@@ -1,0 +1,46 @@
+{
+  "registry": "langchain-hub",
+  "status": "ok",
+  "reason": null,
+  "results": [
+    {
+      "name": "deep-research-writer",
+      "description": null,
+      "source_registry": "langchain-hub",
+      "install_count": 676,
+      "stars": 0,
+      "security_score": null,
+      "last_updated": "2026-03-11T15:40:51.341796",
+      "content_sha": null,
+      "install_url": null,
+      "raw_metadata": {
+        "_envelope": {
+          "source_registry": "langchain-hub",
+          "field": "repo",
+          "wrapped_at": "2026-07-07T16:03:25.241Z"
+        },
+        "value": "{\"repo_handle\":\"deep-research-writer\",\"description\":\"\",\"readme\":\"\",\"id\":\"2ea43b23-d709-4bd1-af7f-5d134b0606f6\",\"tenant_id\":\"cd8c0c3f-386f-4a28-a8b0-2f8198527507\",\"created_at\":\"2026-03-06T23:56:04.902893\",\"updated_at\":\"2026-03-11T15:40:51.341796\",\"is_public\":true,\"is_archived\":false,\"restricted_mode\":false,\"tags\":[\"ChatPromptTemplate\"],\"original_repo_id\":null,\"upstream_repo_id\":null,\"commit_tags\":[],\"repo_type\":\"prompt\",\"source\":null,\"owner\":\"andrecodea\",\"full_name\":\"andrecodea/deep-research-writer\",\"num_likes\":0,\"num_downloads\":676,\"num_views\":35,\"liked_by_auth_user\":null,\"last_commit_hash\":\"9bccef95fdc1b1440fec9cb0e88a12687297a4d06701ad2df44172c47cada3d0\",\"num_commits\":10,\"created_by\":\"André Codea \",\"original_repo_full_name\":null,\"upstream_repo_full_name\":null,\"latest_commit_manifest\":null,\"owners\":null}"
+      }
+    },
+    {
+      "name": "deep-research-orchestrator",
+      "description": null,
+      "source_registry": "langchain-hub",
+      "install_count": 681,
+      "stars": 0,
+      "security_score": null,
+      "last_updated": "2026-03-07T02:47:19.541401",
+      "content_sha": null,
+      "install_url": null,
+      "raw_metadata": {
+        "_envelope": {
+          "source_registry": "langchain-hub",
+          "field": "repo",
+          "wrapped_at": "2026-07-07T16:03:25.241Z"
+        },
+        "value": "{\"repo_handle\":\"deep-research-orchestrator\",\"description\":\"\",\"readme\":\"\",\"id\":\"e1597481-55cf-472e-ac31-f5016f5552c9\",\"tenant_id\":\"cd8c0c3f-386f-4a28-a8b0-2f8198527507\",\"created_at\":\"2026-03-06T23:44:50.505696\",\"updated_at\":\"2026-03-07T02:47:19.541401\",\"is_public\":true,\"is_archived\":false,\"restricted_mode\":false,\"tags\":[\"ChatPromptTemplate\"],\"original_repo_id\":null,\"upstream_repo_id\":null,\"commit_tags\":[],\"repo_type\":\"prompt\",\"source\":null,\"owner\":\"andrecodea\",\"full_name\":\"andrecodea/deep-research-orchestrator\",\"num_likes\":0,\"num_downloads\":681,\"num_views\":19,\"liked_by_auth_user\":null,\"last_commit_hash\":\"7d429bd62317ccffc732c18e45841c7799c1e0ff72dcd07ab58f9ae361825fb5\",\"num_commits\":7,\"created_by\":\"André Codea \",\"original_repo_full_name\":null,\"upstream_repo_full_name\":null,\"latest_commit_manifest\":null,\"owners\":null}"
+      }
+    }
+  ],
+  "latency_ms": 1243
+}

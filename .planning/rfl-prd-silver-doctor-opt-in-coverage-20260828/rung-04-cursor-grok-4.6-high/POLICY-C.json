@@ -1,0 +1,151 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "grok",
+    "effort": "high",
+    "display": "Cursor Grok 4.6 High"
+  },
+  "verdict": "NOT CLEAN",
+  "issues": {
+    "HIGH": "none",
+    "MED": [
+      {
+        "id": "F-4-1",
+        "title": "search_cli host support unspecified vs Alumnium Cursor-only rt_host_supported"
+      }
+    ],
+    "LOW": [
+      {
+        "id": "F-4-2",
+        "title": "rt_scope_includes_component current-system map is two-way vs live three-way"
+      },
+      {
+        "id": "F-4-3",
+        "title": "I-24 packages/scope not on test plan, SKILL examples, or prompt"
+      },
+      {
+        "id": "F-4-4",
+        "title": "Unqualified PATH Health ban vs locked PATH+version"
+      },
+      {
+        "id": "F-4-5",
+        "title": "D10-routes no-consent PASS vs F2 PASS N/A"
+      },
+      {
+        "id": "F-4-6",
+        "title": "Missing provider-missing and PATH-without-version test rows; required_when_enabled false"
+      }
+    ],
+    "NIT": [
+      {
+        "id": "F-4-7",
+        "title": "Implementer prompt omits omniroute key and hermetic vendor-doctor"
+      }
+    ]
+  },
+  "triage": [
+    {
+      "id": "F-4-1",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "Lock search_cli D10 on Cursor/Claude/Codex; do not copy Alumnium fu=1; five-tool/cross_tool stay Cursor-only"
+    },
+    {
+      "id": "F-4-2",
+      "severity": "LOW",
+      "decision": "ACCEPT",
+      "reason": "Document live three-way rt_scope_includes_component including cross_tool"
+    },
+    {
+      "id": "F-4-3",
+      "severity": "LOW",
+      "decision": "ACCEPT",
+      "reason": "Name --fix=packages and rt_scope_includes_component on SKILL examples, test plan, and prompt"
+    },
+    {
+      "id": "F-4-4",
+      "severity": "LOW",
+      "decision": "ACCEPT",
+      "reason": "Qualify PATH/command -v ban as alone; search_cli remains PATH+version"
+    },
+    {
+      "id": "F-4-5",
+      "severity": "LOW",
+      "decision": "ACCEPT",
+      "reason": "no_five_tool_consent is PASS not PASS N/A; coverage N/A rule matches live recorder"
+    },
+    {
+      "id": "F-4-6",
+      "severity": "LOW",
+      "decision": "ACCEPT",
+      "reason": "Add WARN and PATH-without-version rows; keep required_when_enabled false"
+    },
+    {
+      "id": "F-4-7",
+      "severity": "NIT",
+      "decision": "ACCEPT",
+      "reason": "Prompt names omniroute/D10-omniroute and hermetic vendor-doctor path"
+    }
+  ],
+  "blockers": "none",
+  "highs": "none",
+  "mediums": [
+    {
+      "id": "F-4-1",
+      "title": "search_cli host support unspecified vs Alumnium Cursor-only rt_host_supported"
+    }
+  ],
+  "disposition": "ACCEPT-apply",
+  "resolved": [
+    {
+      "id": "F-4-1",
+      "severity": "MED",
+      "title": "search_cli host support",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F-4-2",
+      "severity": "LOW",
+      "title": "three-way scope map",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F-4-3",
+      "severity": "LOW",
+      "title": "packages propagation",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F-4-4",
+      "severity": "LOW",
+      "title": "PATH Health alone",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F-4-5",
+      "severity": "LOW",
+      "title": "D10-routes PASS vs PASS N/A",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F-4-6",
+      "severity": "LOW",
+      "title": "search_cli test rows and required_when_enabled",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F-4-7",
+      "severity": "NIT",
+      "title": "prompt omniroute and vendor-doctor",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    }
+  ],
+  "apply_sha": "241daa69b7961f1ecd60c7bf3e642875914e1fca6fdc95f7e6a928717ec0622b"
+}

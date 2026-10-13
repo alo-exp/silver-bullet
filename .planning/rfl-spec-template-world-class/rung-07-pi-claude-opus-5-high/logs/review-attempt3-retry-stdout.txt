@@ -1,0 +1,24 @@
+Done.
+
+## Rung 07 — Claude Opus 5 High — review pass 3: **NOT CLEAN**
+
+**Output:** `.planning/rfl-spec-template-world-class/rung-07-pi-claude-opus-5-high/review-rerun-3.md`
+
+**Freeze verified unchanged** — both twins hash `4c229f5d873b…`; freeze/twins/SPEC compiler untouched, no triage/APPLY/commit/verify/outcome-record.
+
+**16 residuals filed: `R7c-F01`–`R7c-F16`** (1 HIGH, 7 MED, 5 LOW, 3 nit). All 16 R7b-F01–F16 encodings confirmed landed; R7b-F17 REJECT not re-filed.
+
+| ID | Sev | Summary |
+|----|-----|---------|
+| R7c-F01 | HIGH | Invariants precedence branch (3) `ASK` has no non-interactive terminal, and blocks two *pinned* brief-less Wave 6 fixtures (R5-F01 migrate PASS, R7b-F06 `decision-count: 2` install) |
+| R7c-F02 | MED | `decision-count` has no live-`DEC-nn` equality (unlike R7b-F04's `invariant-count`) — installed value can be false, nothing FAILs |
+| R7c-F03 | MED | `invariant-count` exact equality gates on an undefined MUST/MUST NOT bullet grammar; invariants are the only core structured content with no ID |
+| R7c-F04 | MED | The R7b-F14 dedicated `QA-01, SLO-01` fixture kinds both *require* `security` ⇒ live `CTRL-01` in neither branch ⇒ the positive fixture FAILs |
+| R7c-F05 | MED | Malformed prior `spec-version` on augment 2/4b has no seed/bump rule despite "tree is total" |
+| R7c-F06 | MED | `conditionally-required` cannot be expressed in `software-kinds.yaml`, which R7b-F07 made the sole machine source |
+| R7c-F07 | MED | Retained `.spec-kind-migration.md` is a fixed path with no accumulation rule — second migration overwrites the first |
+| R7c-F08 | MED | `SCAN:` normalization ambiguous on runs/trim/whitespace; mismatch is fail-closed `REQ-F71` |
+| R7c-F09–F13 | LOW | `<line-or-id>` stability; QC-string test asserts lag the `rg` line; `world-class-min` fixture asserts lag template asserts; Invariants always-on unasserted; template can't hold both `Metric` and `None identified` |
+| R7c-F14–F16 | nit | Bare ISSUE with no `SPEC-F*` in new ontology row; non-enum "Default class" vocabulary; "in practice only cli" restated normatively ×6 |
+
+Memory saved to `.agentmemory/memory/2026-08-31-rfl-rung07-claude-opus-5-high-review-pass-3.md`; `graphify update .` completed (43608 nodes).

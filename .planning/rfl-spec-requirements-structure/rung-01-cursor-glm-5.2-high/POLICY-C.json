@@ -1,0 +1,117 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "glm",
+    "effort": "high",
+    "display": "Cursor GLM 5.2 High"
+  },
+  "verdict": "CLEAN",
+  "issues": {
+    "HIGH": "none",
+    "MED": [
+      {
+        "id": "R1-F01",
+        "title": "Legacy lock algorithm is broader than its own rollback mitigation"
+      }
+    ],
+    "LOW": [
+      {
+        "id": "R1-F02",
+        "title": "REQ-09 wave mapping understates coverage"
+      },
+      {
+        "id": "R1-F03",
+        "title": "AC-03 If/Then equivalent is undefined (contract-soft)"
+      }
+    ],
+    "NIT": [
+      {
+        "id": "R1-F04",
+        "title": "SPEC template byte count typo (1013 vs 1017)"
+      },
+      {
+        "id": "R1-F05",
+        "title": "AC-09 / NFR-03 overlap on spec-floor test"
+      }
+    ]
+  },
+  "triage": [
+    {
+      "id": "R1-F01",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "Wave 6 lock must require missing spec-version and missing User Stories and missing feature-slug; stories-without-frontmatter is augment"
+    },
+    {
+      "id": "R1-F02",
+      "severity": "LOW",
+      "decision": "ACCEPT",
+      "reason": "AC-09 / REQ-09 mapping must include compiler/clarify string-assert waves 3 and 4"
+    },
+    {
+      "id": "R1-F03",
+      "severity": "LOW",
+      "decision": "ACCEPT",
+      "reason": "Pin If/Then to non-interactive AC; interactive require GWT; ISSUE on new compiles, INFO on legacy pre-ID augment"
+    },
+    {
+      "id": "R1-F04",
+      "severity": "NIT",
+      "decision": "ACCEPT",
+      "reason": "Evidence/CONTEXT must cite SPEC template 52 lines / 1017 bytes, not 53 / 1013"
+    },
+    {
+      "id": "R1-F05",
+      "severity": "NIT",
+      "decision": "ACCEPT",
+      "reason": "Spec-floor harness is NFR-03 only; AC-09 / REQ-09 own template/compiler/QC/ID-parse tests"
+    }
+  ],
+  "blockers": "none",
+  "highs": "none",
+  "mediums": [
+    {
+      "id": "R1-F01",
+      "title": "Legacy lock algorithm is broader than its own rollback mitigation"
+    }
+  ],
+  "disposition": "ACCEPT-apply",
+  "resolved": [
+    {
+      "id": "R1-F01",
+      "severity": "MED",
+      "title": "Legacy lock algorithm is broader than its own rollback mitigation",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "R1-F02",
+      "severity": "LOW",
+      "title": "REQ-09 wave mapping understates coverage",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "R1-F03",
+      "severity": "LOW",
+      "title": "AC-03 If/Then equivalent is undefined (contract-soft)",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "R1-F04",
+      "severity": "NIT",
+      "title": "SPEC template byte count typo (1013 vs 1017)",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "R1-F05",
+      "severity": "NIT",
+      "title": "AC-09 / NFR-03 overlap on spec-floor test",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    }
+  ],
+  "apply_sha": "d281cb7ee6321201bdce5825dde26f48c082ab6c7e4ef7a59cfeff965dcd1feb"
+}

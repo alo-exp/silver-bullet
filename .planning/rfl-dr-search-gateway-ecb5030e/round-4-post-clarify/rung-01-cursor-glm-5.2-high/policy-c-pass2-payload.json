@@ -1,0 +1,31 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "glm",
+    "effort": "high",
+    "display": "Cursor GLM 5.2 High (review pass 2)"
+  },
+  "verdict": "NOT CLEAN",
+  "disposition": "ACCEPT-apply",
+  "issues": {
+    "HIGH": "none",
+    "MED": "none",
+    "LOW": [
+      {"id": "R1", "title": "Historical X must_search:false ledger bullets lack inline superseded markers"}
+    ],
+    "NIT": [
+      {"id": "R2", "title": "Consent UI silent on official-JSON site: fallbacks vs Serper"}
+    ]
+  },
+  "triage": [
+    {"id": "R1", "severity": "LOW", "decision": "ACCEPT", "reason": "Convention expects inline superseded; does not unwind X must-search"},
+    {"id": "R2", "severity": "NIT", "decision": "ACCEPT", "reason": "Lock fallbacks as best-effort degrade, recorded gap if no Serper/Brave"}
+  ],
+  "blockers": "none",
+  "highs": "none",
+  "mediums": "none",
+  "resolved": [
+    {"id": "R1", "severity": "LOW", "title": "superseded markers on historical X must_search:false", "decision": "ACCEPT", "resolved": "yes"},
+    {"id": "R2", "severity": "NIT", "title": "official-JSON site: fallbacks best-effort degrade", "decision": "ACCEPT", "resolved": "yes"}
+  ]
+}

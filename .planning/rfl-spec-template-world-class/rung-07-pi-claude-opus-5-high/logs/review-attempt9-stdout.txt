@@ -1,0 +1,29 @@
+Done. Rung 07 pass 9 complete.
+
+## Result: **NOT CLEAN** — 11 residuals (`R7i-F01` … `R7i-F11`)
+
+**Output:** `.planning/rfl-spec-template-world-class/rung-07-pi-claude-opus-5-high/review-rerun-9.md`
+
+**Freeze integrity:** both twins hashed at start and end — `892b263d530f…` unchanged, not mutated. `review.md` and `review-rerun-2..8.md` untouched.
+
+### Findings
+
+| ID | Sev | One-line |
+|----|-----|----------|
+| R7i-F01 | HIGH | Clause-(c) version-cell re-anchor has no reachable target — migration-record target can't satisfy `scan-section-slug` live-heading match (it's non-canonical/not-QC-parsed), and "surviving canonical row" is an unbounded silent repoint; pinned L602 malformed-prior PASS fixture deadlocks on ASK |
+| R7i-F02 | MED | `ASM-nn` is now a mandatory clause-(a) SCAN anchor but QC-13 still says "remains optional" — no uniqueness/width/tombstone/producer contract; duplicate `ASM-01` legal |
+| R7i-F03 | MED | QC-10 "non-placeholder summary" can FAIL the freeze's own mandated no-structural-change sentence; no whitelist, no L437 fixture |
+| R7i-F04 | MED | QC-10 provenance written as a reviewer rule though reviewers can't see the brief; QC-11 got the compiler-obligation caveat, QC-10 didn't |
+| R7i-F05 | LOW | `review-cross-artifact` SCAN clause omits `scan-section-slug` `<section>` normalization despite resolving atoms before the eligible-set join |
+| R7i-F06 | LOW | L427 still says clause (b) is "for ID-less sections" — contradicts the closed Invariants/unprefixed-Assumptions list in the same sentence |
+| R7i-F07 | LOW | Wave 2 `rg` omits `decision-row-identity` and `ASM-nn`/per-entry tokens asserted at L437 |
+| R7i-F08 | LOW | Wave 3 `- contains` QC-10 bullet omits the no-structural-change clause, `<reason>` enum, and `N` binding |
+| R7i-F09 | nit | `decision-log` Default class cell still not enum-only (residual of R7h-F10) |
+| R7i-F10 | nit | `v<integer>` has no canonical decimal form (`v01` vs `v1`) and no `v0` dead-value rule, unlike `b00` |
+| R7i-F11 | nit | R7h-F05 Assumptions entry grammar has PASS fixtures only; exclusion half unpinned |
+
+**R7h-F01–F11 APPLY confirmed landed** (evidence table in the review); R7g/R7f/R7e/R7d/R7c/R7b/R7/R6b–R6n spot-checked and unweakened; KEEP REJECT and `R7b-F17` REJECT untouched.
+
+**Mandatory tools:** `graphify query` first ✓ · agentmemory record written to `.agentmemory/memory/2026-08-31-rfl-rung07-claude-opus-5-high-review-pass-9.md` (HTTP save API returned 404 on all routes; used the configured `CLAUDE_MEMORY_BRIDGE` file-export path that prior passes use) · `graphify update .` after writing ✓
+
+No triage, no APPLY, no verify, no ladder advance, no commit.

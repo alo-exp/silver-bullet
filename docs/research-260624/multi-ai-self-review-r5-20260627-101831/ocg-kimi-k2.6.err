@@ -1,0 +1,55 @@
+[0m
+> build · kimi-k2.6
+[0m
+[0m# [0mTodos
+[•] Read all 8 skill files for multi-ai-task review
+[ ] Draft §1 Critical Assessment per file
+[ ] Draft §2 8-Dimension Rubric scoring
+[ ] Draft §3 Top 5 Improvements
+[ ] Draft §4 Open Questions and §5 Confidence
+[ ] Assemble final review markdown
+[0m
+[0m→ [0mRead skills/multi-ai-task/SKILL.md[90m [additionalContext=<context_guidance>
+  <tip>
+    Reading to Edit the file? Read is correct — Edit needs the exact bytes in your conversation to match against.
+    Reading to analyze, summarize, or extract from the file? Use context-mode_ctx_execute_file(path, language, code) — the bytes stay in the sandbox and only what your code prints enters your conversation.
+  </tip>
+</context_guidance>][0m
+[0m→ [0mRead skills/multi-ai-task/rules/methodology.md
+[0m→ [0mRead skills/multi-ai-task/rules/dispatch-mechanics.md
+[0m→ [0mRead skills/multi-ai-task/rules/consolidation-rules.md
+[0m→ [0mRead skills/multi-ai-task/rules/output-schema.md
+[0m→ [0mRead skills/multi-ai-task/rules/examples/research-prior-art.md
+[0m→ [0mRead skills/multi-ai-task/rules/examples/fact-check.md
+[0m→ [0mRead skills/multi-ai-task/rules/examples/code-review.md
+[0m✱ [0mGrep "no extra cost"[90m in skills/multi-ai-task · 1 match[0m
+[0m✱ [0mGrep "primary_key"[90m in skills/multi-ai-task · 14 matches[0m
+[0m✱ [0mGrep "timeout"[90m in skills/multi-ai-task/rules/dispatch-mechanics.md · 6 matches[0m
+[0m✱ [0mGrep "does NOT do|does not do"[90m in skills/multi-ai-task/SKILL.md · 6 matches[0m
+[0m✱ [0mGrep "v2\.1\.0|v2\.0\.0|version"[90m in skills/multi-ai-task · 22 matches[0m
+[0m✱ [0mGrep "not yet produced|deferred"[90m in skills/multi-ai-task · 7 matches[0m
+[0m
+[0m# [0mTodos
+[✓] Read all 8 skill files for multi-ai-task review
+[•] Draft §1 Critical Assessment per file
+[ ] Draft §2 8-Dimension Rubric scoring
+[ ] Draft §3 Top 5 Improvements
+[ ] Draft §4 Open Questions and §5 Confidence
+[ ] Assemble final review markdown
+[0m
+[0m# [0mTodos
+[✓] Read all 8 skill files for multi-ai-task review
+[✓] Draft §1 Critical Assessment per file
+[✓] Draft §2 8-Dimension Rubric scoring
+[✓] Draft §3 Top 5 Improvements
+[✓] Draft §4 Open Questions and §5 Confidence
+[•] Assemble final review markdown
+[0m
+[0m# [0mTodos
+[✓] Read all 8 skill files for multi-ai-task review
+[✓] Draft §1 Critical Assessment per file
+[✓] Draft §2 8-Dimension Rubric scoring
+[✓] Draft §3 Top 5 Improvements
+[✓] Draft §4 Open Questions and §5 Confidence
+[✓] Assemble final review markdown
+[0m

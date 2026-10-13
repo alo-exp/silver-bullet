@@ -1,0 +1,1027 @@
+{
+  "schema_version": "1.0.0",
+  "category_id": "agentic-sdlc-process-orchestrator",
+  "display_name": "Agentic SDLC Process Orchestrators",
+  "definition": "Systems that add repeatable workflows, cross-session state, deterministic quality gates, specialist agents, and enforcement above the host coding-agent runtime — not generic AI coding assistants, foundation-model labs, or single-step SDLC tools. Closest comps orchestrate full or multi-phase software delivery and DevOps cycles as composable, host-integrated process layers (plugins, skills, hooks).",
+  "jobs_to_be_done": [
+    "Enforce a full SDLC or DevOps cycle so agents cannot skip planning, verification, review, or release steps",
+    "Compose specialist agents and external workflows (GSD, spec kits, review ladders) under one compliance layer",
+    "Persist process state, gates, and evidence across sessions and parallel workers",
+    "Provide procurement-ready comparison of process-orchestration depth vs host runtimes and frameworks"
+  ],
+  "inclusion_criteria": {
+    "rule": "min_pass_count",
+    "min_pass_count": 3,
+    "criteria": [
+      {
+        "id": "lifecycle_span",
+        "label": "Multi-phase lifecycle span",
+        "description": "Covers two or more of plan/spec, build, test, review, release, or DevOps operations as an integrated process — not a single-shot codegen or review-only tool."
+      },
+      {
+        "id": "plugin_skill_hook_packaging",
+        "label": "Plugin / skill / hook packaging",
+        "description": "Ships as host-integrated packaging (Claude/Codex/Cursor plugin, skill bundle, hook layer, or equivalent) rather than a standalone IDE or raw API."
+      },
+      {
+        "id": "deterministic_gates",
+        "label": "Deterministic quality gates",
+        "description": "Uses machine-checkable gates (hooks, audits, stop-checks, CI integration) that block progression when criteria fail."
+      },
+      {
+        "id": "cross_session_state",
+        "label": "Cross-session state",
+        "description": "Persists workflow state, memory, or runbooks across agent clears, sessions, or parallel workers."
+      },
+      {
+        "id": "specialist_agents",
+        "label": "Specialist agent orchestration",
+        "description": "Routes work to named specialist agents, hats, or role-specific subagents — not a single monolithic agent."
+      },
+      {
+        "id": "quality_release_enforcement",
+        "label": "Quality / release enforcement claim",
+        "description": "Publicly claims enforcement of quality, compliance, release, or governance — not advisory-only suggestions."
+      },
+      {
+        "id": "process_layer_above_host",
+        "label": "Process layer above host runtime",
+        "description": "Positions as a meta-orchestrator or compliance wrapper above Claude Code, Codex, Cursor, or similar — not as the host runtime itself."
+      }
+    ]
+  },
+  "exclusion_classes": [
+    {
+      "id": "coding_agent",
+      "label": "Generic AI coding agent",
+      "description": "IDE copilots, autocomplete agents, and autonomous SWE bots whose primary job is writing code — not enforcing a full process lattice."
+    },
+    {
+      "id": "host_runtime",
+      "label": "Host runtime",
+      "description": "The underlying agent host (Cursor, Claude Code, Codex CLI, Copilot) when evaluated as the runtime itself — adjacent only, not a process-orchestrator peer."
+    },
+    {
+      "id": "single_sdlc_step",
+      "label": "Single SDLC step tool",
+      "description": "Point solutions for one step only: code review bots, test generators, security scanners, design tools without workflow orchestration."
+    },
+    {
+      "id": "generic_agent_framework",
+      "label": "Generic agent framework",
+      "description": "Reusable multi-agent libraries (LangGraph, CrewAI) without a shipped, enforced SDLC process product."
+    },
+    {
+      "id": "project_management",
+      "label": "Project management",
+      "description": "Issue trackers and PM SaaS (Linear, Jira-style) without agentic process enforcement."
+    },
+    {
+      "id": "foundation_model_lab",
+      "label": "Foundation model lab",
+      "description": "Model providers and research labs — not process-orchestration products."
+    },
+    {
+      "id": "sunset",
+      "label": "Sunset / discontinued",
+      "description": "Products officially discontinued or abandoned; never list in Top-N, charts, or matrix."
+    },
+    {
+      "id": "professional_services",
+      "label": "Professional services / FDE shop",
+      "description": "Forward-deployed engineering, staff-aug, or services firms without a shipped APO product surface."
+    }
+  ],
+  "adjacent_classes": [
+    {
+      "id": "host_runtime",
+      "label": "Host runtimes & autonomous SWE",
+      "description": "Host coding-agent runtimes (Cursor, Claude Code, Codex, Copilot) and aggregator surfaces (Conductor, Replit Agent, Cognition Scout) — important buying context but not APO peers and not agentic-SDLC-SaaS core (Factory/Devin/Augment Cosmos/Tembo/Magic.dev)."
+    },
+    {
+      "id": "methodology_ingredient",
+      "label": "Methodology / ingredient systems",
+      "description": "Generic methodology ingredients when not scored in the sdlc-plugins market; GSD/BMAD/Spec Kit/etc. are sdlc-plugins cores when seeded there."
+    },
+    {
+      "id": "generic_agent_framework",
+      "label": "Generic agent frameworks",
+      "description": "LangGraph, CrewAI — building blocks, not analyst-grade process-orchestrator peers."
+    },
+    {
+      "id": "governance_adjacent",
+      "label": "Governance-adjacent",
+      "description": "Runtime policy and audit layers (e.g. AxonFlow) — adjacent on enforcement evidence, not full SDLC orchestration."
+    },
+    {
+      "id": "historical_version",
+      "label": "Historical product line",
+      "description": "Superseded versions (e.g. Cavekit v4 minimal line vs v3.1 orchestration line) — document under Adjacent/Historical only."
+    },
+    {
+      "id": "client_automation_crm",
+      "label": "Client-automation CRM",
+      "description": "Consultant/client-change automation products (not SDLC process orchestrators)."
+    }
+  ],
+  "core_seeds": [
+    {
+      "slug": "silver-bullet",
+      "name": "Silver Bullet",
+      "license": "oss",
+      "must_research": true,
+      "tier": 0,
+      "notes": "Always include — subject solution."
+    },
+    {
+      "slug": "ai-dlc",
+      "name": "AI-DLC",
+      "license": "oss",
+      "must_research": true,
+      "tier": 1
+    },
+    {
+      "slug": "agentsys",
+      "name": "AgentSys",
+      "license": "oss",
+      "must_research": true,
+      "tier": 1
+    },
+    {
+      "slug": "deepwork",
+      "name": "Deepwork",
+      "license": "commercial",
+      "must_research": true,
+      "tier": 1
+    },
+    {
+      "slug": "workflow-manager",
+      "name": "Workflow Manager",
+      "license": "commercial",
+      "must_research": true,
+      "tier": 1
+    },
+    {
+      "slug": "turboshovel",
+      "name": "Turboshovel",
+      "license": "commercial",
+      "must_research": true,
+      "tier": 1
+    },
+    {
+      "slug": "director",
+      "name": "Director",
+      "license": "oss",
+      "must_research": true,
+      "tier": 2
+    },
+    {
+      "slug": "metagpt",
+      "name": "MetaGPT",
+      "license": "oss",
+      "must_research": true,
+      "tier": 2,
+      "notes": "Multi-agent software-company SOPs — APO OSS core, not adjacent framework"
+    }
+  ],
+  "adjacent_seeds": [
+    {
+      "slug": "langgraph",
+      "name": "LangGraph",
+      "license": "oss",
+      "adjacent_class": "generic_agent_framework"
+    },
+    {
+      "slug": "crewai",
+      "name": "CrewAI",
+      "license": "oss",
+      "adjacent_class": "generic_agent_framework"
+    },
+    {
+      "slug": "langchain",
+      "name": "LangChain",
+      "license": "oss",
+      "adjacent_class": "generic_agent_framework",
+      "notes": "Dedupe when LangGraph present — prefer LangGraph"
+    },
+    {
+      "slug": "axonflow",
+      "name": "AxonFlow",
+      "license": "commercial",
+      "adjacent_class": "governance_adjacent"
+    },
+    {
+      "slug": "cavekit-v4",
+      "name": "Cavekit v4",
+      "license": "commercial",
+      "adjacent_class": "historical_version",
+      "notes": "Minimal line — Cavekit v3.1 is sdlc-plugins core (Claude Code plugin class), not APO"
+    },
+    {
+      "slug": "agenthub",
+      "name": "AgentHub",
+      "license": "mixed",
+      "must_research": true,
+      "tier": 2,
+      "adjacent_class": "client_automation_crm",
+      "notes": "Consultant client-automation CRM (agenthub.ai: manage client automation changes). SCR is seed boilerplate without SDLC process-orchestrator evidence — APO adjacent, not core/Leader."
+    },
+    {
+      "slug": "devin",
+      "name": "Devin",
+      "license": "commercial",
+      "must_research": true,
+      "tier": 1,
+      "adjacent_class": "host_runtime",
+      "notes": "agentic-sdlc-saas core (keep MQ/Wave plotted). APO-adjacent autonomous SWE — not an APO process-orchestrator peer and not SaaS adjacent-only."
+    }
+  ],
+  "hard_exclusions": [
+    {
+      "slug": "claude-code-expert",
+      "name": "Claude Code Expert",
+      "exclusion_class": "sunset",
+      "reason": "No such product — invented/wrong seed name; remove from charts and cards"
+    },
+    {
+      "slug": "cursor-background-agents",
+      "name": "Cursor Background Agents",
+      "exclusion_class": "coding_agent",
+      "reason": "Host-runtime feature, not process orchestrator"
+    },
+    {
+      "slug": "sweep",
+      "name": "Sweep",
+      "exclusion_class": "coding_agent"
+    },
+    {
+      "slug": "windsurf",
+      "name": "Windsurf",
+      "exclusion_class": "coding_agent"
+    },
+    {
+      "slug": "amazon-q-developer",
+      "name": "Amazon Q Developer",
+      "exclusion_class": "coding_agent"
+    },
+    {
+      "slug": "sourcegraph-cody",
+      "name": "Sourcegraph Cody",
+      "exclusion_class": "coding_agent"
+    },
+    {
+      "slug": "poolside",
+      "name": "Poolside",
+      "exclusion_class": "coding_agent"
+    },
+    {
+      "slug": "coderabbit",
+      "name": "CodeRabbit",
+      "exclusion_class": "single_sdlc_step"
+    },
+    {
+      "slug": "jetbrains-ai-assistant",
+      "name": "JetBrains AI Assistant",
+      "exclusion_class": "coding_agent"
+    },
+    {
+      "slug": "github-copilot-enterprise",
+      "name": "GitHub Copilot Enterprise",
+      "exclusion_class": "coding_agent"
+    },
+    {
+      "slug": "openhands",
+      "name": "OpenHands",
+      "exclusion_class": "coding_agent"
+    },
+    {
+      "slug": "cline",
+      "name": "Cline",
+      "exclusion_class": "coding_agent"
+    },
+    {
+      "slug": "continue",
+      "name": "Continue",
+      "exclusion_class": "coding_agent"
+    },
+    {
+      "slug": "aider",
+      "name": "Aider",
+      "exclusion_class": "coding_agent"
+    },
+    {
+      "slug": "swe-agent",
+      "name": "SWE-agent",
+      "exclusion_class": "coding_agent"
+    },
+    {
+      "slug": "open-interpreter",
+      "name": "Open Interpreter",
+      "exclusion_class": "coding_agent"
+    },
+    {
+      "slug": "linear",
+      "name": "Linear",
+      "exclusion_class": "project_management"
+    },
+    {
+      "slug": "cognition",
+      "name": "Cognition",
+      "exclusion_class": "host_runtime",
+      "reason": "Parent brand — use Devin as agentic-sdlc-saas core; Devin is APO-adjacent autonomous SWE, not an APO peer"
+    },
+    {
+      "slug": "ateam",
+      "name": "ATeam",
+      "exclusion_class": "professional_services",
+      "reason": "Forward-deployed engineering / enterprise AI services shop (a.team), not a shipped APO product. SCR is seed boilerplate only."
+    },
+    {
+      "slug": "augment-code",
+      "name": "Augment Code",
+      "exclusion_class": "coding_agent",
+      "reason": "Brand without Cosmos orchestration evidence — use augment-cosmos or exclude"
+    },
+    {
+      "slug": "magic-dev",
+      "name": "Magic.dev",
+      "exclusion_class": "coding_agent",
+      "reason": "Long-context coding-model lab, not a Factory/Devin-class autonomous-delivery SaaS peer. SCR is seed boilerplate only; features.json has no hook gates, catalog, specialist delegation, or CI. One membership: hard-excluded — not tertiary core and not MQ/Wave plotted."
+    }
+  ],
+  "product_aliases": {
+    "augment-code": "augment-cosmos",
+    "augment_code": "augment-cosmos",
+    "cognition": "devin",
+    "cavekit": "cavekit-v31",
+    "cavekit-v3": "cavekit-v31",
+    "cavekit-v3.1": "cavekit-v31",
+    "sdlc": "zuvo",
+    "silver_bullet": "silver-bullet",
+    "spec-kit": "spec-kit",
+    "github-spec-kit": "spec-kit",
+    "claude-flow": "ruflo",
+    "factory": "factory-ai",
+    "barkain": "barkain-workflow-orchestrator",
+    "barkain-workflow-orchestrator": "barkain-workflow-orchestrator",
+    "barkain_workflow_orchestrator": "barkain-workflow-orchestrator",
+    "oh-my-pi": "oh-my-pi",
+    "omp": "oh-my-pi",
+    "bmad-method": "bmad",
+    "github-copilot": "github-copilot",
+    "copilot": "github-copilot",
+    "sdlc-plugin": "zuvo",
+    "sdlc_plugin": "zuvo"
+  },
+  "homepage_by_slug": {
+    "silver-bullet": "https://sb.alolabs.dev/",
+    "agenthub": "https://www.agenthub.ai/",
+    "agentsys": "https://github.com/agent-sh/agentsys",
+    "ai-dlc": "https://github.com/awslabs/aidlc-workflows",
+    "ateam": "https://www.a.team/",
+    "augment-cosmos": "https://www.augmentcode.com/",
+    "barkain-workflow-orchestrator": "https://github.com/barkain/claude-code-workflow-orchestration",
+    "bmad": "https://github.com/bmad-code-org/BMAD-METHOD",
+    "cavekit-v31": "https://github.com/JuliusBrussee/cavekit",
+    "cc10x": "https://github.com/romiluz13/cc10x",
+    "claude-code": "https://docs.anthropic.com/en/docs/claude-code/overview",
+    "codex": "https://openai.com/codex/",
+    "cognition-scout": "https://cognition.ai/",
+    "conductor": "https://conductor.build/",
+    "cursor": "https://cursor.com/",
+    "devin": "https://devin.ai/",
+    "factory-ai": "https://www.factory.ai/",
+    "github-copilot": "https://github.com/features/copilot",
+    "gsd": "https://github.com/gsd-build/get-shit-done",
+    "magic-dev": "https://magic.dev/",
+    "ruflo": "https://github.com/ruvnet/ruflo",
+    "spec-kit": "https://github.com/github/spec-kit",
+    "superclaude": "https://github.com/SuperClaude-Org/SuperClaude_Framework",
+    "superpowers": "https://github.com/obra/superpowers",
+    "tembo": "https://tembo.io/",
+    "zuvo": "https://zuvo.dev/",
+    "axonflow": "https://www.axonflow.ai/",
+    "cavekit-v4": "https://github.com/JuliusBrussee/cavekit",
+    "crewai": "https://www.crewai.com/",
+    "langchain": "https://www.langchain.com/",
+    "langgraph": "https://www.langchain.com/langgraph",
+    "metagpt": "https://github.com/FoundationAgents/MetaGPT",
+    "replit-agent": "https://replit.com/ai"
+  },
+  "github_by_slug": {
+    "zuvo": "https://github.com/greglas75/zuvo",
+    "cc10x": "https://github.com/romiluz13/cc10x",
+    "cavekit-v31": "https://github.com/JuliusBrussee/cavekit",
+    "barkain-workflow-orchestrator": "https://github.com/barkain/claude-code-workflow-orchestration"
+  },
+  "parent_child_dedupe": [
+    {
+      "parent_slug": "cognition",
+      "prefer_slug": "devin",
+      "reason": "Never dual-list parent brand and Devin product"
+    },
+    {
+      "parent_slug": "langchain",
+      "prefer_slug": "langgraph",
+      "reason": "Prefer framework runtime (LangGraph) over parent brand when both appear"
+    },
+    {
+      "parent_slug": "augment-code",
+      "prefer_slug": "augment-cosmos",
+      "reason": "Product-level Cosmos naming only"
+    },
+    {
+      "parent_slug": "sdlc-plugin",
+      "prefer_slug": "zuvo",
+      "reason": "sdlc-plugin is an alias for Zuvo (https://zuvo.dev/ → https://github.com/greglas75/zuvo), not claude.com/plugins or anthropics/claude-code"
+    }
+  ],
+  "sunset_registry": [
+    {
+      "slug": "copilot-workspace",
+      "name": "GitHub Copilot Workspace",
+      "reason": "Discontinued by GitHub"
+    },
+    {
+      "slug": "autogen",
+      "name": "AutoGen",
+      "reason": "Microsoft shifted to Agent Framework; legacy status"
+    },
+    {
+      "slug": "agentgpt",
+      "name": "AgentGPT",
+      "reason": "Abandoned / non-production"
+    },
+    {
+      "slug": "devika",
+      "name": "Devika",
+      "reason": "Project discontinued"
+    }
+  ],
+  "feature_axes": [
+    {
+      "id": "lifecycle_coverage",
+      "label": "Lifecycle coverage (plan→release)",
+      "enforcement_ladder": false
+    },
+    {
+      "id": "devops_cycle_coverage",
+      "label": "DevOps / release cycle coverage",
+      "enforcement_ladder": false
+    },
+    {
+      "id": "deterministic_gates",
+      "label": "Deterministic quality gates",
+      "enforcement_ladder": true
+    },
+    {
+      "id": "hook_enforcement",
+      "label": "Hook / stop-check enforcement depth",
+      "enforcement_ladder": true
+    },
+    {
+      "id": "cross_session_state",
+      "label": "Cross-session state persistence",
+      "enforcement_ladder": false
+    },
+    {
+      "id": "specialist_routing",
+      "label": "Specialist agent routing",
+      "enforcement_ladder": false
+    },
+    {
+      "id": "multi_host_support",
+      "label": "Multi-host runtime support",
+      "enforcement_ladder": false
+    },
+    {
+      "id": "composable_dependencies",
+      "label": "Composable external workflow deps",
+      "enforcement_ladder": false
+    },
+    {
+      "id": "evidence_audit_trail",
+      "label": "Evidence / audit trail",
+      "enforcement_ladder": true
+    },
+    {
+      "id": "release_governance",
+      "label": "Release & ship governance",
+      "enforcement_ladder": true
+    },
+    {
+      "id": "procurement_readiness",
+      "label": "SMB procurement readiness",
+      "enforcement_ladder": false
+    }
+  ],
+  "min_core_count": 8,
+  "max_core_count": 24,
+  "notes": "Multi-market membership is NOT mutually exclusive: a solution may be core (or adjacent) in one OR multiple markets when evidence supports it (e.g. Silver Bullet is APO core and sdlc-plugins core). Do not force exclusive single-market placement. Multi-market pack (APO primary, SDLC plugins secondary, agentic SDLC SaaS tertiary). Host runtimes (Cursor/Claude Code/Codex/Copilot) are SaaS-adjacent only — never MQ/Wave core. Devin is agentic-sdlc-saas core (MQ/Wave Leader) and APO-adjacent autonomous SWE — not SaaS adjacent-only and not an APO process-orchestrator peer. Claude Harness, cc10x, Cavekit v3.1, and Barkain are sdlc-plugins OSS (Claude Code plugin class — not APO commercial core). AgentHub is APO-adjacent client-automation CRM, not APO core. A.Team/ATeam is excluded (FDE/professional services, not APO). Conductor is SaaS-adjacent aggregator (not APO). cc10x is sdlc-plugins Claude Code plugin (not APO). Director is APO seed with unverified identity and no shipped hook gates in features.json (Niche/low-execute, not a plugin and not an aggregator). MetaGPT is APO OSS core (not generic-framework adjacent). Magic.dev is hard-excluded coding_agent (boilerplate SCR — not SaaS core, not MQ/Wave). Zuvo is sdlc-plugins core (homepage https://zuvo.dev/; GitHub greglas75/zuvo). Inclusion: ≥3/7 APO; ≥2/5 secondary/tertiary. Tembo is demoted to agentic-sdlc-saas adjacent (not SaaS core plotted).",
+  "markets": [
+    {
+      "id": "apo",
+      "display_name": "Agentic Process Orchestrators (APO)",
+      "role": "primary",
+      "definition": "Systems that add repeatable workflows, cross-session state, deterministic quality gates, specialist agents, and enforcement above the host coding-agent runtime — not generic AI coding assistants, foundation-model labs, or single-step SDLC tools. Closest comps orchestrate full or multi-phase software delivery and DevOps cycles as composable, host-integrated process layers (plugins, skills, hooks).",
+      "seeds": [
+        {
+          "slug": "silver-bullet",
+          "name": "Silver Bullet",
+          "license": "oss",
+          "must_research": true,
+          "tier": 0,
+          "notes": "Always include — subject solution."
+        },
+        {
+          "slug": "ai-dlc",
+          "name": "AI-DLC",
+          "license": "oss",
+          "must_research": true,
+          "tier": 1
+        },
+        {
+          "slug": "agentsys",
+          "name": "AgentSys",
+          "license": "oss",
+          "must_research": true,
+          "tier": 1
+        },
+        {
+          "slug": "deepwork",
+          "name": "Deepwork",
+          "license": "commercial",
+          "must_research": true,
+          "tier": 1
+        },
+        {
+          "slug": "workflow-manager",
+          "name": "Workflow Manager",
+          "license": "commercial",
+          "must_research": true,
+          "tier": 1
+        },
+        {
+          "slug": "turboshovel",
+          "name": "Turboshovel",
+          "license": "commercial",
+          "must_research": true,
+          "tier": 1
+        },
+        {
+          "slug": "director",
+          "name": "Director",
+          "license": "oss",
+          "must_research": true,
+          "tier": 2
+        },
+        {
+          "slug": "metagpt",
+          "name": "MetaGPT",
+          "license": "oss",
+          "must_research": true,
+          "tier": 2,
+          "notes": "Multi-agent software-company SOPs — APO OSS core, not adjacent"
+        }
+      ],
+      "adjacent_seeds": [
+        {
+          "slug": "langgraph",
+          "name": "LangGraph",
+          "license": "oss",
+          "adjacent_class": "generic_agent_framework"
+        },
+        {
+          "slug": "crewai",
+          "name": "CrewAI",
+          "license": "oss",
+          "adjacent_class": "generic_agent_framework"
+        },
+        {
+          "slug": "langchain",
+          "name": "LangChain",
+          "license": "oss",
+          "adjacent_class": "generic_agent_framework",
+          "notes": "Dedupe when LangGraph present — prefer LangGraph"
+        },
+        {
+          "slug": "axonflow",
+          "name": "AxonFlow",
+          "license": "commercial",
+          "adjacent_class": "governance_adjacent"
+        },
+        {
+          "slug": "cavekit-v4",
+          "name": "Cavekit v4",
+          "license": "commercial",
+          "adjacent_class": "historical_version",
+          "notes": "Minimal line — Cavekit v3.1 is sdlc-plugins core (Claude Code plugin class), not APO"
+        },
+        {
+          "slug": "agenthub",
+          "name": "AgentHub",
+          "license": "mixed",
+          "must_research": true,
+          "tier": 2,
+          "adjacent_class": "client_automation_crm",
+          "notes": "Consultant client-automation CRM (agenthub.ai: manage client automation changes). SCR is seed boilerplate without SDLC process-orchestrator evidence — APO adjacent, not core/Leader."
+        },
+        {
+          "slug": "devin",
+          "name": "Devin",
+          "license": "commercial",
+          "must_research": true,
+          "tier": 1,
+          "adjacent_class": "host_runtime",
+          "notes": "agentic-sdlc-saas core (keep MQ/Wave plotted). APO-adjacent autonomous SWE — not an APO process-orchestrator peer and not SaaS adjacent-only."
+        }
+      ],
+      "inclusion_criteria": {
+        "rule": "min_pass_count",
+        "min_pass_count": 3,
+        "criteria": [
+          {
+            "id": "lifecycle_span",
+            "label": "Multi-phase lifecycle span",
+            "description": "Covers two or more of plan/spec, build, test, review, release, or DevOps operations as an integrated process — not a single-shot codegen or review-only tool."
+          },
+          {
+            "id": "plugin_skill_hook_packaging",
+            "label": "Plugin / skill / hook packaging",
+            "description": "Ships as host-integrated packaging (Claude/Codex/Cursor plugin, skill bundle, hook layer, or equivalent) rather than a standalone IDE or raw API."
+          },
+          {
+            "id": "deterministic_gates",
+            "label": "Deterministic quality gates",
+            "description": "Uses machine-checkable gates (hooks, audits, stop-checks, CI integration) that block progression when criteria fail."
+          },
+          {
+            "id": "cross_session_state",
+            "label": "Cross-session state",
+            "description": "Persists workflow state, memory, or runbooks across agent clears, sessions, or parallel workers."
+          },
+          {
+            "id": "specialist_agents",
+            "label": "Specialist agent orchestration",
+            "description": "Routes work to named specialist agents, hats, or role-specific subagents — not a single monolithic agent."
+          },
+          {
+            "id": "quality_release_enforcement",
+            "label": "Quality / release enforcement claim",
+            "description": "Publicly claims enforcement of quality, compliance, release, or governance — not advisory-only suggestions."
+          },
+          {
+            "id": "process_layer_above_host",
+            "label": "Process layer above host runtime",
+            "description": "Positions as a meta-orchestrator or compliance wrapper above Claude Code, Codex, Cursor, or similar — not as the host runtime itself."
+          }
+        ]
+      },
+      "chart_eligible": true,
+      "min_core_count": 8,
+      "max_core_count": 24,
+      "feature_axes": [
+        {
+          "id": "lifecycle_coverage",
+          "label": "Lifecycle coverage (plan→release)",
+          "enforcement_ladder": false
+        },
+        {
+          "id": "devops_cycle_coverage",
+          "label": "DevOps / release cycle coverage",
+          "enforcement_ladder": false
+        },
+        {
+          "id": "deterministic_gates",
+          "label": "Deterministic quality gates",
+          "enforcement_ladder": true
+        },
+        {
+          "id": "hook_enforcement",
+          "label": "Hook / stop-check enforcement depth",
+          "enforcement_ladder": true
+        },
+        {
+          "id": "cross_session_state",
+          "label": "Cross-session state persistence",
+          "enforcement_ladder": false
+        },
+        {
+          "id": "specialist_routing",
+          "label": "Specialist agent routing",
+          "enforcement_ladder": false
+        },
+        {
+          "id": "multi_host_support",
+          "label": "Multi-host runtime support",
+          "enforcement_ladder": false
+        },
+        {
+          "id": "composable_dependencies",
+          "label": "Composable external workflow deps",
+          "enforcement_ladder": false
+        },
+        {
+          "id": "evidence_audit_trail",
+          "label": "Evidence / audit trail",
+          "enforcement_ladder": true
+        },
+        {
+          "id": "release_governance",
+          "label": "Release & ship governance",
+          "enforcement_ladder": true
+        },
+        {
+          "id": "procurement_readiness",
+          "label": "SMB procurement readiness",
+          "enforcement_ladder": false
+        }
+      ]
+    },
+    {
+      "id": "sdlc-plugins",
+      "display_name": "SDLC Plugins & Methodology Packs",
+      "role": "secondary",
+      "definition": "Host-integrated skill packs, methodology frameworks, and SDLC plugin ecosystems (GSD, BMAD, Superpowers, Spec Kit, Oh My plugins, Zuvo, Claude Flow/Ruflo, Claude Harness, cc10x, Cavekit, Barkain) — formidable substitutes that shape how teams run agentic delivery even when they lack full APO enforcement.",
+      "seeds": [
+        {
+          "slug": "silver-bullet",
+          "name": "Silver Bullet",
+          "license": "oss",
+          "must_research": true,
+          "tier": 0,
+          "notes": "Multi-market core: APO process orchestrator that also ships as host plugin/skill/hook packs — legitimate sdlc-plugins competitor (not exclusive to APO)."
+        },
+        {
+          "slug": "gsd",
+          "name": "GSD (Get Shit Done)",
+          "license": "oss",
+          "must_research": true,
+          "tier": 1
+        },
+        {
+          "slug": "superpowers",
+          "name": "Superpowers",
+          "license": "oss",
+          "must_research": true,
+          "tier": 1
+        },
+        {
+          "slug": "bmad",
+          "name": "BMAD-METHOD",
+          "license": "oss",
+          "must_research": true,
+          "tier": 1
+        },
+        {
+          "slug": "spec-kit",
+          "name": "GitHub Spec Kit",
+          "license": "oss",
+          "must_research": true,
+          "tier": 1
+        },
+        {
+          "slug": "superclaude",
+          "name": "SuperClaude",
+          "license": "oss",
+          "must_research": true,
+          "tier": 2
+        },
+        {
+          "slug": "ruflo",
+          "name": "Ruflo / Claude Flow",
+          "license": "oss",
+          "must_research": true,
+          "tier": 2
+        },
+        {
+          "slug": "oh-my-pi",
+          "name": "Oh My Pi (OMP)",
+          "license": "oss",
+          "must_research": true,
+          "tier": 2,
+          "notes": "Oh My plugin family representative"
+        },
+        {
+          "slug": "claude-harness",
+          "name": "Claude Harness",
+          "license": "oss",
+          "must_research": true,
+          "tier": 2,
+          "notes": "Claude Code wrapper / host methodology pack — not APO process orchestrator"
+        },
+        {
+          "slug": "cc10x",
+          "name": "cc10x",
+          "license": "oss",
+          "must_research": true,
+          "tier": 2,
+          "homepage": "https://github.com/romiluz13/cc10x",
+          "github": "https://github.com/romiluz13/cc10x",
+          "notes": "Claude Code plugin class (same as Claude Harness). SCR: Claude Code plugin with composable subagents — sdlc-plugins OSS core, not APO commercial core."
+        },
+        {
+          "slug": "cavekit-v31",
+          "name": "Cavekit v3.1",
+          "license": "oss",
+          "must_research": true,
+          "tier": 2,
+          "homepage": "https://github.com/JuliusBrussee/cavekit",
+          "github": "https://github.com/JuliusBrussee/cavekit",
+          "notes": "Claude Code skills/plugin pack (JuliusBrussee/cavekit). Thin SCR evidence — sdlc-plugins OSS core like Harness, not APO commercial core. v4 remains historical adjacent."
+        },
+        {
+          "slug": "barkain-workflow-orchestrator",
+          "name": "Barkain Workflow Orchestrator",
+          "license": "oss",
+          "must_research": true,
+          "tier": 2,
+          "homepage": "https://github.com/barkain/claude-code-workflow-orchestration",
+          "github": "https://github.com/barkain/claude-code-workflow-orchestration",
+          "notes": "Claude Code workflow-orchestration plugin. Thin SCR evidence — sdlc-plugins OSS core like Harness, not APO commercial core."
+        },
+        {
+          "slug": "zuvo",
+          "name": "Zuvo",
+          "license": "oss",
+          "must_research": true,
+          "tier": 2,
+          "homepage": "https://zuvo.dev/",
+          "github": "https://github.com/greglas75/zuvo",
+          "notes": "Verified host-integrated skill/plugin pack (Claude Code, Codex, Cursor) with a multi-agent SDLC pipeline. Canonical site https://zuvo.dev/ links to MIT repo https://github.com/greglas75/zuvo — sdlc-plugins core, not APO."
+        }
+      ],
+      "adjacent_seeds": [
+        {
+          "slug": "langgraph",
+          "name": "LangGraph",
+          "license": "oss",
+          "adjacent_class": "generic_agent_framework"
+        },
+        {
+          "slug": "crewai",
+          "name": "CrewAI",
+          "license": "oss",
+          "adjacent_class": "generic_agent_framework"
+        }
+      ],
+      "inclusion_criteria": {
+        "rule": "min_pass_count",
+        "min_pass_count": 2,
+        "criteria": [
+          {
+            "id": "skill_packaging",
+            "label": "Skill / plugin packaging",
+            "description": "Ships as installable skill pack, plugin, or methodology bundle for Claude/Codex/Cursor hosts."
+          },
+          {
+            "id": "sdlc_methodology",
+            "label": "SDLC methodology coverage",
+            "description": "Defines multi-phase SDLC roles, specs, or workflows (plan, build, verify, ship)."
+          },
+          {
+            "id": "oss_or_marketplace",
+            "label": "OSS or marketplace distribution",
+            "description": "Public OSS repo or host marketplace listing with documented install path."
+          },
+          {
+            "id": "composable_roles",
+            "label": "Composable specialist roles",
+            "description": "Named roles, hats, or agent personas for SDLC phases."
+          },
+          {
+            "id": "spec_artifacts",
+            "label": "Spec / planning artifacts",
+            "description": "Produces structured specs, plans, or task breakdowns as first-class outputs."
+          }
+        ]
+      },
+      "chart_eligible": true,
+      "min_core_count": 4,
+      "max_core_count": 16
+    },
+    {
+      "id": "agentic-sdlc-saas",
+      "display_name": "Agentic SDLC SaaS & Autonomous Delivery",
+      "role": "tertiary",
+      "definition": "Managed autonomous software engineering products and agentic delivery SaaS (Factory, Devin, Augment Cosmos, Tembo-class) — even when vendors do not self-label as APO, analyst framing places them as substitutes for process orchestration buying decisions.",
+      "seeds": [
+        {
+          "slug": "factory-ai",
+          "name": "Factory.ai",
+          "license": "commercial",
+          "must_research": true,
+          "tier": 1
+        },
+        {
+          "slug": "devin",
+          "name": "Devin",
+          "license": "commercial",
+          "must_research": true,
+          "tier": 1
+        },
+        {
+          "slug": "augment-cosmos",
+          "name": "Augment Cosmos",
+          "license": "commercial",
+          "must_research": true,
+          "tier": 1
+        }
+      ],
+      "adjacent_seeds": [
+        {
+          "slug": "replit-agent",
+          "name": "Replit Agent",
+          "license": "commercial",
+          "adjacent_class": "host_runtime"
+        },
+        {
+          "slug": "conductor",
+          "name": "Conductor",
+          "license": "commercial",
+          "adjacent_class": "host_runtime",
+          "notes": "conductor.build coding-agent aggregator (parallel Claude Code/Codex worktrees) — not APO"
+        },
+        {
+          "slug": "cursor",
+          "name": "Cursor",
+          "license": "commercial",
+          "adjacent_class": "host_runtime",
+          "notes": "Host runtime with agentic delivery surface; adjacent host runtime (not SaaS core)"
+        },
+        {
+          "slug": "claude-code",
+          "name": "Claude Code",
+          "license": "commercial",
+          "adjacent_class": "host_runtime",
+          "notes": "Host runtime — adjacent only; never Top-N/MQ/Wave core"
+        },
+        {
+          "slug": "codex",
+          "name": "Codex",
+          "license": "commercial",
+          "adjacent_class": "host_runtime",
+          "notes": "Host runtime — adjacent only; never Top-N/MQ/Wave core"
+        },
+        {
+          "slug": "github-copilot",
+          "name": "GitHub Copilot",
+          "license": "commercial",
+          "adjacent_class": "host_runtime",
+          "notes": "Host runtime — adjacent only; never Top-N/MQ/Wave core"
+        },
+        {
+          "slug": "cognition-scout",
+          "name": "Cognition Scout",
+          "license": "commercial",
+          "adjacent_class": "host_runtime",
+          "notes": "Cognition surface adjacent to Devin — not a distinct SaaS core peer"
+        },
+        {
+          "slug": "tembo",
+          "name": "Tembo",
+          "license": "commercial",
+          "must_research": true,
+          "tier": 3,
+          "membership": "adjacent",
+          "notes": "Demoted from agentic-sdlc-saas core — ≤2-of-7 inclusion fit + identity risk. List as adjacent/unplotted; do not MQ/Wave core-plot."
+        }
+      ],
+      "inclusion_criteria": {
+        "rule": "min_pass_count",
+        "min_pass_count": 2,
+        "criteria": [
+          {
+            "id": "autonomous_delivery",
+            "label": "Autonomous delivery claim",
+            "description": "Markets end-to-end issue→PR or plan→ship autonomous software delivery."
+          },
+          {
+            "id": "managed_runtime",
+            "label": "Managed runtime / hosting",
+            "description": "Cloud or managed agent runtime — not a local-only OSS framework."
+          },
+          {
+            "id": "repo_integration",
+            "label": "Repository integration",
+            "description": "Integrates with customer git repos, PRs, or CI for delivery."
+          },
+          {
+            "id": "multi_step_sdlc",
+            "label": "Multi-step SDLC execution",
+            "description": "Executes more than one SDLC step autonomously (not single-shot completion)."
+          },
+          {
+            "id": "commercial_product",
+            "label": "Commercial product surface",
+            "description": "Shipped product with pricing, waitlist, or enterprise sales — not a raw model API."
+          }
+        ]
+      },
+      "chart_eligible": true,
+      "min_core_count": 4,
+      "max_core_count": 12
+    }
+  ],
+  "primary_market_id": "apo"
+}

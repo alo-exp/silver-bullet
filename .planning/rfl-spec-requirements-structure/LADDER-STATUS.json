@@ -1,0 +1,157 @@
+{
+  "status": "discontinued",
+  "superseded": true,
+  "superseded_by": ".planning/rfl-spec-template-world-class",
+  "discontinued_at": "2026-08-29",
+  "discontinued_reason": "Review was plan-hygiene not SPEC-template quality + software-kind tailoring. Stopped after rung 04 APPLY. Remaining Pi/Claude rungs cancelled.",
+  "updated_at": "2026-08-29T08:48:00Z",
+  "current_rung": "rung-04-cursor-grok-4.6-high",
+  "current_phase": "discontinued",
+  "stopped_after": "rung-04 APPLY (R4-F01–F03); verify_1 PASS; verify_2 PASS",
+  "freeze": {
+    "file": ".planning/spec_requirements_structure.plan.md",
+    "sha256": "5d387487c1888fc260d50ffc57a4440459df9514fc0b9128c2c61e2ced0a61af",
+    "byte_identical_to": ".planning/spec-requirements-structure/phases/01-world-class-artifacts/PLAN.md",
+    "note": "Frozen at discontinuation. Do not APPLY further. Successor freeze is .planning/spec_template_world_class.plan.md"
+  },
+  "rung_01": {
+    "verdict": "CLEAN",
+    "disposition": "ACCEPT-apply",
+    "findings": 5,
+    "applied": true,
+    "apply_sha": "d281cb7ee6321201bdce5825dde26f48c082ab6c7e4ef7a59cfeff965dcd1feb",
+    "verify_1": "PASS",
+    "verify_2": "PASS",
+    "phase": "done",
+    "policy_c": true
+  },
+  "rung_02": {
+    "verdict": "CLEAN",
+    "disposition": "ACCEPT-apply",
+    "findings": 4,
+    "applied": true,
+    "apply_sha": "2b2f7d7672534c8895ac821fe49d34b634833cc1eb16770d6f2f5d9d3f2d1ffe",
+    "verify_1": "PASS",
+    "verify_2": "PASS",
+    "phase": "done",
+    "policy_c": true
+  },
+  "rung_03": {
+    "verdict": "CLEAN",
+    "disposition": "ACCEPT-apply",
+    "findings": 0,
+    "applied": true,
+    "apply_sha": "2b2f7d7672534c8895ac821fe49d34b634833cc1eb16770d6f2f5d9d3f2d1ffe",
+    "verify_1": "PASS",
+    "verify_2": "PASS",
+    "phase": "done",
+    "policy_c": true
+  },
+  "rung_04": {
+    "verdict": "NOT CLEAN",
+    "disposition": "ACCEPT-apply",
+    "findings": 3,
+    "applied": true,
+    "apply_sha": "5d387487c1888fc260d50ffc57a4440459df9514fc0b9128c2c61e2ced0a61af",
+    "verify_1": "PASS",
+    "verify_2": "PASS",
+    "phase": "done",
+    "policy_c": true
+  },
+  "rungs": [
+    {
+      "id": "rung-01-cursor-glm-5.2-high",
+      "model": "glm-5.2-high",
+      "host": "cursor",
+      "role": "review",
+      "status": "done",
+      "verdict": "CLEAN",
+      "review": "rung-01-cursor-glm-5.2-high/review.md",
+      "policy_c": "rung-01-cursor-glm-5.2-high/POLICY-C.json",
+      "apply": "rung-01-cursor-glm-5.2-high/APPLY.md",
+      "verify_1": "PASS",
+      "verify_2": "PASS",
+      "apply_sha": "d281cb7ee6321201bdce5825dde26f48c082ab6c7e4ef7a59cfeff965dcd1feb"
+    },
+    {
+      "id": "rung-02-cursor-kimi-k3-high",
+      "model": "kimi-k3-high",
+      "host": "cursor",
+      "role": "review",
+      "status": "done",
+      "verdict": "CLEAN",
+      "review": "rung-02-cursor-kimi-k3-high/review.md",
+      "policy_c": "rung-02-cursor-kimi-k3-high/POLICY-C.json",
+      "apply": "rung-02-cursor-kimi-k3-high/APPLY.md",
+      "verify_1": "PASS",
+      "verify_2": "PASS",
+      "apply_sha": "2b2f7d7672534c8895ac821fe49d34b634833cc1eb16770d6f2f5d9d3f2d1ffe"
+    },
+    {
+      "id": "rung-03-cursor-gemini-3.7-flash-high",
+      "model": "gemini-3.7-flash-high",
+      "host": "cursor",
+      "role": "review",
+      "status": "done",
+      "verdict": "CLEAN",
+      "review": "rung-03-cursor-gemini-3.7-flash-high/review.md",
+      "policy_c": "rung-03-cursor-gemini-3.7-flash-high/POLICY-C.json",
+      "apply": "rung-03-cursor-gemini-3.7-flash-high/APPLY.md",
+      "verify_1": "PASS",
+      "verify_2": "PASS",
+      "apply_sha": "2b2f7d7672534c8895ac821fe49d34b634833cc1eb16770d6f2f5d9d3f2d1ffe"
+    },
+    {
+      "id": "rung-04-cursor-grok-4.6-high",
+      "model": "cursor-grok-4.6-high",
+      "host": "cursor",
+      "role": "review",
+      "status": "done",
+      "verdict": "NOT CLEAN",
+      "review": "rung-04-cursor-grok-4.6-high/review.md",
+      "policy_c": "rung-04-cursor-grok-4.6-high/POLICY-C.json",
+      "apply": "rung-04-cursor-grok-4.6-high/APPLY.md",
+      "verify_1": "PASS",
+      "verify_2": "PASS",
+      "apply_sha": "5d387487c1888fc260d50ffc57a4440459df9514fc0b9128c2c61e2ced0a61af"
+    },
+    {
+      "id": "rung-05-pi-gpt-5.6-sol-high",
+      "model": "gpt-5.6-sol-high",
+      "host": "pi",
+      "role": "review",
+      "status": "cancelled",
+      "note": "Cancelled 2026-08-29 — ladder discontinued; successor is rfl-spec-template-world-class"
+    },
+    {
+      "id": "rung-06-pi-gpt-5.6-sol-xhigh",
+      "model": "gpt-5.6-sol-xhigh",
+      "host": "pi",
+      "role": "review",
+      "status": "cancelled",
+      "note": "Cancelled 2026-08-29 — ladder discontinued; successor is rfl-spec-template-world-class"
+    },
+    {
+      "id": "rung-07-pi-claude-opus-5-high",
+      "model": "claude-opus-5-high",
+      "host": "pi",
+      "role": "review",
+      "status": "cancelled",
+      "note": "Cancelled 2026-08-29 — ladder discontinued; successor is rfl-spec-template-world-class"
+    },
+    {
+      "id": "rung-08-pi-claude-opus-5-xhigh",
+      "model": "claude-opus-5-xhigh",
+      "host": "pi",
+      "role": "review",
+      "status": "cancelled",
+      "note": "Cancelled 2026-08-29 — ladder discontinued; successor is rfl-spec-template-world-class"
+    }
+  ],
+  "verify_policy": {
+    "model": "cursor-grok-4.5-high",
+    "subagent_type": "sb-grok-4-5-high",
+    "host": "cursor-task",
+    "note": "Per-rung verify_1 then verify_2. Native Cursor Task only. Never Pi/Omni/agent-pi. Never Grok 4.6 for Verify. Unused after discontinuation."
+  }
+}

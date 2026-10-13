@@ -1,0 +1,87 @@
+{
+  "status": "completed",
+  "updated_at": "2026-08-28T17:10:17Z",
+  "current_phase": "ladder_complete",
+  "rung_01": {
+    "verify_1": "PASS",
+    "verify_2": "PASS"
+  },
+  "rung_02": {
+    "verify_1": "PASS",
+    "verify_2": "PASS"
+  },
+  "rung_03": {
+    "verify_1": "PASS",
+    "verify_2": "PASS"
+  },
+  "rung_04": {
+    "verdict": "NOT CLEAN",
+    "disposition": "ACCEPT-apply",
+    "findings": 7,
+    "applied": true,
+    "verify_1": "PASS",
+    "verify_2": "PASS"
+  },
+  "rung_05": {
+    "verdict": "NOT CLEAN",
+    "disposition": "ACCEPT-apply",
+    "findings": 10,
+    "applied": true,
+    "prd_sha": "b3c5327ef93e457d5c0b3501305ed2bbe5a1fdc309616178427fbeb85b3bd6d7",
+    "verify_1": "PASS",
+    "verify_2": "PASS"
+  },
+  "rung_06": {
+    "verdict": "NOT CLEAN",
+    "disposition": "ACCEPT-apply",
+    "findings": 8,
+    "applied": true,
+    "prd_sha": "67b7fb32d64e6defc6db4b18d41d6ff2e6df9085562c472c352275a783fa73d8",
+    "verify_1": "PASS",
+    "verify_2": "PASS"
+  },
+  "rung_07": {
+    "verdict": "NOT CLEAN",
+    "disposition": "ACCEPT-apply",
+    "findings": 13,
+    "applied": true,
+    "prd_sha": "e5cf0853236d005cb74860d95cd0c8082409f30ffe70427f6c6d55ad52b7f5ef",
+    "verify_1": "PASS",
+    "verify_2": "PASS",
+    "phase": "done"
+  },
+  "rung_08": {
+    "verdict": "NOT CLEAN",
+    "disposition": "ACCEPT-apply",
+    "findings": 12,
+    "applied": true,
+    "prd_sha": "9391e9dc3120685335743782a0d8b67119af226126936a76faaa46d87e4d0728",
+    "verify_1": "PASS",
+    "verify_2": "PASS",
+    "phase": "done"
+  },
+  "claude_quota": {
+    "exhausted": false,
+    "available_at": null,
+    "omni_fill_first": true,
+    "omni_round_robin": false,
+    "accounts": [
+      "shafqat@sourcevo.com",
+      "shafqat.ullah@gmail.com"
+    ],
+    "rungs": [
+      7,
+      8
+    ],
+    "action": "launch_now",
+    "substitute_grok": false,
+    "note": "Claude and OpenCode Go use Omni fill-first: drain one account until exhausted, then the next. When that exhausts, an earlier account may have reset. No round-robin. No Grok remap."
+  },
+  "opencode_go": {
+    "omni_fill_first": true,
+    "omni_round_robin": false,
+    "connected_accounts": 2,
+    "note": "OpenCode Go dashboard strategy set to fill-first (was round-robin)."
+  },
+  "policy_d_written": true
+}

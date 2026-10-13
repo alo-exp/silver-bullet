@@ -1,0 +1,23 @@
+Done.
+
+## Rung 07 — Pi Claude Opus 5 High — review pass 6: **NOT CLEAN**
+
+**Output:** `.planning/rfl-spec-template-world-class/rung-07-pi-claude-opus-5-high/review-rerun-6.md`
+
+**Freeze pin verified (start and end, unchanged):** both twins = `f5fda2aed2eeb32bd00c5ff2a30ce12c81db58067f63588403080ca8f6e5976d`.
+
+**14 residuals, new IDs `R7f-F01`–`R7f-F14`** (1 HIGH / 4 MED / 5 LOW / 4 nit), none re-filing a ledger row:
+
+| ID | Sev | Issue |
+|----|-----|-------|
+| R7f-F01 | HIGH | Change History provenance branch (2) isn't total — R7c-F05 brief-less augment *seeds* (never bumps) and mints nothing ⇒ empty delta ⇒ ASK ⇒ fail-before-write on a pinned PASS fixture |
+| R7f-F02 | MED | L427 `review-requirements` SCAN resolution still pins live-ID only; R7e-F02 ordinal `b03` fails `REQ-F71` at the reviewer surface (L428 has no resolution clause at all) |
+| R7f-F03 | MED | Two exhaustion predicates; `00–99` shorthand at 10 binding sites is unreachable now that `-00` is never minted |
+| R7f-F04 | MED | Ordinal SCAN citations silently repoint across superseding Invariants writes; no re-anchor/revalidation |
+| R7f-F05 | MED | Malformed-prior `spec-version` seed forces "exactly one" history row ⇒ silent deletion of operator history, no migrate-or-ASK |
+| R7f-F06–F10 | LOW | `DEC-nn` divergent-text identity; `change-summary` missing from Wave 4 asserts + blast radius; `rg` alternation gaps; no ordinal PASS fixture / QC-10 provenance assert; ordinal section list names table-only Change History |
+| R7f-F11–F14 | nit | `nfr` Notes emphasis malformed (tag closes before kind list); `invariant-count` omits branch (3) + source-vs-live wording; `b00` unreachable / no >99 rule; `world-class-min` presence-not-equality |
+
+R7e-F01–F10 confirmed landed (evidence table in the file); R7b-F17 REJECT not reopened; KEEP REJECT honored throughout (no third canonical doc, no new interview turn). Review-only — no triage, APPLY, commit, verify, or ladder advance. `graphify update .` completed (43 848 nodes); memory saved.
+
+PI_EXIT=0

@@ -1,0 +1,32 @@
+{
+  "version": "3.0.0",
+  "workflow_id": "WF-SILVER-DEEP-RESEARCH",
+  "atomic_flow": "AF-DECIDE",
+  "flow_step": "FS-SILVER_DEEP_RESEARCH",
+  "question": "Pi GUI landscape: OSS GUI apps that drive the Pi coding agent (pi.dev) as native subagents or dedicated Pi GUI",
+  "mode": "deep",
+  "research_type": "solution-landscape",
+  "slug": "pi-gui-landscape",
+  "started_at": "2026-07-10T00:00:00Z",
+  "finished_at": "2026-07-09T15:09:04Z",
+  "source_budget_target": 20,
+  "sources_collected": 12,
+  "candidates_evaluated": 14,
+  "search_cli": {
+    "status": "unavailable",
+    "providers_available": [],
+    "path": null
+  },
+  "retrieval": {
+    "intent_class": "landscape",
+    "portals_attempted": [
+      "web_search",
+      "ctx_fetch_and_index"
+    ],
+    "portals_succeeded": [
+      "ctx_fetch_and_index"
+    ],
+    "fallback_reason": "search-cli not installed; used ctx_fetch_and_index + web search"
+  },
+  "fallback_reason": "search-cli not installed; used ctx_fetch_and_index + web search"
+}

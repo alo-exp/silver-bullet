@@ -1,0 +1,7 @@
+end=2026-08-23T18:45:00Z
+status=blocked
+reason=opencode-go glm-5.3 5-hour usage limit
+model=opencode-go/glm-5.3
+variant=max
+invoke.sh=missing
+sha256=6e33742a3f462edc50d1eb9ed3add2c2665c007edc87e896cea32476b92907ba

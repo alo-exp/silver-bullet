@@ -1,0 +1,59 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "kimi",
+    "effort": "high",
+    "display": "Cursor Kimi K3 High (rung 2 review 3 Policy G pack)"
+  },
+  "verdict": "NOT CLEAN",
+  "disposition": "ACCEPT-apply",
+  "issues": {
+    "HIGH": "none",
+    "MED": "none",
+    "LOW": [
+      {
+        "id": "R2P3-2",
+        "title": "SEARCH_KEYS_XWEB_GUEST figment-nests vs flat xweb_guest_token"
+      }
+    ],
+    "NIT": [
+      {
+        "id": "R2P3-1",
+        "title": "§2.2 bucket short-names omit x/xweb"
+      }
+    ]
+  },
+  "triage": [
+    {
+      "id": "R2P3-1",
+      "severity": "NIT",
+      "decision": "ACCEPT",
+      "reason": "Adds x/xweb to §2.2 bucket list; honors X-must-search; not a ledger re-report"
+    },
+    {
+      "id": "R2P3-2",
+      "severity": "LOW",
+      "decision": "ACCEPT",
+      "reason": "resolve_keys load path makes xweb env work; does not unwind xweb"
+    }
+  ],
+  "blockers": "none",
+  "highs": "none",
+  "mediums": "none",
+  "resolved": [
+    {
+      "id": "R2P3-1",
+      "severity": "NIT",
+      "title": "§2.2 bucket short-names include x/xweb",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "R2P3-2",
+      "severity": "LOW",
+      "title": "xweb envs via resolve_keys not figment SEARCH_KEYS_XWEB_GUEST",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    }
+  ]
+}

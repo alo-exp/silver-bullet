@@ -1,0 +1,90 @@
+{
+  "version": 2,
+  "description": "Homepage marketing claims mapped to verification test IDs (site/index.html).",
+  "claims": [
+    {
+      "claim_id": "hero-apo-title",
+      "text": "Agentic Process Orchestrator for the AI Era",
+      "source_selector": "#hero-main .version-badge",
+      "test_ids": ["validate-apo-catalog", "enterprise-e2e-row-1"]
+    },
+    {
+      "claim_id": "hero-tagline",
+      "text": "THE PROCESS LAYER OF AI-DRIVEN DEV",
+      "source_selector": "#hero-main .hero-tagline-caps",
+      "test_ids": ["claims-audit"]
+    },
+    {
+      "claim_id": "hero-reliability-evidence",
+      "text": "with Enforced Evidence",
+      "source_selector": "#hero-main .hero-headline",
+      "test_ids": ["completion-audit", "claims-audit"]
+    },
+    {
+      "claim_id": "hero-busl-no-telemetry",
+      "text": "BUSL 1.1 Source-Available",
+      "source_selector": "#hero-main .hero-cta-note",
+      "test_ids": ["claims-audit", "license-terms", "privacy-docs"]
+    },
+    {
+      "claim_id": "hero-tri-host",
+      "text": "Claude Code, Codex, or Cursor",
+      "source_selector": "#hero-main .hero-intro",
+      "test_ids": ["install-claude", "install-codex", "cursor-hook-bridge"]
+    },
+    {
+      "claim_id": "hero-evidence-gates",
+      "text": "blocks unsafe commits, PRs, and releases until the evidence is real",
+      "source_selector": "#hero-main .hero-intro",
+      "test_ids": ["completion-audit", "enterprise-e2e-rows-14-16"]
+    },
+    {
+      "claim_id": "mechanism-catalog-counts",
+      "text": "29 atomic flows composed into 22 task-shaped workflows and 4 reusable components",
+      "source_selector": "#mechanism",
+      "test_ids": ["validate-apo-catalog"]
+    },
+    {
+      "claim_id": "mechanism-twelve-hooks",
+      "text": "twelve hook layers that physically block unsafe progress",
+      "source_selector": "#mechanism",
+      "test_ids": ["hook-unit-tests", "hook-delivery-preflight"]
+    },
+    {
+      "claim_id": "mechanism-dynamic-silver",
+      "text": "Dynamic Workflow Composition",
+      "source_selector": "#mechanism",
+      "test_ids": ["enterprise-e2e-row-1", "tui-contract-bypass-disclaimer"]
+    },
+    {
+      "claim_id": "code-intel-stack",
+      "text": "Graphify + agentmemory wire",
+      "source_selector": "#code-intelligence",
+      "test_ids": ["enterprise-e2e-code-intel-preflight", "graphify-gate", "agentmemory-gate"]
+    },
+    {
+      "claim_id": "proof-sb-diagnostics",
+      "text": "sb-diagnostics.sh",
+      "source_selector": "#proof",
+      "test_ids": ["sb-diagnostics-script"]
+    },
+    {
+      "claim_id": "proof-enforcement-tier",
+      "text": "enforcement tier your host actually supports",
+      "source_selector": "#proof",
+      "test_ids": ["runtime-compatibility-doc"]
+    },
+    {
+      "claim_id": "catalog-contract-footer",
+      "text": "26 Catalog Workflows: 22 Task-Shaped + 4 Components. 29 Atomic Flows.",
+      "source_selector": "#workflow",
+      "test_ids": ["validate-apo-catalog"]
+    },
+    {
+      "claim_id": "hero-capabilities",
+      "text": "Engineering Best Practices",
+      "source_selector": "#hero-main .hero-features-list",
+      "test_ids": ["enterprise-e2e-matrix"]
+    }
+  ]
+}

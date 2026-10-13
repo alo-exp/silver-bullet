@@ -1,0 +1,31 @@
+{
+  "checkpoint_ts": "2026-07-02T04:59:00Z",
+  "install_pin": "26cf687f",
+  "harness_head": "d572f53f",
+  "branch": "enterprise-e2e/cursor",
+  "marker": "FORCE_FAIL_ROWS:DONE(4P/0F);PHASE_C:PASS",
+  "force_rows": {
+    "8": "PASS",
+    "11": "PASS",
+    "15": "PASS",
+    "16": "PASS"
+  },
+  "matrix_force": {
+    "pass": 4,
+    "fail": 0
+  },
+  "phase_c": {
+    "outcome_harness": "59/0",
+    "run_all_r5": "5091/0",
+    "run_all_log": "/tmp/cursor2-phasec-run-all-r5.log",
+    "validation_overlay": "10/0/3 skip",
+    "pre_release_overlay": "40/0",
+    "ledger_reconcile": "COMPLETE_22_22",
+    "rcs": 100,
+    "consecutive_pair": "2/2 PASS"
+  },
+  "strict_clean_cursor_2": true,
+  "consecutive_pair_2_2": "2/2 PASS",
+  "tmux": "cursor-runall-c2-r5b (exited 0)",
+  "model": "composer-2.5"
+}

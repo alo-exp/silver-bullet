@@ -1,0 +1,113 @@
+{
+  "atomic_flows": [
+    {
+      "id": "AF-FIXTURE-READ-A",
+      "slug": "FIXTURE-READ-A",
+      "capability_class": "fixture_read_a",
+      "flow_steps": ["FS-FIXTURE-READ-A"],
+      "execution": {
+        "dispatch_mode": "subagent",
+        "worker_template": "templates/orchestrator-workers/FIXTURE-READ-A.md",
+        "parallelizable": true,
+        "mutation_scopes": ["read-only planning artifacts"],
+        "join_condition": "join only after every owned step V-loops pass and roll up before the parent atomic-flow V-gate passes",
+        "dispatch_record_shape": "subagent_id, atomic_flow_id, inputs, outputs, step_v_loop_status, v_gate_result, retries, join_status"
+      }
+    },
+    {
+      "id": "AF-FIXTURE-READ-B",
+      "slug": "FIXTURE-READ-B",
+      "capability_class": "fixture_read_b",
+      "flow_steps": ["FS-FIXTURE-READ-B"],
+      "execution": {
+        "dispatch_mode": "subagent",
+        "worker_template": "templates/orchestrator-workers/FIXTURE-READ-B.md",
+        "parallelizable": true,
+        "mutation_scopes": ["metrics-only artifacts"],
+        "join_condition": "join only after every owned step V-loops pass and roll up before the parent atomic-flow V-gate passes",
+        "dispatch_record_shape": "subagent_id, atomic_flow_id, inputs, outputs, step_v_loop_status, v_gate_result, retries, join_status"
+      }
+    },
+    {
+      "id": "AF-FIXTURE-WRITE-A",
+      "slug": "FIXTURE-WRITE-A",
+      "capability_class": "fixture_write_a",
+      "flow_steps": ["FS-FIXTURE-WRITE-A"],
+      "execution": {
+        "dispatch_mode": "subagent",
+        "worker_template": "templates/orchestrator-workers/FIXTURE-WRITE-A.md",
+        "parallelizable": true,
+        "mutation_scopes": ["scoped repository paths"],
+        "join_condition": "join only after every owned step V-loops pass and roll up before the parent atomic-flow V-gate passes",
+        "dispatch_record_shape": "subagent_id, atomic_flow_id, inputs, outputs, step_v_loop_status, v_gate_result, retries, join_status"
+      }
+    },
+    {
+      "id": "AF-FIXTURE-WRITE-B",
+      "slug": "FIXTURE-WRITE-B",
+      "capability_class": "fixture_write_b",
+      "flow_steps": ["FS-FIXTURE-WRITE-B"],
+      "execution": {
+        "dispatch_mode": "subagent",
+        "worker_template": "templates/orchestrator-workers/FIXTURE-WRITE-B.md",
+        "parallelizable": true,
+        "mutation_scopes": ["scoped repository paths"],
+        "join_condition": "join only after every owned step V-loops pass and roll up before the parent atomic-flow V-gate passes",
+        "dispatch_record_shape": "subagent_id, atomic_flow_id, inputs, outputs, step_v_loop_status, v_gate_result, retries, join_status"
+      }
+    },
+    {
+      "id": "AF-FIXTURE-SERIAL",
+      "slug": "FIXTURE-SERIAL",
+      "capability_class": "fixture_serial",
+      "flow_steps": ["FS-FIXTURE-SERIAL"],
+      "execution": {
+        "dispatch_mode": "subagent",
+        "worker_template": "templates/orchestrator-workers/FIXTURE-SERIAL.md",
+        "parallelizable": false,
+        "mutation_scopes": ["declared artifacts"],
+        "join_condition": "join only after every owned step V-loops pass and roll up before the parent atomic-flow V-gate passes",
+        "dispatch_record_shape": "subagent_id, atomic_flow_id, inputs, outputs, step_v_loop_status, v_gate_result, retries, join_status"
+      }
+    },
+    {
+      "id": "AF-FIXTURE-EXECUTE",
+      "slug": "FIXTURE-EXECUTE",
+      "capability_class": "fixture_execute",
+      "flow_steps": ["FS-FIXTURE-EXECUTE-A", "FS-FIXTURE-EXECUTE-B"],
+      "execution": {
+        "dispatch_mode": "subagent",
+        "worker_template": "templates/orchestrator-workers/FIXTURE-EXECUTE.md",
+        "parallelizable": true,
+        "depends_on_atoms": ["AF-FIXTURE-READ-A"],
+        "mutation_scopes": ["scoped repository paths"],
+        "join_condition": "join only after every owned step V-loops pass and roll up before the parent atomic-flow V-gate passes",
+        "dispatch_record_shape": "subagent_id, atomic_flow_id, inputs, outputs, step_v_loop_status, v_gate_result, retries, join_status"
+      }
+    }
+  ],
+  "dynamic_rules": [
+    {"id": "DR-PRUNE-SATISFIED-ATOM", "operation": "prune"},
+    {"id": "DR-INSERT-MISSING-EVIDENCE", "operation": "insert"},
+    {"id": "DR-SUBSTITUTE-LEANER-WORKFLOW", "operation": "substitute"},
+    {"id": "DR-PARALLELIZE-INDEPENDENT-ATOMS", "operation": "parallelize"},
+    {"id": "DR-LOOP-FAILED-V-GATE", "operation": "loop"}
+  ],
+  "v_loop_rollups": [
+    {
+      "id": "VR-FIXTURE-WORKFLOW",
+      "rollup_semantics": "all selected child flow-step V-loops pass before parent atomic-flow gates; all selected atomic-flow gates pass before workflow final intent gate"
+    }
+  ],
+  "migration_map": {
+    "runtime_queue_tokens": {
+      "FLOW-QUALITY-GATE": "AF-QUALITY-GATE",
+      "silver-fixture-read-a": "AF-FIXTURE-READ-A",
+      "silver-fixture-read-b": "AF-FIXTURE-READ-B"
+    },
+    "skill_to_entity": {
+      "silver-fixture-read-a": "AF-FIXTURE-READ-A",
+      "silver-fixture-read-b": "AF-FIXTURE-READ-B"
+    }
+  }
+}

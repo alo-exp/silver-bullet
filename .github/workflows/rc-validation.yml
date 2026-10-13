@@ -1,0 +1,42 @@
+name: RC Validation (optional)
+
+# Non-blocking RC matrix diagnostic — manual / pre-release signal only.
+# Merge gate remains `.github/workflows/ci.yml` (unit + integration + harness sanity).
+#
+# CI policy: cursor live cells when CURSOR_API_KEY is available; codex/claude get
+# structural install smoke only (no live TUI delegate). GitHub Actions has no
+# first-party Anthropic or Codex API keys — operator-local pre-release must run
+# all six cells (cursor/codex/claude × fresh/upgrade) before release.
+
+on:
+  workflow_dispatch:
+    inputs:
+      require_live:
+        description: Fail if cursor live delegate unavailable
+        default: 'false'
+        type: choice
+        options: ['false', 'true']
+
+jobs:
+  rc-matrix:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install deps
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq jq
+      - name: Seed runtime env
+        run: |
+          source hooks/lib/runtime-paths.sh
+          echo "SB_RUNTIME_STATE_DIR=$SB_RUNTIME_STATE_DIR" >> "$GITHUB_ENV"
+      - name: Run RC matrix (CI mode — cursor live; codex/claude structural only)
+        run: |
+          export SB_RC_CI_MODE=1
+          [[ "${{ inputs.require_live }}" == "true" ]] && export SB_RC_MATRIX_REQUIRE_LIVE=1
+          bash scripts/run-rc-validation-matrix.sh
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}

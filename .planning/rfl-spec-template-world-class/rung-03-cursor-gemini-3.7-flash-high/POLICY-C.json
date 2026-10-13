@@ -1,0 +1,126 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "gemini",
+    "effort": "high",
+    "display": "Cursor Gemini 3.7 Flash High"
+  },
+  "verdict": "NOT CLEAN",
+  "issues": {
+    "HIGH": [
+      {
+        "id": "R3-F01",
+        "title": "review-spec QC-7 is kind-blind and fails UX-forbidden kinds when figma-url is present"
+      }
+    ],
+    "MED": [
+      {
+        "id": "R3-F02",
+        "title": "review-cross-artifact QC-1 Step 4 orphans all NFR-nn (XART-F02)"
+      },
+      {
+        "id": "R3-F03",
+        "title": "silver-spec Step 1 domain mapping is kind-blind; Wave 3 omits Step 1"
+      }
+    ],
+    "LOW": [
+      {
+        "id": "R3-F04",
+        "title": "Wave 2 verify rg omits QC-9 / QC-10 / SPEC-F71 / SPEC-F72 / REQ-F70"
+      },
+      {
+        "id": "R3-F05",
+        "title": "kind-aware QC-1 present forbidden heading has no explicit SPEC-F* code"
+      }
+    ],
+    "NIT": "none"
+  },
+  "triage": [
+    {
+      "id": "R3-F01",
+      "severity": "HIGH",
+      "decision": "ACCEPT",
+      "reason": "Wave 2 QC-7 must be kind-aware: do not require UX Flows / SPEC-F61 when ux is forbidden, even if figma-url is present; figma-url stays core"
+    },
+    {
+      "id": "R3-F02",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "XART-F02 Step 4 scopes to Functional REQ-nn lacking AC join; NFR-nn are exempt because NFR has no AC column and Coverage Matrix is AC\u2194REQ"
+    },
+    {
+      "id": "R3-F03",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "Wave 3 must name silver-spec Step 1 and map brief domains to kind pack headings, not blindly to UX Flows / AC / OQ"
+    },
+    {
+      "id": "R3-F04",
+      "severity": "LOW",
+      "decision": "ACCEPT",
+      "reason": "Wave 2 rg snippet must include QC-9, QC-10, SPEC-F71, SPEC-F72, REQ-F70 to match assert prose"
+    },
+    {
+      "id": "R3-F05",
+      "severity": "LOW",
+      "decision": "ACCEPT",
+      "reason": "Present forbidden heading emits SPEC-F08, not a bare ISSUE"
+    }
+  ],
+  "blockers": "none",
+  "highs": [
+    {
+      "id": "R3-F01",
+      "title": "review-spec QC-7 is kind-blind and fails UX-forbidden kinds when figma-url is present"
+    }
+  ],
+  "mediums": [
+    {
+      "id": "R3-F02",
+      "title": "review-cross-artifact QC-1 Step 4 orphans all NFR-nn (XART-F02)"
+    },
+    {
+      "id": "R3-F03",
+      "title": "silver-spec Step 1 domain mapping is kind-blind; Wave 3 omits Step 1"
+    }
+  ],
+  "disposition": "ACCEPT-apply",
+  "resolved": [
+    {
+      "id": "R3-F01",
+      "severity": "HIGH",
+      "title": "review-spec QC-7 is kind-blind and fails UX-forbidden kinds when figma-url is present",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "R3-F02",
+      "severity": "MED",
+      "title": "review-cross-artifact QC-1 Step 4 orphans all NFR-nn (XART-F02)",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "R3-F03",
+      "severity": "MED",
+      "title": "silver-spec Step 1 domain mapping is kind-blind; Wave 3 omits Step 1",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "R3-F04",
+      "severity": "LOW",
+      "title": "Wave 2 verify rg omits QC-9 / QC-10 / SPEC-F71 / SPEC-F72 / REQ-F70",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "R3-F05",
+      "severity": "LOW",
+      "title": "kind-aware QC-1 present forbidden heading has no explicit SPEC-F* code",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    }
+  ],
+  "apply_sha": "edf2c256dcf987016c887555bb0a60fadd0c45b636fd101faf309f3729b54b96"
+}

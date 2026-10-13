@@ -1,0 +1,5 @@
+2026-08-28T01:17:11Z
+[agent-pi] hard-timeout kill after 3600s (stdout_bytes=no expect_ok=True)
+[agent-pi] fail-fast: skipping --continue after first-run EXIT 124
+AGENT_PI_EXIT=124
+2026-08-28T02:17:12Z

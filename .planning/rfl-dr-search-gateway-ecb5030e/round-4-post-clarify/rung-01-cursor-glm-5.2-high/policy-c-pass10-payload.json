@@ -1,0 +1,27 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "glm",
+    "effort": "high",
+    "display": "Cursor GLM 5.2 High (review pass 10)"
+  },
+  "verdict": "NOT CLEAN",
+  "disposition": "ACCEPT-apply",
+  "issues": {
+    "HIGH": "none",
+    "MED": "none",
+    "LOW": [
+      {"id": "Y1", "title": "§1.2 rung 10 H1 still says Fork may read SB_DR_FLEET_SLOTS"}
+    ],
+    "NIT": "none"
+  },
+  "triage": [
+    {"id": "Y1", "severity": "LOW", "decision": "ACCEPT", "reason": "Not wrong; leftover stale H1 contradicts I-18 / §6.13 / item 10 M-2; no lock unwind"}
+  ],
+  "blockers": "none",
+  "highs": "none",
+  "mediums": "none",
+  "resolved": [
+    {"id": "Y1", "severity": "LOW", "title": "§1.2 H1 SB_DR_FLEET_SLOTS fork-read superseded (I-18)", "decision": "ACCEPT", "resolved": "yes"}
+  ]
+}

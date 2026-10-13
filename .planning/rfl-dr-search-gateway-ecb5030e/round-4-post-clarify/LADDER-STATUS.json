@@ -1,0 +1,22 @@
+{
+  "status": "active",
+  "updated_at": "2026-09-01T08:20:00Z",
+  "current_rung": "rung-02-cursor-kimi-k3-high",
+  "current_phase": "rung_2_closed",
+  "consecutive_clean_reviews": 2,
+  "consecutive_clean_rung": "rung-02-cursor-kimi-k3-high",
+  "rung_1": {
+    "consecutive_clean_reviews": 2,
+    "closed": true,
+    "closed_sha256": "916d87f52b25688f7953c76c89b96802d9438eb8da537a8c16b927b98b2ee138"
+  },
+  "freeze": {
+    "sha256": "f6ba43bb7d7d4d4ca394333ae5f7c15022059040edac9ec75585654630584cd6",
+    "apply_sha": "f6ba43bb7d7d4d4ca394333ae5f7c15022059040edac9ec75585654630584cd6"
+  },
+  "rung_2": {
+    "consecutive_clean_reviews": 2,
+    "closed": true,
+    "closed_sha256": "f6ba43bb7d7d4d4ca394333ae5f7c15022059040edac9ec75585654630584cd6"
+  }
+}

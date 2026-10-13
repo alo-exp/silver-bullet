@@ -1,0 +1,68 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "gpt",
+    "effort": "xhigh",
+    "display": "Pi Codex GPT-5.6 Sol Extra High (re-run pass 9)"
+  },
+  "verdict": "NOT CLEAN",
+  "issues": {
+    "HIGH": "none",
+    "MED": [
+      {
+        "id": "R6i-F01",
+        "title": "Functional AC-cell cardinality remains contradictory after R6h"
+      },
+      {
+        "id": "R6i-F02",
+        "title": "NFR `Source` permits many-to-one but defines no cell-list grammar or behavioral parser fixture"
+      }
+    ],
+    "LOW": "none",
+    "NIT": "none"
+  },
+  "triage": [
+    {
+      "id": "R6i-F01",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "Close the contradiction. R6h exact AC-[0-9]{2} cells wins: one Functional AC cell = exactly one AC-nn. Close the open many-to-one via explicit AC column lists? as no lists (AC-01, AC-02 FAIL). Many-to-one REQ↔AC if needed is via multiple Functional rows, not a comma list in one cell. Fixture: AC-01, AC-02 FAIL; AC-01 PASS."
+    },
+    {
+      "id": "R6i-F02",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "NFR Source many-to-one needs a named cell grammar and parser fixtures. Named nfr-source-cell-list: comma-separated source IDs with comma + exactly one space, no other whitespace. Same parser for reverse-coverage / exclusivity / overlap FAIL. Template must not stay header-only empty. Fixture: two valid sources in one cell parse as two IDs; malformed list FAIL. Do not weaken R5k exclusive Source vs Dispositions."
+    }
+  ],
+  "blockers": "none",
+  "highs": "none",
+  "mediums": [
+    {
+      "id": "R6i-F01",
+      "title": "Functional AC-cell cardinality remains contradictory after R6h"
+    },
+    {
+      "id": "R6i-F02",
+      "title": "NFR `Source` permits many-to-one but defines no cell-list grammar or behavioral parser fixture"
+    }
+  ],
+  "disposition": "ACCEPT-apply",
+  "resolved": [
+    {
+      "id": "R6i-F01",
+      "severity": "MED",
+      "title": "Functional AC-cell cardinality remains contradictory after R6h",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "R6i-F02",
+      "severity": "MED",
+      "title": "NFR `Source` permits many-to-one but defines no cell-list grammar or behavioral parser fixture",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    }
+  ],
+  "apply_sha": "f20dd7b1f1c0ff3e33a782a94d0de45979df2ce9badbb65e78b6a6961313b6b3"
+}

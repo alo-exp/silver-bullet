@@ -1,0 +1,31 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "glm",
+    "effort": "high",
+    "display": "Cursor GLM 5.2 High (review pass 12)"
+  },
+  "verdict": "NOT CLEAN",
+  "disposition": "ACCEPT-apply",
+  "issues": {
+    "HIGH": "none",
+    "MED": "none",
+    "LOW": [
+      {"id": "AA1", "title": "§6.12 acquire test list omits serper.rs and x.rs"}
+    ],
+    "NIT": [
+      {"id": "AA2", "title": "§6.12 has no negative test for human-run cache_ttl_default_300s exemption"}
+    ]
+  },
+  "triage": [
+    {"id": "AA1", "severity": "LOW", "decision": "ACCEPT", "reason": "Not wrong; locked acquire paths lack §6.12 tests; not a duplicate of I-26; no lock unwind"},
+    {"id": "AA2", "severity": "NIT", "decision": "ACCEPT", "reason": "Not wrong; only the positive fleet warning is tested"}
+  ],
+  "blockers": "none",
+  "highs": "none",
+  "mediums": "none",
+  "resolved": [
+    {"id": "AA1", "severity": "LOW", "title": "§6.12 serper/x acquire tests", "decision": "ACCEPT", "resolved": "yes"},
+    {"id": "AA2", "severity": "NIT", "title": "Human-run cache_ttl_default_300s negative test", "decision": "ACCEPT", "resolved": "yes"}
+  ]
+}

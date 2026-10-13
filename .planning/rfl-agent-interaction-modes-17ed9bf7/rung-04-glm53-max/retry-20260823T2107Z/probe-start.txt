@@ -1,0 +1,5 @@
+PROBE_START=2026-08-23T21:08:26Z
+OPENCODE=/Users/shafqat/.opencode/bin/opencode
+HOME=/Users/shafqat
+MODEL=opencode-go/glm-5.3
+VARIANT=max

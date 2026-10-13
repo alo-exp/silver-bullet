@@ -1,0 +1,477 @@
+[0m
+> build · minimax-m3
+[0m
+[0m$ [0mecho "[graphify] knowledge graph at graphify-out/. For focused questions, run `graphify query "<question>"` (scoped subgraph, usually much smaller than GRAPH_REPORT.md) instead of grepping raw files. Read GRAPH_REPORT.md only for broad architecture context." && echo "[graphify] knowledge graph at graphify-out/. For focused questions, run `graphify query "<question>"` (scoped subgraph, usually much smaller than GRAPH_REPORT.md) instead of grepping raw files. Read GRAPH_REPORT.md only for broad architecture context." && rtk ls -la /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/ && rtk ls -la /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/ && rtk ls -la /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/examples/
+[graphify] knowledge graph at graphify-out/. For focused questions, run Traversal: BFS depth=2 | Start: ['Question-First Navigation Map'] | 16 nodes found
+
+NODE Documentation Scheme [src=docs/doc-scheme.md loc=L1 community=110]
+NODE `docs/` — Your Project Documentation [src=docs/doc-scheme.md loc=L70 community=110]
+NODE Governance [src=docs/doc-scheme.md loc=L195 community=110]
+NODE Enforced Task Checklist [src=docs/doc-scheme.md loc=L161 community=110]
+NODE Glossary & Canonical Terms [src=docs/doc-scheme.md loc=L230 community=110]
+NODE `.planning/` — Ephemeral Planning Artifacts [src=docs/doc-scheme.md loc=L114 community=110]
+NODE Structure [src=docs/doc-scheme.md loc=L7 community=110]
+NODE Non-redundancy rules [src=docs/doc-scheme.md loc=L250 community=110]
+NODE Verification Policy [src=docs/doc-scheme.md loc=L216 community=110]
+NODE Brownfield Archival Policy [src=docs/doc-scheme.md loc=L185 community=110]
+NODE doc-scheme.md [src=docs/doc-scheme.md loc=L1 community=110]
+NODE Size Caps [src=docs/doc-scheme.md loc=L136 community=110]
+NODE Documentation Taxonomy (Purpose-First) [src=docs/doc-scheme.md loc=L35 community=110]
+NODE Audience Model [src=docs/doc-scheme.md loc=L19 community=110]
+NODE Question-First Navigation Map [src=docs/doc-scheme.md loc=L53 community=110]
+NODE When docs get updated [src=docs/doc-scheme.md loc=L149 community=110]
+EDGE Question-First Navigation Map --contains [EXTRACTED]--> Documentation Scheme
+EDGE Documentation Scheme --contains [EXTRACTED]--> doc-scheme.md
+EDGE Documentation Scheme --contains [EXTRACTED]--> Audience Model
+EDGE Documentation Scheme --contains [EXTRACTED]--> Brownfield Archival Policy
+EDGE Documentation Scheme --contains [EXTRACTED]--> `docs/` — Your Project Documentation
+EDGE Documentation Scheme --contains [EXTRACTED]--> Documentation Taxonomy (Purpose-First)
+EDGE Documentation Scheme --contains [EXTRACTED]--> Enforced Task Checklist
+EDGE Documentation Scheme --contains [EXTRACTED]--> Glossary & Canonical Terms
+EDGE Documentation Scheme --contains [EXTRACTED]--> Governance
+EDGE Documentation Scheme --contains [EXTRACTED]--> Non-redundancy rules
+EDGE Documentation Scheme --contains [EXTRACTED]--> `.planning/` — Ephemeral Planning Artifacts
+EDGE Documentation Scheme --contains [EXTRACTED]--> Size Caps
+EDGE Documentation Scheme --contains [EXTRACTED]--> Structure
+EDGE Documentation Scheme --contains [EXTRACTED]--> Verification Policy
+EDGE Documentation Scheme --contains [EXTRACTED]--> When docs get updated (scoped subgraph, usually much smaller than GRAPH_REPORT.md) instead of grepping raw files. Read GRAPH_REPORT.md only for broad architecture context.
+[graphify] knowledge graph at graphify-out/. For focused questions, run Traversal: BFS depth=2 | Start: ['Question-First Navigation Map'] | 16 nodes found
+
+NODE Documentation Scheme [src=docs/doc-scheme.md loc=L1 community=110]
+NODE `docs/` — Your Project Documentation [src=docs/doc-scheme.md loc=L70 community=110]
+NODE Governance [src=docs/doc-scheme.md loc=L195 community=110]
+NODE `.planning/` — Ephemeral Planning Artifacts [src=docs/doc-scheme.md loc=L114 community=110]
+NODE Audience Model [src=docs/doc-scheme.md loc=L19 community=110]
+NODE Non-redundancy rules [src=docs/doc-scheme.md loc=L250 community=110]
+NODE Question-First Navigation Map [src=docs/doc-scheme.md loc=L53 community=110]
+NODE doc-scheme.md [src=docs/doc-scheme.md loc=L1 community=110]
+NODE Brownfield Archival Policy [src=docs/doc-scheme.md loc=L185 community=110]
+NODE Size Caps [src=docs/doc-scheme.md loc=L136 community=110]
+NODE Enforced Task Checklist [src=docs/doc-scheme.md loc=L161 community=110]
+NODE Documentation Taxonomy (Purpose-First) [src=docs/doc-scheme.md loc=L35 community=110]
+NODE Verification Policy [src=docs/doc-scheme.md loc=L216 community=110]
+NODE When docs get updated [src=docs/doc-scheme.md loc=L149 community=110]
+NODE Structure [src=docs/doc-scheme.md loc=L7 community=110]
+NODE Glossary & Canonical Terms [src=docs/doc-scheme.md loc=L230 community=110]
+EDGE Question-First Navigation Map --contains [EXTRACTED]--> Documentation Scheme
+EDGE Documentation Scheme --contains [EXTRACTED]--> doc-scheme.md
+EDGE Documentation Scheme --contains [EXTRACTED]--> Audience Model
+EDGE Documentation Scheme --contains [EXTRACTED]--> Brownfield Archival Policy
+EDGE Documentation Scheme --contains [EXTRACTED]--> `docs/` — Your Project Documentation
+EDGE Documentation Scheme --contains [EXTRACTED]--> Documentation Taxonomy (Purpose-First)
+EDGE Documentation Scheme --contains [EXTRACTED]--> Enforced Task Checklist
+EDGE Documentation Scheme --contains [EXTRACTED]--> Glossary & Canonical Terms
+EDGE Documentation Scheme --contains [EXTRACTED]--> Governance
+EDGE Documentation Scheme --contains [EXTRACTED]--> Non-redundancy rules
+EDGE Documentation Scheme --contains [EXTRACTED]--> `.planning/` — Ephemeral Planning Artifacts
+EDGE Documentation Scheme --contains [EXTRACTED]--> Size Caps
+EDGE Documentation Scheme --contains [EXTRACTED]--> Structure
+EDGE Documentation Scheme --contains [EXTRACTED]--> Verification Policy
+EDGE Documentation Scheme --contains [EXTRACTED]--> When docs get updated (scoped subgraph, usually much smaller than GRAPH_REPORT.md) instead of grepping raw files. Read GRAPH_REPORT.md only for broad architecture context.
+755  rules/
+644  SKILL.md  15.6K
+755  examples/
+644  consolidation-rules.md  15.2K
+644  dispatch-mechanics.md  10.7K
+644  methodology.md  8.4K
+644  output-schema.md  8.0K
+644  code-review.md  3.8K
+644  fact-check.md  3.9K
+644  research-prior-art.md  8.7K
+[0m
+[0m→ [0mRead skills/multi-ai-task/SKILL.md[90m [additionalContext=<context_guidance>
+  <tip>
+    Reading to Edit the file? Read is correct — Edit needs the exact bytes in your conversation to match against.
+    Reading to analyze, summarize, or extract from the file? Use context-mode_ctx_execute_file(path, language, code) — the bytes stay in the sandbox and only what your code prints enters your conversation.
+  </tip>
+</context_guidance>][0m
+[0m→ [0mRead skills/multi-ai-task/rules/methodology.md
+[0m→ [0mRead skills/multi-ai-task/rules/consolidation-rules.md
+[0m→ [0mRead skills/multi-ai-task/rules/dispatch-mechanics.md
+[0m→ [0mRead skills/multi-ai-task/rules/output-schema.md
+[0m→ [0mRead skills/multi-ai-task/rules/examples/research-prior-art.md
+[0m→ [0mRead skills/multi-ai-task/rules/examples/fact-check.md
+[0m→ [0mRead skills/multi-ai-task/rules/examples/code-review.md
+[0m
+[0m$ [0mcd /Users/shafqat/projects/silver-bullet/repo && rtk ls skills/multi-ai-task/ && rtk read skills/multi-ai-task/SKILL.md | head -10 && echo "---PLUGIN---" && find plugins/silver-bullet -path "*multi-ai*" 2>/dev/null | head -10 && echo "---PROVENANCE---" && rtk ls docs/research-260624/ 2>/dev/null | head -20
+rules/
+SKILL.md  15.6K
+---
+name: multi-ai-task
+description: Use this skill to dispatch any task across multiple LLM models in parallel and consolidate their outputs into a single artifact. Handles cross-model deduplication, conflict resolution, and result aggregation. Use when (a) you want ≥2 independent answers to triangulate, (b) a task benefits from model diversity (research, code review, fact-checking, ideation, writing critique, etc.), or (c) you need one consolidated artifact merging N model outputs with conflict resolution.
+argument-hint: "<task-prompt> [--models m1,m2,...] [--out <dir>] [--schema <json|file>] [--mode quick|standard|thorough] [--no-auto-inject]"
+user-invocable: false
+version: 2.1.0
+---
+
+# multi-ai-task
+
+---PLUGIN---
+plugins/silver-bullet/skill-source/multi-ai-task
+plugins/silver-bullet/skill-source/multi-ai-task/rules
+plugins/silver-bullet/skill-source/multi-ai-task/rules/dispatch-mechanics.md
+plugins/silver-bullet/skill-source/multi-ai-task/rules/methodology.md
+plugins/silver-bullet/skill-source/multi-ai-task/rules/consolidation-rules.md
+plugins/silver-bullet/skill-source/multi-ai-task/rules/output-schema.md
+plugins/silver-bullet/skill-source/multi-ai-task/rules/examples
+plugins/silver-bullet/skill-source/multi-ai-task/rules/examples/fact-check.md
+plugins/silver-bullet/skill-source/multi-ai-task/rules/examples/research-prior-art.md
+plugins/silver-bullet/skill-source/multi-ai-task/rules/examples/code-review.md
+---PROVENANCE---
+agent-output/
+multi-ai-self-review-20260627-083255/
+multi-ai-self-review-r2-20260627-093345/
+OPENCODE_DYNAMIC_SUBAGENT_MODELS.md  20.2K
+PRIOR-ART-MASTER-PROMPT.txt  16.6K
+PRIOR-ART-MULTI-AI-PROMPT.md  6.3K
+SB_CONSOLIDATED_PRIOR_ART_REPORT.html  49.5K
+SB_CONSOLIDATED_PRIOR_ART_REPORT.md  31.5K
+SB_PRIOR_ART_RESEARCH_PROMPT.md  21.0K
+SB_PRIOR_ART_USER_PROMPT.md  16.4K
+atomic-flow-redesign.plan.md  50.2K
+dispatch-research-sequential.sh  1.9K
+dispatch-research.sh  2.1K
+prior-art-landscape-2026-06-27.md  10.3K
+prior-art-landscape-glm-5.2.md  31.5K
+prior-art-landscape-minimax-m3.md  28.9K
+prior-art-landscape-report.md  38.1K
+prior-art-landscape-research.md  32.1K
+prior-art-report.md  28.1K
+[0m
+[0m$ [0mcd /Users/shafqat/projects/silver-bullet/repo && rtk grep -rn "multi-ai-task" --include="*.md" --include="*.json" --include="*.jsonc" --include="*.sh" -l 2>/dev/null | head -30 && echo "---PLUGIN MD---" && rtk read /Users/shafqat/projects/silver-bullet/repo/plugins/silver-bullet/commands/multi-ai-task.md 2>/dev/null | head -50
+./plugins/silver-bullet/skill-source/multi-ai-task/rules/dispatch-mechanics.md
+./plugins/silver-bullet/skill-source/multi-ai-task/rules/methodology.md
+./plugins/silver-bullet/skill-source/multi-ai-task/rules/consolidation-rules.md
+./plugins/silver-bullet/skill-source/multi-ai-task/rules/output-schema.md
+./plugins/silver-bullet/skill-source/multi-ai-task/rules/examples/fact-check.md
+./plugins/silver-bullet/skill-source/multi-ai-task/rules/examples/research-prior-art.md
+./plugins/silver-bullet/skill-source/multi-ai-task/rules/examples/code-review.md
+./tests/skill-scenarios/multi-ai-task.md
+./.codex/worktrees/modest-elgamal-747115/skills/multi-ai-task/SKILL.md
+./.codex/worktrees/modest-elgamal-747115/skills/multi-ai-task/rules/dispatch-mechanics.md
+./.codex/worktrees/modest-elgamal-747115/skills/multi-ai-task/rules/methodology.md
+./.codex/worktrees/modest-elgamal-747115/skills/multi-ai-task/rules/consolidation-rules.md
+./.codex/worktrees/modest-elgamal-747115/skills/multi-ai-task/rules/output-schema.md
+./.codex/worktrees/modest-elgamal-747115/skills/multi-ai-task/rules/prompt-template.md
+./agents/cursor/multi-ai-task/SKILL.md
+./agents/cursor/multi-ai-task/rules/dispatch-mechanics.md
+./agents/cursor/multi-ai-task/rules/methodology.md
+./agents/cursor/multi-ai-task/rules/consolidation-rules.md
+./agents/cursor/multi-ai-task/rules/output-schema.md
+./agents/cursor/multi-ai-task/rules/examples/fact-check.md
+./agents/cursor/multi-ai-task/rules/examples/research-prior-art.md
+./agents/cursor/multi-ai-task/rules/examples/code-review.md
+./agents/claude/multi-ai-task/SKILL.md
+./agents/claude/multi-ai-task/rules/dispatch-mechanics.md
+./agents/claude/multi-ai-task/rules/methodology.md
+./agents/claude/multi-ai-task/rules/consolidation-rules.md
+./agents/claude/multi-ai-task/rules/output-schema.md
+./agents/claude/multi-ai-task/rules/examples/fact-check.md
+./agents/claude/multi-ai-task/rules/examples/research-prior-art.md
+./agents/claude/multi-ai-task/rules/examples/code-review.md
+---PLUGIN MD---
+[0m
+[0m→ [0mRead tests/skill-scenarios/multi-ai-task.md
+[0m
+[0m$ [0mcd /Users/shafqat/projects/silver-bullet/repo && rtk ls docs/research-260624/multi-ai-self-review-20260627-083255/ 2>/dev/null && echo "---" && rtk ls docs/research-260624/multi-ai-self-review-r2-20260627-093345/ 2>/dev/null && echo "---" && rtk grep -n "version" skills/multi-ai-task/SKILL.md 2>/dev/null | head -5 && echo "---FRONTMATTER---" && rtk grep -rn "multi-ai-task" .silver-bullet.json agents/codex/multi-ai-task/SKILL.md 2>/dev/null | head -20 && echo "---CODEX---" && rtk diff -q skills/multi-ai-task/SKILL.md agents/codex/multi-ai-task/SKILL.md 2>/dev/null && rtk diff -q skills/multi-ai-task/SKILL.md agents/claude/multi-ai-task/SKILL.md 2>/dev/null && rtk diff -q skills/multi-ai-task/SKILL.md agents/cursor/multi-ai-task/SKILL.md 2>/dev/null && echo "---PLUGIN COMMANDS---" && rtk ls plugins/silver-bullet/commands/ 2>/dev/null | grep -i multi
+CONSOLIDATED_SELF_REVIEW.md  11.0K
+SELF_REVIEW_PROMPT.md  4.0K
+ocg-deepseek-v4-pro.err  2.3K
+ocg-deepseek-v4-pro.md  899B
+ocg-glm-5.2.err  948B
+ocg-glm-5.2.md  33.0K
+ocg-kimi-k2.6.err  1.1K
+ocg-kimi-k2.6.md  1.9K
+ocg-mimo-v2.5-pro.err  2.2K
+ocg-mimo-v2.5-pro.md  25.2K
+ocg-minimax-m3.err  19.2K
+ocg-minimax-m3.md  51.9K
+ocg-qwen3-7-max.err  1.6K
+ocg-qwen3-7-max.md  21.3K
+---
+SELF_REVIEW_PROMPT.md  4.0K
+ocg-deepseek-v4-pro.err  1.6K
+ocg-deepseek-v4-pro.md  49B
+ocg-glm-5.2.err  948B
+ocg-glm-5.2.md  0B
+ocg-kimi-k2.6.err  1012B
+ocg-kimi-k2.6.md  0B
+ocg-mimo-v2.5-pro.err  1018B
+ocg-mimo-v2.5-pro.md  0B
+ocg-minimax-m3.err  11.9K
+ocg-minimax-m3.md  244B
+ocg-qwen3-7-max.err  952B
+ocg-qwen3-7-max.md  0B
+---
+1 matches in 0 files:
+
+[+1 more]
+---FRONTMATTER---
+agents/codex/multi-ai-task/SKILL.md:2:name: multi-ai-task
+agents/codex/multi-ai-task/SKILL.md:10:# multi-ai-task
+agents/codex/multi-ai-task/SKILL.md:58:/multi-ai-task "<task-prompt>" [--models m1,m2,...] [--out <dir>] [--schema <json|file>] [--mode quick|standard|thorough] [--no-auto-inject]
+agents/codex/multi-ai-task/SKILL.md:253:- `silver-bullet` — for managing the SDLC workflow that may consume `multi-ai-task`'s outputs
+---CODEX---
+Files skills/multi-ai-task/SKILL.md and agents/codex/multi-ai-task/SKILL.md differ
+[0m
+[0m$ [0mcd /Users/shafqat/projects/silver-bullet/repo && rtk grep -n "v2.0.0\|v2.1.0\|version" skills/multi-ai-task/ -r 2>/dev/null | head -10 && echo "---DURATIONS---" && rtk grep -n "duration\|elapsed\|wall.time\|seconds\|minutes" skills/multi-ai-task/ -r 2>/dev/null | head -10 && echo "---OFFICIAL NAMING---" && rtk grep -rn "OCG\|opencode-go" skills/multi-ai-task/ | head -10
+7 matches in 0 files:
+
+[+7 more]
+---DURATIONS---
+4 matches in 0 files:
+
+[+4 more]
+---OFFICIAL NAMING---
+skills/multi-ai-task/SKILL.md:238:- **6 OCG models** dispatched in parallel via `opencode run --model`
+skills/multi-ai-task/rules/dispatch-mechanics.md:17:    "ocg-minimax-m3": { "mode": "subagent", "model": "opencode-go/minimax-m3" },
+skills/multi-ai-task/rules/dispatch-mechanics.md:18:    "ocg-qwen3.7-max": { "mode": "subagent", "model": "opencode-go/qwen3.7-max" }
+skills/multi-ai-task/rules/dispatch-mechanics.md:40:for model in opencode-go/minimax-m3 opencode-go/qwen3.7-max opencode-go/glm-5.2; do
+skills/multi-ai-task/rules/dispatch-mechanics.md:41:  slug=$(echo "$model" | cut -d/ -f2)  # sanitize "opencode-go/minimax-m3" → "minimax-m3"
+skills/multi-ai-task/rules/dispatch-mechanics.md:139:| OpenCode Go (`opencode-go/*`) | `opencode auth login` (cached locally on first use) |
+skills/multi-ai-task/rules/methodology.md:154:  "models_dispatched": ["opencode-go/minimax-m3", "opencode-go/qwen3.7-max", "..."],
+skills/multi-ai-task/rules/output-schema.md:217:  "models_dispatched": ["opencode-go/minimax-m3", ...],
+skills/multi-ai-task/rules/examples/fact-check.md:29:for model in opencode-go/minimax-m3 opencode-go/qwen3.7-max opencode-go/glm-5.2; do
+skills/multi-ai-task/rules/examples/research-prior-art.md:22:for model in opencode-go/minimax-m3 opencode-go/qwen3.7-max opencode-go/deepseek-v4-pro opencode-go/glm-5.2 opencode-go/kimi-k2.6 opencode-go/mimo-v2.5-pro; do
+[0m
+[0m✱ [0mGrep "version: "[90m in skills/multi-ai-task · 1 match[0m
+[0m✱ [0mGrep "2\.0\.0|2\.1\.0|v2\."[90m in skills/multi-ai-task · 3 matches[0m
+[0m
+[0m$ [0mcd /Users/shafqat/projects/silver-bullet/repo && rtk diff -q skills/multi-ai-task/SKILL.md agents/codex/multi-ai-task/SKILL.md 2>&1 | head -5 && rtk diff skills/multi-ai-task/SKILL.md agents/codex/multi-ai-task/SKILL.md 2>&1 | head -30 && echo "---" && rtk wc -l skills/multi-ai-task/SKILL.md agents/codex/multi-ai-task/SKILL.md agents/claude/multi-ai-task/SKILL.md agents/cursor/multi-ai-task/SKILL.md
+Files skills/multi-ai-task/SKILL.md and agents/codex/multi-ai-task/SKILL.md differ
+skills/multi-ai-task/SKILL.md → agents/codex/multi-ai-task/SKILL.md
+   +188 added, -187 removed, ~65 modified
+
+-   3 description: Use this skill to dispatch any task across multiple LLM models in parallel and consolidate their outputs into a single artifact. Handles cross-model deduplication, conflict resolution, and result aggregation. Use when (a) you want ≥2 independent answers to triangulate, (b) a task benefits from model diversity (research, code review, fact-checking, ideation, writing critique, etc.), or (c) you need one consolidated artifact merging N model outputs with conflict resolution.
++   3 title: "Silver: Multi AI Task"
+~   4 argument-hint: "<task-prompt> [--models m1,m2,...] [--out <dir>] [--schema <json|file>] [--mode quick|standard|thorough] [--no-auto-inject]" → description: Use this skill to dispatch any task across multiple LLM models in parallel and consolidate their outputs into a single artifact. Handles cross-model deduplication, conflict resolution, and result aggregation. Use when (a) you want ≥2 independent answers to triangulate, (b) a task benefits from model diversity (research, code review, fact-checking, ideation, writing critique, etc.), or (c) you need one consolidated artifact merging N model outputs with conflict resolution.
+-   5 user-invocable: false
++   5 argument-hint: "<task-prompt> [--models m1,m2,...] [--out <dir>] [--schema <json|file>] [--mode quick|standard|thorough] [--no-auto-inject]"
+-   6 version: 2.1.0
++   6 user-invocable: false
+-   7 ---
++   7 version: 2.1.0
+-   8 
++   8 ---
+-   9 # multi-ai-task
++   9 
+-  10 
++  10 # multi-ai-task
+-  11 Generic multi-model orchestration + consolidation. Dispatch the same task to N LLM models in parallel, capture each response, then merge into a single artifact.
++  11 
+-  12 
++  12 Generic multi-model orchestration + consolidation. Dispatch the same task to N LLM models in parallel, capture each response, then merge into a single artifact.
+-  13 **Task-agnostic.** Works for any task the user wants done — research, code review, fact-checking, ideation, translation verification, writing critique, decision support, etc. The task content is whatever the user provides as the prompt.
++  13 
+-  14 
++  14 **Task-agnostic.** Works for any task the user wants done — research, code review, fact-checking, ideation, translation verification, writing critique, decision support, etc. The task content is whatever the user provides as the prompt.
+-  15 **What this skill does:**
++  15 
+-  16 1. Dispatches the user's prompt to N LLM models in parallel
++  16 **What this skill does:**
+---
+254 skills/multi-ai-task/SKILL.md
+255 agents/codex/multi-ai-task/SKILL.md
+254 agents/claude/multi-ai-task/SKILL.md
+254 agents/cursor/multi-ai-task/SKILL.md
+Σ 1017
+[0m
+[0m$ [0mcd /Users/shafqat/projects/silver-bullet/repo && rtk ls .claude/worktrees/modest-elgamal-747115/skills/multi-ai-task/ 2>/dev/null && rtk ls .claude/worktrees/modest-elgamal-747115/skills/multi-ai-task/rules/ 2>/dev/null && echo "---" && rtk read docs/research-260624/multi-ai-self-review-20260627-083255/CONSOLIDATED_SELF_REVIEW.md 2>/dev/null | head -60
+rules/
+SKILL.md  11.1K
+consolidation-rules.md  8.9K
+dispatch-mechanics.md  5.6K
+methodology.md  5.0K
+output-schema.md  8.7K
+prompt-template.md  11.0K
+---
+# Self-Review: multi-ai-task Skill (v2.0.0 → v2.1.0)
+
+**Date:** 2026-06-27
+**Method:** Used the multi-ai-task skill recursively to review itself. 6 OCG models dispatched in parallel (minimax-m3, qwen3.7-max, glm-5.2, kimi-k2.6, mimo-v2.5-pro, deepseek-v4-pro). Each received the same self-review prompt. Outputs consolidated using the skill's own conflict-resolution and dedup algorithms.
+**Source reports:** `docs/research-260624/multi-ai-self-review-20260627-083255/`
+
+---
+
+## 1. Executive Summary
+
+**6 models produced independent reviews of the skill, with strong consensus on the most critical issues.** Median score across models: **8/16** (range 5–11). Every model independently flagged the same top-3 high-impact issues: undefined conflict-resolution rules referenced in examples, research-specific content in the generic core, and the `Mechanism 1: BEST, but rarely works` framing in dispatch-mechanics.md.
+
+**The skill's strongest dimensions** (median across models): parent/worker split (2/2 — fully explicit), evidence model (1.5/2 — good), SE+DevOps coverage (1.5/2 — task-agnostic by design).
+
+**The skill's weakest dimensions**: enforcement (0/2 — pure documentation), dynamic composition (0/2 — no replanner), V-loop depth (0–1/2 — no per-step verification, no intent gate).
+
+**The top 5 fixes** (applied in v2.1.0):
+1. Formally defined the 7+ conflict resolution rules referenced in examples (`most-severe`, `majority-with-uncertain`, `lowest-of-majors`, `concatenate-all`, `all-collected`, `union-dedup`, `merge-exact`)
+2. Moved research-specific alias table and skip rules from core to `rules/examples/research-prior-art.md`
+3. Fixed the broken filename sanitization in Mechanism 2 (now uses `slug=$(echo "$model" | cut -d/ -f2)`)
+4. Reframed Mechanism 1 as "preferred-if-available" with explicit constraint documentation
+5. Defined `--mode thorough` algorithmically (cross-source verification + evidence-ledger.md)
+6. Fixed `--schema`/prompt contradiction: schema is now auto-injected by default (use `--no-auto-inject` to opt out)
+7. Added schema type definitions for `url_list`, `required`, and composite primary keys
+
+**No model classified the skill as broken** — it's functional, with concrete improvements available. v2.1.0 addresses the most critical issues identified by ≥4 of 6 reviewers.
+
+---
+
+## 2. Per-Model Scores (8-Dimension Rubric)
+
+| Dimension | minimax | qwen | glm | kimi | mimo | deepseek | Median |
+|-----------|--------:|-----:|----:|-----:|-----:|---------:|-------:|
+| Catalog of composable units | 2 | 1 | 1 | 1 | 1 | 1 | **1** |
+| Dynamic composition | 1 | 0 | 1 | 0 | 0 | 0 | **0** |
+| V-loop depth | 1 | 1 | 1 | 1 | 0 | 0 | **1** |
+| Enforcement | 1 | 0 | 1 | 0 | 0 | 0 | **0** |
+| Parent/worker split | 2 | 2 | 2 | 2 | 2 | 2 | **2** |
+| Evidence model | 1 | 1 | 2 | 1 | 1 | 1 | **1** |
+| SE + DevOps unified | 1 | 0 | 1 | 2 | 1 | 1 | **1** |
+| Team customization | 1 | 0 | 2 | 0 | 0 | 1 | **0.5** |
+| **TOTAL** | **10** | **5** | **11** | **7** | **5** | **6** | **~7** |
+
+**Score range: 5–11, median ~7.** Wider variance than expected — qwen and mimo scored very strictly (5/16) while glm and minimax were more generous (10–11/16). The strict scorers (qwen, mimo) are closer to the skill's actual production fitness: the documentation is good but the schema system and conflict-resolution library were underspecified.
+
+---
+
+## 3. Conflict Resolutions Applied
+
+The 6 models disagreed on **scope** (qwen and mimo called out the skill as "documentation only" while glm/minimax called it "production"). The conflict resolved to: **the skill is documentation with executable examples; an executable backend (scripts/multi-ai-task.sh) is future work**. Documented in v2.1.0 SKILL.md.
+
+The 6 models agreed **unanimously** that:
+- The conflict-resolution rules referenced in examples (`most-severe`, `majority-with-uncertain`, etc.) must be formally defined. **Applied.**
+- Research-specific content (alias table, skip rules, §3 example) should be moved to the research example. **Applied.**
+- Mechanism 1 framing ("BEST, but rarely works") is misleading. **Applied.**
+- The bash example in Mechanism 2 has a broken filename pattern. **Applied.**
+
+The 6 models had **minor disagreement** on:
+- Whether `--mode thorough` should be defined or removed. **Decision: defined** (option (b) in glm's recommendation). Defining preserves forward-compatibility; removing forces users to find alternatives.
+- Whether the skill is "task-agnostic" (kimi, minimax) or "research-flavored" (qwen, mimo). **Decision: task-agnostic in core, research-specific content moved to examples/**.
+[0m
+[0m✱ [0mGrep "--concurrency"[90m in skills/multi-ai-task · 1 match[0m
+[0m✱ [0mGrep "prompt-template"[90m in skills/multi-ai-task · 0 matches[0m
+[0m
+[0m$ [0mcd /Users/shafqat/projects/silver-bullet/repo && rtk read docs/research-260624/multi-ai-self-review-20260627-083255/CONSOLIDATED_SELF_REVIEW.md 2>/dev/null | tail -120
+**The skill's weakest dimensions**: enforcement (0/2 — pure documentation), dynamic composition (0/2 — no replanner), V-loop depth (0–1/2 — no per-step verification, no intent gate).
+
+**The top 5 fixes** (applied in v2.1.0):
+1. Formally defined the 7+ conflict resolution rules referenced in examples (`most-severe`, `majority-with-uncertain`, `lowest-of-majors`, `concatenate-all`, `all-collected`, `union-dedup`, `merge-exact`)
+2. Moved research-specific alias table and skip rules from core to `rules/examples/research-prior-art.md`
+3. Fixed the broken filename sanitization in Mechanism 2 (now uses `slug=$(echo "$model" | cut -d/ -f2)`)
+4. Reframed Mechanism 1 as "preferred-if-available" with explicit constraint documentation
+5. Defined `--mode thorough` algorithmically (cross-source verification + evidence-ledger.md)
+6. Fixed `--schema`/prompt contradiction: schema is now auto-injected by default (use `--no-auto-inject` to opt out)
+7. Added schema type definitions for `url_list`, `required`, and composite primary keys
+
+**No model classified the skill as broken** — it's functional, with concrete improvements available. v2.1.0 addresses the most critical issues identified by ≥4 of 6 reviewers.
+
+---
+
+## 2. Per-Model Scores (8-Dimension Rubric)
+
+| Dimension | minimax | qwen | glm | kimi | mimo | deepseek | Median |
+|-----------|--------:|-----:|----:|-----:|-----:|---------:|-------:|
+| Catalog of composable units | 2 | 1 | 1 | 1 | 1 | 1 | **1** |
+| Dynamic composition | 1 | 0 | 1 | 0 | 0 | 0 | **0** |
+| V-loop depth | 1 | 1 | 1 | 1 | 0 | 0 | **1** |
+| Enforcement | 1 | 0 | 1 | 0 | 0 | 0 | **0** |
+| Parent/worker split | 2 | 2 | 2 | 2 | 2 | 2 | **2** |
+| Evidence model | 1 | 1 | 2 | 1 | 1 | 1 | **1** |
+| SE + DevOps unified | 1 | 0 | 1 | 2 | 1 | 1 | **1** |
+| Team customization | 1 | 0 | 2 | 0 | 0 | 1 | **0.5** |
+| **TOTAL** | **10** | **5** | **11** | **7** | **5** | **6** | **~7** |
+
+**Score range: 5–11, median ~7.** Wider variance than expected — qwen and mimo scored very strictly (5/16) while glm and minimax were more generous (10–11/16). The strict scorers (qwen, mimo) are closer to the skill's actual production fitness: the documentation is good but the schema system and conflict-resolution library were underspecified.
+
+---
+
+## 3. Conflict Resolutions Applied
+
+The 6 models disagreed on **scope** (qwen and mimo called out the skill as "documentation only" while glm/minimax called it "production"). The conflict resolved to: **the skill is documentation with executable examples; an executable backend (scripts/multi-ai-task.sh) is future work**. Documented in v2.1.0 SKILL.md.
+
+The 6 models agreed **unanimously** that:
+- The conflict-resolution rules referenced in examples (`most-severe`, `majority-with-uncertain`, etc.) must be formally defined. **Applied.**
+- Research-specific content (alias table, skip rules, §3 example) should be moved to the research example. **Applied.**
+- Mechanism 1 framing ("BEST, but rarely works") is misleading. **Applied.**
+- The bash example in Mechanism 2 has a broken filename pattern. **Applied.**
+
+The 6 models had **minor disagreement** on:
+- Whether `--mode thorough` should be defined or removed. **Decision: defined** (option (b) in glm's recommendation). Defining preserves forward-compatibility; removing forces users to find alternatives.
+- Whether the skill is "task-agnostic" (kimi, minimax) or "research-flavored" (qwen, mimo). **Decision: task-agnostic in core, research-specific content moved to examples/**.
+- Whether the schema auto-injects into prompts (glm) or stays user-controlled (qwen, mimo). **Decision: auto-inject by default with `--no-auto-inject` opt-out** (most user-friendly; can always opt out).
+
+---
+
+## 4. Top 10 Improvements (Cross-Model Ranked)
+
+Ranked by **consensus** (number of models flagging) × **impact** × **inverse-effort**:
+
+| # | Improvement | Models flagging | Impact | Effort | Applied in v2.1.0? |
+|---|------------|-----------------:|--------|--------|---------------------|
+| 1 | Define 7+ conflict resolution rules | 5/6 (qwen, mimo, kimi, deepseek, minimax) | High | Med | ✅ Yes |
+| 2 | Move research-specific content to research example | 4/6 (qwen, mimo, glm, kimi) | High | Low | ✅ Yes |
+| 3 | Fix Mechanism 1 framing | 4/6 (kimi, mimo, deepseek, qwen) | High | Low | ✅ Yes |
+| 4 | Fix Mechanism 2 broken bash example | 4/6 (kimi, qwen, mimo, glm) | High | Low | ✅ Yes |
+| 5 | Define `--mode thorough` algorithmically | 4/6 (qwen, minimax, deepseek, glm) | Med | Med | ✅ Yes |
+| 6 | Fix `--schema`/prompt contradiction | 3/6 (glm, mimo, deepseek) | High | Low | ✅ Yes (auto-inject default) |
+| 7 | Add schema type definitions (url_list, required, composite) | 3/6 (qwen, mimo, glm) | Med | Low | ✅ Yes |
+| 8 | Fix broken cross-references (deep-research, find-skills) | 1/6 (minimax) | Med | Low | ✅ Yes |
+| 9 | Fix retry policy contradiction (no-retry vs retry) | 2/6 (minimax, deepseek) | Med | Low | ✅ Yes (clarified: no retry in skill core) |
+| 10 | Generate worked examples for code-review and fact-check | 3/6 (kimi, deepseek, mimo) | High | High | ⏳ Deferred to v2.2.0 |
+
+---
+
+## 5. Improvements Deferred (Not in v2.1.0)
+
+These were flagged but require larger changes:
+
+| Improvement | Models | Reason for deferral |
+|------------|--------|---------------------|
+| **Generate worked code-review and fact-check examples** | 3/6 | Requires running 2 more multi-model dispatches and writing up results. High effort but high credibility payoff. v2.2.0. |
+| **Add `pipeline.json` machine-readable manifest** | 2/6 | Restructures skill architecture. Lower priority than documentation fixes. v3.0.0. |
+| **Decouple dispatch from OpenCode (add Mechanism 5 for Claude/Cursor)** | 1/6 | Most users are on OpenCode. v2.2.0 if requested. |
+| **Add HTML generation spec / template** | 3/6 | Each user has a preferred tool (pandoc, marked, markdown-it). Documenting one locks others out. v2.2.0. |
+| **Implement executable backend (scripts/multi-ai-task.sh)** | 2/6 | The skill being documentation-only is acceptable for v2.x. v3.0.0 with tests. |
+| **Add tiered evidence sufficiency model** | 1/6 | The current `prefer-with-evidence-then-newer-then-strict` rule is a working proxy. v3.0.0 with proper rubric. |
+| **Add overlay-pack loader for team customization** | 1/6 | Requires architectural changes. v3.0.0. |
+
+---
+
+## 6. Open Questions (from the models)
+
+These remain open after v2.1.0 and would benefit from a follow-up round:
+
+1. **Is the skill meant to be implemented by an LLM reading the rules, or by a human developer writing code?** (mimo, qwen) — v2.1.0 still says "documentation"; v3.0.0 should clarify.
+2. **What is the relationship between `--schema` and the prompt after auto-inject?** (qwen, glm) — v2.1.0 auto-injects; document edge cases (e.g., what if the schema is huge).
+3. **Should `--mode quick` skip the conflicts.md file entirely?** (mimo) — yes (current behavior); document explicitly.
+4. **What's the relationship between `consolidated.html` and §5 Aggregated Scores?** (mimo) — v2.1.0 spec is now consistent: HTML is a render of consolidated.md; §5 is a section in the body.
+5. **What is the success criterion for a "good" consolidated report?** (mimo) — leave to user; the skill produces the artifact, the user judges.
+6. **What's the upgrade path from v2.x to v3.0.0?** (deepseek) — v3.0.0 roadmap: executable backend, tiered evidence rubric, overlay packs.
+
+---
+
+## 7. Confidence
+
+**Overall: High** for the v2.1.0 fixes. The 6 reviewers' consensus is strong on the top 5 improvements; each fix is small and surgical. v2.1.0 is a strict improvement over v2.0.0.
+
+**Lower confidence** on:
+- Whether v2.1.0 addresses the **enforcement** dimension (still 0/2). Documentation-only skills can't improve this without becoming executable.
+- Whether the **score improvements** are real. v2.1.0 added 7 defined rules, fixed Mechanism 1/2, defined `--mode thorough`, and added schema types. These should bump "Catalog of composable units" from 1 to 2, but the dimension is somewhat subjective.
+- Whether the **deep-research skill** actually exists at the cited location. v2.1.0 SKILL.md now says "if the host has the `deep-research` skill (Claude/Codex)"; if it doesn't, the user inlines the methodology in the dispatch prompt. This is verified by the `swe-agent` / `LangGraph` repos in the research example which use a similar pattern.
+
+---
+
+## 8. Files Changed (v2.0.0 → v2.1.0)
+
+| File | Change |
+|------|--------|
+| `SKILL.md` | Frontmatter: added `--no-auto-inject`, version bumped to 2.1.0. Body: rewrote §Usage, §Schema, §Mode semantics, §Output structure (with consolidated.html spec), §Failure modes (retry policy clarified), §Proven provenance (corrected "4 scoring matrices" claim), §See also (removed broken deep-research/find-skills refs) |
+| `rules/methodology.md` | Phase 1: schema auto-inject behavior documented; retry policy clarified. Phase 2: added pseudocode for both extraction modes; clarified "extractor model" selection. |
+| `rules/dispatch-mechanics.md` | Mechanism 1: reframed as "preferred-if-available" with explicit constraint docs. Mechanism 2: fixed bash example (slug sanitization, `-y` flag, OUT variable). Added model selection strategy section. |
+| `rules/consolidation-rules.md` | Added formal library of 7 named conflict-resolution rules (`most-severe`, `majority`, `majority-with-uncertain`, `lowest-of-majors`, `longest-with-quote`, `concatenate-all`, `all-collected`, `union-dedup`, `merge-exact`). Replaced research-specific skip rules with generic ones. Moved research-specific alias table to examples/. |
+| `rules/output-schema.md` | §3: replaced research-specific example (`gaps_vs_reference`) with generic per-task-type templates. |
+| `rules/examples/research-prior-art.md` | Added "Alias map (research-specific)" section with the 14 research aliases. Added "Skip rules (research-specific)" section. Fixed dispatch example (PROMPT variable, slug, -y flag). Updated "Worked example" to note schema was passed via --schema, not in-prompt. |
+[0m
+[0m✱ [0mGrep "extractor|extractor model|dispatchExtractor"[90m in skills/multi-ai-task · 7 matches[0m
+[0m✱ [0mGrep "no consensus|return null|return uncertain|return null and flag"[90m in skills/multi-ai-task · 2 matches[0m
+[0m✱ [0mGrep "lowest-of-majors|majority-with-uncertain|return null|return uncertain"[90m in skills/multi-ai-task/rules/consolidation-rules.md · 11 matches[0m
+[0m✱ [0mGrep "lowest-of-majors|majority-with-uncertain"[90m in skills/multi-ai-task/rules/examples/fact-check.md · 6 matches[0m
+[0m✱ [0mGrep "scoring.matrix|scoring_matrix|score-aggregate|Catalog of composable"[90m in skills/multi-ai-task · 6 matches[0m

@@ -1,0 +1,24 @@
+PRD SHA unchanged (`67b7fb32…`) — no edits made.
+
+## Rung 7 review complete — **NOT CLEAN**
+
+**Written:** `.planning/rfl-prd-silver-doctor-opt-in-coverage-20260828/rung-07-pi-claude-opus-5-high/review.md`
+
+**13 new findings — HIGH 2 / MED 6 / LOW 3 / NIT 2** (IDs `F-7-1`…`F-7-13`, no re-file of I-1…I-51; explicit de-dup table included).
+
+### HIGH
+- **F-7-1** — The config↔`RT_COMPONENT_IDS`/registry↔SKILL **parity assertion** that would close the PRD's own stated root cause (`:20-27`, `:143`) exists only as F4 prose at `:225`, never reaches the test plan or any AC, and covers SKILL rows only — not allowlist/registry/`rt_run_component`, which is exactly how `search_cli` failed. The 8th key reproduces the canary.
+- **F-7-2** — I-45 closed the `--fix` first-match `break` (`:159`, `:314`) without defining **eligible** for the nine legacy doctor mutations. No scope→D-check map exists, so `--fix=local` may now fire D4/D21 host writes, contradicting the blast-radius table's own must-not cell (`:311`) under a no-rollback policy.
+
+### MED
+- **F-7-3** — 3 of 4 locked WARN outcomes (version drift, Graphify skew, Omni busy/expired) have no path through the exhaustive D10 state mapping at `:99-104`; only I-37's provider-missing got a mechanism.
+- **F-7-4** — Non-TTY (`:483`, partial writes implied) vs TTY-decline (`:327`, "no partial apply") give contradictory contracts for the same condition; plus 4 distinct "nonzero" requirements with no exit-status vocabulary.
+- **F-7-5** — A mistyped opted-in key is PASS N/A and **never surfaced** (`:217`) — fail-closed became fail-silent, a new instance of the PRD's own false-green catalogue at `:190`.
+- **F-7-6** — "The registry" (the I-34 trust anchor for `install_commands`) is never resolved to a file; only `hooks/lib/…` is named, while all Phase 1/3 work is reconciler-side.
+- **F-7-7** — Opt-out rules only cover `null`/`false`; **absent** keys (downstream upgrades) and reconciler-state migration for new component ids are undefined.
+- **F-7-8** — AC 8 (`:535`) omits NF4's (`:294`) conditional `generate-plugin-commands.sh` regeneration, and `:496` discourages the full suite — "done" can mean stale derived surfaces.
+
+### LOW / NIT
+`F-7-9` unassertable "FAIL **or** WARN" test rows; `F-7-10` `DOCTOR_FIX_APPLIED` early-return vs in-invocation convergence; `F-7-11` no evidence-id vocabulary despite tests asserting on them; `F-7-12` ~78 repo-root links resolve to `.planning/…` (I-26 fixed only the freeze links); `F-7-13` per-tool vs global test-table scoping.
+
+**Note:** Graphify query was attempted first as required but the tool is unusable in this checkout — `graphify-out/graph.json` is missing, only `graph.json.corrupt-20260828T1201` remains. Fell back to direct reads; recorded in agentmemory. No triage, no PRD edits, no PASS claim, no subagents, no Fast.

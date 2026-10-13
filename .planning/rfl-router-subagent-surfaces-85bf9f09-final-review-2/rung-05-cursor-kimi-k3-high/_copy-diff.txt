@@ -1,0 +1,38 @@
+434,435c434,435
+< - **Also (live-spec MUST):** `/sb:new-workflow` conventional-skill extract/decompose/recompose (arbitrary conventional AI skill(s) in → catalog-legal WF of AFs / Flow Steps / optional leaf Skills; not wrap-`SKILL.md`-as-one-`AF-EXECUTE`; Job authoring session; PUB-01 Authorizer-admitted publish; Cursor MVP; named test coverage — see §4.2 Proposed architecture and WFM-01).
+< - **Also (live-spec MUST):** workflow evolution of shared WF / AF / Flow Step / Skill from improvement-tagged Learnings (`/sb:improve` is always a Job — never FAST; `/sb:contribute` explicit PR Job, WS4 runtime / WS7 docs; latest evolved installed versions; FAST is not subject to Evolution or `/sb:improve`; FAST thin-capture skip tags unless a durable learning is still captured; general-improvement not per-user forks — see §4.2 Proposed architecture).
+---
+> - **Also (live-spec MUST):** `/sb:new-workflow` conventional-skill extract/decompose/recompose (arbitrary conventional AI skill(s) in → catalog-legal WF of AFs / Flow Steps / optional leaf Skills; not wrap-`SKILL.md`-as-one-`AF-EXECUTE`; Job authoring session; PUB-01 Authorizer-admitted publish; Cursor MVP; named test coverage — see §4.2 Process router `/sb`, catalog generation, FAST vs Job and WFM-01).
+> - **Also (live-spec MUST):** workflow evolution of shared WF / AF / Flow Step / Skill from improvement-tagged Learnings (`/sb:improve` is always a Job — never FAST; `/sb:contribute` explicit PR Job, WS4 runtime / WS7 docs; latest evolved installed versions; FAST is not subject to Evolution or `/sb:improve`; FAST thin-capture skip tags unless a durable learning is still captured; general-improvement not per-user forks — see §4.2 Process router `/sb`, catalog generation, FAST vs Job).
+1286c1286
+< - Multi-member mode is **Ladder** (default) or **Fusion**; both patterns are also public `/sb:ladder` and `/sb:fusion`. **Panel** (`/sb:panel`) is the third public Job collaboration pattern (persistent interactive member sessions; see LS-ladder-parallel). See §4.2 Proposed architecture.
+---
+> - Multi-member mode is **Ladder** (default) or **Fusion**; both patterns are also public `/sb:ladder` and `/sb:fusion`. **Panel** (`/sb:panel`) is the third public Job collaboration pattern (persistent interactive member sessions; see LS-ladder-parallel). See §4.2 Process router `/sb`, catalog generation, FAST vs Job.
+1598c1598
+< #### `blocked_corrupt_state` (worktree merge)
+---
+> #### `blocked_corrupt_state` (row 1)
+2200c2200
+< #### `blocked_launch_prompt_spec`
+---
+> #### `blocked_launch_prompt_spec` (row 4)
+2243c2243
+< - Direct `sb:<route>` / AF invokes still wrap as specified in §4.2 Proposed architecture (work-spec + Advisor invoke, or catalog dispatch of an already-existing AF/WF id).
+---
+> - Direct `sb:<route>` / AF invokes still wrap as specified in §4.2 Process router `/sb`, catalog generation, FAST vs Job (work-spec + Advisor invoke, or catalog dispatch of an already-existing AF/WF id).
+2257c2257
+< #### `blocked_corrupt_state` (row 1 remint)
+---
+> #### `blocked_corrupt_state` (row 1)
+2404c2404
+< - After Advisor is satisfied with Executor **code** (A-loop two-clean), run the **unified SB code-review** (thermos-absorbed; see §4.2 Proposed architecture); Executor fixes remaining non-wrong findings.
+---
+> - After Advisor is satisfied with Executor **code** (A-loop two-clean), run the **unified SB code-review** (thermos-absorbed; see §4.2 Process router `/sb`, catalog generation, FAST vs Job); Executor fixes remaining non-wrong findings.
+2747c2747
+< Architecture implications remain in §4.2 Proposed architecture (after pointers) and in Roles / Board above.
+---
+> Architecture implications remain in §4.2 Process router `/sb`, catalog generation, FAST vs Job (after pointers) and in Roles / Board above.
+4038c4038
+< #### `blocked_corrupt_state` (specified risks)
+---
+> #### `blocked_corrupt_state` (row 1)

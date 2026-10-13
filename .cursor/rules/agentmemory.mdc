@@ -1,0 +1,34 @@
+---
+description: agentmemory session capture and Graphify synergy
+alwaysApply: true
+---
+
+# agentmemory — mandatory when opted in
+
+When `recommended_tools.agentmemory.enabled_by_user` is `true` in `.silver-bullet.json`:
+
+## Save (every session)
+
+1. **Start server** if needed: `curl -sf http://localhost:3111/agentmemory/health` or `nohup agentmemory > ~/.agentmemory/server.log 2>&1 &`
+2. **Use agentmemory MCP** (Cursor: `user-agentmemory` tools) to capture:
+   - decisions, defects, round outcomes, workflow results
+   - live E2E observations and ladder rung summaries
+3. **Export root:** `.agentmemory/memory/` in the project — keep exports git-friendly per `.gitignore` rules.
+
+## Retrieve — via Graphify only
+
+**Do NOT** re-read raw agentmemory dumps for orientation when Graphify is enabled.
+
+**Synergy:** **save via agentmemory, retrieve via Graphify.**
+
+After saving, run `graphify update .` so memory exports index into `graphify-out/graph.json`, then `graphify query "<topic>"` for retrieval.
+
+## Before substantive work
+
+- Confirm MCP wired: `~/.cursor/mcp.json` contains `agentmemory`
+- Hooks require fresh agentmemory usage (see `agentmemory-usage` state) when enforcement is active
+- Pair every graphify query pass with agentmemory capture of what you learned
+
+## Subagents
+
+Every subagent prompt MUST include: use agentmemory MCP to save session notes; retrieve prior context via Graphify query, not ad-hoc file greps.

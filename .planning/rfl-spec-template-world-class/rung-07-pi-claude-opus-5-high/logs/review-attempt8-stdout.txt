@@ -1,0 +1,25 @@
+Memory persisted to the agentmemory store (REST daemon on :3111 was not accepting writes; used the same `.agentmemory/memory/` file convention as prior passes 3/5/6).
+
+## Rung 07 — Pi Claude Opus 5 High — review pass 8: **NOT CLEAN**
+
+**Freeze verified:** both twins hash `ba563660336894ffa204a68c49b475b582859bdec714a48c5a45b1a963b79085` — matches the brief, unmutated after the pass.
+
+**Written:** `.planning/rfl-spec-template-world-class/rung-07-pi-claude-opus-5-high/review-rerun-8.md` (only file written; passes 1–7 untouched).
+
+**11 residuals — `R7h-F01`–`R7h-F11`** (5 MED / 4 LOW / 2 nit). No ledger row re-filed; `R7b-F17` REJECT not reopened.
+
+| ID | Sev | One-line |
+|----|-----|----------|
+| R7h-F01 | MED | Ordinal stability scoped to "ID-less section" exempts the mixed `## Assumptions` R7g-F07 made `bNN`-citable ⇒ silent repoint |
+| R7h-F02 | MED | Re-anchor **rewrite** assigned to Step 7 (renders SPEC only) but `bNN` lives in REQUIREMENTS Source written by Step 8; no step owns it; R6d coupling unstated |
+| R7h-F03 | MED | Clause-(c) `v<integer>` has no stability terminal across the malformed-prior seed that deletes cited rows ⇒ hard `REQ-F71` on a pinned PASS path |
+| R7h-F04 | MED | L198 `nfr` Notes "(or the matching ID-less heading slug + ordinal)" negates R7g-F05 "sole anchor" in-sentence; general ID-less MUST has no grammar/FAIL |
+| R7h-F05 | MED | Assumptions clause-(b) unit is "entries" vs clause (b)'s "counted top-level bullet" — pinned `#b02` PASS on an undefined unit |
+| R7h-F06 | MED | Adding `ASM-nn` to a cited entry makes a still-resolving `bNN` MUST-violating; R7f-F10 stability rationale inoperative |
+| R7h-F07 | LOW | Catalog-side exhaustion still pins `EX-00` present-or-tombstoned; `-00`-absent (only reachable state) has no SPEC-side primary fixture |
+| R7h-F08 | LOW | Clause-(c) `version-cell` token missing from Wave 2 `rg` (L434) and Wave 3 `- contains` |
+| R7h-F09 | LOW | Assumptions per-entry MUST has two PASS fixtures, no negative |
+| R7h-F10 | nit | `decision-log` Default class cell not enum-only (breaks R7c-F15 / R7d-F10) |
+| R7h-F11 | nit | No-structural-change template has unbound `N` + open `<reason>` vs QC-10 non-placeholder check |
+
+Six of the eleven attach directly to surfaces the R7g pack created (per-entry Assumptions, clause (c), re-anchor binding). R7g-F01–F10 all confirmed landed with line-level evidence. `graphify update .` run. Policy C respected: no triage, APPLY, fix, verify, commit, or outcome recording.

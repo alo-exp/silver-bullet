@@ -1,0 +1,6 @@
+=== agent-opencode-delegate 2026-08-16T09:40:31Z ===
+work_dir=/Users/shafqat/projects/silver-bullet/repo
+sb_root=/Users/shafqat/projects/silver-bullet/repo
+attempt=1
+model=opencode-go/ocg-deepseek-v4-pro mode=multi-ai-worker-v1
+

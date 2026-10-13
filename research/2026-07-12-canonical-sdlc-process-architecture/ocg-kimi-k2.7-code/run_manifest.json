@@ -1,0 +1,29 @@
+{
+  "agent_slug": "ocg-kimi-k2.7-code",
+  "model": "opencode-go/kimi-k2.7-code",
+  "started_at": "2026-07-11T19:53:16Z",
+  "research_date": "2026-07-12",
+  "mode": "ultradeep",
+  "workflow": "AF-DECIDE / FS-SILVER_DEEP_RESEARCH",
+  "topic": "Canonical SDLC Process Architecture — Multi-Agent Research Brief",
+  "output_directory": "/Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/",
+  "required_artifacts": [
+    "research_report.md",
+    "scope.md",
+    "research-plan.md",
+    "sources.jsonl",
+    "evidence.jsonl",
+    "triangulation.md",
+    "outline.md",
+    "claims.jsonl",
+    "critique.md",
+    "decision-record.md",
+    "handoff.md",
+    "vloop-rollup.json",
+    "run_manifest.json"
+  ],
+  "process_areas_count": 18,
+  "min_sources_target": 40,
+  "min_evidence_spans_target": 120,
+  "status": "completed"
+}

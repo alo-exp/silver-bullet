@@ -1,0 +1,144 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "kimi",
+    "effort": "high",
+    "display": "Cursor Kimi K3 High"
+  },
+  "verdict": "NOT CLEAN",
+  "issues": {
+    "HIGH": [
+      {
+        "id": "R2-F01",
+        "title": "nfr kind-required but sourced only by optional QA prompt; skip cites a nonexistent nfr turn"
+      }
+    ],
+    "MED": [
+      {
+        "id": "R2-F02",
+        "title": "Pack-table Notes contradict kind catalog (security/infra-devops, data/mobile+infra+cli, decision-log/mobile)"
+      },
+      {
+        "id": "R2-F03",
+        "title": "17 unclassified kind×pack cells; no closed-world default for unlisted packs"
+      }
+    ],
+    "LOW": [
+      {
+        "id": "R2-F04",
+        "title": "mobile and pipeline packs have no pack-local IDs"
+      }
+    ],
+    "NIT": [
+      {
+        "id": "R2-F05",
+        "title": "Forbidden QC carve-out tolerates _N/A_ stubs the freeze rejects"
+      },
+      {
+        "id": "R2-F06",
+        "title": "Freeze-copy relative links, NFR thresholds only in discontinued folder, stale parent-launches-GLM"
+      }
+    ]
+  },
+  "triage": [
+    {
+      "id": "R2-F01",
+      "severity": "HIGH",
+      "decision": "ACCEPT",
+      "reason": "Honor R1-F03: nfr-required kinds get a real Clarify Quality Attributes turn, not an optional prompt plus a skip citing a nonexistent nfr turn"
+    },
+    {
+      "id": "R2-F02",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "Pack-table Notes must match the catalog: security includes infra-devops; data optional includes mobile, infra-devops, cli; decision-log optional for mobile"
+    },
+    {
+      "id": "R2-F03",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "Closed-world default: unlisted kind×pack cells omit at compile; present = forbidden (ISSUE new, INFO legacy augment)"
+    },
+    {
+      "id": "R2-F04",
+      "severity": "LOW",
+      "decision": "ACCEPT",
+      "reason": "Mint SCR-nn for mobile screens and STG-nn for pipeline stages"
+    },
+    {
+      "id": "R2-F05",
+      "severity": "NIT",
+      "decision": "ACCEPT",
+      "reason": "Pick omit-do-not-stub: present forbidden heading = ISSUE on new compiles including N/A stubs; legacy N/A on augment = INFO"
+    },
+    {
+      "id": "R2-F06",
+      "severity": "NIT",
+      "decision": "ACCEPT",
+      "reason": "Note twin-relative links; restate NFR-01–04 thresholds inline; drop stale parent-launches-GLM header"
+    }
+  ],
+  "blockers": "none",
+  "highs": [
+    {
+      "id": "R2-F01",
+      "title": "nfr kind-required but sourced only by optional QA prompt; skip cites a nonexistent nfr turn"
+    }
+  ],
+  "mediums": [
+    {
+      "id": "R2-F02",
+      "title": "Pack-table Notes contradict kind catalog (security/infra-devops, data/mobile+infra+cli, decision-log/mobile)"
+    },
+    {
+      "id": "R2-F03",
+      "title": "17 unclassified kind×pack cells; no closed-world default for unlisted packs"
+    }
+  ],
+  "disposition": "ACCEPT-apply",
+  "resolved": [
+    {
+      "id": "R2-F01",
+      "severity": "HIGH",
+      "title": "nfr kind-required but sourced only by optional QA prompt; skip cites a nonexistent nfr turn",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "R2-F02",
+      "severity": "MED",
+      "title": "Pack-table Notes contradict kind catalog (security/infra-devops, data/mobile+infra+cli, decision-log/mobile)",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "R2-F03",
+      "severity": "MED",
+      "title": "17 unclassified kind×pack cells; no closed-world default for unlisted packs",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "R2-F04",
+      "severity": "LOW",
+      "title": "mobile and pipeline packs have no pack-local IDs",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "R2-F05",
+      "severity": "NIT",
+      "title": "Forbidden QC carve-out tolerates _N/A_ stubs the freeze rejects",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "R2-F06",
+      "severity": "NIT",
+      "title": "Freeze-copy relative links, NFR thresholds only in discontinued folder, stale parent-launches-GLM",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    }
+  ],
+  "apply_sha": "d05755cb838f7143f5f922d8d2e8823e2ef215b56522801902d5179a66188989"
+}

@@ -1,0 +1,27 @@
+{
+  "version": "1.0",
+  "agent_slug": "ocg-mimo-v2.5",
+  "model": "opencode-go/mimo-v2.5",
+  "started_at": "2026-07-11T19:53:16Z",
+  "completed_at": "2026-07-12T00:00:00Z",
+  "research_depth": "ultradeep",
+  "deliverables": [
+    "research_report.md",
+    "sources.jsonl",
+    "evidence.jsonl",
+    "triangulation.md",
+    "claims.jsonl",
+    "outline.md",
+    "scope.md",
+    "research-plan.md",
+    "critique.md",
+    "decision-record.md",
+    "handoff.md",
+    "run_manifest.json"
+  ],
+  "source_count": 45,
+  "evidence_count": 40,
+  "claim_count": 20,
+  "process_areas": 18,
+  "status": "complete"
+}

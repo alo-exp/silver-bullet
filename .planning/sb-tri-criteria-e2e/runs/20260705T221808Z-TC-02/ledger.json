@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "track": "sb-tri-criteria-e2e",
+  "track_id": "TC-02",
+  "row_id": "TC-02",
+  "install_fp": "claude@5501782189e3+2717f916398e",
+  "sb_git_sha": "5501782189e3",
+  "status": "scored",
+  "host": "cursor",
+  "orchestrator_mode": "parent",
+  "started_at": "2026-07-05T22:18:08Z",
+  "mechanism": "silver-orchestrator parent + Task workers",
+  "harness": "scripts/sb-tri-criteria-e2e.sh",
+  "design_doc": ".planning/sb-tri-criteria-e2e/DESIGN.md",
+  "verdict": "PASS",
+  "blocking_outcomes": {},
+  "live_session_run": true,
+  "scored_at": "2026-07-05T22:19:06Z",
+  "session_log": "/Users/shafqat/projects/silver-bullet/repo/.planning/sb-tri-criteria-e2e/runs/20260705T221808Z-TC-02/parent-session.log"
+}

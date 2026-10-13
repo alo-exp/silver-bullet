@@ -1,0 +1,12 @@
+timestamp=2026-08-23T18:58:43.350Z level=ERROR run=49597288 message="stream error" providerID=opencode-go modelID=glm-5.3 session.id=ses_fd002e79effeFihah7fN3K9qQC small=false agent=build mode=primary error.error="AI_APICallError: 5-hour usage limit reached. Resets in 2hr 3min. To continue using this model now, enable usage from your available balance: https://opencode.ai/workspace/wrk_01KS4QW3V1S4F7Q545S66WNAXV/go"
+timestamp=2026-08-23T20:00:30.269Z run=80ddde29 session=ses_fcfca403affeHcB93OaxbCmem2 AI_APICallError: 5-hour usage limit reached. Resets in 1hr 2min.
+
+===== retry probe 2026-08-23T21:08:38Z exit=0 =====
+[0m
+> build · glm-5.3
+[0m
+
+===== retry invoke 2026-08-23T21:10:15Z =====
+
+===== retry 2026-08-23T21:21:48Z SUCCESS not quota =====
+INVOKE_EXIT=0 review.md written

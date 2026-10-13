@@ -1,0 +1,117 @@
+{
+  "solution_name": "tembo",
+  "display_name": "Tembo",
+  "categories": [
+    {
+      "name": "Process orchestration",
+      "features": [
+        {
+          "name": "Workflow composition",
+          "supported": true
+        },
+        {
+          "name": "Atomic flow catalog",
+          "supported": false
+        },
+        {
+          "name": "Parent/child agent delegation",
+          "supported": true
+        },
+        {
+          "name": "Hook-enforced gates",
+          "supported": false
+        }
+      ]
+    },
+    {
+      "name": "Developer Experience",
+      "features": [
+        {
+          "name": "Self-serve signup",
+          "supported": null
+        },
+        {
+          "name": "Quick onboarding",
+          "supported": false
+        },
+        {
+          "name": "IDE-native integration",
+          "supported": true
+        },
+        {
+          "name": "Skill/plugin marketplace",
+          "supported": false
+        }
+      ]
+    },
+    {
+      "name": "Pricing and licensing",
+      "features": [
+        {
+          "name": "Predictable pricing",
+          "supported": null
+        },
+        {
+          "name": "Free tier / OSS core",
+          "supported": false
+        },
+        {
+          "name": "Per-seat transparency",
+          "supported": null
+        }
+      ]
+    },
+    {
+      "name": "Time to value",
+      "features": [
+        {
+          "name": "Managed hosting",
+          "supported": true
+        },
+        {
+          "name": "Prebuilt SDLC templates",
+          "supported": false
+        },
+        {
+          "name": "Zero-infra bootstrap",
+          "supported": false
+        }
+      ]
+    },
+    {
+      "name": "Verification and quality",
+      "features": [
+        {
+          "name": "Automated review loops",
+          "supported": false
+        },
+        {
+          "name": "CI integration",
+          "supported": false
+        },
+        {
+          "name": "Visual/E2E verification",
+          "supported": null
+        }
+      ]
+    },
+    {
+      "name": "Security and compliance",
+      "features": [
+        {
+          "name": "SSO",
+          "supported": null
+        },
+        {
+          "name": "RBAC",
+          "supported": null
+        },
+        {
+          "name": "Audit log",
+          "supported": null
+        }
+      ]
+    }
+  ],
+  "source": "live-envelopes"
+}

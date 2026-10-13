@@ -1,0 +1,8 @@
+START 2026-08-28T11:48:57Z
+PI_PROVIDER=omniroute PI_MODEL=claude/claude-opus-5-high
+PI_EXPECT_FILE_MIN_BYTES=2500 PI_RUN_TIMEOUT=3600
+ATTEMPT=3 after attempt2 EXIT 124 zero-byte-idle; no --continue
+[agent-pi] zero-byte-idle kill after 600s (stdout_bytes=no expect_ok=False expect_bytes=0)
+[agent-pi] fail-fast: skipping --continue after first-run EXIT 124
+INVOKE_EXIT:124
+END 2026-08-28T11:58:57Z

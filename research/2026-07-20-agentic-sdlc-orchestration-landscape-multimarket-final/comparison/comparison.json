@@ -1,0 +1,748 @@
+{
+  "research_type": "landscape-feature-matrix",
+  "license_preference": "mixed",
+  "categories": [
+    "Process orchestration",
+    "Developer Experience",
+    "Pricing and licensing",
+    "Time to value",
+    "Verification and quality",
+    "Security and compliance"
+  ],
+  "rows": [
+    {
+      "type": "category",
+      "name": "Process orchestration"
+    },
+    {
+      "type": "feature",
+      "name": "Workflow composition",
+      "priority": "Critical",
+      "solutions": {
+        "agentsys": "\u2714",
+        "ai-dlc": "\u2714",
+        "augment-cosmos": "\u2714",
+        "barkain-workflow-orchestrator": "\u2714",
+        "bmad": "\u2714",
+        "cavekit-v31": "\u2714",
+        "cc10x": "\u2714",
+        "claude-harness": "\u2714",
+        "deepwork": "\u2714",
+        "devin": "\u2714",
+        "director": "\u2714",
+        "factory-ai": "\u2714",
+        "gsd": "\u2714",
+        "oh-my-pi": "\u2714",
+        "ruflo": "\u2714",
+        "silver-bullet": "\u2714",
+        "spec-kit": "\u2714",
+        "superclaude": "\u2714",
+        "superpowers": "\u2714",
+        "turboshovel": "\u2714",
+        "workflow-manager": "\u2714",
+        "zuvo": "\u2714"
+      }
+    },
+    {
+      "type": "feature",
+      "name": "Atomic flow catalog",
+      "priority": "Medium",
+      "solutions": {
+        "agentsys": "",
+        "ai-dlc": "",
+        "augment-cosmos": "",
+        "barkain-workflow-orchestrator": "",
+        "bmad": "",
+        "cavekit-v31": "",
+        "cc10x": "",
+        "claude-harness": "",
+        "deepwork": "",
+        "devin": "",
+        "director": "",
+        "factory-ai": "",
+        "gsd": "",
+        "oh-my-pi": "",
+        "ruflo": "",
+        "silver-bullet": "\u2714",
+        "spec-kit": "",
+        "superclaude": "",
+        "superpowers": "",
+        "turboshovel": "",
+        "workflow-manager": "",
+        "zuvo": ""
+      }
+    },
+    {
+      "type": "feature",
+      "name": "Parent/child agent delegation",
+      "priority": "Medium",
+      "solutions": {
+        "agentsys": "\u2714",
+        "ai-dlc": "",
+        "augment-cosmos": "\u2714",
+        "barkain-workflow-orchestrator": "",
+        "bmad": "",
+        "cavekit-v31": "",
+        "cc10x": "",
+        "claude-harness": "",
+        "deepwork": "",
+        "devin": "",
+        "director": "",
+        "factory-ai": "\u2714",
+        "gsd": "",
+        "oh-my-pi": "\u2714",
+        "ruflo": "\u2714",
+        "silver-bullet": "\u2714",
+        "spec-kit": "",
+        "superclaude": "",
+        "superpowers": "",
+        "turboshovel": "",
+        "workflow-manager": "",
+        "zuvo": "\u2714"
+      }
+    },
+    {
+      "type": "feature",
+      "name": "Hook-enforced gates",
+      "priority": "Medium",
+      "solutions": {
+        "agentsys": "",
+        "ai-dlc": "",
+        "augment-cosmos": "",
+        "barkain-workflow-orchestrator": "",
+        "bmad": "\u2714",
+        "cavekit-v31": "",
+        "cc10x": "\u2714",
+        "claude-harness": "\u2714",
+        "deepwork": "",
+        "devin": "",
+        "director": "",
+        "factory-ai": "",
+        "gsd": "\u2714",
+        "oh-my-pi": "\u2714",
+        "ruflo": "\u2714",
+        "silver-bullet": "\u2714",
+        "spec-kit": "\u2714",
+        "superclaude": "\u2714",
+        "superpowers": "\u2714",
+        "turboshovel": "",
+        "workflow-manager": "",
+        "zuvo": "\u2714"
+      }
+    },
+    {
+      "type": "category",
+      "name": "Developer Experience"
+    },
+    {
+      "type": "feature",
+      "name": "Self-serve signup",
+      "priority": "Critical",
+      "solutions": {
+        "agentsys": "",
+        "ai-dlc": "",
+        "augment-cosmos": "",
+        "barkain-workflow-orchestrator": "",
+        "bmad": "",
+        "cavekit-v31": "",
+        "cc10x": "",
+        "claude-harness": "",
+        "deepwork": "",
+        "devin": "",
+        "director": "",
+        "factory-ai": "",
+        "gsd": "",
+        "oh-my-pi": "",
+        "ruflo": "",
+        "silver-bullet": "",
+        "spec-kit": "",
+        "superclaude": "",
+        "superpowers": "",
+        "turboshovel": "",
+        "workflow-manager": "",
+        "zuvo": ""
+      }
+    },
+    {
+      "type": "feature",
+      "name": "Quick onboarding",
+      "priority": "Critical",
+      "solutions": {
+        "agentsys": "",
+        "ai-dlc": "",
+        "augment-cosmos": "\u2714",
+        "barkain-workflow-orchestrator": "",
+        "bmad": "\u2714",
+        "cavekit-v31": "",
+        "cc10x": "\u2714",
+        "claude-harness": "",
+        "deepwork": "",
+        "devin": "\u2714",
+        "director": "",
+        "factory-ai": "\u2714",
+        "gsd": "\u2714",
+        "oh-my-pi": "\u2714",
+        "ruflo": "",
+        "silver-bullet": "\u2714",
+        "spec-kit": "",
+        "superclaude": "",
+        "superpowers": "",
+        "turboshovel": "",
+        "workflow-manager": "",
+        "zuvo": ""
+      }
+    },
+    {
+      "type": "feature",
+      "name": "IDE-native integration",
+      "priority": "High",
+      "solutions": {
+        "agentsys": "\u2714",
+        "ai-dlc": "",
+        "augment-cosmos": "\u2714",
+        "barkain-workflow-orchestrator": "\u2714",
+        "bmad": "\u2714",
+        "cavekit-v31": "\u2714",
+        "cc10x": "\u2714",
+        "claude-harness": "\u2714",
+        "deepwork": "\u2714",
+        "devin": "\u2714",
+        "director": "\u2714",
+        "factory-ai": "\u2714",
+        "gsd": "\u2714",
+        "oh-my-pi": "\u2714",
+        "ruflo": "\u2714",
+        "silver-bullet": "\u2714",
+        "spec-kit": "\u2714",
+        "superclaude": "\u2714",
+        "superpowers": "\u2714",
+        "turboshovel": "\u2714",
+        "workflow-manager": "\u2714",
+        "zuvo": "\u2714"
+      }
+    },
+    {
+      "type": "feature",
+      "name": "Skill/plugin marketplace",
+      "priority": "High",
+      "solutions": {
+        "agentsys": "",
+        "ai-dlc": "",
+        "augment-cosmos": "",
+        "barkain-workflow-orchestrator": "",
+        "bmad": "\u2714",
+        "cavekit-v31": "\u2714",
+        "cc10x": "\u2714",
+        "claude-harness": "",
+        "deepwork": "",
+        "devin": "",
+        "director": "\u2714",
+        "factory-ai": "",
+        "gsd": "\u2714",
+        "oh-my-pi": "\u2714",
+        "ruflo": "\u2714",
+        "silver-bullet": "\u2714",
+        "spec-kit": "\u2714",
+        "superclaude": "\u2714",
+        "superpowers": "\u2714",
+        "turboshovel": "",
+        "workflow-manager": "",
+        "zuvo": "\u2714"
+      }
+    },
+    {
+      "type": "category",
+      "name": "Pricing and licensing"
+    },
+    {
+      "type": "feature",
+      "name": "Predictable pricing",
+      "priority": "Very High",
+      "solutions": {
+        "agentsys": "",
+        "ai-dlc": "",
+        "augment-cosmos": "",
+        "barkain-workflow-orchestrator": "",
+        "bmad": "",
+        "cavekit-v31": "",
+        "cc10x": "",
+        "claude-harness": "",
+        "deepwork": "",
+        "devin": "\u2714",
+        "director": "",
+        "factory-ai": "",
+        "gsd": "",
+        "oh-my-pi": "",
+        "ruflo": "",
+        "silver-bullet": "",
+        "spec-kit": "",
+        "superclaude": "",
+        "superpowers": "",
+        "turboshovel": "",
+        "workflow-manager": "",
+        "zuvo": ""
+      }
+    },
+    {
+      "type": "feature",
+      "name": "Free tier / OSS core",
+      "priority": "Very High",
+      "solutions": {
+        "agentsys": "",
+        "ai-dlc": "\u2714",
+        "augment-cosmos": "",
+        "barkain-workflow-orchestrator": "",
+        "bmad": "\u2714",
+        "cavekit-v31": "",
+        "cc10x": "\u2714",
+        "claude-harness": "\u2714",
+        "deepwork": "",
+        "devin": "\u2714",
+        "director": "",
+        "factory-ai": "",
+        "gsd": "\u2714",
+        "oh-my-pi": "\u2714",
+        "ruflo": "\u2714",
+        "silver-bullet": "\u2714",
+        "spec-kit": "\u2714",
+        "superclaude": "\u2714",
+        "superpowers": "\u2714",
+        "turboshovel": "",
+        "workflow-manager": "",
+        "zuvo": "\u2714"
+      }
+    },
+    {
+      "type": "feature",
+      "name": "Per-seat transparency",
+      "priority": "Very High",
+      "solutions": {
+        "agentsys": "",
+        "ai-dlc": "",
+        "augment-cosmos": "",
+        "barkain-workflow-orchestrator": "",
+        "bmad": "",
+        "cavekit-v31": "",
+        "cc10x": "",
+        "claude-harness": "",
+        "deepwork": "",
+        "devin": "\u2714",
+        "director": "",
+        "factory-ai": "",
+        "gsd": "",
+        "oh-my-pi": "",
+        "ruflo": "",
+        "silver-bullet": "",
+        "spec-kit": "",
+        "superclaude": "",
+        "superpowers": "",
+        "turboshovel": "",
+        "workflow-manager": "",
+        "zuvo": ""
+      }
+    },
+    {
+      "type": "category",
+      "name": "Time to value"
+    },
+    {
+      "type": "feature",
+      "name": "Managed hosting",
+      "priority": "Critical",
+      "solutions": {
+        "agentsys": "",
+        "ai-dlc": "",
+        "augment-cosmos": "\u2714",
+        "barkain-workflow-orchestrator": "",
+        "bmad": "",
+        "cavekit-v31": "",
+        "cc10x": "",
+        "claude-harness": "",
+        "deepwork": "",
+        "devin": "\u2714",
+        "director": "",
+        "factory-ai": "\u2714",
+        "gsd": "",
+        "oh-my-pi": "",
+        "ruflo": "",
+        "silver-bullet": "",
+        "spec-kit": "",
+        "superclaude": "",
+        "superpowers": "",
+        "turboshovel": "",
+        "workflow-manager": "",
+        "zuvo": ""
+      }
+    },
+    {
+      "type": "feature",
+      "name": "Prebuilt SDLC templates",
+      "priority": "Critical",
+      "solutions": {
+        "agentsys": "",
+        "ai-dlc": "\u2714",
+        "augment-cosmos": "",
+        "barkain-workflow-orchestrator": "",
+        "bmad": "\u2714",
+        "cavekit-v31": "",
+        "cc10x": "",
+        "claude-harness": "",
+        "deepwork": "",
+        "devin": "",
+        "director": "",
+        "factory-ai": "",
+        "gsd": "\u2714",
+        "oh-my-pi": "\u2714",
+        "ruflo": "\u2714",
+        "silver-bullet": "\u2714",
+        "spec-kit": "\u2714",
+        "superclaude": "\u2714",
+        "superpowers": "\u2714",
+        "turboshovel": "",
+        "workflow-manager": "",
+        "zuvo": "\u2714"
+      }
+    },
+    {
+      "type": "feature",
+      "name": "Zero-infra bootstrap",
+      "priority": "Critical",
+      "solutions": {
+        "agentsys": "",
+        "ai-dlc": "\u2714",
+        "augment-cosmos": "",
+        "barkain-workflow-orchestrator": "",
+        "bmad": "\u2714",
+        "cavekit-v31": "",
+        "cc10x": "\u2714",
+        "claude-harness": "",
+        "deepwork": "",
+        "devin": "",
+        "director": "",
+        "factory-ai": "",
+        "gsd": "\u2714",
+        "oh-my-pi": "\u2714",
+        "ruflo": "",
+        "silver-bullet": "\u2714",
+        "spec-kit": "",
+        "superclaude": "",
+        "superpowers": "",
+        "turboshovel": "",
+        "workflow-manager": "",
+        "zuvo": ""
+      }
+    },
+    {
+      "type": "category",
+      "name": "Verification and quality"
+    },
+    {
+      "type": "feature",
+      "name": "Automated review loops",
+      "priority": "Medium",
+      "solutions": {
+        "agentsys": "",
+        "ai-dlc": "",
+        "augment-cosmos": "",
+        "barkain-workflow-orchestrator": "",
+        "bmad": "",
+        "cavekit-v31": "",
+        "cc10x": "",
+        "claude-harness": "",
+        "deepwork": "",
+        "devin": "\u2714",
+        "director": "",
+        "factory-ai": "\u2714",
+        "gsd": "\u2714",
+        "oh-my-pi": "",
+        "ruflo": "",
+        "silver-bullet": "\u2714",
+        "spec-kit": "",
+        "superclaude": "",
+        "superpowers": "\u2714",
+        "turboshovel": "",
+        "workflow-manager": "",
+        "zuvo": ""
+      }
+    },
+    {
+      "type": "feature",
+      "name": "CI integration",
+      "priority": "Medium",
+      "solutions": {
+        "agentsys": "",
+        "ai-dlc": "",
+        "augment-cosmos": "",
+        "barkain-workflow-orchestrator": "",
+        "bmad": "",
+        "cavekit-v31": "",
+        "cc10x": "",
+        "claude-harness": "",
+        "deepwork": "",
+        "devin": "",
+        "director": "",
+        "factory-ai": "",
+        "gsd": "",
+        "oh-my-pi": "",
+        "ruflo": "",
+        "silver-bullet": "",
+        "spec-kit": "",
+        "superclaude": "",
+        "superpowers": "",
+        "turboshovel": "",
+        "workflow-manager": "",
+        "zuvo": ""
+      }
+    },
+    {
+      "type": "feature",
+      "name": "Visual/E2E verification",
+      "priority": "Medium",
+      "solutions": {
+        "agentsys": "",
+        "ai-dlc": "",
+        "augment-cosmos": "",
+        "barkain-workflow-orchestrator": "",
+        "bmad": "",
+        "cavekit-v31": "",
+        "cc10x": "",
+        "claude-harness": "",
+        "deepwork": "",
+        "devin": "",
+        "director": "",
+        "factory-ai": "",
+        "gsd": "",
+        "oh-my-pi": "",
+        "ruflo": "",
+        "silver-bullet": "",
+        "spec-kit": "",
+        "superclaude": "",
+        "superpowers": "",
+        "turboshovel": "",
+        "workflow-manager": "",
+        "zuvo": ""
+      }
+    },
+    {
+      "type": "category",
+      "name": "Security and compliance"
+    },
+    {
+      "type": "feature",
+      "name": "SSO",
+      "priority": "Medium",
+      "solutions": {
+        "agentsys": "",
+        "ai-dlc": "",
+        "augment-cosmos": "",
+        "barkain-workflow-orchestrator": "",
+        "bmad": "",
+        "cavekit-v31": "",
+        "cc10x": "",
+        "claude-harness": "",
+        "deepwork": "",
+        "devin": "",
+        "director": "",
+        "factory-ai": "",
+        "gsd": "",
+        "oh-my-pi": "",
+        "ruflo": "",
+        "silver-bullet": "",
+        "spec-kit": "",
+        "superclaude": "",
+        "superpowers": "",
+        "turboshovel": "",
+        "workflow-manager": "",
+        "zuvo": ""
+      }
+    },
+    {
+      "type": "feature",
+      "name": "RBAC",
+      "priority": "Medium",
+      "solutions": {
+        "agentsys": "",
+        "ai-dlc": "",
+        "augment-cosmos": "",
+        "barkain-workflow-orchestrator": "",
+        "bmad": "",
+        "cavekit-v31": "",
+        "cc10x": "",
+        "claude-harness": "",
+        "deepwork": "",
+        "devin": "",
+        "director": "",
+        "factory-ai": "",
+        "gsd": "",
+        "oh-my-pi": "",
+        "ruflo": "",
+        "silver-bullet": "",
+        "spec-kit": "",
+        "superclaude": "",
+        "superpowers": "",
+        "turboshovel": "",
+        "workflow-manager": "",
+        "zuvo": ""
+      }
+    },
+    {
+      "type": "feature",
+      "name": "Audit log",
+      "priority": "Medium",
+      "solutions": {
+        "agentsys": "",
+        "ai-dlc": "",
+        "augment-cosmos": "",
+        "barkain-workflow-orchestrator": "",
+        "bmad": "",
+        "cavekit-v31": "",
+        "cc10x": "",
+        "claude-harness": "",
+        "deepwork": "",
+        "devin": "",
+        "director": "",
+        "factory-ai": "",
+        "gsd": "",
+        "oh-my-pi": "",
+        "ruflo": "",
+        "silver-bullet": "",
+        "spec-kit": "",
+        "superclaude": "",
+        "superpowers": "",
+        "turboshovel": "",
+        "workflow-manager": "",
+        "zuvo": ""
+      }
+    }
+  ],
+  "rankings": [
+    {
+      "solution": "silver-bullet",
+      "score": 38,
+      "rank": 1
+    },
+    {
+      "solution": "gsd",
+      "score": 34,
+      "rank": 2
+    },
+    {
+      "solution": "oh-my-pi",
+      "score": 34,
+      "rank": 3
+    },
+    {
+      "solution": "bmad",
+      "score": 32,
+      "rank": 4
+    },
+    {
+      "solution": "devin",
+      "score": 32,
+      "rank": 5
+    },
+    {
+      "solution": "cc10x",
+      "score": 27,
+      "rank": 6
+    },
+    {
+      "solution": "ruflo",
+      "score": 24,
+      "rank": 7
+    },
+    {
+      "solution": "superpowers",
+      "score": 24,
+      "rank": 8
+    },
+    {
+      "solution": "zuvo",
+      "score": 24,
+      "rank": 9
+    },
+    {
+      "solution": "factory-ai",
+      "score": 22,
+      "rank": 10
+    },
+    {
+      "solution": "spec-kit",
+      "score": 22,
+      "rank": 11
+    },
+    {
+      "solution": "superclaude",
+      "score": 22,
+      "rank": 12
+    },
+    {
+      "solution": "augment-cosmos",
+      "score": 20,
+      "rank": 13
+    },
+    {
+      "solution": "ai-dlc",
+      "score": 19,
+      "rank": 14
+    },
+    {
+      "solution": "claude-harness",
+      "score": 14,
+      "rank": 15
+    },
+    {
+      "solution": "cavekit-v31",
+      "score": 11,
+      "rank": 16
+    },
+    {
+      "solution": "director",
+      "score": 11,
+      "rank": 17
+    },
+    {
+      "solution": "agentsys",
+      "score": 10,
+      "rank": 18
+    },
+    {
+      "solution": "barkain-workflow-orchestrator",
+      "score": 8,
+      "rank": 19
+    },
+    {
+      "solution": "deepwork",
+      "score": 8,
+      "rank": 20
+    },
+    {
+      "solution": "turboshovel",
+      "score": 8,
+      "rank": 21
+    },
+    {
+      "solution": "workflow-manager",
+      "score": 8,
+      "rank": 22
+    }
+  ],
+  "winner": "silver-bullet",
+  "runner_up": "gsd",
+  "caveats": [
+    "Matrix ticks come from solution feature envelopes; null/empty means unverified or unsupported in this pass \u2014 not a claim of absence in the wild.",
+    "Zuvo identity verified via https://zuvo.dev/ \u2192 https://github.com/greglas75/zuvo (MIT); sdlc-plugins core, not APO. Ticks and rank 10 / score 24 may drive plugin-market chart membership.",
+    "Claude Harness must not be conflated with anthropics/claude-code host runtime.",
+    "Interactive SPA matrix panel in landscape-report.html is the preferred procurement view; this markdown is a regenerated ranking + criteria summary.",
+    "Thin-evidence APO commercials demoted on MQ; matrix ticks alone must not shortlist them.",
+    "Tembo identity risk (Postgres brand collision) \u2014 verify agentic product surface.",
+    "Augment plotted as Augment Code (Cosmos), not a separate Cosmos vendor.",
+    "No SSO/SCIM/residency/BYOK/pricing attestation in this matrix."
+  ],
+  "provenance": {
+    "cell_semantics": "\u2714 = feature envelope supported in this research pass; empty/null = unknown or unsupported in-envelope \u2014 not proof of absence in the wild.",
+    "scoring_formula": "Rankings derive from startup-weighted feature rows in this file; see landscape chart-data scoring_methodology for MQ/Wave. No security-procurement dimensions included.",
+    "unknowns_policy": "Prefer unknown over inferred capability when SCR evidence is thin.",
+    "last_address_all": "2026-07-22"
+  }
+}

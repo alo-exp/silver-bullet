@@ -1,0 +1,710 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://alo-exp.github.io/silver-bullet/apo-catalog.schema.json",
+  "title": "Silver Bullet APO Catalog",
+  "description": "Authoritative schema for Process > Workflow > Atomic Flow > Flow Step hierarchy. Workflow nesting is expressed only via workflow.composition_tree and reusable-as-component references — never as a standalone entity type.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "catalog_version",
+    "meta",
+    "processes",
+    "workflows",
+    "atomic_flows",
+    "flow_steps",
+    "artifacts",
+    "tool_policies",
+    "migration_map"
+  ],
+  "properties": {
+    "catalog_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(-[a-z0-9.-]+)?$"
+    },
+    "meta": { "$ref": "#/$defs/meta" },
+    "processes": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/process" }
+    },
+    "process_packs": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/process_pack" }
+    },
+    "workflows": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/workflow" }
+    },
+    "atomic_flows": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/atomic_flow" }
+    },
+    "flow_steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/flow_step" }
+    },
+    "artifacts": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/artifact" }
+    },
+    "v_loops": {
+      "type": "array",
+      "description": "Optional standalone V-loop registry; per-entity v_loop blocks are authoritative for enforcement.",
+      "items": { "$ref": "#/$defs/v_loop" }
+    },
+    "evidence_records": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/evidence_record" }
+    },
+    "intent_ledgers": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/intent_ledger" }
+    },
+    "v_loop_rollups": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/v_loop_rollup" }
+    },
+    "composition_logs": {
+      "type": "array",
+      "description": "Schema templates and example records for runtime composition audit trails.",
+      "items": { "$ref": "#/$defs/composition_log" }
+    },
+    "tool_policies": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/tool_policy" }
+    },
+    "dynamic_rules": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/dynamic_rule" }
+    },
+    "migration_map": { "$ref": "#/$defs/migration_map" }
+  },
+  "$defs": {
+    "id_slug": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9_-]*$"
+    },
+    "entity_id": {
+      "type": "string",
+      "minLength": 3
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_of_truth", "generated_views"],
+      "properties": {
+        "source_of_truth": {
+          "type": "string",
+          "const": "docs/apo-catalog.json"
+        },
+        "generated_views": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "description": { "type": "string" }
+      }
+    },
+    "v_loop": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "input_contract",
+        "work_product",
+        "verification",
+        "validation",
+        "repair",
+        "escalation",
+        "evidence_refs"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/entity_id" },
+        "rollup_target": {
+          "type": "string",
+          "enum": ["flow_step", "atomic_flow", "workflow", "process", "intent"]
+        },
+        "input_contract": { "type": "string" },
+        "work_product": { "type": "string" },
+        "verification": { "$ref": "#/$defs/verification_block" },
+        "validation": { "$ref": "#/$defs/validation_block" },
+        "repair": { "$ref": "#/$defs/repair_block" },
+        "escalation": { "$ref": "#/$defs/escalation_block" },
+        "evidence_refs": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "verification_block": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["methods"],
+      "properties": {
+        "methods": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "enum": [
+              "inspection",
+              "analysis",
+              "demonstration",
+              "testing",
+              "artifact_review",
+              "command_evidence",
+              "tool_evidence"
+            ]
+          }
+        },
+        "commands": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "artifact_refs": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "validation_block": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target", "methods"],
+      "properties": {
+        "target": { "type": "string" },
+        "methods": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "repair_block": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["behavior"],
+      "properties": {
+        "behavior": { "type": "string" },
+        "max_attempts": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "escalation_block": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["condition"],
+      "properties": {
+        "condition": { "type": "string" },
+        "blocker_artifact": { "type": "string" }
+      }
+    },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "dispatch_mode",
+        "worker_template",
+        "parallelizable",
+        "dependencies",
+        "mutation_scopes",
+        "join_condition",
+        "retry_policy"
+      ],
+      "properties": {
+        "dispatch_mode": {
+          "type": "string",
+          "enum": ["subagent"]
+        },
+        "worker_template": { "type": "string" },
+        "parallelizable": { "type": "boolean" },
+        "dependencies": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "mutation_scopes": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "join_condition": { "type": "string" },
+        "retry_policy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["max_attempts", "on_failure"],
+          "properties": {
+            "max_attempts": { "type": "integer", "minimum": 0 },
+            "on_failure": {
+              "type": "string",
+              "enum": ["repair_loop", "escalate", "degrade"]
+            }
+          }
+        },
+        "dispatch_record_shape": { "type": "string" },
+        "merge_behavior": { "type": "string" }
+      }
+    },
+    "composition_node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "ref"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["atomic_flow", "workflow", "conditional", "parallel", "sequence"]
+        },
+        "ref": { "type": "string" },
+        "optional": { "type": "boolean" },
+        "condition": { "type": "string" },
+        "label": { "type": "string" },
+        "children": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/composition_node" }
+        }
+      }
+    },
+    "process": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "domain", "default_workflows", "mandatory_gates"],
+      "properties": {
+        "id": { "$ref": "#/$defs/entity_id" },
+        "name": { "type": "string" },
+        "domain": {
+          "type": "string",
+          "enum": ["software_engineering", "devops", "mixed"]
+        },
+        "default_workflows": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" }
+        },
+        "team_override_policy": { "type": "string" },
+        "mandatory_gates": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "process_pack": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "process_ref",
+        "workflow_refs",
+        "override_rules",
+        "conflict_resolution",
+        "versioning"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/entity_id" },
+        "name": { "type": "string" },
+        "process_ref": { "type": "string" },
+        "workflow_refs": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "override_rules": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "conflict_resolution": { "type": "string" },
+        "versioning": { "type": "string" }
+      }
+    },
+    "workflow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "slug",
+        "type",
+        "triggers",
+        "composition_tree",
+        "reusable_as_component",
+        "final_intent_gate"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/entity_id" },
+        "slug": { "type": "string" },
+        "type": {
+          "type": "string",
+          "enum": ["precomposed", "reusable_component", "dynamic_route", "specialized"]
+        },
+        "triggers": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "composition_tree": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/composition_node" }
+        },
+        "reusable_as_component": { "type": "boolean" },
+        "allowed_dynamic_operations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["prune", "insert", "substitute", "parallelize", "loop"]
+          }
+        },
+        "final_intent_gate": { "type": "string" },
+        "enforcement_queue": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "owning_skill": { "type": "string" }
+      }
+    },
+    "atomic_flow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "slug",
+        "capability_class",
+        "legacy_flow_id",
+        "trigger",
+        "prerequisites",
+        "inputs",
+        "work_product",
+        "artifacts",
+        "v_loop",
+        "tools",
+        "owning_skills",
+        "flow_steps",
+        "exit_condition",
+        "execution"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/entity_id" },
+        "slug": { "$ref": "#/$defs/id_slug" },
+        "capability_class": { "type": "string" },
+        "legacy_flow_id": { "type": "string" },
+        "trigger": { "type": "string" },
+        "prerequisites": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "inputs": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "work_product": { "type": "string" },
+        "artifacts": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "v_loop": { "$ref": "#/$defs/v_loop" },
+        "tools": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "owning_skills": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" }
+        },
+        "flow_steps": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "exit_condition": { "type": "string" },
+        "execution": { "$ref": "#/$defs/execution" },
+        "dedup_gate_status": {
+          "type": "string",
+          "enum": ["pending", "passed", "merged", "rejected"]
+        },
+        "dedup_gate": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "equivalence_review",
+            "granularity_review",
+            "usage_review",
+            "v_loop_review",
+            "step_review"
+          ],
+          "properties": {
+            "equivalence_review": { "type": "string" },
+            "granularity_review": { "type": "string" },
+            "usage_review": { "type": "string" },
+            "v_loop_review": { "type": "string" },
+            "step_review": { "type": "string" }
+          }
+        }
+      }
+    },
+    "flow_step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "skill",
+        "purpose",
+        "hierarchy_level",
+        "inputs",
+        "outputs",
+        "v_loop",
+        "reusable_by_flows"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/entity_id" },
+        "skill": { "type": "string" },
+        "purpose": { "type": "string" },
+        "hierarchy_level": {
+          "type": "string",
+          "const": "flow_step"
+        },
+        "classification": {
+          "type": "string",
+          "enum": [
+            "flow-step-skill",
+            "atomic-flow-implementation",
+            "precomposed-workflow",
+            "process-router",
+            "reviewer-pack",
+            "quality-dimension-step",
+            "deprecated",
+            "distribution-only"
+          ]
+        },
+        "inputs": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "outputs": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "v_loop": { "$ref": "#/$defs/v_loop" },
+        "reusable_by_flows": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "canonical_catalog_entity": { "type": "string" }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "path_pattern", "producer", "verifier"],
+      "properties": {
+        "id": { "$ref": "#/$defs/entity_id" },
+        "path_pattern": { "type": "string" },
+        "schema_or_sections": { "type": "string" },
+        "producer": { "type": "string" },
+        "verifier": { "type": "string" },
+        "stale_conditions": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "evidence_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "producer",
+        "artifact_or_tool_ref",
+        "sufficiency_class",
+        "satisfies_v_loop_ref"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/entity_id" },
+        "producer": { "type": "string" },
+        "artifact_or_tool_ref": { "type": "string" },
+        "sufficiency_class": {
+          "type": "string",
+          "enum": [
+            "inspection",
+            "analysis",
+            "demonstration",
+            "testing",
+            "artifact_review",
+            "command_evidence",
+            "tool_evidence"
+          ]
+        },
+        "staleness_key": { "type": "string" },
+        "satisfies_v_loop_ref": { "type": "string" }
+      }
+    },
+    "intent_ledger": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "material_claims",
+        "mapped_entities",
+        "validation_status",
+        "final_gate_result"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/entity_id" },
+        "material_claims": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "mapped_entities": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "validation_status": {
+          "type": "string",
+          "enum": ["pending", "partial", "satisfied", "failed"]
+        },
+        "final_gate_result": {
+          "type": "string",
+          "enum": ["pending", "pass", "fail", "blocked"]
+        },
+        "producers": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "consumers": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "v_loop_rollup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "parent_ref",
+        "child_v_loop_refs",
+        "rollup_semantics",
+        "intent_ledger_ref"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/entity_id" },
+        "parent_ref": { "type": "string" },
+        "child_v_loop_refs": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "rollup_semantics": { "type": "string" },
+        "intent_ledger_ref": { "type": "string" },
+        "producers": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "consumers": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "composition_log": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "selected_workflow",
+        "operations",
+        "scheduler_decisions"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/entity_id" },
+        "selected_workflow": { "type": "string" },
+        "operations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["op", "target_ref", "catalog_rule_ref", "rationale"],
+            "properties": {
+              "op": {
+                "type": "string",
+                "enum": ["prune", "insert", "substitute", "dispatch", "join"]
+              },
+              "target_ref": { "type": "string" },
+              "catalog_rule_ref": { "type": "string" },
+              "rationale": { "type": "string" }
+            }
+          }
+        },
+        "scheduler_decisions": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "subagent_dispatch_records": {
+          "type": "array",
+          "items": { "type": "object" }
+        }
+      }
+    },
+    "tool_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "tool_id",
+        "policy_name",
+        "opt_in_state_source",
+        "relevance_rules",
+        "required_evidence",
+        "failure_policy"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/entity_id" },
+        "tool_id": { "type": "string" },
+        "policy_name": {
+          "type": "string",
+          "const": "once-opted-in-then-mandatory-when-relevant"
+        },
+        "opt_in_state_source": { "type": "string" },
+        "relevance_rules": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "required_evidence": { "type": "string" },
+        "failure_policy": {
+          "type": "string",
+          "enum": ["warn", "repair", "block", "degrade"]
+        }
+      }
+    },
+    "dynamic_rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "workflow_ref", "operation", "condition", "rationale_required"],
+      "properties": {
+        "id": { "$ref": "#/$defs/entity_id" },
+        "workflow_ref": { "type": "string" },
+        "operation": {
+          "type": "string",
+          "enum": ["prune", "insert", "substitute", "parallelize", "loop"]
+        },
+        "condition": { "type": "string" },
+        "rationale_required": { "type": "boolean" }
+      }
+    },
+    "migration_map": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["legacy_flows", "skill_to_entity", "gsd_alias_to_entity"],
+      "properties": {
+        "legacy_flows": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
+        "skill_to_entity": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
+        "gsd_alias_to_entity": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
+        "runtime_queue_tokens": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        }
+      }
+    }
+  }
+}

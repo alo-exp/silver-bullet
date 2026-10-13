@@ -1,0 +1,54 @@
+[0m
+> build · kimi-k2.6
+[0m
+[0m→ [0mSkill "deep-research"
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_search Search Indexed Content
+[0m% [0mWebFetch https://www.google.com/search?q=BMAD+method+agent+workflow
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_search Search Indexed Content
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_search Search Indexed Content
+[0m% [0mWebFetch https://duckduckgo.com/html/?q=BMAD+method+agent+workflow+software+engineering
+[0m% [0mWebFetch https://duckduckgo.com/html/?q=%22GSD%22+%22get+shit+done%22+agent+methodology+software+engineering
+[0m% [0mWebFetch https://duckduckgo.com/html/?q=%22github+spec+kit%22+agent+workflow+software+engineering
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_search Search Indexed Content
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m
+[0m← [0mWrite prior-art-landscape-report.md
+Wrote file successfully.
+[0m
+[0m→ [0mRead prior-art-landscape-report.md[90m [limit=50, additionalContext=<context_guidance>
+  <tip>
+    Reading to Edit the file? Read is correct — Edit needs the exact bytes in your conversation to match against.
+    Reading to analyze, summarize, or extract from the file? Use context-mode_ctx_execute_file(path, language, code) — the bytes stay in the sandbox and only what your code prints enters your conversation.
+  </tip>
+</context_guidance>][0m
+[0m→ [0mRead prior-art-landscape-report.md[90m [offset=51, limit=200][0m
+[0m→ [0mRead prior-art-landscape-report.md[90m [offset=251, limit=200][0m
+[0m
+[0m← [0mEdit prior-art-landscape-report.md
+Index: /Users/shafqat/projects/silver-bullet/repo/docs/research-260624/prior-art-landscape-report.md
+===================================================================
+--- /Users/shafqat/projects/silver-bullet/repo/docs/research-260624/prior-art-landscape-report.md
++++ /Users/shafqat/projects/silver-bullet/repo/docs/research-260624/prior-art-landscape-report.md
+@@ -32,9 +32,9 @@
+ | **Camunda** | https://docs.camunda.io/ | adjacent | BPMN 2.0 XML processes; reusable subprocesses and call activities. Visual modeler. Not LLM-native. | none | ci-gate / policy-engine | partial | partial | no | informal | no | production (v8.9) | • No LLM-native agent orchestration • No V-loop per task • No parent/worker split for agents • No evidence tier model • BPMN is heavy for code-level workflows | • Mature BPMN standard • Strong enterprise adoption • Human task management built-in • Process analytics | high | 2026-06-27 |
+ | **Conductor** | https://docs.conductor-oss.org/ | adjacent | JSON-defined tasks + workflows; dynamic workflow generation; parent/child workflow split; human-in-the-loop approval; durable execution. | end-only (human approval at task level) | ci-gate / policy-engine | partial | partial | yes | informal | replanner-only | production (Netflix origin) | • No per-step V-loop rollup • No SDLC-specific catalog (general-purpose) • No intent-validation gate • No evidence sufficiency tiers • No hook enforcement on commits/deploys | • Durable execution with crash recovery • Proven at Netflix scale • Built-in human-in-the-loop • 14+ LLM providers • MCP integration | high | 2026-06-27 |
+ | **OpenHands** | https://github.com/All-Hands-AI/OpenHands | adjacent | Agent Canvas: automations/workflows with Slack/GitHub/Linear integration. ACP protocol for multi-agent backends. Prebuilt automations. | none | honor-system | partial | none | partial | informal | no | beta (transitioning to Agent Canvas) | • No machine-readable catalog of atomic flows • No V-loop or verification gates • No hook enforcement • No evidence registry • No parent/worker orchestration split | • Open-source • Multi-backend (Claude Code, Codex, Gemini) • Webhook-driven automations | high | 2026-06-27 |
+ | **SWE-agent** | https://github.com/princeton-nlp/SWE-agent | tangential | Issue → agent-environment loop → patch. No workflow catalog; single-agent with tool use. Academic benchmark focus (SWE-bench). | end-only (SWE-bench test verification) | honor-system | partial | none | no | informal | no | production (NeurIPS 2024) | • No multi-agent orchestration • No workflow catalog • No V-loop per step • No enforcement hooks • No evidence model beyond test pass/fail | • Strong academic backing • Proven benchmark results • Reproducible research environment | high | 2026-06-27 |
+-| **Aider** | tangential | https://aider.chat/ | tangential | Pair-programming session; no workflow composition. Architect + editor modes. No catalog. | none | honor-system | partial | none | no | informal | no | production (v0.x, 44K stars) | • No orchestration or workflow catalog • No V-loop • No enforcement • No parent/worker • Single-session pair programming | • Excellent git integration • Multi-model support • Strong developer UX • Widely adopted | high | 2026-06-27 |
++| **Aider** | https://aider.chat/ | tangential | Pair-programming session; no workflow composition. Architect + editor modes. No catalog. | none | honor-system | partial | none | no | informal | no | production (v0.x, 44K stars) | • No orchestration or workflow catalog • No V-loop • No enforcement • No parent/worker • Single-session pair programming | • Excellent git integration • Multi-model support • Strong developer UX • Widely adopted | high | 2026-06-27 |
+ | **Dagger** | https://docs.dagger.io/ | adjacent | Modular containerized functions composed into DAGs. General-purpose (CI, data, AI agent workflows). Programmable in Go/Python/TypeScript. | none | ci-gate | partial | partial | no | informal | no | production (v0.21.x) | • No machine-readable catalog of reusable agent workflows • No V-loop • No hook enforcement on delivery • No evidence registry • General-purpose, not SDLC-specific | • Universal composition engine • Container-native • Cross-language SDKs • Cache and parallel optimization | high | 2026-06-27 |
+ | **OPA** | https://www.openpolicyagent.org/ | adjacent | Policy-as-code engine (Rego). Enforces rules at API, CI, deploy gates. No workflow composition. | none | policy-engine | none | partial | no | informal | no | production (v1.x) | • No workflow catalog or composition • No V-loop • No parent/worker • No SE lifecycle coverage • Policy only, not orchestration | • CNCF graduated • Universal policy language • Integrates with many tools • Strong community | high | 2026-06-27 |
+ | **Backstage** | https://backstage.io/ | adjacent | Software Templates (scaffolder) for project creation. Catalog of components, not workflows. Golden paths via templates. | none | honor-system | partial | none | no | informal | no | production (v1.x) | • No agent workflow orchestration • No V-loop • No enforcement on delivery actions • No parent/worker • No dynamic composition at runtime | • Strong software catalog • Extensible plugin ecosystem • Spotify origin • Widely adopted for IDPs | high | 2026-06-27 |
+ | **Earthly Lunar** | https://www.earthly.dev/ | adjacent | Central policy config → agent hooks (file-edit time) + PR checks + deploy gates. Same evaluation engine across lifecycle. Evidence as byproduct. | none | ide-hook + ci-gate + policy-engine | partial | partial | no | tiered-sufficiency (audit trail) | no | beta (2025) | • No machine-readable workflow catalog • No parent/worker orchestration • No V-loop per work unit • No dynamic composition of workflows • No intent-validation gate | • Real-time agent hooks • Unified policy engine across authoring/PR/deploy • Evidence dashboards • SOC2/compliance oriented | medium | 2026-06-27 |
+
+[0m
+[0m→ [0mRead prior-art-landscape-report.md[90m [offset=36, limit=5][0m

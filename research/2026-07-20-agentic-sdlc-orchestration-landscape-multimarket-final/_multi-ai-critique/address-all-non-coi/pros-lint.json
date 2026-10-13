@@ -1,0 +1,29 @@
+{
+  "files_changed": [
+    "solutions/agenthub/scr.md",
+    "solutions/agentsys/scr.md",
+    "solutions/ai-dlc/scr.md",
+    "solutions/ateam/scr.md",
+    "solutions/augment-cosmos/scr.md",
+    "solutions/bmad/scr.md",
+    "solutions/claude-code/scr.md",
+    "solutions/codex/scr.md",
+    "solutions/cognition-scout/scr.md",
+    "solutions/conductor/scr.md",
+    "solutions/cursor/scr.md",
+    "solutions/devin/scr.md",
+    "solutions/factory-ai/scr.md",
+    "solutions/github-copilot/scr.md",
+    "solutions/gsd/scr.md",
+    "solutions/oh-my-pi/scr.md",
+    "solutions/ruflo/scr.md",
+    "solutions/sdlc-plugin/scr.md",
+    "solutions/silver-bullet/scr.md",
+    "solutions/spec-kit/scr.md",
+    "solutions/superclaude/scr.md",
+    "solutions/superpowers/scr.md",
+    "solutions/zuvo/scr.md",
+    "landscape/landscape-report.md"
+  ],
+  "count": 24
+}

@@ -1,0 +1,4 @@
+429: {"message":"[opencode-go/qwen3.8-max] [429]: Weekly usage limit reached. Resets in 3 days. To continue using this model now, enable usage from your available balance: https://opencode.ai/workspace/wrk_01KRB24TFK3R258WVSRVFC49XX/go (reset after 24h)"}
+[agent-pi] fail-fast: skipping --continue after first-run EXIT 1
+[agent-pi] quota-window: 429: {"message":"[opencode-go/qwen3.8-max] [429]: Weekly usage limit reached. Resets in 3 days. To continue using this model now, enable usage from your available balance: https://opencode.ai/workspace/wrk_01KRB24TFK3R258WVSRVFC49XX/go (reset after 24h)"}
+EXIT=1 finished at 2026-08-27T14:40:50Z

@@ -1,0 +1,27 @@
+Done.
+
+## Rung 07 — Claude Opus 5 High — review pass 5: **NOT CLEAN**
+
+**Output:** `.planning/rfl-spec-template-world-class/rung-07-pi-claude-opus-5-high/review-rerun-5.md`
+
+**Freeze integrity:** both twins hashed at start and end → `74b9acf23da1817834f35047c72bc1129fef4b2511ceac6c974fa5a8752fec33` ✓ unmutated. `review.md` / `-rerun-2` / `-3` / `-4` untouched.
+
+**10 residuals filed — `R7e-F01`…`R7e-F10` (1 HIGH, 2 MED, 4 LOW, 3 nit):**
+
+| ID | Sev | Summary |
+|----|-----|---------|
+| R7e-F01 | HIGH | `R7d-F05` SCAN eligible-ID join landed only at L262/L293; `review-requirements` (L427), `review-cross-artifact` (L428) and Step 8 (L458) reverse-coverage clauses are unbound → the freeze's own pinned `SCAN:quality-attributes#QA-01` sole-Source **PASS** fixture neither-branch **FAILs**. Same missing-binding class as R6j-F02. |
+| R7e-F02 | MED | `R7c-F09`'s live-ID rule makes `SCAN:` unusable for its stated "no structured pack ID" purpose — ID-less sections (`### Invariants` deliberately has no `INV-nn` per R7c-F03, Overview, optional-`ASM-nn` Assumptions) have no resolvable Source. |
+| R7e-F03 | MED | QC-10's non-placeholder Change History summary is fail-closed (`SPEC-F72`) with no brief field, no precedence chain, no ASK/fail terminal on brief-less augment 2/3/4b — the R7-F01 defect shape one heading over. |
+| R7e-F04 | LOW | "`-00` is allocatable" survives in 5 places, contradicting `R7d-F09`'s "never minted"; R6f exhaustion trigger ambiguous when `EX-00` is absent. |
+| R7e-F05 | LOW | `R7d-F01` union emission + `R7c-F02` count-equality have zero test-surface binding (L437 / L474 / L599 carry only the degenerate R7b-F06 case). |
+| R7e-F06 | LOW | `R7d-F04` branch-(1) supersede + migrate-or-ASK has a Wave 3 string assert but no Wave 6 behavioral fixture. |
+| R7e-F07 | LOW | Wave 1 SPEC core-template asserts omit `spec-version` while the REQUIREMENTS list requires it (R7-F10 / R7b-F13 class). |
+| R7e-F08 | nit | Union-emission "matching decision text" identity has no normalization rule → invisible duplicate `DEC-nn`. |
+| R7e-F09 | nit | Non-normative catalog tag applied to `nfr` Notes only; 10 sibling rows untagged. |
+| R7e-F10 | nit | Core template `invariant-count` example not pinned to its example bullet count (`SPEC-F73` on copy). |
+
+R7d APPLY confirmed landed for F01–F04, F06–F08, F10–F12; **F05 contract-only** (→ R7e-F01) and **F09 partial** (→ R7e-F04). No ledger row re-reported; `R7b-F17` REJECT and KEEP-REJECT untouched.
+
+Memory saved (`.agentmemory/memory/2026-08-31-rfl-rung07-claude-high-review-pass5.md`); `graphify update .` completed (43760 nodes / 59445 edges).
+PI_EXIT=0

@@ -1,0 +1,22 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "gemini",
+    "effort": "high",
+    "display": "Cursor Gemini 3.7 Flash High"
+  },
+  "verdict": "CLEAN",
+  "issues": {
+    "HIGH": "none",
+    "MED": "none",
+    "LOW": "none",
+    "NIT": "none"
+  },
+  "triage": "none",
+  "blockers": "none",
+  "highs": "none",
+  "mediums": "none",
+  "disposition": "ACCEPT-apply",
+  "resolved": "none",
+  "apply_sha": "2b2f7d7672534c8895ac821fe49d34b634833cc1eb16770d6f2f5d9d3f2d1ffe"
+}

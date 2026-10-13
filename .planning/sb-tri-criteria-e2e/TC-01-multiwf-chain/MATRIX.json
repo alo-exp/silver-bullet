@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "track": "TC-01-multiwf-chain",
+  "criterion": "autonomous-multi-workflow-chaining",
+  "host": "cursor",
+  "orchestrator_mode": "parent",
+  "harness": "scripts/sb-tri-criteria-e2e.sh",
+  "fixture": {
+    "work_dir_default": "/Users/shafqat/projects/enterprise-grade-test-app",
+    "vision_template": "fixtures/TC-01-vision.md",
+    "prefs_template": "fixtures/TC-01-prefs.json"
+  },
+  "rows": [
+    {
+      "id": "TC-01",
+      "title": "Greenfield micro-SaaS waitlist slice",
+      "intent_class": "multi-workflow-chain",
+      "route_hint": "/silver or /silver:feature — parent chains feature + devops + release",
+      "min_workflow_ids": 3,
+      "blocking_outcomes": [
+        "OUT-MULTIWF-01",
+        "OUT-ORCH-01",
+        "OUT-AUTO-01",
+        "OUT-NOOP-01",
+        "OUT-WORLD-01"
+      ],
+      "advisory_outcomes": ["OUT-KM-01", "OUT-VLOOP-01", "OUT-TRACE-01", "OUT-FLOW-01"],
+      "acceptance": [
+        "Waitlist API with SQLite + landing page + Docker Compose",
+        "≥3 distinct workflow_id in composition log",
+        "Orchestrator queue drained or prefs subset complete",
+        "Committed on feature/tc01-waitlist-saas"
+      ],
+      "vision_template": "fixtures/TC-01-vision.md",
+      "prefs_template": "fixtures/TC-01-prefs.json"
+    }
+  ]
+}

@@ -1,0 +1,258 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "claude",
+    "effort": "xhigh",
+    "display": "Pi Claude Opus 5 Extra High"
+  },
+  "verdict": "NOT CLEAN",
+  "issues": {
+    "HIGH": [
+      {
+        "id": "F-8-1",
+        "title": "No severity\u2192exit-code contract; only three special cases specify nonzero, and the one WARN that does contradicts the implied default"
+      }
+    ],
+    "MED": [
+      {
+        "id": "F-8-2",
+        "title": "Graphify skew WARN is permanently true, has no --fix action, and no stated interaction with default tree is green"
+      },
+      {
+        "id": "F-8-3",
+        "title": "required_when_enabled: false vs a hard D10 FAIL: doctor is stricter than the enforcement layer"
+      },
+      {
+        "id": "F-8-4",
+        "title": "version_drift WARN vs --fix=packages pinned install: downgrade and post-apply idempotency contradict"
+      },
+      {
+        "id": "F-8-5",
+        "title": "Two canonical evidence ids have no test-plan row, including the implementer-trap id"
+      },
+      {
+        "id": "F-8-6",
+        "title": "Confirmation gate trigger is undefined: scope requested vs package mutation actually planned"
+      }
+    ],
+    "LOW": [
+      {
+        "id": "F-8-7",
+        "title": "D13\u2013D19 range includes a print-only check and a check that does not exist"
+      },
+      {
+        "id": "F-8-8",
+        "title": "Stale five host CLIs residue contradicts current-host-only"
+      },
+      {
+        "id": "F-8-9",
+        "title": "unsupported_package_manager skip has no defined DOCTOR_FIX_APPLIED / exit outcome"
+      },
+      {
+        "id": "F-8-10",
+        "title": "Users table promises an Omni PASS N/A row that cannot exist when Phase 3 is deferred"
+      }
+    ],
+    "NIT": [
+      {
+        "id": "F-8-11",
+        "title": "Dead bare-UUID links to the origin review (three occurrences)"
+      },
+      {
+        "id": "F-8-12",
+        "title": "Status: draft after eight review rungs and a locked SHA"
+      }
+    ]
+  },
+  "triage": [
+    {
+      "id": "F-8-1",
+      "severity": "HIGH",
+      "decision": "ACCEPT",
+      "reason": "FAIL \u2192 nonzero; WARN \u2192 zero except unknown_key; PASS/PASS N/A \u2192 zero; global test rows for WARN-only vs FAIL trees"
+    },
+    {
+      "id": "F-8-2",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "Graphify skew WARN is expected non-blocking advisory; --fix none (operator graphify install); green means no FAIL"
+    },
+    {
+      "id": "F-8-3",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "required_when_enabled gates hook enforcement not audit honesty; D10 still FAILs opted-in missing CLI; deliberate divergence"
+    },
+    {
+      "id": "F-8-4",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "Older than pin \u2192 repair via pinned install; newer than pin \u2192 WARN only, no downgrade, WARN persists after apply"
+    },
+    {
+      "id": "F-8-5",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "Global test rows for duplicate_key FAIL and cross_tool no_five_tool_consent PASS"
+    },
+    {
+      "id": "F-8-6",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "Confirmation gate is plan-triggered: fires when the ordered pass would execute a confirm-class mutation"
+    },
+    {
+      "id": "F-8-7",
+      "severity": "LOW",
+      "decision": "ACCEPT",
+      "reason": "Use D13/D14/D16/D18/D19 enumeration; D15 print-only; no D17"
+    },
+    {
+      "id": "F-8-8",
+      "severity": "LOW",
+      "decision": "ACCEPT",
+      "reason": "Session A Omni D10 is current doctor host CLI only; freeze five-CLI catalog is not a D10 requirement"
+    },
+    {
+      "id": "F-8-9",
+      "severity": "LOW",
+      "decision": "ACCEPT",
+      "reason": "Skip is WARN-class: DOCTOR_FIX_APPLIED=0, receipt not-applied, exit zero unless FAIL also exists"
+    },
+    {
+      "id": "F-8-10",
+      "severity": "LOW",
+      "decision": "ACCEPT",
+      "reason": "Omni PASS N/A only once Phase 3 lands; deferred Phase 3 has no Omni D10 row"
+    },
+    {
+      "id": "F-8-11",
+      "severity": "NIT",
+      "decision": "ACCEPT",
+      "reason": "Origin review 759a2827 as inline code, not a dead relative UUID link"
+    },
+    {
+      "id": "F-8-12",
+      "severity": "NIT",
+      "decision": "ACCEPT",
+      "reason": "Status promoted to ready for Session A implementation"
+    }
+  ],
+  "blockers": "none",
+  "highs": [
+    {
+      "id": "F-8-1",
+      "title": "severity\u2192exit contract"
+    }
+  ],
+  "mediums": [
+    {
+      "id": "F-8-2",
+      "title": "Graphify skew advisory"
+    },
+    {
+      "id": "F-8-3",
+      "title": "required_when_enabled vs D10 FAIL"
+    },
+    {
+      "id": "F-8-4",
+      "title": "no-downgrade version_drift"
+    },
+    {
+      "id": "F-8-5",
+      "title": "duplicate_key and no_five_tool_consent tests"
+    },
+    {
+      "id": "F-8-6",
+      "title": "plan-triggered confirmation"
+    }
+  ],
+  "disposition": "ACCEPT-apply",
+  "resolved": [
+    {
+      "id": "F-8-1",
+      "severity": "HIGH",
+      "title": "severity\u2192exit",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F-8-2",
+      "severity": "MED",
+      "title": "Graphify skew advisory",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F-8-3",
+      "severity": "MED",
+      "title": "hook vs audit flag",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F-8-4",
+      "severity": "MED",
+      "title": "no downgrade",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F-8-5",
+      "severity": "MED",
+      "title": "evidence test rows",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F-8-6",
+      "severity": "MED",
+      "title": "plan-triggered confirm",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F-8-7",
+      "severity": "LOW",
+      "title": "D13 enumeration",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F-8-8",
+      "severity": "LOW",
+      "title": "current-host CLI",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F-8-9",
+      "severity": "LOW",
+      "title": "skip DOCTOR_FIX_APPLIED",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F-8-10",
+      "severity": "LOW",
+      "title": "Omni N/A after Phase 3",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F-8-11",
+      "severity": "NIT",
+      "title": "inline-code origin review",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F-8-12",
+      "severity": "NIT",
+      "title": "status ready",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    }
+  ],
+  "apply_sha": "9391e9dc3120685335743782a0d8b67119af226126936a76faaa46d87e4d0728"
+}

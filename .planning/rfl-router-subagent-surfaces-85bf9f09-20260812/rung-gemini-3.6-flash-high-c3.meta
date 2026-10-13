@@ -1,0 +1,11 @@
+{
+  "rung": 1,
+  "model": "gemini-3.6-flash",
+  "effort": "high",
+  "slug": "gemini-3.6-flash-high",
+  "cycle": 3,
+  "sb_overview": true,
+  "started_at": "2026-08-11T17:30:06Z",
+  "command": "agent --print --mode ask --model gemini-3.6-flash-high",
+  "prompt_files": ["REVIEW-PROMPT-PREAMBLE.md", "REVIEW-PROMPT.txt"]
+}

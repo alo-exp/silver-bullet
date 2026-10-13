@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" data-neutral-variant="s3">
+<head>
+<script>(function(){try{var t=localStorage.getItem('silver-bullet-theme')||localStorage.getItem('sb-theme');document.documentElement.setAttribute('data-theme',t==='dark'?'dark':'light');}catch(e){}})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="../../favicon.png">
+<link rel="shortcut icon" href="../../favicon.ico">
+<title>Autonomous Enterprise Status — Silver Bullet Help</title>
+<meta name="description" content="Customer-facing certification and proof levels for Silver Bullet autonomous enterprise delivery: what is proven, in progress, and planned.">
+<meta property="og:title" content="Autonomous Enterprise Status — Silver Bullet Help">
+<meta property="og:description" content="Proof levels for APO orchestration, tri-host E2E, policy profiles, and durable execution — without overclaiming.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://sb.alolabs.dev/help/concepts/autonomous-enterprise-status.html">
+<meta property="og:image" content="https://sb.alolabs.dev/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://sb.alolabs.dev/og-image.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../tokens.css?v=s3-site-icon-glyph-align5">
+<link rel="stylesheet" href="../../neutral-variants.css?v=s3-home-icons">
+<link rel="stylesheet" href="../../chrome.css?v=site-chrome-11">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+body{font-family:var(--font-sans);background:var(--bg-page);color:var(--text-primary);line-height:1.7;overflow-x:hidden}
+h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-cta,.hero-tagline-caps,.version-badge,.step-card-title,.phase-header,.plugin-name,.plugin-role,.install-label{font-family:var(--font-heading)}
+.container{max-width:860px;margin:0 auto;padding:0 24px}
+.container-wide{max-width:1100px;margin:0 auto;padding:0 24px}
+.page-hero{background:var(--bg-hero);padding-bottom:64px;padding-left:24px;padding-right:24px;position:relative;overflow:hidden}
+.page-hero::before{content:'';position:absolute;top:-200px;right:-200px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,var(--slate-a08) 0%,transparent 70%)}
+.page-hero .container{position:relative;z-index:1}
+.page-hero h1{font-size:clamp(1.8rem,3.5vw,2.8rem);letter-spacing:-.04em;margin-bottom:16px;line-height:1.1}
+.page-hero p{font-size:1rem;color:var(--text-secondary);max-width:640px;line-height:1.7}
+.doc-layout{display:grid;grid-template-columns:220px 1fr;gap:48px;padding:64px 0}
+@media(max-width:768px){.doc-layout{grid-template-columns:1fr}}
+.doc-content h2{font-size:1.5rem;letter-spacing:-.03em;margin-bottom:16px;margin-top:48px;padding-top:16px}
+.doc-content h2:first-child{margin-top:0}
+.doc-content h3{font-size:1.05rem;margin-bottom:10px;margin-top:28px;color:var(--text-primary)}
+.doc-content p{margin-bottom:16px;color:var(--text-secondary);line-height:1.8}
+.doc-content ul,.doc-content ol{margin-bottom:16px;padding-left:20px;color:var(--text-secondary)}
+.doc-content li{margin-bottom:6px;line-height:1.7}
+.doc-content strong{color:var(--text-primary)}
+.doc-content code{font-family:var(--font-mono);font-size:1em;background:var(--bg-code);padding:2px 6px;border-radius:4px;color:var(--accent-light)}
+.callout{border-radius:var(--radius);padding:20px 24px;margin-bottom:24px;display:flex;gap:14px;align-items:flex-start}
+.callout-info{background:var(--slate-a08);border:1px solid var(--slate-a20)}
+.callout-tip{background:var(--green-warn-a06);border:1px solid var(--green-warn-a20)}
+.callout-warn{background:var(--amber-warn-a06);border:1px solid var(--amber-warn-a20)}
+.callout-icon{font-size:1.1rem;flex-shrink:0;margin-top:1px}
+.callout-body{font-size:.875rem;color:var(--text-secondary);line-height:1.7}
+.callout-body strong{color:var(--text-primary)}
+.ref-table{width:100%;border-collapse:collapse;margin-bottom:24px;font-size:.875rem}
+.ref-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:24px;max-width:100%}
+.ref-table-wrap .ref-table{margin-bottom:0}
+.ref-table th{text-align:left;padding:10px 14px;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);border-bottom:2px solid var(--border)}
+.ref-table td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text-secondary);line-height:1.5;vertical-align:top}
+.ref-table tr:last-child td{border-bottom:none}
+.ref-table tr:hover td{background:var(--slate-a02)}
+.proof-shipped{color:var(--green);font-weight:700;font-size:.8rem;text-transform:uppercase;letter-spacing:.06em}
+.proof-proven{color:var(--green);font-weight:700;font-size:.8rem;text-transform:uppercase;letter-spacing:.06em}
+.proof-partial{color:var(--amber-warn);font-weight:700;font-size:.8rem;text-transform:uppercase;letter-spacing:.06em}
+.proof-progress{color:var(--accent-light);font-weight:700;font-size:.8rem;text-transform:uppercase;letter-spacing:.06em}
+.proof-planned{color:var(--text-dim);font-weight:700;font-size:.8rem;text-transform:uppercase;letter-spacing:.06em}
+.divider{height:1px;background:var(--border);margin:40px 0}
+.page-nav-bottom{display:flex;justify-content:space-between;margin-top:56px;padding-top:32px;border-top:1px solid var(--border)}
+.page-nav-bottom a{display:flex;flex-direction:column;gap:4px;text-decoration:none;max-width:220px}
+.pnb-label{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;font-weight:600;color:var(--text-dim)}
+.pnb-title{font-size:.95rem;font-weight:700;color:var(--accent-light)}
+svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;stroke-width:1.5;stroke:currentColor;fill:none;stroke-linecap:round;stroke-linejoin:round}
+</style>
+</head>
+<body class="has-help-subnav">
+
+<nav>
+  <div class="nav-inner">
+    <a href="../../" class="nav-brand" aria-label="Silver Bullet home">
+      <img src="../../silver-bullet.png" alt="" class="nav-bullet" aria-hidden="true">
+      <span class="nav-wordmark">
+        <span class="logo gradient">Silver Bullet</span>
+        <span class="nav-alpha" title="Pre-release software &mdash; APIs may change">ALPHA</span>
+      </span>
+    </a>
+    <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('active')" aria-label="Toggle menu"><i data-lucide="menu"></i></button>
+    <ul class="nav-links">
+      <li><a href="../../#problem">Problem</a></li>
+      <li><a href="../../#future">What If</a></li>
+      <li><a href="../../#mechanism">How It Works</a></li>
+      <li><a href="../../#workflow">Workflows</a></li>
+      <li><a href="../../#install">Install</a></li>
+      <li class="mobile-only"><a href="https://github.com/alo-exp/silver-bullet" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="../../help/" class="nav-help">Help Center</a>
+      <button id="theme-toggle" type="button" aria-label="Toggle light/dark mode">
+        <span id="icon-sun"><i data-lucide="sun"></i></span>
+        <span id="icon-moon" style="display:none"><i data-lucide="moon"></i></span>
+      </button>
+      <a href="https://github.com/alo-exp/silver-bullet" class="nav-cta" target="_blank" rel="noopener noreferrer">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<div class="help-subnav" id="help-subnav">
+  <div class="help-subnav-inner">
+    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Concepts</a><span class="sep">/</span><span class="current">Enterprise Status</span></nav>
+    <div class="help-subnav-extra">
+      <div class="help-subnav-links"><a href="../getting-started/">Start</a><a href="../concepts/" class="active">Concepts</a><a href="../workflows/">Workflows</a><a href="../reference/">Reference</a><a href="../troubleshooting/">Troubleshoot</a></div>
+      <div class="nav-search-wrap"><input type="text" class="nav-search-input" id="nav-search-input" placeholder="Search docs…" autocomplete="off"><div class="nav-search-results" id="nav-search-results"></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="page-hero">
+  <div class="container">
+    <h1>Autonomous Enterprise Status</h1>
+    <p>What Silver Bullet can prove today versus what is still in flight. This page uses explicit <strong>proof levels</strong> so marketing, buyers, and engineers share the same vocabulary.</p>
+    <p style="margin-top:12px;font-size:.9rem;color:var(--text-dim)" id="cert-generated-meta">Last reviewed: 2026-07-06 &middot; Hydrates from <code>site/help/data/certification-status.json</code> (regenerate via <code>scripts/regenerate-site-certification-status.sh</code>)</p>
+  </div>
+</div>
+
+<div class="container-wide">
+  <div class="doc-layout">
+
+    <aside class="doc-sidebar">
+      <ul class="sidebar-nav">
+        <li><a href="#proof-levels">Proof Levels</a></li>
+        <li><a href="#capability-matrix">Capability Matrix</a></li>
+        <li><a href="#tri-host">Tri-Host E2E</a></li>
+        <li><a href="#known-gaps">Known Gaps</a></li>
+        <li><a href="#evidence">Evidence Artifacts</a></li>
+        <li><a href="#see-also">See Also</a></li>
+      </ul>
+    </aside>
+
+    <article class="doc-content">
+
+      <h2 id="proof-levels">Proof Level Definitions</h2>
+      <div class="ref-table-wrap">
+      <table class="ref-table">
+        <thead>
+          <tr><th>Level</th><th>Meaning</th><th>Buyer-safe?</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><span class="proof-shipped">Shipped</span></td><td>Released in SB; structural hook/unit tests or catalog invariants prove the contract.</td><td>Yes — for the scoped claim.</td></tr>
+          <tr><td><span class="proof-proven">Live E2E (proven)</span></td><td>Canonical host ledger 22/22 with strict-clean methodology; may still carry evidence gaps.</td><td>Yes — per host, with gap footnotes.</td></tr>
+          <tr><td><span class="proof-partial">Live E2E (partial)</span></td><td>Some live matrix rows pass; full 22/22 strict-clean not complete on that host.</td><td>Qualify by host and row scope.</td></tr>
+          <tr><td><span class="proof-progress">In progress</span></td><td>Design + partial implementation; catalog may ahead of runtime.</td><td>No — treat as roadmap.</td></tr>
+          <tr><td><span class="proof-planned">Planned / future</span></td><td>Vision or design doc only; no release-grade proof.</td><td>No.</td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <div class="callout callout-info">
+        <span class="callout-icon"><i data-lucide="info"></i></span>
+        <div class="callout-body"><strong>Claims hygiene:</strong> Homepage claims map to <code>docs/testing/claims-registry.json</code>. This status page is the customer-facing mirror — when they diverge, fix the registry first.</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <h2 id="capability-matrix">Capability Status</h2>
+      <div class="ref-table-wrap">
+      <table class="ref-table">
+        <thead>
+          <tr><th>Capability</th><th>Proof level</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>APO catalog (29 AF / 26 WF: 22 public + 4 internal)</td><td><span class="proof-shipped">Shipped</span></td><td><code>validate-apo-catalog</code>, generated contract views; 3 process packs (<code>PP-SB-DEFAULT</code>, regulated, startup-fast)</td></tr>
+          <tr><td>Parent-only orchestrator (tier&nbsp;2+)</td><td><span class="proof-shipped">Shipped</span></td><td>Directive guard, parent-guard hook tests; marketplace stubs for orchestrator/orient/execute/ship</td></tr>
+          <tr><td>Tri-criteria E2E harness (live/cold/greenfield)</td><td><span class="proof-proven">Live E2E (proven)</span></td><td>Greenfield 6/6 PASS (cursor+claude+codex); <code>composer_chain</code> multi-WF scheduler; evidence under <code>.planning/sb-tri-criteria-e2e/</code></td></tr>
+          <tr><td>Twelve enforcement layers + V-loops</td><td><span class="proof-shipped">Shipped</span></td><td>Hook unit suite; completion audit</td></tr>
+          <tr><td>Autonomous session mode</td><td><span class="proof-partial">Live E2E (partial)</span></td><td>Proven on fixture rows (OUT-AUTO-01); <code>autonomous_safe</code>/<code>internal_dogfood</code> auto-set mode on tier&nbsp;2+ at SessionStart</td></tr>
+          <tr><td>Enterprise policy profiles (config)</td><td><span class="proof-shipped">Shipped</span></td><td>Schema + migration; SessionStart auto-sets mode when tier-safe; supervised/regulated stay interactive</td></tr>
+          <tr><td>22-row enterprise E2E matrix</td><td><span class="proof-partial">Live E2E (partial)</span></td><td>Cursor + Codex canonical 22/22 (<code>live_e2e_proven</code>); Claude 6/22 smoke — tri-host parity incomplete</td></tr>
+          <tr><td>Parallel DAG scheduler</td><td><span class="proof-progress">In progress</span></td><td>Catalog + fixture runtime: batch planning, dispatch metadata, join gates, stop-check; flow_queue defers until batch joins; host parallel Task dispatch partial</td></tr>
+          <tr><td>Policy profile runtime enforcement</td><td><span class="proof-partial">Live E2E (partial)</span></td><td><code>clarify_auto</code>, evidence strict, deploy gates partially wired; session mode auto-default shipped</td></tr>
+          <tr><td>Generated certification artifact</td><td><span class="proof-shipped">Shipped</span></td><td><code>CERTIFICATION-STATUS.json</code> + <code>site/help/data/certification-status.json</code>; this page hydrates from site copy</td></tr>
+          <tr><td>SOC2-style evidence export</td><td><span class="proof-shipped">Shipped</span></td><td><code>scripts/export-enterprise-evidence.sh</code> bundles audit entities + composition log + intent ledger excerpts</td></tr>
+          <tr><td>Durable orchestration event log</td><td><span class="proof-planned">Planned</span></td><td>Replay/retry/saga substrate not shipped</td></tr>
+          <tr><td>Cold-start autonomy (vague prompt → shipped app)</td><td><span class="proof-partial">Live E2E (partial)</span></td><td>Improving on Cursor/Codex tracks; early rounds needed heavy operator intervention</td></tr>
+          <tr><td>Production deploy without human gate</td><td><span class="proof-planned">Planned</span></td><td>Explicitly not offered; policy keeps prod human-gated</td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <div class="divider"></div>
+
+      <h2 id="tri-host">Tri-Host Certification Snapshot</h2>
+      <p>Release-grade enterprise autonomy requires reproducible <strong>strict-clean</strong> evidence on Claude Code, Codex, and Cursor — not structural tests alone.</p>
+      <div class="ref-table-wrap">
+      <table class="ref-table">
+        <thead>
+          <tr><th>Host</th><th>Proof level</th><th>Evidence surface</th></tr>
+        </thead>
+        <tbody id="cert-host-tbody">
+          <tr><td>Cursor</td><td><span class="proof-proven">Live E2E (proven)</span></td><td>22/22 ledger; narrative matrix reconcile; evidence gaps: strict-clean narrative-only, legacy ledger format</td></tr>
+          <tr><td>Codex</td><td><span class="proof-proven">Live E2E (proven)</span></td><td>22/22 ledger reconcile COMPLETE; gates closed_pass; product audit pass</td></tr>
+          <tr><td>Claude Code</td><td><span class="proof-partial">Live E2E (partial)</span></td><td>6/22 registry smoke; gates in progress; strict-clean not eligible</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p>Canonical: <code>.planning/enterprise-e2e/CERTIFICATION-STATUS.json</code>. Site mirror: <code>site/help/data/certification-status.json</code>. <span id="cert-public-claim-note"><code>public_autonomous_enterprise_claim_ready: false</code> until Claude reaches 22/22</span>. Operational detail lives in <code>.planning/enterprise-e2e/</code> (internal).</p>
+
+      <div class="divider"></div>
+
+      <h2 id="known-gaps">Known Gaps (Do Not Overclaim)</h2>
+      <ul>
+        <li><strong>Sequential runtime vs DAG catalog</strong> — batch planning and join gates exist; full DAG parity and host parallel Task dispatch still in flight.</li>
+        <li><strong>Scheduler runtime gaps</strong> — batch_dispatch, stop-check, and flow_queue join gate have fixture tests; production skill↔atom matching relies on <code>migration_map</code> (slug-derived skills may miss joins).</li>
+        <li><strong>Default interactive onboarding</strong> — supervised/regulated profiles still default interactive; autonomous profiles auto-set only on tier&nbsp;2+ hosts.</li>
+        <li><strong>Monitor/ledger drift</strong> — enterprise E2E effectiveness plan notes reconciliation must stay non-optional.</li>
+        <li><strong>Marketplace command stubs</strong> — high-value atomic routes (orchestrator, orient, execute, ship) now have stubs; ~45 skills remain skill-tool-only.</li>
+      </ul>
+      <p>Deeper engineering gap analysis: <a href="../../gaps/">public gaps index</a> (evidence-backed, not marketing).</p>
+
+      <div class="divider"></div>
+
+      <h2 id="evidence">Evidence and Export Surfaces</h2>
+      <ul>
+        <li><code>docs/evidence-schema.md</code> — hook evidence record shapes</li>
+        <li><code>docs/apo-catalog.json</code> — <code>evidence_records</code> and flow-step V-loops</li>
+        <li><code>.planning/orchestrator-composition-log.jsonl</code> — autonomous composition audit</li>
+        <li><code>docs/testing/outcome-criteria-registry.json</code> — blocking autonomy outcomes (OUT-AUTO-01, OUT-ORCH-01, …)</li>
+        <li><code>scripts/regenerate-site-certification-status.sh</code> — sync certification JSON to GitHub Pages data path</li>
+        <li><code>scripts/export-enterprise-evidence.sh</code> — SOC2-style audit zip scaffold (evidence_records, composition log, intent ledger excerpts)</li>
+      </ul>
+      <p>Buyer-facing export UI is not shipped — run the export script locally or in CI for audit bundles.</p>
+
+      <div class="divider"></div>
+
+      <h2 id="see-also">See Also</h2>
+      <ul>
+        <li><a href="orchestrator-mode.html">Parent / Worker Orchestrator Mode</a></li>
+        <li><a href="enterprise-policy-profiles.html">Enterprise Policy Profiles</a></li>
+        <li><a href="../../gaps/">Public Gaps Index</a></li>
+        <li><a href="../reference/#capability-matrix">Host Capability Matrix</a></li>
+      </ul>
+
+      <div class="page-nav-bottom">
+        <a href="enterprise-policy-profiles.html">
+          <span class="pnb-label">← Previous</span>
+          <span class="pnb-title">Policy Profiles</span>
+        </a>
+        <a href="./">
+          <span class="pnb-label">Back to</span>
+          <span class="pnb-title">Core Concepts</span>
+        </a>
+      </div>
+
+    </article>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand-group">
+      <span class="footer-credit"><a href="../../" class="footer-brand-link">Silver Bullet</a> &middot; Innovated at <a href="https://alolabs.dev" target="_blank" rel="noopener noreferrer" style="font-weight:700;text-decoration:none;color:inherit">&#256;lo Labs</a></span>
+    </div>
+    <div class="footer-copyright">&copy; 2026 Alo Labs. All rights reserved.</div>
+    <div class="footer-links">
+      <a href="../../help/">Help</a>
+      <a href="../../terms/">Terms of Use</a>
+      <a href="../../privacy/">Privacy Policy</a>
+    </div>
+  </div>
+</footer>
+
+<script src="certification-status.js?v=enterprise-cert-1"></script>
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<script src="../search.js"></script>
+<script src="../common.js?v=s3-site-common-themefix1"></script>
+<script src="../../chrome.js?v=site-chrome-11"></script>
+</body>
+</html>

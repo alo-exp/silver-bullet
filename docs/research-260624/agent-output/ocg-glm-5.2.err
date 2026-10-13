@@ -1,0 +1,82 @@
+[0m
+> build · glm-5.2
+[0m
+[0m⚙ [0mctx_search Search Indexed Content
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m✗ [0mctx_fetch_and_index {"concurrency":5,"ttl":86400000} failed
+[91m[1mError: [0mctx_fetch_and_index requires either `url` (single) or `requests: [{url, source?}, ...]` (batch).
+[0m✗ [0mctx_fetch_and_index {"concurrency":5,"ttl":86400000} failed
+[91m[1mError: [0mctx_fetch_and_index requires either `url` (single) or `requests: [{url, source?}, ...]` (batch).
+[0m✗ [0mctx_fetch_and_index {"concurrency":5,"ttl":86400000} failed
+[91m[1mError: [0mctx_fetch_and_index requires either `url` (single) or `requests: [{url, source?}, ...]` (batch).
+[0m✗ [0mctx_fetch_and_index {"requests":[{"url":"https://github.com/bmad-co/BMAD-METHOD","source":"bmad-github"},{"url":"https://github.com/bmad-artifacts/BMAD-METHOD","source":"bmad-alt-github"},{"url":"https://github.com/GSD-AI/GSD","source":"gsd-github"},{"url":"https://github.com/jesseduffield/superpowers","source":"superpowers-github"},{"url":"https://docs.aider.chat/","source":"aider-docs"}],"concurrency":5} failed
+[91m[1mError: [0mfetched 5 c=5. ok=0 cache=0 err=5. 0 sections 0.0KB.
+
+- [err]   https://github.com/bmad-co/BMAD-METHOD: HTTP 404
+
+- [err]   https://github.com/bmad-artifacts/BMAD-METHOD: HTTP 404
+
+- [err]   https://github.com/GSD-AI/GSD: HTTP 404
+
+- [err]   https://github.com/jesseduffield/superpowers: HTTP 404
+
+- [err]   https://docs.aider.chat/: DNS lookup failed for "docs.aider.chat": getaddrinfo ENOTFOUND
+
+ctx_search(queries: [...], source: "<label>") for full content.
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m✗ [0mctx_fetch_and_index {"concurrency":5,"ttl":86400000} failed
+[91m[1mError: [0mctx_fetch_and_index requires either `url` (single) or `requests: [{url, source?}, ...]` (batch).
+[0m✗ [0mctx_fetch_and_index {"concurrency":5,"ttl":86400000} failed
+[91m[1mError: [0mctx_fetch_and_index requires either `url` (single) or `requests: [{url, source?}, ...]` (batch).
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m✗ [0mctx_fetch_and_index {"concurrency":8,"ttl":86400000} failed
+[91m[1mError: [0mctx_fetch_and_index requires either `url` (single) or `requests: [{url, source?}, ...]` (batch).
+[0m✗ [0mctx_fetch_and_index {"concurrency":8,"ttl":86400000} failed
+[91m[1mError: [0mctx_fetch_and_index requires either `url` (single) or `requests: [{url, source?}, ...]` (batch).
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m✗ [0mctx_fetch_and_index {"concurrency":8,"ttl":86400000} failed
+[91m[1mError: [0mctx_fetch_and_index requires either `url` (single) or `requests: [{url, source?}, ...]` (batch).
+[0m✗ [0mctx_fetch_and_index {"concurrency":8,"ttl":86400000} failed
+[91m[1mError: [0mctx_fetch_and_index requires either `url` (single) or `requests: [{url, source?}, ...]` (batch).
+[0m✗ [0mctx_fetch_and_index {"concurrency":8,"ttl":86400000} failed
+[91m[1mError: [0mctx_fetch_and_index requires either `url` (single) or `requests: [{url, source?}, ...]` (batch).
+[0m✗ [0mctx_fetch_and_index {"concurrency":8,"ttl":86400000} failed
+[91m[1mError: [0mctx_fetch_and_index requires either `url` (single) or `requests: [{url, source?}, ...]` (batch).
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_search Search Indexed Content
+[0m⚙ [0mctx_search Search Indexed Content
+[0m✗ [0mctx_fetch_and_index {"concurrency":8,"ttl":86400000} failed
+[91m[1mError: [0mctx_fetch_and_index requires either `url` (single) or `requests: [{url, source?}, ...]` (batch).
+[0m✗ [0mctx_fetch_and_index {"concurrency":8,"ttl":86400000} failed
+[91m[1mError: [0mctx_fetch_and_index requires either `url` (single) or `requests: [{url, source?}, ...]` (batch).
+[0m✗ [0mctx_fetch_and_index {"concurrency":8,"ttl":86400000} failed
+[91m[1mError: [0mctx_fetch_and_index requires either `url` (single) or `requests: [{url, source?}, ...]` (batch).
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_search Search Indexed Content
+[0m⚙ [0mctx_search Search Indexed Content
+[0m⚙ [0mctx_search Search Indexed Content
+[0m⚙ [0mctx_search Search Indexed Content
+[0m⚙ [0mctx_search Search Indexed Content
+[0m⚙ [0mctx_search Search Indexed Content
+[0m
+[0m$ [0mrtk ls /Users/shafqat/projects/silver-bullet/repo/docs/research-260624
+agent-output/
+OPENCODE_DYNAMIC_SUBAGENT_MODELS.md  20.2K
+PRIOR-ART-MASTER-PROMPT.txt  16.6K
+PRIOR-ART-MULTI-AI-PROMPT.md  1.8K
+SB_PRIOR_ART_RESEARCH_PROMPT.md  21.0K
+SB_PRIOR_ART_USER_PROMPT.md  16.4K
+atomic-flow-redesign.plan.md  50.2K
+dispatch-research-sequential.sh  1.9K
+dispatch-research.sh  2.1K
+prior-art-landscape-2026-06-27.md  10.3K
+prior-art-landscape-minimax-m3.md  28.9K
+prior-art-landscape-report.md  12.4K
+prior-art-report.md  28.1K
+[0m
+[0m← [0mWrite prior-art-landscape-glm-5.2.md
+Wrote file successfully.
+[0m

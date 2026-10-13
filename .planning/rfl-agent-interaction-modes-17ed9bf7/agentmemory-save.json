@@ -1,0 +1,29 @@
+{
+  "export": "/Users/shafqat/projects/silver-bullet/repo/.agentmemory/memory/rfl-agent-interaction-modes-17ed9bf7-20260823T155524Z.md",
+  "http": [
+    {
+      "url": "http://127.0.0.1:3111/memory",
+      "error": "HTTP Error 404: Not Found"
+    },
+    {
+      "url": "http://127.0.0.1:3111/memories",
+      "error": "HTTP Error 404: Not Found"
+    },
+    {
+      "url": "http://127.0.0.1:3111/v1/memory",
+      "error": "HTTP Error 404: Not Found"
+    },
+    {
+      "url": "http://127.0.0.1:3111/agentmemory/memory",
+      "error": "HTTP Error 404: Not Found"
+    },
+    {
+      "url": "http://127.0.0.1:3111/save",
+      "error": "HTTP Error 404: Not Found"
+    },
+    {
+      "url": "http://127.0.0.1:8080/memory",
+      "error": "<urlopen error [Errno 61] Connection refused>"
+    }
+  ]
+}

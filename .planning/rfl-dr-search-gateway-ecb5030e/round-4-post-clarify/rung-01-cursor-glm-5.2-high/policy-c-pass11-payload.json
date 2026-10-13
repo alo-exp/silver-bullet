@@ -1,0 +1,21 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "glm",
+    "effort": "high",
+    "display": "Cursor GLM 5.2 High (review pass 11)"
+  },
+  "verdict": "CLEAN",
+  "disposition": "ACCEPT-apply",
+  "issues": {
+    "HIGH": "none",
+    "MED": "none",
+    "LOW": "none",
+    "NIT": "none"
+  },
+  "triage": "none",
+  "blockers": "none",
+  "highs": "none",
+  "mediums": "none",
+  "resolved": "none"
+}

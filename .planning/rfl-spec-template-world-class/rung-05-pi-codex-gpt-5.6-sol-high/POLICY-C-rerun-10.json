@@ -1,0 +1,47 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "gpt",
+    "effort": "high",
+    "display": "Pi Codex GPT-5.6 Sol High (re-run pass 10)"
+  },
+  "verdict": "NOT CLEAN",
+  "issues": {
+    "HIGH": "none",
+    "MED": [
+      {
+        "id": "R5j-F01",
+        "title": "SPEC-only greenfield detection can overwrite an existing REQUIREMENTS tombstone ledger"
+      }
+    ],
+    "LOW": "none",
+    "NIT": "none"
+  },
+  "triage": [
+    {
+      "id": "R5j-F01",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "True greenfield = both SPEC.md and REQUIREMENTS.md absent. Named behavior preserve-or-fail-closed. Partial-pair (SPEC absent, REQUIREMENTS present) unions prior REQUIREMENTS id-tombstones or fails before write. Step 8 / Wave 6 union prior tombstones on every replace. Fixture: no SPEC + id-tombstones [REQ-03, NFR-02] must not become [] / must not later reissue REQ-03. R5h SPEC tombstones/QC-12/QC-13/Step 7 and R5i REQUIREMENTS tombstones/QC-2/QC-3 unchanged."
+    }
+  ],
+  "blockers": "none",
+  "highs": "none",
+  "mediums": [
+    {
+      "id": "R5j-F01",
+      "title": "SPEC-only greenfield detection can overwrite an existing REQUIREMENTS tombstone ledger"
+    }
+  ],
+  "disposition": "ACCEPT-apply",
+  "resolved": [
+    {
+      "id": "R5j-F01",
+      "severity": "MED",
+      "title": "SPEC-only greenfield detection can overwrite an existing REQUIREMENTS tombstone ledger",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    }
+  ],
+  "apply_sha": "8a2eb671bafcd8ee4e053c1c9a739e671972eaf64f438267a611ad603b63bf50"
+}

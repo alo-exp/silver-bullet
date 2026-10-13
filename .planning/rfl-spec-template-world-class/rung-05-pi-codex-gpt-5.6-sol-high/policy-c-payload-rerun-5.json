@@ -1,0 +1,47 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "gpt",
+    "effort": "high",
+    "display": "Pi Codex GPT-5.6 Sol High (re-run pass 5)"
+  },
+  "verdict": "NOT CLEAN",
+  "issues": {
+    "HIGH": "none",
+    "MED": [
+      {
+        "id": "R5e-F01",
+        "title": "REQUIREMENTS accepts variable-width REQ/NFR IDs despite the two-digit cross-artifact contract"
+      }
+    ],
+    "LOW": "none",
+    "NIT": "none"
+  },
+  "triage": [
+    {
+      "id": "R5e-F01",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "Wave 2 review-requirements QC-2 must require exact two-digit REQ-[0-9]{2} / NFR-[0-9]{2} (not one-or-more digits). Align with template + SPEC QC-13. Step 8 mint/preserve two-digit. Malformed-width negatives (REQ-1, REQ-001, NFR-2)."
+    }
+  ],
+  "blockers": "none",
+  "highs": "none",
+  "mediums": [
+    {
+      "id": "R5e-F01",
+      "title": "REQUIREMENTS accepts variable-width REQ/NFR IDs despite the two-digit cross-artifact contract"
+    }
+  ],
+  "disposition": "ACCEPT-apply",
+  "resolved": [
+    {
+      "id": "R5e-F01",
+      "severity": "MED",
+      "title": "REQUIREMENTS accepts variable-width REQ/NFR IDs despite the two-digit cross-artifact contract",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    }
+  ],
+  "apply_sha": "0844eb0fbf945aa64fa40a5f6dfe2369cc6c812701dbda92e472a58e097d68cc"
+}

@@ -1,0 +1,26 @@
+[9A────────────────────────────────────────────────────────────────────────────────
+ ☐ Evidence file
+The worker reports the README install-section fix is already in the working tree
+(pre-existing scoped diff, install instructions only), but the Write to
+`.planning/workflows/fast-readme.md` was blocked by the orchestrator hook. SB
+core rules forbid the worker (or parent) writing SB planning artifacts directly.
+How should I close out this turn?
+
+❯ 1. Issue SB OVERRIDE — re-spawn worker to write evidence
+  I issue an explicit SB OVERRIDE for this turn authorizing the write, then
+  re-spawn the worker to write the evidence file. Evidence path becomes the
+  authoritative record.
+  2. Skip evidence file — README diff IS the evidence
+  I treat the working-tree README diff (already in place, scoped to install
+  instructions) as the de facto evidence, drop the
+  .planning/workflows/fast-readme.md requirement, and complete the turn with
+  completion-audit.
+  3. Abort — no README change, no evidence file
+  Revert the working-tree README edit, stop without writing evidence, and
+  report a clean stop. The install instructions remain in their original
+  state.
+  4. Type something.
+────────────────────────────────────────────────────────────────────────────────
+  5. Chat about this
+
+Enter to select · ↑/↓ to navigate · Esc to cancel

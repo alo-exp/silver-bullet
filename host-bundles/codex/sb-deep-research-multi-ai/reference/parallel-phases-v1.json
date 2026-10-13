@@ -1,0 +1,26 @@
+{
+  "schema_id": "parallel-phases-v1",
+  "version": "1.0.0",
+  "canonical_phase_ids": ["DR-RETRIEVE", "DR-TRIANGULATE", "DR-CRITIQUE"],
+  "input_aliases": {
+    "retrieve": "DR-RETRIEVE",
+    "triangulate": "DR-TRIANGULATE",
+    "critique": "DR-CRITIQUE"
+  },
+  "by_research_type": {
+    "default": {
+      "quick": [],
+      "standard": ["DR-RETRIEVE"],
+      "deep": ["DR-RETRIEVE", "DR-TRIANGULATE", "DR-CRITIQUE"],
+      "ultradeep": ["DR-RETRIEVE", "DR-TRIANGULATE", "DR-CRITIQUE"]
+    },
+    "solution-landscape": {
+      "deep": ["DR-RETRIEVE", "DR-TRIANGULATE"],
+      "ultradeep": ["DR-RETRIEVE", "DR-TRIANGULATE", "DR-CRITIQUE"]
+    },
+    "solution-compare": {
+      "deep": ["DR-RETRIEVE", "DR-TRIANGULATE"],
+      "ultradeep": ["DR-RETRIEVE", "DR-TRIANGULATE", "DR-CRITIQUE"]
+    }
+  }
+}

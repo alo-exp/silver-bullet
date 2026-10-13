@@ -1,0 +1,12 @@
+{
+  "decision": "demote_core_to_adjacent_unplotted",
+  "reason": "Run envelopes include both agent-surface claims (tembo.io, medium confidence) and an explicit inclusion judgment that Tembo 'Satisfies 2 of 7 inclusion criteria at most \u2014 qualifies as tertiary Adjacent, not Top-N' plus IDENTITY RISK (Postgres-first brand). Core/MQ/Wave/Blue Ocean require \u22653-of-7 clear evidence; keep listed adjacent/watchlist only.",
+  "sources": [
+    "solutions/tembo/scr.md",
+    "contributions/all-envelopes.json (Tembo 2-of-7 claim)",
+    "https://tembo.io/",
+    "https://www.tembo.io/blog/autonomous-software-maintenance-has-arrived"
+  ],
+  "date": "2026-07-22",
+  "reviewer": "address-all-non-coi-pass"
+}

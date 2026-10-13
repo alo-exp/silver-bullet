@@ -1,0 +1,18 @@
+`./verify-1.md` exists (5593 bytes, required header present). Verdict:
+
+**CLEAN — VERIFY_PASS**
+
+Evidence summary (all re-derived from disk, nothing copied from `review.md`):
+- **Hash/size:** both copies independently hashed → SHA-256 `1e2e775aa4cf885a816a96a060e5fe50a76c07d4ec02e84ff83c5b922448957e`, 621246 bytes each; `cmp` byte-identical. Matches locked freeze. No stale SHA cited as current.
+- **YAML:** 33 unique todo ids, 33/33 `status: pending` (frontmatter L1–L118).
+- **Mermaid:** exactly 1 fence (L1438).
+- **NIT-1 APPLY confirmed:** escaped `/sb:ladder\|parallel <route>` at L141 (glossary) and L590 (FR-13).
+- **NIT-2 APPLY confirmed:** appendix header `| Named test path | Note |` + `|---|---|` at L4166/L4167.
+- **F-2 HOLD:** `#### \`blocked_advisor_state\` (row 14)` present at L3246 (unchanged; NIT edits added bytes within lines, not newlines); row-14 catalog entry also at L3052.
+- **`ws0--ws0b`** count = 0; F-1 REJECT held (all remaining `--` legitimate: frontmatter, table separators, CLI flags, mermaid arrows, GFM slug).
+- **KEEP REJECT closed** (§3.3 L904–948, §6 gate L4070); **Q1–Q3 decided** (L4074/L4087/L4093); **Part A → Part B** intact (L16, L647, YAML order).
+- **FAST:** not a Job, not GST-01, not a legal compose route (L140/L141, L376, L385, L469, L584, L916, L747).
+- **Leftovers: none.** Graphify queried pre-exploration; verdict persisted via agentmemory file store (`mem_r03vfy01_b1aa276d131e.md`).
+- **EXIT:** PASS — verify_2 not started; no fixes applied; freeze untouched.
+
+Stopping.

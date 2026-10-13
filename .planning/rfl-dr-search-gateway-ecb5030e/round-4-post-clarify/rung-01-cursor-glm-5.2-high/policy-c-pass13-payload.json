@@ -1,0 +1,37 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "glm",
+    "effort": "high",
+    "display": "Cursor GLM 5.2 High (review pass 13)"
+  },
+  "verdict": "NOT CLEAN",
+  "disposition": "ACCEPT-apply",
+  "issues": {
+    "HIGH": "none",
+    "MED": "none",
+    "LOW": [
+      {"id": "AB1", "title": "X-union dedup lock has no SB-orchestrator test in §3"}
+    ],
+    "NIT": [
+      {"id": "AB2", "title": "§6.12 clap help test omits --cache-ttl"},
+      {"id": "AB3", "title": "§6.12 reddit OAuth test omits no-stampede invariant"},
+      {"id": "AB4", "title": "§6.12 clear() test omits future qN_* deletion"}
+    ]
+  },
+  "triage": [
+    {"id": "AB1", "severity": "LOW", "decision": "ACCEPT", "reason": "Not wrong; I-1 locked behavior but §3 never tested it; no lock unwind"},
+    {"id": "AB2", "severity": "NIT", "decision": "ACCEPT", "reason": "Not wrong; --cache-ttl is a locked Phase 1 ADD omitted from clap help test"},
+    {"id": "AB3", "severity": "NIT", "decision": "ACCEPT", "reason": "Not wrong; I-23 no-stampede has no dedicated assertion"},
+    {"id": "AB4", "severity": "NIT", "decision": "ACCEPT", "reason": "Not wrong; I-10 future-qN_* lock has no q4_* fixture"}
+  ],
+  "blockers": "none",
+  "highs": "none",
+  "mediums": "none",
+  "resolved": [
+    {"id": "AB1", "severity": "LOW", "title": "§3 X-union dedup test", "decision": "ACCEPT", "resolved": "yes"},
+    {"id": "AB2", "severity": "NIT", "title": "clap --cache-ttl in --help", "decision": "ACCEPT", "resolved": "yes"},
+    {"id": "AB3", "severity": "NIT", "title": "Reddit OAuth no-stampede test", "decision": "ACCEPT", "resolved": "yes"},
+    {"id": "AB4", "severity": "NIT", "title": "clear() removes future qN_*", "decision": "ACCEPT", "resolved": "yes"}
+  ]
+}

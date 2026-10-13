@@ -1,0 +1,66 @@
+# RFL Final Review — Rung 6/11 VERIFY-ONLY pass 2/2
+
+- **Rung:** 6/11 (`rung_06_verify_2`)
+- **Model:** `cursor/gemini-3.7-flash-high` (Gemini 3.7 Flash High via `/silver:agent-pi` / OmniRoute), reasoning=host-default
+- **Phase:** VERIFY-ONLY pass 2/2 (`rung_06_verify_2`) — independent re-verification
+- **Date:** 2026-08-26
+- **Parent session:** `d5150f38-4d37-458d-9bdb-5e6f985975d3`
+- **Output written:** [`verify-2.md`](/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-06-cursor-gemini-3.7-flash-high/verify-2.md)
+
+---
+
+## SHA-256 & Size Verification
+
+| Copy | SHA-256 (as hashed) | Size (bytes) | Byte-identical |
+|---|---|---|---|
+| [`/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md) | `edff7c0cca55e7e6662cafbbf3f10cea71230483c4992c2a5d5149c629a63e5e` | 621101 | **YES** |
+| [`/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md) | `edff7c0cca55e7e6662cafbbf3f10cea71230483c4992c2a5d5149c629a63e5e` | 621101 | **YES** |
+
+- **Byte-identical:** **YES** (`cmp` and independent SHA-256 computation match exactly across both locations).
+- Current locked freeze SHA `edff7c0cca55e7e6662cafbbf3f10cea71230483c4992c2a5d5149c629a63e5e` (621101 bytes) verified on disk.
+
+---
+
+## Independent Audit Checks
+
+1. **YAML frontmatter:** Exactly 33 unique `- id:` items (L18–L116), all 33 marked `status: pending` (33/33). (**PASS**)
+2. **Mermaid fences:** Exactly 1 ` ```mermaid ` block in document body (L1438–L1496). (**PASS**)
+3. **F-2 HOLD:** Line 3246 is confirmed as `#### \`blocked_advisor_state\` (row 14)`. (**PASS**)
+4. **`ws0--ws0b` string count:** Exactly 0 matches across the entire freeze. (**PASS**)
+5. **F3 APPLY text:** Confirmed present at L1808 (Cursor), L1821 (Codex), L1836 (Claude): `**What SB must not write:**`. (**PASS**)
+6. **F4 APPLY text:** Confirmed present at L1296 and L3376: `may remain — that does **not** apply`. (**PASS**)
+7. **Closed decisions:** KEEP REJECT closed (L4070), Q1–Q3 decided (L4072–L4104), Part A then Part B intact (L128, L3262–L3285). (**PASS**)
+8. **FAST route semantics:** FAST is classified-trivial execution, not a Job, skips GST-01, and not a legal `&lt;route&gt;` for `/sb:ladder` or `/sb:parallel` (L10, L40, L64, L140–L141, L159, L407, L469, L747, L4080, L4240, L4252). (**PASS**)
+9. **Forbid routes/aliases:** No `/sb:multi-ai-task`, no `sb:agent-wrap` (L85, L106, L142, L480, L748, L754, L761, L3330, L3659, L4072, L4097–L4099, L4103). (**PASS**)
+
+---
+
+## Prior ACCEPT HOLD / Leftover Table
+
+None to apply this rung (Policy A). All prior dispositions remain closed:
+
+| Item | Disposition | Disk state | Leftover? |
+|---|---|---|---|
+| F-1 (rung 3, Qwen) | **REJECT** | `ws0--ws0b` count is **0** | **No** |
+| F-2 | **HOLD** | L3246 `#### \`blocked_advisor_state\` (row 14)` | **No** |
+| F3 (rung 2 Policy C) | **APPLIED & CLOSED** | L1808, L1821, L1836 `**What SB must not write:**` | **No** |
+| F4 (rung 2 Policy C) | **APPLIED & CLOSED** | L1296, L3376 `may remain — that does **not** apply` | **No** |
+| YAML 33 pending | Closed lock | 33 unique todos, all pending | **No** |
+| Decisions | Closed lock | KEEP REJECT, Q1–Q3, Part A then Part B intact | **No** |
+
+---
+
+## Remaining Findings
+
+**None.** (HIGH: 0, MED: 0, LOW: 0, NIT: 0)
+
+---
+
+## Verdict
+
+**CLEAN**  
+**VERIFY_PASS**
+
+- **Leftovers:** none
+- **SHA hashed:** `edff7c0cca55e7e6662cafbbf3f10cea71230483c4992c2a5d5149c629a63e5e` (621101 bytes)
+- **Pi Gemini EXIT:** 0

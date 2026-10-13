@@ -1,0 +1,6 @@
+2026-08-28T02:27:48Z
+PI_PROVIDER= PI_MODEL= PI_RUN_TIMEOUT= PI_NI_ZERO_BYTE_IDLE_NON_QWEN_SEC= PI_EXPECT_FILE_MIN_BYTES= PI_NI_ZERO_BYTE_IDLE_SEC=<unset> no --continue
+Error: Unknown provider "opencode-go". Use --list-models to see available providers/models.
+[agent-pi] fail-fast: skipping --continue after first-run EXIT 1
+AGENT_PI_EXIT=1
+2026-08-28T02:27:48Z

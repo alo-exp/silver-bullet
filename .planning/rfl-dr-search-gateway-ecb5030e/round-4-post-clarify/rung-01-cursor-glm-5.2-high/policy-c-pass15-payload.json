@@ -1,0 +1,27 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "glm",
+    "effort": "high",
+    "display": "Cursor GLM 5.2 High (review pass 15)"
+  },
+  "verdict": "NOT CLEAN",
+  "disposition": "ACCEPT-apply",
+  "issues": {
+    "HIGH": "none",
+    "MED": "none",
+    "LOW": "none",
+    "NIT": [
+      {"id": "AD1", "title": "§6.12 clear() test omits query-cache .gitignore preserve"}
+    ]
+  },
+  "triage": [
+    {"id": "AD1", "severity": "NIT", "decision": "ACCEPT", "reason": "Not wrong; §2.2/§6.3/§1.2 lock query-cache .gitignore preserve but §6.12 L634 fixture omitted it; not a duplicate of I-1–I-39; no product-lock unwind"}
+  ],
+  "blockers": "none",
+  "highs": "none",
+  "mediums": "none",
+  "resolved": [
+    {"id": "AD1", "severity": "NIT", "title": "clear() preserves query-cache .gitignore", "decision": "ACCEPT", "resolved": "yes"}
+  ]
+}

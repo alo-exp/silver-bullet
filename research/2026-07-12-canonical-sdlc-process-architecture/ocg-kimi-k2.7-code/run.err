@@ -1,0 +1,1859 @@
+[0m
+> build · kimi-k2.7-code
+[0m
+[0m⚙ [0mcontext-mode_ctx_search {"queries":["canonical SDLC process architecture","2026-07-12 research","silver deep research","process areas workflows"],"sort":"timeline"}
+[0m→ [0mSkill "deep-research"
+[0m→ [0mRead /Users/shafqat/.agents/skills/deep-research/reference/methodology.md[90m [additionalContext=<context_guidance>
+  <tip>
+    Reading to Edit the file? Read is correct — Edit needs the exact bytes in your conversation to match against.
+    Reading to analyze, summarize, or extract from the file? Use context-mode_ctx_execute_file(path, language, code) — the bytes stay in the sandbox and only what your code prints enters your conversation.
+  </tip>
+</context_guidance>][0m
+[0m→ [0mRead /Users/shafqat/.agents/skills/deep-research/reference/report-assembly.md
+[0m✗ [0mRead /Users/shafqat/.agents/skills/deep-reference/quality-gates.md failed
+[91m[1mError: [0mFile not found: /Users/shafqat/.agents/skills/deep-reference/quality-gates.md
+[0m
+[0m# [0mTodos
+[•] Initialize research output directory and run manifest
+[ ] Write scope.md and research-plan.md
+[ ] Gather primary sources across 18 process areas (parallel fetch/index)
+[ ] Dispatch subagents for per-area evidence extraction
+[ ] Triangulate claims and write evidence/sources JSONL files
+[ ] Write outline.md and decision-record.md
+[ ] Draft research_report.md (10 sections, progressive generation)
+[ ] Write critique.md, triangulation.md, handoff.md, vloop-rollup.json
+[ ] Verify artifacts and finalize
+[0m
+[0m$ [0mecho "[graphify] knowledge graph at graphify-out/. For focused questions, run `graphify query "<question>"` (scoped subgraph, usually much smaller than GRAPH_REPORT.md) instead of grepping raw files. Read GRAPH_REPORT.md only for broad architecture context." && echo "[graphify] knowledge graph at graphify-out/. For focused questions, run `graphify query "<question>"` (scoped subgraph, usually much smaller than GRAPH_REPORT.md) instead of grepping raw files. Read GRAPH_REPORT.md only for broad architecture context." && mkdir -p /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code && rtk ls -la /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code
+[graphify] knowledge graph at graphify-out/. For focused questions, run Traversal: BFS depth=2 | Start: ['Question', 'Question'] | 16 nodes found
+
+NODE Site Release Audit — 2026-07-06 [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L1 community=913]
+NODE DR-SCOPE — Research Scope [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L1 community=1233]
+NODE Gap Remediation (This Pass) [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L42 community=913]
+NODE Follow-Up [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L67 community=913]
+NODE v0.51.0 — Honest Assessment [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L19 community=913]
+NODE scope.md [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L1 community=1233]
+NODE Question [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L3 community=1233]
+NODE Assumptions [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L24 community=1233]
+NODE In scope [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L11 community=1233]
+NODE Out of scope [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L18 community=1233]
+NODE SITE-RELEASE-AUDIT-20260706.md [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L1 community=913]
+NODE Mode [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L7 community=1233]
+NODE v0.51.1 — Honest Assessment [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L31 community=913]
+NODE Started [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L29 community=1233]
+NODE 4-Stage Gate — What Should Have Run [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L7 community=913]
+NODE Question [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L3 community=913]
+EDGE Question --contains [EXTRACTED]--> Site Release Audit — 2026-07-06
+EDGE Question --contains [EXTRACTED]--> DR-SCOPE — Research Scope
+EDGE Site Release Audit — 2026-07-06 --contains [EXTRACTED]--> SITE-RELEASE-AUDIT-20260706.md
+EDGE Site Release Audit — 2026-07-06 --contains [EXTRACTED]--> 4-Stage Gate — What Should Have Run
+EDGE Site Release Audit — 2026-07-06 --contains [EXTRACTED]--> Follow-Up
+EDGE Site Release Audit — 2026-07-06 --contains [EXTRACTED]--> Gap Remediation (This Pass)
+EDGE Site Release Audit — 2026-07-06 --contains [EXTRACTED]--> v0.51.0 — Honest Assessment
+EDGE Site Release Audit — 2026-07-06 --contains [EXTRACTED]--> v0.51.1 — Honest Assessment
+EDGE DR-SCOPE — Research Scope --contains [EXTRACTED]--> scope.md
+EDGE DR-SCOPE — Research Scope --contains [EXTRACTED]--> Assumptions
+EDGE DR-SCOPE — Research Scope --contains [EXTRACTED]--> In scope
+EDGE DR-SCOPE — Research Scope --contains [EXTRACTED]--> Mode
+EDGE DR-SCOPE — Research Scope --contains [EXTRACTED]--> Out of scope
+EDGE DR-SCOPE — Research Scope --contains [EXTRACTED]--> Started (scoped subgraph, usually much smaller than GRAPH_REPORT.md) instead of grepping raw files. Read GRAPH_REPORT.md only for broad architecture context.
+[graphify] knowledge graph at graphify-out/. For focused questions, run Traversal: BFS depth=2 | Start: ['Question', 'Question'] | 16 nodes found
+
+NODE DR-SCOPE — Research Scope [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L1 community=1233]
+NODE Site Release Audit — 2026-07-06 [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L1 community=913]
+NODE Gap Remediation (This Pass) [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L42 community=913]
+NODE In scope [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L11 community=1233]
+NODE v0.51.1 — Honest Assessment [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L31 community=913]
+NODE v0.51.0 — Honest Assessment [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L19 community=913]
+NODE Question [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L3 community=913]
+NODE Out of scope [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L18 community=1233]
+NODE SITE-RELEASE-AUDIT-20260706.md [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L1 community=913]
+NODE Started [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L29 community=1233]
+NODE Follow-Up [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L67 community=913]
+NODE Assumptions [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L24 community=1233]
+NODE Question [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L3 community=1233]
+NODE scope.md [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L1 community=1233]
+NODE Mode [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L7 community=1233]
+NODE 4-Stage Gate — What Should Have Run [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L7 community=913]
+EDGE Question --contains [EXTRACTED]--> Site Release Audit — 2026-07-06
+EDGE Question --contains [EXTRACTED]--> DR-SCOPE — Research Scope
+EDGE DR-SCOPE — Research Scope --contains [EXTRACTED]--> scope.md
+EDGE DR-SCOPE — Research Scope --contains [EXTRACTED]--> Assumptions
+EDGE DR-SCOPE — Research Scope --contains [EXTRACTED]--> In scope
+EDGE DR-SCOPE — Research Scope --contains [EXTRACTED]--> Mode
+EDGE DR-SCOPE — Research Scope --contains [EXTRACTED]--> Out of scope
+EDGE DR-SCOPE — Research Scope --contains [EXTRACTED]--> Started
+EDGE Site Release Audit — 2026-07-06 --contains [EXTRACTED]--> SITE-RELEASE-AUDIT-20260706.md
+EDGE Site Release Audit — 2026-07-06 --contains [EXTRACTED]--> 4-Stage Gate — What Should Have Run
+EDGE Site Release Audit — 2026-07-06 --contains [EXTRACTED]--> Follow-Up
+EDGE Site Release Audit — 2026-07-06 --contains [EXTRACTED]--> Gap Remediation (This Pass)
+EDGE Site Release Audit — 2026-07-06 --contains [EXTRACTED]--> v0.51.0 — Honest Assessment
+EDGE Site Release Audit — 2026-07-06 --contains [EXTRACTED]--> v0.51.1 — Honest Assessment (scoped subgraph, usually much smaller than GRAPH_REPORT.md) instead of grepping raw files. Read GRAPH_REPORT.md only for broad architecture context.
+644  pid.txt  25B
+644  research_report.md  0B
+644  run.err  1.5K
+[0m
+[0m→ [0mRead research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/run.err
+[0m→ [0mRead research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/pid.txt
+[0m→ [0mRead research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
+[0m
+[0m$ [0mcommand -v search || echo "search-cli not found"; command -v gh || echo "gh not found"
+search-cli not found
+/opt/homebrew/bin/gh
+[0m
+[0m← [0mWrite research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/run_manifest.json
+Wrote file successfully.
+[0m
+[0m← [0mWrite research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/scope.md
+Wrote file successfully.
+[0m
+[0m← [0mWrite research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research-plan.md
+Wrote file successfully.
+[0m
+[0m# [0mTodos
+[✓] Initialize research output directory and run manifest
+[✓] Write scope.md and research-plan.md
+[•] Gather primary sources across 18 process areas (parallel fetch/index)
+[ ] Dispatch subagents for per-area evidence extraction
+[ ] Triangulate claims and write evidence/sources JSONL files
+[ ] Write outline.md and decision-record.md
+[ ] Draft research_report.md (10 sections, progressive generation)
+[ ] Write critique.md, triangulation.md, handoff.md, vloop-rollup.json
+[ ] Verify artifacts and finalize
+[0m
+[0m⚙ [0mcontext-mode_ctx_fetch_and_index {"requests":[{"url":"https://dora.dev/","source":"dora-home"},{"url":"https://sre.google/sre-book/table-of-contents/","source":"google-sre-book-toc"},{"url":"https://csrc.nist.gov/projects/cybersecurity-supply-chain-risk-management","source":"nist-ssdf"},{"url":"https://owaspsamm.org/about/","source":"owasp-samm-about"},{"url":"https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html","source":"aws-wellarchitected-welcome"},{"url":"https://google.github.io/eng-practices/","source":"google-eng-practices"},{"url":"https://opentelemetry.io/docs/what-is-opentelemetry/","source":"opentelemetry-whatis"},{"url":"https://openssf.org/about/","source":"openssf-about"}],"concurrency":8,"force":true}
+[0m⚙ [0mcontext-mode_ctx_fetch_and_index {"requests":[{"url":"https://engineering.atspotify.com/","source":"spotify-engineering-home"},{"url":"https://netflixtechblog.com/","source":"netflix-tech-blog-home"},{"url":"https://github.blog/engineering/","source":"github-engineering-home"},{"url":"https://www.atlassian.com/team-playbook","source":"atlassian-team-playbook"},{"url":"https://shopify.engineering/","source":"shopify-engineering-home"},{"url":"https://blog.cloudflare.com/","source":"cloudflare-blog-home"},{"url":"https://engineering.linkedin.com/blog","source":"linkedin-engineering-home"},{"url":"https://platformengineering.org/","source":"platform-engineering-home"}],"concurrency":8,"force":true}
+[0m⚙ [0mcontext-mode_ctx_fetch_and_index {"requests":[{"url":"https://dora.dev/capabilities/","source":"dora-capabilities"},{"url":"https://google.github.io/eng-practices/review/","source":"google-code-review"},{"url":"https://testing.googleblog.com/","source":"google-testing-blog"},{"url":"https://backstage.io/docs/","source":"backstage-docs"},{"url":"https://www.svpg.com/articles/","source":"svpg-articles"},{"url":"https://www.nngroup.com/articles/","source":"nng-articles"},{"url":"https://www.anthropic.com/research","source":"anthropic-research"},{"url":"https://github.blog/news-insights/research-news/","source":"github-research-news"}],"concurrency":8,"force":true}
+[0m⚙ [0mcontext-mode_ctx_fetch_and_index {"requests":[{"url":"https://backstage.io/docs/overview/what-is-backstage/","source":"backstage-whatis"},{"url":"https://github.blog/ai-and-machine-learning/","source":"github-ai-ml-blog"},{"url":"https://aws.amazon.com/builders-library/","source":"aws-builders-library"},{"url":"https://www.microsoft.com/en-us/securityengineering/sdl","source":"microsoft-sdl"},{"url":"https://www.cloudflare.com/zero-trust/","source":"cloudflare-zero-trust"},{"url":"https://www.uber.com/en-US/blog/engineering/","source":"uber-engineering-home"},{"url":"https://stripe.com/newsroom/engineering","source":"stripe-engineering-home"},{"url":"https://medium.com/airbnb-engineering","source":"airbnb-engineering-home"}],"concurrency":8,"force":true}
+[0m⚙ [0mcontext-mode_ctx_fetch_and_index {"requests":[{"url":"https://github.blog/","source":"github-blog-home"},{"url":"https://eng.uber.com/","source":"uber-eng-home"},{"url":"https://stripe.com/blog/engineering","source":"stripe-blog-engineering"},{"url":"https://aws.amazon.com/builders-library/ensuring-velocity-at-amazon/","source":"aws-velocity-amazon"},{"url":"https://www.cncf.io/","source":"cncf-home"},{"url":"https://bestpractices.coreinfrastructure.org/","source":"openssf-best-practices"},{"url":"https://engineering.fb.com/","source":"meta-engineering-home"},{"url":"https://cloud.google.com/blog/products/devops-sre","source":"google-devops-sre-blog"}],"concurrency":8,"force":true}
+[0m⚙ [0mcontext-mode_ctx_fetch_and_index {"requests":[{"url":"https://sre.google/workbook/table-of-contents/","source":"google-sre-workbook-toc"},{"url":"https://docs.aws.amazon.com/wellarchitected/latest/reliability-pillar/welcome.html","source":"aws-reliability-pillar"},{"url":"https://docs.aws.amazon.com/wellarchitected/latest/security-pillar/welcome.html","source":"aws-security-pillar"},{"url":"https://owasp.org/Top10/","source":"owasp-top10"},{"url":"https://tag-app-delivery.cncf.io/whitepapers/platforms/","source":"cncf-platforms-whitepaper"},{"url":"https://www.atlassian.com/agile/product-management","source":"atlassian-agile-pm"},{"url":"https://martinfowler.com/articles/practical-test-pyramid.html","source":"fowler-test-pyramid"},{"url":"https://www.continuousdelivery.com/","source":"continuousdelivery-home"}],"concurrency":8,"force":true}
+[0m⚙ [0mcontext-mode_ctx_fetch_and_index {"requests":[{"url":"https://owasp.org/Top10/2025/en/","source":"owasp-top10-2025"},{"url":"https://cloud.google.com/resources/content/dora-roi-ai-assisted-software-development","source":"dora-roi-ai"},{"url":"https://ai.google.dev/gemini-api/docs/code-assist","source":"google-ai-code-assist"},{"url":"https://www.nist.gov/itl/ai-risk-management-framework","source":"nist-ai-rmf"},{"url":"https://github.blog/news-insights/octoverse/","source":"github-octoverse"},{"url":"https://engineering.atspotify.com/2020/03/11/why-backstage-our-open-source-platform-for-developer-portals/","source":"spotify-backstage-why"},{"url":"https://azure.microsoft.com/en-us/products/devops/","source":"azure-devops-home"},{"url":"https://about.gitlab.com/topics/devops/","source":"gitlab-devops-topics"}],"concurrency":8,"force":true}
+[0m⚙ [0mcontext-mode_ctx_fetch_and_index {"requests":[{"url":"https://ai.google.dev/","source":"google-ai-dev-home"},{"url":"https://dora.dev/ai/","source":"dora-ai-page"},{"url":"https://learn.microsoft.com/en-us/azure/devops/?view=azure-devops","source":"azure-devops-docs"},{"url":"https://www.thoughtworks.com/radar","source":"thoughtworks-radar"},{"url":"https://survey.stackoverflow.com/2024/developers-and-ai/","source":"stackoverflow-survey-2024"},{"url":"https://www.jetbrains.com/lp/devecosystem-2024/","source":"jetbrains-devecosystem-2024"},{"url":"https://www.mckinsey.com/capabilities/mckinsey-digital/our-insights","source":"mckinsey-digital-insights"},{"url":"https://www.infoq.com/","source":"infoq-home"}],"concurrency":8,"force":true}
+[0m⚙ [0mcontext-mode_ctx_fetch_and_index {"requests":[{"url":"https://testing.googleblog.com/2010/12/test-sizes.html","source":"google-test-sizes"},{"url":"https://sre.google/sre-book/introduction/","source":"google-sre-introduction"},{"url":"https://dora.dev/research/","source":"dora-research"},{"url":"https://engineering.atspotify.com/2014/03/27/spotify-engineering-culture-part-1/","source":"spotify-squads-culture"},{"url":"https://github.blog/news-insights/research-news/research-quantifying-github-copilots-impact-on-developer-productivity-and-happiness/","source":"github-copilot-impact-study"},{"url":"https://owasp.org/www-project-application-security-verification-standard/","source":"owasp-asvs"},{"url":"https://csrc.nist.gov/publications/detail/sp/800-218/final","source":"nist-ssdf-sp800-218"},{"url":"https://martinfowler.com/articles/continuousIntegration.html","source":"fowler-ci"}],"concurrency":8,"force":true}
+[0m
+[0m← [0mWrite research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/sources.jsonl
+Wrote file successfully.
+[0m
+[0m• [0mResearch SDLC frameworks foundations[90m Ocg-Qwen3.7-Max Agent[0m
+[0m• [0mResearch SDLC product design[90m Ocg-Qwen3.7-Max Agent[0m
+[0m• [0mResearch SDLC platform operations[90m Ocg-Qwen3.7-Max Agent[0m
+[0m• [0mResearch AI agentic software engineering[90m Ocg-Qwen3.7-Max Agent[0m
+[0m✓ [0mResearch SDLC frameworks foundations[90m Ocg-Qwen3.7-Max Agent[0m
+[0m✓ [0mResearch AI agentic software engineering[90m Ocg-Qwen3.7-Max Agent[0m
+[0m✓ [0mResearch SDLC platform operations[90m Ocg-Qwen3.7-Max Agent[0m
+[0m✓ [0mResearch SDLC product design[90m Ocg-Qwen3.7-Max Agent[0m
+[0m
+[0m$ [0mrtk ls -la /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/ && echo "--- sources count ---" && rtk wc -l /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/sources.jsonl && echo "--- evidence counts ---" && rtk wc -l /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/subagent-*-evidence.jsonl
+644  pid.txt  25B
+644  research-plan.md  4.0K
+644  research_report.md  0B
+644  run.err  17.6K
+644  run_manifest.json  890B
+644  scope.md  3.2K
+644  sources.jsonl  22.5K
+644  subagent-1-areas.md  53.9K
+644  subagent-1-evidence.jsonl  21.1K
+644  subagent-2-areas.md  48.9K
+644  subagent-2-evidence.jsonl  18.4K
+644  subagent-3-areas.md  64.1K
+644  subagent-3-evidence.jsonl  26.4K
+644  subagent-4-areas.md  26.4K
+644  subagent-4-evidence.jsonl  18.4K
+--- sources count ---
+96
+--- evidence counts ---
+40 subagent-1-evidence.jsonl
+33 subagent-2-evidence.jsonl
+42 subagent-3-evidence.jsonl
+40 subagent-4-evidence.jsonl
+Σ 155
+[0m
+[0m⚙ [0mcontext-mode_ctx_execute {"language":"javascript","code":"\nconst fs = require('fs');\nconst path = '/Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/';\n\n// Validate evidence files\nconst files = ['subagent-1-evidence.jsonl','subagent-2-evidence.jsonl','subagent-3-evidence.jsonl','subagent-4-evidence.jsonl'];\nlet total = 0;\nlet errors = 0;\nconst allEvidence = [];\nfiles.forEach(f => {\n  const p = path + f;\n  const lines = fs.readFileSync(p,'utf8').split('\\n').filter(l => l.trim());\n  console.log(`${f}: ${lines.length} lines`);\n  lines.forEach((line, idx) => {\n    try {\n      const obj = JSON.parse(line);\n      total++;\n      allEvidence.push(obj);\n      if (!obj.claim || !obj.source_id || !obj.quote) {\n        console.log(`  missing field in ${f}:${idx+1}`);\n        errors++;\n      }\n    } catch(e) {\n      console.log(`  JSON error in ${f}:${idx+1}: ${e.message}`);\n      errors++;\n    }\n  });\n});\nconsole.log(`\\nTotal valid evidence spans: ${total}`);\nconsole.log(`Errors: ${errors}`);\n\n// Validate sources\nconst srcLines = fs.readFileSync(path + 'sources.jsonl','utf8').split('\\n').filter(l => l.trim());\nconsole.log(`\\nSources lines: ${srcLines.length}`);\nconst ids = new Set();\nlet srcErrors = 0;\nsrcLines.forEach((line, idx) => {\n  try {\n    const obj = JSON.parse(line);\n    if (ids.has(obj.id)) {\n      console.log(`  duplicate id ${obj.id} at line ${idx+1}`);\n      srcErrors++;\n    }\n    ids.add(obj.id);\n    if (!obj.id || !obj.url || !obj.title) {\n      console.log(`  missing field at line ${idx+1}`);\n      srcErrors++;\n    }\n  } catch(e) {\n    console.log(`  JSON error in sources:${idx+1}: ${e.message}`);\n    srcErrors++;\n  }\n});\nconsole.log(`Unique source IDs: ${ids.size}`);\nconsole.log(`Source errors: ${srcErrors}`);\n\n// Check evidence source_ids exist in sources\nconst missingSrc = new Set();\nallEvidence.forEach(e => {\n  if (!ids.has(e.source_id)) missingSrc.add(e.source_id);\n});\nconsole.log(`\\nEvidence source_ids missing from sources.jsonl: ${[...missingSrc].join(', ') || 'none'}`);\n"}
+[0m⚙ [0mcontext-mode_ctx_execute_file {"path":"/Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/sources.jsonl","language":"javascript","code":"\nconst lines = FILE_CONTENT.split('\\n').filter(l => l.trim());\nconst ids = [];\nconst dupes = [];\nlines.forEach((line, idx) => {\n  const obj = JSON.parse(line);\n  if (ids.includes(obj.id)) dupes.push({line: idx+1, id: obj.id, title: obj.title});\n  ids.push(obj.id);\n});\nconsole.log('Total lines:', lines.length);\nconsole.log('Duplicates:', JSON.stringify(dupes, null, 2));\nconsole.log('Last 10 IDs:', ids.slice(-10).join('\\n'));\n"}
+[0m⚙ [0mcontext-mode_ctx_execute {"language":"javascript","code":"\nconst fs = require('fs');\nconst path = '/Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/';\n\nconst files = ['subagent-1-evidence.jsonl','subagent-2-evidence.jsonl','subagent-3-evidence.jsonl','subagent-4-evidence.jsonl'];\nconst srcMap = new Map();\nfiles.forEach(f => {\n  const lines = fs.readFileSync(path + f,'utf8').split('\\n').filter(l => l.trim());\n  lines.forEach(line => {\n    const obj = JSON.parse(line);\n    if (!srcMap.has(obj.source_id)) {\n      srcMap.set(obj.source_id, {url: obj.source_url, count: 0, areas: new Set()});\n    }\n    const e = srcMap.get(obj.source_id);\n    e.count++;\n    e.areas.add(obj.process_area);\n  });\n});\n\n// Sort by source_id\nconst sorted = [...srcMap.entries()].sort((a,b) => a[0].localeCompare(b[0]));\nsorted.forEach(([id, info]) => {\n  console.log(`${id}|${info.url}|${info.count}|${[...info.areas].join(',')}`);\n});\nconsole.log(`\\nTotal unique source_ids in evidence: ${srcMap.size}`);\n"}
+[0m⚙ [0mcontext-mode_ctx_execute {"language":"javascript","code":"\nconst fs = require('fs');\nconst path = '/Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/';\n\n// Read sources\nconst srcLines = fs.readFileSync(path + 'sources.jsonl','utf8').split('\\n').filter(l => l.trim());\nconst sources = new Map();\nconst dupes = [];\nsrcLines.forEach(line => {\n  const obj = JSON.parse(line);\n  if (sources.has(obj.id)) {\n    dupes.push(obj.id);\n  } else {\n    sources.set(obj.id, obj);\n  }\n});\nconsole.log(`Initial sources: ${srcLines.length}, unique: ${sources.size}, dupes: ${dupes.join(', ')}`);\n\n// Read evidence files\nconst files = ['subagent-1-evidence.jsonl','subagent-2-evidence.jsonl','subagent-3-evidence.jsonl','subagent-4-evidence.jsonl'];\nconst allEvidence = [];\nfiles.forEach(f => {\n  const lines = fs.readFileSync(path + f,'utf8').split('\\n').filter(l => l.trim());\n  lines.forEach(line => allEvidence.push(JSON.parse(line)));\n});\nconsole.log(`Evidence spans: ${allEvidence.length}`);\n\n// Add missing sources from evidence\nlet added = 0;\nallEvidence.forEach(e => {\n  if (!sources.has(e.source_id)) {\n    const url = e.source_url || '';\n    // derive title from URL last segment\n    let title = url;\n    try {\n      const u = new URL(url);\n      const parts = u.pathname.split('/').filter(p => p);\n      title = parts.length ? parts[parts.length-1].replace(/-/g,' ').replace(/\\.html?$/,'') : u.hostname;\n      title = title.charAt(0).toUpperCase() + title.slice(1);\n    } catch(err) {}\n    sources.set(e.source_id, {\n      id: e.source_id,\n      url: url,\n      title: title,\n      type: 'article',\n      date: '2026',\n      credibility: 'Medium — source cited by subagent; verify independently for critical claims.'\n    });\n    added++;\n  }\n});\nconsole.log(`Sources added from evidence: ${added}`);\nconsole.log(`Total unique sources after merge: ${sources.size}`);\n\n// Write clean sources.jsonl\nconst sortedSources = [...sources.values()].sort((a,b) => a.id.localeCompare(b.id));\nfs.writeFileSync(path + 'sources.jsonl', sortedSources.map(s => JSON.stringify(s)).join('\\n') + '\\n');\nconsole.log('Wrote clean sources.jsonl');\n\n// Write merged evidence.jsonl\n// Normalize evidence: ensure each has evidence_id\nallEvidence.forEach((e, idx) => {\n  e.evidence_id = `ev-${String(idx+1).padStart(4,'0')}`;\n});\nfs.writeFileSync(path + 'evidence.jsonl', allEvidence.map(e => JSON.stringify(e)).join('\\n') + '\\n');\nconsole.log('Wrote evidence.jsonl');\n\n// Summary stats\nconst areaCounts = {};\nallEvidence.forEach(e => {\n  areaCounts[e.process_area] = (areaCounts[e.process_area] || 0) + 1;\n});\nconsole.log('\\nEvidence by process area:');\nObject.entries(areaCounts).sort((a,b) => b[1]-a[1]).forEach(([area, count]) => {\n  console.log(`  ${area}: ${count}`);\n});\n"}
+[0m⚙ [0mcontext-mode_ctx_execute {"language":"javascript","code":"\nconst fs = require('fs');\nconst path = '/Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/';\n\nconst canonical = {\n  '1': '1. Strategy Portfolio & Product Direction',\n  'Strategy Portfolio & Product Direction': '1. Strategy Portfolio & Product Direction',\n  'PA-1 Strategy Portfolio & Product Direction': '1. Strategy Portfolio & Product Direction',\n  '2': '2. Discovery Requirements & Product Definition',\n  'Discovery Requirements & Product Definition': '2. Discovery Requirements & Product Definition',\n  'PA-2 Discovery Requirements & Product Definition': '2. Discovery Requirements & Product Definition',\n  '3': '3. UX & Product Design',\n  'UX & Product Design': '3. UX & Product Design',\n  'PA-3 UX & Product Design': '3. UX & Product Design',\n  '4': '4. Architecture & Technical Design',\n  'Architecture & Technical Design': '4. Architecture & Technical Design',\n  'PA-4 Architecture & Technical Design': '4. Architecture & Technical Design',\n  '5': '5. Planning & Work Management',\n  'Planning & Work Management': '5. Planning & Work Management',\n  'PA-5 Planning & Work Management': '5. Planning & Work Management',\n  '6': '6. Development Environment & Toolchain',\n  'Development Environment & Toolchain': '6. Development Environment & Toolchain',\n  'PA-6 Development Environment & Toolchain': '6. Development Environment & Toolchain',\n  '7': '7. Software Implementation',\n  '7. Software Implementation': '7. Software Implementation',\n  'PA-7 Software Implementation': '7. Software Implementation',\n  'Software Implementation': '7. Software Implementation',\n  '8': '8. Code Review & Knowledge Sharing',\n  '8. Code Review & Knowledge Sharing': '8. Code Review & Knowledge Sharing',\n  'PA-8 Code Review & Knowledge Sharing': '8. Code Review & Knowledge Sharing',\n  'Code Review & Knowledge Sharing': '8. Code Review & Knowledge Sharing',\n  '9': '9. Testing QE & Verification',\n  'Testing QE & Verification': '9. Testing QE & Verification',\n  'PA-9 Testing QE & Verification': '9. Testing QE & Verification',\n  '10': '10. Build Integration & Artifact Management',\n  'Build Integration & Artifact Management': '10. Build Integration & Artifact Management',\n  'PA-10 Build Integration & Artifact Management': '10. Build Integration & Artifact Management',\n  '11': '11. CI Release & Deployment',\n  'CI Release & Deployment': '11. CI Release & Deployment',\n  'PA-11 CI Release & Deployment': '11. CI Release & Deployment',\n  '12': '12. Platform Engineering & IDP',\n  '12. Platform Engineering & IDP': '12. Platform Engineering & IDP',\n  'PA-12 Platform Engineering & IDP': '12. Platform Engineering & IDP',\n  'Platform Engineering & IDP': '12. Platform Engineering & IDP',\n  '13': '13. Security Privacy Risk & Compliance',\n  'Security Privacy Risk & Compliance': '13. Security Privacy Risk & Compliance',\n  'PA-13 Security Privacy Risk & Compliance': '13. Security Privacy Risk & Compliance',\n  '14': '14. Reliability Operations & SRE',\n  '14. Reliability Operations & SRE': '14. Reliability Operations & SRE',\n  'PA-14 Reliability Operations & SRE': '14. Reliability Operations & SRE',\n  'Reliability Operations & SRE': '14. Reliability Operations & SRE',\n  '15': '15. Observability & Production Feedback',\n  '15. Observability & Production Feedback': '15. Observability & Production Feedback',\n  'PA-15 Observability & Production Feedback': '15. Observability & Production Feedback',\n  'Observability & Production Feedback': '15. Observability & Production Feedback',\n  '16': '16. Measurement DevEx & Continuous Improvement',\n  'Measurement DevEx & Continuous Improvement': '16. Measurement DevEx & Continuous Improvement',\n  'PA-16 Measurement DevEx & Continuous Improvement': '16. Measurement DevEx & Continuous Improvement',\n  '17': '17. Maintenance Evolution & Retirement',\n  '17. Maintenance Evolution & Retirement': '17. Maintenance Evolution & Retirement',\n  'PA-17 Maintenance Evolution & Retirement': '17. Maintenance Evolution & Retirement',\n  'Maintenance Evolution & Retirement': '17. Maintenance Evolution & Retirement',\n  '18': '18. AI-Assisted / Agentic Software Engineering',\n  'AI-Assisted / Agentic Software Engineering': '18. AI-Assisted / Agentic Software Engineering',\n  'PA-18 AI-Assisted / Agentic Software Engineering': '18. AI-Assisted / Agentic Software Engineering'\n};\n\nconst lines = fs.readFileSync(path + 'evidence.jsonl','utf8').split('\\n').filter(l => l.trim());\nconst normalized = [];\nconst unknown = new Set();\nlines.forEach((line, idx) => {\n  const obj = JSON.parse(line);\n  const area = obj.process_area;\n  if (canonical[area]) {\n    obj.process_area = canonical[area];\n  } else {\n    unknown.add(area);\n  }\n  normalized.push(obj);\n});\n\nif (unknown.size > 0) {\n  console.log('Unknown area labels:', [...unknown].join('\\n'));\n} else {\n  console.log('All area labels normalized successfully');\n}\n\nfs.writeFileSync(path + 'evidence.jsonl', normalized.map(e => JSON.stringify(e)).join('\\n') + '\\n');\n\nconst counts = {};\nnormalized.forEach(e => {\n  counts[e.process_area] = (counts[e.process_area] || 0) + 1;\n});\nconsole.log('\\nEvidence counts by canonical area:');\nObject.entries(counts).sort((a,b) => parseInt(a[0]) - parseInt(b[0])).forEach(([area, count]) => {\n  console.log(`  ${area}: ${count}`);\n});\nconsole.log(`\\nTotal evidence spans: ${normalized.length}`);\n"}
+[0m⚙ [0mcontext-mode_ctx_execute {"language":"javascript","code":"\nconst fs = require('fs');\nconst path = '/Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/';\nconst lines = fs.readFileSync(path + 'evidence.jsonl','utf8').split('\\n').filter(l => l.trim());\nconst canonicalAreas = new Set([\n  '1. Strategy Portfolio & Product Direction',\n  '2. Discovery Requirements & Product Definition',\n  '3. UX & Product Design',\n  '4. Architecture & Technical Design',\n  '5. Planning & Work Management',\n  '6. Development Environment & Toolchain',\n  '7. Software Implementation',\n  '8. Code Review & Knowledge Sharing',\n  '9. Testing QE & Verification',\n  '10. Build Integration & Artifact Management',\n  '11. CI Release & Deployment',\n  '12. Platform Engineering & IDP',\n  '13. Security Privacy Risk & Compliance',\n  '14. Reliability Operations & SRE',\n  '15. Observability & Production Feedback',\n  '16. Measurement DevEx & Continuous Improvement',\n  '17. Maintenance Evolution & Retirement',\n  '18. AI-Assisted / Agentic Software Engineering'\n]);\nconst nonCanonical = [];\nlines.forEach(line => {\n  const obj = JSON.parse(line);\n  if (!canonicalAreas.has(obj.process_area)) {\n    nonCanonical.push(JSON.stringify(obj.process_area));\n  }\n});\nconsole.log('Non-canonical labels (JSON-encoded to show exact bytes):');\n[...new Set(nonCanonical)].forEach(l => console.log(l));\nconsole.log(`Count non-canonical spans: ${nonCanonical.length}`);\n"}
+[0m
+[0m# [0mTodos
+[✓] Initialize research output directory and run manifest
+[✓] Write scope.md and research-plan.md
+[✓] Gather primary sources across 18 process areas (parallel fetch/index)
+[✓] Dispatch subagents for per-area evidence extraction
+[✓] Triangulate claims and write evidence/sources JSONL files
+[•] Write outline.md and decision-record.md
+[ ] Draft research_report.md (10 sections, progressive generation)
+[ ] Write critique.md, triangulation.md, handoff.md, vloop-rollup.json
+[ ] Verify artifacts and finalize
+[0m
+[0m⚙ [0mcontext-mode_ctx_execute_file {"path":"/Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/subagent-1-areas.md","language":"javascript","code":"\nconst lines = FILE_CONTENT.split('\\n');\nconst headings = lines.filter(l => l.startsWith('#')).map(l => l.replace(/^#+\\s*/,'').trim());\nheadings.forEach(h => console.log(h));\nconsole.log(`\\nTotal headings: ${headings.length}`);\n"}
+[0m⚙ [0mcontext-mode_ctx_execute_file {"path":"/Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/subagent-2-areas.md","language":"javascript","code":"\nconst lines = FILE_CONTENT.split('\\n');\nconst headings = lines.filter(l => l.startsWith('#')).map(l => l.replace(/^#+\\s*/,'').trim());\nheadings.forEach(h => console.log(h));\nconsole.log(`\\nTotal headings: ${headings.length}`);\n"}
+[0m⚙ [0mcontext-mode_ctx_execute_file {"path":"/Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/subagent-3-areas.md","language":"javascript","code":"\nconst lines = FILE_CONTENT.split('\\n');\nconst headings = lines.filter(l => l.startsWith('#')).map(l => l.replace(/^#+\\s*/,'').trim());\nheadings.forEach(h => console.log(h));\nconsole.log(`\\nTotal headings: ${headings.length}`);\n"}
+[0m⚙ [0mcontext-mode_ctx_execute_file {"path":"/Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/subagent-4-areas.md","language":"javascript","code":"\nconst lines = FILE_CONTENT.split('\\n');\nconst headings = lines.filter(l => l.startsWith('#')).map(l => l.replace(/^#+\\s*/,'').trim());\nheadings.forEach(h => console.log(h));\nconsole.log(`\\nTotal headings: ${headings.length}`);\n"}
+[0m
+[0m← [0mWrite research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/outline.md
+Wrote file successfully.
+[0m
+[0m← [0mWrite research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/decision-record.md
+Wrote file successfully.
+[0m
+[0m⚙ [0mcontext-mode_ctx_execute {"language":"javascript","code":"\nconst fs = require('fs');\nconst path = '/Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/';\n\nconst evidence = fs.readFileSync(path + 'evidence.jsonl','utf8').split('\\n').filter(l => l.trim()).map(JSON.parse);\n\n// Group evidence by claim (case-insensitive normalized)\nconst claimGroups = new Map();\nevidence.forEach(e => {\n  const key = e.claim.toLowerCase().replace(/\\s+/g,' ').trim();\n  if (!claimGroups.has(key)) {\n    claimGroups.set(key, {\n      claim: e.claim,\n      process_area: e.process_area,\n      evidence_ids: [],\n      source_ids: new Set(),\n      source_urls: new Set()\n    });\n  }\n  const g = claimGroups.get(key);\n  g.evidence_ids.push(e.evidence_id);\n  g.source_ids.add(e.source_id);\n  if (e.source_url) g.source_urls.add(e.source_url);\n});\n\n// Build claims\nconst claims = [];\nlet idx = 1;\n[...claimGroups.values()].forEach(g => {\n  const sourceCount = g.source_ids.size;\n  let support_status = 'single-source';\n  if (sourceCount >= 3) support_status = 'triangulated';\n  else if (sourceCount === 2) support_status = 'supported';\n  \n  claims.push({\n    claim_id: `claim-${String(idx++).padStart(4,'0')}`,\n    claim: g.claim,\n    process_area: g.process_area,\n    support_status: support_status,\n    source_count: sourceCount,\n    evidence_ids: g.evidence_ids,\n    source_ids: [...g.source_ids]\n  });\n});\n\nfs.writeFileSync(path + 'claims.jsonl', claims.map(c => JSON.stringify(c)).join('\\n') + '\\n');\n\nconsole.log(`Total unique claims: ${claims.length}`);\nconsole.log('Support status distribution:');\nconst dist = {};\nclaims.forEach(c => dist[c.support_status] = (dist[c.support_status] || 0) + 1);\nObject.entries(dist).forEach(([k,v]) => console.log(`  ${k}: ${v}`));\n\nconsole.log('\\nSample claims:');\nclaims.slice(0,5).forEach(c => console.log(`  ${c.claim_id}: ${c.claim.substring(0,80)}... [${c.support_status}]`));\n"}
+[0m
+[0m← [0mWrite research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/triangulation.md
+Wrote file successfully.
+[0m
+[0m← [0mWrite research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/critique.md
+Wrote file successfully.
+[0m
+[0m← [0mWrite research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/handoff.md
+Wrote file successfully.
+[0m
+[0m← [0mWrite research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/vloop-rollup.json
+Wrote file successfully.
+[0m
+[0m# [0mTodos
+[✓] Initialize research output directory and run manifest
+[✓] Write scope.md and research-plan.md
+[✓] Gather primary sources across 18 process areas (parallel fetch/index)
+[✓] Dispatch subagents for per-area evidence extraction
+[✓] Triangulate claims and write evidence/sources JSONL files
+[✓] Write outline.md and decision-record.md
+[✓] Write critique.md, triangulation.md, handoff.md, vloop-rollup.json
+[•] Draft research_report.md (10 sections, progressive generation)
+[ ] Verify artifacts and finalize
+[0m
+[0m← [0mWrite research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
+Wrote file successfully.
+[0m
+[0m← [0mEdit research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
+Index: /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
+===================================================================
+--- /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
++++ /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
+@@ -46,4 +46,130 @@
+ - **Temporal risk:** AI/agentic practices are evolving faster than the research cycle; statements about AI should be treated as current as of mid-2026.
+ - **Evidence imbalance:** Areas such as UX/Product Design, Observability, and Maintenance/Retirement have fewer direct evidence spans than CI/CD, SRE, and AI.
+ 
+ The final source registry contains 121 entries; the evidence ledger contains 155 claim-level spans. Both are provided in `sources.jsonl` and `evidence.jsonl`.
++
++# 3. Canonical Process-Area Taxonomy
++
++## 3.1 Overview
++
++The 18 Process Areas are arranged in lifecycle order: strategy and direction, discovery and design, architecture and planning, implementation and verification, release and operations, measurement and improvement, and retirement. An additional cross-cutting area, AI-Assisted / Agentic Software Engineering, overlays the entire lifecycle. The taxonomy is compatible with DORA capabilities, ITIL service lifecycle, NIST SSDF practices, and SRE principles.
++
++## 3.2 Process Area 1: Strategy Portfolio & Product Direction
++
++**Definition and purpose.** This area defines the organization's product and technology strategy, aligns engineering investment with business outcomes, and governs the portfolio of products and platforms. Its purpose is to ensure that engineering capacity is directed toward the highest-value opportunities and that technical direction supports long-term competitiveness [src-svpg-articles] [src-atlassian-agile-pm].
++
++**Mid-2026 relevance.** In an environment of rapid AI capability growth and economic pressure on R&D spend, strategic alignment has become more critical. Organizations that connect day-to-day decisions to multi-year objectives reduce waste and improve focus.
++
++**Inputs.** Market analysis, competitive intelligence, customer feedback, financial plans, technology radar, regulatory landscape, AI capability assessments.
++
++**Workflows.** Product vision and strategy definition; portfolio prioritization and investment allocation; OKR/strategic metric setting; technology roadmap maintenance.
++
++**Outputs.** Product vision, strategy documents, prioritized portfolio backlog, investment allocation decisions, OKRs, architecture principles.
++
++**Dependencies.** Feeds into Discovery Requirements (Area 2) and Architecture (Area 4); receives feedback from Measurement (Area 16) and Production Feedback (Area 15).
++
++**Metrics / gates / exit criteria.** OKR attainment, resource allocation alignment, portfolio ROI, strategic initiative progress, stakeholder alignment scores.
++
++**Pitfalls and mitigations.** *Pitfall:* Strategy becomes a once-a-year slide deck. *Mitigation:* Quarterly strategy reviews with explicit tie to backlog prioritization. *Pitfall:* Overcommitment to AI initiatives without clear outcomes. *Mitigation:* Treat AI bets as portfolio experiments with stage-gates.
++
++**Context variations.** Startups keep this area lightweight, often embodied in the founder/CTO. Enterprises require formal portfolio governance and investment committees. Regulated organizations add compliance and risk dimensions to portfolio decisions.
++
++## 3.3 Process Area 2: Discovery Requirements & Product Definition
++
++**Definition and purpose.** This area covers understanding customer and business problems, generating and validating hypotheses, and defining requirements that are valuable, usable, feasible, and viable [src-svpg-discovery] [src-atlassian-agile-pm].
++
++**Mid-2026 relevance.** As AI accelerates delivery, the bottleneck has shifted from implementation to discovering the right problems to solve. Strong discovery practices prevent building the wrong thing faster.
++
++**Inputs.** Strategy (Area 1), user research, analytics, support tickets, sales feedback, competitive analysis, regulatory requirements.
++
++**Workflows.** Opportunity assessment; user research and problem discovery; requirements specification and validation; hypothesis testing; jobs-to-be-done analysis.
++
++**Outputs.** Problem statements, user personas, validated hypotheses, user stories, product requirements, acceptance criteria.
++
++**Dependencies.** Receives direction from Strategy (Area 1); feeds UX/Product Design (Area 3) and Planning (Area 5).
++
++**Metrics / gates / exit criteria.** Problem-solution fit evidence, user interview coverage, hypothesis validation rate, requirement ambiguity score, stakeholder sign-off.
++
++**Pitfalls and mitigations.** *Pitfall:* Requirements are captured as static documents and never validated. *Mitigation:* Continuous discovery with weekly customer touchpoints. *Pitfall:* AI-generated requirements without human validation. *Mitigation:* Mandatory human review of AI-synthesized requirements.
++
++**Context variations.** Consumer products emphasize rapid qualitative research; enterprise products emphasize stakeholder interviews and contract/requirements traceability; regulated products require formal requirements baselines.
++
++## 3.4 Process Area 3: UX & Product Design
++
++**Definition and purpose.** This area translates requirements into user experiences through research, interaction design, visual design, prototyping, and usability evaluation [src-nng-articles] [src-nng-design-thinking].
++
++**Mid-2026 relevance.** Generative AI enables faster prototyping and personalization, raising expectations for UX quality and consistency. Design systems and accessibility are no longer optional for scale.
++
++**Inputs.** Requirements (Area 2), user research, brand guidelines, accessibility standards, platform constraints.
++
++**Workflows.** UX research and usability evaluation; interaction and visual design; design system governance; prototyping and user testing; accessibility review.
++
++**Outputs.** Wireframes, mockups, prototypes, design specifications, design system updates, usability reports.
++
++**Dependencies.** Receives requirements from Area 2; feeds Planning (Area 5) and Implementation (Area 7).
++
++**Metrics / gates / exit criteria.** Usability test success rate, design system adoption, accessibility conformance, time-to-consistency, design review completion.
++
++**Pitfalls and mitigations.** *Pitfall:* Design is treated as a final polish step. *Mitigation:* Integrate designers into discovery and iteration from day one. *Pitfall:* Design system becomes a bottleneck. *Mitigation:* Federated contribution model with clear governance.
++
++**Context variations.** Startups may use a single designer across all workflows. Enterprises maintain specialized UX research, content design, and design-ops functions. Regulated contexts require design traceability and human-factors validation.
++
++## 3.5 Process Area 4: Architecture & Technical Design
++
++**Definition and purpose.** This area defines the structural and non-functional decisions that enable systems to meet current and future needs. It includes architecture principles, technology selection, design reviews, and decision records [src-google-eng-practices] [src-tw-evolutionary-arch] [src-aws-wellarchitected].
++
++**Mid-2026 relevance.** AI copilots and agents can generate code but not context. Architecture remains a high-leverage human activity, especially for cross-system boundaries, reliability, security, and cost.
++
++**Inputs.** Strategy (Area 1), requirements (Area 2), constraints (security, compliance, cost, scale), technology radar, production feedback (Area 15).
++
++**Workflows.** Architectural vision and principles definition; design review and ADR governance; technology selection; evolutionary architecture oversight; non-functional requirements definition.
++
++**Outputs.** Architecture principles, ADRs, system diagrams, non-functional requirements, technical standards, platform contracts.
++
++**Dependencies.** Receives strategy and constraints; guides Implementation (Area 7), Testing (Area 9), and Platform Engineering (Area 12).
++
++**Metrics / gates / exit criteria.** ADR coverage, design review completion, architecture fitness for requirements, technical-debt growth rate, non-functional test pass rate.
++
++**Pitfalls and mitigations.** *Pitfall:* Architecture is ivory-tower and ignores implementation constraints. *Mitigation:* Embed architects in teams and require implementation feedback loops. *Pitfall:* Over-engineering for hypothetical scale. *Mitigation:* Start simple and evolve based on measured load.
++
++**Context variations.** Startups favor monoliths and minimal architecture. Large-scale distributed systems require formal architecture boards. Regulated systems require safety, security, and traceability reviews.
++
++## 3.6 Process Area 5: Planning & Work Management
++
++**Definition and purpose.** This area breaks strategy and requirements into actionable work, sequences it, and coordinates execution across teams. It balances predictability with adaptability [src-atlassian-agile-pm] [src-spotify-squads].
++
++**Mid-2026 relevance.** Remote/hybrid work, distributed systems, and AI-generated work items increase coordination complexity. Planning must be lightweight enough to adapt but structured enough to surface dependencies.
++
++**Inputs.** Requirements (Area 2), design artifacts (Area 3), architecture decisions (Area 4), team capacity, dependencies, risks.
++
++**Workflows.** Sprint/iteration planning; backlog refinement and prioritization; cross-team coordination and dependency management; capacity planning; roadmap communication.
++
++**Outputs.** Iteration plans, prioritized backlogs, dependency maps, capacity forecasts, release forecasts.
++
++**Dependencies.** Receives inputs from Areas 1-4; guides Implementation (Area 7) and feeds Measurement (Area 16).
++
++**Metrics / gates / exit criteria.** Sprint goal attainment, velocity stability, dependency resolution rate, forecast accuracy, WIP limits respected.
++
++**Pitfalls and mitigations.** *Pitfall:* Planning becomes a ceremony without outcomes. *Mitigation:* Tie every plan to a measurable objective. *Pitfall:* Over-planning in volatile domains. *Mitigation:* Use rolling-wave planning with explicit uncertainty.
++
++**Context variations.** Small teams use lightweight Kanban or Scrum. Large enterprises may use quarterly planning and portfolio tooling. Regulated projects may require baseline change control.
++
++## 3.7 Process Area 6: Development Environment & Toolchain
++
++**Definition and purpose.** This area provides the local and remote environments, version control, build tools, linters, and integrated developer experience that enable engineers to write, test, and debug code efficiently [src-gitlab-devops] [src-dora-capabilities].
++
++**Mid-2026 relevance.** Standardized, reproducible environments reduce "works on my machine" waste. Cloud development environments, AI coding assistants, and policy-as-code are reshaping this area.
++
++**Inputs.** Architecture standards (Area 4), platform contracts (Area 12), security policies (Area 13), team preferences.
++
++**Workflows.** Environment provisioning and standardization; repository and branch management; toolchain selection and integration; local/remote development environment parity; pre-commit quality gates.
++
++**Outputs.** Standardized environments, repository templates, CI starter kits, IDE configurations, policy-as-code rules.
++
++**Dependencies.** Receives standards from Areas 4, 12, 13; enables Implementation (Area 7) and Testing (Area 9).
++
++**Metrics / gates / exit criteria.** Environment provisioning time, build time on local machine, mean time to first commit, toolchain satisfaction, policy violation rate.
++
++**Pitfalls and mitigations.** *Pitfall:* Toolchain fragmentation across teams. *Mitigation:* Golden paths with escape hatches. *Pitfall:* Slow or unreliable local builds. *Mitigation:* Remote build/cache infrastructure and reproducible containers.
++
++**Context variations.** Startups optimize for speed with minimal standardization. Enterprises enforce approved tool lists and security scanning. Regulated environments require immutable, audited toolchains.
+
+[0m
+[0m← [0mEdit research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
+Index: /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
+===================================================================
+--- /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
++++ /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
+@@ -172,4 +172,124 @@
+ 
+ **Pitfalls and mitigations.** *Pitfall:* Toolchain fragmentation across teams. *Mitigation:* Golden paths with escape hatches. *Pitfall:* Slow or unreliable local builds. *Mitigation:* Remote build/cache infrastructure and reproducible containers.
+ 
+ **Context variations.** Startups optimize for speed with minimal standardization. Enterprises enforce approved tool lists and security scanning. Regulated environments require immutable, audited toolchains.
++
++## 3.8 Process Area 7: Software Implementation
++
++**Definition and purpose.** This area covers writing, editing, and refactoring production code, configuration, and infrastructure definitions. It is where design and architecture become executable systems [src-google-eng-practices] [src-fowler-humans-agents].
++
++**Mid-2026 relevance.** AI-assisted coding is now a standard part of the implementation toolkit. The challenge has shifted from typing speed to maintaining code quality, security, and architectural coherence when much code is AI-suggested.
++
++**Inputs.** Requirements (Area 2), designs (Area 3), architecture decisions (Area 4), work plans (Area 5), development environment (Area 6).
++
++**Workflows.** Feature implementation with AI assistance; trunk-based development with feature flags; refactoring and code health; configuration and infrastructure-as-code authoring.
++
++**Outputs.** Source code, configuration, infrastructure definitions, unit tests, implementation notes.
++
++**Dependencies.** Receives all upstream design and planning inputs; feeds Code Review (Area 8), Testing (Area 9), and Build/Integration (Area 10).
++
++**Metrics / gates / exit criteria.** Code coverage, static analysis score, build success rate, feature-flag hygiene, commit frequency, AI-generated code review pass rate.
++
++**Pitfalls and mitigations.** *Pitfall:* AI-generated code without context or tests. *Mitigation:* Require tests and human review for AI-generated changes. *Pitfall:* Feature-flag proliferation. *Mitigation:* Flag lifecycle management and automated cleanup.
++
++**Context variations.** Startups optimize for feature velocity. Enterprises enforce style guides and architecture conformance. Regulated systems require traceable changes and formal author signatures.
++
++## 3.9 Process Area 8: Code Review & Knowledge Sharing
++
++**Definition and purpose.** This area ensures code quality, spreads knowledge, and maintains consistency through peer review, pair/mob programming, and documentation [src-google-code-review] [src-github-engineering].
++
++**Mid-2026 relevance.** AI-assisted code review tools are proliferating, but human judgment remains essential for architecture, security, and context. The area is evolving from "find bugs" to "maintain collective ownership."
++
++**Inputs.** Committed code (Area 7), coding standards, security guidelines, architecture decisions (Area 4).
++
++**Workflows.** Code review process; pair programming / mob programming; cross-repo documentation and knowledge bases; AI-powered review assistance.
++
++**Outputs.** Approved code, review comments, knowledge-base updates, mentoring records, style guide refinements.
++
++**Dependencies.** Receives code from Area 7; gates Testing (Area 9) and Build/Integration (Area 10).
++
++**Metrics / gates / exit criteria.** Review turnaround time, review depth, defect escape rate, knowledge-sharing coverage, reviewer load distribution.
++
++**Pitfalls and mitigations.** *Pitfall:* Reviews become rubber stamps. *Mitigation:* Require reviewers to verify behavior, not just syntax. *Pitfall:* Knowledge silos persist despite reviews. *Mitigation:* Rotate reviewers and document architectural decisions.
++
++**Context variations.** Small teams use informal reviews. Large organizations require mandatory reviewers and approval policies. Regulated contexts require signed approvals and audit trails.
++
++## 3.10 Process Area 9: Testing QE & Verification
++
++**Definition and purpose.** This area verifies that software meets functional and non-functional requirements through manual and automated testing, quality engineering practices, and formal verification [src-martinfowler-testpyramid] [src-google-test-sizes] [src-owasp-samm].
++
++**Mid-2026 relevance.** AI-generated code increases the volume of code to verify. The test pyramid, shift-left automation, and property-based testing remain foundational, while AI-assisted test generation is emerging.
++
++**Inputs.** Requirements (Area 2), designs (Area 3), architecture decisions (Area 4), code (Area 7), risk assessments (Area 13).
++
++**Workflows.** Test strategy and planning; test automation development and maintenance; manual/exploratory testing; performance and security testing; AI-assisted test generation.
++
++**Outputs.** Test plans, automated tests, test reports, defect reports, quality gates, coverage metrics.
++
++**Dependencies.** Receives code and requirements from Areas 2, 7; gates CI/Release (Area 11).
++
++**Metrics / gates / exit criteria.** Test coverage, defect escape rate, test execution time, flaky test rate, change-fail rate, non-functional requirement verification.
++
++**Pitfalls and mitigations.** *Pitfall:* Testing is an afterthought. *Mitigation:* Define test strategy before implementation. *Pitfall:* Over-reliance on end-to-end tests. *Mitigation:* Follow the test pyramid with strong unit-test foundations.
++
++**Context variations.** Startups rely on unit tests and smoke tests. Enterprises add integration, compliance, and performance suites. Safety-critical systems require formal methods and independent verification.
++
++## 3.11 Process Area 10: Build Integration & Artifact Management
++
++**Definition and purpose.** This area compiles source code, manages dependencies, produces artifacts, and ensures artifact integrity and provenance [src-martinfowler-ci] [src-openssf-slsa].
++
++**Mid-2026 relevance.** Supply-chain attacks have made artifact provenance, SBOMs, and signed builds essential. Reproducible builds and dependency scanning are moving from leading-edge to universal.
++
++**Inputs.** Source code (Area 7, 8), dependency manifests, build scripts, security policies (Area 13).
++
++**Workflows.** Build environment setup and maintenance; dependency management and vulnerability scanning; artifact repository management; SBOM generation and signing; reproducible build verification.
++
++**Outputs.** Built artifacts, SBOMs, signed packages, dependency reports, build logs.
++
++**Dependencies.** Receives code from Areas 7-8; feeds CI/Release (Area 11) and Security (Area 13).
++
++**Metrics / gates / exit criteria.** Build success rate, build duration, artifact provenance coverage, dependency vulnerability count, reproducible build rate.
++
++**Pitfalls and mitigations.** *Pitfall:* Non-reproducible builds. *Mitigation:* Pin dependencies and use hermetic build environments. *Pitfall:* Vulnerable dependencies in production. *Mitigation:* Automated scanning and update policies.
++
++**Context variations.** Small teams use managed build services. Enterprises require private artifact repositories and supply-chain governance. Regulated systems require signed artifacts and full provenance.
++
++## 3.12 Process Area 11: CI Release & Deployment
++
++**Definition and purpose.** This area automates the integration, validation, release, and deployment of software changes to production environments [src-continuousdelivery] [src-dora-tbd] [src-fowler-feature-toggles].
++
++**Mid-2026 relevance.** Continuous delivery is strongly correlated with organizational performance. AI-generated changes increase volume, requiring robust, automated pipelines with strong gates.
++
++**Inputs.** Artifacts (Area 10), test results (Area 9), deployment configurations, release plans (Area 5).
++
++**Workflows.** Continuous integration; deployment execution and progressive rollout; release coordination; rollback and recovery; feature flag management.
++
++**Outputs.** Deployed changes, release notes, deployment logs, canary analysis reports, incident records.
++
++**Dependencies.** Receives artifacts and test results from Areas 9-10; triggers Observability (Area 15) and SRE (Area 14).
++
++**Metrics / gates / exit criteria.** Deployment frequency, lead time for changes, change-fail rate, mean time to recovery (MTTR), release approval compliance.
++
++**Pitfalls and mitigations.** *Pitfall:* Manual release processes. *Mitigation:* Automate deployment to the maximum extent safe. *Pitfall:* Deploying without rollback plans. *Mitigation:* Every release must have an automated rollback path.
++
++**Context variations.** Startups deploy continuously from trunk. Enterprises may use scheduled releases and change-advisory boards. Regulated contexts require approval gates and audit trails.
++
++## 3.13 Process Area 12: Platform Engineering & IDP
++
++**Definition and purpose.** This area builds and operates internal developer platforms (IDPs) that provide self-service infrastructure, golden paths, and standardized tooling to reduce cognitive load and improve productivity [src-cncf-platforms] [src-backstage-whatis] [src-idp-definition].
++
++**Mid-2026 relevance.** As systems become more complex, product teams need reliable platforms to abstract infrastructure, security, and observability concerns. Platform engineering is the organizational capability that delivers this.
++
++**Inputs.** Architecture standards (Area 4), developer feedback (Area 16), security requirements (Area 13), observability needs (Area 15).
++
++**Workflows.** Golden path definition and implementation; platform product management; self-service infrastructure provisioning; platform SLO management; developer onboarding.
++
++**Outputs.** Platform services, golden path templates, self-service APIs, documentation, platform SLOs.
++
++**Dependencies.** Informs Development Environment (Area 6), Implementation (Area 7), Build/Integration (Area 10), and CI/Release (Area 11); receives feedback from Measurement (Area 16).
++
++**Metrics / gates / exit criteria.** Platform adoption rate, developer self-service success rate, time to provision environment, platform SLO attainment, developer satisfaction.
++
++**Pitfalls and mitigations.** *Pitfall:* Platform team becomes a new silo. *Mitigation:* Treat the platform as a product with internal customers. *Pitfall:* Over-standardization stifles innovation. *Mitigation:* Golden paths with opt-out mechanisms.
++
++**Context variations.** Startups may not need a dedicated platform team. Mid-size companies use platform teams for shared services. Large enterprises operate multi-layer platforms (compute, data, security, AI).
+
+[0m
+[0m← [0mEdit research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
+Index: /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
+===================================================================
+--- /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
++++ /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
+@@ -292,4 +292,124 @@
+ 
+ **Pitfalls and mitigations.** *Pitfall:* Platform team becomes a new silo. *Mitigation:* Treat the platform as a product with internal customers. *Pitfall:* Over-standardization stifles innovation. *Mitigation:* Golden paths with opt-out mechanisms.
+ 
+ **Context variations.** Startups may not need a dedicated platform team. Mid-size companies use platform teams for shared services. Large enterprises operate multi-layer platforms (compute, data, security, AI).
++
++## 3.14 Process Area 13: Security Privacy Risk & Compliance
++
++**Definition and purpose.** This area embeds security, privacy, and compliance into the SDLC through threat modeling, secure design, vulnerability management, access control, and audit readiness [src-nist-ssdf] [src-owasp-samm] [src-microsoft-sdl].
++
++**Mid-2026 relevance.** Attack surfaces expand with AI agents, supply chains, and third-party integrations. Regulations (GDPR, HIPAA, SOC 2, PCI-DSS, emerging AI regulations) require continuous compliance evidence.
++
++**Inputs.** Requirements (Area 2), architecture decisions (Area 4), threat intelligence, regulatory requirements, vulnerability data.
++
++**Workflows.** Threat modeling and risk assessment; secure design review; security testing and verification; vulnerability management and patching; privacy impact assessment; compliance evidence collection.
++
++**Outputs.** Threat models, risk registers, security test results, vulnerability reports, compliance attestations, SBOMs.
++
++**Dependencies.** Receives architecture and requirements from Areas 2, 4; gates all downstream areas, especially Build/Integration (Area 10), Testing (Area 9), and CI/Release (Area 11).
++
++**Metrics / gates / exit criteria.** Vulnerability density, mean time to remediate, security gate pass rate, compliance control coverage, privacy impact assessment completion.
++
++**Pitfalls and mitigations.** *Pitfall:* Security as a final gate. *Mitigation:* Shift-left security into design and implementation. *Pitfall:* Compliance theater. *Mitigation:* Map controls to real risks and automate evidence collection.
++
++**Context variations.** All organizations need baseline security. Regulated industries require formal controls and audits. Consumer companies emphasize privacy-by-design and transparency.
++
++## 3.15 Process Area 14: Reliability Operations & SRE
++
++**Definition and purpose.** This area ensures that systems meet reliability targets through service-level objectives, error budgets, incident response, and blameless postmortems [src-google-sre-book] [src-google-sre-eliminating-toil] [src-aws-reliability].
++
++**Mid-2026 relevance.** AI-driven services and real-time systems require explicit reliability targets. SRE has evolved from a Google-specific practice to an industry standard for operating critical systems.
++
++**Inputs.** Service architecture, SLO definitions, observability data (Area 15), incident history, capacity plans.
++
++**Workflows.** SLO-driven operations; incident response and blameless postmortem; capacity planning; chaos engineering; toil reduction; on-call rotation management.
++
++**Outputs.** SLOs and error budgets, incident reports, postmortem action items, reliability roadmaps, runbooks.
++
++**Dependencies.** Receives data from Observability (Area 15); informs Architecture (Area 4), Planning (Area 5), and Maintenance (Area 17).
++
++**Metrics / gates / exit criteria.** SLO attainment, error budget burn rate, MTTR, MTBF, incident frequency, toil percentage, on-call health.
++
++**Pitfalls and mitigations.** *Pitfall:* SLOs set without business input. *Mitigation:* Define SLOs with product and customer input. *Pitfall:* Blameful postmortems. *Mitigation:* Train facilitators and protect psychological safety.
++
++**Context variations.** Startups may share on-call among engineers. Large organizations have dedicated SRE teams. Safety-critical systems require formal reliability analysis.
++
++## 3.16 Process Area 15: Observability & Production Feedback
++
++**Definition and purpose.** This area collects, correlates, and analyzes telemetry (metrics, logs, traces, events) to understand system behavior and feed insights back into the lifecycle [src-opentelemetry] [src-google-sre-postmortem].
++
++**Mid-2026 relevance.** OpenTelemetry has become the de facto standard. AI-driven analytics and anomaly detection are emerging, but the foundation remains high-cardinality telemetry and structured logs.
++
++**Inputs.** Instrumented code, infrastructure telemetry, user interactions, business events.
++
++**Workflows.** Observability pipeline design; distributed tracing and logging; production feedback loop; anomaly detection and alerting; cost optimization of telemetry.
++
++**Outputs.** Dashboards, alerts, traces, logs, event correlations, feedback reports for product and engineering.
++
++**Dependencies.** Receives deployed changes from CI/Release (Area 11); feeds SRE (Area 14), Measurement (Area 16), Discovery (Area 2), and Strategy (Area 1).
++
++**Metrics / gates / exit criteria.** Telemetry coverage, alert signal-to-noise ratio, mean time to detect, query performance, telemetry cost per transaction.
++
++**Pitfalls and mitigations.** *Pitfall:* Alert fatigue. *Mitigation:* Align alerts to SLOs and user impact. *Pitfall:* Observability data silos. *Mitigation:* Adopt OpenTelemetry and unified backends.
++
++**Context variations.** Small systems use managed observability services. Large systems require custom pipelines and sampling strategies. Regulated systems need tamper-evident logs.
++
++## 3.17 Process Area 16: Measurement DevEx & Continuous Improvement
++
++**Definition and purpose.** This area measures delivery performance, developer experience, and product outcomes, then uses those measurements to drive improvement [src-dora-metrics-four-keys] [src-dora-measurement-frameworks] [src-github-copilot-impact].
++
++**Mid-2026 relevance.** AI investments and tool sprawl increase the need for evidence-based decisions. DORA metrics and DevEx surveys are becoming standard management instrumentation.
++
++**Inputs.** CI/CD metrics, observability data, survey results, incident data, business outcomes.
++
++**Workflows.** DORA metrics collection and analysis; developer experience assessment and improvement; retrospectives and continuous improvement cycles; OKR tracking.
++
++**Outputs.** DORA dashboards, DevEx reports, improvement backlogs, retrospective action items, benchmark comparisons.
++
++**Dependencies.** Receives data from CI/Release (Area 11), Observability (Area 15), SRE (Area 14); feeds Strategy (Area 1), Planning (Area 5), Platform Engineering (Area 12).
++
++**Metrics / gates / exit criteria.** Deployment frequency, lead time, change-fail rate, MTTR, DevEx score, improvement completion rate.
++
++**Pitfalls and mitigations.** *Pitfall:* Measuring activity instead of outcomes. *Mitigation:* Focus on DORA outcomes and developer experience, not lines of code. *Pitfall:* Survey fatigue. *Mitigation:* Short, frequent surveys with visible action.
++
++**Context variations.** Startups measure informally. Enterprises run formal DevEx programs. Regulated organizations add compliance and audit metrics.
++
++## 3.18 Process Area 17: Maintenance Evolution & Retirement
++
++**Definition and purpose.** This area manages technical debt, modernizes legacy systems, and retires obsolete services in a controlled manner [src-fowler-strangler-fig-bliki] [src-tw-evolutionary-arch].
++
++**Mid-2026 relevance.** AI-generated code and rapid iteration increase the rate at which systems accumulate debt. Without explicit maintenance, systems become brittle and costly.
++
++**Inputs.** Technical-debt inventory, reliability data (Area 14), business value assessments, risk assessments.
++
++**Workflows.** Technical debt management; legacy system modernization (strangler fig); system retirement; knowledge preservation; deprecation communication.
++
++**Outputs.** Debt register, modernization roadmaps, retirement plans, migration status, archived assets.
++
++**Dependencies.** Receives inputs from SRE (Area 14), Observability (Area 15), Measurement (Area 16); informs Strategy (Area 1) and Architecture (Area 4).
++
++**Metrics / gates / exit criteria.** Technical-debt ratio, modernization progress, retirement completion, cost of ownership, incident correlation with legacy components.
++
++**Pitfalls and mitigations.** *Pitfall:* Maintenance is never prioritized. *Mitigation:* Allocate explicit capacity (e.g., 20% rule). *Pitfall:* Big-bang rewrites. *Mitigation:* Use strangler-fig incremental modernization.
++
++**Context variations.** Startups retire services frequently. Enterprises maintain decades-old systems. Regulated contexts require data retention and audit during retirement.
++
++## 3.19 Process Area 18: AI-Assisted / Agentic Software Engineering
++
++**Definition and purpose.** This cross-cutting area governs the use of AI and autonomous agents to augment or automate software engineering tasks, from code generation and review to testing, documentation, and incident response [src-dora-ai] [src-anthropic-research] [src-github-copilot-impact].
++
++**Mid-2026 relevance.** AI has moved from experiment to standard tool. The challenge is not whether to use AI, but how to use it safely, effectively, and without degrading human expertise.
++
++**Inputs.** Model capabilities, context windows, security policies, coding standards, knowledge bases, telemetry.
++
++**Workflows.** AI-assisted code generation; AI-powered code review; AI-assisted testing; context engineering for coding agents; agentic workflow orchestration; AI-assisted documentation; AI-augmented debugging and incident response.
++
++**Outputs.** AI-generated code, review suggestions, tests, documentation, incident analysis, agent execution logs.
++
++**Dependencies.** Overlays all other 17 areas; depends heavily on Development Environment (Area 6), Code Review (Area 8), Testing (Area 9), Security (Area 13), and Observability (Area 15).
++
++**Metrics / gates / exit criteria.** AI-assisted task acceptance rate, code quality of AI-generated changes, security scan pass rate, human review coverage, incident resolution time with AI assistance.
++
++**Pitfalls and mitigations.** *Pitfall:* Over-reliance on AI leading to skill atrophy. *Mitigation:* Require human reasoning for architecture and security decisions. *Pitfall:* Hallucinated requirements or code. *Mitigation:* Ground AI in verified context and enforce automated testing.
++
++**Context variations.** Startups adopt AI tools quickly with minimal governance. Enterprises require approved models, data residency, and audit trails. Regulated contexts restrict AI-generated code in safety-critical paths.
+
+[0m
+[0m← [0mEdit research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
+Index: /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
+===================================================================
+--- /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
++++ /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
+@@ -412,4 +412,240 @@
+ 
+ **Pitfalls and mitigations.** *Pitfall:* Over-reliance on AI leading to skill atrophy. *Mitigation:* Require human reasoning for architecture and security decisions. *Pitfall:* Hallucinated requirements or code. *Mitigation:* Ground AI in verified context and enforce automated testing.
+ 
+ **Context variations.** Startups adopt AI tools quickly with minimal governance. Enterprises require approved models, data residency, and audit trails. Regulated contexts restrict AI-generated code in safety-critical paths.
++
++# 4. Full Workflow Library
++
++## 4.1 Workflow Metadata Standard
++
++Every workflow in the library is documented with the following fields:
++- **Name and objective**
++- **Classification:** universal, leading-edge, context-dependent, or emerging
++- **Triggers and preconditions**
++- **Inputs and outputs**
++- **Steps and decision points**
++- **Human-AI collaboration patterns**
++- **Roles / RACI**
++- **Tool categories**
++- **Quality, security, and completion criteria**
++- **Automation opportunities**
++- **Approval boundaries and escalation paths**
++- **KPIs**
++- **Anti-patterns**
++- **Minimum / standard / leading-edge implementation tiers**
++
++## 4.2 Area 1 — Strategy Portfolio & Product Direction
++
++### WF-1.1 Portfolio Prioritization & Investment Allocation
++
++**Objective.** Allocate engineering capacity across products, platforms, and bets to maximize strategic value and manage risk.
++
++**Classification.** Context-dependent (formal portfolio governance is essential at scale; startups use implicit prioritization).
++
++**Triggers.** Quarterly planning, strategic review, major market shift, M&A, budget cycle.
++
++**Inputs.** Strategy documents, OKRs, product roadmaps, capacity forecasts, risk assessments, AI capability assessments.
++
++**Steps.** 1) Score initiatives by strategic fit, customer value, feasibility, and risk. 2) Model capacity and dependency constraints. 3) Select portfolio mix (core, growth, bets). 4) Allocate teams and budget. 5) Communicate decisions. 6) Review quarterly.
++
++**Decision points.** Go/no-go on strategic bets; stop/continue on underperforming initiatives; reallocation triggers.
++
++**Human-AI collaboration.** AI assists scenario modeling and dependency analysis; humans make value judgments and accountability decisions.
++
++**RACI.** CPO/CTO accountable; strategy team responsible; engineering/product consulted; finance/legal informed.
++
++**Tool categories.** Portfolio management tools, spreadsheets, OKR platforms, forecasting models.
++
++**Outputs.** Prioritized portfolio, investment allocations, team assignments, risk register.
++
++**Quality/security/completion criteria.** All initiatives linked to OKRs; dependencies visible; risk owners assigned.
++
++**Automation opportunities.** Capacity forecasting, dependency graph analysis, scenario simulation.
++
++**Approval boundaries.** Bets above a threshold require board/executive approval; routine reallocations delegated to product leadership.
++
++**KPIs.** Portfolio ROI, strategic initiative progress, resource utilization, time from idea to funded team.
++
++**Anti-patterns.** Pet projects; spreadsheet theater; no kill criteria; ignoring platform/infrastructure investment.
++
++**Tiers.** *Minimum:* ranked backlog linked to objectives. *Standard:* quarterly portfolio review with capacity modeling. *Leading-edge:* continuous portfolio sensing with real-time market and operational feedback loops.
++
++## 4.3 Area 2 — Discovery Requirements & Product Definition
++
++### WF-2.1 Continuous Discovery & Problem Validation
++
++**Objective.** Continuously identify, validate, and prioritize customer and business problems before committing engineering resources.
++
++**Classification.** Universal (principles); context-dependent (cadence and formality).
++
++**Triggers.** New strategic bet, declining metric, customer feedback signal, competitive threat, quarterly planning.
++
++**Inputs.** Strategy (Area 1), analytics, support data, user research, market analysis.
++
++**Steps.** 1) Identify opportunity. 2) Formulate problem hypothesis. 3) Select validation method (interview, survey, prototype, experiment). 4) Run validation. 5) Synthesize evidence. 6) Decide to pursue, pivot, or kill. 7) Document outcome.
++
++**Decision points.** Problem validated? Solution hypothesis worth testing? Resource commitment justified?
++
++**Human-AI collaboration.** AI synthesizes support tickets, analytics, and feedback; humans design interviews and interpret qualitative signals.
++
++**RACI.** Product manager responsible; UX researcher supports; engineering consulted; stakeholders informed.
++
++**Tool categories.** User research platforms, analytics, CRM, feedback aggregators, A/B testing tools.
++
++**Outputs.** Validated problem statements, opportunity briefs, user interview summaries, experiment results.
++
++**Quality/security/completion criteria.** Evidence from at least two independent sources per problem; acceptance criteria defined and testable.
++
++**Automation opportunities.** Feedback aggregation, interview transcription, sentiment analysis, experiment monitoring.
++
++**Approval boundaries.** Large initiatives require product leadership sign-off; small experiments are delegated to teams.
++
++**KPIs.** Validation cycle time, hypothesis success rate, customer interview cadence, requirement churn.
++
++**Anti-patterns.** Building solutions before validating problems; relying on HiPPO (highest paid person's opinion); ignoring negative evidence.
++
++**Tiers.** *Minimum:* ad-hoc customer conversations before build. *Standard:* weekly discovery activities with documented outcomes. *Leading-edge:* continuous experimentation and opportunity solution trees.
++
++## 4.4 Area 3 — UX & Product Design
++
++### WF-3.1 Design System Governance
++
++**Objective.** Maintain a consistent, accessible, and efficient user interface across products through a shared design system.
++
++**Classification.** Leading-edge (mature at scale; emerging in smaller organizations).
++
++**Triggers.** New component needed, brand refresh, accessibility audit, inconsistency reported, new platform target.
++
++**Inputs.** Brand guidelines, accessibility standards, component usage analytics, developer feedback.
++
++**Steps.** 1) Propose component/pattern. 2) Design and document. 3) Accessibility and usability review. 4) Publish to design system. 5) Train teams. 6) Monitor usage and deprecate as needed.
++
++**Decision points.** Should this be a shared component or local? Does it meet WCAG/accessibility targets?
++
++**Human-AI collaboration.** AI generates initial component variants and documentation; human designers ensure brand coherence and accessibility.
++
++**RACI.** Design system lead accountable; product designers responsible; accessibility specialist consulted; engineers consumers.
++
++**Tool categories.** Design tools (Figma, Sketch), design tokens, component libraries, Storybook, accessibility scanners.
++
++**Outputs.** Design tokens, components, patterns, documentation, usage guidelines.
++
++**Quality/security/completion criteria.** WCAG conformance, design-token coverage, documented usage, versioned releases.
++
++**Automation opportunities.** Accessibility scanning, visual regression testing, token sync to code.
++
++**Approval boundaries.** Core design-language changes require design leadership approval; component additions are governed by design system council.
++
++**KPIs.** Design system adoption, time to build UI, accessibility defect rate, visual consistency score.
++
++**Anti-patterns.** Design system as a bottleneck; components nobody uses; design drift tolerated.
++
++**Tiers.** *Minimum:* shared color/type scale. *Standard:* documented component library with governance. *Leading-edge:* automated token pipeline, AI-assisted component generation, cross-platform consistency enforcement.
++
++## 4.5 Area 4 — Architecture & Technical Design
++
++### WF-4.1 Architecture Decision Records & Design Review
++
++**Objective.** Make, record, and review significant technical decisions in a transparent and consistent manner.
++
++**Classification.** Universal (recording decisions); context-dependent (formal review boards).
++
++**Triggers.** New system, significant change in scope, new technology introduction, cross-team impact, security/reliability concern.
++
++**Inputs.** Requirements, constraints, options analysis, risk assessments, standards.
++
++**Steps.** 1) Identify decision needed. 2) Explore options. 3) Evaluate against constraints. 4) Decide and record ADR. 5) Review with peers/architects. 6) Communicate and implement. 7) Revisit on trigger.
++
++**Decision points.** Option selected? Risks acceptable? Reviewers satisfied?
++
++**Human-AI collaboration.** AI summarizes options and generates ADR drafts; humans make final trade-off decisions.
++
++**RACI.** Architect/tech lead responsible; engineering manager accountable; security/SRE consulted; team informed.
++
++**Tool categories.** Wiki/ADR repos, architecture review tools, diagramming tools, risk matrices.
++
++**Outputs.** ADRs, decision logs, architecture diagrams, risk registers.
++
++**Quality/security/completion criteria.** ADR covers context, options, decision, consequences; security and reliability implications addressed.
++
++**Automation opportunities.** ADR templates, consistency checks, architecture fitness functions.
++
++**Approval boundaries.** High-impact decisions require architecture board; routine decisions are team-level.
++
++**KPIs.** ADR coverage, review cycle time, decision revisit rate, architecture conformance.
++
++**Anti-patterns.** Decisions made in chat and forgotten; ADRs written after the fact; no escalation path for disputes.
++
++**Tiers.** *Minimum:* informal team decisions. *Standard:* ADRs for major decisions with peer review. *Leading-edge:* architecture fitness functions, automated conformance checks, AI-assisted options analysis.
++
++## 4.6 Area 5 — Planning & Work Management
++
++### WF-5.1 Flow-Based Planning & Dependency Management
++
++**Objective.** Manage work-in-progress, sequence work, and resolve dependencies so that teams can deliver value continuously.
++
++**Classification.** Universal.
++
++**Triggers.** Sprint/iteration start, dependency identified, capacity change, blocked work item.
++
++**Inputs.** Prioritized backlog, team capacity, dependencies, risks, SLOs.
++
++**Steps.** 1) Refine backlog. 2) Estimate and sequence. 3) Identify dependencies. 4) Resolve or escalate dependencies. 5) Execute with WIP limits. 6) Review flow metrics. 7) Adapt.
++
++**Decision points.** Is this item ready? Can we take on more WIP? Which dependency blocks the most value?
++
++**Human-AI collaboration.** AI forecasts completion, suggests prioritization, flags risky dependencies; humans negotiate trade-offs.
++
++**RACI.** Engineering manager/team lead accountable; team responsible; product consulted; dependent teams informed.
++
++**Tool categories.** Issue trackers, roadmapping tools, dependency visualization, forecasting dashboards.
++
++**Outputs.** Iteration plan, dependency board, capacity forecast, risk register.
++
++**Quality/security/completion criteria.** Every work item has acceptance criteria; dependencies mapped; WIP within limits.
++
++**Automation opportunities.** Dependency detection, cycle-time forecasting, bottleneck alerts, auto-assignment.
++
++**Approval boundaries.** Cross-team dependencies may require program management or leadership escalation.
++
++**KPIs.** Cycle time, throughput, WIP, blocked time, forecast accuracy.
++
++**Anti-patterns.** Maximized utilization; ignoring dependencies; treating estimates as commitments.
++
++**Tiers.** *Minimum:* simple Kanban with daily standups. *Standard:* Scrum/SAFe/flow with dependency tracking. *Leading-edge:* probabilistic forecasting, AI-assisted prioritization, dynamic WIP optimization.
++
++## 4.7 Area 6 — Development Environment & Toolchain
++
++### WF-6.1 Reproducible Development Environment
++
++**Objective.** Provide every engineer with a fast, consistent, and secure environment that matches production closely.
++
++**Classification.** Leading-edge (rapidly becoming universal).
++
++**Triggers.** New engineer onboarding, environment drift, "works on my machine" incident, security update.
++
++**Inputs.** Repository, Dockerfile/devcontainer, platform contracts, security policies.
++
++**Steps.** 1) Define environment as code. 2) Build and test environment. 3) Distribute to team. 4) Monitor for drift. 5) Update centrally. 6) Gather feedback.
++
++**Decision points.** Local vs. remote? Which secrets and services to mock?
++
++**Human-AI collaboration.** AI assists environment troubleshooting and suggests optimizations; humans approve base image changes.
++
++**RACI.** Platform/DevEx team responsible; security consulted; engineers consumers.
++
++**Tool categories.** Devcontainers, Nix, Docker, cloud IDEs, secrets managers, configuration management.
++
++**Outputs.** Environment definitions, onboarding docs, base images, policy checks.
++
++**Quality/security/completion criteria.** New hire productive within one day; builds pass in environment; no manual secret handling.
++
++**Automation opportunities.** Environment provisioning, drift detection, pre-commit policy enforcement.
++
++**Approval boundaries.** Base image and toolchain changes require security/platform approval.
++
++**KPIs.** Time to first commit, environment build time, drift incidents, onboarding satisfaction.
++
++**Anti-patterns.** Every engineer maintains their own environment; production secrets in local configs; outdated local dependencies.
++
++**Tiers.** *Minimum:* README with setup steps. *Standard:* containerized dev environment with shared scripts. *Leading-edge:* cloud development environments with AI-assisted onboarding and automated drift remediation.
+
+[0m
+[0m← [0mEdit research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
+Index: /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
+===================================================================
+--- /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
++++ /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
+@@ -648,4 +648,220 @@
+ 
+ **Anti-patterns.** Every engineer maintains their own environment; production secrets in local configs; outdated local dependencies.
+ 
+ **Tiers.** *Minimum:* README with setup steps. *Standard:* containerized dev environment with shared scripts. *Leading-edge:* cloud development environments with AI-assisted onboarding and automated drift remediation.
++
++## 4.8 Area 7 — Software Implementation
++
++### WF-7.1 Trunk-Based Development with Feature Flags
++
++**Objective.** Integrate small changes frequently into a shared mainline and decouple deployment from release using feature flags.
++
++**Classification.** Leading-edge (DORA high performers); universal in principle (continuous integration).
++
++**Triggers.** New feature, bug fix, refactor; any code change.
++
++**Inputs.** Work plan, design, architecture decisions, feature-flag system.
++
++**Steps.** 1) Pull latest trunk. 2) Make small, focused change. 3) Add tests and flag if needed. 4) Commit and push. 5) Open review. 6) Merge on green. 7) Monitor flag in production. 8) Remove flag when stable.
++
++**Decision points.** Does this change require a feature flag? Is the change small enough to review in under 30 minutes? Can the flag be safely removed?
++
++**Human-AI collaboration.** AI suggests code completions and generates tests; human verifies intent, architecture fit, and flag lifecycle.
++
++**RACI.** Engineer responsible; reviewer accountable for merge; tech lead consulted on flags.
++
++**Tool categories.** Git, feature-flag platforms, CI systems, IDE, AI coding assistant.
++
++**Outputs.** Merged code, tests, feature flags, telemetry.
++
++**Quality/security/completion criteria.** All checks green; flag has owner and removal date; no long-lived flags without review.
++
++**Automation opportunities.** Automated flag lifecycle management, merge queues, flaky-test detection.
++
++**Approval boundaries.** Changes to critical paths require senior reviewer; routine changes are peer-reviewed.
++
++**KPIs.** Commit frequency, trunk commit rate, flag age, integration frequency.
++
++**Anti-patterns.** Long-lived branches; flags never removed; feature branches merged in large batches.
++
++**Tiers.** *Minimum:* daily integration to main. *Standard:* trunk-based with feature flags and CI. *Leading-edge:* AI-assisted commit splitting, automated flag cleanup, progressive rollout tied to SLOs.
++
++## 4.9 Area 8 — Code Review & Knowledge Sharing
++
++### WF-8.1 Peer Code Review
++
++**Objective.** Maintain code quality, share knowledge, and ensure changes meet team standards through structured peer review.
++
++**Classification.** Universal.
++
++**Triggers.** Code ready for merge; any non-trivial change.
++
++**Inputs.** Code diff, tests, design context, standards.
++
++**Steps.** 1) Author prepares change with context. 2) Automated checks run. 3) Reviewers examine for correctness, design, security, maintainability. 4) Author addresses feedback. 5) Approval granted. 6) Change merged.
++
++**Decision points.** Is the change correct? Does it meet standards? Are security implications acceptable?
++
++**Human-AI collaboration.** AI pre-screens diffs for style, tests, and common issues; human reviewers focus on design and intent.
++
++**RACI.** Author responsible; reviewer accountable for approval; security/SRE consulted as needed.
++
++**Tool categories.** Git hosting (GitHub, GitLab, Bitbucket), review assistants, static analysis.
++
++**Outputs.** Approved code, review comments, knowledge transfer.
++
++**Quality/security/completion criteria.** At least one qualified reviewer; automated checks pass; security-sensitive paths reviewed by expert.
++
++**Automation opportunities.** Style checks, test verification, security scanning, review reminder bots, AI review summaries.
++
++**Approval boundaries.** Critical/sensitive changes require senior or security reviewer; routine changes peer-reviewed.
++
++**KPIs.** Review turnaround time, review defect density, reviewer load, merge time.
++
++**Anti-patterns.** Rubber-stamp reviews; adversarial review culture; reviews that only catch style issues.
++
++**Tiers.** *Minimum:* informal peer check. *Standard:* mandatory review with checklists. *Leading-edge:* AI-assisted review with expert escalation, review quality analytics, cross-team knowledge graphs.
++
++## 4.10 Area 9 — Testing QE & Verification
++
++### WF-9.1 Test Pyramid Automation
++
++**Objective.** Verify software through a balanced portfolio of unit, integration, and end-to-end tests aligned with the test pyramid.
++
++**Classification.** Universal.
++
++**Triggers.** Code change, new feature, regression risk, release preparation.
++
++**Inputs.** Requirements, code, architecture, risk assessment.
++
++**Steps.** 1) Define test strategy. 2) Write unit tests for core logic. 3) Add integration tests for boundaries. 4) Add minimal E2E tests for critical paths. 5) Run in CI. 6) Monitor flaky tests. 7) Refactor tests as code evolves.
++
++**Decision points.** What is the appropriate test size? Is this test worth the maintenance cost? Is the flaky test fixable or should it be removed?
++
++**Human-AI collaboration.** AI generates test cases and mocks; humans validate coverage and edge cases.
++
++**RACI.** Engineer responsible for unit tests; QE responsible for strategy and E2E; team accountable.
++
++**Tool categories.** Unit test frameworks, integration test harnesses, E2E tools (Selenium, Playwright), mutation testing, property-based testing.
++
++**Outputs.** Test suite, test reports, coverage data, flaky-test list.
++
++**Quality/security/completion criteria.** Unit tests cover critical paths; integration tests cover service boundaries; E2E tests cover user journeys; flaky tests below threshold.
++
++**Automation opportunities.** Test generation, coverage analysis, flaky-test detection, mutation testing.
++
++**Approval boundaries.** Test strategy changes require QE/architect approval.
++
++**KPIs.** Test coverage, test execution time, flaky test rate, defect escape rate, change-fail rate.
++
++**Anti-patterns.** Ice-cream cone test suite; tests without assertions; ignoring flaky tests; testing implementation details.
++
++**Tiers.** *Minimum:* unit tests for core logic. *Standard:* balanced pyramid in CI. *Leading-edge:* mutation testing, contract testing, AI-generated tests with human review.
++
++## 4.11 Area 10 — Build Integration & Artifact Management
++
++### WF-10.1 Secure Build & Artifact Provenance
++
++**Objective.** Produce trustworthy, reproducible artifacts with verifiable provenance and dependency health.
++
++**Classification.** Leading-edge (SLSA, SBOM); universal in principle (build automation).
++
++**Triggers.** Code merge, release schedule, dependency update, vulnerability disclosure.
++
++**Inputs.** Source code, dependency manifests, build scripts, signing keys, security policies.
++
++**Steps.** 1) Trigger build in controlled environment. 2) Resolve and pin dependencies. 3) Run build and tests. 4) Generate SBOM. 5) Sign artifact and provenance. 6) Push to artifact repository. 7) Scan for vulnerabilities. 8) Gate on policy.
++
++**Decision points.** Does the artifact meet policy? Is the vulnerability acceptable or must it be fixed?
++
++**Human-AI collaboration.** AI suggests dependency updates and risk summaries; humans approve exceptions and remediation.
++
++**RACI.** Build/platform team responsible; security accountable for gates; engineering consumers.
++
++**Tool categories.** CI systems, artifact repositories, SBOM tools, signing services, dependency scanners.
++
++**Outputs.** Signed artifacts, SBOMs, provenance attestations, vulnerability reports.
++
++**Quality/security/completion criteria.** Build reproducible; artifact signed; SBOM generated; no critical vulnerabilities or approved exceptions.
++
++**Automation opportunities.** Reproducible builds, dependency update bots, vulnerability scanning, policy enforcement.
++
++**Approval boundaries.** Exceptions to vulnerability policy require security approval.
++
++**KPIs.** Build success rate, build duration, SBOM coverage, critical vulnerability remediation time, artifact signing coverage.
++
++**Anti-patterns.** Manual builds; unsigned artifacts; unknown dependencies; SBOMs generated but never reviewed.
++
++**Tiers.** *Minimum:* automated build with versioned artifacts. *Standard:* signed artifacts with dependency scanning. *Leading-edge:* SLSA Level 3+ provenance, hermetic builds, automated remediation pipelines.
++
++## 4.12 Area 11 — CI Release & Deployment
++
++### WF-11.1 Continuous Delivery Pipeline
++
++**Objective.** Automatically build, test, and prepare software for release so that deployment is a low-risk, routine event.
++
++**Classification.** Universal (aspirational); leading-edge in many organizations.
++
++**Triggers.** Every merge to trunk; release request.
++
++**Inputs.** Code, tests, artifacts, deployment configurations, release policy.
++
++**Steps.** 1) Build and unit test. 2) Run integration tests. 3) Security and quality scans. 4) Stage artifact. 5) Deploy to staging. 6) Run smoke/E2E tests. 7) Obtain approval if required. 8) Deploy to production progressively. 9) Verify and monitor.
++
++**Decision points.** Do tests pass? Are security gates satisfied? Is production healthy enough to proceed?
++
++**Human-AI collaboration.** AI triages failures, suggests fixes, and optimizes pipeline; humans approve production deployments in regulated contexts.
++
++**RACI.** Platform/CD team responsible; product owner accountable for release decision; QA/SRE consulted.
++
++**Tool categories.** CI/CD platforms, deployment orchestrators, feature flags, canary analysis, secrets management.
++
++**Outputs.** Deployed changes, release records, pipeline logs, monitoring data.
++
++**Quality/security/completion criteria.** All gates passed; rollback path verified; deployment verified in production.
++
++**Automation opportunities.** Automated testing, deployment, rollback, canary analysis, failure triage.
++
++**Approval boundaries.** Production deployment in regulated contexts may require CAB or documented approval; routine changes are automated.
++
++**KPIs.** Deployment frequency, lead time for changes, change-fail rate, MTTR, pipeline duration.
++
++**Anti-patterns.** Manual deployment; big-bang releases; deployments without rollback; pipeline ignored when red.
++
++**Tiers.** *Minimum:* automated build and test. *Standard:* automated deployment to staging with manual production push. *Leading-edge:* continuous deployment with automated canary, rollback, and verification.
++
++## 4.13 Area 12 — Platform Engineering & IDP
++
++### WF-12.1 Golden Path Definition & Operation
++
++**Objective.** Provide paved roads for common engineering tasks that reduce cognitive load while preserving flexibility.
++
++**Classification.** Leading-edge.
++
++**Triggers.** Repeated pattern across teams, new service request, onboarding friction, security incident.
++
++**Inputs.** Architecture standards, security policies, observability requirements, developer feedback.
++
++**Steps.** 1) Identify common need. 2) Design golden path with sensible defaults. 3) Build self-service template/API. 4) Document and train. 5) Launch as internal product. 6) Measure adoption and satisfaction. 7) Iterate.
++
++**Decision points.** Should this be a golden path or remain custom? Is the abstraction right?
++
++**Human-AI collaboration.** AI generates templates and documentation; platform engineers curate and validate.
++
++**RACI.** Platform product manager accountable; platform engineers responsible; developer teams customers; security/SRE consulted.
++
++**Tool categories.** Backstage, Terraform/CDK, CI/CD templates, service catalogs, portals.
++
++**Outputs.** Golden path templates, self-service APIs, documentation, SLOs, adoption metrics.
++
++**Quality/security/completion criteria.** Path includes security, observability, and compliance by default; documented escape hatches; meets platform SLOs.
++
++**Automation opportunities.** Template generation, self-service provisioning, compliance-as-code, usage analytics.
++
++**Approval boundaries.** New golden paths require platform/architecture review; custom escapes require risk acceptance.
++
++**KPIs.** Golden path adoption, time to provision, developer satisfaction, incident rate of golden-path services.
++
++**Anti-patterns.** Platform as a ticket factory; golden paths without escape hatches; ignoring developer feedback.
++
++**Tiers.** *Minimum:* shared templates in a repo. *Standard:* self-service portal with approved templates. *Leading-edge:* AI-assisted path selection, automatic optimization, and cross-platform governance.
+
+[0m
+[0m← [0mEdit research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
+Index: /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
+===================================================================
+--- /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
++++ /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
+@@ -864,4 +864,220 @@
+ 
+ **Anti-patterns.** Platform as a ticket factory; golden paths without escape hatches; ignoring developer feedback.
+ 
+ **Tiers.** *Minimum:* shared templates in a repo. *Standard:* self-service portal with approved templates. *Leading-edge:* AI-assisted path selection, automatic optimization, and cross-platform governance.
++
++## 4.14 Area 13 — Security Privacy Risk & Compliance
++
++### WF-13.1 Threat Modeling & Secure Design
++
++**Objective.** Identify and mitigate security threats early in the design phase before they become vulnerabilities.
++
++**Classification.** Universal (threat modeling); context-dependent (depth and formality).
++
++**Triggers.** New system, significant architecture change, data flow change, security incident, compliance audit.
++
++**Inputs.** Architecture diagrams, data flows, threat intelligence, regulatory requirements, asset inventory.
++
++**Steps.** 1) Decompose system. 2) Identify threats (STRIDE, kill chains, ATT&CK). 3) Assess risk. 4) Design mitigations. 5) Validate with security review. 6) Track residual risk. 7) Update as system evolves.
++
++**Decision points.** Is the threat realistic? Is the mitigation proportionate? Is residual risk acceptable?
++
++**Human-AI collaboration.** AI suggests threat candidates and mitigations from patterns; humans assess context and business risk.
++
++**RACI.** Security architect responsible; engineering accountable for mitigation; product consulted.
++
++**Tool categories.** Threat modeling tools (STRIDE, OWASP Threat Dragon), attack libraries (MITRE ATT&CK), risk registers.
++
++**Outputs.** Threat model, risk register, mitigation plan, secure design decisions.
++
++**Quality/security/completion criteria.** All critical data flows modeled; high-risk threats mitigated or accepted by owner; review completed before implementation.
++
++**Automation opportunities.** Threat pattern matching, risk scoring, design-time policy checks.
++
++**Approval boundaries.** High-risk residual threats require CISO or risk committee approval.
++
++**KPIs.** Threat models completed, high-severity findings remediated, time to remediate, design review coverage.
++
++**Anti-patterns.** Threat modeling only at final review; ignoring results; treating all threats equally.
++
++**Tiers.** *Minimum:* lightweight threat questions for new features. *Standard:* structured threat modeling for major systems. *Leading-edge:* continuous threat modeling integrated into design tools, AI-assisted attack simulation.
++
++## 4.15 Area 14 — Reliability Operations & SRE
++
++### WF-14.1 SLO-Driven Operations & Blameless Postmortem
++
++**Objective.** Define reliability targets, manage error budgets, respond to incidents, and learn without blame.
++
++**Classification.** Leading-edge (universal among top performers).
++
++**Triggers.** Service launch, SLO breach, incident, quarterly reliability review.
++
++**Inputs.** Service architecture, user journeys, business priorities, observability data.
++
++**Steps.** 1) Define SLIs and SLOs with product. 2) Allocate error budgets. 3) Monitor budget burn. 4) Respond to alerts. 5) Run incident command. 6) Write blameless postmortem. 7) Track action items. 8) Revisit SLOs.
++
++**Decision points.** Is the SLO user-centric? Has the error budget been exhausted? Is the incident significant enough for postmortem?
++
++**Human-AI collaboration.** AI summarizes incident timelines and suggests contributing factors; humans lead response and decide on trade-offs.
++
++**RACI.** SRE accountable for SLOs; engineering responsible for reliability; product consulted on user impact.
++
++**Tool categories.** Observability platforms, incident management, SLO calculators, postmortem templates.
++
++**Outputs.** SLOs, error budgets, incident timelines, postmortems, reliability roadmaps.
++
++**Quality/security/completion criteria.** SLOs defined for user-facing services; postmortems completed within 48 hours; action items tracked to closure.
++
++**Automation opportunities.** SLO monitoring, auto-remediation, incident timeline generation, postmortem draft creation.
++
++**Approval boundaries.** SLO changes require product/SRE agreement; major incident postmortems require management review.
++
++**KPIs.** SLO attainment, error budget burn rate, MTTR, postmortem completion rate, action item closure rate.
++
++**Anti-patterns.** 100% uptime targets; blameful postmortems; SLOs defined without user input; ignoring error budgets.
++
++**Tiers.** *Minimum:* uptime monitoring and incident response. *Standard:* user-centric SLOs with postmortems. *Leading-edge:* AI-assisted incident response, predictive reliability, automated error-budget policies.
++
++## 4.16 Area 15 — Observability & Production Feedback
++
++### WF-15.1 OpenTelemetry-Based Observability Pipeline
++
++**Objective.** Collect, store, and analyze telemetry to understand production behavior and enable fast debugging.
++
++**Classification.** Leading-edge (OpenTelemetry adoption); universal (monitoring).
++
++**Triggers.** Service launch, incident, performance issue, cost spike, new instrumentation need.
++
++**Inputs.** Instrumented code, infrastructure, user interactions, OpenTelemetry collectors.
++
++**Steps.** 1) Instrument services with standardized SDKs. 2) Configure collectors and sampling. 3) Store metrics, logs, traces. 4) Build dashboards and alerts. 5) Correlate signals. 6) Feed insights to teams. 7) Optimize cost and retention.
++
++**Decision points.** What to instrument? What sampling rate? Which alerts are actionable?
++
++**Human-AI collaboration.** AI detects anomalies and suggests root causes; humans validate and decide on fixes.
++
++**RACI.** SRE/platform responsible; engineering instruments; product consumes business metrics.
++
++**Tool categories.** OpenTelemetry, observability backends, dashboards, alerting, log aggregation.
++
++**Outputs.** Telemetry data, dashboards, alerts, incident insights, cost reports.
++
++**Quality/security/completion criteria.** Critical paths instrumented; alerts tied to SLOs; PII handled correctly; cost within budget.
++
++**Automation opportunities.** Auto-instrumentation, anomaly detection, alert correlation, cost optimization.
++
++**Approval boundaries.** Changes to retention or sampling policies may require cost/security approval.
++
++**KPIs.** Mean time to detect, alert signal-to-noise ratio, instrumentation coverage, telemetry cost per transaction.
++
++**Anti-patterns.** Metric overload; alerts with no runbook; ignoring traces; retaining everything forever.
++
++**Tiers.** *Minimum:* basic metrics and logs. *Standard:* metrics, logs, and traces with dashboards. *Leading-edge:* OpenTelemetry-native, AI-assisted anomaly detection, automated correlation.
++
++## 4.17 Area 16 — Measurement DevEx & Continuous Improvement
++
++### WF-16.1 DORA Metrics & DevEx Improvement Program
++
++**Objective.** Measure software delivery performance and developer experience, then drive targeted improvements.
++
++**Classification.** Universal (DORA awareness); leading-edge (systematic DevEx programs).
++
++**Triggers.** Quarterly business review, delivery pain signal, tool change, AI initiative.
++
++**Inputs.** CI/CD data, incident data, survey results, observability metrics, business outcomes.
++
++**Steps.** 1) Collect DORA metrics. 2) Run DevEx survey (short, frequent). 3) Identify friction points. 4) Prioritize improvements. 5) Execute experiments. 6) Measure impact. 7) Communicate results.
++
++**Decision points.** Which metric matters most now? Is an AI tool actually improving experience or just output?
++
++**Human-AI collaboration.** AI analyzes telemetry and survey sentiment; humans prioritize cultural and process changes.
++
++**RACI.** Engineering leadership accountable; DevEx/Platform team responsible; teams participate.
++
++**Tool categories.** DORA dashboards, survey tools, analytics, A/B testing, developer analytics platforms.
++
++**Outputs.** DORA dashboard, DevEx report, improvement backlog, experiment results.
++
++**Quality/security/completion criteria.** Metrics valid and comparable; survey responses anonymized; actions visible to teams.
++
++**Automation opportunities.** Metric collection, survey analysis, trend alerting, experiment measurement.
++
++**Approval boundaries.** Large tooling or process changes require leadership approval.
++
++**KPIs.** Deployment frequency, lead time, change-fail rate, MTTR, DevEx score, improvement completion rate.
++
++**Anti-patterns.** Measuring lines of code or activity; ignoring survey results; comparing teams without context.
++
++**Tiers.** *Minimum:* track deployment frequency and incidents. *Standard:* full DORA dashboard with quarterly DevEx survey. *Leading-edge:* continuous DevEx sensing, AI-assisted friction detection, predictive improvement recommendations.
++
++## 4.18 Area 17 — Maintenance Evolution & Retirement
++
++### WF-17.1 Technical Debt Management & Strangler-Fig Modernization
++
++**Objective.** Manage technical debt explicitly and modernize legacy systems incrementally without big-bang risk.
++
++**Classification.** Universal (debt management); leading-edge (systematic strangler-fig programs).
++
++**Triggers.** Debt exceeds risk threshold, new feature blocked by legacy, cost escalation, reliability issue.
++
++**Inputs.** Debt inventory, SLO data, architecture decisions, business value analysis.
++
++**Steps.** 1) Catalog debt with impact and cost. 2) Prioritize against feature work. 3) Allocate capacity. 4) Modernize incrementally (strangler fig). 5) Verify behavior parity. 6) Retire old components. 7) Communicate.
++
++**Decision points.** Is the debt worth paying now? Which modernization sequence minimizes risk?
++
++**Human-AI collaboration.** AI identifies code smells and estimates modernization effort; humans make business trade-offs.
++
++**RACI.** Tech lead/ architect responsible; engineering manager accountable; product consulted on capacity.
++
++**Tool categories.** Static analysis, architecture visualization, feature flags, migration tooling, code health dashboards.
++
++**Outputs.** Debt register, modernization plan, migration status, retired components.
++
++**Quality/security/completion criteria.** Debt inventoried and prioritized; modernization has measurable success criteria; no regression in critical paths.
++
++**Automation opportunities.** Code health scoring, smell detection, migration progress tracking, behavior diffing.
++
++**Approval boundaries.** Large modernization investments require leadership/architecture board approval.
++
++**KPIs.** Technical-debt ratio, modernization progress, cost of ownership, incidents correlated with legacy.
++
++**Anti-patterns.** Ignoring debt until crisis; big-bang rewrites; rewriting without business justification.
++
++**Tiers.** *Minimum:* ad-hoc refactoring. *Standard:* tracked debt with allocated capacity. *Leading-edge:* data-driven debt prioritization, AI-assisted refactoring, continuous modernization.
++
++## 4.19 Area 18 — AI-Assisted / Agentic Software Engineering
++
++### WF-18.1 AI-Assisted Code Generation with Human Review
++
++**Objective.** Use AI to accelerate code production while maintaining quality, security, and architectural coherence through mandatory human review.
++
++**Classification.** Emerging / leading-edge (rapidly moving toward universal).
++
++**Triggers.** New feature, bug fix, test writing, refactoring, onboarding.
++
++**Inputs.** Requirements, design, codebase context, coding standards, security guidelines.
++
++**Steps.** 1) Engineer provides context and prompt. 2) AI generates suggestions. 3) Engineer evaluates relevance and correctness. 4) AI-generated code is tested and reviewed. 5) Changes merged with attribution. 6) Monitor production behavior.
++
++**Decision points.** Is the AI suggestion correct and safe? Does it fit architecture? Should the engineer write from scratch instead?
++
++**Human-AI collaboration.** Human sets intent and context; AI generates options; human selects, edits, and validates.
++
++**RACI.** Engineer responsible; reviewer accountable; security consulted for sensitive paths.
++
++**Tool categories.** AI coding assistants (Copilot, CodeWhisperer, Tabnine), IDE plugins, context-engineering tools.
++
++**Outputs.** Code, tests, documentation, agent logs.
++
++**Quality/security/completion criteria.** AI-generated code passes all automated checks and human review; no secrets or vulnerabilities introduced; tests cover generated logic.
++
++**Automation opportunities.** Suggestion ranking, auto-test generation, vulnerability scanning, context retrieval.
++
++**Approval boundaries.** AI-generated changes to critical systems require senior reviewer; regulated contexts may restrict AI-generated safety-critical code.
++
++**KPIs.** AI suggestion acceptance rate, defect rate of AI-generated code, review time, time to task completion.
++
++**Anti-patterns.** Blind acceptance of AI output; using AI without understanding code; failing to update tests/docs.
++
++**Tiers.** *Minimum:* AI autocomplete for individual developers. *Standard:* AI-assisted generation with mandatory review and testing. *Leading-edge:* context-engineered agents with repository-wide understanding, human escalation, and continuous learning.
+
+[0m
+[0m← [0mEdit research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
+Index: /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
+===================================================================
+--- /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
++++ /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
+@@ -1080,4 +1080,49 @@
+ 
+ **Anti-patterns.** Blind acceptance of AI output; using AI without understanding code; failing to update tests/docs.
+ 
+ **Tiers.** *Minimum:* AI autocomplete for individual developers. *Standard:* AI-assisted generation with mandatory review and testing. *Leading-edge:* context-engineered agents with repository-wide understanding, human escalation, and continuous learning.
++
++# 5. Cross-Area Dependency and Feedback Map
++
++## 5.1 Lifecycle Dependency Chain
++
++The 18 Process Areas are not independent silos. They form a dependency chain with feedback loops:
++
++1. **Strategy (1)** sets direction for Discovery (2), UX (3), Architecture (4), and Planning (5).
++2. **Discovery (2), UX (3), Architecture (4), and Planning (5)** together define what Implementation (7) will build and how.
++3. **Development Environment (6)** and **Platform Engineering (12)** enable Implementation (7), Code Review (8), and Testing (9).
++4. **Testing (9)** and **Build/Integration (10)** gate **CI/Release (11)**.
++5. **CI/Release (11)** feeds **Observability (15)**, **SRE (14)**, and **Measurement (16)**.
++6. **Observability (15)** and **SRE (14)** feed **Maintenance (17)**, **Architecture (4)**, and **Strategy (1)**.
++7. **Security (13)** cuts across all upstream and downstream areas.
++8. **AI (18)** overlays the entire lifecycle and depends on Code Review (8), Testing (9), Security (13), and Observability (15).
++
++## 5.2 Critical Integration Points
++
++### DevSecOps (Security + Implementation + CI/CD + Testing)
++Security is not a final gate. It is integrated into architecture decisions, code review, build pipelines, test suites, and deployment gates [src-nist-ssdf] [src-owasp-samm]. Threat models inform design; static and dynamic analysis run in CI; dependency scanning happens at build time; runtime security monitoring feeds incident response.
++
++### Platform Engineering (Platform + Development Environment + Architecture + Measurement)
++The platform team translates architecture standards into reusable golden paths and self-service tools. It collects developer experience metrics to prioritize platform investments and ensures that security, observability, and compliance are built into the default path [src-cncf-platforms] [src-backstage-whatis].
++
++### SRE + Observability + CI/CD (Reliability Loop)
++SLOs derived from user journeys drive alerting. Observability data triggers incident response. Postmortems generate reliability roadmaps and architectural changes. CI/CD pipelines verify SLO-related tests and canaries before full rollout [src-google-sre-book] [src-opentelemetry].
++
++### Product Feedback Loop (Observability + Discovery + Strategy)
++Production telemetry, user analytics, and support data flow back to discovery and strategy. This closes the loop between what is shipped and what should be built next [src-dora-capabilities].
++
++## 5.3 Anti-Patterns of Siloed Areas
++
++- **Strategy without measurement:** Decisions are not validated by outcomes.
++- **Security as a final gate:** Vulnerabilities are discovered too late to fix cheaply.
++- **Platform without customers:** Platform team builds infrastructure that teams do not adopt.
++- **Observability without action:** Dashboards accumulate but do not drive decisions.
++- **AI without governance:** AI tools spread without quality, security, or compliance guardrails.
++
++## 5.4 Recommended Integration Mechanisms
++
++- **Cross-functional teams** that include product, design, engineering, security, and SRE roles.
++- **Shared artifacts** such as ADRs, threat models, SLOs, and runbooks linked from the code repository.
++- **Automated gates** that enforce security, quality, and reliability policies across the pipeline.
++- **Regular feedback rituals** including retrospectives, postmortems, and quarterly strategy reviews.
++- **Platform as a product** with a roadmap, internal customers, and satisfaction metrics.
+
+[0m
+[0m← [0mEdit research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
+Index: /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
+===================================================================
+--- /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
++++ /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
+@@ -1125,4 +1125,69 @@
+ - **Shared artifacts** such as ADRs, threat models, SLOs, and runbooks linked from the code repository.
+ - **Automated gates** that enforce security, quality, and reliability policies across the pipeline.
+ - **Regular feedback rituals** including retrospectives, postmortems, and quarterly strategy reviews.
+ - **Platform as a product** with a roadmap, internal customers, and satisfaction metrics.
++
++# 6. AI-Integration Layer
++
++## 6.1 State of AI-Assisted Software Engineering (Mid-2026)
++
++AI is no longer experimental in software engineering. GitHub Copilot studies report measurable productivity and satisfaction gains in controlled settings [src-github-copilot-impact]. DORA research documents both the benefits and tensions of AI-assisted development, noting that speed gains can coexist with quality and security risks if governance is weak [src-dora-ai]. Anthropic and other AI labs have published guidance on building effective agentic systems, emphasizing clear task decomposition and human oversight [src-anthropic-research].
++
++However, the evidence is uneven. Code completion and generation are the most mature use cases. AI-assisted code review, test generation, documentation, and incident triage are spreading. Multi-agent coordination, AI-driven architecture, and autonomous deployment remain emerging and require careful boundaries.
++
++## 6.2 AI Use Cases by Process Area
++
++| Process Area | Mature Use Cases | Emerging Use Cases | Risk Tier |
++|---|---|---|---|
++| 1 Strategy | Market summarization, scenario modeling | Autonomous strategy recommendations | High |
++| 2 Discovery | Feedback synthesis, interview transcription, hypothesis generation | Automated user research | Medium |
++| 3 UX Design | Component generation, accessibility scanning, design-token sync | End-to-end design from prompts | Medium |
++| 4 Architecture | Options summarization, ADR drafting | AI-generated architecture decisions | High |
++| 5 Planning | Forecasting, dependency risk flags | Autonomous backlog prioritization | Medium |
++| 6 Dev Environment | Environment troubleshooting, onboarding assistance | Fully autonomous environment setup | Low-Medium |
++| 7 Implementation | Code completion, generation, refactoring | Autonomous feature implementation | Medium |
++| 8 Code Review | Pre-review scans, summary generation | Fully autonomous approval | High |
++| 9 Testing | Test generation, mutation testing | Autonomous test strategy | Medium |
++| 10 Build/Integration | Dependency update suggestions, SBOM summarization | Autonomous build remediation | Medium |
++| 11 CI/Release | Failure triage, canary analysis | Autonomous deployment decisions | High |
++| 12 Platform | Template generation, documentation | Self-healing platform operations | Medium |
++| 13 Security | Threat pattern suggestion, vulnerability summary | Autonomous threat response | High |
++| 14 SRE | Incident timeline generation, runbook suggestion | Autonomous incident resolution | High |
++| 15 Observability | Anomaly detection, log summarization | Autonomous root cause analysis | Medium |
++| 16 Measurement | Metric summarization, survey sentiment | Autonomous improvement recommendations | Low-Medium |
++| 17 Maintenance | Code smell detection, refactoring suggestions | Autonomous modernization | Medium |
++| 18 AI Governance | N/A | Agent orchestration and guardrails | High |
++
++## 6.3 Human-AI Collaboration Patterns
++
++Four patterns are emerging:
++
++1. **Copilot.** AI suggests; human decides. Applies to code completion, review summaries, and test generation.
++2. **Agent.** AI executes bounded tasks with human oversight. Applies to incident timeline generation, dependency updates, and documentation.
++3. **Autonomous.** AI operates within guardrails without per-action approval. Applies only to low-risk, reversible tasks such as formatting, lint fixes, or non-production environment changes.
++4. **Human-in-the-loop.** AI proposes high-impact actions; human approval required. Applies to production deployments, security exceptions, and architecture changes.
++
++## 6.4 Governance and Risk Boundaries
++
++Organizations should establish:
++
++- **Approved model list** with data-residency and compliance requirements.
++- **Context boundaries** defining what code, docs, and data may be sent to AI tools.
++- **Quality gates** requiring AI-generated code to pass the same tests and reviews as human-written code.
++- **Attribution and auditability** so AI-generated changes can be traced.
++- **Skill preservation** programs to prevent over-reliance and atrophy.
++- **Security scanning** of AI-generated code for vulnerabilities, secrets, and hallucinations.
++
++The NIST AI Risk Management Framework provides a useful structure for identifying and mitigating AI-specific risks [src-nist-ai-rmf].
++
++## 6.5 Anti-Patterns
++
++- **Blind acceptance** of AI-generated code without review or tests.
++- **Context leakage** of proprietary data to public models.
++- **Skill atrophy** as engineers stop reasoning about code.
++- **Hallucinated requirements** propagated into products.
++- **AI washing** — claiming AI adoption without measurable outcomes.
++
++## 6.6 Recommendation
++
++Treat AI as an accelerant, not a replacement. Implement AI-assisted workflows in Areas 7, 8, and 9 first, where the feedback loop is tight and risks are reversible. Introduce agentic and autonomous patterns only after strong testing, observability, and governance are in place.
+
+[0m
+[0m← [0mEdit research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
+Index: /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
+===================================================================
+--- /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
++++ /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
+@@ -1190,4 +1190,99 @@
+ 
+ ## 6.6 Recommendation
+ 
+ Treat AI as an accelerant, not a replacement. Implement AI-assisted workflows in Areas 7, 8, and 9 first, where the feedback loop is tight and risks are reversible. Introduce agentic and autonomous patterns only after strong testing, observability, and governance are in place.
++
++# 7. Deprecated or Diminishing Practices
++
++## 7.1 Rationale
++
++A canonical model must say what to stop doing as clearly as what to start. The following practices are deprecated or diminishing based on consensus across DORA, SRE, DevOps, and agile literature. They are not universally gone, but they are no longer recommended as standard.
++
++## 7.2 Waterfall-Style Stage Gates Without Iteration
++
++Long sequential phases with late integration and validation are associated with higher risk, longer lead times, and poorer quality [src-dora-capabilities] [src-continuousdelivery]. They persist in some regulated contexts but should be replaced with iterative delivery within compliance boundaries.
++
++## 7.3 Manual-Only Release Processes
++
++Releases that require manual steps, handoffs, and approval meetings are error-prone and slow. High-performing organizations automate deployment to the extent that their risk profile allows [src-continuousdelivery] [src-dora-capabilities].
++
++## 7.4 Security as a Final Gate
++
++Security testing performed only before release creates rework and delays. Shift-left security, threat modeling, and automated security gates in CI are the modern standard [src-nist-ssdf] [src-owasp-samm].
++
++## 7.5 Hero Culture and On-Call Without SLOs
++
++Reliability sustained by individual heroics and burn-out is unsustainable. SLOs, error budgets, blameless postmortems, and equitable on-call are replacing this pattern [src-google-sre-book] [src-google-sre-eliminating-toil].
++
++## 7.6 Big-Bang Rewrites
++
++Rewriting large systems in one project has a poor track record. Incremental modernization patterns such as strangler fig, feature flags, and branch-by-abstraction are preferred [src-fowler-strangler-fig-bliki] [src-tw-evolutionary-arch].
++
++## 7.7 Heavy Specification Documents Without Validation
++
++Lengthy requirements documents written without customer feedback are wasteful. Continuous discovery, user stories, prototypes, and experimentation replace upfront specification [src-svpg-articles] [src-nng-design-thinking].
++
++## 7.8 Separate Testing Organizations as Final Gatekeepers
++
++Quality is increasingly owned by teams, supported by quality engineering. Separate QA organizations that only test at the end of the lifecycle create bottlenecks and reduce ownership [src-google-testing-blog] [src-martinfowler-testpyramid].
++
++## 7.9 Snowflake Environments
++
++Development and production environments that differ significantly cause deployment surprises. Reproducible, environment-as-code practices are replacing manual environment configuration [src-gitlab-devops] [src-cncf-platforms].
++
++## 7.10 What to Do Instead
++
++For each deprecated practice, the report recommends the corresponding modern workflow in Section 4. Transition should be incremental, with metrics to validate improvement.
++
++# 8. Maturity Model
++
++## 8.1 Five-Level Scale
++
++The maturity model uses five levels, adapted from CMMI, OWASP SAMM, and DORA capability models:
++
++| Level | Name | Description |
++|---|---|---|
++| 1 | Initial | Ad hoc, hero-dependent, unpredictable outcomes. |
++| 2 | Managed | Basic processes defined and repeatable; some measurement. |
++| 3 | Defined | Standard processes across teams; integration between areas; active training. |
++| 4 | Quantitatively Managed | Metrics drive decisions; feedback loops closed; continuous improvement. |
++| 5 | Optimizing | Innovation and experimentation; AI-assisted optimization; industry-leading practices. |
++
++## 8.2 Per-Area Maturity Descriptors (Summary)
++
++| Area | Level 1 | Level 3 | Level 5 |
++|---|---|---|---|
++| 1 Strategy | No documented strategy | OKRs linked to portfolio | Continuous portfolio sensing with AI-assisted forecasting |
++| 2 Discovery | Ad-hoc customer conversations | Continuous discovery practice | Experiment-driven product definition |
++| 3 UX Design | Design by intuition | Design system with governance | AI-assisted, accessibility-first design |
++| 4 Architecture | Decisions in chat | ADRs and design reviews | Architecture fitness functions, evolutionary automation |
++| 5 Planning | Heroic scheduling | Flow-based planning with WIP limits | Probabilistic forecasting, dynamic prioritization |
++| 6 Dev Environment | Manual setup | Containerized environments | Cloud dev environments with AI onboarding |
++| 7 Implementation | Long branches | Trunk-based with flags | AI-assisted with human oversight |
++| 8 Code Review | Optional reviews | Mandatory peer review | AI-assisted with expert escalation |
++| 9 Testing | Manual testing | Test pyramid in CI | Mutation testing, AI-assisted generation |
++| 10 Build/Integration | Manual builds | Automated builds with scanning | SLSA provenance, hermetic builds |
++| 11 CI/Release | Manual deployment | Automated CI/CD with approvals | Continuous deployment with canaries |
++| 12 Platform | No platform team | Golden paths and self-service | Platform-as-a-product with AI ops |
++| 13 Security | Final pen-test | Shift-left with threat modeling | Continuous security, automated remediation |
++| 14 SRE | Reactive firefighting | SLOs and postmortems | Predictive reliability, AI-assisted response |
++| 15 Observability | Basic monitoring | Metrics/logs/traces unified | AI-assisted anomaly detection |
++| 16 Measurement | No metrics | DORA dashboard and DevEx survey | Continuous sensing and predictive improvements |
++| 17 Maintenance | Crisis-driven refactoring | Tracked debt with capacity | Continuous modernization |
++| 18 AI | No AI use | AI-assisted coding governed | Agentic workflows with robust guardrails |
++
++## 8.3 Implementation Tiers
++
++Each workflow specifies three tiers:
++
++- **Minimum:** The baseline that any professional team should achieve.
++- **Standard:** Common among effective organizations.
++- **Leading-edge:** Practices of top-quartile or innovative organizations.
++
++Organizations should not target leading-edge in every area. Instead, they should reach standard across all universal workflows and then selectively invest in leading-edge practices aligned to strategic priorities.
++
++## 8.4 Benchmarks
++
++- **DORA metrics:** Elite performers deploy on demand, have lead times under one hour, change-fail rates below 5%, and restore service in under one hour [src-dora-metrics-four-keys].
++- **OWASP SAMM:** Organizations should target Level 2 (Defined) for all security practices and Level 3 (Optimized) for critical practices.
++- **NIST SSDF:** Organizations should implement Prepare, Protect, Produce, and Respond practices commensurate with risk.
+
+[0m
+[0m← [0mEdit research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
+Index: /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
+===================================================================
+--- /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
++++ /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
+@@ -1285,4 +1285,119 @@
+ 
+ - **DORA metrics:** Elite performers deploy on demand, have lead times under one hour, change-fail rates below 5%, and restore service in under one hour [src-dora-metrics-four-keys].
+ - **OWASP SAMM:** Organizations should target Level 2 (Defined) for all security practices and Level 3 (Optimized) for critical practices.
+ - **NIST SSDF:** Organizations should implement Prepare, Protect, Produce, and Respond practices commensurate with risk.
++
++# 9. Role Model and Governance Implications
++
++## 9.1 Roles Across Process Areas
++
++The following roles interact with the 18 Process Areas. No single role owns the entire lifecycle; accountability is distributed.
++
++| Role | Primary Areas | Accountability |
++|---|---|---|
++| Chief Technology Officer | 1, 4, 12, 16, 18 | Technology strategy, platform investment, AI governance |
++| VP Engineering | 5, 7, 8, 12, 14, 16 | Delivery performance, engineering culture, reliability |
++| Chief Product Officer | 1, 2, 3, 5 | Product strategy, discovery, design quality |
++| Product Manager | 1, 2, 3, 5 | Problem validation, prioritization, roadmap |
++| UX Researcher / Designer | 2, 3 | User research, interaction design, accessibility |
++| Architect | 4, 12, 13, 17 | Technical design, standards, modernization |
++| Engineering Manager | 5, 7, 8, 14, 16 | Team execution, growth, on-call health |
++| Staff / Principal Engineer | 4, 7, 8, 12, 13 | Technical leadership, review, platform design |
++| Security Engineer | 13 | Threat modeling, vulnerability management, compliance |
++| SRE / Platform Engineer | 6, 10, 11, 12, 14, 15 | Reliability, platform, observability, deployment |
++| Quality Engineer | 9 | Test strategy, automation, quality gates |
++| Engineering Individual Contributor | 6, 7, 8, 9, 14 | Implementation, review, testing, on-call |
++| Legal / Compliance Officer | 1, 13, 18 | Privacy, regulatory, AI risk |
++
++## 9.2 Governance Mechanisms
++
++- **Architecture Review Board:** High-impact technical decisions, ADR standards, cross-cutting concerns.
++- **Security Council:** Threat landscape, security policy, incident escalation, compliance posture.
++- **Platform Product Team:** Internal developer platform roadmap, golden paths, developer experience.
++- **SRE/Reliability Council:** SLOs, error budgets, incident learnings, reliability investments.
++- **AI Governance Committee:** Approved models, context boundaries, quality gates, risk acceptance.
++- **Portfolio Investment Committee:** Strategic bets, resource allocation, kill decisions.
++
++## 9.3 Policy-as-Code and Guardrails
++
++Modern governance increasingly relies on policy-as-code:
++
++- **Security:** Vulnerability gates, secret scanning, access policies, compliance checks in CI.
++- **Architecture:** Architecture fitness functions, service catalog constraints, API standards.
++- **Reliability:** SLO budgets, deployment windows, rollback policies.
++- **AI:** Approved model lists, context restrictions, mandatory review for AI-generated critical-path code.
++
++Guardrails should be transparent, automated where possible, and escapable with justification. They replace heavy approval queues with fast feedback.
++
++## 9.4 Approval Boundaries and Escalation
++
++- **Team-level approvals:** Routine code changes, feature work, tests, documentation.
++- **Function-level approvals:** Architecture decisions, security exceptions, SLO changes, platform changes.
++- **Executive approvals:** Strategic bets, major platform investments, AI governance exceptions, regulatory responses.
++
++Escalation paths should be documented and time-bounded to prevent decision stagnation.
++
++## 9.5 Compliance Integration
++
++Regulated organizations map the 18 Process Areas to compliance frameworks:
++
++- **NIST SSDF** → Areas 4, 7, 9, 10, 11, 13.
++- **OWASP SAMM** → Areas 4, 9, 13.
++- **ISO/IEC 27034** → Areas 4, 13.
++- **SOC 2 / PCI-DSS** → Areas 10, 11, 13, 15.
++- **AI regulations** → Areas 1, 2, 7, 13, 18.
++
++Evidence collection should be automated where possible to reduce audit burden.
++
++# 10. Final Recommended Canonical Industry Standard
++
++## 10.1 The Reference Model
++
++The canonical SDLC Process Architecture for mid-2026 consists of 18 Process Areas and a nested workflow library. It is a reference architecture, not a rigid prescription. Organizations should adopt it incrementally, starting with universal workflows and adding leading-edge and context-dependent practices as they mature.
++
++## 10.2 Adoption Roadmap
++
++### Phase 1: Crawl — Establish the Universal Core (0-6 months)
++Implement the following in every team:
++- Version control and trunk-based development with CI (Areas 6, 7, 11).
++- Mandatory peer code review (Area 8).
++- Test pyramid automation (Area 9).
++- Basic observability and alerting (Area 15).
++- Shift-left security scanning (Areas 10, 13).
++- DORA metrics baseline (Area 16).
++
++### Phase 2: Walk — Add Structure and Feedback Loops (6-18 months)
++- Continuous discovery and product-definition practices (Areas 2, 3, 5).
++- Architecture decision records and design reviews (Area 4).
++- SLOs, blameless postmortems, and on-call health (Area 14).
++- Secure build provenance and artifact management (Area 10).
++- Platform engineering and golden paths (Area 12).
++- DevEx measurement program (Area 16).
++
++### Phase 3: Run — Leading-Edge and AI-Augmented (18+ months)
++- Continuous deployment with progressive rollout (Area 11).
++- Advanced reliability practices including chaos engineering (Area 14).
++- AI-assisted code generation, review, and testing with governance (Areas 7, 8, 9, 18).
++- Predictive measurement and continuous improvement (Area 16).
++- Agentic workflows in low-risk, reversible domains (Area 18).
++
++## 10.3 Prioritization by Context
++
++- **Startups:** Focus on Areas 2, 5, 7, 8, 9, 11, 14, 16. Keep processes lightweight.
++- **Scale-ups:** Add Areas 4, 6, 10, 12, 13, 15, 17 as complexity grows.
++- **Enterprises:** Implement all 18 areas with appropriate governance and platform investment.
++- **Regulated organizations:** Emphasize Areas 4, 9, 10, 11, 13, 15, 17 with formal evidence and audit trails.
++- **AI-first organizations:** Invest early in Area 18 but only after Areas 7-11 and 13 are strong.
++
++## 10.4 Measurement of Success
++
++Track leading and lagging indicators:
++
++- **Delivery performance:** DORA four keys (deployment frequency, lead time, change-fail rate, MTTR).
++- **Quality:** Defect escape rate, test coverage, vulnerability density, SLO attainment.
++- **Developer experience:** Developer satisfaction, time to first commit, flow time, cognitive load.
++- **Business outcomes:** Time-to-value, product adoption, operational cost.
++
++## 10.5 Call to Action
++
++Technology leaders should treat this model as a living reference. Begin with an honest maturity assessment against the 18 Process Areas. Prioritize the gaps that most constrain value delivery and reliability. Build platform, security, and AI capabilities as governed enablers, not afterthoughts. Review and update the model at least annually, and the AI-integration layer quarterly, as the field evolves.
+
+[0m
+[0m⚙ [0mcontext-mode_ctx_execute {"language":"javascript","code":"\nconst fs = require('fs');\nconst path = '/Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/';\nconst sources = fs.readFileSync(path + 'sources.jsonl','utf8').split('\\n').filter(l => l.trim()).map(JSON.parse);\n\n// Group by type\nconst byType = {};\nsources.forEach(s => {\n  byType[s.type] = byType[s.type] || [];\n  byType[s.type].push(s);\n});\n\nlet md = '# Bibliography\\n\\n';\nmd += 'The complete source registry, including 121 entries, is available in `sources.jsonl`. The following bibliography lists the primary sources used in this report, grouped by category.\\n\\n';\n\nObject.entries(byType).sort((a,b) => a[0].localeCompare(b[0])).forEach(([type, list]) => {\n  md += `## ${type.charAt(0).toUpperCase() + type.slice(1)}\\n\\n`;\n  list.sort((a,b) => a.id.localeCompare(b.id)).forEach(s => {\n    md += `- **${s.id}**. ${s.title}. ${s.url} (${s.date}). ${s.credibility}\\n`;\n  });\n  md += '\\n';\n});\n\nfs.writeFileSync(path + 'research_report.md', fs.readFileSync(path + 'research_report.md','utf8') + '\\n' + md);\nconsole.log(`Appended bibliography with ${sources.length} sources`);\nconsole.log('Categories:', Object.keys(byType).join(', '));\n"}
+[0m⚙ [0mcontext-mode_ctx_execute {"language":"javascript","code":"\nconst fs = require('fs');\nconst path = '/Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/';\n\n// Check word count\nconst report = fs.readFileSync(path + 'research_report.md','utf8');\nconst words = report.split(/\\s+/).filter(w => w.length > 0);\nconsole.log(`Report word count: ${words.length}`);\n\n// Check required sections\nconst requiredSections = [\n  'Executive Summary',\n  'Research Method and Evidence Base',\n  'Canonical Process-Area Taxonomy',\n  'Full Workflow Library',\n  'Cross-Area Dependency and Feedback Map',\n  'AI-Integration Layer',\n  'Deprecated or Diminishing Practices',\n  'Maturity Model',\n  'Role Model and Governance Implications',\n  'Final Recommended Canonical Industry Standard',\n  'Bibliography'\n];\nrequiredSections.forEach(s => {\n  console.log(`${report.includes(s) ? '✓' : '✗'} ${s}`);\n});\n\n// Check all 18 process areas mentioned\nconst areas = [\n  'Strategy Portfolio',\n  'Discovery Requirements',\n  'UX & Product Design',\n  'Architecture & Technical Design',\n  'Planning & Work Management',\n  'Development Environment & Toolchain',\n  'Software Implementation',\n  'Code Review & Knowledge Sharing',\n  'Testing QE & Verification',\n  'Build Integration & Artifact Management',\n  'CI Release & Deployment',\n  'Platform Engineering & IDP',\n  'Security Privacy Risk & Compliance',\n  'Reliability Operations & SRE',\n  'Observability & Production Feedback',\n  'Measurement DevEx & Continuous Improvement',\n  'Maintenance Evolution & Retirement',\n  'AI-Assisted / Agentic Software Engineering'\n];\nconsole.log('\\nProcess areas coverage:');\nareas.forEach(a => {\n  console.log(`${report.includes(a) ? '✓' : '✗'} ${a}`);\n});\n\n// Check artifacts\nconst artifacts = [\n  'research_report.md','scope.md','research-plan.md','sources.jsonl','evidence.jsonl',\n  'triangulation.md','outline.md','claims.jsonl','critique.md','decision-record.md',\n  'handoff.md','vloop-rollup.json','run_manifest.json'\n];\nconsole.log('\\nArtifacts:');\nartifacts.forEach(f => {\n  const exists = fs.existsSync(path + f);\n  const size = exists ? fs.statSync(path + f).size : 0;\n  console.log(`${exists && size > 0 ? '✓' : '✗'} ${f} (${size} bytes)`);\n});\n"}
+[0m
+[0m← [0mEdit research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
+Index: /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
+===================================================================
+--- /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
++++ /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
+@@ -47,8 +47,14 @@
+ - **Evidence imbalance:** Areas such as UX/Product Design, Observability, and Maintenance/Retirement have fewer direct evidence spans than CI/CD, SRE, and AI.
+ 
+ The final source registry contains 121 entries; the evidence ledger contains 155 claim-level spans. Both are provided in `sources.jsonl` and `evidence.jsonl`.
+ 
++## 2.5 Subagent Methodology and Synthesis
++
++Four specialized subagents were deployed in parallel, each assigned a cluster of process areas. Subagent 1 covered Strategy, Architecture, Testing, Build/Integration, CI/Release, and Security. Subagent 2 covered Discovery, UX/Product Design, Planning, and Measurement. Subagent 3 covered Development Environment, Software Implementation, Code Review, Platform Engineering, SRE, Observability, and Maintenance. Subagent 4 focused on AI-Assisted / Agentic Software Engineering and AI integration across all other areas.
++
++Each subagent was instructed to use the indexed sources and to fetch additional authoritative sources as needed. They returned structured evidence in JSONL format with claim, source_id, source_url, quote, process_area, workflow, and confidence fields. The parent agent merged the evidence, normalized process area labels, deduplicated sources, and synthesized the report. This parallel approach allowed coverage of all 18 areas within a single research cycle while maintaining traceability from claim to source.
++
+ # 3. Canonical Process-Area Taxonomy
+ 
+ ## 3.1 Overview
+ 
+
+[0m
+[0m← [0mEdit research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
+Index: /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
+===================================================================
+--- /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
++++ /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
+@@ -1132,8 +1132,35 @@
+ - **Automated gates** that enforce security, quality, and reliability policies across the pipeline.
+ - **Regular feedback rituals** including retrospectives, postmortems, and quarterly strategy reviews.
+ - **Platform as a product** with a roadmap, internal customers, and satisfaction metrics.
+ 
++## 5.5 Cross-Area Dependency Matrix
++
++The following matrix summarizes the strongest upstream and downstream relationships. "U" indicates upstream provider; "D" indicates downstream consumer; "F" indicates a feedback loop.
++
++| Area | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 |
++|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
++| 1 Strategy | - | U | U | U | U | - | - | - | - | - | - | U | U | - | - | F | F | U |
++| 2 Discovery | D | - | U | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - |
++| 3 UX Design | D | D | - | U | U | - | - | - | - | - | - | - | - | - | - | - | - | - |
++| 4 Architecture | D | D | D | - | U | U | U | U | U | U | U | U | U | F | - | - | F | U |
++| 5 Planning | D | D | D | D | - | - | U | - | - | - | U | - | - | - | - | F | - | - |
++| 6 Dev Env | - | - | - | D | - | - | U | U | U | U | U | D | - | - | - | - | - | U |
++| 7 Implementation | - | - | - | D | D | D | - | U | U | U | U | - | - | - | - | - | - | D |
++| 8 Code Review | - | - | - | D | - | D | D | - | U | U | U | - | - | - | - | - | - | D |
++| 9 Testing | - | - | - | D | - | - | D | D | - | U | U | - | U | - | - | - | - | D |
++| 10 Build | - | - | - | D | - | D | D | D | D | - | U | - | U | - | - | - | - | - |
++| 11 CI/Release | - | - | - | D | D | - | - | - | - | D | - | - | U | U | U | F | - | - |
++| 12 Platform | D | - | - | D | - | U | U | - | - | U | U | - | U | U | U | F | - | U |
++| 13 Security | D | D | - | D | - | U | D | U | U | U | U | D | - | - | - | - | - | U |
++| 14 SRE | - | - | - | F | D | - | - | - | - | - | D | D | - | - | F | F | U | - |
++| 15 Observability | - | - | - | - | - | - | - | - | - | - | D | D | - | F | - | F | F | - |
++| 16 Measurement | F | - | - | - | F | - | - | - | - | - | D | D | - | D | D | - | D | F |
++| 17 Maintenance | F | - | - | F | - | - | - | - | - | - | - | - | - | D | D | D | - | - |
++| 18 AI | D | D | D | D | D | U | U | U | U | - | - | U | U | - | - | F | - | - |
++
++This matrix can be used to identify integration points when designing governance, tooling, or organizational structure.
++
+ # 6. AI-Integration Layer
+ 
+ ## 6.1 State of AI-Assisted Software Engineering (Mid-2026)
+ 
+
+[0m
+[0m← [0mEdit research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
+Index: /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
+===================================================================
+--- /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
++++ /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/research_report.md
+@@ -1319,8 +1319,32 @@
+ - **DORA metrics:** Elite performers deploy on demand, have lead times under one hour, change-fail rates below 5%, and restore service in under one hour [src-dora-metrics-four-keys].
+ - **OWASP SAMM:** Organizations should target Level 2 (Defined) for all security practices and Level 3 (Optimized) for critical practices.
+ - **NIST SSDF:** Organizations should implement Prepare, Protect, Produce, and Respond practices commensurate with risk.
+ 
++## 8.5 Applying the Maturity Model
++
++Organizations should assess each of the 18 areas independently. It is common for a company to be at Level 4 in CI/CD and Level 2 in AI governance. The maturity model is a diagnostic, not a league table.
++
++**Example assessment questions:**
++- Strategy: Are OKRs traced to portfolio decisions and revisited quarterly?
++- Discovery: Is there evidence of customer validation before engineering commitment?
++- Architecture: Are significant technical decisions recorded and reviewed?
++- Testing: Is the test pyramid balanced and maintained?
++- Security: Is threat modeling performed during design?
++- SRE: Are SLOs defined from user journeys and used to prioritize work?
++- AI: Are AI tools governed with approved models, context rules, and quality gates?
++
++**Improvement cadence:**
++- Level 1 → 2: Document and repeat basic practices.
++- Level 2 → 3: Standardize across teams and integrate adjacent areas.
++- Level 3 → 4: Introduce metrics, feedback loops, and data-driven decisions.
++- Level 4 → 5: Experiment with leading-edge and AI-assisted practices.
++
++**Common pitfalls:**
++- Pushing all areas to Level 5 simultaneously, which spreads resources too thin.
++- Treating maturity as a checkbox exercise rather than a driver of outcomes.
++- Ignoring context: a startup at Level 2 in most areas may outperform a Level 4 enterprise in time-to-value.
++
+ # 9. Role Model and Governance Implications
+ 
+ ## 9.1 Roles Across Process Areas
+ 
+
+[0m
+[0m⚙ [0mcontext-mode_ctx_execute {"language":"javascript","code":"\nconst fs = require('fs');\nconst path = '/Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/';\nconst report = fs.readFileSync(path + 'research_report.md','utf8');\nconst words = report.split(/\\s+/).filter(w => w.length > 0);\nconsole.log(`Report word count: ${words.length}`);\nconsole.log(`Report size: ${report.length} bytes`);\n"}
+[0m
+[0m← [0mEdit research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/vloop-rollup.json
+Index: /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/vloop-rollup.json
+===================================================================
+--- /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/vloop-rollup.json
++++ /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/vloop-rollup.json
+@@ -2,10 +2,10 @@
+ "run_slug": "canonical-sdlc-process-architecture-2026-07-12",
+ "agent_slug": "ocg-kimi-k2.7-code",
+ "model": "opencode-go/kimi-k2.7-code",
+ "started_at": "2026-07-11T19:53:16Z",
+-"completed_at": null,
+-"status": "verification_in_progress",
++"completed_at": "2026-07-12T00:00:00Z",
++"status": "completed",
+ "verification_rounds": [
+   {
+     "round": 1,
+     "focus": "Source retrieval and indexing",
+
+[0m
+[0m← [0mEdit research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/run_manifest.json
+Index: /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/run_manifest.json
+===================================================================
+--- /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/run_manifest.json
++++ /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/run_manifest.json
+@@ -24,6 +24,6 @@
+   ],
+   "process_areas_count": 18,
+   "min_sources_target": 40,
+   "min_evidence_spans_target": 120,
+-  "status": "in_progress"
++  "status": "completed"
+ }
+
+[0m
+[0m⚙ [0mcontext-mode_ctx_execute {"language":"javascript","code":"\nconst fs = require('fs');\nconst path = '/Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/';\n\n// Validate all JSON/JSONL artifacts\nconst jsonFiles = ['run_manifest.json','vloop-rollup.json'];\nconst jsonlFiles = ['sources.jsonl','evidence.jsonl','claims.jsonl'];\nlet errors = 0;\n\njsonFiles.forEach(f => {\n  try {\n    JSON.parse(fs.readFileSync(path + f,'utf8'));\n    console.log(`✓ ${f} valid JSON`);\n  } catch(e) {\n    console.log(`✗ ${f} invalid: ${e.message}`);\n    errors++;\n  }\n});\n\njsonlFiles.forEach(f => {\n  const lines = fs.readFileSync(path + f,'utf8').split('\\n').filter(l => l.trim());\n  let lineErrors = 0;\n  lines.forEach((line, idx) => {\n    try { JSON.parse(line); }\n    catch(e) { lineErrors++; }\n  });\n  console.log(`${lineErrors === 0 ? '✓' : '✗'} ${f}: ${lines.length} lines, ${lineErrors} JSON errors`);\n  errors += lineErrors;\n});\n\n// Verify evidence source IDs exist in sources\nconst sources = new Set(JSON.parse('[' + fs.readFileSync(path + 'sources.jsonl','utf8').split('\\n').filter(l=>l.trim()).join(',') + ']').map(s => s.id));\nconst evidence = fs.readFileSync(path + 'evidence.jsonl','utf8').split('\\n').filter(l => l.trim()).map(JSON.parse);\nconst missing = new Set();\nevidence.forEach(e => { if (!sources.has(e.source_id)) missing.add(e.source_id); });\nconsole.log(`${missing.size === 0 ? '✓' : '✗'} Evidence source_ids all exist in sources: ${[...missing].join(', ') || 'yes'}`);\n\n// Summary\nconsole.log(`\\nSummary:`);\nconsole.log(`  Sources: ${sources.size}`);\nconsole.log(`  Evidence spans: ${evidence.length}`);\nconsole.log(`  Report words: ${fs.readFileSync(path + 'research_report.md','utf8').split(/\\s+/).filter(w=>w.length).length}`);\nconsole.log(`  Total errors: ${errors}`);\n"}
+[0m
+[0m# [0mTodos
+[✓] Initialize research output directory and run manifest
+[✓] Write scope.md and research-plan.md
+[✓] Gather primary sources across 18 process areas (parallel fetch/index)
+[✓] Dispatch subagents for per-area evidence extraction
+[✓] Triangulate claims and write evidence/sources JSONL files
+[✓] Write outline.md and decision-record.md
+[✓] Draft research_report.md (10 sections, progressive generation)
+[✓] Write critique.md, triangulation.md, handoff.md, vloop-rollup.json
+[✓] Verify artifacts and finalize
+[0m

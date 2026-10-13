@@ -1,0 +1,3 @@
+429: {"message":"[opencode-go/minimax-m3] [429]: Weekly usage limit reached. Resets in 3 days. To continue using this model now, enable usage  (reset after 23h 58m 39s)"}
+[agent-pi] fail-fast: skipping --continue after first-run EXIT 1
+[agent-pi] quota-window: 429: {"message":"[opencode-go/minimax-m3] [429]: Weekly usage limit reached. Resets in 3 days. To continue using this model now, enable usage  (reset after 23h 58m 39s)"}

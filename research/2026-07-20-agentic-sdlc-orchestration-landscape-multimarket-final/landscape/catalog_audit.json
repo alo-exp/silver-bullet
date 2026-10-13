@@ -1,0 +1,606 @@
+{
+  "pack_id": "agentic-sdlc-process-orchestrator",
+  "primary_market_id": "apo",
+  "core": [
+    "agentsys",
+    "ai-dlc",
+    "deepwork",
+    "director",
+    "metagpt",
+    "silver-bullet",
+    "turboshovel",
+    "workflow-manager"
+  ],
+  "matrix_slugs": [
+    "agentsys",
+    "ai-dlc",
+    "augment-cosmos",
+    "barkain-workflow-orchestrator",
+    "bmad",
+    "cavekit-v31",
+    "cc10x",
+    "claude-harness",
+    "deepwork",
+    "devin",
+    "director",
+    "factory-ai",
+    "gsd",
+    "metagpt",
+    "oh-my-pi",
+    "ruflo",
+    "silver-bullet",
+    "spec-kit",
+    "superclaude",
+    "superpowers",
+    "turboshovel",
+    "workflow-manager",
+    "zuvo"
+  ],
+  "markets": {
+    "apo": {
+      "role": "primary",
+      "display_name": "Agentic Process Orchestrators (APO)",
+      "chart_eligible": true,
+      "core": [
+        "agentsys",
+        "ai-dlc",
+        "deepwork",
+        "director",
+        "metagpt",
+        "silver-bullet",
+        "turboshovel",
+        "workflow-manager"
+      ],
+      "adjacent": [
+        "agenthub",
+        "axonflow",
+        "cavekit-v4",
+        "crewai",
+        "langchain",
+        "langgraph"
+      ],
+      "excluded": [
+        "aider",
+        "amazon-q-developer",
+        "ateam",
+        "augment-cosmos",
+        "barkain-workflow-orchestrator",
+        "bmad",
+        "cavekit-v31",
+        "cc10x",
+        "claude-code",
+        "claude-code-expert",
+        "claude-harness",
+        "cline",
+        "coderabbit",
+        "codex",
+        "cognition-scout",
+        "conductor",
+        "continue",
+        "cursor",
+        "cursor-background-agents",
+        "factory-ai",
+        "github-copilot",
+        "github-copilot-enterprise",
+        "gsd",
+        "jetbrains-ai-assistant",
+        "linear",
+        "magic-dev",
+        "oh-my-pi",
+        "open-interpreter",
+        "openhands",
+        "poolside",
+        "replit-agent",
+        "ruflo",
+        "sourcegraph-cody",
+        "spec-kit",
+        "superclaude",
+        "superpowers",
+        "swe-agent",
+        "sweep",
+        "tembo",
+        "windsurf",
+        "zuvo"
+      ]
+    },
+    "sdlc-plugins": {
+      "role": "secondary",
+      "display_name": "SDLC Plugins & Methodology Packs",
+      "chart_eligible": true,
+      "core": [
+        "barkain-workflow-orchestrator",
+        "bmad",
+        "cavekit-v31",
+        "cc10x",
+        "claude-harness",
+        "gsd",
+        "oh-my-pi",
+        "ruflo",
+        "silver-bullet",
+        "spec-kit",
+        "superclaude",
+        "superpowers",
+        "zuvo"
+      ],
+      "adjacent": [
+        "crewai",
+        "langgraph"
+      ],
+      "excluded": [
+        "agenthub",
+        "agentsys",
+        "ai-dlc",
+        "aider",
+        "amazon-q-developer",
+        "ateam",
+        "augment-cosmos",
+        "axonflow",
+        "cavekit-v4",
+        "claude-code",
+        "claude-code-expert",
+        "cline",
+        "coderabbit",
+        "codex",
+        "cognition-scout",
+        "conductor",
+        "continue",
+        "cursor",
+        "cursor-background-agents",
+        "deepwork",
+        "devin",
+        "director",
+        "factory-ai",
+        "github-copilot",
+        "github-copilot-enterprise",
+        "jetbrains-ai-assistant",
+        "langchain",
+        "linear",
+        "magic-dev",
+        "metagpt",
+        "open-interpreter",
+        "openhands",
+        "poolside",
+        "replit-agent",
+        "sourcegraph-cody",
+        "swe-agent",
+        "sweep",
+        "tembo",
+        "turboshovel",
+        "windsurf",
+        "workflow-manager"
+      ]
+    },
+    "agentic-sdlc-saas": {
+      "role": "tertiary",
+      "display_name": "Agentic SDLC SaaS & Autonomous Delivery",
+      "chart_eligible": true,
+      "core": [
+        "augment-cosmos",
+        "devin",
+        "factory-ai"
+      ],
+      "adjacent": [
+        "claude-code",
+        "codex",
+        "cognition-scout",
+        "conductor",
+        "cursor",
+        "github-copilot",
+        "replit-agent",
+        "tembo"
+      ],
+      "excluded": [
+        "agenthub",
+        "agentsys",
+        "ai-dlc",
+        "aider",
+        "amazon-q-developer",
+        "ateam",
+        "axonflow",
+        "barkain-workflow-orchestrator",
+        "bmad",
+        "cavekit-v31",
+        "cavekit-v4",
+        "cc10x",
+        "claude-code-expert",
+        "claude-harness",
+        "cline",
+        "coderabbit",
+        "continue",
+        "crewai",
+        "cursor-background-agents",
+        "deepwork",
+        "director",
+        "github-copilot-enterprise",
+        "gsd",
+        "jetbrains-ai-assistant",
+        "langchain",
+        "langgraph",
+        "linear",
+        "magic-dev",
+        "metagpt",
+        "oh-my-pi",
+        "open-interpreter",
+        "openhands",
+        "poolside",
+        "ruflo",
+        "silver-bullet",
+        "sourcegraph-cody",
+        "spec-kit",
+        "superclaude",
+        "superpowers",
+        "swe-agent",
+        "sweep",
+        "turboshovel",
+        "windsurf",
+        "workflow-manager",
+        "zuvo"
+      ]
+    }
+  },
+  "adjacent": [
+    "agenthub",
+    "axonflow",
+    "cavekit-v4",
+    "claude-code",
+    "codex",
+    "cognition-scout",
+    "conductor",
+    "crewai",
+    "cursor",
+    "github-copilot",
+    "langchain",
+    "langgraph",
+    "replit-agent",
+    "tembo"
+  ],
+  "excluded": [
+    "aider",
+    "amazon-q-developer",
+    "ateam",
+    "claude-code-expert",
+    "cline",
+    "coderabbit",
+    "continue",
+    "cursor-background-agents",
+    "github-copilot-enterprise",
+    "jetbrains-ai-assistant",
+    "linear",
+    "magic-dev",
+    "open-interpreter",
+    "openhands",
+    "poolside",
+    "sourcegraph-cody",
+    "swe-agent",
+    "sweep",
+    "windsurf"
+  ],
+  "sunset": [
+    "agentgpt",
+    "autogen",
+    "copilot-workspace",
+    "devika"
+  ],
+  "gaps": [],
+  "by_slug": {
+    "zuvo": {
+      "classification": "core",
+      "reason": "sdlc-plugins market_core (matrix)"
+    },
+    "oh-my-pi": {
+      "classification": "core",
+      "reason": "sdlc-plugins market_core (matrix)"
+    },
+    "factory-ai": {
+      "classification": "core",
+      "reason": "agentic-sdlc-saas market_core (matrix)"
+    },
+    "devin": {
+      "classification": "core",
+      "reason": "agentic-sdlc-saas market_core (matrix)"
+    },
+    "cavekit-v31": {
+      "classification": "core",
+      "reason": "sdlc-plugins market_core (matrix)"
+    },
+    "bmad": {
+      "classification": "core",
+      "reason": "sdlc-plugins market_core (matrix)"
+    },
+    "ruflo": {
+      "classification": "core",
+      "reason": "sdlc-plugins market_core (matrix)"
+    },
+    "claude-code": {
+      "classification": "adjacent",
+      "reason": "pack adjacent_seed"
+    },
+    "silver-bullet": {
+      "classification": "core",
+      "reason": "pack core_seed"
+    },
+    "superpowers": {
+      "classification": "core",
+      "reason": "sdlc-plugins market_core (matrix)"
+    },
+    "cursor": {
+      "classification": "adjacent",
+      "reason": "pack adjacent_seed"
+    },
+    "codex": {
+      "classification": "adjacent",
+      "reason": "pack adjacent_seed"
+    },
+    "github-copilot": {
+      "classification": "adjacent",
+      "reason": "pack adjacent_seed"
+    },
+    "gsd": {
+      "classification": "core",
+      "reason": "sdlc-plugins market_core (matrix)"
+    },
+    "spec-kit": {
+      "classification": "core",
+      "reason": "sdlc-plugins market_core (matrix)"
+    },
+    "augment-cosmos": {
+      "classification": "core",
+      "reason": "agentic-sdlc-saas market_core (matrix)"
+    },
+    "conductor": {
+      "classification": "adjacent",
+      "reason": "pack adjacent_seed"
+    },
+    "superclaude": {
+      "classification": "core",
+      "reason": "sdlc-plugins market_core (matrix)"
+    },
+    "tembo": {
+      "classification": "adjacent",
+      "reason": "pack adjacent_seed"
+    },
+    "agenthub": {
+      "classification": "adjacent",
+      "reason": "pack adjacent_seed"
+    },
+    "barkain-workflow-orchestrator": {
+      "classification": "core",
+      "reason": "sdlc-plugins market_core (matrix)"
+    },
+    "cc10x": {
+      "classification": "core",
+      "reason": "sdlc-plugins market_core (matrix)"
+    },
+    "ai-dlc": {
+      "classification": "core",
+      "reason": "pack core_seed"
+    },
+    "director": {
+      "classification": "core",
+      "reason": "pack core_seed"
+    },
+    "turboshovel": {
+      "classification": "core",
+      "reason": "pack core_seed"
+    },
+    "deepwork": {
+      "classification": "core",
+      "reason": "pack core_seed"
+    },
+    "ateam": {
+      "classification": "excluded",
+      "reason": "pack hard_exclusion (professional_services)"
+    },
+    "crewai": {
+      "classification": "adjacent",
+      "reason": "pack adjacent_seed"
+    },
+    "aider": {
+      "classification": "excluded",
+      "reason": "pack hard_exclusion (coding_agent)"
+    },
+    "windsurf": {
+      "classification": "excluded",
+      "reason": "hard_veto from need_profile"
+    },
+    "cline": {
+      "classification": "excluded",
+      "reason": "pack hard_exclusion (coding_agent)"
+    },
+    "continue": {
+      "classification": "excluded",
+      "reason": "pack hard_exclusion (coding_agent)"
+    },
+    "openhands": {
+      "classification": "excluded",
+      "reason": "pack hard_exclusion (coding_agent)"
+    },
+    "agentsys": {
+      "classification": "core",
+      "reason": "pack core_seed"
+    },
+    "langchain": {
+      "classification": "adjacent",
+      "reason": "pack adjacent_seed"
+    },
+    "langgraph": {
+      "classification": "adjacent",
+      "reason": "pack adjacent_seed"
+    },
+    "metagpt": {
+      "classification": "core",
+      "reason": "pack core_seed"
+    },
+    "claude-harness": {
+      "classification": "core",
+      "reason": "sdlc-plugins market_core (matrix)"
+    },
+    "coderabbit": {
+      "classification": "excluded",
+      "reason": "hard_veto from need_profile"
+    },
+    "axonflow": {
+      "classification": "adjacent",
+      "reason": "pack adjacent_seed"
+    },
+    "sweep": {
+      "classification": "excluded",
+      "reason": "hard_veto from need_profile"
+    },
+    "agentgpt": {
+      "classification": "sunset",
+      "reason": "Abandoned / non-production"
+    },
+    "autogen": {
+      "classification": "sunset",
+      "reason": "Microsoft shifted to Agent Framework; legacy status"
+    },
+    "cognition-scout": {
+      "classification": "adjacent",
+      "reason": "pack adjacent_seed"
+    },
+    "magic-dev": {
+      "classification": "excluded",
+      "reason": "pack hard_exclusion (coding_agent)"
+    },
+    "swe-agent": {
+      "classification": "excluded",
+      "reason": "pack hard_exclusion (coding_agent)"
+    },
+    "claude-code-expert": {
+      "classification": "excluded",
+      "reason": "pack hard_exclusion (sunset)"
+    },
+    "poolside": {
+      "classification": "excluded",
+      "reason": "hard_veto from need_profile"
+    },
+    "cursor-background-agents": {
+      "classification": "excluded",
+      "reason": "hard_veto from need_profile"
+    },
+    "cavekit-v4": {
+      "classification": "adjacent",
+      "reason": "pack adjacent_seed"
+    },
+    "linear": {
+      "classification": "excluded",
+      "reason": "pack hard_exclusion (project_management)"
+    },
+    "workflow-manager": {
+      "classification": "core",
+      "reason": "pack core_seed"
+    },
+    "copilot-workspace": {
+      "classification": "sunset",
+      "reason": "Discontinued by GitHub"
+    },
+    "devika": {
+      "classification": "sunset",
+      "reason": "Project discontinued"
+    },
+    "sourcegraph-cody": {
+      "classification": "excluded",
+      "reason": "hard_veto from need_profile"
+    },
+    "amazon-q-developer": {
+      "classification": "excluded",
+      "reason": "hard_veto from need_profile"
+    },
+    "open-interpreter": {
+      "classification": "excluded",
+      "reason": "pack hard_exclusion (coding_agent)"
+    },
+    "github-copilot-enterprise": {
+      "classification": "excluded",
+      "reason": "pack hard_exclusion (coding_agent)"
+    },
+    "jetbrains-ai-assistant": {
+      "classification": "excluded",
+      "reason": "hard_veto from need_profile"
+    },
+    "replit-agent": {
+      "classification": "adjacent",
+      "reason": "pack adjacent_seed"
+    },
+    "augment-code": {
+      "classification": "core",
+      "reason": "alias of augment-cosmos: agentic-sdlc-saas market_core (matrix)",
+      "canonical_slug": "augment-cosmos"
+    },
+    "cognition": {
+      "classification": "core",
+      "reason": "alias of devin: agentic-sdlc-saas market_core (matrix)",
+      "canonical_slug": "devin"
+    },
+    "cavekit": {
+      "classification": "core",
+      "reason": "alias of cavekit-v31: sdlc-plugins market_core (matrix)",
+      "canonical_slug": "cavekit-v31"
+    },
+    "cavekit-v3": {
+      "classification": "core",
+      "reason": "alias of cavekit-v31: sdlc-plugins market_core (matrix)",
+      "canonical_slug": "cavekit-v31"
+    },
+    "cavekit-v3.1": {
+      "classification": "core",
+      "reason": "alias of cavekit-v31: sdlc-plugins market_core (matrix)",
+      "canonical_slug": "cavekit-v31"
+    },
+    "sdlc": {
+      "classification": "core",
+      "reason": "alias of zuvo: sdlc-plugins market_core (matrix)",
+      "canonical_slug": "zuvo"
+    },
+    "github-spec-kit": {
+      "classification": "core",
+      "reason": "alias of spec-kit: sdlc-plugins market_core (matrix)",
+      "canonical_slug": "spec-kit"
+    },
+    "claude-flow": {
+      "classification": "core",
+      "reason": "alias of ruflo: sdlc-plugins market_core (matrix)",
+      "canonical_slug": "ruflo"
+    },
+    "factory": {
+      "classification": "core",
+      "reason": "alias of factory-ai: agentic-sdlc-saas market_core (matrix)",
+      "canonical_slug": "factory-ai"
+    },
+    "barkain": {
+      "classification": "core",
+      "reason": "alias of barkain-workflow-orchestrator: sdlc-plugins market_core (matrix)",
+      "canonical_slug": "barkain-workflow-orchestrator"
+    },
+    "omp": {
+      "classification": "core",
+      "reason": "alias of oh-my-pi: sdlc-plugins market_core (matrix)",
+      "canonical_slug": "oh-my-pi"
+    },
+    "bmad-method": {
+      "classification": "core",
+      "reason": "alias of bmad: sdlc-plugins market_core (matrix)",
+      "canonical_slug": "bmad"
+    },
+    "copilot": {
+      "classification": "adjacent",
+      "reason": "alias of github-copilot: pack adjacent_seed",
+      "canonical_slug": "github-copilot"
+    },
+    "sdlc-plugin": {
+      "classification": "core",
+      "reason": "alias of zuvo: sdlc-plugins market_core (matrix)",
+      "canonical_slug": "zuvo"
+    }
+  },
+  "counts": {
+    "core": 8,
+    "matrix_slugs": 23,
+    "adjacent": 14,
+    "excluded": 19,
+    "sunset": 4,
+    "gaps": 0
+  }
+}
+

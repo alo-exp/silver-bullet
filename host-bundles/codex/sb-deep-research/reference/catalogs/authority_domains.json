@@ -1,0 +1,13 @@
+{
+  "version": "1.1.0",
+  "domains": {
+    "academic": {"tier": "primary", "suffixes": [".edu", "arxiv.org", "doi.org", "pubmed"]},
+    "government": {"tier": "primary", "suffixes": [".gov", "europa.eu", "who.int"]},
+    "documentation": {"tier": "primary", "patterns": ["docs.", "developer.", "readthedocs"]},
+    "news": {"tier": "secondary", "domains": ["reuters.com", "apnews.com", "bbc.com"]},
+    "code": {"tier": "primary", "domains": ["github.com", "gitlab.com"]},
+    "video": {"tier": "primary", "domains": ["youtube.com"]},
+    "social_paid": {"tier": "tertiary", "domains": ["linkedin.com", "x.com", "twitter.com"], "notes": "paid official API + site: fallback; not scrapers"},
+    "vendor": {"tier": "tertiary", "patterns": ["aws.amazon", "cloud.google", "azure.microsoft"]}
+  }
+}

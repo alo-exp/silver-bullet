@@ -1,0 +1,30 @@
+Done.
+
+## Rung 07 — Pi Claude Opus 5 High — review pass 4
+
+**Output:** `.planning/rfl-spec-template-world-class/rung-07-pi-claude-opus-5-high/review-rerun-4.md`
+
+**Freeze SHA (both twins, verified at start and re-verified after):** `fce83948e0c8b7ef74af2cbc74facad9744a1baea1e1d0aa32810c21702ac48e` — unmutated.
+
+### Verdict: NOT CLEAN — 12 residuals `R7d-F01`–`R7d-F12`
+
+| ID | Sev | One-line |
+|----|-----|----------|
+| R7d-F01 | HIGH | `decision-count = max(brief, preserved)` is arithmetically incompatible with R7c-F02's QC-12 live-`DEC-nn` **count-equality**; no union/dedup rule for augment Decision Log emission (contrast: `invariant-count` uses exclusive precedence) |
+| R7d-F02 | HIGH | R7c-F01's live-`### Invariants` precondition enumerated only 2 fixtures; R7c-F05 malformed-`spec-version`, R6n lineage PASS-on-augment, and R6c commit-boundary augment fixtures still terminate at branch-(3) ASK fail-before-write in CI |
+| R7d-F03 | MED | brief `decisions` has no sourcing turn — 12 gated turns vs 13 packs; "all 13 packs are sourced" false; `decision-log` unreachable on greenfield |
+| R7d-F04 | MED | Invariants branch (1) silently destroys preserved live bullets, against the freeze's own no-silent-delete/migrate-or-ASK rule |
+| R7d-F05 | MED | R7c-F09's live-ID rule makes `SCAN:…#QA-01` name an eligible source, colliding with "SCAN atoms are not in this set" — the pinned PASS fixture triggers reverse-coverage neither-branch FAIL |
+| R7d-F06 | LOW | Wave 2 `rg` alternation omits `scan-section-slug` and `conditionally-required` |
+| R7d-F07 | LOW | Wave 3 verify list omits every R7/R7b/R7c Step 7 obligation except the bare Invariants mapping |
+| R7d-F08 | LOW | `multi` catalog row is a computation, not a set — YAML set-equality and R7c-F06 predicate undefined for it |
+| R7d-F09 | LOW | allocator has no defined seed; `-00` is "allocatable" yet unreachable, making R6f's exhaustion fixture non-behavioral |
+| R7d-F10 | nit | `nfr` **Default class** cell embeds a catalog-derived kind list without the R7c-F16 non-normative tag |
+| R7d-F11 | nit | `invariant-count` grammar admits `0`, which QC-11 (`≥ 1`) makes permanently non-installable |
+| R7d-F12 | nit | SCAN atom permits `#` in both halves with no split rule — `SCAN:a#b#c` undefined under fail-closed `REQ-F71` |
+
+All 16 R7c and 16 R7b encodings confirmed landed (table in the review with line cites). `R7b-F17` and `KEEP-REJECT` not re-filed.
+
+**Tools:** `graphify query` first, `memory_save` (`mem_mtgb2oaa_a275844db174`), `graphify update .` after write (43676 nodes / 59363 edges).
+
+**Policy:** review-only — no triage, APPLY, fix, commit, branch switch, verify launch, or `--record-rung-review-outcome`. Streak stays 0; no advance to Extra High.
