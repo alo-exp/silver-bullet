@@ -1062,9 +1062,9 @@ prepare_release_work_dir() {
     npm --prefix "$RELEASE_WORK_DIR" install >/dev/null
   fi
 
-  if [[ -f "${WORK_DIR}/.codex/settings.local.json" ]]; then
+  if [[ -f "${WORK_DIR}/.claude/settings.local.json" ]]; then
     mkdir -p "${RELEASE_WORK_DIR}/.claude"
-    cp "${WORK_DIR}/.codex/settings.local.json" "${RELEASE_WORK_DIR}/.codex/settings.local.json"
+    cp "${WORK_DIR}/.claude/settings.local.json" "${RELEASE_WORK_DIR}/.claude/settings.local.json"
   fi
 }
 
@@ -1095,19 +1095,19 @@ journey_turn "sb:release" "finish the release workflow" "no" "release turn recor
 
 if [[ -d "$RELEASE_WORK_DIR" ]] && git -C "$RELEASE_WORK_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   release_artifacts_status=""
-  if release_artifacts_status="$(git -C "$RELEASE_WORK_DIR" status --short -- coverage-ledger.md .codex/settings.local.json 2>/dev/null)"; then
+  if release_artifacts_status="$(git -C "$RELEASE_WORK_DIR" status --short -- coverage-ledger.md .claude/settings.local.json 2>/dev/null)"; then
     :
   else
     release_artifacts_status=""
   fi
   if [[ -n "$release_artifacts_status" ]]; then
-    git -C "$RELEASE_WORK_DIR" stash push --include-untracked -m "post-release-cleanup harness artifacts" -- coverage-ledger.md .codex/settings.local.json >/dev/null 2>&1 || true
+    git -C "$RELEASE_WORK_DIR" stash push --include-untracked -m "post-release-cleanup harness artifacts" -- coverage-ledger.md .claude/settings.local.json >/dev/null 2>&1 || true
   fi
 
   release_status=""
   if release_status="$(
     git -C "$RELEASE_WORK_DIR" status --short 2>/dev/null \
-      | grep -Ev '^\?\? coverage-ledger\.md$|^\?\? \.codex/settings\.local\.json$' \
+      | grep -Ev '^\?\? coverage-ledger\.md$|^\?\? \.claude/settings\.local\.json$' \
       || true
   )"; then
     :
@@ -1160,8 +1160,8 @@ if [[ -d "$RELEASE_WORK_DIR" ]] && git -C "$RELEASE_WORK_DIR" rev-parse --is-ins
     FAIL=$((FAIL + 1))
   fi
 
-  if [[ -n "$(git -C "$RELEASE_WORK_DIR" status --short -- coverage-ledger.md .codex/settings.local.json 2>/dev/null)" ]]; then
-    git -C "$RELEASE_WORK_DIR" stash push --include-untracked -m "post-release-cleanup harness artifacts" -- coverage-ledger.md .codex/settings.local.json >/dev/null 2>&1 || true
+  if [[ -n "$(git -C "$RELEASE_WORK_DIR" status --short -- coverage-ledger.md .claude/settings.local.json 2>/dev/null)" ]]; then
+    git -C "$RELEASE_WORK_DIR" stash push --include-untracked -m "post-release-cleanup harness artifacts" -- coverage-ledger.md .claude/settings.local.json >/dev/null 2>&1 || true
     echo "PASS: coverage ledger preserved outside the release workspace"
   else
     echo "PASS: coverage ledger already clean after release"

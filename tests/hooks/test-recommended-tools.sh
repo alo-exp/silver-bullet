@@ -155,7 +155,7 @@ else
 fi
 # Unknown hosts still hit the documented fallback.
 _got="$(sb_graphify_platform_artifact_path "/tmp/sb-proj" wat)"
-if [[ "$_got" == "/tmp/sb-proj/.codex/settings.json" ]]; then
+if [[ "$_got" == "/tmp/sb-proj/.claude/settings.json" ]]; then
   pass "unknown host graphify artifact falls back"
 else
   fail "unknown host graphify artifact falls back (got: $_got)"

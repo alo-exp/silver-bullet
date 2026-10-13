@@ -38,8 +38,8 @@ sb_context_mode_cli_path() {
 }
 
 sb_context_mode_claude_plugin_present() {
-  [[ -d "${HOME}/.codex/plugins/context-mode" ]] \
-    || [[ -d "${HOME}/.codex/plugins/mksglu-context-mode" ]]
+  [[ -d "${HOME}/.claude/plugins/context-mode" ]] \
+    || [[ -d "${HOME}/.claude/plugins/mksglu-context-mode" ]]
 }
 
 sb_context_mode_cli_available() {
@@ -75,7 +75,7 @@ sb_context_mode_platform_artifact_path() {
     opencode) printf '%s/.config/opencode/opencode.json' "${HOME}" ;;
     pi) printf '%s/extensions/silver-bullet-five-tool-stack/config.json' \
       "${PI_CODING_AGENT_DIR:-${HOME}/.pi/agent}" ;;
-    *) printf '%s/.codex/plugins/context-mode' "${HOME}" ;;
+    *) printf '%s/.claude/plugins/context-mode' "${HOME}" ;;
   esac
 }
 

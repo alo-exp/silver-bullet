@@ -105,7 +105,7 @@ PY
     _agent_claude_seed_folder_trust_json "${config_dir}/.claude.json" "$work_dir"
   fi
   if [[ "${SB_AGENT_CLAUDE_SEED_FOLDER_TRUST_GLOBAL:-1}" == "1" && -n "${HOME:-}" ]]; then
-    _agent_claude_seed_folder_trust_json "${HOME}/.codex.json" "$work_dir"
+    _agent_claude_seed_folder_trust_json "${HOME}/.claude.json" "$work_dir"
   fi
 }
 
@@ -131,7 +131,7 @@ agent_claude_prepare_lightweight_config_dir() {
 # Copy global Claude settings into ephemeral config, stripping broken user hook refs.
 agent_claude_seed_lightweight_settings() {
   local config_dir="${1:-${CLAUDE_CONFIG_DIR:-}}"
-  local global_settings="${HOME}/.codex/settings.json"
+  local global_settings="${HOME}/.claude/settings.json"
   local dest_settings="${config_dir}/settings.json"
   [[ -n "$config_dir" ]] || return 0
   command -v python3 >/dev/null 2>&1 || return 0

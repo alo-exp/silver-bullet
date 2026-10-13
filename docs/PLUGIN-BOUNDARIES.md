@@ -55,7 +55,7 @@ Optional plugins remain useful when they add capability outside SB's lifecycle s
 
 ## Packaging Boundaries
 
-- `/.planning/` and `/.codex/` are project-instance artifacts, not plugin artifacts.
+- `/.planning/` and `/.claude/` are project-instance artifacts, not plugin artifacts.
 - `silver-bullet.md` is the project-side instance copy; `templates/silver-bullet.md.base` is the source template.
 - `plugins/silver-bullet/` is the curated SB-only Codex bundle, synchronized from the repo root.
 - `plugins/silver-bullet/commands/` is the Cursor command surface. It exposes `/sb:*` entry points; the Codex manifest omits `commands` and uses the native `skill-source/` mirror to avoid command-to-skill migration artifacts.

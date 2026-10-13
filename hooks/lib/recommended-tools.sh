@@ -336,7 +336,7 @@ sb_graphify_platform_artifact_path() {
     # path, so graphify-platform reported a permanently unclearable WARN even
     # when Claude hooks were installed correctly.
     claude) printf '%s/.claude/settings.json' "${project_root%/}" ;;
-    *) printf '%s/.codex/settings.json' "${project_root%/}" ;;
+    *) printf '%s/.claude/settings.json' "${project_root%/}" ;;
   esac
 }
 

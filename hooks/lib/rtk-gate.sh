@@ -99,13 +99,13 @@ sb_rtk_platform_hook_artifact_path() {
   case "$host" in
     cursor) printf '%s/.cursor/hooks.json' "${HOME}" ;;
     codex) printf '%s/.codex/AGENTS.md' "${CODEX_HOME:-${HOME}/.codex}" ;;
-    # rtk init -g wires Claude hooks into ~/.claude/settings.json; the codex
+    # rtk init -g wires Claude hooks into ${HOME}/.claude/settings.json; the codex
     # fallback pointed this check at a different host's config entirely.
     claude) printf '%s/.claude/settings.json' "${HOME}" ;;
     opencode) printf '%s/.config/opencode/plugins/rtk.ts' "${HOME}" ;;
     pi) printf '%s/extensions/silver-bullet-five-tool-stack/config.json' \
       "${PI_CODING_AGENT_DIR:-${HOME}/.pi/agent}" ;;
-    *) printf '%s/.codex/settings.json' "${HOME}" ;;
+    *) printf '%s/.claude/settings.json' "${HOME}" ;;
   esac
 }
 
@@ -143,7 +143,7 @@ sb_rtk_edit_path_is_exempt() {
   if [[ "$file_path" == *"/.silver-bullet/"* ]]; then
     return 0
   fi
-  if [[ "$file_path" == *"/.cursor/hooks.json" ]] || [[ "$file_path" == *"/.codex/settings.json" ]]; then
+  if [[ "$file_path" == *"/.cursor/hooks.json" ]] || [[ "$file_path" == *"/.claude/settings.json" ]]; then
     return 0
   fi
   return 1
