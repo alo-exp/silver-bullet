@@ -1,0 +1,4 @@
+[agent-pi] hard-timeout kill after 3600s (stdout_bytes=no expect_ok=True)
+[agent-pi] fail-fast: skipping --continue after first-run EXIT 124
+
+[harness] attempt2 EXIT 

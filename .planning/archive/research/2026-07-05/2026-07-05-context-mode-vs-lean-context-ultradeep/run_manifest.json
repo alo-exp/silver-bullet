@@ -1,0 +1,53 @@
+{
+  "version": "3.0.0",
+  "query": "For agentic coding and AI-assisted software engineering workflows, which context management solution is better: Context Mode or Lean Context, and under what conditions should Silver Bullet recommend one over the other?",
+  "mode": "ultradeep",
+  "started_at": "2026-07-05T12:37:28.153865+00:00",
+  "finished_at": "2026-07-05T12:55:00.000000+00:00",
+  "workflow_id": "WF-SILVER-DEEP-RESEARCH",
+  "atomic_flow": "AF-DECIDE",
+  "flow_step": "FS-SILVER_DEEP_RESEARCH",
+  "assumptions": [
+    {
+      "assumption_id": "asm_a1b2c3d4",
+      "text": "Primary host surface is Cursor with MCP and PreToolUse hooks, matching SB's first-class integration path.",
+      "materiality": "high",
+      "status": "evidence_validated"
+    },
+    {
+      "assumption_id": "asm_e5f6a7b8",
+      "text": "Comparison scope is agentic coding context management, not general RAG or enterprise search platforms.",
+      "materiality": "high",
+      "status": "user_confirmed"
+    },
+    {
+      "assumption_id": "asm_c9d0e1f2",
+      "text": "Live public documentation fetched 2026-07-05 reflects current product positioning; neither product was installed end-to-end in this run.",
+      "materiality": "medium",
+      "status": "implicit"
+    }
+  ],
+  "search_cli": {
+    "status": "unavailable",
+    "providers_available": []
+  },
+  "fallback_reason": "search-cli and search command not on PATH; live retrieval via context-mode ctx_fetch_and_index (7 URLs) plus local SB docs (docs/CONTEXT-MODE.md, silver-bullet.md, code-intelligence-contract.md)",
+  "provider_config": {
+    "primary": "ctx_fetch_and_index",
+    "scholarly": null
+  },
+  "retrieval_methods": [
+    "ctx_fetch_and_index",
+    "ctx_search",
+    "local_repo_docs",
+    "graphify_query"
+  ],
+  "report_dir": "/Users/shafqat/projects/silver-bullet/repo/.planning/research/2026-07-05-context-mode-vs-lean-context-ultradeep",
+  "artifact_paths": {
+    "sources": "sources.jsonl",
+    "evidence": "evidence.jsonl",
+    "claims": "claims.jsonl",
+    "report": "research_report.md"
+  },
+  "continuation": null
+}

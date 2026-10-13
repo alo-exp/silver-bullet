@@ -1,0 +1,15 @@
+START 2026-08-28T12:04:25Z
+PI_PROVIDER=omniroute PI_MODEL=claude/claude-opus-5-high
+PI_EXPECT_FILE_MIN_BYTES=2500 PI_RUN_TIMEOUT=7200 PI_NI_ZERO_BYTE_IDLE_NON_QWEN_SEC=2400 PI_NI_ZERO_BYTE_IDLE_SEC=2400
+ATTEMPT=4 after hang×2 at 600s idle; env-raised Claude first-write idle 2400s; no --continue on 124; named High; no Grok-substitute; no Policy C
+Written: `.planning/rfl-router-subagent-surfaces-85bf9f09-final-review-2/rung-10-claude-opus-5-high/review.md` (23,585 bytes).
+
+**Freeze gate:** all three copies re-hashed with `hashlib.sha256` at start and again before writing — `088a18a6dc755ffee2ec68755cf72df0d28c5fde53d9c6f86198fb6672719f4e` / **648963** on working tree, C⁠ursor plans copy, and `HEAD` blob. MATCH, no split. Freeze never edited.
+
+**Eight mandated surfaces:** all **PASS** (Executor tiers; public trio post-F-5-1 with no live fusion id; AP 1.0 partial emit after docs-release; Doctor/WS7; KEEP REJECT drift; Q1–Q3; FAST-not-a-Job; catalog/WS ship order).
+
+**Findings:** HIGH **none** · MED M1 (KR-no-public-fusion has no named test, violating the freeze's own coverage MUST), M2 (Panel-start admitted as a quality-order hop mode at L2412 but excluded at L1293 — rename regression; no hop-level termination rule), M3 (`/sb:panel-end` fail-closed classifies to no canonical `blocked_*` despite L2993) · LOW L1–L4 · NIT N1–N3. F-2 HOLD observed and not filed; GFM `--` class not filed (`ws0--ws0b` = 0); rungs 4–10 APPLYs verified intact and not re-litigated.
+
+**Verdict: NOT CLEAN.** No APPLY, no triage, no Policy C, no commit, no model remap, no rung 11.
+INVOKE_EXIT:0
+END 2026-08-28T12:49:39Z

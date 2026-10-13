@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "track": "minimal-intent-e2e",
+  "row_id": "MI-01",
+  "install_fp": "claude@1f68e8d45a8f+2717f916398e",
+  "sb_git_sha": "1f68e8d45a8f",
+  "status": "prepared",
+  "host": "cursor",
+  "orchestrator_mode": "parent",
+  "started_at": "2026-07-05T17:53:30Z",
+  "mechanism": "silver-orchestrator parent + Task workers",
+  "harness": "scripts/minimal-intent-autonomous-e2e.sh",
+  "verdict": null,
+  "blocking_outcomes": {},
+  "live_session_run": false
+}

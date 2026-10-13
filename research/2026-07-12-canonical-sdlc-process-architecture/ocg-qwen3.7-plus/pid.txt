@@ -1,0 +1,2 @@
+ocg-qwen3.7-plus
+77319

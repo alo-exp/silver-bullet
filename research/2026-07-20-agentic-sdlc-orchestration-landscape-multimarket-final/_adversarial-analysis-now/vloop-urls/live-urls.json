@@ -1,0 +1,27 @@
+{
+  "github": [
+    {
+      "url": "https://github.com/romiluz13/cc10x",
+      "http_status": 200,
+      "fetch": "ok",
+      "page_title": "GitHub - romiluz13/cc10x: The Loop Engine for Claude Code"
+    },
+    {
+      "url": "https://github.com/JuliusBrussee/cavekit",
+      "http_status": 200,
+      "fetch": "ok",
+      "page_title": "GitHub - JuliusBrussee/cavekit: A Claude Code plugin that turns natural language into blueprints..."
+    },
+    {
+      "url": "https://github.com/barkain/claude-code-workflow-orchestration",
+      "http_status": 200,
+      "fetch": "ok",
+      "page_title": "GitHub - barkain/claude-code-workflow-orchestration: Claude Code plugin for multi-step workflow orchestration"
+    }
+  ],
+  "old_marketing_hosts": [
+    { "url": "https://cc10x.dev", "result": "DNS ENOTFOUND" },
+    { "url": "https://cavekit.ai", "result": "fetch error" },
+    { "url": "https://barkain.com", "result": "empty content" }
+  ]
+}

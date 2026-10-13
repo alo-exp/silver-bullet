@@ -1,0 +1,26 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "minimax",
+    "effort": "max",
+    "display": "OpenCode Go MiniMax M3"
+  },
+  "verdict": "BLOCKED",
+  "issues": {
+    "HIGH": "none",
+    "MED": "none",
+    "LOW": "none",
+    "NIT": "none"
+  },
+  "triage": "none",
+  "blockers": [
+    {
+      "id": "B1",
+      "title": "OpenCode weekly 429"
+    }
+  ],
+  "highs": "none",
+  "mediums": "none",
+  "disposition": "HOLD",
+  "resolved": "none"
+}

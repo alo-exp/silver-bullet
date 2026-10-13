@@ -1,0 +1,27 @@
+Done.
+
+## Rung 07 — review pass 10 (Pi Claude Opus 5 High) — **NOT CLEAN**
+
+**Output:** `.planning/rfl-spec-template-world-class/rung-07-pi-claude-opus-5-high/review-rerun-10.md`
+
+**Freeze integrity:** both twins hashed → `56cdd69882857aba35cf3f34bd2bc9333d68abb12e5b066a64dfb4720dc80aed`. Byte-identical, unmutated.
+
+**9 residuals — `R7j-F01`–`R7j-F09` (0 HIGH / 4 MED / 3 LOW / 2 nit):**
+
+| ID | Sev | One-line |
+|----|-----|----------|
+| R7j-F01 | MED | `id-tombstones` entry grammar is "exact two-digit **catalog** ID" (L142/L217/L426) — rejects the `ASM-nn` entries R7i-F02 requires it to hold |
+| R7j-F02 | MED | No producer ever appends `ASM-nn` to `id-tombstones` (Step 7 L457 / Wave 6 L593 are catalog+mint-scoped; compiler never mints `ASM-nn`) ⇒ never-reissue rule vacuous |
+| R7j-F03 | MED | Step 7 records only bullet-text + prefix deltas; Step 8 applies a third `v<integer>` re-anchor delta with **no producer**; `change-row-identity` absent from L457/L458 ⇒ L602 PASS fixture unreachable |
+| R7j-F04 | MED | Re-anchor `ASK` terminal has no legal answer space — repoint blocked by identity MUST, drop-atom blocked by resolvable-Source MUST, keep-stale = `REQ-F71` |
+| R7j-F05 | LOW | Wave 2 `rg` alternation (L434) omits `change-row-identity` |
+| R7j-F06 | LOW | L437 has the clause-(c) positive only; no `v01` FAIL, no `v0` dead, no `change-row-identity` re-anchor fixtures |
+| R7j-F07 | LOW | Wave 3 `- contains` list never asserts the Assumptions `bNN`→`ASM-nn` prefix-migration obligation |
+| R7j-F08 | nit | Entry-grammar "`ASM-nn` label" token has no shape at the counting site ⇒ malformed prefix silently shifts every ordinal base |
+| R7j-F09 | nit | `decision-log` Notes (L197) carries a dangling untagged catalog-derived fragment "(optional pack for every kind)" |
+
+**R7i APPLY confirmed:** F03/F04/F05/F06/F08/F11 fully landed; F01/F02/F07/F09/F10 landed with the residuals above. R7h/R7g/R7f/R7e/R7d/R7c/R7b/R7/R6b–R6n spot-checked and retained; spec-floor not tightened; KEEP REJECT intact. No ledger IDs re-filed (incl. REJECT F17).
+
+**Mandatory tools:** `graphify query` run first; memory saved to `.agentmemory/memory/2026-08-31-rfl-rung07-claude-opus-5-high-review-pass-10.md`; `graphify update .` completed (44238 nodes / 59910 edges).
+
+No triage, no APPLY, no commit, no verify launch, no ladder advance. Policy F streak stays 0.

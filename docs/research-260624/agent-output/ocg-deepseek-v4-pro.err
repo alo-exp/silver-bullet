@@ -1,0 +1,65 @@
+[0m
+> build · deepseek-v4-pro
+[0m
+[0m# [0mTodos
+[•] Fetch docs for direct candidate systems (LangGraph, CrewAI, AutoGen, etc.)
+[ ] Fetch docs for adjacent categories (BMAD, GSD, Spec Kit, Devin, etc.)
+[ ] Fetch docs for CI/CD/DevOps tools (OPA, Dagger, Harness, etc.)
+[ ] Fetch docs for enterprise process automation (Temporal, Camunda, Airflow)
+[ ] Fetch docs for quality/review automation (CodeRabbit, PR-Agent, etc.)
+[ ] Search arXiv for academic papers on V-model + LLM agents
+[ ] Synthesize findings into research report with tables and evidence blocks
+[ ] Write narrative sections (executive summary, top competitors, gaps, negative results)
+[0m
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_search Search Indexed Content
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_search Search Indexed Content
+[0m⚙ [0mctx_search Search Indexed Content
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_search Search Indexed Content
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_search Search Indexed Content
+[0m⚙ [0mctx_search Search Indexed Content
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_search Search Indexed Content
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_search Search Indexed Content
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_batch_execute Batch Execute & Search
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_execute Run code in a sandbox (executes the supplied code)
+[0m
+[0m# [0mTodos
+[✓] Fetch docs for direct candidate systems (LangGraph, CrewAI, AutoGen, etc.)
+[✓] Fetch docs for adjacent categories (BMAD, GSD, Spec Kit, Devin, etc.)
+[✓] Fetch docs for CI/CD/DevOps tools (OPA, Dagger, Harness, etc.)
+[✓] Fetch docs for enterprise process automation (Temporal, Camunda, Airflow)
+[✓] Fetch docs for quality/review automation (CodeRabbit, PR-Agent, etc.)
+[✓] Search arXiv for academic papers on V-model + LLM agents
+[•] Synthesize findings into research report with tables and evidence blocks
+[ ] Write narrative sections (executive summary, top competitors, gaps, negative results)
+[0m
+[0m← [0mWrite prior-art-report.md
+Wrote file successfully.
+[0m
+[0m# [0mTodos
+[✓] Fetch docs for direct candidate systems (LangGraph, CrewAI, AutoGen, etc.)
+[✓] Fetch docs for adjacent categories (BMAD, GSD, Spec Kit, Devin, etc.)
+[✓] Fetch docs for CI/CD/DevOps tools (OPA, Dagger, Harness, etc.)
+[✓] Fetch docs for enterprise process automation (Temporal, Camunda, Airflow)
+[✓] Fetch docs for quality/review automation (CodeRabbit, PR-Agent, etc.)
+[✓] Search arXiv for academic papers on V-model + LLM agents
+[✓] Synthesize findings into research report with tables and evidence blocks
+[✓] Write narrative sections (executive summary, top competitors, gaps, negative results)
+[0m
+[0m$ [0mrtk wc -l /Users/shafqat/projects/silver-bullet/repo/docs/research-260624/prior-art-report.md
+360
+[0m

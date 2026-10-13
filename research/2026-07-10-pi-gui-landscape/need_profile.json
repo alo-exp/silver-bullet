@@ -1,0 +1,31 @@
+{
+  "category": "Pi coding agent GUI shells",
+  "adjacent_categories": [
+    "VS Code extensions",
+    "web UIs for coding agents",
+    "multi-channel personal assistants"
+  ],
+  "audience": "Developers adopting pi.dev who want a graphical interface instead of terminal-only TUI",
+  "must_haves": [
+    "Drives or wraps @earendil-works/pi-coding-agent (not a separate agent runtime)",
+    "Graphical UI (desktop app, web UI, or IDE extension)",
+    "OSS or source-available license"
+  ],
+  "nice_to_haves": [
+    "Multi-session workspace management",
+    "Git worktree isolation",
+    "Remote / multi-device supervision",
+    "Integrated terminal and diff review",
+    "Multi-agent orchestration"
+  ],
+  "constraints": [
+    "Must be actively maintained in 2026",
+    "Prefer projects with public source and install path"
+  ],
+  "success_criteria": [
+    "Pick a default GUI for daily Pi coding-agent use on macOS/Linux",
+    "Document tradeoffs for Windows and remote workflows"
+  ],
+  "license_preference": "oss",
+  "interview_complete": true
+}

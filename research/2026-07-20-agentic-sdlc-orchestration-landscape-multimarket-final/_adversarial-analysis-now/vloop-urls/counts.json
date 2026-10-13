@@ -1,0 +1,28 @@
+{
+  "measured_at": "2026-08-14T03:48+10",
+  "html": "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/landscape-report.html",
+  "html_bytes": 601840,
+  "md": "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/landscape/landscape-report.md",
+  "md_chars": 62204,
+  "forbidden": {
+    "cc10x.dev": { "html": 0, "md": 0, "pdf_bin": 0, "pdf_uris": 0, "html_ci": 0, "md_ci": 0 },
+    "cavekit.ai": { "html": 0, "md": 0, "pdf_bin": 0, "pdf_uris": 0, "html_ci": 0, "md_ci": 0 },
+    "barkain.com": { "html": 0, "md": 0, "pdf_bin": 0, "pdf_uris": 0, "html_ci": 0, "md_ci": 0 }
+  },
+  "expected_github": {
+    "github.com/romiluz13/cc10x": { "html": 11, "md": 7, "pdf_bin": 7, "pdf_uris": "present" },
+    "github.com/JuliusBrussee/cavekit": { "html": 9, "md": 5, "pdf_bin": 5, "pdf_uris": "present" },
+    "github.com/barkain/claude-code-workflow-orchestration": { "html": 10, "md": 6, "pdf_bin": 7, "pdf_uris": "present" }
+  },
+  "md_product_markdown_links_unique": {
+    "cc10x -> https://github.com/romiluz13/cc10x": 7,
+    "Cavekit v3.1 -> https://github.com/JuliusBrussee/cavekit": 5,
+    "Barkain Workflow Orchestrator -> https://github.com/barkain/claude-code-workflow-orchestration": 6
+  },
+  "chart_data_urls_only": [
+    "https://github.com/romiluz13/cc10x",
+    "https://github.com/JuliusBrussee/cavekit",
+    "https://github.com/barkain/claude-code-workflow-orchestration"
+  ],
+  "html_outside_report_data_forbidden": { "cc10x.dev": 0, "cavekit.ai": 0, "barkain.com": 0 }
+}

@@ -1,0 +1,30 @@
+---
+project: {{PROJECT_NAME}}
+period: {{YYYY-MM}}
+type: knowledge
+---
+
+# Project Knowledge — {{YYYY-MM}}
+
+## Architecture Patterns
+
+*(none yet)*
+
+## Known Gotchas
+
+*(none yet)*
+
+## Key Decisions
+
+*(none yet)*
+
+## Recurring Patterns
+
+*(none yet)*
+
+## Open Questions
+
+*(none yet)*
+
+> To add: append `YYYY-MM-DD — <note>` under the relevant category.
+> To resolve an open question: append `[RESOLVED YYYY-MM-DD]: <resolution>` below the original.

@@ -1,0 +1,48 @@
+{
+  "version": "1.0",
+  "agent_slug": "ocg-mimo-v2.5",
+  "model": "opencode-go/mimo-v2.5",
+  "started_at": "2026-07-11T19:53:16Z",
+  "completed_at": "2026-07-12T00:00:00Z",
+  "research_depth": "ultradeep",
+  "deliverables": {
+    "research_report.md": "Primary deliverable — 10-section canonical SDLC process architecture report",
+    "sources.jsonl": "45 sources with credibility notes",
+    "evidence.jsonl": "40 evidence claims with source mappings",
+    "triangulation.md": "Cross-source validation of major claims",
+    "claims.jsonl": "20 classified claims with confidence levels",
+    "outline.md": "Full document outline",
+    "scope.md": "Research scope and assumptions",
+    "research-plan.md": "Research methodology",
+    "critique.md": "Limitations and gaps analysis",
+    "decision-record.md": "Key architectural decisions",
+    "handoff.md": "Handoff document for next steps",
+    "vloop-rollup.json": "Structured metadata about this run",
+    "run_manifest.json": "This file"
+  },
+  "statistics": {
+    "sources_fetched": 45,
+    "evidence_claims_extracted": 40,
+    "claims_classified": 20,
+    "process_areas_defined": 18,
+    "workflows_summarized": "100+",
+    "triangulated_claims": 20,
+    "source_categories": {
+      "research_programs": 5,
+      "standards_bodies": 3,
+      "company_blogs": 15,
+      "reference_documentation": 10,
+      "surveys": 3
+    }
+  },
+  "key_findings": [
+    "18 evidence-based Process Areas covering full SDLC",
+    "DORA metrics are industry standard for delivery performance measurement",
+    "90%+ AI adoption with amplification effect on existing capabilities",
+    "Platform engineering reached mainstream adoption in 2025-2026",
+    "Security is non-negotiable — shift-left practices universal",
+    "Error budgets balance innovation velocity with stability",
+    "Blameless postmortems essential for organizational learning"
+  ],
+  "status": "complete"
+}

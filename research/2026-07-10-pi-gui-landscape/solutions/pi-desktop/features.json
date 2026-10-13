@@ -1,0 +1,38 @@
+{
+  "solution_name": "Pi Desktop",
+  "license": "oss",
+  "categories": [
+    {
+      "name": "Pi integration",
+      "features": [
+        {"name": "Dedicated Pi coding agent GUI", "supported": true, "evidence_ids": ["E007"]},
+        {"name": "pi.dev packages browser", "supported": true, "evidence_ids": ["E007"]}
+      ]
+    },
+    {
+      "name": "GUI surface",
+      "features": [
+        {"name": "Native desktop app (Electron)", "supported": true, "evidence_ids": ["E007"]},
+        {"name": "Integrated code editor", "supported": true, "evidence_ids": ["E007"]},
+        {"name": "Integrated terminal", "supported": true, "evidence_ids": ["E007"]},
+        {"name": "Inline diff viewer", "supported": true, "evidence_ids": ["E007"]}
+      ]
+    },
+    {
+      "name": "Workflow",
+      "features": [
+        {"name": "Multi-workspace Pi processes", "supported": true, "evidence_ids": ["E007"]},
+        {"name": "Multi-agent council planning", "supported": true, "evidence_ids": ["E008"]},
+        {"name": "Git worktrees per thread", "supported": false, "evidence_ids": []}
+      ]
+    },
+    {
+      "name": "Platform",
+      "features": [
+        {"name": "macOS", "supported": true, "evidence_ids": ["E007"]},
+        {"name": "Linux", "supported": true, "evidence_ids": ["E007"]},
+        {"name": "Windows", "supported": true, "evidence_ids": ["E007"]}
+      ]
+    }
+  ]
+}

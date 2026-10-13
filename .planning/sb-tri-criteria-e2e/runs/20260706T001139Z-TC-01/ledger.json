@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "track": "sb-tri-criteria-e2e",
+  "track_id": "TC-01",
+  "row_id": "TC-01",
+  "install_fp": "claude@d46409736640+2717f916398e",
+  "sb_git_sha": "d46409736640",
+  "status": "prepared",
+  "host": "cursor",
+  "orchestrator_mode": "parent",
+  "started_at": "2026-07-06T00:11:39Z",
+  "mechanism": "silver-orchestrator parent + Task workers",
+  "harness": "scripts/sb-tri-criteria-e2e.sh",
+  "design_doc": ".planning/sb-tri-criteria-e2e/DESIGN.md",
+  "verdict": null,
+  "blocking_outcomes": {},
+  "live_session_run": false
+}

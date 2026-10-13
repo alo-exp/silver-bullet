@@ -1,0 +1,93 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "kimi",
+    "effort": "high",
+    "display": "Cursor Kimi K3 High (rung 2 review 5 Policy G pack)"
+  },
+  "verdict": "NOT CLEAN",
+  "disposition": "ACCEPT-apply",
+  "issues": {
+    "HIGH": "none",
+    "MED": "none",
+    "LOW": [
+      {
+        "id": "R2P5-1",
+        "title": "§6.1 fleet never --x / -m social overbroad vs xAI leg"
+      }
+    ],
+    "NIT": [
+      {
+        "id": "R2P5-2",
+        "title": "§1.2 still permits fork-side X dedup"
+      },
+      {
+        "id": "R2P5-3",
+        "title": "§6.3 quota layout uses <host> not {id}"
+      },
+      {
+        "id": "R2P5-4",
+        "title": "§7 Serper node omits locked -q exceptions"
+      }
+    ]
+  },
+  "triage": [
+    {
+      "id": "R2P5-1",
+      "severity": "LOW",
+      "decision": "ACCEPT",
+      "reason": "Scope --x shorthand ban; keep explicit -m social -p xai for X union leg B — does not unwind X-must-search"
+    },
+    {
+      "id": "R2P5-2",
+      "severity": "NIT",
+      "decision": "ACCEPT",
+      "reason": "Strike fork dedup path; aligns with locked orchestrator-only contract"
+    },
+    {
+      "id": "R2P5-3",
+      "severity": "NIT",
+      "decision": "ACCEPT",
+      "reason": "Rename §6.3 quota files to {id} matching §6.4 / not-hostname lock"
+    },
+    {
+      "id": "R2P5-4",
+      "severity": "NIT",
+      "decision": "ACCEPT",
+      "reason": "Relabel §7 Serper node; preserves X site:x.com-in-q exception"
+    }
+  ],
+  "blockers": "none",
+  "highs": "none",
+  "mediums": "none",
+  "resolved": [
+    {
+      "id": "R2P5-1",
+      "severity": "LOW",
+      "title": "§6.1 fleet never --x shorthand; xAI leg still -m social -p xai",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "R2P5-2",
+      "severity": "NIT",
+      "title": "§1.2 X dedup orchestrator-only not fork",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "R2P5-3",
+      "severity": "NIT",
+      "title": "§6.3 quota files buckets/{id} not <host>",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "R2P5-4",
+      "severity": "NIT",
+      "title": "§7 Serper node names -d bare-host and -q exceptions",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    }
+  ]
+}

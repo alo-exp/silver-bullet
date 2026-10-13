@@ -1,0 +1,34 @@
+---
+period: {{YYYY-MM}}
+type: learnings
+categories: []
+---
+
+# Learnings — {{YYYY-MM}}
+
+> Write each learning as if explaining to someone who has never seen this project.
+> No project-specific file paths, feature names, requirement IDs, or entity references.
+> Add the relevant category to the frontmatter `categories` list.
+
+## domain:{area}
+
+> Business domain learnings — regulations, industry patterns, terminology, domain gotchas.
+
+## stack:{technology}
+
+> Language, framework, and tool-specific learnings.
+
+## practice:{area}
+
+> Software engineering practices — testing, review, architecture, security.
+
+## devops:{area}
+
+> CI, deployment, monitoring, infrastructure learnings.
+
+## design:{area}
+
+> UI, UX, accessibility pattern learnings.
+
+> To add: append `YYYY-MM-DD — <learning>` under the relevant category.
+> Delete unused category sections before committing.

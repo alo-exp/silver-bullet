@@ -1,0 +1,27 @@
+{
+  "registry": "glama",
+  "status": "ok",
+  "reason": null,
+  "results": [
+    {
+      "name": "Vertex MCP Search",
+      "description": "A Model Context Protocol server that uses Google Vertex AI and Gemini 3.5 Flash to perform deep research with high thinking capability and live Google Search grounding, enabling intelligent, multi-source research via a single tool.",
+      "source_registry": "glama",
+      "install_count": null,
+      "stars": null,
+      "security_score": null,
+      "last_updated": null,
+      "content_sha": null,
+      "install_url": "https://glama.ai/mcp/servers/yfizxf2ays",
+      "raw_metadata": {
+        "_envelope": {
+          "source_registry": "glama",
+          "field": "server",
+          "wrapped_at": "2026-07-07T16:03:24.763Z"
+        },
+        "value": "{\"attributes\":[\"hosting:local-only\"],\"description\":\"A Model Context Protocol server that uses Google Vertex AI and Gemini 3.5 Flash to perform deep research with high thinking capability and live Google Search grounding, enabling intelligent, multi-source research via a single tool.\",\"environmentVariablesJsonSchema\":{\"properties\":{\"GEMINI_AUTH_MODE\":{\"description\":\"Authentication mode for Gemini (e.g., 'vertex')\",\"type\":\"string\"},\"GOOGLE_CLOUD_PROJECT\":{\"description\":\"Google Cloud project ID\",\"type\":\"string\"},\"GOOGLE_CLOUD_LOCATION\":{\"description\":\"Google Cloud location (e.g., 'global')\",\"type\":\"string\"},\"GEMINI_HTTP_RETRY_ATTEMPTS\":{\"description\":\"Number of HTTP retry attempts (optional, default 1)\",\"type\":\"string\",\"default\":\"1\"},\"GOOGLE_APPLICATION_CREDENTIALS\":{\"description\":\"Path to Google application default credentials JSON file\",\"type\":\"string\"},\"GEMINI_MODEL_REQUEST_TIMEOUT_MS\":{\"description\":\"Timeout for model request in milliseconds (optional, default 170000)\",\"type\":\"string\",\"default\":\"170000\"},\"GEMINI_WORKER_REQUEST_TIMEOUT_SECONDS\":{\"description\":\"Timeout for Gemini worker request in seconds (default 180)\",\"type\":\"string\",\"default\":\"180\"}},\"type\":\"object\",\"required\":[\"GEMINI_AUTH_MODE\",\"GOOGLE_CLOUD_PROJECT\",\"GOOGLE_CLOUD_LOCATION\",\"GOOGLE_APPLICATION_CREDENTIALS\",\"GEMINI_WORKER_REQUEST_TIMEOUT_SECONDS\"]},\"id\":\"yfizxf2ays\",\"name\":\"Vertex MCP Search\",\"namespace\":\"leacvikas0\",\"repository\":{\"url\":\"https://github.com/leacvikas0/vertex-mcp-search\"},\"slug\":\"vertex-mcp-search\",\"spdxLicense\":null,\"tools\":[],\"url\":\"https://glama.ai/mcp/servers/yfizxf2ays\"}"
+      }
+    }
+  ],
+  "latency_ms": 769
+}

@@ -1,0 +1,1 @@
+REVIEW-ONLY Policy F re-review (streak 0/2). Plan only. SHA `ddc71a73810355206f57fd4267358478cea6e33622b7ae7c0617444a90f8b2a9`. Residual-only vs F1–F13 and R1–R2 (all APPLY’d). Write review-pass-3.md. CLEAN only if nothing valid remains. No keep-the-locks. Graphify CLI. No nested subagents.

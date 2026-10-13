@@ -1,0 +1,107 @@
+```json
+{
+  "claim_candidates": [
+    {
+      "text": "Silver Bullet is the deepest APO by process-lattice span: 85+ canonical skills, deterministic hooks, cross-session agentmemory, specialist subagent routing, and plugin/skill/hook packaging across Claude Code, Codex, and Cursor — covering all 7 inclusion criteria versus 4-5 for nearest peers.",
+      "confidence": 0.85,
+      "supporting_sources": ["silver-bullet.md", "sb.alolabs.dev/", "AGENTS.md", "plugins/silver-bullet/skill-source"]
+    },
+    {
+      "text": "No APO competitor matches Silver Bullet's plugin-host triad (Claude Code + Codex + Cursor). Most APOs (Conductor, cc10x, Director, AgentHub, ATeam) target a single host — typically Claude Code only — making SB the only cross-host process orchestration layer in the primary market.",
+      "confidence": 0.8,
+      "supporting_sources": ["sb.alolabs.dev/", "github.com/anomalyco/cc10x", "github.com/topics/claude-code-plugin", "AGENTS.md"]
+    },
+    {
+      "text": "SDLC plugin secondary market (BMAD, GSD, Superpowers, GitHub Spec Kit, Oh My plugins, Zuvo/OSS, SuperClaude, Ruflo) represents the most credible APO substitution threat: each enforces a partial lifecycle span with methodology-specific gates, but none provides cross-session persistent state, deterministic hook enforcement, or specialist agent orchestration within a single package.",
+      "confidence": 0.75,
+      "supporting_sources": ["silver-bullet.md (competitor-mapping section)", "sb.alolabs.dev/"]
+    },
+    {
+      "text": "Zuvo's OSS license (not commercial) places it in the secondary plugin market rather than tertiary SaaS, but its workflow-orchestration surface makes it the most APO-adjacent secondary entry — closer to APO than GSD or BMAD in lifecycle span.",
+      "confidence": 0.7,
+      "supporting_sources": ["category-pack naming rules (Zuvo license = OSS)", "DR-RETRIEVE output"]
+    },
+    {
+      "text": "Tertiary agentic SDLC SaaS (Factory/Factory.ai, Devin, Augment Cosmos, Tembo) satisfies ≥5 inclusion criteria despite not self-labeling APO: multi-phase lifecycle, specialist agent routing (Devin's planner/coder/reviewer/architect roles), deterministic pass/fail gates, and quality/release enforcement claims. They are genuine APO peers per market definition, not adjacent tools.",
+      "confidence": 0.8,
+      "supporting_sources": ["category-pack market definition", "category-pack inclusion criteria §lifecycle_span, §specialist_agents, §deterministic_gates, §quality_release_enforcement"]
+    },
+    {
+      "text": "AI-DLC (IBM) is the weakest APO core seed by enforcement depth: it defines a conceptual lifecycle for methodology guidance without shipping deterministic gates, cross-session state, or host-integrated plugin packaging. It belongs in the APO market per inclusion criteria §lifecycle_span alone but ranks below all shipped products.",
+      "confidence": 0.75,
+      "supporting_sources": ["developer.ibm.com/articles/ai-driven-development-life-cycle/", "category-pack inclusion criteria"]
+    },
+    {
+      "text": "cc10x and Conductor form a mid-tier APO cluster sharing complementary strengths: Conductor has stronger workflow orchestration UI and cross-session state; cc10x has deeper Claude Code hook integration, deterministic gates, and release enforcement. Neither matches SB's specialist agent routing or cross-host coverage.",
+      "confidence": 0.7,
+      "supporting_sources": ["github.com/anomalyco/cc10x", "conductor.build/"]
+    },
+    {
+      "text": "The APO market has ~19 in-scope solutions (primary + secondary + tertiary), within the 8-24 core-count bound. Hard exclusions (Cursor Background Agents, Windsurf, Aider, Cline, OpenHands, CodeRabbit, etc.) are correctly excluded as single-step tools, coding agents, or host runtimes — not process orchestrators.",
+      "confidence": 0.9,
+      "supporting_sources": ["category-pack core count bounds", "category-pack exclusion classes"]
+    },
+    {
+      "text": "No APO product except Silver Bullet provides verifiable cross-session memory persistence (agentmemory, FTS5 knowledge base, observation audit trail) as a process-orchestration primitive. Conductor and Cavekit v3.1 claim workflow state only; Factory and Devin retain session context within a single cloud workspace but do not surface it as a reusable gate-check artifact.",
+      "confidence": 0.7,
+      "supporting_sources": ["sb.alolabs.dev/", "silver-bullet.md §cross-session state", "AGENTS.md"]
+    },
+    {
+      "text": "Startup-weighted comparison matrix should weight cross-host coverage (SB), lifecycle span depth (SB, Devin, Factory), deterministic gate enforcement (SB, cc10x, Devin), and plugin-ecosystem size (SB, Oh My plugins) as the top differentiators — with SB leading on 3 of 4 and Devin leading on lifecycle span.",
+      "confidence": 0.65,
+      "supporting_sources": ["category-pack market definition", "DR-RETRIEVE output", "sb.alolabs.dev/"]
+    }
+  ],
+  "cross_checks": [
+    {
+      "claim": "Silver Bullet covers all 7 inclusion criteria",
+      "status": "VERIFIED from source — silver-bullet.md and sb.alolabs.dev document all 7: lifecycle_span (plan→release+devops), plugin_skill_hook_packaging (Claude/Codex/Cursor plugins + skill-source + hooks), deterministic_gates (pre-commit hooks, audit skills, CI quality gates), cross_session_state (agentmemory, FTS5 knowledge base, observation audit trail), specialist_agents (6+ named subagent types: graphify, review-*, forensics, topgun), quality_release_enforcement (pre-release gate, CI-mandatory, version release policy), process_layer_above_host (explicitly positions above Claude Code/Codex/Cursor).",
+      "notes": "Strong confidence. Re-verify if SB updates or removes any of these capabilities."
+    },
+    {
+      "claim": "SDLC plugins lack cross-session state",
+      "status": "NEEDS VERIFICATION — BMAD-METHOD and GSD documentation may include session-runbook patterns. Check individual README files for state persistence.",
+      "notes": "Low confidence until secondary-market artifacts are read directly."
+    },
+    {
+      "claim": "Factory and Devin do not self-label APO but meet ≥5 criteria",
+      "status": "VERIFIED from inclusion criteria — both have multi-phase lifecycle, specialist agents, deterministic gates, quality enforcement. Check if Factory ships host-integrated packaging (plugin/skill/hook) or is standalone-only.",
+      "notes": "Factory appears to be standalone SaaS; if so, it scores 5/7 (missing plugin/skill/hook packaging and process_layer_above_host). Devin also standalone SaaS. Both remain APO peers per market definition but score lower on two criteria."
+    },
+    {
+      "claim": "19 in-scope solutions across 3 markets",
+      "status": "PRELIMINARY COUNT — APO core seeds ~12-15 (SB, AI-DLC, AgentSys, SDLC, Deepwork, Workflow Manager, Turboshovel, Cavekit v3.1, Barkain, Conductor, cc10x, Director, Claude Harness, Claude Code Expert, AgentHub, ATeam); SDLC plugins ~7-8 (Zuvo, GSD, Superpowers, BMAD, GitHub Spec Kit, SuperClaude, Ruflo, Oh My Pi); agentic SDLC SaaS ~5 (Factory, Devin, Augment Cosmos, Tembo, Scout). Need deduplication and adjacency filtering.",
+      "notes": "Overlappossible (some entries may be discontinued or renamed). Reconcile with sunset list (GitHub Copilot Workspace, AutoGen, AgentGPT, Devika — excluded)."
+    },
+    {
+      "claim": "Augment Cosmos qualifies as tertiary APO peer",
+      "status": "NEEDS VERIFICATION — Augment Code is excluded (coding_agent), but Augment Cosmos may meet inclusion criteria if it enforces multi-phase lifecycle with gates. Check current Augment Cosmos product page.",
+      "notes": "Product may have been renamed or repositioned since retrieval. Cross-reference live product page."
+    },
+    {
+      "claim": "Conductor provides cross-session workflow state",
+      "status": "PARTIALLY VERIFIED — conductor.build shows workflow orchestration UI and runbook persistence. Verify whether state survives agent reset or session clear (vs. ephemeral session state).",
+      "notes": "Differentiate between 'workflow run history' and 'agent-accessible cross-session memory'."
+    },
+    {
+      "claim": "cc10x has deterministic gate enforcement",
+      "status": "VERIFIED from cc10x README — hook-based pre-commit/post-review gates, audit templates, and CI integration. Depth and composability vs SB hooks need comparison.",
+      "notes": "cc10x gates appear Claude Code-only; no cross-host story."
+    },
+    {
+      "claim": "Startup-weighted differentiation favors SB on 3 of 4 top dimensions",
+      "status": "OPINION-BASED — cross-host coverage and gate enforcement are evidence-backed; 'plugin-ecosystem size' needs quantitative comparison (SB: 85+ skills vs Oh My: ~40 plugins vs others).",
+      "notes": "Add plugin/skill count to comparison matrix. SB likely leads but need exact counts per competitor."
+    },
+    {
+      "claim": "No APO competitor except SB documents verifiable cross-session memory",
+      "status": "WEAK CLAIM — Devin claims 'long-term memory' in marketing but no audit trail or FTS5 knowledge base. Factory docs focus on task execution not memory. Conductor has workflow logs. Cavekit may have memory features.",
+      "notes": "Search specifically for 'agent memory', 'persistent state', 'knowledge base' in each competitor's docs."
+    }
+  ]
+}
+```
+
+[0m
+> build · deepseek-v4-flash
+[0m

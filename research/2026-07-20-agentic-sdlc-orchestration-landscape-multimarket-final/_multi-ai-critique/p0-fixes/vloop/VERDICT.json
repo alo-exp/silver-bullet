@@ -1,0 +1,67 @@
+{
+  "generated": "2026-07-21T18:31:39.247Z",
+  "claims": [
+    {
+      "id": 1,
+      "name": "Director overview ≠ Superpowers",
+      "pass": true,
+      "evidence": "### Director (OSS — OSS)  * **Overview**: Director is a primary-market APO candidate — agent orchestration, workflow composition, deterministic gates, and specialist agent routing. Canonical product URL was not independe"
+    },
+    {
+      "id": 2,
+      "name": "cc10x overview ≠ methodology/SB-anchor leak",
+      "pass": true,
+      "evidence": "### [cc10x](https://cc10x.dev/) (Commercial)  * **Overview**: cc10x is a primary-market APO candidate — a Claude Code–oriented enhancement pack for multi-agent coordination, process enforcement, and host-integrated packaging. Public footprint is thinner than S"
+    },
+    {
+      "id": 3,
+      "name": "AI-DLC → AWS/awslabs not IBM",
+      "pass": true,
+      "evidence": "card=### [AI-DLC](https://github.com/awslabs/aidlc-workflows) (OSS — OSS)  * **Overview**: AWS [AI-DLC](https://github.com/awslabs/aidlc-workflows) is an open-source methodology (published July 2025; awsla | html_aidlc_ibm=0 | body_ibm=0 | html_IBM_left=2"
+    },
+    {
+      "id": 4,
+      "name": "Claude Harness not homepage→anthropics/claude-code",
+      "pass": true,
+      "evidence": "### Claude Harness (UNVERIFIED — not anthropics/claude-code)  * **Overview**: UNVERIFIED IDENTITY — Claude Harness is an SDLC-plugins methodology pack (not an APO peer) — [Claude Code](https://docs.anthropic.com/en/docs/claude-code/overview) wrapper, process enforcement, complian"
+    },
+    {
+      "id": 5,
+      "name": "Zuvo quarantined / not plugins MQ Leader",
+      "pass": true,
+      "evidence": "card=### Zuvo (QUARANTINED / WATCHLIST — identity unverified)  * **Overview**: QUARANTINED: Zuvo could not be corroborated by open web search in this retrieval pass. Removed from sdlc-plugins MQ/Wave/Leade mq=false gmq=false wave=false core=false unplot={\"slug\":\"zuvo\",\"reason\":\"quarantined — identity/OSS/license unverified; watchlist only (not MQ/Wave/Leader)\"}"
+    },
+    {
+      "id": 6,
+      "name": "MetaGPT consistently APO core (§13)",
+      "pass": true,
+      "evidence": "MetaGPT remains APO OSS core** (Niche Players in MQ) per membership — do not also label it adjacent-only. - [AI-DLC](https://github.com/awslabs/aidlc-workflows) (AWS / awslabs) is the wea"
+    },
+    {
+      "id": 7,
+      "name": "No stale Zuvo coverage gap while core",
+      "pass": true,
+      "evidence": "gapPhrase=false quarantine=true"
+    },
+    {
+      "id": 8,
+      "name": "Devin Adjacent vs SaaS Leader clarified",
+      "pass": true,
+      "evidence": "Market-layer note (P0 consistency):** Devin is **adjacent** for the primary APO market (host runtime, not a process layer above a host). Devin **is** a **core Leader** in the tertiary **Agentic SDLC SaaS** market — those are different membership contracts, not a single “adjacent-only everywhere” rule. - **Single-step** tools (PR review"
+    },
+    {
+      "id": 9,
+      "name": "comparison-matrix.md real (not stub)",
+      "pass": true,
+      "evidence": "# Comparison matrix (regenerated from comparison.json)  Winner: **silver-bullet** | Runner-up: **gsd**  > Prefer the interactive matrix in [`landscape-report.html`](../landscape-report.html) (SPA `landscape-matrix-panel`). This file is a readable summary synced from `comparison.j"
+    },
+    {
+      "id": 10,
+      "name": "file:// / HTTP renders",
+      "pass": true,
+      "evidence": "file open via macOS open; HTTP 200 on :8766 len=604735 Director+AWS+QUARANTINED+matrix markers; noAidlcIbm=true"
+    }
+  ],
+  "overall": "PASS",
+  "scrub_note": "Scrubbed residual ai-dlc (ibm) claim_keys in HTML+consolidation; remaining developer.ibm.com URLs / corrective mis-attribution notes are non-blocking"
+}

@@ -1,0 +1,7 @@
+{
+  "registry": "opentools",
+  "status": "ok",
+  "reason": "no results passed relevance filter (claude/skill/agent/mcp keywords)",
+  "results": [],
+  "latency_ms": 0
+}

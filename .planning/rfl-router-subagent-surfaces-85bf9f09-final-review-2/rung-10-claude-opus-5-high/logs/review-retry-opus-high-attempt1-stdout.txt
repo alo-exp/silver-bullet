@@ -1,0 +1,21 @@
+[harness] attempt1 START 2026-08-28T11:24:53Z
+[harness] PI_PROVIDER=omniroute PI_MODEL=claude/claude-opus-5-high PI_RUN_TIMEOUT=3600 PI_EXPECT_FILE_MIN_BYTES=2500
+[harness] PI_NI_ZERO_BYTE_IDLE_NON_QWEN_SEC=<default 600>
+**Written:** `.planning/rfl-router-subagent-surfaces-85bf9f09-final-review-2/rung-10-claude-opus-5-high/review.md` (12,573 bytes).
+
+**STOP condition hit at the freeze gate.**
+
+Re-hashed all three copies with `hashlib.sha256` at review start and again after writing — identical both times:
+
+| Copy | SHA-256 | Bytes |
+|---|---|---|
+| Repo worktree | `088a18a6…719f4e` | 648963 |
+| `~/.cursor/plans/…` | `088a18a6…719f4e` | 648963 |
+| `git show HEAD:…` | `088a18a6…719f4e` | 648963 |
+
+Mandated: `564c94ab…d114f4` / 646464. **Mismatch.** No three-copy split — all three are byte-identical to each other; they have drifted *together* away from the mandate.
+
+Root cause (metadata only): `git show bbda814c:…` **does** hash to `564c94ab…` / 646464, so the pin was correct for `bbda814c`. But one commit after it touches the freeze — `f507e80f` *"Restate F-5-1 KEEP REJECT in §3.3 and disambiguate empty current-panel"* (+21/−15, +2499 bytes) — and `main` tip is now `32742b87`, not `bbda814c`. `bbda814c` is still an ancestor of HEAD (no rollback).
+
+Per the STOP rule I did **not** run the full charter review against the different blob. Report contains: H1 (freeze SHA mismatch, review blocked), H2 (stale branch pin), M1 (charter undischargeable; all eight surfaces BLOCKED — not assessed), L1/L2, N1. No freeze copy edited, synced, or restored; no APPLY, triage, clarify, commit, or model remap; rung 11 not started. Verdict: **NOT CLEAN**.
+[harness] attempt1 EXIT 0 2026-08-28T11:27:19Z

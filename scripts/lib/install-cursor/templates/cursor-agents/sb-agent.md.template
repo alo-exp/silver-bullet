@@ -1,0 +1,8 @@
+---
+name: {{AGENT_NAME}}
+description: {{DESCRIPTION}}
+model: {{MODEL_PARAM}}
+readonly: false
+---
+{{BODY}}
+<!-- sb-managed: cursor-sb-agents -->

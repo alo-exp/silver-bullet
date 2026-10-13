@@ -1,0 +1,4 @@
+401: {"message":"[opencode-go/minimax-m3] [401]: Insufficient balance. Manage your billing here: https://opencode.ai/workspace/wrk_01KS4QW3V1S4F7Q545S66WNAXV/billing (reset after 23h 59m 57s)"}
+[agent-pi] fail-fast: skipping --continue after first-run EXIT 1
+[agent-pi] first-hop billing: 401: {"message":"[opencode-go/minimax-m3] [401]: Insufficient balance. Manage your billing here: https://opencode.ai/workspace/wrk_01KS4QW3V1S4F7Q545S66WNAXV/billing (reset after 23h 59m 57s)"}
+[agent-pi] quota-window: 401: {"message":"[opencode-go/minimax-m3] [401]: Insufficient balance. Manage your billing here: https://opencode.ai/workspace/wrk_01KS4QW3V1S4F7Q545S66WNAXV/billing (reset after 23h 59m 57s)"}

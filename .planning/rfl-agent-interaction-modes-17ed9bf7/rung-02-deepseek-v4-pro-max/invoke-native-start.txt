@@ -1,0 +1,2 @@
+2026-08-23T16:32:34Z
+OPENCODE=/Users/shafqat/.opencode/bin/opencode

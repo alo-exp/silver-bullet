@@ -1,0 +1,26 @@
+Done.
+
+## Rung 07 · Pass 7 — **NOT CLEAN**
+
+**SHA verified on both twins:** `e48177804e917588603962385ecd76fab0440debc233c38e0cee047f35ccd2f1` — unchanged before and after the pass. Freeze not mutated.
+
+**Output:** `.planning/rfl-spec-template-world-class/rung-07-pi-claude-opus-5-high/review-rerun-7.md` (only file written in the work dir).
+
+### 10 residuals — `R7g-F01`–`R7g-F10` (1 HIGH / 4 MED / 3 LOW / 2 nit)
+
+| ID | Sev | Summary |
+|----|-----|---------|
+| R7g-F01 | HIGH | `.spec-kind-migration.md` declared "migrate branch only" + "forbidden/unlisted heading prose" (L313/L457), but R7d-F04 Invariants supersede and R7f-F05 Change-History rows write to it from non-migrate branches; both pinned PASS-install at L599 |
+| R7g-F02 | MED | L457 Step 7 still writes `invariant-count` "from the sourced bullet count" — contradicts R7f-F12 resulting-live count (L143) and the L599 supersede fixture |
+| R7g-F03 | MED | R7f-F04 ordinal re-anchor never bound to Step 7, the Step 8 fail-before-replace list, or the Wave 3 verify list |
+| R7g-F04 | MED | R7f-F10 says cite Change History "by the `spec-version` cell", but the closed two-clause `<line-or-id>` grammar makes that a bare line ⇒ always `REQ-F71` |
+| R7g-F05 | MED | L198 promises Overview-prose SCAN for omitted `nfr`, but the Overview ordinal counts `-` bullets and a conforming Overview has none |
+| R7g-F06 | LOW | R7f-F13 1-based `b00` / >99 rule missing from `review-requirements`, `review-cross-artifact`, and the QC-string fixtures |
+| R7g-F07 | LOW | Mixed `## Assumptions` (optional `ASM-nn`) unclassified under the section-level ID-bearing MUST; ordinal base ambiguous |
+| R7g-F08 | LOW | `decision-row-identity` idempotence + R7f-F06 divergent-text FAIL exist only at L142 — no test surface, not a Step 8 precondition |
+| R7g-F09 | nit | REQUIREMENTS exhaustion fixture still `REQ-00`–`REQ-99` shorthand at 4 sites; never exercises the `-00`-absent disjunct |
+| R7g-F10 | nit | R7f-F01's "if that set is empty" includes seed ⇒ unreachable; L599 says "empty **remaining** delta" — rule vs its own fixture |
+
+R7f-F01–F14 (and R7e/R7d/R7c/R7b/R7/R6b–R6n) confirmed landed with a spot-check table. No ledger row re-reported; `R7b-F17` REJECT and KEEP REJECT untouched. Graphify queried first and `graphify update .` completed (43940 nodes); memory note saved.
+PI_EXIT=0
+EXPECT_BYTES=25485

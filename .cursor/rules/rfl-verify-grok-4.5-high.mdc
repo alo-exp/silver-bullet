@@ -1,0 +1,10 @@
+---
+description: DEPRECATED — see rfl-verify-composer-2.5.mdc for the current RFL verify model policy
+alwaysApply: false
+---
+
+# DEPRECATED — Grok 4.5 High verify removed (1 Sep 2026)
+
+RFL **verify_1** and **verify_2** now use **Composer 2.5**.
+
+See [`rfl-verify-composer-2.5.mdc`](rfl-verify-composer-2.5.mdc) and [`~/.cursor/rules/rfl-verify-composer-2.5.mdc`](../../../../.cursor/rules/rfl-verify-composer-2.5.mdc).

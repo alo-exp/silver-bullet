@@ -1,0 +1,24 @@
+# Requirements: [Feature Name]
+
+**Derived from:** .planning/SPEC.md v{spec-version}
+**Generated:** YYYY-MM-DD
+
+## Functional Requirements
+
+| ID | Requirement | Acceptance Criterion | Priority |
+|----|-------------|----------------------|---------|
+| REQ-01 | [derived from User Story] | [from Acceptance Criteria section] | P1 |
+
+## Non-Functional Requirements
+
+| ID | Requirement | Metric | Priority |
+|----|-------------|--------|---------|
+| NFR-01 | [performance, security, accessibility concern] | [measurable target] | P1 |
+
+## Out of Scope
+
+[Mirror from SPEC.md Out of Scope]
+
+## Open Items
+
+[Mirror from SPEC.md Open Questions]

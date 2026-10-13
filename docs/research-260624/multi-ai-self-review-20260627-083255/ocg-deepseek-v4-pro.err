@@ -1,0 +1,51 @@
+[0m
+> build · deepseek-v4-pro
+[0m
+[0m# [0mTodos
+[•] Read all 8 skill files
+[ ] Write §1: Critical Assessment of each file
+[ ] Write §2: Score on 8-Dimension Rubric
+[ ] Write §3: Top 5 Improvements
+[ ] Write §4: Open Questions
+[ ] Write §5: Confidence
+[0m
+[0m→ [0mRead skills/multi-ai-task/SKILL.md[90m [additionalContext=<context_guidance>
+  <tip>
+    Reading to Edit the file? Read is correct — Edit needs the exact bytes in your conversation to match against.
+    Reading to analyze, summarize, or extract from the file? Use context-mode_ctx_execute_file(path, language, code) — the bytes stay in the sandbox and only what your code prints enters your conversation.
+  </tip>
+</context_guidance>][0m
+[0m→ [0mRead skills/multi-ai-task/rules/methodology.md
+[0m→ [0mRead skills/multi-ai-task/rules/dispatch-mechanics.md
+[0m→ [0mRead skills/multi-ai-task/rules/consolidation-rules.md
+[0m→ [0mRead skills/multi-ai-task/rules/output-schema.md
+[0m→ [0mRead skills/multi-ai-task/rules/examples/research-prior-art.md
+[0m→ [0mRead skills/multi-ai-task/rules/examples/code-review.md
+[0m→ [0mRead skills/multi-ai-task/rules/examples/fact-check.md
+[0m
+[0m# [0mTodos
+[✓] Read all 8 skill files
+[•] Write §1: Critical Assessment of each file
+[ ] Write §2: Score on 8-Dimension Rubric
+[ ] Write §3: Top 5 Improvements
+[ ] Write §4: Open Questions
+[ ] Write §5: Confidence
+[0m
+[0m✱ [0mGrep "unresolved_conflicts"[90m in skills/multi-ai-task · 1 match[0m
+[0m✱ [0mGrep "Phase 3\.5|Phase 3\.6"[90m in skills/multi-ai-task · 2 matches[0m
+[0m✱ [0mGrep "score-aggregate"[90m in skills/multi-ai-task · 1 match[0m
+[0m✱ [0mGrep "majority-with-uncertain|lowest-of-majors"[90m in skills/multi-ai-task · 6 matches[0m
+[0m✱ [0mGrep "most-severe|concatenate-all|union-dedup|all-collected"[90m in skills/multi-ai-task/rules/consolidation-rules.md · 10 matches[0m
+[0m✱ [0mGrep "most-severe|concatenate|union-dedup|all-collected"[90m in skills/multi-ai-task · 11 matches[0m
+[0m
+[0m← [0mWrite skills/multi-ai-task/rules/review-self-260627.md
+Wrote file successfully.
+[0m
+[0m# [0mTodos
+[✓] Read all 8 skill files
+[✓] Write §1: Critical Assessment of each file
+[✓] Write §2: Score on 8-Dimension Rubric
+[✓] Write §3: Top 5 Improvements
+[✓] Write §4: Open Questions
+[✓] Write §5: Confidence
+[0m

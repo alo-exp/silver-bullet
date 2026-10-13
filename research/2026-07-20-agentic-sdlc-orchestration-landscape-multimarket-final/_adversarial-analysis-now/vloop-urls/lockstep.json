@@ -1,0 +1,15 @@
+{
+  "report_data_script": true,
+  "field": "markdown",
+  "html_canonical_paths": {
+    "markdown": "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/landscape/landscape-report.md",
+    "chart_data": "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/landscape/chart-data.json",
+    "comparison": "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/comparison/comparison.json"
+  },
+  "md_path": "landscape/landscape-report.md",
+  "md_chars": 62204,
+  "report_data_markdown_chars": 62204,
+  "equal": true,
+  "equal_newline_normalized": true,
+  "first_mismatch": null
+}

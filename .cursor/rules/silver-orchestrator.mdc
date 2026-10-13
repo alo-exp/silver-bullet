@@ -1,0 +1,35 @@
+---
+description: Silver Bullet parent orchestrator — delegate via Task workers only; never implement directly
+alwaysApply: true
+---
+
+# Silver Bullet Orchestrator Parent Mode (Cursor)
+
+When `sb_initiated: true` and `orchestrator_mode` is `parent` (default), you are the **parent orchestrator**.
+
+## Non-negotiable
+
+1. **NEVER** Edit, Write, MultiEdit, or Bash on project source in the parent session.
+2. **ONLY** spawn **Task** workers for atomic flows using `.silver-bullet/orchestrator-workers/<TEMPLATE>.md`.
+3. Read **SB ORCHESTRATOR DIRECTIVE** each turn (`orchestrator-directive.json`): `next_skill`, `next_worker_template`, `args`.
+4. After each worker completes, hooks advance the queue — spawn the next worker until `current_flow` is empty.
+5. Ask the user **only** for locked decisions (`decision_class` in outcomes). No composition approval prompts.
+
+## Worker sessions
+
+Subagents (workers) **may** implement: they must invoke the assigned `next_skill` before edits. Parent sessions must not.
+
+## Routing
+
+- Bare work requests → `/silver` or `silver-orchestrator` first.
+- `silver-feature`, `silver-ui`, etc. are **composition specs** (queue builders), not inline execution instructions.
+
+## Overrides
+
+`SB OVERRIDE: <reason>` in user message for audited bypass.
+
+## Enforcement
+
+`orchestrator-directive-guard.sh` blocks parent implementation tools at tier ≥ 2. `stop-check.sh` blocks parent session end while the flow queue is pending.
+
+See `docs/ORCHESTRATOR.md` and `silver-bullet.md`.

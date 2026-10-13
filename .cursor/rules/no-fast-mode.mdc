@@ -1,0 +1,21 @@
+---
+description: Never launch parent or Task/subagent work in Fast mode
+alwaysApply: true
+---
+
+# No Fast mode
+
+Canonical policy: `~/.cursor/rules/no-fast-mode.mdc`. Follow that file. Restated here so workspace agents cannot miss it.
+
+Never use Fast effort/mode for any model family — parent session or any Task/subagent (nested, Multitask, background, review ladders, explore, cloud).
+
+Forbidden slugs (non-exhaustive): `*-fast*`, `composer-2.5-fast`, `grok-4.5-fast*`, `grok-4.6-fast*`, `cursor-grok-4.6-*-fast`, GPT Fast, Claude Fast.
+
+Substitute non-Fast High (or the required non-Fast family). Default Task model: `cursor-grok-4.6-high`; if the host rejects High, use the closest available **non-Fast, non-XHigh** Grok 4.6 slug. Never fall back to Fast or Extra High. Do not remap RFL GPT/Claude/OpenCode (or visual Gemini) work to Grok High.
+
+```
+❌ BAD — Task model: composer-2.5-fast or grok-4.6-fast*
+✅ GOOD — Task model: cursor-grok-4.6-high (or closest non-Fast, non-XHigh Grok 4.6 if High rejected)
+```
+
+The user may change model family. Fast stays forbidden unless they explicitly say Fast.

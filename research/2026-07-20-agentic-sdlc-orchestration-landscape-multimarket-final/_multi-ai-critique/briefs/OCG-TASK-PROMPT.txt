@@ -1,0 +1,310 @@
+Thorough analyst critique of the multimarket Agentic SDLC orchestration landscape report (run_id=run-57f38dfa25d83cc50d224e283d4692f3).
+
+Return JSON with keys:
+- critiques: array of {target, severity (P0|P1|P2|opinion), finding, dimension (gap|quality|information|inconsistency|opinion|new_info)}
+- gaps: array of {area, description, suggested_action}
+- top_findings: array of strings (max 15)
+- new_information: array of {claim, source_or_unverified, confidence}
+
+Focus: missing vendors/criteria/markets/evidence; prose/structure/chart realism/matrix quality; wrong facts/URLs/names; chart↔list↔matrix↔prose↔membership inconsistencies; judgment calls; new info to add.
+
+SHARED BRIEF:
+# Multi-AI landscape critique brief
+
+**run_id:** `run-57f38dfa25d83cc50d224e283d4692f3`  
+**Subject:** Agentic SDLC orchestration multimarket landscape (final)  
+**Do not:** switch git branches, commit, or regenerate the SPA unless explicitly asked. Critique only.
+
+## Artifacts to review (read these)
+
+1. `research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/landscape-report.html` (primary SPA, file://)
+2. `.../landscape/landscape-report.md`
+3. `.../landscape/chart-data.json`
+4. `.../comparison/comparison-matrix.md` (+ `comparison.json`)
+5. SCRs under `.../solutions/`
+6. Evidence packs: `_analyst-grade-review/`, `_realistic-charts-matrix-pass/`, `_fix-wave-strategy-spread/`, `_sb-chart-placement-review/`
+7. Context digest: `.../_multi-ai-critique/context/REPORT-DIGEST.md`
+
+## Required critique dimensions
+
+Produce a thorough analyst review covering:
+
+1. **Gap analysis** — missing vendors, criteria, markets, evidence
+2. **Quality issues** — prose, structure, chart realism, matrix
+3. **Information issues** — wrong facts, URLs, names, licenses
+4. **Inconsistencies** — chart ↔ list ↔ matrix ↔ prose ↔ membership
+5. **Opinions / judgment calls** — placement, leaders, exclusions
+6. **New information to add** — cite sources; flag unverified speculation
+
+## Known membership snapshot (verify, do not trust blindly)
+
+- **APO core (13):** agenthub, agentsys, ai-dlc, ateam, barkain-workflow-orchestrator, cavekit-v31, cc10x, deepwork, director, metagpt, silver-bullet, turboshovel, workflow-manager — Leaders claimed: AgentHub, AI-DLC, Silver Bullet
+- **SDLC plugins core (10):** bmad, claude-harness, gsd, oh-my-pi, ruflo, silver-bullet, spec-kit, superclaude, superpowers, zuvo
+- **SaaS core (5):** augment-cosmos, devin, factory-ai, magic-dev, tembo
+- Silver Bullet appears in APO + SDLC plugins (multi-market)
+- Empty Challengers buckets in chart data for APO/plugins/SaaS — flag if unrealistic
+
+## Output format
+
+Write markdown with sections matching the six dimensions above, plus a short **Top findings** list (≤15 bullets). Severity tags: `P0` / `P1` / `P2` / `opinion`.
+
+
+REPORT DIGEST (truncated):
+# Landscape report context digest (for multi-AI critique)
+
+run_id=run-57f38dfa25d83cc50d224e283d4692f3
+Primary SPA: research/.../landscape-report.html (file://, ~589KB)
+Markdown: landscape/landscape-report.md
+Chart data: landscape/chart-data.json
+
+## Markets
+- Primary APO: Agentic Process Orchestrators
+- Secondary: SDLC Plugins & Methodology Packs
+- Tertiary: Agentic SDLC SaaS & Autonomous Delivery
+
+## Membership (core)
+```json
+{
+  "apo": {
+    "display": "Agentic Process Orchestrators (APO)",
+    "role": "primary",
+    "core": [
+      "agenthub",
+      "agentsys",
+      "ai-dlc",
+      "ateam",
+      "barkain-workflow-orchestrator",
+      "cavekit-v31",
+      "cc10x",
+      "deepwork",
+      "director",
+      "metagpt",
+      "silver-bullet",
+      "turboshovel",
+      "workflow-manager"
+    ],
+    "adjacent": [
+      "axonflow",
+      "cavekit-v4",
+      "crewai",
+      "langchain",
+      "langgraph"
+    ],
+    "leaders": [
+      "AgentHub",
+      "AI-DLC",
+      "Silver Bullet"
+    ],
+    "challengers": [],
+    "mq_plotted": [
+      "AgentHub",
+      "AgentSys",
+      "AI-DLC",
+      "ATeam",
+      "Barkain Workflow Orchestrator",
+      "Cavekit v3.1",
+      "cc10x",
+      "Deepwork",
+      "Director",
+      "MetaGPT",
+      "Silver Bullet",
+      "Turboshovel",
+      "Workflow Manager"
+    ],
+    "wave_count": 8,
+    "unplotted": [
+      "axonflow",
+      "cavekit-v4",
+      "crewai",
+      "langchain",
+      "langgraph"
+    ]
+  },
+  "sdlc-plugins": {
+    "display": "SDLC Plugins & Methodology Packs",
+    "role": "secondary",
+    "core": [
+      "bmad",
+      "claude-harness",
+      "gsd",
+      "oh-my-pi",
+      "ruflo",
+      "silver-bullet",
+      "spec-kit",
+      "superclaude",
+      "superpowers",
+      "zuvo"
+    ],
+    "adjacent": [
+      "crewai",
+      "langgraph"
+    ],
+    "leaders": [
+      "BMAD-METHOD",
+      "Claude Harness",
+      "GSD (Get Shit Done)",
+      "Oh My Pi (OMP)",
+      "Ruflo / Claude Flow",
+      "Silver Bullet",
+      "GitHub Spec Kit",
+      "SuperClaude",
+      "Superpowers",
+      "Zuvo"
+    ],
+    "challengers": [],
+    "mq_plotted": [
+      "BMAD-METHOD",
+      "Claude Harness",
+      "GSD (Get Shit Done)",
+      "Oh My Pi (OMP)",
+      "Ruflo / Claude Flow",
+      "Silver Bullet",
+      "GitHub Spec Kit",
+      "SuperClaude",
+      "Superpowers",
+      "Zuvo"
+    ],
+    "wave_count": 8,
+    "unplotted": [
+      "crewai",
+      "langgraph"
+    ]
+  },
+  "agentic-sdlc-saas": {
+    "display": "Agentic SDLC SaaS & Autonomous Delivery",
+    "role": "tertiary",
+    "core": [
+      "augment-cosmos",
+      "devin",
+      "factory-ai",
+      "magic-dev",
+      "tembo"
+    ],
+    "adjacent": [
+      "claude-code",
+      "codex",
+      "cognition-scout",
+      "conductor",
+      "cursor",
+      "github-copilot",
+      "replit-agent"
+    ],
+    "leaders": [
+      "Augment Cosmos",
+      "Devin",
+      "Factory.ai",
+      "Magic.dev",
+      "Tembo"
+    ],
+    "challengers": [],
+    "mq_plotted": [
+      "Augment Cosmos",
+      "Devin",
+      "Factory.ai",
+      "Magic.dev",
+      "Tembo"
+    ],
+    "wave_count": 5,
+    "unplotted": [
+      "claude-code",
+      "codex",
+      "cognition-scout",
+      "conductor",
+      "cursor",
+      "github-copilot",
+      "replit-agent"
+    ]
+  }
+}
+```
+
+## Scope excerpt
+
+**Landscape scope**
+
+Agentic SDLC orchestration solutions operating **one level above coding agents** — end-to-end, process-driven, workflow-based agentic layers for software engineering and DevOps (SecOps-adjacent). Excludes raw LLM APIs and single-shot copilots.
+
+Research topic: `Agentic SDLC orchestration landscape multimarket final — APO primary, SDLC plugins secondary (BMAD GSD [Superpowers](https://github.com/obra/superpowers) Spec Kit Oh My [Zuvo](https://zuvo.dev/) OSS), agentic SDLC SaaS tertiary (Factory Devin Augment Cosmos)`
+
+**Primary jobs-to-be-done**
+
+1. Enforce a full SDLC or DevOps cycle so agents cannot skip planning, verification, review, or release steps
+2. Compose specialist agents and external workflows (GSD, spec kits, review ladders) under one compliance layer
+3. Persist process state, gates, and evidence across sessions and parallel workers
+4. Provide procurement-ready comparison of process-orchestration depth vs host runtimes and frameworks
+
+**Out of scope (excluded from core peer set)**
+
+- Generic **coding agents** and IDE copilots (Cursor Background Agents, Cline, Aider, Continue, OpenHands, SWE-agent)
+- **Host runtimes** that execute code without a process catalog (Devin, Copilot, [Claude Code](https://docs.anthropic.com/en/docs/claude-code/overview) as hosts — listed under Adjacent only)
+- **Single-step** tools (PR review bots, PM integrations such as Linear)
+- **Generic agent frameworks** without SDLC process packaging (LangGraph, [CrewAI](https://github.com/crewAIInc/crewAI) as adjacent)
+- **Sunset** products (GitHub Copilot Workspace, AutoGen, AgentGPT, Devika)
+
+**Inclusion criteria**
+
+A vendor belongs in the **core peer set** when it clearly demonstrates at least **3 of 7** capabilities below (not advisory-only claims):
+
+- **Multi-phase lifecycle span** — Covers two or more of plan/spec, build, test, review, release, or DevOps operations as an integrated process — not a single-shot codegen or review-only tool.
+- **Plugin / skill / hook packaging** — Ships as host-integrated packaging (Claude/[Codex](https://openai.com/codex/)/[Cursor](https://cursor.com/) plugin, skill bundle, hook layer, or equivalent) rather than a standalone IDE or raw API.
+- **Deterministic quality gates** — Uses machine-checkable gates (hooks, audits, stop-checks, CI integration) that block progression when criteria fail.
+- **Cross-session state** — Persists workflow state, memory, or runbooks across agent clears, sessions, or parallel workers.
+- **Sp
+
+## Adjacent
+
+Products below are relevant context but **not** scored on the Magic Quadrant, Wave, or comparison matrix.
+
+- **[AxonFlow](https://www.axonflow.ai/)** (`axonflow`) — pack adjacent_seed
+- **Cavekit v4** (`cavekit-v4`) — pack adjacent_seed
+- **[Claude Code](https://docs.anthropic.com/en/docs/claude-code/overview)** (`claude-code`) — pack adjacent_seed
+- **[Codex](https://openai.com/codex/)** (`codex`) — pack adjacent_seed
+- **[Cognition Scout](https://cognition.ai/)** (`cognition-scout`) — pack adjacent_seed
+- **[Conductor](https://conductor.build/)** (`conductor`) — pack adjacent_seed
+- **[CrewAI](https://github.com/crewAIInc/crewAI)** (`crewai`) — pack adjacent_seed
+- **[Cursor](https://cursor.com/)** (`cursor`) — pack adjacent_seed
+- **GitHub Copilot** (`github-copilot`) — pack adjacent_seed
+- **[LangChain](https://github.com/langchain-ai/langchain)** (`langchain`) — pack adjacent_seed
+- **LangGraph** (`langgraph`) — pack adjacent_seed
+- **[Replit Agent](https://replit.com/)** (`replit-agent`) — pack adjacent_seed
+
+## Excluded
+
+- **Aider** — pack hard_exclusion (coding_agent)
+- **Amazon Q Developer** — hard_veto from need_profile
+- **Claude Code Expert** — pack hard_exclusion (sunset)
+- **Cline** — pack hard_exclusion (coding_agent)
+- **CodeRabbit** — hard_veto from need_profile
+- **Continue** — pack hard_exclusion (coding_agent)
+- **Cursor Background Agents** — hard_veto from need_profile
+- **GitHub Copilot Enterprise** — pack hard_exclusion (coding_agent)
+- **JetBrains AI Assistant** — hard_veto from need_profile
+- **Linear** — pack hard_exclusion (project_management)
+- **Open Interpreter** — pack hard_exclusion (coding_agent)
+- **OpenHands** — pack hard_exclusion (coding_agent)
+- **Poolside** — hard_veto from need_profile
+- **Sourcegraph Cody** — hard_veto from need_profile
+- **SWE-agent** — pack hard_exclusion (coding_agent)
+- **Sweep** — hard_veto from need_profile
+- **Windsurf** — hard_veto from need_profile
+- **AgentGPT** — Abandoned / non-production
+- **AutoGen** — Microsoft shifted to Agent Framework; legacy status
+- **GitHub Copilot Workspace** — Discontinued by GitHub
+- **Devika** — Project discontinued
+
+**Coverage gaps (must-research seeds missing from envelopes)**
+
+- [Zuvo](https://zuvo.dev/) (`sdlc-plugin`)
+
+## Buying guidance
+
+- **Lean startup, process-first**: Prioritise workflow composition, atomic catalog, and hook gates — shortlist **[Silver Bullet](https://sb.alolabs.dev/)** and peers: [AgentHub](https://www.agenthub.ai/), [AgentSys](https://github.com/agent-sh/agentsys), [AI-DLC](https://github.com/awslabs/aidlc-workflows), [ATeam](https://www.a.team/), [Barkain Workflow Orchestrator](https://barkain.com/).
+- **Open-source-first**: Prioritise [Silver Bullet](https://sb.alolabs.dev/) and OSS core orchestrators — budget for hook and catalog integration.
+- **Host-runtime path**: Use SaaS-adjacent host runtimes ([Cursor](https://cursor.com/), [Claude Code](https://docs.anthropic.com/en/docs/claude-code/overview)) with a separate APO process layer — do not conflate with Factory/Devin SaaS cores or APO peers.
+
+## Solutions catalog (34 entries)
+- agenthub: AgentHub
+- agentsys: AgentSys
+- ai-dlc: AI-DLC
+- ateam: ATeam
+-

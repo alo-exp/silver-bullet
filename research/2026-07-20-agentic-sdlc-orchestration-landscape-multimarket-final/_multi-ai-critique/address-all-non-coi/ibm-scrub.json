@@ -1,0 +1,29 @@
+{
+  "before": 15,
+  "after": 4,
+  "path": "contributions/all-envelopes.json",
+  "phases/DR-RETRIEVE/final-retrieve.json": {
+    "before": 2,
+    "after": 0
+  },
+  "phases/DR-RETRIEVE/final-retrieve-clean.json": {
+    "before": 2,
+    "after": 0
+  },
+  "phases/DR-RETRIEVE/final-retrieve-perfect.json": {
+    "before": 2,
+    "after": 0
+  },
+  "phases/DR-RETRIEVE/merged-retrieve.json": {
+    "before": 2,
+    "after": 0
+  },
+  "phases/DR-RETRIEVE/final-retrieve-selection.json": {
+    "before": 2,
+    "after": 0
+  },
+  "after_second_pass": 0,
+  "note": "Bare host paths + notes scrubbed; historical mis-attribution language neutralized",
+  "envelopes_final_developer_ibm_com": 0,
+  "html_final": 0
+}

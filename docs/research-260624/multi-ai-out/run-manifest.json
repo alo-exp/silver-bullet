@@ -1,0 +1,25 @@
+{
+  "timestamp": "2026-07-13T20:37:00Z",
+  "question": "Can subagents launch their own subagents in the following agent environments: Codex, Cursor, Claude, OpenCode, Pi (through extension - find out which extension)?",
+  "profile": "ocg-lite",
+  "mode": "ultradeep",
+  "models": [
+    "opencode-go/minimax-m3",
+    "opencode-go/qwen3.7-plus",
+    "opencode-go/deepseek-v4-flash",
+    "opencode-go/kimi-k2.7-code",
+    "opencode-go/mimo-v2.5"
+  ],
+  "dispatch_method": "OpenCode task tool (OCG subagents)",
+  "subagent_types": [
+    "ocg-minimax-m3",
+    "ocg-qwen3.7-plus",
+    "ocg-deepseek-v4-flash",
+    "ocg-kimi-k2.7-code",
+    "ocg-mimo-v2.5"
+  ],
+  "artifacts": {
+    "consolidated_report": "consolidated.md",
+    "conflicts": "conflicts.md"
+  }
+}

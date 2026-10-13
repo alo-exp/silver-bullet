@@ -1,0 +1,77 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "kimi",
+    "effort": "high",
+    "display": "Cursor Kimi K3 High"
+  },
+  "verdict": "NOT CLEAN",
+  "issues": {
+    "HIGH": [
+      {
+        "id": "F-5-1",
+        "title": "Integrity oscillation to pre-rung-4 freeze SHA"
+      }
+    ],
+    "MED": [
+      {
+        "id": "F-5-2",
+        "title": "Executor unspecified-effort contradiction (xhigh vs High)"
+      }
+    ],
+    "LOW": [
+      {
+        "id": "F-5-3",
+        "title": "\u00a73.3 listed in full below vs locks outside KR list"
+      }
+    ],
+    "NIT": [
+      {
+        "id": "F-5-4",
+        "title": "TOC slug vs href mismatch under freeze GFM lock"
+      }
+    ]
+  },
+  "triage": [
+    {
+      "id": "F-5-1",
+      "severity": "HIGH",
+      "decision": "ACCEPT",
+      "reason": "Process/integrity oscillation accepted"
+    },
+    {
+      "id": "F-5-2",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "Real unspecified Executor thinking-level contradiction"
+    },
+    {
+      "id": "F-5-3",
+      "severity": "LOW",
+      "decision": "ACCEPT",
+      "reason": "Qualify listed-in-full claim"
+    },
+    {
+      "id": "F-5-4",
+      "severity": "NIT",
+      "decision": "ACCEPT",
+      "reason": "Compute slug; edit TOC only if mismatch"
+    }
+  ],
+  "blockers": "none",
+  "highs": [
+    {
+      "id": "F-5-1",
+      "title": "Integrity oscillation to pre-rung-4 freeze SHA"
+    }
+  ],
+  "mediums": [
+    {
+      "id": "F-5-2",
+      "title": "Executor unspecified-effort contradiction (xhigh vs High)"
+    }
+  ],
+  "disposition": "ACCEPT-apply",
+  "resolved": "pending",
+  "apply_sha_in_flight": "6ed8cb0f"
+}

@@ -1,0 +1,27 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "glm",
+    "effort": "high",
+    "display": "Cursor GLM 5.2 High (review pass 7)"
+  },
+  "verdict": "NOT CLEAN",
+  "disposition": "ACCEPT-apply",
+  "issues": {
+    "HIGH": "none",
+    "MED": "none",
+    "LOW": "none",
+    "NIT": [
+      {"id": "V1", "title": "§8.1/§8.4 omit src/doctor.rs despite §6.1/§4.4 bounded-patch contract"}
+    ]
+  },
+  "triage": [
+    {"id": "V1", "severity": "NIT", "decision": "ACCEPT", "reason": "Not wrong; brave.rs is listed as a bounded patch but doctor.rs is not; no lock unwind"}
+  ],
+  "blockers": "none",
+  "highs": "none",
+  "mediums": "none",
+  "resolved": [
+    {"id": "V1", "severity": "NIT", "title": "src/doctor.rs added to §8.1 Modify and §8.4 item 8", "decision": "ACCEPT", "resolved": "yes"}
+  ]
+}

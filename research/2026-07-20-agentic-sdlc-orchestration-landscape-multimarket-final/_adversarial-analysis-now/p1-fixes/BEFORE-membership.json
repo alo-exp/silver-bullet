@@ -1,0 +1,83 @@
+{
+  "named": {
+    "devin": {
+      "apo_core": false,
+      "apo_adjacent": false,
+      "apo_excluded": true,
+      "plugins_core": false,
+      "saas_core": true,
+      "saas_mq": "Leaders",
+      "prose": "§1 lists Devin with host runtimes under Adjacent only"
+    },
+    "agenthub": {
+      "apo_core": true,
+      "apo_mq": "Leaders",
+      "apo_gmq": "Challengers",
+      "plugins_core": false,
+      "saas_core": false,
+      "section": "§5 APO commercial core"
+    },
+    "ateam": {
+      "apo_core": true,
+      "apo_mq": "Visionaries",
+      "apo_gmq": "Challengers",
+      "plugins_core": false,
+      "saas_core": false,
+      "section": "§5 APO commercial core"
+    },
+    "cc10x": {
+      "apo_core": true,
+      "apo_mq": "Visionaries",
+      "apo_gmq": "Leaders",
+      "plugins_core": false,
+      "license_plotted": "commercial",
+      "section": "§5 APO commercial core"
+    },
+    "cavekit-v31": {
+      "apo_core": true,
+      "apo_mq": "Visionaries",
+      "apo_gmq": "Niche Players",
+      "plugins_core": false,
+      "license_plotted": "commercial",
+      "section": "§5 APO commercial core"
+    },
+    "barkain-workflow-orchestrator": {
+      "apo_core": true,
+      "apo_mq": "Niche Players",
+      "apo_gmq": "Niche Players",
+      "plugins_core": false,
+      "license_plotted": "commercial",
+      "section": "§5 APO commercial core"
+    }
+  },
+  "apo_core": [
+    "agenthub",
+    "agentsys",
+    "ai-dlc",
+    "ateam",
+    "barkain-workflow-orchestrator",
+    "cavekit-v31",
+    "cc10x",
+    "deepwork",
+    "director",
+    "metagpt",
+    "silver-bullet",
+    "turboshovel",
+    "workflow-manager"
+  ],
+  "sdlc_plugins_core": [
+    "bmad",
+    "claude-harness",
+    "gsd",
+    "oh-my-pi",
+    "ruflo",
+    "silver-bullet",
+    "spec-kit",
+    "superclaude",
+    "superpowers",
+    "zuvo"
+  ],
+  "saas_core": ["augment-cosmos", "devin", "factory-ai", "magic-dev"],
+  "vc_oss_managed_hosting": 3,
+  "note": "Captured before P1 membership/prose/chart fixes. Do not re-derive run."
+}

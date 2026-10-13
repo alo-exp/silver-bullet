@@ -1,0 +1,26 @@
+{
+  "scrubbed_at": "2026-07-22T04:32:00Z",
+  "files": [
+    "landscape-report.html",
+    "consolidated/consolidation.json"
+  ],
+  "replacements": [
+    "ai-dlc (ibm) → ai-dlc (aws / awslabs)",
+    "ibm-backed lifecycle → AWS-backed lifecycle"
+  ],
+  "left_nonblocking": [
+    "developer.ibm.com source URLs in contribution envelopes / embedded JSON",
+    "corrective 'mis-attributed to IBM' notes in HTML JSON"
+  ],
+  "http_render": {
+    "status": 200,
+    "len": 604735,
+    "hasDirector": true,
+    "hasAws": true,
+    "hasDoctype": true,
+    "hasQuarantine": true,
+    "hasMatrix": true,
+    "noAidlcIbm": true,
+    "file_open": "open file:///…/landscape-report.html"
+  }
+}

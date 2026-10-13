@@ -1,0 +1,13 @@
+[
+  {"rung": "1", "reviewer": "OpenCode Go MiniMax M3", "high": 0, "med": 0, "low": 0, "nit": 0, "reported": 0, "accepted": 0, "skipped_then_retried": false, "notes_skip": true},
+  {"rung": "2", "reviewer": "OpenCode Go DeepSeek V4 Pro Max", "high": 0, "med": 0, "low": 0, "nit": 0, "reported": 0, "accepted": 0, "skipped_then_retried": false, "notes_skip": true},
+  {"rung": "3", "reviewer": "OpenCode Go Qwen 3.8 Max", "high": 0, "med": 0, "low": 0, "nit": 0, "reported": 0, "accepted": 0, "skipped_then_retried": false, "notes_skip": true},
+  {"rung": "4", "reviewer": "Cursor GLM 5.2 High", "high": 0, "med": 0, "low": 0, "nit": 2, "reported": 2, "accepted": 2, "clean": true},
+  {"rung": "5", "reviewer": "Cursor Kimi K3 High", "high": 1, "med": 1, "low": 1, "nit": 1, "reported": 4, "accepted": 4},
+  {"rung": "6", "reviewer": "Cursor Gemini 3.7 Flash High", "high": 0, "med": 0, "low": 0, "nit": 0, "reported": 0, "accepted": 0, "clean": true},
+  {"rung": "7", "reviewer": "Cursor Grok 4.6 High", "high": 0, "med": 0, "low": 0, "nit": 1, "reported": 1, "accepted": 1, "clean": true},
+  {"rung": "8", "reviewer": "Pi Codex GPT-5.6 Sol High", "high": 1, "med": 2, "low": 2, "nit": 0, "reported": 5, "accepted": 4},
+  {"rung": "9", "reviewer": "Pi Codex GPT-5.6 Sol Extra High", "high": 0, "med": 0, "low": 0, "nit": 0, "reported": 0, "accepted": 0, "clean": true},
+  {"rung": "10", "reviewer": "Pi claude/claude-opus-5-high (named; not grok-substitute)", "high": 0, "med": 3, "low": 4, "nit": 3, "reported": 10, "accepted": 10},
+  {"rung": "11", "reviewer": "Pi claude/claude-opus-5-xhigh (named; not grok-substitute)", "high": 0, "med": 2, "low": 5, "nit": 4, "reported": 11, "accepted": 11}
+]

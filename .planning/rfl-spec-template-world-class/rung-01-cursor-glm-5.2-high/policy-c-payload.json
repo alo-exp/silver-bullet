@@ -1,0 +1,228 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "glm",
+    "effort": "high",
+    "display": "Cursor GLM 5.2 High"
+  },
+  "verdict": "NOT CLEAN",
+  "issues": {
+    "HIGH": [
+      {
+        "id": "R1-F01",
+        "title": "QC-1 heading count vs QC-10 Change History (7 vs 8) is ambiguous"
+      },
+      {
+        "id": "R1-F02",
+        "title": "Wave 3 must update silver-spec Step 3 kind-blind heading list (incl. UX Flows)"
+      },
+      {
+        "id": "R1-F03",
+        "title": "Clarify skip-turn map names Security/Telemetry/API/CLI/Mobile/Pipeline turns that do not exist"
+      }
+    ],
+    "MED": [
+      {
+        "id": "R1-F04",
+        "title": "multi union vs forbid conflict is unresolved"
+      },
+      {
+        "id": "R1-F05",
+        "title": "Decision-log trigger has no capture-schema decisions field"
+      },
+      {
+        "id": "R1-F06",
+        "title": "security optional for headless-service / data-ml / library-sdk is contradictory"
+      },
+      {
+        "id": "R1-F07",
+        "title": "No behavioral multi / kind-multi fixture"
+      }
+    ],
+    "LOW": [
+      {
+        "id": "R1-F08",
+        "title": "### Invariants is core-required but no QC enforces presence"
+      },
+      {
+        "id": "R1-F09",
+        "title": "Pack-local ID scheme is inconsistent across packs"
+      }
+    ],
+    "NIT": [
+      {
+        "id": "R1-F10",
+        "title": "software-kinds presence-iff-multi is not a stated QC"
+      }
+    ]
+  },
+  "triage": [
+    {
+      "id": "R1-F01",
+      "severity": "HIGH",
+      "decision": "ACCEPT",
+      "reason": "Pin QC-1 = 7 headings; Change History is 8th core-required heading enforced only by QC-10"
+    },
+    {
+      "id": "R1-F02",
+      "severity": "HIGH",
+      "decision": "ACCEPT",
+      "reason": "Wave 3 must recompute silver-spec Step 3 required-sections from catalog; UX Flows not universal"
+    },
+    {
+      "id": "R1-F03",
+      "severity": "HIGH",
+      "decision": "ACCEPT",
+      "reason": "Option A: add kind-gated domain turns so all 13 packs are sourced; skip map names only existing turns"
+    },
+    {
+      "id": "R1-F04",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "multi tie-break: required-wins over forbidden + INFO unusual combination"
+    },
+    {
+      "id": "R1-F05",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "Wave 4 capture schema gains a decisions field; compiler counts that field"
+    },
+    {
+      "id": "R1-F06",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "security is required for headless-service, data-ml, and library-sdk"
+    },
+    {
+      "id": "R1-F07",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "Add kind-multi behavioral fixture and required-wins test case"
+    },
+    {
+      "id": "R1-F08",
+      "severity": "LOW",
+      "decision": "ACCEPT",
+      "reason": "QC-11 requires ### Invariants under Overview with >=1 MUST/MUST NOT"
+    },
+    {
+      "id": "R1-F09",
+      "severity": "LOW",
+      "decision": "ACCEPT",
+      "reason": "Mint DATA-nn SIG-nn SLO-nn CTRL-nn QA-nn so structured packs are ID-addressable"
+    },
+    {
+      "id": "R1-F10",
+      "severity": "NIT",
+      "decision": "ACCEPT",
+      "reason": "QC-6b: software-kinds present and non-empty iff software-kind is multi"
+    }
+  ],
+  "blockers": "none",
+  "highs": [
+    {
+      "id": "R1-F01",
+      "title": "QC-1 heading count vs QC-10 Change History (7 vs 8) is ambiguous"
+    },
+    {
+      "id": "R1-F02",
+      "title": "Wave 3 must update silver-spec Step 3 kind-blind heading list (incl. UX Flows)"
+    },
+    {
+      "id": "R1-F03",
+      "title": "Clarify skip-turn map names Security/Telemetry/API/CLI/Mobile/Pipeline turns that do not exist"
+    }
+  ],
+  "mediums": [
+    {
+      "id": "R1-F04",
+      "title": "multi union vs forbid conflict is unresolved"
+    },
+    {
+      "id": "R1-F05",
+      "title": "Decision-log trigger has no capture-schema decisions field"
+    },
+    {
+      "id": "R1-F06",
+      "title": "security optional for headless-service / data-ml / library-sdk is contradictory"
+    },
+    {
+      "id": "R1-F07",
+      "title": "No behavioral multi / kind-multi fixture"
+    }
+  ],
+  "disposition": "ACCEPT-apply",
+  "resolved": [
+    {
+      "id": "R1-F01",
+      "severity": "HIGH",
+      "title": "QC-1 heading count vs QC-10 Change History (7 vs 8) is ambiguous",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "R1-F02",
+      "severity": "HIGH",
+      "title": "Wave 3 must update silver-spec Step 3 kind-blind heading list (incl. UX Flows)",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "R1-F03",
+      "severity": "HIGH",
+      "title": "Clarify skip-turn map names Security/Telemetry/API/CLI/Mobile/Pipeline turns that do not exist",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "R1-F04",
+      "severity": "MED",
+      "title": "multi union vs forbid conflict is unresolved",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "R1-F05",
+      "severity": "MED",
+      "title": "Decision-log trigger has no capture-schema decisions field",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "R1-F06",
+      "severity": "MED",
+      "title": "security optional for headless-service / data-ml / library-sdk is contradictory",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "R1-F07",
+      "severity": "MED",
+      "title": "No behavioral multi / kind-multi fixture",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "R1-F08",
+      "severity": "LOW",
+      "title": "### Invariants is core-required but no QC enforces presence",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "R1-F09",
+      "severity": "LOW",
+      "title": "Pack-local ID scheme is inconsistent across packs",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "R1-F10",
+      "severity": "NIT",
+      "title": "software-kinds presence-iff-multi is not a stated QC",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    }
+  ],
+  "apply_sha": "0b9a17713c7ca349b27678c1ec05d4878eac1de91ab7e7b02677a673d4b1af8d"
+}
