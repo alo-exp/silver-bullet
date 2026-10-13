@@ -24,7 +24,7 @@ BANNED_PATTERNS=(
   'Cursor Skill tool|Cursor Skill tool'
   '\${CLAUDE_PLUGIN_ROOT}|CLAUDE_PLUGIN_ROOT placeholder'
   '\${CURSOR_PLUGIN_ROOT}|CURSOR_PLUGIN_ROOT placeholder'
-  '~/.codex/|~/.claude home path'
+  '~/.claude/|~/.claude home path'
   '~/.cursor/|~/.cursor home path'
   'Read tool|Read tool'
   'Write tool|Write tool'

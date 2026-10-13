@@ -77,7 +77,7 @@ Codex entry point.
 
 ### Packaging Boundaries
 
-- `/.planning/` and `/.codex/` are project-instance artifacts, not plugin content.
+- `/.planning/` and `/.claude/` are project-instance artifacts, not plugin content.
 - `silver-bullet.md` is the project copy; `templates/silver-bullet.md.base` is the source template.
 - `plugins/silver-bullet/` is a curated Codex snapshot, not a mirror of the whole repository.
 - `plugins/silver-bullet/commands/` ships inside the shared package for Cursor's command surface; the Codex manifest intentionally omits `commands` so Codex does not migrate stubs into `source-command-*` skills.

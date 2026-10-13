@@ -620,8 +620,8 @@ teardown
 # `--ignored=traditional` previously over-caught routine session/runtime
 # artifacts, defeating HOOK-14's intent on every release. v0.30.0 filters
 # porcelain output through a transient-path allowlist before deciding
-# `tree_clean`. Defaults: .codex/scheduled_tasks.lock,
-# .codex/settings.local.json, .superpowers/, .planning/workflows/, REVIEW.md.
+# `tree_clean`. Defaults: .claude/scheduled_tasks.lock,
+# .claude/settings.local.json, .superpowers/, .planning/workflows/, REVIEW.md.
 
 echo "--- Test #88-A: built-in transient artifacts ignored — HOOK-14 fires ---"
 setup
@@ -629,7 +629,7 @@ echo "silver-quality-gates" > "$TMPSTATE"
 # Add gitignored runtime/session artifacts that previously blocked HOOK-14
 mkdir -p "$TMPDIR_TEST/.claude" "$TMPDIR_TEST/.codex" "$TMPDIR_TEST/.superpowers/brainstorm" "$TMPDIR_TEST/.planning/workflows"
 cat > "$TMPDIR_TEST/.gitignore" <<'GITIG'
-.codex/
+.claude/
 .superpowers/
 .planning/workflows/
 REVIEW.md
@@ -637,8 +637,8 @@ GITIG
 git -C "$TMPDIR_TEST" add .gitignore
 git -C "$TMPDIR_TEST" commit -q -m "gitignore"
 # Now create the transient artifacts (untracked + ignored)
-touch "$TMPDIR_TEST/.codex/scheduled_tasks.lock"
-echo "{}" > "$TMPDIR_TEST/.codex/settings.local.json"
+touch "$TMPDIR_TEST/.claude/scheduled_tasks.lock"
+echo "{}" > "$TMPDIR_TEST/.claude/settings.local.json"
 touch "$TMPDIR_TEST/.superpowers/brainstorm/notes.md"
 touch "$TMPDIR_TEST/.planning/workflows/20260428T120000Z-abc123-silver-feature.md"
 touch "$TMPDIR_TEST/REVIEW.md"

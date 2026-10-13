@@ -61,7 +61,7 @@ sb_leanctx_platform_artifact_path() {
     pi) printf '%s/extensions/silver-bullet-five-tool-stack/config.json' \
       "${PI_CODING_AGENT_DIR:-${HOME}/.pi/agent}" ;;
     claude) printf '%s/.claude/settings.json' "${HOME}" ;;
-    *) printf '%s/.codex/settings.json' "${HOME}" ;;
+    *) printf '%s/.claude/settings.json' "${HOME}" ;;
   esac
 }
 
