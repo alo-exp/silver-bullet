@@ -146,7 +146,26 @@ When the five-tool coordinator records `sb_stack_double_compression`, PreToolUse
 
 **Wedged-session warning:** When the mutex is dirty, do not trust prior tool success self-reports — re-run verification after recovery.
 
-**Install guard:** `install-leanctx-sb.sh` / `optimize-five-tool-stack.sh` write `LEANCTX_DISABLE_SHELL_MCP=1` in the five-tool profile env so RTK owns `sb_shell` without LeanCTX shell MCP overlap.
+**Install guard:** `install-leanctx-sb.sh` / `optimize-five-tool-stack.sh` write `LEAN_CTX_DISABLED_TOOLS` (honored by lean-ctx 3.11+) plus the legacy `LEANCTX_DISABLE_SHELL_MCP=1` hints in the five-tool profile env, and set `lean-ctx config set excluded_commands rtk`, so RTK owns `sb_shell` without LeanCTX shell MCP overlap or a second compression pass.
+
+## LeanCTX, Context Mode, and RTK conflicts (lean-ctx 3.11+)
+
+lean-ctx 3.11.4 ignores the `LEANCTX_MCP_TOOL_PREFIX` and `LEANCTX_DISABLE_*` env hints (they are absent from the binary), so the routed profile has to use the switches lean-ctx actually reads. Each conflict, and how it is resolved:
+
+| Conflict | Symptom | Resolution |
+|---|---|---|
+| LeanCTX shell vs RTK | `lean-ctx hook rewrite` wraps every Claude Bash command in `lean-ctx -c`, compressing RTK output twice | Remove the `lean-ctx hook rewrite` Bash hook; make `rtk hook claude` the first Bash PreToolUse hook |
+| LeanCTX agent shell wrapper vs RTK | The `~/.zshenv` hook runs agent shells under `lean-ctx -c` (`shell_activation = "agents-only"`) | `excluded_commands = ["rtk"]` passes RTK commands through untouched; LeanCTX still compresses commands RTK does not rewrite (the designed fallback) |
+| LeanCTX replace mode vs RTK on Codex | `lean-ctx hook codex-pretooluse` denies native Bash ("use MCP tools instead of native Bash"), so `rtk` commands never run | Remove lean-ctx's Codex hooks from `~/.codex/hooks.json`. Its `codex-session-start` and `observe` hooks re-add the denial and a duplicate `[mcp_servers.lean-ctx]` table, so remove those too |
+| LeanCTX MCP vs Context Mode and agentmemory | Both expose `ctx_execute`, `ctx_search`, `ctx_index`, and web/memory tools | `LEAN_CTX_DISABLED_TOOLS` in the MCP env (or `disabled_tools` in `~/.config/lean-ctx/config.toml`) hides `ctx_shell`, `shell`, `ctx_execute`, `ctx_search`, `ctx_index`, `ctx_url_read`, `ctx_knowledge`, `ctx_memory` |
+| LeanCTX policy text vs routing | `lean-ctx hook observe` injects "commands via ctx_shell" into every Claude prompt, naming a disabled tool | Remove the `lean-ctx hook observe` hooks; keep `redirect`, `read-dedup`, and the statusline (they allow Read/Grep) |
+| LeanCTX shell allowlist vs Context Mode | Agent shells block `context-mode`, `lean-ctx`, and `graphify-mcp` | Add them to `shell_allowlist_extra` |
+| Context Mode plugin vs shared MCP | The `context-mode@context-mode` plugin duplicates the shared MCP server and every hook | Disable the plugin on Claude and Codex; keep the shared MCP and the `hooks.json` entries |
+| Codex approval policy vs all MCP | `approval_policy = "never"` refuses every MCP call | `default_tools_approval_mode = "approve"` on the stack's MCP servers |
+
+| LeanCTX self-heal vs all of the above | lean-ctx re-renders its Claude hooks on every MCP server start and after updates, restoring `hook rewrite` and `hook observe` | `lean-ctx config set setup.manage_hooks false` (the installer does this); only an explicit `lean-ctx setup`, `init`, or `doctor --fix` then writes hook config |
+
+`lean-ctx setup`, `init`, and `doctor --fix` still re-add the removed hooks and the duplicate MCP table. Re-check `~/.claude/settings.json`, `~/.codex/hooks.json`, and `~/.codex/config.toml` after running any of them and after every lean-ctx update.
 
 ## Durable file edits (compression marker leak)
 

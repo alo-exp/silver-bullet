@@ -37,17 +37,17 @@ which context-mode
 
 ## Phase 2 — Global artifacts
 
-### 2.1 RTK hook (`~/.codex/settings.json`)
+### 2.1 RTK hook (`~/.claude/settings.json`)
 
 ```bash
-jq '.hooks.PreToolUse[]? | select(.command? | test("rtk"))' ~/.codex/settings.json 2>/dev/null
-grep -q rtk ~/.codex/settings.json 2>/dev/null && echo OK-settings
-test -f ~/.codex/RTK.md && echo OK-rtk-md
+jq -c '.hooks.PreToolUse[]? | select(any(.hooks[]?; .command == "rtk hook claude"))' ~/.claude/settings.json
+jq '[.hooks.PreToolUse[]?.hooks[]?.command | select(test("lean-ctx hook rewrite"))] | length' ~/.claude/settings.json
+test -f ~/.claude/RTK.md && echo OK-rtk-md
 ```
 
-**Pass:** RTK PreToolUse entry and `RTK.md` present.
+**Pass:** a `Bash` PreToolUse entry running `rtk hook claude` (ideally the first Bash entry), zero `lean-ctx hook rewrite` entries, and `RTK.md` present.
 
-**Fail:** `rtk init -g`
+**Fail:** run `rtk init -g` for `RTK.md`. RTK 0.51 prints the hook instead of writing it, so add `{"matcher": "Bash", "hooks": [{"type": "command", "command": "rtk hook claude"}]}` to `hooks.PreToolUse` yourself, and remove any `lean-ctx hook rewrite` entry: it wraps every Bash command in `lean-ctx -c`, which compresses RTK's output a second time.
 
 ### 2.2 Context Mode shared MCP
 

@@ -27,7 +27,7 @@ Prerequisites: `rtk-ai/rtk` on PATH (`rtk gain --help` must work), Node >= 22.5 
 
 | Agent | RTK | Context Mode | Status | Global config roots |
 |-------|-----|--------------|--------|---------------------|
-| **Claude Code** | `rtk init -g` → `~/.codex/settings.json` | Shared global MCP in `~/.claude.json` | **SUPPORTED** | `~/.claude.json`, `~/.codex/` |
+| **Claude Code** | `rtk init -g` + `rtk hook claude` PreToolUse entry → `~/.claude/settings.json` | Shared global MCP in `~/.claude.json` | **SUPPORTED** | `~/.claude.json`, `~/.claude/` |
 | **Codex** | `rtk init -g --codex` → `~/.codex/AGENTS.md` | MCP + `hooks.json` merge | **SUPPORTED** (RTK prompt-layer) | `~/.codex/` |
 | **Cursor** | `rtk init -g --agent cursor` + allow-list | MCP + hooks + `~/.cursor/rules/` | **SUPPORTED** | `~/.cursor/` |
 | **OpenCode** | Manifest-backed RTK plugin TS | Native Context Mode plugin in `opencode.json`; no duplicate `mcp.context-mode` | **SUPPORTED** | `~/.config/opencode/` |
