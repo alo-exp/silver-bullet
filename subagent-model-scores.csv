@@ -1,0 +1,3 @@
+timestamp,model_slug,reasoning_effort,score,task_complexity
+2026-10-13T14:23:20Z,claude-haiku-5-5,high,3,medium
+2026-10-13T14:36:21Z,claude-haiku-5-5,high,4,medium
