@@ -4,7 +4,8 @@
       "status": "supported",
       "rtk": {
         "command": "rtk init -g",
-        "artifacts": ["~/.codex/settings.json", "~/.codex/RTK.md"]
+        "artifacts": ["~/.claude/settings.json", "~/.claude/RTK.md"],
+        "note": "rtk init -g writes RTK.md and prints the hook; settings.json needs a PreToolUse Bash entry running `rtk hook claude` (first Bash hook). Remove any `lean-ctx hook rewrite` Bash entry so output is compressed once."
       },
       "context_mode": {
         "command": "npm install -g context-mode",

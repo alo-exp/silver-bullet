@@ -91,7 +91,7 @@ detect_host() {
     printf '%s' "pi"
     return 0
   fi
-  if [[ -d "${HOME}/.codex" ]]; then
+  if [[ -d "${HOME}/.claude" ]]; then
     printf '%s' "claude"
     return 0
   fi
@@ -322,6 +322,8 @@ write_sb_profile_env() {
   mkdir -p "$profile_dir"
   cat >"$profile_file" <<'ENVEOF'
 # SB five_tool_routed profile — applied by install-leanctx-sb.sh / optimize-five-tool-stack.sh
+# lean-ctx >= 3.11 honors LEAN_CTX_DISABLED_TOOLS; the LEANCTX_* lines serve older releases.
+LEAN_CTX_DISABLED_TOOLS=ctx_shell,shell,ctx_execute,ctx_search,ctx_index,ctx_url_read,ctx_knowledge,ctx_memory
 LEANCTX_MCP_TOOL_PREFIX=lctx_
 LEANCTX_DISABLE_SHELL_MCP=1
 LEANCTX_DISABLE_SANDBOX_MCP=1
@@ -330,6 +332,49 @@ LEANCTX_DISABLE_FTS=1
 LEANCTX_PRIMARY_FTS=context_mode
 ENVEOF
   log "OK: ${profile_file}"
+}
+
+# lean-ctx wraps agent shells (shell_activation=agents-only). RTK output is already
+# compressed, so exclude rtk from lean-ctx's shell compression to avoid a second pass.
+configure_rtk_passthrough() {
+  if ! leanctx_binary_ok; then
+    log "SKIP: lean-ctx not installed; RTK passthrough not configured"
+    return 0
+  fi
+  local current
+  current="$(lean-ctx config 2>/dev/null | sed -n 's/^excluded_commands = //p' | head -1)"
+  if [[ "$current" == *'"rtk"'* ]]; then
+    log "OK: lean-ctx excluded_commands already includes rtk"
+    return 0
+  fi
+  if [[ -n "$current" && "$current" != "[]" ]]; then
+    warn "lean-ctx excluded_commands=${current}; add rtk to it so RTK output is not compressed twice"
+    return 0
+  fi
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    log "DRY-RUN: lean-ctx config set excluded_commands rtk"
+    return 0
+  fi
+  run_cmd lean-ctx config set excluded_commands rtk
+}
+
+# lean-ctx re-renders its hooks on every MCP server start and after updates. That
+# restores `hook rewrite` (double-wraps RTK) and `hook observe` (re-injects the
+# ctx_shell policy) after the routed profile removed them. With manage_hooks off,
+# only an explicit `lean-ctx setup`, `init`, or `doctor --fix` writes hook config.
+configure_leanctx_hook_management() {
+  if ! leanctx_binary_ok; then
+    return 0
+  fi
+  if lean-ctx config 2>/dev/null | awk '/^\[setup\]/{s=1;next} /^\[/{s=0} s && /^manage_hooks = false/{f=1} END{exit !f}'; then
+    log "OK: lean-ctx setup.manage_hooks already false"
+    return 0
+  fi
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    log "DRY-RUN: lean-ctx config set setup.manage_hooks false"
+    return 0
+  fi
+  run_cmd lean-ctx config set setup.manage_hooks false
 }
 
 verify_wire_proxy_ordering() {
@@ -403,6 +448,8 @@ install_leanctx_binary
 run_library_mode_init
 merge_mcp_config
 write_sb_profile_env
+configure_rtk_passthrough
+configure_leanctx_hook_management
 verify_wire_proxy_ordering
 
 if [[ "$DRY_RUN" -eq 1 ]]; then

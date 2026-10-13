@@ -19,6 +19,7 @@ from five_tool_instances import ensure_global_instances, global_instances_manife
 
 LEANCTX_ENV = {
     "LEANCTX_MCP_TOOL_PREFIX": "lctx_",
+    "LEAN_CTX_DISABLED_TOOLS": "ctx_shell,shell,ctx_execute,ctx_search,ctx_index,ctx_url_read,ctx_knowledge,ctx_memory",
     "LEANCTX_DISABLE_SHELL_MCP": "1",
     "LEANCTX_DISABLE_SANDBOX_MCP": "1",
     "LEANCTX_DISABLE_FETCH_MCP": "1",

@@ -29,6 +29,7 @@ from opencode import (  # noqa: E402
 
 LEANCTX_ENV_CM_ACTIVE = {
     "LEANCTX_MCP_TOOL_PREFIX": "lctx_",
+    "LEAN_CTX_DISABLED_TOOLS": "ctx_shell,shell,ctx_execute,ctx_search,ctx_index,ctx_url_read,ctx_knowledge,ctx_memory",
     "LEANCTX_DISABLE_SHELL_MCP": "1",
     "LEANCTX_DISABLE_SANDBOX_MCP": "1",
     "LEANCTX_DISABLE_FETCH_MCP": "1",
@@ -228,6 +229,33 @@ def copy_file(src: pathlib.Path, dest: pathlib.Path, dry_run: bool) -> bool:
     return True
 
 
+def stage_agents_template(src: pathlib.Path, dest: pathlib.Path, dry_run: bool) -> str:
+    """Install Context Mode's AGENTS.md only where the host has none.
+
+    A host AGENTS.md carries the user's own global rules, so an existing file is
+    never overwritten.  When it differs from the template, the template is staged
+    beside it for a deliberate merge.  Returns installed, unchanged, staged, or
+    missing.
+    """
+    if not src.is_file():
+        return "missing"
+    if not dest.exists():
+        return "installed" if copy_file(src, dest, dry_run) else "missing"
+    if dest.read_bytes() == src.read_bytes():
+        return "unchanged"
+    staged = dest.with_name(dest.name + ".context-mode-template")
+    if dry_run:
+        print(f"DRY-RUN: would stage {src} -> {staged} (existing {dest} kept)")
+        return "staged"
+    shutil.copy2(src, staged)
+    print(
+        f"NOTICE: kept existing {dest}; Context Mode template staged at {staged}. "
+        f"Merge any new rules into {dest} by hand.",
+        file=sys.stderr,
+    )
+    return "staged"
+
+
 def append_unique_plugin(plugins: list, entry: str) -> bool:
     if entry in plugins:
         return False
@@ -263,6 +291,13 @@ def context_mode_pkg_root() -> pathlib.Path | None:
         candidate = pathlib.Path(npm_root)
         if candidate.is_dir():
             return candidate
+    # Prefer the package behind the context-mode CLI on PATH: that is the install
+    # the shared MCP server runs, even when npm's global prefix points elsewhere.
+    cli = shutil.which("context-mode")
+    if cli:
+        pkg = pathlib.Path(cli).resolve().parent
+        if (pkg / "package.json").is_file():
+            return pkg
     try:
         import subprocess
 
@@ -441,14 +476,18 @@ def optimize_codex(dry_run: bool) -> dict:
         if cm_hooks.is_file():
             hooks_added = merge_codex_hooks_file(hooks_path, load_json(cm_hooks), dry_run)
         agents_src = cm_pkg / "configs" / "codex" / "AGENTS.md"
-        agents_copied = copy_file(agents_src, codex_home / "AGENTS.md", dry_run)
+        agents_template = stage_agents_template(agents_src, codex_home / "AGENTS.md", dry_run)
+        agents_copied = agents_template == "installed"
         config_merged = merge_codex_config_toml(config_path, dry_run)
+    else:
+        agents_template = "missing"
     return {
         "host": "codex",
         "status": "supported",
         "hooks_added": hooks_added,
         "config_merged": config_merged,
         "agents_copied": agents_copied,
+        "agents_template": agents_template,
     }
 
 
@@ -566,10 +605,10 @@ def optimize_opencode(
     if plugin_added or plugin_written or mcp_added or not cfg_path.is_file():
         save_json(cfg_path, data, dry_run)
 
-    agents_copied = False
+    agents_template = "missing"
     if cm_pkg:
         agents_src = cm_pkg / "configs" / "opencode" / "AGENTS.md"
-        agents_copied = copy_file(agents_src, opencode_home / "AGENTS.md", dry_run)
+        agents_template = stage_agents_template(agents_src, opencode_home / "AGENTS.md", dry_run)
 
     return {
         "host": "opencode",
@@ -577,7 +616,8 @@ def optimize_opencode(
         "plugin_added": plugin_added,
         "plugin_written": plugin_written,
         "mcp_added": mcp_added,
-        "agents_copied": agents_copied,
+        "agents_copied": agents_template == "installed",
+        "agents_template": agents_template,
     }
 
 

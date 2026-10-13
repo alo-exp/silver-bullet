@@ -166,15 +166,34 @@ def _expected_entrypoint(tool: str, value: str) -> bool:
     return actual == expected or actual in aliases.get(tool, set())
 
 
+def _stable_path(path: Path) -> str:
+    """Return an absolute executable path that survives package upgrades.
+
+    Symlinks are normally resolved so a host-scoped shim cannot pose as the
+    global entrypoint.  A versioned Homebrew keg (``.../Cellar/<formula>/<ver>/``)
+    is the exception: it disappears on the next ``brew upgrade``, so the stable
+    ``bin`` link that points at it is recorded instead.
+    """
+    real = path.resolve()
+    if "Cellar" not in real.parts:
+        return str(real)
+    if "Cellar" not in path.absolute().parts:
+        return str(path.absolute())
+    linked = shutil.which(real.name)
+    if linked and Path(linked).resolve() == real:
+        return linked
+    return str(real)
+
+
 def _resolve_candidate(value: str) -> Optional[str]:
     if not value:
         return None
     candidate = Path(value).expanduser()
     if candidate.is_file() and os.access(candidate, os.X_OK):
-        return str(candidate.resolve())
+        return _stable_path(candidate)
     resolved = shutil.which(value)
     if resolved:
-        return str(Path(resolved).resolve())
+        return _stable_path(Path(resolved))
     return None
 
 

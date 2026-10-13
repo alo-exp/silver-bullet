@@ -99,6 +99,21 @@ def context_mode_present_codex(config_toml: pathlib.Path) -> bool:
     return "[mcp_servers.context-mode]" in text
 
 
+# LeanCTX tools whose job belongs to another stack member in the routed profile.
+# lean-ctx >= 3.11 hides these via LEAN_CTX_DISABLED_TOOLS (comma-separated); it
+# ignores the legacy LEANCTX_* hints, which are still written for older releases.
+LEANCTX_ROUTED_DISABLED_TOOLS = [
+    "ctx_shell",  # RTK owns shell output
+    "shell",
+    "ctx_execute",  # Context Mode owns sandboxed execution, search, and web fetch
+    "ctx_search",
+    "ctx_index",
+    "ctx_url_read",
+    "ctx_knowledge",  # agentmemory owns cross-session memory
+    "ctx_memory",
+]
+
+
 def leanctx_server_env(cm_active: bool) -> dict[str, str]:
     """SB five-tool routed profile env hints for LeanCTX MCP subprocess."""
     env: dict[str, str] = {
@@ -109,6 +124,7 @@ def leanctx_server_env(cm_active: bool) -> dict[str, str]:
         # Disable overlapping LeanCTX MCP surfaces owned by RTK/CM in parallel mode.
         env.update(
             {
+                "LEAN_CTX_DISABLED_TOOLS": ",".join(LEANCTX_ROUTED_DISABLED_TOOLS),
                 "LEANCTX_DISABLE_SHELL_MCP": "1",
                 "LEANCTX_DISABLE_SANDBOX_MCP": "1",
                 "LEANCTX_DISABLE_FETCH_MCP": "1",
