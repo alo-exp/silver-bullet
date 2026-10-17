@@ -28,7 +28,7 @@ skip() { printf 'SKIP: %s\n' "$1"; SKIP=$((SKIP + 1)); }
 
 assert_output_contains() {
   local label="$1" haystack="$2" needle="$3"
-  if printf '%s' "$haystack" | grep -qiE "$needle"; then
+  if grep -qiE "$needle" <<<"$haystack"; then
     pass "$label"
   else
     fail "$label"
@@ -67,7 +67,7 @@ run_automated_triage_scenario() {
   done
   apply_prompt="$(review_fix_ladder_phase_prompt "fix" 1 8 "composer-2.5" "low")"
   assert_output_contains "launcher APPLY ACCEPT prompt is not a rung fix" "$apply_prompt" "APPLY ACCEPT"
-  if printf '%s' "$apply_prompt" | grep -qiE 'Fix divide\(\) minimally|Reply with FIX_PASS'; then
+  if grep -qiE 'Fix divide\(\) minimally|Reply with FIX_PASS' <<<"$apply_prompt"; then
     fail "APPLY ACCEPT does not instruct the rung to patch"
   else
     pass "APPLY ACCEPT does not instruct the rung to patch"

@@ -345,7 +345,8 @@ run_matching_hooks() {
   local tool_name="$2"
   local payload_json="$3"
   local matched_json spec command stderr_file stdout_file status reason
-  local -a seen_commands=()
+  # seen_commands is declared by run_all_matching_hooks: a command runs once per
+  # event even when several tool-name aliases match it.
 
   matched_json="$(matching_hook_specs "$event_name" "$tool_name")"
   [[ -n "$matched_json" ]] || matched_json='[]'
@@ -355,7 +356,7 @@ run_matching_hooks() {
     [[ -n "$spec" ]] || continue
     command="$(printf '%s' "$spec" | jq -r '.command')"
     [[ -n "$command" ]] || continue
-    if ((${#seen_commands[@]})) && grep -Fqx -- "$command" <<<"${seen_commands[@]}"; then
+    if ((${#seen_commands[@]})) && grep -Fqx -- "$command" <<<"$(printf '%s\n' "${seen_commands[@]}")"; then
       continue
     fi
     seen_commands+=("$command")
@@ -394,6 +395,7 @@ run_all_matching_hooks() {
   local primary_tool_name="$2"
   local payload_json="$3"
   local matcher_tool_name
+  local -a seen_commands=()
 
   while IFS= read -r matcher_tool_name; do
     [[ -n "$matcher_tool_name" ]] || continue

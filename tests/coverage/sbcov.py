@@ -538,7 +538,9 @@ def collect(cov_dir: Path) -> int:
     larger count, since neither kind of run overcounts. A run another process
     traced shortly before at the same or a deeper level (a command substitution,
     or pipeline stages, whose parent statement shares the line) is added to the
-    parent's run for that line.
+    parent's run for that line, and so is a deeper run another process opens
+    for that line while the parent's run is open (a second substitution in the
+    same statement).
 
     Besides first words, each run counts signatures ("\x01" + words joined by
     \x1f) of records whose text parses into plain words, so statements with
@@ -559,7 +561,11 @@ def collect(cov_dir: Path) -> int:
                 per_line[w] = n
 
     def flush_run(run):
-        key, _depth, counts, fn, words = run
+        key, _depth, own, fn, words, children = run
+        counts = dict(own)
+        for child in children:  # substitutions that ran after this run opened
+            for k, n in child.items():
+                counts[k] = counts.get(k, 0) + n
         flush(key, counts)
         fn_counts = {f"{FN_KEY}{fn}\x1f{k}": n for k, n in counts.items()}
         if 0 < len(words) <= 12:
@@ -604,10 +610,13 @@ def collect(cov_dir: Path) -> int:
                         for k, n in other[2].items():
                             counts[k] = counts.get(k, 0) + n
                     else:
+                        if other[0] != pid and other[1] < depth:
+                            other[4][5].append(counts)  # a substitution of that open run
                         kept.append(other)
-                kept.append([pid, depth, counts, index])
+                run = [key, depth, counts, fn_b.decode("utf-8", "replace"), [], []]
+                kept.append([pid, depth, counts, index, run])
                 recent[key] = kept
-                stack.append([key, depth, counts, fn_b.decode("utf-8", "replace"), []])
+                stack.append(run)
             w = _first_word(cmd)
             sig = _trace_sig(cmd)
             bump(stack[-1][2], w, sig)

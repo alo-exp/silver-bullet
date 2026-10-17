@@ -58,7 +58,7 @@ assert_message_real_newlines() {
     FAIL=$((FAIL + 1))
     return
   fi
-  if printf '%s' "$msg" | grep -qF '\n'; then
+  if grep -qF '\n' <<<"$msg"; then
     echo "  FAIL: $name — message contains literal backslash-n"
     FAIL=$((FAIL + 1))
     return

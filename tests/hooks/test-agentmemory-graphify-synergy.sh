@@ -61,7 +61,7 @@ exit 0
 EOF
   cat >"$MOCK_BIN/curl" <<'EOF'
 #!/usr/bin/env bash
-if printf '%s' "$*" | grep -q 'agentmemory/health'; then exit 0; fi
+if grep -q 'agentmemory/health' <<<"$*"; then exit 0; fi
 exit 0
 EOF
   chmod +x "$MOCK_BIN/agentmemory" "$MOCK_BIN/curl"
@@ -140,7 +140,7 @@ out="$(cd "$TMPDIR_TEST" && export SILVER_BULLET_PROJECT_ROOT="$TMPDIR_TEST" HOM
 unwire_test_mcp
 if [[ -z "$out" ]] || ! printf '%s' "$out" | jq -e '.hookSpecificOutput.permissionDecision == "deny"' >/dev/null 2>&1; then
   pass "gate allows edit when Graphify synergy active"
-elif printf '%s' "$out" | grep -q 'USAGE REQUIRED'; then
+elif grep -q 'USAGE REQUIRED' <<<"$out"; then
   # Helper proves synergy contract; gate infra checks validated in test-agentmemory-gate.sh
   pass "gate allows edit when Graphify synergy active (synergy helper + graphify freshness verified)"
 else

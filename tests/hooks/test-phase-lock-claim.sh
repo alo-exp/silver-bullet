@@ -142,18 +142,18 @@ rm -f "$TMPDIR_TEST/claim-stdout"
 set -e
 
 [[ "$rc" == "2" ]] && ok "T5: rc == 2 (PreToolUse block via exit-2)" || nope "T5: rc" "got $rc, expected 2"
-if printf '%s' "$stderr_capture" | grep -q '099 is locked by'; then
+if grep -q '099 is locked by' <<<"$stderr_capture"; then
   ok "T5: stderr contains 'phase 099 is locked by'"
 else
   nope "T5: stderr conflict phrasing" "got: $stderr_capture"
 fi
-printf '%s' "$stderr_capture" | grep -q 'opencode' \
+grep -q 'opencode' <<<"$stderr_capture" \
   && ok "T5: stderr names owner runtime opencode" \
   || nope "T5: opencode" "stderr did not mention opencode"
-printf '%s' "$stderr_capture" | grep -q 'peek' \
+grep -q 'peek' <<<"$stderr_capture" \
   && ok "T5: stderr suggests peek hint" \
   || nope "T5: peek hint" "stderr did not mention peek"
-if printf '%s' "$stdout_capture" | grep -q 'permissionDecision'; then
+if grep -q 'permissionDecision' <<<"$stdout_capture"; then
   nope "T5: no permissionDecision JSON" "stdout contained it"
 else
   ok "T5: stdout does NOT contain permissionDecision (CONTEXT.md locks exit-2 path)"

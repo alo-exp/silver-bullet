@@ -77,7 +77,7 @@ run_hook_worker() {
 
 assert_block() {
   local label="$1" out="$2"
-  if printf '%s' "$out" | grep -q '"decision":"block"'; then
+  if grep -q '"decision":"block"' <<<"$out"; then
     echo "  ok: $label"
     PASS=$((PASS + 1))
   else
@@ -88,7 +88,7 @@ assert_block() {
 
 assert_deny() {
   local label="$1" out="$2"
-  if printf '%s' "$out" | grep -qE '"permissionDecision":"deny"|"decision":"block"'; then
+  if grep -qE '"permissionDecision":"deny"|"decision":"block"' <<<"$out"; then
     echo "  ok: $label"
     PASS=$((PASS + 1))
   else
@@ -99,7 +99,7 @@ assert_deny() {
 
 assert_allow() {
   local label="$1" out="$2"
-  if printf '%s' "$out" | grep -q '"decision":"block"'; then
+  if grep -q '"decision":"block"' <<<"$out"; then
     echo "  FAIL: $label (unexpected block)"
     FAIL=$((FAIL + 1))
   else
@@ -110,7 +110,7 @@ assert_allow() {
 
 assert_permit() {
   local label="$1" out="$2"
-  if printf '%s' "$out" | grep -qE '"decision":"block"|"permissionDecision":"deny"'; then
+  if grep -qE '"decision":"block"|"permissionDecision":"deny"' <<<"$out"; then
     echo "  FAIL: $label (unexpected deny/block)"
     FAIL=$((FAIL + 1))
   else
@@ -123,7 +123,7 @@ echo "--- instruction-ledger-gate ---"
 setup
 prompt=$'- fix header overlap\n- unify card hover\n- remove duplicate callout'
 out=$(run_hook "$LEDGER_HOOK" UserPromptSubmit "$(jq -n --arg p "$prompt" '{hook_event_name:"UserPromptSubmit",prompt:$p}')")
-if printf '%s' "$out" | grep -qiE 'instruction ledger|unresolved'; then
+if grep -qiE 'instruction ledger|unresolved' <<<"$out"; then
   echo "  ok: seeds ledger context for multi-bullet prompt"
   PASS=$((PASS + 1))
 else
@@ -182,7 +182,7 @@ teardown
 echo "--- subagent-start ---"
 setup
 out=$(run_hook "$SUBAGENT_START_HOOK" SubagentStart "$(jq -n '{hook_event_name:"SubagentStart",subagent_type:"generalPurpose",prompt:"invoke sb:execute"}')")
-if printf '%s' "$out" | grep -qiE 'graphify|agentmemory|evidence'; then
+if grep -qiE 'graphify|agentmemory|evidence' <<<"$out"; then
   echo "  ok: subagentStart injects worker tooling banner"
   PASS=$((PASS + 1))
 else
@@ -300,7 +300,7 @@ else
   echo "  FAIL: agentmemory MCP usage not recorded"
   FAIL=$((FAIL + 1))
 fi
-if printf '%s' "$out" | grep -q 'recommended MCP usage recorded'; then
+if grep -q 'recommended MCP usage recorded' <<<"$out"; then
   echo "  ok: emits recorded confirmation message"
   PASS=$((PASS + 1))
 else

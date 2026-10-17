@@ -292,17 +292,17 @@ cat >"$LEDGER_RESUME_FIXTURE" <<'LEDGER'
 | 3 | `silver-feature` | | | Fail | | | | |
 LEDGER
 inc="$(enterprise_e2e_incomplete_rows "$TMP_LOG" "$LEDGER_RESUME_FIXTURE" | tr '\n' ' ' | xargs)"
-if printf '%s\n' "$inc" | grep -qw 1; then
+if grep -qw 1 <<<"$inc"; then
   fail "resume must not include row 1 when ledger Pass"
 else
   pass "resume excludes row 1 when ledger Pass"
 fi
-if printf '%s\n' "$inc" | grep -qw 2; then
+if grep -qw 2 <<<"$inc"; then
   pass "resume includes row 2 when ledger incomplete despite log SKIP"
 else
   fail "resume includes row 2 when ledger incomplete — got [$inc]"
 fi
-if printf '%s\n' "$inc" | grep -qw 3; then
+if grep -qw 3 <<<"$inc"; then
   pass "resume includes ledger Fail row 3"
 else
   fail "resume includes ledger Fail row 3 — got [$inc]"
@@ -468,7 +468,7 @@ else
 fi
 rm -rf "$CONSEC_TMP"
 consec_host_out="$(RTK_DISABLED=1 bash "$CONSEC_CHECK" --host codex 2>&1 || true)"
-if printf '%s\n' "$consec_host_out" | grep -q "${REPO_ROOT}/.planning/enterprise-e2e/ROUND-CODEX-1-GATES.md"; then
+if grep -q "${REPO_ROOT}/.planning/enterprise-e2e/ROUND-CODEX-1-GATES.md" <<<"$consec_host_out"; then
   pass "consecutive rounds --host resolves repo-root gate paths"
 else
   fail "consecutive rounds --host must resolve gates under repo .planning/"

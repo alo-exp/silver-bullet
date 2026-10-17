@@ -58,7 +58,7 @@ else
 fi
 
 json="$(python3 "$PY_VALIDATOR" --root "$WORKDIR" --json)"
-if jq -e '.warnings | length > 0' >/dev/null <<<"$json"; then
+if jq -e '.warnings | length > 0' <<<"$json" >/dev/null; then
   pass "json output includes warnings"
 else
   fail "json output includes warnings"

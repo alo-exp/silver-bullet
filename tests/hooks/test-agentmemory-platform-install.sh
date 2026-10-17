@@ -51,7 +51,7 @@ codex_pre="$(jq -r '.recommended_tools.agentmemory.platform_install_commands.cod
 [[ "$codex_pre" == "codex plugin marketplace add rohitg00/agentmemory" ]] && pass "codex pre_index marketplace" || fail "codex pre_index marketplace"
 
 install_cmds="$(jq -r '.recommended_tools.agentmemory.install_commands[]' "$TEMPLATE")"
-printf '%s' "$install_cmds" | grep -q 'npm install -g @agentmemory/agentmemory' && pass "template npm install" || fail "template npm install"
+grep -q 'npm install -g @agentmemory/agentmemory' <<<"$install_cmds" && pass "template npm install" || fail "template npm install"
 
 write_cfg() { printf '%s' "$1" >"$TMP/.silver-bullet.json"; }
 write_cfg "{\"config_version\":\"0.47.1\"}"
@@ -60,8 +60,8 @@ post="$(SILVER_BULLET_RUNTIME=claude sb_recommended_tool_platform_post_index_com
 [[ "$post" == "agentmemory connect claude-code" ]] && pass "claude post_index fallback" || fail "claude post_index fallback"
 
 codex_cmds="$(SILVER_BULLET_RUNTIME=codex sb_recommended_tool_platform_install_commands "$TMP/.silver-bullet.json" agentmemory)"
-printf '%s' "$codex_cmds" | grep -q 'codex plugin marketplace add rohitg00/agentmemory' && pass "codex pre_index fallback" || fail "codex pre_index fallback"
-printf '%s' "$codex_cmds" | grep -q 'agentmemory connect codex --with-hooks' && pass "codex post_index fallback" || fail "codex post_index fallback"
+grep -q 'codex plugin marketplace add rohitg00/agentmemory' <<<"$codex_cmds" && pass "codex pre_index fallback" || fail "codex pre_index fallback"
+grep -q 'agentmemory connect codex --with-hooks' <<<"$codex_cmds" && pass "codex post_index fallback" || fail "codex post_index fallback"
 
 # shellcheck source=hooks/lib/agentmemory-gate.sh
 source "$REPO_ROOT/hooks/lib/agentmemory-gate.sh"

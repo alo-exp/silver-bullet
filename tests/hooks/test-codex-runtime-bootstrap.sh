@@ -29,7 +29,7 @@ assert_eq() {
 
 assert_not_contains() {
   local label="$1" output="$2" needle="$3"
-  if ! printf '%s' "$output" | grep -Fq "$needle"; then
+  if ! grep -Fq "$needle" <<<"$output"; then
     echo "  PASS: $label"
     PASS=$((PASS + 1))
   else
