@@ -80,7 +80,7 @@ sb_alumnium_edit_path_requires_browser() {
       return 0
       ;;
   esac
-  if printf '%s' "$file_path" | grep -qiE '(screenshot|playwright|cypress|puppeteer|browser-test|visual-regression|\.spec\.(ts|js|tsx|jsx)$)'; then
+  if grep -qiE '(screenshot|playwright|cypress|puppeteer|browser-test|visual-regression|\.spec\.(ts|js|tsx|jsx)$)' <<<"$file_path"; then
     return 0
   fi
   return 1
@@ -89,10 +89,10 @@ sb_alumnium_edit_path_requires_browser() {
 sb_alumnium_command_is_exempt() {
   local cmd="${1:-}"
   [[ -n "$cmd" ]] || return 0
-  if printf '%s' "$cmd" | grep -qiE '(^|[[:space:]/])alumnium([[:space:]]|$)|npx[[:space:]]+-y[[:space:]]+alumnium'; then
+  if grep -qiE '(^|[[:space:]/])alumnium([[:space:]]|$)|npx[[:space:]]+-y[[:space:]]+alumnium' <<<"$cmd"; then
     return 0
   fi
-  if printf '%s' "$cmd" | grep -qE '(^|[[:space:]])(npm|npx|which|command -v|grep|cat|jq|echo|printf|true|false)(\s|$)'; then
+  if grep -qE '(^|[[:space:]])(npm|npx|which|command -v|grep|cat|jq|echo|printf|true|false)(\s|$)' <<<"$cmd"; then
     return 0
   fi
   return 1

@@ -24,7 +24,7 @@ rt_probe_graphify_skill_package_skew() {
   command -v graphify >/dev/null 2>&1 || return 1
   local out
   out="$(graphify --version </dev/null 2>&1 || true)"
-  printf '%s' "$out" | grep -qiE 'skill is from graphify|skill.*package'
+  grep -qiE 'skill is from graphify|skill.*package' <<<"$out"
 }
 
 rt_probe_graphify() {

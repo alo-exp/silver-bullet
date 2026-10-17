@@ -58,7 +58,7 @@ SPEC=".planning/SPEC.md"
 
 # Gate milestone release only — phase-level ship (sb:ship) does not require UAT.md.
 # UAT is generated at milestone completion (sb:feature Step 17) before sb:release.
-if ! printf '%s' "$skill" | grep -qE 'silver-release'; then
+if ! grep -qE 'silver-release' <<<"$skill"; then
   exit 0
 fi
 
@@ -90,10 +90,10 @@ if [[ -f "$SPEC" ]]; then
   spec_version=$(grep -m1 '^spec-version:' "$SPEC" | awk '{print $2}' | tr -d '"' | tr -d "'" || true)
   # Validate against allowlist before interpolating into block message (SEC: content injection guard)
   # Only digits-and-dots (e.g. 1.0, 2.3.1) are accepted; invalid values skip the check safely
-  if ! printf '%s' "${uat_version:-}" | grep -qE '^[0-9]+(\.[0-9]+)*$'; then
+  if ! grep -qE '^[0-9]+(\.[0-9]+)*$' <<<"${uat_version:-}"; then
     uat_version=""
   fi
-  if ! printf '%s' "${spec_version:-}" | grep -qE '^[0-9]+(\.[0-9]+)*$'; then
+  if ! grep -qE '^[0-9]+(\.[0-9]+)*$' <<<"${spec_version:-}"; then
     spec_version=""
   fi
   if [[ -n "$uat_version" && -n "$spec_version" && "$uat_version" != "$spec_version" ]]; then
