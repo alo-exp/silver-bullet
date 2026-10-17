@@ -83,6 +83,27 @@ check_eq "nested: every statement credited" \
 check_eq "nested: the loop body's substitution is one statement" \
   "1" "$(python3 "$SBCOV" analyze "${REPO_ROOT}/${FIX_REL}/nested.sh" | awk -F'\t' '$1 == "15-15" && $3 == "echo"' | wc -l | tr -d ' ')"
 
+# 2d. Process substitutions inside a function are traced at an unrelated line;
+#     they are matched to their substitution by function and words. The
+#     `|| true` of the first one never ran, the second loop body and helper
+#     never ran, and skipped() never ran at all.
+cov="$TMP/procsub"
+trace "$cov" "$TMP" "${REPO_ROOT}/${FIX_REL}/procsub.sh"
+check_eq "procsub: only statements that did not run are missing" \
+  "11:true 13:= 16:: 21:local 22:read 23:: 24:emit 24:true" "$(field "$cov" "$FIX_REL/procsub.sh" "$missing_expr")"
+
+# 2e. bash reports the `|| true` after a multi-line program inside $(...) several
+#     lines late, at another function's `true`; and a pipeline-stage printf and
+#     its fallback printf run in different processes. Both are credited.
+cov="$TMP/skew"
+for args in "build 1" "build not-json" "clear" 'field {"x":1} ev' 'field {"hook_event_name":"PreToolUse"} ev' \
+  'field {"x":1} tn' 'field {"tool_name":"Edit"} tn'; do
+  read -r -a argv <<<"$args"
+  trace "$cov" "$TMP" "${REPO_ROOT}/${FIX_REL}/skew.sh" "${argv[@]}"
+done
+check_eq "skew: every statement credited" \
+  "" "$(field "$cov" "$FIX_REL/skew.sh" "$missing_expr")"
+
 # 3. Relative invocation from the repo root maps back to the source file.
 cov="$TMP/relative"
 trace "$cov" "$REPO_ROOT" "${FIX_REL}/fallback.sh" false
