@@ -26,7 +26,7 @@ A good prompt is not a delivery system. Agents skip planning, spec and PR drift 
 |------------|--------------|
 | Engineering best practices | Spec-to-release traceability, not prompt-only discipline |
 | Dynamically tailored workflows | `/sb` composes the smallest safe chain per task |
-| Verification and validation loops | 85 flow-step V-loops with BLOCK / WARN / INFO evidence |
+| Verification and validation loops | A local V-loop on every catalog flow step, with BLOCK / WARN / INFO evidence |
 | Quality gates | Two-tier delivery discipline — fast in the middle, strict at the edges |
 | Cost optimization | Enforced process + Graphify, agentmemory, RTK, Context Mode for cheaper models |
 | Intent-aligned results | The agent reasons; the environment decides whether unsafe actions proceed |
@@ -43,37 +43,39 @@ The catalog authority is [docs/apo-catalog.json](docs/apo-catalog.json):
 
 | Layer | Count | Role |
 |-------|-------|------|
-| Atomic flows (`AF-*`) | 27 | Composable primitives (ROUTE, SPECIFY, PLAN, EXECUTE, VERIFY, SHIP, …) |
-| Workflows (`WF-*`) | 22 | Task-shaped chains (`sb:feature`, `sb:bugfix`, `sb:devops`, …) |
-| Flow-step V-loops | 85 | Evidence at every step; resumable across context compaction |
+| Atomic flows (`AF-*`) | 29 | Composable primitives (ROUTE, SPECIFY, PLAN, EXECUTE, VERIFY, SHIP, …) |
+| Workflows (`WF-*`) | 26 | 22 public task-shaped chains (`sb:feature`, `sb:bugfix`, `sb:devops`, …) + 4 reusable components (shared gate chains) |
+| Flow steps, each with a local V-loop | 118 | Evidence at every step; resumable across context compaction |
 
-Generated views: [docs/composable-flows-contracts.md](docs/composable-flows-contracts.md), [docs/workflow-composition-matrix.md](docs/workflow-composition-matrix.md).
+The counts are the lengths of `atomic_flows`, `workflows` and `flow_steps` in the catalog; a reusable component is a workflow whose `type` is `reusable_component`. `tests/docs/test-doc-facts.sh` fails when the numbers here drift. Generated views: [docs/composable-flows-contracts.md](docs/composable-flows-contracts.md), [docs/workflow-composition-matrix.md](docs/workflow-composition-matrix.md).
 
 ### Two-Tier Delivery Discipline
 
-- **Planning floor** — source edits and intermediate commits require the selected SB pre-execution chain (default: `sb:quality-gates`, `sb:context`, `sb:plan`).
-- **Final delivery floor** — PR creation, deploy, release, and completion claims require review, security, validation, test freshness, and ship markers.
+- **Planning floor** — source edits, `git commit`, `git push` and ending a task require the selected SB pre-execution chain (`skills.required_planning`; default: `sb:quality-gates`, `sb:context`, `sb:plan`).
+- **Final delivery floor** — `gh pr create`, `gh pr merge`, deploy commands and `gh release create` require the full `skills.required_deploy` list: review, security, validation, test freshness and ship markers.
 
 Small edits stay on `sb:fast`. High-risk work gets the full chain.
 
-### Twelve Hook Layers
+### Twelve Enforcement Layers
 
-Hooks observe real tool usage and state transitions — not decorative instructions:
+Hooks observe real tool usage and state transitions — not decorative instructions. The same twelve layers are described in [docs/ENFORCEMENT.md](docs/ENFORCEMENT.md) and in `silver-bullet.md` §1:
 
 | Layer | Hook or surface | Purpose |
 |-------|-----------------|---------|
-| 1 | `record-skill.sh` | Records completed SB skill invocations |
-| 2 | `record-requested-skill.sh` | Records requested `/sb` routes |
-| 3 | `prompt-reminder.sh` | Re-injects missing steps before each prompt |
-| 4 | `dev-cycle-check.sh` | Blocks source edits before planning floor |
-| 5 | `workflow-chain-guard.sh` | Blocks composed workflows with missing downstream markers |
-| 6 | `dependency-skill-check.sh` | Fails closed when required skills are unavailable |
-| 7 | `planning-file-guard.sh` | Blocks direct edits to SB-owned planning artifacts |
-| 8 | `completion-audit.sh` | Blocks PR/deploy/release when final gates are missing |
-| 9 | `ci-status-check.sh` | Blocks push/PR/release while CI is red; commit stays warning-only |
-| 10 | `stop-check.sh` | Blocks task-complete declarations when gates are missing |
-| 11 | `uat-gate.sh`, `spec-floor-check.sh` | Enforce minimum spec and UAT evidence |
-| 12 | `forbidden-skill-check.sh`, guards | Protect against deprecated paths and bypass abuse |
+| 1 | `record-skill.sh` | Records completed SB skill invocations in the state file |
+| 2 | `dev-cycle-check.sh`, `workflow-chain-guard.sh` | Block source edits until the planning floor (or the composed workflow's pre-execution chain) is recorded |
+| 3 | `compliance-status.sh` | Shows workflow progress after every tool call (informational) |
+| 4 | `planning-file-guard.sh` | Blocks direct edits to SB-owned planning artifacts |
+| 5 | `completion-audit.sh` | Commits and pushes need the planning floor; PR, deploy and release need the full delivery floor |
+| 6 | `ci-status-check.sh` | Blocks push, PR create/merge and release while CI is red; after a commit it only warns |
+| 7 | `session-start`, `session-log-init.sh`, `timeout-check.sh` | Branch-scoped state reset, session logs, autonomous-mode timeout warnings |
+| 8 | `stop-check.sh` (with `outcomes-check.sh` and other Stop gates) | Blocks task-complete declarations while the planning floor or another session gate is open |
+| 9 | `record-requested-skill.sh`, `prompt-reminder.sh` | Record the requested `/sb` route and re-inject missing steps before each prompt |
+| 10 | `forbidden-skill-check.sh` | Blocks forbidden or deprecated skills |
+| 11 | `roadmap-freshness.sh` | Blocks commits that stage a phase summary without ticking its roadmap entry |
+| 12 | `silver-bullet.md`, workflow docs, optional `CLAUDE.md` / `AGENTS.md` | The same rules repeated on every instruction surface |
+
+Further gates sit beside these layers: spec and UAT floors, phase archive and phase locks, orchestrator parent-mode guards, site-session gates, and the opt-in Graphify, agentmemory, RTK, Context Mode, LeanCTX and Alumnium gates. [docs/HOOKS.md](docs/HOOKS.md) lists every registered hook with its event, matcher and timeout.
 
 Capability tiers per host are documented in [docs/RUNTIME-COMPATIBILITY.md](docs/RUNTIME-COMPATIBILITY.md). Run `bash scripts/sb-diagnostics.sh` for a local tier report.
 
@@ -89,19 +91,28 @@ Hook-backed enforcement requires a runtime that supports the relevant hook event
 
 ## Install
 
-Install `jq` first:
+Requirements on the machine that runs your coding agent:
+
+| Tool | Why |
+|------|-----|
+| A supported host | Claude Code, Codex or Cursor (see Runtime Support) |
+| `bash` | Hooks are Bash scripts; they avoid Bash 4-only features, so the macOS system bash works |
+| `jq` | Every hook reads JSON with `jq`. Without it most hooks only warn, but the core gates block (see [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)) |
+| `git` | Branch-scoped state, commit gates, CI lookups |
+| `python3` | Several hooks parse tool payloads with small Python helpers; diagnostics use it too |
+| `gh` (optional) | The CI gate and the release gate query GitHub Actions; without `gh` the CI check is skipped and `gh release create` stays blocked |
 
 ```bash
-brew install jq
-# or
-sudo apt install jq
+brew install jq python gh            # macOS (bash and git ship with the OS / Xcode tools)
+sudo apt install jq git python3 gh   # Debian/Ubuntu
 ```
 
-Onboarding probe and capability report:
+Onboarding probe and capability report (run from a Silver Bullet checkout or the installed plugin root):
 
 ```bash
 bash scripts/sb-bootstrap.sh
-bash scripts/sb-diagnostics.sh          # claude | codex | cursor
+bash scripts/sb-diagnostics.sh                               # runtime auto-detected
+SILVER_BULLET_RUNTIME=codex bash scripts/sb-diagnostics.sh   # or force claude | codex | cursor
 ```
 
 ### Claude Code
@@ -158,7 +169,7 @@ Then start normal work:
 
 ## Built-In Skills And Routes
 
-Silver Bullet ships **85 canonical skills** under `skills/`. The plugin exposes **36 command stubs** in `plugins/silver-bullet/commands/` for top marketplace routes. Remaining skills are Skill-tool-only — invoke through the host picker or, on Codex, `silver-bullet invoke-skill <name>`.
+Silver Bullet ships **98 skills** under `skills/` (one `skills/<name>/SKILL.md` each). The plugin exposes **18 command stubs** in `plugins/silver-bullet/commands/` for the top routes (generated by `scripts/generate-plugin-commands.sh`). The other skills are Skill-tool-only — invoke them through the host picker or, on Codex, `silver-bullet invoke-skill <name>`. `tests/docs/test-doc-facts.sh` keeps both counts in sync with the tree.
 
 | Route or skill | Purpose |
 |----------------|---------|
@@ -208,62 +219,65 @@ Operator runbook: [docs/ENTERPRISE-E2E-LIVE-TEST.md](docs/ENTERPRISE-E2E-LIVE-TE
 
 ## Configuration
 
-Project config lives in `.silver-bullet.json`. Default source of truth: [templates/silver-bullet.config.json.default](templates/silver-bullet.config.json.default).
+Project config lives in `.silver-bullet.json`, scaffolded by `/sb:init` from [templates/silver-bullet.config.json.default](templates/silver-bullet.config.json.default). The fields you most often change are `project.src_pattern` (which files count as source), `project.active_workflow` (`full-dev-cycle` or `devops-cycle`), `skills.required_planning` and `skills.required_deploy` (the two enforcement floors), `verify_commands` (what `verify-tests` runs) and the `recommended_tools.*.enabled_by_user` opt-ins.
 
-Important fields:
-
-| Field | Meaning |
-|-------|---------|
-| `project.src_pattern` | Regex for files that trigger enforcement |
-| `project.active_workflow` | `full-dev-cycle` or `devops-cycle` |
-| `skills.required_planning` | Planning floor before implementation |
-| `skills.required_deploy` | Final delivery floor for PR/deploy/release |
-
-Downstream projects normally use the generic release profile. This repository requires plugin-runtime live matrices and the 4-stage pre-release gate because Silver Bullet itself is a multi-host plugin.
+[docs/CONFIGURATION.md](docs/CONFIGURATION.md) describes every key, which code reads it, and the keys the code reads that the template omits.
 
 ## Documentation
+
+Start at [docs/README.md](docs/README.md), the index of the docs tree. The most used pages:
 
 | Doc | Purpose |
 |-----|---------|
 | [docs/PRD-Overview.md](docs/PRD-Overview.md) | Product overview |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System architecture |
-| [docs/ENFORCEMENT.md](docs/ENFORCEMENT.md) | Enforcement details |
+| [docs/ENFORCEMENT.md](docs/ENFORCEMENT.md) | Enforcement layers and the two-tier model |
+| [docs/HOOKS.md](docs/HOOKS.md) | Every registered hook (generated from `hooks/hooks.json`) |
+| [docs/CONFIGURATION.md](docs/CONFIGURATION.md) | `.silver-bullet.json` reference |
+| [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Common problems and fixes |
 | [docs/RUNTIME-COMPATIBILITY.md](docs/RUNTIME-COMPATIBILITY.md) | Per-host capability tiers |
 | [docs/composable-flows-contracts.md](docs/composable-flows-contracts.md) | Canonical flow contracts |
+| [docs/TESTING.md](docs/TESTING.md) | Test layout, running tests, coverage |
+| [docs/RELEASE.md](docs/RELEASE.md) | Release process |
+| [docs/CICD.md](docs/CICD.md) | GitHub Actions workflows |
 | [docs/ENTERPRISE-E2E-LIVE-TEST.md](docs/ENTERPRISE-E2E-LIVE-TEST.md) | Enterprise live-test runbook |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Development setup and pull requests |
 
 ## Testing
 
 ```bash
-bash scripts/verify-tests.sh
+bash tests/run-all-tests.sh            # every default suite (the local equivalent of CI)
+bash tests/run-all-tests.sh --jobs 4   # in parallel
+bash tests/run-all-tests.sh --list     # list the test files without running them
+bash scripts/verify-tests.sh           # what the verify-tests gate runs, plus its freshness marker
 ```
 
-Live runtime tests:
+Live runtime tests use real host CLIs and model credentials and are not part of the default suite:
 
 ```bash
 bash tests/live/run-live-tests.sh
 bash tests/e2e-live/run-e2e-live-tests.sh
+SB_LIVE_RUNTIMES=codex bash tests/live/run-live-tests.sh   # pick the runtime (default: claude)
 ```
 
-Limit to one runtime:
-
-```bash
-SB_LIVE_RUNTIMES=codex bash tests/live/run-live-tests.sh
-```
+See [docs/TESTING.md](docs/TESTING.md) for suites, isolation, coverage and live tests.
 
 ## Repository Layout
 
 ```text
-skills/                           Source SB skills
-hooks/                            Runtime enforcement hooks
-scripts/                          Installers, workflow helpers, verification tools
-templates/                        Project config and docs templates
+skills/                           Source SB skills (one SKILL.md each)
+hooks/                            Runtime enforcement hooks (hooks.json, hooks/lib/)
+scripts/                          Installers, workflow helpers, generators, validators
+templates/                        Files /sb:init stamps into projects
 docs/                             Product, architecture, enforcement, testing docs
 site/                             Public website (sb.alolabs.dev)
+tests/                            Unit, integration, harness, docs, live and E2E suites
+agents/, host-bundles/            Generated per-host skill bundles (do not edit)
 plugins/silver-bullet/            Codex/Cursor package surface (mostly symlinks)
-tests/                            Unit, integration, live, and E2E harnesses
-.claude-plugin/                   Claude plugin marketplace metadata
+.claude-plugin/, .cursor-plugin/  Plugin and marketplace manifests
 ```
+
+[CONTRIBUTING.md](CONTRIBUTING.md#repository-layout) describes every top-level directory.
 
 ## Troubleshooting
 
@@ -271,11 +285,12 @@ tests/                            Unit, integration, live, and E2E harnesses
 |---------|-----|
 | `jq not found` | Install `jq` with Homebrew or apt |
 | `/sb` not available | Install the plugin and restart the session |
-| Hooks not firing | Confirm `.silver-bullet.json` and `silver-bullet.md` exist in project root |
-| CI is red and you need to push a fix | Commit normally; for push use `touch ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/ci-red-override` only when fixing CI |
+| Hooks not firing | Run `/sb:init`: hooks stay inert until both `.silver-bullet.json` and `silver-bullet.md` exist in the project root |
+| CI is red and you need to push a fix | Start the commit message with `fix(ci):` or `ci:` (or include `[ci-fix]`), or push changes under `.github/workflows/`, `tests/` or `package.json`; as a last resort `touch ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/ci-red-override` |
+| An orchestrator directive blocks and cannot be satisfied | Reply with `SB OVERRIDE: <reason>`; the override is logged to `.planning/orchestrator-override-log.jsonl` |
 | Want to refresh templates | Re-run `/sb:init` |
 
-Run `bash scripts/sb-diagnostics.sh` for host-specific install and hook wiring checks.
+Run `bash scripts/sb-doctor.sh` for an install and activation audit and `bash scripts/sb-diagnostics.sh` for the capability tier. [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) covers more cases, including the hook payload debug dump.
 
 ## Current Release
 
