@@ -159,7 +159,7 @@ EOF
 
 should_run_row() {
   local row_num="$1"
-  shift || true
+  shift
   if [[ "$#" -eq 0 ]]; then
     return 0
   fi
@@ -343,7 +343,6 @@ verify_row_internal() {
   case "$row_num" in
     21) marker='post-exec-gates'; parent_row=3 ;;
     22) marker='validate-substep'; parent_row=4 ;;
-    *) return 1 ;;
   esac
   enterprise_e2e_matrix_seed_internal_gate_markers "$parent_row"
   if find "${WORK_DIR}/.planning/workflows" -name '*.md' -exec grep -l "$marker" {} + 2>/dev/null | grep -q .; then
@@ -596,10 +595,6 @@ run_matrix_row() {
         if [[ "$row_num" == "3" || "$row_num" == "4" ]]; then
           enterprise_e2e_matrix_seed_internal_gate_markers "$row_num"
         fi
-      elif [[ "$row_num" == "1" ]] && verify_row_routing_state_delta; then
-        echo "  PASS: routing skill recorded in $(claude_routing_state_file) (row 1 routing-only criterion)"
-      elif [[ "$row_num" == "1" ]] && verify_row_routing_output "$output"; then
-        echo "  PASS: routing markers in session output (row 1 routing-only criterion)"
       fi
       if [[ "$row_num" == "1" ]]; then
         sb_e2e_matrix_clear_routing_row_marker
@@ -804,7 +799,6 @@ main() {
     _row_order+=("$_rn")
   done < <(matrix_row_execution_order "${requested[@]+"${requested[@]}"}")
   for row_num in "${_row_order[@]}"; do
-    [[ -z "$row_num" ]] && continue
     local slug="" route="" prompt_card="" evidence_path="" row="" rn=""
     for row in "${MATRIX_ROWS[@]}"; do
       IFS='|' read -r rn slug route prompt_card evidence_path <<<"$row"
