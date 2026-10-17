@@ -49,6 +49,19 @@ JSON
 JSON
   printf '{"recommended_tools":{"graphify":{"query_budget":2000},"agentmemory":{"export_root":".agentmemory"}}}' >"$SBREPO/.silver-bullet.json"
 }
+break_state() {
+cat >"$CUR/toolstack.json" <<'JSON'
+{"enforcement":"off","sb_parity":false,"profile":"other",
+ "shell_compression":{"primary":"x","fallback":"y"},
+ "routes":{"sb_wire":"a","sb_read":"a","sb_grep":"a","sb_shell":"a","sb_slice":"a","sb_webfetch":"a","sb_graph":"a","sb_remember":"a","sb_pathjail":"a","sb_injection":"a"},
+ "tools":{"leanctx_standalone":{},"graphify":{"graph_path":"g.json","query_ttl_seconds":1,"query_budget":3},"agentmemory":{"export_root":"mem","usage_ttl_seconds":2}}}
+JSON
+rm -f "$TSD"/*.sh "$TSD/lib/common.sh" "$CUR/rules/"*.mdc
+printf '{"mcpServers":{"lean-ctx-standalone":{}}}' >"$CUR/mcp.json"
+cat >"$CUR/hooks.json" <<'JSON'
+{"hooks":[{"command":"~/.cursor/hooks/toolstack/shell-compression.sh"},{"command":"lean-ctx hook rewrite"}]}
+JSON
+}
 run_pv() { TOOLSTACK_REPO_ROOT="$SBREPO" tl_run bash "$SCRIPT"; }
 
 for c in graphify agentmemory context-mode lean-ctx rtk; do tl_stub "$c" 'exit 0'; done
@@ -69,17 +82,7 @@ assert_contains "mcp wired" "$TL_OUT" "[x] mcp:leanctx: wired"
 
 # --- everything wrong ---
 good_state
-cat >"$CUR/toolstack.json" <<'JSON'
-{"enforcement":"off","sb_parity":false,"profile":"other",
- "shell_compression":{"primary":"x","fallback":"y"},
- "routes":{"sb_wire":"a","sb_read":"a","sb_grep":"a","sb_shell":"a","sb_slice":"a","sb_webfetch":"a","sb_graph":"a","sb_remember":"a","sb_pathjail":"a","sb_injection":"a"},
- "tools":{"leanctx_standalone":{},"graphify":{"graph_path":"g.json","query_ttl_seconds":1,"query_budget":3},"agentmemory":{"export_root":"mem","usage_ttl_seconds":2}}}
-JSON
-rm -f "$TSD"/*.sh "$TSD/lib/common.sh" "$CUR/rules/"*.mdc
-printf '{"mcpServers":{"lean-ctx-standalone":{}}}' >"$CUR/mcp.json"
-cat >"$CUR/hooks.json" <<'JSON'
-{"hooks":[{"command":"~/.cursor/hooks/toolstack/shell-compression.sh"},{"command":"lean-ctx hook rewrite"}]}
-JSON
+break_state
 rm -f "$TL_BIN/graphify" "$TL_BIN/agentmemory" "$TL_BIN/context-mode" "$TL_BIN/lean-ctx" "$TL_BIN/rtk"
 run_pv
 assert_eq "broken exits 1" 1 "$TL_STATUS"
@@ -132,5 +135,19 @@ mkdir -p "$CUR/worktrees/repo/r41j"
 printf '{"recommended_tools":{"graphify":{"query_budget":2000},"agentmemory":{"export_root":".agentmemory"}}}' >"$CUR/worktrees/repo/r41j/.silver-bullet.json"
 tl_run bash "$SCRIPT"
 assert_contains "default SB root is ~/.cursor/worktrees/repo/r41j" "$TL_OUT" "[x] parity:query_budget: 2000"
+
+# --- one process scoring a healthy and then a broken stack (both outcomes of every check) ---
+export CUR TSD SBREPO
+export -f break_state
+good_state
+for c in graphify agentmemory context-mode lean-ctx rtk; do tl_stub "$c" 'exit 0'; done
+TOOLSTACK_REPO_ROOT="$SBREPO" tl_run bash -c 'source "$1" || true; echo "=== second pass ==="; break_state; source "$1" || true' _ "$SCRIPT"
+first="${TL_OUT%%=== second pass ===*}"
+second="${TL_OUT##*=== second pass ===}"
+assert_contains "double run: first pass healthy" "$first" "0 failed, 0 warnings"
+assert_contains "double run: first pass parity ok" "$first" "[x] parity:export_root: .agentmemory"
+assert_contains "double run: second pass broken budget parity" "$second" "[ ] parity:query_budget: sb=2000 ts=3"
+assert_contains "double run: second pass broken export parity" "$second" "[ ] parity:export_root: sb=.agentmemory"
+assert_not_contains "double run: second pass not healthy" "$second" "0 failed"
 
 tl_results
