@@ -27,7 +27,7 @@ Security review is part of the canonical final-delivery chain. A historical audi
 
 ## Audit Coverage
 
-The repository preserves consolidated historical audits in [`docs/audits/`](audits/) and targeted current-surface audits in [`docs/audits/sentinel-skills/`](audits/sentinel-skills/). The root [`SENTINEL-audit-silver-bullet-v0.15.1.md`](../SENTINEL-audit-silver-bullet-v0.15.1.md) is the latest consolidated release-wide report currently preserved; later coverage is intentionally described as targeted rather than misrepresented as a full-tree audit.
+The repository preserves consolidated historical audits in [`docs/audits/`](audits/) and targeted current-surface audits in [`docs/audits/sentinel-skills/`](audits/sentinel-skills/). [`docs/audits/SENTINEL-audit-silver-bullet-v0.15.1.md`](audits/SENTINEL-audit-silver-bullet-v0.15.1.md) is the latest consolidated release-wide report currently preserved; later coverage is intentionally described as targeted rather than misrepresented as a full-tree audit.
 
 Targeted reports currently cover high-risk orchestration and release surfaces including agent delegation, release creation, diagnostics, multi-AI execution, review escalation, and triage. See [`docs/audits/sentinel-skills/MANIFEST.md`](audits/sentinel-skills/MANIFEST.md) for the inventory.
 
