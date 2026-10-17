@@ -80,7 +80,7 @@ emit_block() {
 sb_subagent_state_has_completion_audit() {
   local state_contents=""
   [[ -f "$state_file" && ! -L "$state_file" ]] && state_contents="$(cat "$state_file" 2>/dev/null || true)"
-  grep -Fqx 'silver-completion-audit' 2>/dev/null <<<"$state_contents"
+  grep -Fqx 'silver-completion-audit' <<<"$state_contents" 2>/dev/null
 }
 
 sb_subagent_block_pending_audit() {
