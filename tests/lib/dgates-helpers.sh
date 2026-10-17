@@ -70,7 +70,7 @@ dg_run_gate_missing() {
 dg_stub_real() {
   local name="$1" match="$2" real
   real="$(command -v "$name")"
-  tl_stub "$name" "if [[ \"\$*\" == *${match}* ]]; then exit 1; fi; exec ${real} \"\$@\""
+  tl_stub "$name" "if [[ \"\$*\" == *'${match}'* ]]; then exit 1; fi; exec ${real} \"\$@\""
 }
 
 # dg_run_nolib_in DIR HOOK JSON [VAR=VALUE...]: like dg_run_nolib but with cwd=DIR.
@@ -96,4 +96,17 @@ dg_run_with_fn() {
     >"$TL_TMP/.out" 2>"$TL_TMP/.err" || TL_STATUS=$?
   TL_OUT="$(cat "$TL_TMP/.out")"
   TL_ERR="$(cat "$TL_TMP/.err")"
+}
+
+# dg_stage_hooks DEST [LIB_FILE...]: copy hooks/ (hooks and hooks/lib) to DEST/hooks without the
+# named hooks/lib files, so a hook can be run with some of its libraries missing. The copy is
+# attributed to the originals by coverage (path-suffix match).
+dg_stage_hooks() {
+  local dest="$1" f
+  shift
+  rm -rf "$dest"
+  mkdir -p "$dest"
+  cp -r "$TL_REPO_ROOT/hooks" "$dest/hooks"
+  for f in "$@"; do rm -f "$dest/hooks/lib/$f"; done
+  return 0
 }
