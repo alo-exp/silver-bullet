@@ -371,7 +371,7 @@ main() {
     local command_filename_colon_count marketplace_version marketplace_sha
     expected_version="$(jq -r '.version // empty' "${REPO_ROOT}/package.json" 2>/dev/null || true)"
     if [[ -L "$cache_current" ]]; then
-      resolved_current="$(cd "$cache_current" && pwd -P 2>/dev/null || true)"
+      resolved_current="$(cd "$cache_current" && pwd -P 2>/dev/null)" || true
       if [[ -f "${resolved_current}/commands/sb.md" ]] && \
          [[ "$(python3 - "${resolved_current}/commands/sb.md" <<'PY'
 import re, sys

@@ -243,6 +243,7 @@ parse_skill_pre_exec() {
       print block
       exit
     }' "$skill_file")"
+    # shellcheck disable=SC2016  # backticks are literal regex characters
     while IFS= read -r t; do
       [[ -z "$t" ]] && continue
       case "$t" in
@@ -259,6 +260,7 @@ parse_skill_pre_exec() {
     done < <(printf '%s' "$line" | grep -oE '`[^`]+`' | tr -d '`')
   elif grep -q '^## Enforcement queue' "$skill_file"; then
     line="$(awk '/^## Enforcement queue/{found=1;next} found && /^## /{exit} found && /`[^`]+`/{print; exit}' "$skill_file")"
+    # shellcheck disable=SC2016  # backticks are literal regex characters
     while IFS= read -r t; do
       [[ -z "$t" ]] && continue
       [[ "$t" == *conditional* ]] && continue

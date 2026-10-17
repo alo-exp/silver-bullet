@@ -195,7 +195,7 @@ write_cfg true true
 touch "${TMPDIR_TEST}/graphify-out/graph.json"
 input=$(jq -n --arg f "$TMPFILE" \
   '{hook_event_name:"PreToolUse", tool_name:"Edit", tool_input:{file_path:$f, old_string:"a", new_string:"b"}}')
-out="$(cd "$TMPDIR_TEST" && export PATH="/usr/bin:/bin" HOME="$(mktemp -d)" && printf '%s' "$input" | bash "$GATE_HOOK" 2>/dev/null)"
+out="$(cd "$TMPDIR_TEST" && export PATH="/usr/bin:/bin" && HOME="$(mktemp -d)" && export HOME && printf '%s' "$input" | bash "$GATE_HOOK" 2>/dev/null)"
 assert_deny "CLI missing blocks when opted in" "$out"
 assert_contains "CLI missing message" "$out" "GRAPHIFY REQUIRED"
 

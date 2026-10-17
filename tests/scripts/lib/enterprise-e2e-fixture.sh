@@ -21,6 +21,7 @@ enterprise_e2e_test_fixture_init() {
   else
     local tmp="${TMPDIR:-/tmp}"
     FIXTURE="$(mktemp -d "${tmp}/sb-enterprise-fixture.XXXXXX")"
+    # shellcheck disable=SC2034  # read by the sourcing test's cleanup
     enterprise_e2e_test_fixture_temp="$FIXTURE"
   fi
   export FIXTURE SB_TEST_ENTERPRISE_APP_ROOT="$FIXTURE"

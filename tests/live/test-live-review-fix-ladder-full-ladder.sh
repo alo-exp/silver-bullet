@@ -18,7 +18,6 @@ PASS=0
 FAIL=0
 SKIP=0
 LADDER_RESULTS=()
-LADDER_STARTED_AT=""
 LADDER_HOST=""
 
 # shellcheck source=tests/live/lib/review-fix-ladder-common.sh
@@ -103,6 +102,7 @@ assert_silver_bullet_shim_ready() {
 
 setup_runtime_isolation() {
   local runtime="$1"
+  # shellcheck disable=SC2034  # SILVER_BULLET_RUNTIME is read by the sourced live helpers
   case "$runtime" in
     codex)
       SILVER_BULLET_RUNTIME="codex"
@@ -167,13 +167,12 @@ evaluate_rung_passes() {
 
 run_full_ladder_for_host() {
   local runtime="$1"
-  local host ladder_json rung_count start_rung max_rung rung_index
+  local ladder_json rung_count start_rung max_rung rung_index
   local model reasoning prompt response cleaned slug
   local rung_status row
 
   LADDER_HOST="$(review_fix_ladder_resolve_host "$runtime")" || return 1
   LADDER_RESULTS=()
-  LADDER_STARTED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
   export SB_LIVE_AGENT="$runtime"
   export SB_LIVE_RUNTIME="$runtime"

@@ -266,8 +266,9 @@ cmd_start() {
 
   if [[ "$use_tmux" -eq 1 ]]; then
     command -v tmux >/dev/null 2>&1 || { echo "ERROR: tmux required for --tmux" >&2; exit 1; }
-    local session="agent-claude-auto-$(printf '%s' "$row_id" | tr '[:upper:]' '[:lower:]')"
-    local invoke_cmd="bash $(printf '%q' "$INVOKE")"
+    local session invoke_cmd
+    session="agent-claude-auto-$(printf '%s' "$row_id" | tr '[:upper:]' '[:lower:]')"
+    invoke_cmd="bash $(printf '%q' "$INVOKE")"
     local arg
     for arg in "${invoke_args[@]}"; do
       invoke_cmd+=" $(printf '%q' "$arg")"

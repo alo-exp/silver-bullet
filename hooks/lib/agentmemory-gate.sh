@@ -189,7 +189,7 @@ sb_agentmemory_usage_state_path() {
     state_path="${SB_RUNTIME_STATE_DIR:-${HOME}/.silver-bullet}/agentmemory-usage"
   fi
   # Reject unresolved ${...} leftovers — never mkdir a literal placeholder path.
-  if [[ "$state_path" == *'${'* ]]; then
+  if [[ "$state_path" == *"\${"* ]]; then
     state_path="${SB_RUNTIME_STATE_DIR:-${HOME}/.silver-bullet}/agentmemory-usage"
   fi
   if declare -f sb_runtime_path_is_state_scoped >/dev/null 2>&1; then

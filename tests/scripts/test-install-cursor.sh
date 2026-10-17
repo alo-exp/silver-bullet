@@ -222,7 +222,6 @@ repo_sha="$(git -C "$REPO_ROOT" rev-parse HEAD)"
 market_cache_link="${CURSOR_HOME}/plugins/cache/alo-labs-cursor/silver-bullet/${repo_sha}"
 backend_cache_link="${CURSOR_HOME}/plugins/cache/alo-labs-agent-plugins/silver-bullet/${repo_sha}"
 market_cache_target="$(cd "$market_cache_link" 2>/dev/null && pwd -P || true)"
-backend_cache_target="$(cd "$backend_cache_link" 2>/dev/null && pwd -P || true)"
 if [[ -L "$market_cache_link" ]] && [[ "$market_cache_target" == "$resolved_current" ]]; then
   pass "install-cursor seeds alo-labs-cursor marketplace cache symlink"
 else

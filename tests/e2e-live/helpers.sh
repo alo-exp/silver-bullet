@@ -534,6 +534,7 @@ setup_workspace() {
 
   case "$E2E_RUNTIME" in
     claude)
+      # shellcheck disable=SC2034  # read by the sourced tests/live/agents/claude/agent.sh
       CLAUDE_PROMPT_COUNT=0
       bootstrap_claude_dependencies
       ;;
