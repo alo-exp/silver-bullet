@@ -157,7 +157,8 @@ SUBAGENT_HOOK="${REPO_ROOT}/hooks/subagent-stop-enforcement.sh"
 if [[ -x "$SUBAGENT_HOOK" && -f "${REPO_ROOT}/hooks/lib/e2e-matrix-routing.sh" ]]; then
   # shellcheck source=hooks/lib/e2e-matrix-routing.sh
   source "${REPO_ROOT}/hooks/lib/e2e-matrix-routing.sh"
-  export SB_RUNTIME_STATE_DIR="$(matrix_routing_state_root "$STATE_DIR/home")"
+  SB_RUNTIME_STATE_DIR="$(matrix_routing_state_root "$STATE_DIR/home")"
+  export SB_RUNTIME_STATE_DIR
   sb_e2e_matrix_set_routing_row_marker
   sub_out="$(printf '%s' '{"hook_event_name":"Stop"}' | HOME="$HOME" SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="$SB_RUNTIME_STATE_DIR" bash "$SUBAGENT_HOOK" 2>/dev/null || true)"
   if ! printf '%s' "$sub_out" | grep -qE '"decision"\s*:\s*"block"'; then

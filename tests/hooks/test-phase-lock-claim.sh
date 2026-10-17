@@ -135,10 +135,10 @@ bash "$TMPDIR_TEST/.planning/scripts/phase-lock.sh" claim 099 opencode "simulate
 
 json=$(printf '{"hook_event_name":"PreToolUse","tool_name":"Edit","tool_input":{"file_path":".planning/phases/099-test/y.md"},"session_id":"test2-%s"}' "$TEST_RUN_ID")
 set +e
-stderr_capture=$(printf '%s' "$json" | bash "$HOOK" 2> >(cat) 1>/tmp/claim-stdout.$$)
+stderr_capture=$(printf '%s' "$json" | bash "$HOOK" 2> >(cat) 1>"$TMPDIR_TEST/claim-stdout")
 rc=$?
-stdout_capture=$(cat /tmp/claim-stdout.$$ 2>/dev/null)
-rm -f /tmp/claim-stdout.$$
+stdout_capture=$(cat "$TMPDIR_TEST/claim-stdout" 2>/dev/null)
+rm -f "$TMPDIR_TEST/claim-stdout"
 set -e
 
 [[ "$rc" == "2" ]] && ok "T5: rc == 2 (PreToolUse block via exit-2)" || nope "T5: rc" "got $rc, expected 2"

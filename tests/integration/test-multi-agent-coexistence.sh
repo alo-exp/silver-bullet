@@ -31,7 +31,7 @@ trap cleanup_all EXIT
 
 setup() {
   TMPDIR_TEST=$(mktemp -d)
-  cd "$TMPDIR_TEST"
+  cd "$TMPDIR_TEST" || exit 1
   git init -q
   git config user.email t@t
   git config user.name t
@@ -168,7 +168,7 @@ runtime=$(jq -r '."099".agent_runtime' "$SB_PHASE_LOCK_FILE")
 
 # Parent peeks normally (peek is the one op SB_PHASE_LOCK_INHERITED does NOT
 # short-circuit — confirms the contract from Phase 70)
-SB_PHASE_LOCK_INHERITED=true peek_json=$($helper peek 099 2>/dev/null)
+peek_json=$(SB_PHASE_LOCK_INHERITED=true $helper peek 099 2>/dev/null)
 runtime_peek=$(printf '%s' "$peek_json" | jq -r '.agent_runtime')
 [[ "$runtime_peek" == "claude" ]] && ok "TEST-03.6: peek works even under SB_PHASE_LOCK_INHERITED=true" \
   || nope "TEST-03.6: peek under inheritance" "got '$runtime_peek'"

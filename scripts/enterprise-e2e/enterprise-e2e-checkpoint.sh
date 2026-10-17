@@ -52,7 +52,7 @@ fi
 
 ledger="$(enterprise_e2e_ledger_file_path)"
 reconcile_status="$(enterprise_e2e_ledger_reconcile_status 2>/dev/null || echo UNKNOWN)"
-read -r pass_count total_count _ < <(enterprise_e2e_ledger_pass_summary "$ledger" 2>/dev/null || echo "0 0")
+read -r pass_count _ _ < <(enterprise_e2e_ledger_pass_summary "$ledger" 2>/dev/null || echo "0 0")
 
 fixture_dir="$(enterprise_e2e_fixture_dir)"
 have_branch="$(git -C "$fixture_dir" branch --show-current 2>/dev/null || echo detached)"

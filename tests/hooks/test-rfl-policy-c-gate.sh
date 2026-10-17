@@ -35,7 +35,7 @@ RUN="$WORKDIR/.planning/rfl-live"
 RUNG="$RUN/rung-01-cursor-glm-5.2-high"
 
 run_hook() {
-  local event="$1" tool="$2" json="$3"
+  local json="$3" # $1 (event) and $2 (tool) label the call site only
   (cd "$WORKDIR" && printf '%s' "$json" | env SB_RFL_POLICY_C_GATE=1 SILVER_BULLET_RUNTIME=cursor bash "$HOOK" 2>/dev/null)
 }
 

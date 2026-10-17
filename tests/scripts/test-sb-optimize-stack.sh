@@ -17,7 +17,7 @@ trap 'rm -rf "$TMP"' EXIT
 
 echo "=== sb-optimize-stack tests ==="
 
-[[ -x "$SCRIPT" ]] && pass "script executable" || { chmod +x "$SCRIPT"; pass "script made executable"; }
+[[ -x "$SCRIPT" ]] && pass "script executable" || fail "script executable (tracked mode must be 755)"
 
 # shellcheck source=../../hooks/lib/stack-optimizer.sh
 source "$LIB"

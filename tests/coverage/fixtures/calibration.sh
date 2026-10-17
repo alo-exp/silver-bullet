@@ -61,6 +61,7 @@ out=$(jq -n '
 : "$out"
 printf '%s\n' \
   "$(printf cont-sub)" >/dev/null
+# shellcheck disable=SC2066  # a single quoted item on a continuation line is the construct under test
 for item in \
   "$(printf for-sub)"; do
   : "$item"

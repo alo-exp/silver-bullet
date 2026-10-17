@@ -148,7 +148,7 @@ write_default_config
 printf 'silver-quality-gates\n' >> "$TMPSTATE"
 
 mkdir -p "$TMPDIR_TEST/.planning"
-real_wf_dir="/tmp/sb-test-real-workflows-$$"
+real_wf_dir="${TMPDIR:-/tmp}/sb-test-real-workflows-$$"
 mkdir -p "$real_wf_dir"
 touch "$real_wf_dir/20260428T015523Z-K4F7QA-silver-feature.md"
 ln -s "$real_wf_dir" "$TMPDIR_TEST/.planning/workflows"

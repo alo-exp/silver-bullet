@@ -23,7 +23,7 @@ case "$tool_name" in
   Bash|Shell|shell|exec_command) ;;
   CallMcpTool|MCP) ;;
   # Claude/Cursor may surface MCP tools as mcp__<server>__<tool>
-  mcp__*agentmemory*|mcp__agentmemory__*) ;;
+  mcp__*agentmemory*) ;;
   memory_smart_search|memory_recall|memory_search|memory_save|smart_search) ;;
   *) exit 0 ;;
 esac
@@ -65,7 +65,7 @@ case "$tool_name" in
     fi
     exit 0
     ;;
-  mcp__*agentmemory*|mcp__agentmemory__*|memory_smart_search|memory_recall|memory_search|memory_save|smart_search)
+  mcp__*agentmemory*|memory_smart_search|memory_recall|memory_search|memory_save|smart_search)
     if sb_agentmemory_record_usage "$config_file"; then
       printf '{"hookSpecificOutput":{"message":"✅ agentmemory usage recorded"}}'
     fi

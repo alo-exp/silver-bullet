@@ -96,7 +96,7 @@ inline='[{"id":"X-F01","severity":"LOW","decision":"ACCEPT","resolved":"no","sha
 inline_out="$(python3 "$RESOLVER" --issue-ledger --table-json "$inline")"
 grep -q '| X-F01 | LOW | ACCEPT | no | ddd | inline only |' <<<"$inline_out" && pass "ledger accepts inline table-json" || fail "ledger accepts inline table-json"
 
-if python3 "$RESOLVER" --issue-ledger >/tmp/rfl-issue-ledger-err.txt 2>&1; then
+if python3 "$RESOLVER" --issue-ledger >/dev/null 2>&1; then
   fail "issue-ledger without run-dir/json exits non-zero"
 else
   pass "issue-ledger without run-dir/json exits non-zero"

@@ -590,6 +590,23 @@ def fetch_and_cache_catalog(
     catalog = build_catalog(docs_pricing, agent_entries)
     catalog["agent_cli"] = cli or catalog.get("agent_cli")
 
+    # Offline with no agent CLI, the refresh finds no models at all. Keep a
+    # cached catalog that has models instead of overwriting it with an empty one.
+    if not catalog.get("models"):
+        for cached_path in (global_cache, project_cache):
+            if cached_path is None:
+                continue
+            try:
+                cached = load_json(cached_path)
+            except (OSError, ValueError):
+                continue
+            if cached.get("models"):
+                print(
+                    f"WARN: catalog refresh found no models; keeping cached catalog {cached_path}",
+                    file=sys.stderr,
+                )
+                return cached
+
     write_json(global_cache, catalog)
     if project_cache:
         write_json(project_cache, catalog)

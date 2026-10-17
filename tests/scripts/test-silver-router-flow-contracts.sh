@@ -100,11 +100,10 @@ assert_contains "release milestone audit maps to FLOW 18" "Milestone audit.*18.*
 
 assert_contains "contracts document runtime queue tokens" "Runtime Queue Tokens" "$contracts"
 
-for file in "$REPO_ROOT/skills/silver-migrate/SKILL.md"; do
-  assert_not_contains "no stale sb:intel in ${file#$REPO_ROOT/}" "sb:intel" "$file"
-  assert_not_contains "no stale INTEL/BRAINSTORM flow labels in ${file#$REPO_ROOT/}" "FLOW 2 \\(INTEL\\)|FLOW 3 \\(BRAINSTORM\\)" "$file"
-  assert_not_contains "no stale PATH wording in ${file#$REPO_ROOT/}" "Build Path Chain|propose which PATH" "$file"
-done
+file="$REPO_ROOT/skills/silver-migrate/SKILL.md"
+assert_not_contains "no stale sb:intel in ${file#$REPO_ROOT/}" "sb:intel" "$file"
+assert_not_contains "no stale INTEL/BRAINSTORM flow labels in ${file#$REPO_ROOT/}" "FLOW 2 \\(INTEL\\)|FLOW 3 \\(BRAINSTORM\\)" "$file"
+assert_not_contains "no stale PATH wording in ${file#$REPO_ROOT/}" "Build Path Chain|propose which PATH" "$file"
 
 for file in "$template" "$root_rules"; do
   assert_contains "template states SB lifecycle authority in ${file#$REPO_ROOT/}" "Silver Bullet owns the default lifecycle through SB-owned skills" "$file"

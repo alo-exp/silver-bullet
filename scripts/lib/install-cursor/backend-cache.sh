@@ -289,7 +289,7 @@ collect_cursor_plugin_seed_shas() {
 }
 
 resolve_cursor_backend_plugin_sha() {
-  local discovered manifest_sha install_sha
+  local discovered manifest_sha
   while IFS= read -r discovered; do
     [[ -n "$discovered" ]] || continue
     if cursor_github_commit_reachable "$discovered"; then

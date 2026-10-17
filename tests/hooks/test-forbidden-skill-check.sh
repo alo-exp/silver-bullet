@@ -26,7 +26,6 @@ fi
 # State files MUST be within ${SB_RUNTIME_HOME_ROOT}/ due to security path validation in hooks.
 SB_TEST_DIR="${SB_RUNTIME_STATE_DIR}"
 mkdir -p "$SB_TEST_DIR"
-TEST_RUN_ID="$$"
 
 cleanup_all() { :; }
 trap cleanup_all EXIT
