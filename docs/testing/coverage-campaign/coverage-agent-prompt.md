@@ -1,8 +1,8 @@
 You are writing tests for the "Silver Bullet" repository (an agent-plugin process orchestrator: Bash hooks in hooks/ wired by hooks/hooks.json, Bash/Python scripts in scripts/, Python skill scripts in skills/*/scripts). Your job: bring the files in YOUR PACKAGE (listed at the end) to 100% coverage with tests that verify real behavior. Commit your work in your worktree (conventional commit messages ending with the two lines `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` and `Claude-Session: https://claude.ai/code/session_013z3F7YTZ5T5DAJxAcCmeVV`). Do not push. Never put model identifiers in files.
 
 ## Before you start (mandatory)
-- You work ONLY inside the package worktree named in YOUR PACKAGE below (an existing git worktree on branch cov/<package-id>, based on the working branch at 990268442b932dcd8bf281cf926b028f730afc17). `cd` there first and run every command from there — never edit /home/user/silver-bullet itself or another package's worktree. Do not reset or recreate the worktree.
-- The container restarts without warning (about hourly) and kills your process; a fresh agent may then be started on the same package. So: first run `git -C <worktree> log --oneline 990268442b932dcd8bf281cf926b028f730afc17..HEAD` and `git status` — if there are commits or uncommitted files, a previous attempt already did part of the work: review it, keep what is good, and continue from there. Commit after every logical step (each new test file that passes), with a descriptive message, so little work is lost. Prefer foreground commands over long background jobs.
+- You work ONLY inside the package worktree named in YOUR PACKAGE below (an existing git worktree on branch cov/<package-id>, based on the working branch at b0e53b8 (run `git log -1 --format=%H b0e53b8` for the full hash)). `cd` there first and run every command from there — never edit /home/user/silver-bullet itself or another package's worktree. Do not reset or recreate the worktree.
+- The container restarts without warning (about hourly) and kills your process; a fresh agent may then be started on the same package. So: first run `git -C <worktree> log --oneline b0e53b8..HEAD` and `git status` — if there are commits or uncommitted files, a previous attempt already did part of the work: review it, keep what is good, and continue from there. Commit after every logical step (each new test file that passes), with a descriptive message, so little work is lost. Prefer foreground commands over long background jobs.
 
 ## Repository rules
 - graphify-out/graph.json exists: orient with `graphify query "<question>"`, `graphify explain "<node>"`, `graphify path "A" "B"` (CLI at /usr/local/bin/graphify) before grepping/reading raw source files; then read the specific files you test. Never run `graphify update`.
@@ -51,9 +51,14 @@ You are writing tests for the "Silver Bullet" repository (an agent-plugin proces
 - Anything not coverable, with precise reasons.
 - Any flaky or slow tests observed.
 
-## Known pre-existing failures (being fixed by another agent — do not edit these test files; ignore their failures)
-tests/scripts/test-codex-skill-frontmatter-yaml.sh, test-five-tool-prerelease-cursor.sh, test-install-codex.sh, test-install-cursor.sh, test-kay-codex-isolation.sh, test-reconcile-recommended-tools.sh, test-reload-receipts.sh, test-silver-doctor.sh, test-tri-host-install-smoke.sh, tests/integration/test-graphify-enforcement.sh, tests/scripts/test-sync-codex-package.sh, tests/scripts/test-install-cursor-sb-agents.sh. Typical causes: hidden dependence on the real HOME (e.g. hooks/session-start needs a Silver Bullet plugin cache under $SB_RUNTIME_PLUGIN_CACHE_ROOT — stage a fake one in your own tests), network access, rg presence, root uid. Your NEW tests must not have these problems. If your package's coverage depends on statements only those failing tests reach, write your own hermetic tests for them.
-Also: another agent is making ShellCheck pass across the repo, so small quoting changes to source files may land later; keep your own source edits minimal.
+## Hermeticity reminders
+Tests run with a sandboxed HOME, so code that needs a Silver Bullet plugin cache (for example hooks/session-start) needs a fake one staged under $SB_RUNTIME_PLUGIN_CACHE_ROOT in your test. Never depend on network access, `rg` being installed, or root uid. `make lint` runs ShellCheck over first-party Bash and fails on any finding, so keep source edits ShellCheck-clean.
+
+## Working rules that apply to every delegated task
+- No silent git branch switches: never run `git checkout <branch>`, `git switch`, `git checkout -b`, `git rebase`, `git reset --hard` or anything else that changes which branch a checkout is on. Restoring files (`git checkout -- <file>`, `git restore`) and `git merge` inside your own worktree are fine.
+- No Fast mode: never enable it and never use a `*-fast*` model.
+- Graphify first for exploration (see Repository rules).
+- TDD: a production (non-test) change needs a test that fails first (red), then passes after the change (green). Record the exact test command and both outcomes in your report. Tests that only characterize existing behavior must pass on the unmodified source. Never invent test evidence.
 
 ## Reporting your worktree
 At the end, report your worktree's absolute path, your branch and HEAD commit — the reviewer and the parent need them.
