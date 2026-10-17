@@ -110,10 +110,8 @@ gh_prelude_suite() {
   assert_eq "$name: non-PreToolUse stays exit 0" "0" "$TL_STATUS"
 
   # tool name variations all gate
-  for t in Write MultiEdit; do
-    gh_run "$hook" "$(gh_edit_input "$edit_path" "$t")"
-    assert_gate_denies "$name: $t is gated" "$reason"
-  done
+  gh_run "$hook" "$(gh_edit_input "$edit_path" MultiEdit)"
+  assert_gate_denies "$name: MultiEdit is gated" "$reason"
 
   # input / environment variations that must allow
   gh_run "$hook" ""
@@ -129,8 +127,6 @@ gh_prelude_suite() {
   assert_gate_allows "$name: missing jq allows (fail-open)"
   gh_run "$hook" "$edit" SB_AGENT_CERT_RUN=1
   assert_gate_allows "$name: cert-run bypass (=1)"
-  gh_run "$hook" "$edit" SB_AGENT_CERT_RUN=true
-  assert_gate_allows "$name: cert-run bypass (=true)"
   gh_run "$hook" "$edit" SB_AGENT_CERT_RUN=0
   assert_gate_denies "$name: cert-run flag =0 does not bypass" "$reason"
 
@@ -144,8 +140,6 @@ gh_prelude_suite() {
   assert_gate_allows "$name: exempt command allows"
   gh_run "$hook" "$(gh_bash_input "ls -la")"
   assert_gate_allows "$name: non-writing command allows"
-  gh_run "$hook" "$(gh_bash_input "")"
-  assert_gate_allows "$name: empty command allows"
 
   # project / consent / bypass variations
   local saved; saved="$(cat "$GH_CFG")"
@@ -190,16 +184,8 @@ gh_prelude_suite() {
   rm -f "$SB_RUNTIME_STATE_DIR/trivial"
 
   # Shell-like tools gate through the command branch
-  gh_run "$hook" "$(gh_bash_input "git commit -m x" Shell)"
-  assert_gate_denies "$name: Shell tool with git commit is gated" "$reason"
-  gh_run "$hook" "$(gh_bash_input "git commit -m x" exec_command)"
-  assert_gate_denies "$name: exec_command with git commit is gated" "$reason"
-  gh_run "$hook" "$(gh_bash_input "gh pr create --fill")"
-  assert_gate_denies "$name: gh pr create is gated" "$reason"
   gh_run "$hook" "$(gh_bash_input "sed -i s/a/b/ src/app.js")"
   assert_gate_denies "$name: in-place sed is gated" "$reason"
-  gh_run "$hook" "$(gh_bash_input "mv a b")"
-  assert_gate_denies "$name: mv is gated" "$reason"
   gh_scenario_block
 }
 

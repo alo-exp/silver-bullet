@@ -53,6 +53,27 @@ for entry in "${GATES[@]}"; do
   GH_REPO="$GH_FARM" gh_run "$hook" "$edit"
   assert_gate_allows "$name: uninitiated project allows"
 
+  # in-hook project search (no project-gate library): walks up from a nested directory
+  gh_farm "$name-search" "$hook" sb-project-gate.sh project-active.sh
+  NEST="$TL_TMP/nest-$name"; rm -rf "$NEST"
+  mkdir -p "$NEST/only-json/a/b" "$NEST/only-md/a/b" "$NEST/both/a/b" "$NEST/none/a/b"
+  cp "$GH_CFG" "$NEST/only-json/.silver-bullet.json"
+  cp "$GH_CFG" "$NEST/both/.silver-bullet.json"
+  printf '# SB\n' >"$NEST/only-md/silver-bullet.md"
+  printf '# SB\n' >"$NEST/both/silver-bullet.md"
+  GH_CWD="$NEST/only-json/a/b" GH_PROJECT_ROOT="" GH_REPO="$GH_FARM" gh_run "$hook" "$edit"
+  assert_gate_allows "$name: parent with only .silver-bullet.json is not a project"
+  GH_CWD="$NEST/only-md/a/b" GH_PROJECT_ROOT="" GH_REPO="$GH_FARM" gh_run "$hook" "$edit"
+  assert_gate_allows "$name: parent with only silver-bullet.md is not a project"
+  GH_CWD="$NEST/none/a/b" GH_PROJECT_ROOT="" GH_REPO="$GH_FARM" gh_run "$hook" "$edit"
+  assert_gate_allows "$name: no markers anywhere allows"
+  GH_CWD="$NEST/both/a/b" GH_PROJECT_ROOT="" GH_REPO="$GH_FARM" gh_run "$hook" "$edit"
+  assert_gate_denies "$name: both markers in a parent make it the project (normal decision)" ""
+  mkdir -p "$NEST/both/a/b/.git"
+  GH_CWD="$NEST/both/a/b" GH_PROJECT_ROOT="" GH_REPO="$GH_FARM" gh_run "$hook" "$edit"
+  assert_gate_allows "$name: search stops at a .git directory below the project root"
+  rm -rf "$NEST/both/a/b/.git"
+
   # cat failing: no input, fail-open
   tl_stub cat 'exit 1'; hash -r
   GH_REPO="$REAL_REPO" gh_run "$hook" "$edit"
