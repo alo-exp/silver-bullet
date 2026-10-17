@@ -238,6 +238,25 @@ export CODEX_BIN="$FAKE_BIN"
 unset CODEX_HOME CODEX_SB_TEST_HOME SB_LIVE_CODEX_ISOLATION_ACTIVE SB_LIVE_CODEX_ISOLATION_DIR SB_LIVE_ORIGINAL_HOME
 unset SB_LIVE_AGENT SB_LIVE_CODEX_MODEL SB_LIVE_CODEX_MODEL_PROVIDER SB_LIVE_CODEX_REASONING_EFFORT CODEX_REASONING_EFFORT
 
+# The harness regenerates the Codex package with sync-codex-package.sh inside
+# SB_ROOT and, by default, keeps isolated homes in <checkout>/../.tmp. Point it
+# at a snapshot and a private isolation parent so the test writes neither into
+# the checkout nor next to it. The parent must stay outside macOS's symlinked
+# /var temp tree (asserted below), so use /tmp there.
+# shellcheck source=tests/lib/repo-snapshot.sh
+source "$REPO_ROOT/tests/lib/repo-snapshot.sh"
+SB_ROOT="$(sb_repo_snapshot "$REPO_ROOT" "$TMP/sb-root")"
+export SB_ROOT
+CODEX_ISOLATION_PARENT="$(cd "$(mktemp -d "${TMPDIR:-/tmp}/sb-codex-isolation.XXXXXX")" && pwd -P)"
+case "$CODEX_ISOLATION_PARENT" in
+  /var/*|/private/var/*)
+    rmdir "$CODEX_ISOLATION_PARENT"
+    CODEX_ISOLATION_PARENT="$(mktemp -d /tmp/sb-codex-isolation.XXXXXX)"
+    ;;
+esac
+export SB_LIVE_CODEX_ISOLATION_PARENT="$CODEX_ISOLATION_PARENT"
+trap 'rm -rf "$TMP" "$CODEX_ISOLATION_PARENT"' EXIT
+
 # shellcheck source=tests/live/lib/codex-cli-isolation.sh
 source "$REPO_ROOT/tests/live/lib/codex-cli-isolation.sh"
 setup_codex_cli_isolation
