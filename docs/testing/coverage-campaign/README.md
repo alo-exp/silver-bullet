@@ -57,9 +57,10 @@ Update the base commit named in coverage-agent-prompt.md to the PR branch head b
 | A-devcycle-completion | Merged after review (refactors and bug fixes listed in the merge commit) |
 | B-orchestrator | Merged after review (agent-delegation scope fixes, fail-closed paths) |
 | C-toolgates-1 | Merged after review |
-| D-gates | Repair round after review |
-| E-core-hooks, F-enterprise-1 | In progress |
-| C-toolgates-2, F-enterprise-2, G-toolstack-1 | In progress |
+| G-toolstack-1 | Merged after review (five bug fixes, each with a red test) |
+| D-gates | Second review |
+| F-enterprise-1 | Repair round after review |
+| E-core-hooks, C-toolgates-2, F-enterprise-2, G-toolstack-2 | In progress |
 | All others | Not started |
 
 Each package is merged into the PR branch only after an adversarial review passes and its tests pass under both the `claude` and `codex` runtimes.
@@ -81,6 +82,7 @@ Statements that cannot run are removed, not excluded: each removal is its own `r
 ## Known measurement limits
 
 - Bash branch coverage beyond statements is not measurable from xtrace; `a || b` one-liners are covered at the statement level (each side is its own statement).
+- Two commands with the same command word on one line, both with non-literal arguments (`if c; then _check pass "$x"; else _check fail "$x"; fi`), cannot be told apart: when either runs, the analyzer credits one of them. Such lines are split over several lines (layout only) so each statement is measured.
 - Code embedded in Bash heredocs (python, jq, awk programs) and Tcl/Expect scripts is not measured.
 - bash reports some commands at another line: inside a function, the commands of `< <(...)` carry the line of the last function definition it parsed, and a `|| fallback` after a multi-line program inside `$(...)` lands several lines late. `sbcov.py` matches these by function and by the substitution's words. The one case it cannot tell apart is a late-reported command that lands on a statement with the same command word in the same function (for example `orchestrator-scheduler.sh` line 797, `|| true`, reported at the `|| true` two lines later); such a statement is listed as missing although it ran.
 - `.planning/scripts/phase-lock.sh` is in scope but lives in the SB-managed `.planning/` tree; test it without editing it.
