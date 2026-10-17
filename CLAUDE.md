@@ -37,7 +37,13 @@ Silver Bullet is a host-aware plugin — an agentic process orchestrator that en
 ### Running Tests
 
 ```bash
-# Every default suite: hooks, scripts, integration, harness, docs, e2e-live harness,
+# Makefile entry points (each wraps the script commands below)
+make setup        # prerequisite check + python3 -m pip install -r requirements-dev.txt
+make check        # make lint + make test: what a pull request must pass
+make coverage     # Bash, Python and JS/TS coverage (FAIL_UNDER=N for a threshold)
+
+# Every default suite: hooks, scripts (including tests/python and tests/js through
+# test-python-unit.sh / test-js-unit.sh), integration, harness, docs, e2e-live harness,
 # TUI contracts, then the hook coverage matrix
 bash tests/run-all-tests.sh
 bash tests/run-all-tests.sh --jobs 4          # parallel
@@ -48,7 +54,7 @@ bash tests/run-all-tests.sh --list            # list test files only
 bash tests/hooks/test-completion-audit.sh
 bash tests/run-all-tests.sh tests/integration/test-e2e-enforcement-gates.sh
 
-# Coverage (pip install -r tests/coverage/requirements.txt first)
+# Coverage (python3 -m pip install -r requirements-dev.txt first)
 bash tests/coverage/run-coverage.sh
 ```
 
@@ -60,7 +66,8 @@ See [docs/TESTING.md](docs/TESTING.md) for the layout, isolation and live suites
 # Syntax-check all hook and script files
 for f in hooks/*.sh hooks/lib/*.sh scripts/*.sh; do bash -n "$f" || echo "FAIL: $f"; done
 
-# ShellCheck, as CI runs it
+# ShellCheck with CI's exclusions (make lint runs this plus bash -n and jq; it fails on any
+# finding, and existing hooks/scripts still carry some)
 shellcheck --exclude=SC2317,SC1091,SC2329 hooks/*.sh hooks/lib/*.sh scripts/*.sh
 
 # JSON validity
@@ -176,7 +183,7 @@ The project-instruction skeleton for Claude Code lives at `scripts/lib/install-c
 
 Tests use a consistent pattern:
 - Each test runs against its own temporary directory (usually a real `git init` with a `.silver-bullet.json` and `silver-bullet.md`) and points `SILVER_BULLET_STATE_FILE` at a path under `${SB_RUNTIME_HOME_ROOT}/` (path validation in hooks rejects anything outside `${SB_RUNTIME_HOME_ROOT}/`). `tests/run-all-tests.sh` also gives every test file its own temporary `HOME` and `TMPDIR`.
-- Hook scripts are invoked by piping JSON via stdin (matching the host hook protocol); `tests/lib/testlib.sh` provides helpers for new tests.
+- Hook scripts are invoked by piping JSON via stdin (matching the host hook protocol); `tests/lib/testlib.sh` provides helpers for new tests. Python unit tests live in `tests/python/` (`sbtest.load_module`), JavaScript/TypeScript tests in `tests/js/` (`node:test`).
 - Results are parsed from `Results: N passed, M failed` lines.
 
 ---

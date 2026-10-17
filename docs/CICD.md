@@ -27,12 +27,15 @@ The `validate` job on `ubuntu-latest` seeds the runtime environment through `hoo
 ## Reproducing CI locally
 
 ```bash
+make check                             # make lint + make test
+make sync-check                        # runtime mirrors and the plugin mirror
 bash tests/run-all-tests.sh            # the test suites CI runs, with per-test HOME/TMPDIR isolation
 shellcheck --exclude=SC2317,SC1091,SC2329 hooks/*.sh hooks/lib/*.sh scripts/*.sh
-bash scripts/validate-plugin-mirror.sh
 ```
 
-`tests/run-all-tests.sh` is the CI-equivalent entry point: it hides optional host tools (`graphify`, `claude`, `gh`, ...) from tests so local results match the clean CI runner. `bash scripts/pre-release-gate.sh` adds the release-only checks on top ([RELEASE.md](RELEASE.md#2-local-pre-release-gate)). See [TESTING.md](TESTING.md) for suites and options.
+CI's shellcheck step accepts exit status 1 (findings) and fails only when shellcheck itself errors, while `make lint` fails on any finding; the existing hooks and scripts still carry findings.
+
+`tests/run-all-tests.sh` (`make test`) is the CI-equivalent entry point: it hides optional host tools (`graphify`, `claude`, `gh`, ...) from tests so local results match the clean CI runner. `bash scripts/pre-release-gate.sh` adds the release-only checks on top ([RELEASE.md](RELEASE.md#2-local-pre-release-gate)). See [TESTING.md](TESTING.md) for suites and options.
 
 ## When CI is red
 
