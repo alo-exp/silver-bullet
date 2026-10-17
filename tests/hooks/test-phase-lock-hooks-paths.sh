@@ -105,7 +105,7 @@ dg_run "$P" "$H" "$(edit "$P/.planning/phases/099-x/a.md" s2)" PL_CLAIM_RC=2 PL_
 assert_contains "claim: unparsable owner falls back to ?" "$TL_ERR" "locked by ? (owner_id=?)"
 assert_not_contains "claim: no helper stderr line when empty" "$TL_ERR" "owned-elsewhere"
 dg_run "$P" "$H" "$(edit "$P/.planning/phases/099-x/a.md" s2)" PL_CLAIM_RC=2 PL_PEEK_RC=1
-assert_contains "claim: failing peek still reports the conflict" "$TL_ERR" "locked by ? (owner_id=?)"
+assert_contains "claim: failing peek still reports the conflict" "$TL_ERR" "PHASE LOCK CONFLICT"
 assert_eq "claim: failing peek still exits 2" 2 "$TL_STATUS"
 dg_run "$P" "$H" "$(edit "$P/.planning/phases/099-x/a.md" s2)" PL_CLAIM_RC=4
 assert_eq "claim: unexpected helper rc fails open" 0 "$TL_STATUS"
