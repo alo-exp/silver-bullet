@@ -8,7 +8,6 @@ Format: `| Item | Severity | Effort | Status |`. Priority score = (Impact + Risk
 
 | Item | Severity | Effort | Status |
 |------|----------|--------|--------|
-| CI step "Assert DEFAULT_REQUIRED is subset of DEFAULT_TRACKED in hook scripts" (`.github/workflows/ci.yml`) greps `hooks/stop-check.sh` for `DEFAULT_REQUIRED="silver-…` and `hooks/record-skill.sh` for `DEFAULT_TRACKED=`; neither literal list exists any more (both come from `hooks/lib/required-skills.sh`), so the step always passes. Replace it with a check against `templates/silver-bullet.config.json.default`, or drop it — CI already asserts `required_deploy` ⊆ `all_tracked` on the config | Medium | Low | Open (found 2026-10-17) |
 | `hooks/rfl-policy-c-gate.sh` runs under `set -euo pipefail` with no `ERR` trap, unlike the other hooks; an unexpected failure exits non-zero and surfaces as a hook error instead of failing open | Low | Low | Open (found 2026-10-17) |
 | Without `jq`, `hooks/completion-audit.sh` blocks `git commit`, `git push`, `gh pr create`, `gh release create` and deploy commands even outside an SB project (its jq fallback runs before the project-activation check), contradicting "enforcement engages only in initiated projects" | Medium | Low | Open (found 2026-10-17) |
 | The release-gate message for an incomplete SENTINEL manifest in `hooks/lib/completion-audit/deploy-tier.sh` hard-codes "85/85 clean rows"; the canonical skill count is now derived from `skills/*/SKILL.md` | Low | Low | Open (found 2026-10-17) |
@@ -21,6 +20,7 @@ Format: `| Item | Severity | Effort | Status |`. Priority score = (Impact + Risk
 
 | Item | Resolution |
 |------|------------|
+| CI step "Assert DEFAULT_REQUIRED is subset of DEFAULT_TRACKED" compared two empty strings (neither literal list existed any more), so it always passed | Replaced by the `required-subset-tracked` check in `scripts/check-repo-invariants.sh`, which checks every `required_*` list against `all_tracked` in the template and `.silver-bullet.json`; `tests/scripts/test-check-repo-invariants.sh` proves it fails on drift |
 | `required_deploy` / `all_tracked` correctness not validated in CI (priority 1, score 35) | CI asserts `required_deploy` ⊆ `all_tracked` and that `.silver-bullet.json` skill lists match the template |
 | No CI step enforcing `docs/workflows/` ↔ `templates/workflows/` parity (priority 2, score 30) | CI step "Check docs/workflows/ parity with templates/workflows/"; also `tests/docs/test-documentation-scheme.sh` |
 | `hooks/dev-cycle-check.sh` had no test file (priority 3, score 24) | `tests/hooks/test-dev-cycle-check.sh` covers stages A–D, phase-skip detection, the trivial marker, state tamper, plugin boundary and devops-cycle |

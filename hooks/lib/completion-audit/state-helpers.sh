@@ -6,7 +6,7 @@ has_skill() {
     sb_required_skill_is_recorded "$state_contents" "$1"
     return $?
   fi
-  printf '%s\n' "$state_contents" | grep -Fqx -- "$1" 2>/dev/null
+  grep -Fqx -- "$1" 2>/dev/null <<<"$state_contents"
 }
 
 # Line number of a skill in the state file (for ordering checks); 0 if absent

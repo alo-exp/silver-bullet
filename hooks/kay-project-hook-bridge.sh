@@ -355,7 +355,7 @@ run_matching_hooks() {
     [[ -n "$spec" ]] || continue
     command="$(printf '%s' "$spec" | jq -r '.command')"
     [[ -n "$command" ]] || continue
-    if ((${#seen_commands[@]})) && printf '%s\n' "${seen_commands[@]}" | grep -Fqx -- "$command"; then
+    if ((${#seen_commands[@]})) && grep -Fqx -- "$command" <<<"${seen_commands[@]}"; then
       continue
     fi
     seen_commands+=("$command")
@@ -435,7 +435,7 @@ collect_git_commit_write_targets() {
   local command_str="$1"
   local git_dir=""
 
-  printf '%s' "$command_str" | grep -qE '(^|[[:space:];(&|])git[[:space:]]+commit([[:space:]]|$)' || return 0
+  grep -qE '(^|[[:space:];(&|])git[[:space:]]+commit([[:space:]]|$)' <<<"$command_str" || return 0
   git_dir="$(git rev-parse --git-dir 2>/dev/null || true)"
   [[ -n "$git_dir" ]] || return 0
   case "$git_dir" in

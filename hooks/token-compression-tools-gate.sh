@@ -81,7 +81,7 @@ case "$tool_name" in
 esac
 
 if [[ -n "$command_str" ]]; then
-  if ! printf '%s' "$command_str" | grep -qE '\bgit commit\b|\bgh pr create\b|\bgh release create\b'; then
+  if ! grep -qE '\bgit commit\b|\bgh pr create\b|\bgh release create\b' <<<"$command_str"; then
     exit 0
   fi
 fi

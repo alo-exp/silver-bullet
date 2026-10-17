@@ -66,6 +66,23 @@ trace "$cov" "$TMP" "${REPO_ROOT}/${FIX_REL}/fallback.sh" false
 check_eq "fallback: credited once a run takes the error path" \
   "" "$(field "$cov" "$FIX_REL/fallback.sh" "$missing_expr")"
 
+# 2b. Same-word statements separated by callee trace lines, process substitution
+#     bodies and a braced || group across a continuation line are all credited.
+cov="$TMP/callee"
+trace "$cov" "$TMP" "${REPO_ROOT}/${FIX_REL}/callee.sh"
+check_eq "callee: only the unreachable branch body is uncovered" \
+  "15::" "$(field "$cov" "$FIX_REL/callee.sh" "$missing_expr")"
+
+# 2c. Substitutions nested in loops, case arms and continuation lines: no
+#     statement is listed twice and exclusive `&& echo true || echo false` arms
+#     are told apart by their literal arguments.
+cov="$TMP/nested"
+trace "$cov" "$TMP" "${REPO_ROOT}/${FIX_REL}/nested.sh"
+check_eq "nested: every statement credited" \
+  "" "$(field "$cov" "$FIX_REL/nested.sh" "$missing_expr")"
+check_eq "nested: the loop body's substitution is one statement" \
+  "1" "$(python3 "$SBCOV" analyze "${REPO_ROOT}/${FIX_REL}/nested.sh" | awk -F'\t' '$1 == "15-15" && $3 == "echo"' | wc -l | tr -d ' ')"
+
 # 3. Relative invocation from the repo root maps back to the source file.
 cov="$TMP/relative"
 trace "$cov" "$REPO_ROOT" "${FIX_REL}/fallback.sh" false
@@ -89,7 +106,8 @@ check_eq "edited staged copy is ignored, not credited" \
   "0" "$(field "$cov" "$FIX_REL/fallback.sh" "d['statements_covered']")"
 
 # 5. No tracing without SB_COV_DIR (tests outside coverage runs are unaffected).
-out="$(BASH_ENV="$ENV_FILE" bash -c 'printf "%s" "$-"')"
+# (env -u: inside a coverage run the runner exports SB_COV_DIR to every test.)
+out="$(env -u SB_COV_DIR BASH_ENV="$ENV_FILE" bash -c 'printf "%s" "$-"')"
 if [[ "$out" == *x* ]]; then fail "tracer stays off without SB_COV_DIR"; else pass "tracer stays off without SB_COV_DIR"; fi
 
 # 6. The tracer must not change a script's stdout or stderr.
@@ -97,6 +115,9 @@ mkdir -p "$TMP/io/raw"
 got="$(SB_COV_DIR="$TMP/io" BASH_ENV="$ENV_FILE" bash -c 'echo out; echo err >&2' 2>&1)"
 check_eq "traced script output is unchanged" "out
 err" "$got"
+got="$(SB_COV_DIR="$TMP/io" BASH_ENV="$ENV_FILE" bash -c 'set -u; f() { echo in-f; }; f; echo top' 2>&1)"
+check_eq "tracing a set -u script adds no errors" "in-f
+top" "$got"
 
 # 7. Python subprocesses are measured through the sitecustomize bootstrap.
 cov="$TMP/py"

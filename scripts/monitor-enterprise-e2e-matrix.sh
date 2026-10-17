@@ -255,19 +255,19 @@ parse_recent_issues() {
   local chunk
   chunk="$(tail -n "$window" "$MATRIX_LOG" 2>/dev/null || true)"
   local issues=()
-  if printf '%s\n' "$chunk" | grep -qiE '429|token[[:space:]]+plan|usage[[:space:]]+limit'; then
+  if grep -qiE '429|token[[:space:]]+plan|usage[[:space:]]+limit' <<<"$chunk"; then
     issues+=("429")
   fi
-  if printf '%s\n' "$chunk" | grep -qiE 'ENOTFOUND|ConnectionRefused|Unable to connect'; then
+  if grep -qiE 'ENOTFOUND|ConnectionRefused|Unable to connect' <<<"$chunk"; then
     issues+=("network")
   fi
-  if printf '%s\n' "$chunk" | grep -qiE 'Stop hook error'; then
+  if grep -qiE 'Stop hook error' <<<"$chunk"; then
     issues+=("stop-hook")
   fi
-  if printf '%s\n' "$chunk" | grep -qiE 'hookEventName'; then
+  if grep -qiE 'hookEventName' <<<"$chunk"; then
     issues+=("hookEventName")
   fi
-  if printf '%s\n' "$chunk" | grep -qE '^  FAIL:'; then
+  if grep -qE '^  FAIL:' <<<"$chunk"; then
     issues+=("FAIL")
   fi
   if [[ ${#issues[@]} -gt 0 ]]; then

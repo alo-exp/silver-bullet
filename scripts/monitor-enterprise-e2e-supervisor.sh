@@ -36,15 +36,15 @@ start_monitor() {
 note_ux_if_needed() {
   local status
   status="$(cat "$STATUS_FILE" 2>/dev/null || true)"
-  if printf '%s\n' "$status" | grep -qiE 'hookEventName|Stop hook error'; then
+  if grep -qiE 'hookEventName|Stop hook error' <<<"$status"; then
     if ! grep -q 'monitor-supervisor.*hookEventName' "$SUPERVISOR_LOG" 2>/dev/null; then
       log "UX note: hookEventName/Stop hook seen — see UX friction log in ROUND-1-LEDGER.md"
     fi
   fi
-  if printf '%s\n' "$status" | grep -qiE '429|QUOTA'; then
+  if grep -qiE '429|QUOTA' <<<"$status"; then
     log "state: quota/429 noted — monitor handles wait+retry"
   fi
-  if printf '%s\n' "$status" | grep -qiE 'COMPLETE'; then
+  if grep -qiE 'COMPLETE' <<<"$status"; then
     log "matrix COMPLETE — supervisor exiting"
     exit 0
   fi

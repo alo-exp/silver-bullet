@@ -21,7 +21,7 @@ run_artifact_substance_delivery_gate "$project_root"
 release_live_matrix_file="${SB_RUNTIME_STATE_DIR}/release-live-matrix"
 e2e_live_matrix_file="${SB_RUNTIME_STATE_DIR}/e2e-live-matrix"
 inline_e2e_matrix_file="${SB_RUNTIME_STATE_DIR}/inline-e2e-matrix"
-if printf '%s' "$cmd_first_line" | grep -qE '\bgh release create\b'; then
+if grep -qE '\bgh release create\b' <<<"$cmd_first_line"; then
   # shellcheck disable=SC2154  # set by completion-audit.sh from .silver-bullet.json
   if [[ "$release_require_plugin_runtime_matrix" == "true" || "${SB_REQUIRE_PLUGIN_RELEASE_MATRIX:-0}" == "1" ]]; then
     release_matrix_value=""
@@ -213,7 +213,7 @@ else
 fi
 
 # Release commands also require release-only skills (e.g. silver-create-release).
-if printf '%s' "$cmd_first_line" | grep -qE '\bgh release create\b'; then
+if grep -qE '\bgh release create\b' <<<"$cmd_first_line"; then
   release_defaults="${DEFAULT_RELEASE_REQUIRED:-silver-create-release}"
   if [[ "$delivery_uses_devops_deploy" == true ]]; then
     release_defaults="${DEVOPS_DEFAULT_RELEASE_REQUIRED:-silver-create-release}"

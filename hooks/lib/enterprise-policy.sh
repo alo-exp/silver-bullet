@@ -162,7 +162,7 @@ sb_enterprise_policy_human_deploy_approved() {
 
 sb_enterprise_policy_delivery_command_is_non_production() {
   local cmd="$1"
-  printf '%s' "$cmd" | grep -qiE \
+  grep -qiE <<<"$cmd" \
     'staging|preview|non[-_]?prod|dev[-_ ]?deploy|sandbox|dogfood|internal' \
     && return 0
   return 1
@@ -172,7 +172,7 @@ sb_enterprise_policy_delivery_command_is_non_production() {
 sb_enterprise_policy_delivery_blocked() {
   local config_file="$1" cmd="$2"
   [[ -n "$config_file" && -f "$config_file" && -n "$cmd" ]] || return 1
-  printf '%s' "$cmd" | grep -qE '\bgh pr (create|merge)\b|\bgh release create\b|\bdeploy\b' || return 1
+  grep -qE '\bgh pr (create|merge)\b|\bgh release create\b|\bdeploy\b' <<<"$cmd" || return 1
   sb_enterprise_policy_production_deploy_requires_human "$config_file" || return 1
   if sb_enterprise_policy_human_deploy_approved; then
     return 1

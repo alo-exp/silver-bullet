@@ -26,7 +26,7 @@ esac
 if [[ -n "$file_path" ]]; then
   case "$file_path" in */.cursor/*|*/hooks/*|*/scripts/lib/*) exit 0 ;; esac
 elif [[ -n "$command_str" ]]; then
-  if printf '%s' "$command_str" | grep -qE '(^|[[:space:]])(rtk|context-mode|graphify|agentmemory|lean-ctx)(\s|$)'; then exit 0; fi
+  if grep -qE '(^|[[:space:]])(rtk|context-mode|graphify|agentmemory|lean-ctx)(\s|$)' <<<"$command_str"; then exit 0; fi
   ts_is_substantive_shell "$command_str" || exit 0
 else exit 0; fi
 if ! ts_rtk_cli_available; then
