@@ -91,7 +91,9 @@ sb_rfl_sync_rung_metadata() {
   local rung="${1:-1}"
   local project_root resolver_json rung_json subagent_name model_param
   project_root="$(sb_rfl_project_root)"
-  resolver_json="$(sb_rfl_resolver_json "$project_root")"
+  # A project without scripts/review-fix-ladder.py makes the resolver return 1 after
+  # printing the "{}" default; do not let errexit abort on that.
+  resolver_json="$(sb_rfl_resolver_json "$project_root")" || true
   rung_json="$(sb_rfl_rung_from_resolver "$resolver_json" "$rung")"
   command -v jq >/dev/null 2>&1 || return 0
   subagent_name="$(jq -r '.subagent_name // empty' <<<"$rung_json")"
@@ -99,13 +101,14 @@ sb_rfl_sync_rung_metadata() {
   [[ -n "$subagent_name" ]] && sb_rfl_set_field subagent_name "$subagent_name"
   [[ -n "$model_param" ]] && sb_rfl_set_field model_param "$model_param"
   [[ -n "$model_param" ]] && sb_rfl_set_field rung_model "$model_param"
+  return 0
 }
 
 sb_rfl_activate() {
   local rung="${1:-1}" rung_model="${2:-}" host_model="${3:-composer-2.5}"
   local project_root resolver_json total_rungs rung_json subagent_name model_param state_json
   project_root="$(sb_rfl_project_root)"
-  resolver_json="$(sb_rfl_resolver_json "$project_root")"
+  resolver_json="$(sb_rfl_resolver_json "$project_root")" || true
   total_rungs="$(sb_rfl_total_rungs_from_resolver "$resolver_json")"
   rung_json="$(sb_rfl_rung_from_resolver "$resolver_json" "$rung")"
   if command -v jq >/dev/null 2>&1; then

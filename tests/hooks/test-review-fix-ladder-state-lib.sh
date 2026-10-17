@@ -70,6 +70,30 @@ assert_eq "rung_from_resolver: default index 1" '{"a":1}' "$(sb_rfl_rung_from_re
 assert_eq "rung_from_resolver: out of range" '{}' "$(sb_rfl_rung_from_resolver '{"rungs":[]}' 3)"
 assert_eq "rung_from_resolver (no jq)" '{}' "$(PATH="$NOJQ" sb_rfl_rung_from_resolver '{"rungs":[{"a":1}]}' 1)"
 
+# --- project without scripts/review-fix-ladder.py (every downstream SB project) ---
+NP="$TL_TMP/noresolver"; mkdir -p "$NP"
+rm -f "$SF"
+# hooks run under `set -e`; an `||` list would mask the abort, so use a separate errexit shell
+out="$(SB_RFL_PROJECT_ROOT="$NP" bash -c 'set -e; source "$0"; sb_rfl_activate; echo reached-end' "$TL_REPO_ROOT/hooks/lib/review-fix-ladder-state.sh" 2>/dev/null || true)"
+assert_eq "activate without a resolver survives errexit" reached-end "$out"
+out="$(SB_RFL_PROJECT_ROOT="$NP" bash -c 'set -e; source "$0"; sb_rfl_sync_rung_metadata 1; echo reached-end' "$TL_REPO_ROOT/hooks/lib/review-fix-ladder-state.sh" 2>/dev/null || true)"
+assert_eq "sync_rung_metadata without a resolver survives errexit" reached-end "$out"
+rm -f "$SF"
+r=0; SB_RFL_PROJECT_ROOT="$NP" sb_rfl_activate || r=$?
+assert_eq "activate without a resolver succeeds" 0 "$r"
+assert_eq "activate without a resolver writes active state" true "$(f active)"
+assert_eq "activate without a resolver defaults to 6 rungs" 6 "$(f total_rungs)"
+r=0; SB_RFL_PROJECT_ROOT="$NP" sb_rfl_advance_rung || r=$?
+assert_eq "advance without a resolver returns 0" 0 "$r"
+assert_eq "advance without a resolver moves to rung 2" 2 "$(f rung)"
+r=0; SB_RFL_PROJECT_ROOT="$NP" sb_rfl_sync_rung_metadata 1 || r=$?
+assert_eq "sync_rung_metadata with an empty rung returns 0" 0 "$r"
+st "{$base}"
+r=0; sb_rfl_sync_rung_metadata 3 || r=$?
+assert_eq "sync_rung_metadata with a rung lacking subagent/model returns 0" 0 "$r"
+r=0; st "{$base,\"grep_after_verify\":1}"; sb_rfl_mark_orchestrator_grep || r=$?
+assert_eq "mark_orchestrator_grep advancing the rung returns 0" 0 "$r"
+
 # --- activate / deactivate / reset ---------------------------------------------
 rm -f "$SF"; sb_rfl_activate
 assert_eq "activate: active" true "$(f active)"
@@ -118,7 +142,7 @@ sb_rfl_sync_rung_metadata 1
 assert_eq "sync: subagent" sb-gpt-5 "$(f subagent_name)"
 assert_eq "sync: model_param" gpt-x "$(f model_param)"
 assert_eq "sync: rung_model" gpt-x "$(f rung_model)"
-st "{$base}"; sb_rfl_sync_rung_metadata 3 || true
+st "{$base}"; sb_rfl_sync_rung_metadata 3
 assert_eq "sync: empty rung leaves fields unset" null "$(f subagent_name)"
 assert_eq "sync: no jq no-op" 0 "$(PATH="$NOJQ" rc sb_rfl_sync_rung_metadata 1)"
 
