@@ -18,9 +18,11 @@ sb_agent_delegation_normalize_path "" "$ROOT" && rc=0 || rc=$?
 assert_eq "empty path rejected" 1 "$rc"
 assert_eq "relative path resolved against repo root" "$ROOT/src/a.txt" "$(sb_agent_delegation_normalize_path src/a.txt "$ROOT")"
 assert_eq "absolute path kept" "$ROOT/src/a.txt" "$(sb_agent_delegation_normalize_path "$ROOT/src/a.txt" "$ROOT")"
-# Any ".." component is rejected outright: the path cannot be trusted to stay inside a scope.
-sb_agent_delegation_normalize_path "$ROOT/src/../src/a.txt" "$ROOT" >/dev/null && rc=0 || rc=$?
-assert_eq "dot-dot component rejected" 1 "$rc"
+# "." and ".." collapse lexically (realpath -m semantics) so the final location is what gets checked.
+assert_eq "dot-dot collapsed" "$ROOT/src/a.txt" "$(sb_agent_delegation_normalize_path "$ROOT/src/../src/a.txt" "$ROOT")"
+assert_eq "dot-dot through a missing dir collapsed" "$ROOT/src/x.txt" "$(sb_agent_delegation_normalize_path "$ROOT/newdir/../src/x.txt" "$ROOT")"
+assert_eq "dot segments dropped" "$ROOT/src/a.txt" "$(sb_agent_delegation_normalize_path "$ROOT/./src/./a.txt" "$ROOT")"
+assert_eq "dot-dot never climbs above /" "/x" "$(sb_agent_delegation_normalize_path "/../../x" "$ROOT")"
 # Regression: a nonexistent parent must never be fabricated into "/<basename>". The nearest
 # existing ancestor is resolved and the missing components are re-appended, so the scope check
 # still works for a new file in a new subdirectory (writing src/newdir/a.txt into an owned src/).
@@ -33,8 +35,7 @@ cd() { return 1; }
 sb_agent_delegation_normalize_path "$ROOT/src/a.txt" "$ROOT" >/dev/null && rc=0 || rc=$?
 unset -f cd
 assert_eq "unenterable ancestor returns failure" 1 "$rc"
-sb_agent_delegation_normalize_path "$ROOT/src/.." "$ROOT" >/dev/null && rc=0 || rc=$?
-assert_eq "path whose last segment is .. rejected" 1 "$rc"
+assert_eq "trailing .. resolves to the parent" "$ROOT" "$(sb_agent_delegation_normalize_path "$ROOT/src/.." "$ROOT")"
 
 echo "=== active flag and fields ==="
 assert_eq "default state file under runtime state dir" "$SB_RUNTIME_STATE_DIR/agent-delegation-active.json" "$STATE"
@@ -125,6 +126,12 @@ sb_agent_delegation_path_in_scope "$ROOT/.planning/agent-codex/T1/n.md" "$ROOT" 
 assert_eq "own evidence dir exempt even under an owned root" 1 "$rc"
 sb_agent_delegation_path_in_scope "$ROOT/src/a" "$ROOT" && rc=0 || rc=$?
 assert_eq "owned root covers children" 0 "$rc"
+
+# A target that cannot be normalized while a delegation is active is treated as in scope (fail closed).
+cd() { return 1; }
+sb_agent_delegation_path_in_scope "$ROOT/src/a.txt" "$ROOT" && rc=0 || rc=$?
+unset -f cd
+assert_eq "unnormalizable target is in scope (fail closed)" 0 "$rc"
 
 echo "=== deactivate ==="
 sb_agent_delegation_deactivate
