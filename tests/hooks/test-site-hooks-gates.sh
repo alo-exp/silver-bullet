@@ -310,9 +310,10 @@ assert_contains "regression: missing tests dir is a setup problem" "$TL_OUT" "no
 mkdir -p "$P/tests/scripts"
 for s in chrome-regression doc-freshness content-freshness; do suite "$s" 'echo ok'; done
 site_session
+mkdir -p "$TL_TMP/fallback"
 tl_stub mktemp 'exit 1'
-printf '%s' "$stop_json" | (cd "$P" && TMPDIR="$TL_TMP/no-such-dir" bash -c 'mkdir -p "/tmp/site-regression-$$.log"; echo "$$" >"$1"; exec bash "$0"' "$TL_REPO_ROOT/$H" "$TL_TMP/hookpid") >"$TL_TMP/.out" 2>/dev/null || true
-rmdir "/tmp/site-regression-$(cat "$TL_TMP/hookpid").log"
+printf '%s' "$stop_json" | (cd "$P" && TMPDIR="$TL_TMP/no-such-dir" SB_SITE_REGRESSION_FALLBACK_DIR="$TL_TMP/fallback" bash -c 'mkdir -p "$SB_SITE_REGRESSION_FALLBACK_DIR/site-regression-$$.log"; echo "$$" >"$1"; exec bash "$0"' "$TL_REPO_ROOT/$H" "$TL_TMP/hookpid") >"$TL_TMP/.out" 2>/dev/null || true
+rmdir "$TL_TMP/fallback/site-regression-$(cat "$TL_TMP/hookpid").log"
 rm -f "$TL_BIN/mktemp"
 TL_OUT="$(cat "$TL_TMP/.out")"
 assert_contains "regression: unallocatable log reported" "$TL_OUT" "failed to create a log file"

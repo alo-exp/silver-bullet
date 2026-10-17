@@ -172,17 +172,18 @@ mkdir -p "$TL_TMP/tmpd"
 r=0; log="$(SB_RUNTIME_STATE_DIR="$TL_TMP/blocker/sub" TMPDIR="$TL_TMP/tmpd" sb_site_session_run_regression_tests "$PROJ")" || r=$?
 assert_match "run_regression: mktemp failure falls back to TMPDIR pid log" "^$TL_TMP/tmpd/site-regression-[0-9]+\\.log\$" "$log"
 rm -f "$log"
-# TMPDIR unwritable too -> /tmp pid log
-r=0; log="$(SB_RUNTIME_STATE_DIR="$TL_TMP/blocker/sub" TMPDIR="$TL_TMP/blocker/nope" sb_site_session_run_regression_tests "$PROJ")" || r=$?
-assert_match "run_regression: second fallback is /tmp pid log" '^/tmp/site-regression-[0-9]+\.log$' "$log"
+# TMPDIR unwritable too -> fallback-dir pid log (sandboxed through the seam variable)
+mkdir -p "$TL_TMP/fallback"
+r=0; log="$(SB_SITE_REGRESSION_FALLBACK_DIR="$TL_TMP/fallback" SB_RUNTIME_STATE_DIR="$TL_TMP/blocker/sub" TMPDIR="$TL_TMP/blocker/nope" sb_site_session_run_regression_tests "$PROJ")" || r=$?
+assert_match "run_regression: second fallback is the fallback-dir pid log" "^$TL_TMP/fallback/site-regression-[0-9]+\\.log\$" "$log"
 rm -f "$log"
-# both unwritable -> 91 (shadow /tmp writes via a function-free approach: ':' redirect fails when path is a dir)
-mkdir -p "/tmp/site-regression-$$.log" 2>/dev/null || true
-if [[ -d "/tmp/site-regression-$$.log" ]]; then
-  r=0; SB_RUNTIME_STATE_DIR="$TL_TMP/blocker/sub" TMPDIR="$TL_TMP/blocker/nope" sb_site_session_run_regression_tests "$PROJ" >/dev/null 2>&1 || r=$?
-  rmdir "/tmp/site-regression-$$.log"
-  assert_eq "run_regression: no log can be allocated => 91" 91 "$r"
-fi
+# default fallback directory is /tmp (documented, not exercised: it would write outside the sandbox)
+assert_contains "run_regression: fallback default is /tmp" "$(grep -c 'SB_SITE_REGRESSION_FALLBACK_DIR:-/tmp' "$TL_REPO_ROOT/hooks/lib/site-session.sh")" "1"
+# both unwritable -> 91 (':' redirect fails when the pid log path is a directory)
+mkdir -p "$TL_TMP/fallback/site-regression-$$.log"
+r=0; SB_SITE_REGRESSION_FALLBACK_DIR="$TL_TMP/fallback" SB_RUNTIME_STATE_DIR="$TL_TMP/blocker/sub" TMPDIR="$TL_TMP/blocker/nope" sb_site_session_run_regression_tests "$PROJ" >/dev/null 2>&1 || r=$?
+rmdir "$TL_TMP/fallback/site-regression-$$.log"
+assert_eq "run_regression: no log can be allocated => 91" 91 "$r"
 # mv of the base log fails -> keeps the base name
 mkdir -p "$TL_TMP/mvfail"
 tl_stub mv 'exit 1'; hash -r
