@@ -4,7 +4,7 @@
 # helper reports the project as not initiated.
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
-tl_init
+tl_init claude
 unset SB_AGENT_CERT_RUN SB_KAY_HOOK_BRIDGE_INVOKED
 source "$TL_REPO_ROOT/tests/lib/c-toolgates-1-helpers.sh"
 gh_init_project

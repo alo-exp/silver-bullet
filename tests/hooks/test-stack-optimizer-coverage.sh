@@ -3,7 +3,7 @@
 # systemctl, pgrep, brew, curl, gitleaks and node are all logging stubs.
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
-tl_init
+tl_init claude
 unset CI SB_STACK_OPTIMIZER_DRY_RUN SB_STACK_SKIP_HOST_HOOKS SB_AGENTMEMORY_HOME SB_STACK_SCORE_THRESHOLD SB_AGENTMEMORY_MCP_ARTIFACT
 
 LIBF="$TL_REPO_ROOT/hooks/lib/stack-optimizer.sh"
