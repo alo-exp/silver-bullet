@@ -112,3 +112,17 @@ orch_fixture_catalog() {
 }
 JSON
 }
+
+# orch_bash_env_wrapper FILE...: print the path of a BASH_ENV script that first sources the
+# coverage tracer (when one is active) and then FILE..., so child bash processes start with
+# extra functions already defined. Use as: BASH_ENV="$(orch_bash_env_wrapper lib.sh)" cmd
+orch_bash_env_wrapper() {
+  local wrapper="$TL_TMP/bash-env-wrapper.$$.sh" f
+  {
+    if [[ -n "${BASH_ENV:-}" && "$BASH_ENV" != "$wrapper" ]]; then
+      printf 'source %q\n' "$BASH_ENV"
+    fi
+    for f in "$@"; do printf 'source %q\n' "$f"; done
+  } >"$wrapper"
+  printf '%s' "$wrapper"
+}
