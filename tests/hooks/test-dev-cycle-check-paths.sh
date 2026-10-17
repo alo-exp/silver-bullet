@@ -99,7 +99,7 @@ run_dc "$(jq -cn --arg p "$PATCH_DOC" '{hook_event_name:"PreToolUse",tool_name:"
 assert_eq "apply_patch outside src is ignored" "none" "$(decision)"
 
 # ── four-stage planning gate ─────────────────────────────────────────────────
-edit() { run_dc "$(edit_json "$PROJ/src/app.js" Edit "${1:-PreToolUse}" "$BIG_OLD" "$BIG_NEW")"; }
+edit() { run_dc "$(edit_json "$PROJ/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")"; }
 mkproj stages '.skills.required_planning=["inst-a","ghost-a","ghost-b"]'
 state ""
 edit
@@ -279,6 +279,10 @@ printf '## Flow Log\n| 1 | a | pending |\n' >"$PROJ/.planning/workflows/$WF.md"
 run_dc "$(edit_json "$PROJ/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")"
 assert_contains "active workflow without SB_WORKFLOW_ID blocks" "$(message)" "SB_WORKFLOW_ID is unset"
 assert_contains "block lists the workflow" "$(message)" "• $WF"
+printf '## Flow Log\n| 1 | a | pending |\n' >"$PROJ/.planning/workflows/20260101T000000Z-def456-silver-bugfix.md"
+run_dc "$(edit_json "$PROJ/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")"
+assert_contains "block lists every active workflow" "$(message)" "• 20260101T000000Z-def456-silver-bugfix"
+rm -f "$PROJ/.planning/workflows/20260101T000000Z-def456-silver-bugfix.md"
 run_dc "$(edit_json "$PROJ/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")" SB_WORKFLOW_ID=BAD
 assert_contains "malformed id blocks" "$(message)" "invalid format: BAD"
 run_dc "$(edit_json "$PROJ/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")" SB_WORKFLOW_ID=20260101T000000Z-zzz999-silver-feature

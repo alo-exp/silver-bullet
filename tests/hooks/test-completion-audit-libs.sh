@@ -228,9 +228,12 @@ rmdir "$wfroot/.planning/workflows/subdir.md"
 
 WF=20260101T000000Z-abc123-silver-feature
 printf '## Flow Log\n| 1 | a | complete |\n| 2 | b | pending |\n' >"$wfroot/.planning/workflows/$WF.md"
+printf '## Flow Log\n| 1 | a | pending |\n' >"$wfroot/.planning/workflows/20260101T000000Z-def456-silver-bugfix.md"
 gate X=1
 assert_contains "no id: gate blocks" "$TL_OUT" "SB_WORKFLOW_ID is not set"
 assert_contains "no id: active workflows are listed" "$TL_OUT" "• $WF"
+assert_contains "no id: every active workflow is listed" "$TL_OUT" "• 20260101T000000Z-def456-silver-bugfix"
+rm -f "$wfroot/.planning/workflows/20260101T000000Z-def456-silver-bugfix.md"
 assert_eq "no id: block path exits 0" 0 "$TL_STATUS"
 assert_not_contains "no id: does not fall through" "$TL_OUT" "fell-through"
 gate SB_WORKFLOW_ID=BAD_ID
@@ -326,11 +329,14 @@ echo c >>"$NOBASE/a.txt"
 collect "$NOBASE"
 assert_eq "no main/master branch: unstaged change reported" "a.txt" "$TL_OUT"
 
-tl_run bash -c 'source "$1"; git() { if [[ "$1 $2 $3" == "-C $4 diff" ]]; then return 1; fi; command git "$@"; }; ca_collect_changed_paths "$2"; echo "rc=$?"' _ "$CA/change-class.sh" "$GITROOT"
-assert_contains "failing git diff is tolerated" "$TL_OUT" "rc=0"
-tl_run bash -c 'source "$1"; git() { case "$*" in *diff*) return 1;; esac; command git "$@"; }; ca_collect_changed_paths "$2"; echo "rc=$?"' _ "$CA/change-class.sh" "$GITROOT"
-assert_eq "all git diffs failing: no paths, still success" "
-rc=0" "$TL_OUT"
+# External git stubs (a shell-function stub would interleave its own trace lines with the lib's).
+REAL_GIT="$(command -v git)"
+tl_stub git 'for a in "$@"; do [[ "$a" == diff ]] && exit 1; done; exec "$GIT_REAL" "$@"'
+export GIT_REAL="$REAL_GIT"
+collect "$GITROOT"
+assert_eq "all git diffs failing: no paths" "" "$TL_OUT"
+assert_eq "all git diffs failing: still success" 0 "$TL_STATUS"
+rm -f "$TL_BIN/git"
 
 tl_run bash -c 'source "$1"; ca_collect_changed_paths() { printf "docs/a.md\n\ndocs/b.md\n"; }; cmd_first_line=""; ca_detect_change_class "$2" ""; echo "$ca_change_class"' _ "$CA/change-class.sh" "$GITROOT"
 assert_eq "blank lines in the path list are skipped" "docs" "$TL_OUT"
