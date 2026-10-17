@@ -341,6 +341,20 @@ orch_stub_failing jq '.reason // "Orchestrator'
 tl_run_hook "$HOOK" "$(tool_json Edit src/a.txt)"
 orch_unstub jq
 assert_eq "directive reason unreadable: still denied" deny "$(decision)"
+# The directive disappears between the blocking check and the skill lookup.
+write_directive silver-plan PLAN
+real_jq="$(command -v jq)"
+cat >"$TL_BIN/jq" <<STUB
+#!/usr/bin/env bash
+if [[ "\$1" == "-e" ]]; then rm -f "$DIRF"; fi
+exec $real_jq "\$@"
+STUB
+chmod +x "$TL_BIN/jq"
+hash -r
+tl_run_hook "$HOOK" "$(tool_json Edit src/a.txt)"
+orch_unstub jq
+assert_eq "directive vanishing mid-check: not denied" "none" "$(decision)"
+assert_contains "directive vanishing mid-check: falls through to the workflow rule" "$TL_OUT" "edit without active workflow"
 # Override without a directive on disk and without a project-root cache hit.
 rm -f "$DIRF"
 ov="$(jq -cn '{hook_event_name:"PreToolUse",tool_name:"Edit",tool_input:{file_path:"a"},prompt:"SB OVERRIDE: no directive pending"}')"

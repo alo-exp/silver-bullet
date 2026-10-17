@@ -164,3 +164,16 @@ orch_stage_tree() {
   cp -R "$TL_REPO_ROOT/hooks" "$root/hooks"
   printf '%s' "$root/hooks"
 }
+
+# orch_stub_failing_nth CMD PATTERN N: like orch_stub_failing, but only the N-th invocation
+# whose arguments contain PATTERN fails (earlier and later ones run the real command).
+orch_stub_failing_nth() {
+  local cmd="$1" pattern="$2" nth="$3" real counter
+  rm -f "$TL_BIN/$cmd"
+  hash -r
+  real="$(command -v "$cmd")"
+  counter="$TL_TMP/nth-$cmd.count"
+  rm -f "$counter"
+  tl_stub "$cmd" "for a in \"\$@\"; do if [[ \"\$a\" == *'$pattern'* ]]; then n=\$(cat '$counter' 2>/dev/null || echo 0); n=\$((n + 1)); echo \"\$n\" >'$counter'; [[ \"\$n\" -eq $nth ]] && exit 1; break; fi; done; exec $real \"\$@\""
+  hash -r
+}
