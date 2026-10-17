@@ -155,6 +155,19 @@ peval="$(rt_attestation_validate "$partial" "$receipt")"
 echo "$peval" | jq -e '.activation_status == "partial" and .clear_eligible == false' >/dev/null 2>&1 \
   && pass "partial tool failures retain reload_required" || fail "partial tool failures retain reload_required"
 
+# A partial activation stays valid when the only errors are missing tools, and
+# turns invalid as soon as any other error comes with them (each error is
+# checked on its own line).
+only_missing="$(build_attestation success | jq -c 'del(.servers.agentmemory.tools[1])')"
+omeval="$(rt_attestation_validate "$only_missing" "$receipt")"
+echo "$omeval" | jq -e '.activation_status == "partial" and .valid == true and (.errors | all(startswith("missing_tool:")))' >/dev/null 2>&1 \
+  && pass "partial with only missing tools is valid" || fail "partial with only missing tools is valid: $omeval"
+# The extra error comes after the missing-tool one: unexpected_tool:...
+missing_plus="$(build_attestation success | jq -c '.servers.agentmemory.tools[1].id = "bogus_tool"')"
+mpeval="$(rt_attestation_validate "$missing_plus" "$receipt")"
+echo "$mpeval" | jq -e '.activation_status == "partial" and .valid == false and (.errors | index("unexpected_tool:agentmemory/bogus_tool"))' >/dev/null 2>&1 \
+  && pass "partial with a missing tool and another error is invalid" || fail "partial with a missing tool and another error is invalid: $mpeval"
+
 # oversized stdin
 big="$(printf '%70000s' 'x')"
 big_rc=0
