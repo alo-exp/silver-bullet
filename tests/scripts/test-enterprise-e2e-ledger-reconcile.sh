@@ -26,6 +26,7 @@ mk_ledger() {
 
 # --- sourced function behaviour -------------------------------------------
 # shellcheck source=scripts/lib/enterprise-e2e-ledger-reconcile.sh
+# shellcheck source=scripts/lib/enterprise-e2e-ledger-reconcile.sh
 source "$LIB"
 
 # path resolution: SB_ROOT set vs derived from the library location
@@ -55,6 +56,7 @@ if enterprise_e2e_ledger_header_ok "$TL_TMP/does-not-exist.md"; then tl_fail "he
 enterprise_e2e_ledger_required_columns() { printf 'Pass/Fail\n\n'; }
 if enterprise_e2e_ledger_header_ok "$TL_TMP/nocols.md"; then tl_pass "blank required column skipped"; else tl_fail "blank required column skipped"; fi
 unset -f enterprise_e2e_ledger_required_columns
+# shellcheck source=scripts/lib/enterprise-e2e-ledger-reconcile.sh
 source "$LIB"
 
 # matrix rows / summary
@@ -68,6 +70,7 @@ assert_eq "summary of full ledger" "22 22 " "$(enterprise_e2e_ledger_pass_summar
 # blank row numbers from the row emitter are ignored
 enterprise_e2e_ledger_matrix_rows() { printf ' \n5 pass\n'; }
 assert_eq "summary skips blank rows" "1 1 " "$(enterprise_e2e_ledger_pass_summary x)"
+# shellcheck source=scripts/lib/enterprise-e2e-ledger-reconcile.sh
 source "$LIB"
 
 # rows without a Pass/Fail column are dropped
