@@ -670,7 +670,7 @@ for skill in $required_skills; do
     if sb_required_skill_is_recorded "$state_contents" "$skill"; then
       skill_recorded=true
     fi
-  elif grep -Fqx -- "$skill" 2>/dev/null <<<"$state_contents"; then
+  elif grep -Fqx -- "$skill" <<<"$state_contents" 2>/dev/null; then
     skill_recorded=true
   else
     skill_recorded=false

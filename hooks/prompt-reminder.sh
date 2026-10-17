@@ -189,7 +189,7 @@ if [[ "$delivery_adjacent" != true ]]; then
     if sb_required_skill_is_recorded "$state_contents" "silver-execute"; then
       delivery_adjacent=true
     fi
-  elif grep -Fqx -- "silver-execute" 2>/dev/null <<<"$state_contents"; then
+  elif grep -Fqx -- "silver-execute" <<<"$state_contents" 2>/dev/null; then
     delivery_adjacent=true
   fi
 fi
@@ -239,7 +239,7 @@ for skill in $required_skills; do
     else
       missing_list="${missing_list:+$missing_list, }${skill}"
     fi
-  elif grep -Fqx -- "$skill" 2>/dev/null <<<"$state_contents"; then
+  elif grep -Fqx -- "$skill" <<<"$state_contents" 2>/dev/null; then
     completed=$((completed + 1))
   else
     missing_list="${missing_list:+$missing_list, }${skill}"

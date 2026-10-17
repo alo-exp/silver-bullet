@@ -242,7 +242,7 @@ sb_orchestrator_directive_skill_recorded() {
     sb_required_skill_is_recorded "$state_contents" "$expected"
     return $?
   fi
-  grep -Fqx -- "$expected" 2>/dev/null <<<"$state_contents"
+  grep -Fqx -- "$expected" <<<"$state_contents" 2>/dev/null
 }
 
 sb_orchestrator_directive_context_block() {
