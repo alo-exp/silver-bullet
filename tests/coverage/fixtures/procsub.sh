@@ -23,4 +23,19 @@ skipped() {
     : "$item"
   done < <(emit never || true)
 }
+gather() {
+  local k out=""
+  while IFS= read -r k; do
+    out+="$k"
+  done < <(broken 2>/dev/null || true)
+  while IFS= read -r k; do
+    out+="$k"
+  done < <(broken "$out" 2>/dev/null || true)
+  for k in a b; do
+    while IFS= read -r out; do
+      : "$out"
+    done < <(broken "$k" 2>/dev/null || true)
+  done
+}
 collect >/dev/null
+gather

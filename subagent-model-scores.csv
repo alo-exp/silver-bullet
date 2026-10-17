@@ -36,3 +36,5 @@ timestamp,model_slug,reasoning_effort,score,task_complexity
 2026-10-17T21:09:22Z,claude-sonnet-5-5,low,4,high
 2026-10-17T21:09:22Z,claude-sonnet-5-5,low,4,high
 2026-10-17T21:43:58Z,claude-sonnet-5-5,low,5,high
+2026-10-17T21:46:52Z,claude-sonnet-5-5,low,5,high
+2026-10-17T21:46:52Z,claude-sonnet-5-5,medium,5,high
