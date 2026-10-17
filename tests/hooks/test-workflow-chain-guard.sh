@@ -90,7 +90,7 @@ run_hook_apply_patch() {
 
 is_denied() {
   local output="$1"
-  [[ -n "$output" ]] && printf '%s' "$output" | grep -qE '"permissionDecision"\s*:\s*"deny"|"decision"\s*:\s*"block"'
+  [[ -n "$output" ]] && grep -qE '"permissionDecision"\s*:\s*"deny"|"decision"\s*:\s*"block"' <<<"$output"
 }
 
 assert_blocks() {

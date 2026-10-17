@@ -15,7 +15,7 @@ assert_pass() {
   shift
   local out
   if out="$("$@" 2>&1)"; then
-    if printf '%s\n' "$out" | grep -q '"status": "pass"'; then
+    if grep -q '"status": "pass"' <<<"$out"; then
       echo "PASS: $label"
       PASS=$((PASS + 1))
     else

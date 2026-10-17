@@ -218,7 +218,7 @@ leanctx_install_count="$(printf '%s\n' "$leanctx_install_lines" | sed '/^$/d' | 
 [[ "$leanctx_install_count" -eq 1 ]] \
   && pass "recommended-tools leanctx emits single platform install line" \
   || fail "recommended-tools leanctx emits single platform install line"
-printf '%s' "$leanctx_install_lines" | grep -qF -- '--project-root "$(pwd)"' \
+grep -qF -- '--project-root "$(pwd)"' <<<"$leanctx_install_lines" \
   && pass "recommended-tools leanctx platform install includes --project-root" \
   || fail "recommended-tools leanctx platform install includes --project-root"
 

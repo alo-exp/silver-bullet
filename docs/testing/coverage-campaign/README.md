@@ -60,6 +60,20 @@ Update the base commit named in coverage-agent-prompt.md to the PR branch head b
 
 The partial branches are unreviewed WIP checkpoints taken when the container restarted; review the source edits before keeping them.
 
+## Dead code and root-only paths
+
+Statements that cannot run are removed, not excluded: each removal is its own `refactor:` commit that states why the code is unreachable, with the package's tests passing before and after. Paths that need a non-root user (unreadable files) are tested with an explicit skip under root; CI runs as a normal user, so the CI coverage job measures them.
+
+## Findings outside the package that found them
+
+| Finding | Where | Owner package |
+|---|---|---|
+| `if sb_stack_gitleaks_path >/dev/null` always passes (the function always exits 0), so diagnostics report gitleaks installed regardless | `scripts/sb-diagnostics.sh:275` | L-scripts-misc (sb-diagnostics) |
+| `jq '... // "true"'` reads a JSON boolean `false` as `"true"`, so `hooks.evidence_schema.strict: false` does not relax the gate | `hooks/lib/enterprise-policy.sh:157`, `hooks/lib/completion-audit/gates.sh:221/224/227` | E-core-hooks / A follow-up |
+| `count_*` helpers use `grep -c ... \|\| echo 0` (prints `0` twice when nothing matches) | `hooks/lib/workflow-utils.sh` | E-core-hooks |
+| Invalid escape `\s` in a Python string (SyntaxWarning, an error in future Python) | `skills/silver-deep-research-multi-ai/scripts/landscape_preview_render.py:665` | M-dr-multi-ai |
+| `sb_rfl_activate` aborts under errexit in a project without `scripts/review-fix-ladder.py` | `hooks/lib/review-fix-ladder-state.sh` | D-gates (under review) |
+
 ## Known measurement limits
 
 - Bash branch coverage beyond statements is not measurable from xtrace; `a || b` one-liners are covered at the statement level (each side is its own statement).

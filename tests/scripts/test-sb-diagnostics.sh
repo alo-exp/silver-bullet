@@ -75,9 +75,9 @@ assert_output_contains "diagnostics emits Results line" "Results:" bash "$SCRIPT
 assert_output_contains "diagnostics checks jq" "jq" bash "$SCRIPT"
 assert_output_contains "diagnostics reports capability tier" "runtime-capability-tier" bash "$SCRIPT"
 diag_out="$(bash "$SCRIPT" 2>&1 || true)"
-if grep 'graphify-cli' >/dev/null <<<"$diag_out"; then
+if grep 'graphify-cli' <<<"$diag_out" >/dev/null; then
   pass "diagnostics checks graphify CLI"
-elif grep -Eq 'graphify-cli|graphify[[:space:]]' >/dev/null <<<"$diag_out"; then
+elif grep -Eq 'graphify-cli|graphify[[:space:]]' <<<"$diag_out" >/dev/null; then
   pass "diagnostics reports graphify status when CLI absent"
 else
   fail "diagnostics checks graphify CLI — output missing graphify status"
@@ -88,7 +88,7 @@ grep -q 'stack-optimizer' "$SCRIPT" && pass "diagnostics sources stack-optimizer
 grep -q 'optimize-gitleaks' "$SCRIPT" && pass "diagnostics includes optimize-gitleaks" || fail "diagnostics optimize-gitleaks"
 
 json_out="$(SB_DIAG_FORMAT=json bash "$SCRIPT" 2>&1 || true)"
-if jq -e '.capability_tier' >/dev/null <<<"$json_out"; then
+if jq -e '.capability_tier' <<<"$json_out" >/dev/null; then
   pass "json diagnostics includes capability_tier"
 else
   fail "json diagnostics includes capability_tier"

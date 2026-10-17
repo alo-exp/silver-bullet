@@ -15,7 +15,7 @@ fail() { echo "FAIL: $1"; FAIL=$((FAIL + 1)); }
 
 is_denied() {
   local output="$1"
-  [[ -n "$output" ]] && printf '%s' "$output" | grep -qE '"permissionDecision"[[:space:]]*:[[:space:]]*"deny"|"decision"[[:space:]]*:[[:space:]]*"block"'
+  [[ -n "$output" ]] && grep -qE '"permissionDecision"[[:space:]]*:[[:space:]]*"deny"|"decision"[[:space:]]*:[[:space:]]*"block"' <<<"$output"
 }
 
 WORKDIR="$(mktemp -d "${TMPDIR:-/tmp}/rfl-policy-c-gate.XXXXXX")"
@@ -106,7 +106,7 @@ EOF
 printf '# SKIPPED none\n' >"$RUNG/SKIPPED.md"
 # stop-check may still block on required skills; Policy C should not deny
 stop_out="$(cd "$WORKDIR" && printf '%s' '{"hook_event_name":"Stop"}' | env SB_ORCHESTRATOR_WORKER= SILVER_BULLET_RUNTIME=cursor bash "$STOP" 2>/dev/null || true)"
-if printf '%s' "$stop_out" | grep -q 'Policy C'; then
+if grep -q 'Policy C' <<<"$stop_out"; then
   fail "stop-check does not Policy-C-deny when valid"
   printf '%s\n' "$stop_out"
 else

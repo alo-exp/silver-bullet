@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Guards against `printf ... | grep -q` / `echo ... | grep -q` in first-party Bash.
+# Guards against `printf ... | grep -q` / `echo ... | grep -q` in first-party Bash,
+# tests included.
 #
 # grep -q (and -m) exits at the first match. bash's printf and echo write
 # multi-line text one line per write(), so a writer still holding lines gets
@@ -25,9 +26,10 @@ grep -q '^match$' <<<"$big" || rc=$?
 assert_eq "grep -q with a here-string succeeds" 0 "$rc"
 
 offenders="$(cd "$TL_REPO_ROOT" &&
-  git ls-files -- 'hooks/*' 'scripts/*' 'skills/*' 'site/*' |
+  git ls-files -- 'hooks/*' 'scripts/*' 'skills/*' 'site/*' 'tests/*' |
   while IFS= read -r f; do
     [[ -f "$f" && ! -L "$f" ]] || continue
+    [[ "$f" == tests/scripts/test-no-pipe-into-grep-quiet.sh ]] && continue  # demonstrates the pattern
     case "$f" in
       *.sh | hooks/session-start | scripts/silver-bullet) ;;
       *) head -1 "$f" | grep -q 'bash' || continue ;;
@@ -39,6 +41,21 @@ if [[ -z "$offenders" ]]; then
 else
   tl_fail "printf/echo piped into grep -q/-m (use grep ... <<<\"\$text\"):
 $offenders"
+fi
+
+# The replacement must keep one element per line: a here-string of "${arr[@]}"
+# or "$@" joins the elements with spaces, so grep -x never matches.
+joined="$(cd "$TL_REPO_ROOT" &&
+  git ls-files -- 'hooks/*' 'scripts/*' 'skills/*' 'tests/*' |
+  while IFS= read -r f; do
+    [[ -f "$f" && ! -L "$f" && "$f" == *.sh ]] || continue
+    grep -nE '<<<"(\$\{[A-Za-z_][A-Za-z0-9_]*\[@\]\}|\$@)"' "$f" | sed "s|^|$f:|" || true
+  done)"
+if [[ -z "$joined" ]]; then
+  tl_pass "no here-string over an array or \$@"
+else
+  tl_fail "here-string over an array joins elements (use <<<\"\$(printf '%s\\n' \"\${arr[@]}\")\"):
+$joined"
 fi
 
 tl_results
