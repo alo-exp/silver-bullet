@@ -55,7 +55,7 @@ emit_deny() {
 
 case "$file_path" in
   */site/tokens.css|site/tokens.css)
-    if printf '%s' "$new_string" | grep -qE '@font-face|font-family:[[:space:]]*[^v]'; then
+    if printf '%s' "$new_string" | grep -qE '@font-face|font-family:[[:space:]]*[^v[:space:]]'; then
       if ! printf '%s' "$new_string" | grep -q 'SB FONT TOKEN OVERRIDE'; then
         emit_deny "Site tokens guard — tokens.css @font-face / font-family edits require explicit SB FONT TOKEN OVERRIDE marker in the diff.
 
