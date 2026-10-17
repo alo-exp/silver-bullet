@@ -344,7 +344,6 @@ EOF
     local mandatory=false
 
     for doc_key in "${_sb_required_doc_keys[@]}"; do
-      [[ -n "$doc_key" ]] || continue
       status=$(jq -r --arg k "$doc_key" '.docs[$k] // empty' "$checklist" 2>/dev/null || true)
       if [[ -z "$status" ]]; then
         gate_issues+="  - Missing checklist entry: ${doc_key}"$'\n'
