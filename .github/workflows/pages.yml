@@ -27,8 +27,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
+      # Publish only the public site: local preview/asset tooling stays in the repo.
+      - name: Stage public site
+        run: |
+          rsync -a --delete \
+            --exclude '*.py' --exclude '*.sh' --exclude '*.plist' --exclude '.claude/' \
+            site/ _site/
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: site
+          path: _site
       - id: deployment
         uses: actions/deploy-pages@v4

@@ -8,7 +8,7 @@ sources: silver-bullet.md, docs/ORCHESTRATOR.md, atomic-flow-redesign.plan.md, S
 # Silver Bullet Autonomous Enterprise Delivery — Product Vision
 
 **Audience:** Technical product / architecture  
-**Sources:** [`silver-bullet.md`](../silver-bullet.md), [`docs/ORCHESTRATOR.md`](ORCHESTRATOR.md), [`docs/composable-flows-contracts.md`](composable-flows-contracts.md), [`docs/research-260624/atomic-flow-redesign.plan.md`](research-260624/atomic-flow-redesign.plan.md), [`docs/research-260624/SB_CONSOLIDATED_PRIOR_ART_REPORT.md`](research-260624/SB_CONSOLIDATED_PRIOR_ART_REPORT.md), [`skills/silver-orchestrator/SKILL.md`](../skills/silver-orchestrator/SKILL.md), [`skills/silver-feature/SKILL.md`](../skills/silver-feature/SKILL.md), [`.planning/enterprise-e2e/`](../.planning/enterprise-e2e/)  
+**Sources:** [`silver-bullet.md`](../silver-bullet.md), [`docs/ORCHESTRATOR.md`](ORCHESTRATOR.md), [`docs/composable-flows-contracts.md`](composable-flows-contracts.md), [`research/2026-06-24-prior-art-and-extensibility/atomic-flow-redesign.plan.md`](../research/2026-06-24-prior-art-and-extensibility/atomic-flow-redesign.plan.md), [`research/2026-06-24-prior-art-and-extensibility/SB_CONSOLIDATED_PRIOR_ART_REPORT.md`](../research/2026-06-24-prior-art-and-extensibility/SB_CONSOLIDATED_PRIOR_ART_REPORT.md), [`skills/silver-orchestrator/SKILL.md`](../skills/silver-orchestrator/SKILL.md), [`skills/silver-feature/SKILL.md`](../skills/silver-feature/SKILL.md), [`.planning/enterprise-e2e/`](../.planning/enterprise-e2e/)  
 **Status:** Vision synthesis — not an implementation spec
 
 ---
@@ -56,15 +56,15 @@ Autonomous mode is not "no rules." It is **process-autonomous with evidence-auto
 | **Hook-enforced lifecycle** | Planning floor, completion audit, outcomes-check, stop hook ([`silver-bullet.md`](../silver-bullet.md) §1) |
 | **Autonomous session mode** | Mode file, anti-stall, structured commentary ([`silver-bullet.md`](../silver-bullet.md) §2f, §4) |
 | **Enterprise E2E validation program** | 22-row matrix, shared harness, outcome rubric with blocking autonomy gates ([`.planning/enterprise-e2e/`](../.planning/enterprise-e2e/)) |
-| **Atomic-flow redesign (v0.48+)** | Catalog, V-loops, intent ledger, composition log — marked completed in [`docs/research-260624/atomic-flow-redesign.plan.md`](research-260624/atomic-flow-redesign.plan.md) |
+| **Atomic-flow redesign (v0.48+)** | Catalog, V-loops, intent ledger, composition log — marked completed in [`research/2026-06-24-prior-art-and-extensibility/atomic-flow-redesign.plan.md`](../research/2026-06-24-prior-art-and-extensibility/atomic-flow-redesign.plan.md) |
 
 ### Vision requires (not yet proven at enterprise scale)
 
 | Requirement | Gap vs. today |
 |-------------|---------------|
 | **Cold-start autonomy** — vague prompt → shipped app without operator babysitting | Early E2E rounds needed heavy operator intervention ([`docs/testing/ENTERPRISE-E2E-EFFECTIVENESS-PLAN.md`](testing/ENTERPRISE-E2E-EFFECTIVENESS-PLAN.md) §1) |
-| **Durable orchestration** — retries, sagas, replay across sessions | Workers are LLM calls in hooks; no Conductor/Temporal substrate ([`docs/research-260624/SB_CONSOLIDATED_PRIOR_ART_REPORT.md`](research-260624/SB_CONSOLIDATED_PRIOR_ART_REPORT.md) §8) |
-| **Full parallel DAG scheduling** | Designed ([`docs/research-260624/atomic-flow-redesign.plan.md`](research-260624/atomic-flow-redesign.plan.md) §Parallel execution rules); host multitask adapters not fully realized |
+| **Durable orchestration** — retries, sagas, replay across sessions | Workers are LLM calls in hooks; no Conductor/Temporal substrate ([`research/2026-06-24-prior-art-and-extensibility/SB_CONSOLIDATED_PRIOR_ART_REPORT.md`](../research/2026-06-24-prior-art-and-extensibility/SB_CONSOLIDATED_PRIOR_ART_REPORT.md) §8) |
+| **Full parallel DAG scheduling** | Designed ([`research/2026-06-24-prior-art-and-extensibility/atomic-flow-redesign.plan.md`](../research/2026-06-24-prior-art-and-extensibility/atomic-flow-redesign.plan.md) §Parallel execution rules); host multitask adapters not fully realized |
 | **Tri-host parity** | Claude/Codex/Cursor E2E tracks in flight; early program was Claude-centric ([`docs/testing/ENTERPRISE-E2E-EFFECTIVENESS-PLAN.md`](testing/ENTERPRISE-E2E-EFFECTIVENESS-PLAN.md) §2 blind spots) |
 | **Claims-grade measurement** | 22/22 ≠ world-class reliability; monitor/ledger drift observed ([`docs/testing/ENTERPRISE-E2E-EFFECTIVENESS-PLAN.md`](testing/ENTERPRISE-E2E-EFFECTIVENESS-PLAN.md)) |
 | **True deploy autonomy** | Tags/releases and some destructive ops still user-triggered by policy ([`AGENTS.md`](../AGENTS.md); [`silver-bullet.md`](../silver-bullet.md) §7 file safety) |
@@ -85,7 +85,7 @@ Silver Bullet self-describes as an **Agentic Process Orchestrator** with hierarc
 
 ### 3.2 Atomic flows as subagent work packages
 
-**One atomic flow = exactly one subagent work package.** Workflows are dependency DAGs; independent flows may parallelize; dependents join on V-gates ([`docs/research-260624/atomic-flow-redesign.plan.md`](research-260624/atomic-flow-redesign.plan.md) §Goal; [`docs/research-260624/SB_PRIOR_ART_RESEARCH_PROMPT.md`](research-260624/SB_PRIOR_ART_RESEARCH_PROMPT.md) §Core differentiators).
+**One atomic flow = exactly one subagent work package.** Workflows are dependency DAGs; independent flows may parallelize; dependents join on V-gates ([`research/2026-06-24-prior-art-and-extensibility/atomic-flow-redesign.plan.md`](../research/2026-06-24-prior-art-and-extensibility/atomic-flow-redesign.plan.md) §Goal; [`research/2026-06-24-prior-art-and-extensibility/SB_PRIOR_ART_RESEARCH_PROMPT.md`](../research/2026-06-24-prior-art-and-extensibility/SB_PRIOR_ART_RESEARCH_PROMPT.md) §Core differentiators).
 
 Each `AF-*` maps to a worker template under `.silver-bullet/orchestrator-workers/` (e.g. `EXECUTE.md`, `SHIP.md`) ([`docs/composable-flows-contracts.md`](composable-flows-contracts.md) §Atomic Flow Catalog).
 
@@ -104,7 +104,7 @@ State files: `orchestrator.json`, `orchestrator-directive.json`, `orchestrator-i
 
 ### 3.4 Hooks as fail-closed enforcement
 
-Hooks block **commits, PRs, deploy, release, session stop** until lifecycle evidence exists ([`silver-bullet.md`](../silver-bullet.md) §1; [`docs/research-260624/SB_CONSOLIDATED_PRIOR_ART_REPORT.md`](research-260624/SB_CONSOLIDATED_PRIOR_ART_REPORT.md) §8 — "blocks delivery by default").
+Hooks block **commits, PRs, deploy, release, session stop** until lifecycle evidence exists ([`silver-bullet.md`](../silver-bullet.md) §1; [`research/2026-06-24-prior-art-and-extensibility/SB_CONSOLIDATED_PRIOR_ART_REPORT.md`](../research/2026-06-24-prior-art-and-extensibility/SB_CONSOLIDATED_PRIOR_ART_REPORT.md) §8 — "blocks delivery by default").
 
 Key guards:
 - `orchestrator-directive-guard.sh` — parent implementation block
@@ -114,19 +114,19 @@ Key guards:
 
 ### 3.5 V-loops and intent validation
 
-Every atomic flow and flow step owns a V-loop: input → work product → verification (build it right) → validation (build the right thing) → repair → escalation → evidence ([`docs/research-260624/atomic-flow-redesign.plan.md`](research-260624/atomic-flow-redesign.plan.md) §APO And V-Model Principles).
+Every atomic flow and flow step owns a V-loop: input → work product → verification (build it right) → validation (build the right thing) → repair → escalation → evidence ([`research/2026-06-24-prior-art-and-extensibility/atomic-flow-redesign.plan.md`](../research/2026-06-24-prior-art-and-extensibility/atomic-flow-redesign.plan.md) §APO And V-Model Principles).
 
 Composed workflows roll up child V-gates and end with **`INTENT-GATE-DEFAULT`** — material user-intent claims checked against artifacts ([`docs/composable-flows-contracts.md`](composable-flows-contracts.md) — all workflows declare `Final intent gate: INTENT-GATE-DEFAULT`).
 
 ### 3.6 Evidence and recommended tools
 
-Once opted in, Graphify, agentmemory, RTK, Context Mode, Alumnium become **mandatory when relevant** to the active flow; outputs are V-model evidence ([`docs/research-260624/atomic-flow-redesign.plan.md`](research-260624/atomic-flow-redesign.plan.md) §Opted-In Tool Governance; [`silver-bullet.md`](../silver-bullet.md) §2g-i).
+Once opted in, Graphify, agentmemory, RTK, Context Mode, Alumnium become **mandatory when relevant** to the active flow; outputs are V-model evidence ([`research/2026-06-24-prior-art-and-extensibility/atomic-flow-redesign.plan.md`](../research/2026-06-24-prior-art-and-extensibility/atomic-flow-redesign.plan.md) §Opted-In Tool Governance; [`silver-bullet.md`](../silver-bullet.md) §2g-i).
 
 Enterprise E2E rubric scores **OUT-KM-01** (Graphify + agentmemory), **OUT-VLOOP-01**, **OUT-GATES-01**, **OUT-TRACE-01** ([`.planning/enterprise-e2e/OUTCOME-ASSESSMENT-RUBRIC.md`](../.planning/enterprise-e2e/OUTCOME-ASSESSMENT-RUBRIC.md)).
 
 ### 3.7 Dynamic composition with audit
 
-Pre-composed workflows (e.g. `WF-SILVER-FEATURE`) are **defaults, not ceremony**. Runtime may prune/insert/substitute `AF-*` atoms when catalog rules and context justify it; deviations go to `composition_log` ([`docs/research-260624/atomic-flow-redesign.plan.md`](research-260624/atomic-flow-redesign.plan.md) §Design Decisions; **OUT-TAILOR-01** in rubric).
+Pre-composed workflows (e.g. `WF-SILVER-FEATURE`) are **defaults, not ceremony**. Runtime may prune/insert/substitute `AF-*` atoms when catalog rules and context justify it; deviations go to `composition_log` ([`research/2026-06-24-prior-art-and-extensibility/atomic-flow-redesign.plan.md`](../research/2026-06-24-prior-art-and-extensibility/atomic-flow-redesign.plan.md) §Design Decisions; **OUT-TAILOR-01** in rubric).
 
 ---
 
@@ -284,7 +284,7 @@ Matrix rows run in **autonomous Agent mode** — no Plan/Debug mid-row ([`docs/O
 
 ### 7.1 From prior art (honest external assessment)
 
-[`docs/research-260624/SB_CONSOLIDATED_PRIOR_ART_REPORT.md`](research-260624/SB_CONSOLIDATED_PRIOR_ART_REPORT.md) §8 identifies three structural lacks:
+[`research/2026-06-24-prior-art-and-extensibility/SB_CONSOLIDATED_PRIOR_ART_REPORT.md`](../research/2026-06-24-prior-art-and-extensibility/SB_CONSOLIDATED_PRIOR_ART_REPORT.md) §8 identifies three structural lacks:
 
 1. **Durable execution substrate** — no Temporal/Conductor-grade retries, sagas, replay  
 2. **Production adoption signal** — defined + documented vs. BMAD/Superpowers community scale  
@@ -309,7 +309,7 @@ SB's moat (catalog + V-loop rollups + hook blocking + SE+DevOps unity) is **arch
 
 | Gap | Impact on vision |
 |-----|------------------|
-| **Parallel scheduler + mutation-scope conflict detection** | Designed in atomic-flow plan Phase 8; not fully deployed ([`docs/research-260624/atomic-flow-redesign.plan.md`](research-260624/atomic-flow-redesign.plan.md) §Phase 8) |
+| **Parallel scheduler + mutation-scope conflict detection** | Designed in atomic-flow plan Phase 8; not fully deployed ([`research/2026-06-24-prior-art-and-extensibility/atomic-flow-redesign.plan.md`](../research/2026-06-24-prior-art-and-extensibility/atomic-flow-redesign.plan.md) §Phase 8) |
 | **Step V-loop runtime rollup enforcement** | Catalog exists; join gates may not yet block on all step rollups in practice |
 | **Tier 0–1 hosts** | No Task/subagent — single-session inline execution ([`docs/ORCHESTRATOR.md`](ORCHESTRATOR.md) §Tier 0–1) |
 | **TUI vs. `--print` skill invocation** | Interactive path not fully validated ([`docs/testing/ENTERPRISE-E2E-EFFECTIVENESS-PLAN.md`](testing/ENTERPRISE-E2E-EFFECTIVENESS-PLAN.md)) |
@@ -319,7 +319,7 @@ SB's moat (catalog + V-loop rollups + hook blocking + SE+DevOps unity) is **arch
 
 ### 7.4 Competitive threats to the vision
 
-From [`docs/research-260624/SB_CONSOLIDATED_PRIOR_ART_REPORT.md`](research-260624/SB_CONSOLIDATED_PRIOR_ART_REPORT.md) §8: Superpowers adding V-loops + evidence tiers; GitHub Spec Kit mindshare; gh-aw as enforcement peer; BMAD custom agents dissolving process-pack moat.
+From [`research/2026-06-24-prior-art-and-extensibility/SB_CONSOLIDATED_PRIOR_ART_REPORT.md`](../research/2026-06-24-prior-art-and-extensibility/SB_CONSOLIDATED_PRIOR_ART_REPORT.md) §8: Superpowers adding V-loops + evidence tiers; GitHub Spec Kit mindshare; gh-aw as enforcement peer; BMAD custom agents dissolving process-pack moat.
 
 ---
 
@@ -340,7 +340,7 @@ From [`docs/research-260624/SB_CONSOLIDATED_PRIOR_ART_REPORT.md`](research-26062
 
 **Goal:** Catalog semantics fully drive runtime, not prose.
 
-Aligned with [`docs/research-260624/atomic-flow-redesign.plan.md`](research-260624/atomic-flow-redesign.plan.md) Phase 8:
+Aligned with [`research/2026-06-24-prior-art-and-extensibility/atomic-flow-redesign.plan.md`](../research/2026-06-24-prior-art-and-extensibility/atomic-flow-redesign.plan.md) Phase 8:
 
 - DAG scheduler with recorded subagent IDs, join gates, composition_log
 - `test-parallel-scheduling-safety.sh`, `test-step-vloop-runtime-rollup.sh`, `test-dynamic-composition-audit.sh`
@@ -355,7 +355,7 @@ Aligned with [`docs/research-260624/atomic-flow-redesign.plan.md`](research-2606
 - Auto-autonomous when safe (extend bypass-permissions pattern; enterprise policy profiles)
 - `sb:clarify --auto` as default front door for vague intent
 - Session 0 fully automated (`/sb:init` TUI path validated)
-- Process packs for team gate overlays without forking `AF-*` ([`docs/research-260624/atomic-flow-redesign.plan.md`](research-260624/atomic-flow-redesign.plan.md) Phase 6)
+- Process packs for team gate overlays without forking `AF-*` ([`research/2026-06-24-prior-art-and-extensibility/atomic-flow-redesign.plan.md`](../research/2026-06-24-prior-art-and-extensibility/atomic-flow-redesign.plan.md) Phase 6)
 
 **Exit criteria:** New project: user provides brief → SPEC → multi-phase feature → PR without interactive prompts except `decision_class: blocking`.
 
@@ -377,7 +377,7 @@ Aligned with [`docs/research-260624/atomic-flow-redesign.plan.md`](research-2606
 - Statistical SLOs (flake budget, consecutive-round definition)
 - SOC2/evidence export from `evidence_records` + instruction ledger
 - IDE marketplace parity; process-pack marketplace
-- Defend moat: unified SE+DevOps catalog, tiered evidence, delivery blocking ([`docs/research-260624/SB_CONSOLIDATED_PRIOR_ART_REPORT.md`](research-260624/SB_CONSOLIDATED_PRIOR_ART_REPORT.md) §8 opportunities)
+- Defend moat: unified SE+DevOps catalog, tiered evidence, delivery blocking ([`research/2026-06-24-prior-art-and-extensibility/SB_CONSOLIDATED_PRIOR_ART_REPORT.md`](../research/2026-06-24-prior-art-and-extensibility/SB_CONSOLIDATED_PRIOR_ART_REPORT.md) §8 opportunities)
 
 **Exit criteria:** Customer pilot: intent → production deploy with audited composition_log, intent gate PASS, and human touchpoints only on blockers + compliance gates.
 
@@ -400,8 +400,8 @@ The **gap is operational proof**: durable execution, tri-host strict-clean certi
 | Canonical instructions | [`silver-bullet.md`](../silver-bullet.md) |
 | Orchestrator contract | [`docs/ORCHESTRATOR.md`](ORCHESTRATOR.md) |
 | Flow contracts (generated) | [`docs/composable-flows-contracts.md`](composable-flows-contracts.md) |
-| APO redesign plan | [`docs/research-260624/atomic-flow-redesign.plan.md`](research-260624/atomic-flow-redesign.plan.md) |
-| Market positioning | [`docs/research-260624/SB_CONSOLIDATED_PRIOR_ART_REPORT.md`](research-260624/SB_CONSOLIDATED_PRIOR_ART_REPORT.md) §8 |
+| APO redesign plan | [`research/2026-06-24-prior-art-and-extensibility/atomic-flow-redesign.plan.md`](../research/2026-06-24-prior-art-and-extensibility/atomic-flow-redesign.plan.md) |
+| Market positioning | [`research/2026-06-24-prior-art-and-extensibility/SB_CONSOLIDATED_PRIOR_ART_REPORT.md`](../research/2026-06-24-prior-art-and-extensibility/SB_CONSOLIDATED_PRIOR_ART_REPORT.md) §8 |
 | Parent skill | [`skills/silver-orchestrator/SKILL.md`](../skills/silver-orchestrator/SKILL.md) |
 | Feature queue builder | [`skills/silver-feature/SKILL.md`](../skills/silver-feature/SKILL.md) |
 | Enterprise E2E ops | [`.planning/enterprise-e2e/OPERATIONAL-ADDENDUM.md`](../.planning/enterprise-e2e/OPERATIONAL-ADDENDUM.md) |
