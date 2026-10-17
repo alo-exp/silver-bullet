@@ -205,11 +205,27 @@ def has_tokenized_redirect(command_name, args):
     return False
 
 
-def is_in_place_flag(arg: str) -> bool:
-    # -i, -i.bak, bundled short flags (sed -Ei, sed -ni) and --in-place[=SUFFIX]
+# Short options that take the rest of the bundle (or the next word) as their argument;
+# letters after one of them are that argument, not further flags.
+ARG_TAKING_SHORT_OPTIONS = {
+    "sed": set("efl"),
+    "perl": set("eEMmIxCdDF"),
+}
+
+
+def is_in_place_flag(command_name: str, arg: str) -> bool:
+    # -i, -i.bak, bundled short flags (sed -Ei, perl -pi) and --in-place[=SUFFIX]
     if arg == "--in-place" or arg.startswith("--in-place="):
         return True
-    return arg.startswith("-") and not arg.startswith("--") and "i" in arg[1:]
+    if not arg.startswith("-") or arg.startswith("--"):
+        return False
+    stop = ARG_TAKING_SHORT_OPTIONS.get(command_name, set())
+    for ch in arg[1:]:
+        if ch == "i":
+            return True
+        if ch in stop:
+            return False
+    return False
 
 
 def first_non_option(args):
@@ -332,7 +348,7 @@ while pending_chunks:
         if looks_like_test_command(command_name, args):
             continue
         if command_name == "sed":
-            if any(is_in_place_flag(arg) for arg in args):
+            if any(is_in_place_flag(command_name, arg) for arg in args):
                 raise SystemExit(1)
                 continue
         if command_name not in read_only_commands:
