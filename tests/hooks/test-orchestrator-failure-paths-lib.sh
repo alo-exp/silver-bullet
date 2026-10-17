@@ -5,7 +5,7 @@
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/b-orchestrator-helpers.sh"
-tl_init
+tl_init claude
 export SB_RUNTIME_PRESERVE_STATE_DIR=1
 unset SB_ORCHESTRATOR_RUNTIME_SCHEDULER SB_APO_CATALOG_FILE SB_ORCHESTRATOR_PARALLEL_DISPATCH SILVER_BULLET_TEST_HOOK_ENFORCED \
   SB_ORCHESTRATOR_WORKER SB_ORCHESTRATOR_PARENT _lib_dir
