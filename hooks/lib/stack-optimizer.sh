@@ -46,8 +46,10 @@ sb_stack_optimization_profile_name() {
 sb_stack_profile_knob() {
   local config_file="${1:-}" profile="${2:-}" area="${3:-}" key="${4:-}" default="${5:-}"
   local val
+  # jq's // treats an explicit false like null, so an opt-out knob (false) would silently
+  # fall back to its default; test for null explicitly instead.
   val="$(jq -r --arg p "$profile" --arg a "$area" --arg k "$key" --arg def "$default" \
-    '.optimization_profiles[$p][$a][$k] // $def' "$config_file" 2>/dev/null || echo "$default")"
+    '.optimization_profiles[$p][$a][$k] | if . == null then $def else . end' "$config_file" 2>/dev/null || echo "$default")"
   [[ "$val" == "null" ]] && val="$default"
   printf '%s' "$val"
 }
@@ -284,7 +286,8 @@ sb_stack_ensure_gitleaks() {
   profile="${profile:-$(sb_stack_optimization_profile_name "$config_file")}"
   sb_stack_gitleaks_required "$config_file" "$profile" || return 0
 
-  if sb_stack_gitleaks_path >/dev/null; then
+  # sb_stack_gitleaks_path always exits 0 (empty output when absent): test the output.
+  if [[ -n "$(sb_stack_gitleaks_path)" ]]; then
     return 0
   fi
 
@@ -305,7 +308,7 @@ sb_stack_ensure_gitleaks() {
     printf 'WARN: gitleaks not installed — brew install gitleaks (macOS) or see docs/AGENTMEMORY.md\n'
   fi
 
-  sb_stack_gitleaks_path >/dev/null
+  [[ -n "$(sb_stack_gitleaks_path)" ]]
 }
 
 sb_stack_server_persistence_ok() {
@@ -342,7 +345,7 @@ sb_optimize_graphify() {
 
   if sb_graphify_cli_available; then
     local cmd
-    while IFS= read -r cmd; do
+    while IFS= read -r cmd || [[ -n "$cmd" ]]; do
       [[ -n "$cmd" ]] || continue
       if sb_stack_optimizer_dry_run; then
         printf 'DRY-RUN: %s\n' "$cmd"
@@ -351,7 +354,7 @@ sb_optimize_graphify() {
       fi
       actions=$((actions + 1))
     done < <(sb_recommended_tool_platform_pre_index_commands "$config_file" graphify "$host")
-    while IFS= read -r cmd; do
+    while IFS= read -r cmd || [[ -n "$cmd" ]]; do
       [[ -n "$cmd" ]] || continue
       if sb_stack_optimizer_dry_run; then
         printf 'DRY-RUN: %s\n' "$cmd"
@@ -386,7 +389,8 @@ sb_optimize_agentmemory() {
   sb_stack_ensure_agentmemory_gitignore "$repo"
   sb_stack_merge_agentmemory_env "$repo" "$config_file" "$profile"
 
-  sb_stack_ensure_gitleaks "$config_file" "$profile"
+  # A missing gitleaks only degrades the bridge to regex scanning; never abort the apply.
+  sb_stack_ensure_gitleaks "$config_file" "$profile" || true
 
   persistence="$(sb_stack_profile_knob "$config_file" "$profile" agentmemory server_persistence launchd)"
   if [[ "$persistence" == "launchd" ]] && command -v launchctl >/dev/null 2>&1 && ! sb_stack_skip_host_hooks; then
@@ -395,7 +399,7 @@ sb_optimize_agentmemory() {
   fi
 
   local cmd
-  while IFS= read -r cmd; do
+  while IFS= read -r cmd || [[ -n "$cmd" ]]; do
     [[ -n "$cmd" ]] || continue
     [[ "$cmd" == Verify* ]] && continue
     if sb_stack_optimizer_dry_run; then
@@ -446,8 +450,8 @@ sb_stack_graph_has_agentmemory_refs() {
   local repo="${1:-$PWD}" config_file="${2:-}" graph_path count
   graph_path="$(sb_graphify_abs_graph_path "$repo" "$config_file")"
   [[ -f "$graph_path" ]] || return 1
-  count="$(grep -c '\.agentmemory' "$graph_path" 2>/dev/null || echo 0)"
-  [[ "$count" -gt 0 ]]
+  count="$(grep -c '\.agentmemory' "$graph_path" 2>/dev/null || true)"
+  [[ "${count:-0}" -gt 0 ]]
 }
 
 sb_optimization_score() {
@@ -524,12 +528,12 @@ sb_optimization_score() {
       _sb_score_check warn "agentmemory-bridge" "bridge not running" 10
     fi
     if sb_stack_gitleaks_required "$config_file" "$profile"; then
-      if sb_stack_gitleaks_path >/dev/null; then
+      if [[ -n "$(sb_stack_gitleaks_path)" ]]; then
         _sb_score_check pass "gitleaks" "installed ($(sb_stack_gitleaks_path))" 5
       else
         _sb_score_check warn "gitleaks" "required but missing — brew install gitleaks" 5
       fi
-    elif sb_stack_gitleaks_path >/dev/null; then
+    elif [[ -n "$(sb_stack_gitleaks_path)" ]]; then
       _sb_score_check pass "gitleaks" "installed" 5
     else
       _sb_score_check skip "gitleaks" "not required for profile" 0
