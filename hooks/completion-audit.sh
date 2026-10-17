@@ -57,8 +57,8 @@ if ! command -v jq >/dev/null 2>&1; then
     _ca_search=$(dirname "$_ca_search")
   done
   if [[ -n "$_ca_config" ]] && declare -f sb_project_is_initiated >/dev/null 2>&1 && sb_project_is_initiated "$_ca_config"; then
+    # Contract: sb_jq_enforcement_block never returns when jq is missing (it emits and exits 0).
     sb_jq_enforcement_block "completion-audit" "emit_block"
-    exit 0
   fi
   if grep -qE 'git commit|git push|gh pr create|gh release create|\bdeploy\b' <<<"$input"; then
     sb_jq_enforcement_block "completion-audit" "emit_block"
@@ -66,11 +66,6 @@ if ! command -v jq >/dev/null 2>&1; then
   printf '{"hookSpecificOutput":{"message":"⚠️  ENFORCEMENT INACTIVE — jq not installed. Install: brew install jq (macOS) / apt install jq (Linux). All Silver Bullet enforcement hooks are disabled until jq is available."}}'
   exit 0
 fi
-
-emit_warn() {
-  local reason="$1"
-  jq -n --arg m "$reason" '{"hookSpecificOutput":{"message":$m}}'
-}
 
 capture_evidence_warn() {
   # shellcheck disable=SC2034  # read by the sourced lib/completion-audit/deploy-tier.sh
@@ -221,8 +216,8 @@ state_contents=""
 
 # shellcheck disable=SC2154  # is_intermediate is set by ca_classify in lib/completion-audit/classify.sh
 if [[ "$is_intermediate" == true ]]; then
+  # Contract: ca_run_planning_tier_gate always ends the hook with exit 0.
   ca_run_planning_tier_gate
-  exit 0
 fi
 
 ca_run_deploy_tier_gate
