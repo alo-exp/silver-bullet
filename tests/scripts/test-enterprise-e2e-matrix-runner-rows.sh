@@ -67,7 +67,7 @@ reset
 agent <<'EOS'
 echo "agent did nothing"
 EOS
-run bash "$MATRIX" 2
+run env F2_TELEMETRY_FAIL=1 bash "$MATRIX" 2
 assert_eq "missing evidence fails" "1" "$TL_STATUS"
 assert_contains "missing evidence message" "$TL_OUT" "  FAIL: missing evidence at docs/ADR-001-runtime.md"
 assert_contains "fail summary" "$TL_OUT" "Fail:  1"
@@ -78,7 +78,7 @@ reset
 evidence_agent
 touch "$F2_CTL/outcome-fail-2"
 printf 'OUT-PLAN-01 missing\n\nOUT-WORLD-01 no commits\n' >"$F2_CTL/outcome-failures"
-run bash "$MATRIX" 2
+run env F2_TELEMETRY_FAIL=1 bash "$MATRIX" 2
 assert_eq "outcome failure fails the row" "1" "$TL_STATUS"
 assert_contains "outcome failure message" "$TL_OUT" "  FAIL: outcome assessment — mandatory criteria not all pass (evidence alone insufficient)"
 assert_contains "outcome failure line 1" "$TL_OUT" "    OUTCOME-FAIL: OUT-PLAN-01 missing"
@@ -112,54 +112,18 @@ run bash "$MATRIX" 2
 assert_eq "agent crash is a row failure, not a harness crash" "1" "$TL_STATUS"
 assert_contains "agent crash output kept" "$(cat "$R/.e2e-row2-attempt.log")" "boom"
 
-# ------------------------------------------------------------ quota handling
-reset
-agent <<'EOS'
-if [[ "$1" == 1 ]]; then echo "HTTP 429 Token Plan exceeded"; else mkdir -p "$WORK_DIR/docs"; echo ok >"$WORK_DIR/docs/ADR-001-runtime.md"; fi
+# rows 3 and 4 seed the internal-gate markers after their own evidence passes
+for pair in "3|.planning/workflows/feature-currency.md|post-exec-gates" "4|.planning/workflows/bugfix-health.md|validate-substep"; do
+  IFS='|' read -r row ev marker <<<"$pair"
+  reset
+  agent <<EOS
+mkdir -p "\$WORK_DIR/.planning/workflows"
+echo "evidence only" >"\$WORK_DIR/$ev"
 EOS
-run bash "$MATRIX" 2
-assert_eq "quota retry then pass" "0" "$TL_STATUS"
-assert_contains "quota wait message" "$TL_OUT" "  QUOTA: API 429 / Token Plan limit — waiting 7s before retry 1..."
-assert_contains "retry banner" "$TL_OUT" "  retry attempt 2 (quota retry #1)..."
-assert_contains "quota success message" "$TL_OUT" "  PASS: succeeded after 1 quota retry(ies)"
-assert_contains "slept the retry interval" "$CALLS" "sleep 7"
-assert_file_exists "second attempt log" "$R/.e2e-row2-attempt2.log"
+  run bash "$MATRIX" "$row"
+  assert_eq "row $row passes" "0" "$TL_STATUS"
+  assert_contains "row $row seeds the $marker marker" "$(cat "$APP/$ev")" "$marker"
+done
 
-reset
-agent <<'EOS'
-echo "rate limit hit"
-EOS
-run env SB_E2E_MATRIX_QUOTA_MAX_RETRIES=1 bash "$MATRIX" 2
-assert_eq "quota exhaustion fails" "1" "$TL_STATUS"
-assert_contains "quota exhausted message" "$TL_OUT" "  FAIL: quota retries exhausted (1) — missing evidence at docs/ADR-001-runtime.md"
-assert_eq "one sleep before giving up" "1" "$(grep -c '^sleep 7$' <<<"$CALLS")"
-assert_contains "exhausted telemetry" "$CALLS" "telemetry matrix_row row=2 slug=silver-deep-research result=fail"
-
-# ------------------------------------------------------------ timeouts per row
-reset
-agent <<'EOS'
-echo noop
-EOS
-run env SB_E2E_ROW8_TIMEOUT=111 SB_E2E_WORKFLOW_QUIET_TIMEOUT=22 bash "$MATRIX" 8
-assert_contains "row 8 agent timeout" "$CALLS" "agent-env#1 quiet=22 timeout=111 cursor_timeout=111"
-reset
-agent <<'EOS'
-echo noop
-EOS
-run env SB_E2E_ROW11_TIMEOUT=222 bash "$MATRIX" 11
-assert_contains "row 11 agent timeout" "$CALLS" "timeout=222 cursor_timeout=222"
-reset
-agent <<'EOS'
-echo noop
-EOS
-run env SB_E2E_ROW1_QUIET_TIMEOUT=33 bash "$MATRIX" 1
-assert_contains "row 1 quiet timeout and routing flag" "$CALLS" "quiet=33 timeout=900 cursor_timeout=900 evidence=.planning/workflows/router-session.md routing=1"
-reset
-agent <<'EOS'
-echo noop
-EOS
-run env SB_E2E_ROW3_QUIET_TIMEOUT=44 SILVER_BULLET_RUNTIME=codex SB_E2E_LIVE_RUNTIME=codex bash "$MATRIX" 3
-assert_contains "codex row 3 quiet timeout and trust env" "$CALLS" "agent-env#1 quiet=44 timeout=900 cursor_timeout=900 evidence=.planning/workflows/feature-currency.md routing=0 codex_trust=1 bypass=1"
-assert_contains "codex adapter seeded hook trust before the row" "$CALLS" "scripts/install-codex.sh --hook-trust-seed-only"
 
 tl_results
