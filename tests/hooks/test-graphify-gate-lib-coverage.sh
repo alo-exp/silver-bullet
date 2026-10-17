@@ -2,7 +2,7 @@
 # Behavior tests for hooks/lib/graphify-gate.sh (graphify CLI is stubbed)
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
-tl_init
+tl_init claude
 unset SB_GLOBAL_TOOLSTACK_MANIFEST SB_GLOBAL_TOOLSTACK_HOME
 
 LIBF="$TL_REPO_ROOT/hooks/lib/graphify-gate.sh"

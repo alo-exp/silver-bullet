@@ -3,7 +3,7 @@
 # (graphify, agentmemory, launchctl, brew, curl, gitleaks, codex) is a logging stub.
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
-tl_init
+tl_init claude
 unset CI GA_SKIP_HOST_HOOKS GA_GLOBAL_DRY_RUN GA_AGENTMEMORY_HOME
 
 LIBF="$TL_REPO_ROOT/hooks/lib/graphify-am-global.sh"

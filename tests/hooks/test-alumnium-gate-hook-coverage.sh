@@ -2,7 +2,7 @@
 # Behavior tests for hooks/alumnium-gate.sh (PreToolUse). npx/npm are stubs.
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
-tl_init
+tl_init claude
 unset SB_ALUMNIUM_MCP_ARTIFACT SB_AGENT_CERT_RUN SB_KAY_HOOK_BRIDGE_INVOKED
 source "$TL_REPO_ROOT/tests/lib/c-toolgates-1-helpers.sh"
 gh_init_project
