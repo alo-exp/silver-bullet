@@ -52,8 +52,8 @@ gh_run() {
       SILVER_BULLET_RUNTIME=claude \
       "$@" bash "$GH_REPO/$hook"
   ) >"$out" 2>"$err" || TL_STATUS=$?
-  TL_OUT="$(cat "$out")"
-  TL_ERR="$(cat "$err")"
+  TL_OUT="$(<"$out")"
+  TL_ERR="$(<"$err")"
 }
 
 gh_decision() { # prints permissionDecision or decision from TL_OUT ("" when none)
@@ -201,4 +201,28 @@ gh_prelude_suite() {
   gh_run "$hook" "$(gh_bash_input "mv a b")"
   assert_gate_denies "$name: mv is gated" "$reason"
   gh_scenario_block
+}
+
+# gh_farm <name> <hook relative path> [excluded lib basenames...]
+# Builds $TL_TMP/farm-<name>/hooks/{<hook>,lib/*} out of symlinks to the real files,
+# minus the excluded libs ("-" excludes the whole lib dir), and points GH_REPO at it so
+# gh_run exercises the hook's behavior when a sourced library is unavailable.
+gh_farm() {
+  local name="$1" hook="$2" root f ex skip
+  shift 2
+  root="$TL_TMP/farm-$name"
+  rm -rf "$root"
+  mkdir -p "$root/hooks/lib"
+  ln -s "$TL_REPO_ROOT/$hook" "$root/$hook"
+  if [[ "${1:-}" == "-" ]]; then
+    rmdir "$root/hooks/lib"
+  else
+    for f in "$TL_REPO_ROOT"/hooks/lib/*; do
+      skip=0
+      for ex in "$@"; do [[ "${f##*/}" == "$ex" ]] && skip=1; done
+      [[ "$skip" -eq 1 ]] || ln -s "$f" "$root/hooks/lib/${f##*/}"
+    done
+  fi
+  GH_FARM="$root"
+  export GH_FARM
 }
