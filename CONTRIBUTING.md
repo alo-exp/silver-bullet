@@ -21,11 +21,11 @@ Contributions are accepted on an inbound = outbound basis: by submitting a contr
 | Python 3.10+ | Hook payload helpers (`hooks/lib/tool-input/`), generators, validators, skill unit tests, coverage | Yes |
 | `rsync` | `scripts/sync-*.sh` and installer tests | Yes |
 | `expect` | `tests/tui-contract/` (those tests fail without it) | Yes, for the full suite |
-| `shellcheck` | Linting, as CI runs it | Yes, before a PR |
+| `shellcheck` | Linting (`make lint`; CI uses the same exclusions) | Yes, before a PR |
 | `xxd`, `zip`/`unzip`, GNU `timeout` | Used by a few script tests (`test-silver-doctor.sh`, `test-export-enterprise-evidence.sh`, `test-reconcile-recommended-tools.sh`); macOS ships `xxd` and `zip`, and `timeout` comes from Homebrew `coreutils` | Yes, for the full suite |
-| `pip install -r tests/coverage/requirements.txt` | `tests/coverage/run-coverage.sh` (coverage.py, tree-sitter, tree-sitter-bash) | For coverage only |
-| `pip install openpyxl` | Spreadsheet tests of the deep-research skill (skipped without it) | Optional |
-| `node` / `npx` | CI's site HTML lint (`html-validate`) and the opt-in Node tools (Context Mode, agentmemory, Alumnium) | Optional |
+| `make` | The `Makefile` entry points (`make setup`, `lint`, `test`, `coverage`, `check`) | Recommended |
+| `python3 -m pip install -r requirements-dev.txt` (or `make setup`) | Coverage tooling (`coverage`, `tree-sitter`, `tree-sitter-bash`, pinned in `tests/coverage/requirements.txt`) plus `openpyxl` and `PyYAML` for the deep-research skill tests (some skip without them). Runtime hooks need only the standard library | For coverage and the full skill tests |
+| `node` / `npx` | `tests/js/` unit tests and JavaScript coverage (skipped without Node), CI's site HTML lint (`html-validate`), and the opt-in Node tools (Context Mode, agentmemory, Alumnium) | Optional |
 | `tmux` | `scripts/agent-claude-autonomous-test.sh --tmux` and the enterprise E2E matrix drivers (operator-only) | Optional |
 | `gh` | Release scripts and live suites; `tests/run-all-tests.sh` hides it from tests | Optional |
 
@@ -35,14 +35,14 @@ macOS (Homebrew):
 
 ```bash
 brew install bash jq python rsync expect shellcheck coreutils
-# git comes with the Xcode command line tools: xcode-select --install
+# git and make come with the Xcode command line tools: xcode-select --install
 ```
 
 Debian/Ubuntu:
 
 ```bash
 sudo apt-get update
-sudo apt-get install -y bash git jq python3 python3-pip rsync expect shellcheck xxd zip unzip
+sudo apt-get install -y bash git jq make python3 python3-pip rsync expect shellcheck xxd zip unzip
 # on releases without a separate xxd package, xxd comes with vim-common
 ```
 
@@ -51,10 +51,11 @@ Then:
 ```bash
 git clone https://github.com/alo-exp/silver-bullet.git
 cd silver-bullet
-bash tests/run-all-tests.sh --jobs 4      # confirm a green baseline
+make setup     # checks required tools, then python3 -m pip install -r requirements-dev.txt
+make test      # bash tests/run-all-tests.sh --jobs 4: confirm a green baseline
 ```
 
-On macOS, make sure the Homebrew bash runs the test runner: either put `$(brew --prefix)/bin` first on `PATH` or call it explicitly (`$(brew --prefix)/bin/bash tests/run-all-tests.sh`).
+On macOS, make sure the Homebrew bash runs the test runner: put `$(brew --prefix)/bin` first on `PATH` (the Makefile runs `bash` from `PATH`), or call it explicitly (`$(brew --prefix)/bin/bash tests/run-all-tests.sh`).
 
 To dogfood enforcement while you work, install the plugin into your host from this checkout (`./scripts/install-codex.sh --purge-legacy-skills`, `bash scripts/install-cursor.sh`, or the Claude Code marketplace) and run `/sb:init` in the repo. `bash scripts/sb-doctor.sh` audits the install.
 
@@ -81,20 +82,22 @@ To dogfood enforcement while you work, install the plugin into your host from th
 | `subagent-model-scores.csv` | Maintainer log of subagent assessments. |
 | `SETUP_REPORT.md` | Output of `bash scripts/sb-verify-synergy.sh --write-setup-report` (a point-in-time machine report). |
 | `CHANGELOG.md` | Release notes per version. `docs/CHANGELOG.md` is the task log. |
+| `Makefile`, `requirements-dev.txt` | Developer entry points (`make setup`, `lint`, `test`, `coverage`, `check`) and the Python packages the test suite and coverage need. |
 
 ## Running Tests, Coverage and Lint
 
 ```bash
-bash tests/run-all-tests.sh                 # every default suite (what CI runs, locally)
-bash tests/run-all-tests.sh --jobs 4        # parallel
-bash tests/run-all-tests.sh --suite hooks   # one suite; --list prints the files
+make check                                  # lint + full suite: what a pull request must pass
+make lint                                   # bash -n, JSON validity, shellcheck
+make test                                   # bash tests/run-all-tests.sh --jobs 4
+SUITE=hooks make test                       # one suite
+make coverage                               # Bash, Python and JS/TS coverage report
+
 bash tests/run-all-tests.sh tests/hooks/test-ci-status-check.sh   # specific files
-
-bash tests/coverage/run-coverage.sh         # Bash + Python coverage report
-
-for f in hooks/*.sh hooks/lib/*.sh scripts/*.sh; do bash -n "$f" || echo "FAIL: $f"; done
-shellcheck --exclude=SC2317,SC1091,SC2329 hooks/*.sh hooks/lib/*.sh scripts/*.sh
+bash tests/run-all-tests.sh --list                                # list the test files
 ```
+
+Every target wraps a script you can also run directly. `make lint` fails on any `shellcheck` finding; at the time of writing the existing hooks and scripts still carry findings (CI's shellcheck step tolerates them), so look at the findings in the files you changed.
 
 [docs/TESTING.md](docs/TESTING.md) explains the suites, the per-test sandbox, test conventions and the live suites. [docs/CICD.md](docs/CICD.md) lists the GitHub Actions workflows.
 
@@ -153,7 +156,7 @@ Use [Conventional Commits](https://www.conventionalcommits.org/): `feat:`, `fix:
 
 1. Create a feature branch from `main`.
 2. Make focused commits with conventional messages.
-3. Run the full suite and lint locally (`bash tests/run-all-tests.sh`, `shellcheck`); update docs and generated files that your change affects.
+3. Run `make check` (or `bash tests/run-all-tests.sh` plus `shellcheck` on the files you changed); update docs and generated files that your change affects.
 4. Open a PR; the template asks for a summary, the testing you did and the docs you updated.
 5. CI ([docs/CICD.md](docs/CICD.md)) must be green. PRs are reviewed for consistency with the existing workflow structure and enforcement model.
 
