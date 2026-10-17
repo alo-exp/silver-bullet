@@ -160,4 +160,15 @@ assert_eq "block tier without jq exits 2" 2 "$TL_STATUS"
 assert_contains "block tier without jq explains on stderr" "$TL_ERR" "AF-AGENT-DELEGATE"
 assert_eq "block tier without jq prints no JSON" "" "$TL_OUT"
 
+echo "=== guard: jq-less field extraction (sb_adg_hook_field) ==="
+# The hook runs its main flow on source, so load just the function definition.
+eval "$(sed -n '/^sb_adg_hook_field()/,/^}/p' "$TL_REPO_ROOT/$HOOK")"
+_sb_adg_have_jq=false
+pre='{"hook_event_name":"PreToolUse","tool_name":"Edit","tool_input":{"file_path":"x"}}'
+assert_eq "no-jq event name: PreToolUse recognised" "PreToolUse" "$(sb_adg_hook_field "$pre" hook_event_name dflt)"
+assert_eq "no-jq event name: other event falls back to default" "dflt" "$(sb_adg_hook_field '{"hook_event_name":"PostToolUse"}' hook_event_name dflt)"
+assert_eq "no-jq tool_name is extracted" "Edit" "$(sb_adg_hook_field "$pre" tool_name dflt)"
+assert_eq "no-jq tool_name missing falls back to default" "dflt" "$(sb_adg_hook_field '{"x":1}' tool_name dflt)"
+assert_eq "no-jq unknown field returns default" "dflt" "$(sb_adg_hook_field "$pre" other dflt)"
+
 tl_results
