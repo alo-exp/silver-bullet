@@ -98,7 +98,7 @@ enterprise_e2e_telemetry_append() {
 }
 EOS
   cat >"$root/tests/e2e-live/helpers.sh" <<'EOS'
-agent_cli_path() { printf '/stub/agent-cli\n'; }
+agent_cli_path() { [[ -z "${F2_AGENT_MISSING:-}" ]] || return 1; printf '/stub/agent-cli\n'; }
 setup_workspace() { WORK_DIR="$FIXTURE_DIR"; printf 'setup_workspace\n' >>"${F2_CALLS:?}"; }
 cleanup_workspace() { printf 'cleanup_workspace\n' >>"${F2_CALLS:?}"; }
 run_prompt() {
@@ -120,10 +120,16 @@ EOS
   cat >"$root/scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh" <<'EOS'
 enterprise_e2e_outcome_write_workflow_checklist() {
   printf 'checklist row=%s out=%s work=%s state=%s log=%s ledger=%s evidence=%s\n' "$@" >>"${F2_CALLS:?}"
+  [[ -z "${F2_CHECKLIST_FAIL:-}" ]] || return 1
   printf '# outcomes for row %s\n' "$1" >"$2"
+}
+f2_heal() {
+  [[ -f "$F2_CTL/heal" ]] || return 0
+  rm -rf "$WORK_DIR/.planning/workflows/feature-currency.md" "$WORK_DIR/.planning/workflows/bugfix-health.md"
 }
 enterprise_e2e_outcome_row_passes() {
   printf 'outcome-row-passes row=%s work=%s log=%s ledger=%s evidence=%s\n' "$1" "$2" "$4" "$5" "${6:-}" >>"${F2_CALLS:?}"
+  f2_heal
   [[ ! -f "$F2_CTL/outcome-fail-$1" ]]
 }
 enterprise_e2e_outcome_row_failures() {
@@ -134,6 +140,7 @@ enterprise_e2e_outcome_matrix_evidence_path() { printf 'evidence-for-%s\n' "$1";
 enterprise_e2e_outcome_ledger_workflow_line() { grep -E "^\| $2 \|" "$1"; }
 enterprise_e2e_outcome_ledger_parse_workflow_row() {
   local status
+  f2_heal
   status="$(awk -F'|' '{gsub(/^ +| +$/, "", $5); print $5}' <<<"$1")"
   printf 'slug\nworkflow\n%s\n' "$status"
 }
