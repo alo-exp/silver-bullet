@@ -10,7 +10,7 @@ H=hooks/workflow-chain-guard.sh
 P="$TL_TMP/proj"
 ST="$SB_RUNTIME_STATE_DIR"
 STATE="$ST/state"
-edit() { jq -cn --arg p "${1:-$P/src/a.sh}" '{hook_event_name:"PreToolUse",tool_name:"Edit",tool_input:{file_path:$p}}'; }
+edit() { jq -cn --arg p "$P/src/a.sh" '{hook_event_name:"PreToolUse",tool_name:"Edit",tool_input:{file_path:$p}}'; }
 dec() { [[ -n "$TL_OUT" ]] && jq -r '.hookSpecificOutput.permissionDecision // "none"' <<<"$TL_OUT" 2>/dev/null || echo none; }
 reason() { jq -r '.hookSpecificOutput.permissionDecisionReason // ""' <<<"$TL_OUT"; }
 fresh() {
