@@ -40,7 +40,7 @@ You are writing tests for the "Silver Bullet" repository (an agent-plugin proces
 
 ## Validation before you finish
 1. Coverage for every file in your package: 100% statements/lines/functions (bash), statements/branches (Python), lines/functions/branches (JS/TS) — or a precise justification per remaining statement.
-2. All test files you added or changed pass via `bash tests/run-all-tests.sh --jobs 4 <files>`, and every pre-existing test file that references your package's files still passes (find them with grep in tests/ and skills/*/tests/ for each basename). Run them twice to check determinism.
+2. All test files you added or changed pass via `bash tests/run-all-tests.sh --jobs 4 <files>`, and every pre-existing test file that references your package's files still passes (find them with grep in tests/ and skills/*/tests/ for each basename). Run them twice to check determinism, once with `SILVER_BULLET_RUNTIME=claude` and once with `SILVER_BULLET_RUNTIME=codex` (CI runs the suite under both): derive state, marker and audit paths from the runtime helpers (`$SB_RUNTIME_HOME_ROOT`, `$SB_RUNTIME_STATE_DIR`), never from `~/.claude` literals, and pin the runtime inside a test only when the test is about a specific host.
 3. `bash -n` on new bash tests; `shellcheck -S warning` clean on new bash test files.
 4. Commit.
 
