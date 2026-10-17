@@ -50,23 +50,30 @@ done
 state
 dg_run_nojq "$P" "$H" "$(ev PreToolUse Task '{"prompt":"x"}')"
 assert_eq "no jq: inert" "" "$TL_OUT"
+dg_assert_ok "no jq: inert: exits 0"
 run ""
 assert_eq "empty input: inert" "" "$TL_OUT"
+dg_assert_ok "empty input: inert: exits 0"
 dg_run_closed_stdin "$P" "$H"
 assert_eq "unreadable stdin: exit 0" 0 "$TL_STATUS"
 rm -f "$ST/project-root"
 dg_run "$TL_TMP/outside" "$H" "$(ev PreToolUse Task '{"prompt":"x"}')"
 assert_eq "outside an SB project: inert" "" "$TL_OUT"
+dg_assert_ok "outside an SB project: inert: exits 0"
 dg_run_nolib_in "$P" "$H" "$(ev PreToolUse Task '{"prompt":"x"}')"
 assert_eq "no libs: inert" "" "$TL_OUT"
+dg_assert_ok "no libs: inert: exits 0"
 S0="$TL_TMP/s0"; dg_stage_hooks "$S0" project-active.sh
 dg_run_with_fn "$P" "$S0/hooks/review-fix-ladder-guard.sh" "$(ev PreToolUse Task '{"prompt":"x"}')" 'sb_project_gate_or_exit() { return 1; }; export -f sb_project_gate_or_exit'
 assert_eq "project gate failing: exit 0" "" "$TL_OUT"
+dg_assert_ok "project gate failing: exit 0: exits 0"
 rm -f "$SF"
 run "$(ev PreToolUse Task '{"prompt":"x"}')"
 assert_eq "no ladder state: allow" "" "$TL_OUT"
+dg_assert_ok "no ladder state: allow: exits 0"
 state; run "$(ev PreToolUse Task '{"prompt":"rung_1_review"}')" SB_REVIEW_FIX_LADDER_GUARD=0
 assert_eq "guard disabled: allow" "" "$TL_OUT"
+dg_assert_ok "guard disabled: allow: exits 0"
 echo blocker >"$TL_TMP/blocker"
 dg_run "$P" "$H" "$(ev PreToolUse Task '{"prompt":"x"}')" SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="$TL_TMP/blocker/sub"
 assert_eq "unusable state dir tolerated" 0 "$TL_STATUS"
@@ -107,6 +114,7 @@ assert_eq "PostToolUse Skill without a name is ignored" 0 "$TL_STATUS"
 state
 run "$(ev Stop Task '{"prompt":"x"}')"
 assert_eq "non-Pre/Post events are allowed when not in compliance stop" "" "$TL_OUT"
+dg_assert_ok "non-Pre/Post events are allowed when not in compliance stop: exits 0"
 
 # --- PostToolUse bookkeeping ---------------------------------------------------------
 state
@@ -131,6 +139,7 @@ assert_eq "other PostToolUse tools ignored" 0 "$TL_STATUS"
 state
 run "$(ev PreToolUse Task '{"prompt":"rung_1_review","model":"m1"}')"
 assert_eq "valid review Task allowed" "" "$TL_OUT"
+dg_assert_ok "valid review Task allowed: exits 0"
 run "$(ev PreToolUse Task '{"prompt":"run /sb:triage","model":"m1"}')"
 assert_eq "triage in review phase denied" "deny" "$(dec)"
 assert_contains "violation text surfaced" "$TL_OUT" "must be review-only"
@@ -139,6 +148,7 @@ assert_contains "violation stored as stop reason" "$(f stop_reason)" "review-onl
 state
 run "$(ev PreToolUse Task '{"prompt":"rung_1_review","model":"m1"}')" SB_ORCHESTRATOR_PARENT=0
 assert_eq "worker session Tasks are not gated" "" "$TL_OUT"
+dg_assert_ok "worker session Tasks are not gated: exits 0"
 state
 run "$(ev PreToolUse Subagent '{"description":"verify_1 and verify_2","readonly":true}')"
 assert_eq "Subagent combined verify denied" "deny" "$(dec)"
@@ -171,7 +181,9 @@ done
 state
 run "$(ev PreToolUse Edit '{"file_path":"/x"}')" SB_ORCHESTRATOR_PARENT=0
 assert_eq "worker edit in review phase allowed" "" "$TL_OUT"
+dg_assert_ok "worker edit in review phase allowed: exits 0"
 run "$(ev PreToolUse Read '{}')"
 assert_eq "unrelated tools allowed" "" "$TL_OUT"
+dg_assert_ok "unrelated tools allowed: exits 0"
 
 tl_results

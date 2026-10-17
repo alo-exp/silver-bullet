@@ -73,6 +73,7 @@ dg_run_nolib_in "$P" "$H" "$(edit "$P/.planning/phases/099-x/a.md" s1)"
 assert_contains "claim: missing libs reports and skips" "$TL_OUT" "phase-path.sh missing"
 dg_run "$P" "$H" "$(edit "" s1)"
 assert_eq "claim: empty file path ignored" "" "$TL_OUT"
+dg_assert_ok "claim: empty file path ignored: exits 0"
 dg_run "$P" "$H" "$(edit "$P/src/a.sh" s1)"
 assert_file_absent "claim: non-phase path ignored" "$(manifest s1)"
 

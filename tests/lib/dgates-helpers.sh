@@ -110,3 +110,8 @@ dg_stage_hooks() {
   for f in "$@"; do rm -f "$dest/hooks/lib/$f"; done
   return 0
 }
+
+# dg_assert_ok NAME: assert that the last dg_run* hook invocation exited 0 (allow / fail-open).
+dg_assert_ok() {
+  assert_eq "$1" 0 "${TL_STATUS:-unset}"
+}

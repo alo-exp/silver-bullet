@@ -15,8 +15,10 @@ reason() { jq -r '.hookSpecificOutput.permissionDecisionReason // ""' <<<"$TL_OU
 
 dg_run "$P" "$H" "$(skill sb:ship)"
 assert_eq "non-release skill ignored" "" "$TL_OUT"
+dg_assert_ok "non-release skill ignored: exits 0"
 dg_run "$P" "$H" "$(skill "")"
 assert_eq "empty skill ignored" "" "$TL_OUT"
+dg_assert_ok "empty skill ignored: exits 0"
 
 dg_run "$P" "$H" "$(skill sb:release)"
 assert_eq "missing UAT.md denies" "deny" "$(dec)"
@@ -40,6 +42,7 @@ assert_contains "NOT-RUN mentions audited waiver" "$(reason)" "SB OVERRIDE"
 printf '| Total | PASS | FAIL | NOT-RUN |\n| 3 | 3 | 0 | 0 |\n%s\n| 1 | a | PASS |\n' "$HDR" >"$P/.planning/UAT.md"
 dg_run "$P" "$H" "$(skill sb:release)"
 assert_eq "all PASS and no spec: allow" "none" "$(dec)"
+dg_assert_ok "all PASS and no spec: allow: exits 0"
 assert_contains "pass message" "$TL_OUT" "UAT gate passed"
 
 printf -- '---\nspec-version: "1.0"\n---\n| 1 | a | PASS |\n' >"$P/.planning/UAT.md"
@@ -69,6 +72,7 @@ mkdir -p "$TL_TMP/outside"
 rm -f "$SB_RUNTIME_STATE_DIR/project-root"
 dg_run "$TL_TMP/outside" "$H" "$(skill sb:release)"
 assert_eq "outside an SB project: inert" "" "$TL_OUT"
+dg_assert_ok "outside an SB project: inert: exits 0"
 
 dg_run "$P" "$H" "not json"
 assert_contains "unparsable input: ERR trap reports and exits 0" "$TL_OUT" "uat-gate: hook error"
@@ -80,6 +84,7 @@ assert_eq "no jq in an SB project: fail closed" "deny" "$(dec 2>/dev/null || tru
 assert_contains "no jq: static reason when jq cannot encode" "$TL_OUT" "jq required for Silver Bullet enforcement"
 dg_run_nolib_in "$P" "$H" "$(skill sb:release)" PATH="$(tl_path_without jq)"
 assert_contains "no libs and no jq: visible warning, fail open" "$TL_OUT" "hooks require jq"
+dg_assert_ok "no libs and no jq: exits 0"
 dg_run_nolib_in "$P" "$H" "$(skill silver-release)"
 assert_contains "no libs: still gates UAT via plain jq" "$TL_OUT" "UAT gate passed"
 

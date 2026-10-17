@@ -41,28 +41,37 @@ assert_eq "project found from a sub-directory" "deny" "$(dec)"
 # --- not protected / not applicable --------------------------------------
 dg_run "$P" "$H" "$(edit "$P/.planning/phases/01-x/PLAN.md")"
 assert_eq "SB-native phase layout PLAN.md is not protected here" "none" "$(dec)"
+dg_assert_ok "SB-native phase layout PLAN.md is not protected here: exits 0"
 dg_run "$P" "$H" "$(edit "$P/.planning/NOTES.md")"
 assert_eq "unlisted planning file allowed" "none" "$(dec)"
+dg_assert_ok "unlisted planning file allowed: exits 0"
 dg_run "$P" "$H" "$(edit "$P/src/a.sh")"
 assert_eq "non-planning file allowed" "none" "$(dec)"
+dg_assert_ok "non-planning file allowed: exits 0"
 dg_run "$P" "$H" "$(edit "")"
 assert_eq "empty path allowed" "" "$TL_OUT"
+dg_assert_ok "empty path allowed: exits 0"
 dg_run "$P" "$H" "$(edit "$TL_TMP/other/.planning/ROADMAP.md")"
 assert_eq "planning file of another project not enforced" "none" "$(dec)"
+dg_assert_ok "planning file of another project not enforced: exits 0"
 mkdir -p "$TL_TMP/bare/.git"
 dg_run "$TL_TMP/bare" "$H" "$(edit "$TL_TMP/bare/.planning/ROADMAP.md")"
 assert_eq "directory without SB config not enforced" "none" "$(dec)"
+dg_assert_ok "directory without SB config not enforced: exits 0"
 
 # --- cert-run bypass & hook-bootstrap hook --------------------------------
 dg_run "$P" "$H" "$(edit "$P/.planning/ROADMAP.md")" SB_AGENT_CERT_RUN=1
 assert_eq "cert run bypass allows" "none" "$(dec)"
+dg_assert_ok "cert run bypass allows: exits 0"
 dg_run_with_fn "$P" "$H" "$(edit "$P/.planning/ROADMAP.md")" 'sb_hook_exit_on_cert_run() { exit 0; }; export -f sb_hook_exit_on_cert_run'
 assert_eq "sb_hook_exit_on_cert_run takes precedence when defined" "" "$TL_OUT"
+dg_assert_ok "sb_hook_exit_on_cert_run takes precedence when defined: exits 0"
 
 # --- env / file overrides --------------------------------------------------
 dg_run "$P" "$H" "$(edit "$P/.planning/ROADMAP.md")" SB_ALLOW_PLANNING_EDITS=1
 assert_contains "env override allows with notice" "$TL_OUT" "SB_ALLOW_PLANNING_EDITS=1"
 assert_eq "env override does not deny" "none" "$(dec)"
+dg_assert_ok "env override does not deny: exits 0"
 
 OV="$ST/planning-edit-override"
 : >"$OV"
@@ -103,11 +112,13 @@ rm -f "$RO"
 : >"$ST/trivial"
 dg_run "$P" "$H" "$(edit "$P/.planning/ROADMAP.md")"
 assert_eq "legacy trivial marker bypasses" "" "$TL_OUT"
+dg_assert_ok "legacy trivial marker bypasses: exits 0"
 rm -f "$ST/trivial"
 printf '{"state":{"trivial_file":"%s"}}\n' "$ST/custom-trivial" >"$P/.silver-bullet.json"
 : >"$ST/custom-trivial"
 dg_run "$P" "$H" "$(edit "$P/.planning/ROADMAP.md")"
 assert_eq "configured trivial file bypasses" "" "$TL_OUT"
+dg_assert_ok "configured trivial file bypasses: exits 0"
 rm -f "$ST/custom-trivial"
 printf '{"state":{"trivial_file":"%s"}}\n' "$TL_TMP/outside-trivial" >"$P/.silver-bullet.json"
 : >"$TL_TMP/outside-trivial"
@@ -130,17 +141,22 @@ mkdir -p "$TL_TMP/outside"
 rm -f "$ST/project-root"
 dg_run "$TL_TMP/outside" "$H" "$(edit "$P/.planning/ROADMAP.md")" PATH="$(tl_path_without jq)"
 assert_eq "no jq outside an SB project: allow" "" "$TL_OUT"
+dg_assert_ok "no jq outside an SB project: allow: exits 0"
 
 # --- degraded: no helper libraries ------------------------------------------
 dg_run_nolib_in "$P" "$H" "$(edit "$P/.planning/ROADMAP.md")" PATH="$(tl_path_without jq)"
 assert_eq "no libs and no jq: fail open" "" "$TL_OUT"
+dg_assert_ok "no libs and no jq: fail open: exits 0"
 dg_run_nolib_in "$P" "$H" "$(edit "$P/.planning/ROADMAP.md")"
 assert_eq "no libs: jq extraction works but the audit helper is missing => fail open" "" "$TL_OUT"
+dg_assert_ok "no libs: jq extraction works but the audit helper is missing => fail open: exits 0"
 dg_run_with_fn "$P" "$H" "$(edit "$P/.planning/ROADMAP.md")" 'cd() { return 1; }; sb_project_is_initiated() { return 1; }; export -f cd sb_project_is_initiated'
 assert_eq "no libs: initiated-check fallback can opt out" "" "$TL_OUT"
+dg_assert_ok "no libs: initiated-check fallback can opt out: exits 0"
 
 dg_run_with_fn "$P" "$H" "$(edit "$P/.planning/ROADMAP.md")" 'sb_project_active() { return 1; }; export -f sb_project_active'
 assert_eq "project reported inactive: guard stands down" "" "$TL_OUT"
+dg_assert_ok "project reported inactive: guard stands down: exits 0"
 
 # --- apply_patch payload ----------------------------------------------------
 dg_run "$P" "$H" "$(jq -cn --arg i "*** Begin Patch

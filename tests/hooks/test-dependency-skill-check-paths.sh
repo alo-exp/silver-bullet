@@ -19,12 +19,15 @@ done
 dg_run "$P" "$H" '{"hook_event_name":"PreToolUse","tool_name":"Skill","tool_input":{}}'
 assert_eq "missing skill name: exit 0" 0 "$TL_STATUS"
 assert_eq "missing skill name: silent" "" "$TL_OUT"
+dg_assert_ok "missing skill name: silent: exits 0"
 rm -f "$SB_RUNTIME_STATE_DIR/project-root"
 dg_run "$TL_TMP/outside" "$H" "$(skill sb:plan)"
 assert_eq "outside an SB project: silent" "" "$TL_OUT"
+dg_assert_ok "outside an SB project: silent: exits 0"
 mkdir -p "$TL_TMP/gitonly/.git"
 dg_run "$TL_TMP/gitonly" "$H" "$(skill sb:plan)"
 assert_eq "git root without SB config: silent" "" "$TL_OUT"
+dg_assert_ok "git root without SB config: silent: exits 0"
 dg_run "$P" "$H" "not json"
 assert_contains "unparsable input: ERR trap notice" "$TL_OUT" "internal error; continuing without blocking"
 assert_eq "unparsable input: exit 0" 0 "$TL_STATUS"
@@ -32,14 +35,17 @@ dg_run_nojq "$P" "$H" "$(skill sb:plan)"
 assert_contains "no jq: visible warning" "$TL_OUT" "ENFORCEMENT INACTIVE"
 dg_run_nolib_in "$P" "$H" "$(skill sb:plan)"
 assert_eq "no libs: still a silent no-op" "" "$TL_OUT"
+dg_assert_ok "no libs: still a silent no-op: exits 0"
 for s in superpowers:x design:y engineering:z product-management:w multai:v code-review write-spec other; do
   dg_run_nolib_in "$P" "$H" "$(skill "$s")"
   assert_eq "no libs: raw skill '$s' passes through silently" "" "$TL_OUT"
 done
 dg_run_with_fn "$P" "$H" "$(skill sb:plan)" 'sb_project_gate_or_exit() { exit 0; }; export -f sb_project_gate_or_exit'
 assert_eq "project gate exit honoured" "" "$TL_OUT"
+dg_assert_ok "project gate exit honoured: exits 0"
 S1="$TL_TMP/s1"; dg_stage_hooks "$S1" sb-project-gate.sh skill-discovery.sh
 dg_run "$P" "$S1/hooks/dependency-skill-check.sh" "$(skill sb:plan)"
 assert_eq "no gate/discovery libs: still a silent no-op" "" "$TL_OUT"
+dg_assert_ok "no gate/discovery libs: still a silent no-op: exits 0"
 
 tl_results
