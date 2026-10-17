@@ -66,6 +66,13 @@ trace "$cov" "$TMP" "${REPO_ROOT}/${FIX_REL}/fallback.sh" false
 check_eq "fallback: credited once a run takes the error path" \
   "" "$(field "$cov" "$FIX_REL/fallback.sh" "$missing_expr")"
 
+# 2b. Same-word statements separated by callee trace lines, process substitution
+#     bodies and a braced || group across a continuation line are all credited.
+cov="$TMP/callee"
+trace "$cov" "$TMP" "${REPO_ROOT}/${FIX_REL}/callee.sh"
+check_eq "callee: only the unreachable branch body is uncovered" \
+  "15::" "$(field "$cov" "$FIX_REL/callee.sh" "$missing_expr")"
+
 # 3. Relative invocation from the repo root maps back to the source file.
 cov="$TMP/relative"
 trace "$cov" "$REPO_ROOT" "${FIX_REL}/fallback.sh" false
@@ -98,6 +105,9 @@ mkdir -p "$TMP/io/raw"
 got="$(SB_COV_DIR="$TMP/io" BASH_ENV="$ENV_FILE" bash -c 'echo out; echo err >&2' 2>&1)"
 check_eq "traced script output is unchanged" "out
 err" "$got"
+got="$(SB_COV_DIR="$TMP/io" BASH_ENV="$ENV_FILE" bash -c 'set -u; f() { echo in-f; }; f; echo top' 2>&1)"
+check_eq "tracing a set -u script adds no errors" "in-f
+top" "$got"
 
 # 7. Python subprocesses are measured through the sitecustomize bootstrap.
 cov="$TMP/py"
