@@ -33,6 +33,13 @@ fail() { echo "  FAIL: $1"; FAIL=$((FAIL + 1)); }
 TMP="$(mktemp -d)"
 TMP="$(cd "$TMP" && pwd -P)"
 TEST_HOME="$(mktemp -d)"
+# Authorized --mode apply runs repair the opted-in tools by installing them
+# (npm install -g context-mode, uv tool install, curl … | sh). Tests must never
+# install software or reach the network: put failing stand-ins first on PATH
+# (kept under TEST_HOME, which the EXIT trap removes).
+# shellcheck source=tests/lib/offline-tools.sh
+source "$REPO_ROOT/tests/lib/offline-tools.sh"
+sb_offline_tools_install "${TEST_HOME}/.offline-bin"
 export HOME="$TEST_HOME"
 export SB_RUNTIME_STATE_DIR="${TEST_HOME}/.silver-bullet"
 export SB_RUNTIME_PRESERVE_STATE_DIR=1
