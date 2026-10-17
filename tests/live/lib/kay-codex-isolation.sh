@@ -31,9 +31,11 @@ default_kay_isolation_parent() {
   # Namespace per PID / TEST_RUN_ID so concurrent runners do not share one
   # workspace .tmp root (SB-BUG-G / #253). Keep under workspace .tmp (not
   # /var/folders) so isolated Kay homes stay outside symlinked system temp.
+  # SB_LIVE_KAY_WORKSPACE_ROOT replaces the workspace (the checkout's parent)
+  # so unit tests can keep the isolated tree in their own temp directory.
   local workspace_root
   local run_id="${TEST_RUN_ID:-$$}"
-  workspace_root="$(cd "${SB_ROOT}/.." && pwd)"
+  workspace_root="${SB_LIVE_KAY_WORKSPACE_ROOT:-$(cd "${SB_ROOT}/.." && pwd)}"
   mkdir -p "${workspace_root}/.tmp/kay-isolation-${run_id}"
   printf '%s\n' "${workspace_root}/.tmp/kay-isolation-${run_id}"
 }
