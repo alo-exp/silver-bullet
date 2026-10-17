@@ -2,7 +2,7 @@
 # Behavior tests for hooks/lib/rtk-gate.sh, rtk-compat.sh and rtk-cm-global.sh
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
-tl_init
+tl_init claude
 unset RTK_DISABLED SILVER_BULLET SB_RTK_COMPAT_MODE SB_RTK_COMPAT_ENABLED SB_RTK_HOOK_ARTIFACT SB_GLOBAL_TOOLSTACK_MANIFEST SB_GLOBAL_TOOLSTACK_HOME
 
 # shellcheck source=../../hooks/lib/rtk-gate.sh

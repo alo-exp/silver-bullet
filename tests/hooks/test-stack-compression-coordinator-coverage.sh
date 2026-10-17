@@ -3,7 +3,7 @@
 # hooks/lib/token-compression-tools-gate.sh
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
-tl_init
+tl_init claude
 
 # shellcheck source=../../hooks/lib/token-compression-tools-gate.sh
 source "$TL_REPO_ROOT/hooks/lib/token-compression-tools-gate.sh"

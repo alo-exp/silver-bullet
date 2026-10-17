@@ -2,7 +2,7 @@
 # Behavior tests for hooks/lib/leanctx-gate.sh (lean-ctx CLI is stubbed)
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
-tl_init
+tl_init claude
 unset SB_LEANCTX_MCP_ARTIFACT SB_GLOBAL_TOOLSTACK_MANIFEST SB_GLOBAL_TOOLSTACK_HOME
 
 LIBF="$TL_REPO_ROOT/hooks/lib/leanctx-gate.sh"
