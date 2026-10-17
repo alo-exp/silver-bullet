@@ -73,6 +73,7 @@ emit_warn() {
 }
 
 capture_evidence_warn() {
+  # shellcheck disable=SC2034  # read by the sourced lib/completion-audit/deploy-tier.sh
   EVIDENCE_SCHEMA_WARN="$1"
 }
 
@@ -156,15 +157,23 @@ state_file=$(printf '%s' "$config_vals" | sed -n '1p')
 state_file="${state_file/#\~/$HOME}"
 trivial_file=$(printf '%s' "$config_vals" | sed -n '2p')
 trivial_file="${trivial_file/#\~/$HOME}"
+# shellcheck disable=SC2034  # read by the sourced lib/completion-audit/planning-tier.sh
 required_planning_cfg=$(printf '%s' "$config_vals" | sed -n '3p')
+# shellcheck disable=SC2034  # read by the sourced lib/completion-audit/planning-tier.sh
 required_planning_devops_cfg=$(printf '%s' "$config_vals" | sed -n '4p')
+# shellcheck disable=SC2034  # read by the sourced lib/completion-audit/deploy-tier.sh
 required_deploy_cfg=$(printf '%s' "$config_vals" | sed -n '5p')
+# shellcheck disable=SC2034  # read by the sourced lib/completion-audit/deploy-tier.sh
 required_deploy_devops_cfg=$(printf '%s' "$config_vals" | sed -n '6p')
+# shellcheck disable=SC2034  # read by the sourced lib/completion-audit/*-tier.sh
 active_workflow=$(printf '%s' "$config_vals" | sed -n '7p')
 cfg_quality_gate_state_file=$(printf '%s' "$config_vals" | sed -n '8p')
 [[ -n "$cfg_quality_gate_state_file" ]] && quality_gate_state_file="${cfg_quality_gate_state_file/#\~/$HOME}"
+# shellcheck disable=SC2034  # read by the sourced lib/completion-audit/deploy-tier.sh
 release_require_plugin_runtime_matrix=$(printf '%s' "$config_vals" | sed -n '9p')
+# shellcheck disable=SC2034  # read by the sourced lib/completion-audit/deploy-tier.sh
 release_require_pre_release_quality_gate=$(printf '%s' "$config_vals" | sed -n '10p')
+# shellcheck disable=SC2034  # read by the sourced lib/completion-audit/deploy-tier.sh
 release_require_rc_matrix=$(printf '%s' "$config_vals" | sed -n '11p')
 
 # Env var override for state file
@@ -201,13 +210,16 @@ if [[ -n "$current_branch" ]] && ! printf '%s' "$current_branch" | grep -qE '^[a
 fi
 on_main=false
 if [[ "$current_branch" == "main" || "$current_branch" == "master" ]]; then
+  # shellcheck disable=SC2034  # read by the sourced lib/completion-audit/deploy-tier.sh
   on_main=true
 fi
 
 # ── Read state file ───────────────────────────────────────────────────────────
 state_contents=""
+# shellcheck disable=SC2034  # read by the sourced lib/completion-audit/*.sh
 [[ -f "$state_file" ]] && state_contents=$(cat "$state_file")
 
+# shellcheck disable=SC2154  # is_intermediate is set by ca_classify in lib/completion-audit/classify.sh
 if [[ "$is_intermediate" == true ]]; then
   ca_run_planning_tier_gate
   exit 0

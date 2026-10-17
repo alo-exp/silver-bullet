@@ -37,10 +37,15 @@ assert_equal() {
   fi
 }
 
-REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-SCRIPT="$REPO_ROOT/scripts/sync-codex-marketplace-version.sh"
+SOURCE_REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
+# sync-codex-package.sh (run below) regenerates package trees inside the
+# checkout it runs from: work on a snapshot so the repository is never written.
+# shellcheck source=tests/lib/repo-snapshot.sh
+source "$SOURCE_REPO_ROOT/tests/lib/repo-snapshot.sh"
+REPO_ROOT="$(sb_repo_snapshot "$SOURCE_REPO_ROOT" "$TMP/repo")"
+SCRIPT="$REPO_ROOT/scripts/sync-codex-marketplace-version.sh"
 
 MARKETPLACE="$TMP/marketplace"
 REMOTE="$TMP/remote.git"

@@ -84,7 +84,9 @@ rt_run_vendor_doctor() {
       (
         timer_pid=0
         cleanup_watchdog() {
-          [[ "$timer_pid" -gt 0 ]] && kill "$timer_pid" 2>/dev/null || true
+          if [[ "$timer_pid" -gt 0 ]]; then
+            kill "$timer_pid" 2>/dev/null || true
+          fi
           exit 0
         }
         trap cleanup_watchdog TERM INT HUP

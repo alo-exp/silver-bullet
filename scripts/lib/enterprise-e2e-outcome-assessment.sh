@@ -705,6 +705,7 @@ enterprise_e2e_outcome_score_clarify() {
   if [[ -f "$state_file" ]] && grep -q 'silver-clarify' "$state_file" 2>/dev/null; then
     printf 'pass\n'; return 0
   fi
+  # shellcheck disable=SC2016  # \$ is a literal dollar in the regex
   if [[ -n "$row_log" && -f "$row_log" ]] && grep -qiE '/sb:clarify|sb:clarify|\$sb:clarify|silver-clarify' "$row_log" 2>/dev/null; then
     printf 'pass\n'; return 0
   fi
@@ -1204,6 +1205,7 @@ enterprise_e2e_outcome_score_orch() {
   if [[ -f "${state_dir}/orchestrator-worker-active.json" ]]; then
     printf 'pass\n'; return 0
   fi
+  # shellcheck disable=SC2016  # \$ is a literal dollar in the regex
   if [[ -n "$evidence" && -f "${work_dir}/${evidence}" ]] && \
      enterprise_e2e_outcome_log_matches "$row_log" 'orchestrator|Silver Bullet|\$silver|/sb|Booting MCP|graphify query'; then
     printf 'pass\n'; return 0

@@ -40,7 +40,7 @@ resolve_cursor_install_dest() {
 
   if [[ "$candidate" == "$current_link" || "$(basename "$candidate")" == "current" ]]; then
     if [[ -L "$current_link" ]]; then
-      resolved="$(cd "$current_link" 2>/dev/null && pwd -P || true)"
+      resolved="$(cd "$current_link" 2>/dev/null && pwd -P)" || true
       if [[ -n "$resolved" && -d "$resolved" ]]; then
         printf '%s\n' "$resolved"
         return 0
@@ -432,7 +432,7 @@ cursor_marketplace_cache_link_ready() {
   link_path="$(cursor_marketplace_plugin_cache_root)/${commit_sha}"
   [[ -L "$link_path" ]] || return 1
   resolved_dest="$(cd "$dest" && pwd -P)"
-  resolved_link="$(cd "$link_path" && pwd -P 2>/dev/null || true)"
+  resolved_link="$(cd "$link_path" && pwd -P 2>/dev/null)" || true
   [[ "$resolved_link" == "$resolved_dest" ]]
 }
 
@@ -604,7 +604,8 @@ verify_cursor_install_identity() {
 
   resolved_dest="$(cursor_canonical_physical_path "$dest")"
   current_link="$(cursor_install_current_link)"
-  resolved_current="$(cursor_canonical_physical_path "$(cd "$current_link" 2>/dev/null && pwd -P || true)")"
+  resolved_current="$(cd "$current_link" 2>/dev/null && pwd -P)" || true
+  resolved_current="$(cursor_canonical_physical_path "$resolved_current")"
   local_plugin="${CURSOR_HOME}/plugins/local/silver-bullet"
 
   if [[ "$(basename "$resolved_dest")" != "$version" || ! -d "$resolved_dest" ]]; then
@@ -855,7 +856,7 @@ if [[ -f "$RT_INSTALLER_LIB" ]]; then
   source "$RT_INSTALLER_LIB"
   _rt_project=""
   if [[ -n "${SB_RECONCILE_PROJECT_ROOT:-}" ]]; then
-    _rt_project="$(cd "$SB_RECONCILE_PROJECT_ROOT" && pwd -P 2>/dev/null || true)"
+    _rt_project="$(cd "$SB_RECONCILE_PROJECT_ROOT" && pwd -P 2>/dev/null)" || true
   fi
   rt_installer_post_install "$REPO_ROOT" "$_rt_project" ||     printf 'WARN: reconciler post-install exited nonzero (host infra may still be usable)\n' >&2
   # Toolstack patchers rewrite ~/.cursor/hooks.json after the initial SB merge.

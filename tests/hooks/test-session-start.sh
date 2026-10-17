@@ -613,7 +613,7 @@ echo "--- Test 9: Invalid SILVER_BULLET_STATE_FILE outside ${SB_RUNTIME_HOME_ROO
 HOOK_WORKDIR=$(make_git_repo)
 new_branch=$(git -C "$HOOK_WORKDIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
 printf '%s' "$new_branch" > "$TMPBRANCH"
-OUTSIDE_PATH="/tmp/evil-state-file-${TEST_RUN_ID}"
+OUTSIDE_PATH="${TMPDIR:-/tmp}/evil-state-file-${TEST_RUN_ID}"
 REAL_STATE_FILE="${SB_TEST_DIR}/state"
 # Ensure the real default state file is absent so we can detect the fallback
 rm -f "$REAL_STATE_FILE" 2>/dev/null || true

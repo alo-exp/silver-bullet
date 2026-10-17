@@ -27,8 +27,8 @@ Write docs so the intended reader is obvious.
 | **Reviewer / release operator** | Is this ready to ship? What is the risk? | `docs/TESTING.md`, `docs/RELEASE.md`, `docs/SECURITY.md` |
 | **Maintainer** | What is durable policy vs temporary plan? | `docs/doc-scheme.md`, `docs/knowledge/`, `docs/ADR/` |
 | **External stakeholder** | What shipped and why? | `README.md`, `docs/CHANGELOG.md` |
-| **Plugin author** *(Claude-Codex plugin-dev projects only)* | How do I extend commands/skills/agents safely? | `docs/specs/`, plugin runtime docs, relevant ADRs |
-| **Runtime operator** *(Claude/Codex/Kay, plugin-dev only)* | What is shared vs runtime-specific? | `docs/RUNTIME-COMPATIBILITY.md` |
+| **Plugin author** *(multi-host plugin-dev projects only)* | How do I extend commands/skills/agents safely? | `docs/specs/`, plugin runtime docs, relevant ADRs |
+| **Runtime operator** *(supported runtimes, plugin-dev only)* | What is shared vs runtime-specific? | `docs/RUNTIME-COMPATIBILITY.md` |
 
 ---
 
@@ -106,28 +106,28 @@ Both use monthly files (`YYYY-MM.md`). Each month's file is append-only during t
 | `GLOSSARY.md` | Terminology starts drifting across docs |
 | `NAVIGATION.md` | Docs grow large enough that question-first routing needs a dedicated page |
 | `DOC-OWNERSHIP.md` | Team needs explicit doc owners and review cadence tracking |
-| `RUNTIME-COMPATIBILITY.md` | **Claude-Codex plugin-dev projects only**; runtime parity must be explicit |
+| `RUNTIME-COMPATIBILITY.md` | **multi-host plugin-dev projects only**; runtime parity must be explicit |
 | `ADR/` | Significant architecture, packaging, compatibility, or deprecation decisions |
 
 ---
 
 ## `.planning/` — Ephemeral Planning Artifacts
 
-Managed by SB workflows. You rarely edit these directly — they're created and consumed by workflow skills.
+Managed by Silver Bullet. You rarely edit these directly — they're created and consumed by SB workflow skills.
 
 | Artifact | Created by | Purpose |
 |----------|-----------|---------|
-| `PROJECT.md` | `sb:init` / `sb:plan` | Vision, core value, requirements |
-| `ROADMAP.md` | `sb:plan` | Phase structure, status |
-| `STATE.md` | `sb:context` / `sb:plan` | Current progress, decisions, quick tasks |
-| `REQUIREMENTS.md` | `sb:spec` / `sb:plan` | Scoped requirements with acceptance criteria |
-| Phase dirs (`phases/`) | `sb:plan` / `sb:execute` | Per-phase context, research, plans, reviews |
+| `PROJECT.md` | `sb:init` / SB bootstrap | Vision, core value, requirements |
+| `ROADMAP.md` | `sb:init` / SB bootstrap | Phase structure, status |
+| `STATE.md` | `sb:init` / SB bootstrap | Current progress, decisions, quick tasks |
+| `REQUIREMENTS.md` | `sb:spec` / SB milestone planning | Scoped requirements with acceptance criteria |
+| Phase dirs (`phases/`) | Planning skills | Per-phase context, research, plans, reviews |
 | `workflows/<id>.md` | `/sb` composer | Active composed-workflow state per workflow instance |
 | `WORKFLOW.md` (retired legacy) | Older `/sb` flows | Retired single-file composition log |
 | `VALIDATION.md` | `silver-validate` | Pre-build validation results |
 | `UI-SPEC.md` | `sb:ui-contract` | UI specification — layout, components, interactions |
 | `UI-REVIEW.md` | `sb:ui-review` | UI review findings — 6-pillar assessment |
-| `SECURITY.md` | `sb:secure` | Security audit findings — threat mitigations |
+| `SECURITY.md` | `sb:secure` / `security` | Security audit findings — threat mitigations |
 
 All planning artifacts are archived on milestone completion — nothing grows unbounded.
 
@@ -165,7 +165,7 @@ The repository intentionally contains more documents than the live governance se
 | Class | Examples | Contract treatment |
 |-------|----------|--------------------|
 | **Current guidance** | Architecture, enforcement, release, testing, runtime, workflow, and integration references | Listed in `doc-scheme.json` `required_docs`; reviewed for every non-trivial task |
-| **Generated current views** | APO catalog derivatives and composition matrices | Listed in `required_docs`; regenerate from their authority rather than hand-editing |
+| **Generated current views** | Catalog derivatives and composition matrices | Listed in `required_docs`; regenerate from their authority rather than hand-editing |
 | **Historical evidence** | `audits/`, `archive/`, `sessions/`, `specs/`, completed plans, research outputs, forensics | Preserved and discoverable, but excluded from `required_docs` unless explicitly promoted |
 | **Superseded analysis** | Point-in-time internal comparisons and completed audits | Keep the original body and add a clear historical header plus replacement links |
 
@@ -254,7 +254,7 @@ Use terms consistently.
 | **Milestone** | Group of tasks delivered and archived together |
 | **ADR** | Architecture Decision Record for durable technical decisions |
 | **Skill** | Reusable workflow capability invoked during development |
-| **Runtime compatibility** *(plugin-dev only)* | Matrix of shared vs runtime-specific behavior (Claude/Codex/Kay) |
+| **Runtime compatibility** *(plugin-dev only)* | Matrix of shared vs runtime-specific behavior (supported runtimes) |
 
 If terms drift or multiply, create/update `docs/GLOSSARY.md` and link it from `knowledge/INDEX.md`.
 

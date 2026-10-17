@@ -6,10 +6,10 @@ CSBA_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CSBA_REPO_ROOT="${CSBA_REPO_ROOT:-$(cd "${CSBA_LIB_DIR}/../../.." && pwd)}"
 CSBA_PYTHON="${CSBA_PYTHON:-python3}"
 CSBA_FETCH="${CSBA_LIB_DIR}/fetch-cursor-models.py"
-CSBA_PY_LIB="${CSBA_LIB_DIR}/cursor_sb_agents_lib.py"
 CSBA_MANAGED_MARKER='<!-- sb-managed: cursor-sb-agents -->'
 CSBA_GLOBAL_CONFIG="${SB_CURSOR_SB_AGENTS_CONFIG:-${HOME}/.config/silver-bullet/cursor-sb-agents.json}"
 CSBA_GLOBAL_CATALOG="${SB_CURSOR_MODELS_CATALOG:-${HOME}/.config/silver-bullet/cursor-models-catalog.json}"
+# shellcheck disable=SC2034  # read by scripts/install-cursor-sb-agents.sh, which sources this file
 CSBA_TEMPLATE="${CSBA_LIB_DIR}/../install-cursor/templates/cursor-agents/sb-agent.md.template"
 
 csba_default_config_json() {
@@ -23,7 +23,7 @@ csba_project_config_path() {
 
 csba_load_merged_config() {
   local project_root="${1:-${CSBA_REPO_ROOT}}"
-  local project_cfg global_cfg
+  local project_cfg
   project_cfg="$(csba_project_config_path "$project_root")"
   if [[ -f "$project_cfg" ]] && jq -e '.cursor_sb_agents' "$project_cfg" >/dev/null 2>&1; then
     jq -c '.cursor_sb_agents' "$project_cfg"

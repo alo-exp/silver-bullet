@@ -61,5 +61,7 @@ else
   ' "$ROOT_MANIFEST" > "$tmp"
 fi
 mv "$tmp" "$DEST_DIR/.cursor-plugin/plugin.json"
+# mktemp creates 0600; keep the tracked manifest readable like the rest of the package.
+chmod 644 "$DEST_DIR/.cursor-plugin/plugin.json"
 
 log "Cursor package manifest synchronized to ${DEST_DIR}"

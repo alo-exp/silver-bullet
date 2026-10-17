@@ -219,9 +219,7 @@ record_completed_surface() {
   fi
 }
 
-LOCAL_SKILL_SOURCE_REGEX='/Users/shafqat/projects/codex-plugins/skills/[^[:space:]]+'
 LOCAL_SKILL_SOURCE_ROOT='/Users/shafqat/projects/codex-plugins/skills'
-LOCAL_SKILL_SOURCE_NEGATIVE_CONTEXT="do[[:space:]]*not[[:space:]]*read[[:space:]]*or[[:space:]]*use[[:space:]]*local[[:space:]]*${LOCAL_SKILL_SOURCE_ROOT}|avoid(ed|s|ing)?[[:space:]]*local[[:space:]]*codex-plugins[[:space:]]*skill[[:space:]]*sources|not[[:space:]]*read[[:space:]]*or[[:space:]]*use[[:space:]]*local[[:space:]]*${LOCAL_SKILL_SOURCE_ROOT}|not[[:space:]]*read[[:space:]]*from[[:space:]]*${LOCAL_SKILL_SOURCE_ROOT}|not[[:space:]]*using[[:space:]]*${LOCAL_SKILL_SOURCE_ROOT}|prohibited[[:space:]]*${LOCAL_SKILL_SOURCE_ROOT}|from[[:space:]]*${LOCAL_SKILL_SOURCE_ROOT}[[:space:]]*as[[:space:]]*requested|!${LOCAL_SKILL_SOURCE_ROOT}"
 
 resolve_silver_skill_path() {
   if [[ "$E2E_RUNTIME" == "codex" || "$E2E_RUNTIME" == "kay" ]]; then

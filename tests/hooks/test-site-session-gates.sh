@@ -66,12 +66,12 @@ EOF
 }
 
 run_hook() {
-  local hook="$1" event="$2" payload="$3"
+  local hook="$1" payload="$3" # $2 (event) labels the call site only
   printf '%s' "$payload" | ( cd "$TMPDIR_TEST" && SB_RUNTIME_PRESERVE_STATE_DIR=1 bash "$hook" 2>/dev/null )
 }
 
 run_hook_worker() {
-  local hook="$1" event="$2" payload="$3"
+  local hook="$1" payload="$3" # $2 (event) labels the call site only
   printf '%s' "$payload" | ( cd "$TMPDIR_TEST" && SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_ORCHESTRATOR_PARENT=0 bash "$hook" 2>/dev/null )
 }
 
