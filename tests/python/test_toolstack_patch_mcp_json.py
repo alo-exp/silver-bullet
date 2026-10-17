@@ -403,6 +403,24 @@ class OpencodeMergeTest(McpCase):
         self.assertFalse(changed)
         self.assertEqual(self.read(path)["plugin"], "junk")
 
+    def test_consent_keeps_existing_plugin_list(self):
+        path = self.home / ".config" / "opencode" / "opencode.json"
+        path.parent.mkdir(parents=True)
+        path.write_text(json.dumps({"plugin": ["other"], "mcp": {}}))
+        (changed, _), _ = self.merge(patch_context_mode=True)
+        self.assertTrue(changed)
+        self.assertEqual(self.read(path)["plugin"], ["other", "context-mode"])
+
+    def test_mcp_entry_is_the_fallback_when_the_plugin_cannot_be_registered(self):
+        # Defensive path: if the plugin helper leaves OpenCode without the
+        # native plugin, Context Mode is still wired as a local MCP server.
+        with mock.patch.object(pm, "opencode_ensure_context_mode_plugin", return_value=False):
+            (changed, _), path = self.merge(patch_context_mode=True)
+        self.assertTrue(changed)
+        entry = self.read(path)["mcp"]["context-mode"]
+        self.assertEqual(entry["command"], ["/opt/five/context-mode"])
+        self.assertEqual(entry["type"], "local")
+
     def test_non_list_plugin_value_replaced_with_consent(self):
         path = self.home / ".config" / "opencode" / "opencode.json"
         path.parent.mkdir(parents=True)
