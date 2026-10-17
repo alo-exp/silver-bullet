@@ -3,7 +3,7 @@
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/b-orchestrator-helpers.sh"
-tl_init
+tl_init claude
 
 HOOK=hooks/orchestrator-directive-guard.sh
 export SB_RUNTIME_PRESERVE_STATE_DIR=1
