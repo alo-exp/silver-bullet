@@ -397,4 +397,37 @@ printf 'not json' >"$TL_TMP/ev-cfg.json"
 tl_run env -u SILVER_BULLET_EVIDENCE_SCHEMA_STRICT bash -c 'source "$1/required-skills.sh"; source "$2/classify.sh"; source "$2/gates.sh"; _lib_dir="$3"; config_file="$4"; run_evidence_schema_delivery_gate "$5"; echo "strict=$SILVER_BULLET_EVIDENCE_SCHEMA_STRICT"' _ "$LIBDIR" "$CA" "$TL_TMP/no-ep-lib" "$TL_TMP/ev-cfg.json" "$TL_TMP"
 assert_contains "no enterprise lib and unreadable config: strict" "$TL_OUT" "strict=1"
 
+# ── remaining fallbacks: junk stat output, blank find lines, whitespace-only path list ──
+tl_stub stat 'echo junk'
+drive gates.sh "_mtime_epoch '$mt'"
+assert_eq "non-numeric stat output becomes mtime 0 (linux branch)" "0" "$TL_OUT"
+rm -f "$TL_BIN/stat"
+
+REAL_FIND="$(command -v find)"
+tl_stub find 'printf "\ndocs/x.md\n"'
+drive gates.sh "build_doc_scheme_checklist_keys '$docroot'; printf '%s\n' \"\${DOC_SCHEME_CHECKLIST_KEYS[@]}\""
+assert_contains "blank lines from find are skipped" "$TL_OUT" "docs/x.md"
+assert_not_contains "no empty key is recorded" "$TL_OUT"$'\n' $'\n\n'
+rm -f "$TL_BIN/find"
+: "$REAL_FIND"
+
+tl_run bash -c 'source "$1"; ca_collect_changed_paths() { printf " \n"; }; cmd_first_line=""; ca_detect_change_class "$2" ""; echo "$ca_change_class"' _ "$CA/change-class.sh" "$GITROOT"
+assert_eq "whitespace-only path entries classify as mixed" "mixed" "$TL_OUT"
+
+# jq succeeding for the enterprise check and failing for the gate's own read
+REAL_JQ="$(command -v jq)"
+export REAL_JQ
+tl_stub jq 'if [[ "$*" == *evidence_schema.strict* ]]; then n=$(cat "$TL_TMP/jqcount" 2>/dev/null || echo 0); echo $((n+1)) >"$TL_TMP/jqcount"; if [[ "$n" -eq 0 ]]; then echo false; exit 0; fi; exit 1; fi; exec "$REAL_JQ" "$@"'
+export TL_TMP
+rm -f "$TL_TMP/jqcount"
+evid '{}'
+assert_contains "failing jq re-read after a non-strict profile answer defaults to strict" "$TL_OUT" "strict=1"
+rm -f "$TL_BIN/jq"
+
+# project gate refusing inside the enforcement-tier helper
+mkdir -p "$TL_TMP/refuse-lib"
+printf 'sb_project_is_initiated() { return 1; }\n' >"$TL_TMP/refuse-lib/sb-project-gate.sh"
+tl_run bash -c 'source "$1/required-skills.sh"; source "$1/workflow-utils.sh"; source "$2/classify.sh"; source "$2/gates.sh"; _lib_dir="$3"; config_file="$4"; emit_block() { echo "BLOCK: $1"; }; run_enforcement_tier_delivery_gate; echo "returned"' _ "$LIBDIR" "$CA" "$TL_TMP/refuse-lib" "$TL_TMP/tier-cfg.json"
+assert_eq "uninitiated project: tier gate is a no-op" "returned" "$TL_OUT"
+
 tl_results
