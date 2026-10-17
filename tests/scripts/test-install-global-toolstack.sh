@@ -101,12 +101,15 @@ assert_eq "env project root forwarded" "$FAKE|$proj|$FAKE|$proj" "$(cat "$HOME/p
 
 # ===== entry script: copy failures are tolerated =====
 rm -rf "$CUR"
-mkdir -p "$TSD/lib"
-mkdir "$TSD/graphify-gate.sh" "$TSD/patch-mcp.py" "$TSD/global-recommended-tools.mdc"   # cp onto a directory fails
+REAL_CP="$(command -v cp)"
+tl_stub cp "case \"\$*\" in *graphify-gate.sh*|*patch-mcp.py*|*global-recommended-tools.mdc*) exit 1;; esac; exec $REAL_CP \"\$@\""
 tl_run bash "$ENTRY"
 assert_eq "entry tolerates failing copies" 0 "$TL_STATUS"
 assert_contains "entry still completes" "$TL_OUT" "Global toolstack install complete"
-rm -rf "$CUR"
+assert_file_absent "failed .sh copy leaves nothing" "$TSD/graphify-gate.sh"
+assert_file_absent "failed .py copy leaves nothing" "$TSD/patch-mcp.py"
+assert_file_exists "other files still staged" "$TSD/rtk-gate.sh"
+rm -f "$TL_BIN/cp"
 tl_stub chmod 'exit 1'
 tl_run bash "$ENTRY"
 assert_eq "entry tolerates failing chmod" 0 "$TL_STATUS"
@@ -122,6 +125,19 @@ assert_eq "repo-mode: no project root => empty" "$FAKE|||" "$(cat "$HOME/post-in
 assert_file_exists "repo-mode self-deploys install.sh" "$TSD/install.sh"
 assert_file_exists "repo-mode stages gates" "$TSD/rtk-gate.sh"
 assert_file_exists "repo-mode stages common.sh" "$TSD/lib/common.sh"
+
+# existing hooks.json / mcp.json are backed up; a project root with SB config is resolved
+printf '{"h":2}' >"$CUR/hooks.json"
+printf '{"m":2}' >"$CUR/mcp.json"
+rm -f "$HOME/post-install.log"
+SB_RECONCILE_PROJECT_ROOT="$proj" tl_run bash "$BODY"
+assert_eq "repo-mode backs up hooks.json" '{"h":2}' "$(cat "$CUR/hooks.json.bak.20260101T000000")"
+assert_eq "repo-mode backs up mcp.json" '{"m":2}' "$(cat "$CUR/mcp.json.bak.20260101T000000")"
+assert_eq "repo-mode passes resolved project root" "$FAKE|$proj||$proj" "$(cat "$HOME/post-install.log")"
+ln -s "$proj" "$TL_TMP/proj-link"
+rm -f "$HOME/post-install.log"
+SB_RECONCILE_PROJECT_ROOT="$TL_TMP/proj-link" tl_run bash "$BODY"
+assert_eq "project root is canonicalised (pwd -P)" "$FAKE|$proj||$TL_TMP/proj-link" "$(cat "$HOME/post-install.log")"
 
 # project root without .silver-bullet.json is ignored
 rm -f "$HOME/post-install.log"
