@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# Guards against `printf ... | grep -q` / `echo ... | grep -q` in first-party Bash.
+#
+# grep -q (and -m) exits at the first match. bash's printf and echo write
+# multi-line text one line per write(), so a writer still holding lines gets
+# SIGPIPE, and under `set -o pipefail` the whole check reports "no match": a
+# recorded skill looks missing, or a command gate silently skips. Feed grep a
+# here-string instead: grep -q PATTERN <<<"$text".
+set -euo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
+tl_init
+
+# A writer pipeline into a quiet/early-exit grep, on one line.
+pattern='(printf|echo)[^|]*\|[[:space:]]*grep[[:space:]]+(-[a-zA-Z]*[qm][a-zA-Z]*|--quiet|--max-count)'
+
+# The mechanism itself: with the match first and more lines than a pipe buffer
+# holds, the pipeline fails under pipefail while the here-string form succeeds.
+big="$(printf 'match\n'; printf 'line-%06d\n' $(seq 1 20000))"
+rc=0
+(set -o pipefail; printf '%s\n' "$big" | grep -q '^match$') || rc=$?
+assert_eq "printf | grep -q fails under pipefail when grep exits early" 141 "$rc"
+rc=0
+grep -q '^match$' <<<"$big" || rc=$?
+assert_eq "grep -q with a here-string succeeds" 0 "$rc"
+
+offenders="$(cd "$TL_REPO_ROOT" &&
+  git ls-files -- 'hooks/*' 'scripts/*' 'skills/*' 'site/*' |
+  while IFS= read -r f; do
+    [[ -f "$f" && ! -L "$f" ]] || continue
+    case "$f" in
+      *.sh | hooks/session-start | scripts/silver-bullet) ;;
+      *) head -1 "$f" | grep -q 'bash' || continue ;;
+    esac
+    grep -nE "$pattern" "$f" | grep -vE '^[0-9]+:[[:space:]]*#' | sed "s|^|$f:|" || true
+  done)"
+if [[ -z "$offenders" ]]; then
+  tl_pass "no printf/echo piped into grep -q or -m"
+else
+  tl_fail "printf/echo piped into grep -q/-m (use grep ... <<<\"\$text\"):
+$offenders"
+fi
+
+tl_results

@@ -19,7 +19,7 @@ command_str="$(ts_tool_command_string "$input")"
 # Block double shell compression: lean-ctx rewrite must not be primary when RTK owns sb_shell
 if [[ "$tool_name" == "Shell" || "$tool_name" == "Bash" || "$tool_name" == "shell" ]]; then
   if [[ "$(ts_shell_compression_primary)" == "rtk" ]] && command -v rtk >/dev/null 2>&1; then
-    if printf '%s' "$command_str" | grep -qE 'lean-ctx hook rewrite'; then
+    if grep -qE 'lean-ctx hook rewrite' <<<"$command_str"; then
       ts_emit_deny "🚫 DOUBLE SHELL COMPRESSION — RTK owns sb_shell; remove lean-ctx hook rewrite from preToolUse" "$hook_event"
       exit 0
     fi

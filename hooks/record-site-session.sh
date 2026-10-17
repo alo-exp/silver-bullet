@@ -38,7 +38,7 @@ if [[ "$hook_event" == "UserPromptSubmit" ]]; then
     sb_site_session_clear_all
   elif sb_site_prompt_is_site_intent "$prompt"; then
     sb_site_session_mark_site_intent
-    if printf '%s' "$prompt" | grep -qiE '\blive\b|publish|pushed to main|go live'; then
+    if grep -qiE '\blive\b|publish|pushed to main|go live' <<<"$prompt"; then
       sb_site_session_mark_live_claim_pending
     fi
   fi
@@ -63,7 +63,7 @@ case "$tool_name" in
     ;;
   Bash|Shell|shell|exec_command)
     cmd="$(sb_tool_command_string "$input" 2>/dev/null || true)"
-    if printf '%s' "$cmd" | grep -qE '\bgit push\b'; then
+    if grep -qE '\bgit push\b' <<<"$cmd"; then
       sb_site_session_mark_push_intent
     fi
     ;;

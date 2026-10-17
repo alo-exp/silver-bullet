@@ -55,8 +55,8 @@ emit_deny() {
 
 case "$file_path" in
   */site/tokens.css|site/tokens.css)
-    if printf '%s' "$new_string" | grep -qE '@font-face|font-family:[[:space:]]*[^v]'; then
-      if ! printf '%s' "$new_string" | grep -q 'SB FONT TOKEN OVERRIDE'; then
+    if grep -qE '@font-face|font-family:[[:space:]]*[^v]' <<<"$new_string"; then
+      if ! grep -q 'SB FONT TOKEN OVERRIDE' <<<"$new_string"; then
         emit_deny "Site tokens guard — tokens.css @font-face / font-family edits require explicit SB FONT TOKEN OVERRIDE marker in the diff.
 
 Prefer design-system/DESIGN.md tokens. For intentional font changes, include the override marker and run apply-site-chrome.py parity checks."
@@ -66,7 +66,7 @@ Prefer design-system/DESIGN.md tokens. For intentional font changes, include the
 esac
 
 if sb_site_session_path_is_site "$file_path" 2>/dev/null || [[ "$file_path" == */site/help/* ]] || [[ "$file_path" == site/help/* ]]; then
-  if printf '%s' "$new_string" | grep -qE '<nav[^>]*class="[^"]*nav-inner|<footer[^>]*class="[^"]*footer-inner'; then
+  if grep -qE '<nav[^>]*class="[^"]*nav-inner|<footer[^>]*class="[^"]*footer-inner' <<<"$new_string"; then
     emit_deny "Site chrome single-source guard — inline <nav>/<footer> fragments are forbidden in site/help HTML.
 
 Regenerate chrome via: python3 scripts/apply-site-chrome.py

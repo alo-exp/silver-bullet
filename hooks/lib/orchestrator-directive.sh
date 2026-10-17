@@ -242,7 +242,7 @@ sb_orchestrator_directive_skill_recorded() {
     sb_required_skill_is_recorded "$state_contents" "$expected"
     return $?
   fi
-  printf '%s\n' "$state_contents" | grep -Fqx -- "$expected" 2>/dev/null
+  grep -Fqx -- "$expected" 2>/dev/null <<<"$state_contents"
 }
 
 sb_orchestrator_directive_context_block() {
@@ -299,7 +299,7 @@ sb_orchestrator_log_override() {
 
 sb_orchestrator_prompt_has_override() {
   local prompt="$1"
-  printf '%s' "$prompt" | grep -qiE 'SB[[:space:]]+OVERRIDE:' 
+  grep -qiE 'SB[[:space:]]+OVERRIDE:' <<<"$prompt" 
 }
 
 sb_orchestrator_extract_override_reason() {
