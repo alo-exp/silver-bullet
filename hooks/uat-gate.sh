@@ -50,7 +50,7 @@ emit_block() {
 skill=$(printf '%s' "$input" | jq -r '.tool_input.skill // .tool_input.skillName // ""')
 
 if declare -F sb_skill_canonical_name >/dev/null 2>&1; then
-  skill="$(sb_skill_canonical_name "$skill")"
+  skill="$(sb_skill_canonical_name "$skill" || true)"
 fi
 
 UAT=".planning/UAT.md"
