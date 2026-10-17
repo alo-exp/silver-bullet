@@ -360,7 +360,10 @@ def load_scope():
     scope = json.loads(SCOPE_FILE.read_text())
     files = _git_files()
     result = {}
-    for lang in ("bash", "python"):
+    for lang in ("bash", "python", "javascript"):
+        if lang not in scope:
+            result[lang] = []
+            continue
         spec = scope[lang]
         include = spec["include"]
         exclude = [e["glob"] for e in spec.get("exclude", [])]
@@ -371,6 +374,8 @@ def load_scope():
             if lang == "bash" and not _is_bash(rel):
                 continue
             if lang == "python" and not rel.endswith(".py"):
+                continue
+            if lang == "javascript" and not rel.endswith((".js", ".mjs", ".cjs", ".ts")):
                 continue
             chosen.append(rel)
         result[lang] = chosen
@@ -653,6 +658,70 @@ def _python_statement_count(path: str) -> dict:
         return {"statements": 0, "branches": 0, "lines": []}
 
 
+def js_coverage(cov_dir: Path, scoped: list[str]) -> dict:
+    """Merge Node LCOV files (tests/scripts/test-js-unit.sh) for scoped JS/TS files."""
+    lines: dict[str, dict[int, int]] = {}
+    funcs: dict[str, dict[tuple, int]] = {}
+    branches: dict[str, dict[tuple, int]] = {}
+    for info in sorted((cov_dir / "js").glob("*.info")) if (cov_dir / "js").exists() else []:
+        current = None
+        for raw in info.read_text(errors="replace").splitlines():
+            if raw.startswith("SF:"):
+                sf = raw[3:]
+                path = os.path.normpath(sf if sf.startswith("/") else os.path.join(REPO_ROOT, sf))
+                rel = os.path.relpath(path, REPO_ROOT)
+                current = rel
+                lines.setdefault(rel, {})
+                funcs.setdefault(rel, {})
+                branches.setdefault(rel, {})
+            elif current is None:
+                continue
+            elif raw.startswith("DA:"):
+                ln, cnt = raw[3:].split(",")[:2]
+                lines[current][int(ln)] = max(lines[current].get(int(ln), 0), int(cnt))
+            elif raw.startswith("FN:"):
+                ln, name = raw[3:].split(",", 1)
+                funcs[current].setdefault((name,), 0)
+            elif raw.startswith("FNDA:"):
+                cnt, name = raw[5:].split(",", 1)
+                funcs[current][(name,)] = max(funcs[current].get((name,), 0), int(cnt))
+            elif raw.startswith("BRDA:"):
+                ln, block, br, taken = raw[5:].split(",")
+                key = (int(ln), block, br)
+                hit = 0 if taken == "-" else int(taken)
+                branches[current][key] = max(branches[current].get(key, 0), hit)
+            elif raw == "end_of_record":
+                current = None
+    results = {}
+    for rel in scoped:
+        if rel in lines:
+            ln, fn, br = lines[rel], funcs[rel], branches[rel]
+            results[rel] = {
+                "lines": len(ln),
+                "lines_covered": sum(1 for c in ln.values() if c),
+                "functions": len(fn),
+                "functions_covered": sum(1 for c in fn.values() if c),
+                "branches": len(br),
+                "branches_covered": sum(1 for c in br.values() if c),
+                "missing_lines": sorted(k for k, c in ln.items() if not c),
+                "measured": True,
+            }
+        else:
+            text = (REPO_ROOT / rel).read_text(errors="replace").splitlines()
+            approx = sum(1 for t in text if t.strip() and not t.strip().startswith(("//", "*", "/*")))
+            results[rel] = {
+                "lines": approx,
+                "lines_covered": 0,
+                "functions": 0,
+                "functions_covered": 0,
+                "branches": 0,
+                "branches_covered": 0,
+                "missing_lines": [],
+                "measured": False,
+            }
+    return results
+
+
 # --------------------------------------------------------------------------
 # Reporting
 # --------------------------------------------------------------------------
@@ -672,76 +741,82 @@ def _totals(results: dict, keys) -> dict:
 
 def report(cov_dir: Path, fail_under: float | None, show_missing: bool, only: list[str] | None) -> int:
     scope, scoped = load_scope()
-    bash_scoped = scoped["bash"]
-    py_scoped = scoped["python"]
+    bash_scoped, py_scoped, js_scoped = scoped["bash"], scoped["python"], scoped["javascript"]
     if only:
         bash_scoped = [f for f in bash_scoped if _matches(f, only)]
         py_scoped = [f for f in py_scoped if _matches(f, only)]
+        js_scoped = [f for f in js_scoped if _matches(f, only)]
     bash = bash_coverage(cov_dir, bash_scoped)
     py = python_coverage(cov_dir, py_scoped)
+    js = js_coverage(cov_dir, js_scoped)
     bt = _totals(bash, ["statements", "lines", "functions"])
     pt = _totals(py, ["statements", "branches"])
+    jt = _totals(js, ["lines", "functions", "branches"])
+    exclusions = []
+    for lang in ("bash", "python", "javascript"):
+        for e in scope.get(lang, {}).get("exclude", []):
+            exclusions.append({"language": lang, **e})
     summary = {
         "bash": {**bt, "files": len(bash)},
         "python": {**pt, "files": len(py)},
-        "exclusions": scope["bash"].get("exclude", []) + scope["python"].get("exclude", []),
+        "javascript": {**jt, "files": len(js), "unmeasured_files": sorted(k for k, v in js.items() if not v["measured"])},
+        "exclusions": exclusions,
     }
     (cov_dir / "coverage-summary.json").write_text(
-        json.dumps({"summary": summary, "bash": bash, "python": py}, indent=1, sort_keys=True)
+        json.dumps({"summary": summary, "bash": bash, "python": py, "javascript": js}, indent=1, sort_keys=True)
     )
 
+    # (file, primary covered, primary total, funcs covered, funcs total, branches covered, branches total)
     rows = []
     for rel, r in sorted(bash.items()):
         rows.append((rel, r["statements_covered"], r["statements"], r["functions_covered"], r["functions"], None, None))
     for rel, r in sorted(py.items()):
         rows.append((rel, r["statements_covered"], r["statements"], None, None, r["branches_covered"], r["branches"]))
+    for rel, r in sorted(js.items()):
+        rows.append((rel, r["lines_covered"], r["lines"], r["functions_covered"], r["functions"], r["branches_covered"], r["branches"]))
     width = max([len(r[0]) for r in rows] + [10])
-    print(f"{'File':<{width}}  {'Stmts':>11}  {'Funcs':>9}  {'Branches':>11}  Cover")
+    print(f"{'File':<{width}}  {'Stmts/Lines':>11}  {'Funcs':>9}  {'Branches':>11}  Cover")
     for rel, sc, s, fc, f, bc, b in rows:
-        if sc == s and (fc == f) and (bc == b) and not show_missing:
+        if sc == s and fc == f and bc == b and not show_missing:
+            continue
+        if js.get(rel) and not js[rel]["measured"]:
+            print(f"{rel:<{width}}  {'-':>5}/~{s:<4}  {'-':>9}  {'-':>11}  not loaded by any JS test")
             continue
         funcs = f"{fc}/{f}" if f is not None else "-"
         br = f"{bc}/{b}" if b is not None else "-"
         print(f"{rel:<{width}}  {sc:>5}/{s:<5}  {funcs:>9}  {br:>11}  {_pct(sc, s):6.2f}%")
-        if show_missing:
-            r = bash.get(rel) or py.get(rel)
-            if rel in bash:
-                miss = r["missing_statements"]
-                if miss:
-                    print("    missing: " + ", ".join(f"{m['line']}({m['word']})" for m in miss[:60]))
-                if r["missing_functions"]:
-                    print("    uncalled functions: " + ", ".join(f["name"] for f in r["missing_functions"]))
-            else:
-                if r["missing_lines"]:
-                    print("    missing lines: " + _ranges(r["missing_lines"]))
-                if r["missing_branches"]:
-                    print("    missing branches: " + ", ".join(f"{k}->{v}" for k, v in list(r["missing_branches"].items())[:40]))
+        if not show_missing:
+            continue
+        if rel in bash:
+            r = bash[rel]
+            if r["missing_statements"]:
+                print("    missing: " + ", ".join(f"{m['line']}({m['word']})" for m in r["missing_statements"][:60]))
+            if r["missing_functions"]:
+                print("    uncalled functions: " + ", ".join(f["name"] for f in r["missing_functions"]))
+        elif rel in py:
+            r = py[rel]
+            if r["missing_lines"]:
+                print("    missing lines: " + _ranges(r["missing_lines"]))
+            if r["missing_branches"]:
+                print("    missing branches: " + ", ".join(f"{k}->{v}" for k, v in list(r["missing_branches"].items())[:40]))
+        elif js[rel]["missing_lines"]:
+            print("    missing lines: " + _ranges(js[rel]["missing_lines"]))
     print()
-    print(
-        "Bash   files {f}: statements {sc}/{s} ({sp:.2f}%), lines {lc}/{l} ({lp:.2f}%), functions {fc}/{fn} ({fp:.2f}%)".format(
-            f=len(bash),
-            sc=bt["statements_covered"],
-            s=bt["statements"],
-            sp=_pct(bt["statements_covered"], bt["statements"]),
-            lc=bt["lines_covered"],
-            l=bt["lines"],
-            lp=_pct(bt["lines_covered"], bt["lines"]),
-            fc=bt["functions_covered"],
-            fn=bt["functions"],
-            fp=_pct(bt["functions_covered"], bt["functions"]),
-        )
-    )
-    print(
-        "Python files {f}: statements {sc}/{s} ({sp:.2f}%), branches {bc}/{b} ({bp:.2f}%)".format(
-            f=len(py),
-            sc=pt["statements_covered"],
-            s=pt["statements"],
-            sp=_pct(pt["statements_covered"], pt["statements"]),
-            bc=pt["branches_covered"],
-            b=pt["branches"],
-            bp=_pct(pt["branches_covered"], pt["branches"]),
-        )
-    )
+    totals = [
+        f"Bash       files {len(bash)}: statements {bt['statements_covered']}/{bt['statements']} ({_pct(bt['statements_covered'], bt['statements']):.2f}%), "
+        f"lines {bt['lines_covered']}/{bt['lines']} ({_pct(bt['lines_covered'], bt['lines']):.2f}%), "
+        f"functions {bt['functions_covered']}/{bt['functions']} ({_pct(bt['functions_covered'], bt['functions']):.2f}%)",
+        f"Python     files {len(py)}: statements {pt['statements_covered']}/{pt['statements']} ({_pct(pt['statements_covered'], pt['statements']):.2f}%), "
+        f"branches {pt['branches_covered']}/{pt['branches']} ({_pct(pt['branches_covered'], pt['branches']):.2f}%)",
+        f"JS/TS      files {len(js)}: lines {jt['lines_covered']}/{jt['lines']} ({_pct(jt['lines_covered'], jt['lines']):.2f}%), "
+        f"functions {jt['functions_covered']}/{jt['functions']} ({_pct(jt['functions_covered'], jt['functions']):.2f}%), "
+        f"branches {jt['branches_covered']}/{jt['branches']} ({_pct(jt['branches_covered'], jt['branches']):.2f}%)",
+    ]
+    for line in totals:
+        print(line)
+    unmeasured = summary["javascript"]["unmeasured_files"]
+    if unmeasured:
+        print(f"JS/TS files not loaded by any test (approximate line counts): {', '.join(unmeasured)}")
     orphan_total = sum(len(r["orphan_hits"]) for r in bash.values())
     if orphan_total:
         print(f"Unattributed bash trace hits: {orphan_total} (eval/trap bodies or analyzer gaps; per-file list in coverage-summary.json)")
@@ -750,6 +825,9 @@ def report(cov_dir: Path, fail_under: float | None, show_missing: bool, only: li
         print("Bash parse errors (statements near these lines may be miscounted):")
         for rel, lines in errors.items():
             print(f"  {rel}: lines {lines[:10]}")
+    (cov_dir / "coverage-summary.md").write_text(
+        "# Coverage summary\n\n" + "\n".join(f"- {t}" for t in totals) + "\n"
+    )
     if fail_under is not None:
         metrics = [
             _pct(bt["statements_covered"], bt["statements"]),
@@ -757,8 +835,11 @@ def report(cov_dir: Path, fail_under: float | None, show_missing: bool, only: li
             _pct(bt["functions_covered"], bt["functions"]),
             _pct(pt["statements_covered"], pt["statements"]),
             _pct(pt["branches_covered"], pt["branches"]),
+            _pct(jt["lines_covered"], jt["lines"]),
+            _pct(jt["functions_covered"], jt["functions"]),
+            _pct(jt["branches_covered"], jt["branches"]),
         ]
-        if min(metrics) + 1e-9 < fail_under:
+        if min(metrics) + 1e-9 < fail_under or (fail_under >= 100 and unmeasured):
             print(f"FAIL: coverage below {fail_under}%")
             return 2
     return 0
