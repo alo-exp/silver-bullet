@@ -87,14 +87,14 @@ else
   echo "FAIL: compact digest size ${digest_bytes}B > 3072B"
   FAIL=$((FAIL + 1))
 fi
-if printf '%s' "$digest" | grep -q "Non-Negotiable\|Process is non-negotiable"; then
+if grep -q "Non-Negotiable\|Process is non-negotiable" <<<"$digest"; then
   echo "PASS: digest keeps non-negotiable markers"
   PASS=$((PASS + 1))
 else
   echo "FAIL: digest missing non-negotiable markers"
   FAIL=$((FAIL + 1))
 fi
-if printf '%s' "$digest" | grep -q "Full rules (on demand)\|core-rules.md"; then
+if grep -q "Full rules (on demand)\|core-rules.md" <<<"$digest"; then
   echo "PASS: digest points to full core-rules path"
   PASS=$((PASS + 1))
 else

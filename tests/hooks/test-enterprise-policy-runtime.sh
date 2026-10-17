@@ -30,7 +30,7 @@ else
 fi
 
 hint="$(sb_enterprise_policy_clarify_hint_block "$WORK/.silver-bullet.json")"
-if printf '%s' "$hint" | grep -qF 'clarify --auto'; then
+if grep -qF 'clarify --auto' <<<"$hint"; then
   pass "clarify hint block present"
 else
   fail "clarify hint block missing"
@@ -51,11 +51,11 @@ else
 fi
 
 block_msg="$(sb_enterprise_policy_delivery_block_message "$WORK/.silver-bullet.json")"
-if printf '%s' "$block_msg" | grep -qF 'Human operator:' \
-  && printf '%s' "$block_msg" | grep -qF 'from your own terminal' \
-  && printf '%s' "$block_msg" | grep -qF 'agent must NOT create this marker' \
-  && printf '%s' "$block_msg" | grep -qF "$(sb_enterprise_policy_human_deploy_marker_file)" \
-  && ! printf '%s' "$block_msg" | grep -qF 'Record explicit approval:'; then
+if grep -qF 'Human operator:' <<<"$block_msg" \
+  && grep -qF 'from your own terminal' <<<"$block_msg" \
+  && grep -qF 'agent must NOT create this marker' <<<"$block_msg" \
+  && grep -qF "$(sb_enterprise_policy_human_deploy_marker_file)" <<<"$block_msg" \
+  && ! grep -qF 'Record explicit approval:' <<<"$block_msg"; then
   pass "deploy block message addresses human operator (not agent touch)"
 else
   fail "deploy block message must tell human to touch marker; agent must not create it"

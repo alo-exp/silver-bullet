@@ -29,7 +29,7 @@ trap 'rm -rf "$WORKDIR" "${TMPDIR:-/tmp}/rfl-policy-c-out.$$" "${TMPDIR:-/tmp}/r
 
 HELP_OUT="$(python3 "$RESOLVER" --help 2>&1 || true)"
 for flag in --assert-policy-c --write-policy-c --assert-rfl-advance --assert-consecutive-clean --record-rung-review-outcome; do
-  if grep -- "$flag" >/dev/null <<<"$HELP_OUT"; then
+  if grep -- "$flag" <<<"$HELP_OUT" >/dev/null; then
     pass "review-fix-ladder.py --help lists $flag"
   else
     fail "review-fix-ladder.py --help missing $flag"
