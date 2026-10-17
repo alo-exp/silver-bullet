@@ -66,8 +66,9 @@ def entry(cmd: str, matcher: str | None = None, timeout: int | None = None) -> d
     return e
 
 
-def hook_cmd(h: dict) -> str:
-    return str(h.get("command", ""))
+def hook_cmd(h: Any) -> str:
+    # hooks.json is user-editable: tolerate non-object list entries instead of crashing.
+    return str(h.get("command", "")) if isinstance(h, dict) else ""
 
 
 def is_legacy_routing_hook(command: str) -> bool:

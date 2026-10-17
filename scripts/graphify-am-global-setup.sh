@@ -60,7 +60,9 @@ while [[ $# -gt 0 ]]; do
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown option: $1" >&2; usage >&2; exit 2 ;;
   esac
-  shift
+  # A trailing value-taking flag (--host / --repo) has already consumed its
+  # missing argument; do not let this shift abort silently under set -e.
+  shift || true
 done
 
 # shellcheck source=../hooks/lib/graphify-am-global.sh
@@ -91,21 +93,6 @@ if [[ "$APPLY_ALL" -eq 1 ]]; then
     echo "No configured hosts detected (checked global config paths)." >&2
     exit 1
   fi
-  for h in "${detected[@]}"; do
-    run_for_host "$h" || rc=1
-    echo ""
-  done
-  exit "$rc"
-fi
-
-if [[ "$HOST" == "all" ]]; then
-  APPLY_ALL=1
-  mapfile -t detected < <(ga_detect_configured_hosts)
-  if [[ "${#detected[@]}" -eq 0 ]]; then
-    echo "No configured hosts detected." >&2
-    exit 1
-  fi
-  rc=0
   for h in "${detected[@]}"; do
     run_for_host "$h" || rc=1
     echo ""
