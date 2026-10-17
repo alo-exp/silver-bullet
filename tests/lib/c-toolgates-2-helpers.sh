@@ -122,3 +122,136 @@ tg2_farm_stub() {
   rm -f "$TG2_FARM/hooks/lib/$1"
   printf '%s\n' "$2" >"$TG2_FARM/hooks/lib/$1"
 }
+
+# tg2_install_jq_stub: jq wrapper that fails when JQ_FAIL is a substring of its argument
+# list, so one jq call inside a hook can be made to fail while the others behave normally.
+tg2_install_jq_stub() {
+  local real
+  real="$(command -v jq)"
+  tl_stub jq "if [[ -n \"\${JQ_FAIL:-}\" && \"\$*\" == *\"\$JQ_FAIL\"* ]]; then exit 1; fi
+exec $real \"\$@\""
+}
+
+# tg2_gate_suite <hook> <audit-name> <deny-input> <reason> <target> <trivial:yes|no> <bridge:yes|no>
+# Shared prologue assertions for the deny-style PreToolUse gates. The caller defines
+# tg2_scenario_block (arrange state so <deny-input> is denied with <reason>) and
+# tg2_scenario_off <mode> (disable the gate: optout|suspended).
+tg2_gate_suite() {
+  local hook="$1" name="$2" input="$3" reason="$4" target="$5" trivial="$6" bridge="$7"
+  local post_input saved
+  post_input="$(jq -c '.hook_event_name = "PostToolUse"' <<<"$input")"
+
+  tg2_scenario_block
+  rm -f "$TG2_AUDIT"
+  tg2_run "$hook" "$input"
+  assert_denied "$name: baseline is denied" "$reason"
+  assert_eq "$name: baseline exits 0" "0" "$TL_STATUS"
+  assert_eq "$name: deny is audited" "deny" "$(jq -rs 'last.decision // ""' "$TG2_AUDIT" 2>/dev/null || true)"
+  assert_eq "$name: audit hook name" "$name" "$(jq -rs 'last.hook_name // ""' "$TG2_AUDIT" 2>/dev/null || true)"
+  assert_eq "$name: audit target" "$target" "$(jq -rs 'last.target // ""' "$TG2_AUDIT" 2>/dev/null || true)"
+
+  tg2_run "$hook" "$post_input"
+  assert_eq "$name: non-PreToolUse event blocks with decision=block" "block" "$(tg2_decision)"
+  assert_contains "$name: block carries the message" "$(printf '%s' "$TL_OUT" | jq -r '.hookSpecificOutput.message // ""')" "$reason"
+  tg2_run "$hook" "$post_input" JQ_FAIL=hook_event_name
+  assert_eq "$name: unreadable event name defaults to PreToolUse" "deny" "$(tg2_decision)"
+
+  tg2_run "$hook" "$input" SB_KAY_HOOK_BRIDGE_INVOKED=1
+  assert_eq "$name: bridge deny JSON still emitted" "deny" "$(tg2_decision)"
+  if [[ "$bridge" == yes ]]; then
+    assert_eq "$name: bridge invocation exits 2" "2" "$TL_STATUS"
+    assert_contains "$name: bridge invocation prints the reason on stderr" "$TL_ERR" "$reason"
+    tg2_run "$hook" "$post_input" SB_KAY_HOOK_BRIDGE_INVOKED=1
+    assert_eq "$name: bridge env leaves non-PreToolUse at exit 0" "0" "$TL_STATUS"
+  else
+    assert_eq "$name: bridge env does not change the exit status" "0" "$TL_STATUS"
+  fi
+
+  tg2_run "$hook" ""
+  assert_silent_ok "$name: empty stdin allows"
+  TG2_STDIN_DIR=1 tg2_run "$hook" ""
+  assert_silent_ok "$name: unreadable stdin allows"
+  tg2_run "$hook" "not json at all"
+  assert_silent_ok "$name: unparsable stdin allows"
+  TG2_PATH="$(tl_path_without jq)" tg2_run "$hook" "$input"
+  assert_silent_ok "$name: missing jq allows (fail-open)"
+  tg2_run "$hook" "$input" SB_AGENT_CERT_RUN=1
+  assert_silent_ok "$name: cert-run bypass (=1)"
+  tg2_run "$hook" "$input" SB_AGENT_CERT_RUN=true
+  assert_silent_ok "$name: cert-run bypass (=true)"
+  tg2_run "$hook" "$input" SB_AGENT_CERT_RUN=0
+  assert_denied "$name: cert-run flag =0 does not bypass" "$reason"
+
+  saved="$(<"$TG2_CFG")"
+  printf '{ broken json' >"$TG2_CFG"
+  tg2_run "$hook" "$input"
+  assert_silent_ok "$name: unparsable project config allows (fail-open)"
+  printf '%s' "$saved" >"$TG2_CFG"
+  TG2_CWD="$TL_TMP/outside" TG2_PROJECT_ROOT="" tg2_run "$hook" "$input"
+  assert_silent_ok "$name: outside any SB project allows"
+  rm -f "$TG2_CFG" "$SB_RUNTIME_STATE_DIR/project-root"
+  tg2_run "$hook" "$input"
+  assert_silent_ok "$name: missing project config allows"
+  printf '%s' "$saved" >"$TG2_CFG"
+  tg2_scenario_off optout
+  tg2_run "$hook" "$input"
+  assert_silent_ok "$name: opted-out tool allows"
+  printf '%s' "$saved" >"$TG2_CFG"
+  tg2_scenario_off suspended
+  tg2_run "$hook" "$input"
+  assert_silent_ok "$name: suspended enforcement allows"
+  printf '%s' "$saved" >"$TG2_CFG"
+
+  if [[ "$trivial" == yes ]]; then
+    printf 'x' >"$SB_RUNTIME_STATE_DIR/trivial"
+    tg2_run "$hook" "$input"
+    assert_silent_ok "$name: trivial marker (default path) allows"
+    rm -f "$SB_RUNTIME_STATE_DIR/trivial"
+    jq '.state.trivial_file = "~/custom-trivial"' "$TG2_CFG" >"$TG2_CFG.n" && mv "$TG2_CFG.n" "$TG2_CFG"
+    tg2_run "$hook" "$input"
+    assert_denied "$name: configured trivial path absent still gates" "$reason"
+    printf 'x' >"$HOME/custom-trivial"
+    tg2_run "$hook" "$input"
+    assert_silent_ok "$name: trivial marker (configured ~ path) allows"
+    rm -f "$HOME/custom-trivial"
+    tg2_run "$hook" "$input" JQ_FAIL=.state.trivial_file
+    assert_denied "$name: unreadable trivial_file setting falls back to default" "$reason"
+    printf '%s' "$saved" >"$TG2_CFG"
+    ln -s "$TL_TMP/trivial-target" "$SB_RUNTIME_STATE_DIR/trivial"
+    : >"$TL_TMP/trivial-target"
+    tg2_run "$hook" "$input"
+    assert_denied "$name: symlinked trivial marker is ignored" "$reason"
+    rm -f "$SB_RUNTIME_STATE_DIR/trivial"
+  fi
+
+  # library faults
+  tg2_farm "walk-$name" "$hook" sb-project-gate.sh project-active.sh
+  TG2_REPO="$TG2_FARM" TG2_PROJECT_ROOT="" TG2_CWD="$TG2_PROJ/src" tg2_run "$hook" "$input"
+  assert_denied "$name: walk-up fallback finds the config from a subdirectory" "$reason"
+  TG2_REPO="$TG2_FARM" TG2_PROJECT_ROOT="" TG2_CWD="$TL_TMP/outside" tg2_run "$hook" "$input"
+  assert_silent_ok "$name: walk-up fallback stops at the filesystem root"
+  mkdir -p "$TL_TMP/gitonly/sub"
+  git -C "$TL_TMP/gitonly" init -q 2>/dev/null
+  TG2_REPO="$TG2_FARM" TG2_PROJECT_ROOT="" TG2_CWD="$TL_TMP/gitonly/sub" tg2_run "$hook" "$input"
+  assert_silent_ok "$name: walk-up fallback stops at a .git boundary"
+  tg2_farm "inactive-$name" "$hook" project-active.sh
+  tg2_farm_stub project-active.sh 'sb_project_active() { return 1; }
+sb_project_is_initiated() { return 1; }'
+  TG2_REPO="$TG2_FARM" tg2_run "$hook" "$input"
+  assert_silent_ok "$name: uninitiated project allows"
+  tg2_farm "noti-$name" "$hook" tool-input.sh
+  TG2_REPO="$TG2_FARM" tg2_run "$hook" "$input"
+  assert_denied "$name: jq fallbacks still gate without tool-input.sh" "$reason"
+  tg2_farm "noaudit-$name" "$hook" hook-audit.sh
+  rm -f "$TG2_AUDIT"
+  TG2_REPO="$TG2_FARM" tg2_run "$hook" "$input"
+  assert_denied "$name: deny works without hook-audit.sh" "$reason"
+  assert_file_absent "$name: nothing audited without hook-audit.sh" "$TG2_AUDIT"
+  tg2_farm "nocert-$name" "$hook" cert-bypass.sh
+  TG2_REPO="$TG2_FARM" tg2_run "$hook" "$input" SB_AGENT_CERT_RUN=1
+  assert_denied "$name: without cert-bypass.sh the flag is not honoured" "$reason"
+  tg2_farm "nolib-$name" "$hook" -
+  TG2_REPO="$TG2_FARM" tg2_run "$hook" "$input"
+  assert_silent_ok "$name: missing lib dir fails open"
+  tg2_scenario_block
+}
