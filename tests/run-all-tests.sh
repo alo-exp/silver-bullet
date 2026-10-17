@@ -41,6 +41,11 @@ export SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT="${SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT:
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
+# A UTF-8 locale like CI's; some tests read non-ASCII skill files.
+if [[ -z "${LANG:-}" && -z "${LC_ALL:-}" ]]; then
+  export LANG=C.UTF-8
+fi
+
 JOBS="${SB_TEST_JOBS:-1}"
 LIST_ONLY=0
 SUITE_FILTER=()
@@ -132,6 +137,7 @@ run_one() {
     source "$REPO_ROOT/hooks/lib/runtime-paths.sh"
     export SB_RUNTIME_HOME_ROOT SB_RUNTIME_STATE_DIR SB_RUNTIME_PLUGIN_CACHE_ROOT SB_RUNTIME_NAME
     if [[ -n "$COV_MAIN" ]]; then
+      export SB_COV_MAIN_DIR="$COV_MAIN"
       export SB_COV_DIR="$sandbox/cov"
       mkdir -p "$SB_COV_DIR/raw"
     fi

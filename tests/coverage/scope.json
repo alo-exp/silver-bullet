@@ -52,5 +52,22 @@
         "reason": "Test code is not measured as application code."
       }
     ]
+  },
+  "javascript": {
+    "include": [
+      "site/*.js",
+      "scripts/*.mjs",
+      "scripts/*.ts"
+    ],
+    "exclude": [
+      {
+        "glob": "plugins/*",
+        "reason": "Generated package mirror."
+      },
+      {
+        "glob": "*/tests/*",
+        "reason": "Test code is not measured as application code."
+      }
+    ]
   }
 }
