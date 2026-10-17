@@ -104,8 +104,8 @@ if [[ -n "$file_path" ]]; then
 fi
 
 if [[ -n "$command_str" ]]; then
-  if printf '%s' "$command_str" | grep -qF "$trivial_file" || printf '%s' "$command_str" | grep -qF "$trivial_file_tilde"; then
-    if printf '%s' "$command_str" | grep -qE '(^|[[:space:];|&])(touch|truncate|tee|cp|mv|install|sed|perl|python|python3|node|ruby|dd)\b|[[:space:]]>>|[[:space:]]>[^>&=]'; then
+  if grep -qF "$trivial_file" <<<"$command_str" || grep -qF "$trivial_file_tilde" <<<"$command_str"; then
+    if grep -qE '(^|[[:space:];|&])(touch|truncate|tee|cp|mv|install|sed|perl|python|python3|node|ruby|dd)\b|[[:space:]]>>|[[:space:]]>[^>&=]' <<<"$command_str"; then
       emit_block "🚫 LEGACY TRIVIAL BYPASS BLOCKED — Codex agents must not arm the trivial marker file from Bash. Use /sb:fast for trivial work instead."
       exit 0
     fi

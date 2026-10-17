@@ -195,10 +195,10 @@ ts_mcp_server_name() {
 ts_is_substantive_shell() {
   local cmd="${1:-}"
   [[ -n "$cmd" ]] || return 1
-  if printf '%s' "$cmd" | grep -qE '\bgit commit\b|\bgh pr create\b|\bgh release create\b'; then
+  if grep -qE '\bgit commit\b|\bgh pr create\b|\bgh release create\b' <<<"$cmd"; then
     return 0
   fi
-  if printf '%s' "$cmd" | grep -qE '(>>|\s>[^>&=]|\btee\b|\bcp\b|\bmv\b|\bsed\b[^$]*-i|\bperl\b[^$]*-i)'; then
+  if grep -qE '(>>|\s>[^>&=]|\btee\b|\bcp\b|\bmv\b|\bsed\b[^$]*-i|\bperl\b[^$]*-i)' <<<"$cmd"; then
     return 0
   fi
   return 1
@@ -360,23 +360,23 @@ ts_graphify_record_query() {
 ts_graphify_command_is_retrieval() {
   local cmd="${1:-}"
   [[ -n "$cmd" ]] || return 1
-  printf '%s' "$cmd" | grep -qE '(^|[[:space:]/])(graphify|graphifyy)([[:space:]]|$)' || return 1
-  printf '%s' "$cmd" | grep -qE '\b(query|explain|affected|path|diagnose|dfs)\b'
+  grep -qE '(^|[[:space:]/])(graphify|graphifyy)([[:space:]]|$)' <<<"$cmd" || return 1
+  grep -qE '\b(query|explain|affected|path|diagnose|dfs)\b' <<<"$cmd"
 }
 
 ts_graphify_command_is_index_build() {
   local cmd="${1:-}"
   [[ -n "$cmd" ]] || return 1
-  printf '%s' "$cmd" | grep -qE '(^|[[:space:]/])(graphify|graphifyy)([[:space:]]|$)' || return 1
-  printf '%s' "$cmd" | grep -qE '\b(update|extract|watch)\b'
+  grep -qE '(^|[[:space:]/])(graphify|graphifyy)([[:space:]]|$)' <<<"$cmd" || return 1
+  grep -qE '\b(update|extract|watch)\b' <<<"$cmd"
 }
 
 ts_graphify_command_is_exempt() {
   local cmd="${1:-}"
   [[ -n "$cmd" ]] || return 0
   if ts_graphify_command_is_retrieval "$cmd" || ts_graphify_command_is_index_build "$cmd"; then return 0; fi
-  if printf '%s' "$cmd" | grep -qE '(^|[[:space:]/])(graphify|graphifyy)([[:space:]]|$)'; then return 0; fi
-  if printf '%s' "$cmd" | grep -qE '(^|[[:space:]])(cat|head|tail|less|more|wc|ls|pwd|which|type|file|stat|jq|git (status|diff|log|show|branch|rev-parse)|command -v|echo|printf|true|false)(\s|$)'; then return 0; fi
+  if grep -qE '(^|[[:space:]/])(graphify|graphifyy)([[:space:]]|$)' <<<"$cmd"; then return 0; fi
+  if grep -qE '(^|[[:space:]])(cat|head|tail|less|more|wc|ls|pwd|which|type|file|stat|jq|git (status|diff|log|show|branch|rev-parse)|command -v|echo|printf|true|false)(\s|$)' <<<"$cmd"; then return 0; fi
   return 1
 }
 
@@ -513,11 +513,11 @@ ts_agentmemory_graphify_synergy_active() {
 ts_agentmemory_command_is_retrieval() {
   local cmd="${1:-}"
   [[ -n "$cmd" ]] || return 1
-  if printf '%s' "$cmd" | grep -qE 'localhost:3111/agentmemory/(smart-search|search|recall|file-history)'; then return 0; fi
-  if printf '%s' "$cmd" | grep -qE '(^|[[:space:]/])agentmemory([[:space:]]|$)'; then
-    printf '%s' "$cmd" | grep -qE '\b(search|recall|smart-search|file-history|query)\b' && return 0
+  if grep -qE 'localhost:3111/agentmemory/(smart-search|search|recall|file-history)' <<<"$cmd"; then return 0; fi
+  if grep -qE '(^|[[:space:]/])agentmemory([[:space:]]|$)' <<<"$cmd"; then
+    grep -qE '\b(search|recall|smart-search|file-history|query)\b' <<<"$cmd" && return 0
   fi
-  printf '%s' "$cmd" | grep -qE '@agentmemory/mcp' && return 0
+  grep -qE '@agentmemory/mcp' <<<"$cmd" && return 0
   return 1
 }
 
@@ -525,10 +525,10 @@ ts_agentmemory_command_is_exempt() {
   local cmd="${1:-}"
   [[ -n "$cmd" ]] || return 0
   if ts_agentmemory_command_is_retrieval "$cmd"; then return 0; fi
-  if printf '%s' "$cmd" | grep -qE '(^|[[:space:]/])agentmemory([[:space:]]|$)'; then return 0; fi
-  if printf '%s' "$cmd" | grep -qE 'localhost:3111/agentmemory'; then return 0; fi
-  if printf '%s' "$cmd" | grep -qE '(^|[[:space:]])(curl|mkdir|chmod|cat|head|tail|grep|jq|npm install|nohup|kill|lsof|which|command -v|echo|printf|true|false|launchctl)(\s|$)'; then return 0; fi
-  if printf '%s' "$cmd" | grep -qE '(^|[[:space:]/])(graphify|graphifyy)([[:space:]]|$)'; then return 0; fi
+  if grep -qE '(^|[[:space:]/])agentmemory([[:space:]]|$)' <<<"$cmd"; then return 0; fi
+  if grep -qE 'localhost:3111/agentmemory' <<<"$cmd"; then return 0; fi
+  if grep -qE '(^|[[:space:]])(curl|mkdir|chmod|cat|head|tail|grep|jq|npm install|nohup|kill|lsof|which|command -v|echo|printf|true|false|launchctl)(\s|$)' <<<"$cmd"; then return 0; fi
+  if grep -qE '(^|[[:space:]/])(graphify|graphifyy)([[:space:]]|$)' <<<"$cmd"; then return 0; fi
   return 1
 }
 

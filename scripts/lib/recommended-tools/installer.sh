@@ -158,7 +158,7 @@ rt_installer_post_install() {
   local out rc=0
   out="$(rt_installer_run_reconcile "$repo_root" "$project_root" "$scope" apply 2>&1)" || rc=$?
   printf '%s\n' "$out"
-  if printf '%s' "$out" | grep -q 'RESTART_REQUIRED: yes'; then
+  if grep -q 'RESTART_REQUIRED: yes' <<<"$out"; then
     restart=true
   fi
   rt_emit_reload_notice "$restart"

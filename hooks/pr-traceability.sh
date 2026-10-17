@@ -42,13 +42,6 @@ if declare -f sb_jq_enforcement_warn >/dev/null 2>&1; then
   sb_jq_enforcement_warn "pr-traceability"
 fi
 
-# Resolve gh CLI at runtime (CR-01 fix: cross-platform)
-GH_BIN=$(command -v gh || command -v /opt/homebrew/bin/gh || command -v /usr/local/bin/gh || true)
-if [[ -z "$GH_BIN" ]]; then
-  printf '{"hookSpecificOutput":{"message":"⚠️ pr-traceability: gh CLI not found — traceability block skipped."}}'
-  exit 0
-fi
-
 # Read JSON from stdin
 input=$(cat)
 
@@ -68,7 +61,7 @@ else
 fi
 
 # Only trigger on actual `gh pr create` commands
-if ! printf '%s' "$cmd" | grep -qE '\bgh pr create\b'; then
+if ! grep -qE '\bgh pr create\b' <<<"$cmd"; then
   exit 0
 fi
 
@@ -88,6 +81,14 @@ jira_id=$(grep '^jira-id=' "$spec_session_file" | cut -d'=' -f2 | grep -E '^[A-Z
 warn_items=""
 if [[ -f ".planning/VALIDATION.md" ]]; then
   warn_items=$(grep 'FINDING \[WARN\]' .planning/VALIDATION.md || true)
+fi
+
+# Resolve gh CLI at runtime (CR-01 fix: cross-platform). Only `gh pr create`
+# with a spec session needs it, so other commands never see the warning.
+GH_BIN=$(command -v gh || command -v /opt/homebrew/bin/gh || command -v /usr/local/bin/gh || true)
+if [[ -z "$GH_BIN" ]]; then
+  printf '{"hookSpecificOutput":{"message":"⚠️ pr-traceability: gh CLI not found — traceability block skipped."}}'
+  exit 0
 fi
 
 # Get the current PR URL (just created by the gh pr create command)

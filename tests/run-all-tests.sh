@@ -195,6 +195,9 @@ TOTAL_FAIL=0
 SUITE_PASS=0
 SUITE_FAIL=0
 declare -a TIMINGS=()
+# Failing files with their FAIL lines, repeated at the end so a truncated CI log
+# still shows every failure next to the totals.
+declare -a FAILURE_REPORT=()
 
 n=${#ALL_FILES[@]}
 declare -a PIDS=()
@@ -250,6 +253,12 @@ print_result() {
     [[ $f -eq 0 ]] && suite_fail=$((suite_fail + 1))
     suite_failed_files+=("$base")
     printf '  *** SUITE FAILED (exit %d) ***\n\n' "$exit_code"
+  fi
+  if [[ $exit_code -ne 0 || $f -gt 0 ]]; then
+    FAILURE_REPORT+=("${test_file#"$REPO_ROOT"/} (exit $exit_code)")
+    while IFS= read -r line; do
+      FAILURE_REPORT+=("    $line")
+    done < <(printf '%s\n' "$output" | grep -E '^ *(FAIL|✗|❌)' | awk 'NR <= 10')
   fi
   TIMINGS+=("$secs ${test_file#"$REPO_ROOT"/}")
 }
@@ -332,7 +341,14 @@ fi
 
 if [[ ${#TIMINGS[@]} -gt 0 ]]; then
   printf '\nSlowest test files:\n'
-  printf '%s\n' "${TIMINGS[@]}" | sort -rn | head -5 | awk '{printf "  %4ss  %s\n", $1, $2}'
+  # awk reads all of sort's output: `head` would close the pipe early, and the
+  # resulting SIGPIPE fails the whole runner under pipefail.
+  printf '%s\n' "${TIMINGS[@]}" | sort -rn | awk 'NR <= 5 {printf "  %4ss  %s\n", $1, $2}'
+fi
+
+if [[ ${#FAILURE_REPORT[@]} -gt 0 ]]; then
+  printf '\nFailures:\n'
+  printf '  %s\n' "${FAILURE_REPORT[@]}"
 fi
 
 printf '\n========================================\n'
