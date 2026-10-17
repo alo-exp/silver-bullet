@@ -36,6 +36,7 @@ import fnmatch
 import json
 import os
 import re
+import shlex
 import subprocess
 import sys
 from dataclasses import dataclass, field
@@ -98,6 +99,9 @@ class Statement:
     # (bash reparses the substitution text), so they get a wider window.
     win_start: int = 0
     win_end: int = 0
+    # Literal word list ("echo true") when every word is a plain ASCII literal, so
+    # `cond && echo true || echo false` arms can be told apart by trace text.
+    sig: str | None = None
 
 
 @dataclass
@@ -154,6 +158,32 @@ def _assignment_name(node, src: bytes) -> str | None:
     return m.group(1) if m else None
 
 
+_SIG_UNSAFE = set("\\$`*?[]{}~\n")
+
+
+def _literal_arg(node, src: bytes) -> str | None:
+    """The value of a plain literal argument (word, '...', "...", number), else None."""
+    text = _text(node, src)
+    if not text.isascii():
+        return None  # xtrace prints non-ASCII words as $'\ooo' escapes
+    if node.type in ("word", "number"):
+        return None if _SIG_UNSAFE & set(text) else text
+    if node.type == "raw_string":
+        return None if "\n" in text else text[1:-1]
+    if node.type == "string":
+        if any(c.type not in ('"', "string_content") for c in node.children):
+            return None
+        inner = text[1:-1]
+        return None if _SIG_UNSAFE & set(inner) else inner
+    return None
+
+
+def _sig(words) -> str | None:
+    """Join words into a signature; None when too long to survive trace truncation."""
+    joined = "\x1f".join(words)
+    return joined if len(joined) <= 150 else None
+
+
 def _command_statement(node, src: bytes) -> Statement:
     word = None
     names = set()
@@ -177,7 +207,18 @@ def _command_statement(node, src: bytes) -> Statement:
         word = _literal_word(words_after_name[0], src)
     if not seen_name:
         word = None
-    return Statement(node.start_point[0] + 1, node.end_point[0] + 1, "command", word, frozenset(names))
+    sig = None
+    if word is not None and not names and word not in WRAPPER_WORDS and words_after_name:
+        parts = [word]
+        for child in words_after_name:
+            lit = _literal_arg(child, src)
+            if lit is None:
+                parts = None
+                break
+            parts.append(lit)
+        if parts is not None:
+            sig = _sig(parts)
+    return Statement(node.start_point[0] + 1, node.end_point[0] + 1, "command", word, frozenset(names), sig=sig)
 
 
 def _leaf_statement(node, src: bytes) -> Statement:
@@ -321,7 +362,7 @@ def analyze_bash(path: Path) -> BashAnalysis:
             header_end = (body.start_point[0] + 1) if body is not None else node.end_point[0] + 1
             add(Statement(node.start_point[0] + 1, header_end, "for", "select" if node.children[0].type == "select" else "for"))
             for child in node.children:
-                if child is not body and child.is_named:
+                if child != body and child.is_named:
                     visit_substitutions(child, node.start_point[0] + 1, header_end)
             if body is not None:
                 visit(body)
@@ -444,6 +485,23 @@ def _first_word(cmd: bytes) -> str:
     return word
 
 
+RECENT_RECORDS = 64  # how far back a substitution's run can join its parent's
+
+
+def _trace_sig(cmd: bytes) -> str | None:
+    """Signature of a traced command whose text is plain words, else None."""
+    if len(cmd) >= 200 or not cmd.isascii():
+        return None
+    try:
+        words = shlex.split(cmd.decode("ascii"), posix=True)
+    except ValueError:
+        return None
+    if not words:
+        return None
+    joined = _sig(words)
+    return None if joined is None else "\x01" + joined
+
+
 def collect(cov_dir: Path) -> int:
     """Fold raw trace files into bash-hits.json and delete them.
 
@@ -456,7 +514,13 @@ def collect(cov_dir: Path) -> int:
     at the next record of the same process at the same or a shallower depth.
     Records for one line traced back to back by different processes (a command
     substitution and its parent statement) also form a run; flush keeps the
-    larger count, since neither kind of run overcounts.
+    larger count, since neither kind of run overcounts. A run another process
+    traced shortly before at a deeper level (a command substitution whose parent
+    statement shares the line) is added to the parent's run for that line.
+
+    Besides first words, each run counts signatures ("\x01" + words joined by
+    \x1f) of records whose text parses into plain words, so statements with
+    literal arguments (``echo true`` / ``echo false``) can be told apart.
     """
     raw = cov_dir / "raw"
     hits_path = cov_dir / "bash-hits.json"
@@ -472,6 +536,11 @@ def collect(cov_dir: Path) -> int:
             if per_line.get(w, 0) < n:
                 per_line[w] = n
 
+    def bump(counts, w, sig):
+        counts[w] = counts.get(w, 0) + 1
+        if sig is not None:
+            counts[sig] = counts.get(sig, 0) + 1
+
     for trace in sorted(raw.glob("*.trace")):
         data = trace.read_bytes()
         m = PWD_RE.search(data)
@@ -482,7 +551,9 @@ def collect(cov_dir: Path) -> int:
         # substitution's child traced just before its parent statement.
         flat_key = None
         flat_counts: dict[str, int] = {}
-        for plus, src_b, line_b, pid, fdepth, cmd in HIT_RE.findall(data):
+        # Runs recently opened per line: [pid, depth, counts, record index].
+        recent: dict[tuple, list] = {}
+        for index, (plus, src_b, line_b, pid, fdepth, cmd) in enumerate(HIT_RE.findall(data)):
             src = src_b.decode("utf-8", "replace")
             if not src:
                 continue
@@ -495,14 +566,26 @@ def collect(cov_dir: Path) -> int:
                 run = stack.pop()
                 flush(run[0], run[2])
             if not stack or stack[-1][1] < depth:
-                stack.append([key, depth, {}])
+                counts = {}
+                kept = []
+                for other in recent.get(key, []):
+                    if index - other[3] > RECENT_RECORDS:
+                        continue  # too old to belong to this statement
+                    if other[0] != pid and other[1] > depth:
+                        for k, n in other[2].items():
+                            counts[k] = counts.get(k, 0) + n
+                    else:
+                        kept.append(other)
+                kept.append([pid, depth, counts, index])
+                recent[key] = kept
+                stack.append([key, depth, counts])
             w = _first_word(cmd)
-            counts = stack[-1][2]
-            counts[w] = counts.get(w, 0) + 1
+            sig = _trace_sig(cmd)
+            bump(stack[-1][2], w, sig)
             if key != flat_key:
                 flush(flat_key, flat_counts)
                 flat_key, flat_counts = key, {}
-            flat_counts[w] = flat_counts.get(w, 0) + 1
+            bump(flat_counts, w, sig)
             count += 1
         flush(flat_key, flat_counts)
         for stack in stacks.values():
@@ -586,6 +669,9 @@ def bash_file_coverage(analysis: BashAnalysis, line_words: dict) -> dict:
     commands inside multi-line substitutions consulted. Assignment hits ("=name")
     match statements that assign that name. Hits that still match nothing go to
     dynamic statements (unknown command word) on that line, else they are orphans.
+    Signature hits ("\x01" + literal words) are applied first and credit only
+    statements with that signature; a word hit then prefers statements already
+    credited, so a run of ``echo false`` does not also credit ``echo true``.
     """
     stmts = analysis.statements
     covered = [False] * len(stmts)
@@ -605,10 +691,22 @@ def bash_file_coverage(analysis: BashAnalysis, line_words: dict) -> dict:
         return st.word is not None and st.word == w
 
     orphans = []
+    normalized = {}
     for ln, words in line_words.items():
         if isinstance(words, list):  # tolerate the pre-multiplicity format
             words = {w: 1 for w in words}
+        normalized[ln] = words
         for w, n in words.items():
+            if not w.startswith("\x01"):
+                continue
+            sig = w[1:]
+            cands = [i for i in by_line.get(ln, []) + by_window.get(ln, []) if stmts[i].sig == sig]
+            for i in cands[: max(1, n)]:
+                covered[i] = True
+    for ln, words in normalized.items():
+        for w, n in words.items():
+            if w.startswith("\x01"):
+                continue
             # Own-span matches first, then window matches: a word traced n times in
             # one run credits up to n statements in that order.
             cands = [i for i in by_line.get(ln, []) if matches(i, w)]
@@ -618,6 +716,10 @@ def bash_file_coverage(analysis: BashAnalysis, line_words: dict) -> dict:
             if not cands:
                 orphans.append([ln, w])
                 continue
+            # Own span before window (stable); within each, a statement already
+            # credited by its signature comes before one whose signature was not seen.
+            own = set(by_line.get(ln, []))
+            cands.sort(key=lambda i: (i not in own, not (covered[i] and stmts[i].sig is not None)))
             for i in cands[: max(1, n)]:
                 covered[i] = True
     lines_exec = {}
