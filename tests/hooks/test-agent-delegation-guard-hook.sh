@@ -95,6 +95,19 @@ for p in "$PROJ/other/../src/x.txt" "$PROJ/newdir/../src/x.txt" "$PROJ/src/a/../
   tl_run_hook "$HOOK" "$(edit_json Write "$p")"
   assert_eq "dot-dot path landing in the owned scope denied: ${p#"$PROJ"/}" "deny" "$(jq -r '.hookSpecificOutput.permissionDecision' <<<"$TL_OUT")"
 done
+# Symlinks are compared by their real location: docs/l -> ../src lands inside the owned src/.
+ln -sfn "$PROJ/src" "$PROJ/docs/l"
+tl_run_hook "$HOOK" "$(edit_json Write "$PROJ/docs/l/x.txt")"
+assert_eq "write through a symlink into the owned scope denied" "deny" "$(jq -r '.hookSpecificOutput.permissionDecision' <<<"$TL_OUT")"
+ln -sfn "$PROJ/docs" "$PROJ/src/outlink"
+tl_run_hook "$HOOK" "$(edit_json Write "$PROJ/src/outlink/x.txt")"
+assert_eq "write through a symlink out of the owned scope allowed" "0|" "$TL_STATUS|$TL_OUT"
+ln -sfn "$PROJ/src/owned.txt" "$PROJ/docs/filelink"
+tl_run_hook "$HOOK" "$(edit_json Write "$PROJ/docs/filelink")"
+assert_eq "write to a symlinked file inside the owned scope denied" "deny" "$(jq -r '.hookSpecificOutput.permissionDecision' <<<"$TL_OUT")"
+tl_run_hook "$HOOK" "$(edit_json Write "$PROJ/docs/l/../free.md")"
+assert_eq "dot-dot after a symlink resolves from the real directory (docs/free.md is outside src)" "0|" "$TL_STATUS|$TL_OUT"
+rm -f "$PROJ/docs/l" "$PROJ/src/outlink" "$PROJ/docs/filelink"
 for p in "$PROJ/src/../docs/x.txt" "$PROJ/src/newdir/../../docs/a.txt"; do
   tl_run_hook "$HOOK" "$(edit_json Write "$p")"
   assert_eq "dot-dot path leaving the owned scope allowed: ${p#"$PROJ"/}" "0|" "$TL_STATUS|$TL_OUT"
