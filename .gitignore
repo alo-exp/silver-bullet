@@ -1,0 +1,37 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# Coverage runs (tests/coverage/run-coverage.sh)
+/.coverage-run/
+.coverage
+.coverage.*
+
+# Graphify incremental caches; graph.json, GRAPH_REPORT.md and manifest.json stay tracked
+graphify-out/cache/
+graphify-out/converted/
+
+# Lock files written by scripts/render-agent-bundle.py
+*.render.lock
+
+# Runtime state written into the checkout by optional tools
+.github/context-mode/
+.silver-bullet/graphify-query
+.silver-bullet/agentmemory-usage
+data/state_store.db/
+data/stream_store/
+data/iii-config.runtime.yaml
+
+# Enterprise E2E supervisor scratch files (scripts/run-enterprise-e2e-*.sh)
+/.e2e-*
+
+# Editor and OS leftovers
+*.bak
+*.swp
+.DS_Store
+
+# Node
+node_modules/
+
+# Agent worktrees created inside the checkout
+.claude/worktrees/

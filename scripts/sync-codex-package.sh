@@ -91,8 +91,6 @@ PACKAGE_ENTRIES=(
   LICENSE
   README.md
   SECURITY.md
-  SENTINEL-audit-silver-bullet-v0.15.1.md
-  SENTINEL-audit-silver-init.md
   .silver-bullet.json
   docs
   hooks
