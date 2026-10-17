@@ -172,7 +172,11 @@ tg2_gate_suite() {
   TG2_STDIN_DIR=1 tg2_run "$hook" ""
   assert_silent_ok "$name: unreadable stdin allows"
   tg2_run "$hook" "not json at all"
-  assert_silent_ok "$name: unparsable stdin allows"
+  if [[ "${TG2_GARBAGE_DENIES:-}" == yes ]]; then
+    assert_denied "$name: unparsable stdin is denied while the gate is armed (fail-closed)" "$reason"
+  else
+    assert_silent_ok "$name: unparsable stdin allows"
+  fi
   TG2_PATH="$(tl_path_without jq)" tg2_run "$hook" "$input"
   assert_silent_ok "$name: missing jq allows (fail-open)"
   tg2_run "$hook" "$input" SB_AGENT_CERT_RUN=1
