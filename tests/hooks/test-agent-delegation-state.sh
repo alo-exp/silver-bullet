@@ -133,6 +133,16 @@ sb_agent_delegation_path_in_scope "$ROOT/src/a.txt" "$ROOT" && rc=0 || rc=$?
 unset -f cd
 assert_eq "unnormalizable target is in scope (fail closed)" 0 "$rc"
 
+# A scope entry that cannot be normalized is skipped; the remaining entries still apply.
+cd() { [[ "${1:-}" == "$ROOT/src" ]] && return 1; builtin cd "$@"; }
+sb_agent_delegation_path_in_scope "$ROOT/rel/f" "$ROOT" && rc=0 || rc=$?
+assert_eq "other scope entries still apply when one cannot be normalized" 0 "$rc"
+mkdir -p "$ROOT/elsewhere"
+jq --arg r "$ROOT" '.ownership_scope=[($r+"/src")]' "$STATE" >"$STATE.n" && mv "$STATE.n" "$STATE"
+sb_agent_delegation_path_in_scope "$ROOT/elsewhere/f" "$ROOT" && rc=0 || rc=$?
+unset -f cd
+assert_eq "the only scope entry unnormalizable: unrelated target not in scope" 1 "$rc"
+
 echo "=== deactivate ==="
 sb_agent_delegation_deactivate
 assert_file_absent "deactivate removes state" "$STATE"
