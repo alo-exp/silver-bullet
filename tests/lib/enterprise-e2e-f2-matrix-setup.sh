@@ -37,6 +37,9 @@ export SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL=7
 export F2_RECORD_HEAVY=1
 
 tl_stub sleep 'printf "sleep %s\n" "$*" >>"$F2_CALLS"'
+# find fails when $F2_CTL/find-fail-<marker> exists and <marker> is among its arguments (simulates a workflow
+# marker the search cannot see); the fake outcome scorer can remove the flag again (see f2_heal)
+tl_stub find 'for f in "$F2_CTL"/find-fail-*; do [[ -e "$f" && " $* " == *"${f##*find-fail-}"* ]] && exit 1; done; exec /usr/bin/find "$@"'
 
 # gate overrides, active only for the F2_*_FAIL_AT switch that is set: the Nth call fails
 cat >"$TL_TMP/overrides.sh" <<'EOS'
