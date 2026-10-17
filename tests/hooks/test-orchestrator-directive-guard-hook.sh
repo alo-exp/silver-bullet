@@ -346,8 +346,9 @@ write_directive silver-plan PLAN
 real_jq="$(command -v jq)"
 cat >"$TL_BIN/jq" <<STUB
 #!/usr/bin/env bash
+$real_jq "\$@"; rc=\$?
 if [[ "\$1" == "-e" ]]; then rm -f "$DIRF"; fi
-exec $real_jq "\$@"
+exit \$rc
 STUB
 chmod +x "$TL_BIN/jq"
 hash -r
