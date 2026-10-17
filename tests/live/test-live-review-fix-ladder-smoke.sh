@@ -37,7 +37,7 @@ detect_smoke_host() {
 
 assert_json_true() {
   local label="$1" filter="$2" json="$3"
-  if jq -e "$filter" >/dev/null <<<"$json"; then
+  if jq -e "$filter" <<<"$json" >/dev/null; then
     pass "$label"
   else
     fail "$label"
@@ -111,7 +111,7 @@ PY
 
 assert_output_contains() {
   local label="$1" haystack="$2" needle="$3"
-  if printf '%s' "$haystack" | grep -qiE "$needle"; then
+  if grep -qiE "$needle" <<<"$haystack"; then
     pass "$label"
   else
     fail "$label"
@@ -121,7 +121,7 @@ assert_output_contains() {
 
 assert_output_not_contains() {
   local label="$1" haystack="$2" needle="$3"
-  if printf '%s' "$haystack" | grep -qiE "$needle"; then
+  if grep -qiE "$needle" <<<"$haystack"; then
     fail "$label"
     printf '  snippet: %s\n' "$(printf '%s' "$haystack" | head -c 400)"
   else
@@ -173,14 +173,14 @@ ${cleaned_transcript}"
 
   assert_output_not_contains "live turn did not report silver-bullet command missing" "$combined" 'command not found: silver-bullet|silver-bullet: command not found|bash: silver-bullet: command not found|silver-bullet invoke-skill [^[:space:]]+ not available'
 
-  if printf '%s' "$combined" | grep -qiE 'BEGIN SKILL silver-review-fix-ladder'; then
+  if grep -qiE 'BEGIN SKILL silver-review-fix-ladder' <<<"$combined"; then
     invoke_ok=1
     pass "live turn ran silver-bullet invoke-skill"
   else
     printf 'NOTE: live turn did not run silver-bullet invoke-skill\n'
   fi
 
-  if printf '%s' "$combined" | grep -qiE 'Explored.*Read.*(CHARTER\.md|smoke-target\.py)|Read[[:space:]]+CHARTER\.md|Read[[:space:]]+smoke-target\.py|ReadCHARTER\.md,[[:space:]]*smoke-target\.py|BUG: no zero check|Review Charter \(smoke\)|must reject division by zero'; then
+  if grep -qiE 'Explored.*Read.*(CHARTER\.md|smoke-target\.py)|Read[[:space:]]+CHARTER\.md|Read[[:space:]]+smoke-target\.py|ReadCHARTER\.md,[[:space:]]*smoke-target\.py|BUG: no zero check|Review Charter \(smoke\)|must reject division by zero' <<<"$combined"; then
     file_read_ok=1
     pass "live turn read fixture charter or target file"
   else

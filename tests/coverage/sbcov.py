@@ -102,6 +102,8 @@ class Statement:
     # Literal word list ("echo true") when every word is a plain ASCII literal, so
     # `cond && echo true || echo false` arms can be told apart by trace text.
     sig: str | None = None
+    fn: str = ""  # innermost enclosing function ("" at top level)
+    procsub: tuple | None = None  # (function, node id) when inside <(...) / >(...)
 
 
 @dataclass
@@ -264,12 +266,15 @@ def analyze_bash(path: Path) -> BashAnalysis:
     fn_stack: list[Function] = []
 
     window: list[tuple[int, int] | None] = [None]  # active attribution window
+    procsub_stack: list[tuple] = []
 
     def widen(lo: int, hi: int) -> tuple[int, int]:
         cur = window[-1]
         return (lo, hi) if cur is None else (min(cur[0], lo), max(cur[1], hi))
 
     def add(stmt: Statement):
+        stmt.fn = fn_stack[-1].name if fn_stack else ""
+        stmt.procsub = procsub_stack[-1] if procsub_stack else None
         win = window[-1]
         if win is None:
             stmt.win_start, stmt.win_end = stmt.start, stmt.end
@@ -292,9 +297,14 @@ def analyze_bash(path: Path) -> BashAnalysis:
                 # at the line where the function definition starts.
                 lo = min(lo, fn_stack[-1].start)
             window.append((lo, hi + extra))
+            is_procsub = node.type == "process_substitution"
+            if is_procsub:
+                procsub_stack.append((fn_stack[-1].name if fn_stack else "", node.start_byte))
             for inner in node.children:
                 if inner.is_named:
                     visit(inner)
+            if is_procsub:
+                procsub_stack.pop()
             window.pop()
             return
         for child in node.children:
@@ -471,7 +481,11 @@ def load_scope():
 
 # "+" repeats once per subshell/substitution level; pid and function depth are
 # absent in traces written before they were added to PS4.
-HIT_RE = re.compile(rb"^(\++)\x1f([^\x1f\n]*)\x1f(\d+)\x1f(?:(\d+)\x1f(\d*)\x1f)?([^\n]{0,200})", re.M)
+HIT_RE = re.compile(
+    rb"^(\++)\x1f([^\x1f\n]*)\x1f(\d+)\x1f(?:(\d+)\x1f(\d*)\x1f(?:([^\x1f\n]*)\x1f)?)?([^\n]{0,200})", re.M
+)
+FN_KEY = "\x04"  # FN_KEY + function + "\x1f" + word or signature: per-function multiplicity
+RUN_KEY = "\x03"  # RUN_KEY + function + "\x1e" + words: one process's run of records for a line
 PWD_RE = re.compile(rb"^#PWD\x1f([^\n]*)$", re.M)
 
 
@@ -522,8 +536,11 @@ def collect(cov_dir: Path) -> int:
     Records for one line traced back to back by different processes (a command
     substitution and its parent statement) also form a run; flush keeps the
     larger count, since neither kind of run overcounts. A run another process
-    traced shortly before at a deeper level (a command substitution whose parent
-    statement shares the line) is added to the parent's run for that line.
+    traced shortly before at the same or a deeper level (a command substitution,
+    or pipeline stages, whose parent statement shares the line) is added to the
+    parent's run for that line, and so is a deeper run another process opens
+    for that line while the parent's run is open (a second substitution in the
+    same statement).
 
     Besides first words, each run counts signatures ("\x01" + words joined by
     \x1f) of records whose text parses into plain words, so statements with
@@ -543,6 +560,18 @@ def collect(cov_dir: Path) -> int:
             if per_line.get(w, 0) < n:
                 per_line[w] = n
 
+    def flush_run(run):
+        key, _depth, own, fn, words, children = run
+        counts = dict(own)
+        for child in children:  # substitutions that ran after this run opened
+            for k, n in child.items():
+                counts[k] = counts.get(k, 0) + n
+        flush(key, counts)
+        fn_counts = {f"{FN_KEY}{fn}\x1f{k}": n for k, n in counts.items()}
+        if 0 < len(words) <= 12:
+            fn_counts[RUN_KEY + fn + "\x1e" + "\x1e".join(sorted(words))] = 1
+        flush(key, fn_counts)
+
     def bump(counts, w, sig):
         counts[w] = counts.get(w, 0) + 1
         if sig is not None:
@@ -560,7 +589,7 @@ def collect(cov_dir: Path) -> int:
         flat_counts: dict[str, int] = {}
         # Runs recently opened per line: [pid, depth, counts, record index].
         recent: dict[tuple, list] = {}
-        for index, (plus, src_b, line_b, pid, fdepth, cmd) in enumerate(HIT_RE.findall(data)):
+        for index, (plus, src_b, line_b, pid, fdepth, fn_b, cmd) in enumerate(HIT_RE.findall(data)):
             src = src_b.decode("utf-8", "replace")
             if not src:
                 continue
@@ -570,25 +599,28 @@ def collect(cov_dir: Path) -> int:
             depth = len(plus) + int(fdepth or 0)
             stack = stacks.setdefault(pid, [])
             while stack and (stack[-1][1] > depth or (stack[-1][1] == depth and stack[-1][0] != key)):
-                run = stack.pop()
-                flush(run[0], run[2])
+                flush_run(stack.pop())
             if not stack or stack[-1][1] < depth:
                 counts = {}
                 kept = []
                 for other in recent.get(key, []):
                     if index - other[3] > RECENT_RECORDS:
                         continue  # too old to belong to this statement
-                    if other[0] != pid and other[1] > depth:
+                    if other[0] != pid and other[1] >= depth:
                         for k, n in other[2].items():
                             counts[k] = counts.get(k, 0) + n
                     else:
+                        if other[0] != pid and other[1] < depth:
+                            other[4][5].append(counts)  # a substitution of that open run
                         kept.append(other)
-                kept.append([pid, depth, counts, index])
+                run = [key, depth, counts, fn_b.decode("utf-8", "replace"), [], []]
+                kept.append([pid, depth, counts, index, run])
                 recent[key] = kept
-                stack.append([key, depth, counts])
+                stack.append(run)
             w = _first_word(cmd)
             sig = _trace_sig(cmd)
             bump(stack[-1][2], w, sig)
+            stack[-1][4].append(w)
             if key != flat_key:
                 flush(flat_key, flat_counts)
                 flat_key, flat_counts = key, {}
@@ -597,7 +629,7 @@ def collect(cov_dir: Path) -> int:
         flush(flat_key, flat_counts)
         for stack in stacks.values():
             for run in stack:
-                flush(run[0], run[2])
+                flush_run(run)
         if os.environ.get("SB_COV_KEEP_RAW"):
             trace.rename(trace.with_suffix(".kept"))
         else:
@@ -668,7 +700,11 @@ def _map_paths(traced_paths, scoped: list[str]) -> dict:
 
 
 def bash_file_coverage(analysis: BashAnalysis, line_words: dict) -> dict:
-    """Credit statements from {line: {word: multiplicity}} and return coverage details.
+    """Credit statements from {line: {key: multiplicity}} and return coverage details.
+
+    Keys are first words, signatures ("\x01" + literal words), per-function
+    variants of both (FN_KEY + function + "\x1f" + key) and process runs
+    (RUN_KEY + function + "\x1e" + words); see collect().
 
     A hit (line, word) credits statements whose own span contains the line and
     whose word matches; with multiplicity n it credits up to n such statements in
@@ -676,9 +712,14 @@ def bash_file_coverage(analysis: BashAnalysis, line_words: dict) -> dict:
     commands inside multi-line substitutions consulted. Assignment hits ("=name")
     match statements that assign that name. Hits that still match nothing go to
     dynamic statements (unknown command word) on that line, else they are orphans.
-    Signature hits ("\x01" + literal words) are applied first and credit only
-    statements with that signature; a word hit then prefers statements already
-    credited, so a run of ``echo false`` does not also credit ``echo true``.
+    Per-function hits only credit statements in that function, so a record bash
+    reports at another function's line (multi-line substitutions) cannot credit
+    the wrong statement. Signature hits are applied first and credit only
+    statements with that signature; the word pass then leaves statements whose
+    signature could have been seen to the signature pass. Finally a process's run
+    of records that no statement on its line explains is matched to the one
+    process substitution in that function whose words contain the run's words:
+    bash reports such commands at the line of the last function it parsed.
     """
     stmts = analysis.statements
     covered = [False] * len(stmts)
@@ -691,44 +732,98 @@ def bash_file_coverage(analysis: BashAnalysis, line_words: dict) -> dict:
             if not st.start <= ln <= st.end:
                 by_window.setdefault(ln, []).append(i)
 
+    def fn_ok(i: int, fn: str | None) -> bool:
+        if fn is None:
+            return True
+        own = stmts[i].fn
+        return own == fn or (own == "" and fn in ("", "source", "main"))
+
     def matches(i: int, w: str) -> bool:
         st = stmts[i]
         if w.startswith("="):
             return w[1:] in st.names or (st.kind == "assignment" and not st.names)
         return st.word is not None and st.word == w
 
-    orphans = []
-    normalized = {}
+    entries = []  # (line, function or None, key, multiplicity)
+    runs = []  # (line, function, words)
+    sig_words: dict[int, set] = {}
+    plain_keys = 0
     for ln, words in line_words.items():
         if isinstance(words, list):  # tolerate the pre-multiplicity format
             words = {w: 1 for w in words}
-        normalized[ln] = words
-        for w, n in words.items():
-            if not w.startswith("\x01"):
+        ln = int(ln)
+        best: dict[str, int] = {}
+        for k, n in words.items():
+            if k.startswith(RUN_KEY):
+                fn, _, rest = k[1:].partition("\x1e")
+                runs.append((ln, fn, rest.split("\x1e")))
+            elif k.startswith(FN_KEY):
+                fn, _, w = k[1:].partition("\x1f")
+                entries.append((ln, fn, w, n))
+                best[w] = max(best.get(w, 0), n)
+        for k, n in words.items():
+            if k.startswith((RUN_KEY, FN_KEY)):
                 continue
-            sig = w[1:]
-            cands = [i for i in by_line.get(ln, []) + by_window.get(ln, []) if stmts[i].sig == sig]
-            for i in cands[: max(1, n)]:
+            plain_keys += 1
+            if k.startswith("\x01"):
+                sig_words.setdefault(ln, set()).add(k[1:].split("\x1f", 1)[0])
+            if n > best.get(k, 0):
+                entries.append((ln, None, k, n))
+
+    # Signatures first.
+    for ln, fn, w, n in entries:
+        if not w.startswith("\x01"):
+            continue
+        cands = [i for i in by_line.get(ln, []) + by_window.get(ln, []) if stmts[i].sig == w[1:] and fn_ok(i, fn)]
+        for i in cands[: max(1, n)]:
+            covered[i] = True
+
+    orphans = set()
+    for ln, fn, w, n in entries:
+        if w.startswith("\x01"):
+            continue
+        own = [i for i in by_line.get(ln, []) if matches(i, w) and fn_ok(i, fn)]
+        cands = own + [i for i in by_window.get(ln, []) if matches(i, w) and fn_ok(i, fn)]
+        # A statement with a signature was credited by the signature pass if it ran.
+        cands = [i for i in cands if not (stmts[i].sig and stmts[i].word in sig_words.get(ln, ()))] or cands
+        if not cands:
+            cands = [i for i in by_line.get(ln, []) if stmts[i].word is None and not w.startswith("=") and fn_ok(i, fn)]
+        if not cands:
+            orphans.add((ln, w))
+            continue
+        own_set = set(own)
+        cands.sort(key=lambda i: (i not in own_set, not (covered[i] and stmts[i].sig is not None)))
+        for i in cands[: max(1, n)]:
+            covered[i] = True
+
+    # Process substitutions reported at the wrong line.
+    nodes: dict[tuple, list[int]] = {}
+    for i, st in enumerate(stmts):
+        if st.procsub is not None:
+            nodes.setdefault(st.procsub, []).append(i)
+    for ln, fn, words in runs:
+        if all(any(matches(i, w) and fn_ok(i, fn) for i in by_line.get(ln, [])) for w in words):
+            continue  # statements on this line explain the run
+        need: dict[str, int] = {}
+        for w in words:
+            need[w] = need.get(w, 0) + 1
+        fits = []
+        for key, idx in nodes.items():
+            if not (key[0] == fn or (key[0] == "" and fn in ("", "source", "main"))):
+                continue
+            have: dict[str, int] = {}
+            for i in idx:
+                if stmts[i].word is not None:
+                    have[stmts[i].word] = have.get(stmts[i].word, 0) + 1
+            if all(have.get(w, 0) >= c for w, c in need.items()):
+                fits.append(idx)
+        if len(fits) != 1:
+            continue  # ambiguous or unknown: leave it to the orphan list
+        for w, c in need.items():
+            for i in [i for i in fits[0] if stmts[i].word == w][:c]:
                 covered[i] = True
-    for ln, words in normalized.items():
-        for w, n in words.items():
-            if w.startswith("\x01"):
-                continue
-            # Own-span matches first, then window matches: a word traced n times in
-            # one run credits up to n statements in that order.
-            cands = [i for i in by_line.get(ln, []) if matches(i, w)]
-            cands += [i for i in by_window.get(ln, []) if matches(i, w)]
-            if not cands:
-                cands = [i for i in by_line.get(ln, []) if stmts[i].word is None and not w.startswith("=")]
-            if not cands:
-                orphans.append([ln, w])
-                continue
-            # Own span before window (stable); within each, a statement already
-            # credited by its signature comes before one whose signature was not seen.
-            own = set(by_line.get(ln, []))
-            cands.sort(key=lambda i: (i not in own, not (covered[i] and stmts[i].sig is not None)))
-            for i in cands[: max(1, n)]:
-                covered[i] = True
+            orphans.discard((ln, w))
+    orphans = [list(o) for o in sorted(orphans)]
     lines_exec = {}
     for i, st in enumerate(stmts):
         lines_exec[st.start] = lines_exec.get(st.start, False) or covered[i]
@@ -747,7 +842,8 @@ def bash_file_coverage(analysis: BashAnalysis, line_words: dict) -> dict:
             {"line": st.start, "end": st.end, "word": st.word or "*"} for i, st in enumerate(stmts) if not covered[i]
         ],
         "missing_functions": [f for f in funcs if not f["covered"]],
-        "orphan_hits": sorted(orphans),
+        "orphan_hits": orphans,
+        "hit_keys": plain_keys,
         "parse_errors": analysis.parse_errors,
     }
 
@@ -760,7 +856,7 @@ def _copy_matches_source(analysis: BashAnalysis, line_words: dict) -> bool:
     credited when at most 10% of its distinct (line, word) hits fail to match.
     """
     res = bash_file_coverage(analysis, line_words)
-    total = sum(len(w) for w in line_words.values())
+    total = res["hit_keys"]
     return total == 0 or len(res["orphan_hits"]) <= max(1, total // 10)
 
 

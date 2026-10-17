@@ -43,7 +43,7 @@ sleep 1  # ensure flag mtime >= session-start-time
 touch "$TIMEOUT_FLAG_FILE"
 rm -f "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/timeout-warn-count"
 out=$(run_hook "$TIMEOUT_FLAG_FILE")
-if printf '%s' "$out" | grep -q "Autonomous session"; then
+if grep -q "Autonomous session" <<<"$out"; then
   PASS=$((PASS + 1))
   printf 'PASS: current flag + autonomous → warning on call 1\n'
 else
@@ -123,7 +123,7 @@ if [[ "$(uname)" == "Darwin" ]]; then
   echo "4" > "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/timeout-warn-count"
   touch -t 202001010000 "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/timeout-warn-count"
   out=$(run_hook "$TIMEOUT_FLAG_FILE")
-  if printf '%s' "$out" | grep -q "Autonomous session"; then
+  if grep -q "Autonomous session" <<<"$out"; then
     PASS=$((PASS + 1))
     printf 'PASS: stale warn-count resets to 0 → warning fires on first call\n'
   else
@@ -166,7 +166,7 @@ echo "0"  > "${SB_DIR}/last-progress-call"
 echo "0"  > "${SB_DIR}/last-state-mtime"
 # Don't create a state file — current_state_mtime will be 0 = last_state_mtime, no reset
 out=$(run_hook_tier2)
-if printf '%s' "$out" | grep -q "Check-in"; then
+if grep -q "Check-in" <<<"$out"; then
   PASS=$((PASS + 1))
   printf 'PASS: T2-1: 30 calls since progress → Check-in warning fires\n'
 else
@@ -183,7 +183,7 @@ echo "59" > "${SB_DIR}/call-count"
 echo "0"  > "${SB_DIR}/last-progress-call"
 echo "0"  > "${SB_DIR}/last-state-mtime"
 out=$(run_hook_tier2)
-if printf '%s' "$out" | grep -q "STALL WARNING"; then
+if grep -q "STALL WARNING" <<<"$out"; then
   PASS=$((PASS + 1))
   printf 'PASS: T2-2: 60 calls since progress → STALL WARNING fires\n'
 else
@@ -200,7 +200,7 @@ echo "99" > "${SB_DIR}/call-count"
 echo "0"  > "${SB_DIR}/last-progress-call"
 echo "0"  > "${SB_DIR}/last-state-mtime"
 out=$(run_hook_tier2)
-if printf '%s' "$out" | grep -q "STALL BLOCK"; then
+if grep -q "STALL BLOCK" <<<"$out"; then
   PASS=$((PASS + 1))
   printf 'PASS: T2-3: 100 calls since progress → STALL BLOCK fires\n'
 else

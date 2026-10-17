@@ -18,12 +18,12 @@ assert_eq() {
 
 assert_contains() {
   local desc="$1" needle="$2" haystack="$3"
-  printf '%s' "$haystack" | grep -qF "$needle" && pass "$desc" || fail "$desc"
+  grep -qF "$needle" <<<"$haystack" && pass "$desc" || fail "$desc"
 }
 
 assert_not_contains() {
   local desc="$1" needle="$2" haystack="$3"
-  printf '%s' "$haystack" | grep -qF "$needle" && fail "$desc" || pass "$desc"
+  grep -qF "$needle" <<<"$haystack" && fail "$desc" || pass "$desc"
 }
 
 [[ -x "$INSTALLER" ]] && pass "installer executable" || fail "installer executable"

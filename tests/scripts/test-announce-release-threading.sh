@@ -6,7 +6,7 @@ FAIL=0
 
 assert_contains() {
   local desc="$1" needle="$2" haystack="$3"
-  if grep -F "$needle" >/dev/null <<<"$haystack"; then
+  if grep -F "$needle" <<<"$haystack" >/dev/null; then
     echo "PASS: $desc"
     (( PASS++ )) || true
   else

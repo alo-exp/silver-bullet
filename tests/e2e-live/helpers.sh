@@ -1198,7 +1198,7 @@ assert_contains() {
   local label="$1"
   local haystack="$2"
   local needle="$3"
-  if printf '%s' "$haystack" | grep -qE "$needle"; then
+  if grep -qE "$needle" <<<"$haystack"; then
     echo "PASS: $label"
     PASS=$((PASS + 1))
   else
@@ -1213,7 +1213,7 @@ assert_not_contains() {
   local label="$1"
   local haystack="$2"
   local needle="$3"
-  if ! printf '%s' "$haystack" | grep -qE "$needle"; then
+  if ! grep -qE "$needle" <<<"$haystack"; then
     echo "PASS: $label"
     PASS=$((PASS + 1))
   else

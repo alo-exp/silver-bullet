@@ -55,11 +55,11 @@ write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools
 sb_agentmemory_edit_path_is_exempt ".agentmemory/memory/foo.md" "$TMP/.silver-bullet.json" && pass "edit path exempt under export" || fail "edit path exempt"
 
 benefits="$(sb_recommended_tool_benefits "$TMP/.silver-bullet.json" agentmemory)"
-printf '%s' "$benefits" | grep -q 'Graphify' && pass "agentmemory benefits mention Graphify" || fail "agentmemory benefits"
+grep -q 'Graphify' <<<"$benefits" && pass "agentmemory benefits mention Graphify" || fail "agentmemory benefits"
 
 write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools\":{\"agentmemory\":{\"enabled_by_user\":null}}}"
 block="$(sb_recommended_tool_consent_prompt_block "$TMP/.silver-bullet.json" agentmemory 2>/dev/null || true)"
-printf '%s' "$block" | grep -q 'CONSENT PENDING' && pass "agentmemory pending prompt" || fail "agentmemory pending prompt"
+grep -q 'CONSENT PENDING' <<<"$block" && pass "agentmemory pending prompt" || fail "agentmemory pending prompt"
 
 # #276: usage_state_file with ${SB_RUNTIME_HOME_ROOT} must expand to an absolute path
 export SB_RUNTIME_HOME_ROOT="${TMP}/runtime-home"

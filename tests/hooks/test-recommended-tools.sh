@@ -76,8 +76,8 @@ benefits="$(sb_recommended_tool_benefits "$TMP/.silver-bullet.json" graphify)"
 write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools\":{\"graphify\":{\"platform_install_commands\":{\"cursor\":{\"post_index\":[\"graphify cursor install\"]},\"claude\":{\"pre_index\":[\"graphify install --project\"],\"post_index\":[\"graphify claude install --project\"]}}}}}"
 [[ "$(SILVER_BULLET_RUNTIME=cursor sb_recommended_tool_platform_post_index_commands "$TMP/.silver-bullet.json" graphify)" == "graphify cursor install" ]] && pass "cursor platform post_index from config" || fail "cursor platform post_index from config"
 claude_cmds="$(SILVER_BULLET_RUNTIME=claude sb_recommended_tool_platform_install_commands "$TMP/.silver-bullet.json" graphify)"
-printf '%s' "$claude_cmds" | grep -q 'graphify install --project' && pass "claude platform install from config" || fail "claude platform install from config"
-printf '%s' "$claude_cmds" | grep -q 'graphify claude install --project' && pass "claude always-on install from config" || fail "claude always-on install from config"
+grep -q 'graphify install --project' <<<"$claude_cmds" && pass "claude platform install from config" || fail "claude platform install from config"
+grep -q 'graphify claude install --project' <<<"$claude_cmds" && pass "claude always-on install from config" || fail "claude always-on install from config"
 [[ "$(SILVER_BULLET_RUNTIME=claude sb_recommended_tool_platform_pre_index_commands "$TMP/.silver-bullet.json" graphify)" == "graphify install --project" ]] && pass "claude pre_index from nested config" || fail "claude pre_index from nested config"
 
 [[ "$(SILVER_BULLET_RUNTIME=codex sb_runtime_host)" == "codex" ]] && pass "sb_runtime_host codex" || fail "sb_runtime_host codex"
@@ -98,13 +98,13 @@ host="$(
 [[ "$host" == "opencode" ]] && pass "OPENCODE -> opencode" || fail "OPENCODE -> opencode"
 
 full="$(SILVER_BULLET_RUNTIME=cursor sb_recommended_tool_full_install_lines "$TMP/.silver-bullet.json" graphify)"
-printf '%s' "$full" | grep -Eq "uv tool install ['\"]?graphifyy" && pass "full install includes CLI" || fail "full install includes CLI"
-printf '%s' "$full" | grep -q 'graphify cursor install' && pass "full install includes cursor platform cmd" || fail "full install includes cursor platform cmd"
+grep -Eq "uv tool install ['\"]?graphifyy" <<<"$full" && pass "full install includes CLI" || fail "full install includes CLI"
+grep -q 'graphify cursor install' <<<"$full" && pass "full install includes cursor platform cmd" || fail "full install includes cursor platform cmd"
 
 write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\"}"
 fallback="$(SILVER_BULLET_RUNTIME=codex sb_recommended_tool_platform_install_commands "$TMP/.silver-bullet.json" graphify)"
-printf '%s' "$fallback" | grep -q 'graphify install --project --platform codex' && pass "codex fallback platform install" || fail "codex fallback platform install"
-printf '%s' "$fallback" | grep -q 'graphify codex install --project' && pass "codex fallback always-on install" || fail "codex fallback always-on install"
+grep -q 'graphify install --project --platform codex' <<<"$fallback" && pass "codex fallback platform install" || fail "codex fallback platform install"
+grep -q 'graphify codex install --project' <<<"$fallback" && pass "codex fallback always-on install" || fail "codex fallback always-on install"
 
 write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools\":{\"agentmemory\":{\"enabled_by_user\":null}}}"
 [[ "$(sb_recommended_tool_consent "$TMP/.silver-bullet.json" agentmemory)" == "pending" ]] && pass "agentmemory null consent -> pending" || fail "agentmemory null consent"
@@ -113,7 +113,7 @@ write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools
 sb_recommended_tool_enforced "$TMP/.silver-bullet.json" agentmemory && pass "agentmemory enabled enforces" || fail "agentmemory enabled enforces"
 
 am_benefits="$(sb_recommended_tool_benefits "$TMP/.silver-bullet.json" agentmemory)"
-printf '%s' "$am_benefits" | grep -q 'Graphify' && pass "agentmemory benefits from config" || fail "agentmemory benefits from config"
+grep -q 'Graphify' <<<"$am_benefits" && pass "agentmemory benefits from config" || fail "agentmemory benefits from config"
 
 write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools\":{\"rtk\":{\"enabled_by_user\":null}}}"
 [[ "$(sb_recommended_tool_consent "$TMP/.silver-bullet.json" rtk)" == "pending" ]] && pass "rtk null consent -> pending" || fail "rtk null consent"
@@ -122,13 +122,13 @@ write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools
 sb_recommended_tool_enforced "$TMP/.silver-bullet.json" rtk && pass "rtk enabled enforces" || fail "rtk enabled enforces"
 
 rtk_cmds="$(SILVER_BULLET_RUNTIME=cursor sb_recommended_tool_platform_pre_index_commands "$TMP/.silver-bullet.json" rtk)"
-printf '%s' "$rtk_cmds" | grep -q 'rtk init -g --agent cursor' && pass "rtk cursor platform fallback" || fail "rtk cursor platform fallback"
+grep -q 'rtk init -g --agent cursor' <<<"$rtk_cmds" && pass "rtk cursor platform fallback" || fail "rtk cursor platform fallback"
 
 write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools\":{\"context_mode\":{\"enabled_by_user\":true}}}"
 sb_recommended_tool_enforced "$TMP/.silver-bullet.json" context_mode && pass "context_mode enabled enforces" || fail "context_mode enabled enforces"
 
 cm_benefits="$(sb_recommended_tool_benefits "$TMP/.silver-bullet.json" context_mode)"
-printf '%s' "$cm_benefits" | grep -qi 'MCP' && pass "context_mode benefits" || fail "context_mode benefits"
+grep -qi 'MCP' <<<"$cm_benefits" && pass "context_mode benefits" || fail "context_mode benefits"
 
 # --- Claude host arms in host case statements -----------------------------
 # Regression: sb_graphify_platform_artifact_path() had no claude) arm, so the
