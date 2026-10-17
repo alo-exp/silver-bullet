@@ -332,7 +332,9 @@ fi
 
 if [[ ${#TIMINGS[@]} -gt 0 ]]; then
   printf '\nSlowest test files:\n'
-  printf '%s\n' "${TIMINGS[@]}" | sort -rn | head -5 | awk '{printf "  %4ss  %s\n", $1, $2}'
+  # awk reads all of sort's output: `head` would close the pipe early, and the
+  # resulting SIGPIPE fails the whole runner under pipefail.
+  printf '%s\n' "${TIMINGS[@]}" | sort -rn | awk 'NR <= 5 {printf "  %4ss  %s\n", $1, $2}'
 fi
 
 printf '\n========================================\n'
