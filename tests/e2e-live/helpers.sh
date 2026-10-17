@@ -9,7 +9,7 @@
 
 set -euo pipefail
 
-PATH="/Users/shafqat/.local/bin:/opt/homebrew/bin:/Applications/Codex.app/Contents/Resources:${PATH:-/usr/bin:/bin:/usr/sbin:/sbin}"
+PATH="${HOME}/.local/bin:/opt/homebrew/bin:/Applications/Codex.app/Contents/Resources:${PATH:-/usr/bin:/bin:/usr/sbin:/sbin}"
 export PATH
 
 E2E_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -285,7 +285,7 @@ emit_hook_delivery_diagnostic() {
   if [[ "$E2E_RUNTIME" != "claude" ]]; then
     if [[ -n "$transcript_file" && -f "$transcript_file" ]]; then
       echo "  latest ${E2E_RUNTIME} transcript tool events:"
-      rg -n 'exec_command_begin|tool_call_begin|tool_call|permissionDecision|decision' "$transcript_file" | sed -n '1,10p' || true
+      grep -nE 'exec_command_begin|tool_call_begin|tool_call|permissionDecision|decision' "$transcript_file" | sed -n '1,10p' || true
     else
       echo "  no ${E2E_RUNTIME} transcript captured at: ${transcript_file:-<unknown>}"
     fi
