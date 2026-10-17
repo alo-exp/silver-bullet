@@ -24,3 +24,28 @@ ts_sb_project() {
   printf '%s\n' "${2:-{\}}" >"$1/.silver-bullet.json"
   printf '# sb\n' >"$1/silver-bullet.md"
 }
+
+# ts_stage_deployed <dir>: lay the toolstack scripts out like ~/.cursor/hooks/toolstack
+# (scripts next to a lib/ directory that holds common.sh), as the gates expect.
+ts_stage_deployed() {
+  local d="$1" f
+  mkdir -p "$d/lib"
+  for f in "$TS_SRC"/*.sh; do
+    cp "$f" "$d/"
+  done
+  mv "$d/common.sh" "$d/lib/common.sh"
+}
+
+# ts_gate <script-basename> <json> [cwd]: run a staged gate with the payload on stdin.
+# Requires TS_STAGE to point at the staged directory.
+ts_gate() {
+  local script="$1" json="$2" cwd="${3:-$PWD}"
+  tl_run_stdin "$json" bash -c 'cd "$1" && exec bash "$2"' _ "$cwd" "$TS_STAGE/$script"
+}
+
+# ts_payload <tool> <file_path> <command> [event]: build a hook payload.
+ts_payload() {
+  jq -cn --arg t "$1" --arg f "$2" --arg c "$3" --arg e "${4:-}" \
+    '{tool_name:$t, tool_input:({} + (if $f != "" then {file_path:$f} else {} end) + (if $c != "" then {command:$c} else {} end))}
+     + (if $e != "" then {hook_event_name:$e} else {} end)'
+}
