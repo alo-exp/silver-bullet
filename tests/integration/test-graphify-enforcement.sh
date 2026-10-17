@@ -21,8 +21,14 @@ mkdir -p "$SB_TEST_DIR"
 TEST_RUN_ID="$$"
 MOCK_BIN=""
 
+# session-start's prerequisite probe (hooks/lib/prerequisite-probe.sh) stops the
+# hook before the branch-scoped reset unless a Silver Bullet plugin cache exists.
+# Stage a minimal one instead of relying on an install left in the home directory.
+PLUGIN_CACHE_STUB="${SB_RUNTIME_PLUGIN_CACHE_ROOT}/alo-labs/silver-bullet/test-graphify-${TEST_RUN_ID}"
+mkdir -p "$PLUGIN_CACHE_STUB"
+
 cleanup() {
-  rm -rf "$TMP" "$MOCK_BIN" \
+  rm -rf "$TMP" "$MOCK_BIN" "$PLUGIN_CACHE_STUB" \
     "${SB_TEST_DIR}/graphify-query-${TEST_RUN_ID}" \
     "${SB_TEST_DIR}/branch-${TEST_RUN_ID}"
 }

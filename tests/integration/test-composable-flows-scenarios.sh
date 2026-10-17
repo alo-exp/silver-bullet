@@ -88,12 +88,12 @@ integration_setup
 write_default_config
 mkdir -p "$TMPDIR_TEST/.planning"
 # Create a real file elsewhere and symlink
-echo "fake" > "/tmp/fake-workflow-$$.md"
-ln -s "/tmp/fake-workflow-$$.md" "$TMPDIR_TEST/.planning/WORKFLOW.md"
+echo "fake" > "${TMPDIR:-/tmp}/fake-workflow-$$.md"
+ln -s "${TMPDIR:-/tmp}/fake-workflow-$$.md" "$TMPDIR_TEST/.planning/WORKFLOW.md"
 # Should fall through to legacy (symlink ignored per hook security)
 out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")
 assert_blocked "S6.1: symlinked WORKFLOW.md ignored, legacy blocks" "$out"
-rm -f "/tmp/fake-workflow-$$.md"
+rm -f "${TMPDIR:-/tmp}/fake-workflow-$$.md"
 
 integration_teardown
 

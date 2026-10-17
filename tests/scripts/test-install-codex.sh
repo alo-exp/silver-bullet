@@ -482,7 +482,7 @@ assert_contains() {
 assert_not_contains() {
   local desc="$1" needle="$2" path="$3"
   if [[ -d "$path" ]]; then
-    if rg -n --hidden -S -- "$needle" "$path" >/dev/null 2>&1; then
+    if sb_tree_contains "$needle" "$path"; then
       echo "FAIL: $desc — unexpected [$needle] in $path"
       (( FAIL++ )) || true
     else
@@ -528,7 +528,20 @@ assert_command_fails() {
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
-REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+SOURCE_REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+# shellcheck source=tests/lib/tree-search.sh
+source "$SOURCE_REPO_ROOT/tests/lib/tree-search.sh"
+# shellcheck source=tests/lib/repo-snapshot.sh
+source "$SOURCE_REPO_ROOT/tests/lib/repo-snapshot.sh"
+# shellcheck source=tests/lib/offline-tools.sh
+source "$SOURCE_REPO_ROOT/tests/lib/offline-tools.sh"
+# install-codex.sh and sync-codex-package.sh regenerate plugins/silver-bullet,
+# agents/ and host-bundles/ inside the checkout they run from. Run everything
+# from a snapshot so the test never rewrites the repository (parallel test
+# files would race on those trees) and works from a read-only checkout.
+REPO_ROOT="$(sb_repo_snapshot "$SOURCE_REPO_ROOT" "$TMP/repo")"
+# No package installs or network access: every source here is local.
+sb_offline_tools_install "$TMP/offline-bin"
 bash "$REPO_ROOT/scripts/sync-codex-package.sh" >/dev/null
 export SILVER_BULLET_RUNTIME="${SILVER_BULLET_RUNTIME:-codex}"
 if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
@@ -1324,36 +1337,52 @@ assert_contains "legacy hook preserved in Codex user config" 'legacy-check-updat
 assert_contains "legacy hook preserved in Codex user config mirror" 'legacy-check-update.js' "$HOME_DIR/.codex/hooks.json"
 assert_no_combined_tool_matchers "Codex user hooks avoid combined command-tool matchers" "$HOME_DIR/.codex/hooks.json"
 RUNTIME_CLAUDE_REPORT="$TMP/codex-runtime-claude-reference-report.txt"
-RUNTIME_CLAUDE_SHARED_HOST_GLOBS=(
+# Files that legitimately name ~/.claude paths in a Codex install. Each entry
+# says why; anything else that references a Claude runtime path is a leak.
+RUNTIME_CLAUDE_ALLOWED_GLOBS=(
+  # Not runtime code.
+  -g '!**/.git/**' -g '!**/*.md' -g '!**/*.html' -g '!**/*.txt' -g '!**/*.err'
+  # Cursor-only bundles.
+  -g '!**/agents/cursor/**' -g '!**/host-bundles/cursor/**' -g '!**/.cursor-plugin/**'
+  # Shared multi-host tooling: per-host path tables or host branches with a
+  # Claude entry next to the Codex one.
   -g '!**/scripts/sb-doctor.sh'
   -g '!**/scripts/optimize-rtk-context-mode.sh'
   -g '!**/scripts/install-leanctx-sb.sh'
+  -g '!**/scripts/install-recommended-tools-global.sh'
+  -g '!**/scripts/lib/rtk-cm-hosts.json'
   -g '!**/hooks/lib/rtk-gate.sh'
   -g '!**/hooks/lib/leanctx-gate.sh'
+  -g '!**/hooks/lib/context-mode-gate.sh'
+  -g '!**/hooks/lib/graphify-am-global.sh'
   -g '!**/hooks/lib/recommended-tools.sh'
   -g '!**/scripts/lib/recommended-tools/probe-rtk.sh'
+  # Host translators and validators: they name Claude paths in order to rewrite
+  # them (render-agent-bundle.py's Claude -> Codex/Cursor table) or to flag them
+  # (validate-host-agnostic-core.sh's forbidden-pattern list).
+  -g '!**/scripts/render-agent-bundle.py'
+  -g '!**/scripts/validate-host-agnostic-core.sh'
+  # Claude-host maintenance and operator-only Claude live harnesses; none of
+  # them runs inside a Codex session.
+  -g '!**/scripts/lib/plugin-cache-version.sh'
+  -g '!**/scripts/prune-stale-claude-user-hooks.sh'
+  -g '!**/scripts/agent-claude/**'
+  -g '!**/scripts/claude-interactive-invoke.expect'
+  -g '!**/scripts/lib/claude-matrix-auth.sh'
+  -g '!**/scripts/enterprise-e2e/**'
+  -g '!**/scripts/lib/enterprise-e2e-matrix-quiesce.sh'
+  -g '!**/scripts/monitor-enterprise-e2e-matrix.sh'
+  -g '!**/scripts/sb-tri-criteria-e2e.sh'
 )
-rg() {
-  local -a filtered=()
-  local arg
-  for arg in "$@"; do
-    if [[ "$arg" == "$FAKE_SB_INSTALL_ROOT" && ! -e "$arg" ]]; then
-      continue
-    fi
-    filtered+=("$arg")
-  done
-  command rg "${RUNTIME_CLAUDE_SHARED_HOST_GLOBS[@]}" "${filtered[@]}"
-}
 {
-  rg -n -g '!**/.git/**' -g '!**/*.md' -g '!**/*.html' -g '!**/*.txt' -g '!**/*.err' -g '!**/agents/cursor/**' -g '!**/host-bundles/cursor/**' -g '!**/.cursor-plugin/**' -g '!**/scripts/install-leanctx-sb.sh' -g '!**/hooks/lib/recommended-tools.sh' -g '!**/hooks/lib/rtk-gate.sh' -g '!**/hooks/lib/leanctx-gate.sh' '/\\.claude(/|$)' "$FAKE_MARKETPLACE_ROOT" "$FAKE_SB_INSTALL_ROOT" || true
-  rg -n -g '!**/.git/**' -g '!**/*.md' -g '!**/*.html' -g '!**/*.txt' -g '!**/*.err' -g '!**/agents/cursor/**' -g '!**/host-bundles/cursor/**' -g '!**/scripts/install-leanctx-sb.sh' -g '!**/hooks/lib/recommended-tools.sh' -g '!**/hooks/lib/rtk-gate.sh' -g '!**/hooks/lib/leanctx-gate.sh' 'os\\.homedir\\(\\).*\\.claude' "$FAKE_MARKETPLACE_ROOT" "$FAKE_SB_INSTALL_ROOT" || true
-  rg -n -g '!**/.git/**' -g '!**/*.md' -g '!**/*.html' -g '!**/*.txt' -g '!**/*.err' -g '!**/agents/cursor/**' -g '!**/scripts/install-leanctx-sb.sh' -g '!**/hooks/lib/recommended-tools.sh' -g '!**/hooks/lib/rtk-gate.sh' -g '!**/hooks/lib/leanctx-gate.sh' -F '.claude/' "$FAKE_MARKETPLACE_ROOT" "$FAKE_SB_INSTALL_ROOT" || true
-} > "$RUNTIME_CLAUDE_REPORT"
-unset -f rg
+  sb_tree_grep "${RUNTIME_CLAUDE_ALLOWED_GLOBS[@]}" '/\.claude(/|$)' "$FAKE_MARKETPLACE_ROOT" "$FAKE_SB_INSTALL_ROOT"
+  sb_tree_grep "${RUNTIME_CLAUDE_ALLOWED_GLOBS[@]}" 'os\.homedir\(\).*\.claude' "$FAKE_MARKETPLACE_ROOT" "$FAKE_SB_INSTALL_ROOT"
+  sb_tree_grep "${RUNTIME_CLAUDE_ALLOWED_GLOBS[@]}" -F '.claude/' "$FAKE_MARKETPLACE_ROOT" "$FAKE_SB_INSTALL_ROOT"
+} | sort -u > "$RUNTIME_CLAUDE_REPORT"
 assert_file_exists "Codex runtime Claude reference audit report generated" "$RUNTIME_CLAUDE_REPORT"
 if [[ -s "$RUNTIME_CLAUDE_REPORT" ]]; then
   echo "FAIL: Runtime Claude path references detected in Codex installation:"
-  sed -n '1,20p' "$RUNTIME_CLAUDE_REPORT"
+  sed -n '1,40p' "$RUNTIME_CLAUDE_REPORT"
   (( FAIL++ )) || true
 else
   echo "PASS: Codex runtime Claude reference audit is clean"
@@ -1361,13 +1390,11 @@ else
 fi
 
 CLAUDE_REFERENCE_REPORT="$TMP/codex-claude-reference-report.txt"
-{
-  rg -n -i -g '!skills/**' -g '!hooks/**' -g '!**/.git/**' 'claude' "$FAKE_MARKETPLACE_ROOT" "$FAKE_SB_INSTALL_ROOT" || true
-} > "$CLAUDE_REFERENCE_REPORT"
+sb_tree_grep -i -g '!skills/**' -g '!hooks/**' -g '!**/.git/**' 'claude' \
+  "$FAKE_MARKETPLACE_ROOT" "$FAKE_SB_INSTALL_ROOT" > "$CLAUDE_REFERENCE_REPORT"
 assert_file_exists "Codex claude reference audit report generated" "$CLAUDE_REFERENCE_REPORT"
 if [[ -s "$CLAUDE_REFERENCE_REPORT" ]]; then
-  echo "INFO: Non-skill/hook claude references detected in Codex installation:"
-  sed -n '1,20p' "$CLAUDE_REFERENCE_REPORT"
+  echo "INFO: Non-skill/hook claude references detected in Codex installation ($(wc -l < "$CLAUDE_REFERENCE_REPORT" | tr -d ' ') lines)"
 fi
 
 DEFAULT_GSD_TMP="$(mktemp -d)"

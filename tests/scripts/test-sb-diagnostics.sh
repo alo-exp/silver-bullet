@@ -56,7 +56,6 @@ assert_output_contains() {
 }
 
 assert_file_exists "sb-diagnostics script exists" "$SCRIPT"
-chmod +x "$SCRIPT"
 assert_executable "sb-diagnostics is executable" "$SCRIPT"
 
 assert_file_contains "runtime compatibility documents capability tiers" \
