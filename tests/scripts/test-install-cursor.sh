@@ -23,9 +23,24 @@ assert_contains() {
   fi
 }
 
-REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+SOURCE_REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 TMP_HOME="$(mktemp -d "${TMPDIR:-/tmp}/sb-install-cursor.XXXXXX")"
-trap 'rm -rf "$TMP_HOME"' EXIT
+REPO_TMP="$(mktemp -d "${TMPDIR:-/tmp}/sb-install-cursor-repo.XXXXXX")"
+trap 'rm -rf "$TMP_HOME" "$REPO_TMP"' EXIT
+
+# install-cursor.sh regenerates package trees and records install state inside
+# the checkout it runs from, and clones that checkout for the marketplace
+# gitPath (keyed on its HEAD commit). Run it from a snapshot that is its own
+# one-commit repository: nothing touches the real checkout, the gitPath commit
+# always exists locally, and no clone reaches GitHub.
+# shellcheck source=tests/lib/repo-snapshot.sh
+source "$SOURCE_REPO_ROOT/tests/lib/repo-snapshot.sh"
+# shellcheck source=tests/lib/offline-tools.sh
+source "$SOURCE_REPO_ROOT/tests/lib/offline-tools.sh"
+REPO_ROOT="$(sb_repo_snapshot --git "$SOURCE_REPO_ROOT" "$REPO_TMP/silver-bullet")"
+# No package installs or network: installers fail fast and git may only
+# clone local repositories.
+sb_offline_tools_install "$REPO_TMP/offline-bin"
 
 export HOME="$TMP_HOME"
 export CURSOR_HOME="${TMP_HOME}/.cursor"
@@ -38,6 +53,12 @@ export RT_SKIP_VENDOR_DOCTOR=1
 # checkout's own config.
 export CSBA_REPO_ROOT="${TMP_HOME}/project"
 mkdir -p "$CSBA_REPO_ROOT"
+# The subagent installer refreshes its model catalog from cursor.com unless it
+# runs offline with a cached catalog; seed the committed fixture.
+export SB_CURSOR_SB_AGENTS_OFFLINE=1
+mkdir -p "${TMP_HOME}/.config/silver-bullet"
+cp "${SOURCE_REPO_ROOT}/tests/fixtures/cursor-models-catalog.json" \
+  "${TMP_HOME}/.config/silver-bullet/cursor-models-catalog.json"
 export CURSOR_MARKETPLACE_ROOT="${CURSOR_HOME}/plugins/marketplaces/alo-labs-cursor"
 # Keep this fake-home test hermetic: the installer normally defaults to the
 # public marketplace and GitHub reachability probes, neither of which belongs
