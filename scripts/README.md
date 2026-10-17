@@ -71,6 +71,7 @@ Called by skills and hooks while Silver Bullet runs in a project.
 | Script | Purpose |
 |--------|---------|
 | `lint-shell.sh` | ShellCheck over all first-party Bash (`--all`, `--list`); used by `make lint` and CI |
+| `check-repo-invariants.sh` | Repository invariants CI's `validate` job checks: manifests and versions, hook executability and references, template placeholders, required-skill lists, workflow mirror (`--list`, `--check NAME`) |
 | `validate-plugin-mirror.sh` | The plugin package mirrors source hooks and skills |
 | `validate-host-agnostic-core.sh`, `validate-host-install-surface.sh`, `validate-host-skill-surface.sh` | Host-neutral core, per-host install layout, namespaced skill surfaces |
 | `validate-claude-agent-token-budget.sh` | Claude agent descriptions stay under the host token budget |
