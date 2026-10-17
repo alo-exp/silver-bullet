@@ -115,4 +115,11 @@ printf 'garbage' >"$VLOOPS"
 tl_run_hook "$HOOK" "$(stop_json)"
 assert_eq "corrupt V-loop file: fails open" "0|" "$TL_STATUS|$TL_OUT"
 
+echo "=== unreadable stdin ==="
+reset
+start_site_session
+status=0
+out="$(bash "$TL_REPO_ROOT/$HOOK" <"$TL_TMP")" || status=$?
+assert_eq "stdin that cannot be read yields no event name: silent" "0|" "$status|$out"
+
 tl_results

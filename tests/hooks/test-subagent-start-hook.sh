@@ -111,4 +111,9 @@ tl_run_hook "$HOOK" "$(start_json 'run sb:plan')"
 assert_eq "no orchestrator state: banner still emitted" "0" "$TL_STATUS"
 assert_contains "banner after a failed dispatch" "$(ctx)" "sb:plan"
 
+echo "=== unreadable stdin ==="
+status=0
+out="$(bash "$TL_REPO_ROOT/$HOOK" <"$TL_TMP")" || status=$?
+assert_eq "stdin that cannot be read: silent" "0|" "$status|$out"
+
 tl_results
