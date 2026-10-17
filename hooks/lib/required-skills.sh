@@ -139,7 +139,7 @@ sb_required_skill_is_recorded() {
 
   while IFS= read -r alias; do
     [[ -n "$alias" ]] || continue
-    if grep -Fqx -- "$alias" 2>/dev/null <<<"$state_contents"; then
+    if grep -Fqx -- "$alias" <<<"$state_contents" 2>/dev/null; then
       return 0
     fi
   done < <(sb_required_skill_aliases "$skill")

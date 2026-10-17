@@ -160,7 +160,7 @@ sb_prompt_is_agent_report() {
     'exit 0|_EXIT=[0-9]' \
     '[0-9a-f]{7,}\.\.[0-9a-f]{7,}|`[0-9a-f]{7,}`[[:space:]]*→[[:space:]]*`[0-9a-f]{7,}`'
   do
-    if grep -Eq "$marker" 2>/dev/null <<<"$prompt"; then
+    if grep -Eq "$marker" <<<"$prompt" 2>/dev/null; then
       hits=$((hits + 1))
     fi
   done
