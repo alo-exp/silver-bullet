@@ -139,7 +139,7 @@ enterprise_e2e_outcome_row_failures() {
   [[ -f "$F2_CTL/outcome-failures" ]] && cat "$F2_CTL/outcome-failures"
   return 0
 }
-enterprise_e2e_outcome_matrix_evidence_path() { printf 'evidence-for-%s\n' "$1"; }
+enterprise_e2e_outcome_matrix_evidence_path() { [[ -z "${F2_EVPATH_FAIL:-}" ]] || return 1; printf 'evidence-for-%s\n' "$1"; }
 enterprise_e2e_outcome_ledger_workflow_line() { grep -E "^\| $2 \|" "$1"; }
 enterprise_e2e_outcome_ledger_parse_workflow_row() {
   local status n

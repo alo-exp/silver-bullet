@@ -130,4 +130,19 @@ assert_eq "codex live setup exit" "0" "$TL_STATUS"
 assert_not_contains "no claude auth for codex" "$CALLS" "claude_matrix_export_settings_env"
 assert_contains "banner host codex" "$TL_OUT" "Host:       codex"
 
+# variables the harness tries to unset may be read-only in the caller's shell: that is tolerated
+cat >"$TL_TMP/readonly-env.sh" <<'EOS'
+[[ -z "${F2_ORIG_BASH_ENV:-}" ]] || source "$F2_ORIG_BASH_ENV"
+readonly CURSOR_CONVERSATION_ID=c CURSOR_AGENT=a VSCODE_IPC_HOOK=h AGENT_CLI_CREDENTIAL_STORE=s \
+  ANTHROPIC_API_KEY=k OPENAI_API_KEY=o ANTHROPIC_BASE_URL=u ANTHROPIC_AUTH_TOKEN=t
+EOS
+RO=(BASH_ENV="$TL_TMP/readonly-env.sh" F2_ORIG_BASH_ENV="${BASH_ENV:-}")
+run env "${RO[@]}" SILVER_BULLET_RUNTIME=cursor SB_E2E_LIVE_RUNTIME=cursor bash "$MATRIX" 99
+assert_eq "read-only cursor session variables tolerated" "0" "$TL_STATUS"
+run env "${RO[@]}" SB_E2E_MATRIX_CLEAN_ENV=1 bash "$MATRIX" 99
+assert_eq "read-only API keys tolerated in clean-env mode" "0" "$TL_STATUS"
+run env "${RO[@]}" SB_E2E_MATRIX_OAUTH_ONLY=1 bash "$MATRIX" 99
+assert_eq "read-only API variables tolerated in oauth-only mode" "0" "$TL_STATUS"
+assert_contains "oauth-only still configured" "$CALLS" "skipexport=1 strategy=recommended"
+
 tl_results
