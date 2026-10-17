@@ -196,6 +196,8 @@ assert_eq "corrupt JSON is not blocking" 1 "$((rc != 0))"
 echo "=== skill_recorded ==="
 sb_orchestrator_directive_skill_recorded "" "x" && rc=0 || rc=$?
 assert_eq "empty expected" 1 "$rc"
+sb_orchestrator_directive_skill_recorded "" $'a\n\nb' && rc=0 || rc=$?
+assert_eq "empty expected never matches a blank state line" 1 "$rc"
 sb_orchestrator_directive_skill_recorded "x" "" && rc=0 || rc=$?
 assert_eq "empty state" 1 "$rc"
 sb_orchestrator_directive_skill_recorded silver-plan $'silver-context\nsilver-plan' && rc=0 || rc=$?

@@ -164,6 +164,21 @@ PATH="$stubdir:$nojq" tl_run_hook "$HOOK" "$(edit_json Edit "$PROJ/src/owned.txt
 assert_eq "block tier without jq exits 2" 2 "$TL_STATUS"
 assert_contains "block tier without jq explains on stderr" "$TL_ERR" "AF-AGENT-DELEGATE"
 assert_eq "block tier without jq prints no JSON" "" "$TL_OUT"
+# Same end-to-end jq-less deny for a new file in a new subdirectory of the owned scope, and an
+# in-scope check that is not satisfied by an early allow.
+cat >"$stubdir/jq" <<STUB
+#!/usr/bin/env bash
+if [[ "\$*" == *tool_input.file_path* ]]; then
+  "$real_jq" "\$@"; rc=\$?
+  rm -f "\$0"
+  exit \$rc
+fi
+exec "$real_jq" "\$@"
+STUB
+chmod +x "$stubdir/jq"
+PATH="$stubdir:$nojq" tl_run_hook "$HOOK" "$(edit_json Write "$PROJ/src/brand/new/dir/f.txt")"
+assert_eq "jq-less deny for a new file in a new subdirectory exits 2" 2 "$TL_STATUS"
+assert_contains "jq-less deny explains itself" "$TL_ERR" "AF-AGENT-DELEGATE"
 
 
 echo "=== guard: jq-less payload without a tool name ==="

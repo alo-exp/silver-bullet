@@ -82,6 +82,8 @@ rm -f "$LOG"
 ( PATH="$NOJQ"; sb_orchestrator_event_resume_hints_json ) && rc=0 || rc=$?
 assert_eq "hints need jq" 1 "$rc"
 assert_eq "no state file: not resumable" '{"resumable":false,"reason":"no orchestrator.json"}' "$(sb_orchestrator_event_resume_hints_json)"
+sb_orchestrator_event_resume_hints_json >/dev/null && rc=0 || rc=$?
+assert_eq "no state file: reported as success" 0 "$rc"
 orch_write_state '{"flow_queue":["a","b"],"active_intent":"go","current_flow":"a","last_completed":"z","workflow_id":"W1",
   "scheduler":{"batch_dispatch":{"status":"open","handoffs":[{"join_status":"joined"},{"join_status":"pending"},{"join_status":"pending"}]}}}'
 sb_orchestrator_event_append seen '{}'
@@ -199,6 +201,9 @@ assert_eq "legacy flow key" AF-PLAN "$(r 'FLOW 7')"
 assert_eq "slug exact" AF-READ-C "$(r read-c)"
 assert_eq "slug case-insensitive" AF-DEP "$(r dep)"
 assert_eq "silver-slug tail" AF-LATER "$(r silver-later)"
+r silver-later >/dev/null && rc=0 || rc=$?
+assert_eq "silver-slug tail resolves with status 0" 0 "$rc"
+assert_eq "skill-atom lib alone loads the directive lib" 0 "$(bash -c 'source "$1"; declare -f sb_orchestrator_flow_to_skill >/dev/null; echo $?' _ "$TL_REPO_ROOT/hooks/lib/orchestrator-skill-atom.sh")"
 assert_eq "silver-slug tail ignores dashes" AF-READ-A "$(r silver-fixtureread-a)"
 assert_eq "flow_to_skill normalisation" AF-PLAN "$(r FLOW-PLAN)"
 assert_eq "dangling queue token falls through" "" "$(r ghost-token || true)"
