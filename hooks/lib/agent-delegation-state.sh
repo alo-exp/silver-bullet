@@ -72,7 +72,9 @@ sb_agent_delegation_normalize_path() {
   if [[ "$path" != /* ]]; then
     path="${repo_root%/}/$path"
   fi
-  path="$(cd "$(dirname "$path")" 2>/dev/null && pwd)/$(basename "$path")" || return 1
+  local parent
+  parent="$(cd "$(dirname "$path")" 2>/dev/null && pwd)" || return 1
+  path="${parent}/$(basename "$path")"
   if [[ "$path" == *".."* ]]; then
     return 1
   fi
