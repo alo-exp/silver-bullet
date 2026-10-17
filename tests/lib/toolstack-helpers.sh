@@ -4,10 +4,10 @@
 
 TS_SRC="$TL_REPO_ROOT/scripts/lib/global-toolstack"
 
-# ts_call <fn> [args...]: run a common.sh function in a fresh bash (HOME is the
-# sandbox). Sets TL_OUT / TL_ERR / TL_STATUS. Extra env comes from the caller.
+# ts_call <fn> [args...]: run a common.sh function in a fresh bash with cwd=$HOME
+# (the sandbox, so the repo's own SB markers are not discovered). Sets TL_OUT / TL_ERR / TL_STATUS. Extra env comes from the caller.
 ts_call() {
-  tl_run bash -c 'source "$1/common.sh"; shift; "$@"' _ "$TS_SRC" "$@"
+  tl_run bash -c 'cd "$HOME"; source "$1/common.sh"; shift; "$@"' _ "$TS_SRC" "$@"
 }
 
 # ts_write_config <json>: write the toolstack config and point TS_CONFIG at it.
