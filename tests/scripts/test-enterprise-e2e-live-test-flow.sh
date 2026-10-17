@@ -55,6 +55,7 @@ printf 'hook-delivery attempt=%s skipbootstrap=%s\n' "$n" "${SB_E2E_HOOK_DELIVER
 EOS
 cat >"$R/tests/e2e-live/lib/session-start-preflight.sh" <<'EOS'
 printf 'session-start-preflight runtime=%s\n' "$SILVER_BULLET_RUNTIME" >>"$F2_CALLS"
+return 1
 EOS
 
 APP="$TL_TMP/app"
@@ -63,7 +64,7 @@ git -C "$APP" init -q
 tl_stub npm 'printf "npm %s cwd=%s\n" "$*" "$PWD" >>"$F2_CALLS"; exit "${F2_NPM_RC:-0}"'
 tl_stub sleep 'printf "sleep %s\n" "$*" >>"$F2_CALLS"'
 tl_stub pgrep 'printf "pgrep %s\n" "$*" >>"$F2_CALLS"; [[ -n "${F2_PGREP_HIT:-}" ]]'
-tl_stub pkill 'printf "pkill %s\n" "$*" >>"$F2_CALLS"'
+tl_stub pkill 'printf "pkill %s\n" "$*" >>"$F2_CALLS"; exit 1'
 
 LIVE="$R/scripts/enterprise-e2e/live-test.sh"
 LEDGER="$TL_TMP/ledger.md"
@@ -163,6 +164,7 @@ assert_contains "code-intel preflight ran with fixture" "$CALLS" "code-intel $R 
 assert_contains "hook delivery bootstrap skipped" "$CALLS" "hook-delivery attempt=1 skipbootstrap=1"
 assert_contains "npm test ran in the fixture" "$CALLS" "npm test cwd=$APP"
 assert_contains "session-start preflight sourced as cursor" "$CALLS" "session-start-preflight runtime=cursor"
+assert_eq "failing session-start preflight tolerated" "0" "$TL_STATUS"
 assert_contains "host install ran" "$CALLS" "install-host $R"
 assert_contains "host preflight ran" "$CALLS" "preflight-host $R"
 assert_not_contains "no session 0 gate in preflight-only" "$CALLS" "session0"
@@ -233,6 +235,7 @@ assert_contains "monitor replaced" "$TL_OUT" "matrix-monitor: replacing existing
 assert_contains "watch replaced" "$TL_OUT" "tui-watch: replacing existing instance (driver-owned harness)"
 assert_contains "pkill used for monitor" "$CALLS" "pkill -f monitor-enterprise-e2e-matrix.sh"
 assert_contains "pkill used for watch" "$CALLS" "pkill -f watch-enterprise-e2e-tui.sh"
+assert_eq "failing pkill does not abort the run" "0" "$TL_STATUS"
 
 # monitor disabled
 run env SB_E2E_MATRIX_MONITOR=0 bash "$LIVE" 2
