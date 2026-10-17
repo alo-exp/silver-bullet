@@ -7,6 +7,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
 
 HOOK="$TL_REPO_ROOT/hooks/completion-audit.sh"
+# shellcheck disable=SC2034  # used by the sourced fixture
 CFG_VERSION="$(jq -r '.config_version' "$TL_REPO_ROOT/templates/silver-bullet.config.json.default")"
 SKILLS="$TL_TMP/skills"
 for s in inst-a inst-b; do

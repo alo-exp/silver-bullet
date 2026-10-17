@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2034  # variables are consumed by the sourcing tests
 # shellcheck shell=bash
 # Shared completion-audit fixture (sourced after tl_init).
 _ca_tpl() {
