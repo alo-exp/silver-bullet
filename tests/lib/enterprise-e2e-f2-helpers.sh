@@ -36,6 +36,14 @@ source "$TL_REPO_ROOT/scripts/lib/enterprise-e2e-live-common.sh"
 [[ -z "\${F2_REGCOUNT_FAIL:-}" ]] || enterprise_e2e_row_pass_registry_pass_count() { return 1; }
 [[ -z "\${F2_RESET_FAIL:-}" ]] || enterprise_e2e_reset_tui_monitor_offsets() { return 1; }
 [[ -z "\${F2_QUIESCE_FAIL:-}" ]] || enterprise_e2e_quiesce_orchestrator_queue() { return 1; }
+[[ -z "\${F2_HOSTBRANCH_FAIL:-}" ]] || enterprise_e2e_assert_host_git_branch() { return 1; }
+if [[ -n "\${F2_RECORD_HEAVY:-}" ]]; then
+  enterprise_e2e_code_intel_preflight() { printf 'code-intel %s\\n' "\$*" >>"\${F2_CALLS:?}"; }
+  enterprise_e2e_run_install_host() { printf 'install-host %s\\n' "\$*" >>"\${F2_CALLS:?}"; }
+  enterprise_e2e_preflight_host() { printf 'preflight-host %s\\n' "\$*" >>"\${F2_CALLS:?}"; }
+  enterprise_e2e_assert_session0_or_skip() { printf 'session0 %s\\n' "\$*" >>"\${F2_CALLS:?}"; }
+  enterprise_e2e_prepare_matrix_mcp_env() { printf 'mcp-env %s\\n' "\$*" >>"\${F2_CALLS:?}"; }
+fi
 EOS
   local f
   for f in "$TL_REPO_ROOT"/scripts/lib/enterprise-e2e-*.sh; do
