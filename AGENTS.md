@@ -35,8 +35,9 @@ for f in hooks/*.sh hooks/lib/*.sh scripts/*.sh; do bash -n "$f"; done
 jq . hooks/hooks.json >/dev/null
 jq . .silver-bullet.json >/dev/null
 
-# ShellCheck with CI's exclusions (make lint fails on any finding; existing files still carry some)
-shellcheck --exclude=SC2317,SC1091,SC2329 hooks/*.sh hooks/lib/*.sh scripts/*.sh
+# ShellCheck as CI runs it (make lint fails on any finding)
+bash scripts/lint-shell.sh --all
+bash scripts/check-repo-invariants.sh   # manifests, versions, hook references, skill lists, mirrors
 
 # Cursor recommended-tool rules (graphify + agentmemory + umbrella)
 bash scripts/install-recommended-tools-cursor.sh

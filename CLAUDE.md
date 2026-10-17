@@ -66,9 +66,12 @@ See [docs/TESTING.md](docs/TESTING.md) for the layout, isolation and live suites
 # Syntax-check all hook and script files
 for f in hooks/*.sh hooks/lib/*.sh scripts/*.sh; do bash -n "$f" || echo "FAIL: $f"; done
 
-# ShellCheck with CI's exclusions (make lint runs this plus bash -n and jq; it fails on any
-# finding, and existing hooks/scripts still carry some)
-shellcheck --exclude=SC2317,SC1091,SC2329 hooks/*.sh hooks/lib/*.sh scripts/*.sh
+# ShellCheck as CI runs it: application Bash at every severity, tests at -S warning
+# (make lint runs this plus bash -n and jq; any finding fails)
+bash scripts/lint-shell.sh --all
+
+# Repository invariants (manifests, versions, hook references, skill lists, mirrors)
+bash scripts/check-repo-invariants.sh
 
 # JSON validity
 jq . hooks/hooks.json > /dev/null && echo "hooks.json valid"
