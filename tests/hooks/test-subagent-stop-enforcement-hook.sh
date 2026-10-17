@@ -191,4 +191,68 @@ assert_file_absent "audit recorded: pending marker cleared" "$PENDING"
 tl_run_hook "$HOOK" "$(ev SessionEnd)"
 assert_eq "unrelated events fall through" "0|" "$TL_STATUS|$TL_OUT"
 
+echo "=== failure paths ==="
+reset
+status=0
+out="$(bash "$TL_REPO_ROOT/$HOOK" <"$TL_TMP")" || status=$?
+assert_eq "unreadable stdin: silent" "0|" "$status|$out"
+# Plugin without its lib directory: the project gate is missing, so the hook fails open.
+staged="$(orch_stage_hook subagent-stop-enforcement.sh)"
+tl_run_stdin "$(ev PostToolUse Task)" bash "$staged"
+assert_eq "no lib directory: fails open" "0|" "$TL_STATUS|$TL_OUT"
+assert_file_absent "no lib directory: nothing recorded" "$PENDING"
+# Found from a nested working directory.
+mkdir -p "$PROJ/a/b"
+( cd "$PROJ/a/b" && tl_run_hook "$HOOK" "$(ev PostToolUse Task)" && printf '%s' "$TL_OUT" ) >"$TL_TMP/nested.out"
+assert_contains "nested directory: project found, reminder emitted" "$(cat "$TL_TMP/nested.out")" "completion-audit"
+reset
+# State directory that cannot be created: still reminds the parent.
+notdir="$TL_TMP/regular-file"
+: >"$notdir"
+SB_RUNTIME_STATE_DIR="$notdir/state" tl_run_hook "$HOOK" "$(ev PostToolUse Task)"
+assert_contains "uncreatable state dir: reminder still emitted" "$(ctx)" "completion-audit"
+# Unreadable state file: treated as no audit recorded.
+reset
+mark_pending
+printf 'silver-completion-audit\n' >"$STATE_REC"
+orch_stub_failing cat '.silver-bullet/state'
+tl_run_hook "$HOOK" "$(ev PreToolUse Edit)"
+orch_unstub cat
+assert_eq "unreadable state file: audit not seen, edit denied" deny "$(decision)"
+# jq failing on individual extractions.
+reset
+orch_stub_failing jq '.tool_name'
+tl_run_hook "$HOOK" "$(ev PreToolUse Task)"
+assert_eq "tool name unreadable (PreToolUse): ignored" "0|" "$TL_STATUS|$TL_OUT"
+tl_run_hook "$HOOK" "$(ev PostToolUse Task)"
+assert_eq "tool name unreadable (PostToolUse): ignored" "0|" "$TL_STATUS|$TL_OUT"
+orch_unstub jq
+orch_stub_failing jq 'tool_input // {}'
+tl_run_hook "$HOOK" "$(ev PreToolUse Task)"
+assert_eq "spawn preview unreadable: spawn still recorded" 1 "$(wc -l <"$SPAWNS" | tr -d ' ')"
+assert_contains "spawn recorded with an empty preview" "$(cat "$SPAWNS")" "spawned_at"
+tl_run_hook "$HOOK" "$(ev PostToolUse Task)"
+assert_eq "return preview unreadable: audit still required" true "$(jq -r .pending "$PENDING")"
+orch_unstub jq
+reset
+mark_pending
+orch_stub_failing jq '.tool_input.skill'
+tl_run_hook "$HOOK" "$(ev PreToolUse Skill silver-completion-audit)"
+assert_eq "skill name unreadable (PreToolUse): gate stays" "0|" "$TL_STATUS|$TL_OUT"
+assert_file_exists "skill name unreadable (PreToolUse): pending kept" "$PENDING"
+tl_run_hook "$HOOK" "$(ev PostToolUse Skill silver-completion-audit)"
+assert_file_exists "skill name unreadable (PostToolUse): pending kept" "$PENDING"
+orch_unstub jq
+# The clearing helpers are unavailable: the hook still exits cleanly.
+tree="$(orch_stage_tree)"
+printf '%s\n' 'sb_site_session_subagents_spawned() { return 0; }' >"$tree/lib/site-session.sh"
+mark_pending
+tl_run_stdin "$(ev PreToolUse Skill silver-completion-audit)" bash "$tree/subagent-stop-enforcement.sh"
+assert_eq "no clearing helpers (PreToolUse skill): clean exit" "0|" "$TL_STATUS|$TL_OUT"
+tl_run_stdin "$(ev PostToolUse Skill silver-completion-audit)" bash "$tree/subagent-stop-enforcement.sh"
+assert_eq "no clearing helpers (PostToolUse skill): clean exit" "0|" "$TL_STATUS|$TL_OUT"
+printf 'silver-completion-audit\n' >"$STATE_REC"
+tl_run_stdin "$(ev Stop)" bash "$tree/subagent-stop-enforcement.sh"
+assert_eq "no clearing helpers (Stop with audit recorded): clean exit" "0|" "$TL_STATUS|$TL_OUT"
+
 tl_results

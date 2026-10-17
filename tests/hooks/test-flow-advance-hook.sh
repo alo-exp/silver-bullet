@@ -121,4 +121,72 @@ assert_eq "failed rewrite: config untouched" devops-cycle "$(jq -r .project.acti
 assert_eq "failed rewrite: silent" "0|" "$TL_STATUS|$TL_OUT"
 assert_eq "failed rewrite: temp file removed" 0 "$(find "$TL_TMP/hook-tmp" -type f | wc -l | tr -d ' ')"
 
+echo "=== failure paths ==="
+status=0
+out="$(bash "$TL_REPO_ROOT/$HOOK" <"$TL_TMP")" || status=$?
+assert_eq "unreadable stdin: silent" "0|" "$status|$out"
+
+# Without the shared canonicaliser the hook strips the prefix and namespace itself.
+tree="$(orch_stage_tree)"
+rm -f "$tree/lib/skill-discovery.sh"
+orch_write_state "$(jq -n --arg r "$PROJ" '{repo_root:$r,flow_queue:["silver-plan","silver-execute"],current_flow:"silver-plan"}')"
+tl_run_stdin "$(skill_json silver:plan)" bash "$tree/flow-advance.sh"
+assert_contains "fallback canonicalisation maps silver:plan to silver-plan" "$(msg)" "Next flow: silver-execute"
+orch_write_state "$(jq -n --arg r "$PROJ" '{repo_root:$r,flow_queue:["silver-plan","silver-execute"],current_flow:"silver-plan"}')"
+tl_run_stdin "$(skill_json sb:silver-plan)" bash "$tree/flow-advance.sh"
+assert_contains "fallback canonicalisation strips the sb: prefix" "$(msg)" "Next flow: silver-execute"
+
+# No project root resolver result: the working directory is the root.
+tree="$(orch_stage_tree)"
+cat >"$tree/lib/sb-project-gate.sh" <<'LIB'
+sb_project_gate_or_exit() { :; }
+sb_find_project_root() { return 1; }
+sb_find_project_config() { return 1; }
+LIB
+orch_write_state "$(jq -n --arg r "$PROJ" '{repo_root:$r,flow_queue:["silver-plan","silver-execute"],current_flow:"silver-plan"}')"
+tl_run_stdin "$(skill_json silver-plan)" bash "$tree/flow-advance.sh"
+assert_contains "no root resolver: PWD used as the project root" "$(msg)" "Next flow: silver-execute"
+
+# Unreadable intent file: composer still starts, with an empty intent.
+rm -f "$(orch_state_file)"
+printf 'my intent\n' >"$INTENT"
+orch_stub_failing head orchestrator-intent
+tl_run_hook "$HOOK" "$(skill_json silver-feature)"
+orch_unstub head
+assert_contains "unreadable intent: composer started" "$(msg)" "started"
+assert_eq "unreadable intent: empty intent" "" "$(orch_state_get .active_intent)"
+rm -f "$INTENT"
+
+# Orchestrator entry points that fail are tolerated.
+tree="$(orch_stage_tree)"
+cat >"$tree/lib/orchestrator-state.sh" <<'LIB'
+sb_orchestrator_is_composer_skill() { [[ "$1" == silver-feature ]]; }
+sb_orchestrator_is_flow_atom() { [[ "$1" == silver-plan ]]; }
+sb_orchestrator_on_composer_start() { return 1; }
+sb_orchestrator_advance_on_atom() { return 1; }
+LIB
+tl_run_stdin "$(skill_json silver-feature)" bash "$tree/flow-advance.sh"
+assert_eq "composer start failing: silent" "0|" "$TL_STATUS|$TL_OUT"
+tl_run_stdin "$(skill_json silver-plan)" bash "$tree/flow-advance.sh"
+assert_eq "atom advance failing: silent" "0|" "$TL_STATUS|$TL_OUT"
+
+# A corrupt project config cannot be inspected: the ship reset is skipped.
+printf 'not json' >"$PROJ/.silver-bullet.json"
+rm -f "$(orch_state_file)"
+tl_run_hook "$HOOK" "$(skill_json silver-ship)"
+assert_eq "corrupt config: silent" "0|" "$TL_STATUS|$TL_OUT"
+assert_eq "corrupt config left alone" "not json" "$(cat "$PROJ/.silver-bullet.json")"
+
+# The rewrite fails and the temp file cannot be removed either: still silent.
+orch_make_project "$PROJ" '{"sb_initiated":true,"project":{"active_workflow":"devops-cycle"}}'
+mkdir -p "$TL_TMP/hook-tmp2"
+orch_stub_failing jq '= "full-dev-cycle"'
+tl_stub rm "for a in \"\$@\"; do [[ \"\$a\" == *hook-tmp2* ]] && exit 1; done; exec $(command -v rm) \"\$@\""
+hash -r
+TMPDIR="$TL_TMP/hook-tmp2" tl_run_hook "$HOOK" "$(skill_json silver-ship)"
+orch_unstub rm
+orch_unstub jq
+assert_eq "failed rewrite with an undeletable temp file: silent" "0|" "$TL_STATUS|$TL_OUT"
+assert_eq "config untouched" devops-cycle "$(jq -r .project.active_workflow "$PROJ/.silver-bullet.json")"
+
 tl_results
