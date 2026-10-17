@@ -32,6 +32,29 @@ def normalize_candidate(token: str):
         return str(path)
 
 
+# Short options that take the rest of the bundle (or the next word) as their argument;
+# letters after one of them are that argument, not further flags.
+ARG_TAKING_SHORT_OPTIONS = {
+    "sed": set("efl"),
+    "perl": set("eEMmIxCdDF"),
+}
+
+
+def is_in_place_flag(command_name: str, arg: str) -> bool:
+    # -i, -i.bak, bundled short flags (sed -Ei, perl -pi) and --in-place[=SUFFIX]
+    if arg == "--in-place" or arg.startswith("--in-place="):
+        return True
+    if not arg.startswith("-") or arg.startswith("--"):
+        return False
+    stop = ARG_TAKING_SHORT_OPTIONS.get(command_name, set())
+    for ch in arg[1:]:
+        if ch == "i":
+            return True
+        if ch in stop:
+            return False
+    return False
+
+
 def tokenize(line: str):
     try:
         return shlex.split(line, posix=True)
@@ -92,20 +115,20 @@ def inline_script_write_targets(command_name, args):
     if command_name in {"python", "python3"}:
         script = inline_script_arg(args, "-c")
         patterns = [
-            re.compile(r"""(?:pathlib\.)?Path\(\s*(['"])(.+?)\1\s*\)\.(?:write_text|write_bytes|touch)\s*\("""),
-            re.compile(r"""(?:pathlib\.)?Path\(\s*(['"])(.+?)\1\s*\)\.open\(\s*['"](?:a|w|x)['"]"""),
-            re.compile(r"""open\(\s*(['"])(.+?)\1\s*,\s*['"](?:a|w|x)['"]"""),
+            re.compile(r"""(?:pathlib\.)?Path\(\s*(['"])((?:(?!\1).)+)\1\s*\)\.(?:write_text|write_bytes|touch)\s*\("""),
+            re.compile(r"""(?:pathlib\.)?Path\(\s*(['"])((?:(?!\1).)+)\1\s*\)\.open\(\s*['"](?:a|w|x)['"]"""),
+            re.compile(r"""open\(\s*(['"])((?:(?!\1).)+)\1\s*,\s*['"](?:a|w|x)['"]"""),
         ]
     elif command_name in {"node", "nodejs"}:
         script = inline_script_arg(args, "-e")
         patterns = [
-            re.compile(r"""(?:appendFileSync|writeFileSync|createWriteStream)\(\s*(['"])(.+?)\1"""),
+            re.compile(r"""(?:appendFileSync|writeFileSync|createWriteStream)\(\s*(['"])((?:(?!\1).)+)\1"""),
         ]
     elif command_name == "ruby":
         script = inline_script_arg(args, "-e")
         patterns = [
-            re.compile(r"""File\.(?:write|binwrite)\(\s*(['"])(.+?)\1"""),
-            re.compile(r"""File\.open\(\s*(['"])(.+?)\1\s*,\s*['"](?:a|w|x)['"]"""),
+            re.compile(r"""File\.(?:write|binwrite)\(\s*(['"])((?:(?!\1).)+)\1"""),
+            re.compile(r"""File\.open\(\s*(['"])((?:(?!\1).)+)\1\s*,\s*['"](?:a|w|x)['"]"""),
         ]
     elif command_name == "perl":
         script = inline_script_arg(args, "-e")
@@ -200,7 +223,7 @@ while pending_chunks:
                 if normalized:
                     seen.add(normalized)
             continue
-        if cmd in {"sed", "perl"} and any(arg == "-i" or arg.startswith("-i") for arg in args):
+        if cmd in {"sed", "perl"} and any(is_in_place_flag(cmd, arg) for arg in args):
             for arg in reversed(args):
                 if arg == "--" or arg.startswith("-"):
                     continue
