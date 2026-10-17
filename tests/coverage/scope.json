@@ -1,0 +1,56 @@
+{
+  "_comment": "Coverage denominator for tests/coverage/run-coverage.sh. Every tracked first-party executable file matching an include glob is measured. Exclusions must state why the file is not first-party application code; never exclude a file only because it is hard to test.",
+  "bash": {
+    "include": [
+      "hooks/*",
+      "scripts/*",
+      "skills/*",
+      "site/*.sh",
+      ".planning/scripts/phase-lock.sh"
+    ],
+    "exclude": [
+      {
+        "glob": "plugins/*",
+        "reason": "Generated package mirror (symlinks/copies of hooks, scripts, skills); verified identical by scripts/validate-plugin-mirror.sh and the bundle renderer tests."
+      },
+      {
+        "glob": "agents/*",
+        "reason": "Generated Claude skill bundle rendered from skills/ by scripts/render-agent-bundle.py."
+      },
+      {
+        "glob": "host-bundles/*",
+        "reason": "Generated Codex/Cursor skill bundles rendered from skills/ by scripts/render-agent-bundle.py."
+      },
+      {
+        "glob": "*/tests/*",
+        "reason": "Test code is not measured as application code."
+      }
+    ]
+  },
+  "python": {
+    "include": [
+      "hooks/*",
+      "scripts/*",
+      "skills/*",
+      "site/*.py"
+    ],
+    "exclude": [
+      {
+        "glob": "plugins/*",
+        "reason": "Generated package mirror of skills/ scripts."
+      },
+      {
+        "glob": "agents/*",
+        "reason": "Generated Claude skill bundle rendered from skills/."
+      },
+      {
+        "glob": "host-bundles/*",
+        "reason": "Generated Codex/Cursor skill bundles rendered from skills/."
+      },
+      {
+        "glob": "*/tests/*",
+        "reason": "Test code is not measured as application code."
+      }
+    ]
+  }
+}
