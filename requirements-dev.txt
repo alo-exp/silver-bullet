@@ -1,0 +1,6 @@
+# Python packages for running the test suite and coverage (local and CI).
+# Install: python3 -m pip install -r requirements-dev.txt
+# Runtime hooks and scripts use only the Python standard library.
+-r tests/coverage/requirements.txt
+openpyxl>=3.1   # deep-research comparison matrix (skills/silver-deep-research)
+PyYAML>=6.0     # deep-research catalog/frontmatter parsing
