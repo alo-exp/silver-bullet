@@ -43,4 +43,19 @@ else
 $offenders"
 fi
 
+# The replacement must keep one element per line: a here-string of "${arr[@]}"
+# or "$@" joins the elements with spaces, so grep -x never matches.
+joined="$(cd "$TL_REPO_ROOT" &&
+  git ls-files -- 'hooks/*' 'scripts/*' 'skills/*' 'tests/*' |
+  while IFS= read -r f; do
+    [[ -f "$f" && ! -L "$f" && "$f" == *.sh ]] || continue
+    grep -nE '<<<"(\$\{[A-Za-z_][A-Za-z0-9_]*\[@\]\}|\$@)"' "$f" | sed "s|^|$f:|" || true
+  done)"
+if [[ -z "$joined" ]]; then
+  tl_pass "no here-string over an array or \$@"
+else
+  tl_fail "here-string over an array joins elements (use <<<\"\$(printf '%s\\n' \"\${arr[@]}\")\"):
+$joined"
+fi
+
 tl_results
