@@ -21,7 +21,7 @@ total_fail=$((failed + errors + failures))
 
 # unittest discover -v prints "Ran N tests" line
 ran=$(printf '%s\n' "$output" | grep -oE 'Ran [0-9]+ tests' | grep -oE '[0-9]+' || echo "0")
-if printf '%s\n' "$output" | grep -q '^FAILED '; then
+if grep -q '^FAILED ' <<<"$output"; then
   printf '\nResults: %s passed, suite failed\n' "$((ran - total_fail))"
   exit 1
 fi

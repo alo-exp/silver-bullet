@@ -284,7 +284,7 @@ run_full_ladder_for_host() {
     response="$(invoke_rung_turn "$prompt")"
     cleaned="$(printf '%s' "$response" | strip_ansi_response)"
 
-    if printf '%s' "$cleaned" | grep -qiE 'authentication required|please run .agent login'; then
+    if grep -qiE 'authentication required|please run .agent login' <<<"$cleaned"; then
       rung_status="BLOCKED"
       fail "rung ${rung_index}/${rung_count} ${model}/${reasoning} (auth required)"
       row="$(printf '%-4s %-22s %-10s %-8s' "$rung_index" "$model" "$reasoning" "$rung_status")"

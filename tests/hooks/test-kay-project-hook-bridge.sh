@@ -28,7 +28,7 @@ assert_eq() {
 
 assert_deny_reason() {
   local label="$1" haystack="$2"
-  if printf '%s' "$haystack" | grep -qE 'Planning incomplete|HARD STOP|ORCHESTRATOR PARENT|forbidden|blocked'; then
+  if grep -qE 'Planning incomplete|HARD STOP|ORCHESTRATOR PARENT|forbidden|blocked' <<<"$haystack"; then
     echo "PASS: $label"
     PASS=$((PASS + 1))
   else

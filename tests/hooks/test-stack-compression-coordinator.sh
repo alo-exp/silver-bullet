@@ -166,7 +166,7 @@ read_after=$(jq -n \
 read_out="$(cd "$TMP" && SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="$STATE_DIR" \
   printf '%s' "$read_after" | bash "$COORD_HOOK" 2>/dev/null || true)"
 if printf '%s' "$read_out" | jq -e '.hookSpecificOutput.permissionDecision == "deny"' >/dev/null 2>&1 \
-  && printf '%s' "$read_out" | grep -q 'sb_stack_double_compression'; then
+  && grep -q 'sb_stack_double_compression' <<<"$read_out"; then
   fail "RED-1: Read denied after recovery — got: $read_out"
 else
   pass "RED-1: Read allowed after recovery MCP"

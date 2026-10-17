@@ -219,7 +219,7 @@ PY
 run_scenario() {
   local id="$1" prompt="$2"
   if [[ -n "$SCENARIO_FILTER" ]] && ! \
-    printf ',%s,' "$SCENARIO_FILTER" | grep -Fq ",${id},"; then
+    grep -Fq ",${id}," <<<",${SCENARIO_FILTER},"; then
     skip "${id}: filtered by SB_FIVE_TOOL_SCENARIOS"
     return 0
   fi

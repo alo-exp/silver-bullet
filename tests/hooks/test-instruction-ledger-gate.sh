@@ -72,7 +72,7 @@ run_stop() {
 }
 
 blocks() {
-  printf '%s' "$1" | grep -q '"decision":"block"'
+  grep -q '"decision":"block"' <<<"$1"
 }
 
 echo "--- instruction-ledger-gate ---"
@@ -129,7 +129,7 @@ if blocks "$out"; then
 else
   check "Stop blocks when one ledger item is pending" fail
 fi
-if printf '%s' "$out" | grep -q 'fix the bug'; then
+if grep -q 'fix the bug' <<<"$out"; then
   check "block reason names the pending item" pass
 else
   check "block reason names the pending item" fail
@@ -320,7 +320,7 @@ fi
 # Block reason must name the sanctioned resolve procedure.
 write_ledger "done" pending "done"
 out=$(run_stop)
-if blocks "$out" && printf '%s' "$out" | grep -q 'resolve-instruction-ledger.sh'; then
+if blocks "$out" && grep -q 'resolve-instruction-ledger.sh' <<<"$out"; then
   check "block reason documents sanctioned resolve procedure" pass
 else
   check "block reason documents sanctioned resolve procedure" fail
