@@ -322,7 +322,7 @@ for raw in "${skills_to_record[@]}"; do
   if declare -F sb_skill_canonical_name >/dev/null 2>&1; then
     skill="$(sb_skill_canonical_name "$skill")"
   else
-    while printf '%s' "$skill" | grep -qE '^[a-zA-Z0-9_-]+:'; do
+    while grep -qE '^[a-zA-Z0-9_-]+:' <<<"$skill"; do
       skill=$(printf '%s' "$skill" | sed 's/^[a-zA-Z0-9_-]*://')
     done
   fi

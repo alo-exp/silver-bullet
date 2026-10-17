@@ -84,23 +84,23 @@ ca_classify_command() {
     return 1
   fi
 
-  if printf '%s' "$cmd_first_line" | grep -qE '\bgit commit\b'; then
+  if grep -qE '\bgit commit\b' <<<"$cmd_first_line"; then
     is_intermediate=true
-  elif printf '%s' "$cmd_first_line" | grep -qE '\bgit push\b'; then
+  elif grep -qE '\bgit push\b' <<<"$cmd_first_line"; then
     is_intermediate=true
-  elif printf '%s' "$cmd_first_line" | grep -qE '\bgit (write-tree|commit-tree)\b'; then
+  elif grep -qE '\bgit (write-tree|commit-tree)\b' <<<"$cmd_first_line"; then
     is_intermediate=true
-  elif printf '%s' "$cmd_first_line" | grep -qE '\bgit hash-object\b.*\s-w\b'; then
+  elif grep -qE '\bgit hash-object\b.*\s-w\b' <<<"$cmd_first_line"; then
     is_intermediate=true
-  elif printf '%s' "$cmd_first_line" | grep -qE '\bgit update-ref\b.*\brefs/heads/'; then
+  elif grep -qE '\bgit update-ref\b.*\brefs/heads/' <<<"$cmd_first_line"; then
     is_intermediate=true
-  elif printf '%s' "$cmd_first_line" | grep -qE '\bgh pr create\b'; then
+  elif grep -qE '\bgh pr create\b' <<<"$cmd_first_line"; then
     is_completion=true
-  elif printf '%s' "$cmd_first_line" | grep -qE '\bgh pr merge\b'; then
+  elif grep -qE '\bgh pr merge\b' <<<"$cmd_first_line"; then
     is_completion=true
-  elif printf '%s' "$cmd_first_line" | grep -iqE '\bdeploy\b'; then
+  elif grep -iqE '\bdeploy\b' <<<"$cmd_first_line"; then
     is_completion=true
-  elif printf '%s' "$cmd_first_line" | grep -qE '\bgh release create\b'; then
+  elif grep -qE '\bgh release create\b' <<<"$cmd_first_line"; then
     is_completion=true
   fi
 

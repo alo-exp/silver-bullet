@@ -290,7 +290,7 @@ fi
 current_branch=""
 current_branch=$(git -C "$PWD" rev-parse --abbrev-ref HEAD 2>/dev/null || true)
 # Validate branch name: only allow safe characters
-if [[ -n "$current_branch" ]] && ! printf '%s' "$current_branch" | grep -qE '^[a-zA-Z0-9/_.-]+$'; then
+if [[ -n "$current_branch" ]] && ! grep -qE '^[a-zA-Z0-9/_.-]+$' <<<"$current_branch"; then
   current_branch=""
 fi
 # ── HOOK-14: Skip enforcement for read-only/conversational sessions ───────────
@@ -331,7 +331,7 @@ if git -C "$PWD" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
         # Sentinel is ASCII SOH (\001) — never present in a real file path, so
         # legitimate path-fragment patterns (e.g. REVIEW\.md, \.superpowers/) won't
         # match it, but catch-all patterns (.*, ., [^x]+, etc.) will — #90
-        if printf '\001' | grep -qE "$sb_extra" 2>/dev/null; then
+        if grep -qE "$sb_extra" <<<$'\001' 2>/dev/null; then
           printf '{"hookSpecificOutput":{"message":"⚠️ stop-check: transient_path_ignore_patterns is too broad (matches non-path control char) — ignoring. Fix your .silver-bullet.json."}}'
         else
           sb_transient_re="${sb_transient_re%)}|${sb_extra})"
@@ -670,7 +670,7 @@ for skill in $required_skills; do
     if sb_required_skill_is_recorded "$state_contents" "$skill"; then
       skill_recorded=true
     fi
-  elif printf '%s\n' "$state_contents" | grep -Fqx -- "$skill" 2>/dev/null; then
+  elif grep -Fqx -- "$skill" 2>/dev/null <<<"$state_contents"; then
     skill_recorded=true
   else
     skill_recorded=false

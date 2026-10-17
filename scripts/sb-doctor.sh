@@ -375,7 +375,7 @@ doctor_record_reconciler_d10() {
       ready)
         local ev
         ev="$(printf '%s' "$RECONCILER_JSON" | jq -r --arg t "$tool" '.components[]? | select(.component==$t) | .evidence[]?' 2>/dev/null || true)"
-        if printf '%s\n' "$ev" | grep -qxE 'provider_missing|version_drift|unsupported_package_manager|vendor_skip|skill_package_skew|health_identity_unproven'; then
+        if grep -qxE 'provider_missing|version_drift|unsupported_package_manager|vendor_skip|skill_package_skew|health_identity_unproven' <<<"$ev"; then
           record warn "D10-${tool}" "${tool} ready with advisory ($(printf '%s' "$ev" | paste -sd ',' -)) (activation=${activation})"
         else
           record pass "D10-${tool}" "${tool} ready (activation=${activation})"

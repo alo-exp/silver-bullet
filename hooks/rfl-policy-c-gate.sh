@@ -56,7 +56,7 @@ case "$tool_name" in
   Bash|Shell|exec_command)
     cmd="$(printf '%s' "$input" | jq -r '.tool_input.command // ""' 2>/dev/null || true)"
     prompt="$cmd"
-    if ! printf '%s' "$cmd" | grep -qiE 'agent-pi|agent-opencode|agent-codex/invoke|agent-claude/invoke|review-fix-ladder|rung_.*review|verify_1|verify_2|mark-ladder-status'; then
+    if ! grep -qiE 'agent-pi|agent-opencode|agent-codex/invoke|agent-claude/invoke|review-fix-ladder|rung_.*review|verify_1|verify_2|mark-ladder-status' <<<"$cmd"; then
       exit 0
     fi
     ;;

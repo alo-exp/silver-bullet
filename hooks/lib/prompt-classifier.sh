@@ -15,10 +15,10 @@ sb_prompt_is_informational_query() {
   case "$lower" in
     /*|sb:*|*@silver*|*'`sb:'*) return 1 ;;
   esac
-  if printf '%s' "$lower" | grep -Eq '(remaining deliverable|left to do|what are the|what is the|list the|show me the|status of|how far|where are we|what did we|recap|what.s next|outstanding|pending gate)'; then
+  if grep -Eq '(remaining deliverable|left to do|what are the|what is the|list the|show me the|status of|how far|where are we|what did we|recap|what.s next|outstanding|pending gate)' <<<"$lower"; then
     return 0
   fi
-  if printf '%s' "$lower" | grep -Eq '^(what|why|how|where|when|who|which|do you|does it|did we|are we|is it|can you explain|explain|summarize|describe)[[:space:]].*[?]?$'; then
+  if grep -Eq '^(what|why|how|where|when|who|which|do you|does it|did we|are we|is it|can you explain|explain|summarize|describe)[[:space:]].*[?]?$' <<<"$lower"; then
     return 0
   fi
   return 1
@@ -29,12 +29,12 @@ sb_prompt_is_orchestrator_followup() {
   local prompt words
   prompt="$(sb_prompt_trim "${1:-}")"
   [[ -n "$prompt" ]] || return 1
-  if printf '%s' "$prompt" | grep -qiE '^user directive:'; then
+  if grep -qiE '^user directive:' <<<"$prompt"; then
     return 0
   fi
   words=$(printf '%s' "$prompt" | tr -cs '[:alnum:]' '\n' | sed '/^$/d' | wc -l | tr -d ' ')
   [[ "${words:-0}" -le 12 ]] || return 1
-  printf '%s' "$prompt" | grep -qiE '^(yes|no|yep|nope|ok|okay|sure|proceed|continue|stop|cancel|go ahead|that one|the first|the second|option [0-9]|[0-9]+[.)]?[[:space:]])'
+  grep -qiE '^(yes|no|yep|nope|ok|okay|sure|proceed|continue|stop|cancel|go ahead|that one|the first|the second|option [0-9]|[0-9]+[.)]?[[:space:]])' <<<"$prompt"
 }
 
 sb_prompt_is_bare_work_request() {
@@ -54,7 +54,7 @@ sb_prompt_is_bare_work_request() {
   esac
 
   # Common conversational/status questions should not be forced through SB.
-  if printf '%s' "$lower" | grep -Eq '^(what|why|how|where|when|who|which|do you|does it|did we|are we|is it|can you explain|explain|summarize|describe)[[:space:]].*[?]?$'; then
+  if grep -Eq '^(what|why|how|where|when|who|which|do you|does it|did we|are we|is it|can you explain|explain|summarize|describe)[[:space:]].*[?]?$' <<<"$lower"; then
     return 1
   fi
 
@@ -62,7 +62,7 @@ sb_prompt_is_bare_work_request() {
   [[ "${word_count:-0}" -ge 3 ]] || return 1
 
   # Work-intent verbs that normally require SB orchestration or router triage.
-  printf '%s' "$lower" | grep -Eq '(^|[^[:alnum:]_])(add|build|change|create|cut|debug|deploy|document|fix|implement|improve|investigate|migrate|publish|refactor|release|research|review|ship|test|update|validate|verify)([^[:alnum:]_]|$)'
+  grep -Eq '(^|[^[:alnum:]_])(add|build|change|create|cut|debug|deploy|document|fix|implement|improve|investigate|migrate|publish|refactor|release|research|review|ship|test|update|validate|verify)([^[:alnum:]_]|$)' <<<"$lower"
 }
 
 # True when the prompt signals imminent final delivery (PR / release / deploy /
@@ -73,5 +73,5 @@ sb_prompt_is_delivery_adjacent() {
   prompt="$(sb_prompt_trim "${1:-}")"
   [[ -n "$prompt" ]] || return 1
   lower="$(printf '%s' "$prompt" | tr '[:upper:]' '[:lower:]')"
-  printf '%s' "$lower" | grep -Eq '(^|[^[:alnum:]_])(ship|deploy|release|publish|merge|cut a release|pull request|pr|gh pr|gh release|finalize|finish|hand off|handoff|deliver)([^[:alnum:]_]|$)'
+  grep -Eq '(^|[^[:alnum:]_])(ship|deploy|release|publish|merge|cut a release|pull request|pr|gh pr|gh release|finalize|finish|hand off|handoff|deliver)([^[:alnum:]_]|$)' <<<"$lower"
 }

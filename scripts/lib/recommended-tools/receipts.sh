@@ -376,7 +376,7 @@ rt_attestation_validate() {
   if [[ ${#errors[@]} -eq 0 ]]; then
     valid=true
   elif [[ "$activation" == "partial" || "$activation" == "none" ]] \
-     && printf '%s\n' "${errors[@]}" | grep -qvE '^(missing_tool:|missing_server:)'; then
+     && grep -qvE '^(missing_tool:|missing_server:)' <<<"${errors[@]}"; then
     valid=false
   elif [[ "$activation" == "partial" ]]; then
     valid=true

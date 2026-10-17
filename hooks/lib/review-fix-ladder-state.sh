@@ -220,15 +220,15 @@ sb_rfl_prompt_phase_hint() {
   local prompt="$1"
   local lower
   lower="$(sb_rfl_prompt_lower "$prompt")"
-  if printf '%s' "$lower" | grep -qiE 'rung_[0-9]+_review|review-only|raw findings only|review_raw'; then
+  if grep -qiE 'rung_[0-9]+_review|review-only|raw findings only|review_raw' <<<"$lower"; then
     printf 'review'
-  elif printf '%s' "$lower" | grep -qiE '/sb:triage|sb:triage|rung_[0-9]+_triage|triage_pass|classify'; then
+  elif grep -qiE '/sb:triage|sb:triage|rung_[0-9]+_triage|triage_pass|classify' <<<"$lower"; then
     printf 'triage'
-  elif printf '%s' "$lower" | grep -qiE 'rung_[0-9]+_fix|fix subagent|fix_pass|apply accept'; then
+  elif grep -qiE 'rung_[0-9]+_fix|fix subagent|fix_pass|apply accept' <<<"$lower"; then
     printf 'fix'
-  elif printf '%s' "$lower" | grep -qiE 'verify_2|second verify|verify pass 2'; then
+  elif grep -qiE 'verify_2|second verify|verify pass 2' <<<"$lower"; then
     printf 'verify_2'
-  elif printf '%s' "$lower" | grep -qiE 'verify-only|verify_1|readonly:\s*true|ladder_pass'; then
+  elif grep -qiE 'verify-only|verify_1|readonly:\s*true|ladder_pass' <<<"$lower"; then
     printf 'verify_1'
   else
     printf 'unknown'
@@ -239,7 +239,7 @@ sb_rfl_prompt_has_combined_verify() {
   local prompt="$1"
   local lower
   lower="$(sb_rfl_prompt_lower "$prompt")"
-  printf '%s' "$lower" | grep -qiE 'verify_1.*verify_2|two consecutive verify|2 verify pass|both verify pass|do 2 passes|two passes in one'
+  grep -qiE 'verify_1.*verify_2|two consecutive verify|2 verify pass|both verify pass|do 2 passes|two passes in one' <<<"$lower"
 }
 
 sb_rfl_prompt_has_review_triage_mix() {
@@ -247,8 +247,8 @@ sb_rfl_prompt_has_review_triage_mix() {
   local lower
   lower="$(sb_rfl_prompt_lower "$prompt")"
   local has_review=0 has_triage=0
-  printf '%s' "$lower" | grep -qiE 'review-only|raw findings' && has_review=1
-  printf '%s' "$lower" | grep -qiE 'sb:triage|/sb:triage|valid-blocker|valid-nonblocker|triage_pass' && has_triage=1
+  grep -qiE 'review-only|raw findings' <<<"$lower" && has_review=1
+  grep -qiE 'sb:triage|/sb:triage|valid-blocker|valid-nonblocker|triage_pass' <<<"$lower" && has_triage=1
   [[ "$has_review" -eq 1 && "$has_triage" -eq 1 ]]
 }
 
@@ -454,7 +454,7 @@ sb_rfl_advance_after_task() {
 
 sb_rfl_detect_pm_filing_command() {
   local cmd="$1"
-  printf '%s' "$cmd" | grep -qiE 'silver-add\.sh|adapter-create|gh issue create|/sb:add|sb:add'
+  grep -qiE 'silver-add\.sh|adapter-create|gh issue create|/sb:add|sb:add' <<<"$cmd"
 }
 
 sb_rfl_on_skill_invoke() {
