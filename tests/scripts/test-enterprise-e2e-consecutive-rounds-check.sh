@@ -120,6 +120,12 @@ tl_run env -u SILVER_BULLET_RUNTIME bash "$STAGED" "$TL_TMP/gates/a.md"
 assert_contains "single arg fills round1" "$TL_OUT" "round1: $TL_TMP/gates/a.md"
 assert_contains "second round from default" "$TL_OUT" "round2: $G/ROUND-6-GATES.md"
 
+# a failing awk degrades to unknown rather than aborting
+tl_stub awk 'exit 3'
+tl_run bash "$STAGED" --json "$TL_TMP/gates/a.md" "$TL_TMP/gates/b.md"
+assert_eq "awk failure yields unknown" "unknown" "$(jq -r '.round1.strict_clean' <<<"$TL_OUT")"
+rm -f "$TL_BIN/awk"
+
 # jq missing for --json
 tl_run env PATH="$(tl_path_without jq)" bash "$STAGED" --json "$TL_TMP/gates/a.md" "$TL_TMP/gates/b.md"
 assert_eq "--json without jq exits 2" "2" "$TL_STATUS"
