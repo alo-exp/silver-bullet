@@ -194,6 +194,7 @@ SCRIPTS_HOST_TOOLING_PREFIXES = (
     "scripts/lib/post-release-uninstall.sh",
     "scripts/prune-stale-claude",
     "scripts/watch-enterprise-e2e",
+    "scripts/check-repo-invariants.sh",  # CI invariants over the per-host manifests
 )
 
 INSTALLER_SCRIPTS = {

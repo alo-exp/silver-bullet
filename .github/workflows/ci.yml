@@ -99,7 +99,8 @@ jobs:
 
       - name: Install test prerequisites
         run: |
-          sudo apt-get install -y jq git
+          # expect drives the TUI contract tests (tests/tui-contract)
+          sudo apt-get install -y jq git expect
           python3 -m pip install -r requirements-dev.txt
 
       - name: Run all test suites
@@ -122,7 +123,7 @@ jobs:
 
       - name: Install test and coverage prerequisites
         run: |
-          sudo apt-get install -y jq git
+          sudo apt-get install -y jq git expect
           python3 -m pip install -r requirements-dev.txt
 
       - name: Measure Bash, Python and JS/TS coverage
