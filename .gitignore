@@ -35,3 +35,5 @@ node_modules/
 
 # Agent worktrees created inside the checkout
 .claude/worktrees/
+graphify-out/.graphify_*
+graphify-out/graph.html

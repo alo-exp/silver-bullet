@@ -17,25 +17,27 @@ Silver Bullet uses GitHub Actions. The workflows live in `.github/workflows/`; t
 
 ## What `ci.yml` checks
 
-The `validate` job on `ubuntu-latest` seeds the runtime environment through `hooks/lib/runtime-paths.sh`, then runs groups of checks:
+`ci.yml` has three jobs on `ubuntu-latest`:
 
-- **Manifests and versions** — JSON validity of the plugin, marketplace, hooks and config files; plugin, Cursor and Codex marketplace versions agree with each other and with the latest tag.
-- **Generated and mirrored artifacts** — committed Graphify artifacts are valid; `scripts/validate-plugin-mirror.sh` passes; `docs/workflows/` matches `templates/workflows/`; the dogfood `.silver-bullet.json` skill lists match the template; `required_deploy` is a subset of `all_tracked`; the fallback list in `scripts/deploy-gate-snippet.sh` matches the template.
-- **Hook hygiene** — every `hooks/*.sh`, `hooks/session-start` and `scripts/*.sh` is executable; every command in `hooks/hooks.json` points at an existing file; template placeholders are present; `shellcheck --exclude=SC2317,SC1091,SC2329` over hooks and scripts.
-- **Tests** — the hook, script, integration and harness suites, the Cursor runtime smoke (`scripts/release-live-matrix-cursor-smoke.sh`), the skill-reference integrity check, and a site HTML lint (`npx html-validate`, non-blocking). Optional Python packages such as `openpyxl` are installed for the skill unit tests.
+- **`validate`** — fast checks that need no test sandbox:
+  - `scripts/check-repo-invariants.sh`: JSON validity of the plugin, marketplace, hooks and config files; the Claude, Cursor and Codex marketplace versions match their `plugin.json`; every `hooks/*.sh`, `hooks/session-start` and `scripts/*.sh` is executable; every `${CLAUDE_PLUGIN_ROOT}/...` path in `hooks/hooks.json` exists; template placeholders are present; the fallback `REQUIRED_DEPLOY` list in `scripts/deploy-gate-snippet.sh` matches the template; every `required_*` skill list is a subset of `all_tracked` in both the template and `.silver-bullet.json`; the dogfood `.silver-bullet.json` skill lists match the template; `docs/workflows/` matches `templates/workflows/`. `tests/scripts/test-check-repo-invariants.sh` proves each check fails when its invariant is broken.
+  - Committed Graphify artifacts are valid; `plugin.json` matches the latest tag (warning only).
+  - ShellCheck through `scripts/lint-shell.sh`: application Bash at every severity, test Bash at `-S warning`; any finding fails the job.
+  - `scripts/validate-plugin-mirror.sh`, the Cursor runtime smoke (`scripts/release-live-matrix-cursor-smoke.sh`) and a site HTML lint (`npx html-validate`, non-blocking).
+- **`test`** — `bash tests/run-all-tests.sh --jobs 4`, once with `SILVER_BULLET_RUNTIME=claude` and once with `codex`. This is the same isolated runner as `make test` (per-test `HOME` and `TMPDIR`, optional host tools hidden), so a local `make test` reproduces it.
+- **`coverage`** — `bash tests/coverage/run-coverage.sh --jobs 4` measures Bash, Python and JS/TS coverage over the whole suite, writes the summary to the job summary and uploads `coverage-summary.{json,md}` as the `coverage-report` artifact. See [TESTING.md](TESTING.md#coverage).
 
 ## Reproducing CI locally
 
 ```bash
-make check                             # make lint + make test
+make check                             # make lint + make test (the validate checks run inside the test suite too)
+bash scripts/check-repo-invariants.sh  # the validate job's invariants alone
+SILVER_BULLET_RUNTIME=codex make test  # the codex leg of the test job
+make coverage                          # the coverage job
 make sync-check                        # runtime mirrors and the plugin mirror
-bash tests/run-all-tests.sh            # the test suites CI runs, with per-test HOME/TMPDIR isolation
-shellcheck --exclude=SC2317,SC1091,SC2329 hooks/*.sh hooks/lib/*.sh scripts/*.sh
 ```
 
-CI's shellcheck step accepts exit status 1 (findings) and fails only when shellcheck itself errors, while `make lint` fails on any finding; the existing hooks and scripts still carry findings.
-
-`tests/run-all-tests.sh` (`make test`) is the CI-equivalent entry point: it hides optional host tools (`graphify`, `claude`, `gh`, ...) from tests so local results match the clean CI runner. `bash scripts/pre-release-gate.sh` adds the release-only checks on top ([RELEASE.md](RELEASE.md#2-local-pre-release-gate)). See [TESTING.md](TESTING.md) for suites and options.
+`tests/run-all-tests.sh` hides optional host tools (`graphify`, `claude`, `gh`, ...) from tests so local results match the clean CI runner. `bash scripts/pre-release-gate.sh` adds the release-only checks on top ([RELEASE.md](RELEASE.md#2-local-pre-release-gate)). See [TESTING.md](TESTING.md) for suites and options.
 
 ## When CI is red
 

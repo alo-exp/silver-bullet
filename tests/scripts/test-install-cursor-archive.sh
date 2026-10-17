@@ -23,7 +23,7 @@ export RT_SKIP_VENDOR_DOCTOR=1
 
 # Use current tracked/untracked working-tree content without .git metadata so
 # pre-commit verification exercises the code under review rather than HEAD.
-rsync -a --exclude='.git/' "$REPO_ROOT/" "$ARCHIVE_ROOT/"
+rsync -a --exclude='.git/' --exclude='/.claude/worktrees/' --exclude='/.coverage-run/' "$REPO_ROOT/" "$ARCHIVE_ROOT/"
 
 if [[ -f "${ARCHIVE_ROOT}/scripts/generate-cursor-hooks.py" ]]; then
   pass "archive-shaped tree contains scripts/generate-cursor-hooks.py"
