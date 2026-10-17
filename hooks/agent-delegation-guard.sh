@@ -26,7 +26,6 @@ sb_adg_hook_field() {
   case "$field" in
     hook_event_name) grep -q '"hook_event_name"[[:space:]]*:[[:space:]]*"PreToolUse"' <<<"$json" && printf 'PreToolUse' || printf '%s' "$default" ;;
     tool_name) printf '%s' "$json" | grep -oE '"tool_name"[[:space:]]*:[[:space:]]*"[^"]+"' | head -1 | sed -E 's/.*"([^"]+)"$/\1/' || printf '%s' "$default" ;;
-    *) printf '%s' "$default" ;;
   esac
 }
 

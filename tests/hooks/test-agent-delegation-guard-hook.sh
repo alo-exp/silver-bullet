@@ -214,6 +214,5 @@ assert_eq "no-jq event name: PreToolUse recognised" "PreToolUse" "$(sb_adg_hook_
 assert_eq "no-jq event name: other event falls back to default" "dflt" "$(sb_adg_hook_field '{"hook_event_name":"PostToolUse"}' hook_event_name dflt)"
 assert_eq "no-jq tool_name is extracted" "Edit" "$(sb_adg_hook_field "$pre" tool_name dflt)"
 assert_eq "no-jq tool_name missing falls back to default" "dflt" "$(sb_adg_hook_field '{"x":1}' tool_name dflt)"
-assert_eq "no-jq unknown field returns default" "dflt" "$(sb_adg_hook_field "$pre" other dflt)"
 
 tl_results
