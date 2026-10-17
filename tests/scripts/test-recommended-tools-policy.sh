@@ -238,10 +238,11 @@ jq -e '.optimization_profiles.five_tool_routed.routes.sb_read == "leanctx" and .
 # parity covers the contract only: min_version, mcp_tool_prefix, stack_mode,
 # primary_fts, install_commands, routes.
 LEANCTX_PARITY_FILTER='.recommended_tools.leanctx | del(.enabled_by_user, .install_status, .install_failure_reason, .enforcement_suspended)'
-jq -S "$LEANCTX_PARITY_FILTER" "$REPO_ROOT/templates/silver-bullet.config.json.default" > /tmp/sb-leanctx-template.json
-jq -S "$LEANCTX_PARITY_FILTER" "$REPO_ROOT/.silver-bullet.json" > /tmp/sb-leanctx-live.json
-diff -q /tmp/sb-leanctx-template.json /tmp/sb-leanctx-live.json >/dev/null \
+jq -S "$LEANCTX_PARITY_FILTER" "$REPO_ROOT/templates/silver-bullet.config.json.default" > "${TMPDIR:-/tmp}/sb-leanctx-template.$$.json"
+jq -S "$LEANCTX_PARITY_FILTER" "$REPO_ROOT/.silver-bullet.json" > "${TMPDIR:-/tmp}/sb-leanctx-live.$$.json"
+diff -q "${TMPDIR:-/tmp}/sb-leanctx-template.$$.json" "${TMPDIR:-/tmp}/sb-leanctx-live.$$.json" >/dev/null \
   && pass "leanctx block parity template vs live" || fail "leanctx block parity template vs live"
+rm -f "${TMPDIR:-/tmp}/sb-leanctx-template.$$.json" "${TMPDIR:-/tmp}/sb-leanctx-live.$$.json"
 
 assert_grep "LEANCTX.md exists" \
   "$REPO_ROOT/docs/LEANCTX.md" \
