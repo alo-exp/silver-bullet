@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2218  # the file defines a temporary echo wrapper (fault injection) near its end
 # Failure-path tests for the orchestrator libs: every degrade-gracefully fallback
 # (`cmd || true`, `cmd || echo default`) is driven by injecting the failure it guards against
 # and asserting the observable result (fallback value used, state untouched, status code).
@@ -618,5 +619,25 @@ orch_write_state '{"scheduler":{"batch_dispatch":{"handoffs":[{"join_status":"pe
 orch_stub_failing jq 'batch_dispatch // empty'
 assert_eq "batch read failing: generic reason" "Orchestrator scheduler: pending dispatch or join work remains." "$(sb_scheduler_parent_stop_block_reason)"
 orch_unstub jq
+
+# ---------------------------------------------------------------------------------------
+echo "=== stdout write failures inside command substitutions ==="
+# If echo itself fails, the `[[ ]] && echo true || echo false` flag helper yields two lines
+# ("true" then "false"), which is not a JSON value; the callers must fail cleanly.
+reset
+echo() { builtin echo "$@"; [[ "${1:-}" != true ]]; }
+sb_orchestrator_directive_write silver-plan "" "" true && rc=0 || rc=$?
+assert_eq "directive_write: invalid blocking flag fails the write" 1 "$rc"
+assert_file_absent "directive_write: nothing written" "$DIRF"
+sb_orchestrator_directive_write_batch silver-plan "" "" true TPL '{"handoffs":[]}' && rc=0 || rc=$?
+assert_eq "directive_write_batch: invalid blocking flag fails the write" 1 "$rc"
+assert_file_absent "directive_write_batch: nothing written" "$DIRF"
+sb_orchestrator_event_record_advance silver-a silver-b true
+assert_eq "advance event: payload degrades to an empty object" "{}" "$(jq -c .payload "$EVENTS")"
+orch_write_state '{"scheduler":{"batches":[["AF-PLAN"]],"active_batch_index":0}}'
+SB_ORCHESTRATOR_PARALLEL_DISPATCH=1 sb_scheduler_refresh_active_batch_dispatch "$PROJ" && rc=0 || rc=$?
+assert_eq "dispatch refresh: invalid host flag fails the update" 1 "$rc"
+assert_eq "dispatch refresh: nothing recorded" null "$(orch_state_get .scheduler.batch_dispatch)"
+unset -f echo
 
 tl_results
