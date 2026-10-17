@@ -89,7 +89,8 @@ check_eq "edited staged copy is ignored, not credited" \
   "0" "$(field "$cov" "$FIX_REL/fallback.sh" "d['statements_covered']")"
 
 # 5. No tracing without SB_COV_DIR (tests outside coverage runs are unaffected).
-out="$(BASH_ENV="$ENV_FILE" bash -c 'printf "%s" "$-"')"
+# (env -u: inside a coverage run the runner exports SB_COV_DIR to every test.)
+out="$(env -u SB_COV_DIR BASH_ENV="$ENV_FILE" bash -c 'printf "%s" "$-"')"
 if [[ "$out" == *x* ]]; then fail "tracer stays off without SB_COV_DIR"; else pass "tracer stays off without SB_COV_DIR"; fi
 
 # 6. The tracer must not change a script's stdout or stderr.
