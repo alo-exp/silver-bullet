@@ -92,8 +92,9 @@ if [[ -f "$HOOKS_JSON" ]]; then
   if grep -q 'toolstack/token-compression-tools-gate' "$HOOKS_JSON"; then _check pass hooks:token_gate wired; else _check fail hooks:token_gate missing; fi
   if grep -q 'toolstack/session-bootstrap' "$HOOKS_JSON"; then _check pass hooks:session_bootstrap wired; else _check fail hooks:session_bootstrap missing; fi
   # rtk before context-mode
-  rtk_line=$(grep -n 'rtk hook cursor' "$HOOKS_JSON" | head -1 | cut -d: -f1)
-  cm_line=$(grep -nE 'context-mode.*hook cursor pretooluse|hook cursor pretooluse.*context-mode' "$HOOKS_JSON" | head -1 | cut -d: -f1)
+  # grep exits 1 when a hook is absent; under pipefail that must not abort the scorecard.
+  rtk_line=$(grep -n 'rtk hook cursor' "$HOOKS_JSON" | head -1 | cut -d: -f1 || true)
+  cm_line=$(grep -nE 'context-mode.*hook cursor pretooluse|hook cursor pretooluse.*context-mode' "$HOOKS_JSON" | head -1 | cut -d: -f1 || true)
   if [[ -n "$rtk_line" && -n "$cm_line" && "$rtk_line" -lt "$cm_line" ]]; then
     _check pass hooks:rtk_before_cm order
   else
