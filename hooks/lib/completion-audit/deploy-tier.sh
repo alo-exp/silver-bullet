@@ -2,7 +2,6 @@
 # completion-audit: TIER 2 final delivery gate
 ca_run_deploy_tier_gate() {
 project_root="$(dirname "$config_file")"
-[[ -z "$project_root" ]] && project_root="$PWD"
 # shellcheck disable=SC2154  # _lib_dir is set by completion-audit.sh
 if [[ -f "${_lib_dir}/enterprise-policy.sh" && -n "${config_file:-}" && -f "$config_file" ]]; then
   # shellcheck source=lib/enterprise-policy.sh
@@ -171,7 +170,6 @@ if [[ "$active_workflow" == "devops-cycle" ]]; then
   DEFAULT_REQUIRED="$DEVOPS_DEFAULT_REQUIRED"
 else
   project_root_for_composer="$(dirname "$config_file")"
-  [[ -z "$project_root_for_composer" ]] && project_root_for_composer="$PWD"
   wf_dir_for_composer="$project_root_for_composer/.planning/workflows"
   composer_wf_id="${SB_WORKFLOW_ID:-}"
   if [[ -z "$composer_wf_id" ]]; then
@@ -274,7 +272,6 @@ done
 if declare -f sb_qg_repo_requires_pre_ship_marker >/dev/null 2>&1 \
    && declare -f sb_qg_pre_ship_marker_recorded >/dev/null 2>&1; then
   project_root_qg="$(dirname "$config_file")"
-  [[ -z "$project_root_qg" || "$project_root_qg" == "." ]] && project_root_qg="$PWD"
   if sb_qg_repo_requires_pre_ship_marker "$project_root_qg"; then
     if [[ "$delivery_uses_devops_deploy" == true ]] \
        && declare -f sb_dqg_pre_ship_marker_recorded >/dev/null 2>&1; then
