@@ -6,8 +6,8 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/toolstack-helpers.sh"
 tl_init
 
-TS_STAGE="$TL_TMP/toolstack"
-ts_stage_deployed "$TS_STAGE"
+
+ts_stage_deployed
 repo="$TL_TMP/repo"; tl_git_repo "$repo"
 mkdir -p "$repo/graphify-out"
 hash="$(printf '%s' "$repo" | sha256sum | awk '{print substr($1,1,16)}')"
@@ -84,5 +84,13 @@ assert_contains "stop event reason" "$(jq -r '.reason' <<<"$TL_OUT")" "GRAPHIFY 
 date +%s >"$state"
 ts_gate graphify-gate.sh "$edit" "$repo"; expect_silent "fresh query allows edit"
 ts_gate graphify-gate.sh "$shell" "$repo"; expect_silent "fresh query allows shell"
+
+# unreadable stdin and malformed payloads fail open
+mkdir -p "$TL_TMP/catfail"
+printf '#!/bin/sh\nexit 1\n' >"$TL_TMP/catfail/cat"
+chmod +x "$TL_TMP/catfail/cat"
+tl_run_stdin "$edit" env PATH="$TL_TMP/catfail:$PATH" bash -c 'cd "$1" && exec bash "$2"' _ "$repo" "$TS_STAGE/graphify-gate.sh"
+expect_silent "unreadable stdin (cat fails)"
+ts_gate graphify-gate.sh "$(ts_payload Bash "" "make build")" "$repo"; expect_silent "non-substantive, non-exempt shell"
 
 tl_results
