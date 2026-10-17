@@ -17,7 +17,8 @@ dg_run() {
   shift 3
   [[ "$hook" == /* ]] || hook="$TL_REPO_ROOT/$hook"
   TL_STATUS=0
-  printf '%s' "$json" | (cd "$dir" && env "$@" bash "$hook") >"$TL_TMP/.out" 2>"$TL_TMP/.err" || TL_STATUS=$?
+  printf '%s' "$json" >"$TL_TMP/.in"
+  (cd "$dir" && env "$@" bash "$hook") <"$TL_TMP/.in" >"$TL_TMP/.out" 2>"$TL_TMP/.err" || TL_STATUS=$?
   TL_OUT="$(cat "$TL_TMP/.out")"
   TL_ERR="$(cat "$TL_TMP/.err")"
 }
@@ -27,8 +28,9 @@ dg_run_nolib() {
   local hook="$1" json="$2"
   [[ "$hook" == /* ]] || hook="$TL_REPO_ROOT/$hook"
   TL_STATUS=0
-  printf '%s' "$json" | bash -c 'cd() { return 1; }; export -f cd; exec bash "$0"' "$hook" \
-    >"$TL_TMP/.out" 2>"$TL_TMP/.err" || TL_STATUS=$?
+  printf '%s' "$json" >"$TL_TMP/.in"
+  bash -c 'cd() { return 1; }; export -f cd; exec bash "$0"' "$hook" \
+    <"$TL_TMP/.in" >"$TL_TMP/.out" 2>"$TL_TMP/.err" || TL_STATUS=$?
   TL_OUT="$(cat "$TL_TMP/.out")"
   TL_ERR="$(cat "$TL_TMP/.err")"
 }
@@ -59,8 +61,9 @@ dg_run_gate_missing() {
   shift 3
   [[ "$hook" == /* ]] || hook="$TL_REPO_ROOT/$hook"
   TL_STATUS=0
-  printf '%s' "$json" | (cd "$dir" && env "$@" bash -c 'sb_project_active() { return 0; }; export -f sb_project_active; exec bash "$0"' "$hook") \
-    >"$TL_TMP/.out" 2>"$TL_TMP/.err" || TL_STATUS=$?
+  printf '%s' "$json" >"$TL_TMP/.in"
+  (cd "$dir" && env "$@" bash -c 'sb_project_active() { return 0; }; export -f sb_project_active; exec bash "$0"' "$hook") \
+    <"$TL_TMP/.in" >"$TL_TMP/.out" 2>"$TL_TMP/.err" || TL_STATUS=$?
   TL_OUT="$(cat "$TL_TMP/.out")"
   TL_ERR="$(cat "$TL_TMP/.err")"
 }
@@ -79,8 +82,9 @@ dg_run_nolib_in() {
   shift 3
   [[ "$hook" == /* ]] || hook="$TL_REPO_ROOT/$hook"
   TL_STATUS=0
-  printf '%s' "$json" | (cd "$dir" && env "$@" bash -c 'cd() { return 1; }; export -f cd; exec bash "$0"' "$hook") \
-    >"$TL_TMP/.out" 2>"$TL_TMP/.err" || TL_STATUS=$?
+  printf '%s' "$json" >"$TL_TMP/.in"
+  (cd "$dir" && env "$@" bash -c 'cd() { return 1; }; export -f cd; exec bash "$0"' "$hook") \
+    <"$TL_TMP/.in" >"$TL_TMP/.out" 2>"$TL_TMP/.err" || TL_STATUS=$?
   TL_OUT="$(cat "$TL_TMP/.out")"
   TL_ERR="$(cat "$TL_TMP/.err")"
 }
@@ -92,8 +96,9 @@ dg_run_with_fn() {
   shift 4
   [[ "$hook" == /* ]] || hook="$TL_REPO_ROOT/$hook"
   TL_STATUS=0
-  printf '%s' "$json" | (cd "$dir" && env "$@" bash -c "$body"'; exec bash "$0"' "$hook") \
-    >"$TL_TMP/.out" 2>"$TL_TMP/.err" || TL_STATUS=$?
+  printf '%s' "$json" >"$TL_TMP/.in"
+  (cd "$dir" && env "$@" bash -c "$body"'; exec bash "$0"' "$hook") \
+    <"$TL_TMP/.in" >"$TL_TMP/.out" 2>"$TL_TMP/.err" || TL_STATUS=$?
   TL_OUT="$(cat "$TL_TMP/.out")"
   TL_ERR="$(cat "$TL_TMP/.err")"
 }
