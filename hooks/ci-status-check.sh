@@ -71,9 +71,9 @@ fi
 
 # Trigger scope differs by event (see header comment above):
 if [[ "$hook_event" == "PreToolUse" ]]; then
-  printf '%s' "$cmd" | grep -qE '\bgit push\b|\bgh pr (create|merge)\b|\bgh release create\b' || exit 0
+  grep -qE '\bgit push\b|\bgh pr (create|merge)\b|\bgh release create\b' <<<"$cmd" || exit 0
 else
-  printf '%s' "$cmd" | grep -qE '\bgit (commit|push)\b|\bgh pr (create|merge)\b|\bgh release create\b' || exit 0
+  grep -qE '\bgit (commit|push)\b|\bgh pr (create|merge)\b|\bgh release create\b' <<<"$cmd" || exit 0
 fi
 
 # ── Resolve config file — exit silently if not a Silver Bullet project ───────
@@ -162,15 +162,15 @@ if [[ "$conclusion" == "failure" ]] || [[ "$conclusion" == "cancelled" ]]; then
   # ── CI-fix bypass (issue #95): allow pushes that ARE the fix ─────────────
   # Option B: commit message starts with fix(ci): / ci: or contains [ci-fix]
   # Option A: diff touches .github/workflows/, tests/, or package.json
-  if printf '%s' "$cmd" | grep -qE '\bgit push\b'; then
+  if grep -qE '\bgit push\b' <<<"$cmd"; then
     _top_msg=$(git log -1 --format="%s" 2>/dev/null || true)
-    if printf '%s' "$_top_msg" | grep -qiE '^(fix\(ci\)|ci):|\[ci-fix\]'; then
+    if grep -qiE '^(fix\(ci\)|ci):|\[ci-fix\]' <<<"$_top_msg"; then
       printf '{"hookSpecificOutput":{"message":"ℹ️ CI is red but commit matches ci-fix convention — allowing push."}}'
       exit 0
     fi
     if git rev-parse "@{u}" >/dev/null 2>&1; then
       _changed=$(git diff "@{u}..HEAD" --name-only 2>/dev/null || true)
-      if [[ -n "$_changed" ]] && printf '%s' "$_changed" | grep -qE '^\.github/workflows/|^tests/|^package\.json$'; then
+      if [[ -n "$_changed" ]] && grep -qE '^\.github/workflows/|^tests/|^package\.json$' <<<"$_changed"; then
         printf '{"hookSpecificOutput":{"message":"ℹ️ CI is red but push touches CI/test files — allowing push (suspected CI fix)."}}'
         exit 0
       fi
@@ -193,8 +193,8 @@ If you need to push a CI fix, one of the following auto-bypasses the block:
   # can cause deadlock (can't commit the CI fix because PostToolUse blocks it).
   # Push, PR, and release operations are still hard-blocked (remote-state mutations).
   if [[ "$hook_event" == "PostToolUse" ]] && \
-     printf '%s' "$cmd" | grep -qE '\bgit commit\b' && \
-     ! printf '%s' "$cmd" | grep -qE '\bgit push\b|\bgh pr\b|\bgh release\b'; then
+     grep -qE '\bgit commit\b' <<<"$cmd" && \
+     ! grep -qE '\bgit push\b|\bgh pr\b|\bgh release\b' <<<"$cmd"; then
     json_msg=$(printf '%s' "$msg" | jq -Rs '.')
     printf '{"hookSpecificOutput":{"message":%s}}' "$json_msg"
   else
