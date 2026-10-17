@@ -143,6 +143,36 @@ sb_agent_delegation_path_in_scope "$ROOT/elsewhere/f" "$ROOT" && rc=0 || rc=$?
 unset -f cd
 assert_eq "the only scope entry unnormalizable: unrelated target not in scope" 1 "$rc"
 
+echo "=== symlinks ==="
+mkdir -p "$ROOT/real" "$ROOT/links"
+ln -sfn "$ROOT/real" "$ROOT/links/abs"
+ln -sfn ../real "$ROOT/links/rel"
+: >"$ROOT/real/file.txt"
+ln -sfn "$ROOT/real/file.txt" "$ROOT/links/filelink"
+ln -sfn ../real/file.txt "$ROOT/links/relfile"
+ln -sfn "$ROOT/links/loop" "$ROOT/links/loop"
+assert_eq "directory symlink resolved physically" "$ROOT/real/new.txt" "$(sb_agent_delegation_normalize_path "$ROOT/links/abs/new.txt" "$ROOT")"
+assert_eq "relative directory symlink resolved physically" "$ROOT/real/new.txt" "$(sb_agent_delegation_normalize_path "$ROOT/links/rel/new.txt" "$ROOT")"
+assert_eq "dot-dot after a symlink starts from the real directory" "$ROOT/free.txt" "$(sb_agent_delegation_normalize_path "$ROOT/links/abs/../free.txt" "$ROOT")"
+assert_eq "file symlink (absolute) resolved" "$ROOT/real/file.txt" "$(sb_agent_delegation_normalize_path "$ROOT/links/filelink" "$ROOT")"
+assert_eq "file symlink (relative) resolved" "$ROOT/real/file.txt" "$(sb_agent_delegation_normalize_path "$ROOT/links/relfile" "$ROOT")"
+sb_agent_delegation_normalize_path "$ROOT/links/loop" "$ROOT" >/dev/null && rc=0 || rc=$?
+assert_eq "symlink loop fails" 1 "$rc"
+tl_stub readlink 'exit 1'
+hash -r
+sb_agent_delegation_normalize_path "$ROOT/links/filelink" "$ROOT" >/dev/null && rc=0 || rc=$?
+rm -f "$TL_BIN/readlink"; hash -r
+assert_eq "unreadable symlink fails" 1 "$rc"
+# A symlinked scope entry owns the target of the link; links pointing into the scope are in scope.
+jq -n --arg r "$ROOT" '{active:true,host:"codex",task_id:"T1",work_dir:$r,ownership_scope:[($r+"/links/abs")]}' >"$STATE"
+sb_agent_delegation_path_in_scope "$ROOT/real/anything.txt" "$ROOT" && rc=0 || rc=$?
+assert_eq "symlinked scope entry owns the link target" 0 "$rc"
+sb_agent_delegation_path_in_scope "$ROOT/links/rel/anything.txt" "$ROOT" && rc=0 || rc=$?
+assert_eq "another link to the same target is in scope" 0 "$rc"
+sb_agent_delegation_path_in_scope "$ROOT/elsewhere/anything.txt" "$ROOT" && rc=0 || rc=$?
+assert_eq "unrelated path stays out of scope" 1 "$rc"
+sb_agent_delegation_deactivate
+
 echo "=== deactivate ==="
 sb_agent_delegation_deactivate
 assert_file_absent "deactivate removes state" "$STATE"
