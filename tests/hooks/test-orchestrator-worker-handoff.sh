@@ -70,7 +70,7 @@ assert_eq "flow review request token" "$(sb_orchestrator_flow_to_skill 'FLOW-REV
 assert_eq "no silver-FLOW prefix fallback" "$(sb_orchestrator_flow_to_skill 'FLOW-VERIFY' | grep -c 'silver-FLOW-' || true)" "0"
 
 ctx="$(sb_orchestrator_directive_context_block)"
-if printf '%s' "$ctx" | grep -qF 'next_worker_template: EXECUTE.md'; then
+if grep -qF 'next_worker_template: EXECUTE.md' <<<"$ctx"; then
   echo "PASS: context includes worker template"
   PASS=$((PASS + 1))
 else

@@ -45,7 +45,7 @@ test_guard_rejects_symlink() {
   local out rc=0
   out=$(bash -c "source '$LIB'; sb_guard_nofollow '$link'" 2>&1) || rc=$?
   rm -f "$link" "$target"
-  if [[ $rc -eq 1 ]] && printf '%s' "$out" | grep -q 'refusing to write through symlink'; then
+  if [[ $rc -eq 1 ]] && grep -q 'refusing to write through symlink' <<<"$out"; then
     pass "sb_guard_nofollow rejects symlink (exit 1 + stderr)"
   else
     fail "sb_guard_nofollow rejects symlink — got rc=$rc out='$out'"

@@ -37,7 +37,7 @@ check() {
 
 is_denied() {
   local output="$1"
-  [[ -n "$output" ]] && printf '%s' "$output" | grep -qE '"permissionDecision"\s*:\s*"deny"|"decision"\s*:\s*"block"'
+  [[ -n "$output" ]] && grep -qE '"permissionDecision"\s*:\s*"deny"|"decision"\s*:\s*"block"' <<<"$output"
 }
 
 run_hook() {

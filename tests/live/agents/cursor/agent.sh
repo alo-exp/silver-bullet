@@ -60,12 +60,12 @@ agent_preflight() {
     return 0
   fi
   status_out="$("$cli" status 2>&1 || true)"
-  if printf '%s' "$status_out" | grep -qiE 'not logged in|authentication required'; then
+  if grep -qiE 'not logged in|authentication required' <<<"$status_out"; then
     printf 'ERROR: cursor-agent is not logged in (run: cursor-agent login, or set CURSOR_API_KEY)\n' >&2
     printf '%s\n' "$status_out" >&2
     return 1
   fi
-  if ! printf '%s' "$status_out" | grep -qiE 'logged in as|email:|account:'; then
+  if ! grep -qiE 'logged in as|email:|account:' <<<"$status_out"; then
     printf 'ERROR: cursor-agent login status unclear; expected logged-in account details\n' >&2
     printf '%s\n' "$status_out" >&2
     return 1

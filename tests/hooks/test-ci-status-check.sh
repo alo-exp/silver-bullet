@@ -81,7 +81,7 @@ run_hook_pretooluse() {
 assert_passes() {
   local label="$1"
   local output="$2"
-  if ! printf '%s' "$output" | grep -qE '"decision"\s*:\s*"block"|"permissionDecision"\s*:\s*"deny"'; then
+  if ! grep -qE '"decision"\s*:\s*"block"|"permissionDecision"\s*:\s*"deny"' <<<"$output"; then
     echo "  ✅ $label"
     PASS=$((PASS + 1))
   else
@@ -94,7 +94,7 @@ assert_contains() {
   local label="$1"
   local output="$2"
   local needle="$3"
-  if printf '%s' "$output" | grep -q "$needle"; then
+  if grep -q "$needle" <<<"$output"; then
     echo "  ✅ $label"
     PASS=$((PASS + 1))
   else
@@ -186,7 +186,7 @@ teardown
 # Guard: git push at PostToolUse must STILL emit decision:block when CI is red
 setup
 out=$(run_hook "git push" '{"status":"completed","conclusion":"failure"}')
-if printf '%s' "$out" | grep -qE '"decision"\s*:\s*"block"'; then
+if grep -qE '"decision"\s*:\s*"block"' <<<"$out"; then
   echo "  ✅ Bug2 guard: git push at PostToolUse still decision:blocked when CI red"
   PASS=$((PASS + 1))
 else
@@ -201,7 +201,7 @@ teardown
 # through as if they were commit-only.
 setup
 out=$(run_hook "git commit -m fix && git push" '{"status":"completed","conclusion":"failure"}')
-if printf '%s' "$out" | grep -qE '"decision"\s*:\s*"block"'; then
+if grep -qE '"decision"\s*:\s*"block"' <<<"$out"; then
   echo "  ✅ Bug2 guard: compound 'git commit && git push' at PostToolUse still decision:blocked when CI red"
   PASS=$((PASS + 1))
 else

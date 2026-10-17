@@ -68,7 +68,7 @@ exit 0
 EOF
   cat >"$MOCK_BIN/curl" <<'EOF'
 #!/usr/bin/env bash
-if printf '%s' "$*" | grep -q 'agentmemory/health'; then exit 0; fi
+if grep -q 'agentmemory/health' <<<"$*"; then exit 0; fi
 exit 0  # every other request succeeds offline; never reach the real network
 EOF
   chmod +x "$MOCK_BIN/agentmemory" "$MOCK_BIN/curl"
@@ -182,7 +182,7 @@ install_mock_agentmemory
 # Force unhealthy server: mock curl fails health
 cat >"$MOCK_BIN/curl" <<'EOF'
 #!/usr/bin/env bash
-if printf '%s' "$*" | grep -q 'agentmemory/health'; then exit 1; fi
+if grep -q 'agentmemory/health' <<<"$*"; then exit 1; fi
 exit 1  # every other request fails offline; never reach the real network
 EOF
 chmod +x "$MOCK_BIN/curl"

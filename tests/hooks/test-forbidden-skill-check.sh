@@ -69,7 +69,7 @@ run_hook() {
 is_denied() {
   local output="$1"
   [[ -z "$output" ]] && return 1
-  printf '%s' "$output" | grep -q '"permissionDecision".*"deny"'
+  grep -q '"permissionDecision".*"deny"' <<<"$output"
 }
 
 assert_blocks() {

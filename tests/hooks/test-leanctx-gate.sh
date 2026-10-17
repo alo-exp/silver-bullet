@@ -31,7 +31,7 @@ trap cleanup_all EXIT
 assert_deny() {
   local label="$1" output="$2" needle="${3:-USAGE REQUIRED}"
   if printf '%s' "$output" | jq -e '.hookSpecificOutput.permissionDecision == "deny"' >/dev/null 2>&1 \
-    && printf '%s' "$output" | grep -qF "$needle"; then
+    && grep -qF "$needle" <<<"$output"; then
     echo "  PASS: $label"
     PASS=$((PASS + 1))
   else

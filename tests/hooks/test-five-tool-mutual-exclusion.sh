@@ -76,7 +76,7 @@ assert_deny_hook() {
   out="$(cd "$TMP" && SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="$STATE_DIR" \
     printf '%s' "$input" | bash "$COORD_HOOK" 2>/dev/null || true)"
   if printf '%s' "$out" | jq -e '.hookSpecificOutput.permissionDecision == "deny"' >/dev/null 2>&1 \
-    && printf '%s' "$out" | grep -qF "$needle"; then
+    && grep -qF "$needle" <<<"$out"; then
     pass "$label"
   else
     fail "$label — got: $out"
@@ -155,7 +155,7 @@ read_dirty=$(jq -n \
 read_dirty_out="$(cd "$TMP" && SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="$STATE_DIR" \
   printf '%s' "$read_dirty" | bash "$COORD_HOOK" 2>/dev/null || true)"
 if printf '%s' "$read_dirty_out" | jq -e '.hookSpecificOutput.permissionDecision == "deny"' >/dev/null 2>&1 \
-  && printf '%s' "$read_dirty_out" | grep -q 'sb_stack_double_compression'; then
+  && grep -q 'sb_stack_double_compression' <<<"$read_dirty_out"; then
   pass "hook blocks native Read recovery when mutex dirty"
 else
   fail "hook blocks native Read recovery when mutex dirty — got: $read_dirty_out"
@@ -179,7 +179,7 @@ allow_input=$(jq -n \
 allow_out="$(cd "$TMP" && SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="$STATE_DIR" \
   printf '%s' "$allow_input" | bash "$COORD_HOOK" 2>/dev/null || true)"
 if printf '%s' "$allow_out" | jq -e '.hookSpecificOutput.permissionDecision == "deny"' >/dev/null 2>&1 \
-  && printf '%s' "$allow_out" | grep -q 'sb_stack_double_compression'; then
+  && grep -q 'sb_stack_double_compression' <<<"$allow_out"; then
   fail "hook blocks Read after recovery — got: $allow_out"
 else
   pass "hook allows Read after recovery"

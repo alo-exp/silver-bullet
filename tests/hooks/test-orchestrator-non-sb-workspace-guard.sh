@@ -49,7 +49,7 @@ assert_missing() {
 
 assert_not_contains() {
   local name="$1" hay="$2" needle="$3"
-  if ! printf '%s' "$hay" | grep -qF "$needle"; then
+  if ! grep -qF "$needle" <<<"$hay"; then
     echo "PASS: $name"
     PASS=$((PASS + 1))
   else
@@ -60,7 +60,7 @@ assert_not_contains() {
 
 assert_contains() {
   local name="$1" hay="$2" needle="$3"
-  if printf '%s' "$hay" | grep -qF "$needle"; then
+  if grep -qF "$needle" <<<"$hay"; then
     echo "PASS: $name"
     PASS=$((PASS + 1))
   else
