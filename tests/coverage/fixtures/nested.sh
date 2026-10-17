@@ -23,7 +23,14 @@ held() {
     --held \
     "$([[ "$held" == true ]] && echo true || echo false)")"
 }
+drain() {
+  local item
+  while IFS= read -r item || [[ -n "$item" ]]; do
+    : "$item"
+  done < <(lower Feed)
+}
 lower Shout >/dev/null
 join >/dev/null
 held true >/dev/null
 held false >/dev/null
+drain
