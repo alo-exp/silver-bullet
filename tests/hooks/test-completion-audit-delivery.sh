@@ -118,6 +118,17 @@ state inst-b
 run_ca PreToolUse "$PR" SB_WORKFLOW_ID="$WFID"
 assert_contains "other composers keep the standard list" "$(message)" "/inst-a"
 state inst-a
+printf 'composer: silver-devops\n## Flow Log\n| 1 | a | complete |\n' >"$PROJ/.planning/workflows/$WFID.md"
+REAL_AWK="$(command -v awk)"; export REAL_AWK
+tl_stub awk '[[ "$*" == *'^composer'* ]] && exit 1; exec "$REAL_AWK" "$@"'
+state inst-b
+run_ca PreToolUse "$PR" SB_WORKFLOW_ID="$WFID"
+assert_contains "failing awk while reading the composer keeps the standard list" "$(message)" "/inst-a"
+rm -f "$TL_BIN/awk"
+run_ca PreToolUse "$PR" SB_WORKFLOW_ID="$WFID"
+assert_eq "with awk working the same devops composer uses its own list" "allow" "$(decision)"
+printf 'composer: silver-feature\n## Flow Log\n| 1 | a | complete |\n' >"$PROJ/.planning/workflows/$WFID.md"
+state inst-a
 run_ca PreToolUse "export SB_WORKFLOW_ID=$WFID; $PR"
 assert_eq "workflow id taken from the command assignment" "allow" "$(decision)"
 
