@@ -64,7 +64,6 @@ ca_run_planning_tier_gate() {
       exit 0
     fi
     _pr="$(dirname "$config_file")"
-    [[ -z "$_pr" ]] && _pr="$PWD"
     vfile=""
     for candidate in "$_pr/.planning/VERIFICATION.md" "$_pr/.planning/phases"/*/*-VERIFICATION.md; do
       [[ -f "$candidate" && ! -L "$candidate" ]] || continue
