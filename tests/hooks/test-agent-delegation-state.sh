@@ -18,13 +18,14 @@ sb_agent_delegation_normalize_path "" "$ROOT" && rc=0 || rc=$?
 assert_eq "empty path rejected" 1 "$rc"
 assert_eq "relative path resolved against repo root" "$ROOT/src/a.txt" "$(sb_agent_delegation_normalize_path src/a.txt "$ROOT")"
 assert_eq "absolute path kept" "$ROOT/src/a.txt" "$(sb_agent_delegation_normalize_path "$ROOT/src/a.txt" "$ROOT")"
-assert_eq "dot segments in the parent are collapsed" "$ROOT/src/a.txt" "$(sb_agent_delegation_normalize_path "$ROOT/src/../src/a.txt" "$ROOT")"
-# Regression: a nonexistent parent directory must fail, not silently become "/<basename>".
-out="$(sb_agent_delegation_normalize_path "$ROOT/nodir/deep/file.txt" "$ROOT")" && rc=0 || rc=$?
-assert_eq "nonexistent parent returns failure" 1 "$rc"
-assert_eq "nonexistent parent prints no fabricated path" "" "$out"
-sb_agent_delegation_normalize_path "missing/file.txt" "$ROOT" >/dev/null && rc=0 || rc=$?
-assert_eq "relative path under a missing dir returns failure" 1 "$rc"
+# Any ".." component is rejected outright: the path cannot be trusted to stay inside a scope.
+sb_agent_delegation_normalize_path "$ROOT/src/../src/a.txt" "$ROOT" >/dev/null && rc=0 || rc=$?
+assert_eq "dot-dot component rejected" 1 "$rc"
+# Regression: a nonexistent parent must never be fabricated into "/<basename>". The nearest
+# existing ancestor is resolved and the missing components are re-appended, so the scope check
+# still works for a new file in a new subdirectory (writing src/newdir/a.txt into an owned src/).
+assert_eq "missing parents re-appended to the resolved ancestor" "$ROOT/nodir/deep/file.txt" "$(sb_agent_delegation_normalize_path "$ROOT/nodir/deep/file.txt" "$ROOT")"
+assert_eq "relative path under a missing dir resolved against the root" "$ROOT/missing/file.txt" "$(sb_agent_delegation_normalize_path "missing/file.txt" "$ROOT")"
 sb_agent_delegation_normalize_path "$ROOT/src/.." "$ROOT" >/dev/null && rc=0 || rc=$?
 assert_eq "path whose last segment is .. rejected" 1 "$rc"
 
@@ -107,7 +108,7 @@ assert_eq "relative scope entry resolved against the repo root" 0 "$rc"
 sb_agent_delegation_path_in_scope "$ROOT/srcx/a.txt" "$ROOT" && rc=0 || rc=$?
 assert_eq "sibling with common prefix not in scope" 1 "$rc"
 sb_agent_delegation_path_in_scope "$ROOT/nodir/x/f" "$ROOT" && rc=0 || rc=$?
-assert_eq "scope entry with missing parent never matches" 1 "$rc"
+assert_eq "scope entry that does not exist yet still owns its subtree" 0 "$rc"
 sb_agent_delegation_path_in_scope "$ROOT/missing/deep/f" "$ROOT" && rc=0 || rc=$?
 assert_eq "target with missing parent not in scope" 1 "$rc"
 sb_agent_delegation_path_in_scope "$ROOT/hooks/x.sh" "$ROOT" && rc=0 || rc=$?
