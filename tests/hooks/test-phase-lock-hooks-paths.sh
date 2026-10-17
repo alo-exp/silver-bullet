@@ -58,6 +58,10 @@ assert_eq "peek: preserves the caller's exit status" 7 "$(peek_rc "$P/.planning/
 assert_eq "peek: jq missing preserves status quietly" "rc=0" "$(cd "$P/.planning/phases/099-x" && PATH="$(tl_path_without jq)" bash -c 'source "$0/hooks/lib/runtime-paths.sh"; source "$0/hooks/lib/phase-path.sh"; _phase_lock_peek_on_exit; echo "rc=$?"' "$TL_REPO_ROOT" 2>/dev/null)"
 assert_contains "peek: unparsable owner JSON falls back to ?" "$(peek_run "$P/.planning/phases/099-x" 'not json')" "locked by ?"
 
+# a failing resolver must not change the exit status the EXIT trap preserves
+peek_fail_rc="$(cd "$P/.planning/phases/099-x" && bash -c 'source "$0/hooks/lib/runtime-paths.sh"; source "$0/hooks/lib/phase-path.sh"; _resolve_phase_from_path() { return 1; }; (exit 7); _phase_lock_peek_on_exit' "$TL_REPO_ROOT" >/dev/null 2>&1; echo $?)"
+assert_eq "peek: failing phase resolver is tolerated and the caller's status (7) preserved" 7 "$peek_fail_rc"
+
 # ======================= phase-lock-claim.sh =============================
 H=hooks/phase-lock-claim.sh
 reset
@@ -142,6 +146,16 @@ dg_run "$P" "$H" "$(jq -cn --arg i "*** Begin Patch
 *** End Patch" '{hook_event_name:"PreToolUse",tool_name:"apply_patch",tool_input:{input:$i},session_id:"s6"}')"
 assert_eq "claim: apply_patch header drives phase resolution" "099" "$(cat "$(manifest s6)" 2>/dev/null || true)"
 reset
+
+# resolver failing inside the claim hook: no claim, exit 0, helper never called
+SF1="$TL_TMP/sfail"; dg_stage_hooks "$SF1"
+printf '\n_resolve_phase_from_path() { return 1; }\n' >>"$SF1/hooks/lib/phase-path.sh"
+reset
+dg_run "$P" "$SF1/hooks/phase-lock-claim.sh" "$(edit "$P/.planning/phases/099-x/a.md" sf1)"
+assert_eq "claim: failing phase resolver exits 0" 0 "$TL_STATUS"
+assert_eq "claim: failing phase resolver => no output" "" "$TL_OUT"
+assert_file_absent "claim: failing phase resolver => no manifest" "$(manifest sf1)"
+assert_file_absent "claim: failing phase resolver => helper never called" "$LOG"
 
 # ======================= phase-lock-heartbeat.sh =========================
 H=hooks/phase-lock-heartbeat.sh
