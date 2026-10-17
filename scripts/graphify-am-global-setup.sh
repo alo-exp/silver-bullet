@@ -100,21 +100,6 @@ if [[ "$APPLY_ALL" -eq 1 ]]; then
   exit "$rc"
 fi
 
-if [[ "$HOST" == "all" ]]; then
-  APPLY_ALL=1
-  mapfile -t detected < <(ga_detect_configured_hosts)
-  if [[ "${#detected[@]}" -eq 0 ]]; then
-    echo "No configured hosts detected." >&2
-    exit 1
-  fi
-  rc=0
-  for h in "${detected[@]}"; do
-    run_for_host "$h" || rc=1
-    echo ""
-  done
-  exit "$rc"
-fi
-
 ga_validate_host "$HOST" || {
   echo "Unsupported host: $HOST (use: ${GA_SUPPORTED_HOSTS})" >&2
   exit 2
