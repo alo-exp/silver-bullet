@@ -14,22 +14,22 @@ matrix_failure_class_from_snippet() {
     return 0
   }
 
-  if printf '%s\n' "$snippet" | grep -qiE \
+  if grep -qiE <<<"$snippet" \
     '429|token[[:space:]]+plan|usage[[:space:]]+limit|rate[[:space:]]+limit|quota'; then
     printf '%s\n' "environmental"
     return 0
   fi
-  if printf '%s\n' "$snippet" | grep -qiE \
+  if grep -qiE <<<"$snippet" \
     'ENOTFOUND|ECONNREFUSED|ConnectionRefused|Unable to connect|network error|ETIMEDOUT|EAI_AGAIN'; then
     printf '%s\n' "environmental"
     return 0
   fi
-  if printf '%s\n' "$snippet" | grep -qiE \
+  if grep -qiE <<<"$snippet" \
     'expect|harness|Bypass Permissions|missing close-bracket|accept_bypass|claude-interactive-invoke|ANSI|exp_continue|spawn'; then
     printf '%s\n' "harness"
     return 0
   fi
-  if printf '%s\n' "$snippet" | grep -qiE \
+  if grep -qiE <<<"$snippet" \
     'Stop hook error|hookEventName|planning-file-guard|completion-audit|orchestrator-directive'; then
     printf '%s\n' "product"
     return 0

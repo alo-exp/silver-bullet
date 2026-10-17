@@ -53,7 +53,7 @@ ca_run_planning_tier_gate() {
 
   # VFY-01 plan-boundary: block plan-seal commits without completion-audit since last plan work
   # shellcheck disable=SC2154  # cmd is set by completion-audit.sh
-  if printf '%s' "$cmd" | grep -qE 'docs\([0-9]+-[0-9]+\): complete'; then
+  if grep -qE 'docs\([0-9]+-[0-9]+\): complete' <<<"$cmd"; then
     if ! has_skill "silver-completion-audit"; then
       emit_block "$(printf '🛑 PLAN SEAL BLOCKED — Plan completion commit detected but /sb:completion-audit has not been recorded this session.\n\nRun /sb:completion-audit to verify completion claims, then retry the plan-seal commit.')"
       exit 0

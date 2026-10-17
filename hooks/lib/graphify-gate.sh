@@ -143,15 +143,15 @@ sb_graphify_clear_query_state() {
 sb_graphify_command_is_retrieval() {
   local cmd="${1:-}"
   [[ -n "$cmd" ]] || return 1
-  printf '%s' "$cmd" | grep -qE '(^|[[:space:]/])(graphify|graphifyy)([[:space:]]|$)' || return 1
-  printf '%s' "$cmd" | grep -qE '\b(query|explain|affected|path|diagnose|dfs)\b'
+  grep -qE '(^|[[:space:]/])(graphify|graphifyy)([[:space:]]|$)' <<<"$cmd" || return 1
+  grep -qE '\b(query|explain|affected|path|diagnose|dfs)\b' <<<"$cmd"
 }
 
 sb_graphify_command_is_index_build() {
   local cmd="${1:-}"
   [[ -n "$cmd" ]] || return 1
-  printf '%s' "$cmd" | grep -qE '(^|[[:space:]/])(graphify|graphifyy)([[:space:]]|$)' || return 1
-  printf '%s' "$cmd" | grep -qE '\b(update|extract|watch)\b'
+  grep -qE '(^|[[:space:]/])(graphify|graphifyy)([[:space:]]|$)' <<<"$cmd" || return 1
+  grep -qE '\b(update|extract|watch)\b' <<<"$cmd"
 }
 
 sb_graphify_command_is_exempt() {
@@ -160,10 +160,10 @@ sb_graphify_command_is_exempt() {
   if sb_graphify_command_is_retrieval "$cmd" || sb_graphify_command_is_index_build "$cmd"; then
     return 0
   fi
-  if printf '%s' "$cmd" | grep -qE '(^|[[:space:]/])(graphify|graphifyy)([[:space:]]|$)'; then
+  if grep -qE '(^|[[:space:]/])(graphify|graphifyy)([[:space:]]|$)' <<<"$cmd"; then
     return 0
   fi
-  if printf '%s' "$cmd" | grep -qE '(^|[[:space:]])(cat|head|tail|less|more|wc|ls|pwd|which|type|file|stat|jq|git (status|diff|log|show|branch|rev-parse)|command -v|echo|printf|true|false)(\s|$)'; then
+  if grep -qE '(^|[[:space:]])(cat|head|tail|less|more|wc|ls|pwd|which|type|file|stat|jq|git (status|diff|log|show|branch|rev-parse)|command -v|echo|printf|true|false)(\s|$)' <<<"$cmd"; then
     return 0
   fi
   return 1

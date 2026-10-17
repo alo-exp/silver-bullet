@@ -100,7 +100,7 @@ rt_probe_rtk_vendor_doctor() {
   # because `rtk doctor --help` is interpreted as a proxy command.
   local help=""
   help="$("$rtk_bin" help </dev/null 2>&1 || true)"
-  printf '%s\n' "$help" | grep -qE '^[[:space:]]+doctor([[:space:]]|$)' || return 2
+  grep -qE '^[[:space:]]+doctor([[:space:]]|$)' <<<"$help" || return 2
   rt_vendor_doctor_subcommand_usable "$rtk_bin" || return 2
   if "$rtk_bin" doctor --help </dev/null 2>&1 | grep -qiE -- '--non-interactive'; then
     extra+=(--non-interactive)

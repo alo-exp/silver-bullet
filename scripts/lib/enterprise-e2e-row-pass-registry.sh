@@ -205,13 +205,13 @@ enterprise_e2e_pilot_log_row_passed() {
     collecting { buf = buf $0 ORS }
     END { printf "%s", buf }
   ' "$log_file" 2>/dev/null || true)"
-  if printf '%s\n' "$slice" | grep -q "  FAIL:"; then
+  if grep -q "  FAIL:" <<<"$slice"; then
     return 1
   fi
-  if printf '%s\n' "$slice" | grep -q "OUTCOMES: all applicable criteria pass"; then
+  if grep -q "OUTCOMES: all applicable criteria pass" <<<"$slice"; then
     return 0
   fi
-  if printf '%s\n' "$slice" | grep -q "  PASS: evidence at"; then
+  if grep -q "  PASS: evidence at" <<<"$slice"; then
     return 0
   fi
   return 1
