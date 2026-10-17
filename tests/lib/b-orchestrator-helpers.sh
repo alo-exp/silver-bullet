@@ -126,3 +126,41 @@ orch_bash_env_wrapper() {
   } >"$wrapper"
   printf '%s' "$wrapper"
 }
+
+# orch_stub_failing CMD PATTERN: put a stub CMD first on PATH that exits 1 when any argument
+# contains PATTERN and otherwise runs the real command. Clears bash's command hash so the
+# current shell picks the stub up. Undo with orch_unstub CMD.
+orch_stub_failing() {
+  local cmd="$1" pattern="$2" real
+  rm -f "$TL_BIN/$cmd"
+  hash -r
+  real="$(command -v "$cmd")"
+  tl_stub "$cmd" "for a in \"\$@\"; do [[ \"\$a\" == *'$pattern'* ]] && exit 1; done; exec $real \"\$@\""
+  hash -r
+}
+
+# orch_unstub CMD: remove a stub installed with orch_stub_failing/tl_stub and clear the hash.
+orch_unstub() {
+  rm -f "$TL_BIN/$1"
+  hash -r
+}
+
+# orch_stage_libs NAME...: copy the named hooks/lib files (and nothing else) into a fresh
+# <tmp>/hooks/lib directory and print that directory. The two-component path keeps the
+# coverage mapper able to credit the copies to the real files.
+orch_stage_libs() {
+  local dir name
+  dir="$(mktemp -d "$TL_TMP/stage.XXXXXX")/hooks/lib"
+  mkdir -p "$dir"
+  for name in "$@"; do cp "$TL_REPO_ROOT/hooks/lib/$name" "$dir/$name"; done
+  printf '%s' "$dir"
+}
+
+# orch_stage_tree: copy the whole hooks/ tree to <tmp>/hooks and print the hooks directory,
+# so a test can remove or replace single libs before running a hook from the copy.
+orch_stage_tree() {
+  local root
+  root="$(mktemp -d "$TL_TMP/tree.XXXXXX")"
+  cp -R "$TL_REPO_ROOT/hooks" "$root/hooks"
+  printf '%s' "$root/hooks"
+}
