@@ -111,4 +111,53 @@ nojq="$(tl_path_without jq)"
 PATH="$nojq" tl_run_hook "$HOOK" "$(edit_json Edit "$PROJ/src/owned.txt")"
 assert_eq "without jq the guard cannot resolve paths and fails open" "0|" "$TL_STATUS|$TL_OUT"
 
+echo "=== guard: malformed and degenerate input ==="
+activate
+tl_run_hook "$HOOK" 'this is not json'
+assert_eq "invalid JSON input: allow" "0|" "$TL_STATUS|$TL_OUT"
+tl_run_hook "$HOOK" '{"hook_event_name":"PreToolUse","tool_name":"Edit","tool_input":"just-a-string"}'
+assert_eq "tool_input that is not an object: allow" "0|" "$TL_STATUS|$TL_OUT"
+tl_run_hook "$HOOK" "$(edit_json Edit "$PROJ/no/such/dir/f.txt")"
+assert_eq "target under a missing directory is not scoped: allow" "0|" "$TL_STATUS|$TL_OUT"
+# stdin is a directory: cat fails, the guard sees no input and allows.
+status=0
+out="$(bash "$TL_REPO_ROOT/$HOOK" <"$TL_TMP")" || status=$?
+assert_eq "unreadable stdin: allow" "0|" "$status|$out"
+
+echo "=== guard: progress surface missing ==="
+staged_lib="$(orch_stage_hook agent-delegation-guard.sh with-lib)"
+tl_run_stdin "$(edit_json Edit "$PROJ/src/owned.txt")" bash "$staged_lib"
+assert_eq "no progress surface file: still denies" "deny" "$(jq -r '.hookSpecificOutput.permissionDecision' <<<"$TL_OUT")"
+
+echo "=== guard: jq-less hosts ==="
+# Without jq from the start the guard cannot read a target path and allows.
+for ev in '{"hook_event_name":"PreToolUse","tool_name":"Edit","tool_input":{"file_path":"x"}}' \
+          '{"hook_event_name":"PostToolUse","tool_name":"Edit"}' \
+          '{"hook_event_name":"PreToolUse","tool_name":"Read"}' \
+          '{"tool_name":"Edit"}'; do
+  PATH="$nojq" tl_run_hook "$HOOK" "$ev"
+  assert_eq "no jq, event $(printf '%s' "$ev" | cut -c1-40): allow" "0|" "$TL_STATUS|$TL_OUT"
+done
+
+# jq present for the path lookup and then gone: the block tier falls back to a stderr
+# message and exit 2. The stub jq removes itself after extracting the target path.
+real_jq="$(command -v jq)"
+stubdir="$TL_TMP/selfdel"
+mkdir -p "$stubdir"
+cat >"$stubdir/jq" <<STUB
+#!/usr/bin/env bash
+if [[ "\$*" == *tool_input.file_path* ]]; then
+  "$real_jq" "\$@"; rc=\$?
+  rm -f "\$0"
+  exit \$rc
+fi
+exec "$real_jq" "\$@"
+STUB
+chmod +x "$stubdir/jq"
+activate
+PATH="$stubdir:$nojq" tl_run_hook "$HOOK" "$(edit_json Edit "$PROJ/src/owned.txt")"
+assert_eq "block tier without jq exits 2" 2 "$TL_STATUS"
+assert_contains "block tier without jq explains on stderr" "$TL_ERR" "AF-AGENT-DELEGATE"
+assert_eq "block tier without jq prints no JSON" "" "$TL_OUT"
+
 tl_results
