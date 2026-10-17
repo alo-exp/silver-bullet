@@ -14,7 +14,6 @@ fail() { echo "  FAIL: $1"; FAIL=$((FAIL + 1)); }
 echo "=== graphify-am-global-setup tests ==="
 
 [[ -f "$SCRIPT" ]] && pass "script exists" || fail "script exists"
-chmod +x "$SCRIPT" 2>/dev/null || true
 [[ -x "$SCRIPT" ]] && pass "script executable" || fail "script executable"
 
 [[ -f "$LIB" ]] && pass "lib exists" || fail "lib exists"
