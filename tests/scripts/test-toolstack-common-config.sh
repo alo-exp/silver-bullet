@@ -8,6 +8,7 @@ tl_init
 unset TS_CONFIG
 
 # --- ts_expand_path ---
+# shellcheck disable=SC2088  # literal tilde is the input under test
 ts_call ts_expand_path '~/x/y'
 assert_eq "expand ~ prefix" "$HOME/x/y" "$TL_OUT"
 ts_call ts_expand_path '/abs/~/y'
