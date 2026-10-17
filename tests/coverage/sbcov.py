@@ -287,6 +287,10 @@ def analyze_bash(path: Path) -> BashAnalysis:
             # multi-line substitutions further; the window covers all of that.
             extra = node.end_point[0] - node.start_point[0]
             lo, hi = widen(outer_start, outer_end)
+            if node.type == "process_substitution" and fn_stack:
+                # Inside a function bash reports a process substitution's commands
+                # at the line where the function definition starts.
+                lo = min(lo, fn_stack[-1].start)
             window.append((lo, hi + extra))
             for inner in node.children:
                 if inner.is_named:
@@ -305,7 +309,10 @@ def analyze_bash(path: Path) -> BashAnalysis:
                 return
             lo, hi = node.start_point[0] + 1, node.end_point[0] + 1
             for child in node.children:
-                if child.type in SKIP_CHILD_TYPES or not child.is_named:
+                if child.type in SKIP_CHILD_TYPES or not child.is_named or child.type in (
+                    "command_substitution",
+                    "process_substitution",
+                ):
                     # Expansions in redirect targets (e.g. `done < <(cmd)`) and here-documents.
                     visit_substitutions(child, lo, hi)
                 else:
