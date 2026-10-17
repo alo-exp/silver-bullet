@@ -81,6 +81,18 @@ export HB_OUT="$TL_TMP/hb-out"
 in_dir "$proj" ts_sb_defer_to_bridge
 assert_eq "failing id helpers => no defer" 1 "$TL_STATUS"
 assert_eq "empty ids still reach path helper" "args:[][][]" "$(cat "$HB_OUT")"
+# heartbeat path helper that fails
+cat >"$hbdir/heartbeat.sh" <<'HB'
+rt_project_id() { echo p; }
+rt_worktree_id() { echo w; }
+rt_current_session_id() { echo s; }
+rt_heartbeat_path() { return 1; }
+rt_heartbeat_is_valid() { echo called >"$HB_OUT"; return 0; }
+HB
+rm -f "$HB_OUT"
+in_dir "$proj" ts_sb_defer_to_bridge
+assert_eq "failing heartbeat path helper => no defer" 1 "$TL_STATUS"
+assert_file_absent "validity check skipped without a heartbeat path" "$HB_OUT"
 # heartbeat lib that fails to load entirely
 printf 'return 1\n' >"$hbdir/heartbeat.sh"
 in_dir "$proj" ts_sb_defer_to_bridge
