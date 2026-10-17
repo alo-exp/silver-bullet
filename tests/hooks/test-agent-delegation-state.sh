@@ -26,6 +26,13 @@ assert_eq "dot-dot component rejected" 1 "$rc"
 # still works for a new file in a new subdirectory (writing src/newdir/a.txt into an owned src/).
 assert_eq "missing parents re-appended to the resolved ancestor" "$ROOT/nodir/deep/file.txt" "$(sb_agent_delegation_normalize_path "$ROOT/nodir/deep/file.txt" "$ROOT")"
 assert_eq "relative path under a missing dir resolved against the root" "$ROOT/missing/file.txt" "$(sb_agent_delegation_normalize_path "missing/file.txt" "$ROOT")"
+assert_eq "filesystem root normalises to itself" "/" "$(sb_agent_delegation_normalize_path / "$ROOT")"
+# An ancestor that cannot be entered (race with removal/permissions) fails closed.
+sb_agent_delegation_normalize_path "$ROOT/src/a.txt" "$ROOT" >/dev/null && rc=0 || rc=$?
+cd() { return 1; }
+sb_agent_delegation_normalize_path "$ROOT/src/a.txt" "$ROOT" >/dev/null && rc=0 || rc=$?
+unset -f cd
+assert_eq "unenterable ancestor returns failure" 1 "$rc"
 sb_agent_delegation_normalize_path "$ROOT/src/.." "$ROOT" >/dev/null && rc=0 || rc=$?
 assert_eq "path whose last segment is .. rejected" 1 "$rc"
 
