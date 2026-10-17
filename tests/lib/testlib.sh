@@ -85,6 +85,7 @@ tl_run() {
 }
 
 # tl_run_stdin <input> <cmd...>: like tl_run but feeds <input> on stdin.
+# shellcheck disable=SC2034  # TL_STATUS/TL_OUT/TL_ERR are outputs read by the sourcing test
 tl_run_stdin() {
   local input="$1"
   shift
