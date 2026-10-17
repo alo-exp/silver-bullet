@@ -24,3 +24,4 @@ timestamp,model_slug,reasoning_effort,score,task_complexity
 2026-10-17T18:06:02Z,claude-opus-5-5,unknown,4,high
 2026-10-17T18:06:02Z,claude-opus-5-5,unknown,4,high
 2026-10-17T18:06:02Z,claude-opus-5-5,unknown,4,high
+2026-10-17T18:13:37Z,claude-haiku-5-5,medium,4,low
