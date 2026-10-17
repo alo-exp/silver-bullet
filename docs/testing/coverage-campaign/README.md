@@ -54,11 +54,15 @@ Update the base commit named in coverage-agent-prompt.md to the PR branch head b
 
 | Package | State |
 |---|---|
-| A-devcycle-completion | Partial: branch `cov/A-devcycle-completion` (WIP commit 52f047b) — Python tests for hooks/lib/tool-input, plus edits to two tool-input sources that must be reviewed |
-| B-orchestrator | Partial: branch `cov/B-orchestrator` (WIP commit 6fadc36) — agent-delegation hook test and helpers, plus an edit to hooks/lib/agent-delegation-state.sh that must be reviewed |
+| A-devcycle-completion | Merged after review (refactors and bug fixes listed in the merge commit) |
+| B-orchestrator | Merged after review (agent-delegation scope fixes, fail-closed paths) |
+| C-toolgates-1 | Merged after review |
+| D-gates | Repair round after review |
+| E-core-hooks, F-enterprise-1 | In progress |
+| C-toolgates-2, F-enterprise-2, G-toolstack-1 | In progress |
 | All others | Not started |
 
-The partial branches are unreviewed WIP checkpoints taken when the container restarted; review the source edits before keeping them.
+Each package is merged into the PR branch only after an adversarial review passes and its tests pass under both the `claude` and `codex` runtimes.
 
 ## Dead code and root-only paths
 
