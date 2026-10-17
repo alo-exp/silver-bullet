@@ -258,7 +258,7 @@ print_result() {
     FAILURE_REPORT+=("${test_file#"$REPO_ROOT"/} (exit $exit_code)")
     while IFS= read -r line; do
       FAILURE_REPORT+=("    $line")
-    done < <(printf '%s\n' "$output" | grep -E '^ *(FAIL|✗)' | awk 'NR <= 10')
+    done < <(printf '%s\n' "$output" | grep -E '^ *(FAIL|✗|❌)' | awk 'NR <= 10')
   fi
   TIMINGS+=("$secs ${test_file#"$REPO_ROOT"/}")
 }
