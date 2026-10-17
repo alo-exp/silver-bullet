@@ -98,7 +98,7 @@ fi
 
 prompt_out="$(cd "$TMP" && export SILVER_BULLET_PROJECT_ROOT="$TMP" && jq -n '{hook_event_name:"UserPromptSubmit",prompt:"ship"}' | bash "$PROMPT" 2>/dev/null)"
 ctx="$(printf '%s' "$prompt_out" | jq -r '.hookSpecificOutput.additionalContext // ""' 2>/dev/null || true)"
-if printf '%s' "$ctx" | grep -q 'fresh query recorded'; then
+if grep -q 'fresh query recorded' <<<"$ctx"; then
   pass "integration: prompt-reminder reports fresh query"
 else
   fail "integration: prompt-reminder reports fresh query"

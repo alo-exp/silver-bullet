@@ -439,7 +439,7 @@ run_session_start() {
 is_blocked() {
   local output="$1"
   [[ -z "$output" ]] && return 1
-  printf '%s' "$output" | grep -qE '"decision"\s*:\s*"block"|"permissionDecision"\s*:\s*"deny"'
+  grep -qE '"decision"\s*:\s*"block"|"permissionDecision"\s*:\s*"deny"' <<<"$output"
 }
 
 assert_blocked() {
@@ -462,7 +462,7 @@ assert_allowed() {
 
 assert_contains() {
   local label="$1" output="$2" needle="$3"
-  if printf '%s' "$output" | grep -q "$needle"; then
+  if grep -q "$needle" <<<"$output"; then
     PASS=$((PASS + 1)); printf 'PASS: %s\n' "$label"
   else
     FAIL=$((FAIL + 1)); printf 'FAIL: %s (expected "%s" in: %s)\n' "$label" "$needle" "$output"
@@ -471,7 +471,7 @@ assert_contains() {
 
 assert_not_contains() {
   local label="$1" output="$2" needle="$3"
-  if ! printf '%s' "$output" | grep -q "$needle"; then
+  if ! grep -q "$needle" <<<"$output"; then
     PASS=$((PASS + 1)); printf 'PASS: %s\n' "$label"
   else
     FAIL=$((FAIL + 1)); printf 'FAIL: %s (unexpected "%s" in: %s)\n' "$label" "$needle" "$output"

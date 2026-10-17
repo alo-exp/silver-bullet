@@ -13,7 +13,7 @@ fail() { echo "FAIL: $1"; (( FAIL++ )) || true; }
 
 assert_jq_true() {
   local desc="$1" filter="$2" json="$3"
-  if jq -e "$filter" >/dev/null <<<"$json"; then
+  if jq -e "$filter" <<<"$json" >/dev/null; then
     pass "$desc"
   else
     fail "$desc"
@@ -93,11 +93,11 @@ assert_jq_true "launcher mandatory steps include issue/triage/resolved/matrix" \
 
 issues_json='[{"id":"H1","severity":"HIGH","title":"broken lock"},{"id":"M1","severity":"MED","title":"missing table"},{"id":"L1","severity":"LOW","title":"typo"},{"id":"N1","severity":"NIT","title":"nitpick"}]'
 issue_md="$(python3 "$RESOLVER" --issue-table --table-json "$issues_json")"
-if printf '%s' "$issue_md" | grep -qF '### HIGH' \
-  && printf '%s' "$issue_md" | grep -qF '### MED' \
-  && printf '%s' "$issue_md" | grep -qF '### LOW' \
-  && printf '%s' "$issue_md" | grep -qF '### NIT' \
-  && printf '%s' "$issue_md" | grep -qF '| H1 | broken lock |'; then
+if grep -qF '### HIGH' <<<"$issue_md" \
+  && grep -qF '### MED' <<<"$issue_md" \
+  && grep -qF '### LOW' <<<"$issue_md" \
+  && grep -qF '### NIT' <<<"$issue_md" \
+  && grep -qF '| H1 | broken lock |' <<<"$issue_md"; then
   pass "issue table grouped by HIGH/MED/LOW/NIT"
 else
   fail "issue table grouped by HIGH/MED/LOW/NIT"
@@ -106,9 +106,9 @@ fi
 
 triage_json='[{"id":"H1","severity":"HIGH","decision":"ACCEPT","reason":"valid"},{"id":"N1","severity":"NIT","decision":"REJECT","reason":"factually false"}]'
 triage_md="$(python3 "$RESOLVER" --triage-table --table-json "$triage_json")"
-if printf '%s' "$triage_md" | grep -qF '| Decision | Reason |' \
-  && printf '%s' "$triage_md" | grep -qF '| H1 | HIGH | ACCEPT | valid |' \
-  && printf '%s' "$triage_md" | grep -qF '| N1 | NIT | REJECT | factually false |'; then
+if grep -qF '| Decision | Reason |' <<<"$triage_md" \
+  && grep -qF '| H1 | HIGH | ACCEPT | valid |' <<<"$triage_md" \
+  && grep -qF '| N1 | NIT | REJECT | factually false |' <<<"$triage_md"; then
   pass "triage table accepted vs rejected + reason"
 else
   fail "triage table accepted vs rejected + reason"
@@ -117,8 +117,8 @@ fi
 
 resolved_json='[{"id":"H1","severity":"HIGH","title":"broken lock","decision":"ACCEPT","resolved":"yes"},{"id":"N1","severity":"NIT","title":"nitpick","decision":"REJECT","resolved":"n/a"}]'
 resolved_md="$(python3 "$RESOLVER" --resolved-table --table-json "$resolved_json")"
-if printf '%s' "$resolved_md" | grep -qF '| Resolved |' \
-  && printf '%s' "$resolved_md" | grep -qF '| H1 | HIGH | broken lock | ACCEPT | yes |'; then
+if grep -qF '| Resolved |' <<<"$resolved_md" \
+  && grep -qF '| H1 | HIGH | broken lock | ACCEPT | yes |' <<<"$resolved_md"; then
   pass "resolved table includes Resolved column"
 else
   fail "resolved table includes Resolved column"
@@ -127,11 +127,11 @@ fi
 
 matrix_json='[{"rung":"1","reviewer":"Composer 2.5 High","high":1,"med":1,"low":0,"nit":1,"reported":3,"accepted":2,"clean":false},{"rung":"2","reviewer":"Grok 4.6 High","high":0,"med":0,"low":0,"nit":0,"reported":0,"accepted":0,"clean":true},{"rung":"4","reviewer":"GLM 5.2 High","high":0,"med":0,"low":0,"nit":0,"reported":0,"accepted":0,"skipped_then_retried":true,"id_collision":true}]'
 matrix_md="$(python3 "$RESOLVER" --ladder-matrix --table-json "$matrix_json")"
-if printf '%s' "$matrix_md" | grep -qF '| Rung | Reviewer | HIGH | MED | LOW | NIT | Reported | Accepted |' \
-  && printf '%s' "$matrix_md" | grep -qF '| 1 | Composer 2.5 High | 1 | 1 | 0 | 1 | 3 | 2 |' \
-  && printf '%s' "$matrix_md" | grep -qF 'skipped-then-retried' \
-  && printf '%s' "$matrix_md" | grep -qF 'ID collision' \
-  && printf '%s' "$matrix_md" | grep -qF 'CLEAN'; then
+if grep -qF '| Rung | Reviewer | HIGH | MED | LOW | NIT | Reported | Accepted |' <<<"$matrix_md" \
+  && grep -qF '| 1 | Composer 2.5 High | 1 | 1 | 0 | 1 | 3 | 2 |' <<<"$matrix_md" \
+  && grep -qF 'skipped-then-retried' <<<"$matrix_md" \
+  && grep -qF 'ID collision' <<<"$matrix_md" \
+  && grep -qF 'CLEAN' <<<"$matrix_md"; then
   pass "ladder-complete matrix with footnotes"
 else
   fail "ladder-complete matrix with footnotes"

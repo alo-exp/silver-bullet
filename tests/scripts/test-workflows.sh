@@ -10,13 +10,13 @@ assert_eq() {
 
 assert_contains() {
   local desc="$1" needle="$2" haystack="$3"
-  if printf '%s' "$haystack" | grep -qE "$needle"; then echo "PASS: $desc"; (( PASS++ )) || true
+  if grep -qE "$needle" <<<"$haystack"; then echo "PASS: $desc"; (( PASS++ )) || true
   else echo "FAIL: $desc — looking for: [$needle]"; (( FAIL++ )) || true; fi
 }
 
 assert_not_contains() {
   local desc="$1" needle="$2" haystack="$3"
-  if ! printf '%s' "$haystack" | grep -qE "$needle"; then echo "PASS: $desc"; (( PASS++ )) || true
+  if ! grep -qE "$needle" <<<"$haystack"; then echo "PASS: $desc"; (( PASS++ )) || true
   else echo "FAIL: $desc — should NOT contain: [$needle]"; (( FAIL++ )) || true; fi
 }
 

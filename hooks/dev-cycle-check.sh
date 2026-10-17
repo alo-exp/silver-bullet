@@ -19,7 +19,12 @@ DEVOPS_DEFAULT_PLANNING="${DEVOPS_DEFAULT_PLANNING:-silver-blast-radius devops-q
 emit_block_jq_missing() {
   local reason="$1"
   local json_reason
-  json_reason=$(printf '%s' "$reason" | jq -Rs '.')
+  # This runs only when jq is missing, so encode the reason without it.
+  if command -v python3 >/dev/null 2>&1; then
+    json_reason=$(python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))' <<<"$reason")
+  else
+    json_reason='"jq is required for Silver Bullet enforcement"'
+  fi
   printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":%s}}' "$json_reason"
 }
 
@@ -125,7 +130,6 @@ main() {
     local payload="$1"
     local base_dir="$2"
     local target_path
-    [[ -n "$payload" ]] || return 0
     if ! declare -f sb_shell_candidate_write_paths >/dev/null 2>&1; then
       return 0
     fi
@@ -428,10 +432,6 @@ To reset workflow state intentionally, run in your terminal:
 
   shell_command_shows_write_intent() {
     local payload="${1:-}"
-    [[ -n "$payload" ]] || return 1
-    if [[ ${#shell_write_targets[@]} -gt 0 ]]; then
-      return 0
-    fi
     if grep -qE '(>>|[[:space:]]>[^>&=]|\btee\b|\bcp\b|\bmv\b|\binstall\b|\bsed\b[[:space:]]+-[^[:space:];|&]*i|\bperl\b[[:space:]]+-[^[:space:];|&]*i|\btouch\b|\bchmod\b)' <<<"$payload"; then
       return 0
     fi
@@ -440,7 +440,6 @@ To reset workflow state intentionally, run in your terminal:
 
   shell_payload_is_sb_skill_adapter_invocation() {
     local payload="$1"
-    [[ -n "$payload" ]] || return 1
     # Codex invokes SB skills through the package-local adapter. The adapter is
     # the workflow continuation channel, not a source edit; concrete redirects
     # and writes are still handled by shell_write_targets before this check.

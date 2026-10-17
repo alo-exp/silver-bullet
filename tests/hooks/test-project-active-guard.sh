@@ -59,7 +59,7 @@ assert_exit0() {
 
 assert_no_block() {
   local name="$1" out="$2"
-  if printf '%s' "$out" | grep -qE 'permissionDecision":"deny|decision":"block'; then
+  if grep -qE 'permissionDecision":"deny|decision":"block' <<<"$out"; then
     echo "FAIL: $name (unexpected block)"
     FAIL=$((FAIL + 1))
   else
@@ -70,7 +70,7 @@ assert_no_block() {
 
 assert_has_context() {
   local name="$1" out="$2"
-  if printf '%s' "$out" | grep -q 'additionalContext'; then
+  if grep -q 'additionalContext' <<<"$out"; then
     echo "PASS: $name"
     PASS=$((PASS + 1))
   else
@@ -81,7 +81,7 @@ assert_has_context() {
 
 assert_has_enforcement_context() {
   local name="$1" out="$2"
-  if printf '%s' "$out" | grep -q 'Core Enforcement Rules'; then
+  if grep -q 'Core Enforcement Rules' <<<"$out"; then
     echo "PASS: $name"
     PASS=$((PASS + 1))
   else

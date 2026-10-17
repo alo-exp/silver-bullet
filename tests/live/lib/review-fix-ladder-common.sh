@@ -184,7 +184,7 @@ PY
 
 review_fix_ladder_response_passes() {
   local response="$1"
-  if printf '%s' "$response" | grep -qiE 'LADDER_PASS:|ZeroDivisionError|zero-divisor|zero check|BUG: no zero|division by zero|reject.*zero|b == 0|!= 0'; then
+  if grep -qiE 'LADDER_PASS:|ZeroDivisionError|zero-divisor|zero check|BUG: no zero|division by zero|reject.*zero|b == 0|!= 0' <<<"$response"; then
     return 0
   fi
   return 1
