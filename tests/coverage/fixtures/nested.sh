@@ -29,8 +29,16 @@ drain() {
     : "$item"
   done < <(lower Feed)
 }
+both() {
+  local name="$1"
+  if [[ "$(lower "$name")" == "silver-x" \
+     && "$(lower "$name")" == "silver-x" ]]; then
+    : both
+  fi
+}
 lower Shout >/dev/null
 join >/dev/null
 held true >/dev/null
 held false >/dev/null
 drain
+both X
