@@ -150,22 +150,13 @@ canonicalize() {
   # Convert sb:* -> the historical silver-* compliance marker.
   if [[ "$raw" == sb:* ]]; then
     printf 'silver-%s' "${raw#sb:}"
-  elif [[ "$raw" == *:* ]]; then
-    printf 'silver-%s' "${raw#*:}"
   elif [[ "$raw" == sb ]]; then
     printf 'silver'
-  else
-    printf '%s' "$raw"
   fi
 }
 
 for raw in "${skills[@]}"; do
   skill="$(canonicalize "$raw")"
-  case "$skill" in
-    silver) ;;
-    silver-*) ;;
-    *) continue ;;
-  esac
   ledger_skills+=("$skill")
 
   # No duplicates.

@@ -16,7 +16,6 @@ if [[ -n "$_lib_dir" && -f "$_lib_dir/nofollow-guard.sh" ]]; then
   source "$_lib_dir/nofollow-guard.sh"
 else
   sb_guard_nofollow() { [[ -L "$1" ]] && { printf 'ERROR: refusing to write through symlink: %s\n' "$1" >&2; exit 1; }; return 0; }
-  sb_safe_write()    { [[ -L "$1" ]] && rm -f -- "$1"; return 0; }
 fi
 if [[ -n "$_lib_dir" && -f "$_lib_dir/skill-discovery.sh" ]]; then
   # shellcheck source=lib/skill-discovery.sh
