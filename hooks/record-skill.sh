@@ -234,7 +234,7 @@ debug_record_skill() {
     printf '--- %s ---\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null || date)"
     printf 'pwd=%s\n' "$PWD"
     printf 'raw_skill=%s\n' "$raw_skill"
-    printf 'canonical_skill=%s\n' "$skill"
+    printf 'canonical_skill=%s\n' "${skill:-}"
     printf 'config_file=%s\n' "${config_file:-}"
   } >>"$dbg_file" 2>/dev/null || true
 }

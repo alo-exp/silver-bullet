@@ -102,6 +102,7 @@ tg2_farm() {
   rm -rf "$root"
   mkdir -p "$root/hooks/lib"
   ln -s "$TL_REPO_ROOT/$hook" "$root/$hook"
+  ln -s "$TL_REPO_ROOT/templates" "$root/templates"
   if [[ "${1:-}" == "-" ]]; then
     rmdir "$root/hooks/lib"
   else
