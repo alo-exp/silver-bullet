@@ -43,12 +43,16 @@ S3="$TL_TMP/s3"; dg_stage_hooks "$S3" tool-input.sh
 PRE='{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"git push origin main"}}'
 dg_run_with_fn "$P" "$S3/hooks/site-regression-gate.sh" "$PRE" 'sb_tool_name() { return 1; }; export -f sb_tool_name'
 assert_eq "regression gate: failing tool-name helper => ignored" "" "$TL_OUT"
+dg_assert_ok "regression gate: failing tool-name helper => ignored: exits 0"
 dg_run_with_fn "$P" "$S3/hooks/site-regression-gate.sh" "$PRE" 'sb_tool_name() { echo Bash; }; export -f sb_tool_name'
 assert_eq "regression gate: missing command helper => ignored" "" "$TL_OUT"
+dg_assert_ok "regression gate: missing command helper => ignored: exits 0"
 dg_run_with_fn "$P" "$S3/hooks/live-publish-evidence-gate.sh" "$PRE" 'sb_tool_name() { return 1; }; export -f sb_tool_name'
 assert_eq "live gate: failing tool-name helper => ignored" "" "$TL_OUT"
+dg_assert_ok "live gate: failing tool-name helper => ignored: exits 0"
 dg_run_with_fn "$P" "$S3/hooks/live-publish-evidence-gate.sh" "$PRE" 'sb_tool_name() { echo Bash; }; export -f sb_tool_name'
 assert_eq "live gate: missing command helper => ignored" "" "$TL_OUT"
+dg_assert_ok "live gate: missing command helper => ignored: exits 0"
 
 # live gate: state dir not creatable / jq failing on the flags
 echo blocker >"$TL_TMP/blocker"
@@ -57,6 +61,7 @@ assert_eq "live gate: unusable state dir tolerated" 0 "$TL_STATUS"
 dg_stub_real jq 'push_intent // false'
 dg_run "$P" hooks/live-publish-evidence-gate.sh '{"hook_event_name":"Stop"}'
 assert_eq "live gate: flag extraction failing defaults to no evidence needed" "" "$TL_OUT"
+dg_assert_ok "live gate: flag extraction failing defaults to no evidence needed: exits 0"
 rm -f "$TL_BIN/jq"
 dg_stub_real jq 'live_claim_pending // false'
 dg_run "$P" hooks/live-publish-evidence-gate.sh '{"hook_event_name":"Stop"}'
@@ -99,5 +104,6 @@ S5="$TL_TMP/s5"; dg_stage_hooks "$S5" instruction-ledger.sh
 LEDGER_FNS='sb_instruction_ledger_seed_from_prompt() { :; }; sb_instruction_ledger_pending_summary() { return 1; }; export -f sb_instruction_ledger_seed_from_prompt sb_instruction_ledger_pending_summary'
 dg_run_with_fn "$P" "$S5/hooks/instruction-ledger-gate.sh" '{"hook_event_name":"UserPromptSubmit","prompt":"- a\n- b\n- c"}' "$LEDGER_FNS"
 assert_eq "instruction-ledger-gate: failing summary helper => no context, exit 0" "" "$TL_OUT"
+dg_assert_ok "instruction-ledger-gate: failing summary helper => no context, exit 0: exits 0"
 
 tl_results

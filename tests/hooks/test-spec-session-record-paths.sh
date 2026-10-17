@@ -14,6 +14,7 @@ IN='{"hook_event_name":"SessionStart"}'
 
 dg_run "$P" "$H" "$IN"
 assert_eq "no SPEC.md => silent success" "" "$TL_OUT"
+dg_assert_ok "no SPEC.md => silent success: exits 0"
 assert_file_absent "no SPEC.md => no spec-session file" "$SS"
 
 printf -- '---\nspec-version: "2.3.1"\njira-id: FOO-123\n---\n# Spec\n' >"$P/.planning/SPEC.md"
@@ -39,6 +40,7 @@ rm -f "$SS"
 
 dg_run "$TL_TMP" "$H" "$IN"
 assert_eq "outside an SB project => inert" "" "$TL_OUT"
+dg_assert_ok "outside an SB project => inert: exits 0"
 
 dg_run_nojq "$P" "$H" "$IN"
 assert_contains "no jq => visible warning" "$TL_OUT" "require jq"

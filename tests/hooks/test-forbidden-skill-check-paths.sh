@@ -16,12 +16,16 @@ NS="$(printf '%s%s' gs d)"   # retired namespace, assembled so this file never s
 
 dg_run "$P" "$H" "$(skill sb:plan)"
 assert_eq "ordinary skill allowed silently" "" "$TL_OUT"
+dg_assert_ok "ordinary skill allowed silently: exits 0"
 dg_run "$P" "$H" "$(skill "")"
 assert_eq "empty skill allowed" "" "$TL_OUT"
+dg_assert_ok "empty skill allowed: exits 0"
 dg_run "$P" "$H" '{"hook_event_name":"PreToolUse","tool_name":"Skill","tool_input":{}}'
 assert_eq "missing skill field allowed" "" "$TL_OUT"
+dg_assert_ok "missing skill field allowed: exits 0"
 dg_run "$P" "$H" "$(skill ":::")"
 assert_eq "colon-only skill name matches nothing" "" "$TL_OUT"
+dg_assert_ok "colon-only skill name matches nothing: exits 0"
 
 dg_run "$P" "$H" "$(skill "${NS}:plan-phase")"
 assert_eq "retired namespace (colon) denied" "deny" "$(dec)"
@@ -43,13 +47,17 @@ assert_eq "config forbidden skill denied (config found from sub-dir)" "deny" "$(
 assert_contains "config reason" "$(reason)" "project configuration"
 dg_run "$P" "$H" "$(skill other-skill)"
 assert_eq "skill not in config list allowed" "" "$TL_OUT"
+dg_assert_ok "skill not in config list allowed: exits 0"
 echo 'not json' >"$P/.silver-bullet.json"
 dg_run "$P" "$H" "$(skill other-skill)"
 assert_eq "unparsable config tolerated" "" "$TL_OUT"
+dg_assert_ok "unparsable config tolerated: exits 0"
 dg_run "$P" "$H" "$(skill executing-plans)"
 assert_eq "hardcoded list still applies with a broken config" "deny" "$(dec)"
 echo '{"sb_initiated":true}' >"$P/.silver-bullet.json"
 
+dg_run_closed_stdin "$P" "$H"
+dg_assert_ok "unreadable stdin (ERR trap before the skill check): exits 0"
 dg_run "$P" "$H" "not json"
 assert_contains "unparsable input: ERR trap warns" "$TL_OUT" "unexpected error"
 assert_eq "unparsable input exits 0" 0 "$TL_STATUS"
@@ -58,6 +66,7 @@ mkdir -p "$TL_TMP/outside"
 rm -f "$SB_RUNTIME_STATE_DIR/project-root"
 dg_run "$TL_TMP/outside" "$H" "$(skill executing-plans)"
 assert_eq "outside an SB project: inert" "" "$TL_OUT"
+dg_assert_ok "outside an SB project: inert: exits 0"
 
 # project known only through the root cache; the walk from a plain git dir finds no config
 dg_run "$P" "$H" "$(skill sb:plan)"
