@@ -16,7 +16,7 @@ fresh() {
   echo two >"$P/.planning/phases/002-b/PLAN.md"
   printf '# Project\n\nCurrent Milestone: V2 Launch (Beta)\n' >"$P/.planning/PROJECT.md"
 }
-CLEAR='node gsd-tools.cjs phases clear'
+CLEAR='node ladder-tools.cjs phases clear'
 fresh
 
 dg_run "$P" "$H" "$(bash_json "$CLEAR")"
