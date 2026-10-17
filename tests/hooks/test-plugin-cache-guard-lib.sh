@@ -34,6 +34,10 @@ TL_NOJQ="$(tl_path_without jq)"
 tl_run env PATH="$TL_NOJQ" bash -c 'source "$1"; sb_plugin_cache_installed_paths' _ "$LIB"
 assert_eq "jq missing: installed paths fail" 1 "$TL_STATUS"
 
+write_registry "{\"plugins\":{\"a@m\":[{\"installPath\":\"$CACHE/mkt/kept/1.0\"}]}}"
+tl_run env PATH="$TL_NOJQ" bash -c 'source "$1"; sb_plugin_cache_path_is_uninstalled "$2/mkt/gone/1.0" "$2"' _ "$LIB" "$CACHE"
+assert_eq "jq missing: unreadable registry is treated as no installs" 0 "$TL_STATUS"
+
 # --- sb_plugin_cache_path_is_uninstalled ----------------------------------
 call sb_plugin_cache_path_is_uninstalled "" "$CACHE"
 assert_eq "empty target is not uninstalled" 1 "$TL_STATUS"

@@ -381,9 +381,14 @@ evid '{}' SILVER_BULLET_EVIDENCE_SCHEMA_STRICT=true
 assert_contains "env 'true' is strict" "$TL_OUT" "strict=1"
 tl_run env -u SILVER_BULLET_EVIDENCE_SCHEMA_STRICT bash -c 'source "$1/required-skills.sh"; source "$2/classify.sh"; source "$2/gates.sh"; _lib_dir="$3"; config_file=""; run_evidence_schema_delivery_gate "$4"; echo "strict=$SILVER_BULLET_EVIDENCE_SCHEMA_STRICT"' _ "$LIBDIR" "$CA" "$TL_TMP/no-such-dir" "$TL_TMP"
 assert_contains "no config at all: strict by default" "$TL_OUT" "strict=1"
+evid 'not json'
+assert_contains "unreadable config falls back to strict" "$TL_OUT" "strict=1"
 mkdir -p "$TL_TMP/no-ep-lib"
 printf '{"hooks":{"evidence_schema":{"strict":"false"}}}' >"$TL_TMP/ev-cfg.json"
 tl_run env -u SILVER_BULLET_EVIDENCE_SCHEMA_STRICT bash -c 'source "$1/required-skills.sh"; source "$2/classify.sh"; source "$2/gates.sh"; _lib_dir="$3"; config_file="$4"; run_evidence_schema_delivery_gate "$5"; echo "strict=$SILVER_BULLET_EVIDENCE_SCHEMA_STRICT"' _ "$LIBDIR" "$CA" "$TL_TMP/no-ep-lib" "$TL_TMP/ev-cfg.json" "$TL_TMP"
 assert_contains "without the enterprise-policy lib the config is read directly" "$TL_OUT" "strict=0"
+printf 'not json' >"$TL_TMP/ev-cfg.json"
+tl_run env -u SILVER_BULLET_EVIDENCE_SCHEMA_STRICT bash -c 'source "$1/required-skills.sh"; source "$2/classify.sh"; source "$2/gates.sh"; _lib_dir="$3"; config_file="$4"; run_evidence_schema_delivery_gate "$5"; echo "strict=$SILVER_BULLET_EVIDENCE_SCHEMA_STRICT"' _ "$LIBDIR" "$CA" "$TL_TMP/no-ep-lib" "$TL_TMP/ev-cfg.json" "$TL_TMP"
+assert_contains "no enterprise lib and unreadable config: strict" "$TL_OUT" "strict=1"
 
 tl_results
