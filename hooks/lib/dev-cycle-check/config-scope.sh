@@ -132,6 +132,7 @@ dcc_shell_payload_is_sb_skill_adapter_invocation() {
   # the workflow continuation channel, not a source edit; concrete redirects
   # and writes are still handled by shell_write_targets before this check.
   [[ "$payload" != *$'\n'* ]] || return 1
+  # shellcheck disable=SC2154  # _lib_dir is set by dev-cycle-check.sh
   python3 "${_lib_dir}/tool-input/skill_adapter_invocation.py" "$payload" >/dev/null 2>&1
 }
 
@@ -161,6 +162,7 @@ dcc_workflow_id_from_shell_assignment() {
 
 # Current-version configs can explicitly set the planning floor. Legacy
 # configs are normalized to inherit the current default SB planning gates.
+# shellcheck disable=SC2153  # DEFAULT_PLANNING is set by the sourced required-skills.sh
 default_planning="$DEFAULT_PLANNING"
 if [[ "$active_workflow" == "devops-cycle" ]]; then
   default_planning="$DEVOPS_DEFAULT_PLANNING"
@@ -205,6 +207,7 @@ fi
 
 # --- Destructive command warning (F-04) ---
 if [[ -n "$command_str" ]] && [[ ! -f "$trivial_file" || -L "$trivial_file" ]]; then
+  # shellcheck disable=SC2154  # plugin_cache is set by dev-cycle-check.sh
   if printf '%s' "$command_str" | grep -qE '\b(rm|mv)\b' && \
      ! printf '%s' "$command_str" | grep -qE "(${plugin_cache}|\.silver-bullet/|/tmp/|\.${SB_RUNTIME_NAME}/)"; then
     printf '{"hookSpecificOutput":{"message":"Warning: Destructive command detected (rm/mv on project files). Verify this is intentional before proceeding."}}'

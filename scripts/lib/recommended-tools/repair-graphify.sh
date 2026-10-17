@@ -86,7 +86,7 @@ rt_repair_graphify() {
     echo '{"actions":[],"failures":["mutation_not_authorized"],"restart_required":false}'
     return 0
   fi
-  local pkg_out action line
+  local pkg_out line
   pkg_out="$(rt_repair_graphify_packages)"
   while IFS= read -r line; do
     [[ "$line" == "---FAILURES---" ]] && break

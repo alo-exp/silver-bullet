@@ -221,12 +221,14 @@ invoke_skill() {
   printf 'Canonical: %s\n' "$canonical_skill"
   printf 'Source: %s\n\n' "$skill_file"
   if [[ -n "$skill_arguments" ]]; then
+    # shellcheck disable=SC2016  # $ARGUMENTS is printed literally for the agent
     printf 'Runtime arguments for this skill ($ARGUMENTS):\n%s\n\n' "$skill_arguments"
   fi
   printf '%s\n' "----- BEGIN SKILL ${canonical_skill} -----"
   cat "$skill_file"
   printf '\n%s\n' "----- END SKILL ${canonical_skill} -----"
   if [[ -n "$skill_arguments" ]]; then
+    # shellcheck disable=SC2016  # $ARGUMENTS is printed literally for the agent
     printf '\nUse the runtime arguments above wherever the skill refers to `$ARGUMENTS`.\n'
   fi
   printf 'Follow the skill instructions above. Silver Bullet hooks will record this invocation through the SB-owned Codex adapter receipt.\n'

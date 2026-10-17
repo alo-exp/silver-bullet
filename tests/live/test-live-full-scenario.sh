@@ -23,8 +23,8 @@ live_setup
 # Step 1: record silver-quality-gates via hook directly (record-skill.sh PostToolUse:Skill
 # does not fire in -p mode since Claude reads skill files via Read, not Skill tool)
 echo "  S8.1: Recording silver-quality-gates via hook..."
-hook_out=$(cd "$WORK_DIR" && printf '{"tool_name":"Skill","tool_input":{"skill":"silver-quality-gates"},"hook_event_name":"PostToolUse"}' \
-  | bash "${SB_ROOT}/hooks/record-skill.sh" 2>/dev/null || true)
+(cd "$WORK_DIR" && printf '{"tool_name":"Skill","tool_input":{"skill":"silver-quality-gates"},"hook_event_name":"PostToolUse"}' \
+  | bash "${SB_ROOT}/hooks/record-skill.sh" 2>/dev/null || true) >/dev/null
 assert_state_contains "S8.1: silver-quality-gates recorded" "silver-quality-gates"
 
 echo "  S8.2: Seeding planning floor and silver-review state..."

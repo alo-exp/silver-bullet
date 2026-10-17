@@ -40,6 +40,7 @@ cat >"$TMP/.silver-bullet.json" <<'EOF'
 }
 EOF
 
+# shellcheck disable=SC2034  # read by sourced stack-optimizer.sh (sb_stack_agentmemory_home)
 SB_AGENTMEMORY_HOME="$TMP/amhome"
 sb_stack_merge_agentmemory_env "$TMP" "$TMP/.silver-bullet.json" synergy_max
 [[ -f "$TMP/amhome/.env.bak" || -f "$TMP/amhome/.env" ]] && pass "env merge creates files" || fail "env merge"

@@ -172,7 +172,11 @@ optimize_host() {
   fi
 
   if [[ "$h" == "cursor" ]]; then
-    run_cmd bash "$INSTALL_CURSOR_RULES" $([[ "$DRY_RUN" -eq 1 ]] && printf '%s' '--global' || true)
+    if [[ "$DRY_RUN" -eq 1 ]]; then
+      run_cmd bash "$INSTALL_CURSOR_RULES" --global
+    else
+      run_cmd bash "$INSTALL_CURSOR_RULES"
+    fi
   fi
 
   if [[ "$SKIP_SYNERGY" -eq 0 || "$SKIP_RTCM" -eq 0 ]]; then

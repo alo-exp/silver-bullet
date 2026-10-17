@@ -40,7 +40,9 @@ assert_eq() {
   fi
 }
 
+# shellcheck source=hooks/lib/orchestrator-directive.sh
 source "$LIB_OD"
+# shellcheck source=hooks/lib/orchestrator-parent.sh
 source "$LIB_PARENT"
 
 sb_orchestrator_directive_write "silver-execute" "build feature" "handoff test" true

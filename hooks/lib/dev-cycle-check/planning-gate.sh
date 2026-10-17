@@ -2,6 +2,7 @@
 # dev-cycle-check module — auto-split
 # --- Read state file and determine stage ---
 completed_skills=""
+# shellcheck disable=SC2154  # state_file is set by dev-cycle-check.sh
 if [[ -f "$state_file" ]]; then
   completed_skills=$(cat "$state_file")
 fi
@@ -18,6 +19,7 @@ dcc_has_skill() {
 # --- Check required planning skills ---
 missing_skills=""
 unavailable_skills=""
+# shellcheck disable=SC2154  # required_planning is set by dev-cycle-check.sh
 for skill in $required_planning; do
   if ! dcc_has_skill "$skill"; then
     if sb_skill_is_installed "$skill"; then
@@ -61,6 +63,7 @@ if [[ -n "$unavailable_skills" ]]; then
     unavailable_display="${unavailable_display}⚠️ ${us} (not installed anywhere invocable)"$'\n'
   done
   stage_a_msg=$(printf '⚠️ Planning skills not installed anywhere invocable, so they were not enforced:\n%s\nProceeding with source edits.' "$unavailable_display")
+  # shellcheck disable=SC2154  # hook_event is set by parse-input.sh
   sb_hook_audit_record "dev-cycle-check" "$hook_event" "allow" "$stage_a_msg" "${file_path:-${command_str:-}}"
   jq -n --arg m "$stage_a_msg" '{"hookSpecificOutput":{"message":$m}}'
   exit 0

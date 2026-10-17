@@ -104,7 +104,9 @@ for f in common.sh shell-compression.sh graphify-gate.sh agentmemory-gate.sh \
 done
 
 for py in five_tool_instances.py patch-hooks.py patch-mcp.py fix-shell-compression-hook.py parity-verify.sh verify.sh; do
-  [[ -f "${SRC_DIR}/${py}" ]] && cp -f "${SRC_DIR}/${py}" "${TS_DIR}/${py}" 2>/dev/null || true
+  if [[ -f "${SRC_DIR}/${py}" ]]; then
+    cp -f "${SRC_DIR}/${py}" "${TS_DIR}/${py}" 2>/dev/null || true
+  fi
 done
 chmod +x "${TS_DIR}/parity-verify.sh" "${TS_DIR}/verify.sh" 2>/dev/null || true
 

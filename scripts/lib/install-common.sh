@@ -70,7 +70,7 @@ sb_install_parse_common_args() {
         fi
         exit 0
         ;;
-      ${purge_flag})
+      "${purge_flag}")
         if [[ -n "$purge_var" ]]; then
           printf -v "$purge_var" '%s' 1
         fi

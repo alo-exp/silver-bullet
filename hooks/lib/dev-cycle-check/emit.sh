@@ -4,6 +4,7 @@ emit_block() {
   local reason="$1"
   local json_reason
   json_reason=$(printf '%s' "$reason" | jq -Rs '.')
+  # shellcheck disable=SC2154  # hook_event is set by parse-input.sh
   sb_hook_audit_record "dev-cycle-check" "$hook_event" "deny" "$reason" "${file_path:-${command_str:-}}"
   if [[ "$hook_event" == "PreToolUse" ]]; then
     printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":%s}}' "$json_reason"

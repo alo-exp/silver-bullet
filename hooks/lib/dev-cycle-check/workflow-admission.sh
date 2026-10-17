@@ -7,6 +7,7 @@
 # admission check that prevents direct edits from bypassing /silver-routed
 # workflows. Legacy skill markers remain the fallback when no composed
 # workflow is active at all.
+# shellcheck disable=SC2154  # hook_event is set by parse-input.sh
 if [[ "$hook_event" == "PreToolUse" ]]; then
   repo_root=$(dcc_resolve_repo_root 2>/dev/null || true)
   active_workflows=()
@@ -51,6 +52,7 @@ if [[ "$hook_event" == "PreToolUse" ]]; then
       if [[ -n "$config_file" ]] && declare -f sb_project_is_initiated >/dev/null 2>&1; then
         if sb_project_is_initiated "$config_file"; then
           logic_edit=false
+          # shellcheck disable=SC2154  # shell_in_scope_targets is set by parse-input.sh
           if [[ -n "$file_path" ]]; then
             case "$file_path" in
               *.py|*.ts|*.tsx|*.js|*.jsx|*.go|*.rs|*.sh|*.rb|*.java|*.kt|*.swift|*.tf|*.hcl|*.c|*.cpp|*.h)

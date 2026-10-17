@@ -154,7 +154,7 @@ if grep -qF 'Forbidden reject reasons' "$SKILL" && grep -qE 'advisory|doc-only|n
 else
   fail "SKILL forbids advisory/doc-only reject reasons"
 fi
-if grep -qF 'After each rung’s review, the agent that launched the RFL applies ACCEPT fixes' "$SKILL" \
+if grep -qF "After each rung’s review, the agent that launched the RFL applies ACCEPT fixes" "$SKILL" \
   || grep -qF "After each rung's review, the agent that launched the RFL applies ACCEPT fixes" "$SKILL"; then
   pass "SKILL Policy B: launcher applies ACCEPT fixes"
 else

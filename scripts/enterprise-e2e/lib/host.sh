@@ -61,7 +61,7 @@ PY
 }
 
 enterprise_e2e_apply_host_path_default() {
-  local env_var="$1" field="$2" host sb_root legacy val
+  local env_var="$1" field="$2" host sb_root val
   host="$(enterprise_e2e_matrix_host)"
   sb_root="${SB_ROOT:-$(enterprise_e2e_sb_root 2>/dev/null || enterprise_e2e_harness_root)/..}"
   sb_root="$(cd "$sb_root" && pwd)"
