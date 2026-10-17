@@ -78,9 +78,10 @@ bash scripts/validate-launch-review.sh
 
 ## Stage 2 — SENTINEL Per-Skill Audit (Prose Skills)
 
-Mandatory **1 clean SENTINEL pass per canonical** `skills/*/SKILL.md` (**85 skills**).
-Agent bundle copies (`agents/{claude,codex,cursor}/*/SKILL.md`) are covered by sync
-parity when `diff` against canonical is empty; diverged copies require their own pass.
+Mandatory **1 clean SENTINEL pass per canonical** `skills/*/SKILL.md` (one per skill;
+count them with `ls skills/*/SKILL.md | wc -l`). Rendered bundle copies (`agents/claude/`,
+`host-bundles/{codex,cursor}/`) are covered by sync parity when `diff` against canonical is
+empty; diverged copies require their own pass.
 
 ### Pass criteria (per skill)
 
@@ -102,7 +103,7 @@ parity when `diff` against canonical is empty; diverged copies require their own
 echo "sentinel-skills-clean" >> "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state"
 ```
 
-Optional per-skill lines: `sentinel-clean:<skill-name>` (85 lines when complete).
+Optional per-skill lines: `sentinel-clean:<skill-name>` (one per canonical skill when complete).
 
 ### Validation
 
@@ -248,7 +249,7 @@ Codex live TUI delegates require operator-local CLIs and user API keys — **not
 (no first-party Anthropic/Codex keys; third-party proxy out of scope). The release gate requires six
 operator-local markers under `${SB_RUNTIME_STATE_DIR}/rc-validation/` (`pass` or audited `skip`).
 
-CI: [`.github/workflows/rc-validation.yml`](../.github/workflows/rc-validation.yml) is optional/non-blocking
+CI: [`.github/workflows/rc-validation.yml`](../../.github/workflows/rc-validation.yml) is optional/non-blocking
 (like `e2e-live.yml`) — cursor live when `CURSOR_API_KEY` exists; codex/claude structural install only.
 Five-tool cursor scenarios fold into RC cursor cells. See `docs/testing/RC-VALIDATION-MATRIX.md`.
 Legacy `run-release-live-matrix.sh` is optional diagnostics. Bypass: `SB_SKIP_RC_MATRIX=1`.
@@ -261,10 +262,12 @@ Before `gh release create` or `/silver-create-release`:
 
 1. Run `bash scripts/run-release-live-matrix.sh`
 2. Run `tests/e2e-live/run-e2e-live-tests.sh` (or documented SKIP)
-3. Confirm `matrix=codex-only` + `inline-full-surface` markers exist
+3. Confirm matching `matrix=` markers plus `inline-full-surface` exist (the accepted
+   combinations are listed in `hooks/lib/completion-audit/deploy-tier.sh`)
 4. Run `bash scripts/verify-release-commit-ci.sh` — CI + Secret Scan green on HEAD
 
-Default release path uses Kay-backed Codex-compatible markers (`matrix=codex-only`).
+The live harnesses default to the Claude runtime (`matrix=claude-only` markers);
+`scripts/run-sb-live-tests-kay.sh` produces Kay-backed `matrix=codex-only` markers instead.
 Full Claude/native-Codex parity is optional diagnostic coverage.
 
 Mandatory tri-host skill surface + routing smoke (before live matrix):

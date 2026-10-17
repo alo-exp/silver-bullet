@@ -1,8 +1,8 @@
 # Security Posture
 
-**Last updated:** 2026-08-08
+**Last updated:** 2026-10-17
 
-**Current release line:** v0.51.x
+**Supported release line:** see the Supported Versions table in [`SECURITY.md`](../SECURITY.md#supported-versions)
 
 **Methodology:** release security gates, targeted SENTINEL skill audits, and regression tests
 

@@ -1,27 +1,32 @@
 # Technical Debt Register
 
-Items are appended newest-first per phase. Format: `| Item | Severity | Effort | Phase introduced |`
-
-Priority score = (Impact + Risk) × (6 − Effort)  where Impact/Risk/Effort are 1–5.
+Format: `| Item | Severity | Effort | Status |`. Priority score = (Impact + Risk) × (6 − Effort), where Impact/Risk/Effort are 1–5. Resolved items stay listed with how they were resolved; the product backlog is [issues/BACKLOG.md](issues/BACKLOG.md).
 
 ---
 
-## Phase 2 — Skill Enforcement Expansion (2026-04-05)
+## Open
 
-| Item | Severity | Effort | Phase introduced |
-|------|----------|--------|-----------------|
-| `.silver-bullet.json` `required_deploy` and `all_tracked` correctness not validated in CI — `completion-audit.sh` silently enforces wrong skill list if arrays drift; a `jq` assertion in CI would catch this immediately | High | Low | Phase 2 |
-| No CI step enforcing template parity — `docs/workflows/` and `templates/workflows/` byte-identity is currently verified only during code review; a `diff` step in CI would prevent silent template drift for new projects | High | Low | Phase 2 |
-| `hooks/dev-cycle-check.sh` has no test file — all four stage routing paths (A/B/C/D), phase-skip detection, and the trivial-file bypass are completely untested; bash test patterns already exist in `tests/hooks/` for reference | High | Medium | Phase 2 |
-| `finalization_skills` in `dev-cycle-check.sh` is a hardcoded string that must be manually kept in sync with `required_deploy` in `.silver-bullet.json` — adding a future skill to `required_deploy` without updating `finalization_skills` silently breaks phase-skip detection | Medium | Medium | Phase 2 |
+| Item | Severity | Effort | Status |
+|------|----------|--------|--------|
+| CI step "Assert DEFAULT_REQUIRED is subset of DEFAULT_TRACKED in hook scripts" (`.github/workflows/ci.yml`) greps `hooks/stop-check.sh` for `DEFAULT_REQUIRED="silver-…` and `hooks/record-skill.sh` for `DEFAULT_TRACKED=`; neither literal list exists any more (both come from `hooks/lib/required-skills.sh`), so the step always passes. Replace it with a check against `templates/silver-bullet.config.json.default`, or drop it — CI already asserts `required_deploy` ⊆ `all_tracked` on the config | Medium | Low | Open (found 2026-10-17) |
+| `hooks/rfl-policy-c-gate.sh` runs under `set -euo pipefail` with no `ERR` trap, unlike the other hooks; an unexpected failure exits non-zero and surfaces as a hook error instead of failing open | Low | Low | Open (found 2026-10-17) |
+| Without `jq`, `hooks/completion-audit.sh` blocks `git commit`, `git push`, `gh pr create`, `gh release create` and deploy commands even outside an SB project (its jq fallback runs before the project-activation check), contradicting "enforcement engages only in initiated projects" | Medium | Low | Open (found 2026-10-17) |
+| The release-gate message for an incomplete SENTINEL manifest in `hooks/lib/completion-audit/deploy-tier.sh` hard-codes "85/85 clean rows"; the canonical skill count is now derived from `skills/*/SKILL.md` | Low | Low | Open (found 2026-10-17) |
+| `scripts/install-claude.sh` falls back to a maintainer-specific absolute path for the `claude` binary when it is not on `PATH` | Low | Low | Open (found 2026-10-17) |
+| `multi_agent.delegation_timeout_seconds` is in the config template and described in `docs/multi-agent-coordination.md`, but no script reads it | Low | Low | Open (found 2026-10-17) |
+| `skills/silver-create-release` generates release notes with `##` section headings and inserts them under the `## [X.Y.Z]` heading of `CHANGELOG.md`, so each release reintroduces same-level subsections (normalized to `###` on 2026-10-17) | Low | Low | Open (found 2026-10-17) |
+| `docs/workflows/` and `templates/workflows/` must stay byte-identical by hand; only tests catch drift | Low | Medium | Open |
 
-### Prioritized Remediation Plan
+## Resolved
 
-| Priority | Item | Score | Suggested phase |
-|----------|------|-------|-----------------|
-| 1 | Add `jq` CI assertions for `required_deploy` and `all_tracked` | (3+4)×(6−1)=35 | Next CI improvement pass |
-| 2 | Add `diff` CI step for `docs/` vs `templates/` parity | (3+3)×(6−1)=30 | Next CI improvement pass |
-| 3 | Create `tests/hooks/test-dev-cycle-check.sh` covering all 4 stages + legacy trivial-marker guard | (4+4)×(6−3)=24 | Phase 3 or dedicated test hardening sprint |
-| 4 | Derive `finalization_skills` from `.silver-bullet.json` at hook runtime instead of hardcoding | (3+3)×(6−3)=18 | When next skill is added to `required_deploy` |
+| Item | Resolution |
+|------|------------|
+| `required_deploy` / `all_tracked` correctness not validated in CI (priority 1, score 35) | CI asserts `required_deploy` ⊆ `all_tracked` and that `.silver-bullet.json` skill lists match the template |
+| No CI step enforcing `docs/workflows/` ↔ `templates/workflows/` parity (priority 2, score 30) | CI step "Check docs/workflows/ parity with templates/workflows/"; also `tests/docs/test-documentation-scheme.sh` |
+| `hooks/dev-cycle-check.sh` had no test file (priority 3, score 24) | `tests/hooks/test-dev-cycle-check.sh` covers stages A–D, phase-skip detection, the trivial marker, state tamper, plugin boundary and devops-cycle |
 
-Items 1 and 2 can be done alongside feature work in under an hour total. Item 3 requires ~2 hours to write comprehensive bash test cases. Item 4 requires a small refactor of `dev-cycle-check.sh` startup to read and parse the JSON config.
+## Partly resolved
+
+| Item | Status |
+|------|--------|
+| `finalization_skills` in `dev-cycle-check.sh` was a hard-coded string that had to be kept in sync with `required_deploy` (priority 4, score 18) | The hook now derives the list from the project's `required_deploy` minus the lifecycle markers. A hard-coded fallback (`silver-branch-finish silver-create-release silver-completion-audit tdd`) and the lifecycle exclusion list remain in the script and still need manual upkeep when lifecycle skills change |
