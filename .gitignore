@@ -32,3 +32,6 @@ data/iii-config.runtime.yaml
 
 # Node
 node_modules/
+
+# Agent worktrees created inside the checkout
+.claude/worktrees/
