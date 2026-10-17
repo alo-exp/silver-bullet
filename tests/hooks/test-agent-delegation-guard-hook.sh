@@ -87,6 +87,12 @@ assert_eq "apply_patch with relative tool_input.path denied" "deny" "$(jq -r '.h
 tl_run_hook "$HOOK" "$(edit_json MultiEdit "$PROJ/src/new-file.txt")"
 assert_eq "new file inside scope denied" "deny" "$(jq -r '.hookSpecificOutput.permissionDecision' <<<"$TL_OUT")"
 
+tl_run_hook "$HOOK" "$(edit_json Write "$PROJ/src/newdir/deeper/a.txt")"
+assert_eq "new file in a new subdirectory of an owned scope denied" "deny" "$(jq -r '.hookSpecificOutput.permissionDecision' <<<"$TL_OUT")"
+tl_run_hook "$HOOK" "$(edit_json Write "$PROJ/docs/newdir/a.txt")"
+assert_eq "new file in a new subdirectory outside the scope allowed" "0|" "$TL_STATUS|$TL_OUT"
+tl_run_hook "$HOOK" "$(edit_json Write "$PROJ/src/newdir/../../docs/a.txt")"
+assert_eq "dot-dot path through a missing dir is not trusted as in-scope" "0|" "$TL_STATUS|$TL_OUT"
 tl_run_hook "$HOOK" "$(edit_json Write "$PROJ/hooks/repair.sh")"
 assert_eq "harness repair path under hooks/ allowed" "0|" "$TL_STATUS|$TL_OUT"
 

@@ -72,12 +72,20 @@ sb_agent_delegation_normalize_path() {
   if [[ "$path" != /* ]]; then
     path="${repo_root%/}/$path"
   fi
-  local parent
-  parent="$(cd "$(dirname "$path")" 2>/dev/null && pwd)" || return 1
-  path="${parent}/$(basename "$path")"
-  if [[ "$path" == *".."* ]]; then
-    return 1
-  fi
+  # Any ".." component makes the path untrustworthy.
+  case "/$path/" in
+    */../*) return 1 ;;
+  esac
+  # Resolve the nearest existing ancestor and re-append the components that do not exist yet,
+  # so a write to a new file in a new subdirectory is still checked against the scope.
+  local dir="$path" rest="" parent
+  while [[ ! -d "$dir" ]]; do
+    rest="/$(basename "$dir")$rest"
+    dir="$(dirname "$dir")"
+  done
+  parent="$(cd "$dir" 2>/dev/null && pwd)" || return 1
+  path="${parent%/}${rest}"
+  [[ -n "$path" ]] || path="/"
   printf '%s' "$path"
 }
 
