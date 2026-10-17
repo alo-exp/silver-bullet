@@ -8,8 +8,16 @@
 # Fallback definitions if sourcing failed (e.g. in test environments or path resolution issues)
 if ! declare -f count_flow_log_rows >/dev/null 2>&1; then
   # grep -c already prints 0 when nothing matches; only a missing file prints nothing.
-  count_flow_log_rows() { local n; n=$(grep -cE '^\| [0-9]+ \|' "$1" 2>/dev/null) || true; echo "${n:-0}"; }
-  count_complete_flow_rows() { local n; n=$(grep -cE '^\| [^|]+\| [^|]+\| (complete|skipped)' "$1" 2>/dev/null) || true; echo "${n:-0}"; }
+  count_flow_log_rows() {
+    local n
+    n=$(grep -cE '^\| [0-9]+ \|' "$1" 2>/dev/null) || true
+    echo "${n:-0}"
+  }
+  count_complete_flow_rows() {
+    local n
+    n=$(grep -cE '^\| [^|]+\| [^|]+\| (complete|skipped)' "$1" 2>/dev/null) || true
+    echo "${n:-0}"
+  }
 fi
 
 # shellcheck source=lib/skill-discovery.sh

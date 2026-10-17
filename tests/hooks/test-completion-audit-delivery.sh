@@ -57,6 +57,13 @@ release_ready() {
   printf 'matrix=inline-full-surface\n' >"$SB_RUNTIME_STATE_DIR/inline-e2e-matrix"
   printf '%s\n' adversarial-review-clean sentinel-skills-clean quality-gate-stage-3 full-test-suite-rerun >"$QG"
 }
+# write_exec <file> <exit-code>: install an executable validator atomically (write, chmod, rename)
+# so an immediate exec cannot race an open writer ("Text file busy").
+write_exec() {
+  printf '#!/usr/bin/env bash\nexit %s\n' "$2" >"$1.tmp"
+  chmod +x "$1.tmp"
+  mv -f "$1.tmp" "$1"
+}
 PR='gh pr create --fill'
 
 # ── enterprise policy and enforcement tier ───────────────────────────────────
@@ -221,18 +228,18 @@ run_ca PreToolUse "$REL"
 assert_contains "partial quality gate state" "$(message)" "pre-release quality sequence has not been completed"
 release_ready
 mkdir -p "$PROJ/scripts"
-printf '#!/usr/bin/env bash\nexit 1\n' >"$PROJ/scripts/validate-launch-review.sh"; chmod +x "$PROJ/scripts/validate-launch-review.sh"
+write_exec "$PROJ/scripts/validate-launch-review.sh" 1
 run_ca PreToolUse "$REL"
 assert_contains "failing LAUNCH-REVIEW validator blocks" "$(message)" "LAUNCH-REVIEW.md does not satisfy"
-printf '#!/usr/bin/env bash\nexit 0\n' >"$PROJ/scripts/validate-launch-review.sh"
-printf '#!/usr/bin/env bash\nexit 1\n' >"$PROJ/scripts/validate-sentinel-skills-manifest.sh"; chmod +x "$PROJ/scripts/validate-sentinel-skills-manifest.sh"
+write_exec "$PROJ/scripts/validate-launch-review.sh" 0
+write_exec "$PROJ/scripts/validate-sentinel-skills-manifest.sh" 1
 run_ca PreToolUse "$REL"
 assert_contains "failing SENTINEL validator blocks" "$(message)" "SENTINEL per-skill manifest is incomplete"
-printf '#!/usr/bin/env bash\nexit 0\n' >"$PROJ/scripts/validate-sentinel-skills-manifest.sh"
+write_exec "$PROJ/scripts/validate-sentinel-skills-manifest.sh" 0
 run_ca PreToolUse "$REL"
 assert_eq "passing validators: release allowed" "allow" "$(decision)"
 run_ca PreToolUse "$REL" SB_REQUIRE_PRE_RELEASE_QUALITY_GATE=1
-assert_eq "env switch also enables the quality gate" "allow" "$(decision)"
+assert_eq "env switch also enables the quality gate" "allow " "$(decision) $([[ "$(decision)" == allow ]] || message)"
 
 # RC matrix
 mkproj rc '.release={require_rc_matrix:true}'
@@ -270,6 +277,117 @@ mkproj reldevopsdefault '.project.active_workflow="devops-cycle" | .skills.requi
 state inst-a
 run_ca PreToolUse "$REL"
 assert_contains "devops release default list applies" "$(message)" "silver-create-release"
+
+# ── more release matrix variants and CI listings ─────────────────────────────
+mkproj matrices '.release={require_plugin_runtime_matrix:true} | .skills.required_release=["inst-b"]'
+state inst-a inst-b
+set_matrix() { printf 'matrix=%s\n' "$1" >"$SB_RUNTIME_STATE_DIR/release-live-matrix"; printf 'matrix=%s\n' "$2" >"$SB_RUNTIME_STATE_DIR/e2e-live-matrix"; printf 'matrix=%s\n' "$3" >"$SB_RUNTIME_STATE_DIR/inline-e2e-matrix"; }
+set_matrix full-claude-codex full-claude-codex inline-full-surface
+run_ca PreToolUse "$REL"; assert_eq "full claude+codex matrix accepted" "allow" "$(decision)"
+set_matrix codex-only codex-only inline-full-surface
+run_ca PreToolUse "$REL"; assert_eq "codex-only matrix accepted" "allow" "$(decision)"
+set_matrix cursor-smoke codex-only inline-full-surface
+run_ca PreToolUse "$REL"; assert_eq "cursor smoke + codex e2e accepted" "allow" "$(decision)"
+set_matrix cursor-smoke claude-only inline-full-surface
+run_ca PreToolUse "$REL"; assert_eq "inconsistent matrix pair rejected" "deny" "$(decision)"
+set_matrix claude-only claude-only inline-partial
+run_ca PreToolUse "$REL"; assert_eq "inline matrix must be the full surface" "deny" "$(decision)"
+set_matrix claude-only claude-only inline-full-surface
+SHA="$(git -C "$PROJ" rev-parse HEAD)"
+run_ca PreToolUse "$REL" GH_RUN_LIST_OVERRIDE="[{\"workflowName\":\"CI\",\"status\":\"in_progress\",\"headSha\":\"$SHA\",\"createdAt\":\"1\"},{\"workflowName\":\"Lint\",\"status\":\"completed\",\"conclusion\":\"failure\",\"headSha\":\"$SHA\",\"createdAt\":\"2\"},{\"workflowName\":\"Old\",\"status\":\"completed\",\"conclusion\":\"failure\",\"headSha\":\"other\",\"createdAt\":\"3\"}]"
+assert_contains "several non-green workflows are all listed" "$(message)" "• Lint — status=completed conclusion=failure"
+assert_contains "first non-green workflow listed" "$(message)" "• CI — status=in_progress"
+assert_not_contains "runs for other commits are ignored" "$(message)" "• Old"
+run_ca PreToolUse "$REL" GH_RUN_LIST_OVERRIDE="[{\"workflowName\":\"CI\",\"status\":\"completed\",\"conclusion\":\"failure\",\"headSha\":\"$SHA\",\"createdAt\":\"1\"},{\"workflowName\":\"CI\",\"status\":\"completed\",\"conclusion\":\"success\",\"headSha\":\"$SHA\",\"createdAt\":\"2\"}]"
+assert_eq "only the latest run per workflow counts" "allow" "$(decision)"
+
+# ── ordering and review states in more combinations ──────────────────────────
+mkproj combos '.skills.required_deploy=["inst-a","ghost-skill"]'
+printf '# Review\n\n## Findings\n\nNo issues found - review completed with evidence.\n\nstatus: passed\n' >"$PROJ/.planning-review.tmp" && mkdir -p "$PROJ/.planning" && mv "$PROJ/.planning-review.tmp" "$PROJ/.planning/REVIEW.md"
+printf '## Round 1\nFindings: advisory only - addressed.\n\n## Round 2\nNo findings - clean pass.\n' >"$PROJ/.planning/REVIEW-ROUNDS.md"
+state inst-a silver-review-request
+run_ca PreToolUse "$PR"
+assert_eq "request without review is not an ordering issue" "allow" "$(decision)"
+state inst-a silver-review
+run_ca PreToolUse "$PR"
+assert_eq "review without triage is not an ordering issue" "allow" "$(decision)"
+state inst-a silver-review-request silver-review-triage
+run_ca PreToolUse "$PR"
+assert_eq "request then triage is in order" "allow" "$(decision)"
+state inst-a silver-review silver-review-request
+run_ca PreToolUse "$PR"
+assert_contains "ordering block lists ignored skills" "$(message)" "ghost-skill"
+assert_contains "ordering block header" "$(message)" "ORDERING BLOCKED"
+mkproj combos2 '.skills.required_deploy=["inst-a","inst-b"]'
+printf '# Review\n\n## Findings\n\nNo issues found - review completed with evidence.\n\nstatus: passed\n' >"$TL_TMP/rev.md"; mkdir -p "$PROJ/.planning"; cp "$TL_TMP/rev.md" "$PROJ/.planning/REVIEW.md"
+printf '## Round 1\nFindings: advisory only - addressed.\n\n## Round 2\nNo findings - clean pass.\n' >"$PROJ/.planning/REVIEW-ROUNDS.md"
+state inst-a silver-review silver-review-request
+run_ca PreToolUse "$PR"
+assert_contains "missing skills block also reports ordering issues" "$(message)" "Ordering issues detected"
+
+# stale marker and artifact blocks with ignored skills in the message
+mkproj stale2 '.skills.required_deploy=["inst-a","verify-tests","ghost-skill"]'
+rm -f "$SILVER_BULLET_VERIFY_TESTS_STATE_FILE"
+state inst-a verify-tests
+run_ca PreToolUse "$PR"
+assert_contains "stale marker block lists ignored skills" "$(message)" "ghost-skill"
+assert_contains "stale marker block header" "$(message)" "TEST GATE STALE"
+printf 'verified\n' >"$SILVER_BULLET_VERIFY_TESTS_STATE_FILE"
+mkproj art2 '.skills.required_deploy=["inst-a","ghost-skill"]'
+state inst-a silver-execute
+run_ca PreToolUse "$PR"
+assert_contains "artifact block lists ignored skills" "$(message)" "ghost-skill"
+assert_contains "artifact block header" "$(message)" "ARTIFACT BLOCKED"
+
+# find_planning_artifact against a real .planning tree
+mkproj find1 '.skills.required_deploy=["inst-a"]'
+mkdir -p "$PROJ/.planning/phases/01-x"
+state inst-a silver-verify silver-secure silver-validate
+run_ca PreToolUse "$PR"
+assert_contains "empty .planning still lacks artifacts" "$(message)" "ARTIFACT BLOCKED"
+echo ok >"$PROJ/.planning/phases/01-x/01-UAT.md"
+echo ok >"$PROJ/.planning/phases/01-x/01-SECURITY.md"
+echo ok >"$PROJ/.planning/phases/01-x/01-VALIDATION.md"
+run_ca PreToolUse "$PR"
+assert_eq "phase artifacts found by pattern satisfy the markers" "allow" "$(decision)"
+rm -f "$PROJ/.planning/phases/01-x/01-UAT.md"
+printf '# Verification\n\n```bash\n$ npm test\nTests: 3 passed, 3 total\n```\n' >"$PROJ/.planning/VERIFICATION.md"
+run_ca PreToolUse "$PR"
+assert_eq "VERIFICATION.md satisfies the verify marker" "allow" "$(decision)"
+mkproj find2 '.skills.required_deploy=["inst-a"]'
+mkdir -p "$PROJ/.planning"
+echo ok >"$PROJ/.planning/UAT.md"
+echo ok >"$PROJ/.planning/SECURITY.md"
+echo ok >"$PROJ/.planning/VALIDATION.md"
+state inst-a silver-verify silver-secure silver-validate
+run_ca PreToolUse "$PR"
+assert_eq "top-level artifacts satisfy the markers" "allow" "$(decision)"
+
+# ── evidence schema warn-first mode ──────────────────────────────────────────
+mkproj evidence '.skills.required_deploy=["inst-a"]'
+mkdir -p "$PROJ/scripts/lib" "$PROJ/.planning/phases/056-test"
+cp "$TL_REPO_ROOT/scripts/validate-evidence-findings.py" "$TL_REPO_ROOT/scripts/validate-evidence-findings.sh" "$PROJ/scripts/"
+cp "$TL_REPO_ROOT/scripts/lib/evidence_common.py" "$PROJ/scripts/lib/"
+cat >"$PROJ/.planning/phases/056-test/DOMAIN-AUDIT.md" <<'MD'
+# Domain Audit
+
+## Findings
+
+| domain | scope | severity | confidence | evidence | finding |
+|--------|-------|----------|------------|----------|---------|
+| code-health | src/app.ts | BLOCK | HIGH | src/app.ts:1 | missing required columns |
+MD
+state inst-a
+run_ca PreToolUse "$PR" SILVER_BULLET_EVIDENCE_SCHEMA_STRICT=0
+assert_eq "warn mode does not block" "allow" "$(decision)"
+assert_contains "warning is appended to the success message" "$(message)" "EVIDENCE SCHEMA"
+assert_contains "success headline kept" "$(message)" "Workflow compliance verified"
+run_ca PreToolUse "$PR" SILVER_BULLET_EVIDENCE_SCHEMA_STRICT=1
+assert_contains "strict mode blocks" "$(message)" "EVIDENCE SCHEMA GATE"
+jq '.skills.required_deploy=["inst-a","ghost-skill"]' "$PROJ/.silver-bullet.json" >"$PROJ/c.tmp" && mv "$PROJ/c.tmp" "$PROJ/.silver-bullet.json"
+run_ca PreToolUse "$PR" SILVER_BULLET_EVIDENCE_SCHEMA_STRICT=0
+assert_contains "warning joins the ignored-skills note" "$(message)" "ghost-skill"
+assert_contains "warning text follows the ignored note" "$(message)" "finding tables deviate"
 
 # ── jq missing ───────────────────────────────────────────────────────────────
 mkproj nojq

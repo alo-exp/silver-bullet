@@ -314,4 +314,76 @@ nodocs="$TL_TMP/nodocs"; mkdir -p "$nodocs"
 drive gates.sh "build_doc_scheme_checklist_keys '$nodocs'; printf '%s\n' \"\${#DOC_SCHEME_CHECKLIST_KEYS[@]}\""
 assert_eq "checklist keys: no docs dir keeps the mandatory three" "3" "$TL_OUT"
 
+# ── change-class.sh: git failure fallbacks ───────────────────────────────────
+NOBASE="$TL_TMP/nobase"; mkdir -p "$NOBASE"
+git -C "$NOBASE" init -q -b trunk
+git -C "$NOBASE" config user.email t@example.com; git -C "$NOBASE" config user.name T; git -C "$NOBASE" config commit.gpgsign false
+echo a >"$NOBASE/a.txt"; git -C "$NOBASE" add a.txt; git -C "$NOBASE" commit -q -m init
+echo b >"$NOBASE/b.txt"
+collect "$NOBASE"
+assert_eq "no main/master branch: only working-tree changes (none tracked)" "" "$TL_OUT"
+echo c >>"$NOBASE/a.txt"
+collect "$NOBASE"
+assert_eq "no main/master branch: unstaged change reported" "a.txt" "$TL_OUT"
+
+tl_run bash -c 'source "$1"; git() { if [[ "$1 $2 $3" == "-C $4 diff" ]]; then return 1; fi; command git "$@"; }; ca_collect_changed_paths "$2"; echo "rc=$?"' _ "$CA/change-class.sh" "$GITROOT"
+assert_contains "failing git diff is tolerated" "$TL_OUT" "rc=0"
+tl_run bash -c 'source "$1"; git() { case "$*" in *diff*) return 1;; esac; command git "$@"; }; ca_collect_changed_paths "$2"; echo "rc=$?"' _ "$CA/change-class.sh" "$GITROOT"
+assert_eq "all git diffs failing: no paths, still success" "
+rc=0" "$TL_OUT"
+
+tl_run bash -c 'source "$1"; ca_collect_changed_paths() { printf "docs/a.md\n\ndocs/b.md\n"; }; cmd_first_line=""; ca_detect_change_class "$2" ""; echo "$ca_change_class"' _ "$CA/change-class.sh" "$GITROOT"
+assert_eq "blank lines in the path list are skipped" "docs" "$TL_OUT"
+
+# ── gates.sh: darwin stat failure, enforcement tier helper, project gate ─────
+tl_stub uname 'echo Darwin'
+tl_stub stat 'exit 1'
+drive gates.sh "_mtime_epoch '$mt'"
+assert_eq "darwin stat failure becomes mtime 0" "0" "$TL_OUT"
+rm -f "$TL_BIN/uname" "$TL_BIN/stat"
+
+mkdir -p "$TL_TMP/learn-only/docs/learnings"
+echo l >"$TL_TMP/learn-only/docs/learnings/2026-03.md"
+ln -s "$TL_TMP/learn-only/docs/learnings/2026-03.md" "$TL_TMP/learn-only/docs/learnings/2026-03-link.md"
+drive gates.sh "resolve_doc_key_state '$TL_TMP/learn-only' 2026-03 docs/learnings/YYYY-MM.md; echo \"\$DOC_KEY_EXISTS\""
+assert_eq "learnings key ignores symlinked monthly files" "1" "$TL_OUT"
+
+tier() { # tier <config path or empty> [pre-code]
+  tl_run env "${@:3}" bash -c 'source "$1/required-skills.sh"; source "$1/workflow-utils.sh"; source "$2/classify.sh"; source "$2/gates.sh"; _lib_dir="$1"; emit_block() { echo "BLOCK: $1"; }; config_file="$3"; eval "$4"; run_enforcement_tier_delivery_gate; echo "returned"' _ "$LIBDIR" "$CA" "$1" "${2:-:}"
+}
+tier "" 
+assert_eq "no config: tier gate is a no-op" "returned" "$TL_OUT"
+tier "$TL_TMP/missing-config.json"
+assert_eq "missing config file: tier gate is a no-op" "returned" "$TL_OUT"
+echo '{}' >"$TL_TMP/tier-cfg.json"
+tier "$TL_TMP/tier-cfg.json" ':' SILVER_BULLET_SKIP_ENFORCEMENT_TIER_GATE=1
+assert_eq "skip switch disables the tier gate" "returned" "$TL_OUT"
+tier "$TL_TMP/tier-cfg.json" 'sb_enforcement_tier_delivery_allowed() { return 0; }'
+assert_eq "tier allowing delivery: gate returns" "returned" "$TL_OUT"
+tier "$TL_TMP/tier-cfg.json" 'sb_enforcement_tier_delivery_allowed() { return 1; }; sb_enforcement_tier_effective() { echo 1; }; sb_enforcement_tier_block_message() { echo "tier-msg-$1"; }'
+assert_contains "tier denying delivery: blocks with the tier message" "$TL_OUT" "BLOCK: tier-msg-1"
+assert_not_contains "tier denial exits instead of returning" "$TL_OUT" "returned"
+
+# ── gates.sh: evidence schema strictness resolution ──────────────────────────
+evid() { # evid <config json> [env...]
+  printf '%s' "$1" >"$TL_TMP/ev-cfg.json"
+  tl_run env "${@:2}" bash -c 'source "$1/required-skills.sh"; source "$1/workflow-utils.sh"; source "$2/classify.sh"; source "$2/gates.sh"; _lib_dir="$1"; config_file="$3"; run_evidence_schema_delivery_gate "$4"; echo "strict=$SILVER_BULLET_EVIDENCE_SCHEMA_STRICT"' _ "$LIBDIR" "$CA" "$TL_TMP/ev-cfg.json" "$TL_TMP"
+}
+evid '{}'
+assert_contains "default is strict" "$TL_OUT" "strict=1"
+evid '{"hooks":{"evidence_schema":{"strict":"false"}}}'
+assert_contains "config can relax strictness" "$TL_OUT" "strict=0"
+evid '{"hooks":{"evidence_schema":{"strict":"yes"}}}'
+assert_contains "'yes' counts as strict" "$TL_OUT" "strict=1"
+evid '{}' SILVER_BULLET_EVIDENCE_SCHEMA_STRICT=off
+assert_contains "env override wins and unknown values are non-strict" "$TL_OUT" "strict=0"
+evid '{}' SILVER_BULLET_EVIDENCE_SCHEMA_STRICT=true
+assert_contains "env 'true' is strict" "$TL_OUT" "strict=1"
+tl_run env -u SILVER_BULLET_EVIDENCE_SCHEMA_STRICT bash -c 'source "$1/required-skills.sh"; source "$2/classify.sh"; source "$2/gates.sh"; _lib_dir="$3"; config_file=""; run_evidence_schema_delivery_gate "$4"; echo "strict=$SILVER_BULLET_EVIDENCE_SCHEMA_STRICT"' _ "$LIBDIR" "$CA" "$TL_TMP/no-such-dir" "$TL_TMP"
+assert_contains "no config at all: strict by default" "$TL_OUT" "strict=1"
+mkdir -p "$TL_TMP/no-ep-lib"
+printf '{"hooks":{"evidence_schema":{"strict":"false"}}}' >"$TL_TMP/ev-cfg.json"
+tl_run env -u SILVER_BULLET_EVIDENCE_SCHEMA_STRICT bash -c 'source "$1/required-skills.sh"; source "$2/classify.sh"; source "$2/gates.sh"; _lib_dir="$3"; config_file="$4"; run_evidence_schema_delivery_gate "$5"; echo "strict=$SILVER_BULLET_EVIDENCE_SCHEMA_STRICT"' _ "$LIBDIR" "$CA" "$TL_TMP/no-ep-lib" "$TL_TMP/ev-cfg.json" "$TL_TMP"
+assert_contains "without the enterprise-policy lib the config is read directly" "$TL_OUT" "strict=0"
+
 tl_results
