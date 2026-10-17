@@ -50,7 +50,7 @@ export SB_LEANCTX_MCP_ARTIFACT=/ovr
 assert_eq "artifact override" "/ovr" "$(sb_leanctx_platform_artifact_path "$PR" claude)"
 unset SB_LEANCTX_MCP_ARTIFACT
 assert_eq "artifact cursor" "$HOME/.cursor/mcp.json" "$(sb_leanctx_platform_artifact_path "$PR" cursor)"
-assert_eq "artifact codex (current layout)" "/ch/.codex/config.toml" "$(CODEX_HOME=/ch sb_leanctx_platform_artifact_path "$PR" codex)"
+assert_eq "artifact codex" "/ch/config.toml" "$(CODEX_HOME=/ch sb_leanctx_platform_artifact_path "$PR" codex)"
 assert_eq "artifact opencode" "$HOME/.config/opencode/opencode.json" "$(sb_leanctx_platform_artifact_path "$PR" opencode)"
 assert_eq "artifact pi env" "/pd/extensions/silver-bullet-five-tool-stack/config.json" "$(PI_CODING_AGENT_DIR=/pd sb_leanctx_platform_artifact_path "$PR" pi)"
 assert_eq "artifact pi home" "$HOME/.pi/agent/extensions/silver-bullet-five-tool-stack/config.json" "$(env -u PI_CODING_AGENT_DIR bash -c 'source "$1"; sb_leanctx_platform_artifact_path /x pi' _ "$LIBF")"

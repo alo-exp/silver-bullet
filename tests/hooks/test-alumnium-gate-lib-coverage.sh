@@ -42,8 +42,8 @@ export SB_ALUMNIUM_MCP_ARTIFACT=/ovr
 assert_eq "artifact override" "/ovr" "$(sb_alumnium_platform_artifact_path "$PR" cursor)"
 unset SB_ALUMNIUM_MCP_ARTIFACT
 assert_eq "artifact cursor" "$HOME/.cursor/mcp.json" "$(sb_alumnium_platform_artifact_path "$PR" cursor)"
-assert_eq "artifact codex (current layout)" "/ch/.codex/config.toml" "$(CODEX_HOME=/ch sb_alumnium_platform_artifact_path "$PR" codex)"
-assert_eq "artifact codex default home" "$HOME/.codex/.codex/config.toml" "$(env -u CODEX_HOME bash -c 'source "$1"; sb_alumnium_platform_artifact_path /x codex' _ "$LIBF")"
+assert_eq "artifact codex" "/ch/config.toml" "$(CODEX_HOME=/ch sb_alumnium_platform_artifact_path "$PR" codex)"
+assert_eq "artifact codex default home" "$HOME/.codex/config.toml" "$(env -u CODEX_HOME bash -c 'source "$1"; sb_alumnium_platform_artifact_path /x codex' _ "$LIBF")"
 assert_eq "artifact claude" "$HOME/.claude.json" "$(sb_alumnium_platform_artifact_path "$PR" claude)"
 assert_eq "artifact other host" "$HOME/.claude.json" "$(sb_alumnium_platform_artifact_path "$PR" pi)"
 assert_eq "artifact default host" "$HOME/.claude.json" "$(SILVER_BULLET_RUNTIME=claude sb_alumnium_platform_artifact_path "$PR")"
