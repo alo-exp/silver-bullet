@@ -4,7 +4,7 @@ Silver Bullet supports multiple host coding-agent environments. The workflow int
 
 ## Model Selection Boundary
 
-Silver Bullet does not provide generic automatic model routing. The historical `hooks/ensure-model-routing.sh` script is disabled, exits as a no-op, and is not registered as the active mechanism for model choice.
+Silver Bullet does not provide generic automatic model routing. An earlier model-routing hook (`ensure-model-routing.sh`) has been removed, and no hook registered in `hooks/hooks.json` selects models.
 
 | Surface | Model owner | Silver Bullet responsibility |
 |---------|-------------|------------------------------|
@@ -55,7 +55,7 @@ Tier 2+ restores parent-only mode: parent spawns Task workers; cooperative singl
 
 SB uses **parent-only** orchestration: the parent agent delegates each atomic flow to a **Task worker** (subagent). At tier 2, `orchestrator-directive-guard.sh` blocks parent Edit/Write/Bash; workers implement after recording the assigned skill.
 
-**Cursor requirement:** Tier-2 parent mode needs Cursor's Task/subagent tool and merged hooks. Without subagents, use tier 0–1 guidance-only behavior or migrate hooks per `skills/silver-init/scripts/merge-cursor-hooks.py`. See `docs/ORCHESTRATOR.md`.
+**Cursor requirement:** Tier-2 parent mode needs Cursor's Task/subagent tool and merged hooks. Without subagents, use tier 0–1 guidance-only behavior or merge the hooks with `scripts/lib/install-cursor/merge-cursor-hooks.py` (which `scripts/install-cursor.sh` runs). See `docs/ORCHESTRATOR.md`.
 
 ### Diagnostics
 
@@ -71,9 +71,10 @@ SB_DIAG_FORMAT=json bash scripts/sb-diagnostics.sh
 ```
 
 Checks: `jq`, hook config presence, Graphify availability, package version,
-state root, inferred runtime name (`claude`, `codex`, or `cursor`), and capability tier.
+state root, inferred runtime name, and capability tier. The scripts take no runtime
+argument; set `SILVER_BULLET_RUNTIME` to check a specific host.
 
-Host detection follows `hooks/lib/runtime-paths.sh` (`SILVER_BULLET_RUNTIME`, `CURSOR_PLUGIN_ROOT`, `CLAUDE_PLUGIN_ROOT`, Codex env markers). Doctor and diagnostics **do not** infer Cursor from unrelated hosts' config files on the same machine.
+Host detection follows `hooks/lib/runtime-paths.sh`: `SILVER_BULLET_RUNTIME` when set, otherwise Codex env markers, `CURSOR_PLUGIN_ROOT`, `PI_CODING_AGENT_DIR`, OpenCode markers, or `CLAUDE_PLUGIN_ROOT` paths, defaulting to `claude`. Accepted runtime names are `claude`, `codex`, `cursor`, `opencode`, `pi`, `goose` and `hermes`; each has its own state root (`~/.claude`, `~/.codex`, `~/.cursor`, `~/.config/opencode`, `~/.pi/agent`, `~/.config/goose`, `~/.hermes`). Doctor and diagnostics **do not** infer Cursor from unrelated hosts' config files on the same machine.
 
 ### sb:doctor host-scoped checks
 
@@ -110,15 +111,15 @@ Cursor release smoke (no live agent required): `bash scripts/release-live-matrix
 | Codex | `AGENTS.md` | Optional; not created by default on fresh Codex init |
 | Cursor | `AGENTS.md` | Optional; same reconciliation rules as Codex |
 
-Template content is host-neutral: `templates/CLAUDE.md.base` (project instruction template).
+The project instruction skeleton is `scripts/lib/install-claude/templates/CLAUDE.md.base`; Silver Bullet's own rules live in `silver-bullet.md`, not in the instruction file.
 
 ### Host hooks manifests
 
 | Host | Global hooks manifest | Hook merge script |
 |------|----------------------|-------------------|
-| Claude Code | `${SB_RUNTIME_HOME_ROOT}/settings.json` | `skills/silver-init/scripts/merge-hooks.py` |
-| Codex | Plugin-delivered hooks (optional user merge) | `merge-hooks.py` when user hooks surface is used |
-| Cursor | `${SB_RUNTIME_HOME_ROOT}/hooks.json` | `skills/silver-init/scripts/merge-cursor-hooks.py` |
+| Claude Code | `${SB_RUNTIME_HOME_ROOT}/settings.json` | `scripts/lib/install-claude/merge-hooks.py` (also reachable through the `skills/silver-init/scripts/merge-hooks.py` shim) |
+| Codex | Plugin-delivered hooks (optional user merge) | `scripts/install-codex.sh`, which routes hook commands through `hooks/codex-hook-adapter.sh` |
+| Cursor | `${SB_RUNTIME_HOME_ROOT}/hooks.json` | `scripts/lib/install-cursor/merge-cursor-hooks.py` (merges the generated `hooks/cursor-hooks.json`) |
 
 Project-scoped legacy v1 hook entries may appear in `.claude/settings.json` or `.codex/settings.json`; `sb:init` removes incompatible v1 entries when found.
 
@@ -139,7 +140,7 @@ Project-scoped legacy v1 hook entries may appear in `.claude/settings.json` or `
 
 ## Reload receipts and host evidence (Cursor)
 
-Runtime state for five-tool reconciliation lives under `${SB_RUNTIME_STATE}/recommended-tools/` (heartbeats, reload receipts). Paths resolve via `hooks/lib/runtime-paths.sh` — never by probing arbitrary home directories.
+Runtime state for five-tool reconciliation lives under `${SB_RUNTIME_STATE_DIR}/recommended-tools/` (heartbeats, reload receipts). Paths resolve via `hooks/lib/runtime-paths.sh` — never by probing arbitrary home directories.
 
 | Artifact | Path pattern |
 |----------|----------------|

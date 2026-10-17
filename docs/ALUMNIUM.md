@@ -136,7 +136,6 @@ export ALUMNIUM_MODEL='openai/MiniMax-M3'
 |----------|------|
 | [`scripts/minimax-openai-proxy.mjs`](../scripts/minimax-openai-proxy.mjs) | Rewrites `parsed: true` → `parsed: {}`, fixes missing `logprobs` |
 | [`scripts/start-minimax-openai-proxy.sh`](../scripts/start-minimax-openai-proxy.sh) | Start proxy on `127.0.0.1:18721` |
-| [`scripts/patch-alumnium-minimax.mjs`](../scripts/patch-alumnium-minimax.mjs) | Post-`npm install` — coerce MiniMax plain-text retriever output |
 
 **Verify:**
 
