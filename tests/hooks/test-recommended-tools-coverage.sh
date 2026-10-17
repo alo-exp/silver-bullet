@@ -2,7 +2,7 @@
 # Extra behavior tests for hooks/lib/recommended-tools.sh and recommended-tools-registry.sh
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
-tl_init
+tl_init claude
 
 # shellcheck source=../../hooks/lib/recommended-tools-registry.sh
 source "$TL_REPO_ROOT/hooks/lib/recommended-tools-registry.sh"

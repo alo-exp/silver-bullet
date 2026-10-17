@@ -2,7 +2,7 @@
 # Behavior tests for hooks/lib/alumnium-gate.sh (npm/npx are stubbed)
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
-tl_init
+tl_init claude
 unset SB_ALUMNIUM_MCP_ARTIFACT
 
 LIBF="$TL_REPO_ROOT/hooks/lib/alumnium-gate.sh"

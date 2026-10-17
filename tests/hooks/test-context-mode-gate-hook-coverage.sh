@@ -2,7 +2,7 @@
 # Behavior tests for hooks/context-mode-gate.sh (PreToolUse). node/context-mode are stubs.
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
-tl_init
+tl_init claude
 unset SB_CONTEXT_MODE_MCP_ARTIFACT SB_AGENT_CERT_RUN SB_KAY_HOOK_BRIDGE_INVOKED
 source "$TL_REPO_ROOT/tests/lib/c-toolgates-1-helpers.sh"
 gh_init_project
