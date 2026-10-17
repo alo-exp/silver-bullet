@@ -91,15 +91,6 @@ sb_scheduler_resolve_atom_id() {
     fi
   fi
 
-  # Reverse skill_to_entity lookup when token matches entity id usage.
-  resolved="$(jq -r --arg t "$token" '
-    .migration_map.skill_to_entity | to_entries[] | select(.value == $t) | .value
-  ' "$catalog_file" 2>/dev/null | head -1 || true)"
-  if [[ -n "$resolved" && "$resolved" == AF-* ]]; then
-    printf '%s' "$resolved"
-    return 0
-  fi
-
   return 1
 }
 

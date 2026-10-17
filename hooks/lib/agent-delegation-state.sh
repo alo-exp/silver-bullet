@@ -67,15 +67,50 @@ sb_agent_delegation_deactivate() {
 }
 
 sb_agent_delegation_normalize_path() {
-  local path="$1" repo_root="${2:-$PWD}"
+  local path="$1" repo_root="${2:-$PWD}" depth="${3:-0}"
   [[ -n "$path" ]] || return 1
+  # Symlink chains/loops: give up (callers treat failure as in scope).
+  [[ "$depth" -lt 20 ]] || return 1
   if [[ "$path" != /* ]]; then
     path="${repo_root%/}/$path"
   fi
-  path="$(cd "$(dirname "$path")" 2>/dev/null && pwd)/$(basename "$path")" || return 1
-  if [[ "$path" == *".."* ]]; then
-    return 1
+  # Walk the components left to right. While every component exists, resolve it physically
+  # (symlinks followed, so the real location is compared); once one does not exist, the rest is
+  # applied lexically ("." dropped, ".." popping one component, never above /).
+  local -a parts=() tail=()
+  local part cur="/" next link
+  IFS=/ read -ra parts <<<"$path"
+  for part in "${parts[@]}"; do
+    case "$part" in
+      ""|.) continue ;;
+      ..)
+        if [[ ${#tail[@]} -gt 0 ]]; then
+          unset 'tail[${#tail[@]}-1]'
+        else
+          cur="$(dirname "$cur")"
+        fi
+        continue
+        ;;
+    esac
+    if [[ ${#tail[@]} -eq 0 && -d "${cur%/}/$part" ]]; then
+      next="$(cd "${cur%/}/$part" 2>/dev/null && pwd -P)" || return 1
+      cur="$next"
+    elif [[ ${#tail[@]} -eq 0 && -L "${cur%/}/$part" ]]; then
+      # A symlink that is not a directory (a file link, or dangling): follow it once.
+      link="$(readlink "${cur%/}/$part" 2>/dev/null || true)"
+      [[ -n "$link" ]] || return 1
+      [[ "$link" == /* ]] || link="${cur%/}/$link"
+      sb_agent_delegation_normalize_path "$link" "$cur" "$((depth + 1))"
+      return $?
+    else
+      tail+=("$part")
+    fi
+  done
+  path="${cur%/}"
+  if [[ ${#tail[@]} -gt 0 ]]; then
+    path="${path}/$(IFS=/; printf '%s' "${tail[*]}")"
   fi
+  [[ -n "$path" ]] || path="/"
   printf '%s' "$path"
 }
 
@@ -83,9 +118,11 @@ sb_agent_delegation_path_in_scope() {
   local target="$1" repo_root="${2:-$PWD}"
   sb_agent_delegation_is_active || return 1
   local file scope norm_target
+  repo_root="$(sb_agent_delegation_normalize_path "$repo_root" "$PWD" 2>/dev/null || printf '%s' "$repo_root")"
   file="$(sb_agent_delegation_state_file)"
   norm_target="$(sb_agent_delegation_normalize_path "$target" "$repo_root" 2>/dev/null || true)"
-  [[ -n "$norm_target" ]] || return 1
+  # Fail closed: a target that cannot be normalized while a delegation is active is treated as in scope.
+  [[ -n "$norm_target" ]] || return 0
 
   local task_id host
   task_id="$(sb_agent_delegation_read_field task_id "")"

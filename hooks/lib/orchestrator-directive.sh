@@ -304,7 +304,7 @@ sb_orchestrator_prompt_has_override() {
 
 sb_orchestrator_extract_override_reason() {
   local prompt="$1"
-  printf '%s' "$prompt" | sed -n 's/.*[Ss][Bb][[:space:]]*OVERRIDE:[[:space:]]*//p' | head -1
+  printf '%s' "$prompt" | sed -n 's/.*[Ss][Bb][[:space:]]*[Oo][Vv][Ee][Rr][Rr][Ii][Dd][Ee]:[[:space:]]*//p' | head -1
 }
 
 # Write directive from orchestrator.json current_flow when present.
