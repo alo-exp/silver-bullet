@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2034  # variables are consumed by the sourcing tests
 # shellcheck shell=bash
 
 HOOK="$TL_REPO_ROOT/hooks/dev-cycle-check.sh"
