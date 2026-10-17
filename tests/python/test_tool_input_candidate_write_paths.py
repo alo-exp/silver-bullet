@@ -129,6 +129,7 @@ class CandidateWritePathsTest(unittest.TestCase):
         self.assertEqual(self.targets("bash script.sh"), [])
 
     def test_comment_empty_and_assignment_only_segments(self):
+        self.assertEqual(self.targets("FOO=1"), [])
         self.assertEqual(self.targets("   "), [])
         self.assertEqual(self.targets("# rm -rf everything"), [])
         self.assertEqual(self.targets("FOO=1; env BAR=2 && touch t.txt"), [self.p("t.txt")])
