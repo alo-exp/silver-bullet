@@ -123,13 +123,16 @@ enterprise_e2e_outcome_write_workflow_checklist() {
   [[ -z "${F2_CHECKLIST_FAIL:-}" ]] || return 1
   printf '# outcomes for row %s\n' "$1" >"$2"
 }
-f2_heal() {
+f2_heal() { # f2_heal PARENT_ROW: lets the marker search succeed again for that row (3 or 4)
   [[ -f "$F2_CTL/heal" ]] || return 0
-  rm -rf "$WORK_DIR/.planning/workflows/feature-currency.md" "$WORK_DIR/.planning/workflows/bugfix-health.md"
+  case "$1" in
+    3) rm -f "$F2_CTL/find-fail-post-exec-gates" ;;
+    4) rm -f "$F2_CTL/find-fail-validate-substep" ;;
+  esac
 }
 enterprise_e2e_outcome_row_passes() {
   printf 'outcome-row-passes row=%s work=%s log=%s ledger=%s evidence=%s\n' "$1" "$2" "$4" "$5" "${6:-}" >>"${F2_CALLS:?}"
-  f2_heal
+  f2_heal "$1"
   [[ ! -f "$F2_CTL/outcome-fail-$1" ]]
 }
 enterprise_e2e_outcome_row_failures() {
@@ -139,8 +142,14 @@ enterprise_e2e_outcome_row_failures() {
 enterprise_e2e_outcome_matrix_evidence_path() { printf 'evidence-for-%s\n' "$1"; }
 enterprise_e2e_outcome_ledger_workflow_line() { grep -E "^\| $2 \|" "$1"; }
 enterprise_e2e_outcome_ledger_parse_workflow_row() {
-  local status
-  f2_heal
+  local status n
+  # the ledger is parsed up front by ensure_internal_gate_markers (twice per call, two calls); only
+  # parses after the first $F2_CTL/heal-ledger-after of them may heal the marker search
+  n="$(($(cat "$F2_CTL/parse-count" 2>/dev/null || echo 0) + 1))"
+  echo "$n" >"$F2_CTL/parse-count"
+  if (( n > $(cat "$F2_CTL/heal-ledger-after" 2>/dev/null || echo 0) )); then
+    f2_heal "$(awk -F'|' '{gsub(/ /, "", $2); print $2}' <<<"$1")"
+  fi
   status="$(awk -F'|' '{gsub(/^ +| +$/, "", $5); print $5}' <<<"$1")"
   printf 'slug\nworkflow\n%s\n' "$status"
 }
