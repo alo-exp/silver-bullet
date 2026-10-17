@@ -103,7 +103,8 @@ class Statement:
     # `cond && echo true || echo false` arms can be told apart by trace text.
     sig: str | None = None
     fn: str = ""  # innermost enclosing function ("" at top level)
-    procsub: tuple | None = None  # (function, node id) when inside <(...) / >(...)
+    argc: int | None = None  # number of arguments when it cannot vary at run time
+    procsub: tuple | None = None  # (function, node id, container start, container end) inside <(...)
 
 
 @dataclass
@@ -180,6 +181,21 @@ def _literal_arg(node, src: bytes) -> str | None:
     return None
 
 
+def _fixed_arg(node, src: bytes) -> bool:
+    """True when an argument always expands to exactly one word."""
+    t = node.type
+    if t in ("raw_string", "number"):
+        return True
+    text = _text(node, src)
+    if t == "string":
+        return "[@]" not in text and "$@" not in text
+    if t == "word":
+        return not (set("*?[{~") & set(text))
+    if t == "concatenation":
+        return all(_fixed_arg(c, src) for c in node.children if c.is_named)
+    return False
+
+
 def _sig(words) -> str | None:
     """Join words into a signature; None when too long to survive trace truncation."""
     joined = "\x1f".join(words)
@@ -220,7 +236,12 @@ def _command_statement(node, src: bytes) -> Statement:
             parts.append(lit)
         if parts is not None:
             sig = _sig(parts)
-    return Statement(node.start_point[0] + 1, node.end_point[0] + 1, "command", word, frozenset(names), sig=sig)
+    argc = None
+    if word is not None and not names and word not in WRAPPER_WORDS and all(_fixed_arg(c, src) for c in words_after_name):
+        argc = len(words_after_name)
+    return Statement(
+        node.start_point[0] + 1, node.end_point[0] + 1, "command", word, frozenset(names), sig=sig, argc=argc
+    )
 
 
 def _leaf_statement(node, src: bytes) -> Statement:
@@ -267,6 +288,7 @@ def analyze_bash(path: Path) -> BashAnalysis:
 
     window: list[tuple[int, int] | None] = [None]  # active attribution window
     procsub_stack: list[tuple] = []
+    container_stack: list[tuple[int, int]] = []  # spans of enclosing redirected statements
 
     def widen(lo: int, hi: int) -> tuple[int, int]:
         cur = window[-1]
@@ -299,7 +321,8 @@ def analyze_bash(path: Path) -> BashAnalysis:
             window.append((lo, hi + extra))
             is_procsub = node.type == "process_substitution"
             if is_procsub:
-                procsub_stack.append((fn_stack[-1].name if fn_stack else "", node.start_byte))
+                cont = container_stack[-1] if container_stack else (outer_start, outer_end)
+                procsub_stack.append((fn_stack[-1].name if fn_stack else "", node.start_byte, cont[0], cont[1]))
             for inner in node.children:
                 if inner.is_named:
                     visit(inner)
@@ -354,9 +377,11 @@ def analyze_bash(path: Path) -> BashAnalysis:
             visit_substitutions(node, stmt.start, stmt.end)
             return
         if t == "redirected_statement":
+            container_stack.append((node.start_point[0] + 1, node.end_point[0] + 1))
             for child in node.children:
                 if child.is_named:
                     visit(child)
+            container_stack.pop()
             return
         if t == "compound_statement" and node.children and node.children[0].type == "((":
             stmt = Statement(node.start_point[0] + 1, node.end_point[0] + 1, "arith", "((")
@@ -509,6 +534,17 @@ def _first_word(cmd: bytes) -> str:
 RECENT_RECORDS = 64  # how far back a substitution's run can join its parent's
 
 
+def _trace_token(cmd: bytes, word: str) -> str:
+    """Run token: the first word, plus '#<argc>' when the record parses into words."""
+    if len(cmd) >= 200:
+        return word
+    try:
+        words = shlex.split(cmd.decode("utf-8", "replace"), posix=True)
+    except ValueError:
+        return word
+    return f"{word}#{len(words) - 1}" if words else word
+
+
 def _trace_sig(cmd: bytes) -> str | None:
     """Signature of a traced command whose text is plain words, else None."""
     if len(cmd) >= 200 or not cmd.isascii():
@@ -561,7 +597,7 @@ def collect(cov_dir: Path) -> int:
                 per_line[w] = n
 
     def flush_run(run):
-        key, _depth, own, fn, words, children = run
+        key, _depth, own, fn, words, children, anchor, after = run
         counts = dict(own)
         for child in children:  # substitutions that ran after this run opened
             for k, n in child.items():
@@ -569,7 +605,8 @@ def collect(cov_dir: Path) -> int:
         flush(key, counts)
         fn_counts = {f"{FN_KEY}{fn}\x1f{k}": n for k, n in counts.items()}
         if 0 < len(words) <= 12:
-            fn_counts[RUN_KEY + fn + "\x1e" + "\x1e".join(sorted(words))] = 1
+            tag = f"\x1d{anchor}\x1c{after[0] if after else ''}"
+            fn_counts[RUN_KEY + fn + "\x1e" + "\x1e".join(sorted(words)) + tag] = 1
         flush(key, fn_counts)
 
     def bump(counts, w, sig):
@@ -589,6 +626,10 @@ def collect(cov_dir: Path) -> int:
         flat_counts: dict[str, int] = {}
         # Runs recently opened per line: [pid, depth, counts, record index].
         recent: dict[tuple, list] = {}
+        # Recent records (pid, depth, src, line): a child process's run is anchored at
+        # the parent's last record before it, e.g. the `while read` of `done < <(...)`.
+        history: list[tuple] = []
+        awaiting: list[list] = []  # child runs waiting for the parent's next record
         for index, (plus, src_b, line_b, pid, fdepth, fn_b, cmd) in enumerate(HIT_RE.findall(data)):
             src = src_b.decode("utf-8", "replace")
             if not src:
@@ -613,14 +654,34 @@ def collect(cov_dir: Path) -> int:
                         if other[0] != pid and other[1] < depth:
                             other[4][5].append(counts)  # a substitution of that open run
                         kept.append(other)
-                run = [key, depth, counts, fn_b.decode("utf-8", "replace"), [], []]
+                anchor = ""
+                for hpid, hdepth, hsrc, hline in reversed(history):
+                    if hpid != pid and hdepth < depth:
+                        anchor = hline if hsrc == src else ""
+                        break
+                run = [key, depth, counts, fn_b.decode("utf-8", "replace"), [], [], anchor, []]
+                awaiting.append(run + [pid, src, index])
                 kept.append([pid, depth, counts, index, run])
                 recent[key] = kept
                 stack.append(run)
             w = _first_word(cmd)
             sig = _trace_sig(cmd)
             bump(stack[-1][2], w, sig)
-            stack[-1][4].append(w)
+            stack[-1][4].append(_trace_token(cmd, w))
+            still = []
+            for waiting in awaiting:
+                wpid, wsrc, windex = waiting[8], waiting[9], waiting[10]
+                if index - windex > RECENT_RECORDS:
+                    continue
+                if wpid != pid and depth < waiting[1]:
+                    if wsrc == src:
+                        waiting[7].append(key[1])  # shares the run's anchor list
+                    continue
+                still.append(waiting)
+            awaiting = still
+            history.append((pid, depth, src, key[1]))
+            if len(history) > RECENT_RECORDS:
+                del history[0]
             if key != flat_key:
                 flush(flat_key, flat_counts)
                 flat_key, flat_counts = key, {}
@@ -756,7 +817,9 @@ def bash_file_coverage(analysis: BashAnalysis, line_words: dict) -> dict:
         for k, n in words.items():
             if k.startswith(RUN_KEY):
                 fn, _, rest = k[1:].partition("\x1e")
-                runs.append((ln, fn, rest.split("\x1e")))
+                rest, _, anchors = rest.partition("\x1d")
+                before, _, after = anchors.partition("\x1c")
+                runs.append((ln, fn, rest.split("\x1e"), [int(a) for a in (before, after) if a]))
             elif k.startswith(FN_KEY):
                 fn, _, w = k[1:].partition("\x1f")
                 entries.append((ln, fn, w, n))
@@ -783,7 +846,12 @@ def bash_file_coverage(analysis: BashAnalysis, line_words: dict) -> dict:
         if w.startswith("\x01"):
             continue
         own = [i for i in by_line.get(ln, []) if matches(i, w) and fn_ok(i, fn)]
-        cands = own + [i for i in by_window.get(ln, []) if matches(i, w) and fn_ok(i, fn)]
+        # Process substitutions inside functions are matched by their runs below.
+        cands = own + [
+            i
+            for i in by_window.get(ln, [])
+            if matches(i, w) and fn_ok(i, fn) and not (stmts[i].procsub and stmts[i].procsub[0])
+        ]
         # A statement with a signature was credited by the signature pass if it ran.
         cands = [i for i in cands if not (stmts[i].sig and stmts[i].word in sig_words.get(ln, ()))] or cands
         if not cands:
@@ -800,28 +868,52 @@ def bash_file_coverage(analysis: BashAnalysis, line_words: dict) -> dict:
     nodes: dict[tuple, list[int]] = {}
     for i, st in enumerate(stmts):
         if st.procsub is not None:
-            nodes.setdefault(st.procsub, []).append(i)
-    for ln, fn, words in runs:
+            nodes.setdefault(st.procsub[:2], []).append(i)
+    def fit(idx: list[int], tokens: list[str]):
+        """Statements of one substitution matching the run's tokens, or None."""
+        free = list(idx)
+        chosen = []
+        for tok in tokens:
+            w, _, argc = tok.partition("#")
+            pick = next(
+                (i for i in free if stmts[i].word == w and (not argc or stmts[i].argc in (None, int(argc)))),
+                None,
+            )
+            if pick is None:
+                return None
+            free.remove(pick)
+            chosen.append(pick)
+        return chosen
+
+    for ln, fn, tokens, anchors in runs:
+        words = [t.partition("#")[0] for t in tokens]
         if all(any(matches(i, w) and fn_ok(i, fn) for i in by_line.get(ln, [])) for w in words):
             continue  # statements on this line explain the run
-        need: dict[str, int] = {}
-        for w in words:
-            need[w] = need.get(w, 0) + 1
         fits = []
         for key, idx in nodes.items():
             if not (key[0] == fn or (key[0] == "" and fn in ("", "source", "main"))):
                 continue
-            have: dict[str, int] = {}
-            for i in idx:
-                if stmts[i].word is not None:
-                    have[stmts[i].word] = have.get(stmts[i].word, 0) + 1
-            if all(have.get(w, 0) >= c for w, c in need.items()):
-                fits.append(idx)
+            chosen = fit(idx, tokens)
+            if chosen is not None:
+                fits.append((idx, chosen))
+        if len(fits) > 1 and anchors:
+            # The parent's records around the substitution belong to its enclosing
+            # statement (the `while read` of `done < <(...)`), or come just before it.
+            def span(f):
+                ps = stmts[f[0][0]].procsub
+                return ps[2], ps[3]
+
+            near = [f for f in fits if any(span(f)[0] <= a <= span(f)[1] for a in anchors)]
+            if not near:
+                later = [f for f in fits if span(f)[0] > anchors[0]]
+                first = min((span(f)[0] for f in later), default=None)
+                near = [f for f in later if span(f)[0] == first]
+            fits = near or fits
         if len(fits) != 1:
             continue  # ambiguous or unknown: leave it to the orphan list
-        for w, c in need.items():
-            for i in [i for i in fits[0] if stmts[i].word == w][:c]:
-                covered[i] = True
+        for i in fits[0][1]:
+            covered[i] = True
+        for w in words:
             orphans.discard((ln, w))
     orphans = [list(o) for o in sorted(orphans)]
     lines_exec = {}

@@ -86,11 +86,12 @@ check_eq "nested: the loop body's substitution is one statement" \
 # 2d. Process substitutions inside a function are traced at an unrelated line;
 #     they are matched to their substitution by function and words. The
 #     `|| true` of the first one never ran, the second loop body and helper
-#     never ran, and skipped() never ran at all.
+#     never ran, skipped() never ran at all, and in gather() the three
+#     substitutions with the same words run but their loop bodies do not.
 cov="$TMP/procsub"
 trace "$cov" "$TMP" "${REPO_ROOT}/${FIX_REL}/procsub.sh"
 check_eq "procsub: only statements that did not run are missing" \
-  "11:true 13:= 16:: 21:local 22:read 23:: 24:emit 24:true" "$(field "$cov" "$FIX_REL/procsub.sh" "$missing_expr")"
+  "11:true 13:= 16:: 21:local 22:read 23:: 24:emit 24:true 29:= 32:= 36::" "$(field "$cov" "$FIX_REL/procsub.sh" "$missing_expr")"
 
 # 2e. bash reports the `|| true` after a multi-line program inside $(...) several
 #     lines late, at another function's `true`; and a pipeline-stage printf and
