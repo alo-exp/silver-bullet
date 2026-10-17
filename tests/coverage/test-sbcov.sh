@@ -47,7 +47,7 @@ missing_expr="' '.join(f\"{m['line']}:{m['word']}\" for m in d['missing_statemen
 cov="$TMP/cal"
 trace "$cov" "$TMP" "${REPO_ROOT}/${FIX_REL}/calibration.sh" hit
 check_eq "calibration: uncovered statements are exactly the MISS lines" \
-  "17:echo 30:echo 49:echo 53:echo" "$(field "$cov" "$FIX_REL/calibration.sh" "$missing_expr")"
+  "17:echo 30:echo 49:echo 53:echo 71:echo" "$(field "$cov" "$FIX_REL/calibration.sh" "$missing_expr")"
 check_eq "calibration: every trace hit is attributed" \
   "0" "$(field "$cov" "$FIX_REL/calibration.sh" "len(d['orphan_hits'])")"
 check_eq "calibration: uncalled function reported" \
@@ -79,6 +79,14 @@ cp "${REPO_ROOT}/${FIX_REL}/fallback.sh" "$TMP/stage/${FIX_REL}/fallback.sh"
 trace "$cov" "$TMP" "$TMP/stage/${FIX_REL}/fallback.sh" false
 check_eq "copy outside the repo attributed to the source file" \
   "" "$(field "$cov" "$FIX_REL/fallback.sh" "$missing_expr")"
+
+# 4b. An edited copy (lines shifted) must not credit the source file.
+cov="$TMP/edited"
+mkdir -p "$TMP/edited-stage/${FIX_REL}"
+{ printf '#!/usr/bin/env bash\n:\n:\n:\n'; tail -n +2 "${REPO_ROOT}/${FIX_REL}/fallback.sh"; } >"$TMP/edited-stage/${FIX_REL}/fallback.sh"
+trace "$cov" "$TMP" "$TMP/edited-stage/${FIX_REL}/fallback.sh" false
+check_eq "edited staged copy is ignored, not credited" \
+  "0" "$(field "$cov" "$FIX_REL/fallback.sh" "d['statements_covered']")"
 
 # 5. No tracing without SB_COV_DIR (tests outside coverage runs are unaffected).
 out="$(BASH_ENV="$ENV_FILE" bash -c 'printf "%s" "$-"')"

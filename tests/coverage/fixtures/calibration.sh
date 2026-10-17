@@ -59,3 +59,15 @@ out=$(jq -n '
   {a: 1}
 ' | cat)
 : "$out"
+printf '%s\n' \
+  "$(printf cont-sub)" >/dev/null
+for item in \
+  "$(printf for-sub)"; do
+  : "$item"
+done
+while read -r row; do
+  : "$row"
+done < <(printf 'a\nb\n' | cat)
+cat <<'HEREDOC' >/dev/null || echo "MISS: heredoc fallback" >/dev/null
+heredoc body
+HEREDOC
