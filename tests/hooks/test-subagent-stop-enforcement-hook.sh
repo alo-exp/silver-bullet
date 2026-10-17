@@ -48,6 +48,14 @@ assert_eq "missing event name defaults to Stop; nothing spawned" "0|" "$TL_STATU
 tl_run_hook "$HOOK" 'not json'
 assert_eq "invalid JSON defaults to Stop; nothing spawned" "0|" "$TL_STATUS|$TL_OUT"
 
+echo "=== refusing project gate ==="
+tree="$(orch_stage_tree)"
+printf '%s\n' 'sb_project_gate_or_exit() { return 1; }' >"$tree/lib/sb-project-gate.sh"
+reset
+tl_run_stdin "$(ev PostToolUse Task)" bash "$tree/subagent-stop-enforcement.sh"
+assert_eq "refusing project gate: silent" "0|" "$TL_STATUS|$TL_OUT"
+assert_file_absent "refusing project gate: no pending marker" "$PENDING"
+
 echo "=== PreToolUse: Task spawn is recorded ==="
 reset
 for t in Task Subagent Agent; do

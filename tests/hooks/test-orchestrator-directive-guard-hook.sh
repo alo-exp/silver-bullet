@@ -374,8 +374,22 @@ rm -f "$PROJ/.planning/orchestrator-override-log.jsonl"
 tl_run_stdin "$ov" bash "$tree/orchestrator-directive-guard.sh"
 assert_eq "override without a resolvable root: allowed" "0|" "$TL_STATUS|$TL_OUT"
 assert_eq "override logged under the working directory" 1 "$(wc -l <"$PROJ/.planning/orchestrator-override-log.jsonl" | tr -d ' ')"
-tl_run_stdin "$(tool_json Write src/a.txt)" bash "$tree/orchestrator-directive-guard.sh"
-assert_eq "edit without a resolvable project root: allowed" "0|" "$TL_STATUS|$TL_OUT"
+SB_ORCHESTRATOR_EDIT_WITHOUT_WORKFLOW_BLOCK=1 tl_run_stdin "$(tool_json Write src/a.txt)" bash "$tree/orchestrator-directive-guard.sh"
+assert_eq "edit without a resolvable project root: allowed even at threshold 1" "0|" "$TL_STATUS|$TL_OUT"
+
+# No workspace config resolvable although every other lib is present: the guard stands down.
+tree="$(orch_stage_tree)"
+cat >"$tree/lib/sb-project-gate.sh" <<'LIB'
+sb_find_project_config_walk_only() { return 1; }
+sb_find_project_root_walk_only() { printf '%s' "$PWD"; }
+sb_find_project_root() { printf '%s' "$PWD"; }
+sb_config_marked_initiated() { return 0; }
+LIB
+reset
+rm -f "$PROJ/.planning/workflows/"*.md
+SB_ORCHESTRATOR_EDIT_WITHOUT_WORKFLOW_BLOCK=1 tl_run_stdin "$(tool_json Write src/a.txt)" bash "$tree/orchestrator-directive-guard.sh"
+assert_eq "no workspace config: silent even at threshold 1" "0|" "$TL_STATUS|$TL_OUT"
+assert_file_absent "no workspace config: counter untouched" "$COUNTER"
 
 # Edit-without-workflow counter failures.
 reset

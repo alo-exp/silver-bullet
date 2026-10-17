@@ -73,10 +73,27 @@ assert_eq "SessionStart accepted" SessionStart "$(jq -r .hookSpecificOutput.hook
 tl_run_hook "$HOOK" '{"prompt":"sb:plan"}'
 assert_eq "missing event name defaults to SubagentStart" SubagentStart "$(jq -r .hookSpecificOutput.hookEventName <<<"$TL_OUT")"
 tl_run_hook "$HOOK" 'not json'
-assert_eq "invalid JSON: treated as SubagentStart" "0" "$TL_STATUS"
+assert_eq "invalid JSON: treated as SubagentStart (banner emitted)" SubagentStart "$(jq -r .hookSpecificOutput.hookEventName <<<"$TL_OUT")"
+assert_eq "invalid JSON: marker has no skill or type" "" "$(jq -r '.assigned_skill + .subagent_type' "$MARKER")"
 ( cd "$PROJ/sub/dir" && tl_run_hook "$HOOK" "$(start_json 'run sb:plan')" && printf '%s' "$TL_STATUS" ) >"$TL_TMP/sub.out"
 assert_eq "found from a nested directory" 0 "$(cat "$TL_TMP/sub.out")"
 assert_eq "nested directory still writes the marker" sb:plan "$(jq -r .assigned_skill "$MARKER")"
+
+echo "=== project boundary ==="
+# Only one of the two boundary files present: no worker marker. The root cache from the earlier
+# runs would otherwise let the project gate pass from anywhere.
+mkdir -p "$TL_TMP/half/.git"
+printf '{"sb_initiated":true}\n' >"$TL_TMP/half/.silver-bullet.json"
+rm -f "$MARKER"
+( cd "$TL_TMP/half" && tl_run_hook "$HOOK" "$(start_json 'run sb:plan')" && printf '%s|%s' "$TL_STATUS" "$TL_OUT" ) >"$TL_TMP/half.out"
+assert_eq "config without silver-bullet.md: silent" "0|" "$(cat "$TL_TMP/half.out")"
+assert_file_absent "config without silver-bullet.md: no marker" "$MARKER"
+# A project gate that refuses: no marker either.
+tree="$(orch_stage_tree)"
+printf '%s\n' 'sb_project_gate_or_exit() { return 1; }' >"$tree/lib/sb-project-gate.sh"
+tl_run_stdin "$(start_json 'run sb:plan')" bash "$tree/subagent-start.sh"
+assert_eq "refusing project gate: silent" "0|" "$TL_STATUS|$TL_OUT"
+assert_file_absent "refusing project gate: no marker" "$MARKER"
 
 echo "=== marker write failures do not suppress the banner ==="
 rm -f "$MARKER"
@@ -90,6 +107,8 @@ notdir="$TL_TMP/notadir"
 : >"$notdir"
 SB_RUNTIME_STATE_DIR="$notdir/state" tl_run_hook "$HOOK" "$(start_json 'run sb:plan')"
 assert_eq "state dir under a regular file: still exits 0" 0 "$TL_STATUS"
+assert_contains "state dir under a regular file: banner still emitted" "$(ctx)" "SB WORKER SUBAGENT"
+assert_file_absent "state dir under a regular file: no marker anywhere" "$notdir/state/orchestrator-worker-active.json"
 
 echo "=== scheduler handoff dispatch ==="
 unset SB_ORCHESTRATOR_RUNTIME_SCHEDULER
@@ -109,7 +128,7 @@ assert_eq "no assigned skill: nothing dispatched" pending "$(orch_state_get '.sc
 rm -f "$(orch_state_file)"
 tl_run_hook "$HOOK" "$(start_json 'run sb:plan')"
 assert_eq "no orchestrator state: banner still emitted" "0" "$TL_STATUS"
-assert_contains "banner after a failed dispatch" "$(ctx)" "sb:plan"
+assert_contains "banner after a failed dispatch names the assigned skill" "$(ctx)" "Invoke assigned skill before substantive edits: sb:plan."
 
 echo "=== unreadable stdin ==="
 status=0

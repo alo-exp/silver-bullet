@@ -382,6 +382,17 @@ orch_write_state '{"flow_queue":["silver-execute"],"current_flow":"silver-execut
 bash -c 'source "$1"; sb_orchestrator_advance_on_atom silver-execute ""' _ "$stg/orchestrator-state.sh" >/dev/null
 assert_eq "drain without directive lib" "" "$(orch_state_get .current_flow)"
 
+echo "=== scheduler helpers without their library file ==="
+# Helpers that happen to be declared must not be used when the scheduler lib is not beside this lib.
+stg2="$(orch_stage_libs orchestrator-state.sh orchestrator-directive.sh)"
+flag="$TL_TMP/sched-flag"
+mkq
+FLAG="$flag" bash -c 'source "$1"; sb_scheduler_runtime_enabled() { return 0; }; sb_scheduler_mark_handoff_joined() { touch "$FLAG"; }
+  sb_scheduler_catalog_file() { return 1; }; sb_scheduler_active_batch_has_pending_joins() { return 1; }
+  sb_orchestrator_advance_on_atom silver-plan ""' _ "$stg2/orchestrator-state.sh" >/dev/null
+assert_file_absent "scheduler helpers not used without the lib file" "$flag"
+assert_eq "advance still happened" silver-validate "$(orch_state_get .current_flow)"
+
 echo "=== advance with an active scheduler batch ==="
 mkbatch() {
   orch_write_state "$(jq -n --arg r "$PROJ" '{repo_root:$r, active_intent:"i", flow_queue:["silver-fixture-read-a","silver-fixture-read-b","security"], current_flow:"silver-fixture-read-a",
