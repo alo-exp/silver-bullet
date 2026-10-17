@@ -33,8 +33,8 @@ fi
 if command -v jq >/dev/null 2>&1; then
   jq -e '.hosts | length == 3' "$SITE_COPY" >/dev/null
   echo "OK: site certification mirror @ $(jq -r '.generated_at' "$SITE_COPY") ($(jq -r '.sb_git_sha' "$SITE_COPY"))"
-  echo "    canonical: ${CANONICAL#${SB_ROOT}/}"
-  echo "    site copy: ${SITE_COPY#${SB_ROOT}/}"
+  echo "    canonical: ${CANONICAL#"${SB_ROOT}"/}"
+  echo "    site copy: ${SITE_COPY#"${SB_ROOT}"/}"
 else
   if [[ ! -e "$SITE_COPY" || ! "$CANONICAL" -ef "$SITE_COPY" ]]; then
     cp -f "$CANONICAL" "$SITE_COPY"

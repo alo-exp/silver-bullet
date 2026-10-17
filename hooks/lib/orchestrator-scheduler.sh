@@ -677,7 +677,7 @@ PY
 # Refresh .scheduler.batch_dispatch for the active batch index.
 sb_scheduler_refresh_active_batch_dispatch() {
   local repo_root="${1:-}"
-  local catalog_file file batch_index batches_json batch_atoms handoffs_json mode status now updated parallel_ok
+  local catalog_file file batch_index batches_json handoffs_json mode status now updated parallel_ok
   catalog_file="$(sb_scheduler_catalog_file "$repo_root" 2>/dev/null || true)"
   file="$(sb_orchestrator_state_file)"
   [[ -n "$catalog_file" && -f "$file" ]] || return 1

@@ -152,6 +152,7 @@ sb_prompt_is_agent_report() {
   # hooks running under `set -e` with an ERR trap, where a failing AND-list is
   # needless risk.
   local marker
+  # shellcheck disable=SC2016  # backticks are literal regex characters
   for marker in \
     '^[[:space:]]*(Report from|##[[:space:]]*Report)' \
     'git log --oneline|git status --porcelain' \

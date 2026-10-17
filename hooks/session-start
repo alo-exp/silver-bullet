@@ -162,8 +162,10 @@ if [[ -n "$_rt_hb_script" && -f "${sb_project_root}/.silver-bullet.json" ]]; the
   if [[ "$_sb_initiated" == "true" ]]; then
     # Section 3: eligible SessionStart (all sources); rt_heartbeat_write enforces 60s cadence.
     # shellcheck source=/dev/null
-    RT_PROJECT_ROOT="$sb_project_root" RT_HOST="${SILVER_BULLET_RUNTIME:-cursor}" \
-      source "$_rt_hb_script" 2>/dev/null && rt_heartbeat_write "$sb_project_root" "${SILVER_BULLET_RUNTIME:-cursor}" 2>/dev/null || true
+    if RT_PROJECT_ROOT="$sb_project_root" RT_HOST="${SILVER_BULLET_RUNTIME:-cursor}" \
+      source "$_rt_hb_script" 2>/dev/null; then
+      rt_heartbeat_write "$sb_project_root" "${SILVER_BULLET_RUNTIME:-cursor}" 2>/dev/null || true
+    fi
   fi
 fi
 unset _rt_hb_script _sb_initiated
@@ -421,7 +423,7 @@ fi
 # so enforcement rules survive context compaction.
 # Security: co-located with hooks; plugin-dir write access implies hook modification
 # access anyway. Path traversal defense: verify file resolves within plugin directory.
-script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd 2>/dev/null || true)"
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd 2>/dev/null)" || true
 [[ -n "$script_dir" ]] || exit 0
 core_rules_file="${script_dir}/core-rules.md"
 # Path traversal defense: reject if resolved path escapes plugin directory

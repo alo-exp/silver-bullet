@@ -70,6 +70,7 @@ if [[ "$sb_source_checkout" != true && -n "$file_path" ]] && [[ "$file_path" == 
   emit_block "Silver Bullet NEVER modifies its own enforcement hooks. This would disable process compliance. If you need to reconfigure, use /sb:init."
   exit 0
 fi
+# shellcheck disable=SC2154  # shell_script_body is set by parse-input.sh
 if [[ "$sb_source_checkout" != true && -n "$command_str" ]] && { \
   { dcc_shell_writes_under_prefix "${SB_RUNTIME_HOME_ROOT}" && \
     printf '%s\n%s' "$command_str" "$shell_script_body" | grep -qE '/hooks/'; } || \

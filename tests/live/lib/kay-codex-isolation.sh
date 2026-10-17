@@ -399,9 +399,9 @@ setup_kay_codex_isolation() {
   isolation_parent="${isolation_parent%/}"
   mkdir -p "$isolation_parent"
   export KAY_SB_TEST_HOME="${KAY_SB_TEST_HOME:-$(mktemp -d "${isolation_parent}/sb-kay-test.XXXXXX")}"
-  export KAY_SB_TEST_HOME="$(normalize_kay_path "$KAY_SB_TEST_HOME")"
+  KAY_SB_TEST_HOME="$(normalize_kay_path "$KAY_SB_TEST_HOME")"
   export KAY_HOME="${KAY_HOME:-$KAY_SB_TEST_HOME}"
-  export KAY_HOME="$(normalize_kay_path "$KAY_HOME")"
+  KAY_HOME="$(normalize_kay_path "$KAY_HOME")"
   export SB_LIVE_CODEX_ISOLATION_DIR="${SB_LIVE_CODEX_ISOLATION_DIR:-$KAY_HOME}"
   export SB_LIVE_CODEX_ISOLATION_ACTIVE=1
   export HOME="$KAY_HOME"
@@ -500,7 +500,7 @@ PY
 
     if [[ -n "$api_key" ]]; then
       printf -v "$env_var" '%s' "$api_key"
-      export "$env_var"
+      export "${env_var?}"
     fi
   }
 
@@ -622,12 +622,11 @@ PY
 }
 
 teardown_kay_codex_isolation() {
-  local cleanup_attempt=0
   if [[ "${SB_LIVE_CODEX_ISOLATION_ACTIVE:-0}" != "1" ]]; then
     return 0
   fi
   if [[ "${SB_LIVE_KEEP_CODEX_ISOLATION:-0}" != "1" && -n "${SB_LIVE_CODEX_ISOLATION_DIR:-}" ]]; then
-    for cleanup_attempt in 1 2 3; do
+    for _ in 1 2 3; do
       rm -rf "$SB_LIVE_CODEX_ISOLATION_DIR" 2>/dev/null || true
       [[ ! -e "$SB_LIVE_CODEX_ISOLATION_DIR" ]] && break
       rm -rf "${SB_LIVE_CODEX_ISOLATION_DIR}/Library/Caches/com.apple.python" 2>/dev/null || true

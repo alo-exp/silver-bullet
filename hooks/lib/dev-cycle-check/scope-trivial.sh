@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 # dev-cycle-check module — auto-split
 # --- Check if file/command matches src_pattern ---
+# shellcheck disable=SC2154  # patch_file_paths is set by dev-cycle-check.sh
 if [[ ${#patch_file_paths[@]} -gt 0 ]]; then
   patch_in_scope=false
   for patch_path in "${patch_file_paths[@]}"; do
+    # shellcheck disable=SC2154  # src_pattern/src_exclude_pattern are set by dev-cycle-check.sh
     if dcc_matches_src_scope "$patch_path" "$src_pattern" && ! printf '%s' "$patch_path" | grep -qE "$src_exclude_pattern"; then
       file_path="$patch_path"
       patch_in_scope=true
@@ -23,9 +25,11 @@ elif [[ -n "$file_path" ]]; then
 else
   dcc_shell_payload_is_sb_skill_adapter_invocation "$command_str" && exit 0
   dcc_collect_shell_in_scope_targets
+  # shellcheck disable=SC2154  # shell_write_targets is set by parse-input.sh
   if [[ ${#shell_write_targets[@]} -gt 0 ]]; then
     # When we can resolve concrete write targets, scope Bash enforcement to the
     # actual destination paths instead of matching arbitrary file content.
+    # shellcheck disable=SC2154  # shell_in_scope_targets is set by parse-input.sh
     [[ ${#shell_in_scope_targets[@]} -gt 0 ]] || exit 0
   else
     if [[ -n "$shell_script_body" ]]; then
@@ -48,6 +52,7 @@ else
 fi
 
 # --- Check trivial file override ---
+# shellcheck disable=SC2154  # trivial_file is set by dev-cycle-check.sh
 if [[ -f "$trivial_file" && ! -L "$trivial_file" ]]; then
   exit 0
 fi
@@ -55,9 +60,11 @@ fi
 # --- Invalidate fresh test execution when the source actually changed ---
 # PostToolUse on Edit/Write/MultiEdit means the edit has already landed and
 # the release gate must be refreshed before final delivery.
+# shellcheck disable=SC2154  # hook_event is set by parse-input.sh
 if [[ "$hook_event" == "PostToolUse" ]]; then
   invalidate_verify_tests=false
   if [[ -n "$file_path" ]]; then
+    # shellcheck disable=SC2154  # tool_name is set by dev-cycle-check.sh
     case "$tool_name" in
       Edit|Write|MultiEdit|apply_patch)
         invalidate_verify_tests=true
@@ -72,6 +79,7 @@ if [[ "$hook_event" == "PostToolUse" ]]; then
     fi
   fi
   if [[ "$invalidate_verify_tests" == true ]]; then
+    # shellcheck disable=SC2154  # verify_tests_state_file is set by dev-cycle-check.sh
     rm -f -- "$verify_tests_state_file" 2>/dev/null || true
   fi
 fi
@@ -80,6 +88,7 @@ fi
 if [[ -n "$file_path" ]]; then
   # Non-logic file extensions inside src/ are trivial
   # EXCEPTION: In devops-cycle, .yml/.yaml/.json are infrastructure code — NOT exempt
+  # shellcheck disable=SC2154  # active_workflow is set by dev-cycle-check.sh
   if [[ "$active_workflow" == "devops-cycle" ]]; then
     case "$file_path" in
       *.md|*.txt|*.css|*.svg|*.env|*.env.*|*.ini|*.cfg|*.conf|*.lock)
@@ -99,6 +108,7 @@ if [[ -n "$file_path" ]]; then
   # Small edit changes (combined old+new < 100 chars) are trivial (typo fixes)
   # Threshold reduced from 300 to 100 to prevent bypassing enforcement via incremental changes
   if [[ "$tool_name" == "Edit" ]]; then
+    # shellcheck disable=SC2154  # input is set by parse-input.sh
     old_str_len=$(printf '%s' "$input" | jq -r '.tool_input.old_string // "" | length')
     new_str_len=$(printf '%s' "$input" | jq -r '.tool_input.new_string // "" | length')
     combined_len=$((old_str_len + new_str_len))

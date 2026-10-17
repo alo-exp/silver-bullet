@@ -12,7 +12,7 @@ rt_session_verify_block() {
   local project_root="${1:-}"
   local host="${2:-cursor}"
   [[ -n "$project_root" && -f "${project_root}/.silver-bullet.json" ]] || return 0
-  local repo_root reconciler out cfg
+  local repo_root reconciler out
   repo_root=""
   if [[ -f "${project_root}/scripts/reconcile-recommended-tools.sh" ]]; then
     repo_root="$project_root"
@@ -33,7 +33,6 @@ rt_session_verify_block() {
   [[ -n "$repo_root" ]] || return 0
   reconciler="${repo_root}/scripts/reconcile-recommended-tools.sh"
   [[ -f "$reconciler" ]] || return 0
-  cfg="${project_root}/.silver-bullet.json"
   local -a lines=()
   local needs_action=0
 

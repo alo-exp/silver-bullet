@@ -4,6 +4,7 @@
 input=$(cat)
 
 # Detect hook event type (PreToolUse vs PostToolUse)
+# shellcheck disable=SC2034  # read by the other dev-cycle-check modules
 hook_event=$(printf '%s' "$input" | jq -r '.hook_event_name // "PostToolUse"')
 
 dcc_resolve_repo_root() {
@@ -57,7 +58,9 @@ shell_script_path=""
 shell_script_dir="$PWD"
 shell_script_body=""
 shell_write_targets=()
+# shellcheck disable=SC2034  # read by scope-trivial.sh and workflow-admission.sh
 shell_in_scope_targets=()
+# shellcheck disable=SC2034  # read by scope-trivial.sh
 shell_target_scope_fallback=false
 
 dcc_collect_shell_write_targets() {

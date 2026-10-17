@@ -18,6 +18,7 @@ OUT_DIR="$(mktemp -d "${TMPDIR}/sb-outcome-out.XXXXXX")"
 # shellcheck source=tests/scripts/lib/enterprise-e2e-fixture.sh
 source "${REPO_ROOT}/tests/scripts/lib/enterprise-e2e-fixture.sh"
 enterprise_e2e_test_fixture_init "$REPO_ROOT"
+# shellcheck disable=SC2154  # set by enterprise_e2e_test_fixture_init (sourced fixture lib)
 trap 'rm -rf "$STATE_DIR" "$OUT_DIR" ${enterprise_e2e_test_fixture_temp:+"$enterprise_e2e_test_fixture_temp"}' EXIT
 
 # shellcheck source=scripts/lib/enterprise-e2e-outcome-assessment.sh

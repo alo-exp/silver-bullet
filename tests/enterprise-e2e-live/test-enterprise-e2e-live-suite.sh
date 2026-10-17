@@ -373,7 +373,11 @@ cat >"$LEDGER_FIXTURE" <<'LEDGER'
 LEDGER
 # shellcheck source=scripts/lib/enterprise-e2e-ledger-reconcile.sh
 source "${REPO_ROOT}/scripts/lib/enterprise-e2e-ledger-reconcile.sh"
-SB_E2E_LEDGER_FILE="$LEDGER_FIXTURE" reconcile_status="$(enterprise_e2e_ledger_reconcile_status)"
+# Stays set (unexported) for the rest of the suite, so the later host-default
+# helpers keep the fixture instead of exporting the host ledger path.
+# shellcheck disable=SC2034  # read by the sourced enterprise-e2e-ledger-reconcile.sh
+SB_E2E_LEDGER_FILE="$LEDGER_FIXTURE"
+reconcile_status="$(enterprise_e2e_ledger_reconcile_status)"
 if [[ "$reconcile_status" == "STALE" ]]; then
   pass "ledger reconcile STALE when <22 rows"
 else

@@ -2,21 +2,20 @@
 # Shared reconciliation helpers — consent, state precedence, authorization.
 # Sourced only by scripts/reconcile-recommended-tools.sh and sibling libs (not executable).
 
+# shellcheck disable=SC2034  # read by the sibling heartbeat.sh
 RT_RECONCILER_VERSION="1.0.0"
+# shellcheck disable=SC2034  # read by scripts/reconcile-recommended-tools.sh
 RT_RESULT_SCHEMA_VERSION="1.0.0"
 
+# shellcheck disable=SC2034  # read by scripts/reconcile-recommended-tools.sh
 RT_COMPONENT_IDS=(graphify agentmemory rtk context_mode leanctx alumnium search_cli cross_tool)
+# shellcheck disable=SC2034  # read by the sibling probe-cross-tool.sh
 RT_FIVE_TOOL_ROUTES=(
   sb_wire:leanctx sb_read:leanctx sb_grep:context_mode sb_shell:rtk
   sb_slice:context_mode sb_webfetch:context_mode sb_graph:graphify
   sb_remember:agentmemory sb_pathjail:leanctx sb_injection:leanctx
 )
 RT_VALID_HOSTS=(cursor claude codex opencode pi goose hermes)
-RT_FIVE_TOOL_HOSTS=(cursor claude codex opencode pi)
-RT_VALID_MODES=(verify plan apply)
-RT_VALID_SCOPES=(project host packages all)
-RT_VALID_ENTRY_POINTS=(init update installer doctor-fix)
-RT_STATE_PRECEDENCE=(unsupported disabled pending suspended failed reload_required repairable ready)
 
 _rt_repo_root() {
   local lib_dir candidate
@@ -34,8 +33,6 @@ _rt_repo_root() {
 }
 
 rt_init_paths() {
-  local script_dir
-  script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   RT_REPO_ROOT="${RT_REPO_ROOT:-$(_rt_repo_root)}"
   RT_HOOKS_LIB="${RT_REPO_ROOT}/hooks/lib"
   if [[ -f "${RT_HOOKS_LIB}/runtime-paths.sh" ]]; then
@@ -295,6 +292,7 @@ rt_validate_authorization() {
         ;;
     esac
   fi
+  # shellcheck disable=SC2034  # read by scripts/reconcile-recommended-tools.sh
   RT_AUTH_ERROR=""
   return 0
 }

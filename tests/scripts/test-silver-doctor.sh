@@ -675,10 +675,8 @@ printf '{"mcpServers":{}}\n' >"$SC_HOME/.cursor/mcp.json"
 printf '{"hooks":{"preToolUse":[]}}\n' >"$SC_HOME/.cursor/hooks.json"
 
 sc_run_doctor() {
-  local extra_env="${1:-}"
-  # shellcheck disable=SC2086
   env -u SB_RUNTIME_NAME HOME="$SC_HOME" SILVER_BULLET_RUNTIME=cursor \
-    PATH="${SC_BIN}:${PATH}" RT_SKIP_VENDOR_DOCTOR=1 $extra_env \
+    PATH="${SC_BIN}:${PATH}" RT_SKIP_VENDOR_DOCTOR=1 \
     bash "$DOCTOR" "$SC_PROJ" 2>&1 || true
 }
 
@@ -1081,13 +1079,11 @@ else
   FAIL=$((FAIL + 1))
 fi
 hooks_before="$(cksum "$FIX_HOME/.cursor/hooks.json")"
-fix_out2="$(
-  env -u SB_RUNTIME_NAME HOME="$FIX_HOME" SILVER_BULLET_RUNTIME=cursor \
-    PATH="${FIX_BIN}:${PATH}" RT_SKIP_VENDOR_DOCTOR=1 SB_DOCTOR_ASSUME_YES=1 \
-    SB_DOCTOR_RECONCILER="$FIX_RECON" SB_DOCTOR_FORMAT=json \
-    SB_DOCTOR_STUB_HOST_INSTALL="${FIX_HOME}/host-install.stamp" \
-    bash "$DOCTOR" --fix=host "$FIX_PROJ" 2>/dev/null || true
-)"
+env -u SB_RUNTIME_NAME HOME="$FIX_HOME" SILVER_BULLET_RUNTIME=cursor \
+  PATH="${FIX_BIN}:${PATH}" RT_SKIP_VENDOR_DOCTOR=1 SB_DOCTOR_ASSUME_YES=1 \
+  SB_DOCTOR_RECONCILER="$FIX_RECON" SB_DOCTOR_FORMAT=json \
+  SB_DOCTOR_STUB_HOST_INSTALL="${FIX_HOME}/host-install.stamp" \
+  bash "$DOCTOR" --fix=host "$FIX_PROJ" >/dev/null 2>&1 || true
 hooks_after="$(cksum "$FIX_HOME/.cursor/hooks.json")"
 if [[ "$hooks_before" == "$hooks_after" ]]; then
   echo "PASS: five-tool second --fix=host is idempotent"
@@ -1117,13 +1113,11 @@ jq '.recommended_tools.leanctx.enabled_by_user = true
   | .recommended_tools.context_mode.enabled_by_user = true' \
   "$FIX_PROJ/.silver-bullet.json" >"${FIX_PROJ}/.silver-bullet.json.tmp"
 mv "${FIX_PROJ}/.silver-bullet.json.tmp" "$FIX_PROJ/.silver-bullet.json"
-local_out="$(
-  env -u SB_RUNTIME_NAME HOME="$FIX_HOME" SILVER_BULLET_RUNTIME=cursor \
-    PATH="${FIX_BIN}:${PATH}" RT_SKIP_VENDOR_DOCTOR=1 SB_DOCTOR_ASSUME_YES=1 \
-    SB_DOCTOR_RECONCILER="$FIX_RECON_NOWWRITE" \
-    SB_DOCTOR_STUB_HOST_INSTALL="${FIX_HOME}/host-install-local.stamp" \
-    bash "$DOCTOR" --fix=local "$FIX_PROJ" 2>/dev/null || true
-)"
+env -u SB_RUNTIME_NAME HOME="$FIX_HOME" SILVER_BULLET_RUNTIME=cursor \
+  PATH="${FIX_BIN}:${PATH}" RT_SKIP_VENDOR_DOCTOR=1 SB_DOCTOR_ASSUME_YES=1 \
+  SB_DOCTOR_RECONCILER="$FIX_RECON_NOWWRITE" \
+  SB_DOCTOR_STUB_HOST_INSTALL="${FIX_HOME}/host-install-local.stamp" \
+  bash "$DOCTOR" --fix=local "$FIX_PROJ" >/dev/null 2>&1 || true
 hooks_local_after="$(cksum "$FIX_HOME/.cursor/hooks.json")"
 if [[ "$hooks_local_before" == "$hooks_local_after" ]]; then
   echo "PASS: --fix=local does not mutate host D4 hooks"
