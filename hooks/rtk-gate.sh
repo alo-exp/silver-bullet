@@ -98,8 +98,8 @@ elif [[ -n "$command_str" ]]; then
   if sb_rtk_command_is_exempt "$command_str"; then
     exit 0
   fi
-  if ! printf '%s' "$command_str" | grep -qE '\bgit commit\b|\bgh pr create\b|\bgh release create\b'; then
-    if ! printf '%s' "$command_str" | grep -qE '(>>|\s>[^>&=]|\btee\b|\bcp\b|\bmv\b|\bsed\b[^$]*-i|\bperl\b[^$]*-i)'; then
+  if ! grep -qE '\bgit commit\b|\bgh pr create\b|\bgh release create\b' <<<"$command_str"; then
+    if ! grep -qE '(>>|\s>[^>&=]|\btee\b|\bcp\b|\bmv\b|\bsed\b[^$]*-i|\bperl\b[^$]*-i)' <<<"$command_str"; then
       exit 0
     fi
   fi

@@ -58,7 +58,7 @@ fi
 [[ -z "$cmd" ]] && exit 0
 
 # Only fire when command touches the session mode file
-printf '%s' "$cmd" | grep -qE '\.silver-bullet(/mode|-mode)' || exit 0
+grep -qE '\.silver-bullet(/mode|-mode)' <<<"$cmd" || exit 0
 
 # --- Locate project root (allow override for testing) ---
 project_root="${PROJECT_ROOT_OVERRIDE:-}"

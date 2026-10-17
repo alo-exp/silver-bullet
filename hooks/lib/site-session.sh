@@ -52,14 +52,14 @@ sb_site_prompt_is_site_intent() {
   prompt="${1:-}"
   [[ -n "$prompt" ]] || return 1
   lower="$(printf '%s' "$prompt" | tr '[:upper:]' '[:lower:]')"
-  printf '%s' "$lower" | grep -Eq '(site/|help center|help-center|homepage|github pages|sb\.alolabs\.dev|publish.*site|site.*publish|help/.*html|chrome\.css|tokens\.css)'
+  grep -Eq '(site/|help center|help-center|homepage|github pages|sb\.alolabs\.dev|publish.*site|site.*publish|help/.*html|chrome\.css|tokens\.css)' <<<"$lower"
 }
 
 # Agent delegation prompts/spawns are not site sessions (#244/#245).
 sb_site_text_is_agent_delegation_intent() {
   local text="${1:-}"
   [[ -n "$text" ]] || return 1
-  printf '%s' "$text" | grep -qiE 'silver-agent-(codex|cursor|claude|opencode|pi)|AF-AGENT-DELEGATE|agent.delegat'
+  grep -qiE 'silver-agent-(codex|cursor|claude|opencode|pi)|AF-AGENT-DELEGATE|agent.delegat' <<<"$text"
 }
 
 sb_site_prompt_is_agent_delegation_intent() {
@@ -155,7 +155,7 @@ sb_site_session_subagent_input_is_site_related() {
   if sb_site_text_is_agent_delegation_intent "$tool_input"; then
     return 1
   fi
-  printf '%s' "$tool_input" | grep -qiE \
+  grep -qiE <<<"$tool_input" \
     'sb:content|site/[[:alnum:]_./-]+|site/\*\*|help[[:space:]-]center|sb\.alolabs\.dev|github[[:space:]]+pages|publish.*site|site.*publish|homepage'
 }
 
@@ -245,8 +245,8 @@ sb_site_session_push_targets_main() {
   if declare -f sb_shell_command_unwrap_rtk >/dev/null 2>&1; then
     unwrapped="$(sb_shell_command_unwrap_rtk "$cmd" 2>/dev/null || printf '%s' "$cmd")"
   fi
-  printf '%s' "$unwrapped" | grep -qE '\bgit push\b' \
-    && printf '%s' "$unwrapped" | grep -qE '\b(origin[[:space:]]+)?(main|master)\b|HEAD:main|HEAD:master'
+  grep -qE '\bgit push\b' <<<"$unwrapped" \
+    && grep -qE '\b(origin[[:space:]]+)?(main|master)\b|HEAD:main|HEAD:master' <<<"$unwrapped"
 }
 
 sb_live_publish_evidence_valid() {

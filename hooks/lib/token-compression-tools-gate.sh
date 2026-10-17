@@ -81,7 +81,7 @@ sb_token_tool_record_usage() {
 sb_token_tool_command_matches() {
   local cmd="${1:-}" tool_id="${2:-}" cli="${3:-}"
   [[ -n "$cmd" && -n "$cli" ]] || return 1
-  printf '%s' "$cmd" | grep -qE "(^|[[:space:]/])${cli}([[:space:]]|$)"
+  grep -qE "(^|[[:space:]/])${cli}([[:space:]]|$)" <<<"$cmd"
 }
 
 sb_token_tool_enforced() {

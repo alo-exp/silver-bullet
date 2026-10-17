@@ -225,13 +225,13 @@ sb_stack_bash_rtk_rewritten() {
 sb_stack_bash_leanctx_shell_marker() {
   local command_str="${1:-}"
   [[ -n "$command_str" ]] || return 1
-  if printf '%s' "$command_str" | grep -qE 'SB_LEANCTX_SHELL=1'; then
+  if grep -qE 'SB_LEANCTX_SHELL=1' <<<"$command_str"; then
     return 0
   fi
-  if printf '%s' "$command_str" | grep -qE '(^|[[:space:]|&;])(lean-ctx|leanctx)[[:space:]]+shell\b'; then
+  if grep -qE '(^|[[:space:]|&;])(lean-ctx|leanctx)[[:space:]]+shell\b' <<<"$command_str"; then
     return 0
   fi
-  if printf '%s' "$command_str" | grep -qE '\blctx_shell\b'; then
+  if grep -qE '\blctx_shell\b' <<<"$command_str"; then
     return 0
   fi
   return 1
@@ -254,7 +254,7 @@ sb_stack_mcp_tool_route() {
 sb_stack_mcp_query_looks_like_code() {
   local payload="${1:-}"
   [[ -n "$payload" ]] || return 1
-  if printf '%s' "$payload" | grep -qiE 'graphify|codebase|symbol|dependency|import |function |class |hooks/|\.tsx?|\.py|\.sh'; then
+  if grep -qiE 'graphify|codebase|symbol|dependency|import |function |class |hooks/|\.tsx?|\.py|\.sh' <<<"$payload"; then
     return 0
   fi
   return 1

@@ -61,7 +61,7 @@ else
 fi
 
 # Only trigger on actual `gh pr create` commands
-if ! printf '%s' "$cmd" | grep -qE '\bgh pr create\b'; then
+if ! grep -qE '\bgh pr create\b' <<<"$cmd"; then
   exit 0
 fi
 
