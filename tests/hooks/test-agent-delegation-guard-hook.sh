@@ -159,6 +159,12 @@ assert_eq "block tier without jq exits 2" 2 "$TL_STATUS"
 assert_contains "block tier without jq explains on stderr" "$TL_ERR" "AF-AGENT-DELEGATE"
 assert_eq "block tier without jq prints no JSON" "" "$TL_OUT"
 
+
+echo "=== guard: jq-less payload without a tool name ==="
+activate
+PATH="$nojq" tl_run_hook "$HOOK" '{"hook_event_name":"PreToolUse"}'
+assert_eq "no jq, no tool_name in the payload: allow" "0|" "$TL_STATUS|$TL_OUT"
+
 echo "=== guard: jq-less field extraction (sb_adg_hook_field) ==="
 # The hook runs its main flow on source, so load just the function definition.
 eval "$(sed -n '/^sb_adg_hook_field()/,/^}/p' "$TL_REPO_ROOT/$HOOK")"
