@@ -29,7 +29,14 @@ f2_stage_root() {
   ln -s "$TL_REPO_ROOT/scripts/enterprise-e2e/config" "$root/scripts/enterprise-e2e/config"
   ln -s "$TL_REPO_ROOT/hooks/lib" "$root/hooks/lib"
   ln -s "$TL_REPO_ROOT/tests/live/lib" "$root/tests/live/lib"
-  cp "$TL_REPO_ROOT/scripts/lib/enterprise-e2e-live-common.sh" "$root/scripts/lib/"
+  # live-common wraps the real one; F2_* env switches make selected collaborators fail.
+  cat >"$root/scripts/lib/enterprise-e2e-live-common.sh" <<EOS
+source "$TL_REPO_ROOT/scripts/lib/enterprise-e2e-live-common.sh"
+[[ -z "\${F2_FP_FAIL:-}" ]] || enterprise_e2e_install_fingerprint() { return 1; }
+[[ -z "\${F2_REGCOUNT_FAIL:-}" ]] || enterprise_e2e_row_pass_registry_pass_count() { return 1; }
+[[ -z "\${F2_RESET_FAIL:-}" ]] || enterprise_e2e_reset_tui_monitor_offsets() { return 1; }
+[[ -z "\${F2_QUIESCE_FAIL:-}" ]] || enterprise_e2e_quiesce_orchestrator_queue() { return 1; }
+EOS
   local f
   for f in "$TL_REPO_ROOT"/scripts/lib/enterprise-e2e-*.sh; do
     [[ -e "$root/scripts/lib/$(basename "$f")" ]] || ln -s "$f" "$root/scripts/lib/$(basename "$f")"
