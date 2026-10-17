@@ -22,6 +22,10 @@ EDIT="$(gh_edit_input)"
 gh_scenario_block
 assert_contains "no-cli message lists install" "$( gh_run "$HOOK" "$EDIT"; gh_reason)" "uv tool install"
 
+# a command that neither writes nor delivers is not gated (and is not on the exempt list)
+gh_run "$HOOK" "$(gh_bash_input "make build")"
+assert_gate_allows "non-writing, non-exempt command allows"
+
 # retrieval/index commands are exempt even when they write
 gh_run "$HOOK" "$(gh_bash_input "graphify update . --no-cluster > build.log")"
 assert_gate_allows "index build command is exempt"
