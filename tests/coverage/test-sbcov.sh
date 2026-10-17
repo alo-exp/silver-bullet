@@ -73,6 +73,16 @@ trace "$cov" "$TMP" "${REPO_ROOT}/${FIX_REL}/callee.sh"
 check_eq "callee: only the unreachable branch body is uncovered" \
   "15::" "$(field "$cov" "$FIX_REL/callee.sh" "$missing_expr")"
 
+# 2c. Substitutions nested in loops, case arms and continuation lines: no
+#     statement is listed twice and exclusive `&& echo true || echo false` arms
+#     are told apart by their literal arguments.
+cov="$TMP/nested"
+trace "$cov" "$TMP" "${REPO_ROOT}/${FIX_REL}/nested.sh"
+check_eq "nested: every statement credited" \
+  "" "$(field "$cov" "$FIX_REL/nested.sh" "$missing_expr")"
+check_eq "nested: the loop body's substitution is one statement" \
+  "1" "$(python3 "$SBCOV" analyze "${REPO_ROOT}/${FIX_REL}/nested.sh" | awk -F'\t' '$1 == "15-15" && $3 == "echo"' | wc -l | tr -d ' ')"
+
 # 3. Relative invocation from the repo root maps back to the source file.
 cov="$TMP/relative"
 trace "$cov" "$REPO_ROOT" "${FIX_REL}/fallback.sh" false

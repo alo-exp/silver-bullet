@@ -46,7 +46,7 @@ fi
 [[ -z "$cmd" ]] && exit 0
 
 # Only trigger on phases clear commands
-if ! printf '%s' "$cmd" | grep -qE 'phases\s+clear'; then
+if ! grep -qE 'phases\s+clear' <<<"$cmd"; then
   exit 0
 fi
 

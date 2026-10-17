@@ -62,7 +62,9 @@ sb_dqg_mode_marker() {
 sb_qg_state_has_marker() {
   local state_contents="$1"
   local marker="$2"
-  printf '%s\n' "$state_contents" | grep -Fqx -- "$marker" 2>/dev/null
+  # A here-string, not printf | grep -q: grep stops at the first match, and the
+  # writer's SIGPIPE would fail the pipeline under pipefail.
+  grep -Fqx -- "$marker" <<<"$state_contents" 2>/dev/null
 }
 
 # Pre-plan chain: design marker or legacy silver-quality-gates only.

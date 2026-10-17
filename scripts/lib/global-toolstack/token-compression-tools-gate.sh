@@ -20,7 +20,7 @@ case "$tool_name" in
   *) exit 0 ;;
 esac
 [[ -n "$command_str" ]] || exit 0
-if ! printf '%s' "$command_str" | grep -qE '\bgit commit\b|\bgh pr create\b|\bgh release create\b'; then
+if ! grep -qE '\bgit commit\b|\bgh pr create\b|\bgh release create\b' <<<"$command_str"; then
   exit 0
 fi
 if ts_tool_required rtk && ! ts_rtk_cli_available; then

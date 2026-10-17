@@ -126,7 +126,7 @@ except subprocess.TimeoutExpired as exc:
 PY
 )" || true
 
-if printf '%s' "$out" | grep -qi 'SB_ROUTING_OK'; then
+if grep -qi 'SB_ROUTING_OK' <<<"$out"; then
   printf 'pre-release-cursor-cli-smoke: PASS\n'
   exit 0
 fi

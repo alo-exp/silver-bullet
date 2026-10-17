@@ -168,7 +168,7 @@ sb_context_mode_is_windows_native() {
   case "$(uname -s 2>/dev/null)" in
     MINGW*|MSYS*|CYGWIN*|Windows_NT) return 0 ;;
   esac
-  if [[ -n "${OS:-}" ]] && printf '%s' "$OS" | grep -qi windows; then
+  if [[ -n "${OS:-}" ]] && grep -qi windows <<<"$OS"; then
     return 0
   fi
   return 1
@@ -197,13 +197,13 @@ sb_context_mode_edit_path_is_exempt() {
 sb_context_mode_command_is_exempt() {
   local cmd="${1:-}"
   [[ -n "$cmd" ]] || return 0
-  if printf '%s' "$cmd" | grep -qE '(^|[[:space:]/])context-mode([[:space:]]|$)'; then
+  if grep -qE '(^|[[:space:]/])context-mode([[:space:]]|$)' <<<"$cmd"; then
     return 0
   fi
-  if printf '%s' "$cmd" | grep -qE 'enable-rtk-context-mode|npm install.*context-mode'; then
+  if grep -qE 'enable-rtk-context-mode|npm install.*context-mode' <<<"$cmd"; then
     return 0
   fi
-  if printf '%s' "$cmd" | grep -qE '(^|[[:space:]])(npm|node|curl|grep|cat|jq|mkdir|cp|chmod|echo|printf|true|false)(\s|$)'; then
+  if grep -qE '(^|[[:space:]])(npm|node|curl|grep|cat|jq|mkdir|cp|chmod|echo|printf|true|false)(\s|$)' <<<"$cmd"; then
     return 0
   fi
   return 1
