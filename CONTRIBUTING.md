@@ -97,7 +97,7 @@ bash tests/run-all-tests.sh tests/hooks/test-ci-status-check.sh   # specific fil
 bash tests/run-all-tests.sh --list                                # list the test files
 ```
 
-Every target wraps a script you can also run directly. `make lint` fails on any `shellcheck` finding; at the time of writing the existing hooks and scripts still carry findings (CI's shellcheck step tolerates them), so look at the findings in the files you changed.
+Every target wraps a script you can also run directly. `make lint` fails on any `shellcheck` finding, as CI does (`scripts/lint-shell.sh`: application Bash at every severity, tests at `-S warning`).
 
 [docs/TESTING.md](docs/TESTING.md) explains the suites, the per-test sandbox, test conventions and the live suites. [docs/CICD.md](docs/CICD.md) lists the GitHub Actions workflows.
 

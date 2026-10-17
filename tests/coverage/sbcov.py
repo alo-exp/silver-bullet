@@ -171,6 +171,10 @@ def _command_statement(node, src: bytes) -> Statement:
             words_after_name.append(child)
     if word in WRAPPER_WORDS and words_after_name:
         word = _literal_word(words_after_name[0], src)
+    elif word == "{" and words_after_name:
+        # tree-sitter-bash parses `! { cmd ...; }` as a command named "{"; bash
+        # traces the command inside the group.
+        word = _literal_word(words_after_name[0], src)
     if not seen_name:
         word = None
     return Statement(node.start_point[0] + 1, node.end_point[0] + 1, "command", word, frozenset(names))
@@ -286,6 +290,8 @@ def analyze_bash(path: Path) -> BashAnalysis:
             return
         if t in LEAF_TYPES:
             stmt = _leaf_statement(node, src)
+            if stmt.kind == "command" and stmt.word == "}" and node.named_child_count == 1:
+                return  # the closing brace of a misparsed `! { ...; }` group
             add(stmt)
             visit_substitutions(node, stmt.start, stmt.end)
             return
@@ -415,7 +421,9 @@ def load_scope():
 # Trace collection
 # --------------------------------------------------------------------------
 
-HIT_RE = re.compile(rb"^\++\x1f([^\x1f\n]*)\x1f(\d+)\x1f([^\n]{0,200})", re.M)
+# "+" repeats once per subshell/substitution level; pid and function depth are
+# absent in traces written before they were added to PS4.
+HIT_RE = re.compile(rb"^(\++)\x1f([^\x1f\n]*)\x1f(\d+)\x1f(?:(\d+)\x1f(\d*)\x1f)?([^\n]{0,200})", re.M)
 PWD_RE = re.compile(rb"^#PWD\x1f([^\n]*)$", re.M)
 
 
@@ -440,9 +448,15 @@ def collect(cov_dir: Path) -> int:
     """Fold raw trace files into bash-hits.json and delete them.
 
     bash-hits.json maps traced path -> line -> word -> multiplicity, where the
-    multiplicity is the largest number of times the word was traced in one
-    uninterrupted run of records for that line. It lets attribution tell apart
-    two same-word statements on one line, e.g. ``x=$(cmd) || x=""``.
+    multiplicity is the largest number of times the word was traced in one run
+    of records for that line by one process. It lets attribution tell apart two
+    same-word statements on one line, e.g. ``x=$(cmd) || x=""``. A run continues
+    across deeper records (a called function, a command substitution) and records
+    of other processes (a process substitution running concurrently), and ends
+    at the next record of the same process at the same or a shallower depth.
+    Records for one line traced back to back by different processes (a command
+    substitution and its parent statement) also form a run; flush keeps the
+    larger count, since neither kind of run overcounts.
     """
     raw = cov_dir / "raw"
     hits_path = cov_dir / "bash-hits.json"
@@ -462,22 +476,38 @@ def collect(cov_dir: Path) -> int:
         data = trace.read_bytes()
         m = PWD_RE.search(data)
         start_pwd = m.group(1).decode("utf-8", "replace") if m else ""
-        run_key = None
-        run_counts: dict[str, int] = {}
-        for src_b, line_b, cmd in HIT_RE.findall(data):
+        # Per process: a stack of open runs [key, depth, counts], deepest last.
+        stacks: dict[bytes, list] = {}
+        # Across processes: consecutive records for one line, e.g. a command
+        # substitution's child traced just before its parent statement.
+        flat_key = None
+        flat_counts: dict[str, int] = {}
+        for plus, src_b, line_b, pid, fdepth, cmd in HIT_RE.findall(data):
             src = src_b.decode("utf-8", "replace")
             if not src:
                 continue
             if not src.startswith("/") and start_pwd:
                 src = os.path.normpath(os.path.join(start_pwd, src))
             key = (src, line_b.decode())
-            if key != run_key:
-                flush(run_key, run_counts)
-                run_key, run_counts = key, {}
+            depth = len(plus) + int(fdepth or 0)
+            stack = stacks.setdefault(pid, [])
+            while stack and (stack[-1][1] > depth or (stack[-1][1] == depth and stack[-1][0] != key)):
+                run = stack.pop()
+                flush(run[0], run[2])
+            if not stack or stack[-1][1] < depth:
+                stack.append([key, depth, {}])
             w = _first_word(cmd)
-            run_counts[w] = run_counts.get(w, 0) + 1
+            counts = stack[-1][2]
+            counts[w] = counts.get(w, 0) + 1
+            if key != flat_key:
+                flush(flat_key, flat_counts)
+                flat_key, flat_counts = key, {}
+            flat_counts[w] = flat_counts.get(w, 0) + 1
             count += 1
-        flush(run_key, run_counts)
+        flush(flat_key, flat_counts)
+        for stack in stacks.values():
+            for run in stack:
+                flush(run[0], run[2])
         if os.environ.get("SB_COV_KEEP_RAW"):
             trace.rename(trace.with_suffix(".kept"))
         else:

@@ -14,7 +14,8 @@
 #   SNAP="$(sb_repo_snapshot --git "$REPO_ROOT" "$TMP/repo")"   # copy + own git repo
 #
 # The copy leaves out .git and the large trees no script reads (graphify-out,
-# .planning, research, .agentmemory) plus caches and local install artifacts.
+# .planning, research, .agentmemory), agent worktrees under .claude/worktrees, the
+# coverage run directory (written to while tests run), caches and local install artifacts.
 # With --git the copy becomes a repository of its own holding a single commit
 # with fixed author, committer and dates, so commit-SHA logic works offline and
 # never needs the original repository's object store (which another user may
@@ -36,6 +37,8 @@ sb_repo_snapshot() {
     --exclude='/.planning/' \
     --exclude='/research/' \
     --exclude='/.agentmemory/' \
+    --exclude='/.claude/worktrees/' \
+    --exclude='/.coverage-run/' \
     --exclude='node_modules/' \
     --exclude='__pycache__/' \
     --exclude='.pytest_cache/' \
