@@ -72,3 +72,6 @@ done < <(printf 'a\nb\n' | cat)
 cat <<'HEREDOC' >/dev/null || echo "MISS: heredoc fallback" >/dev/null
 heredoc body
 HEREDOC
+nohup true >/dev/null 2>&1 &
+wait
+time : timed
