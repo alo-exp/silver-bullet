@@ -13,8 +13,6 @@ SUITE ?=
 FAIL_UNDER ?=
 PYTHON ?= python3
 
-SHELLCHECK_EXCLUDES := SC2317,SC1091,SC2329
-
 .PHONY: help setup prereqs lint test coverage check sync-check
 
 help:
@@ -33,13 +31,14 @@ setup: prereqs
 	$(PYTHON) -m pip install -r requirements-dev.txt
 
 lint:
-	@for f in hooks/*.sh hooks/session-start hooks/lib/*.sh hooks/lib/*/*.sh scripts/*.sh $$(find scripts/lib scripts/enterprise-e2e scripts/agent-* -name '*.sh'); do \
+	@files="$$(bash scripts/lint-shell.sh --list)" || exit 1; \
+	for f in $$files; do \
 	  bash -n "$$f" || exit 1; \
 	done; echo "bash -n: ok"
 	@for f in hooks/hooks.json templates/silver-bullet.config.json.default .silver-bullet.json package.json \
 	  .claude-plugin/plugin.json .claude-plugin/marketplace.json .cursor-plugin/plugin.json .cursor-plugin/marketplace.json \
 	  .agents/plugins/marketplace.json; do jq empty "$$f" || exit 1; done; echo "json: ok"
-	shellcheck --exclude=$(SHELLCHECK_EXCLUDES) hooks/*.sh hooks/lib/*.sh scripts/*.sh
+	bash scripts/lint-shell.sh --all
 
 test:
 	bash tests/run-all-tests.sh --jobs $(JOBS) $(if $(SUITE),--suite $(SUITE),)
