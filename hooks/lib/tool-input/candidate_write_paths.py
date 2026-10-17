@@ -32,6 +32,13 @@ def normalize_candidate(token: str):
         return str(path)
 
 
+def is_in_place_flag(arg: str) -> bool:
+    # -i, -i.bak, bundled short flags (sed -Ei, perl -pi) and sed --in-place[=SUFFIX]
+    if arg == "--in-place" or arg.startswith("--in-place="):
+        return True
+    return arg.startswith("-") and not arg.startswith("--") and "i" in arg[1:]
+
+
 def tokenize(line: str):
     try:
         return shlex.split(line, posix=True)
@@ -200,7 +207,7 @@ while pending_chunks:
                 if normalized:
                     seen.add(normalized)
             continue
-        if cmd in {"sed", "perl"} and any(arg == "-i" or arg.startswith("-i") for arg in args):
+        if cmd in {"sed", "perl"} and any(is_in_place_flag(arg) for arg in args):
             for arg in reversed(args):
                 if arg == "--" or arg.startswith("-"):
                     continue
