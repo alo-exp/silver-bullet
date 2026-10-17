@@ -17,6 +17,9 @@ stage_root() {
   cp "$TL_REPO_ROOT/scripts/lib/enterprise-e2e-ledger-reconcile.sh" "$root/scripts/lib/"
   : >"$root/scripts/lib/enterprise-e2e-live-common.sh"
   cat >"$root/scripts/lib/enterprise-e2e-outcome-assessment.sh" <<EOS
+if [[ -f "$root/ctl/blank-row" ]]; then
+  enterprise_e2e_ledger_matrix_rows() { printf ' \n1 pass\n'; }
+fi
 enterprise_e2e_outcome_row_passes() {
   # args: row fixture state_dir row_log ledger evidence
   printf '%s|%s|%s|%s\n' "\$1" "\$2" "\$3" "\$4" >>"$root/ctl/outcome-calls"
@@ -129,6 +132,13 @@ assert_eq "outcome failure exit" "1" "$TL_STATUS"
 assert_contains "row 4 outcome failure reported" "$TL_ERR" "row 4 ledger Pass but outcome assessment FAIL"
 assert_contains "outcome count reflects failure" "$TL_OUT" "Outcome strict-clean rows: 21/22"
 rm -f "$R/ctl/outcome-fail-4" "$R/ctl/outcome-calls"
+
+# a blank row emitted by the ledger parser is ignored
+touch "$R/ctl/blank-row"
+tl_run bash "$CHECK" --ledger "$R/full.md"
+assert_eq "blank row skipped, remaining count is short" "1" "$TL_STATUS"
+assert_contains "only the real row scored" "$TL_OUT" "Outcome strict-clean rows: 1/22"
+rm -f "$R/ctl/blank-row" "$R/ctl/outcome-calls"
 
 # registry helper absent: that gate is skipped
 rm -rf "$TL_TMP/root2"

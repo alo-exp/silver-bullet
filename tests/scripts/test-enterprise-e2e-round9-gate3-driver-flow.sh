@@ -104,6 +104,30 @@ run env F2_FAIL_STEP=scripts/run-enterprise-e2e-live-test.sh bash "$DRIVER" --pr
 assert_eq "live-test preflight failure exit" "1" "$TL_STATUS"
 assert_contains "live-test preflight failure message" "$TL_ERR" "PREFLIGHT FAIL: live-test --preflight-only"
 
+# collaborators that fail are tolerated with fallbacks
+run env F2_FP_FAIL=1 F2_REGCOUNT_FAIL=1 F2_RESET_FAIL=1 F2_QUIESCE_FAIL=1 bash "$DRIVER" 2
+assert_eq "tolerated collaborator failures exit" "0" "$TL_STATUS"
+assert_contains "fingerprint fallback" "$TL_OUT" "  install_fp=unknown"
+assert_contains "registry count fallback" "$TL_OUT" "registry_pass_count=0/22 @ current install_fp"
+assert_contains "matrix still launched" "$TL_OUT" "=== R9 Gate3 matrix "
+
+# fixture that is not a git repo: no branch information, warning names detached
+mkdir -p "$TL_TMP/plain-app"
+run env SB_TEST_ENTERPRISE_APP_ROOT="$TL_TMP/plain-app" bash "$DRIVER" --preflight-only
+assert_eq "non-git fixture exit" "0" "$TL_STATUS"
+assert_contains "non-git fixture warning" "$TL_OUT" "WARN: fixture on 'detached' — want enterprise-e2e/round-9-claude"
+
+# SB_ROOT without any commit: sha shown as unknown
+NOGIT="$TL_TMP/nocommit"
+f2_stage_root "$NOGIT"
+mkdir -p "$NOGIT/.planning/enterprise-e2e"
+cp "$R/scripts/enterprise-e2e/round9-gate3-driver.sh" "$NOGIT/scripts/enterprise-e2e/"
+cp -r "$R/scripts/run-enterprise-e2e-live-test.sh" "$NOGIT/scripts/"
+: >"$NOGIT/.planning/enterprise-e2e/ROUND-9-LEDGER.md"
+run env SB_E2E_MAIN_REPO="$NOGIT" bash "$NOGIT/scripts/enterprise-e2e/round9-gate3-driver.sh" --preflight-only
+assert_eq "commitless root exit" "0" "$TL_STATUS"
+assert_contains "commitless root sha unknown" "$TL_OUT" "SB_ROOT=$NOGIT @ unknown"
+
 # --- registry-driven row selection ---------------------------------------------------------
 jq -n --arg fp "$install_fp" '{installs: {($fp): {rows: {"1": {outcome_pass: true}, "3": {outcome_pass: true}, "6": {outcome_pass: false}}}}}' >"$REG"
 run bash "$DRIVER" --preflight-only
@@ -191,6 +215,10 @@ assert_contains "tmux session announced" "$TL_OUT" "tmux session r9-gate3 starte
 assert_contains "stale session killed first" "$CALLS" "tmux kill-session -t r9-gate3"
 assert_contains "session created detached" "$CALLS" "tmux new-session -d -s r9-gate3 cd '$R' && RTK_DISABLED=1 bash '$R/scripts/enterprise-e2e/round9-gate3-driver.sh' 3 8 2>&1 | tee -a '$R/.e2e-r9-gate3-matrix-live.log'"
 assert_not_contains "matrix not launched directly under tmux" "$CALLS" "pty "
+tl_stub tmux 'printf "tmux %s\n" "$*" >>"$F2_CALLS"; [[ "$1" == kill-session ]] && exit 1; exit 0'
+run bash "$DRIVER" --tmux 3
+assert_eq "failing kill-session tolerated" "0" "$TL_STATUS"
+assert_contains "session still created" "$CALLS" "tmux new-session -d -s r9-gate3"
 rm -f "$TL_BIN/tmux"
 run env PATH="$(tl_path_without tmux)" bash "$DRIVER" --tmux 3
 assert_eq "missing tmux exit" "1" "$TL_STATUS"
