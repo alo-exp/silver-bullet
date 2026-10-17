@@ -773,7 +773,7 @@ PY
       sb_required_skill_is_recorded "$completed_skills" "$1"
       return $?
     fi
-    grep -Fqx -- "$1" 2>/dev/null <<<"$completed_skills"
+    grep -Fqx -- "$1" <<<"$completed_skills" 2>/dev/null
   }
 
   # --- Check required planning skills ---

@@ -54,7 +54,7 @@ sb_evidence_schema_gate_enforce() {
     json_out="$(bash "$validator" "$repo_root" --json 2>/dev/null || true)"
   fi
 
-  if [[ -z "$json_out" ]] || ! jq -e '.artifacts_scanned' >/dev/null <<<"$json_out" 2>/dev/null; then
+  if [[ -z "$json_out" ]] || ! jq -e '.artifacts_scanned' <<<"$json_out" >/dev/null 2>/dev/null; then
     "$emit_warn_fn" "⚠️  EVIDENCE SCHEMA — validator failed to run; skipped finding-table check."
     return 0
   fi
