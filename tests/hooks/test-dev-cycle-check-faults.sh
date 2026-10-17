@@ -107,4 +107,24 @@ edit
 assert_contains "main returning non-zero prints the continue-without-blocking notice" "$TL_OUT" "dev-cycle-check.sh encountered an error"
 unstage
 
+# ── unreadable files (needs a non-root user: root ignores permission bits) ───
+if [[ "$(id -u)" -eq 0 ]]; then
+  echo "SKIP: needs a non-root user (unreadable branch file and script)"
+else
+  mkproj f3
+  state inst-a
+  printf 'other/branch\n' >"$BRANCHF"
+  chmod 000 "$BRANCHF"
+  edit
+  assert_not_contains "unreadable branch file: no mismatch warning" "$(message)" "Branch mismatch"
+  assert_contains "unreadable branch file: planning verdict still reached" "$(message)" "Planning verified"
+  chmod 600 "$BRANCHF"; printf "feature/test\n" >"$BRANCHF"
+  printf '#!/usr/bin/env bash\necho x > src/gen.js\n' >"$PROJ/gen.sh"
+  chmod 000 "$PROJ/gen.sh"
+  dc_cmd 'bash gen.sh'
+  assert_eq "unreadable script: body not inspected, command ignored" "none" "$(decision)"
+  assert_eq "unreadable script: hook exits 0" 0 "$TL_STATUS"
+  chmod 600 "$PROJ/gen.sh"
+fi
+
 tl_results
