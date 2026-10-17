@@ -79,7 +79,6 @@ fi
 
 # Catalog template still defines required dynamic rule coverage (preflight)
 required_ops="prune insert substitute parallelize loop"
-catalog_ops="$(jq -r '[.dynamic_rules[].operation] | unique | sort | join(" ")' "$PROD_CATALOG")"
 missing=""
 for op in $required_ops; do
   if ! jq -e --arg op "$op" '.dynamic_rules[] | select(.operation == $op)' "$PROD_CATALOG" >/dev/null 2>&1; then

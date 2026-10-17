@@ -235,7 +235,12 @@ cmd_preflight() {
     [[ -n "$track_filter" && "$track_filter" != "$tid" ]] && continue
     tdir="$(track_dir_for "$tid")" || continue
     for f in RUNBOOK.md CRITERIA.md MATRIX.json; do
-      [[ -f "${tdir}/${f}" ]] && echo "OK: ${tid}/${f}" || { echo "ERROR: missing ${tdir}/${f}" >&2; dry_ok=0; }
+      if [[ -f "${tdir}/${f}" ]]; then
+        echo "OK: ${tid}/${f}"
+      else
+        echo "ERROR: missing ${tdir}/${f}" >&2
+        dry_ok=0
+      fi
     done
   done
 
@@ -258,10 +263,13 @@ cmd_preflight() {
   done
 
   if command -v jq >/dev/null 2>&1; then
-    jq -e '.criteria[] | select(.id=="OUT-MULTIWF-01")' \
-      "${REPO_ROOT}/docs/testing/outcome-criteria-registry.json" >/dev/null 2>&1 \
-      && echo "OK: OUT-MULTIWF-01 in outcome registry" \
-      || { echo "ERROR: OUT-MULTIWF-01 missing from registry" >&2; dry_ok=0; }
+    if jq -e '.criteria[] | select(.id=="OUT-MULTIWF-01")' \
+      "${REPO_ROOT}/docs/testing/outcome-criteria-registry.json" >/dev/null 2>&1; then
+      echo "OK: OUT-MULTIWF-01 in outcome registry"
+    else
+      echo "ERROR: OUT-MULTIWF-01 missing from registry" >&2
+      dry_ok=0
+    fi
   fi
 
   [[ "$dry_ok" -eq 1 ]] || exit 1

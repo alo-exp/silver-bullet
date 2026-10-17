@@ -52,6 +52,7 @@ ts_sb_jq() {
   fi
 }
 
+# shellcheck disable=SC2120  # optional start dir; defaults to $PWD
 ts_find_sb_config() {
   local start="${1:-$PWD}" dir
   dir="$(cd "$start" 2>/dev/null && pwd -P)" || dir="$start"
@@ -122,6 +123,7 @@ ts_state_root() {
   ts_expand_path "$root"
 }
 
+# shellcheck disable=SC2120  # optional start dir; defaults to $PWD
 ts_git_root() {
   local start="${1:-$PWD}" dir
   dir="$(cd "$start" 2>/dev/null && pwd -P)" || dir="$start"
@@ -544,7 +546,7 @@ ts_agentmemory_mcp_is_save() {
   local input="${1:-}" server tool
   server="$(ts_mcp_server_name "$input")"
   tool="$(ts_mcp_tool_name "$input")"
-  case "$server" in *agentmemory*|user-agentmemory) ;; *) return 1 ;; esac
+  case "$server" in *agentmemory*) ;; *) return 1 ;; esac
   case "$tool" in memory_save|save_memory|agentmemory_save) return 0 ;; esac
   return 1
 }

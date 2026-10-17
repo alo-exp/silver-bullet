@@ -69,7 +69,7 @@ EOF
   cat >"$MOCK_BIN/curl" <<'EOF'
 #!/usr/bin/env bash
 if printf '%s' "$*" | grep -q 'agentmemory/health'; then exit 0; fi
-command -v /usr/bin/curl >/dev/null && exec /usr/bin/curl "$@" || exit 0
+exit 0  # every other request succeeds offline; never reach the real network
 EOF
   chmod +x "$MOCK_BIN/agentmemory" "$MOCK_BIN/curl"
   export PATH="$MOCK_BIN:/usr/bin:/bin:/usr/sbin:/sbin"
@@ -183,7 +183,7 @@ install_mock_agentmemory
 cat >"$MOCK_BIN/curl" <<'EOF'
 #!/usr/bin/env bash
 if printf '%s' "$*" | grep -q 'agentmemory/health'; then exit 1; fi
-command -v /usr/bin/curl >/dev/null && exec /usr/bin/curl "$@" || exit 1
+exit 1  # every other request fails offline; never reach the real network
 EOF
 chmod +x "$MOCK_BIN/curl"
 wire_test_mcp

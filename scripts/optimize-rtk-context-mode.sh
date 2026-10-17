@@ -46,8 +46,11 @@ EOF
 
 # shellcheck source=../hooks/lib/rtk-cm-global.sh
 source "$LIB"
+# shellcheck source=../hooks/lib/recommended-tools.sh
 [[ -f "$RECOMMENDED_TOOLS_LIB" ]] && source "$RECOMMENDED_TOOLS_LIB"
+# shellcheck source=../hooks/lib/context-mode-gate.sh
 [[ -f "$CONTEXT_MODE_LIB" ]] && source "$CONTEXT_MODE_LIB"
+# shellcheck source=../hooks/lib/rtk-gate.sh
 [[ -f "$RTK_GATE_LIB" ]] && source "$RTK_GATE_LIB"
 
 detect_host() {
@@ -88,7 +91,8 @@ run_cmd() {
 }
 
 rtk_binary_ok() {
-  local bin="$(sb_rtk_cli_path 2>/dev/null || true)"
+  local bin
+  bin="$(sb_rtk_cli_path 2>/dev/null || true)"
   [[ -n "$bin" ]] || return 1
   "$bin" gain --help >/dev/null 2>&1 || return 1
   ! "$bin" --help 2>&1 | head -5 | grep -qiE 'rust type kit|rtk-check'

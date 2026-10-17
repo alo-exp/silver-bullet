@@ -198,7 +198,7 @@ declare -a TIMINGS=()
 
 n=${#ALL_FILES[@]}
 declare -a PIDS=()
-declare -A DONE=()
+declare -A FINISHED=()
 next_to_start=0
 next_to_print=0
 current_suite=""
@@ -272,14 +272,14 @@ while [[ $next_to_print -lt $n ]]; do
     else
       wait "$pid" 2>/dev/null || true
       finish_one "$RUN_TMP/log.$idx"
-      DONE[$idx]=1
+      FINISHED[$idx]=1
       reaped=1
     fi
   done
   PIDS=("${still[@]+"${still[@]}"}")
   unset still
   # Print every finished result that is next in order.
-  while [[ $next_to_print -lt $n && -n "${DONE[$next_to_print]:-}" ]]; do
+  while [[ $next_to_print -lt $n && -n "${FINISHED[$next_to_print]:-}" ]]; do
     print_result "$next_to_print"
     next_to_print=$((next_to_print + 1))
   done

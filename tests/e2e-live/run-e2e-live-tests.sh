@@ -18,8 +18,6 @@ SCENARIO_DIR="${SCRIPT_DIR}/scenarios"
 DEPENDENCY_PREFLIGHT_SCRIPT="${SCRIPT_DIR}/dependency-access-preflight.sh"
 HOOK_PREFLIGHT_SCRIPT="${SCRIPT_DIR}/hook-delivery-preflight.sh"
 RECOMMENDED_TOOLS_PREFLIGHT_SCRIPT="${SCRIPT_DIR}/recommended-tools-preflight.sh"
-E2E_LIVE_MATRIX_FILE=""
-INLINE_E2E_MATRIX_FILE=""
 HOST_E2E_LIVE_MATRIX_FILE="${SB_RUNTIME_STATE_DIR}/e2e-live-matrix"
 HOST_INLINE_E2E_MATRIX_FILE="${SB_RUNTIME_STATE_DIR}/inline-e2e-matrix"
 HOST_VERIFY_TESTS_STATE_FILE="${SB_RUNTIME_STATE_DIR}/verify-tests-state"
@@ -226,8 +224,6 @@ for runtime in "${RUNTIMES[@]}"; do
   esac
 
   if [[ "$runtime" == "claude" ]]; then
-    E2E_LIVE_MATRIX_FILE="${SB_RUNTIME_HOME_ROOT}/.silver-bullet/e2e-live-matrix"
-    INLINE_E2E_MATRIX_FILE="${SB_RUNTIME_HOME_ROOT}/.silver-bullet/inline-e2e-matrix"
     if ! /Users/shafqat/.local/bin/claude --version >/dev/null 2>&1; then
       echo "ERROR: claude CLI not found or not working at /Users/shafqat/.local/bin/claude"
       exit 1
@@ -236,8 +232,6 @@ for runtime in "${RUNTIMES[@]}"; do
     # shellcheck source=tests/live/lib/codex-cli-isolation.sh
     source "$CODEX_ISOLATION_HELPER"
     setup_codex_cli_isolation
-    E2E_LIVE_MATRIX_FILE="${CODEX_HOME}/.silver-bullet/e2e-live-matrix"
-    INLINE_E2E_MATRIX_FILE="${CODEX_HOME}/.silver-bullet/inline-e2e-matrix"
     if [[ -z "${CODEX_BIN:-}" ]] || ! "$CODEX_BIN" --version >/dev/null 2>&1; then
       echo "ERROR: native Codex CLI not found or not working"
       exit 1
@@ -250,8 +244,6 @@ for runtime in "${RUNTIMES[@]}"; do
     # shellcheck source=tests/live/lib/kay-codex-isolation.sh
     source "$KAY_ISOLATION_HELPER"
     setup_kay_codex_isolation
-    E2E_LIVE_MATRIX_FILE="${KAY_HOME}/.codex/.silver-bullet/e2e-live-matrix"
-    INLINE_E2E_MATRIX_FILE="${KAY_HOME}/.codex/.silver-bullet/inline-e2e-matrix"
     if [[ -z "${CODEX_BIN:-}" ]] || ! "$CODEX_BIN" --version >/dev/null 2>&1; then
       echo "ERROR: Kay CLI not found or not working"
       exit 1
@@ -305,8 +297,6 @@ for runtime in "${RUNTIMES[@]}"; do
   elif [[ "$runtime" == "kay" ]]; then
     teardown_kay_codex_isolation
   fi
-  E2E_LIVE_MATRIX_FILE="$HOST_E2E_LIVE_MATRIX_FILE"
-  INLINE_E2E_MATRIX_FILE="$HOST_INLINE_E2E_MATRIX_FILE"
 done
 
 echo ""

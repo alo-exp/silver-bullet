@@ -12,7 +12,7 @@ if [[ -x /usr/bin/grep ]]; then
 elif [[ -x /bin/grep ]]; then
   GREP=/bin/grep
 else
-  GREP=grep
+  GREP="grep"
 fi
 
 SPEC="$REPO_ROOT/skills/silver-spec/SKILL.md"

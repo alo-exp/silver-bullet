@@ -19,6 +19,7 @@ agent_host_pi_quota_repo_root() {
   pwd
 }
 
+# shellcheck disable=SC2120  # optional work dir; defaults to WORK_DIR/PI_WORK_DIR
 agent_host_pi_resolve_quota_run_dir() {
   local work_dir="${1:-${WORK_DIR:-${PI_WORK_DIR:-}}}"
   local abs parent repo
@@ -46,6 +47,7 @@ agent_host_pi_resolve_quota_run_dir() {
   printf '%s' "${repo}/.planning/agent-pi/quota-retry"
 }
 
+# shellcheck disable=SC2120  # optional work dir; defaults to WORK_DIR/PI_WORK_DIR
 agent_host_pi_resolve_quota_rung() {
   local work_dir="${1:-${WORK_DIR:-${PI_WORK_DIR:-}}}"
   local base

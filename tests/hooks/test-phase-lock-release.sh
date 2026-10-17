@@ -43,7 +43,7 @@ trap cleanup_all EXIT
 setup() {
   TMPDIR_TEST=$(mktemp -d)
   hook_test_stamp_sb_scaffold "$TMPDIR_TEST"
-  cd "$TMPDIR_TEST"
+  cd "$TMPDIR_TEST" || exit 1
   git init -q
   git config user.email t@t
   git config user.name t
