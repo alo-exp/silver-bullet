@@ -286,13 +286,11 @@ def looks_like_test_command(command_name, args):
             return script == "test" or script.startswith("test:")
         return False
 
-    if command_name in {"npx"}:
-        idx = first_non_option(args)
-        if idx is None:
-            return False
-        return looks_like_test_command(pathlib.Path(args[idx]).name, args[idx + 1 :])
-
-    return False
+    # Every other name in test_command_names is handled above; only npx remains.
+    idx = first_non_option(args)
+    if idx is None:
+        return False
+    return looks_like_test_command(pathlib.Path(args[idx]).name, args[idx + 1 :])
 
 
 pending_chunks = [payload]
