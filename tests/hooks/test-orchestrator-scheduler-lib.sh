@@ -589,7 +589,7 @@ orch_write_state '{"scheduler":{"step_v_loops":{"AF-A":{"S1":"pass"}}}}'
 assert_eq "passing step V-loops" free "$(psb)"
 
 echo "=== parent stop block reason ==="
-rs() { sb_scheduler_parent_stop_block_reason "$@"; }
+rs() { sb_scheduler_parent_stop_block_reason; }
 rm -f "$STATE"
 assert_eq "no state" "Orchestrator scheduler: pending batch dispatch." "$(rs)"
 orch_write_state '{"scheduler":{}}'

@@ -137,7 +137,7 @@ assert_eq "default blocks" block "$(unset SILVER_BULLET_RUNTIME; sb_agent_delega
 echo "=== progress surface ==="
 SURF="$TL_REPO_ROOT/hooks/agent-delegation-progress-surface.sh"
 LOG="$ROOT/d.log"
-run_surface() { bash -c 'source "$1"; sb_agent_delegation_progress_surface' _ "${1:-$SURF}"; }
+run_surface() { bash -c 'source "$1"; sb_agent_delegation_progress_surface' _ "$SURF"; }
 assert_eq "inactive delegation: empty surface" "" "$(run_surface)"
 sb_agent_delegation_activate codex T1 "$ROOT" '[]' "$LOG"
 assert_eq "no log file: header only" "[SB delegation active] host=codex task_id=T1" "$(run_surface)"
@@ -149,7 +149,7 @@ tl_stub tail 'exit 1'
 assert_eq "tail failure leaves just the header" "[SB delegation active] host=codex task_id=T1" "$(run_surface)"
 rm -f "$TL_BIN/tail"
 printf 'x%.0s' $(seq 1 300) >"$LOG"; printf '\n' >>"$LOG"
-for i in 1 2 3 4 5 6 7 8; do printf 'y%.0s' $(seq 1 300) >>"$LOG"; printf '\n' >>"$LOG"; done
+for _ in 1 2 3 4 5 6 7 8; do printf 'y%.0s' $(seq 1 300) >>"$LOG"; printf '\n' >>"$LOG"; done
 out="$(run_surface)"
 assert_eq "surface truncated to 2048 chars" 2048 "${#out}"
 # Redaction failure falls back to the raw lines.

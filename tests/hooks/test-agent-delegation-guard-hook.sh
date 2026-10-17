@@ -18,7 +18,6 @@ mkdir -p "$PROJ/src" "$PROJ/docs" "$PROJ/hooks" "$PROJ/.planning/agent-codex/T1"
 : >"$PROJ/src/owned.txt"
 : >"$PROJ/docs/free.md"
 LOG="$PROJ/.planning/agent-codex/T1/delegate.log"
-STATE_FILE="$SB_RUNTIME_STATE_DIR/agent-delegation-active.json"
 AUDIT_LOG="$SB_RUNTIME_STATE_DIR/hook-audit.jsonl"
 
 edit_json() { # edit_json TOOL PATH [event]
