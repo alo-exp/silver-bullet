@@ -256,7 +256,9 @@ EOF
     checklist="$repo_root/$checklist"
   fi
 
-  enabled=$(jq -r '.enforcement.enabled // true' "$contract_file" 2>/dev/null || true)
+  # `// true` would also replace an explicit false, so `enabled: false` could never
+  # disable the gate; only a missing/null value defaults to enabled.
+  enabled=$(jq -r '.enforcement.enabled | if . == null then true else . end' "$contract_file" 2>/dev/null || true)
   if [[ "$enabled" != "true" ]]; then
     return 0
   fi
