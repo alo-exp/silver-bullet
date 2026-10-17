@@ -72,10 +72,19 @@ sb_agent_delegation_normalize_path() {
   if [[ "$path" != /* ]]; then
     path="${repo_root%/}/$path"
   fi
-  # Any ".." component makes the path untrustworthy.
-  case "/$path/" in
-    */../*) return 1 ;;
-  esac
+  # Collapse "." and ".." lexically (never above /), like realpath -m, so a path that climbs
+  # out of and back into a scope is checked against its final location.
+  local -a parts=() stack=()
+  local part
+  IFS=/ read -ra parts <<<"$path"
+  for part in "${parts[@]}"; do
+    case "$part" in
+      ""|.) ;;
+      ..) [[ ${#stack[@]} -eq 0 ]] || unset 'stack[${#stack[@]}-1]' ;;
+      *) stack+=("$part") ;;
+    esac
+  done
+  path="/$(IFS=/; printf '%s' "${stack[*]:-}")"
   # Resolve the nearest existing ancestor and re-append the components that do not exist yet,
   # so a write to a new file in a new subdirectory is still checked against the scope.
   local dir="$path" rest="" parent
@@ -95,7 +104,8 @@ sb_agent_delegation_path_in_scope() {
   local file scope norm_target
   file="$(sb_agent_delegation_state_file)"
   norm_target="$(sb_agent_delegation_normalize_path "$target" "$repo_root" 2>/dev/null || true)"
-  [[ -n "$norm_target" ]] || return 1
+  # Fail closed: a target that cannot be normalized while a delegation is active is treated as in scope.
+  [[ -n "$norm_target" ]] || return 0
 
   local task_id host
   task_id="$(sb_agent_delegation_read_field task_id "")"
