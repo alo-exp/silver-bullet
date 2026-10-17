@@ -35,6 +35,8 @@ for f in "${SRC}"/*; do
       chmod +x "${HOME}/.cursor/hooks/toolstack/${base}" 2>/dev/null || true
       ;;
     *.py) cp -f "$f" "${HOME}/.cursor/hooks/toolstack/${base}" 2>/dev/null || true ;;
+    # The deployed install-body.sh only finds this rule next to itself.
+    global-recommended-tools.mdc) cp -f "$f" "${HOME}/.cursor/hooks/toolstack/${base}" 2>/dev/null || true ;;
     *.mdc) ;;
   esac
 done
