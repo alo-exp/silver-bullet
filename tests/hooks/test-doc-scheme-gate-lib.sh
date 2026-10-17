@@ -184,14 +184,19 @@ setup_repo; jq '.sections["docs/CHANGELOG.md"].Added="maybe"' "$R/docs/task-doc-
 assert_contains "enforce: invalid section status" "$(cat "$EMITTED")" "Invalid section status: docs/CHANGELOG.md :: Added -> maybe"
 assert_contains "enforce: remediation command names the task" "$(cat "$EMITTED")" "--task T-1 --gaps"
 
-# knowledge / learnings keys with the current month
+# knowledge / learnings keys with the "current" month, pinned so the test cannot flake at a month boundary
+MONTH=2026-03
+real_date="$(command -v date)"
+tl_stub date "if [[ \"\$1\" == '+%Y-%m' ]]; then echo $MONTH; else exec $real_date \"\$@\"; fi"; hash -r
 setup_repo
 jq '.required_docs += [{"key":"docs/knowledge/YYYY-MM.md","required_sections":[]},{"key":"docs/learnings/YYYY-MM.md","required_sections":[]}]' "$R/docs/doc-scheme.json" >"$R/c.t" && mv "$R/c.t" "$R/docs/doc-scheme.json"
 jq '.docs["docs/knowledge/YYYY-MM.md"]="updated"|.docs["docs/learnings/YYYY-MM.md"]="n/a:none"' "$R/docs/task-doc-checklist.json" >"$R/c.t" && mv "$R/c.t" "$R/docs/task-doc-checklist.json"; touch -d "@$NEW" "$R/docs/task-doc-checklist.json"
 run_enforce
-assert_contains "enforce: monthly doc marked updated but absent" "$(cat "$EMITTED")" "Missing file marked updated: docs/knowledge/$(date '+%Y-%m')*.md"
-rm -f "$EMITTED"; echo k >"$R/docs/knowledge/$(date '+%Y-%m').md"; touch -d "@$NEW" "$R/docs/knowledge/$(date '+%Y-%m').md"; run_enforce
+assert_contains "enforce: monthly doc marked updated but absent" "$(cat "$EMITTED")" "Missing file marked updated: docs/knowledge/$MONTH*.md"
+rm -f "$EMITTED"; echo k >"$R/docs/knowledge/$MONTH.md"; touch -d "@$NEW" "$R/docs/knowledge/$MONTH.md"; run_enforce
 assert_file_absent "enforce: monthly doc satisfied" "$EMITTED"
+
+rm -f "$TL_BIN/date"; hash -r
 
 # absolute checklist path from the contract
 setup_repo; mv "$R/docs/task-doc-checklist.json" "$R/abs-checklist.json"

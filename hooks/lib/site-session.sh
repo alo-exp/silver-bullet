@@ -212,7 +212,7 @@ sb_site_session_run_regression_tests() {
     # use an unwedgeable pid path under TMPDIR so log-alloc is never a test failure.
     log_file="${TMPDIR:-/tmp}/site-regression-$$.log"
     if ! : >"$log_file" 2>/dev/null; then
-      log_file="/tmp/site-regression-$$.log"
+      log_file="${SB_SITE_REGRESSION_FALLBACK_DIR:-/tmp}/site-regression-$$.log"
       : >"$log_file" 2>/dev/null || return 91
     fi
   fi
