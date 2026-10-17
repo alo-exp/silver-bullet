@@ -8,6 +8,20 @@ DOCTOR="${REPO_ROOT}/scripts/sb-doctor.sh"
 PASS=0
 FAIL=0
 
+# Logs and the offline tool stand-ins live in one private temp dir (no fixed
+# /tmp names). Doctor --fix paths must never install packages or reach the
+# network, whatever is installed on the machine running the test.
+DOCTOR_TEST_TMP="$(mktemp -d)"
+# shellcheck source=tests/lib/offline-tools.sh
+source "${REPO_ROOT}/tests/lib/offline-tools.sh"
+sb_offline_tools_install "${DOCTOR_TEST_TMP}/offline-bin"
+
+# last_byte_hex <file>: hex of the file's final byte (od is POSIX; xxd is not
+# installed everywhere).
+last_byte_hex() {
+  tail -c1 "$1" | od -An -tx1 | tr -d ' \n'
+}
+
 assert_contains() {
   local desc="$1" needle="$2" file="$3"
   # Fixed-string when needle looks like a flag (BSD grep treats "--fix" as an option).
@@ -84,7 +98,7 @@ done
 
 # Broken fixture: missing sb_initiated should FAIL D5
 FIXTURE="$(mktemp -d)"
-trap 'rm -rf "$FIXTURE"' EXIT
+trap 'rm -rf "$FIXTURE" "$DOCTOR_TEST_TMP"' EXIT
 cp "$REPO_ROOT/templates/silver-bullet.config.json.default" "$FIXTURE/.silver-bullet.json"
 jq '.sb_initiated = false' "$FIXTURE/.silver-bullet.json" >"${FIXTURE}/.silver-bullet.json.tmp"
 mv "${FIXTURE}/.silver-bullet.json.tmp" "$FIXTURE/.silver-bullet.json"
@@ -105,7 +119,7 @@ fi
 # Host-scoped: Claude runtime must not require Cursor orchestrator rule (D8 N/A)
 MOCK_HOME="$(mktemp -d)"
 MOCK_PROJ="$(mktemp -d)"
-trap 'rm -rf "$FIXTURE" "$MOCK_HOME" "$MOCK_PROJ"' EXIT
+trap 'rm -rf "$FIXTURE" "$MOCK_HOME" "$MOCK_PROJ" "$DOCTOR_TEST_TMP"' EXIT
 mkdir -p "$MOCK_HOME/.cursor" "$MOCK_HOME/.claude" "$MOCK_PROJ/docs/workflows" "$MOCK_PROJ/scripts"
 cp "$REPO_ROOT/templates/silver-bullet.config.json.default" "$MOCK_PROJ/.silver-bullet.json"
 cp "$REPO_ROOT/silver-bullet.md" "$MOCK_PROJ/silver-bullet.md"
@@ -386,7 +400,10 @@ if env HOME="$D21_HOME" \
     FAIL=$((FAIL + 1))
   fi
 else
-  echo "WARN: install-cursor-sb-agents skipped in test (catalog/network)"
+  # Offline with the fixture catalog seeded above, the installer has no
+  # reason to fail; a failure here is a regression, not an environment gap.
+  echo "FAIL: install-cursor-sb-agents failed with the offline fixture catalog"
+  FAIL=$((FAIL + 1))
 fi
 
 d21_claude="$(env HOME="$D21_HOME" SILVER_BULLET_RUNTIME=claude bash "$DOCTOR" "$D21_PROJ" 2>&1 || true)"
@@ -519,16 +536,19 @@ else
 fi
 rm -rf "$ALU_HOME" "$ALU_PROJ" "$ALU_BIN"
 
-# Live dogfood repo should PASS when environment is healthy (soft — warn only on fail)
-if bash "$DOCTOR" "$REPO_ROOT" >/tmp/sb-doctor-live-$$.txt 2>&1; then
-  echo "PASS: doctor PASS on live repo"
-  PASS=$((PASS + 1))
+# Live dogfood repo: the verdict depends on the host plugin state and tools of
+# the machine running the test, so it is reported, not counted. The doctor
+# runs on a snapshot so it cannot touch the checkout.
+# shellcheck source=tests/lib/repo-snapshot.sh
+source "${REPO_ROOT}/tests/lib/repo-snapshot.sh"
+LIVE_SNAPSHOT="$(sb_repo_snapshot "$REPO_ROOT" "${DOCTOR_TEST_TMP}/live-repo")"
+if bash "$DOCTOR" "$LIVE_SNAPSHOT" >"${DOCTOR_TEST_TMP}/doctor-live.txt" 2>&1; then
+  echo "INFO: doctor PASS on live repo (environment-dependent, not counted)"
 else
-  echo "WARN: doctor did not PASS on live repo (environment-dependent)"
-  cat /tmp/sb-doctor-live-$$.txt | tail -20
-  # Do not increment FAIL — CI may lack full host plugin state in sandbox
+  echo "INFO: doctor did not PASS on live repo (environment-dependent, not counted)"
+  tail -20 "${DOCTOR_TEST_TMP}/doctor-live.txt"
 fi
-rm -f /tmp/sb-doctor-live-$$.txt
+rm -rf "$LIVE_SNAPSHOT" "${DOCTOR_TEST_TMP}/doctor-live.txt"
 
 # D10-routes is a supported five-tool component on every SB host; genuinely
 # repairable drift must FAIL and retain the actionable host repair.
@@ -562,12 +582,12 @@ jq -n '{sb_initiated:true, sb_enforcement_tier:0}' >"$PERSIST_NL_CFG"
 # shellcheck source=../../hooks/lib/enforcement-tier-gate.sh
 source "${REPO_ROOT}/hooks/lib/enforcement-tier-gate.sh"
 sb_enforcement_tier_persist "$PERSIST_NL_CFG" "0"
-if [[ "$(tail -c1 "$PERSIST_NL_CFG" | xxd -p)" == "0a" ]]; then
+if [[ "$(last_byte_hex "$PERSIST_NL_CFG")" == "0a" ]]; then
   echo "PASS: sb_enforcement_tier_persist preserves trailing newline"
   PASS=$((PASS + 1))
 else
   echo "FAIL: sb_enforcement_tier_persist stripped trailing newline"
-  xxd -l 16 -s -16 "$PERSIST_NL_CFG" || true
+  tail -c16 "$PERSIST_NL_CFG" | od -c || true
   FAIL=$((FAIL + 1))
 fi
 rm -rf "$PERSIST_NL_TMP"
@@ -585,14 +605,14 @@ printf '# silver-bullet\n' >"${DRY_NL_TMP}/silver-bullet.md"
 DRY_BEFORE="$(cksum "$DRY_NL_CFG")"
 bash "$DOCTOR" --dry-run "$DRY_NL_TMP" >/dev/null 2>&1 || true
 DRY_AFTER="$(cksum "$DRY_NL_CFG")"
-if [[ "$DRY_BEFORE" == "$DRY_AFTER" ]] && [[ "$(tail -c1 "$DRY_NL_CFG" | xxd -p)" == "0a" ]]; then
+if [[ "$DRY_BEFORE" == "$DRY_AFTER" ]] && [[ "$(last_byte_hex "$DRY_NL_CFG")" == "0a" ]]; then
   echo "PASS: doctor --dry-run leaves .silver-bullet.json byte-identical (D11 smoke)"
   PASS=$((PASS + 1))
 else
   echo "FAIL: doctor --dry-run dirtied .silver-bullet.json"
   echo "  before=$DRY_BEFORE"
   echo "  after=$DRY_AFTER"
-  echo "  eof=$(tail -c1 "$DRY_NL_CFG" | xxd -p)"
+  echo "  eof=$(last_byte_hex "$DRY_NL_CFG")"
   FAIL=$((FAIL + 1))
 fi
 rm -rf "$DRY_NL_TMP"
@@ -731,27 +751,27 @@ chmod +x "${SC_BIN}/search"
 sc_warn_rc=0
 env -u SB_RUNTIME_NAME HOME="$SC_HOME" SILVER_BULLET_RUNTIME=cursor \
   PATH="${SC_BIN}:${PATH}" RT_SKIP_VENDOR_DOCTOR=1 \
-  bash "$DOCTOR" "$SC_PROJ" >/tmp/sb-doctor-sc-warn-$$.txt 2>&1 || sc_warn_rc=$?
-if grep -qE 'WARN: D10-search_cli' /tmp/sb-doctor-sc-warn-$$.txt \
-  && ! grep -qE 'FAIL: D10-search_cli' /tmp/sb-doctor-sc-warn-$$.txt; then
+  bash "$DOCTOR" "$SC_PROJ" >${DOCTOR_TEST_TMP}/sc-warn.txt 2>&1 || sc_warn_rc=$?
+if grep -qE 'WARN: D10-search_cli' ${DOCTOR_TEST_TMP}/sc-warn.txt \
+  && ! grep -qE 'FAIL: D10-search_cli' ${DOCTOR_TEST_TMP}/sc-warn.txt; then
   echo "PASS: WARN-only search_cli D10 is WARN not FAIL"
   PASS=$((PASS + 1))
 else
   echo "FAIL: WARN-only search_cli D10 is WARN not FAIL (rc=$sc_warn_rc)"
-  grep 'D10-search_cli' /tmp/sb-doctor-sc-warn-$$.txt || true
+  grep 'D10-search_cli' ${DOCTOR_TEST_TMP}/sc-warn.txt || true
   FAIL=$((FAIL + 1))
 fi
 rm -f "${SC_BIN}/search"
 sc_fail_rc=0
 env -u SB_RUNTIME_NAME HOME="$SC_HOME" SILVER_BULLET_RUNTIME=cursor \
   PATH="${SC_BIN}:${PATH}" RT_SKIP_VENDOR_DOCTOR=1 \
-  bash "$DOCTOR" "$SC_PROJ" >/tmp/sb-doctor-sc-fail-$$.txt 2>&1 || sc_fail_rc=$?
-if grep -qE 'FAIL: D10-search_cli' /tmp/sb-doctor-sc-fail-$$.txt && [[ "$sc_fail_rc" -ne 0 ]]; then
+  bash "$DOCTOR" "$SC_PROJ" >${DOCTOR_TEST_TMP}/sc-fail.txt 2>&1 || sc_fail_rc=$?
+if grep -qE 'FAIL: D10-search_cli' ${DOCTOR_TEST_TMP}/sc-fail.txt && [[ "$sc_fail_rc" -ne 0 ]]; then
   echo "PASS: FAIL search_cli tree exits nonzero"
   PASS=$((PASS + 1))
 else
   echo "FAIL: FAIL search_cli tree exits nonzero (rc=$sc_fail_rc)"
-  grep 'D10-search_cli' /tmp/sb-doctor-sc-fail-$$.txt || true
+  grep 'D10-search_cli' ${DOCTOR_TEST_TMP}/sc-fail.txt || true
   FAIL=$((FAIL + 1))
 fi
 
@@ -767,9 +787,9 @@ sc_empty_out="$(
   env -u SB_RUNTIME_NAME HOME="$SC_HOME" SILVER_BULLET_RUNTIME=cursor \
     PATH="${SC_BIN}:${PATH}" RT_SKIP_VENDOR_DOCTOR=1 \
     SB_DOCTOR_RECONCILER="$SC_FAKE" SB_DOCTOR_FORMAT=json SB_DOCTOR_ASSUME_YES=1 \
-    bash "$DOCTOR" --fix=packages "$SC_PROJ" 2>/tmp/sb-doctor-sc-empty-err-$$.txt || true
+    bash "$DOCTOR" --fix=packages "$SC_PROJ" 2>${DOCTOR_TEST_TMP}/sc-empty-err.txt || true
 )"
-sc_empty_err="$(cat /tmp/sb-doctor-sc-empty-err-$$.txt 2>/dev/null || true)"
+sc_empty_err="$(cat ${DOCTOR_TEST_TMP}/sc-empty-err.txt 2>/dev/null || true)"
 if printf '%s' "$sc_empty_out" | jq -e '.fix_applied == false' >/dev/null 2>&1 \
   && [[ "$sc_empty_err" == *"reconciler-stderr-kept"* ]]; then
   echo "PASS: empty/failed apply JSON does not mark DOCTOR_FIX_APPLIED"
@@ -828,7 +848,7 @@ unset SB_DOCTOR_ASSUME_YES
 sc_confirm_rc=0
 env -u SB_RUNTIME_NAME -u SB_DOCTOR_ASSUME_YES HOME="$SC_HOME" SILVER_BULLET_RUNTIME=cursor \
   PATH="${SC_BIN}:${PATH}" RT_SKIP_VENDOR_DOCTOR=1 SB_DOCTOR_FORMAT=json \
-  bash "$DOCTOR" --fix=packages "$SC_PROJ" >/tmp/sb-doctor-sc-confirm-$$.txt 2>&1 || sc_confirm_rc=$?
+  bash "$DOCTOR" --fix=packages "$SC_PROJ" >${DOCTOR_TEST_TMP}/sc-confirm.txt 2>&1 || sc_confirm_rc=$?
 if [[ "$sc_confirm_rc" -ne 0 ]] && [[ ! -f "$SC_STAMP" ]]; then
   echo "PASS: confirmation unobtainable blocks packages --fix writes"
   PASS=$((PASS + 1))
@@ -861,8 +881,8 @@ else
 fi
 
 rm -rf "$SC_HOME" "$SC_PROJ" "$SC_BIN"
-rm -f /tmp/sb-doctor-sc-warn-$$.txt /tmp/sb-doctor-sc-fail-$$.txt \
-  /tmp/sb-doctor-sc-empty-err-$$.txt /tmp/sb-doctor-sc-confirm-$$.txt
+rm -f ${DOCTOR_TEST_TMP}/sc-warn.txt ${DOCTOR_TEST_TMP}/sc-fail.txt \
+  ${DOCTOR_TEST_TMP}/sc-empty-err.txt ${DOCTOR_TEST_TMP}/sc-confirm.txt
 
 echo
 
