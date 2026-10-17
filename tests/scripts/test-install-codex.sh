@@ -1344,14 +1344,35 @@ RUNTIME_CLAUDE_ALLOWED_GLOBS=(
   -g '!**/.git/**' -g '!**/*.md' -g '!**/*.html' -g '!**/*.txt' -g '!**/*.err'
   # Cursor-only bundles.
   -g '!**/agents/cursor/**' -g '!**/host-bundles/cursor/**' -g '!**/.cursor-plugin/**'
-  # Shared multi-host tooling: per-host path tables with a Claude entry.
+  # Shared multi-host tooling: per-host path tables or host branches with a
+  # Claude entry next to the Codex one.
   -g '!**/scripts/sb-doctor.sh'
   -g '!**/scripts/optimize-rtk-context-mode.sh'
   -g '!**/scripts/install-leanctx-sb.sh'
+  -g '!**/scripts/install-recommended-tools-global.sh'
+  -g '!**/scripts/lib/rtk-cm-hosts.json'
   -g '!**/hooks/lib/rtk-gate.sh'
   -g '!**/hooks/lib/leanctx-gate.sh'
+  -g '!**/hooks/lib/context-mode-gate.sh'
+  -g '!**/hooks/lib/graphify-am-global.sh'
   -g '!**/hooks/lib/recommended-tools.sh'
   -g '!**/scripts/lib/recommended-tools/probe-rtk.sh'
+  # Host translators and validators: they name Claude paths in order to rewrite
+  # them (render-agent-bundle.py's Claude -> Codex/Cursor table) or to flag them
+  # (validate-host-agnostic-core.sh's forbidden-pattern list).
+  -g '!**/scripts/render-agent-bundle.py'
+  -g '!**/scripts/validate-host-agnostic-core.sh'
+  # Claude-host maintenance and operator-only Claude live harnesses; none of
+  # them runs inside a Codex session.
+  -g '!**/scripts/lib/plugin-cache-version.sh'
+  -g '!**/scripts/prune-stale-claude-user-hooks.sh'
+  -g '!**/scripts/agent-claude/**'
+  -g '!**/scripts/claude-interactive-invoke.expect'
+  -g '!**/scripts/lib/claude-matrix-auth.sh'
+  -g '!**/scripts/enterprise-e2e/**'
+  -g '!**/scripts/lib/enterprise-e2e-matrix-quiesce.sh'
+  -g '!**/scripts/monitor-enterprise-e2e-matrix.sh'
+  -g '!**/scripts/sb-tri-criteria-e2e.sh'
 )
 {
   sb_tree_grep "${RUNTIME_CLAUDE_ALLOWED_GLOBS[@]}" '/\.claude(/|$)' "$FAKE_MARKETPLACE_ROOT" "$FAKE_SB_INSTALL_ROOT"
@@ -1373,7 +1394,7 @@ sb_tree_grep -i -g '!skills/**' -g '!hooks/**' -g '!**/.git/**' 'claude' \
   "$FAKE_MARKETPLACE_ROOT" "$FAKE_SB_INSTALL_ROOT" > "$CLAUDE_REFERENCE_REPORT"
 assert_file_exists "Codex claude reference audit report generated" "$CLAUDE_REFERENCE_REPORT"
 if [[ -s "$CLAUDE_REFERENCE_REPORT" ]]; then
-  echo "INFO: Non-skill/hook claude references detected in Codex installation ($(wc -l < "$CLAUDE_REFERENCE_REPORT" | tr -d ' ') lines; report: $CLAUDE_REFERENCE_REPORT)"
+  echo "INFO: Non-skill/hook claude references detected in Codex installation ($(wc -l < "$CLAUDE_REFERENCE_REPORT" | tr -d ' ') lines)"
 fi
 
 DEFAULT_GSD_TMP="$(mktemp -d)"
