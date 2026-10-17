@@ -16,7 +16,6 @@ HOOK="$(cd "$(dirname "$0")/../.." && pwd)/hooks/trivial-file-clear.sh"
 PASS=0
 FAIL=0
 
-TEST_RUN_ID="$$"
 TMPHOME=""
 TMPSTATE=""
 

@@ -4,6 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 _LIB="${SCRIPT_DIR}/lib/install-codex"
+# shellcheck disable=SC2034  # read by the sourced lib/install-codex/config.sh
 AGENT_RENDERER="${SCRIPT_DIR}/render-agent-bundle.py"
 # shellcheck source=scripts/lib/agent-bundle-paths.sh
 source "${REPO_ROOT}/scripts/lib/agent-bundle-paths.sh"

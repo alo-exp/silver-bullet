@@ -21,7 +21,6 @@ assert_json_key() {
 }
 
 SCRIPT="$(cd "$(dirname "$0")/../.." && pwd)/scripts/semantic-compress.sh"
-REPO_ROOT_ORIG="$(cd "$(dirname "$0")/../.." && pwd)"
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 

@@ -222,7 +222,7 @@ sb_recommended_tool_platform_pre_index_commands() {
       claude) printf '%s\n' 'graphify install --project' ;;
       codex) printf '%s\n' 'graphify install --project --platform codex' ;;
       opencode) printf '%s\n' 'graphify install --project --platform opencode' ;;
-      pi) printf '%s\n' 'python3 scripts/lib/global-toolstack/install-pi.py --repo-root "$(pwd)"' ;;
+      pi) printf '%s\n' "python3 scripts/lib/global-toolstack/install-pi.py --repo-root \"\$(pwd)\"" ;;
       goose) printf '%s\n' 'graphify install --project --platform pi' ;;
       hermes) printf '%s\n' 'graphify install --project --platform hermes' ;;
     esac
@@ -241,14 +241,14 @@ sb_recommended_tool_platform_pre_index_commands() {
       claude) printf '%s\n' 'rtk init -g' ;;
       cursor) printf '%s\n' 'rtk init -g --agent cursor' ;;
       codex) printf '%s\n' 'rtk init -g --codex' ;;
-      opencode) printf '%s\n' 'bash scripts/optimize-rtk-context-mode.sh --host opencode --project-root "$(pwd)"' ;;
-      pi) printf '%s\n' 'bash scripts/optimize-rtk-context-mode.sh --host pi --project-root "$(pwd)"' ;;
+      opencode) printf '%s\n' "bash scripts/optimize-rtk-context-mode.sh --host opencode --project-root \"\$(pwd)\"" ;;
+      pi) printf '%s\n' "bash scripts/optimize-rtk-context-mode.sh --host pi --project-root \"\$(pwd)\"" ;;
     esac
   elif [[ "$tool_id" == "context_mode" ]]; then
     case "$host" in
       claude)
         printf '%s\n' 'npm install -g context-mode'
-        printf '%s\n' 'bash scripts/optimize-rtk-context-mode.sh --host claude --project-root "$(pwd)"'
+        printf '%s\n' "bash scripts/optimize-rtk-context-mode.sh --host claude --project-root \"\$(pwd)\""
         ;;
       cursor)
         printf '%s\n' 'Copy context-mode.mdc to .cursor/rules/; merge MCP + hooks per docs/CONTEXT-MODE.md'
@@ -260,7 +260,7 @@ sb_recommended_tool_platform_pre_index_commands() {
         printf '%s\n' 'Register the global Context Mode plugin and RTK plugin in ~/.config/opencode/opencode.json; remove legacy Context Mode MCP duplicates'
         ;;
       pi)
-        printf '%s\n' 'python3 scripts/lib/global-toolstack/install-pi.py --repo-root "$(pwd)"'
+        printf '%s\n' "python3 scripts/lib/global-toolstack/install-pi.py --repo-root \"\$(pwd)\""
         ;;
     esac
   elif [[ "$tool_id" == "leanctx" ]]; then

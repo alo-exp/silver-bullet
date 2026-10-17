@@ -220,7 +220,8 @@ fi
 orch_test="${SB_RUNTIME_STATE_DIR:-/tmp}/orchestrator-queue-index-$$.json"
 mkdir -p "$(dirname "$orch_test")"
 printf '{"flow_queue":["FLOW-QUALITY-GATE-PRESHIP","silver-plan","silver-execute"],"last_completed_index":-1}' >"$orch_test"
-export SB_RUNTIME_STATE_DIR="$(dirname "$orch_test")"
+SB_RUNTIME_STATE_DIR="$(dirname "$orch_test")"
+export SB_RUNTIME_STATE_DIR
 mv "$orch_test" "${SB_RUNTIME_STATE_DIR}/orchestrator.json"
 idx="$(sb_orchestrator_queue_index_for_atom silver-quality-gates "${SB_RUNTIME_STATE_DIR}/orchestrator.json" 0 2>/dev/null || true)"
 if [[ "$idx" == "0" ]]; then

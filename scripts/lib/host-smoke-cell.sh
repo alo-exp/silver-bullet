@@ -12,7 +12,7 @@ source "${SCRIPT_DIR}/agent-bundle-paths.sh"
 
 HOST="" MODE="" SCOPE="default"
 WRITE_CURSOR_MARKER="${SB_RELEASE_LIVE_MATRIX_WRITE_CURSOR_MARKER:-0}"
-RUN_CLAIMS=0 RUN_CURSOR_HOOK_TESTS=0 RUN_CURSOR_CLI_SMOKE=0 RUN_INVOKE_ROUTE=0
+RUN_CLAIMS=0 RUN_CURSOR_HOOK_TESTS=0 RUN_CURSOR_CLI_SMOKE=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -27,7 +27,7 @@ done
 case "$SCOPE" in
   ci-smoke) RUN_CURSOR_HOOK_TESTS=1; WRITE_CURSOR_MARKER=0 ;;
   tri-host|rc) RUN_CLAIMS=1 ;;
-  pre-release) RUN_INVOKE_ROUTE=1; RUN_CURSOR_CLI_SMOKE=1; WRITE_CURSOR_MARKER=0 ;;
+  pre-release) RUN_CURSOR_CLI_SMOKE=1; WRITE_CURSOR_MARKER=0 ;;
 esac
 
 SB_PRE_RELEASE_SMOKE_ROOT="$(sb_smoke_root)"
@@ -62,10 +62,17 @@ seed_upgrade() {
 run_install_cell() {
   local host="$1" mode="$2"
   begin_host "$host"
-  [[ "$mode" == "upgrade" ]] && seed_upgrade "$host" || true
+  if [[ "$mode" == "upgrade" ]]; then
+    seed_upgrade "$host" || true
+  fi
   host_install "$host" >/dev/null 2>&1 || return 1
-  [[ "$host" == "cursor" ]] && grep -q silver-bullet "${HOME}/.cursor/hooks.json" || true
-  [[ "$mode" == "upgrade" ]] && host_install "$host" >/dev/null 2>&1 || true
+  if [[ "$host" == "cursor" ]]; then
+    # The result is not enforced; this probe never fails the cell.
+    grep -q silver-bullet "${HOME}/.cursor/hooks.json" || true
+  fi
+  if [[ "$mode" == "upgrade" ]]; then
+    host_install "$host" >/dev/null 2>&1 || true
+  fi
   SB_DIAG_SMOKE=1 SILVER_BULLET_RUNTIME="$host" bash "${REPO_ROOT}/scripts/sb-diagnostics.sh" >/dev/null 2>&1 || return 1
   [[ "$RUN_CLAIMS" -eq 1 ]] && RTK_DISABLED=1 bash "${REPO_ROOT}/scripts/claims-audit.sh" >/dev/null 2>&1
 }

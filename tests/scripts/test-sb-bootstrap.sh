@@ -9,7 +9,6 @@ FAIL=0
 pass() { echo "PASS: $1"; (( PASS++ )) || true; }
 fail() { echo "FAIL: $1"; (( FAIL++ )) || true; }
 
-chmod +x "$SCRIPT"
 
 out="$(bash "$SCRIPT" "$REPO_ROOT" 2>&1)"
 if grep -q "Silver Bullet bootstrap" <<<"$out"; then

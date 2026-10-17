@@ -1,0 +1,201 @@
+{
+  "_comment": "Curated input for scripts/generate-hook-reference.py, which renders docs/HOOKS.md. Add a purpose for every script registered in hooks/hooks.json and a role for every other file in hooks/; the generator's --check fails otherwise.",
+  "wiring": [
+    "**Claude Code** reads `hooks/hooks.json` from the plugin root; commands use `${CLAUDE_PLUGIN_ROOT}`.",
+    "**Codex** loads the same manifest from the plugin package. `scripts/install-codex.sh` rewrites the paths and routes each command through `hooks/codex-hook-adapter.sh`.",
+    "**Cursor** uses `hooks/cursor-hooks.json`, generated from `hooks/hooks.json` by `scripts/generate-cursor-hooks.py`; each command runs through `hooks/cursor-hook-bridge.sh`.",
+    "Matchers name tools from every host: `Bash` (Claude) and `exec_command` (Codex) are shell calls; `apply_patch` is the Codex edit tool; `CallMcpTool`/`MCP` are MCP calls; `Task|Subagent|Agent` are subagent spawns.",
+    "Enforcement hooks first check that the project is activated (`.silver-bullet.json` and `silver-bullet.md` at the project root, see `hooks/lib/sb-project-gate.sh`); outside an SB project they exit 0, apart from the missing-`jq` case below.",
+    "Unexpected errors fail open: almost every hook installs an `ERR` trap that exits 0 (some print a notice or a no-op payload first). Exceptions: `phase-archive.sh` denies the `phases clear` it guards when archiving fails, and `rfl-policy-c-gate.sh` has no `ERR` trap, so an unexpected error surfaces as a non-blocking hook error.",
+    "A missing `jq` does not fail open everywhere. `session-start` warns that enforcement is disabled and most hooks exit 0, but `completion-audit.sh`, `dev-cycle-check.sh`, `forbidden-skill-check.sh`, `planning-file-guard.sh`, `uat-gate.sh` and `workflow-chain-guard.sh` block in an initiated project (`hooks/lib/jq-gate.sh`), and `completion-audit.sh` also blocks commit, push, PR, release and deploy commands outside one."
+  ],
+  "event_notes": {
+    "SessionStart": "Session startup, `/clear` and compaction (`startup|clear|compact`).",
+    "PreToolUse": "Before a tool runs; a hook can deny the call.",
+    "PostToolUse": "After a tool runs; a hook can report, record state, or ask the agent to stop.",
+    "SubagentStart": "When a subagent starts (Cursor).",
+    "Stop": "When the agent tries to end its turn; a hook can block the stop.",
+    "SubagentStop": "When a subagent finishes.",
+    "UserPromptSubmit": "Before each user prompt is processed; hooks add context or record the requested route."
+  },
+  "purposes": {
+    "agent-delegation-guard.sh": "While an `/sb:agent-*` delegation is active, blocks parent-session edits on Claude and Codex and advises on Cursor.",
+    "agentmemory-gate.sh": "Opt-in (`recommended_tools.agentmemory`): requires a recent agentmemory capture/retrieval before substantive work.",
+    "alumnium-gate.sh": "Opt-in (`recommended_tools.alumnium`): checks that the Alumnium MCP server is wired before browser/visual work.",
+    "ci-status-check.sh": "Checks the latest GitHub Actions run for the branch. Pre: blocks `git push`, `gh pr create/merge` and `gh release create` while CI failed or was cancelled. Post: warns after `git commit`. CI-fix commits and the `ci-red-override` flag bypass it.",
+    "completion-audit.sh": "Two-tier delivery gate. Commits, pushes and commit plumbing need `skills.required_planning`; `gh pr create/merge`, deploy commands and `gh release create` need `skills.required_deploy` plus the release gates (live matrices, quality-gate markers, RC matrix, green CI on the release commit).",
+    "compliance-status.sh": "Prints workflow progress (flow N/M, or recorded-skill count) after every tool call. Informational only.",
+    "compression-marker-guard.sh": "Blocks writes whose content contains LeanCTX compression markers (pasted `ctx_read` output).",
+    "context-mode-gate.sh": "Opt-in (`recommended_tools.context_mode`): checks Context Mode install and MCP/hook wiring.",
+    "context-mode-read-deny.sh": "Opt-in (`recommended_tools.context_mode`): denies Read/Grep on files larger than `read_deny_bytes`.",
+    "debug-dump.sh": "Debug only: when the `debug-dump` flag file exists in the runtime state dir, appends each PreToolUse payload to `hook-dump.jsonl` there. Never blocks.",
+    "dependency-skill-check.sh": "Compatibility gate for dependency-skill invocations. Does not block SB-absorbed namespaces; forbidden execution modes are handled by `forbidden-skill-check.sh`.",
+    "dev-cycle-check.sh": "Planning-floor gate: blocks source edits and shell writes until workflow admission or the `required_planning` skills are recorded. Also blocks edits under the host plugin cache and direct writes to SB state files.",
+    "flow-advance.sh": "Advances the autonomous orchestrator flow queue after a skill or tracked command completes.",
+    "forbidden-skill-check.sh": "Blocks forbidden skills: the built-in list (`executing-plans`, `subagent-driven-development`) plus `skills.forbidden`.",
+    "graphify-gate.sh": "Opt-in (`recommended_tools.graphify`): requires a recent Graphify query before substantive work.",
+    "industry-tooling-hint.sh": "Optional reminders about industry tooling for shell commands; active only when `hooks.industry_tooling.enabled` is true.",
+    "instruction-file-guard.sh": "Blocks creating a brand-new root `CLAUDE.md` or `AGENTS.md` during initialization; existing files may be reconciled in place.",
+    "instruction-ledger-gate.sh": "Maintains the nested per-session instruction ledger; at Stop, blocks while ledger items remain open.",
+    "leanctx-gate.sh": "Opt-in (`recommended_tools.leanctx`): checks LeanCTX install, wiring and usage freshness.",
+    "live-publish-evidence-gate.sh": "Requires fetched live-page evidence before a site publish is claimed LIVE (Stop) and before `git push` to main for site work.",
+    "orchestrator-directive-guard.sh": "Orchestrator parent mode: blocks edits, shell commands and Task spawns until the skill named by the pending directive has been invoked.",
+    "outcomes-check.sh": "Tracks the per-prompt outcome checklist; at Stop, blocks while outcomes are incomplete.",
+    "phase-archive.sh": "Archives `.planning/phases/` directories before a `phases clear` command runs. Fails closed: if archiving fails, the clear is denied.",
+    "phase-lock-claim.sh": "Claims the `.planning/phases/<NNN>/` lock (via `.planning/scripts/phase-lock.sh`) before a session edits a phase's files.",
+    "phase-lock-heartbeat.sh": "Refreshes heartbeats for the phase locks this session holds (throttled to once per 5 minutes per phase).",
+    "phase-lock-release.sh": "Releases this session's phase locks at Stop/SubagentStop. Never blocks.",
+    "planning-file-guard.sh": "Blocks direct edits to SB-managed planning artifacts (`.planning/ROADMAP.md`, `STATE.md`, phase `PLAN.md`/`SUMMARY.md`, ...); they change only through the owning SB skill.",
+    "pr-traceability.sh": "After `gh pr create`, appends the spec traceability block to the PR body and records the PR URL in `SPEC.md`.",
+    "prompt-reminder.sh": "Injects a compact compliance reminder (missing skills, active workflow position, opted-in tool notes) before each prompt.",
+    "record-agentmemory-usage.sh": "Records successful agentmemory retrievals (CLI or MCP) for the opt-in agentmemory gate.",
+    "record-graphify-query.sh": "Records successful Graphify queries for the opt-in Graphify gate.",
+    "record-leanctx-usage.sh": "Records LeanCTX CLI/MCP usage for the opt-in LeanCTX gate.",
+    "record-recommended-mcp.sh": "Records agentmemory/Graphify MCP tool calls for the opt-in gates.",
+    "record-requested-skill.sh": "Records the SB route requested in the user prompt (for example `/sb:feature`) in the state file.",
+    "record-site-session.sh": "Records `site/**` edits and site-intent prompts so the site session gates know a site session is active.",
+    "record-site-visual-evidence.sh": "Records browser screenshot paths as site visual evidence.",
+    "record-skill.sh": "Records completed skill invocations (host Skill tool, or `silver-bullet invoke-skill` receipts on Codex) in the state file.",
+    "record-token-compression-usage.sh": "Records token-compression CLI usage (RTK) for the opt-in usage-freshness gate.",
+    "review-fix-ladder-guard.sh": "Enforces the review-fix-ladder state machine while a ladder session is active.",
+    "rfl-policy-c-gate.sh": "While a review-fix-ladder run is active (`.planning/rfl-*/LADDER-STATUS.json`), denies advancing when Policy C or sibling artifacts are missing.",
+    "rfl-quota-retry-due.sh": "Activates review-fix-ladder quota-retry jobs whose retry time has arrived. No-op when none are scheduled.",
+    "roadmap-freshness.sh": "Blocks `git commit` when a phase `SUMMARY.md` is staged but its `ROADMAP.md` checkbox is not ticked.",
+    "rtk-gate.sh": "Opt-in (`recommended_tools.rtk`): checks RTK install, version and host hook wiring (it does not rewrite commands itself).",
+    "semantic-compress.sh": "After phase skills, assembles a ranked context summary for the current phase goal (`semantic_compression` config).",
+    "session-log-init.sh": "When the session mode is written, creates the `docs/sessions/` log skeleton; in autonomous mode starts the timeout sentinel.",
+    "session-start": "Injects the core rules, resets branch- and worktree-scoped state, clears the trivial marker and stale gate files, and probes prerequisites (warns when `jq` is missing).",
+    "site-chrome-guard.sh": "Blocks inline `<nav>`/`<footer>` in site HTML (canonical fragments live in `site/_chrome/`) and unmarked font edits in `site/tokens.css`.",
+    "site-preview-preflight.sh": "Before `site/**` edits, checks that the local site preview server is healthy.",
+    "site-regression-gate.sh": "Runs the site regression tests at Stop and before `git push` when `site/**` was touched in the session.",
+    "site-visual-evidence-gate.sh": "At Stop, requires 1280px visual evidence for active site sessions.",
+    "spec-floor-check.sh": "Spec floor: blocks `sb:plan` without a minimum viable `SPEC.md`; advisory for `sb:fast`.",
+    "spec-session-record.sh": "Captures spec version and Jira ID from `.planning/SPEC.md` for `pr-traceability.sh`.",
+    "stack-compression-coordinator.sh": "Five-tool stack coordinator: routes Read/Grep/shell/WebFetch/MCP surfaces to their owning tool and blocks double compression.",
+    "stack-compression-lifecycle.sh": "On compaction, records the LeanCTX lifecycle phase after the agentmemory snapshot.",
+    "stop-check.sh": "Stop/SubagentStop gate: blocks a task-complete declaration while `required_planning` skills are missing, and enforces doc-scheme finalization when `docs/doc-scheme.md` exists.",
+    "subagent-start.sh": "Injects the worker banner and tool requirements into subagent sessions.",
+    "subagent-stop-enforcement.sh": "Tracks Task worker spawns and returns; at Stop, blocks a parent session whose workers ran but `sb:completion-audit` is not recorded.",
+    "timeout-check.sh": "Autonomous mode only: warns on wall-clock timeout and on 30/60/100 tool calls without a recorded skill.",
+    "token-compression-tools-gate.sh": "Opt-in: requires recent RTK usage before substantive commits.",
+    "trivial-file-clear.sh": "Deletes the legacy trivial-session marker after any file write.",
+    "trivial-file-guard.sh": "Blocks agents from creating the legacy trivial marker; small changes go through `/sb:fast`.",
+    "uat-gate.sh": "Blocks `sb:release` and milestone completion when `UAT.md` is missing, failing or stale against the spec version.",
+    "v-loop-rollup-gate.sh": "At Stop, blocks when active site-session V-loops lack evidence.",
+    "workflow-chain-guard.sh": "Inside a composed workflow (`.planning/workflows/<id>.md`), blocks implementation edits until the pre-execution chain is recorded."
+  },
+  "unregistered": {
+    "hooks.json": "The registration manifest itself (Claude Code plugin format; Codex reads the same file from the plugin package).",
+    "cursor-hooks.json": "Cursor hook manifest, generated from `hooks.json` by `scripts/generate-cursor-hooks.py` (Cursor event names, `${CURSOR_PLUGIN_ROOT}` paths, every hook wrapped by `cursor-hook-bridge.sh`). Do not edit by hand.",
+    "generate-cursor-hooks.py": "Compatibility shim that runs `scripts/generate-cursor-hooks.py`.",
+    "cursor-hook-bridge.sh": "Cursor bridge: `cursor-hook-bridge.sh <cursorEvent> <hook>` translates a Cursor hook payload into the SB hook protocol, runs the hook with a subprocess timeout and maps the result back.",
+    "codex-hook-adapter.sh": "Codex adapter: `scripts/install-codex.sh` rewrites installed hook commands to run through it (`codex-hook-adapter.sh <event> <hook>`); it buffers stdin/stdout and applies a subprocess timeout (`SB_CODEX_HOOK_SUBPROC_TIMEOUT`).",
+    "kay-project-hook-bridge.sh": "Project-level hook bridge for the Kay (Codex-compatible) runtime; the live-test harness registers it in `~/.kay/config.toml` (`tests/live/lib/kay-codex-isolation.sh`).",
+    "agent-delegation-progress-surface.sh": "Library, not a hook: sourced by `agent-delegation-guard.sh` to render bounded, redacted delegation progress (8 lines / 2 KB).",
+    "run-hook.cmd": "Windows/Unix polyglot wrapper: `run-hook.cmd <script> [args]` finds Git for Windows bash (or bash on PATH) and runs the hook.",
+    "core-rules.md": "Core enforcement rules that `session-start` injects into context.",
+    "core-rules.sha256": "Integrity pin for `core-rules.md`, checked by `hooks/lib/core-rules-integrity.sh` before injection."
+  },
+  "lib_groups": [
+    {
+      "title": "Runtime paths and hook plumbing",
+      "members": [
+        "runtime-paths.sh",
+        "hook-bootstrap.sh",
+        "hook-output.sh",
+        "hook-subproc-timeout.sh",
+        "hook-audit.sh",
+        "jq-gate.sh",
+        "tool-input.sh",
+        "tool-input/",
+        "path-canonical.sh",
+        "stop-coalesce.sh",
+        "ups-coalesce.sh",
+        "rtk-compat.sh",
+        "cert-bypass.sh"
+      ]
+    },
+    {
+      "title": "Project activation, state and safety",
+      "members": [
+        "sb-project-gate.sh",
+        "project-active.sh",
+        "branch-scope.sh",
+        "trivial-bypass.sh",
+        "nofollow-guard.sh",
+        "plugin-cache-guard.sh",
+        "core-rules-integrity.sh",
+        "capability-tier.sh",
+        "enforcement-tier-gate.sh",
+        "prerequisite-probe.sh",
+        "check-sb-update.sh",
+        "session-ledger.sh",
+        "phase-path.sh"
+      ]
+    },
+    {
+      "title": "Required skills and workflow tracking",
+      "members": [
+        "required-skills.sh",
+        "skill-discovery.sh",
+        "workflow-utils.sh",
+        "quality-gates-mode.sh",
+        "prompt-classifier.sh",
+        "outcomes-gate.sh",
+        "instruction-ledger.sh"
+      ]
+    },
+    {
+      "title": "Delivery gates",
+      "members": [
+        "completion-audit/",
+        "artifact-substance-gate.sh",
+        "doc-scheme-gate.sh",
+        "evidence-schema-gate.sh",
+        "enterprise-policy.sh",
+        "github-run-list.sh",
+        "e2e-matrix-routing.sh"
+      ]
+    },
+    {
+      "title": "Orchestrator, delegation and review ladder",
+      "members": [
+        "orchestrator-directive.sh",
+        "orchestrator-event-log.sh",
+        "orchestrator-parent.sh",
+        "orchestrator-scheduler.sh",
+        "orchestrator-skill-atom.sh",
+        "orchestrator-state.sh",
+        "agent-delegation-state.sh",
+        "review-fix-ladder-state.sh",
+        "rfl-policy-c-assert.sh"
+      ]
+    },
+    {
+      "title": "Opt-in recommended tools (five-tool stack)",
+      "members": [
+        "recommended-tools.sh",
+        "recommended-tools-registry.sh",
+        "graphify-gate.sh",
+        "agentmemory-gate.sh",
+        "alumnium-gate.sh",
+        "context-mode-gate.sh",
+        "context-mode-read-deny.sh",
+        "leanctx-gate.sh",
+        "rtk-gate.sh",
+        "token-compression-tools-gate.sh",
+        "stack-compression-coordinator.sh",
+        "stack-optimizer.sh",
+        "graphify-am-global.sh",
+        "rtk-cm-global.sh"
+      ]
+    },
+    {
+      "title": "Site sessions",
+      "members": [
+        "site-session.sh"
+      ]
+    }
+  ],
+  "lib_footer": "`hooks/lib/completion-audit/` holds the modules `completion-audit.sh` sources (command classification, planning tier, deploy tier, change class, gate runners, state helpers). `hooks/lib/tool-input/` holds the Python helpers `tool-input.sh` calls to parse tool payloads (command strings, write targets, patch paths, RTK unwrapping)."
+}

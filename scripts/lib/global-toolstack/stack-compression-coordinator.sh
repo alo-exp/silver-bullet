@@ -27,7 +27,7 @@ if [[ "$tool_name" == "Shell" || "$tool_name" == "Bash" || "$tool_name" == "shel
 fi
 # Block wrong-owner lctx_* sandbox/fetch/shell when CM present
 if [[ "$tool_name" == "CallMcpTool" || "$tool_name" == "MCP" ]]; then
-  case "$mcp_server" in *leanctx*|user-leanctx) ;;
+  case "$mcp_server" in *leanctx*) ;;
   *) exit 0 ;; esac
   case "$mcp_tool" in
     lctx_shell|lctx_execute|lctx_batch_execute|lctx_fetch|lctx_fetch_and_index)

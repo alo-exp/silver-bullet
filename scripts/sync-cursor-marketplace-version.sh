@@ -69,6 +69,8 @@ update_marketplace_plugin_source() {
     | (.plugins[] | select(.name=="silver-bullet") | .source.path) = $path
   ' "$manifest" > "$tmp"
   mv "$tmp" "$manifest"
+  # mktemp creates 0600; keep the tracked manifest world-readable.
+  chmod 644 "$manifest"
   rm -f -- "$tmp"
 }
 

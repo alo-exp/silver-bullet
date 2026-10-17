@@ -47,7 +47,7 @@ missing_expr="' '.join(f\"{m['line']}:{m['word']}\" for m in d['missing_statemen
 cov="$TMP/cal"
 trace "$cov" "$TMP" "${REPO_ROOT}/${FIX_REL}/calibration.sh" hit
 check_eq "calibration: uncovered statements are exactly the MISS lines" \
-  "17:echo 30:echo 49:echo 53:echo 71:echo" "$(field "$cov" "$FIX_REL/calibration.sh" "$missing_expr")"
+  "17:echo 30:echo 49:echo 53:echo 72:echo" "$(field "$cov" "$FIX_REL/calibration.sh" "$missing_expr")"
 check_eq "calibration: every trace hit is attributed" \
   "0" "$(field "$cov" "$FIX_REL/calibration.sh" "len(d['orphan_hits'])")"
 check_eq "calibration: uncalled function reported" \

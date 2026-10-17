@@ -490,6 +490,7 @@ printf 'ok\n' >"${TMP_PI}/work/tiny-ok.md"
 ) && check "default min 2500 rejects 3-byte non-stub file" pass \
   || check "default min 2500 rejects 3-byte non-stub file" fail
 (
+  # shellcheck disable=SC2034  # read by the sourced agent-host-exec.sh
   PI_EXPECT_FILE_MIN_BYTES=1
   agent_host_pi_file_ok "${TMP_PI}/work/tiny-ok.md"
 ) && check "PI_EXPECT_FILE_MIN_BYTES=1 still accepts 3-byte non-stub" pass \

@@ -3,6 +3,7 @@
 # Expects _lib_dir to be set by the caller.
 
 # shellcheck source=lib/workflow-utils.sh
+# shellcheck disable=SC2154  # _lib_dir is set by the hook that sources this file
 [[ -f "$_lib_dir/workflow-utils.sh" ]] && source "$_lib_dir/workflow-utils.sh"
 # Fallback definitions if sourcing failed (e.g. in test environments or path resolution issues)
 if ! declare -f count_flow_log_rows >/dev/null 2>&1; then

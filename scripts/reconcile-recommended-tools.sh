@@ -196,7 +196,7 @@ rt_run_component() {
 }
 
 rt_reprobe_sibling_components() {
-  local sibling probe_fn probe_json updated=() comp_json comp_name merged
+  local probe_fn probe_json updated=() comp_json comp_name merged
   for comp_json in "${RT_COMPONENT_RESULTS[@]}"; do
     comp_name="$(printf '%s' "$comp_json" | jq -r '.component')"
     if [[ "$comp_name" == "cross_tool" ]]; then

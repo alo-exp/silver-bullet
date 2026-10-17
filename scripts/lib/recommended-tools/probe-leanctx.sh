@@ -79,7 +79,8 @@ rt_probe_leanctx_lctx_prefix() {
 rt_probe_leanctx_overlaps_disabled() {
   [[ -f "$(rt_leanctx_mcp_file)" ]] || return 1
   if [[ "${RT_HOST:-cursor}" == "codex" ]]; then
-    local f="$(rt_leanctx_mcp_file)"
+    local f
+    f="$(rt_leanctx_mcp_file)"
     local key
     for key in LEANCTX_DISABLE_SHELL_MCP LEANCTX_DISABLE_SANDBOX_MCP LEANCTX_DISABLE_FETCH_MCP LEANCTX_DISABLE_FTS; do
       grep -A 12 '^\[mcp_servers\.leanctx\]$' "$f" 2>/dev/null \
@@ -154,7 +155,10 @@ rt_probe_leanctx_version_ok() {
   fi
   local cli_path
   cli_path="$(sb_leanctx_cli_path "$cfg" 2>/dev/null || true)"
-  raw="$( [[ -n "$cli_path" ]] && "$cli_path" --version </dev/null 2>/dev/null || true)"
+  raw=""
+  if [[ -n "$cli_path" ]]; then
+    raw="$("$cli_path" --version </dev/null 2>/dev/null)" || true
+  fi
   ver="$(printf '%s' "$raw" | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1 || true)"
   [[ -n "$ver" ]] || return 1
   [[ "$(rt_leanctx_version_int "$ver")" -ge "$(rt_leanctx_version_int "$min_ver")" ]]

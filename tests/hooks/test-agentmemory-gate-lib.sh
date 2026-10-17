@@ -45,7 +45,10 @@ sb_agentmemory_export_exists "$TMP" "$TMP/.silver-bullet.json" && pass "export r
 write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools\":{\"agentmemory\":{\"enabled_by_user\":true,\"export_root\":\"../../tmp/am-traversal-$$\"}}}"
 ! sb_agentmemory_scaffold_export_root "$TMP" "$TMP/.silver-bullet.json" 2>/dev/null \
   && pass "export scaffold blocks traversal" || fail "export scaffold blocks traversal"
-[[ ! -d "/tmp/am-traversal-$$" ]] && pass "traversal target not created" || fail "traversal target not created"
+# Where the traversal would land: relative to the project dir, not a fixed /tmp
+# path (which only matched when TMPDIR was /tmp, so the check was vacuous otherwise).
+traversal_target="$(python3 -c 'import os, sys; print(os.path.normpath(sys.argv[1]))' "$TMP/../../tmp/am-traversal-$$")"
+[[ ! -d "$traversal_target" ]] && pass "traversal target not created" || fail "traversal target not created"
 
 write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools\":{\"agentmemory\":{\"enabled_by_user\":true,\"export_root\":\".agentmemory\"}}}"
 

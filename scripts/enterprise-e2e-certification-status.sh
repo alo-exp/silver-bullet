@@ -41,7 +41,6 @@ EOF
 done
 
 SOURCES="${SB_ROOT}/docs/testing/host-certification-sources.json"
-BASELINE="${SB_ROOT}/docs/testing/autonomous-enterprise-proof-baseline.json"
 # SB_CERT_ARTIFACT redirects --write to an alternate path so callers (tests)
 # can exercise the writer without mutating the tracked repo artifact.
 ARTIFACT="${SB_CERT_ARTIFACT:-${SB_ROOT}/.planning/enterprise-e2e/CERTIFICATION-STATUS.json}"
@@ -372,7 +371,7 @@ echo "Tri-host live_e2e_proven: $(jq -r '.conservative_summary.tri_host_live_e2e
 echo "Public autonomous enterprise claim ready: $(jq -r '.conservative_summary.public_autonomous_enterprise_claim_ready' <<<"$DOC")"
 if [[ "$WRITE_ARTIFACT" -eq 0 ]]; then
   echo ""
-  echo "Run with --write to persist ${ARTIFACT#${SB_ROOT}/}"
+  echo "Run with --write to persist ${ARTIFACT#"${SB_ROOT}"/}"
 fi
 
 printf '%s\n' "$DOC"

@@ -49,7 +49,7 @@ assert_contains() {
 
 assert_not_contains() {
   local desc="$1" needle="$2" path="$3"
-  if rg -n --hidden -S -- "$needle" "$path" >/dev/null 2>&1; then
+  if sb_tree_contains "$needle" "$path"; then
     echo "FAIL: $desc — found [$needle] under $path"
     (( FAIL++ )) || true
   else
@@ -188,7 +188,16 @@ PY
   fi
 }
 
-REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+SOURCE_REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+# shellcheck source=tests/lib/tree-search.sh
+source "$SOURCE_REPO_ROOT/tests/lib/tree-search.sh"
+# shellcheck source=tests/lib/repo-snapshot.sh
+source "$SOURCE_REPO_ROOT/tests/lib/repo-snapshot.sh"
+# sync-codex-package.sh rewrites plugins/silver-bullet, agents/ and
+# host-bundles/ in the checkout it runs from: sync a snapshot instead.
+SNAPSHOT_TMP="$(mktemp -d)"
+trap 'rm -rf "$SNAPSHOT_TMP"' EXIT
+REPO_ROOT="$(sb_repo_snapshot "$SOURCE_REPO_ROOT" "$SNAPSHOT_TMP/repo")"
 export SILVER_BULLET_RUNTIME="${SILVER_BULLET_RUNTIME:-codex}"
 if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
   # shellcheck source=hooks/lib/runtime-paths.sh

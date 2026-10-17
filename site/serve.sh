@@ -79,8 +79,7 @@ curl_check() {
 }
 
 wait_for_listen() {
-  local i
-  for i in $(seq 1 30); do
+  for _ in $(seq 1 30); do
     if [[ -n "$(listener_pids)" ]]; then
       return 0
     fi
@@ -142,15 +141,16 @@ cmd_start() {
 cmd_stop() {
   local stopped=0
   if launchagent_loaded; then
-    launchctl bootout "gui/$(id -u)" "$LAUNCH_AGENT_PLIST" 2>/dev/null && stopped=1 || true
+    if launchctl bootout "gui/$(id -u)" "$LAUNCH_AGENT_PLIST" 2>/dev/null; then
+      stopped=1
+    fi
   fi
   if [[ -f "$PID_FILE" ]]; then
     local pid
     pid="$(cat "$PID_FILE")"
     if [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null; then
       kill "$pid" 2>/dev/null || true
-      local i
-      for i in $(seq 1 15); do
+      for _ in $(seq 1 15); do
         kill -0 "$pid" 2>/dev/null || break
         sleep 0.2
       done
@@ -165,6 +165,7 @@ cmd_stop() {
   pids="$(listener_pids)"
   if [[ -n "$pids" ]]; then
     echo "Stopping process(es) on port ${PORT}: ${pids}" >&2
+    # shellcheck disable=SC2086  # $pids is a whitespace-separated PID list
     kill $pids 2>/dev/null || true
     stopped=1
   fi

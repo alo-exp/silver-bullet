@@ -3,6 +3,7 @@
 ca_run_deploy_tier_gate() {
 project_root="$(dirname "$config_file")"
 [[ -z "$project_root" ]] && project_root="$PWD"
+# shellcheck disable=SC2154  # _lib_dir is set by completion-audit.sh
 if [[ -f "${_lib_dir}/enterprise-policy.sh" && -n "${config_file:-}" && -f "$config_file" ]]; then
   # shellcheck source=lib/enterprise-policy.sh
   source "${_lib_dir}/enterprise-policy.sh"
@@ -21,6 +22,7 @@ release_live_matrix_file="${SB_RUNTIME_STATE_DIR}/release-live-matrix"
 e2e_live_matrix_file="${SB_RUNTIME_STATE_DIR}/e2e-live-matrix"
 inline_e2e_matrix_file="${SB_RUNTIME_STATE_DIR}/inline-e2e-matrix"
 if printf '%s' "$cmd_first_line" | grep -qE '\bgh release create\b'; then
+  # shellcheck disable=SC2154  # set by completion-audit.sh from .silver-bullet.json
   if [[ "$release_require_plugin_runtime_matrix" == "true" || "${SB_REQUIRE_PLUGIN_RELEASE_MATRIX:-0}" == "1" ]]; then
     release_matrix_value=""
     e2e_matrix_value=""
@@ -49,8 +51,10 @@ if printf '%s' "$cmd_first_line" | grep -qE '\bgh release create\b'; then
     fi
   fi
 
+  # shellcheck disable=SC2154  # set by completion-audit.sh from .silver-bullet.json
   if [[ "$release_require_pre_release_quality_gate" == "true" || "${SB_REQUIRE_PRE_RELEASE_QUALITY_GATE:-0}" == "1" ]]; then
     quality_gate_ready=false
+    # shellcheck disable=SC2154  # set by completion-audit.sh
     if [[ -f "$quality_gate_state_file" && ! -L "$quality_gate_state_file" ]]; then
       quality_gate_ready=true
       for marker in \
@@ -87,6 +91,7 @@ if printf '%s' "$cmd_first_line" | grep -qE '\bgh release create\b'; then
     fi
   fi
 
+  # shellcheck disable=SC2154  # set by completion-audit.sh from .silver-bullet.json
   if [[ "$release_require_rc_matrix" == "true" || "${SB_REQUIRE_RC_MATRIX:-0}" == "1" ]]; then
     _rc_iso="${project_root}/scripts/lib/pre-release-host-isolation.sh"
     if [[ -f "$_rc_iso" ]]; then
@@ -160,6 +165,7 @@ DEVOPS_DEFAULT_REQUIRED="${DEVOPS_DEFAULT_REQUIRED:-${__SB_RS_FALLBACK:-silver-q
 
 # DevOps workflow substitutes silver-quality-gates with silver-blast-radius + devops-quality-gates
 delivery_uses_devops_deploy=false
+# shellcheck disable=SC2154  # set by completion-audit.sh from .silver-bullet.json
 if [[ "$active_workflow" == "devops-cycle" ]]; then
   delivery_uses_devops_deploy=true
   DEFAULT_REQUIRED="$DEVOPS_DEFAULT_REQUIRED"
@@ -188,6 +194,7 @@ if [[ "$delivery_uses_devops_deploy" == true ]]; then
 fi
 
 # When on main/master branch, branch finishing is not applicable
+# shellcheck disable=SC2154  # set by completion-audit.sh
 if [[ "$on_main" == true ]]; then
   # Remove from DEFAULT_REQUIRED and from any config-supplied required_deploy
   DEFAULT_REQUIRED=$(printf '%s' "$DEFAULT_REQUIRED" | tr ' ' '\n' | grep -vE '^(finishing-a-development-branch|silver-branch-finish)$' | tr '\n' ' ' | sed 's/ $//')
@@ -271,6 +278,7 @@ if declare -f sb_qg_repo_requires_pre_ship_marker >/dev/null 2>&1 \
   if sb_qg_repo_requires_pre_ship_marker "$project_root_qg"; then
     if [[ "$delivery_uses_devops_deploy" == true ]] \
        && declare -f sb_dqg_pre_ship_marker_recorded >/dev/null 2>&1; then
+      # shellcheck disable=SC2154  # set by completion-audit.sh
       if ! sb_dqg_pre_ship_marker_recorded "$state_contents"; then
         if has_skill "devops-quality-gates"; then
           missing="${missing:+$missing }devops-quality-gates-adversarial"
@@ -369,6 +377,7 @@ for skill in $required_skills; do
   fi
 done
 test_freshness_warning=""
+# shellcheck disable=SC2154  # set by completion-audit.sh
 if [[ "$verify_tests_required" == true ]] && has_skill "verify-tests" && [[ ! -f "$verify_tests_state_file" ]]; then
   test_freshness_warning=$(printf '🛑 TEST GATE STALE — /verify-tests was recorded earlier, but the freshness marker is missing at %s.\n\nSource changes invalidate the marker. Re-run /verify-tests before creating the PR, deploy, or release.' "$verify_tests_state_file")
 fi

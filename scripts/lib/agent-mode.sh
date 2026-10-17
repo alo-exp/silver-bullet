@@ -90,6 +90,7 @@ agent_mode_reasons_json() {
 
 agent_mode_fail_conflict() {
   SB_AM_FAILURE_CLASS="mode-conflict"
+  # shellcheck disable=SC2034  # SB_AM_* state is read by scripts that source agent-mode.sh
   SB_AM_CONFLICT_DETAIL="$1"
   printf 'ERROR: mode-conflict (%s)\n' "$1" >&2
   return 2
@@ -240,10 +241,12 @@ agent_mode_handle_flag() {
       return 0
       ;;
     --quota-retry)
+      # shellcheck disable=SC2034  # read by the sibling agent-delegate-common.sh
       SB_AM_QUOTA_RETRY=1
       return 0
       ;;
     --skip-preflight)
+      # shellcheck disable=SC2034  # read by the sibling agent-delegate-common.sh
       SB_AM_SKIP_PREFLIGHT=1
       return 0
       ;;
@@ -590,6 +593,7 @@ PY
 agent_mode_classify_task() {
   local brief="$1" task_dir="$2" host="${3:-}" utterance="${4:-}"
   SB_AM_CLASSIFIED="non-interactive"
+  # shellcheck disable=SC2034  # SB_AM_* state record exposed to scripts that source agent-mode.sh
   SB_AM_UTTERANCE="$utterance"
 
   if [[ "$SB_AM_NO_ESCALATE" -eq 0 ]] && agent_mode_pending_escalate "$task_dir"; then
@@ -1157,6 +1161,7 @@ agent_mode_run_delegate_resolver() {
   printf '%s' "$brief" >"${task_dir}/brief.md"
   # Pinned NI: persist mode.json and return — no classify / D3 / TUI / D4.
   if [[ "$SB_AM_CONCRETE_PIN" -eq 1 && "$SB_AM_REQUESTED" == "non-interactive" ]]; then
+    # shellcheck disable=SC2034  # SB_AM_* state record exposed to scripts that source agent-mode.sh
     SB_AM_HOST="$host"
     SB_AM_TASK_DIR="$task_dir"
     SB_AM_REASONS=()
