@@ -152,7 +152,7 @@ state_contents=""
 # ── Detect current git branch (for main-branch exemptions) ───────────────────
 current_branch=""
 current_branch=$(git -C "$PWD" rev-parse --abbrev-ref HEAD 2>/dev/null || true)
-if [[ -n "$current_branch" ]] && ! printf '%s' "$current_branch" | grep -qE '^[a-zA-Z0-9/_.-]+$'; then
+if [[ -n "$current_branch" ]] && ! grep -qE '^[a-zA-Z0-9/_.-]+$' <<<"$current_branch"; then
   current_branch=""
 fi
 on_main=false
@@ -189,7 +189,7 @@ if [[ "$delivery_adjacent" != true ]]; then
     if sb_required_skill_is_recorded "$state_contents" "silver-execute"; then
       delivery_adjacent=true
     fi
-  elif printf '%s\n' "$state_contents" | grep -Fqx -- "silver-execute" 2>/dev/null; then
+  elif grep -Fqx -- "silver-execute" <<<"$state_contents" 2>/dev/null; then
     delivery_adjacent=true
   fi
 fi
@@ -239,7 +239,7 @@ for skill in $required_skills; do
     else
       missing_list="${missing_list:+$missing_list, }${skill}"
     fi
-  elif printf '%s\n' "$state_contents" | grep -Fqx -- "$skill" 2>/dev/null; then
+  elif grep -Fqx -- "$skill" <<<"$state_contents" 2>/dev/null; then
     completed=$((completed + 1))
   else
     missing_list="${missing_list:+$missing_list, }${skill}"

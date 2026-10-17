@@ -242,6 +242,7 @@ rt_host_evidence_read_stdin() {
   local trailing
   trailing="$(cat 2>/dev/null || true)"
   if [[ -n "$trailing" && "$trailing" != $'\n' ]]; then
+    # shellcheck disable=SC2034  # read by scripts/reconcile-recommended-tools.sh
     RT_HOST_EVIDENCE_ERROR="host_evidence_trailing_data"
     return 1
   fi
@@ -375,7 +376,7 @@ rt_attestation_validate() {
   if [[ ${#errors[@]} -eq 0 ]]; then
     valid=true
   elif [[ "$activation" == "partial" || "$activation" == "none" ]] \
-     && printf '%s\n' "${errors[@]}" | grep -qvE '^(missing_tool:|missing_server:)'; then
+     && grep -qvE '^(missing_tool:|missing_server:)' <<<"$(printf '%s\n' "${errors[@]}")"; then
     valid=false
   elif [[ "$activation" == "partial" ]]; then
     valid=true
@@ -610,7 +611,7 @@ rt_apply_host_convergence_batches() {
 
 rt_apply_host_hooks_batch() {
   local repo="${RT_REPO_ROOT:-}" actions=() failures=() changed=0 patch_any=0
-  local hooks_pre hooks_post patch_out fix_out
+  local hooks_pre hooks_post patch_out
   # Claude and Codex own their hook formats and lifecycle; their installers
   # wire RTK/Context Mode directly. Never invoke the Cursor JSON patcher for a
   # different host, because that silently creates a foreign-host config.

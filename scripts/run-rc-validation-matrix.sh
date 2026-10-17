@@ -61,7 +61,9 @@ run_cell() {
   trap sb_smoke_cleanup EXIT
   RTK_DISABLED=1 bash "${REPO_ROOT}/scripts/lib/host-smoke-cell.sh" --host "$host" --mode "$mode" --scope rc \
     || { sb_smoke_write_rc_marker "$host" "$mode" fail host-smoke; FAIL=$((FAIL+1)); return; }
-  local wd="$(sb_smoke_host_root "$host")/workspace" log="$(sb_smoke_host_root "$host")/rc.log"
+  local wd log
+  wd="$(sb_smoke_host_root "$host")/workspace"
+  log="$(sb_smoke_host_root "$host")/rc.log"
   mkdir -p "$wd"
   if [[ "$host" == cursor && "$LEANCTX_ON" -eq 1 ]]; then
     rc_delegate_five_tool_scenarios "$REPO_ROOT" || { sb_smoke_write_rc_marker "$host" "$mode" fail "$log"; FAIL=$((FAIL+1)); return; }

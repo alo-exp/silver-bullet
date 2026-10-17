@@ -301,7 +301,8 @@ EOF
   export SILVER_BULLET_SESSION_START_FILE="$SESSION_START_FILE"
   export SILVER_BULLET_VERIFY_TESTS_STATE_FILE="$VERIFY_TESTS_FILE"
   date +%s > "$SESSION_START_FILE"
-  export GH_RUN_LIST_OVERRIDE=$(jq -n --arg sha "$(git -C "$TMPGIT" rev-parse HEAD 2>/dev/null || echo unknown)" '[
+  export GH_RUN_LIST_OVERRIDE
+  GH_RUN_LIST_OVERRIDE=$(jq -n --arg sha "$(git -C "$TMPGIT" rev-parse HEAD 2>/dev/null || echo unknown)" '[
     {workflowName:"CI", status:"completed", conclusion:"success", headSha:$sha, createdAt:"2026-05-07T00:00:01Z"},
     {workflowName:"Secret Scan", status:"completed", conclusion:"success", headSha:$sha, createdAt:"2026-05-07T00:00:02Z"},
     {workflowName:"Deploy to GitHub Pages", status:"completed", conclusion:"success", headSha:$sha, createdAt:"2026-05-07T00:00:03Z"}
@@ -353,7 +354,7 @@ is_blocked() {
   local output="$1"
   # A block occurs when output contains "block" decision or "deny" permissionDecision
   [[ -z "$output" ]] && return 1
-  printf '%s' "$output" | grep -qE '"decision"\s*:\s*"block"|"permissionDecision"\s*:\s*"deny"'
+  grep -qE '"decision"\s*:\s*"block"|"permissionDecision"\s*:\s*"deny"' <<<"$output"
 }
 
 assert_blocks() {
@@ -403,7 +404,7 @@ assert_decoded_message_real_newlines() {
     FAIL=$((FAIL + 1))
     return
   fi
-  if printf '%s' "$decoded" | grep -qF '\n'; then
+  if grep -qF '\n' <<<"$decoded"; then
     echo "  FAIL: $label — decoded text still contains literal backslash-n"
     FAIL=$((FAIL + 1))
     return
@@ -416,7 +417,7 @@ assert_contains() {
   local label="$1"
   local output="$2"
   local needle="$3"
-  if printf '%s' "$output" | grep -q "$needle"; then
+  if grep -q "$needle" <<<"$output"; then
     echo "  ✅ $label"
     PASS=$((PASS + 1))
   else
@@ -967,7 +968,8 @@ quality-gate-stage-3
 full-test-suite-rerun
 EOF
 write_verify_tests_state
-export GH_RUN_LIST_OVERRIDE=$(jq -n --arg sha "$(git -C "$TMPDIR_TEST" rev-parse HEAD 2>/dev/null || echo unknown)" '[
+export GH_RUN_LIST_OVERRIDE
+GH_RUN_LIST_OVERRIDE=$(jq -n --arg sha "$(git -C "$TMPDIR_TEST" rev-parse HEAD 2>/dev/null || echo unknown)" '[
   {workflowName:"CI", status:"completed", conclusion:"success", headSha:$sha, createdAt:"2026-05-07T00:00:01Z"},
   {workflowName:"CI", status:"in_progress", conclusion:"", headSha:$sha, createdAt:"2026-05-07T00:00:05Z"},
   {workflowName:"Secret Scan", status:"completed", conclusion:"success", headSha:$sha, createdAt:"2026-05-07T00:00:02Z"},
@@ -1052,7 +1054,7 @@ write_verify_tests_state
 out=$(run_hook "PreToolUse" "gh pr create --title 'feat'")
 assert_passes "correct review-stack order passes without ordering warning" "$out"
 # Should NOT contain "wrong order"
-if ! printf '%s' "$out" | grep -q "wrong order"; then
+if ! grep -q "wrong order" <<<"$out"; then
   echo "  ✅ no false ordering warning on correct sequence"
   PASS=$((PASS + 1))
 else
@@ -1348,7 +1350,7 @@ WFEOF
 out=$(run_hook "PreToolUse" "git commit -m test")
 # Empty state = legacy gate exits 0 silently. Confirm the stale-WF message is
 # NOT in the output (would prove the old gate is gone).
-if printf '%s' "$out" | grep -q 'WORKFLOW\.md.*Intermediate commit allowed\|WORKFLOW\.md.*Delivery allowed'; then
+if grep -q 'WORKFLOW\.md.*Intermediate commit allowed\|WORKFLOW\.md.*Delivery allowed' <<<"$out"; then
   echo "  ❌ WF-PASS1-A: stale WORKFLOW.md still being read — Pass 1 hotfix incomplete"
   FAIL=$((FAIL+1))
 else
@@ -1378,7 +1380,7 @@ out=$(run_hook "PreToolUse" "git commit -m test")
 # With empty state, completion-audit's legacy gate exits 0 silently
 # (see HOOK-04 empty-state behavior). The key assertion: no WORKFLOW.md
 # message in the output proves Pass 1 hotfix is engaged.
-if printf '%s' "$out" | grep -q 'flows complete\|Delivery allowed\|Intermediate commit allowed'; then
+if grep -q 'flows complete\|Delivery allowed\|Intermediate commit allowed' <<<"$out"; then
   echo "  ❌ WF-PASS1-B: workflows/ dir incorrectly bypassed legacy gate"
   FAIL=$((FAIL+1))
 else
@@ -1671,7 +1673,7 @@ finishing-a-development-branch
 EOF
 out=$(run_hook "PreToolUse" "gh pr create --title 'docs'")
 assert_passes "#282 docs-only PR passes with light floor (no tdd/verify-tests)" "$out"
-if printf '%s' "$out" | grep -qE "tdd|verify-tests|test-driven-development|silver-execute"; then
+if grep -qE "tdd|verify-tests|test-driven-development|silver-execute" <<<"$out"; then
   echo "  FAIL: docs-only still demanding src skills"
   FAIL=$((FAIL + 1))
 else

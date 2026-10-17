@@ -34,4 +34,4 @@
 
 ## Remaining gap
 
-Full catalog rollup for composed workflows (`sb:feature`, etc.) still requires Phase 103+ intent-ledger integration with per-step evidence refs from `docs/apo-catalog.json`. Site-session profile is the first runtime consumer; general workflow rollup is tracked in [atomic-flow-redesign.plan.md](../research-260624/atomic-flow-redesign.plan.md).
+Full catalog rollup for composed workflows (`sb:feature`, etc.) still requires Phase 103+ intent-ledger integration with per-step evidence refs from `docs/apo-catalog.json`. Site-session profile is the first runtime consumer; general workflow rollup is tracked in [atomic-flow-redesign.plan.md](../../research/2026-06-24-prior-art-and-extensibility/atomic-flow-redesign.plan.md).

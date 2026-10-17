@@ -15,7 +15,6 @@ if [[ -f "$CODEX_HOOK_TRANSPLANT_HELPER" ]]; then
 fi
 
 RUNTIMES=()
-RELEASE_LIVE_MATRIX_FILE=""
 HOST_RELEASE_LIVE_MATRIX_FILE="${SB_RUNTIME_STATE_DIR}/release-live-matrix"
 HOST_VERIFY_TESTS_STATE_FILE="${SB_RUNTIME_STATE_DIR}/verify-tests-state"
 HOST_VERIFY_TESTS_BACKUP_FILE=""
@@ -132,7 +131,6 @@ for runtime in "${RUNTIMES[@]}"; do
         # shellcheck source=hooks/lib/runtime-paths.sh
         source "${LIVE_TEST_ROOT}/../../hooks/lib/runtime-paths.sh"
       fi
-      RELEASE_LIVE_MATRIX_FILE="${SB_RUNTIME_HOME_ROOT}/.silver-bullet/release-live-matrix"
       if ! /Users/shafqat/.local/bin/claude --version >/dev/null 2>&1; then
         echo "ERROR: claude CLI not found or not working at /Users/shafqat/.local/bin/claude"
         exit 1
@@ -143,7 +141,6 @@ for runtime in "${RUNTIMES[@]}"; do
       # shellcheck source=tests/live/lib/codex-cli-isolation.sh
       source "$CODEX_ISOLATION_HELPER"
       setup_codex_cli_isolation
-      RELEASE_LIVE_MATRIX_FILE="${CODEX_HOME}/.silver-bullet/release-live-matrix"
       if [[ -z "${CODEX_BIN:-}" ]] || ! "$CODEX_BIN" --version >/dev/null 2>&1; then
         echo "ERROR: native Codex CLI not found or not working"
         exit 1
@@ -154,11 +151,11 @@ for runtime in "${RUNTIMES[@]}"; do
       fi
       ;;
     kay)
+      # shellcheck disable=SC2034  # read by the sourced runtime-paths/isolation helpers
       SILVER_BULLET_RUNTIME="codex"
       # shellcheck source=tests/live/lib/kay-codex-isolation.sh
       source "$KAY_ISOLATION_HELPER"
       setup_kay_codex_isolation
-      RELEASE_LIVE_MATRIX_FILE="${KAY_HOME}/.codex/.silver-bullet/release-live-matrix"
       if [[ -z "${CODEX_BIN:-}" ]] || ! "$CODEX_BIN" --version >/dev/null 2>&1; then
         echo "ERROR: Kay CLI not found or not working"
         exit 1
@@ -184,7 +181,6 @@ for runtime in "${RUNTIMES[@]}"; do
   elif [[ "$runtime" == "kay" ]]; then
     teardown_kay_codex_isolation
   fi
-  RELEASE_LIVE_MATRIX_FILE="$HOST_RELEASE_LIVE_MATRIX_FILE"
 done
 
 echo ""

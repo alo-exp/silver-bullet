@@ -70,7 +70,7 @@ sb_rtk_version_ok() {
   local ver_line major minor patch min_major min_minor min_patch
   ver_line="$(sb_rtk_version_string 2>/dev/null || true)"
   [[ -n "$ver_line" ]] || return 1
-  if printf '%s' "$ver_line" | grep -qE '0\.4[0-9]'; then
+  if grep -qE '0\.4[0-9]' <<<"$ver_line"; then
     return 0
   fi
   local min_ver
@@ -98,7 +98,7 @@ sb_rtk_platform_hook_artifact_path() {
   host="${host:-$(sb_runtime_host)}"
   case "$host" in
     cursor) printf '%s/.cursor/hooks.json' "${HOME}" ;;
-    codex) printf '%s/.codex/AGENTS.md' "${CODEX_HOME:-${HOME}/.codex}" ;;
+    codex) printf '%s/AGENTS.md' "${CODEX_HOME:-${HOME}/.codex}" ;;
     # rtk init -g wires Claude hooks into ${HOME}/.claude/settings.json; the codex
     # fallback pointed this check at a different host's config entirely.
     claude) printf '%s/.claude/settings.json' "${HOME}" ;;
@@ -152,13 +152,13 @@ sb_rtk_edit_path_is_exempt() {
 sb_rtk_command_is_exempt() {
   local cmd="${1:-}"
   [[ -n "$cmd" ]] || return 0
-  if printf '%s' "$cmd" | grep -qE '(^|[[:space:]/])rtk([[:space:]]|$)'; then
+  if grep -qE '(^|[[:space:]/])rtk([[:space:]]|$)' <<<"$cmd"; then
     return 0
   fi
-  if printf '%s' "$cmd" | grep -qE 'enable-rtk-context-mode|rtk init'; then
+  if grep -qE 'enable-rtk-context-mode|rtk init' <<<"$cmd"; then
     return 0
   fi
-  if printf '%s' "$cmd" | grep -qE '(^|[[:space:]])(brew|curl|npm install|which|command -v|grep|cat|jq|echo|printf|true|false)(\s|$)'; then
+  if grep -qE '(^|[[:space:]])(brew|curl|npm install|which|command -v|grep|cat|jq|echo|printf|true|false)(\s|$)' <<<"$cmd"; then
     return 0
   fi
   return 1

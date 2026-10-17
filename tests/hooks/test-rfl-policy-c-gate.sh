@@ -15,7 +15,7 @@ fail() { echo "FAIL: $1"; FAIL=$((FAIL + 1)); }
 
 is_denied() {
   local output="$1"
-  [[ -n "$output" ]] && printf '%s' "$output" | grep -qE '"permissionDecision"[[:space:]]*:[[:space:]]*"deny"|"decision"[[:space:]]*:[[:space:]]*"block"'
+  [[ -n "$output" ]] && grep -qE '"permissionDecision"[[:space:]]*:[[:space:]]*"deny"|"decision"[[:space:]]*:[[:space:]]*"block"' <<<"$output"
 }
 
 WORKDIR="$(mktemp -d "${TMPDIR:-/tmp}/rfl-policy-c-gate.XXXXXX")"
@@ -35,7 +35,7 @@ RUN="$WORKDIR/.planning/rfl-live"
 RUNG="$RUN/rung-01-cursor-glm-5.2-high"
 
 run_hook() {
-  local event="$1" tool="$2" json="$3"
+  local json="$3" # $1 (event) and $2 (tool) label the call site only
   (cd "$WORKDIR" && printf '%s' "$json" | env SB_RFL_POLICY_C_GATE=1 SILVER_BULLET_RUNTIME=cursor bash "$HOOK" 2>/dev/null)
 }
 
@@ -106,7 +106,7 @@ EOF
 printf '# SKIPPED none\n' >"$RUNG/SKIPPED.md"
 # stop-check may still block on required skills; Policy C should not deny
 stop_out="$(cd "$WORKDIR" && printf '%s' '{"hook_event_name":"Stop"}' | env SB_ORCHESTRATOR_WORKER= SILVER_BULLET_RUNTIME=cursor bash "$STOP" 2>/dev/null || true)"
-if printf '%s' "$stop_out" | grep -q 'Policy C'; then
+if grep -q 'Policy C' <<<"$stop_out"; then
   fail "stop-check does not Policy-C-deny when valid"
   printf '%s\n' "$stop_out"
 else

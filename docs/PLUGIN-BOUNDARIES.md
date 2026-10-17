@@ -64,7 +64,7 @@ Optional plugins remain useful when they add capability outside SB's lifecycle s
 ## Codex Marketplace Packaging
 
 For the Codex packaging pattern used with Alo Labs plugins, see
-[docs/internal/codex-marketplace-packaging-guide.md](docs/internal/codex-marketplace-packaging-guide.md).
+[docs/internal/codex-marketplace-packaging-guide.md](internal/codex-marketplace-packaging-guide.md).
 SB's own Codex package stays SB-only. Optional extension plugins are installed
 from their own sources when needed, and SB's slash-command layer ships inside the
 main SB bundle so the default install exposes one Silver Bullet plugin with

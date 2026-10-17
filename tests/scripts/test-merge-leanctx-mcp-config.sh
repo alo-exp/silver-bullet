@@ -51,7 +51,7 @@ fi
 if jq -e '.mcpServers.leanctx.command == "lean-ctx" or (.mcpServers.leanctx.command | endswith("/lean-ctx"))' "${TEST_HOME}/.cursor/mcp.json" >/dev/null 2>&1; then
   pass "leanctx preserved after merge"
 else
-  fail "leanctx missing after merge (expected manifest command '${expected_cmd}')"
+  fail "leanctx missing after merge (expected command lean-ctx or */lean-ctx)"
 fi
 
 if [[ -f "${TEST_HOME}/.cursor/mcp.json.bak" ]]; then

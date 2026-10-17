@@ -56,7 +56,7 @@ sb_leanctx_platform_artifact_path() {
   host="${host:-$(sb_runtime_host)}"
   case "$host" in
     cursor) printf '%s/.cursor/mcp.json' "${HOME}" ;;
-    codex) printf '%s/.codex/config.toml' "${CODEX_HOME:-${HOME}/.codex}" ;;
+    codex) printf '%s/config.toml' "${CODEX_HOME:-${HOME}/.codex}" ;;
     opencode) printf '%s/.config/opencode/opencode.json' "${HOME}" ;;
     pi) printf '%s/extensions/silver-bullet-five-tool-stack/config.json' \
       "${PI_CODING_AGENT_DIR:-${HOME}/.pi/agent}" ;;
@@ -202,13 +202,13 @@ sb_leanctx_edit_path_is_exempt() {
 sb_leanctx_command_is_exempt() {
   local cmd="${1:-}"
   [[ -n "$cmd" ]] || return 0
-  if printf '%s' "$cmd" | grep -qE '(^|[[:space:]/])(lean-ctx|leanctx)([[:space:]]|$)'; then
+  if grep -qE '(^|[[:space:]/])(lean-ctx|leanctx)([[:space:]]|$)' <<<"$cmd"; then
     return 0
   fi
-  if printf '%s' "$cmd" | grep -qE 'install-leanctx-sb|optimize-five-tool-stack'; then
+  if grep -qE 'install-leanctx-sb|optimize-five-tool-stack' <<<"$cmd"; then
     return 0
   fi
-  if printf '%s' "$cmd" | grep -qE '(^|[[:space:]])(brew|curl|npm install|which|command -v|grep|cat|jq|echo|printf|true|false)(\s|$)'; then
+  if grep -qE '(^|[[:space:]])(brew|curl|npm install|which|command -v|grep|cat|jq|echo|printf|true|false)(\s|$)' <<<"$cmd"; then
     return 0
   fi
   return 1
@@ -219,10 +219,10 @@ sb_leanctx_command_is_usage() {
   local cli
   [[ -n "$cmd" ]] || return 1
   cli="$(sb_leanctx_cli_command "$config_file")"
-  if printf '%s' "$cmd" | grep -qE "(^|[[:space:]/])${cli}([[:space:]]|$)"; then
+  if grep -qE "(^|[[:space:]/])${cli}([[:space:]]|$)" <<<"$cmd"; then
     return 0
   fi
-  if printf '%s' "$cmd" | grep -qE '(^|[[:space:]/])(lean-ctx|leanctx)([[:space:]]|$)'; then
+  if grep -qE '(^|[[:space:]/])(lean-ctx|leanctx)([[:space:]]|$)' <<<"$cmd"; then
     return 0
   fi
   return 1
@@ -242,7 +242,7 @@ sb_leanctx_mcp_tool_is_usage() {
 sb_leanctx_mcp_server_matches() {
   local server="${1:-}"
   [[ -n "$server" ]] || return 1
-  printf '%s' "$server" | grep -qiE "$_sb_leanctx_mcp_server_names"
+  grep -qiE "$_sb_leanctx_mcp_server_names" <<<"$server"
 }
 
 sb_leanctx_block_message_no_cli() {

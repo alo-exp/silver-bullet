@@ -20,12 +20,14 @@ FAIL=0
 SB_TEST_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet"
 mkdir -p "$SB_TEST_DIR"
 TEST_RUN_ID="$$"
+# Symlink targets and fixtures live in a private temp dir, never a shared /tmp name.
+SYMLINK_TMP="$(mktemp -d "${TMPDIR:-/tmp}/sb-symlink-guard.XXXXXX")"
 
 cleanup_all() {
   rm -f "${SB_TEST_DIR}/test-symlink-${TEST_RUN_ID}" 2>/dev/null || true
   rm -f "${SB_TEST_DIR}/test-symlink-target-${TEST_RUN_ID}" 2>/dev/null || true
   rm -f "${SB_TEST_DIR}/test-state-symlink-${TEST_RUN_ID}" 2>/dev/null || true
-  rm -f "/tmp/sb-symlink-attacker-target-${TEST_RUN_ID}" 2>/dev/null || true
+  rm -rf "$SYMLINK_TMP" 2>/dev/null || true
 }
 trap cleanup_all EXIT
 
@@ -36,14 +38,14 @@ fail() { FAIL=$((FAIL+1)); printf '  FAIL: %s\n' "$1"; }
 
 # Test 1: symlink path causes exit 1 with stderr error
 test_guard_rejects_symlink() {
-  local target="/tmp/sb-symlink-attacker-target-${TEST_RUN_ID}"
+  local target="${SYMLINK_TMP}/attacker-target"
   local link="${SB_TEST_DIR}/test-symlink-${TEST_RUN_ID}"
   : > "$target"
   ln -sf "$target" "$link"
   local out rc=0
   out=$(bash -c "source '$LIB'; sb_guard_nofollow '$link'" 2>&1) || rc=$?
   rm -f "$link" "$target"
-  if [[ $rc -eq 1 ]] && printf '%s' "$out" | grep -q 'refusing to write through symlink'; then
+  if [[ $rc -eq 1 ]] && grep -q 'refusing to write through symlink' <<<"$out"; then
     pass "sb_guard_nofollow rejects symlink (exit 1 + stderr)"
   else
     fail "sb_guard_nofollow rejects symlink — got rc=$rc out='$out'"
@@ -79,7 +81,7 @@ test_guard_passes_nonexistent() {
 
 # Test 4: sb_safe_write unlinks symlink but leaves regular file alone
 test_safe_write_unlinks_symlink() {
-  local target="/tmp/sb-symlink-attacker-target-${TEST_RUN_ID}"
+  local target="${SYMLINK_TMP}/attacker-target"
   local link="${SB_TEST_DIR}/test-symlink-${TEST_RUN_ID}"
   printf 'original' > "$target"
   ln -sf "$target" "$link"
@@ -98,7 +100,7 @@ test_safe_write_unlinks_symlink() {
 
 test_record_skill_rejects_symlink_state() {
   local HOOK="${REPO_ROOT}/hooks/record-skill.sh"
-  local target="/tmp/sb-symlink-attacker-target-${TEST_RUN_ID}"
+  local target="${SYMLINK_TMP}/attacker-target"
   local state_link="${SB_TEST_DIR}/test-state-symlink-${TEST_RUN_ID}"
   printf 'canary\n' > "$target"
   ln -sf "$target" "$state_link"
@@ -120,12 +122,24 @@ test_record_skill_rejects_symlink_state() {
 }
 
 # ── End-to-end: session-start refuses to write through symlink branch file ──
-# Smoke test — branch_file write at line 51/56 should be symlink-guarded
+# The branch-scope write in session-start must be symlink-guarded. The hook only
+# gets that far inside an SB project on a named branch and once its prerequisite
+# probe finds a Silver Bullet plugin cache, so stage both: run from the checkout
+# with no cache, the hook returned early (exit 0) and this check passed without
+# ever reaching the write.
 
 test_session_start_rejects_symlink_branch() {
   local HOOK="${REPO_ROOT}/hooks/session-start"
-  local target="/tmp/sb-symlink-attacker-target-${TEST_RUN_ID}"
+  local target="${SYMLINK_TMP}/attacker-target-session-start"
   local branch_link="${SB_TEST_DIR}/branch"
+  local project="${SYMLINK_TMP}/sb-project"
+  local cache_stub="${SB_RUNTIME_PLUGIN_CACHE_ROOT}/alo-labs/silver-bullet/test-symlink-${TEST_RUN_ID}"
+  mkdir -p "$project" "$cache_stub"
+  cp "${REPO_ROOT}/templates/silver-bullet.config.json.default" "$project/.silver-bullet.json"
+  printf '# SB\n' >"$project/silver-bullet.md"
+  git -C "$project" init -q
+  git -C "$project" checkout -q -b feature/symlink-guard
+  git -C "$project" -c user.name=t -c user.email=t@example.invalid commit -q --allow-empty -m init
   # Back up any existing branch file
   local backup=""
   if [[ -f "$branch_link" && ! -L "$branch_link" ]]; then
@@ -135,9 +149,11 @@ test_session_start_rejects_symlink_branch() {
   printf 'canary' > "$target"
   ln -sfn "$target" "$branch_link"
 
-  # Run session-start; it may or may not invoke branch-file write depending on
-  # whether stored branch matches. Either way, target must remain 'canary'.
-  "$HOOK" </dev/null >/dev/null 2>&1 || true
+  # The stored branch ("canary") differs from feature/symlink-guard, so the hook
+  # rewrites the branch file; the nofollow guard must stop it there with exit 1.
+  local rc=0
+  (cd "$project" && printf '{"source":"startup"}' | \
+    env -u SILVER_BULLET_BRANCH_FILE "$HOOK" >/dev/null 2>&1) || rc=$?
 
   local target_content
   target_content=$(cat "$target" 2>/dev/null || echo MISSING)
@@ -145,7 +161,13 @@ test_session_start_rejects_symlink_branch() {
   # Restore
   rm -f "$branch_link"
   [[ -n "$backup" ]] && mv "$backup" "$branch_link"
+  rm -rf "$cache_stub"
 
+  if [[ "$rc" -eq 1 ]]; then
+    pass "session-start reaches the guarded branch-file write (exit 1)"
+  else
+    fail "session-start did not stop at the symlinked branch file — rc=$rc"
+  fi
   if [[ "$target_content" == "canary" ]]; then
     pass "session-start refuses to write through symlink branch file"
   else

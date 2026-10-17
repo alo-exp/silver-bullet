@@ -84,7 +84,7 @@ run_overflow_page() {
   out=$(OVERFLOW_BASE_URL="$OVERFLOW_BASE" node "$AUDIT_DIR/overflow-check.mjs" "$path" 2>&1) || true
   local overflow_px
   overflow_px=$(echo "$out" | grep -oE 'overflow=[0-9]+px' | head -1 | sed 's/overflow=//;s/px//')
-  if echo "$out" | grep -q "^PASS"; then
+  if grep -q "^PASS" <<<"$out"; then
     append_step "$step_name" "PASS" "overflow=${overflow_px:-0}px on ${path}"
     return 0
   fi

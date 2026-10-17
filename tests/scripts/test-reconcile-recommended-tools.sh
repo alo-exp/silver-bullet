@@ -9,9 +9,10 @@ PASS=0
 FAIL=0
 TMP=""
 TEST_HOME=""
+OFFLINE_TMP=""
 
 cleanup() {
-  rm -rf "$TMP" "$TEST_HOME"
+  rm -rf "$TMP" "$TEST_HOME" "$OFFLINE_TMP"
 }
 trap cleanup EXIT
 
@@ -20,6 +21,15 @@ fail() { echo "  FAIL: $1"; FAIL=$((FAIL + 1)); }
 
 TMP="$(mktemp -d)"
 TEST_HOME="$(mktemp -d)"
+OFFLINE_TMP="$(mktemp -d)"
+# --mode apply repairs opted-in tools by installing them (npm install -g
+# context-mode, uv tool install graphifyy, curl … | sh for lean-ctx). Tests
+# must never install software or touch the network, so those commands are
+# failing stand-ins here: the reconciler's install-failure path runs on every
+# machine, whatever happens to be installed.
+# shellcheck source=tests/lib/offline-tools.sh
+source "$REPO_ROOT/tests/lib/offline-tools.sh"
+sb_offline_tools_install "${OFFLINE_TMP}/bin"
 export HOME="$TEST_HOME"
 mkdir -p "${TEST_HOME}/.cursor"
 printf '{"mcpServers":{}}\n' >"${TEST_HOME}/.cursor/mcp.json"
@@ -60,15 +70,15 @@ echo "$out" | jq -e '.components[] | select(.component=="graphify") | .canonical
   && pass "graphify disabled when opted out" || fail "graphify disabled when opted out"
 
 auth_out="$(bash "$RECONCILE" --project-root "$TMP" --host cursor --mode verify --entry-point init --format json 2>&1 || true)"
-printf '%s' "$auth_out" | grep -q 'fail closed\|authorization\|entry-point' \
+grep -q 'fail closed\|authorization\|entry-point' <<<"$auth_out" \
   && pass "verify with entry-point fails closed" || fail "verify with entry-point fails closed"
 
 bad_host_out="$(bash "$RECONCILE" --project-root "$TMP" --host '../../evil' --mode verify --format json 2>&1 || true)"
-printf '%s' "$bad_host_out" | grep -q 'unknown host' \
+grep -q 'unknown host' <<<"$bad_host_out" \
   && pass "rejects unknown --host before path use" || fail "rejects unknown --host before path use"
 
 apply_out="$(bash "$RECONCILE" --project-root "$TMP" --host cursor --mode apply --format json 2>&1 || true)"
-printf '%s' "$apply_out" | grep -q 'entry-point\|authorization' \
+grep -q 'entry-point\|authorization' <<<"$apply_out" \
   && pass "apply without entry-point fails closed" || fail "apply without entry-point fails closed"
 
 plan_out="$(bash "$RECONCILE" --project-root "$TMP" --host cursor --mode plan --scope project --format json 2>/dev/null || true)"
@@ -98,16 +108,16 @@ echo "$consent_summary" | jq -e 'length > 0 and .graphify == "enabled" and .rtk 
 
 # optimize-five-tool-stack requires explicit host + project-root
 OPT="$REPO_ROOT/scripts/optimize-five-tool-stack.sh"
-if bash "$OPT" --host cursor --project-root "$TMP" --dry-run --skip-rtcm --skip-synergy --force >/tmp/sb-opt-req.log 2>&1; then
+if bash "$OPT" --host cursor --project-root "$TMP" --dry-run --skip-rtcm --skip-synergy --force >"${OFFLINE_TMP}/opt-req.log" 2>&1; then
   pass "optimize-five-tool with required args"
 else
   fail "optimize-five-tool with required args"
-  cat /tmp/sb-opt-req.log >&2 || true
+  cat "${OFFLINE_TMP}/opt-req.log" >&2 || true
 fi
-if bash "$OPT" --dry-run --force 2>/tmp/sb-opt-miss.log; then
+if bash "$OPT" --dry-run --force 2>"${OFFLINE_TMP}/opt-miss.log"; then
   fail "optimize-five-tool rejects missing args"
 else
-  grep -q 'required' /tmp/sb-opt-miss.log && pass "optimize-five-tool rejects missing args" || fail "optimize-five-tool rejects missing args"
+  grep -q 'required' "${OFFLINE_TMP}/opt-miss.log" && pass "optimize-five-tool rejects missing args" || fail "optimize-five-tool rejects missing args"
 fi
 
 # patch-hooks removes legacy routing hooks when RTK is consented and counts removals
@@ -119,7 +129,7 @@ if jq -e '.hooks.preToolUse[] | select(.command | test("lean-ctx hook (deny|redi
 else
   pass "patch-hooks removes legacy routing hooks"
 fi
-printf '%s' "$patch_lean_out" | grep -qE '\([1-9][0-9]* changes?\)' \
+grep -qE '\([1-9][0-9]* changes?\)' <<<"$patch_lean_out" \
   && pass "patch-hooks counts legacy routing removals" \
   || fail "patch-hooks counts legacy routing removals"
 
@@ -140,7 +150,7 @@ hooks_after_second="$(cat "${TMP_PH_IDEM}/.cursor/hooks.json")"
 [[ "$hooks_after_first" == "$hooks_after_second" ]] \
   && pass "patch-hooks idempotent second run preserves hooks.json bytes" \
   || fail "patch-hooks idempotent second run preserves hooks.json bytes"
-printf '%s' "$hooks_idem_out" | grep -q 'unchanged' \
+grep -q 'unchanged' <<<"$hooks_idem_out" \
   && pass "patch-hooks idempotent second run prints unchanged" \
   || fail "patch-hooks idempotent second run prints unchanged"
 export HOME="$TEST_HOME"
@@ -209,8 +219,8 @@ jq '.recommended_tools.graphify.enabled_by_user = false
 cp "$REPO_ROOT/silver-bullet.md" "$TMP_AM_ONLY/silver-bullet.md" 2>/dev/null || printf '# SB\n' >"$TMP_AM_ONLY/silver-bullet.md"
 git -C "$TMP_AM_ONLY" init -q
 am_env='RT_PROJECT_ROOT="'"$TMP_AM_ONLY"'" RT_HOST=cursor RT_MODE=apply RT_ENTRY_POINT=doctor-fix RT_REPO_ROOT="'"$REPO_ROOT"'"'
-am_batch="$(eval "$am_env bash -c 'source \"'"$REPO_ROOT"'\"/scripts/lib/recommended-tools/common.sh; rt_init_paths
-  source \"'"$REPO_ROOT"'\"/scripts/lib/recommended-tools/receipts.sh
+am_batch="$(eval "$am_env bash -c 'source \"$REPO_ROOT\"/scripts/lib/recommended-tools/common.sh; rt_init_paths
+  source \"$REPO_ROOT\"/scripts/lib/recommended-tools/receipts.sh
   rt_apply_host_mcp_batch'" 2>/dev/null || true)"
 echo "$am_batch" | jq -e '.actions[]? | select(. == "patch_mcp")' >/dev/null 2>&1 \
   && pass "agentmemory-only mcp batch patches when agentmemory consented" \
@@ -248,11 +258,11 @@ for stub in graphify-gate.sh context-mode-gate.sh rtk-gate.sh stack-compression-
   chmod +x "${TMP_IDEM}/.cursor/hooks/toolstack/${stub}"
 done
 idem_env='RT_PROJECT_ROOT="'"$TMP_IDEM"'" RT_HOST=cursor RT_MODE=apply RT_ENTRY_POINT=doctor-fix RT_REPO_ROOT="'"$REPO_ROOT"'"'
-hooks_first="$(eval "$idem_env bash -c 'source \"'"$REPO_ROOT"'\"/scripts/lib/recommended-tools/common.sh; rt_init_paths
-  source \"'"$REPO_ROOT"'\"/scripts/lib/recommended-tools/receipts.sh
+hooks_first="$(eval "$idem_env bash -c 'source \"$REPO_ROOT\"/scripts/lib/recommended-tools/common.sh; rt_init_paths
+  source \"$REPO_ROOT\"/scripts/lib/recommended-tools/receipts.sh
   rt_apply_host_hooks_batch'" 2>/dev/null || true)"
-hooks_second="$(eval "$idem_env bash -c 'source \"'"$REPO_ROOT"'\"/scripts/lib/recommended-tools/common.sh; rt_init_paths
-  source \"'"$REPO_ROOT"'\"/scripts/lib/recommended-tools/receipts.sh
+hooks_second="$(eval "$idem_env bash -c 'source \"$REPO_ROOT\"/scripts/lib/recommended-tools/common.sh; rt_init_paths
+  source \"$REPO_ROOT\"/scripts/lib/recommended-tools/receipts.sh
   rt_apply_host_hooks_batch'" 2>/dev/null || true)"
 echo "$hooks_second" | jq -e '.changed == false' >/dev/null 2>&1 \
   && pass "idempotent hooks batch second run changed=false" || fail "idempotent hooks batch second run changed=false"
@@ -261,11 +271,11 @@ echo "$hooks_first" | jq -e '.changed == true or (.actions | length) > 0' >/dev/
 
 printf '{"mcpServers":{"graphify":{"command":"graphify-mcp","args":["--transport","stdio"]}}}\n' \
   >"${TMP_IDEM}/.cursor/mcp.json"
-mcp_first="$(eval "$idem_env bash -c 'source \"'"$REPO_ROOT"'\"/scripts/lib/recommended-tools/common.sh; rt_init_paths
-  source \"'"$REPO_ROOT"'\"/scripts/lib/recommended-tools/receipts.sh
+mcp_first="$(eval "$idem_env bash -c 'source \"$REPO_ROOT\"/scripts/lib/recommended-tools/common.sh; rt_init_paths
+  source \"$REPO_ROOT\"/scripts/lib/recommended-tools/receipts.sh
   rt_apply_host_mcp_batch'" 2>/dev/null || true)"
-mcp_second="$(eval "$idem_env bash -c 'source \"'"$REPO_ROOT"'\"/scripts/lib/recommended-tools/common.sh; rt_init_paths
-  source \"'"$REPO_ROOT"'\"/scripts/lib/recommended-tools/receipts.sh
+mcp_second="$(eval "$idem_env bash -c 'source \"$REPO_ROOT\"/scripts/lib/recommended-tools/common.sh; rt_init_paths
+  source \"$REPO_ROOT\"/scripts/lib/recommended-tools/receipts.sh
   rt_apply_host_mcp_batch'" 2>/dev/null || true)"
 echo "$mcp_second" | jq -e '.changed == false' >/dev/null 2>&1 \
   && pass "idempotent mcp batch second run changed=false" || fail "idempotent mcp batch second run changed=false"
@@ -283,8 +293,8 @@ jq '.recommended_tools.graphify.enabled_by_user = true
 cp "$REPO_ROOT/silver-bullet.md" "$TMP_MCP_CREATE/silver-bullet.md" 2>/dev/null || printf '# SB\n' >"$TMP_MCP_CREATE/silver-bullet.md"
 git -C "$TMP_MCP_CREATE" init -q
 mcp_create_env='RT_PROJECT_ROOT="'"$TMP_MCP_CREATE"'" RT_HOST=cursor RT_MODE=apply RT_ENTRY_POINT=doctor-fix RT_REPO_ROOT="'"$REPO_ROOT"'"'
-mcp_create="$(eval "$mcp_create_env bash -c 'source \"'"$REPO_ROOT"'\"/scripts/lib/recommended-tools/common.sh; rt_init_paths
-  source \"'"$REPO_ROOT"'\"/scripts/lib/recommended-tools/receipts.sh
+mcp_create="$(eval "$mcp_create_env bash -c 'source \"$REPO_ROOT\"/scripts/lib/recommended-tools/common.sh; rt_init_paths
+  source \"$REPO_ROOT\"/scripts/lib/recommended-tools/receipts.sh
   rt_apply_host_mcp_batch'" 2>/dev/null || true)"
 if command -v graphify-mcp >/dev/null 2>&1; then
   echo "$mcp_create" | jq -e '.changed == true' >/dev/null 2>&1 \
@@ -437,7 +447,7 @@ export HOME="$TMP_MCP_DEFAULT"
 mkdir -p "${TMP_MCP_DEFAULT}/.cursor"
 printf '{"mcpServers":{"other":{"command":"noop"}}}\n' >"${TMP_MCP_DEFAULT}/.cursor/mcp.json"
 before="$(cat "${TMP_MCP_DEFAULT}/.cursor/mcp.json")"
-RT_PATCH_GRAPHIFY= RT_PATCH_LEANCTX= python3 "$REPO_ROOT/scripts/lib/global-toolstack/patch-mcp.py" >/dev/null 2>&1 || true
+RT_PATCH_GRAPHIFY='' RT_PATCH_LEANCTX='' python3 "$REPO_ROOT/scripts/lib/global-toolstack/patch-mcp.py" >/dev/null 2>&1 || true
 after="$(cat "${TMP_MCP_DEFAULT}/.cursor/mcp.json")"
 [[ "$before" == "$after" ]] && pass "patch-mcp defaults fail-closed" || fail "patch-mcp defaults fail-closed"
 export HOME="$TEST_HOME"
@@ -516,7 +526,6 @@ echo "$rtk_repair" | jq -e '[.actions[]? | select(. == "optimize_rtk_context_mod
   && pass "rtk repair runs optimize under cross_tool batch" || fail "rtk repair runs optimize under cross_tool batch"
 export HOME="$TEST_HOME"
 
-TMP_INSTALL="$(mktemp -d)"
 export HOME="$TEST_HOME"
 # shellcheck source=../../scripts/lib/recommended-tools/installer.sh
 source "$REPO_ROOT/scripts/lib/recommended-tools/installer.sh"
@@ -861,11 +870,11 @@ rt_init_paths
 # shellcheck source=../../hooks/lib/recommended-tools-registry.sh
 source "$REPO_ROOT/hooks/lib/recommended-tools-registry.sh"
 
-printf '%s\n' "${RT_COMPONENT_IDS[@]}" | grep -qx search_cli \
+grep -qx search_cli <<<"$(printf '%s\n' "${RT_COMPONENT_IDS[@]}")" \
   && pass "RT_COMPONENT_IDS includes search_cli" \
   || fail "RT_COMPONENT_IDS includes search_cli"
 
-printf '%s\n' "${SB_RECOMMENDED_TOOL_IDS[@]}" | grep -qx search_cli \
+grep -qx search_cli <<<"$(printf '%s\n' "${SB_RECOMMENDED_TOOL_IDS[@]}")" \
   && pass "registry SB_RECOMMENDED_TOOL_IDS includes search_cli" \
   || fail "registry SB_RECOMMENDED_TOOL_IDS includes search_cli"
 
@@ -955,7 +964,7 @@ sc_prov="$(d10_probe probe-search_cli.sh rt_probe_search_cli 2>/dev/null || true
 echo "$sc_prov" | jq -e '.canonical_state == "ready" and (.evidence | index("provider_missing") != null)' >/dev/null 2>&1 \
   && pass "D10 search_cli provider_missing WARN on ready Health" \
   || fail "D10 search_cli provider_missing WARN on ready Health (${sc_prov:-empty})"
-printf '%s' "$sc_prov" | grep -q 'sk-live-should-never-appear' \
+grep -q 'sk-live-should-never-appear' <<<"$sc_prov" \
   && fail "D10 search_cli must not dump secrets" \
   || pass "D10 search_cli must not dump secrets"
 

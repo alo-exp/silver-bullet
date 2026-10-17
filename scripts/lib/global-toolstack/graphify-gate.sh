@@ -30,8 +30,6 @@ elif [[ -n "$command_str" ]]; then
   ts_is_substantive_shell "$command_str" || exit 0
 else exit 0; fi
 graph_rel="$(ts_effective_graph_path)"
-ttl="$(ts_effective_query_ttl)"
-budget="$(ts_effective_query_budget)"
 if ! ts_graphify_cli_available; then
   ts_emit_deny "🚫 GRAPHIFY REQUIRED — CLI not installed (uv tool install graphifyy). Config: ~/.cursor/toolstack.json" "$hook_event"
   exit 0

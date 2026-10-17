@@ -200,10 +200,10 @@ enterprise_e2e_commit_touches_api_currency() {
   [[ -n "$sha" ]] || return 1
   local paths
   paths="$(git -C "$fixture_dir" diff-tree --no-commit-id --name-only -r "$sha" 2>/dev/null || true)"
-  if printf '%s\n' "$paths" | grep -qE '^api/.*(currency|orders)|^api/src/(orders|currency)'; then
+  if grep -qE '^api/.*(currency|orders)|^api/src/(orders|currency)' <<<"$paths"; then
     return 0
   fi
-  if printf '%s\n' "$paths" | grep -qE '^api/' && \
+  if grep -qE '^api/' <<<"$paths" && \
      git -C "$fixture_dir" log -1 --format='%s' "$sha" 2>/dev/null | grep -qiE 'currency|orders'; then
     return 0
   fi
@@ -988,7 +988,8 @@ enterprise_e2e_ledger_session0_pass() {
 }
 
 enterprise_e2e_fixture_code_intel_opted_in() {
-  local fixture_dir="${1:-}" config="${fixture_dir}/.silver-bullet.json"
+  local fixture_dir="${1:-}"
+  local config="${fixture_dir}/.silver-bullet.json"
   [[ -f "$config" ]] || return 1
   jq -e \
     '.recommended_tools.graphify.enabled_by_user == true and .recommended_tools.agentmemory.enabled_by_user == true' \
@@ -1209,7 +1210,7 @@ enterprise_e2e_preflight_context_mode() {
       if ! doctor_out="$(CONTEXT_MODE_PLATFORM="$platform" context-mode doctor 2>&1)"; then
         enterprise_e2e_preflight_fail "context-mode doctor failed (platform=${platform}): ${doctor_out%%$'\n'*}"
       fi
-      if printf '%s' "$doctor_out" | grep -qE '(^|[[:space:]])FAIL:'; then
+      if grep -qE '(^|[[:space:]])FAIL:' <<<"$doctor_out"; then
         enterprise_e2e_preflight_fail "context-mode doctor reported FAIL (platform=${platform}) — run: CONTEXT_MODE_PLATFORM=${platform} context-mode doctor"
       fi
       echo "    context-mode doctor OK (platform=${platform})"

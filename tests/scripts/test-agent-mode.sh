@@ -183,11 +183,13 @@ TASKA="${TMPROOT}/agent-claude/t-a"
 mkdir -p "$TASKA"
 
 agent_mode_reset
+# shellcheck disable=SC2218  # real definition comes from the sourced agent-mode.sh; the later one is a stub
 agent_mode_classify_task "Implement the feature and run tests. First-wave implement+test." "$TASKA" "claude" ""
 [[ "$SB_AM_CLASSIFIED" == "non-interactive" ]] && check "first-wave implement+test classifies NI" pass \
   || check "first-wave implement+test classifies NI" fail
 
 agent_mode_reset
+# shellcheck disable=SC2218  # real definition comes from the sourced agent-mode.sh; the later one is a stub
 agent_mode_classify_task "Keep going with the same child." "$TASKA" "claude" "continue"
 [[ "$SB_AM_CLASSIFIED" == "interactive" ]] && check "continue utterance classifies interactive" pass \
   || check "continue utterance classifies interactive" fail
@@ -202,6 +204,7 @@ cat >"${TASKA}/result.md" <<'EOF'
 ## STATUS
 pass
 EOF
+# shellcheck disable=SC2218  # real definition comes from the sourced agent-mode.sh; the later one is a stub
 agent_mode_classify_task "Implement a small fix and test." "$TASKA" "claude" ""
 [[ "$SB_AM_CLASSIFIED" == "non-interactive" ]] && check "leftover conversation id after terminal result is NI not D3" pass \
   || check "leftover conversation id after terminal result is NI not D3" fail
@@ -320,6 +323,7 @@ cat >"${CDIR}/session.json" <<EOF
 EOF
 agent_mode_reset
 export SB_AGENT_MODE_TUI_AVAILABLE=1
+# shellcheck disable=SC2218  # real definition comes from the sourced agent-mode.sh; the later one is a stub
 agent_mode_classify_task "Add a unit test." "$CDIR" "cursor" ""
 [[ "$SB_AM_CLASSIFIED" == "interactive" ]] && agent_mode_reason_has "d3-in-wave-cursor" \
   && check "in-wave Cursor status=live + conversation_id is D3 (2)" pass \
@@ -382,6 +386,7 @@ agent_mode_reset
 SB_AM_REQUESTED="auto"
 SB_AM_CLASSIFIED="non-interactive"
 SB_AM_RESOLVED="non-interactive"
+# shellcheck disable=SC2034  # read by the sourced agent-mode.sh
 SB_AM_REASONS=("classifier-ni")
 agent_mode_normalize_incomplete_result "$MISS" 1
 STATUS="$(agent_mode_result_status "${MISS}/result.md")"
@@ -415,6 +420,7 @@ cat >"${EV}/session.json" <<EOF
 {"status":"dead","conversation_id":"x","updated_at":"$(date -u +%Y-%m-%dT%H:%M:%SZ)"}
 EOF
 agent_mode_reset
+# shellcheck disable=SC2218  # real definition comes from the sourced agent-mode.sh; the later one is a stub
 agent_mode_classify_task "Implement and test a helper." "$EV" "claude" ""
 [[ "$SB_AM_CLASSIFIED" == "non-interactive" ]] && check "classifier ignores events.jsonl" pass \
   || check "classifier ignores events.jsonl" fail
@@ -481,7 +487,9 @@ agent_mode_apply_host_launch_env "cursor"
 # AF seed round-trip
 agent_mode_reset
 SB_AM_REQUESTED="auto"
+# shellcheck disable=SC2034  # read by the sourced agent-mode.sh
 SB_AM_MAX_WALL_SEC="1800"
+# shellcheck disable=SC2034  # read by the sourced agent-mode.sh
 SB_AM_IDLE_SEC="45"
 SEED="$(agent_mode_af_seed_fields)"
 if echo "$SEED" | python3 -c 'import json,sys; o=json.load(sys.stdin); assert o["interaction_mode"]=="auto"; assert o["max_wall_sec"]==1800; assert o["idle_sec"]==45'; then
@@ -502,7 +510,9 @@ fail
 EOF
 : >"${PEND}/escalation.md"
 agent_mode_reset
+# shellcheck disable=SC2034  # read by the sourced agent-mode.sh
 SB_AM_NO_ESCALATE=1
+# shellcheck disable=SC2218  # real definition comes from the sourced agent-mode.sh; the later one is a stub
 agent_mode_classify_task "Implement and test." "$PEND" "claude" ""
 [[ "$SB_AM_CLASSIFIED" == "non-interactive" ]] && check "--no-escalate disables in-flight-escalate force-interactive" pass \
   || check "--no-escalate disables in-flight-escalate force-interactive" fail
@@ -735,11 +745,11 @@ if (
   export PATH="${HOSTBIN}:$PATH"
   unset SB_AGENT_HOST_ARGV_FILE
   agent_host_build_argv pi interactive "$NIFAST" "hello" permissive
-  ! printf '%s\n' "${AGENT_HOST_ARGV[@]}" | grep -qx -- '-p'
+  ! grep -qx -- '-p' <<<"$(printf '%s\n' "${AGENT_HOST_ARGV[@]}")"
 ) && (
   export PATH="${HOSTBIN}:$PATH"
   agent_host_build_argv pi non-interactive "$NIFAST" "hello" permissive
-  printf '%s\n' "${AGENT_HOST_ARGV[@]}" | grep -qx -- '-p'
+  grep -qx -- '-p' <<<"$(printf '%s\n' "${AGENT_HOST_ARGV[@]}")"
 ); then
   check "Pi interactive argv has no -p; NI argv has -p" pass
 else
@@ -748,11 +758,11 @@ fi
 if (
   export PATH="${HOSTBIN}:$PATH"
   agent_host_build_argv cursor interactive "$NIFAST" "hello" permissive
-  ! printf '%s\n' "${AGENT_HOST_ARGV[@]}" | grep -qx -- '--print'
+  ! grep -qx -- '--print' <<<"$(printf '%s\n' "${AGENT_HOST_ARGV[@]}")"
 ) && (
   export PATH="${HOSTBIN}:$PATH"
   agent_host_build_argv cursor non-interactive "$NIFAST" "hello" permissive
-  printf '%s\n' "${AGENT_HOST_ARGV[@]}" | grep -qx -- '--print'
+  grep -qx -- '--print' <<<"$(printf '%s\n' "${AGENT_HOST_ARGV[@]}")"
 ); then
   check "Cursor interactive argv has no --print; NI argv has --print" pass
 else
@@ -770,9 +780,11 @@ got="$(agent_delegate_quota_retry_max AGENT_CLAUDE_QUOTA_RETRY_MAX 5)"
 [[ "$got" == "0" ]] && check "pinned NI quota-retry max defaults to 0" pass \
   || check "pinned NI quota-retry max defaults to 0" fail
 agent_mode_reset
+# shellcheck disable=SC2034  # read by the sourced agent-delegate-common.sh
 SB_AM_CONCRETE_PIN=1
 SB_AM_REQUESTED="non-interactive"
 SB_AM_RESOLVED="non-interactive"
+# shellcheck disable=SC2034  # read by the sourced agent-delegate-common.sh
 SB_AM_QUOTA_RETRY=1
 got="$(agent_delegate_quota_retry_max AGENT_CLAUDE_QUOTA_RETRY_MAX 5)"
 [[ "$got" == "5" ]] && check "--quota-retry restores default max on pinned NI" pass \

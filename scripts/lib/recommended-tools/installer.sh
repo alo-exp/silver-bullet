@@ -22,7 +22,7 @@ rt_deploy_toolstack_scripts() {
   ts_dir="$(rt_installer_toolstack_dir)"
   ts_lib="${ts_dir}/lib"
   mkdir -p "$ts_dir" "$ts_lib" 2>/dev/null || true
-  local f base
+  local f
   for f in common.sh shell-compression.sh graphify-gate.sh agentmemory-gate.sh \
     rtk-gate.sh context-mode-gate.sh token-compression-tools-gate.sh \
     stack-compression-coordinator.sh session-bootstrap.sh \
@@ -66,6 +66,7 @@ rt_deploy_reconciler_snapshots() {
   return 0
 }
 
+# shellcheck disable=SC2120  # optional root; defaults to SB_RECONCILE_PROJECT_ROOT
 rt_installer_resolve_project_root() {
   local explicit="${1:-${SB_RECONCILE_PROJECT_ROOT:-}}"
   if [[ -n "$explicit" && -f "${explicit}/.silver-bullet.json" ]]; then
@@ -157,7 +158,7 @@ rt_installer_post_install() {
   local out rc=0
   out="$(rt_installer_run_reconcile "$repo_root" "$project_root" "$scope" apply 2>&1)" || rc=$?
   printf '%s\n' "$out"
-  if printf '%s' "$out" | grep -q 'RESTART_REQUIRED: yes'; then
+  if grep -q 'RESTART_REQUIRED: yes' <<<"$out"; then
     restart=true
   fi
   rt_emit_reload_notice "$restart"

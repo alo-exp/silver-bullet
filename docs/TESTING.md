@@ -1,186 +1,118 @@
-# Testing Strategy and Plan
+# Testing
 
-## Testing Pyramid
+Silver Bullet's code is Bash hooks and scripts, Python helpers and generators, JSON configuration and packaging glue — no application server or database. Almost everything is covered by fast offline tests that pipe JSON into hooks or run scripts against temporary directories. Live suites that drive real host CLIs and models are separate and opt-in.
 
-```
-    / Static assertions \   JSON config validation, template parity, doc content grep
-   / Hook unit tests    \   Bash test scripts per hook in tests/hooks/
-  / Manual smoke tests  \   /sb:init setup on a fresh project
-```
+## Test Layout
 
-Silver Bullet's test surface is primarily shell hooks, JSON configuration, and packaging
-glue — no application server, no database, no frontend. The bulk of coverage is fast static
-and unit tests, plus a shared live matrix that exercises the real Kay-backed Codex-compatible path.
+| Path | Contents | In the default run? |
+|------|----------|---------------------|
+| `tests/hooks/` | Hook unit tests, one or more per hook (`test-<hook>.sh`); `tests/hooks/helpers/` holds shared fixtures | Yes — *Hook Unit Tests* |
+| `tests/scripts/` | Script unit and contract tests: installers, generators, validators, site checks, release-identity parity, skill scenario coverage, and wrappers for the skills' Python suites | Yes — *Script Unit Tests* |
+| `tests/integration/` | Multi-hook scenarios (session lifecycle, enforcement gates, devops cycle, skill tracking) and `coverage-matrix.sh`, which fails when a hook registered in `hooks/hooks.json` is not referenced by any test | Yes — *Integration Scenario Tests* + *Coverage Matrix* |
+| `tests/lib/` | `testlib.sh`, the shared helper library, and its self-test | Yes — *Test Harness Tests* |
+| `tests/coverage/` | Coverage tooling (`run-coverage.sh`, `sbcov.py`, `bash-env.sh`, `scope.json`) and its calibration self-test | Yes — *Test Harness Tests* |
+| `tests/python/` | Python unit tests for repository Python code (`unittest`; `sbtest.load_module` imports hyphenated or package-less scripts by path) | Yes — via `tests/scripts/test-python-unit.sh` |
+| `tests/js/` | JavaScript/TypeScript unit tests (`*.test.mjs`, Node's built-in `node:test`); the directory appears with its first test | Yes — via `tests/scripts/test-js-unit.sh`, which reports 0/0 when there are no tests and skips without `node` |
+| `tests/docs/` | Documentation checks: doc scheme, relative links, stated counts, hook reference freshness | Yes — *Documentation Tests* |
+| `tests/e2e-live/` | Live E2E harness (`run-e2e-live-tests.sh`, `scenarios/`) plus offline sanity tests of the harness itself | Sanity tests only — *E2E Live Harness Tests* |
+| `tests/tui-contract/` | `expect`-driven contracts for interactive host prompts (folder trust, bypass and API-key disclaimers, blocking-decision picker); fail without `expect` | Yes — *TUI Contract Tests* |
+| `tests/live/` | Live AI matrix (`run-live-tests.sh`): enforcement, skill recording, doc scheme, review-fix ladder, init migration, five-tool stack | No |
+| `tests/enterprise-e2e-live/` | Structural checks for the operator-only enterprise E2E matrix | Only with `SB_ENTERPRISE_E2E_LIVE=1` |
+| `tests/skill-scenarios/` | One scenario fixture per skill (trigger phrase and workflow), plus capability fixtures | Checked by `tests/scripts/test-sb-skill-scenario-coverage.sh` |
+| `tests/fixtures/` | Shared JSON fixtures (model catalogs, quotas, scheduler, recommended tools) | — |
+| `skills/*/tests/` | Python `unittest` suites for skills with Python helpers (`silver-deep-research`, `silver-deep-research-multi-ai`, `silver-multi-ai-task`) | Via `tests/scripts/test-solution-research-python.sh` and `tests/scripts/test-multi-ai-deep-research-contract.sh` |
 
-## Test Classification
+The manual `/sb:init` smoke protocol lives in [testing/MANUAL-E2E-SMOKE-TEST.md](testing/MANUAL-E2E-SMOKE-TEST.md); the other files under `docs/testing/` are runbooks and registries for the release and enterprise suites.
 
-| Type | What | Location | Speed |
-|------|------|----------|-------|
-| **Static — JSON** | Validate `required_deploy`/`all_tracked` correctness; ensure config template mirrors live config | CI step / jq assertions | <1s |
-| **Static — template parity** | `diff docs/workflows/ templates/workflows/` byte-for-byte | CI step | <1s |
-| **Static — doc content grep** | Assert REQUIRED markers and skill names in workflow files | CI step | <1s |
-| **Hook unit — bash** | Each hook exercised with mocked state; verify correct output per scenario | `tests/hooks/test-*.sh` | <5s each |
-| **Script unit — bash** | Semantic compress, TF-IDF rank, extract-phase-goal | `tests/scripts/test-*.sh` | <10s each |
-| **Generic five-tool runtime** | No-SB install/validate/repair, legacy migration, one-instance coordination, five projections, and Windows launcher/path fixtures | `tests/scripts/test-generic-five-tool-runtime.sh` | <2s |
-| **Codex package sync/install** | SB-only Codex bundle, marketplace registration, dependency bootstrap, legacy skill purge | `scripts/install-codex.sh`, `scripts/sync-codex-package.sh` | <10s each |
-| **Live AI matrix** | Shared scenario suite on the Kay agent adapter using the Codex-compatible hook surface | `tests/live/run-live-tests.sh` | 5-15 min |
-| **Live enterprise E2E** | Kay hook-delivery diagnostic against the standalone sibling `enterprise-grade-test-app` repo; full workflow matrix via Claude supervised sessions | `tests/e2e-live/run-e2e-live-tests.sh` + `.planning/enterprise-e2e/` | 10-30 min (Kay) / multi-day (Claude matrix) |
-| **Manual smoke** | Run `/sb:init` on a clean project; verify enforcement activates | Human | 5-10 min |
-
-## Coverage Goals
-
-| Component | Target | Current |
-|-----------|--------|---------|
-| `record-skill.sh` | 100% of skip/record paths | Covered by compliance-status tests (indirect) |
-| `dev-cycle-check.sh` | 100% of Stage A/B/C/D + legacy trivial-marker compatibility | **Covered** by `tests/hooks/test-dev-cycle-check.sh` |
-| `compliance-status.sh` | Key progress calculation paths | Covered via integration patterns |
-| `completion-audit.sh` | block vs. pass for each required skill group | Partial |
-| `verify-tests.sh` | Configured commands, stack fallback, marker write, failure path | **Covered** by `tests/hooks/test-verify-tests.sh` |
-| `ci-status-check.sh` | failed/passing/missing CI output | 100% (`test-ci-status-check.sh`) |
-| SB Codex packaging | package scope, marketplace registration, dependency bootstrap | 100% (`test-install-codex.sh`, `test-sync-codex-package.sh`) |
-| Live Kay matrix | shared scenarios, isolated Kay adapter, release-gate hook enforcement | 100% (`tests/live/run-live-tests.sh`) |
-| Live enterprise E2E | Kay hook-failure diagnostic on `enterprise-grade-test-app`; Claude supervised 22-row matrix is the canonical full-surface gate | Kay: `tests/e2e-live/run-e2e-live-tests.sh`; Claude: `.planning/enterprise-e2e/` |
-| JSON config correctness | required_deploy + all_tracked exact-match assertions | ✅ CI enforced (v0.26.0) |
-| Template parity | docs/ == templates/ | ✅ CI enforced (v0.26.0) |
-| Release identity parity | package, plugin, marketplace, config, catalog, README, and security support series | **Covered** by `tests/scripts/test-release-version-alignment.sh` |
-| Documentation governance | unique live-guidance inventory, exact task-checklist coverage, historical-evidence exclusion | **Covered** by `tests/docs/test-documentation-scheme.sh` |
-| Generic five-tool runtime | manifest schema, idempotent repair, host projections, Windows fixtures | **Covered** by `tests/scripts/test-generic-five-tool-runtime.sh` |
-
-## Silver Bullet Test Execution Gate
-
-Silver Bullet treats test execution as a freshness-gated step, not just a planning note.
-
-- Run `/verify-tests` after the last source change and before `gh pr create`, deploy, or `gh release create`
-- The skill executes `.silver-bullet.json` `verify_commands` when present, otherwise it falls back to stack defaults such as `tests/run-all-tests.sh`, `npm test`, `pytest`, `cargo test`, or `go test ./...`
-- `tests/run-all-tests.sh` invokes each `test-*.sh` with `</dev/null` so hooks that read stdin do not hang when the runner captures output via command substitution (fixed v0.39.2 — without the redirect, `input=$(cat)` in hook tests blocks the full 3000+ test suite indefinitely in agent shells)
-- The aggregate runner counts a non-zero test-file exit even when that file terminates before printing a `Results:` summary; suite totals cannot silently report green after an early failure.
-- Default structural tests are hermetic. Assertions against the live sibling enterprise fixture are opt-in with `SB_TEST_ENTERPRISE_FIXTURE_STATE=1`; live/certification gates own external branch state.
-- Tri-host install smoke must leave generated runtime mirrors unchanged. Installer caches dereference package symlinks outside the source checkout.
-- Manifest-generator tests write to temporary output directories; frozen historical audit manifests are validation inputs, not mutable test fixtures.
-- On success, the skill writes `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/verify-tests-state`
-- `completion-audit.sh` blocks final delivery if the marker is missing after `/verify-tests` was recorded, and `dev-cycle-check.sh` invalidates the marker whenever source edits land
-
-### `run-all-tests.sh` stdin redirect (v0.39.2)
-
-`tests/run-all-tests.sh` captures per-test output with:
+## Running Tests
 
 ```bash
-output=$(bash "$test_file" </dev/null 2>&1)
+bash tests/run-all-tests.sh                  # every default suite
+bash tests/run-all-tests.sh --jobs 4         # run test files in parallel (or SB_TEST_JOBS=4)
+bash tests/run-all-tests.sh --suite hooks    # suites whose directory matches (repeatable)
+bash tests/run-all-tests.sh tests/hooks/test-ci-status-check.sh tests/docs/test-doc-links.sh
+bash tests/run-all-tests.sh --list           # print "suite<TAB>file" and exit
+bash tests/run-all-tests.sh --help
 ```
 
-Without `</dev/null`, the subshell inherits the parent agent shell's open stdin. Hook tests that read input via `input=$(cat)` block indefinitely and the 3000+ test suite appears hung. Individual hook tests should pipe explicit JSON when exercising stdin paths.
+The `Makefile` wraps the same commands:
 
-## Phase 2 — New Test Requirements
+| Target | Runs |
+|--------|------|
+| `make setup` | Checks required tools (`bash git jq python3 rsync`; warns about `shellcheck expect tmux node`) and runs `python3 -m pip install -r requirements-dev.txt` |
+| `make lint` | `bash -n` over every shell source, `jq empty` over the manifests and config, then `shellcheck --exclude=SC2317,SC1091,SC2329` over hooks and scripts |
+| `make test` | `bash tests/run-all-tests.sh --jobs $(JOBS)` (default 4); `SUITE=hooks make test` limits it |
+| `make coverage` | `bash tests/coverage/run-coverage.sh --jobs $(JOBS)`; `FAIL_UNDER=100 make coverage` adds a threshold |
+| `make check` | `make lint` and `make test` — what a pull request must pass |
+| `make sync-check` | `bash scripts/sync-runtime-mirrors.sh --check` and `bash scripts/validate-plugin-mirror.sh` |
 
-> **Status:** Priorities 1 and 2 implemented in v0.26.0 (CI-02 and CI-01). Priority 3 remains open (SB-B-3 backlog).
+Suites run in this order: Hook Unit Tests (`hooks`), Script Unit Tests (`scripts`), Integration Scenario Tests (`integration`), Test Harness Tests (`lib`, `coverage`), Documentation Tests (`docs`), E2E Live Harness Tests (`e2e-live`), TUI Contract Tests (`tui-contract`), then the Coverage Matrix. `--suite` matches directory names, so `--suite docs` runs only `tests/docs/`. The coverage matrix runs only on a full run (no `--suite`, no explicit files). Results print in a stable order even with `--jobs`, followed by the five slowest files and a `TOTAL: N passed, M failed (x/y suites green)` line. The exit status is non-zero when any test fails.
 
-### Priority 1: Config JSON CI assertions (score 35) ✅ Done — v0.26.0
-```yaml
-- name: Validate required_deploy contents
-  run: |
-    jq -e '.skills.required_deploy | contains(["tdd","verify-tests"])' \
-      .silver-bullet.json
-    jq -e '.skills.required_deploy | contains(["accessibility-review"]) | not' \
-      .silver-bullet.json
-    jq -e '.skills.all_tracked | contains(["tdd","silver-bootstrap-project","silver-orient"])' \
-      .silver-bullet.json
+A single test file can also be run directly (`bash tests/hooks/test-uat-gate.sh`), but then it sees your real `HOME` and tools; going through the runner gives it the sandbox below.
 
-- name: Config template parity
-  run: |
-    diff <(jq '.skills' .silver-bullet.json) \
-         <(jq '.skills' templates/silver-bullet.config.json.default)
-```
+### Isolation
 
-### Priority 2: Template parity CI step (score 30) ✅ Done — v0.26.0
-```yaml
-- name: Workflow template parity
-  run: |
-    diff docs/workflows/full-dev-cycle.md templates/workflows/full-dev-cycle.md
-    diff docs/workflows/devops-cycle.md templates/workflows/devops-cycle.md
-```
+The runner is the local equivalent of CI because it isolates each test file:
 
-### Priority 3: `dev-cycle-check.sh` unit tests (score 24) ✅ Done
-`tests/hooks/test-dev-cycle-check.sh` covers the full gate matrix:
-1. Stage A blocks if `quality-gates` is absent from state
-2. Stage A warns and allows when the required skill is unavailable anywhere invocable
-3. Stage A and Stage B both block source edits when planning is incomplete
-4. Phase-skip detection warns when finalization skills appear before `/sb:review` while still allowing fixes
-5. Stage C allows edits once `silver-review` is done and finalization remains
-6. Stage D allows edits once all required skills are present
-7. Trivial file bypass never blocks, regardless of state
-8. State tamper, plugin boundary, and devops-cycle regressions are covered in the same suite
+- **Own `HOME` and `TMPDIR`.** Every test file runs with a fresh temporary `HOME` and `TMPDIR`, so runtime state under `~/.claude`, `~/.codex` or `~/.cursor` never touches your real home. `SB_RUNTIME_*`, `SILVER_BULLET_STATE_FILE`, `SILVER_BULLET_BRANCH_FILE` and `XDG_*` are unset and the runtime paths are recomputed inside the sandbox. `PYTHONUSERBASE` is pinned first so user-installed Python packages still import.
+- **Hidden host tools.** Optional tools are removed from `PATH` so results do not depend on what is installed locally. The default hidden set is `graphify agentmemory iii context-mode rtk lean-ctx claude codex cursor-agent agent opencode pi kay gh alumnium search uv uvx pipx brew`. Set `SB_TEST_HOST_TOOLS=1` to keep them visible, or `SB_TEST_HIDE_TOOLS="a b c"` to choose the hidden set.
+- **Runtime defaults.** `SILVER_BULLET_RUNTIME` defaults to `claude`, as do `SB_LIVE_AGENT`, `SB_E2E_LIVE_AGENT`, `SB_LIVE_RUNTIMES` and `SB_E2E_LIVE_RUNTIMES`. When neither `LANG` nor `LC_ALL` is set, the runner exports `LANG=C.UTF-8`, as on CI.
+- **Closed stdin.** Each file runs with `</dev/null`, so hooks that read stdin cannot hang the run; tests that exercise stdin pipe explicit JSON.
+- **Failure accounting.** A test file that exits non-zero counts as a failure even if it never printed a `Results:` line.
 
-## Live AI Matrix (separate suite)
+Opt-in additions: `SB_ENTERPRISE_E2E_LIVE=1` adds `tests/enterprise-e2e-live/`; `SB_FIVE_TOOL_LIVE=1` adds `tests/live/test-live-five-tool-stack-cursor.sh` (the pre-release gate runs `tests/scripts/test-five-tool-prerelease-cursor.sh` instead).
 
-Not part of CI — run manually with real model/API usage via
-`tests/live/run-live-tests.sh`.
+### The verify-tests gate
 
-| Test file | What it covers |
-|-----------|---------------|
-| `tests/live/test-live-enforcement.sh` | S1-S4 enforcement scenarios (blocking, planning gate, forbidden skills, stop-check) |
-| `tests/live/test-live-skill-recording.sh` | S5-S6 skill recording and compliance-status output |
-| `tests/live/test-live-full-scenario.sh` | S7-S8 session initialization and abbreviated SDLC lifecycle |
-| `tests/live/test-live-doc-scheme.sh` | Doc scaffolding from scratch, finalization appends, CHANGELOG prepend, INDEX.md update, learnings portability, monthly boundary freeze |
-| `tests/live/test-silver-init-migration.sh` | On-demand doc-scheme migration test: no-docs skip, unrecognized files skip, architecture doc detection, skip option, backup + rename, knowledge/learnings split |
+`/verify-tests` (`bash scripts/verify-tests.sh`) runs the project's `verify_commands` from `.silver-bullet.json`, or a stack default (`bash tests/run-all-tests.sh` when that file exists, then `npm test --if-present`, `pytest`, `cargo test`, `go test ./...`). On success it writes `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/verify-tests-state`. `dev-cycle-check.sh` deletes that marker whenever a source edit lands, and `completion-audit.sh` blocks final delivery when `verify-tests` was recorded but the marker is missing. Run it after the last source change and before `gh pr create`, deploy or `gh release create`.
 
-The suite invokes Kay through the Codex-compatible adapter in
-`tests/live/agents/` by default. The standard combination is
-MiniMax.io + `MiniMax-M3` + low reasoning in isolated envs.
-Claude or native Codex runs are optional diagnostics only when explicitly
-requested.
+## Writing Tests
 
-The live enterprise E2E suite is separate. It uses the standalone sibling
-`enterprise-grade-test-app` repo for Kay hook-delivery diagnostics and writes its own
-`e2e-live-matrix` marker. The **canonical full-surface gate** is the Claude supervised
-22-row workflow matrix (`.planning/enterprise-e2e/CLAUDE-TUI-PROTOCOL.md`,
-`enterprise-grade-test-app/docs/WORKFLOW_E2E_MATRIX.md`).
+Conventions every test file follows:
 
-The legacy Kay inline todo-app full-surface journey is retired from the default
-scenario list. Set `SB_E2E_LIVE_INCLUDE_LEGACY_JOURNEY=1` to run the archived script.
+- Name it `test-<subject>.sh` in the suite directory; the runner picks up `test-*.sh` only.
+- Print one `PASS: ...` or `FAIL: ...` line per check and finish with `Results: N passed, M failed`; exit non-zero when anything failed. The runner sums the last `N passed` / `M failed` it finds.
+- Work in temporary directories and leave the repository tree clean. Point `SILVER_BULLET_STATE_FILE` (and `SILVER_BULLET_BRANCH_FILE` for session tests) at paths under `${SB_RUNTIME_HOME_ROOT}/`; hooks reject state paths outside it.
+- Invoke hooks by piping the host JSON payload on stdin, as the host does. A hook only acts inside an SB project, so create `.silver-bullet.json` and `silver-bullet.md` in the test project.
+- Stay hermetic: no network, no real `gh` (use overrides such as `GH_STATUS_OVERRIDE` or `GH_RUN_LIST_OVERRIDE`), no dependence on the developer's home directory. Assertions against the live sibling enterprise fixture are opt-in with `SB_TEST_ENTERPRISE_FIXTURE_STATE=1`.
+- Generator tests write to temporary output directories; frozen audit manifests are inputs, not fixtures to rewrite.
 
-The Kay diagnostic path verifies hook delivery against `api/src/health.js` in the
-enterprise fixture. Release gates accept either Kay `matrix=codex-only` markers from
-this suite or Claude supervised matrix evidence recorded in round ledgers.
-
-The separate `tests/live/test-silver-init-migration.sh` scenario exercises the
-Step 3.5.5 delegation path where `sb:init` hands docs bootstrap/reconciliation
-to `sb:ensure-docs`. It validates the brownfield preserve-vs-switch behavior,
-archive-move policy, and recovery/remediation command paths.
-
-## Skill Scenario Coverage
-
-The skill scenario coverage test validates that each SB-owned source skill has a scenario fixture under `tests/skill-scenarios/`.
-
-### Test Classification
-
-| Type | What | Location | Speed |
-|------|------|----------|-------|
-| **Skill scenario tests** | Each skill has documented trigger + workflow | `tests/skill-scenarios/*.md` | <5s |
-| **Coverage guard** | Every source skill has a scenario fixture | `tests/scripts/test-sb-skill-scenario-coverage.sh` | <5s |
-
-### Coverage Contract
-
-Every source `skills/*/SKILL.md` must have a matching scenario fixture. The scenario directory may also contain capability-level fixtures, so its raw file count is not a canonical skill count. `tests/scripts/test-sb-skill-scenario-coverage.sh` computes coverage from the current source tree and fails on a missing source-skill scenario.
-
-### Running the Harness
+New tests can use `tests/lib/testlib.sh`:
 
 ```bash
-bash tests/scripts/test-sb-skill-scenario-coverage.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
+tl_init                                   # sandbox HOME + temp dir, counters, cleanup trap
+tl_git_repo "$TL_TMP/project"             # git repo with one commit on feature/test
+tl_stub gh 'echo "[]"'                    # fake command first on PATH
+tl_run_hook hooks/ci-status-check.sh "$(tl_hook_json PreToolUse Bash 'git push')"
+assert_eq "hook exits 0" 0 "$TL_STATUS"
+assert_not_contains "push not denied without CI runs" "$TL_OUT" '"permissionDecision":"deny"'
+tl_results                                # prints the Results line; non-zero on failure
 ```
 
-### Skill Trigger Examples
+| Helper | Purpose |
+|--------|---------|
+| `tl_init [runtime]` | Create the sandbox (`TL_TMP`, `TL_BIN`, `HOME`), recompute runtime paths, install the cleanup trap |
+| `tl_run <cmd...>`, `tl_run_stdin <input> <cmd...>` | Run a command, capturing `TL_OUT`, `TL_ERR` and `TL_STATUS` |
+| `tl_run_hook <hook> <json>` | Run a hook (path relative to the repo or absolute) with JSON on stdin |
+| `tl_hook_json <event> <tool> [command-or-path] [extra-json]` | Build a hook payload |
+| `tl_stub <name> <body>` | Install a fake executable first on `PATH` |
+| `tl_path_without <cmd...>` | Print a `PATH` under which the named commands are absent |
+| `tl_git_repo <dir>` | Initialise a git repo with one commit on `feature/test` |
+| `assert_eq`, `assert_contains`, `assert_not_contains`, `assert_match`, `assert_file_exists`, `assert_file_absent` | Assertions; each records a pass or fail |
+| `tl_pass`, `tl_fail`, `tl_results` | Manual results and the final summary line |
 
-| Skill | Trigger Phrase |
-|-------|---------------|
-| `silver-feature` | "I need to add a feature" |
-| `silver-bugfix` | "The delete button doesn't work" |
-| `tdd` | "Add feature using TDD" |
-| `silver-execute` | "Implement the endpoint" |
-| `silver-secure` | "Audit API for vulnerabilities" |
+Older tests carry their own small helpers (for example `tests/hooks/helpers/common.sh` and `tests/integration/helpers/common.sh`); keep their conventions when you extend them.
 
-### Adding New Skill Scenarios
+### Python and JavaScript unit tests
 
-Create `tests/skill-scenarios/{skill-name}.md`:
+Unit tests for Python code go in `tests/python/test_*.py` (standard `unittest`). Import repository scripts with `sbtest.load_module("scripts/some-script.py")`, which handles hyphenated names and sibling imports. `tests/scripts/test-python-unit.sh` runs the discovery and converts the result into a `Results:` line. Skills with their own Python helpers keep their suites under `skills/<name>/tests/`.
+
+JavaScript and TypeScript tests go in `tests/js/*.test.mjs` and use Node's built-in `node:test`; `tests/scripts/test-js-unit.sh` runs them with the TAP reporter. During coverage runs it also writes LCOV for `site/**/*.js` and `scripts/**/*.{mjs,ts}`.
+
+### Skill scenarios
+
+Every `skills/*/SKILL.md` needs a fixture `tests/skill-scenarios/<skill-name>.md`; `tests/scripts/test-sb-skill-scenario-coverage.sh` computes coverage from the source tree and fails on a missing one. The directory may also hold capability-level fixtures, so its file count is not a skill count.
 
 ```markdown
 # {Skill Name} Skill Scenario
@@ -195,42 +127,47 @@ Create `tests/skill-scenarios/{skill-name}.md`:
 **Workflow:**
 1. Step one
 2. Step two
-3. Step three
 ```
 
-The harness checks for scenario file existence — if found, skill shows ✓ in test output.
-
-## Skip Policy
-
-Do **not** test:
-- The markdown prose inside workflow/skill files (no executable logic)
-- Third-party plugin hooks (GSD, Superpowers enforce their own behavior)
-- Trivial config scaffolding (placeholder presence is already tested in CI)
-
-## Session note (2026-06-14)
-
-Doc-scheme gate remediation for `phase-056-zuvo-runtime-parity-release` in a Cursor session did not change test commands, harness layout, or coverage targets; prior v0.39.2 `run-all-tests.sh` stdin guidance remains authoritative.
-
-## Doc-scheme session (2026-06-14)
-
-Task `phase-056-zuvo-runtime-parity-release`: v0.40.0 shipped (phase 056 runtime parity, phase 057 Cursor marketplace, site refresh). Doc-scheme gate refreshed in Cursor runtime (`~/.cursor/.silver-bullet`).
-
-
-## Cursor runtime bootstrap (v0.40.0 / phase 057)
-
-Phase 057 adds targeted coverage for the Cursor host adapter:
-
-| Area | What it proves | Location |
-|------|----------------|----------|
-| Runtime paths | `$HOME/.cursor/.silver-bullet` state + hook manifest resolution | `tests/hooks/test-runtime-paths.sh` (cursor cases) |
-| Bootstrap / install | Marketplace sync, plain-file template layout, local git identity on CI | `tests/hooks/test-cursor-runtime-bootstrap.sh` |
-| Hook bridge | Cursor `exec_command` / patch events reach SB PreToolUse hooks | `tests/hooks/test-cursor-hook-bridge.sh` |
-
-Run the focused slice before release:
+## Coverage
 
 ```bash
-bash tests/hooks/test-cursor-runtime-bootstrap.sh
-bash tests/hooks/test-cursor-hook-bridge.sh
+python3 -m pip install -r requirements-dev.txt     # or: make setup (coverage tooling is pinned in tests/coverage/requirements.txt)
+bash tests/coverage/run-coverage.sh                # full suite with coverage (or: make coverage)
+bash tests/coverage/run-coverage.sh tests/hooks/test-ci-status-check.sh --show-missing
+bash tests/coverage/run-coverage.sh --suite hooks --jobs 4 --only 'hooks/*' --fail-under 80
 ```
 
-Full suite still gates delivery via `/verify-tests` → `tests/run-all-tests.sh` (stdin closed per test).
+`run-coverage.sh` runs `tests/run-all-tests.sh` (all of it, selected suites, or given files) with tracing enabled, then prints a per-file table and totals. Options: `--cov-dir DIR` (default `.coverage-run/`, git-ignored), `--keep` (add to an existing run), `--only GLOB` (limit the report), `--show-missing`, `--fail-under PCT` (fail if any metric is below), `--no-report`, and `--jobs`/`--suite` passed through to the runner. The full results are written to `coverage-summary.json` and `coverage-summary.md` in the coverage directory.
+
+**Metrics.** Bash files report statements, lines and functions; Python files report statements and branches; JavaScript/TypeScript files report lines, functions and branches from Node's LCOV output. `--fail-under` applies to every metric.
+
+**How it works.** `tests/coverage/bash-env.sh` is exported as `BASH_ENV`, so every bash process started during the run turns on xtrace into a per-process trace file. `tests/coverage/sbcov.py` analyses each script with tree-sitter-bash, lists its executable statements with their line spans and command words, and credits a statement only when a trace line falls inside its span with the same command word — so in `check || exit 1` the `exit` counts only when the error path ran. Each trace record also carries the process id, function depth and function name: runs of records are followed per process, statements whose arguments are plain literals are matched by their full words (so `cond && echo true || echo false` tells the arms apart), and records bash reports at a wrong line (commands inside a function's `< <(...)`, or after a multi-line program inside `$(...)`) are matched within their function. Python is measured with coverage.py, started in every Python subprocess through a generated `sitecustomize.py`. JavaScript coverage comes from the LCOV files `tests/scripts/test-js-unit.sh` writes, merged by `sbcov.py`. `sbcov.py` also offers `analyze`, `collect`, `report` and `annotate` subcommands.
+
+**Scope.** `tests/coverage/scope.json` defines the denominator per language: Bash and Python files under `hooks/`, `scripts/`, `skills/` and `site/` (plus `.planning/scripts/phase-lock.sh`), and JavaScript/TypeScript in `site/*.js`, `scripts/*.mjs` and `scripts/*.ts`, excluding generated mirrors (`plugins/`, `agents/`, `host-bundles/`) and test code. Each exclusion states its reason.
+
+**Limitations.** Code embedded in other languages inside a Bash file — heredoc Python, `jq` filters, `awk` programs — is not measured; neither are Tcl `expect` scripts. Browser JavaScript counts only when a `tests/js` test loads it in Node; files no test loads are listed as unmeasured with approximate line counts. Bash has no explicit branch events, so implicit-else branches (an `if` without `else` that was never false) cannot be measured; use statement coverage of both arms instead. `eval` and trap bodies may show up as unattributed hits.
+
+`tests/coverage/test-sbcov.sh` calibrates the analyzer against `tests/coverage/fixtures/` and runs in the default suite.
+
+## Live and Opt-In Suites
+
+These suites use real host CLIs, credentials and model calls. They are not part of `tests/run-all-tests.sh` or CI's required jobs.
+
+| Suite | Command | Notes |
+|-------|---------|-------|
+| Live AI matrix | `bash tests/live/run-live-tests.sh` | Runtimes from `SB_LIVE_RUNTIMES` (default `claude`; for example `SB_LIVE_RUNTIMES=codex`). Writes the `release-live-matrix` marker used by the release gate |
+| Live E2E | `bash tests/e2e-live/run-e2e-live-tests.sh` | Runtimes from `SB_E2E_LIVE_RUNTIMES` (default `claude`). Uses the sibling `enterprise-grade-test-app` fixture for hook-delivery checks and writes the `e2e-live-matrix` marker. The retired todo-app journey runs only with `SB_E2E_LIVE_INCLUDE_LEGACY_JOURNEY=1` |
+| Runtime wrappers | `bash scripts/run-sb-live-tests-claude.sh`, `...-codex.sh`, `...-kay.sh` | Run both suites pinned to one runtime; the Kay wrapper selects the Kay (Codex-compatible) adapter with its own model and provider defaults |
+| Release live matrix | `bash scripts/run-release-live-matrix.sh` | Requires a fresh `verify-tests` marker; see [RELEASE.md](RELEASE.md) |
+| Enterprise E2E | `SB_ENTERPRISE_E2E_LIVE=1 bash scripts/run-enterprise-e2e-live-test.sh` | Operator-only interactive Claude TUI matrix; [ENTERPRISE-E2E-LIVE-TEST.md](ENTERPRISE-E2E-LIVE-TEST.md) |
+| Five-tool stack (Cursor) | `SB_FIVE_TOOL_LIVE=1 SB_FIVE_TOOL_LIVE_EXECUTE=1 SB_FIVE_TOOL_MODE=full bash tests/run-all-tests.sh` | Needs `cursor-agent`; the pre-release gate runs the targeted check |
+| RC validation matrix | `bash scripts/run-rc-validation-matrix.sh` | Six cells (cursor, codex, claude × fresh/upgrade) on the operator machine; [testing/RC-VALIDATION-MATRIX.md](testing/RC-VALIDATION-MATRIX.md) |
+
+Model selection belongs to the host; see [RUNTIME-COMPATIBILITY.md](RUNTIME-COMPATIBILITY.md#model-selection-boundary).
+
+## What Not to Test
+
+- The prose inside workflow and skill files (no executable logic) beyond the structural checks that already exist
+- Third-party plugin hooks, which enforce their own behaviour
+- Placeholder presence in config scaffolding, which CI already checks

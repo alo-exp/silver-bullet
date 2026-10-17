@@ -25,7 +25,6 @@ FAIL=0
 # ── Test infrastructure ───────────────────────────────────────────────────────
 SB_TEST_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet"
 mkdir -p "$SB_TEST_DIR"
-TEST_RUN_ID="$$"
 SPEC_SESSION_FILE="${SB_TEST_DIR}/spec-session"
 
 cleanup_all() {
@@ -56,7 +55,7 @@ assert_passes() {
   local label="$1"
   local output="$2"
   # passes = not blocked (no deny/block in output)
-  if ! printf '%s' "$output" | grep -qE '"decision"\s*:\s*"block"|"permissionDecision"\s*:\s*"deny"'; then
+  if ! grep -qE '"decision"\s*:\s*"block"|"permissionDecision"\s*:\s*"deny"' <<<"$output"; then
     echo "  ✅ $label"
     PASS=$((PASS + 1))
   else
@@ -69,7 +68,7 @@ assert_contains() {
   local label="$1"
   local output="$2"
   local needle="$3"
-  if printf '%s' "$output" | grep -q "$needle"; then
+  if grep -q "$needle" <<<"$output"; then
     echo "  ✅ $label"
     PASS=$((PASS + 1))
   else

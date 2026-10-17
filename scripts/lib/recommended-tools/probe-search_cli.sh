@@ -58,7 +58,7 @@ rt_probe_search_cli_providers() {
   # Never dump config secrets or API keys.
   local out
   out="$(search config check </dev/null 2>/dev/null || true)"
-  if printf '%s' "$out" | grep -qiE '(:[[:space:]]*set\b|\bok\b|configured)'; then
+  if grep -qiE '(:[[:space:]]*set\b|\bok\b|configured)' <<<"$out"; then
     return 0
   fi
   return 1

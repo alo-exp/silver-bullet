@@ -18,12 +18,12 @@ assert_eq() {
 
 assert_contains() {
   local desc="$1" needle="$2" haystack="$3"
-  printf '%s' "$haystack" | grep -qF "$needle" && pass "$desc" || fail "$desc"
+  grep -qF "$needle" <<<"$haystack" && pass "$desc" || fail "$desc"
 }
 
 assert_not_contains() {
   local desc="$1" needle="$2" haystack="$3"
-  printf '%s' "$haystack" | grep -qF "$needle" && fail "$desc" || pass "$desc"
+  grep -qF "$needle" <<<"$haystack" && fail "$desc" || pass "$desc"
 }
 
 [[ -x "$INSTALLER" ]] && pass "installer executable" || fail "installer executable"
@@ -108,11 +108,19 @@ done
 [[ "$fast_found" -eq 0 ]] && pass "AC-10 no fast agents by default" || fail "AC-10 no fast agents by default"
 
 # AC-18: no legacy keys / sb-rfl prefix
-legacy_hits="$(rg -n 'cursor_review_fix_ladder|install-cursor-rfl|sb-rfl-' \
+# grep/python search, not rg: without rg the old check passed on an empty result.
+# shellcheck source=tests/lib/tree-search.sh
+source "$REPO_ROOT/tests/lib/tree-search.sh"
+legacy_hits="$(sb_tree_grep 'cursor_review_fix_ladder|install-cursor-rfl|sb-rfl-' \
   "$REPO_ROOT/scripts/install-cursor-sb-agents.sh" \
   "$REPO_ROOT/scripts/lib/cursor-sb-agents" \
-  "$AGENTS_DIR" 2>/dev/null || true)"
-[[ -z "$legacy_hits" ]] && pass "AC-18 no legacy keys or sb-rfl names" || fail "AC-18 no legacy keys or sb-rfl names"
+  "$AGENTS_DIR")"
+if [[ -z "$legacy_hits" ]]; then
+  pass "AC-18 no legacy keys or sb-rfl names"
+else
+  fail "AC-18 no legacy keys or sb-rfl names"
+  printf '%s\n' "$legacy_hits" | head -20
+fi
 
 # Catalog fixture has pricing fields (AC-9 partial)
 jq -e '.models[0].pricing.input' "$FIXTURE_CATALOG" >/dev/null \

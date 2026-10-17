@@ -44,8 +44,8 @@ sb_artifact_substance_gate_enforce() {
   # Only validate REVIEW when review skill was recorded this session
   local check_review=false check_verify=false
   if [[ -n "$state_contents" ]]; then
-    printf '%s\n' "$state_contents" | grep -Fqx 'silver-review' 2>/dev/null && check_review=true
-    printf '%s\n' "$state_contents" | grep -Fqx 'silver-verify' 2>/dev/null && check_verify=true
+    grep -Fqx 'silver-review' <<<"$state_contents" 2>/dev/null && check_review=true
+    grep -Fqx 'silver-verify' <<<"$state_contents" 2>/dev/null && check_verify=true
   else
     check_review=true
     check_verify=true
@@ -84,7 +84,7 @@ sb_artifact_substance_gate_enforce() {
     fi
   fi
 
-  if printf '%s\n' "$state_contents" | grep -Fqx 'silver-plan' 2>/dev/null; then
+  if grep -Fqx 'silver-plan' <<<"$state_contents" 2>/dev/null; then
     pfile="$(_sb_substance_find_artifact "$repo_root" "PLAN.md" 2>/dev/null || true)"
     if [[ -n "$pfile" ]]; then
       if _sb_substance_is_stub "$pfile"; then

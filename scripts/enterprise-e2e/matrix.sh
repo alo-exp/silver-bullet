@@ -285,7 +285,7 @@ verify_row_routing_state_delta() {
     <(printf '%s\n' "$ROUTING_STATE_SNAPSHOT" | sed '/^$/d' | sort -u) \
     <(sed '/^$/d' "$state_file" | sort -u) 2>/dev/null || true)"
   [[ -n "$new_skills" ]] || return 1
-  printf '%s\n' "$new_skills" | grep -qE '^(silver-feature|silver-fast|silver-clarify|silver-context|silver-quality-gates)$'
+  grep -qE '^(silver-feature|silver-fast|silver-clarify|silver-context|silver-quality-gates)$' <<<"$new_skills"
 }
 
 verify_row_routing_state_present() {
@@ -297,7 +297,7 @@ verify_row_routing_state_present() {
 
 verify_row_routing_output() {
   local output="$1"
-  printf '%s\n' "$output" | grep -qE 'SILVER BULLET.*ROUTING|Skill\(silver-bullet:silver-(feature|fast|clarify|context|quality-gates)'
+  grep -qE 'SILVER BULLET.*ROUTING|Skill\(silver-bullet:silver-(feature|fast|clarify|context|quality-gates)' <<<"$output"
 }
 
 verify_row_success() {
@@ -775,6 +775,7 @@ main() {
   fi
   setup_workspace
   if [[ -n "$_matrix_batch_pid_file" ]]; then
+    # shellcheck disable=SC2064  # capture the pid-file path now, as intended
     trap "rm -f '$_matrix_batch_pid_file'; cleanup_workspace" EXIT
   else
     trap cleanup_workspace EXIT

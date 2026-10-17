@@ -160,6 +160,7 @@ PY
 }
 
 # Count rows with outcome_pass for install_fp (default: current).
+# shellcheck disable=SC2120  # optional fingerprint; defaults to the current install
 enterprise_e2e_row_pass_registry_pass_count() {
   local install_fp="${1:-$(enterprise_e2e_install_fingerprint)}"
   local reg
@@ -204,13 +205,13 @@ enterprise_e2e_pilot_log_row_passed() {
     collecting { buf = buf $0 ORS }
     END { printf "%s", buf }
   ' "$log_file" 2>/dev/null || true)"
-  if printf '%s\n' "$slice" | grep -q "  FAIL:"; then
+  if grep -q "  FAIL:" <<<"$slice"; then
     return 1
   fi
-  if printf '%s\n' "$slice" | grep -q "OUTCOMES: all applicable criteria pass"; then
+  if grep -q "OUTCOMES: all applicable criteria pass" <<<"$slice"; then
     return 0
   fi
-  if printf '%s\n' "$slice" | grep -q "  PASS: evidence at"; then
+  if grep -q "  PASS: evidence at" <<<"$slice"; then
     return 0
   fi
   return 1

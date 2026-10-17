@@ -7,8 +7,8 @@ set -euo pipefail
 
 SB_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 DEFAULT_TEST_ENTERPRISE_APP_ROOT="$(cd "${SB_ROOT}/../.." && pwd)/enterprise-grade-test-app"
+# shellcheck disable=SC2034  # legacy alias kept for scripts that source this helper
 DEFAULT_TEST_TODO_APP_ROOT="$DEFAULT_TEST_ENTERPRISE_APP_ROOT"
-MAX_BUDGET="1.00"
 PASS=0
 FAIL=0
 TEST_RUN_ID="$$"
@@ -81,10 +81,12 @@ live_setup() {
   agent_preflight
   # Reset per-scenario Claude session state so fresh workspaces do not
   # accidentally inherit `--continue` from a previous live setup.
+  # shellcheck disable=SC2034  # read by the sourced tests/live/agents/claude/agent.sh
   CLAUDE_PROMPT_COUNT=0
   WORK_DIR=$(mktemp -d)
   # TMPSTATE points to REAL_STATE so assert_state_* helpers work correctly
   TMPSTATE="$REAL_STATE"
+  # shellcheck disable=SC2034  # compatibility variable for scripts that source this helper
   TMPTRIVIAL="$REAL_TRIVIAL"
 
   # Backup and clear the real state file so each test starts clean

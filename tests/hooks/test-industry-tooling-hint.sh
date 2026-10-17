@@ -50,7 +50,7 @@ run_hook() {
 
 assert_hint() {
   local label="$1" output="$2" needle="$3"
-  if printf '%s' "$output" | grep -q "$needle"; then
+  if grep -q "$needle" <<<"$output"; then
     echo "  PASS $label"
     PASS=$((PASS + 1))
   else

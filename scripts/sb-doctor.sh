@@ -242,7 +242,8 @@ doctor_generic_manifest_path() {
 }
 
 doctor_record_generic_stack() {
-  local manifest_path="$(doctor_generic_manifest_path)"
+  local manifest_path
+  manifest_path="$(doctor_generic_manifest_path)"
   if [[ ! -f "$manifest_path" ]]; then
     record warn D10-generic "generic stack absent (${manifest_path}); SB integration remains separate"
     return 0
@@ -272,7 +273,8 @@ doctor_repair_generic_stack() {
   case "${DOCTOR_FIX_SCOPE:-all}" in
     local) return 0 ;;
   esac
-  local manifest_path="$(doctor_generic_manifest_path)"
+  local manifest_path
+  manifest_path="$(doctor_generic_manifest_path)"
   local legacy_path="${HOME}/.silver-bullet/five-tool-stack/instances.json"
   local output rc=0
   output="$(PYTHONPATH="${REPO_ROOT}/scripts/lib" python3 "${REPO_ROOT}/scripts/lib/five_tool_runtime/cli.py" repair \
@@ -373,7 +375,7 @@ doctor_record_reconciler_d10() {
       ready)
         local ev
         ev="$(printf '%s' "$RECONCILER_JSON" | jq -r --arg t "$tool" '.components[]? | select(.component==$t) | .evidence[]?' 2>/dev/null || true)"
-        if printf '%s\n' "$ev" | grep -qxE 'provider_missing|version_drift|unsupported_package_manager|vendor_skip|skill_package_skew|health_identity_unproven'; then
+        if grep -qxE 'provider_missing|version_drift|unsupported_package_manager|vendor_skip|skill_package_skew|health_identity_unproven' <<<"$ev"; then
           record warn "D10-${tool}" "${tool} ready with advisory ($(printf '%s' "$ev" | paste -sd ',' -)) (activation=${activation})"
         else
           record pass "D10-${tool}" "${tool} ready (activation=${activation})"
@@ -414,9 +416,11 @@ doctor_record_reconciler_d10() {
     # Context Mode vendor doctor runs on the default D10 probe path (FAIL when
     # opted in). --deep keeps the Graphify MCP stdio handshake as WARN only.
     if command -v graphify-mcp >/dev/null 2>&1; then
-      timeout 5 graphify-mcp --transport stdio </dev/null >/dev/null 2>&1 \
-        && record pass D10-deep-graphify "graphify-mcp stdio handshake OK" \
-        || record warn D10-deep-graphify "graphify-mcp stdio handshake failed"
+      if timeout 5 graphify-mcp --transport stdio </dev/null >/dev/null 2>&1; then
+        record pass D10-deep-graphify "graphify-mcp stdio handshake OK"
+      else
+        record warn D10-deep-graphify "graphify-mcp stdio handshake failed"
+      fi
     fi
   fi
   [[ "$any_fail" -eq 0 ]]
@@ -500,7 +504,9 @@ doctor_apply_fixes() {
           cursor) bash "${REPO_ROOT}/scripts/install-cursor.sh" --merge-hooks-only >&2 || true; fixed=1 ;;
           *)
             install_script="$(doctor_host_install_script "$runtime" || true)"
-            [[ -n "$install_script" && -x "$install_script" ]] && bash "$install_script" >&2 || true
+            if [[ -n "$install_script" && -x "$install_script" ]]; then
+              bash "$install_script" >&2 || true
+            fi
             fixed=1
             ;;
         esac
@@ -980,5 +986,4 @@ main() {
   [[ "$FAIL" -eq 0 ]]
 }
 
-parse_args "$@"
-main
+main "$@"

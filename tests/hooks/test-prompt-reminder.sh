@@ -107,7 +107,7 @@ assert_contains() {
   local label="$1"
   local output="$2"
   local needle="$3"
-  if printf '%s' "$output" | grep -q "$needle"; then
+  if grep -q "$needle" <<<"$output"; then
     echo "  PASS: $label"
     PASS=$((PASS + 1))
   else
@@ -120,7 +120,7 @@ assert_not_contains() {
   local label="$1"
   local output="$2"
   local needle="$3"
-  if ! printf '%s' "$output" | grep -q "$needle"; then
+  if ! grep -q "$needle" <<<"$output"; then
     echo "  PASS: $label"
     PASS=$((PASS + 1))
   else
@@ -333,7 +333,7 @@ write_cfg
 echo "silver-quality-gates" > "$TMPSTATE"
 mkdir -p "$TMPDIR_TEST/.planning/workflows"
 out=$(run_hook)
-if printf '%s' "$out" | grep -q 'Active composed workflows'; then
+if grep -q 'Active composed workflows' <<<"$out"; then
   echo "  FAIL: WF2: empty dir should not emit position line"
   FAIL=$((FAIL+1))
 else
@@ -355,7 +355,7 @@ Last-flow: 7
 FLOW 12: VERIFY
 WFEOF
 out=$(run_hook)
-if printf '%s' "$out" | grep -q 'Composable path'; then
+if grep -q 'Composable path' <<<"$out"; then
   echo "  FAIL: WF3: legacy WORKFLOW.md still being read — Pass 1 incomplete"
   FAIL=$((FAIL+1))
 else
