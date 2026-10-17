@@ -17,12 +17,17 @@ Guidance for coding agents and contributors working in this repository. `CLAUDE.
 ## Useful Commands
 
 ```bash
+# Makefile entry points
+make setup        # prerequisite check + python3 -m pip install -r requirements-dev.txt
+make check        # lint + full suite: what a pull request must pass
+make coverage     # Bash, Python and JS/TS coverage
+
 # Full validation (the local equivalent of CI)
 bash tests/run-all-tests.sh
 bash tests/run-all-tests.sh --jobs 4 --suite hooks     # parallel, one suite
 bash tests/run-all-tests.sh tests/hooks/test-ci-status-check.sh
 
-# Coverage (needs: pip install -r tests/coverage/requirements.txt)
+# Coverage directly (needs requirements-dev.txt)
 bash tests/coverage/run-coverage.sh
 
 # Hook and script sanity checks
@@ -30,7 +35,7 @@ for f in hooks/*.sh hooks/lib/*.sh scripts/*.sh; do bash -n "$f"; done
 jq . hooks/hooks.json >/dev/null
 jq . .silver-bullet.json >/dev/null
 
-# ShellCheck, as CI runs it
+# ShellCheck with CI's exclusions (make lint fails on any finding; existing files still carry some)
 shellcheck --exclude=SC2317,SC1091,SC2329 hooks/*.sh hooks/lib/*.sh scripts/*.sh
 
 # Cursor recommended-tool rules (graphify + agentmemory + umbrella)
