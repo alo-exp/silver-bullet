@@ -115,9 +115,7 @@ assert_eq "other blocking values mean false" false "$(orch_directive_get .blocki
   [[ "$(jq -r .next_worker_template "$DIR")" == VERIFY ]]
 ) && rc=0 || rc=$?
 assert_eq "mapper is loaded on demand" 0 "$rc"
-staged="$TL_TMP/staged-lib"
-mkdir -p "$staged"
-cp "$TL_REPO_ROOT/hooks/lib/orchestrator-directive.sh" "$staged/"
+staged="$(orch_stage_libs orchestrator-directive.sh)"
 (
   unset -f sb_orchestrator_worker_template_for_skill
   # shellcheck disable=SC1091
@@ -338,7 +336,6 @@ assert_eq "args carry the ownership scope" "$TL_TMP/b" "$(jq -r '.ownership_scop
 assert_eq "delegation state activated for the host" pi "$(jq -r .host "$SB_RUNTIME_STATE_DIR/agent-delegation-active.json")"
 assert_eq "delegation work_dir is the brief's directory" "$TL_TMP/b" "$(jq -r .work_dir "$SB_RUNTIME_STATE_DIR/agent-delegation-active.json")"
 # A lib directory without the delegation state lib still writes the directive.
-cp "$TL_REPO_ROOT/hooks/lib/orchestrator-directive.sh" "$staged/"
 rm -f "$DIR" "$SB_RUNTIME_STATE_DIR/agent-delegation-active.json"
 (
   # shellcheck disable=SC1091

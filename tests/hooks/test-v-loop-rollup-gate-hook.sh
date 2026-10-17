@@ -103,10 +103,10 @@ start_site_session
 rm -f "$VLOOPS"
 tl_run_hook "$HOOK" "$(stop_json)"
 assert_eq "missing V-loop file is re-initialised and blocks" block "$(blocked)"
-assert_eq "implement step derived from the active session" done "$(jq -r '.steps[]|select(.id=="implement")|.status' "$VLOOPS")"
+assert_eq "implement step derived from the active session" "done" "$(jq -r '.steps[]|select(.id=="implement")|.status' "$VLOOPS")"
 sb_site_session_mark_visual_evidence "shots/home.png"
 tl_run_hook "$HOOK" "$(stop_json)"
-assert_eq "visual evidence file marks the visual step" done "$(jq -r '.steps[]|select(.id=="visual")|.status' "$VLOOPS")"
+assert_eq "visual evidence file marks the visual step" "done" "$(jq -r '.steps[]|select(.id=="visual")|.status' "$VLOOPS")"
 echo "=== sync failures do not break Stop ==="
 reset
 start_site_session

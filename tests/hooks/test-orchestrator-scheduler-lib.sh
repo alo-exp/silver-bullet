@@ -41,9 +41,7 @@ mkdir -p "$PROJ/docs"
 cp "$CAT" "$PROJ/docs/apo-catalog.json"
 assert_eq "env pointing at a missing file is ignored" "$PROJ/docs/apo-catalog.json" "$(SB_APO_CATALOG_FILE=/no/such sb_scheduler_catalog_file "$PROJ")"
 assert_contains "plugin catalog is the last resort" "$(unset SB_APO_CATALOG_FILE; sb_scheduler_catalog_file "")" "/../../docs/apo-catalog.json"
-stg="$TL_TMP/stg"
-mkdir -p "$stg/hooks/lib"
-cp "$TL_REPO_ROOT"/hooks/lib/*.sh "$stg/hooks/lib/"
+stg="$(dirname "$(dirname "$(orch_stage_libs orchestrator-scheduler.sh orchestrator-state.sh orchestrator-skill-atom.sh orchestrator-event-log.sh orchestrator-directive.sh orchestrator-parent.sh)")")"
 assert_eq "no catalog anywhere" 1 "$(bash -c 'unset SB_APO_CATALOG_FILE; source "$1"; sb_scheduler_catalog_file "" >/dev/null; echo $?' _ "$stg/hooks/lib/orchestrator-scheduler.sh")"
 
 echo "=== mutation scope conflicts ==="
@@ -329,7 +327,7 @@ for v in 1 true yes TRUE YES; do
 done
 assert_eq "hook-enforced tier supports parallel" 0 "$(SILVER_BULLET_TEST_HOOK_ENFORCED=1 rc_of sb_scheduler_host_supports_parallel_dispatch)"
 assert_eq "no enforced hooks: sequential" 1 "$(rc_of sb_scheduler_host_supports_parallel_dispatch)"
-assert_eq "missing tier lib: sequential" 1 "$(bash -c 'source "$1"; sb_scheduler_host_supports_parallel_dispatch; echo $?' _ "$stg/hooks/lib/orchestrator-scheduler.sh" 2>/dev/null | tail -1 | sed 's/^0$/1/')"
+assert_eq "missing tier lib: sequential" 1 "$(bash -c 'source "$1"; sb_scheduler_host_supports_parallel_dispatch; echo $?' _ "$stg/hooks/lib/orchestrator-scheduler.sh" 2>/dev/null | tail -1)"
 
 echo "=== worker template / skill for atom ==="
 assert_eq "template from worker_template" PLAN "$(sb_scheduler_worker_template_for_atom "$CAT" AF-PLAN)"

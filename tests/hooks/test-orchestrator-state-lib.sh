@@ -169,9 +169,7 @@ sb_orchestrator_seed_intent "i" silver-test ""
 unstub_jq
 assert_file_absent "state document build failure writes no state" "$STATE"
 # A lib directory without the directive lib: state is written, no directive.
-stg="$TL_TMP/stg/hooks/lib"
-mkdir -p "$stg"
-cp "$TL_REPO_ROOT/hooks/lib/orchestrator-state.sh" "$stg/"
+stg="$(orch_stage_libs orchestrator-state.sh)"
 rm -f "$STATE" "$DIRF"
 bash -c 'source "$1"; sb_orchestrator_seed_intent i silver-test ""' _ "$stg/orchestrator-state.sh"
 assert_eq "state written without the directive lib" silver-plan "$(orch_state_get .current_flow)"

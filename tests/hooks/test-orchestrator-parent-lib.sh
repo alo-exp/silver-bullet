@@ -331,9 +331,7 @@ assert_eq "delegate script without fallback" no "$(b "bash scripts/agent-codex-d
 assert_eq "read-only command allowed" yes "$(b "git status")"
 assert_eq "mutating command refused" no "$(b "rm -rf build")"
 # Without the tool-input classifier the parent has no read-only allowance.
-staged="$TL_TMP/staged"
-mkdir -p "$staged"
-cp "$TL_REPO_ROOT/hooks/lib/orchestrator-parent.sh" "$staged/"
+staged="$(orch_stage_libs orchestrator-parent.sh)"
 assert_eq "no classifier available: refused" no "$(bash -c 'source "$1"; sb_orchestrator_parent_bash_allowed "git status" && echo yes || echo no' _ "$staged/orchestrator-parent.sh")"
 
 echo "=== parent skill allowance ==="
