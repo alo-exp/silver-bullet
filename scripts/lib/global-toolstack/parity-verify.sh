@@ -41,7 +41,11 @@ for route in sb_wire sb_read sb_grep sb_shell sb_slice sb_webfetch sb_graph sb_r
     sb_remember) want=agentmemory ;;
   esac
   got="$(_jq ".routes.${route}")"
-  if [[ "$got" == "$want" ]]; then _check pass "route:${route}" "$want"; else _check fail "route:${route}" "got=${got} want=${want}"; fi
+  if [[ "$got" == "$want" ]]; then
+    _check pass "route:${route}" "$want"
+  else
+    _check fail "route:${route}" "got=${got} want=${want}"
+  fi
 done
 
 if [[ "$(_jq '.tools.graphify.graph_path')" == "graphify-out/graph.json" ]]; then _check pass graph_path ok; else _check fail graph_path "$(_jq '.tools.graphify.graph_path')"; fi
@@ -53,16 +57,28 @@ if [[ "$(_jq '.tools.agentmemory.usage_ttl_seconds')" == "1800" ]]; then _check 
 if ! jq -e '.tools.leanctx_standalone' "$TS_JSON" >/dev/null 2>&1; then _check pass no_standalone_tool absent; else _check fail no_standalone_tool "leanctx_standalone present"; fi
 
 for tool in graphify agentmemory context_mode leanctx rtk; do
-  if [[ "$(_jq ".tools.${tool}.required")" == "true" ]]; then _check pass "required:${tool}" true; else _check fail "required:${tool}" "$(_jq ".tools.${tool}.required")"; fi
+  if [[ "$(_jq ".tools.${tool}.required")" == "true" ]]; then
+    _check pass "required:${tool}" true
+  else
+    _check fail "required:${tool}" "$(_jq ".tools.${tool}.required")"
+  fi
 done
 
 for hook in session-bootstrap shell-compression graphify-gate agentmemory-gate rtk-gate context-mode-gate token-compression-tools-gate stack-compression-coordinator record-graphify-query record-agentmemory-usage; do
-  if [[ -x "${TS_DIR}/${hook}.sh" ]]; then _check pass "hook:${hook}" executable; else _check fail "hook:${hook}" missing; fi
+  if [[ -x "${TS_DIR}/${hook}.sh" ]]; then
+    _check pass "hook:${hook}" executable
+  else
+    _check fail "hook:${hook}" missing
+  fi
 done
 if [[ -f "${TS_DIR}/lib/common.sh" ]]; then _check pass common.sh present; else _check fail common.sh missing; fi
 
 for rule in graphify.mdc agentmemory.mdc leanctx.mdc context-mode.mdc token-compression-enforcement.mdc recommended-tools.mdc; do
-  if [[ -f "${HOME_CURSOR}/rules/${rule}" ]]; then _check pass "rule:${rule}" present; else _check fail "rule:${rule}" missing; fi
+  if [[ -f "${HOME_CURSOR}/rules/${rule}" ]]; then
+    _check pass "rule:${rule}" present
+  else
+    _check fail "rule:${rule}" missing
+  fi
 done
 
 if [[ -f "$MCP_JSON" ]]; then
@@ -92,8 +108,9 @@ if [[ -f "$HOOKS_JSON" ]]; then
   if grep -q 'toolstack/token-compression-tools-gate' "$HOOKS_JSON"; then _check pass hooks:token_gate wired; else _check fail hooks:token_gate missing; fi
   if grep -q 'toolstack/session-bootstrap' "$HOOKS_JSON"; then _check pass hooks:session_bootstrap wired; else _check fail hooks:session_bootstrap missing; fi
   # rtk before context-mode
-  rtk_line=$(grep -n 'rtk hook cursor' "$HOOKS_JSON" | head -1 | cut -d: -f1)
-  cm_line=$(grep -nE 'context-mode.*hook cursor pretooluse|hook cursor pretooluse.*context-mode' "$HOOKS_JSON" | head -1 | cut -d: -f1)
+  # grep exits 1 when a hook is absent; under pipefail that must not abort the scorecard.
+  rtk_line=$(grep -n 'rtk hook cursor' "$HOOKS_JSON" | head -1 | cut -d: -f1 || true)
+  cm_line=$(grep -nE 'context-mode.*hook cursor pretooluse|hook cursor pretooluse.*context-mode' "$HOOKS_JSON" | head -1 | cut -d: -f1 || true)
   if [[ -n "$rtk_line" && -n "$cm_line" && "$rtk_line" -lt "$cm_line" ]]; then
     _check pass hooks:rtk_before_cm order
   else
@@ -111,9 +128,17 @@ if command -v rtk >/dev/null 2>&1; then _check pass cli:rtk ok; else _check fail
 
 if [[ -f "$SB_JSON" ]]; then
   sb_budget="$(jq -r '.recommended_tools.graphify.query_budget // 0' "$SB_JSON")"
-  if [[ "$sb_budget" == "$(_jq '.tools.graphify.query_budget')" ]]; then _check pass parity:query_budget "$sb_budget"; else _check fail parity:query_budget "sb=${sb_budget} ts=$(_jq '.tools.graphify.query_budget')"; fi
+  if [[ "$sb_budget" == "$(_jq '.tools.graphify.query_budget')" ]]; then
+    _check pass parity:query_budget "$sb_budget"
+  else
+    _check fail parity:query_budget "sb=${sb_budget} ts=$(_jq '.tools.graphify.query_budget')"
+  fi
   sb_export="$(jq -r '.recommended_tools.agentmemory.export_root // ""' "$SB_JSON")"
-  if [[ "$sb_export" == "$(_jq '.tools.agentmemory.export_root')" ]]; then _check pass parity:export_root "$sb_export"; else _check fail parity:export_root "sb=${sb_export}"; fi
+  if [[ "$sb_export" == "$(_jq '.tools.agentmemory.export_root')" ]]; then
+    _check pass parity:export_root "$sb_export"
+  else
+    _check fail parity:export_root "sb=${sb_export}"
+  fi
 fi
 
 printf '\nSummary: %s passed, %s failed, %s warnings\n' "$pass" "$fail" "$warn"
