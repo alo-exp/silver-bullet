@@ -25,7 +25,6 @@ FAIL=0
 # ── Test infrastructure ───────────────────────────────────────────────────────
 SB_TEST_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet"
 mkdir -p "$SB_TEST_DIR"
-TEST_RUN_ID="$$"
 
 TMPDIR_TEST=""
 SESSION_LOG_DIR=""

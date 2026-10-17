@@ -31,7 +31,6 @@ fi
 # ── Test infrastructure ───────────────────────────────────────────────────────
 SB_TEST_DIR="${SB_RUNTIME_STATE_DIR}"
 mkdir -p "$SB_TEST_DIR"
-TEST_RUN_ID="$$"
 
 cleanup_all() { true; }
 trap cleanup_all EXIT

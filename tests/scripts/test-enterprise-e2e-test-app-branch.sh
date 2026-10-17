@@ -41,7 +41,6 @@ assert_contains "matrix calls branch preflight" \
   "${REPO_ROOT}/scripts/enterprise-e2e/matrix.sh" \
   "enterprise_e2e_assert_test_app_branch"
 
-HARNESS_CONFIG="${REPO_ROOT}/scripts/enterprise-e2e/config/hosts.json"
 HARNESS_CORE="${REPO_ROOT}/scripts/enterprise-e2e/lib/core.sh"
 METHODOLOGY="${REPO_ROOT}/docs/testing/ENTERPRISE-E2E-HOST-CERTIFICATION-METHODOLOGY.md"
 

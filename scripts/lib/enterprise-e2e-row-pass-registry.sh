@@ -160,6 +160,7 @@ PY
 }
 
 # Count rows with outcome_pass for install_fp (default: current).
+# shellcheck disable=SC2120  # optional fingerprint; defaults to the current install
 enterprise_e2e_row_pass_registry_pass_count() {
   local install_fp="${1:-$(enterprise_e2e_install_fingerprint)}"
   local reg

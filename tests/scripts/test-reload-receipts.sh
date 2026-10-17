@@ -69,7 +69,6 @@ rt_init_paths
 # shellcheck source=../../scripts/lib/recommended-tools/receipts.sh
 source "$RT_LIB/receipts.sh"
 
-hashes="$(rt_current_config_hashes)"
 receipt="$(rt_receipt_create project init '["graphify","agentmemory"]' true 2>/dev/null || true)"
 echo "$receipt" | jq -e '.schema == "v1" and .receipt_id != "" and .nonce != ""' >/dev/null 2>&1 \
   && pass "receipt create schema-v1" || fail "receipt create schema-v1"
@@ -339,6 +338,7 @@ echo "$leanctx_eval" | jq -e '.valid == true and .clear_eligible == true' >/dev/
 # pre_config_hashes captured before mutations when RT_PRE_CONFIG_HASHES set
 pre_snapshot="$(rt_current_config_hashes)"
 printf '{"mcpServers":{"test":{"command":"noop"}}}\n' >"${TEST_HOME}/.cursor/mcp.json"
+# shellcheck disable=SC2034  # read by the sourced receipts.sh (rt_receipt_create)
 RT_PRE_CONFIG_HASHES="$pre_snapshot"
 receipt_pre="$(rt_receipt_create project init '["graphify"]' true 2>/dev/null || true)"
 unset RT_PRE_CONFIG_HASHES

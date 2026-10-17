@@ -40,7 +40,7 @@ if [[ -x "$CERT_SCRIPT" ]]; then
   # read-only operation from the repo's point of view; without the redirect it
   # rewrites the tracked .planning artifact as a side effect.
   RTK_DISABLED=1 SB_CERT_ARTIFACT="$STAGING/evidence/CERTIFICATION-STATUS.json" \
-    bash "$CERT_SCRIPT" --write --json >"$STAGING/evidence/CERTIFICATION-STATUS.json" 2>/dev/null \
+    bash "$CERT_SCRIPT" --write --json >/dev/null 2>&1 \
     || cp -f "${SB_ROOT}/.planning/enterprise-e2e/CERTIFICATION-STATUS.json" \
       "$STAGING/evidence/CERTIFICATION-STATUS.json" 2>/dev/null || true
 fi

@@ -267,12 +267,6 @@ PATHLESS_RESOLVED="$(
     CODEX_BIN="" \
     bash -lc 'source "'"$REPO_ROOT"'/tests/live/lib/kay-cli.sh"; resolve_kay_cli_path'
 )"
-NORMALIZED_KAY_HOME="$(python3 - "$KAY_HOME" <<'PY'
-import pathlib
-import sys
-print(pathlib.Path(sys.argv[1]))
-PY
-)"
 
 assert_eq "KAY_HOME is redirected to isolated test root" "$SB_LIVE_CODEX_ISOLATION_DIR" "$KAY_HOME"
 assert_eq "KAY_SB_TEST_HOME mirrors KAY_HOME" "$KAY_HOME" "$KAY_SB_TEST_HOME"
@@ -393,7 +387,7 @@ run_bridge_event() {
   local event="$1" call_id="$2" payload="$3"
   (
     cd "$BRIDGE_WORKSPACE"
-    HOME="$KAY_HOME" \
+    env HOME="$KAY_HOME" \
     KAY_HOME="$KAY_HOME" \
     SILVER_BULLET_RUNTIME=codex \
     CLAUDE_PLUGIN_ROOT="$REPO_ROOT" \
@@ -438,7 +432,7 @@ assert_file_exists "Kay bridge writes fallback shell shims into the active prepe
 chmod_status=0
 set +e
 chmod_output="$(
-  cd "$BRIDGE_WORKSPACE" && HOME="$KAY_HOME" KAY_HOME="$KAY_HOME" bash -lc "$chmod_probe_command" 2>&1
+  cd "$BRIDGE_WORKSPACE" && env HOME="$KAY_HOME" KAY_HOME="$KAY_HOME" bash -lc "$chmod_probe_command" 2>&1
 )"
 chmod_status=$?
 set -e
@@ -466,7 +460,7 @@ assert_contains "Kay bridge direct-write fallback surfaces planning denial" "$br
 python_status=0
 set +e
 python_output="$(
-  cd "$BRIDGE_WORKSPACE" && HOME="$KAY_HOME" KAY_HOME="$KAY_HOME" python3 -c "$python_probe_script" 2>&1
+  cd "$BRIDGE_WORKSPACE" && env HOME="$KAY_HOME" KAY_HOME="$KAY_HOME" python3 -c "$python_probe_script" 2>&1
 )"
 python_status=$?
 set -e
@@ -494,7 +488,7 @@ assert_contains "Kay bridge shell fallback surfaces planning denial" "$bridge_ou
 shell_status=0
 set +e
 shell_output="$(
-  cd "$BRIDGE_WORKSPACE" && HOME="$KAY_HOME" KAY_HOME="$KAY_HOME" bash -lc "$shell_probe_command" 2>&1
+  cd "$BRIDGE_WORKSPACE" && env HOME="$KAY_HOME" KAY_HOME="$KAY_HOME" bash -lc "$shell_probe_command" 2>&1
 )"
 shell_status=$?
 set -e
@@ -547,7 +541,7 @@ hash -r 2>/dev/null || true
 git_status=0
 set +e
 git_output="$(
-  cd "$BRIDGE_WORKSPACE" && HOME="$KAY_HOME" KAY_HOME="$KAY_HOME" "$REAL_GIT_BIN" commit -am "blocked direct git probe" 2>&1
+  cd "$BRIDGE_WORKSPACE" && env HOME="$KAY_HOME" KAY_HOME="$KAY_HOME" "$REAL_GIT_BIN" commit -am "blocked direct git probe" 2>&1
 )"
 git_status=$?
 set -e

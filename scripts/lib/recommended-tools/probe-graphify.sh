@@ -74,6 +74,7 @@ rt_probe_graphify() {
   esac
 
   canonical="$(rt_derive_canonical_state "$fu" "$fd" "$fp" "$fs" "$ff" "$frr" "$frp" "$fr")"
+  # shellcheck disable=SC2034  # read by rt_emit_probe_result in the sibling common.sh
   RT_PROBE_EXTRA_JSON="$(jq -n \
     --argjson evidence "$(rt_evidence_json_array ${evidence[@]+"${evidence[@]}"})" \
     '{configured:{mcp:(($evidence|index("mcp_not_configured"))|not)},

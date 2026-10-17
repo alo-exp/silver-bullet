@@ -82,7 +82,7 @@ sb_agent_delegation_normalize_path() {
 sb_agent_delegation_path_in_scope() {
   local target="$1" repo_root="${2:-$PWD}"
   sb_agent_delegation_is_active || return 1
-  local file scopes scope norm_target
+  local file scope norm_target
   file="$(sb_agent_delegation_state_file)"
   norm_target="$(sb_agent_delegation_normalize_path "$target" "$repo_root" 2>/dev/null || true)"
   [[ -n "$norm_target" ]] || return 1

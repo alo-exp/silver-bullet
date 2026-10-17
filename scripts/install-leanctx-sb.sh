@@ -177,13 +177,15 @@ assert_guard_unchanged() {
 }
 
 leanctx_binary_ok() {
-  local bin="$(leanctx_cli_path || true)"
+  local bin
+  bin="$(leanctx_cli_path || true)"
   [[ -n "$bin" ]] || return 1
   "$bin" --version >/dev/null 2>&1 || "$bin" --help >/dev/null 2>&1
 }
 
 leanctx_supports_library_mode() {
-  local bin="$(leanctx_cli_path || true)"
+  local bin
+  bin="$(leanctx_cli_path || true)"
   [[ -n "$bin" ]] && "$bin" init --help 2>&1 | grep -q -- '--library-mode'
 }
 
@@ -245,7 +247,8 @@ install_leanctx_binary() {
 
 run_library_mode_init() {
   # Conflict #8: never `lean-ctx init --agent *`. Library mode only when verified.
-  local bin="$(leanctx_cli_path || true)"
+  local bin
+  bin="$(leanctx_cli_path || true)"
   if ! leanctx_binary_ok; then
     warn "lean-ctx missing — skip library init"
     return 0
@@ -395,7 +398,8 @@ verify_wire_proxy_ordering() {
   fi
   log "OK: wire-proxy ordering validator self-test passed"
   if [[ "$HOST" == "codex" ]] && leanctx_binary_ok; then
-    local bin="$(leanctx_cli_path || true)"
+    local bin
+    bin="$(leanctx_cli_path || true)"
     if [[ -n "$bin" ]] && "$bin" proxy --help >/dev/null 2>&1; then
       log "OK: lean-ctx proxy subcommand available for Codex wire path"
     else

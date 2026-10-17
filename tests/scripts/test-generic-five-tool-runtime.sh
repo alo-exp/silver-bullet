@@ -8,10 +8,9 @@ trap 'rm -rf "$TMP_ROOT"' EXIT
 
 HOME="$TMP_ROOT/home" \
   PYTHONPATH="$REPO_ROOT/scripts/lib" \
-  REPO_ROOT="$REPO_ROOT" \
-  TMP_ROOT="$TMP_ROOT" \
   env -u SB_GLOBAL_TOOLSTACK_HOME -u SB_GLOBAL_TOOLSTACK_MANIFEST \
       -u SILVER_BULLET_RUNTIME -u SILVER_BULLET_STATE_FILE \
+      REPO_ROOT="$REPO_ROOT" TMP_ROOT="$TMP_ROOT" \
       python3 - <<'PY'
 import hashlib
 import json

@@ -54,6 +54,7 @@ assert_match "assert_match works" '^v[0-9]+$' "v12"
 # Failure reporting: a sub-shell with a failing assertion must make tl_results fail.
 rc=0
 (
+  # shellcheck disable=SC2034  # counters read by tl_results in the sourced testlib.sh
   TL_PASS=0 TL_FAIL=0
   assert_eq "deliberate mismatch" a b >/dev/null
   tl_results >/dev/null

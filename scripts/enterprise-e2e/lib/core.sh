@@ -988,7 +988,8 @@ enterprise_e2e_ledger_session0_pass() {
 }
 
 enterprise_e2e_fixture_code_intel_opted_in() {
-  local fixture_dir="${1:-}" config="${fixture_dir}/.silver-bullet.json"
+  local fixture_dir="${1:-}"
+  local config="${fixture_dir}/.silver-bullet.json"
   [[ -f "$config" ]] || return 1
   jq -e \
     '.recommended_tools.graphify.enabled_by_user == true and .recommended_tools.agentmemory.enabled_by_user == true' \

@@ -775,6 +775,7 @@ main() {
   fi
   setup_workspace
   if [[ -n "$_matrix_batch_pid_file" ]]; then
+    # shellcheck disable=SC2064  # capture the pid-file path now, as intended
     trap "rm -f '$_matrix_batch_pid_file'; cleanup_workspace" EXIT
   else
     trap cleanup_workspace EXIT
