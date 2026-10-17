@@ -235,4 +235,18 @@ run_enforce
 rm -f "$TL_BIN/jq"; hash -r
 assert_file_absent "enforce: unreadable levels fall back to 2,3" "$EMITTED"
 
+# jq failing while reading required docs / mandatory docs / required sections
+jqfail() { tl_stub jq "if [[ \"\$*\" == *'$1'* ]]; then exit 1; fi; exec $real_jq \"\$@\""; hash -r; }
+jqunstub() { rm -f "$TL_BIN/jq"; hash -r; }
+setup_repo; jqfail 'required_docs[]?.key'; run_enforce; jqunstub
+assert_contains "enforce: unreadable required_docs => empty-contract issue" "$(cat "$EMITTED")" "required_docs[] is empty"
+setup_repo
+jq '.docs["docs/CHANGELOG.md"]="not-needed:skip"' "$R/docs/task-doc-checklist.json" >"$R/c.t" && mv "$R/c.t" "$R/docs/task-doc-checklist.json"; touch -d "@$NEW" "$R/docs/task-doc-checklist.json"
+jqfail 'mandatory_updated_docs'; run_enforce; jqunstub
+assert_file_absent "enforce: unreadable mandatory list enforces nothing mandatory" "$EMITTED"
+setup_repo
+jq 'del(.sections)' "$R/docs/task-doc-checklist.json" >"$R/c.t" && mv "$R/c.t" "$R/docs/task-doc-checklist.json"; touch -d "@$NEW" "$R/docs/task-doc-checklist.json"
+jqfail 'required_sections'; run_enforce; jqunstub
+assert_file_absent "enforce: unreadable section list checks no sections" "$EMITTED"
+
 tl_results
