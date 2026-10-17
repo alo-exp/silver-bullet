@@ -47,7 +47,7 @@ missing_expr="' '.join(f\"{m['line']}:{m['word']}\" for m in d['missing_statemen
 cov="$TMP/cal"
 trace "$cov" "$TMP" "${REPO_ROOT}/${FIX_REL}/calibration.sh" hit
 check_eq "calibration: uncovered statements are exactly the MISS lines" \
-  "17:echo 30:echo 49:echo 53:echo" "$(field "$cov" "$FIX_REL/calibration.sh" "$missing_expr")"
+  "17:echo 30:echo 49:echo 53:echo 71:echo" "$(field "$cov" "$FIX_REL/calibration.sh" "$missing_expr")"
 check_eq "calibration: every trace hit is attributed" \
   "0" "$(field "$cov" "$FIX_REL/calibration.sh" "len(d['orphan_hits'])")"
 check_eq "calibration: uncalled function reported" \
@@ -80,6 +80,14 @@ trace "$cov" "$TMP" "$TMP/stage/${FIX_REL}/fallback.sh" false
 check_eq "copy outside the repo attributed to the source file" \
   "" "$(field "$cov" "$FIX_REL/fallback.sh" "$missing_expr")"
 
+# 4b. An edited copy (lines shifted) must not credit the source file.
+cov="$TMP/edited"
+mkdir -p "$TMP/edited-stage/${FIX_REL}"
+{ printf '#!/usr/bin/env bash\n:\n:\n:\n'; tail -n +2 "${REPO_ROOT}/${FIX_REL}/fallback.sh"; } >"$TMP/edited-stage/${FIX_REL}/fallback.sh"
+trace "$cov" "$TMP" "$TMP/edited-stage/${FIX_REL}/fallback.sh" false
+check_eq "edited staged copy is ignored, not credited" \
+  "0" "$(field "$cov" "$FIX_REL/fallback.sh" "d['statements_covered']")"
+
 # 5. No tracing without SB_COV_DIR (tests outside coverage runs are unaffected).
 out="$(BASH_ENV="$ENV_FILE" bash -c 'printf "%s" "$-"')"
 if [[ "$out" == *x* ]]; then fail "tracer stays off without SB_COV_DIR"; else pass "tracer stays off without SB_COV_DIR"; fi
@@ -98,7 +106,7 @@ python3 "${REPO_ROOT}/hooks/lib/tool-input/tool_command_string.py" '{"tool_input
 EOF
 bash "${REPO_ROOT}/tests/coverage/run-coverage.sh" --cov-dir "$cov" --no-report "$TMP/py-test.sh" >/dev/null 2>&1 || true
 py_cov="$(python3 "$SBCOV" report --cov-dir "$cov" --only 'hooks/lib/tool-input/tool_command_string.py' 2>/dev/null |
-  awk '/^Python files/ {print $5}')"
+  awk '/^Python +files/ {print $5}')"
 if [[ -n "$py_cov" && "${py_cov%%/*}" -gt 0 ]]; then
   pass "python subprocess coverage recorded ($py_cov statements)"
 else
@@ -109,6 +117,15 @@ fi
 rc=0
 python3 "$SBCOV" report --cov-dir "$cov" --only 'hooks/lib/tool-input/tool_command_string.py' --fail-under 100 >/dev/null 2>&1 || rc=$?
 check_eq "report --fail-under exits 2 when coverage is short" "2" "$rc"
+
+# 9. JS/TS LCOV from Node's test runner is merged per line/function/branch.
+cov="$TMP/js"
+mkdir -p "$cov/js"
+printf 'SF:site/chrome.js\nFN:2,setIconState\nFNDA:1,setIconState\nDA:2,1\nDA:3,0\nBRDA:5,0,0,1\nBRDA:5,0,1,-\nend_of_record\n' >"$cov/js/a.info"
+printf 'SF:%s/site/chrome.js\nFN:2,setIconState\nFNDA:0,setIconState\nDA:2,0\nDA:3,4\nBRDA:5,0,0,0\nBRDA:5,0,1,-\nend_of_record\n' "$REPO_ROOT" >"$cov/js/b.info"
+js_line="$(python3 "$SBCOV" report --cov-dir "$cov" --only 'site/chrome.js' | grep '^JS/TS ')"
+check_eq "lcov merged across runs (lines, functions, branches)" \
+  "JS/TS      files 1: lines 2/2 (100.00%), functions 1/1 (100.00%), branches 1/2 (50.00%)" "$js_line"
 
 echo
 echo "Results: $PASS passed, $FAIL failed"
