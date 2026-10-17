@@ -70,15 +70,15 @@ echo "$out" | jq -e '.components[] | select(.component=="graphify") | .canonical
   && pass "graphify disabled when opted out" || fail "graphify disabled when opted out"
 
 auth_out="$(bash "$RECONCILE" --project-root "$TMP" --host cursor --mode verify --entry-point init --format json 2>&1 || true)"
-printf '%s' "$auth_out" | grep -q 'fail closed\|authorization\|entry-point' \
+grep -q 'fail closed\|authorization\|entry-point' <<<"$auth_out" \
   && pass "verify with entry-point fails closed" || fail "verify with entry-point fails closed"
 
 bad_host_out="$(bash "$RECONCILE" --project-root "$TMP" --host '../../evil' --mode verify --format json 2>&1 || true)"
-printf '%s' "$bad_host_out" | grep -q 'unknown host' \
+grep -q 'unknown host' <<<"$bad_host_out" \
   && pass "rejects unknown --host before path use" || fail "rejects unknown --host before path use"
 
 apply_out="$(bash "$RECONCILE" --project-root "$TMP" --host cursor --mode apply --format json 2>&1 || true)"
-printf '%s' "$apply_out" | grep -q 'entry-point\|authorization' \
+grep -q 'entry-point\|authorization' <<<"$apply_out" \
   && pass "apply without entry-point fails closed" || fail "apply without entry-point fails closed"
 
 plan_out="$(bash "$RECONCILE" --project-root "$TMP" --host cursor --mode plan --scope project --format json 2>/dev/null || true)"
@@ -129,7 +129,7 @@ if jq -e '.hooks.preToolUse[] | select(.command | test("lean-ctx hook (deny|redi
 else
   pass "patch-hooks removes legacy routing hooks"
 fi
-printf '%s' "$patch_lean_out" | grep -qE '\([1-9][0-9]* changes?\)' \
+grep -qE '\([1-9][0-9]* changes?\)' <<<"$patch_lean_out" \
   && pass "patch-hooks counts legacy routing removals" \
   || fail "patch-hooks counts legacy routing removals"
 
@@ -150,7 +150,7 @@ hooks_after_second="$(cat "${TMP_PH_IDEM}/.cursor/hooks.json")"
 [[ "$hooks_after_first" == "$hooks_after_second" ]] \
   && pass "patch-hooks idempotent second run preserves hooks.json bytes" \
   || fail "patch-hooks idempotent second run preserves hooks.json bytes"
-printf '%s' "$hooks_idem_out" | grep -q 'unchanged' \
+grep -q 'unchanged' <<<"$hooks_idem_out" \
   && pass "patch-hooks idempotent second run prints unchanged" \
   || fail "patch-hooks idempotent second run prints unchanged"
 export HOME="$TEST_HOME"
@@ -870,11 +870,11 @@ rt_init_paths
 # shellcheck source=../../hooks/lib/recommended-tools-registry.sh
 source "$REPO_ROOT/hooks/lib/recommended-tools-registry.sh"
 
-printf '%s\n' "${RT_COMPONENT_IDS[@]}" | grep -qx search_cli \
+grep -qx search_cli <<<"$(printf '%s\n' "${RT_COMPONENT_IDS[@]}")" \
   && pass "RT_COMPONENT_IDS includes search_cli" \
   || fail "RT_COMPONENT_IDS includes search_cli"
 
-printf '%s\n' "${SB_RECOMMENDED_TOOL_IDS[@]}" | grep -qx search_cli \
+grep -qx search_cli <<<"$(printf '%s\n' "${SB_RECOMMENDED_TOOL_IDS[@]}")" \
   && pass "registry SB_RECOMMENDED_TOOL_IDS includes search_cli" \
   || fail "registry SB_RECOMMENDED_TOOL_IDS includes search_cli"
 
@@ -964,7 +964,7 @@ sc_prov="$(d10_probe probe-search_cli.sh rt_probe_search_cli 2>/dev/null || true
 echo "$sc_prov" | jq -e '.canonical_state == "ready" and (.evidence | index("provider_missing") != null)' >/dev/null 2>&1 \
   && pass "D10 search_cli provider_missing WARN on ready Health" \
   || fail "D10 search_cli provider_missing WARN on ready Health (${sc_prov:-empty})"
-printf '%s' "$sc_prov" | grep -q 'sk-live-should-never-appear' \
+grep -q 'sk-live-should-never-appear' <<<"$sc_prov" \
   && fail "D10 search_cli must not dump secrets" \
   || pass "D10 search_cli must not dump secrets"
 

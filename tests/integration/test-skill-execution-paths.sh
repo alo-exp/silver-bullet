@@ -263,32 +263,32 @@ echo "=== Group 3: Orchestrator Queue Ordering ==="
 
 feature_q="$(sb_orchestrator_default_queue_for_composer silver-feature)"
 check "silver-feature: quality-gates before execute in orchestrator queue" \
-  "$(printf '%s' "$feature_q" | grep -q 'FLOW-QUALITY-GATE,silver-context,silver-plan,silver-validate,silver-execute' && echo pass || echo fail)"
+  "$(grep -q 'FLOW-QUALITY-GATE,silver-context,silver-plan,silver-validate,silver-execute' <<<"$feature_q" && echo pass || echo fail)"
 check "silver-feature: review before verify in orchestrator queue" \
-  "$(printf '%s' "$feature_q" | grep -q 'silver-review-request,silver-review,silver-review-triage,silver-verify' && echo pass || echo fail)"
+  "$(grep -q 'silver-review-request,silver-review,silver-review-triage,silver-verify' <<<"$feature_q" && echo pass || echo fail)"
 
 ui_q="$(sb_orchestrator_default_queue_for_composer silver-ui)"
 check "silver-ui: ui-contract before execute in orchestrator queue" \
-  "$(printf '%s' "$ui_q" | grep -q 'silver-ui-contract,silver-validate,silver-execute' && echo pass || echo fail)"
+  "$(grep -q 'silver-ui-contract,silver-validate,silver-execute' <<<"$ui_q" && echo pass || echo fail)"
 check "silver-ui: ui-review immediately after execute" \
-  "$(printf '%s' "$ui_q" | grep -q 'silver-execute,silver-ui-review' && echo pass || echo fail)"
+  "$(grep -q 'silver-execute,silver-ui-review' <<<"$ui_q" && echo pass || echo fail)"
 
 devops_q="$(sb_orchestrator_default_queue_for_composer silver-devops)"
 check "silver-devops: validate before execute in orchestrator queue" \
-  "$(printf '%s' "$devops_q" | grep -q 'silver-validate,silver-execute' && echo pass || echo fail)"
+  "$(grep -q 'silver-validate,silver-execute' <<<"$devops_q" && echo pass || echo fail)"
 check "silver-devops: security before ship segment" \
-  "$(printf '%s' "$devops_q" | grep -q 'security,silver-secure' && echo pass || echo fail)"
+  "$(grep -q 'security,silver-secure' <<<"$devops_q" && echo pass || echo fail)"
 
 bugfix_q="$(sb_orchestrator_default_queue_for_composer silver-bugfix)"
 bugfix_pre="${bugfix_q%%,silver-execute*}"
 check "silver-bugfix: debug before plan in orchestrator queue" \
-  "$(printf '%s' "$bugfix_q" | grep -q 'silver-debug,silver-plan' && echo pass || echo fail)"
+  "$(grep -q 'silver-debug,silver-plan' <<<"$bugfix_q" && echo pass || echo fail)"
 check "silver-bugfix: no pre-plan quality-gates in orchestrator queue" \
   "$([[ "$(printf '%s' "$bugfix_pre" | grep -c 'FLOW-QUALITY-GATE')" -eq 0 ]] && echo pass || echo fail)"
 
 release_q="$(sb_orchestrator_default_queue_for_composer silver-release)"
 check "silver-release: branch-finish before ship in orchestrator queue" \
-  "$(printf '%s' "$release_q" | grep -q 'silver-branch-finish,silver-completion-audit,silver-ship' && echo pass || echo fail)"
+  "$(grep -q 'silver-branch-finish,silver-completion-audit,silver-ship' <<<"$release_q" && echo pass || echo fail)"
 check "silver-release: create-release is queue tail" \
   "$([[ "$(printf '%s' "$release_q" | awk -F, '{print $NF}')" == "silver-create-release" ]] && echo pass || echo fail)"
 

@@ -39,7 +39,7 @@ assert_false() {
 
 assert_contains() {
   local label="$1" hay="$2" needle="$3"
-  if printf '%s' "$hay" | grep -qF "$needle"; then
+  if grep -qF "$needle" <<<"$hay"; then
     pass=$((pass + 1))
     printf 'PASS: %s\n' "$label"
   else
@@ -50,7 +50,7 @@ assert_contains() {
 
 assert_not_contains() {
   local label="$1" hay="$2" needle="$3"
-  if printf '%s' "$hay" | grep -qF "$needle"; then
+  if grep -qF "$needle" <<<"$hay"; then
     fail=$((fail + 1))
     printf 'FAIL: %s — unexpected %s\n' "$label" "$needle" >&2
   else

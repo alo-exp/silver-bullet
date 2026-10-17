@@ -10,7 +10,7 @@ assert_eq() {
 
 assert_contains() {
   local desc="$1" needle="$2" haystack="$3"
-  if printf '%s' "$haystack" | grep -q "$needle"; then echo "PASS: $desc"; (( PASS++ )) || true
+  if grep -q "$needle" <<<"$haystack"; then echo "PASS: $desc"; (( PASS++ )) || true
   else echo "FAIL: $desc — looking for: [$needle]"; (( FAIL++ )) || true; fi
 }
 
@@ -71,7 +71,7 @@ python3 -c "print('authentication test content\n' * 20)" > "$TMP/src/auth.test.s
 result=$(cd "$TMP" && REPO_ROOT="$TMP" "$SCRIPT" 2>/dev/null || true)
 if [[ -n "$result" ]]; then
   context=$(printf '%s' "$result" | jq -r '.hookSpecificOutput.additionalContext')
-  if printf '%s' "$context" | grep -q 'auth\.test\.sh'; then
+  if grep -q 'auth\.test\.sh' <<<"$context"; then
     echo "FAIL: excluded file auth.test.sh appeared in context"; (( FAIL++ )) || true
   else
     echo "PASS: src_exclude_pattern excludes test files"; (( PASS++ )) || true
@@ -103,7 +103,7 @@ python3 -c "print('real text content\n' * 20)" > "$TMP/src/text.sh"
 result=$(cd "$TMP" && REPO_ROOT="$TMP" "$SCRIPT" 2>/dev/null || true)
 if [[ -n "$result" ]]; then
   context=$(printf '%s' "$result" | jq -r '.hookSpecificOutput.additionalContext')
-  if printf '%s' "$context" | grep -q 'binary\.bin'; then
+  if grep -q 'binary\.bin' <<<"$context"; then
     echo "FAIL: binary file appeared in context"; (( FAIL++ )) || true
   else
     echo "PASS: binary file excluded from context"; (( PASS++ )) || true
@@ -129,14 +129,14 @@ if [[ -n "$result" ]]; then
   context=$(printf '%s' "$result" | jq -r '.hookSpecificOutput.additionalContext')
   cred_leak=false
   for cred_file in '.env' '.env.production' 'private.pem' 'id_rsa.key'; do
-    if printf '%s' "$context" | grep -qF "$cred_file"; then
+    if grep -qF "$cred_file" <<<"$context"; then
       echo "FAIL: credential file $cred_file leaked into context"; (( FAIL++ )) || true
       cred_leak=true
     fi
   done
   [[ "$cred_leak" == false ]] && { echo "PASS: credential files excluded from context"; (( PASS++ )) || true; }
   # Verify non-credential env-substring file is NOT falsely excluded
-  if printf '%s' "$context" | grep -q 'environment\.sh'; then
+  if grep -q 'environment\.sh' <<<"$context"; then
     echo "PASS: environment.sh (non-credential) not excluded"; (( PASS++ )) || true
   else
     echo "PASS: environment.sh may be excluded by budget/ranking (acceptable)"; (( PASS++ )) || true

@@ -74,7 +74,7 @@ check "lib sources config (no hardcoded literal DEFAULT_REQUIRED)" \
 CFG_ALL_TRACKED=$(jq -r '.skills.all_tracked | .[]' "$CONFIG" | sort -u)
 missing_from_tracked=()
 while IFS= read -r skill; do
-  if ! printf '%s\n' "$CFG_ALL_TRACKED" | grep -qx "$skill"; then
+  if ! grep -qx "$skill" <<<"$CFG_ALL_TRACKED"; then
     missing_from_tracked+=("$skill")
   fi
 done < <(jq -r '.skills.required_deploy | .[]' "$CONFIG")
@@ -89,7 +89,7 @@ fi
 # Same check for required_deploy_devops
 missing_from_tracked_devops=()
 while IFS= read -r skill; do
-  if ! printf '%s\n' "$CFG_ALL_TRACKED" | grep -qx "$skill"; then
+  if ! grep -qx "$skill" <<<"$CFG_ALL_TRACKED"; then
     missing_from_tracked_devops+=("$skill")
   fi
 done < <(jq -r '.skills.required_deploy_devops | .[]' "$CONFIG" 2>/dev/null)
