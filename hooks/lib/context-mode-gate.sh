@@ -71,7 +71,7 @@ sb_context_mode_platform_artifact_path() {
   host="${host:-$(sb_runtime_host)}"
   case "$host" in
     cursor) printf '%s/.cursor/mcp.json' "${HOME}" ;;
-    codex) printf '%s/.codex/config.toml' "${CODEX_HOME:-${HOME}/.codex}" ;;
+    codex) printf '%s/config.toml' "${CODEX_HOME:-${HOME}/.codex}" ;;
     opencode) printf '%s/.config/opencode/opencode.json' "${HOME}" ;;
     pi) printf '%s/extensions/silver-bullet-five-tool-stack/config.json' \
       "${PI_CODING_AGENT_DIR:-${HOME}/.pi/agent}" ;;
