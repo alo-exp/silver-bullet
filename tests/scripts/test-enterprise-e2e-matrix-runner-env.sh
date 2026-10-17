@@ -88,9 +88,9 @@ assert_contains "failing telemetry tolerated" "$CALLS" "telemetry matrix_row_dry
 # no rows: every matrix row in definition order, plus internal rows 21 and 22
 run env SB_E2E_MATRIX_DRY_RUN=1 bash "$MATRIX"
 assert_eq "full dry-run fails on missing evidence" "1" "$TL_STATUS"
-assert_eq "all 20 explicit rows visited" "20" "$(grep -cE '^=== Row [0-9]+: [a-z-]+ \(' <<<"$TL_OUT" | tr -d ' ')"
+assert_eq "all 20 explicit rows visited" "20" "$(grep -cE '^=== Row [0-9]+: [a-z-]+ \(/' <<<"$TL_OUT" | tr -d ' ')"
 assert_contains "row 1 first" "$(grep '^=== Row' <<<"$TL_OUT" | head -1)" "=== Row 1: silver-router (/sb) ==="
-assert_contains "row 20 last explicit row" "$(grep -E '^=== Row [0-9]+: [a-z-]+ \(' <<<"$TL_OUT" | tail -1)" "=== Row 20: process-maintenance (/sb:process-maintenance) ==="
+assert_contains "row 20 last explicit row" "$(grep -E '^=== Row [0-9]+: [a-z-]+ \(/' <<<"$TL_OUT" | tail -1)" "=== Row 20: process-maintenance (/sb:process-maintenance) ==="
 assert_contains "row 21 internal pass" "$TL_OUT" "=== Row 21: post-exec-gates (internal) PASS ==="
 assert_contains "row 22 internal pass" "$TL_OUT" "=== Row 22: validate-substep (internal) PASS ==="
 assert_contains "internal markers seeded in the fixture" "$(cat "$APP/.planning/workflows/feature-currency.md")" "post-exec-gates"
