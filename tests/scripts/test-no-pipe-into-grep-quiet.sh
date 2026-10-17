@@ -18,7 +18,8 @@ pattern='(printf|echo)[^|]*\|[[:space:]]*grep[[:space:]]+(-[a-zA-Z]*[qm][a-zA-Z]
 big="$(printf 'match\n'; printf 'line-%06d\n' $(seq 1 20000))"
 rc=0
 (set -o pipefail; printf '%s\n' "$big" | grep -q '^match$') || rc=$?
-assert_eq "printf | grep -q fails under pipefail when grep exits early" 141 "$rc"
+# 141 (SIGPIPE) normally; 1 (EPIPE write error) where SIGPIPE is ignored, as on CI runners.
+assert_match "printf | grep -q fails under pipefail when grep exits early" '^(141|1)$' "$rc"
 rc=0
 grep -q '^match$' <<<"$big" || rc=$?
 assert_eq "grep -q with a here-string succeeds" 0 "$rc"
