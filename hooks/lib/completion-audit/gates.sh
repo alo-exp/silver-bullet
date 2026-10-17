@@ -45,6 +45,10 @@ run_workflow_strict_gate() {
   local total complete
   total=$(count_flow_log_rows "$wf_file")
   complete=$(count_complete_flow_rows "$wf_file")
+  # count_* print "0" and then echo "0" again when grep -c matches nothing; keep the first line
+  # so a Flow Log with zero rows reaches the explicit block below instead of failing open.
+  total=${total%%$'\n'*}
+  complete=${complete%%$'\n'*}
   total=${total:-0}
   complete=${complete:-0}
 
@@ -175,7 +179,6 @@ build_doc_scheme_checklist_keys() {
   fi
 
   for key in "${DOC_SCHEME_CHECKLIST_KEYS[@]}"; do
-    [[ -n "$key" ]] || continue
     if [[ "$seen" == *$'\n'"$key"$'\n'* ]]; then
       continue
     fi

@@ -136,11 +136,10 @@ ca_detect_change_class() {
     ca_change_class="site"
   elif [[ "$has_config" == true && "$has_docs" == false && "$has_site" == false ]]; then
     ca_change_class="config"
-  elif [[ "$has_docs" == true || "$has_site" == true || "$has_config" == true ]]; then
-    # Pure docs/site/config mix — keep light floor; label by dominant docs.
-    ca_change_class="docs"
   else
-    ca_change_class="mixed"
+    # Every non-empty path sets one flag, so only a pure docs/site/config mix remains here —
+    # keep the light floor; label by dominant docs.
+    ca_change_class="docs"
   fi
 }
 
