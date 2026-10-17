@@ -14,6 +14,13 @@ if ! command -v python3 >/dev/null 2>&1; then
   exit 0
 fi
 
+# generate-cursor-hooks.py rewrites hooks/cursor-hooks.json and the plugin
+# copy inside the checkout it runs from: generate into a snapshot instead.
+SNAPSHOT_TMP="$(mktemp -d)"
+trap 'rm -rf "$SNAPSHOT_TMP"' EXIT
+# shellcheck source=tests/lib/repo-snapshot.sh
+source "$REPO_ROOT/tests/lib/repo-snapshot.sh"
+REPO_ROOT="$(sb_repo_snapshot "$REPO_ROOT" "$SNAPSHOT_TMP/repo")"
 python3 "$REPO_ROOT/scripts/generate-cursor-hooks.py" >/dev/null
 
 CURSOR_HOOKS="$REPO_ROOT/hooks/cursor-hooks.json"
