@@ -244,7 +244,7 @@ has_skill() {
     sb_required_skill_is_recorded "$state_contents" "$1"
     return $?
   fi
-  grep -Fqx -- "$1" 2>/dev/null <<<"$state_contents"
+  grep -Fqx -- "$1" <<<"$state_contents" 2>/dev/null
 }
 
 # --- PLANNING phase ---
