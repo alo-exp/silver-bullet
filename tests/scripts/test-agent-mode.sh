@@ -745,11 +745,11 @@ if (
   export PATH="${HOSTBIN}:$PATH"
   unset SB_AGENT_HOST_ARGV_FILE
   agent_host_build_argv pi interactive "$NIFAST" "hello" permissive
-  ! grep -qx -- '-p' <<<"${AGENT_HOST_ARGV[@]}"
+  ! grep -qx -- '-p' <<<"$(printf '%s\n' "${AGENT_HOST_ARGV[@]}")"
 ) && (
   export PATH="${HOSTBIN}:$PATH"
   agent_host_build_argv pi non-interactive "$NIFAST" "hello" permissive
-  grep -qx -- '-p' <<<"${AGENT_HOST_ARGV[@]}"
+  grep -qx -- '-p' <<<"$(printf '%s\n' "${AGENT_HOST_ARGV[@]}")"
 ); then
   check "Pi interactive argv has no -p; NI argv has -p" pass
 else
@@ -758,11 +758,11 @@ fi
 if (
   export PATH="${HOSTBIN}:$PATH"
   agent_host_build_argv cursor interactive "$NIFAST" "hello" permissive
-  ! grep -qx -- '--print' <<<"${AGENT_HOST_ARGV[@]}"
+  ! grep -qx -- '--print' <<<"$(printf '%s\n' "${AGENT_HOST_ARGV[@]}")"
 ) && (
   export PATH="${HOSTBIN}:$PATH"
   agent_host_build_argv cursor non-interactive "$NIFAST" "hello" permissive
-  grep -qx -- '--print' <<<"${AGENT_HOST_ARGV[@]}"
+  grep -qx -- '--print' <<<"$(printf '%s\n' "${AGENT_HOST_ARGV[@]}")"
 ); then
   check "Cursor interactive argv has no --print; NI argv has --print" pass
 else

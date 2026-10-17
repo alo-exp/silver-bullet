@@ -870,11 +870,11 @@ rt_init_paths
 # shellcheck source=../../hooks/lib/recommended-tools-registry.sh
 source "$REPO_ROOT/hooks/lib/recommended-tools-registry.sh"
 
-grep -qx search_cli <<<"${RT_COMPONENT_IDS[@]}" \
+grep -qx search_cli <<<"$(printf '%s\n' "${RT_COMPONENT_IDS[@]}")" \
   && pass "RT_COMPONENT_IDS includes search_cli" \
   || fail "RT_COMPONENT_IDS includes search_cli"
 
-grep -qx search_cli <<<"${SB_RECOMMENDED_TOOL_IDS[@]}" \
+grep -qx search_cli <<<"$(printf '%s\n' "${SB_RECOMMENDED_TOOL_IDS[@]}")" \
   && pass "registry SB_RECOMMENDED_TOOL_IDS includes search_cli" \
   || fail "registry SB_RECOMMENDED_TOOL_IDS includes search_cli"
 
