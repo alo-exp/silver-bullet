@@ -1,6 +1,6 @@
 # Silver Bullet Benefits Over Plain GSD
 
-> **Historical analysis — superseded.** This 2026-05-14 report describes the former SB-on-GSD architecture. Silver Bullet now owns its lifecycle and has no required GSD dependency. For current guidance, use [`docs/ARCHITECTURE.md`](../ARCHITECTURE.md), [`docs/gsd-vs-silver-bullet.md`](../gsd-vs-silver-bullet.md), and [`docs/sb-without-gsd.md`](../sb-without-gsd.md). The body below is preserved as point-in-time evidence.
+> **Historical analysis — superseded.** This 2026-05-14 report describes the former SB-on-GSD architecture. Silver Bullet now owns its lifecycle and has no required GSD dependency. For current guidance, use [`docs/ARCHITECTURE.md`](../ARCHITECTURE.md) and [`docs/sb-vs-gsd.md`](../sb-vs-gsd.md) (which replaced `gsd-vs-silver-bullet.md` and `sb-without-gsd.md`). The body below is preserved as point-in-time evidence; its source links were written relative to `docs/` before the file moved here.
 
 **Date:** 2026-05-14  
 **Scope:** Concrete benefits Silver Bullet provides when layered on top of GSD, based on the current Silver Bullet project documents and codebase surfaces: hooks, commands, and skills.  
