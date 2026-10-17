@@ -72,7 +72,7 @@ sb_rfl_resolver_json() {
 sb_rfl_total_rungs_from_resolver() {
   local resolver_json="$1"
   if command -v jq >/dev/null 2>&1; then
-    jq -r '(.total_rungs // (.rungs | length) // 6)' <<<"$resolver_json"
+    jq -r '(.total_rungs // (if ((.rungs // []) | length) > 0 then (.rungs | length) else empty end) // 6)' <<<"$resolver_json"
   else
     printf '6'
   fi
