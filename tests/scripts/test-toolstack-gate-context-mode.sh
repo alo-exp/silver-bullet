@@ -5,8 +5,8 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/toolstack-helpers.sh"
 tl_init
 
-TS_STAGE="$TL_TMP/toolstack"
-ts_stage_deployed "$TS_STAGE"
+
+ts_stage_deployed
 repo="$TL_TMP/repo"; tl_git_repo "$repo"
 ts_write_config '{"enforcement":"always","tools":{"context_mode":{"required":true}}}'
 edit="$(ts_payload Edit "$repo/src/app.py" "")"
@@ -50,5 +50,27 @@ ts_gate context-mode-gate.sh "$shell" "$repo"; expect_silent "wired CLI allows s
 printf '{"mcpServers":{}}' >"$HOME/.cursor/mcp.json"
 ts_gate context-mode-gate.sh "$(ts_payload Edit "$repo/s.py" "" Stop)" "$repo"
 assert_eq "stop event blocks" block "$(jq -r '.decision' <<<"$TL_OUT")"
+
+# unreadable stdin and malformed payloads fail open
+mkdir -p "$TL_TMP/catfail"
+printf '#!/bin/sh\nexit 1\n' >"$TL_TMP/catfail/cat"
+chmod +x "$TL_TMP/catfail/cat"
+tl_run_stdin "$edit" env PATH="$TL_TMP/catfail:$PATH" bash -c 'cd "$1" && exec bash "$2"' _ "$repo" "$TS_STAGE/context-mode-gate.sh"
+expect_silent "unreadable stdin (cat fails)"
+ts_gate context-mode-gate.sh 'not json' "$repo"; expect_silent "invalid JSON payload"
+ts_gate context-mode-gate.sh "$(ts_payload Bash "" "make build")" "$repo"; expect_silent "non-substantive, non-exempt shell"
+
+# --- SB bridge deferral ---
+sbp="$TL_TMP/sbp"; tl_git_repo "$sbp"
+ts_sb_project "$sbp"
+mkdir -p "$sbp/scripts/lib/recommended-tools"
+cat >"$sbp/scripts/lib/recommended-tools/heartbeat.sh" <<'HB'
+rt_project_id() { echo p; }
+rt_worktree_id() { echo w; }
+rt_current_session_id() { echo s; }
+rt_heartbeat_path() { echo /hb; }
+rt_heartbeat_is_valid() { return 0; }
+HB
+ts_gate context-mode-gate.sh "$edit" "$sbp"; expect_silent "defers to a live SB bridge"
 
 tl_results

@@ -25,15 +25,19 @@ ts_sb_project() {
   printf '# sb\n' >"$1/silver-bullet.md"
 }
 
-# ts_stage_deployed <dir>: lay the toolstack scripts out like ~/.cursor/hooks/toolstack
-# (scripts next to a lib/ directory that holds common.sh), as the gates expect.
+# ts_stage_deployed: lay the toolstack scripts out like ~/.cursor/hooks/toolstack
+# (scripts next to a lib/ directory that holds common.sh), as the gates expect, and
+# set TS_STAGE. The directory is named global-toolstack so the coverage tool maps the
+# staged copies back to scripts/lib/global-toolstack/*; lib/common.sh is a one-line
+# wrapper sourcing the real file so its functions are attributed to the source.
 ts_stage_deployed() {
-  local d="$1" f
-  mkdir -p "$d/lib"
+  TS_STAGE="$TL_TMP/global-toolstack"
+  mkdir -p "$TS_STAGE/lib"
+  local f
   for f in "$TS_SRC"/*.sh; do
-    cp "$f" "$d/"
+    [[ "$(basename "$f")" == common.sh ]] || cp "$f" "$TS_STAGE/"
   done
-  mv "$d/common.sh" "$d/lib/common.sh"
+  printf 'source "%s/common.sh"\n' "$TS_SRC" >"$TS_STAGE/lib/common.sh"
 }
 
 # ts_gate <script-basename> <json> [cwd]: run a staged gate with the payload on stdin.
