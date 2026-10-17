@@ -67,8 +67,9 @@ nope() { printf '  ✗ %s — %s\n' "$1" "$2"; FAIL=$((FAIL+1)); }
 # ── T1: SB_PHASE_LOCK_INHERITED bypass ──────────────────────────────────────
 echo "--- T1: INHERITED → silent exit 0, no throttle file ---"
 setup
-out=$(SB_PHASE_LOCK_INHERITED=true printf '{"session_id":"x"}' \
-  | SB_PHASE_LOCK_INHERITED=true bash "$HOOK" 2>&1)
+# Here-string input: the hook exits before reading stdin, so a printf writer
+# could fail with EPIPE and turn rc non-zero under pipefail.
+out=$(SB_PHASE_LOCK_INHERITED=true bash "$HOOK" <<<'{"session_id":"x"}' 2>&1)
 rc=$?
 [[ "$rc" == "0" ]] && ok "T1: exit 0" || nope "T1: exit 0" "rc=$rc"
 [[ -z "$out" ]] && ok "T1: silent" || nope "T1: silent" "got: $out"
