@@ -52,6 +52,12 @@ dc_cmd 'bash gen.sh'
 assert_eq "failing script-path helper: the script body is not inspected" "none" "$(decision)"
 unstage
 
+stage s3b
+printf 'sb_shell_candidate_write_paths() { printf "\\n"; }\n' >>"$STG/hooks/lib/tool-input.sh"
+dc_cmd 'cp $A /src/$B'
+assert_eq "blank lines from the write-path helper are not counted as targets" "deny" "$(decision)"
+unstage
+
 if [[ -f /proc/self/mem ]]; then
   stage s5
   printf 'sb_shell_invoked_script_path() { printf "%%s" /proc/self/mem; }\n' >>"$STG/hooks/lib/tool-input.sh"

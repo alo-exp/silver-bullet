@@ -179,7 +179,6 @@ build_doc_scheme_checklist_keys() {
   fi
 
   for key in "${DOC_SCHEME_CHECKLIST_KEYS[@]}"; do
-    [[ -n "$key" ]] || continue
     if [[ "$seen" == *$'\n'"$key"$'\n'* ]]; then
       continue
     fi
