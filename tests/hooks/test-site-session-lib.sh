@@ -191,7 +191,7 @@ rm -f "$TL_BIN/mv"; hash -r
 assert_match "run_regression: mv failure keeps un-suffixed log" '/site-regression\.[A-Za-z0-9]+$' "$log"
 
 # cd failure inside the regression subshell is reported as a suite failure
-cd() { return 1; }
+eval 'cd() { return 1; }'
 r=0; log="$(SB_RUNTIME_STATE_DIR="$TL_TMP/mvfail" sb_site_session_run_regression_tests "$PROJ")" || r=$?
 unset -f cd
 assert_eq "run_regression: cd into repo failing => rc 1" 1 "$r"
