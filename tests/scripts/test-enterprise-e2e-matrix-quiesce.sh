@@ -25,6 +25,15 @@ assert_file_exists "fallback leaves unrelated state" "$SB_RUNTIME_STATE_DIR/keep
 SB_ROOT="$bare" enterprise_e2e_matrix_quiesce_orchestrator_queue
 assert_file_absent "SB_ROOT default used when no arg" "$SB_RUNTIME_STATE_DIR/orchestrator.json"
 
+# rm failing is tolerated in the fallback branch
+tl_stub rm 'exit 1'
+hash -r
+rc=0
+enterprise_e2e_matrix_quiesce_orchestrator_queue "$bare" || rc=$?
+assert_eq "failing rm tolerated in fallback" "0" "$rc"
+/bin/rm -f "$TL_BIN/rm"
+hash -r
+
 # --- orchestrator queue: libs present; failing helpers never abort the caller ----
 libroot="$TL_TMP/lib-root"
 mkdir -p "$libroot/hooks/lib"
@@ -86,6 +95,30 @@ assert_file_exists "other file archived directly" "$wf/.archive/other.md"
 printf 'x\n' >"$wf/20260104T010203Z-x.md"
 SB_ROOT="" matrix_quiesce_active_workflows
 assert_file_exists "no SB root: dated file archived" "$wf/.archive/20260104T010203Z-x.md"
+
+# The non-dated sweep skips names matching ^202[0-9]{6}T (nine digits). Real ids carry
+# eight digits, so such a name only occurs with a crafted file: a "completed" workflow
+# that stays on disk is then left in place by the second pass.
+rm -rf "${wf:?}"/* "$wf/.archive"
+printf 'x\n' >"$wf/202123456T-ddd-silver-test.md"
+printf '#!/usr/bin/env bash\nexit 0\n' >"$sbroot/scripts/workflows.sh"
+SB_ROOT="$sbroot" matrix_quiesce_active_workflows
+assert_file_exists "completed-but-present dated workflow left in place" "$wf/202123456T-ddd-silver-test.md"
+
+# failing mv is tolerated everywhere
+printf 'x\n' >"$wf/plain.md"
+tl_stub mv 'exit 1'
+hash -r
+rc=0
+SB_ROOT="$bare" matrix_quiesce_active_workflows || rc=$?
+assert_eq "failing mv tolerated" "0" "$rc"
+assert_file_exists "file stays when mv fails" "$wf/plain.md"
+printf '#!/usr/bin/env bash\nexit 1\n' >"$sbroot/scripts/workflows.sh"
+rc=0
+SB_ROOT="$sbroot" matrix_quiesce_active_workflows || rc=$?
+assert_eq "failing completion plus failing mv tolerated" "0" "$rc"
+/bin/rm -f "$TL_BIN/mv"
+hash -r
 
 # --- router session evidence ---------------------------------------------------
 evidence=".planning/workflows/router-session.md"
