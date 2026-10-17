@@ -110,7 +110,7 @@ assert_contains "env compress knob" "$(cat "$EF")" "AGENTMEMORY_AUTO_COMPRESS=tr
 assert_contains "env obsidian knob" "$(cat "$EF")" "OBSIDIAN_AUTO_EXPORT=false"
 assert_contains "env bridge knob" "$(cat "$EF")" "CLAUDE_MEMORY_BRIDGE=false"
 assert_contains "env export root" "$(cat "$EF")" "AGENTMEMORY_EXPORT_ROOT=$RP/.agentmemory"
-assert_eq "env mode" "600" "$(stat -c %a "$EF")"
+assert_eq "env mode" "-rw-------" "$(ls -l "$EF" | cut -c1-10)"
 printf 'USER=1\n' >"$EF"
 sb_stack_merge_agentmemory_env "$RP" "" synergy_max
 assert_eq "env backup" "USER=1" "$(cat "$EF.bak")"
@@ -143,7 +143,10 @@ reset_calls; stub_log launchctl 'case "$1" in bootstrap) exit 1;; esac; exit 0'
 sb_stack_launchd_server_plist "$RP"
 assert_contains "falls back to load" "$(calls)" "launchctl load $SP"
 stub_log launchctl 'exit 1'
+reset_calls; rm -f "$SP"
 sb_stack_launchd_server_plist "$RP" && tl_pass "server plist tolerates launchctl failures" || tl_fail "server plist tolerates launchctl failures"
+assert_file_exists "server plist written despite launchctl failure" "$SP"
+assert_contains "load attempted after failed bootstrap" "$(calls)" "launchctl load $SP"
 stub_log agentmemory; stub_log launchctl
 sb_stack_launchd_server_plist "$RP"
 assert_contains "agentmemory path rewritten to PATH binary" "$(cat "$SP")" "<string>$TL_BIN/agentmemory</string>"
@@ -181,8 +184,13 @@ reset_calls; stub_log launchctl 'case "$1" in bootstrap) exit 1;; esac; exit 0'
 sb_stack_launchd_bridge_plist "$RP"
 assert_contains "bridge falls back to load" "$(calls)" "launchctl load $BP"
 stub_log launchctl 'exit 1'
+reset_calls; rm -f "$BP"
 sb_stack_launchd_bridge_plist "$RP" && tl_pass "bridge plist tolerates launchctl failures" || tl_fail "bridge plist tolerates launchctl failures"
+assert_file_exists "bridge plist written despite launchctl failure" "$BP"
+assert_contains "bridge load attempted" "$(calls)" "launchctl load $BP"
+rm -f "$BP"
 ( cd "$RP" && sb_stack_launchd_bridge_plist ) && tl_pass "bridge plist default repo is PWD" || tl_fail "bridge plist default repo"
+assert_contains "bridge plist default repo recorded" "$(cat "$BP")" "<string>$RP</string>"
 unstub launchctl
 rm -rf "$LA"
 

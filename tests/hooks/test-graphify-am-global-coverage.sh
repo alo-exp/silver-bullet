@@ -114,7 +114,7 @@ ga_merge_agentmemory_env /repo/.agentmemory
 assert_file_exists "env created" "$EF"
 assert_contains "env has flags" "$(cat "$EF")" "AGENTMEMORY_INJECT_CONTEXT=true"
 assert_contains "env export root from arg" "$(cat "$EF")" "AGENTMEMORY_EXPORT_ROOT=/repo/.agentmemory"
-assert_eq "env mode 600" "600" "$(stat -c %a "$EF")"
+assert_eq "env mode 600" "-rw-------" "$(ls -l "$EF" | cut -c1-10)"
 assert_file_absent "no backup when env was new" "$EF.bak"
 printf 'USER_SETTING=1\n' >"$EF"
 ga_merge_agentmemory_env /other/repo
@@ -174,8 +174,11 @@ stub_log launchctl 'case "$1" in bootstrap) exit 1;; esac; exit 0'
 ga_launchd_server_plist /exp/root
 assert_contains "falls back to launchctl load" "$(calls)" "launchctl load $P"
 stub_log launchctl 'exit 1'
+reset_calls
+rm -f "$P"
 ga_launchd_server_plist
-tl_pass "server plist tolerates launchctl failures"
+assert_file_exists "server plist still written when launchctl fails" "$P"
+assert_contains "launchctl load was attempted and failure ignored" "$(calls)" "launchctl load $P"
 assert_contains "default export root used" "$(cat "$P")" "<string>$HOME/.agentmemory/default-export</string>"
 rm -f "$TL_BIN/node" "$TL_BIN/agentmemory"; hash -r
 PATH="$PB" ga_launchd_server_plist /exp/root
@@ -210,8 +213,11 @@ reset_calls
 ga_launchd_bridge_plist "$RP"
 assert_contains "bridge falls back to launchctl load" "$(calls)" "launchctl load $BP"
 stub_log launchctl 'exit 1'
+reset_calls
+rm -f "$BP"
 ga_launchd_bridge_plist "$RP"
-tl_pass "bridge plist tolerates launchctl failures"
+assert_file_exists "bridge plist still written when launchctl fails" "$BP"
+assert_contains "bridge launchctl load attempted and failure ignored" "$(calls)" "launchctl load $BP"
 rm -rf "$LA" "$HOME/.agentmemory"
 
 # ---------- cli / server / gitleaks ----------
