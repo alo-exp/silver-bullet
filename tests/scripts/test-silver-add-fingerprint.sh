@@ -12,7 +12,6 @@ fail() { echo "FAIL: $1"; (( FAIL++ )) || true; }
 WORKDIR="$(mktemp -d)"
 trap 'rm -rf "$WORKDIR"' EXIT
 
-chmod +x "$SCRIPT"
 
 fp1="$(bash "$SCRIPT" fingerprint --domain code-health --scope src/a.ts --finding 'null deref')"
 fp2="$(bash "$SCRIPT" fingerprint --domain code-health --scope src/a.ts --finding 'null deref')"
