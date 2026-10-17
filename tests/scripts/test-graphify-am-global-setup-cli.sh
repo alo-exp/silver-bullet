@@ -36,6 +36,10 @@ tl_run bash "$SCRIPT" --host
 assert_eq "--host without value exits 2" 2 "$TL_STATUS"
 assert_contains "--host without value reports missing host" "$TL_ERR" "--host is required"
 
+tl_run bash "$SCRIPT" --host claude --apply --dry-run --repo
+assert_eq "--repo without value exits 2" 2 "$TL_STATUS"
+assert_contains "--repo without value reports missing path" "$TL_ERR" "--repo requires a path"
+
 # --- all hosts with nothing configured ---
 tl_run bash "$SCRIPT" --host all --verify
 assert_eq "--host all with no config exits 1" 1 "$TL_STATUS"
