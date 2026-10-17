@@ -84,3 +84,16 @@ dg_run_nolib_in() {
   TL_OUT="$(cat "$TL_TMP/.out")"
   TL_ERR="$(cat "$TL_TMP/.err")"
 }
+
+# dg_run_with_fn DIR HOOK JSON FUNC_BODY [VAR=VALUE...]: run a hook with extra shell functions
+# pre-defined and exported (FUNC_BODY is shell source, e.g. 'f() { exit 0; }').
+dg_run_with_fn() {
+  local dir="$1" hook="$2" json="$3" body="$4"
+  shift 4
+  [[ "$hook" == /* ]] || hook="$TL_REPO_ROOT/$hook"
+  TL_STATUS=0
+  printf '%s' "$json" | (cd "$dir" && env "$@" bash -c "$body"'; exec bash "$0"' "$hook") \
+    >"$TL_TMP/.out" 2>"$TL_TMP/.err" || TL_STATUS=$?
+  TL_OUT="$(cat "$TL_TMP/.out")"
+  TL_ERR="$(cat "$TL_TMP/.err")"
+}
