@@ -4,3 +4,17 @@ timestamp,model_slug,reasoning_effort,score,task_complexity
 2026-10-13T18:59:53Z,claude-haiku-5-5,max,3,medium
 2026-10-13T19:08:39Z,claude-sonnet-5-5,low,4,high
 2026-10-13T19:31:28Z,claude-sonnet-5-5,low,4,high
+2026-10-13T23:42:36Z,claude-haiku-5-5,max,4,medium
+2026-10-15T09:29:38Z,claude-sonnet-5-5,low,4,high
+2026-10-15T09:33:40Z,claude-sonnet-5-5,low,3,high
+2026-10-15T09:48:22Z,claude-sonnet-5-5,low,4,high
+2026-10-15T09:56:30Z,claude-haiku-5-5,max,4,medium
+2026-10-15T10:14:16Z,claude-haiku-5-5,max,5,medium
+2026-10-15T10:14:17Z,claude-haiku-5-5,max,4,medium
+2026-10-15T10:16:42Z,claude-haiku-5-5,max,4,medium
+2026-10-15T10:38:48Z,claude-haiku-5-5,max,4,medium
+2026-10-15T10:42:45Z,claude-haiku-5-5,max,4,medium
+2026-10-15T13:20:12Z,claude-sonnet-5-5,low,4,medium
+2026-10-15T14:50:32Z,claude-sonnet-5-5,low,3,medium
+2026-10-15T17:59:08Z,claude-haiku-5-5,medium,4,low
+2026-10-17T08:20:11Z,gpt-6.1-sol,high,5,medium
