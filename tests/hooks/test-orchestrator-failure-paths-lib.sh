@@ -13,6 +13,8 @@ export SILVER_BULLET_RUNTIME=claude
 tl_stub sleep 'exit 0'
 mkdir -p "$TL_TMP/cwd"
 cd "$TL_TMP/cwd"
+# shellcheck source=../../hooks/lib/sb-project-gate.sh
+source "$TL_REPO_ROOT/hooks/lib/sb-project-gate.sh"
 # shellcheck source=../../hooks/lib/orchestrator-scheduler.sh
 source "$TL_REPO_ROOT/hooks/lib/orchestrator-scheduler.sh"
 # shellcheck source=../../hooks/lib/orchestrator-parent.sh
@@ -284,8 +286,11 @@ out="$(sb_orchestrator_on_composer_start silver-test "x" "$PROJ")"
 rm -rf "$PROJ/.planning/orchestrator-composition-log.jsonl"
 assert_eq "composition log unwritable: workflow id still returned" WF-FP-1 "$out"
 reset
-( sb_scheduler_refresh_active_batch_dispatch() { return 1; }; sb_orchestrator_on_composer_start silver-test "x" "$PROJ" >/dev/null )
-assert_file_exists "batch refresh failing: composer start still completes" "$STATE"
+orch_stub_failing jq 'host_parallel_capable'
+out="$(sb_orchestrator_on_composer_start silver-test "x" "$PROJ")"
+orch_unstub jq
+assert_eq "batch refresh failing: composer start still returns the id" WF-FP-1 "$out"
+assert_eq "batch refresh failing: no batch dispatch recorded" null "$(orch_state_get .scheduler.batch_dispatch)"
 # The event jq failing.
 reset
 orch_stub_failing jq 'selected_workflow: (if'
@@ -364,6 +369,12 @@ SB_ORCHESTRATOR_RUNTIME_SCHEDULER=0 sb_orchestrator_advance_on_atom silver-plan 
 orch_unstub jq
 assert_eq "jq failing on every token read: nothing matches, nothing advances" silver-plan "$(orch_state_get .current_flow)"
 mkq
+orch_stub_failing_nth jq '.flow_queue[$i] // ""' 2
+out="$(SB_ORCHESTRATOR_RUNTIME_SCHEDULER=0 sb_orchestrator_advance_on_atom silver-plan "$PROJ")"
+orch_unstub jq
+assert_eq "next flow unreadable: no chaining message" "" "$out"
+assert_eq "next flow unreadable: current flow cleared" "" "$(orch_state_get .current_flow)"
+mkq
 orch_stub_failing jq '.current_flow = $next'
 SB_ORCHESTRATOR_RUNTIME_SCHEDULER=0 sb_orchestrator_advance_on_atom silver-plan "$PROJ" >/dev/null
 orch_unstub jq
@@ -418,7 +429,7 @@ assert_eq "unusable handoff: still held" silver-fixture-read-a "$(orch_state_get
 # Scheduler enabled but no catalog is reachable from this lib location.
 tree="$(orch_stage_libs orchestrator-state.sh orchestrator-scheduler.sh orchestrator-skill-atom.sh orchestrator-event-log.sh orchestrator-directive.sh orchestrator-parent.sh)"
 mkq
-bash -c 'unset SB_APO_CATALOG_FILE; source "$1"; sb_orchestrator_advance_on_atom silver-plan ""' _ "$tree/orchestrator-state.sh" >/dev/null
+bash -c 'unset SB_APO_CATALOG_FILE; source "$1"; sb_orchestrator_advance_on_atom silver-plan ""' _ "$tree/orchestrator-scheduler.sh" >/dev/null
 assert_eq "no catalog reachable: plain advance" silver-validate "$(orch_state_get .current_flow)"
 
 # ---------------------------------------------------------------------------------------
@@ -460,6 +471,10 @@ sb_scheduler_apply_multi_workflow_chain "$bad" silver-feature "$multi" && rc=0 |
 assert_eq "multi-chain with an unwritable log" 0 "$rc"
 sb_scheduler_apply_net_new_workflow_route "$bad" silver-new-workflow "posture audit" && rc=0 || rc=$?
 assert_eq "net-new composer with an unwritable log" 0 "$rc"
+dirize "$EVENTS"
+sb_scheduler_apply_net_new_workflow_route "$PROJ" silver-new-workflow "posture audit" 2>/dev/null && rc=0 || rc=$?
+rm -rf "$EVENTS" "$PROJ/.planning/orchestrator-composition-log.jsonl"
+assert_eq "net-new composer with an unwritable event log" 0 "$rc"
 sb_scheduler_apply_net_new_workflow_route "$bad" silver-feature "posture audit" && rc=0 || rc=$?
 assert_eq "net-new routing with an unwritable log" 0 "$rc"
 (
@@ -556,6 +571,12 @@ dirize "$EVENTS"
 sb_scheduler_mark_handoff_joined AF-PLAN "" 2>/dev/null && rc=0 || rc=$?
 rm -rf "$EVENTS"
 assert_eq "event log unwritable: join marking succeeds" 0 "$rc"
+orch_write_state "$(jq -n --arg r "$PROJ" '{repo_root:$r,scheduler:{batches:[["AF-PLAN"],["AF-READ-A"]],active_batch_index:0,batch_dispatch:{handoffs:[{atomic_flow_id:"AF-PLAN",next_skill:"silver-plan",join_status:"pending"}]}}}')"
+orch_stub_failing jq 'active_batch_index = $idx'
+sb_scheduler_mark_handoff_joined AF-PLAN "" && rc=0 || rc=$?
+orch_unstub jq
+assert_eq "batch completion failing: join marking still succeeds" 0 "$rc"
+assert_eq "batch completion failing: batch index unchanged" 0 "$(orch_state_get .scheduler.active_batch_index)"
 orch_write_state "$(jq -n --arg r "$PROJ" '{repo_root:$r,scheduler:{batches:[["AF-PLAN"],[]],active_batch_index:0,batch_dispatch:{handoffs:[{atomic_flow_id:"AF-PLAN",next_skill:"silver-plan",join_status:"pending"}]}}}')"
 sb_scheduler_mark_handoff_joined AF-PLAN ""
 assert_eq "next batch empty: refresh failure tolerated, index advanced" 1 "$(orch_state_get .scheduler.active_batch_index)"

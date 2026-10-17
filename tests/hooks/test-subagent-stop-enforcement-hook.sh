@@ -243,6 +243,14 @@ assert_file_exists "skill name unreadable (PreToolUse): pending kept" "$PENDING"
 tl_run_hook "$HOOK" "$(ev PostToolUse Skill silver-completion-audit)"
 assert_file_exists "skill name unreadable (PostToolUse): pending kept" "$PENDING"
 orch_unstub jq
+# Without the tool-input helpers the tool name cannot be read: the hook ignores the call.
+tree="$(orch_stage_tree)"
+rm -f "$tree/lib/tool-input.sh"
+mark_pending
+tl_run_stdin "$(ev PreToolUse Edit)" bash "$tree/subagent-stop-enforcement.sh"
+assert_eq "no tool-input helper (PreToolUse): ignored" "0|" "$TL_STATUS|$TL_OUT"
+tl_run_stdin "$(ev PostToolUse Task)" bash "$tree/subagent-stop-enforcement.sh"
+assert_eq "no tool-input helper (PostToolUse): ignored" "0|" "$TL_STATUS|$TL_OUT"
 # The clearing helpers are unavailable: the hook still exits cleanly.
 tree="$(orch_stage_tree)"
 printf '%s\n' 'sb_site_session_subagents_spawned() { return 0; }' >"$tree/lib/site-session.sh"
