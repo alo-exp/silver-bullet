@@ -9,9 +9,10 @@ PASS=0
 FAIL=0
 TMP=""
 TEST_HOME=""
+OFFLINE_TMP=""
 
 cleanup() {
-  rm -rf "$TMP" "$TEST_HOME"
+  rm -rf "$TMP" "$TEST_HOME" "$OFFLINE_TMP"
 }
 trap cleanup EXIT
 
@@ -20,6 +21,15 @@ fail() { echo "  FAIL: $1"; FAIL=$((FAIL + 1)); }
 
 TMP="$(mktemp -d)"
 TEST_HOME="$(mktemp -d)"
+OFFLINE_TMP="$(mktemp -d)"
+# --mode apply repairs opted-in tools by installing them (npm install -g
+# context-mode, uv tool install graphifyy, curl … | sh for lean-ctx). Tests
+# must never install software or touch the network, so those commands are
+# failing stand-ins here: the reconciler's install-failure path runs on every
+# machine, whatever happens to be installed.
+# shellcheck source=tests/lib/offline-tools.sh
+source "$REPO_ROOT/tests/lib/offline-tools.sh"
+sb_offline_tools_install "${OFFLINE_TMP}/bin"
 export HOME="$TEST_HOME"
 mkdir -p "${TEST_HOME}/.cursor"
 printf '{"mcpServers":{}}\n' >"${TEST_HOME}/.cursor/mcp.json"
@@ -98,16 +108,16 @@ echo "$consent_summary" | jq -e 'length > 0 and .graphify == "enabled" and .rtk 
 
 # optimize-five-tool-stack requires explicit host + project-root
 OPT="$REPO_ROOT/scripts/optimize-five-tool-stack.sh"
-if bash "$OPT" --host cursor --project-root "$TMP" --dry-run --skip-rtcm --skip-synergy --force >/tmp/sb-opt-req.log 2>&1; then
+if bash "$OPT" --host cursor --project-root "$TMP" --dry-run --skip-rtcm --skip-synergy --force >"${OFFLINE_TMP}/opt-req.log" 2>&1; then
   pass "optimize-five-tool with required args"
 else
   fail "optimize-five-tool with required args"
-  cat /tmp/sb-opt-req.log >&2 || true
+  cat "${OFFLINE_TMP}/opt-req.log" >&2 || true
 fi
-if bash "$OPT" --dry-run --force 2>/tmp/sb-opt-miss.log; then
+if bash "$OPT" --dry-run --force 2>"${OFFLINE_TMP}/opt-miss.log"; then
   fail "optimize-five-tool rejects missing args"
 else
-  grep -q 'required' /tmp/sb-opt-miss.log && pass "optimize-five-tool rejects missing args" || fail "optimize-five-tool rejects missing args"
+  grep -q 'required' "${OFFLINE_TMP}/opt-miss.log" && pass "optimize-five-tool rejects missing args" || fail "optimize-five-tool rejects missing args"
 fi
 
 # patch-hooks removes legacy routing hooks when RTK is consented and counts removals

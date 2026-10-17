@@ -13,7 +13,6 @@ fail() { echo "FAIL: $1"; (( FAIL++ )) || true; }
 WORKDIR="$(mktemp -d)"
 trap 'rm -rf "$WORKDIR"' EXIT
 
-chmod +x "$SCRIPT"
 cp -R "$REPO_ROOT/templates" "$WORKDIR/templates"
 
 cat > "$WORKDIR/package.json" <<'EOF'
