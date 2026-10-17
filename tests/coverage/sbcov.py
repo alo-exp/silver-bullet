@@ -51,7 +51,9 @@ SCOPE_FILE = Path(__file__).resolve().parent / "scope.json"
 
 ASSIGN_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*)(\[[^\]]*\])?\+?=")
 DECLARATION_WORDS = {"declare", "typeset", "local", "export", "readonly"}
-WRAPPER_WORDS = {"time", "nohup", "coproc"}
+# Keywords bash traces as the command they wrap. `nohup` is not one: it is an
+# ordinary command and xtrace prints it as the command word.
+WRAPPER_WORDS = {"time", "coproc"}
 # Node types that are statements bash traces itself.
 LEAF_TYPES = {
     "command",
