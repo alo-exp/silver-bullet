@@ -218,7 +218,11 @@ def analyze_bash(path: Path) -> BashAnalysis:
     errors: list[int] = []
     fn_stack: list[Function] = []
 
-    window: list[tuple[int, int] | None] = [None]  # active $(...) attribution window
+    window: list[tuple[int, int] | None] = [None]  # active attribution window
+
+    def widen(lo: int, hi: int) -> tuple[int, int]:
+        cur = window[-1]
+        return (lo, hi) if cur is None else (min(cur[0], lo), max(cur[1], hi))
 
     def add(stmt: Statement):
         win = window[-1]
@@ -233,11 +237,12 @@ def analyze_bash(path: Path) -> BashAnalysis:
     def visit_substitutions(node, outer_start: int, outer_end: int):
         """Add statements for commands inside $(...), <(...) and `...` at or below node."""
         if node.type in ("command_substitution", "process_substitution"):
+            # bash reports these commands at the enclosing statement's first line
+            # (backslash continuations) or last line (assignments), and shifts
+            # multi-line substitutions further; the window covers all of that.
             extra = node.end_point[0] - node.start_point[0]
-            parent = window[-1]
-            lo = outer_start if parent is None else min(parent[0], outer_start)
-            hi = outer_end + extra if parent is None else max(parent[1], outer_end) + extra
-            window.append((lo, hi) if extra else parent)
+            lo, hi = widen(outer_start, outer_end)
+            window.append((lo, hi + extra))
             for inner in node.children:
                 if inner.is_named:
                     visit(inner)
@@ -251,6 +256,33 @@ def analyze_bash(path: Path) -> BashAnalysis:
         if t == "ERROR" or node.is_missing:
             errors.append(node.start_point[0] + 1)
         if t in SKIP_CHILD_TYPES:
+            if t == "comment":
+                return
+            lo, hi = node.start_point[0] + 1, node.end_point[0] + 1
+            for child in node.children:
+                if child.type in SKIP_CHILD_TYPES or not child.is_named:
+                    # Expansions in redirect targets (e.g. `done < <(cmd)`) and here-documents.
+                    visit_substitutions(child, lo, hi)
+                else:
+                    # tree-sitter nests `cmd <<EOF || fallback` inside the here-document
+                    # redirect; bash reports the fallback at the end of the document.
+                    window.append(widen(lo, hi))
+                    visit(child)
+                    window.pop()
+            return
+        if t in ("list", "pipeline"):
+            # Simple commands chained after a here-document or a continuation line
+            # are reported anywhere in the chain's span.
+            lo, hi = widen(node.start_point[0] + 1, node.end_point[0] + 1)
+            for child in node.children:
+                if not child.is_named:
+                    continue
+                if child.type in LEAF_TYPES or child.type in ("redirected_statement", "negated_command"):
+                    window.append((lo, hi))
+                    visit(child)
+                    window.pop()
+                else:
+                    visit(child)
             return
         if t in LEAF_TYPES:
             stmt = _leaf_statement(node, src)
@@ -259,10 +291,7 @@ def analyze_bash(path: Path) -> BashAnalysis:
             return
         if t == "redirected_statement":
             for child in node.children:
-                if child.type in SKIP_CHILD_TYPES:
-                    # Expansions in redirect targets and here-documents run with the command.
-                    visit_substitutions(child, node.start_point[0] + 1, node.end_point[0] + 1)
-                elif child.is_named:
+                if child.is_named:
                     visit(child)
             return
         if t == "compound_statement" and node.children and node.children[0].type == "((":
@@ -449,7 +478,10 @@ def collect(cov_dir: Path) -> int:
             run_counts[w] = run_counts.get(w, 0) + 1
             count += 1
         flush(run_key, run_counts)
-        trace.unlink()
+        if os.environ.get("SB_COV_KEEP_RAW"):
+            trace.rename(trace.with_suffix(".kept"))
+        else:
+            trace.unlink()
     hits_path.write_text(json.dumps(hits))
     return count
 
@@ -547,9 +579,10 @@ def bash_file_coverage(analysis: BashAnalysis, line_words: dict) -> dict:
         if isinstance(words, list):  # tolerate the pre-multiplicity format
             words = {w: 1 for w in words}
         for w, n in words.items():
+            # Own-span matches first, then window matches: a word traced n times in
+            # one run credits up to n statements in that order.
             cands = [i for i in by_line.get(ln, []) if matches(i, w)]
-            if not cands:
-                cands = [i for i in by_window.get(ln, []) if matches(i, w)]
+            cands += [i for i in by_window.get(ln, []) if matches(i, w)]
             if not cands:
                 cands = [i for i in by_line.get(ln, []) if stmts[i].word is None and not w.startswith("=")]
             if not cands:
@@ -580,12 +613,36 @@ def bash_file_coverage(analysis: BashAnalysis, line_words: dict) -> dict:
     }
 
 
+def _copy_matches_source(analysis: BashAnalysis, line_words: dict) -> bool:
+    """True when a copy's hits line up with the source (rejects edited copies).
+
+    Tests sometimes run a staged copy that was modified (lines inserted or
+    removed). Its hits would land on the wrong statements, so a copy is only
+    credited when at most 10% of its distinct (line, word) hits fail to match.
+    """
+    res = bash_file_coverage(analysis, line_words)
+    total = sum(len(w) for w in line_words.values())
+    return total == 0 or len(res["orphan_hits"]) <= max(1, total // 10)
+
+
+REJECTED_COPIES: list[str] = []
+
+
 def bash_coverage(cov_dir: Path, scoped: list[str]) -> dict:
     hits_path = cov_dir / "bash-hits.json"
     hits = json.loads(hits_path.read_text()) if hits_path.exists() else {}
     mapping = _map_paths(hits.keys(), scoped)
+    root = str(REPO_ROOT) + os.sep
+    analyses: dict[str, BashAnalysis] = {}
     merged: dict[str, dict[int, dict]] = {}
     for traced, rel in mapping.items():
+        real = os.path.realpath(traced) if os.path.exists(traced) else traced
+        if not real.startswith(root):
+            analysis = analyses.setdefault(rel, analyze_bash(REPO_ROOT / rel))
+            line_words = {int(k): v for k, v in hits[traced].items()}
+            if not _copy_matches_source(analysis, line_words):
+                REJECTED_COPIES.append(f"{traced} -> {rel}")
+                continue
         dest = merged.setdefault(rel, {})
         for ln, words in hits[traced].items():
             slot = dest.setdefault(int(ln), {})
@@ -593,7 +650,7 @@ def bash_coverage(cov_dir: Path, scoped: list[str]) -> dict:
                 slot[w] = max(slot.get(w, 0), n)
     results = {}
     for rel in scoped:
-        analysis = analyze_bash(REPO_ROOT / rel)
+        analysis = analyses.get(rel) or analyze_bash(REPO_ROOT / rel)
         results[rel] = bash_file_coverage(analysis, merged.get(rel, {}))
     return results
 
@@ -817,6 +874,12 @@ def report(cov_dir: Path, fail_under: float | None, show_missing: bool, only: li
     unmeasured = summary["javascript"]["unmeasured_files"]
     if unmeasured:
         print(f"JS/TS files not loaded by any test (approximate line counts): {', '.join(unmeasured)}")
+    if REJECTED_COPIES:
+        print(f"Ignored {len(REJECTED_COPIES)} modified staged copies whose traces do not match the source (see coverage-summary.json)")
+        summary["rejected_copies"] = REJECTED_COPIES
+        (cov_dir / "coverage-summary.json").write_text(
+            json.dumps({"summary": summary, "bash": bash, "python": py, "javascript": js}, indent=1, sort_keys=True)
+        )
     orphan_total = sum(len(r["orphan_hits"]) for r in bash.values())
     if orphan_total:
         print(f"Unattributed bash trace hits: {orphan_total} (eval/trap bodies or analyzer gaps; per-file list in coverage-summary.json)")
@@ -864,16 +927,7 @@ def _ranges(nums) -> str:
 def annotate(cov_dir: Path, rel: str, as_json: bool = False) -> int:
     path = REPO_ROOT / rel
     analysis = analyze_bash(path)
-    hits_path = cov_dir / "bash-hits.json"
-    hits = json.loads(hits_path.read_text()) if hits_path.exists() else {}
-    mapping = _map_paths(hits.keys(), [rel])
-    line_words: dict[int, dict] = {}
-    for traced, mapped in mapping.items():
-        for ln, words in hits[traced].items():
-            slot = line_words.setdefault(int(ln), {})
-            for w, n in words.items():
-                slot[w] = max(slot.get(w, 0), n)
-    res = bash_file_coverage(analysis, line_words)
+    res = bash_coverage(cov_dir, [rel])[rel]
     if as_json:
         print(json.dumps(res, indent=1, sort_keys=True))
         return 0
