@@ -330,7 +330,7 @@ sb_scheduler_composer_catalog_workflow_id() {
 sb_scheduler_detect_doc_only_intent() {
   local intent="${1:-}"
   [[ -n "$intent" ]] || return 1
-  printf '%s' "$intent" | grep -qiE \
+  grep -qiE <<<"$intent" \
     'documentation-only|doc-only|README badge|shields\.io|static README badge|readme only|badge visible in rendered README' \
     && return 0
   return 1
@@ -361,8 +361,8 @@ sb_scheduler_apply_doc_only_tailoring() {
 sb_scheduler_detect_observability_only_intent() {
   local intent="${1:-}"
   [[ -n "$intent" ]] || return 1
-  printf '%s' "$intent" | grep -qiE 'observability|structured logging|runbook|correlation.?id|log envelope' \
-    && printf '%s' "$intent" | grep -qiE 'zero API|no API|no UI|no new routes|no database|no landing|documentation-only|README runbook' \
+  grep -qiE 'observability|structured logging|runbook|correlation.?id|log envelope' <<<"$intent" \
+    && grep -qiE 'zero API|no API|no UI|no new routes|no database|no landing|documentation-only|README runbook' <<<"$intent" \
     && return 0
   return 1
 }
@@ -394,10 +394,10 @@ sb_scheduler_apply_observability_tailoring() {
 sb_scheduler_detect_multi_capability_intent() {
   local intent="${1:-}"
   [[ -n "$intent" ]] || return 1
-  printf '%s' "$intent" | grep -qiE 'greenfield|incident-ready|waitlist|micro-SaaS|from scratch|tenant-scoped' \
-    && printf '%s' "$intent" | grep -qiE 'docker|container|compose|devops|runtime|canary' \
-    && printf '%s' "$intent" | grep -qiE 'ship|release|deploy|PR|readiness' \
-    && printf '%s' "$intent" | grep -qiE 'API|endpoint|persistence|landing|SQLite' \
+  grep -qiE 'greenfield|incident-ready|waitlist|micro-SaaS|from scratch|tenant-scoped' <<<"$intent" \
+    && grep -qiE 'docker|container|compose|devops|runtime|canary' <<<"$intent" \
+    && grep -qiE 'ship|release|deploy|PR|readiness' <<<"$intent" \
+    && grep -qiE 'API|endpoint|persistence|landing|SQLite' <<<"$intent" \
     && return 0
   return 1
 }
@@ -426,7 +426,7 @@ sb_scheduler_apply_multi_workflow_chain() {
 sb_scheduler_detect_net_new_workflow_intent() {
   local intent="${1:-}"
   [[ -n "$intent" ]] || return 1
-  printf '%s' "$intent" | grep -qiE 'posture audit|compliance snapshot|compliance-bundle|SB posture|hook manifest|net-new workflow|no existing.*workflow|new reusable workflow' \
+  grep -qiE 'posture audit|compliance snapshot|compliance-bundle|SB posture|hook manifest|net-new workflow|no existing.*workflow|new reusable workflow' <<<"$intent" \
     && return 0
   return 1
 }

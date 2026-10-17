@@ -60,7 +60,7 @@ if ! command -v jq >/dev/null 2>&1; then
     sb_jq_enforcement_block "completion-audit" "emit_block"
     exit 0
   fi
-  if printf '%s' "$input" | grep -qE 'git commit|git push|gh pr create|gh release create|\bdeploy\b'; then
+  if grep -qE 'git commit|git push|gh pr create|gh release create|\bdeploy\b' <<<"$input"; then
     sb_jq_enforcement_block "completion-audit" "emit_block"
   fi
   printf '{"hookSpecificOutput":{"message":"⚠️  ENFORCEMENT INACTIVE — jq not installed. Install: brew install jq (macOS) / apt install jq (Linux). All Silver Bullet enforcement hooks are disabled until jq is available."}}'
@@ -205,7 +205,7 @@ fi
 current_branch=""
 current_branch=$(git -C "$PWD" rev-parse --abbrev-ref HEAD 2>/dev/null || true)
 # Validate branch name: only allow safe characters
-if [[ -n "$current_branch" ]] && ! printf '%s' "$current_branch" | grep -qE '^[a-zA-Z0-9/_.-]+$'; then
+if [[ -n "$current_branch" ]] && ! grep -qE '^[a-zA-Z0-9/_.-]+$' <<<"$current_branch"; then
   current_branch=""
 fi
 on_main=false
