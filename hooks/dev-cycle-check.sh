@@ -19,7 +19,12 @@ DEVOPS_DEFAULT_PLANNING="${DEVOPS_DEFAULT_PLANNING:-silver-blast-radius devops-q
 emit_block_jq_missing() {
   local reason="$1"
   local json_reason
-  json_reason=$(printf '%s' "$reason" | jq -Rs '.')
+  # This runs only when jq is missing, so encode the reason without it.
+  if command -v python3 >/dev/null 2>&1; then
+    json_reason=$(python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))' <<<"$reason")
+  else
+    json_reason='"jq is required for Silver Bullet enforcement"'
+  fi
   printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":%s}}' "$json_reason"
 }
 
