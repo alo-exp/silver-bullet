@@ -74,7 +74,11 @@ sb_artifact_substance_gate_enforce() {
       local rounds_file="${repo_root}/.planning/REVIEW-ROUNDS.md"
       if [[ -f "$rounds_file" && ! -L "$rounds_file" ]]; then
         local round_count
-        round_count=$(grep -cE '^## Round [0-9]+' "$rounds_file" 2>/dev/null || echo 0)
+        # grep -c prints 0 AND exits 1 when nothing matches; `|| echo 0` would append a
+        # second 0 ("0\n0"), which makes the numeric comparison below error out and
+        # silently pass a rounds file with no rounds at all.
+        round_count=$(grep -cE '^## Round [0-9]+' "$rounds_file" 2>/dev/null || true)
+        round_count="${round_count:-0}"
         if [[ "$round_count" -lt 2 ]]; then
           issues="${issues}  ❌ REVIEW-ROUNDS.md has ${round_count} round(s) — two consecutive clean passes required (see hooks/core-rules.md §3a) ($rounds_file)"$'\n'
         fi
