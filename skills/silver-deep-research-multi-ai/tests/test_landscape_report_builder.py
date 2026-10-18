@@ -27,6 +27,25 @@ from synthesize_landscape import (  # noqa: E402
 )
 
 
+_SAVED_FONT_CACHE = None
+
+
+def setUpModule() -> None:
+    # Keep the suite offline: an empty cached font CSS stops the independent PDF builder
+    # from fetching Google Fonts over HTTP in a fresh interpreter.
+    import landscape_independent_pdf
+
+    global _SAVED_FONT_CACHE
+    _SAVED_FONT_CACHE = landscape_independent_pdf._FONT_CSS_CACHE
+    landscape_independent_pdf._FONT_CSS_CACHE = ""
+
+
+def tearDownModule() -> None:
+    import landscape_independent_pdf
+
+    landscape_independent_pdf._FONT_CSS_CACHE = _SAVED_FONT_CACHE
+
+
 class OverviewQualityTests(unittest.TestCase):
     def test_rejects_meta_research_overviews(self) -> None:
         self.assertTrue(
