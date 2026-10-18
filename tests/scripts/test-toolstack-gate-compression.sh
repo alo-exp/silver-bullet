@@ -34,7 +34,11 @@ rt_current_session_id() { echo s; }
 rt_heartbeat_path() { echo /hb; }
 rt_heartbeat_is_valid() { return 0; }
 HB
-mkdir -p "$TL_TMP/nogit"
+mkdir -p "$TL_TMP/nogit" "$TL_TMP/catfail"
+printf '#!/bin/sh\nexit 1\n' >"$TL_TMP/catfail/cat"; chmod +x "$TL_TMP/catfail/cat"
+unreadable() { # <script> <json>: stdin cannot be read (cat fails)
+  tl_run_stdin "$2" env PATH="$TL_TMP/catfail:$PATH" bash -c 'cd "$1" && exec bash "$2"' _ "$repo" "$TS_STAGE/$1"
+}
 printf '{"enforcement":"off","tools":{"rtk":{"required":true}}}' >"$TL_TMP/off.json"
 printf '{"enforcement":"always","tools":{}}' >"$TL_TMP/nr.json"
 
@@ -46,6 +50,7 @@ TS_CONFIG="$TL_TMP/none.json" ts_gate $r "$edit" "$repo"; expect_silent "rtk: no
 TS_CONFIG="$TL_TMP/off.json" ts_gate $r "$edit" "$repo"; expect_silent "rtk: enforcement off"
 TS_CONFIG="$TL_TMP/nr.json" ts_gate $r "$edit" "$repo"; expect_silent "rtk: not required"
 ts_gate $r "" "$repo"; expect_silent "rtk: empty stdin"
+unreadable $r "$edit"; expect_silent "rtk: unreadable stdin"
 ts_gate $r "$edit" "$TL_TMP/nogit"; expect_silent "rtk: outside git"
 ts_gate $r '[1]' "$repo"; expect_silent "rtk: non-object JSON (event fallback)"
 ts_gate $r 'not json' "$repo"; expect_silent "rtk: invalid JSON"
@@ -82,6 +87,7 @@ ts_gate $t "$commit" "$sbp"; expect_silent "token: defers to a live SB bridge"
 TS_CONFIG="$TL_TMP/none.json" ts_gate $t "$commit" "$repo"; expect_silent "token: no config"
 TS_CONFIG="$TL_TMP/off.json" ts_gate $t "$commit" "$repo"; expect_silent "token: enforcement off"
 ts_gate $t "" "$repo"; expect_silent "token: empty stdin"
+unreadable $t "$commit"; expect_silent "token: unreadable stdin"
 ts_gate $t '[1]' "$repo"; expect_silent "token: non-object JSON (event fallback)"
 ts_gate $t "$(ts_payload Read "$repo/a" "")" "$repo"; expect_silent "token: non-edit tool"
 ts_gate $t "$(ts_payload Bash "" "")" "$repo"; expect_silent "token: empty command"
@@ -111,6 +117,7 @@ ts_gate $c "$lean" "$sbp"; expect_silent "coord: defers to a live SB bridge"
 TS_CONFIG="$TL_TMP/none.json" ts_gate $c "$lean" "$repo"; expect_silent "coord: no config"
 TS_CONFIG="$TL_TMP/off.json" ts_gate $c "$lean" "$repo"; expect_silent "coord: enforcement off"
 ts_gate $c "" "$repo"; expect_silent "coord: empty stdin"
+unreadable $c "$lean"; expect_silent "coord: unreadable stdin"
 ts_gate $c '[1]' "$repo"; expect_silent "coord: non-object JSON (event fallback)"
 
 # double shell compression: only when RTK is primary and installed

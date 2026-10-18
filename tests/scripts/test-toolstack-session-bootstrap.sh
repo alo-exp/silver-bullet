@@ -153,6 +153,23 @@ wait_unlocked || assert_eq "lock removed" removed "still locked"
 assert_eq "defaults used when config reads fail" "update . --no-cluster" "$(cat "$calls")"
 rm -f "$TL_BIN/jq"
 
+# --- lock removal / job detaching failures are tolerated ---
+reset
+tl_stub rm 'exit 1'
+ts_gate $S "" "$repo"; expect_silent "lock cannot be removed"
+for _ in $(seq 1 200); do [[ "$(count)" -ge 1 ]] && break; sleep 0.05; done
+sleep 0.3
+assert_eq "job still ran" 1 "$(count)"
+assert_file_exists "lock left behind when rm fails" "$lock"
+rm -f "$TL_BIN/rm"; rm -f "$lock"
+
+reset
+disown() { return 1; }; export -f disown
+ts_gate $S "" "$repo"; expect_silent "disown fails"
+unset -f disown
+wait_unlocked || assert_eq "lock removed" removed "still locked"
+assert_eq "detach failure does not stop the job" 1 "$(count)"
+
 # --- unusable state dir: the job cannot log, graphify never runs ---
 reset; printf x >"$HOME/st"
 ts_gate $S "" "$repo"; expect_silent "state dir is a file"
