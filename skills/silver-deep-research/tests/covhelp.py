@@ -59,3 +59,29 @@ def call_main(module, argv):
         except SystemExit as exc:
             code = 0 if exc.code is None else exc.code  # str codes keep their message
     return code, out.getvalue(), err.getvalue()
+
+
+SAMPLE_CONFIG = {
+    "title": "Sample Matrix",
+    "categories": [
+        {"name": "Sec", "features": [
+            {"name": "SSO", "priority": "Critical"},
+            {"name": "Audit", "priority": "High"},
+        ]},
+        {"name": "Ops", "features": [
+            {"name": "API", "priority": "Medium"},
+            {"name": "CLI", "priority": "Low"},
+        ]},
+    ],
+    "platforms": [
+        {"name": "Alpha", "features": ["SSO", "API"]},
+        {"name": "Beta", "features": ["SSO", "Audit", "API", "CLI"]},
+        {"name": "Gamma", "features": []},
+    ],
+}
+
+
+def build_sample_matrix(path, config=None):
+    """Build a real XLSX with matrix_builder.build_matrix (needs openpyxl)."""
+    import matrix_builder
+    return matrix_builder.build_matrix(config or SAMPLE_CONFIG, str(path))
