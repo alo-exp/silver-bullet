@@ -504,7 +504,7 @@ rt_reconcile_receipt_state() {
   result="$(jq -n \
     --argjson has_receipt "$([[ -n "$receipt" ]] && echo true || echo false)" \
     --arg canonical "$( [[ -n "$receipt" ]] && echo reload_required || echo ready)" \
-    --arg activation "$(jq -r '.activation_status // "none"' <<<"${receipt:-{}}")" \
+    --arg activation "$(jq -r '.activation_status // "none"' <<<"${receipt:-"{}"}")" \
     --argjson clear_eligible false \
     '{has_receipt:$has_receipt,canonical_state:$canonical,activation_status:$activation,clear_eligible:$clear_eligible,errors:[]}')"
 
