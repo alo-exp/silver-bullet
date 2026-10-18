@@ -71,11 +71,13 @@ enterprise_e2e_resolve_sb_root"
 assert_eq "legacy worktree used when still valid: status" 0 "$TL_STATUS"
 assert_eq "legacy worktree is the fixed path" "$LEGACY" "$TL_OUT"
 
+NOLEGACY="eval \"\$(declare -f enterprise_e2e_sb_root_is_valid | sed '1s/.*/_sb_root_is_valid_orig () /')\"
+enterprise_e2e_sb_root_is_valid() { [[ \"\$1\" != '$LEGACY' ]] && _sb_root_is_valid_orig \"\$1\"; }"
 # Script-relative fallback: a copy of the lib inside a valid tree resolves to that tree.
 mk_root "$TL_TMP/tree" dir
 mkdir -p "$TL_TMP/tree/scripts/lib"
 cp "$LIB" "$TL_TMP/tree/scripts/lib/"
-tl_run env "${BASE[@]}" bash -c "set -euo pipefail; source '$TL_TMP/tree/scripts/lib/enterprise-e2e-sb-root-resolve.sh'; enterprise_e2e_resolve_sb_root"
+tl_run env "${BASE[@]}" bash -c "set -euo pipefail; source '$TL_TMP/tree/scripts/lib/enterprise-e2e-sb-root-resolve.sh'; $NOLEGACY; enterprise_e2e_resolve_sb_root"
 assert_eq "script-relative fallback: status" 0 "$TL_STATUS"
 assert_eq "script-relative fallback resolves the tree holding the lib" "$TL_TMP/tree" "$TL_OUT"
 
@@ -83,7 +85,7 @@ assert_eq "script-relative fallback resolves the tree holding the lib" "$TL_TMP/
 mk_root "$TL_TMP/bad" noscript
 mkdir -p "$TL_TMP/bad/scripts/lib"
 cp "$LIB" "$TL_TMP/bad/scripts/lib/"
-tl_run env "${BASE[@]}" bash -c "set -euo pipefail; source '$TL_TMP/bad/scripts/lib/enterprise-e2e-sb-root-resolve.sh'; enterprise_e2e_resolve_sb_root"
+tl_run env "${BASE[@]}" bash -c "set -euo pipefail; source '$TL_TMP/bad/scripts/lib/enterprise-e2e-sb-root-resolve.sh'; $NOLEGACY; enterprise_e2e_resolve_sb_root"
 assert_eq "unresolvable: status" 1 "$TL_STATUS"
 assert_eq "unresolvable: no stdout" "" "$TL_OUT"
 assert_contains "unresolvable: error names the remedy" "$TL_ERR" "cannot resolve SB_ROOT"
