@@ -54,7 +54,7 @@ rt_probe_rtk_before_cm() {
   if [[ "${RT_HOST:-cursor}" == "pi" ]]; then
     local pi_cfg="${PI_CODING_AGENT_DIR:-${HOME}/.pi/agent}/extensions/pi-lean-ctx/config.json"
     [[ -f "$pi_cfg" ]] || return 1
-    [[ "$(jq -r '.routeShell // true' "$pi_cfg" 2>/dev/null)" == "false" ]] || return 1
+    [[ "$(jq -r 'if .routeShell == null then true else .routeShell end' "$pi_cfg" 2>/dev/null)" == "false" ]] || return 1
     jq -e '.disableTools | index("ctx_shell") != null' "$pi_cfg" >/dev/null 2>&1
     return $?
   fi
