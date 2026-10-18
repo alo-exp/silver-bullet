@@ -31,8 +31,6 @@ ALLOWLIST=(
   scripts/lib/recommended-tools/probe-leanctx.sh
   scripts/lib/recommended-tools/probe-rtk.sh
   # F-enterprise-2
-  scripts/enterprise-e2e/live-test.sh
-  scripts/enterprise-e2e/matrix.sh
 )
 
 # Any producer piped into a quiet/early-exit grep, on one line (a lone `|`, not `||`).
