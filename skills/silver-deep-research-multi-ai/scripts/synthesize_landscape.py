@@ -2606,13 +2606,10 @@ def _non_apo_display_labels(pack: dict[str, Any]) -> set[str]:
                 slug = str(seed["slug"])
                 if slug in apo_slugs:
                     continue
-                if bucket == "seeds" and mid == "apo":
-                    continue
                 # Adjacent anywhere, or core seeds of non-APO markets, are not APO peers.
-                if bucket == "adjacent_seeds" or mid != "apo":
-                    name = str(seed.get("name") or slug).strip()
-                    if name:
-                        labels.add(name)
+                name = str(seed.get("name") or slug).strip()
+                if name:
+                    labels.add(name)
     return labels
 
 
