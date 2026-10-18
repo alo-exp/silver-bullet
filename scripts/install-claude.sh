@@ -55,7 +55,7 @@ plugin_scopes() {
   local plugin_id="$2"
 
   installed_plugins_json "$cli" \
-    | jq -r --arg id "$plugin_id" '.[]? | select(.id == $id) | .scope' 2>/dev/null || true
+    | jq -r --arg id "$plugin_id" '.[]? | select(.id == $id) | .scope // empty' 2>/dev/null || true
 }
 
 marketplace_registered() {
@@ -159,7 +159,13 @@ if registry.is_file():
         data = json.loads(registry.read_text())
     except Exception:
         data = {"plugins": {}}
-plugins = data.setdefault("plugins", {})
+plugins = data.setdefault("plugins", {}) if isinstance(data, dict) else None
+if not isinstance(plugins, dict):
+    sys.stderr.write(
+        f"install-claude: {registry}: unexpected structure (expected an object with a "
+        "'plugins' object); leaving it unchanged\n"
+    )
+    sys.exit(1)
 plugins["silver-bullet@alo-labs"] = [{
     "version": version,
     "installPath": str(stable),
