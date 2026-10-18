@@ -228,7 +228,6 @@ fi
     fi
   fi
   _stop_project_root="$(dirname "$config_file")"
-  [[ -z "$_stop_project_root" || "$_stop_project_root" == "." ]] && _stop_project_root="$search_dir"
   if sb_orchestrator_is_parent_session 2>/dev/null \
     && sb_orchestrator_state_applies_to_project "$_stop_project_root" 2>/dev/null; then
     cur_flow=""
@@ -321,6 +320,7 @@ if git -C "$PWD" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
         sb_cfg="$sb_cfg_search/.silver-bullet.json"
         break
       fi
+      # Stop at the repository root or /: the config can vanish while the hook runs.
       if [[ -d "$sb_cfg_search/.git" ]] || [[ "$sb_cfg_search" == "/" ]]; then break; fi
       sb_cfg_search=$(dirname "$sb_cfg_search")
     done
@@ -433,131 +433,6 @@ emit_stop_block() {
   printf '{"decision":"block","reason":%s}' "$json_reason"
 }
 
-# Platform-aware stat helper: returns file mtime as epoch seconds
-_mtime_epoch() {
-  local _v
-  if [[ "$(uname)" == "Darwin" ]]; then
-    _v=$(stat -f %m "$1" 2>/dev/null || true)
-  else
-    _v=$(stat --format=%Y "$1" 2>/dev/null || true)
-  fi
-  [[ "$_v" =~ ^[0-9]+$ ]] && printf '%s' "$_v" || printf '0'
-}
-
-# shellcheck disable=SC2034
-# Resolve a checklist doc key to file state for the current repo/month.
-# Inputs:
-#   $1 repo root
-#   $2 month (YYYY-MM)
-#   $3 checklist key
-# Outputs (globals):
-#   DOC_KEY_LABEL, DOC_KEY_EXISTS (0|1), DOC_KEY_MTIME
-resolve_doc_key_state() {
-  local repo_root="$1"
-  local month="$2"
-  local doc_key="$3"
-  local full=""
-  local f=""
-  local m=0
-
-  DOC_KEY_LABEL="$doc_key"
-  DOC_KEY_EXISTS=0
-  DOC_KEY_MTIME=0
-
-  case "$doc_key" in
-    "docs/knowledge/YYYY-MM.md")
-      DOC_KEY_LABEL="docs/knowledge/${month}*.md"
-      shopt -s nullglob
-      for f in "$repo_root/docs/knowledge/${month}"*.md; do
-        [[ -f "$f" && ! -L "$f" ]] || continue
-        m=$(_mtime_epoch "$f")
-        if (( m > DOC_KEY_MTIME )); then
-          DOC_KEY_EXISTS=1
-          DOC_KEY_MTIME=$m
-        fi
-      done
-      shopt -u nullglob
-      ;;
-    "docs/learnings/YYYY-MM.md")
-      DOC_KEY_LABEL="docs/learnings/${month}*.md"
-      shopt -s nullglob
-      for f in "$repo_root/docs/learnings/${month}"*.md; do
-        [[ -f "$f" && ! -L "$f" ]] || continue
-        m=$(_mtime_epoch "$f")
-        if (( m > DOC_KEY_MTIME )); then
-          DOC_KEY_EXISTS=1
-          DOC_KEY_MTIME=$m
-        fi
-      done
-      shopt -u nullglob
-      ;;
-    *)
-      full="$repo_root/$doc_key"
-      if [[ -f "$full" && ! -L "$full" ]]; then
-        DOC_KEY_EXISTS=1
-        DOC_KEY_MTIME=$(_mtime_epoch "$full")
-      fi
-      ;;
-  esac
-}
-
-# Build the governed checklist key set:
-#   - mandatory every-task keys (with monthly wildcards)
-#   - every concrete doc file under docs/ (excluding monthly files represented
-#     by wildcard keys and placeholder .gitkeep files)
-#   - root README.md / CHANGELOG.md when present
-#
-# Output (global array):
-#   DOC_SCHEME_CHECKLIST_KEYS
-build_doc_scheme_checklist_keys() {
-  local repo_root="$1"
-  local rel=""
-  local key=""
-  local deduped=()
-  local seen=$'\n'
-
-  DOC_SCHEME_CHECKLIST_KEYS=(
-    "docs/CHANGELOG.md"
-    "docs/knowledge/YYYY-MM.md"
-    "docs/learnings/YYYY-MM.md"
-  )
-
-  if [[ -d "$repo_root/docs" && ! -L "$repo_root/docs" ]]; then
-    while IFS= read -r rel; do
-      [[ -n "$rel" ]] || continue
-      # Monthly docs are represented by wildcard keys above.
-      if [[ "$rel" =~ ^docs/knowledge/[0-9]{4}-[0-9]{2}([-.].*)?\.md$ ]]; then
-        continue
-      fi
-      if [[ "$rel" =~ ^docs/learnings/[0-9]{4}-[0-9]{2}([-.].*)?\.md$ ]]; then
-        continue
-      fi
-      # Ignore placeholder files that are not real documentation content.
-      if [[ "$rel" == ".gitkeep" || "$rel" == */.gitkeep ]]; then
-        continue
-      fi
-      DOC_SCHEME_CHECKLIST_KEYS+=("$rel")
-    done < <(cd "$repo_root" && find docs -type f -print | LC_ALL=C sort)
-  fi
-
-  if [[ -f "$repo_root/README.md" && ! -L "$repo_root/README.md" ]]; then
-    DOC_SCHEME_CHECKLIST_KEYS+=("README.md")
-  fi
-  if [[ -f "$repo_root/CHANGELOG.md" && ! -L "$repo_root/CHANGELOG.md" ]]; then
-    DOC_SCHEME_CHECKLIST_KEYS+=("CHANGELOG.md")
-  fi
-
-  for key in "${DOC_SCHEME_CHECKLIST_KEYS[@]}"; do
-    [[ -n "$key" ]] || continue
-    if [[ "$seen" == *$'\n'"$key"$'\n'* ]]; then
-      continue
-    fi
-    deduped+=("$key")
-    seen+="$key"$'\n'
-  done
-  DOC_SCHEME_CHECKLIST_KEYS=("${deduped[@]}")
-}
-
 # If docs/doc-scheme.md exists, task finalization is hard-blocked until this
 # session updates required docs and completes a per-task checklist:
 #   - checklist file: docs/task-doc-checklist.json (updated this session)
@@ -584,6 +459,8 @@ sb_branch_file="${SILVER_BULLET_BRANCH_FILE:-${SB_STATE_DIR}/branch}"
 # Security: validate path stays within the host runtime state root (mirrors session-start pattern)
 if ! sb_runtime_path_is_state_scoped "$sb_branch_file"; then
   sb_branch_file="${SB_STATE_DIR}/branch"
+  # branch-scope.sh reads SILVER_BULLET_BRANCH_FILE directly; do not let a rejected path back in.
+  unset SILVER_BULLET_BRANCH_FILE
 fi
 stored_state_branch=""
 stored_state_toplevel=""

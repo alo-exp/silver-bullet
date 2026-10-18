@@ -98,7 +98,7 @@ if [[ -f "$SB_DIR"/sentinel-pid && ! -L "$SB_DIR"/sentinel-pid ]]; then
   old_token="${_sent_line#*:}"
   [[ "$old_token" == "$old_pid" ]] && old_token=""   # no colon → legacy format
   if [[ -n "$old_pid" ]] && kill -0 "$old_pid" 2>/dev/null \
-     && ps -p "$old_pid" -o user= 2>/dev/null | grep -q "^$(whoami)$"; then
+     && grep -q "^$(whoami)$" < <(ps -p "$old_pid" -o user= 2>/dev/null); then
     if [[ -n "$old_token" ]]; then
       # UUID token file: only kill if lock file exists — proves it is the same process instance
       _old_lock="$SB_DIR/sentinel-lock-$old_token"
@@ -207,11 +207,13 @@ if [[ -n "$existing" ]]; then
   fi
 
   sb_guard_nofollow "$SB_DIR"/session-log-path; printf '%s' "$existing" > "$SB_DIR"/session-log-path
-  basename "$existing" | jq -Rs '{"hookSpecificOutput":{"message":("ℹ️ Session log already exists: " + .)}}' | tr -d '\n'
+  # Pretty JSON from jq with every newline stripped (single line, no trailing newline).
+  existing_msg="$(basename "$existing" | jq -Rs '{"hookSpecificOutput":{"message":("ℹ️ Session log already exists: " + .)}}')"
+  printf '%s' "${existing_msg//$'\n'/}"
   exit 0
 fi
 
-# No existing log — read mode from mode file (ground truth)
+# No existing log - read mode from mode file (ground truth)
 mode_file="${SB_DIR}/mode"
 if [[ -f "$mode_file" && ! -L "$mode_file" ]]; then
   mode=$(cat "$mode_file" 2>/dev/null || echo "interactive")

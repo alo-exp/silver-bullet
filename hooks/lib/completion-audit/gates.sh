@@ -221,10 +221,10 @@ run_evidence_schema_delivery_gate() {
       if sb_enterprise_policy_evidence_schema_strict "$config_file"; then
         strict="1"
       else
-        strict=$(jq -r '.hooks.evidence_schema.strict // "true"' "$config_file" 2>/dev/null || echo "true")
+        strict=$(jq -r '.hooks.evidence_schema.strict | if . == null then "true" else tostring end' "$config_file" 2>/dev/null || echo "true")
       fi
     else
-      strict=$(jq -r '.hooks.evidence_schema.strict // "true"' "$config_file" 2>/dev/null || echo "true")
+      strict=$(jq -r '.hooks.evidence_schema.strict | if . == null then "true" else tostring end' "$config_file" 2>/dev/null || echo "true")
     fi
   fi
   if [[ -z "$strict" ]]; then
