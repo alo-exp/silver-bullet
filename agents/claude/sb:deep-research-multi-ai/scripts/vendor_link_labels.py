@@ -410,7 +410,7 @@ def drop_ambiguous_shared_homepage_urls(pairs: list[list[str]]) -> list[list[str
             continue
         keep = {lab for score, _length, lab in scored if score == best_score}
         if len(keep) > 1:
-            keep = {max(keep, key=len)}
+            keep = {max(keep, key=lambda lab: (len(lab), lab))}
         drop.update(set(unique) - keep)
 
     return [
@@ -519,9 +519,10 @@ def _linkify_code_span_url(span: str) -> str:
     lowered = url.lower()
     if not lowered.startswith("http://") and not lowered.startswith("https://"):
         return span
-    if stripped not in {url, url + trail}:
+    if any(ch.isspace() for ch in url):
+        # `https://a.b and more` is prose in a code span, not a bare URL.
         return span
-    return f"[`{url}`]({url})" + (trail if stripped == url + trail else "")
+    return f"[`{url}`]({url})" + trail
 
 
 def linkify_bare_http_urls(markdown: str) -> str:
