@@ -725,9 +725,10 @@ source "$LEGACY_MARKETPLACE_LIB"
 # shellcheck source=scripts/lib/install-cursor/backend-cache.sh
 source "$BACKEND_CACHE_LIB"
 
-# Test seam: SB_INSTALL_CURSOR_SOURCE_ONLY=1 (set by a sourcing test) loads the
-# functions above without running the installer.
-if [[ "${SB_INSTALL_CURSOR_SOURCE_ONLY:-0}" == "1" ]]; then
+# Test seam: SB_INSTALL_CURSOR_SOURCE_ONLY=1 loads the functions above without
+# running the installer. Honoured only when this file is sourced, so a stray
+# variable in the environment never turns an executed install into a no-op.
+if [[ "${SB_INSTALL_CURSOR_SOURCE_ONLY:-0}" == "1" && "${BASH_SOURCE[0]}" != "$0" ]]; then
   return 0
 fi
 
@@ -736,7 +737,12 @@ while [[ $# -gt 0 ]]; do
     --merge-hooks-only) MERGE_ONLY=1; shift ;;
     --public-release) PUBLIC_RELEASE_ONLY=1; shift ;;
     --project-root)
-      SB_RECONCILE_PROJECT_ROOT="${2:-}"
+      if [[ $# -lt 2 ]]; then
+        echo "--project-root requires a value" >&2
+        usage >&2
+        exit 2
+      fi
+      SB_RECONCILE_PROJECT_ROOT="$2"
       shift 2
       ;;
     -h|--help) usage; exit 0 ;;

@@ -30,6 +30,12 @@ probe --bogus
 assert_eq "unknown option exits 2" 2 "$TL_STATUS"
 assert_contains "unknown option named" "$TL_ERR" "Unknown option: --bogus"
 
+for flag in --config-json --agents-dir --repo-root; do
+  probe "$flag"
+  assert_eq "$flag without a value exits 2" 2 "$TL_STATUS"
+  assert_contains "$flag without a value explains" "$TL_ERR" "$flag requires a value"
+done
+
 # ---- pass
 probe --config-json "$CFG"
 assert_eq "matching agents pass" 0 "$TL_STATUS"

@@ -60,6 +60,13 @@ tl_run env CURSOR_HOME="$CH" bash "$SCRIPT" --bogus
 assert_eq "unknown option exits 2" 2 "$TL_STATUS"
 assert_contains "unknown option named" "$TL_ERR" "Unknown option: --bogus"
 
+tl_run env CURSOR_HOME="$CH" SB_INSTALL_CURSOR_SOURCE_ONLY=1 bash "$SCRIPT" --help
+assert_eq "executing with the source-only variable set still runs the script" 0 "$TL_STATUS"
+assert_contains "the variable does not turn execution into a no-op" "$TL_OUT" "Usage: scripts/install-cursor.sh"
+tl_run env CURSOR_HOME="$CH" bash "$SCRIPT" --project-root
+assert_eq "--project-root without a value exits 2" 2 "$TL_STATUS"
+assert_contains "--project-root without a value explains" "$TL_ERR" "--project-root requires a value"
+
 # ---- version fallback when package.json is unreadable
 cp "$SNAP/package.json" "$TL_TMP/package.json.bak"
 printf 'not json' >"$SNAP/package.json"
