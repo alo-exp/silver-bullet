@@ -1487,43 +1487,6 @@ def _normalize_scope_markdown(text: str) -> str:
     return "\n".join(lines)
 
 
-def _slugify_label(label: str) -> str:
-    return re.sub(r"[^a-z0-9]+", "-", label.strip().lower()).strip("-")
-
-
-def _slug_for_label(
-    label: str,
-    *,
-    known: dict[str, str],
-    rankings: list[dict[str, Any]],
-    commercial: list[dict[str, str]] | None = None,
-    oss: list[dict[str, str]] | None = None,
-    support: dict[str, dict[str, bool]] | None = None,
-) -> str | None:
-    norm = label.strip()
-    for slug, name in known.items():
-        if name == norm:
-            return slug
-    for entry in _catalog_entries(commercial, oss):
-        if _catalog_label(entry, known=known) == norm:
-            return entry["slug"]
-    for item in rankings:
-        if not isinstance(item, dict):
-            continue
-        slug = str(item.get("solution") or "").strip()
-        if not slug:
-            continue
-        if known.get(slug, slug.replace("-", " ").title()) == norm:
-            return slug
-    slugified = _slugify_label(norm)
-    if support and slugified in support:
-        return slugified
-    for slug in support or {}:
-        if known.get(slug, slug.replace("-", " ").title()) == norm:
-            return slug
-    return slugified or None
-
-
 def _collect_mq_leader_series(
     gmq_data: list[dict[str, Any]],
     mq_data: list[dict[str, Any]],
@@ -1732,6 +1695,7 @@ def _linkify_markdown_vendors(
         placeholders.append((token, label))
 
     segments = re.split(r"(\[[^\]]+\]\([^)]+\)|https?://\S+)", text)
+    url_by_label: dict[str, str] = {}
     for label, url in sorted(
         filter_vendor_link_pairs(link_pairs),
         key=lambda p: -len(str(p[0])),
@@ -1740,10 +1704,16 @@ def _linkify_markdown_vendors(
         url = str(url).strip()
         if not label or not url.startswith("http"):
             continue
-        escaped = re.escape(label)
-        pattern = re.compile(rf"\b({escaped})\b")
+        url_by_label.setdefault(label, url)
+    if url_by_label:
+        # One pass with the longest label first: a shorter label ("GitHub Copilot") must not
+        # re-match inside a link just written for a longer one ("GitHub Copilot Workspace").
+        alternation = "|".join(re.escape(label) for label in sorted(url_by_label, key=len, reverse=True))
+        pattern = re.compile(rf"\b({alternation})\b")
         for idx in range(0, len(segments), 2):
-            segments[idx] = pattern.sub(rf"[\1]({url})", segments[idx])
+            segments[idx] = pattern.sub(
+                lambda m: f"[{m.group(1)}]({url_by_label[m.group(1)]})", segments[idx]
+            )
     out = "".join(segments)
     for token, label in placeholders:
         out = out.replace(token, label)
@@ -2052,8 +2022,6 @@ def build_chart_data(
             if slug not in present:
                 rankings.append({"solution": slug, "score": 0})
                 present.add(slug)
-        if not rankings:
-            rankings = [{"solution": slug, "score": 0} for slug in sorted(market_slugs)]
     # Charts use ranked core solutions; include all market cores (cap by pack max).
     chart_cap = 12
     if market_slugs:
@@ -2220,11 +2188,6 @@ def build_chart_data(
         reason_by_slug=reason_by_slug,
     )
     plotted = {str(p.get("slug")) for p in mq_data if p.get("slug")}
-    # Invariant: every plotted core must be in listed membership.
-    stray = sorted(plotted - set(membership["listed"]))
-    if stray and market_slugs:
-        membership["listed"] = sorted(set(membership["listed"]) | plotted)
-        membership["core"] = sorted(set(membership["core"]) | plotted)
     link_pairs = build_link_pairs(
         rankings,
         root=root,
@@ -2255,21 +2218,11 @@ def build_chart_data(
 
     # Value Curve / Leaders radar: every MQ leader (3A + 3B) with slug from chart points.
     leader_series = _collect_mq_leader_series(gmq_data, mq_data)
-    leader_labels = [label for _, label in leader_series]
     vc_kcfs = select_vc_kcfs([slug for slug, _ in leader_series if slug], support)
     if not vc_kcfs:
         vc_kcfs = [k for k in KCF_NAMES if k != "Managed hosting"][:6]
     for slug, label in leader_series:
-        resolved = slug or _slug_for_label(
-            label,
-            known=effective_known,
-            rankings=rankings,
-            commercial=commercial,
-            oss=oss,
-            support=support,
-        )
-        if resolved:
-            _append_vc_series(resolved, label)
+        _append_vc_series(slug, label)
 
     if not existing_vc:
         commercial_src = COMMERCIAL_CATALOG if commercial is None else commercial
@@ -2287,12 +2240,6 @@ def build_chart_data(
             slug = str(entry.get("slug") or "")
             label = entry.get("name") or effective_known.get(slug, slug.replace("-", " ").title())
             _append_vc_series(slug, label)
-    else:
-        for entry in _catalog_entries(commercial, oss):
-            label = _catalog_label(entry, known=effective_known)
-            if label not in leader_labels or label in existing_vc:
-                continue
-            _append_vc_series(entry["slug"], label)
 
     axes = _derive_axis_profile(category, need or {}, scope_text)
     chart_notes: list[str] = []
@@ -2495,8 +2442,8 @@ def build_multi_market_chart_data(
                     buckets.setdefault("commercial", []).append(label)
                 bucket_labels.add(label)
         chart["vendor_buckets"] = buckets
-        # Per-market plotted_slugs must equal MQ slugs (membership.core after stray
-        # merge). Adjacent/excluded vendors must not remain in plotted_slugs.
+        # Per-market plotted_slugs must equal MQ slugs (membership.core is widened with
+        # them below). Adjacent/excluded vendors must not remain in plotted_slugs.
         mq_slugs = sorted(
             {str(p.get("slug")) for p in (chart.get("mq_data") or []) if p.get("slug")}
         )
@@ -2599,13 +2546,10 @@ def _non_apo_display_labels(pack: dict[str, Any]) -> set[str]:
                 slug = str(seed["slug"])
                 if slug in apo_slugs:
                     continue
-                if bucket == "seeds" and mid == "apo":
-                    continue
                 # Adjacent anywhere, or core seeds of non-APO markets, are not APO peers.
-                if bucket == "adjacent_seeds" or mid != "apo":
-                    name = str(seed.get("name") or slug).strip()
-                    if name:
-                        labels.add(name)
+                name = str(seed.get("name") or slug).strip()
+                if name:
+                    labels.add(name)
     return labels
 
 
