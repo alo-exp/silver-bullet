@@ -149,4 +149,12 @@ assert_contains "dogfood archive missing" "$TL_OUT" "FAIL: workflow archive miss
 assert_contains "dogfood default label" "$TL_OUT" "(cursor)"
 assert_file_exists "dogfood honours SILVER_BULLET_STATE_FILE" "$STATE_DIR/alt-state"
 
+# default app path: with no argument it is <SB_ROOT/../..>/enterprise-grade-test-app
+DD="$TL_TMP/dflt/outer/harness"
+mkdir -p "$DD/scripts"
+cp "$R/scripts/dogfood-orchestrator-parent-surface.sh" "$DD/scripts/"
+printf '#!/usr/bin/env bash\necho "MIGRATE:$1"\n' >"$DD/scripts/sb-migrate-orchestrator-parent.sh"
+tl_run env SB_RUNTIME_STATE_DIR="$TL_TMP/dflt-state" bash "$DD/scripts/dogfood-orchestrator-parent-surface.sh"
+assert_contains "dogfood default app is the sibling of the SB root's parent" "$TL_OUT" "MIGRATE:$TL_TMP/dflt/enterprise-grade-test-app"
+
 tl_results
