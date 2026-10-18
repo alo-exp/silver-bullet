@@ -166,7 +166,7 @@ assert_guard_unchanged() {
     # Legacy mtime snapshots (older callers) — tolerate missing hash prefix.
     if [[ -f "$path" ]]; then
       local mtime
-      mtime="$(stat -f '%m' "$path" 2>/dev/null || stat -c '%Y' "$path" 2>/dev/null || echo 0)"
+      mtime="$(stat -c '%Y' "$path" 2>/dev/null || stat -f '%m' "$path" 2>/dev/null || echo 0)"
       [[ "$mtime" == "$state" ]] || {
         warn "install modified guarded path: $path"
         return 1
