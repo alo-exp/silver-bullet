@@ -707,6 +707,11 @@ class DivergenceTests(unittest.TestCase):
 
 
 class PrintHtmlTests(unittest.TestCase):
+    def setUp(self) -> None:
+        # Building the print HTML fills the module font cache; keep it from leaking to later tests.
+        saved = lp._FONT_CSS_CACHE
+        self.addCleanup(setattr, lp, "_FONT_CSS_CACHE", saved)
+
     def test_plain_text_and_injection(self) -> None:
         self.assertEqual(lp._plain_html_text("<b>a</b> <i>b</i>"), "a b")
         self.assertEqual(lp._plain_html_text(None), "")  # type: ignore[arg-type]
