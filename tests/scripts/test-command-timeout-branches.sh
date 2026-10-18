@@ -165,6 +165,12 @@ run_to "$PATH_NO_PY" 0.15 racewd -- sleep 3
 assert_eq "watchdog: failing kill tolerated, still 124" 124 "$RC"
 "$REAL_SLEEP" 0.6   # let the detached watchdog subshell run its final KILL
 unset -f kill
+# kill(1) failing when asked to stop the watchdog itself (it already went away): tolerated
+kill() { case "${1:-}" in -*) builtin kill "$@" ;; *) return 1 ;; esac; }
+run_to "$PATH_NO_PY" 0.15 nokillwd -- true
+assert_eq "watchdog: failing kill of the watchdog tolerated" 0 "$RC"
+"$REAL_SLEEP" 0.3
+unset -f kill
 run_to "$PATH_NO_PY" 1 lbl -- true
 assert_eq "watchdog: fast command rc 0" 0 "$RC"; assert_eq "watchdog: no error output" "" "$ERR"
 
