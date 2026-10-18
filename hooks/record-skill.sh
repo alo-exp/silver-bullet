@@ -198,7 +198,6 @@ elif { [[ "$tool_name" == "Bash" ]] || { declare -f sb_tool_is_shell_like >/dev/
   elif [[ "$cmd" == *"SKILL.md"* ]]; then
     # Extract any SKILL.md paths embedded in the command string.
     while IFS= read -r token; do
-      [[ -n "$token" ]] || continue
       token="${token#\"}"
       token="${token%\"}"
       token="${token#\'}"
@@ -207,7 +206,6 @@ elif { [[ "$tool_name" == "Bash" ]] || { declare -f sb_tool_is_shell_like >/dev/
       token="${token%;}"
       token="${token#(}"
       token="${token%)}"
-      [[ "$token" == *"SKILL.md"* ]] || continue
 
       # Prefer deriving the skill from the directory name so we can record the
       # canonical hyphenated marker (e.g. silver-init, silver-context).
@@ -220,10 +218,6 @@ fi
 
 [[ ${#skills_to_record[@]} -gt 0 ]] || exit 0
 
-if declare -F sb_skill_canonical_name >/dev/null 2>&1; then
-  :
-fi
-
 debug_record_skill() {
   [[ "${SILVER_BULLET_DEBUG_RECORD_SKILL:-0}" == "1" ]] || return 0
   local dbg_dir="${SB_RUNTIME_STATE_DIR}"
@@ -233,7 +227,7 @@ debug_record_skill() {
     printf '--- %s ---\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null || date)"
     printf 'pwd=%s\n' "$PWD"
     printf 'raw_skill=%s\n' "$raw_skill"
-    printf 'canonical_skill=%s\n' "${skill:-}"
+    printf 'skills_to_record=%s\n' "${skills_to_record[*]}"
     printf 'config_file=%s\n' "${config_file:-}"
   } >>"$dbg_file" 2>/dev/null || true
 }
