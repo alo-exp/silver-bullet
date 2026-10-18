@@ -32,7 +32,6 @@ rt_session_verify_block() {
   fi
   [[ -n "$repo_root" ]] || return 0
   reconciler="${repo_root}/scripts/reconcile-recommended-tools.sh"
-  [[ -f "$reconciler" ]] || return 0
   local -a lines=()
   local needs_action=0
 

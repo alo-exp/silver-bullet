@@ -68,7 +68,6 @@ rt_probe_search_cli_providers() {
 rt_search_cli_project_install_commands() {
   local cfg
   cfg="$(rt_project_config)" || { printf ''; return 0; }
-  [[ -n "$cfg" && -f "$cfg" ]] || { printf ''; return 0; }
   jq -r '[.recommended_tools.search_cli.install_commands[]?] | join(" && ")' "$cfg" 2>/dev/null
 }
 

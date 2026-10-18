@@ -77,7 +77,6 @@ rt_reload_receipt_scope_dir() {
       printf '%s/_host-global/%s' "$(rt_reload_receipt_host_dir "$host")" "$sanitized_wid"
       ;;
     project|*)
-      [[ -n "$project_id" && -n "$worktree_id" ]] || return 1
       printf '%s/%s/%s' "$(rt_reload_receipt_host_dir "$host")" "$project_id" "$worktree_id"
       ;;
   esac
@@ -90,7 +89,6 @@ rt_reload_receipt_path() {
   worktree_id="$(rt_sanitize_path_segment "${3:-}" "")"
   receipt_id="$(rt_sanitize_path_segment "${4:-}" "")"
   scope="${5:-project}"
-  [[ -n "$receipt_id" ]] || return 1
   printf '%s/%s.json' "$(rt_reload_receipt_scope_dir "$host" "$project_id" "$worktree_id" "$scope")" "$receipt_id"
 }
 

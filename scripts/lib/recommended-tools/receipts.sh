@@ -90,7 +90,7 @@ rt_receipt_expected_tools_json() {
 rt_receipt_list_paths() {
   local host="${1:-cursor}" project_id="${2:-}" worktree_id="${3:-}" scope="${4:-project}"
   local dir
-  dir="$(rt_reload_receipt_scope_dir "$host" "$project_id" "$worktree_id" "$scope" 2>/dev/null || true)"
+  dir="$(rt_reload_receipt_scope_dir "$host" "$project_id" "$worktree_id" "$scope" 2>/dev/null)"
   [[ -d "$dir" ]] || return 0
   find "$dir" -maxdepth 1 -name '*.json' -type f ! -name '.*' 2>/dev/null | sort
 }
@@ -114,7 +114,6 @@ rt_receipt_find_active() {
   local host="${1:-cursor}" project_id="${2:-}" worktree_id="${3:-}" scope="${4:-project}"
   local path receipt newest="" newest_ts=""
   while IFS= read -r path; do
-    [[ -n "$path" ]] || continue
     receipt="$(rt_receipt_read "$path" 2>/dev/null || true)"
     [[ -n "$receipt" ]] || continue
     jq -e '.consumed_at == null and (.superseded_at == null or .superseded_at == "")' <<<"$receipt" >/dev/null 2>&1 || continue
@@ -134,7 +133,6 @@ rt_receipt_supersede_same_lineage() {
   local change_set_id="${5:-}" predecessor="${6:-}"
   local path receipt
   while IFS= read -r path; do
-    [[ -n "$path" ]] || continue
     receipt="$(rt_receipt_read "$path" 2>/dev/null || true)"
     [[ -n "$receipt" ]] || continue
     jq -e '.consumed_at == null and (.superseded_at == null or .superseded_at == "")' <<<"$receipt" >/dev/null 2>&1 || continue
@@ -175,7 +173,7 @@ rt_receipt_create() {
 
   path="$(rt_reload_receipt_path "$host" "$project_id" "$worktree_id" "$receipt_id" "$scope")"
   lock_dir="$(rt_reload_receipt_lock_dir "$host" "$project_id" "$worktree_id" "$scope")"
-  rt_receipt_supersede_same_lineage "$host" "$project_id" "$worktree_id" "$scope" "$change_set_id" "" || true
+  rt_receipt_supersede_same_lineage "$host" "$project_id" "$worktree_id" "$scope" "$change_set_id" ""
 
   payload="$(jq -n \
     --arg schema "$RT_RECEIPT_SCHEMA" \
@@ -237,13 +235,6 @@ rt_host_evidence_read_stdin() {
   fi
   if ! printf '%s' "$raw" | python3 -c 'import json,sys; json.load(sys.stdin)' 2>/dev/null; then
     RT_HOST_EVIDENCE_ERROR="host_evidence_invalid_json"
-    return 1
-  fi
-  local trailing
-  trailing="$(cat 2>/dev/null || true)"
-  if [[ -n "$trailing" && "$trailing" != $'\n' ]]; then
-    # shellcheck disable=SC2034  # read by scripts/reconcile-recommended-tools.sh
-    RT_HOST_EVIDENCE_ERROR="host_evidence_trailing_data"
     return 1
   fi
   RT_HOST_EVIDENCE_JSON="$(printf '%s' "$raw" | jq -c '.')"
@@ -397,16 +388,13 @@ rt_receipt_find_by_id() {
   local project_id="${4:-}" worktree_id="${5:-}"
   [[ -n "$receipt_id" ]] || return 1
   local path receipt
-  path="$(rt_reload_receipt_path "$host" "$project_id" "$worktree_id" "$receipt_id" "$scope" 2>/dev/null || true)"
-  if [[ -n "$path" ]]; then
-    receipt="$(rt_receipt_read "$path" 2>/dev/null || true)"
-    if [[ -n "$receipt" ]]; then
-      printf '%s' "$receipt"
-      return 0
-    fi
+  path="$(rt_reload_receipt_path "$host" "$project_id" "$worktree_id" "$receipt_id" "$scope" 2>/dev/null)"
+  receipt="$(rt_receipt_read "$path" 2>/dev/null || true)"
+  if [[ -n "$receipt" ]]; then
+    printf '%s' "$receipt"
+    return 0
   fi
   while IFS= read -r path; do
-    [[ -n "$path" ]] || continue
     receipt="$(rt_receipt_read "$path" 2>/dev/null || true)"
     [[ -n "$receipt" ]] || continue
     jq -e --arg rid "$receipt_id" '.receipt_id == $rid' <<<"$receipt" >/dev/null 2>&1 || continue
