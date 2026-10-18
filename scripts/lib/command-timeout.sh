@@ -103,7 +103,7 @@ PY
       watchdog_pid=$!
       wait "$cmd_pid" || rc=$?
       kill "$watchdog_pid" 2>/dev/null || true
-      wait "$watchdog_pid" 2>/dev/null || true
+      if wait "$watchdog_pid" 2>/dev/null; then :; fi   # reap it; its status is irrelevant
       # SIGTERM=143, SIGKILL=137 → normalize to GNU timeout 124.
       if [[ $rc -eq 143 || $rc -eq 137 ]]; then
         rc=124
