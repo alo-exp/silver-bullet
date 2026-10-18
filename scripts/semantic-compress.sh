@@ -66,7 +66,8 @@ if [[ "${#exclude_pattern}" -gt 0 ]]; then
 else
   exclude_pattern="${_SB_CREDENTIAL_EXCLUDE}"
 fi
-export SB_CHUNK_BYTES; SB_CHUNK_BYTES=$(jq -r '.semantic_compression.chunk_size_bytes // 1024' "$CONFIG")
+export SB_CHUNK_BYTES
+SB_CHUNK_BYTES=$(jq -r '.semantic_compression.chunk_size_bytes // 1024' "$CONFIG")
 
 budget_bytes=$(( budget_kb * 1024 ))
 cache_dir="$REPO_ROOT/.planning/.context-cache"
@@ -77,7 +78,8 @@ SCRIPTS_DIR="${SCRIPTS_DIR_OVERRIDE:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pw
 # Portable md5
 md5_str() {
   local input="$1"
-  local tmp; tmp=$(mktemp)
+  local tmp
+  tmp=$(mktemp)
   printf '%s' "$input" > "$tmp"
   if command -v md5 >/dev/null 2>&1; then
     md5 -q "$tmp" 2>/dev/null || md5 "$tmp" 2>/dev/null | awk '{print $NF}'
@@ -218,7 +220,8 @@ score_and_add() {
   local files=("$@")
   [[ ${#files[@]} -eq 0 ]] && return
 
-  local TMP_COUNTS; TMP_COUNTS=$(mktemp)
+  local TMP_COUNTS
+  TMP_COUNTS=$(mktemp)
   # Use double-quoted trap string so $TMP_COUNTS is expanded NOW (path embedded
   # as a literal). This ensures the correct path is available even in the EXIT
   # trap context, where function-local variables are no longer in scope.
@@ -237,7 +240,8 @@ score_and_add() {
     chunk_text=$(printf '%s' "$scored_line" | cut -f5-)
     chunk_text="${chunk_text//\\n/$'\n'}"  # unescape \n sequences → real newlines
     local rel="${file#"$REPO_ROOT"/}"
-    local key; key=$(printf '%s' "$file" | tr '/: ' '___')
+    local key
+    key=$(printf '%s' "$file" | tr '/: ' '___')
     local cnt=0
     # awk prefix match: grep -F would treat the leading ^ literally and never match
     cnt=$(awk -v k="$key" 'index($0, k "=") == 1 { print substr($0, length(k) + 2); exit }' "$TMP_COUNTS")
