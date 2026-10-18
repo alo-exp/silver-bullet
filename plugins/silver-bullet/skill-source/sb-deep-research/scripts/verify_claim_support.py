@@ -56,7 +56,7 @@ def write_jsonl(path: str, rows: list[dict]) -> None:
 NUMBER_RE = re.compile(r'\b\d+(?:\.\d+)?(?:%|x|X)?\b')
 
 # Extract year-like numbers
-YEAR_RE = re.compile(r'\b(19|20)\d{2}\b')
+YEAR_RE = re.compile(r'\b(?:19|20)\d{2}\b')
 
 # Extract capitalized entities (naive NER)
 ENTITY_RE = re.compile(r'\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b')
@@ -105,7 +105,7 @@ def compute_support_score(claim_text: str, evidence_quotes: list[str]) -> tuple[
     claim_years = extract_years(claim_text)
     claim_entities = extract_entities(claim_text)
 
-    best_score = 0.0
+    best_score = -1.0
     best_notes = []
 
     for quote in evidence_quotes:
@@ -255,10 +255,7 @@ def parse_bibliography_number_to_url(report_md: str) -> dict[int, str]:
         m = BIB_ENTRY_RE.match(line.strip())
         if not m:
             continue
-        try:
-            num = int(m.group(1))
-        except ValueError:
-            continue
+        num = int(m.group(1))
         urls = MD_LINK_URL_RE.findall(line)
         if not urls:
             continue
@@ -336,10 +333,7 @@ def infer_citation_numbers_from_context(report_md: str, claim_text: str) -> list
     nums: list[int] = []
     for m in INLINE_CITATION_RE.finditer(snippet):
         for n in m.group(1).split(','):
-            try:
-                nums.append(int(n.strip()))
-            except ValueError:
-                continue
+            nums.append(int(n.strip()))
     if nums:
         # Deduplicate while preserving order.
         out: list[int] = []
@@ -352,10 +346,7 @@ def infer_citation_numbers_from_context(report_md: str, claim_text: str) -> list
     snippet = report_md[pos: min(len(report_md), pos + 800)]
     for m in INLINE_CITATION_RE.finditer(snippet):
         for n in m.group(1).split(','):
-            try:
-                nums.append(int(n.strip()))
-            except ValueError:
-                continue
+            nums.append(int(n.strip()))
     out: list[int] = []
     for n in nums:
         if n not in out:
@@ -420,6 +411,7 @@ def cmd_verify(args: argparse.Namespace) -> None:
             continue
 
         claim_type = claim.get('claim_type', 'factual')
+        claim['claim_type'] = claim_type
 
         # Normalize claim types based on section intent.
         if section_id == 'recommendations':
