@@ -139,6 +139,7 @@ f2_stub_script "$R/scripts/monitor-enterprise-e2e-matrix.sh" scripts/monitor-ent
 # lock contention
 /bin/sleep 30 &
 holder=$!
+trap 'kill "$holder" 2>/dev/null || true; tl_cleanup' EXIT
 printf '%s\n' "$holder" >"$TL_TMP/live.lock"
 run env SB_ENTERPRISE_E2E_LIVE=1 bash "$LIVE"
 kill "$holder" 2>/dev/null || true
@@ -269,6 +270,16 @@ assert_file_absent "lock released when nothing to resume" "$TL_TMP/live.lock"
 run bash "$LIVE"
 assert_eq "no resume needed run exit" "0" "$TL_STATUS"
 assert_contains "matrix launched without rows" "$CALLS" "matrix args=[] pwd=$R"
+
+# incomplete_rows that keeps printing after its first line must not be cut short by `grep -q`
+# (SIGPIPE under pipefail used to make a no-argument run skip the resume)
+cat >"$TL_TMP/slow-rows.sh" <<'EOS'
+enterprise_e2e_incomplete_rows() { printf '4\n'; /bin/sleep 0.2; printf '5\n'; }
+EOS
+mk_ledger 1 2 3
+run env F2_OVERRIDES="$TL_TMP/slow-rows.sh" bash "$LIVE"
+assert_contains "slow producer: resume announced" "$TL_OUT" "Resume rows (ledger-incomplete): 4 5"
+assert_contains "slow producer: matrix gets both rows" "$CALLS" "matrix args=[4 5] pwd=$R"
 
 # matrix log is created when missing (resume path)
 rm -f "$LOG"
