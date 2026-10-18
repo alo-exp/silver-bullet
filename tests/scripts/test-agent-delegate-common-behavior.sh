@@ -72,6 +72,10 @@ agent_delegate_clear_matrix_env
 assert_eq "clear matrix env: all matrix vars unset" "" "$(env | grep -c '^SB_E2E_' | grep -v '^0$' || true)"
 assert_eq "clear matrix env: unrelated vars kept" "1" "${KEEP_ME}"
 
+# an env var that cannot be unset does not abort the cleanup
+tl_run bash -c "source '$ST/scripts/lib/agent-delegate-common.sh'; export SB_E2E_LEDGER_FILE=x SB_E2E_TUI_OFFSETS=y; readonly SB_E2E_LEDGER_FILE; agent_delegate_clear_matrix_env; echo rc=\$? ledger=\${SB_E2E_LEDGER_FILE:-unset} offsets=\${SB_E2E_TUI_OFFSETS:-unset}"
+assert_contains "clear matrix env: readonly var tolerated, others still cleared" "$TL_OUT" "rc=0 ledger=x offsets=unset"
+
 # ---------------- quota detection / short-retry gate ----------------
 agent_delegate_is_quota_error "Token Plan exhausted" && tl_pass "quota: token plan" || tl_fail "quota: token plan"
 agent_delegate_is_quota_error "all fine" && tl_fail "quota: clean output" || tl_pass "quota: clean output is not quota"
@@ -199,6 +203,23 @@ EV3="$TL_TMP/logs/evidence3.log"
 agent_delegate_append_workdir_evidence "$EV3" "$REPO2"
 assert_not_contains "evidence: no readme section without README" "$(cat "$EV3")" "readme_preview"
 
+# every probe failing is tolerated and recorded as best-effort evidence
+REPO3="$TL_TMP/repo3"; tl_git_repo "$REPO3"
+printf '# R\n' >"$REPO3/README.md"
+git() { case "$*" in *"rev-parse HEAD"*|*"log -3"*|*" status "*) return 1 ;; esac; command git "$@"; }
+head() { case "$*" in *-20*|*README*) return 1 ;; esac; command head "$@"; }
+EV4="$TL_TMP/logs/evidence4.log"
+rc=0; agent_delegate_append_workdir_evidence "$EV4" "$REPO3" || rc=$?
+unset -f git head
+assert_eq "evidence: failing probes do not fail the helper" 0 "$rc"
+assert_contains "evidence: head falls back to none" "$(cat "$EV4")" "git_head=none"
+assert_contains "evidence: sections still emitted" "$(cat "$EV4")" "readme_preview="
+ls() { return 1; }
+EV5="$TL_TMP/logs/evidence5.log"
+rc=0; agent_delegate_append_workdir_evidence "$EV5" "$TL_TMP/w" || rc=$?
+unset -f ls
+assert_eq "evidence: failing ls tolerated" 0 "$rc"
+assert_contains "evidence: non-repo marker still written" "$(cat "$EV5")" "git=not-a-repo"
 # ---------------- log floor / workflow markers ----------------
 printf '%0100d' 0 >"$TL_TMP/floor.log"
 tl_run agent_delegate_check_log_floor "" 10 host
