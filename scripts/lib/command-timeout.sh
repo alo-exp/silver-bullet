@@ -87,7 +87,12 @@ PY
       "$@" &
       cmd_pid=$!
       (
-        sleep "$seconds"
+        # Run the delay as a child we can kill: killing only this subshell would leave
+        # `sleep` holding the caller's stdout (e.g. inside $(...)) until it expires.
+        sleep "$seconds" &
+        sleep_pid=$!
+        trap 'kill "$sleep_pid" 2>/dev/null; exit 0' TERM
+        wait "$sleep_pid"
         if kill -0 "$cmd_pid" 2>/dev/null; then
           kill -TERM "$cmd_pid" 2>/dev/null || true
           sleep 2
