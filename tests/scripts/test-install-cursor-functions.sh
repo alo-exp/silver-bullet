@@ -438,6 +438,11 @@ mkdir -p "$CACHE/6.0.0"
 sub verify_cursor_install_identity "$CACHE/6.0.0" 6.0.0 "$SNAP_SHA"
 assert_eq "an uninstalled tree fails identity verification" 1 "$TL_STATUS"
 assert_contains "missing current link reported" "$TL_ERR" "Cursor current symlink resolves to"
+mkdir -p "$TL_TMP/other-name"
+sub verify_cursor_install_identity "$TL_TMP/other-name" 9.9.9 ""
+assert_eq "a destination not named after the version fails" 1 "$TL_STATUS"
+assert_contains "unmaterialized version reported" "$TL_ERR" "Cursor cache claimed version 9.9.9 is not materialized at $TL_TMP/other-name"
+assert_contains "missing claimed cache version reported" "$TL_ERR" "Cursor claimed cache version is missing: $CACHE/9.9.9"
 
 # ---- public-release sync, with GitHub redirected to local repositories
 reset_home
