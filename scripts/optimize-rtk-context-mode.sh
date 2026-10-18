@@ -74,10 +74,6 @@ detect_host() {
     printf '%s' "pi"
     return 0
   fi
-  if [[ -d "${HOME}/.codex" ]]; then
-    printf '%s' "claude"
-    return 0
-  fi
   printf '%s' "cursor"
 }
 
