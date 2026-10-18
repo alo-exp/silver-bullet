@@ -47,7 +47,9 @@ rt_heartbeat_path() {
   local project_id="${1:-}" worktree_id="${2:-}" session_id="${3:-}"
   [[ -n "$session_id" ]] || return 1
   session_id="$(rt_sanitize_session_id "$session_id")"
-  printf '%s/%s.json' "$(rt_heartbeat_dir "$project_id" "$worktree_id")" "$session_id"
+  local dir
+  dir="$(rt_heartbeat_dir "$project_id" "$worktree_id")" || return 1
+  printf '%s/%s.json' "$dir" "$session_id"
 }
 
 rt_reload_receipt_root() {

@@ -115,6 +115,13 @@ rt_heartbeat_write "$PROJ" cursor
 assert_eq "an old heartbeat is rewritten" "v1" "$(jq -r .schema "$HB_PATH")"
 assert_eq "no lock directory left behind" "1" "$(rc_of test -e "$(dirname "$HB_PATH")/.lock")"
 
+# outside git there is no project id: nothing may be written (least of all at the filesystem root)
+NOGIT_HB="$TL_TMP/nogit-hb"; mkdir -p "$NOGIT_HB"; cp "$PROJ/.silver-bullet.json" "$NOGIT_HB/"
+hb_rc=0
+if (SILVER_BULLET_SESSION_ID=nogit-root-probe RT_PROJECT_ROOT="$NOGIT_HB" rt_heartbeat_write "$NOGIT_HB" cursor >/dev/null 2>&1); then hb_rc=0; else hb_rc=1; fi
+assert_eq "heartbeat write without a project id fails (if-context)" "1" "$hb_rc"
+assert_eq "no heartbeat written at the filesystem root" "0" "$(ls /nogit-root-probe.json /.lock 2>/dev/null | wc -l | tr -d ' ')"
+
 # ---------------------------------------------------------------- validity
 good="$TL_TMP/good-hb.json"
 future="$("$REAL_DATE" -u -d '+1 hour' +%Y-%m-%dT%H:%M:%SZ)"
