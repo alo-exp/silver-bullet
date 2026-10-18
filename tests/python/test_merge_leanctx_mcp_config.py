@@ -252,22 +252,48 @@ class CursorMergeTest(Base):
             self.assertEqual(servers["leanctx"]["command"], "/opt/g/lean-ctx", bad)
             self.assertEqual(servers["keep"], {"command": "k"})
 
-    def test_non_dict_env_and_disabled_tools_are_repaired(self):
-        self.write(self.target(), {"mcpServers": {"context-mode": {}, "leanctx": {
-            "command": "/opt/g/lean-ctx", "args": ["mcp"], "env": ["bad"], "disabledTools": "ctx_search"}}})
-        self.merge()
-        lean = self.read_json(self.target())["mcpServers"]["leanctx"]
-        self.assertEqual(lean["env"]["LEANCTX_MCP_TOOL_PREFIX"], "lctx_")
-        self.assertEqual(sorted(lean["disabledTools"]), sorted(mod.CM_OVERLAP_TOOLS))
+    def assert_untouched(self, fn, *args):
+        before = self.target().read_bytes()
+        with self.assertRaisesRegex(ValueError, "must be a JSON"):
+            fn(*args)
+        self.assertEqual(self.target().read_bytes(), before)
+        self.assertFalse(self.target().with_suffix(".json.bak").exists())
 
-    def test_non_dict_mcp_servers_container_is_replaced(self):
-        for bad in (None, [], "x"):
+    def test_wrong_typed_env_and_disabled_tools_are_refused(self):
+        good = {"command": "/opt/g/lean-ctx", "args": ["mcp"]}
+        for lean in ({**good, "env": ["bad"]}, {**good, "env": "x"},
+                     {**good, "env": {}, "disabledTools": "ctx_search"},
+                     {**good, "env": {}, "disabledTools": {"k": 1}}):
+            self.write(self.target(), {"mcpServers": {"context-mode": {}, "leanctx": lean}})
+            self.assert_untouched(self.merge)
+
+    def test_null_or_empty_env_and_disabled_tools_are_repaired(self):
+        for env, dis in ((None, None), ([], []), ({}, [])):
+            self.write(self.target(), {"mcpServers": {"context-mode": {}, "leanctx": {
+                "command": "/opt/g/lean-ctx", "args": ["mcp"], "env": env, "disabledTools": dis}}})
+            self.merge()
+            lean = self.read_json(self.target())["mcpServers"]["leanctx"]
+            self.assertEqual(lean["env"]["LEANCTX_MCP_TOOL_PREFIX"], "lctx_")
+            self.assertEqual(sorted(lean["disabledTools"]), sorted(mod.CM_OVERLAP_TOOLS))
+
+    def test_command_drift_alone_triggers_write(self):
+        spec = mod.leanctx_cursor_server(False, MANIFEST)
+        for key, val in (("command", "old"), ("args", ["x"])):
+            self.write(self.target(), {"mcpServers": {"leanctx": {**spec, key: val}}})
+            self.assertTrue(self.merge()["mcp_merged"], key)
+            self.assertEqual(self.read_json(self.target())["mcpServers"]["leanctx"][key], spec[key])
+    def test_wrong_typed_mcp_servers_container_is_refused(self):
+        for bad in ("x", [{"name": "mine"}], 5):
             self.write(self.target(), {"mcpServers": bad, "other": 1})
-            self.assertTrue(self.merge()["mcp_merged"], bad)
+            self.assert_untouched(self.merge)
+
+    def test_null_or_empty_mcp_servers_container_is_repaired(self):
+        for ok in (None, [], {}):
+            self.write(self.target(), {"mcpServers": ok, "other": 1})
+            self.assertTrue(self.merge()["mcp_merged"], ok)
             data = self.read_json(self.target())
             self.assertEqual(data["other"], 1)
             self.assertEqual(data["mcpServers"]["leanctx"]["command"], "/opt/g/lean-ctx")
-
     def test_symlinked_target_is_written_through(self):
         real = self.write(self.tmp / "real.json", {"mcpServers": {}, "keep": 1})
         self.target().parent.mkdir(parents=True)
@@ -306,14 +332,20 @@ class ClaudeMergeTest(Base):
         self.assertEqual(lean, mod.leanctx_cursor_server(True, MANIFEST))  # replaced wholesale
         self.assertTrue(self.target().with_suffix(".json.bak").is_file())
 
-    def test_dry_run_and_bad_container(self):
-        self.write(self.target(), {"mcpServers": "oops"})
-        res = self.merge(dry_run=True)
-        self.assertTrue(res["mcp_merged"])
-        self.assertEqual(self.read_json(self.target()), {"mcpServers": "oops"})
+    def test_bad_container(self):
+        for bad in ("oops", [{"name": "mine"}]):
+            self.write(self.target(), {"mcpServers": bad})
+            before = self.target().read_bytes()
+            for dry in (True, False):
+                with self.assertRaisesRegex(ValueError, "must be a JSON"):
+                    self.merge(dry_run=dry)
+            self.assertEqual(self.target().read_bytes(), before)
+            self.assertFalse(self.target().with_suffix(".json.bak").exists())
+        self.write(self.target(), {"mcpServers": None})
+        self.assertTrue(self.merge(dry_run=True)["mcp_merged"])
+        self.assertEqual(self.read_json(self.target()), {"mcpServers": None})
         self.merge()
         self.assertEqual(self.read_json(self.target())["mcpServers"]["leanctx"]["command"], "/opt/g/lean-ctx")
-
 
 class StripCollisionTest(Base):
     def test_cases(self):
@@ -324,6 +356,11 @@ class StripCollisionTest(Base):
         self.write(p, {"mcpServers": {}})
         self.assertFalse(mod.strip_unprefixed_leanctx_collision(p, False))
         self.write(p, {"mcpServers": {"leanctx": {"disabledTools": "not-a-list"}}})
+        before = p.read_bytes()
+        with self.assertRaisesRegex(ValueError, "disabledTools must be a JSON array"):
+            mod.strip_unprefixed_leanctx_collision(p, False)
+        self.assertEqual(p.read_bytes(), before)
+        self.write(p, {"mcpServers": {"leanctx": {"disabledTools": None}}})
         self.assertTrue(mod.strip_unprefixed_leanctx_collision(p, False))
         self.assertEqual(self.read_json(p)["mcpServers"]["leanctx"]["disabledTools"], mod.CM_OVERLAP_TOOLS)
         before = p.read_bytes()
@@ -358,8 +395,17 @@ class OpenCodeMergeTest(Base):
         self.assertFalse(self.merge()["mcp_merged"])
         self.assertEqual(self.target().read_bytes(), first)
 
-    def test_fills_missing_schema_and_replaces_bad_mcp(self):
-        self.write(self.target(), {"mcp": ["bad"], "theme": "x"})
+    def test_wrong_typed_mcp_is_refused(self):
+        for bad in (["bad"], "x", [{"name": "mine"}]):
+            self.write(self.target(), {"mcp": bad, "theme": "x"})
+            before = self.target().read_bytes()
+            with self.assertRaisesRegex(ValueError, "mcp must be a JSON object"):
+                self.merge()
+            self.assertEqual(self.target().read_bytes(), before)
+            self.assertFalse(self.target().with_suffix(".json.bak").exists())
+
+    def test_fills_missing_schema_and_replaces_empty_mcp(self):
+        self.write(self.target(), {"mcp": [], "theme": "x"})
         self.merge()
         data = self.read_json(self.target())
         self.assertEqual(data["$schema"], "https://opencode.ai/config.json")
@@ -384,6 +430,33 @@ class OpenCodeMergeTest(Base):
         mcp = self.read_json(self.target())["mcp"]
         self.assertEqual(set(mcp), {"context-mode", "leanctx"})
         self.assertEqual(mcp["context-mode"]["command"], ["/opt/g/context-mode", "serve"])
+
+    def test_each_change_flag_alone_triggers_a_write(self):
+        def perturbed(seed, mutate):
+            self.write(self.target(), seed)
+            self.merge()
+            data = self.read_json(self.target())
+            mutate(data)
+            self.write(self.target(), data)
+            res = self.merge()
+            return res, self.read_json(self.target())
+
+        plugin_seed = {"plugin": ["context-mode"], "mcp": {}}
+        res, data = perturbed(plugin_seed, lambda d: d.update(plugin=["context-mode@0.1"]))
+        self.assertTrue(res["mcp_merged"])
+        self.assertEqual(data["plugin"], ["context-mode"])
+        res, data = perturbed(plugin_seed, lambda d: d["mcp"].update({"context-mode": {"command": ["x"]}}))
+        self.assertTrue(res["mcp_merged"])
+        self.assertNotIn("context-mode", data["mcp"])
+        res, data = perturbed(plugin_seed, lambda d: d["mcp"]["leanctx"].update(command=["old"]))
+        self.assertTrue(res["mcp_merged"])
+        self.assertEqual(data["mcp"]["leanctx"]["command"], ["/opt/g/lean-ctx", "mcp"])
+        mcp_seed = {"mcp": {"context-mode": {"command": ["x"]}}}
+        res, data = perturbed(mcp_seed, lambda d: d["mcp"]["context-mode"].update(command=["old"]))
+        self.assertTrue(res["mcp_merged"])
+        self.assertEqual(data["mcp"]["context-mode"]["command"], ["/opt/g/context-mode", "serve"])
+        res, _ = perturbed(mcp_seed, lambda d: None)
+        self.assertFalse(res["mcp_merged"])
 
     def test_plugin_not_a_list_is_ignored(self):
         self.write(self.target(), {"plugin": "context-mode", "mcp": {}})
@@ -563,6 +636,12 @@ class OptimizeAndMainTest(Base):
             res = self.quiet(mod.optimize_host, host, False, MANIFEST)
             self.assertEqual((res["host"], res["mcp_merged"]), (host, True), host)
             self.assertTrue(path.is_file(), host)
+
+    def test_nested_missing_config_dirs_are_created(self):
+        nested = self.tmp / "a" / "b" / "c"
+        with mock.patch.dict(os.environ, {"CODEX_HOME": str(nested)}):
+            self.quiet(mod.optimize_host, "codex", False, MANIFEST)
+        self.assertTrue((nested / "config.toml").is_file())
 
     def test_codex_home_override(self):
         custom = self.tmp / "custom-codex"

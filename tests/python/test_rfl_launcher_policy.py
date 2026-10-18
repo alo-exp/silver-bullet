@@ -117,6 +117,28 @@ class LaunchActionTest(unittest.TestCase):
             self.assertEqual((out["action"], out["retry"], out["retry_kind"], out["skipped"]),
                              ("retry_immediate", True, "immediate", False))
 
+    def test_exact_payloads(self):
+        base = {"outcome": "timeout", "phase": "rung", "attempts": 1}
+        self.assertEqual(self.act(), {
+            **base, "action": "retry_immediate", "skipped": False, "retry": True,
+            "retry_kind": "immediate", "post_ladder_retry_pending": False,
+            "post_ladder_retry_done": False})
+        self.assertEqual(self.act(attempts=2, host="x"), {
+            **base, "attempts": 2, "action": "skip", "skipped": True, "retry": False,
+            "retry_kind": None, "post_ladder_retry_pending": True,
+            "post_ladder_retry_done": False})
+        sub = self.act(attempts=2, host="pi")
+        self.assertEqual((sub["post_ladder_retry_pending"], sub["post_ladder_retry_done"],
+                          sub["retry_kind"]), (False, False, None))
+        self.assertEqual(self.act(phase="post_ladder", attempts=2), {
+            **base, "attempts": 2, "phase": "post_ladder", "action": "remain_skipped",
+            "skipped": True, "retry": False, "retry_kind": None,
+            "post_ladder_retry_pending": False, "post_ladder_retry_done": True})
+        ok = self.act(outcome="success")
+        self.assertEqual((ok["skipped"], ok["retry"], ok["retry_kind"],
+                          ok["post_ladder_retry_pending"], ok["post_ladder_retry_done"]),
+                         (False, False, None, False, False))
+
     def test_second_failure_substitutes_on_opencode_and_pi(self):
         for host in ("opencode", "pi", "Agent-Pi", "/sb:agent-opencode"):
             out = self.act(attempts=2, host=host)
@@ -275,6 +297,7 @@ class RenderTest(unittest.TestCase):
 class HelpersTest(unittest.TestCase):
     def test_parse_available_hosts(self):
         self.assertIsNone(lp._parse_available_hosts(None))
+        self.assertIsNone(lp._parse_available_hosts(""))
         self.assertIsNone(lp._parse_available_hosts("  "))
         self.assertEqual(lp._parse_available_hosts("pi, cursor,,"), ("pi", "cursor"))
         self.assertEqual(lp._parse_available_hosts(","), ())
@@ -354,6 +377,18 @@ class CliTest(unittest.TestCase):
         self.assertEqual(json.loads(out)["action"], "remain_skipped")
         code, _, err = self.cli("--launch-policy")
         self.assertEqual((code, "requires --outcome" in err), (2, True))
+
+    def test_host_flag_beats_user_agent_for_launch_and_skip(self):
+        for flag in ("--launch-policy", "--skip-artifact"):
+            base = [flag, "--outcome", "timeout", "--attempts", "2"]
+            if flag == "--skip-artifact":
+                base += ["--rung-id", "r1"]
+            for argv, action in ((["--host", "pi"], "substitute_grok"),
+                                 (["--user-agent", "pi"], "substitute_grok"),
+                                 (["--host", "cursor", "--user-agent", "pi"], "skip"),
+                                 (["--host", "pi", "--user-agent", "cursor"], "substitute_grok")):
+                code, out, _ = self.cli(*base, *argv)
+                self.assertEqual(json.loads(out)["action"], action, (flag, argv))
 
     def test_skip_artifact(self):
         rung_dir = self.tmp / "rung" / "1"

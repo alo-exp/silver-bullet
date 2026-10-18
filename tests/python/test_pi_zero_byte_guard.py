@@ -256,6 +256,28 @@ class MainFakeTest(unittest.TestCase):
         self.assertIn("zero-byte-idle", h.err.getvalue())
         self.assertIn("expect_ok=False expect_bytes=779", h.err.getvalue())
 
+    def test_expect_file_exactly_min_bytes_is_ok(self):
+        h = Harness(self)
+        h.run(["1", "5", "/x/e", "10"], FakeProc([None]),
+              getsize=lambda p: 10, isfile=lambda p: True, is_stub=lambda p: False)
+        self.assertIn("hard-timeout", h.err.getvalue())
+        self.assertIn("expect_ok=True expect_bytes=10", h.err.getvalue())
+        h = Harness(self)
+        h.run(["1", "600", "/x/e", "10"], FakeProc([None]),
+              getsize=lambda p: 9, isfile=lambda p: True, is_stub=lambda p: False)
+        self.assertIn("zero-byte-idle", h.err.getvalue())
+        self.assertIn("expect_ok=False expect_bytes=9", h.err.getvalue())
+
+    def test_output_then_silence_is_idle_kill_with_stdout_yes(self):
+        h = Harness(self)
+        h.ready = [True]
+        h.reads = [b"hello"]
+        code = h.run(["1", "600", "", "10"], FakeProc([None]))
+        self.assertEqual(code, 124)
+        self.assertIn("zero-byte-idle", h.err.getvalue())
+        self.assertIn("stdout_bytes=yes", h.err.getvalue())
+        self.assertEqual(h.out.getvalue(), b"hello")
+
     def test_small_expect_file_not_ok(self):
         h = Harness(self)
         proc = FakeProc([None])
@@ -319,14 +341,14 @@ class MainSubprocessTest(unittest.TestCase):
         )
 
     def test_passthrough_exit_code_and_output(self):
-        res = self._run(["5", "20", "", "10", sys.executable, "-c",
+        res = self._run(["600", "600", "", "10", sys.executable, "-c",
                          "import sys; print('out'); sys.stderr.write('err\\n'); sys.exit(7)"])
         self.assertEqual(res.returncode, 7)
         self.assertIn("out", res.stdout)
         self.assertIn("err", res.stdout)  # stderr merged into stdout
 
     def test_silent_child_killed_by_idle(self):
-        res = self._run(["1", "20", "", "10", sys.executable, "-c",
+        res = self._run(["0", "600", "", "10", sys.executable, "-c",
                          "import time; time.sleep(30)"])
         self.assertEqual(res.returncode, 124)
         self.assertIn("zero-byte-idle kill", res.stderr)

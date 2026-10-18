@@ -7,8 +7,10 @@ import argparse
 import json
 import os
 import pathlib
+import re
 import shutil
 import sys
+from typing import Any
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent / "global-toolstack"))
 
@@ -51,13 +53,22 @@ def load_json(path: pathlib.Path, default: dict | None = None) -> dict:
     return default or {}
 
 
-def object_member(data: dict, key: str) -> dict:
-    """Return ``data[key]`` as a dict, replacing a missing/non-object value with ``{}``."""
+def json_member(data: dict, key: str, kind: type, path: pathlib.Path) -> Any:
+    """Return ``data[key]`` as ``kind`` (dict or list).
+
+    A missing, null or empty ({} / []) value is replaced by a fresh ``kind()``.
+    Any other value of the wrong type is user data we must not destroy, so raise
+    before anything is written.
+    """
     value = data.get(key)
-    if not isinstance(value, dict):
-        value = {}
+    if isinstance(value, kind):
+        return value
+    if value is None or value == {} or value == []:
+        value = kind()
         data[key] = value
-    return value
+        return value
+    label = "object" if kind is dict else "array"
+    raise ValueError(f"{path}: {key} must be a JSON {label}")
 
 
 def save_json(path: pathlib.Path, data: dict, dry_run: bool) -> None:
@@ -167,7 +178,7 @@ def merge_codex_hooks_file(target: pathlib.Path, fragment: dict, dry_run: bool) 
                 if any(c in existing_cmds for c in new_cmds):
                     found = True
                     break
-            if not found:
+            if not found and group not in event_list:
                 event_list.append(group)
                 added += 1
     save_json(target, settings, dry_run)
@@ -176,7 +187,7 @@ def merge_codex_hooks_file(target: pathlib.Path, fragment: dict, dry_run: bool) 
 
 def merge_mcp_server(target: pathlib.Path, server_name: str, server_cfg: dict, dry_run: bool) -> bool:
     data = load_json(target, {"mcpServers": {}})
-    servers = object_member(data, "mcpServers")
+    servers = json_member(data, "mcpServers", dict, target)
     if server_name in servers:
         return False
     servers[server_name] = server_cfg
@@ -189,7 +200,7 @@ def merge_shared_claude_context_mode(
 ) -> bool:
     """Keep Claude's Context Mode server canonical and manifest-backed."""
     data = load_json(target, {"mcpServers": {}})
-    servers = object_member(data, "mcpServers")
+    servers = json_member(data, "mcpServers", dict, target)
     changed = False
     existing = servers.get("context-mode")
     legacy = servers.get("user-context-mode")
@@ -217,11 +228,8 @@ def merge_shared_claude_context_mode(
 def merge_cli_allowlist(target: pathlib.Path, allow_entries: list[str], dry_run: bool) -> int:
     data = load_json(target, {"version": 1, "permissions": {"allow": [], "deny": []}})
     data.setdefault("version", 1)
-    perms = object_member(data, "permissions")
-    allow = perms.get("allow")
-    if not isinstance(allow, list):
-        allow = []
-        perms["allow"] = allow
+    perms = json_member(data, "permissions", dict, target)
+    allow = json_member(perms, "allow", list, target)
     added = 0
     for entry in allow_entries:
         if entry not in allow:
@@ -388,27 +396,40 @@ def merge_codex_config_toml(target: pathlib.Path, dry_run: bool) -> bool:
 
 
 def merge_hermes_context_mode_mcp(config_path: pathlib.Path, dry_run: bool) -> bool:
+    """Register Context Mode under Hermes ``mcp_servers`` without duplicating the key.
+
+    Returns False (and writes nothing) when Context Mode is already configured,
+    or when ``mcp_servers`` has an inline value we cannot safely extend.
+    """
     marker = "# === rtk-cm context-mode MCP block ==="
     end_marker = "# === end rtk-cm context-mode MCP block ==="
-    block = f"""{marker}
-mcp_servers:
-  context-mode:
-    command: context-mode
-    args: [mcp]
-    env: {{}}
-{end_marker}
-"""
-    if config_path.is_file():
-        text = config_path.read_text(encoding="utf-8")
-        if "context-mode:" in text and "mcp_servers:" in text:
-            return False
-        if marker in text:
-            return False
+    child = (
+        f"  {marker}\n"
+        "  context-mode:\n"
+        "    command: context-mode\n"
+        "    args: [mcp]\n"
+        "    env: {}\n"
+        f"  {end_marker}"
+    )
+    block = f"{marker}\nmcp_servers:\n" + child.split("\n", 1)[1].replace(
+        f"  {end_marker}", end_marker
+    ) + "\n"
+    text = config_path.read_text(encoding="utf-8") if config_path.is_file() else ""
+    if marker in text or re.search(r"^[ \t]+context-mode:", text, re.M):
+        return False
+    header = re.search(r"^mcp_servers:[ \t]*(#.*)?$", text, re.M)
+    if header is None and re.search(r"^mcp_servers:", text, re.M):
+        return False  # inline value such as ``mcp_servers: {}``
     if dry_run:
         print(f"DRY-RUN: would append context-mode MCP to {config_path}")
         return True
     config_path.parent.mkdir(parents=True, exist_ok=True)
-    if config_path.is_file():
+    if header is not None:
+        backup_file(config_path)
+        rest = text[header.end():]
+        updated = text[: header.end()] + "\n" + child + (rest if rest else "\n")
+        config_path.write_text(updated, encoding="utf-8")
+    elif config_path.is_file():
         backup_file(config_path)
         with config_path.open("a", encoding="utf-8") as handle:
             handle.write("\n")
@@ -550,10 +571,7 @@ def optimize_opencode(
         },
     )
     data.setdefault("$schema", "https://opencode.ai/config.json")
-    plugins = data.setdefault("plugin", [])
-    if not isinstance(plugins, list):
-        plugins = []
-        data["plugin"] = plugins
+    plugins = json_member(data, "plugin", list, cfg_path)
     configure_rtk = not context_mode_only
     configure_context_mode = not rtk_only
     plugin_added = False
@@ -578,10 +596,7 @@ def optimize_opencode(
             dry_run,
         )
 
-    mcp = data.setdefault("mcp", {})
-    if not isinstance(mcp, dict):
-        mcp = {}
-        data["mcp"] = mcp
+    mcp = json_member(data, "mcp", dict, cfg_path)
     mcp_added = False
     if cm_plugin_active:
         mcp_added = opencode_remove_context_mode_mcp(mcp) or mcp_added

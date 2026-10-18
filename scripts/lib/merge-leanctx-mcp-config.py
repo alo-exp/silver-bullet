@@ -61,6 +61,23 @@ def load_json(path: pathlib.Path, default: dict | None = None) -> dict:
     return default or {}
 
 
+def json_member(data: dict, key: str, kind: type, path: pathlib.Path):
+    """Return ``data[key]`` as ``kind`` (dict or list).
+
+    Missing, null or empty ({} / []) values are replaced by a fresh ``kind()``.
+    Any other wrong-typed value is user data: raise before anything is written.
+    """
+    value = data.get(key)
+    if isinstance(value, kind):
+        return value
+    if value is None or value == {} or value == []:
+        value = kind()
+        data[key] = value
+        return value
+    label = "object" if kind is dict else "array"
+    raise ValueError(f"{path}: {key} must be a JSON {label}")
+
+
 def server_map(data: dict, key: str) -> dict:
     """Return ``data[key]`` when it is an object, else an empty mapping."""
     value = data.get(key)
@@ -167,10 +184,7 @@ def remove_upstream_lean_ctx_duplicate(servers: dict) -> bool:
 def merge_cursor_mcp(target: pathlib.Path, dry_run: bool, manifest: dict) -> dict:
     cm_active = context_mode_present_cursor(target)
     data = load_json(target, {"mcpServers": {}})
-    servers = data.get("mcpServers")
-    if not isinstance(servers, dict):
-        servers = {}
-        data["mcpServers"] = servers
+    servers = json_member(data, "mcpServers", dict, target)
     changed = False
     if remove_upstream_lean_ctx_duplicate(servers):
         changed = True
@@ -185,8 +199,7 @@ def merge_cursor_mcp(target: pathlib.Path, dry_run: bool, manifest: dict) -> dic
                 existing[key] = desired[key]
                 changed = True
         desired_env = leanctx_server_env(cm_active)
-        current_env = existing.get("env")
-        merged_env = dict(current_env) if isinstance(current_env, dict) else {}
+        merged_env = dict(json_member(existing, "env", dict, target))
         for key, val in desired_env.items():
             if merged_env.get(key) != val:
                 merged_env[key] = val
@@ -195,8 +208,7 @@ def merge_cursor_mcp(target: pathlib.Path, dry_run: bool, manifest: dict) -> dic
             existing["env"] = merged_env
             servers["leanctx"] = existing
         if cm_active:
-            current_disabled = existing.get("disabledTools")
-            disabled = list(current_disabled) if isinstance(current_disabled, list) else []
+            disabled = list(json_member(existing, "disabledTools", list, target))
             for tool in CM_OVERLAP_TOOLS:
                 if tool not in disabled:
                     disabled.append(tool)
@@ -211,10 +223,7 @@ def merge_cursor_mcp(target: pathlib.Path, dry_run: bool, manifest: dict) -> dic
 def merge_claude_mcp(target: pathlib.Path, dry_run: bool, manifest: dict) -> dict:
     cm_active = context_mode_present_claude(target)
     data = load_json(target, {"mcpServers": {}})
-    servers = data.get("mcpServers")
-    if not isinstance(servers, dict):
-        servers = {}
-        data["mcpServers"] = servers
+    servers = json_member(data, "mcpServers", dict, target)
     changed = False
     if remove_upstream_lean_ctx_duplicate(servers):
         changed = True
@@ -237,10 +246,7 @@ def merge_opencode_mcp(target: pathlib.Path, dry_run: bool, manifest: dict) -> d
         },
     )
     data.setdefault("$schema", "https://opencode.ai/config.json")
-    mcp = data.setdefault("mcp", {})
-    if not isinstance(mcp, dict):
-        mcp = {}
-        data["mcp"] = mcp
+    mcp = json_member(data, "mcp", dict, target)
     changed = False
     cm_plugin_active = opencode_context_mode_plugin_present(data)
     plugins = data.get("plugin")
@@ -392,9 +398,7 @@ def strip_unprefixed_leanctx_collision(mcp_path: pathlib.Path, dry_run: bool) ->
     lean = servers.get("leanctx")
     if not isinstance(lean, dict):
         return False
-    disabled = lean.get("disabledTools")
-    if not isinstance(disabled, list):
-        disabled = []
+    disabled = json_member(lean, "disabledTools", list, mcp_path)
     cm_overlap = [
         "ctx_execute",
         "ctx_execute_file",
