@@ -78,6 +78,7 @@ Statements that cannot run are removed, not excluded: each removal is its own `r
 | `jq '... // "true"'` reads a JSON boolean `false` as `"true"`, so `hooks.evidence_schema.strict: false` does not relax the gate | `hooks/lib/enterprise-policy.sh:157`, `hooks/lib/completion-audit/gates.sh:221/224/227` | E-core-hooks / A follow-up |
 | `count_*` helpers use `grep -c ... \|\| echo 0` (prints `0` twice when nothing matches) | `hooks/lib/workflow-utils.sh` | E-core-hooks |
 | Invalid escape `\s` in a Python string (SyntaxWarning, an error in future Python) | `skills/silver-deep-research-multi-ai/scripts/landscape_preview_render.py:665` | M-dr-multi-ai |
+| The in-place edit regex (`\bsed\b[^$]*-i`, `\bperl\b[^$]*-i`) misses combined flags such as `perl -pi` and `sed -Ei`; fixed in `scripts/lib/global-toolstack/common.sh` (G-toolstack-2) but the hook copies still use the old form | `hooks/dev-cycle-check.sh` (229, 249, 628), `hooks/{graphify,rtk,context-mode,agentmemory,leanctx,alumnium}-gate.sh` | Follow-up after the hook packages |
 | `sb_rfl_activate` aborts under errexit in a project without `scripts/review-fix-ladder.py` | `hooks/lib/review-fix-ladder-state.sh` | D-gates (under review) |
 
 ## Known measurement limits
