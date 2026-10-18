@@ -32,6 +32,11 @@ SB_ROOT="${SB_ROOT:-$REPO_ROOT}"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --work-dir|--prompt|--prompt-file|--brief-file|--log|--mode|--sb-root|--control-dir|--max-turns|--max-wall-sec|--idle-sec|--task-id)
+      [[ $# -ge 2 ]] || { printf 'ERROR: %s requires a value\n' "$1" >&2; exit 2; }
+      ;;
+  esac
+  case "$1" in
     --work-dir) WORK_DIR="$2"; shift 2 ;;
     --prompt) PROMPT_TEXT="$2"; shift 2 ;;
     --prompt-file) PROMPT_FILE="$2"; shift 2 ;;
