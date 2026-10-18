@@ -60,6 +60,7 @@ run_cell() {
       || { sb_smoke_write_rc_marker "$host" "$mode" fail install; FAIL=$((FAIL+1)); return; }
     sb_smoke_write_rc_marker "$host" "$mode" skip no-live-cli; SKIP=$((SKIP+1)); return
   fi
+  sb_smoke_cleanup   # drop the previous cell's smoke root before creating a new one
   SB_PRE_RELEASE_SMOKE_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/sb-rc.XXXXXX")"; export SB_PRE_RELEASE_SMOKE_ROOT
   trap sb_smoke_cleanup EXIT
   RTK_DISABLED=1 bash "${REPO_ROOT}/scripts/lib/host-smoke-cell.sh" --host "$host" --mode "$mode" --scope rc \

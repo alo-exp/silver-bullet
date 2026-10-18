@@ -118,6 +118,12 @@ assert_contains "live totals" "$TL_OUT" "1 passed, 0 failed, 0 skipped"
 mrun CELL_FAIL=codex --host codex --mode fresh
 assert_eq "live host-smoke failure marker" host-smoke "$(artifact_of codex-fresh)"
 assert_eq "live host-smoke failure exit" 1 "$TL_STATUS"
+# several live cells with a private TMPDIR: no per-cell smoke root may be left behind
+PT="$TL_TMP/private-tmp"; rm -rf "$PT"; mkdir -p "$PT"
+mrun TMPDIR="$PT" --host codex
+assert_eq "two live codex cells pass" 0 "$TL_STATUS"
+assert_contains "two live cells totals" "$TL_OUT" "2 passed, 0 failed, 0 skipped"
+assert_eq "no sb-rc.* smoke roots remain" "" "$(find "$PT" -maxdepth 1 -name 'sb-rc.*' | tr '\n' ' ')"
 mrun DELEGATE_FAIL=codex --host codex --mode fresh
 assert_eq "live delegate failure -> fail marker" fail "$(status_of codex-fresh)"
 assert_match "live delegate failure artifact is the log" 'rc\.log$' "$(artifact_of codex-fresh)"
