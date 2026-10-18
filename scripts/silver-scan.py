@@ -893,101 +893,6 @@ def git_or_changelog_match(root: Path, candidate: dict[str, Any]) -> bool:
     return False
 
 
-def parse_candidates(root: Path, source: dict[str, Any], config: dict[str, Any], tracker_text: str) -> tuple[list[dict[str, Any]], int]:
-    sections = parse_sections(source["text"])
-    raw_candidates: list[dict[str, Any]] = []
-    duplicate_count = 0
-    recorded_insights: set[str] = set()
-
-    for section in sections:
-        title = section["title"]
-        blocks = split_blocks(section["lines"])
-        if title in SECTION_ITEMS_FILED:
-            for _line_no, block_text in blocks:
-                text = strip_prefix(block_text).strip()
-                normalized = normalize_text(text)
-                if (
-                    text.lower().startswith("- [knowledge]:")
-                    or text.lower().startswith("- [learnings]:")
-                    or text.lower().startswith("- [lessons]:")
-                ):
-                    recorded_insights.add(normalized)
-            continue
-
-        if title not in SECTION_DEFERRED and title not in SECTION_AUTONOMOUS and title not in SECTION_KNOWLEDGE:
-            continue
-
-        for line_no, block_text in blocks:
-            candidate = build_candidate(root, source, title, block_text, line_no, config)
-            if candidate is None:
-                continue
-            if candidate["kind"] == "knowledge" and normalize_text(candidate["context"]) in recorded_insights:
-                duplicate_count += 1
-                continue
-            raw_candidates.append(candidate)
-
-    # Keyword sweep for loose ends and unresolved work.
-    in_code = False
-    lines = source["text"].splitlines()
-    for idx, line in enumerate(lines, 1):
-        stripped = line.strip()
-        if stripped.startswith("```"):
-            in_code = not in_code
-            continue
-        if in_code or not stripped or stripped.startswith("#"):
-            continue
-        if not any(re.search(pattern, stripped, re.I) for pattern in DEFERRED_PATTERNS):
-            continue
-        title = short_title(stripped)
-        context = short_context("\n".join(lines[max(0, idx - 2) : min(len(lines), idx + 1)]))
-        candidate = {
-            "candidate_id": sha256_text(f"{normalize_text(rel_path(source['path'], root))}\n{normalize_text(title)}\n{normalize_text(context)}"),
-            "fingerprint": scan_item_fingerprint(title, context),
-            "kind": "deferred",
-            "classification": classify_deferred(stripped)[0],
-            "confidence": classify_deferred(stripped)[1],
-            "routing_target": "issue" if classify_deferred(stripped)[0] in {"bug", "question"} else "backlog",
-            "title": title,
-            "context": context,
-            "source_kind": source["kind"],
-            "source_path": rel_path(source["path"], root),
-            "source_line": idx,
-            "source_refs": [{"path": rel_path(source["path"], root), "line": idx}],
-            "status": "pending",
-        }
-        raw_candidates.append(candidate)
-
-    deduped: dict[str, dict[str, Any]] = {}
-    for candidate in raw_candidates:
-        fingerprint = candidate["fingerprint"]
-        if fingerprint in deduped:
-            duplicate_count += 1
-            existing = deduped[fingerprint]
-            existing.setdefault("source_refs", [])
-            for ref in candidate.get("source_refs", []):
-                if ref not in existing["source_refs"]:
-                    existing["source_refs"].append(ref)
-            existing.setdefault("candidate_ids", [])
-            if candidate["candidate_id"] not in existing["candidate_ids"]:
-                existing["candidate_ids"].append(candidate["candidate_id"])
-            continue
-        deduped[fingerprint] = candidate
-
-    final_candidates = list(deduped.values())
-    for candidate in final_candidates:
-        if local_tracker_matches(candidate, tracker_text):
-            candidate["status"] = "tracked"
-            candidate["dedupe_reason"] = "local-tracker"
-        elif config.get("issue_tracker") == "github" and github_issue_exists(root, candidate):
-            candidate["status"] = "tracked"
-            candidate["dedupe_reason"] = "github-issues"
-        elif git_or_changelog_match(root, candidate):
-            candidate["status"] = "weakly-tracked"
-            candidate["dedupe_reason"] = "gitlog-or-changelog"
-
-    return final_candidates, duplicate_count
-
-
 def append_local_entry(target: Path, entry_id: str, candidate: dict[str, Any]) -> None:
     if not target.exists():
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -1333,30 +1238,7 @@ def handle_file(root: Path, config: dict[str, Any], state: dict[str, Any], candi
     if candidate["kind"] == "knowledge":
         return record_candidate(root, candidate, state)
     if config.get("issue_tracker") == "github":
-        if not github_available():
-            raise RuntimeError("gh CLI is not available")
-        proc = run_command(
-            [
-                "gh",
-                "issue",
-                "create",
-                "--repo",
-                repo_slug_from_origin(root),
-                "--title",
-                candidate["title"],
-                "--body",
-                github_body(candidate, root),
-                *[flag for label in issue_labels(candidate["classification"]) for flag in ("--label", label)],
-            ],
-            cwd=root,
-        )
-        if proc.returncode != 0:
-            raise RuntimeError(proc.stderr.strip() or "gh issue create failed")
-        output = (proc.stdout or "").strip()
-        match = re.search(r"https://github\.com/[^\s]+/issues/\d+", output)
-        issue_url = match.group(0) if match else output.splitlines()[-1].strip()
-        update_state_for_candidate(state, candidate, "filed", issue_url)
-        return {"candidate": {**candidate, "status": "filed", "filed_ref": issue_url}, "filed_ref": issue_url, "target_file": issue_url}
+        return github_issue_create(root, candidate, state)
     return file_local_candidate(root, candidate, state)
 
 
