@@ -978,6 +978,9 @@ main() {
     PASS=0; FAIL=0; WARN=0; REPORT_LINES=(); FAILED_CHECK_IDS=()
     RECONCILER_JSON=""
     DOCTOR_UNKNOWN_KEY=0
+    # The re-run only verifies: applying (and confirming) the fixes a second time
+    # would repeat every installer and reconciler apply.
+    DOCTOR_FIX=0
     run_doctor_checks
   fi
   doctor_print_summary
