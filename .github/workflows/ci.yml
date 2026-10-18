@@ -104,31 +104,7 @@ jobs:
           python3 -m pip install -r requirements-dev.txt
 
       - name: Run all test suites
-        run: |
-          # TEMPORARY diagnosis of runner shutdowns: trace signals delivered to the runner's own
-          # processes and name the sender from a rolling process-table snapshot.
-          diag=/tmp/sb-diag; mkdir -p "$diag"
-          for p in $(pgrep -f 'Runner.Listener|Runner.Worker|provjobd'); do
-            sudo strace -qq -e trace=none -e signal=all -p "$p" -o "$diag/st.$p" 2>/dev/null &
-          done
-          (seen=""; while sleep 0.2; do
-            ps -eo pid,ppid,pgid,etimes,args >"$diag/ps.new" 2>/dev/null && mv "$diag/ps.new" "$diag/ps.cur"
-            cp "$diag/ps.cur" "$diag/ps.$(( $(date +%s) % 5 ))" 2>/dev/null
-            for line in $(grep -ho 'si_pid=[0-9]*' "$diag"/st.* 2>/dev/null | sort -u); do
-              case " $seen " in *" $line "*) continue ;; esac
-              seen="$seen $line"; sp="${line#si_pid=}"
-              echo "::warning::runner process got a signal from pid $sp"
-              grep -h -- '' "$diag"/st.* | tail -5
-              for snap in "$diag"/ps.*; do
-                awk -v p="$sp" 'NR==1 || $1==p' "$snap"
-              done | sort -u | cut -c1-300
-              q="$sp"; for _ in 1 2 3 4 5 6; do
-                l="$(awk -v p="$q" '$1==p' "$diag"/ps.* | head -1)"; [ -n "$l" ] || break
-                echo "  ancestor: ${l:0:300}"; q="$(awk '{print $2}' <<<"$l")"
-              done
-            done
-          done) &
-          bash tests/run-all-tests.sh --jobs 4
+        run: bash tests/run-all-tests.sh --jobs 4
 
       # Tests must write only to their sandboxed HOME/TMPDIR, never into the checkout.
       - name: Check the tests left the checkout unchanged
