@@ -104,7 +104,17 @@ jobs:
           python3 -m pip install -r requirements-dev.txt
 
       - name: Run all test suites
-        run: bash tests/run-all-tests.sh --jobs 4
+        run: |
+          # TEMPORARY diagnostic: sample disk, memory and the largest processes every 5 s to
+          # find what the runner runs out of before its "shutdown signal". Removed after.
+          (while sleep 5; do
+             printf '## SAMPLE %s | %s | %s | procs %s | %s\n' "$(date -u +%T)" \
+               "$(df -h / | awk 'NR==2{print "disk used "$3" avail "$4" "$5}')" \
+               "$(free -m | awk '/^Mem/{print "mem used "$3"M avail "$7"M"} /^Swap/{print "swap "$3"M"}' | tr '\n' ' ')" \
+               "$(ps -e --no-headers | wc -l)" \
+               "$(ps -eo rss=,comm= --sort=-rss | head -3 | awk '{printf "%s:%dM ", $2, $1/1024}')"
+           done) &
+          bash tests/run-all-tests.sh --jobs 4
 
       # Tests must write only to their sandboxed HOME/TMPDIR, never into the checkout.
       - name: Check the tests left the checkout unchanged
