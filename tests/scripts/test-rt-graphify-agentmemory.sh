@@ -370,6 +370,13 @@ printf 'file\n' >"$HR_PROJ/.agentmemory.blocker"
 hr_project '{"sb_initiated":true,"recommended_tools":{"agentmemory":{"enabled_by_user":true,"export_path":".agentmemory-blocked/x"}}}'
 out="$(RT_PROJECT_ROOT="$HR_PROJ" rt_repair_agentmemory)"
 assert_contains "am repair: export root outcome reported" "$out" '"actions"'
+# server log directory cannot be created, export path lookup fails, export root blocked
+hr_consent agentmemory=enabled
+hr_bin agentmemory 'echo "Health: healthy"'
+rm -rf "$HOME/.agentmemory" "$HR_PROJ/.agentmemory"; printf 'file\n' >"$HR_PROJ/.agentmemory"
+out="$(sb_agentmemory_export_rel_path() { return 1; }; sb_agentmemory_server_healthy() { return 1; }; mkdir -p "$TL_TMP/fake-home"; printf 'file\n' >"$TL_TMP/fake-home/.agentmemory"; HOME="$TL_TMP/fake-home" rt_repair_agentmemory)"
+assert_contains "am repair: blocked export root reported" "$(jq -c . <<<"$out")" '"export_root_failed"'
+rm -f "$HR_PROJ/.agentmemory"
 # cli missing -> npm install; server down -> start attempt
 hr_consent agentmemory=enabled
 hr_nobin agentmemory
