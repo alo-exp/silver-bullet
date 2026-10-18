@@ -737,14 +737,5 @@ class WakeTest(Base):
         ]))
 
 
-class AttachTimerTest(Base):
-    def test_attach_timer_sets_timer_on_matching_job_only(self):
-        self.put_store([job(id="a"), job(id="b")])
-        q._attach_timer(self.run_dir, "b", {"armed": True})
-        jobs = self.store()["jobs"]
-        self.assertNotIn("timer", jobs[0])
-        self.assertEqual(jobs[1]["timer"], {"armed": True})
-
-
 if __name__ == "__main__":
     unittest.main()

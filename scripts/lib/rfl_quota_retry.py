@@ -517,16 +517,6 @@ def wake_argv(*, project_root: Path, run_dir: Path) -> list[str]:
     ]
 
 
-def _attach_timer(run_dir: Path, job_id: str, timer: dict[str, Any]) -> None:
-    store = load_schedule(run_dir)
-    jobs = list(store.get("jobs") or [])
-    for job in jobs:
-        if job.get("id") == job_id:
-            job["timer"] = timer
-    store["jobs"] = jobs
-    _write_json(schedule_path(run_dir), store)
-
-
 def _xml_escape(value: str) -> str:
     return (
         value.replace("&", "&amp;")
@@ -671,10 +661,6 @@ def arm_quota_retry_timer(
         queued = _try_at()
         if queued:
             return queued
-    if not prefer_launchd:
-        launched = _try_launchd()
-        if launched:
-            return launched
 
     payload["reason"] = "no at/launchd backend available"
     return payload
