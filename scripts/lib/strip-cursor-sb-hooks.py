@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import pathlib
@@ -69,6 +70,7 @@ if changed:
     # never truncates the user's hooks file; follow a symlinked file and keep its permissions.
     real_path = os.path.realpath(settings_path)
     tmp_name = None
+    failure = None
     try:
         fd, tmp_name = tempfile.mkstemp(prefix=".hooks.", suffix=".tmp", dir=os.path.dirname(real_path))
         with os.fdopen(fd, "w") as handle:
@@ -78,9 +80,15 @@ if changed:
         os.chmod(tmp_name, stat.S_IMODE(os.stat(real_path).st_mode))
         os.replace(tmp_name, real_path)
     except OSError as exc:
+        failure = exc
+    finally:
+        # Any exit (including KeyboardInterrupt) removes a leftover temp file; the rename
+        # consumes it on success, so a missing file is expected and ignored.
         if tmp_name is not None:
-            os.unlink(tmp_name)
-        print(f"ERROR: cannot update {settings_path}: {exc}; left unchanged", file=sys.stderr)
+            with contextlib.suppress(OSError):
+                os.unlink(tmp_name)
+    if failure is not None:
+        print(f"ERROR: cannot update {settings_path}: {failure}; left unchanged", file=sys.stderr)
         raise SystemExit(1)
     print(f"SB hooks stripped from {settings_path}")
 else:

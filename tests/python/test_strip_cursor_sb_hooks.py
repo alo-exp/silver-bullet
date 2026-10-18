@@ -151,6 +151,42 @@ class StripCursorHooksTest(unittest.TestCase):
         self.assertTrue(err.getvalue().startswith(f"ERROR: cannot update {self.target}: "))
         self.assertEqual(self.target.read_bytes(), raw)
 
+    def test_interrupt_during_write_removes_temp_file_and_reraises(self):
+        raw = self.seed({"hooks": {"stop": [{"command": SB_COMMANDS[0]}, {"command": "mine"}]}})
+        with mock.patch("os.replace", side_effect=KeyboardInterrupt):
+            with self.assertRaises(KeyboardInterrupt):
+                self.run_script(self.target)
+        self.assert_untouched(raw)
+
+    def test_cleanup_failure_does_not_mask_the_write_error(self):
+        raw = self.seed({"hooks": {"stop": [{"command": SB_COMMANDS[0]}, {"command": "mine"}]}})
+        real_remove = os.remove
+
+        def vanish_then_fail(src, dst):
+            real_remove(src)  # the temp file is gone when the cleanup runs
+            raise OSError("rename failed")
+
+        err = io.StringIO()
+        with mock.patch("os.replace", side_effect=vanish_then_fail), contextlib.redirect_stderr(err):
+            with self.assertRaises(SystemExit) as cm:
+                self.run_script(self.target)
+        self.assertEqual(cm.exception.code, 1)
+        self.assertEqual(err.getvalue(), f"ERROR: cannot update {self.target}: rename failed; left unchanged\n")
+        self.assert_untouched(raw)
+
+    def test_temp_file_holds_all_data_when_fsync_is_called(self):
+        self.seed({"hooks": {"stop": [{"command": SB_COMMANDS[0]}, {"command": "mine"}]}})
+        expected = json.dumps({"hooks": {"stop": [{"command": "mine"}]}}, indent=2) + "\n"
+        seen = []
+
+        def check(fd):
+            temps = sorted(self.target.parent.glob(".hooks.*.tmp"))
+            seen.append([t.read_text() for t in temps])
+
+        with mock.patch("os.fsync", side_effect=check):
+            self.run_script(self.target)
+        self.assertEqual(seen, [[expected]])
+
     def test_data_is_fsynced_before_the_rename(self):
         self.seed({"hooks": {"stop": [{"command": SB_COMMANDS[0]}, {"command": "mine"}]}})
         events = []
