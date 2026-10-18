@@ -144,4 +144,11 @@ run --target AF-good
 assert_eq "no catalog -> exit 1" 1 "$TL_STATUS"
 assert_contains "no catalog message" "$TL_ERR" "atomic flow AF-good missing"
 
+# jq failing while listing orphan reusable_by_flows (a malformed atomic_flows entry) is tolerated
+# by the `|| true` guard; the later composition query then aborts the script under errexit.
+jq -n '{atomic_flows:[5],flow_steps:[{id:"FS-w",skill:"alpha",reusable_by_flows:["AF-x"]}],workflows:[]}' >"$T/docs/apo-catalog.json"
+run --target FS-w
+assert_contains "malformed AF list: resolve line still printed" "$TL_OUT" "PASS [enforcement]: all reusable_by_flows resolve"
+assert_eq "malformed AF list aborts at composition query" 5 "$TL_STATUS"
+
 tl_results
