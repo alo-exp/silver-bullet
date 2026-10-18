@@ -205,6 +205,46 @@ assert_eq "a quota failure propagates the delegate status" "1" "$TL_STATUS"
 assert_contains "a 5-hour quota failure is classified and scheduled" "$TL_ERR$TL_OUT" "[agent-pi] quota 5h; retry at"
 assert_file_exists "the retry schedule is written under the run dir" "$TL_TMP/rfl/quota-retry-schedule.json"
 
+# ---------------------------------------------------------------- fault injection
+# the captured output cannot be read back: invoke still passes the delegate status through
+reset
+REAL_CAT="$(command -v cat)"
+tl_stub cat "case \"\$*\" in *agent-pi-invoke-*) exit 1 ;; esac; exec '$REAL_CAT' \"\$@\""
+FAKE_RC=2 FAKE_OUT="tee-visible" inv --work-dir "$W" --prompt p
+rm -f "$TL_BIN/cat"
+assert_eq "an unreadable capture does not change the delegate status" "2" "$TL_STATUS"
+assert_contains "the delegate output was still teed" "$TL_OUT" "tee-visible"
+
+# a quota hook that fails (staged copy with a stub library) never changes the exit status
+STG="$TL_TMP/stage"
+mkdir -p "$STG/scripts/agent-pi" "$STG/scripts/lib"
+cp "$TL_REPO_ROOT/scripts/agent-pi/invoke.sh" "$STG/scripts/agent-pi/invoke.sh"
+cp "$TL_REPO_ROOT/scripts/lib/agent-host-exec.sh" "$STG/scripts/lib/agent-host-exec.sh"
+printf 'agent_host_pi_maybe_schedule_quota_retry() { return 1; }\n' >"$STG/scripts/lib/agent-pi-quota-retry.sh"
+reset
+FAKE_RC=4 tl_run timeout 60 bash "$STG/scripts/agent-pi/invoke.sh" --work-dir "$W" --prompt p
+assert_eq "a failing quota hook does not change the delegate status" "4" "$TL_STATUS"
+
+# the work dir disappearing between the checks and the --continue hop fails the invocation
+reset
+cat >"$TL_TMP/cd-fail.sh" <<'CDEOF'
+cd() {
+  if [[ "$1" == "$CD_FAIL_DIR" ]]; then
+    local n
+    n=$(( $(command cat "$CD_COUNT" 2>/dev/null || echo 0) + 1 ))
+    printf '%s' "$n" >"$CD_COUNT"
+    [[ "$n" -ne 2 ]] || return 1
+  fi
+  builtin cd "$@"
+}
+export -f cd
+exec bash "$@"
+CDEOF
+rm -f "$TL_TMP/cd-count"
+tl_run timeout 60 env CD_FAIL_DIR="$W" CD_COUNT="$TL_TMP/cd-count" bash "$TL_TMP/cd-fail.sh" "$INVOKE" --work-dir "$W" --prompt p --expect-file "$W/out.md"
+assert_eq "a work dir that vanishes before the continue hop fails the invocation" "1" "$TL_STATUS"
+assert_eq "no continue hop ran in the vanished work dir" "" "$(cat "$PI_RECORD")"
+
 assert_file_absent "no real host CLI was reached" "$TL_TMP/unexpected-cli.log"
 assert_file_absent "no package manager or sudo was invoked" "$TL_TMP/guarded-commands.log"
 

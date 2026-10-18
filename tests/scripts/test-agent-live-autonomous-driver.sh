@@ -100,6 +100,11 @@ assert_contains "status without runs says none" "$TL_OUT" "(none)"
 mkdir -p "$RUNS"
 drv status
 assert_eq "status with an empty runs dir exits 0" "0" "$TL_STATUS"
+tl_stub ls 'exit 2'
+drv status
+assert_eq "status survives a failing listing" "0" "$TL_STATUS"
+assert_contains "status reports none when the listing fails" "$TL_OUT" "(none)"
+rm -f "$TL_BIN/ls"
 drv status --run nope
 assert_eq "status of an unknown run exits 0" "0" "$TL_STATUS"
 assert_contains "status of an unknown run says missing" "$TL_ERR" "missing: $RUNS/nope/ledger.json"
@@ -205,6 +210,13 @@ assert_contains "a detached session is created" "$tmux_log" "new-session -d -s a
 assert_contains "the session runs invoke.sh with the brief and log" "$tmux_log" "agent-claude/invoke.sh"
 assert_contains "the session records the exit in the ledger" "$tmux_log" "doc['status'] = 'completed' if exit_code == 0 else 'failed'"
 assert_contains "the session passes the work dir" "$tmux_log" "CLAUDE_WORK_DIR="
+# a failing `kill-session` for a stale session is ignored
+tl_stub tmux "printf '%s\n' \"\$*\" >>'$TMUX_REC'; case \"\$1\" in kill-session) exit 1 ;; esac; exit 0"
+: >"$TMUX_REC"
+drv start --row AUTO-C01 --tmux
+assert_eq "tmux start tolerates a failing kill-session" "0" "$TL_STATUS"
+assert_contains "tmux start still creates the session" "$(cat "$TMUX_REC")" "new-session -d -s agent-claude-auto-auto-c01"
+tl_stub tmux "printf '%s\n' \"\$*\" >>'$TMUX_REC'; exit 0"
 NOTMUX_PATH="$(tl_path_without tmux)"
 tl_run timeout 60 env PATH="$NOTMUX_PATH" bash "$DRIVER" start --row AUTO-C01 --tmux
 assert_eq "tmux start without tmux exits 1" "1" "$TL_STATUS"
@@ -255,6 +267,11 @@ drv preflight
 assert_eq "preflight with a missing fixture dir still passes" "0" "$TL_STATUS"
 assert_contains "preflight warns about the missing fixture dir" "$TL_ERR" "WARN: fixture work_dir missing: $TL_TMP/fixture-gone"
 sed -i "s#$TL_TMP/fixture-gone#$TL_TMP/fixture-app#" "$PLAN/MATRIX.json"
+
+# a non-git SB_ROOT reports sha unknown in the preflight header (the harness dry-run then fails: no expect harness)
+tl_run timeout 60 env SB_ROOT="$TL_TMP/nogit" bash "$DRIVER" preflight
+assert_contains "preflight outside a git repo reports an unknown sha" "$TL_OUT" "sb_git_sha=unknown"
+assert_eq "preflight with an unusable SB_ROOT fails" "1" "$TL_STATUS"
 
 # ---------------------------------------------------------------- score: errors
 drv score

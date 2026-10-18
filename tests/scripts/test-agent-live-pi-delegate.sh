@@ -70,6 +70,9 @@ run_pd
 assert_eq "pi delegate without a prompt exits 2" "2" "$TL_STATUS"
 run_pd --prompt 'api_key=abcdef'
 assert_eq "pi delegate refuses a prompt with secrets" "2" "$TL_STATUS"
+run_pd --auto-policy bogus --prompt hi
+assert_eq "pi delegate invalid --auto-policy exits 2" "2" "$TL_STATUS"
+assert_contains "pi delegate invalid --auto-policy message" "$TL_ERR" "invalid-auto-policy"
 run_pd --interactive --non-interactive --prompt hi
 assert_eq "pi delegate opposite aliases exit 2" "2" "$TL_STATUS"
 assert_eq "no adapter ran for rejected invocations" "0" "$(alh_attempts)"
@@ -234,6 +237,14 @@ rm -f "$LOG"
 alh_script "0|tiny"
 tl_run timeout 60 env SB_AGENT_PI_LOG_FLOOR=10 bash "$DELEGATE" --sb-root "$SB" --skip-preflight --work-dir "$W" --prompt p --log "$LOG"
 assert_eq "SB_AGENT_PI_LOG_FLOOR lowers the floor" "0" "$TL_STATUS"
+
+# an adapter that deletes the work dir (and with it the evidence target) gets a fallback log
+rm -f "$LOG"
+mkdir -p "$TL_TMP/work-gone"
+alh_script "0|"
+tl_run timeout 60 env ALH_RM_WORKDIR=1 ALH_RM_LOG=1 bash "$DELEGATE" --sb-root "$SB" --skip-preflight --work-dir "$TL_TMP/work-gone" --prompt p --log "$LOG" --no-escalate
+assert_contains "a missing log after the run is announced" "$TL_ERR" "[agent-pi] log written: $LOG"
+assert_contains "the fallback log records the attempt and exit" "$(cat "$LOG")" "exit=0"
 
 # ---------------------------------------------------------------- failure -> normalisation -> D4 escalation
 alh_script "1|first wave failed" "0|escalated wave ok"
