@@ -451,6 +451,14 @@ class OcgPoolCohortTests(HermeticCase):
         self.assertEqual(rc, 1)
         self.assertFalse(json.loads(out)["ok"])
 
+    def test_import_adds_script_dir_to_sys_path_when_absent(self) -> None:
+        script_dir = str(SCRIPTS)
+        trimmed = [p for p in sys.path if p != script_dir]
+        with mock.patch.object(sys, "path", trimmed):
+            namespace = runpy.run_path(str(SCRIPTS / "ocg_pool_cohort.py"), run_name="ocg_pool_cohort_probe")
+            self.assertEqual(trimmed[0], script_dir)
+        self.assertTrue(callable(namespace["run_cohort"]))
+
     def test_script_entry_point(self) -> None:
         req = self.tmp / "req.json"
         req.write_text(json.dumps({"phase_id": "p", "query": "q", "logical_model_ids": [], "work_dir": str(self.tmp / "w5")}))
