@@ -51,8 +51,6 @@ Options:
 EOF
 }
 
-utc_now() { date -u '+%Y-%m-%dT%H:%M:%SZ'; }
-
 run_id_new() {
   date -u '+%Y%m%dT%H%M%SZ'
 }
