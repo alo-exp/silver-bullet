@@ -204,6 +204,10 @@ assert_eq "search providers: set" "0" "$(rc_of rt_probe_search_cli_providers)"
 assert_eq "search providers: ok marker" "0" "$(SEARCH_PROVIDERS="brave ok" rc_of rt_probe_search_cli_providers)"
 assert_eq "search providers: configured marker" "0" "$(SEARCH_PROVIDERS="2 providers configured" rc_of rt_probe_search_cli_providers)"
 assert_eq "search providers: none" "1" "$(SEARCH_PROVIDERS="exa: missing" rc_of rt_probe_search_cli_providers)"
+hr_bin search 'exit 3'
+assert_eq "search version: failing --version yields nothing" "" "$(rt_probe_search_cli_version)"
+assert_eq "search providers: failing config check" "1" "$(rc_of rt_probe_search_cli_providers)"
+hr_bin search 'case "$*" in --version) echo "search ${SEARCH_VER:-0.9.0}" ;; "config check") echo "${SEARCH_PROVIDERS:-exa: set}" ;; esac'
 
 hr_project '{"sb_initiated":true,"recommended_tools":{"search_cli":{"enabled_by_user":true,"install_commands":["brew tap x","brew install y"]}}}'
 assert_eq "search project install commands" "brew tap x && brew install y" "$(rt_search_cli_project_install_commands)"
