@@ -139,7 +139,8 @@ while [[ "$attempt" -le "$quota_retry_max" ]]; do
       "provider=opencode-go model=mimo-v2.5"
   fi
 
-  final_output="$(agent_pi_invoke_once)" && final_exit=0 || final_exit=$?
+  final_exit=0
+  final_output="$(agent_pi_invoke_once)" || final_exit=$?
 
   if [[ -n "$LOG_FILE" ]]; then
     agent_delegate_append_invoke_output "$LOG_FILE" "$final_output"
@@ -179,7 +180,8 @@ if [[ "$final_exit" -ne 0 ]]; then
   agent_mode_normalize_incomplete_result "$SB_AM_TASK_DIR" "$missing"
   if agent_mode_maybe_escalate "pi" "$SB_AM_TASK_DIR" "${LOG_FILE:-}"; then
     agent_mode_apply_host_launch_env "pi"
-    final_output="$(agent_pi_invoke_once)" && final_exit=0 || final_exit=$?
+    final_exit=0
+    final_output="$(agent_pi_invoke_once)" || final_exit=$?
   fi
 fi
 
