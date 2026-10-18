@@ -11,14 +11,14 @@ SCRIPTS="$TL_REPO_ROOT/scripts"
 mkdir -p "$TL_TMP/tmp"
 
 # lib_run LIB SCRIPT [ENV=VAL...]: run SCRIPT after sourcing LIB in a clean environment.
-# (Not `env -i`: the coverage tracer is injected through BASH_ENV and must reach the child.)
+# (Not `env -i`, and SB_COV_* is kept: the coverage tracer is injected through BASH_ENV.)
 lib_run() {
   local lib="$1" script="$2" name
   shift 2
   local -a unset_args=()
   while IFS= read -r name; do
     unset_args+=(-u "$name")
-  done < <(compgen -e | grep -E '^(SB_|SILVER_BULLET_|CLAUDE_|CODEX_|OPENCODE_|PI_|RTK_|AGENT_)' || true)
+  done < <(compgen -e | grep -E '^(SB_|SILVER_BULLET_|CLAUDE_|CODEX_|OPENCODE_|PI_|RTK_|AGENT_)' | grep -v '^SB_COV_' || true)
   tl_run env "${unset_args[@]}" HOME="$HOME" PATH="${LIB_PATH:-$PATH}" TMPDIR="$TL_TMP/tmp" "$@" \
     bash -c "source '$lib'; $script"
 }

@@ -75,6 +75,9 @@ run_od
 assert_eq "opencode delegate without a prompt exits 2" "2" "$TL_STATUS"
 run_od --prompt 'password: hunter2'
 assert_eq "opencode delegate refuses a prompt with secrets" "2" "$TL_STATUS"
+run_od --auto-policy bogus --prompt hi
+assert_eq "opencode delegate invalid --auto-policy exits 2" "2" "$TL_STATUS"
+assert_contains "opencode delegate invalid --auto-policy message" "$TL_ERR" "invalid-auto-policy"
 run_od --interactive --non-interactive --prompt hi
 assert_eq "opencode delegate opposite aliases exit 2" "2" "$TL_STATUS"
 assert_eq "no adapter ran for rejected invocations" "0" "$(alh_attempts)"
@@ -211,6 +214,9 @@ run_od --delegation-mode multi-ai-pool-v1 --cohort-request "$TL_TMP/cohort/reque
 assert_eq "pool mode with an unknown pool fails" "2" "$TL_STATUS"
 run_od --delegation-mode multi-ai-pool-v1 --cohort-request "$TL_TMP/cohort/request.json" --multi-ai-profile ocg-x --no-escalate
 assert_eq "pool mode ignores a profile and still runs" "0" "$TL_STATUS"
+tl_run env OPENCODE_MODEL=other bash "$DELEGATE" --sb-root "$SB" --skip-preflight --work-dir "$W" --delegation-mode multi-ai-pool-v1 --cohort-request "$TL_TMP/cohort/request.json" --no-escalate
+assert_eq "pool mode with a drifted model fails the MiMo pin" "2" "$TL_STATUS"
+assert_contains "pool mode drifted model message" "$TL_ERR" "OPENCODE_MODEL must be mimo-v2.5"
 tl_run env COHORT_RC=4 bash "$DELEGATE" --sb-root "$SB" --skip-preflight --work-dir "$W" --delegation-mode multi-ai-pool-v1 --cohort-request "$TL_TMP/cohort/request.json" --no-escalate
 assert_eq "a failing cohort propagates its status" "4" "$TL_STATUS"
 mv "$SB/skills/silver-multi-ai-task/scripts/ocg_pool_cohort.py" "$TL_TMP/cohort.py.moved"
@@ -307,6 +313,28 @@ alh_script "0|${big}"
 tl_run env ALH_RM_LOG=1 bash "$DELEGATE" --sb-root "$SB" --skip-preflight --work-dir "$W" --prompt p --log "$LOG"
 assert_eq "a log removed by the adapter is rebuilt" "0" "$TL_STATUS"
 assert_file_exists "the rebuilt log exists" "$LOG"
+
+# an adapter that deletes the work dir (and with it the evidence target) gets a fallback log
+rm -f "$LOG"
+mkdir -p "$TL_TMP/work-gone"
+alh_script "0|"
+tl_run env ALH_RM_WORKDIR=1 ALH_RM_LOG=1 bash "$DELEGATE" --sb-root "$SB" --skip-preflight --work-dir "$TL_TMP/work-gone" --prompt p --log "$LOG" --no-escalate
+assert_contains "a missing log after the run is announced" "$TL_ERR" "[agent-opencode] log written: $LOG"
+assert_contains "the fallback log records the attempt and exit" "$(cat "$LOG")" "exit=0"
+
+# fault injection: a read-only SB_ORCHESTRATOR_PARENT makes the last export of the lightweight env step fail
+BASHENV="$TL_TMP/readonly-delegate.env"
+cat >"$BASHENV" <<'ENVEOF'
+[[ -z "${ORIG_BASH_ENV:-}" ]] || source "$ORIG_BASH_ENV"
+readonly SB_ORCHESTRATOR_PARENT=0
+ENVEOF
+alh_script "0|ok"
+tl_run env ORIG_BASH_ENV="${BASH_ENV:-}" BASH_ENV="$BASHENV" bash "$DELEGATE" --sb-root "$SB" --skip-preflight --work-dir "$W" --prompt p --no-escalate
+assert_eq "a failing lightweight env step fails the delegation" "1" "$TL_STATUS"
+assert_contains "the failing export is visible" "$TL_ERR" "readonly variable"
+assert_eq "a failing lightweight env step never reaches the adapter" "0" "$(alh_attempts)"
+tl_run env ORIG_BASH_ENV="${BASH_ENV:-}" BASH_ENV="$BASHENV" bash "$DELEGATE" --sb-root "$SB" --skip-preflight --work-dir "$W" --delegation-mode multi-ai-pool-v1 --cohort-request "$TL_TMP/cohort/request.json" --no-escalate
+assert_eq "a failing lightweight env step fails the pool cohort" "1" "$TL_STATUS"
 
 # ---------------------------------------------------------------- failure -> result normalisation -> D4 escalation
 alh_script "1|first wave failed" "0|escalated wave ok"
