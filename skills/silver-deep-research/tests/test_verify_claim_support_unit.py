@@ -143,6 +143,44 @@ class TestLocators(unittest.TestCase):
         self.assertNotEqual(a, vcs.compute_source_id('https://y.org'))
 
 
+CM_SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'scripts', 'citation_manager.py')
+_cm_spec = importlib.util.spec_from_file_location('citation_manager_under_test', CM_SCRIPT)
+cm = importlib.util.module_from_spec(_cm_spec)
+_cm_spec.loader.exec_module(cm)
+
+PARITY_URLS = [
+    ('https://doi.org/10.1000/xyz', 'doi:10.1000/xyz'),
+    ('http://dx.doi.org/10.1000/XYZ.', 'doi:10.1000/XYZ'),
+    ('doi:10.1234/abc', 'doi:10.1234/abc'),
+    ('https://arxiv.org/abs/2101.12345v2', 'arxiv:2101.12345v2'),
+    ('arXiv:2101.12345', 'arxiv:2101.12345'),
+    ('HTTP://Example.COM/a/b/', 'http://example.com/a/b'),
+    ('https://example.com/p?utm_source=x&b=2&a=1&ref=y#frag', 'https://example.com/p?a=1&b=2'),
+    ('https://example.com/p/?utm_term=1', 'https://example.com/p'),
+    ('example.com', 'https:example.com'),
+    ('example.com/path', 'https:example.com/path'),
+    ('//example.com/x', 'https://example.com/x'),
+    ('ftp://Files.Example.com/x/', 'ftp://files.example.com/x'),
+]
+
+
+class TestCanonicalParity(unittest.TestCase):
+    """canonicalize_locator must agree with citation_manager so source_ids match."""
+
+    def test_table(self):
+        for raw, expected in PARITY_URLS:
+            with self.subTest(raw):
+                self.assertEqual(cm.canonicalize_locator(raw), expected)
+                self.assertEqual(vcs.canonicalize_locator(raw), expected)
+                self.assertEqual(vcs.compute_source_id(vcs.canonicalize_locator(raw)),
+                                 cm.compute_source_id(cm.canonicalize_locator(raw)))
+
+    def test_regexes_and_tracking_params_match(self):
+        self.assertEqual(vcs.DOI_RE.pattern, cm.DOI_RE.pattern)
+        self.assertEqual(vcs.ARXIV_RE.pattern, cm.ARXIV_RE.pattern)
+        self.assertEqual(vcs.TRACKING_PARAMS, cm.TRACKING_PARAMS)
+
+
 class TestFindReport(unittest.TestCase):
     def test_manifest_valid(self):
         d = tmpdir()
@@ -240,6 +278,12 @@ class TestDisplayMapping(unittest.TestCase):
         bib = {1: 'https://a.com/x', 2: 'https://b.com/y?utm_source=q', 3: 'https://c.com/z/', 4: 'https://unknown.com'}
         out = vcs.build_display_number_to_source_id(sources, bib)
         self.assertEqual(out, {1: 's1', 2: 's2', 3: vcs.compute_source_id(canon)})
+
+    def test_doi_bibliography_url_resolves_to_citation_manager_source_id(self):
+        sid = cm.compute_source_id(cm.canonicalize_locator('https://doi.org/10.1000/xyz'))
+        sources = [{'source_id': sid}]
+        out = vcs.build_display_number_to_source_id(sources, {1: 'https://doi.org/10.1000/xyz'})
+        self.assertEqual(out, {1: sid})
 
     def test_fallback_registration_order(self):
         sources = [{'source_id': 'a'}, {'source_id': 'a'}, {}, {'source_id': 'b'}]
