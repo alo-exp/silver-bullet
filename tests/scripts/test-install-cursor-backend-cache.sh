@@ -87,7 +87,47 @@ sub prune_stale_cursor_marketplace_cache_links
 assert_file_exists "upstream-only gitPath kept by pruning" "$GPR/$UP_ONLY"
 assert_eq "upstream-only cache link kept by pruning" 1 "$([[ -L "$CACHE_MP/$UP_ONLY" ]] && echo 1 || echo 0)"
 tl_run env CURSOR_HOME="$CH" CURSOR_GITHUB_REPO_URL="file://$TL_TMP/no-such-remote.git" SB_INSTALL_CURSOR_SOURCE_ONLY=1 bash -c 'source "$1"; cursor_github_commit_reachable "$2" "$3"' _ "$SCRIPT" "$UP_ONLY" "$SNAP"
-assert_eq "unreachable remote: commit not reachable" 1 "$TL_STATUS"
+assert_eq "unreachable remote: reachability unknown (2)" 2 "$TL_STATUS"
+
+# a non-tip upstream commit is found by fetching it; malformed shas are never reachable
+echo up2 >>"$TL_TMP/up-seed/f"; git -C "$TL_TMP/up-seed" -c commit.gpgsign=false commit -q -am up2
+git -C "$TL_TMP/up-seed" push -q origin HEAD 2>/dev/null
+sub cursor_github_commit_reachable "$UP_ONLY" "$SNAP"
+assert_eq "non-tip upstream commit is reachable" 0 "$TL_STATUS"
+sub cursor_github_commit_reachable ".*" "$SNAP"
+assert_eq "regex-like sha is not reachable" 1 "$TL_STATUS"
+sub cursor_github_commit_reachable "${UP_ONLY:0:39}" "$SNAP"
+assert_eq "39-character prefix is not reachable" 1 "$TL_STATUS"
+sub cursor_github_commit_reachable "${UP_ONLY^^}" "$SNAP"
+assert_eq "upper-case sha is not reachable" 1 "$TL_STATUS"
+sub cursor_github_commit_reachable "$SHA_A" "$SNAP"
+assert_eq "commit unknown to a reachable remote: not reachable (1)" 1 "$TL_STATUS"
+# unknowable answers stay unknown (2)
+REAL_GIT="$(command -v git)"
+tl_stub git 'if [[ " $* " == *" fetch "* ]]; then echo "fatal: some transient failure" >&2; exit 1; fi; exec '"$REAL_GIT"' "$@"'
+sub cursor_github_commit_reachable "$SHA_A" "$SNAP"
+assert_eq "an unclassified fetch failure is unknown (2)" 2 "$TL_STATUS"
+tl_stub git 'if [[ " $* " == *" init "* ]]; then exit 1; fi; exec '"$REAL_GIT"' "$@"'
+sub cursor_github_commit_reachable "$SHA_A" "$SNAP"
+assert_eq "no scratch repository: unknown (2)" 2 "$TL_STATUS"
+rm -f "${TL_BIN:?}/git"
+tl_run env CURSOR_HOME="$CH" CURSOR_GITHUB_REPO_URL="file://$UPSTREAM" TMPDIR="$TL_TMP/no-such-tmp" SB_INSTALL_CURSOR_SOURCE_ONLY=1 bash -c 'source "$1"; cursor_github_commit_reachable "$2" "$3"' _ "$SCRIPT" "$SHA_A" "$SNAP"
+assert_eq "no scratch directory: unknown (2)" 2 "$TL_STATUS"
+# pruning deletes only on a definite "no"
+reset_home
+mkdir -p "$GPR/$UP_ONLY" "$CACHE_MP" "$TL_TMP/tgt"; ln -s "$TL_TMP/tgt" "$CACHE_MP/$UP_ONLY"
+mkdir -p "$GPR/$SHA_A"; ln -s "$TL_TMP/tgt" "$CACHE_MP/$SHA_A"
+sub prune_stale_cursor_marketplace_gitpaths
+sub prune_stale_cursor_marketplace_cache_links
+assert_file_exists "non-tip upstream gitPath kept" "$GPR/$UP_ONLY"
+assert_eq "non-tip upstream cache link kept" 1 "$([[ -L "$CACHE_MP/$UP_ONLY" ]] && echo 1 || echo 0)"
+assert_file_absent "definitely-unknown gitPath pruned" "$GPR/$SHA_A"
+assert_file_absent "definitely-unknown cache link pruned" "$CACHE_MP/$SHA_A"
+mkdir -p "$GPR/$SHA_B"; ln -s "$TL_TMP/tgt" "$CACHE_MP/$SHA_B"
+tl_run env CURSOR_HOME="$CH" CURSOR_GITHUB_REPO_URL="file://$TL_TMP/no-such-remote.git" SB_INSTALL_CURSOR_SOURCE_ONLY=1 bash -c 'source "$1"; prune_stale_cursor_marketplace_gitpaths; prune_stale_cursor_marketplace_cache_links' _ "$SCRIPT"
+assert_file_exists "offline: gitPath kept" "$GPR/$SHA_B"
+assert_eq "offline: cache link kept" 1 "$([[ -L "$CACHE_MP/$SHA_B" ]] && echo 1 || echo 0)"
+assert_file_exists "offline: every other gitPath kept" "$GPR/$UP_ONLY"
 
 # ---- stale link / gitPath pruning (REPO_ROOT is the snapshot, which holds SNAP_SHA)
 reset_home
