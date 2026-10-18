@@ -935,10 +935,6 @@ def _parse_prose_claim(
     for feature in _features_in_text(neg):
         _assign_support(support, slug, feature, False)
 
-    if neg and re.search(r"(?:\blacks?\b|blanks? on|trail on|✗|✖)", neg, re.IGNORECASE):
-        for feature in _features_in_text(neg):
-            _assign_support(support, slug, feature, False)
-
 
 def _parse_checkmark_for_claims(
     support: dict[str, dict[str, bool | None]],
