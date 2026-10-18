@@ -109,7 +109,8 @@ class HTMLVerifier:
             "\U0001F680-\U0001F6FF"  # transport & map symbols
             "\U0001F1E0-\U0001F1FF"  # flags
             "\U00002702-\U000027B0"
-            "\U000024C2-\U0001F251"
+            "\U000024C2"
+            "\U0001F170-\U0001F251"  # enclosed alphanumeric/ideographic supplements
             "]+",
             flags=re.UNICODE
         )
