@@ -24,12 +24,17 @@ EOF
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --log) LOG_FILE="$2"; shift 2 ;;
+    --log)
+      [[ $# -ge 2 ]] || { printf 'ERROR: --log requires a value\n' >&2; exit 2; }
+      LOG_FILE="$2"; shift 2
+      ;;
     --interval)
+      [[ $# -ge 2 ]] || { printf 'ERROR: --interval requires a value\n' >&2; exit 2; }
       [[ "$2" =~ ^[0-9]+$ ]] || { printf 'ERROR: --interval must be numeric\n' >&2; exit 2; }
       INTERVAL="$2"; shift 2
       ;;
     --stall-sec)
+      [[ $# -ge 2 ]] || { printf 'ERROR: --stall-sec requires a value\n' >&2; exit 2; }
       [[ "$2" =~ ^[0-9]+$ ]] || { printf 'ERROR: --stall-sec must be numeric\n' >&2; exit 2; }
       STALL_SEC="$2"; shift 2
       ;;
