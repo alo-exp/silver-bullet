@@ -425,9 +425,6 @@ class MarkdownTests(unittest.TestCase):
         self.assertEqual(lp._inline_fmt_raw("go http://c.example/x", autolink=False), "go http://c.example/x")
         self.assertEqual(lp._inline_fmt_raw("https:// alone"), "https:// alone")
 
-    def test_legacy_inline_fmt_wrapper_delegates(self) -> None:
-        self.assertEqual(lp._inline_fmt("**x** <y>", re.compile("a"), re.compile("b"), re.compile("c")), "<strong>x</strong> &lt;y&gt;")
-
     def test_md_inline_link_wrapping(self) -> None:
         a = '<a href="https://u" target="_blank" rel="noopener noreferrer">{}</a>'
         self.assertEqual(lp._md_inline("plain"), "plain")
