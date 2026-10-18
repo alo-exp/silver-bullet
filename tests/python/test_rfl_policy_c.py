@@ -610,3 +610,381 @@ class QuotaAndInferTest(TmpCase):
         # verify_2 outranks verify_1 and next rung
         self.assertEqual(i("verify_1 verify_2 next rung"), "verify_2")
         self.assertEqual(i("verify_1 next rung"), "verify_1")
+
+
+FINDINGS = {"HIGH": [{"id": "H1", "title": "t"}], "MED": "none", "LOW": "none", "NIT": "none"}
+
+
+class SkippedAndStreakAssertTest(TmpCase):
+    def test_skipped_allows_advance(self):
+        rung = self.rung(review=False)
+        f = pc._skipped_allows_advance
+        self.assertFalse(f(rung, {"verdict": "CLEAN"}))
+        self.assertFalse(f(rung, {"verdict": "SKIPPED"}))  # no SKIPPED.md
+        (rung / "SKIPPED.md").write_text("")
+        self.assertFalse(f(rung, {"verdict": "SKIPPED"}))
+        (rung / "SKIPPED.md").write_text("why")
+        self.assertTrue(f(rung, {"verdict": "skipped"}))
+        self.assertTrue(f(rung, {"disposition": "SKIP"}))
+        self.assertFalse(f(rung, {"disposition": "HOLD"}))
+
+    def call(self, status, action, rung_dir=None):
+        return pc._assert_consecutive_clean_reviews(
+            self.run_dir, status, action=action, rung_dir=rung_dir)
+
+    def test_other_actions_not_checked(self):
+        self.rung()
+        for action in ("task", "verify_1", "verify_2", "stop"):
+            self.assertEqual(self.call({}, action), [], action)
+
+    def test_no_rung_to_check(self):
+        self.assertEqual(self.call({}, "next_rung_review"), [])
+        # status passed in names a directory even though the run dir has no rungs
+        other = self.tmp / "elsewhere"
+        other.mkdir()
+        errs = self.call({"current_rung": str(other)}, "next_rung_review")
+        self.assertEqual(len(errs), 1)
+        self.assertIn("consecutive_clean_reviews=0 < 2", errs[0])
+
+    def test_streak_threshold(self):
+        self.rung("rung-01-a", policy=valid_payload())
+        errs = self.call({"current_rung": "rung-01-a", "consecutive_clean_reviews": 1},
+                         "next_rung_review")
+        self.assertEqual(len(errs), 1)
+        self.assertTrue(errs[0].startswith("consecutive_clean_reviews=1 < 2; do not start"))
+        self.assertIn("--record-rung-review-outcome clean|accept-apply", errs[0])
+        self.assertEqual(self.call({"current_rung": "rung-01-a",
+                                    "consecutive_clean_reviews": 2}, "next_rung_review"), [])
+        self.assertEqual(self.call({"current_rung": "rung-01-a",
+                                    "consecutive_clean_reviews": 9}, "mark_completed"), [])
+        # without current_rung the resolved directory name is the rung id
+        self.assertEqual(len(self.call({}, "mark_completed")), 1)
+
+    def test_skip_with_artifact_allows_advance(self):
+        rung = self.rung("rung-01-a", policy=valid_payload(verdict="SKIPPED", disposition="SKIP"))
+        self.assertEqual(len(self.call({}, "next_rung_review")), 1)
+        (rung / "SKIPPED.md").write_text("skipped")
+        self.assertEqual(self.call({}, "next_rung_review"), [])
+
+    def test_mark_completed_without_any_review_is_not_checked(self):
+        self.rung("rung-01-a", review=False)
+        self.assertEqual(self.call({}, "mark_completed"), [])
+        self.assertEqual(len(self.call({}, "next_rung_review")), 1)
+
+
+class FailureArtifactsTest(TmpCase):
+    def check(self, rung, payload, action="task", phase=None):
+        return pc._assert_rung_failure_artifacts(
+            rung, payload, next_action=action, current_phase=phase)
+
+    def test_blocked_requires_blocked_md(self):
+        rung = self.rung(review=False)
+        payload = {"verdict": "BLOCKED", "disposition": "SKIP"}
+        self.assertEqual(self.check(rung, payload), ["missing BLOCKED.md"])
+        (rung / "BLOCKED.md").write_text("crashed")
+        self.assertEqual(self.check(rung, payload), [])
+
+    def test_blocked_with_quota_needs_classification(self):
+        rung = self.rung(review=False, **{"BLOCKED.md": "HTTP 429 from provider"})
+        payload = {"verdict": "BLOCKED", "disposition": "SKIP"}
+        self.assertEqual(self.check(rung, payload), ["missing QUOTA-CLASSIFY.json"])
+        self.assertEqual(self.check(rung, {**payload, "quota": True}),
+                         ["missing QUOTA-CLASSIFY.json"])
+        (rung / "QUOTA-CLASSIFY.json").write_text('{"should_schedule": true, "quota_class": "five_hour"}')
+        self.assertEqual(self.check(rung, payload), [])
+
+    def test_hold_blocks_advancing_only(self):
+        rung = self.rung(review=False, **{"BLOCKED.md": "stuck"})
+        payload = {"verdict": "NOT CLEAN", "disposition": "HOLD"}
+        self.assertEqual(self.check(rung, payload, "task"), [])
+        self.assertEqual(self.check(rung, payload, "next_rung_review")[0],
+                         "HOLD/BLOCKED cannot start next rung without skip or quota retry")
+        blocked_skip = {"verdict": "BLOCKED", "disposition": "SKIP"}
+        self.assertEqual(self.check(rung, blocked_skip, "mark_completed"), ["missing SKIPPED.md"])
+
+    def test_skipped_requires_skipped_md_when_advancing(self):
+        rung = self.rung(review=False)
+        payload = {"verdict": "SKIPPED", "disposition": "SKIP"}
+        self.assertEqual(self.check(rung, payload, "task"), [])
+        self.assertEqual(self.check(rung, payload, "next_rung_review"), ["missing SKIPPED.md"])
+        (rung / "SKIPPED.md").write_text("ok")
+        self.assertEqual(self.check(rung, payload, "next_rung_review"), [])
+        # disposition alone also counts
+        self.assertEqual(self.check(rung, {"disposition": "SKIP"}, "verify_1"), [])
+
+    def test_compliance_stop_phase(self):
+        rung = self.rung(review=False)
+        errs = self.check(rung, {}, "stop", phase="compliance_stop")
+        self.assertEqual(errs, ["missing STOP.md"])
+        (rung / "STOP.md").write_text("no check info")
+        self.assertEqual(self.check(rung, {}, "stop", phase="STOP"),
+                         ["STOP.md missing which check failed"])
+        (rung / "STOP.md").write_text("check: ci-status")
+        self.assertEqual(self.check(rung, {}, "stop", phase="stop"), [])
+        for action in ("verify_1", "verify_2", "next_rung_review", "task"):
+            errs = self.check(rung, {}, action, phase="compliance_stop")
+            self.assertIn("compliance STOP blocks advance", errs, action)
+        skipped = {"verdict": "SKIPPED", "disposition": "SKIP"}
+        (rung / "SKIPPED.md").write_text("skipped")
+        self.assertEqual(self.check(rung, skipped, "mark_completed", phase="stop"), [])
+
+    def test_stop_md_present_blocks_advance(self):
+        rung = self.rung(review=False)
+        (rung / "STOP.md").write_text('{"check": "ci"}')
+        self.assertEqual(self.check(rung, {}, "task"), [])
+        self.assertEqual(self.check(rung, {}, "stop"), [])
+        for action in ("next_rung_review", "verify_1", "verify_2"):
+            errs = self.check(rung, {"verdict": "SKIPPED", "disposition": "SKIP"}, action)
+            self.assertIn("STOP.md present — do not advance", errs, action)
+            self.assertNotIn("STOP.md missing which check failed", errs)
+        (rung / "STOP.md").write_text("nothing useful")
+        errs = self.check(rung, {"verdict": "BLOCKED", "disposition": "SKIP"}, "verify_1")
+        self.assertIn("STOP.md missing which check failed", errs)
+        self.assertIn("STOP.md present — do not advance", errs)
+
+    def test_accept_apply_needs_apply_md_or_complete_resolved(self):
+        rung = self.rung(review=False)
+        (rung / "verify-1.md").write_text("v1")
+        base = {"verdict": "NOT CLEAN", "disposition": "ACCEPT-apply", "issues": FINDINGS}
+        msg = "missing APPLY.md (or complete resolved table) before next-rung review"
+        self.assertEqual(self.check(rung, base, "next_rung_review"), [msg])
+        self.assertEqual(self.check(rung, base, "task"), [])
+        self.assertEqual(self.check(rung, {**base, "resolved": "none"}, "mark_completed"), [msg])
+        done = [{"resolved": "yes"}, {"resolved": "N/A"}, {"resolved": "na"}]
+        self.assertEqual(self.check(rung, {**base, "resolved": done}, "next_rung_review"), [])
+        part = [{"resolved": "yes"}, {"resolved": "pending"}]
+        self.assertEqual(self.check(rung, {**base, "resolved": part}, "next_rung_review"), [msg])
+        self.assertEqual(self.check(rung, {**base, "resolved": "bogus"}, "next_rung_review"), [msg])
+        (rung / "APPLY.md").write_text("applied")
+        self.assertEqual(self.check(rung, base, "next_rung_review"), [])
+
+    def test_accept_apply_without_findings_or_with_bad_issues(self):
+        rung = self.rung(review=False)
+        (rung / "verify-1.md").write_text("v1")
+        none_issues = {"HIGH": "none", "MED": "n/a", "LOW": "NA", "NIT": "none"}
+        payload = {"verdict": "NOT CLEAN", "disposition": "ACCEPT-apply", "issues": none_issues}
+        self.assertEqual(self.check(rung, payload, "next_rung_review"), [])
+        # a missing/None severity is not the "none" token, so it counts as a finding
+        for bad in ("bogus", {"HIGH": None}):
+            payload["issues"] = bad
+            self.assertEqual(len(self.check(rung, payload, "next_rung_review")), 1, bad)
+
+    def test_verify_files_required_when_advancing(self):
+        rung = self.rung(review=False)
+        clean = {"verdict": "CLEAN", "disposition": "REJECT-as-wrong"}
+        self.assertEqual(self.check(rung, clean, "task"), [])
+        self.assertEqual(self.check(rung, clean, "next_rung_review"),
+                         ["missing verify-1.md", "missing verify-2.md"])
+        (rung / "verify_1.md").write_text("v1")
+        self.assertEqual(self.check(rung, clean, "mark_completed"), ["missing verify-2.md"])
+        (rung / "verify-2.md").write_text("v2")
+        self.assertEqual(self.check(rung, clean, "mark_completed"), [])
+        notclean = {"verdict": "NOT CLEAN", "disposition": "REJECT-as-wrong"}
+        (rung / "verify_1.md").unlink()
+        self.assertEqual(self.check(rung, notclean, "next_rung_review"), ["missing verify-1.md"])
+        (rung / "verify-1.md").write_text("")  # empty file does not count
+        self.assertEqual(self.check(rung, notclean, "next_rung_review"), ["missing verify-1.md"])
+        for verdict in ("SKIPPED", "BLOCKED"):
+            self.assertNotIn("missing verify-1.md", self.check(
+                rung, {"verdict": verdict, "disposition": "SKIP"}, "next_rung_review"))
+
+
+class AssertAdvanceTest(TmpCase):
+    def advance(self, run_dir="default", **kw):
+        run_dir = self.run_dir if run_dir == "default" else run_dir
+        return pc.assert_rfl_advance(run_dir, **kw)
+
+    def full_rung(self, name="rung-01-a", **payload_over):
+        rung = self.rung(name, policy=valid_payload(**payload_over))
+        (rung / "POLICY-C.md").write_text("md")
+        (rung / "verify-1.md").write_text("v1")
+        (rung / "verify-2.md").write_text("v2")
+        return rung
+
+    def test_no_run_dir_or_project(self):
+        res = pc.assert_rfl_advance()
+        self.assertEqual(res, {"ok": True, "skipped": "no_run_dir", "errors": [],
+                               "next_action": "task"})
+        res = pc.assert_rfl_advance(None, prompt="start verify-1")
+        self.assertEqual(res["next_action"], "verify_1")
+
+    def test_project_root_discovery(self):
+        proj = self.tmp / "proj"
+        (proj / ".planning").mkdir(parents=True)
+        res = pc.assert_rfl_advance(project_root=proj)
+        self.assertEqual((res["ok"], res["skipped"]), (True, "no_active_run"))
+        run = proj / ".planning" / "rfl-x"
+        run.mkdir()
+        (run / "LADDER-STATUS.json").write_text('{"status": "active"}')
+        res = pc.assert_rfl_advance(project_root=proj)
+        self.assertEqual((res["ok"], res["run_dirs"], res["checked"]), (True, [str(run)], []))
+
+    def test_run_dir_wins_over_project_root(self):
+        proj = self.tmp / "proj"
+        (proj / ".planning").mkdir(parents=True)
+        res = pc.assert_rfl_advance(self.run_dir, project_root=proj)
+        self.assertEqual(res["run_dirs"], [str(self.run_dir)])
+
+    def test_action_resolution(self):
+        r = self.advance(next_action="bogus", prompt="please verify-2")
+        self.assertEqual(r["next_action"], "verify_2")
+        r = self.advance(next_action="task", prompt="go to the next rung")
+        self.assertEqual(r["next_action"], "next_rung_review")
+        r = self.advance(next_action="verify_1", prompt="verify-2")
+        self.assertEqual(r["next_action"], "verify_1")
+        r = self.advance(next_action="bogus")
+        self.assertEqual(r["next_action"], "task")
+
+    def test_inactive_run_is_skipped_unless_marking_completed(self):
+        self.status(status="completed")
+        self.rung()
+        res = self.advance(next_action="verify_1")
+        self.assertEqual((res["ok"], res["checked"]), (True, []))
+        res = self.advance(next_action="mark_completed")
+        self.assertFalse(res["ok"])
+        self.assertTrue(res["checked"])
+
+    def test_clean_rung_advances(self):
+        rung = self.full_rung()
+        self.status(status="active", current_rung="rung-01-a", consecutive_clean_reviews=2,
+                    consecutive_clean_rung="rung-01-a")
+        res = self.advance(next_action="next_rung_review")
+        self.assertEqual((res["ok"], res["errors"], res["checked"]), (True, [], [str(rung)]))
+        res = self.advance(next_action="mark_completed")
+        self.assertEqual((res["ok"], res["errors"]), (True, []))
+
+    def test_streak_blocks_next_rung(self):
+        self.full_rung()
+        self.status(status="active", current_rung="rung-01-a", consecutive_clean_reviews=1,
+                    consecutive_clean_rung="rung-01-a")
+        res = self.advance(next_action="next_rung_review")
+        self.assertFalse(res["ok"])
+        self.assertTrue(res["errors"][0].startswith("consecutive_clean_reviews=1 < 2"))
+
+    def test_review_prompt_promotes_task_to_next_rung_review(self):
+        self.full_rung()
+        self.status(status="active", current_rung="rung-01-a")
+        res = self.advance(prompt="Review the rung output")
+        self.assertEqual(res["next_action"], "next_rung_review")
+        self.assertFalse(res["ok"])  # streak is 0
+        # a prompt mentioning verify keeps the task action
+        res = self.advance(prompt="review then verify")
+        self.assertEqual(res["next_action"], "task")
+        # no policy JSON yet: stays a task
+        (self.run_dir / "rung-01-a" / "POLICY-C.json").unlink()
+        res = self.advance(prompt="review it")
+        self.assertEqual(res["next_action"], "task")
+
+    def test_ladder_status_type_errors(self):
+        self.rung()
+        self.status(status="active", current_rung=3, current_phase=["x"])
+        res = self.advance(next_action="stop")
+        self.assertIn("LADDER-STATUS.json current_rung must be a single string", res["errors"])
+        self.assertIn("LADDER-STATUS.json current_phase must be a single string", res["errors"])
+
+    def test_compliance_stop(self):
+        self.rung()
+        self.status(status="active", compliance_stop=True)
+        res = self.advance(next_action="verify_1")
+        self.assertIn("compliance_stop set but STOP.md missing", res["errors"])
+        self.assertIn("compliance STOP blocks advance", res["errors"])
+        stop = self.run_dir / "rung-01-gpt" / "STOP.md"
+        stop.write_text("nope")
+        res = self.advance(next_action="stop")
+        self.assertIn("STOP.md missing which check failed", res["errors"])
+        self.assertNotIn("compliance STOP blocks advance", res["errors"])
+        stop.write_text("check: lint")
+        res = self.advance(next_action="stop")
+        self.assertNotIn("STOP.md missing which check failed", res["errors"])
+        self.assertNotIn("compliance_stop set but STOP.md missing", res["errors"])
+        # no rung dirs: STOP.md is looked up in the run dir itself
+        (self.tmp / "norungs").mkdir()
+        (self.tmp / "norungs" / "LADDER-STATUS.json").write_text(
+            '{"status": "active", "compliance_stop": true}')
+        res = pc.assert_rfl_advance(self.tmp / "norungs", next_action="stop")
+        self.assertEqual(res["errors"], ["compliance_stop set but STOP.md missing"])
+
+    def test_mark_completed_targets(self):
+        self.status(status="active", current_rung="rung-09-z")
+        res = self.advance(next_action="mark_completed")
+        self.assertEqual(res["errors"], ["current rung missing Policy C"])
+        self.rung("rung-01-a", review=False)  # neither review nor policy nor current
+        res = self.advance(next_action="mark_completed")
+        self.assertEqual(res["checked"], [str(self.run_dir / "rung-01-a")])
+        self.status(status="active")  # no current_rung and nothing to check
+        res = self.advance(next_action="mark_completed")
+        self.assertEqual(res["checked"], [])
+        # a rung that has a review is checked; current rung already in list is not duplicated
+        self.rung("rung-02-b")
+        self.status(status="active", current_rung="rung-02-b")
+        res = self.advance(next_action="mark_completed")
+        self.assertEqual(res["checked"].count(str(self.run_dir / "rung-02-b")), 1)
+        self.assertIn("missing POLICY-C.json", res["errors"])
+
+    def test_task_and_stop_skip_rungs_without_review_or_policy(self):
+        self.rung("rung-01-a", review=False)
+        self.status(status="active")
+        for action in ("task", "stop"):
+            res = self.advance(next_action=action)
+            self.assertEqual((res["ok"], res["errors"]), (True, []), action)
+        # policy JSON without review.md under a plain task is not validated either
+        self.rung("rung-02-b", policy={"broken": True}, review=False)
+        res = self.advance(next_action="task")
+        self.assertEqual((res["ok"], res["errors"]), (True, []))
+        # ... but verify actions validate it
+        res = self.advance(next_action="verify_1")
+        self.assertFalse(res["ok"])
+        self.assertIn("missing POLICY-C.md", res["errors"])
+        self.assertIn("missing rung_identity", res["errors"])
+
+    def test_task_with_review_validates_policy_c(self):
+        self.rung("rung-01-a")
+        self.status(status="active")
+        res = self.advance(next_action="task")
+        self.assertEqual(res["errors"][:2], ["missing POLICY-C.json", "missing POLICY-C.md"])
+
+    def test_explicit_rung_dir_and_dedup(self):
+        a = self.rung("rung-01-a")
+        self.rung("rung-02-b")
+        self.status(status="active")
+        res = self.advance(next_action="verify_1", rung_dir="rung-01-a")
+        self.assertEqual(res["checked"], [str(a)])
+        self.assertEqual(len(res["errors"]), len(set(res["errors"])))
+        # two active runs reporting the same error are de-duplicated
+        proj = self.tmp / "proj"
+        for name in ("rfl-a", "rfl-b"):
+            run = proj / ".planning" / name
+            (run / "rung-01-x").mkdir(parents=True)
+            (run / "rung-01-x" / "review.md").write_text("r")
+            (run / "LADDER-STATUS.json").write_text('{"status": "active"}')
+        res = pc.assert_rfl_advance(project_root=proj, next_action="verify_1")
+        self.assertEqual(res["errors"].count("missing POLICY-C.json"), 1)
+        self.assertEqual(len(res["run_dirs"]), 2)
+
+    def test_resolved_must_be_complete_before_next_rung(self):
+        rung = self.full_rung(disposition="ACCEPT-apply", issues=FINDINGS,
+                              triage=[{"id": "H1", "decision": "ACCEPT"}], verdict="NOT CLEAN",
+                              resolved=[{"id": "H1", "resolved": "no"}])
+        self.status(status="active", current_rung="rung-01-a", consecutive_clean_reviews=2,
+                    consecutive_clean_rung="rung-01-a")
+        res = self.advance(next_action="next_rung_review")
+        self.assertIn("resolved table incomplete before next-rung review", res["errors"])
+        self.assertIn("missing APPLY.md (or complete resolved table) before next-rung review",
+                      res["errors"])
+        (rung / "APPLY.md").write_text("done")
+        res = self.advance(next_action="next_rung_review")
+        self.assertIn("resolved table incomplete before next-rung review", res["errors"])
+
+    def test_assert_run_ready_for_complete(self):
+        self.full_rung()
+        self.status(status="active", current_rung="rung-01-a", consecutive_clean_reviews=2,
+                    consecutive_clean_rung="rung-01-a")
+        res = pc.assert_run_ready_for_complete(str(self.run_dir))
+        self.assertEqual((res["ok"], res["next_action"]), (True, "mark_completed"))
+        (self.run_dir / "rung-01-a" / "verify-2.md").unlink()
+        res = pc.assert_run_ready_for_complete(self.run_dir)
+        self.assertEqual(res["errors"], ["missing verify-2.md"])
+
+
+if __name__ == "__main__":
+    unittest.main()
