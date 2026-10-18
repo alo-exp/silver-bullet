@@ -94,9 +94,9 @@ PY
 # True when registry records live+outcome pass for row on current install_fp.
 enterprise_e2e_row_pass_registry_has_pass() {
   local row="$1" install_fp reg
-  install_fp="${2:-$(enterprise_e2e_install_fingerprint)}"
   reg="$(enterprise_e2e_row_pass_registry_file)"
   [[ -f "$reg" ]] || return 1
+  install_fp="${2:-$(enterprise_e2e_install_fingerprint)}"
   python3 - "$reg" "$install_fp" "$row" <<'PY'
 import json, sys
 path, install_fp, row = sys.argv[1:4]
