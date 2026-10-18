@@ -46,7 +46,7 @@ EOF
 tl_stub lean-ctx '
 printf "lean-ctx %s\n" "$*" >>"$LOG"
 case "$1" in
-  --version) [[ -n "${LC_BROKEN:-}" ]] && exit 1; echo "lean-ctx 3.12.0"; exit 0 ;;
+  --version) [[ -n "${LC_BROKEN:-}${LC_NOVERSION:-}" ]] && exit 1; echo "lean-ctx 3.12.0"; exit 0 ;;
   --help) [[ -n "${LC_BROKEN:-}" ]] && exit 1; exit 0 ;;
   init) [[ "${2:-}" == "--help" && -n "${LC_LIBMODE:-}" ]] && echo "  --library-mode"; exit 0 ;;
   config) if [[ "${2:-}" == set ]]; then exit 0; fi; printf "%s\n" "${LC_CONFIG:-}"; exit 0 ;;
@@ -289,6 +289,14 @@ tl_stub stat 'exit 1'
 fn_run "assert_guard_unchanged '${LEGACY_TARGET}=0'"
 assert_eq "legacy snapshot: unreadable mtime counts as 0" "0" "$TL_STATUS"
 /bin/rm -f "$TL_BIN/stat"; hash -r
+
+# leanctx_binary_ok: --version, then --help
+LC_NOVERSION=1 fn_run 'leanctx_binary_ok'
+assert_eq "binary ok: --version fails but --help works" "0" "$TL_STATUS"
+LC_NOVERSION=1 LC_BROKEN=1 fn_run 'leanctx_binary_ok'
+assert_eq "binary not ok: both --version and --help fail" "1" "$TL_STATUS"
+fn_run 'leanctx_binary_ok'
+assert_eq "binary ok: --version works" "0" "$TL_STATUS"
 
 # helpers that the main flow only reaches in special situations
 fn_run 'HOST=nowhere; context_mode_configured'
