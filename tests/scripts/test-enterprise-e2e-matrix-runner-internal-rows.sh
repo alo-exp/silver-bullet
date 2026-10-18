@@ -118,4 +118,13 @@ run env SB_E2E_MATRIX_DRY_RUN=1 bash "$MATRIX" "" 99
 assert_eq "blank row argument ignored" "0" "$TL_STATUS"
 assert_not_contains "blank row runs nothing" "$TL_OUT" "=== Row"
 
+# several matching marker files, listed slowly: the verdict must not depend on grep -q closing the pipe early
+reset
+touch "$F2_CTL/find-slow"
+run bash "$MATRIX" 21 22
+assert_eq "slow multi-file marker listing passes" "0" "$TL_STATUS"
+assert_contains "row 21 pass with slow listing" "$TL_OUT" "=== Row 21: post-exec-gates (internal) PASS ==="
+assert_contains "row 22 pass with slow listing" "$TL_OUT" "=== Row 22: validate-substep (internal) PASS ==="
+rm -f "$F2_CTL/find-slow"
+
 tl_results

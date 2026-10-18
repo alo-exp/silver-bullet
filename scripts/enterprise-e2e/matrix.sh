@@ -336,6 +336,12 @@ verify_row_evidence() {
   return 1
 }
 
+# True when any workflow file mentions the marker. Captures the listing instead of piping into
+# `grep -q`, which would SIGPIPE the producer under pipefail.
+matrix_marker_present() {
+  [[ -n "$(find "${WORK_DIR}/.planning/workflows" -name '*.md' -exec grep -l "$1" {} + 2>/dev/null)" ]]
+}
+
 verify_row_internal() {
   local row_num="$1"
   local slug="$2"
@@ -345,7 +351,7 @@ verify_row_internal() {
     22) marker='validate-substep'; parent_row=4 ;;
   esac
   enterprise_e2e_matrix_seed_internal_gate_markers "$parent_row"
-  if find "${WORK_DIR}/.planning/workflows" -name '*.md' -exec grep -l "$marker" {} + 2>/dev/null | grep -q .; then
+  if matrix_marker_present "$marker"; then
     return 0
   fi
   parent_log="$(enterprise_e2e_row_attempt_log "$parent_row" 2>/dev/null || true)"
@@ -362,7 +368,7 @@ verify_row_internal() {
     if enterprise_e2e_outcome_row_passes "$parent_row" "$WORK_DIR" "$state_dir" \
         "$parent_log" "$ledger" "$ev" 2>/dev/null; then
       enterprise_e2e_matrix_seed_internal_gate_markers "$parent_row"
-      find "${WORK_DIR}/.planning/workflows" -name '*.md' -exec grep -l "$marker" {} + 2>/dev/null | grep -q .
+      matrix_marker_present "$marker"
       return $?
     fi
   fi
@@ -375,7 +381,7 @@ verify_row_internal() {
       status="$(enterprise_e2e_outcome_ledger_parse_workflow_row "$line" | sed -n '3p')"
       if [[ "$status" == "pass" || "$status" == "Pass" ]]; then
         enterprise_e2e_matrix_seed_internal_gate_markers "$parent_row"
-        find "${WORK_DIR}/.planning/workflows" -name '*.md' -exec grep -l "$marker" {} + 2>/dev/null | grep -q .
+        matrix_marker_present "$marker"
         return $?
       fi
     fi
