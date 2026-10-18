@@ -204,8 +204,11 @@ class CatalogLabelTests(TmpCase):
                          if False else "pn")
         self.assertEqual(f("Pretty Label", support={"other": {}}), "pretty-label")
         self.assertEqual(f("Some Other", support={"some-x": {}}), "some-other")
-        self.assertEqual(f("Match Me", support={"match-me-not": {}, "zzz": {}},
-                           known={"zzz": "Match Me"}, commercial=[], oss=[]), "zzz")
+        self.assertEqual(f("Other Name", known={"x": "X", "kn": "Known"},
+                           commercial=[{"slug": "c", "name": "C"}], oss=[{"slug": "o", "name": "O"}],
+                           rankings=[{"solution": "r"}, {"solution": "rr"}],
+                           support={"a_b": {}, "c_d": {}}), "other-name")
+        self.assertEqual(f("A_B", known={"x": "X"}, support={"c_d": {}, "a_b": {}}), "a_b")
         self.assertIsNone(f("!!!"))
         self.assertEqual(f("Plain"), "plain")
 
@@ -323,6 +326,9 @@ class LinkifyTests(TmpCase):
             out,
             "[GitHub Copilot Workspace](https://githubnext.com/projects/copilot-workspace) uses "
             "[GitHub Copilot](https://github.com/features/copilot)")
+
+    def test_linkify_with_only_filtered_pairs(self):
+        self.assertEqual(sl._linkify_markdown_vendors("SDLC rocks", [["SDLC", "https://x"]]), "SDLC rocks")
 
     def test_linkify_skips_blank_and_non_http_after_filter(self):
         with mock.patch.object(sl, "filter_vendor_link_pairs",
