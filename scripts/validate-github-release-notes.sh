@@ -22,15 +22,18 @@ repo=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --file)
-      body_file="${2:-}"
+      [[ $# -ge 2 ]] || { echo "ERROR: $1 requires a value" >&2; usage >&2; exit 2; }
+      body_file="$2"
       shift 2
       ;;
     --tag)
-      tag="${2:-}"
+      [[ $# -ge 2 ]] || { echo "ERROR: $1 requires a value" >&2; usage >&2; exit 2; }
+      tag="$2"
       shift 2
       ;;
     --repo)
-      repo="${2:-}"
+      [[ $# -ge 2 ]] || { echo "ERROR: $1 requires a value" >&2; usage >&2; exit 2; }
+      repo="$2"
       shift 2
       ;;
     -h|--help)
@@ -59,8 +62,8 @@ if [[ -n "$tag" && -z "$body_file" ]]; then
     exit 1
   fi
   body_file="$(mktemp "${TMPDIR:-/tmp}/sb-release-notes.XXXXXX")"
-  gh release view "$tag" --repo "$repo" --json body --jq '.body // ""' >"$body_file"
   trap 'rm -f -- "$body_file"' EXIT
+  gh release view "$tag" --repo "$repo" --json body --jq '.body // ""' >"$body_file"
 fi
 
 if [[ -z "$body_file" || ! -f "$body_file" ]]; then
