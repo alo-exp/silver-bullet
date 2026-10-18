@@ -149,4 +149,30 @@ unset SILVER_BULLET_RUNTIME
 tl_run env -u SILVER_BULLET_RUNTIME PATH="$PATH" bash -c 'cd "$1" && bash "$2" --tool context_mode' _ "$STAGE" "$RCM"
 assert_contains "rcm: unset runtime still resolves a host" "$TL_OUT" "Context Mode:"
 
+# -------------------------------------------------- degraded helper libraries
+# Wrapper libs source the real ones, then drop helpers so the scripts' "|| echo"
+# / "|| true" fallbacks run (a host that cannot be resolved falls back to cursor).
+DEG="$TL_TMP/degraded"
+mkdir -p "$DEG/scripts" "$DEG/hooks/lib"
+cp "$ALU" "$RCM" "$DEG/scripts/"
+printf '{}\n' >"$DEG/.silver-bullet.json"
+mk_wrapper() {
+  local lib="$1"; shift
+  printf 'source "%s/hooks/lib/%s"\nunset -f %s\n' "$TL_REPO_ROOT" "$lib" "$*" >"$DEG/hooks/lib/$lib"
+}
+mk_wrapper recommended-tools.sh sb_runtime_host
+mk_wrapper rtk-gate.sh sb_rtk_version_string sb_rtk_platform_hook_artifact_path
+mk_wrapper context-mode-gate.sh sb_context_mode_platform_artifact_path
+mk_wrapper alumnium-gate.sh sb_alumnium_platform_artifact_path
+export SILVER_BULLET_RUNTIME=cursor
+tl_stub rtk 'case "$1" in --version) echo "rtk 0.42.3";; esac; exit 0'
+tl_stub node 'echo v22.9.0'
+tl_run bash "$DEG/scripts/enable-rtk-context-mode.sh"
+assert_contains "rcm degraded: version string falls back to 'rtk'" "$TL_OUT" "[x] binary present: rtk"
+assert_contains "rcm degraded: unresolvable rtk artifact path leaves it blank" "$TL_OUT" "[ ] host hook missing (cursor)"
+assert_contains "rcm degraded: unresolvable context-mode artifact" "$TL_OUT" "[ ] MCP/plugin not wired (cursor)"
+assert_eq "rcm degraded: exits 1" "1" "$TL_STATUS"
+tl_run bash "$DEG/scripts/enable-alumnium.sh"
+assert_contains "alumnium degraded: artifact path fallback" "$TL_OUT" "[ ] MCP not wired (cursor)"
+
 tl_results
