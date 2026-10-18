@@ -154,7 +154,13 @@ class LineMcpClient {
   private connected = false
   private lastError = ""
 
-  constructor(private readonly name: string, private readonly spec: ToolSpec) {}
+  private readonly name: string
+  private readonly spec: ToolSpec
+
+  constructor(name: string, spec: ToolSpec) {
+    this.name = name
+    this.spec = spec
+  }
 
   async start(): Promise<McpTool[]> {
     this.child = spawn(this.spec.command, this.spec.args || [], {
@@ -166,6 +172,7 @@ class LineMcpClient {
       const text = chunk.toString("utf8").trim()
       if (text) this.lastError = text.slice(-500)
     })
+    this.child.stdin.on("error", (error) => this.failPending(error))
     this.child.on("error", (error) => this.failPending(error))
     this.child.on("exit", (code, signal) => {
       this.connected = false
@@ -195,7 +202,8 @@ class LineMcpClient {
     const abort = new Promise<JsonObject>((_, reject) => {
       signal?.addEventListener("abort", () => reject(new Error(`${this.name} MCP call aborted`)), { once: true })
     })
-    return withTimeout(Promise.race([request, abort]), CALL_TIMEOUT_MS, `${this.name} MCP ${name}`)
+    const response = await withTimeout(Promise.race([request, abort]), CALL_TIMEOUT_MS, `${this.name} MCP ${name}`)
+    return (response.result ?? {}) as JsonObject
   }
 
   async close(): Promise<void> {
