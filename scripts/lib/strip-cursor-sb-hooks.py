@@ -68,15 +68,20 @@ if changed:
     # Write a temp file in the same directory and rename it over the target so a failed write
     # never truncates the user's hooks file; follow a symlinked file and keep its permissions.
     real_path = os.path.realpath(settings_path)
-    fd, tmp_name = tempfile.mkstemp(prefix=".hooks.", suffix=".tmp", dir=os.path.dirname(real_path))
+    tmp_name = None
     try:
+        fd, tmp_name = tempfile.mkstemp(prefix=".hooks.", suffix=".tmp", dir=os.path.dirname(real_path))
         with os.fdopen(fd, "w") as handle:
             handle.write(json.dumps(data, indent=2) + "\n")
+            handle.flush()
+            os.fsync(handle.fileno())
         os.chmod(tmp_name, stat.S_IMODE(os.stat(real_path).st_mode))
         os.replace(tmp_name, real_path)
-    except BaseException:
-        os.unlink(tmp_name)
-        raise
+    except OSError as exc:
+        if tmp_name is not None:
+            os.unlink(tmp_name)
+        print(f"ERROR: cannot update {settings_path}: {exc}; left unchanged", file=sys.stderr)
+        raise SystemExit(1)
     print(f"SB hooks stripped from {settings_path}")
 else:
     print(f"No SB hooks found in {settings_path}")
