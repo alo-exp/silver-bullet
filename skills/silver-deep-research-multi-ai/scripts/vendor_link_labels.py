@@ -410,7 +410,7 @@ def drop_ambiguous_shared_homepage_urls(pairs: list[list[str]]) -> list[list[str
             continue
         keep = {lab for score, _length, lab in scored if score == best_score}
         if len(keep) > 1:
-            keep = {max(keep, key=len)}
+            keep = {max(keep, key=lambda lab: (len(lab), lab))}
         drop.update(set(unique) - keep)
 
     return [
