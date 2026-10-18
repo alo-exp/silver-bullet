@@ -222,6 +222,23 @@ assert_file_absent "legacy Silver Bullet agent quarantined" "$AG/silver-legacy"
 assert_file_exists "unrelated agent untouched" "$AG/my-own.md"
 assert_file_exists "legacy agent kept in quarantine" "$(find "$HOME/.cursor/.silver-bullet-quarantine" -path '*silver-legacy*' -name SKILL.md | head -1)"
 
+# marker evasion: only genuine installer output is exempt from the quarantine
+AG2="$TL_TMP/agents2/agents"; rm -rf "${TL_TMP:?}/agents2"; mkdir -p "$AG2/sub"
+MARK='<!-- sb-managed: cursor-sb-agents -->'
+gen() { printf -- '---\nname: %s\ndescription: SB reusable ladder agent — x effort=high.\nmodel: m\nreadonly: false\n---\nYou are a Silver Bullet reusable review/verify agent.\n%s\n' "$1" "$MARK"; }
+gen sb-ok-high >"$AG2/sb-ok-high.md"
+gen sb:evil >"$AG2/sb-evil.md"
+gen silver-fake >"$AG2/silver-fake.md"
+printf -- '---\nname: sb-mid-high\ndescription: SB reusable ladder agent — x.\n---\n%s\nSilver Bullet trailing body\n' "$MARK" >"$AG2/sb-mid-high.md"
+gen sb-nested-high >"$AG2/sub/sb-nested-high.md"
+printf -- '---\nname: sb-other-high\ndescription: something else Silver Bullet.\n---\nbody\n%s\n' "$MARK" >"$AG2/sb-other-high.md"
+tl_run env CURSOR_HOME="$TL_TMP/agents2" SB_INSTALL_CURSOR_SOURCE_ONLY=1 bash -c 'source "$1"; cleanup_cursor_custom_agents ""' _ "$SCRIPT"
+assert_file_exists "genuine generated agent stays" "$AG2/sb-ok-high.md"
+for f in sb-evil silver-fake sb-mid-high sb-other-high; do
+  assert_file_absent "$f quarantined" "$AG2/$f.md"
+done
+assert_file_absent "marker file in a subdirectory quarantined" "$AG2/sub/sb-nested-high.md"
+
 # ---- plugin surface materialization
 reset_home
 D="$TL_TMP/dest1"; rm -rf "${D:?}"; make_dest "$D" 3.0.0

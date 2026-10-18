@@ -171,7 +171,7 @@ prune_agents_from_all_cursor_backend_caches() {
 
 cleanup_cursor_custom_agents() {
   local project_root="${1:-${REPO_ROOT:-}}"
-  python3 - "$CURSOR_HOME" "$project_root" <<'INNERPY'
+  python3 - "$CURSOR_HOME" "$project_root" "$(cd "$(dirname "${BASH_SOURCE[0]}")/../cursor-sb-agents" && pwd)" <<'INNERPY'
 from __future__ import annotations
 
 import json
@@ -183,6 +183,8 @@ from pathlib import Path
 
 cursor_home = Path(sys.argv[1]).expanduser()
 project_root = Path(sys.argv[2]).expanduser() if sys.argv[2] else None
+sys.path.insert(0, sys.argv[3])
+from sb_managed_agent import is_installer_managed_agent  # noqa: E402
 roots: list[tuple[str, Path]] = [("user", cursor_home / "agents")]
 if project_root:
     roots.append(("project", project_root / ".cursor" / "agents"))
@@ -221,7 +223,7 @@ def parse_frontmatter(path: Path) -> dict[str, str]:
     return meta
 
 
-def should_quarantine(path: Path) -> bool:
+def should_quarantine(path: Path, root: Path) -> bool:
     meta = parse_frontmatter(path)
     name = meta.get("name") or meta.get("title") or path.stem
     lowered = name.strip().lower()
@@ -231,7 +233,7 @@ def should_quarantine(path: Path) -> bool:
         text = path.read_text(errors="ignore")[:4000]
     except Exception:
         text = ""
-    if "<!-- sb-managed: cursor-sb-agents -->" in text:
+    if is_installer_managed_agent(path, root):
         # Agents written by install-cursor-sb-agents.sh are intentional, not legacy.
         return False
     return "Silver Bullet" in text or "silver-bullet" in text
@@ -255,7 +257,7 @@ for scope, root in roots:
         continue
     candidates: list[Path] = []
     for item in sorted(root.glob("**/*"), key=lambda p: len(p.parts), reverse=True):
-        if item.is_file() and item.suffix.lower() in {".md", ".json", ".yaml", ".yml"} and should_quarantine(item):
+        if item.is_file() and item.suffix.lower() in {".md", ".json", ".yaml", ".yml"} and should_quarantine(item, root):
             candidates.append(item)
     for item in candidates:
         if not item.exists():
