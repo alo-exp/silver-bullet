@@ -1637,16 +1637,16 @@ enterprise_e2e_outcome_score_dynamic() {
     valid_ops="$(jq -s '
       [.[] | .operations[]? |
         select((.catalog_rule_ref // "") != "" and (.rationale // "") != "")] | length
-    ' "${comp_logs[@]}" 2>/dev/null || echo 0)"
+    ' "${comp_logs[@]}" 2>/dev/null)" || valid_ops=0
     distinct_ops="$(jq -s '
       [.[] | .operations[]?.op] | unique | length
-    ' "${comp_logs[@]}" 2>/dev/null || echo 0)"
+    ' "${comp_logs[@]}" 2>/dev/null)" || distinct_ops=0
     if [[ -f "${sb_root}/docs/apo-catalog.json" ]]; then
       bad_refs="$(jq -s --slurpfile cat "${sb_root}/docs/apo-catalog.json" '
         def ids: [$cat[0].dynamic_rules[]?.id];
         [.[] | .operations[]? | select((.catalog_rule_ref // "") != "") |
           select(.catalog_rule_ref as $r | (ids | index($r)) | not)] | length
-      ' "${comp_logs[@]}" 2>/dev/null || echo 1)"
+      ' "${comp_logs[@]}" 2>/dev/null)" || bad_refs=1
     fi
     if [[ "${valid_ops:-0}" -ge 2 && "${distinct_ops:-0}" -ge 2 && "${bad_refs:-1}" -eq 0 ]]; then
       printf 'pass\n'; return 0
