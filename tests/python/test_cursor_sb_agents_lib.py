@@ -39,6 +39,7 @@ def model(mid, **kw):
 
 
 class SmallHelpersTest(unittest.TestCase):
+
     def test_default_config_returns_fresh_lists(self):
         a, b = lib.default_config(), lib.default_config()
         a["selected_models"].append("x")
@@ -87,6 +88,7 @@ class SmallHelpersTest(unittest.TestCase):
 
 
 class DocsTest(unittest.TestCase):
+
     def test_fetch_docs_markdown_uses_request_headers_and_decodes(self):
         resp = mock.MagicMock()
         resp.__enter__.return_value = resp
@@ -124,7 +126,7 @@ class AgentModelsTest(unittest.TestCase):
         return subprocess.CompletedProcess([], rc, stdout=out, stderr="")
 
     def test_parse_output(self):
-        text = "Available models\n\nauto - Auto\nnot a model line\ncomposer-2.5 - Composer 2.5 \n x-high - X High\n"
+        text = "Available models - x\nAvailable models\n\nauto - Auto\nnot a model line\ncomposer-2.5 - Composer 2.5 \n x-high - X High\n"
         self.assertEqual(lib.parse_agent_models_output(text), [
             {"id": "composer-2.5", "display_name": "Composer 2.5"},
             {"id": "x-high", "display_name": "X High"},
@@ -160,6 +162,7 @@ class AgentModelsTest(unittest.TestCase):
 
 
 class SlugTest(unittest.TestCase):
+
     def test_base_model_from_slug(self):
         cases = {
             "composer-2.5": "composer-2.5",
@@ -280,6 +283,7 @@ class CatalogTest(unittest.TestCase):
 
 
 class ResolveTest(unittest.TestCase):
+
     def test_builtin_and_config_maps(self):
         r = lib.resolve_model_param
         self.assertEqual(r("opus-5", "high"), "claude-opus-5-thinking-high")
@@ -342,6 +346,7 @@ class ResolveTest(unittest.TestCase):
 
 
 class ConfigDerivedTest(unittest.TestCase):
+
     def test_efforts_for_model(self):
         f = lib.efforts_for_model
         self.assertEqual(f({"rfl_effort_maps": {"m": {"a": "x", "b": "y"}}}, "m"), ["a", "b"])
@@ -370,6 +375,7 @@ class ConfigDerivedTest(unittest.TestCase):
 
 
 class FormatTest(unittest.TestCase):
+
     def test_pricing_label(self):
         f = lib.format_pricing_label
         self.assertEqual(

@@ -64,6 +64,7 @@ class Base(unittest.TestCase):
 
 
 class JsonIoTest(Base):
+
     def test_load_json_variants(self):
         self.assertEqual(mod.load_json(self.tmp / "none.json"), {})
         self.assertEqual(mod.load_json(self.tmp / "none.json", {"d": 1}), {"d": 1})
@@ -93,6 +94,7 @@ class JsonIoTest(Base):
 
 
 class PresenceTest(Base):
+
     def test_cursor_and_claude(self):
         p = self.tmp / "m.json"
         self.assertFalse(mod.context_mode_present_cursor(p))
@@ -133,6 +135,7 @@ class PresenceTest(Base):
 
 
 class EnvTest(Base):
+
     def test_leanctx_server_env(self):
         self.assertEqual(mod.leanctx_server_env(False), PREFIX)
         env = mod.leanctx_server_env(True)
@@ -282,6 +285,7 @@ class CursorMergeTest(Base):
             self.write(self.target(), {"mcpServers": {"leanctx": {**spec, key: val}}})
             self.assertTrue(self.merge()["mcp_merged"], key)
             self.assertEqual(self.read_json(self.target())["mcpServers"]["leanctx"][key], spec[key])
+
     def test_wrong_typed_mcp_servers_container_is_refused(self):
         for bad in ("x", [{"name": "mine"}], 5):
             self.write(self.target(), {"mcpServers": bad, "other": 1})
@@ -294,6 +298,7 @@ class CursorMergeTest(Base):
             data = self.read_json(self.target())
             self.assertEqual(data["other"], 1)
             self.assertEqual(data["mcpServers"]["leanctx"]["command"], "/opt/g/lean-ctx")
+
     def test_symlinked_target_is_written_through(self):
         real = self.write(self.tmp / "real.json", {"mcpServers": {}, "keep": 1})
         self.target().parent.mkdir(parents=True)
@@ -348,6 +353,7 @@ class ClaudeMergeTest(Base):
         self.assertEqual(self.read_json(self.target())["mcpServers"]["leanctx"]["command"], "/opt/g/lean-ctx")
 
 class StripCollisionTest(Base):
+
     def test_cases(self):
         p = self.tmp / "m.json"
         self.assertFalse(mod.strip_unprefixed_leanctx_collision(p, False))
@@ -373,6 +379,21 @@ class StripCollisionTest(Base):
         self.assertTrue(self.quiet(mod.strip_unprefixed_leanctx_collision, p, True))
         self.assertEqual(self.read_json(p), {"mcpServers": {"leanctx": {}}})
         self.assertIn("DRY-RUN", self.last_out)
+
+
+class StripContainerRefusalTest(Base):
+
+    def test_wrong_typed_mcp_servers_refused(self):
+        p = self.tmp / "m.json"
+        for bad in ([{"name": "mine"}], "x", 5):
+            self.write(p, {"mcpServers": bad})
+            before = p.read_bytes()
+            with self.assertRaisesRegex(ValueError, "mcpServers must be a JSON object"):
+                mod.strip_unprefixed_leanctx_collision(p, False)
+            self.assertEqual(p.read_bytes(), before)
+            self.assertFalse(p.with_suffix(".json.bak").exists())
+        self.write(p, {"mcpServers": None})
+        self.assertFalse(mod.strip_unprefixed_leanctx_collision(p, False))
 
 
 class OpenCodeMergeTest(Base):
@@ -622,6 +643,7 @@ class CodexTomlTest(Base):
 
 
 class OptimizeAndMainTest(Base):
+
     def test_unsupported_host(self):
         with self.assertRaisesRegex(ValueError, "unsupported host: vim"):
             mod.optimize_host("vim", False, MANIFEST)

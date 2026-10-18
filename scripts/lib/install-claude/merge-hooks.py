@@ -56,24 +56,54 @@ sb_hooks = sub_path(sb_hooks, install_path)
 SB_HOOK_RE = re.compile(r'/silver-bullet/[^/]+/hooks/')
 
 def is_stale_sb_hook(hook):
+    if not isinstance(hook, dict):
+        return False
     cmd = hook.get('command', '')
+    if not isinstance(cmd, str):
+        return False
     if '${CLAUDE_PLUGIN_ROOT}/hooks/' in cmd:
         return True
     return bool(SB_HOOK_RE.search(cmd)) and install_path not in cmd
 
+
+def json_member(data, key, kind):
+    """Return data[key] as kind; repair missing/null/empty, refuse other wrong types."""
+    value = data.get(key)
+    if isinstance(value, kind):
+        return value
+    if value is None or value == {} or value == []:
+        value = kind()
+        data[key] = value
+        return value
+    label = 'object' if kind is dict else 'array'
+    raise ValueError(f'{settings_path}: {key} must be a JSON {label}')
+
+
+def group_hooks(group):
+    """The hook list of a settings group; non-dict groups have none."""
+    if not isinstance(group, dict) or 'hooks' not in group:
+        return []
+    return json_member(group, 'hooks', list)
+
+
 if os.path.exists(settings_path):
     with open(settings_path) as f:
         settings = json.load(f)
+    if not isinstance(settings, dict):
+        raise ValueError(f'{settings_path}: expected a JSON object at the top level')
 else:
     settings = {}
 
-existing_hooks = settings.setdefault('hooks', {})
+existing_hooks = json_member(settings, 'hooks', dict)
 
 # Purge stale SB entries from previous installs before adding current version
 for event in list(existing_hooks.keys()):
     cleaned = []
-    for group in existing_hooks[event]:
-        kept = [h for h in group.get('hooks', []) if not is_stale_sb_hook(h)]
+    for group in json_member(existing_hooks, event, list):
+        if not isinstance(group, dict):
+            cleaned.append(group)  # foreign entry: keep untouched
+            continue
+        kept = [h for h in group_hooks(group) if not is_stale_sb_hook(h)]
         if kept:
             group['hooks'] = kept
             cleaned.append(group)
@@ -83,24 +113,25 @@ for event in list(existing_hooks.keys()):
         del existing_hooks[event]
 
 for event, entries in sb_hooks.items():
-    existing_event = existing_hooks.setdefault(event, [])
+    existing_event = json_member(existing_hooks, event, list)
     for new_group in entries:
         new_hooks_list = new_group.get('hooks', [])
         for new_hook in new_hooks_list:
             new_cmd = new_hook.get('command', '')
             already_present = any(
-                h.get('command', '') == new_cmd
+                isinstance(h, dict) and h.get('command', '') == new_cmd
                 for group in existing_event
-                for h in group.get('hooks', [])
+                for h in group_hooks(group)
             )
             if not already_present:
                 matcher = new_group.get('matcher', '')
                 matched = next(
-                    (g for g in existing_event if g.get('matcher', '') == matcher),
+                    (g for g in existing_event
+                     if isinstance(g, dict) and g.get('matcher', '') == matcher),
                     None
                 )
                 if matched:
-                    matched.setdefault('hooks', []).append(new_hook)
+                    json_member(matched, 'hooks', list).append(new_hook)
                 else:
                     existing_event.append({'matcher': matcher, 'hooks': [new_hook]})
 

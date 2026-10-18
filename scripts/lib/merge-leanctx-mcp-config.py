@@ -394,7 +394,7 @@ def strip_unprefixed_leanctx_collision(mcp_path: pathlib.Path, dry_run: bool) ->
     if not mcp_path.is_file():
         return False
     data = load_json(mcp_path)
-    servers = data.get("mcpServers", {})
+    servers = json_member(data, "mcpServers", dict, mcp_path)
     lean = servers.get("leanctx")
     if not isinstance(lean, dict):
         return False

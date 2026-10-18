@@ -12,6 +12,7 @@ led = load_module("scripts/lib/rfl_issue_ledger.py")
 
 
 class NormalizeTest(unittest.TestCase):
+
     def test_severity(self):
         n = led._norm_severity
         self.assertEqual(n("high"), "HIGH")
@@ -135,6 +136,7 @@ text ends table
 
 
 class MarkdownTest(unittest.TestCase):
+
     def test_parse_markdown(self):
         rows = led.parse_issue_ledger_markdown(LEDGER_MD)
         self.assertEqual([r["id"] for r in rows], ["R-1", "R-2", "R-3"])
@@ -157,6 +159,7 @@ class MarkdownTest(unittest.TestCase):
 
 
 class PolicyCPayloadTest(unittest.TestCase):
+
     def test_full_payload(self):
         payload = {
             "apply_sha": " deadbeefdeadbeef ",
@@ -298,6 +301,13 @@ class RenderTest(unittest.TestCase):
             self.assertIn(f"- {rule}", brief)
         self.assertIn("Do **not** re-file ledger IDs", brief)
         self.assertTrue(brief.endswith("ledger.\n"))
+
+    def test_write_review_brief_into_existing_directory(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / "brief.md"
+            led.write_review_brief(target, self.ROWS)
+            led.write_review_brief(target, [])  # overwrite
+            self.assertEqual(target.read_text(), led.render_review_brief([]))
 
     def test_write_review_brief(self):
         with tempfile.TemporaryDirectory() as tmp:

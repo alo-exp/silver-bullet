@@ -81,6 +81,7 @@ class Base(unittest.TestCase):
 
 
 class JsonFilesTest(Base):
+
     def test_load_json(self):
         self.assertEqual(mod.load_json(self.tmp / "none.json"), {})
         self.assertEqual(mod.load_json(self.tmp / "none.json", {"d": 1}), {"d": 1})
@@ -115,6 +116,7 @@ class JsonFilesTest(Base):
 
 
 class HookEntriesTest(Base):
+
     def test_command_and_key(self):
         self.assertEqual(mod.hook_command({"command": 5}), "5")
         self.assertEqual(mod.hook_command({}), "")
@@ -159,6 +161,7 @@ class HookEntriesTest(Base):
 
 
 class MergeHooksFileTest(Base):
+
     def test_create_and_idempotent(self):
         target = self.home / ".cursor" / "hooks.json"
         frags = [{"hooks": {"preToolUse": [{"command": "context-mode hook cursor pretooluse"}]}},
@@ -231,6 +234,7 @@ class MergeCodexHooksTest(Base):
 
 
 class McpMergeTest(Base):
+
     def test_merge_mcp_server(self):
         target = self.home / ".cursor" / "mcp.json"
         self.assertTrue(self.quiet(mod.merge_mcp_server, target, "a", {"command": "a"}, False))
@@ -257,6 +261,7 @@ class McpMergeTest(Base):
             self.assertTrue(self.quiet(mod.merge_mcp_server, target, "a", {"command": "a"}, False))
             data = self.read_json(target)
             self.assertEqual((data["keep"], data["mcpServers"]), (1, {"a": {"command": "a"}}))
+
     def test_shared_claude_context_mode(self):
         spec = {"command": "/opt/cm", "args": ["mcp"], "env": {}}
         target = self.home / ".claude.json"
@@ -297,6 +302,7 @@ class McpMergeTest(Base):
             target = self.write(self.home / ".claude.json", {"mcpServers": ok})
             self.assertTrue(self.quiet(mod.merge_shared_claude_context_mode, target, spec, False))
             self.assertEqual(self.read_json(target)["mcpServers"]["context-mode"], spec)
+
     def test_cli_allowlist(self):
         target = self.home / ".cursor" / "cli-config.json"
         self.assertEqual(self.quiet(mod.merge_cli_allowlist, target, ["a", "b", "a"], False), 2)
@@ -323,6 +329,7 @@ class McpMergeTest(Base):
             self.assertEqual(self.read_json(target)["permissions"]["allow"], ["a"])
 
 class FileCopyTest(Base):
+
     def test_copy_file(self):
         src = self.write(self.tmp / "src.txt", "one")
         dest = self.tmp / "d" / "e" / "f" / "dest.txt"
@@ -394,6 +401,7 @@ class FileCopyTest(Base):
 
 
 class PackageRootTest(Base):
+
     def test_env_override(self):
         pkg = self.tmp / "envpkg"
         pkg.mkdir()
@@ -452,6 +460,7 @@ class PackageRootTest(Base):
 
 
 class CodexTomlTest(Base):
+
     def test_requires_package_and_snippet(self):
         target = self.home / ".codex" / "config.toml"
         self.assertFalse(mod.merge_codex_config_toml(target, False))
@@ -488,6 +497,7 @@ class CodexTomlTest(Base):
 
 
 class HermesTest(Base):
+
     def test_create_append_and_skip(self):
         cfg = self.home / ".hermes" / "config.yaml"
         self.assertTrue(mod.merge_hermes_context_mode_mcp(cfg, False))
@@ -630,6 +640,7 @@ class OptimizeCursorTest(Base):
 
 
 class OptimizeCodexClaudeTest(Base):
+
     def test_codex_without_package(self):
         res = self.quiet(mod.optimize_codex, False)
         self.assertEqual(res, {"host": "codex", "status": "supported", "hooks_added": 0,
@@ -768,6 +779,7 @@ class OptimizeOpenCodeTest(Base):
         self.assertEqual(data["plugin"], ["context-mode", "./plugins/rtk.ts"])
         self.assertEqual(data["mcp"], {})
         self.assertTrue(res["plugin_added"])
+
     def test_dry_run_writes_nothing(self):
         repo = self.make_repo()
         res = self.quiet(mod.optimize_opencode, True, repo)
@@ -797,6 +809,7 @@ class OptimizeOpenCodeTest(Base):
 
 
 class OtherHostsAndMainTest(Base):
+
     def test_hermes_and_goose(self):
         res = self.quiet(mod.optimize_hermes, False)
         self.assertEqual((res["host"], res["status"], res["mcp_merged"]), ("hermes", "partial", True))
@@ -857,6 +870,149 @@ class OtherHostsAndMainTest(Base):
                 runpy.run_path(str(REPO_ROOT / REL), run_name="__main__")
         self.assertEqual(cm.exception.code, 0)
         self.assertIn('"unsupported"', out.getvalue())
+
+class Refusal(Base):
+    def refuse(self, fn, target, *args, match="must be a JSON"):
+        before = Path(target).read_bytes()
+        with self.assertRaisesRegex(ValueError, match):
+            self.quiet(fn, target, *args)
+        self.assertEqual(Path(target).read_bytes(), before)
+        self.assertEqual(list(Path(target).parent.glob("*.bak")), [])
+
+
+class HooksFileRefusalTest(Refusal):
+    FRAG = [{"hooks": {"preToolUse": [{"command": "rtk hook cursor"}]}}]
+    CODEX = {"hooks": {"Stop": [{"hooks": [{"command": "c"}]}]}}
+
+    def test_cursor_hooks_wrong_types_refused(self):
+        for data in ({"hooks": {"preToolUse": "str"}}, {"hooks": {"preToolUse": {"a": 1}}},
+                     {"hooks": "x"}, {"hooks": ["x"]}):
+            target = self.write(self.home / "h.json", data)
+            self.refuse(mod.merge_hooks_file, target, self.FRAG, False)
+
+    def test_cursor_hooks_null_or_empty_repaired(self):
+        for data in ({"hooks": None}, {"hooks": []}, {"hooks": {"preToolUse": None}},
+                     {"hooks": {"preToolUse": {}}}, {"hooks": {"preToolUse": []}}):
+            target = self.write(self.home / "h.json", data)
+            self.assertEqual(self.quiet(mod.merge_hooks_file, target, self.FRAG, False), 1)
+            self.assertEqual(self.read_json(target)["hooks"]["preToolUse"], [{"command": "rtk hook cursor"}])
+
+    def test_codex_hooks_wrong_types_refused(self):
+        for data in ({"hooks": {"Stop": "str"}}, {"hooks": {"Stop": {"a": 1}}},
+                     {"hooks": "x"}, {"hooks": [1]}):
+            target = self.write(self.home / "hooks.json", data)
+            self.refuse(mod.merge_codex_hooks_file, target, self.CODEX, False)
+        for data in ({"hooks": None}, {"hooks": {"Stop": None}}, {"hooks": {"Stop": []}}):
+            target = self.write(self.home / "hooks2.json", data)
+            self.assertEqual(self.quiet(mod.merge_codex_hooks_file, target, self.CODEX, False), 1)
+
+
+class OpenCodeRefusalTest(Refusal):
+
+    def test_nothing_written_when_config_is_refused(self):
+        repo = self.tmp / "repo"
+        self.write(repo / "scripts" / "lib" / "global-toolstack" / "opencode-rtk-plugin.ts", "x")
+        cfg = self.home / ".config" / "opencode" / "opencode.json"
+        for data in ({"plugin": "x"}, {"mcp": ["y"]}):
+            self.write(cfg, data)
+            self.ensure.reset_mock()
+            before = cfg.read_bytes()
+            with self.assertRaisesRegex(ValueError, "must be a JSON"):
+                self.quiet(mod.optimize_opencode, False, repo)
+            self.assertEqual(cfg.read_bytes(), before)
+            self.ensure.assert_not_called()
+            self.assertFalse((cfg.parent / "plugins").exists())
+            self.assertFalse((cfg.parent / "AGENTS.md").exists())
+
+
+class HermesIndentTest(Base):
+    def yaml(self):
+        try:
+            import yaml
+        except ImportError:
+            self.skipTest("SKIP: PyYAML not importable")
+        return yaml
+
+    def check_siblings(self, text, servers=("github",)):
+        data = self.yaml().safe_load(text)
+        got = data["mcp_servers"]
+        self.assertIn("context-mode", got)
+        self.assertEqual(got["context-mode"]["command"], "context-mode")
+        for name in servers:
+            self.assertIn(name, got)
+            self.assertEqual(got[name]["command"], "gh")
+        return data
+
+    def merge(self, text, name="c.yaml"):
+        cfg = self.home / name
+        cfg.write_bytes(text.encode()) if isinstance(text, str) else cfg.write_bytes(text)
+        return cfg, mod.merge_hermes_context_mode_mcp(cfg, False)
+
+    def test_four_and_three_space_indents_keep_servers_as_siblings(self):
+        for pad in ("    ", "   ", "  ", " "):
+            cfg, ok = self.merge(f"mcp_servers:\n{pad}github:\n{pad}{pad}command: gh\nother: 1\n")
+            self.assertTrue(ok, repr(pad))
+            text = cfg.read_text()
+            self.assertIn(f"\n{pad}context-mode:\n", text)
+            data = self.check_siblings(text)
+            self.assertEqual(data["other"], 1)
+            first = cfg.read_bytes()
+            self.assertFalse(mod.merge_hermes_context_mode_mcp(cfg, False))
+            self.assertEqual(cfg.read_bytes(), first)
+
+    def test_indent_comes_from_first_real_child_not_comments_or_blank_lines(self):
+        cfg, ok = self.merge("mcp_servers:\n\n# note\n    # indented note\n    github:\n        command: gh\n")
+        self.assertTrue(ok)
+        self.check_siblings(cfg.read_text())
+        self.assertIn("\n    context-mode:\n", cfg.read_text())
+
+    def test_no_children_defaults_to_two_spaces(self):
+        for text in ("mcp_servers:\nother: 1\n", "mcp_servers:\n", "mcp_servers:\n# only a comment\n"):
+            cfg, ok = self.merge(text)
+            self.assertTrue(ok, text)
+            self.assertIn("\n  context-mode:\n    command: context-mode\n", cfg.read_text())
+            self.yaml().safe_load(cfg.read_text())
+
+    def test_sequences_and_tabs_are_refused(self):
+        for text in ("mcp_servers:\n  - name: gh\n", "mcp_servers:\n- name: gh\n",
+                     "mcp_servers:\n\tgithub: {}\n", "mcp_servers:\n  \tgithub: {}\n"):
+            cfg, ok = self.merge(text)
+            self.assertFalse(ok, repr(text))
+            self.assertEqual(cfg.read_text(), text)
+            self.assertFalse(cfg.with_suffix(".yaml.bak").exists())
+
+    def test_quoted_key_is_refused(self):
+        for text in ('"mcp_servers":\n  github: {}\n', "'mcp_servers' :\n  github: {}\n"):
+            cfg, ok = self.merge(text)
+            self.assertFalse(ok, text)
+            self.assertEqual(cfg.read_text(), text)
+
+    def test_crlf_line_endings_are_preserved(self):
+        text = "model: x\r\nmcp_servers:\r\n    github:\r\n        command: gh\r\n"
+        cfg, ok = self.merge(text)
+        self.assertTrue(ok)
+        raw = cfg.read_bytes()
+        self.assertNotIn(b"\n", raw.replace(b"\r\n", b""))
+        self.assertIn(b"\r\n    context-mode:\r\n", raw)
+        self.check_siblings(raw.decode())
+        self.assertFalse(mod.merge_hermes_context_mode_mcp(cfg, False))
+        self.assertEqual(cfg.read_bytes(), raw)
+        cfg2, ok = self.merge("model: x\r\n", "d.yaml")
+        self.assertTrue(ok)
+        self.assertNotIn(b"\n", cfg2.read_bytes().replace(b"\r\n", b""))
+        self.assertEqual(cfg2.with_suffix(".yaml.bak").read_bytes(), b"model: x\r\n")
+
+    def test_nested_missing_parent_directories_are_created(self):
+        cfg = self.home / "a" / "b" / "c" / "config.yaml"
+        self.assertTrue(mod.merge_hermes_context_mode_mcp(cfg, False))
+        self.assertTrue(cfg.is_file())
+
+    def test_codex_config_nested_missing_parent(self):
+        pkg = self.make_pkg()
+        self.write(pkg / "configs" / "codex" / "config.toml", "# s")
+        target = self.home / "x" / "y" / "z" / "config.toml"
+        self.assertTrue(mod.merge_codex_config_toml(target, False))
+        self.assertTrue(target.is_file())
 
 
 if __name__ == "__main__":
