@@ -1303,9 +1303,7 @@ def _parse_core_set_bulk_claim(
     if not features:
         features = _default_inclusion_features()
     if re.search(r"startup[- ]weighted", text, re.IGNORECASE):
-        for feature in ("Quick onboarding", "Zero-infra bootstrap"):
-            if feature not in features:
-                features.append(feature)
+        features.extend(("Quick onboarding", "Zero-infra bootstrap"))
     for slug in slugs:
         for feature in features:
             _assign_support(support, slug, feature, True)
