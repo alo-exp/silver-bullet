@@ -116,10 +116,36 @@ unset SB_TEST_KILLPG_RAISE
 # --- watchdog branch ----------------------------------------------------------
 run_to "$PATH_NO_PY" 5 lbl -- bash -c 'echo wd; exit 9'
 assert_eq "watchdog: exit code" 9 "$RC"; assert_eq "watchdog: output" wd "$OUT"
-# a command that finishes early must not leave the caller (e.g. inside $(...)) waiting for the watchdog's sleep
-start=$SECONDS
-run_to "$PATH_NO_PY" 20 lbl -- true
-assert_eq "watchdog: quick command returns promptly" yes "$([[ $((SECONDS - start)) -lt 5 ]] && echo yes || echo no)"
+# Orphan checks look for a leftover `sleep <unique duration>` process (the watchdog's delay or a
+# grandchild): promptness is judged by what is left running, not by wall-clock timing.
+sleepers() { ps -eo args= | awk -v d="$1" '$NF == d && $0 ~ /sleep/ {n++} END {print n+0}'; }
+wait_gone() { for _ in 1 2 3 4 5 6 7 8 9 10; do [[ "$(sleepers "$1")" == 0 ]] && return 0; "$REAL_SLEEP" 0.1; done; return 1; }
+reap_sleepers() { ps -eo pid=,args= | awk -v d="$1" '$NF == d && $0 ~ /sleep/ {print $1}' | while read -r p; do kill "$p" 2>/dev/null; done; }
+reap_sleepers 21; reap_sleepers 23; reap_sleepers 27
+PATH="$PATH_NO_PY" sb_run_with_timeout 21 lbl -- true >/dev/null 2>&1
+assert_eq "watchdog: finished command leaves no watchdog sleep behind" yes "$(wait_gone 21 && echo yes || echo no)"
+reap_sleepers 21
+# the same with a command that runs for a while (output not captured with $(...): an orphaned
+# sleep would hold that pipe open and stall the test instead of failing it)
+PATH="$PATH_NO_PY" sb_run_with_timeout 23 lbl -- sleep 0.5 >/dev/null 2>&1
+assert_eq "watchdog: slow command leaves no watchdog sleep behind" yes "$(wait_gone 23 && echo yes || echo no)"
+reap_sleepers 23
+# a bare call under a strict (set -euo pipefail) caller must never abort it
+tl_run "$BASH" -c 'set -euo pipefail; source "$1"; for ((i = 0; i < 50; i++)); do PATH="$2" sb_run_with_timeout 30 x -- true; done; echo done50' _ "$TL_REPO_ROOT/scripts/lib/command-timeout.sh" "$PATH_NO_PY"
+assert_eq "watchdog: 50 bare calls under set -euo pipefail" "done50" "$TL_OUT"
+assert_eq "watchdog: strict caller exit status" 0 "$TL_STATUS"
+reap_sleepers 30
+# grandchildren die with the command on timeout (process group), as with the python3/timeout paths
+# (no command substitution here: a surviving grandchild would keep a pipe open and stall the test)
+RC=0; PATH="$PATH_NO_PY" sb_run_with_timeout 0.15 grand -- bash -c 'sleep 27 & wait' >/dev/null 2>&1 || RC=$?
+assert_eq "watchdog: timeout rc with a backgrounded grandchild" 124 "$RC"
+assert_eq "watchdog: grandchild killed with the command" yes "$(wait_gone 27 && echo yes || echo no)"
+reap_sleepers 27
+# a caller that already has job control enabled keeps it
+tl_run "$BASH" -c 'source "$1"; set -m; PATH="$2" sb_run_with_timeout 5 x -- true; case $- in *m*) echo monitor-kept;; *) echo monitor-lost;; esac; set +m; PATH="$2" sb_run_with_timeout 5 x -- true; case $- in *m*) echo monitor-leaked;; *) echo monitor-off;; esac' _ "$TL_REPO_ROOT/scripts/lib/command-timeout.sh" "$PATH_NO_PY"
+assert_contains "watchdog: job control left on when the caller had it" "$TL_OUT" "monitor-kept"
+assert_contains "watchdog: job control not leaked when the caller had it off" "$TL_OUT" "monitor-off"
+reap_sleepers 5
 run_to "$PATH_NO_PY" 0.15 slowwd -- sleep 3
 assert_eq "watchdog: TERM normalised to 124" 124 "$RC"
 assert_contains "watchdog: timeout message" "$ERR" "timed out after 0.15s: slowwd"
