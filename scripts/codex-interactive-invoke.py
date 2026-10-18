@@ -269,8 +269,7 @@ def main() -> int:
     compact_prompt = compact_text(prompt)
     compact_prompt_prefix = compact_prompt[:120]
     args = [cli, "--cd", work_dir, "--no-alt-screen"]
-    if sandbox_mode:
-        args.extend(["--sandbox", sandbox_mode])
+    args.extend(["--sandbox", sandbox_mode])
     if bypass == "1":
         args.append("--dangerously-bypass-approvals-and-sandbox")
     if hook_trust_bypass == "1":
