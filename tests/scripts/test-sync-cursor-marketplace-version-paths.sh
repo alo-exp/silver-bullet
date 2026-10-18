@@ -51,8 +51,9 @@ assert_contains "in-repo update reported" "$TL_OUT" "Updated in-repo marketplace
 assert_contains "remote update reported" "$TL_OUT" "Updated Cursor marketplace manifest: 0.0.1 → 2.0.0"
 assert_contains "completion banner" "$TL_OUT" "The agent-plugins Cursor manifest was updated for v2.0.0."
 assert_eq "in-repo version" "2.0.0" "$(sb_version "$T/$MF")"
-# (git echoes an unknown tag name on stdout, so "no tag" resolves like "tag behind HEAD")
-assert_eq "no tag: ref is main" "main" "$(sb_get "$T/$MF" ref)"
+# No tag exists yet (a real repository): the release commit is HEAD and the ref is the
+# tag the release is about to create, never main.
+assert_eq "no tag: ref is the release tag to be created" "v2.0.0" "$(sb_get "$T/$MF" ref)"
 assert_eq "no tag: sha is HEAD" "$HEAD1" "$(sb_get "$T/$MF" sha)"
 assert_eq "path pinned to the package dir" "plugins/silver-bullet" "$(sb_get "$T/$MF" path)"
 assert_eq "in-repo manifest is world-readable" "644" "$(stat -c %a "$T/$MF" 2>/dev/null || stat -f %Lp "$T/$MF")"
@@ -94,7 +95,7 @@ assert_eq "tag behind HEAD: exits 0" 0 "$TL_STATUS"
 assert_eq "tag behind HEAD: sha is HEAD" "$HEAD2" "$(sb_get "$T/$MF" sha)"
 assert_eq "tag behind HEAD: ref is main" "main" "$(sb_get "$T/$MF" ref)"
 
-# A tag that is not a commit (points at a tree) falls back to the plain rev-parse.
+# A tag that is not a commit (points at a tree) does not count as a release tag.
 new_tree
 git -C "$T" tag v2.0.0 "$(git -C "$T" rev-parse 'HEAD^{tree}')"
 HEAD3="$(git -C "$T" rev-parse HEAD)"
@@ -102,21 +103,7 @@ j_clone_remote "$TL_TMP/work-tag3"
 sync_run env AGENT_PLUGINS_REPO_ROOT="$TL_TMP/work-tag3" bash "$SCRIPT"
 assert_eq "non-commit tag: exits 0" 0 "$TL_STATUS"
 assert_eq "non-commit tag: sha is HEAD" "$HEAD3" "$(sb_get "$T/$MF" sha)"
-assert_eq "non-commit tag: ref is main" "main" "$(sb_get "$T/$MF" ref)"
-
-# A git that stays silent for an unknown tag (nothing echoed on stdout): no tag at
-# all, so the release commit is HEAD and the ref is the release tag to be created.
-new_tree
-REAL_GIT="$(command -v git)"
-tl_stub git 'if [[ "${1:-}" == "-C" && "${3:-}" == "rev-parse" && "${4:-}" == v* ]]; then exit 128; fi
-exec "'"$REAL_GIT"'" "$@"'
-HEAD4="$(git -C "$T" rev-parse HEAD)"
-j_clone_remote "$TL_TMP/work-tag4"
-sync_run env AGENT_PLUGINS_REPO_ROOT="$TL_TMP/work-tag4" bash "$SCRIPT"
-assert_eq "silent unknown tag: exits 0" 0 "$TL_STATUS"
-assert_eq "silent unknown tag: sha is HEAD" "$HEAD4" "$(sb_get "$T/$MF" sha)"
-assert_eq "silent unknown tag: ref is the release tag to be created" "v2.0.0" "$(sb_get "$T/$MF" ref)"
-rm -f "$TL_BIN/git"
+assert_eq "non-commit tag: ref is the release tag to be created" "v2.0.0" "$(sb_get "$T/$MF" ref)"
 
 # --- clone path ----------------------------------------------------------------------------------
 j_make_remote "$TL_TMP/mk2"

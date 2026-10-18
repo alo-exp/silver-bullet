@@ -30,7 +30,7 @@ resolve_release_commit_sha() {
   local version="$1"
   local tag_sha head_sha
   head_sha="$(git -C "$repo_root" rev-parse HEAD)"
-  tag_sha="$(git -C "$repo_root" rev-parse "v${version}^{commit}" 2>/dev/null || git -C "$repo_root" rev-parse "v${version}" 2>/dev/null || true)"
+  tag_sha="$(git -C "$repo_root" rev-parse --verify --quiet "v${version}^{commit}" 2>/dev/null || true)"
   if [[ -n "$tag_sha" && "$head_sha" != "$tag_sha" ]]; then
     printf '%s\n' "$head_sha"
     return 0
@@ -46,7 +46,7 @@ resolve_marketplace_source_ref() {
   local version="$1"
   local tag_sha head_sha
   head_sha="$(git -C "$repo_root" rev-parse HEAD)"
-  tag_sha="$(git -C "$repo_root" rev-parse "v${version}^{commit}" 2>/dev/null || git -C "$repo_root" rev-parse "v${version}" 2>/dev/null || true)"
+  tag_sha="$(git -C "$repo_root" rev-parse --verify --quiet "v${version}^{commit}" 2>/dev/null || true)"
   if [[ -n "$tag_sha" && "$head_sha" != "$tag_sha" ]]; then
     printf 'main\n'
     return 0
