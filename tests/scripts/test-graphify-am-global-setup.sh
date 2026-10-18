@@ -73,7 +73,7 @@ declare -f ga_gitleaks_path >/dev/null 2>&1 && pass "ga_gitleaks_path defined" |
 if ga_gitleaks_path >/dev/null 2>&1; then
   ga_ensure_gitleaks && pass "ga_ensure_gitleaks when installed"
 else
-  if GA_GLOBAL_DRY_RUN=1 ga_ensure_gitleaks 2>&1 | grep -q 'DRY-RUN.*gitleaks'; then
+  if grep -q 'DRY-RUN.*gitleaks' < <(GA_GLOBAL_DRY_RUN=1 ga_ensure_gitleaks 2>&1); then
     pass "ga_ensure_gitleaks dry-run"
   else
     fail "ga_ensure_gitleaks dry-run"
