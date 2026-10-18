@@ -302,8 +302,7 @@ class CitationVerifier:
 
         # STEP 4: Final fallback - no verification method
         if not entry['doi'] and not entry['url']:
-            if 'No DOI provided' not in ' '.join(result['issues']):
-                result['issues'].append("No DOI or URL - cannot verify")
+            result['issues'].append("No DOI or URL - cannot verify")
             result['status'] = 'suspicious'
 
         return result
