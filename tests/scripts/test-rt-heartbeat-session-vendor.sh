@@ -6,6 +6,7 @@
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
+cd "$TL_TMP"
 
 RTLIB="$TL_REPO_ROOT/scripts/lib/recommended-tools"
 export RT_REPO_ROOT="$TL_REPO_ROOT"
@@ -115,12 +116,24 @@ rt_heartbeat_write "$PROJ" cursor
 assert_eq "an old heartbeat is rewritten" "v1" "$(jq -r .schema "$HB_PATH")"
 assert_eq "no lock directory left behind" "1" "$(rc_of test -e "$(dirname "$HB_PATH")/.lock")"
 
-# outside git there is no project id: nothing may be written (least of all at the filesystem root)
+# outside git there is no project id: nothing may be built, locked or written (as root a
+# regression would really create /<session>.json and /.lock, so the writers are replaced
+# by recorders that refuse and log)
 NOGIT_HB="$TL_TMP/nogit-hb"; mkdir -p "$NOGIT_HB"; cp "$PROJ/.silver-bullet.json" "$NOGIT_HB/"
+HB_CALLS="$TL_TMP/hb-calls.log"; : >"$HB_CALLS"
 hb_rc=0
-if (SILVER_BULLET_SESSION_ID=nogit-root-probe RT_PROJECT_ROOT="$NOGIT_HB" rt_heartbeat_write "$NOGIT_HB" cursor >/dev/null 2>&1); then hb_rc=0; else hb_rc=1; fi
+if (
+  SILVER_BULLET_SESSION_ID=nogit-root-probe
+  RT_PROJECT_ROOT="$NOGIT_HB"
+  rt_with_lock() { echo "rt_with_lock $*" >>"$HB_CALLS"; return 1; }
+  rt_atomic_write_json() { echo "rt_atomic_write_json $*" >>"$HB_CALLS"; return 1; }
+  rt_heartbeat_build_json() { echo "rt_heartbeat_build_json" >>"$HB_CALLS"; echo '{}'; }
+  rt_heartbeat_write "$NOGIT_HB" cursor >/dev/null 2>&1
+); then hb_rc=0; else hb_rc=1; fi
 assert_eq "heartbeat write without a project id fails (if-context)" "1" "$hb_rc"
-assert_eq "no heartbeat written at the filesystem root" "0" "$(ls /nogit-root-probe.json /.lock 2>/dev/null | wc -l | tr -d ' ')"
+assert_eq "heartbeat write without a project id builds, locks and writes nothing" "" "$(cat "$HB_CALLS")"
+assert_file_absent "no lock directory in the working directory" "$PWD/.lock"
+assert_eq "heartbeat path printed nothing for the missing project id" "" "$(RT_PROJECT_ROOT="$NOGIT_HB" rt_heartbeat_path "$(RT_PROJECT_ROOT="$NOGIT_HB" rt_project_id 2>/dev/null || true)" wid nogit-root-probe 2>/dev/null || true)"
 
 # ---------------------------------------------------------------- validity
 good="$TL_TMP/good-hb.json"
