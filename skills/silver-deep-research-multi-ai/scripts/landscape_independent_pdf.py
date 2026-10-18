@@ -519,8 +519,6 @@ def _svg_scatter(
     parsed: list[tuple[dict[str, Any], float, float, float, str, str]] = []
     palette = colors or _DEFAULT_QUAD_COLORS
     for i, pt in enumerate(points):
-        if not isinstance(pt, dict):
-            continue
         try:
             x = float(pt.get(x_key) or 0)
             y = float(pt.get(y_key) or 0)
@@ -746,13 +744,7 @@ def _md_inline(text: str) -> str:
 
 
 def _inline_fmt(text: str, bold_re: re.Pattern[str], em_re: re.Pattern[str], code_re: re.Pattern[str]) -> str:
-    out = html.escape(text)
-
-    def _bold(m: re.Match[str]) -> str:
-        return f"<strong>{m.group(1)}</strong>"
-
-    # Operate on escaped text; recreate patterns against escaped form is messy.
-    # Re-parse original then escape segments:
+    # Patterns are unused: formatting is re-parsed from the raw text, then escaped per segment.
     return _inline_fmt_raw(text)
 
 
@@ -773,13 +765,12 @@ def _inline_fmt_raw(text: str, *, autolink: bool = True) -> str:
                 inner = text[i + 1 : j]
                 if autolink:
                     stripped = inner.strip()
-                    url, trail = split_url_trailing_punct(stripped)
+                    url, _trail = split_url_trailing_punct(stripped)
                     lowered = url.lower()
                     if lowered.startswith("http://") or lowered.startswith("https://"):
-                        if stripped in {url, url + trail}:
-                            out.append(f"<code>{_html_ext_anchor(url, html.escape(url))}</code>")
-                            i = j + 1
-                            continue
+                        out.append(f"<code>{_html_ext_anchor(url, html.escape(url))}</code>")
+                        i = j + 1
+                        continue
                 out.append(f"<code>{html.escape(inner)}</code>")
                 i = j + 1
                 continue
@@ -809,11 +800,9 @@ def _inline_fmt_raw(text: str, *, autolink: bool = True) -> str:
             matched = BARE_HTTP_URL_RE.match(text, i)
             if matched:
                 url, _trail = split_url_trailing_punct(matched.group(0))
-                lowered = url.lower()
-                if lowered.startswith("http://") or lowered.startswith("https://"):
-                    out.append(_html_ext_anchor(url, html.escape(url)))
-                    i += len(url)
-                    continue
+                out.append(_html_ext_anchor(url, html.escape(url)))
+                i += len(url)
+                continue
         out.append(html.escape(text[i]))
         i += 1
     return "".join(out)

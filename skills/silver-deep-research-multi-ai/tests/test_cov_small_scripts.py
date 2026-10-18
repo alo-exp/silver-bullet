@@ -200,6 +200,13 @@ class ConsolidateTests(unittest.TestCase):
             "payload": {"claim_candidates": claims},
         }
 
+    def test_claim_without_logical_model_id_has_no_supporting_agent(self) -> None:
+        env = self._env("a", "f1", [{"text": "Solo claim"}])
+        env["logical_model_id"] = None
+        with mock.patch.object(consolidate, "validate_inputs"):
+            result = consolidate.consolidate([env], self.INDEX, resolved_pool=1)
+        self.assertIn("Solo claim", json.dumps(result))
+
     def test_validate_index_entry_missing_ids(self) -> None:
         for entry in ({"logical_model_id": "a"}, {"work_item_id": "w"}):
             with self.assertRaisesRegex(ValueError, "missing work_item_id or logical_model_id"):
