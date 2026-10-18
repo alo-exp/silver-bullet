@@ -97,6 +97,15 @@ count
 assert_eq "distinct ids: composer silver-ship" "1" "$TL_OUT"
 oa -- enterprise_e2e_outcome_count_distinct_workflow_ids "$W"
 assert_eq "distinct ids: state dir defaults when omitted" "1" "$TL_OUT"
+printf '%s\n' '{"composer":"silver-feature"}' '{"composer":"sb:silver-feature"}' >"$W/.planning/orchestrator-composition-log.jsonl"
+count
+assert_eq "distinct ids: silver-feature and sb:silver-feature are one workflow" "1" "$TL_OUT"
+echo '{"composer":"sb:feature"}' >"$W/.planning/orchestrator-composition-log.jsonl"
+count
+assert_eq "distinct ids: sb:feature alone is one workflow" "1" "$TL_OUT"
+printf '%s\n' '{"composer":"sb:feature"}' '{"composer":"silver-feature"}' >"$W/.planning/orchestrator-composition-log.jsonl"
+count
+assert_eq "distinct ids: sb:feature equals silver-feature" "1" "$TL_OUT"
 
 # --- score_multiwf ----------------------------------------------------------
 newcase
@@ -150,6 +159,10 @@ assert_eq "dynamic: run dir set but no composition log anywhere" "fail" "$TL_OUT
 printf '%s\n' '{"operations":[{"op":"insert","catalog_rule_ref":"DR-1","rationale":"why"},{"op":"prune","catalog_rule_ref":"DR-2","rationale":"why"}]}' >"$CL"
 dyn
 assert_eq "dynamic: two valid distinct ops with known rules" "pass" "$TL_OUT"
+printf '%s\n' '{"operations":[{"op":"insert","catalog_rule_ref":"DR-1","rationale":"why"},{"op":"prune"}]}' >"$CL"
+dyn
+assert_eq "dynamic: exactly one of two distinct ops valid -> partial" "partial" "$TL_OUT"
+printf '%s\n' '{"operations":[{"op":"insert","catalog_rule_ref":"DR-1","rationale":"why"},{"op":"prune","catalog_rule_ref":"DR-2","rationale":"why"}]}' >"$CL"
 # fallback: the candidate lister yields nothing although the work-dir log exists
 oa_sh "enterprise_e2e_outcome_composition_log_candidates() { return 0; }
 enterprise_e2e_outcome_score_dynamic '$W' '$S' ''"
@@ -180,7 +193,7 @@ dyn
 assert_eq "dynamic: unreadable catalog counts as bad references" "partial" "$TL_OUT"
 rm "$APO"
 dyn
-assert_eq "dynamic: no catalog file means references are not checked" "pass" "$TL_OUT"
+assert_eq "dynamic: no catalog file -> references cannot be verified (fail closed)" "partial" "$TL_OUT"
 echo '{"dynamic_rules":[{"id":"DR-1"},{"id":"DR-2"}]}' >"$APO"
 echo 'not json' >"$CL"
 dyn
@@ -328,6 +341,12 @@ disp OUT-NEWWF-01 "newwf|WORK STATE LOG"
 disp OUT-UNKNOWN-99 "n/a"
 oa -- enterprise_e2e_outcome_score_criterion OUT-PLAN-01 "$TL_TMP/nowork" "$S"
 assert_eq "dispatch: real scorer with only the required args" "fail" "$TL_OUT"
+
+# review ladder boundary: seven all-Pass rungs are not a complete ladder
+RL7="$TL_TMP/ladder7.md"
+{ echo "review-fix-ladder"; for i in 1 2 3 4 5 6 7; do echo "| $i | rung | Pass |"; done; } >"$RL7"
+oa -- enterprise_e2e_outcome_score_review "$RL7" 3 "" "$W"
+assert_eq "review: seven all-Pass rungs -> fail" "fail" "$TL_OUT"
 
 # --- assess workflow row / session / round ---------------------------------
 REG="$TL_TMP/registry-assess.json"
