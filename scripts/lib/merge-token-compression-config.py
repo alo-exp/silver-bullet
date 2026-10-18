@@ -384,8 +384,6 @@ def merge_codex_config_toml(target: pathlib.Path, dry_run: bool) -> bool:
         if target.stat().st_size > 0:
             handle.write("\n")
         handle.write(snippet)
-        if not snippet.endswith("\n"):
-            handle.write("\n")
     return True
 
 
