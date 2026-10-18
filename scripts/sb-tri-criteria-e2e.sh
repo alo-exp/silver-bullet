@@ -67,36 +67,7 @@ track_dir_for() {
   esac
 }
 
-utc_now() { date -u '+%Y-%m-%dT%H:%M:%SZ'; }
 run_id_new() { date -u '+%Y%m%dT%H%M%SZ'; }
-
-matrix_json_for_track() {
-  local track_id="$1"
-  local tdir
-  tdir="$(track_dir_for "$track_id")" || return 1
-  printf '%s/MATRIX.json' "$tdir"
-}
-
-matrix_row_field() {
-  local matrix_json="$1" row_id="$2" field="$3"
-  python3 - "$matrix_json" "$row_id" "$field" <<'PY'
-import json, sys
-path, row_id, field = sys.argv[1:4]
-with open(path, encoding="utf-8") as f:
-    doc = json.load(f)
-for row in doc.get("rows", []):
-    if row.get("id") == row_id:
-        val = row.get(field)
-        if val is None:
-            sys.exit(2)
-        if isinstance(val, (list, dict)):
-            print(json.dumps(val))
-        else:
-            print(val)
-        sys.exit(0)
-sys.exit(1)
-PY
-}
 
 default_work_dir() {
   python3 - "$UMBRELLA_MATRIX" <<'PY'
@@ -233,7 +204,7 @@ cmd_preflight() {
   local tid tdir
   for tid in TC-01 TC-02 TC-03; do
     [[ -n "$track_filter" && "$track_filter" != "$tid" ]] && continue
-    tdir="$(track_dir_for "$tid")" || continue
+    tdir="$(track_dir_for "$tid")"
     for f in RUNBOOK.md CRITERIA.md MATRIX.json; do
       if [[ -f "${tdir}/${f}" ]]; then
         echo "OK: ${tid}/${f}"
@@ -433,7 +404,6 @@ PY
   [[ "$detail" == pass ]] || verdict=FAIL
 
   for outcome in $(row_advisory_outcomes "$matrix_json" "$row_id" 2>/dev/null || true); do
-    [[ -z "$outcome" ]] && continue
     detail="$(enterprise_e2e_outcome_score_criterion "$outcome" "$work_dir" "$state_dir" "$log_path" "$row_id" "$ledger" "$evidence_path" 2>/dev/null || true)"
     echo "  $outcome: ${detail:-n/a} (advisory)"
   done

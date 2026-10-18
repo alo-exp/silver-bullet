@@ -373,10 +373,6 @@ agent_mode_preflight_flags() {
       agent_mode_fail_conflict "auto-policy-on-ni"
       return 2
     fi
-    if [[ "$SB_AM_ALLOW_FALLBACK" -eq 1 ]]; then
-      agent_mode_fail_conflict "fallback-not-pinned"
-      return 2
-    fi
   fi
 
   agent_mode_unset_consumed_env
