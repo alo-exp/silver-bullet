@@ -29,7 +29,9 @@ class TestSearchOrchestrator(unittest.TestCase):
 
     def test_skills_sh_mock_fixture(self):
         with tempfile.TemporaryDirectory() as d:
-            mock = {"skills_sh": [{"name": "deep-research", "url": "https://skills.sh/x"}]}
+            # every portal with a search_url must be mocked, or the run would hit the network
+            mock = {"skills_sh": [{"name": "deep-research", "url": "https://skills.sh/x"}],
+                    "github": []}
             mock_path = os.path.join(d, 'mock.json')
             with open(mock_path, 'w') as f:
                 json.dump(mock, f)
@@ -126,7 +128,8 @@ class TestGithubSkillMdRetrieval(unittest.TestCase):
                 'fullName': 'Weizhena/Deep-Research-skills',
                 'url': 'https://github.com/Weizhena/Deep-Research-skills',
             }]
-            mock = {'github': hits}
+            # skills_sh also has a search_url: mock it so the run stays offline
+            mock = {'github': hits, 'skills_sh': []}
             branches_path = os.path.join(d, 'branches.json')
             with open(branches_path, 'w', encoding='utf-8') as f:
                 json.dump(self._load_branches(), f)

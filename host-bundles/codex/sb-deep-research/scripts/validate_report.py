@@ -228,13 +228,12 @@ class ReportValidator:
 
         # Check for consecutive citation numbers
         citation_nums = sorted([int(c) for c in unique_citations])
-        if citation_nums:
-            max_citation = max(citation_nums)
-            expected = set(range(1, max_citation + 1))
-            missing = expected - set(citation_nums)
+        max_citation = max(citation_nums)
+        expected = set(range(1, max_citation + 1))
+        missing = expected - set(citation_nums)
 
-            if missing:
-                self.warnings.append(f"Non-consecutive citation numbers, missing: {sorted(missing)}")
+        if missing:
+            self.warnings.append(f"Non-consecutive citation numbers, missing: {sorted(missing)}")
 
         return True
 
@@ -276,16 +275,16 @@ class ReportValidator:
 
         # Check citation number continuity (no gaps)
         bib_nums = sorted([int(n) for n in bib_entries])
-        if bib_nums:
-            expected = list(range(1, bib_nums[-1] + 1))
-            actual = bib_nums
-            missing = [n for n in expected if n not in actual]
-            if missing:
-                self.errors.append(f"Bibliography has gaps in numbering: missing {missing}")
-                return False
+        expected = list(range(1, bib_nums[-1] + 1))
+        actual = bib_nums
+        missing = [n for n in expected if n not in actual]
+        if missing:
+            self.errors.append(f"Bibliography has gaps in numbering: missing {missing}")
+            return False
 
-        # Find citations in text
-        text_citations = set(re.findall(r'\[(\d+)\]', self.content))
+        # Find citations in the body text (the bibliography's own entries are not citations)
+        body_text = self.content[:match.start()] + self.content[match.end():]
+        text_citations = set(re.findall(r'\[(\d+)\]', body_text))
         bib_citations = set(bib_entries)
 
         # Check all citations have bibliography entries
