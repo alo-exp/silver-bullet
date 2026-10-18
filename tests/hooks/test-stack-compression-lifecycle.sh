@@ -33,7 +33,7 @@ reset; tg2_run "$HOOK" '{"hook_event_name":"SessionStart"}'
 assert_unmarked "payload without a source is ignored"
 reset; tg2_run "$HOOK" ""
 assert_unmarked "empty stdin is ignored"
-reset; TG2_STDIN_DIR=1 tg2_run "$HOOK" ""
+reset; TG2_STDIN_UNREADABLE=1 tg2_run "$HOOK" ""
 assert_unmarked "unreadable stdin is ignored"
 reset; tg2_run "$HOOK" "not json"
 assert_unmarked "unparsable stdin is ignored"

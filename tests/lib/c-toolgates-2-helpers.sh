@@ -9,7 +9,10 @@
 #   tg2_edit_input / tg2_bash_input / tg2_mcp_input   build hook payloads
 #
 # tg2_run honours TG2_CWD (working dir), TG2_PROJECT_ROOT (SILVER_BULLET_PROJECT_ROOT),
-# TG2_PATH (PATH override) and TG2_REPO (alternate hook tree, e.g. a farm).
+# TG2_PATH (PATH override), TG2_REPO (alternate hook tree, e.g. a farm) and
+# TG2_STDIN_UNREADABLE=1 (stdin opened write-only, so the hook's read fails with EBADF).
+# A literally closed stdin (<&-) is not usable: even a one-line bash script that runs
+# `cat` hangs when fd 0 is closed (bash reuses fd 0 for the script file).
 
 TG2_REPO="$TL_REPO_ROOT"
 
@@ -49,18 +52,24 @@ tg2_run() {
   local out="$TL_TMP/.tg2.out" err="$TL_TMP/.tg2.err"
   TL_STATUS=0
   if [[ -z "${TG2_PROJECT_ROOT-$TG2_PROJ}" ]]; then rm -f "$SB_RUNTIME_STATE_DIR/project-root"; fi
+  # Fault-injection stubs (tg2_fault_stub) are only on PATH for runs that pass a fault
+  # trigger variable (*_FAIL=..., PY_NO_C=...), so ordinary runs pay no wrapper cost.
+  local run_path="${TG2_PATH:-$TL_BIN:$TG2_BASE_PATH}" arg
+  for arg in "$@"; do
+    case "$arg" in *_FAIL=*|PY_NO_C=*) [[ -z "${TG2_PATH:-}" ]] && run_path="$TL_TMP/faultbin:$run_path" ;; esac
+  done
   (
     cd "${TG2_CWD:-$TG2_PROJ}"
-    if [[ -n "${TG2_STDIN_DIR:-}" ]]; then
+    if [[ -n "${TG2_STDIN_UNREADABLE:-}" ]]; then
       env \
-        PATH="${TG2_PATH:-$TL_BIN:$TG2_BASE_PATH}" \
+        PATH="$run_path" \
         SILVER_BULLET_PROJECT_ROOT="${TG2_PROJECT_ROOT-$TG2_PROJ}" \
         SILVER_BULLET_HOOK_AUDIT_LOG="$TG2_AUDIT" \
         SILVER_BULLET_RUNTIME="${SILVER_BULLET_RUNTIME:-claude}" \
-        "$@" bash "${TG2_REPO}/$hook" <"$TL_TMP"
+        "$@" bash "${TG2_REPO}/$hook" 0>/dev/null
     else
       printf '%s' "$input" | env \
-        PATH="${TG2_PATH:-$TL_BIN:$TG2_BASE_PATH}" \
+        PATH="$run_path" \
         SILVER_BULLET_PROJECT_ROOT="${TG2_PROJECT_ROOT-$TG2_PROJ}" \
         SILVER_BULLET_HOOK_AUDIT_LOG="$TG2_AUDIT" \
         SILVER_BULLET_RUNTIME="${SILVER_BULLET_RUNTIME:-claude}" \
@@ -123,12 +132,22 @@ tg2_farm_stub() {
   printf '%s\n' "$2" >"$TG2_FARM/hooks/lib/$1"
 }
 
-# tg2_install_jq_stub: jq wrapper that fails when JQ_FAIL is a substring of its argument
-# list, so one jq call inside a hook can be made to fail while the others behave normally.
+# tg2_fault_stub <name> <body>: fault-injection wrapper placed on PATH only for runs that pass
+# a trigger variable (see tg2_run). Bodies call `exec "$TG2_REAL_<NAME>" "$@"` to fall through.
+tg2_fault_stub() {
+  mkdir -p "$TL_TMP/faultbin"
+  printf '#!/usr/bin/env bash\n%s\n' "$2" >"$TL_TMP/faultbin/$1"
+  chmod +x "$TL_TMP/faultbin/$1"
+}
+
+# tg2_install_jq_stub: jq wrapper that fails when JQ_FAIL is a substring of the whole jq
+# argument list (filter text and file names). The match is coupled to the hook's jq filter
+# text: if a hook's filter is reworded the JQ_FAIL case stops failing jq and the test that
+# asserts the fallback behaviour fails loudly, so drift cannot go unnoticed.
 tg2_install_jq_stub() {
   local real
   real="$(command -v jq)"
-  tl_stub jq "if [[ -n \"\${JQ_FAIL:-}\" && \"\$*\" == *\"\$JQ_FAIL\"* ]]; then exit 1; fi
+  tg2_fault_stub jq "if [[ -n \"\${JQ_FAIL:-}\" && \"\$*\" == *\"\$JQ_FAIL\"* ]]; then exit 1; fi
 exec $real \"\$@\""
 }
 
@@ -136,6 +155,15 @@ exec $real \"\$@\""
 # Shared prologue assertions for the deny-style PreToolUse gates. The caller defines
 # tg2_scenario_block (arrange state so <deny-input> is denied with <reason>) and
 # tg2_scenario_off <mode> (disable the gate: optout|suspended).
+#
+# Per-gate differences are explicit parameters, never silently assumed:
+#   trivial=yes  the gate honours the trivial marker (rtk, token-compression); trivial=no asserts
+#                the marker does NOT bypass it (stack coordinator never sources trivial-bypass.sh).
+#   bridge=yes   SB_KAY_HOOK_BRIDGE_INVOKED makes a PreToolUse deny exit 2 with the reason on
+#                stderr (rtk, coordinator); bridge=no asserts the deny stays exit 0.
+#   TG2_GARBAGE_DENIES=yes  for gates that are armed by external state rather than by the
+#                payload (the coordinator's dirty mutex blocks every call, even an unparsable
+#                one - fail-closed); default expects unparsable stdin to be allowed (fail-open).
 tg2_gate_suite() {
   local hook="$1" name="$2" input="$3" reason="$4" target="$5" trivial="$6" bridge="$7"
   local post_input saved
@@ -169,7 +197,7 @@ tg2_gate_suite() {
 
   tg2_run "$hook" ""
   assert_silent_ok "$name: empty stdin allows"
-  TG2_STDIN_DIR=1 tg2_run "$hook" ""
+  TG2_STDIN_UNREADABLE=1 tg2_run "$hook" ""
   assert_silent_ok "$name: unreadable stdin allows"
   tg2_run "$hook" "not json at all"
   if [[ "${TG2_GARBAGE_DENIES:-}" == yes ]]; then
@@ -225,6 +253,13 @@ tg2_gate_suite() {
     : >"$TL_TMP/trivial-target"
     tg2_run "$hook" "$input"
     assert_denied "$name: symlinked trivial marker is ignored" "$reason"
+    rm -f "$SB_RUNTIME_STATE_DIR/trivial"
+  fi
+
+  if [[ "$trivial" != yes ]]; then
+    printf 'x' >"$SB_RUNTIME_STATE_DIR/trivial"
+    tg2_run "$hook" "$input"
+    assert_denied "$name: a trivial marker does not bypass this gate" "$reason"
     rm -f "$SB_RUNTIME_STATE_DIR/trivial"
   fi
 
