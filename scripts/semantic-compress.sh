@@ -66,7 +66,8 @@ if [[ "${#exclude_pattern}" -gt 0 ]]; then
 else
   exclude_pattern="${_SB_CREDENTIAL_EXCLUDE}"
 fi
-export SB_CHUNK_BYTES; SB_CHUNK_BYTES=$(jq -r '.semantic_compression.chunk_size_bytes // 1024' "$CONFIG")
+export SB_CHUNK_BYTES
+SB_CHUNK_BYTES=$(jq -r '.semantic_compression.chunk_size_bytes // 1024' "$CONFIG")
 
 budget_bytes=$(( budget_kb * 1024 ))
 cache_dir="$REPO_ROOT/.planning/.context-cache"
@@ -77,7 +78,8 @@ SCRIPTS_DIR="${SCRIPTS_DIR_OVERRIDE:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pw
 # Portable md5
 md5_str() {
   local input="$1"
-  local tmp; tmp=$(mktemp)
+  local tmp
+  tmp=$(mktemp)
   printf '%s' "$input" > "$tmp"
   if command -v md5 >/dev/null 2>&1; then
     md5 -q "$tmp" 2>/dev/null || md5 "$tmp" 2>/dev/null | awk '{print $NF}'
@@ -186,11 +188,14 @@ used_bytes=0
 add_block() {
   local rel="$1" content="$2" label="${3:-}"
   local block
-  block=$(printf $'### %s%s\n```\n%s\n```\n' "$rel" "${label:+ ($label)}" "$content")
-  local block_bytes=${#block}
+  local fence='```'
+  block=$(printf '### %s%s\n%s\n%s\n%s\n' "$rel" "${label:+ ($label)}" "$fence" "$content" "$fence")
+  local block_bytes=$(( ${#block} + 1 ))   # +1: the newline that separates blocks
   if (( used_bytes + block_bytes <= budget_bytes )); then
-    output+="$block"
-    (( used_bytes += block_bytes )) || true
+    # $(...) strips the trailing newline of the block; restore it so the closing
+    # fence does not run into the next block's heading.
+    output+="$block"$'\n'
+    (( used_bytes += block_bytes ))
     return 0
   fi
   return 1
@@ -214,9 +219,9 @@ done
 score_and_add() {
   local query="$1"; shift
   local files=("$@")
-  [[ ${#files[@]} -eq 0 ]] && return
 
-  local TMP_COUNTS; TMP_COUNTS=$(mktemp)
+  local TMP_COUNTS
+  TMP_COUNTS=$(mktemp)
   # Use double-quoted trap string so $TMP_COUNTS is expanded NOW (path embedded
   # as a literal). This ensures the correct path is available even in the EXIT
   # trap context, where function-local variables are no longer in scope.
@@ -235,19 +240,24 @@ score_and_add() {
     chunk_text=$(printf '%s' "$scored_line" | cut -f5-)
     chunk_text="${chunk_text//\\n/$'\n'}"  # unescape \n sequences → real newlines
     local rel="${file#"$REPO_ROOT"/}"
-    local key; key=$(printf '%s' "$file" | tr '/: ' '___')
+    local key
+    key=$(printf '%s' "$file" | tr '/: ' '___')
     local cnt=0
-    cnt=$(grep -Fm1 "^${key}=" "$TMP_COUNTS" 2>/dev/null | cut -d= -f2 || echo 0)
+    # Exact key match (the line is "<key>=<count>"; the key may itself contain "=" or
+    # backslashes, so read it via ENVIRON, which awk -v would escape-process).
+    cnt=$(SB_KEY="$key" awk 'BEGIN { k = ENVIRON["SB_KEY"] }
+      match($0, /=[0-9]+$/) && substr($0, 1, RSTART - 1) == k { print substr($0, RSTART + 1); exit }' "$TMP_COUNTS")
+    cnt="${cnt:-0}"
     if [[ $cnt -ge $top_n ]]; then continue; fi
     if add_block "$rel" "$chunk_text" "lines ${start}-${end}"; then
-      if grep -Fv "^${key}=" "$TMP_COUNTS" > "${TMP_COUNTS}.tmp" 2>/dev/null; then
-        mv "${TMP_COUNTS}.tmp" "$TMP_COUNTS"
-      fi
+      SB_KEY="$key" awk 'BEGIN { k = ENVIRON["SB_KEY"] }
+        !(match($0, /=[0-9]+$/) && substr($0, 1, RSTART - 1) == k)' "$TMP_COUNTS" > "${TMP_COUNTS}.tmp"
+      mv -f "${TMP_COUNTS}.tmp" "$TMP_COUNTS"
       printf '%s=%s\n' "$key" "$(( cnt + 1 ))" >> "$TMP_COUNTS"
       if [[ "$debug" == "true" ]]; then printf '  chunk: %s lines %s-%s score=%s\n' "$rel" "$start" "$end" "$score" >> "$debug_log"; fi
     fi
     true
-  done < <(printf '%s\n' "${files[@]}" | "$SCRIPTS_DIR/tfidf-rank.sh" "${query}")
+  done < <(printf '%s\n' "${files[@]}" | bash "$SCRIPTS_DIR/tfidf-rank.sh" "${query}")
   rm -f -- "$TMP_COUNTS"  # explicit cleanup for bash 3.2 where RETURN trap is ignored
   trap - EXIT           # disarm EXIT trap so a subsequent call can install its own
 }

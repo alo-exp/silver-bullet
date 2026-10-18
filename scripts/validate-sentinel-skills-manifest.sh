@@ -17,15 +17,18 @@ release_tag=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --manifest)
-      manifest_file="${2:-}"
+      [[ $# -ge 2 ]] || { printf 'validate-sentinel-skills-manifest: %s requires a value\n' "$1" >&2; exit 2; }
+      manifest_file="$2"
       shift 2
       ;;
     --expected-count)
-      expected_count="${2:-}"
+      [[ $# -ge 2 ]] || { printf 'validate-sentinel-skills-manifest: %s requires a value\n' "$1" >&2; exit 2; }
+      expected_count="$2"
       shift 2
       ;;
     --release-tag)
-      release_tag="${2:-}"
+      [[ $# -ge 2 ]] || { printf 'validate-sentinel-skills-manifest: %s requires a value\n' "$1" >&2; exit 2; }
+      release_tag="$2"
       shift 2
       ;;
     -h|--help)
