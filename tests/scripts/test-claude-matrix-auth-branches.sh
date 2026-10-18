@@ -106,7 +106,7 @@ export CLAUDE_BIN="$TL_TMP/claude-oauth"
 assert_eq "export?: ok" 0 "$(rc claude_matrix_should_export_settings_env)"
 assert_eq "export?: SB skip flag" 1 "$(SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=1 rc claude_matrix_should_export_settings_env)"
 assert_eq "export?: print skip flag" 1 "$(CLAUDE_PRINT_SKIP_SETTINGS_EXPORT=1 rc claude_matrix_should_export_settings_env)"
-assert_eq "export?: settings missing" 1 "$(CLAUDE_SETTINGS_FILE= HOME="$TL_TMP/nohome" rc claude_matrix_should_export_settings_env)"
+assert_eq "export?: settings missing" 1 "$(CLAUDE_SETTINGS_FILE='' HOME="$TL_TMP/nohome" rc claude_matrix_should_export_settings_env)"
 command() { if [[ "${1:-}" == -v && "${2:-}" == jq ]]; then return 1; fi; builtin command "$@"; }
 assert_eq "export?: jq missing" 1 "$(rc claude_matrix_should_export_settings_env)"
 unset -f command
