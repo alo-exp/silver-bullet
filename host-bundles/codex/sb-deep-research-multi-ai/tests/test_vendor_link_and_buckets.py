@@ -2,13 +2,29 @@
 
 from __future__ import annotations
 
+import os
 import re
 import unittest
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "scripts"
 TEMPLATE = ROOT / "assets" / "landscape-preview.template.html"
+
+
+_OFFLINE_ENV = None
+
+
+def setUpModule() -> None:
+    # Hermetic by default: no vendor-URL health checks over HTTP.
+    global _OFFLINE_ENV
+    _OFFLINE_ENV = mock.patch.dict(os.environ, {"SB_SKIP_VENDOR_URL_HEALTH": "1"})
+    _OFFLINE_ENV.start()
+
+
+def tearDownModule() -> None:
+    _OFFLINE_ENV.stop()
 
 
 class VendorLinkCollisionTests(unittest.TestCase):
