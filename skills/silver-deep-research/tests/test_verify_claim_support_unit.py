@@ -216,7 +216,7 @@ class TestHugeNumbers(unittest.TestCase):
         self.assertEqual(vcs.parse_bibliography_number_to_url(md), {2: 'http://b.com'})
 
     def test_huge_inline_citation_ignored(self):
-        md = 'Claim here [' + '1' * 5000 + '] and [3].'
+        md = 'Claim here [3] and [' + '1' * 5000 + '].'
         self.assertEqual(vcs.infer_citation_numbers_from_context(md, 'Claim here'), [3])
         md = 'Claim here.\n\n[' + '9' * 5000 + ', 2]'
         self.assertEqual(vcs.infer_citation_numbers_from_context(md, 'Claim here.'), [])
