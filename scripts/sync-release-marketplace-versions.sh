@@ -29,6 +29,8 @@ cursor_sync_script="${SB_SYNC_CURSOR_MARKETPLACE_VERSION_SCRIPT:-${SCRIPT_DIR}/s
 
 batch_root="${AGENT_PLUGINS_REPO_ROOT:-}"
 batch_tmp=""
+# Remove the temporary clone on every exit, including a failing host sync.
+trap '[[ -n "$batch_tmp" ]] && rm -rf -- "$batch_tmp"' EXIT
 if [[ -z "$batch_root" ]]; then
   batch_tmp=$(mktemp -d "${TMPDIR:-/tmp}/sb-agent-plugins-release.XXXXXX")
   batch_root="$batch_tmp"
@@ -48,7 +50,6 @@ if [[ -n "$batch_root" ]]; then
   bash "$cursor_sync_script" "$release_version"
   unset AGENT_PLUGINS_SKIP_PUSH
   agent_plugins_commit_push_if_dirty "$batch_root" "Sync silver-bullet marketplace manifests to $release_version"
-  [[ -n "$batch_tmp" ]] && rm -rf -- "$batch_tmp"
 else
   bash "$claude_sync_script" "$release_version"
   bash "$codex_sync_script" "$release_version"

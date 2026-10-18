@@ -123,6 +123,16 @@ assert_contains "hosts ran inside the temporary clone" "$(<"$LOG")" "claude vers
 assert_eq "clone-based batch pushed" "Sync silver-bullet marketplace manifests to 2.0.0" "$(git -C "$J_REMOTE" log -1 --format=%s main)"
 assert_eq "temporary clone removed" "" "$(ls -A "$TL_TMP/tmpdir")"
 
+# A host sync failing inside the temporary clone must not leak the clone.
+new_tree
+j_make_remote "$TL_TMP/mk5"
+before="$(git -C "$J_REMOTE" rev-parse main)"
+run_release env SB_SKIP_PRE_RELEASE_GATE=1 AGENT_PLUGINS_REPO_URL="$J_REMOTE" STUB_FAIL=codex bash "$SCRIPT" 2.0.0
+assert_eq "failing host in a temporary clone fails the sync" 1 "$TL_STATUS"
+assert_contains "the failing host ran inside the clone" "$(<"$LOG")" "codex version=2.0.0 root=$TL_TMP/tmpdir/sb-agent-plugins-release."
+assert_eq "temporary clone removed after a failing host sync" "" "$(ls -A "$TL_TMP/tmpdir")"
+assert_eq "nothing pushed after the failing host sync" "$before" "$(git -C "$J_REMOTE" rev-parse main)"
+
 # --- clone failure: in-repo manifests only ------------------------------------------------------------
 new_tree
 run_release env SB_SKIP_PRE_RELEASE_GATE=1 AGENT_PLUGINS_REPO_URL="$TL_TMP/does-not-exist" bash "$SCRIPT" v2.0.0
