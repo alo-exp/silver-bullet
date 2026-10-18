@@ -121,6 +121,8 @@ enterprise_e2e_outcome_score_criterion() {
   local var="SCORE_${1//-/_}"
   if [[ -n "${!var+x}" ]]; then printf '%s' "${!var}"; else printf 'pass|stub ok'; fi
 }
+enterprise_e2e_outcome_composition_log_path() { printf '%s/.planning/orchestrator-composition-log.jsonl' "$1"; }
+enterprise_e2e_outcome_count_distinct_workflow_ids() { printf '%s' "${STUB_WF_COUNT-3}"; }
 EOS
   : >"$d/hooks/lib/orchestrator-directive.sh"; : >"$d/hooks/lib/orchestrator-scheduler.sh"; : >"$d/hooks/lib/orchestrator-state.sh"
 }
