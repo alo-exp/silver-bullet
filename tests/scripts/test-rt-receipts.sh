@@ -81,6 +81,11 @@ assert_eq "receipt read back" "$RID1" "$(rt_receipt_read "$(rt_reload_receipt_pa
 assert_eq "receipt read: missing" "1" "$(rc_of rt_receipt_read "$TL_TMP/none")"
 assert_eq "active receipt found" "$RID1" "$(rt_receipt_find_active cursor "$PID" "$WID" | jq -r .receipt_id)"
 
+# persisting failure must not be reported as success (callers use the status)
+BLOCK_STATE="$TL_TMP/blocked-state"; mkdir -p "$BLOCK_STATE"; printf 'file\n' >"$BLOCK_STATE/recommended-tools"
+create_rc=0
+if (SB_RUNTIME_STATE_DIR="$BLOCK_STATE"; rt_receipt_create project init '[]' true >/dev/null 2>&1); then create_rc=0; else create_rc=1; fi
+assert_eq "create: unwritable receipt store fails (if-context)" "1" "$create_rc"
 # a newer change set supersedes the old one; the same change set does not
 export RT_CHANGE_SET_ID=cs-2
 R2="$(rt_receipt_create project init '[]' true)"

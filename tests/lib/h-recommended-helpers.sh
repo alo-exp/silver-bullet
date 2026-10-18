@@ -35,6 +35,11 @@ if hook:
 sys.exit(int(os.environ.get("HR_PY_RC_$py".replace("-", "_"), "0")))
 EOF
   done
+  cat >"$HR_STAGE/scripts/lib/merge-token-compression-config.py" <<'EOF'
+import os, sys
+open(os.environ["HR_LOG"], "a").write("merge-token-compression %s\n" % " ".join(sys.argv[1:]))
+sys.exit(int(os.environ.get("HR_PY_RC_merge_token", "0")))
+EOF
   local sh
   for sh in optimize-rtk-context-mode install-leanctx-sb; do
     cat >"$HR_STAGE/scripts/$sh.sh" <<EOF
