@@ -9,6 +9,13 @@ import { FakeElement, makeBrowser, runScript } from "./helpers/fake-dom.mjs";
 const here = path.dirname(fileURLToPath(import.meta.url));
 const SCRIPT = path.resolve(here, "../../site/help/concepts/certification-status.js");
 
+// Errors swallowed by the script's own .catch() would otherwise be invisible: record them.
+const swallowed = [];
+const origCatch = Promise.prototype.catch;
+Promise.prototype.catch = function (fn) {
+  return origCatch.call(this, (err) => { swallowed.push(err); return fn(err); });
+};
+
 const tick = () => new Promise((resolve) => setImmediate(resolve));
 
 async function load({ response, rejects, withMeta = true, withNote = true, withBody = true } = {}) {
@@ -29,10 +36,11 @@ async function load({ response, rejects, withMeta = true, withNote = true, withB
     if (rejects) return Promise.reject(new Error("offline"));
     return Promise.resolve(response);
   };
+  swallowed.length = 0;
   runScript(SCRIPT, env.sandbox);
   await tick();
   await tick();
-  return { tbody, meta, note, calls };
+  return { tbody, meta, note, calls, errors: swallowed.slice() };
 }
 
 const ok = (data) => ({ ok: true, json: () => Promise.resolve(data) });
@@ -73,6 +81,11 @@ test("renders a row per host with proof class, ledger, gates and gaps", async ()
   assert.equal(note.textContent, "public_autonomous_enterprise_claim_ready: false (1/3 hosts live_e2e_proven)");
 });
 
+test("a successful render raises no swallowed error", async () => {
+  const r = await load({ response: ok({ hosts: [{ host: "claude", proof_level: "shipped" }], conservative_summary: {} }) });
+  assert.deepEqual(r.errors, []);
+});
+
 test("missing metadata renders question marks and a zero host count", async () => {
   const { meta, note } = await load({ response: ok({ hosts: [], conservative_summary: { public_autonomous_enterprise_claim_ready: true } }) });
   assert.equal(meta.textContent, "Generated: ? @ ? — mirrors certification-status.json");
@@ -80,9 +93,11 @@ test("missing metadata renders question marks and a zero host count", async () =
 });
 
 test("without a conservative summary the claim note keeps its static text", async () => {
-  const { note, tbody } = await load({ response: ok({ hosts: [{ host: "claude", proof_level: "shipped" }] }) });
+  const { note, tbody, meta, errors } = await load({ response: ok({ hosts: [{ host: "claude", proof_level: "shipped" }] }) });
   assert.equal(note.textContent, "STATIC");
   assert.match(tbody.innerHTML, /data-host="claude"/);
+  assert.equal(meta.textContent, "Generated: ? @ ? \u2014 mirrors certification-status.json");
+  assert.deepEqual(errors, [], "skipping the note is deliberate, not an error swallowed by the fallback");
 });
 
 test("optional elements may be absent from the page", async () => {
@@ -105,6 +120,16 @@ test("data that is not an object with a hosts array is ignored", async () => {
     assert.equal(tbody.innerHTML, "STATIC");
     assert.equal(meta.textContent, "STATIC");
   }
+});
+
+test("a non-OK response is rejected even when it carries a usable JSON body", async () => {
+  const body = { hosts: [{ host: "claude", proof_level: "shipped" }], conservative_summary: {} };
+  const r = await load({ response: { ok: false, status: 503, json: () => Promise.resolve(body) } });
+  assert.equal(r.tbody.innerHTML, "STATIC");
+  assert.equal(r.meta.textContent, "STATIC");
+  assert.equal(r.note.textContent, "STATIC");
+  assert.equal(r.errors.length, 1);
+  assert.equal(r.errors[0].message, "503");
 });
 
 test("HTTP errors, network failures and bad JSON keep the static fallback", async () => {

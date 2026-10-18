@@ -173,3 +173,21 @@ test("lucide.createIcons is invoked on load only when callable", () => {
   assert.doesNotThrow(() => load({ lucide: { createIcons: 1 } }));
   assert.doesNotThrow(() => load());
 });
+
+test("sidebar: a section is current when its top is at or above scroll + offset + 2px", () => {
+  const l1 = linkTo("#one"), l2 = linkTo("#two");
+  const mk = (twoTop) => load({
+    elements: { one: new FakeElement({ id: "one", offsetTop: 0 }), two: new FakeElement({ id: "two", offsetTop: twoTop }) },
+    selectors: { [SIDEBAR_SEL]: [l1, l2] },
+  });
+  // pos = 0 + (64 + 32) + 2 = 98
+  let env = mk(98);
+  assert.equal(l2.classList.contains("active"), true, "offsetTop == pos counts");
+  env = mk(99);
+  assert.equal(l2.classList.contains("active"), false, "one pixel below pos does not");
+  assert.equal(l1.classList.contains("active"), true);
+  // scrolling shifts pos one-for-one
+  env.window.pageYOffset = 1;
+  env.window.listeners.scroll[0].fn();
+  assert.equal(l2.classList.contains("active"), true);
+});

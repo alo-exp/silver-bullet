@@ -13,19 +13,32 @@ const FILE = path.resolve(here, "../../site/help/search.js");
 const IDX = JSON.parse(fs.readFileSync(FILE, "utf8").match(/var IDX = (\[.*?\]);\s*\n/s)[1]);
 const ELL = "…";
 
-function loadNav({ withBox = true, withInput = true } = {}) {
+// Replace the generated index with controlled entries. The replacement keeps the source's
+// length and line count so coverage offsets still match the real file.
+function withIdx(entries) {
+  return (code) => {
+    const m = code.match(/var IDX = \[.*?\];\s*\n/s);
+    const base = `var IDX = ${JSON.stringify(entries)};`;
+    const newlines = (m[0].match(/\n/g) || []).length;
+    const pad = m[0].length - base.length - newlines;
+    assert.ok(pad >= 0, "synthetic index must fit in the original literal");
+    return code.replace(m[0], base + " ".repeat(pad) + "\n".repeat(newlines));
+  };
+}
+
+function loadNav({ withBox = true, withInput = true, idx = null } = {}) {
   const input = new FakeElement({ id: "nav-search-input" });
   const box = new FakeElement({ id: "nav-search-results" });
   const elements = {};
   if (withInput) elements["nav-search-input"] = input;
   if (withBox) elements["nav-search-results"] = box;
   const env = makeBrowser({ elements });
-  runScript(FILE, env.sandbox);
+  runScript(FILE, env.sandbox, idx && withIdx(idx));
   fireDomReady(env.document);
   return { ...env, input, box };
 }
 
-function loadHelp({ missing = null } = {}) {
+function loadHelp({ missing = null, idx = null } = {}) {
   const input = new FakeElement({ id: "search-input" });
   const sec = new FakeElement({ id: "search-results-section" });
   const list = new FakeElement({ id: "search-results-list" });
@@ -33,7 +46,7 @@ function loadHelp({ missing = null } = {}) {
   const all = { "search-input": input, "search-results-section": sec, "search-results-list": list, "main-help-content": main };
   if (missing) delete all[missing];
   const env = makeBrowser({ elements: all });
-  runScript(FILE, env.sandbox);
+  runScript(FILE, env.sandbox, idx && withIdx(idx));
   fireDomReady(env.document);
   return { ...env, input, sec, list, main };
 }
@@ -283,4 +296,111 @@ test("Help-home search is inert when any of its elements is missing", () => {
     const ui = loadHelp({ missing: id });
     assert.equal(ui.input.listeners.input, undefined, `no handler without ${id}`);
   }
+});
+
+// ---------------------------------------------------------------------------
+// Pinned, synthetic index: exact scoring, boundaries and excerpt windows.
+// ---------------------------------------------------------------------------
+const E = (page, title, text, anchor = "a") => ({ page, title, text, url: "/" + page.replace(/\W+/g, "-") + "/", anchor });
+const titlesOf = (items) => items.map((i) => i.title);
+
+test("title bonus is exactly 2 and page bonus exactly 0.5 (ties keep index order)", () => {
+  // Query "zeta omega sigma" (needs >= 2 terms). Y: page holds zeta+omega, text holds sigma
+  // = 1.5 + 1.5 + 1 = 4. X: zeta in the title (1 + 2), omega in the text (1) = 4.
+  const Y = (n) => E("zeta omega", `Y${n}`, "sigma only");
+  const X = (n) => E("Plain", `zeta X${n}`, "omega only");
+  const q = "zeta omega sigma";
+  let ui = loadNav({ idx: [Y(1), X(1), X(2), Y(2)] });
+  // All four score 4. A heavier title/page bonus lifts X (or Y) ahead of the others, a lighter one
+  // drops it behind, so the index order only survives with exact bonuses.
+  assert.deepEqual(titlesOf(navSearch(ui, q)), ["Y1", "zeta X1", "zeta X2", "Y2"]);
+});
+
+test("scores order by title, page and text hits exactly", () => {
+  const idx = [
+    E("Beta", "plain", "zeta appears in text only"),        // 1
+    E("zeta page", "other", "no match words"),               // 1.5
+    E("Alpha", "zeta guide", "nothing here"),                // 3
+    E("zeta", "zeta", "zeta zeta"),                          // 3.5
+  ];
+  const ui = loadNav({ idx });
+  assert.deepEqual(titlesOf(navSearch(ui, "zeta")), ["zeta", "zeta guide", "other", "plain"]);
+});
+
+test("a multi-term query needs ceil(n/2) matching terms", () => {
+  const idx = [E("P", "one", "alpha"), E("P", "two", "alpha beta"), E("P", "three", "alpha beta gamma")];
+  const ui = loadNav({ idx });
+  assert.deepEqual(titlesOf(navSearch(ui, "alpha beta gamma")), ["three", "two"]);
+  assert.deepEqual(titlesOf(navSearch(ui, "alpha beta gamma delta")), ["three", "two"]);
+  assert.deepEqual(titlesOf(navSearch(ui, "alpha beta gamma delta eps")), ["three"]);
+});
+
+test("query length boundary: two characters search, one does not; one-char terms are dropped", () => {
+  const idx = [E("P", "ab-entry", "contains ab here"), E("P", "a-only", "banana a")];
+  const ui = loadNav({ idx });
+  assert.deepEqual(titlesOf(navSearch(ui, "ab")), ["ab-entry"]);
+  assert.deepEqual(navSearch(ui, "a"), []);
+  assert.deepEqual(navSearch(ui, "  a  "), []);
+  assert.deepEqual(titlesOf(navSearch(ui, "a ab")), ["ab-entry"], "the 1-char term is ignored");
+  assert.deepEqual(titlesOf(navSearch(ui, " AB ")), ["ab-entry"], "matching is case-insensitive and trimmed");
+});
+
+// Text of exactly `len` characters made of distinguishable digits/letters, with `word` at `at`.
+function textWith(len, at, word) {
+  const base = Array.from({ length: len }, (_, i) => "abcdefghij"[i % 10] + (i % 7 === 0 ? "" : ""));
+  const chars = base.join("").slice(0, len).split("");
+  word.split("").forEach((c, i) => { chars[at + i] = c; });
+  return chars.join("");
+}
+const excerptOf = (ui, q, title) => navSearch(ui, q).find((i) => i.title === title).excerpt;
+
+test("excerpt window starts 40 characters before the match and is 110 wide", () => {
+  const text = textWith(400, 100, "QQzeta");
+  // match is lowercase "qqzeta" in the lowered text at index 100
+  const ui = loadNav({ idx: [E("P", "t", text)] });
+  const expected = ELL + text.slice(60, 170).trim() + ELL;
+  assert.equal(excerptOf(ui, "qqzeta", "t"), expected);
+});
+
+test("leading ellipsis appears only when the window start is past 0", () => {
+  const at40 = textWith(300, 40, "zzword");
+  const at41 = textWith(300, 41, "zzword");
+  const ui = loadNav({ idx: [E("P", "t40", at40), E("P", "t41", at41)] });
+  assert.equal(excerptOf(ui, "zzword", "t40"), at40.slice(0, 110).trim() + ELL);
+  assert.equal(excerptOf(ui, "zzword", "t41"), ELL + at41.slice(1, 111).trim() + ELL);
+});
+
+test("trailing ellipsis appears only when text continues past the window", () => {
+  const exact = textWith(170, 100, "zzword");    // start 60 + 110 == 170
+  const longer = textWith(171, 100, "zzword");   // one character remains
+  const ui = loadNav({ idx: [E("P", "exact", exact), E("P", "longer", longer)] });
+  assert.equal(excerptOf(ui, "zzword", "exact"), ELL + exact.slice(60, 170).trim());
+  assert.equal(excerptOf(ui, "zzword", "longer"), ELL + longer.slice(60, 170).trim() + ELL);
+});
+
+test("the excerpt follows the first query term that occurs in the text", () => {
+  const text = textWith(400, 5, "alphaw").slice(0, 300) + "betaww" + textWith(400, 0, "").slice(0, 94);
+  const at = text.indexOf("betaww");
+  assert.ok(at > 200);
+  const ui = loadNav({ idx: [E("P", "t", text)] });
+  // "betaww" comes first in the query, so its position wins even though "alphaw" occurs earlier
+  const start = at - 40;
+  assert.equal(excerptOf(ui, "betaww alphaw", "t"), ELL + text.slice(start, start + 110).trim() + ELL);
+  // reversed query: "alphaw" (index 5) wins, so the window starts at 0
+  assert.equal(excerptOf(ui, "alphaw betaww", "t"), text.slice(0, 110).trim() + ELL);
+});
+
+test("uppercase queries still find the match position (header search)", () => {
+  const text = textWith(400, 200, "zzword");
+  const ui = loadNav({ idx: [E("P", "t", text)] });
+  assert.equal(excerptOf(ui, "ZZWORD", "t"), ELL + text.slice(160, 270).trim() + ELL);
+});
+
+test("uppercase queries still find the match position (Help-home search)", () => {
+  const text = textWith(400, 200, "zzword");
+  const ui = loadHelp({ idx: [E("P", "t", text)] });
+  ui.input.value = "ZZWORD";
+  ui.input.dispatch("input");
+  const [item] = parseItems(ui.list.innerHTML, "sr");
+  assert.equal(item.excerpt, ELL + text.slice(160, 270).trim() + ELL);
 });

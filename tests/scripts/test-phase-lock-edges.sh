@@ -7,7 +7,7 @@ set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
 
-SCRIPT="$TL_REPO_ROOT/.planning/scripts/phase-lock.sh"
+SCRIPT="${PL_SCRIPT:-$TL_REPO_ROOT/.planning/scripts/phase-lock.sh}"
 DEFAULT_CFG="$TL_REPO_ROOT/templates/silver-bullet.config.json.default"
 WORK="$TL_TMP/work"
 mkdir -p "$WORK/.planning"
@@ -152,6 +152,23 @@ iso peek 1
 assert_eq "hard fallback ttl keeps fresh lock unexpired" "null" "$(jq -r '.expired // "null"' <<<"$TL_OUT")"
 reset
 
+# Hard-fallback TTL is exactly 1800s: with the clock pinned, age 1800 is live and 1801 is expired.
+HB_TS="2026-01-01T00:00:00Z"
+HB_EPOCH="$(date -u -d "$HB_TS" +%s)"
+printf '{"001":{"owner_id":"codex-o-1","agent_runtime":"codex","host":"o","last_heartbeat_at":"%s","intent":"x"}}\n' "$HB_TS" >"$SB_PHASE_LOCK_FILE"
+CLOCK_RUN="$TL_TMP/clock-run.sh"
+cat >"$CLOCK_RUN" <<'INNER'
+date() { if [[ "$*" == "-u +%s" ]]; then echo "$PINNED_NOW"; else command date "$@"; fi; }
+export -f date
+exec bash "$ISO/.planning/scripts/phase-lock.sh" peek 1
+INNER
+for age in 1800 1801; do
+  in_dir "$NOGIT" tl_run env -u SB_DEFAULT_CONFIG ISO="$ISO" PINNED_NOW="$((HB_EPOCH + age))" bash "$CLOCK_RUN"
+  if [[ "$age" == 1800 ]]; then want=null; else want=true; fi
+  assert_eq "fallback ttl: heartbeat ${age}s old" "$want" "$(jq -r '.expired // "null"' <<<"$TL_OUT")"
+done
+reset
+
 # An unparsable heartbeat timestamp reads as epoch 0: the lock is stale and stolen.
 printf '{"001":{"owner_id":"codex-other-1","agent_runtime":"codex","host":"other","last_heartbeat_at":"garbage","intent":"x"}}\n' >"$SB_PHASE_LOCK_FILE"
 pl peek 1
@@ -172,7 +189,6 @@ rmdir "$SB_PHASE_LOCK_FILE.lock"
 
 # --- same-process re-claim is idempotent --------------------------------
 # $$ of a sourced script is the sourcing shell, so seed the lock with that pid.
-reset
 reset
 RECLAIM="$TL_TMP/reclaim.sh"
 cat >"$RECLAIM" <<'INNER'
@@ -228,14 +244,20 @@ assert_eq "waiter wrote the lock" "waited" "$(jq -r '."005".intent' "$SB_PHASE_L
 # stat(1) failing in both flavours reads as mtime 0: the held mutex is not treated as stale.
 mkdir -p "$SB_PHASE_LOCK_FILE.lock.d"
 STAT_RUN="$TL_TMP/stat-run.sh"
+STAT_LOG="$TL_TMP/stat.log"; : >"$STAT_LOG"
 cat >"$STAT_RUN" <<'INNER'
 stat() { return 1; }
-sleep() { command rmdir "$SB_PHASE_LOCK_FILE.lock.d"; }
+sleep() {
+  # a mutex that was force-cleared would never make us wait
+  [[ -d "$SB_PHASE_LOCK_FILE.lock.d" ]] && echo "waited-with-mutex-present" >>"$STAT_LOG"
+  command rmdir "$SB_PHASE_LOCK_FILE.lock.d"
+}
 export -f stat sleep
 exec bash "$SCRIPT" claim 7 claude statless
 INNER
-PATH="$NOFLOCK_PATH" SCRIPT="$SCRIPT" tl_run bash "$STAT_RUN"
+PATH="$NOFLOCK_PATH" SCRIPT="$SCRIPT" STAT_LOG="$STAT_LOG" tl_run bash "$STAT_RUN"
 assert_eq "claim proceeds when stat is unusable" "0" "$TL_STATUS"
+assert_eq "an unreadable mtime is not treated as stale: the claim waited for the holder" "waited-with-mutex-present" "$(cat "$STAT_LOG")"
 assert_eq "statless claim wrote the lock" "statless" "$(jq -r '."007".intent' "$SB_PHASE_LOCK_FILE")"
 
 # A stale mutex that cannot be removed (rm fails) is retried, not fatal.
@@ -265,16 +287,30 @@ assert_eq "claim with phantom mutex wrote the lock" "nopid" "$(jq -r '."009".int
 
 # The mutex cannot be taken at all: gives up after the retry budget with exit 1.
 FAIL_RUN="$TL_TMP/fail-run.sh"
+FAIL_COUNT="$TL_TMP/fail.count"
 cat >"$FAIL_RUN" <<'INNER'
+export PL_N=0
 mkdir() { return 1; }
-sleep() { return 0; }
+sleep() { PL_N=$((PL_N + 1)); echo "$PL_N" >"$FAIL_COUNT"; return 0; }
 export -f mkdir sleep
 exec bash "$SCRIPT" claim 6 claude never
 INNER
-PATH="$NOFLOCK_PATH" SCRIPT="$SCRIPT" tl_run bash "$FAIL_RUN"
+PATH="$NOFLOCK_PATH" SCRIPT="$SCRIPT" FAIL_COUNT="$FAIL_COUNT" tl_run bash "$FAIL_RUN"
+assert_eq "the retry budget is exactly 6000 attempts" "6000" "$(cat "$FAIL_COUNT")"
 assert_eq "unobtainable mutex exits 1" "1" "$TL_STATUS"
 assert_contains "mutex timeout message" "$TL_ERR" "could not acquire mkdir lock"
 assert_eq "no phase 6 lock written" "null" "$(jq -r '."006" // "null"' "$SB_PHASE_LOCK_FILE")"
+
+# --- a failing `shift` (empty argument list) falls through to the usage check ----
+SHIFT_RUN="$TL_TMP/shift-run.sh"
+cat >"$SHIFT_RUN" <<'INNER'
+shift() { return 1; }
+export -f shift
+exec bash "$SCRIPT" peek 1
+INNER
+SCRIPT="$SCRIPT" tl_run bash "$SHIFT_RUN"
+assert_eq "failed shift leaves the op in the arguments, so usage is reported" "4" "$TL_STATUS"
+assert_contains "failed shift usage message" "$TL_ERR" "Usage: phase-lock.sh peek <phase>"
 
 # --- inherited lock is a no-op for claim, but peek still reads ----------
 reset
