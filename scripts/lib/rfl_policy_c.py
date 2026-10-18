@@ -41,7 +41,7 @@ def _read_json(path: Path) -> dict[str, Any]:
         return {}
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
+    except (OSError, ValueError):
         return {}
     return payload if isinstance(payload, dict) else {}
 
@@ -631,7 +631,7 @@ def _blocked_needs_quota(rung_dir: Path, payload: dict[str, Any]) -> bool:
     if blocked.is_file():
         try:
             text = blocked.read_text(encoding="utf-8")
-        except OSError:
+        except (OSError, ValueError):
             text = ""
         if QUOTA_HINT_RE.search(text):
             return True
