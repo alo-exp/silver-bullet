@@ -519,6 +519,9 @@ def _linkify_code_span_url(span: str) -> str:
     lowered = url.lower()
     if not lowered.startswith("http://") and not lowered.startswith("https://"):
         return span
+    if any(ch.isspace() for ch in url):
+        # `https://a.b and more` is prose in a code span, not a bare URL.
+        return span
     if stripped not in {url, url + trail}:
         return span
     return f"[`{url}`]({url})" + (trail if stripped == url + trail else "")
