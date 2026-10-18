@@ -58,7 +58,6 @@ resolve_cursor_registry_git_commit_sha() {
 
   backend_sha=""
   while IFS= read -r discovered; do
-    [[ -n "$discovered" ]] || continue
     if cursor_github_commit_reachable "$discovered"; then
       backend_sha="$discovered"
       break
@@ -73,7 +72,6 @@ resolve_cursor_registry_git_commit_sha() {
       return 0
     fi
     while IFS= read -r cache_sha; do
-      [[ -n "$cache_sha" ]] || continue
       if cursor_plugin_gitpath_ready "$cache_sha"; then
         preferred="$cache_sha"
       fi

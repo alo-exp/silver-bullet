@@ -55,7 +55,7 @@ plugin_scopes() {
   local plugin_id="$2"
 
   installed_plugins_json "$cli" \
-    | jq -r --arg id "$plugin_id" '.[]? | select(.id == $id) | .scope' 2>/dev/null || true
+    | jq -r --arg id "$plugin_id" '.[]? | select(.id == $id) | .scope // empty' 2>/dev/null || true
 }
 
 marketplace_registered() {
@@ -146,8 +146,31 @@ materialize_local_silver_bullet_plugin_cache() {
 
   python3 - "$registry" "$version" "$stable_alias" <<'PY'
 import json
+import os
 import pathlib
+import shutil
 import sys
+import tempfile
+
+def write_json_atomically(path, data):
+    # Serialize before touching the file (a lone surrogate cannot be encoded as UTF-8:
+    # fall back to ASCII escapes), then replace it atomically, through a symlink if any.
+    try:
+        payload = (json.dumps(data, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
+    except UnicodeEncodeError:
+        payload = (json.dumps(data, indent=2) + "\n").encode("utf-8")
+    target = os.path.realpath(path)
+    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(target), prefix=".tmp-")
+    try:
+        with os.fdopen(fd, "wb") as fh:
+            fh.write(payload)
+        if os.path.exists(target):
+            shutil.copymode(target, tmp)
+        os.replace(tmp, target)
+    except BaseException:
+        if os.path.exists(tmp):
+            os.unlink(tmp)
+        raise
 
 registry = pathlib.Path(sys.argv[1])
 version = sys.argv[2]
@@ -156,17 +179,24 @@ stable = pathlib.Path(sys.argv[3]).resolve()
 data = {"plugins": {}}
 if registry.is_file():
     try:
-        data = json.loads(registry.read_text())
-    except Exception:
-        data = {"plugins": {}}
-plugins = data.setdefault("plugins", {})
+        data = json.loads(registry.read_text(encoding="utf-8"))
+    except Exception as exc:
+        sys.stderr.write(f"install-claude: {registry}: not valid JSON ({exc}); leaving it unchanged\n")
+        sys.exit(1)
+plugins = data.setdefault("plugins", {}) if isinstance(data, dict) else None
+if not isinstance(plugins, dict):
+    sys.stderr.write(
+        f"install-claude: {registry}: unexpected structure (expected an object with a "
+        "'plugins' object); leaving it unchanged\n"
+    )
+    sys.exit(1)
 plugins["silver-bullet@alo-labs"] = [{
     "version": version,
     "installPath": str(stable),
     "scope": "user",
 }]
 registry.parent.mkdir(parents=True, exist_ok=True)
-registry.write_text(json.dumps(data, indent=2) + "\n")
+write_json_atomically(registry, data)
 PY
 
   refresh_silver_bullet_install_alias
@@ -235,16 +265,39 @@ sync_silver_bullet_settings_paths() {
 
   python3 - "$settings_file" "$plugin_cache_root" "$stable_install_path" <<'PY'
 import json
+import os
 import pathlib
 import re
+import shutil
 import sys
+import tempfile
+
+def write_json_atomically(path, data):
+    # Serialize before touching the file (a lone surrogate cannot be encoded as UTF-8:
+    # fall back to ASCII escapes), then replace it atomically, through a symlink if any.
+    try:
+        payload = (json.dumps(data, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
+    except UnicodeEncodeError:
+        payload = (json.dumps(data, indent=2) + "\n").encode("utf-8")
+    target = os.path.realpath(path)
+    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(target), prefix=".tmp-")
+    try:
+        with os.fdopen(fd, "wb") as fh:
+            fh.write(payload)
+        if os.path.exists(target):
+            shutil.copymode(target, tmp)
+        os.replace(tmp, target)
+    except BaseException:
+        if os.path.exists(tmp):
+            os.unlink(tmp)
+        raise
 
 settings_path = pathlib.Path(sys.argv[1])
 cache_root = sys.argv[2].rstrip("/")
 stable_install_path = sys.argv[3].rstrip("/")
 
 try:
-    data = json.loads(settings_path.read_text())
+    data = json.loads(settings_path.read_text(encoding="utf-8"))
 except Exception:
     sys.exit(0)
 
@@ -255,18 +308,14 @@ def rewrite(value):
     if isinstance(value, str):
         return path_pattern.sub(stable_install_path, value)
     if isinstance(value, list):
-        return [item for item in (rewrite(item) for item in value) if item is not None]
+        return [rewrite(item) for item in value]
     if isinstance(value, dict):
         rewritten = {}
         for key, item in value.items():
             new_item = rewrite(item)
-            if new_item is None:
-                continue
             if key == "hooks" and isinstance(new_item, list):
                 filtered_hooks = []
                 for hook in new_item:
-                    if hook is None:
-                        continue
                     if isinstance(hook, dict):
                         command = hook.get("command", "")
                         if "${CLAUDE_PLUGIN_ROOT}/hooks/" in command:
@@ -282,7 +331,7 @@ def rewrite(value):
     return value
 
 updated = rewrite(data)
-settings_path.write_text(json.dumps(updated, indent=2) + "\n")
+write_json_atomically(settings_path, updated)
 PY
   done
 }
