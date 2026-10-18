@@ -9,12 +9,6 @@ SETTINGS="${CLAUDE_HOME}/settings.json"
 HOOKS_DIR="${CLAUDE_HOME}/hooks"
 pruned=0
 
-prune_missing_hook_file() {
-  local path="$1"
-  [[ -n "$path" && -f "$path" ]] && return 1
-  return 0
-}
-
 if [[ -d "$HOOKS_DIR" ]]; then
   for f in "$HOOKS_DIR"/*; do
     [[ -e "$f" ]] || continue
