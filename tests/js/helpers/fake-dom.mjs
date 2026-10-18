@@ -105,8 +105,11 @@ export function makeBrowser({ elements = {}, selectors = {}, bodyClasses = [], s
 }
 
 // Run a script file inside the sandbox; the filename keeps coverage attributed to the file.
-export function runScript(file, sandbox) {
-  const code = fs.readFileSync(file, "utf8");
+// `transform(code)` may rewrite the source first (it should keep length and line count so
+// coverage offsets still line up with the real file).
+export function runScript(file, sandbox, transform = null) {
+  let code = fs.readFileSync(file, "utf8");
+  if (transform) code = transform(code);
   const ctx = vm.createContext(sandbox);
   new vm.Script(code, { filename: file }).runInContext(ctx);
   return ctx;

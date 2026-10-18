@@ -121,7 +121,7 @@ def make_fake_pil():
     image.Image = FakeImage
     image.LANCZOS = "LANCZOS-legacy"
     image.Resampling = types.SimpleNamespace(LANCZOS="LANCZOS")
-    image.eval = lambda img, fn: ("eval", img, fn(100), fn(500))
+    image.eval = lambda img, fn: ("eval", img, tuple(fn(v) for v in (10, 72, 73, 500)))
 
     draw = types.ModuleType("PIL.ImageDraw")
 
@@ -406,6 +406,18 @@ class MainRender(unittest.TestCase):
             "Engineering Best Practices", "Dynamically Tailored Workflows", "Verification & Validation Loops",
             "Quality Gates", "Spec-to-Release Traceability", "Cost Optimization", "Intent-Aligned Results",
             "Knowledge Management"}), 8)
+
+    def test_main_lays_out_feature_rows_42_pixels_apart(self):
+        _, _, draws = self.run_main()
+        feats = [c for d in draws for c in d.calls if c[0] == "text" and c[1][0] == 732 + 28]
+        self.assertEqual([c[1][1] for c in feats], [196 + 42 * i for i in range(8)])
+
+    def test_main_caps_the_logo_shadow_alpha_at_72(self):
+        _, images, _ = self.run_main()
+        evals = [op[1] for i in images for op in i.ops if op[0] == "alpha_composite" and isinstance(op[1], tuple)]
+        self.assertEqual(len(evals), 1)
+        # per-pixel alpha: values below the cap pass through, larger ones are clamped to 72
+        self.assertEqual(evals[0][2], (10, 72, 72, 72))
 
     def test_main_loads_the_bullet_logo_scaled_to_104_pixels_high(self):
         _, images, _ = self.run_main()

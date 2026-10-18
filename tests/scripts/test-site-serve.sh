@@ -32,7 +32,7 @@ tl_stub sleep 'exit 0'
 # lsof prints $S/listeners and, like the real one, exits 1 when it prints nothing.
 # LSOF_FROM_CALL=N hides the listener until the Nth lsof call; LSOF_ONLY_CALL=N shows it on
 # the Nth call only (a listener that appears and vanishes between serve.sh's checks).
-tl_stub lsof "n=\$(cat '$S/lsof.n' 2>/dev/null || echo 0); n=\$((n+1)); echo \$n >'$S/lsof.n'
+tl_stub lsof "echo \"\$*\" >>'$S/lsof.args'; n=\$(cat '$S/lsof.n' 2>/dev/null || echo 0); n=\$((n+1)); echo \$n >'$S/lsof.n'
 if [[ -n \"\${LSOF_FROM_CALL:-}\" && \$n -lt \$LSOF_FROM_CALL ]]; then exit 1; fi
 if [[ -n \"\${LSOF_ONLY_CALL:-}\" && \$n -ne \$LSOF_ONLY_CALL ]]; then exit 1; fi
 [[ -s '$S/listeners' ]] && { cat '$S/listeners'; exit 0; }
@@ -59,13 +59,25 @@ kill() {
   local sig="" pid rc=0
   if [[ "\$1" == -* ]]; then sig="\$1"; shift; fi
   if [[ "\$sig" == "-0" ]]; then
+    # DIES_AFTER=N: after a TERM the process answers N more liveness probes, then is gone.
+    if [[ -f "$S/dying" ]]; then
+      local left; left="\$(cat "$S/dying")"
+      if [[ "\$left" -le 0 ]]; then
+        grep -vx "\$1" "$S/alive" >"$S/alive.new" || true
+        mv "$S/alive.new" "$S/alive"; rm -f "$S/dying"
+      else
+        echo \$((left - 1)) >"$S/dying"
+      fi
+    fi
     grep -qx "\$1" "$S/alive" 2>/dev/null
     return
   fi
   for pid in "\$@"; do
     echo "kill \${sig:-TERM} \$pid" >>"$S/kill.calls"
     [[ "\${KILL_FAIL:-0}" == 1 ]] && rc=1
-    if [[ "\$sig" == "-9" || "\${STUBBORN:-0}" != 1 ]]; then
+    if [[ -n "\${DIES_AFTER:-}" && "\$sig" != "-9" ]]; then
+      echo "\$DIES_AFTER" >"$S/dying"
+    elif [[ "\$sig" == "-9" || "\${STUBBORN:-0}" != 1 ]]; then
       if [[ -f "$S/alive" ]]; then
         grep -vx "\$pid" "$S/alive" >"$S/alive.new" || true
         mv "$S/alive.new" "$S/alive"
@@ -87,6 +99,13 @@ reset() {
   rm -rf "${HOME:?}/Library"
 }
 serve() { tl_run bash "$TL_TMP/run-serve.sh" "$@"; }
+
+# --- command lines of the probes --------------------------------------------
+reset
+echo 5150 >"$S/listeners"
+LA_LOADED=1 serve status
+assert_contains "listener probe asks lsof for listening TCP pids on the port" "$(cat "$S/lsof.args")" "-tiTCP:8765 -sTCP:LISTEN"
+assert_eq "launchagent probe targets the user domain and label" "print gui/$(id -u)/com.alolabs.silver-bullet-site-preview" "$(head -1 "$S/launchctl.calls")"
 
 # --- usage ---------------------------------------------------------------
 reset
@@ -199,6 +218,14 @@ assert_eq "vanished foreign listener still exits 1" "1" "$TL_STATUS"
 assert_contains "vanished foreign listener message" "$TL_ERR" "Port 8765 already in use by another process:"
 assert_not_contains "no holder line when it vanished" "$TL_ERR" "python3"
 
+# --- start: the listener only shows up after several polls ---------------------
+reset
+LSOF_FROM_CALL=12 serve start
+assert_eq "start waits for a late listener" "0" "$TL_STATUS"
+assert_contains "late listener start reports success" "$TL_OUT" "Started preview server"
+assert_not_contains "late listener is not a failure" "$TL_ERR" "Failed to start"
+assert_eq "daemon launched once, not retried on 0.0.0.0" "127.0.0.1 8765" "$(cat "$S/daemon.calls")"
+
 # --- start: loopback bind fails, 0.0.0.0 works --------------------------------
 reset
 DAEMON_FAIL_HOST=127.0.0.1 serve start
@@ -267,6 +294,13 @@ echo 5150 >"$S/listeners"
 KILL_FAIL=1 serve stop
 assert_eq "failing kill of listeners is tolerated" "0" "$TL_STATUS"
 assert_contains "failing listener kill still reports stopped" "$TL_OUT" "Stopped preview server"
+
+# a daemon that needs several liveness probes to exit is not sent kill -9
+reset
+echo 777 >"$PID_FILE"; echo 777 >"$S/alive"
+DIES_AFTER=3 serve stop
+assert_eq "only TERM for a process that exits while polled" "kill TERM 777" "$(cat "$S/kill.calls")"
+assert_contains "slow exit still reports stopped" "$TL_OUT" "Stopped preview server"
 
 # launchagent: bootout succeeds / fails
 reset

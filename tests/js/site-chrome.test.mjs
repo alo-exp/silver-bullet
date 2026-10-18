@@ -125,3 +125,27 @@ test("lucide.createIcons runs only when it is a function", () => {
   e = load({ lucide: undefined });
   assert.doesNotThrow(() => fireDomReady(e.document));
 });
+
+test("the silver-bullet-theme key takes precedence over sb-theme in either direction", () => {
+  let e = load({ storage: { "silver-bullet-theme": "dark", "sb-theme": "light" } });
+  fireDomReady(e.document);
+  assert.equal(e.docEl.getAttribute("data-theme"), "dark");
+  e = load({ storage: { "silver-bullet-theme": "light", "sb-theme": "dark" } });
+  fireDomReady(e.document);
+  assert.equal(e.docEl.getAttribute("data-theme"), "light");
+});
+
+test("theme-btn is used when theme-toggle is absent, and theme-toggle wins when both exist", () => {
+  const btn = new FakeElement({ id: "theme-btn" });
+  let e = load({ elements: { "theme-btn": btn } });
+  fireDomReady(e.document);
+  assert.equal(btn.getAttribute("aria-label"), "Toggle light/dark mode");
+  assert.equal(btn.listeners.click.length, 1);
+
+  const toggle = new FakeElement({ id: "theme-toggle" });
+  const other = new FakeElement({ id: "theme-btn" });
+  e = load({ elements: { "theme-toggle": toggle, "theme-btn": other } });
+  fireDomReady(e.document);
+  assert.equal(toggle.listeners.click.length, 1);
+  assert.equal(other.listeners.click, undefined);
+});
