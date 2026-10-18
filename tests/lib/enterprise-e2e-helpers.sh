@@ -65,3 +65,55 @@ e2e_commit() {
   git -C "$dir" add "$file"
   git -C "$dir" commit -q -m "$msg"
 }
+
+# e2e_stage_scripts STAGE: build STAGE/scripts as a real directory of symlinks to the repo's
+# scripts/ (and the same one level down for scripts/lib and scripts/enterprise-e2e), so a script
+# that derives SB_ROOT from its own location resolves to STAGE while the code under test is the
+# real file (coverage follows the symlinks). Individual files are then replaced with
+# e2e_stage_override.
+e2e_stage_scripts() {
+  local stage="$1" f d
+  mkdir -p "$stage/scripts"
+  for f in "$TL_REPO_ROOT"/scripts/*; do
+    ln -s "$f" "$stage/scripts/$(basename "$f")"
+  done
+  for d in lib enterprise-e2e; do
+    rm -f "$stage/scripts/$d"
+    mkdir -p "$stage/scripts/$d"
+    for f in "$TL_REPO_ROOT/scripts/$d"/*; do
+      ln -s "$f" "$stage/scripts/$d/$(basename "$f")"
+    done
+  done
+}
+
+# e2e_stage_override STAGE REL-PATH BODY: replace a staged script with a stub holding BODY.
+e2e_stage_override() {
+  local stage="$1" rel="$2" body="$3"
+  rm -f "$stage/$rel"
+  mkdir -p "$(dirname "$stage/$rel")"
+  printf '#!/usr/bin/env bash\n%s\n' "$body" >"$stage/$rel"
+  chmod +x "$stage/$rel"
+}
+
+# e2e_mk_ledger FILE ROW:STATUS...: a workflow-matrix ledger with the required columns.
+e2e_mk_ledger() {
+  local f="$1" spec
+  shift
+  mkdir -p "$(dirname "$f")"
+  {
+    echo "| # | WF slug | Pass/Fail | graphify_query_ref | agentmemory_export_ref |"
+    echo "|---|---------|-----------|--------------------|------------------------|"
+    for spec in "$@"; do
+      echo "| ${spec%%:*} | wf-${spec%%:*} | ${spec#*:} | q | m |"
+    done
+    echo "**Pass count: x**"
+  } >"$f"
+}
+
+# e2e_all_pass_specs N: prints "1:Pass" ... "N:Pass" one per line.
+e2e_all_pass_specs() {
+  local n
+  for ((n = 1; n <= $1; n++)); do
+    echo "$n:Pass"
+  done
+}
