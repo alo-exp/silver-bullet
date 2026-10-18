@@ -930,10 +930,51 @@ class TimerContractTest(Base):
         os.environ["SB_RFL_TIMER_MODE"] = "launchd-only"
         os.environ["SB_RFL_LAUNCHD_DIR"] = str(self.tmp / "LA")
         results = [subprocess.CompletedProcess([], 0), subprocess.CompletedProcess([], 5)]
-        with mock.patch.object(q.subprocess, "run", side_effect=results):
+        with mock.patch.object(q.subprocess, "run", side_effect=results) as run:
             t = self.arm(id="x")
         self.assertEqual((t["armed"], t["backend"], t["launchctl_rc"]), (False, "launchd", 5))
+        self.assertEqual(t["launchd_error"], "launchctl load exited with status 5")
         self.assertTrue(Path(t["plist"]).is_file())
+        self.assertEqual(run.call_count, 2)  # launchd-only: no `at` fallback
+
+    def test_negative_launchctl_status_is_not_armed(self):
+        os.environ["SB_RFL_TIMER_MODE"] = "launchd-only"
+        os.environ["SB_RFL_LAUNCHD_DIR"] = str(self.tmp / "LA")
+        results = [subprocess.CompletedProcess([], 0), subprocess.CompletedProcess([], -9)]
+        with mock.patch.object(q.subprocess, "run", side_effect=results):
+            t = self.arm(id="x")
+        self.assertEqual((t["armed"], t["launchctl_rc"]), (False, -9))
+
+    def launchd_then_at(self, mode, load_rc, at_rc):
+        os.environ["SB_RFL_TIMER_MODE"] = mode
+        os.environ["SB_RFL_LAUNCHD_DIR"] = str(self.tmp / "LA")
+        os.environ["SB_RFL_AT_BIN"] = "/bin/at-stub"
+        results = [
+            subprocess.CompletedProcess([], 0),  # launchctl unload
+            subprocess.CompletedProcess([], load_rc),  # launchctl load
+            subprocess.CompletedProcess([], at_rc, stdout="", stderr="at said no" if at_rc else "job 1"),
+        ]
+        with mock.patch.object(q.sys, "platform", "darwin"), mock.patch.object(Path, "is_file", return_value=True), \
+             mock.patch.object(q.subprocess, "run", side_effect=results) as run:
+            return self.arm(id="x"), run
+
+    def test_auto_mode_falls_back_to_at_when_launchd_did_not_arm(self):
+        for mode in ("auto", "launchd"):
+            with self.subTest(mode=mode):
+                t, run = self.launchd_then_at(mode, load_rc=5, at_rc=0)
+                self.assertEqual((t["armed"], t["backend"]), (True, "at"))
+                self.assertEqual((t["launchctl_rc"], t["launchd_error"]), (5, "launchctl load exited with status 5"))
+                self.assertEqual(run.call_args.args[0][:2], ["/bin/at-stub", "-t"])
+
+    def test_auto_mode_reports_launchd_failure_when_at_fails_too(self):
+        t, _ = self.launchd_then_at("auto", load_rc=5, at_rc=1)
+        self.assertEqual((t["armed"], t["backend"], t["reason"]), (False, "unarmed", "no at/launchd backend available"))
+        self.assertEqual((t["launchctl_rc"], t["launchd_error"], t["at_error"]), (5, "launchctl load exited with status 5", "at said no"))
+
+    def test_auto_mode_keeps_a_working_launchd_without_trying_at(self):
+        t, run = self.launchd_then_at("auto", load_rc=0, at_rc=0)
+        self.assertEqual((t["armed"], t["backend"], t["launchctl_rc"]), (True, "launchd", 0))
+        self.assertEqual(run.call_count, 2)
 
 
 if __name__ == "__main__":
