@@ -18,6 +18,22 @@ from sbtest import REPO_ROOT, load_module
 r = load_module("scripts/_review_fix_ladder_impl.py")
 
 
+class ImportPathTest(unittest.TestCase):
+    LIB = str(REPO_ROOT / "scripts" / "lib")
+
+    def test_lib_dir_is_added_to_sys_path_when_absent(self):
+        trimmed = [p for p in sys.path if p != self.LIB]
+        with mock.patch.object(sys, "path", trimmed):
+            load_module("scripts/_review_fix_ladder_impl.py", name="rfl_impl_fresh_a")
+            self.assertEqual(trimmed[0], self.LIB)
+
+    def test_lib_dir_not_duplicated_when_present(self):
+        path = [self.LIB] + [p for p in sys.path if p != self.LIB]
+        with mock.patch.object(sys, "path", path):
+            load_module("scripts/_review_fix_ladder_impl.py", name="rfl_impl_fresh_b")
+            self.assertEqual(path.count(self.LIB), 1)
+
+
 class TmpCase(unittest.TestCase):
     """Per-test scratch dir with HOME, cwd and RFL env isolated."""
 
