@@ -33,6 +33,15 @@ USE_EXEC=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --work-dir|--prompt|--prompt-file|--brief-file|--log|--mode|--sb-root)
+      if [[ $# -lt 2 ]]; then
+        printf 'ERROR: %s requires a value\n' "$1" >&2
+        usage >&2
+        exit 2
+      fi
+      ;;
+  esac
+  case "$1" in
     --work-dir) WORK_DIR="$2"; shift 2 ;;
     --prompt) PROMPT_TEXT="$2"; shift 2 ;;
     --prompt-file) PROMPT_FILE="$2"; shift 2 ;;
@@ -45,6 +54,11 @@ while [[ $# -gt 0 ]]; do
     --sb-root) SB_ROOT="$2"; shift 2 ;;
     --interaction-mode|--interactive|--non-interactive|--attach|--no-escalate|--allow-mode-fallback|--auto-policy|--control-dir|--max-turns|--max-wall-sec|--idle-sec|--task-id|--use-print|--use-exec|--use-interactive|--quota-retry|--skip-preflight)
       agent_mode_handle_flag "$1" "${2:-}" || exit 2
+      if [[ "$SB_AM_SHIFT" -gt $# ]]; then
+        printf 'ERROR: %s requires a value\n' "$1" >&2
+        usage >&2
+        exit 2
+      fi
       shift "$SB_AM_SHIFT"
       ;;
     -h|--help) usage; exit 0 ;;
@@ -135,7 +149,9 @@ agent_codex_cleanup_lightweight_env() {
 agent_codex_invoke_once() {
   agent_codex_apply_runtime_env
   agent_codex_apply_lightweight_env
-  trap agent_codex_cleanup_lightweight_env RETURN
+  # EXIT, not RETURN: a RETURN trap also fires when `source "$AGENT_SH"` finishes,
+  # which would delete the lightweight CODEX_HOME before the adapter runs.
+  trap agent_codex_cleanup_lightweight_env EXIT
   export SB_ROOT
   export WORK_DIR="$WORK_DIR"
   export CODEX_BIN="$CLI"
@@ -162,7 +178,15 @@ while [[ "$attempt" -le "$quota_retry_max" ]]; do
     agent_delegate_write_log_header "$LOG_FILE" "agent-codex-delegate" "$WORK_DIR" "$SB_ROOT" "$attempt"
   fi
 
-  final_output="$(agent_codex_invoke_once)" && final_exit=0 || final_exit=$?
+  if final_output="$(agent_codex_invoke_once)"; then
+
+    final_exit=0
+
+  else
+
+    final_exit=$?
+
+  fi
 
   if [[ -n "$LOG_FILE" && "$USE_EXEC" == "1" ]]; then
     agent_delegate_append_invoke_output "$LOG_FILE" "$final_output"
@@ -202,7 +226,11 @@ if [[ "$final_exit" -ne 0 ]]; then
   if agent_mode_maybe_escalate "codex" "$SB_AM_TASK_DIR" "${LOG_FILE:-}"; then
     agent_mode_apply_host_launch_env "codex"
     USE_EXEC=0
-    final_output="$(agent_codex_invoke_once)" && final_exit=0 || final_exit=$?
+    if final_output="$(agent_codex_invoke_once)"; then
+      final_exit=0
+    else
+      final_exit=$?
+    fi
   fi
 fi
 
