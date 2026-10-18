@@ -52,7 +52,9 @@ if [[ -n "$violations" ]]; then
   # Allow denylist/migration references and the research-only competitor registry.
   # The category-pack URL is discovery data; it is not a runtime dependency or route.
   # test-orchestrator-event-log-lib.sh asserts the legacy gsd-* name still resolves.
-  unexpected="$(printf '%s\n' "$violations" | grep -vE 'hooks/forbidden-skill-check\.sh|tests/hooks/test-orchestrator-event-log-lib\.sh|tests/scripts/test-no-gsd-runtime\.sh|scripts/prune-stale-claude-user-hooks\.sh|scripts/watch-enterprise-e2e-tui\.sh|scripts/agent-claude/lib\.sh|skills/silver-deep-research/reference/landscape/category-packs/agentic-sdlc-process-orchestrator\.json' || true)"
+  # test-agent-live-libs.sh feeds legacy gsd-* hook commands to the settings sanitiser in
+  # scripts/agent-claude/lib.sh (already allowlisted below) and asserts they are stripped.
+  unexpected="$(printf '%s\n' "$violations" | grep -vE 'hooks/forbidden-skill-check\.sh|tests/hooks/test-orchestrator-event-log-lib\.sh|tests/scripts/test-no-gsd-runtime\.sh|scripts/prune-stale-claude-user-hooks\.sh|scripts/watch-enterprise-e2e-tui\.sh|tests/scripts/test-agent-live-libs\.sh|scripts/agent-claude/lib\.sh|skills/silver-deep-research/reference/landscape/category-packs/agentic-sdlc-process-orchestrator\.json' || true)"
   if [[ -n "$unexpected" ]]; then
     fail "unexpected gsd refs outside forbidden-skill denylist"
     printf '%s\n' "$unexpected" | sed 's/^/    /'
