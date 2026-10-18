@@ -898,7 +898,7 @@ RT_SCOPE=host rt_scope_includes_component search_cli \
   || pass "host scope excludes search_cli"
 
 if grep -q 'rt_any_five_tool_mutation_allowed' "$REPO_ROOT/scripts/lib/recommended-tools/common.sh" \
-  && grep -A8 'rt_any_five_tool_mutation_allowed()' "$REPO_ROOT/scripts/lib/recommended-tools/common.sh" | grep -q search_cli; then
+  && grep -q search_cli < <(grep -A8 'rt_any_five_tool_mutation_allowed()' "$REPO_ROOT/scripts/lib/recommended-tools/common.sh"); then
   fail "search_cli must not join rt_any_five_tool_mutation_allowed"
 else
   pass "search_cli must not join rt_any_five_tool_mutation_allowed"

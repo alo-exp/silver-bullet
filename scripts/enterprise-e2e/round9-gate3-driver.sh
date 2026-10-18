@@ -163,8 +163,11 @@ run_matrix() {
   source "${SB_ROOT}/tests/live/lib/detach-background.sh"
   printf '\n=== R9 Gate3 matrix %s rows=%s ===\n' "$(utc_now)" "${ROWS[*]}"
   if sb_detach_has_controlling_tty; then
-    exec env RTK_DISABLED=1 bash scripts/run-enterprise-e2e-live-test.sh "${ROWS[@]}" \
+    # `exec` in a pipeline only replaces the pipeline's subshell, so run in the foreground
+    # and return: otherwise control falls through to the detached launch below (double run).
+    env RTK_DISABLED=1 bash scripts/run-enterprise-e2e-live-test.sh "${ROWS[@]}" \
       2>&1 | tee -a "$SB_E2E_MATRIX_LOG"
+    return 0
   fi
   driver_log="${SB_ROOT}/.e2e-r9-gate3-driver.log"
   driver_pid="$(sb_run_detached_pty --log "$driver_log" -- \

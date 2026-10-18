@@ -52,7 +52,9 @@ fi
 emit_block_jq_missing() {
   local reason="$1"
   local json_reason
-  json_reason=$(printf '%s' "$reason" | jq -Rs '.')
+  # jq is the very thing that is missing here; fall back to a static reason so the
+  # deny is still emitted instead of the ERR trap failing the gate open.
+  json_reason=$(printf '%s' "$reason" | jq -Rs '.' 2>/dev/null || printf '"jq required for Silver Bullet enforcement"')
   printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":%s}}' "$json_reason"
 }
 
