@@ -174,12 +174,27 @@ bigfile "$P/docs/d2.md" delta 40
 run
 assert_contains "first small source fits" "$(ctx)" "### src/s1.sh"
 assert_not_contains "second small source over budget is dropped" "$(ctx)" "### src/s2.sh"
+# The choice under a tight budget must not depend on directory order: run again
+# with a find that lists files in reverse order and expect the same selection.
+REAL_FIND="$(command -v find)"
+run_reversed() {
+  tl_stub find "\"$REAL_FIND\" \"\$@\" | LC_ALL=C sort -r"
+  rm -rf "$P/.planning/.context-cache"
+  run
+  rm -f "$TL_BIN/find"
+}
+run_reversed
+assert_contains "reverse directory order: same source selected" "$(ctx)" "### src/s1.sh"
+assert_not_contains "reverse directory order: other source dropped" "$(ctx)" "### src/s2.sh"
 mkproj '{"project":{"src_pattern":"/src/"},"semantic_compression":{"context_budget_kb":1,"min_file_size_bytes":5000}}'
 bigfile "$P/docs/d1.md" gamma 40
 bigfile "$P/docs/d2.md" delta 40
 run
 assert_contains "first small doc fits" "$(ctx)" "### docs/d1.md"
 assert_not_contains "second small doc over budget is dropped" "$(ctx)" "### docs/d2.md"
+run_reversed
+assert_contains "reverse directory order: same doc selected" "$(ctx)" "### docs/d1.md"
+assert_not_contains "reverse directory order: other doc dropped" "$(ctx)" "### docs/d2.md"
 
 # --- scoring: large docs and per-file chunk limit ---------------------------------------------------------------
 mkproj '{"project":{"src_pattern":"/src/"},"semantic_compression":{"context_budget_kb":50,"min_file_size_bytes":100,"chunk_size_bytes":120,"top_chunks_per_file":2}}'
