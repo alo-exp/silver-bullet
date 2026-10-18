@@ -44,6 +44,24 @@ hd_stage() {
   hd_sh scripts/lib/cursor-sb-agents/probe-global-agents.sh 'echo "probe-agents $*" >>"$HD_LOG"; exit "${STUB_RC_AGENTS:-0}"'
   hd_sh scripts/reconcile-recommended-tools.sh 'echo "reconcile $*" >>"$HD_LOG"; [[ -z "${STUB_RECON_ERR:-}" ]] || echo "$STUB_RECON_ERR" >&2; if [[ -v STUB_RECON_JSON ]]; then printf "%s" "$STUB_RECON_JSON"; else cat "$(dirname "$0")/../default-recon.json"; fi; exit "${STUB_RECON_RC:-0}"'
   printf '%s' "$HD_DEFAULT_RECON" >"$HD_ST/default-recon.json"
+  # stand-in for the generic five-tool runtime package (the doctor validates and repairs through it)
+  mkdir -p "$HD_ST/scripts/lib/five_tool_runtime"
+  : >"$HD_ST/scripts/lib/five_tool_runtime/__init__.py"
+  cat >"$HD_ST/scripts/lib/five_tool_runtime/runtime.py" <<'PY'
+import os
+def load_manifest(path):
+    return {}
+def validate_manifest(manifest, require_commands=False):
+    if os.environ.get("STUB_GENERIC") == "invalid":
+        return {"valid": False, "errors": ["broken"], "warnings": []}
+    return {"valid": True, "errors": [], "warnings": []}
+PY
+  cat >"$HD_ST/scripts/lib/five_tool_runtime/cli.py" <<'PY'
+import os, sys
+open(os.environ["HD_LOG"], "a").write("generic-repair %s\n" % " ".join(sys.argv[1:]))
+print("repair ran")
+sys.exit(int(os.environ.get("STUB_RC_GENERIC", "0")))
+PY
   : >"$HD_LOG"
 }
 
