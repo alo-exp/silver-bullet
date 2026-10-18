@@ -564,7 +564,7 @@ fi
 RT_COMMON="${REPO_ROOT}/scripts/lib/recommended-tools/common.sh"
 if [[ -f "$RT_COMMON" ]]; then
   for supported_host in claude codex cursor; do
-    if awk '/^rt_host_supported\(\)/,/^}/' "$RT_COMMON" | grep -q "$supported_host"; then
+    if grep -q "$supported_host" < <(awk '/^rt_host_supported\(\)/,/^}/' "$RT_COMMON"); then
       echo "PASS: rt_host_supported includes ${supported_host}"
       PASS=$((PASS + 1))
     else
@@ -641,7 +641,7 @@ else
   echo "FAIL: skill Omni footnote is planned WS7 not D10 Graphify"
   FAIL=$((FAIL + 1))
 fi
-if awk '/search_cli/{f=1} f && /Health/{print; exit}' "$SKILL" | grep -q 'command -v'; then
+if grep -q 'command -v' < <(awk '/search_cli/{f=1} f && /Health/{print; exit}' "$SKILL"); then
   echo "FAIL: search_cli Health must not claim command -v alone"
   FAIL=$((FAIL + 1))
 else
@@ -658,7 +658,7 @@ else
 fi
 
 # Swallow anti-pattern: apply must not discard stderr then mark applied
-if grep -n 'doctor_run_reconciler apply' "$DOCTOR" | grep -q .; then
+if grep -q . < <(grep -n 'doctor_run_reconciler apply' "$DOCTOR"); then
   apply_ctx="$(awk '/doctor_apply_fixes\(\)/,/^run_doctor_checks/{print}' "$DOCTOR")"
   if grep -q '2>/dev/null || true' <<<"$apply_ctx" \
     && grep -q 'DOCTOR_FIX_APPLIED=1' <<<"$apply_ctx"; then

@@ -45,7 +45,7 @@ sb_rtk_is_wrong_binary() {
   if ! "$rtk_bin" gain --help >/dev/null 2>&1; then
     return 0
   fi
-  if "$rtk_bin" --help 2>&1 | head -5 | grep -qiE 'rust type kit|rtk-check'; then
+  if grep -qiE 'rust type kit|rtk-check' < <("$rtk_bin" --help 2>&1 | head -5); then
     return 0
   fi
   return 1

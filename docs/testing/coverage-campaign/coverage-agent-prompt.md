@@ -55,6 +55,7 @@ You are writing tests for the "Silver Bullet" repository (an agent-plugin proces
 Tests run with a sandboxed HOME, so code that needs a Silver Bullet plugin cache (for example hooks/session-start) needs a fake one staged under $SB_RUNTIME_PLUGIN_CACHE_ROOT in your test. Never depend on network access, `rg` being installed, or root uid. `make lint` runs ShellCheck over first-party Bash and fails on any finding, so keep source edits ShellCheck-clean.
 
 ## Lessons from earlier packages
+- Machine limits: the container has 4 cores and 16 GB and restarts when memory runs out, killing every agent. Use `--jobs 2`, run one test or coverage runner at a time (no parallel background runners), and keep determinism checks to at most 3 parallel copies.
 - Pin the runtime with `tl_init claude` when a test exports `SILVER_BULLET_RUNTIME=claude` for the code under test; otherwise sandbox paths and the code's state paths differ under codex.
 - Never pipe `printf` into `grep -q` under `pipefail` (SIGPIPE race); use here-strings, and for arrays `<<<"$(printf '%s\n' "${arr[@]}")"`. `tests/scripts/test-no-pipe-into-grep-quiet.sh` enforces this.
 - A failure-propagation fix (`|| return 1`) needs tests that call the function where errexit is off (`if f; then …`), and a mutation check: remove the fix in a scratch copy and see a test fail.

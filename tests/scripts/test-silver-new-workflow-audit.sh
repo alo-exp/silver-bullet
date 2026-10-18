@@ -17,21 +17,21 @@ grep -q 'audit workflow' skills/silver/SKILL.md && pass "router audit triggers" 
 grep -q 'Audit (read-only)' docs/NEW-WORKFLOW.md && pass "runbook audit section" || fail "runbook missing audit section"
 
 # Known-good workflow: silver-new-workflow (meta workflow)
-if bash scripts/audit-workflow-compliance.sh --target WF-SILVER-NEW-WORKFLOW 2>&1 | grep -q 'VERDICT: PASS'; then
+if grep -q 'VERDICT: PASS' < <(bash scripts/audit-workflow-compliance.sh --target WF-SILVER-NEW-WORKFLOW 2>&1); then
   pass "audit WF-SILVER-NEW-WORKFLOW PASS"
 else
   fail "audit WF-SILVER-NEW-WORKFLOW expected PASS"
 fi
 
 # Known-good workflow: silver-feature via slug alias
-if bash scripts/audit-workflow-compliance.sh --slug feature 2>&1 | grep -q 'VERDICT: PASS'; then
+if grep -q 'VERDICT: PASS' < <(bash scripts/audit-workflow-compliance.sh --slug feature 2>&1); then
   pass "audit silver-feature PASS"
 else
   fail "audit silver-feature expected PASS"
 fi
 
 # validate-workflow-authoring --audit delegation
-if bash scripts/validate-workflow-authoring.sh --audit --target silver-new-workflow 2>&1 | grep -q 'VERDICT: PASS'; then
+if grep -q 'VERDICT: PASS' < <(bash scripts/validate-workflow-authoring.sh --audit --target silver-new-workflow 2>&1); then
   pass "validate --audit delegation PASS"
 else
   fail "validate --audit delegation expected PASS"

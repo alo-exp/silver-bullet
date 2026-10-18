@@ -1408,7 +1408,7 @@ wait_for_file_or_git_head_contains() {
       PASS=$((PASS + 1))
       return 0
     fi
-    if git -C "$repo_dir" show "HEAD:$path" 2>/dev/null | grep -qE "$needle"; then
+    if grep -qE "$needle" < <(git -C "$repo_dir" show "HEAD:$path" 2>/dev/null); then
       echo "PASS: $label"
       PASS=$((PASS + 1))
       return 0

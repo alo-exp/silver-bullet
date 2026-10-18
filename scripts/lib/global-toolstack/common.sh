@@ -453,7 +453,7 @@ ts_agentmemory_server_healthy() {
   url="$(ts_effective_health_url)"
   if command -v curl >/dev/null 2>&1 && curl -sf --max-time 3 "$url" >/dev/null 2>&1; then return 0; fi
   if command -v agentmemory >/dev/null 2>&1; then
-    agentmemory status 2>/dev/null | grep -qE 'Connected|Health:[[:space:]]+healthy' && return 0
+    grep -qE 'Connected|Health:[[:space:]]+healthy' < <(agentmemory status 2>/dev/null) && return 0
   fi
   return 1
 }
