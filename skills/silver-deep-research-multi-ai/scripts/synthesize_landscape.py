@@ -2225,11 +2225,6 @@ def build_chart_data(
         reason_by_slug=reason_by_slug,
     )
     plotted = {str(p.get("slug")) for p in mq_data if p.get("slug")}
-    # Invariant: every plotted core must be in listed membership.
-    stray = sorted(plotted - set(membership["listed"]))
-    if stray and market_slugs:
-        membership["listed"] = sorted(set(membership["listed"]) | plotted)
-        membership["core"] = sorted(set(membership["core"]) | plotted)
     link_pairs = build_link_pairs(
         rankings,
         root=root,
