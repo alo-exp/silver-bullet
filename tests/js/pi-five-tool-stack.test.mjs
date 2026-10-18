@@ -617,6 +617,15 @@ test("commands already routed through rtk are not rewritten again", async (t) =>
   assert.equal(event.input.command, "rtk /opt/rtkfoo run [rewrite]", "only an exact 'rtk' basename counts");
 });
 
+test("a whitespace-only command is still handed to rtk", async (t) => {
+  const sb = sandbox(t);
+  const pi = await startRtk(t, sb, { mode: "same" });
+  const event = bash("   ");
+  await pi.handlers.tool_call[0](event, { cwd: sb.root });
+  assert.equal(event.input.command, "   ", "rtk answered with the command itself, so it stays unchanged");
+  assert.deepEqual(rtkLines(sb).map((l) => l.argv), [["rewrite", "   "]]);
+});
+
 test("an rtk failure, empty answer or identical answer keeps the original command", async (t) => {
   for (const mode of ["fail", "empty", "same"]) {
     const sb = sandbox(t);
