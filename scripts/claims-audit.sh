@@ -44,7 +44,6 @@ done < <(jq -r '.claims[].text' "$REGISTRY")
 
 # data-claim attributes must be registered.
 while IFS= read -r claim_id; do
-  [[ -z "$claim_id" ]] && continue
   if jq -e --arg id "$claim_id" '.claims[] | select(.claim_id == $id)' "$REGISTRY" >/dev/null 2>&1; then
     pass "data-claim registered: $claim_id"
   else

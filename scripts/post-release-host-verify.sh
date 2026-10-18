@@ -56,6 +56,11 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+case "$HOST_FILTER" in
+  all|cursor|codex|claude) ;;
+  *) printf 'Unknown host: %s\n' "$HOST_FILTER" >&2; usage >&2; exit 2 ;;
+esac
+
 if [[ -z "$VERSION" ]]; then
   VERSION="$(git -C "$REPO_ROOT" describe --tags --abbrev=0 2>/dev/null || true)"
 fi
@@ -75,7 +80,9 @@ resolve_install_repo() {
 }
 
 cleanup_install_repo() {
-  [[ -n "$INSTALL_REPO_TMP" && -d "$INSTALL_REPO_TMP" ]] && rm -rf "$INSTALL_REPO_TMP"
+  if [[ -n "$INSTALL_REPO_TMP" && -d "$INSTALL_REPO_TMP" ]]; then
+    rm -rf "$INSTALL_REPO_TMP"
+  fi
 }
 
 resolve_install_repo
@@ -87,7 +94,6 @@ marker_dir_for_host() {
     cursor) home_root="${HOME}/.cursor" ;;
     codex) home_root="${HOME}/.codex" ;;
     claude) home_root="${HOME}/.claude" ;;
-    *) home_root="${HOME}/.${host}" ;;
   esac
   printf '%s/post-release-verify\n' "${home_root}/.silver-bullet"
 }

@@ -17,7 +17,10 @@ source "${REPO_ROOT}/tests/scripts/lib/five-tool-prerelease.sh"
 RC_CI_MODE=0
 [[ "${SB_RC_CI_MODE:-0}" == "1" || "${GITHUB_ACTIONS:-}" == "true" ]] && RC_CI_MODE=1
 
-HOST_FILTER=all MODE_FILTER=all DRY_RUN=0 REQUIRE_LIVE="${SB_RC_MATRIX_REQUIRE_LIVE:-}"
+HOST_FILTER=all
+MODE_FILTER=all
+DRY_RUN=0
+REQUIRE_LIVE="${SB_RC_MATRIX_REQUIRE_LIVE:-}"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --host) HOST_FILTER="$2"; shift 2 ;;
@@ -57,6 +60,7 @@ run_cell() {
       || { sb_smoke_write_rc_marker "$host" "$mode" fail install; FAIL=$((FAIL+1)); return; }
     sb_smoke_write_rc_marker "$host" "$mode" skip no-live-cli; SKIP=$((SKIP+1)); return
   fi
+  sb_smoke_cleanup   # drop the previous cell's smoke root before creating a new one
   SB_PRE_RELEASE_SMOKE_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/sb-rc.XXXXXX")"; export SB_PRE_RELEASE_SMOKE_ROOT
   trap sb_smoke_cleanup EXIT
   RTK_DISABLED=1 bash "${REPO_ROOT}/scripts/lib/host-smoke-cell.sh" --host "$host" --mode "$mode" --scope rc \
