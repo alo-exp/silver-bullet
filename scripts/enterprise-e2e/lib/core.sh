@@ -152,7 +152,6 @@ enterprise_e2e_assert_row_matrix_baseline_rev_increase() {
   local fixture_dir="${3:-$(enterprise_e2e_fixture_dir)}"
   [[ "${SB_E2E_PRODUCT_WORK_GATE:-1}" == "1" ]] || return 0
   enterprise_e2e_row_uses_matrix_baseline_rev_gate "$row_num" || return 0
-  enterprise_e2e_row_requires_product_commit "$row_num" || return 0
   if enterprise_e2e_row_outcome_only_rerun "$row_num"; then
     return 0
   fi
@@ -929,7 +928,7 @@ enterprise_e2e_export_live_defaults() {
   enterprise_e2e_apply_isolated_claude_runtime_paths
   export SB_E2E_MATRIX_CLEAN_ENV="${SB_E2E_MATRIX_CLEAN_ENV:-0}"
   export SB_E2E_MATRIX_DRY_RUN="${SB_E2E_MATRIX_DRY_RUN:-}"
-  unset SB_E2E_MATRIX_DRY_RUN 2>/dev/null || true
+  unset SB_E2E_MATRIX_DRY_RUN
   # Default ON for live matrix — inherited SKIP=1 from run-all-tests / live wrappers
   # skips claude_matrix_export_settings_env and leaves interactive TUI at /login.
   export SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT="${SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT:-0}"

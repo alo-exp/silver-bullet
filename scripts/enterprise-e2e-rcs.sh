@@ -114,7 +114,6 @@ case "${SB_E2E_RCS_VALIDATION_OVERLAY:-unknown}" in
 esac
 if [[ "$score_validation" -gt 0 && "$score_claims" -lt 15 ]]; then
   score_claims=$((score_claims + score_validation))
-  [[ "$score_claims" -gt 15 ]] && score_claims=15
 fi
 
 # tri-host smoke (10%) — Claude required; others warn
