@@ -41,9 +41,9 @@ cmd_fingerprint() {
   local domain="" scope="" finding=""
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --domain) domain="${2:-}"; shift 2 ;;
-      --scope) scope="${2:-}"; shift 2 ;;
-      --finding) finding="${2:-}"; shift 2 ;;
+      --domain) domain="${2:-}"; shift $(( $# >= 2 ? 2 : 1 )) ;;
+      --scope) scope="${2:-}"; shift $(( $# >= 2 ? 2 : 1 )) ;;
+      --finding) finding="${2:-}"; shift $(( $# >= 2 ? 2 : 1 )) ;;
       *) echo "Unknown argument: $1" >&2; usage >&2; return 1 ;;
     esac
   done
@@ -58,8 +58,8 @@ cmd_dedup() {
   local fp="" root="$PWD"
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --fingerprint) fp="${2:-}"; shift 2 ;;
-      --root) root="${2:-}"; shift 2 ;;
+      --fingerprint) fp="${2:-}"; shift $(( $# >= 2 ? 2 : 1 )) ;;
+      --root) root="${2:-}"; shift $(( $# >= 2 ? 2 : 1 )) ;;
       *) echo "Unknown argument: $1" >&2; usage >&2; return 1 ;;
     esac
   done
@@ -94,10 +94,10 @@ cmd_prioritize() {
   local impact="" risk="" evidence="" effort=""
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --impact) impact="${2:-}"; shift 2 ;;
-      --risk) risk="${2:-}"; shift 2 ;;
-      --evidence-strength) evidence="${2:-}"; shift 2 ;;
-      --effort) effort="${2:-}"; shift 2 ;;
+      --impact) impact="${2:-}"; shift $(( $# >= 2 ? 2 : 1 )) ;;
+      --risk) risk="${2:-}"; shift $(( $# >= 2 ? 2 : 1 )) ;;
+      --evidence-strength) evidence="${2:-}"; shift $(( $# >= 2 ? 2 : 1 )) ;;
+      --effort) effort="${2:-}"; shift $(( $# >= 2 ? 2 : 1 )) ;;
       *) echo "Unknown argument: $1" >&2; usage >&2; return 1 ;;
     esac
   done
@@ -117,17 +117,27 @@ read_adapter_config() {
     echo "missing config: $cfg" >&2
     return 1
   fi
-  CREATE_CMD=$(jq -r '.issue_tracker_adapter.create_issue_command // empty' "$cfg")
-  DEDUPE_CMD=$(jq -r '.issue_tracker_adapter.dedupe_command // empty' "$cfg")
-  TRACKER=$(jq -r '.issue_tracker // "local"' "$cfg")
+  # Callers run this under `|| return 1`, where errexit is off: check each read.
+  CREATE_CMD=$(jq -r '.issue_tracker_adapter.create_issue_command // empty' "$cfg" 2>/dev/null) || {
+    echo "invalid config: $cfg" >&2
+    return 1
+  }
+  DEDUPE_CMD=$(jq -r '.issue_tracker_adapter.dedupe_command // empty' "$cfg" 2>/dev/null) || {
+    echo "invalid config: $cfg" >&2
+    return 1
+  }
+  TRACKER=$(jq -r '.issue_tracker // "local"' "$cfg" 2>/dev/null) || {
+    echo "invalid config: $cfg" >&2
+    return 1
+  }
 }
 
 cmd_adapter_dedup() {
   local fp="" root="$PWD"
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --fingerprint) fp="${2:-}"; shift 2 ;;
-      --root) root="${2:-}"; shift 2 ;;
+      --fingerprint) fp="${2:-}"; shift $(( $# >= 2 ? 2 : 1 )) ;;
+      --root) root="${2:-}"; shift $(( $# >= 2 ? 2 : 1 )) ;;
       *) echo "Unknown argument: $1" >&2; usage >&2; return 1 ;;
     esac
   done
@@ -173,8 +183,8 @@ cmd_adapter_create() {
   local payload="" root="$PWD"
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --payload) payload="${2:-}"; shift 2 ;;
-      --root) root="${2:-}"; shift 2 ;;
+      --payload) payload="${2:-}"; shift $(( $# >= 2 ? 2 : 1 )) ;;
+      --root) root="${2:-}"; shift $(( $# >= 2 ? 2 : 1 )) ;;
       *) echo "Unknown argument: $1" >&2; usage >&2; return 1 ;;
     esac
   done
