@@ -125,6 +125,23 @@ jq -n '{verify_commands:[]}' >"$d/.silver-bullet.json"
 inp "$d" bash "$VT"
 assert_contains "empty array falls back to defaults" "$TL_OUT" "Using stack default test command(s)"
 
+# invalid JSON config -> configured commands unreadable, stack defaults apply
+d="$(newproj badjson)"; echo '{not json' >"$d/.silver-bullet.json"; : >"$d/go.mod"
+: >"$CALLS"
+inp "$d" bash "$VT"
+assert_eq "invalid config exits 0 via defaults" 0 "$TL_STATUS"
+assert_eq "invalid config ran the go default" "go test ./..." "$(cat "$CALLS")"
+
+# script text fed on stdin has no BASH_SOURCE: runtime-paths cannot be located, env paths still work
+d="$(newproj stdin)"; jq -n '{verify_commands:["echo via-stdin"]}' >"$d/.silver-bullet.json"
+rm -f "$MARKER"
+pushd "$d" >/dev/null
+tl_run_stdin "$(cat "$VT")" bash -s
+popd >/dev/null
+assert_eq "stdin script passes" 0 "$TL_STATUS"
+assert_contains "stdin script ran the command" "$TL_OUT" "Passed: echo via-stdin"
+assert_file_exists "stdin script wrote the marker from the inherited runtime paths" "$MARKER"
+
 # --- project root discovery -------------------------------------------------
 n="$TL_TMP/noroot"; mkdir -p "$n/a/b"
 inp "$n/a/b" bash "$VT"

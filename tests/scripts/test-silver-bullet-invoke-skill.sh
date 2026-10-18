@@ -111,13 +111,15 @@ assert_contains "HOME agents skills dir searched" "$TL_OUT" "Source: $HOME/.agen
 
 # content search fallback: directory name differs from the frontmatter name
 mkskill "$FX/skills" misnamed-dir SKILL.md $'---\nname: real.name+1\n---\nMISNAMED BODY'
-run invoke-skill real.name+1
+PATH="$(tl_path_without rg)" run invoke-skill real.name+1
 assert_eq "frontmatter name found by content search (find/grep)" 0 "$TL_STATUS"
 assert_contains "content search result used" "$TL_OUT" "Source: $FX/skills/misnamed-dir/SKILL.md"
 assert_contains "content search body printed" "$TL_OUT" "MISNAMED BODY"
 mkskill "$FX/skills" misnamed-dir2 SKILL.md $'---\nname: "quoted-name"\n---\nQ'
-run invoke-skill quoted-name
+PATH="$(tl_path_without rg)" run invoke-skill quoted-name
 assert_contains "quoted frontmatter name matches" "$TL_OUT" "Source: $FX/skills/misnamed-dir2/SKILL.md"
+PATH="$(tl_path_without rg)" run invoke-skill never-defined-anywhere
+assert_eq "find/grep search finding nothing -> not discoverable" 1 "$TL_STATUS"
 # with rg available the search goes through it
 tl_stub rg 'echo "'"$FX"'/skills/misnamed-dir/SKILL.md"; echo "$@" >"'"$TL_TMP"'/rg.args"'
 run invoke-skill real.name+1
