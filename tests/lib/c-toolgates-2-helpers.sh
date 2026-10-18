@@ -11,8 +11,8 @@
 # tg2_run honours TG2_CWD (working dir), TG2_PROJECT_ROOT (SILVER_BULLET_PROJECT_ROOT),
 # TG2_PATH (PATH override), TG2_REPO (alternate hook tree, e.g. a farm) and
 # TG2_STDIN_UNREADABLE=1 (stdin opened write-only, so the hook's read fails with EBADF).
-# A literally closed stdin (<&-) is not usable: even a one-line bash script that runs
-# `cat` hangs when fd 0 is closed (bash reuses fd 0 for the script file).
+# A literally closed stdin (<&-) is not usable: the hooks hang when fd 0 is closed
+# (bash reuses fd 0 for the script file). A write-only fd 0 fails reads with EBADF instead.
 
 TG2_REPO="$TL_REPO_ROOT"
 
@@ -161,7 +161,7 @@ exec $real \"\$@\""
 #
 # Per-gate differences are explicit parameters, never silently assumed:
 #   trivial=yes  the gate honours the trivial marker (rtk, token-compression); trivial=no asserts
-#                the marker does NOT bypass it (stack coordinator never sources trivial-bypass.sh).
+#                the marker does NOT bypass it (the stack coordinator sources trivial-bypass.sh but never calls sb_trivial_bypass).
 #   bridge=yes   SB_KAY_HOOK_BRIDGE_INVOKED makes a PreToolUse deny exit 2 with the reason on
 #                stderr (rtk, coordinator); bridge=no asserts the deny stays exit 0.
 #   TG2_GARBAGE_DENIES=yes  for gates that are armed by external state rather than by the
