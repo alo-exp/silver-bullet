@@ -63,7 +63,7 @@ csba_expected_names "$CONFIG_JSON" >"$EXPECTED_NAMES"
 MANAGED_FILES=()
 while IFS= read -r f; do
   [[ -n "$f" ]] && MANAGED_FILES+=("$f")
-done < <(csba_collect_managed_agents "$AGENTS_DIR" || true)
+done < <(csba_collect_managed_agents "$AGENTS_DIR")
 ACTUAL_COUNT="${#MANAGED_FILES[@]}"
 
 : >"$ACTUAL_NAMES"
