@@ -53,8 +53,19 @@ while [[ $# -gt 0 ]]; do
     --fix) FIX_MODE=1; NON_INTERACTIVE=1; shift ;;
     --include-fast) INCLUDE_FAST=1; shift ;;
     --include-max) INCLUDE_MAX=1; shift ;;
-    --select-models) SELECT_MODELS="$2"; shift 2 ;;
-    --effort-levels) EFFORT_LEVELS="$2"; shift 2 ;;
+    --select-models|--effort-levels)
+      if [[ $# -lt 2 ]]; then
+        echo "$1 requires a value" >&2
+        usage >&2
+        exit 2
+      fi
+      if [[ "$1" == "--select-models" ]]; then
+        SELECT_MODELS="$2"
+      else
+        EFFORT_LEVELS="$2"
+      fi
+      shift 2
+      ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown option: $1" >&2; usage >&2; exit 2 ;;
   esac
@@ -129,11 +140,13 @@ if [[ -z "$CONFIG_JSON" ]]; then
     MAX_ARGS=()
     [[ "$INCLUDE_FAST" -eq 1 ]] && FAST_ARGS+=(--include-fast)
     [[ "$INCLUDE_MAX" -eq 1 ]] && MAX_ARGS+=(--include-max)
+    OFFLINE_ARGS=()
+    [[ "${SB_CURSOR_SB_AGENTS_OFFLINE:-}" == "1" ]] && OFFLINE_ARGS+=(--no-fetch)
     ROWS=()
     while IFS= read -r row; do
       [[ -n "$row" ]] && ROWS+=("$row")
     done < <("${CSBA_PYTHON}" "$CSBA_FETCH" --list-selectable \
-      "${FAST_ARGS[@]}" "${MAX_ARGS[@]}" \
+      "${FAST_ARGS[@]}" "${MAX_ARGS[@]}" "${OFFLINE_ARGS[@]}" \
       --repo-root "$PROJECT_ROOT" 2>/dev/null || true)
     declare -a IDS=()
     local_i=1
