@@ -25,7 +25,7 @@ sb_post_release_uninstall_cursor() {
   _sb_post_release_rm_dir "${cursor_home}/plugins/cache/alo-labs/silver-bullet"
   _sb_post_release_rm_dir "${cursor_home}/plugins/cache/alo-labs-agent-plugins/silver-bullet"
   _sb_post_release_rm_dir "${cursor_home}/plugins/cache/alo-labs-cursor/silver-bullet"
-  _sb_post_release_strip_cursor_hooks "${cursor_home}/hooks.json"
+  _sb_post_release_strip_cursor_hooks "${cursor_home}/hooks.json" || return 1
   rm -f -- \
     "${sb_state_dir}/site-session.json" \
     "${sb_state_dir}/site-visual-evidence.json" \
