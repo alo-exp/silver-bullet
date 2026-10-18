@@ -54,6 +54,15 @@ You are writing tests for the "Silver Bullet" repository (an agent-plugin proces
 ## Hermeticity reminders
 Tests run with a sandboxed HOME, so code that needs a Silver Bullet plugin cache (for example hooks/session-start) needs a fake one staged under $SB_RUNTIME_PLUGIN_CACHE_ROOT in your test. Never depend on network access, `rg` being installed, or root uid. `make lint` runs ShellCheck over first-party Bash and fails on any finding, so keep source edits ShellCheck-clean.
 
+## Lessons from earlier packages
+- Pin the runtime with `tl_init claude` when a test exports `SILVER_BULLET_RUNTIME=claude` for the code under test; otherwise sandbox paths and the code's state paths differ under codex.
+- Never pipe `printf` into `grep -q` under `pipefail` (SIGPIPE race); use here-strings, and for arrays `<<<"$(printf '%s\n' "${arr[@]}")"`. `tests/scripts/test-no-pipe-into-grep-quiet.sh` enforces this.
+- A failure-propagation fix (`|| return 1`) needs tests that call the function where errexit is off (`if f; then …`), and a mutation check: remove the fix in a scratch copy and see a test fail.
+- Keep each test file under 30 s: batch invocations of the code under test instead of spawning hundreds of shells.
+- Two commands with the same command word on one line, both with non-literal arguments, are indistinguishable to the analyzer; split such a line (layout only) in a separate `style:` commit and assert both branches.
+- Git snapshots from `tests/lib/repo-snapshot.sh` have automatic gc disabled; any other test repo that is cloned with `git clone --local` while a test runs needs the same (`git config gc.auto 0`, `maintenance.auto false`).
+- Commit messages end with exactly the two trailer lines given above; no other model names in commits.
+
 ## Working rules that apply to every delegated task
 - No silent git branch switches: never run `git checkout <branch>`, `git switch`, `git checkout -b`, `git rebase`, `git reset --hard` or anything else that changes which branch a checkout is on. Restoring files (`git checkout -- <file>`, `git restore`) and `git merge` inside your own worktree are fine.
 - No Fast mode: never enable it and never use a `*-fast*` model.
