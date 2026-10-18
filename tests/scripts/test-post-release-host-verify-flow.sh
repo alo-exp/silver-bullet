@@ -57,6 +57,12 @@ assert_eq "help exits 0" 0 "$TL_STATUS"; assert_contains "help text" "$TL_OUT" "
 vrun --nope
 assert_eq "unknown arg -> 2" 2 "$TL_STATUS"; assert_contains "unknown arg msg" "$TL_ERR" "Unknown argument: --nope"; assert_contains "usage on stderr" "$TL_ERR" "Usage:"
 
+vrun --version v1.0.0 --host bogus
+assert_eq "unknown host is a usage error" 2 "$TL_STATUS"
+assert_contains "unknown host message" "$TL_ERR" "Unknown host: bogus"
+assert_contains "unknown host shows usage" "$TL_ERR" "Usage:"
+assert_eq "unknown host runs nothing" "" "$(cat "$LOG")"
+
 # --- version resolution (no tags yet) -----------------------------------------------------------------------------------
 git -C "$REL" add -A >/dev/null; git -C "$REL" commit -qm stubs
 vrun

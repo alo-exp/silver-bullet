@@ -56,6 +56,11 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+case "$HOST_FILTER" in
+  all|cursor|codex|claude) ;;
+  *) printf 'Unknown host: %s\n' "$HOST_FILTER" >&2; usage >&2; exit 2 ;;
+esac
+
 if [[ -z "$VERSION" ]]; then
   VERSION="$(git -C "$REPO_ROOT" describe --tags --abbrev=0 2>/dev/null || true)"
 fi
