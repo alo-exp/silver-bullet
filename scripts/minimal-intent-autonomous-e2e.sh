@@ -372,7 +372,7 @@ cmd_status() {
 
   echo "=== minimal-intent runs ==="
   local d
-  for d in "${PLANNING_DIR}"/runs/*/ledger.json; do
+  for d in "${RUNS_DIR}"/*/ledger.json; do
     [[ -f "$d" ]] || continue
     python3 - "$d" <<'PY'
 import json, sys
