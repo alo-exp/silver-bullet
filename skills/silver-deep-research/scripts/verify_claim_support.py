@@ -169,6 +169,11 @@ def compute_support_score(claim_text: str, evidence_quotes: list[str]) -> tuple[
     notes = '; '.join(best_notes) if best_notes else 'adequate overlap'
     return (status, round(best_score, 3), notes)
 
+# Kept identical to citation_manager.py so source_id matching stays stable
+# (tests/test_verify_claim_support_unit.py::TestCanonicalParity enforces it).
+DOI_RE = re.compile(r'(?:https?://(?:dx\.)?doi\.org/|doi:)(10\.\d{4,}/\S+)', re.IGNORECASE)
+ARXIV_RE = re.compile(r'(?:https?://arxiv\.org/abs/|arxiv:)(\d{4}\.\d{4,}(?:v\d+)?)', re.IGNORECASE)
+
 TRACKING_PARAMS = frozenset([
     'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content',
     'ref', 'source', 'fbclid', 'gclid', 'mc_cid', 'mc_eid',
@@ -178,8 +183,15 @@ TRACKING_PARAMS = frozenset([
 def canonicalize_locator(raw_url: str) -> str:
     """Derive a canonical locator from a raw URL or identifier string.
 
-    Mirrors citation_manager.py behavior to keep source_id matching stable.
+    Mirrors citation_manager.py behavior (DOI > arXiv > normalized URL) to
+    keep source_id matching stable.
     """
+    m = DOI_RE.search(raw_url)
+    if m:
+        return f'doi:{m.group(1).rstrip(".")}'
+    m = ARXIV_RE.search(raw_url)
+    if m:
+        return f'arxiv:{m.group(1)}'
     parsed = urlparse(raw_url)
     scheme = (parsed.scheme or 'https').lower()
     host = (parsed.hostname or '').lower()
