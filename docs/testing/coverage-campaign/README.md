@@ -59,7 +59,7 @@ Update the base commit named in coverage-agent-prompt.md to the PR branch head b
 | C-toolgates-1 | Merged after review |
 | G-toolstack-1 | Merged after review (five bug fixes, each with a red test) |
 | D-gates | Second review |
-| F-enterprise-1 | Repair round after review |
+| F-enterprise-1 | Merged after review and one repair round (preflight failures now fail their callers; overlay telemetry kept out of the checkout) |
 | E-core-hooks, C-toolgates-2, F-enterprise-2, G-toolstack-2 | In progress |
 | All others | Not started |
 
