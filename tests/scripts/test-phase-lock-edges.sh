@@ -22,7 +22,6 @@ pl() { tl_run bash "$SCRIPT" "$@"; }
 # in_dir DIR cmd...: run a command (typically tl_run ...) from DIR without a subshell, so TL_* survive.
 in_dir() { local d="$1" old="$PWD"; shift; cd "$d"; "$@"; cd "$old"; }
 export GIT_CEILING_DIRECTORIES="$TL_TMP"
-HOST="$(hostname -s 2>/dev/null || hostname)"
 
 # --- help ---------------------------------------------------------------
 for arg in "" "-h" "--help"; do
