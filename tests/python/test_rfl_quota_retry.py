@@ -253,13 +253,28 @@ class ScheduleTest(Base):
 
     def test_not_quota_schedules_nothing(self):
         out = self.schedule("plain failure")
-        self.assertEqual((out["scheduled"], out["deduped"], out["job"]), (False, False, None))
+        self.assertEqual(out, {
+            "ok": True, "deduped": False, "scheduled": False, "path": str(self.run_dir / q.SCHEDULE_FILENAME),
+            "job": None, **q.classify_quota_window("plain failure"),
+        })
         self.assertFalse((self.run_dir / q.SCHEDULE_FILENAME).exists())
 
     def test_new_job_is_persisted_and_armed(self):
         out = self.schedule()
-        self.assertEqual((out["ok"], out["scheduled"], out["deduped"], out["armed"]), (True, True, False, True))
         j = out["job"]
+        timer = j["timer"]
+        self.assertEqual(out, {
+            "ok": True, "deduped": False, "scheduled": True, "armed": True, "timer": timer,
+            "path": str(self.run_dir / q.SCHEDULE_FILENAME), "job": j,
+            **q.classify_quota_window("5-hour usage limit. Resets in 2hr"),
+        })
+        self.assertEqual(j, {
+            "id": "rfl-demo::r1::gpt", "run_id": "rfl-demo", "run_dir": str(self.run_dir), "rung": "r1", "model": "gpt",
+            "quota_class": "five_hour", "reset_seconds": 7200, "schedule_delay_seconds": 7200,
+            "fire_at": "2030-01-01T14:00:00Z", "created_at": "2030-01-01T12:00:00Z", "status": "scheduled",
+            "same_named_model": True, "substitute_model": None, "timer": timer,
+        })
+        self.assertEqual((timer["armed"], timer["backend"], timer["fire_at"]), (True, "mock", "2030-01-01T14:00:00Z"))
         self.assertEqual(j["id"], "rfl-demo::r1::gpt")
         self.assertEqual(j["fire_at"], "2030-01-01T14:00:00Z")
         self.assertEqual(j["schedule_delay_seconds"], 7200)
@@ -284,7 +299,12 @@ class ScheduleTest(Base):
         self.schedule()
         before = (self.run_dir / q.SCHEDULE_FILENAME).read_bytes()
         out = self.schedule()
-        self.assertEqual((out["deduped"], out["scheduled"], out["armed"]), (True, True, True))
+        stored_job = self.store()["jobs"][0]
+        self.assertEqual(out, {
+            "ok": True, "deduped": True, "scheduled": True, "armed": True, "timer": stored_job["timer"],
+            "path": str(self.run_dir / q.SCHEDULE_FILENAME), "job": stored_job,
+            **q.classify_quota_window("5-hour usage limit. Resets in 2hr"),
+        })
         self.assertEqual((self.run_dir / q.SCHEDULE_FILENAME).read_bytes(), before)
         self.assertEqual(len(self.store()["jobs"]), 1)
 
@@ -304,7 +324,11 @@ class ScheduleTest(Base):
     def test_duplicate_of_finished_job_reports_not_scheduled(self):
         self.put_store([job(status="executed")])
         out = self.schedule()
-        self.assertEqual((out["deduped"], out["scheduled"], out["armed"], out["timer"]), (True, False, False, None))
+        self.assertEqual(out, {
+            "ok": True, "deduped": True, "scheduled": False, "armed": False, "timer": None,
+            "path": str(self.run_dir / q.SCHEDULE_FILENAME), "job": job(status="executed"),
+            **q.classify_quota_window("5-hour usage limit. Resets in 2hr"),
+        })
         self.assertEqual(self.store()["jobs"][0].get("timer"), None)
 
 
@@ -328,7 +352,7 @@ class ActivateAndDueTest(Base):
 
     def test_missing_job(self):
         out = self.activate()
-        self.assertEqual((out["ok"], out["action"], out["execute"], out["error"]), (False, "missing", False, "no schedule for rfl-demo::r1::gpt"))
+        self.assertEqual(out, {"ok": False, "action": "missing", "execute": False, "ask": None, "error": "no schedule for rfl-demo::r1::gpt"})
 
     def test_alternate_run_id_lookup(self):
         self.put_store([job(id="stored::r1::gpt", run_id="stored")], run_id="stored")
@@ -351,21 +375,24 @@ class ActivateAndDueTest(Base):
     def test_already_consumed(self):
         self.put_store([job(status="executed")])
         out = self.activate()
-        self.assertEqual((out["ok"], out["action"], out["execute"]), (True, "already_consumed", False))
+        self.assertEqual(out, {"ok": True, "action": "already_consumed", "execute": False, "ask": None, "job": job(status="executed")})
 
     def test_not_due(self):
         self.put_store([job(fire_at="2030-01-01T13:00:00Z")])
         out = self.activate()
-        self.assertEqual((out["action"], out["execute"]), ("not_due", False))
+        self.assertEqual(out, {"ok": True, "action": "not_due", "execute": False, "ask": None, "job": job(fire_at="2030-01-01T13:00:00Z")})
         self.assertEqual(self.store()["jobs"][0]["status"], "scheduled")
         self.assertFalse((self.run_dir / q.EXECUTE_FILENAME).exists())
 
     def test_retry_rung_when_ladder_active(self):
         self.put_store([job()])
         out = self.activate()
-        self.assertEqual((out["action"], out["execute"], out["rung"], out["model"]), ("retry_rung", True, "r1", "gpt"))
-        self.assertEqual(out["artifact"], str(self.run_dir / q.EXECUTE_FILENAME))
-        self.assertEqual(out["ladder_status"], "active")
+        self.assertEqual(out, {
+            "ok": True, "action": "retry_rung", "execute": True, "ask": None,
+            "artifact": str(self.run_dir / q.EXECUTE_FILENAME), "rung": "r1", "model": "gpt",
+            "same_named_model": True, "substitute_model": None, "ladder_status": "active",
+            "job": job(status="executed", executed_at="2030-01-01T12:00:00Z"),
+        })
         stored = self.store()["jobs"][0]
         self.assertEqual((stored["status"], stored["executed_at"]), ("executed", "2030-01-01T12:00:00Z"))
         body = (self.run_dir / q.EXECUTE_FILENAME).read_text()
@@ -381,9 +408,13 @@ class ActivateAndDueTest(Base):
         self.put_store([job()])
         (self.run_dir / "LADDER-STATUS.json").write_text('{"status": "completed"}')
         out = self.activate()
-        self.assertEqual((out["action"], out["execute"], out["ladder_status"]), ("ask_user", False, "completed"))
+        expected_ask = q.ask_user_prompt(run_id="rfl-demo", rung="r1", model="gpt", ladder_status="completed")
+        self.assertEqual(out, {
+            "ok": True, "action": "ask_user", "execute": False, "ask": expected_ask,
+            "artifact": str(self.run_dir / q.ASK_FILENAME), "ladder_status": "completed",
+            "job": job(status="asked", asked_at="2030-01-01T12:00:00Z", ask=expected_ask),
+        })
         self.assertIn("`rfl-demo` has already finished (status: completed)", out["ask"])
-        self.assertEqual(out["artifact"], str(self.run_dir / q.ASK_FILENAME))
         stored = self.store()["jobs"][0]
         self.assertEqual((stored["status"], stored["asked_at"], stored["ask"]), ("asked", "2030-01-01T12:00:00Z", out["ask"]))
         self.assertIn("Do **not** execute this rung until the user answers yes.", (self.run_dir / q.ASK_FILENAME).read_text())
@@ -472,9 +503,10 @@ class TimerTest(Base):
             t = self.arm()
         self.assertEqual((t["armed"], t["backend"], t["at_bin"], t["stderr"]), (True, "at", "/bin/at-stub", "job 5 at Tue"))
         args, kwargs = run.call_args
-        self.assertEqual(args[0][:2], ["/bin/at-stub", "-t"])
-        self.assertEqual(kwargs["input"], t["command"] + "\n")
-        self.assertIs(kwargs["check"], False)
+        fire_local = datetime(2030, 1, 1, 11, 0, tzinfo=timezone.utc).astimezone().strftime("%Y%m%d%H%M")
+        self.assertEqual(args, (["/bin/at-stub", "-t", fire_local],))
+        self.assertEqual(kwargs, {"input": t["command"] + "\n", "text": True, "capture_output": True, "check": False})
+        self.assertIn(str(self.run_dir), t["command"])
 
     def test_at_backend_found_on_path(self):
         os.environ["SB_RFL_TIMER_MODE"] = "at-only"
@@ -530,7 +562,8 @@ class TimerTest(Base):
         self.assertIn("<key>Label</key><string>dev.alolabs.sb.rfl-quota-retry.a-b-c</string>", body)
         self.assertIn("<string>--quota-retry-wake</string>", body)
         self.assertIn("<key>RunAtLoad</key><false/>", body)
-        self.assertEqual([c.args[0][:2] for c in run.call_args_list], [["launchctl", "unload"], ["launchctl", "load"]])
+        self.assertEqual([c.args for c in run.call_args_list], [(["launchctl", "unload", str(plist)],), (["launchctl", "load", str(plist)],)])
+        self.assertEqual([c.kwargs for c in run.call_args_list], [{"capture_output": True, "check": False}] * 2)
 
     def test_launchd_label_defaults_when_job_has_no_id(self):
         self.launchd_env(launchctl="0")
@@ -671,8 +704,7 @@ class WakeTest(Base):
         self.put_store([job(), job(id="x", status="executed"), job(id="n", rung="r2", fire_at="2030-01-01T13:00:00Z")])
         out = q.wake_due_jobs(run_dir=self.run_dir, now=NOW)
         self.assertEqual([r["action"] for r in out["results"]], ["retry_rung", "not_due"])
-        self.assertEqual(out["results"][1]["job_id"], "n")
-        self.assertEqual(out["results"][1]["fire_at"], "2030-01-01T13:00:00Z")
+        self.assertEqual(out["results"][1], {"ok": True, "action": "not_due", "execute": False, "job_id": "n", "fire_at": "2030-01-01T13:00:00Z"})
         self.assertEqual(out["executes"], ["Execute rung r1 on gpt (same model)."])
         self.assertEqual(out["asks"], [])
         self.assertEqual(out["run_dirs"], [str(self.run_dir)])
@@ -693,7 +725,7 @@ class WakeTest(Base):
     def test_missing_job_result_is_reported_without_notification(self):
         self.put_store([job(run_id="", rung="", model="")])
         out = q.wake_due_jobs(run_dir=self.run_dir, now=NOW)
-        self.assertEqual([r["action"] for r in out["results"]], ["missing"])
+        self.assertEqual(out["results"], [{"ok": False, "action": "missing", "execute": False, "ask": None, "error": "no schedule for rfl-demo::::"}])
         self.notify.assert_not_called()
 
     def test_project_root_discovers_dirs_and_resurfaces_artifacts(self):
@@ -735,6 +767,37 @@ class WakeTest(Base):
             "RFL SCHEDULED WORKER: E1 The 5-hour (or ≤5h) quota window has ended. Do this now.",
             "RFL SCHEDULED WORKER: E2 The 5-hour (or ≤5h) quota window has ended. Do this now.",
         ]))
+
+
+class ReviewFollowUpTest(Base):
+    def test_ask_prompt_receives_job_fields_and_ladder_status(self):
+        self.put_store([job(run_id="job-run", rung="r1", model="gpt")])
+        (self.run_dir / "LADDER-STATUS.json").write_text('{"status": "aborted"}')
+        with mock.patch.object(q, "ask_user_prompt", wraps=q.ask_user_prompt) as ask:
+            out = q.activate_quota_retry(run_dir=self.run_dir, run_id="rfl-demo", rung="r1", model="gpt", now=NOW)
+        self.assertEqual(ask.call_args.args, ())
+        self.assertEqual(ask.call_args.kwargs, {"run_id": "job-run", "rung": "r1", "model": "gpt", "ladder_status": "aborted"})
+        self.assertIn("`job-run` has already finished (status: aborted)", out["ask"])
+
+    def test_ask_prompt_falls_back_to_call_arguments_for_sparse_job(self):
+        self.put_store([{"id": "rfl-demo::r1::gpt", "status": "asked"}])
+        (self.run_dir / "POLICY-D.md").write_text("x")
+        with mock.patch.object(q, "ask_user_prompt", wraps=q.ask_user_prompt) as ask:
+            q.activate_quota_retry(run_dir=self.run_dir, run_id="rfl-demo", rung="r1", model="gpt", now=NOW)
+        self.assertEqual(ask.call_args.kwargs, {"run_id": "rfl-demo", "rung": "r1", "model": "gpt", "ladder_status": "completed"})
+
+    def test_every_duration_unit_in_the_table_is_parsed(self):
+        expected_units = {
+            "h": 3600, "hr": 3600, "hrs": 3600, "hour": 3600, "hours": 3600,
+            "m": 60, "min": 60, "mins": 60, "minute": 60, "minutes": 60,
+            "s": 1, "sec": 1, "secs": 1, "second": 1, "seconds": 1,
+        }
+        self.assertEqual(q._UNIT_SECONDS, expected_units)
+        for unit, seconds in q._UNIT_SECONDS.items():
+            for text in (f"resets in 2 {unit}", f"Resets in 2{unit.upper()}", f"reset after 1.5 {unit}"):
+                with self.subTest(text=text):
+                    factor = 1.5 if "1.5" in text else 2
+                    self.assertEqual(q.parse_reset_seconds(text), int(factor * seconds))
 
 
 if __name__ == "__main__":
