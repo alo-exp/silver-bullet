@@ -250,7 +250,12 @@ while time.time() < deadline:
             os.write(fd, reply)
             sent = True
 timed_out = False
+# the terminal closes slightly before the process is reapable: poll briefly
+grace = time.time() + 10
 done, status = os.waitpid(pid, os.WNOHANG)
+while done == 0 and time.time() < grace:
+    time.sleep(0.05)
+    done, status = os.waitpid(pid, os.WNOHANG)
 if done == 0:
     # still running after the deadline (for example a second prompt): never hang CI
     timed_out = True
