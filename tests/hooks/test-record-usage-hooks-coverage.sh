@@ -283,8 +283,8 @@ sb_project_gate_or_exit() { exit 0; }'
 
 fault_suite() { # hook state bash-cmd mcp-tool-env-ok
   local hook="$1" state="$2" cmd="$3" name="${1##*/}"
-  reset; TG2_STDIN_DIR=1 tg2_run "$hook" ""
-  assert_not_recorded "$name: unreadable stdin (directory) is a no-op" "$state"
+  reset; TG2_STDIN_UNREADABLE=1 tg2_run "$hook" ""
+  assert_not_recorded "$name: unreadable stdin is a no-op" "$state"
   if [[ -n "$cmd" ]]; then
     reset; tg2_farm "ti-$name" "$hook" tool-input.sh; tg2_farm_stub tool-input.sh "$stub_tool_input"
     TG2_REPO="$TG2_FARM" tg2_run "$hook" "not json" STUB_TOOL_NAME=Bash "STUB_CMD=$cmd"
@@ -307,8 +307,8 @@ assert_not_recorded "leanctx: unparsable MCP payload records nothing" "$LC_STATE
 reset; tg2_farm ti-rm "$RMH" tool-input.sh; tg2_farm_stub tool-input.sh "$stub_tool_input"
 TG2_REPO="$TG2_FARM" tg2_run "$RMH" "not json" STUB_TOOL_NAME=CallMcpTool
 assert_not_recorded "recommended-mcp: unparsable MCP payload records nothing" "$AM_STATE"
-reset; TG2_STDIN_DIR=1 tg2_run "$RMH" ""
-assert_not_recorded "recommended-mcp: unreadable stdin (directory) is a no-op" "$AM_STATE"
+reset; TG2_STDIN_UNREADABLE=1 tg2_run "$RMH" ""
+assert_not_recorded "recommended-mcp: unreadable stdin is a no-op" "$AM_STATE"
 reset; tg2_farm inactive-rm "$RMH" project-active.sh; tg2_farm_stub project-active.sh "$stub_inactive"
 TG2_REPO="$TG2_FARM" tg2_run "$RMH" "$(tg2_mcp_input agentmemory memory_recall CallMcpTool)"
 assert_not_recorded "recommended-mcp: not-initiated project is a no-op" "$AM_STATE"

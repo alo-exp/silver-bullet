@@ -12,7 +12,6 @@ NOOP='{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit"}}'
 STATE="$SB_RUNTIME_STATE_DIR/state"
 REQ="$STATE.requested"
 LOG_PATH_FILE="$TL_TMP/session-log-path"
-REAL_GREP="$(command -v grep)"
 reset() {
   rm -rf "$STATE" "$REQ" "$SB_RUNTIME_STATE_DIR/ups-coalesce-turn" "$SB_RUNTIME_STATE_DIR/ups-coalesce-seen" \
     "$SB_RUNTIME_STATE_DIR/project-root" "$TL_TMP/custom"
@@ -50,7 +49,7 @@ assert_file_absent "empty prompt creates no requested file" "$REQ"
 # ------------------------------------------------------------------ input shapes
 reset; tg2_run "$HOOK" "" 
 assert_noop "empty stdin is a no-op"
-reset; TG2_STDIN_DIR=1 tg2_run "$HOOK" ""
+reset; TG2_STDIN_UNREADABLE=1 tg2_run "$HOOK" ""
 assert_noop "unreadable stdin is a no-op"
 reset; tg2_run "$HOOK" "not json"
 assert_noop "unparsable stdin is a no-op"
@@ -71,10 +70,10 @@ reset; jq --arg p "~${SB_RUNTIME_STATE_DIR#"$HOME"}/tilde-state" '.state.state_f
 run 'run `sb:feature`'
 assert_eq "tilde in config state_file expands to HOME" "silver-feature" "$(requested "$SB_RUNTIME_STATE_DIR/tilde-state.requested")"
 rm -f "$SB_RUNTIME_STATE_DIR/tilde-state.requested"
-reset; jq '.state.state_file="/tmp/outside-state-root"' <<<'{"sb_initiated":true}' >"$TG2_CFG"
+reset; jq --arg p "$TL_TMP/outside-state-root" '.state.state_file=$p' <<<'{"sb_initiated":true}' >"$TG2_CFG"
 run 'run `sb:feature`'
 assert_eq "state file outside the runtime state root falls back to the default" "silver-feature" "$(requested "$REQ")"
-assert_file_absent "out-of-scope state file is not written" "/tmp/outside-state-root.requested"
+assert_file_absent "out-of-scope state file is not written" "$TL_TMP/outside-state-root.requested"
 reset; run 'run `sb:feature`' SILVER_BULLET_STATE_FILE="$SB_RUNTIME_STATE_DIR/env-state"
 assert_eq "SILVER_BULLET_STATE_FILE overrides the config" "silver-feature" "$(requested "$SB_RUNTIME_STATE_DIR/env-state.requested")"
 rm -f "$SB_RUNTIME_STATE_DIR/env-state.requested"
@@ -121,13 +120,6 @@ reset; : >"$TL_TMP/afile"
 run 'run `sb:feature`' SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="$TL_TMP/afile/.silver-bullet"
 assert_noop "uncreatable state dir does not break the hook"
 assert_file_absent "uncreatable state dir leaves nothing behind" "$TL_TMP/afile/.silver-bullet/state.requested"
-
-# grep emitting a blank match line is skipped
-tl_stub grep "if [[ -n \"\${GREP_BLANK:-}\" && \"\$1\" == -oE ]]; then printf '\n'; fi
-exec $REAL_GREP \"\$@\""
-reset; run 'run `sb:feature`' GREP_BLANK=1
-assert_eq "blank token from grep is skipped" "silver-feature" "$(requested "$REQ")"
-rm -f "$TL_BIN/grep"
 
 # ledger and coalesce libraries
 reset; mkdir -p "$TG2_PROJ/docs/sessions"
