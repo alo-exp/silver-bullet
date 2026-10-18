@@ -142,38 +142,40 @@ score "noop: no log" partial score_noop "$W" "$TL_TMP/absent.log"
 score "noop: empty log arg" partial score_noop "$W" ""
 
 # --- runtime state dirs / orchestrator files -------------------------------
-HOME_DIR="$TL_TMP/home"
+# a private HOME so the hosts present are exactly the ones created here (tl_init pre-creates the active runtime's dir)
+HOME_DIR="$TL_TMP/oa-home"
+HE="HOME=$HOME_DIR"
 mkdir -p "$HOME_DIR/.cursor/.silver-bullet" "$HOME_DIR/.claude/.silver-bullet"
-oa -- enterprise_e2e_outcome_runtime_state_dirs ""
+oa "$HE" -- enterprise_e2e_outcome_runtime_state_dirs ""
 assert_eq "state dirs: sibling hosts that exist, in fixed order" "$HOME_DIR/.cursor/.silver-bullet
 $HOME_DIR/.claude/.silver-bullet" "$TL_OUT"
-oa -- enterprise_e2e_outcome_runtime_state_dirs "$TL_TMP/primary"
+oa "$HE" -- enterprise_e2e_outcome_runtime_state_dirs "$TL_TMP/primary"
 assert_eq "state dirs: primary first, then siblings" "$TL_TMP/primary
 $HOME_DIR/.cursor/.silver-bullet
 $HOME_DIR/.claude/.silver-bullet" "$TL_OUT"
-oa -- enterprise_e2e_outcome_runtime_state_dirs "$HOME_DIR/.cursor/.silver-bullet"
+oa "$HE" -- enterprise_e2e_outcome_runtime_state_dirs "$HOME_DIR/.cursor/.silver-bullet"
 assert_eq "state dirs: a sibling equal to the primary is not repeated" "$HOME_DIR/.cursor/.silver-bullet
 $HOME_DIR/.claude/.silver-bullet" "$TL_OUT"
-oa -- enterprise_e2e_outcome_runtime_state_dirs
+oa "$HE" -- enterprise_e2e_outcome_runtime_state_dirs
 assert_eq "state dirs: no primary argument" "$HOME_DIR/.cursor/.silver-bullet
 $HOME_DIR/.claude/.silver-bullet" "$TL_OUT"
 
 echo '{}' >"$HOME_DIR/.claude/.silver-bullet/orchestrator-directive.json"
-oa -- enterprise_e2e_outcome_find_orchestrator_file orchestrator-directive.json "$TL_TMP/primary"
+oa "$HE" -- enterprise_e2e_outcome_find_orchestrator_file orchestrator-directive.json "$TL_TMP/primary"
 assert_eq "find orchestrator file: sibling host dir" "$HOME_DIR/.claude/.silver-bullet/orchestrator-directive.json" "$TL_OUT"
 mkdir -p "$TL_TMP/primary"
 echo '{}' >"$TL_TMP/primary/orchestrator-directive.json"
-oa -- enterprise_e2e_outcome_find_orchestrator_file orchestrator-directive.json "$TL_TMP/primary"
+oa "$HE" -- enterprise_e2e_outcome_find_orchestrator_file orchestrator-directive.json "$TL_TMP/primary"
 assert_eq "find orchestrator file: primary wins" "$TL_TMP/primary/orchestrator-directive.json" "$TL_OUT"
-oa -- enterprise_e2e_outcome_find_orchestrator_file orchestrator-worker-active.json "$TL_TMP/primary"
+oa "$HE" -- enterprise_e2e_outcome_find_orchestrator_file orchestrator-worker-active.json "$TL_TMP/primary"
 assert_eq "find orchestrator file: absent everywhere" 1 "$TL_STATUS"
 oa_sh "enterprise_e2e_outcome_runtime_state_dirs() { printf '\n%s\n' '$TL_TMP/primary'; }
-enterprise_e2e_outcome_find_orchestrator_file orchestrator-directive.json"
+enterprise_e2e_outcome_find_orchestrator_file orchestrator-directive.json" "$HE"
 assert_eq "find orchestrator file: blank directory entries are skipped" "$TL_TMP/primary/orchestrator-directive.json" "$TL_OUT"
 
 # the sibling-host directive was only for the lookup tests; later scorers must see no directive
 rm -f "$HOME_DIR/.claude/.silver-bullet/orchestrator-directive.json"
-oa -- enterprise_e2e_outcome_find_orchestrator_file orchestrator-directive.json "$TL_TMP/nowhere"
+oa "$HE" -- enterprise_e2e_outcome_find_orchestrator_file orchestrator-directive.json "$TL_TMP/nowhere"
 assert_eq "find orchestrator file: nothing left in the sibling hosts" 1 "$TL_STATUS"
 
 dd_() { oa -- enterprise_e2e_outcome_directive_drained "$1"; }
