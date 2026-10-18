@@ -38,6 +38,7 @@ pre_release_overlay_run_feature_checks() { echo "features $1 dry=$SB_E2E_PRE_REL
 pre_release_overlay_check_router_help_page() { echo "router-help $1" >>"$F4_CALLS"; VALIDATION_OVERLAY_SKIP=$((VALIDATION_OVERLAY_SKIP + 1)); }
 pre_release_overlay_matrix_row_claims() { echo "rowclaims $1" >>"$F4_CALLS"; [[ -z "${F4_PRE_ROW_FAIL:-}" ]] || VALIDATION_OVERLAY_FAIL=$((VALIDATION_OVERLAY_FAIL + 1)); }
 EOS
+rm -f "$R/scripts/run-tri-host-install-smoke.sh"
 cat >"$R/scripts/run-tri-host-install-smoke.sh" <<'EOS'
 #!/usr/bin/env bash
 echo "tri-host rtk=${RTK_DISABLED:-}" >>"$F4_CALLS"

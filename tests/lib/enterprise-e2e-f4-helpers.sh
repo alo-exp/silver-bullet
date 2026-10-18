@@ -13,8 +13,12 @@ f4_setup() {
   export F4_CTL="$TL_TMP/ctl" F4_CALLS="$TL_TMP/calls"
   mkdir -p "$F4_CTL"
   : >"$F4_CALLS"
+  # cd fails for the directory named in $F4_CD_FAIL (fault injection for `cd X || exit`).
   # kill: record only; `kill -0 PID` is true when PID is listed in $F4_CTL/alive
-  cat >"$TL_TMP/kill-stub.sh" <<'EOS'
+  # BASH_ENV is also how the coverage tracer is loaded, so chain to the previous value.
+  {
+    printf '[[ -z "%s" || ! -f "%s" ]] || source "%s"\n' "${BASH_ENV:-}" "${BASH_ENV:-}" "${BASH_ENV:-}"
+    cat <<'EOS'
 kill() {
   printf 'kill %s\n' "$*" >>"${F4_CALLS:?}"
   if [[ "${1:-}" == "-0" ]]; then
@@ -23,7 +27,14 @@ kill() {
   fi
   return 0
 }
+cd() {
+  if [[ -n "${F4_CD_FAIL:-}" && "${1:-}" == "$F4_CD_FAIL" ]]; then
+    return 1
+  fi
+  builtin cd "$@"
+}
 EOS
+  } >"$TL_TMP/kill-stub.sh"
   export BASH_ENV="$TL_TMP/kill-stub.sh"
   # pgrep: records argv, prints $F4_CTL/pgrep.<key> when the arguments contain <key>
   tl_stub pgrep 'printf "pgrep %s\n" "$*" >>"$F4_CALLS"
