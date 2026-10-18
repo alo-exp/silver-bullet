@@ -40,11 +40,14 @@ bash "${SB_ROOT}/tests/hooks/test-orchestrator-directive.sh" | tail -1
 bash "${SB_ROOT}/tests/hooks/test-orchestrator-worker-handoff.sh" | tail -1
 bash "${SB_ROOT}/tests/hooks/test-outcomes-check.sh" | tail -1
 
+# A private log file: a fixed /tmp path collides across users and runs.
+npm_log="$(mktemp "${TMPDIR:-/tmp}/enterprise-app-dogfood-test.XXXXXX")"
+trap 'rm -f -- "$npm_log"' EXIT
 (
   cd "$ENTERPRISE_APP"
-  npm test >/tmp/enterprise-app-dogfood-test.log 2>&1
+  npm test >"$npm_log" 2>&1
 )
-echo "PASS: enterprise-grade-test-app npm test ($(tail -1 /tmp/enterprise-app-dogfood-test.log))"
+echo "PASS: enterprise-grade-test-app npm test ($(tail -1 "$npm_log"))"
 
 for artifact in \
   ".planning/phases/08-v5-full-surface/PLAN.md" \
