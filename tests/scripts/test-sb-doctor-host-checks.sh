@@ -273,6 +273,13 @@ run STUB_RC_SURFACE_CACHE=1 -- --fix "$HD_PROJ"
 assert_not_contains "non-executable installer is skipped" "$(hd_logs)" "install-claude "
 chmod +x "$HD_ST/scripts/install-claude.sh"
 
+# a Cursor install problem outside D4 runs the full Cursor installer
+hd_happy cursor
+rm -f -- "${HOME:?}/.cursor/plugins/cache/alo-labs/silver-bullet/$HD_VER/commands/sb.md"
+cu -- --fix "$HD_PROJ"
+assert_contains "cursor installer announced for D19" "$TL_ERR" "sb-doctor: --fix running $HD_ST/scripts/install-cursor.sh for D19"
+assert_contains "cursor installer ran without arguments" "$(hd_logs)" "install-cursor "
+
 # D4: cursor merges hooks; other hosts run their installer
 hd_happy cursor
 rm -f -- "${HOME:?}/.cursor/hooks.json"
