@@ -116,15 +116,23 @@ check_template-placeholders() {
   return "$ok"
 }
 
-# The deploy gate snippet keeps a fallback copy of the template's required_deploy list.
+# The deploy gate snippet and prompt-reminder.sh keep fallback copies of the template's
+# required_deploy list.
 check_deploy-snippet-list() {
-  local snippet template
+  local ok=0 snippet template literal
   snippet="$(sed -n 's/^REQUIRED_DEPLOY="\(.*\)"$/\1/p' scripts/deploy-gate-snippet.sh | head -1)"
   template="$(jq -r '.skills.required_deploy | join(" ")' "$TEMPLATE")"
-  [[ "$snippet" == "$template" ]] && return 0
-  echo "  scripts/deploy-gate-snippet.sh REQUIRED_DEPLOY: $snippet"
-  echo "  $TEMPLATE required_deploy: $template"
-  return 1
+  if [[ "$snippet" != "$template" ]]; then
+    echo "  scripts/deploy-gate-snippet.sh REQUIRED_DEPLOY: $snippet"
+    ok=1
+  fi
+  while IFS= read -r literal; do
+    [[ "$literal" == "$template" ]] && continue
+    echo "  hooks/prompt-reminder.sh DEFAULT_REQUIRED fallback: $literal"
+    ok=1
+  done < <(grep -o 'DEFAULT_REQUIRED:-[^}]*}' hooks/prompt-reminder.sh | sed 's/^DEFAULT_REQUIRED:-//; s/}$//')
+  [[ "$ok" == 0 ]] || echo "  $TEMPLATE required_deploy: $template"
+  return "$ok"
 }
 
 # A required skill that is not tracked can never be recorded, so the gate never opens.
