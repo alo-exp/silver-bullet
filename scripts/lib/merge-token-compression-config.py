@@ -44,8 +44,20 @@ LEANCTX_ENV_BASE = {"LEANCTX_MCP_TOOL_PREFIX": "lctx_"}
 def load_json(path: pathlib.Path, default: dict | None = None) -> dict:
     if path.is_file():
         with path.open(encoding="utf-8") as handle:
-            return json.load(handle)
+            data = json.load(handle)
+        if not isinstance(data, dict):
+            raise ValueError(f"{path}: expected a JSON object at the top level")
+        return data
     return default or {}
+
+
+def object_member(data: dict, key: str) -> dict:
+    """Return ``data[key]`` as a dict, replacing a missing/non-object value with ``{}``."""
+    value = data.get(key)
+    if not isinstance(value, dict):
+        value = {}
+        data[key] = value
+    return value
 
 
 def save_json(path: pathlib.Path, data: dict, dry_run: bool) -> None:
@@ -65,11 +77,15 @@ def backup_file(path: pathlib.Path) -> None:
 
 
 def hook_command(entry: dict) -> str:
+    if not isinstance(entry, dict):
+        return ""
     return str(entry.get("command", ""))
 
 
 def hook_entry_key(entry: dict) -> tuple[str, str]:
     """Dedupe key: same command with different matchers must both be kept."""
+    if not isinstance(entry, dict):
+        return ("", "")
     return (hook_command(entry), str(entry.get("matcher", "")))
 
 
@@ -160,7 +176,7 @@ def merge_codex_hooks_file(target: pathlib.Path, fragment: dict, dry_run: bool) 
 
 def merge_mcp_server(target: pathlib.Path, server_name: str, server_cfg: dict, dry_run: bool) -> bool:
     data = load_json(target, {"mcpServers": {}})
-    servers = data.setdefault("mcpServers", {})
+    servers = object_member(data, "mcpServers")
     if server_name in servers:
         return False
     servers[server_name] = server_cfg
@@ -173,7 +189,7 @@ def merge_shared_claude_context_mode(
 ) -> bool:
     """Keep Claude's Context Mode server canonical and manifest-backed."""
     data = load_json(target, {"mcpServers": {}})
-    servers = data.setdefault("mcpServers", {})
+    servers = object_member(data, "mcpServers")
     changed = False
     existing = servers.get("context-mode")
     legacy = servers.get("user-context-mode")
@@ -201,8 +217,11 @@ def merge_shared_claude_context_mode(
 def merge_cli_allowlist(target: pathlib.Path, allow_entries: list[str], dry_run: bool) -> int:
     data = load_json(target, {"version": 1, "permissions": {"allow": [], "deny": []}})
     data.setdefault("version", 1)
-    perms = data.setdefault("permissions", {})
-    allow = perms.setdefault("allow", [])
+    perms = object_member(data, "permissions")
+    allow = perms.get("allow")
+    if not isinstance(allow, list):
+        allow = []
+        perms["allow"] = allow
     added = 0
     for entry in allow_entries:
         if entry not in allow:
@@ -424,7 +443,9 @@ def optimize_cursor(repo_root: pathlib.Path, dry_run: bool, skip_cli_config: boo
         cm_mcp = cm_pkg / "configs" / "cursor" / "mcp.json"
         if cm_mcp.is_file():
             mcp_data = load_json(cm_mcp)
-            servers = mcp_data.get("mcpServers", {})
+            servers = mcp_data.get("mcpServers")
+            if not isinstance(servers, dict):
+                servers = {}
             for name, cfg in servers.items():
                 if name in ("context-mode", "user-context-mode"):
                     cfg = mcp_server_spec(manifest, "context_mode")
