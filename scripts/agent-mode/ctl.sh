@@ -27,6 +27,7 @@ EOF
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --control-dir)
+      [[ $# -ge 2 ]] || { printf 'ERROR: --control-dir requires a value\n' >&2; exit 2; }
       CONTROL_DIR="$2"
       shift 2
       ;;
