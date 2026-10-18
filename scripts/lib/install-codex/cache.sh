@@ -55,8 +55,6 @@ sync_codex_cache_package_surface() {
     return 0
   fi
 
-  [[ -d "${marketplace_root}/plugins/silver-bullet" ]] || return 0
-
   local cache_root="${CODEX_HOME_ROOT}/.codex/plugins/cache"
   local marketplace_package_root="${marketplace_root}/plugins/silver-bullet"
   local package_root="${cache_root}/alo-labs-codex/silver-bullet"
