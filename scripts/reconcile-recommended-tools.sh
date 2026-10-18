@@ -225,7 +225,6 @@ rt_reprobe_sibling_components() {
 
 rt_forced_host_convergence_pass() {
   local conv_json failure restart
-  [[ "${RT_MODE:-verify}" == "apply" ]] || return 0
   rt_cross_tool_batch_active || return 0
   [[ "$RT_CROSS_TOOL_REPAIRED" == true ]] && return 0
   rt_any_five_tool_mutation_allowed || return 0
