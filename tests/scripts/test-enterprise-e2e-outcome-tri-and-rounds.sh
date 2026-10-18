@@ -87,6 +87,10 @@ assert_eq "distinct ids: no jq reports zero" "0" "$TL_OUT"
 newcase
 count
 assert_eq "distinct ids: nothing recorded" "0" "$TL_OUT"
+EMPTYRUN="$TL_TMP/c$c/empty-run"
+mkdir -p "$EMPTYRUN"
+count "SB_TRI_CRITERIA_RUN_DIR=$EMPTYRUN"
+assert_eq "distinct ids: run dir set but no composition log anywhere" "0" "$TL_OUT"
 mkdir -p "$W/.planning"
 echo '{"composer":"silver-ship"}' >"$W/.planning/orchestrator-composition-log.jsonl"
 count
@@ -120,6 +124,10 @@ mw "SB_TRI_CRITERIA_MIN_WORKFLOW_IDS=2"
 assert_eq "multiwf: minimum lowered to two" "pass" "$TL_OUT"
 mw "PATH=$NOJQ"
 assert_eq "multiwf: without jq the count is zero" "fail" "$TL_OUT"
+printf '%s\n' '{"selected_workflow":"WF-1"}' '{"selected_workflow":"WF-2"}' >"$W/.planning/orchestrator-composition-log.jsonl"
+printf '%s\n' '{"type":"advance"}' 'garbage line' >"$S/orchestrator-events.jsonl"
+mw
+assert_eq "multiwf: unparsable event stream counts as zero advances" "fail" "$TL_OUT"
 rm "$S/orchestrator-events.jsonl"
 oa_log "$L" "WF-SILVER-FEATURE multi workflow"
 printf '%s\n' '{"selected_workflow":"WF-1"}' '{"selected_workflow":"WF-2"}' >"$W/.planning/orchestrator-composition-log.jsonl"
@@ -135,9 +143,17 @@ dyn() { oa "$@" -- enterprise_e2e_outcome_score_dynamic "$W" "$S" "${DYN_LOG-$L}
 CL="$W/.planning/orchestrator-composition-log.jsonl"
 DYN_LOG="" dyn
 assert_eq "dynamic: no composition log" "fail" "$TL_OUT"
+EMPTYRUN="$TL_TMP/c$c/empty-run"
+mkdir -p "$EMPTYRUN"
+DYN_LOG="" dyn "SB_TRI_CRITERIA_RUN_DIR=$EMPTYRUN"
+assert_eq "dynamic: run dir set but no composition log anywhere" "fail" "$TL_OUT"
 printf '%s\n' '{"operations":[{"op":"insert","catalog_rule_ref":"DR-1","rationale":"why"},{"op":"prune","catalog_rule_ref":"DR-2","rationale":"why"}]}' >"$CL"
 dyn
 assert_eq "dynamic: two valid distinct ops with known rules" "pass" "$TL_OUT"
+# fallback: the candidate lister yields nothing although the work-dir log exists
+oa_sh "enterprise_e2e_outcome_composition_log_candidates() { return 0; }
+enterprise_e2e_outcome_score_dynamic '$W' '$S' ''"
+assert_eq "dynamic: falls back to the work-dir log when the candidate list is empty" "pass" "$TL_OUT"
 printf '%s\n' '{"operations":[{"op":"insert","catalog_rule_ref":"DR-1","rationale":"why"},{"op":"insert","catalog_rule_ref":"DR-2","rationale":"why"}]}' >"$CL"
 dyn
 assert_eq "dynamic: ops all the same kind" "partial" "$TL_OUT"
@@ -352,7 +368,7 @@ OUT-KM-01 n/a" "$TL_OUT"
 # --- checklist writer -------------------------------------------------------
 newcase
 : >"$W/.planning/PLAN-1.md"
-oa_registry "$REG" '{"criteria":[],"workflow_row_map":{"3":["OUT-PLAN-01"]},"session_criteria":["OUT-PLAN-01","","OUT-DECIDE-01"]}'
+oa_registry "$REG" '{"criteria":[],"workflow_row_map":{"3":["","OUT-PLAN-01"]},"session_criteria":["OUT-PLAN-01","","OUT-DECIDE-01"]}'
 OUTF="$TL_TMP/c$c/nested/dir/row-3.md"
 oa "$RENV" -- enterprise_e2e_outcome_write_workflow_checklist 3 "$OUTF" "$W" "$S" "$L" "" ""
 assert_eq "checklist: status" 0 "$TL_STATUS"
@@ -383,6 +399,12 @@ oa "$RENV" "SB_TEST_ENTERPRISE_APP_ROOT=$W" "SB_RUNTIME_STATE_DIR=$S" -- enterpr
 assert_contains "checklist: defaulted work dir is used" "$(cat "$OUTF2")" "**Row outcome verdict:** PASS"
 oa "$RENV" "SB_TEST_ENTERPRISE_APP_ROOT=$W" -- enterprise_e2e_outcome_write_workflow_checklist 3 "$OUTF2" "" "" "" "" ""
 assert_contains "checklist: empty state dir falls back" "$(cat "$OUTF2")" "| OUT-PLAN-01 | pass | workflow |"
+
+# no work dir and no app root: the default test-app location (absent) is scored
+OUTF3="$TL_TMP/c$c/no-defaults.md"
+oa "$RENV" -- enterprise_e2e_outcome_write_workflow_checklist 3 "$OUTF3"
+assert_contains "checklist: default work dir does not exist -> criterion fails" "$(cat "$OUTF3")" "| OUT-PLAN-01 | fail | workflow |"
+assert_contains "checklist: default work dir does not exist -> FAIL verdict" "$(cat "$OUTF3")" "**Row outcome verdict:** FAIL"
 
 # --- structural wiring ------------------------------------------------------
 FRESH="$TL_TMP/wiring-root"
