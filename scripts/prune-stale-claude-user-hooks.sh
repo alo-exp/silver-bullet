@@ -32,8 +32,22 @@ if [[ -f "$SETTINGS" ]] && command -v python3 >/dev/null 2>&1; then
 import json, os, re, sys
 
 path = sys.argv[1]
-with open(path, encoding="utf-8") as f:
-    doc = json.load(f)
+
+
+def fail(msg):
+    print(f"prune-stale-claude-user-hooks: ERROR: {msg}; {path} left unchanged", file=sys.stderr)
+    sys.exit(1)
+
+
+try:
+    with open(path, encoding="utf-8") as f:
+        doc = json.load(f)
+except (OSError, ValueError) as exc:
+    fail(f"cannot read settings ({exc})")
+if not isinstance(doc, dict):
+    fail("settings.json is not a JSON object")
+if doc.get("hooks") is not None and not isinstance(doc["hooks"], dict):
+    fail('"hooks" in settings.json is not an object')
 
 changed = False
 hook_re = re.compile(r'gsd-session-state|gsd-[a-z-]+\.sh', re.I)
@@ -59,11 +73,14 @@ def filter_hooks(hooks):
         if not isinstance(entry, dict):
             kept.append(entry)
             continue
-        inner = entry.get("hooks") or []
+        inner = entry.get("hooks")
+        if not isinstance(inner, list) or not inner:
+            # Not a populated hook group: foreign data, never ours to drop.
+            kept.append(entry)
+            continue
         new_inner = []
         for h in inner:
-            cmd = (h or {}).get("command", "")
-            if hook_command_broken(cmd):
+            if isinstance(h, dict) and hook_command_broken(h.get("command", "")):
                 changed = True
                 continue
             new_inner.append(h)
@@ -71,13 +88,9 @@ def filter_hooks(hooks):
             entry = dict(entry)
             entry["hooks"] = new_inner
             kept.append(entry)
-        else:
-            changed = True
     return kept
 
 for section in ("hooks",):
-    if section not in doc:
-        continue
     for event, groups in list((doc.get(section) or {}).items()):
         if not isinstance(groups, list):
             continue
@@ -85,7 +98,7 @@ for section in ("hooks",):
 
 if changed:
     with open(path, "w", encoding="utf-8") as f:
-        json.dump(doc, f, indent=2)
+        json.dump(doc, f, indent=2, ensure_ascii=False)
         f.write("\n")
     print("prune-stale-claude-user-hooks: cleaned settings.json SessionStart hooks", file=sys.stderr)
 PY
