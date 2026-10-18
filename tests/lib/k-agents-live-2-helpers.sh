@@ -73,3 +73,34 @@ k2_assert_no_stray_processes() {
   n="$(ps -eo args 2>/dev/null | grep -c "[s]leep $tag" || true)"
   assert_eq "no stray background processes ($tag)" 0 "$n"
 }
+
+# k2_stage_agent_lib <dir>: staged scripts/lib with the agent libraries and a stub
+# pi-zero-byte-guard.py (plan "rc[:bytes]" per call in GUARD_PLAN; GUARD_OUT is echoed).
+k2_stage_agent_lib() {
+  local d="$1" f
+  mkdir -p "$d/scripts/lib"
+  for f in agent-host-exec.sh agent-mode.sh agent-delegate-common.sh agent-pi-quota-retry.sh codex-cli.sh opencode-cli.sh \
+    multi-ai-opencode-worker.sh pi-cli.sh; do
+    cp "$TL_REPO_ROOT/scripts/lib/$f" "$d/scripts/lib/"
+  done
+  cat >"$d/scripts/lib/pi-zero-byte-guard.py" <<'PY'
+import os, sys
+a = sys.argv[1:]
+plan = os.environ.get("GUARD_PLAN", "0").split(",")
+cnt = os.environ.get("GUARD_COUNTER", "/dev/null")
+try:
+    n = int(open(cnt).read() or 0)
+except Exception:
+    n = 0
+if cnt != "/dev/null":
+    open(cnt, "w").write(str(n + 1))
+ent = plan[min(n, len(plan) - 1)].split(":")
+with open(os.environ["FAKE_LOG"], "a") as f:
+    f.write("GUARD idle=%s hard=%s expect=%s min=%s cwd=%s argv=%s\n" % (a[0], a[1], a[2], a[3], os.getcwd(), " ".join(a[4:])))
+if os.environ.get("GUARD_OUT"):
+    print(os.environ["GUARD_OUT"])
+if len(ent) > 1 and ent[1]:
+    open(a[2], "w").write("x" * int(ent[1]))
+sys.exit(int(ent[0]))
+PY
+}
