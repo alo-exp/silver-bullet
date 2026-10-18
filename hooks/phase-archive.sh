@@ -16,12 +16,22 @@ if [[ -f "$_lib_dir/jq-gate.sh" ]]; then
   # shellcheck source=lib/jq-gate.sh
   source "$_lib_dir/jq-gate.sh"
 fi
-if declare -f sb_jq_enforcement_warn >/dev/null 2>&1; then
-  sb_jq_enforcement_warn "phase-archive"
-fi
 
 # Read JSON from stdin
 input=$(cat)
+
+# This hook fails closed: without jq the command cannot be parsed, so a `phases clear`
+# in an SB project is denied (static reason; no jq in the deny path) instead of warned about.
+if ! command -v jq >/dev/null 2>&1; then
+  grep -qE 'phases[[:space:]]+clear' <<<"$input" || exit 0
+  if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
+    # shellcheck source=lib/sb-project-gate.sh
+    source "$_lib_dir/sb-project-gate.sh"
+    [[ -n "$(sb_find_project_config 2>/dev/null || true)" ]] || exit 0
+  fi
+  printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"phase-archive: jq required for Silver Bullet enforcement - blocking phases clear because phases cannot be archived without it"}}'
+  exit 0
+fi
 
 if [[ -z "$_lib_dir" ]]; then
   _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""

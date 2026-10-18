@@ -256,7 +256,9 @@ EOF
     checklist="$repo_root/$checklist"
   fi
 
-  enabled=$(jq -r '.enforcement.enabled // true' "$contract_file" 2>/dev/null || true)
+  # `// true` would also replace an explicit false, so `enabled: false` could never
+  # disable the gate; only a missing/null value defaults to enabled.
+  enabled=$(jq -r '.enforcement.enabled | if . == null then true else . end' "$contract_file" 2>/dev/null || true)
   if [[ "$enabled" != "true" ]]; then
     return 0
   fi
@@ -342,7 +344,6 @@ EOF
     local mandatory=false
 
     for doc_key in "${_sb_required_doc_keys[@]}"; do
-      [[ -n "$doc_key" ]] || continue
       status=$(jq -r --arg k "$doc_key" '.docs[$k] // empty' "$checklist" 2>/dev/null || true)
       if [[ -z "$status" ]]; then
         gate_issues+="  - Missing checklist entry: ${doc_key}"$'\n'

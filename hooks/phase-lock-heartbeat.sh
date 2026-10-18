@@ -75,10 +75,6 @@ while IFS= read -r phase || [[ -n "$phase" ]]; do
   [[ "$phase" =~ ^[0-9]{3}$ ]] || continue
 
   throttle="${SB_STATE_DIR}/heartbeat-${phase}"
-  case "$throttle" in
-    "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) ;;
-    *) continue ;;
-  esac
 
   # Throttle check: skip if mtime within 300 s
   if [[ -f "$throttle" && ! -L "$throttle" ]]; then
