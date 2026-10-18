@@ -207,4 +207,15 @@ run_opt --host auto --project-root "$PROJ" --skip-rtcm --skip-synergy
 assert_contains "auto host resolves to the detected host" "$TL_OUT" "=== SB five-tool stack optimization (host=codex) ==="
 assert_contains "auto host drives the helpers" "$(calls)" "install-leanctx-sb --host codex"
 
+# sb-optimize-stack.sh --apply exits non-zero when the score has critical gaps; the
+# orchestrator reports them and still finishes its remaining steps
+write_cfg '{"recommended_tools":{"leanctx":{"enabled_by_user":true}}}'
+: >"$LOG"
+tl_run env STUB_RC_sb_optimize_stack=1 bash "$OPT" --host cursor --project-root "$PROJ" --skip-rtcm
+assert_eq "synergy gaps do not abort the orchestrator" "0" "$TL_STATUS"
+assert_contains "synergy gaps are reported" "$TL_ERR" "WARN: sb-optimize-stack.sh --apply reported critical gaps (exit 1)"
+assert_contains "synergy gaps point at the verify report" "$TL_ERR" "sb-optimize-stack.sh --verify"
+assert_contains "the orchestrator still completes" "$TL_OUT" "=== Five-tool optimization complete ==="
+assert_contains "later steps still ran" "$(calls)" "patch-mcp"
+
 tl_results

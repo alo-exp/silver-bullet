@@ -253,7 +253,13 @@ if [[ "$SKIP_SYNERGY" -eq 0 ]]; then
   synergy_args=(bash "$OPTIMIZE_SYNERGY" --apply)
   [[ "$DRY_RUN" -eq 1 ]] && synergy_args+=(--dry-run)
   [[ "$HOST" != "auto" && "$HOST" != "all" ]] && synergy_args+=(--host "$HOST")
-  run_cmd "${synergy_args[@]}"
+  # --apply exits non-zero when the stack score has critical gaps (a missing opted-in
+  # CLI, no index). That is a report, not a reason to skip the remaining steps.
+  synergy_rc=0
+  run_cmd "${synergy_args[@]}" || synergy_rc=$?
+  if [[ "$synergy_rc" -ne 0 ]]; then
+    warn "sb-optimize-stack.sh --apply reported critical gaps (exit ${synergy_rc}); run: bash scripts/sb-optimize-stack.sh --verify"
+  fi
 else
   log "SKIP: sb-optimize-stack.sh (Graphify + agentmemory)"
 fi
