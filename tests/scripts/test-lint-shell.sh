@@ -4,6 +4,8 @@
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
+export TMPDIR="$TL_TMP/tmp"
+mkdir -p "$TMPDIR"
 
 # A scratch repository holding a copy of the script, so REPO_ROOT is the scratch tree.
 make_repo() {
@@ -144,16 +146,35 @@ assert_contains "--all: app clean" "$TL_ERR" "application Bash clean"
 assert_contains "--all: test findings" "$TL_ERR" "test Bash — 2 file(s) with findings"
 
 # a worker killed mid-run (the child of the main script that runs the stub) is
-# reported as an unexpected failure, and its missing result counts as a failed file
-MAINPID="$TL_TMP/main.pid"
-tl_stub shellcheck 'pid=$PPID
-while [[ "$(awk "{print \$4}" /proc/$pid/stat)" != "$(cat "'"$MAINPID"'")" ]]; do
-  pid="$(awk "{print \$4}" /proc/$pid/stat)"
+# reported as an unexpected failure, and its missing result counts as a failed file.
+# The stub walks up from its own parent to the child of the main script, with a bound,
+# and exits 3 (never loops) when it cannot find it.
+if [[ -r /proc/self/stat ]] || ps -o ppid= -p $$ >/dev/null 2>&1; then
+  MAINPID="$TL_TMP/main.pid"
+  tl_stub shellcheck 'ppid_of() {
+  if [[ -r /proc/$1/stat ]]; then awk "{print \$4}" "/proc/$1/stat"; else ps -o ppid= -p "$1" | tr -d " "; fi
+}
+main="$(cat "'"$MAINPID"'")"
+pid=$PPID
+for _ in 1 2 3 4 5 6 7 8; do
+  [[ -n "$pid" && "$pid" -gt 1 ]] || exit 3
+  parent="$(ppid_of "$pid")"
+  if [[ "$parent" == "$main" ]]; then kill -KILL "$pid"; exit 0; fi
+  pid="$parent"
 done
-kill -KILL "$pid"; sleep 5'
-tl_run bash -c 'echo $$ >"$1"; shift; exec "$@"' _ "$MAINPID" bash "$LINT" --tests --jobs 1
-assert_eq "killed worker: exit 2" 2 "$TL_STATUS"
-assert_contains "killed worker message" "$TL_ERR" "a worker failed unexpectedly"
+exit 3'
+  tl_run bash -c 'echo $$ >"$1"; shift; exec "$@"' _ "$MAINPID" bash "$LINT" --tests --jobs 1
+  assert_eq "killed worker: exit 2" 2 "$TL_STATUS"
+  assert_contains "killed worker message" "$TL_ERR" "a worker failed unexpectedly"
+else
+  echo "SKIP: killed-worker case needs /proc or ps"
+fi
+
+# the scratch output directory is removed after normal runs and failure paths
+shopt -s nullglob
+leftovers=("$TMPDIR"/sb-lint-shell.*)
+shopt -u nullglob
+assert_eq "no sb-lint-shell.* directories left in TMPDIR" 0 "${#leftovers[@]}"
 
 # --- no files found --------------------------------------------------------------------------
 EMPTY="$TL_TMP/empty"
