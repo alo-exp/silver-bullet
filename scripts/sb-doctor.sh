@@ -88,7 +88,11 @@ record() {
 version_to_int() {
   local v="${1%%-*}"
   local maj min patch
+  v="${v#v}"
   IFS='.' read -r maj min patch <<<"$v"
+  # Keep the leading digits of each part so "latest" or "3+build" never hit the
+  # arithmetic evaluator as an invalid base-10 number.
+  maj="${maj%%[!0-9]*}"; min="${min%%[!0-9]*}"; patch="${patch%%[!0-9]*}"
   maj="${maj:-0}"; min="${min:-0}"; patch="${patch:-0}"
   printf '%d' $((10#$maj * 1000000 + 10#$min * 1000 + 10#$patch))
 }
@@ -226,7 +230,6 @@ doctor_reconciler_scope() {
     host) printf '%s' "host" ;;
     packages) printf '%s' "packages" ;;
     all) printf '%s' "all" ;;
-    *) printf '%s' "all" ;;
   esac
 }
 
@@ -269,7 +272,6 @@ PY
 }
 
 doctor_repair_generic_stack() {
-  [[ "$DOCTOR_FIX" -eq 1 && "$DOCTOR_DRY_RUN" -eq 0 ]] || return 0
   case "${DOCTOR_FIX_SCOPE:-all}" in
     local) return 0 ;;
   esac
@@ -541,16 +543,18 @@ run_doctor_checks() {
 
   source_runtime_paths
   runtime="${SB_RUNTIME_NAME:-${SILVER_BULLET_RUNTIME:-claude}}"
-  template_ver="$(resolve_template_config_version)"
-  sb_config="${PROJ_ROOT}/.silver-bullet.json"
-  cache_root="$(plugin_cache_root)"
 
-  # D1 — jq
+  # D1 — jq (every other check parses JSON with jq, so report it and stop here)
   if command -v jq >/dev/null 2>&1; then
     record pass D1 "jq on PATH ($(jq --version 2>/dev/null | head -1))"
   else
     record fail D1 "jq missing — SB hooks fail-open without jq"
+    return 0
   fi
+
+  template_ver="$(resolve_template_config_version)"
+  sb_config="${PROJ_ROOT}/.silver-bullet.json"
+  cache_root="$(plugin_cache_root)"
 
   # D2 — plugin registry
   local reg
@@ -646,8 +650,9 @@ run_doctor_checks() {
 
   # D6 — config freshness
   if [[ -f "$sb_config" ]]; then
-    proj_ver="$(jq -r '.config_version // .version // "0.0.0"' "$sb_config")"
-    if version_lt "$proj_ver" "$template_ver"; then
+    if ! proj_ver="$(jq -r '.config_version // .version // "0.0.0"' "$sb_config" 2>/dev/null)"; then
+      record fail D6 "project config is not valid JSON (${sb_config})"
+    elif version_lt "$proj_ver" "$template_ver"; then
       record fail D6 "project config_version ${proj_ver} < template ${template_ver}"
     else
       record pass D6 "config_version ${proj_ver} (template ${template_ver})"
@@ -688,7 +693,7 @@ run_doctor_checks() {
 
   # D10 — five-tool reconciler (all components + routes)
   # D10-generic is deliberately separate from SB hooks/enforcement readiness.
-  doctor_record_generic_stack || true
+  doctor_record_generic_stack
   doctor_record_reconciler_d10 || true
 
 
@@ -728,16 +733,14 @@ run_doctor_checks() {
   if [[ -f "${REPO_ROOT}/hooks/lib/runtime-paths.sh" ]]; then
     # shellcheck source=../hooks/lib/runtime-paths.sh
     source "${REPO_ROOT}/hooks/lib/runtime-paths.sh"
-    mkdir -p "${SB_RUNTIME_STATE_DIR}"
-    if [[ -w "${SB_RUNTIME_STATE_DIR}" ]]; then
+    if mkdir -p "${SB_RUNTIME_STATE_DIR}" 2>/dev/null && [[ -w "${SB_RUNTIME_STATE_DIR}" ]]; then
       record pass D12 "${SB_RUNTIME_STATE_DIR} writable"
     else
       record fail D12 "${SB_RUNTIME_STATE_DIR} not writable"
     fi
   else
     local fallback="${HOME}/.silver-bullet"
-    mkdir -p "$fallback"
-    if [[ -w "$fallback" ]]; then
+    if mkdir -p "$fallback" 2>/dev/null && [[ -w "$fallback" ]]; then
       record pass D12 "${fallback} writable (fallback)"
     else
       record fail D12 "state dir not writable"
@@ -940,19 +943,23 @@ run_doctor_checks() {
 }
 
 doctor_print_summary() {
-  if [[ "$FORMAT" == "json" ]]; then
+  if [[ "$FORMAT" == "json" ]] && command -v jq >/dev/null 2>&1; then
     local recon='null'
     if [[ -n "${RECONCILER_JSON:-}" ]]; then
-      recon="$(printf '%s' "$RECONCILER_JSON" | jq -c '.' 2>/dev/null || echo null)"
+      recon="$(printf '%s' "$RECONCILER_JSON" | jq -c '.' 2>/dev/null)"
     fi
+    local deep=false dry_run=false fix_applied=false
+    [[ "$DOCTOR_DEEP" -eq 1 ]] && deep=true
+    [[ "$DOCTOR_DRY_RUN" -eq 1 ]] && dry_run=true
+    [[ "$DOCTOR_FIX_APPLIED" -eq 1 ]] && fix_applied=true
     jq -n \
       --arg schema "2.0.0" \
       --argjson pass "$PASS" --argjson fail "$FAIL" --argjson warn "$WARN" \
-      --argjson deep "$([[ "$DOCTOR_DEEP" -eq 1 ]] && echo true || echo false)" \
-      --argjson dry_run "$([[ "$DOCTOR_DRY_RUN" -eq 1 ]] && echo true || echo false)" \
+      --argjson deep "$deep" \
+      --argjson dry_run "$dry_run" \
       --arg fix_scope "${DOCTOR_FIX_SCOPE:-}" \
       --argjson reconciler "$recon" \
-      --argjson fix_applied "$([[ "$DOCTOR_FIX_APPLIED" -eq 1 ]] && echo true || echo false)" \
+      --argjson fix_applied "$fix_applied" \
       --arg lines "$(printf '%s\n' "${REPORT_LINES[@]}")" \
       '{schema:$schema,pass:$pass,fail:$fail,warn:$warn,deep:$deep,dry_run:$dry_run,fix_applied:$fix_applied,fix_scope:(if $fix_scope=="" then null else $fix_scope end),reconciler:$reconciler,lines:($lines|split("\n"))}'
   else
@@ -974,6 +981,9 @@ main() {
     PASS=0; FAIL=0; WARN=0; REPORT_LINES=(); FAILED_CHECK_IDS=()
     RECONCILER_JSON=""
     DOCTOR_UNKNOWN_KEY=0
+    # The re-run only verifies: applying (and confirming) the fixes a second time
+    # would repeat every installer and reconciler apply.
+    DOCTOR_FIX=0
     run_doctor_checks
   fi
   doctor_print_summary

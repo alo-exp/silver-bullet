@@ -36,6 +36,8 @@ Silver Bullet **may delegate** to global setup during `/sb:init` Step 3f, then r
 | Synergy audit | `bash scripts/sb-verify-synergy.sh [--write-setup-report]` |
 | Diagnostics | `bash scripts/sb-diagnostics.sh` (`optimize-*` checks) |
 
+**Exit codes.** `--apply` and `--verify` exit 1 when the score has critical gaps (an opted-in CLI missing, no index, no `.agentmemory` refs); the score line and, for `--verify`, the failing checks explain which. Run `--apply` then `--verify` as separate steps: a non-zero `--apply` does not stop the follow-up `--verify`. `optimize-five-tool-stack.sh` reports a non-zero `--apply` as a warning and still finishes its remaining steps. `sb-verify-synergy.sh` also exits 1 with critical gaps; `--report` always exits 0.
+
 ## synergy_max profile
 
 Configured in `.silver-bullet.json` under `optimization_profiles.synergy_max`:

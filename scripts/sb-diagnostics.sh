@@ -9,10 +9,6 @@ PASS=0
 FAIL=0
 WARN=0
 
-json_escape() {
-  python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))' <<<"$1"
-}
-
 record() {
   local level="$1" check="$2" detail="$3"
   case "$level" in
@@ -242,7 +238,9 @@ main() {
   if declare -f sb_optimization_score >/dev/null 2>&1 && [[ -f "$sb_config" ]]; then
     if [[ "$graphify_consent" == "enabled" || "$agentmemory_consent" == "enabled" ]]; then
       local opt_score opt_fails
-      opt_score="$(sb_optimization_score "$REPO_ROOT" "$sb_config")"
+      # Run in this shell (not $(...)) so the SB_STACK_SCORE_* exports survive.
+      sb_optimization_score "$REPO_ROOT" "$sb_config" >/dev/null
+      opt_score="${SB_STACK_SCORE:-0}"
       opt_fails="${SB_STACK_SCORE_FAILS:-0}"
       if [[ "$opt_fails" -eq 0 && "$opt_score" -ge 60 ]]; then
         record pass "optimize-score" "stack optimization ${opt_score}/100"
@@ -272,7 +270,8 @@ main() {
         if declare -f sb_stack_gitleaks_required >/dev/null 2>&1 \
           && sb_stack_gitleaks_required "$sb_config" \
           && declare -f sb_stack_gitleaks_path >/dev/null 2>&1; then
-          if sb_stack_gitleaks_path >/dev/null; then
+          # sb_stack_gitleaks_path always exits 0 (empty output when absent): test the output.
+          if [[ -n "$(sb_stack_gitleaks_path)" ]]; then
             record pass "optimize-gitleaks" "gitleaks installed ($(sb_stack_gitleaks_path))"
           else
             record warn "optimize-gitleaks" "gitleaks required but missing — brew install gitleaks"

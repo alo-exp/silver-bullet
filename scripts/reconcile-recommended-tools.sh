@@ -48,12 +48,19 @@ EOF
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --project-root) RT_PROJECT_ROOT="${2:-}"; shift 2 ;;
-    --host) RT_HOST="${2:-cursor}"; shift 2 ;;
-    --mode) RT_MODE="${2:-verify}"; shift 2 ;;
-    --scope) RT_SCOPE="${2:-all}"; shift 2 ;;
-    --format) RT_FORMAT="${2:-text}"; shift 2 ;;
-    --entry-point) RT_ENTRY_POINT="${2:-}"; shift 2 ;;
+    --project-root|--host|--mode|--scope|--format|--entry-point)
+      # A trailing option has no value; `shift 2` would abort silently under set -e.
+      if [[ $# -lt 2 ]]; then echo "ERROR: $1 requires a value" >&2; usage >&2; exit 2; fi
+      case "$1" in
+        --project-root) RT_PROJECT_ROOT="$2" ;;
+        --host) RT_HOST="${2:-cursor}" ;;
+        --mode) RT_MODE="${2:-verify}" ;;
+        --scope) RT_SCOPE="${2:-all}" ;;
+        --format) RT_FORMAT="${2:-text}" ;;
+        --entry-point) RT_ENTRY_POINT="$2" ;;
+      esac
+      shift 2
+      ;;
     --host-evidence-stdin) RT_HOST_EVIDENCE_STDIN=true; shift ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown argument: $1" >&2; usage >&2; exit 2 ;;
@@ -218,7 +225,6 @@ rt_reprobe_sibling_components() {
 
 rt_forced_host_convergence_pass() {
   local conv_json failure restart
-  [[ "${RT_MODE:-verify}" == "apply" ]] || return 0
   rt_cross_tool_batch_active || return 0
   [[ "$RT_CROSS_TOOL_REPAIRED" == true ]] && return 0
   rt_any_five_tool_mutation_allowed || return 0
