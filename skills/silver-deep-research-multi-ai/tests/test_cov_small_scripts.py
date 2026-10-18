@@ -230,8 +230,22 @@ class ConsolidateTests(unittest.TestCase):
                 consolidate.validate_inputs([env], self.INDEX)
 
     def test_validate_accepts_clean_envelope(self) -> None:
-        consolidate.validate_inputs([self._env("a", "f1", [])], self.INDEX)
-        consolidate.validate_inputs([], {})
+        import copy
+
+        envelopes = [self._env("a", "f1", [])]
+        index = copy.deepcopy(self.INDEX)
+        before = copy.deepcopy(envelopes)
+        # validation is a pure check: it returns nothing and leaves both inputs untouched
+        self.assertIsNone(consolidate.validate_inputs(envelopes, index))
+        self.assertEqual(envelopes, before)
+        self.assertEqual(index, self.INDEX)
+        # every allowed phase passes, and an empty run needs no index entries at all
+        for phase in ("DR-RETRIEVE", "DR-TRIANGULATE", "DR-CRITIQUE"):
+            self.assertIsNone(consolidate.validate_inputs([self._env("a", "f1", [], phase=phase)], index))
+        self.assertIsNone(consolidate.validate_inputs([], {}))
+        # the same envelope is rejected as soon as its index entry is missing
+        with self.assertRaisesRegex(ValueError, "not referenced by result index"):
+            consolidate.validate_inputs(envelopes, {"entries": []})
 
     def test_normalize_claim(self) -> None:
         self.assertEqual(consolidate.normalize_claim("  Foo \n BAR\tbaz "), "foo bar baz")

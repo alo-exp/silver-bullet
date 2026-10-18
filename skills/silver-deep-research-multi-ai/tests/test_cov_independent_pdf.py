@@ -837,12 +837,18 @@ class WritePdfTests(unittest.TestCase):
         self.assertEqual(info["pdf"], str(out_pdf.resolve()))
         self.assertTrue(printed.is_file())
 
-    def expect_error(self, pattern: str, *, content: bytes = b"%PDF-1.4 fake", write: bool = True, patch_html=None) -> None:
-        run, _ = self.fake_run(content, write)
+    def expect_error(self, pattern: str, *, content: bytes = b"%PDF-1.4 fake", write: bool = True, patch_html=None,
+                     renders: bool = False) -> None:
+        """Assert the RuntimeError; `renders` says whether Playwright was reached (print HTML written, CLI run once)."""
+        run, calls = self.fake_run(content, write)
+        printed = self.root / "landscape-report.print.html"
+        printed.unlink(missing_ok=True)
         ctx = mock.patch.object(lp, "build_independent_print_html", return_value=patch_html) if patch_html is not None else mock.patch.object(lp, "_FONT_CSS_CACHE", "")
         with ctx, mock.patch.object(lp.shutil, "which", return_value="/x/playwright"), mock.patch.object(lp.subprocess, "run", run):
             with self.assertRaisesRegex(RuntimeError, pattern):
                 lp.write_independent_landscape_pdf(self.root)
+        self.assertEqual(len(calls), 1 if renders else 0)
+        self.assertEqual(printed.is_file(), renders)
 
     def valid_html(self, extra: str = "") -> str:
         return (f'<!-- {lp.INDEPENDENT_PDF_MARKER} --><body id="{lp.PRINT_ROOT_ID}"><svg><circle class="fig-pt"/></svg>'
@@ -852,11 +858,11 @@ class WritePdfTests(unittest.TestCase):
         self.expect_error("dropped SPA heading: Alpha Heading", patch_html=self.valid_html().replace("Alpha Heading", ""))
         self.expect_error("dropped comparison feature: Gate feature", patch_html=self.valid_html().replace("Gate feature", ""))
         self.expect_error("still uses highlights-only comparison", patch_html=self.valid_html(" Comparison matrix highlights"))
-        self.expect_error("did not write independent PDF", write=False, patch_html=self.valid_html())
-        self.expect_error("did not write independent PDF", content=b"%PD", patch_html=self.valid_html())
-        self.expect_error("is not a PDF file", content=b"NOTAPDF-bytes", patch_html=self.valid_html())
-        self.expect_error("contains SPA chrome bytes", content=b"%PDF-1.4 pdfExportBtn", patch_html=self.valid_html())
-        self.expect_error("contains SPA chrome bytes", content=b"%PDF-1.4 exportBar", patch_html=self.valid_html())
+        self.expect_error("did not write independent PDF", write=False, patch_html=self.valid_html(), renders=True)
+        self.expect_error("did not write independent PDF", content=b"%PD", patch_html=self.valid_html(), renders=True)
+        self.expect_error("is not a PDF file", content=b"NOTAPDF-bytes", patch_html=self.valid_html(), renders=True)
+        self.expect_error("contains SPA chrome bytes", content=b"%PDF-1.4 pdfExportBtn", patch_html=self.valid_html(), renders=True)
+        self.expect_error("contains SPA chrome bytes", content=b"%PDF-1.4 exportBar", patch_html=self.valid_html(), renders=True)
 
     def test_escaped_heading_is_accepted(self) -> None:
         run, _ = self.fake_run()
