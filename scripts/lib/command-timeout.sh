@@ -89,10 +89,11 @@ PY
       (
         # Run the delay as a child we can kill: killing only this subshell would leave
         # `sleep` holding the caller's stdout (e.g. inside $(...)) until it expires.
+        # The trap is installed first so an early TERM (command already finished) is handled.
+        # shellcheck disable=SC2064,SC2046
+        trap 'kill $(jobs -p) 2>/dev/null; exit 0' TERM
         sleep "$seconds" &
-        sleep_pid=$!
-        trap 'kill "$sleep_pid" 2>/dev/null; exit 0' TERM
-        wait "$sleep_pid"
+        wait
         if kill -0 "$cmd_pid" 2>/dev/null; then
           kill -TERM "$cmd_pid" 2>/dev/null || true
           sleep 2
