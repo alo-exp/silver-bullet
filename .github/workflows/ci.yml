@@ -106,6 +106,18 @@ jobs:
       - name: Run all test suites
         run: bash tests/run-all-tests.sh --jobs 4
 
+      # Tests must write only to their sandboxed HOME/TMPDIR, never into the checkout.
+      - name: Check the tests left the checkout unchanged
+        if: always()
+        run: |
+          changes="$(git status --porcelain --untracked-files=all)"
+          if [[ -n "$changes" ]]; then
+            echo "::error::The test run modified the checkout:"
+            printf '%s\n' "$changes"
+            git diff --stat
+            exit 1
+          fi
+
   coverage:
     runs-on: ubuntu-latest
     env:

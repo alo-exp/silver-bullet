@@ -24,7 +24,7 @@ Silver Bullet uses GitHub Actions. The workflows live in `.github/workflows/`; t
   - Committed Graphify artifacts are valid; `plugin.json` matches the latest tag (warning only).
   - ShellCheck through `scripts/lint-shell.sh`: application Bash at every severity, test Bash at `-S warning`; any finding fails the job.
   - `scripts/validate-plugin-mirror.sh`, the Cursor runtime smoke (`scripts/release-live-matrix-cursor-smoke.sh`) and a site HTML lint (`npx html-validate`, non-blocking).
-- **`test`** — `bash tests/run-all-tests.sh --jobs 4`, once with `SILVER_BULLET_RUNTIME=claude` and once with `codex`. This is the same isolated runner as `make test` (per-test `HOME` and `TMPDIR`, optional host tools hidden), so a local `make test` reproduces it.
+- **`test`** — `bash tests/run-all-tests.sh --jobs 4`, once with `SILVER_BULLET_RUNTIME=claude` and once with `codex`. This is the same isolated runner as `make test` (per-test `HOME` and `TMPDIR`, optional host tools hidden), so a local `make test` reproduces it. A final step fails the job if the run left the checkout modified (`git status --porcelain`): tests may write only to their sandboxed `HOME` and `TMPDIR`.
 - **`coverage`** — `bash tests/coverage/run-coverage.sh --jobs 4` measures Bash, Python and JS/TS coverage over the whole suite, writes the summary to the job summary and uploads `coverage-summary.{json,md}` as the `coverage-report` artifact. See [TESTING.md](TESTING.md#coverage).
 
 ## Reproducing CI locally
