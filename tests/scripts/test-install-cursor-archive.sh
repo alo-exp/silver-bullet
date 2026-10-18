@@ -65,6 +65,12 @@ else
   fail "archive install never reaches the network for the model catalog"
 fi
 
+if grep -q 'rt-post-install' "$INSTALL_LOG"; then
+  pass "archive install ran the reconciler post-install step"
+else
+  fail "archive install ran the reconciler post-install step"
+fi
+
 current_link="${CURSOR_HOME}/plugins/cache/alo-labs/silver-bullet/current"
 resolved_current="$(cd "$current_link" && pwd -P)"
 

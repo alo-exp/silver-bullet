@@ -146,8 +146,31 @@ materialize_local_silver_bullet_plugin_cache() {
 
   python3 - "$registry" "$version" "$stable_alias" <<'PY'
 import json
+import os
 import pathlib
+import shutil
 import sys
+import tempfile
+
+def write_json_atomically(path, data):
+    # Serialize before touching the file (a lone surrogate cannot be encoded as UTF-8:
+    # fall back to ASCII escapes), then replace it atomically, through a symlink if any.
+    try:
+        payload = (json.dumps(data, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
+    except UnicodeEncodeError:
+        payload = (json.dumps(data, indent=2) + "\n").encode("utf-8")
+    target = os.path.realpath(path)
+    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(target), prefix=".tmp-")
+    try:
+        with os.fdopen(fd, "wb") as fh:
+            fh.write(payload)
+        if os.path.exists(target):
+            shutil.copymode(target, tmp)
+        os.replace(tmp, target)
+    except BaseException:
+        if os.path.exists(tmp):
+            os.unlink(tmp)
+        raise
 
 registry = pathlib.Path(sys.argv[1])
 version = sys.argv[2]
@@ -173,7 +196,7 @@ plugins["silver-bullet@alo-labs"] = [{
     "scope": "user",
 }]
 registry.parent.mkdir(parents=True, exist_ok=True)
-registry.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+write_json_atomically(registry, data)
 PY
 
   refresh_silver_bullet_install_alias
@@ -242,9 +265,32 @@ sync_silver_bullet_settings_paths() {
 
   python3 - "$settings_file" "$plugin_cache_root" "$stable_install_path" <<'PY'
 import json
+import os
 import pathlib
 import re
+import shutil
 import sys
+import tempfile
+
+def write_json_atomically(path, data):
+    # Serialize before touching the file (a lone surrogate cannot be encoded as UTF-8:
+    # fall back to ASCII escapes), then replace it atomically, through a symlink if any.
+    try:
+        payload = (json.dumps(data, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
+    except UnicodeEncodeError:
+        payload = (json.dumps(data, indent=2) + "\n").encode("utf-8")
+    target = os.path.realpath(path)
+    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(target), prefix=".tmp-")
+    try:
+        with os.fdopen(fd, "wb") as fh:
+            fh.write(payload)
+        if os.path.exists(target):
+            shutil.copymode(target, tmp)
+        os.replace(tmp, target)
+    except BaseException:
+        if os.path.exists(tmp):
+            os.unlink(tmp)
+        raise
 
 settings_path = pathlib.Path(sys.argv[1])
 cache_root = sys.argv[2].rstrip("/")
@@ -285,7 +331,7 @@ def rewrite(value):
     return value
 
 updated = rewrite(data)
-settings_path.write_text(json.dumps(updated, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+write_json_atomically(settings_path, updated)
 PY
   done
 }

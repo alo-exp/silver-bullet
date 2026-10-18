@@ -113,6 +113,15 @@ assert_eq "no scratch repository: unknown (2)" 2 "$TL_STATUS"
 rm -f "${TL_BIN:?}/git"
 tl_run env CURSOR_HOME="$CH" CURSOR_GITHUB_REPO_URL="file://$UPSTREAM" TMPDIR="$TL_TMP/no-such-tmp" SB_INSTALL_CURSOR_SOURCE_ONLY=1 bash -c 'source "$1"; cursor_github_commit_reachable "$2" "$3"' _ "$SCRIPT" "$SHA_A" "$SNAP"
 assert_eq "no scratch directory: unknown (2)" 2 "$TL_STATUS"
+# the scratch repository never outlives a call, whatever the answer
+mkdir -p "$TL_TMP/scratch-tmp"
+for who in "$UP_ONLY" "$SHA_A"; do
+  tl_run env CURSOR_HOME="$CH" CURSOR_GITHUB_REPO_URL="file://$UPSTREAM" TMPDIR="$TL_TMP/scratch-tmp" SB_INSTALL_CURSOR_SOURCE_ONLY=1 bash -c 'source "$1"; cursor_github_commit_reachable "$2" "$3"' _ "$SCRIPT" "$who" "$SNAP"
+done
+tl_stub git 'if [[ " $* " == *" fetch "* ]]; then echo "fatal: some transient failure" >&2; exit 1; fi; exec '"$REAL_GIT"' "$@"'
+tl_run env CURSOR_HOME="$CH" CURSOR_GITHUB_REPO_URL="file://$UPSTREAM" TMPDIR="$TL_TMP/scratch-tmp" SB_INSTALL_CURSOR_SOURCE_ONLY=1 bash -c 'source "$1"; cursor_github_commit_reachable "$2" "$3"' _ "$SCRIPT" "$SHA_A" "$SNAP"
+rm -f "${TL_BIN:?}/git"
+assert_eq "no scratch repositories left behind" "" "$(ls -A "$TL_TMP/scratch-tmp")"
 # pruning deletes only on a definite "no"
 reset_home
 mkdir -p "$GPR/$UP_ONLY" "$CACHE_MP" "$TL_TMP/tgt"; ln -s "$TL_TMP/tgt" "$CACHE_MP/$UP_ONLY"

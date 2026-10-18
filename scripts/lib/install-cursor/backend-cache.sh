@@ -34,21 +34,21 @@ cursor_github_commit_reachable() {
   if awk -v s="$sha" '$1==s{f=1} END{exit !f}' <<<"$refs"; then
     return 0
   fi
-  # Not a ref tip: ask the remote for the commit itself, in a scratch repository.
+  # Not a ref tip: ask the remote for the commit itself, in a scratch repository
+  # that is removed on every path out of this function.
+  local rc=2
   tmp="$(mktemp -d "${TMPDIR:-/tmp}/sb-reach.XXXXXX")" || return 2
-  if ! git init -q --bare "$tmp" >/dev/null 2>&1; then
-    rm -rf -- "$tmp"
-    return 2
-  fi
-  if err="$(git -C "$tmp" fetch --depth 1 -- "$CURSOR_GITHUB_REPO_URL" "$sha" 2>&1 >/dev/null)"; then
-    rm -rf -- "$tmp"
-    return 0
+  if git init -q --bare "$tmp" >/dev/null 2>&1; then
+    if err="$(git -C "$tmp" fetch --depth 1 -- "$CURSOR_GITHUB_REPO_URL" "$sha" 2>&1 >/dev/null)"; then
+      rc=0
+    else
+      case "$err" in
+        *"not our ref"* | *"couldn't find remote ref"*) rc=1 ;;
+      esac
+    fi
   fi
   rm -rf -- "$tmp"
-  case "$err" in
-    *"not our ref"* | *"couldn't find remote ref"*) return 1 ;;
-  esac
-  return 2
+  return "$rc"
 }
 
 prune_stale_cursor_marketplace_cache_links() {
