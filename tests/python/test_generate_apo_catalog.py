@@ -16,6 +16,24 @@ from sbtest import REPO_ROOT, load_module
 g = load_module("scripts/generate-apo-catalog.py")
 
 
+class ImportPathTest(unittest.TestCase):
+    LIB = str(REPO_ROOT / "scripts" / "lib")
+
+    def test_lib_dir_is_added_to_sys_path_when_absent(self):
+        import sys
+        trimmed = [p for p in sys.path if p != self.LIB]
+        with mock.patch.object(sys, "path", trimmed):
+            load_module("scripts/generate-apo-catalog.py", name="gen_catalog_fresh_a")
+            self.assertEqual(trimmed[0], self.LIB)
+
+    def test_lib_dir_not_duplicated_when_present(self):
+        import sys
+        path = [self.LIB] + [p for p in sys.path if p != self.LIB]
+        with mock.patch.object(sys, "path", path):
+            load_module("scripts/generate-apo-catalog.py", name="gen_catalog_fresh_b")
+            self.assertEqual(path.count(self.LIB), 1)
+
+
 class ClassifySkillTest(unittest.TestCase):
     def test_classes(self):
         self.assertEqual(g.classify_skill("silver-feature"), "precomposed-workflow")
