@@ -354,7 +354,8 @@ rt_with_lock() {
   local lock_path="${1:-}" timeout_s="${2:-30}"
   shift 2
   [[ -n "$lock_path" ]] || return 1
-  mkdir -p "$(dirname "$lock_path")" 2>/dev/null || true
+  # A parent that cannot be created is a permanent error, not contention: fail at once.
+  mkdir -p "$(dirname "$lock_path")" 2>/dev/null || return 1
   local start now
   start="$(date +%s)"
   while ! mkdir "$lock_path" 2>/dev/null; do
