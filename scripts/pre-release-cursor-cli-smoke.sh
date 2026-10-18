@@ -47,7 +47,7 @@ fi
 
 sb_smoke_begin_cursor
 workspace="$(sb_smoke_cursor_workspace)"
-plugin_dir="$(sb_smoke_cursor_plugin_dir)"
+plugin_dir="$(sb_smoke_cursor_plugin_dir)" || plugin_dir=""
 config_dir="$(sb_smoke_cursor_config_dir)"
 mkdir -p "$workspace"
 
