@@ -28,29 +28,29 @@ for entry in "${HOSTS[@]}"; do
   log="$LOGDIR/$host.log"
 
   # --- argument handling
-  tl_run bash "$MON" --help
+  tl_run timeout 60 bash "$MON" --help
   assert_eq "$host monitor --help exits 0" "0" "$TL_STATUS"
   assert_contains "$host monitor --help usage" "$TL_OUT" "Usage: monitor.sh --log PATH"
 
-  tl_run bash "$MON"
+  tl_run timeout 60 bash "$MON"
   assert_eq "$host monitor without --log exits 2" "2" "$TL_STATUS"
   assert_contains "$host monitor without --log prints usage" "$TL_ERR" "Usage: monitor.sh --log PATH"
 
-  tl_run bash "$MON" --nope
+  tl_run timeout 60 bash "$MON" --nope
   assert_eq "$host monitor unknown arg exits 2" "2" "$TL_STATUS"
   assert_contains "$host monitor unknown arg named" "$TL_ERR" "unknown argument: --nope"
 
-  tl_run bash "$MON" --log "$log" --interval abc
+  tl_run timeout 60 bash "$MON" --log "$log" --interval abc
   assert_eq "$host monitor non-numeric --interval exits 2" "2" "$TL_STATUS"
   assert_contains "$host monitor non-numeric --interval message" "$TL_ERR" "--interval must be numeric"
 
-  tl_run bash "$MON" --log "$log" --stall-sec 1x
+  tl_run timeout 60 bash "$MON" --log "$log" --stall-sec 1x
   assert_eq "$host monitor non-numeric --stall-sec exits 2" "2" "$TL_STATUS"
   assert_contains "$host monitor non-numeric --stall-sec message" "$TL_ERR" "--stall-sec must be numeric"
 
   # a value flag given last must be a clear usage error, not an unbound-variable crash
   for flag in --log --interval --stall-sec; do
-    tl_run bash "$MON" "$flag"
+    tl_run timeout 60 bash "$MON" "$flag"
     assert_eq "$host monitor $flag without value exits 2" "2" "$TL_STATUS"
     assert_contains "$host monitor $flag without value message" "$TL_ERR" "$flag requires a value"
     assert_not_contains "$host monitor $flag without value is not an unbound crash" "$TL_ERR" "unbound variable"
@@ -58,12 +58,12 @@ for entry in "${HOSTS[@]}"; do
 
   # --- single scan
   rm -f "$log"
-  tl_run bash "$MON" --log "$log" --once
+  tl_run timeout 60 bash "$MON" --log "$log" --once
   assert_eq "$host --once on a missing log exits 0" "0" "$TL_STATUS"
   assert_eq "$host --once on a missing log prints nothing" "" "$TL_OUT"
 
   printf 'hello world\n' >"$log"
-  tl_run env "$FLOOR_VAR=" bash "$MON" --log "$log" --once --stall-sec 99999
+  tl_run timeout 60 env "$FLOOR_VAR=" bash "$MON" --log "$log" --once --stall-sec 99999
   assert_eq "$host --once small log exits 0" "0" "$TL_STATUS"
   assert_match "$host --once small log reports activity" "\[agent-$host monitor\] [0-9:]+Z — • activity \+12 B \(total 12 B\)" "$TL_OUT"
   assert_not_contains "$host --once small log has no prompt bullet" "$TL_OUT" "prompt submitted (checkpoint"
@@ -77,21 +77,21 @@ for entry in "${HOSTS[@]}"; do
     pad 600
     printf '\n'
   } >"$log"
-  tl_run env "$FLOOR_VAR=" bash "$MON" --log "$log" --once --stall-sec 99999
+  tl_run timeout 60 env "$FLOOR_VAR=" bash "$MON" --log "$log" --once --stall-sec 99999
   assert_contains "$host --once reports the prompt checkpoint" "$TL_OUT" "• prompt submitted (checkpoint 1 satisfied)"
   assert_contains "$host --once reports the host-specific signal" "$TL_OUT" "• signal: ${signal_text}"
   assert_match "$host --once reports the default floor" "log floor met \([0-9]+ B ≥ 512 B\)" "$TL_OUT"
 
   # the floor comes from the host-specific environment variable
-  tl_run env "$FLOOR_VAR=5" bash "$MON" --log "$log" --once --stall-sec 99999
+  tl_run timeout 60 env "$FLOOR_VAR=5" bash "$MON" --log "$log" --once --stall-sec 99999
   assert_contains "$host --once honours $FLOOR_VAR" "$TL_OUT" "≥ 5 B)"
 
   # an idle log (no growth since start) with --stall-sec 0 raises the stall bullet
   : >"$log"
-  tl_run bash "$MON" --log "$log" --once --stall-sec 0
+  tl_run timeout 60 bash "$MON" --log "$log" --once --stall-sec 0
   assert_match "$host --once stall bullet" "• idle [0-9]+s — prepare stuck escalation \(checkpoint 2\)" "$TL_OUT"
   : >"$log"
-  tl_run bash "$MON" --log "$log" --once --stall-sec 99999
+  tl_run timeout 60 bash "$MON" --log "$log" --once --stall-sec 99999
   assert_not_contains "$host --once no stall before the window" "$TL_OUT" "idle"
 
   # --- watch loop, ended by a failing sleep stub
@@ -124,11 +124,11 @@ done
 # codex/opencode/pi accept a signal word in the guard that the extraction pattern does not
 # capture ('not logged in' for codex, 'auth' for opencode/pi): the bullet falls back to "anomaly".
 printf 'You are not logged in\n' >"$LOGDIR/codex-q.log"
-tl_run bash "$SCRIPTS/agent-codex/monitor.sh" --log "$LOGDIR/codex-q.log" --once --stall-sec 99999
+tl_run timeout 60 bash "$SCRIPTS/agent-codex/monitor.sh" --log "$LOGDIR/codex-q.log" --once --stall-sec 99999
 assert_contains "codex 'not logged in' falls back to anomaly" "$TL_OUT" "• signal: anomaly"
 for host in opencode pi; do
   printf 'auth token rejected\n' >"$LOGDIR/$host-q.log"
-  tl_run bash "$SCRIPTS/agent-$host/monitor.sh" --log "$LOGDIR/$host-q.log" --once --stall-sec 99999
+  tl_run timeout 60 bash "$SCRIPTS/agent-$host/monitor.sh" --log "$LOGDIR/$host-q.log" --once --stall-sec 99999
   assert_contains "$host 'auth' falls back to anomaly" "$TL_OUT" "• signal: anomaly"
 done
 
@@ -139,7 +139,7 @@ for a in \"\$@\"; do
   if [ \"\$a\" = -1 ]; then exit 1; fi
 done
 exec '$REAL_TAIL' \"\$@\""
-tl_run bash "$SCRIPTS/agent-claude/monitor.sh" --log "$LOGDIR/claude-t.log" --once --stall-sec 99999
+tl_run timeout 60 bash "$SCRIPTS/agent-claude/monitor.sh" --log "$LOGDIR/claude-t.log" --once --stall-sec 99999
 assert_eq "claude monitor survives a failing signal extraction" "0" "$TL_STATUS"
 assert_contains "claude failed extraction reports anomaly" "$TL_OUT" "• signal: anomaly"
 rm -f "$TL_BIN/tail"
@@ -148,7 +148,7 @@ rm -f "$TL_BIN/tail"
 for host in claude codex opencode pi; do
   printf 'Prompt submitted\nrate limit\n' >"$LOGDIR/tail-$host.log"
   tl_stub tail 'exit 1'
-  tl_run bash "$SCRIPTS/agent-$host/monitor.sh" --log "$LOGDIR/tail-$host.log" --once --stall-sec 99999
+  tl_run timeout 60 bash "$SCRIPTS/agent-$host/monitor.sh" --log "$LOGDIR/tail-$host.log" --once --stall-sec 99999
   assert_eq "$host monitor survives a failing tail" "0" "$TL_STATUS"
   assert_contains "$host monitor still reports activity without content" "$TL_OUT" "• activity +"
   assert_not_contains "$host monitor reports no prompt without content" "$TL_OUT" "prompt submitted (checkpoint"

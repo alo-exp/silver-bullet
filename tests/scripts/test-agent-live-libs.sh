@@ -19,7 +19,7 @@ lib_run() {
   while IFS= read -r name; do
     unset_args+=(-u "$name")
   done < <(compgen -e | grep -E '^(SB_|SILVER_BULLET_|CLAUDE_|CODEX_|OPENCODE_|PI_|RTK_|AGENT_)' | grep -v '^SB_COV_' || true)
-  tl_run env "${unset_args[@]}" HOME="$HOME" PATH="${LIB_PATH:-$PATH}" TMPDIR="$TL_TMP/tmp" "$@" \
+  tl_run timeout 60 env "${unset_args[@]}" HOME="$HOME" PATH="${LIB_PATH:-$PATH}" TMPDIR="$TL_TMP/tmp" "$@" \
     bash -c "source '$lib'; $script"
 }
 
@@ -123,7 +123,7 @@ seed "agent_claude_seed_folder_trust '$W' '$CFG'" SB_AGENT_CLAUDE_SEED_FOLDER_TR
 assert_file_exists "folder trust still seeds the config dir with global off" "$CFG/.claude.json"
 assert_file_absent "folder trust global off writes no HOME file" "$HOME/.claude.json"
 rm -f "$HOME/.claude.json"
-tl_run env -u HOME bash -c "source '$CL'; agent_claude_seed_folder_trust '$W' ''; echo rc=\$?"
+tl_run timeout 60 env -u HOME bash -c "source '$CL'; agent_claude_seed_folder_trust '$W' ''; echo rc=\$?"
 assert_eq "folder trust without HOME and config dir is a no-op" "rc=0" "$TL_OUT"
 assert_file_absent "folder trust without HOME writes nothing" "$HOME/.claude.json"
 
@@ -205,6 +205,17 @@ echo cfg2=[\${CLAUDE_CONFIG_DIR-unset}]
 "
 assert_eq "cleanup tolerates a missing or empty ephemeral dir" "cfg=$ORIG
 cfg2=[unset]" "$TL_OUT"
+
+# a failing rm during cleanup is ignored and the original config dir is still restored
+lib_run "$CL" "
+export CLAUDE_CONFIG_DIR='$ORIG'
+agent_claude_prepare_lightweight_config_dir
+rm() { return 1; }
+agent_claude_cleanup_lightweight_config_dir
+echo \"cfg=\$CLAUDE_CONFIG_DIR\"
+unset -f rm
+"
+assert_eq "cleanup survives a failing rm and still restores the config dir" "cfg=$ORIG" "$TL_OUT"
 
 # ---- settings sanitising
 SETTINGS_DEST="$TL_TMP/dest-cfg"
