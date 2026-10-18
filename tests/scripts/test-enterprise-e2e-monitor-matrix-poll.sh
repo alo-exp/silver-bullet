@@ -344,6 +344,33 @@ live_batch 7000
 tl_run env F4_NO_LOGBYTES=1 timeout 30 bash "$MON"
 assert_contains "fallback byte count is 0 without a log" "$(cat "$STATUS")" "matrix log bytes: 0"
 
+# --- agent children are looked up per host ---
+for h in codex cursor; do
+  f4_mon_reset
+  live_batch 7000
+  roster 1:PASS
+  echo "4321 $h-process" >"$P/pgrep.$([[ $h == codex ]] && echo codex-interactive || echo cursor-agent)"
+  f4_mon_run SB_E2E_LIVE_RUNTIME=$h
+  assert_contains "$h children listed" "$(cat "$STATUS")" "  4321 $h-process"
+  f4_mon_reset
+  live_batch 7000
+  roster 1:PASS
+  f4_mon_run SB_E2E_LIVE_RUNTIME=$h
+  assert_contains "$h without children tolerated" "$(cat "$STATUS")" "batch PID: 7000 — RUNNING"
+done
+
+# --- tr failing on the pid file: discovery falls back to pgrep ---
+f4_mon_reset
+roster 1:PASS
+echo 7777 >"$BPID"
+f4_alive 7777 8888
+printf '8888\n' >"$P/pgrep.(run-enterprise-e2e-matrix"
+REAL_TR="$(command -v tr)"
+tl_stub tr "in=\"\$(cat)\"; [[ \"\$in\" == 7777* ]] && exit 1; printf '%s' \"\$in\" | $REAL_TR \"\$@\""
+f4_mon_run SB_E2E_MONITOR_AUTO_RESTART=0
+rm -f "$TL_BIN/tr"
+assert_eq "unreadable pid file replaced through pgrep discovery" "8888" "$(cat "$BPID")"
+
 # --- cd failure ---
 f4_mon_reset
 tl_run env F4_CD_FAIL="$R" timeout 30 bash "$MON"
