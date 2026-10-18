@@ -117,6 +117,12 @@ assert_contains "cursor: parity-verify executed" "$(cat "$PARITY_LOG")" "ran"
 assert_not_contains "cursor: no tip with --global" "$TL_OUT" "Tip: run with --global"
 assert_contains "cursor: pending-project note" "$TL_OUT" "Project toolstack reconciliation pending"
 
+# --global with no project: a failing reconciler only warns (host infra stays usable)
+rm -rf "$HOME/.cursor"
+tl_run env RECON_RC=4 bash -c 'cd "$1" && bash "$2" --global' _ "$WORK" "$CUR"
+assert_eq "cursor: --global survives a failing host-scope reconcile" "0" "$TL_STATUS"
+assert_contains "cursor: --global reconcile failure warns" "$TL_ERR" "WARN: reconciler post-install exited nonzero"
+
 # --global falls back to the project recommended-tools rule when there is no global variant
 rm -rf "$HOME/.cursor" "$STAGE/scripts/lib/global-toolstack/global-recommended-tools.mdc"
 tl_run bash -c 'cd "$1" && bash "$2" --global' _ "$WORK" "$CUR"
