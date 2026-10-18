@@ -122,6 +122,8 @@ assert_contains "rtk doctor: --yes flag passed" "$(cat "$HR_LOG")" "rtk doctor -
 assert_eq "rtk doctor: failing doctor" "1" "$(RTK_DOC_RC=3 vdr rt_probe_rtk_vendor_doctor)"
 hr_bin rtk 'case "$*" in "gain --help") exit 0;; help) echo "Commands:"; echo "  gain";; *) exit 0;; esac'
 assert_eq "rtk doctor: no doctor subcommand listed" "2" "$(vdr rt_probe_rtk_vendor_doctor)"
+hr_bin rtk 'case "$*" in "gain --help") exit 0;; help) exit 1;; *) exit 0;; esac'
+assert_eq "rtk doctor: help command failing" "2" "$(vdr rt_probe_rtk_vendor_doctor)"
 hr_bin rtk 'case "$*" in "gain --help") exit 0;; help) echo "  doctor";; "doctor --help") echo "unknown command doctor"; exit 1;; *) exit 0;; esac'
 assert_eq "rtk doctor: subcommand not usable" "2" "$(vdr rt_probe_rtk_vendor_doctor)"
 hr_nobin rtk
@@ -261,6 +263,7 @@ hr_bin lean-ctx 'case "$*" in
   "doctor --help") echo "${LC_DOC_HELP:-usage: lean-ctx doctor}" ;;
   doctor*) echo "lean-ctx $*" >>"$HR_LOG"; exit "${LC_DOC_RC:-0}" ;;
 esac'
+# shellcheck disable=SC2034  # `cfg` is read by rt_probe_leanctx_vendor_doctor (dynamic scope in the real caller)
 cfg=""
 assert_eq "leanctx doctor: skip flag" "2" "$(RT_SKIP_VENDOR_DOCTOR=1 vdr rt_probe_leanctx_vendor_doctor)"
 assert_eq "leanctx doctor: explicit command" "0" "$(RT_LEANCTX_DOCTOR_CMD="true" vdr rt_probe_leanctx_vendor_doctor)"
@@ -280,10 +283,12 @@ printf '{"recommended_tools":{"leanctx":{"cli_command":"my-lc"}}}\n' >"$TL_TMP/l
 cfg="$TL_TMP/lc-cli.json"; : >"$HR_LOG"
 rt_probe_leanctx_vendor_doctor || true
 assert_contains "leanctx doctor: custom cli command" "$(cat "$HR_LOG")" "my-lc doctor"
+# shellcheck disable=SC2034
 cfg=""
 # without the gate helpers there is no binary to find
 assert_eq "leanctx doctor: gate helpers unavailable -> default binary name" "0" "$( (unset -f sb_leanctx_cli_command sb_leanctx_cli_path; hr_bin lean-ctx 'case "$*" in "doctor --help") echo usage;; esac'; rc_of rt_probe_leanctx_vendor_doctor) )"
 assert_eq "leanctx doctor: unresolvable binary -> skip" "2" "$( (sb_leanctx_cli_path() { return 1; }; vdr rt_probe_leanctx_vendor_doctor) )"
+assert_eq "leanctx doctor: failing cli_command lookup finds no binary (skip)" "1" "$( (sb_leanctx_cli_command() { return 1; }; hr_bin lean-ctx 'case "$*" in "doctor --help") echo usage;; esac'; rc_of rt_probe_leanctx_vendor_doctor) )"
 export RT_SKIP_VENDOR_DOCTOR=1
 
 # probe table
