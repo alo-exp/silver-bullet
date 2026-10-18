@@ -35,8 +35,8 @@ assert_contains "missing file message" "$TL_ERR" "release notes body file is req
 # a trailing option without a value must be a clear error, not a silent shift failure
 for opt in --file --tag --repo; do
   tl_run bash "$SCRIPT" "$opt"
-  assert_eq "$opt without value exits 1" 1 "$TL_STATUS"
-  assert_contains "$opt without value is explained" "$TL_ERR" "ERROR:"
+  assert_eq "$opt without value exits 2" 2 "$TL_STATUS"
+  assert_contains "$opt without value is explained" "$TL_ERR" "ERROR: $opt requires a value"
 done
 
 tl_run bash "$SCRIPT" --file "$TL_TMP/good.md"
