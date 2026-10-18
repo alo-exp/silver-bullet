@@ -104,6 +104,20 @@ assert_eq "non-commit tag: exits 0" 0 "$TL_STATUS"
 assert_eq "non-commit tag: sha is HEAD" "$HEAD3" "$(sb_get "$T/$MF" sha)"
 assert_eq "non-commit tag: ref is main" "main" "$(sb_get "$T/$MF" ref)"
 
+# A git that stays silent for an unknown tag (nothing echoed on stdout): no tag at
+# all, so the release commit is HEAD and the ref is the release tag to be created.
+new_tree
+REAL_GIT="$(command -v git)"
+tl_stub git 'if [[ "${1:-}" == "-C" && "${3:-}" == "rev-parse" && "${4:-}" == v* ]]; then exit 128; fi
+exec "'"$REAL_GIT"'" "$@"'
+HEAD4="$(git -C "$T" rev-parse HEAD)"
+j_clone_remote "$TL_TMP/work-tag4"
+sync_run env AGENT_PLUGINS_REPO_ROOT="$TL_TMP/work-tag4" bash "$SCRIPT"
+assert_eq "silent unknown tag: exits 0" 0 "$TL_STATUS"
+assert_eq "silent unknown tag: sha is HEAD" "$HEAD4" "$(sb_get "$T/$MF" sha)"
+assert_eq "silent unknown tag: ref is the release tag to be created" "v2.0.0" "$(sb_get "$T/$MF" ref)"
+rm -f "$TL_BIN/git"
+
 # --- clone path ----------------------------------------------------------------------------------
 j_make_remote "$TL_TMP/mk2"
 new_tree
