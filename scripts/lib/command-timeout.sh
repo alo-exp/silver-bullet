@@ -25,7 +25,7 @@ sb_run_with_timeout() {
   local seconds="${1:-}"
   local label="${2:-command}"
   local bin rc=0 cmd_pid watchdog_pid
-  shift 2 || true
+  shift "$(( $# < 2 ? $# : 2 ))"
   if [[ "${1:-}" == "--" ]]; then
     shift
   fi
