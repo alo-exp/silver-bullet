@@ -176,6 +176,9 @@ echo '{"hooks":{"preToolUse":[{"command":"rtk hook cursor"},{"command":"context-
 assert_eq "cross: heartbeat absent" "repairable|none|heartbeat_absent_or_invalid|true" "$(pct)"
 RT_MODE=verify rt_heartbeat_write "$HR_PROJ" cursor
 assert_eq "cross: ready with a valid heartbeat" "ready|full||false" "$(pct)"
+# outside git there is no project id, hence no heartbeat location
+NOGITP="$TL_TMP/nogit-cross"; mkdir -p "$NOGITP"; cp "$HR_PROJ/.silver-bullet.json" "$NOGITP/.silver-bullet.json"
+assert_eq "cross: no project id -> heartbeat absent" "repairable|none|heartbeat_absent_or_invalid|true" "$(RT_PROJECT_ROOT="$NOGITP" pct)"
 
 # ============================================================ cross-tool repair
 RT_MODE=verify
