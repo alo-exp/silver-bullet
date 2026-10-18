@@ -72,7 +72,7 @@ for pair in silver-feature:WF-SILVER-FEATURE sb:silver-feature:WF-SILVER-FEATURE
   cid "${pair%:WF-*}"
   assert_eq "composer id: ${pair%:WF-*}" "WF-${pair##*:WF-}" "$TL_OUT"
 done
-cid "gsd-execute"
+cid "other-execute"
 assert_eq "composer id: non-silver composer is rejected" 1 "$TL_STATUS"
 assert_eq "composer id: non-silver composer prints nothing" "" "$TL_OUT"
 
