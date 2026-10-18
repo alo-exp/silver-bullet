@@ -75,6 +75,8 @@ hr_bin graphify 'echo "graphify $*" >>"$HR_LOG"; if [[ "$1" == update ]]; then m
 rm -rf "$HR_PROJ/graphify-out"
 : >"$HR_LOG"
 assert_eq "build index outside git fails" "1" "$(RT_PROJECT_ROOT="$NOGITPROJ" rc_of rt_graphify_worktree_build_index "$NOGITPROJ")"
+NOCFG_GIT="$TL_TMP/nocfg-git"; tl_git_repo "$NOCFG_GIT"
+assert_eq "build index in a git root without an SB config fails" "1" "$(RT_PROJECT_ROOT="$NOCFG_GIT" rc_of rt_graphify_worktree_build_index "$NOCFG_GIT")"
 assert_eq "build index without a project root fails" "1" "$(RT_PROJECT_ROOT='' rc_of rt_graphify_worktree_build_index "")"
 rt_graphify_worktree_build_index "$HR_PROJ"
 assert_contains "graphify update invoked" "$(cat "$HR_LOG")" "graphify update . --no-cluster"
