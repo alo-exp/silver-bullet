@@ -19,7 +19,7 @@ sb_e2e_matrix_set_routing_row_marker() {
   local marker
   marker="$(sb_e2e_matrix_routing_row_marker_file)"
   mkdir -p "$(dirname "$marker")" 2>/dev/null || true
-  printf '1\n' >"${marker}.tmp" 2>/dev/null && mv "${marker}.tmp" "$marker"
+  printf '1\n' 2>/dev/null >"${marker}.tmp" && mv "${marker}.tmp" "$marker"
 }
 
 sb_e2e_matrix_clear_routing_row_marker() {
