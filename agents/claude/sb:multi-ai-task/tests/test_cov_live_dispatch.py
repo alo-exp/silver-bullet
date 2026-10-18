@@ -308,15 +308,19 @@ class DelegateWorkerTests(HermeticCase):
         self.assertEqual(ld._delegate_work_dir(self.out), ld.REPO_ROOT)
         self.assertTrue((ld.REPO_ROOT / "skills" / "silver-multi-ai-task").is_dir())
 
-    def _run(self, fn, logical: str, outcome, invoke_attr: str, invoke_path: Path | None = None):
+    def _run(self, fn, logical: str, outcome, invoke_attr: str):
+        # The invoke script is a temp file, so the tests do not depend on the checkout's scripts/.
+        invoke = self.tmp / f"{invoke_attr}.sh"
+        invoke.write_text("#!/bin/sh\n")
+        self.invoke = invoke
+
         def fake(cmd, **kwargs):  # noqa: ANN001
             self.captured = (cmd, kwargs)
             if isinstance(outcome, BaseException):
                 raise outcome
             return outcome
 
-        ctx = mock.patch.object(ld, invoke_attr, invoke_path) if invoke_path is not None else mock.patch.object(ld, "REPO_ROOT", ld.REPO_ROOT)
-        with ctx, mock.patch.object(ld.subprocess, "run", side_effect=fake):
+        with mock.patch.object(ld, invoke_attr, invoke), mock.patch.object(ld.subprocess, "run", side_effect=fake):
             return fn(logical_model_id=logical, prompt="PR", output_dir=self.out, timeout_sec=9)
 
     def test_codex_worker_success_and_environment(self) -> None:
@@ -327,7 +331,7 @@ class DelegateWorkerTests(HermeticCase):
         self.assertEqual(result.raw_output, "out\nerr")
         cmd, kwargs = self.captured
         self.assertEqual(cmd[0], "bash")
-        self.assertEqual(cmd[1], str(ld.AGENT_CODEX_INVOKE))
+        self.assertEqual(cmd[1], str(self.invoke))
         self.assertIn("--use-exec", cmd)
         self.assertEqual(cmd[cmd.index("--prompt") + 1], "PR")
         env = kwargs["env"]
@@ -373,7 +377,7 @@ class DelegateWorkerTests(HermeticCase):
         self.assertEqual((result.status, result.backend, result.error), ("completed", "claude", None))
         self.assertEqual(result.effective_model_id, "claude-opus-4-8-medium")
         cmd, kwargs = self.captured
-        self.assertEqual(cmd[1], str(ld.AGENT_CLAUDE_INVOKE))
+        self.assertEqual(cmd[1], str(self.invoke))
         self.assertIn("--use-print", cmd)
         env = kwargs["env"]
         self.assertEqual(env["CLAUDE_BIN"], "/x/claude")
