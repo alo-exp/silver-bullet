@@ -243,12 +243,15 @@ score_and_add() {
     local key
     key=$(printf '%s' "$file" | tr '/: ' '___')
     local cnt=0
-    # awk prefix match: grep -F would treat the leading ^ literally and never match
-    cnt=$(awk -v k="$key" 'index($0, k "=") == 1 { print substr($0, length(k) + 2); exit }' "$TMP_COUNTS")
+    # Exact key match (the line is "<key>=<count>"; the key may itself contain "=" or
+    # backslashes, so read it via ENVIRON, which awk -v would escape-process).
+    cnt=$(SB_KEY="$key" awk 'BEGIN { k = ENVIRON["SB_KEY"] }
+      match($0, /=[0-9]+$/) && substr($0, 1, RSTART - 1) == k { print substr($0, RSTART + 1); exit }' "$TMP_COUNTS")
     cnt="${cnt:-0}"
     if [[ $cnt -ge $top_n ]]; then continue; fi
     if add_block "$rel" "$chunk_text" "lines ${start}-${end}"; then
-      awk -v k="$key" 'index($0, k "=") != 1' "$TMP_COUNTS" > "${TMP_COUNTS}.tmp"
+      SB_KEY="$key" awk 'BEGIN { k = ENVIRON["SB_KEY"] }
+        !(match($0, /=[0-9]+$/) && substr($0, 1, RSTART - 1) == k)' "$TMP_COUNTS" > "${TMP_COUNTS}.tmp"
       mv -f "${TMP_COUNTS}.tmp" "$TMP_COUNTS"
       printf '%s=%s\n' "$key" "$(( cnt + 1 ))" >> "$TMP_COUNTS"
       if [[ "$debug" == "true" ]]; then printf '  chunk: %s lines %s-%s score=%s\n' "$rel" "$start" "$end" "$score" >> "$debug_log"; fi
