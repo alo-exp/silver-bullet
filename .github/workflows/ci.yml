@@ -144,7 +144,7 @@ jobs:
           python3 -m pip install -r requirements-dev.txt
 
       - name: Measure Bash, Python and JS/TS coverage
-        run: bash tests/coverage/run-coverage.sh --jobs 4
+        run: bash tests/coverage/run-coverage.sh --jobs 4 --fail-under 100
 
       - name: Coverage summary
         if: always()

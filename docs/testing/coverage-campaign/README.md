@@ -6,6 +6,7 @@ Working state of the effort to bring first-party code to 100% measured coverage 
 
 - Tooling: `tests/coverage/run-coverage.sh` (`make coverage`), engine `tests/coverage/sbcov.py`, scope `tests/coverage/scope.json`. See [../../TESTING.md](../../TESTING.md).
 - Metrics: Bash statements, lines and functions; Python statements and branches; JS/TS lines, functions and branches.
+- Target: `--fail-under 100`, enforced by the CI coverage job. It is evaluated on the denominator minus four audited statements listed in `tests/coverage/known-limits.json` (see Known measurement limits); no other statement is excluded.
 - Denominator (2026-10-17): Bash 44,168 statements in 353 files; Python 19,483 statements in 108 files; JS/TS 7 files (about 1,400 lines). Generated mirrors and test code are excluded.
 
 ## Baseline (2026-10-17, commit 990268442b)
@@ -107,3 +108,14 @@ Statements that cannot run are removed, not excluded: each removal is its own `r
 - Code embedded in Bash heredocs (python, jq, awk programs) and Tcl/Expect scripts is not measured.
 - bash reports some commands at another line: inside a function, the commands of `< <(...)` carry the line of the last function definition it parsed, and a `|| fallback` after a multi-line program inside `$(...)` lands several lines late. `sbcov.py` matches these by function and by the substitution's words. The one case it cannot tell apart is a late-reported command that lands on a statement with the same command word in the same function (for example `orchestrator-scheduler.sh` line 797, `|| true`, reported at the `|| true` two lines later); such a statement is listed as missing although it ran.
 - `.planning/scripts/phase-lock.sh` is in scope but lives in the SB-managed `.planning/` tree; test it without editing it.
+
+### Audited known limits
+
+`tests/coverage/known-limits.json` removes exactly four statements from the Bash denominator (the covered count and the total; they are not counted as covered, and function counts are unchanged). `--fail-under 100` is enforced on the denominator minus these four statements. `sbcov.py report` validates the file on every run: an entry for a file outside `scope.json`, with no statement of that command word at that line, or whose statement was covered in the run (`stale known limit: now covered`) is an error and the report exits 3. Entries for files not measured in a `--only` run are skipped. See [../../TESTING.md](../../TESTING.md).
+
+| File:line | Word | Kind | Why |
+|---|---|---|---|
+| `.planning/scripts/phase-lock.sh:478` | `cat` | unreachable | The `"" \| -h \| --help)` arm of the final dispatch `case` is dead: the early dispatch at lines 31-46 has already exited for those values. The file is in the SB-managed `.planning/` tree and may not be edited, so the dead code cannot be removed. |
+| `.planning/scripts/phase-lock.sh:490` | `exit` | unreachable | The `exit` ending the same dead arm. |
+| `hooks/lib/orchestrator-scheduler.sh:797` | `true` | unmeasurable | The `\|\| true` after `tmpl=$(jq ...)` in `sb_scheduler_mark_handoff_dispatched` is the late-reported fallback described above. It runs: removing it fails `tests/hooks/test-orchestrator-failure-paths-scheduler-lib.sh`. |
+| `scripts/enterprise-e2e/lib/core.sh:26` | `*` | unmeasurable | `done < <("$@")` in `enterprise_e2e_read_lines_to_array` runs a dynamic command; xtrace prints the resolved command, so the static word match fails. It runs: `tests/scripts/test-enterprise-e2e-core-fixture.sh` asserts the resulting array. |
