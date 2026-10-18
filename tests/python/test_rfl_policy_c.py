@@ -63,6 +63,7 @@ class TmpCase(unittest.TestCase):
 
 
 class ReadHelpersTest(TmpCase):
+
     def test_read_json(self):
         self.assertEqual(pc._read_json(self.tmp / "none.json"), {})
         self.assertEqual(pc._read_json(self.tmp), {})  # directory
@@ -116,6 +117,7 @@ class ReadHelpersTest(TmpCase):
 
 
 class StreakTest(TmpCase):
+
     def test_bucket_key(self):
         self.assertEqual(pc._rung_bucket_key("rung-03-x"), "rung_3")
         self.assertEqual(pc._rung_bucket_key(" RUNG-007"), "rung_7")
@@ -241,6 +243,7 @@ class StreakTest(TmpCase):
 
 
 class RungDirTest(TmpCase):
+
     def test_discover_active_runs(self):
         root = self.tmp / "proj"
         self.assertEqual(pc.discover_active_rfl_runs(root), [])
@@ -463,6 +466,7 @@ class ValidateTest(unittest.TestCase):
 
 
 class RenderAndWriteTest(TmpCase):
+
     def test_render_markdown_full(self):
         payload = valid_payload(
             issues={"HIGH": [{"id": "H1", "title": "Bad thing"}], "MED": "none",
@@ -564,6 +568,7 @@ class RenderAndWriteTest(TmpCase):
 
 
 class QuotaAndInferTest(TmpCase):
+
     def test_quota_classify_ok(self):
         rung = self.rung(review=False)
         self.assertEqual(pc._quota_classify_ok(rung), ["missing QUOTA-CLASSIFY.json"])
@@ -616,6 +621,7 @@ FINDINGS = {"HIGH": [{"id": "H1", "title": "t"}], "MED": "none", "LOW": "none", 
 
 
 class SkippedAndStreakAssertTest(TmpCase):
+
     def test_skipped_allows_advance(self):
         rung = self.rung(review=False)
         f = pc._skipped_allows_advance

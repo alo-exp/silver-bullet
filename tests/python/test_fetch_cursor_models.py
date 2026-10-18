@@ -48,6 +48,7 @@ class FetchCliTest(unittest.TestCase):
         self.gcache.write_text(json.dumps(catalog))
 
     # --- cache path helpers ---------------------------------------------
+
     def test_global_cache_path_env_and_default(self):
         with mock.patch.dict(os.environ, {"SB_CURSOR_MODELS_CATALOG": "/x/c.json"}):
             self.assertEqual(fetch.global_cache_path(), Path("/x/c.json"))
@@ -63,6 +64,7 @@ class FetchCliTest(unittest.TestCase):
                          Path("/r/.silver-bullet/cursor-models-catalog.json"))
 
     # --- main -----------------------------------------------------------
+
     def test_no_fetch_reads_existing_cache_and_prints_summary(self):
         self.seed_global()
         with mock.patch.object(fetch, "fetch_and_cache_catalog") as fc:

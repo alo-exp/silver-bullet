@@ -43,6 +43,7 @@ class Base(unittest.TestCase):
 
 
 class HostEnvTest(Base):
+
     def test_claude_detection(self):
         self.assertTrue(c5._is_claude("Claude", "", ""))
         self.assertTrue(c5._is_claude("", "anthropic/sonnet", ""))
@@ -62,6 +63,7 @@ class HostEnvTest(Base):
 
 
 class EnrichTest(Base):
+
     def test_empty_and_none(self):
         self.assertEqual(c5.enrich_quota_blob(""), "")
         self.assertEqual(c5.enrich_quota_blob(None), "")
@@ -168,6 +170,7 @@ class ApplyTest(Base):
 
 
 class ClassifyTest(Base):
+
     def test_generic_claude_429_becomes_five_hour(self):
         out = c5.classify_quota_window("Error 429 rate limit", host="claude")
         self.assertEqual(out["quota_class"], "five_hour")
@@ -361,6 +364,7 @@ class ScheduleTest(Base):
 
 
 class InstallAndBindTest(Base):
+
     def test_install_patches_core_module_functions(self):
         with mock.patch.object(qr, "classify_quota_window", qr.classify_quota_window), \
              mock.patch.object(qr, "schedule_quota_retry", qr.schedule_quota_retry):

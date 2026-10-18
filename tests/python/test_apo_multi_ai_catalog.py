@@ -15,6 +15,7 @@ def _atomic(**extra):
 
 
 class BuildFlowStepsTest(unittest.TestCase):
+
     def test_steps_follow_order_with_evidence(self):
         steps, evidence = ma.build_multi_ai_flow_steps()
         self.assertEqual([s["id"] for s in steps], ma.MULTI_AI_FLOW_STEP_ORDER)

@@ -18,6 +18,7 @@ lp = load_module("scripts/lib/rfl_launcher_policy.py")
 
 
 class ModelAndHostTest(unittest.TestCase):
+
     def test_model_family(self):
         cases = {
             "": "other", None: "other", "  ": "other",
@@ -206,6 +207,7 @@ class SkipArtifactTest(unittest.TestCase):
 
 
 class RenderTest(unittest.TestCase):
+
     def test_normalize_severity(self):
         for raw, want in (("high", "HIGH"), ("Blockers", "HIGH"), ("medium", "MED"),
                           ("lows", "LOW"), ("nitpicks", "NIT"), ("", "LOW"), (None, "LOW"),
@@ -295,6 +297,7 @@ class RenderTest(unittest.TestCase):
 
 
 class HelpersTest(unittest.TestCase):
+
     def test_parse_available_hosts(self):
         self.assertIsNone(lp._parse_available_hosts(None))
         self.assertIsNone(lp._parse_available_hosts(""))
@@ -406,6 +409,16 @@ class CliTest(unittest.TestCase):
                      ["--skip-artifact", "--rung-id", "r1"]):
             code, _, err = self.cli(*argv)
             self.assertEqual((code, "requires --rung-id and --outcome" in err), (2, True))
+
+    def test_skip_artifact_into_existing_rung_dir(self):
+        rung_dir = self.tmp / "existing"
+        rung_dir.mkdir()
+        (rung_dir / "keep.txt").write_text("k")
+        code, out, _ = self.cli("--skip-artifact", "--rung-id", "r1", "--outcome", "timeout",
+                                "--rung-dir", str(rung_dir))
+        self.assertEqual(code, 0)
+        self.assertTrue((rung_dir / "SKIPPED.md").is_file())
+        self.assertEqual((rung_dir / "keep.txt").read_text(), "k")
 
     def test_tables(self):
         cases = {

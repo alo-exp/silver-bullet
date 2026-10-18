@@ -152,6 +152,7 @@ class IsStubTest(unittest.TestCase):
 
 
 class MainFakeTest(unittest.TestCase):
+
     def test_child_exits_cleanly_with_leftover(self):
         h = Harness(self)
         proc = FakeProc([0], returncode=3, leftover=b"tail\n")

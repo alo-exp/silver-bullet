@@ -180,6 +180,33 @@ class MergeHooksTest(unittest.TestCase):
         self.run_script(install)
         self.assertFalse((self.tmp / "silver-bullet" / "current").exists())
 
+    def test_wrong_typed_containers_refused_without_touching_file(self):
+        install = self.make_install()
+        bad = [[1], {"hooks": "x"}, {"hooks": ["x"]}, {"hooks": {"PreToolUse": "str"}},
+               {"hooks": {"PreToolUse": {"a": 1}}}, {"hooks": {"PreToolUse": [{"hooks": "str"}]}},
+               {"hooks": {"PreToolUse": [{"matcher": "Bash", "hooks": {"a": 1}}]}}]
+        for data in bad:
+            self.settings.write_text(json.dumps(data))
+            before = self.settings.read_bytes()
+            with self.assertRaisesRegex(ValueError, "must be a JSON|top level"):
+                self.run_script(install)
+            self.assertEqual(self.settings.read_bytes(), before)
+            self.assertEqual(list(self.settings.parent.glob("*.bak")), [])
+
+    def test_null_or_empty_containers_repaired_and_foreign_entries_kept(self):
+        install = self.make_install()
+        self.settings.write_text(json.dumps({"hooks": None}))
+        self.run_script(install)
+        self.assertIn("PreToolUse", self.load()["hooks"])
+        self.settings.write_text(json.dumps({"hooks": {"PreToolUse": [
+            "foreign", {"matcher": "Bash", "hooks": ["foreign-hook", {"command": None},
+                                                       hook("/usr/bin/keep")]}]}}))
+        self.run_script(install)
+        pre = self.load()["hooks"]["PreToolUse"]
+        self.assertEqual(pre[0], "foreign")
+        self.assertEqual(pre[1]["hooks"][:3], ["foreign-hook", {"command": None}, hook("/usr/bin/keep")])
+        self.assertIn(hook(f"{install}/hooks/a.sh"), pre[1]["hooks"])
+
     def test_malformed_settings_crash_without_clobbering(self):
         install = self.make_install()
         self.settings.write_text("{not json")

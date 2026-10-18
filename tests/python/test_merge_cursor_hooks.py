@@ -58,6 +58,7 @@ class MergeCursorHooksTest(unittest.TestCase):
         return json.loads(self.target.read_text())
 
     # --- usage / creation -------------------------------------------------
+
     def test_missing_or_empty_argument_exits_with_usage(self):
         for args in ((), ("",)):
             with self.assertRaises(SystemExit) as cm:
@@ -112,6 +113,7 @@ class MergeCursorHooksTest(unittest.TestCase):
         self.assertEqual(self.load()["hooks"]["stop"], [{"command": f"{install}/hooks/s.sh"}])
 
     # --- stale / malformed purge -----------------------------------------
+
     def test_purges_stale_and_malformed_entries(self):
         install = self.make_install()
         self.seed({"version": 1, "hooks": {
@@ -146,6 +148,7 @@ class MergeCursorHooksTest(unittest.TestCase):
         self.assertEqual(self.load()["hooks"]["custom"], {"a": 1})
 
     # --- duplicate collapse ----------------------------------------------
+
     def test_duplicates_collapse_with_matcher_union_and_max_timeout(self):
         install = self.make_install(hooks={})
         self.seed({"version": 1, "hooks": {"preToolUse": [
@@ -179,6 +182,7 @@ class MergeCursorHooksTest(unittest.TestCase):
         self.assertEqual(self.load()["hooks"]["stop"], [{"command": "/c/x"}])
 
     # --- bad input ----------------------------------------------------------
+
     def test_non_dict_and_non_string_command_entries_do_not_crash(self):
         install = self.make_install()
         self.seed({"version": 1, "hooks": {"preToolUse": [
@@ -202,6 +206,25 @@ class MergeCursorHooksTest(unittest.TestCase):
         self.assertIn(bridge, out)
         self.assertNotIn('/y/codex-hook-adapter.sh" cursor-hook-bridge',
                          [e.get("command") for e in out])
+
+    def test_wrong_typed_containers_refused_without_touching_file(self):
+        install = self.make_install()
+        for data in ([1], {"hooks": "x"}, {"hooks": [{"a": 1}]},
+                     {"hooks": {"preToolUse": "str"}}, {"hooks": {"preToolUse": {"a": 1}}}):
+            self.seed(data)
+            before = self.target.read_bytes()
+            with self.assertRaisesRegex(ValueError, "must be a JSON|top level"):
+                self.run_script(install)
+            self.assertEqual(self.target.read_bytes(), before)
+            self.assertEqual(list(self.target.parent.glob("*.bak")), [])
+
+    def test_null_or_empty_containers_are_repaired(self):
+        install = self.make_install()
+        for data in ({"hooks": None}, {"hooks": []}, {"hooks": {"preToolUse": None}},
+                     {"hooks": {"preToolUse": {}}}):
+            self.seed(data)
+            self.run_script(install)
+            self.assertEqual(self.load()["hooks"]["preToolUse"], [entry(f"{install}/hooks/a.sh", "Shell")])
 
     def test_malformed_json_crashes_without_clobbering(self):
         install = self.make_install()
@@ -235,6 +258,7 @@ class MergeCursorHooksTest(unittest.TestCase):
         self.assertIn("preToolUse", data["hooks"])
 
     # --- stable alias --------------------------------------------------------
+
     def test_versioned_install_uses_current_alias_replacing_old_kinds(self):
         install = self.make_install("silver-bullet/1.2.3")
         alias = self.tmp / "silver-bullet" / "current"
