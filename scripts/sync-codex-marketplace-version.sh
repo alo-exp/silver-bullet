@@ -66,6 +66,11 @@ sync_codex_marketplace_manifest() {
     exit 1
   }
 
+  # Nothing to bump without a silver-bullet entry: fail instead of reporting a no-op as synced.
+  if ! jq -e '[.plugins[]? | select(.name=="silver-bullet")] | length > 0' "$manifest" >/dev/null; then
+    echo "ERROR: $manifest has no silver-bullet entry to sync" >&2
+    exit 1
+  fi
   remote_before=$(jq -r '.plugins[] | select(.name=="silver-bullet") | .version' "$manifest")
   tmp=$(mktemp)
   jq --arg v "$version" --arg ref "$release_ref" \
