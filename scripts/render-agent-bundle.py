@@ -382,12 +382,17 @@ def _render_lock(dest_root: pathlib.Path):
         yield
 
 
+def _backoff(attempt: int, attempts: int = 3) -> None:
+    """Sleep between retries; the last attempt does not wait."""
+    if attempt + 1 < attempts:
+        time.sleep(0.05 * (attempt + 1))
+
+
 def rewrite_file(path: pathlib.Path, agent: str) -> bool:
     if path.name == "runtime-paths.sh" and "hooks" in path.parts:
         return False
 
-    attempt = 0
-    while True:
+    for attempt in range(3):
         try:
             if not path.is_file():
                 return False
@@ -395,10 +400,7 @@ def rewrite_file(path: pathlib.Path, agent: str) -> bool:
         except UnicodeDecodeError:
             return False
         except OSError:
-            if attempt + 1 >= 3:
-                return False
-            time.sleep(0.05 * (attempt + 1))
-            attempt += 1
+            _backoff(attempt)
             continue
 
         preserve_runtime_placeholders = "hooks" in path.parts
@@ -410,10 +412,8 @@ def rewrite_file(path: pathlib.Path, agent: str) -> bool:
             path.write_text(updated)
             return True
         except OSError:
-            if attempt + 1 >= 3:
-                return False
-            time.sleep(0.05 * (attempt + 1))
-            attempt += 1
+            _backoff(attempt)
+    return False
 
 
 def sanitize_root(root: pathlib.Path, agent: str) -> None:

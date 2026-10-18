@@ -374,6 +374,22 @@ class SanitizeRootTest(TmpCase):
         self.assertEqual(b.read_text(), "$HOME/.codex/b")
         self.assertEqual(outside.read_text(), "$HOME/.claude/o")
 
+    def test_children_are_visited_in_name_order(self):
+        for name in ("c.md", "a.md", "b.md"):
+            self.write(f"s/{name}", "x")
+        seen = []
+        with mock.patch.object(r, "rewrite_file", side_effect=lambda path, agent: seen.append(path.name)):
+            r.sanitize_root(self.tmp / "s", "codex")
+        self.assertEqual(seen, ["a.md", "b.md", "c.md"])
+
+    def test_nested_directories_are_walked_depth_first_in_name_order(self):
+        for rel in ("s/b/2.md", "s/b/1.md", "s/a/x.md", "s/z.md"):
+            self.write(rel, "x")
+        seen = []
+        with mock.patch.object(r, "rewrite_file", side_effect=lambda path, agent: seen.append(path.relative_to(self.tmp / "s").as_posix())):
+            r.sanitize_root(self.tmp / "s", "codex")
+        self.assertEqual(seen, ["a/x.md", "b/1.md", "b/2.md", "z.md"])
+
     def test_root_that_is_a_symlink_is_skipped(self):
         real = self.write("real/a.md", "$HOME/.claude/a")
         (self.tmp / "lnk").symlink_to(self.tmp / "real")
@@ -560,6 +576,19 @@ class RenderBundleTest(TmpCase):
         r.render_bundle(src, dest, "cursor")
         self.assertEqual(sorted(p.name for p in dest.iterdir()), ["helper", "sb", "sb:feature"])
 
+    def test_symlinks_in_the_source_are_copied_as_regular_files(self):
+        src = self.make_source()
+        (src / "silver-feature" / "linked.md").symlink_to(src / "silver-feature" / "notes.md")
+        (src / "linked-dir").symlink_to(src / "helper")
+        dest = self.tmp / "out" / "bundle"
+        r.render_bundle(src, dest, "codex")
+        linked = dest / "sb-feature" / "linked.md"
+        self.assertFalse(linked.is_symlink())
+        self.assertEqual(linked.read_text(), "keep $HOME/.codex/y\n")
+        self.assertFalse((dest / "linked-dir").is_symlink())
+        self.assertTrue((dest / "linked-dir" / "SKILL.md").is_file())
+        self.assertTrue((src / "silver-feature" / "linked.md").is_symlink())  # source untouched
+
     def test_unknown_agent_is_copied_without_route_renames(self):
         src = self.make_source()
         dest = self.tmp / "out" / "x"
@@ -619,6 +648,12 @@ class MainTest(TmpCase):
         rc, err = self.run_main("sanitize", "--agent", "codex")
         self.assertEqual(rc, 2)
         self.assertIn("sanitize mode requires --root", err)
+
+    def test_agent_is_required(self):
+        for argv in (["sanitize", "--root", "x"], ["render", "--source-root", "a", "--dest-root", "b"]):
+            rc, err = self.run_main(*argv)
+            self.assertEqual(rc, 2)
+            self.assertIn("the following arguments are required: --agent", err)
 
     def test_bad_agent_rejected(self):
         rc, err = self.run_main("sanitize", "--agent", "vim", "--root", "x")
