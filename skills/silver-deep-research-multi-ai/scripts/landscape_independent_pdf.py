@@ -745,11 +745,6 @@ def _md_inline(text: str) -> str:
     return "".join(pieces)
 
 
-def _inline_fmt(text: str, bold_re: re.Pattern[str], em_re: re.Pattern[str], code_re: re.Pattern[str]) -> str:
-    # The patterns are unused: formatting is re-parsed from the raw text, then escaped per segment.
-    return _inline_fmt_raw(text)
-
-
 def _inline_fmt_raw(text: str, *, autolink: bool = True) -> str:
     out: list[str] = []
     i = 0
