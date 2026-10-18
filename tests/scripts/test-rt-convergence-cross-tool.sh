@@ -110,6 +110,12 @@ apply_env
 hr_consent graphify=disabled
 assert_eq "convergence: nobody consented" '{"actions":[],"failures":[],"restart_required":false,"changed":false,"affected_servers":[]}' "$(rt_apply_host_convergence_batches | j)"
 hr_consent "${ALL_ENABLED[@]}"
+# a single consented tool is enough to trigger the batches
+hr_consent context_mode=enabled
+assert_eq "convergence: only context-mode" '"patch_hooks"' "$( (export HR_PY_OUT_patch_hooks=patched HR_PY_HOOK_patch_hooks="$CHANGE_HOOKS"; rt_apply_host_convergence_batches false) | jq -c '.actions[0]')"
+hr_consent leanctx=enabled
+assert_eq "convergence: only leanctx" '"patch_hooks"' "$( (export HR_PY_OUT_patch_hooks=patched HR_PY_HOOK_patch_hooks="$CHANGE_HOOKS"; rt_apply_host_convergence_batches false) | jq -c '.actions[0]')"
+hr_consent "${ALL_ENABLED[@]}"
 out="$( (export HR_PY_OUT_patch_hooks=patched HR_PY_HOOK_patch_hooks="$CHANGE_HOOKS" HR_PY_OUT_patch_mcp=patched HR_PY_HOOK_patch_mcp="$CHANGE_MCP"; rt_apply_host_convergence_batches true) | jq -c .)"
 assert_eq "convergence: hooks + mcp changed, receipt created" '{"actions":["patch_hooks","patch_mcp","reload_receipt_created"],"failures":[],"restart_required":true,"changed":true,"affected_servers":["context-mode","graphify","leanctx","agentmemory"]}' "$out"
 PID="$(rt_project_id)"; WID="$(rt_worktree_id "$HR_PROJ")"
