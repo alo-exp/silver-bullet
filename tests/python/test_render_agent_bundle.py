@@ -655,6 +655,16 @@ class MainTest(TmpCase):
             self.assertEqual(rc, 2)
             self.assertIn("render mode requires --source-root and --dest-root", err)
 
+    def test_render_failure_cleans_staging_and_exits_nonzero_with_message(self):
+        self.write("src/silver-x/SKILL.md", "---\nname: silver-x\n---\n")
+        dest = self.tmp / "dest"
+        with mock.patch.object(r, "sanitize_root", side_effect=RuntimeError("boom")):
+            rc, err = self.run_main("render", "--agent", "codex", "--source-root", str(self.tmp / "src"), "--dest-root", str(dest))
+        self.assertEqual(rc, 1)
+        self.assertEqual(err, "ERROR: render failed: boom\n")
+        self.assertFalse(dest.exists())
+        self.assertEqual(sorted(p.name for p in self.tmp.iterdir() if "staging" in p.name), [])
+
     def test_sanitize_mode(self):
         f = self.write("root/a.md", "$HOME/.claude/x")
         rc, _ = self.run_main("sanitize", "--agent", "cursor", "--root", str(self.tmp / "root"))
