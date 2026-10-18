@@ -6,7 +6,6 @@ CSBA_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CSBA_REPO_ROOT="${CSBA_REPO_ROOT:-$(cd "${CSBA_LIB_DIR}/../../.." && pwd)}"
 CSBA_PYTHON="${CSBA_PYTHON:-python3}"
 CSBA_FETCH="${CSBA_LIB_DIR}/fetch-cursor-models.py"
-CSBA_MANAGED_MARKER='<!-- sb-managed: cursor-sb-agents -->'
 CSBA_GLOBAL_CONFIG="${SB_CURSOR_SB_AGENTS_CONFIG:-${HOME}/.config/silver-bullet/cursor-sb-agents.json}"
 CSBA_GLOBAL_CATALOG="${SB_CURSOR_MODELS_CATALOG:-${HOME}/.config/silver-bullet/cursor-models-catalog.json}"
 # shellcheck disable=SC2034  # read by scripts/install-cursor-sb-agents.sh, which sources this file

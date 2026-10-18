@@ -104,13 +104,7 @@ jobs:
           python3 -m pip install -r requirements-dev.txt
 
       - name: Run all test suites
-        # TEMPORARY diagnostic: stream every real signal sent inside the suite (and every
-        # process a signal kills) to the step log while it runs; a dying job keeps only the
-        # tail of its log, so the signals sent just before a runner shutdown survive.
-        run: |
-          sudo apt-get install -y strace >/dev/null
-          strace -f --seccomp-bpf -q -e trace=kill,tkill,tgkill -e signal=none -o '|grep --line-buffered -vE "(kill|tgkill|tkill)\([^)]*, 0\)|SIGCHLD|SIGCONT|resumed>|exited with" | sed -u "s/^/## SIG /"' \
-            bash tests/run-all-tests.sh --jobs 2
+        run: bash tests/run-all-tests.sh --jobs 4
 
       # Tests must write only to their sandboxed HOME/TMPDIR, never into the checkout.
       - name: Check the tests left the checkout unchanged
@@ -145,7 +139,7 @@ jobs:
           python3 -m pip install -r requirements-dev.txt
 
       - name: Measure Bash, Python and JS/TS coverage
-        run: bash tests/coverage/run-coverage.sh --jobs 2
+        run: bash tests/coverage/run-coverage.sh --jobs 4
 
       - name: Coverage summary
         if: always()
