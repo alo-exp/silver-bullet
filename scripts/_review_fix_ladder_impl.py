@@ -308,7 +308,10 @@ def load_json_file(path: Path) -> dict[str, Any] | None:
 
 
 def load_cursor_sb_agents_config(project_root: Path | None = None) -> dict[str, Any]:
-    config = dict(CURSOR_SB_AGENTS_DEFAULTS)
+    config = {
+        key: list(value) if isinstance(value, list) else value
+        for key, value in CURSOR_SB_AGENTS_DEFAULTS.items()
+    }
     project_root = project_root or Path.cwd()
 
     project_cfg_path = project_root / ".silver-bullet.json"
