@@ -46,29 +46,47 @@ class FifoHarness:
         cmd = os.path.join(self.ctl, "cmd.fifo")
         reply = os.path.join(self.ctl, "reply.fifo")
 
+        stop = threading.Event()
+
         def writer():
             for _ in range(200):  # main() creates the fifos when absent
-                if os.path.exists(cmd):
+                if os.path.exists(cmd) or stop.is_set():
                     break
                 time.sleep(0.02)
             for session in writers:
-                fd = os.open(cmd, os.O_WRONLY)
-                for chunk in session:
-                    if isinstance(chunk, float):
-                        time.sleep(chunk)
-                    else:
-                        os.write(fd, chunk)
-                        time.sleep(0.05)
-                os.close(fd)
+                if stop.is_set():
+                    return
+                try:
+                    fd = os.open(cmd, os.O_WRONLY)
+                except OSError:
+                    return
+                try:
+                    for chunk in session:
+                        if stop.is_set():
+                            return
+                        if isinstance(chunk, float):
+                            time.sleep(chunk)
+                        else:
+                            os.write(fd, chunk)
+                            time.sleep(0.05)
+                except OSError:
+                    return
+                finally:
+                    os.close(fd)
                 time.sleep(0.05)
 
         def reader():
             for _ in range(expect_replies):
                 for _ in range(200):
-                    if os.path.exists(reply):
+                    if os.path.exists(reply) or stop.is_set():
                         break
                     time.sleep(0.02)
-                fd = os.open(reply, os.O_RDONLY)
+                if stop.is_set():
+                    return
+                try:
+                    fd = os.open(reply, os.O_RDONLY)
+                except OSError:
+                    return
                 data = b""
                 while True:
                     part = os.read(fd, 4096)
@@ -84,10 +102,20 @@ class FifoHarness:
             t.start()
         argv = ["mock-interactive.py", "--task-dir", self.task, "--control-dir", self.ctl,
                 "--timeout", str(self.timeout)]
-        with mock.patch.object(sys, "argv", argv):
-            rc = (entry or mi.main)()
-        for t in threads:
-            t.join(timeout=5)
+        try:
+            with mock.patch.object(sys, "argv", argv):
+                rc = (entry or mi.main)()
+        finally:
+            stop.set()
+            # Unblock threads parked in a blocking FIFO open() before joining.
+            for path, flags in ((cmd, os.O_RDONLY | os.O_NONBLOCK), (reply, os.O_WRONLY | os.O_NONBLOCK)):
+                try:
+                    os.close(os.open(path, flags))
+                except OSError:
+                    pass
+            for t in threads:
+                t.join(timeout=5)
+                self.tc.assertFalse(t.is_alive(), "FIFO helper thread did not stop")
         return rc
 
 
