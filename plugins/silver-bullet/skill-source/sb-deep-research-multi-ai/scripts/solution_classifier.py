@@ -216,8 +216,6 @@ def _classify_slug(
             return "excluded", "core_seed without envelope evidence (gap)"
         return "excluded", f"{market_label} market_seed without envelope evidence (gap)"
     if slug in all_adjacent_seeds or slug in adjacent_seeds:
-        if slug in all_core_seeds:
-            return "excluded", "market core seed; not adjacent"
         return "adjacent", "pack adjacent_seed"
     exc_class = exclusion_map.get(slug)
     if exc_class:

@@ -11,6 +11,7 @@ from typing import Any
 from category_pack import (
     build_known_solutions,
     build_overview_seeds,
+    get_core_seed_slugs,
     normalize_slug,
     resolve_pack_from_need,
 )
@@ -349,7 +350,8 @@ def discover_solutions(
         matrix_slugs = list(audit.get("matrix_slugs") or audit.get("core") or [])
         if len(matrix_slugs) >= min_solutions:
             return matrix_slugs
-        return matrix_slugs or list(pack.get("core_seeds") or [])[: max(min_solutions, 5)]
+        # Fall back to the pack's seed *slugs* (callers build paths from them), not the seed dicts.
+        return matrix_slugs or get_core_seed_slugs(pack)[: max(min_solutions, 5)]
 
     known = _effective_known_solutions(need)
     scores: dict[str, int] = {}
@@ -589,12 +591,7 @@ def _resolve_features(feature_text: str) -> list[str]:
     for alias, feature in _FEATURE_ALIASES.items():
         if alias in lower and feature not in matched:
             matched.append(feature)
-    if matched:
-        return matched
-    for feature in _all_template_features():
-        if feature.lower() == lower:
-            return [feature]
-    return [text]
+    return matched or [text]
 
 
 def _matrix_entry_head_is_solution(
@@ -937,10 +934,6 @@ def _parse_prose_claim(
 
     for feature in _features_in_text(neg):
         _assign_support(support, slug, feature, False)
-
-    if neg and re.search(r"(?:\blacks?\b|blanks? on|trail on|✗|✖)", neg, re.IGNORECASE):
-        for feature in _features_in_text(neg):
-            _assign_support(support, slug, feature, False)
 
 
 def _parse_checkmark_for_claims(
@@ -1306,9 +1299,7 @@ def _parse_core_set_bulk_claim(
     if not features:
         features = _default_inclusion_features()
     if re.search(r"startup[- ]weighted", text, re.IGNORECASE):
-        for feature in ("Quick onboarding", "Zero-infra bootstrap"):
-            if feature not in features:
-                features.append(feature)
+        features.extend(("Quick onboarding", "Zero-infra bootstrap"))
     for slug in slugs:
         for feature in features:
             _assign_support(support, slug, feature, True)

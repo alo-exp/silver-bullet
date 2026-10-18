@@ -32,6 +32,25 @@ from landscape_independent_pdf import (  # noqa: E402
 )
 
 
+def setUpModule() -> None:
+    # Keep the suite offline: an empty cached font CSS stops build_independent_print_html
+    # from fetching Google Fonts over HTTP on every fresh interpreter.
+    import landscape_independent_pdf
+
+    global _SAVED_FONT_CACHE
+    _SAVED_FONT_CACHE = landscape_independent_pdf._FONT_CSS_CACHE
+    landscape_independent_pdf._FONT_CSS_CACHE = ""
+
+
+def tearDownModule() -> None:
+    import landscape_independent_pdf
+
+    landscape_independent_pdf._FONT_CSS_CACHE = _SAVED_FONT_CACHE
+
+
+_SAVED_FONT_CACHE = None
+
+
 def _minimal_chart() -> dict:
     return {
         "primary_market_id": "apo",
