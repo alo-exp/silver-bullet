@@ -386,7 +386,8 @@ def rewrite_file(path: pathlib.Path, agent: str) -> bool:
     if path.name == "runtime-paths.sh" and "hooks" in path.parts:
         return False
 
-    for attempt in range(3):
+    attempt = 0
+    while True:
         try:
             if not path.is_file():
                 return False
@@ -397,6 +398,7 @@ def rewrite_file(path: pathlib.Path, agent: str) -> bool:
             if attempt + 1 >= 3:
                 return False
             time.sleep(0.05 * (attempt + 1))
+            attempt += 1
             continue
 
         preserve_runtime_placeholders = "hooks" in path.parts
@@ -411,6 +413,7 @@ def rewrite_file(path: pathlib.Path, agent: str) -> bool:
             if attempt + 1 >= 3:
                 return False
             time.sleep(0.05 * (attempt + 1))
+            attempt += 1
 
 
 def sanitize_root(root: pathlib.Path, agent: str) -> None:

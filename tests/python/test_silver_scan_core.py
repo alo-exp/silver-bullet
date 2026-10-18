@@ -78,14 +78,17 @@ class TextHelpersTest(Base):
             self.assertEqual(s.normalize_text("  `Code` — Thing:; "), "code - thing")
             self.assertEqual(s.normalize_text("A\n\tB"), "a b")
 
-    def test_normalize_text_adds_lib_to_sys_path_only_when_missing(self):
+    def test_helpers_add_lib_to_sys_path_only_when_missing(self):
         lib = str(REPO_ROOT / "scripts" / "lib")
-        for present in (False, True):
-            path = [p for p in sys.path if p != lib] + ([lib] if present else [])
-            with mock.patch.object(sys, "path", path):
-                s.normalize_text("x")
-                s.scan_item_fingerprint("t", "c")
-                self.assertEqual(path.count(lib), 1)
+        calls = {"normalize_text": ("x",), "scan_item_fingerprint": ("t", "c")}
+        for name, args in calls.items():
+            for present in (False, True):
+                path = [p for p in sys.path if p != lib] + ([lib] if present else [])
+                with mock.patch.object(sys, "path", path):
+                    getattr(s, name)(*args)
+                    self.assertEqual(path.count(lib), 1, (name, present))
+                    if not present:
+                        self.assertEqual(path[0], lib)
 
     def test_scan_item_fingerprint_shared_and_fallback(self):
         shared = s.scan_item_fingerprint("Title", "Context")
