@@ -89,7 +89,6 @@ marker_dir_for_host() {
     cursor) home_root="${HOME}/.cursor" ;;
     codex) home_root="${HOME}/.codex" ;;
     claude) home_root="${HOME}/.claude" ;;
-    *) home_root="${HOME}/.${host}" ;;
   esac
   printf '%s/post-release-verify\n' "${home_root}/.silver-bullet"
 }
