@@ -103,26 +103,8 @@ jobs:
           sudo apt-get install -y jq git expect
           python3 -m pip install -r requirements-dev.txt
 
-      # TEMPORARY diagnostic: the CI bisect puts the runner shutdown on
-      # tests/hooks/test-prompt-reminder-paths.sh, about a minute after it runs, with no
-      # in-VM signal to the runner. Run it alone under strace, print what it executed and
-      # connected to straight away, then wait so a delayed shutdown lands in this step.
-      - name: Trace test-prompt-reminder-paths alone (temporary)
-        run: |
-          sudo apt-get install -y strace >/dev/null
-          trace="$RUNNER_TEMP/pr.trace"
-          strace -f -qq -o "$trace" -e trace=execve,connect,kill,tkill,tgkill \
-            bash tests/run-all-tests.sh tests/hooks/test-prompt-reminder-paths.sh || true
-          echo "## connect() targets:"
-          grep -o 'connect(.*' "$trace" | grep -oE 'sin6?_addr=[^,)]*|sun_path="[^"]*"|sin6?_port=htons\([0-9]+\)' | sort | uniq -c | sort -rn | head -40
-          echo "## executed programs:"
-          grep -oE 'execve\("[^"]+"' "$trace" | sort | uniq -c | sort -rn | head -60
-          echo "## signals sent:"
-          grep -E 'kill\(' "$trace" | grep -vE 'kill\([0-9]+, 0\)' | head -40
-          for i in $(seq 1 18); do sleep 10; echo "## alive $(date -u +%T)"; done
-
       - name: Run all test suites
-        run: bash tests/run-all-tests.sh --jobs 4
+        run: bash tests/run-all-tests.sh --jobs 2
 
       # Tests must write only to their sandboxed HOME/TMPDIR, never into the checkout.
       - name: Check the tests left the checkout unchanged
@@ -157,7 +139,7 @@ jobs:
           python3 -m pip install -r requirements-dev.txt
 
       - name: Measure Bash, Python and JS/TS coverage
-        run: bash tests/coverage/run-coverage.sh --jobs 4
+        run: bash tests/coverage/run-coverage.sh --jobs 2
 
       - name: Coverage summary
         if: always()
