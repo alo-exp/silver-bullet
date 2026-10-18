@@ -10,3 +10,5 @@ Do all of this inside the worktree directory you are given (cd there; every comm
 5. `shellcheck -S warning` and `bash -n` on new bash test files; Python tests must run under `python3 -m unittest`.
 
 Output (structured): verdict "pass" only if there are no issues of severity high/medium; list every issue with severity (high = coverage claim false / vacuous or wrong test / unjustified source change / flaky; medium = missing important edge case or error path that coverage numbers hide, hermeticity risk, slow test; low = style), file, precise description and a concrete fix hint; and the coverage you measured per package file.
+
+Machine limits: the container has 4 cores and 16 GB and restarts when memory runs out. Use `--jobs 2` (not 4), run one test or coverage runner at a time, and keep determinism checks to at most 3 parallel copies.

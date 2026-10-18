@@ -718,7 +718,7 @@ else
   if [[ "$issue_num" == "0" ]]; then
     echo "PASS: sb:add filed todo-app issue ${issue_num} (local fallback)"
     PASS=$((PASS + 1))
-  elif gh issue view "$issue_num" --repo "$owner_repo" --json labels -q '.labels[].name' 2>/dev/null | grep -qx 'todo-app'; then
+  elif grep -qx 'todo-app' < <(gh issue view "$issue_num" --repo "$owner_repo" --json labels -q '.labels[].name' 2>/dev/null); then
     echo "PASS: sb:add filed todo-app issue ${issue_num}"
     PASS=$((PASS + 1))
   else
@@ -1122,15 +1122,15 @@ if [[ -d "$RELEASE_WORK_DIR" ]] && git -C "$RELEASE_WORK_DIR" rev-parse --is-ins
   fi
 
   echo "DEBUG: release tags before ensure: $(git -C "$RELEASE_WORK_DIR" tag -l 'v1.0.0-inline' 2>/dev/null | tr '\n' ' ')"
-  if git -C "$RELEASE_WORK_DIR" tag -l "v1.0.0-inline" | grep -qx "v1.0.0-inline" \
-    || ([[ -n "${INLINE_RELEASE_WORK_DIR:-}" ]] && git -C "$INLINE_RELEASE_WORK_DIR" tag -l "v1.0.0-inline" | grep -qx "v1.0.0-inline"); then
+  if grep -qx "v1.0.0-inline" < <(git -C "$RELEASE_WORK_DIR" tag -l "v1.0.0-inline") \
+    || ([[ -n "${INLINE_RELEASE_WORK_DIR:-}" ]] && grep -qx "v1.0.0-inline" < <(git -C "$INLINE_RELEASE_WORK_DIR" tag -l "v1.0.0-inline")); then
     echo "PASS: local git tag v1.0.0-inline exists"
     PASS=$((PASS + 1))
   else
     ensure_inline_release_tag_exists "$RELEASE_WORK_DIR"
     echo "DEBUG: release tags after ensure: $(git -C "$RELEASE_WORK_DIR" tag -l 'v1.0.0-inline' 2>/dev/null | tr '\n' ' ')"
-    if git -C "$RELEASE_WORK_DIR" tag -l "v1.0.0-inline" | grep -qx "v1.0.0-inline" \
-      || ([[ -n "${INLINE_RELEASE_WORK_DIR:-}" ]] && git -C "$INLINE_RELEASE_WORK_DIR" tag -l "v1.0.0-inline" | grep -qx "v1.0.0-inline"); then
+    if grep -qx "v1.0.0-inline" < <(git -C "$RELEASE_WORK_DIR" tag -l "v1.0.0-inline") \
+      || ([[ -n "${INLINE_RELEASE_WORK_DIR:-}" ]] && grep -qx "v1.0.0-inline" < <(git -C "$INLINE_RELEASE_WORK_DIR" tag -l "v1.0.0-inline")); then
       echo "PASS: local git tag v1.0.0-inline exists"
       PASS=$((PASS + 1))
     else

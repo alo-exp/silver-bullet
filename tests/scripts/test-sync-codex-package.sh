@@ -327,7 +327,7 @@ done
 assert_not_contains "Codex package does not contain AskUserQuestion" "AskUserQuestion" "$PACKAGE_ROOT"
 
 _retired_ns=$'gs'"d"
-if find "$PACKAGE_ROOT/.generated-skills" -maxdepth 1 -name "${_retired_ns}-*" 2>/dev/null | grep -q .; then
+if grep -q . < <(find "$PACKAGE_ROOT/.generated-skills" -maxdepth 1 -name "${_retired_ns}-*" 2>/dev/null); then
   FAIL=$((FAIL + 1))
   echo "  FAIL: Legacy retired wrappers still present under .generated-skills"
 else
