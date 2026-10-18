@@ -215,17 +215,13 @@ def extract_json_payload(text: str) -> dict[str, Any]:
     fence = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.DOTALL)
     if fence:
         try:
-            parsed = json.loads(fence.group(1))
-            if isinstance(parsed, dict):
-                return parsed
+            return json.loads(fence.group(1))
         except json.JSONDecodeError:
             pass
     brace = re.search(r"(\{.*\})", text, re.DOTALL)
     if brace:
         try:
-            parsed = json.loads(brace.group(1))
-            if isinstance(parsed, dict):
-                return parsed
+            return json.loads(brace.group(1))
         except json.JSONDecodeError:
             pass
     return {"raw_text": text[:8000]}
@@ -345,7 +341,8 @@ def run_cursor_worker(*, logical_model_id: str, prompt: str, output_dir: Path, t
                             note,
                             effective_model_id=model,
                         )
-                failure = parse_cursor_cli_failure(raw_retry)
+                else:
+                    failure = parse_cursor_cli_failure(raw_retry)
             failures.append(f"{model}: {failure}")
 
         out_file.write_text(last_raw, encoding="utf-8")
@@ -572,9 +569,7 @@ def _parse_ocg_cohort_output(raw: str) -> dict[str, Any] | None:
     brace = re.search(r"(\{[^{}]*\"schema_id\"\s*:\s*\"ocg-pool-cohort-result-v1\".*\})", text, re.DOTALL)
     if brace:
         try:
-            parsed = json.loads(brace.group(1))
-            if isinstance(parsed, dict):
-                return parsed
+            return json.loads(brace.group(1))
         except json.JSONDecodeError:
             pass
     return None
