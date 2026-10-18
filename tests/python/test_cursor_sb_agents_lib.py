@@ -46,6 +46,9 @@ class SmallHelpersTest(unittest.TestCase):
         self.assertEqual(b["selected_models"], lib.DEFAULT_SELECTED_MODELS)
         self.assertEqual(b["effort_levels"], lib.DEFAULT_EFFORT_LEVELS)
         self.assertIs(b["enabled_by_user"], None)
+        self.assertIs(b["include_fast"], False)
+        self.assertIs(b["include_max"], False)
+        self.assertIs(b["enabled"], True)
         self.assertEqual(b["agent_name_prefix"], "sb")
 
     def test_sanitize_and_agent_name(self):
@@ -139,6 +142,12 @@ class AgentModelsTest(unittest.TestCase):
         side = [FileNotFoundError(), self.proc(0, "a - A\n")]
         with mock.patch.object(lib.subprocess, "run", side_effect=side):
             self.assertEqual(lib.run_agent_models()[1], "cursor-agent")
+
+    def test_subprocess_invocation_is_bounded_and_captured(self):
+        with mock.patch.object(lib.subprocess, "run", return_value=self.proc(0, "a - A\n")) as run:
+            lib.run_agent_models()
+        self.assertEqual(run.call_args.kwargs, {
+            "capture_output": True, "text": True, "check": False, "timeout": 120})
 
     def test_nonzero_empty_and_timeout_yield_nothing(self):
         for side in (

@@ -46,6 +46,14 @@ def _read_json(path: Path) -> dict[str, Any]:
     return payload if isinstance(payload, dict) else {}
 
 
+def _read_text(path: Path) -> str:
+    """Read a text file, returning "" when it is unreadable or not valid UTF-8."""
+    try:
+        return path.read_text(encoding="utf-8")
+    except (OSError, ValueError):
+        return ""
+
+
 def _is_none(value: Any) -> bool:
     if value is None:
         return False
@@ -629,11 +637,7 @@ def _blocked_needs_quota(rung_dir: Path, payload: dict[str, Any]) -> bool:
         return True
     blocked = Path(rung_dir) / "BLOCKED.md"
     if blocked.is_file():
-        try:
-            text = blocked.read_text(encoding="utf-8")
-        except (OSError, ValueError):
-            text = ""
-        if QUOTA_HINT_RE.search(text):
+        if QUOTA_HINT_RE.search(_read_text(blocked)):
             return True
     return False
 
@@ -681,14 +685,14 @@ def _assert_rung_failure_artifacts(
         stop_path = Path(rung_dir) / "STOP.md"
         if not _file_nonempty(stop_path):
             errors.append("missing STOP.md")
-        elif not STOP_CHECK_RE.search(stop_path.read_text(encoding="utf-8")):
+        elif not STOP_CHECK_RE.search(_read_text(stop_path)):
             errors.append("STOP.md missing which check failed")
         if next_action in {"verify_1", "verify_2", "next_rung_review", "task"}:
             errors.append("compliance STOP blocks advance")
 
     stop_path = Path(rung_dir) / "STOP.md"
     if stop_path.is_file() and next_action in {"next_rung_review", "verify_1", "verify_2"}:
-        if not STOP_CHECK_RE.search(stop_path.read_text(encoding="utf-8")):
+        if not STOP_CHECK_RE.search(_read_text(stop_path)):
             errors.append("STOP.md missing which check failed")
         errors.append("STOP.md present — do not advance")
 
@@ -775,7 +779,7 @@ def assert_rfl_advance(
             stop_path = Path(target) / "STOP.md"
             if not _file_nonempty(stop_path):
                 errors.append("compliance_stop set but STOP.md missing")
-            elif not STOP_CHECK_RE.search(stop_path.read_text(encoding="utf-8")):
+            elif not STOP_CHECK_RE.search(_read_text(stop_path)):
                 errors.append("STOP.md missing which check failed")
             if action != "stop":
                 errors.append("compliance STOP blocks advance")

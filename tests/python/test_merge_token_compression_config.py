@@ -93,6 +93,9 @@ class JsonFilesTest(Base):
             mod.load_json(self.write(self.tmp / "list.json", "[1]"))
 
     def test_save_json_and_backup(self):
+        deep = self.tmp / "x" / "y" / "z.json"
+        self.quiet(mod.save_json, deep, {}, False)
+        self.assertTrue(deep.is_file())
         target = self.tmp / "a" / "b.json"
         self.quiet(mod.save_json, target, {"a": 1}, False)
         self.assertEqual(target.read_text(), '{\n  "a": 1\n}\n')
@@ -218,6 +221,8 @@ class MergeCodexHooksTest(Base):
         frag = {"hooks": {"Stop": [{"hooks": ["junk", {"type": "x"}]}]}}
         target = self.home / "hooks.json"
         self.assertEqual(self.quiet(mod.merge_codex_hooks_file, target, frag, False), 1)
+        self.assertEqual(self.quiet(mod.merge_codex_hooks_file, target, frag, False), 0)
+        self.assertEqual(len(self.read_json(target)["hooks"]["Stop"]), 1)
 
     def test_entry_in_other_group_counts_as_present(self):
         target = self.write(self.home / "hooks.json", {"hooks": {"SessionStart": [
@@ -235,13 +240,23 @@ class McpMergeTest(Base):
         self.assertTrue(self.quiet(mod.merge_mcp_server, target, "c", {}, True))
         self.assertNotIn("c", self.read_json(target)["mcpServers"])
 
+    def assert_untouched(self, fn, target, *args):
+        before = Path(target).read_bytes()
+        with self.assertRaisesRegex(ValueError, "must be a JSON"):
+            self.quiet(fn, target, *args)
+        self.assertEqual(Path(target).read_bytes(), before)
+        self.assertFalse(Path(str(target) + ".bak").exists())
+        self.assertFalse(Path(target).with_suffix(".bak").exists())
+
     def test_merge_mcp_server_bad_container(self):
-        for bad in (None, [], "x"):
+        for bad in ("x", [{"name": "mine", "command": "m"}], 5, 5.5):
             target = self.write(self.home / "m.json", {"mcpServers": bad, "keep": 1})
-            self.assertTrue(self.quiet(mod.merge_mcp_server, target, "a", {"command": "a"}, False), bad)
+            self.assert_untouched(mod.merge_mcp_server, target, "a", {"command": "a"}, False)
+        for ok in (None, [], {}):
+            target = self.write(self.home / "m2.json", {"mcpServers": ok, "keep": 1})
+            self.assertTrue(self.quiet(mod.merge_mcp_server, target, "a", {"command": "a"}, False))
             data = self.read_json(target)
             self.assertEqual((data["keep"], data["mcpServers"]), (1, {"a": {"command": "a"}}))
-
     def test_shared_claude_context_mode(self):
         spec = {"command": "/opt/cm", "args": ["mcp"], "env": {}}
         target = self.home / ".claude.json"
@@ -275,10 +290,13 @@ class McpMergeTest(Base):
 
     def test_shared_claude_bad_container(self):
         spec = {"command": "/opt/cm", "args": []}
-        target = self.write(self.home / ".claude.json", {"mcpServers": None})
-        self.assertTrue(self.quiet(mod.merge_shared_claude_context_mode, target, spec, False))
-        self.assertEqual(self.read_json(target)["mcpServers"]["context-mode"], spec)
-
+        for bad in ("x", [{"name": "mine"}]):
+            target = self.write(self.home / ".claude.json", {"mcpServers": bad})
+            self.assert_untouched(mod.merge_shared_claude_context_mode, target, spec, False)
+        for ok in (None, [], {}):
+            target = self.write(self.home / ".claude.json", {"mcpServers": ok})
+            self.assertTrue(self.quiet(mod.merge_shared_claude_context_mode, target, spec, False))
+            self.assertEqual(self.read_json(target)["mcpServers"]["context-mode"], spec)
     def test_cli_allowlist(self):
         target = self.home / ".cursor" / "cli-config.json"
         self.assertEqual(self.quiet(mod.merge_cli_allowlist, target, ["a", "b", "a"], False), 2)
@@ -293,19 +311,21 @@ class McpMergeTest(Base):
         self.assertEqual(self.quiet(mod.merge_cli_allowlist, target, ["q"], True), 1)
         self.assertEqual(self.read_json(target)["permissions"]["allow"], ["a"])
 
-    def test_cli_allowlist_bad_shapes_are_repaired(self):
-        target = self.write(self.home / "c.json", {"permissions": {"allow": "oops"}})
-        self.assertEqual(self.quiet(mod.merge_cli_allowlist, target, ["a"], False), 1)
-        self.assertEqual(self.read_json(target)["permissions"]["allow"], ["a"])
-        target = self.write(self.home / "c2.json", {"permissions": []})
-        self.assertEqual(self.quiet(mod.merge_cli_allowlist, target, ["a"], False), 1)
-        self.assertEqual(self.read_json(target)["permissions"]["allow"], ["a"])
-
+    def test_cli_allowlist_bad_shapes(self):
+        for data in ({"permissions": {"allow": "Shell(ls)"}}, {"permissions": [{"a": 1}]},
+                     {"permissions": "x"}, {"permissions": {"allow": {"k": 1}}}):
+            target = self.write(self.home / "c.json", data)
+            self.assert_untouched(mod.merge_cli_allowlist, target, ["a"], False)
+        for data in ({"permissions": {"allow": None}}, {"permissions": {"allow": []}},
+                     {"permissions": []}, {"permissions": None}, {"permissions": {"allow": {}}}):
+            target = self.write(self.home / "c2.json", data)
+            self.assertEqual(self.quiet(mod.merge_cli_allowlist, target, ["a"], False), 1)
+            self.assertEqual(self.read_json(target)["permissions"]["allow"], ["a"])
 
 class FileCopyTest(Base):
     def test_copy_file(self):
         src = self.write(self.tmp / "src.txt", "one")
-        dest = self.tmp / "d" / "dest.txt"
+        dest = self.tmp / "d" / "e" / "f" / "dest.txt"
         self.assertFalse(mod.copy_file(self.tmp / "nope", dest, False))
         self.assertTrue(self.quiet(mod.copy_file, src, dest, True))
         self.assertEqual(self.out, f"DRY-RUN: would copy {src} -> {dest}\n")
@@ -485,6 +505,52 @@ class HermesTest(Base):
         self.assertFalse(mod.merge_hermes_context_mode_mcp(cfg, False))
         cfg.write_text("# === rtk-cm context-mode MCP block ===\n")
         self.assertFalse(mod.merge_hermes_context_mode_mcp(cfg, False))
+
+    def test_inserts_under_existing_mcp_servers_without_duplicating_key(self):
+        cfg = self.home / "c.yaml"
+        cfg.write_text("model: x\nmcp_servers:  # servers\n  github:\n    command: gh\nother: 1\n")
+        self.assertTrue(mod.merge_hermes_context_mode_mcp(cfg, False))
+        lines = cfg.read_text().splitlines()
+        self.assertEqual([l for l in lines if l.startswith("mcp_servers:")], ["mcp_servers:  # servers"])
+        self.assertIn("  github:", lines)
+        self.assertIn("    command: gh", lines)
+        self.assertIn("  context-mode:", lines)
+        self.assertIn("    command: context-mode", lines)
+        self.assertLess(lines.index("mcp_servers:  # servers"), lines.index("  context-mode:"))
+        self.assertLess(lines.index("  context-mode:"), lines.index("  github:"))
+        self.assertIn("other: 1", lines)
+        self.assertEqual(cfg.with_suffix(".yaml.bak").read_text().count("mcp_servers"), 1)
+        first = cfg.read_bytes()
+        self.assertFalse(mod.merge_hermes_context_mode_mcp(cfg, False))
+        self.assertEqual(cfg.read_bytes(), first)
+
+    def test_mcp_servers_header_at_eof_without_newline(self):
+        cfg = self.home / "c.yaml"
+        cfg.write_text("mcp_servers:")
+        self.assertTrue(mod.merge_hermes_context_mode_mcp(cfg, False))
+        text = cfg.read_text()
+        self.assertTrue(text.startswith("mcp_servers:\n  # === rtk-cm"))
+        self.assertTrue(text.endswith("# === end rtk-cm context-mode MCP block ===\n"))
+
+    def test_inline_mcp_servers_value_is_refused(self):
+        cfg = self.home / "c.yaml"
+        for text in ("mcp_servers: {}\n", "mcp_servers: {github: {command: gh}}\n"):
+            cfg.write_text(text)
+            self.assertFalse(mod.merge_hermes_context_mode_mcp(cfg, False))
+            self.assertEqual(cfg.read_text(), text)
+            self.assertFalse(cfg.with_suffix(".yaml.bak").exists())
+
+    def test_comment_mentioning_context_mode_does_not_block(self):
+        cfg = self.home / "c.yaml"
+        cfg.write_text("# context-mode: later\nmodel: x\n")
+        self.assertTrue(mod.merge_hermes_context_mode_mcp(cfg, False))
+        self.assertEqual(cfg.read_text().count("\nmcp_servers:\n"), 1)
+
+    def test_dry_run_with_existing_mcp_servers_writes_nothing(self):
+        cfg = self.home / "c.yaml"
+        cfg.write_text("mcp_servers:\n  github: {}\n")
+        self.assertTrue(self.quiet(mod.merge_hermes_context_mode_mcp, cfg, True))
+        self.assertEqual(cfg.read_text(), "mcp_servers:\n  github: {}\n")
 
     def test_dry_run(self):
         cfg = self.home / "c.yaml"
@@ -687,15 +753,21 @@ class OptimizeOpenCodeTest(Base):
         self.assertEqual(self.read_json(self.cfg())["plugin"], ["./plugins/rtk.ts"])
         self.assertTrue(res["plugin_written"])
 
-    def test_bad_plugin_and_mcp_containers_are_replaced(self):
+    def test_bad_plugin_and_mcp_containers(self):
         repo = self.make_repo()
-        self.write(self.cfg(), {"plugin": "x", "mcp": ["y"]})
+        for data in ({"plugin": "x"}, {"plugin": [], "mcp": ["y"]}, {"mcp": "z"}):
+            self.write(self.cfg(), data)
+            before = self.cfg().read_bytes()
+            with self.assertRaisesRegex(ValueError, "must be a JSON"):
+                self.quiet(mod.optimize_opencode, False, repo)
+            self.assertEqual(self.cfg().read_bytes(), before)
+            self.assertFalse(self.cfg().with_suffix(".json.bak").exists())
+        self.write(self.cfg(), {"plugin": None, "mcp": []})
         res = self.quiet(mod.optimize_opencode, False, repo)
         data = self.read_json(self.cfg())
         self.assertEqual(data["plugin"], ["context-mode", "./plugins/rtk.ts"])
         self.assertEqual(data["mcp"], {})
         self.assertTrue(res["plugin_added"])
-
     def test_dry_run_writes_nothing(self):
         repo = self.make_repo()
         res = self.quiet(mod.optimize_opencode, True, repo)

@@ -78,6 +78,11 @@ class MergeTest(unittest.TestCase):
         out = self.merge({"id": "B"}, {"summary": "orphan"}, {"id": "A"})
         self.assertEqual([r["id"] for r in out], ["B", "A"])
 
+    def test_blank_and_whitespace_ids_are_dropped(self):
+        out = self.merge({"id": "", "summary": "a"}, {"id": "   ", "summary": "b"},
+                         {"id": None}, {"id": "A"}, {"summary": "no id"})
+        self.assertEqual([r["id"] for r in out], ["A"])
+
     def test_duplicate_merge_prefers_longer_text_and_yes(self):
         out = self.merge(
             {"id": "A", "severity": "LOW", "summary": "short", "sha": "", "resolved": "no"},

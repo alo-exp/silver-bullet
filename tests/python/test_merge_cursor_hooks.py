@@ -189,6 +189,20 @@ class MergeCursorHooksTest(unittest.TestCase):
         self.assertIn(entry("/usr/bin/keep"), out)
         self.assertIn(entry(f"{install}/hooks/a.sh", "Shell"), out)
 
+    def test_foreign_entries_with_odd_commands_survive_and_bridge_is_not_malformed(self):
+        install = self.make_install()
+        foreign = [{"command": None}, {"command": ["x"]}, {"command": 5}, {"other": 1}]
+        bridge = entry("/x/cursor-hook-bridge.sh")
+        self.seed({"version": 1, "hooks": {"preToolUse": [
+            *foreign, bridge, entry('/y/codex-hook-adapter.sh" cursor-hook-bridge')]}})
+        self.run_script(install)
+        out = self.load()["hooks"]["preToolUse"]
+        for item in foreign:
+            self.assertIn(item, out)
+        self.assertIn(bridge, out)
+        self.assertNotIn('/y/codex-hook-adapter.sh" cursor-hook-bridge',
+                         [e.get("command") for e in out])
+
     def test_malformed_json_crashes_without_clobbering(self):
         install = self.make_install()
         self.seed("{broken")

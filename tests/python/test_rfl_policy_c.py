@@ -742,6 +742,16 @@ class FailureArtifactsTest(TmpCase):
         self.assertIn("STOP.md missing which check failed", errs)
         self.assertIn("STOP.md present — do not advance", errs)
 
+    def test_undecodable_stop_md_reports_missing_check_instead_of_crashing(self):
+        rung = self.rung(review=False)
+        (rung / "STOP.md").write_bytes(b"\xff\xfe")
+        errs = self.check(rung, {}, "stop", phase="stop")
+        self.assertEqual(errs, ["STOP.md missing which check failed"])
+        skipped = {"verdict": "SKIPPED", "disposition": "SKIP"}
+        errs = self.check(rung, skipped, "verify_1")
+        self.assertIn("STOP.md missing which check failed", errs)
+        self.assertIn("STOP.md present — do not advance", errs)
+
     def test_accept_apply_needs_apply_md_or_complete_resolved(self):
         rung = self.rung(review=False)
         (rung / "verify-1.md").write_text("v1")
@@ -903,6 +913,13 @@ class AssertAdvanceTest(TmpCase):
             '{"status": "active", "compliance_stop": true}')
         res = pc.assert_rfl_advance(self.tmp / "norungs", next_action="stop")
         self.assertEqual(res["errors"], ["compliance_stop set but STOP.md missing"])
+
+    def test_compliance_stop_with_undecodable_stop_md(self):
+        rung = self.rung()
+        (rung / "STOP.md").write_bytes(b"\xff\xfe")
+        self.status(status="active", compliance_stop=True)
+        res = self.advance(next_action="stop")
+        self.assertIn("STOP.md missing which check failed", res["errors"])
 
     def test_mark_completed_targets(self):
         self.status(status="active", current_rung="rung-09-z")
