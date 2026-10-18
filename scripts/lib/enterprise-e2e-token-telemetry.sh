@@ -19,7 +19,7 @@ enterprise_e2e_telemetry_extract_row_log_tokens() {
   local max_tokens
   max_tokens="$(grep -oE '[0-9]{1,9}[[:space:]]+tokens' "$log_file" 2>/dev/null \
     | grep -oE '^[0-9]+' | sort -n | tail -1 || true)"
-  [[ -n "$max_tokens" ]] && printf '%s\n' "$max_tokens"
+  [[ -z "$max_tokens" ]] || printf '%s\n' "$max_tokens"
 }
 
 enterprise_e2e_telemetry_rtk_snapshot() {
