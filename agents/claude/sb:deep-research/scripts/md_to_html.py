@@ -96,21 +96,14 @@ def _convert_content_section(markdown: str) -> str:
     # Convert paragraphs (wrap non-HTML lines in <p> tags)
     html = _convert_paragraphs(html)
 
-    # Close all open sections
-    html = _close_sections(html)
-
-    # Wrap executive summary if present
+    # Wrap executive summary if present (closed together with its section)
     html = html.replace(
         '<h2 class="section-title">Executive Summary</h2>',
         '<div class="executive-summary"><h2 class="section-title">Executive Summary</h2>'
     )
-    if '<div class="executive-summary">' in html:
-        # Close executive summary at the next section
-        html = html.replace(
-            '</h2>\n<div class="section">',
-            '</h2></div>\n<div class="section">',
-            1
-        )
+
+    # Close all open sections (and the executive-summary wrapper inside one)
+    html = _close_sections(html)
 
     return html
 
@@ -291,17 +284,23 @@ def _close_sections(html: str) -> str:
     lines = html.split('\n')
     result = []
     section_open = False
+    summary_open = False
+
+    def close_section() -> str:
+        # A section holding the executive-summary wrapper needs two closing divs
+        return '</div></div>' if summary_open else '</div>'
 
     for i, line in enumerate(lines):
         if '<div class="section">' in line:
             if section_open:
-                result.append('</div>')  # Close previous section
+                result.append(close_section())  # Close previous section
             section_open = True
+            summary_open = '<div class="executive-summary">' in line
         result.append(line)
 
     # Close final section if still open
     if section_open:
-        result.append('</div>')
+        result.append(close_section())
 
     return '\n'.join(result)
 
