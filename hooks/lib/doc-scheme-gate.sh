@@ -256,7 +256,9 @@ EOF
     checklist="$repo_root/$checklist"
   fi
 
-  enabled=$(jq -r '.enforcement.enabled // true' "$contract_file" 2>/dev/null || true)
+  # `// true` would also replace an explicit false, so `enabled: false` could never
+  # disable the gate; only a missing/null value defaults to enabled.
+  enabled=$(jq -r '.enforcement.enabled | if . == null then true else . end' "$contract_file" 2>/dev/null || true)
   if [[ "$enabled" != "true" ]]; then
     return 0
   fi
@@ -315,7 +317,7 @@ EOF
   while IFS= read -r _doc_key; do
     [[ -n "$_doc_key" ]] || continue
     _sb_required_doc_keys+=("$_doc_key")
-  done < <(jq -r '.required_docs[]?.key // empty' "$contract_file" 2>/dev/null || true)
+  done < <(jq -r '.required_docs[]?.key // empty' "$contract_file" 2>/dev/null)
   if ((${#_sb_required_doc_keys[@]} == 0)); then
     gate_issues+="  - Invalid contract: required_docs[] is empty in docs/doc-scheme.json"$'\n'
   fi
@@ -330,7 +332,7 @@ EOF
         (.mandatory_updated_docs // [])
         + ((.required_docs // []) | map(select(.mandatory_updated == true) | .key))
       ) | .[]?
-    ' "$contract_file" 2>/dev/null || true
+    ' "$contract_file" 2>/dev/null
   )
 
   if [[ -f "$checklist" && ! -L "$checklist" ]] && jq -e '.docs | type == "object"' "$checklist" >/dev/null 2>&1; then
@@ -342,7 +344,6 @@ EOF
     local mandatory=false
 
     for doc_key in "${_sb_required_doc_keys[@]}"; do
-      [[ -n "$doc_key" ]] || continue
       status=$(jq -r --arg k "$doc_key" '.docs[$k] // empty' "$checklist" 2>/dev/null || true)
       if [[ -z "$status" ]]; then
         gate_issues+="  - Missing checklist entry: ${doc_key}"$'\n'

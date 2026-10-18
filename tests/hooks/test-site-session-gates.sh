@@ -267,14 +267,26 @@ teardown
 
 echo "--- site-preview-preflight ---"
 setup
-SB_SITE_PREVIEW_PORT=59991
+# A free ephemeral port: a fixed one can collide with a concurrent run.
+SB_SITE_PREVIEW_PORT="$(python3 -c 'import socket; s = socket.socket(); s.bind(("127.0.0.1", 0)); print(s.getsockname()[1])')"
 export SB_SITE_PREVIEW_PORT
 out=$(run_hook_worker "$PREVIEW_HOOK" PreToolUse "$(jq -n --arg fp "site/index.html" '{hook_event_name:"PreToolUse",tool_name:"Edit",tool_input:{file_path:$fp}}')")
 assert_deny "PreToolUse Edit site/** denied when preview unhealthy" "$out"
 printf '<html><body>preview</body></html>\n' >"$TMPDIR_TEST/index.html"
-python3 -m http.server "$SB_SITE_PREVIEW_PORT" --directory "$TMPDIR_TEST" >/dev/null 2>&1 &
+python3 -m http.server "$SB_SITE_PREVIEW_PORT" --bind 127.0.0.1 --directory "$TMPDIR_TEST" >/dev/null 2>&1 &
 PREVIEW_PID=$!
-sleep 0.5
+# Wait until the server accepts connections (a fixed sleep lost the race under load).
+python3 - "$SB_SITE_PREVIEW_PORT" <<'PY' || echo "  note: preview server not listening after 15s"
+import socket, sys, time
+deadline = time.time() + 15
+while time.time() < deadline:
+    try:
+        socket.create_connection(("127.0.0.1", int(sys.argv[1])), timeout=0.5).close()
+        sys.exit(0)
+    except OSError:
+        time.sleep(0.1)
+sys.exit(1)
+PY
 out=$(run_hook_worker "$PREVIEW_HOOK" PreToolUse "$(jq -n --arg fp "site/index.html" '{hook_event_name:"PreToolUse",tool_name:"Edit",tool_input:{file_path:$fp}}')")
 assert_permit "PreToolUse Edit site/** allowed when preview healthy" "$out"
 teardown

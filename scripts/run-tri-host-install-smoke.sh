@@ -85,6 +85,10 @@ run_timed() {
   fi
   if [[ $rc -ne 0 ]]; then
     echo "ERROR: ${label} failed (rc=${rc}). Log: ${log_file}" >&2
+    # The log lives in a temp dir that CI discards: show its tail here.
+    echo "----- last 40 lines of ${label} log -----" >&2
+    tail -n 40 "$log_file" >&2 || true
+    echo "----- end of ${label} log -----" >&2
     return "$rc"
   fi
   rm -f "$log_file"
