@@ -11,7 +11,19 @@ source "$TL_REPO_ROOT/tests/lib/repo-snapshot.sh"
 source "$TL_REPO_ROOT/tests/lib/offline-tools.sh"
 sb_offline_tools_install "$TL_TMP/offline-bin"
 
-SNAP="$(sb_repo_snapshot --git "$TL_REPO_ROOT" "$TL_TMP/snap")"
+# A trimmed snapshot keeps the many local clones below cheap: the installer functions need
+# scripts/, hooks/, skills/, templates/ and the plugin manifests, not tests, docs or sites.
+SNAP="$(sb_repo_snapshot "$TL_REPO_ROOT" "$TL_TMP/snap")"
+for _d in tests docs site agents host-bundles .agentmemory .github research; do rm -rf "${SNAP:?}/$_d"; done
+(
+  cd "$SNAP"
+  export GIT_AUTHOR_NAME="SB Test" GIT_AUTHOR_EMAIL="sb-test@example.invalid" GIT_COMMITTER_NAME="SB Test" GIT_COMMITTER_EMAIL="sb-test@example.invalid"
+  git -c init.defaultBranch=main init -q
+  git config gc.auto 0
+  git config maintenance.auto false
+  git add -A
+  git -c commit.gpgsign=false -c core.hooksPath=/dev/null commit -q -m "test snapshot"
+)
 SCRIPT="$SNAP/scripts/install-cursor.sh"
 CH="$TL_TMP/cursor-home"
 UPSTREAM="$TL_TMP/upstream.git"
@@ -89,6 +101,14 @@ tl_run env CURSOR_HOME="$CH" CURSOR_GITHUB_REPO_URL="file://$UPSTREAM" CURSOR_BA
   bash -c 'source "$1"; prune_stale_cursor_marketplace_gitpaths' _ "$SNAP/scripts/lib/install-cursor/backend-cache.sh"
 assert_eq "library alone resolves the default gitPath root" 0 "$TL_STATUS"
 assert_file_absent "default-root unreachable entry pruned" "$GPR/$SHA_B"
+
+# empty roots (the glob matches nothing) are fine
+reset_home
+mkdir -p "$CACHE_MP" "$GPR"
+sub prune_stale_cursor_marketplace_cache_links
+assert_eq "empty cache root tolerated" 0 "$TL_STATUS"
+sub prune_stale_cursor_marketplace_gitpaths
+assert_eq "empty gitPath root tolerated" 0 "$TL_STATUS"
 
 # ---- Cursor Plugins log discovery
 reset_home
@@ -330,6 +350,24 @@ rm -f "${TL_BIN:?}/git"
 reset_home
 sub cursor_plugin_gitpath_root_surface_ready "$SHA_A"
 assert_eq "no gitPath: surface not ready" 1 "$TL_STATUS"
+git clone -q --local "$SNAP" "$GPR/$SNAP_SHA" 2>/dev/null
+G1="$GPR/$SNAP_SHA"
+sub cursor_plugin_gitpath_root_surface_ready "$SNAP_SHA"
+assert_eq "checkout without a commands surface: not ready" 1 "$TL_STATUS"
+make_dest "$G1" 3.0.0
+rm -rf "${G1:?}/.cursor-plugin" "${G1:?}/skills"
+sub cursor_plugin_gitpath_root_surface_ready "$SNAP_SHA"
+assert_eq "commands without a manifest: not ready" 1 "$TL_STATUS"
+mkdir -p "$G1/.cursor-plugin"; printf '{"version":"3.0.0","commands":"./elsewhere"}\n' >"$G1/.cursor-plugin/plugin.json"
+sub cursor_plugin_gitpath_root_surface_ready "$SNAP_SHA"
+assert_eq "manifest pointing elsewhere: not ready" 1 "$TL_STATUS"
+printf '{"version":"3.0.0","commands":"./commands"}\n' >"$G1/.cursor-plugin/plugin.json"
+mkdir -p "$G1/skills/silver-feature"; echo s >"$G1/skills/silver-feature/SKILL.md"
+sub cursor_plugin_gitpath_root_surface_ready "$SNAP_SHA"
+assert_eq "canonical skills still present: not ready" 1 "$TL_STATUS"
+rm -rf "${G1:?}/skills"
+sub cursor_plugin_gitpath_root_surface_ready "$SNAP_SHA"
+assert_eq "clean commands-only surface: ready" 0 "$TL_STATUS"
 
 # ================================================================ legacy-marketplace.sh
 reset_home
