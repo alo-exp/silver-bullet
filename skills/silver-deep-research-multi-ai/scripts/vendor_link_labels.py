@@ -522,9 +522,7 @@ def _linkify_code_span_url(span: str) -> str:
     if any(ch.isspace() for ch in url):
         # `https://a.b and more` is prose in a code span, not a bare URL.
         return span
-    if stripped not in {url, url + trail}:
-        return span
-    return f"[`{url}`]({url})" + (trail if stripped == url + trail else "")
+    return f"[`{url}`]({url})" + trail
 
 
 def linkify_bare_http_urls(markdown: str) -> str:
