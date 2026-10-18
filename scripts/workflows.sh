@@ -222,11 +222,16 @@ cmd_complete_flow() {
       name = $3
       gsub(/^[[:space:]]+|[[:space:]]+$/, "", name)
       if (!completed_match && (name == flow || norm(name) == norm(flow))) {
-        # Replace status column 4 → " complete " and completed col 6 → " <now> "
-        changed = sub(/\| pending \| - \| - \|$/, "| complete | - | " now " |", $0)
-        # Also handle cases where started has been set but completed is still "-"
-        changed += sub(/\| (pending|in-progress) \| ([^|]+) \| - \|$/, "| complete | \\2 | " now " |", $0)
-        if (changed > 0) completed_match = 1
+        # Columns: $4 status, $5 started, $6 completed. A pending / in-progress
+        # row whose completed column is still "-" becomes complete; started is kept.
+        # (Field assignment, not sub() back-references: awk has no \2 in sub().)
+        st = $4; gsub(/^[[:space:]]+|[[:space:]]+$/, "", st)
+        cp = $6; gsub(/^[[:space:]]+|[[:space:]]+$/, "", cp)
+        if (NF == 7 && $7 ~ /^[[:space:]]*$/ && (st == "pending" || st == "in-progress") && cp == "-") {
+          $4 = " complete "
+          $6 = " " now " "
+          completed_match = 1
+        }
       }
       print
       next
