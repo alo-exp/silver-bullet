@@ -948,14 +948,18 @@ doctor_print_summary() {
     if [[ -n "${RECONCILER_JSON:-}" ]]; then
       recon="$(printf '%s' "$RECONCILER_JSON" | jq -c '.' 2>/dev/null)"
     fi
+    local deep=false dry_run=false fix_applied=false
+    [[ "$DOCTOR_DEEP" -eq 1 ]] && deep=true
+    [[ "$DOCTOR_DRY_RUN" -eq 1 ]] && dry_run=true
+    [[ "$DOCTOR_FIX_APPLIED" -eq 1 ]] && fix_applied=true
     jq -n \
       --arg schema "2.0.0" \
       --argjson pass "$PASS" --argjson fail "$FAIL" --argjson warn "$WARN" \
-      --argjson deep "$([[ "$DOCTOR_DEEP" -eq 1 ]] && echo true || echo false)" \
-      --argjson dry_run "$([[ "$DOCTOR_DRY_RUN" -eq 1 ]] && echo true || echo false)" \
+      --argjson deep "$deep" \
+      --argjson dry_run "$dry_run" \
       --arg fix_scope "${DOCTOR_FIX_SCOPE:-}" \
       --argjson reconciler "$recon" \
-      --argjson fix_applied "$([[ "$DOCTOR_FIX_APPLIED" -eq 1 ]] && echo true || echo false)" \
+      --argjson fix_applied "$fix_applied" \
       --arg lines "$(printf '%s\n' "${REPORT_LINES[@]}")" \
       '{schema:$schema,pass:$pass,fail:$fail,warn:$warn,deep:$deep,dry_run:$dry_run,fix_applied:$fix_applied,fix_scope:(if $fix_scope=="" then null else $fix_scope end),reconciler:$reconciler,lines:($lines|split("\n"))}'
   else
