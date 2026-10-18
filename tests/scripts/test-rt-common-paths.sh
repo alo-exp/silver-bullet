@@ -164,6 +164,9 @@ probe="$(rt_emit_probe_result rtk pending pending none 0)"
 assert_eq "probe result: not repairable, no evidence" "false|[]" "$(jq -r '"\(.repairable)|\(.evidence)"' <<<"$probe" | tr -d ' \n')"
 probe="$(RT_PROBE_EXTRA_JSON='{"extra":1,"repairable":true}' rt_emit_probe_result rtk enabled ready full 0 e)"
 assert_eq "probe result: extra merged and overrides" "1|true" "$(jq -r '"\(.extra)|\(.repairable)"' <<<"$probe")"
+probe="$(rt_emit_probe_result graphify enabled ready full)"
+# shift 5 fails with <5 arguments, so nothing is consumed and every argument lands in the evidence
+assert_eq "probe result: missing trailing arguments tolerated" 'graphify|false|["graphify","enabled","ready","full"]' "$(jq -r '"\(.component)|\(.repairable)|\(.evidence)"' <<<"$probe" | tr -d ' \n')"
 assert_eq "derive: unsupported wins" "unsupported" "$(rt_derive_canonical_state 1 1 1 1 1 1 1 1)"
 assert_eq "derive: disabled" "disabled" "$(rt_derive_canonical_state 0 1 1 1 1 1 1 1)"
 assert_eq "derive: pending" "pending" "$(rt_derive_canonical_state 0 0 1 1 1 1 1 1)"
@@ -234,6 +237,8 @@ assert_eq "atomic write replaces" '{"a":2}' "$(cat "$D/sub/out.json")"
 assert_eq "atomic write leaves no temp files" "out.json" "$(ls -A "$D/sub")"
 assert_eq "atomic write needs a destination" "1" "$(rc_of rt_atomic_write_json "" x)"
 assert_eq "atomic write needs content" "1" "$(rc_of rt_atomic_write_json "$D/none.json" "")"
+printf 'file\n' >"$D/blocker"
+assert_eq "atomic write fails when the directory cannot be created" "1" "$(rc_of rt_atomic_write_json "$D/blocker/sub/out.json" '{}')"
 ln -s "$D/sub/out.json" "$D/link.json"
 assert_eq "atomic write refuses a symlink destination" "1" "$(rc_of rt_atomic_write_json "$D/link.json" '{"x":1}')"
 assert_eq "symlink target untouched" '{"a":2}' "$(cat "$D/sub/out.json")"
@@ -254,6 +259,9 @@ rm -f "$DATE_STATE"
 rc=0; rt_with_lock "$L" 5 true || rc=$?
 assert_eq "a held lock times out" "1" "$rc"
 assert_file_exists "a lock held by someone else is left alone" "$L"
+rm -f "$DATE_STATE"
+rc=0; rt_with_lock "$D/blocker/locks/x.lock" 5 true || rc=$?
+assert_eq "an uncreatable lock directory times out" "1" "$rc"
 rm -f "$TL_BIN/date" "$TL_BIN/sleep"; rmdir "$L"
 
 # held lock released by another process while we wait
