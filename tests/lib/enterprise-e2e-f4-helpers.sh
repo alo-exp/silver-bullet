@@ -53,13 +53,16 @@ cat "$f"'
   # date: -u -> fixed stamp, +%s -> $F4_CTL/now (default 1000000)
   tl_stub date 'if [[ "$*" == *"+%s"* ]]; then cat "$F4_CTL/now" 2>/dev/null || echo 1000000
 else echo 2026-01-01T00:00:00Z; fi'
-  # sleep: records; when the argument equals $F4_LOOP_SLEEP and this is call number
+  # sleep: records; on every loop sleep it also advances the fake clock by $F4_NOW_STEP and sources
+  # $F4_CTL/on-loop-sleep (arg: call number) if present; when the argument equals $F4_LOOP_SLEEP and this is call number
   # $F4_LOOP_MAX (default 1), SIGTERM the parent -- but only a parent whose command line
   # contains $F4_PARENT_MARK (the script under test).
   tl_stub sleep 'printf "sleep %s\n" "$*" >>"$F4_CALLS"
 if [[ -n "${F4_LOOP_SLEEP:-}" && "${1:-}" == "$F4_LOOP_SLEEP" ]]; then
   n=$(( $(cat "$F4_CTL/loop-count" 2>/dev/null || echo 0) + 1 ))
   echo "$n" >"$F4_CTL/loop-count"
+  [[ -z "${F4_NOW_STEP:-}" ]] || echo $(( $(cat "$F4_CTL/now" 2>/dev/null || echo 1000000) + F4_NOW_STEP )) >"$F4_CTL/now"
+  [[ ! -f "$F4_CTL/on-loop-sleep" ]] || source "$F4_CTL/on-loop-sleep" "$n"
   if (( n >= ${F4_LOOP_MAX:-1} )) && [[ -n "${F4_PARENT_MARK:-}" ]] \
      && tr "\0" " " <"/proc/$PPID/cmdline" | grep -qF -- "$F4_PARENT_MARK"; then
     builtin kill -TERM "$PPID"
