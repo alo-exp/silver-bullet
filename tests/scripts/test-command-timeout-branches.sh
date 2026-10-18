@@ -60,9 +60,13 @@ run_to "$PATH" 5 lbl --
 assert_eq "no command rc" 2 "$RC"; assert_contains "no command msg" "$ERR" "missing command for 'lbl'"
 run_to "$PATH" 5 onlylabel
 assert_eq "label but no command rc" 2 "$RC"; assert_contains "label named in message" "$ERR" "missing command for 'onlylabel'"
-# Only seconds given: `shift 2` fails, so "5" itself is run as the command (observed behaviour).
+# Only seconds given: no command to run (an executable literally named "5" must not be executed).
+tl_stub 5 "touch \"$TL_TMP/five-ran\""; hash -r
 run_to "$PATH" 5
-assert_eq "seconds only -> runs '5' as command (127)" 127 "$RC"
+assert_eq "seconds only -> rc 2" 2 "$RC"
+assert_contains "seconds only -> missing command message" "$ERR" "missing command"
+assert_file_absent "seconds only -> '5' not executed" "$TL_TMP/five-ran"
+rm -f "$TL_BIN/5"; hash -r
 RC=0; sb_run_with_timeout 2>"$TL_TMP/err" || RC=$?
 assert_eq "no args rc" 2 "$RC"
 
