@@ -210,23 +210,19 @@ def extract_json_payload(text: str) -> dict[str, Any]:
         parsed = json.loads(text)
         if isinstance(parsed, dict):
             return parsed
-    except json.JSONDecodeError:
+    except (json.JSONDecodeError, RecursionError):
         pass
     fence = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.DOTALL)
     if fence:
         try:
-            parsed = json.loads(fence.group(1))
-            if isinstance(parsed, dict):
-                return parsed
-        except json.JSONDecodeError:
+            return json.loads(fence.group(1))
+        except (json.JSONDecodeError, RecursionError):
             pass
     brace = re.search(r"(\{.*\})", text, re.DOTALL)
     if brace:
         try:
-            parsed = json.loads(brace.group(1))
-            if isinstance(parsed, dict):
-                return parsed
-        except json.JSONDecodeError:
+            return json.loads(brace.group(1))
+        except (json.JSONDecodeError, RecursionError):
             pass
     return {"raw_text": text[:8000]}
 
@@ -246,7 +242,7 @@ def sanitize_phase_context(context: str, *, max_chars: int = 2000) -> str:
                 if payload:
                     cleaned.append(payload)
             context = json.dumps(cleaned, indent=2)
-    except json.JSONDecodeError:
+    except (json.JSONDecodeError, RecursionError):
         pass
     return context[:max_chars]
 
@@ -345,7 +341,8 @@ def run_cursor_worker(*, logical_model_id: str, prompt: str, output_dir: Path, t
                             note,
                             effective_model_id=model,
                         )
-                failure = parse_cursor_cli_failure(raw_retry)
+                else:
+                    failure = parse_cursor_cli_failure(raw_retry)
             failures.append(f"{model}: {failure}")
 
         out_file.write_text(last_raw, encoding="utf-8")
@@ -474,7 +471,7 @@ def run_claude_worker(*, logical_model_id: str, prompt: str, output_dir: Path, t
         {
             "SB_ROOT": str(REPO_ROOT),
             "SB_HOST": "cursor",
-            "CLAUDE_BIN": os.environ.get("CLAUDE_BIN", shutil.which("claude") or "/Users/shafqat/.local/bin/claude"),
+            "CLAUDE_BIN": os.environ.get("CLAUDE_BIN") or shutil.which("claude") or "claude",
             "CLAUDE_MODEL": model,
             "CLAUDE_EFFORT": effort,
             "CLAUDE_PRINT_VERBOSE": "0",
@@ -559,7 +556,7 @@ def _parse_ocg_cohort_output(raw: str) -> dict[str, Any] | None:
         parsed = json.loads(text)
         if isinstance(parsed, dict) and parsed.get("schema_id") == "ocg-pool-cohort-result-v1":
             return parsed
-    except json.JSONDecodeError:
+    except (json.JSONDecodeError, RecursionError):
         pass
     fence = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.DOTALL)
     if fence:
@@ -567,15 +564,13 @@ def _parse_ocg_cohort_output(raw: str) -> dict[str, Any] | None:
             parsed = json.loads(fence.group(1))
             if isinstance(parsed, dict) and parsed.get("schema_id") == "ocg-pool-cohort-result-v1":
                 return parsed
-        except json.JSONDecodeError:
+        except (json.JSONDecodeError, RecursionError):
             pass
     brace = re.search(r"(\{[^{}]*\"schema_id\"\s*:\s*\"ocg-pool-cohort-result-v1\".*\})", text, re.DOTALL)
     if brace:
         try:
-            parsed = json.loads(brace.group(1))
-            if isinstance(parsed, dict):
-                return parsed
-        except json.JSONDecodeError:
+            return json.loads(brace.group(1))
+        except (json.JSONDecodeError, RecursionError):
             pass
     return None
 
@@ -662,7 +657,7 @@ def run_ocg_pool_cohort(
         if result_path.is_file():
             try:
                 cohort_payload = json.loads(result_path.read_text(encoding="utf-8"))
-            except json.JSONDecodeError:
+            except (json.JSONDecodeError, RecursionError):
                 cohort_payload = None
         if cohort_payload is None:
             cohort_payload = _parse_ocg_cohort_output(raw)
