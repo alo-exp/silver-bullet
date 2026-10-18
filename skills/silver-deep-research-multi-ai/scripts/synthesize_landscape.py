@@ -2442,8 +2442,8 @@ def build_multi_market_chart_data(
                     buckets.setdefault("commercial", []).append(label)
                 bucket_labels.add(label)
         chart["vendor_buckets"] = buckets
-        # Per-market plotted_slugs must equal MQ slugs (membership.core after stray
-        # merge). Adjacent/excluded vendors must not remain in plotted_slugs.
+        # Per-market plotted_slugs must equal MQ slugs (membership.core is widened with
+        # them below). Adjacent/excluded vendors must not remain in plotted_slugs.
         mq_slugs = sorted(
             {str(p.get("slug")) for p in (chart.get("mq_data") or []) if p.get("slug")}
         )

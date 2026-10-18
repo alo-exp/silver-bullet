@@ -498,6 +498,27 @@ class CatalogGateTests(_Base):
         self.put("landscape/landscape-report.md", md)
         self.assertIn("parent+child dual listing in core sections: langchain + langgraph", self.errors())
 
+    def test_listed_in_core_matches_display_name_and_slug_separately(self):
+        pack = copy.deepcopy(category_pack.resolve_pack_from_need({"category_pack_id": PACK_ID}))
+        pack["parent_child_dedupe"] = [{"parent_slug": "factory-ai", "prefer_slug": "devin"}]
+        self.audit()
+        expected = "parent+child dual listing in core sections: factory-ai + devin"
+
+        def errors_for(*h3):
+            md = ALL_SECTIONS.replace(
+                "## 5. Top Commercial Solutions\n",
+                "## 5. Top Commercial Solutions\n\n" + "".join(f"### {h}\n\n" for h in h3))
+            self.put("landscape/landscape-report.md", md)
+            with mock.patch.object(vlc, "resolve_pack_from_need", return_value=pack):
+                return self.errors()
+
+        # display name "Factory.ai" differs from the slug form "factory ai": each alone counts
+        self.assertIn(expected, errors_for("Factory.ai", "Devin"))
+        self.assertIn(expected, errors_for("Factory AI", "Devin (SaaS)"))
+        self.assertNotIn(expected, errors_for("Factory.ai"))
+        self.assertNotIn(expected, errors_for("Devin"))
+        self.assertNotIn(expected, errors_for("Factory Other", "Devin"))
+
     def test_gaps_acknowledgement(self):
         self.audit(gaps=["zuvo"])
         self.assertIn("must_research gaps ['zuvo'] without coverage_gaps.json acknowledgment", self.errors())

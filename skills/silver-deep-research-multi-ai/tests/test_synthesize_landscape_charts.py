@@ -39,6 +39,19 @@ class UniquifyTests(unittest.TestCase):
         self.assertEqual(sl._uniquify_axis([5.0, 5.0, 5.0], lo=1, hi=9.5, step=100), [5.0, 1.0, 5.0])
 
 
+class SlotBoundaryTests(unittest.TestCase):
+    def test_axis_cap_can_use_the_lowest_slot(self):
+        pts = [{"slug": "a", "x": 8.0, "y": 3.0}] + [
+            {"slug": f"o{i}", "x": x, "y": 1.0 + i} for i, x in enumerate((1.3, 1.2, 1.1))]
+        out = sl._enforce_axis_cap(pts, {"a"}, key="x", cap=1.3, lo=1.0)
+        self.assertEqual(out[0]["x"], 1.0)
+
+    def test_non_leader_y_can_use_the_lowest_slot(self):
+        taken = [{"slug": f"o{i}", "x": 1.0, "y": round(5.4 - i / 10, 1)} for i in range(44)]  # 5.4 .. 1.1
+        out = sl._enforce_non_leader_y([{"slug": "a", "x": 7.0, "y": 6.0}] + taken, {"a"})
+        self.assertEqual(out[0]["y"], 1.0)
+
+
 class CollisionTests(unittest.TestCase):
     def test_avoid_collisions(self):
         self.assertEqual(sl.avoid_chart_coord_collisions([]), [])
@@ -186,6 +199,22 @@ class BuildChartTests(TmpCase):
                 self.build(market_id="apo", support={s: dict(GATES) for s in ("alpha", "beta", "gamma")})
             with self.assertRaisesRegex(ValueError, "in Cat:mq_data"):
                 self.build(support={s: dict(GATES) for s in ("alpha", "beta", "gamma")})
+
+    def test_shared_axis_invariant_is_per_axis(self):
+        sup = {s: dict(GATES) for s in ("alpha", "beta", "gamma")}
+
+        def only(axis_to_share):
+            def fn(pts, **kw):
+                out = [dict(p, x=float(i + 1), y=float(i + 1)) for i, p in enumerate(pts)]
+                for p in out:
+                    p[axis_to_share] = 5.0
+                return out
+            return fn
+
+        for axis in ("x", "y"):
+            with mock.patch.object(sl, "avoid_chart_coord_collisions", side_effect=only(axis)):
+                with self.assertRaisesRegex(ValueError, "shared axis line remains"):
+                    self.build(market_id="apo", support=sup)
 
     def test_adjacent_reasons_from_pack_market(self):
         pack = {"hard_exclusions": [], "sunset_registry": [],
@@ -344,6 +373,22 @@ class MultiMarketTests(TmpCase):
             out = sl.build_multi_market_chart_data({}, pack=pack, support={})
         self.assertEqual(out["markets"], {})
         self.assertEqual(out["primary_market_id"], "m")
+
+    def test_market_sections_commercial_and_oss(self):
+        audit = {"markets": {"agentic-sdlc-saas": {"core": ["devin", "factory-ai"]},
+                             "apo": {"core": ["deepwork", "silver-bullet", "metagpt"]},
+                             "sdlc-plugins": {"core": ["gsd"]}}}
+        sections, nxt = sl._market_solution_sections(self.pack, audit, start_num=7)
+        self.assertEqual([(s["market_id"], s["kind"], s["num"]) for s in sections], [
+            ("apo", "commercial", 7), ("apo", "oss", 8), ("sdlc-plugins", "oss", 9),
+            ("agentic-sdlc-saas", "commercial", 10)])
+        self.assertEqual(nxt, 11)
+        apo_com, apo_oss, _plug, saas = sections
+        self.assertEqual([e["slug"] for e in apo_com["entries"]], ["deepwork"])
+        self.assertEqual([e["slug"] for e in apo_oss["entries"]], ["silver-bullet", "metagpt"])
+        self.assertEqual([e["slug"] for e in saas["entries"]], ["devin", "factory-ai"])
+        self.assertEqual((saas["market_role"], apo_com["market_role"]), ("Tertiary", "Primary"))
+        self.assertTrue(saas["market_display"])
 
     def test_market_sections(self):
         audit = {"markets": {"apo": {"core": ["silver-bullet", "langchain"]}}}
