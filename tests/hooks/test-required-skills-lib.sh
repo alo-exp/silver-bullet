@@ -79,8 +79,8 @@ assert_eq "earliest alias line wins" "2" "$(sb_required_skill_line $'x\nsilver-p
 assert_eq "no match: line 0" "0" "$(sb_required_skill_line $'x\n' silver-plan)"
 
 # ---- filtering and normalising ----------------------------------------------
-retired_ns_hyphen="$(printf '%s%s-' gs d)thing"
-retired_ns_colon="$(printf '%s%s:' gs d)thing"
+retired_ns_hyphen="gsd-thing"
+retired_ns_colon="gsd:thing"
 assert_eq "retired names, namespaces and blanks are dropped" "keep-me also-keep" "$(sb_required_skills_filter_retired keep-me code-review "" "$retired_ns_hyphen" "$retired_ns_colon" documentation also-keep)"
 assert_eq "dedupe preserves order and skips blanks" "a b c" "$(sb_required_skills_dedupe a "" b a c b)"
 assert_eq "empty configured list uses defaults" "x y" "$(sb_required_skills_normalize_configured_list "$CFG" "" "x y")"
