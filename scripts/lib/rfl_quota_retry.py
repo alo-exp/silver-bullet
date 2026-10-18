@@ -623,6 +623,15 @@ def arm_quota_retry_timer(
         try:
             launchd_dir.mkdir(parents=True, exist_ok=True)
             plist.write_text(body, encoding="utf-8")
+            armed = True
+            result: dict[str, Any] = {
+                "backend": "launchd",
+                "fire_at": job.get("fire_at"),
+                "command": command,
+                "argv": argv,
+                "label": label,
+                "plist": str(plist),
+            }
             if os.environ.get("SB_RFL_LAUNCHCTL") != "0":
                 subprocess.run(
                     ["launchctl", "unload", str(plist)],
@@ -634,16 +643,9 @@ def arm_quota_retry_timer(
                     capture_output=True,
                     check=False,
                 )
-                payload["launchctl_rc"] = loaded.returncode
-            return {
-                "armed": True,
-                "backend": "launchd",
-                "fire_at": job.get("fire_at"),
-                "command": command,
-                "argv": argv,
-                "label": label,
-                "plist": str(plist),
-            }
+                armed = loaded.returncode == 0
+                result["launchctl_rc"] = loaded.returncode
+            return {"armed": armed, **result}
         except OSError as exc:
             payload["launchd_error"] = str(exc)
             return None
