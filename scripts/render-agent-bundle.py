@@ -357,7 +357,6 @@ def _safe_rmtree(path: pathlib.Path, *, retries: int = 8, delay: float = 0.05) -
     if not path.exists() and not path.is_symlink():
         return
 
-    last_error: OSError | None = None
     for attempt in range(retries):
         try:
             if path.is_symlink() or path.is_file():
@@ -368,14 +367,10 @@ def _safe_rmtree(path: pathlib.Path, *, retries: int = 8, delay: float = 0.05) -
         except FileNotFoundError:
             return
         except OSError as exc:
-            last_error = exc
             if exc.errno in {errno.ENOTEMPTY, errno.EBUSY, errno.EEXIST} and attempt + 1 < retries:
                 time.sleep(delay * (attempt + 1))
                 continue
             raise
-
-    if last_error is not None:
-        raise last_error
 
 
 @contextlib.contextmanager
@@ -385,6 +380,12 @@ def _render_lock(dest_root: pathlib.Path):
     with open(lock_path, "w", encoding="utf-8") as lock_file:
         fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
         yield
+
+
+def _backoff(attempt: int, attempts: int = 3) -> None:
+    """Sleep between retries; the last attempt does not wait."""
+    if attempt + 1 < attempts:
+        time.sleep(0.05 * (attempt + 1))
 
 
 def rewrite_file(path: pathlib.Path, agent: str) -> bool:
@@ -399,9 +400,7 @@ def rewrite_file(path: pathlib.Path, agent: str) -> bool:
         except UnicodeDecodeError:
             return False
         except OSError:
-            if attempt + 1 >= 3:
-                return False
-            time.sleep(0.05 * (attempt + 1))
+            _backoff(attempt)
             continue
 
         preserve_runtime_placeholders = "hooks" in path.parts
@@ -413,10 +412,7 @@ def rewrite_file(path: pathlib.Path, agent: str) -> bool:
             path.write_text(updated)
             return True
         except OSError:
-            if attempt + 1 >= 3:
-                return False
-            time.sleep(0.05 * (attempt + 1))
-
+            _backoff(attempt)
     return False
 
 
@@ -536,8 +532,7 @@ def command_stub_routes(commands_dir: pathlib.Path) -> set[str]:
             pass
         elif name.startswith("sb-"):
             name = "sb:" + name[len("sb-") :]
-        if name:
-            routes.add(name)
+        routes.add(name)
     return routes
 
 
@@ -618,7 +613,11 @@ def main() -> int:
     if args.mode == "render":
         if not args.source_root or not args.dest_root:
             parser.error("render mode requires --source-root and --dest-root")
-        render_bundle(pathlib.Path(args.source_root), pathlib.Path(args.dest_root), args.agent)
+        try:
+            render_bundle(pathlib.Path(args.source_root), pathlib.Path(args.dest_root), args.agent)
+        except Exception as exc:
+            print(f"ERROR: render failed: {exc}", file=sys.stderr)
+            return 1
         return 0
 
     if not args.root:
