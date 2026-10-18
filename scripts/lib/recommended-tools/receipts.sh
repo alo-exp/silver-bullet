@@ -220,7 +220,7 @@ rt_receipt_create() {
     superseded_at: null
   }')"
 
-  rt_with_lock "$lock_dir" 15 rt_atomic_write_json "$path" "$payload"
+  rt_with_lock "$lock_dir" 15 rt_atomic_write_json "$path" "$payload" || return 1
   printf '%s' "$payload"
 }
 
