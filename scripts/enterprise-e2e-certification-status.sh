@@ -231,7 +231,9 @@ for host in cursor codex claude; do
     esac
   fi
 
-  reg_fp="" reg_rows=0 reg_at=""
+  reg_fp=""
+  reg_rows=0
+  reg_at=""
   reg_lines="$(registry_best_install "$host" 2>/dev/null || true)"
   if [[ -n "$reg_lines" ]]; then
     reg_fp="$(printf '%s\n' "$reg_lines" | sed -n '1p')"
