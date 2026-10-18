@@ -226,6 +226,24 @@ assert_contains "the session records the exit in the ledger" "$tmux_log" "doc['s
 assert_contains "the session passes the work dir" "$tmux_log" "CLAUDE_WORK_DIR="
 assert_contains "the session waits for the launcher's ready marker before invoking" "$tmux_log" "$RUNS/$tmux_run/.launch-ready"
 assert_file_exists "the launcher released the session with the ready marker" "$RUNS/$tmux_run/.launch-ready"
+# the recorded tmux command must be valid shell and, when run, must wait for the launcher's ledger
+# update (tmux stub runs the command in the background; the launcher's session update is delayed)
+TMUX_CMD="$TL_TMP/tmux-cmd.sh"
+tl_stub tmux "case \"\$1\" in new-session) printf '%s' \"\${@: -1}\" >'$TMUX_CMD'; bash '$TMUX_CMD' >'$TL_TMP/tmux-cmd.out' 2>&1 & ;; esac; exit 0"
+tl_stub python3 "case \"\${@: -1}\" in agent-claude-auto-*) sleep 0.6 ;; esac; exec '$REAL_PY' \"\$@\""
+: >"$INVOKE_RECORD"
+INVOKE_RC=0 drv start --row AUTO-C02 --work-dir "$TL_TMP/fixture-app" --tmux
+tmux_fast="$(sed -n 's/^run_id=//p' <<<"$TL_OUT")"
+assert_eq "the recorded tmux command is syntactically valid" "0" "$(bash -n "$TMUX_CMD" 2>/dev/null; echo $?)"
+assert_eq "a fast tmux session's completion is not overwritten by the launcher" "completed" "$(wait_for_status "$tmux_fast" completed)"
+sleep 1
+assert_eq "the tmux ledger stays completed after the launcher finished" "completed" "$(jq -r .status "$RUNS/$tmux_fast/ledger.json")"
+assert_eq "the tmux session recorded the delegate exit" "0" "$(jq -r .delegate_exit "$RUNS/$tmux_fast/ledger.json")"
+assert_eq "the tmux session recorded its name" "agent-claude-auto-auto-c02" "$(jq -r .tmux_session "$RUNS/$tmux_fast/ledger.json")"
+assert_contains "the tmux session ran invoke with the brief and log" "$(cat "$INVOKE_RECORD")" "--brief-file $RUNS/$tmux_fast/brief.md --log $RUNS/$tmux_fast/claude-run.log"
+rm -f "$TL_BIN/python3"
+tl_stub tmux "printf '%s\\n' \"\$*\" >>'$TMUX_REC'; exit 0"
+
 # a failing `kill-session` for a stale session is ignored
 tl_stub tmux "printf '%s\n' \"\$*\" >>'$TMUX_REC'; case \"\$1\" in kill-session) exit 1 ;; esac; exit 0"
 : >"$TMUX_REC"
