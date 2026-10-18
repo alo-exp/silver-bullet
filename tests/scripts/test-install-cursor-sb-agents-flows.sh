@@ -83,12 +83,15 @@ REAL_PY="$(command -v python3)"
 printf '#!/usr/bin/env bash\necho "$*" >>"%s/py-args.log"\nexec %s "$@"\n' "$TL_TMP" "$REAL_PY" >"$TL_TMP/py-wrapper"
 chmod +x "$TL_TMP/py-wrapper"
 export CSBA_PYTHON="$TL_TMP/py-wrapper"
+# a docs-only catalog makes every entry selectable (the fixture has no agent ids)
+jq '.source = "docs-only"' "$TL_REPO_ROOT/tests/fixtures/cursor-models-catalog.json" >"$CFGDIR/cursor-models-catalog.json"
 rm -rf "$PROJ/.cursor" "$HOME/.cursor" "$PROJ/.silver-bullet.json" "$CFGDIR/cursor-sb-agents.json"
 install_in $'n\nn\n1,grok-4.5,\n\n' --project
 assert_eq "interactive install exits 0" 0 "$TL_STATUS"
 assert_contains "model table shown" "$TL_OUT" "Eligible models (pricing per 1M tokens):"
 assert_contains "model listing is offline" "$(grep -- '--list-selectable' "$TL_TMP/py-args.log")" "--no-fetch"
-assert_contains "catalog rows are listed" "$TL_OUT" "composer-2.5"
+assert_match "catalog rows are numbered" ' 1 +composer-2\.5 +Composer 2\.5' "$TL_OUT"
+assert_eq "numbered selection resolves to the listed id" '["composer-2.5","grok-4.5"]' "$(jq -c .selected_models "$CFGDIR/cursor-sb-agents.json")"
 assert_contains "selection prompt shown" "$TL_OUT" "Select models"
 assert_contains "interactive install reported" "$TL_OUT" "installed (project)"
 INTERACTIVE_NAMES="$(names "$PROJ/.cursor/agents")"
@@ -118,5 +121,20 @@ assert_eq "interactive install on closed stdin exits 0" 0 "$TL_STATUS"
 assert_eq "closed stdin picks the default models" '["composer-2.5","grok-4.5"]' "$(jq -c .selected_models "$CFGDIR/cursor-sb-agents.json")"
 assert_eq "closed stdin picks the default efforts" '["medium","high","xhigh"]' "$(jq -c .effort_levels "$CFGDIR/cursor-sb-agents.json")"
 assert_eq "closed stdin leaves fast off" false "$(jq -r .include_fast "$CFGDIR/cursor-sb-agents.json")"
+
+# model listing failure (python exits non-zero) leaves an empty table; defaults still apply
+rm -rf "$PROJ/.cursor"
+printf '#!/usr/bin/env bash\n[[ "$*" == *--list-selectable* ]] && exit 1\nexec %s "$@"\n' "$REAL_PY" >"$TL_TMP/py-wrapper"
+install_in $'n\nn\n\n\n' --project
+assert_eq "failing model listing tolerated" 0 "$TL_STATUS"
+assert_eq "defaults applied after a failed listing" '["composer-2.5","grok-4.5"]' "$(jq -c .selected_models "$CFGDIR/cursor-sb-agents.json")"
+
+# only a project-level catalog exists: the global one is unreadable for jq but the install proceeds
+rm -f "$CFGDIR/cursor-models-catalog.json"
+mkdir -p "$PROJ/.silver-bullet"
+cp "$TL_REPO_ROOT/tests/fixtures/cursor-models-catalog.json" "$PROJ/.silver-bullet/cursor-models-catalog.json"
+install --global --non-interactive
+assert_eq "install without a global catalog exits 0" 0 "$TL_STATUS"
+assert_eq "no catalog timestamp recorded" null "$(jq -c .catalog_fetched_at "$CFGDIR/cursor-sb-agents.json")"
 
 tl_results
