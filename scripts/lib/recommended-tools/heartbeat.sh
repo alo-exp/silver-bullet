@@ -158,7 +158,7 @@ rt_heartbeat_cleanup_expired() {
   now="$(date +%s)"
   cutoff=$((now - RT_HEARTBEAT_CLEANUP_AGE_SECONDS))
   find "$root" -name '*.json' -type f 2>/dev/null | while read -r f; do
-    mtime="$(stat -f '%m' "$f" 2>/dev/null || stat -c '%Y' "$f" 2>/dev/null || echo 0)"
+    mtime="$(stat -c '%Y' "$f" 2>/dev/null || stat -f '%m' "$f" 2>/dev/null || echo 0)"
     if [[ "$mtime" -lt "$cutoff" ]]; then
       rm -f -- "$f" 2>/dev/null || true
     fi
