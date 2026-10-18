@@ -75,7 +75,9 @@ resolve_install_repo() {
 }
 
 cleanup_install_repo() {
-  [[ -n "$INSTALL_REPO_TMP" && -d "$INSTALL_REPO_TMP" ]] && rm -rf "$INSTALL_REPO_TMP"
+  if [[ -n "$INSTALL_REPO_TMP" && -d "$INSTALL_REPO_TMP" ]]; then
+    rm -rf "$INSTALL_REPO_TMP"
+  fi
 }
 
 resolve_install_repo
