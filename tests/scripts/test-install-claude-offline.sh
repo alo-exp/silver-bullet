@@ -80,7 +80,7 @@ cat >"$CLAUDE_DIR/settings.json" <<JSON
  {"type":"command","command":"\${CLAUDE_PLUGIN_ROOT}/hooks/b.sh"},
  {"type":"command","command":"/x/silver-bullet/1.2.3/hooks/c.sh"},
  {"type":"command","command":"/usr/bin/user-hook"}]}],
- "Stop":[]},"keep":"yes"}
+ "Stop":[]},"keep":"yes","theme":null,"env":{"A":null,"B":"x"},"list":[1,null,2],"only":[null]}
 JSON
 install_claude
 assert_eq "local install exits 0" 0 "$TL_STATUS"
@@ -105,6 +105,7 @@ assert_not_contains "plugin-root variable hook dropped" "$SETTINGS_CMDS" 'CLAUDE
 assert_not_contains "stale versioned hook dropped" "$SETTINGS_CMDS" '/x/silver-bullet/1.2.3'
 assert_contains "user hook preserved" "$SETTINGS_CMDS" "/usr/bin/user-hook"
 assert_eq "unrelated settings key preserved" "yes" "$(jq -r .keep "$CLAUDE_DIR/settings.json")"
+assert_eq "null values are preserved" '{"theme":null,"env":{"A":null,"B":"x"},"list":[1,null,2],"only":[null]}' "$(jq -c '{theme,env,list,only}' "$CLAUDE_DIR/settings.json")"
 assert_file_absent "commands dir removed from cache" "$CACHE/9.9.9/commands"
 
 # ---- registry: a registry whose "plugins" is not an object must not be mangled
@@ -126,7 +127,9 @@ assert_eq "foreign registry entry preserved" "1" "$(jq -r '.plugins["other@x"][0
 assert_eq "foreign top-level key preserved" "true" "$(jq -r .extra "$CLAUDE_DIR/plugins/installed_plugins.json")"
 printf 'not json' >"$CLAUDE_DIR/plugins/installed_plugins.json"
 install_claude
-assert_eq "corrupt registry rebuilt" 9.9.9 "$(jq -r '.plugins["silver-bullet@alo-labs"][0].version' "$CLAUDE_DIR/plugins/installed_plugins.json")"
+assert_eq "corrupt registry makes the install fail" 1 "$TL_STATUS"
+assert_eq "corrupt registry left byte-identical" "not json" "$(<"$CLAUDE_DIR/plugins/installed_plugins.json")"
+assert_contains "corrupt registry reported" "$TL_ERR" "installed_plugins.json"
 rm -f "$CLAUDE_DIR/plugins/installed_plugins.json"
 install_claude
 SECOND="$(jq -cS . "$CLAUDE_DIR/plugins/installed_plugins.json")"

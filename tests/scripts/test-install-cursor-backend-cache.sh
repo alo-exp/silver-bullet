@@ -124,7 +124,7 @@ assert_contains "second sha listed" "$TL_OUT" "$SHA_B"
 # logs without any SB line must not abort a caller running under errexit
 printf 'nothing relevant\n' >"$LOGS/Cursor Plugins.log"; printf 'also nothing\n' >"$LOGS/Cursor Plugins 2.log"
 tl_run env CURSOR_HOME="$CH" CURSOR_GITHUB_REPO_URL="file://$UPSTREAM" SB_INSTALL_CURSOR_SOURCE_ONLY=1 \
-  bash -c 'source "$1"; found="$(discover_cursor_backend_plugin_shas)"; echo "alive:[$found]"' _ "$SCRIPT"
+  bash -c 'source "$1"; discover_cursor_backend_plugin_shas > "$2"; echo "alive:[$(<"$2")]"' _ "$SCRIPT" "$TL_TMP/discover.out"
 assert_eq "no SB lines in the logs: discovery survives errexit" "alive:[]" "$TL_OUT"
 
 # an unreachable remote yields no head sha instead of aborting

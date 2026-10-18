@@ -46,6 +46,9 @@ for d in alo-labs alo-labs-agent-plugins alo-labs-cursor; do assert_file_absent 
 assert_file_exists "other plugin cache preserved" "$CURSOR_HOME/plugins/cache/alo-labs/other-plugin"
 assert_file_absent "site session state removed" "$CURSOR_HOME/.silver-bullet/site-session.json"
 assert_file_absent "pending completion audit removed" "$CURSOR_HOME/.silver-bullet/pending-completion-audit.json"
+for f in live-publish-evidence.json subagent-spawns.jsonl site-vloops.json agent-delegation-active.json site-visual-evidence.json; do
+  assert_file_absent "$f removed" "$CURSOR_HOME/.silver-bullet/$f"
+done
 assert_file_exists "unrelated state file preserved" "$CURSOR_HOME/.silver-bullet/keep-me.json"
 HOOKS="$(<"$CURSOR_HOME/hooks.json")"
 assert_not_contains "SB hook stripped" "$HOOKS" "silver-bullet"

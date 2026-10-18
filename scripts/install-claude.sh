@@ -157,8 +157,9 @@ data = {"plugins": {}}
 if registry.is_file():
     try:
         data = json.loads(registry.read_text())
-    except Exception:
-        data = {"plugins": {}}
+    except Exception as exc:
+        sys.stderr.write(f"install-claude: {registry}: not valid JSON ({exc}); leaving it unchanged\n")
+        sys.exit(1)
 plugins = data.setdefault("plugins", {}) if isinstance(data, dict) else None
 if not isinstance(plugins, dict):
     sys.stderr.write(
@@ -261,18 +262,14 @@ def rewrite(value):
     if isinstance(value, str):
         return path_pattern.sub(stable_install_path, value)
     if isinstance(value, list):
-        return [item for item in (rewrite(item) for item in value) if item is not None]
+        return [rewrite(item) for item in value]
     if isinstance(value, dict):
         rewritten = {}
         for key, item in value.items():
             new_item = rewrite(item)
-            if new_item is None:
-                continue
             if key == "hooks" and isinstance(new_item, list):
                 filtered_hooks = []
                 for hook in new_item:
-                    if hook is None:
-                        continue
                     if isinstance(hook, dict):
                         command = hook.get("command", "")
                         if "${CLAUDE_PLUGIN_ROOT}/hooks/" in command:
