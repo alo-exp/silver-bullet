@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Behavior tests for hooks/record-site-session.sh and hooks/record-site-visual-evidence.sh
+# Behavior tests for hooks/record-site-session.sh
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
@@ -7,17 +7,12 @@ tl_init
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/c-toolgates-2-helpers.sh"
 tg2_init_project
 
-# jq wrapper that fails when the JQ_FAIL env var is a substring of its argument list, so a
-# single jq call inside a hook can be made to fail while all other calls behave normally.
-REAL_JQ="$(command -v jq)"
-tl_stub jq "if [[ -n \"\${JQ_FAIL:-}\" && \"\$*\" == *\"\$JQ_FAIL\"* ]]; then exit 1; fi
-exec $REAL_JQ \"\$@\""
+tg2_install_jq_stub
 
 SS="$SB_RUNTIME_STATE_DIR/site-session.json"
 VE="$SB_RUNTIME_STATE_DIR/site-visual-evidence.json"
 VL="$SB_RUNTIME_STATE_DIR/site-vloops.json"
 SESSION_HOOK=hooks/record-site-session.sh
-EVIDENCE_HOOK=hooks/record-site-visual-evidence.sh
 cfg='{"sb_initiated":true}'
 reset() {
   rm -f "$SS" "$VE" "$VL" "$SB_RUNTIME_STATE_DIR/project-root" \
@@ -112,76 +107,13 @@ TG2_REPO="$TG2_FARM" tg2_run "$SESSION_HOOK" "$(post_input Edit '{"file_path":"s
 assert_no_session "session: failing project gate is a no-op"
 reset; tg2_farm no-tool-input "$SESSION_HOOK" tool-input.sh
 TG2_REPO="$TG2_FARM" tg2_run "$SESSION_HOOK" "$(post_input Edit '{"file_path":"site/index.html"}')"
-assert_eq "session: without tool-input.sh the hook exits 0" "0" "$TL_STATUS"
+assert_no_session "session: without tool-input.sh the tool is unknown and nothing is recorded"
 reset; tg2_farm no-lib "$SESSION_HOOK" -
 TG2_REPO="$TG2_FARM" tg2_run "$SESSION_HOOK" "$(post_input Edit '{"file_path":"site/index.html"}')"
 assert_no_session "session: missing lib dir fails open"
 reset; tg2_farm bad-event "$SESSION_HOOK" tool-input.sh
 TG2_REPO="$TG2_FARM" tg2_run "$SESSION_HOOK" "not json"
 assert_no_session "session: unparsable event defaults to PostToolUse and records nothing"
-
-# ================================================== record-site-visual-evidence
-shot_input() { # tool response-json [tool_input-json]
-  jq -cn --arg t "$1" --argjson r "$2" --argjson i "${3:-{\}}" \
-    '{hook_event_name:"PostToolUse", tool_name:$t, tool_input:$i, tool_response:$r}'
-}
-ve_path() { jq -r '.paths[0] // ""' "$VE" 2>/dev/null || true; }
-assert_no_evidence() {
-  if [[ ! -e "$VE" && "$TL_STATUS" == 0 && -z "$TL_OUT" ]]; then tl_pass "$1"; else tl_fail "$1 (status=$TL_STATUS out=${TL_OUT:0:200} evidence=$([[ -e "$VE" ]] && echo present || echo absent))"; fi
-}
-ve_msg() { printf '%s' "$TL_OUT" | jq -r '.hookSpecificOutput.message // ""' 2>/dev/null || true; }
-
-reset; tg2_run "$EVIDENCE_HOOK" "$(shot_input browser_take_screenshot '{"path":"/tmp/shot-1.png"}')"
-assert_eq "evidence: screenshot tool records the path" "/tmp/shot-1.png" "$(ve_path)"
-assert_eq "evidence: confirmation message" "✅ site visual evidence recorded" "$(ve_msg)"
-assert_eq "evidence: record carries viewport" "1280" "$(jq -r .viewport "$VE")"
-assert_eq "evidence: visual V-loop step is marked done" "done" "$(jq -r '.steps[] | select(.id=="visual") | .status' "$VL")"
-assert_eq "evidence: V-loop evidence ref is the path" "/tmp/shot-1.png" "$(jq -r '.steps[] | select(.id=="visual") | .evidence_ref' "$VL")"
-reset; tg2_run "$EVIDENCE_HOOK" "$(shot_input browser_take_screenshot '{"filename":"shots/a.png"}')"
-assert_eq "evidence: filename fallback is recorded" "shots/a.png" "$(ve_path)"
-reset; tg2_run "$EVIDENCE_HOOK" "$(shot_input browser_take_screenshot '{}')"
-assert_no_evidence "evidence: screenshot without a path records nothing"
-
-for mcp_tool in browser_take_screenshot take_screenshot screenshot; do
-  reset; tg2_run "$EVIDENCE_HOOK" "$(shot_input CallMcpTool '{"path":"/tmp/m.png"}' "{\"toolName\":\"$mcp_tool\"}")"
-  assert_eq "evidence: MCP $mcp_tool records response.path" "/tmp/m.png" "$(ve_path)"
-done
-reset; tg2_run "$EVIDENCE_HOOK" "$(shot_input MCP '{"result":{"path":"/tmp/nested.png"}}' '{"name":"screenshot"}')"
-assert_eq "evidence: MCP result.path is recorded" "/tmp/nested.png" "$(ve_path)"
-reset; tg2_run "$EVIDENCE_HOOK" "$(shot_input CallMcpTool '{"path":"/tmp/m.png"}' '{"toolName":"browser_click"}')"
-assert_no_evidence "evidence: non-screenshot MCP tool is ignored"
-reset; tg2_run "$EVIDENCE_HOOK" "$(shot_input CallMcpTool '{}' '{"toolName":"screenshot"}')"
-assert_no_evidence "evidence: MCP screenshot without a path records nothing"
-reset; tg2_run "$EVIDENCE_HOOK" "$(shot_input Bash '{"path":"/tmp/x.png"}')"
-assert_no_evidence "evidence: unrelated tool is ignored"
-reset; printf 'not json' >"$VL"
-tg2_run "$EVIDENCE_HOOK" "$(shot_input browser_take_screenshot '{"path":"/tmp/shot-2.png"}')"
-assert_eq "evidence: corrupt V-loop file does not stop evidence being recorded" "/tmp/shot-2.png" "$(ve_path)"
-assert_eq "evidence: confirmation still printed with corrupt V-loop file" "✅ site visual evidence recorded" "$(ve_msg)"
-
-reset; tg2_run "$EVIDENCE_HOOK" ""
-assert_no_evidence "evidence: empty stdin is a no-op"
-reset; TG2_STDIN_UNREADABLE=1 tg2_run "$EVIDENCE_HOOK" ""
-assert_no_evidence "evidence: unreadable stdin is a no-op"
-reset; TG2_PATH="$(tl_path_without jq)" tg2_run "$EVIDENCE_HOOK" "$(shot_input browser_take_screenshot '{"path":"/tmp/s.png"}')"
-assert_no_evidence "evidence: missing jq is a no-op"
-reset; TG2_CWD="$TL_TMP/outside" TG2_PROJECT_ROOT="" tg2_run "$EVIDENCE_HOOK" "$(shot_input browser_take_screenshot '{"path":"/tmp/s.png"}')"
-assert_no_evidence "evidence: outside an SB project is a no-op"
-reset; TG2_CWD="$TL_TMP/gitonly/sub" TG2_PROJECT_ROOT="" tg2_run "$EVIDENCE_HOOK" "$(shot_input browser_take_screenshot '{"path":"/tmp/s.png"}')"
-assert_no_evidence "evidence: walk-up stops at the .git boundary"
-reset; TG2_CWD="$TG2_PROJ/src" TG2_PROJECT_ROOT="" tg2_run "$EVIDENCE_HOOK" "$(shot_input browser_take_screenshot '{"path":"/tmp/s.png"}')"
-assert_eq "evidence: walk-up finds the config in a parent dir" "/tmp/s.png" "$(ve_path)"
-reset; tg2_farm ve-gate "$EVIDENCE_HOOK" project-active.sh
-tg2_farm_stub project-active.sh 'sb_project_active() { return 1; }
-sb_project_gate_or_exit() { return 1; }'
-TG2_REPO="$TG2_FARM" tg2_run "$EVIDENCE_HOOK" "$(shot_input browser_take_screenshot '{"path":"/tmp/s.png"}')"
-assert_no_evidence "evidence: failing project gate is a no-op"
-reset; tg2_farm ve-noti "$EVIDENCE_HOOK" tool-input.sh
-TG2_REPO="$TG2_FARM" tg2_run "$EVIDENCE_HOOK" "$(shot_input browser_take_screenshot '{"path":"/tmp/s.png"}')"
-assert_eq "evidence: jq fallback tool-name parse records the path" "/tmp/s.png" "$(ve_path)"
-reset; tg2_farm ve-nolib "$EVIDENCE_HOOK" -
-TG2_REPO="$TG2_FARM" tg2_run "$EVIDENCE_HOOK" "$(shot_input browser_take_screenshot '{"path":"/tmp/s.png"}')"
-assert_no_evidence "evidence: missing lib dir fails open"
 
 # single failing jq calls fall back to empty values
 reset; tg2_run "$SESSION_HOOK" "$(prompt_input 'update the help center')" JQ_FAIL='.prompt'
@@ -196,11 +128,5 @@ sb_tool_command_string() { return 1; }'
 TG2_REPO="$TG2_FARM" tg2_run "$SESSION_HOOK" "$(post_input Bash '{"command":"git push"}')"
 assert_no_session "session: unreadable shell command never counts as a push"
 
-reset; tg2_run "$EVIDENCE_HOOK" "$(shot_input browser_take_screenshot '{"path":"/tmp/a.png"}')" JQ_FAIL='.tool_response.filename'
-assert_no_evidence "evidence: failed screenshot-path extraction records nothing"
-reset; tg2_run "$EVIDENCE_HOOK" "$(shot_input CallMcpTool '{"path":"/tmp/a.png"}' '{"toolName":"screenshot"}')" JQ_FAIL='.tool_input.toolName'
-assert_no_evidence "evidence: failed MCP tool-name extraction records nothing"
-reset; tg2_run "$EVIDENCE_HOOK" "$(shot_input CallMcpTool '{"path":"/tmp/a.png"}' '{"toolName":"screenshot"}')" JQ_FAIL='.tool_response.result.path'
-assert_no_evidence "evidence: failed MCP path extraction records nothing"
 
 tl_results
