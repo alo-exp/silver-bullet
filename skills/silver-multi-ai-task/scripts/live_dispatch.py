@@ -345,7 +345,8 @@ def run_cursor_worker(*, logical_model_id: str, prompt: str, output_dir: Path, t
                             note,
                             effective_model_id=model,
                         )
-                failure = parse_cursor_cli_failure(raw_retry)
+                else:
+                    failure = parse_cursor_cli_failure(raw_retry)
             failures.append(f"{model}: {failure}")
 
         out_file.write_text(last_raw, encoding="utf-8")
