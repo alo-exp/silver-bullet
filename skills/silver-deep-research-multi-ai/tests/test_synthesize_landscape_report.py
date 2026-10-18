@@ -167,6 +167,11 @@ class MethodologyAndGuidanceTests(unittest.TestCase):
         self.assertIn("Zuvo, P00", text)  # zuvo promoted to the head of the shortlist
         self.assertIn("Ai Dlc", text)
         self.assertIn("Devin", text)
+        host = lambda **kw: next(l for l in sl._buying_guidance_lines(known={}, support={}, **kw)  # noqa: E731
+                                 if l.startswith("- **Host-runtime path**"))
+        self.assertIn("a separate pack (Gsd, Bmad, Spec Kit, Zuvo). ", host(audit=None))
+        many = {"markets": {"sdlc-plugins": {"core": ["silver-bullet", *[f"p{i}" for i in range(1, 8)]]}}}
+        self.assertIn("a separate pack (P1, P2, P3, P4, P5). ", host(audit=many))
         near = {"markets": {"sdlc-plugins": {"core": ["zuvo", "a"]}}}
         self.assertIn("Zuvo, A", g(audit=near))
 
@@ -321,6 +326,33 @@ class ReportTests(TmpCase):
         self.assertIn("| K1 | 5 |", md)
         self.assertIn("| K2 | 1 |", md)
         self.assertIn("### 4.2 Weird market: m2", md)
+
+    def test_divergence_text_is_cleaned_then_scrubbed_before_selection(self):
+        cons = {"consensus": [], "divergence": [
+            {"text": "Conductor is a primary-market APO candidate — the most complete process layer",
+             "supporting_agents": ["a"], "model_families": ["f1"]},
+            {"text": "Conductor is the weakest option [lean-ctx: junk] and excluded",
+             "supporting_agents": ["b"], "model_families": ["f2"]},
+            {"text": "[lean-ctx: only a marker]", "supporting_agents": ["c"]},
+            {"text": "", "supporting_agents": ["d"]},
+        ]}
+        captured = []
+        real = sl.consensus_resolution_table_lines
+
+        def spy(notable):
+            captured.append(notable)
+            return real(notable)
+
+        with mock.patch.object(sl, "consensus_resolution_table_lines", side_effect=spy):
+            self.report(need=APO_NEED, consolidation=cons)
+        (notable,) = captured
+        self.assertEqual([n["subject"] for n in notable], ["conductor"])
+        texts = sorted(side["text"] for side in notable[0]["sides"])
+        self.assertEqual(texts, [
+            "Conductor is not an APO peer — the most complete process layer",
+            "Conductor is the weakest option  and excluded"])
+        self.assertNotIn("lean-ctx", notable[0]["text"])
+        self.assertNotIn("primary-market APO candidate", notable[0]["text"])
 
     def test_final_pass_keeps_notable_divergences(self):
         cons = {"consensus": [], "divergence": [
