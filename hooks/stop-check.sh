@@ -320,6 +320,8 @@ if git -C "$PWD" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
         sb_cfg="$sb_cfg_search/.silver-bullet.json"
         break
       fi
+      # Stop at the repository root or /: the config can vanish while the hook runs.
+      if [[ -d "$sb_cfg_search/.git" ]] || [[ "$sb_cfg_search" == "/" ]]; then break; fi
       sb_cfg_search=$(dirname "$sb_cfg_search")
     done
     if [[ -n "$sb_cfg" ]] && command -v jq >/dev/null 2>&1; then
