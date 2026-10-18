@@ -10,6 +10,7 @@ import io
 import json
 import os
 import runpy
+import shutil
 import sys
 import tempfile
 import unittest
@@ -20,9 +21,32 @@ _spec = importlib.util.spec_from_file_location('verify_claim_support_under_test'
 vcs = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(vcs)
 
+_ROOT = None
+_patches = []
+
+
+def _no_network(*a, **k):
+    raise AssertionError('network access attempted')
+
+
+def setUpModule():
+    global _ROOT
+    _ROOT = tempfile.mkdtemp()
+    for target in ('socket.socket.connect', 'socket.getaddrinfo'):
+        p = mock.patch(target, side_effect=_no_network)
+        p.start()
+        _patches.append(p)
+
+
+def tearDownModule():
+    for p in _patches:
+        p.stop()
+    _patches.clear()
+    shutil.rmtree(_ROOT, ignore_errors=True)
+
 
 def tmpdir():
-    return tempfile.mkdtemp()
+    return tempfile.mkdtemp(dir=_ROOT)
 
 
 def put_jsonl(d, name, rows):
@@ -57,6 +81,17 @@ class TestJsonl(unittest.TestCase):
 
 
 class TestExtractors(unittest.TestCase):
+    def test_percent_and_x_suffixes_kept(self):
+        # Regression: a trailing % was dropped unless a word character followed.
+        self.assertEqual(vcs.extract_numbers('up 50% now'), {'50%'})
+        self.assertEqual(vcs.extract_numbers('up 50%.'), {'50%'})
+        self.assertEqual(vcs.extract_numbers('3x faster, 4X slower'), {'3x', '4X'})
+        self.assertEqual(vcs.extract_numbers('3xyz and 7'), {'7'})
+        self.assertNotIn('50%', vcs.extract_numbers('50 people'))
+        score_pct = vcs.compute_support_score('Revenue grew 50% overall', ['Revenue grew 50 people overall'])[1]
+        score_same = vcs.compute_support_score('Revenue grew 50% overall', ['Revenue grew 50% overall'])[1]
+        self.assertLess(score_pct, score_same)
+
     def test_extractors(self):
         self.assertEqual(vcs.extract_tokens('The Quick fox jumped'), {'quick', 'jumped'})
         self.assertEqual(vcs.extract_numbers('grew 12.5 in 2020 by 3x'), {'12.5', '2020', '3x'})
@@ -116,6 +151,96 @@ class TestScore(unittest.TestCase):
         self.assertEqual((status, score), ('supported', 1.0))
 
 
+class TestScoreBoundaries(unittest.TestCase):
+    """Exact threshold and note boundaries of compute_support_score."""
+
+    def score(self, claim, *quotes):
+        return vcs.compute_support_score(claim, list(quotes))
+
+    def test_status_thresholds(self):
+        # (tokens, numbers, years, entities) = (0.5, 1, 1, 0) -> exactly 0.6
+        self.assertEqual(self.score('alpha bravo 2020 Qux', 'alpha 2020')[:2], ('supported', 0.6))
+        # (0, 1, 1, 0.5) -> exactly 0.5: still partial
+        self.assertEqual(self.score('alpha 2020 Qux, Zed', 'Qux 2020')[:2], ('partial', 0.5))
+        # (0.5, 0, 1, 0) -> exactly 0.35: partial
+        self.assertEqual(self.score('alpha bravo 12 Qux', 'alpha 13')[:2], ('partial', 0.35))
+        # (0.25, 0, 1, 0) -> 0.25: just below 0.35
+        self.assertEqual(self.score('alpha bravo charlie delta 12 Qux', 'alpha 13')[:2], ('needs_review', 0.25))
+        # (0.75, 0, 0, 0) -> 0.3: just below the partial threshold
+        self.assertEqual(self.score('alpha bravo charlie delta 2020 Qux', 'alpha bravo charlie 2019')[:2],
+                         ('needs_review', 0.3))
+        self.assertEqual(self.score('alpha bravo 12 Qux, Zed', 'Zed 13')[:2], ('needs_review', 0.25))
+
+    def test_just_above_and_below_sixty(self):
+        status, score, _ = self.score('Hi', 'Hi there')  # 0.6000000000000001 rounded to 0.6
+        self.assertEqual((status, score), ('supported', 0.6))
+        # (0.25, 1, 1, 0.5) = 0.6 also supported; (0.25, 1, 1, 0) = 0.5 partial
+        self.assertEqual(self.score('alpha bravo charlie delta 2020 Qux, Zed', 'charlie 2020 Qux')[:2],
+                         ('supported', 0.6))
+        self.assertEqual(self.score('alpha bravo charlie delta 2020 Qux', 'charlie 2020')[:2], ('partial', 0.5))
+
+    TEN_TOKENS = 'aaaa bbbb cccc dddd eeee ffff gggg hhhh iiii jjjj'
+
+    def test_lexical_overlap_note_boundary(self):
+        _, _, at = self.score(self.TEN_TOKENS, 'aaaa bbbb cccc')
+        _, _, below = self.score(self.TEN_TOKENS, 'aaaa bbbb')
+        self.assertNotIn('low lexical overlap', at)
+        self.assertIn('low lexical overlap', below)
+
+    def test_number_note_boundary(self):
+        _, _, at = self.score('alpha 10 20', 'alpha 10')
+        _, _, below = self.score('alpha 10 20 30', 'alpha 10')
+        self.assertNotIn('number mismatch', at)
+        self.assertIn('number mismatch', below)
+        _, _, full = self.score('alpha 10 20', 'alpha 10 20')
+        self.assertNotIn('number mismatch', full)
+
+    ENTITIES = 'Alpha, Bravo, Charlie, Delta, Echo, Foxtrot, Golf, Hotel, India, Juliet'
+
+    def test_entity_note_boundary(self):
+        _, _, at = self.score(self.ENTITIES, 'Alpha, Bravo, Charlie')
+        _, _, below = self.score(self.ENTITIES, 'Alpha, Bravo')
+        self.assertNotIn('entity mismatch', at)
+        self.assertIn('entity mismatch', below)
+
+    def test_year_note_boundary(self):
+        _, _, partial = self.score('alpha 2019 2020', 'alpha 2020')
+        _, _, full = self.score('alpha 2019 2020', 'alpha 2019 2020')
+        self.assertIn('year mismatch', partial)
+        self.assertNotIn('year mismatch', full)
+
+    def test_tie_keeps_first_quote_notes(self):
+        claim = 'alpha bravo charlie delta 2020 Qux, Zed'
+        first = 'alpha bravo 2020'      # (0.5, 1, 1, 0) -> 0.6, entity mismatch
+        second = 'charlie 2020 Qux'     # (0.25, 1, 1, 0.5) -> 0.6, low lexical overlap
+        s1 = self.score(claim, first)
+        s2 = self.score(claim, second)
+        self.assertEqual((s1[1], s2[1]), (0.6, 0.6))
+        self.assertNotEqual(s1[2], s2[2])
+        self.assertEqual(self.score(claim, first, second)[2], s1[2])
+        self.assertEqual(self.score(claim, second, first)[2], s2[2])
+
+
+class TestInferWindows(unittest.TestCase):
+    CLAIM = 'Windowed claim.'
+
+    def doc(self, end_index):
+        """Claim, blank line, filler, then '[7]' ending exactly at end_index."""
+        head = self.CLAIM + '\n\n'
+        filler = 'x' * (end_index - len(head) - 3)
+        return head + filler + '[7]'
+
+    def test_forward_window_800(self):
+        self.assertEqual(vcs.infer_citation_numbers_from_context(self.doc(800), self.CLAIM), [7])
+        self.assertEqual(vcs.infer_citation_numbers_from_context(self.doc(801), self.CLAIM), [])
+
+    def test_unparagraphed_window_1200(self):
+        def one_para(end):
+            return self.CLAIM + ' ' + 'x' * (end - len(self.CLAIM) - 1 - 3) + '[7]'
+        self.assertEqual(vcs.infer_citation_numbers_from_context(one_para(1200), self.CLAIM), [7])
+        self.assertEqual(vcs.infer_citation_numbers_from_context(one_para(1201), self.CLAIM), [])
+
+
 class TestLocators(unittest.TestCase):
     def test_canonicalize(self):
         c = vcs.canonicalize_locator
@@ -130,6 +255,44 @@ class TestLocators(unittest.TestCase):
         self.assertEqual(len(a), 16)
         self.assertEqual(a, vcs.compute_source_id('https://x.org'))
         self.assertNotEqual(a, vcs.compute_source_id('https://y.org'))
+
+
+CM_SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'scripts', 'citation_manager.py')
+_cm_spec = importlib.util.spec_from_file_location('citation_manager_under_test', CM_SCRIPT)
+cm = importlib.util.module_from_spec(_cm_spec)
+_cm_spec.loader.exec_module(cm)
+
+PARITY_URLS = [
+    ('https://doi.org/10.1000/xyz', 'doi:10.1000/xyz'),
+    ('http://dx.doi.org/10.1000/XYZ.', 'doi:10.1000/XYZ'),
+    ('doi:10.1234/abc', 'doi:10.1234/abc'),
+    ('https://arxiv.org/abs/2101.12345v2', 'arxiv:2101.12345v2'),
+    ('arXiv:2101.12345', 'arxiv:2101.12345'),
+    ('HTTP://Example.COM/a/b/', 'http://example.com/a/b'),
+    ('https://example.com/p?utm_source=x&b=2&a=1&ref=y#frag', 'https://example.com/p?a=1&b=2'),
+    ('https://example.com/p/?utm_term=1', 'https://example.com/p'),
+    ('example.com', 'https:example.com'),
+    ('example.com/path', 'https:example.com/path'),
+    ('//example.com/x', 'https://example.com/x'),
+    ('ftp://Files.Example.com/x/', 'ftp://files.example.com/x'),
+]
+
+
+class TestCanonicalParity(unittest.TestCase):
+    """canonicalize_locator must agree with citation_manager so source_ids match."""
+
+    def test_table(self):
+        for raw, expected in PARITY_URLS:
+            with self.subTest(raw):
+                self.assertEqual(cm.canonicalize_locator(raw), expected)
+                self.assertEqual(vcs.canonicalize_locator(raw), expected)
+                self.assertEqual(vcs.compute_source_id(vcs.canonicalize_locator(raw)),
+                                 cm.compute_source_id(cm.canonicalize_locator(raw)))
+
+    def test_regexes_and_tracking_params_match(self):
+        self.assertEqual(vcs.DOI_RE.pattern, cm.DOI_RE.pattern)
+        self.assertEqual(vcs.ARXIV_RE.pattern, cm.ARXIV_RE.pattern)
+        self.assertEqual(vcs.TRACKING_PARAMS, cm.TRACKING_PARAMS)
 
 
 class TestFindReport(unittest.TestCase):
@@ -197,6 +360,26 @@ class TestBibliography(unittest.TestCase):
         self.assertEqual(vcs.parse_bibliography_number_to_url('## Findings\n[1] x [l](https://a.com)\n'), {})
 
 
+class TestHugeNumbers(unittest.TestCase):
+    """Regression: int() on 5000 digits raises ValueError on Python 3.11+."""
+
+    def test_huge_bibliography_number_ignored(self):
+        md = '## Bibliography\n[' + '1' * 5000 + '] [x](http://a.com)\n[2] [y](http://b.com)\n'
+        self.assertEqual(vcs.parse_bibliography_number_to_url(md), {2: 'http://b.com'})
+
+    def test_huge_inline_citation_ignored(self):
+        md = 'Claim here [3] and [' + '1' * 5000 + '].'
+        self.assertEqual(vcs.infer_citation_numbers_from_context(md, 'Claim here'), [3])
+        md = 'Claim here.\n\n[' + '9' * 5000 + ', 2]'
+        self.assertEqual(vcs.infer_citation_numbers_from_context(md, 'Claim here.'), [])
+
+    def test_nine_digit_numbers_still_parsed(self):
+        md = '## Bibliography\n[123456789] [x](http://a.com)\n'
+        self.assertEqual(vcs.parse_bibliography_number_to_url(md), {123456789: 'http://a.com'})
+        self.assertEqual(vcs.infer_citation_numbers_from_context('Claim [123456789, 5]', 'Claim'),
+                         [123456789, 5])
+
+
 class TestDisplayMapping(unittest.TestCase):
     def test_by_raw_canonical_and_computed(self):
         canon = vcs.canonicalize_locator('https://c.com/z/')
@@ -209,6 +392,12 @@ class TestDisplayMapping(unittest.TestCase):
         bib = {1: 'https://a.com/x', 2: 'https://b.com/y?utm_source=q', 3: 'https://c.com/z/', 4: 'https://unknown.com'}
         out = vcs.build_display_number_to_source_id(sources, bib)
         self.assertEqual(out, {1: 's1', 2: 's2', 3: vcs.compute_source_id(canon)})
+
+    def test_doi_bibliography_url_resolves_to_citation_manager_source_id(self):
+        sid = cm.compute_source_id(cm.canonicalize_locator('https://doi.org/10.1000/xyz'))
+        sources = [{'source_id': sid}]
+        out = vcs.build_display_number_to_source_id(sources, {1: 'https://doi.org/10.1000/xyz'})
+        self.assertEqual(out, {1: sid})
 
     def test_fallback_registration_order(self):
         sources = [{'source_id': 'a'}, {'source_id': 'a'}, {}, {'source_id': 'b'}]

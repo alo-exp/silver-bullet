@@ -8,6 +8,7 @@ import importlib.util
 import io
 import os
 import runpy
+import shutil
 import sys
 import tempfile
 import unittest
@@ -18,6 +19,30 @@ SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'scripts
 _spec = importlib.util.spec_from_file_location('verify_html_under_test', SCRIPT)
 vh = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(vh)
+
+_ROOT = None
+_patches = []
+
+
+def _no_network(*a, **k):
+    raise AssertionError('network access attempted')
+
+
+def setUpModule():
+    global _ROOT
+    _ROOT = tempfile.mkdtemp()
+    for target in ('socket.socket.connect', 'socket.getaddrinfo'):
+        p = mock.patch(target, side_effect=_no_network)
+        p.start()
+        _patches.append(p)
+
+
+def tearDownModule():
+    for p in _patches:
+        p.stop()
+    _patches.clear()
+    shutil.rmtree(_ROOT, ignore_errors=True)
+
 
 GOOD_HTML = (
     '<html><head><title>T</title></head><body>'
@@ -30,7 +55,7 @@ GOOD_MD = '## Executive Summary\nSee [1].\n## Bibliography\n[1] x\n'
 
 
 def make(html, md):
-    d = Path(tempfile.mkdtemp())
+    d = Path(tempfile.mkdtemp(dir=_ROOT))
     (d / 'r.html').write_text(html, encoding='utf-8')
     (d / 'r.md').write_text(md, encoding='utf-8')
     return vh.HTMLVerifier(d / 'r.html', d / 'r.md'), d
@@ -142,6 +167,37 @@ class TestPlaceholdersEmojis(unittest.TestCase):
         v._check_no_emojis('\u4e2d\u6587\u62a5\u544a \u2500\u2502 \u3042')
         self.assertEqual(v.errors, [])
 
+    def test_symbol_blocks_flagged(self):
+        # Regression: the narrowed range dropped the Miscellaneous Symbols,
+        # Miscellaneous Symbols and Arrows and Supplemental Symbols blocks.
+        cases = {
+            '\u26a0': 'warning sign', '\u26a1': 'high voltage', '\u2b50': 'star',
+            '\u2600': 'sun', '\u2611': 'ballot box check', '\u2665': 'heart',
+            '\u25b6': 'play button', '\u2b06': 'up arrow', '\U0001F916': 'robot',
+            '\U0001F9E0': 'brain', '\U0001F947': 'gold medal', '\u25fb': 'white medium square',
+            '\u2934': 'arrow curving up', '\U0001F100': 'digit zero full stop',
+        }
+        for ch, name in cases.items():
+            with self.subTest(name):
+                v, _ = make('', '')
+                v._check_no_emojis('x' + ch + 'y')
+                self.assertEqual(len(v.errors), 1, name)
+                self.assertIn('Found 1 emojis', v.errors[0])
+
+    def test_symbol_block_edges(self):
+        for ch in ('\u2600', '\u26ff', '\u2b00', '\u2bff', '\U0001F900', '\U0001F9FF'):
+            with self.subTest(hex(ord(ch))):
+                v, _ = make('', '')
+                v._check_no_emojis(ch)
+                self.assertEqual(len(v.errors), 1)
+
+    def test_neighbouring_non_emoji_not_flagged(self):
+        for ch in ('\u257f', '\u2580', '\u25b5', '\u2c00', '\U0001F8ff', '\u2190', '\u4e2d', '\u3042'):
+            with self.subTest(hex(ord(ch))):
+                v, _ = make('', '')
+                v._check_no_emojis(ch)
+                self.assertEqual(v.errors, [])
+
     def test_enclosed_symbols_still_flagged(self):
         v, _ = make('', '')
         v._check_no_emojis('\u24c2 \U0001F170 \U0001F251')
@@ -164,6 +220,32 @@ class TestStructure(unittest.TestCase):
         self.assertEqual(v.errors, [])
         self.assertEqual(len(v.warnings), 1)
         self.assertIn('Possible unclosed divs', v.warnings[0])
+
+
+class TestHtmlBoundaries(unittest.TestCase):
+    def struct_warnings(self, opens, closes):
+        v, _ = make('', '')
+        v._check_structure(GOOD_HTML.replace('<div', '<span').replace('</div>', '</span>')
+                           + '<div>' * opens + '</div>' * closes)
+        return v.warnings
+
+    def test_div_imbalance_boundary(self):
+        self.assertEqual(self.struct_warnings(2, 0), [])      # difference exactly 2
+        self.assertEqual(len(self.struct_warnings(3, 0)), 1)  # 3
+        self.assertEqual(self.struct_warnings(0, 2), [])
+        self.assertEqual(len(self.struct_warnings(0, 3)), 1)  # more closing than opening
+
+    def citation_warnings(self, md_count, html_count):
+        v, _ = make('', '')
+        md = ' '.join('[%d]' % i for i in range(1, md_count + 1))
+        html = ' '.join('[%d]' % i for i in range(1, html_count + 1))
+        v._check_citations(html, md)
+        return v.warnings
+
+    def test_citation_ratio_boundary(self):
+        self.assertEqual(self.citation_warnings(3, 2), [])    # ratio 1.5 exactly
+        self.assertEqual(len(self.citation_warnings(7, 4)), 1)  # 1.75
+        self.assertEqual(len(self.citation_warnings(4, 2)), 1)  # 2.0
 
 
 class TestCitations(unittest.TestCase):
