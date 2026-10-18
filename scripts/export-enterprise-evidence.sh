@@ -18,6 +18,11 @@ PROJECT_ROOT="$(cd "${1:-.}" && pwd)"
 SB_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TIMESTAMP="$(date -u '+%Y%m%dT%H%M%SZ')"
 OUT_ZIP="${2:-${PROJECT_ROOT}/dist/enterprise-evidence-${TIMESTAMP}.zip}"
+# The zip is written from inside the staging dir: resolve a relative path against the caller's cwd first.
+case "$OUT_ZIP" in
+  /*) ;;
+  *) OUT_ZIP="${PWD}/${OUT_ZIP}" ;;
+esac
 STAGING="$(mktemp -d "${TMPDIR:-/tmp}/sb-evidence-export.XXXXXX")"
 
 cleanup() { rm -rf "$STAGING"; }
