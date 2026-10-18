@@ -172,6 +172,14 @@ assert_eq "symlinked output refused" 1 "$TL_STATUS"
 assert_contains "symlinked output message" "$TL_ERR" "refusing to write through symlink"
 assert_eq "symlink target untouched" precious "$(cat "$TL_TMP/precious.txt")"
 
+# a relative output path is resolved against the caller's cwd (not the staging dir)
+RELD="$TL_TMP/reldir"; mkdir -p "$RELD"
+tl_run bash -c 'cd "$1" && bash "$2" "$3" out/rel.zip' _ "$RELD" "$EX" "$SP"
+assert_eq "relative output ok" 0 "$TL_STATUS"
+assert_file_exists "relative output zip exists under the caller's cwd" "$RELD/out/rel.zip"
+assert_contains "relative output zip is a valid export" "$(unzip -Z1 "$RELD/out/rel.zip")" "manifest.json"
+assert_contains "relative output reported with an absolute path" "$TL_OUT" "$RELD/out/rel.zip"
+
 # minimal project: no catalog, no cert script, no logs/sessions/config; default output dir and timestamped name
 EM="$TL_TMP/exp-min"; mkdir -p "$EM/scripts"; cp "$EX" "$EM/scripts/"
 PM="$TL_TMP/proj-min"; mkdir -p "$PM"
