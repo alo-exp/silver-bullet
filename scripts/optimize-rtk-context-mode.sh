@@ -336,8 +336,12 @@ run_cm_doctor() {
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --host) HOST="${2:-}"; shift 2 ;;
-    --project-root) PROJECT_ROOT="${2:-}"; shift 2 ;;
+    --host|--project-root)
+      # A trailing option has no value; `shift 2` would abort silently under set -e.
+      if [[ $# -lt 2 ]]; then echo "ERROR: $1 requires a value" >&2; usage >&2; exit 2; fi
+      if [[ "$1" == "--host" ]]; then HOST="$2"; else PROJECT_ROOT="$2"; fi
+      shift 2
+      ;;
     --dry-run) DRY_RUN=1; export RTCM_DRY_RUN=1; shift ;;
     --skip-cli-config) SKIP_CLI_CONFIG=1; shift ;;
     --skip-rtk-init) SKIP_RTK_INIT=1; shift ;;
