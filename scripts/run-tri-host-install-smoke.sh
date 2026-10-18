@@ -37,12 +37,47 @@ SB_TRIHOST_CMD_TIMEOUT="${SB_TRIHOST_CMD_TIMEOUT:-180}"
 SB_TRIHOST_DIAG_TIMEOUT="${SB_TRIHOST_DIAG_TIMEOUT:-90}"
 export RT_SKIP_POST_INSTALL="${RT_SKIP_POST_INSTALL:-1}"
 
-# Re-exec under overall wall-clock so a hung host cannot stall run-all-tests forever.
-if [[ "${SB_TRIHOST_INNER:-0}" != "1" ]]; then
-  export SB_TRIHOST_INNER=1
+# sb_trihost_descendants <pid>: every descendant of <pid>, found through the parent links
+# (timeout wrappers move their child into a process group of its own, so groups cannot be used).
+sb_trihost_descendants() {
+  local child
+  while read -r child; do
+    printf '%s\n' "$child"
+    sb_trihost_descendants "$child"
+  done < <(ps -A -o pid= -o ppid= | awk -v parent="$1" '$2 == parent { print $1 }')
+}
+
+# sb_trihost_alive <pid>: running (a zombie that is only waiting to be reaped is not).
+sb_trihost_alive() {
+  local state
+  state="$(ps -p "$1" -o stat= 2>/dev/null || true)"
+  [[ -n "$state" && "$state" != Z* ]]
+}
+
+# sb_trihost_kill_tree <pid>: TERM the process and all of its descendants, then KILL what survives.
+sb_trihost_kill_tree() {
+  local pids p i alive
+  pids="$(printf '%s\n' "$1"; sb_trihost_descendants "$1")"
+  for p in $pids; do kill -TERM "$p" 2>/dev/null || true; done
+  for i in 1 2 3 4 5 6 7 8 9 10; do
+    alive=0
+    for p in $pids; do
+      if sb_trihost_alive "$p"; then alive=1; fi
+    done
+    [[ $alive -eq 0 ]] && return 0
+    sleep 0.1
+  done
+  for p in $pids; do kill -KILL "$p" 2>/dev/null || true; done
+}
+
+# Three levels: the launcher applies the overall wall-clock, the supervisor (a child of the
+# timeout wrapper) runs the smoke in a process group of its own and, when the wrapper
+# signals it, takes down the smoke together with every descendant, so a hung host cannot
+# stall run-all-tests nor outlive the run.
+if [[ "${SB_TRIHOST_INNER:-0}" != "1" && "${SB_TRIHOST_SUPERVISOR:-0}" != "1" ]]; then
   overall_rc=0
   sb_run_with_timeout "$SB_TRIHOST_OVERALL_TIMEOUT" "tri-host-install-smoke overall" -- \
-    env SB_TRIHOST_INNER=1 \
+    env SB_TRIHOST_SUPERVISOR=1 \
       SB_TRIHOST_OVERALL_TIMEOUT="$SB_TRIHOST_OVERALL_TIMEOUT" \
       SB_TRIHOST_CMD_TIMEOUT="$SB_TRIHOST_CMD_TIMEOUT" \
       SB_TRIHOST_DIAG_TIMEOUT="$SB_TRIHOST_DIAG_TIMEOUT" \
@@ -53,6 +88,15 @@ if [[ "${SB_TRIHOST_INNER:-0}" != "1" ]]; then
     exit 124
   fi
   exit "$overall_rc"
+fi
+if [[ "${SB_TRIHOST_INNER:-0}" != "1" ]]; then
+  set -m
+  env SB_TRIHOST_INNER=1 bash "$0" "$@" &
+  smoke_pid=$!
+  trap 'sb_trihost_kill_tree "$smoke_pid"; exit 143' TERM INT
+  smoke_rc=0
+  wait "$smoke_pid" || smoke_rc=$?
+  exit "$smoke_rc"
 fi
 
 HOST_FILTER="${1:-all}"

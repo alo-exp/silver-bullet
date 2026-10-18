@@ -29,6 +29,7 @@ S
   cat >"$T/scripts/install-cursor.sh" <<'S'
 #!/usr/bin/env bash
 echo "install-cursor HOME=$HOME CURSOR_HOME=$CURSOR_HOME RUNTIME=$SILVER_BULLET_RUNTIME" >>"$LOG"
+[[ -n "${CURSOR_IGNORE_TERM:-}" ]] && trap '' TERM
 [[ -n "${CURSOR_HANG:-}" ]] && exec sleep "$CURSOR_HANG"
 [[ -n "${CURSOR_INSTALL_RC:-}" ]] && { echo "boom out"; echo "boom err" >&2; exit "$CURSOR_INSTALL_RC"; }
 if [[ -z "${CURSOR_NO_HOOKS:-}" ]]; then
@@ -143,21 +144,31 @@ assert_contains "timeout verdict" "$TL_OUT" "FAIL: cursor: install-cursor.sh (TI
 assert_contains "hang detected message" "$TL_ERR" "hang detected for cursor: install-cursor.sh"
 
 # --- overall timeout -----------------------------------------------------
+# After the overall timeout fires no descendant may survive, however the installer's
+# own timeout wrapper (a separate process group) is configured. Checked right after the
+# run returns, with distinctive sleep durations, never by waiting for orphans to expire.
+live_procs() { ps -eo pid=,stat=,args= | awk -v pat="$1" 'index($0, pat) && $2 !~ /^Z/ && !/awk/'; }
+
 build_tree
-# The overall timeout does not signal the installer's own timeout wrapper
-# (separate process group), so a short per-command timeout bounds the orphan.
 smoke PATH="$NOCLAUDE" CURSOR_HANG=7.12 SB_TRIHOST_CMD_TIMEOUT=2 SB_TRIHOST_OVERALL_TIMEOUT=1
 assert_eq "overall timeout exits 124" 124 "$TL_STATUS"
 assert_contains "overall timeout explained" "$TL_ERR" "tri-host install smoke hung — overall timeout 1s"
 assert_contains "tuning hint" "$TL_ERR" "SB_TRIHOST_CMD_TIMEOUT"
+assert_eq "no hung installer left running (short command timeout)" "" "$(live_procs "sleep 7.12")"
 
-# Never leave the (distinctively timed) hung installer behind: wait for the
-# command-level timeout to reap it, bounded.
-for _ in $(seq 1 60); do
-  [[ -z "$(ps -eo args= | grep -F "sleep 7.1" | grep -vF grep || true)" ]] && break
-  /bin/sleep 0.2
-done
-assert_eq "no hung installer left running" "" "$(ps -eo args= | grep -F "sleep 7.1" | grep -vF grep || true)"
+# Long command timeout: the installer's own timeout wrapper would keep the hung installer
+# alive for minutes if the overall timeout left it behind.
+build_tree
+smoke PATH="$NOCLAUDE" CURSOR_HANG=7.31 SB_TRIHOST_CMD_TIMEOUT=300 SB_TRIHOST_OVERALL_TIMEOUT=1
+assert_eq "overall timeout exits 124 with a long command timeout" 124 "$TL_STATUS"
+assert_eq "no hung installer left running (long command timeout)" "" "$(live_procs "sleep 7.31")"
+assert_eq "no timeout wrapper left running" "" "$(live_procs "timeout --signal=TERM --kill-after=2 300s")"
+
+# An installer that ignores SIGTERM is killed for good.
+build_tree
+smoke PATH="$NOCLAUDE" CURSOR_HANG=7.32 CURSOR_IGNORE_TERM=1 SB_TRIHOST_CMD_TIMEOUT=300 SB_TRIHOST_OVERALL_TIMEOUT=1
+assert_eq "overall timeout exits 124 with a TERM-ignoring installer" 124 "$TL_STATUS"
+assert_eq "no TERM-ignoring installer left running" "" "$(live_procs "sleep 7.32")"
 
 # --- codex ----------------------------------------------------------------
 # Retries: two failed attempts, success on the third; the sleep between is stubbed.
