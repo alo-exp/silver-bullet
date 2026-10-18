@@ -6,7 +6,7 @@ agent_name() {
 }
 
 agent_cli_path() {
-  printf '%s\n' "${CLAUDE_BIN:-$(command -v claude 2>/dev/null || echo "/Users/shafqat/.local/bin/claude")}"
+  printf '%s\n' "${CLAUDE_BIN:-$(command -v claude 2>/dev/null || echo claude)}"
 }
 
 agent_preflight() {

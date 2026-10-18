@@ -131,8 +131,8 @@ for runtime in "${RUNTIMES[@]}"; do
         # shellcheck source=hooks/lib/runtime-paths.sh
         source "${LIVE_TEST_ROOT}/../../hooks/lib/runtime-paths.sh"
       fi
-      if ! /Users/shafqat/.local/bin/claude --version >/dev/null 2>&1; then
-        echo "ERROR: claude CLI not found or not working at /Users/shafqat/.local/bin/claude"
+      if ! "${CLAUDE_BIN:-claude}" --version >/dev/null 2>&1; then
+        echo "ERROR: claude CLI not found or not working at ${CLAUDE_BIN:-claude} (set CLAUDE_BIN or put claude on PATH)"
         exit 1
       fi
       ;;

@@ -87,14 +87,14 @@ rm -f "$R/ctl/outcome-calls"
 # default fixture path and SB_E2E_LEDGER_FILE env (no --ledger flag)
 tl_run env SB_E2E_LEDGER_FILE="$R/full.md" bash "$CHECK"
 assert_eq "env ledger accepted" "0" "$TL_STATUS"
-assert_contains "default fixture used" "$(sed -n 1p "$R/ctl/outcome-calls")" "1|/Users/shafqat/projects/enterprise-grade-test-app|"
+assert_contains "default fixture used" "$(sed -n 1p "$R/ctl/outcome-calls")" "1|$(cd "$R/../.." && pwd)/enterprise-grade-test-app|"
 rm -f "$R/ctl/outcome-calls"
 
 # row attempt log is passed only when the file exists
 echo "log" >"$R/ctl/row-3.log"
 tl_run env SB_E2E_LEDGER_FILE="$R/full.md" bash "$CHECK"
 assert_contains "existing attempt log forwarded" "$(grep '^3|' "$R/ctl/outcome-calls")" "|$R/ctl/row-3.log"
-assert_eq "missing attempt log passed empty" "1|/Users/shafqat/projects/enterprise-grade-test-app|$R/.planning/enterprise-e2e|" "$(grep '^1|' "$R/ctl/outcome-calls")"
+assert_eq "missing attempt log passed empty" "1|$(cd "$R/../.." && pwd)/enterprise-grade-test-app|$R/.planning/enterprise-e2e|" "$(grep '^1|' "$R/ctl/outcome-calls")"
 rm -f "$R/ctl/outcome-calls"
 touch "$R/ctl/no-attempt-log"
 tl_run env SB_E2E_LEDGER_FILE="$R/full.md" bash "$CHECK"
