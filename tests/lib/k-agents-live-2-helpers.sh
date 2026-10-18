@@ -104,3 +104,23 @@ if len(ent) > 1 and ent[1]:
 sys.exit(int(ent[0]))
 PY
 }
+
+# k2_stage_e2e_tree <dir> <script-basename>: staged repo for the minimal-intent / tri-criteria e2e
+# harnesses. The script is a byte-identical copy; libraries it sources are stubs that log calls to
+# $STUB_LOG and answer scorer queries from env (SCORE_<OUTCOME with - as _>).
+k2_stage_e2e_tree() {
+  local d="$1" script="$2"
+  mkdir -p "$d/scripts/lib" "$d/hooks/lib" "$d/tests/scripts"
+  cp "$TL_REPO_ROOT/scripts/$script" "$d/scripts/"
+  cat >"$d/scripts/lib/enterprise-e2e-row-pass-registry.sh" <<'EOS'
+enterprise_e2e_install_fingerprint() { echo "fp-stub-123"; }
+EOS
+  cat >"$d/scripts/lib/enterprise-e2e-outcome-assessment.sh" <<'EOS'
+enterprise_e2e_outcome_score_criterion() {
+  echo "SCORE $*" >>"${STUB_LOG:-/dev/null}"
+  local var="SCORE_${1//-/_}"
+  if [[ -n "${!var+x}" ]]; then printf '%s' "${!var}"; else printf 'pass|stub ok'; fi
+}
+EOS
+  : >"$d/hooks/lib/orchestrator-directive.sh"; : >"$d/hooks/lib/orchestrator-scheduler.sh"; : >"$d/hooks/lib/orchestrator-state.sh"
+}
