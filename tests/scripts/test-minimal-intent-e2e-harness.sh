@@ -174,6 +174,20 @@ assert_eq "state dir defaults under HOME/.cursor" "ok" "$(grep -q " $HOME/.curso
 rm -rf "$WORK/.planning"
 run X=1 -- score --run "$RUN2" --log "$TL_TMP/other.log"
 assert_eq "no evidence available still scores" 0 "$TL_STATUS"
+# scorer crashing (non-zero, no output) is a failed outcome, advisory crash is tolerated
+run SCOREFAIL_OUT_B=1 -- score --run "$RUN2"
+assert_eq "crashing blocking scorer fails the run" 1 "$TL_STATUS"
+assert_contains "crashing scorer reported as unavailable" "$TL_OUT" "  OUT-B: fail|scorer unavailable"
+run SCOREFAIL_OUT_ADV=1 -- score --run "$RUN2"
+assert_eq "crashing advisory scorer is tolerated" 0 "$TL_STATUS"
+assert_contains "crashing advisory scorer shows n/a" "$TL_OUT" "  OUT-ADV: n/a (advisory)"
+# evidence lookup failing is tolerated
+mkdir -p "$WORK/.planning/phases/p9"
+tl_stub find 'exit 1'
+hash -r
+run X=1 -- score --run "$RUN2"
+assert_eq "failing evidence search is tolerated" 0 "$TL_STATUS"
+rm -f "$TL_BIN/find"; hash -r
 # a row without advisory outcomes
 mkdir -p "$RUNS/run3"; jq -n '{row_id:"MI-03",status:"prepared"}' >"$RUNS/run3/ledger.json"; echo t >"$RUNS/run3/parent-session.log"
 run X=1 -- score --run run3
@@ -187,6 +201,10 @@ run X=1 -- status --run "$RUN2"
 assert_contains "status of one run prints the ledger" "$TL_OUT" '"verdict": "PASS"'
 run X=1 -- status --run nope
 assert_eq "status of an unknown run" "No ledger for nope" "$TL_OUT"
+run X=1 -- status
+EMPTY_RUNS="$TL_TMP/empty-runs"; mkdir -p "$EMPTY_RUNS"
+tl_run env SB_E2E_RUNS_DIR="$EMPTY_RUNS" bash "$S" status
+assert_eq "empty runs dir lists nothing" "=== minimal-intent runs ===" "$TL_OUT"
 # listing reads the redirected runs dir (SB_E2E_RUNS_DIR)
 run X=1 -- status
 assert_contains "listing header" "$TL_OUT" "=== minimal-intent runs ==="
