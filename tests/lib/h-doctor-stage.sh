@@ -34,7 +34,7 @@ hd_stage() {
     hd_sh "hooks/$h" 'echo "hook '"$h"' $SB_HOOK_SMOKE $(cat | jq -r .hook_event_name)" >>"$HD_LOG"; exit "${STUB_RC_HOOK:-0}"'
   done
   hd_sh tests/scripts/test-silver-bullet-template-parity.sh 'exit "${STUB_RC_PARITY:-0}"'
-  hd_sh scripts/validate-host-install-surface.sh 'echo "surface $*" >>"$HD_LOG"; exit "${STUB_RC_SURFACE:-0}"'
+  hd_sh scripts/validate-host-install-surface.sh 'echo "surface $*" >>"$HD_LOG"; if [[ "$1" == --cache-root ]]; then exit "${STUB_RC_SURFACE_CACHE:-${STUB_RC_SURFACE:-0}}"; fi; exit "${STUB_RC_SURFACE_REPO:-${STUB_RC_SURFACE:-0}}"'
   hd_sh scripts/validate-claude-agent-token-budget.sh 'echo "tokens $*" >>"$HD_LOG"; exit "${STUB_RC_TOKENS:-0}"'
   hd_sh scripts/validate-host-agnostic-core.sh 'echo "agnostic $*" >>"$HD_LOG"; exit "${STUB_RC_AGNOSTIC:-0}"'
   for h in claude codex cursor; do

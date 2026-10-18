@@ -652,8 +652,9 @@ run_doctor_checks() {
 
   # D6 — config freshness
   if [[ -f "$sb_config" ]]; then
-    proj_ver="$(jq -r '.config_version // .version // "0.0.0"' "$sb_config")"
-    if version_lt "$proj_ver" "$template_ver"; then
+    if ! proj_ver="$(jq -r '.config_version // .version // "0.0.0"' "$sb_config" 2>/dev/null)"; then
+      record fail D6 "project config is not valid JSON (${sb_config})"
+    elif version_lt "$proj_ver" "$template_ver"; then
       record fail D6 "project config_version ${proj_ver} < template ${template_ver}"
     else
       record pass D6 "config_version ${proj_ver} (template ${template_ver})"
