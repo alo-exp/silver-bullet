@@ -15,6 +15,14 @@ REPO_ROOT="${CSBA_REPO_ROOT}"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --config-json|--agents-dir|--repo-root)
+      if [[ $# -lt 2 ]]; then
+        echo "$1 requires a value" >&2
+        exit 2
+      fi
+      ;;
+  esac
+  case "$1" in
     --config-json) CONFIG_JSON="$2"; shift 2 ;;
     --agents-dir) AGENTS_DIR="$2"; shift 2 ;;
     --repo-root) REPO_ROOT="$2"; shift 2 ;;
