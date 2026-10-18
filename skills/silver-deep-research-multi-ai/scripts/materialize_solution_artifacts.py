@@ -591,12 +591,7 @@ def _resolve_features(feature_text: str) -> list[str]:
     for alias, feature in _FEATURE_ALIASES.items():
         if alias in lower and feature not in matched:
             matched.append(feature)
-    if matched:
-        return matched
-    for feature in _all_template_features():
-        if feature.lower() == lower:
-            return [feature]
-    return [text]
+    return matched or [text]
 
 
 def _matrix_entry_head_is_solution(
