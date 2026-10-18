@@ -351,17 +351,33 @@ class PairTests(unittest.TestCase):
         got = d([["Alpha", "https://m.example/x"], ["Beta", "https://m.example/x"], ["Gamma", "https://g"]])
         self.assertEqual(got, [["Gamma", "https://g"]])
         # tie on best score -> longest label kept
-        got = d([["Plug", "https://plug.example/plug"], ["Plugx Plug", "https://plug.example/plug"],
+        got = d([["Plug", "https://plug.example/plug"], ["Plug Pro Max", "https://plug.example/plug"],
                  ["Other Plug", "https://plug.example/plug"]])
-        # "Plugx Plug" and "Other Plug" both score 2 ("plug" twice is counted once per
-        # token): the longest label wins the tie.
-        self.assertEqual(got, [["Plugx Plug", "https://plug.example/plug"]])
+        self.assertEqual(got, [["Plug Pro Max", "https://plug.example/plug"]])
         # unique best score keeps only the leader
         got = d([["Zeta Tool", "https://zeta.example"], ["Other", "https://zeta.example"]])
         self.assertEqual(got, [["Zeta Tool", "https://zeta.example"]])
         # paren alias form
         par = [["Dev", "https://d.io"], ["Dev(X)", "https://d.io"]]
         self.assertEqual(d(par), par)
+
+    def test_drop_ambiguous_equal_length_tie_is_deterministic(self):
+        # Two colliding labels with the same score and the same length: the survivor must
+        # not depend on set iteration order (PYTHONHASHSEED).
+        import subprocess
+
+        code = (
+            "import sys; sys.path.insert(0, %r); import vendor_link_labels as v;"
+            "print(v.drop_ambiguous_shared_homepage_urls("
+            "[['Plugx Plug','https://plug.example/plug'],['Other Plug','https://plug.example/plug']]))"
+        ) % str(SCRIPTS)
+        outs = set()
+        for seed in range(8):
+            env = dict(os.environ, PYTHONHASHSEED=str(seed))
+            res = subprocess.run([sys.executable, "-c", code], env=env,
+                                 capture_output=True, text=True, check=True)
+            outs.add(res.stdout.strip())
+        self.assertEqual(outs, {"[['Plugx Plug', 'https://plug.example/plug']]"})
 
     def test_filter_vendor_link_pairs(self):
         f = vll.filter_vendor_link_pairs
