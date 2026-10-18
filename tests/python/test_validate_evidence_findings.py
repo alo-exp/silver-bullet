@@ -65,12 +65,16 @@ class HelperTest(unittest.TestCase):
         self.assertTrue(v.looks_like_finding_table(["Severity", "Issue", "Proof"]))
         self.assertFalse(v.looks_like_finding_table(["Severity", "Issue"]))
 
-    def test_in_findings_section(self):
-        t = "# T\n## Findings\n| a |\n"
-        self.assertTrue(v.in_findings_section(t, len(t)))
-        self.assertTrue(v.in_findings_section("## FINDINGS\n| a |", 14))
-        self.assertFalse(v.in_findings_section("## Summary\n| a |\n", 20))
-        self.assertTrue(v.in_findings_section("## Threat Findings\n| a |", 22))
+    def test_parse_table_header_and_separator_at_end_of_file(self):
+        headers, rows, nxt = v.parse_table([HDR, SEP], 0)
+        self.assertEqual((len(headers), rows, nxt), (9, [], 2))
+        headers, rows, nxt = v.parse_table(["intro", HDR, SEP], 1)
+        self.assertEqual((len(headers), rows, nxt), (9, [], 3))
+        self.assertIsNone(v.parse_table([HDR, SEP], 1))  # start on the separator: nothing follows
+
+    def test_section_markers_are_not_part_of_the_module(self):
+        self.assertFalse(hasattr(v, "in_findings_section"))
+        self.assertFalse(hasattr(v, "FINDING_SECTION_MARKERS"))
 
 
 class DiscoverTest(unittest.TestCase):
@@ -171,6 +175,17 @@ class ValidateRepoTest(unittest.TestCase):
         self.assertEqual([i.message for i in res.issues], ["row 2: invalid severity 'WRONG'"])
         self.assertEqual(res.issues[0].path, ".planning/p/REVIEW.md")
 
+    def test_finding_shaped_table_under_any_heading_is_validated(self):
+        bad = "| c | a | WRONG | HIGH | e | f | r | w | blocks ship |"
+        for heading in ("## Summary", "## Notes", "# Top", "## Findings"):
+            with self.subTest(heading=heading):
+                self.write("REVIEW.md", f"{heading}\n" + table(bad))
+                res = v.validate_repo(self.root)
+                self.assertEqual(res.tables_checked, 1)
+                self.assertEqual([i.message for i in res.issues], ["row 1: invalid severity 'WRONG'"])
+        self.write("REVIEW.md", "## Summary\n| a | b | c |\n|---|---|---|\n| x | y | z |\n")
+        self.assertEqual(v.validate_repo(self.root).tables_checked, 0)
+
     def test_directory_named_like_artifact_is_ignored(self):
         (self.root / ".planning" / "p" / "SECURITY.md").mkdir()
         res = v.validate_repo(self.root)
@@ -238,6 +253,15 @@ class FormatAndMainTest(unittest.TestCase):
             self.assertEqual(v.main([]), 0)
             v.main(["--strict", "--json"])
         self.assertIn('"passed": true', o.getvalue())  # json "passed" ignores warnings when strict
+
+    def test_json_output_is_indented_with_two_spaces(self):
+        self.write("## Findings\n" + table(GOOD))
+        rc, out = self.run_main("--json")
+        self.assertEqual(rc, 0)
+        self.assertEqual(out, (
+            '{\n  "passed": true,\n  "strict": false,\n  "artifacts_scanned": 1,\n'
+            '  "tables_checked": 1,\n  "warnings": [],\n  "errors": []\n}\n'
+        ))
 
     def test_clean_json_passes(self):
         self.write("## Findings\n" + table(GOOD))
