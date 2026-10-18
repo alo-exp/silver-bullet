@@ -141,7 +141,7 @@ assert_contains "bootstrap macOS hint" "$TL_OUT" "brew install jq"
 assert_not_contains "bootstrap stops before diagnostics" "$TL_OUT" "PASS: jq installed"
 
 # staged bootstrap: diagnostics script missing / failing, project initialized or not
-BD="$TL_TMP/bs"
+BD="$TL_TMP/bs/scripts"
 mkdir -p "$BD"
 cp "$BS" "$BD/"
 TGT="$TL_TMP/target"; mkdir -p "$TGT"
