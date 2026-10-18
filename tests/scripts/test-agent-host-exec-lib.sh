@@ -15,6 +15,7 @@ for f in agent-host-exec.sh codex-cli.sh opencode-cli.sh multi-ai-opencode-worke
   cp "$TL_REPO_ROOT/scripts/lib/$f" "$S/"
 done
 export FAKE_LOG="$TL_TMP/fake.log"
+# shellcheck disable=SC2218  # cat() is overridden later on purpose (fault injection)
 cat >"$S/pi-zero-byte-guard.py" <<'PY'
 import os, sys
 a = sys.argv[1:]
@@ -81,6 +82,10 @@ rc=0; agent_host_resolve_cli bogus >/dev/null || rc=$?
 assert_eq "unknown host returns 1" 1 "$rc"
 rc=0; PATH="$NOHOSTS" PI_BIN="" HOME="$TL_TMP/nohome" agent_host_resolve_cli pi >/dev/null || rc=$?
 assert_eq "pi: missing returns 1" 1 "$rc"
+rc=0; PATH="$NOHOSTS" CODEX_BIN="" HOME="$TL_TMP/nohome" agent_host_resolve_cli codex >/dev/null || rc=$?
+assert_eq "codex: missing returns 1" 1 "$rc"
+rc=0; PATH="$NOHOSTS" OPENCODE_BIN="" HOME="$TL_TMP/nohome" agent_host_resolve_cli opencode >/dev/null || rc=$?
+assert_eq "opencode: missing returns 1" 1 "$rc"
 
 # =================== ni_write_rails_needed ===================
 for m in grok-4 qwen3 claude/opus; do
@@ -159,6 +164,10 @@ b c
 d" "$(cat "$TL_TMP/argv/out.txt")"
 SB_AGENT_HOST_ARGV_FILE="$TL_TMP/argv/env.txt" agent_host_dump_argv
 assert_file_exists "dump: env path used" "$TL_TMP/argv/env.txt"
+
+printf x >"$TL_TMP/plainfile"
+rc=0; agent_host_dump_argv "$TL_TMP/plainfile/sub/out.txt" 2>/dev/null || rc=$?
+assert_eq "dump: unwritable location fails the redirect after a tolerated mkdir failure" 1 "$rc"
 
 # =================== file_is_stub / file_ok ===================
 F="$TL_TMP/f.md"
@@ -253,6 +262,19 @@ assert_not_contains "fresh: no rails for mimo" "$(logged)" "--thinking off"
 rm -f "$EXP"; reset_log
 PI_MODEL=qwen3 GUARD_PLAN="0:3000" agent_host_pi_fresh_rewrite_for_file "$EXP" "x" "$W" >/dev/null 2>&1
 assert_contains "fresh: rails for qwen" "$(logged)" "--thinking off --no-context-files --no-skills --no-extensions --append-system-prompt NON-INTERACTIVE:"
+# cd into the session dir failing inside the guard subshell
+rm -f "$EXP"; reset_log
+cd() { if [[ "${1:-}" == *.pi-fresh-rewrite.* ]]; then return 1; fi; builtin cd "$@"; }
+rc=0; GUARD_PLAN="0:3000" agent_host_pi_fresh_rewrite_for_file "$EXP" x "$W" >/dev/null 2>&1 || rc=$?
+unset -f cd
+assert_eq "fresh: cd failure aborts the guard run (returns 1)" 1 "$rc"
+assert_not_contains "fresh: guard never started after cd failure" "$(logged)" "GUARD"
+# unreadable capture file is tolerated
+rm -f "$EXP"
+cat() { if [[ "${1:-}" == *pi-fresh-rewrite-* ]]; then return 1; fi; command cat "$@"; }
+rc=0; GUARD_PLAN="0:3000" agent_host_pi_fresh_rewrite_for_file "$EXP" x "$W" >/dev/null 2>&1 || rc=$?
+unset -f cat
+assert_eq "fresh: capture read failure still sees the written file" 0 "$rc"
 # file still missing: error with guard rc, plain rc 0 -> 1, auth failure variants
 rm -f "$EXP"
 rc=0; GUARD_PLAN="4" agent_host_pi_fresh_rewrite_for_file "$EXP" x "$W" >/dev/null 2>"$TL_TMP/e" || rc=$?
@@ -294,6 +316,11 @@ assert_contains "continue: rails on grok" "$(logged)" "--thinking off --no-conte
 assert_contains "continue: hop 2 uses default retry prompt" "$(logged)" "You already failed by emitting a plan sentence"
 assert_contains "continue: fresh rewrite runs through guard" "$(logged)" "GUARD idle="
 assert_contains "continue: fresh rewrite carries original prompt" "$(logged)" "orig"
+# a failing --continue hop does not abort the loop
+rm -f "$EXP" "$TL_TMP/pic"; reset_log
+rc=0; PI_PLAN="3,0:3000" PI_COUNTER="$TL_TMP/pic" agent_host_pi_continue_for_file "$EXP" "" x "$W" >/dev/null 2>&1 || rc=$?
+assert_eq "continue: failed hop 1 then success on hop 2" 0 "$rc"
+assert_eq "continue: both hops ran" 2 "$(grep -c '^PI -p --continue' "$FAKE_LOG")"
 # PI_CONTINUE_MAX bounds hops; junk resets to 2; original prompt falls back to last argv word
 rm -f "$EXP" "$TL_TMP/pic"; reset_log; AGENT_HOST_ARGV=(pi -p "argv-prompt")
 PI_CONTINUE_MAX=3 PI_PLAN="0,0,0:3000" PI_COUNTER="$TL_TMP/pic" agent_host_pi_continue_for_file "$EXP" "" "" "$W" >/dev/null 2>&1
@@ -318,6 +345,12 @@ rc=0; GUARD_PLAN="0" GUARD_OUT="HTTP 401 unauthorized" agent_host_run_pi_until_f
 assert_eq "until: auth failure on rc 0 returns 1" 1 "$rc"
 rc=0; GUARD_PLAN="2" GUARD_OUT="boom" agent_host_run_pi_until_file "$EXP" >/dev/null 2>&1 || rc=$?
 assert_eq "until: failed run (rc 2) never continues" 2 "$rc"
+# unreadable capture file is tolerated (nothing to inspect, so a failed run is not treated as auth failure)
+rm -f "$EXP"
+cat() { if [[ "${1:-}" == *pi-until-* ]]; then return 1; fi; command cat "$@"; }
+rc=0; GUARD_PLAN="2" GUARD_OUT="HTTP 401" agent_host_run_pi_until_file "$EXP" >/dev/null 2>"$TL_TMP/e" || rc=$?
+unset -f cat
+assert_eq "until: capture read failure still returns the run status" 2 "$rc"
 # plan-only exit 0 -> continue hop writes the file
 rm -f "$EXP" "$TL_TMP/pic"; reset_log
 rc=0; GUARD_PLAN="0" PI_PLAN="0:3000" PI_COUNTER="$TL_TMP/pic" agent_host_run_pi_until_file "$EXP" "go on" >/dev/null 2>&1 || rc=$?

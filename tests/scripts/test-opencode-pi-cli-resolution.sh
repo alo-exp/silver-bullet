@@ -43,6 +43,10 @@ NOPI="$(tl_path_without pi)"
 tl_run env PATH="$NOPI" bash -c "source '$PI'; resolve_native_pi_cli_path '$TL_TMP/other/notpi'; echo rc=\$?"
 assert_contains "pi: not found returns 1" "$TL_OUT" "rc=1"
 
+# requested path that does not exist is used verbatim, rejected, and resolution falls through
+tl_run env PATH="$TL_TMP/fake:$PATH" bash -c "source '$PI'; resolve_native_pi_cli_path '$TL_TMP/does-not-exist/pi'"
+assert_eq "pi: nonexistent requested path falls through to PATH" "$TL_TMP/fake/pi" "$TL_OUT"
+
 # pin: defaults
 run_lib "$PI" "agent_pi_pin_mimo_model_env; echo \"rc=\$? \$PI_PROVIDER \$PI_MODEL\""
 assert_eq "pi: pin defaults" "rc=0 opencode-go mimo-v2.5" "$TL_OUT"
@@ -71,6 +75,9 @@ NOOC="$(tl_path_without opencode)"
 tl_run env PATH="$NOOC" bash -c "source '$OC'; resolve_native_opencode_cli_path '$TL_TMP/other/notopencode'; echo rc=\$?"
 assert_contains "oc: not found returns 1" "$TL_OUT" "rc=1"
 
+tl_run env PATH="$TL_TMP/fake:$PATH" bash -c "source '$OC'; resolve_native_opencode_cli_path '$TL_TMP/does-not-exist/opencode'"
+assert_eq "oc: nonexistent requested path falls through to PATH" "$TL_TMP/fake/opencode" "$TL_OUT"
+
 # pin
 run_lib "$OC" "agent_opencode_pin_mimo_model_env; echo \"rc=\$? \$OPENCODE_MODEL \$OPENCODE_MODEL_PROVIDER \$OPENCODE_RUN_MODEL\""
 assert_eq "oc: pin defaults" "rc=0 mimo-v2.5 opencode-go opencode-go/mimo-v2.5" "$TL_OUT"
@@ -83,9 +90,9 @@ tl_run env OPENCODE_RUN_MODEL=x bash -c "source '$OC'; agent_opencode_pin_mimo_m
 assert_contains "oc: run model drift" "$TL_ERR" "OPENCODE_RUN_MODEL must be opencode-go/mimo-v2.5 (got x)"
 
 # worker policy missing next to the lib: warning, functions from the policy absent
-mkdir -p "$TL_TMP/lonely"
-cp "$OC" "$TL_TMP/lonely/opencode-cli.sh"
-tl_run bash -c "source '$TL_TMP/lonely/opencode-cli.sh'; declare -F agent_opencode_validate_multi_ai_pool_mode >/dev/null && echo has || echo none"
+mkdir -p "$TL_TMP/lonely/scripts/lib"
+cp "$OC" "$TL_TMP/lonely/scripts/lib/opencode-cli.sh"
+tl_run bash -c "source '$TL_TMP/lonely/scripts/lib/opencode-cli.sh'; declare -F agent_opencode_validate_multi_ai_pool_mode >/dev/null && echo has || echo none"
 assert_contains "oc: missing worker policy warns" "$TL_ERR" "multi-ai-opencode-worker.sh missing"
 assert_eq "oc: missing worker policy defines nothing" "none" "$TL_OUT"
 
@@ -133,6 +140,12 @@ assert_contains "enforce: lone validated flag is forged" "$TL_OUT" "rc=2"
 # pool mode set but not validated (and no other flag) is not caught by the forged guard
 enforce SB_AGENT_OPENCODE_DELEGATION_MODE=multi-ai-pool-v1 --
 assert_contains "enforce: unvalidated pool mode falls to default pin" "$TL_OUT" "rc=0"
+
+# pool mode reached through the forged-env guard (profile set, pool mode, not validated)
+enforce SB_AGENT_OPENCODE_DELEGATION_MODE=multi-ai-pool-v1 SB_MULTI_AI_OCG_PROFILE=ocg-kimi SB_MULTI_AI_OCG_POOL=regular -- "$SB"
+assert_contains "enforce: unvalidated pool mode with profile validates the pool" "$TL_OUT" "rc=0"
+enforce SB_AGENT_OPENCODE_DELEGATION_MODE=multi-ai-pool-v1 SB_MULTI_AI_OCG_PROFILE=ocg-kimi SB_MULTI_AI_OCG_POOL=nope -- "$SB"
+assert_contains "enforce: that path rejects an unknown pool" "$TL_OUT" "rc=2"
 
 # nothing set -> default pin; drifted pin rejected
 enforce X=1 --

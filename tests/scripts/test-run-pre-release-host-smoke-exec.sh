@@ -107,6 +107,10 @@ assert_eq "cursor cli failure exits 1" 1 "$TL_STATUS"
 smoke STUB_ADAPTER_MODE=bad -- codex
 assert_contains "unrouted skill reported" "$TL_OUT" "FAIL: codex: invoke-skill routes sb:verify"
 assert_contains "snippet of adapter output shown" "$TL_OUT" "snippet: no skill here"
+# adapter that exits non-zero is tolerated (output still judged)
+smoke STUB_ADAPTER_MODE=fail -- codex
+assert_contains "failing adapter reported as unrouted" "$TL_OUT" "FAIL: codex: invoke-skill routes sb:verify"
+assert_contains "failing adapter output shown" "$TL_OUT" "snippet: adapter failed"
 # missing bundle directory
 rmdir "$T/host-bundles/codex"
 smoke X=1 -- codex

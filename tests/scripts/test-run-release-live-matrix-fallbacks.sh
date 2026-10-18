@@ -19,6 +19,21 @@ run_matrix() { # <staged dir> [env...]
   tl_run env "$@" bash "$d/scripts/run-release-live-matrix.sh"
 }
 
+# 0. a configured command wins over every script and runs from the repo root
+S0="$TL_TMP/s0"; stage "$S0"
+mkdir -p "$S0/tests/live"
+printf '#!/usr/bin/env bash\necho bundled >>"%s"\n' "$TL_TMP/s0.log" >"$S0/tests/live/run-live-tests.sh"; chmod +x "$S0/tests/live/run-live-tests.sh"
+write_marker
+run_matrix "$S0" HOME="$HOME" SILVER_BULLET_RUNTIME="$SILVER_BULLET_RUNTIME" SB_RELEASE_LIVE_MATRIX_CMD='echo configured-ran-in-$PWD'
+assert_eq "configured command exits 0" 0 "$TL_STATUS"
+assert_contains "configured command announced" "$TL_OUT" "Running configured command: echo configured-ran-in-"
+assert_contains "configured command ran from the repo root" "$TL_OUT" "configured-ran-in-$S0"
+assert_file_absent "bundled matrix not run when a command is configured" "$TL_TMP/s0.log"
+write_marker
+run_matrix "$S0" HOME="$HOME" SILVER_BULLET_RUNTIME="$SILVER_BULLET_RUNTIME" SB_RELEASE_LIVE_MATRIX_CMD='exit 9'
+assert_eq "configured command failure propagates" 9 "$TL_STATUS"
+assert_file_exists "marker restored after configured command failure" "$(marker)"
+
 # 1. override script is preferred over the bundled matrix
 S1="$TL_TMP/s1"; stage "$S1"
 mkdir -p "$S1/tests/live"

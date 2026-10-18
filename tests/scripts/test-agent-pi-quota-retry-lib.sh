@@ -164,6 +164,17 @@ run_sched FAKE_CLASSIFY_JSON='{"quota_class":"five_hour","should_schedule":true}
 assert_eq "no wake time: nothing announced" "" "$TL_ERR"
 assert_contains "no wake time still returns 0" "$TL_OUT" "rc=0"
 
+# jq unable to read the wake time: nothing announced, still returns 0
+REAL_JQ="$(command -v jq)"
+tl_stub jq "if [[ \"\$*\" == *wake_at* ]]; then exit 5; fi; exec '$REAL_JQ' \"\$@\""
+hash -r
+run_sched FAKE_CLASSIFY_JSON='{"quota_class":"five_hour","should_schedule":true}' FAKE_SCHEDULE_JSON='{"job":{"wake_at":"2026-01-01T05:00:00Z"}}' \
+  SB_RFL_RUN_DIR="$RUNDIR" -- 1 "429" h m
+assert_eq "jq failure on wake time: nothing announced" "" "$TL_ERR"
+assert_contains "jq failure on wake time: still returns 0" "$TL_OUT" "rc=0"
+assert_contains "jq failure on wake time: scheduling happened" "$CALLS" "--schedule-quota-retry"
+rm -f "$TL_BIN/jq"; hash -r
+
 # schedule failure: swallowed, blob removed
 run_sched FAKE_CLASSIFY_JSON='{"quota_class":"five_hour","should_schedule":true}' FAKE_SCHEDULE_FAIL=1 \
   SB_RFL_RUN_DIR="$RUNDIR" -- 1 "429" h m
