@@ -13,7 +13,13 @@ source "$TL_REPO_ROOT/tests/lib/offline-tools.sh"
 sb_offline_tools_install "$TL_TMP/offline-bin"
 
 SNAP="$(sb_repo_snapshot "$TL_REPO_ROOT" "$TL_TMP/snap")"
-for _d in tests docs site agents host-bundles .agentmemory .github research; do rm -rf "${SNAP:?}/$_d"; done
+for _d in tests docs site agents host-bundles .agentmemory .github research .agents; do rm -rf "${SNAP:?}/$_d"; done
+if [[ "${ICF_KEEP_SKILLS:-0}" != "1" ]]; then
+  # The installer only copies skills/silver-init/scripts; the bundle render is tolerated to fail.
+  find "${SNAP:?}/skills" -mindepth 1 -maxdepth 1 ! -name silver-init -exec rm -rf {} +
+  find "${SNAP:?}/skills/silver-init" -mindepth 1 -maxdepth 1 ! -name scripts -exec rm -rf {} +
+  rm -rf "${SNAP:?}/plugins/silver-bullet/skill-source" "${SNAP:?}/plugins/silver-bullet/skills"
+fi
 (
   cd "$SNAP" || exit 1
   export GIT_AUTHOR_NAME="SB Test" GIT_AUTHOR_EMAIL="sb-test@example.invalid" GIT_COMMITTER_NAME="SB Test" GIT_COMMITTER_EMAIL="sb-test@example.invalid"

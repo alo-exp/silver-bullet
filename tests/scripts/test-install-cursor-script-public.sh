@@ -4,6 +4,7 @@
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init claude
+export ICF_KEEP_SKILLS=1
 # shellcheck source=tests/lib/install-cursor-script-fixture.sh
 source "$TL_REPO_ROOT/tests/lib/install-cursor-script-fixture.sh"
 

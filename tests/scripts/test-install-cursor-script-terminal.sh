@@ -6,15 +6,13 @@ tl_init claude
 # shellcheck source=tests/lib/install-cursor-script-fixture.sh
 source "$TL_REPO_ROOT/tests/lib/install-cursor-script-fixture.sh"
 
-# ---- interactive terminal: the sub-agent installer is not forced non-interactive
+# ---- interactive terminal: the sub-agent installer is not forced non-interactive (and its failure only warns)
 fresh
 if command -v script >/dev/null 2>&1; then
-  tl_run script -qec "bash '$SCRIPT'" /dev/null
+  tl_run script -qec "env STUB_CSBA_RC=1 bash '$SCRIPT'" /dev/null
   assert_eq "install on a terminal exits 0" 0 "$TL_STATUS"
   assert_contains "interactive sub-agent installer invoked" "$(<"$CALLS")" "csba --global repo="
   assert_not_contains "no --non-interactive on a terminal" "$(grep '^csba' "$CALLS" | head -1)" "--non-interactive"
-  fresh
-  tl_run script -qec "env STUB_CSBA_RC=1 bash '$SCRIPT'" /dev/null
   assert_contains "interactive installer failure warned about" "$TL_OUT$TL_ERR" "exited nonzero (continuing)"
 else
   echo "SKIP: script(1) not available; terminal branch not exercised"
