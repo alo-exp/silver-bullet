@@ -51,6 +51,7 @@ assert_match "random id fallback without od" '^rt-[0-9]+-' "$(hr_bin od 'exit 1'
 hr_bin openssl 'echo deadbeef'
 assert_eq "nonce via openssl" "deadbeef" "$(rt_receipt_random_nonce)"
 assert_match "nonce fallback" '^[0-9a-f]{32}$' "$(PATH="$(hr_path_without openssl)" rt_receipt_random_nonce)"
+assert_match "nonce fallback when od fails" '^nonce-[0-9]+$' "$(hr_bin od 'exit 1'; PATH="$(hr_path_without openssl)" rt_receipt_random_nonce; hr_nobin od)"
 hr_nobin openssl; hr_nobin uuidgen
 assert_eq "expected tools" '{"graphify":["query_graph","get_node","graph_stats"],"agentmemory":["memory_save","memory_recall"],"leanctx":["ctx_compose","ctx_read","ctx_search"],"context-mode":["ctx_execute","ctx_search"]}' \
   "$(rt_receipt_expected_tools_json '["graphify","agentmemory","leanctx","context-mode","rtk"]' | jq -c .)"
@@ -84,7 +85,7 @@ assert_eq "active receipt found" "$RID1" "$(rt_receipt_find_active cursor "$PID"
 # persisting failure must not be reported as success (callers use the status)
 BLOCK_STATE="$TL_TMP/blocked-state"; mkdir -p "$BLOCK_STATE"; printf 'file\n' >"$BLOCK_STATE/recommended-tools"
 create_rc=0
-if (SB_RUNTIME_STATE_DIR="$BLOCK_STATE"; rt_receipt_create project init '[]' true >/dev/null 2>&1); then create_rc=0; else create_rc=1; fi
+if (export SB_RUNTIME_STATE_DIR="$BLOCK_STATE"; rt_receipt_create project init '[]' true >/dev/null 2>&1); then create_rc=0; else create_rc=1; fi
 assert_eq "create: unwritable receipt store fails (if-context)" "1" "$create_rc"
 # a newer change set supersedes the old one; the same change set does not
 export RT_CHANGE_SET_ID=cs-2
@@ -125,10 +126,21 @@ PB="$(mk_receipt rb cs-b ' | .written_at="2026-03-01T00:00:00Z"')"
 PC="$(mk_receipt rc cs-c ' | .consumed_at="2026-01-02T00:00:00Z" | .written_at="2026-05-01T00:00:00Z"')"
 printf 'garbage' >"$(dirname "$PA")/broken.json"
 assert_eq "find active: newest unconsumed" "rb" "$(rt_receipt_find_active cursor "$PID" "$WID" | jq -r .receipt_id)"
+PX="$(mk_receipt rforeign cs-f ' | .identities.host="codex" | .written_at="2026-09-01T00:00:00Z"')"
+assert_eq "find active: a newer receipt of another identity in the same dir is ignored" "rb" "$(rt_receipt_find_active cursor "$PID" "$WID" | jq -r .receipt_id)"
+rm -f "$PX"
 assert_eq "find active: wrong identity" "1" "$(rc_of rt_receipt_find_active cursor other-pid "$WID")"
 assert_eq "find active: nothing for another host" "1" "$(rc_of rt_receipt_find_active codex "$PID" "$WID")"
 assert_eq "identity match: host-global scope ignores project ids" "0" "$(rc_of rt_receipt_identity_matches '{"scope":"host-global","identities":{"host":"cursor"}}' cursor x y)"
 assert_eq "identity match: mismatch" "1" "$(rc_of rt_receipt_identity_matches '{"scope":"project","identities":{"host":"cursor","project_id":"a","worktree_id":"b"}}' cursor x b)"
+
+# a failing atomic write is tolerated while superseding
+PS="$(mk_receipt rs cs-s)"
+hr_bin mv 'exit 1'
+rt_receipt_supersede_same_lineage cursor "$PID" "$WID" project cs-none ""
+/bin/rm -f "$HR_BIN/mv"; hash -r
+assert_eq "supersede: failed write leaves the receipt untouched" "null" "$(jq -r .superseded_at "$PS")"
+rm -f "$PS"
 
 # find by id: direct path, then scan, then miss
 assert_eq "find by id (direct)" "rb" "$(rt_receipt_find_by_id cursor rb project "$PID" "$WID" | jq -r .receipt_id)"
@@ -204,6 +216,11 @@ LIVE_M="$(rt_config_hash_file "$HOME/.cursor/mcp.json")"; LIVE_H="$(rt_config_ha
 LIVE_RECEIPT="$(jq -c --arg m "$LIVE_M" --arg h "$LIVE_H" '.post_config_hashes={mcp:$m,hooks:$h}' <<<"$RECEIPT")"
 v="$(RT_MODE=verify val "$(att ".config_hashes={mcp:\"$LIVE_M\",hooks:\"$LIVE_H\"}")" "$LIVE_RECEIPT")"
 assert_eq "attestation (verify): matching live hashes" "true" "$(jq -r .valid <<<"$v")"
+
+# empty server / tool / extra names are skipped
+BLANK_RECEIPT="$(jq -c '.expected_tools={"":["x"],graphify:["query_graph",""]}' <<<"$RECEIPT")"
+v="$(val "$(att '.servers.graphify.tools=[{id:"query_graph",status:"success"},{id:"",status:"success"}]')" "$BLANK_RECEIPT")"
+assert_eq "attestation: blank names are ignored" "1|1" "$(jq -r '"\(.totals.total)|\(.totals.success)"' <<<"$v")"
 
 # ----------------------------------------------------- consume / clear / reconcile
 export RT_HOST_EVIDENCE_JSON="" RT_MODE=apply
