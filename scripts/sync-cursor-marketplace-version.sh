@@ -58,6 +58,11 @@ update_marketplace_plugin_source() {
   local manifest="$1"
   local version="$2"
   local release_sha source_ref
+  # Nothing to pin without a silver-bullet entry: fail instead of reporting a no-op as synced.
+  if ! jq -e '[.plugins[]? | select(.name=="silver-bullet")] | length > 0' "$manifest" >/dev/null; then
+    echo "ERROR: $manifest has no silver-bullet entry to sync" >&2
+    exit 1
+  fi
   release_sha="$(resolve_release_commit_sha "$version")"
   source_ref="$(resolve_marketplace_source_ref "$version")"
   local tmp
