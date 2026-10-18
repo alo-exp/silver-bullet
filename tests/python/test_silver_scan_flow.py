@@ -218,6 +218,41 @@ class CandidateStreamTest(Base):
         cands, dupes = self.stream(text)
         self.assertEqual(([c["title"] for c in cands], dupes), (["Same thing"], 0))
 
+    def test_recorded_insight_in_silver_rem_format_suppresses_knowledge(self):
+        insight = "Atomic jq+tmpfile+mv pattern for safe JSON writes and temp cleanup"
+        self.assertGreater(len(insight), 60)
+        filed = f"- [knowledge]: Architecture Patterns \u2014 {insight[:60]}"
+        text = f"## Knowledge & Learnings Additions\n- {insight}\n## Items Filed\n\n{filed}\n"
+        cands, dupes = self.stream(text)
+        self.assertEqual(([c["title"] for c in cands], dupes), ([], 1))
+
+    def test_recorded_insight_short_with_category_and_ascii_hyphen(self):
+        for filed in ("- [learnings]: stack:bash \u2014 Prefer small commits", "- [lessons]: practice:workflow - Prefer small commits"):
+            text = f"## Knowledge & Learnings Additions\n- Prefer small commits\n## Items Filed\n{filed}\n"
+            cands, dupes = self.stream(text)
+            self.assertEqual(([c["title"] for c in cands], dupes), ([], 1), filed)
+
+    def test_recorded_insight_hyphen_inside_text_without_category(self):
+        text = "## Knowledge & Learnings Additions\n- Use foo - not bar\n## Items Filed\n- [knowledge]: Use foo - not bar\n"
+        cands, dupes = self.stream(text)
+        self.assertEqual(([c["title"] for c in cands], dupes), ([], 1))
+
+    def test_recorded_insight_non_matches_stay_candidates(self):
+        long_insight = "Atomic jq+tmpfile+mv pattern for safe JSON writes and temp cleanup"
+        cases = {
+            "different insight, same category": ("Something else entirely", "- [knowledge]: Architecture Patterns \u2014 Another thing"),
+            "stored short insight is only a prefix of the candidate": ("Same thing and more", "- [knowledge]: Architecture Patterns \u2014 Same thing"),
+            "candidate shares only the category": ("Architecture Patterns are fun", "- [knowledge]: Architecture Patterns \u2014 Another thing"),
+            "same start but diverges before sixty chars": (long_insight, "- [knowledge]: Architecture Patterns \u2014 Atomic jq+tmpfile+mv pattern for a different thing altogether"),
+            "empty recorded insight": ("Anything at all", "- [knowledge]:"),
+            "category only": ("Anything at all", "- [knowledge]: Architecture Patterns \u2014"),
+        }
+        for name, (insight, filed) in cases.items():
+            with self.subTest(name):
+                text = f"## Knowledge & Learnings Additions\n- {insight}\n## Items Filed\n{filed}\n"
+                cands, dupes = self.stream(text)
+                self.assertEqual(([c["title"] for c in cands], dupes), ([s.short_title(insight)], 0))
+
     def test_duplicate_fingerprints_merge_refs_and_ids(self):
         text = "## Needs Human Review\n- Same item\n- Same item\n"
         cands, dupes = self.stream(text)
@@ -378,13 +413,15 @@ class ExternalTest(Base):
         c = self.candidate(title="Fix the very long thing now please")
         with mock.patch.object(s, "run_command", return_value=cp(0, "abc123 msg\n")) as run:
             self.assertTrue(s.git_or_changelog_match(self.root, c))
-        self.assertEqual(run.call_args.args[0], ["git", "log", "--oneline", "--fixed-strings", "--grep=fix the very long thing", "--"])
+        self.assertEqual(run.call_args.args[0], ["git", "log", "--oneline", "-i", "--fixed-strings", "--grep=fix the very long thing", "--"])
         with mock.patch.object(s, "run_command", return_value=cp(0, "")):
             self.assertFalse(s.git_or_changelog_match(self.root, c))
             (self.root / "CHANGELOG.md").write_text("- fix the very long thing\n")
             self.assertTrue(s.git_or_changelog_match(self.root, c))
-            # the phrase is normalized to lower case and compared case-sensitively with the changelog
+            # the phrase is normalized to lower case, so the changelog text is normalized the same way
             (self.root / "CHANGELOG.md").write_text("- Fix The Very Long Thing\n")
+            self.assertTrue(s.git_or_changelog_match(self.root, c))
+            (self.root / "CHANGELOG.md").write_text("- Fix a different thing\n")
             self.assertFalse(s.git_or_changelog_match(self.root, c))
         with mock.patch.object(s, "run_command", return_value=cp(128, "stuff")):
             (self.root / "CHANGELOG.md").unlink()
@@ -593,6 +630,82 @@ class RecordTest(Base):
         s.record_candidate(self.root, self.candidate(classification="learning", context="bash tip", candidate_id="c2", fingerprint="f2"), {})
         self.assertIn("[candidate-id:c2]", lt.read_text())
 
+    def seed(self, rel, text):
+        target = self.root / rel
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(text, encoding="utf-8")
+        return target
+
+    def test_existing_knowledge_heading_gets_entry_directly_under_it(self):
+        target = self.seed("docs/knowledge/2030-01.md", "# T\n\n## Key Decisions\n\nold decision\n\n## Open Questions\n\nold q\n")
+        s.record_candidate(self.root, self.candidate(classification="knowledge", kind="knowledge", context="a decision was made"), {})
+        self.assertEqual(
+            target.read_text(),
+            "# T\n\n## Key Decisions\n\n2030-01-01 - a decision was made [candidate-id:cid1]\n\nold decision\n\n## Open Questions\n\nold q\n",
+        )
+
+    def test_existing_knowledge_heading_newest_entry_first_with_blank_lines(self):
+        target = self.seed("docs/knowledge/2030-01.md", "## Key Decisions\n")
+        s.record_candidate(self.root, self.candidate(classification="knowledge", kind="knowledge", candidate_id="a", fingerprint="fa", context="first decision"), {})
+        s.record_candidate(self.root, self.candidate(classification="knowledge", kind="knowledge", candidate_id="b", fingerprint="fb", context="second decision"), {})
+        self.assertEqual(
+            target.read_text(),
+            "## Key Decisions\n\n2030-01-01 - second decision [candidate-id:b]\n\n2030-01-01 - first decision [candidate-id:a]\n",
+        )
+
+    def test_existing_knowledge_heading_at_end_of_file_without_newline(self):
+        target = self.seed("docs/knowledge/2030-01.md", "# T\n\n## Key Decisions")
+        s.record_candidate(self.root, self.candidate(classification="knowledge", kind="knowledge", context="a decision was made"), {})
+        self.assertEqual(target.read_text(), "# T\n\n## Key Decisions\n\n2030-01-01 - a decision was made [candidate-id:cid1]\n")
+
+    def test_existing_knowledge_heading_trailing_blank_lines_collapse_to_one_newline(self):
+        target = self.seed("docs/knowledge/2030-01.md", "## Key Decisions  \n\n\n\n")
+        s.record_candidate(self.root, self.candidate(classification="knowledge", kind="knowledge", context="a decision was made"), {})
+        self.assertEqual(target.read_text(), "## Key Decisions  \n\n2030-01-01 - a decision was made [candidate-id:cid1]\n")
+
+    def test_existing_learnings_heading_gets_entry_directly_under_it(self):
+        target = self.seed("docs/learnings/2030-01.md", "# L\n\n## stack:bash\n\nold tip\n\n## practice:workflow\n\nold practice\n")
+        s.record_candidate(self.root, self.candidate(classification="learning", kind="knowledge", context="use jq for json"), {})
+        self.assertEqual(
+            target.read_text(),
+            "# L\n\n## stack:bash\n\n2030-01-01 - use jq for json [candidate-id:cid1]\n\nold tip\n\n## practice:workflow\n\nold practice\n",
+        )
+
+    def test_existing_learnings_heading_at_end_of_file_without_newline(self):
+        target = self.seed("docs/learnings/2030-01.md", "## stack:bash\n\n\n")
+        s.record_candidate(self.root, self.candidate(classification="learning", kind="knowledge", context="use jq for json"), {})
+        self.assertEqual(target.read_text(), "## stack:bash\n\n2030-01-01 - use jq for json [candidate-id:cid1]\n")
+
+    def test_knowledge_heading_chosen_by_each_keyword(self):
+        cases = [
+            ("question", "An unanswered question remains", "## Open Questions"),
+            ("open question", "open question about retries", "## Open Questions"),
+            ("pattern", "A pattern emerges in loaders", "## Recurring Patterns"),
+            ("repeated", "Repeated work in the loaders", "## Recurring Patterns"),
+            ("gotcha", "Watch this gotcha in loaders", "## Known Gotchas"),
+            ("avoid", "Avoid shelling out in loaders", "## Known Gotchas"),
+            ("must", "Loaders must close files", "## Known Gotchas"),
+            ("decision", "A decision on loaders", "## Key Decisions"),
+            ("because", "Loaders are lazy because speed", "## Key Decisions"),
+            ("choose", "We choose lazy loaders", "## Key Decisions"),
+            ("none", "Layers are separated", "## Architecture Patterns"),
+        ]
+        all_headings = {"## Open Questions", "## Recurring Patterns", "## Known Gotchas", "## Key Decisions", "## Architecture Patterns"}
+        for idx, (keyword, context, heading) in enumerate(cases):
+            with self.subTest(keyword=keyword):
+                target = self.root / "docs/knowledge/2030-01.md"
+                if target.exists():
+                    target.unlink()
+                cand = self.candidate(classification="knowledge", kind="knowledge", candidate_id=f"k{idx}", fingerprint=f"f{idx}", context=context)
+                s.record_candidate(self.root, cand, {})
+                lines = target.read_text().splitlines()
+                entry = f"2030-01-01 - {context} [candidate-id:k{idx}]"
+                at = lines.index(entry)
+                # the entry sits directly under its heading (one blank line between)
+                self.assertEqual((lines[at - 2], lines[at - 1]), (heading, ""))
+                self.assertEqual(lines.count(entry), 1)
+                self.assertTrue(all_headings.issuperset({h for h in lines if h.startswith("## ")}))
+
     def test_reject_candidate(self):
         state = {}
         res = s.reject_candidate(self.candidate(), state)
@@ -686,6 +799,16 @@ class ReconstructAndHandleTest(Base):
             with mock.patch.object(s, "run_command", return_value=cp(0, "created: ok\nfinal line\n")):
                 res = s.handle_file(self.root, cfg, state, "cid1")
             self.assertEqual(res["filed_ref"], "final line")
+
+    def test_handle_file_github_empty_output_is_a_clear_error(self):
+        state, _ = self.state_with()
+        with mock.patch.object(s, "github_available", return_value=True), \
+             mock.patch.object(s, "repo_slug_from_origin", return_value="acme/repo"):
+            for out in ("", "  \n"):
+                with mock.patch.object(s, "run_command", return_value=cp(0, out)):
+                    with self.assertRaisesRegex(RuntimeError, "gh issue create returned no output"):
+                        s.handle_file(self.root, {"issue_tracker": "github"}, state, "cid1")
+        self.assertEqual(state["fingerprints"]["fp1"]["status"], "seen")
 
     def test_github_body(self):
         (self.root / ".silver-bullet.json").write_text('{"issue_tracker": "github"}')
@@ -819,6 +942,103 @@ class ScanFlowTest(Base):
         self.assertEqual(res["summary"]["auto_filed"], 0)
         self.assertEqual(res["summary"]["manual_review_count"], 0)
         self.assertEqual([(c["title"], c["status"]) for c in res["candidates"]], [("Parser crash on empty input", "pending")])
+
+    def test_duplicates_filtered_counts_already_seen_candidates_exactly(self):
+        self.write("docs/sessions/a.md", "## Needs Human Review\n- Parser crash on empty input\n- Rename the helper files\n")
+        res, _ = self.scan()
+        self.assertEqual((res["summary"]["duplicates_filtered"], len(res["candidates"])), (0, 2))
+        self.write("docs/sessions/a.md", "## Needs Human Review\n- Parser crash on empty input\n- Rename the helper files\n- Rename the cache files\n")
+        res2, _ = self.scan()
+        self.assertEqual([c["title"] for c in res2["candidates"]], ["Rename the cache files"])
+        self.assertEqual(res2["summary"]["duplicates_filtered"], 2)
+
+    def test_duplicates_filtered_counts_cross_source_duplicates_exactly(self):
+        for name in ("a", "b", "c"):
+            self.write(f"docs/sessions/{name}.md", "## Needs Human Review\n- Parser crash on empty input\n")
+        res, _ = self.scan()
+        self.assertEqual([c["title"] for c in res["candidates"]], ["Parser crash on empty input"])
+        self.assertEqual((res["summary"]["sessions_scanned"], res["summary"]["duplicates_filtered"]), (3, 2))
+
+    def test_duplicates_filtered_counts_tracked_candidates_exactly(self):
+        self.write("docs/sessions/a.md", "## Needs Human Review\n- Parser crash on empty input\n- Rename the helper files\n")
+        self.write("docs/issues/ISSUES.md", "- parser crash on empty input\n")
+        res, _ = self.scan()
+        self.assertEqual([c["title"] for c in res["candidates"]], ["Rename the helper files"])
+        self.assertEqual(res["summary"]["duplicates_filtered"], 1)
+
+    def test_failed_filing_is_not_recorded_as_seen_and_is_retried_on_next_scan(self):
+        self.write("docs/sessions/a.md", "## Needs Human Review\n- Parser crash on empty input\n")
+        cfg = {"issue_tracker": "github"}
+        with mock.patch.object(s, "github_issue_exists", return_value=False), mock.patch.object(s, "github_available", return_value=False):
+            res, state = self.scan("autonomous", config=cfg)
+        self.assertEqual([(c["title"], c["status"]) for c in res["candidates"]], [("Parser crash on empty input", "pending")])
+        saved = s.load_state(self.root)
+        self.assertEqual(saved.get("fingerprints", {}), {})
+        self.assertEqual(saved.get("candidates_by_id", {}), {})
+        self.assertNotIn("docs/sessions/a.md", saved.get("sources", {}))
+        # the next scan (state reloaded from disk) surfaces the candidate again and files it once gh works
+        with mock.patch.object(s, "github_issue_exists", return_value=False), \
+             mock.patch.object(s, "github_available", return_value=True), \
+             mock.patch.object(s, "repo_slug_from_origin", return_value="acme/repo"), \
+             mock.patch.object(s, "run_command", return_value=cp(0, "https://github.com/acme/repo/issues/9\n")):
+            res2, _ = self.scan("autonomous", config=cfg, state=saved)
+        self.assertEqual((res2["summary"]["sessions_scanned"], res2["summary"]["issues_filed"], res2["summary"]["duplicates_filtered"]), (1, 1, 0))
+        self.assertEqual([(c["title"], c["status"], c["filed_ref"]) for c in res2["candidates"]], [("Parser crash on empty input", "filed", "https://github.com/acme/repo/issues/9")])
+        self.assertEqual(next(iter(s.load_state(self.root)["fingerprints"].values()))["status"], "filed")
+
+    def test_failed_filing_keeps_previous_source_record_and_other_candidates(self):
+        self.write("docs/sessions/a.md", "## Needs Human Review\n- Rename the helper files\n")
+        res, _ = self.scan()
+        old_source = dict(s.load_state(self.root)["sources"]["docs/sessions/a.md"])
+        self.write("docs/sessions/a.md", "## Needs Human Review\n- Rename the helper files\n- Parser crash on empty input\n")
+        with mock.patch.object(s, "github_issue_exists", return_value=False), mock.patch.object(s, "github_available", return_value=False):
+            res2, state = self.scan("autonomous", config={"issue_tracker": "github"})
+        self.assertEqual(res2["summary"]["duplicates_filtered"], 1)
+        self.assertEqual(state["sources"]["docs/sessions/a.md"], old_source)
+        statuses = {rec["status"] for rec in state["fingerprints"].values()}
+        self.assertEqual(statuses, {"seen"})  # the rename candidate stays seen; the failed bug was restored (absent)
+        self.assertEqual(len(state["fingerprints"]), 1)
+
+
+class GitChangelogRealRepoTest(Base):
+    """git_or_changelog_match against a real git repository (the phrase is lower-cased by normalize_text)."""
+
+    def setUp(self):
+        super().setUp()
+        env = mock.patch.dict(os.environ, {"GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_NOSYSTEM": "1", "HOME": str(self.tmp)})
+        env.start()
+        self.addCleanup(env.stop)
+        self.git("init", "-q")
+        self.git("config", "gc.auto", "0")
+        self.git("config", "maintenance.auto", "false")
+        self.commit("Initial commit")
+
+    def git(self, *args):
+        subprocess.run(["git", *args], cwd=self.root, check=True, capture_output=True, text=True)
+
+    def commit(self, subject):
+        self.git("-c", "user.name=T", "-c", "user.email=t@example.invalid", "commit", "--allow-empty", "-q", "-m", subject)
+
+    def test_mixed_case_commit_subject_matches(self):
+        self.commit("Fix The Very Long Thing in Parser")
+        c = self.candidate(title="Fix the very long thing now please")
+        self.assertTrue(s.git_or_changelog_match(self.root, c))
+
+    def test_mixed_case_changelog_line_matches(self):
+        (self.root / "CHANGELOG.md").write_text("# Changelog\n- Fix The Very Long Thing\n", encoding="utf-8")
+        c = self.candidate(title="Fix the very long thing now please")
+        self.assertTrue(s.git_or_changelog_match(self.root, c))
+
+    def test_changelog_with_doubled_spaces_and_line_wrap_matches(self):
+        (self.root / "CHANGELOG.md").write_text("- Fix  the very\n  long   thing\n", encoding="utf-8")
+        c = self.candidate(title="Fix the very long thing now please")
+        self.assertTrue(s.git_or_changelog_match(self.root, c))
+
+    def test_unrelated_title_does_not_match(self):
+        self.commit("Bump dependencies")
+        (self.root / "CHANGELOG.md").write_text("- Bump dependencies\n", encoding="utf-8")
+        c = self.candidate(title="Fix the very long thing now please")
+        self.assertFalse(s.git_or_changelog_match(self.root, c))
 
 
 class CliTest(Base):
