@@ -23,15 +23,15 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --file)
       body_file="${2:-}"
-      shift 2
+      shift $(( $# >= 2 ? 2 : 1 ))
       ;;
     --tag)
       tag="${2:-}"
-      shift 2
+      shift $(( $# >= 2 ? 2 : 1 ))
       ;;
     --repo)
       repo="${2:-}"
-      shift 2
+      shift $(( $# >= 2 ? 2 : 1 ))
       ;;
     -h|--help)
       usage
@@ -59,8 +59,8 @@ if [[ -n "$tag" && -z "$body_file" ]]; then
     exit 1
   fi
   body_file="$(mktemp "${TMPDIR:-/tmp}/sb-release-notes.XXXXXX")"
-  gh release view "$tag" --repo "$repo" --json body --jq '.body // ""' >"$body_file"
   trap 'rm -f -- "$body_file"' EXIT
+  gh release view "$tag" --repo "$repo" --json body --jq '.body // ""' >"$body_file"
 fi
 
 if [[ -z "$body_file" || ! -f "$body_file" ]]; then
