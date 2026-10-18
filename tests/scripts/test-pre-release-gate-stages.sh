@@ -61,9 +61,13 @@ run
 assert_contains "bad config -> offline" "$TL_OUT" "leanctx not opted in"
 
 # a read-only REQUIRE_LIVE variable (injected through BASH_ENV) cannot be unset; the gate carries on
-echo 'readonly SB_FIVE_TOOL_PRERELEASE_REQUIRE_LIVE=' >"$TL_TMP/ro-env.sh"
+# (chain to any pre-existing BASH_ENV, e.g. the coverage tracer, so that tracing keeps working)
+cat >"$TL_TMP/ro-env.sh" <<'EOS'
+[[ -n "${SB_T_CHAIN_ENV:-}" && -f "$SB_T_CHAIN_ENV" ]] && source "$SB_T_CHAIN_ENV"
+readonly SB_FIVE_TOOL_PRERELEASE_REQUIRE_LIVE=
+EOS
 rm -f "$T/.silver-bullet.json"
-run BASH_ENV="$TL_TMP/ro-env.sh"
+run BASH_ENV="$TL_TMP/ro-env.sh" SB_T_CHAIN_ENV="${BASH_ENV:-}"
 assert_eq "unset failure tolerated" 0 "$TL_STATUS"
 assert_contains "still offline" "$TL_OUT" "leanctx not opted in"
 
