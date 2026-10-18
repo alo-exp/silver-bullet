@@ -48,7 +48,8 @@ if [[ -f "$PWD/package.json" ]] && grep -qE 'npm (install|ci|run build)' <<<"$cm
   fi
 fi
 
-if find "$PWD" -maxdepth 3 -name '*.tf' -print -quit 2>/dev/null | grep -q .; then
+# Process substitution, not a pipe: grep -q exits at the first line and the producer's SIGPIPE would fail a pipeline under pipefail.
+if grep -q . < <(find "$PWD" -maxdepth 3 -name '*.tf' -print -quit 2>/dev/null); then
   if grep -qE 'terraform (apply|plan)' <<<"$cmd"; then
     if ! grep -q 'terraform validate' <<<"$cmd"; then
       hints+=("Consider: terraform validate before apply/plan (industry_tooling)")

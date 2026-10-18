@@ -69,7 +69,8 @@ Update the base commit named in coverage-agent-prompt.md to the PR branch head b
 | L-scripts-misc-2 | Merged after review (value-less options fail closed, workflows awk, semantic-compress budget) |
 | H-recommended-2 | Merged after two reviews (diagnostics gitleaks, doctor --fix twice, lost score exports, claude host detection) |
 | I-scripts-py-2 | Merged after three reviews (merge scripts no longer overwrite user config; hermes YAML keeps user servers) |
-| E-core-hooks | Repair round after review |
+| E-core-hooks | Merged after two reviews (session-start cleanup no longer aborts, strict=false honoured, SIGPIPE-safe grep, prompt-reminder fallback list pinned to the template) |
+| I-scripts-py-3 | Merged after four reviews (silver-scan case-insensitive match and lost-filing retry, atomic Cursor hook strip, launchd failure falls back to at, render failures exit non-zero) |
 | All others | Not started |
 
 Each package is merged into the PR branch only after an adversarial review passes and its tests pass under both the `claude` and `codex` runtimes.
@@ -83,11 +84,12 @@ Statements that cannot run are removed, not excluded: each removal is its own `r
 | Finding | Where | Owner package |
 |---|---|---|
 | ~~`if sb_stack_gitleaks_path >/dev/null` always passes, so diagnostics report gitleaks installed regardless~~ fixed | `scripts/sb-diagnostics.sh` | H-recommended-2 (merged) |
-| `jq '... // "true"'` reads a JSON boolean `false` as `"true"`, so `hooks.evidence_schema.strict: false` does not relax the gate | `hooks/lib/enterprise-policy.sh:157`, `hooks/lib/completion-audit/gates.sh:221/224/227` | E-core-hooks / A follow-up |
-| `count_*` helpers use `grep -c ... \|\| echo 0` (prints `0` twice when nothing matches) | `hooks/lib/workflow-utils.sh` | E-core-hooks |
+| ~~`jq '... // "true"'` reads a JSON boolean `false` as `"true"`, so `hooks.evidence_schema.strict: false` does not relax the gate~~ fixed | `hooks/lib/enterprise-policy.sh`, `hooks/lib/completion-audit/gates.sh` | E-core-hooks (merged) |
+| ~~`count_*` helpers use `grep -c ... \|\| echo 0` (prints `0` twice when nothing matches)~~ fixed | `hooks/lib/workflow-utils.sh` | E-core-hooks (merged) |
+| ~~`refactor(hooks): drop unreachable alternatives` removed the `.git`/`/` stop from the config walk-ups in `session-start` (trivial file) and `stop-check` (transient patterns); when the config vanishes mid-run (project deleted under a backgrounded hook) the walk spins on `dirname /` forever, which killed the CI runners~~ fixed, guard restored with a red test (`tests/hooks/test-config-walk-vanishes.sh`) | `hooks/session-start`, `hooks/stop-check.sh` | E-core-hooks follow-up |
 | Invalid escape `\s` in a Python string (SyntaxWarning, an error in future Python) | `skills/silver-deep-research-multi-ai/scripts/landscape_preview_render.py:665` | M-dr-multi-ai |
 | The in-place edit regex (`\bsed\b[^$]*-i`, `\bperl\b[^$]*-i`) misses combined flags such as `perl -pi` and `sed -Ei`; fixed in `scripts/lib/global-toolstack/common.sh` (G-toolstack-2) but the hook copies still use the old form | `hooks/dev-cycle-check.sh` (229, 249, 628), `hooks/{graphify,rtk,context-mode,agentmemory,leanctx,alumnium}-gate.sh` | Follow-up after the hook packages |
-| `sb_rfl_activate` aborts under errexit in a project without `scripts/review-fix-ladder.py` | `hooks/lib/review-fix-ladder-state.sh` | D-gates (under review) |
+| ~~`sb_rfl_activate` aborts under errexit in a project without `scripts/review-fix-ladder.py`~~ fixed | `hooks/lib/review-fix-ladder-state.sh` | D-gates (merged) |
 
 ## Known measurement limits
 

@@ -20,7 +20,7 @@ sb_project_root_cache_write() {
   [[ -n "${SB_RUNTIME_STATE_DIR:-}" ]] || return 0
   mkdir -p "${SB_RUNTIME_STATE_DIR}" 2>/dev/null || true
   local tmp="${SB_PROJECT_ROOT_CACHE_FILE}.$$"
-  if printf '%s\n' "$root" >"$tmp" 2>/dev/null; then
+  if printf '%s\n' "$root" 2>/dev/null >"$tmp"; then
     mv -f "$tmp" "$SB_PROJECT_ROOT_CACHE_FILE" 2>/dev/null || rm -f -- "$tmp"
   fi
 }

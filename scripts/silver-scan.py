@@ -15,6 +15,8 @@ from typing import Any
 
 
 STATE_DIR = ".silver-bullet"
+# skills/silver-rem/SKILL.md writes "- [type]: <Category> — ${INSIGHT:0:60}" to the session log.
+RECORDED_INSIGHT_LIMIT = 60
 STATE_FILE = "scan-state.json"
 LOCAL_ISSUES_DIR = Path("docs/issues")
 KNOWLEDGE_DIR = Path("docs/knowledge")
@@ -882,110 +884,13 @@ def git_or_changelog_match(root: Path, candidate: dict[str, Any]) -> bool:
     if not words:
         return False
     phrase = " ".join(words[: min(5, len(words))])
-    if not phrase:
-        return False
-    proc = run_command(["git", "log", "--oneline", "--fixed-strings", f"--grep={phrase}", "--"], cwd=root)
+    proc = run_command(["git", "log", "--oneline", "-i", "--fixed-strings", f"--grep={phrase}", "--"], cwd=root)
     if proc.returncode == 0 and proc.stdout.strip():
         return True
     changelog = root / "CHANGELOG.md"
-    if changelog.is_file() and phrase in read_text(changelog):
+    if changelog.is_file() and phrase in normalize_text(read_text(changelog)):
         return True
     return False
-
-
-def parse_candidates(root: Path, source: dict[str, Any], config: dict[str, Any], tracker_text: str) -> tuple[list[dict[str, Any]], int]:
-    sections = parse_sections(source["text"])
-    raw_candidates: list[dict[str, Any]] = []
-    duplicate_count = 0
-    recorded_insights: set[str] = set()
-
-    for section in sections:
-        title = section["title"]
-        blocks = split_blocks(section["lines"])
-        if title in SECTION_ITEMS_FILED:
-            for _line_no, block_text in blocks:
-                text = strip_prefix(block_text).strip()
-                normalized = normalize_text(text)
-                if (
-                    text.lower().startswith("- [knowledge]:")
-                    or text.lower().startswith("- [learnings]:")
-                    or text.lower().startswith("- [lessons]:")
-                ):
-                    recorded_insights.add(normalized)
-            continue
-
-        if title not in SECTION_DEFERRED and title not in SECTION_AUTONOMOUS and title not in SECTION_KNOWLEDGE:
-            continue
-
-        for line_no, block_text in blocks:
-            candidate = build_candidate(root, source, title, block_text, line_no, config)
-            if candidate is None:
-                continue
-            if candidate["kind"] == "knowledge" and normalize_text(candidate["context"]) in recorded_insights:
-                duplicate_count += 1
-                continue
-            raw_candidates.append(candidate)
-
-    # Keyword sweep for loose ends and unresolved work.
-    in_code = False
-    lines = source["text"].splitlines()
-    for idx, line in enumerate(lines, 1):
-        stripped = line.strip()
-        if stripped.startswith("```"):
-            in_code = not in_code
-            continue
-        if in_code or not stripped or stripped.startswith("#"):
-            continue
-        if not any(re.search(pattern, stripped, re.I) for pattern in DEFERRED_PATTERNS):
-            continue
-        title = short_title(stripped)
-        context = short_context("\n".join(lines[max(0, idx - 2) : min(len(lines), idx + 1)]))
-        candidate = {
-            "candidate_id": sha256_text(f"{normalize_text(rel_path(source['path'], root))}\n{normalize_text(title)}\n{normalize_text(context)}"),
-            "fingerprint": scan_item_fingerprint(title, context),
-            "kind": "deferred",
-            "classification": classify_deferred(stripped)[0],
-            "confidence": classify_deferred(stripped)[1],
-            "routing_target": "issue" if classify_deferred(stripped)[0] in {"bug", "question"} else "backlog",
-            "title": title,
-            "context": context,
-            "source_kind": source["kind"],
-            "source_path": rel_path(source["path"], root),
-            "source_line": idx,
-            "source_refs": [{"path": rel_path(source["path"], root), "line": idx}],
-            "status": "pending",
-        }
-        raw_candidates.append(candidate)
-
-    deduped: dict[str, dict[str, Any]] = {}
-    for candidate in raw_candidates:
-        fingerprint = candidate["fingerprint"]
-        if fingerprint in deduped:
-            duplicate_count += 1
-            existing = deduped[fingerprint]
-            existing.setdefault("source_refs", [])
-            for ref in candidate.get("source_refs", []):
-                if ref not in existing["source_refs"]:
-                    existing["source_refs"].append(ref)
-            existing.setdefault("candidate_ids", [])
-            if candidate["candidate_id"] not in existing["candidate_ids"]:
-                existing["candidate_ids"].append(candidate["candidate_id"])
-            continue
-        deduped[fingerprint] = candidate
-
-    final_candidates = list(deduped.values())
-    for candidate in final_candidates:
-        if local_tracker_matches(candidate, tracker_text):
-            candidate["status"] = "tracked"
-            candidate["dedupe_reason"] = "local-tracker"
-        elif config.get("issue_tracker") == "github" and github_issue_exists(root, candidate):
-            candidate["status"] = "tracked"
-            candidate["dedupe_reason"] = "github-issues"
-        elif git_or_changelog_match(root, candidate):
-            candidate["status"] = "weakly-tracked"
-            candidate["dedupe_reason"] = "gitlog-or-changelog"
-
-    return final_candidates, duplicate_count
 
 
 def append_local_entry(target: Path, entry_id: str, candidate: dict[str, Any]) -> None:
@@ -1100,6 +1005,8 @@ def github_issue_create(root: Path, candidate: dict[str, Any], state: dict[str, 
     if proc.returncode != 0:
         raise RuntimeError(proc.stderr.strip() or "gh issue create failed")
     output = (proc.stdout or "").strip()
+    if not output:
+        raise RuntimeError("gh issue create returned no output")
     match = re.search(r"https://github\.com/[^\s]+/issues/\d+", output)
     issue_url = match.group(0) if match else output.splitlines()[-1].strip()
     update_state_for_candidate(state, candidate, "filed", issue_url)
@@ -1243,31 +1150,27 @@ def write_record_entry(root: Path, candidate: dict[str, Any], target: Path, is_k
         elif "gotcha" in lower or "avoid" in lower or "must" in lower:
             heading = "## Known Gotchas"
         entry = f"{local_date()} - {candidate['context']} [candidate-id:{candidate['candidate_id']}]"
-        if heading not in content:
+        if heading not in (line.strip() for line in content.splitlines()):
             content = content.rstrip() + f"\n\n{heading}\n\n{entry}\n"
         else:
             lines = content.splitlines()
-            for idx, line in enumerate(lines):
-                if line.strip() == heading:
-                    lines.insert(idx + 1, "")
-                    lines.insert(idx + 2, entry)
-                    content = "\n".join(lines).rstrip() + "\n"
-                    break
+            idx = next(i for i, line in enumerate(lines) if line.strip() == heading)
+            lines.insert(idx + 1, "")
+            lines.insert(idx + 2, entry)
+            content = "\n".join(lines).rstrip() + "\n"
         atomic_write(target, content if content.endswith("\n") else content + "\n")
         ensure_knowledge_index(root, month, "knowledge")
     else:
         heading = learning_category(candidate["context"])
         entry = f"{local_date()} - {candidate['context']} [candidate-id:{candidate['candidate_id']}]"
-        if f"## {heading}" not in content:
+        if f"## {heading}" not in (line.strip() for line in content.splitlines()):
             content = content.rstrip() + f"\n\n## {heading}\n\n{entry}\n"
         else:
             lines = content.splitlines()
-            for idx, line in enumerate(lines):
-                if line.strip() == f"## {heading}":
-                    lines.insert(idx + 1, "")
-                    lines.insert(idx + 2, entry)
-                    content = "\n".join(lines).rstrip() + "\n"
-                    break
+            idx = next(i for i, line in enumerate(lines) if line.strip() == f"## {heading}")
+            lines.insert(idx + 1, "")
+            lines.insert(idx + 2, entry)
+            content = "\n".join(lines).rstrip() + "\n"
         atomic_write(target, content if content.endswith("\n") else content + "\n")
         ensure_knowledge_index(root, month, "learnings")
 
@@ -1289,16 +1192,16 @@ def reconstruct_candidate(state: dict[str, Any], candidate_id: str) -> dict[str,
     if isinstance(by_id, dict):
         refs = by_id.get("source_refs") or []
         first_ref = refs[0] if refs else {"path": "", "line": 0}
-    return {
-        "candidate_id": candidate_id,
-        "fingerprint": by_id.get("fingerprint", ""),
-        "kind": by_id.get("kind", "deferred"),
-        "classification": by_id.get("classification", "chore"),
-        "category": by_id.get("category", by_id.get("classification", "chore")),
-        "confidence": by_id.get("confidence", "medium"),
-        "routing_target": by_id.get("routing_target", "backlog"),
-        "title": by_id.get("title", "session candidate"),
-        "context": by_id.get("context", ""),
+        return {
+            "candidate_id": candidate_id,
+            "fingerprint": by_id.get("fingerprint", ""),
+            "kind": by_id.get("kind", "deferred"),
+            "classification": by_id.get("classification", "chore"),
+            "category": by_id.get("category", by_id.get("classification", "chore")),
+            "confidence": by_id.get("confidence", "medium"),
+            "routing_target": by_id.get("routing_target", "backlog"),
+            "title": by_id.get("title", "session candidate"),
+            "context": by_id.get("context", ""),
             "source_kind": by_id.get("source_kind", "unknown"),
             "source_path": first_ref.get("path", ""),
             "source_line": first_ref.get("line", 0),
@@ -1333,30 +1236,7 @@ def handle_file(root: Path, config: dict[str, Any], state: dict[str, Any], candi
     if candidate["kind"] == "knowledge":
         return record_candidate(root, candidate, state)
     if config.get("issue_tracker") == "github":
-        if not github_available():
-            raise RuntimeError("gh CLI is not available")
-        proc = run_command(
-            [
-                "gh",
-                "issue",
-                "create",
-                "--repo",
-                repo_slug_from_origin(root),
-                "--title",
-                candidate["title"],
-                "--body",
-                github_body(candidate, root),
-                *[flag for label in issue_labels(candidate["classification"]) for flag in ("--label", label)],
-            ],
-            cwd=root,
-        )
-        if proc.returncode != 0:
-            raise RuntimeError(proc.stderr.strip() or "gh issue create failed")
-        output = (proc.stdout or "").strip()
-        match = re.search(r"https://github\.com/[^\s]+/issues/\d+", output)
-        issue_url = match.group(0) if match else output.splitlines()[-1].strip()
-        update_state_for_candidate(state, candidate, "filed", issue_url)
-        return {"candidate": {**candidate, "status": "filed", "filed_ref": issue_url}, "filed_ref": issue_url, "target_file": issue_url}
+        return github_issue_create(root, candidate, state)
     return file_local_candidate(root, candidate, state)
 
 
@@ -1382,30 +1262,45 @@ def parse_candidate_stream(root: Path, source: dict[str, Any], config: dict[str,
     sections = parse_sections(source["text"])
     candidates: list[dict[str, Any]] = []
     duplicate_count = 0
-    recorded_insights: set[str] = set()
+    recorded_exact: set[str] = set()
+    recorded_prefixes: set[str] = set()
+
+    # Collect already-recorded insights first: "Items Filed" may follow the sections it dedupes.
+    for section in sections:
+        if section["title"] not in SECTION_ITEMS_FILED:
+            continue
+        for _line_no, block_text in split_blocks(section["lines"]):
+            # strip_prefix already removed the list bullet, so the tag is the first token.
+            text = strip_prefix(block_text).strip()
+            recorded = re.match(r"^\[(?:knowledge|learnings|lessons)\]:\s*", text, flags=re.I)
+            if not recorded:
+                continue
+            body = text[recorded.end():]
+            # silver-rem writes "[tag]: <Category> — <insight[:60]>": compare the insight with and
+            # without the category, and treat a 60-char insight as a truncated prefix.
+            variants = [body]
+            with_category = re.match(r"^[^\n\u2014]+?\s+[\u2014-]\s+(?P<insight>\S.*)$", body)
+            if with_category:
+                variants.append(with_category.group("insight"))
+            for variant in variants:
+                normalized = normalize_text(variant)
+                if not normalized:
+                    continue
+                (recorded_prefixes if len(variant) >= RECORDED_INSIGHT_LIMIT else recorded_exact).add(normalized)
 
     for section in sections:
         title = section["title"]
-        blocks = split_blocks(section["lines"])
-        if title in SECTION_ITEMS_FILED:
-            for _line_no, block_text in blocks:
-                text = strip_prefix(block_text).strip()
-                if (
-                    text.lower().startswith("- [knowledge]:")
-                    or text.lower().startswith("- [learnings]:")
-                    or text.lower().startswith("- [lessons]:")
-                ):
-                    recorded_insights.add(normalize_text(re.sub(r"^- \[(knowledge|learnings|lessons)\]:\s*", "", text, flags=re.I)))
-            continue
         if title not in SECTION_DEFERRED and title not in SECTION_AUTONOMOUS and title not in SECTION_KNOWLEDGE:
             continue
-        for line_no, block_text in blocks:
+        for line_no, block_text in split_blocks(section["lines"]):
             candidate = build_candidate(root, source, title, block_text, line_no, config)
             if candidate is None:
                 continue
-            if candidate["kind"] == "knowledge" and normalize_text(candidate["context"]) in recorded_insights:
-                duplicate_count += 1
-                continue
+            if candidate["kind"] == "knowledge":
+                context = normalize_text(candidate["context"])
+                if context in recorded_exact or any(context.startswith(prefix) for prefix in recorded_prefixes):
+                    duplicate_count += 1
+                    continue
             candidates.append(candidate)
 
     lines = source["text"].splitlines()
@@ -1488,6 +1383,13 @@ def handle_preflight(root: Path, agent_env: str) -> dict[str, Any]:
     }
 
 
+def _restore_entry(table: dict[str, Any], key: str, previous: Any) -> None:
+    if previous is None:
+        table.pop(key, None)
+    else:
+        table[key] = previous
+
+
 def handle_scan(root: Path, config: dict[str, Any], state: dict[str, Any], mode: str, agent_env: str) -> dict[str, Any]:
     tracker_text = local_tracker_text(root)
     sources, preflight = discover_sources(root, agent_env)
@@ -1512,6 +1414,8 @@ def handle_scan(root: Path, config: dict[str, Any], state: dict[str, Any], mode:
             summary["sessions_skipped_already_scanned"] += 1
             continue
         summary["sessions_scanned"] += 1
+        previous_source = prev
+        filing_failed = False
         state.setdefault("sources", {})[rel] = {
             "kind": source["kind"],
             "hash": source["hash"],
@@ -1531,6 +1435,8 @@ def handle_scan(root: Path, config: dict[str, Any], state: dict[str, Any], mode:
                 summary["duplicates_filtered"] += 1
                 continue
             seen_fingerprints.add(candidate["fingerprint"])
+            previous_fingerprint = state.get("fingerprints", {}).get(candidate["fingerprint"])
+            previous_by_id = state.get("candidates_by_id", {}).get(candidate["candidate_id"])
             update_state_for_candidate(state, candidate, "seen", None)
             if should_autofile(candidate, mode):
                 try:
@@ -1555,10 +1461,17 @@ def handle_scan(root: Path, config: dict[str, Any], state: dict[str, Any], mode:
                         summary["auto_filed"] += 1
                         summary["local_backlog_filed"] += 1
                 except Exception:
+                    # A failed filing must not be remembered as seen: restore the prior records and
+                    # forget this source's hash so the next scan retries the candidate.
                     candidate["status"] = "pending"
+                    filing_failed = True
+                    _restore_entry(state.setdefault("fingerprints", {}), candidate["fingerprint"], previous_fingerprint)
+                    _restore_entry(state.setdefault("candidates_by_id", {}), candidate["candidate_id"], previous_by_id)
             else:
                 summary["manual_review_count"] += 1
             all_candidates.append(candidate)
+        if filing_failed:
+            _restore_entry(state["sources"], rel, previous_source)
 
     summary["total_candidates"] = len(all_candidates)
     save_state(root, state)
