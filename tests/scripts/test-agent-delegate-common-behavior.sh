@@ -289,6 +289,11 @@ printf 'tiny' >"$TL_TMP/tiny.log"
 assert_eq "class: log floor (default 512)" "log-floor" "$(fc 1 "boom" "$TL_TMP/tiny.log")"
 assert_eq "class: log floor via SB_AGENT_DELEGATE_LOG_FLOOR" "delegate-failure" "$(SB_AGENT_DELEGATE_LOG_FLOOR=2 fc 1 "boom" "$TL_TMP/tiny.log")"
 assert_eq "class: codex floor overrides" "log-floor" "$(SB_AGENT_CODEX_LOG_FLOOR=100 SB_AGENT_DELEGATE_LOG_FLOOR=2 fc 1 "boom" "$TL_TMP/tiny.log")"
+# The default floor is exactly 512 bytes: one byte short is a log-floor failure, 512 is not.
+head -c 511 /dev/zero | tr '\0' x >"$TL_TMP/floor-1.log"
+head -c 512 /dev/zero | tr '\0' x >"$TL_TMP/floor.log"
+assert_eq "class: a 511-byte log is under the default floor" "log-floor" "$(fc 1 "boom" "$TL_TMP/floor-1.log")"
+assert_eq "class: a 512-byte log meets the default floor" "delegate-failure" "$(fc 1 "boom" "$TL_TMP/floor.log")"
 assert_eq "class: missing log file falls through" "delegate-failure" "$(fc 1 "boom" "$TL_TMP/nolog")"
 assert_eq "class: generic failure" "delegate-failure" "$(fc 1 "boom")"
 
