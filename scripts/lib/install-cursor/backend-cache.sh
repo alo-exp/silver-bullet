@@ -98,7 +98,6 @@ discover_cursor_backend_plugin_shas() {
 
 collect_cursor_plugin_required_shas() {
   while IFS= read -r sha; do
-    [[ -n "$sha" ]] || continue
     if cursor_github_commit_reachable "$sha"; then
       printf '%s\n' "$sha"
     fi
@@ -121,7 +120,6 @@ collect_cursor_plugin_verify_shas() {
 
   registry_sha="$(read_installed_plugins_git_sha)"
   while IFS= read -r sha; do
-    [[ -n "$sha" ]] || continue
     if cursor_github_commit_reachable "$sha"; then
       printf '%s\n' "$sha"
     fi
@@ -275,7 +273,6 @@ collect_cursor_plugin_seed_shas() {
   cleanup_cursor_custom_agents "${REPO_ROOT:-}"
 
   while IFS= read -r sha; do
-    [[ -n "$sha" ]] || continue
     if cursor_github_commit_reachable "$sha"; then
       printf '%s\n' "$sha"
     fi
@@ -291,7 +288,6 @@ collect_cursor_plugin_seed_shas() {
 resolve_cursor_backend_plugin_sha() {
   local discovered manifest_sha
   while IFS= read -r discovered; do
-    [[ -n "$discovered" ]] || continue
     if cursor_github_commit_reachable "$discovered"; then
       printf '%s\n' "$discovered"
       return 0

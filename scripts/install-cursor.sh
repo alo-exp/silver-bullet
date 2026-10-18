@@ -12,7 +12,6 @@ CURSOR_MARKETPLACE_SOURCE="${CURSOR_MARKETPLACE_SOURCE:-https://github.com/alo-l
 CURSOR_SB_PUBLIC_MARKETPLACE_SOURCE="${CURSOR_SB_PUBLIC_MARKETPLACE_SOURCE:-https://github.com/alo-labs/agent-plugins.git}"
 CURSOR_MARKETPLACE_NAME="${CURSOR_MARKETPLACE_NAME:-alo-labs-cursor}"
 CURSOR_BACKEND_MARKETPLACE_NAME="${CURSOR_BACKEND_MARKETPLACE_NAME:-alo-labs-agent-plugins}"
-CURSOR_PLUGIN_GIT_SUBPATH="${CURSOR_PLUGIN_GIT_SUBPATH:-plugins/silver-bullet}"
 CURSOR_MARKETPLACE_ROOT="${CURSOR_MARKETPLACE_ROOT:-${CURSOR_HOME}/plugins/marketplaces/${CURSOR_MARKETPLACE_NAME}}"
 CURSOR_GITHUB_REPO_SLUG="${CURSOR_GITHUB_REPO_SLUG:-alo-exp/silver-bullet}"
 CURSOR_GITHUB_REPO_URL="${CURSOR_GITHUB_REPO_URL:-https://github.com/alo-exp/silver-bullet.git}"
@@ -149,7 +148,7 @@ sync_plugin_tree_from_checkout() {
   # plugin.json skills. Orchestrator + Skill tool read skill-source/ instead.
   rm -rf "${dest}/agents/cursor" "${dest}/agents"
   local commands_src
-  commands_src="$(cursor_plugin_commands_src "$source_root" || true)"
+  commands_src="$(cursor_plugin_commands_src "$source_root")"
   if [[ -n "$commands_src" ]]; then
     mkdir -p "${dest}/commands"
     rsync -a --delete "${commands_src}/" "${dest}/commands/"
@@ -329,11 +328,6 @@ read_installed_plugins_git_sha() {
 cursor_github_marketplace_gitpath_for_sha() {
   local commit_sha="$1"
   printf '%s/%s' "$(cursor_github_marketplace_gitpath_root)" "$commit_sha"
-}
-
-cursor_plugin_git_subpath_root() {
-  local commit_sha="$1"
-  printf '%s/%s' "$(cursor_github_marketplace_gitpath_for_sha "$commit_sha")" "$CURSOR_PLUGIN_GIT_SUBPATH"
 }
 
 prune_cursor_gitpath_picker_skills() {
