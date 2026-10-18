@@ -22,6 +22,10 @@ cleanup_procs() {
   tl_cleanup
 }
 trap cleanup_procs EXIT
+# A PID that has just exited and been reaped. A hard-coded PID such as 999999 can name a live
+# process of the same user (on a CI runner, the runner itself), which the legacy sentinel
+# format and the EXIT cleanup above would kill.
+dead_pid() { local p; ( exit 0 ) & p=$!; wait "$p" 2>/dev/null || true; echo "$p"; }
 
 # ======== session-log-init =====================================================
 TODAY="2026-01-15"
@@ -48,7 +52,7 @@ assert_eq "log: unreadable command: nothing created" "" "$TL_OUT"
 
 # an unreadable sentinel pid file is treated as no sentinel
 sl_reset
-printf '123\n' >"$SD/sentinel-pid"
+printf '%s\n' "$(dead_pid)" >"$SD/sentinel-pid"
 ec_fail cat '*"sentinel-pid"*'
 hook session-log-init.sh "$EC_PROJ" "$SL_IN"
 ec_unfail cat
@@ -69,7 +73,7 @@ for variant in legacy token; do
 done
 # rm failing during sentinel cleanup
 sl_reset
-printf '999999\n' >"$SD/sentinel-pid"
+printf '%s\n' "$(dead_pid)" >"$SD/sentinel-pid"
 ec_fail rm '*"sentinel-lock-"*'
 hook session-log-init.sh "$EC_PROJ" "$SL_IN"
 ec_unfail rm
