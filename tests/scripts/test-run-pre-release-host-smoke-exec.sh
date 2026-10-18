@@ -48,7 +48,7 @@ assert_contains "marker lists hosts" "$(cat "$MARK")" "hosts=codex,cursor,claude
 assert_contains "marker lists isolation" "$(cat "$MARK")" "cursor_isolation=fake-home,CURSOR_CONFIG_DIR,--plugin-dir,--workspace"
 assert_file_exists "marker copied beside the claude runtime state" "$TL_TMP/keep/claude/.silver-bullet/pre-release-host-smoke"
 # the operator's real homes are never touched
-assert_file_absent "real HOME untouched" "$HOME/.codex"
+assert_file_absent "sandbox runtime state untouched by the smoke" "$SB_RUNTIME_STATE_DIR/pre-release-host-smoke"
 
 # ---- single host runs: marker is already at the destination ----
 smoke X=1 -- --host codex
