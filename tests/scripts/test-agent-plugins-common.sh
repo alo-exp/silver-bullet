@@ -12,13 +12,13 @@ source "$LIB"
 # --- agent_plugins_repo_url ---
 unset AGENT_PLUGINS_REPO_URL MARKETPLACE_REPO_URL CODEX_MARKETPLACE_REPO_URL CURSOR_MARKETPLACE_REPO_URL
 assert_eq "default repo url" "https://github.com/alo-labs/agent-plugins.git" "$(agent_plugins_repo_url)"
-AGENT_PLUGINS_REPO_URL="file:///x/y.git"
+export AGENT_PLUGINS_REPO_URL="file:///x/y.git"
 assert_eq "env override repo url" "file:///x/y.git" "$(agent_plugins_repo_url)"
 
 # --- legacy url per host ---
-MARKETPLACE_REPO_URL="legacy-claude"
-CODEX_MARKETPLACE_REPO_URL="legacy-codex"
-CURSOR_MARKETPLACE_REPO_URL="legacy-cursor"
+export MARKETPLACE_REPO_URL="legacy-claude"
+export CODEX_MARKETPLACE_REPO_URL="legacy-codex"
+export CURSOR_MARKETPLACE_REPO_URL="legacy-cursor"
 assert_eq "legacy claude" "legacy-claude" "$(agent_plugins_legacy_repo_url claude)"
 assert_eq "legacy codex" "legacy-codex" "$(agent_plugins_legacy_repo_url codex)"
 assert_eq "legacy cursor" "legacy-cursor" "$(agent_plugins_legacy_repo_url cursor)"
@@ -83,7 +83,7 @@ assert_eq "catalog in repo root" "$REPO/scripts/lib/agent-plugins-catalog.json" 
 unset AGENT_PLUGINS_CATALOG
 assert_eq "catalog default when repo lacks file" "scripts/lib/agent-plugins-catalog.json" "$(agent_plugins_catalog_path "$TL_TMP/empty")"
 assert_eq "catalog default when no arg" "scripts/lib/agent-plugins-catalog.json" "$(agent_plugins_catalog_path)"
-AGENT_PLUGINS_CATALOG="/custom/cat.json"
+export AGENT_PLUGINS_CATALOG="/custom/cat.json"
 assert_eq "catalog env override" "/custom/cat.json" "$(agent_plugins_catalog_path "$TL_TMP/empty")"
 
 tl_results
