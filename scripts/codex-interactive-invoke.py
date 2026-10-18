@@ -344,6 +344,16 @@ def main() -> int:
                             terminate_child(child_pid)
                             return 1
                         continue
+                    if getattr(exc, "errno", None) == errno.EIO:
+                        # Linux reports EIO (not EOF) on the PTY master once the
+                        # child has closed its side: end of output. Give the child a
+                        # moment to become reapable so its exit status is reported.
+                        for _ in range(40):
+                            exited, returncode = child_returncode(child_pid)
+                            if exited:
+                                return returncode or 0
+                            time.sleep(0.05)
+                        return 0
                     raise
                 if not chunk:
                     break
