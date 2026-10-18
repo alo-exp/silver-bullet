@@ -103,10 +103,15 @@ tl_run env SB_E2E_GATES_ROUND1="$TL_TMP/gates/a.md" bash "$STAGED" --host claude
 assert_contains "env override wins over host default" "$TL_OUT" "round1: $TL_TMP/gates/a.md"
 assert_contains "host default for the other round" "$TL_OUT" "round2: $G/ROUND-6-GATES.md"
 
-# unknown host track: message and failure (both rounds unresolved)
+# unknown host track: usage error before any gate file is read
 tl_run bash "$STAGED" --host bogus
-assert_eq "unknown host fails" "1" "$TL_STATUS"
+assert_eq "unknown host exits 2" "2" "$TL_STATUS"
 assert_contains "unknown host message" "$TL_ERR" "unknown host track: bogus"
+assert_not_contains "no verdict printed for an unknown host" "$TL_OUT" "consecutive strict-clean pair"
+tl_run env SB_E2E_LIVE_RUNTIME=bogus bash "$STAGED"
+assert_eq "unknown runtime host exits 2" "2" "$TL_STATUS"
+tl_run env SB_E2E_LIVE_RUNTIME=bogus bash "$STAGED" "$TL_TMP/gates/a.md" "$TL_TMP/gates/b.md"
+assert_eq "explicit pair ignores the unknown runtime" "0" "$TL_STATUS"
 
 # no args: host from SB_E2E_LIVE_RUNTIME, else SILVER_BULLET_RUNTIME, else claude
 tl_run env SB_E2E_LIVE_RUNTIME=codex bash "$STAGED"
