@@ -9,6 +9,7 @@
 # "rc|text" line per attempt from $ALH_SCRIPT (the last line repeats). Environment
 # variables named in $ALH_ENV_KEYS are written to the record on every invoke.
 # ALH_WRITE_LOG=text appends text to $CLAUDE_INTERACTIVE_LOG_FILE (adapter that writes the TUI log).
+# ALH_TERM_SELF=1 makes the stub send SIGTERM to its own subshell ($BASHPID) mid-invoke.
 # ALH_RM_WORKDIR=1 makes the stub delete $WORK_DIR (adapter that cleans up after itself).
 # ALH_RM_LOG=1 makes the stub delete $CLAUDE_INTERACTIVE_LOG_FILE (adapter that loses the log).
 alh_stage_sb() {
@@ -39,6 +40,9 @@ agent_invoke() {
   fi
   if [[ "${ALH_RM_LOG:-}" == "1" ]]; then
     rm -f "${CLAUDE_INTERACTIVE_LOG_FILE:-}"
+  fi
+  if [[ "${ALH_TERM_SELF:-}" == "1" ]]; then
+    kill -TERM "$BASHPID"
   fi
   if [[ "${ALH_RM_WORKDIR:-}" == "1" ]]; then
     rm -rf "${WORK_DIR:?}"

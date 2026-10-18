@@ -131,6 +131,9 @@ agent_claude_apply_lightweight_env() {
 agent_claude_invoke_once() {
   agent_claude_apply_runtime_env
   agent_claude_apply_lightweight_env
+  # This runs in a command-substitution subshell: the EXIT trap also fires when the adapter
+  # is terminated (SIGTERM/SIGINT) or calls exit, so the ephemeral config dir never leaks.
+  trap agent_claude_cleanup_lightweight_config_dir EXIT
   export SB_ROOT
   export WORK_DIR="$WORK_DIR"
   export CLAUDE_WORK_DIR="$WORK_DIR"
