@@ -88,12 +88,12 @@ discover_cursor_backend_plugin_shas() {
       | xargs -0 grep -h 'Adding enabled plugin: silver-bullet from ' 2>/dev/null \
       | sed -n 's/.*silver-bullet from \([0-9a-f]\{40\}\).*/\1/p' \
       | tail -1
-  )"
+  )" || latest_sha=""
   [[ -n "$latest_sha" ]] && printf '%s\n' "$latest_sha"
   find "$log_root" -name 'Cursor Plugins*.log' -type f -print0 2>/dev/null \
     | xargs -0 grep -h 'Adding enabled plugin: silver-bullet from ' 2>/dev/null \
     | sed -n 's/.*silver-bullet from \([0-9a-f]\{40\}\).*/\1/p' \
-    | sort -u
+    | sort -u || true
 }
 
 collect_cursor_plugin_required_shas() {
@@ -473,7 +473,8 @@ cursor_backend_plugin_cache_ready() {
 ensure_agent_plugins_marketplace_clone() {
   local head_sha dest_root tmp
 
-  head_sha="$(git ls-remote "$CURSOR_AGENT_PLUGINS_REPO_URL" HEAD 2>/dev/null | awk 'NR==1 {print $1}')"
+  # An unreachable remote (offline) must skip the clone, not abort the installer.
+  head_sha="$(git ls-remote "$CURSOR_AGENT_PLUGINS_REPO_URL" HEAD 2>/dev/null | awk 'NR==1 {print $1}')" || head_sha=""
   [[ -n "$head_sha" ]] || return 0
 
   dest_root="${CURSOR_AGENT_PLUGINS_GITPATH_ROOT}/${head_sha}"
