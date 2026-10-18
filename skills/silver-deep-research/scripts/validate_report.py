@@ -284,8 +284,9 @@ class ReportValidator:
                 self.errors.append(f"Bibliography has gaps in numbering: missing {missing}")
                 return False
 
-        # Find citations in text
-        text_citations = set(re.findall(r'\[(\d+)\]', self.content))
+        # Find citations in the body text (the bibliography's own entries are not citations)
+        body_text = self.content[:match.start()] + self.content[match.end():]
+        text_citations = set(re.findall(r'\[(\d+)\]', body_text))
         bib_citations = set(bib_entries)
 
         # Check all citations have bibliography entries
