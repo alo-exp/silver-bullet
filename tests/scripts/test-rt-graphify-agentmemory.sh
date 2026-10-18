@@ -59,6 +59,13 @@ printf '%s' "$HEAD_COMMIT" >"$HR_PROJ/graphify-out/.build-commit"
 NOGITPROJ="$TL_TMP/nogit-proj"; mkdir -p "$NOGITPROJ/graphify-out"; echo '{}' >"$NOGITPROJ/graphify-out/graph.json"; echo '{}' >"$NOGITPROJ/.silver-bullet.json"
 assert_eq "stale: outside git there is no HEAD" "1" "$(RT_PROJECT_ROOT="$NOGITPROJ" rc_of rt_probe_graphify_index_stale)"
 
+# an unreadable build-commit file counts as stale
+printf '%s' "$HEAD_COMMIT" >"$HR_PROJ/graphify-out/.build-commit" 2>/dev/null || { mkdir -p "$HR_PROJ/graphify-out"; echo '{}' >"$HR_PROJ/graphify-out/graph.json"; printf '%s' "$HEAD_COMMIT" >"$HR_PROJ/graphify-out/.build-commit"; }
+hr_bin cat 'exit 1'
+assert_eq "stale: unreadable build commit" "0" "$(rc_of rt_probe_graphify_index_stale)"
+hr_nobin cat
+rm -rf "$HR_PROJ/graphify-out"
+
 # build index
 hr_bin graphify 'echo "graphify $*" >>"$HR_LOG"; mkdir -p graphify-out; echo "{}" >graphify-out/graph.json; exit "${HR_GRAPHIFY_RC:-0}"'
 rm -rf "$HR_PROJ/graphify-out"
@@ -109,6 +116,9 @@ assert_eq "base only: graphify on PATH, no manifest" "0" "$(rc_of rt_probe_graph
 hr_manifest "graphify=$HR_BIN/graphify-mcp"
 assert_eq "base only: false when the mcp binary resolves" "1" "$(rc_of rt_probe_graphify_base_only)"
 assert_eq "base only: false without graphify" "1" "$(PATH="$NOGRAPHIFY" rc_of rt_probe_graphify_base_only)"
+hr_bin graphify 'echo "graphify 1.2.3"'
+hr_bin graphify 'exit 1'
+assert_eq "skew: failing --version is not skew" "1" "$(rc_of rt_probe_graphify_skill_package_skew)"
 hr_bin graphify 'echo "graphify 1.2.3"'
 assert_eq "skew: not reported" "1" "$(rc_of rt_probe_graphify_skill_package_skew)"
 hr_bin graphify 'echo "warning: skill is from graphify 0.9, package 1.2"'
@@ -218,15 +228,22 @@ assert_eq "platform: no project config" "1" "$(RT_PROJECT_ROOT="$TL_TMP/nocfg" r
 hr_bin sb-platform-marker 'echo marker >>"$HR_LOG"'
 : >"$HR_LOG"
 sb_recommended_tool_platform_post_index_commands() { printf '%s\n' "" "sb-platform-marker" "false"; }
+# shellcheck disable=SC2218  # defined by the sourced repair-graphify.sh
 rt_repair_graphify_platform
 assert_eq "platform: post-index commands evaluated, failures tolerated, blanks skipped" "marker" "$(cat "$HR_LOG")"
 unset -f sb_recommended_tool_platform_post_index_commands
 # shellcheck source=/dev/null
 source "$TL_REPO_ROOT/hooks/lib/recommended-tools.sh"
 
+# a handshake child that cannot be signalled (kill reports failure) is still reaped
+hr_bin graphify-mcp 'exec sleep 30'
+hr_nobin sleep
+assert_eq "handshake: failed kill is tolerated" "1" "$(kill() { if [[ "$1" == -0 ]]; then builtin kill "$@"; return; fi; builtin kill "$@"; return 1; }; rc_of rt_graphify_mcp_handshake)"
+hr_bin sleep 'exit 0'
+hr_bin graphify-mcp 'exit 0'
+
 # mcp config merge
 : >"$HR_LOG"
-RT_REPO_ROOT_SAVED="$RT_REPO_ROOT"
 assert_eq "mcp config: patch helper missing" "1" "$(RT_REPO_ROOT="$TL_TMP/none" rc_of rt_repair_graphify_mcp_config)"
 hr_nobin graphify-mcp
 assert_eq "mcp config: handshake failure" "1" "$(PATH="$(hr_path_without graphify-mcp)" rc_of rt_repair_graphify_mcp_config)"
@@ -263,6 +280,13 @@ assert_eq "repair: stale index rebuilt" '{"actions":["worktree_index_built","pla
 hr_nobin graphify; hr_nobin uv; hr_nobin pipx
 out="$(PATH="$(hr_path_without graphify uv pipx)" rt_repair_graphify 2>/dev/null)"
 assert_eq "repair: no cli and no installers" '{"actions":[],"failures":["no_uv_or_pipx"],"restart_required":false}' "$(jq -c . <<<"$out")"
+# package install actions are carried into the result
+hr_nobin graphify
+hr_bin uv 'echo "uv $*" >>"$HR_LOG"'
+out="$(PATH="$(hr_path_without graphify)" rt_repair_graphify 2>/dev/null)"
+assert_contains "repair: package install action reported" "$(jq -c . <<<"$out")" '"uv_tool_install_graphifyy_mcp"'
+hr_nobin uv
+hr_bin graphify 'exit 0'
 # platform refresh failing is reported
 hr_bin graphify 'exit 0'
 rt_repair_graphify_platform() { return 1; }
