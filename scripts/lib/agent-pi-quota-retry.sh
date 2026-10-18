@@ -79,7 +79,6 @@ agent_host_pi_should_continue() {
   local rc="$1"
   local text="$2"
   [[ "$rc" == "0" ]] || return 1
-  [[ "$rc" == "124" ]] && return 1
   if declare -F agent_host_pi_is_auth_failure >/dev/null 2>&1; then
     if agent_host_pi_is_auth_failure "$text"; then
       return 1
