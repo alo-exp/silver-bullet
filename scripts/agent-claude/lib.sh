@@ -68,7 +68,6 @@ agent_claude_seed_folder_trust() {
   _agent_claude_seed_folder_trust_json() {
     local json_path="$1"
     local target_dir="$2"
-    [[ -n "$json_path" && -n "$target_dir" ]] || return 0
     mkdir -p "$(dirname "$json_path")"
     python3 - "$json_path" "$target_dir" <<'PY'
 import json
