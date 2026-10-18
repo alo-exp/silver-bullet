@@ -82,14 +82,16 @@ detect() {  # env assignments... -> prints the detected host
   run_args --host auto --project-root "$PROJ" --dry-run --skip-rtk-init --skip-cm-doctor
   sed -n 's/^=== RTK + Context Mode optimization (host=\(.*\)) ===$/\1/p' <<<"$TL_OUT"
 }
-rm -rf "$HOME/.cursor" "$HOME/.codex" "$HOME/.hermes" "$HOME/.pi" "$HOME/.config/opencode"
+rm -rf "$HOME/.cursor" "$HOME/.codex" "$HOME/.hermes" "$HOME/.pi" "$HOME/.config/opencode" "$HOME/.claude"
 assert_eq "auto: nothing present falls back to cursor" "cursor" "$(detect)"
-mkdir -p "$HOME/.pi/agent"; assert_eq "auto: pi agent dir" "pi" "$(detect)"
+mkdir -p "$HOME/.claude"; assert_eq "auto: only ~/.claude gives claude" "claude" "$(detect)"
+mkdir -p "$HOME/.pi/agent"; assert_eq "auto: pi agent dir beats ~/.claude" "pi" "$(detect)"
 mkdir -p "$HOME/.hermes"; assert_eq "auto: hermes dir" "hermes" "$(detect)"
 mkdir -p "$HOME/.config/opencode"; assert_eq "auto: opencode dir" "opencode" "$(detect)"
 mkdir -p "$HOME/.codex"; assert_eq "auto: codex dir" "codex" "$(detect)"
 mkdir -p "$HOME/.cursor"; assert_eq "auto: cursor dir wins" "cursor" "$(detect)"
 rm -rf "$HOME/.cursor"
+mkdir -p "$HOME/.claude"
 : >"$LOG"
 run_args --host auto --project-root "$PROJ" --dry-run --skip-rtk-init --skip-cm-doctor
 assert_eq "auto: codex dir (again)" "codex" "$(sed -n 's/^=== .*(host=\(.*\)) ===$/\1/p' <<<"$TL_OUT")"
