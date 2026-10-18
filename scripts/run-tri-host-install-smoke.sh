@@ -58,7 +58,10 @@ sb_trihost_alive() {
 sb_trihost_kill_tree() {
   local pids p i alive
   pids="$(printf '%s\n' "$1"; sb_trihost_descendants "$1")"
-  for p in $pids; do kill -TERM "$p" 2>/dev/null || true; done
+  for p in $pids; do
+    # A process that already exited is not an error.
+    if kill -TERM "$p" 2>/dev/null; then :; fi
+  done
   for i in 1 2 3 4 5 6 7 8 9 10; do
     alive=0
     for p in $pids; do
