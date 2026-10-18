@@ -1,0 +1,37 @@
+{
+  "_comment": "Audited statements that no test can cover, removed from the coverage denominator by sbcov.py report. Every entry is validated on each run: the file must be in scope, file:line must hold a statement with that word, and a statement that is covered makes the entry stale (an error). kind is 'unreachable' (dead code that cannot run) or 'unmeasurable' (it runs, but the tracer cannot attribute it). Never add an entry to hide a coverage gap that a test could close.",
+  "entries": [
+    {
+      "file": ".planning/scripts/phase-lock.sh",
+      "line": 478,
+      "word": "cat",
+      "kind": "unreachable",
+      "reason": "The `\"\"|-h|--help)` arm of the final dispatch case is dead: the early dispatch at lines 31-46 has already exited for those values. The file is in the SB-managed .planning/ tree and may not be edited, so the dead code cannot be removed.",
+      "evidence": "Read lines 31-46 and 478-490 of .planning/scripts/phase-lock.sh: the early dispatch handles an empty command, -h and --help and exits before the final case runs."
+    },
+    {
+      "file": ".planning/scripts/phase-lock.sh",
+      "line": 490,
+      "word": "exit",
+      "kind": "unreachable",
+      "reason": "The `exit` that ends the same dead `\"\"|-h|--help)` arm; the early dispatch at lines 31-46 has already exited for those values. The file is in the SB-managed .planning/ tree and may not be edited.",
+      "evidence": "Same proof as line 478: the early dispatch at lines 31-46 of .planning/scripts/phase-lock.sh exits first."
+    },
+    {
+      "file": "hooks/lib/orchestrator-scheduler.sh",
+      "line": 797,
+      "word": "true",
+      "kind": "unmeasurable",
+      "reason": "The `|| true` after `tmpl=$(jq ...)` in sb_scheduler_mark_handoff_dispatched is a late-reported fallback that the tracer does not attribute to the statement. It does run.",
+      "evidence": "tests/hooks/test-orchestrator-failure-paths-scheduler-lib.sh fails when the fallback is removed; see docs/testing/coverage-campaign/README.md, Known measurement limits."
+    },
+    {
+      "file": "scripts/enterprise-e2e/lib/core.sh",
+      "line": 26,
+      "word": "*",
+      "kind": "unmeasurable",
+      "reason": "`done < <(\"$@\")` in enterprise_e2e_read_lines_to_array runs a dynamic command (`\"$@\"`): xtrace prints the resolved command, so the static word match fails. It does run.",
+      "evidence": "tests/scripts/test-enterprise-e2e-core-fixture.sh asserts the array that this process substitution fills."
+    }
+  ]
+}
