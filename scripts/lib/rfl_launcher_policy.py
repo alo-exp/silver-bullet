@@ -483,7 +483,11 @@ def _parse_available_hosts(raw: str | None) -> tuple[str, ...] | None:
 
 def _load_json_arg(raw: str | None, path: Path | None) -> Any:
     if path is not None:
-        return json.loads(path.read_text(encoding="utf-8"))
+        try:
+            text = path.read_text(encoding="utf-8")
+        except OSError as exc:
+            raise ValueError(f"cannot read {path}: {exc}") from exc
+        return json.loads(text)
     if raw:
         return json.loads(raw)
     raise ValueError("JSON payload required (--table-json or --table-json-file)")
