@@ -16,8 +16,17 @@ cleanup_pids() {
 PIDS=()
 trap 'cleanup_pids; tl_cleanup' EXIT
 
+# The script's `sleep 0.3` is replaced by a stub so timing never depends on machine load.
+# With the marker file present the stub instead waits (bounded) until the launched
+# process has exited, making the "node died immediately" case deterministic.
+REAL_SLEEP="$(command -v sleep)"
+tl_stub sleep 'if [[ -f "'"$TL_TMP"'/wait-for-exit" ]]; then
+  for _ in $(seq 100); do kill -0 "$(cat "'"$MINIMAX_OPENAI_PROXY_PID_FILE"'")" 2>/dev/null || exit 0; "'"$REAL_SLEEP"'" 0.05; done
+fi
+exit 0'
+
 # 1. fresh start: node is launched with the proxy script and the port env.
-tl_stub node 'echo "port=$MINIMAX_OPENAI_PROXY_PORT args=$*" >"'"$TL_TMP"'/node.args"; exec sleep 60'
+tl_stub node 'echo "port=$MINIMAX_OPENAI_PROXY_PORT args=$*" >"'"$TL_TMP"'/node.args"; exec "'"$REAL_SLEEP"'" 60'
 tl_run bash "$SCRIPT"
 assert_eq "fresh start exits 0" 0 "$TL_STATUS"
 assert_contains "announces url" "$TL_OUT" "MiniMax proxy: http://127.0.0.1:19999/v1"
@@ -55,6 +64,7 @@ wait "$PID2" 2>/dev/null || true
 
 # 4. node dies immediately: failure message names the log, exit 1.
 rm -f "$MINIMAX_OPENAI_PROXY_PID_FILE"
+touch "$TL_TMP/wait-for-exit"
 tl_stub node 'echo "boom" >&2; exit 3'
 tl_run bash "$SCRIPT"
 assert_eq "failed start exits 1" 1 "$TL_STATUS"

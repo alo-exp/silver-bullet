@@ -22,16 +22,19 @@ repo=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --file)
-      body_file="${2:-}"
-      shift $(( $# >= 2 ? 2 : 1 ))
+      [[ $# -ge 2 ]] || { echo "ERROR: $1 requires a value" >&2; usage >&2; exit 2; }
+      body_file="$2"
+      shift 2
       ;;
     --tag)
-      tag="${2:-}"
-      shift $(( $# >= 2 ? 2 : 1 ))
+      [[ $# -ge 2 ]] || { echo "ERROR: $1 requires a value" >&2; usage >&2; exit 2; }
+      tag="$2"
+      shift 2
       ;;
     --repo)
-      repo="${2:-}"
-      shift $(( $# >= 2 ? 2 : 1 ))
+      [[ $# -ge 2 ]] || { echo "ERROR: $1 requires a value" >&2; usage >&2; exit 2; }
+      repo="$2"
+      shift 2
       ;;
     -h|--help)
       usage

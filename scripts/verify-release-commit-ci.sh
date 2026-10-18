@@ -101,7 +101,9 @@ while true; do
       echo "✓ Release commit $COMMIT_SHA is fully green"
       exit 0
       ;;
-    missing|waiting)
+    *)
+      # Anything but "ready" (missing, waiting, or any unexpected state) keeps polling
+      # until the deadline, so the loop can never spin without sleeping.
       if (( $(date +%s) >= deadline )); then
         if [[ "$state" == "missing" ]]; then
           echo "::error::Release CI timed out waiting for GitHub workflow runs for commit $COMMIT_SHA: $details"
