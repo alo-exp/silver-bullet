@@ -40,8 +40,8 @@ for missing in domain scope finding; do
   assert_contains "fingerprint without --$missing explained" "$TL_ERR" "fingerprint requires --domain, --scope, and --finding"
 done
 add fingerprint --domain d --scope s --finding
-assert_eq "fingerprint --finding without value fails cleanly" 1 "$TL_STATUS"
-assert_contains "value-less option reported as missing" "$TL_ERR" "fingerprint requires --domain, --scope, and --finding"
+assert_eq "fingerprint --finding without value exits 2" 2 "$TL_STATUS"
+assert_contains "value-less option reported" "$TL_ERR" "--finding requires a value"
 add fingerprint --nope
 assert_eq "fingerprint unknown option fails" 1 "$TL_STATUS"
 assert_contains "fingerprint unknown option message" "$TL_ERR" "Unknown argument: --nope"
@@ -51,12 +51,14 @@ add dedup
 assert_eq "dedup without fingerprint fails" 1 "$TL_STATUS"
 assert_contains "dedup requires fingerprint" "$TL_ERR" "dedup requires --fingerprint"
 add dedup --fingerprint
-assert_eq "dedup value-less --fingerprint fails cleanly" 1 "$TL_STATUS"
-assert_contains "value-less --fingerprint reported" "$TL_ERR" "dedup requires --fingerprint"
+assert_eq "dedup value-less --fingerprint exits 2" 2 "$TL_STATUS"
+assert_contains "value-less --fingerprint reported" "$TL_ERR" "--fingerprint requires a value"
 add dedup --bogus
 assert_contains "dedup unknown option" "$TL_ERR" "Unknown argument: --bogus"
 add dedup --fingerprint abc123 --root
-assert_eq "dedup value-less --root falls back to an empty root: unique" "unique" "$TL_OUT"
+assert_eq "dedup value-less --root exits 2 (must not fail open)" 2 "$TL_STATUS"
+assert_contains "value-less --root reported" "$TL_ERR" "--root requires a value"
+assert_not_contains "no dedup verdict printed" "$TL_OUT" "unique"
 
 add dedup --fingerprint "$FP" --root "$R"
 assert_eq "nothing recorded -> unique" "unique" "$TL_OUT"
@@ -91,13 +93,22 @@ add prioritize --impact 1 --risk 1 --evidence-strength 1
 assert_eq "missing --effort fails" 1 "$TL_STATUS"
 assert_contains "prioritize requirement message" "$TL_ERR" "prioritize requires --impact, --risk, --evidence-strength, --effort"
 add prioritize --impact 1 --risk 1 --evidence-strength 1 --effort
-assert_eq "value-less --effort fails cleanly" 1 "$TL_STATUS"
-assert_contains "value-less --effort reported" "$TL_ERR" "prioritize requires"
+assert_eq "value-less --effort exits 2" 2 "$TL_STATUS"
+assert_contains "value-less --effort reported" "$TL_ERR" "--effort requires a value"
 add prioritize --impact x --risk 1 --evidence-strength 1 --effort 1
 assert_eq "non-numeric input fails" 1 "$TL_STATUS"
 assert_contains "non-numeric input reports ValueError" "$TL_ERR" "ValueError"
 add prioritize --what
 assert_contains "prioritize unknown option" "$TL_ERR" "Unknown argument: --what"
+
+# every value-taking option rejects a missing value
+for spec in "adapter-dedup --fingerprint" "adapter-dedup --root" "adapter-create --payload" "adapter-create --root" \
+            "prioritize --impact" "prioritize --risk" "prioritize --evidence-strength" "fingerprint --domain" "fingerprint --scope" "dedup --root"; do
+  read -r sub opt <<<"$spec"
+  add "$sub" "$opt"
+  assert_eq "$sub $opt without value exits 2" 2 "$TL_STATUS"
+  assert_contains "$sub $opt without value explained" "$TL_ERR" "$opt requires a value"
+done
 
 # --- adapter-dedup ----------------------------------------------------------------
 A="$TL_TMP/adapter"; mkdir -p "$A/docs/issues"

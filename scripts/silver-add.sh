@@ -18,6 +18,14 @@ Fingerprint formula (canonical, shared with scripts/lib/evidence_common.py):
 EOF
 }
 
+# Reject an option given without a value (callers return 2).
+need_value() {
+  if [[ $# -lt 2 ]]; then
+    echo "$1 requires a value" >&2
+    return 1
+  fi
+}
+
 py_fingerprint() {
   local domain="$1" scope="$2" finding="$3"
   PYTHONPATH="${SCRIPT_DIR}/lib" python3 -c '
@@ -41,9 +49,9 @@ cmd_fingerprint() {
   local domain="" scope="" finding=""
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --domain) domain="${2:-}"; shift $(( $# >= 2 ? 2 : 1 )) ;;
-      --scope) scope="${2:-}"; shift $(( $# >= 2 ? 2 : 1 )) ;;
-      --finding) finding="${2:-}"; shift $(( $# >= 2 ? 2 : 1 )) ;;
+      --domain) need_value "$@" || return 2; domain="$2"; shift 2 ;;
+      --scope) need_value "$@" || return 2; scope="$2"; shift 2 ;;
+      --finding) need_value "$@" || return 2; finding="$2"; shift 2 ;;
       *) echo "Unknown argument: $1" >&2; usage >&2; return 1 ;;
     esac
   done
@@ -58,8 +66,8 @@ cmd_dedup() {
   local fp="" root="$PWD"
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --fingerprint) fp="${2:-}"; shift $(( $# >= 2 ? 2 : 1 )) ;;
-      --root) root="${2:-}"; shift $(( $# >= 2 ? 2 : 1 )) ;;
+      --fingerprint) need_value "$@" || return 2; fp="$2"; shift 2 ;;
+      --root) need_value "$@" || return 2; root="$2"; shift 2 ;;
       *) echo "Unknown argument: $1" >&2; usage >&2; return 1 ;;
     esac
   done
@@ -94,10 +102,10 @@ cmd_prioritize() {
   local impact="" risk="" evidence="" effort=""
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --impact) impact="${2:-}"; shift $(( $# >= 2 ? 2 : 1 )) ;;
-      --risk) risk="${2:-}"; shift $(( $# >= 2 ? 2 : 1 )) ;;
-      --evidence-strength) evidence="${2:-}"; shift $(( $# >= 2 ? 2 : 1 )) ;;
-      --effort) effort="${2:-}"; shift $(( $# >= 2 ? 2 : 1 )) ;;
+      --impact) need_value "$@" || return 2; impact="$2"; shift 2 ;;
+      --risk) need_value "$@" || return 2; risk="$2"; shift 2 ;;
+      --evidence-strength) need_value "$@" || return 2; evidence="$2"; shift 2 ;;
+      --effort) need_value "$@" || return 2; effort="$2"; shift 2 ;;
       *) echo "Unknown argument: $1" >&2; usage >&2; return 1 ;;
     esac
   done
@@ -136,8 +144,8 @@ cmd_adapter_dedup() {
   local fp="" root="$PWD"
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --fingerprint) fp="${2:-}"; shift $(( $# >= 2 ? 2 : 1 )) ;;
-      --root) root="${2:-}"; shift $(( $# >= 2 ? 2 : 1 )) ;;
+      --fingerprint) need_value "$@" || return 2; fp="$2"; shift 2 ;;
+      --root) need_value "$@" || return 2; root="$2"; shift 2 ;;
       *) echo "Unknown argument: $1" >&2; usage >&2; return 1 ;;
     esac
   done
@@ -183,8 +191,8 @@ cmd_adapter_create() {
   local payload="" root="$PWD"
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --payload) payload="${2:-}"; shift $(( $# >= 2 ? 2 : 1 )) ;;
-      --root) root="${2:-}"; shift $(( $# >= 2 ? 2 : 1 )) ;;
+      --payload) need_value "$@" || return 2; payload="$2"; shift 2 ;;
+      --root) need_value "$@" || return 2; root="$2"; shift 2 ;;
       *) echo "Unknown argument: $1" >&2; usage >&2; return 1 ;;
     esac
   done
