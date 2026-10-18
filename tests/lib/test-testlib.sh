@@ -16,6 +16,20 @@ else
   tl_fail "runtime root is outside the real home ($SB_RUNTIME_HOME_ROOT)"
 fi
 
+# Privilege escalation and system package managers are guarded: a test that reaches one (for
+# example a hook's prerequisite repair running `sudo apt-get install`) must never run it.
+for guarded in sudo apt-get apt dnf yum snap; do
+  assert_eq "$guarded resolves to the sandbox guard" "$TL_BIN/$guarded" "$(command -v "$guarded")"
+  tl_run "$guarded" install -y jq
+  assert_eq "$guarded guard fails" "1" "$TL_STATUS"
+done
+assert_contains "guard records the attempted command" "$(cat "$TL_TMP/guarded-commands.log")" "sudo install -y jq"
+# The guards stay on a PATH that hides other commands, and a test can still replace one.
+assert_eq "guard survives tl_path_without" "$(PATH="$(tl_path_without jq)" command -v sudo)" "$(PATH="$(tl_path_without jq)" command -v sudo | grep -F "$TL_TMP")"
+tl_stub apt-get 'echo custom-apt'
+tl_run apt-get
+assert_eq "a test can still stub a guarded command" "custom-apt" "$TL_OUT"
+
 tl_stub fakecmd 'echo "fake:$*"; exit 3'
 tl_run fakecmd a b
 assert_eq "stub output captured" "fake:a b" "$TL_OUT"
