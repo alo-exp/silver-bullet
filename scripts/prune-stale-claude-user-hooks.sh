@@ -2,6 +2,12 @@
 # Prune stale user-level Claude hooks that reference missing scripts (E2E-010).
 # Removes gsd-session-state.sh and other broken SessionStart entries from
 # ~/.claude/settings.json and deletes dangling files in ~/.claude/hooks/.
+#
+# When settings.json needs cleaning it is rewritten as a normalised JSON document
+# (2-space indent, trailing newline): numbers are re-serialised (2.50 -> 2.5,
+# 1e3 -> 1000.0) and duplicate object keys collapse to the last value. A file with
+# nothing to prune is not touched. The rewrite goes through a temp file renamed over
+# the real (symlink-resolved) path, so a failure never truncates the settings.
 set -euo pipefail
 
 CLAUDE_HOME="${CLAUDE_HOME:-${HOME}/.claude}"
@@ -23,7 +29,7 @@ fi
 
 if [[ -f "$SETTINGS" ]] && command -v python3 >/dev/null 2>&1; then
   python3 - "$SETTINGS" <<'PY'
-import json, os, re, sys
+import json, os, re, stat, sys, tempfile
 
 path = sys.argv[1]
 
@@ -91,9 +97,25 @@ for section in ("hooks",):
         doc[section][event] = filter_hooks(groups)
 
 if changed:
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(doc, f, indent=2, ensure_ascii=False)
-        f.write("\n")
+    out = json.dumps(doc, indent=2, ensure_ascii=False) + "\n"
+    try:
+        data = out.encode("utf-8")
+    except UnicodeEncodeError:
+        # A lone surrogate (e.g. "\ud800") cannot be written as UTF-8: keep it as an escape.
+        data = (json.dumps(doc, indent=2, ensure_ascii=True) + "\n").encode("utf-8")
+    # Write a temp file next to the real settings file and rename it over, so a failed
+    # write can never leave a truncated settings.json (and a symlinked one stays a symlink).
+    target = os.path.realpath(path)
+    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(target), prefix=".settings.json.")
+    try:
+        with os.fdopen(fd, "wb") as f:
+            f.write(data)
+        os.chmod(tmp, stat.S_IMODE(os.stat(target).st_mode))
+        os.replace(tmp, target)
+    except BaseException:
+        if os.path.exists(tmp):
+            os.unlink(tmp)
+        raise
     print("prune-stale-claude-user-hooks: cleaned settings.json SessionStart hooks", file=sys.stderr)
 PY
 fi
