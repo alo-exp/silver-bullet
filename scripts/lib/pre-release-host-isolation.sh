@@ -223,7 +223,8 @@ sb_smoke_write_rc_marker() {
 }
 
 sb_smoke_rc_markers_complete() {
-  local host mode dir file; dir="$(sb_smoke_rc_marker_dir)"
+  local host mode dir file
+  dir="$(sb_smoke_rc_marker_dir)"
   for host in cursor codex claude; do for mode in fresh upgrade; do
     file="${dir}/${host}-${mode}"
     [[ -f "$file" ]] && grep -qE '^status=(pass|skip)$' "$file" || return 1

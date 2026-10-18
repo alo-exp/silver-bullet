@@ -17,7 +17,10 @@ source "${REPO_ROOT}/tests/scripts/lib/five-tool-prerelease.sh"
 RC_CI_MODE=0
 [[ "${SB_RC_CI_MODE:-0}" == "1" || "${GITHUB_ACTIONS:-}" == "true" ]] && RC_CI_MODE=1
 
-HOST_FILTER=all MODE_FILTER=all DRY_RUN=0 REQUIRE_LIVE="${SB_RC_MATRIX_REQUIRE_LIVE:-}"
+HOST_FILTER=all
+MODE_FILTER=all
+DRY_RUN=0
+REQUIRE_LIVE="${SB_RC_MATRIX_REQUIRE_LIVE:-}"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --host) HOST_FILTER="$2"; shift 2 ;;

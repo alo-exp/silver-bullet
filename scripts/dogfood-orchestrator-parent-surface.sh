@@ -52,7 +52,11 @@ for artifact in \
   ".planning/phases/08-v5-full-surface/REVIEW.md" \
   ".planning/phases/08-v5-full-surface/SECURITY.md" \
   ".planning/orchestrator-composition-log.jsonl"; do
-  [[ -f "${ENTERPRISE_APP}/${artifact}" ]] && echo "PASS: artifact ${artifact}" || echo "FAIL: missing ${artifact}"
+  if [[ -f "${ENTERPRISE_APP}/${artifact}" ]]; then
+    echo "PASS: artifact ${artifact}"
+  else
+    echo "FAIL: missing ${artifact}"
+  fi
 done
 
 [[ -d "${ENTERPRISE_APP}/.planning/workflows/.archive" ]] && \
