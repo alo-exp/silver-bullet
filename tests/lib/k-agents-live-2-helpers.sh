@@ -118,7 +118,8 @@ EOS
   cat >"$d/scripts/lib/enterprise-e2e-outcome-assessment.sh" <<'EOS'
 enterprise_e2e_outcome_score_criterion() {
   echo "SCORE $*" >>"${STUB_LOG:-/dev/null}"
-  local var="SCORE_${1//-/_}"
+  local var="SCORE_${1//-/_}" failvar="SCOREFAIL_${1//-/_}"
+  [[ -z "${!failvar:-}" ]] || return 1
   if [[ -n "${!var+x}" ]]; then printf '%s' "${!var}"; else printf 'pass|stub ok'; fi
 }
 enterprise_e2e_outcome_composition_log_path() { printf '%s/.planning/orchestrator-composition-log.jsonl' "$1"; }

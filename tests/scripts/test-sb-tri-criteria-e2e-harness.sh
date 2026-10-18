@@ -197,6 +197,17 @@ echo '{}' >"$RUNS/$RUN2/orchestrator-composition-log.jsonl"
 run STUB_WF_COUNT= -- score --run "$RUN2" --track TC-01
 assert_contains "run-dir composition log counted, empty count shows 0" "$TL_OUT" "distinct_workflow_ids=0"
 mv "$RUNS/$RUN2/orchestrator-composition-log.jsonl" "$TL_TMP/comp2.bak"
+run SCOREFAIL_OUT_A=1 -- score --run "$RUN2" --track TC-01
+assert_contains "crashing scorer is a bare fail" "$TL_OUT" "  OUT-A: fail"
+run SCOREFAIL_OUT_ADV=1 -- score --run "$RUN2" --track TC-01
+assert_eq "crashing advisory scorer tolerated" 0 "$TL_STATUS"
+assert_contains "crashing advisory shows n/a" "$TL_OUT" "  OUT-ADV: n/a (advisory)"
+cp "$PL/TC-01-multiwf-chain/MATRIX.json" "$TL_TMP/m1.bak"
+jq '.rows[0].advisory_outcomes = 5' "$TL_TMP/m1.bak" >"$PL/TC-01-multiwf-chain/MATRIX.json"
+run X=1 -- score --run "$RUN2" --track TC-01
+assert_eq "unreadable advisory list is tolerated" 0 "$TL_STATUS"
+assert_not_contains "no advisory lines then" "$TL_OUT" "(advisory)"
+cp "$TL_TMP/m1.bak" "$PL/TC-01-multiwf-chain/MATRIX.json"
 run SCORE_OUT_A="fail|x" -- score --run "$RUN2" --track TC-01
 assert_eq "failing outcome" 1 "$TL_STATUS"; assert_contains "world fails" "$TL_OUT" "  OUT-WORLD-01: fail"
 run SCORE_OUT_A="" -- score --run "$RUN2" --track TC-01
@@ -250,6 +261,22 @@ tl_run env -u SB_RUNTIME_STATE_DIR SB_E2E_RUNS_DIR="$RUNS" STUB_LOG="$STUB_LOG" 
 assert_eq "live without jq passes" 0 "$TL_STATUS"
 LR="$(last_run TC-01)"
 assert_eq "no jq: greenfield not recorded, fixture branch not added" "false|null" "$(jq -r '[.greenfield,(.fixture_branch // "null")]|join("|")' "$RUNS/$LR/ledger.json")"
+# no work dir anywhere: the umbrella matrix default is used; a non-git fixture records "unknown"
+NOGIT="$TL_TMP/nogit"; mkdir -p "$NOGIT"
+jq --arg w "$NOGIT" '.fixture.work_dir_default=$w' "$PL/MATRIX.json" >"$TL_TMP/mx.json"; cp "$PL/MATRIX.json" "$TL_TMP/mx.bak"; cp "$TL_TMP/mx.json" "$PL/MATRIX.json"
+run X=1 -- live --track TC-01
+assert_eq "live with the matrix default work dir" 0 "$TL_STATUS"
+assert_contains "default work dir used" "$TL_OUT" "work_dir=$NOGIT"
+LR="$(last_run TC-01)"
+assert_eq "non-git fixture recorded as unknown" "unknown|unknown" "$(jq -r '[.fixture_branch,.fixture_sha]|join("|")' "$RUNS/$LR/ledger.json")"
+cp "$TL_TMP/mx.bak" "$PL/MATRIX.json"
+# a track whose matrix lacks the row cannot go live or cold
+cp "$PL/TC-02-dynamic-compose/MATRIX.json" "$TL_TMP/m2.bak"; echo '{"rows":[]}' >"$PL/TC-02-dynamic-compose/MATRIX.json"
+run X=1 -- live --track TC-02 --work-dir "$WORK"
+assert_eq "live with unknown row" 1 "$TL_STATUS"
+run X=1 -- cold --track TC-02 --work-dir "$WORK"
+assert_eq "cold with unknown row" 1 "$TL_STATUS"
+cp "$TL_TMP/m2.bak" "$PL/TC-02-dynamic-compose/MATRIX.json"
 mv "$PL/scripts/live-verify-track.sh" "$PL/scripts/live.bak"
 run X=1 -- live --track TC-01 --work-dir "$WORK"
 assert_eq "missing live script" 1 "$TL_STATUS"; assert_contains "missing live script message" "$TL_ERR" "ERROR: missing $PL/scripts/live-verify-track.sh"
@@ -284,6 +311,9 @@ run X=1 -- status --run "$RUN2"
 assert_contains "status of one run" "$TL_OUT" '"row_id": "TC-01"'
 run X=1 -- status --run nope
 assert_eq "status unknown run" "No ledger for nope" "$TL_OUT"
+EMPTY_RUNS="$TL_TMP/empty-runs"; mkdir -p "$EMPTY_RUNS"
+tl_run env SB_E2E_RUNS_DIR="$EMPTY_RUNS" bash "$S" status
+assert_eq "empty runs dir lists nothing" "=== sb-tri-criteria runs ===" "$TL_OUT"
 run X=1 -- status
 assert_contains "listing header" "$TL_OUT" "=== sb-tri-criteria runs ==="
 assert_contains "listing reads the redirected runs dir" "$TL_OUT" "TC-01  TC-01  scored  verdict=PASS  live=True"
