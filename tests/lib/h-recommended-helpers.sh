@@ -6,7 +6,7 @@
 # "repo" the libraries resolve helper scripts from is a staged copy whose helper
 # scripts only log their invocations.
 
-HR_RTLIB="$TL_REPO_ROOT/scripts/lib/recommended-tools"
+export HR_RTLIB="$TL_REPO_ROOT/scripts/lib/recommended-tools"
 HR_STAGE="$TL_TMP/hr-repo"
 HR_LOG="$TL_TMP/hr-calls.log"
 HR_PROJ="$TL_TMP/hr-proj"
