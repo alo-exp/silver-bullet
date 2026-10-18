@@ -10,6 +10,7 @@ import io
 import json
 import os
 import runpy
+import shutil
 import sys
 import tempfile
 import unittest
@@ -20,9 +21,32 @@ _spec = importlib.util.spec_from_file_location('verify_claim_support_under_test'
 vcs = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(vcs)
 
+_ROOT = None
+_patches = []
+
+
+def _no_network(*a, **k):
+    raise AssertionError('network access attempted')
+
+
+def setUpModule():
+    global _ROOT
+    _ROOT = tempfile.mkdtemp()
+    for target in ('socket.socket.connect', 'socket.getaddrinfo'):
+        p = mock.patch(target, side_effect=_no_network)
+        p.start()
+        _patches.append(p)
+
+
+def tearDownModule():
+    for p in _patches:
+        p.stop()
+    _patches.clear()
+    shutil.rmtree(_ROOT, ignore_errors=True)
+
 
 def tmpdir():
-    return tempfile.mkdtemp()
+    return tempfile.mkdtemp(dir=_ROOT)
 
 
 def put_jsonl(d, name, rows):
@@ -125,6 +149,96 @@ class TestScore(unittest.TestCase):
         claim = 'alpha bravo charlie delta'
         status, score, notes = vcs.compute_support_score(claim, [claim, 'zzz'])
         self.assertEqual((status, score), ('supported', 1.0))
+
+
+class TestScoreBoundaries(unittest.TestCase):
+    """Exact threshold and note boundaries of compute_support_score."""
+
+    def score(self, claim, *quotes):
+        return vcs.compute_support_score(claim, list(quotes))
+
+    def test_status_thresholds(self):
+        # (tokens, numbers, years, entities) = (0.5, 1, 1, 0) -> exactly 0.6
+        self.assertEqual(self.score('alpha bravo 2020 Qux', 'alpha 2020')[:2], ('supported', 0.6))
+        # (0, 1, 1, 0.5) -> exactly 0.5: still partial
+        self.assertEqual(self.score('alpha 2020 Qux, Zed', 'Qux 2020')[:2], ('partial', 0.5))
+        # (0.5, 0, 1, 0) -> exactly 0.35: partial
+        self.assertEqual(self.score('alpha bravo 12 Qux', 'alpha 13')[:2], ('partial', 0.35))
+        # (0.25, 0, 1, 0) -> 0.25: just below 0.35
+        self.assertEqual(self.score('alpha bravo charlie delta 12 Qux', 'alpha 13')[:2], ('needs_review', 0.25))
+        # (0.75, 0, 0, 0) -> 0.3: just below the partial threshold
+        self.assertEqual(self.score('alpha bravo charlie delta 2020 Qux', 'alpha bravo charlie 2019')[:2],
+                         ('needs_review', 0.3))
+        self.assertEqual(self.score('alpha bravo 12 Qux, Zed', 'Zed 13')[:2], ('needs_review', 0.25))
+
+    def test_just_above_and_below_sixty(self):
+        status, score, _ = self.score('Hi', 'Hi there')  # 0.6000000000000001 rounded to 0.6
+        self.assertEqual((status, score), ('supported', 0.6))
+        # (0.25, 1, 1, 0.5) = 0.6 also supported; (0.25, 1, 1, 0) = 0.5 partial
+        self.assertEqual(self.score('alpha bravo charlie delta 2020 Qux, Zed', 'charlie 2020 Qux')[:2],
+                         ('supported', 0.6))
+        self.assertEqual(self.score('alpha bravo charlie delta 2020 Qux', 'charlie 2020')[:2], ('partial', 0.5))
+
+    TEN_TOKENS = 'aaaa bbbb cccc dddd eeee ffff gggg hhhh iiii jjjj'
+
+    def test_lexical_overlap_note_boundary(self):
+        _, _, at = self.score(self.TEN_TOKENS, 'aaaa bbbb cccc')
+        _, _, below = self.score(self.TEN_TOKENS, 'aaaa bbbb')
+        self.assertNotIn('low lexical overlap', at)
+        self.assertIn('low lexical overlap', below)
+
+    def test_number_note_boundary(self):
+        _, _, at = self.score('alpha 10 20', 'alpha 10')
+        _, _, below = self.score('alpha 10 20 30', 'alpha 10')
+        self.assertNotIn('number mismatch', at)
+        self.assertIn('number mismatch', below)
+        _, _, full = self.score('alpha 10 20', 'alpha 10 20')
+        self.assertNotIn('number mismatch', full)
+
+    ENTITIES = 'Alpha, Bravo, Charlie, Delta, Echo, Foxtrot, Golf, Hotel, India, Juliet'
+
+    def test_entity_note_boundary(self):
+        _, _, at = self.score(self.ENTITIES, 'Alpha, Bravo, Charlie')
+        _, _, below = self.score(self.ENTITIES, 'Alpha, Bravo')
+        self.assertNotIn('entity mismatch', at)
+        self.assertIn('entity mismatch', below)
+
+    def test_year_note_boundary(self):
+        _, _, partial = self.score('alpha 2019 2020', 'alpha 2020')
+        _, _, full = self.score('alpha 2019 2020', 'alpha 2019 2020')
+        self.assertIn('year mismatch', partial)
+        self.assertNotIn('year mismatch', full)
+
+    def test_tie_keeps_first_quote_notes(self):
+        claim = 'alpha bravo charlie delta 2020 Qux, Zed'
+        first = 'alpha bravo 2020'      # (0.5, 1, 1, 0) -> 0.6, entity mismatch
+        second = 'charlie 2020 Qux'     # (0.25, 1, 1, 0.5) -> 0.6, low lexical overlap
+        s1 = self.score(claim, first)
+        s2 = self.score(claim, second)
+        self.assertEqual((s1[1], s2[1]), (0.6, 0.6))
+        self.assertNotEqual(s1[2], s2[2])
+        self.assertEqual(self.score(claim, first, second)[2], s1[2])
+        self.assertEqual(self.score(claim, second, first)[2], s2[2])
+
+
+class TestInferWindows(unittest.TestCase):
+    CLAIM = 'Windowed claim.'
+
+    def doc(self, end_index):
+        """Claim, blank line, filler, then '[7]' ending exactly at end_index."""
+        head = self.CLAIM + '\n\n'
+        filler = 'x' * (end_index - len(head) - 3)
+        return head + filler + '[7]'
+
+    def test_forward_window_800(self):
+        self.assertEqual(vcs.infer_citation_numbers_from_context(self.doc(800), self.CLAIM), [7])
+        self.assertEqual(vcs.infer_citation_numbers_from_context(self.doc(801), self.CLAIM), [])
+
+    def test_unparagraphed_window_1200(self):
+        def one_para(end):
+            return self.CLAIM + ' ' + 'x' * (end - len(self.CLAIM) - 1 - 3) + '[7]'
+        self.assertEqual(vcs.infer_citation_numbers_from_context(one_para(1200), self.CLAIM), [7])
+        self.assertEqual(vcs.infer_citation_numbers_from_context(one_para(1201), self.CLAIM), [])
 
 
 class TestLocators(unittest.TestCase):
