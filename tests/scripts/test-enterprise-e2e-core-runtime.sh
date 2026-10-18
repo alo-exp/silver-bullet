@@ -70,9 +70,15 @@ run_detached "echo 'Claude marketplaces registered' >>\"\$2\"; echo $DEAD_PID" "
 assert_eq "install: marker seen once the child exited counts as success" 0 "$TL_STATUS"
 rm -f "$TL_BIN/grep"
 # Timeout: sleep advances SECONDS; the installer pid stays alive.
-run_detached 'tail -f /dev/null >/dev/null 2>&1 & echo $!' "" 'sleep() { SECONDS=$((SECONDS + 200)); }; trap "pkill -P \$\$ tail || true" EXIT'
+# The "installer" is a tail started in the stub's subshell; its pid is recorded so the test
+# can stop exactly that process afterwards (pkill -P on the test shell never matched it).
+run_detached 'tail -f /dev/null >/dev/null 2>&1 & echo $! >"'"$TL_TMP"'/installer.pid"; echo $!' "" 'sleep() { SECONDS=$((SECONDS + 200)); }'
 assert_eq "install: timeout fails" 1 "$TL_STATUS"
 assert_contains "install: timeout message" "$TL_ERR" "ERROR: install-claude timed out after 300s — see $LOGF"
+installer_pid="$(cat "$TL_TMP/installer.pid")"
+kill "$installer_pid" 2>/dev/null || true
+for _ in 1 2 3 4 5 6 7 8 9 10; do kill -0 "$installer_pid" 2>/dev/null || break; command -p sleep 0.2; done
+assert_eq "install: timed-out installer stopped by the test" 1 "$(kill -0 "$installer_pid" 2>/dev/null && echo 0 || echo 1)"
 
 # Interactive branch needs a real tty on stdin and stdout: drive it through a pty.
 printf '' >"$LOGF"
