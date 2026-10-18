@@ -103,6 +103,17 @@ jobs:
           sudo apt-get install -y jq git expect
           python3 -m pip install -r requirements-dev.txt
 
+      # TEMPORARY diagnostic: every runner shutdown happens while
+      # tests/scripts/test-rt-receipts.sh is running. Run it alone with a live, timestamped
+      # trace on the step log (a dying job keeps only its last ~19 KB of log), then wait.
+      - name: Trace test-rt-receipts alone (temporary)
+        run: |
+          sudo apt-get install -y strace >/dev/null
+          strace -f -tt -qq -s 160 -e trace=execve,kill,tgkill,unlink,unlinkat,rename,renameat2,connect \
+            bash tests/run-all-tests.sh tests/scripts/test-rt-receipts.sh 2>&1 \
+            | grep -vE 'execve\("/usr/bin/(jq|cat|dirname|basename|mkdir|date|head|tr|sed|awk|grep)"' || true
+          for i in $(seq 1 12); do sleep 10; echo "## alive $(date -u +%T)"; done
+
       - name: Run all test suites
         run: bash tests/run-all-tests.sh --jobs 2
 
