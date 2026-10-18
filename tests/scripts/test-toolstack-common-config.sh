@@ -215,11 +215,11 @@ ts_call ts_tool_file_path '{}'
 assert_eq "missing file path is empty" "" "$TL_OUT"
 
 # --- ts_is_substantive_shell ---
-for c in 'git commit -m x' 'gh pr create --fill' 'gh release create v1' 'echo hi >> f' 'echo hi > f' 'cat a | tee b' 'cp a b' 'mv a b' 'sed -i s/a/b/ f' 'perl -i.bak -pe s/a/b/ f'; do
+for c in 'git commit -m x' 'gh pr create --fill' 'gh release create v1' 'echo hi >> f' 'echo hi > f' 'cat a | tee b' 'cp a b' 'mv a b' 'sed -i s/a/b/ f' 'perl -i.bak -pe s/a/b/ f' 'perl -pi -e s/a/b/ f' 'perl -lpi.bak -e s/a/b/ f' 'sed -Ei s/a/b/ f' 'sed -ni 5p f' 'sed -n -i 5p f' 'sed --in-place s/a/b/ f'; do
   ts_call ts_is_substantive_shell "$c"
   assert_eq "substantive: $c" 0 "$TL_STATUS"
 done
-for c in '' 'ls -la' 'git status' 'echo a >&2' 'cat a'; do
+for c in '' 'ls -la' 'git status' 'echo a >&2' 'cat a' 'sed -n 5p f' 'sed -E s/a/b/ f' 'sed --silent -e 5p f' 'perl -Mstrict -e 1' 'perl -ne print f'; do
   ts_call ts_is_substantive_shell "$c"
   assert_eq "not substantive: '$c'" 1 "$TL_STATUS"
 done
