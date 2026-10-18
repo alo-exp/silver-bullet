@@ -13,7 +13,7 @@ from unittest import mock
 
 from sbtest import REPO_ROOT, load_module
 
-pc = load_module("scripts/lib/rfl_policy_c.py", "rfl_policy_c")
+load_module("scripts/lib/rfl_policy_c.py", "rfl_policy_c")  # registers the module the CLI imports lazily
 lp = load_module("scripts/lib/rfl_launcher_policy.py")
 
 
@@ -430,13 +430,13 @@ class CliTest(unittest.TestCase):
         self.assertEqual((code, "requires --run-dir or --table-json" in err), (2, True))
 
     def test_write_policy_c(self):
-        with mock.patch.object(pc, "write_policy_c",
+        with mock.patch.object(sys.modules["rfl_policy_c"], "write_policy_c",
                                return_value={"ok": True, "markdown": "MD\n", "errors": []}) as w:
             code, out, err = self.cli("--write-policy-c", "--rung-dir", str(self.tmp),
                                       "--table-json", '{"a": 1}', "--current-phase", "p1")
         self.assertEqual((code, out, err), (0, "MD\n", ""))
         w.assert_called_once_with(self.tmp, {"a": 1}, current_phase="p1")
-        with mock.patch.object(pc, "write_policy_c",
+        with mock.patch.object(sys.modules["rfl_policy_c"], "write_policy_c",
                                return_value={"ok": False, "markdown": "MD\n",
                                              "errors": ["e1", "e2"]}):
             code, out, err = self.cli("--write-policy-c", "--rung-dir", str(self.tmp),
@@ -454,31 +454,31 @@ class CliTest(unittest.TestCase):
 
     def test_assert_policy_c(self):
         ok = {"ok": True, "errors": [], "rung_dir": "/r", "extra": 1}
-        with mock.patch.object(pc, "assert_policy_c", return_value=ok) as a:
+        with mock.patch.object(sys.modules["rfl_policy_c"], "assert_policy_c", return_value=ok) as a:
             code, out, _ = self.cli("--assert-policy-c", "--rung-dir", str(self.tmp))
         self.assertEqual((code, json.loads(out)), (0, {"ok": True, "errors": [], "rung_dir": "/r"}))
         a.assert_called_once_with(self.tmp, current_phase=None)
         bad = {"ok": False, "errors": ["x"], "rung_dir": "/r"}
-        with mock.patch.object(pc, "assert_policy_c", return_value=bad):
+        with mock.patch.object(sys.modules["rfl_policy_c"], "assert_policy_c", return_value=bad):
             code, out, _ = self.cli("--assert-policy-c", "--rung-dir", str(self.tmp))
         self.assertEqual((code, json.loads(out)["errors"]), (2, ["x"]))
         code, _, err = self.cli("--assert-policy-c")
         self.assertEqual((code, "requires --rung-dir" in err), (2, True))
 
     def test_record_rung_review_outcome(self):
-        with mock.patch.object(pc, "record_rung_review_outcome", return_value={"ok": 1}) as r:
+        with mock.patch.object(sys.modules["rfl_policy_c"], "record_rung_review_outcome", return_value={"ok": 1}) as r:
             code, out, _ = self.cli("--record-rung-review-outcome", "clean",
                                     "--run-dir", str(self.tmp), "--rung-id", "r1")
         self.assertEqual((code, json.loads(out)), (0, {"ok": 1}))
         r.assert_called_once_with(self.tmp, "clean", rung_id="r1")
-        with mock.patch.object(pc, "record_rung_review_outcome", side_effect=ValueError("bad")):
+        with mock.patch.object(sys.modules["rfl_policy_c"], "record_rung_review_outcome", side_effect=ValueError("bad")):
             code, _, err = self.cli("--record-rung-review-outcome", "x", "--run-dir", str(self.tmp))
         self.assertEqual((code, err), (2, "ERROR: bad\n"))
         code, _, err = self.cli("--record-rung-review-outcome", "clean")
         self.assertEqual((code, "requires --run-dir" in err), (2, True))
 
     def test_assert_rfl_advance_and_consecutive_clean(self):
-        with mock.patch.object(pc, "assert_rfl_advance", return_value={"ok": True}) as a:
+        with mock.patch.object(sys.modules["rfl_policy_c"], "assert_rfl_advance", return_value={"ok": True}) as a:
             code, out, _ = self.cli("--assert-rfl-advance", "--run-dir", str(self.tmp),
                                     "--next-action", "verify_1", "--prompt", "p",
                                     "--project-root", str(self.tmp), "--rung-dir", str(self.tmp),
@@ -486,15 +486,15 @@ class CliTest(unittest.TestCase):
         self.assertEqual((code, json.loads(out)), (0, {"ok": True}))
         a.assert_called_once_with(self.tmp, rung_dir=self.tmp, project_root=self.tmp,
                                   next_action="verify_1", current_phase="ph", prompt="p")
-        with mock.patch.object(pc, "assert_rfl_advance", return_value={"ok": False}) as a:
+        with mock.patch.object(sys.modules["rfl_policy_c"], "assert_rfl_advance", return_value={"ok": False}) as a:
             code, _, _ = self.cli("--assert-consecutive-clean", "--run-dir", str(self.tmp))
         self.assertEqual(code, 2)
         self.assertEqual(a.call_args.kwargs["next_action"], "next_rung_review")
-        with mock.patch.object(pc, "assert_rfl_advance", return_value={"ok": True}) as a:
+        with mock.patch.object(sys.modules["rfl_policy_c"], "assert_rfl_advance", return_value={"ok": True}) as a:
             self.cli("--assert-consecutive-clean", "--next-action", "stop")
         self.assertEqual(a.call_args.kwargs["next_action"], "stop")
         self.assertIsNone(a.call_args.args[0])
-        with mock.patch.object(pc, "assert_rfl_advance", return_value={"ok": True}) as a:
+        with mock.patch.object(sys.modules["rfl_policy_c"], "assert_rfl_advance", return_value={"ok": True}) as a:
             self.cli("--assert-rfl-advance", "--next-action", "")
         self.assertEqual(a.call_args.kwargs["next_action"], "task")
 
