@@ -109,6 +109,19 @@ assert_eq "upgrade exits 0" 0 "$TL_STATUS"
 assert_eq "upgrade installs: seed, install, re-install" 3 "$(grep -c '^install codex' <<<"$LOG")"
 assert_match "seed install runs against the prior tag checkout" '^install codex repo=.*/prior-tag ' "$(sed -n 1p <<<"$LOG")"
 assert_match "second install uses the current tree" '^install codex repo='"$T"' ' "$(sed -n 2p <<<"$LOG")"
+# a failing re-install after a successful install is tolerated
+cat >"$T/scripts/install-codex.sh" <<EOS
+#!/usr/bin/env bash
+n=\$(cat "$TL_TMP/inst.count" 2>/dev/null || echo 0); echo \$((n+1)) >"$TL_TMP/inst.count"
+echo "install codex call \$((n+1))" >>"\${STUB_LOG:?}"
+[[ \$((n+1)) -ge 3 ]] && exit 1
+exit 0
+EOS
+rm -f "$TL_TMP/inst.count"
+cell X=1 -- --host codex --mode upgrade --scope rc
+assert_eq "failing re-install does not fail the cell" 0 "$TL_STATUS"
+assert_contains "third install was attempted" "$LOG" "install codex call 3"
+k2_stub_script "$T/scripts/install-codex.sh" "install codex repo=\${SB_PRE_RELEASE_REPO_ROOT:-} home=\$HOME" STUB_FAIL_INSTALL
 # explicit previous tag, and a tag that does not exist (checkout fails, still succeeds)
 cell SB_RC_PREVIOUS_TAG=v1.0.0 -- --host codex --mode upgrade
 assert_eq "upgrade with explicit tag exits 0" 0 "$TL_STATUS"

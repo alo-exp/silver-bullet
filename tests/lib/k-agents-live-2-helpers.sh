@@ -46,7 +46,11 @@ EOS
   cat >"$d/scripts/silver-bullet" <<'EOS'
 #!/usr/bin/env bash
 echo "adapter $* roots=${SILVER_BULLET_SKILL_ROOTS:-} plugin=${SB_PLUGIN_ROOT:-}" >>"${STUB_LOG:?}"
-if [[ "${STUB_ADAPTER_MODE:-ok}" == ok ]]; then echo "BEGIN SKILL silver-verify"; else echo "no skill here"; fi
+case "${STUB_ADAPTER_MODE:-ok}" in
+  ok) echo "BEGIN SKILL silver-verify" ;;
+  fail) echo "adapter failed"; exit 1 ;;
+  *) echo "no skill here" ;;
+esac
 EOS
   chmod +x "$d/scripts/silver-bullet"
 }
