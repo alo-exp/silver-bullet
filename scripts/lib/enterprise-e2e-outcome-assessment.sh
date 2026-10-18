@@ -359,9 +359,9 @@ enterprise_e2e_outcome_log_has_workflow_evidence_written() {
   enterprise_e2e_outcome_log_matches "$row_log" \
     'WROTE:.*\.planning/workflows/|Evidence[[:space:]]+written[[:space:]]+to[[:space:]]+\.planning/workflows/|\.planning/workflows/[[:alnum:]_.-]+\.md' && return 0
   enterprise_e2e_outcome_log_matches "$row_log" \
-    'WROTE:.*\.planning/reviews/|\.planning/reviews/[[:alnum_]_.-]+\.md' && return 0
+    'WROTE:.*\.planning/reviews/|\.planning/reviews/[[:alnum:]_.-]+\.md' && return 0
   enterprise_e2e_outcome_log_matches "$row_log" \
-    'WROTE:.*\.planning/ship-readiness/|\.planning/ship-readiness/[[:alnum_]_.-]+\.md' && return 0
+    'WROTE:.*\.planning/ship-readiness/|\.planning/ship-readiness/[[:alnum:]_.-]+\.md' && return 0
   return 1
 }
 
