@@ -41,7 +41,6 @@ assert_eq "evidence: trailing junk returns failure and keeps no evidence" "1|" "
 NOW="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 assert_eq "parse time" "1577836800" "$(rt_attestation_parse_time_epoch 2020-01-01T00:00:00Z)"
 assert_eq "parse time: invalid" "1" "$(rc_of rt_attestation_parse_time_epoch garbage)"
-rm -rf "$(dirname "$PA")"
 RP="$(mk_receipt rv cs-v ' | .nonce="nonce-1" | .expected_tools={graphify:["query_graph","get_node"]} | .post_config_hashes={mcp:"M",hooks:"H"}')"
 RECEIPT="$(jq -c . "$RP")"
 att() { # <jq filter on the good attestation>
