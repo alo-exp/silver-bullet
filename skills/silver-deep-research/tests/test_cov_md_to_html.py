@@ -76,6 +76,31 @@ class TestContentSection(unittest.TestCase):
         self.assertNotIn("executive-summary", m._convert_content_section("## Other\ntext"))
 
 
+class TestDivBalance(unittest.TestCase):
+    def assert_balanced(self, md):
+        html = m._convert_content_section(md)
+        self.assertEqual(html.count("<div"), html.count("</div>"), html)
+        return html
+
+    def test_summary_followed_by_sections(self):
+        html = self.assert_balanced("## Executive Summary\ntext\n## Findings\nbody\n## More\nx")
+        # the summary wrapper closes before the next section opens
+        self.assertLess(html.index('class="executive-summary"'), html.index("Findings"))
+        self.assertIn("</div></div>\n<div class=\"section\">", html)
+
+    def test_summary_only(self):
+        self.assert_balanced("## Executive Summary\ntext")
+
+    def test_no_summary(self):
+        self.assert_balanced("## Findings\nbody\n## More\nx")
+
+    def test_summary_not_first_and_adjacent_headings(self):
+        self.assert_balanced("## Intro\nx\n## Executive Summary\n## Findings\nbody")
+
+    def test_raw_html_divs_in_body_do_not_confuse_balance(self):
+        self.assert_balanced("## Executive Summary\n<div>raw</div>\n## Findings\nbody")
+
+
 class TestLists(unittest.TestCase):
     def test_unordered_both_markers(self):
         out = m._convert_lists("- a\n* b\ntext")
