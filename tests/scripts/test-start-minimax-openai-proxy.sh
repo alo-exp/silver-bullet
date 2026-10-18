@@ -25,6 +25,14 @@ tl_stub sleep 'if [[ -f "'"$TL_TMP"'/wait-for-exit" ]]; then
 fi
 exit 0'
 
+# The script backgrounds node and returns at once (its sleep is stubbed), so the stubbed
+# node may not have written node.args yet: wait for it, bounded, before reading it.
+wait_for_node_args() {
+  local _
+  for _ in $(seq 200); do [[ -s "$TL_TMP/node.args" ]] && return 0; "$REAL_SLEEP" 0.05; done
+  return 1
+}
+
 # 1. fresh start: node is launched with the proxy script and the port env.
 tl_stub node 'echo "port=$MINIMAX_OPENAI_PROXY_PORT args=$*" >"'"$TL_TMP"'/node.args"; exec "'"$REAL_SLEEP"'" 60'
 tl_run bash "$SCRIPT"
@@ -34,8 +42,9 @@ assert_contains "mentions OPENAI_CUSTOM_URL" "$TL_OUT" "OPENAI_CUSTOM_URL=http:/
 assert_file_exists "pid file written" "$MINIMAX_OPENAI_PROXY_PID_FILE"
 PID1="$(cat "$MINIMAX_OPENAI_PROXY_PID_FILE")"
 PIDS+=("$PID1")
+wait_for_node_args || true
 assert_match "pid is numeric" '^[0-9]+$' "$PID1"
-ARGS="$(cat "$TL_TMP/node.args")"
+ARGS="$(cat "$TL_TMP/node.args" 2>/dev/null || true)"
 assert_contains "node got proxy script path" "$ARGS" "scripts/minimax-openai-proxy.mjs"
 assert_contains "node got the port env" "$ARGS" "port=19999"
 
@@ -58,6 +67,7 @@ assert_eq "stale pid restarts" 0 "$TL_STATUS"
 PID2="$(cat "$MINIMAX_OPENAI_PROXY_PID_FILE")"
 PIDS+=("$PID2")
 assert_contains "restart announces url" "$TL_OUT" "MiniMax proxy: http://127.0.0.1:19999/v1"
+wait_for_node_args || true
 assert_file_exists "node launched again" "$TL_TMP/node.args"
 kill "$PID2" 2>/dev/null || true
 wait "$PID2" 2>/dev/null || true
