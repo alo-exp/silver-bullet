@@ -37,7 +37,7 @@ note_ux_if_needed() {
   local status
   status="$(cat "$STATUS_FILE" 2>/dev/null || true)"
   if grep -qiE 'hookEventName|Stop hook error' <<<"$status"; then
-    if ! grep -q 'monitor-supervisor.*hookEventName' "$SUPERVISOR_LOG" 2>/dev/null; then
+    if ! grep -q 'UX note: hookEventName' "$SUPERVISOR_LOG" 2>/dev/null; then
       log "UX note: hookEventName/Stop hook seen — see UX friction log in ROUND-1-LEDGER.md"
     fi
   fi
