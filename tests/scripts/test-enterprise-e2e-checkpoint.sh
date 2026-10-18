@@ -115,4 +115,18 @@ assert_contains "appended file holds the block" "$(cat "$OUT_LEDGER")" "| Ledger
 cp_run --append "$OUT_LEDGER" -- "SB_E2E_LEDGER_FILE=$PART" "SB_E2E_CHECKPOINT_DRIVER_PID=$$"
 assert_eq "a second append keeps both blocks" "2" "$(grep -c '^## Poll checkpoint' "$OUT_LEDGER")"
 
+# --- helpers that fail or are missing: the checkpoint still reports --------------------------
+STAGE2="$TL_TMP/stage2"
+e2e_stage_scripts "$STAGE2"
+e2e_stage_override "$STAGE2" scripts/lib/enterprise-e2e-ledger-reconcile.sh 'enterprise_e2e_ledger_file_path() { echo "${SB_E2E_LEDGER_FILE:-}"; }
+enterprise_e2e_ledger_reconcile_status() { return 1; }
+enterprise_e2e_ledger_pass_summary() { return 1; }'
+e2e_stage_override "$STAGE2" scripts/lib/enterprise-e2e-live-common.sh "source '$TL_REPO_ROOT/scripts/enterprise-e2e/lib/core.sh'
+unset -f enterprise_e2e_row_attempt_log"
+SCRIPT="$STAGE2/scripts/enterprise-e2e/enterprise-e2e-checkpoint.sh"
+cp_run -- "SB_E2E_LEDGER_FILE=$FULL" "SB_E2E_CHECKPOINT_DRIVER_PID=$$"
+assert_eq "failing reconcile helpers do not break the checkpoint" 0 "$TL_STATUS"
+assert_contains "reconcile failure is reported as UNKNOWN with zero passes" "$TL_OUT" "| Ledger pass | **0/22** (reconcile: UNKNOWN) |"
+assert_contains "a missing attempt-log helper leaves the last row unknown" "$TL_OUT" "| Last row ~ | ? |"
+
 tl_results
