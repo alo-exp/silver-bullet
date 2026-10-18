@@ -143,12 +143,11 @@ rm -f "$STATE"
 tl_run bash -c 'cd "$1" && source "$2" --skip-workflow-check; echo "after-source rc=$?"' _ "$NOCFG" "$SNIP"
 assert_contains "sourced bypass returns to caller" "$TL_OUT" "after-source rc=0"
 tl_run bash -c 'cd "$1" && source "$2"; echo "after-source rc=$?"' _ "$NOCFG" "$SNIP"
-# Observed behaviour: the sourced script's `set -e` + ERR trap are inherited by the caller, so the
-# `return 1` of a failed gate triggers `exit 0` in the caller's shell: the caller stops (the code
-# after `source` never runs, so the deploy cannot proceed) but its exit status is 0.
+# Observed behaviour: the sourced script's `set -e` is inherited by the caller, so the failed gate's
+# `return 1` ends the caller's shell with status 1 (the code after `source` never runs).
 assert_contains "sourced failure reports the block" "$TL_OUT" "No workflow state file found"
 assert_not_contains "sourced failure ends the caller shell" "$TL_OUT" "after-source"
-assert_eq "sourced failure caller exit status" 0 "$TL_STATUS"
+assert_eq "sourced failure caller exit status" 1 "$TL_STATUS"
 
 # --- libraries absent in a copied tree ----------------------------------------------------------
 CP="$TL_TMP/copytree"; mkdir -p "$CP/scripts" "$CP/hooks/lib"
