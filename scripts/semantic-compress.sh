@@ -135,7 +135,7 @@ if [[ -d "$src_root" ]]; then
     [[ -n "$f" ]] || continue
     mime=$(file --mime-type -b "$f" 2>/dev/null || echo "application/octet-stream")
     [[ "$mime" == text/* ]] && TEXT_SRC+=("$f")
-  done < <(find "$src_root" -type f 2>/dev/null | grep -Ev "$exclude_pattern" | LC_ALL=C sort || true)
+  done < <(find "$src_root" -type f 2>/dev/null | grep -Ev "$exclude_pattern" | env LC_ALL=C sort || true)
 fi
 
 TEXT_DOC=()
@@ -144,7 +144,7 @@ if [[ -d "$REPO_ROOT/docs" ]]; then
     [[ -n "$f" ]] || continue
     mime=$(file --mime-type -b "$f" 2>/dev/null || echo "application/octet-stream")
     [[ "$mime" == text/* ]] && TEXT_DOC+=("$f")
-  done < <(find "$REPO_ROOT/docs" -name '*.md' -type f 2>/dev/null | LC_ALL=C sort || true)
+  done < <(find "$REPO_ROOT/docs" -name '*.md' -type f 2>/dev/null | env LC_ALL=C sort || true)
 fi
 
 [[ ${#TEXT_SRC[@]} -eq 0 && ${#TEXT_DOC[@]} -eq 0 ]] && exit 0
