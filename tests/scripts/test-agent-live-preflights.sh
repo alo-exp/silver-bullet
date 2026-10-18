@@ -99,6 +99,14 @@ assert_eq "claude preflight ensured the plugin cache for the staged root" "$SB" 
 assert_file_exists "claude preflight ran the prune script" "$SB/prune.ran"
 assert_contains "claude preflight announces plugin cache readiness" "$TL_ERR" "OK: Claude plugin cache ready"
 
+# a CLI without an `auth status` subcommand is treated as "no complaint" (lenient)
+mkdir -p "$BINS/claude-noauth"
+printf '#!/usr/bin/env bash\ncase "$1" in --version) echo "claude 1.0"; exit 0 ;; esac\nexit 4\n' >"$BINS/claude-noauth/claude"
+chmod +x "$BINS/claude-noauth/claude"
+tl_run env CLAUDE_BIN="$BINS/claude-noauth/claude" bash "$PF" --sb-root "$SB"
+assert_eq "claude preflight tolerates a failing auth status call" "0" "$TL_STATUS"
+assert_contains "claude preflight reports the auth surface present" "$TL_OUT" "OK: Claude auth surface present"
+
 # a failing prune script never blocks
 tl_run env CLAUDE_BIN="$BINS/claude-ok/claude" PRUNE_RC=1 bash "$PF" --sb-root "$SB"
 assert_eq "claude preflight ignores a failing prune script" "0" "$TL_STATUS"

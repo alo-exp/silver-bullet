@@ -202,7 +202,7 @@ assert_eq "pi env summary line" \
 # --export output must be eval-able and reproduce the environment, quoting included.
 tl_run env SB_ORCHESTRATOR_WORKER='two words' bash "$SCRIPTS/agent-claude/env.sh" --export
 assert_contains "export quotes values with spaces" "$TL_OUT" "export SB_ORCHESTRATOR_WORKER=two\\ words"
-evaled="$(env -i PATH="$PATH" bash -c 'eval "$1"; printf "%s|%s" "$CLAUDE_USE_INTERACTIVE" "$SB_AGENT_CLAUDE_DELEGATE"' _ "$TL_OUT")"
+evaled="$(env -u CLAUDE_USE_INTERACTIVE -u SB_AGENT_CLAUDE_DELEGATE bash -c 'eval "$1"; printf "%s|%s" "$CLAUDE_USE_INTERACTIVE" "$SB_AGENT_CLAUDE_DELEGATE"' _ "$TL_OUT")"
 assert_eq "export output evals to the delegate env" "1|1" "$evaled"
 
 # A pinned model that violates the MiMo policy makes env.sh fail (errexit) instead of printing.
@@ -212,6 +212,18 @@ assert_contains "pi env names the violation" "$TL_ERR" "PI_MODEL must be mimo-v2
 tl_run env OPENCODE_MODEL=other bash "$SCRIPTS/agent-opencode/env.sh"
 assert_eq "opencode env fails for a non-pinned model" "2" "$TL_STATUS"
 assert_contains "opencode env names the violation" "$TL_ERR" "OPENCODE_MODEL must be mimo-v2.5"
+
+# A blank line in the variable-name list is skipped, not exported as an empty name.
+BLANKROOT="$TL_TMP/blank-env-root"
+mkdir -p "$BLANKROOT"
+cp -R "$SCRIPTS" "$BLANKROOT/scripts"
+for host in claude codex opencode pi; do
+  printf '\nagent_%s_delegate_env_names() { printf "SB_ORCHESTRATOR_WORKER\\n\\nSB_ORCHESTRATOR_PARENT\\n"; }\n' "$host" \
+    >>"$BLANKROOT/scripts/agent-$host/lib.sh"
+  tl_run bash "$BLANKROOT/scripts/agent-$host/env.sh" --export
+  assert_eq "$host env --export skips blank names" "export SB_ORCHESTRATOR_WORKER=1
+export SB_ORCHESTRATOR_PARENT=0" "$TL_OUT"
+done
 
 # ---------------------------------------------------------------- invoke.sh aliases
 for host in claude codex opencode; do

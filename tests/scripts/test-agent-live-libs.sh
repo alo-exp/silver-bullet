@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # agent-{claude,codex,opencode,pi}/lib.sh helper functions: runtime env defaults, delegate env,
 # folder-trust seeding, ephemeral config dir lifecycle, settings sanitising and plugin-cache checks.
-# Everything runs in an `env -i` shell with the sandbox HOME; no host CLI is launched.
+# Each case runs in a fresh bash with the delegation-related variables unset and the sandbox HOME;
+# no host CLI is launched.
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
@@ -10,10 +11,15 @@ SCRIPTS="$TL_REPO_ROOT/scripts"
 mkdir -p "$TL_TMP/tmp"
 
 # lib_run LIB SCRIPT [ENV=VAL...]: run SCRIPT after sourcing LIB in a clean environment.
+# (Not `env -i`: the coverage tracer is injected through BASH_ENV and must reach the child.)
 lib_run() {
-  local lib="$1" script="$2"
+  local lib="$1" script="$2" name
   shift 2
-  tl_run env -i HOME="$HOME" PATH="${LIB_PATH:-$PATH}" TMPDIR="$TL_TMP/tmp" "$@" \
+  local -a unset_args=()
+  while IFS= read -r name; do
+    unset_args+=(-u "$name")
+  done < <(compgen -e | grep -E '^(SB_|SILVER_BULLET_|CLAUDE_|CODEX_|OPENCODE_|PI_|RTK_|AGENT_)' || true)
+  tl_run env "${unset_args[@]}" HOME="$HOME" PATH="${LIB_PATH:-$PATH}" TMPDIR="$TL_TMP/tmp" "$@" \
     bash -c "source '$lib'; $script"
 }
 
@@ -117,7 +123,7 @@ seed "agent_claude_seed_folder_trust '$W' '$CFG'" SB_AGENT_CLAUDE_SEED_FOLDER_TR
 assert_file_exists "folder trust still seeds the config dir with global off" "$CFG/.claude.json"
 assert_file_absent "folder trust global off writes no HOME file" "$HOME/.claude.json"
 rm -f "$HOME/.claude.json"
-tl_run env -i PATH="$PATH" bash -c "source '$CL'; agent_claude_seed_folder_trust '$W' ''; echo rc=\$?"
+tl_run env -u HOME bash -c "source '$CL'; agent_claude_seed_folder_trust '$W' ''; echo rc=\$?"
 assert_eq "folder trust without HOME and config dir is a no-op" "rc=0" "$TL_OUT"
 assert_file_absent "folder trust without HOME writes nothing" "$HOME/.claude.json"
 
