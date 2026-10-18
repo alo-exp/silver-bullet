@@ -101,7 +101,9 @@ tl_run bash "$RCM" --tool nonsense
 assert_eq "rcm invalid tool exits 2" "2" "$TL_STATUS"
 assert_contains "rcm invalid tool message" "$TL_ERR" "Invalid --tool: nonsense (use rtk|context_mode|all)"
 tl_run bash "$RCM" --tool
-assert_contains "rcm --tool without value defaults to all" "$TL_OUT" "Context Mode:"
+assert_eq "rcm --tool without value exits 0 on a healthy stack" "0" "$TL_STATUS"
+assert_contains "rcm --tool without value defaults to all (RTK section)" "$TL_OUT" "RTK:"
+assert_contains "rcm --tool without value defaults to all (Context Mode section)" "$TL_OUT" "Context Mode:"
 
 # rtk degraded: too old, hook missing
 tl_stub rtk 'case "$1" in --version) echo "rtk 0.30.1";; esac; exit 0'

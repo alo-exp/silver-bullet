@@ -5,6 +5,8 @@
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/h-recommended-helpers.sh"
+cd "$TL_TMP"
 
 RTLIB="$TL_REPO_ROOT/scripts/lib/recommended-tools"
 export RT_REPO_ROOT="$TL_REPO_ROOT"
@@ -14,8 +16,8 @@ rc_of() { local rc=0; "$@" >/dev/null 2>&1 || rc=1; printf '%s' "$rc"; }
 BIN2="$TL_TMP/vbin"; mkdir -p "$BIN2"
 printf '#!/usr/bin/env bash\nexit 0\n' >"$BIN2/okcmd"
 printf '#!/usr/bin/env bash\nexit 3\n' >"$BIN2/badcmd"
-printf '#!/usr/bin/env bash\ntrap "" TERM\nsleep 4\n' >"$BIN2/stubborn"
-printf '#!/usr/bin/env bash\nsleep 3\n' >"$BIN2/short"
+printf '#!/usr/bin/env bash\ntrap "" TERM\nsleep 2\n' >"$BIN2/stubborn"
+printf '#!/usr/bin/env bash\nsleep 2\n' >"$BIN2/short"
 printf '#!/usr/bin/env bash\nsleep 30\n' >"$BIN2/hang"
 chmod +x "$BIN2"/*
 vd() { # <env-assignments...> -- <args...>; runs in a fresh shell, prints rc
@@ -35,7 +37,7 @@ assert_eq "shared timeout helper: failure" "1" "$(vd RT_MODE=verify -- "$BIN2/ba
 assert_eq "timeout(1) runner: success" "0" "$(vd RT_MODE=verify RT_REPO_ROOT="$TL_TMP/no-repo" -- "$BIN2/okcmd")"
 assert_eq "timeout(1) runner: failure" "1" "$(vd RT_MODE=verify RT_REPO_ROOT="$TL_TMP/no-repo" -- "$BIN2/badcmd")"
 # neither helper nor timeout/gtimeout: watchdog
-NOTO="$(tl_path_without timeout gtimeout)"
+NOTO="$(hr_path_without timeout gtimeout)"
 assert_eq "watchdog: success" "0" "$(vd RT_MODE=verify RT_REPO_ROOT="$TL_TMP/no-repo" PATH="$NOTO" -- "$BIN2/okcmd")"
 assert_eq "watchdog: failure" "1" "$(vd RT_MODE=verify RT_REPO_ROOT="$TL_TMP/no-repo" PATH="$NOTO" -- "$BIN2/badcmd")"
 # kill(1) failing inside the watchdog: the command is left to finish on its own
@@ -62,7 +64,7 @@ assert_eq "watchdog: TERM-ignoring command is killed" "1" "$(cat "$RES/watchdog-
 assert_eq "watchdog: TERM that cannot be delivered ends the watchdog, command completes" "0" "$(cat "$RES/term-fails")"
 assert_eq "watchdog: a failed KILL is ignored and the command completes by itself" "0" "$(cat "$RES/kill-fails")"
 # no sleep(1): nothing can bound the run, so the probe is reported failed
-NOSLEEP="$(tl_path_without timeout gtimeout sleep)"
+NOSLEEP="$(hr_path_without timeout gtimeout sleep)"
 assert_eq "no sleep available -> failure" "1" "$(vd RT_MODE=verify RT_REPO_ROOT="$TL_TMP/no-repo" PATH="$NOSLEEP" -- "$BIN2/okcmd")"
 # errexit state is restored
 assert_eq "errexit preserved after the run" "e" "$(bash -c 'set -e; source "$1/vendor-doctor.sh"; rt_run_vendor_doctor "$2" >/dev/null 2>&1 || true; case $- in *e*) echo e;; *) echo x;; esac' _ "$RTLIB" "$BIN2/okcmd")"
@@ -75,7 +77,7 @@ assert_eq "second source is skipped" "ok" "$(bash -c 'source "$1/vendor-doctor.s
 runner() { env "$@" bash -c 'source "$1/vendor-doctor.sh"; rt_vendor_doctor_runner' _ "$RTLIB"; }
 assert_eq "runner: timeout" "timeout" "$(runner RT_X=1)"
 mkdir -p "$TL_TMP/gt"; printf '#!/bin/sh\nexit 0\n' >"$TL_TMP/gt/gtimeout"; chmod +x "$TL_TMP/gt/gtimeout"
-assert_eq "runner: gtimeout" "gtimeout" "$(runner PATH="$(tl_path_without timeout):$TL_TMP/gt")"
+assert_eq "runner: gtimeout" "gtimeout" "$(runner PATH="$(hr_path_without timeout):$TL_TMP/gt")"
 assert_eq "runner: none" "" "$(runner PATH="$NOTO")"
 
 # subcommand usability
