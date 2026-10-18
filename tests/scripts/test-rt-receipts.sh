@@ -6,6 +6,7 @@ set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/h-recommended-helpers.sh"
+cd "$TL_TMP"  # never run with the checkout as cwd: stubs and relative writes stay in the sandbox
 
 hr_stage_repo
 # shellcheck source=/dev/null

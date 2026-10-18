@@ -6,6 +6,10 @@ set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/h-recommended-helpers.sh"
+cd "$TL_TMP"  # never run with the checkout as cwd: stubs and relative writes stay in the sandbox
+# The checkout's tracked knowledge graph must never be touched by this test.
+REPO_GRAPH="$TL_REPO_ROOT/graphify-out/graph.json"
+GRAPH_BEFORE="$(cksum <"$REPO_GRAPH")|$(stat -c %Y "$REPO_GRAPH")"
 
 hr_stage_repo
 # shellcheck source=/dev/null
@@ -67,7 +71,7 @@ hr_nobin cat
 rm -rf "$HR_PROJ/graphify-out"
 
 # build index
-hr_bin graphify 'echo "graphify $*" >>"$HR_LOG"; mkdir -p graphify-out; echo "{}" >graphify-out/graph.json; exit "${HR_GRAPHIFY_RC:-0}"'
+hr_bin graphify 'echo "graphify $*" >>"$HR_LOG"; if [[ "$1" == update ]]; then mkdir -p graphify-out; echo "{}" >graphify-out/graph.json; fi; exit "${HR_GRAPHIFY_RC:-0}"'
 rm -rf "$HR_PROJ/graphify-out"
 : >"$HR_LOG"
 assert_eq "build index outside git fails" "1" "$(RT_PROJECT_ROOT="$NOGITPROJ" rc_of rt_graphify_worktree_build_index "$NOGITPROJ")"
@@ -124,7 +128,7 @@ assert_eq "skew: not reported" "1" "$(rc_of rt_probe_graphify_skill_package_skew
 hr_bin graphify 'echo "warning: skill is from graphify 0.9, package 1.2"'
 assert_eq "skew: reported" "0" "$(rc_of rt_probe_graphify_skill_package_skew)"
 assert_eq "skew: no graphify" "1" "$(PATH="$NOGRAPHIFY" rc_of rt_probe_graphify_skill_package_skew)"
-hr_bin graphify 'echo "graphify $*" >>"$HR_LOG"; mkdir -p graphify-out; echo "{}" >graphify-out/graph.json'
+hr_bin graphify 'echo "graphify $*" >>"$HR_LOG"; if [[ "$1" == update ]]; then mkdir -p graphify-out; echo "{}" >graphify-out/graph.json; fi'
 
 pg() { hr_state "$(rt_probe_graphify)"; }
 RT_HOST=goose; assert_eq "graphify: unsupported host" "unsupported|none||false" "$(pg)"; RT_HOST=cursor
@@ -395,4 +399,5 @@ out="$(rt_repair_agentmemory)"
 assert_contains "am repair: server started" "$(jq -c . <<<"$out")" '"server_started"'
 assert_file_exists "am repair: server log directory created" "$HOME/.agentmemory/server.log"
 
+assert_eq "the checkout's graphify-out/graph.json is untouched (content and mtime)" "$GRAPH_BEFORE" "$(cksum <"$REPO_GRAPH")|$(stat -c %Y "$REPO_GRAPH")"
 tl_results
