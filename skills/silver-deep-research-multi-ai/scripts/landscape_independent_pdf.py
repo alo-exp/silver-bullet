@@ -802,11 +802,9 @@ def _inline_fmt_raw(text: str, *, autolink: bool = True) -> str:
             matched = BARE_HTTP_URL_RE.match(text, i)
             if matched:
                 url, _trail = split_url_trailing_punct(matched.group(0))
-                lowered = url.lower()
-                if lowered.startswith("http://") or lowered.startswith("https://"):
-                    out.append(_html_ext_anchor(url, html.escape(url)))
-                    i += len(url)
-                    continue
+                out.append(_html_ext_anchor(url, html.escape(url)))
+                i += len(url)
+                continue
         out.append(html.escape(text[i]))
         i += 1
     return "".join(out)
