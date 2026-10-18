@@ -1679,7 +1679,7 @@ enterprise_e2e_outcome_score_newwf() {
   local has_worker=0 has_artifact=0 event_file
   event_file="$(enterprise_e2e_outcome_event_log_path "$state_dir")"
   if [[ -f "$event_file" ]] && command -v jq >/dev/null 2>&1; then
-    if jq -e '
+    if jq -e -s '
       [.[] | select(.type=="dispatch" and (
         (.payload.worker_template // "") == "NEW-WORKFLOW" or
         (.payload.skill // "") == "silver-new-workflow"
