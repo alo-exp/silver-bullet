@@ -591,7 +591,12 @@ def _resolve_features(feature_text: str) -> list[str]:
     for alias, feature in _FEATURE_ALIASES.items():
         if alias in lower and feature not in matched:
             matched.append(feature)
-    return matched or [text]
+    if matched:
+        return matched
+    for feature in _all_template_features():
+        if feature.lower() == lower:
+            return [feature]
+    return [text]
 
 
 def _matrix_entry_head_is_solution(
@@ -1303,7 +1308,9 @@ def _parse_core_set_bulk_claim(
     if not features:
         features = _default_inclusion_features()
     if re.search(r"startup[- ]weighted", text, re.IGNORECASE):
-        features.extend(("Quick onboarding", "Zero-infra bootstrap"))
+        for feature in ("Quick onboarding", "Zero-infra bootstrap"):
+            if feature not in features:
+                features.append(feature)
     for slug in slugs:
         for feature in features:
             _assign_support(support, slug, feature, True)
