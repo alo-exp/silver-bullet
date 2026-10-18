@@ -182,7 +182,7 @@ class BuildCursorHooksTest(unittest.TestCase):
         self.assertEqual(after[0]["matcher"], ".*")
         self.assertNotIn("timeout", after[0])
         self.assertEqual(h["stop"][0]["timeout"], 3)
-        self.assertNotIn("matcher", h["stop"][0])
+        self.assertEqual(h["stop"][0]["matcher"], ".*")  # absent matcher defaults to wildcard
 
     def test_missing_hooks_key(self):
         self.assertEqual(g.build_cursor_hooks({}), {"version": 1, "hooks": {}})
