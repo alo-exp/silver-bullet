@@ -29,6 +29,17 @@ tl_init() {
   fi
   export HOME="$TL_TMP/home"
   export PATH="$TL_BIN:$PATH"
+  # Guard privilege escalation and system package managers: code under test that reaches one
+  # (a hook's prerequisite repair runs `sudo apt-get install`) must record the attempt and
+  # fail, never change the machine; on CI runners sudo needs no password. Commands the code
+  # probes for to pick a platform branch (brew, launchctl, systemctl) are left alone so the
+  # branch taken stays the host's. tl_stub replaces a guard.
+  local guarded
+  for guarded in sudo apt-get apt dnf yum snap; do
+    printf '#!/usr/bin/env bash\nprintf "%%s %%s\\n" %q "$*" >>%q\nexit 1\n' \
+      "$guarded" "$TL_TMP/guarded-commands.log" >"$TL_BIN/$guarded"
+    chmod +x "$TL_BIN/$guarded"
+  done
   export SILVER_BULLET_RUNTIME="$runtime"
   unset SB_RUNTIME_HOME_ROOT SB_RUNTIME_STATE_DIR SB_RUNTIME_PLUGIN_CACHE_ROOT SB_RUNTIME_NAME \
     SB_RUNTIME_PRESERVE_STATE_DIR SILVER_BULLET_STATE_FILE SILVER_BULLET_BRANCH_FILE
