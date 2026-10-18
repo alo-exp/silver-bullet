@@ -269,8 +269,7 @@ def main() -> int:
     compact_prompt = compact_text(prompt)
     compact_prompt_prefix = compact_prompt[:120]
     args = [cli, "--cd", work_dir, "--no-alt-screen"]
-    if sandbox_mode:
-        args.extend(["--sandbox", sandbox_mode])
+    args.extend(["--sandbox", sandbox_mode])
     if bypass == "1":
         args.append("--dangerously-bypass-approvals-and-sandbox")
     if hook_trust_bypass == "1":
@@ -344,6 +343,18 @@ def main() -> int:
                             terminate_child(child_pid)
                             return 1
                         continue
+                    if getattr(exc, "errno", None) == errno.EIO:
+                        # Linux reports EIO (not EOF) on the PTY master once the
+                        # child has closed its side: end of output. Give the child a
+                        # moment to become reapable so its exit status is reported.
+                        for _ in range(40):
+                            exited, returncode = child_returncode(child_pid)
+                            if exited:
+                                return returncode or 0
+                            time.sleep(0.05)
+                        print("ERROR: Codex PTY closed but the child did not exit", file=sys.stderr)
+                        terminate_child(child_pid)
+                        return 1
                     raise
                 if not chunk:
                     break
