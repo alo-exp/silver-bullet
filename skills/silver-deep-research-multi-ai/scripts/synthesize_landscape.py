@@ -1732,6 +1732,7 @@ def _linkify_markdown_vendors(
         placeholders.append((token, label))
 
     segments = re.split(r"(\[[^\]]+\]\([^)]+\)|https?://\S+)", text)
+    url_by_label: dict[str, str] = {}
     for label, url in sorted(
         filter_vendor_link_pairs(link_pairs),
         key=lambda p: -len(str(p[0])),
@@ -1740,10 +1741,16 @@ def _linkify_markdown_vendors(
         url = str(url).strip()
         if not label or not url.startswith("http"):
             continue
-        escaped = re.escape(label)
-        pattern = re.compile(rf"\b({escaped})\b")
+        url_by_label.setdefault(label, url)
+    if url_by_label:
+        # One pass with the longest label first: a shorter label ("GitHub Copilot") must not
+        # re-match inside a link just written for a longer one ("GitHub Copilot Workspace").
+        alternation = "|".join(re.escape(label) for label in sorted(url_by_label, key=len, reverse=True))
+        pattern = re.compile(rf"\b({alternation})\b")
         for idx in range(0, len(segments), 2):
-            segments[idx] = pattern.sub(rf"[\1]({url})", segments[idx])
+            segments[idx] = pattern.sub(
+                lambda m: f"[{m.group(1)}]({url_by_label[m.group(1)]})", segments[idx]
+            )
     out = "".join(segments)
     for token, label in placeholders:
         out = out.replace(token, label)

@@ -33,6 +33,11 @@ class TmpCase(unittest.TestCase):
         spy = mock.patch.object(socket.socket, "connect", side_effect=AssertionError("network used"))
         spy.start()
         self.addCleanup(spy.stop)
+        # Vendor URL health probes and PDF rendering are always off in unit tests.
+        env = mock.patch.dict("os.environ", {"SB_SKIP_VENDOR_URL_HEALTH": "1", "SB_SKIP_LANDSCAPE_PDF": "1",
+                                             "SB_ALLOW_SKIP_LANDSCAPE_PDF": "1"})
+        env.start()
+        self.addCleanup(env.stop)
 
     def put(self, rel, data):
         path = self.root / rel
