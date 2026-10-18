@@ -29,13 +29,17 @@ fi
 #
 # Usage:
 #   bash /path/to/deploy-gate-snippet.sh             # standalone (recommended)
-#   source /path/to/deploy-gate-snippet.sh           # sourced in deploy script
+#   source /path/to/deploy-gate-snippet.sh || exit 1   # sourced in deploy script
 #   bash /path/to/deploy-gate-snippet.sh --skip-workflow-check  # bypass
 #
 # The script reads .silver-bullet.json (walking up from $PWD) for config.
 # If no config is found it falls back to sensible defaults.
 #
-# Note: Uses return (not exit) so sourcing doesn't kill the caller's shell.
+# Note: Uses return (not exit) so sourcing doesn't kill the caller's shell. A blocked
+# gate returns 1 to the caller, so always guard the source with `|| exit 1` (or
+# `|| handle`): a bare `source` under the caller's own `set -e` would abort it, and
+# without `set -e` the caller would carry on and deploy. Sourcing leaves the caller's
+# shell options, ERR trap and umask untouched.
 # When run standalone, bash treats return outside a function as exit.
 ###############################################################################
 
