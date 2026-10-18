@@ -17,7 +17,8 @@ ALL_GITPATHS=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --cursor-home)
-      CURSOR_HOME="${2:-}"
+      [[ $# -ge 2 ]] || { printf 'diagnose-cursor-picker-duplicates: --cursor-home requires a value\n' >&2; exit 2; }
+      CURSOR_HOME="$2"
       shift 2
       ;;
     --all-gitpaths)
