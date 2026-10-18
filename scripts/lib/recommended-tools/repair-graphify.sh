@@ -92,9 +92,11 @@ rt_repair_graphify() {
     [[ "$line" == "---FAILURES---" ]] && break
     [[ -n "$line" ]] && actions+=("$line")
   done <<<"$pkg_out"
+  local pkg_failures
+  pkg_failures="$(printf '%s\n' "$pkg_out" | sed -n '/---FAILURES---/,$p' | tail -n +2)"
   while IFS= read -r line; do
     [[ -n "$line" ]] && failures+=("$line")
-  done <<<"$(printf '%s\n' "$pkg_out" | sed -n '/---FAILURES---/,$p' | tail -n +2)"
+  done <<<"$pkg_failures"
 
   if sb_graphify_cli_available 2>/dev/null && rt_graphify_mcp_handshake; then
     if rt_cross_tool_batch_active; then
