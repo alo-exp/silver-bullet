@@ -56,7 +56,7 @@ case "$cmd" in
       case "$1" in
         --evidence)
           evidence="${2:-}"
-          shift 2 || true
+          shift 2 || shift
           ;;
         --evidence=*)
           evidence="${1#--evidence=}"
