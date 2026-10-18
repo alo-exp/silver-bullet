@@ -24,19 +24,23 @@ rc_of() { local rc=0; "$@" >/dev/null 2>&1 || rc=1; printf '%s' "$rc"; }
 
 # ------------------------------------------------------------- session ids
 assert_eq "session id from SILVER_BULLET_SESSION_ID" "sess-1" "$(rt_current_session_id)"
-assert_eq "session id from CURSOR_SESSION_ID" "cur-9" "$(SILVER_BULLET_SESSION_ID= CURSOR_SESSION_ID=cur-9 rt_current_session_id)"
+assert_eq "session id from CURSOR_SESSION_ID" "cur-9" "$(SILVER_BULLET_SESSION_ID='' CURSOR_SESSION_ID=cur-9 rt_current_session_id)"
 printf '1700000000' >"$SB_RUNTIME_STATE_DIR/session-start-time"
-assert_eq "session id from the session-start marker" "sb-1700000000" "$(SILVER_BULLET_SESSION_ID= CURSOR_SESSION_ID= rt_current_session_id)"
+assert_eq "session id from the session-start marker" "sb-1700000000" "$(SILVER_BULLET_SESSION_ID='' CURSOR_SESSION_ID='' rt_current_session_id)"
 rm -f "$SB_RUNTIME_STATE_DIR/session-start-time"
-assert_match "session id fallback is unknown-<epoch>" '^unknown-[0-9]+$' "$(SILVER_BULLET_SESSION_ID= CURSOR_SESSION_ID= rt_current_session_id)"
+printf '1700000001' >"$SB_RUNTIME_STATE_DIR/session-start-time"
+tl_stub cat 'exit 1'
+assert_eq "unreadable marker still yields an sb- id" "sb-" "$(SILVER_BULLET_SESSION_ID='' CURSOR_SESSION_ID='' rt_current_session_id)"
+rm -f "$TL_BIN/cat" "$SB_RUNTIME_STATE_DIR/session-start-time"
+assert_match "session id fallback is unknown-<epoch>" '^unknown-[0-9]+$' "$(SILVER_BULLET_SESSION_ID='' CURSOR_SESSION_ID='' rt_current_session_id)"
 assert_match "unsafe session ids are hashed" '^sid-[0-9a-f]{16}$' "$(SILVER_BULLET_SESSION_ID='a/../b' rt_current_session_id)"
 # the marker file exists but cannot be read -> falls through to unknown-*
-assert_eq "empty marker still yields an sb- id" "sb-" "$(: >"$SB_RUNTIME_STATE_DIR/session-start-time"; SILVER_BULLET_SESSION_ID= CURSOR_SESSION_ID= rt_current_session_id)"
+assert_eq "empty marker still yields an sb- id" "sb-" "$(: >"$SB_RUNTIME_STATE_DIR/session-start-time"; SILVER_BULLET_SESSION_ID='' CURSOR_SESSION_ID='' rt_current_session_id)"
 rm -f "$SB_RUNTIME_STATE_DIR/session-start-time"
 
 # ------------------------------------------------------------ consent summary
 assert_eq "consent summary" '{"graphify":"enabled","agentmemory":"pending","rtk":"disabled","context_mode":"pending","leanctx":"pending"}' "$(rt_heartbeat_consent_summary)"
-assert_eq "consent summary without a config" "{}" "$(RT_PROJECT_ROOT= rt_heartbeat_consent_summary)"
+assert_eq "consent summary without a config" "{}" "$(RT_PROJECT_ROOT='' rt_heartbeat_consent_summary)"
 
 # --------------------------------------------------------------- build json
 hb="$(rt_heartbeat_build_json "$PROJ" claude)"
@@ -65,7 +69,7 @@ assert_eq "invalid config -> not initiated" "false" "$(rt_heartbeat_build_json "
 rm -f "$PROJ/.silver-bullet.json"
 NOCFG="$TL_TMP/nocfg"; mkdir -p "$NOCFG"
 assert_eq "no config -> not initiated" "false" "$(RT_PROJECT_ROOT="$NOCFG" rt_heartbeat_build_json "$NOCFG" cursor | jq -r .sb_initiated)"
-assert_eq "no config and no root -> not initiated" "false" "$(RT_PROJECT_ROOT= rt_heartbeat_build_json "" cursor | jq -r .sb_initiated)"
+assert_eq "no config and no root -> not initiated" "false" "$(RT_PROJECT_ROOT='' rt_heartbeat_build_json "" cursor | jq -r .sb_initiated)"
 # git-less root: no project id, but the worktree id is still derived from the given root
 assert_eq "ids fall back to unknown" "unknown|$(rt_stable_id "$NOCFG")" "$(RT_PROJECT_ROOT="$NOCFG" rt_heartbeat_build_json "$NOCFG" cursor | jq -r '"\(.project_id)|\(.worktree_id)"')"
 printf '{"sb_initiated":true,"recommended_tools":{"graphify":{"enabled_by_user":true}}}\n' >"$PROJ/.silver-bullet.json"
@@ -157,6 +161,13 @@ printf '{}' >"$HBR/c/unreadable.json"
 rt_heartbeat_cleanup_expired "$HBR"
 assert_file_absent "unreadable mtime counts as epoch 0 (expired)" "$HBR/c/unreadable.json"
 rm -f "$TL_BIN/stat"
+# a file that cannot be removed does not abort the sweep
+printf '{}' >"$HBR/c/stuck.json"; touch -d '3 days ago' "$HBR/c/stuck.json"
+tl_stub rm 'exit 1'
+hash -r
+assert_eq "failed removal is tolerated" "0" "$(rc_of rt_heartbeat_cleanup_expired "$HBR")"
+/bin/rm -f "$TL_BIN/rm"; hash -r
+assert_file_exists "the stuck file is still there" "$HBR/c/stuck.json"
 
 # ======================================================== session verify
 # shellcheck source=/dev/null
@@ -198,6 +209,8 @@ out="$(sv "$(json '[{"component":"cross_tool","canonical_state":"ready","activat
 assert_contains "cross-tool heartbeat invalid" "$out" "TOOLSTACK routes: ready (activation=full)"
 out="$(sv "$(json "$ALLREADY" true)")"
 assert_contains "restart required" "$out" "TOOLSTACK reload: MCP config changed"
+assert_eq "unparsable reconciler output -> silent" "" "$(sv "garbage that is not json")"
+assert_eq "components without a name are skipped" "" "$(sv "$(json '[{}]')")"
 out="$(sv "$(json '[{"component":"cross_tool","canonical_state":"failed"}]')")"
 assert_contains "missing activation shows none" "$out" "TOOLSTACK routes: failed (activation=none)"
 NOJQ="$(tl_path_without jq)"
@@ -209,10 +222,10 @@ for d in plain "up/deep/er"; do printf '{}\n' >"$SV/disc/$d/.silver-bullet.json"
 for d in rtroot plugin up; do cp "$SVP/scripts/reconcile-recommended-tools.sh" "$SV/disc/$d/scripts/"; done
 FAILJSON="$(json '[{"component":"x","canonical_state":"failed","activation_status":"none"}]')"
 : >"$RECON_LOG"
-assert_eq "no reconciler anywhere -> silent" "" "$(cd /; env -u CLAUDE_PLUGIN_ROOT RT_REPO_ROOT= sv "$FAILJSON" "$SV/disc/plain")"
-assert_eq "RT_REPO_ROOT reconciler used" "0" "$(RT_REPO_ROOT="$SV/disc/rtroot" sv "$FAILJSON" "$SV/disc/plain" | grep -c 'TOOLSTACK x: failed' | sed 's/^1$/0/')"
-assert_contains "CLAUDE_PLUGIN_ROOT reconciler used" "$(RT_REPO_ROOT= CLAUDE_PLUGIN_ROOT="$SV/disc/plugin" sv "$FAILJSON" "$SV/disc/plain")" "TOOLSTACK x: failed"
-assert_contains "ancestor directory reconciler used" "$(RT_REPO_ROOT= CLAUDE_PLUGIN_ROOT= sv "$FAILJSON" "$SV/disc/up/deep/er")" "TOOLSTACK x: failed"
+assert_eq "no reconciler anywhere -> silent" "" "$(cd /; RT_REPO_ROOT='' CLAUDE_PLUGIN_ROOT='' sv "$FAILJSON" "$SV/disc/plain")"
+assert_contains "RT_REPO_ROOT reconciler used" "$(RT_REPO_ROOT="$SV/disc/rtroot" CLAUDE_PLUGIN_ROOT='' sv "$FAILJSON" "$SV/disc/plain")" "TOOLSTACK x: failed"
+assert_contains "CLAUDE_PLUGIN_ROOT reconciler used" "$(RT_REPO_ROOT='' CLAUDE_PLUGIN_ROOT="$SV/disc/plugin" sv "$FAILJSON" "$SV/disc/plain")" "TOOLSTACK x: failed"
+assert_contains "ancestor directory reconciler used" "$(RT_REPO_ROOT='' CLAUDE_PLUGIN_ROOT='' sv "$FAILJSON" "$SV/disc/up/deep/er")" "TOOLSTACK x: failed"
 
 # =========================================================== installer
 # shellcheck source=/dev/null
@@ -243,6 +256,12 @@ assert_eq "deploy without a generic runtime" "0" "$(rc_of rt_deploy_toolstack_sc
 rm -rf "$HOME/.cursor"; mkdir -p "$HOME/.cursor"; printf 'file\n' >"$HOME/.cursor/hooks"
 assert_eq "deploy tolerates an unwritable toolstack" "0" "$(rc_of rt_deploy_toolstack_scripts "$IR")"
 rm -rf "$HOME/.cursor"
+# the generic runtime directory cannot be created inside the toolstack lib
+mkdir -p "$IR/scripts/lib/five_tool_runtime"; printf '# runtime\n' >"$IR/scripts/lib/five_tool_runtime/runtime.py"
+mkdir -p "$HOME/.cursor/hooks/toolstack/lib"; printf 'file\n' >"$HOME/.cursor/hooks/toolstack/lib/five_tool_runtime"
+assert_eq "deploy tolerates an uncreatable runtime directory" "0" "$(rc_of rt_deploy_toolstack_scripts "$IR")"
+assert_eq "other files still deployed" "# rtk-gate.sh" "$(cat "$HOME/.cursor/hooks/toolstack/rtk-gate.sh")"
+rm -rf "$HOME/.cursor"
 
 assert_eq "snapshots need the reconciler libs" "1" "$(rc_of rt_deploy_reconciler_snapshots "$TL_TMP/no-such-repo")"
 assert_eq "snapshots need a repo root" "1" "$(env -u RT_REPO_ROOT bash -c 'source "$1/installer.sh"; RT_REPO_ROOT=; rt_deploy_reconciler_snapshots' _ "$RTLIB" >/dev/null 2>&1; echo $?)"
@@ -253,6 +272,12 @@ assert_eq "lib snapshot deployed" "# rt" "$(cat "$TS/lib/recommended-tools/probe
 assert_file_absent "directories inside the lib are not copied" "$TS/lib/recommended-tools/subdir"
 rm -rf "$HOME/.cursor"; mkdir -p "$HOME/.cursor"; printf 'file\n' >"$HOME/.cursor/hooks"; printf 'file\n' >"$HOME/.cursor/state"
 assert_eq "snapshots tolerate unwritable destinations" "0" "$(rc_of rt_deploy_reconciler_snapshots "$IR")"
+rm -rf "$HOME/.cursor"
+# snapshots continue when the toolstack scripts cannot be deployed (no global-toolstack sources)
+NOTS="$TL_TMP/no-toolstack-repo"; mkdir -p "$NOTS/scripts/lib/recommended-tools"; printf '# x\n' >"$NOTS/scripts/lib/recommended-tools/a.sh"
+printf '#!/bin/sh\n' >"$NOTS/scripts/reconcile-recommended-tools.sh"
+assert_eq "snapshots tolerate missing toolstack sources" "0" "$(rc_of rt_deploy_reconciler_snapshots "$NOTS")"
+assert_eq "lib snapshot still deployed" "# x" "$(cat "$HOME/.cursor/hooks/toolstack/lib/recommended-tools/a.sh")"
 rm -rf "$HOME/.cursor"
 
 # project root resolution
@@ -287,6 +312,13 @@ assert_contains "notice when true" "$(rt_emit_reload_notice true)" "RELOAD REQUI
 assert_contains "notice when 1" "$(rt_emit_reload_notice 1)" "Developer: Reload Window"
 
 # post-install
+# post-install keeps going when snapshot deployment fails (no reconciler libs in the repo)
+BARE="$TL_TMP/bare-repo"; mkdir -p "$BARE/scripts"
+printf '#!/usr/bin/env bash\nprintf "%%s\\n" "$*" >>"$RECON_LOG"\n' >"$BARE/scripts/reconcile-recommended-tools.sh"
+: >"$RECON_LOG"
+BARE_OUT="$(rt_installer_post_install "$BARE" "$IP")"
+assert_not_contains "no pending note when the project root is known" "$BARE_OUT" "Project toolstack reconciliation pending"
+assert_contains "post-install reconciles even when snapshots fail" "$(cat "$RECON_LOG")" "--scope all"
 export RT_SKIP_POST_INSTALL=1
 assert_contains "post-install skip flag" "$(rt_installer_post_install "$IR" "$IP")" "SKIP: installer post-install reconcile (RT_SKIP_POST_INSTALL=1)"
 unset RT_SKIP_POST_INSTALL

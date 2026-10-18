@@ -114,7 +114,7 @@ assert_eq "codex dotted table does not match a prefix" "1" "$(rc_of rt_host_mcp_
 assert_eq "codex absent table" "1" "$(rc_of rt_host_mcp_server_configured codex leanctx)"
 assert_eq "empty server name" "1" "$(rc_of rt_host_mcp_server_configured cursor "")"
 assert_eq "host without a config path" "1" "$(rc_of rt_host_mcp_server_configured goose graphify)"
-assert_eq "host without a matching reader" "1" "$(RT_VALID_HOSTS=(goose); rt_host_mcp_config_path() { echo "$HOME/.goose.json"; }; touch "$HOME/.goose.json"; rc_of rt_host_mcp_server_configured goose graphify)"
+assert_eq "host without a matching reader" "1" "$(rt_host_mcp_config_path() { echo "$HOME/.goose.json"; }; touch "$HOME/.goose.json"; rc_of rt_host_mcp_server_configured goose graphify)"
 rm -f "$HOME/.cursor/mcp.json"
 ln -s "$HOME/.claude.json" "$HOME/.cursor/mcp.json"
 assert_eq "symlinked config is refused" "1" "$(rc_of rt_host_mcp_server_configured cursor agentmemory)"
@@ -146,8 +146,8 @@ assert_eq "main worktree root falls back to toplevel when worktree list is empty
 
 assert_eq "worktree id of explicit root" "$(rt_stable_id "$PROJ")" "$(rt_worktree_id "$PROJ")"
 assert_eq "worktree ids differ per worktree" "1" "$([[ "$(rt_worktree_id "$PROJ")" != "$(rt_worktree_id "$TL_TMP/wt")" ]] && echo 1 || echo 0)"
-assert_eq "worktree id defaults to the git toplevel" "$(rt_stable_id "$PROJ")" "$(cd "$PROJ/sub" && RT_PROJECT_ROOT= rt_worktree_id)"
-assert_eq "worktree id outside git fails" "1" "$(cd "$NOGIT" && RT_PROJECT_ROOT= rc_of rt_worktree_id)"
+assert_eq "worktree id defaults to the git toplevel" "$(rt_stable_id "$PROJ")" "$(cd "$PROJ/sub" && RT_PROJECT_ROOT='' rt_worktree_id)"
+assert_eq "worktree id outside git fails" "1" "$(cd "$NOGIT" && RT_PROJECT_ROOT='' rc_of rt_worktree_id)"
 assert_eq "project id is the main worktree's id from any worktree" "$(rt_stable_id "$PROJ")" "$(RT_PROJECT_ROOT="$TL_TMP/wt" rt_project_id)"
 assert_eq "project id outside git fails" "1" "$(RT_PROJECT_ROOT="$NOGIT" rc_of rt_project_id)"
 
@@ -275,7 +275,7 @@ rm -f "$TL_BIN/sleep"
 # ---------------------------------------------------------------- paths.sh
 unset SB_RUNTIME_STATE_DIR
 assert_eq "state root defaults under HOME" "$HOME/.silver-bullet/recommended-tools" "$(rt_state_root)"
-SB_RUNTIME_STATE_DIR="$TL_TMP/state"
+export SB_RUNTIME_STATE_DIR="$TL_TMP/state"
 assert_eq "state root follows the runtime state dir" "$TL_TMP/state/recommended-tools" "$(rt_state_root)"
 assert_eq "heartbeat root" "$TL_TMP/state/recommended-tools/heartbeats" "$(rt_heartbeat_root)"
 assert_eq "heartbeat dir" "$TL_TMP/state/recommended-tools/heartbeats/p/w" "$(rt_heartbeat_dir p w)"
