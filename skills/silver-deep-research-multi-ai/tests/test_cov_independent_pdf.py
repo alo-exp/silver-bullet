@@ -316,6 +316,12 @@ class SvgScatterTests(unittest.TestCase):
         self.assertEqual(svg.count('r="7.0"'), 2)  # bogus text and 0 both fall back to raw=1.0 -> 7.0
         self.assertIn('data-slug="Only label"', svg)
 
+    def test_non_dict_points_from_the_collision_pass_are_skipped(self) -> None:
+        pts = [{"slug": "a", "x": 5, "y": 5, "q": "Leaders"}, "junk", None]
+        with mock.patch.object(lp, "_apply_plot_coord_collisions", return_value=pts):
+            svg = self.render(pts)
+        self.assertEqual(svg.count('class="fig-pt"'), 1)
+
     def test_wave_chart(self) -> None:
         pts = [
             {"slug": "w1", "label": "W1", "strategy": 4, "offering": 4, "presence": 4},

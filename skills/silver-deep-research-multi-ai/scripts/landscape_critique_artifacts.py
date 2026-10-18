@@ -506,6 +506,8 @@ def coverage_completeness_lines(
         placement = vendor_final_decision(slug, market, audit=audit, pack=pack)
         if place == "hard-excluded":
             placement = "hard-excluded"
+        elif place == "adjacent-aggregator":
+            placement = "adjacent-aggregator (not APO)"
         gaps: list[str] = []
         if slug == "zuvo":
             pass
