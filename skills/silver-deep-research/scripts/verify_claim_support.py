@@ -56,7 +56,7 @@ def write_jsonl(path: str, rows: list[dict]) -> None:
 NUMBER_RE = re.compile(r'\b\d+(?:\.\d+)?(?:%|x|X)?\b')
 
 # Extract year-like numbers
-YEAR_RE = re.compile(r'\b(19|20)\d{2}\b')
+YEAR_RE = re.compile(r'\b(?:19|20)\d{2}\b')
 
 # Extract capitalized entities (naive NER)
 ENTITY_RE = re.compile(r'\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b')
@@ -105,7 +105,7 @@ def compute_support_score(claim_text: str, evidence_quotes: list[str]) -> tuple[
     claim_years = extract_years(claim_text)
     claim_entities = extract_entities(claim_text)
 
-    best_score = 0.0
+    best_score = -1.0
     best_notes = []
 
     for quote in evidence_quotes:
@@ -420,6 +420,7 @@ def cmd_verify(args: argparse.Namespace) -> None:
             continue
 
         claim_type = claim.get('claim_type', 'factual')
+        claim['claim_type'] = claim_type
 
         # Normalize claim types based on section intent.
         if section_id == 'recommendations':
