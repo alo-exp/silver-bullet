@@ -265,7 +265,7 @@ class ConsolidateTests(unittest.TestCase):
 
     def test_consolidate_agent_missing_is_not_counted(self) -> None:
         env = self._env("a", "f1", [{"text": "x"}])
-        index = {"entries": [{"work_item_id": "w1", "logical_model_id": None or "a"}]}
+        index = {"entries": [{"work_item_id": "w1", "logical_model_id": "a"}]}
         env2 = dict(env)
         out = consolidate.consolidate([env, env2], index, 2)
         self.assertEqual(out["divergence"][0]["support_count"], 1)
