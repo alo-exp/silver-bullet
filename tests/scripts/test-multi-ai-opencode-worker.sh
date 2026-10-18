@@ -32,6 +32,14 @@ assert_eq "default root arg" zzz "$(cd "$TL_TMP" && agent_opencode_profile_to_ru
 NOJQ="$(tl_path_without jq)"
 assert_eq "no jq falls back to prefix strip" alias "$(PATH="$NOJQ" agent_opencode_profile_to_run_model ocg-alias "$SB")"
 
+# unparseable registry: alias lookup yields nothing, pool count falls back to 0
+BAD="$TL_TMP/sb-bad"
+mkdir -p "$BAD/skills/silver-multi-ai-task/reference"
+echo 'not json' >"$BAD/skills/silver-multi-ai-task/reference/model-family-registry-v1.json"
+assert_eq "invalid registry falls back to prefix strip" xyz "$(agent_opencode_profile_to_run_model ocg-xyz "$BAD")"
+rc=0; err="$(agent_opencode_validate_multi_ai_pool_mode lite "$BAD" 2>&1)" || rc=$?
+assert_eq "invalid registry pool rc" 2 "$rc"; assert_contains "invalid registry pool msg" "$err" "empty OCG pool lite"
+
 # validate pool
 rc=0; agent_opencode_validate_multi_ai_pool_mode lite "$SB" || rc=$?
 assert_eq "lite pool valid" 0 "$rc"

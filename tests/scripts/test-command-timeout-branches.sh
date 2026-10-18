@@ -108,6 +108,20 @@ assert_eq "watchdog: TERM normalised to 124" 124 "$RC"
 assert_contains "watchdog: timeout message" "$ERR" "timed out after 0.3s: slowwd"
 run_to "$PATH_NO_PY" 0.3 stubwd -- bash -c 'trap "" TERM; while :; do :; done'
 assert_eq "watchdog: KILL normalised to 124" 124 "$RC"
+# kill(1) reporting failure (process raced away): the watchdog tolerates it. The shell
+# function reports TERM as failed after really delivering it, and leaves the watchdog
+# alive so its later KILL hits the already-dead command and fails too.
+kill() {
+  case "${1:-}" in
+    -TERM) builtin kill "$@"; return 1 ;;
+    -[A-Z]*|-0) builtin kill "$@" ;;
+    *) return 0 ;;
+  esac
+}
+run_to "$PATH_NO_PY" 0.3 racewd -- sleep 3
+assert_eq "watchdog: failing kill tolerated, still 124" 124 "$RC"
+"$REAL_SLEEP" 0.6   # let the detached watchdog subshell run its final KILL
+unset -f kill
 run_to "$PATH_NO_PY" 5 lbl -- true
 assert_eq "watchdog: fast command rc 0" 0 "$RC"; assert_eq "watchdog: no error output" "" "$ERR"
 

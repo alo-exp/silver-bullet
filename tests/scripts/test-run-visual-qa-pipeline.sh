@@ -29,6 +29,7 @@ case "$script" in
   golden-strings.mjs)
     [[ "${FAIL_GOLDEN:-}" == 1 ]] && exit 1
     mkdir -p "$GOLDEN_OUT_DIR"
+    if [[ "${GOLDEN_BAD:-}" == 1 ]]; then echo 'not json' >"$GOLDEN_OUT_DIR/home-golden-strings.json"; echo '{' >"$GOLDEN_OUT_DIR/help-getting-started-golden-strings.json"; exit 0; fi
     echo '{"strings":["a","b","c"]}' >"$GOLDEN_OUT_DIR/home-golden-strings.json"
     echo '{"strings":["a"]}' >"$GOLDEN_OUT_DIR/help-getting-started-golden-strings.json"
     exit 0 ;;
@@ -161,6 +162,8 @@ assert_eq "proof capture fail" FAIL "$(step capture .status)"
 assert_eq "proof overflow fail detail" "horizontal overflow on /: 12px" "$(step overflow-home-375 .detail)"
 ARGS="--proof-only"; run FAIL_OVERFLOW=noinfo
 assert_eq "proof overflow unknown px" "horizontal overflow on /help/getting-started/: ?px" "$(step overflow-help-375 .detail)"
+ARGS="--proof-only --skip-alumnium"; run GOLDEN_BAD=1
+assert_eq "unparseable golden json counts as 0" "home=0 strings, help-getting-started=0" "$(step golden-strings .detail)"
 # CAPTURE_OUT_DIR override
 ARGS="--proof-only"; run CAPTURE_OUT_DIR="$T/custom-out"
 assert_eq "custom out dir (under repo -> relative)" "custom-out" "$(res .outDir)"

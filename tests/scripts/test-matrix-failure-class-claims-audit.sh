@@ -42,6 +42,8 @@ printf '429\nok\n' >"$TL_TMP/b.log"
 assert_eq "window 1 sees only last line" product "$(matrix_failure_class_from_file "$TL_TMP/b.log" 1)"
 assert_eq "default window sees all" environmental "$(matrix_failure_class_from_file "$TL_TMP/b.log")"
 
+assert_eq "unusable window (tail fails) -> product" product "$(matrix_failure_class_from_file "$TL_TMP/a.log" notanumber)"
+
 # --- CLI mode ---------------------------------------------------------------------
 tl_run bash "$MFC"
 assert_eq "cli no args -> 2" 2 "$TL_STATUS"; assert_contains "cli usage" "$TL_ERR" "Usage: matrix-failure-class.sh"
