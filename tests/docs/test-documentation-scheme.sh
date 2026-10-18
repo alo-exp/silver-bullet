@@ -195,7 +195,7 @@ section "Knowledge file frontmatter validation"
 
 for f in docs/knowledge/2*.md; do
   [[ -f "$f" ]] || continue
-  if head -1 "$f" | grep -q "^---"; then
+  if grep -q "^---" < <(head -1 "$f"); then
     pass "$f has frontmatter"
   else
     fail "$f missing frontmatter"
@@ -218,7 +218,7 @@ section "Learnings file frontmatter validation"
 
 for f in docs/learnings/2*.md; do
   [[ -f "$f" ]] || continue
-  if head -1 "$f" | grep -q "^---"; then
+  if grep -q "^---" < <(head -1 "$f"); then
     pass "$f has frontmatter"
   else
     fail "$f missing frontmatter"

@@ -68,7 +68,7 @@ for view in \
 done
 
 # templates/ must not host a competing catalog SOT.
-if find "$REPO_ROOT/templates" -name 'apo-catalog.json' 2>/dev/null | grep -q .; then
+if grep -q . < <(find "$REPO_ROOT/templates" -name 'apo-catalog.json' 2>/dev/null); then
   fail "templates/ contains apo-catalog.json parallel SOT"
 else
   pass "templates/ has no apo-catalog.json parallel SOT"
