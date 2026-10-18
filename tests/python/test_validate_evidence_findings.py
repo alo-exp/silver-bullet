@@ -35,6 +35,33 @@ class HelperTest(unittest.TestCase):
 
     def test_split_row(self):
         self.assertEqual(v.split_row(" | a | b |  c | "), ["a", "b", "c"])
+        self.assertEqual(v.split_row("a|b|c"), ["a", "b", "c"])
+        self.assertEqual(v.split_row("|a|b|c|"), ["a", "b", "c"])
+        self.assertEqual(v.split_row("| a |  | c |"), ["a", "", "c"])
+
+    def test_column_alias_table(self):
+        expected = {
+            "domain": ["domain", "pack", "surface"],
+            "scope": ["scope", "file", "target", "area", "location"],
+            "severity": ["severity", "sev"],
+            "confidence": ["confidence", "conf"],
+            "evidence": ["evidence", "proof", "pointer"],
+            "finding": ["finding", "issue", "description", "summary"],
+            "required_action": ["required action", "required_action", "action", "required fix"],
+            "owner_workflow": ["owner workflow", "owner_workflow", "owner", "workflow"],
+            "blocking_status": ["blocking status", "blocking_status", "blocking", "ship impact"],
+            "backlog_decision": ["backlog decision", "backlog_decision", "backlog", "deferral"],
+        }
+        self.assertEqual({k: sorted(a) for k, a in v.COLUMN_ALIASES.items()}, {k: sorted(a) for k, a in expected.items()})
+        for canonical, aliases in expected.items():
+            for alias in aliases:
+                for cell in (alias, alias.upper(), alias.title()):
+                    with self.subTest(cell=cell):
+                        self.assertEqual(v.canonical_header(cell), canonical)
+        self.assertEqual(v.REQUIRED_COLUMNS, [
+            "domain", "scope", "severity", "confidence", "evidence", "finding",
+            "required_action", "owner_workflow", "blocking_status",
+        ])
 
     def test_is_separator_row(self):
         self.assertFalse(v.is_separator_row([]))
@@ -144,6 +171,19 @@ class ValidateTableTest(unittest.TestCase):
         rows = [["-", "n/a", "TBD", "", "na", "-", "-", "-", "-"], ["code", "a", "BAD", "HIGH", "e", "f", "r", "w", "blocks ship"]]
         res = self.run_table(self.hdrs(), rows)
         self.assertEqual([i.message for i in res.issues], ["row 2: invalid severity 'BAD'"])
+
+    def test_each_placeholder_value_marks_a_row_empty_but_one_real_cell_does_not(self):
+        for placeholder in ("-", "n/a", "N/A", "na", "tbd", "TBD", "", "  "):
+            with self.subTest(placeholder=placeholder):
+                res = self.run_table(self.hdrs(), [[placeholder] * 9])
+                self.assertEqual(res.issues, [])
+        res = self.run_table(self.hdrs(), [["-", "-", "BAD", "-", "-", "-", "-", "-", "-"]])
+        self.assertEqual([i.message for i in res.issues], [
+            "row 1: invalid severity 'BAD'", "row 1: invalid confidence '-'",
+            "row 1: empty required field 'finding'", "row 1: empty required field 'evidence'",
+        ])
+        res = self.run_table(self.hdrs(), [["n/a", "n/a", "n/a", "n/a", "n/a", "n/a", "n/a", "n/a", "n/a"]])
+        self.assertEqual(res.issues, [])
 
     def test_extra_cells_beyond_headers_ignored(self):
         res = self.run_table(self.hdrs(), [v.split_row(GOOD) + ["extra"]])

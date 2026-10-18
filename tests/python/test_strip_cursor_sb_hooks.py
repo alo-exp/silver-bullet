@@ -34,6 +34,7 @@ class StripCursorHooksTest(unittest.TestCase):
 
     def run_script(self, *args):
         out = io.StringIO()
+        self.last_out = out
         with mock.patch.dict(os.environ, {"HOME": str(self.home)}), \
              mock.patch("sys.argv", ["strip-cursor-sb-hooks.py", *map(str, args)]), \
              contextlib.redirect_stdout(out):
@@ -54,6 +55,11 @@ class StripCursorHooksTest(unittest.TestCase):
             self.run_script(self.target)
         self.assertEqual(cm.exception.code, 0)
         self.assertFalse(self.target.exists())
+
+    def test_missing_file_prints_skip_message(self):
+        with self.assertRaises(SystemExit):
+            self.run_script(self.target)
+        self.assertEqual(self.last_out.getvalue(), f"SKIP: no hooks file at {self.target}\n")
 
     def test_default_path_uses_home(self):
         raw = self.seed({"hooks": {"stop": [{"command": SB_COMMANDS[0]}]}})
@@ -114,10 +120,45 @@ class StripCursorHooksTest(unittest.TestCase):
 
     def test_failed_write_leaves_original_intact_and_no_temp_file(self):
         raw = self.seed({"hooks": {"stop": [{"command": SB_COMMANDS[0]}, {"command": "mine"}]}})
-        with mock.patch("os.replace", side_effect=OSError("disk full")):
-            with self.assertRaisesRegex(OSError, "disk full"):
+        err = io.StringIO()
+        with mock.patch("os.replace", side_effect=OSError("disk full")), contextlib.redirect_stderr(err):
+            with self.assertRaises(SystemExit) as cm:
                 self.run_script(self.target)
+        self.assertEqual(cm.exception.code, 1)
+        self.assertEqual(err.getvalue(), f"ERROR: cannot update {self.target}: disk full; left unchanged\n")
         self.assert_untouched(raw)
+
+    def test_unwritable_directory_gives_one_line_error_and_keeps_file(self):
+        raw = self.seed({"hooks": {"stop": [{"command": SB_COMMANDS[0]}, {"command": "mine"}]}})
+        err = io.StringIO()
+        with mock.patch("tempfile.mkstemp", side_effect=PermissionError(13, "Permission denied")), contextlib.redirect_stderr(err):
+            with self.assertRaises(SystemExit) as cm:
+                self.run_script(self.target)
+        self.assertEqual(cm.exception.code, 1)
+        self.assertEqual(err.getvalue(), f"ERROR: cannot update {self.target}: [Errno 13] Permission denied; left unchanged\n")
+        self.assert_untouched(raw)
+
+    def test_read_only_directory_real_permissions(self):
+        if os.geteuid() == 0:
+            self.skipTest("SKIP: root ignores directory permission bits")
+        raw = self.seed({"hooks": {"stop": [{"command": SB_COMMANDS[0]}]}})
+        self.target.parent.chmod(0o555)
+        self.addCleanup(self.target.parent.chmod, 0o755)
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err), self.assertRaises(SystemExit) as cm:
+            self.run_script(self.target)
+        self.assertEqual(cm.exception.code, 1)
+        self.assertTrue(err.getvalue().startswith(f"ERROR: cannot update {self.target}: "))
+        self.assertEqual(self.target.read_bytes(), raw)
+
+    def test_data_is_fsynced_before_the_rename(self):
+        self.seed({"hooks": {"stop": [{"command": SB_COMMANDS[0]}, {"command": "mine"}]}})
+        events = []
+        real_fsync, real_replace = os.fsync, os.replace
+        with mock.patch("os.fsync", side_effect=lambda fd: (events.append("fsync"), real_fsync(fd))[1]), \
+             mock.patch("os.replace", side_effect=lambda a, b: (events.append("replace"), real_replace(a, b))[1]):
+            self.run_script(self.target)
+        self.assertEqual(events, ["fsync", "replace"])
 
     def test_rewrite_preserves_permissions_and_symlinked_file(self):
         real = self.tmp / "dotfiles" / "hooks.json"

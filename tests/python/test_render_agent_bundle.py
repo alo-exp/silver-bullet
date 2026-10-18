@@ -589,6 +589,23 @@ class RenderBundleTest(TmpCase):
         self.assertTrue((dest / "linked-dir" / "SKILL.md").is_file())
         self.assertTrue((src / "silver-feature" / "linked.md").is_symlink())  # source untouched
 
+    def test_destination_parents_are_created_and_existing_parent_is_fine(self):
+        src = self.make_source()
+        deep = self.tmp / "p" / "q" / "r" / "bundle"
+        r.render_bundle(src, deep, "codex")
+        self.assertTrue((deep / "sb-feature" / "SKILL.md").is_file())
+        r.render_bundle(src, deep, "codex")  # parent already exists
+        self.assertTrue((deep / "sb-feature" / "SKILL.md").is_file())
+
+    def test_openai_yaml_is_removed_for_cursor_and_claude_but_kept_for_codex(self):
+        src = self.make_source()
+        for agent, expect in (("cursor", False), ("claude", False), ("codex", True)):
+            with self.subTest(agent=agent):
+                dest = self.tmp / "out" / agent
+                r.render_bundle(src, dest, agent)
+                found = list(dest.glob("*/agents/openai.yaml"))
+                self.assertEqual(bool(found), expect)
+
     def test_unknown_agent_is_copied_without_route_renames(self):
         src = self.make_source()
         dest = self.tmp / "out" / "x"
@@ -654,6 +671,13 @@ class MainTest(TmpCase):
             rc, err = self.run_main(*argv)
             self.assertEqual(rc, 2)
             self.assertIn("the following arguments are required: --agent", err)
+
+    def test_every_documented_agent_is_accepted_and_choices_are_listed(self):
+        for agent in ("claude", "codex", "cursor"):
+            rc, _ = self.run_main("sanitize", "--agent", agent, "--root", str(self.tmp / "none"))
+            self.assertEqual(rc, 0, agent)
+        rc, err = self.run_main("sanitize", "--agent", "vim", "--root", "x")
+        self.assertIn("choose from claude, codex, cursor", err.replace("'", ""))
 
     def test_bad_agent_rejected(self):
         rc, err = self.run_main("sanitize", "--agent", "vim", "--root", "x")
