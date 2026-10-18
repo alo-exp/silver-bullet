@@ -81,11 +81,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ -z "$SCOPE" ]]; then
-  if [[ -t 0 && -t 1 && "$NON_INTERACTIVE" -eq 0 && "$FIX_MODE" -eq 0 ]]; then
-    SCOPE="global"
-  else
-    SCOPE="global"
-  fi
+  SCOPE="global"
 fi
 
 if [[ "$FIX_MODE" -eq 1 ]]; then
@@ -107,28 +103,19 @@ fi
 
 csba_refresh_catalog "$PROJECT_ROOT" >/dev/null
 
+# Only called in interactive mode (see the guard below); the answer defaults to no.
 prompt_yes_no() {
   local prompt="$1"
-  local default_no="${2:-1}"
-  if [[ "$NON_INTERACTIVE" -eq 1 ]]; then
-    return 1
-  fi
-  local hint="y/N"
-  [[ "$default_no" -eq 0 ]] && hint="Y/n"
-  read -r -p "${prompt} [${hint}]: " ans || true
+  read -r -p "${prompt} [y/N]: " ans || true
   ans="${ans:-}"
-  if [[ "$default_no" -eq 1 ]]; then
-    [[ "$ans" =~ ^[Yy] ]]
-  else
-    [[ ! "$ans" =~ ^[Nn] ]]
-  fi
+  [[ "$ans" =~ ^[Yy] ]]
 }
 
 if [[ "$FIX_MODE" -eq 0 && "$NON_INTERACTIVE" -eq 0 ]]; then
-  if prompt_yes_no "Include Fast variants?" 1; then
+  if prompt_yes_no "Include Fast variants?"; then
     INCLUDE_FAST=1
   fi
-  if prompt_yes_no "Include Max / Max Mode models?" 1; then
+  if prompt_yes_no "Include Max / Max Mode models?"; then
     INCLUDE_MAX=1
   fi
 fi
@@ -160,18 +147,17 @@ if [[ -z "$CONFIG_JSON" ]]; then
     OFFLINE_ARGS=()
     [[ "${SB_CURSOR_SB_AGENTS_OFFLINE:-}" == "1" ]] && OFFLINE_ARGS+=(--no-fetch)
     ROWS=()
+    LISTING="$("${CSBA_PYTHON}" "$CSBA_FETCH" --list-selectable "${FAST_ARGS[@]}" "${MAX_ARGS[@]}" "${OFFLINE_ARGS[@]}" --repo-root "$PROJECT_ROOT" 2>/dev/null)" || LISTING=""
     while IFS= read -r row; do
       [[ -n "$row" ]] && ROWS+=("$row")
-    done < <("${CSBA_PYTHON}" "$CSBA_FETCH" --list-selectable \
-      "${FAST_ARGS[@]}" "${MAX_ARGS[@]}" "${OFFLINE_ARGS[@]}" \
-      --repo-root "$PROJECT_ROOT" 2>/dev/null || true)
+    done <<<"$LISTING"
     declare -a IDS=()
     local_i=1
     for row in "${ROWS[@]:-}"; do
       IFS=$'\t' read -r mid display pricing <<<"$row"
       IDS+=("$mid")
       printf " %2d %-21s %-32s %s\n" "$local_i" "$mid" "$display" "$pricing"
-      ((local_i++)) || true
+      local_i=$((local_i + 1))
     done
     echo ""
     echo "Select models (comma-separated numbers or ids; default: composer-2.5,grok-4.5):"
