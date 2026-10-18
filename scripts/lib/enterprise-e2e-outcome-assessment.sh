@@ -89,7 +89,7 @@ enterprise_e2e_outcome_routing_evidence_present() {
     return 0
   fi
   if [[ -d "${work_dir}/.planning/workflows/.archive" ]] && \
-     find "${work_dir}/.planning/workflows/.archive" -name 'router-session.md' 2>/dev/null | grep -q .; then
+     grep -q . < <(find "${work_dir}/.planning/workflows/.archive" -name 'router-session.md' 2>/dev/null); then
     return 0
   fi
   if [[ -f "$state_file" ]] && grep -qE 'silver-router|silver-context|silver-feature|silver-fast' "$state_file" 2>/dev/null; then
@@ -575,17 +575,17 @@ enterprise_e2e_outcome_evidence_resolved() {
     return 0
   fi
   base="${evidence_path##*/}"
-  if find "${work_dir}/.planning/workflows/.archive" -name "$base" -print -quit 2>/dev/null | grep -q .; then
+  if grep -q . < <(find "${work_dir}/.planning/workflows/.archive" -name "$base" -print -quit 2>/dev/null); then
     printf '%s\n' "$evidence_path"
     return 0
   fi
   slug="$(enterprise_e2e_outcome_matrix_workflow_slug "$row_num")"
-  if [[ -n "$slug" ]] && find "${work_dir}/.planning/workflows" \( -name "$base" -o -name "*${slug}*" \) \
-     ! -path '*/.archive/*' -print -quit 2>/dev/null | grep -q .; then
+  if [[ -n "$slug" ]] && grep -q . < <(find "${work_dir}/.planning/workflows" \( -name "$base" -o -name "*${slug}*" \) \
+       ! -path '*/.archive/*' -print -quit 2>/dev/null); then
     printf '%s\n' "$evidence_path"
     return 0
   fi
-  if [[ -n "$slug" ]] && find "${work_dir}/.planning/workflows/.archive" -name "*${slug}*" -print -quit 2>/dev/null | grep -q .; then
+  if [[ -n "$slug" ]] && grep -q . < <(find "${work_dir}/.planning/workflows/.archive" -name "*${slug}*" -print -quit 2>/dev/null); then
     printf '%s\n' "$evidence_path"
     return 0
   fi
@@ -804,7 +804,7 @@ enterprise_e2e_outcome_score_drift() {
     3|4|5|17|19) ;;
     *) printf 'n/a\n'; return 0 ;;
   esac
-  if find "${work_dir}/.planning/workflows" -name '*.md' -exec grep -lEi 'deviation|drift|course.correct|realign' {} + 2>/dev/null | grep -q .; then
+  if grep -q . < <(find "${work_dir}/.planning/workflows" -name '*.md' -exec grep -lEi 'deviation|drift|course.correct|realign' {} + 2>/dev/null); then
     printf 'pass\n'; return 0
   fi
   if [[ -n "$row_log" && -f "$row_log" ]] && grep -qiE 'course correct|implementation drift|realign' "$row_log" 2>/dev/null; then
@@ -901,7 +901,7 @@ enterprise_e2e_outcome_score_release() {
   [[ -f "${work_dir}/docs/instruction-ledger.jsonl" ]] && has_ledger=1
   [[ -d "${work_dir}/.planning/ship-readiness" ]] && has_ship=1
   [[ -f "${work_dir}/CHANGELOG.md" ]] && has_changelog=1
-  if find "${work_dir}/.planning/phases" -name 'SHIP.md' 2>/dev/null | grep -qi 'release'; then
+  if grep -qi 'release' < <(find "${work_dir}/.planning/phases" -name 'SHIP.md' 2>/dev/null); then
     has_release_ship=1
   fi
   # E2E-097: row 14 silver-release uses CHANGELOG + release phase, not ship-readiness.
@@ -1027,7 +1027,7 @@ enterprise_e2e_outcome_score_vloop() {
   if compgen -G "${work_dir}/.planning/VALIDATION"*.md >/dev/null 2>&1; then
     printf 'pass\n'; return 0
   fi
-  if find "${work_dir}/.planning/workflows" -name '*.md' -exec grep -lE 'VALIDATE|validate-evidence|V-loop' {} + 2>/dev/null | grep -q .; then
+  if grep -q . < <(find "${work_dir}/.planning/workflows" -name '*.md' -exec grep -lE 'VALIDATE|validate-evidence|V-loop' {} + 2>/dev/null); then
     printf 'partial\n'; return 0
   fi
   printf 'fail\n'
@@ -1076,7 +1076,7 @@ enterprise_e2e_outcome_score_intent() {
     fi
     printf 'fail\n'; return 0
   fi
-  if find "${work_dir}/.planning" -type f 2>/dev/null | head -1 | grep -q .; then
+  if grep -q . < <(find "${work_dir}/.planning" -type f 2>/dev/null | head -1); then
     printf 'partial\n'; return 0
   fi
   printf 'fail\n'
@@ -1427,8 +1427,8 @@ enterprise_e2e_outcome_score_codeint() {
 
 enterprise_e2e_outcome_score_flow() {
   local work_dir="$1"
-  if find "${work_dir}/.planning/workflows" -name '202*.md' 2>/dev/null | grep -q .; then
-    if find "${work_dir}/.planning/workflows" -name '202*.md' -exec grep -l 'Flow Log' {} + 2>/dev/null | grep -q .; then
+  if grep -q . < <(find "${work_dir}/.planning/workflows" -name '202*.md' 2>/dev/null); then
+    if grep -q . < <(find "${work_dir}/.planning/workflows" -name '202*.md' -exec grep -l 'Flow Log' {} + 2>/dev/null); then
       printf 'pass\n'; return 0
     fi
     printf 'partial\n'; return 0
@@ -1696,8 +1696,8 @@ enterprise_e2e_outcome_score_newwf() {
      grep -qE 'NEW-WORKFLOW|silver-new-workflow' "${state_dir}/orchestrator.json" 2>/dev/null; then
     has_worker=1
   fi
-  if find "${work_dir}/.planning/workflows" -name '*.md' 2>/dev/null | head -1 | grep -q .; then
-    if find "${work_dir}/.planning/workflows" -name '*.md' -exec grep -lEi 'compliance.?snapshot|WF-.*COMPLIANCE|net.?new|Flow Log' {} + 2>/dev/null | grep -q .; then
+  if grep -q . < <(find "${work_dir}/.planning/workflows" -name '*.md' 2>/dev/null | head -1); then
+    if grep -q . < <(find "${work_dir}/.planning/workflows" -name '*.md' -exec grep -lEi 'compliance.?snapshot|WF-.*COMPLIANCE|net.?new|Flow Log' {} + 2>/dev/null); then
       has_artifact=1
     fi
   fi

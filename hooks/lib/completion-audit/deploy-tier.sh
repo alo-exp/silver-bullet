@@ -328,7 +328,7 @@ project_root=$(dirname "$config_file")
 find_planning_artifact() {
   local pattern="$1"
   [[ -d "$project_root/.planning" ]] || return 1
-  find "$project_root/.planning" -type f -name "$pattern" -print -quit 2>/dev/null | grep -q .
+  grep -q . < <(find "$project_root/.planning" -type f -name "$pattern" -print -quit 2>/dev/null)
 }
 
 # silver-execute should produce .planning/STATE.md
