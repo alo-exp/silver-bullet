@@ -115,8 +115,9 @@ find_skill_file() {
     while IFS= read -r alias; do
       [[ -n "$alias" ]] && candidate_names+=("$alias")
     done < <(
-      sb_required_skill_aliases "$canonical_skill"
-      sb_required_skill_aliases "$raw_skill"
+      for name in "$canonical_skill" "$raw_skill"; do
+        sb_required_skill_aliases "$name"
+      done
     )
   fi
 
