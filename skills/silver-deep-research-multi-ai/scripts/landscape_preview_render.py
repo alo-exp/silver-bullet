@@ -427,26 +427,25 @@ def collect_landscape_payload(root: Path, *, report_html: Path | None = None) ->
         or "Market Landscape Report"
     )
 
-    if isinstance(consolidation, dict):
-        consolidation = {
-            **consolidation,
-            "consensus": [
-                {
-                    **item,
-                    "text": scrub_membership_framing(str(item.get("text") or ""), pack),
-                }
-                for item in (consolidation.get("consensus") or [])
-                if isinstance(item, dict)
-            ],
-            "divergence": [
-                {
-                    **item,
-                    "text": scrub_membership_framing(str(item.get("text") or ""), pack),
-                }
-                for item in (consolidation.get("divergence") or [])
-                if isinstance(item, dict)
-            ],
-        }
+    consolidation = {
+        **consolidation,
+        "consensus": [
+            {
+                **item,
+                "text": scrub_membership_framing(str(item.get("text") or ""), pack),
+            }
+            for item in (consolidation.get("consensus") or [])
+            if isinstance(item, dict)
+        ],
+        "divergence": [
+            {
+                **item,
+                "text": scrub_membership_framing(str(item.get("text") or ""), pack),
+            }
+            for item in (consolidation.get("divergence") or [])
+            if isinstance(item, dict)
+        ],
+    }
 
     def _scrub_embedded_strings(obj: Any) -> Any:
         """Scrub Conductor-as-APO framing inside embedded envelope/claim JSON."""
