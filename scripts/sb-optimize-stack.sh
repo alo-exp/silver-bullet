@@ -36,8 +36,10 @@ while [[ $# -gt 0 ]]; do
     --report) MODE="report" ;;
     --dry-run) DRY_RUN=1; export SB_STACK_OPTIMIZER_DRY_RUN=1 ;;
     --host)
+      # A trailing --host has no value; a bare `shift` would abort under set -e.
+      if [[ $# -lt 2 ]]; then echo "--host requires a value" >&2; usage >&2; exit 2; fi
       shift
-      HOST_OVERRIDE="${1:-}"
+      HOST_OVERRIDE="$1"
       ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown option: $1" >&2; usage >&2; exit 2 ;;
