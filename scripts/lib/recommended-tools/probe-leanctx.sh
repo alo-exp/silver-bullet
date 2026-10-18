@@ -50,8 +50,9 @@ rt_leanctx_mcp_env() {
   f="$(rt_leanctx_mcp_file)"
   [[ -f "$f" && -n "$key" ]] || return 1
   if [[ "$host" == "codex" ]]; then
-    grep -m1 -E "^${key}[[:space:]]*=[[:space:]]*\"" \
-      < <(grep -A 12 '^\[mcp_servers\.leanctx\]$' "$f" 2>/dev/null) \
+    local block
+    block="$(grep -A 12 '^\[mcp_servers\.leanctx\]$' "$f" 2>/dev/null)"
+    grep -m1 -E "^${key}[[:space:]]*=[[:space:]]*\"" <<<"$block" \
       | sed -E 's/^[^=]+=[[:space:]]*"([^"]*)".*$/\1/'
     return 0
   fi
@@ -79,12 +80,12 @@ rt_probe_leanctx_lctx_prefix() {
 rt_probe_leanctx_overlaps_disabled() {
   [[ -f "$(rt_leanctx_mcp_file)" ]] || return 1
   if [[ "${RT_HOST:-cursor}" == "codex" ]]; then
-    local f
+    local f block
     f="$(rt_leanctx_mcp_file)"
     local key
     for key in LEANCTX_DISABLE_SHELL_MCP LEANCTX_DISABLE_SANDBOX_MCP LEANCTX_DISABLE_FETCH_MCP LEANCTX_DISABLE_FTS; do
-      grep -qE "^${key}[[:space:]]*=[[:space:]]*\"1\"" \
-        < <(grep -A 12 '^\[mcp_servers\.leanctx\]$' "$f" 2>/dev/null) || return 1
+      block="$(grep -A 12 '^\[mcp_servers\.leanctx\]$' "$f" 2>/dev/null)"
+      grep -qE "^${key}[[:space:]]*=[[:space:]]*\"1\"" <<<"$block" || return 1
     done
     return 0
   fi

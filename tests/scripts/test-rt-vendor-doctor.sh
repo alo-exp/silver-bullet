@@ -53,7 +53,9 @@ RES="$TL_TMP/slow"; mkdir -p "$RES"
 ( vd RT_MODE=verify RT_REPO_ROOT="$TL_TMP/no-repo" PATH="$NOTO" RT_VENDOR_DOCTOR_TIMEOUT=1 -- "$BIN2/stubborn" >"$RES/watchdog-stubborn" ) &
 ( vdk -TERM "$BIN2/short" >"$RES/term-fails" ) &
 ( vdk -KILL "$BIN2/stubborn" >"$RES/kill-fails" ) &
+( RT_MODE=verify RT_REPO_ROOT="$TL_TMP/no-repo" PATH="$NOTO" RT_VENDOR_DOCTOR_TIMEOUT=5 WN=0 bash -c 'wait() { builtin wait "$@"; local r=$?; WN=$((WN + 1)); if [[ $WN -eq 2 ]]; then return 1; fi; return $r; }; source "$1/vendor-doctor.sh"; rt_run_vendor_doctor "$2"; echo $?' _ "$RTLIB" "$BIN2/okcmd" >"$RES/wait-fails" 2>/dev/null ) &
 wait
+assert_eq "watchdog: a failing wait on the watchdog is tolerated" "0" "$(cat "$RES/wait-fails")"
 assert_eq "shared timeout helper: timeout" "1" "$(cat "$RES/helper-timeout")"
 assert_eq "watchdog: hung command is terminated" "1" "$(cat "$RES/watchdog-hang")"
 assert_eq "watchdog: TERM-ignoring command is killed" "1" "$(cat "$RES/watchdog-stubborn")"

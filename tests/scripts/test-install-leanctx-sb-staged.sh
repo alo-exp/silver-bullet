@@ -257,20 +257,41 @@ guard_for cursor "$STAGE/.cursorrules"
 guard_for cursor "$STAGE/AGENTS.md"
 guard_for cursor "$HOME/.cursor/AGENTS.md"
 
+# Functions-only copy of the script (same line numbers, main flow cut off) so the
+# helpers older callers use can be exercised directly and still map to the source.
+FN="$TL_TMP/fn/scripts/install-leanctx-sb.sh"
+mkdir -p "$TL_TMP/fn/scripts" "$TL_TMP/fn/hooks"
+ln -sfn "$TL_REPO_ROOT/hooks/lib" "$TL_TMP/fn/hooks/lib"
+head -n 409 "$TL_REPO_ROOT/scripts/install-leanctx-sb.sh" >"$FN"
+mkdir -p "$TL_TMP/fn/scripts/lib"; cp "$VERIFY" "$TL_TMP/fn/scripts/lib/verify-leanctx-wire-proxy-ordering.py"
+fn_run() { # <snippet> -> runs with the functions loaded; sets TL_OUT/TL_ERR/TL_STATUS
+  tl_run bash -c 'source "$1"; shift; eval "$1"' _ "$FN" "$1"
+}
+
 # legacy mtime snapshots of older callers
 LEGACY_TARGET="$TL_TMP/legacy.txt"; printf 'a\n' >"$LEGACY_TARGET"
 LEGACY_MTIME="$(stat -c '%Y' "$LEGACY_TARGET")"
-legacy() { # <snapshot entry>
-  tl_run bash -c 'warn() { printf "WARN: %s\n" "$*" >&2; }; source <(sed -n "/^assert_guard_unchanged()/,/^}/p" "$1"); assert_guard_unchanged "$2"' _ "$INST" "$1"
-}
-legacy "${LEGACY_TARGET}=${LEGACY_MTIME}"
+fn_run "assert_guard_unchanged '${LEGACY_TARGET}=${LEGACY_MTIME}'"
 assert_eq "legacy snapshot: unchanged mtime passes" "0" "$TL_STATUS"
-legacy "${LEGACY_TARGET}=12345"
+fn_run "assert_guard_unchanged '${LEGACY_TARGET}=12345'"
 assert_eq "legacy snapshot: changed mtime fails" "1" "$TL_STATUS"
 assert_contains "legacy snapshot: reports modification" "$TL_ERR" "install modified guarded path: ${LEGACY_TARGET}"
-legacy "${TL_TMP}/absent.txt=12345"
+fn_run "assert_guard_unchanged '${TL_TMP}/absent.txt=12345'"
 assert_eq "legacy snapshot: absent file is tolerated" "0" "$TL_STATUS"
-tl_run bash -c 'warn() { :; }; source <(sed -n "/^assert_guard_unchanged()/,/^}/p" "$1"); assert_guard_unchanged "$2"' _ "$INST" "${LEGACY_TARGET}=hash:"
+fn_run "assert_guard_unchanged '${LEGACY_TARGET}=hash:'"
 assert_eq "hash snapshot with empty digest fails" "1" "$TL_STATUS"
+tl_stub stat 'exit 1'
+fn_run "assert_guard_unchanged '${LEGACY_TARGET}=0'"
+assert_eq "legacy snapshot: unreadable mtime counts as 0" "0" "$TL_STATUS"
+/bin/rm -f "$TL_BIN/stat"; hash -r
+
+# helpers that the main flow only reaches in special situations
+fn_run 'HOST=nowhere; context_mode_configured'
+assert_eq "context_mode_configured: unknown host" "1" "$TL_STATUS"
+fn_run 'leanctx_cli_path() { return 1; }; leanctx_supports_library_mode'
+assert_eq "library mode: no binary" "1" "$TL_STATUS"
+fn_run 'HOST=codex; n=0; leanctx_binary_ok() { return 0; }; leanctx_cli_path() { return 1; }; verify_wire_proxy_ordering'
+assert_eq "wire-proxy verify: codex without a resolvable binary only warns" "0" "$TL_STATUS"
+assert_contains "wire-proxy verify: warns" "$TL_ERR" "lean-ctx proxy subcommand not found"
 
 tl_results

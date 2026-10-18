@@ -165,10 +165,13 @@ tl_run env STUB_RC_install_leanctx_sb=7 bash "$OPT" --host claude --project-root
 assert_eq "failing leanctx installer aborts with its status" "7" "$TL_STATUS"
 assert_not_contains "no later stage after the failure" "$(calls)" "optimize-rtk-context-mode"
 
-# ---- host auto-detection
+# ---- host auto-detection and config helpers (functions-only copy: same line numbers, main flow cut off)
+FN="$TL_TMP/fn/scripts/optimize-five-tool-stack.sh"
+mkdir -p "$TL_TMP/fn/scripts" "$TL_TMP/fn/hooks"
+ln -sfn "$TL_REPO_ROOT/hooks/lib" "$TL_TMP/fn/hooks/lib"
+head -n 197 "$TL_REPO_ROOT/scripts/optimize-five-tool-stack.sh" >"$FN"
 detect() {
-  tl_run env -u CURSOR_PLUGIN_ROOT -u CODEX_HOME -u PI_CODING_AGENT_DIR -u RT_HOST "$@" bash -c '
-    source <(sed -n "/^detect_host()/,/^}/p" "$1"); detect_host' _ "$OPT"
+  tl_run env -u CURSOR_PLUGIN_ROOT -u CODEX_HOME -u PI_CODING_AGENT_DIR -u RT_HOST "$@" bash -c 'source "$1"; detect_host' _ "$FN"
 }
 rm -rf "$HOME/.cursor" "$HOME/.codex" "$HOME/.claude" "$HOME/.pi" "$HOME/.config"
 detect; assert_eq "detect: nothing found falls back to cursor" "cursor" "$TL_OUT"
@@ -186,6 +189,16 @@ mkdir -p "$HOME/.pi/agent"; detect; assert_eq "detect: ~/.pi/agent" "pi" "$TL_OU
 rm -rf "$HOME/.pi"
 mkdir -p "$HOME/.claude"; detect; assert_eq "detect: ~/.claude" "claude" "$TL_OUT"
 rm -rf "$HOME/.claude"
+
+# no config anywhere: the profile helpers degrade quietly
+tl_run bash -c 'source "$1"; PROJECT_ROOT=""; DRY_RUN=0; if five_tool_profile_active; then echo active=0; else echo active=1; fi; apply_profile_metadata; echo "apply=$?"' _ "$FN"
+assert_contains "profile active: no config file" "$TL_OUT" "active=1"
+assert_contains "apply metadata: no config file is a no-op" "$TL_OUT" "apply=0"
+# an unparsable config counts as the default (five_tool_routed) profile
+printf 'garbage' >"$PROJ/.silver-bullet.json"
+tl_run bash -c 'source "$1"; PROJECT_ROOT="$2"; if five_tool_profile_active; then echo active=0; else echo active=1; fi; if leanctx_opted_in; then echo opted=0; else echo opted=1; fi' _ "$FN" "$PROJ"
+assert_contains "profile active: unparsable config" "$TL_OUT" "active=0"
+assert_contains "opted in: unparsable config" "$TL_OUT" "opted=1"
 
 # --host auto resolves through detect_host before the opt-in check
 mkdir -p "$HOME/.codex"
