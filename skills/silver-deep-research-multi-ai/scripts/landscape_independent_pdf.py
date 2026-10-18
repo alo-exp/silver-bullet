@@ -767,13 +767,12 @@ def _inline_fmt_raw(text: str, *, autolink: bool = True) -> str:
                 inner = text[i + 1 : j]
                 if autolink:
                     stripped = inner.strip()
-                    url, trail = split_url_trailing_punct(stripped)
+                    url, _trail = split_url_trailing_punct(stripped)
                     lowered = url.lower()
                     if lowered.startswith("http://") or lowered.startswith("https://"):
-                        if stripped in {url, url + trail}:
-                            out.append(f"<code>{_html_ext_anchor(url, html.escape(url))}</code>")
-                            i = j + 1
-                            continue
+                        out.append(f"<code>{_html_ext_anchor(url, html.escape(url))}</code>")
+                        i = j + 1
+                        continue
                 out.append(f"<code>{html.escape(inner)}</code>")
                 i = j + 1
                 continue
