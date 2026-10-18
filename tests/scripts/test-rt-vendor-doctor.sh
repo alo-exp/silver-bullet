@@ -16,7 +16,7 @@ rc_of() { local rc=0; "$@" >/dev/null 2>&1 || rc=1; printf '%s' "$rc"; }
 BIN2="$TL_TMP/vbin"; mkdir -p "$BIN2"
 printf '#!/usr/bin/env bash\nexit 0\n' >"$BIN2/okcmd"
 printf '#!/usr/bin/env bash\nexit 3\n' >"$BIN2/badcmd"
-printf '#!/usr/bin/env bash\ntrap "" TERM\nsleep 2\n' >"$BIN2/stubborn"
+printf '#!/usr/bin/env bash\ntrap "" TERM\nsleep 5\n' >"$BIN2/stubborn"
 printf '#!/usr/bin/env bash\nsleep 2\n' >"$BIN2/short"
 printf '#!/usr/bin/env bash\nsleep 30\n' >"$BIN2/hang"
 chmod +x "$BIN2"/*
