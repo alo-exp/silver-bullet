@@ -230,7 +230,6 @@ doctor_reconciler_scope() {
     host) printf '%s' "host" ;;
     packages) printf '%s' "packages" ;;
     all) printf '%s' "all" ;;
-    *) printf '%s' "all" ;;
   esac
 }
 
@@ -273,7 +272,6 @@ PY
 }
 
 doctor_repair_generic_stack() {
-  [[ "$DOCTOR_FIX" -eq 1 && "$DOCTOR_DRY_RUN" -eq 0 ]] || return 0
   case "${DOCTOR_FIX_SCOPE:-all}" in
     local) return 0 ;;
   esac
@@ -695,7 +693,7 @@ run_doctor_checks() {
 
   # D10 — five-tool reconciler (all components + routes)
   # D10-generic is deliberately separate from SB hooks/enforcement readiness.
-  doctor_record_generic_stack || true
+  doctor_record_generic_stack
   doctor_record_reconciler_d10 || true
 
 
@@ -948,7 +946,7 @@ doctor_print_summary() {
   if [[ "$FORMAT" == "json" ]] && command -v jq >/dev/null 2>&1; then
     local recon='null'
     if [[ -n "${RECONCILER_JSON:-}" ]]; then
-      recon="$(printf '%s' "$RECONCILER_JSON" | jq -c '.' 2>/dev/null || echo null)"
+      recon="$(printf '%s' "$RECONCILER_JSON" | jq -c '.' 2>/dev/null)"
     fi
     jq -n \
       --arg schema "2.0.0" \
