@@ -100,8 +100,6 @@ def main() -> None:
         if proc.poll() is not None:
             leftover = proc.stdout.read() or b""
             if leftover:
-                if leftover.strip():
-                    got_bytes = True
                 sys.stdout.buffer.write(leftover)
                 sys.stdout.buffer.flush()
             sys.exit(proc.returncode or 0)

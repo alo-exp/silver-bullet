@@ -260,9 +260,6 @@ def base_model_from_slug(model_id: str) -> str:
         suffix = f"-{effort}"
         if model_id.endswith(suffix):
             return model_id[: -len(suffix)]
-        fast_suffix = f"-fast{suffix}"
-        if model_id.endswith(fast_suffix):
-            return model_id[: -len(fast_suffix)]
     if "[" in model_id:
         return model_id.split("[", 1)[0]
     return model_id
@@ -600,7 +597,7 @@ def fetch_and_cache_catalog(
                 cached = load_json(cached_path)
             except (OSError, ValueError):
                 continue
-            if cached.get("models"):
+            if isinstance(cached, dict) and cached.get("models"):
                 print(
                     f"WARN: catalog refresh found no models; keeping cached catalog {cached_path}",
                     file=sys.stderr,
