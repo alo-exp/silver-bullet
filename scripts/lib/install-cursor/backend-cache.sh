@@ -17,24 +17,43 @@ cursor_cursor_logs_root() {
   printf '%s/.config/Cursor/logs\n' "$HOME"
 }
 
+# Is a commit reachable? Prints nothing; the status says it:
+#   0  known to exist (in the local checkout, a remote ref tip, or fetchable)
+#   1  definitely not (malformed id, or the reachable remote says "not our ref")
+#   2  unknown (remote unreachable or the answer is unknowable) — never delete on 2
 cursor_github_commit_reachable() {
   local sha="$1"
   local source_root="${2:-${REPO_ROOT:-.}}"
+  local refs tmp err
 
-  [[ -n "$sha" ]] || return 1
+  [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || return 1
   if git -C "$source_root" cat-file -e "${sha}^{commit}" >/dev/null 2>&1; then
     return 0
   fi
-  # ls-remote matches ref names, never commit ids: look for the sha among the
-  # advertised ref tips instead.
-  local refs
-  refs="$(git ls-remote "$CURSOR_GITHUB_REPO_URL" 2>/dev/null)" || return 1
-  grep -q "^${sha}[[:space:]]" <<<"$refs"
+  refs="$(git ls-remote -- "$CURSOR_GITHUB_REPO_URL" 2>/dev/null)" || return 2
+  if awk -v s="$sha" '$1==s{f=1} END{exit !f}' <<<"$refs"; then
+    return 0
+  fi
+  # Not a ref tip: ask the remote for the commit itself, in a scratch repository.
+  tmp="$(mktemp -d "${TMPDIR:-/tmp}/sb-reach.XXXXXX")" || return 2
+  if ! git init -q --bare "$tmp" >/dev/null 2>&1; then
+    rm -rf -- "$tmp"
+    return 2
+  fi
+  if err="$(git -C "$tmp" fetch --depth 1 -- "$CURSOR_GITHUB_REPO_URL" "$sha" 2>&1 >/dev/null)"; then
+    rm -rf -- "$tmp"
+    return 0
+  fi
+  rm -rf -- "$tmp"
+  case "$err" in
+    *"not our ref"* | *"couldn't find remote ref"*) return 1 ;;
+  esac
+  return 2
 }
 
 prune_stale_cursor_marketplace_cache_links() {
   local keep_sha="${1:-}"
-  local cache_root entry name
+  local cache_root entry name reach
 
   cache_root="$(cursor_marketplace_plugin_cache_root)"
   [[ -d "$cache_root" ]] || return 0
@@ -46,7 +65,9 @@ prune_stale_cursor_marketplace_cache_links() {
     if [[ -n "$keep_sha" && "$name" == "$keep_sha" ]]; then
       continue
     fi
-    if cursor_github_commit_reachable "$name"; then
+    reach=0
+    cursor_github_commit_reachable "$name" || reach=$?
+    if [[ "$reach" -ne 1 ]]; then
       continue
     fi
     rm -f "$entry"
@@ -56,7 +77,7 @@ prune_stale_cursor_marketplace_cache_links() {
 
 prune_stale_cursor_marketplace_gitpaths() {
   local keep_sha="${1:-}"
-  local base_root entry name
+  local base_root entry name reach
 
   if declare -F cursor_github_marketplace_gitpath_root >/dev/null 2>&1; then
     base_root="$(cursor_github_marketplace_gitpath_root)"
@@ -72,7 +93,9 @@ prune_stale_cursor_marketplace_gitpaths() {
     if [[ -n "$keep_sha" && "$name" == "$keep_sha" ]]; then
       continue
     fi
-    if cursor_github_commit_reachable "$name"; then
+    reach=0
+    cursor_github_commit_reachable "$name" || reach=$?
+    if [[ "$reach" -ne 1 ]]; then
       continue
     fi
     rm -rf "$entry"
