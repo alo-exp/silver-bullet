@@ -206,10 +206,16 @@ cmd_start() {
   local row_id="" use_print=0 use_tmux=0 work_dir="" dry_run=0
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --row) row_id="$2"; shift 2 ;;
+      --row)
+      [[ $# -ge 2 ]] || { echo "ERROR: --row requires a value" >&2; exit 2; }
+      row_id="$2"; shift 2
+      ;;
       --use-print) use_print=1; shift ;;
       --tmux) use_tmux=1; shift ;;
-      --work-dir) work_dir="$2"; shift 2 ;;
+      --work-dir)
+      [[ $# -ge 2 ]] || { echo "ERROR: --work-dir requires a value" >&2; exit 2; }
+      work_dir="$2"; shift 2
+      ;;
       --dry-run) dry_run=1; shift ;;
       *) echo "Unknown start arg: $1" >&2; exit 2 ;;
     esac
@@ -352,7 +358,10 @@ cmd_score() {
   local run_id=""
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --run) run_id="$2"; shift 2 ;;
+      --run)
+      [[ $# -ge 2 ]] || { echo "ERROR: --run requires a value" >&2; exit 2; }
+      run_id="$2"; shift 2
+      ;;
       *) echo "Unknown score arg: $1" >&2; exit 2 ;;
     esac
   done
@@ -485,7 +494,10 @@ cmd_status() {
   local run_id=""
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --run) run_id="$2"; shift 2 ;;
+      --run)
+      [[ $# -ge 2 ]] || { echo "ERROR: --run requires a value" >&2; exit 2; }
+      run_id="$2"; shift 2
+      ;;
       *) echo "Unknown status arg: $1" >&2; exit 2 ;;
     esac
   done
