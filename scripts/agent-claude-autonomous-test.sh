@@ -267,6 +267,9 @@ cmd_start() {
 
   local launch_log="${run_dir}/launch.log"
   echo "Launching agent-claude invoke (log: $launch_log) ..."
+  # The launcher records the session/pid and "running" in the ledger after the fork; the
+  # delegate must not write its completion first or the launcher would overwrite it.
+  local ready_marker="${run_dir}/.launch-ready"
 
   if [[ "$use_tmux" -eq 1 ]]; then
     command -v tmux >/dev/null 2>&1 || { echo "ERROR: tmux required for --tmux" >&2; exit 1; }
@@ -279,7 +282,7 @@ cmd_start() {
     done
     tmux kill-session -t "$session" 2>/dev/null || true
     tmux new-session -d -s "$session" \
-      "cd $(printf '%q' "$REPO_ROOT") && source $(printf '%q' "${REPO_ROOT}/scripts/agent-claude/lib.sh") && export CLAUDE_WORK_DIR=$(printf '%q' "$work_dir") && agent_claude_apply_delegate_env && ${invoke_cmd} >>$(printf '%q' "$launch_log") 2>&1; exit_code=\$?; python3 - $(printf '%q' "$run_dir/ledger.json") \"\$exit_code\" <<'PY'
+      "for i in \$(seq 1 100); do [ -e $(printf '%q' "$ready_marker") ] && break; sleep 0.05; done; rm -f $(printf '%q' "$ready_marker"); cd $(printf '%q' "$REPO_ROOT") && source $(printf '%q' "${REPO_ROOT}/scripts/agent-claude/lib.sh") && export CLAUDE_WORK_DIR=$(printf '%q' "$work_dir") && agent_claude_apply_delegate_env && ${invoke_cmd} >>$(printf '%q' "$launch_log") 2>&1; exit_code=\$?; python3 - $(printf '%q' "$run_dir/ledger.json") \"\$exit_code\" <<'PY'
 import json, sys
 from datetime import datetime, timezone
 path, exit_code = sys.argv[1], int(sys.argv[2])
@@ -305,6 +308,7 @@ with open(path, "w", encoding="utf-8") as f:
     json.dump(doc, f, indent=2)
     f.write("\n")
 PY
+    : >"$ready_marker"
     echo "STARTED: tmux session $session"
     echo "ATTACH:  tmux attach -t $session"
     echo "MONITOR: bash scripts/agent-claude/monitor.sh --log ${run_dir}/claude-run.log"
@@ -313,8 +317,14 @@ PY
   fi
 
   # Background launch — TUI sessions are long-running
+  # Wait (bounded) for the launcher's ready marker before invoking.
   (
     set +e
+    for ((wait_i = 0; wait_i < 100; wait_i++)); do
+      [[ -e "$ready_marker" ]] && break
+      sleep 0.05
+    done
+    rm -f "$ready_marker"
     bash "$INVOKE" "${invoke_args[@]}" >>"$launch_log" 2>&1
     exit_code=$?
     python3 - "$run_dir/ledger.json" "$exit_code" <<'PY'
@@ -346,6 +356,7 @@ with open(path, "w", encoding="utf-8") as f:
     json.dump(doc, f, indent=2)
     f.write("\n")
 PY
+  : >"$ready_marker"
 
   echo "STARTED: delegate PID $pid"
   echo "MONITOR: bash scripts/agent-claude/monitor.sh --log ${run_dir}/claude-run.log"
