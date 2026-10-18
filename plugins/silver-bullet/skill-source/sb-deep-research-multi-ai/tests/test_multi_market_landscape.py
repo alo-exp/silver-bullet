@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 SCRIPTS = Path(__file__).resolve().parents[1] / "scripts"
 DR_SKILL = SCRIPTS.parent.parent / "silver-deep-research"
@@ -22,6 +24,23 @@ from category_pack import (  # noqa: E402
 from materialize_solution_artifacts import materialize_solution_artifacts  # noqa: E402
 from solution_classifier import classify_solutions  # noqa: E402
 from synthesize_landscape import build_multi_market_chart_data  # noqa: E402
+
+
+_OFFLINE_ENV = None
+
+
+def setUpModule() -> None:
+    # Hermetic by default: no vendor-URL health checks over HTTP and no Playwright PDF rendering.
+    global _OFFLINE_ENV
+    _OFFLINE_ENV = mock.patch.dict(
+        os.environ,
+        {"SB_SKIP_VENDOR_URL_HEALTH": "1", "SB_SKIP_LANDSCAPE_PDF": "1", "SB_ALLOW_SKIP_LANDSCAPE_PDF": "1"},
+    )
+    _OFFLINE_ENV.start()
+
+
+def tearDownModule() -> None:
+    _OFFLINE_ENV.stop()
 
 
 class MultiMarketPackTests(unittest.TestCase):
