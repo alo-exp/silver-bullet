@@ -194,7 +194,7 @@ add_block() {
     # $(...) strips the trailing newline of the block; restore it so the closing
     # fence does not run into the next block's heading.
     output+="$block"$'\n'
-    (( used_bytes += block_bytes )) || true
+    (( used_bytes += block_bytes ))
     return 0
   fi
   return 1
@@ -218,7 +218,6 @@ done
 score_and_add() {
   local query="$1"; shift
   local files=("$@")
-  [[ ${#files[@]} -eq 0 ]] && return
 
   local TMP_COUNTS
   TMP_COUNTS=$(mktemp)
