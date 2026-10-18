@@ -88,7 +88,11 @@ record() {
 version_to_int() {
   local v="${1%%-*}"
   local maj min patch
+  v="${v#v}"
   IFS='.' read -r maj min patch <<<"$v"
+  # Keep the leading digits of each part so "latest" or "3+build" never hit the
+  # arithmetic evaluator as an invalid base-10 number.
+  maj="${maj%%[!0-9]*}"; min="${min%%[!0-9]*}"; patch="${patch%%[!0-9]*}"
   maj="${maj:-0}"; min="${min:-0}"; patch="${patch:-0}"
   printf '%d' $((10#$maj * 1000000 + 10#$min * 1000 + 10#$patch))
 }
@@ -541,16 +545,18 @@ run_doctor_checks() {
 
   source_runtime_paths
   runtime="${SB_RUNTIME_NAME:-${SILVER_BULLET_RUNTIME:-claude}}"
-  template_ver="$(resolve_template_config_version)"
-  sb_config="${PROJ_ROOT}/.silver-bullet.json"
-  cache_root="$(plugin_cache_root)"
 
-  # D1 — jq
+  # D1 — jq (every other check parses JSON with jq, so report it and stop here)
   if command -v jq >/dev/null 2>&1; then
     record pass D1 "jq on PATH ($(jq --version 2>/dev/null | head -1))"
   else
     record fail D1 "jq missing — SB hooks fail-open without jq"
+    return 0
   fi
+
+  template_ver="$(resolve_template_config_version)"
+  sb_config="${PROJ_ROOT}/.silver-bullet.json"
+  cache_root="$(plugin_cache_root)"
 
   # D2 — plugin registry
   local reg
@@ -728,16 +734,14 @@ run_doctor_checks() {
   if [[ -f "${REPO_ROOT}/hooks/lib/runtime-paths.sh" ]]; then
     # shellcheck source=../hooks/lib/runtime-paths.sh
     source "${REPO_ROOT}/hooks/lib/runtime-paths.sh"
-    mkdir -p "${SB_RUNTIME_STATE_DIR}"
-    if [[ -w "${SB_RUNTIME_STATE_DIR}" ]]; then
+    if mkdir -p "${SB_RUNTIME_STATE_DIR}" 2>/dev/null && [[ -w "${SB_RUNTIME_STATE_DIR}" ]]; then
       record pass D12 "${SB_RUNTIME_STATE_DIR} writable"
     else
       record fail D12 "${SB_RUNTIME_STATE_DIR} not writable"
     fi
   else
     local fallback="${HOME}/.silver-bullet"
-    mkdir -p "$fallback"
-    if [[ -w "$fallback" ]]; then
+    if mkdir -p "$fallback" 2>/dev/null && [[ -w "$fallback" ]]; then
       record pass D12 "${fallback} writable (fallback)"
     else
       record fail D12 "state dir not writable"
@@ -940,7 +944,7 @@ run_doctor_checks() {
 }
 
 doctor_print_summary() {
-  if [[ "$FORMAT" == "json" ]]; then
+  if [[ "$FORMAT" == "json" ]] && command -v jq >/dev/null 2>&1; then
     local recon='null'
     if [[ -n "${RECONCILER_JSON:-}" ]]; then
       recon="$(printf '%s' "$RECONCILER_JSON" | jq -c '.' 2>/dev/null || echo null)"
