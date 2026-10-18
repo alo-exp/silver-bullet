@@ -20,6 +20,15 @@ export CURSOR_UNIFIED_MARKETPLACE_SOURCE="$REPO_ROOT"
 export CURSOR_AGENT_PLUGINS_REPO_URL="$REPO_ROOT"
 export CURSOR_GITHUB_REPO_URL="$REPO_ROOT"
 export RT_SKIP_VENDOR_DOCTOR=1
+# Hermetic: no package installs or network. The sub-agent installer runs offline
+# from the committed model catalog and writes its config into a sandbox project.
+# shellcheck source=tests/lib/offline-tools.sh
+source "$REPO_ROOT/tests/lib/offline-tools.sh"
+sb_offline_tools_install "$TMP_HOME/offline-bin"
+export SB_CURSOR_SB_AGENTS_OFFLINE=1
+export CSBA_REPO_ROOT="${TMP_HOME}/project"
+mkdir -p "$CSBA_REPO_ROOT" "${TMP_HOME}/.config/silver-bullet"
+cp "$REPO_ROOT/tests/fixtures/cursor-models-catalog.json" "${TMP_HOME}/.config/silver-bullet/cursor-models-catalog.json"
 
 # Use current tracked/untracked working-tree content without .git metadata so
 # pre-commit verification exercises the code under review rather than HEAD.
@@ -31,7 +40,13 @@ else
   fail "archive-shaped tree contains scripts/generate-cursor-hooks.py"
 fi
 
-RTK_DISABLED=1 bash "${ARCHIVE_ROOT}/scripts/install-cursor.sh" >/dev/null
+INSTALL_LOG="$TMP_HOME/install.log"
+RTK_DISABLED=1 bash "${ARCHIVE_ROOT}/scripts/install-cursor.sh" >"$INSTALL_LOG" 2>&1
+if ! grep -q 'docs fetch failed' "$INSTALL_LOG"; then
+  pass "archive install never reaches the network for the model catalog"
+else
+  fail "archive install never reaches the network for the model catalog"
+fi
 
 current_link="${CURSOR_HOME}/plugins/cache/alo-labs/silver-bullet/current"
 resolved_current="$(cd "$current_link" && pwd -P)"
@@ -70,6 +85,12 @@ if bash "${ARCHIVE_ROOT}/scripts/enumerate-cursor-slash-picker.sh" --cursor-home
   pass "archive install enumerate-cursor-slash-picker OK"
 else
   fail "archive install enumerate-cursor-slash-picker OK"
+fi
+
+if [[ "$(find "${CURSOR_HOME}/agents" -maxdepth 1 -name 'sb-*.md' | wc -l | tr -d ' ')" -gt 0 ]]; then
+  pass "archive install keeps the installer-managed sb-* subagents"
+else
+  fail "archive install keeps the installer-managed sb-* subagents"
 fi
 
 echo

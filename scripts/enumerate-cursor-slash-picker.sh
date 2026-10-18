@@ -255,6 +255,9 @@ def enumerate_global_custom_agents(root: Path) -> list[dict[str, str]]:
         if path.suffix.lower() not in {".md", ".json", ".yaml", ".yml"}:
             continue
         text = path.read_text(errors="ignore")
+        if "<!-- sb-managed: cursor-sb-agents -->" in text:
+            # Subagents written by install-cursor-sb-agents.sh are intentional.
+            continue
         meta = parse_frontmatter(path)
         name = meta.get("name") or meta.get("title") or path.stem
         if name.startswith("sb:") or name.startswith("silver-") or "Silver Bullet" in text[:2000]:
