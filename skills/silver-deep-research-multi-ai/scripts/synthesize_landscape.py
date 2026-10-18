@@ -2059,8 +2059,6 @@ def build_chart_data(
             if slug not in present:
                 rankings.append({"solution": slug, "score": 0})
                 present.add(slug)
-        if not rankings:
-            rankings = [{"solution": slug, "score": 0} for slug in sorted(market_slugs)]
     # Charts use ranked core solutions; include all market cores (cap by pack max).
     chart_cap = 12
     if market_slugs:
