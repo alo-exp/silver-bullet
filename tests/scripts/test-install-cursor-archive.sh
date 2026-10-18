@@ -16,9 +16,6 @@ trap 'rm -rf "$TMP_HOME" "$ARCHIVE_ROOT"' EXIT
 export HOME="$TMP_HOME"
 export CURSOR_HOME="${TMP_HOME}/.cursor"
 export CURSOR_MARKETPLACE_ROOT="${CURSOR_HOME}/plugins/marketplaces/alo-labs-cursor"
-export CURSOR_UNIFIED_MARKETPLACE_SOURCE="$REPO_ROOT"
-export CURSOR_AGENT_PLUGINS_REPO_URL="$REPO_ROOT"
-export CURSOR_GITHUB_REPO_URL="$REPO_ROOT"
 export RT_SKIP_VENDOR_DOCTOR=1
 # Hermetic: no package installs or network. The sub-agent installer runs offline
 # from the committed model catalog and writes its config into a sandbox project.
@@ -32,7 +29,27 @@ cp "$REPO_ROOT/tests/fixtures/cursor-models-catalog.json" "${TMP_HOME}/.config/s
 
 # Use current tracked/untracked working-tree content without .git metadata so
 # pre-commit verification exercises the code under review rather than HEAD.
-rsync -a --exclude='.git/' --exclude='/.claude/worktrees/' --exclude='/.coverage-run/' "$REPO_ROOT/" "$ARCHIVE_ROOT/"
+# Trees the installer never reads (tests, docs, planning notes, graph output, research) are
+# left out so the copy and the install stay fast; the rest is the archive-shaped tree.
+rsync -a --exclude='/.git' --exclude='.git/' --exclude='/.claude/worktrees/' --exclude='/.coverage-run/' \
+  --exclude='/graphify-out/' --exclude='/.planning/' --exclude='/research/' --exclude='/.agentmemory/' \
+  --exclude='/tests/' --exclude='/docs/' --exclude='/site/' --exclude='node_modules/' "$REPO_ROOT/" "$ARCHIVE_ROOT/"
+# GitHub, the marketplace and the agent-plugins repository are one small local repository
+# (cloning the full development history costs most of the install time).
+ORIGIN_ROOT="$TMP_HOME/origin"
+rsync -a "$ARCHIVE_ROOT/" "$ORIGIN_ROOT/"
+(
+  cd "$ORIGIN_ROOT" || exit 1
+  export GIT_AUTHOR_NAME="SB Test" GIT_AUTHOR_EMAIL="sb-test@example.invalid" GIT_COMMITTER_NAME="SB Test" GIT_COMMITTER_EMAIL="sb-test@example.invalid"
+  git -c init.defaultBranch=main init -q
+  git config gc.auto 0
+  git config maintenance.auto false
+  git add -A
+  git -c commit.gpgsign=false -c core.hooksPath=/dev/null commit -q -m origin
+)
+export CURSOR_UNIFIED_MARKETPLACE_SOURCE="$ORIGIN_ROOT" CURSOR_AGENT_PLUGINS_REPO_URL="$ORIGIN_ROOT" CURSOR_GITHUB_REPO_URL="$ORIGIN_ROOT"
+# The five-tool reconciler (minutes of tool probing) has its own suites; record the call instead.
+printf 'rt_installer_post_install() { echo "rt-post-install $*"; }\n' >"$ARCHIVE_ROOT/scripts/lib/recommended-tools/installer.sh"
 
 if [[ -f "${ARCHIVE_ROOT}/scripts/generate-cursor-hooks.py" ]]; then
   pass "archive-shaped tree contains scripts/generate-cursor-hooks.py"
