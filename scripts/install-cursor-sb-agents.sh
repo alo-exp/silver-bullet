@@ -45,6 +45,15 @@ script provides a numbered CLI fallback with pricing columns.
 USAGE
 }
 
+# flag_json 0|1 -> false|true (for jq --argjson)
+flag_json() {
+  if [[ "$1" -eq 1 ]]; then
+    echo true
+  else
+    echo false
+  fi
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --global) SCOPE="global"; shift ;;
@@ -84,8 +93,16 @@ if [[ "$FIX_MODE" -eq 1 ]]; then
   SCOPE="$(printf '%s' "$CONFIG_JSON" | jq -r '.agents_install_scope // "global"')"
   INCLUDE_FAST="$(printf '%s' "$CONFIG_JSON" | jq -r '.include_fast // false')"
   INCLUDE_MAX="$(printf '%s' "$CONFIG_JSON" | jq -r '.include_max // false')"
-  [[ "$INCLUDE_FAST" == "true" ]] && INCLUDE_FAST=1 || INCLUDE_FAST=0
-  [[ "$INCLUDE_MAX" == "true" ]] && INCLUDE_MAX=1 || INCLUDE_MAX=0
+  if [[ "$INCLUDE_FAST" == "true" ]]; then
+    INCLUDE_FAST=1
+  else
+    INCLUDE_FAST=0
+  fi
+  if [[ "$INCLUDE_MAX" == "true" ]]; then
+    INCLUDE_MAX=1
+  else
+    INCLUDE_MAX=0
+  fi
 fi
 
 csba_refresh_catalog "$PROJECT_ROOT" >/dev/null
@@ -128,8 +145,8 @@ if [[ -z "$CONFIG_JSON" ]]; then
         '.effort_levels = ($e | split(",") | map(gsub("^\\s+|\\s+$"; "")))')"
     fi
     CONFIG_JSON="$(printf '%s' "$CONFIG_JSON" | jq \
-      --argjson fast "$([[ "$INCLUDE_FAST" -eq 1 ]] && echo true || echo false)" \
-      --argjson max "$([[ "$INCLUDE_MAX" -eq 1 ]] && echo true || echo false)" \
+      --argjson fast "$(flag_json "$INCLUDE_FAST")" \
+      --argjson max "$(flag_json "$INCLUDE_MAX")" \
       '.include_fast = $fast | .include_max = $max')"
   else
     echo ""
@@ -181,8 +198,8 @@ if [[ -z "$CONFIG_JSON" ]]; then
     effort_json="$(printf '%s' "$effort_in" | tr ',' '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | jq -R . | jq -s .)"
     CONFIG_JSON="$(printf '%s' "$CONFIG_JSON" | jq --argjson e "$effort_json" '.effort_levels = $e')"
     CONFIG_JSON="$(printf '%s' "$CONFIG_JSON" | jq \
-      --argjson fast "$([[ "$INCLUDE_FAST" -eq 1 ]] && echo true || echo false)" \
-      --argjson max "$([[ "$INCLUDE_MAX" -eq 1 ]] && echo true || echo false)" \
+      --argjson fast "$(flag_json "$INCLUDE_FAST")" \
+      --argjson max "$(flag_json "$INCLUDE_MAX")" \
       '.include_fast = $fast | .include_max = $max')"
   fi
 fi
