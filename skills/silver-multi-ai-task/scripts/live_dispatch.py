@@ -215,17 +215,13 @@ def extract_json_payload(text: str) -> dict[str, Any]:
     fence = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.DOTALL)
     if fence:
         try:
-            parsed = json.loads(fence.group(1))
-            if isinstance(parsed, dict):
-                return parsed
+            return json.loads(fence.group(1))
         except json.JSONDecodeError:
             pass
     brace = re.search(r"(\{.*\})", text, re.DOTALL)
     if brace:
         try:
-            parsed = json.loads(brace.group(1))
-            if isinstance(parsed, dict):
-                return parsed
+            return json.loads(brace.group(1))
         except json.JSONDecodeError:
             pass
     return {"raw_text": text[:8000]}
@@ -573,9 +569,7 @@ def _parse_ocg_cohort_output(raw: str) -> dict[str, Any] | None:
     brace = re.search(r"(\{[^{}]*\"schema_id\"\s*:\s*\"ocg-pool-cohort-result-v1\".*\})", text, re.DOTALL)
     if brace:
         try:
-            parsed = json.loads(brace.group(1))
-            if isinstance(parsed, dict):
-                return parsed
+            return json.loads(brace.group(1))
         except json.JSONDecodeError:
             pass
     return None
