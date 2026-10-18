@@ -165,6 +165,9 @@ assert_eq "drop: reasons" "fallback_drop:attach fallback_drop:control-dir fallba
 fresh; agent_mode_drop_interactive_only_flags
 assert_eq "drop: nothing to drop" "0 0" "${#SB_AM_DROPPED[@]} ${#SB_AM_REASONS[@]}"
 
+tl_run bash -c "source '$LIB'; agent_mode_reset; export SB_AGENT_MODE_ATTACH=1; readonly SB_AGENT_MODE_ATTACH; SB_AM_ATTACH=1; agent_mode_drop_interactive_only_flags; echo rc=\$? attach=\$SB_AM_ATTACH env=\${SB_AGENT_MODE_ATTACH:-unset}"
+assert_contains "drop: unsettable env var tolerated" "$TL_OUT" "rc=0 attach=0 env=1"
+
 # ---------------- apply_tui_gate ----------------
 gate() { # <tui 0|1> args...
   local tui="$1"; shift
@@ -347,6 +350,39 @@ assert_not_contains "escalation: tail limited to 80 lines" "$(cat "$WE/escalatio
 printf '## NEXT_RETRY_PROMPT\n(none)\n' >"$WE/result.md"
 agent_mode_write_escalation "$WE" "none" ""
 assert_not_contains "escalation: (none) prompt skipped" "$(cat "$WE/escalation.md")" "NEXT_RETRY_PROMPT"
+
+tail() { return 1; }
+agent_mode_write_escalation "$WE" "log unreadable" "$TL_TMP/big.log"
+unset -f tail
+assert_contains "escalation: unreadable log tail tolerated, fence still closed" "$(cat "$WE/escalation.md")" "## Log tail
+
+\`\`\`
+\`\`\`"
+
+# ---------------- normalize_incomplete_result ----------------
+NR="$TL_TMP/nr"
+fresh; agent_mode_normalize_incomplete_result "$NR"
+assert_contains "normalize: missing result gets a failing skeleton" "$(cat "$NR/result.md")" "## STATUS
+fail"
+assert_eq "normalize: missing result reasons" "incomplete result-missing" "${SB_AM_REASONS[*]}"
+fresh; printf 'free text only\n' >"$NR/result.md"
+agent_mode_normalize_incomplete_result "$NR"
+assert_eq "normalize: statusless result gets a fail status prepended" "## STATUS
+fail
+
+free text only" "$(cat "$NR/result.md")"
+assert_eq "normalize: present result is only incomplete" "incomplete" "${SB_AM_REASONS[*]}"
+fresh; printf '## STATUS\nweird\n\nbody\n' >"$NR/result.md"
+agent_mode_normalize_incomplete_result "$NR"
+assert_eq "normalize: unknown heading status replaced with fail" "fail" "$(agent_mode_result_status "$NR/result.md")"
+fresh; printf 'STATUS: pass\nbody\n' >"$NR/result.md"
+agent_mode_normalize_incomplete_result "$NR"
+assert_eq "normalize: a real STATUS line is left alone" "STATUS: pass
+body" "$(cat "$NR/result.md")"
+fresh; printf 'STATUS: pass\n' >"$NR/result.md"
+agent_mode_normalize_incomplete_result "$NR" 1
+assert_eq "normalize: forced missing flag records result-missing" "incomplete result-missing" "${SB_AM_REASONS[*]}"
+assert_eq "normalize: mode.json persisted" '["incomplete","result-missing"]' "$(jq -c .reason "$NR/mode.json")"
 
 # ---------------- maybe_escalate ----------------
 ME_WORK="$TL_TMP/mework"; ME_TASK="$ME_WORK/.planning/agent-claude/t-9"; mkdir -p "$ME_TASK"
