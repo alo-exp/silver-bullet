@@ -265,7 +265,9 @@ assert_contains "runbook documents RTK coexistence" "$RUNBOOK" "RTK coexistence"
 assert_contains "runbook documents verbatim harness mode" "$RUNBOOK" "SB_RTK_COMPAT_MODE=verbatim"
 
 # Dry-run path (no tool enforcement when configs pending or debug dry_run)
-if enterprise_e2e_code_intel_preflight "$REPO_ROOT" "${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/shafqat/projects/enterprise-grade-test-app}" 1 >/dev/null 2>&1; then
+# The preflight rejects a missing fixture directory, so give it a real (empty) one.
+DRY_FIXTURE="$(mktemp -d)"
+if enterprise_e2e_code_intel_preflight "$REPO_ROOT" "$DRY_FIXTURE" 1 >/dev/null 2>&1; then
   pass "code-intel preflight dry-run exits 0"
 else
   fail "code-intel preflight dry-run should exit 0"
@@ -275,7 +277,7 @@ fi
 TMP_LOG="$(mktemp)"
 LEDGER_FIXTURE=""
 LEDGER_RESUME_FIXTURE=""
-cleanup_tmp() { rm -f "$TMP_LOG" "$LEDGER_FIXTURE" "$LEDGER_RESUME_FIXTURE"; }
+cleanup_tmp() { rm -f "$TMP_LOG" "$LEDGER_FIXTURE" "$LEDGER_RESUME_FIXTURE"; rm -rf "$DRY_FIXTURE"; }
 trap cleanup_tmp EXIT
 {
   echo "=== Row 1: silver-router (/sb) ==="
