@@ -142,6 +142,19 @@ assert_eq "stdin script passes" 0 "$TL_STATUS"
 assert_contains "stdin script ran the command" "$TL_OUT" "Passed: echo via-stdin"
 assert_file_exists "stdin script wrote the marker from the inherited runtime paths" "$MARKER"
 
+# plugin-root detection failing (cd into the script's parent): runtime paths come from the environment
+d="$(newproj nocd)"; jq -n '{verify_commands:["echo no-cd"]}' >"$d/.silver-bullet.json"
+rm -f "$MARKER"
+pushd "$d" >/dev/null
+tl_run bash -c '
+  cd() { if [[ "${1:-}" == */.. ]]; then return 1; fi; builtin cd "$@"; }
+  export -f cd
+  exec bash "$1"' _ "$VT"
+popd >/dev/null
+assert_eq "plugin-root cd failure is tolerated" 0 "$TL_STATUS"
+assert_contains "command still ran" "$TL_OUT" "Passed: echo no-cd"
+assert_file_exists "marker written via the inherited runtime paths" "$MARKER"
+
 # --- project root discovery -------------------------------------------------
 n="$TL_TMP/noroot"; mkdir -p "$n/a/b"
 inp "$n/a/b" bash "$VT"
