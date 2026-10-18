@@ -2,7 +2,8 @@
 # Portable command timeout for Silver Bullet scripts (macOS-safe).
 #
 # Prefers GNU `timeout` / Homebrew `gtimeout`, then python3 subprocess+killpg,
-# then a background+kill watchdog. Exit 124 on timeout (GNU timeout convention).
+# then a background+kill watchdog (the command runs in its own process group, via job
+# control, so grandchildren are signalled too). Exit 124 on timeout (GNU timeout convention).
 #
 # Usage:
 #   sb_run_with_timeout <seconds> <label> -- command [args...]
@@ -20,11 +21,16 @@ sb_timeout_bin() {
   fi
 }
 
+# _sb_timeout_signal <signal> <pid>: signal the command's process group, else the process alone.
+_sb_timeout_signal() {
+  kill "-$1" -- "-$2" 2>/dev/null || kill "-$1" "$2" 2>/dev/null || true
+}
+
 # sb_run_with_timeout seconds label -- cmd...
 sb_run_with_timeout() {
   local seconds="${1:-}"
   local label="${2:-command}"
-  local bin rc=0 cmd_pid watchdog_pid
+  local bin rc=0 cmd_pid watchdog_pid monitor_was_on=0
   shift "$(( $# < 2 ? $# : 2 ))"
   if [[ "${1:-}" == "--" ]]; then
     shift
@@ -84,6 +90,11 @@ PY
       ;;
     *)
       # Background + kill watchdog (no timeout/gtimeout/python3).
+      # Job control gives the background command its own process group (pgid == pid).
+      if [[ $- == *m* ]]; then
+        monitor_was_on=1
+      fi
+      set -m
       "$@" &
       cmd_pid=$!
       (
@@ -95,15 +106,20 @@ PY
         sleep "$seconds" &
         wait
         if kill -0 "$cmd_pid" 2>/dev/null; then
-          kill -TERM "$cmd_pid" 2>/dev/null || true
+          _sb_timeout_signal TERM "$cmd_pid"
           sleep 2
-          kill -KILL "$cmd_pid" 2>/dev/null || true
+          _sb_timeout_signal KILL "$cmd_pid"
         fi
       ) &
       watchdog_pid=$!
+      if [[ "$monitor_was_on" -eq 0 ]]; then
+        set +m
+      fi
       wait "$cmd_pid" || rc=$?
       kill "$watchdog_pid" 2>/dev/null || true
-      if wait "$watchdog_pid" 2>/dev/null; then :; fi   # reap it; its status is irrelevant
+      # Reap the watchdog. Its status is irrelevant, and a bare `wait` here can return 143 (when the
+      # TERM lands mid-flight) and abort a caller running under `set -e`; the `if` keeps it errexit-safe.
+      if wait "$watchdog_pid" 2>/dev/null; then :; fi
       # SIGTERM=143, SIGKILL=137 → normalize to GNU timeout 124.
       if [[ $rc -eq 143 || $rc -eq 137 ]]; then
         rc=124
