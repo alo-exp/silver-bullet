@@ -1487,43 +1487,6 @@ def _normalize_scope_markdown(text: str) -> str:
     return "\n".join(lines)
 
 
-def _slugify_label(label: str) -> str:
-    return re.sub(r"[^a-z0-9]+", "-", label.strip().lower()).strip("-")
-
-
-def _slug_for_label(
-    label: str,
-    *,
-    known: dict[str, str],
-    rankings: list[dict[str, Any]],
-    commercial: list[dict[str, str]] | None = None,
-    oss: list[dict[str, str]] | None = None,
-    support: dict[str, dict[str, bool]] | None = None,
-) -> str | None:
-    norm = label.strip()
-    for slug, name in known.items():
-        if name == norm:
-            return slug
-    for entry in _catalog_entries(commercial, oss):
-        if _catalog_label(entry, known=known) == norm:
-            return entry["slug"]
-    for item in rankings:
-        if not isinstance(item, dict):
-            continue
-        slug = str(item.get("solution") or "").strip()
-        if not slug:
-            continue
-        if known.get(slug, slug.replace("-", " ").title()) == norm:
-            return slug
-    slugified = _slugify_label(norm)
-    if support and slugified in support:
-        return slugified
-    for slug in support or {}:
-        if known.get(slug, slug.replace("-", " ").title()) == norm:
-            return slug
-    return slugified or None
-
-
 def _collect_mq_leader_series(
     gmq_data: list[dict[str, Any]],
     mq_data: list[dict[str, Any]],

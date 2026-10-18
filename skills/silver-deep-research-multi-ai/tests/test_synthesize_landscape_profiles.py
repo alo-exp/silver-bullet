@@ -189,28 +189,6 @@ class CatalogLabelTests(TmpCase):
         self.assertEqual(sl._normalize_scope_markdown("# Title\nbody\n"), "**Title**\nbody")
         self.assertEqual(sl._normalize_scope_markdown("## Sub\nbody"), "## Sub\nbody")
         self.assertEqual(sl._normalize_scope_markdown("  "), "")
-        self.assertEqual(sl._slugify_label("  Hello, World! "), "hello-world")
-
-    def test_slug_for_label(self):
-        f = lambda label, **kw: sl._slug_for_label(label, known=kw.pop("known", {}), rankings=kw.pop("rankings", []), **kw)  # noqa: E731
-        self.assertEqual(f(" Known Name ", known={"kn": "Known Name"}), "kn")
-        self.assertEqual(f("Cat Name", commercial=[{"slug": "cat", "name": "Cat Name"}]), "cat")
-        self.assertEqual(f("Oss Name", oss=[{"slug": "oss", "name": "Oss Name"}]), "oss")
-        self.assertEqual(f("Ranked Tool", rankings=["junk", {"solution": ""}, {"solution": "ranked-tool"}]),
-                         "ranked-tool")
-        self.assertEqual(f("Ranked Known", known={"rk": "Ranked Known"}, rankings=[{"solution": "rk"}]), "rk")
-        self.assertEqual(f("Sup Tool", support={"sup-tool": {}}), "sup-tool")
-        self.assertEqual(f("Pretty Name", known={"pn": "Pretty Name"}, support={"pn": {}}), "pretty-name"
-                         if False else "pn")
-        self.assertEqual(f("Pretty Label", support={"other": {}}), "pretty-label")
-        self.assertEqual(f("Some Other", support={"some-x": {}}), "some-other")
-        self.assertEqual(f("Other Name", known={"x": "X", "kn": "Known"},
-                           commercial=[{"slug": "c", "name": "C"}], oss=[{"slug": "o", "name": "O"}],
-                           rankings=[{"solution": "r"}, {"solution": "rr"}],
-                           support={"a_b": {}, "c_d": {}}), "other-name")
-        self.assertEqual(f("A_B", known={"x": "X"}, support={"c_d": {}, "a_b": {}}), "a_b")
-        self.assertIsNone(f("!!!"))
-        self.assertEqual(f("Plain"), "plain")
 
     def test_leader_series_and_vc_entry(self):
         gmq = [{"q": "Challengers", "label": "C", "slug": "c"}, {"q": "Leaders", "label": "A", "slug": "a"},
