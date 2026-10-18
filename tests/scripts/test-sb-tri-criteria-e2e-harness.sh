@@ -49,6 +49,10 @@ EOS
   chmod +x "$PL/scripts/$sc.sh"
 done
 RUNS="$TL_TMP/runs"
+# Unique, increasing run ids without sleeping: the harness asks `date` for %Y%m%dT%H%M%SZ stamps.
+REAL_DATE="$(command -v date)"
+tl_stub date "if [[ \"\$*\" == *%Y%m%dT%H%M%SZ* ]]; then n=\$(cat '$TL_TMP/date.n' 2>/dev/null || echo 0); n=\$((n+1)); echo \$n >'$TL_TMP/date.n'; printf '20260301T%06dZ\n' \$n; else exec '$REAL_DATE' \"\$@\"; fi"
+hash -r
 run() { # [env...] -- args
   local envs=()
   while [[ "$1" != "--" ]]; do envs+=("$1"); shift; done
@@ -140,13 +144,11 @@ assert_eq "ledger defaults to cursor parent" "TC-01|TC-01|prepared|cursor|parent
   "$(jq -r '[.track_id,.row_id,.status,.host,.orchestrator_mode,(.live_session_run|tostring)]|join("|")' "$RUNS/$RUN1/ledger.json")"
 assert_contains "design path printed" "$TL_OUT" "design=$PL/DESIGN.md"
 for h in claude codex; do
-  sleep 1
   run SB_TRI_CRITERIA_HOST=$h -- start --track TC-01 --dry-run
   id="$(sed -n 's/^run_id=//p' <<<"$TL_OUT")"
   assert_eq "ledger for host $h" "$h|delegation" "$(jq -r '[.host,.orchestrator_mode]|join("|")' "$RUNS/$id/ledger.json")"
   assert_contains "mechanism for host $h" "$(jq -r .mechanism "$RUNS/$id/ledger.json")" "/sb:agent-$h"
 done
-sleep 1
 run SB_TRI_CRITERIA_HOST=weird -- start --track TC-01 --dry-run
 id="$(sed -n 's/^run_id=//p' <<<"$TL_OUT")"
 assert_eq "unknown host normalized to cursor" "cursor|parent" "$(jq -r '[.host,.orchestrator_mode]|join("|")' "$RUNS/$id/ledger.json")"
@@ -215,7 +217,6 @@ assert_eq "live unknown arg" 2 "$TL_STATUS"; assert_contains "live unknown arg m
 run X=1 -- live --track TC-01 --host mainframe
 assert_eq "live bad host" 2 "$TL_STATUS"; assert_contains "bad host message" "$TL_ERR" "--host must be cursor, claude, or codex (got: mainframe)"
 last_run() { local d r=""; for d in "$RUNS"/*-"$1"; do r="${d##*/}"; done; printf '%s' "$r"; }
-sleep 1
 run X=1 -- live --track TC-01 --work-dir "$WORK"
 assert_eq "cursor live passes" 0 "$TL_STATUS"
 assert_contains "live banner" "$TL_OUT" "host=cursor work_dir=$WORK greenfield=0"
@@ -226,37 +227,30 @@ assert_contains "scored with the cursor state dir" "$(cat "$STUB_LOG")" " $HOME/
 assert_eq "live ledger records the fixture branch and sha" "feature/test|ok" \
   "$(jq -r '[.fixture_branch,(.fixture_sha|if length==12 then "ok" else . end)]|join("|")' "$RUNS/$LR/ledger.json")"
 assert_eq "live ledger ends scored" "scored" "$(jq -r .status "$RUNS/$LR/ledger.json")"
-sleep 1
 run X=1 -- live --track TC-02 --host claude --work-dir "$WORK" --greenfield
 assert_eq "claude greenfield live passes" 0 "$TL_STATUS"
 LR="$(last_run TC-02)"
 assert_contains "host script invoked as <host> <track> <run-dir>" "$(cat "$STUB_LOG")" "live-verify-track-host claude TC-02 $RUNS/$LR work=$WORK host=claude greenfield=1"
 assert_eq "greenfield flag in ledger" "true" "$(jq -r .greenfield "$RUNS/$LR/ledger.json")"
 assert_contains "scored with the claude state dir" "$(cat "$STUB_LOG")" " $HOME/.claude/.silver-bullet/tri-criteria-live-$LR "
-sleep 1
 run X=1 -- live --track TC-03 --host codex --work-dir "$WORK"
 assert_eq "codex live passes" 0 "$TL_STATUS"
 LR="$(last_run TC-03)"
 assert_contains "codex host script" "$(cat "$STUB_LOG")" "live-verify-track-host codex TC-03 $RUNS/$LR"
 assert_contains "scored with a tri-criteria state dir" "$(cat "$STUB_LOG")" "/.silver-bullet/tri-criteria-live-$LR "
-sleep 1
 run SB_TRI_CRITERIA_HOST=claude SB_TRI_CRITERIA_WORK_DIR="$WORK" -- live --track TC-01
 assert_contains "host and work dir from env" "$TL_OUT" "host=claude work_dir=$WORK"
-sleep 1
 run LIVE_SCRIPT_FAIL=1 -- live --track TC-01 --work-dir "$WORK"
 assert_eq "failing live script aborts" 1 "$TL_STATUS"
 assert_not_contains "no score after a failing live script" "$TL_OUT" "VERDICT"
-sleep 1
 run SCORE_OUT_A="fail|x" -- live --track TC-01 --work-dir "$WORK"
 assert_eq "failing score fails live" 1 "$TL_STATUS"
-sleep 1
 : >"$STUB_LOG"
 tl_run env -u SB_RUNTIME_STATE_DIR SB_E2E_RUNS_DIR="$RUNS" STUB_LOG="$STUB_LOG" PATH="$NOJQ" bash "$S" live --track TC-01 --host claude --greenfield --work-dir "$WORK"
 assert_eq "live without jq passes" 0 "$TL_STATUS"
 LR="$(last_run TC-01)"
 assert_eq "no jq: greenfield not recorded, fixture branch not added" "false|null" "$(jq -r '[.greenfield,(.fixture_branch // "null")]|join("|")' "$RUNS/$LR/ledger.json")"
 mv "$PL/scripts/live-verify-track.sh" "$PL/scripts/live.bak"
-sleep 1
 run X=1 -- live --track TC-01 --work-dir "$WORK"
 assert_eq "missing live script" 1 "$TL_STATUS"; assert_contains "missing live script message" "$TL_ERR" "ERROR: missing $PL/scripts/live-verify-track.sh"
 mv "$PL/scripts/live.bak" "$PL/scripts/live-verify-track.sh"
@@ -268,7 +262,6 @@ run X=1 -- cold
 assert_eq "cold needs --track" 2 "$TL_STATUS"; assert_contains "cold --track message" "$TL_ERR" "--track required"
 run X=1 -- cold --bogus
 assert_eq "cold unknown arg" 2 "$TL_STATUS"; assert_contains "cold unknown arg message" "$TL_ERR" "Unknown cold arg: --bogus"
-sleep 1
 run X=1 -- cold --track TC-01 --no-bootstrap --work-dir "$WORK"
 assert_eq "cold passes" 0 "$TL_STATUS"
 assert_contains "cold banner" "$TL_OUT" "=== sb-tri-criteria E2E cold verify ==="
@@ -276,11 +269,9 @@ CR="$(last_run TC-01)"
 assert_contains "cold script invoked" "$(cat "$STUB_LOG")" "cold-verify-track TC-01 $RUNS/$CR work=$WORK"
 assert_eq "cold ledger scored" "scored|PASS" "$(jq -r '[.status,.verdict]|join("|")' "$RUNS/$CR/ledger.json")"
 chmod -x "$PL/scripts/cold-verify-track.sh"
-sleep 1
 run X=1 -- cold --track TC-02
 assert_eq "cold chmods a non-executable script and runs it" 0 "$TL_STATUS"
 mv "$PL/scripts/cold-verify-track.sh" "$PL/scripts/cold.bak"
-sleep 1
 run X=1 -- cold --track TC-02
 assert_eq "missing cold script" 1 "$TL_STATUS"; assert_contains "missing cold script message" "$TL_ERR" "ERROR: missing $PL/scripts/cold-verify-track.sh"
 run X=1 -- cold --track TC-99
