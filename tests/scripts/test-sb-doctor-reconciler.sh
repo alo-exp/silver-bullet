@@ -235,7 +235,7 @@ if pid == 0:
     os.execvp(argv[0], argv)
 buf = b""
 sent = False
-deadline = time.time() + 20
+deadline = time.time() + 45
 while time.time() < deadline:
     r, _, _ = select.select([fd], [], [], 1)
     if r:
