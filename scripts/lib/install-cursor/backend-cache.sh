@@ -25,7 +25,11 @@ cursor_github_commit_reachable() {
   if git -C "$source_root" cat-file -e "${sha}^{commit}" >/dev/null 2>&1; then
     return 0
   fi
-  git ls-remote --exit-code "$CURSOR_GITHUB_REPO_URL" "$sha" >/dev/null 2>&1
+  # ls-remote matches ref names, never commit ids: look for the sha among the
+  # advertised ref tips instead.
+  local refs
+  refs="$(git ls-remote "$CURSOR_GITHUB_REPO_URL" 2>/dev/null)" || return 1
+  grep -q "^${sha}[[:space:]]" <<<"$refs"
 }
 
 prune_stale_cursor_marketplace_cache_links() {
@@ -227,6 +231,9 @@ def should_quarantine(path: Path) -> bool:
         text = path.read_text(errors="ignore")[:4000]
     except Exception:
         text = ""
+    if "<!-- sb-managed: cursor-sb-agents -->" in text:
+        # Agents written by install-cursor-sb-agents.sh are intentional, not legacy.
+        return False
     return "Silver Bullet" in text or "silver-bullet" in text
 
 

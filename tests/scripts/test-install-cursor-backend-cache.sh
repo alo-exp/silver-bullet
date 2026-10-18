@@ -71,6 +71,24 @@ assert_eq "commit in the checkout is reachable" 0 "$TL_STATUS"
 sub cursor_github_commit_reachable "$SHA_A" "$SNAP"
 assert_eq "unknown commit is not reachable" 1 "$([[ $TL_STATUS -ne 0 ]] && echo 1 || echo 0)"
 
+# a commit that exists only upstream (tip of a ref) is reachable and its checkout is kept
+git clone -q "$UPSTREAM" "$TL_TMP/up-seed" 2>/dev/null
+git -C "$TL_TMP/up-seed" config user.email t@example.invalid; git -C "$TL_TMP/up-seed" config user.name t; git -C "$TL_TMP/up-seed" config gc.auto 0
+echo up >"$TL_TMP/up-seed/f"; git -C "$TL_TMP/up-seed" add -A
+git -C "$TL_TMP/up-seed" -c commit.gpgsign=false commit -q -m up
+git -C "$TL_TMP/up-seed" push -q origin HEAD 2>/dev/null
+UP_ONLY="$(git -C "$TL_TMP/up-seed" rev-parse HEAD)"
+sub cursor_github_commit_reachable "$UP_ONLY" "$SNAP"
+assert_eq "upstream-only tip commit is reachable" 0 "$TL_STATUS"
+reset_home
+mkdir -p "$GPR/$UP_ONLY" "$CACHE_MP" "$TL_TMP/tgt"; ln -s "$TL_TMP/tgt" "$CACHE_MP/$UP_ONLY"
+sub prune_stale_cursor_marketplace_gitpaths
+sub prune_stale_cursor_marketplace_cache_links
+assert_file_exists "upstream-only gitPath kept by pruning" "$GPR/$UP_ONLY"
+assert_eq "upstream-only cache link kept by pruning" 1 "$([[ -L "$CACHE_MP/$UP_ONLY" ]] && echo 1 || echo 0)"
+tl_run env CURSOR_HOME="$CH" CURSOR_GITHUB_REPO_URL="file://$TL_TMP/no-such-remote.git" SB_INSTALL_CURSOR_SOURCE_ONLY=1 bash -c 'source "$1"; cursor_github_commit_reachable "$2" "$3"' _ "$SCRIPT" "$UP_ONLY" "$SNAP"
+assert_eq "unreachable remote: commit not reachable" 1 "$TL_STATUS"
+
 # ---- stale link / gitPath pruning (REPO_ROOT is the snapshot, which holds SNAP_SHA)
 reset_home
 sub prune_stale_cursor_marketplace_cache_links
@@ -185,6 +203,24 @@ ln -s "$TL_TMP/tgt" "$CACHE_MP/$SHA_A"
 sub collect_cursor_plugin_seed_shas "$SNAP_SHA" ""
 assert_contains "seed shas include the primary sha" "$TL_OUT" "$SNAP_SHA"
 assert_file_absent "stale marketplace link pruned while collecting" "$CACHE_MP/$SHA_A"
+
+# ---- custom-agent cleanup keeps the installer's own sb-* agents and quarantines legacy ones
+reset_home
+mkdir -p "$HOME/.config/silver-bullet"
+cp "$TL_REPO_ROOT/tests/fixtures/cursor-models-catalog.json" "$HOME/.config/silver-bullet/cursor-models-catalog.json"
+tl_run env SB_CURSOR_SB_AGENTS_OFFLINE=1 CSBA_REPO_ROOT="$TL_TMP/csba-project" bash "$SNAP/scripts/install-cursor-sb-agents.sh" --global --non-interactive
+assert_eq "real sb agents installed" 0 "$TL_STATUS"
+AG="$HOME/.cursor/agents"
+mkdir -p "$AG/silver-legacy"
+printf -- '---\nname: silver-legacy\n---\nSilver Bullet legacy agent\n' >"$AG/silver-legacy/SKILL.md"
+printf -- '---\nname: my-own\n---\nunrelated agent\n' >"$AG/my-own.md"
+BEFORE_COUNT="$(find "$AG" -maxdepth 1 -name 'sb-*.md' | wc -l | tr -d ' ')"
+tl_run env CURSOR_HOME="$HOME/.cursor" SB_INSTALL_CURSOR_SOURCE_ONLY=1 bash -c 'source "$1"; cleanup_cursor_custom_agents ""' _ "$SCRIPT"
+assert_eq "cleanup exits 0" 0 "$TL_STATUS"
+assert_eq "installer-managed sb-* agents stay" "$BEFORE_COUNT" "$(find "$AG" -maxdepth 1 -name 'sb-*.md' | wc -l | tr -d ' ')"
+assert_file_absent "legacy Silver Bullet agent quarantined" "$AG/silver-legacy"
+assert_file_exists "unrelated agent untouched" "$AG/my-own.md"
+assert_file_exists "legacy agent kept in quarantine" "$(find "$HOME/.cursor/.silver-bullet-quarantine" -path '*silver-legacy*' -name SKILL.md | head -1)"
 
 # ---- plugin surface materialization
 reset_home
