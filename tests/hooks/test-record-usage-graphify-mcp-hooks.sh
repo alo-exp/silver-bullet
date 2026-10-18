@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
-# Behavior tests for the PostToolUse usage recorders:
-#   record-agentmemory-usage.sh, record-graphify-query.sh, record-leanctx-usage.sh,
-#   record-recommended-mcp.sh, record-token-compression-usage.sh
+# Behavior tests for the PostToolUse usage recorders (record-graphify-query.sh, record-recommended-mcp.sh)
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
@@ -63,7 +61,7 @@ prologue_suite() {
   # Library farm: without sb-project-gate.sh the hook walks upward itself.
   reset; tg2_farm gate "hooks/$name" sb-project-gate.sh project-active.sh
   TG2_REPO="$TG2_FARM" TG2_PROJECT_ROOT="" TG2_CWD="$TG2_PROJ/src" tg2_run "hooks/$name" "$good"
-  if [[ "$TL_STATUS" == 0 ]]; then tl_pass "$name: farm without gate lib exits 0"; else tl_fail "$name: farm without gate lib (status=$TL_STATUS)"; fi
+  assert_recorded "$name: farm without gate lib still records via its own walk-up" "$state"
   # Without any lib dir the hook cannot source anything and stays inert (fail-open).
   reset; tg2_farm nolib "hooks/$name" -
   TG2_REPO="$TG2_FARM" tg2_run "hooks/$name" "$good"
@@ -84,48 +82,6 @@ walkup_suite() { # hook state good tool-with-gate-libs-note
   TG2_REPO="$TG2_FARM" TG2_PROJECT_ROOT="" TG2_CWD="$TL_TMP/outside" tg2_run "hooks/$name" "$good"
   assert_not_recorded "$name: walk-up stops at filesystem root" "$state"
 }
-
-# ---------------------------------------------------------------- agentmemory
-AMH=hooks/record-agentmemory-usage.sh
-am_cmd="$(tg2_bash_input 'agentmemory search "auth flow"' Bash PostToolUse)"
-prologue_suite "$AMH" "$AM_STATE" "$am_cmd" "✅ agentmemory usage recorded" agentmemory
-walkup_suite "$AMH" "$AM_STATE" "$am_cmd"
-
-reset; tg2_run "$AMH" "$(tg2_bash_input 'agentmemory search x' Bash PostToolUse 1)"
-assert_not_recorded "agentmemory: failed retrieval command is not recorded" "$AM_STATE"
-reset; tg2_run "$AMH" "$(tg2_bash_input 'ls -la' Bash PostToolUse)"
-assert_not_recorded "agentmemory: non-retrieval command is not recorded" "$AM_STATE"
-reset; tg2_run "$AMH" "$(jq -cn '{hook_event_name:"PostToolUse", tool_name:"Bash", tool_input:{}}')"
-assert_not_recorded "agentmemory: shell tool without command is a no-op" "$AM_STATE"
-reset; tg2_run "$AMH" "$(tg2_bash_input 'curl -s localhost:3111/agentmemory/recall' exec_command PostToolUse)"
-assert_recorded "agentmemory: exec_command HTTP recall is recorded" "$AM_STATE"
-reset; tg2_run "$AMH" "$(tg2_mcp_input agentmemory memory_recall CallMcpTool)"
-assert_recorded "agentmemory: CallMcpTool on agentmemory server records" "$AM_STATE"
-assert_eq "agentmemory: MCP confirmation" "✅ agentmemory usage recorded" "$(msg)"
-reset; tg2_run "$AMH" "$(tg2_mcp_input other-server smart_search MCP)"
-assert_recorded "agentmemory: MCP memory tool on any server records" "$AM_STATE"
-reset; tg2_run "$AMH" "$(tg2_mcp_input other-server list_files CallMcpTool)"
-assert_not_recorded "agentmemory: unrelated MCP tool does not record" "$AM_STATE"
-reset; tg2_run "$AMH" "$(jq -cn '{hook_event_name:"PostToolUse", tool_name:"mcp__user-agentmemory__search", tool_input:{}}')"
-assert_recorded "agentmemory: mcp__*agentmemory* tool records" "$AM_STATE"
-reset; tg2_run "$AMH" "$(jq -cn '{hook_event_name:"PostToolUse", tool_name:"memory_save", tool_input:{}}')"
-assert_recorded "agentmemory: named memory_save tool records" "$AM_STATE"
-# Unwritable state path (a directory) -> record fails, hook stays silent and exits 0.
-reset; mkdir -p "$SB_RUNTIME_STATE_DIR/am-dir"
-jq --arg p "$SB_RUNTIME_STATE_DIR/am-dir" '.recommended_tools.agentmemory.usage_state_file=$p' <<<"$all_cfg" >"$TG2_CFG"
-tg2_run "$AMH" "$am_cmd"
-assert_silent_ok "agentmemory: failed state write is silent (command path)"
-tg2_run "$AMH" "$(tg2_mcp_input agentmemory memory_recall CallMcpTool)"
-assert_silent_ok "agentmemory: failed state write is silent (CallMcpTool path)"
-tg2_run "$AMH" "$(jq -cn '{hook_event_name:"PostToolUse", tool_name:"memory_search", tool_input:{}}')"
-assert_silent_ok "agentmemory: failed state write is silent (named tool path)"
-rmdir "$SB_RUNTIME_STATE_DIR/am-dir"
-# jq-free farm: no tool-input.sh -> jq fallbacks parse the payload.
-reset; tg2_farm notoolinput "$AMH" tool-input.sh
-TG2_REPO="$TG2_FARM" tg2_run "$AMH" "$am_cmd"
-assert_recorded "agentmemory: jq fallbacks record without tool-input.sh" "$AM_STATE"
-reset; TG2_REPO="$TG2_FARM" tg2_run "$AMH" "$(tg2_bash_input 'ls' Bash PostToolUse)"
-assert_not_recorded "agentmemory: jq fallbacks still skip non-retrieval" "$AM_STATE"
 
 # ------------------------------------------------------------------ graphify
 GFH=hooks/record-graphify-query.sh
@@ -148,37 +104,6 @@ rmdir "$SB_RUNTIME_STATE_DIR/gf-dir"
 reset; tg2_farm notoolinput-gf "$GFH" tool-input.sh
 TG2_REPO="$TG2_FARM" tg2_run "$GFH" "$gf_cmd"
 assert_recorded "graphify: jq fallbacks record without tool-input.sh" "$GF_STATE"
-
-# -------------------------------------------------------------------- leanctx
-LCH=hooks/record-leanctx-usage.sh
-lc_cmd="$(tg2_bash_input 'lean-ctx read src/app.js' Bash PostToolUse)"
-prologue_suite "$LCH" "$LC_STATE" "$lc_cmd" "✅ LeanCTX usage recorded" leanctx
-walkup_suite "$LCH" "$LC_STATE" "$lc_cmd"
-reset; tg2_run "$LCH" "$(tg2_bash_input 'lean-ctx read x' Bash PostToolUse 1)"
-assert_not_recorded "leanctx: failed CLI command is not recorded" "$LC_STATE"
-reset; tg2_run "$LCH" "$(tg2_bash_input 'ls' Bash PostToolUse)"
-assert_not_recorded "leanctx: non-LeanCTX command is not recorded" "$LC_STATE"
-reset; tg2_run "$LCH" "$(tg2_mcp_input user-leanctx lctx_read_ast CallMcpTool)"
-assert_recorded "leanctx: matching server and tool records" "$LC_STATE"
-assert_eq "leanctx: MCP confirmation" "✅ LeanCTX usage recorded" "$(msg)"
-reset; tg2_run "$LCH" "$(tg2_mcp_input some-other-server lctx_wire MCP)"
-assert_recorded "leanctx: lctx_* tool on a foreign server still records" "$LC_STATE"
-reset; tg2_run "$LCH" "$(tg2_mcp_input leanctx read_file CallMcpTool)"
-assert_not_recorded "leanctx: non-lctx tool on leanctx server does not record" "$LC_STATE"
-reset; tg2_run "$LCH" "$(tg2_mcp_input other read_file CallMcpTool)"
-assert_not_recorded "leanctx: unrelated MCP call does not record" "$LC_STATE"
-reset; mkdir -p "$SB_RUNTIME_STATE_DIR/lc-dir"
-jq --arg p "$SB_RUNTIME_STATE_DIR/lc-dir" '.recommended_tools.leanctx.usage_state_file=$p' <<<"$all_cfg" >"$TG2_CFG"
-tg2_run "$LCH" "$lc_cmd"
-assert_silent_ok "leanctx: failed state write is silent (command path)"
-tg2_run "$LCH" "$(tg2_mcp_input user-leanctx lctx_wire CallMcpTool)"
-assert_silent_ok "leanctx: failed state write is silent (matching server path)"
-tg2_run "$LCH" "$(tg2_mcp_input other lctx_wire CallMcpTool)"
-assert_silent_ok "leanctx: failed state write is silent (foreign server path)"
-rmdir "$SB_RUNTIME_STATE_DIR/lc-dir"
-reset; tg2_farm notoolinput-lc "$LCH" tool-input.sh
-TG2_REPO="$TG2_FARM" tg2_run "$LCH" "$lc_cmd"
-assert_recorded "leanctx: jq fallbacks record without tool-input.sh" "$LC_STATE"
 
 # ------------------------------------------------------ recommended MCP usage
 RMH=hooks/record-recommended-mcp.sh
@@ -215,7 +140,7 @@ tg2_run "$RMH" "$(tg2_mcp_input agentmemory memory_recall CallMcpTool)"
 assert_not_recorded "recommended-mcp: opted-out agentmemory is a no-op" "$AM_STATE"
 reset; tg2_farm rm-nogate "$RMH" agentmemory-gate.sh
 TG2_REPO="$TG2_FARM" tg2_run "$RMH" "$(tg2_mcp_input agentmemory memory_recall CallMcpTool)"
-if [[ "$TL_STATUS" == 0 ]]; then tl_pass "recommended-mcp: farm without agentmemory-gate.sh exits 0"; else tl_fail "recommended-mcp: farm without agentmemory-gate.sh (status=$TL_STATUS)"; fi
+assert_not_recorded "recommended-mcp: without agentmemory-gate.sh no usage can be recorded" "$AM_STATE"
 reset; tg2_farm rm-nolib "$RMH" -
 TG2_REPO="$TG2_FARM" tg2_run "$RMH" "$(tg2_mcp_input agentmemory memory_recall CallMcpTool)"
 assert_not_recorded "recommended-mcp: missing lib dir fails open" "$AM_STATE"
@@ -227,48 +152,6 @@ jq --arg p "$SB_RUNTIME_STATE_DIR/am-dir" '.recommended_tools.agentmemory.usage_
 tg2_run "$RMH" "$(tg2_mcp_input agentmemory save_memory CallMcpTool)"
 assert_silent_ok "recommended-mcp: failed state write is silent"
 rmdir "$SB_RUNTIME_STATE_DIR/am-dir"
-
-# --------------------------------------------------- token compression (rtk)
-TCH=hooks/record-token-compression-usage.sh
-tc_cmd="$(tg2_bash_input 'rtk gain' Bash PostToolUse)"
-tc_msg="$(source "$TL_REPO_ROOT/hooks/lib/recommended-tools-registry.sh"; printf '✅ %s usage recorded' "$(sb_recommended_tool_display_name rtk)")"
-reset; tg2_run "$TCH" "$tc_cmd"
-assert_recorded "token-compression: rtk CLI use is recorded" "$RTK_STATE"
-assert_eq "token-compression: confirmation names the tool" "$tc_msg" "$(msg)"
-reset; tg2_run "$TCH" ""
-assert_not_recorded "token-compression: empty stdin is a no-op" "$RTK_STATE"
-reset; TG2_PATH="$(tl_path_without jq)" tg2_run "$TCH" "$tc_cmd"
-assert_not_recorded "token-compression: missing jq is a no-op" "$RTK_STATE"
-reset; tg2_run "$TCH" "$(jq -cn '{hook_event_name:"PostToolUse", tool_name:"Read", tool_input:{file_path:"/x"}}')"
-assert_not_recorded "token-compression: non-shell tool is a no-op" "$RTK_STATE"
-reset; TG2_CWD="$TL_TMP/outside" TG2_PROJECT_ROOT="" tg2_run "$TCH" "$tc_cmd"
-assert_not_recorded "token-compression: outside SB project is a no-op" "$RTK_STATE"
-reset; rm -f "$TG2_CFG"; tg2_run "$TCH" "$tc_cmd"
-assert_not_recorded "token-compression: missing config is a no-op" "$RTK_STATE"
-reset; tg2_run "$TCH" "$(jq -cn '{hook_event_name:"PostToolUse", tool_name:"Bash", tool_input:{}}')"
-assert_not_recorded "token-compression: shell tool without command is a no-op" "$RTK_STATE"
-reset; tg2_run "$TCH" "$(tg2_bash_input 'rtk gain' Bash PostToolUse 3)"
-assert_not_recorded "token-compression: failed command is not recorded" "$RTK_STATE"
-reset; tg2_run "$TCH" "$(tg2_bash_input 'ls -la' Bash PostToolUse)"
-assert_not_recorded "token-compression: command without the CLI is not recorded" "$RTK_STATE"
-reset; jq '.recommended_tools.rtk.enabled_by_user=false' <<<"$all_cfg" >"$TG2_CFG"
-tg2_run "$TCH" "$tc_cmd"
-assert_not_recorded "token-compression: opted-out rtk is a no-op" "$RTK_STATE"
-reset; jq '.recommended_tools.rtk.install_status="failed"' <<<"$all_cfg" >"$TG2_CFG"
-tg2_run "$TCH" "$tc_cmd"
-assert_not_recorded "token-compression: not-installed rtk is a no-op" "$RTK_STATE"
-reset; jq '.recommended_tools.rtk.cli_command="myrtk"' <<<"$all_cfg" >"$TG2_CFG"
-tg2_run "$TCH" "$(tg2_bash_input 'myrtk gain' exec_command PostToolUse)"
-assert_recorded "token-compression: configured CLI name is honoured" "$RTK_STATE"
-reset; tg2_farm tc-noti "$TCH" tool-input.sh
-TG2_REPO="$TG2_FARM" tg2_run "$TCH" "$tc_cmd"
-assert_recorded "token-compression: jq fallbacks record without tool-input.sh" "$RTK_STATE"
-reset; tg2_farm tc-nogate "$TCH" sb-project-gate.sh project-active.sh
-TG2_REPO="$TG2_FARM" tg2_run "$TCH" "$tc_cmd"
-assert_not_recorded "token-compression: no project-config finder fails open" "$RTK_STATE"
-reset; tg2_farm tc-nolib "$TCH" -
-TG2_REPO="$TG2_FARM" tg2_run "$TCH" "$tc_cmd"
-assert_not_recorded "token-compression: missing lib dir fails open" "$RTK_STATE"
 
 # ------------------------------------------------ injected library faults
 # A farm whose tool-input.sh answers from env (so unparsable JSON still routes to a tool)
@@ -294,16 +177,7 @@ fault_suite() { # hook state bash-cmd mcp-tool-env-ok
   TG2_REPO="$TG2_FARM" tg2_run "$hook" "$4" STUB_TOOL_NAME="${5:-Bash}" "STUB_CMD=$cmd"
   assert_not_recorded "$name: not-initiated project is a no-op" "$state"
 }
-fault_suite "$AMH" "$AM_STATE" 'agentmemory search x' "$am_cmd"
 fault_suite "$GFH" "$GF_STATE" 'graphify query x' "$gf_cmd"
-fault_suite "$LCH" "$LC_STATE" 'lean-ctx read x' "$lc_cmd"
-fault_suite "$TCH" "$RTK_STATE" 'rtk gain' "$tc_cmd"
-reset; tg2_farm ti-am-mcp "$AMH" tool-input.sh; tg2_farm_stub tool-input.sh "$stub_tool_input"
-TG2_REPO="$TG2_FARM" tg2_run "$AMH" "not json" STUB_TOOL_NAME=CallMcpTool
-assert_not_recorded "agentmemory: unparsable MCP payload records nothing" "$AM_STATE"
-reset; tg2_farm ti-lc-mcp "$LCH" tool-input.sh; tg2_farm_stub tool-input.sh "$stub_tool_input"
-TG2_REPO="$TG2_FARM" tg2_run "$LCH" "not json" STUB_TOOL_NAME=CallMcpTool
-assert_not_recorded "leanctx: unparsable MCP payload records nothing" "$LC_STATE"
 reset; tg2_farm ti-rm "$RMH" tool-input.sh; tg2_farm_stub tool-input.sh "$stub_tool_input"
 TG2_REPO="$TG2_FARM" tg2_run "$RMH" "not json" STUB_TOOL_NAME=CallMcpTool
 assert_not_recorded "recommended-mcp: unparsable MCP payload records nothing" "$AM_STATE"
