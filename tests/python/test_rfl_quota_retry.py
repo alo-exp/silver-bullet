@@ -800,5 +800,141 @@ class ReviewFollowUpTest(Base):
                     self.assertEqual(q.parse_reset_seconds(text), int(factor * seconds))
 
 
+class TimerContractTest(Base):
+    """Complete result dicts and artifacts of the at and launchd backends (fixed fire_at, TZ=UTC)."""
+
+    FIRE = "2031-07-09T15:42:00Z"
+
+    def setUp(self):
+        super().setUp()
+        import time
+        os.environ["TZ"] = "UTC"
+        time.tzset()
+        self.addCleanup(time.tzset)
+        self.addCleanup(lambda: os.environ.pop("TZ", None))
+        self.argv = q.wake_argv(project_root=self.tmp, run_dir=self.run_dir)
+        self.command = subprocess.list2cmdline(self.argv)
+
+    def arm(self, **jobkw):
+        return q.arm_quota_retry_timer(job=job(fire_at=self.FIRE, **jobkw), run_dir=self.run_dir, now=NOW)
+
+    def test_wake_argv_shape(self):
+        self.assertEqual(self.argv[2:], ["--quota-retry-wake", "--project-root", str(self.tmp), "--run-dir", str(self.run_dir)])
+
+    def test_at_backend_complete_result(self):
+        os.environ["SB_RFL_TIMER_MODE"] = "at-only"
+        os.environ["SB_RFL_AT_BIN"] = "/bin/at-stub"
+        proc = subprocess.CompletedProcess([], 0, stdout="", stderr=" job 5 at Tue \n")
+        with mock.patch.object(Path, "is_file", return_value=True), mock.patch.object(q.subprocess, "run", return_value=proc) as run:
+            t = self.arm()
+        self.assertEqual(t, {
+            "armed": True, "backend": "at", "at_bin": "/bin/at-stub", "fire_at": self.FIRE,
+            "command": self.command, "argv": self.argv, "stderr": "job 5 at Tue",
+        })
+        self.assertEqual(run.call_args.args[0], ["/bin/at-stub", "-t", "203107091542"])
+
+    def test_at_stderr_is_truncated_to_300_chars(self):
+        os.environ["SB_RFL_TIMER_MODE"] = "at-only"
+        os.environ["SB_RFL_AT_BIN"] = "/bin/at-stub"
+        proc = subprocess.CompletedProcess([], 0, stdout="", stderr="e" * 350)
+        with mock.patch.object(Path, "is_file", return_value=True), mock.patch.object(q.subprocess, "run", return_value=proc):
+            self.assertEqual(self.arm()["stderr"], "e" * 300)
+        proc = subprocess.CompletedProcess([], 1, stdout="", stderr="f" * 350)
+        with mock.patch.object(Path, "is_file", return_value=True), mock.patch.object(q.subprocess, "run", return_value=proc), \
+             mock.patch.object(q.sys, "platform", "linux"):
+            self.assertEqual(self.arm()["at_error"], "f" * 300)
+
+    def test_default_mode_is_auto_and_default_at_binary_is_at(self):
+        for value in (None, ""):
+            with self.subTest(mode=value):
+                if value is None:
+                    os.environ.pop("SB_RFL_TIMER_MODE", None)
+                else:
+                    os.environ["SB_RFL_TIMER_MODE"] = value
+                proc = subprocess.CompletedProcess([], 0, stdout="", stderr="")
+                with mock.patch.object(q.sys, "platform", "linux"), \
+                     mock.patch.object(q.shutil, "which", side_effect=lambda name: "/usr/bin/at" if name == "at" else None), \
+                     mock.patch.object(Path, "is_file", return_value=False), \
+                     mock.patch.object(q.subprocess, "run", return_value=proc) as run:
+                    t = self.arm()
+                self.assertEqual((t["backend"], t["at_bin"]), ("at", "at"))
+                self.assertEqual(run.call_args.args[0], ["at", "-t", "203107091542"])
+
+    def test_default_mode_auto_prefers_launchd_on_darwin(self):
+        os.environ.pop("SB_RFL_TIMER_MODE", None)
+        os.environ["SB_RFL_LAUNCHD_DIR"] = str(self.tmp / "LA")
+        os.environ["SB_RFL_LAUNCHCTL"] = "0"
+        with mock.patch.object(q.sys, "platform", "darwin"):
+            self.assertEqual(self.arm()["backend"], "launchd")
+
+    def test_launchd_only_never_tries_at(self):
+        os.environ["SB_RFL_TIMER_MODE"] = "launchd-only"
+        os.environ["SB_RFL_LAUNCHD_DIR"] = str(self.tmp / "file-not-dir")
+        (self.tmp / "file-not-dir").write_text("x")
+        os.environ["SB_RFL_AT_BIN"] = "/bin/at-stub"
+        with mock.patch.object(Path, "is_file", return_value=True), mock.patch.object(q.subprocess, "run") as run:
+            t = self.arm()
+        run.assert_not_called()
+        self.assertEqual((t["armed"], t["backend"], t["reason"]), (False, "unarmed", "no at/launchd backend available"))
+        self.assertNotIn("at_error", t)
+
+    def test_launchd_backend_complete_result_and_plist_body(self):
+        os.environ["SB_RFL_TIMER_MODE"] = "launchd-only"
+        os.environ["SB_RFL_LAUNCHD_DIR"] = str(self.tmp / "LA" / "nested")
+        loaded = subprocess.CompletedProcess([], 0)
+        with mock.patch.object(q.subprocess, "run", return_value=loaded):
+            t = self.arm(id="a/b:c")
+        label = "dev.alolabs.sb.rfl-quota-retry.a-b-c"
+        plist = self.tmp / "LA" / "nested" / f"{label}.plist"
+        self.assertEqual(t, {
+            "armed": True, "backend": "launchd", "fire_at": self.FIRE, "command": self.command,
+            "argv": self.argv, "label": label, "plist": str(plist), "launchctl_rc": 0,
+        })
+        args_xml = "".join(f"<string>{a}</string>" for a in self.argv)
+        self.assertEqual(plist.read_text(), (
+            '<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n'
+            '<plist version="1.0">\n<dict>\n'
+            f"  <key>Label</key><string>{label}</string>\n"
+            "  <key>ProgramArguments</key>\n  <array>\n"
+            f"    {args_xml}\n"
+            "  </array>\n"
+            "  <key>StartCalendarInterval</key>\n  <dict>\n"
+            "    <key>Year</key><integer>2031</integer>\n"
+            "    <key>Month</key><integer>7</integer>\n"
+            "    <key>Day</key><integer>9</integer>\n"
+            "    <key>Hour</key><integer>15</integer>\n"
+            "    <key>Minute</key><integer>42</integer>\n"
+            "  </dict>\n"
+            "  <key>RunAtLoad</key><false/>\n"
+            "</dict>\n</plist>\n"
+        ))
+
+    def test_launchd_without_launchctl_has_no_rc_key(self):
+        os.environ["SB_RFL_TIMER_MODE"] = "launchd-only"
+        os.environ["SB_RFL_LAUNCHD_DIR"] = str(self.tmp / "LA")
+        os.environ["SB_RFL_LAUNCHCTL"] = "0"
+        t = self.arm(id="x")
+        self.assertEqual((t["armed"], t["backend"]), (True, "launchd"))
+        self.assertNotIn("launchctl_rc", t)
+
+    def test_launchd_label_truncates_job_id_to_80_chars(self):
+        os.environ["SB_RFL_TIMER_MODE"] = "launchd-only"
+        os.environ["SB_RFL_LAUNCHD_DIR"] = str(self.tmp / "LA")
+        os.environ["SB_RFL_LAUNCHCTL"] = "0"
+        t = self.arm(id="a/" + "b" * 100)
+        self.assertEqual(t["label"], "dev.alolabs.sb.rfl-quota-retry.a-" + "b" * 78)
+        self.assertEqual(len(t["label"]) - len("dev.alolabs.sb.rfl-quota-retry."), 80)
+
+    def test_failed_launchctl_load_is_not_reported_as_armed(self):
+        os.environ["SB_RFL_TIMER_MODE"] = "launchd-only"
+        os.environ["SB_RFL_LAUNCHD_DIR"] = str(self.tmp / "LA")
+        results = [subprocess.CompletedProcess([], 0), subprocess.CompletedProcess([], 5)]
+        with mock.patch.object(q.subprocess, "run", side_effect=results):
+            t = self.arm(id="x")
+        self.assertEqual((t["armed"], t["backend"], t["launchctl_rc"]), (False, "launchd", 5))
+        self.assertTrue(Path(t["plist"]).is_file())
+
+
 if __name__ == "__main__":
     unittest.main()
