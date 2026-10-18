@@ -125,7 +125,7 @@ def parse_reset_seconds(blob: str) -> int | None:
     if not match:
         return None
     rest = text[match.end() :]
-    cut = re.search(r"[.\n;]|\[", rest)
+    cut = re.search(r"\.(?:\s|$)|[\n;]|\[", rest)
     span = rest[: cut.start()] if cut else rest
     total = 0.0
     found = False
