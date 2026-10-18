@@ -16,6 +16,7 @@ from unittest import mock
 from sbtest import REPO_ROOT, load_module
 
 s = load_module("scripts/silver-scan.py", name="silver_scan_flow_under_test")
+REAL_GIT_OR_CHANGELOG_MATCH = s.git_or_changelog_match
 
 
 def cp(returncode=0, stdout="", stderr=""):
@@ -706,6 +707,44 @@ class RecordTest(Base):
                 self.assertEqual(lines.count(entry), 1)
                 self.assertTrue(all_headings.issuperset({h for h in lines if h.startswith("## ")}))
 
+    def test_learning_category_headings_and_index_pointers(self):
+        cases = [
+            ("bash", "stack:bash"), ("shell", "stack:bash"), ("jq", "stack:bash"), ("git", "stack:bash"),
+            ("grep", "stack:bash"), ("tmpfile", "stack:bash"), ("atomic", "stack:bash"), ("cli", "stack:bash"),
+            ("test", "practice:workflow"), ("workflow", "practice:workflow"), ("automation", "practice:workflow"),
+            ("release", "practice:workflow"),
+            ("deploy", "devops:operations"), ("infra", "devops:operations"), ("iam", "devops:operations"),
+            ("cloud", "devops:operations"), ("monitor", "devops:operations"),
+            ("ui", "design:ux"), ("ux", "design:ux"), ("layout", "design:ux"), ("design", "design:ux"),
+            ("accessibility", "design:ux"),
+            ("plain note", "practice:workflow"),
+        ]
+        import shutil
+        for keyword, heading in cases:
+            with self.subTest(keyword=keyword):
+                context = keyword if keyword == "plain note" else f"{keyword} tip"
+                self.assertEqual(s.learning_category(context), heading)
+                shutil.rmtree(self.root / "docs", ignore_errors=True)
+                cand = self.candidate(classification="learning", kind="knowledge", context=context)
+                res = s.record_candidate(self.root, cand, {})
+                self.assertEqual(res["target_file"], "docs/learnings/2030-01.md")
+                text = (self.root / "docs/learnings/2030-01.md").read_text()
+                self.assertIn(f"\n## {heading}\n\n2030-01-01 - {context} [candidate-id:cid1]\n", text)
+                index = (self.root / "docs/knowledge/INDEX.md").read_text()
+                self.assertIn("Latest learnings: `docs/learnings/2030-01.md`\n", index)
+                self.assertIn("Latest knowledge: `(none)`\n", index)
+
+    def test_index_pointers_after_recording_knowledge_then_learning(self):
+        s.record_candidate(self.root, self.candidate(classification="knowledge", kind="knowledge", context="Layers are separated"), {})
+        index = (self.root / "docs/knowledge/INDEX.md").read_text()
+        self.assertIn("Latest knowledge: `docs/knowledge/2030-01.md`\n", index)
+        self.assertIn("Latest learnings: `(none)`\n", index)
+        self.assertEqual(index.count("| 2030-01 | [`2030-01.md`](../knowledge/2030-01.md) | Knowledge for this month |"), 1)
+        s.record_candidate(self.root, self.candidate(classification="learning", context="use jq", candidate_id="l", fingerprint="fl"), {})
+        index = (self.root / "docs/knowledge/INDEX.md").read_text()
+        self.assertIn("Latest knowledge: `docs/knowledge/2030-01.md`\n", index)
+        self.assertIn("Latest learnings: `docs/learnings/2030-01.md`\n", index)
+
     def test_reject_candidate(self):
         state = {}
         res = s.reject_candidate(self.candidate(), state)
@@ -774,7 +813,7 @@ class ReconstructAndHandleTest(Base):
         state, c = self.state_with()
         cfg = {"issue_tracker": "github"}
         with mock.patch.object(s, "github_available", return_value=False):
-            with self.assertRaisesRegex(RuntimeError, "gh CLI is not available"):
+            with self.assertRaisesRegex(RuntimeError, "^gh CLI is not available$"):
                 s.handle_file(self.root, cfg, state, "cid1")
         with mock.patch.object(s, "github_available", return_value=True), \
              mock.patch.object(s, "repo_slug_from_origin", return_value="acme/repo"):
@@ -782,7 +821,7 @@ class ReconstructAndHandleTest(Base):
                 with self.assertRaisesRegex(RuntimeError, "^boom$"):
                     s.handle_file(self.root, cfg, state, "cid1")
             with mock.patch.object(s, "run_command", return_value=cp(1, "", "")):
-                with self.assertRaisesRegex(RuntimeError, "gh issue create failed"):
+                with self.assertRaisesRegex(RuntimeError, "^gh issue create failed$"):
                     s.handle_file(self.root, cfg, state, "cid1")
             out = "Creating issue...\nhttps://github.com/acme/repo/issues/42\n"
             with mock.patch.object(s, "run_command", return_value=cp(0, out)) as run:
@@ -796,6 +835,9 @@ class ReconstructAndHandleTest(Base):
             self.assertEqual((res["filed_ref"], res["target_file"]), ("https://github.com/acme/repo/issues/42", "https://github.com/acme/repo/issues/42"))
             self.assertEqual(res["candidate"]["status"], "filed")
             self.assertEqual(state["fingerprints"]["fp1"]["filed_ref"], "https://github.com/acme/repo/issues/42")
+            with mock.patch.object(s, "run_command", return_value=cp(0, "Creating issue\nhttps://github.com/acme/repo/issues/43\nView it in the browser\n")):
+                res = s.handle_file(self.root, cfg, state, "cid1")
+            self.assertEqual((res["filed_ref"], res["candidate"]["filed_ref"]), ("https://github.com/acme/repo/issues/43",) * 2)
             with mock.patch.object(s, "run_command", return_value=cp(0, "created: ok\nfinal line\n")):
                 res = s.handle_file(self.root, cfg, state, "cid1")
             self.assertEqual(res["filed_ref"], "final line")
@@ -806,7 +848,7 @@ class ReconstructAndHandleTest(Base):
              mock.patch.object(s, "repo_slug_from_origin", return_value="acme/repo"):
             for out in ("", "  \n"):
                 with mock.patch.object(s, "run_command", return_value=cp(0, out)):
-                    with self.assertRaisesRegex(RuntimeError, "gh issue create returned no output"):
+                    with self.assertRaisesRegex(RuntimeError, "^gh issue create returned no output$"):
                         s.handle_file(self.root, {"issue_tracker": "github"}, state, "cid1")
         self.assertEqual(state["fingerprints"]["fp1"]["status"], "seen")
 
@@ -942,6 +984,26 @@ class ScanFlowTest(Base):
         self.assertEqual(res["summary"]["auto_filed"], 0)
         self.assertEqual(res["summary"]["manual_review_count"], 0)
         self.assertEqual([(c["title"], c["status"]) for c in res["candidates"]], [("Parser crash on empty input", "pending")])
+
+    def test_git_or_changelog_match_is_counted_as_duplicate_and_not_filed(self):
+        self.write("docs/sessions/a.md", "## Needs Human Review\n- Parser crash on empty input\n- Rename the helper files\n")
+        self.write("CHANGELOG.md", "# Changelog\n- Fixed: Parser  crash on empty input\n")
+        with mock.patch.object(s, "git_or_changelog_match", REAL_GIT_OR_CHANGELOG_MATCH):
+            res, state = self.scan("autonomous")
+        self.assertEqual([c["title"] for c in res["candidates"]], ["Rename the helper files"])
+        self.assertEqual(res["summary"]["duplicates_filtered"], 1)
+        self.assertEqual((res["summary"]["auto_filed"], res["summary"]["issues_filed"]), (0, 0))
+        self.assertFalse((self.root / "docs/issues/ISSUES.md").exists())
+        self.assertEqual({r["classification"] for r in state["fingerprints"].values()}, {"chore"})
+
+    def test_source_record_fields_are_stored_in_state(self):
+        res, state = self.scan()
+        src = res["sources"][0]
+        self.assertEqual(state["sources"]["docs/sessions/a.md"], {
+            "kind": "markdown-session", "hash": src["hash"], "mtime_ns": src["mtime_ns"],
+            "last_scanned_at": "2030-01-01T00:00:00+00:00",
+        })
+        self.assertEqual(s.load_state(self.root)["sources"]["docs/sessions/a.md"], state["sources"]["docs/sessions/a.md"])
 
     def test_duplicates_filtered_counts_already_seen_candidates_exactly(self):
         self.write("docs/sessions/a.md", "## Needs Human Review\n- Parser crash on empty input\n- Rename the helper files\n")
