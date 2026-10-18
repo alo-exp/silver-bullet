@@ -87,6 +87,14 @@ tl_run bash "$SCRIPT" --dry-run
 t_hasnt "$TL_OUT" "would create" "dry run skips agents that already exist"
 t_has "$TL_OUT" '"created":0,"skipped":6' "dry run on a provisioned dir is all skips"
 
+# --- an unrecognised scope behaves like global (current behaviour) and is echoed back ---
+CURSOR_AGENTS_DIR="$TL_TMP/odd-scope" tl_run bash "$SCRIPT" --scope foo
+t_eq "0" "$TL_STATUS" "unknown scope value is accepted"
+summary="$(tail -n1 <<<"$TL_OUT")"
+t_eq "foo" "$(jq -r .scope <<<"$summary")" "unknown scope reported verbatim"
+t_eq "$TL_TMP/odd-scope" "$(jq -r .agents_dir <<<"$summary")" "unknown scope keeps the global agents dir"
+t_exists "$TL_TMP/odd-scope/sb-dr-composer-2-5.md" "agents written to the global agents dir"
+
 # --- default location comes from the sandboxed HOME / CURSOR_HOME ------------------
 unset CURSOR_AGENTS_DIR
 tl_run bash "$SCRIPT"
