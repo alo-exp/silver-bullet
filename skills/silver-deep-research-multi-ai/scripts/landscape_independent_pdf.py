@@ -746,13 +746,7 @@ def _md_inline(text: str) -> str:
 
 
 def _inline_fmt(text: str, bold_re: re.Pattern[str], em_re: re.Pattern[str], code_re: re.Pattern[str]) -> str:
-    out = html.escape(text)
-
-    def _bold(m: re.Match[str]) -> str:
-        return f"<strong>{m.group(1)}</strong>"
-
-    # Operate on escaped text; recreate patterns against escaped form is messy.
-    # Re-parse original then escape segments:
+    # The patterns are unused: formatting is re-parsed from the raw text, then escaped per segment.
     return _inline_fmt_raw(text)
 
 
