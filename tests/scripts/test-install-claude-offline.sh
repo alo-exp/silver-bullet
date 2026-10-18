@@ -283,6 +283,22 @@ install_claude
 assert_eq "install tolerates unparseable settings" 0 "$TL_STATUS"
 assert_eq "unparseable settings untouched" "{broken" "$(<"$CLAUDE_DIR/settings.json")"
 
+# ---- lone surrogate escapes cannot truncate settings.json or the registry; symlinked settings stay links
+touch "$TL_TMP/stubcfg/install-fails"
+printf '{"s":"\\ud800","keep":"é","hooks":{}}\n' >"$TL_TMP/real-settings.json"
+$REAL_RM -f "$CLAUDE_DIR/settings.json"
+ln -s "$TL_TMP/real-settings.json" "$CLAUDE_DIR/settings.json"
+install_claude
+assert_eq "install with a lone surrogate in settings exits 0" 0 "$TL_STATUS"
+assert_eq "settings.json is still a symlink" 1 "$([[ -L "$CLAUDE_DIR/settings.json" ]] && echo 1 || echo 0)"
+# jq rejects lone surrogates, so validate with Python's parser
+assert_eq "settings content is valid JSON after the rewrite" valid "$(python3 -c 'import json,sys; json.load(open(sys.argv[1], encoding="utf-8")); print("valid")' "$TL_TMP/real-settings.json" 2>/dev/null || echo broken)"
+assert_contains "the surrogate escape is preserved" "$(<"$TL_TMP/real-settings.json")" '\ud800'
+assert_eq "other data survives" "é" "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8"))["keep"])' "$TL_TMP/real-settings.json")"
+assert_eq "no temporary files left behind" "" "$(find "$TL_TMP" "$CLAUDE_DIR" -maxdepth 2 -name '.tmp-*' | head -1)"
+$REAL_RM -f "$CLAUDE_DIR/settings.json"
+rm -f "$TL_TMP/stubcfg/install-fails"
+
 # ---- no cache root: settings/hook/skill sync are no-ops
 "$REAL_RM" -rf "$CACHE"
 printf '{"x":"y"}\n' >"$CLAUDE_DIR/settings.json"
