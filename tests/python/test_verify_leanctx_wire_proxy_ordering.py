@@ -70,7 +70,7 @@ class ValidateTest(unittest.TestCase):
         self.assertIn("unexpected message indices: [5]", errs)
         self.assertIn("missing message indices: [0]", errs)
 
-    def test_unexpected_only(self):
+    def test_duplicate_index_reports_missing_only_never_unexpected(self):
         msgs = [{"index": 0, "role": "user"}, {"index": 0, "role": "user"}]
         errs = m.validate_wire_proxy_ordering(good(messages=msgs))
         self.assertIn("duplicate message index 0", errs)
