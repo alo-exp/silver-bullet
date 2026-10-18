@@ -65,7 +65,7 @@ Update the base commit named in coverage-agent-prompt.md to the PR branch head b
 | C-toolgates-2 | Merged after two reviews (record-skill debug-mode abort, dead token guards removed) |
 | I-scripts-py-1 | Merged after review (codex PTY EIO on Linux, shared default lists, unreapable child terminated) |
 | L-scripts-misc-1 | Merged after three reviews (deploy-gate sourcing leak, evidence zip staleness, timeout helper fixes) |
-| H-recommended-1 | Second review |
+| H-recommended-1 | Merged after three reviews (eleven fixes incl. heartbeat root write, routeShell false, receipts brace) |
 | E-core-hooks | In progress |
 | All others | Not started |
 
