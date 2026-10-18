@@ -195,6 +195,20 @@ assert_eq "a failing delegate is recorded as failed" "failed" "$(wait_for_status
 assert_eq "the ledger records the failing delegate exit" "3" "$(jq -r .delegate_exit "$RUNS/$bg_run2/ledger.json")"
 assert_not_contains "no --use-print without the flag" "$(cat "$INVOKE_RECORD")" "--use-print"
 
+# a delegate that finishes before the launcher records its pid must still end up "completed"
+# (the launcher's pid update is delayed by a python3 wrapper so the order is deterministic)
+REAL_PY="$(command -v python3)"
+tl_stub python3 "case \"\${@: -1}\" in [0-9][0-9][0-9]*) sleep 0.6 ;; esac; exec '$REAL_PY' \"\$@\""
+: >"$INVOKE_RECORD"
+INVOKE_RC=0 drv start --row AUTO-C01 --work-dir "$TL_TMP/fixture-app"
+fast_run="$(sed -n 's/^run_id=//p' <<<"$TL_OUT")"
+assert_eq "a fast delegate's completion is not overwritten by the launcher" "completed" "$(wait_for_status "$fast_run" completed)"
+sleep 1
+assert_eq "the completed status is stable after the launcher finished" "completed" "$(jq -r .status "$RUNS/$fast_run/ledger.json")"
+assert_eq "the fast delegate's exit is kept" "0" "$(jq -r .delegate_exit "$RUNS/$fast_run/ledger.json")"
+assert_eq "the launcher's pid is still recorded" "$(cat "$RUNS/$fast_run/delegate.pid")" "$(jq -r .delegate_pid "$RUNS/$fast_run/ledger.json")"
+rm -f "$TL_BIN/python3"
+
 # ---------------------------------------------------------------- start --tmux (recording tmux)
 : >"$TMUX_REC"
 drv start --row AUTO-C01 --tmux
@@ -210,6 +224,8 @@ assert_contains "a detached session is created" "$tmux_log" "new-session -d -s a
 assert_contains "the session runs invoke.sh with the brief and log" "$tmux_log" "agent-claude/invoke.sh"
 assert_contains "the session records the exit in the ledger" "$tmux_log" "doc['status'] = 'completed' if exit_code == 0 else 'failed'"
 assert_contains "the session passes the work dir" "$tmux_log" "CLAUDE_WORK_DIR="
+assert_contains "the session waits for the launcher's ready marker before invoking" "$tmux_log" "$RUNS/$tmux_run/.launch-ready"
+assert_file_exists "the launcher released the session with the ready marker" "$RUNS/$tmux_run/.launch-ready"
 # a failing `kill-session` for a stale session is ignored
 tl_stub tmux "printf '%s\n' \"\$*\" >>'$TMUX_REC'; case \"\$1\" in kill-session) exit 1 ;; esac; exit 0"
 : >"$TMUX_REC"
