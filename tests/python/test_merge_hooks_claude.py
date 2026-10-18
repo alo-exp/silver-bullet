@@ -64,6 +64,14 @@ class MergeHooksTest(unittest.TestCase):
             {"matcher": "", "hooks": [hook(f"{install}/hooks/s.sh")]}])
         self.assertTrue(self.settings.read_text().endswith("}\n"))
 
+    def test_creates_the_claude_dir_on_a_fresh_home(self):
+        # A fresh machine has no ~/.claude yet; the merge must create it, not crash.
+        (self.home / ".claude").rmdir()
+        install = self.make_install()
+        out = self.run_script(install)
+        self.assertEqual(out, "SB hooks registered in the host runtime settings.json\n")
+        self.assertIn("SessionStart", self.load()["hooks"])
+
     def test_idempotent_second_run_no_change(self):
         install = self.make_install()
         self.run_script(install)

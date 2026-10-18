@@ -53,10 +53,10 @@ def write_jsonl(path: str, rows: list[dict]) -> None:
 # ---------------------------------------------------------------------------
 
 # Extract numbers (integers and decimals)
-NUMBER_RE = re.compile(r'\b\d+(?:\.\d+)?(?:%|x|X)?\b')
+NUMBER_RE = re.compile(r'\b\d+(?:\.\d+)?(?:%|[xX]\b|\b)')
 
 # Extract year-like numbers
-YEAR_RE = re.compile(r'\b(19|20)\d{2}\b')
+YEAR_RE = re.compile(r'\b(?:19|20)\d{2}\b')
 
 # Extract capitalized entities (naive NER)
 ENTITY_RE = re.compile(r'\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b')
@@ -105,7 +105,7 @@ def compute_support_score(claim_text: str, evidence_quotes: list[str]) -> tuple[
     claim_years = extract_years(claim_text)
     claim_entities = extract_entities(claim_text)
 
-    best_score = 0.0
+    best_score = -1.0
     best_notes = []
 
     for quote in evidence_quotes:
@@ -169,6 +169,11 @@ def compute_support_score(claim_text: str, evidence_quotes: list[str]) -> tuple[
     notes = '; '.join(best_notes) if best_notes else 'adequate overlap'
     return (status, round(best_score, 3), notes)
 
+# Kept identical to citation_manager.py so source_id matching stays stable
+# (tests/test_verify_claim_support_unit.py::TestCanonicalParity enforces it).
+DOI_RE = re.compile(r'(?:https?://(?:dx\.)?doi\.org/|doi:)(10\.\d{4,}/\S+)', re.IGNORECASE)
+ARXIV_RE = re.compile(r'(?:https?://arxiv\.org/abs/|arxiv:)(\d{4}\.\d{4,}(?:v\d+)?)', re.IGNORECASE)
+
 TRACKING_PARAMS = frozenset([
     'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content',
     'ref', 'source', 'fbclid', 'gclid', 'mc_cid', 'mc_eid',
@@ -178,8 +183,15 @@ TRACKING_PARAMS = frozenset([
 def canonicalize_locator(raw_url: str) -> str:
     """Derive a canonical locator from a raw URL or identifier string.
 
-    Mirrors citation_manager.py behavior to keep source_id matching stable.
+    Mirrors citation_manager.py behavior (DOI > arXiv > normalized URL) to
+    keep source_id matching stable.
     """
+    m = DOI_RE.search(raw_url)
+    if m:
+        return f'doi:{m.group(1).rstrip(".")}'
+    m = ARXIV_RE.search(raw_url)
+    if m:
+        return f'arxiv:{m.group(1)}'
     parsed = urlparse(raw_url)
     scheme = (parsed.scheme or 'https').lower()
     host = (parsed.hostname or '').lower()
@@ -201,9 +213,10 @@ def compute_source_id(canonical_locator: str) -> str:
 
 
 BIB_HEADING_RE = re.compile(r'^##\s+Bibliography\s*$', re.I)
-BIB_ENTRY_RE = re.compile(r'^\[(\d+)\]\s+')
+# Citation numbers are bounded to 9 digits so int() can never hit the 4300-digit cap.
+BIB_ENTRY_RE = re.compile(r'^\[(\d{1,9})\]\s+')
 MD_LINK_URL_RE = re.compile(r'\]\((https?://[^)\s]+)\)')
-INLINE_CITATION_RE = re.compile(r'\[(\d+(?:,\s*\d+)*)\]')
+INLINE_CITATION_RE = re.compile(r'\[(\d{1,9}(?:,\s*\d{1,9})*)\]')
 
 
 def _find_report_path(run_dir: str) -> Optional[str]:
@@ -255,10 +268,7 @@ def parse_bibliography_number_to_url(report_md: str) -> dict[int, str]:
         m = BIB_ENTRY_RE.match(line.strip())
         if not m:
             continue
-        try:
-            num = int(m.group(1))
-        except ValueError:
-            continue
+        num = int(m.group(1))
         urls = MD_LINK_URL_RE.findall(line)
         if not urls:
             continue
@@ -336,10 +346,7 @@ def infer_citation_numbers_from_context(report_md: str, claim_text: str) -> list
     nums: list[int] = []
     for m in INLINE_CITATION_RE.finditer(snippet):
         for n in m.group(1).split(','):
-            try:
-                nums.append(int(n.strip()))
-            except ValueError:
-                continue
+            nums.append(int(n.strip()))
     if nums:
         # Deduplicate while preserving order.
         out: list[int] = []
@@ -352,10 +359,7 @@ def infer_citation_numbers_from_context(report_md: str, claim_text: str) -> list
     snippet = report_md[pos: min(len(report_md), pos + 800)]
     for m in INLINE_CITATION_RE.finditer(snippet):
         for n in m.group(1).split(','):
-            try:
-                nums.append(int(n.strip()))
-            except ValueError:
-                continue
+            nums.append(int(n.strip()))
     out: list[int] = []
     for n in nums:
         if n not in out:
@@ -420,6 +424,7 @@ def cmd_verify(args: argparse.Namespace) -> None:
             continue
 
         claim_type = claim.get('claim_type', 'factual')
+        claim['claim_type'] = claim_type
 
         # Normalize claim types based on section intent.
         if section_id == 'recommendations':

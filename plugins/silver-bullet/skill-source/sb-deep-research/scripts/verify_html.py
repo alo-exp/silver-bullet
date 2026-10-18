@@ -109,7 +109,12 @@ class HTMLVerifier:
             "\U0001F680-\U0001F6FF"  # transport & map symbols
             "\U0001F1E0-\U0001F1FF"  # flags
             "\U00002702-\U000027B0"
-            "\U000024C2-\U0001F251"
+            "\U000024C2"
+            "\U000025AA-\U000025AB\U000025B6\U000025C0\U000025FB-\U000025FE"  # emoji-style shapes
+            "\U00002600-\U000026FF"  # miscellaneous symbols
+            "\U00002934-\U00002935\U00002B00-\U00002BFF"  # arrows, misc symbols and arrows
+            "\U0001F100-\U0001F251"  # enclosed alphanumeric/ideographic supplements
+            "\U0001F900-\U0001F9FF"  # supplemental symbols and pictographs
             "]+",
             flags=re.UNICODE
         )
