@@ -96,14 +96,13 @@ printf 'x\n' >"$wf/20260104T010203Z-x.md"
 SB_ROOT="" matrix_quiesce_active_workflows
 assert_file_exists "no SB root: dated file archived" "$wf/.archive/20260104T010203Z-x.md"
 
-# The non-dated sweep skips names matching ^202[0-9]{6}T (nine digits). Real ids carry
-# eight digits, so such a name only occurs with a crafted file: a "completed" workflow
-# that stays on disk is then left in place by the second pass.
+# The non-dated sweep skips real workflow ids (YYYYMMDDTHHMMSSZ-...): a "completed" workflow
+# that stays on disk is left in place by the second pass.
 rm -rf "${wf:?}"/* "$wf/.archive"
-printf 'x\n' >"$wf/202123456T-ddd-silver-test.md"
+printf 'x\n' >"$wf/20260105T000000Z-ddd-silver-test.md"
 printf '#!/usr/bin/env bash\nexit 0\n' >"$sbroot/scripts/workflows.sh"
 SB_ROOT="$sbroot" matrix_quiesce_active_workflows
-assert_file_exists "completed-but-present dated workflow left in place" "$wf/202123456T-ddd-silver-test.md"
+assert_file_exists "completed-but-present dated workflow left in place" "$wf/20260105T000000Z-ddd-silver-test.md"
 
 # failing mv is tolerated everywhere
 printf 'x\n' >"$wf/plain.md"
