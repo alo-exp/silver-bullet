@@ -600,7 +600,7 @@ def fetch_and_cache_catalog(
                 cached = load_json(cached_path)
             except (OSError, ValueError):
                 continue
-            if cached.get("models"):
+            if isinstance(cached, dict) and cached.get("models"):
                 print(
                     f"WARN: catalog refresh found no models; keeping cached catalog {cached_path}",
                     file=sys.stderr,
