@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 SCRIPTS = Path(__file__).resolve().parents[1] / "scripts"
@@ -28,6 +30,23 @@ Agentic SDLC orchestration Market Landscape Report
 ... [lean-ctx: omitted 3 lines]
 - Consensus claim with [Archived] marker
 """
+
+
+_OFFLINE_ENV = None
+
+
+def setUpModule() -> None:
+    # Hermetic by default: no vendor-URL health checks over HTTP and no Playwright PDF rendering.
+    global _OFFLINE_ENV
+    _OFFLINE_ENV = mock.patch.dict(
+        os.environ,
+        {"SB_SKIP_VENDOR_URL_HEALTH": "1", "SB_SKIP_LANDSCAPE_PDF": "1", "SB_ALLOW_SKIP_LANDSCAPE_PDF": "1"},
+    )
+    _OFFLINE_ENV.start()
+
+
+def tearDownModule() -> None:
+    _OFFLINE_ENV.stop()
 
 
 class CompressionMarkerTests(unittest.TestCase):
