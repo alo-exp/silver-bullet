@@ -181,8 +181,7 @@ def _convert_lists(html: str) -> str:
                 current_level = len(line) - len(line.lstrip())
                 if current_level > list_level and stripped:
                     # Continuation of previous list item
-                    if result[-1].endswith('</li>'):
-                        result[-1] = result[-1][:-5] + ' ' + stripped + '</li>'
+                    result[-1] = result[-1][:-5] + ' ' + stripped + '</li>'
                     continue
                 else:
                     # End of list
