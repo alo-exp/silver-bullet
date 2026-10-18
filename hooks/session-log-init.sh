@@ -186,7 +186,10 @@ if [[ -n "$existing" ]]; then
     #       writing the timeout marker.
     # This is an intentional bounded timeout guard for autonomous session enforcement.
     # The PID is tracked in sentinel-pid for cleanup; kill is called on lock failure.
-    (sleep "${SENTINEL_SLEEP_OVERRIDE:-600}" && echo "TIMEOUT" > "$SB_DIR"/timeout) </dev/null >/dev/null 2>&1 &
+    # The sleep runs as a child the subshell waits on, so stopping the sentinel (TERM on the
+    # recorded pid) stops the sleep too instead of orphaning it until the timeout.
+    # shellcheck disable=SC2016
+    (trap 'kill "$!" 2>/dev/null; exit 0' TERM; sleep "${SENTINEL_SLEEP_OVERRIDE:-600}" & wait "$!" && echo "TIMEOUT" > "$SB_DIR"/timeout) </dev/null >/dev/null 2>&1 &
     sentinel_pid=$!
     _uuid=$(uuidgen 2>/dev/null || cat /proc/sys/kernel/random/uuid 2>/dev/null || printf '%s-%s' "$$" "$(date +%s)")
     sb_guard_nofollow "$SB_DIR/sentinel-lock-$_uuid"
@@ -310,7 +313,10 @@ date +%s > "$SB_DIR"/session-start-time
 if [[ "$mode" == "autonomous" ]]; then
   sb_guard_nofollow "$SB_DIR"/timeout
   sb_guard_nofollow "$SB_DIR"/sentinel-pid
-  (sleep "${SENTINEL_SLEEP_OVERRIDE:-600}" && echo "TIMEOUT" > "$SB_DIR"/timeout) </dev/null >/dev/null 2>&1 &
+  # The sleep runs as a child the subshell waits on, so stopping the sentinel (TERM on the
+  # recorded pid) stops the sleep too instead of orphaning it until the timeout.
+  # shellcheck disable=SC2016
+  (trap 'kill "$!" 2>/dev/null; exit 0' TERM; sleep "${SENTINEL_SLEEP_OVERRIDE:-600}" & wait "$!" && echo "TIMEOUT" > "$SB_DIR"/timeout) </dev/null >/dev/null 2>&1 &
   sentinel_pid=$!
   _uuid=$(uuidgen 2>/dev/null || cat /proc/sys/kernel/random/uuid 2>/dev/null || printf '%s-%s' "$$" "$(date +%s)")
   sb_guard_nofollow "$SB_DIR/sentinel-lock-$_uuid"

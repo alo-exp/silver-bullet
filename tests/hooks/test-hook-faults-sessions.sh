@@ -18,8 +18,30 @@ SLEEPERS=()
 cleanup_procs() {
   local p
   for p in "${SLEEPERS[@]}"; do kill "$p" 2>/dev/null || true; done
-  if [[ -f "$SD/sentinel-pid" ]]; then kill "$(cut -d: -f1 "$SD/sentinel-pid")" 2>/dev/null || true; fi
+  stop_sentinel
+  stop_orphan_sentinels
   tl_cleanup
+}
+# Fault cases that make the hook lose track of a sentinel (kill or rm failing) leave it running;
+# on exit, stop every sentinel subshell started with this test's HOME, and its sleep (Linux /proc).
+stop_orphan_sentinels() {
+  local p c
+  [[ -d /proc/self ]] || return 0
+  for p in $(ps -A -o pid= -o args= | awk '$2 == "bash" && $3 ~ /session-log-init\.sh$/ { print $1 }'); do
+    tr '\0' '\n' <"/proc/$p/environ" 2>/dev/null | grep -qxF "HOME=$HOME" || continue
+    for c in $(ps -A -o pid= -o ppid= | awk -v p="$p" '$2 == p { print $1 }'); do builtin kill "$c" 2>/dev/null || true; done
+    builtin kill "$p" 2>/dev/null || true
+  done
+}
+# The sentinel subshell and its sleep. A case that exports a failing `kill` function leaves the
+# subshell unable to stop its own sleep, so the sleep is signalled directly.
+stop_sentinel() {
+  local p c
+  [[ -f "$SD/sentinel-pid" ]] || return 0
+  p="$(cut -d: -f1 "$SD/sentinel-pid")"
+  [[ "$p" =~ ^[0-9]+$ ]] || return 0
+  for c in $(ps -A -o pid= -o ppid= | awk -v p="$p" '$2 == p { print $1 }'); do builtin kill "$c" 2>/dev/null || true; done
+  builtin kill "$p" 2>/dev/null || true
 }
 trap cleanup_procs EXIT
 # A PID that has just exited and been reaped. A hard-coded PID such as 999999 can name a live
@@ -34,6 +56,8 @@ SESS="$EC_PROJ/docs/sessions"
 SL_IN="$(jq -cn --arg c "echo autonomous > $SB_RUNTIME_HOME_ROOT/.silver-bullet/mode" '{tool_name:"Bash",tool_input:{command:$c}}')"
 sl_reset() {
   local f
+  # Stop the sentinel the previous case started before forgetting its pid.
+  stop_sentinel
   rm -rf "${SESS:?}"
   for f in mode sentinel-pid timeout session-start-time timeout-warn-count session-log-path; do rm -f "${SD:?}/${f:?}"; done
   for f in "$SD"/sentinel-lock-*; do [[ -e "$f" ]] && rm -f "$f"; done
@@ -105,9 +129,13 @@ rm -f "${SD:?}/timeout" "${SD:?}/sentinel-pid"
 tl_stub touch 'exit 1'
 kill() { if [[ "${1:-}" == "-0" ]]; then builtin kill "$@"; else return 1; fi; }
 export -f kill
-hook session-log-init.sh "$EC_PROJ" "$SL_IN"
+# kill fails too, so the hook cannot stop this sentinel and records no pid: a zero-length
+# sleep lets it finish at once instead of running for 600 s after the test.
+SENTINEL_SLEEP_OVERRIDE=0 hook session-log-init.sh "$EC_PROJ" "$SL_IN"
 ec_unfail touch
 assert_file_absent "log: lock creation failing on restart: no pid file" "$SD/sentinel-pid"
+for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do [[ -f "$SD/timeout" ]] && break; sleep 0.1; done
+rm -f "${SD:?}/timeout"
 # same failure on first creation of an autonomous log
 sl_reset
 printf 'autonomous' >"$SD/mode"
