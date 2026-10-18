@@ -21,10 +21,11 @@ tl_init
 # TEMPORARY allowlist: files other in-flight packages are editing right now and
 # will fix themselves. Remove each entry when its owner lands the rewrite.
 ALLOWLIST=(
-  # E-core-hooks
-  hooks/industry-tooling-hint.sh
-  hooks/session-log-init.sh
-  hooks/lib/quality-gates-mode.sh
+  # H-recommended-1
+  scripts/install-leanctx-sb.sh
+  scripts/lib/recommended-tools/probe-alumnium.sh
+  scripts/lib/recommended-tools/probe-leanctx.sh
+  scripts/lib/recommended-tools/probe-rtk.sh
   # F-enterprise-2
 )
 
