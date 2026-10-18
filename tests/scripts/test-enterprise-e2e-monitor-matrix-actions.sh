@@ -58,6 +58,14 @@ assert_contains "status says RESTARTED" "$(cat "$STATUS")" "— RESTARTED"
 # a restarted state key is replaced, not duplicated
 assert_eq "state keys unique" "1" "$(grep -c '^LAST_GROWTH_EPOCH=' "$STATE")"
 
+# fixture default: with SB_TEST_ENTERPRISE_APP_ROOT unset and a host without test_app_root in hosts.json (codex),
+# the batch gets the sibling of the SB root's parent
+f4_mon_reset
+roster 1:PASS 5:none
+f4_mon_run -u SB_TEST_ENTERPRISE_APP_ROOT SB_E2E_LIVE_RUNTIME=codex
+want_fixture="$(cd "$R/../.." && pwd)/enterprise-grade-test-app"
+assert_contains "unset fixture env defaults to <SB_ROOT/../..>/enterprise-grade-test-app" "$(batch_ran)" "fixture=$want_fixture "
+
 # row 21/22 completion needs the PASS ===  marker for rows listed in the row args
 f4_mon_reset
 roster 1:PASS
