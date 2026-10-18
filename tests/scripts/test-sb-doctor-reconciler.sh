@@ -226,7 +226,7 @@ assert_not_contains "dry-run never applies" "$(hd_logs)" "--mode apply"
 # ---------- --fix: interactive confirmation on a real terminal ----------
 PTY="$TL_TMP/pty-run.py"
 cat >"$PTY" <<'PY'
-import os, pty, select, sys, time
+import os, pty, select, signal, sys, time
 
 reply = sys.argv[1].encode().decode("unicode_escape").encode("latin-1")
 argv = sys.argv[2:]
@@ -249,8 +249,16 @@ while time.time() < deadline:
         if not sent and b"[y/N]" in buf:
             os.write(fd, reply)
             sent = True
-_, status = os.waitpid(pid, 0)
+timed_out = False
+done, status = os.waitpid(pid, os.WNOHANG)
+if done == 0:
+    # still running after the deadline (for example a second prompt): never hang CI
+    timed_out = True
+    os.kill(pid, signal.SIGKILL)
+    _, status = os.waitpid(pid, 0)
 sys.stdout.write(buf.decode("utf-8", "replace"))
+if timed_out:
+    sys.stdout.write("\nPTY-TIMEOUT\n")
 sys.stdout.write("\nPTY-EXIT=%d\n" % os.waitstatus_to_exitcode(status))
 PY
 pty_doctor() {  # reply -> output with PTY-EXIT=
@@ -259,6 +267,7 @@ pty_doctor() {  # reply -> output with PTY-EXIT=
   TL_OUT="$(env STUB_RECON_JSON="$NEEDS" SILVER_BULLET_RUNTIME=claude python3 "$PTY" "$reply" bash "$HD_ST/scripts/sb-doctor.sh" "$@" 2>&1)"
 }
 pty_doctor 'y\n' --fix "$HD_PROJ"
+assert_not_contains "no terminal run hits the deadline" "$TL_OUT" "PTY-TIMEOUT"
 assert_contains "terminal prompt shown" "$TL_OUT" "sb-doctor: apply --fix=all? [y/N]"
 assert_contains "answering y applies the fix" "$(hd_logs)" "--mode apply --scope all"
 assert_contains "answering y re-runs the audit" "$TL_OUT" "sb-doctor: re-running checks after --fix"
