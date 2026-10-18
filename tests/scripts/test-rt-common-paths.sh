@@ -260,8 +260,14 @@ rc=0; rt_with_lock "$L" 5 true || rc=$?
 assert_eq "a held lock times out" "1" "$rc"
 assert_file_exists "a lock held by someone else is left alone" "$L"
 rm -f "$DATE_STATE"
+# A lock directory that cannot be created is a permanent error, not contention: fail at once
+# instead of spinning until the timeout (with sleep stubbed that was a 15 s fork loop).
+tl_stub sleep 'echo slept >>"$SLEEP_LOG"; exit 0'
+export SLEEP_LOG="$TL_TMP/sleep.log"
 rc=0; rt_with_lock "$D/blocker/locks/x.lock" 5 true || rc=$?
-assert_eq "an uncreatable lock directory times out" "1" "$rc"
+assert_eq "an uncreatable lock directory fails" "1" "$rc"
+assert_file_absent "an uncreatable lock directory fails without waiting" "$SLEEP_LOG"
+assert_file_absent "an uncreatable lock directory fails without reading the clock" "$DATE_STATE"
 rm -f "$TL_BIN/date" "$TL_BIN/sleep"; rmdir "$L"
 
 # held lock released by another process while we wait
