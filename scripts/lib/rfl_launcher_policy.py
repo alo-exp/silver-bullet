@@ -792,10 +792,8 @@ def dispatch_policy_cli(args: argparse.Namespace) -> int | None:
     if args.resolved_table:
         print(render_resolved_table(payload), end="")
         return 0
-    if args.ladder_matrix:
-        print(render_ladder_complete_matrix(payload), end="")
-        return 0
-    return None
+    print(render_ladder_complete_matrix(payload), end="")
+    return 0
 
 
 def main() -> int:
