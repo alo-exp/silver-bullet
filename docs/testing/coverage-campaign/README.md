@@ -60,7 +60,9 @@ Update the base commit named in coverage-agent-prompt.md to the PR branch head b
 | G-toolstack-1 | Merged after review (five bug fixes, each with a red test) |
 | D-gates | Merged after two reviews (rfl errexit abort, phase-archive fails closed without jq, site-chrome font rule) |
 | F-enterprise-1 | Merged after review and one repair round (preflight failures now fail their callers; overlay telemetry kept out of the checkout) |
-| C-toolgates-2, F-enterprise-2, G-toolstack-2 | In review |
+| G-toolstack-2 | Merged after review (pi plugin result unwrap, GNU stat lock age, perl -pi detection) |
+| F-enterprise-2 | Merged after two reviews (live-test resume race, quiesce id regex, marker search) |
+| C-toolgates-2 | Second review |
 | E-core-hooks, H-recommended-1 | In progress |
 | All others | Not started |
 
