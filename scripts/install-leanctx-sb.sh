@@ -180,7 +180,8 @@ leanctx_binary_ok() {
   local bin
   bin="$(leanctx_cli_path || true)"
   [[ -n "$bin" ]] || return 1
-  "$bin" --version >/dev/null 2>&1 || "$bin" --help >/dev/null 2>&1
+  "$bin" --version >/dev/null 2>&1 && return 0
+  "$bin" --help >/dev/null 2>&1
 }
 
 leanctx_supports_library_mode() {
