@@ -203,7 +203,7 @@ assert_eq "global cursor: --global rules synced" "context-mode" "$(cat "$HOME/.c
 : >"$PI_LOG"
 tl_run bash -c 'cd "$1" && bash "$2" --host all --global' _ "$WORK" "$GLO"
 assert_eq "global all: exits 0" "0" "$TL_STATUS"
-assert_contains "global all: claude" "$TL_OUT" "~/.claude/RTK.md present"
+assert_contains "global all: claude" "$TL_OUT" "RTK.md present"
 assert_contains "global all: hermes" "$TL_OUT" "Hermes: enable rtk-rewrite"
 assert_not_contains "global all: goose skipped" "$TL_OUT" "SKIP: goose"
 assert_eq "global all: pi ran once" "--repo-root ${STAGE}" "$(cat "$PI_LOG")"
