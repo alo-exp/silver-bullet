@@ -135,6 +135,7 @@ for event, entries in sb_hooks.items():
                 else:
                     existing_event.append({'matcher': matcher, 'hooks': [new_hook]})
 
+os.makedirs(os.path.dirname(settings_path), exist_ok=True)
 with open(settings_path, 'w') as f:
     json.dump(settings, f, indent=2)
     f.write('\n')
