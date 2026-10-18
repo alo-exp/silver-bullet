@@ -1243,7 +1243,7 @@ def write_record_entry(root: Path, candidate: dict[str, Any], target: Path, is_k
         elif "gotcha" in lower or "avoid" in lower or "must" in lower:
             heading = "## Known Gotchas"
         entry = f"{local_date()} - {candidate['context']} [candidate-id:{candidate['candidate_id']}]"
-        if heading not in content:
+        if heading not in (line.strip() for line in content.splitlines()):
             content = content.rstrip() + f"\n\n{heading}\n\n{entry}\n"
         else:
             lines = content.splitlines()
@@ -1258,7 +1258,7 @@ def write_record_entry(root: Path, candidate: dict[str, Any], target: Path, is_k
     else:
         heading = learning_category(candidate["context"])
         entry = f"{local_date()} - {candidate['context']} [candidate-id:{candidate['candidate_id']}]"
-        if f"## {heading}" not in content:
+        if f"## {heading}" not in (line.strip() for line in content.splitlines()):
             content = content.rstrip() + f"\n\n## {heading}\n\n{entry}\n"
         else:
             lines = content.splitlines()
@@ -1289,16 +1289,16 @@ def reconstruct_candidate(state: dict[str, Any], candidate_id: str) -> dict[str,
     if isinstance(by_id, dict):
         refs = by_id.get("source_refs") or []
         first_ref = refs[0] if refs else {"path": "", "line": 0}
-    return {
-        "candidate_id": candidate_id,
-        "fingerprint": by_id.get("fingerprint", ""),
-        "kind": by_id.get("kind", "deferred"),
-        "classification": by_id.get("classification", "chore"),
-        "category": by_id.get("category", by_id.get("classification", "chore")),
-        "confidence": by_id.get("confidence", "medium"),
-        "routing_target": by_id.get("routing_target", "backlog"),
-        "title": by_id.get("title", "session candidate"),
-        "context": by_id.get("context", ""),
+        return {
+            "candidate_id": candidate_id,
+            "fingerprint": by_id.get("fingerprint", ""),
+            "kind": by_id.get("kind", "deferred"),
+            "classification": by_id.get("classification", "chore"),
+            "category": by_id.get("category", by_id.get("classification", "chore")),
+            "confidence": by_id.get("confidence", "medium"),
+            "routing_target": by_id.get("routing_target", "backlog"),
+            "title": by_id.get("title", "session candidate"),
+            "context": by_id.get("context", ""),
             "source_kind": by_id.get("source_kind", "unknown"),
             "source_path": first_ref.get("path", ""),
             "source_line": first_ref.get("line", 0),
@@ -1384,22 +1384,22 @@ def parse_candidate_stream(root: Path, source: dict[str, Any], config: dict[str,
     duplicate_count = 0
     recorded_insights: set[str] = set()
 
+    # Collect already-recorded insights first: "Items Filed" may follow the sections it dedupes.
+    for section in sections:
+        if section["title"] not in SECTION_ITEMS_FILED:
+            continue
+        for _line_no, block_text in split_blocks(section["lines"]):
+            # strip_prefix already removed the list bullet, so the tag is the first token.
+            text = strip_prefix(block_text).strip()
+            recorded = re.match(r"^\[(?:knowledge|learnings|lessons)\]:\s*", text, flags=re.I)
+            if recorded:
+                recorded_insights.add(normalize_text(text[recorded.end():]))
+
     for section in sections:
         title = section["title"]
-        blocks = split_blocks(section["lines"])
-        if title in SECTION_ITEMS_FILED:
-            for _line_no, block_text in blocks:
-                text = strip_prefix(block_text).strip()
-                if (
-                    text.lower().startswith("- [knowledge]:")
-                    or text.lower().startswith("- [learnings]:")
-                    or text.lower().startswith("- [lessons]:")
-                ):
-                    recorded_insights.add(normalize_text(re.sub(r"^- \[(knowledge|learnings|lessons)\]:\s*", "", text, flags=re.I)))
-            continue
         if title not in SECTION_DEFERRED and title not in SECTION_AUTONOMOUS and title not in SECTION_KNOWLEDGE:
             continue
-        for line_no, block_text in blocks:
+        for line_no, block_text in split_blocks(section["lines"]):
             candidate = build_candidate(root, source, title, block_text, line_no, config)
             if candidate is None:
                 continue

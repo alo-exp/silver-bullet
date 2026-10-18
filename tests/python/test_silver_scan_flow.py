@@ -210,6 +210,9 @@ class CandidateStreamTest(Base):
             text = f"## Knowledge & Learnings Additions\n- Same thing\n## Items Filed\n- [{tag}]: Same thing\n"
             cands, dupes = self.stream(text)
             self.assertEqual(([c["title"] for c in cands], dupes), ([], 1), tag)
+        before = "## Items Filed\n- [knowledge]: Same thing\n## Knowledge & Learnings Additions\n- Same thing\n"
+        cands, dupes = self.stream(before)
+        self.assertEqual(([c["title"] for c in cands], dupes), ([], 1))
         text = "## Knowledge & Learnings Additions\n- Same thing\n## Items Filed\n- [other]: Same thing\n"
         cands, dupes = self.stream(text)
         self.assertEqual(([c["title"] for c in cands], dupes), (["Same thing"], 0))
