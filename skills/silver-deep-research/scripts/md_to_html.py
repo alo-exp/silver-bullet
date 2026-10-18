@@ -144,6 +144,7 @@ def _convert_lists(html: str) -> str:
     lines = html.split('\n')
     result = []
     in_list = False
+    list_tag = 'ul'
     list_level = 0
 
     for i, line in enumerate(lines):
@@ -153,6 +154,7 @@ def _convert_lists(html: str) -> str:
         if stripped.startswith('- ') or stripped.startswith('* '):
             if not in_list:
                 result.append('<ul>')
+                list_tag = 'ul'
                 in_list = True
                 list_level = len(line) - len(line.lstrip())
 
@@ -164,6 +166,7 @@ def _convert_lists(html: str) -> str:
         elif re.match(r'^\d+\.\s', stripped):
             if not in_list:
                 result.append('<ol>')
+                list_tag = 'ol'
                 in_list = True
                 list_level = len(line) - len(line.lstrip())
 
@@ -183,7 +186,7 @@ def _convert_lists(html: str) -> str:
                     continue
                 else:
                     # End of list
-                    result.append('</ul>' if '<ul>' in '\n'.join(result[-10:]) else '</ol>')
+                    result.append(f'</{list_tag}>')
                     in_list = False
                     list_level = 0
 
@@ -191,7 +194,7 @@ def _convert_lists(html: str) -> str:
 
     # Close any remaining open list
     if in_list:
-        result.append('</ul>' if '<ul>' in '\n'.join(result[-10:]) else '</ol>')
+        result.append(f'</{list_tag}>')
 
     return '\n'.join(result)
 
