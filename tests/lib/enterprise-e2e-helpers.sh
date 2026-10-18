@@ -2,9 +2,25 @@
 # Helpers shared by the enterprise E2E harness tests (package F-enterprise-1).
 # Source after testlib.sh and tl_init.
 
+# _e2e_split_env ARG...: env(1) wants its -u options before the assignments, so sort
+# them (an unset always applies first). Result in E2E_ENV_ARGS.
+_e2e_split_env() {
+  local opts=() assigns=()
+  while (($#)); do
+    if [[ "$1" == "-u" ]]; then
+      opts+=(-u "$2")
+      shift 2
+    else
+      assigns+=("$1")
+      shift
+    fi
+  done
+  E2E_ENV_ARGS=(${opts[@]+"${opts[@]}"} ${assigns[@]+"${assigns[@]}"})
+}
+
 # e2e_call LIB [ENV-ARG ...] -- FUNCTION [ARGS ...]
 # Run FUNCTION from the sourced LIB in a fresh bash. ENV-ARGs are passed to
-# env(1) (-u VAR first, then VAR=value; at least one is required). The result lands in TL_OUT/TL_ERR/TL_STATUS.
+# env(1) (-u VAR or VAR=value, any order). The result lands in TL_OUT/TL_ERR/TL_STATUS.
 e2e_call() {
   local lib="$1"
   shift
@@ -14,7 +30,8 @@ e2e_call() {
     shift
   done
   shift
-  tl_run env ${envs[@]+"${envs[@]}"} bash -c 'source "$1"; shift; "$@"' _ "$lib" "$@"
+  _e2e_split_env ${envs[@]+"${envs[@]}"}
+  tl_run env ${E2E_ENV_ARGS[@]+"${E2E_ENV_ARGS[@]}"} bash -c 'source "$1"; shift; "$@"' _ "$lib" "$@"
 }
 
 # e2e_script SCRIPT-BODY [ENV-ARG ...]
@@ -23,7 +40,8 @@ e2e_call() {
 e2e_script() {
   local body="$1"
   shift
-  tl_run env "$@" bash -c "set -euo pipefail; $body"
+  _e2e_split_env "$@"
+  tl_run env ${E2E_ENV_ARGS[@]+"${E2E_ENV_ARGS[@]}"} bash -c "set -euo pipefail; $body"
 }
 
 # e2e_git_app DIR: a test-app git repo on branch main with one commit.
