@@ -14,7 +14,7 @@ unset SB_CURSOR_SB_AGENTS_CONFIG SB_CURSOR_MODELS_CATALOG CSBA_REPO_ROOT
 CFG='{"selected_models":["composer-2.5"],"effort_levels":["medium","high"],"agent_name_prefix":"sb"}'
 
 agent_file() { # agent_file <dir> <file-stem> <frontmatter-name> [marker]
-  printf -- '---\nname: %s\n---\n%s\nbody\n' "$3" "${4-<!-- sb-managed: cursor-sb-agents -->}" >"$1/$2.md"
+  printf -- '---\nname: %s\ndescription: SB reusable ladder agent — test.\n---\nbody\n%s\n' "$3" "${4-<!-- sb-managed: cursor-sb-agents -->}" >"$1/$2.md"
 }
 agent_file "$AGENTS" sb-composer-2-5-medium sb-composer-2-5-medium
 agent_file "$AGENTS" sb-composer-2-5-high sb-composer-2-5-high
@@ -107,18 +107,20 @@ assert_contains "count mismatch reported" "$TL_ERR" "count mismatch (actual=1, e
 probe --config-json "$CFG" --json
 assert_eq "json count mismatch ok=false" false "$(jq -r .ok <<<"$TL_OUT")"
 assert_contains "json count mismatch reason" "$(jq -r .reason <<<"$TL_OUT")" "count mismatch"
-agent_file "$AGENTS" sb-composer-2-5-high sb-renamed-high
+rm -f "$AGENTS/sb-composer-2-5-high.md"
+agent_file "$AGENTS" sb-renamed-high sb-renamed-high
 probe --config-json "$CFG"
 assert_eq "wrong name fails" 1 "$TL_STATUS"
 assert_contains "name set mismatch reported" "$TL_ERR" "name set mismatch"
 # unmanaged files and frontmatter without a name are not counted as names
+rm -f "$AGENTS/sb-renamed-high.md"
 agent_file "$AGENTS" sb-composer-2-5-high sb-composer-2-5-high
 agent_file "$AGENTS" sb-user-custom sb-user-custom ""
 printf -- '---\ndescription: x\n---\n<!-- sb-managed: cursor-sb-agents -->\n' >"$AGENTS/sb-nameless.md"
+printf -- '---\nname: sb-quoter\ndescription: mine\n---\nquotes <!-- sb-managed: cursor-sb-agents --> in prose\nand more\n' >"$AGENTS/sb-quoter.md"
 probe --config-json "$CFG"
-assert_eq "nameless managed file counts but has no name" 1 "$TL_STATUS"
-assert_contains "count includes the nameless managed file" "$TL_ERR" "actual=3"
-rm -f "$AGENTS/sb-nameless.md"
+assert_eq "nameless and marker-quoting files are not managed" 0 "$TL_STATUS"
+rm -f "$AGENTS/sb-nameless.md" "$AGENTS/sb-quoter.md"
 probe --config-json "$CFG"
 assert_eq "unmanaged sb-* files are ignored" 0 "$TL_STATUS"
 

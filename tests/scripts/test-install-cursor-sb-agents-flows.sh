@@ -46,10 +46,21 @@ assert_eq "include flags install exits 0" 0 "$TL_STATUS"
 assert_eq "include_fast recorded" true "$(jq -r .include_fast "$CFGDIR/cursor-sb-agents.json")"
 assert_eq "include_max recorded" true "$(jq -r .include_max "$CFGDIR/cursor-sb-agents.json")"
 
+# ---- a user file that merely contains the managed marker is never pruned or counted as managed
+mkdir -p "$HOME/.cursor/agents"
+printf -- '---\nname: sb-my-notes\ndescription: my own notes\n---\nI quote the marker: <!-- sb-managed: cursor-sb-agents --> in prose.\nmore text\n' >"$HOME/.cursor/agents/sb-my-notes.md"
+install --global --non-interactive
+assert_eq "install with a marker-quoting user file exits 0" 0 "$TL_STATUS"
+assert_file_exists "user file containing the marker survives the prune" "$HOME/.cursor/agents/sb-my-notes.md"
+tl_run bash "$TL_REPO_ROOT/scripts/lib/cursor-sb-agents/probe-global-agents.sh" --skip-status
+assert_eq "probe ignores the marker-quoting user file" 0 "$TL_STATUS"
+assert_contains "probe counts only the 6 generated agents" "$TL_OUT" "PROBE PASS: 6 managed agents"
+rm -f "${HOME:?}/.cursor/agents/sb-my-notes.md"
+
 # ---- project scope merges into an existing project config, prunes stale managed files
 printf '{"keep":true}\n' >"$PROJ/.silver-bullet.json"
 mkdir -p "$PROJ/.cursor/agents"
-printf -- '---\nname: sb-stale-model-high\n---\n<!-- sb-managed: cursor-sb-agents -->\n' >"$PROJ/.cursor/agents/sb-stale-model-high.md"
+printf -- '---\nname: sb-stale-model-high\ndescription: SB reusable ladder agent — stale.\n---\nbody\n<!-- sb-managed: cursor-sb-agents -->\n' >"$PROJ/.cursor/agents/sb-stale-model-high.md"
 printf -- '---\nname: sb-user-own\n---\nuser file\n' >"$PROJ/.cursor/agents/sb-user-own.md"
 install --project --non-interactive --select-models "composer-2.5, grok-4.5" --effort-levels "medium, high"
 assert_eq "project install exits 0" 0 "$TL_STATUS"

@@ -217,12 +217,12 @@ import json, os, sys
 from pathlib import Path
 
 sys.path.insert(0, os.environ["CSBA_LIB_DIR"])
+from sb_managed_agent import is_installer_managed_agent
 from cursor_sb_agents_lib import (
     MANAGED_MARKER,
     agent_name,
     expected_agent_names,
     expected_model_params,
-    has_managed_marker,
     load_json,
     render_agent_markdown,
 )
@@ -246,18 +246,13 @@ for model in cfg.get("selected_models", []):
         written.append(str(path))
 
 pruned = []
-for path in sorted(agents_dir.glob("sb-*.md")):
-    if not has_managed_marker(path):
+prefix = cfg.get("agent_name_prefix", "sb")
+for path in sorted(agents_dir.glob(f"{prefix}-*.md")):
+    # Only files this installer generated are ever pruned; a user file that merely
+    # contains the marker text is left alone.
+    if not is_installer_managed_agent(path, agents_dir):
         continue
-    name = None
-    text = path.read_text(encoding="utf-8")
-    if text.startswith("---"):
-        end = text.find("\n---", 3)
-        block = text[3:end] if end != -1 else ""
-        for line in block.splitlines():
-            if line.startswith("name:"):
-                name = line.split(":", 1)[1].strip()
-                break
+    name = path.stem
     if name and name not in expected:
         path.unlink()
         pruned.append(str(path))
