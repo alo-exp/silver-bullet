@@ -67,6 +67,7 @@ Update the base commit named in coverage-agent-prompt.md to the PR branch head b
 | L-scripts-misc-1 | Merged after three reviews (deploy-gate sourcing leak, evidence zip staleness, timeout helper fixes) |
 | H-recommended-1 | Merged after three reviews (eleven fixes incl. heartbeat root write, routeShell false, receipts brace) |
 | L-scripts-misc-2 | Merged after review (value-less options fail closed, workflows awk, semantic-compress budget) |
+| H-recommended-2 | Merged after two reviews (diagnostics gitleaks, doctor --fix twice, lost score exports, claude host detection) |
 | I-scripts-py-2 | Merged after three reviews (merge scripts no longer overwrite user config; hermes YAML keeps user servers) |
 | E-core-hooks | Repair round after review |
 | All others | Not started |
@@ -81,7 +82,7 @@ Statements that cannot run are removed, not excluded: each removal is its own `r
 
 | Finding | Where | Owner package |
 |---|---|---|
-| `if sb_stack_gitleaks_path >/dev/null` always passes (the function always exits 0), so diagnostics report gitleaks installed regardless | `scripts/sb-diagnostics.sh:275` | L-scripts-misc (sb-diagnostics) |
+| ~~`if sb_stack_gitleaks_path >/dev/null` always passes, so diagnostics report gitleaks installed regardless~~ fixed | `scripts/sb-diagnostics.sh` | H-recommended-2 (merged) |
 | `jq '... // "true"'` reads a JSON boolean `false` as `"true"`, so `hooks.evidence_schema.strict: false` does not relax the gate | `hooks/lib/enterprise-policy.sh:157`, `hooks/lib/completion-audit/gates.sh:221/224/227` | E-core-hooks / A follow-up |
 | `count_*` helpers use `grep -c ... \|\| echo 0` (prints `0` twice when nothing matches) | `hooks/lib/workflow-utils.sh` | E-core-hooks |
 | Invalid escape `\s` in a Python string (SyntaxWarning, an error in future Python) | `skills/silver-deep-research-multi-ai/scripts/landscape_preview_render.py:665` | M-dr-multi-ai |
