@@ -80,15 +80,15 @@ emit_json() {
     --argjson actual_count "$ACTUAL_COUNT" \
     --arg agents_dir "$AGENTS_DIR" \
     --arg reason "$reason" \
-    --slurpfile expected "$EXPECTED_NAMES" \
-    --slurpfile actual "$ACTUAL_NAMES" \
+    --rawfile expected "$EXPECTED_NAMES" \
+    --rawfile actual "$ACTUAL_NAMES" \
     '{
       ok: $ok,
       expected_count: $expected_count,
       actual_count: $actual_count,
       agents_dir: $agents_dir,
-      expected_names: ($expected[0] | split("\n") | map(select(length > 0))),
-      found_names: ($actual[0] | split("\n") | map(select(length > 0))),
+      expected_names: ($expected | split("\n") | map(select(length > 0))),
+      found_names: ($actual | split("\n") | map(select(length > 0))),
       reason: (if $reason == "" then null else $reason end)
     }'
 }
