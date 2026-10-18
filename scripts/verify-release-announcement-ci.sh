@@ -124,7 +124,9 @@ while true; do
       echo "✓ Release commit $commit_sha is fully green for announcement"
       exit 0
       ;;
-    missing|waiting)
+    *)
+      # Anything but "ready" (missing, waiting, or any unexpected state) keeps polling
+      # until the deadline, so the loop can never spin without sleeping.
       if (( $(date +%s) >= deadline )); then
         if [[ "$state" == "missing" ]]; then
           echo "::error::Release announcement timed out waiting for CI workflow runs for tag $TAG: $details"
@@ -137,10 +139,6 @@ while true; do
 
       echo "Waiting for release commit $commit_sha to settle before posting announcement..."
       sleep "$poll_interval_seconds"
-      ;;
-    *)
-      echo "::error::Unexpected release CI status state: $state"
-      exit 1
       ;;
   esac
 done

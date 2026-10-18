@@ -101,7 +101,9 @@ while true; do
       echo "✓ Release commit $COMMIT_SHA is fully green"
       exit 0
       ;;
-    missing|waiting)
+    *)
+      # Anything but "ready" (missing, waiting, or any unexpected state) keeps polling
+      # until the deadline, so the loop can never spin without sleeping.
       if (( $(date +%s) >= deadline )); then
         if [[ "$state" == "missing" ]]; then
           echo "::error::Release CI timed out waiting for GitHub workflow runs for commit $COMMIT_SHA: $details"
@@ -114,10 +116,6 @@ while true; do
 
       echo "Waiting for release commit $COMMIT_SHA to become fully green before tagging..."
       sleep "$poll_interval_seconds"
-      ;;
-    *)
-      echo "::error::Unexpected release CI status state: $state"
-      exit 1
       ;;
   esac
 done

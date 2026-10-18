@@ -66,7 +66,9 @@ Update the base commit named in coverage-agent-prompt.md to the PR branch head b
 | I-scripts-py-1 | Merged after review (codex PTY EIO on Linux, shared default lists, unreapable child terminated) |
 | L-scripts-misc-1 | Merged after three reviews (deploy-gate sourcing leak, evidence zip staleness, timeout helper fixes) |
 | H-recommended-1 | Merged after three reviews (eleven fixes incl. heartbeat root write, routeShell false, receipts brace) |
-| E-core-hooks | In progress |
+| L-scripts-misc-2 | Merged after review (value-less options fail closed, workflows awk, semantic-compress budget) |
+| I-scripts-py-2 | Merged after three reviews (merge scripts no longer overwrite user config; hermes YAML keeps user servers) |
+| E-core-hooks | Repair round after review |
 | All others | Not started |
 
 Each package is merged into the PR branch only after an adversarial review passes and its tests pass under both the `claude` and `codex` runtimes.
