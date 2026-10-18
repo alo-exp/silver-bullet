@@ -198,7 +198,7 @@ ts_is_substantive_shell() {
   if grep -qE '\bgit commit\b|\bgh pr create\b|\bgh release create\b' <<<"$cmd"; then
     return 0
   fi
-  if grep -qE '(>>|\s>[^>&=]|\btee\b|\bcp\b|\bmv\b|\bsed\b[^$]*-i|\bperl\b[^$]*-i)' <<<"$cmd"; then
+  if grep -qE '(>>|\s>[^>&=]|\btee\b|\bcp\b|\bmv\b|\bsed\b[^$]*([[:space:]]-[nErsuz]*i|--in-place)|\bperl\b[^$]*[[:space:]]-[lpnaw0-9]*i)' <<<"$cmd"; then
     return 0
   fi
   return 1
@@ -453,7 +453,7 @@ ts_agentmemory_server_healthy() {
   url="$(ts_effective_health_url)"
   if command -v curl >/dev/null 2>&1 && curl -sf --max-time 3 "$url" >/dev/null 2>&1; then return 0; fi
   if command -v agentmemory >/dev/null 2>&1; then
-    agentmemory status 2>/dev/null | grep -qE 'Connected|Health:[[:space:]]+healthy' && return 0
+    grep -qE 'Connected|Health:[[:space:]]+healthy' < <(agentmemory status 2>/dev/null) && return 0
   fi
   return 1
 }

@@ -23,6 +23,15 @@ assert_eq "stub status captured" "3" "$TL_STATUS"
 
 tl_run_stdin "hello" cat
 assert_eq "stdin passed through" "hello" "$TL_OUT"
+tl_run_stdin $'a\nb' cat
+assert_eq "stdin passed byte for byte (no added newline)" "$(printf 'a\nb' | od -c)" "$(printf '%s' "$TL_OUT" | od -c)"
+# A command that exits without reading its input must report its own status,
+# not SIGPIPE (141) from the writer; input larger than a pipe buffer makes the
+# race deterministic.
+tl_run_stdin "$(head -c 200000 /dev/zero | tr '\0' a)" bash -c 'exit 3'
+assert_eq "status is the command's even when it ignores stdin" "3" "$TL_STATUS"
+tl_run_stdin "$(head -c 200000 /dev/zero | tr '\0' a)" true
+assert_eq "early exit without reading stdin is status 0" "0" "$TL_STATUS"
 
 tl_run bash -c 'echo err >&2; exit 1'
 assert_eq "stderr captured" "err" "$TL_ERR"

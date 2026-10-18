@@ -161,7 +161,7 @@ sb_context_mode_instruction_fragment_present() {
 sb_context_mode_cursor_rule_present() {
   local project_root="${1:-$PWD}"
   [[ -f "${project_root%/}/.cursor/rules/context-mode.mdc" ]] \
-    || grep -rl 'context-mode' "${project_root%/}/.cursor/rules/" 2>/dev/null | grep -q .
+    || grep -q . < <(grep -rl 'context-mode' "${project_root%/}/.cursor/rules/" 2>/dev/null)
 }
 
 sb_context_mode_is_windows_native() {

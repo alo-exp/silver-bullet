@@ -35,7 +35,7 @@ check() {
 source "$LIB"
 
 sort_space() { tr ' ' '\n' | sed '/^$/d' | sort -u; }
-has_word() { printf '%s\n' "$1" | tr ' ' '\n' | grep -qx "$2"; }
+has_word() { grep -qx "$2" < <(printf '%s\n' "$1" | tr ' ' '\n'); }
 missing_word() { ! has_word "$1" "$2"; }
 
 CFG_REQUIRED_DEPLOY=$(jq -r '.skills.required_deploy | .[]' "$CONFIG" | sort -u)
@@ -197,13 +197,13 @@ else
 fi
 
 check "legacy config deploy list inherits current SB-owned deploy gates" \
-  bash -c 'for skill in silver-context silver-plan silver-execute silver-verify verify-tests custom-review; do printf "%s\n" "$1" | tr " " "\n" | grep -qx "$skill" || exit 1; done' _ "$legacy_deploy"
+  bash -c 'for skill in silver-context silver-plan silver-execute silver-verify verify-tests custom-review; do grep -qx "$skill" < <(printf "%s\n" "$1" | tr " " "\n") || exit 1; done' _ "$legacy_deploy"
 
 check "legacy config deploy list drops retired legacy dependencies" \
-  bash -c 'for skill in code-review requesting-code-review receiving-code-review testing-strategy documentation finishing-a-development-branch deploy-checklist verification-before-completion test-driven-development tech-debt; do ! printf "%s\n" "$1" | tr " " "\n" | grep -qx "$skill" || exit 1; done' _ "$legacy_deploy"
+  bash -c 'for skill in code-review requesting-code-review receiving-code-review testing-strategy documentation finishing-a-development-branch deploy-checklist verification-before-completion test-driven-development tech-debt; do ! grep -qx "$skill" < <(printf "%s\n" "$1" | tr " " "\n") || exit 1; done' _ "$legacy_deploy"
 
 check "legacy config planning list inherits current SB-owned planning gates" \
-  bash -c 'for skill in silver-quality-gates silver-context silver-plan; do printf "%s\n" "$1" | tr " " "\n" | grep -qx "$skill" || exit 1; done' _ "$legacy_planning"
+  bash -c 'for skill in silver-quality-gates silver-context silver-plan; do grep -qx "$skill" < <(printf "%s\n" "$1" | tr " " "\n") || exit 1; done' _ "$legacy_planning"
 
 check "current config custom deploy list remains explicit" \
   test "$current_deploy" = "custom-review"

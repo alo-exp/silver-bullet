@@ -30,19 +30,11 @@ sb_site_session_repo_root() {
 
 sb_site_session_path_is_site() {
   local file_path="$1"
-  local repo_root rel
   [[ -n "$file_path" ]] || return 1
+  # Any path inside <repo>/site/ (relative or absolute) contains a "site/" component that
+  # these two patterns already match, so no repo-root lookup is needed.
   case "$file_path" in
     site/*|*/site/*) return 0 ;;
-  esac
-  repo_root="$(sb_site_session_repo_root 2>/dev/null || true)"
-  [[ -n "$repo_root" ]] || return 1
-  case "$file_path" in
-    "$repo_root"/site/*) return 0 ;;
-    /*)
-      rel="${file_path#"$repo_root"/}"
-      [[ "$rel" == site/* ]] && return 0
-      ;;
   esac
   return 1
 }
@@ -131,7 +123,6 @@ sb_site_session_has_site_work() {
     edit:site/*) return 0 ;;
     edit:*/site/*) return 0 ;;
   esac
-  [[ "$touch_reason" == edit:* ]] && [[ "$touch_reason" == *"/site/"* ]] && return 0
   return 1
 }
 
@@ -221,7 +212,7 @@ sb_site_session_run_regression_tests() {
     # use an unwedgeable pid path under TMPDIR so log-alloc is never a test failure.
     log_file="${TMPDIR:-/tmp}/site-regression-$$.log"
     if ! : >"$log_file" 2>/dev/null; then
-      log_file="/tmp/site-regression-$$.log"
+      log_file="${SB_SITE_REGRESSION_FALLBACK_DIR:-/tmp}/site-regression-$$.log"
       : >"$log_file" 2>/dev/null || return 91
     fi
   fi

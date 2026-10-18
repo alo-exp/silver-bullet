@@ -50,7 +50,7 @@ emit_block() {
 skill=$(printf '%s' "$input" | jq -r '.tool_input.skill // .tool_input.skillName // ""')
 
 if declare -F sb_skill_canonical_name >/dev/null 2>&1; then
-  skill="$(sb_skill_canonical_name "$skill")"
+  skill="$(sb_skill_canonical_name "$skill" || true)"
 fi
 
 UAT=".planning/UAT.md"
@@ -71,14 +71,14 @@ fi
 # Check 2: No FAIL results allowed (UATG-03)
 # Two-pipe approach: find lines with | FAIL | then exclude header rows (which also contain
 # column names like #, Total, PASS, NOT-RUN, Status, Result).
-if grep -E '\| FAIL \|' "$UAT" | grep -qvE '\|\s*(#|Total|PASS|NOT.?RUN|Status|Result)\s*\|'; then
+if grep -qvE '\|\s*(#|Total|PASS|NOT.?RUN|Status|Result)\s*\|' < <(grep -E '\| FAIL \|' "$UAT"); then
   fail_count=$(grep -E '\| FAIL \|' "$UAT" | grep -cvE '\|\s*(#|Total|PASS|NOT.?RUN|Status|Result)\s*\|' || true)
   emit_block "UAT GATE: ${fail_count} criterion/criteria marked FAIL in .planning/UAT.md. Resolve all failures before completing milestone."
   exit 0
 fi
 
 # Check 3: NOT-RUN blocks milestone release (UATG-02)
-if grep -E '\| NOT-RUN \|' "$UAT" | grep -qvE '\|\s*(#|Total|PASS|FAIL|Status|Result)\s*\|'; then
+if grep -qvE '\|\s*(#|Total|PASS|FAIL|Status|Result)\s*\|' < <(grep -E '\| NOT-RUN \|' "$UAT"); then
   not_run_count=$(grep -E '\| NOT-RUN \|' "$UAT" | grep -cvE '\|\s*(#|Total|PASS|FAIL|Status|Result)\s*\|' || true)
   emit_block "UAT GATE: ${not_run_count} criterion/criteria marked NOT-RUN in .planning/UAT.md. Execute all criteria before completing milestone. Override only with explicit SB OVERRIDE: documented waiver in user message (audited)."
   exit 0

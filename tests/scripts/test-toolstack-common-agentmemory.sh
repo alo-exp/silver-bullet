@@ -6,10 +6,17 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/toolstack-helpers.sh"
 tl_init
 
-in_dir() { # <dir> <fn> [args]
+# The common.sh functions are sourced once into this shell and every call runs in a
+# forked subshell (no bash -c re-exec per call), with the defaults of a fresh
+# `bash -c` (no errexit/nounset/pipefail, empty command hash, cwd as requested).
+# shellcheck source=/dev/null
+source "$TS_SRC/common.sh"
+_ts_sub() { # <dir> <fn> [args]
   local d="$1"; shift
-  tl_run bash -c 'cd "$1" && source "$2/common.sh" && shift 2 && "$@"' _ "$d" "$TS_SRC" "$@"
+  ( set +e +u +o pipefail; hash -r; cd "$d" && "$@" )
 }
+in_dir() { tl_run _ts_sub "$@"; }
+ts_call() { tl_run _ts_sub "$HOME" "$@"; }
 
 ts_write_config '{"enforcement":"always","state_dir":"~/st","shell_compression":{"primary":"leanctx","fallback":"rtk"},"tools":{"graphify":{"required":true,"query_ttl_seconds":900},"agentmemory":{"required":true,"health_url":"http://h.test/health","export_root":"mem","usage_ttl_seconds":600},"rtk":{"usage_ttl_seconds":100}}}'
 plain="$TL_TMP/plain"; mkdir -p "$plain"
@@ -118,10 +125,14 @@ done
 CURL_RC=1 AM_STATUS="Health: down" ts_call ts_agentmemory_server_healthy
 assert_eq "unhealthy status" 1 "$TL_STATUS"
 rm -f "$TL_BIN/curl"
-PATH="$(tl_path_without curl)" AM_STATUS="Connected" ts_call ts_agentmemory_server_healthy
+# tl_path_without symlinks every executable on PATH (about 5 s per call here), so
+# build a minimal PATH with only what the health probe needs and without curl.
+mini="$TL_TMP/mini-path"; mkdir -p "$mini"
+for c in bash jq dirname grep sed cat date sha256sum awk mkdir env; do ln -s "$(command -v "$c")" "$mini/$c"; done
+PATH="$TL_BIN:$mini" AM_STATUS="Connected" ts_call ts_agentmemory_server_healthy
 assert_eq "no curl: falls back to agentmemory status" 0 "$TL_STATUS"
 rm -f "$TL_BIN/agentmemory"
-PATH="$(tl_path_without curl agentmemory)" ts_call ts_agentmemory_server_healthy
+PATH="$mini" ts_call ts_agentmemory_server_healthy
 assert_eq "neither curl nor agentmemory => unhealthy" 1 "$TL_STATUS"
 
 # --- MCP wiring probes ---

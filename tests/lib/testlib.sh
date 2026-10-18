@@ -89,9 +89,12 @@ tl_run() {
 tl_run_stdin() {
   local input="$1"
   shift
-  local out_file="$TL_TMP/.out" err_file="$TL_TMP/.err"
+  local out_file="$TL_TMP/.out" err_file="$TL_TMP/.err" in_file="$TL_TMP/.tl_stdin"
   TL_STATUS=0
-  printf '%s' "$input" | "$@" >"$out_file" 2>"$err_file" || TL_STATUS=$?
+  # A file, not a pipe: a command that exits without reading would otherwise
+  # kill the writer with SIGPIPE and pipefail would report 141.
+  printf '%s' "$input" >"$in_file"
+  "$@" <"$in_file" >"$out_file" 2>"$err_file" || TL_STATUS=$?
   TL_OUT="$(cat "$out_file")"
   TL_ERR="$(cat "$err_file")"
 }

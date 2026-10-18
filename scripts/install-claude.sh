@@ -377,11 +377,11 @@ ensure_github_https_rewrite() {
   local rewrite_value
   rewrite_value='https://github.com/'
 
-  if ! git config --global --get-all url."${rewrite_value}".insteadOf | grep -qx 'git@github.com:'; then
+  if ! grep -qx 'git@github.com:' < <(git config --global --get-all url."${rewrite_value}".insteadOf); then
     git config --global --add url."${rewrite_value}".insteadOf 'git@github.com:'
   fi
 
-  if ! git config --global --get-all url."${rewrite_value}".insteadOf | grep -qx 'ssh://git@github.com/'; then
+  if ! grep -qx 'ssh://git@github.com/' < <(git config --global --get-all url."${rewrite_value}".insteadOf); then
     git config --global --add url."${rewrite_value}".insteadOf 'ssh://git@github.com/'
   fi
 }
