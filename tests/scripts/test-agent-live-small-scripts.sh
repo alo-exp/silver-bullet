@@ -84,6 +84,11 @@ assert_eq "ctl unknown argument exits 2" "2" "$TL_STATUS"
 assert_contains "ctl unknown argument named" "$TL_ERR" "unknown argument: --bogus"
 assert_contains "ctl unknown argument prints usage to stderr" "$TL_ERR" "Usage:"
 
+tl_run bash "$CTL" --control-dir
+assert_eq "ctl --control-dir without a value exits 2" "2" "$TL_STATUS"
+assert_contains "ctl --control-dir without a value message" "$TL_ERR" "--control-dir requires a value"
+assert_not_contains "ctl --control-dir without a value is not an unbound crash" "$TL_ERR" "unbound variable"
+
 tl_run env -u SB_AGENT_CONTROL_DIR bash "$CTL" status
 assert_eq "ctl without control dir exits 2" "2" "$TL_STATUS"
 assert_contains "ctl without control dir message" "$TL_ERR" "--control-dir or SB_AGENT_CONTROL_DIR required"
