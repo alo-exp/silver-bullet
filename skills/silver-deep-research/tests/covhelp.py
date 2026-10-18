@@ -44,7 +44,7 @@ def run_script(path, argv, as_main=True):
         try:
             runpy.run_path(str(path), run_name="__main__" if as_main else "scriptmod")
         except SystemExit as exc:
-            code = exc.code if isinstance(exc.code, int) else (0 if exc.code is None else 1)
+            code = 0 if exc.code is None else exc.code  # str codes keep their message
     return code, out.getvalue(), err.getvalue()
 
 
@@ -57,5 +57,5 @@ def call_main(module, argv):
         try:
             module.main()
         except SystemExit as exc:
-            code = exc.code if isinstance(exc.code, int) else (0 if exc.code is None else 1)
+            code = 0 if exc.code is None else exc.code  # str codes keep their message
     return code, out.getvalue(), err.getvalue()

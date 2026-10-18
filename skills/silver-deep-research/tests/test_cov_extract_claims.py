@@ -40,6 +40,15 @@ class TestClassify(unittest.TestCase):
                          "recommendation")
 
 
+class TestJsonl(unittest.TestCase):
+    def test_read_jsonl_skips_blank_lines_and_missing_file(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.assertEqual(ec.read_jsonl(str(Path(d) / "none")), [])
+            p = Path(d) / "c.jsonl"
+            p.write_text('{"a": 1}\n\n  \n{"b": 2}\n')
+            self.assertEqual(ec.read_jsonl(str(p)), [{"a": 1}, {"b": 2}])
+
+
 class TestParsing(unittest.TestCase):
     def test_section_ids(self):
         md = "\n".join([
