@@ -1,5 +1,10 @@
 # Silver Bullet E2E Smoke Test Protocol
 
+**Path placeholders (used throughout this document):**
+
+- `<sb-repo>`: your Silver Bullet checkout (the repo that contains `scripts/` and `hooks/`).
+- `<test-app>`: your `enterprise-grade-test-app` checkout. By default the harness expects it as a sibling two levels above `<sb-repo>` (`<sb-repo>/../../enterprise-grade-test-app`); override with `SB_TEST_ENTERPRISE_APP_ROOT`.
+
 > **Automated enforcement tests now exist.** Run `bash tests/run-all-tests.sh` for full
 > automated coverage of all hook enforcement behaviors (unit + integration scenarios).
 > Coverage matrix (`tests/integration/coverage-matrix.sh`) verifies every hook in
@@ -18,7 +23,7 @@ Run this before any Silver Bullet release to validate the full workflow works en
 ## 1. SETUP
 
 ```bash
-cd /Users/shafqat/projects/enterprise-grade-test-app
+cd <test-app>
 npm install
 npm test                    # Verify: health test + ui-stub-ok
 ```
@@ -37,7 +42,7 @@ git init && git add -A && git commit -m "initial: enterprise test app baseline"
 
 ## 2. INITIALIZE SILVER BULLET
 
-In Claude Code (with CWD = `/Users/shafqat/projects/enterprise-grade-test-app`):
+In Claude Code (with CWD = `<test-app>`):
 
 ```
 /sb:init
@@ -150,14 +155,14 @@ Silver Bullet: orchestrator active | workflow <id> | FLOW N/M
 ## 7. CLEANUP
 
 ```bash
-cd /Users/shafqat/projects/silver-bullet/repo    # Back to Silver Bullet root
+cd <sb-repo>    # Back to Silver Bullet root
 ```
 
 The SB-generated artifacts (`.planning/`, `.silver-bullet.json`, `silver-bullet.md`, `docs/workflows/`, etc.) are gitignored at the SB project level, so they won't pollute the SB repo.
 
 To fully reset the test app for another run:
 ```bash
-cd /Users/shafqat/projects/enterprise-grade-test-app
+cd <test-app>
 rm -rf .planning .silver-bullet.json silver-bullet.md CLAUDE.md docs/ node_modules
 git checkout -- .    # Restore original files
 git clean -fd        # Remove untracked files

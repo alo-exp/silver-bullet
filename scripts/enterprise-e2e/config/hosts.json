@@ -10,7 +10,7 @@
       "ledger_file": ".planning/enterprise-e2e/ROUND-9-LEDGER.md",
       "fixture_branch": "enterprise-e2e/round-9-claude",
       "git_branch": "main",
-      "test_app_root": "/Users/shafqat/projects/enterprise-grade-test-app-round9-claude",
+      "test_app_root": "../../enterprise-grade-test-app-round9-claude",
       "test_app_git_branch": "enterprise-e2e/round-9-claude",
       "test_app_git_baseline_sha": "8482e60",
       "gates_round1": ".planning/enterprise-e2e/ROUND-5-GATES.md",
@@ -69,7 +69,7 @@
       "tui_offsets": ".e2e-tui-watch-cursor-offsets.json",
       "row_attempt_pattern": ".e2e-row{row}-cursor-attempt{suffix}.log",
       "git_branch": "enterprise-e2e/cursor",
-      "test_app_root": "/Users/shafqat/projects/enterprise-grade-test-app-cursor",
+      "test_app_root": "../../enterprise-grade-test-app-cursor",
       "test_app_git_branch": "enterprise-e2e/round-1-cursor",
       "test_app_git_baseline_sha": "8482e60"
     }

@@ -4,7 +4,7 @@
 set -euo pipefail
 
 SB_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-ENTERPRISE_APP="${1:-/Users/shafqat/projects/enterprise-grade-test-app}"
+ENTERPRISE_APP="${1:-$(cd "${SB_ROOT}/../.." && pwd)/enterprise-grade-test-app}"
 HOST_LABEL="${2:-cursor}"
 STATE_DIR="${SB_RUNTIME_STATE_DIR:-${HOME}/.cursor/.silver-bullet}"
 STATE_FILE="${SILVER_BULLET_STATE_FILE:-${STATE_DIR}/state}"

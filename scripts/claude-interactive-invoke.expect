@@ -52,7 +52,7 @@ proc load_claude_settings_env {} {
   if {![file exists $settings]} {
     return
   }
-  set cli [env_or_default CLAUDE_BIN "/Users/shafqat/.local/bin/claude"]
+  set cli [env_or_default CLAUDE_BIN "claude"]
   if {![catch {exec $cli auth status} auth_json]} {
     if {![catch {exec jq -e {(.authMethod == "claude.ai") and ((.apiKeySource? // "") == "ANTHROPIC_API_KEY")} <<< $auth_json}]} {
       return
@@ -666,7 +666,7 @@ proc submit_prompt {command_name prompt_body} {
 }
 
 set timeout [expr {int([env_or_default CLAUDE_INTERACTIVE_TIMEOUT 900])}]
-set cli [env_or_default CLAUDE_BIN "/Users/shafqat/.local/bin/claude"]
+set cli [env_or_default CLAUDE_BIN "claude"]
 set work_dir [env_or_default CLAUDE_WORK_DIR ""]
 set prompt_file [env_or_default CLAUDE_PROMPT_FILE ""]
 set model [env_or_default CLAUDE_MODEL "sonnet"]

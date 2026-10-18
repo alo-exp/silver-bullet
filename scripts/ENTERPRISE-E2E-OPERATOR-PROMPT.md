@@ -1,10 +1,16 @@
 # Enterprise E2E Operator Prompt — Canonical (adjacent to live test script)
 
+**Path placeholders (used throughout this document):**
+
+- `<sb-repo>`: your Silver Bullet checkout (the repo that contains `scripts/` and `hooks/`).
+- `<test-app>`: your `enterprise-grade-test-app` checkout. By default the harness expects it as a sibling two levels above `<sb-repo>` (`<sb-repo>/../../enterprise-grade-test-app`); override with `SB_TEST_ENTERPRISE_APP_ROOT`.
+- `<iteration-plan>`: the Enterprise E2E iteration plan file kept in your own planning tool (for example a Cursor plan under `~/.cursor/plans/`).
+
 Merged from:
 
-- `/Users/shafqat/.cursor/plans/enterprise_e2e_iteration_30417faf.plan.md`
-- `/Users/shafqat/projects/enterprise-grade-test-app/docs/ENTERPRISE-E2E-SESSION-PROMPT.md`
-- `/Users/shafqat/projects/silver-bullet/repo/docs/ENTERPRISE-E2E-LIVE-TEST.md`
+- `<iteration-plan>`
+- `<test-app>/docs/ENTERPRISE-E2E-SESSION-PROMPT.md`
+- `<sb-repo>/docs/ENTERPRISE-E2E-LIVE-TEST.md`
 
 **Live test entrypoint:** `scripts/run-enterprise-e2e-live-test.sh` (this directory).
 
@@ -14,22 +20,22 @@ Merged from:
 
 Enterprise E2E live test — Silver Bullet validation on `enterprise-grade-test-app`.
 
-**Working directory (Claude TUI CWD):** `/Users/shafqat/projects/enterprise-grade-test-app`
+**Working directory (Claude TUI CWD):** `<test-app>`
 
-**SB plugin:** install from `/Users/shafqat/projects/silver-bullet/repo` via `bash scripts/install-claude.sh` (pin release commit per round ledger).
+**SB plugin:** install from `<sb-repo>` via `bash scripts/install-claude.sh` (pin release commit per round ledger).
 
 ### Pinned paths
 
 | Resource | Path |
 |----------|------|
-| Test app (Claude CWD) | `/Users/shafqat/projects/enterprise-grade-test-app` |
-| Silver Bullet repo | `/Users/shafqat/projects/silver-bullet/repo` |
-| Iteration plan | `/Users/shafqat/.cursor/plans/enterprise_e2e_iteration_30417faf.plan.md` |
-| Claude TUI protocol | `/Users/shafqat/projects/silver-bullet/repo/.planning/enterprise-e2e/CLAUDE-TUI-PROTOCOL.md` |
-| Workflow matrix | `/Users/shafqat/projects/enterprise-grade-test-app/docs/WORKFLOW_E2E_MATRIX.md` |
-| Round ledgers | `/Users/shafqat/projects/silver-bullet/repo/.planning/enterprise-e2e/ROUND-N-LEDGER.md` |
-| Matrix live log | `/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log` |
-| Fixture session prompt | `/Users/shafqat/projects/enterprise-grade-test-app/docs/ENTERPRISE-E2E-SESSION-PROMPT.md` |
+| Test app (Claude CWD) | `<test-app>` |
+| Silver Bullet repo | `<sb-repo>` |
+| Iteration plan | `<iteration-plan>` |
+| Claude TUI protocol | `<sb-repo>/.planning/enterprise-e2e/CLAUDE-TUI-PROTOCOL.md` |
+| Workflow matrix | `<test-app>/docs/WORKFLOW_E2E_MATRIX.md` |
+| Round ledgers | `<sb-repo>/.planning/enterprise-e2e/ROUND-N-LEDGER.md` |
+| Matrix live log | `<sb-repo>/.e2e-matrix-live.log` |
+| Fixture session prompt | `<test-app>/docs/ENTERPRISE-E2E-SESSION-PROMPT.md` |
 
 ### Hard constraints
 
@@ -160,8 +166,8 @@ A round is **clean** only when:
 ```
 Enterprise E2E live test — Silver Bullet validation on enterprise-grade-test-app.
 
-Working directory: /Users/shafqat/projects/enterprise-grade-test-app
-SB plugin: install from /Users/shafqat/projects/silver-bullet/repo via bash scripts/install-claude.sh (pin SHA in ROUND-N-LEDGER.md).
+Working directory: <test-app>
+SB plugin: install from <sb-repo> via bash scripts/install-claude.sh (pin SHA in ROUND-N-LEDGER.md).
 
 Constraints:
 - API key auth only — do NOT login or logout
@@ -207,7 +213,7 @@ When done, summarize: route invoked, skills recorded, artifacts created, test st
 - Ladder nominal model slugs in `review-fix-ladder.py` are separate (Claude TUI matrix); this policy applies to **Cursor Task subagents only**.
 
 - **Pls do that yourself. Never pause for operator.**
-- Automate Session 0 prep when possible: set `recommended_tools.graphify|agentmemory|rtk|context_mode.enabled_by_user` to `true` in `/Users/shafqat/projects/enterprise-grade-test-app/.silver-bullet.json` programmatically if TUI is unavailable; then `graphify update . --no-cluster` in the test app.
+- Automate Session 0 prep when possible: set `recommended_tools.graphify|agentmemory|rtk|context_mode.enabled_by_user` to `true` in `<test-app>/.silver-bullet.json` programmatically if TUI is unavailable; then `graphify update . --no-cluster` in the test app.
 - On **Claude API 429 / quota / Token Plan**: retry every **1 minute** (`SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL=60`); **do not** treat as auth failure; **never** `claude auth login/logout`.
 - **Do not block** on Session 0 if fixture already has partial init — complete tool opt-in and graphify update, then continue the matrix.
 - Continue through the matrix without waiting for a human unless truly blocked (missing secrets, fixture unreachable, etc.). **Never** treat the OAuth "Not logged in" banner as requiring `/login` when token gateway env is configured.

@@ -4,7 +4,7 @@
 # Prerequisites (operator):
 #   - Claude CLI installed; token gateway (cc-switch / MiniMax) per CLAUDE-TUI-PROTOCOL.md
 #   - agentmemory on :3111; graphify on PATH
-#   - Fixture: /Users/shafqat/projects/enterprise-grade-test-app-round9-claude @ enterprise-e2e/round-9-claude
+#   - Fixture: <sb-repo>/../../enterprise-grade-test-app-round9-claude (sibling checkout) @ enterprise-e2e/round-9-claude
 #   - tmux recommended for detached runs (TTY honest)
 #
 # Usage:
@@ -68,7 +68,7 @@ export SB_E2E_ISOLATED_CLAUDE_CONFIG="${SB_E2E_ISOLATED_CLAUDE_CONFIG:-1}"
 
 export SB_E2E_LEDGER_FILE="${SB_E2E_LEDGER_FILE:-${MAIN}/.planning/enterprise-e2e/ROUND-9-LEDGER.md}"
 export SB_E2E_ROW_PASS_REGISTRY="${SB_E2E_ROW_PASS_REGISTRY:-${MAIN}/.planning/enterprise-e2e/.row-pass-registry.json}"
-export SB_TEST_ENTERPRISE_APP_ROOT="${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/shafqat/projects/enterprise-grade-test-app-round9-claude}"
+export SB_TEST_ENTERPRISE_APP_ROOT="${SB_TEST_ENTERPRISE_APP_ROOT:-$(cd "${SB_ROOT}/../.." && pwd)/enterprise-grade-test-app-round9-claude}"
 export SB_E2E_TEST_APP_ROUND=9
 export SB_E2E_TEST_APP_BRANCH="${SB_E2E_TEST_APP_BRANCH:-enterprise-e2e/round-9-claude}"
 export SB_E2E_TEST_APP_BASELINE_SHA="${SB_E2E_TEST_APP_BASELINE_SHA:-8482e60}"
