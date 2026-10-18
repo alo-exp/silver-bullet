@@ -12,7 +12,19 @@ source "$TL_REPO_ROOT/tests/lib/repo-snapshot.sh"
 source "$TL_REPO_ROOT/tests/lib/offline-tools.sh"
 sb_offline_tools_install "$TL_TMP/offline-bin"
 
-SNAP="$(sb_repo_snapshot --git "$TL_REPO_ROOT" "$TL_TMP/snap")"
+# A trimmed snapshot keeps the many local clones below cheap: the installer functions need
+# scripts/, hooks/, skills/, templates/ and the plugin manifests, not tests, docs or sites.
+SNAP="$(sb_repo_snapshot "$TL_REPO_ROOT" "$TL_TMP/snap")"
+for _d in tests docs site agents host-bundles .agentmemory .github research; do rm -rf "${SNAP:?}/$_d"; done
+(
+  cd "$SNAP"
+  export GIT_AUTHOR_NAME="SB Test" GIT_AUTHOR_EMAIL="sb-test@example.invalid" GIT_COMMITTER_NAME="SB Test" GIT_COMMITTER_EMAIL="sb-test@example.invalid"
+  git -c init.defaultBranch=main init -q
+  git config gc.auto 0
+  git config maintenance.auto false
+  git add -A
+  git -c commit.gpgsign=false -c core.hooksPath=/dev/null commit -q -m "test snapshot"
+)
 SCRIPT="$SNAP/scripts/install-cursor.sh"
 CH="$TL_TMP/cursor-home"
 mkdir -p "$CH"
@@ -31,6 +43,8 @@ git -C "$TL_TMP/seed" -c commit.gpgsign=false commit -q -m upstream
 git -C "$TL_TMP/seed" push -q origin HEAD 2>/dev/null
 UP_SHA="$(git -C "$TL_TMP/seed" rev-parse HEAD)"
 SNAP_SHA="$(git -C "$SNAP" rev-parse HEAD)"
+SHA_X="$(printf 'c%.0s' $(seq 1 40))"
+SHA_Y="$(printf 'd%.0s' $(seq 1 40))"
 
 sub() { # sub <function> [args...]
   tl_run env CURSOR_HOME="$CH" CURSOR_GITHUB_REPO_URL="file://$UPSTREAM" SB_INSTALL_CURSOR_SOURCE_ONLY=1 \
@@ -273,6 +287,7 @@ assert_eq "failing ln reported" 1 "$TL_STATUS"
 assert_contains "failing ln explained" "$TL_ERR" "failed to link Cursor marketplace cache"
 rm -f "$TL_BIN/ln"
 # rm that cannot clear the old entry is tolerated
+ln -sfn "$TL_TMP/tgt-old" "$LINKROOT/$SNAP_SHA"
 tl_stub rm '[[ "$*" == *"alo-labs-cursor/silver-bullet/"* ]] && exit 1; exec /bin/rm "$@"'
 sub ensure_cursor_marketplace_plugin_cache_symlink "$DESTX" "$SNAP_SHA"
 assert_eq "failing removal of the old link tolerated" 0 "$TL_STATUS"
@@ -300,5 +315,145 @@ assert_eq "unparseable registry tolerated" 0 "$TL_STATUS"
 # ---- remote head
 sub resolve_remote_github_head_sha
 assert_eq "remote HEAD resolved from the upstream" "$UP_SHA2" "$TL_OUT"
+
+# ---- gitPath surface helpers
+REAL_RM="$(command -v rm)"
+make_dest() {
+  local d="$1" v="$2"
+  mkdir -p "$d/commands" "$d/.cursor-plugin" "$d/skills/x"
+  printf -- '---\nname: "sb"\n---\n' >"$d/commands/sb.md"
+  printf -- '---\nname: "sb-init"\n---\n' >"$d/commands/sb-init.md"
+  printf '{"version":"%s","commands":"./commands"}\n' "$v" >"$d/.cursor-plugin/plugin.json"
+  echo '{}' >"$d/cursor-hooks.json"
+}
+reset_home
+DP="$TL_TMP/dest-p"; rm -rf "${DP:?}"; make_dest "$DP" 4.0.0
+G="$TL_TMP/gitpath-root"; rm -rf "${G:?}"; mkdir -p "$G/skills/old" "$G/plugins/silver-bullet/skills" "$G/.agents" "$G/.cursor/agents" "$G/host-bundles" "$G/agents/cursor" "$G/templates/workflows" "$G/commands"
+sub prune_cursor_gitpath_picker_skills "$DP" "$G"
+assert_file_exists "dest skills mirrored into the gitPath" "$G/skills/x"
+assert_file_absent "old gitPath skills replaced" "$G/skills/old"
+assert_file_absent "nested plugin skills removed" "$G/plugins/silver-bullet/skills"
+assert_file_absent ".agents removed" "$G/.agents"
+sub prune_cursor_gitpath_extra_picker_surfaces "$G"
+assert_file_absent "host-bundles removed" "$G/host-bundles"
+assert_file_absent "agents removed" "$G/agents"
+assert_file_absent "workflow templates removed" "$G/templates/workflows"
+mkdir -p "$G/skills/old" "$G/host-bundles" "$G/agents/cursor"
+tl_stub rm 'exit 1'
+sub prune_cursor_gitpath_picker_skills "$DP" "$G"
+assert_eq "undeletable gitPath skills tolerated" 0 "$TL_STATUS"
+sub prune_cursor_gitpath_extra_picker_surfaces "$G"
+assert_eq "undeletable extra surfaces tolerated" 0 "$TL_STATUS"
+sub materialize_cursor_plugin_surface_at_root "$DP" "$G"
+assert_eq "materialization tolerates undeletable agents" 0 "$TL_STATUS"
+"$REAL_RM" -f "${TL_BIN:?}/rm"
+sub materialize_cursor_plugin_surface_at_root "$DP" "$G"
+assert_file_exists "commands materialized at the root" "$G/commands/sb.md"
+assert_file_exists "hooks file materialized" "$G/cursor-hooks.json"
+assert_file_exists "manifest materialized" "$G/.cursor-plugin/plugin.json"
+# the gitPath-level wrapper
+sub materialize_cursor_plugin_surface_in_gitpath "$DP" ""
+assert_eq "empty sha: nothing materialized" 0 "$TL_STATUS"
+sub materialize_cursor_plugin_surface_in_gitpath "$DP" "$SHA_X"
+assert_eq "no gitPath checkout: nothing materialized" 0 "$TL_STATUS"
+sub ensure_cursor_github_marketplace_gitpath "$SNAP_SHA" "$SNAP"
+sub materialize_cursor_plugin_surface_in_gitpath "$DP" "$SNAP_SHA"
+assert_file_exists "gitPath checkout got the commands" "$GPR/$SNAP_SHA/commands/sb.md"
+sub cursor_plugin_gitpath_ready ""
+assert_eq "empty sha: gitPath not ready" 1 "$TL_STATUS"
+sub cursor_plugin_gitpath_ready "$SNAP_SHA"
+assert_eq "cloned gitPath ready" 0 "$TL_STATUS"
+sub cursor_plugin_gitpath_surface_ready "$SHA_X"
+assert_eq "missing gitPath: surface not ready" 1 "$TL_STATUS"
+
+# marketplace cache link readiness
+sub cursor_marketplace_cache_link_ready "$DP" ""
+assert_eq "empty sha: cache link not ready" 1 "$TL_STATUS"
+sub cursor_marketplace_cache_link_ready "$DP" "$SNAP_SHA"
+assert_eq "no cache link: not ready" 1 "$TL_STATUS"
+LK="$CH/plugins/cache/alo-labs-cursor/silver-bullet"
+mkdir -p "$LK"; ln -s "$TL_TMP/vanished" "$LK/$SNAP_SHA"
+sub cursor_marketplace_cache_link_ready "$DP" "$SNAP_SHA"
+assert_eq "dangling cache link: not ready" 1 "$TL_STATUS"
+"$REAL_RM" -f "${LK:?}/$SNAP_SHA"; ln -s "$DP" "$LK/$SNAP_SHA"
+sub cursor_marketplace_cache_link_ready "$DP" "$SNAP_SHA"
+assert_eq "cache link to the install: ready" 0 "$TL_STATUS"
+
+# seeding loops
+"$REAL_RM" -rf "${GPR:?}" "${LK:?}"
+subx_env 'collect_cursor_plugin_seed_shas() { printf "\n%s\n%s\n" "'"$SHA_X"'" "'"$SNAP_SHA"'"; }; ensure_cursor_github_marketplace_gitpath() { [[ "$1" == "'"$SNAP_SHA"'" ]]; }' seed_cursor_marketplace_gitpaths "$DP" "$SNAP_SHA" "$SNAP"
+assert_eq "seeding skips blank lines and unmaterializable shas" 0 "$TL_STATUS"
+assert_eq "seeded sha linked" "$DP" "$(readlink "$LK/$SNAP_SHA")"
+assert_file_absent "skipped sha not linked" "$LK/$SHA_X"
+
+# rematerialization
+reset_home
+sub rematerialize_all_reachable_cursor_gitpaths "$DP"
+assert_eq "no gitPath root: nothing to rematerialize" 0 "$TL_STATUS"
+mkdir -p "$GPR/$SHA_X" "$GPR/not-a-sha" "$GPR/$SHA_Y/.git"
+echo f >"$GPR/stray-file"
+sub ensure_cursor_github_marketplace_gitpath "$SNAP_SHA" "$SNAP"
+sub rematerialize_all_reachable_cursor_gitpaths "$DP"
+assert_eq "rematerialization exits 0" 0 "$TL_STATUS"
+assert_file_exists "valid gitPath rematerialized" "$GPR/$SNAP_SHA/commands/sb.md"
+assert_file_exists "marketplace cache link refreshed" "$CH/plugins/cache/alo-labs-cursor/silver-bullet/$SNAP_SHA"
+assert_file_exists "backend cache refreshed" "$CH/plugins/cache/alo-labs-agent-plugins/silver-bullet/$SNAP_SHA/.cache-complete"
+assert_file_absent "sha dir without .git left alone" "$GPR/$SHA_X/commands"
+assert_file_absent "broken checkout left alone" "$GPR/$SHA_Y/commands"
+
+# discovery verification: every failure branch is reported
+verify() { # verify <overrides>
+  subx_env "$1" verify_cursor_plugin_discovery_paths "$DP" "$SNAP"
+}
+BASE_OVR='collect_cursor_plugin_verify_shas() { echo "'"$SNAP_SHA"'"; }; resolve_cursor_backend_plugin_sha() { echo; }; cursor_local_plugin_link_ready() { return 0; }; '
+verify "$BASE_OVR"'cursor_plugin_gitpath_ready() { return 1; }'
+assert_eq "missing gitPath fails the verification" 1 "$TL_STATUS"
+assert_contains "missing gitPath reported" "$TL_ERR" "Cursor gitPath missing for $SNAP_SHA"
+verify "$BASE_OVR"'cursor_plugin_gitpath_ready() { return 0; }; cursor_plugin_gitpath_surface_ready() { return 1; }'
+assert_contains "incomplete gitPath surface reported" "$TL_ERR" "gitPath plugin surface incomplete"
+verify "$BASE_OVR"'cursor_plugin_gitpath_ready() { return 0; }; cursor_plugin_gitpath_surface_ready() { return 0; }; cursor_marketplace_cache_link_ready() { return 1; }'
+assert_contains "missing marketplace cache link reported" "$TL_ERR" "Cursor marketplace cache symlink missing for $SNAP_SHA"
+verify "$BASE_OVR"'cursor_plugin_gitpath_ready() { return 0; }; cursor_plugin_gitpath_surface_ready() { return 0; }; cursor_marketplace_cache_link_ready() { return 0; }; cursor_backend_plugin_cache_ready() { return 1; }'
+assert_contains "missing backend cache reported" "$TL_ERR" "Cursor backend marketplace cache missing for $SNAP_SHA"
+verify "${BASE_OVR/cursor_local_plugin_link_ready() \{ return 0; \}/cursor_local_plugin_link_ready() \{ return 1; \}}"'cursor_plugin_gitpath_ready() { return 0; }; cursor_plugin_gitpath_surface_ready() { return 0; }; cursor_marketplace_cache_link_ready() { return 0; }; cursor_backend_plugin_cache_ready() { return 0; }'
+assert_eq "missing local plugin fails the verification" 1 "$TL_STATUS"
+assert_contains "missing local plugin reported" "$TL_ERR" "Cursor local plugin surface missing"
+verify "$BASE_OVR"'cursor_plugin_gitpath_ready() { return 0; }; cursor_plugin_gitpath_surface_ready() { return 0; }; cursor_marketplace_cache_link_ready() { return 0; }; cursor_backend_plugin_cache_ready() { return 0; }'
+assert_eq "everything present passes the verification" 0 "$TL_STATUS"
+verify "$BASE_OVR"'collect_cursor_plugin_verify_shas() { printf "\n%s\n" "'"$SNAP_SHA"'"; }; cursor_plugin_gitpath_ready() { return 0; }; cursor_plugin_gitpath_surface_ready() { return 0; }; cursor_marketplace_cache_link_ready() { return 0; }; cursor_backend_plugin_cache_ready() { return 0; }'
+assert_eq "blank sha lines skipped in verification" 0 "$TL_STATUS"
+
+# path canonicalization and identity verification
+sub cursor_canonical_physical_path ""
+assert_eq "empty path: nothing printed" "" "$TL_OUT"
+echo f >"$TL_TMP/a-file"
+sub cursor_canonical_physical_path "$TL_TMP/a-file"
+assert_eq "file paths keep their name" "$TL_TMP/a-file" "$TL_OUT"
+sub cursor_canonical_physical_path "/private/var/folders/x"
+assert_eq "macOS /private/var normalized" "/var/folders/x" "$TL_OUT"
+sub cursor_canonical_physical_path "$TL_TMP//double///slash"
+assert_eq "duplicate separators collapsed" "$TL_TMP/double/slash" "$TL_OUT"
+reset_home
+mkdir -p "$CACHE/6.0.0"
+sub verify_cursor_install_identity "$CACHE/6.0.0" 6.0.0 "$SNAP_SHA"
+assert_eq "an uninstalled tree fails identity verification" 1 "$TL_STATUS"
+assert_contains "missing current link reported" "$TL_ERR" "Cursor current symlink resolves to"
+
+# ---- public-release sync, with GitHub redirected to local repositories
+reset_home
+MKT="$TL_TMP/marketplace-src"
+mkdir -p "$MKT/.cursor-plugin"
+printf '{"plugins":[{"name":"silver-bullet","version":"5.5.5"}]}\n' >"$MKT/.cursor-plugin/marketplace.json"
+git -C "$MKT" init -q; git -C "$MKT" config user.email t@example.invalid; git -C "$MKT" config user.name t; git -C "$MKT" config gc.auto 0
+git -C "$MKT" add -A; git -C "$MKT" -c commit.gpgsign=false commit -q -m m
+git config --global url."file://$SNAP".insteadOf https://github.com/alo-exp/silver-bullet.git
+tl_run env CURSOR_HOME="$CH" CURSOR_GITHUB_REPO_URL="file://$UPSTREAM" CURSOR_SB_PUBLIC_MARKETPLACE_SOURCE="file://$MKT" SB_INSTALL_CURSOR_SOURCE_ONLY=1 \
+  bash -c 'source "$1"; sync_plugin_tree_from_public_release; echo "version=$VERSION dest=$DEST_ROOT"' _ "$SCRIPT"
+assert_eq "public-release sync exits 0" 0 "$TL_STATUS"
+assert_contains "release version adopted" "$TL_OUT" "version=5.5.5 dest=$CACHE/5.5.5"
+assert_file_exists "release plugin tree materialized" "$CACHE/5.5.5/.cursor-plugin/plugin.json"
+assert_eq "release manifest stamped" 5.5.5 "$(jq -r .version "$CACHE/5.5.5/.cursor-plugin/plugin.json")"
+assert_file_exists "release commands synced" "$CACHE/5.5.5/commands/sb.md"
+git config --global --unset-all url."file://$SNAP".insteadOf
 
 tl_results
