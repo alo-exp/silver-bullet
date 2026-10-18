@@ -148,6 +148,30 @@ assert_not_contains "export: over-long entry skipped" "$(unzip -Z1 "$OUT")" "$lo
 assert_contains "export: normal ledger still exported" "$(unzip -Z1 "$OUT")" "session-logs/s1-intent-ledger.md"
 rm -f "$PROJ/docs/sessions/$longname.md"
 
+# re-export to the same path: stale evidence must not survive and checksums must cover every entry
+SP="$TL_TMP/proj-stale"; mkdir -p "$SP/docs/sessions"
+printf '## Active Intent Ledger\n- one\n' >"$SP/docs/sessions/keep.md"
+printf '## Active Intent Ledger\n- two\n' >"$SP/docs/sessions/stale.md"
+SZ="$TL_TMP/stale.zip"
+tl_run bash "$EX" "$SP" "$SZ"
+assert_contains "stale: first export has both ledgers" "$(unzip -Z1 "$SZ")" "session-logs/stale-intent-ledger.md"
+rm "$SP/docs/sessions/stale.md"
+tl_run bash "$EX" "$SP" "$SZ"
+assert_eq "stale: re-export ok" 0 "$TL_STATUS"
+assert_not_contains "stale: removed source entry is gone" "$(unzip -Z1 "$SZ")" "stale-intent-ledger.md"
+missing=""
+while IFS= read -r entry; do
+  [[ "$entry" == evidence/* && "$entry" != */ ]] || continue
+  grep -qF "	$entry" <(unzip -p "$SZ" checksums.sha256) || missing="$missing $entry"
+done < <(unzip -Z1 "$SZ")
+assert_eq "stale: every evidence entry is listed in checksums.sha256" "" "$missing"
+# a symlinked output path is refused and its target left alone
+echo precious >"$TL_TMP/precious.txt"; ln -s "$TL_TMP/precious.txt" "$TL_TMP/link.zip"
+tl_run bash "$EX" "$SP" "$TL_TMP/link.zip"
+assert_eq "symlinked output refused" 1 "$TL_STATUS"
+assert_contains "symlinked output message" "$TL_ERR" "refusing to write through symlink"
+assert_eq "symlink target untouched" precious "$(cat "$TL_TMP/precious.txt")"
+
 # minimal project: no catalog, no cert script, no logs/sessions/config; default output dir and timestamped name
 EM="$TL_TMP/exp-min"; mkdir -p "$EM/scripts"; cp "$EX" "$EM/scripts/"
 PM="$TL_TMP/proj-min"; mkdir -p "$PM"

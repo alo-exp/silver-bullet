@@ -26,6 +26,11 @@ trap cleanup EXIT
 command -v jq >/dev/null 2>&1 || { echo "FAIL: jq required" >&2; exit 1; }
 command -v zip >/dev/null 2>&1 || { echo "FAIL: zip required" >&2; exit 1; }
 
+if [[ -L "$OUT_ZIP" ]]; then
+  echo "FAIL: refusing to write through symlink: $OUT_ZIP" >&2
+  exit 1
+fi
+
 mkdir -p "$STAGING/evidence" "$(dirname "$OUT_ZIP")"
 
 CATALOG="${SB_ROOT}/docs/apo-catalog.json"
@@ -101,6 +106,8 @@ jq -n \
 
 (
   cd "$STAGING"
+  # zip updates an existing archive in place; start clean so stale evidence cannot survive.
+  rm -f -- "$OUT_ZIP"
   zip -qr "$OUT_ZIP" manifest.json checksums.sha256 evidence
 )
 
