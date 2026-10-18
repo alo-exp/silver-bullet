@@ -144,4 +144,16 @@ assert_eq "claude monitor survives a failing signal extraction" "0" "$TL_STATUS"
 assert_contains "claude failed extraction reports anomaly" "$TL_OUT" "• signal: anomaly"
 rm -f "$TL_BIN/tail"
 
+# a failing tail leaves the scan with no content (no prompt, no signal) but still counts bytes
+for host in claude codex opencode pi; do
+  printf 'Prompt submitted\nrate limit\n' >"$LOGDIR/tail-$host.log"
+  tl_stub tail 'exit 1'
+  tl_run bash "$SCRIPTS/agent-$host/monitor.sh" --log "$LOGDIR/tail-$host.log" --once --stall-sec 99999
+  assert_eq "$host monitor survives a failing tail" "0" "$TL_STATUS"
+  assert_contains "$host monitor still reports activity without content" "$TL_OUT" "• activity +"
+  assert_not_contains "$host monitor reports no prompt without content" "$TL_OUT" "prompt submitted (checkpoint"
+  assert_not_contains "$host monitor reports no signal without content" "$TL_OUT" "signal:"
+  rm -f "$TL_BIN/tail"
+done
+
 tl_results

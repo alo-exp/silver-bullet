@@ -74,6 +74,12 @@ assert_eq "claude delegate missing prompt file exits 2" "2" "$TL_STATUS"
 run_cd --brief-file "$TL_TMP/no-such-brief"
 assert_eq "claude delegate missing brief file exits 2" "2" "$TL_STATUS"
 
+run_cd --auto-policy bogus --prompt hi
+assert_eq "claude delegate invalid --auto-policy exits 2" "2" "$TL_STATUS"
+assert_contains "claude delegate invalid --auto-policy message" "$TL_ERR" "invalid-auto-policy"
+run_cd --prompt hi --interaction-mode
+assert_eq "claude delegate --interaction-mode without value exits 2" "2" "$TL_STATUS"
+assert_contains "claude delegate --interaction-mode without value message" "$TL_ERR" "missing-interaction-mode-value"
 run_cd --interactive --non-interactive --prompt hi
 assert_eq "claude delegate opposite aliases exit 2" "2" "$TL_STATUS"
 assert_contains "claude delegate opposite aliases message" "$TL_ERR" "opposite-aliases"
@@ -180,7 +186,14 @@ assert_eq "cert run exits 0" "0" "$TL_STATUS"
 assert_eq "cert run bypasses permissions by default" "bypassPermissions" "$(alh_env CLAUDE_PERMISSION_MODE)"
 assert_file_exists "cert run leaves the agent-cert-run marker" "$W/.silver-bullet/agent-cert-run"
 assert_contains "cert run warns when the plugin cache helper is missing" "$TL_ERR" "plugin-cache-version helper missing"
+# an unwritable marker location never fails the run (the dir is a file here)
 rm -rf "$W/.silver-bullet"
+: >"$W/.silver-bullet"
+alh_script "0|cert-ok"
+tl_run env SB_AGENT_CERT_RUN=1 bash "$DELEGATE" --sb-root "$SB" --work-dir "$W" --prompt p
+assert_eq "an unwritable cert marker location does not fail the delegation" "0" "$TL_STATUS"
+assert_eq "the unwritable marker location is left untouched" "file" "$([[ -f "$W/.silver-bullet" ]] && echo file || echo other)"
+rm -f "$W/.silver-bullet"
 alh_script "0|cert-ok"
 tl_run env SB_AGENT_CERT_RUN=1 CLAUDE_PERMISSION_MODE=acceptEdits bash "$DELEGATE" --sb-root "$SB" --work-dir "$W" --prompt p
 assert_eq "an explicit permission mode survives a cert run" "acceptEdits" "$(alh_env CLAUDE_PERMISSION_MODE)"
