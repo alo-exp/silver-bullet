@@ -192,6 +192,46 @@ assert_eq "symlinked settings exit 0" 0 "$TL_STATUS"
 assert_eq "settings.json is still a symlink" "$TL_TMP/dotfiles/settings.json" "$(readlink "$S")"
 assert_eq "the link target was rewritten" '["echo keep"]' "$(jq -c '[.hooks.Stop[].hooks[].command]' "$TL_TMP/dotfiles/settings.json")"
 
+# --- file mode and temp files -------------------------------------------------------------
+rm -f "$S"
+printf '%s' '{"hooks":{"Stop":[{"hooks":[{"command":"bash gsd-x.sh"},{"command":"echo keep"}]}]}}' >"$S"
+chmod 640 "$S"
+run_prune
+assert_eq "mode run exits 0" 0 "$TL_STATUS"
+assert_eq "a 0640 settings file keeps its mode" "640" "$(stat -c %a "$S" 2>/dev/null || stat -f %Lp "$S")"
+assert_eq "no temp file remains beside the rewritten settings" "real-hooks settings.json" "$(ls -A "$CH" | tr '\n' ' ' | sed 's/ $//')"
+chmod 600 "$S"
+printf '%s' '{"hooks":{"Stop":[{"hooks":[{"command":"bash gsd-y.sh"}]}]}}' >"$S"
+run_prune
+assert_eq "a 0600 settings file keeps its mode" "600" "$(stat -c %a "$S" 2>/dev/null || stat -f %Lp "$S")"
+
+# The temp file is created in the directory of the (symlink-resolved) settings file, so the
+# final rename stays on one filesystem.
+mkdir -p "$TL_TMP/pylog"
+cat >"$TL_TMP/pylog/sitecustomize.py" <<'PY'
+import os, tempfile
+
+_real = tempfile.mkstemp
+
+def _logged(*args, **kwargs):
+    with open(os.environ["MKSTEMP_LOG"], "a") as log:
+        log.write(kwargs.get("dir", "") + "\n")
+    return _real(*args, **kwargs)
+
+tempfile.mkstemp = _logged
+PY
+printf '%s' '{"hooks":{"Stop":[{"hooks":[{"command":"bash gsd-z.sh"}]}]}}' >"$S"
+: >"$TL_TMP/mkstemp.log"
+tl_run env PYTHONPATH="$TL_TMP/pylog" MKSTEMP_LOG="$TL_TMP/mkstemp.log" CLAUDE_HOME="$CH" bash "$SCRIPT"
+assert_eq "temp file created beside the settings file" "$CH" "$(<"$TL_TMP/mkstemp.log")"
+rm -f "$S"
+ln -s "$TL_TMP/dotfiles/settings.json" "$S"
+printf '%s' '{"hooks":{"Stop":[{"hooks":[{"command":"bash gsd-z.sh"}]}]}}' >"$TL_TMP/dotfiles/settings.json"
+: >"$TL_TMP/mkstemp.log"
+tl_run env PYTHONPATH="$TL_TMP/pylog" MKSTEMP_LOG="$TL_TMP/mkstemp.log" CLAUDE_HOME="$CH" bash "$SCRIPT"
+assert_eq "temp file created beside the symlink target" "$TL_TMP/dotfiles" "$(<"$TL_TMP/mkstemp.log")"
+rm -f "$S"
+
 # --- a failing rename leaves the original untouched and no temp file behind ---------------------
 mkdir -p "$TL_TMP/pyfault"
 cat >"$TL_TMP/pyfault/sitecustomize.py" <<'PY'
