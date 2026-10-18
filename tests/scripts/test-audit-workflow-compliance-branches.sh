@@ -47,8 +47,10 @@ JSON
 cat >"$T/hooks/lib/orchestrator-state.sh" <<'EOF2'
 # registers: silver-alpha silver-bad silver-orphan silver-noown silver-feature silver-fast silver-release
 # silver-deep-research silver-new-workflow silver-devops silver-mismatch silver-noent silver-eq2
+paste() { if [[ "${SB_T_PASTE_FAIL:-}" == 1 ]]; then return 1; fi; command paste "$@"; }
 sb_orchestrator_default_queue_for_composer() {
   case "$1" in
+    silver-emptyq) echo ",silver-plan,silver-execute" ;;
     silver-alpha) echo "silver-quality-gates,silver-clarify,silver-spec,silver-plan,silver-execute,silver-verify" ;;
     silver-feature) echo "silver-quality-gates,silver-plan,silver-validate,silver-execute" ;;
     silver-fast) echo "silver-quality-gates,silver-plan,silver-validate,silver-execute" ;;
@@ -123,6 +125,10 @@ mkskill silver-devops <<'EOF2'
 `FLOW-DEVOPS-QUALITY-GATE-PRESHIP` `silver-validate`
 EOF2
 mkskill silver-mismatch <<'EOF2'
+**Pre-execution:** `silver-plan`
+**Post-execution:** done
+EOF2
+mkskill silver-emptyq <<'EOF2'
 **Pre-execution:** `silver-plan`
 **Post-execution:** done
 EOF2
@@ -268,5 +274,30 @@ assert_contains "component queue N/A" "$TL_OUT" "component workflow — enforcem
 assert_contains "component triple N/A" "$TL_OUT" "component workflow — triple alignment N/A"
 assert_contains "component orchestrator N/A" "$TL_OUT" "component workflow — orchestrator registration N/A"
 assert_contains "component entity N/A" "$TL_OUT" "component workflow — entity mapping N/A"
+
+# an empty element in the orchestrator queue is ignored
+t="$(tri silver-emptyq)"
+assert_contains "empty queue token skipped" "$t" "FAIL [triple_alignment]: guard [] != orchestrator [plan]"
+assert_contains "orchestrator side drops the empty token" "$t" "orchestrator [plan]"
+
+# silver-fast whose SKILL lacks the Tier 2 line has nothing to parse
+cp "$T/skills/silver-fast/SKILL.md" "$TL_TMP/fast.md"
+printf '# fast\nno tier line here\n' >"$T/skills/silver-fast/SKILL.md"
+t="$(tri silver-fast)"
+assert_contains "fast without tier line not parseable" "$t" "SKILL pre-exec markers not parseable"
+cp "$TL_TMP/fast.md" "$T/skills/silver-fast/SKILL.md"
+
+# a failing paste (helper used for the CSV joins) leaves the sets empty instead of aborting
+SB_T_PASTE_FAIL=1 tl_run bash "$S" --target silver-alpha
+t="$(out_all)"
+assert_contains "paste failure -> skill set unparseable" "$t" "SKILL pre-exec markers not parseable"
+assert_contains "paste failure -> guard vs orchestrator empty" "$t" "guard [] != orchestrator []"
+
+# catalog without atomic_flows: the orphan-ref query fails and is tolerated
+cp "$T/docs/apo-catalog.json" "$TL_TMP/catalog.bak"
+jq 'del(.atomic_flows)' "$TL_TMP/catalog.bak" >"$T/docs/apo-catalog.json"
+run --target WF-COMP
+assert_contains "orphan query failure tolerated" "$TL_OUT" "PASS [catalog]: composition_tree refs resolve"
+cp "$TL_TMP/catalog.bak" "$T/docs/apo-catalog.json"
 
 tl_results

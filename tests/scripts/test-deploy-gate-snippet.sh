@@ -168,4 +168,12 @@ printf 'alpha\n' >"$STATE"
 tl_run env DEFAULT_REQUIRED="alpha" bash -c 'cd "$1" && bash "$2"' _ "$NOCFG" "$CP/scripts/deploy-gate-snippet.sh"
 assert_eq "no runtime-paths lib, env state dir" 0 "$TL_STATUS"
 
+# the script directory cannot be entered (cd fails): libraries are skipped, the environment's state dir is used
+printf 'alpha\n' >"$STATE"
+tl_run bash -c 'cd() { return 1; }; source "$1" --skip-workflow-check; echo "rc=$?"' _ "$SNIP"
+assert_contains "cd failure: bypass still works" "$TL_OUT" "Workflow check bypassed"
+assert_file_exists "cd failure: state untouched by bypass" "$STATE"
+tl_run bash -c 'builtin cd "$2"; cd() { return 1; }; source "$1" 2>&1' _ "$SNIP" "$NOCFG"
+assert_contains "cd failure: gate still enforces with env state dir" "$TL_OUT" "Missing required workflow skills"
+
 tl_results
