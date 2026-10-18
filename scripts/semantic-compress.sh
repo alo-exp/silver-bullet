@@ -187,9 +187,11 @@ add_block() {
   local rel="$1" content="$2" label="${3:-}"
   local block
   block=$(printf $'### %s%s\n```\n%s\n```\n' "$rel" "${label:+ ($label)}" "$content")
-  local block_bytes=${#block}
+  local block_bytes=$(( ${#block} + 1 ))   # +1: the newline that separates blocks
   if (( used_bytes + block_bytes <= budget_bytes )); then
-    output+="$block"
+    # $(...) strips the trailing newline of the block; restore it so the closing
+    # fence does not run into the next block's heading.
+    output+="$block"$'\n'
     (( used_bytes += block_bytes )) || true
     return 0
   fi
@@ -237,12 +239,13 @@ score_and_add() {
     local rel="${file#"$REPO_ROOT"/}"
     local key; key=$(printf '%s' "$file" | tr '/: ' '___')
     local cnt=0
-    cnt=$(grep -Fm1 "^${key}=" "$TMP_COUNTS" 2>/dev/null | cut -d= -f2 || echo 0)
+    # awk prefix match: grep -F would treat the leading ^ literally and never match
+    cnt=$(awk -v k="$key" 'index($0, k "=") == 1 { print substr($0, length(k) + 2); exit }' "$TMP_COUNTS")
+    cnt="${cnt:-0}"
     if [[ $cnt -ge $top_n ]]; then continue; fi
     if add_block "$rel" "$chunk_text" "lines ${start}-${end}"; then
-      if grep -Fv "^${key}=" "$TMP_COUNTS" > "${TMP_COUNTS}.tmp" 2>/dev/null; then
-        mv "${TMP_COUNTS}.tmp" "$TMP_COUNTS"
-      fi
+      awk -v k="$key" 'index($0, k "=") != 1' "$TMP_COUNTS" > "${TMP_COUNTS}.tmp"
+      mv -f "${TMP_COUNTS}.tmp" "$TMP_COUNTS"
       printf '%s=%s\n' "$key" "$(( cnt + 1 ))" >> "$TMP_COUNTS"
       if [[ "$debug" == "true" ]]; then printf '  chunk: %s lines %s-%s score=%s\n' "$rel" "$start" "$end" "$score" >> "$debug_log"; fi
     fi
