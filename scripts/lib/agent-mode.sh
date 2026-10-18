@@ -1056,7 +1056,7 @@ agent_mode_maybe_escalate() {
     agent_mode_reason_append "escalate-unavailable"
     return 1
   fi
-  agent_mode_prepare_artifact_dir "$host" "$(dirname "$(dirname "$task_dir")")" >/dev/null
+  agent_mode_prepare_artifact_dir "$host" "$(dirname "$(dirname "$(dirname "$task_dir")")")" >/dev/null
   agent_mode_append_event "$task_dir" "escalated" ""
   agent_mode_append_event "$task_dir" "mode_resolved" "interactive"
   return 0
