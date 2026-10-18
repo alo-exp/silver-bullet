@@ -17,7 +17,7 @@ PIDF="$R/.e2e-matrix-monitor.pid"
 LOGF="$R/.e2e-matrix-supervisor.log"
 STATUS="$R/.e2e-matrix-monitor-status.txt"
 
-export F4_LOOP_SLEEP=4242 F4_PARENT_MARK=monitor-enterprise-e2e-supervisor.sh
+export F4_LOOP_SLEEP=4242
 export SB_E2E_SUPERVISOR_INTERVAL=4242
 
 reset() {
@@ -25,18 +25,25 @@ reset() {
   : >"$F4_CALLS"
   unset F4_LOOP_MAX
 }
-sup() { tl_run timeout 20 bash "$SUP"; }
+sup() { tl_run timeout 20 bash -c "$F4_LAUNCH" _ "$SUP"; }
 
 # --- cd into the SB root fails: exits non-zero before doing anything ---
 reset
-tl_run env F4_CD_FAIL="$R" timeout 20 bash "$SUP"
+tl_run env F4_CD_FAIL="$R" timeout 20 bash -c "$F4_LAUNCH" _ "$SUP"
 assert_eq "cd failure exits 1" "1" "$TL_STATUS"
 assert_file_absent "cd failure writes no log" "$LOGF"
 assert_file_absent "cd failure starts no monitor" "$F4_CTL/monitor-ran"
 
+# --- safety: the stub sleep never signals a process other than the launched pid ---
+reset
+echo 31337 >"$PIDF"
+f4_alive 31337
+tl_run timeout 2 bash -c 'echo 1 >"$F4_CTL/launched.pid"; exec bash "$@"' _ "$SUP"
+assert_eq "wrong launched pid: nothing terminates the supervisor (timeout fires)" "124" "$TL_STATUS"
+
 # --- max runtime reached before the first poll: no monitor is started ---
 reset
-tl_run env SB_E2E_SUPERVISOR_MAX_SEC=-1 timeout 20 bash "$SUP"
+tl_run env SB_E2E_SUPERVISOR_MAX_SEC=-1 timeout 20 bash -c "$F4_LAUNCH" _ "$SUP"
 assert_eq "max runtime exits 0" "0" "$TL_STATUS"
 assert_contains "max runtime logged" "$(cat "$LOGF")" "max runtime -1s reached"
 assert_file_absent "max runtime starts no monitor" "$F4_CTL/monitor-ran"

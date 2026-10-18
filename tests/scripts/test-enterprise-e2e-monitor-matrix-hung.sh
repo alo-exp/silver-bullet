@@ -74,6 +74,8 @@ hung_setup
 echo "9000 run-enterprise-e2e-live-test.sh" >"$P/pgrep.live-test"
 f4_mon_run
 assert_contains "live driver defers the hung restart" "$(cat "$POLL")" "defer hung restart: live-test driver active"
+assert_contains "hung clock reset to now" "$(cat "$STATE")" "LAST_GROWTH_EPOCH=$NOW"
+assert_not_contains "old growth epoch replaced" "$(cat "$STATE")" "LAST_GROWTH_EPOCH=$((NOW - 6000))"
 assert_file_absent "no batch while live driver active" "$P/batch-ran"
 
 # hung and the batch pid file vanished / points at a dead process: restart incomplete rows
@@ -93,6 +95,19 @@ echo 'rm -f "$BPID_FOR_HOOK"' >"$P/on-pkill"
 f4_mon_run BPID_FOR_HOOK="$BPID" SB_E2E_MONITOR_AUTO_RESTART=0
 assert_contains "auto-restart off defers the hung restart" "$(cat "$POLL")" "defer hung restart: SB_E2E_MONITOR_AUTO_RESTART=0"
 assert_file_absent "nothing started" "$P/batch-ran"
+
+# boundary: idle exactly HUNG_SEC kills the agent children, one second less only stalls
+hung_setup
+idle_state 5400
+f4_mon_run
+assert_contains "idle == HUNG_SEC is hung" "$(cat "$POLL")" "HUNG: killing claude children after 5400s idle"
+assert_contains "idle == HUNG_SEC kills" "$(cat "$F4_CALLS")" "pkill -TERM"
+hung_setup
+idle_state 5399
+f4_mon_run
+assert_contains "idle == HUNG_SEC-1 still stalls" "$(cat "$POLL")" "STALL: row=5 idle=5399s"
+assert_not_contains "idle == HUNG_SEC-1 is not hung" "$(cat "$POLL")" "HUNG:"
+assert_not_contains "idle == HUNG_SEC-1 kills nothing" "$(cat "$F4_CALLS")" "pkill"
 
 # stall without hang kills nothing; thresholds are configurable
 hung_setup
@@ -127,6 +142,16 @@ echo "9000 run-enterprise-e2e-live-test.sh" >"$P/pgrep.live-test"
 f4_mon_run
 assert_contains "live driver defers the no-agent restart" "$(cat "$POLL")" "defer no-claude restart: live-test driver active"
 assert_not_contains "no kill of the batch" "$(cat "$F4_CALLS")" "kill -TERM"
+
+# boundary: no-agent restart at exactly HUNG_SEC idle, none one second earlier
+nochild_setup
+idle_state 5400
+f4_mon_run
+assert_contains "no-agent idle == HUNG_SEC restarts" "$(cat "$POLL")" "ACTION: no claude child 5400s — restarting batch"
+nochild_setup
+idle_state 5399
+f4_mon_run
+assert_not_contains "no-agent idle == HUNG_SEC-1 does not restart" "$(cat "$POLL")" "no claude child"
 
 nochild_setup
 f4_mon_run SB_E2E_MONITOR_AUTO_RESTART=0

@@ -190,6 +190,17 @@ f4_mon_run
 assert_contains "idle log and idle attempt log is a stall" "$(cat "$POLL")" "STALL: row=5 idle=3000s (threshold 2700)"
 assert_not_contains "stall below hung threshold does not kill" "$(cat "$F4_CALLS")" "pkill"
 
+# boundary: idle exactly at the stall threshold acts, one second less does not
+STALL_SETUP 2700 4000
+f4_mon_run
+assert_contains "idle == STALL_SEC is a stall" "$(cat "$POLL")" "STALL: row=5 idle=2700s (threshold 2700)"
+STALL_SETUP 2699 4000
+f4_mon_run
+assert_not_contains "idle == STALL_SEC-1 is not a stall" "$(cat "$POLL")" "STALL:"
+STALL_SETUP 2700 4000
+f4_mon_run SB_E2E_MATRIX_STALL_SEC=2701
+assert_not_contains "threshold is configurable (2701 > idle 2700)" "$(cat "$POLL")" "STALL:"
+
 STALL_SETUP 3000 10
 f4_mon_run
 assert_not_contains "recent attempt log output clears the stall" "$(cat "$POLL")" "STALL:"
@@ -235,7 +246,7 @@ assert_contains "fallback byte count used" "$(cat "$STATUS")" "matrix log bytes:
 
 f4_mon_reset
 live_batch 7000
-tl_run env F4_NO_LOGBYTES=1 timeout 30 bash "$MON"
+tl_run env F4_NO_LOGBYTES=1 timeout 30 bash -c "$F4_LAUNCH" _ "$MON"
 assert_contains "fallback byte count is 0 without a log" "$(cat "$STATUS")" "matrix log bytes: 0"
 
 # --- agent children are looked up per host ---
@@ -267,7 +278,7 @@ assert_eq "unreadable pid file replaced through pgrep discovery" "8888" "$(cat "
 
 # --- cd failure ---
 f4_mon_reset
-tl_run env F4_CD_FAIL="$R" timeout 30 bash "$MON"
+tl_run env F4_CD_FAIL="$R" timeout 30 bash -c "$F4_LAUNCH" _ "$MON"
 assert_eq "cd failure exits 1" "1" "$TL_STATUS"
 assert_file_absent "cd failure leaves no monitor pid file" "$MPID"
 

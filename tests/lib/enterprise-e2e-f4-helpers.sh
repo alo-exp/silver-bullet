@@ -6,7 +6,8 @@
 # ever reaches a host process: pgrep/pkill/ps/sleep/date are PATH stubs that record their argv, and
 # `kill` is replaced by a shell function injected through BASH_ENV (it only records; `kill -0`
 # answers from a fake alive list). The only real signal is sent by the stub `sleep`, to its own
-# parent, and only after checking that the parent's command line names the script under test.
+# parent, and only when that parent is the exact pid the test launched (F4_LAUNCH) and, where the
+# script writes a pid file, the pid in that file.
 
 # f4_setup: PATH stubs, kill function and control directory. Sets F4_CALLS, F4_CTL.
 f4_setup() {
@@ -86,8 +87,7 @@ cat "$f"'
 else echo 2026-01-01T00:00:00Z; fi'
   # sleep: records; on every loop sleep it also advances the fake clock by $F4_NOW_STEP and sources
   # $F4_CTL/on-loop-sleep (arg: call number) if present; when the argument equals $F4_LOOP_SLEEP and this is call number
-  # $F4_LOOP_MAX (default 1), SIGTERM the parent -- but only a parent whose command line
-  # contains $F4_PARENT_MARK (the script under test).
+  # $F4_LOOP_MAX (default 1), SIGTERM the parent -- but only the exact launched pid (see F4_LAUNCH).
   tl_stub sleep 'printf "sleep %s\n" "$*" >>"$F4_CALLS"
 [[ ! -f "$F4_CTL/on-sleep.${1:-}" ]] || source "$F4_CTL/on-sleep.${1:-}"
 if [[ -n "${F4_LOOP_SLEEP:-}" && "${1:-}" == "$F4_LOOP_SLEEP" ]]; then
@@ -95,14 +95,22 @@ if [[ -n "${F4_LOOP_SLEEP:-}" && "${1:-}" == "$F4_LOOP_SLEEP" ]]; then
   echo "$n" >"$F4_CTL/loop-count"
   [[ -z "${F4_NOW_STEP:-}" ]] || echo $(( $(cat "$F4_CTL/now" 2>/dev/null || echo 1000000) + F4_NOW_STEP )) >"$F4_CTL/now"
   [[ ! -f "$F4_CTL/on-loop-sleep" ]] || source "$F4_CTL/on-loop-sleep" "$n"
-  if (( n >= ${F4_LOOP_MAX:-1} )) && [[ -n "${F4_PARENT_MARK:-}" ]]; then
-    parent_cmd="$(tr "\0" " " <"/proc/$PPID/cmdline")"
-    [[ "$parent_cmd" != *"$F4_PARENT_MARK"* ]] || builtin kill -TERM "$PPID"
+  if (( n >= ${F4_LOOP_MAX:-1} )); then
+    # signal only the exact process the test launched (F4_LAUNCH records its pid), and, when the
+    # script writes its own pid file ($F4_PID_FILE), only if that file names the same pid
+    launched=""; [[ ! -f "$F4_CTL/launched.pid" ]] || launched="$(<"$F4_CTL/launched.pid")"
+    pidfile_pid=""; [[ -z "${F4_PID_FILE:-}" || ! -f "$F4_PID_FILE" ]] || pidfile_pid="$(<"$F4_PID_FILE")"
+    if [[ -n "$launched" && "$PPID" == "$launched" && ( -z "${F4_PID_FILE:-}" || "$PPID" == "$pidfile_pid" ) ]]; then
+      builtin kill -TERM "$PPID"
+    fi
   fi
   [[ ! -f "$F4_CTL/loop-sleep-fail-first" || "$n" != 1 ]] || exit 1
 fi
 exit 0'
 }
+
+# F4_LAUNCH: use as `timeout N bash -c "$F4_LAUNCH" _ SCRIPT ARGS`; records the pid of the script (exec keeps it).
+F4_LAUNCH='echo $$ >"$F4_CTL/launched.pid"; exec bash "$@"'
 
 # f4_alive PID...: mark PIDs as alive for the fake `kill -0`.
 f4_alive() { printf '%s\n' "$@" >>"$F4_CTL/alive"; }
@@ -159,7 +167,7 @@ source "$TL_REPO_ROOT/scripts/lib/enterprise-e2e-live-common.sh"
 [[ -z "\${F4_ROWLOG_FAIL:-}" ]] || enterprise_e2e_row_attempt_log() { return 1; }
 [[ -z "\${F4_RECONCILE_FAIL:-}" ]] || enterprise_e2e_ledger_reconcile_status() { return 1; }
 EOS
-  export F4_LOOP_SLEEP=4242 F4_PARENT_MARK=monitor-enterprise-e2e-matrix.sh
+  export F4_LOOP_SLEEP=4242 F4_PID_FILE="$MPID"
   export SB_E2E_MATRIX_MONITOR_INTERVAL=4242 SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL=7
   export SB_E2E_MATRIX_NETWORK_WAIT_MIN=11 SB_E2E_MATRIX_NETWORK_WAIT_MAX=11
   export SB_E2E_MATRIX_LOG="$MLOG" SB_E2E_MATRIX_BATCH_PID_FILE="$BPID" SB_E2E_MATRIX_MONITOR_PID_FILE="$MPID"
@@ -187,7 +195,7 @@ f4_mon_ledger() {
 
 # f4_mon_run [ENV-ARG...]: run the monitor once (the stub sleep ends the loop), result in TL_*.
 f4_mon_run() {
-  tl_run env "$@" timeout 30 bash "$MON"
+  tl_run env "$@" timeout 30 bash -c "$F4_LAUNCH" _ "$MON"
 }
 
 # f4_bsd_stat: PATH stub emulating BSD stat (rejects -c; supports `-f %m` and `-f %Sm -t FMT`).
