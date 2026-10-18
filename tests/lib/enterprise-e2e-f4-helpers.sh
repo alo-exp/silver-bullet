@@ -97,3 +97,58 @@ f4_wait_file() {
   done
   return 1
 }
+
+# f4_mon_setup: stage an SB root for monitor-enterprise-e2e-matrix.sh and export its environment.
+# Sets R, MON, MLOG, POLL, STATUS, BPID, MPID, LEDGER, STATE, APP. The batch runner is a stub that
+# appends its argv/environment to $F4_CTL/batch-ran. Requires f4_setup first. Failure injection:
+#   F4_NO_LOGBYTES=1  removes enterprise_e2e_matrix_log_bytes (fallback path in log_bytes)
+f4_mon_setup() {
+  R="$TL_TMP/root"
+  f4_stage "$R"
+  MON="$R/scripts/monitor-enterprise-e2e-matrix.sh"
+  MLOG="$TL_TMP/matrix.log"
+  POLL="$TL_TMP/poll.log"
+  STATUS="$TL_TMP/status.txt"
+  BPID="$TL_TMP/batch.pid"
+  MPID="$TL_TMP/monitor.pid"
+  LEDGER="$TL_TMP/ledger.md"
+  APP="$TL_TMP/app"
+  STATE="$R/.e2e-matrix-monitor-state"
+  mkdir -p "$APP"
+  e2e_stage_override "$R" scripts/run-enterprise-e2e-matrix.sh \
+    'printf "rows=[%s] pwd=%s host=%s ledger=%s lock=%s pidfile=%s force=%s skipexp=%s clean=%s log=%s fixture=%s dry=%s strategy=%s\n" "$*" "$PWD" "$SB_E2E_LIVE_RUNTIME" "${SB_E2E_LEDGER_FILE-unset}" "${SB_E2E_LIVE_TEST_LOCK_FILE-unset}" "${SB_E2E_MATRIX_BATCH_PID_FILE-unset}" "$SB_E2E_MATRIX_FORCE" "$SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT" "$SB_E2E_MATRIX_CLEAN_ENV" "$SB_E2E_MATRIX_LOG" "$SB_TEST_ENTERPRISE_APP_ROOT" "${SB_E2E_MATRIX_DRY_RUN-unset}" "$CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY" >>"$F4_CTL/batch-ran"'
+  rm -f "$R/scripts/lib/enterprise-e2e-live-common.sh"
+  cat >"$R/scripts/lib/enterprise-e2e-live-common.sh" <<EOS
+source "$TL_REPO_ROOT/scripts/lib/enterprise-e2e-live-common.sh"
+[[ -z "\${F4_NO_LOGBYTES:-}" ]] || unset -f enterprise_e2e_matrix_log_bytes
+EOS
+  export F4_LOOP_SLEEP=4242 F4_PARENT_MARK=monitor-enterprise-e2e-matrix.sh
+  export SB_E2E_MATRIX_MONITOR_INTERVAL=4242 SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL=7
+  export SB_E2E_MATRIX_NETWORK_WAIT_MIN=11 SB_E2E_MATRIX_NETWORK_WAIT_MAX=11
+  export SB_E2E_MATRIX_LOG="$MLOG" SB_E2E_MATRIX_BATCH_PID_FILE="$BPID" SB_E2E_MATRIX_MONITOR_PID_FILE="$MPID"
+  export SB_E2E_MATRIX_MONITOR_POLL_LOG="$POLL" SB_E2E_MATRIX_MONITOR_STATUS_FILE="$STATUS"
+  export SB_E2E_LEDGER_FILE="$LEDGER" SB_TEST_ENTERPRISE_APP_ROOT="$APP" SB_E2E_LIVE_RUNTIME=claude
+  export SB_E2E_MATRIX_ROWS="1 5"
+  unset SB_E2E_MONITOR_AUTO_RESTART SB_E2E_LIVE_TEST_LOCK_FILE SB_E2E_MATRIX_DRY_RUN F4_NO_LOGBYTES F4_CD_FAIL \
+    F4_NOW_STEP F4_LOOP_MAX SB_E2E_MATRIX_STALL_SEC SB_E2E_MATRIX_HUNG_SEC || true
+}
+
+# f4_mon_reset: clean per-scenario state.
+f4_mon_reset() {
+  rm -rf "$MLOG" "$POLL" "$STATUS" "$BPID" "$MPID" "$LEDGER" "$STATE" "$R"/.e2e-row*.log "$F4_CTL"
+  mkdir -p "$F4_CTL"
+  : >"$F4_CALLS"
+  unset F4_LOOP_MAX F4_NOW_STEP F4_NO_LOGBYTES
+}
+
+# f4_mon_ledger STATUS: write a 22-row ledger whose rows all carry STATUS (Pass/Fail), valid refs.
+f4_mon_ledger() {
+  local n specs=()
+  for ((n = 1; n <= 22; n++)); do specs+=("$n:$1"); done
+  e2e_mk_ledger "$LEDGER" "${specs[@]}"
+}
+
+# f4_mon_run [ENV-ARG...]: run the monitor once (the stub sleep ends the loop), result in TL_*.
+f4_mon_run() {
+  tl_run env "$@" timeout 30 bash "$MON"
+}

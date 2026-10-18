@@ -149,8 +149,20 @@ log_bytes() {
   [[ -f "$1" ]] && wc -c <"$1" | tr -d ' ' || echo 0
 }
 
+# File mtime helpers: GNU stat takes -c, BSD/macOS stat takes -f (on GNU, `stat -f` reports the
+# filesystem and prints unrelated text), so try the GNU form first.
 log_mtime_epoch() {
-  [[ -f "$1" ]] && stat -f '%m' "$1" 2>/dev/null || echo 0
+  local m
+  [[ -f "$1" ]] || { echo 0; return 0; }
+  m="$(stat -c '%Y' "$1" 2>/dev/null)" || m="$(stat -f '%m' "$1" 2>/dev/null)" || m=0
+  echo "${m:-0}"
+}
+
+log_mtime_text() {
+  local t
+  t="$(stat -c '%y' "$1" 2>/dev/null | cut -c1-16)" && [[ -n "$t" ]] \
+    || t="$(stat -f '%Sm' -t '%Y-%m-%d %H:%M' "$1" 2>/dev/null)" || t="?"
+  echo "$t"
 }
 
 read_state() {
@@ -377,7 +389,7 @@ build_status_block() {
     f="$(row_attempt_log "$r" || true)"
     if [[ -n "$f" && -f "$f" ]]; then
       bytes="$(log_bytes "$f")"
-      mtime="$(stat -f '%Sm' -t '%Y-%m-%d %H:%M' "$f" 2>/dev/null || echo '?')"
+      mtime="$(log_mtime_text "$f")"
       row_logs+="  row${r}-attempt.log: ${bytes} bytes (${mtime})"$'\n'
     fi
   done
