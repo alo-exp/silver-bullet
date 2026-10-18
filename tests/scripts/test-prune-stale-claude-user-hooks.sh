@@ -180,7 +180,7 @@ assert_eq "surrogate settings exit 0" 0 "$TL_STATUS"
 assert_eq "surrogate settings still valid JSON" 0 "$(python3 -c 'import json,sys; json.load(open(sys.argv[1]))' "$S" >/dev/null 2>&1; echo $?)"
 assert_contains "lone surrogate preserved as an escape" "$(<"$S")" '\ud800'
 assert_eq "stale hook pruned despite the surrogate" 0 "$(grep -c 'gsd-x.sh' "$S" || true)"
-assert_eq "no temp files left next to settings.json" "settings.json" "$(ls "$CH" | grep -v -e real-hooks | tr '\n' ' ' | sed 's/ $//')"
+assert_eq "no temp files left next to settings.json" "real-hooks settings.json" "$(ls -A "$CH" | tr '\n' ' ' | sed 's/ $//')"
 
 # --- a symlinked settings.json stays a symlink -----------------------------------------------
 mkdir -p "$TL_TMP/dotfiles"
