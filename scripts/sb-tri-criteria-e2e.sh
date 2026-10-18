@@ -259,7 +259,11 @@ cmd_preflight() {
   fi
 
   for hook in orchestrator-directive.sh orchestrator-scheduler.sh orchestrator-state.sh orchestrator-event-log.sh; do
-    [[ -f "${REPO_ROOT}/hooks/lib/${hook}" ]] && echo "OK: hooks/lib/${hook}" || echo "WARN: missing hooks/lib/${hook}" >&2
+    if [[ -f "${REPO_ROOT}/hooks/lib/${hook}" ]]; then
+      echo "OK: hooks/lib/${hook}"
+    else
+      echo "WARN: missing hooks/lib/${hook}" >&2
+    fi
   done
 
   if command -v jq >/dev/null 2>&1; then
