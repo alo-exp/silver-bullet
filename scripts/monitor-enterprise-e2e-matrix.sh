@@ -153,7 +153,6 @@ log_bytes() {
 # filesystem and prints unrelated text), so try the GNU form first.
 log_mtime_epoch() {
   local m
-  [[ -f "$1" ]] || { echo 0; return 0; }
   m="$(stat -c '%Y' "$1" 2>/dev/null)" || m="$(stat -f '%m' "$1" 2>/dev/null)" || m=0
   echo "${m:-0}"
 }

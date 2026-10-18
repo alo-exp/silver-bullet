@@ -13,6 +13,8 @@ f4_setup() {
   export F4_CTL="$TL_TMP/ctl" F4_CALLS="$TL_TMP/calls"
   mkdir -p "$F4_CTL"
   : >"$F4_CALLS"
+  # printf fails when its arguments contain $F4_PRINTF_FAIL_MATCH (e.g. one specific log line);
+  # with F4_PRINTF_FAIL_ONCE=1 only the first such call fails.
   # cd fails for the directory named in $F4_CD_FAIL (fault injection for `cd X || exit`).
   # kill: record only; `kill -0 PID` is true when PID is listed in $F4_CTL/alive
   # BASH_ENV is also how the coverage tracer is loaded, so chain to the previous value.
@@ -22,20 +24,47 @@ f4_setup() {
 kill() {
   printf 'kill %s\n' "$*" >>"${F4_CALLS:?}"
   if [[ "${1:-}" == "-0" ]]; then
+    if [[ -f "${F4_CTL:?}/kill0-seq" ]]; then
+      # scripted answers: the Nth `kill -0` (any pid) is alive when line N of kill0-seq is 1
+      local n v
+      n=$(( $(cat "$F4_CTL/kill0-n" 2>/dev/null || echo 0) + 1 ))
+      echo "$n" >"$F4_CTL/kill0-n"
+      v="$(sed -n "${n}p" "$F4_CTL/kill0-seq")"
+      [[ "$v" == 1 ]]
+      return
+    fi
     grep -qx -- "${2:-}" "${F4_CTL:?}/alive" 2>/dev/null
     return
   fi
+  [[ -z "${F4_KILL_FAIL:-}" ]] || return 1
   return 0
+}
+printf() {
+  if [[ -n "${F4_PRINTF_FAIL_MATCH:-}" && "$*" == *"$F4_PRINTF_FAIL_MATCH"* ]]; then
+    # F4_PRINTF_FAIL_ONCE=1: only the first matching call fails (flag file in $F4_CTL)
+    if [[ -z "${F4_PRINTF_FAIL_ONCE:-}" ]]; then
+      return 1
+    fi
+    if [[ ! -e "${F4_CTL:?}/printf-failed" ]]; then
+      : >"$F4_CTL/printf-failed"
+      return 1
+    fi
+  fi
+  builtin printf "$@"
 }
 cd() {
   if [[ -n "${F4_CD_FAIL:-}" && "${1:-}" == "$F4_CD_FAIL" ]]; then
-    return 1
+    # F4_CD_FAIL_IN=fn: only fail when called directly from that shell function
+    if [[ -z "${F4_CD_FAIL_IN:-}" || "${FUNCNAME[1]:-}" == "$F4_CD_FAIL_IN" ]]; then
+      return 1
+    fi
   fi
   builtin cd "$@"
 }
 EOS
   } >"$TL_TMP/kill-stub.sh"
   export BASH_ENV="$TL_TMP/kill-stub.sh"
+  # pkill sources $F4_CTL/on-pkill when present (side effects only; it never signals anything).
   # pgrep: records argv, prints $F4_CTL/pgrep.<key> when the arguments contain <key>
   tl_stub pgrep 'printf "pgrep %s\n" "$*" >>"$F4_CALLS"
 for f in "$F4_CTL"/pgrep.*; do
@@ -43,7 +72,9 @@ for f in "$F4_CTL"/pgrep.*; do
   [[ "$*" == *"${f##*/pgrep.}"* ]] && { cat "$f"; exit 0; }
 done
 exit 1'
-  tl_stub pkill 'printf "pkill %s\n" "$*" >>"$F4_CALLS"; exit 0'
+  tl_stub pkill 'printf "pkill %s\n" "$*" >>"$F4_CALLS"
+[[ ! -f "$F4_CTL/on-pkill" ]] || source "$F4_CTL/on-pkill"
+exit "$(cat "$F4_CTL/pkill-status" 2>/dev/null || echo 0)"'
   # ps -p PID -o FIELD=  -> $F4_CTL/ps.PID.FIELD ; missing -> exit 1
   tl_stub ps 'printf "ps %s\n" "$*" >>"$F4_CALLS"
 field="${4%=}"
@@ -58,6 +89,7 @@ else echo 2026-01-01T00:00:00Z; fi'
   # $F4_LOOP_MAX (default 1), SIGTERM the parent -- but only a parent whose command line
   # contains $F4_PARENT_MARK (the script under test).
   tl_stub sleep 'printf "sleep %s\n" "$*" >>"$F4_CALLS"
+[[ ! -f "$F4_CTL/on-sleep.${1:-}" ]] || source "$F4_CTL/on-sleep.${1:-}"
 if [[ -n "${F4_LOOP_SLEEP:-}" && "${1:-}" == "$F4_LOOP_SLEEP" ]]; then
   n=$(( $(cat "$F4_CTL/loop-count" 2>/dev/null || echo 0) + 1 ))
   echo "$n" >"$F4_CTL/loop-count"
@@ -67,6 +99,7 @@ if [[ -n "${F4_LOOP_SLEEP:-}" && "${1:-}" == "$F4_LOOP_SLEEP" ]]; then
      && tr "\0" " " <"/proc/$PPID/cmdline" | grep -qF -- "$F4_PARENT_MARK"; then
     builtin kill -TERM "$PPID"
   fi
+  [[ ! -f "$F4_CTL/loop-sleep-fail-first" || "$n" != 1 ]] || exit 1
 fi
 exit 0'
 }
@@ -102,6 +135,7 @@ f4_wait_file() {
 # Sets R, MON, MLOG, POLL, STATUS, BPID, MPID, LEDGER, STATE, APP. The batch runner is a stub that
 # appends its argv/environment to $F4_CTL/batch-ran. Requires f4_setup first. Failure injection:
 #   F4_NO_LOGBYTES=1  removes enterprise_e2e_matrix_log_bytes (fallback path in log_bytes)
+#   F4_ENSURE_FAIL / F4_ROWLOG_FAIL / F4_RECONCILE_FAIL=1  make that library function return 1
 f4_mon_setup() {
   R="$TL_TMP/root"
   f4_stage "$R"
@@ -121,6 +155,9 @@ f4_mon_setup() {
   cat >"$R/scripts/lib/enterprise-e2e-live-common.sh" <<EOS
 source "$TL_REPO_ROOT/scripts/lib/enterprise-e2e-live-common.sh"
 [[ -z "\${F4_NO_LOGBYTES:-}" ]] || unset -f enterprise_e2e_matrix_log_bytes
+[[ -z "\${F4_ENSURE_FAIL:-}" ]] || enterprise_e2e_ensure_matrix_log() { return 1; }
+[[ -z "\${F4_ROWLOG_FAIL:-}" ]] || enterprise_e2e_row_attempt_log() { return 1; }
+[[ -z "\${F4_RECONCILE_FAIL:-}" ]] || enterprise_e2e_ledger_reconcile_status() { return 1; }
 EOS
   export F4_LOOP_SLEEP=4242 F4_PARENT_MARK=monitor-enterprise-e2e-matrix.sh
   export SB_E2E_MATRIX_MONITOR_INTERVAL=4242 SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL=7
@@ -138,7 +175,7 @@ f4_mon_reset() {
   rm -rf "$MLOG" "$POLL" "$STATUS" "$BPID" "$MPID" "$LEDGER" "$STATE" "$R"/.e2e-row*.log "$F4_CTL"
   mkdir -p "$F4_CTL"
   : >"$F4_CALLS"
-  unset F4_LOOP_MAX F4_NOW_STEP F4_NO_LOGBYTES
+  unset F4_LOOP_MAX F4_NOW_STEP F4_NO_LOGBYTES F4_ENSURE_FAIL F4_ROWLOG_FAIL F4_RECONCILE_FAIL F4_KILL_FAIL F4_CD_FAIL_IN F4_PRINTF_FAIL_ONCE
 }
 
 # f4_mon_ledger STATUS: write a 22-row ledger whose rows all carry STATUS (Pass/Fail), valid refs.
@@ -151,4 +188,19 @@ f4_mon_ledger() {
 # f4_mon_run [ENV-ARG...]: run the monitor once (the stub sleep ends the loop), result in TL_*.
 f4_mon_run() {
   tl_run env "$@" timeout 30 bash "$MON"
+}
+
+# f4_bsd_stat: PATH stub emulating BSD stat (rejects -c; supports `-f %m` and `-f %Sm -t FMT`).
+# F4_STAT_MODE=fail makes every form fail. Uses the real GNU stat only to read the mtime.
+f4_bsd_stat() {
+  local real
+  real="$(command -v stat)"
+  tl_stub stat "printf 'stat %s\\n' \"\$*\" >>\"\$F4_CALLS\"
+[[ \"\${F4_STAT_MODE:-}\" != fail ]] || exit 1
+[[ \"\$1\" == -f ]] || exit 1
+case \"\$2\" in
+  %m) $real -c %Y \"\$3\" ;;
+  %Sm) echo 'BSD-TIME' ;;
+  *) exit 1 ;;
+esac"
 }
