@@ -124,7 +124,7 @@ rt_heartbeat_write() {
   session_id="$(rt_current_session_id)"
   project_id="$(rt_project_id)"
   worktree_id="$(rt_worktree_id "$project_root")"
-  path="$(rt_heartbeat_path "$project_id" "$worktree_id" "$session_id")"
+  path="$(rt_heartbeat_path "$project_id" "$worktree_id" "$session_id")" || return 1
   rt_heartbeat_cadence_due "$path" || return 0
   payload="$(rt_heartbeat_build_json "$project_root" "$host")"
   lock_dir="$(dirname "$path")/.lock"
