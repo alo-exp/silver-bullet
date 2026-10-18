@@ -30,11 +30,20 @@ for step in FS-MULTI-AI-RESOLVE FS-MULTI-AI-CAPABILITY-PROBE FS-MULTI-AI-RESERVE
   jq -e --arg s "$step" '.flow_steps[] | select(.id == $s)' docs/apo-catalog.json >/dev/null && pass "$step registered" || fail "$step missing"
 done
 
-python3 skills/silver-multi-ai-task/scripts/multi_ai_cli.py --output-root /tmp/sb-mat-contract --dry-run >/dev/null && pass "multi-ai dry-run cli" || fail "multi-ai dry-run cli"
+CONTRACT_TMP="$(mktemp -d)"
+trap 'rm -rf "$CONTRACT_TMP"' EXIT
+python3 skills/silver-multi-ai-task/scripts/multi_ai_cli.py --output-root "$CONTRACT_TMP/mat" --dry-run >/dev/null && pass "multi-ai dry-run cli" || fail "multi-ai dry-run cli"
 python3 skills/silver-deep-research-multi-ai/scripts/dr_multi_ai_cli.py "contract probe" --dry-run >/dev/null && pass "dr-multi-ai dry-run cli" || fail "dr-multi-ai dry-run cli"
 
-python3 -m unittest discover -s skills/silver-multi-ai-task/tests -p 'test_*.py' -q && pass "multi-ai unit tests" || fail "multi-ai unit tests"
-python3 -m unittest discover -s skills/silver-deep-research-multi-ai/tests -p 'test_*.py' -q && pass "dr-multi-ai unit tests" || fail "dr-multi-ai unit tests"
+# The unit tests stay offline: without these switches the landscape renderer probes every
+# vendor URL over HTTP and renders PDFs through `npx --yes playwright`, which took minutes
+# and depended on the network. Tests that cover those paths set the variables themselves.
+offline_unittest() {
+  SB_SKIP_VENDOR_URL_HEALTH=1 SB_SKIP_LANDSCAPE_PDF=1 SB_ALLOW_SKIP_LANDSCAPE_PDF=1 \
+    python3 -m unittest discover -s "$1" -p 'test_*.py' -q
+}
+offline_unittest skills/silver-multi-ai-task/tests && pass "multi-ai unit tests" || fail "multi-ai unit tests"
+offline_unittest skills/silver-deep-research-multi-ai/tests && pass "dr-multi-ai unit tests" || fail "dr-multi-ai unit tests"
 
 bash tests/scripts/test-multi-ai-opencode-mode.sh && pass "ocg multi-ai-worker mode" || fail "ocg multi-ai-worker mode"
 test -f skills/silver-multi-ai-task/scripts/cursor_host_adapter.py && pass "cursor host adapter stub" || fail "cursor host adapter stub"
@@ -44,5 +53,5 @@ test -f skills/silver-deep-research-multi-ai/scripts/migrate_run_manifest.py && 
 REG="$REPO_ROOT/skills/silver-multi-ai-task/reference/model-family-registry-v1.json"
 jq -e '(.ocg_lite_pool | length) >= 1 and (.ocg_regular_pool | length) >= 1' "$REG" >/dev/null && pass "ocg registry pools present" || fail "ocg registry pools"
 
-echo "Results: PASS=$PASS FAIL=$FAIL"
+echo "Results: $PASS passed, $FAIL failed"
 [[ "$FAIL" -eq 0 ]]
