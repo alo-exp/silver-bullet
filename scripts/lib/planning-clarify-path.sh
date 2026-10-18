@@ -102,7 +102,6 @@ sb_planning_find_newest_clarify_doc() {
   shopt -s nullglob
   for candidate in "${planning}"/*-CLARIFY-*-*.md; do
     [[ -f "$candidate" ]] || continue
-    [[ "$(basename "$candidate")" == "CLARIFY.md" ]] && continue
     if sb_planning_clarify_filename_matches "$(basename "$candidate")"; then
       cur="$(stat -c '%Y' "$candidate" 2>/dev/null || stat -f '%m' "$candidate" 2>/dev/null || echo 0)"
       [[ "$cur" =~ ^[0-9]+$ ]] || cur=0
