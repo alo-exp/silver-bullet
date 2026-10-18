@@ -35,8 +35,8 @@ sb_ups_coalesce_reset() {
   seen="$(sb_ups_coalesce_seen_file)"
   mkdir -p "$(dirname "$state")" 2>/dev/null || true
   umask 0077
-  date +%s 2>/dev/null >"$state" || true
-  : 2>/dev/null >"$seen" || true
+  date +%s >"$state" 2>/dev/null || true
+  : >"$seen" 2>/dev/null || true
 }
 
 # Begin or continue a UPS turn. Resets when no turn is active or the prior turn is stale.
@@ -52,13 +52,13 @@ sb_ups_coalesce_begin() {
     if [[ "$prev" =~ ^[0-9]+$ ]]; then
       age=$((now - prev))
       if [[ "$age" -ge 0 && "$age" -le "${_sb_ups_coalesce_turn_ttl_seconds}" ]]; then
-        [[ -f "$seen" ]] || : 2>/dev/null >"$seen" || true
+        [[ -f "$seen" ]] || : >"$seen" 2>/dev/null || true
         return 0
       fi
     fi
   fi
-  printf '%s' "$now" 2>/dev/null >"$state" || true
-  : 2>/dev/null >"$seen" || true
+  printf '%s' "$now" >"$state" 2>/dev/null || true
+  : >"$seen" 2>/dev/null || true
 }
 
 # Returns 0 if this content is new for the turn (caller should emit); 1 if duplicate.
@@ -74,7 +74,7 @@ sb_ups_coalesce_claim() {
   if [[ -f "$seen" ]] && grep -qxF "$fp" "$seen" 2>/dev/null; then
     return 1
   fi
-  printf '%s\n' "$fp" 2>/dev/null >>"$seen" || true
+  printf '%s\n' "$fp" >>"$seen" 2>/dev/null || true
   return 0
 }
 

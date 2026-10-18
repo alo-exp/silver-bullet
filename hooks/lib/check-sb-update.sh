@@ -109,7 +109,7 @@ sb_check_sb_update() {
 
 # Emits prompt block for additionalContext when an update is available; empty otherwise.
 sb_check_sb_update_prompt_block() {
-  sb_check_sb_update
+  sb_check_sb_update || true
   case "${SB_UPDATE_CHECK_RESULT:-check_failed}" in
     update_available)
       cat <<EOF

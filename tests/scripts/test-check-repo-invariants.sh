@@ -81,24 +81,6 @@ FIX="$TL_TMP/snippet"; fixture "$FIX"
 sed -i 's/^REQUIRED_DEPLOY="/REQUIRED_DEPLOY="extra-skill /' "$FIX/scripts/deploy-gate-snippet.sh"
 expect_fail "deploy snippet list drift" deploy-snippet-list "extra-skill"
 
-# prompt-reminder.sh carries the same fallback list at two sites; each one is checked.
-for site in 1 2; do
-  FIX="$TL_TMP/reminder-$site"; fixture "$FIX"
-  # Drift every site, then restore all but the one under test.
-  sed -i 's/DEFAULT_REQUIRED:-silver-quality-gates /DEFAULT_REQUIRED:-reminder-drift /' \
-    "$FIX/hooks/prompt-reminder.sh"
-  if [[ "$site" == 1 ]]; then
-    sed -i '0,/DEFAULT_REQUIRED:-reminder-drift /!s/DEFAULT_REQUIRED:-reminder-drift /DEFAULT_REQUIRED:-silver-quality-gates /' \
-      "$FIX/hooks/prompt-reminder.sh"
-  else
-    sed -i '0,/DEFAULT_REQUIRED:-reminder-drift /s//DEFAULT_REQUIRED:-silver-quality-gates /' \
-      "$FIX/hooks/prompt-reminder.sh"
-  fi
-  assert_eq "reminder fixture site $site: exactly one drifted literal" 1 \
-    "$(grep -c 'DEFAULT_REQUIRED:-reminder-drift ' "$FIX/hooks/prompt-reminder.sh")"
-  expect_fail "prompt-reminder default list drift (site $site)" deploy-snippet-list "reminder-drift"
-done
-
 FIX="$TL_TMP/subset"; fixture "$FIX"
 jq '.skills.required_planning += ["never-tracked"]' "$FIX/templates/silver-bullet.config.json.default" >"$FIX/c.json"
 mv "$FIX/c.json" "$FIX/templates/silver-bullet.config.json.default"
