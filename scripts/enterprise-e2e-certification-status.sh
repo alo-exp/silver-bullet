@@ -139,10 +139,6 @@ classify_proof_level() {
     printf '%s\n' "live_e2e_partial"
     return 0
   fi
-  if [[ "$reconcile" == "COMPLETE" && "$pass_count" -ge 22 && "$strict_clean" != "yes" ]]; then
-    printf '%s\n' "live_e2e_partial"
-    return 0
-  fi
   printf '%s\n' "not_started"
 }
 
@@ -163,7 +159,6 @@ product_audit_status() {
 # Legacy ledgers (e.g. Cursor-3 REAL) may lack graphify/agentmemory matrix columns.
 ledger_narrative_matrix_complete() {
   local ledger="$1"
-  [[ -f "$ledger" ]] || return 1
   grep -qiE 'Full matrix 22/22.*\*\*PASS\*\*|Matrix 22/22 live.*\*\*PASS\*\*|22/22 strict-clean' "$ledger" 2>/dev/null
 }
 
@@ -175,7 +170,6 @@ ledger_narrative_strict_clean() {
 
 ledger_narrative_reconcile_complete() {
   local ledger="$1"
-  [[ -f "$ledger" ]] || return 1
   grep -qiE 'ledger reconcile.*\*\*COMPLETE\*\*.*22/22|Ledger reconcile.*\*\*COMPLETE\*\*' "$ledger" 2>/dev/null
 }
 
