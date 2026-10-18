@@ -255,10 +255,7 @@ def parse_bibliography_number_to_url(report_md: str) -> dict[int, str]:
         m = BIB_ENTRY_RE.match(line.strip())
         if not m:
             continue
-        try:
-            num = int(m.group(1))
-        except ValueError:
-            continue
+        num = int(m.group(1))
         urls = MD_LINK_URL_RE.findall(line)
         if not urls:
             continue
@@ -336,10 +333,7 @@ def infer_citation_numbers_from_context(report_md: str, claim_text: str) -> list
     nums: list[int] = []
     for m in INLINE_CITATION_RE.finditer(snippet):
         for n in m.group(1).split(','):
-            try:
-                nums.append(int(n.strip()))
-            except ValueError:
-                continue
+            nums.append(int(n.strip()))
     if nums:
         # Deduplicate while preserving order.
         out: list[int] = []
@@ -352,10 +346,7 @@ def infer_citation_numbers_from_context(report_md: str, claim_text: str) -> list
     snippet = report_md[pos: min(len(report_md), pos + 800)]
     for m in INLINE_CITATION_RE.finditer(snippet):
         for n in m.group(1).split(','):
-            try:
-                nums.append(int(n.strip()))
-            except ValueError:
-                continue
+            nums.append(int(n.strip()))
     out: list[int] = []
     for n in nums:
         if n not in out:

@@ -196,11 +196,6 @@ class TestBibliography(unittest.TestCase):
     def test_no_bibliography(self):
         self.assertEqual(vcs.parse_bibliography_number_to_url('## Findings\n[1] x [l](https://a.com)\n'), {})
 
-    def test_int_overflow_guard(self):
-        with mock.patch.object(vcs, 'BIB_ENTRY_RE') as m:
-            m.match.return_value.group.return_value = 'zz'
-            self.assertEqual(vcs.parse_bibliography_number_to_url('## Bibliography\n[1] x\n'), {})
-
 
 class TestDisplayMapping(unittest.TestCase):
     def test_by_raw_canonical_and_computed(self):
@@ -251,17 +246,6 @@ class TestInfer(unittest.TestCase):
 
     def test_no_citations_anywhere(self):
         self.assertEqual(vcs.infer_citation_numbers_from_context('Claim.\n\nNothing.', 'Claim.'), [])
-
-    def test_unparsable_numbers_skipped(self):
-        # Force int() failure through a regex that yields non-numeric groups
-        class FakeRE:
-            def finditer(self, s):
-                m = mock.Mock()
-                m.group.return_value = 'a, 1'
-                return iter([m])
-        with mock.patch.object(vcs, 'INLINE_CITATION_RE', FakeRE()):
-            self.assertEqual(vcs.infer_citation_numbers_from_context('Claim x\n\ny', 'Claim x'), [1])
-            self.assertEqual(vcs.infer_citation_numbers_from_context('Claim x', 'Claim x'), [1])
 
 
 def run_cmd(fn, **kw):
