@@ -357,7 +357,6 @@ def _safe_rmtree(path: pathlib.Path, *, retries: int = 8, delay: float = 0.05) -
     if not path.exists() and not path.is_symlink():
         return
 
-    last_error: OSError | None = None
     for attempt in range(retries):
         try:
             if path.is_symlink() or path.is_file():
@@ -368,14 +367,10 @@ def _safe_rmtree(path: pathlib.Path, *, retries: int = 8, delay: float = 0.05) -
         except FileNotFoundError:
             return
         except OSError as exc:
-            last_error = exc
             if exc.errno in {errno.ENOTEMPTY, errno.EBUSY, errno.EEXIST} and attempt + 1 < retries:
                 time.sleep(delay * (attempt + 1))
                 continue
             raise
-
-    if last_error is not None:
-        raise last_error
 
 
 @contextlib.contextmanager
@@ -416,8 +411,6 @@ def rewrite_file(path: pathlib.Path, agent: str) -> bool:
             if attempt + 1 >= 3:
                 return False
             time.sleep(0.05 * (attempt + 1))
-
-    return False
 
 
 def sanitize_root(root: pathlib.Path, agent: str) -> None:
@@ -536,8 +529,7 @@ def command_stub_routes(commands_dir: pathlib.Path) -> set[str]:
             pass
         elif name.startswith("sb-"):
             name = "sb:" + name[len("sb-") :]
-        if name:
-            routes.add(name)
+        routes.add(name)
     return routes
 
 
