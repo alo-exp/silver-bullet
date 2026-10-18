@@ -606,29 +606,37 @@ rt_apply_host_hooks_batch() {
   # different host, because that silently creates a foreign-host config.
   if [[ "${RT_HOST:-cursor}" == "opencode" ]]; then
     local merge_py="${repo}/scripts/lib/merge-token-compression-config.py"
+    local errors=() merge_err_file merge_err_line
     if [[ -f "$merge_py" ]]; then
+      merge_err_file="$(mktemp)"
       if rt_mutation_allowed rtk; then
-        if python3 "$merge_py" --host opencode --repo-root "$repo" --rtk-only >/dev/null 2>&1; then
+        if python3 "$merge_py" --host opencode --repo-root "$repo" --rtk-only >/dev/null 2>"$merge_err_file"; then
           actions+=("opencode_rtk_plugin")
           changed=1
         else
           failures+=("opencode_rtk_plugin_failed")
+          merge_err_line="$(tail -n 1 "$merge_err_file")"
+          [[ -z "$merge_err_line" ]] || errors+=("opencode_rtk_plugin: ${merge_err_line}")
         fi
       fi
       if rt_mutation_allowed context_mode; then
-        if python3 "$merge_py" --host opencode --repo-root "$repo" --context-mode-only >/dev/null 2>&1; then
+        if python3 "$merge_py" --host opencode --repo-root "$repo" --context-mode-only >/dev/null 2>"$merge_err_file"; then
           actions+=("opencode_context_mode_plugin")
           changed=1
         else
           failures+=("opencode_context_mode_plugin_failed")
+          merge_err_line="$(tail -n 1 "$merge_err_file")"
+          [[ -z "$merge_err_line" ]] || errors+=("opencode_context_mode_plugin: ${merge_err_line}")
         fi
       fi
+      rm -f "$merge_err_file"
     fi
     jq -n \
       --argjson actions "$(rt_json_string_array ${actions[@]+"${actions[@]}"})" \
       --argjson failures "$(rt_json_string_array ${failures[@]+"${failures[@]}"})" \
+      --argjson errors "$(rt_json_string_array ${errors[@]+"${errors[@]}"})" \
       --argjson changed "$([[ $changed -eq 1 ]] && echo true || echo false)" \
-      '{actions:$actions,failures:$failures,changed:$changed}'
+      '{actions:$actions,failures:$failures,changed:$changed} + (if ($errors | length) > 0 then {errors:$errors} else {} end)'
     return 0
   fi
   if [[ "${RT_HOST:-cursor}" == "pi" ]]; then
