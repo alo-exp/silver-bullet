@@ -507,8 +507,6 @@ def coverage_completeness_lines(
         if place == "hard-excluded":
             placement = "hard-excluded"
         gaps: list[str] = []
-        if slug == "zuvo":
-            pass
         if slug == "magic-dev":
             gaps.append(
                 "quoted model error / hard-excluded coding_agent — not SaaS core, not MQ/Wave, "
