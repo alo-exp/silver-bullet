@@ -140,6 +140,77 @@ assert_eq "string hook kept, stale sibling pruned" '["str"]' "$(jq -c '.hooks.St
 assert_eq "object-valued hooks entry kept" '{"a":1}' "$(jq -c '.hooks.Stop[1].hooks' "$S")"
 assert_eq "null-valued hooks entry kept" 'null' "$(jq -c '.hooks.Stop[2].hooks' "$S")"
 
+# --- command-path edge cases ----------------------------------------------------
+mkdir -p "$CH/real-hooks/is-a-dir.sh"
+printf 'x' >"$HOME/ok-home.mjs"
+cat >"$S" <<JSON
+{"hooks": {"Stop": [
+  {"hooks": [{"command": "node \"~/x.mjs\""}]},
+  {"hooks": [{"command": "node \"~/ok-home.mjs\""}]},
+  {"hooks": [{"command": "bash \"$CH/real-hooks/is-a-dir.sh\""}]},
+  {"hooks": [{"command": "bash GSD-FOO.SH"}]},
+  {"hooks": [{"command": "bash GSD-Session-State.sh"}]},
+  {"hooks": [{"command": "echo no-script-here"}]}
+]}}
+JSON
+run_prune
+assert_eq "path edge cases exit 0" 0 "$TL_STATUS"
+assert_eq "only the existing-home script and the plain command remain" \
+  '["node \"~/ok-home.mjs\"","echo no-script-here"]' "$(jq -c '[.hooks.Stop[].hooks[].command]' "$S")"
+
+# --- exact rewrite bytes -----------------------------------------------------------
+printf '%s' '{"hooks":{"Stop":[{"hooks":[{"command":"bash gsd-x.sh"},{"command":"echo keep"}]}]},"model":"opus"}' >"$S"
+run_prune
+assert_eq "rewrite exits 0" 0 "$TL_STATUS"
+printf '{\n  "hooks": {\n    "Stop": [\n      {\n        "hooks": [\n          {\n            "command": "echo keep"\n          }\n        ]\n      }\n    ]\n  },\n  "model": "opus"\n}\n' >"$TL_TMP/expected.json"
+assert_eq "rewritten file is indent 2 with one trailing newline" "$(cmp "$TL_TMP/expected.json" "$S" && echo identical)" "identical"
+
+# --- the rewrite normalises the document -----------------------------------------------
+printf '%s' '{"n":2.50,"e":1e3,"d":1,"d":2,"hooks":{"Stop":[{"hooks":[{"command":"bash gsd-x.sh"}]}]}}' >"$S"
+run_prune
+assert_eq "normalising rewrite exits 0" 0 "$TL_STATUS"
+assert_contains "2.50 becomes 2.5" "$(<"$S")" '"n": 2.5,'
+assert_contains "1e3 becomes 1000.0" "$(<"$S")" '"e": 1000.0,'
+assert_eq "duplicate key keeps the last value, once" '1 2' "$(grep -c '"d"' "$S") $(jq '.d' "$S")"
+
+# --- lone surrogate: the rewrite must never truncate settings.json -------------------------
+printf '%s' '{"note":"bad \ud800 here","ok":"café","hooks":{"Stop":[{"hooks":[{"command":"bash gsd-x.sh"}]}]}}' >"$S"
+run_prune
+assert_eq "surrogate settings exit 0" 0 "$TL_STATUS"
+assert_eq "surrogate settings still valid JSON" 0 "$(python3 -c 'import json,sys; json.load(open(sys.argv[1]))' "$S" >/dev/null 2>&1; echo $?)"
+assert_contains "lone surrogate preserved as an escape" "$(<"$S")" '\ud800'
+assert_eq "stale hook pruned despite the surrogate" 0 "$(grep -c 'gsd-x.sh' "$S" || true)"
+assert_eq "no temp files left next to settings.json" "settings.json" "$(ls "$CH" | grep -v -e real-hooks | tr '\n' ' ' | sed 's/ $//')"
+
+# --- a symlinked settings.json stays a symlink -----------------------------------------------
+mkdir -p "$TL_TMP/dotfiles"
+printf '%s' '{"hooks":{"Stop":[{"hooks":[{"command":"bash gsd-x.sh"},{"command":"echo keep"}]}]}}' >"$TL_TMP/dotfiles/settings.json"
+rm -f "$S"
+ln -s "$TL_TMP/dotfiles/settings.json" "$S"
+run_prune
+assert_eq "symlinked settings exit 0" 0 "$TL_STATUS"
+assert_eq "settings.json is still a symlink" "$TL_TMP/dotfiles/settings.json" "$(readlink "$S")"
+assert_eq "the link target was rewritten" '["echo keep"]' "$(jq -c '[.hooks.Stop[].hooks[].command]' "$TL_TMP/dotfiles/settings.json")"
+
+# --- a failing rename leaves the original untouched and no temp file behind ---------------------
+mkdir -p "$TL_TMP/pyfault"
+cat >"$TL_TMP/pyfault/sitecustomize.py" <<'PY'
+import os
+
+def _boom(*_args, **_kwargs):
+    raise OSError("injected replace failure")
+
+os.replace = _boom
+PY
+rm -f "$S"
+printf '%s' '{"hooks":{"Stop":[{"hooks":[{"command":"bash gsd-x.sh"}]}]}}' >"$S"
+cp "$S" "$TL_TMP/before"
+tl_run env PYTHONPATH="$TL_TMP/pyfault" CLAUDE_HOME="$CH" bash "$SCRIPT"
+assert_eq "failed rename exits non-zero" 1 "$TL_STATUS"
+assert_contains "failed rename reports the cause" "$TL_ERR" "injected replace failure"
+assert_eq "failed rename leaves settings.json byte-identical" "$(<"$TL_TMP/before")" "$(<"$S")"
+assert_eq "failed rename leaves no temp file" "real-hooks settings.json" "$(ls -A "$CH" | tr '\n' ' ' | sed 's/ $//')"
+
 # python3 absent: file cleanup still happens, settings are left alone.
 printf '%s' '{"hooks":{"Stop":[{"hooks":[{"command":"bash gsd-x.sh"}]}]}}' >"$S"
 cp "$S" "$TL_TMP/before"
