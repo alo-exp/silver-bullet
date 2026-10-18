@@ -26,7 +26,7 @@ smoke() { # [env...] -- args
 # ---- all hosts, everything passes ----
 smoke X=1 --
 assert_eq "all hosts pass exits 0" 0 "$TL_STATUS"
-assert_contains "summary counts" "$TL_OUT" "Pre-release host smoke: 11 passed, 0 failed, 0 skipped (11 checks)"
+assert_contains "summary counts" "$TL_OUT" "Pre-release host smoke: 12 passed, 0 failed, 0 skipped (12 checks)"
 for c in "structural: validate-host-agnostic-core.sh" "structural: validate-host-install-surface.sh" \
   "structural: validate-host-skill-surface.sh" "codex: invoke-skill routes sb:verify" "codex: install-codex.sh" \
   "codex: sb-diagnostics.sh" "cursor: release-live-matrix-cursor-smoke.sh" "cursor: pre-release-cursor-cli-smoke.sh" \
