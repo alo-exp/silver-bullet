@@ -82,6 +82,9 @@ score "auto/tri: session evidence + product evidence" pass score_auto "$TAPP" "$
 oa_log "$L" "unrelated"
 score "auto/tri: product exists but session log has no marker -> generic evidence path, no autonomy" partial score_auto "$TAPP" "$S" "$L" "" TC-01
 oa_log "$L" "unrelated autonomous run" "worker completed"
+oa_log "$L" "compliance posture audit only"
+score "auto/tri: session evidence but no product or run evidence anywhere" fail score_auto "$W" "$S" "$L" "" TC-03
+oa_log "$L" "unrelated autonomous run" "worker completed"
 score "auto/tri: matrix mode autonomous + worker completion" pass score_auto "$W" "$S" "$L" "" TC-03 -- "$MATRIX"
 oa_log "$L" "unrelated autonomous run"
 score "auto/tri: matrix mode needs worker completion too" fail score_auto "$W" "$S" "$L" "" TC-03 -- "$MATRIX"
@@ -167,6 +170,11 @@ assert_eq "find orchestrator file: absent everywhere" 1 "$TL_STATUS"
 oa_sh "enterprise_e2e_outcome_runtime_state_dirs() { printf '\n%s\n' '$TL_TMP/primary'; }
 enterprise_e2e_outcome_find_orchestrator_file orchestrator-directive.json"
 assert_eq "find orchestrator file: blank directory entries are skipped" "$TL_TMP/primary/orchestrator-directive.json" "$TL_OUT"
+
+# the sibling-host directive was only for the lookup tests; later scorers must see no directive
+rm -f "$HOME_DIR/.claude/.silver-bullet/orchestrator-directive.json"
+oa -- enterprise_e2e_outcome_find_orchestrator_file orchestrator-directive.json "$TL_TMP/nowhere"
+assert_eq "find orchestrator file: nothing left in the sibling hosts" 1 "$TL_STATUS"
 
 dd_() { oa -- enterprise_e2e_outcome_directive_drained "$1"; }
 dd_ "$TL_TMP/absent.json"; assert_eq "drained: missing file" 1 "$TL_STATUS"

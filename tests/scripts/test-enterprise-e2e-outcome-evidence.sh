@@ -306,6 +306,17 @@ assert_eq "ledger line: empty ledger arg" 0 "$TL_STATUS"
 ll
 assert_eq "ledger line: no args" 0 "$TL_STATUS"
 
+# an unreadable ledger yields no line instead of aborting (needs a non-root user: root ignores mode bits)
+if [[ "$(id -u)" -eq 0 ]]; then
+  echo "SKIP: unreadable-ledger case needs a non-root user"
+else
+  cp "$LEDGER" "$TL_TMP/locked-ledger.md"
+  chmod 000 "$TL_TMP/locked-ledger.md"
+  ll "$TL_TMP/locked-ledger.md" 3
+  assert_eq "ledger line: unreadable ledger -> no line, success" "0:" "$TL_STATUS:$TL_OUT"
+  chmod 600 "$TL_TMP/locked-ledger.md"
+fi
+
 parse() { oa -- enterprise_e2e_outcome_ledger_parse_workflow_row "$1"; }
 parse '| 3 | `silver-feature` | wf | note | Pass | a | b | c | q-ref | am-ref |'
 assert_eq "parse row: graphify ref, agentmemory ref, lower-cased status" "q-ref
