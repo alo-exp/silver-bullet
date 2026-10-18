@@ -30,6 +30,12 @@ S
 #!/usr/bin/env bash
 echo "install-cursor HOME=$HOME CURSOR_HOME=$CURSOR_HOME RUNTIME=$SILVER_BULLET_RUNTIME" >>"$LOG"
 [[ -n "${CURSOR_IGNORE_TERM:-}" ]] && trap '' TERM
+if [[ -n "${CURSOR_CHAIN_FILE:-}" ]]; then
+  # Own pid and the three ancestors above it: installer, timeout wrapper, smoke, supervisor.
+  p=$$; chain=""
+  for _ in 1 2 3 4; do chain+="$p "; p="$(ps -o ppid= -p "$p" | tr -d ' ')"; done
+  echo "$chain" >"$CURSOR_CHAIN_FILE.tmp" && mv "$CURSOR_CHAIN_FILE.tmp" "$CURSOR_CHAIN_FILE"
+fi
 [[ -n "${CURSOR_HANG:-}" ]] && exec sleep "$CURSOR_HANG"
 [[ -n "${CURSOR_INSTALL_RC:-}" ]] && { echo "boom out"; echo "boom err" >&2; exit "$CURSOR_INSTALL_RC"; }
 if [[ -z "${CURSOR_NO_HOOKS:-}" ]]; then
@@ -169,6 +175,56 @@ build_tree
 smoke PATH="$NOCLAUDE" CURSOR_HANG=7.32 CURSOR_IGNORE_TERM=1 SB_TRIHOST_CMD_TIMEOUT=300 SB_TRIHOST_OVERALL_TIMEOUT=1
 assert_eq "overall timeout exits 124 with a TERM-ignoring installer" 124 "$TL_STATUS"
 assert_eq "no TERM-ignoring installer left running" "" "$(live_procs "sleep 7.32")"
+
+# The TERM-to-KILL path stays fast when the machine is slow: with every `ps` call taking half
+# a second the supervisor must still finish inside the launcher's kill-after window.
+build_tree
+tl_stub ps 'command -p sleep 0.5; exec /bin/ps "$@"'
+[[ -x /bin/ps ]] || { REAL_PS="$(command -v ps)"; tl_stub ps 'command -p sleep 0.5; exec "'"$REAL_PS"'" "$@"'; }
+smoke PATH="$TL_BIN:$NOCLAUDE" CURSOR_HANG=7.33 CURSOR_IGNORE_TERM=1 SB_TRIHOST_CMD_TIMEOUT=300 SB_TRIHOST_OVERALL_TIMEOUT=1
+rm -f "$TL_BIN/ps"
+assert_eq "slow ps: overall timeout still exits 124" 124 "$TL_STATUS"
+assert_eq "slow ps: no TERM-ignoring installer left running" "" "$(live_procs "sleep 7.33")"
+
+# Identity check: when a pid now carries a different start time (a recycled pid), it is not
+# signalled. A ps that reports another start time on the second look keeps the survivor alive.
+build_tree
+REAL_PS="$(command -v ps)"
+tl_stub ps 'if [[ "$*" == *stat=* ]]; then "'"$REAL_PS"'" "$@" | awk '"'"'{ print $1, $2, "Thu Jan  1 00:00:00 1970" }'"'"'; else exec "'"$REAL_PS"'" "$@"; fi'
+smoke PATH="$TL_BIN:$NOCLAUDE" CURSOR_HANG=7.34 CURSOR_IGNORE_TERM=1 SB_TRIHOST_CMD_TIMEOUT=300 SB_TRIHOST_OVERALL_TIMEOUT=1
+rm -f "$TL_BIN/ps"
+assert_eq "identity mismatch: overall timeout exits 124" 124 "$TL_STATUS"
+LEFT="$(live_procs "sleep 7.34")"
+assert_contains "identity mismatch: the process with another start time was not killed" "$LEFT" "sleep 7.34"
+# Clean up the one process this test left behind (its own descendant, found by its unique argument).
+for p in $(awk '{ print $1 }' <<<"$LEFT"); do kill -KILL "$p" 2>/dev/null || true; done
+assert_eq "identity mismatch: leftover removed" "" "$(sleep 0.3; live_procs "sleep 7.34")"
+
+# A supervisor that is SIGKILLed cannot clean up: the smoke notices that its parent is gone
+# and takes its own tree down within 5 seconds (the hung installer would run for 7.4).
+pid_alive() { local st; st="$(ps -p "$1" -o stat= 2>/dev/null || true)"; [[ -n "$st" && "$st" != Z* ]]; }
+build_tree
+CHAIN="$TL_TMP/chain"
+rm -f "$CHAIN"
+( env LOG="$LOG" COUNT="$COUNT" TMPDIR="$TL_TMP/tmp" PATH="$NOCLAUDE" CURSOR_HANG=7.41 CURSOR_CHAIN_FILE="$CHAIN" \
+    SB_TRIHOST_OVERALL_TIMEOUT=60 SB_TRIHOST_CMD_TIMEOUT=300 SB_TRIHOST_DIAG_TIMEOUT=30 \
+    bash "$T/scripts/run-tri-host-install-smoke.sh" --host cursor >/dev/null 2>&1 ) &
+LAUNCHER=$!
+for _ in $(seq 1 100); do [[ -s "$CHAIN" ]] && break; /bin/sleep 0.1; done
+read -r -a CHAIN_PIDS <"$CHAIN"
+assert_eq "chain recorded (installer, timeout, smoke, supervisor)" 4 "${#CHAIN_PIDS[@]}"
+kill -KILL "${CHAIN_PIDS[3]}"
+wait "$LAUNCHER" || true
+for _ in $(seq 1 25); do
+  any=0
+  for p in "${CHAIN_PIDS[@]}"; do pid_alive "$p" && any=1; done
+  [[ $any -eq 0 ]] && break
+  /bin/sleep 0.2
+done
+for p in "${CHAIN_PIDS[@]}"; do
+  assert_eq "orphaned chain member $p is gone" 1 "$(pid_alive "$p" && echo 0 || echo 1)"
+done
+assert_eq "no installer left after a killed supervisor" "" "$(live_procs "sleep 7.41")"
 
 # --- codex ----------------------------------------------------------------
 # Retries: two failed attempts, success on the third; the sleep between is stubbed.
