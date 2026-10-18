@@ -62,8 +62,9 @@ function readBody(req) {
   });
 }
 
-function forwardRequest(method, path, headers, body) {
-  const target = new URL(`${UPSTREAM}${upstreamPath(path)}`);
+/** `upstream` defaults to the configured MiniMax upstream; tests inject others. */
+export function forwardRequest(method, path, headers, body, upstream = UPSTREAM) {
+  const target = new URL(`${upstream}${upstreamPath(path)}`);
   const lib = target.protocol === 'https:' ? https : http;
   const fwdHeaders = { ...headers, host: target.host };
   delete fwdHeaders['content-length'];
