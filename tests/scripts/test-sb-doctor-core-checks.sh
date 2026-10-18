@@ -94,6 +94,10 @@ assert_eq "non-numeric plugin version does not abort the audit" "1" "$TL_STATUS"
 assert_contains "non-numeric plugin version fails D2" "$TL_OUT" "FAIL: D2 — plugin version latest < template config_version $HD_VER"
 assert_contains "audit continues after a non-numeric version" "$TL_OUT" "OVERALL: FAIL"
 assert_not_contains "no arithmetic errors on a non-numeric version" "$TL_ERR" "value too great for base"
+setreg '{"plugins":{"silver-bullet@alo-labs":[{"version":"99.0.0+build"}]}}'
+run -- "$HD_PROJ"
+assert_contains "build metadata is ignored when comparing" "$TL_OUT" "PASS: D2 — silver-bullet@alo-labs version 99.0.0+build"
+assert_not_contains "no arithmetic errors on build metadata" "$TL_ERR" "value too great for base"
 setreg '{"plugins":{"silver-bullet@alo-labs":[{"version":"v99.1.2"}]}}'
 run -- "$HD_PROJ"
 assert_contains "v-prefixed version compares numerically" "$TL_OUT" "PASS: D2 — silver-bullet@alo-labs version v99.1.2"
