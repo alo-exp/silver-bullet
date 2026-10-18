@@ -360,14 +360,11 @@ class CollectPayloadTests(OfflineCase):
         self.assertEqual(data["chart_data"]["mq_data"], [{"slug": "alpha"}])
 
     def test_markdown_path_outside_root_uses_canonical_relative_path(self) -> None:
-        real = self.root / "real"
         self.seed()
-        (self.root / "real").mkdir()
         link = self.root / "link"
         link.symlink_to(self.root, target_is_directory=True)
         data = lpr.collect_landscape_payload(link)
         self.assertEqual(data["landscape"]["markdown_path"], "landscape/landscape-report.md")
-        del real
 
     def test_missing_markdown_file_still_reports_canonical_relative_path(self) -> None:
         write_json(self.root / "landscape" / "chart-data.json", {})

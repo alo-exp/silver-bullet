@@ -11,6 +11,7 @@ from typing import Any
 from category_pack import (
     build_known_solutions,
     build_overview_seeds,
+    get_core_seed_slugs,
     normalize_slug,
     resolve_pack_from_need,
 )
@@ -349,7 +350,8 @@ def discover_solutions(
         matrix_slugs = list(audit.get("matrix_slugs") or audit.get("core") or [])
         if len(matrix_slugs) >= min_solutions:
             return matrix_slugs
-        return matrix_slugs or list(pack.get("core_seeds") or [])[: max(min_solutions, 5)]
+        # Fall back to the pack's seed *slugs* (callers build paths from them), not the seed dicts.
+        return matrix_slugs or get_core_seed_slugs(pack)[: max(min_solutions, 5)]
 
     known = _effective_known_solutions(need)
     scores: dict[str, int] = {}
