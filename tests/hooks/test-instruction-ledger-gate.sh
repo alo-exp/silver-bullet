@@ -162,7 +162,7 @@ sb_instruction_ledger_seed_from_prompt 'Please do the following work:
 - refactor the parser module
 - add a regression test for the fence case
 - update the changelog'
-if [[ -f "$LEDGER" ]] && seeded_labels | grep -q 'refactor the parser module'; then
+if [[ -f "$LEDGER" ]] && grep -q 'refactor the parser module' < <(seeded_labels); then
   check "genuine 3-bullet user request still seeds the ledger" pass
 else
   check "genuine 3-bullet user request still seeds the ledger" fail
