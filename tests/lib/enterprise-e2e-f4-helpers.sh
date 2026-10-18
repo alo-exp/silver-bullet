@@ -95,9 +95,9 @@ if [[ -n "${F4_LOOP_SLEEP:-}" && "${1:-}" == "$F4_LOOP_SLEEP" ]]; then
   echo "$n" >"$F4_CTL/loop-count"
   [[ -z "${F4_NOW_STEP:-}" ]] || echo $(( $(cat "$F4_CTL/now" 2>/dev/null || echo 1000000) + F4_NOW_STEP )) >"$F4_CTL/now"
   [[ ! -f "$F4_CTL/on-loop-sleep" ]] || source "$F4_CTL/on-loop-sleep" "$n"
-  if (( n >= ${F4_LOOP_MAX:-1} )) && [[ -n "${F4_PARENT_MARK:-}" ]] \
-     && tr "\0" " " <"/proc/$PPID/cmdline" | grep -qF -- "$F4_PARENT_MARK"; then
-    builtin kill -TERM "$PPID"
+  if (( n >= ${F4_LOOP_MAX:-1} )) && [[ -n "${F4_PARENT_MARK:-}" ]]; then
+    parent_cmd="$(tr "\0" " " <"/proc/$PPID/cmdline")"
+    [[ "$parent_cmd" != *"$F4_PARENT_MARK"* ]] || builtin kill -TERM "$PPID"
   fi
   [[ ! -f "$F4_CTL/loop-sleep-fail-first" || "$n" != 1 ]] || exit 1
 fi
