@@ -161,9 +161,9 @@ mk_wrapper() {
   printf 'source "%s/hooks/lib/%s"\nunset -f %s\n' "$TL_REPO_ROOT" "$lib" "$*" >"$DEG/hooks/lib/$lib"
 }
 mk_wrapper recommended-tools.sh sb_runtime_host
-mk_wrapper rtk-gate.sh sb_rtk_version_string sb_rtk_platform_hook_artifact_path
-mk_wrapper context-mode-gate.sh sb_context_mode_platform_artifact_path
-mk_wrapper alumnium-gate.sh sb_alumnium_platform_artifact_path
+mk_wrapper rtk-gate.sh sb_runtime_host sb_rtk_version_string sb_rtk_platform_hook_artifact_path
+mk_wrapper context-mode-gate.sh sb_runtime_host sb_context_mode_platform_artifact_path
+mk_wrapper alumnium-gate.sh sb_runtime_host sb_alumnium_platform_artifact_path
 export SILVER_BULLET_RUNTIME=cursor
 tl_stub rtk 'case "$1" in --version) echo "rtk 0.42.3";; esac; exit 0'
 tl_stub node 'echo v22.9.0'
