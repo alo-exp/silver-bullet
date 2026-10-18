@@ -34,6 +34,8 @@ if [[ -z "$batch_root" ]]; then
   batch_root="$batch_tmp"
   git clone "$(agent_plugins_repo_url)" "$batch_root" >/dev/null 2>&1 || {
     echo "WARN: could not clone $(agent_plugins_repo_url); syncing in-repo manifests only" >&2
+    rm -rf -- "$batch_tmp"
+    batch_tmp=""
     batch_root=""
   }
 fi
