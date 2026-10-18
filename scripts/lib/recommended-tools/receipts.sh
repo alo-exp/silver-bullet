@@ -234,6 +234,7 @@ rt_host_evidence_read_stdin() {
     return 1
   fi
   if ! printf '%s' "$raw" | python3 -c 'import json,sys; json.load(sys.stdin)' 2>/dev/null; then
+    # shellcheck disable=SC2034  # read by scripts/reconcile-recommended-tools.sh
     RT_HOST_EVIDENCE_ERROR="host_evidence_invalid_json"
     return 1
   fi
