@@ -260,9 +260,6 @@ def base_model_from_slug(model_id: str) -> str:
         suffix = f"-{effort}"
         if model_id.endswith(suffix):
             return model_id[: -len(suffix)]
-        fast_suffix = f"-fast{suffix}"
-        if model_id.endswith(fast_suffix):
-            return model_id[: -len(fast_suffix)]
     if "[" in model_id:
         return model_id.split("[", 1)[0]
     return model_id
