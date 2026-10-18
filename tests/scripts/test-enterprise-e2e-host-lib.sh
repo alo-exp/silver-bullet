@@ -162,11 +162,14 @@ mkdir -p "$TL_TMP/not-git"
 branch_check "$TL_TMP/not-git" "SB_E2E_LIVE_RUNTIME=codex"
 assert_eq "non-git harness fails" 1 "$TL_STATUS"
 assert_contains "non-git harness named" "$TL_ERR" "SB harness is not a git repo: $TL_TMP/not-git"
-# SB_ROOT unset and no sb_root(): derived from harness root (scripts/, which is not a git root).
-e2e_script "source '$HOST_LIB'; enterprise_e2e_preflight_fail() { echo \"PF: \$*\" >&2; return 1; }; enterprise_e2e_assert_host_git_branch" \
+# SB_ROOT unset and no sb_root(): derived from the harness root's parent. A symlinked host.sh puts
+# the harness under the temp dir, whose parent is not a git repo.
+mkdir -p "$TL_TMP/fakeharness/lib"
+ln -s "$HOST_LIB" "$TL_TMP/fakeharness/lib/host.sh"
+e2e_script "source '$TL_TMP/fakeharness/lib/host.sh'; enterprise_e2e_preflight_fail() { echo \"PF: \$*\" >&2; return 1; }; enterprise_e2e_assert_host_git_branch" \
   -u SB_ROOT "SB_E2E_LIVE_RUNTIME=codex" "SB_E2E_HOSTS_CONFIG=$CFG"
-assert_eq "SB_ROOT derived from harness root: scripts/ has no .git" 1 "$TL_STATUS"
-assert_contains "derived root reported" "$TL_ERR" "SB harness is not a git repo: $TL_REPO_ROOT/scripts"
+assert_eq "SB_ROOT derived from harness root: its parent is not a git repo" 1 "$TL_STATUS"
+assert_contains "derived root reported" "$TL_ERR" "SB harness is not a git repo: $TL_TMP"
 e2e_script "source '$HOST_LIB'; enterprise_e2e_sb_root() { echo '$BR_ROOT'; }; enterprise_e2e_preflight_fail() { echo \"PF: \$*\" >&2; return 1; }; enterprise_e2e_assert_host_git_branch" \
   -u SB_ROOT "SB_E2E_LIVE_RUNTIME=codex" "SB_E2E_HOSTS_CONFIG=$CFG"
 assert_contains "enterprise_e2e_sb_root() is preferred for the root" "$TL_OUT" "have=detached"
@@ -222,8 +225,6 @@ route cursor "/other";     assert_eq "cursor other route unchanged" "/other" "$T
 # --- adapter sourcing -------------------------------------------------------
 e2e_script "source '$HOST_LIB'; enterprise_e2e_source_host_adapter && declare -f enterprise_e2e_adapter_preflight >/dev/null && echo SOURCED" "SB_E2E_LIVE_RUNTIME=cursor"
 assert_eq "existing adapter is sourced" "SOURCED" "$TL_OUT"
-mkdir -p "$TL_TMP/fakeharness/lib"
-ln -s "$HOST_LIB" "$TL_TMP/fakeharness/lib/host.sh"
 e2e_call "$TL_TMP/fakeharness/lib/host.sh" "SB_E2E_LIVE_RUNTIME=codex" -- enterprise_e2e_source_host_adapter
 assert_eq "missing adapter returns 1" 1 "$TL_STATUS"
 assert_contains "missing adapter warns" "$TL_ERR" "WARN: missing host adapter $TL_TMP/fakeharness/lib/adapters/codex.sh"
