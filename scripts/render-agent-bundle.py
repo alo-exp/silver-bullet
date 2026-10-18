@@ -613,7 +613,11 @@ def main() -> int:
     if args.mode == "render":
         if not args.source_root or not args.dest_root:
             parser.error("render mode requires --source-root and --dest-root")
-        render_bundle(pathlib.Path(args.source_root), pathlib.Path(args.dest_root), args.agent)
+        try:
+            render_bundle(pathlib.Path(args.source_root), pathlib.Path(args.dest_root), args.agent)
+        except Exception as exc:
+            print(f"ERROR: render failed: {exc}", file=sys.stderr)
+            return 1
         return 0
 
     if not args.root:
