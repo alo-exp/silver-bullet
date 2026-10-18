@@ -25,11 +25,6 @@ ALLOWLIST=(
   hooks/industry-tooling-hint.sh
   hooks/session-log-init.sh
   hooks/lib/quality-gates-mode.sh
-  # H-recommended-1
-  scripts/install-leanctx-sb.sh
-  scripts/lib/recommended-tools/probe-alumnium.sh
-  scripts/lib/recommended-tools/probe-leanctx.sh
-  scripts/lib/recommended-tools/probe-rtk.sh
   # F-enterprise-2
 )
 

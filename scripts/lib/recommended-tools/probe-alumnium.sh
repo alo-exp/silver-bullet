@@ -44,9 +44,9 @@ rt_probe_alumnium_vendor_doctor() {
   fi
   command -v alumnium >/dev/null 2>&1 || return 2
   rt_vendor_doctor_subcommand_usable alumnium || return 2
-  if alumnium doctor --help </dev/null 2>&1 | grep -qiE -- '--non-interactive'; then
+  if grep -qiE -- '--non-interactive' < <(alumnium doctor --help </dev/null 2>&1); then
     extra+=(--non-interactive)
-  elif alumnium doctor --help </dev/null 2>&1 | grep -qiE -- '--yes'; then
+  elif grep -qiE -- '--yes' < <(alumnium doctor --help </dev/null 2>&1); then
     extra+=(--yes)
   fi
   # Bash 3.2 + set -u: empty extra[@] is unbound and aborts the reconciler.
