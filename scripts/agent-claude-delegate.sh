@@ -165,7 +165,8 @@ while [[ "$attempt" -le "$quota_retry_max" ]]; do
     fi
   fi
 
-  final_output="$(agent_claude_invoke_once)" && final_exit=0 || final_exit=$?
+  final_exit=0
+  final_output="$(agent_claude_invoke_once)" || final_exit=$?
 
   if [[ -n "$LOG_FILE" && "$USE_PRINT" -eq 1 ]]; then
     agent_delegate_append_invoke_output "$LOG_FILE" "$final_output"
@@ -208,7 +209,8 @@ if [[ "$final_exit" -ne 0 ]]; then
   if agent_mode_maybe_escalate "claude" "$SB_AM_TASK_DIR" "${LOG_FILE:-}"; then
     agent_mode_apply_host_launch_env "claude"
     USE_PRINT=0
-    final_output="$(agent_claude_invoke_once)" && final_exit=0 || final_exit=$?
+    final_exit=0
+    final_output="$(agent_claude_invoke_once)" || final_exit=$?
   fi
 fi
 
