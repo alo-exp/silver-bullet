@@ -54,7 +54,7 @@ rt_probe_rtk_before_cm() {
   if [[ "${RT_HOST:-cursor}" == "pi" ]]; then
     local pi_cfg="${PI_CODING_AGENT_DIR:-${HOME}/.pi/agent}/extensions/pi-lean-ctx/config.json"
     [[ -f "$pi_cfg" ]] || return 1
-    [[ "$(jq -r '.routeShell // true' "$pi_cfg" 2>/dev/null)" == "false" ]] || return 1
+    [[ "$(jq -r 'if .routeShell == null then true else .routeShell end' "$pi_cfg" 2>/dev/null)" == "false" ]] || return 1
     jq -e '.disableTools | index("ctx_shell") != null' "$pi_cfg" >/dev/null 2>&1
     return $?
   fi
@@ -102,9 +102,9 @@ rt_probe_rtk_vendor_doctor() {
   help="$("$rtk_bin" help </dev/null 2>&1 || true)"
   grep -qE '^[[:space:]]+doctor([[:space:]]|$)' <<<"$help" || return 2
   rt_vendor_doctor_subcommand_usable "$rtk_bin" || return 2
-  if "$rtk_bin" doctor --help </dev/null 2>&1 | grep -qiE -- '--non-interactive'; then
+  if grep -qiE -- '--non-interactive' < <("$rtk_bin" doctor --help </dev/null 2>&1); then
     extra+=(--non-interactive)
-  elif "$rtk_bin" doctor --help </dev/null 2>&1 | grep -qiE -- '--yes'; then
+  elif grep -qiE -- '--yes' < <("$rtk_bin" doctor --help </dev/null 2>&1); then
     extra+=(--yes)
   fi
   # Bash 3.2 + set -u: empty extra[@] is unbound and aborts the reconciler.

@@ -240,11 +240,6 @@ rt_derive_canonical_state() {
   printf 'ready'
 }
 
-rt_json_escape() {
-  local s="${1:-}"
-  printf '%s' "$s" | jq -Rs '.'
-}
-
 rt_validate_authorization() {
   local mode="${RT_MODE:-verify}"
   local entry="${RT_ENTRY_POINT:-}"

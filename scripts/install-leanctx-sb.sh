@@ -166,7 +166,7 @@ assert_guard_unchanged() {
     # Legacy mtime snapshots (older callers) — tolerate missing hash prefix.
     if [[ -f "$path" ]]; then
       local mtime
-      mtime="$(stat -f '%m' "$path" 2>/dev/null || stat -c '%Y' "$path" 2>/dev/null || echo 0)"
+      mtime="$(stat -c '%Y' "$path" 2>/dev/null || stat -f '%m' "$path" 2>/dev/null || echo 0)"
       [[ "$mtime" == "$state" ]] || {
         warn "install modified guarded path: $path"
         return 1
@@ -180,13 +180,14 @@ leanctx_binary_ok() {
   local bin
   bin="$(leanctx_cli_path || true)"
   [[ -n "$bin" ]] || return 1
-  "$bin" --version >/dev/null 2>&1 || "$bin" --help >/dev/null 2>&1
+  "$bin" --version >/dev/null 2>&1 && return 0
+  "$bin" --help >/dev/null 2>&1
 }
 
 leanctx_supports_library_mode() {
   local bin
   bin="$(leanctx_cli_path || true)"
-  [[ -n "$bin" ]] && "$bin" init --help 2>&1 | grep -q -- '--library-mode'
+  [[ -n "$bin" ]] && grep -q -- '--library-mode' < <("$bin" init --help 2>&1)
 }
 
 context_mode_configured() {

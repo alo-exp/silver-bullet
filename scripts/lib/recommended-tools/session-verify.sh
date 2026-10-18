@@ -32,7 +32,6 @@ rt_session_verify_block() {
   fi
   [[ -n "$repo_root" ]] || return 0
   reconciler="${repo_root}/scripts/reconcile-recommended-tools.sh"
-  [[ -f "$reconciler" ]] || return 0
   local -a lines=()
   local needs_action=0
 
@@ -57,7 +56,7 @@ rt_session_verify_block() {
     done < <(printf '%s' "$out" | jq -r '.components[]? | select(.component != "cross_tool") | [.component,.canonical_state,.activation_status] | @tsv' 2>/dev/null)
     local cross_state cross_activation cross_hb_invalid=0
     cross_state="$(printf '%s' "$out" | jq -r '.components[]? | select(.component=="cross_tool") | .canonical_state' 2>/dev/null || true)"
-    cross_activation="$(printf '%s' "$out" | jq -r '.components[]? | select(.component=="cross_tool") | .activation_status' 2>/dev/null || true)"
+    cross_activation="$(printf '%s' "$out" | jq -r '.components[]? | select(.component=="cross_tool") | .activation_status // ""' 2>/dev/null || true)"
     if printf '%s' "$out" | jq -e '.components[]? | select(.component=="cross_tool") | .evidence[]? | select(. == "heartbeat_absent_or_invalid")' >/dev/null 2>&1; then
       cross_hb_invalid=1
     fi
