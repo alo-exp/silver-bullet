@@ -143,7 +143,6 @@ main() {
     local default_commands=()
     if default_output=$(detect_default_commands "$repo_root"); then
       while IFS= read -r command_str; do
-        [[ -n "$command_str" ]] || continue
         default_commands+=("$command_str")
       done <<< "$default_output"
     fi

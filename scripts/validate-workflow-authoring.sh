@@ -9,7 +9,7 @@ slug="new-workflow"
 audit_mode=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --slug) slug="${2:-}"; shift 2 ;;
+    --slug) slug="${2:-}"; shift $(( $# >= 2 ? 2 : 1 )) ;;
     --audit)
       audit_mode=1
       shift

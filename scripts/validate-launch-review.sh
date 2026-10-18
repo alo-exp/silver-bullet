@@ -15,7 +15,8 @@ review_file="${repo_root}/.planning/phases/launch-readiness-adversarial-review/L
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --file)
-      review_file="${2:-}"
+      [[ $# -ge 2 ]] || { printf 'validate-launch-review: %s requires a value\n' "$1" >&2; exit 2; }
+      review_file="$2"
       shift 2
       ;;
     -h|--help)
