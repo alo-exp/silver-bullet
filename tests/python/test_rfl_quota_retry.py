@@ -578,7 +578,7 @@ class TimerTest(Base):
         with mock.patch.object(q.sys, "platform", "darwin"):
             t = self.arm()
         # prefer_launchd is true on darwin but at-only skips the first launchd attempt,
-        # tries `at` (missing here); the trailing launchd fallback is skipped for preferred hosts.
+        # tries `at` (missing here) and reports no backend.
         self.assertEqual((t["armed"], t["backend"]), (False, "unarmed"))
 
     def test_linux_auto_tries_at_then_non_darwin_launchd_is_inert(self):
