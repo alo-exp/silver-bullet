@@ -982,7 +982,7 @@ enterprise_e2e_outcome_row_failures() {
     printf '%s %s\n' "$cid" "$score"
   done < <(enterprise_e2e_outcome_session_criteria)
   world="$(enterprise_e2e_outcome_score_world "$row_num" "$work_dir" "$state_dir" "$row_log" "$ledger" "$evidence")"
-  [[ "$world" != "pass" ]] && printf 'OUT-WORLD-01 %s\n' "$world"
+  [[ "$world" == "pass" ]] || printf 'OUT-WORLD-01 %s\n' "$world"
 }
 
 # Emit: pass|partial|fail|n/a
@@ -1513,7 +1513,11 @@ def add(val):
 def composer_to_wf(composer):
     if not composer or not isinstance(composer, str):
         return
-    c = composer.strip().replace("sb:", "silver-")
+    c = composer.strip()
+    if c.startswith("sb:"):
+        c = c[3:]
+        if not c.startswith("silver-"):
+            c = "silver-" + c
     mapping = {
         "silver-feature": "WF-SILVER-FEATURE",
         "silver-fast": "WF-SILVER-FAST",
@@ -1647,6 +1651,8 @@ enterprise_e2e_outcome_score_dynamic() {
         [.[] | .operations[]? | select((.catalog_rule_ref // "") != "") |
           select(.catalog_rule_ref as $r | (ids | index($r)) | not)] | length
       ' "${comp_logs[@]}" 2>/dev/null)" || bad_refs=1
+    else
+      bad_refs=1
     fi
     if [[ "${valid_ops:-0}" -ge 2 && "${distinct_ops:-0}" -ge 2 && "${bad_refs:-1}" -eq 0 ]]; then
       printf 'pass\n'; return 0

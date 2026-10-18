@@ -40,6 +40,7 @@ mkdir -p "$W/.planning"; : >"$W/.planning/PLAN-1.md"
 score "world: row criterion passes, session criterion n/a" pass score_world 3 "$W" "$S" "" "" "" -- "$REGENV"
 oa "$REGENV" -- enterprise_e2e_outcome_row_failures 3 "$W" "$S" "" "" ""
 assert_eq "row_failures: no output when everything passes" "" "$TL_OUT"
+assert_eq "row_failures: succeeds (under errexit) when everything passes" 0 "$TL_STATUS"
 oa "$REGENV" -- enterprise_e2e_outcome_row_passes 3 "$W" "$S" "" "" ""
 assert_eq "row_passes (registry): passes" 0 "$TL_STATUS"
 # row criterion that is only partial
