@@ -104,8 +104,7 @@ def validate_wire_proxy_ordering(data: dict[str, Any]) -> list[str]:
     if seen_indices != expected:
         missing = sorted(expected - seen_indices)
         extra = sorted(seen_indices - expected)
-        if missing:
-            errors.append(f"missing message indices: {missing}")
+        errors.append(f"missing message indices: {missing}")
         if extra:
             errors.append(f"unexpected message indices: {extra}")
 
