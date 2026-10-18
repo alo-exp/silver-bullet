@@ -65,13 +65,17 @@ _compact()  { date -u +%Y%m%dT%H%M%SZ; }
 # 6-char lowercase base32-ish suffix from /dev/urandom
 _rand_suffix() {
   # Use head -c on /dev/urandom + base32 if available, fall back to hexdump.
+  # A failed pipeline (e.g. SIGPIPE under pipefail) yields an empty suffix,
+  # which the caller's id validation rejects with a message.
+  local raw=""
   if command -v base32 >/dev/null 2>&1; then
-    head -c 12 /dev/urandom 2>/dev/null | base32 2>/dev/null \
-      | tr -d '=' | tr '[:upper:]' '[:lower:]' | head -c 6
+    raw="$(head -c 12 /dev/urandom 2>/dev/null | base32 2>/dev/null \
+      | tr -d '=\n' | tr '[:upper:]' '[:lower:]')" || raw=""
   else
-    head -c 4 /dev/urandom 2>/dev/null \
-      | od -An -tx1 | tr -d ' \n' | head -c 6
+    raw="$(head -c 4 /dev/urandom 2>/dev/null \
+      | od -An -tx1 | tr -d ' \n')" || raw=""
   fi
+  printf '%s' "${raw:0:6}"
 }
 
 # Sanitize composer slug (allow lowercase alnum, dash, colon → dash)
