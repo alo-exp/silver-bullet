@@ -58,9 +58,10 @@ Update the base commit named in coverage-agent-prompt.md to the PR branch head b
 | B-orchestrator | Merged after review (agent-delegation scope fixes, fail-closed paths) |
 | C-toolgates-1 | Merged after review |
 | G-toolstack-1 | Merged after review (five bug fixes, each with a red test) |
-| D-gates | Second review |
+| D-gates | Merged after two reviews (rfl errexit abort, phase-archive fails closed without jq, site-chrome font rule) |
 | F-enterprise-1 | Merged after review and one repair round (preflight failures now fail their callers; overlay telemetry kept out of the checkout) |
-| E-core-hooks, C-toolgates-2, F-enterprise-2, G-toolstack-2 | In progress |
+| C-toolgates-2, F-enterprise-2, G-toolstack-2 | In review |
+| E-core-hooks, H-recommended-1 | In progress |
 | All others | Not started |
 
 Each package is merged into the PR branch only after an adversarial review passes and its tests pass under both the `claude` and `codex` runtimes.
