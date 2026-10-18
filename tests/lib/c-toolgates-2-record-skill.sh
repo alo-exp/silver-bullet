@@ -1,4 +1,4 @@
-# shellcheck shell=bash
+# shellcheck shell=bash disable=SC2034
 # Shared fixtures for the record-skill.sh tests. Source after tl_init, c-toolgates-2-helpers.sh
 # and tg2_init_project.
 HOOK=hooks/record-skill.sh
