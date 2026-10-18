@@ -9,10 +9,6 @@ PASS=0
 FAIL=0
 WARN=0
 
-json_escape() {
-  python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))' <<<"$1"
-}
-
 record() {
   local level="$1" check="$2" detail="$3"
   case "$level" in
