@@ -188,7 +188,8 @@ used_bytes=0
 add_block() {
   local rel="$1" content="$2" label="${3:-}"
   local block
-  block=$(printf $'### %s%s\n```\n%s\n```\n' "$rel" "${label:+ ($label)}" "$content")
+  local fence='```'
+  block=$(printf '### %s%s\n%s\n%s\n%s\n' "$rel" "${label:+ ($label)}" "$fence" "$content" "$fence")
   local block_bytes=$(( ${#block} + 1 ))   # +1: the newline that separates blocks
   if (( used_bytes + block_bytes <= budget_bytes )); then
     # $(...) strips the trailing newline of the block; restore it so the closing
@@ -253,7 +254,7 @@ score_and_add() {
       if [[ "$debug" == "true" ]]; then printf '  chunk: %s lines %s-%s score=%s\n' "$rel" "$start" "$end" "$score" >> "$debug_log"; fi
     fi
     true
-  done < <(printf '%s\n' "${files[@]}" | "$SCRIPTS_DIR/tfidf-rank.sh" "${query}")
+  done < <(printf '%s\n' "${files[@]}" | bash "$SCRIPTS_DIR/tfidf-rank.sh" "${query}")
   rm -f -- "$TMP_COUNTS"  # explicit cleanup for bash 3.2 where RETURN trap is ignored
   trap - EXIT           # disarm EXIT trap so a subsequent call can install its own
 }

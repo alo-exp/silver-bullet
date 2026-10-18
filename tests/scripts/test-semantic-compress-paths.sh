@@ -252,6 +252,17 @@ REPO_ROOT="-proj" tl_run bash -c 'cd "$1" && exec bash "$2"' _ "$TL_TMP/dashroot
 assert_eq "undescendable REPO_ROOT: exits 0" 0 "$TL_STATUS"
 assert_eq "undescendable REPO_ROOT: no output" "" "$TL_OUT"
 
+# cd failing on the project root while reading the phase goal: goal stays empty, run continues
+mkproj
+bigfile "$P/src/auth.sh" authentication 40
+tl_run env REPO_ROOT="$P" SCRIPTS_DIR_OVERRIDE="$TL_REPO_ROOT/scripts" SB_TEST_ROOT="$P" bash -c '
+  cd() { if [[ "${1:-}" == "$SB_TEST_ROOT" ]]; then return 1; fi; builtin cd "$@"; }
+  export -f cd
+  exec bash "$1"' _ "$SC"
+assert_eq "cd failure while reading the goal is tolerated" 0 "$TL_STATUS"
+assert_contains "goal stays empty after the cd failure" "$(ctx)" "phase: no active phase"
+assert_contains "falls back to the first-30-lines block" "$(ctx)" "### src/auth.sh (first 30 lines)"
+
 # file(1) failing with only docs present
 mkproj
 echo "authentication doc" >"$P/docs/only.md"
