@@ -66,6 +66,11 @@ sync_codex_marketplace_manifest() {
     exit 1
   }
 
+  # A manifest that does not parse is a different problem from one without our entry.
+  if ! jq -e . "$manifest" >/dev/null 2>&1; then
+    echo "ERROR: $manifest is not valid JSON" >&2
+    exit 1
+  fi
   # Nothing to bump without a silver-bullet entry: fail instead of reporting a no-op as synced.
   if ! jq -e '[.plugins[]? | select(.name=="silver-bullet")] | length > 0' "$manifest" >/dev/null; then
     echo "ERROR: $manifest has no silver-bullet entry to sync" >&2

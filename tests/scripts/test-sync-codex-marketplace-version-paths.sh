@@ -129,4 +129,18 @@ sync_run env AGENT_PLUGINS_REPO_ROOT="$TL_TMP/work4" bash "$SCRIPT" 2.0.0
 assert_eq "string-valued source fails the run" 1 "$([[ "$TL_STATUS" -ne 0 ]] && echo 1 || echo 0)"
 assert_eq "string-valued source manifest byte-identical" "$(<"$TL_TMP/str-src.json")" "$(<"$TL_TMP/work4/$MF")"
 
+# A manifest that is not valid JSON is reported as such, not as a missing entry.
+j_make_remote "$TL_TMP/mkjs"
+j_clone_remote "$TL_TMP/workjs"
+printf '%s' '{"plugins": [' >"$TL_TMP/workjs/$MF"
+git -C "$TL_TMP/workjs" commit -q -am "corrupt manifest" && git -C "$TL_TMP/workjs" push -q origin main
+remote_head="$(git -C "$J_REMOTE" rev-parse main)"
+new_tree
+sync_run env AGENT_PLUGINS_REPO_ROOT="$TL_TMP/workjs" bash "$SCRIPT" 2.0.0
+assert_eq "invalid remote JSON exits 1" 1 "$TL_STATUS"
+assert_contains "invalid remote JSON named as such" "$TL_ERR" "workjs/$MF is not valid JSON"
+assert_not_contains "invalid JSON is not reported as a missing entry" "$TL_ERR" "no silver-bullet entry"
+assert_eq "nothing pushed for invalid remote JSON" "$remote_head" "$(git -C "$J_REMOTE" rev-parse main)"
+assert_eq "invalid remote file byte-identical" '{"plugins": [' "$(<"$TL_TMP/workjs/$MF")"
+
 tl_results
