@@ -69,9 +69,7 @@ def entry_command(entry) -> str:
 
 def is_malformed_sb_hook(entry: dict) -> bool:
     command = entry_command(entry)
-    if "codex-hook-adapter" in command:
-        return True
-    return 'codex-hook-adapter.sh"' in command and "cursor-hook-bridge" in command
+    return "codex-hook-adapter" in command
 
 
 def is_stale_sb_hook(entry: dict) -> bool:
