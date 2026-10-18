@@ -142,12 +142,29 @@ assert_eq "legacy: satisfied with defaults + extra" 0 "$TL_STATUS"
 rm -f "$STATE"
 tl_run bash -c 'cd "$1" && source "$2" --skip-workflow-check; echo "after-source rc=$?"' _ "$NOCFG" "$SNIP"
 assert_contains "sourced bypass returns to caller" "$TL_OUT" "after-source rc=0"
-tl_run bash -c 'cd "$1" && source "$2"; echo "after-source rc=$?"' _ "$NOCFG" "$SNIP"
-# Observed behaviour: the sourced script's `set -e` is inherited by the caller, so the failed gate's
-# `return 1` ends the caller's shell with status 1 (the code after `source` never runs).
+# Sourcing must leave the caller's shell options alone: no errexit, no ERR trap, same umask,
+# and a later failing command must not end the caller.
+probe='cd "$1"; u0=$(umask); source "$2" "${@:3}"; rc=$?; echo "rc=$rc flags=$- umask_same=$([[ $(umask) == "$u0" ]] && echo yes || echo no) trap=[$(trap -p ERR)]"; false; echo after-false'
+tl_run bash -c "$probe" _ "$NOCFG" "$SNIP"
+assert_contains "sourced failing gate returns 1 to the caller" "$TL_OUT" "rc=1 "
 assert_contains "sourced failure reports the block" "$TL_OUT" "No workflow state file found"
-assert_not_contains "sourced failure ends the caller shell" "$TL_OUT" "after-source"
-assert_eq "sourced failure caller exit status" 1 "$TL_STATUS"
+assert_contains "caller keeps running after a failing gate" "$TL_OUT" "after-false"
+assert_not_contains "no errexit leaked (failing gate)" "$(grep -o 'flags=[a-zA-Z]*' <<<"$TL_OUT")" "e"
+assert_contains "umask unchanged (failing gate)" "$TL_OUT" "umask_same=yes"
+assert_contains "no ERR trap leaked (failing gate)" "$TL_OUT" "trap=[]"
+tl_run bash -c "$probe" _ "$NOCFG" "$SNIP" --skip-workflow-check
+assert_contains "sourced passing gate returns 0" "$TL_OUT" "rc=0 "
+assert_not_contains "no errexit leaked (passing gate)" "$(grep -o 'flags=[a-zA-Z]*' <<<"$TL_OUT")" "e"
+assert_contains "umask unchanged (passing gate)" "$TL_OUT" "umask_same=yes"
+assert_contains "no ERR trap leaked (passing gate)" "$TL_OUT" "trap=[]"
+assert_contains "caller keeps running after a passing gate" "$TL_OUT" "after-false"
+tl_run bash -c 'cd "$1"; source "$2" || echo handled; false; echo after' _ "$NOCFG" "$SNIP"
+assert_contains "failure is handleable with ||" "$TL_OUT" "handled"
+assert_contains "caller continues after handled failure" "$TL_OUT" "after"
+# executed directly the script still hardens itself (umask 0077 for files it deletes/creates)
+echo x >"$STATE"; echo t >"$TRIVIAL"
+gate "$NOCFG"
+assert_eq "direct execution unaffected" 0 "$TL_STATUS"
 
 # --- libraries absent in a copied tree ----------------------------------------------------------
 CP="$TL_TMP/copytree"; mkdir -p "$CP/scripts" "$CP/hooks/lib"

@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
-set -euo pipefail
-trap 'exit 0' ERR
-
-# Security: restrict file creation permissions (user-only)
-umask 0077
+# Harden the shell only when executed directly. When sourced, these options, the ERR
+# trap and the umask would leak into the caller's shell (a later failing command would
+# end the caller with status 0), so a sourced run leaves the caller's settings alone.
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  set -euo pipefail
+  trap 'exit 0' ERR
+  # Security: restrict file creation permissions (user-only)
+  umask 0077
+fi
 
 # Source runtime path selector so the deploy gate follows the host runtime.
 _repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd 2>/dev/null)" || _repo_root=""
@@ -51,7 +55,7 @@ while true; do
 done
 
 # --- Read config (gracefully degrade if jq is absent) ---
-_SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
+_SB_STATE_DIR="${SB_RUNTIME_STATE_DIR:-}"
 STATE_FILE="${_SB_STATE_DIR}/state"
 TRIVIAL_FILE="${_SB_STATE_DIR}/trivial"
 REQUIRED_DEPLOY="silver-quality-gates silver-context silver-plan silver-execute silver-verify silver-ship silver-review security silver-secure silver-validate silver-review-request silver-review-triage silver-triage silver-branch-finish silver-completion-audit tdd verify-tests"
