@@ -121,7 +121,6 @@ backtick_regex="\`[^\`]+\`"
 
 # Backtick-quoted route markers commonly used by SB test harness prompts.
 while IFS= read -r tok; do
-  [[ -n "$tok" ]] || continue
   tok="${tok#\`}"
   tok="${tok%\`}"
   case "$tok" in
