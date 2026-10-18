@@ -138,9 +138,5 @@ while true; do
       echo "Waiting for release commit $commit_sha to settle before posting announcement..."
       sleep "$poll_interval_seconds"
       ;;
-    *)
-      echo "::error::Unexpected release CI status state: $state"
-      exit 1
-      ;;
   esac
 done

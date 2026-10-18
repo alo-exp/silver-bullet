@@ -124,7 +124,6 @@ find_skill_file() {
   for root in "${SKILL_ROOTS[@]}"; do
     [[ -d "$root" ]] || continue
     for name in "${candidate_names[@]}"; do
-      [[ -n "$name" ]] || continue
       for candidate in "${root}/${name}/SKILL.md" "${root}/${name}/SILVER_SOURCE"; do
         if [[ -f "$candidate" ]]; then
           printf '%s\n' "$candidate"
@@ -206,7 +205,7 @@ invoke_skill() {
       return 2
       ;;
   esac
-  shift || true
+  shift
   skill_arguments="$*"
 
   canonical_skill="$(canonical_skill_name "$raw_skill")"

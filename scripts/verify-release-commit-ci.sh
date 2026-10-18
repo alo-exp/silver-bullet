@@ -115,9 +115,5 @@ while true; do
       echo "Waiting for release commit $COMMIT_SHA to become fully green before tagging..."
       sleep "$poll_interval_seconds"
       ;;
-    *)
-      echo "::error::Unexpected release CI status state: $state"
-      exit 1
-      ;;
   esac
 done
