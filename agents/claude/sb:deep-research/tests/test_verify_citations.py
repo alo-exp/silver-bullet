@@ -8,7 +8,7 @@ import importlib.util
 import io
 import json
 import os
-import socket
+import shutil
 import sys
 import tempfile
 import unittest
@@ -21,6 +21,7 @@ _spec = importlib.util.spec_from_file_location('verify_citations_under_test', SC
 vc = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(vc)
 
+_ROOT = None
 _patches = []
 
 
@@ -29,6 +30,8 @@ def _no_network(*a, **k):
 
 
 def setUpModule():
+    global _ROOT
+    _ROOT = tempfile.mkdtemp()
     for target in ('socket.socket.connect', 'socket.getaddrinfo'):
         p = mock.patch(target, side_effect=_no_network)
         p.start()
@@ -38,6 +41,8 @@ def setUpModule():
 def tearDownModule():
     for p in _patches:
         p.stop()
+    _patches.clear()
+    shutil.rmtree(_ROOT, ignore_errors=True)
 
 
 class FakeDT:
@@ -65,7 +70,7 @@ class FakeResp:
 
 
 def make_verifier(text='## Bibliography\n', strict=False):
-    d = tempfile.mkdtemp()
+    d = tempfile.mkdtemp(dir=_ROOT)
     p = Path(d) / 'report.md'
     p.write_text(text, encoding='utf-8')
     return vc.CitationVerifier(p, strict_mode=strict)
@@ -234,6 +239,61 @@ class TestHallucination(unittest.TestCase):
         self.assertEqual(self.v.detect_hallucination_patterns(entry(title=t, year='1990')), [])
 
 
+class TestCitationBoundaries(unittest.TestCase):
+    def setUp(self):
+        self.v = make_verifier()
+        p = mock.patch.object(vc, 'datetime', FakeDT)
+        p.start()
+        self.addCleanup(p.stop)
+
+    def issues(self, **kw):
+        return self.v.detect_hallucination_patterns(entry(**kw))
+
+    def doi_entry(self, title, meta_title):
+        with mock.patch.object(self.v, 'verify_doi', return_value=(True, {'title': meta_title})), \
+                contextlib.redirect_stdout(io.StringIO()):
+            return self.v.verify_entry(entry(doi='10.1/x', title=title))
+
+    def test_similarity_threshold(self):
+        # 2/4 = 0.5 exactly: accepted. 2/5 = 0.4: mismatch. 3/5 = 0.6: accepted.
+        self.assertEqual(self.doi_entry('alpha beta gamma', 'alpha beta delta')['status'], 'verified')
+        r = self.doi_entry('alpha beta gamma', 'alpha beta delta epsilon')
+        self.assertEqual(r['status'], 'suspicious')
+        self.assertEqual(r['issues'], ['Title mismatch (similarity: 40.0%)'])
+        self.assertEqual(self.doi_entry('alpha beta gamma delta', 'alpha beta gamma epsilon')['status'], 'verified')
+
+    def test_future_year_boundary(self):
+        t = 'Solid paper on databases'
+        self.assertEqual(self.issues(title=t, year='2025', doi='10.1/x'), [])
+        self.assertEqual(self.issues(title=t, year='2026', doi='10.1/x'), ['Future year: 2026 (current: 2025)'])
+
+    def test_recent_year_boundary(self):
+        t = 'Solid paper on databases'
+        self.assertEqual(self.issues(title=t, year='2025'), ['Recent year (2025) with no verification method'])
+        self.assertEqual(self.issues(title=t, year='2024'), ['Recent year (2024) with no verification method'])
+        self.assertEqual(self.issues(title=t, year='2023'), [])
+
+    def test_generic_title_length_boundary(self):
+        self.assertEqual(self.issues(title='Quick guide for beginners'), ['Very generic short title'])
+        self.assertEqual(self.issues(title='Quick guide for new engineers'), [])
+
+    def test_anachronism_boundary(self):
+        self.assertEqual(self.issues(title='GPT of old', year='1999'),
+                         ['Anachronistic: pre-2000 (1999) citation mentioning modern AI terms'])
+        self.assertEqual(self.issues(title='GPT of old', year='2000'), [])
+
+    def test_half_verified_passes_without_warning(self):
+        ok, out, _ = TestVerifyAll.run_all(TestVerifyAll(), [TestVerifyAll.res('1', 'verified'),
+                                                            TestVerifyAll.res('2', 'unverified')])
+        self.assertTrue(ok)
+        self.assertIn('CITATION VERIFICATION PASSED', out)
+        self.assertNotIn('Less than 50%', out)
+        ok, out, _ = TestVerifyAll.run_all(TestVerifyAll(), [TestVerifyAll.res('1', 'verified'),
+                                                            TestVerifyAll.res('2', 'unverified'),
+                                                            TestVerifyAll.res('3', 'unverified')])
+        self.assertIn('Less than 50%', out)
+
+
 class TestSimilarity(unittest.TestCase):
     def setUp(self):
         self.v = make_verifier()
@@ -394,7 +454,7 @@ class TestMain(unittest.TestCase):
         self.assertIn('Report file not found', out)
 
     def test_pass_and_fail_exit_codes(self):
-        d = tempfile.mkdtemp()
+        d = tempfile.mkdtemp(dir=_ROOT)
         p = os.path.join(d, 'r.md')
         with open(p, 'w') as f:
             f.write('## Bibliography\n[1] X (2020). "T". https://e.com/a\n')
@@ -410,7 +470,7 @@ class TestMain(unittest.TestCase):
 
     def test_run_as_script(self):
         import runpy
-        d = tempfile.mkdtemp()
+        d = tempfile.mkdtemp(dir=_ROOT)
         p = os.path.join(d, 'r.md')
         with open(p, 'w') as f:
             f.write('nothing\n')
