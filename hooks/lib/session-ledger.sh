@@ -67,7 +67,7 @@ sb_session_ledger_log_path() {
 
 sb_session_ledger_request_block() {
   local prompt="$1"
-  shift
+  shift || true
   local timestamp
   timestamp=$(date -u '+%Y-%m-%d %H:%M:%SZ' 2>/dev/null || date)
 
@@ -148,7 +148,7 @@ sb_session_ledger_append_block() {
 
 sb_session_ledger_append_request() {
   local prompt="$1"
-  shift
+  shift || true
   local log_path block
 
   log_path="$(sb_session_ledger_log_path 2>/dev/null || true)"

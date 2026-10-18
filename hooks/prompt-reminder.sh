@@ -47,6 +47,7 @@ resolve_silver_bullet_codex_adapter() {
     "${SB_RUNTIME_PLUGIN_CACHE_ROOT:-}/alo-labs-codex/silver-bullet/current/scripts/silver-bullet" \
     "${SB_RUNTIME_HOME_ROOT:-}/.tmp/marketplaces/alo-labs-codex/plugins/silver-bullet/scripts/silver-bullet" \
     "${SB_RUNTIME_HOME_ROOT:-}/bin/silver-bullet"; do
+    [[ -n "$candidate" ]] || continue
     if [[ -f "$candidate" ]]; then
       printf '%s' "$candidate"
       return 0
@@ -203,11 +204,11 @@ fi
 
 if [[ "$delivery_adjacent" == true ]]; then
   if declare -F sb_required_skills_normalize_configured_list >/dev/null 2>&1; then
-    required_skills="$(sb_required_skills_normalize_configured_list "$config_file" "$required_deploy_cfg" "${DEFAULT_REQUIRED:-silver-quality-gates silver-context silver-plan silver-execute silver-verify silver-ship silver-review security silver-secure silver-validate silver-review-request silver-review-triage silver-triage silver-branch-finish silver-completion-audit tdd verify-tests}")"
+    required_skills="$(sb_required_skills_normalize_configured_list "$config_file" "$required_deploy_cfg" "$DEFAULT_REQUIRED")"
   elif [[ -n "$required_deploy_cfg" ]]; then
     required_skills="$required_deploy_cfg"
   else
-    required_skills="${DEFAULT_REQUIRED:-silver-quality-gates silver-context silver-plan silver-execute silver-verify silver-ship silver-review security silver-secure silver-validate silver-review-request silver-review-triage silver-triage silver-branch-finish silver-completion-audit tdd verify-tests}"
+    required_skills="$DEFAULT_REQUIRED"
   fi
 else
   if declare -F sb_required_skills_normalize_configured_list >/dev/null 2>&1; then

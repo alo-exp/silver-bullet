@@ -71,9 +71,6 @@ sb_core_rules_compact_digest() {
   local core_rules_file="${2:-}"
   local max_bytes="${SB_CORE_RULES_DIGEST_MAX_BYTES:-3072}"
   local digest path_note non_neg
-  # The budget is in bytes: measure with the C locale so multi-byte characters
-  # (the em dashes in the header) are not counted as one.
-  local LC_ALL=C
 
   [[ -n "$verified" ]] || return 1
   path_note="${core_rules_file:-hooks/core-rules.md}"

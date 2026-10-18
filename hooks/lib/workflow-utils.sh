@@ -42,7 +42,7 @@ _flow_log_section() {
 # Phase Iterations / Autonomous Decisions / unrelated tables.
 count_flow_log_rows() {
   local file="$1"
-  _flow_log_section "$file" | grep -cE '^\| [0-9]+ \|' 2>/dev/null || true
+  _flow_log_section "$file" | grep -cE '^\| [0-9]+ \|' 2>/dev/null || echo 0
 }
 
 # count_complete_flow_rows <file>
@@ -54,5 +54,5 @@ count_flow_log_rows() {
 # incomplete and blocked `gh release create` indefinitely.
 count_complete_flow_rows() {
   local file="$1"
-  _flow_log_section "$file" | grep -cE '^\| [^|]+\| [^|]+\| (complete|skipped)' 2>/dev/null || true
+  _flow_log_section "$file" | grep -cE '^\| [^|]+\| [^|]+\| (complete|skipped)' 2>/dev/null || echo 0
 }

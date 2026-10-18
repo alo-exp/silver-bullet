@@ -60,7 +60,7 @@ sb_hook_audit_record() {
         detail:$detail,
         target:$target,
         cwd:$cwd
-      }' 2>/dev/null >>"$log_path" || true
+      }' >>"$log_path" 2>/dev/null || true
     return 0
   fi
 
@@ -72,5 +72,5 @@ sb_hook_audit_record() {
     "$decision" \
     "$detail" \
     "$target" \
-    "$PWD" 2>/dev/null >>"$log_path" || true
+    "$PWD" >>"$log_path" 2>/dev/null || true
 }

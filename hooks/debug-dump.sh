@@ -38,4 +38,4 @@ fi
 [[ -n "$payload" ]] || exit 0
 
 mkdir -p "$DBG_DIR" 2>/dev/null || true
-printf '%s\n' "$payload" 2>/dev/null >>"$DBG_OUT" || true
+printf '%s\n' "$payload" >>"$DBG_OUT" 2>/dev/null || true
