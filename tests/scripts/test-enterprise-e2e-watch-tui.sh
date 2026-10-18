@@ -35,7 +35,7 @@ MLOG="$TL_TMP/matrix.log"
 LEDGER="$TL_TMP/ledger.md"
 ROW5="$R/.e2e-row5-attempt.log"
 
-export F4_LOOP_SLEEP=4242 F4_PARENT_MARK=watch-enterprise-e2e-tui.sh
+export F4_LOOP_SLEEP=4242 F4_PID_FILE="$TL_TMP/watch.pid"
 export SB_E2E_TUI_OFFSETS="$OFFS" SB_E2E_TUI_FINDINGS="$FIND" SB_E2E_TUI_WATCH_LOG="$WLOG" SB_E2E_TUI_WATCH_PID="$WPID"
 export SB_E2E_MATRIX_BATCH_PID_FILE="$BPID" SB_E2E_MATRIX_MONITOR_PID_FILE="$MPID" SB_E2E_MATRIX_LOG="$MLOG"
 export SB_E2E_LEDGER_FILE="$LEDGER" SB_TEST_ENTERPRISE_APP_ROOT="$TL_TMP/app" SB_E2E_LIVE_RUNTIME=claude
@@ -52,18 +52,18 @@ reset() {
   echo 31337 >"$MPID" # a live monitor unless a scenario says otherwise
   printf '| # | sev | comp | quote | note |\n' >"$LEDGER"
 }
-watch() { tl_run timeout 30 bash "$W"; }
+watch() { tl_run timeout 30 bash -c "$F4_LAUNCH" _ "$W"; }
 # fcount JQ-FILTER: number of findings-file records matching the filter
 fcount() { jq -s "[.[] | select($1)] | length" "$FIND"; }
 
 # --- cd failure and max runtime ---
 reset
-tl_run env F4_CD_FAIL="$R" timeout 30 bash "$W"
+tl_run env F4_CD_FAIL="$R" timeout 30 bash -c "$F4_LAUNCH" _ "$W"
 assert_eq "cd failure exits 1" "1" "$TL_STATUS"
 assert_file_absent "cd failure writes no pid file" "$WPID"
 
 reset
-tl_run env SB_E2E_TUI_MAX_SEC=-1 timeout 30 bash "$W"
+tl_run env SB_E2E_TUI_MAX_SEC=-1 timeout 30 bash -c "$F4_LAUNCH" _ "$W"
 assert_eq "max runtime exits 0" "0" "$TL_STATUS"
 assert_contains "start line" "$(cat "$WLOG")" "tui-watch started pid="
 assert_contains "start line shows host and poll window" "$(cat "$WLOG")" "host=claude max_runtime=-1s poll=4242-4242s"
@@ -78,7 +78,7 @@ assert_not_contains "monitor probed no pgrep before runtime check" "$(cat "$F4_C
 reset
 echo '{"keep":1}' >"$OFFS"
 echo '{"type":"old"}' >"$FIND"
-tl_run env SB_E2E_TUI_MAX_SEC=-1 timeout 30 bash "$W"
+tl_run env SB_E2E_TUI_MAX_SEC=-1 timeout 30 bash -c "$F4_LAUNCH" _ "$W"
 assert_eq "existing offsets kept" '{"keep":1}' "$(cat "$OFFS")"
 assert_eq "existing findings kept and appended to" "2" "$(wc -l <"$FIND" | tr -d ' ')"
 
@@ -101,7 +101,7 @@ assert_eq "no PASS lines counted as 0" "0" "$(jq -r .passes "$FIND")"
 # pass count reaches the expected rows and no batch runs -> complete; a live batch keeps it going
 reset
 printf '  PASS: a\n  PASS: b\n' >"$MLOG"
-tl_run env SB_E2E_MATRIX_EXPECTED_ROWS=2 timeout 30 bash "$W"
+tl_run env SB_E2E_MATRIX_EXPECTED_ROWS=2 timeout 30 bash -c "$F4_LAUNCH" _ "$W"
 assert_eq "passes>=expected without batch completes" "matrix_complete" "$(jq -r .reason "$FIND")"
 assert_eq "no batch pid file created" "no" "$([[ -e "$BPID" ]] && echo yes || echo no)"
 
@@ -109,7 +109,7 @@ reset
 printf '  PASS: a\n  PASS: b\n' >"$MLOG"
 echo 7777 >"$BPID"
 f4_alive 7777
-tl_run env SB_E2E_MATRIX_EXPECTED_ROWS=2 SB_E2E_TUI_STATUS_INTERVAL=0 timeout 30 bash "$W"
+tl_run env SB_E2E_MATRIX_EXPECTED_ROWS=2 SB_E2E_TUI_STATUS_INTERVAL=0 timeout 30 bash -c "$F4_LAUNCH" _ "$W"
 assert_eq "live batch keeps the watcher running until signalled" "0" "$TL_STATUS"
 assert_contains "signal exit logged" "$(cat "$WLOG")" "tui-watch signal — exiting"
 assert_eq "no final record while batch alive" "0" "$(fcount '.type=="final"')"
@@ -122,7 +122,7 @@ reset
 printf '  PASS: a\n' >"$MLOG"
 printf '9999\n8888\n' >"$F4_CTL/pgrep.run-enterprise-e2e-matrix"
 f4_alive 8888 9999
-tl_run env SB_E2E_TUI_STATUS_INTERVAL=0 timeout 30 bash "$W"
+tl_run env SB_E2E_TUI_STATUS_INTERVAL=0 timeout 30 bash -c "$F4_LAUNCH" _ "$W"
 assert_eq "pgrep batch persisted lowest pid" "8888" "$(cat "$BPID")"
 assert_eq "pgrep batch in status" "8888" "$(jq -rs '[.[]|select(.type=="status")][0].batch_pid' "$FIND")"
 assert_contains "pgrep pattern used" "$(cat "$F4_CALLS")" "pgrep -f bash scripts/run-enterprise-e2e-matrix.sh"
@@ -131,7 +131,7 @@ assert_contains "pgrep pattern used" "$(cat "$F4_CALLS")" "pgrep -f bash scripts
 reset
 echo 5555 >"$BPID"
 printf '6666\n' >"$F4_CTL/pgrep.run-enterprise-e2e-matrix"
-tl_run env SB_E2E_TUI_STATUS_INTERVAL=0 timeout 30 bash "$W"
+tl_run env SB_E2E_TUI_STATUS_INTERVAL=0 timeout 30 bash -c "$F4_LAUNCH" _ "$W"
 assert_eq "dead batch -> none" "none" "$(jq -rs '[.[]|select(.type=="status")][0].batch_pid' "$FIND")"
 assert_contains "dead batch logged as dead" "$(cat "$WLOG")" "batch=dead"
 assert_eq "dead pgrep pid not persisted" "5555" "$(cat "$BPID")"
@@ -158,7 +158,7 @@ assert_match "restart pid recorded" '^[0-9]+$' "$(tr -d '[:space:]' <"$MPID")"
 reset
 rm -f "$MPID"
 printf 'MATRIX COMPLETE\n' >"$MLOG"
-tl_run env SB_E2E_MONITOR_AUTO_RESTART=1 timeout 30 bash "$W"
+tl_run env SB_E2E_MONITOR_AUTO_RESTART=1 timeout 30 bash -c "$F4_LAUNCH" _ "$W"
 f4_wait_file "$F4_CTL/monitor-ran"
 assert_contains "missing monitor pid file restarts with auto=1" "$(cat "$F4_CTL/monitor-ran")" "auto=1"
 
@@ -186,7 +186,7 @@ reset
   printf 'API Error: 429 slow down\n'
   printf 'ENOTFOUND api.example\n'
 } >"$ROW5"
-tl_run env SB_E2E_MATRIX_EXPECTED_ROWS=99 timeout 30 bash "$W"
+tl_run env SB_E2E_MATRIX_EXPECTED_ROWS=99 timeout 30 bash -c "$F4_LAUNCH" _ "$W"
 assert_eq "scan run exits 0" "0" "$TL_STATUS"
 assert_eq "routing info records" "2" "$(fcount '.category=="routing" and .severity=="info"')"
 assert_eq "unexpected route is an annoyance" "1" "$(fcount '.category=="routing" and .severity=="annoyance" and (.message|test("sb:release"))')"
@@ -215,7 +215,7 @@ reset
   echo 'silver-orchestrator will Write the file'
   echo 'orchestrator considers /sb:feature as a parent Task'
 } >"$ROW5"
-tl_run env SB_E2E_MATRIX_EXPECTED_ROWS=99 timeout 30 bash "$W"
+tl_run env SB_E2E_MATRIX_EXPECTED_ROWS=99 timeout 30 bash -c "$F4_LAUNCH" _ "$W"
 assert_eq "orchestrator forbidden annoyance" "1" "$(fcount '.category=="orchestrator" and .severity=="annoyance" and (.message|test("FORBIDDEN";"i"))')"
 assert_eq "parent inline info" "1" "$(fcount '.category=="orchestrator" and .severity=="info"')"
 assert_eq "harness timeout blocker" "1" "$(fcount '.category=="harness" and .severity=="blocker"')"
@@ -227,7 +227,7 @@ assert_contains "harness blocker reached the ledger" "$(cat "$LEDGER")" "| 5 | b
 reset
 : >"$MLOG"
 echo 'Unknown skill foo' >"$ROW5"
-tl_run env SB_E2E_LEDGER_NO_UX_APPEND=1 timeout 30 bash "$W"
+tl_run env SB_E2E_LEDGER_NO_UX_APPEND=1 timeout 30 bash -c "$F4_LAUNCH" _ "$W"
 assert_eq "NO_UX_APPEND leaves the ledger alone" "1" "$(wc -l <"$LEDGER" | tr -d ' ')"
 assert_eq "finding still recorded with NO_UX_APPEND" "1" "$(fcount '.category=="skill"')"
 
@@ -259,7 +259,7 @@ echo 'Unknown skill' >"$R/.e2e-row9-attempt.log"
 echo 'noise' >"$R/.e2e-rowX-attempt.log"
 touch -d '2020-01-01' "$R/.e2e-row9-attempt.log"
 touch -d '2021-01-01' "$R/.e2e-row3-attempt.log"
-tl_run env SB_E2E_MATRIX_EXPECTED_ROWS=99 timeout 30 bash "$W"
+tl_run env SB_E2E_MATRIX_EXPECTED_ROWS=99 timeout 30 bash -c "$F4_LAUNCH" _ "$W"
 assert_eq "each log scanned under its own row" "3" "$(jq -rs '[.[]|select(.category=="auth")][0].row' "$FIND")"
 assert_eq "row 9 finding" "9" "$(jq -rs '[.[]|select(.category=="skill")][0].row' "$FIND")"
 
@@ -268,18 +268,18 @@ echo 'x' >"$R/.e2e-row3-attempt.log"
 echo 'y' >"$R/.e2e-row9-attempt.log"
 touch -d '2020-01-01' "$R/.e2e-row3-attempt.log"
 touch -d '2021-01-01' "$R/.e2e-row9-attempt.log"
-tl_run env SB_E2E_TUI_STATUS_INTERVAL=0 timeout 30 bash "$W"
+tl_run env SB_E2E_TUI_STATUS_INTERVAL=0 timeout 30 bash -c "$F4_LAUNCH" _ "$W"
 assert_eq "newest log is the active row" "9" "$(jq -rs '[.[]|select(.type=="status")][0].active_row' "$FIND")"
 assert_contains "status carries the last interaction text" "$(jq -rs '[.[]|select(.type=="status")][0].last_interaction' "$FIND")" "y"
 
 reset
 echo 'x' >"$R/.e2e-rowX-attempt.log"
-tl_run env SB_E2E_TUI_STATUS_INTERVAL=0 timeout 30 bash "$W"
+tl_run env SB_E2E_TUI_STATUS_INTERVAL=0 timeout 30 bash -c "$F4_LAUNCH" _ "$W"
 assert_eq "unparseable log name maps to row 0" "0" "$(jq -rs '[.[]|select(.type=="status")][0].active_row' "$FIND")"
 
 # no logs at all
 reset
-tl_run env SB_E2E_TUI_STATUS_INTERVAL=0 timeout 30 bash "$W"
+tl_run env SB_E2E_TUI_STATUS_INTERVAL=0 timeout 30 bash -c "$F4_LAUNCH" _ "$W"
 assert_eq "no logs -> row 0" "0" "$(jq -rs '[.[]|select(.type=="status")][0].active_row' "$FIND")"
 assert_eq "no logs -> empty last interaction" "" "$(jq -rs '[.[]|select(.type=="status")][0].last_interaction' "$FIND" | sed 's/^""$//')"
 
@@ -292,7 +292,7 @@ out="$("$real" "$@")"; rc=$?
 printf "%s\n" "$out"
 [[ $# -eq 3 && $2 =~ ^[0-9]+$ ]] && echo
 exit $rc'
-tl_run env SB_E2E_MATRIX_EXPECTED_ROWS=99 timeout 30 bash "$W"
+tl_run env SB_E2E_MATRIX_EXPECTED_ROWS=99 timeout 30 bash -c "$F4_LAUNCH" _ "$W"
 rm -f "$TL_BIN/python3"
 assert_eq "blank analyzer line not written to findings" "0" "$(grep -c '^$' "$FIND")"
 assert_eq "finding still recorded" "1" "$(fcount '.category=="skill"')"
@@ -302,7 +302,7 @@ reset
 : >"$MLOG"
 echo 'Not logged in' >"$R/.e2e-row4-codex-attempt.log"
 echo 'Unknown skill' >"$R/.e2e-row6-attempt.log"
-tl_run env SB_E2E_LIVE_RUNTIME=codex SB_E2E_MATRIX_EXPECTED_ROWS=99 timeout 30 bash "$W"
+tl_run env SB_E2E_LIVE_RUNTIME=codex SB_E2E_MATRIX_EXPECTED_ROWS=99 timeout 30 bash -c "$F4_LAUNCH" _ "$W"
 assert_contains "codex host in start line" "$(cat "$WLOG")" "host=codex"
 assert_eq "codex log scanned" "4" "$(jq -rs '[.[]|select(.category=="auth")][0].row' "$FIND")"
 assert_eq "claude-named log ignored for codex" "0" "$(fcount '.category=="skill"')"
@@ -315,14 +315,14 @@ printf '8888\n' >"$F4_CTL/pgrep.run-enterprise-e2e-matrix"
 f4_alive 8888
 REAL_TR="$(command -v tr)"
 tl_stub tr "in=\"\$(cat)\"; [[ \"\$in\" == 7777* ]] && exit 1; printf '%s' \"\$in\" | $REAL_TR \"\$@\""
-tl_run env SB_E2E_TUI_STATUS_INTERVAL=0 timeout 30 bash "$W"
+tl_run env SB_E2E_TUI_STATUS_INTERVAL=0 timeout 30 bash -c "$F4_LAUNCH" _ "$W"
 rm -f "$TL_BIN/tr"
 assert_eq "tr failure falls back to pgrep discovery" "8888" "$(cat "$BPID")"
 
 # --- hung detection: no growth for longer than the threshold ---
 reset
 echo 'quiet' >"$ROW5"
-tl_run env F4_NOW_STEP=500 F4_LOOP_MAX=2 SB_E2E_TUI_HUNG_SEC=100 timeout 30 bash "$W"
+tl_run env F4_NOW_STEP=500 F4_LOOP_MAX=2 SB_E2E_TUI_HUNG_SEC=100 timeout 30 bash -c "$F4_LAUNCH" _ "$W"
 assert_eq "hung blocker recorded after the threshold" "1" "$(fcount '.category=="stall" and .severity=="blocker"')"
 assert_contains "hung warning logged" "$(cat "$WLOG")" "WARN hung: row 5 no growth 100s (not killing claude)"
 assert_not_contains "hung watcher never signals or kills anything" "$(cat "$F4_CALLS")" "kill -TERM"
@@ -330,13 +330,13 @@ assert_not_contains "hung watcher never pkills" "$(cat "$F4_CALLS")" "pkill"
 
 reset
 echo 'quiet' >"$ROW5"
-tl_run env F4_NOW_STEP=1 F4_LOOP_MAX=3 SB_E2E_TUI_HUNG_SEC=100 timeout 30 bash "$W"
+tl_run env F4_NOW_STEP=1 F4_LOOP_MAX=3 SB_E2E_TUI_HUNG_SEC=100 timeout 30 bash -c "$F4_LAUNCH" _ "$W"
 assert_eq "no hung record below the threshold" "0" "$(fcount '.category=="stall" and .severity=="blocker"')"
 
 # the row-attempt-log lookup failing falls back to the conventional path
 reset
 echo 'quiet' >"$ROW5"
-tl_run env F4_ROWLOG_FAIL=1 F4_NOW_STEP=500 F4_LOOP_MAX=2 SB_E2E_TUI_HUNG_SEC=100 timeout 30 bash "$W"
+tl_run env F4_ROWLOG_FAIL=1 F4_NOW_STEP=500 F4_LOOP_MAX=2 SB_E2E_TUI_HUNG_SEC=100 timeout 30 bash -c "$F4_LAUNCH" _ "$W"
 assert_eq "fallback log path still drives hung detection" "1" "$(fcount '.category=="stall" and .row==5')"
 
 # growth resets the hung clock
@@ -345,7 +345,7 @@ echo 'quiet' >"$ROW5"
 cat >"$F4_CTL/on-loop-sleep" <<EOS2
 echo 'more' >>"$ROW5"
 EOS2
-tl_run env F4_NOW_STEP=500 F4_LOOP_MAX=3 SB_E2E_TUI_HUNG_SEC=100 timeout 30 bash "$W"
+tl_run env F4_NOW_STEP=500 F4_LOOP_MAX=3 SB_E2E_TUI_HUNG_SEC=100 timeout 30 bash -c "$F4_LAUNCH" _ "$W"
 assert_eq "growing log is not hung" "0" "$(fcount '.category=="stall" and .severity=="blocker"')"
 
 tl_results
