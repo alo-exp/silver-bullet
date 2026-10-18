@@ -1,5 +1,10 @@
 name: CI
 on: [push, pull_request]
+# A newer commit on the same branch or pull request supersedes the runs still queued or
+# running for the older one.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
 jobs:
   validate:
     runs-on: ubuntu-latest
