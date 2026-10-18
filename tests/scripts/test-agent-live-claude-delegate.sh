@@ -186,6 +186,16 @@ assert_eq "cert run exits 0" "0" "$TL_STATUS"
 assert_eq "cert run bypasses permissions by default" "bypassPermissions" "$(alh_env CLAUDE_PERMISSION_MODE)"
 assert_file_exists "cert run leaves the agent-cert-run marker" "$W/.silver-bullet/agent-cert-run"
 assert_contains "cert run warns when the plugin cache helper is missing" "$TL_ERR" "plugin-cache-version helper missing"
+# only "1" and "true" mean a cert run: other values never grant bypassPermissions
+for bad in 0 false yes ""; do
+  rm -rf "$W/.silver-bullet"
+  alh_script "0|not-cert"
+  tl_run env SB_AGENT_CERT_RUN="$bad" bash "$DELEGATE" --sb-root "$SB" --skip-preflight --work-dir "$W" --prompt p
+  assert_eq "SB_AGENT_CERT_RUN='$bad' exits 0" "0" "$TL_STATUS"
+  assert_eq "SB_AGENT_CERT_RUN='$bad' does not bypass permissions" "<unset>" "$(alh_env CLAUDE_PERMISSION_MODE)"
+  assert_file_absent "SB_AGENT_CERT_RUN='$bad' leaves no cert marker" "$W/.silver-bullet/agent-cert-run"
+done
+
 # an unwritable marker location never fails the run (the dir is a file here)
 rm -rf "$W/.silver-bullet"
 : >"$W/.silver-bullet"
@@ -215,6 +225,20 @@ export -fn sb_cert_run_touch_marker
 unset -f sb_cert_run_touch_marker
 assert_eq "an available sb_cert_run_touch_marker is used with the work dir" "$W" "$(cat "$TL_TMP/touch-marker-arg")"
 assert_file_absent "the fallback marker is not written when the helper exists" "$W/.silver-bullet/agent-cert-run"
+
+# an adapter that is terminated mid-invoke still leaves no ephemeral CLAUDE_CONFIG_DIR behind
+# (the stub signals only its own subshell, $BASHPID)
+alh_script "0|never-printed"
+run_cd --prompt p --no-escalate
+ok_cfg="$(alh_env CLAUDE_CONFIG_DIR)"
+alh_script "0|never-printed"
+tl_run env ALH_TERM_SELF=1 bash "$DELEGATE" --sb-root "$SB" --skip-preflight --work-dir "$W" --prompt p --no-escalate
+term_cfg="$(alh_env CLAUDE_CONFIG_DIR)"
+assert_match "the terminated adapter ran with an ephemeral config dir" "^$TL_TMP/tmp/agent-claude-config-" "$term_cfg"
+assert_contains "the config dir existed when the adapter was terminated" "$(alh_rec)" "config-dir-present yes"
+assert_file_absent "a terminated adapter leaves no ephemeral config dir" "$term_cfg"
+assert_eq "a terminated adapter fails the delegation" "143" "$TL_STATUS"
+assert_eq "the unrelated normal run's dir is gone too" "" "$([[ -e "$ok_cfg" ]] && echo present)"
 
 # ---------------------------------------------------------------- recommended-tools preflight
 alh_script "0|ok"
