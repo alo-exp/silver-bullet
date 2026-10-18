@@ -2255,21 +2255,11 @@ def build_chart_data(
 
     # Value Curve / Leaders radar: every MQ leader (3A + 3B) with slug from chart points.
     leader_series = _collect_mq_leader_series(gmq_data, mq_data)
-    leader_labels = [label for _, label in leader_series]
     vc_kcfs = select_vc_kcfs([slug for slug, _ in leader_series if slug], support)
     if not vc_kcfs:
         vc_kcfs = [k for k in KCF_NAMES if k != "Managed hosting"][:6]
     for slug, label in leader_series:
-        resolved = slug or _slug_for_label(
-            label,
-            known=effective_known,
-            rankings=rankings,
-            commercial=commercial,
-            oss=oss,
-            support=support,
-        )
-        if resolved:
-            _append_vc_series(resolved, label)
+        _append_vc_series(slug, label)
 
     if not existing_vc:
         commercial_src = COMMERCIAL_CATALOG if commercial is None else commercial
@@ -2287,12 +2277,6 @@ def build_chart_data(
             slug = str(entry.get("slug") or "")
             label = entry.get("name") or effective_known.get(slug, slug.replace("-", " ").title())
             _append_vc_series(slug, label)
-    else:
-        for entry in _catalog_entries(commercial, oss):
-            label = _catalog_label(entry, known=effective_known)
-            if label not in leader_labels or label in existing_vc:
-                continue
-            _append_vc_series(entry["slug"], label)
 
     axes = _derive_axis_profile(category, need or {}, scope_text)
     chart_notes: list[str] = []
