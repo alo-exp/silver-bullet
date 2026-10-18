@@ -69,7 +69,12 @@ assert_eq "canonicalize: relative made absolute" "$TL_TMP/w/rel.md" "$(cd "$TL_T
 export SB_E2E_ENTERPRISE_MATRIX=1 SB_E2E_LEDGER_FILE=x SB_E2E_MATRIX_BATCH_PID=1 SB_E2E_MATRIX_FORCE=1 SB_E2E_MATRIX_MONITOR_PID_FILE=x \
   SB_E2E_MATRIX_MONITOR_STATUS_FILE=x SB_E2E_TUI_FINDINGS=x SB_E2E_TUI_OFFSETS=x SB_E2E_LIVE_TEST_LOCK_FILE=x KEEP_ME=1
 agent_delegate_clear_matrix_env
-assert_eq "clear matrix env: all matrix vars unset" "" "$(env | grep -c '^SB_E2E_' | grep -v '^0$' || true)"
+left=""
+for v in SB_E2E_ENTERPRISE_MATRIX SB_E2E_LEDGER_FILE SB_E2E_MATRIX_BATCH_PID SB_E2E_MATRIX_FORCE SB_E2E_MATRIX_MONITOR_PID_FILE \
+  SB_E2E_MATRIX_MONITOR_STATUS_FILE SB_E2E_TUI_FINDINGS SB_E2E_TUI_OFFSETS SB_E2E_LIVE_TEST_LOCK_FILE; do
+  [[ -z "${!v+x}" ]] || left="$left $v"
+done
+assert_eq "clear matrix env: all matrix vars unset" "" "$left"
 assert_eq "clear matrix env: unrelated vars kept" "1" "${KEEP_ME}"
 
 # an env var that cannot be unset does not abort the cleanup
