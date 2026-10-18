@@ -47,7 +47,7 @@ assert_no_packaged_skill_md() {
 
 assert_no_packaged_markdown_skill_sources() {
   local desc="$1" path="$2"
-  if find "$path/skill-source" -type f -name 'SILVER_SOURCE.md' -print -quit 2>/dev/null | grep -q .; then
+  if grep -q . < <(find "$path/skill-source" -type f -name 'SILVER_SOURCE.md' -print -quit 2>/dev/null); then
     echo "FAIL: $desc — packaged Markdown skill source found under $path/skill-source"
     find "$path/skill-source" -type f -name 'SILVER_SOURCE.md' -print 2>/dev/null | head -20
     (( FAIL++ )) || true
@@ -1270,7 +1270,7 @@ assert_contains "TDD skill is SB-owned in installed package" "SB owns this TDD" 
 assert_not_contains "TDD skill does not delegate to Superpowers in installed package" "superpowers:test-driven-development" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" tdd)"
 
 _retired_ns=$'gs'"d"
-if find "$FAKE_CACHE_ROOT/.generated-skills" -maxdepth 1 -name "${_retired_ns}-*" 2>/dev/null | grep -q .; then
+if grep -q . < <(find "$FAKE_CACHE_ROOT/.generated-skills" -maxdepth 1 -name "${_retired_ns}-*" 2>/dev/null); then
   FAIL=$((FAIL + 1))
   echo "  FAIL: Legacy retired wrappers still present in installed SB cache"
 else

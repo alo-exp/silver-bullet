@@ -38,7 +38,7 @@ chmod +x "$MOCK_BIN/lean-ctx"
 export PATH="$MOCK_BIN:/usr/bin:/bin"
 
 sb_leanctx_cli_available && pass "mock lean-ctx cli available" || fail "mock lean-ctx cli available"
-sb_leanctx_cli_path | grep -q 'lean-ctx' && pass "cli path resolves" || fail "cli path resolves"
+grep -q 'lean-ctx' < <(sb_leanctx_cli_path) && pass "cli path resolves" || fail "cli path resolves"
 
 TEST_HOME="$(mktemp -d)"
 TMP="$(mktemp -d)"
@@ -61,7 +61,7 @@ cat >"$TMP/.silver-bullet.json" <<EOF
 EOF
 
 sb_leanctx_platform_artifact_present "$TMP" cursor && pass "cursor mcp artifact present" || fail "cursor mcp artifact present"
-sb_leanctx_usage_ttl_seconds "$TMP/.silver-bullet.json" | grep -q '^1800$' && pass "ttl from config" || fail "ttl from config"
+grep -q '^1800$' < <(sb_leanctx_usage_ttl_seconds "$TMP/.silver-bullet.json") && pass "ttl from config" || fail "ttl from config"
 
 sb_leanctx_clear_usage_state "$TMP/.silver-bullet.json"
 sb_leanctx_usage_is_fresh "$TMP/.silver-bullet.json" && fail "missing usage is stale" || pass "missing usage is stale"

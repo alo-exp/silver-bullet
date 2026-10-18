@@ -203,7 +203,7 @@ enterprise_e2e_commit_touches_api_currency() {
     return 0
   fi
   if grep -qE '^api/' <<<"$paths" && \
-     git -C "$fixture_dir" log -1 --format='%s' "$sha" 2>/dev/null | grep -qiE 'currency|orders'; then
+     grep -qiE 'currency|orders' < <(git -C "$fixture_dir" log -1 --format='%s' "$sha" 2>/dev/null); then
     return 0
   fi
   return 1
@@ -672,7 +672,7 @@ enterprise_e2e_matrix_should_skip_row_at_version() {
 
 enterprise_e2e_assert_no_auth_mutations() {
   local script="$1"
-  if grep -vE '^[[:space:]]*#' "$script" 2>/dev/null | grep -qE 'claude auth (login|logout)|claude /logout|setup-token|/login|/logout'; then
+  if grep -qE 'claude auth (login|logout)|claude /logout|setup-token|/login|/logout' < <(grep -vE '^[[:space:]]*#' "$script" 2>/dev/null); then
     echo "ERROR: $script must not invoke login/logout (API key auth only)" >&2
     return 1
   fi
