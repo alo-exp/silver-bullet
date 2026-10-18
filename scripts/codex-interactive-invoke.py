@@ -352,7 +352,9 @@ def main() -> int:
                             if exited:
                                 return returncode or 0
                             time.sleep(0.05)
-                        return 0
+                        print("ERROR: Codex PTY closed but the child did not exit", file=sys.stderr)
+                        terminate_child(child_pid)
+                        return 1
                     raise
                 if not chunk:
                     break

@@ -534,9 +534,10 @@ class MainLoopTest(MainBase):
             self.assertEqual(m.main(), 9)
         self.assertEqual(sleeps, [0.05, 0.05])
 
-    def test_pty_eio_with_unreapable_child_gives_up_with_zero(self):
+    def test_pty_eio_with_unreapable_child_terminates_it_and_fails(self):
         eio = OSError(errno.EIO, "Input/output error")
         sleeps = []
+        terminated = []
         s = Script([step(1, eio)])
         with mock.patch.dict(os.environ, self.env(), clear=True), \
                 mock.patch.object(m.pty, "fork", return_value=(FAKE_PID, FAKE_FD)), \
@@ -546,9 +547,14 @@ class MainLoopTest(MainBase):
                 mock.patch.object(m.select, "select", s.select), mock.patch.object(m.os, "read", s.read), \
                 mock.patch.object(m.os, "write", s.write), mock.patch.object(m.os, "close", lambda fd: None), \
                 mock.patch.object(m, "child_returncode", lambda pid: (False, None)), \
-                mock.patch.object(m, "forward_stdout", lambda c, e: e):
-            self.assertEqual(m.main(), 0)
+                mock.patch.object(m, "terminate_child", lambda pid, **k: terminated.append(pid)), \
+                mock.patch.object(m, "forward_stdout", lambda c, e: e), \
+                contextlib.redirect_stderr(io.StringIO()) as err:
+            rc = m.main()
+        self.assertEqual(rc, 1)
+        self.assertEqual(terminated, [FAKE_PID])
         self.assertEqual(len(sleeps), 40)
+        self.assertIn("did not exit", err.getvalue())
 
     def test_child_exit_between_reads(self):
         rc, s = self.run_main([step(1, rc=(True, 4))])
