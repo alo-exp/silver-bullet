@@ -20,8 +20,7 @@ S=session-bootstrap.sh
 
 expect_silent() { assert_eq "$1: exit 0" 0 "$TL_STATUS"; assert_eq "$1: no output" "" "$TL_OUT"; }
 wait_unlocked() { # wait (bounded) for the background job to remove the lock
-  local i
-  for i in $(seq 1 200); do [[ -e "$lock" ]] || return 0; sleep 0.05; done
+  for _ in $(seq 1 200); do [[ -e "$lock" ]] || return 0; sleep 0.05; done
   return 1
 }
 settle() { sleep 0.4; } # negative checks: give a wrongly spawned job time to show itself
