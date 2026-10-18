@@ -373,10 +373,6 @@ agent_mode_preflight_flags() {
       agent_mode_fail_conflict "auto-policy-on-ni"
       return 2
     fi
-    if [[ "$SB_AM_ALLOW_FALLBACK" -eq 1 ]]; then
-      agent_mode_fail_conflict "fallback-not-pinned"
-      return 2
-    fi
   fi
 
   agent_mode_unset_consumed_env
@@ -1056,7 +1052,7 @@ agent_mode_maybe_escalate() {
     agent_mode_reason_append "escalate-unavailable"
     return 1
   fi
-  agent_mode_prepare_artifact_dir "$host" "$(dirname "$(dirname "$task_dir")")" >/dev/null
+  agent_mode_prepare_artifact_dir "$host" "$(dirname "$(dirname "$(dirname "$task_dir")")")" >/dev/null
   agent_mode_append_event "$task_dir" "escalated" ""
   agent_mode_append_event "$task_dir" "mode_resolved" "interactive"
   return 0
