@@ -28,6 +28,10 @@ command -v jq >/dev/null || { echo "jq required"; exit 1; }
 # A marketplace without a silver-bullet entry has nothing to bump: say so instead
 # of reporting a sync that changed nothing.
 require_silver_bullet_entry() {
+  if ! jq -e . "$1" >/dev/null 2>&1; then
+    echo "ERROR: $1 is not valid JSON" >&2
+    exit 1
+  fi
   if ! jq -e '[.plugins[]? | select(.name=="silver-bullet")] | length > 0' "$1" >/dev/null; then
     echo "ERROR: $1 has no silver-bullet entry to sync" >&2
     exit 1

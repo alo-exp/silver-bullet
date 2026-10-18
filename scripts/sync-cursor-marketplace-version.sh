@@ -26,6 +26,14 @@ requested_version="${1:-}"
 command -v jq >/dev/null || { echo "jq required"; exit 1; }
 
 
+# A manifest that does not parse is a different problem from one without our entry.
+require_valid_json() {
+  if ! jq -e . "$1" >/dev/null 2>&1; then
+    echo "ERROR: $1 is not valid JSON" >&2
+    exit 1
+  fi
+}
+
 resolve_release_commit_sha() {
   local version="$1"
   local tag_sha head_sha
@@ -89,6 +97,7 @@ if [[ -n "$requested_version" ]]; then
 else
   plugin_v="$current_plugin_v"
 fi
+require_valid_json "$marketplace_json"
 market_v=$(jq -r '.plugins[] | select(.name=="silver-bullet") | .version' "$marketplace_json")
 
 if [[ "$plugin_v" == "$market_v" ]]; then
@@ -130,6 +139,7 @@ sync_marketplace_repo() {
     exit 1
   }
 
+  require_valid_json "$manifest"
   remote_before=$(jq -r '.plugins[] | select(.name=="silver-bullet") | .version' "$manifest")
   update_marketplace_plugin_source "$manifest" "$version"
 
