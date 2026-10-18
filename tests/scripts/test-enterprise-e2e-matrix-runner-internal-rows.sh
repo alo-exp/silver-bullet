@@ -127,4 +127,26 @@ assert_contains "row 21 pass with slow listing" "$TL_OUT" "=== Row 21: post-exec
 assert_contains "row 22 pass with slow listing" "$TL_OUT" "=== Row 22: validate-substep (internal) PASS ==="
 rm -f "$F2_CTL/find-slow"
 
+# the post-heal searches (after a passing scorer, after a ledger Pass) also list several files slowly
+reset
+break_markers
+echo "unrelated" >"$R/.e2e-row3-attempt.log"
+touch "$F2_CTL/heal" "$F2_CTL/find-slow"
+run bash "$MATRIX" 21
+assert_eq "scorer-heal path with slow listing passes" "0" "$TL_STATUS"
+assert_contains "scorer-heal row 21 pass" "$TL_OUT" "=== Row 21: post-exec-gates (internal) PASS ==="
+assert_contains "scorer consulted on the heal path" "$CALLS" "outcome-row-passes row=3"
+rm -f "$R/.e2e-row3-attempt.log"
+
+reset
+printf '| 3 | silver-feature | wf | Pass | g | a |\n' >"$SB_E2E_LEDGER_FILE"
+break_markers
+echo "unrelated" >"$R/.e2e-row3-attempt.log"
+touch "$F2_CTL/outcome-fail-3" "$F2_CTL/heal" "$F2_CTL/find-slow"
+echo 2 >"$F2_CTL/heal-ledger-after"
+run bash "$MATRIX" 21
+assert_eq "ledger-pass path with slow listing passes" "0" "$TL_STATUS"
+assert_contains "ledger-pass row 21 pass" "$TL_OUT" "=== Row 21: post-exec-gates (internal) PASS ==="
+rm -f "$R/.e2e-row3-attempt.log" "$SB_E2E_LEDGER_FILE"
+
 tl_results

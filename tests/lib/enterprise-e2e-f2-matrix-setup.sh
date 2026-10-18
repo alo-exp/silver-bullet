@@ -39,8 +39,9 @@ export F2_RECORD_HEAVY=1
 tl_stub sleep 'printf "sleep %s\n" "$*" >>"$F2_CALLS"'
 # find fails when $F2_CTL/find-fail-<marker> exists and <marker> is among its arguments (simulates a workflow
 # marker the search cannot see); the fake outcome scorer can remove the flag again (see f2_heal)
-tl_stub find '[[ ! -f "$F2_CTL/find-slow" ]] || { printf "a.md\\n"; /bin/sleep 0.2; printf "b.md\\n"; exit 0; }
-for f in "$F2_CTL"/find-fail-*; do [[ -e "$f" && " $* " == *"${f##*find-fail-}"* ]] && exit 1; done; exec /usr/bin/find "$@"'
+tl_stub find 'for f in "$F2_CTL"/find-fail-*; do [[ -e "$f" && " $* " == *"${f##*find-fail-}"* ]] && exit 1; done
+[[ ! -f "$F2_CTL/find-slow" ]] || { printf "a.md\\n"; /bin/sleep 0.2; printf "b.md\\n"; exit 0; }
+exec /usr/bin/find "$@"'
 
 # gate overrides, active only for the F2_*_FAIL_AT switch that is set: the Nth call fails
 cat >"$TL_TMP/overrides.sh" <<'EOS'
