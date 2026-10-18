@@ -40,7 +40,7 @@ hd_stage() {
   for h in claude codex cursor; do
     hd_sh "scripts/install-$h.sh" 'echo "install-'"$h"' $*" >>"$HD_LOG"; exit "${STUB_RC_INSTALL:-0}"'
   done
-  hd_sh scripts/install-cursor-sb-agents.sh 'echo "install-cursor-sb-agents $* repo=${CSBA_REPO_ROOT:-}" >>"$HD_LOG"; exit 0'
+  hd_sh scripts/install-cursor-sb-agents.sh 'echo "install-cursor-sb-agents $* repo=${CSBA_REPO_ROOT:-}" >>"$HD_LOG"; exit "${STUB_RC_CSBA:-0}"'
   hd_sh scripts/lib/cursor-sb-agents/probe-global-agents.sh 'echo "probe-agents $*" >>"$HD_LOG"; exit "${STUB_RC_AGENTS:-0}"'
   hd_sh scripts/reconcile-recommended-tools.sh 'echo "reconcile $*" >>"$HD_LOG"; [[ -z "${STUB_RECON_ERR:-}" ]] || echo "$STUB_RECON_ERR" >&2; if [[ -v STUB_RECON_JSON ]]; then printf "%s" "$STUB_RECON_JSON"; else cat "$(dirname "$0")/../default-recon.json"; fi; exit "${STUB_RECON_RC:-0}"'
   printf '%s' "$HD_DEFAULT_RECON" >"$HD_ST/default-recon.json"

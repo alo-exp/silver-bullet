@@ -150,6 +150,24 @@ rm -f -- "${CURCACHE:?}/$HD_VER/commands/sb.md"
 cu -- "$HD_PROJ"
 assert_contains "command stubs missing" "$TL_OUT" "FAIL: D19 — commands/ missing from plugin cache — slash menu will be empty"
 
+# an unresolvable cache link and cache symlink are tolerated
+rm -rf -- "${HOME:?}/Library"
+hd_happy cursor
+mkdir -p "$GP_BASE"
+SRC2="$TL_TMP/gitsrc2"; tl_git_repo "$SRC2"
+SHA2="$(git -C "$SRC2" rev-parse HEAD)"
+mv "$SRC2" "$GP_BASE/$SHA2"
+set_sha "$SHA2"
+mkdir -p "$CH/plugins/cache/alo-labs-cursor/silver-bullet"
+ln -s /nonexistent/a/b "$CH/plugins/cache/alo-labs-cursor/silver-bullet/$SHA2"
+cu -- "$HD_PROJ"
+assert_contains "unresolvable marketplace cache link" "$TL_OUT" "FAIL: D18 — missing alo-labs-cursor cache symlink for ${SHA2:0:8}"
+rm -f -- "${CURCACHE:?}/current"
+ln -s /nonexistent/a/b "$CURCACHE/current"
+cu -- "$HD_PROJ"
+assert_contains "unresolvable current link: D3" "$TL_OUT" "FAIL: D3 — broken or missing current symlink"
+assert_contains "unresolvable current link: D19" "$TL_OUT" "FAIL: D19 — commands/ missing from plugin cache"
+
 # ---------- D20: stack compression mutex ----------
 hd_happy claude
 hd_cfg "{\"sb_initiated\":true,\"config_version\":\"$HD_VER\",\"recommended_tools\":{\"rtk\":{\"enabled_by_user\":true},\"context_mode\":{\"enabled_by_user\":true}}}"
@@ -287,6 +305,19 @@ assert_not_contains "seam: no installer ran" "$(hd_logs)" "install-claude"
 run SB_DOCTOR_STUB_HOST_INSTALL="$TL_TMP/host-install2.txt" -- --fix=local "$HD_PROJ"
 assert_file_absent "local scope skips the seam" "$TL_TMP/host-install2.txt"
 
+# failing installers never abort the repair
+hd_happy cursor
+rm -f -- "${HOME:?}/.cursor/hooks.json"
+cu STUB_RC_INSTALL=1 -- --fix "$HD_PROJ"
+assert_contains "failing cursor hooks merge is tolerated" "$TL_OUT" "re-running checks after --fix"
+hd_happy claude
+echo '{}' >"$HOME/.claude/settings.json"
+run STUB_RC_INSTALL=1 -- --fix "$HD_PROJ"
+assert_contains "failing D4 installer is tolerated" "$TL_OUT" "re-running checks after --fix"
+hd_run SILVER_BULLET_RUNTIME=opencode STUB_RC_SURFACE_REPO=1 -- --fix "$HD_PROJ"
+assert_contains "D16 on an unknown host has no installer" "$TL_OUT" "FAIL: D16"
+assert_not_contains "no installer for the unknown host" "$(hd_logs)" "install-"
+
 # D15: advice only
 hd_happy claude
 run STUB_RC_TOKENS=1 -- --fix "$HD_PROJ"
@@ -300,8 +331,15 @@ run -- --fix "$HD_PROJ"
 assert_file_absent "mutex violations cleared" "$MUTEX"
 assert_contains "mutex clean after the fix" "$TL_OUT" "PASS: D20 — stack compression mutex clean"
 assert_eq "agentmemory export root scaffolded" "yes" "$([[ -d "$HD_PROJ/.agentmemory/memory" ]] && echo yes || echo no)"
-hd_cfg "{\"sb_initiated\":true,\"config_version\":\"$HD_VER\",\"recommended_tools\":{\"rtk\":{\"enabled_by_user\":true},\"context_mode\":{\"enabled_by_user\":true}}}"
+# an export root that cannot be created is tolerated
+hd_cfg "{\"sb_initiated\":true,\"config_version\":\"$HD_VER\",\"recommended_tools\":{\"rtk\":{\"enabled_by_user\":true},\"context_mode\":{\"enabled_by_user\":true},\"agentmemory\":{\"enabled_by_user\":true}}}"
 rm -rf -- "${HD_PROJ:?}/.agentmemory"
+: >"$HD_PROJ/.agentmemory"
+echo '{"violations":["double"]}' >"$MUTEX"
+run -- --fix "$HD_PROJ"
+assert_contains "unusable export root does not abort the repair" "$TL_OUT" "re-running checks after --fix"
+rm -f -- "${HD_PROJ:?}/.agentmemory"
+hd_cfg "{\"sb_initiated\":true,\"config_version\":\"$HD_VER\",\"recommended_tools\":{\"rtk\":{\"enabled_by_user\":true},\"context_mode\":{\"enabled_by_user\":true}}}"
 echo '{"violations":["double"]}' >"$MUTEX"
 run -- --fix "$HD_PROJ"
 assert_eq "no scaffold without agentmemory" "no" "$([[ -d "$HD_PROJ/.agentmemory" ]] && echo yes || echo no)"
@@ -327,6 +365,8 @@ assert_contains "global agents installer flags and root" "$(hd_logs)" "install-c
 hd_cfg "{\"sb_initiated\":true,\"config_version\":\"$HD_VER\",\"cursor_sb_agents\":{\"enabled\":true,\"agents_install_scope\":\"project\"}}"
 cu STUB_RC_AGENTS=1 -- --fix "$HD_PROJ"
 assert_contains "project agents installer flags" "$(hd_logs)" "install-cursor-sb-agents --fix --project repo=$HD_PROJ"
+cu STUB_RC_AGENTS=1 STUB_RC_CSBA=1 -- --fix "$HD_PROJ"
+assert_contains "failing agents installer is tolerated" "$TL_OUT" "re-running checks after --fix"
 cu STUB_RC_AGENTS=1 -- --fix=local "$HD_PROJ"
 assert_not_contains "local scope skips the agents installer" "$(hd_logs)" "install-cursor-sb-agents"
 cu SB_DOCTOR_STUB_HOST_INSTALL="$TL_TMP/host-install3.txt" STUB_RC_AGENTS=1 -- --fix "$HD_PROJ"

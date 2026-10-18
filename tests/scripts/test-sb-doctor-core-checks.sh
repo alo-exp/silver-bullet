@@ -97,6 +97,10 @@ assert_not_contains "no arithmetic errors on a non-numeric version" "$TL_ERR" "v
 setreg '{"plugins":{"silver-bullet@alo-labs":[{"version":"v99.1.2"}]}}'
 run -- "$HD_PROJ"
 assert_contains "v-prefixed version compares numerically" "$TL_OUT" "PASS: D2 — silver-bullet@alo-labs version v99.1.2"
+setreg 'not json at all'
+run -- "$HD_PROJ"
+assert_contains "corrupt registry reads as no entry" "$TL_OUT" "FAIL: D2 — no silver-bullet plugin entry in $REG"
+assert_contains "corrupt registry does not stop the audit" "$TL_OUT" "OVERALL: FAIL"
 setreg '{"plugins":{}}'
 run -- "$HD_PROJ"
 assert_contains "no plugin entry" "$TL_OUT" "FAIL: D2 — no silver-bullet plugin entry in $REG"
@@ -161,6 +165,10 @@ assert_contains "missing current symlink" "$TL_OUT" "FAIL: D3 — broken or miss
 ln -s "$TL_TMP/nowhere" "$CUR/current"
 run -- "$HD_PROJ"
 assert_contains "dangling current symlink" "$TL_OUT" "FAIL: D3 — broken or missing current symlink"
+rm -f -- "${CUR:?}/current"
+ln -s /nonexistent/a/b "$CUR/current"
+run -- "$HD_PROJ"
+assert_contains "unresolvable current symlink" "$TL_OUT" "FAIL: D3 — broken or missing current symlink"
 hd_happy claude
 
 # ---------- D4: hook manifests per host ----------

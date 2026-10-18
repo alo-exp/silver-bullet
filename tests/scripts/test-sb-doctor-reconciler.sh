@@ -118,6 +118,16 @@ run STUB_RECON_JSON='{"components":[{"component":"graphify","consent":"enabled",
 assert_contains "partially walkable components: first component read" "$TL_OUT" "PASS: D10-graphify — graphify ready (activation=full)"
 assert_contains "partially walkable components: routes" "$TL_OUT" "D10-routes"
 
+# component names that smuggle line breaks into the one-line-per-component protocol
+run STUB_RECON_JSON="$(jq -nc '{components:[{component:"\ngraphify",consent:"enabled",canonical_state:"ready",activation_status:"full",evidence:[]},{component:"\ncross_tool",consent:"enabled",canonical_state:"failed",activation_status:"none",evidence:[]},{component:"cross_tool",consent:"enabled",canonical_state:"ready",activation_status:"full",evidence:[]}],unknown_keys:[]}')" -- "$HD_PROJ"
+assert_contains "blank protocol lines are skipped" "$TL_OUT" "PASS: D10-routes — ten route owners + heartbeat OK"
+assert_not_contains "a smuggled cross_tool entry is not reported as a tool" "$TL_OUT" "D10-cross_tool"
+# a payload whose unknown_keys cannot be read
+run STUB_RECON_JSON='[]' -- "$HD_PROJ"
+assert_contains "top-level array payload" "$TL_OUT" "WARN: D10-routes — cross_tool component missing from reconciler output"
+assert_not_contains "no unknown_key warning for an unreadable list" "$TL_OUT" "unknown_key"
+assert_contains "the audit still completes" "$TL_OUT" "OVERALL: PASS"
+
 # ---------- D10: reconciler plumbing ----------
 run STUB_RECON_JSON= -- "$HD_PROJ"
 assert_contains "empty reconciler output" "$TL_OUT" "WARN: D10 — reconciler returned no JSON"
