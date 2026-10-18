@@ -70,6 +70,7 @@ Update the base commit named in coverage-agent-prompt.md to the PR branch head b
 | H-recommended-2 | Merged after two reviews (diagnostics gitleaks, doctor --fix twice, lost score exports, claude host detection) |
 | I-scripts-py-2 | Merged after three reviews (merge scripts no longer overwrite user config; hermes YAML keeps user servers) |
 | E-core-hooks | Merged after two reviews (session-start cleanup no longer aborts, strict=false honoured, SIGPIPE-safe grep, prompt-reminder fallback list pinned to the template) |
+| I-scripts-py-3 | Merged after four reviews (silver-scan case-insensitive match and lost-filing retry, atomic Cursor hook strip, launchd failure falls back to at, render failures exit non-zero) |
 | All others | Not started |
 
 Each package is merged into the PR branch only after an adversarial review passes and its tests pass under both the `claude` and `codex` runtimes.
