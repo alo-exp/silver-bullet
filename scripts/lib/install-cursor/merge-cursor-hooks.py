@@ -59,15 +59,23 @@ SB_HOOK_RE = re.compile(r"/silver-bullet/[^/]+/hooks/")
 DEV_CHECKOUT_RE = re.compile(r"/plugins/silver-bullet/hooks/")
 
 
-def is_malformed_sb_hook(entry: dict) -> bool:
+def entry_command(entry) -> str:
+    """Return the entry's command, or "" for non-dict entries / non-string commands."""
+    if not isinstance(entry, dict):
+        return ""
     command = entry.get("command", "")
+    return command if isinstance(command, str) else ""
+
+
+def is_malformed_sb_hook(entry: dict) -> bool:
+    command = entry_command(entry)
     if "codex-hook-adapter" in command:
         return True
     return 'codex-hook-adapter.sh"' in command and "cursor-hook-bridge" in command
 
 
 def is_stale_sb_hook(entry: dict) -> bool:
-    command = entry.get("command", "")
+    command = entry_command(entry)
     if is_malformed_sb_hook(entry):
         return True
     if "${CURSOR_PLUGIN_ROOT}/hooks/" in command:
@@ -148,7 +156,9 @@ for event, entries in list(existing_hooks.items()):
 
 
 def hook_entry_key(entry: dict) -> tuple[str, str]:
-    return (entry.get("command", ""), entry.get("matcher", ""))
+    if not isinstance(entry, dict):
+        return ("", "")
+    return (entry_command(entry), entry.get("matcher", ""))
 
 
 for event, entries in sb_hooks.items():
