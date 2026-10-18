@@ -7,7 +7,9 @@ import json
 import os
 import pathlib
 import re
+import stat
 import sys
+import tempfile
 
 settings_path = pathlib.Path(
     sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.expanduser("~"), ".cursor", "hooks.json")
@@ -63,7 +65,18 @@ for event_name in list(hooks_by_event.keys()):
         del hooks_by_event[event_name]
 
 if changed:
-    settings_path.write_text(json.dumps(data, indent=2) + "\n")
+    # Write a temp file in the same directory and rename it over the target so a failed write
+    # never truncates the user's hooks file; follow a symlinked file and keep its permissions.
+    real_path = os.path.realpath(settings_path)
+    fd, tmp_name = tempfile.mkstemp(prefix=".hooks.", suffix=".tmp", dir=os.path.dirname(real_path))
+    try:
+        with os.fdopen(fd, "w") as handle:
+            handle.write(json.dumps(data, indent=2) + "\n")
+        os.chmod(tmp_name, stat.S_IMODE(os.stat(real_path).st_mode))
+        os.replace(tmp_name, real_path)
+    except BaseException:
+        os.unlink(tmp_name)
+        raise
     print(f"SB hooks stripped from {settings_path}")
 else:
     print(f"No SB hooks found in {settings_path}")
