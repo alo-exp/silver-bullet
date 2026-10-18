@@ -2,6 +2,7 @@
 # scripts/lib/agent-mode.sh part 1: reason codes, failure helpers, flag parsing, env inheritance,
 # preflight conflicts, pid identity and the small JSON/result helpers. The library is sourced
 # into the test shell; process probes (kill, ps) are shell-function stubs that record their args.
+# shellcheck disable=SC2034  # SB_AM_* state is read by the sourced library
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
@@ -53,13 +54,12 @@ tl_run agent_mode_fail_unavailable escalate-unavailable
 assert_eq "other class does not touch reasons" 0 "${#SB_AM_REASONS[@]}"
 assert_contains "other class printed" "$TL_ERR" "ERROR: escalate-unavailable"
 # failures inside the helper are tolerated
-fresh; SB_AM_TASK_DIR="$TD/x"
+tl_run bash -c "source '$LIB'; agent_mode_reset; SB_AM_TASK_DIR='$TD/x'
 agent_mode_reason_append() { return 1; }
 agent_mode_persist_mode_json() { return 1; }
-tl_run agent_mode_fail_unavailable
-assert_eq "unavailable tolerates reason + persist failures" 3 "$TL_STATUS"
-# shellcheck source=../../scripts/lib/agent-mode.sh
-source "$LIB"
+agent_mode_fail_unavailable; echo rc=\$?"
+assert_contains "unavailable tolerates reason + persist failures" "$TL_OUT" "rc=3"
+assert_file_absent "unavailable persist stubbed out" "$TD/x/mode.json"
 
 # ---------------- permission mode ----------------
 fresh
