@@ -74,7 +74,9 @@ run_install_cell() {
     host_install "$host" >/dev/null 2>&1 || true
   fi
   SB_DIAG_SMOKE=1 SILVER_BULLET_RUNTIME="$host" bash "${REPO_ROOT}/scripts/sb-diagnostics.sh" >/dev/null 2>&1 || return 1
-  [[ "$RUN_CLAIMS" -eq 1 ]] && RTK_DISABLED=1 bash "${REPO_ROOT}/scripts/claims-audit.sh" >/dev/null 2>&1
+  if [[ "$RUN_CLAIMS" -eq 1 ]]; then
+    RTK_DISABLED=1 bash "${REPO_ROOT}/scripts/claims-audit.sh" >/dev/null 2>&1
+  fi
 }
 
 case "$MODE" in
@@ -89,7 +91,10 @@ case "$MODE" in
         bash "${REPO_ROOT}/tests/hooks/$t"; done
       [[ "$RUN_CURSOR_CLI_SMOKE" -eq 1 ]] && SB_CURSOR_SMOKE_USE_CURRENT_ENV=1 \
         bash "${REPO_ROOT}/scripts/pre-release-cursor-cli-smoke.sh"
-      [[ "$WRITE_CURSOR_MARKER" == "1" ]] && printf 'matrix=cursor-smoke\n' >"${SB_RUNTIME_STATE_DIR}/release-live-matrix"
+      if [[ "$WRITE_CURSOR_MARKER" == "1" ]]; then
+        mkdir -p "${SB_RUNTIME_STATE_DIR}"
+        printf 'matrix=cursor-smoke\n' >"${SB_RUNTIME_STATE_DIR}/release-live-matrix"
+      fi
     fi ;;
   structural-only)
     bash "${REPO_ROOT}/scripts/validate-host-agnostic-core.sh" --repo-root "$REPO_ROOT"
