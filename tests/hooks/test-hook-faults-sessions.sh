@@ -28,7 +28,7 @@ stop_orphan_sentinels() {
   local p c
   [[ -d /proc/self ]] || return 0
   for p in $(ps -A -o pid= -o args= | awk '$2 == "bash" && $3 ~ /session-log-init\.sh$/ { print $1 }'); do
-    tr '\0' '\n' <"/proc/$p/environ" 2>/dev/null | grep -qxF "HOME=$HOME" || continue
+    grep -qxF "HOME=$HOME" <<<"$(tr '\0' '\n' <"/proc/$p/environ" 2>/dev/null)" || continue
     for c in $(ps -A -o pid= -o ppid= | awk -v p="$p" '$2 == p { print $1 }'); do builtin kill "$c" 2>/dev/null || true; done
     builtin kill "$p" 2>/dev/null || true
   done
