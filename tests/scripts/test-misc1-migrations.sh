@@ -43,12 +43,11 @@ assert_eq "config: template body preserved" "$(jq -c .skills.required_planning "
 
 # merge forward: customizations preserved, lists unioned, legacy tracker rewritten
 P2="$TL_TMP/p2"; mkdir -p "$P2"
-legacy="gs""d"
-jq -n --arg lt "$legacy" '{
+jq -n '{
   project:{name:"acme", src_pattern:"/lib/"},
   skills:{required_planning:["zz-custom","silver-plan"], forbidden:["bad-skill"]},
   hooks:{custom_hook:true},
-  issue_tracker:$lt,
+  issue_tracker:"gsd",
   issue_tracker_adapter:{kind:"mine"},
   sb_enforcement_tier:"strict",
   compactPrompt:"keep it",
