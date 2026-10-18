@@ -152,7 +152,6 @@ enterprise_e2e_assert_row_matrix_baseline_rev_increase() {
   local fixture_dir="${3:-$(enterprise_e2e_fixture_dir)}"
   [[ "${SB_E2E_PRODUCT_WORK_GATE:-1}" == "1" ]] || return 0
   enterprise_e2e_row_uses_matrix_baseline_rev_gate "$row_num" || return 0
-  enterprise_e2e_row_requires_product_commit "$row_num" || return 0
   if enterprise_e2e_row_outcome_only_rerun "$row_num"; then
     return 0
   fi
@@ -929,7 +928,7 @@ enterprise_e2e_export_live_defaults() {
   enterprise_e2e_apply_isolated_claude_runtime_paths
   export SB_E2E_MATRIX_CLEAN_ENV="${SB_E2E_MATRIX_CLEAN_ENV:-0}"
   export SB_E2E_MATRIX_DRY_RUN="${SB_E2E_MATRIX_DRY_RUN:-}"
-  unset SB_E2E_MATRIX_DRY_RUN 2>/dev/null || true
+  unset SB_E2E_MATRIX_DRY_RUN
   # Default ON for live matrix — inherited SKIP=1 from run-all-tests / live wrappers
   # skips claude_matrix_export_settings_env and leaves interactive TUI at /login.
   export SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT="${SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT:-0}"
@@ -944,7 +943,7 @@ enterprise_e2e_export_live_defaults() {
 enterprise_e2e_preflight_claude_token_gateway() {
   local sb_root="${1:-${SB_ROOT:-}}"
 
-  [[ -n "$sb_root" && -d "$sb_root" ]] || enterprise_e2e_preflight_fail "SB_ROOT missing for token gateway preflight"
+  [[ -n "$sb_root" && -d "$sb_root" ]] || enterprise_e2e_preflight_fail "SB_ROOT missing for token gateway preflight" || return 1
 
   if [[ "${SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT:-0}" == "1" ]]; then
     echo "Token gateway preflight: skipped (SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=1 — OAuth-only mode)"
@@ -967,7 +966,7 @@ enterprise_e2e_preflight_claude_token_gateway() {
   fi
 
   enterprise_e2e_preflight_fail \
-    "Claude token gateway not configured — add ANTHROPIC_BASE_URL and ANTHROPIC_API_KEY to ~/.claude/settings.json env (see docs/ENTERPRISE-E2E-LIVE-TEST.md). Prior SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=1 runs may have stripped keys via claude_matrix_auth_prepare without restore."
+    "Claude token gateway not configured — add ANTHROPIC_BASE_URL and ANTHROPIC_API_KEY to ~/.claude/settings.json env (see docs/ENTERPRISE-E2E-LIVE-TEST.md). Prior SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=1 runs may have stripped keys via claude_matrix_auth_prepare without restore." || return 1
 }
 
 # Session 0 gate — matrix rows require bootstrap unless explicitly skipped.
@@ -1071,29 +1070,29 @@ enterprise_e2e_preflight_graphify() {
   fi
 
   if ! declare -f sb_graphify_cli_available >/dev/null 2>&1 || ! sb_graphify_cli_available; then
-    enterprise_e2e_preflight_fail "graphify CLI missing — install: uv tool install graphifyy (${project_root})"
+    enterprise_e2e_preflight_fail "graphify CLI missing — install: uv tool install graphifyy (${project_root})" || return 1
   fi
 
   if ! sb_graphify_index_exists "$project_root" "$config_file"; then
     echo "    graphify index missing — running graphify update . --no-cluster"
     if ! (cd "$project_root" && graphify update . --no-cluster); then
-      enterprise_e2e_preflight_fail "graphify update failed in ${project_root}"
+      enterprise_e2e_preflight_fail "graphify update failed in ${project_root}" || return 1
     fi
   fi
 
   graph_rel="$(sb_graphify_graph_rel_path "$config_file")"
   graph_path="$(sb_graphify_abs_graph_path "$project_root" "$config_file")"
   if [[ ! -f "$graph_path" || -L "$graph_path" ]]; then
-    enterprise_e2e_preflight_fail "graphify index still missing at ${graph_path}"
+    enterprise_e2e_preflight_fail "graphify index still missing at ${graph_path}" || return 1
   fi
 
   if ! sb_graphify_query_is_fresh "$config_file"; then
     echo "    graphify query stale/missing — recording fresh query"
     if ! (cd "$project_root" && graphify query "$task_context" --graph "$graph_rel" --budget 2000 >/dev/null); then
-      enterprise_e2e_preflight_fail "graphify query failed in ${project_root}"
+      enterprise_e2e_preflight_fail "graphify query failed in ${project_root}" || return 1
     fi
     if declare -f sb_graphify_record_query >/dev/null 2>&1; then
-      sb_graphify_record_query "$config_file" || enterprise_e2e_preflight_fail "could not record graphify query state"
+      sb_graphify_record_query "$config_file" || enterprise_e2e_preflight_fail "could not record graphify query state" || return 1
     fi
   else
     echo "    graphify query fresh"
@@ -1113,7 +1112,7 @@ enterprise_e2e_preflight_agentmemory() {
   fi
 
   if ! declare -f sb_agentmemory_cli_available >/dev/null 2>&1 || ! sb_agentmemory_cli_available; then
-    enterprise_e2e_preflight_fail "agentmemory CLI missing — npm install -g @agentmemory/agentmemory"
+    enterprise_e2e_preflight_fail "agentmemory CLI missing — npm install -g @agentmemory/agentmemory" || return 1
   fi
 
   if ! sb_agentmemory_server_healthy "$config_file"; then
@@ -1131,19 +1130,19 @@ enterprise_e2e_preflight_agentmemory() {
       _am_wait=$((_am_wait + 1))
     done
     if ! sb_agentmemory_server_healthy "$config_file"; then
-      enterprise_e2e_preflight_fail "agentmemory server not healthy — see docs/AGENTMEMORY.md and ~/.agentmemory/server.log"
+      enterprise_e2e_preflight_fail "agentmemory server not healthy — see docs/AGENTMEMORY.md and ~/.agentmemory/server.log" || return 1
     fi
   fi
 
   host="${host:-$(sb_runtime_host)}"
   if declare -f sb_agentmemory_platform_artifact_present >/dev/null 2>&1 \
     && ! sb_agentmemory_platform_artifact_present "$project_root" "$host"; then
-    enterprise_e2e_preflight_fail "agentmemory MCP not wired for host=${host} — see docs/AGENTMEMORY.md"
+    enterprise_e2e_preflight_fail "agentmemory MCP not wired for host=${host} — see docs/AGENTMEMORY.md" || return 1
   fi
 
   if declare -f sb_agentmemory_export_exists >/dev/null 2>&1 \
     && ! sb_agentmemory_export_exists "$project_root" "$config_file"; then
-    enterprise_e2e_preflight_fail ".agentmemory/ export root missing in ${project_root} — mkdir -p .agentmemory/memory"
+    enterprise_e2e_preflight_fail ".agentmemory/ export root missing in ${project_root} — mkdir -p .agentmemory/memory" || return 1
   fi
   return 0
 }
@@ -1162,19 +1161,19 @@ enterprise_e2e_preflight_rtk() {
   local rtk_bin
   rtk_bin="$(sb_rtk_cli_path 2>/dev/null || true)"
   if [[ -z "$rtk_bin" ]] || ! sb_rtk_cli_available; then
-    enterprise_e2e_preflight_fail "rtk CLI missing or wrong binary — install rtk-ai/rtk (see docs/RTK.md)"
+    enterprise_e2e_preflight_fail "rtk CLI missing or wrong binary — install rtk-ai/rtk (see docs/RTK.md)" || return 1
   fi
   if ! "$rtk_bin" gain --help >/dev/null 2>&1; then
-    enterprise_e2e_preflight_fail "rtk gain --help failed — verify rtk-ai/rtk install"
+    enterprise_e2e_preflight_fail "rtk gain --help failed — verify rtk-ai/rtk install" || return 1
   fi
   if declare -f sb_rtk_version_ok >/dev/null 2>&1 && ! sb_rtk_version_ok "$config_file"; then
-    enterprise_e2e_preflight_fail "rtk version too old — upgrade rtk-ai/rtk"
+    enterprise_e2e_preflight_fail "rtk version too old — upgrade rtk-ai/rtk" || return 1
   fi
 
   host="${host:-$(sb_runtime_host)}"
   if declare -f sb_rtk_platform_hook_present >/dev/null 2>&1 \
     && ! sb_rtk_platform_hook_present "${SB_ROOT:-$PWD}" "$host"; then
-    enterprise_e2e_preflight_fail "RTK host hook missing for ${host} — run rtk init (see docs/RTK.md)"
+    enterprise_e2e_preflight_fail "RTK host hook missing for ${host} — run rtk init (see docs/RTK.md)" || return 1
   fi
   return 0
 }
@@ -1192,26 +1191,26 @@ enterprise_e2e_preflight_context_mode() {
   fi
 
   if declare -f sb_context_mode_node_ok >/dev/null 2>&1 && ! sb_context_mode_node_ok "$config_file"; then
-    enterprise_e2e_preflight_fail "Node < 22.5 — upgrade before Context Mode (see docs/CONTEXT-MODE.md)"
+    enterprise_e2e_preflight_fail "Node < 22.5 — upgrade before Context Mode (see docs/CONTEXT-MODE.md)" || return 1
   fi
   if ! declare -f sb_context_mode_cli_available >/dev/null 2>&1 || ! sb_context_mode_cli_available; then
-    enterprise_e2e_preflight_fail "context-mode CLI/plugin missing — npm install -g context-mode"
+    enterprise_e2e_preflight_fail "context-mode CLI/plugin missing — npm install -g context-mode" || return 1
   fi
 
   host="${host:-$(sb_runtime_host)}"
   if declare -f sb_context_mode_platform_artifact_present >/dev/null 2>&1 \
     && ! sb_context_mode_platform_artifact_present "$project_root" "$host"; then
-    enterprise_e2e_preflight_fail "Context Mode MCP not wired for host=${host} — see docs/CONTEXT-MODE.md"
+    enterprise_e2e_preflight_fail "Context Mode MCP not wired for host=${host} — see docs/CONTEXT-MODE.md" || return 1
   fi
 
   if command -v context-mode >/dev/null 2>&1 && declare -f rtcm_doctor_platform >/dev/null 2>&1; then
     platform="$(rtcm_doctor_platform "$host")"
     if [[ -n "$platform" ]]; then
       if ! doctor_out="$(CONTEXT_MODE_PLATFORM="$platform" context-mode doctor 2>&1)"; then
-        enterprise_e2e_preflight_fail "context-mode doctor failed (platform=${platform}): ${doctor_out%%$'\n'*}"
+        enterprise_e2e_preflight_fail "context-mode doctor failed (platform=${platform}): ${doctor_out%%$'\n'*}" || return 1
       fi
       if grep -qE '(^|[[:space:]])FAIL:' <<<"$doctor_out"; then
-        enterprise_e2e_preflight_fail "context-mode doctor reported FAIL (platform=${platform}) — run: CONTEXT_MODE_PLATFORM=${platform} context-mode doctor"
+        enterprise_e2e_preflight_fail "context-mode doctor reported FAIL (platform=${platform}) — run: CONTEXT_MODE_PLATFORM=${platform} context-mode doctor" || return 1
       fi
       echo "    context-mode doctor OK (platform=${platform})"
     else
@@ -1228,8 +1227,8 @@ enterprise_e2e_code_intel_preflight() {
   local host="${SILVER_BULLET_RUNTIME:-claude}"
   local config rtk_checked=0 cm_checked=0
 
-  [[ -n "$sb_root" && -d "$sb_root" ]] || enterprise_e2e_preflight_fail "SB_ROOT missing"
-  [[ -n "$fixture_dir" && -d "$fixture_dir" ]] || enterprise_e2e_preflight_fail "fixture dir missing: ${fixture_dir}"
+  [[ -n "$sb_root" && -d "$sb_root" ]] || enterprise_e2e_preflight_fail "SB_ROOT missing" || return 1
+  [[ -n "$fixture_dir" && -d "$fixture_dir" ]] || enterprise_e2e_preflight_fail "fixture dir missing: ${fixture_dir}" || return 1
 
   enterprise_e2e_source_code_intel_libs "$sb_root"
   export SB_ROOT="${sb_root}"

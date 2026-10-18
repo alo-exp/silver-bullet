@@ -55,7 +55,11 @@ sb_repo_snapshot() {
       export GIT_AUTHOR_NAME="SB Test" GIT_AUTHOR_EMAIL="sb-test@example.invalid"
       export GIT_COMMITTER_NAME="SB Test" GIT_COMMITTER_EMAIL="sb-test@example.invalid"
       export GIT_AUTHOR_DATE="2026-01-01T00:00:00Z" GIT_COMMITTER_DATE="2026-01-01T00:00:00Z"
+      # No automatic gc or maintenance: a detached repack after the commit
+      # races installers that `git clone --local` the snapshot.
       git -c init.defaultBranch=main init -q &&
+        git config gc.auto 0 &&
+        git config maintenance.auto false &&
         git add -A &&
         git -c commit.gpgsign=false -c core.hooksPath=/dev/null commit -q -m "test snapshot"
     ) >/dev/null || return 1

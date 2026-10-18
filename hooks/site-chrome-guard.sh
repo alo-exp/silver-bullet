@@ -55,7 +55,9 @@ emit_deny() {
 
 case "$file_path" in
   */site/tokens.css|site/tokens.css)
-    if grep -qE '@font-face|font-family:[[:space:]]*[^v]' <<<"$new_string"; then
+    # Only token references (font-family: var(--x)) are allowed; any other value is a raw font.
+    font_decls="$(grep -oE 'font-family:[[:space:]]*[^;}]*' <<<"$new_string" || true)"
+    if grep -qE '@font-face' <<<"$new_string" || { [[ -n "$font_decls" ]] && grep -qvE '^font-family:[[:space:]]*var\(' <<<"$font_decls"; }; then
       if ! grep -q 'SB FONT TOKEN OVERRIDE' <<<"$new_string"; then
         emit_deny "Site tokens guard — tokens.css @font-face / font-family edits require explicit SB FONT TOKEN OVERRIDE marker in the diff.
 
