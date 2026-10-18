@@ -201,9 +201,10 @@ def compute_source_id(canonical_locator: str) -> str:
 
 
 BIB_HEADING_RE = re.compile(r'^##\s+Bibliography\s*$', re.I)
-BIB_ENTRY_RE = re.compile(r'^\[(\d+)\]\s+')
+# Citation numbers are bounded to 9 digits so int() can never hit the 4300-digit cap.
+BIB_ENTRY_RE = re.compile(r'^\[(\d{1,9})\]\s+')
 MD_LINK_URL_RE = re.compile(r'\]\((https?://[^)\s]+)\)')
-INLINE_CITATION_RE = re.compile(r'\[(\d+(?:,\s*\d+)*)\]')
+INLINE_CITATION_RE = re.compile(r'\[(\d{1,9}(?:,\s*\d{1,9})*)\]')
 
 
 def _find_report_path(run_dir: str) -> Optional[str]:

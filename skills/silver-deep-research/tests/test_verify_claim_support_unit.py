@@ -57,6 +57,17 @@ class TestJsonl(unittest.TestCase):
 
 
 class TestExtractors(unittest.TestCase):
+    def test_percent_and_x_suffixes_kept(self):
+        # Regression: a trailing % was dropped unless a word character followed.
+        self.assertEqual(vcs.extract_numbers('up 50% now'), {'50%'})
+        self.assertEqual(vcs.extract_numbers('up 50%.'), {'50%'})
+        self.assertEqual(vcs.extract_numbers('3x faster, 4X slower'), {'3x', '4X'})
+        self.assertEqual(vcs.extract_numbers('3xyz and 7'), {'7'})
+        self.assertNotIn('50%', vcs.extract_numbers('50 people'))
+        score_pct = vcs.compute_support_score('Revenue grew 50% overall', ['Revenue grew 50 people overall'])[1]
+        score_same = vcs.compute_support_score('Revenue grew 50% overall', ['Revenue grew 50% overall'])[1]
+        self.assertLess(score_pct, score_same)
+
     def test_extractors(self):
         self.assertEqual(vcs.extract_tokens('The Quick fox jumped'), {'quick', 'jumped'})
         self.assertEqual(vcs.extract_numbers('grew 12.5 in 2020 by 3x'), {'12.5', '2020', '3x'})
@@ -195,6 +206,26 @@ class TestBibliography(unittest.TestCase):
 
     def test_no_bibliography(self):
         self.assertEqual(vcs.parse_bibliography_number_to_url('## Findings\n[1] x [l](https://a.com)\n'), {})
+
+
+class TestHugeNumbers(unittest.TestCase):
+    """Regression: int() on 5000 digits raises ValueError on Python 3.11+."""
+
+    def test_huge_bibliography_number_ignored(self):
+        md = '## Bibliography\n[' + '1' * 5000 + '] [x](http://a.com)\n[2] [y](http://b.com)\n'
+        self.assertEqual(vcs.parse_bibliography_number_to_url(md), {2: 'http://b.com'})
+
+    def test_huge_inline_citation_ignored(self):
+        md = 'Claim here [' + '1' * 5000 + '] and [3].'
+        self.assertEqual(vcs.infer_citation_numbers_from_context(md, 'Claim here'), [3])
+        md = 'Claim here.\n\n[' + '9' * 5000 + ', 2]'
+        self.assertEqual(vcs.infer_citation_numbers_from_context(md, 'Claim here.'), [])
+
+    def test_nine_digit_numbers_still_parsed(self):
+        md = '## Bibliography\n[123456789] [x](http://a.com)\n'
+        self.assertEqual(vcs.parse_bibliography_number_to_url(md), {123456789: 'http://a.com'})
+        self.assertEqual(vcs.infer_citation_numbers_from_context('Claim [123456789, 5]', 'Claim'),
+                         [123456789, 5])
 
 
 class TestDisplayMapping(unittest.TestCase):
