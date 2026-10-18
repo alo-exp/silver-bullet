@@ -265,6 +265,13 @@ run_pd --prompt p --task-id esc-3
 assert_eq "an unavailable escalation keeps the failure" "1" "$TL_STATUS"
 assert_contains "the unavailable escalation is recorded" "$(cat "$W/.planning/agent-pi/esc-3/mode.json")" "escalate-unavailable"
 
+# an escalated retry that fails too keeps the failure (second status is final)
+alh_script "1|first wave failed" "3|escalated wave failed"
+tl_run timeout 60 env SB_AGENT_MODE_TUI_AVAILABLE=1 bash "$DELEGATE" --sb-root "$SB" --skip-preflight --work-dir "$W" --prompt p --task-id esc-5
+assert_eq "a failing escalated retry exits with its status" "3" "$TL_STATUS"
+assert_eq "a failing escalated retry output is final" "escalated wave failed" "$TL_OUT"
+assert_eq "a failing escalated retry ran the adapter twice" "2" "$(alh_attempts)"
+
 assert_file_absent "no real host CLI was reached" "$TL_TMP/unexpected-cli.log"
 assert_file_absent "no package manager or sudo was invoked" "$TL_TMP/guarded-commands.log"
 
