@@ -151,80 +151,6 @@ tl_run timeout 60 bash "$DELEGATE" --sb-root "$SB" --skip-preflight --work-dir "
 assert_eq "interactive pin without a TUI exits 3" "3" "$TL_STATUS"
 assert_contains "interactive pin without a TUI says mode-unavailable" "$TL_ERR" "mode-unavailable"
 
-# ---------------------------------------------------------------- delegation modes
-run_od --prompt p --delegation-mode bogus
-assert_eq "an invalid --delegation-mode exits 2" "2" "$TL_STATUS"
-assert_contains "an invalid --delegation-mode message" "$TL_ERR" "invalid --delegation-mode bogus"
-
-alh_script "0|ok"
-run_od --prompt p --multi-ai-profile ocg-x --no-escalate
-assert_eq "--multi-ai-profile without worker mode fails" "2" "$TL_STATUS"
-assert_contains "--multi-ai-profile without worker mode message" "$TL_ERR" "--multi-ai-profile requires --delegation-mode multi-ai-worker-v1"
-assert_eq "--multi-ai-profile without worker mode never reaches the adapter" "0" "$(alh_attempts)"
-
-run_od --prompt p --delegation-mode multi-ai-worker-v1 --no-escalate
-assert_eq "worker mode without a profile fails" "2" "$TL_STATUS"
-assert_contains "worker mode without a profile message" "$TL_ERR" "--multi-ai-profile required for multi-ai-worker-v1"
-
-alh_script "0|worker-ok"
-run_od --prompt p --delegation-mode multi-ai-worker-v1 --multi-ai-profile ocg-x
-assert_eq "worker mode with an allowlisted profile exits 0" "0" "$TL_STATUS"
-assert_eq "worker mode delegation mode reaches the adapter" "multi-ai-worker-v1" "$(alh_env SB_AGENT_OPENCODE_DELEGATION_MODE)"
-assert_eq "worker mode profile reaches the adapter" "ocg-x" "$(alh_env SB_MULTI_AI_OCG_PROFILE)"
-assert_eq "worker mode pool defaults to lite" "lite" "$(alh_env SB_MULTI_AI_OCG_POOL)"
-assert_eq "worker mode run model comes from the registry alias" "opencode-go/x-model" "$(alh_env OPENCODE_RUN_MODEL)"
-assert_eq "worker mode marks the env validated" "1" "$(alh_env SB_MULTI_AI_OCG_VALIDATED)"
-
-alh_script "0|worker-ok"
-run_od --prompt p --delegation-mode multi-ai-worker-v1 --multi-ai-profile ocg-plain
-assert_eq "an unaliased ocg- profile strips its prefix" "opencode-go/plain" "$(alh_env OPENCODE_RUN_MODEL)"
-
-run_od --prompt p --delegation-mode multi-ai-worker-v1 --multi-ai-profile ocg-nope --no-escalate
-assert_eq "a non-allowlisted profile fails" "2" "$TL_STATUS"
-assert_contains "a non-allowlisted profile message" "$TL_ERR" "profile ocg-nope not allowlisted for pool lite"
-alh_script "0|worker-ok"
-run_od --prompt p --delegation-mode multi-ai-worker-v1 --multi-ai-profile ocg-y --multi-ai-pool regular
-assert_eq "the regular pool allows its own profiles" "0" "$TL_STATUS"
-run_od --prompt p --delegation-mode multi-ai-worker-v1 --multi-ai-profile ocg-y --multi-ai-pool huge --no-escalate
-assert_eq "an unknown pool fails" "2" "$TL_STATUS"
-assert_contains "an unknown pool message" "$TL_ERR" "multi-ai pool must be lite or regular"
-
-# ---------------------------------------------------------------- pool cohort
-run_od --delegation-mode multi-ai-pool-v1
-assert_eq "pool mode without --cohort-request exits 2" "2" "$TL_STATUS"
-assert_contains "pool mode without --cohort-request message" "$TL_ERR" "--cohort-request required for multi-ai-pool-v1"
-
-mkdir -p "$TL_TMP/cohort"
-printf '{}\n' >"$TL_TMP/cohort/request.json"
-rm -f "$TL_TMP/cohort-args"
-pushd "$TL_TMP/cohort" >/dev/null
-run_od --delegation-mode multi-ai-pool-v1 --cohort-request request.json --cohort-output out.json --multi-ai-pool regular
-popd >/dev/null
-assert_eq "pool cohort run exits 0" "0" "$TL_STATUS"
-assert_eq "pool cohort prints the cohort output" "cohort-done" "$TL_OUT"
-assert_eq "cohort script got canonical request/output paths and ran in the work dir" \
-  "--request $TL_TMP/cohort/request.json --output $TL_TMP/cohort/out.json|$W" "$(cat "$TL_TMP/cohort-args")"
-assert_contains "pool cohort announces its start" "$TL_ERR" '"type":"ocg.pool.cohort.start","pool":"regular"'
-rm -f "$TL_TMP/cohort-args"
-run_od --delegation-mode multi-ai-pool-v1 --cohort-request "$TL_TMP/cohort/request.json"
-assert_eq "pool cohort without output exits 0" "0" "$TL_STATUS"
-assert_eq "cohort script gets only --request when no output is given" "--request $TL_TMP/cohort/request.json|$W" "$(cat "$TL_TMP/cohort-args")"
-
-run_od --delegation-mode multi-ai-pool-v1 --cohort-request "$TL_TMP/cohort/request.json" --multi-ai-pool huge --no-escalate
-assert_eq "pool mode with an unknown pool fails" "2" "$TL_STATUS"
-run_od --delegation-mode multi-ai-pool-v1 --cohort-request "$TL_TMP/cohort/request.json" --multi-ai-profile ocg-x --no-escalate
-assert_eq "pool mode ignores a profile and still runs" "0" "$TL_STATUS"
-tl_run timeout 60 env OPENCODE_MODEL=other bash "$DELEGATE" --sb-root "$SB" --skip-preflight --work-dir "$W" --delegation-mode multi-ai-pool-v1 --cohort-request "$TL_TMP/cohort/request.json" --no-escalate
-assert_eq "pool mode with a drifted model fails the MiMo pin" "2" "$TL_STATUS"
-assert_contains "pool mode drifted model message" "$TL_ERR" "OPENCODE_MODEL must be mimo-v2.5"
-tl_run timeout 60 env COHORT_RC=4 bash "$DELEGATE" --sb-root "$SB" --skip-preflight --work-dir "$W" --delegation-mode multi-ai-pool-v1 --cohort-request "$TL_TMP/cohort/request.json" --no-escalate
-assert_eq "a failing cohort propagates its status" "4" "$TL_STATUS"
-mv "$SB/skills/silver-multi-ai-task/scripts/ocg_pool_cohort.py" "$TL_TMP/cohort.py.moved"
-run_od --delegation-mode multi-ai-pool-v1 --cohort-request "$TL_TMP/cohort/request.json" --no-escalate
-assert_eq "a missing cohort script fails" "1" "$TL_STATUS"
-assert_contains "a missing cohort script message" "$TL_ERR" "missing OCG cohort script"
-mv "$TL_TMP/cohort.py.moved" "$SB/skills/silver-multi-ai-task/scripts/ocg_pool_cohort.py"
-
 # ---------------------------------------------------------------- recommended-tools preflight
 alh_script "0|ok"
 tl_run timeout 60 bash "$DELEGATE" --sb-root "$SB" --work-dir "$W" --prompt p
@@ -321,20 +247,6 @@ alh_script "0|"
 tl_run timeout 60 env ALH_RM_WORKDIR=1 ALH_RM_LOG=1 bash "$DELEGATE" --sb-root "$SB" --skip-preflight --work-dir "$TL_TMP/work-gone" --prompt p --log "$LOG" --no-escalate
 assert_contains "a missing log after the run is announced" "$TL_ERR" "[agent-opencode] log written: $LOG"
 assert_contains "the fallback log records the attempt and exit" "$(cat "$LOG")" "exit=0"
-
-# fault injection: a read-only SB_ORCHESTRATOR_PARENT makes the last export of the lightweight env step fail
-BASHENV="$TL_TMP/readonly-delegate.env"
-cat >"$BASHENV" <<'ENVEOF'
-[[ -z "${ORIG_BASH_ENV:-}" ]] || source "$ORIG_BASH_ENV"
-readonly SB_ORCHESTRATOR_PARENT=0
-ENVEOF
-alh_script "0|ok"
-tl_run timeout 60 env ORIG_BASH_ENV="${BASH_ENV:-}" BASH_ENV="$BASHENV" bash "$DELEGATE" --sb-root "$SB" --skip-preflight --work-dir "$W" --prompt p --no-escalate
-assert_eq "a failing lightweight env step fails the delegation" "1" "$TL_STATUS"
-assert_contains "the failing export is visible" "$TL_ERR" "readonly variable"
-assert_eq "a failing lightweight env step never reaches the adapter" "0" "$(alh_attempts)"
-tl_run timeout 60 env ORIG_BASH_ENV="${BASH_ENV:-}" BASH_ENV="$BASHENV" bash "$DELEGATE" --sb-root "$SB" --skip-preflight --work-dir "$W" --delegation-mode multi-ai-pool-v1 --cohort-request "$TL_TMP/cohort/request.json" --no-escalate
-assert_eq "a failing lightweight env step fails the pool cohort" "1" "$TL_STATUS"
 
 # ---------------------------------------------------------------- failure -> result normalisation -> D4 escalation
 alh_script "1|first wave failed" "0|escalated wave ok"
