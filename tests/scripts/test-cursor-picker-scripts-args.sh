@@ -40,16 +40,38 @@ MARK='<!-- sb-managed: cursor-sb-agents -->'
 genuine() { printf -- '---\nname: %s\ndescription: SB reusable ladder agent — x effort=high.\nmodel: m\nreadonly: false\n---\nYou are a Silver Bullet reusable review/verify agent.\n%s\n' "$1" "$MARK"; }
 genuine sb-ok-high >"$AG/sb-ok-high.md"
 genuine sb:evil >"$AG/sb-evil.md"                              # marker + sb: name
-genuine silver-fake >"$AG/silver-fake.md"                      # marker + non-sb filename
 printf -- '---\nname: sb-mid-high\ndescription: SB reusable ladder agent — x.\n---\n%s\nSilver Bullet trailing body\n' "$MARK" >"$AG/sb-mid-high.md"   # marker mid-file
 genuine sb-nested-high >"$AG/sub/sb-nested-high.md"            # subdirectory
 printf -- '---\nname: sb-other-high\ndescription: something else Silver Bullet.\n---\nbody\n%s\n' "$MARK" >"$AG/sb-other-high.md"   # wrong description
 printf -- '---\nname: sb-mismatch\ndescription: SB reusable ladder agent — x.\n---\nSilver Bullet\n%s\n' "$MARK" >"$AG/sb-differs-high.md"   # name != filename stem
+
+render_real() { # render_real <dir>: real generator output for unusual names/prefixes
+  python3 - "$TL_REPO_ROOT" "$1" <<'PY'
+import sys, pathlib
+sys.path.insert(0, sys.argv[1] + "/scripts/lib/cursor-sb-agents")
+import cursor_sb_agents_lib as lib
+tpl = pathlib.Path(sys.argv[1], "scripts/lib/install-cursor/templates/cursor-agents/sb-agent.md.template").read_text()
+out = pathlib.Path(sys.argv[2])
+for model, prefix in (("gpt-5", "team"), ("Claude-4.5-Sonnet", "sb"), ("gemini 3", "sb")):
+    name = lib.agent_name(model, "high", prefix)
+    (out / f"{name}.md").write_text(lib.render_agent_markdown(name, model, "high", model, tpl), encoding="utf-8")
+PY
+}
+mkdir -p "$TL_TMP/ext-agents"; genuine sb-ext-high >"$TL_TMP/ext-agents/sb-ext-high.md"
+ln -s "$TL_TMP/ext-agents/sb-ext-high.md" "$AG/sb-ext-high.md"      # symlink whose every field checks out
+genuine sb@evil >"$AG/sb@evil.md"                              # filename outside the generator character set
+render_real "$AG"                                              # custom prefix, mixed case, a space
 tl_run bash "$TL_REPO_ROOT/scripts/enumerate-cursor-slash-picker.sh" --cursor-home "$AGH" --surface "$SURF"
-for f in sb-evil sb-mid-high sb-other-high sb-differs-high sb-nested-high silver-fake; do
+for f in sb-ext-high 'sb@evil'; do
   assert_contains "$f is flagged" "$TL_OUT" "$f"
 done
-assert_not_contains "genuine generated agent is not flagged" "$TL_OUT" "sb-ok-high"
+for f in team-gpt-5-high sb-Claude-4-5-Sonnet-high 'sb-gemini 3-high'; do
+  assert_not_contains "real generator output $f is not flagged" "$TL_OUT" "($f.md)"
+done
+for f in sb-evil sb-mid-high sb-other-high sb-differs-high sb-nested-high; do
+  assert_contains "$f is flagged" "$TL_OUT" "$f"
+done
+assert_not_contains "genuine generated agent is not flagged" "$TL_OUT" "(sb-ok-high.md)"
 
 # ---- codex-sanitize-package.sh
 SAN="$TL_REPO_ROOT/scripts/codex-sanitize-package.sh"
