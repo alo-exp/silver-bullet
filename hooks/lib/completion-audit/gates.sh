@@ -168,7 +168,7 @@ build_doc_scheme_checklist_keys() {
         continue
       fi
       DOC_SCHEME_CHECKLIST_KEYS+=("$rel")
-    done < <(cd "$repo_root" && find docs -type f -print | LC_ALL=C sort)
+    done < <(cd "$repo_root" && find docs -type f -print | env LC_ALL=C sort)
   fi
 
   if [[ -f "$repo_root/README.md" && ! -L "$repo_root/README.md" ]]; then

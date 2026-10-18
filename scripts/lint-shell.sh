@@ -144,7 +144,10 @@ run_shellcheck() {
   local files=() path
   while IFS= read -r path; do
     files+=("$path")
-  done < <(collect "$@" | LC_ALL=C sort -u)
+  done < <(
+    collect "$@" |
+      env LC_ALL=C sort -u
+  )
 
   if ((${#files[@]} == 0)); then
     printf 'lint-shell: no %s files found\n' "$label" >&2
@@ -202,7 +205,7 @@ run_shellcheck() {
   return 0
 }
 
-if ! ((list_only)) && ! command -v shellcheck >/dev/null 2>&1; then
+if ((list_only == 0)) && ! command -v shellcheck >/dev/null 2>&1; then
   printf 'lint-shell: shellcheck not found on PATH (apt-get install shellcheck / brew install shellcheck)\n' >&2
   exit 2
 fi
