@@ -56,6 +56,24 @@ assert_eq "heartbeat consent embedded" "enabled" "$(jq -r .consent.graphify <<<"
 assert_match "heartbeat written_at format" '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:]{8}Z$' "$(jq -r .written_at <<<"$hb")"
 delta=$(( $("$REAL_DATE" -u -d "$(jq -r .expires_at <<<"$hb")" +%s) - $("$REAL_DATE" -u -d "$(jq -r .written_at <<<"$hb")" +%s) ))
 assert_eq "heartbeat TTL is 300s" "300" "$delta"
+# ... also when the clock advances a second between reads: a ticking date stub (each plain read is +1s)
+TICK_FILE="$TL_TMP/tick"; echo 1800000000 >"$TICK_FILE"; export TICK_FILE
+tl_stub date '
+tick() { local n; n="$(cat "$TICK_FILE")"; echo $((n + 1)) >"$TICK_FILE"; echo "$n"; }
+fmt="+%Y-%m-%dT%H:%M:%SZ"
+case "$*" in
+  "-u +%s"|"+%s") tick ;;
+  "-u $fmt") "$REAL_DATE" -u -d "@$(tick)" "$fmt" ;;
+  "-u -d @"*) "$REAL_DATE" "$@" ;;
+
+  "-u -d +"*) "$REAL_DATE" -u -d "@$(( $(tick) + 300 ))" "$fmt" ;;
+  *) "$REAL_DATE" "$@" ;;
+esac'
+hash -r
+hb="$(rt_heartbeat_build_json "$PROJ" cursor)"
+delta=$(( $("$REAL_DATE" -u -d "$(jq -r .expires_at <<<"$hb")" +%s) - $("$REAL_DATE" -u -d "$(jq -r .written_at <<<"$hb")" +%s) ))
+assert_eq "heartbeat TTL is exactly 300s even when the clock ticks between reads" "300" "$delta"
+/bin/rm -f "$TL_BIN/date"; hash -r
 hb="$(rt_heartbeat_build_json "" "")"
 assert_eq "defaults: host falls back to RT_HOST/cursor" "cursor" "$(env -u RT_HOST bash -c 'source "$1/heartbeat.sh" 2>/dev/null; rt_heartbeat_build_json "" "" | jq -r .host' _ "$RTLIB")"
 assert_eq "defaults: project root from RT_PROJECT_ROOT config" "true" "$(jq -r .sb_initiated <<<"$hb")"
@@ -77,7 +95,7 @@ printf '{"sb_initiated":true,"recommended_tools":{"graphify":{"enabled_by_user":
 
 # expiry computed without GNU/BSD date extensions
 tl_stub date '
-for a in "$@"; do [[ "$a" == -v* || "$a" == -d ]] && exit 1; done
+for a in "$@"; do [[ "$a" == -v* || "$a" == -d || "$a" == -r ]] && exit 1; done
 exec "$REAL_DATE" "$@"'
 hb="$(rt_heartbeat_build_json "$PROJ" cursor)"
 assert_eq "expiry falls back to 'now' when date cannot add" "$(jq -r .written_at <<<"$hb")" "$(jq -r .expires_at <<<"$hb")"

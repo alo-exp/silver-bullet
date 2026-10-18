@@ -9,7 +9,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/h-recommended-helpers.sh"
 cd "$TL_TMP"  # never run with the checkout as cwd: stubs and relative writes stay in the sandbox
 # The checkout's tracked knowledge graph must never be touched by this test.
 REPO_GRAPH="$TL_REPO_ROOT/graphify-out/graph.json"
-GRAPH_BEFORE="$(cksum <"$REPO_GRAPH")|$(stat -c %Y "$REPO_GRAPH")"
+GRAPH_BEFORE="$(cksum <"$REPO_GRAPH")|$(stat -c %Y "$REPO_GRAPH" 2>/dev/null || stat -f %m "$REPO_GRAPH")"
 
 hr_stage_repo
 # shellcheck source=/dev/null
@@ -401,5 +401,5 @@ out="$(rt_repair_agentmemory)"
 assert_contains "am repair: server started" "$(jq -c . <<<"$out")" '"server_started"'
 assert_file_exists "am repair: server log directory created" "$HOME/.agentmemory/server.log"
 
-assert_eq "the checkout's graphify-out/graph.json is untouched (content and mtime)" "$GRAPH_BEFORE" "$(cksum <"$REPO_GRAPH")|$(stat -c %Y "$REPO_GRAPH")"
+assert_eq "the checkout's graphify-out/graph.json is untouched (content and mtime)" "$GRAPH_BEFORE" "$(cksum <"$REPO_GRAPH")|$(stat -c %Y "$REPO_GRAPH" 2>/dev/null || stat -f %m "$REPO_GRAPH")"
 tl_results

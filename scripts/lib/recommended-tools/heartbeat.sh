@@ -32,6 +32,12 @@ rt_heartbeat_consent_summary() {
   printf '{%s}' "$(IFS=,; printf '%s' "${parts[*]}")"
 }
 
+# Format an epoch as UTC ISO-8601 (GNU date -d @N, BSD date -r N); fails when neither works.
+rt_epoch_to_iso() {
+  date -u -d "@${1}" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null \
+    || date -u -r "${1}" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null
+}
+
 rt_heartbeat_build_json() {
   local project_root="${1:-${RT_PROJECT_ROOT:-}}"
   local host="${2:-${RT_HOST:-cursor}}"
@@ -40,10 +46,12 @@ rt_heartbeat_build_json() {
   local project_id worktree_id now expires
   project_id="$(rt_project_id)"
   worktree_id="$(rt_worktree_id "$project_root")"
-  now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-  expires="$(date -u -v+${RT_HEARTBEAT_TTL_SECONDS}S +%Y-%m-%dT%H:%M:%SZ 2>/dev/null \
-    || date -u -d "+${RT_HEARTBEAT_TTL_SECONDS} seconds" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null \
-    || date -u +%Y-%m-%dT%H:%M:%SZ)"
+  # One clock read: written_at and expires_at are derived from the same instant,
+  # so the TTL is exactly RT_HEARTBEAT_TTL_SECONDS even across a second boundary.
+  local now_epoch
+  now_epoch="$(date -u +%s)"
+  now="$(rt_epoch_to_iso "$now_epoch" || date -u +%Y-%m-%dT%H:%M:%SZ)"
+  expires="$(rt_epoch_to_iso "$((now_epoch + RT_HEARTBEAT_TTL_SECONDS))" || printf '%s' "$now")"
   local cfg sb_initiated consent_json suspended=false
   # The explicit project root is authoritative during reconciler/repair
   # calls; relying only on RT_PROJECT_ROOT made a heartbeat written by a
