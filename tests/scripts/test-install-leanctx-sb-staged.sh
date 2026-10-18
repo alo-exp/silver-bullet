@@ -135,6 +135,11 @@ assert_contains "installer announced" "$TL_OUT" "Installing lean-ctx via upstrea
 assert_contains "install confirmed" "$TL_OUT" "OK: lean-ctx installed"
 assert_file_exists "stub installer produced the binary" "$LC_DEST/lean-ctx"
 rm -f "$LC_DEST/lean-ctx"
+# the upstream installer itself fails (curl error): still no binary afterwards
+tl_stub curl 'exit 22'
+tl_run env PATH="$LC_DEST:$NOLC" bash "$INST" --host cursor --project-root "$PROJ" --skip-verify --skip-merge
+assert_eq "failing upstream installer aborts" "1" "$TL_STATUS"
+assert_contains "failing upstream installer warns" "$TL_ERR" "WARN: lean-ctx not on PATH after installer"
 # installer ran but produced nothing
 tl_stub curl 'echo "true"'
 tl_run env PATH="$LC_DEST:$NOLC" bash "$INST" --host cursor --project-root "$PROJ" --skip-verify --skip-merge
