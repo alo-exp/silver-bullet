@@ -156,15 +156,18 @@ sync_plugin_tree_from_checkout() {
   else
     rm -rf "${dest}/commands"
   fi
+  local cursor_hooks_json="${source_root}/hooks/cursor-hooks.json"
   python3 "${source_root}/scripts/generate-cursor-hooks.py" >/dev/null 2>&1 || {
-    if [[ -x "${REPO_ROOT}/scripts/generate-cursor-hooks.py" ]]; then
+    if [[ -f "${REPO_ROOT}/scripts/generate-cursor-hooks.py" ]]; then
       python3 "${REPO_ROOT}/scripts/generate-cursor-hooks.py" >/dev/null
+      # The fallback generator writes into its own checkout, not into source_root.
+      cursor_hooks_json="${REPO_ROOT}/hooks/cursor-hooks.json"
     else
       printf 'ERROR: missing scripts/generate-cursor-hooks.py in %s and %s\n' "$source_root" "$REPO_ROOT" >&2
       exit 1
     fi
   }
-  install -m 644 "${source_root}/hooks/cursor-hooks.json" "${dest}/hooks/cursor-hooks.json"
+  install -m 644 "$cursor_hooks_json" "${dest}/hooks/cursor-hooks.json"
   install_cursor_plugin_manifest "$dest" "$version" "$source_root"
   printf '%s\n' "$dest"
 }
@@ -283,7 +286,7 @@ ensure_cursor_github_marketplace_gitpath() {
 }
 
 resolve_remote_github_head_sha() {
-  git ls-remote "$CURSOR_GITHUB_REPO_URL" HEAD 2>/dev/null | awk 'NR==1 {print $1}'
+  git ls-remote "$CURSOR_GITHUB_REPO_URL" HEAD 2>/dev/null | awk 'NR==1 {print $1}' || true
 }
 
 cursor_marketplace_plugin_cache_root() {
@@ -727,6 +730,12 @@ SB_RECONCILE_PROJECT_ROOT=""
 source "$LEGACY_MARKETPLACE_LIB"
 # shellcheck source=scripts/lib/install-cursor/backend-cache.sh
 source "$BACKEND_CACHE_LIB"
+
+# Test seam: SB_INSTALL_CURSOR_SOURCE_ONLY=1 (set by a sourcing test) loads the
+# functions above without running the installer.
+if [[ "${SB_INSTALL_CURSOR_SOURCE_ONLY:-0}" == "1" ]]; then
+  return 0
+fi
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
