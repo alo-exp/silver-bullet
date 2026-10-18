@@ -676,11 +676,6 @@ enterprise_e2e_outcome_score_auto() {
     fi
     printf 'partial\n'; return 0
   fi
-  if enterprise_e2e_outcome_evidence_resolved "$work_dir" "$evidence" "$row_num" >/dev/null 2>&1 && \
-     [[ "${SB_E2E_ENTERPRISE_MATRIX:-}" == "1" ]] && \
-     enterprise_e2e_outcome_log_has_worker_completion "$row_log"; then
-    printf 'pass\n'; return 0
-  fi
   printf 'fail\n'
 }
 
@@ -716,9 +711,6 @@ enterprise_e2e_outcome_score_clarify() {
     fi
     if [[ -n "$row_log" && -f "$row_log" ]] && \
        grep -qEi 'routing validation only|routing completes|composed workflow skill|SILVER BULLET.*ROUTING|/sb.*(feature|fast)' "$row_log" 2>/dev/null; then
-      printf 'n/a\n'; return 0
-    fi
-    if [[ -f "$state_file" ]] && grep -qE 'silver-router|silver-context|silver-feature|silver-fast' "$state_file" 2>/dev/null; then
       printf 'n/a\n'; return 0
     fi
     printf 'fail\n'; return 0
@@ -1290,11 +1282,7 @@ enterprise_e2e_outcome_score_review() {
   [[ -f "$ledger_file" ]] || { printf 'fail\n'; return 0; }
   if grep -q 'review-fix-ladder' "$ledger_file" && \
      awk '/^\| [1-8] \|/{c++} END{exit (c>=8?0:1)}' "$ledger_file" 2>/dev/null; then
-    if grep -E '^\| [1-8] \|' "$ledger_file" | grep -cvE '\*\*Pass\*\*| Pass ' >/dev/null 2>&1; then
-      local fails
-      fails="$(grep -E '^\| [1-8] \|' "$ledger_file" | grep -cvE '\*\*Pass\*\*| Pass ' || true)"
-      [[ "${fails:-0}" -eq 0 ]] && { printf 'pass\n'; return 0; }
-    else
+    if ! grep -E '^\| [1-8] \|' "$ledger_file" | grep -cvE '\*\*Pass\*\*| Pass ' >/dev/null 2>&1; then
       printf 'pass\n'; return 0
     fi
     printf 'partial\n'; return 0

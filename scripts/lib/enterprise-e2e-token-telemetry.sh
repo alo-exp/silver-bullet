@@ -61,7 +61,7 @@ enterprise_e2e_telemetry_append() {
   overlay_fail="${VALIDATION_OVERLAY_FAIL:-}"
   overlay_skip="${VALIDATION_OVERLAY_SKIP:-}"
   tokens_max="$(enterprise_e2e_telemetry_extract_row_log_tokens "$row_log")"
-  rtk_snapshot="$(enterprise_e2e_telemetry_rtk_snapshot || true)"
+  rtk_snapshot="$(enterprise_e2e_telemetry_rtk_snapshot)"
   driver_pid="$(enterprise_e2e_telemetry_matrix_driver_pid)"
 
   if ! command -v jq >/dev/null 2>&1; then
