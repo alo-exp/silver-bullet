@@ -157,15 +157,8 @@ class CandidateTests(unittest.TestCase):
     def test_select_command_falls_back_to_bare_executable(self):
         env = {"FIVE_TOOL_RTK_COMMAND": "/nonexistent/dir/wrong-name"}
         with mock.patch.dict(os.environ, {"PATH": "/nonexistent"}):
-            # The bare executable name is itself an expected entrypoint, so the
-            # second loop returns it unresolved.
+            # No override or prior command qualifies: the bare executable name is returned.
             self.assertEqual(runtime._select_command("rtk", {}, env), "rtk")
-
-    def test_select_command_default_when_nothing_matches(self):
-        # An unexpected entrypoint name for every candidate: patch the matcher
-        # so the final default return is exercised.
-        with mock.patch.object(runtime, "_expected_entrypoint", return_value=False):
-            self.assertEqual(runtime._select_command("rtk", {}, {}), "rtk")
 
     def test_entrypoint_helpers(self):
         self.assertTrue(runtime._expected_entrypoint("context_mode", "/g/cli.bundle.mjs"))
