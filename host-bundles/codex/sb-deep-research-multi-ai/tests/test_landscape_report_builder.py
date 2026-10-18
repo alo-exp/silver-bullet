@@ -27,6 +27,33 @@ from synthesize_landscape import (  # noqa: E402
 )
 
 
+_SAVED_FONT_CACHE = None
+_OFFLINE_ENV = None
+
+
+def setUpModule() -> None:
+    # Keep the suite offline: an empty cached font CSS stops the independent PDF builder
+    # from fetching Google Fonts over HTTP in a fresh interpreter.
+    import landscape_independent_pdf
+
+    global _SAVED_FONT_CACHE, _OFFLINE_ENV
+    _SAVED_FONT_CACHE = landscape_independent_pdf._FONT_CSS_CACHE
+    landscape_independent_pdf._FONT_CSS_CACHE = ""
+    # Hermetic by default: no vendor-URL health checks over HTTP and no Playwright PDF rendering.
+    _OFFLINE_ENV = mock.patch.dict(
+        os.environ,
+        {"SB_SKIP_VENDOR_URL_HEALTH": "1", "SB_SKIP_LANDSCAPE_PDF": "1", "SB_ALLOW_SKIP_LANDSCAPE_PDF": "1"},
+    )
+    _OFFLINE_ENV.start()
+
+
+def tearDownModule() -> None:
+    import landscape_independent_pdf
+
+    landscape_independent_pdf._FONT_CSS_CACHE = _SAVED_FONT_CACHE
+    _OFFLINE_ENV.stop()
+
+
 class OverviewQualityTests(unittest.TestCase):
     def test_rejects_meta_research_overviews(self) -> None:
         self.assertTrue(

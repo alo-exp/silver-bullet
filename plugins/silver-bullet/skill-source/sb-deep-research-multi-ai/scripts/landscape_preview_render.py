@@ -427,26 +427,25 @@ def collect_landscape_payload(root: Path, *, report_html: Path | None = None) ->
         or "Market Landscape Report"
     )
 
-    if isinstance(consolidation, dict):
-        consolidation = {
-            **consolidation,
-            "consensus": [
-                {
-                    **item,
-                    "text": scrub_membership_framing(str(item.get("text") or ""), pack),
-                }
-                for item in (consolidation.get("consensus") or [])
-                if isinstance(item, dict)
-            ],
-            "divergence": [
-                {
-                    **item,
-                    "text": scrub_membership_framing(str(item.get("text") or ""), pack),
-                }
-                for item in (consolidation.get("divergence") or [])
-                if isinstance(item, dict)
-            ],
-        }
+    consolidation = {
+        **consolidation,
+        "consensus": [
+            {
+                **item,
+                "text": scrub_membership_framing(str(item.get("text") or ""), pack),
+            }
+            for item in (consolidation.get("consensus") or [])
+            if isinstance(item, dict)
+        ],
+        "divergence": [
+            {
+                **item,
+                "text": scrub_membership_framing(str(item.get("text") or ""), pack),
+            }
+            for item in (consolidation.get("divergence") or [])
+            if isinstance(item, dict)
+        ],
+    }
 
     def _scrub_embedded_strings(obj: Any) -> Any:
         """Scrub Conductor-as-APO framing inside embedded envelope/claim JSON."""
@@ -662,10 +661,10 @@ function renderMatrixPanel() {
     return;
   }
   const slugifyLabel = (label) => String(label || '').toLowerCase()
-    .replace(/\s*\([^)]*\)\s*/g, '')
-    .replace(/[^\w\s-]/g, '')
+    .replace(/\\s*\\([^)]*\\)\\s*/g, '')
+    .replace(/[^\\w\\s-]/g, '')
     .trim()
-    .replace(/[\s_]+/g, '-');
+    .replace(/[\\s_]+/g, '-');
   const labelForSlug = (slug) => {
     for (const [name] of (LINK_PAIRS || [])) {
       if (slugifyLabel(name) === slug) return name;
@@ -673,7 +672,7 @@ function renderMatrixPanel() {
     for (const d of [...MQ_DATA, ...GMQ_DATA, ...WAVE_DATA, ...VC_COMMERCIAL, ...VC_OSS]) {
       if (d && (d.slug === slug || slugifyLabel(d.label) === slug)) return d.label;
     }
-    return String(slug || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    return String(slug || '').replace(/-/g, ' ').replace(/\\b\\w/g, c => c.toUpperCase());
   };
   const urlForLabel = (label) => {
     if (typeof HOMEPAGE_VENDOR_URLS === 'object' && HOMEPAGE_VENDOR_URLS[label]) return HOMEPAGE_VENDOR_URLS[label];

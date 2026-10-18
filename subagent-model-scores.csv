@@ -120,3 +120,8 @@ timestamp,model_slug,reasoning_effort,score,task_complexity
 2026-10-18T15:11:55Z,claude-sonnet-5-5,medium,3,high
 2026-10-18T15:24:51Z,claude-sonnet-5-5,medium,5,high
 2026-10-18T15:28:52Z,claude-sonnet-5-5,medium,5,high
+2026-10-18T15:38:23Z,claude-sonnet-5-5,medium,4,high
+2026-10-18T15:56:07Z,claude-sonnet-5-5,medium,5,high
+2026-10-18T16:04:39Z,claude-sonnet-5-5,medium,5,high
+2026-10-18T16:10:46Z,claude-sonnet-5-5,medium,4,high
+2026-10-18T16:25:27Z,claude-sonnet-5-5,medium,5,high

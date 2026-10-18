@@ -12,7 +12,6 @@ CURSOR_MARKETPLACE_SOURCE="${CURSOR_MARKETPLACE_SOURCE:-https://github.com/alo-l
 CURSOR_SB_PUBLIC_MARKETPLACE_SOURCE="${CURSOR_SB_PUBLIC_MARKETPLACE_SOURCE:-https://github.com/alo-labs/agent-plugins.git}"
 CURSOR_MARKETPLACE_NAME="${CURSOR_MARKETPLACE_NAME:-alo-labs-cursor}"
 CURSOR_BACKEND_MARKETPLACE_NAME="${CURSOR_BACKEND_MARKETPLACE_NAME:-alo-labs-agent-plugins}"
-CURSOR_PLUGIN_GIT_SUBPATH="${CURSOR_PLUGIN_GIT_SUBPATH:-plugins/silver-bullet}"
 CURSOR_MARKETPLACE_ROOT="${CURSOR_MARKETPLACE_ROOT:-${CURSOR_HOME}/plugins/marketplaces/${CURSOR_MARKETPLACE_NAME}}"
 CURSOR_GITHUB_REPO_SLUG="${CURSOR_GITHUB_REPO_SLUG:-alo-exp/silver-bullet}"
 CURSOR_GITHUB_REPO_URL="${CURSOR_GITHUB_REPO_URL:-https://github.com/alo-exp/silver-bullet.git}"
@@ -149,22 +148,25 @@ sync_plugin_tree_from_checkout() {
   # plugin.json skills. Orchestrator + Skill tool read skill-source/ instead.
   rm -rf "${dest}/agents/cursor" "${dest}/agents"
   local commands_src
-  commands_src="$(cursor_plugin_commands_src "$source_root" || true)"
+  commands_src="$(cursor_plugin_commands_src "$source_root")"
   if [[ -n "$commands_src" ]]; then
     mkdir -p "${dest}/commands"
     rsync -a --delete "${commands_src}/" "${dest}/commands/"
   else
     rm -rf "${dest}/commands"
   fi
+  local cursor_hooks_json="${source_root}/hooks/cursor-hooks.json"
   python3 "${source_root}/scripts/generate-cursor-hooks.py" >/dev/null 2>&1 || {
-    if [[ -x "${REPO_ROOT}/scripts/generate-cursor-hooks.py" ]]; then
+    if [[ -f "${REPO_ROOT}/scripts/generate-cursor-hooks.py" ]]; then
       python3 "${REPO_ROOT}/scripts/generate-cursor-hooks.py" >/dev/null
+      # The fallback generator writes into its own checkout, not into source_root.
+      cursor_hooks_json="${REPO_ROOT}/hooks/cursor-hooks.json"
     else
       printf 'ERROR: missing scripts/generate-cursor-hooks.py in %s and %s\n' "$source_root" "$REPO_ROOT" >&2
       exit 1
     fi
   }
-  install -m 644 "${source_root}/hooks/cursor-hooks.json" "${dest}/hooks/cursor-hooks.json"
+  install -m 644 "$cursor_hooks_json" "${dest}/hooks/cursor-hooks.json"
   install_cursor_plugin_manifest "$dest" "$version" "$source_root"
   printf '%s\n' "$dest"
 }
@@ -283,7 +285,7 @@ ensure_cursor_github_marketplace_gitpath() {
 }
 
 resolve_remote_github_head_sha() {
-  git ls-remote "$CURSOR_GITHUB_REPO_URL" HEAD 2>/dev/null | awk 'NR==1 {print $1}'
+  git ls-remote "$CURSOR_GITHUB_REPO_URL" HEAD 2>/dev/null | awk 'NR==1 {print $1}' || true
 }
 
 cursor_marketplace_plugin_cache_root() {
@@ -326,11 +328,6 @@ read_installed_plugins_git_sha() {
 cursor_github_marketplace_gitpath_for_sha() {
   local commit_sha="$1"
   printf '%s/%s' "$(cursor_github_marketplace_gitpath_root)" "$commit_sha"
-}
-
-cursor_plugin_git_subpath_root() {
-  local commit_sha="$1"
-  printf '%s/%s' "$(cursor_github_marketplace_gitpath_for_sha "$commit_sha")" "$CURSOR_PLUGIN_GIT_SUBPATH"
 }
 
 prune_cursor_gitpath_picker_skills() {
@@ -728,12 +725,24 @@ source "$LEGACY_MARKETPLACE_LIB"
 # shellcheck source=scripts/lib/install-cursor/backend-cache.sh
 source "$BACKEND_CACHE_LIB"
 
+# Test seam: SB_INSTALL_CURSOR_SOURCE_ONLY=1 loads the functions above without
+# running the installer. Honoured only when this file is sourced, so a stray
+# variable in the environment never turns an executed install into a no-op.
+if [[ "${SB_INSTALL_CURSOR_SOURCE_ONLY:-0}" == "1" && "${BASH_SOURCE[0]}" != "$0" ]]; then
+  return 0
+fi
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --merge-hooks-only) MERGE_ONLY=1; shift ;;
     --public-release) PUBLIC_RELEASE_ONLY=1; shift ;;
     --project-root)
-      SB_RECONCILE_PROJECT_ROOT="${2:-}"
+      if [[ $# -lt 2 ]]; then
+        echo "--project-root requires a value" >&2
+        usage >&2
+        exit 2
+      fi
+      SB_RECONCILE_PROJECT_ROOT="$2"
       shift 2
       ;;
     -h|--help) usage; exit 0 ;;

@@ -359,9 +359,9 @@ enterprise_e2e_outcome_log_has_workflow_evidence_written() {
   enterprise_e2e_outcome_log_matches "$row_log" \
     'WROTE:.*\.planning/workflows/|Evidence[[:space:]]+written[[:space:]]+to[[:space:]]+\.planning/workflows/|\.planning/workflows/[[:alnum:]_.-]+\.md' && return 0
   enterprise_e2e_outcome_log_matches "$row_log" \
-    'WROTE:.*\.planning/reviews/|\.planning/reviews/[[:alnum_]_.-]+\.md' && return 0
+    'WROTE:.*\.planning/reviews/|\.planning/reviews/[[:alnum:]_.-]+\.md' && return 0
   enterprise_e2e_outcome_log_matches "$row_log" \
-    'WROTE:.*\.planning/ship-readiness/|\.planning/ship-readiness/[[:alnum_]_.-]+\.md' && return 0
+    'WROTE:.*\.planning/ship-readiness/|\.planning/ship-readiness/[[:alnum:]_.-]+\.md' && return 0
   return 1
 }
 
@@ -676,11 +676,6 @@ enterprise_e2e_outcome_score_auto() {
     fi
     printf 'partial\n'; return 0
   fi
-  if enterprise_e2e_outcome_evidence_resolved "$work_dir" "$evidence" "$row_num" >/dev/null 2>&1 && \
-     [[ "${SB_E2E_ENTERPRISE_MATRIX:-}" == "1" ]] && \
-     enterprise_e2e_outcome_log_has_worker_completion "$row_log"; then
-    printf 'pass\n'; return 0
-  fi
   printf 'fail\n'
 }
 
@@ -716,9 +711,6 @@ enterprise_e2e_outcome_score_clarify() {
     fi
     if [[ -n "$row_log" && -f "$row_log" ]] && \
        grep -qEi 'routing validation only|routing completes|composed workflow skill|SILVER BULLET.*ROUTING|/sb.*(feature|fast)' "$row_log" 2>/dev/null; then
-      printf 'n/a\n'; return 0
-    fi
-    if [[ -f "$state_file" ]] && grep -qE 'silver-router|silver-context|silver-feature|silver-fast' "$state_file" 2>/dev/null; then
       printf 'n/a\n'; return 0
     fi
     printf 'fail\n'; return 0
@@ -990,7 +982,7 @@ enterprise_e2e_outcome_row_failures() {
     printf '%s %s\n' "$cid" "$score"
   done < <(enterprise_e2e_outcome_session_criteria)
   world="$(enterprise_e2e_outcome_score_world "$row_num" "$work_dir" "$state_dir" "$row_log" "$ledger" "$evidence")"
-  [[ "$world" != "pass" ]] && printf 'OUT-WORLD-01 %s\n' "$world"
+  [[ "$world" == "pass" ]] || printf 'OUT-WORLD-01 %s\n' "$world"
 }
 
 # Emit: pass|partial|fail|n/a
@@ -1290,11 +1282,7 @@ enterprise_e2e_outcome_score_review() {
   [[ -f "$ledger_file" ]] || { printf 'fail\n'; return 0; }
   if grep -q 'review-fix-ladder' "$ledger_file" && \
      awk '/^\| [1-8] \|/{c++} END{exit (c>=8?0:1)}' "$ledger_file" 2>/dev/null; then
-    if grep -E '^\| [1-8] \|' "$ledger_file" | grep -cvE '\*\*Pass\*\*| Pass ' >/dev/null 2>&1; then
-      local fails
-      fails="$(grep -E '^\| [1-8] \|' "$ledger_file" | grep -cvE '\*\*Pass\*\*| Pass ' || true)"
-      [[ "${fails:-0}" -eq 0 ]] && { printf 'pass\n'; return 0; }
-    else
+    if ! grep -E '^\| [1-8] \|' "$ledger_file" | grep -cvE '\*\*Pass\*\*| Pass ' >/dev/null 2>&1; then
       printf 'pass\n'; return 0
     fi
     printf 'partial\n'; return 0
@@ -1525,7 +1513,11 @@ def add(val):
 def composer_to_wf(composer):
     if not composer or not isinstance(composer, str):
         return
-    c = composer.strip().replace("sb:", "silver-")
+    c = composer.strip()
+    if c.startswith("sb:"):
+        c = c[3:]
+        if not c.startswith("silver-"):
+            c = "silver-" + c
     mapping = {
         "silver-feature": "WF-SILVER-FEATURE",
         "silver-fast": "WF-SILVER-FAST",
@@ -1649,16 +1641,18 @@ enterprise_e2e_outcome_score_dynamic() {
     valid_ops="$(jq -s '
       [.[] | .operations[]? |
         select((.catalog_rule_ref // "") != "" and (.rationale // "") != "")] | length
-    ' "${comp_logs[@]}" 2>/dev/null || echo 0)"
+    ' "${comp_logs[@]}" 2>/dev/null)" || valid_ops=0
     distinct_ops="$(jq -s '
       [.[] | .operations[]?.op] | unique | length
-    ' "${comp_logs[@]}" 2>/dev/null || echo 0)"
+    ' "${comp_logs[@]}" 2>/dev/null)" || distinct_ops=0
     if [[ -f "${sb_root}/docs/apo-catalog.json" ]]; then
       bad_refs="$(jq -s --slurpfile cat "${sb_root}/docs/apo-catalog.json" '
         def ids: [$cat[0].dynamic_rules[]?.id];
         [.[] | .operations[]? | select((.catalog_rule_ref // "") != "") |
           select(.catalog_rule_ref as $r | (ids | index($r)) | not)] | length
-      ' "${comp_logs[@]}" 2>/dev/null || echo 1)"
+      ' "${comp_logs[@]}" 2>/dev/null)" || bad_refs=1
+    else
+      bad_refs=1
     fi
     if [[ "${valid_ops:-0}" -ge 2 && "${distinct_ops:-0}" -ge 2 && "${bad_refs:-1}" -eq 0 ]]; then
       printf 'pass\n'; return 0
@@ -1679,7 +1673,7 @@ enterprise_e2e_outcome_score_newwf() {
   local has_worker=0 has_artifact=0 event_file
   event_file="$(enterprise_e2e_outcome_event_log_path "$state_dir")"
   if [[ -f "$event_file" ]] && command -v jq >/dev/null 2>&1; then
-    if jq -e '
+    if jq -e -s '
       [.[] | select(.type=="dispatch" and (
         (.payload.worker_template // "") == "NEW-WORKFLOW" or
         (.payload.skill // "") == "silver-new-workflow"

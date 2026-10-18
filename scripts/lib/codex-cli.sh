@@ -16,9 +16,10 @@ resolve_native_codex_cli_path() {
     fi
   fi
 
-  for candidate in \
-    "/Applications/ChatGPT.app/Contents/Resources/codex" \
-    "/Applications/Codex.app/Contents/Resources/codex"; do
+  # SB_CODEX_APP_CANDIDATES (colon-separated) is a test seam for the macOS app bundles.
+  local -a app_candidates=()
+  IFS=: read -r -a app_candidates <<<"${SB_CODEX_APP_CANDIDATES:-/Applications/ChatGPT.app/Contents/Resources/codex:/Applications/Codex.app/Contents/Resources/codex}"
+  for candidate in "${app_candidates[@]}"; do
     if [[ -x "$candidate" && "$(basename "$candidate")" == "codex" ]]; then
       printf '%s\n' "$candidate"
       return 0

@@ -48,7 +48,11 @@ for skill in "${COMPOSERS[@]}"; do
   skill_name="${skill_name#\"}"
   skill_name="${skill_name%\"}"
   skill_name="${skill_name#silver-}"
-  [[ "$skill_name" == "silver" ]] && cmd_name="sb" || cmd_name="$skill_name"
+  if [[ "$skill_name" == "silver" ]]; then
+    cmd_name="sb"
+  else
+    cmd_name="$skill_name"
+  fi
 
   desc_line="$(awk '/^---$/{f++;next} f==1 && /^description:/{print; exit}' "$src")"
   hint_line="$(awk '/^---$/{f++;next} f==1 && /^argument-hint:/{print; exit}' "$src")"

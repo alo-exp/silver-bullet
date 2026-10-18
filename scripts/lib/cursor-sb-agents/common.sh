@@ -95,9 +95,10 @@ print(len(expected_agent_names(cfg)))
 PY
 }
 
+# True only for files the installer generated (not any file that quotes the marker).
 csba_file_has_managed_marker() {
   local file="$1"
-  grep -qF "$CSBA_MANAGED_MARKER" "$file" 2>/dev/null
+  "${CSBA_PYTHON}" "${CSBA_LIB_DIR}/sb_managed_agent.py" "$file" 2>/dev/null
 }
 
 csba_frontmatter_name() {
@@ -109,7 +110,7 @@ csba_collect_managed_agents() {
   local agents_dir="$1"
   local -a files=()
   shopt -s nullglob
-  for f in "${agents_dir}"/sb-*.md; do
+  for f in "${agents_dir}"/*.md; do
     [[ -f "$f" ]] || continue
     csba_file_has_managed_marker "$f" || continue
     files+=("$f")

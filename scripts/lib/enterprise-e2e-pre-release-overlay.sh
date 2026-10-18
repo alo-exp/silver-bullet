@@ -23,8 +23,11 @@ pre_release_overlay_check_registry() {
     return
   fi
   local claim_count tri_host
-  claim_count="$(jq '.claims | length' "$registry")"
-  tri_host="$(jq -r '.tri_host_smoke.script // empty' "$registry")"
+  if ! claim_count="$(jq '.claims | length' "$registry" 2>/dev/null)" ||
+    ! tri_host="$(jq -r '.tri_host_smoke.script // empty' "$registry" 2>/dev/null)"; then
+    pre_release_overlay_fail "pre-release-claims-registry.json unreadable (invalid JSON or unexpected shape)"
+    return
+  fi
   if [[ "$claim_count" -ge 10 ]]; then
     pre_release_overlay_pass "pre-release registry has ${claim_count} feature claims"
   else
