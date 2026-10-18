@@ -56,7 +56,11 @@ else
 fi
 
 for rule in graphify.mdc agentmemory.mdc leanctx.mdc context-mode.mdc token-compression-enforcement.mdc recommended-tools.mdc; do
-  if [[ -f "${HOME_CURSOR}/rules/${rule}" ]]; then _check pass "rule:${rule}" present; else _check fail "rule:${rule}" missing; fi
+  if [[ -f "${HOME_CURSOR}/rules/${rule}" ]]; then
+    _check pass "rule:${rule}" present
+  else
+    _check fail "rule:${rule}" missing
+  fi
 done
 
 if command -v graphify >/dev/null 2>&1; then _check pass graphify-cli "$(command -v graphify)"; else _check fail graphify-cli "not on PATH"; fi
