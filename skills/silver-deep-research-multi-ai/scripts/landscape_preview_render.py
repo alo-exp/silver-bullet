@@ -662,10 +662,10 @@ function renderMatrixPanel() {
     return;
   }
   const slugifyLabel = (label) => String(label || '').toLowerCase()
-    .replace(/\s*\([^)]*\)\s*/g, '')
-    .replace(/[^\w\s-]/g, '')
+    .replace(/\\s*\\([^)]*\\)\\s*/g, '')
+    .replace(/[^\\w\\s-]/g, '')
     .trim()
-    .replace(/[\s_]+/g, '-');
+    .replace(/[\\s_]+/g, '-');
   const labelForSlug = (slug) => {
     for (const [name] of (LINK_PAIRS || [])) {
       if (slugifyLabel(name) === slug) return name;
@@ -673,7 +673,7 @@ function renderMatrixPanel() {
     for (const d of [...MQ_DATA, ...GMQ_DATA, ...WAVE_DATA, ...VC_COMMERCIAL, ...VC_OSS]) {
       if (d && (d.slug === slug || slugifyLabel(d.label) === slug)) return d.label;
     }
-    return String(slug || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    return String(slug || '').replace(/-/g, ' ').replace(/\\b\\w/g, c => c.toUpperCase());
   };
   const urlForLabel = (label) => {
     if (typeof HOMEPAGE_VENDOR_URLS === 'object' && HOMEPAGE_VENDOR_URLS[label]) return HOMEPAGE_VENDOR_URLS[label];
