@@ -156,7 +156,7 @@ stable = pathlib.Path(sys.argv[3]).resolve()
 data = {"plugins": {}}
 if registry.is_file():
     try:
-        data = json.loads(registry.read_text())
+        data = json.loads(registry.read_text(encoding="utf-8"))
     except Exception as exc:
         sys.stderr.write(f"install-claude: {registry}: not valid JSON ({exc}); leaving it unchanged\n")
         sys.exit(1)
@@ -173,7 +173,7 @@ plugins["silver-bullet@alo-labs"] = [{
     "scope": "user",
 }]
 registry.parent.mkdir(parents=True, exist_ok=True)
-registry.write_text(json.dumps(data, indent=2) + "\n")
+registry.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 PY
 
   refresh_silver_bullet_install_alias
@@ -251,7 +251,7 @@ cache_root = sys.argv[2].rstrip("/")
 stable_install_path = sys.argv[3].rstrip("/")
 
 try:
-    data = json.loads(settings_path.read_text())
+    data = json.loads(settings_path.read_text(encoding="utf-8"))
 except Exception:
     sys.exit(0)
 
@@ -285,7 +285,7 @@ def rewrite(value):
     return value
 
 updated = rewrite(data)
-settings_path.write_text(json.dumps(updated, indent=2) + "\n")
+settings_path.write_text(json.dumps(updated, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 PY
   done
 }

@@ -80,7 +80,7 @@ cat >"$CLAUDE_DIR/settings.json" <<JSON
  {"type":"command","command":"\${CLAUDE_PLUGIN_ROOT}/hooks/b.sh"},
  {"type":"command","command":"/x/silver-bullet/1.2.3/hooks/c.sh"},
  {"type":"command","command":"/usr/bin/user-hook"}]}],
- "Stop":[]},"keep":"yes","theme":null,"env":{"A":null,"B":"x"},"list":[1,null,2],"only":[null]}
+ "Stop":[]},"keep":"yes","theme":null,"env":{"A":null,"B":"x"},"list":[1,null,2],"only":[null],"zeta":"é日本😀","alpha":{"ключ":"значение"}}
 JSON
 install_claude
 assert_eq "local install exits 0" 0 "$TL_STATUS"
@@ -106,6 +106,9 @@ assert_not_contains "stale versioned hook dropped" "$SETTINGS_CMDS" '/x/silver-b
 assert_contains "user hook preserved" "$SETTINGS_CMDS" "/usr/bin/user-hook"
 assert_eq "unrelated settings key preserved" "yes" "$(jq -r .keep "$CLAUDE_DIR/settings.json")"
 assert_eq "null values are preserved" '{"theme":null,"env":{"A":null,"B":"x"},"list":[1,null,2],"only":[null]}' "$(jq -c '{theme,env,list,only}' "$CLAUDE_DIR/settings.json")"
+assert_contains "non-ASCII text is written as UTF-8, not escaped" "$(<"$CLAUDE_DIR/settings.json")" '"zeta": "é日本😀"'
+assert_contains "non-ASCII keys are written as UTF-8" "$(<"$CLAUDE_DIR/settings.json")" '"ключ": "значение"'
+assert_eq "top-level key order preserved" "hooks,keep,theme,env,list,only,zeta,alpha" "$(jq -r 'keys_unsorted | join(",")' "$CLAUDE_DIR/settings.json")"
 assert_file_absent "commands dir removed from cache" "$CACHE/9.9.9/commands"
 
 # ---- registry: a registry whose "plugins" is not an object must not be mangled
