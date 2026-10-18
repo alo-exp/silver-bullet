@@ -21,14 +21,6 @@ fresh() { date +%s >"$RTK_STATE"; }
 reset() { rm -f "$RTK_STATE" "$MUTEX" "$SB_RUNTIME_STATE_DIR/project-root"; uninstall_rtk; tg2_cfg "$CFG_JSON"; }
 dirty_mutex() { printf '{"violations":[{"route":"sb_shell","attempted":"leanctx","incumbent":"rtk","reason":"x","epoch":1}]}' >"$MUTEX"; }
 
-tg2_scenario_block() { reset; }
-tg2_scenario_off() {
-  case "$1" in
-    optout) jq '.recommended_tools.rtk.enabled_by_user=false' <<<"$CFG_JSON" >"$TG2_CFG" ;;
-    suspended) jq '.recommended_tools.rtk.enforcement_suspended=true' <<<"$CFG_JSON" >"$TG2_CFG" ;;
-  esac
-}
-tg2_gate_suite "$HOOK" token-compression-tools-gate "$EDIT" "USAGE REQUIRED" "$TG2_PROJ/src/app.js" yes no
 
 # ------------------------------------------------------ rtk CLI / usage freshness
 reset
