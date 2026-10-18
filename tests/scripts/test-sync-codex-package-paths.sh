@@ -119,31 +119,24 @@ assert_contains "lock timeout reported" "$TL_ERR" "timed out waiting for sync-co
 assert_eq "waited 299 times before giving up" 299 "$(wc -l <"$SLEEP_LOG" | tr -d ' ')"
 assert_file_exists "a lock held by someone else is not released" "$SNAP/.planning/sb-sync-codex-package.lock.d"
 
-# The lock is picked up once its holder lets go.
-rmdir "$SNAP/.planning/sb-sync-codex-package.lock.d"
-mkdir -p "$SNAP/.planning/sb-sync-codex-package.lock.d"
-: >"$SLEEP_LOG"
-tl_stub sleep 'echo "$*" >>"'"$SLEEP_LOG"'"; [[ $(wc -l <"'"$SLEEP_LOG"'") -ge 3 ]] && rmdir "'"$SNAP"'/.planning/sb-sync-codex-package.lock.d"; exit 0'
-sync_pkg
-assert_eq "sync proceeds when the lock is released" 0 "$TL_STATUS"
-assert_eq "waited until released" 3 "$(wc -l <"$SLEEP_LOG" | tr -d ' ')"
-rm -f "$TL_BIN/sleep"
-
-# .planning unusable: the lock moves to TMPDIR.
+# One more successful sync carries three tolerance conditions at once, so the synced snapshot
+# is not regenerated for each: .planning is unusable (the lock moves to TMPDIR), the lock
+# is held by someone else until its holder lets go, and the stale-staging `find` cleanup fails.
 rm -rf "$SNAP/.planning"
 printf 'not a dir' >"$SNAP/.planning"
-sync_pkg
-assert_eq "sync works with an unusable .planning" 0 "$TL_STATUS"
-assert_eq ".planning left alone" "not a dir" "$(<"$SNAP/.planning")"
-assert_file_absent "fallback lock released" "$FAKE_TMP/sb-sync-codex-package.lock.d"
-
-# A failing `find` cleanup of stale staging dirs must not fail the sync.
-rm -f "$SNAP/.planning"
-mkdir -p "$PKG/.skill-source.staging.keep"
+FALLBACK_LOCK="$FAKE_TMP/sb-sync-codex-package.lock.d"
+mkdir -p "$FALLBACK_LOCK" "$PKG/.skill-source.staging.keep"
+: >"$SLEEP_LOG"
 REAL_FIND="$(command -v find)"
+tl_stub sleep 'echo "$*" >>"'"$SLEEP_LOG"'"; [[ $(wc -l <"'"$SLEEP_LOG"'") -ge 3 ]] && rmdir "'"$FALLBACK_LOCK"'"; exit 0'
 tl_stub find 'for a in "$@"; do [[ "$a" == ".skill-source.staging.*" ]] && exit 1; done; exec "'"$REAL_FIND"'" "$@"'
 sync_pkg
+assert_eq "sync works with an unusable .planning" 0 "$TL_STATUS"
+assert_eq "sync proceeds when the lock is released" 0 "$TL_STATUS"
+assert_eq "waited until released" 3 "$(wc -l <"$SLEEP_LOG" | tr -d ' ')"
+assert_eq ".planning left alone" "not a dir" "$(<"$SNAP/.planning")"
+assert_file_absent "fallback lock released" "$FALLBACK_LOCK"
 assert_eq "staging cleanup failure is tolerated" 0 "$TL_STATUS"
-rm -f "$TL_BIN/find"
+rm -f "$TL_BIN/sleep" "$TL_BIN/find"
 
 tl_results
