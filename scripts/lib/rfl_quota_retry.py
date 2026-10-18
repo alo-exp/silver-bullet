@@ -645,6 +645,8 @@ def arm_quota_retry_timer(
                 )
                 armed = loaded.returncode == 0
                 result["launchctl_rc"] = loaded.returncode
+                if not armed:
+                    result["launchd_error"] = f"launchctl load exited with status {loaded.returncode}"
             return {"armed": armed, **result}
         except OSError as exc:
             payload["launchd_error"] = str(exc)
@@ -653,15 +655,19 @@ def arm_quota_retry_timer(
     # Darwin: launchd is the reliable wake (atrun is often disabled).
     # Linux/other: `at`. Hooks still activate due jobs when a session returns.
     prefer_launchd = sys.platform == "darwin" or mode in {"launchd", "launchd-only"}
+    launchd_failure: dict[str, Any] = {}
     if prefer_launchd and mode != "at-only":
         launched = _try_launchd()
-        if launched:
+        if launched and (launched["armed"] or mode == "launchd-only"):
             return launched
+        if launched:
+            launchd_failure = {key: launched[key] for key in ("launchctl_rc", "launchd_error")}
     if mode != "launchd-only":
         queued = _try_at()
         if queued:
-            return queued
+            return {**queued, **launchd_failure}
 
+    payload.update(launchd_failure)
     payload["reason"] = "no at/launchd backend available"
     return payload
 
