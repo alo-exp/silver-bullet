@@ -95,4 +95,25 @@ assert_file_absent "foreign ledger dropped on resolve" "$LEDGER"
 run "done" I1.1 --evidence x
 assert_eq "missing ledger -> 1" 1 "$TL_STATUS"
 
+# --- a failing pending-summary helper never changes the exit status -----------------------------------------
+ST="$TL_TMP/stubtree"; mkdir -p "$ST/scripts" "$ST/hooks/lib"
+cp "$CLI" "$ST/scripts/"
+cp "$TL_REPO_ROOT/hooks/lib/runtime-paths.sh" "$ST/hooks/lib/"
+cat >"$ST/hooks/lib/instruction-ledger.sh" <<'EOS'
+sb_instruction_ledger_file() { printf '%s/instruction-ledger.json' "$SB_RUNTIME_STATE_DIR"; }
+sb_instruction_ledger_clear() { rm -f "$(sb_instruction_ledger_file)"; }
+sb_instruction_ledger_scope_mismatch() { return 1; }
+sb_instruction_ledger_pending_summary() { echo "summary-called"; return 1; }
+sb_instruction_ledger_all_resolved() { return 1; }
+sb_instruction_ledger_resolve_item() { return 0; }
+EOS
+echo '{}' >"$LEDGER"
+tl_run bash "$ST/scripts/resolve-instruction-ledger.sh" list
+assert_eq "list tolerates summary failure" 0 "$TL_STATUS"
+assert_contains "list called the summary" "$TL_OUT" "summary-called"
+tl_run bash "$ST/scripts/resolve-instruction-ledger.sh" "done" X --evidence y
+assert_eq "resolve tolerates summary failure" 0 "$TL_STATUS"
+assert_contains "resolve prints ok then summary" "$TL_OUT" "OK: marked X as done"
+assert_contains "resolve summary called" "$TL_OUT" "summary-called"
+
 tl_results

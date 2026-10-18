@@ -19,6 +19,10 @@ sub() { ( source "$LIB"; eval "$1" ); }
 # --- load guard ---------------------------------------------------------------------------------
 assert_eq "second source is a no-op (state kept)" "x" "$(sub 'sb_smoke_roots=(x); source "$LIB"; echo "${sb_smoke_roots[*]}"')"
 
+# executed (not sourced) with the guard already set: `return` is invalid, so it exits 0
+tl_run env _SB_PRE_RELEASE_ISOLATION_LOADED=1 bash "$LIB"
+assert_eq "direct execution with guard set exits 0" 0 "$TL_STATUS"
+
 # --- smoke root ---------------------------------------------------------------------------------------
 r="$(sub 'sb_smoke_root')"
 assert_match "default root is mktemp under TMPDIR" "^$TMPDIR/sb-pre-release-smoke\\.[A-Za-z0-9]+$" "$r"
@@ -66,6 +70,10 @@ assert_file_exists "cursor: workspace dir" "$SM/cursor/workspace"
 out="$(SB_PRE_RELEASE_SMOKE_ROOT="$TL_TMP/sm2" sub 'sb_smoke_begin_cursor; echo "PLUG=[$SB_SMOKE_CURSOR_PLUGIN_DIR]"')"
 assert_contains "cursor: no repo root -> empty plugin dir" "$out" "PLUG=[]"
 
+# a read-only CURSOR_HOME cannot be unset; begin_cursor carries on
+out="$(SB_PRE_RELEASE_SMOKE_ROOT="$SM" sub 'readonly CURSOR_HOME=/ro; sb_smoke_begin_cursor; echo "CH=$CURSOR_HOME"')"
+assert_contains "readonly CURSOR_HOME tolerated" "$out" "CH=/ro"
+
 # --- cursor helpers --------------------------------------------------------------------------------------------------------------
 assert_eq "plugin dir: unset repo" 1 "$(sub 'sb_smoke_cursor_plugin_dir >/dev/null; echo $?' || true)"
 mkdir -p "$TL_TMP/norepo"
@@ -101,6 +109,14 @@ assert_contains "cleanup: no tracked roots, missing root dir" "$res" "done-no-ro
 mkdir -p "$TL_TMP/tracked-only"
 sub 'sb_smoke_roots=("$TL_TMP/tracked-only"); sb_smoke_cleanup'
 assert_file_absent "cleanup: tracked root removed without root var" "$TL_TMP/tracked-only"
+
+# rm failing (stubbed): cleanup is best-effort and still unsets the root variable
+mkdir -p "$TL_TMP/rmfail/a"
+tl_stub rm 'exit 1'; hash -r
+res="$(SB_PRE_RELEASE_SMOKE_ROOT="$TL_TMP/rmfail" sub 'sb_smoke_roots=("$TL_TMP/rmfail/a"); sb_smoke_cleanup; echo "root=${SB_PRE_RELEASE_SMOKE_ROOT:-unset}"')"
+rm_stub="$TL_BIN/rm"; /bin/rm -f "$rm_stub"; hash -r
+assert_contains "cleanup tolerates rm failures" "$res" "root=unset"
+assert_file_exists "cleanup with failing rm leaves the dirs" "$TL_TMP/rmfail/a"
 
 # --- previous tag / checkout ---------------------------------------------------------------------------------------------------------------------
 assert_eq "previous tag: env override" "v9.9.9" "$(SB_RC_PREVIOUS_TAG=v9.9.9 sub 'sb_smoke_resolve_previous_tag')"

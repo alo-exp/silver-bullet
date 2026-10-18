@@ -138,6 +138,16 @@ mkdir -p "$ET/.planning/enterprise-e2e"; echo '{"tracked":true}' >"$ET/.planning
 tl_run bash "$EX" "$PROJ" "$OUT"
 assert_eq "export: fallback copies tracked artifact" '{"tracked":true}' "$(unz evidence/CERTIFICATION-STATUS.json | jq -c .)"
 
+# a session log whose derived output name exceeds NAME_MAX: the awk redirect fails and is tolerated
+longname="$(printf 'n%.0s' {1..240})"
+cp "$PROJ/docs/sessions/s1.md" "$PROJ/docs/sessions/$longname.md"
+rm -f "$OUT"
+tl_run bash "$EX" "$PROJ" "$OUT"
+assert_eq "export: over-long derived name tolerated" 0 "$TL_STATUS"
+assert_not_contains "export: over-long entry skipped" "$(unzip -Z1 "$OUT")" "$longname"
+assert_contains "export: normal ledger still exported" "$(unzip -Z1 "$OUT")" "session-logs/s1-intent-ledger.md"
+rm -f "$PROJ/docs/sessions/$longname.md"
+
 # minimal project: no catalog, no cert script, no logs/sessions/config; default output dir and timestamped name
 EM="$TL_TMP/exp-min"; mkdir -p "$EM/scripts"; cp "$EX" "$EM/scripts/"
 PM="$TL_TMP/proj-min"; mkdir -p "$PM"

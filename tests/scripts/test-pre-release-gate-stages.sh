@@ -60,6 +60,13 @@ echo '{bad' >"$T/.silver-bullet.json"
 run
 assert_contains "bad config -> offline" "$TL_OUT" "leanctx not opted in"
 
+# a read-only REQUIRE_LIVE variable (injected through BASH_ENV) cannot be unset; the gate carries on
+echo 'readonly SB_FIVE_TOOL_PRERELEASE_REQUIRE_LIVE=' >"$TL_TMP/ro-env.sh"
+rm -f "$T/.silver-bullet.json"
+run BASH_ENV="$TL_TMP/ro-env.sh"
+assert_eq "unset failure tolerated" 0 "$TL_STATUS"
+assert_contains "still offline" "$TL_OUT" "leanctx not opted in"
+
 # each stage failing stops the gate with its own message
 chk_fail() { # stage message last-stage-expected
   run FAIL_STAGE="$1"
