@@ -17,21 +17,32 @@ cache_root=""
 host_filter="all"
 max_claude_tokens=14000
 
+need_value() {
+  if [[ "$1" -lt 2 ]]; then
+    printf 'validate-host-install-surface: %s requires a value\n' "$2" >&2
+    exit 2
+  fi
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --repo-root)
+      need_value "$#" "$1"
       repo_root="${2:-}"
       shift 2
       ;;
     --cache-root)
+      need_value "$#" "$1"
       cache_root="${2:-}"
       shift 2
       ;;
     --host)
+      need_value "$#" "$1"
       host_filter="${2:-}"
       shift 2
       ;;
     --max-claude-tokens)
+      need_value "$#" "$1"
       max_claude_tokens="${2:-}"
       shift 2
       ;;
