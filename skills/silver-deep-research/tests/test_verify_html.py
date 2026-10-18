@@ -142,6 +142,37 @@ class TestPlaceholdersEmojis(unittest.TestCase):
         v._check_no_emojis('\u4e2d\u6587\u62a5\u544a \u2500\u2502 \u3042')
         self.assertEqual(v.errors, [])
 
+    def test_symbol_blocks_flagged(self):
+        # Regression: the narrowed range dropped the Miscellaneous Symbols,
+        # Miscellaneous Symbols and Arrows and Supplemental Symbols blocks.
+        cases = {
+            '\u26a0': 'warning sign', '\u26a1': 'high voltage', '\u2b50': 'star',
+            '\u2600': 'sun', '\u2611': 'ballot box check', '\u2665': 'heart',
+            '\u25b6': 'play button', '\u2b06': 'up arrow', '\U0001F916': 'robot',
+            '\U0001F9E0': 'brain', '\U0001F947': 'gold medal', '\u25fb': 'white medium square',
+            '\u2934': 'arrow curving up', '\U0001F100': 'digit zero full stop',
+        }
+        for ch, name in cases.items():
+            with self.subTest(name):
+                v, _ = make('', '')
+                v._check_no_emojis('x' + ch + 'y')
+                self.assertEqual(len(v.errors), 1, name)
+                self.assertIn('Found 1 emojis', v.errors[0])
+
+    def test_symbol_block_edges(self):
+        for ch in ('\u2600', '\u26ff', '\u2b00', '\u2bff', '\U0001F900', '\U0001F9FF'):
+            with self.subTest(hex(ord(ch))):
+                v, _ = make('', '')
+                v._check_no_emojis(ch)
+                self.assertEqual(len(v.errors), 1)
+
+    def test_neighbouring_non_emoji_not_flagged(self):
+        for ch in ('\u257f', '\u2580', '\u25b5', '\u2c00', '\U0001F8ff', '\u2190', '\u4e2d', '\u3042'):
+            with self.subTest(hex(ord(ch))):
+                v, _ = make('', '')
+                v._check_no_emojis(ch)
+                self.assertEqual(v.errors, [])
+
     def test_enclosed_symbols_still_flagged(self):
         v, _ = make('', '')
         v._check_no_emojis('\u24c2 \U0001F170 \U0001F251')
