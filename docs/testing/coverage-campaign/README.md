@@ -64,7 +64,9 @@ Update the base commit named in coverage-agent-prompt.md to the PR branch head b
 | F-enterprise-2 | Merged after two reviews (live-test resume race, quiesce id regex, marker search) |
 | C-toolgates-2 | Merged after two reviews (record-skill debug-mode abort, dead token guards removed) |
 | I-scripts-py-1 | Merged after review (codex PTY EIO on Linux, shared default lists, unreapable child terminated) |
-| E-core-hooks, H-recommended-1 | In progress |
+| L-scripts-misc-1 | Merged after three reviews (deploy-gate sourcing leak, evidence zip staleness, timeout helper fixes) |
+| H-recommended-1 | Second review |
+| E-core-hooks | In progress |
 | All others | Not started |
 
 Each package is merged into the PR branch only after an adversarial review passes and its tests pass under both the `claude` and `codex` runtimes.
