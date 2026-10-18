@@ -44,6 +44,8 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SCOPE_FILE = Path(__file__).resolve().parent / "scope.json"
+KNOWN_LIMITS_FILE = Path(__file__).resolve().parent / "known-limits.json"
+KNOWN_LIMIT_KINDS = ("unreachable", "unmeasurable")
 
 # --------------------------------------------------------------------------
 # Static analysis of bash sources
@@ -1125,6 +1127,109 @@ def _totals(results: dict, keys) -> dict:
     return out
 
 
+def load_known_limits(path: Path | None = None) -> tuple[list, list]:
+    """Read tests/coverage/known-limits.json: (entries, errors). A missing file has no entries."""
+    path = KNOWN_LIMITS_FILE if path is None else path
+    if not path.exists():
+        return [], []
+    try:
+        data = json.loads(path.read_text())
+    except (OSError, ValueError) as exc:
+        return [], [f"cannot read {path.name}: {exc}"]
+    entries = data.get("entries") if isinstance(data, dict) else None
+    if not isinstance(entries, list):
+        return [], [f'{path.name} must be an object with an "entries" list']
+    return entries, []
+
+
+def _known_limit_label(e) -> str:
+    return f"{e.get('file')}:{e.get('line')}" if isinstance(e, dict) else repr(e)
+
+
+def apply_known_limits(entries: list, results: dict, scoped: dict) -> tuple[list, list]:
+    """Remove audited, uncoverable statements from the measured results (in place).
+
+    ``results`` maps "bash"/"python"/"javascript" to the per-file results measured in
+    this run; ``scoped`` maps the same names to the full scope (before --only). Each
+    matching missing statement leaves both the covered count and the total, like a
+    scope exclusion; it is never counted as covered. Returns (applied, errors).
+    Entries for in-scope files this run did not measure (--only) are skipped; an
+    entry for an out-of-scope file, with no statement of that word at that line, or
+    for a statement that was covered, is an error.
+    """
+    applied: list = []
+    errors: list = []
+    seen: set = set()
+    analyses: dict = {}
+    removed_by_line: dict = {}
+    for e in entries:
+        label = _known_limit_label(e)
+        if not isinstance(e, dict):
+            errors.append(f"known limit {label}: entry must be an object")
+            continue
+        missing_fields = [k for k in ("file", "line", "kind", "reason", "evidence") if not e.get(k)]
+        if missing_fields:
+            errors.append(f"known limit {label}: missing {', '.join(missing_fields)}")
+            continue
+        if e["kind"] not in KNOWN_LIMIT_KINDS:
+            errors.append(f"known limit {label}: kind must be one of {', '.join(KNOWN_LIMIT_KINDS)}")
+            continue
+        if isinstance(e["line"], bool) or not isinstance(e["line"], int):
+            errors.append(f"known limit {label}: line must be an integer")
+            continue
+        rel, line = e["file"], e["line"]
+        lang = next((lg for lg in ("bash", "python", "javascript") if rel in scoped.get(lg, [])), None)
+        if lang is None:
+            errors.append(f"known limit {label}: file is not in scope (tests/coverage/scope.json)")
+            continue
+        word = e.get("word")
+        if lang == "bash" and not word:
+            errors.append(f"known limit {label}: bash entries need the statement word")
+            continue
+        key = (rel, line, word if lang == "bash" else None)
+        if key in seen:
+            errors.append(f"known limit {label}: duplicate entry")
+            continue
+        seen.add(key)
+        res = results.get(lang, {}).get(rel)
+        if res is None:
+            continue  # in scope but not measured in this run (--only)
+        if lang == "bash":
+            if rel not in analyses:
+                analyses[rel] = analyze_bash(REPO_ROOT / rel).statements
+            on_line = [st for st in analyses[rel] if st.start == line]
+            if not any((st.word or "*") == word for st in on_line):
+                errors.append(f"known limit {label}: no statement with word '{word}' at that line")
+                continue
+            hit = next(
+                (m for m in res["missing_statements"] if m["line"] == line and m["word"] == word),
+                None,
+            )
+            if hit is None:
+                errors.append(f"known limit {label}: stale known limit: now covered")
+                continue
+            res["missing_statements"].remove(hit)
+            res["statements"] -= 1
+            res["known_limits"] = res.get("known_limits", 0) + 1
+            removed = removed_by_line[(rel, line)] = removed_by_line.get((rel, line), 0) + 1
+            if removed >= len(on_line):  # every statement starting on the line is a known limit
+                res["lines"] -= 1
+        else:
+            if res.get("measured") is False:
+                errors.append(f"known limit {label}: file is not loaded by any test, so it cannot be validated")
+                continue
+            if line not in res["missing_lines"]:
+                errors.append(f"known limit {label}: stale known limit: now covered (or no statement at that line)")
+                continue
+            res["missing_lines"].remove(line)
+            key_total = "statements" if lang == "python" else "lines"
+            res[key_total] -= 1
+            res["known_limits"] = res.get("known_limits", 0) + 1
+        applied.append({"language": lang, **{k: e[k] for k in ("file", "line", "kind", "reason", "evidence")},
+                        **({"word": word} if lang == "bash" else {})})
+    return applied, errors
+
+
 def report(cov_dir: Path, fail_under: float | None, show_missing: bool, only: list[str] | None) -> int:
     scope, scoped = load_scope()
     bash_scoped, py_scoped, js_scoped = scoped["bash"], scoped["python"], scoped["javascript"]
@@ -1135,6 +1240,13 @@ def report(cov_dir: Path, fail_under: float | None, show_missing: bool, only: li
     bash = bash_coverage(cov_dir, bash_scoped)
     py = python_coverage(cov_dir, py_scoped)
     js = js_coverage(cov_dir, js_scoped)
+    limit_entries, known_errors = load_known_limits()
+    known_limits, apply_errors = apply_known_limits(
+        limit_entries,
+        {"bash": bash, "python": py, "javascript": js},
+        scoped,
+    )
+    known_errors += apply_errors
     bt = _totals(bash, ["statements", "lines", "functions"])
     pt = _totals(py, ["statements", "branches"])
     jt = _totals(js, ["lines", "functions", "branches"])
@@ -1147,6 +1259,8 @@ def report(cov_dir: Path, fail_under: float | None, show_missing: bool, only: li
         "python": {**pt, "files": len(py)},
         "javascript": {**jt, "files": len(js), "unmeasured_files": sorted(k for k, v in js.items() if not v["measured"])},
         "exclusions": exclusions,
+        "known_limits": known_limits,
+        "known_limit_errors": known_errors,
     }
     (cov_dir / "coverage-summary.json").write_text(
         json.dumps({"summary": summary, "bash": bash, "python": py, "javascript": js}, indent=1, sort_keys=True)
@@ -1200,6 +1314,14 @@ def report(cov_dir: Path, fail_under: float | None, show_missing: bool, only: li
     ]
     for line in totals:
         print(line)
+    if known_limits:
+        print()
+        print(f"Known limits ({len(known_limits)} audited statements excluded from the totals above; tests/coverage/known-limits.json):")
+        for k in known_limits:
+            word = f" ({k['word']})" if "word" in k else ""
+            print(f"  {k['file']}:{k['line']}{word} [{k['kind']}] {k['reason']}")
+    for msg in known_errors:
+        print(f"ERROR: {msg}", file=sys.stderr)
     unmeasured = summary["javascript"]["unmeasured_files"]
     if unmeasured:
         print(f"JS/TS files not loaded by any test (approximate line counts): {', '.join(unmeasured)}")
@@ -1220,6 +1342,9 @@ def report(cov_dir: Path, fail_under: float | None, show_missing: bool, only: li
     (cov_dir / "coverage-summary.md").write_text(
         "# Coverage summary\n\n" + "\n".join(f"- {t}" for t in totals) + "\n"
     )
+    if known_errors:
+        print(f"FAIL: {len(known_errors)} invalid known limit(s)")
+        return 3
     if fail_under is not None:
         metrics = [
             _pct(bt["statements_covered"], bt["statements"]),
