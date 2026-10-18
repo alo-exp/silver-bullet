@@ -62,7 +62,7 @@ sb_stack_graphify_hooks_installed() {
   fi
   command -v graphify >/dev/null 2>&1 || return 1
   if graphify hook status >/dev/null 2>&1; then
-    graphify hook status 2>/dev/null | grep -qiE 'installed|active|enabled'
+    grep -qiE 'installed|active|enabled' < <(graphify hook status 2>/dev/null)
     return $?
   fi
   return 1
@@ -247,7 +247,7 @@ EOF
 
 sb_stack_bridge_running() {
   if command -v launchctl >/dev/null 2>&1; then
-    launchctl list 2>/dev/null | grep -q 'com.agentmemory.bridge' && return 0
+    grep -q 'com.agentmemory.bridge' < <(launchctl list 2>/dev/null) && return 0
   fi
   if command -v systemctl >/dev/null 2>&1; then
     systemctl --user is-active agentmemory-bridge >/dev/null 2>&1 && return 0
@@ -313,7 +313,7 @@ sb_stack_ensure_gitleaks() {
 
 sb_stack_server_persistence_ok() {
   if command -v launchctl >/dev/null 2>&1; then
-    launchctl list 2>/dev/null | grep -q 'com.agentmemory.server' && return 0
+    grep -q 'com.agentmemory.server' < <(launchctl list 2>/dev/null) && return 0
   fi
   if command -v systemctl >/dev/null 2>&1; then
     systemctl --user is-active agentmemory >/dev/null 2>&1 && return 0

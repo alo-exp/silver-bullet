@@ -361,7 +361,7 @@ ga_ensure_gitleaks() {
 
 ga_graphify_hooks_installed() {
   command -v graphify >/dev/null 2>&1 || return 1
-  graphify hook status 2>/dev/null | grep -qiE 'installed|active|enabled'
+  grep -qiE 'installed|active|enabled' < <(graphify hook status 2>/dev/null)
 }
 
 ga_run_cmd() {

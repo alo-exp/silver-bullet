@@ -95,7 +95,7 @@ rtk_binary_ok() {
   bin="$(sb_rtk_cli_path 2>/dev/null || true)"
   [[ -n "$bin" ]] || return 1
   "$bin" gain --help >/dev/null 2>&1 || return 1
-  ! "$bin" --help 2>&1 | head -5 | grep -qiE 'rust type kit|rtk-check'
+  ! grep -qiE 'rust type kit|rtk-check' < <("$bin" --help 2>&1 | head -5)
 }
 
 ensure_context_mode_cli() {
@@ -118,8 +118,8 @@ claude_native_context_mode_enabled() {
     return 0
   fi
   if command -v claude >/dev/null 2>&1; then
-    claude plugin list 2>/dev/null | \
-      grep -A3 -F 'context-mode@context-mode' | grep -q 'enabled' && return 0
+    grep -q 'enabled' < <(claude plugin list 2>/dev/null |
+      grep -A3 -F 'context-mode@context-mode') && return 0
   fi
   return 1
 }
