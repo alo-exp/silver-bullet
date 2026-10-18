@@ -79,6 +79,7 @@ class ParsingTest(Base):
             (23, "+ plus\ntail"),
         ])
         self.assertEqual(s.split_blocks([]), [])
+        self.assertEqual(s.split_blocks([(1, ""), (2, "  "), (3, "a"), (4, ""), (5, ""), (6, "b")]), [(3, "a"), (6, "b")])
         self.assertEqual(s.split_blocks([(1, "### only heading"), (2, "text")]), [(2, "text")])
         self.assertEqual(s.split_blocks([(5, "a"), (6, "### h"), (7, "b")]), [(5, "a"), (7, "b")])
 
@@ -229,12 +230,13 @@ class CandidateStreamTest(Base):
         a = self.candidate(candidate_id="same", fingerprint="fp", source_refs=[{"path": "p", "line": 1}])
         b = self.candidate(candidate_id="same", fingerprint="fp", source_refs=[{"path": "p", "line": 1}])
         c = self.candidate(candidate_id="other", fingerprint="fp", source_refs=[{"path": "p", "line": 1}, {"path": "p", "line": 2}])
-        built = iter([a, b, c])
+        d = self.candidate(candidate_id="other", fingerprint="fp", source_refs=[])
+        built = iter([a, b, c, d])
         with mock.patch.object(s, "build_candidate", side_effect=lambda *x, **k: next(built)), \
              mock.patch.object(s, "git_or_changelog_match", return_value=False):
             cands, dupes = s.parse_candidate_stream(
-                self.root, self.source("## Needs Human Review\n- one\n- two\n- three\n"), {}, "")
-        self.assertEqual(dupes, 2)
+                self.root, self.source("## Needs Human Review\n- one\n- two\n- three\n- four\n"), {}, "")
+        self.assertEqual(dupes, 3)
         self.assertEqual(len(cands), 1)
         self.assertEqual(cands[0]["candidate_ids"], ["same", "other"])
         self.assertEqual(cands[0]["source_refs"], [{"path": "p", "line": 1}, {"path": "p", "line": 2}])
@@ -361,9 +363,9 @@ class ExternalTest(Base):
                 self.assertTrue(s.github_issue_exists(self.root, self.candidate(candidate_id="zz", fingerprint="FP")))
                 self.assertEqual(seen, ["zz", "FP"])
                 seen.clear()
-                self.assertTrue(s.github_issue_exists(self.root, self.candidate(candidate_id="a", fingerprint="b", title="Fix It")))
-                self.assertEqual(seen, ["a", "b", "Fix It"])
-                self.assertFalse(s.github_issue_exists(self.root, self.candidate(candidate_id="a", fingerprint="b", title="Other")))
+                self.assertTrue(s.github_issue_exists(self.root, self.candidate(candidate_id="§a", fingerprint="§b", title="Fix It")))
+                self.assertEqual(seen, ["§a", "§b", "Fix It"])
+                self.assertFalse(s.github_issue_exists(self.root, self.candidate(candidate_id="§a", fingerprint="§b", title="Other")))
                 self.assertFalse(s.github_issue_exists(self.root, self.candidate(candidate_id="", fingerprint="", title="")))
 
     def test_github_issue_exists_unrelated_results_do_not_match(self):

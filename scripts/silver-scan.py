@@ -882,8 +882,6 @@ def git_or_changelog_match(root: Path, candidate: dict[str, Any]) -> bool:
     if not words:
         return False
     phrase = " ".join(words[: min(5, len(words))])
-    if not phrase:
-        return False
     proc = run_command(["git", "log", "--oneline", "--fixed-strings", f"--grep={phrase}", "--"], cwd=root)
     if proc.returncode == 0 and proc.stdout.strip():
         return True
@@ -1152,12 +1150,10 @@ def write_record_entry(root: Path, candidate: dict[str, Any], target: Path, is_k
             content = content.rstrip() + f"\n\n{heading}\n\n{entry}\n"
         else:
             lines = content.splitlines()
-            for idx, line in enumerate(lines):
-                if line.strip() == heading:
-                    lines.insert(idx + 1, "")
-                    lines.insert(idx + 2, entry)
-                    content = "\n".join(lines).rstrip() + "\n"
-                    break
+            idx = next(i for i, line in enumerate(lines) if line.strip() == heading)
+            lines.insert(idx + 1, "")
+            lines.insert(idx + 2, entry)
+            content = "\n".join(lines).rstrip() + "\n"
         atomic_write(target, content if content.endswith("\n") else content + "\n")
         ensure_knowledge_index(root, month, "knowledge")
     else:
@@ -1167,12 +1163,10 @@ def write_record_entry(root: Path, candidate: dict[str, Any], target: Path, is_k
             content = content.rstrip() + f"\n\n## {heading}\n\n{entry}\n"
         else:
             lines = content.splitlines()
-            for idx, line in enumerate(lines):
-                if line.strip() == f"## {heading}":
-                    lines.insert(idx + 1, "")
-                    lines.insert(idx + 2, entry)
-                    content = "\n".join(lines).rstrip() + "\n"
-                    break
+            idx = next(i for i, line in enumerate(lines) if line.strip() == f"## {heading}")
+            lines.insert(idx + 1, "")
+            lines.insert(idx + 2, entry)
+            content = "\n".join(lines).rstrip() + "\n"
         atomic_write(target, content if content.endswith("\n") else content + "\n")
         ensure_knowledge_index(root, month, "learnings")
 

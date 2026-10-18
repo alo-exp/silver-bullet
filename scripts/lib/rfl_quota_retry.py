@@ -591,8 +591,6 @@ def arm_quota_retry_timer(
         return None
 
     def _try_launchd() -> dict[str, Any] | None:
-        if sys.platform != "darwin" and mode not in {"launchd", "launchd-only"}:
-            return None
         launchd_dir = Path(
             os.environ.get("SB_RFL_LAUNCHD_DIR")
             or (Path.home() / "Library" / "LaunchAgents")
