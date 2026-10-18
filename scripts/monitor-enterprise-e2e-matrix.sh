@@ -164,15 +164,6 @@ log_mtime_text() {
   echo "$t"
 }
 
-read_state() {
-  local key="$1" default="${2:-}"
-  if [[ -f "$STATE_FILE" ]]; then
-    # shellcheck disable=SC1090
-    source "$STATE_FILE" 2>/dev/null || true
-  fi
-  printf '%s\n' "${!key:-$default}"
-}
-
 write_state_kv() {
   local key="$1" val="$2"
   touch "$STATE_FILE"
@@ -331,10 +322,6 @@ monitor_auto_restart_enabled() {
 
 start_batch() {
   local -a rows=("$@")
-  if ! monitor_auto_restart_enabled; then
-    log_poll "$(utc_now) start_batch: SB_E2E_MONITOR_AUTO_RESTART=0 — operator owns batch (rows: ${rows[*]:-none})"
-    return 1
-  fi
   if [[ "${#rows[@]}" -eq 0 ]]; then
     log_poll "$(utc_now) start_batch: no incomplete rows — skip"
     return 1
@@ -380,7 +367,7 @@ build_status_block() {
   local row log_bytes elapsed claude_lines row_logs tail_block issues
   row="$(current_row_from_log)"
   log_bytes="$(log_bytes "$MATRIX_LOG")"
-  elapsed="$(batch_elapsed "$batch_pid" 2>/dev/null || echo '?')"
+  elapsed="$(batch_elapsed "$batch_pid" 2>/dev/null)"
   claude_lines="$(claude_child_lines)"
   row_logs=""
   local f r bytes mtime
