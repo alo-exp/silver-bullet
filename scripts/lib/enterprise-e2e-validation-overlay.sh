@@ -71,7 +71,7 @@ validation_overlay_check_help_version_sync() {
     validation_overlay_skip "help version sync (jq missing)"
     return
   fi
-  pkg_ver="$(jq -r '.version // empty' "${root}/package.json")"
+  pkg_ver="$(jq -r '.version // empty' "${root}/package.json" 2>/dev/null || true)"
   help_ver="$(grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' "${root}/site/help/index.html" 2>/dev/null | head -1 | tr -d 'v' || true)"
   if [[ -z "$pkg_ver" || -z "$help_ver" ]]; then
     validation_overlay_fail "help version sync — could not read package ($pkg_ver) or help ($help_ver)"
@@ -227,7 +227,7 @@ validation_overlay_check_apo_invariants() {
       failed=1
     fi
   done
-  [[ "$failed" -eq 0 ]] || return
+  [[ "$failed" -eq 0 ]] || return 0
 }
 
 validation_overlay_check_registry() {
