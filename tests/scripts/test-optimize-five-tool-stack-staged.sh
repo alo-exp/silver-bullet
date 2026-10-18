@@ -169,7 +169,7 @@ assert_not_contains "no later stage after the failure" "$(calls)" "optimize-rtk-
 FN="$TL_TMP/fn/scripts/optimize-five-tool-stack.sh"
 mkdir -p "$TL_TMP/fn/scripts" "$TL_TMP/fn/hooks"
 ln -sfn "$TL_REPO_ROOT/hooks/lib" "$TL_TMP/fn/hooks/lib"
-head -n 197 "$TL_REPO_ROOT/scripts/optimize-five-tool-stack.sh" >"$FN"
+awk '/^while \[\[ \$# -gt 0 \]\]/ { exit } { print }' "$TL_REPO_ROOT/scripts/optimize-five-tool-stack.sh" >"$FN"
 detect() {
   tl_run env -u CURSOR_PLUGIN_ROOT -u CODEX_HOME -u PI_CODING_AGENT_DIR -u RT_HOST "$@" bash -c 'source "$1"; detect_host' _ "$FN"
 }

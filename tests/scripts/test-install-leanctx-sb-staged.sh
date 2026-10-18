@@ -267,7 +267,7 @@ guard_for cursor "$HOME/.cursor/AGENTS.md"
 FN="$TL_TMP/fn/scripts/install-leanctx-sb.sh"
 mkdir -p "$TL_TMP/fn/scripts" "$TL_TMP/fn/hooks"
 ln -sfn "$TL_REPO_ROOT/hooks/lib" "$TL_TMP/fn/hooks/lib"
-head -n 409 "$TL_REPO_ROOT/scripts/install-leanctx-sb.sh" >"$FN"
+awk '/^while \[\[ \$# -gt 0 \]\]/ { exit } { print }' "$TL_REPO_ROOT/scripts/install-leanctx-sb.sh" >"$FN"
 mkdir -p "$TL_TMP/fn/scripts/lib"; cp "$VERIFY" "$TL_TMP/fn/scripts/lib/verify-leanctx-wire-proxy-ordering.py"
 fn_run() { # <snippet> -> runs with the functions loaded; sets TL_OUT/TL_ERR/TL_STATUS
   tl_run bash -c 'source "$1"; shift; eval "$1"' _ "$FN" "$1"
