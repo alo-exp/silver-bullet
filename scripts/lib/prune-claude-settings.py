@@ -48,8 +48,6 @@ def hook_command_broken(cmd):
 
 def filter_hooks(hooks):
     global changed
-    if not isinstance(hooks, list):
-        return hooks
     kept = []
     for entry in hooks:
         if not isinstance(entry, dict):
