@@ -62,7 +62,7 @@ if [[ "$reconcile_status" != "COMPLETE" ]]; then
   record_fail "ledger not COMPLETE — got ${reconcile_status} (${pass_count:-0}/22 Pass with refs)"
 fi
 
-fixture="${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/shafqat/projects/enterprise-grade-test-app}"
+fixture="${SB_TEST_ENTERPRISE_APP_ROOT:-$(cd "${SB_ROOT}/../.." && pwd)/enterprise-grade-test-app}"
 state_dir="${SB_ROOT}/.planning/enterprise-e2e"
 outcome_pass=0
 

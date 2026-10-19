@@ -33,6 +33,13 @@ fail() { echo "  FAIL: $1"; FAIL=$((FAIL + 1)); }
 TMP="$(mktemp -d)"
 TMP="$(cd "$TMP" && pwd -P)"
 TEST_HOME="$(mktemp -d)"
+# Authorized --mode apply runs repair the opted-in tools by installing them
+# (npm install -g context-mode, uv tool install, curl … | sh). Tests must never
+# install software or reach the network: put failing stand-ins first on PATH
+# (kept under TEST_HOME, which the EXIT trap removes).
+# shellcheck source=tests/lib/offline-tools.sh
+source "$REPO_ROOT/tests/lib/offline-tools.sh"
+sb_offline_tools_install "${TEST_HOME}/.offline-bin"
 export HOME="$TEST_HOME"
 export SB_RUNTIME_STATE_DIR="${TEST_HOME}/.silver-bullet"
 export SB_RUNTIME_PRESERVE_STATE_DIR=1
@@ -69,7 +76,6 @@ rt_init_paths
 # shellcheck source=../../scripts/lib/recommended-tools/receipts.sh
 source "$RT_LIB/receipts.sh"
 
-hashes="$(rt_current_config_hashes)"
 receipt="$(rt_receipt_create project init '["graphify","agentmemory"]' true 2>/dev/null || true)"
 echo "$receipt" | jq -e '.schema == "v1" and .receipt_id != "" and .nonce != ""' >/dev/null 2>&1 \
   && pass "receipt create schema-v1" || fail "receipt create schema-v1"
@@ -148,6 +154,19 @@ partial="$(build_attestation failure)"
 peval="$(rt_attestation_validate "$partial" "$receipt")"
 echo "$peval" | jq -e '.activation_status == "partial" and .clear_eligible == false' >/dev/null 2>&1 \
   && pass "partial tool failures retain reload_required" || fail "partial tool failures retain reload_required"
+
+# A partial activation stays valid when the only errors are missing tools, and
+# turns invalid as soon as any other error comes with them (each error is
+# checked on its own line).
+only_missing="$(build_attestation success | jq -c 'del(.servers.agentmemory.tools[1])')"
+omeval="$(rt_attestation_validate "$only_missing" "$receipt")"
+echo "$omeval" | jq -e '.activation_status == "partial" and .valid == true and (.errors | all(startswith("missing_tool:")))' >/dev/null 2>&1 \
+  && pass "partial with only missing tools is valid" || fail "partial with only missing tools is valid: $omeval"
+# The extra error comes after the missing-tool one: unexpected_tool:...
+missing_plus="$(build_attestation success | jq -c '.servers.agentmemory.tools[1].id = "bogus_tool"')"
+mpeval="$(rt_attestation_validate "$missing_plus" "$receipt")"
+echo "$mpeval" | jq -e '.activation_status == "partial" and .valid == false and (.errors | index("unexpected_tool:agentmemory/bogus_tool"))' >/dev/null 2>&1 \
+  && pass "partial with a missing tool and another error is invalid" || fail "partial with a missing tool and another error is invalid: $mpeval"
 
 # oversized stdin
 big="$(printf '%70000s' 'x')"
@@ -339,6 +358,7 @@ echo "$leanctx_eval" | jq -e '.valid == true and .clear_eligible == true' >/dev/
 # pre_config_hashes captured before mutations when RT_PRE_CONFIG_HASHES set
 pre_snapshot="$(rt_current_config_hashes)"
 printf '{"mcpServers":{"test":{"command":"noop"}}}\n' >"${TEST_HOME}/.cursor/mcp.json"
+# shellcheck disable=SC2034  # read by the sourced receipts.sh (rt_receipt_create)
 RT_PRE_CONFIG_HASHES="$pre_snapshot"
 receipt_pre="$(rt_receipt_create project init '["graphify"]' true 2>/dev/null || true)"
 unset RT_PRE_CONFIG_HASHES

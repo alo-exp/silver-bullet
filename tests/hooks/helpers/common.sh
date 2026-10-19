@@ -3,7 +3,6 @@
 # shellcheck shell=bash
 
 HOOK_TEST_REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-HOOK_TEST_HOOKS_DIR="${HOOK_TEST_REPO_ROOT}/hooks"
 
 if [[ -f "${HOOK_TEST_REPO_ROOT}/hooks/lib/runtime-paths.sh" ]]; then
   # shellcheck source=hooks/lib/runtime-paths.sh
@@ -31,7 +30,6 @@ hook_test_assert_eq() {
 
 hook_test_setup() {
   local run_id="${1:-$$}"
-  HOOK_TEST_RUN_ID="$run_id"
   export SB_RUNTIME_PRESERVE_STATE_DIR=1
   export SB_RUNTIME_STATE_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet/hook-test-${run_id}"
   HOOK_TEST_DIR="$SB_RUNTIME_STATE_DIR"
@@ -59,8 +57,12 @@ hook_test_setup() {
   export SILVER_BULLET_BRANCH_FILE="$HOOK_TEST_BRANCH"
   export SILVER_BULLET_TEST_HOOK_ENFORCED=1
 
+  # Legacy aliases read by the sourcing test scripts.
+  # shellcheck disable=SC2034  # consumed by the test that sources this helper
   TMPCFG="$HOOK_TEST_CFG"
+  # shellcheck disable=SC2034  # consumed by the test that sources this helper
   TMPSTATE="$HOOK_TEST_STATE"
+  # shellcheck disable=SC2034  # consumed by the test that sources this helper
   TMPDIR_TEST="$HOOK_TEST_TMPDIR"
 }
 

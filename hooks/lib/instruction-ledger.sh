@@ -27,7 +27,7 @@ sb_instruction_ledger_current_scope() {
   SB_INSTRUCTION_LEDGER_SCOPE_WORKTREE=""
   SB_INSTRUCTION_LEDGER_SCOPE_BRANCH="$(git -C "$root" rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
   if [[ -n "$SB_INSTRUCTION_LEDGER_SCOPE_BRANCH" ]] \
-    && ! printf '%s' "$SB_INSTRUCTION_LEDGER_SCOPE_BRANCH" | grep -qE '^[a-zA-Z0-9/_.-]+$'; then
+    && ! grep -qE '^[a-zA-Z0-9/_.-]+$' <<<"$SB_INSTRUCTION_LEDGER_SCOPE_BRANCH"; then
     SB_INSTRUCTION_LEDGER_SCOPE_BRANCH=""
   fi
   if declare -f sb_branch_scope_git_toplevel >/dev/null 2>&1; then
@@ -152,6 +152,7 @@ sb_prompt_is_agent_report() {
   # hooks running under `set -e` with an ERR trap, where a failing AND-list is
   # needless risk.
   local marker
+  # shellcheck disable=SC2016  # backticks are literal regex characters
   for marker in \
     '^[[:space:]]*(Report from|##[[:space:]]*Report)' \
     'git log --oneline|git status --porcelain' \
@@ -159,7 +160,7 @@ sb_prompt_is_agent_report() {
     'exit 0|_EXIT=[0-9]' \
     '[0-9a-f]{7,}\.\.[0-9a-f]{7,}|`[0-9a-f]{7,}`[[:space:]]*→[[:space:]]*`[0-9a-f]{7,}`'
   do
-    if printf '%s' "$prompt" | grep -Eq "$marker" 2>/dev/null; then
+    if grep -Eq "$marker" <<<"$prompt" 2>/dev/null; then
       hits=$((hits + 1))
     fi
   done

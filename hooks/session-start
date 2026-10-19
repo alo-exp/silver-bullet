@@ -139,8 +139,8 @@ if ! sb_runtime_path_is_state_scoped "$session_start_file"; then
 fi
 session_start_value="$(cat "$session_start_file" 2>/dev/null || true)"
 if ! [[ "$session_start_value" =~ ^[0-9]+$ ]]; then
-  sb_guard_nofollow "$session_start_file" 2>/dev/null || true
-  date +%s >"$session_start_file" 2>/dev/null || true
+  sb_guard_nofollow "$session_start_file" 2>/dev/null
+  date +%s 2>/dev/null >"$session_start_file" || true
 fi
 
 # SB bridge heartbeat (schema-v1) — verification-only SessionStart may write heartbeat only.
@@ -162,8 +162,10 @@ if [[ -n "$_rt_hb_script" && -f "${sb_project_root}/.silver-bullet.json" ]]; the
   if [[ "$_sb_initiated" == "true" ]]; then
     # Section 3: eligible SessionStart (all sources); rt_heartbeat_write enforces 60s cadence.
     # shellcheck source=/dev/null
-    RT_PROJECT_ROOT="$sb_project_root" RT_HOST="${SILVER_BULLET_RUNTIME:-cursor}" \
-      source "$_rt_hb_script" 2>/dev/null && rt_heartbeat_write "$sb_project_root" "${SILVER_BULLET_RUNTIME:-cursor}" 2>/dev/null || true
+    if RT_PROJECT_ROOT="$sb_project_root" RT_HOST="${SILVER_BULLET_RUNTIME:-cursor}" \
+      source "$_rt_hb_script" 2>/dev/null; then
+      rt_heartbeat_write "$sb_project_root" "${SILVER_BULLET_RUNTIME:-cursor}" 2>/dev/null || true
+    fi
   fi
 fi
 unset _rt_hb_script _sb_initiated
@@ -233,7 +235,7 @@ current_branch=""
 current_git_toplevel=""
 current_branch=$(git -C "$PWD" rev-parse --abbrev-ref HEAD 2>/dev/null || true)
 current_git_toplevel=$(git -C "$PWD" rev-parse --show-toplevel 2>/dev/null || true)
-if [[ -n "$current_branch" ]] && ! printf '%s' "$current_branch" | grep -qE '^[a-zA-Z0-9/_.-]+$'; then
+if [[ -n "$current_branch" ]] && ! grep -qE '^[a-zA-Z0-9/_.-]+$' <<<"$current_branch"; then
   current_branch=""
 fi
 
@@ -267,11 +269,11 @@ esac
 if [[ "$sb_should_mutate" == true && -n "$current_branch" && ( ! -f "$branch_file" || -z "$stored_branch" ) ]]; then
   # Branch file absent or empty (first run, file deleted, or corrupted) — initialize
   # without wiping state.
-  sb_guard_nofollow "$branch_file" 2>/dev/null || true
+  sb_guard_nofollow "$branch_file" 2>/dev/null
   if declare -f sb_branch_scope_write >/dev/null 2>&1; then
     sb_branch_scope_write "$current_branch" "$current_git_toplevel"
   else
-    printf '%s\n' "$current_branch" >"$branch_file" 2>/dev/null || true
+    printf '%s\n' "$current_branch" 2>/dev/null >"$branch_file" || true
   fi
   # v0.30.0 fix (#87 Bug 2): verify the write succeeded; fail-soft (warn-only,
   # do not exit non-zero) so the rest of the hook still runs.
@@ -297,38 +299,23 @@ elif [[ "$sb_should_mutate" == true && -n "$current_branch" && -n "$stored_branc
   if [[ -f "$_lib_dir/graphify-gate.sh" ]]; then
     # shellcheck source=lib/graphify-gate.sh
     source "$_lib_dir/graphify-gate.sh"
-    _gf_cfg=""
-    if [[ -n "${sb_project_root:-}" && -f "${sb_project_root}/.silver-bullet.json" ]]; then
-      _gf_cfg="${sb_project_root}/.silver-bullet.json"
-    fi
-    if [[ -n "$_gf_cfg" ]]; then
-      sb_graphify_clear_query_state "$_gf_cfg" 2>/dev/null || true
-    else
-      rm -f -- "${SB_STATE_DIR}/graphify-query" 2>/dev/null || true
-    fi
+    # sb_project_root was located through this very file, so it exists here.
+    sb_graphify_clear_query_state "${sb_project_root}/.silver-bullet.json" 2>/dev/null || true
   else
     rm -f -- "${SB_STATE_DIR}/graphify-query" 2>/dev/null || true
   fi
   if [[ -f "$_lib_dir/agentmemory-gate.sh" ]]; then
     # shellcheck source=lib/agentmemory-gate.sh
     source "$_lib_dir/agentmemory-gate.sh"
-    _am_cfg=""
-    if [[ -n "${sb_project_root:-}" && -f "${sb_project_root}/.silver-bullet.json" ]]; then
-      _am_cfg="${sb_project_root}/.silver-bullet.json"
-    fi
-    if [[ -n "$_am_cfg" ]]; then
-      sb_agentmemory_clear_usage_state "$_am_cfg" 2>/dev/null || true
-    else
-      rm -f -- "${SB_STATE_DIR}/agentmemory-usage" 2>/dev/null || true
-    fi
+    sb_agentmemory_clear_usage_state "${sb_project_root}/.silver-bullet.json" 2>/dev/null || true
   else
     rm -f -- "${SB_STATE_DIR}/agentmemory-usage" 2>/dev/null || true
   fi
-  sb_guard_nofollow "$branch_file" 2>/dev/null || true
+  sb_guard_nofollow "$branch_file" 2>/dev/null
   if declare -f sb_branch_scope_write >/dev/null 2>&1; then
     sb_branch_scope_write "$current_branch" "$current_git_toplevel"
   else
-    printf '%s\n' "$current_branch" >"$branch_file" 2>/dev/null || true
+    printf '%s\n' "$current_branch" 2>/dev/null >"$branch_file" || true
   fi
   if [[ ! -s "$branch_file" ]]; then
     printf '⚠️  silver-bullet session-start: branch file write failed at %s\n' "$branch_file" >&2
@@ -349,7 +336,7 @@ if [[ "$sb_should_mutate" == true ]]; then
     shopt -s nullglob
     for wf in "$wf_dir"/*.md; do
       [[ -f "$wf" && ! -L "$wf" ]] || continue
-      wf_mtime=$(stat -f %m "$wf" 2>/dev/null || stat -c %Y "$wf" 2>/dev/null || echo 0)
+      wf_mtime=$(stat -c %Y "$wf" 2>/dev/null || stat -f %m "$wf" 2>/dev/null || echo 0)
       wf_mtime="${wf_mtime:-0}"
       [[ "$wf_mtime" =~ ^[0-9]+$ ]] || wf_mtime=0
       age=$((now_epoch - wf_mtime))
@@ -373,6 +360,8 @@ if command -v jq >/dev/null 2>&1; then
       [[ -n "$cfg_trivial" ]] && trivial_file="$cfg_trivial"
       break
     fi
+    # Stop at the repository root or /: the config can vanish after the project lookup
+    # above (a project deleted while a backgrounded hook runs), and dirname / is /.
     if [[ -d "$search_dir/.git" ]] || [[ "$search_dir" == "/" ]]; then break; fi
     search_dir=$(dirname "$search_dir")
   done
@@ -383,12 +372,12 @@ if ! sb_runtime_path_is_state_scoped "$trivial_file"; then
   trivial_file="${SB_STATE_DIR}/trivial"
 fi
 [[ -L "$trivial_file" ]] && trivial_file="${SB_STATE_DIR}/trivial"
-rm -f -- "$trivial_file" 2>/dev/null
-rm -f -- "${SB_STATE_DIR}/release-live-matrix" 2>/dev/null
-rm -f -- "${SB_STATE_DIR}/e2e-live-matrix" 2>/dev/null
+rm -f -- "$trivial_file" 2>/dev/null || true
+rm -f -- "${SB_STATE_DIR}/release-live-matrix" 2>/dev/null || true
+rm -f -- "${SB_STATE_DIR}/e2e-live-matrix" 2>/dev/null || true
 if [[ "$sb_should_mutate" == true ]]; then
-  rm -f -- "$quality_gate_state_file" 2>/dev/null
-  rm -f -- "$verify_tests_state_file" 2>/dev/null
+  rm -f -- "$quality_gate_state_file" 2>/dev/null || true
+  rm -f -- "$verify_tests_state_file" 2>/dev/null || true
   rm -f -- "${SB_STATE_DIR}/planning-edit-override" \
         "${SB_STATE_DIR}/roadmap-edit-override" 2>/dev/null || true
   # #275: Claude Agent workers fire SessionStart(startup) but never SubagentStart.
@@ -421,7 +410,7 @@ fi
 # so enforcement rules survive context compaction.
 # Security: co-located with hooks; plugin-dir write access implies hook modification
 # access anyway. Path traversal defense: verify file resolves within plugin directory.
-script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd 2>/dev/null || true)"
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd 2>/dev/null)" || true
 [[ -n "$script_dir" ]] || exit 0
 core_rules_file="${script_dir}/core-rules.md"
 # Path traversal defense: reject if resolved path escapes plugin directory
@@ -651,8 +640,8 @@ if [[ -f "$_lib_dir/recommended-tools.sh" && -n "${sb_project_root:-}" ]]; then
 fi
 
 # Mark session rules injected (prompt-reminder uses compact ref instead of full re-injection).
-sb_guard_nofollow "${SB_STATE_DIR}/session-rules-injected" 2>/dev/null || true
-date +%s >"${SB_STATE_DIR}/session-rules-injected" 2>/dev/null || true
+sb_guard_nofollow "${SB_STATE_DIR}/session-rules-injected" 2>/dev/null
+date +%s 2>/dev/null >"${SB_STATE_DIR}/session-rules-injected" || true
 
 # If nothing found, silent no-op
 [[ -z "$combined" ]] && exit 0

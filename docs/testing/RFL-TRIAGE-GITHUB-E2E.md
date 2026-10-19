@@ -7,7 +7,7 @@ Enterprise E2E can file **real GitHub issues** on [`alo-exp/enterprise-grade-tes
 ```bash
 cd /path/to/silver-bullet/repo
 
-export SB_TEST_ENTERPRISE_APP_ROOT=/Users/shafqat/projects/enterprise-grade-test-app-cursor
+export SB_TEST_ENTERPRISE_APP_ROOT=/path/to/enterprise-grade-test-app-cursor   # your test-app checkout
 export SB_RFL_GITHUB_E2E=1   # optional — auto-enabled when gh auth or token present
 
 bash tests/enterprise-e2e-live/test-enterprise-e2e-triage-ladder-scenario.sh

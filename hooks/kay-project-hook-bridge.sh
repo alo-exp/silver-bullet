@@ -19,6 +19,11 @@ fi
 if [[ -n "$bridge_home_root" && -z "${HOME:-}" ]]; then
   export HOME="$bridge_home_root"
 fi
+if [[ -z "$bridge_home_root" ]]; then
+  echo "Unable to resolve Kay bridge home root" >&2
+  exit 1
+fi
+
 BRIDGE_ROOT="${bridge_home_root}/.kay/.silver-bullet/kay-hook-bridge"
 PATH_PREPEND_ROOT="${bridge_home_root}/.kay/.silver-bullet/path-prepend"
 ACTIVE_PATH_PREPEND_DIR="${PATH_PREPEND_ROOT}/active"
@@ -50,11 +55,6 @@ fi
 if [[ -f "${LIB_DIR}/tool-input.sh" ]]; then
   # shellcheck source=lib/tool-input.sh
   source "${LIB_DIR}/tool-input.sh"
-fi
-
-if [[ -z "$bridge_home_root" ]]; then
-  echo "Unable to resolve Kay bridge home root" >&2
-  exit 1
 fi
 
 mkdir -p "${BRIDGE_ROOT}/blocks" "${PATH_PREPEND_ROOT}"
@@ -90,7 +90,7 @@ bridge_debug() {
   [[ -n "$BRIDGE_DEBUG_LOG" ]] || return 0
   {
     printf '[%s] %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$1"
-  } >>"$BRIDGE_DEBUG_LOG" 2>/dev/null || true
+  } 2>/dev/null >>"$BRIDGE_DEBUG_LOG" || true
 }
 
 hook_event_name_for_native() {
@@ -172,9 +172,6 @@ tool_names_for_hook_matching() {
       ;;
     file.before_write|file.after_write)
       printf '%s\n' Write Edit MultiEdit apply_patch
-      ;;
-    *)
-      [[ -n "$primary" ]] && printf '%s\n' "$primary"
       ;;
   esac
 }
@@ -345,17 +342,17 @@ run_matching_hooks() {
   local tool_name="$2"
   local payload_json="$3"
   local matched_json spec command stderr_file stdout_file status reason
-  local -a seen_commands=()
+  # seen_commands is declared by run_all_matching_hooks: a command runs once per
+  # event even when several tool-name aliases match it.
 
   matched_json="$(matching_hook_specs "$event_name" "$tool_name")"
   [[ -n "$matched_json" ]] || matched_json='[]'
   bridge_debug "matched_hooks tool=${tool_name} hooks=${matched_json}"
 
   while IFS= read -r spec; do
-    [[ -n "$spec" ]] || continue
     command="$(printf '%s' "$spec" | jq -r '.command')"
     [[ -n "$command" ]] || continue
-    if ((${#seen_commands[@]})) && printf '%s\n' "${seen_commands[@]}" | grep -Fqx -- "$command"; then
+    if ((${#seen_commands[@]})) && grep -Fqx -- "$command" <<<"$(printf '%s\n' "${seen_commands[@]}")"; then
       continue
     fi
     seen_commands+=("$command")
@@ -394,9 +391,9 @@ run_all_matching_hooks() {
   local primary_tool_name="$2"
   local payload_json="$3"
   local matcher_tool_name
+  local -a seen_commands=()
 
   while IFS= read -r matcher_tool_name; do
-    [[ -n "$matcher_tool_name" ]] || continue
     run_matching_hooks "$event_name" "$matcher_tool_name" "$payload_json"
   done < <(tool_names_for_hook_matching "$primary_tool_name")
 }
@@ -435,7 +432,7 @@ collect_git_commit_write_targets() {
   local command_str="$1"
   local git_dir=""
 
-  printf '%s' "$command_str" | grep -qE '(^|[[:space:];(&|])git[[:space:]]+commit([[:space:]]|$)' || return 0
+  grep -qE '(^|[[:space:];(&|])git[[:space:]]+commit([[:space:]]|$)' <<<"$command_str" || return 0
   git_dir="$(git rev-parse --git-dir 2>/dev/null || true)"
   [[ -n "$git_dir" ]] || return 0
   case "$git_dir" in
@@ -609,7 +606,6 @@ EOF
 bridge_block_denied_tool() {
   local reason="$1"
 
-  [[ -n "$reason" ]] || reason="Silver Bullet blocked this tool call."
   printf '%s\n' "$reason" >&2
   exit 2
 }
@@ -620,7 +616,6 @@ install_named_command_shim() {
   local reason="$3"
   local shim_dir
 
-  [[ -n "$command_name" ]] || return 1
   shim_dir="$(ensure_shim_dir "$state_path")"
   write_reason_shim "${shim_dir}/${command_name}" "$reason"
 }
@@ -656,8 +651,9 @@ apply_denial_filesystem_block() {
   else
     bridge_debug "permission_block=applied state_path=${state_path}"
   fi
-  install_mutation_shims "$state_path" "$reason" || true
-  bridge_debug "shim_dir=$(shim_directory_for_call 2>/dev/null || true)"
+  # In an if-condition so a failing shim install cannot trip errexit before the deny is reported.
+  if install_mutation_shims "$state_path" "$reason"; then :; fi
+  bridge_debug "shim_dir=$(shim_directory_for_call)"
   rm -f -- "$targets_file"
 }
 
@@ -674,7 +670,8 @@ apply_file_write_block() {
   targets_file="$(mktemp "${TMPDIR:-/tmp}/sb-kay-hook-targets.XXXXXX")"
   printf '%s\n' "$file_path" >"$targets_file"
   apply_permission_block "$state_path" "$targets_file" || true
-  install_mutation_shims "$state_path" "$reason" || true
+  # In an if-condition so a failing shim install cannot trip errexit before the deny is reported.
+  if install_mutation_shims "$state_path" "$reason"; then :; fi
   rm -f -- "$targets_file"
 }
 

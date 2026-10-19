@@ -7,10 +7,14 @@ set -euo pipefail
 PASS=0
 FAIL=0
 TOTAL=0
-current_month="$(date +%Y-%m)"
+cd "$(dirname "${BASH_SOURCE[0]}")/../.."
+# Newest monthly knowledge/learnings files. Requiring the *current* month would make
+# the suite fail on the first day of every month until someone writes an entry.
+latest_knowledge="$(ls docs/knowledge/2*.md 2>/dev/null | sort | tail -1)"
+latest_learnings="$(ls docs/learnings/2*.md 2>/dev/null | sort | tail -1)"
 
-pass() { ((PASS++)); ((TOTAL++)); printf "  ✓ %s\n" "$1"; }
-fail() { ((FAIL++)); ((TOTAL++)); printf "  ✗ %s\n" "$1"; }
+pass() { PASS=$((PASS + 1)); TOTAL=$((TOTAL + 1)); printf "  ✓ %s\n" "$1"; }
+fail() { FAIL=$((FAIL + 1)); TOTAL=$((TOTAL + 1)); printf "  ✗ %s\n" "$1"; }
 section() { printf "\n━━━ %s ━━━\n" "$1"; }
 
 # ─── Section 1: Required docs exist ───
@@ -34,8 +38,8 @@ for f in \
   docs/doc-scheme.md \
   docs/doc-scheme.json \
   docs/knowledge/INDEX.md \
-  docs/knowledge/$current_month.md \
-  docs/learnings/$current_month.md; do
+  "${latest_knowledge:-docs/knowledge/YYYY-MM.md}" \
+  "${latest_learnings:-docs/learnings/YYYY-MM.md}"; do
   if [[ -f "$f" ]]; then
     pass "$f exists"
   else
@@ -71,7 +75,9 @@ fi
 
 section "Required directories exist"
 
-for d in docs/audits docs/internal docs/knowledge docs/learnings docs/specs docs/sessions docs/workflows; do
+# docs/sessions/ is created at runtime by hooks/session-log-init.sh in downstream projects;
+# this repository does not commit session logs.
+for d in docs/audits docs/internal docs/knowledge docs/learnings docs/specs docs/workflows; do
   if [[ -d "$d" ]]; then
     pass "$d/ exists"
   else
@@ -164,7 +170,7 @@ for f in docs/*.md; do
   lines=$(wc -l < "$f")
   if (( lines > 500 )); then
     fail "$f has $lines lines (cap: 500)"
-    ((over_cap++))
+    over_cap=$((over_cap + 1))
   fi
 done
 if (( over_cap == 0 )); then
@@ -189,7 +195,7 @@ section "Knowledge file frontmatter validation"
 
 for f in docs/knowledge/2*.md; do
   [[ -f "$f" ]] || continue
-  if head -1 "$f" | grep -q "^---"; then
+  if grep -q "^---" < <(head -1 "$f"); then
     pass "$f has frontmatter"
   else
     fail "$f missing frontmatter"
@@ -212,7 +218,7 @@ section "Learnings file frontmatter validation"
 
 for f in docs/learnings/2*.md; do
   [[ -f "$f" ]] || continue
-  if head -1 "$f" | grep -q "^---"; then
+  if grep -q "^---" < <(head -1 "$f"); then
     pass "$f has frontmatter"
   else
     fail "$f missing frontmatter"

@@ -67,7 +67,7 @@ sb_session_ledger_log_path() {
 
 sb_session_ledger_request_block() {
   local prompt="$1"
-  shift || true
+  shift
   local timestamp
   timestamp=$(date -u '+%Y-%m-%d %H:%M:%SZ' 2>/dev/null || date)
 
@@ -148,7 +148,7 @@ sb_session_ledger_append_block() {
 
 sb_session_ledger_append_request() {
   local prompt="$1"
-  shift || true
+  shift
   local log_path block
 
   log_path="$(sb_session_ledger_log_path 2>/dev/null || true)"
@@ -166,14 +166,14 @@ sb_session_ledger_mark_completed() {
   log_path="$(sb_session_ledger_log_path 2>/dev/null || true)"
   [[ -n "$log_path" && -f "$log_path" && ! -L "$log_path" ]] || return 0
 
-  local escaped_skill tmp
-  escaped_skill=$(printf '%s' "$skill" | sed 's/[][(){}.^$*+?|\\/]/\\&/g')
+  local tmp
   tmp=$(mktemp)
-  if awk -v skill="$escaped_skill" '
+  # The skill name is compared literally and passed through the environment: awk -v
+  # processes backslash escapes, which gawk and mawk treat differently.
+  if SB_LEDGER_SKILL="$skill" awk '
     {
       line = $0
-      pattern = "^[[:space:]]*- \\[ \\] " skill "$"
-      if (line ~ pattern) {
+      if (match(line, /^[[:space:]]*- \[ \] /) && substr(line, RLENGTH + 1) == ENVIRON["SB_LEDGER_SKILL"]) {
         sub(/\[ \]/, "[x]", line)
       }
       print line

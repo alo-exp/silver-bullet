@@ -23,7 +23,7 @@ _check() {
 
 printf '== Global toolstack verify ==\n\n'
 
-[[ -f "${HOME_CURSOR}/toolstack.json" ]] && _check pass toolstack.json present || _check fail toolstack.json missing
+if [[ -f "${HOME_CURSOR}/toolstack.json" ]]; then _check pass toolstack.json present; else _check fail toolstack.json missing; fi
 
 for s in session-bootstrap shell-compression graphify-gate agentmemory-gate rtk-gate context-mode-gate token-compression-tools-gate stack-compression-coordinator record-graphify-query record-agentmemory-usage install parity-verify verify; do
   if [[ -x "${TS_DIR}/${s}.sh" ]] || [[ -f "${TS_DIR}/${s}.sh" && "$s" == "install" ]]; then
@@ -33,13 +33,13 @@ for s in session-bootstrap shell-compression graphify-gate agentmemory-gate rtk-
   fi
 done
 
-[[ -f "${TS_DIR}/lib/common.sh" ]] && _check pass lib/common.sh present || _check fail lib/common.sh missing
-[[ -f "${TS_DIR}/patch-hooks.py" ]] && _check pass patch-hooks.py present || _check fail patch-hooks.py missing
-[[ -f "${TS_DIR}/patch-mcp.py" ]] && _check pass patch-mcp.py present || _check fail patch-mcp.py missing
-[[ -f "${TS_DIR}/five_tool_instances.py" ]] && _check pass five_tool_instances.py present || _check fail five_tool_instances.py missing
-[[ -f "${TS_DIR}/lib/five_tool_runtime/runtime.py" ]] && _check pass generic-runtime present || _check fail generic-runtime missing
-[[ -f "${TS_DIR}/lib/five_tool_runtime/cli.py" ]] && _check pass generic-runtime-cli present || _check fail generic-runtime-cli missing
-[[ -f "${TS_DIR}/fix-shell-compression-hook.py" ]] && _check pass fix-shell-compression-hook.py present || _check fail fix-shell-compression-hook.py missing
+if [[ -f "${TS_DIR}/lib/common.sh" ]]; then _check pass lib/common.sh present; else _check fail lib/common.sh missing; fi
+if [[ -f "${TS_DIR}/patch-hooks.py" ]]; then _check pass patch-hooks.py present; else _check fail patch-hooks.py missing; fi
+if [[ -f "${TS_DIR}/patch-mcp.py" ]]; then _check pass patch-mcp.py present; else _check fail patch-mcp.py missing; fi
+if [[ -f "${TS_DIR}/five_tool_instances.py" ]]; then _check pass five_tool_instances.py present; else _check fail five_tool_instances.py missing; fi
+if [[ -f "${TS_DIR}/lib/five_tool_runtime/runtime.py" ]]; then _check pass generic-runtime present; else _check fail generic-runtime missing; fi
+if [[ -f "${TS_DIR}/lib/five_tool_runtime/cli.py" ]]; then _check pass generic-runtime-cli present; else _check fail generic-runtime-cli missing; fi
+if [[ -f "${TS_DIR}/fix-shell-compression-hook.py" ]]; then _check pass fix-shell-compression-hook.py present; else _check fail fix-shell-compression-hook.py missing; fi
 
 if [[ -f "$GLOBAL_INSTANCES" ]] && jq -e '
   .schema == "five-tool-stack/v1"
@@ -56,38 +56,42 @@ else
 fi
 
 for rule in graphify.mdc agentmemory.mdc leanctx.mdc context-mode.mdc token-compression-enforcement.mdc recommended-tools.mdc; do
-  [[ -f "${HOME_CURSOR}/rules/${rule}" ]] && _check pass "rule:${rule}" present || _check fail "rule:${rule}" missing
+  if [[ -f "${HOME_CURSOR}/rules/${rule}" ]]; then
+    _check pass "rule:${rule}" present
+  else
+    _check fail "rule:${rule}" missing
+  fi
 done
 
-command -v graphify >/dev/null 2>&1 && _check pass graphify-cli "$(command -v graphify)" || _check fail graphify-cli "not on PATH"
-command -v graphify-mcp >/dev/null 2>&1 && _check pass graphify-mcp "$(command -v graphify-mcp)" || _check warn graphify-mcp "not on PATH"
-command -v agentmemory >/dev/null 2>&1 && _check pass agentmemory-cli "$(command -v agentmemory)" || _check fail agentmemory-cli "not on PATH"
-command -v context-mode >/dev/null 2>&1 && _check pass context-mode "$(command -v context-mode)" || _check fail context-mode "not on PATH"
-command -v lean-ctx >/dev/null 2>&1 && _check pass lean-ctx "$(command -v lean-ctx)" || _check fail lean-ctx "not on PATH"
-command -v rtk >/dev/null 2>&1 && _check pass rtk "$(command -v rtk)" || _check fail rtk "not on PATH"
+if command -v graphify >/dev/null 2>&1; then _check pass graphify-cli "$(command -v graphify)"; else _check fail graphify-cli "not on PATH"; fi
+if command -v graphify-mcp >/dev/null 2>&1; then _check pass graphify-mcp "$(command -v graphify-mcp)"; else _check warn graphify-mcp "not on PATH"; fi
+if command -v agentmemory >/dev/null 2>&1; then _check pass agentmemory-cli "$(command -v agentmemory)"; else _check fail agentmemory-cli "not on PATH"; fi
+if command -v context-mode >/dev/null 2>&1; then _check pass context-mode "$(command -v context-mode)"; else _check fail context-mode "not on PATH"; fi
+if command -v lean-ctx >/dev/null 2>&1; then _check pass lean-ctx "$(command -v lean-ctx)"; else _check fail lean-ctx "not on PATH"; fi
+if command -v rtk >/dev/null 2>&1; then _check pass rtk "$(command -v rtk)"; else _check fail rtk "not on PATH"; fi
 
 if [[ -f "${HOME_CURSOR}/mcp.json" ]]; then
-  grep -q '"graphify"' "${HOME_CURSOR}/mcp.json" && _check pass mcp:graphify wired || _check fail mcp:graphify missing
-  grep -q 'agentmemory' "${HOME_CURSOR}/mcp.json" && _check pass mcp:agentmemory wired || _check fail mcp:agentmemory missing
-  grep -q '"context-mode"' "${HOME_CURSOR}/mcp.json" && _check pass mcp:context-mode wired || _check fail mcp:context-mode missing
-  grep -q '"leanctx"' "${HOME_CURSOR}/mcp.json" && _check pass mcp:leanctx wired || _check fail mcp:leanctx missing
-  ! grep -q 'lean-ctx-standalone' "${HOME_CURSOR}/mcp.json" && _check pass mcp:no_standalone removed || _check fail mcp:lean-ctx-standalone "still present"
+  if grep -q '"graphify"' "${HOME_CURSOR}/mcp.json"; then _check pass mcp:graphify wired; else _check fail mcp:graphify missing; fi
+  if grep -q 'agentmemory' "${HOME_CURSOR}/mcp.json"; then _check pass mcp:agentmemory wired; else _check fail mcp:agentmemory missing; fi
+  if grep -q '"context-mode"' "${HOME_CURSOR}/mcp.json"; then _check pass mcp:context-mode wired; else _check fail mcp:context-mode missing; fi
+  if grep -q '"leanctx"' "${HOME_CURSOR}/mcp.json"; then _check pass mcp:leanctx wired; else _check fail mcp:leanctx missing; fi
+  if ! grep -q 'lean-ctx-standalone' "${HOME_CURSOR}/mcp.json"; then _check pass mcp:no_standalone removed; else _check fail mcp:lean-ctx-standalone "still present"; fi
 else
   _check fail mcp.json missing
 fi
 
 if [[ -f "${HOME_CURSOR}/hooks.json" ]]; then
-  grep -q 'toolstack/session-bootstrap' "${HOME_CURSOR}/hooks.json" && _check pass hooks:session-bootstrap wired || _check fail hooks:session-bootstrap missing
+  if grep -q 'toolstack/session-bootstrap' "${HOME_CURSOR}/hooks.json"; then _check pass hooks:session-bootstrap wired; else _check fail hooks:session-bootstrap missing; fi
   # RTK owns the one global shell rewrite; the legacy wrapper must be absent.
-  grep -q 'rtk hook cursor' "${HOME_CURSOR}/hooks.json" && _check pass hooks:shell-compression wired || _check fail hooks:shell-compression missing
-  ! grep -q 'toolstack/shell-compression' "${HOME_CURSOR}/hooks.json" && _check pass hooks:legacy-shell-wrapper removed || _check fail hooks:legacy-shell-wrapper "still wired"
-  grep -q 'rtk hook cursor' "${HOME_CURSOR}/hooks.json" && _check pass hooks:rtk wired || _check fail hooks:rtk missing
-  grep -q 'toolstack/graphify-gate' "${HOME_CURSOR}/hooks.json" && _check pass hooks:graphify-gate wired || _check fail hooks:graphify-gate missing
-  grep -q 'toolstack/agentmemory-gate' "${HOME_CURSOR}/hooks.json" && _check pass hooks:agentmemory-gate wired || _check fail hooks:agentmemory-gate missing
-  grep -q 'toolstack/rtk-gate' "${HOME_CURSOR}/hooks.json" && _check pass hooks:rtk-gate wired || _check fail hooks:rtk-gate missing
-  grep -q 'toolstack/context-mode-gate' "${HOME_CURSOR}/hooks.json" && _check pass hooks:context-mode-gate wired || _check fail hooks:context-mode-gate missing
-  grep -q 'toolstack/record-graphify-query' "${HOME_CURSOR}/hooks.json" && _check pass hooks:record-graphify wired || _check fail hooks:record-graphify missing
-  grep -q 'toolstack/record-agentmemory-usage' "${HOME_CURSOR}/hooks.json" && _check pass hooks:record-agentmemory wired || _check fail hooks:record-agentmemory missing
+  if grep -q 'rtk hook cursor' "${HOME_CURSOR}/hooks.json"; then _check pass hooks:shell-compression wired; else _check fail hooks:shell-compression missing; fi
+  if ! grep -q 'toolstack/shell-compression' "${HOME_CURSOR}/hooks.json"; then _check pass hooks:legacy-shell-wrapper removed; else _check fail hooks:legacy-shell-wrapper "still wired"; fi
+  if grep -q 'rtk hook cursor' "${HOME_CURSOR}/hooks.json"; then _check pass hooks:rtk wired; else _check fail hooks:rtk missing; fi
+  if grep -q 'toolstack/graphify-gate' "${HOME_CURSOR}/hooks.json"; then _check pass hooks:graphify-gate wired; else _check fail hooks:graphify-gate missing; fi
+  if grep -q 'toolstack/agentmemory-gate' "${HOME_CURSOR}/hooks.json"; then _check pass hooks:agentmemory-gate wired; else _check fail hooks:agentmemory-gate missing; fi
+  if grep -q 'toolstack/rtk-gate' "${HOME_CURSOR}/hooks.json"; then _check pass hooks:rtk-gate wired; else _check fail hooks:rtk-gate missing; fi
+  if grep -q 'toolstack/context-mode-gate' "${HOME_CURSOR}/hooks.json"; then _check pass hooks:context-mode-gate wired; else _check fail hooks:context-mode-gate missing; fi
+  if grep -q 'toolstack/record-graphify-query' "${HOME_CURSOR}/hooks.json"; then _check pass hooks:record-graphify wired; else _check fail hooks:record-graphify missing; fi
+  if grep -q 'toolstack/record-agentmemory-usage' "${HOME_CURSOR}/hooks.json"; then _check pass hooks:record-agentmemory wired; else _check fail hooks:record-agentmemory missing; fi
 else
   _check fail hooks.json missing
 fi

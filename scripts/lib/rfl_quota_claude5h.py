@@ -243,7 +243,8 @@ def bind_cli_env(*, host: str = "", model: str = "", wake_at: str = "") -> None:
     if host:
         os.environ["SB_RFL_QUOTA_HOST"] = host
     if model:
-        os.environ.setdefault("SB_RFL_MODEL", model)
-        os.environ.setdefault("PI_MODEL", os.environ.get("PI_MODEL") or model)
+        for key in ("SB_RFL_MODEL", "PI_MODEL"):
+            if not os.environ.get(key):
+                os.environ[key] = model
     if wake_at:
         os.environ["SB_RFL_QUOTA_WAKE_AT"] = wake_at

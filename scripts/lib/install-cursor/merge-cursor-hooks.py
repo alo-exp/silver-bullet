@@ -59,15 +59,21 @@ SB_HOOK_RE = re.compile(r"/silver-bullet/[^/]+/hooks/")
 DEV_CHECKOUT_RE = re.compile(r"/plugins/silver-bullet/hooks/")
 
 
-def is_malformed_sb_hook(entry: dict) -> bool:
+def entry_command(entry) -> str:
+    """Return the entry's command, or "" for non-dict entries / non-string commands."""
+    if not isinstance(entry, dict):
+        return ""
     command = entry.get("command", "")
-    if "codex-hook-adapter" in command:
-        return True
-    return 'codex-hook-adapter.sh"' in command and "cursor-hook-bridge" in command
+    return command if isinstance(command, str) else ""
+
+
+def is_malformed_sb_hook(entry: dict) -> bool:
+    command = entry_command(entry)
+    return "codex-hook-adapter" in command
 
 
 def is_stale_sb_hook(entry: dict) -> bool:
-    command = entry.get("command", "")
+    command = entry_command(entry)
     if is_malformed_sb_hook(entry):
         return True
     if "${CURSOR_PLUGIN_ROOT}/hooks/" in command:
@@ -77,14 +83,29 @@ def is_stale_sb_hook(entry: dict) -> bool:
     return bool(SB_HOOK_RE.search(command)) and install_path not in command
 
 
+def json_member(data: dict, key: str, kind: type):
+    """Return ``data[key]`` as ``kind``; repair missing/null/empty, refuse other wrong types."""
+    value = data.get(key)
+    if isinstance(value, kind):
+        return value
+    if value is None or value == {} or value == []:
+        value = kind()
+        data[key] = value
+        return value
+    label = "object" if kind is dict else "array"
+    raise ValueError(f"{settings_path}: {key} must be a JSON {label}")
+
+
 if os.path.exists(settings_path):
     with open(settings_path, encoding="utf-8") as handle:
         settings = json.load(handle)
+    if not isinstance(settings, dict):
+        raise ValueError(f"{settings_path}: expected a JSON object at the top level")
 else:
     settings = {"version": 1, "hooks": {}}
 
 settings.setdefault("version", 1)
-existing_hooks = settings.setdefault("hooks", {})
+existing_hooks = json_member(settings, "hooks", dict)
 
 
 def merge_matchers(entries: list[dict]) -> str | None:
@@ -148,11 +169,13 @@ for event, entries in list(existing_hooks.items()):
 
 
 def hook_entry_key(entry: dict) -> tuple[str, str]:
-    return (entry.get("command", ""), entry.get("matcher", ""))
+    if not isinstance(entry, dict):
+        return ("", "")
+    return (entry_command(entry), entry.get("matcher", ""))
 
 
 for event, entries in sb_hooks.items():
-    event_list = existing_hooks.setdefault(event, [])
+    event_list = json_member(existing_hooks, event, list)
     for new_entry in entries:
         new_key = hook_entry_key(new_entry)
         if not any(hook_entry_key(entry) == new_key for entry in event_list):

@@ -123,6 +123,7 @@ class PackageSolutionOutputsTests(unittest.TestCase):
                 check=False,
                 env={
                     **os.environ,
+                    "SB_SKIP_VENDOR_URL_HEALTH": "1",
                     "SB_SKIP_LANDSCAPE_PDF": "1",
                     "SB_ALLOW_SKIP_LANDSCAPE_PDF": "1",
                 },

@@ -193,7 +193,10 @@ def parse_policy_c_payload(payload: dict[str, Any]) -> list[dict[str, str]]:
                 if ident:
                     titles[ident] = str(item.get("title") or item.get("summary") or "")
     resolved_map: dict[str, str] = {}
-    for item in payload.get("resolved") or []:
+    resolved_items = payload.get("resolved") or []
+    if not isinstance(resolved_items, list):
+        resolved_items = []
+    for item in resolved_items:
         if not isinstance(item, dict):
             continue
         ident = str(item.get("id") or "").strip()
@@ -252,11 +255,15 @@ def collect_issue_ledger(
     if run_dir is not None:
         ledger_md = Path(run_dir) / "ISSUE-LEDGER.md"
         if ledger_md.is_file():
-            collected.extend(parse_issue_ledger_markdown(ledger_md.read_text(encoding="utf-8")))
+            try:
+                ledger_text = ledger_md.read_text(encoding="utf-8")
+            except (OSError, ValueError):
+                ledger_text = ""
+            collected.extend(parse_issue_ledger_markdown(ledger_text))
         for policy_path in _iter_policy_c_files(Path(run_dir)):
             try:
                 payload = json.loads(policy_path.read_text(encoding="utf-8"))
-            except (OSError, json.JSONDecodeError):
+            except (OSError, ValueError):
                 continue
             if isinstance(payload, dict):
                 collected.extend(parse_policy_c_payload(payload))
@@ -264,7 +271,7 @@ def collect_issue_ledger(
         if status_path.is_file():
             try:
                 status = json.loads(status_path.read_text(encoding="utf-8"))
-            except (OSError, json.JSONDecodeError):
+            except (OSError, ValueError):
                 status = None
             if isinstance(status, dict):
                 freeze = status.get("freeze") or {}

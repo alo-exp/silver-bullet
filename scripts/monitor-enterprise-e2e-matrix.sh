@@ -41,7 +41,7 @@ QUOTA_WAIT="${SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL:-${SB_E2E_MATRIX_QUOTA_WAIT:-60
 NETWORK_WAIT_MIN="${SB_E2E_MATRIX_NETWORK_WAIT_MIN:-120}"
 NETWORK_WAIT_MAX="${SB_E2E_MATRIX_NETWORK_WAIT_MAX:-300}"
 
-FIXTURE_DIR="${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/shafqat/projects/enterprise-grade-test-app}"
+FIXTURE_DIR="${SB_TEST_ENTERPRISE_APP_ROOT:-$(cd "${SB_ROOT}/../.." && pwd)/enterprise-grade-test-app}"
 # shellcheck disable=SC2206
 MATRIX_ROW_ARGS=(${SB_E2E_MATRIX_ROWS:-1 5 7 8 9 10 12 13 17 18 19 20})
 
@@ -149,17 +149,19 @@ log_bytes() {
   [[ -f "$1" ]] && wc -c <"$1" | tr -d ' ' || echo 0
 }
 
+# File mtime helpers: GNU stat takes -c, BSD/macOS stat takes -f (on GNU, `stat -f` reports the
+# filesystem and prints unrelated text), so try the GNU form first.
 log_mtime_epoch() {
-  [[ -f "$1" ]] && stat -f '%m' "$1" 2>/dev/null || echo 0
+  local m
+  m="$(stat -c '%Y' "$1" 2>/dev/null)" || m="$(stat -f '%m' "$1" 2>/dev/null)" || m=0
+  echo "${m:-0}"
 }
 
-read_state() {
-  local key="$1" default="${2:-}"
-  if [[ -f "$STATE_FILE" ]]; then
-    # shellcheck disable=SC1090
-    source "$STATE_FILE" 2>/dev/null || true
-  fi
-  printf '%s\n' "${!key:-$default}"
+log_mtime_text() {
+  local t
+  t="$(stat -c '%y' "$1" 2>/dev/null | cut -c1-16)" && [[ -n "$t" ]] \
+    || t="$(stat -f '%Sm' -t '%Y-%m-%d %H:%M' "$1" 2>/dev/null)" || t="?"
+  echo "$t"
 }
 
 write_state_kv() {
@@ -255,19 +257,19 @@ parse_recent_issues() {
   local chunk
   chunk="$(tail -n "$window" "$MATRIX_LOG" 2>/dev/null || true)"
   local issues=()
-  if printf '%s\n' "$chunk" | grep -qiE '429|token[[:space:]]+plan|usage[[:space:]]+limit'; then
+  if grep -qiE '429|token[[:space:]]+plan|usage[[:space:]]+limit' <<<"$chunk"; then
     issues+=("429")
   fi
-  if printf '%s\n' "$chunk" | grep -qiE 'ENOTFOUND|ConnectionRefused|Unable to connect'; then
+  if grep -qiE 'ENOTFOUND|ConnectionRefused|Unable to connect' <<<"$chunk"; then
     issues+=("network")
   fi
-  if printf '%s\n' "$chunk" | grep -qiE 'Stop hook error'; then
+  if grep -qiE 'Stop hook error' <<<"$chunk"; then
     issues+=("stop-hook")
   fi
-  if printf '%s\n' "$chunk" | grep -qiE 'hookEventName'; then
+  if grep -qiE 'hookEventName' <<<"$chunk"; then
     issues+=("hookEventName")
   fi
-  if printf '%s\n' "$chunk" | grep -qE '^  FAIL:'; then
+  if grep -qE '^  FAIL:' <<<"$chunk"; then
     issues+=("FAIL")
   fi
   if [[ ${#issues[@]} -gt 0 ]]; then
@@ -320,10 +322,6 @@ monitor_auto_restart_enabled() {
 
 start_batch() {
   local -a rows=("$@")
-  if ! monitor_auto_restart_enabled; then
-    log_poll "$(utc_now) start_batch: SB_E2E_MONITOR_AUTO_RESTART=0 — operator owns batch (rows: ${rows[*]:-none})"
-    return 1
-  fi
   if [[ "${#rows[@]}" -eq 0 ]]; then
     log_poll "$(utc_now) start_batch: no incomplete rows — skip"
     return 1
@@ -369,7 +367,7 @@ build_status_block() {
   local row log_bytes elapsed claude_lines row_logs tail_block issues
   row="$(current_row_from_log)"
   log_bytes="$(log_bytes "$MATRIX_LOG")"
-  elapsed="$(batch_elapsed "$batch_pid" 2>/dev/null || echo '?')"
+  elapsed="$(batch_elapsed "$batch_pid" 2>/dev/null)"
   claude_lines="$(claude_child_lines)"
   row_logs=""
   local f r bytes mtime
@@ -377,7 +375,7 @@ build_status_block() {
     f="$(row_attempt_log "$r" || true)"
     if [[ -n "$f" && -f "$f" ]]; then
       bytes="$(log_bytes "$f")"
-      mtime="$(stat -f '%Sm' -t '%Y-%m-%d %H:%M' "$f" 2>/dev/null || echo '?')"
+      mtime="$(log_mtime_text "$f")"
       row_logs+="  row${r}-attempt.log: ${bytes} bytes (${mtime})"$'\n'
     fi
   done

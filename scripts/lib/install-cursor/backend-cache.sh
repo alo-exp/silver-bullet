@@ -17,20 +17,43 @@ cursor_cursor_logs_root() {
   printf '%s/.config/Cursor/logs\n' "$HOME"
 }
 
+# Is a commit reachable? Prints nothing; the status says it:
+#   0  known to exist (in the local checkout, a remote ref tip, or fetchable)
+#   1  definitely not (malformed id, or the reachable remote says "not our ref")
+#   2  unknown (remote unreachable or the answer is unknowable) — never delete on 2
 cursor_github_commit_reachable() {
   local sha="$1"
   local source_root="${2:-${REPO_ROOT:-.}}"
+  local refs tmp err
 
-  [[ -n "$sha" ]] || return 1
+  [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || return 1
   if git -C "$source_root" cat-file -e "${sha}^{commit}" >/dev/null 2>&1; then
     return 0
   fi
-  git ls-remote --exit-code "$CURSOR_GITHUB_REPO_URL" "$sha" >/dev/null 2>&1
+  refs="$(git ls-remote -- "$CURSOR_GITHUB_REPO_URL" 2>/dev/null)" || return 2
+  if awk -v s="$sha" '$1==s{f=1} END{exit !f}' <<<"$refs"; then
+    return 0
+  fi
+  # Not a ref tip: ask the remote for the commit itself, in a scratch repository
+  # that is removed on every path out of this function.
+  local rc=2
+  tmp="$(mktemp -d "${TMPDIR:-/tmp}/sb-reach.XXXXXX")" || return 2
+  if git init -q --bare "$tmp" >/dev/null 2>&1; then
+    if err="$(git -C "$tmp" fetch --depth 1 -- "$CURSOR_GITHUB_REPO_URL" "$sha" 2>&1 >/dev/null)"; then
+      rc=0
+    else
+      case "$err" in
+        *"not our ref"* | *"couldn't find remote ref"*) rc=1 ;;
+      esac
+    fi
+  fi
+  rm -rf -- "$tmp"
+  return "$rc"
 }
 
 prune_stale_cursor_marketplace_cache_links() {
   local keep_sha="${1:-}"
-  local cache_root entry name
+  local cache_root entry name reach
 
   cache_root="$(cursor_marketplace_plugin_cache_root)"
   [[ -d "$cache_root" ]] || return 0
@@ -42,7 +65,9 @@ prune_stale_cursor_marketplace_cache_links() {
     if [[ -n "$keep_sha" && "$name" == "$keep_sha" ]]; then
       continue
     fi
-    if cursor_github_commit_reachable "$name"; then
+    reach=0
+    cursor_github_commit_reachable "$name" || reach=$?
+    if [[ "$reach" -ne 1 ]]; then
       continue
     fi
     rm -f "$entry"
@@ -52,7 +77,7 @@ prune_stale_cursor_marketplace_cache_links() {
 
 prune_stale_cursor_marketplace_gitpaths() {
   local keep_sha="${1:-}"
-  local base_root entry name
+  local base_root entry name reach
 
   if declare -F cursor_github_marketplace_gitpath_root >/dev/null 2>&1; then
     base_root="$(cursor_github_marketplace_gitpath_root)"
@@ -68,7 +93,9 @@ prune_stale_cursor_marketplace_gitpaths() {
     if [[ -n "$keep_sha" && "$name" == "$keep_sha" ]]; then
       continue
     fi
-    if cursor_github_commit_reachable "$name"; then
+    reach=0
+    cursor_github_commit_reachable "$name" || reach=$?
+    if [[ "$reach" -ne 1 ]]; then
       continue
     fi
     rm -rf "$entry"
@@ -88,17 +115,16 @@ discover_cursor_backend_plugin_shas() {
       | xargs -0 grep -h 'Adding enabled plugin: silver-bullet from ' 2>/dev/null \
       | sed -n 's/.*silver-bullet from \([0-9a-f]\{40\}\).*/\1/p' \
       | tail -1
-  )"
+  )" || latest_sha=""
   [[ -n "$latest_sha" ]] && printf '%s\n' "$latest_sha"
   find "$log_root" -name 'Cursor Plugins*.log' -type f -print0 2>/dev/null \
     | xargs -0 grep -h 'Adding enabled plugin: silver-bullet from ' 2>/dev/null \
     | sed -n 's/.*silver-bullet from \([0-9a-f]\{40\}\).*/\1/p' \
-    | sort -u
+    | sort -u || true
 }
 
 collect_cursor_plugin_required_shas() {
   while IFS= read -r sha; do
-    [[ -n "$sha" ]] || continue
     if cursor_github_commit_reachable "$sha"; then
       printf '%s\n' "$sha"
     fi
@@ -121,7 +147,6 @@ collect_cursor_plugin_verify_shas() {
 
   registry_sha="$(read_installed_plugins_git_sha)"
   while IFS= read -r sha; do
-    [[ -n "$sha" ]] || continue
     if cursor_github_commit_reachable "$sha"; then
       printf '%s\n' "$sha"
     fi
@@ -169,7 +194,7 @@ prune_agents_from_all_cursor_backend_caches() {
 
 cleanup_cursor_custom_agents() {
   local project_root="${1:-${REPO_ROOT:-}}"
-  python3 - "$CURSOR_HOME" "$project_root" <<'INNERPY'
+  python3 - "$CURSOR_HOME" "$project_root" "$(cd "$(dirname "${BASH_SOURCE[0]}")/../cursor-sb-agents" && pwd)" <<'INNERPY'
 from __future__ import annotations
 
 import json
@@ -181,6 +206,8 @@ from pathlib import Path
 
 cursor_home = Path(sys.argv[1]).expanduser()
 project_root = Path(sys.argv[2]).expanduser() if sys.argv[2] else None
+sys.path.insert(0, sys.argv[3])
+from sb_managed_agent import is_installer_managed_agent  # noqa: E402
 roots: list[tuple[str, Path]] = [("user", cursor_home / "agents")]
 if project_root:
     roots.append(("project", project_root / ".cursor" / "agents"))
@@ -219,7 +246,7 @@ def parse_frontmatter(path: Path) -> dict[str, str]:
     return meta
 
 
-def should_quarantine(path: Path) -> bool:
+def should_quarantine(path: Path, root: Path) -> bool:
     meta = parse_frontmatter(path)
     name = meta.get("name") or meta.get("title") or path.stem
     lowered = name.strip().lower()
@@ -229,6 +256,9 @@ def should_quarantine(path: Path) -> bool:
         text = path.read_text(errors="ignore")[:4000]
     except Exception:
         text = ""
+    if is_installer_managed_agent(path, root):
+        # Agents written by install-cursor-sb-agents.sh are intentional, not legacy.
+        return False
     return "Silver Bullet" in text or "silver-bullet" in text
 
 
@@ -250,7 +280,7 @@ for scope, root in roots:
         continue
     candidates: list[Path] = []
     for item in sorted(root.glob("**/*"), key=lambda p: len(p.parts), reverse=True):
-        if item.is_file() and item.suffix.lower() in {".md", ".json", ".yaml", ".yml"} and should_quarantine(item):
+        if item.is_file() and item.suffix.lower() in {".md", ".json", ".yaml", ".yml"} and should_quarantine(item, root):
             candidates.append(item)
     for item in candidates:
         if not item.exists():
@@ -275,7 +305,6 @@ collect_cursor_plugin_seed_shas() {
   cleanup_cursor_custom_agents "${REPO_ROOT:-}"
 
   while IFS= read -r sha; do
-    [[ -n "$sha" ]] || continue
     if cursor_github_commit_reachable "$sha"; then
       printf '%s\n' "$sha"
     fi
@@ -289,9 +318,8 @@ collect_cursor_plugin_seed_shas() {
 }
 
 resolve_cursor_backend_plugin_sha() {
-  local discovered manifest_sha install_sha
+  local discovered manifest_sha
   while IFS= read -r discovered; do
-    [[ -n "$discovered" ]] || continue
     if cursor_github_commit_reachable "$discovered"; then
       printf '%s\n' "$discovered"
       return 0
@@ -473,7 +501,8 @@ cursor_backend_plugin_cache_ready() {
 ensure_agent_plugins_marketplace_clone() {
   local head_sha dest_root tmp
 
-  head_sha="$(git ls-remote "$CURSOR_AGENT_PLUGINS_REPO_URL" HEAD 2>/dev/null | awk 'NR==1 {print $1}')"
+  # An unreachable remote (offline) must skip the clone, not abort the installer.
+  head_sha="$(git ls-remote "$CURSOR_AGENT_PLUGINS_REPO_URL" HEAD 2>/dev/null | awk 'NR==1 {print $1}')" || head_sha=""
   [[ -n "$head_sha" ]] || return 0
 
   dest_root="${CURSOR_AGENT_PLUGINS_GITPATH_ROOT}/${head_sha}"

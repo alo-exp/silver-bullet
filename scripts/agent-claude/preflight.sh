@@ -22,7 +22,10 @@ EOF
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --sb-root) SB_ROOT="$2"; shift 2 ;;
+    --sb-root)
+      [[ $# -ge 2 ]] || { printf 'ERROR: --sb-root requires a value\n' >&2; exit 2; }
+      SB_ROOT="$2"; shift 2
+      ;;
     --dry-run) DRY_RUN=1; shift ;;
     -h|--help) usage; exit 0 ;;
     *) printf 'ERROR: unknown argument: %s\n' "$1" >&2; usage >&2; exit 2 ;;
@@ -84,7 +87,7 @@ fi
 
 if [[ "$DRY_RUN" != "1" ]]; then
   auth_status="$("$CLI" auth status 2>/dev/null || true)"
-  if printf '%s' "$auth_status" | grep -qiE 'not logged|unauthenticated|login required'; then
+  if grep -qiE 'not logged|unauthenticated|login required' <<<"$auth_status"; then
     printf 'ERROR: Claude not authenticated — run claude auth login before delegation\n' >&2
     PREFLIGHT_OK=0
   else

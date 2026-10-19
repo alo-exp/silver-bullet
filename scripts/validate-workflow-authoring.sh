@@ -9,7 +9,7 @@ slug="new-workflow"
 audit_mode=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --slug) slug="${2:-}"; shift 2 ;;
+    --slug) slug="${2:-}"; shift $(( $# >= 2 ? 2 : 1 )) ;;
     --audit)
       audit_mode=1
       shift
@@ -40,13 +40,13 @@ fail=0
 pass() { echo "PASS: $1"; }
 fail_msg() { echo "FAIL: $1" >&2; fail=1; }
 
-[[ -f "skills/${skill}/SKILL.md" ]] && pass "skill exists" || fail_msg "missing skills/${skill}/SKILL.md"
-grep -q "\"${skill}\"" scripts/generate-apo-catalog.py && pass "catalog generator mapping" || fail_msg "generate-apo-catalog.py missing ${skill}"
-jq -e --arg id "$wf_id" '.workflows[] | select(.id == $id)' docs/apo-catalog.json >/dev/null && pass "catalog workflow" || fail_msg "missing ${wf_id}"
-jq -e --arg s "$skill" '.migration_map.skill_to_entity[$s]' docs/apo-catalog.json >/dev/null && pass "skill_to_entity" || fail_msg "skill_to_entity missing ${skill}"
-grep -q "$skill" hooks/lib/orchestrator-state.sh && pass "orchestrator composer" || fail_msg "orchestrator-state missing ${skill}"
-grep -q "${skill}\|${slug}" skills/silver/SKILL.md && pass "router" || fail_msg "router missing ${skill}"
+if [[ -f "skills/${skill}/SKILL.md" ]]; then pass "skill exists"; else fail_msg "missing skills/${skill}/SKILL.md"; fi
+if grep -q "\"${skill}\"" scripts/generate-apo-catalog.py; then pass "catalog generator mapping"; else fail_msg "generate-apo-catalog.py missing ${skill}"; fi
+if jq -e --arg id "$wf_id" '.workflows[] | select(.id == $id)' docs/apo-catalog.json >/dev/null; then pass "catalog workflow"; else fail_msg "missing ${wf_id}"; fi
+if jq -e --arg s "$skill" '.migration_map.skill_to_entity[$s]' docs/apo-catalog.json >/dev/null; then pass "skill_to_entity"; else fail_msg "skill_to_entity missing ${skill}"; fi
+if grep -q "$skill" hooks/lib/orchestrator-state.sh; then pass "orchestrator composer"; else fail_msg "orchestrator-state missing ${skill}"; fi
+if grep -q "${skill}\|${slug}" skills/silver/SKILL.md; then pass "router"; else fail_msg "router missing ${skill}"; fi
 if [[ "$slug" == "new-workflow" ]]; then
-  [[ -f docs/NEW-WORKFLOW.md ]] && pass "runbook" || fail_msg "missing docs/NEW-WORKFLOW.md"
+  if [[ -f docs/NEW-WORKFLOW.md ]]; then pass "runbook"; else fail_msg "missing docs/NEW-WORKFLOW.md"; fi
 fi
 exit "$fail"

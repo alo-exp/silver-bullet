@@ -166,7 +166,7 @@ assert_guard_unchanged() {
     # Legacy mtime snapshots (older callers) — tolerate missing hash prefix.
     if [[ -f "$path" ]]; then
       local mtime
-      mtime="$(stat -f '%m' "$path" 2>/dev/null || stat -c '%Y' "$path" 2>/dev/null || echo 0)"
+      mtime="$(stat -c '%Y' "$path" 2>/dev/null || stat -f '%m' "$path" 2>/dev/null || echo 0)"
       [[ "$mtime" == "$state" ]] || {
         warn "install modified guarded path: $path"
         return 1
@@ -177,14 +177,17 @@ assert_guard_unchanged() {
 }
 
 leanctx_binary_ok() {
-  local bin="$(leanctx_cli_path || true)"
+  local bin
+  bin="$(leanctx_cli_path || true)"
   [[ -n "$bin" ]] || return 1
-  "$bin" --version >/dev/null 2>&1 || "$bin" --help >/dev/null 2>&1
+  "$bin" --version >/dev/null 2>&1 && return 0
+  "$bin" --help >/dev/null 2>&1
 }
 
 leanctx_supports_library_mode() {
-  local bin="$(leanctx_cli_path || true)"
-  [[ -n "$bin" ]] && "$bin" init --help 2>&1 | grep -q -- '--library-mode'
+  local bin
+  bin="$(leanctx_cli_path || true)"
+  [[ -n "$bin" ]] && grep -q -- '--library-mode' < <("$bin" init --help 2>&1)
 }
 
 context_mode_configured() {
@@ -245,7 +248,8 @@ install_leanctx_binary() {
 
 run_library_mode_init() {
   # Conflict #8: never `lean-ctx init --agent *`. Library mode only when verified.
-  local bin="$(leanctx_cli_path || true)"
+  local bin
+  bin="$(leanctx_cli_path || true)"
   if ! leanctx_binary_ok; then
     warn "lean-ctx missing — skip library init"
     return 0
@@ -395,7 +399,8 @@ verify_wire_proxy_ordering() {
   fi
   log "OK: wire-proxy ordering validator self-test passed"
   if [[ "$HOST" == "codex" ]] && leanctx_binary_ok; then
-    local bin="$(leanctx_cli_path || true)"
+    local bin
+    bin="$(leanctx_cli_path || true)"
     if [[ -n "$bin" ]] && "$bin" proxy --help >/dev/null 2>&1; then
       log "OK: lean-ctx proxy subcommand available for Codex wire path"
     else

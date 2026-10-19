@@ -14,7 +14,6 @@ fail() { echo "  FAIL: $1"; FAIL=$((FAIL + 1)); }
 echo "=== graphify-am-global-setup tests ==="
 
 [[ -f "$SCRIPT" ]] && pass "script exists" || fail "script exists"
-chmod +x "$SCRIPT" 2>/dev/null || true
 [[ -x "$SCRIPT" ]] && pass "script executable" || fail "script executable"
 
 [[ -f "$LIB" ]] && pass "lib exists" || fail "lib exists"
@@ -38,7 +37,7 @@ post="$(ga_graphify_post_commands claude)"
 [[ "$post" == "graphify claude install" ]] && pass "claude global post-index" || fail "claude global post-index: $post"
 
 codex_pre="$(ga_graphify_pre_commands codex)"
-printf '%s' "$codex_pre" | grep -q 'graphify install --platform codex' && pass "codex global pre-index" || fail "codex global pre-index"
+grep -q 'graphify install --platform codex' <<<"$codex_pre" && pass "codex global pre-index" || fail "codex global pre-index"
 
 goose_post="$(ga_graphify_post_commands goose)"
 [[ "$goose_post" == "graphify pi install" ]] && pass "goose global post-index" || fail "goose global post-index: $goose_post"
@@ -74,7 +73,7 @@ declare -f ga_gitleaks_path >/dev/null 2>&1 && pass "ga_gitleaks_path defined" |
 if ga_gitleaks_path >/dev/null 2>&1; then
   ga_ensure_gitleaks && pass "ga_ensure_gitleaks when installed"
 else
-  if GA_GLOBAL_DRY_RUN=1 ga_ensure_gitleaks 2>&1 | grep -q 'DRY-RUN.*gitleaks'; then
+  if grep -q 'DRY-RUN.*gitleaks' < <(GA_GLOBAL_DRY_RUN=1 ga_ensure_gitleaks 2>&1); then
     pass "ga_ensure_gitleaks dry-run"
   else
     fail "ga_ensure_gitleaks dry-run"

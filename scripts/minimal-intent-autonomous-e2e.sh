@@ -47,8 +47,6 @@ Options:
 EOF
 }
 
-utc_now() { date -u '+%Y-%m-%dT%H:%M:%SZ'; }
-
 run_id_new() { date -u '+%Y%m%dT%H%M%SZ'; }
 
 matrix_row_field() {
@@ -330,7 +328,6 @@ PY
 
   # Advisory (informational only)
   for outcome in $(matrix_row_field "$row_id" advisory_outcomes 2>/dev/null | tr -d '[],"' || true); do
-    [[ -z "$outcome" ]] && continue
     detail="$(enterprise_e2e_outcome_score_criterion "$outcome" "$work_dir" "$state_dir" "$log_path" "" "$ledger" "$evidence_path" 2>/dev/null || true)"
     echo "  $outcome: ${detail:-n/a} (advisory)"
   done
@@ -372,7 +369,7 @@ cmd_status() {
 
   echo "=== minimal-intent runs ==="
   local d
-  for d in "${PLANNING_DIR}"/runs/*/ledger.json; do
+  for d in "${RUNS_DIR}"/*/ledger.json; do
     [[ -f "$d" ]] || continue
     python3 - "$d" <<'PY'
 import json, sys

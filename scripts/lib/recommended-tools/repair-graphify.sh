@@ -86,15 +86,17 @@ rt_repair_graphify() {
     echo '{"actions":[],"failures":["mutation_not_authorized"],"restart_required":false}'
     return 0
   fi
-  local pkg_out action line
+  local pkg_out line
   pkg_out="$(rt_repair_graphify_packages)"
   while IFS= read -r line; do
     [[ "$line" == "---FAILURES---" ]] && break
     [[ -n "$line" ]] && actions+=("$line")
   done <<<"$pkg_out"
+  local pkg_failures
+  pkg_failures="$(printf '%s\n' "$pkg_out" | sed -n '/---FAILURES---/,$p' | tail -n +2)"
   while IFS= read -r line; do
     [[ -n "$line" ]] && failures+=("$line")
-  done <<<"$(printf '%s\n' "$pkg_out" | sed -n '/---FAILURES---/,$p' | tail -n +2)"
+  done <<<"$pkg_failures"
 
   if sb_graphify_cli_available 2>/dev/null && rt_graphify_mcp_handshake; then
     if rt_cross_tool_batch_active; then

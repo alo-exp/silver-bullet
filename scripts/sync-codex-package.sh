@@ -56,6 +56,8 @@ plugin_version="$(jq -r '.version' "${REPO_ROOT}/package.json")"
 tmp="$(mktemp)"
 jq --arg v "$plugin_version" '.version = $v' "$DEST_DIR/.codex-plugin/plugin.json" > "$tmp"
 mv "$tmp" "$DEST_DIR/.codex-plugin/plugin.json"
+# mktemp creates 0600; keep the tracked manifest readable like the rest of the package.
+chmod 644 "$DEST_DIR/.codex-plugin/plugin.json"
 
 mkdir -p "${REPO_ROOT}/agents" "${REPO_ROOT}/host-bundles"
 python3 "$AGENT_RENDERER" render --agent claude --source-root "${REPO_ROOT}/skills" --dest-root "$(sb_agent_bundle_root "$REPO_ROOT" claude)"
@@ -91,8 +93,6 @@ PACKAGE_ENTRIES=(
   LICENSE
   README.md
   SECURITY.md
-  SENTINEL-audit-silver-bullet-v0.15.1.md
-  SENTINEL-audit-silver-init.md
   .silver-bullet.json
   docs
   hooks
@@ -131,10 +131,11 @@ PY
 find "${DEST_DIR}" -maxdepth 1 -type d -name '.skill-source.staging.*' -exec rm -rf {} + 2>/dev/null || true
 skill_stage="$(mktemp -d "${TMPDIR:-/tmp}/sb-skill-source.staging.XXXXXX")"
 rsync -a "$(sb_agent_bundle_root "$REPO_ROOT" codex)/" "${skill_stage}/"
+# POSIX test only: this body runs under sh, which is dash on Debian/Ubuntu.
 find "${skill_stage}" -name SKILL.md -type f -exec sh -c '
   for path do
     dest="$(dirname "$path")/SILVER_SOURCE"
-    if [[ -e "$dest" ]]; then
+    if [ -e "$dest" ]; then
       rm -f "$path"
     else
       mv "$path" "$dest"

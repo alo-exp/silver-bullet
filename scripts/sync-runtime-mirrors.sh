@@ -53,7 +53,7 @@ copy_file() {
   fi
   if [[ "$CHECK" == true ]]; then
     if [[ ! -f "$dst" ]] || ! cmp -s "$src" "$dst"; then
-      printf 'DRIFT: %s\n' "${dst#${REPO_ROOT}/}"
+      printf 'DRIFT: %s\n' "${dst#"${REPO_ROOT}"/}"
       drift=$((drift + 1))
     fi
     return 0
@@ -68,10 +68,10 @@ copy_tree() {
   [[ -d "$src_dir" ]] || return 0
   if [[ "$CHECK" == true ]]; then
     while IFS= read -r src; do
-      rel="${src#${src_dir}/}"
+      rel="${src#"${src_dir}"/}"
       dst="${dst_dir}/${rel}"
       if [[ ! -f "$dst" ]] || ! cmp -s "$src" "$dst"; then
-        printf 'DRIFT: %s\n' "${dst#${REPO_ROOT}/}"
+        printf 'DRIFT: %s\n' "${dst#"${REPO_ROOT}"/}"
         drift=$((drift + 1))
       fi
     done < <(find "$src_dir" -type f | sort)

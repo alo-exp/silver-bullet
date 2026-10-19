@@ -18,7 +18,8 @@ repo_root="$(cd "${script_dir}/.." && pwd)"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --repo-root)
-      repo_root="${2:-}"
+      [[ $# -ge 2 ]] || { printf 'validate-host-agnostic-core: %s requires a value\n' "$1" >&2; exit 2; }
+      repo_root="$2"
       shift 2
       ;;
     -h|--help)
@@ -194,6 +195,7 @@ SCRIPTS_HOST_TOOLING_PREFIXES = (
     "scripts/lib/post-release-uninstall.sh",
     "scripts/prune-stale-claude",
     "scripts/watch-enterprise-e2e",
+    "scripts/check-repo-invariants.sh",  # CI invariants over the per-host manifests
 )
 
 INSTALLER_SCRIPTS = {

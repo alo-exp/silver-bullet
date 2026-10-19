@@ -265,7 +265,9 @@ assert_contains "runbook documents RTK coexistence" "$RUNBOOK" "RTK coexistence"
 assert_contains "runbook documents verbatim harness mode" "$RUNBOOK" "SB_RTK_COMPAT_MODE=verbatim"
 
 # Dry-run path (no tool enforcement when configs pending or debug dry_run)
-if enterprise_e2e_code_intel_preflight "$REPO_ROOT" "${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/shafqat/projects/enterprise-grade-test-app}" 1 >/dev/null 2>&1; then
+# The preflight rejects a missing fixture directory, so give it a real (empty) one.
+DRY_FIXTURE="$(mktemp -d)"
+if enterprise_e2e_code_intel_preflight "$REPO_ROOT" "$DRY_FIXTURE" 1 >/dev/null 2>&1; then
   pass "code-intel preflight dry-run exits 0"
 else
   fail "code-intel preflight dry-run should exit 0"
@@ -275,7 +277,7 @@ fi
 TMP_LOG="$(mktemp)"
 LEDGER_FIXTURE=""
 LEDGER_RESUME_FIXTURE=""
-cleanup_tmp() { rm -f "$TMP_LOG" "$LEDGER_FIXTURE" "$LEDGER_RESUME_FIXTURE"; }
+cleanup_tmp() { rm -f "$TMP_LOG" "$LEDGER_FIXTURE" "$LEDGER_RESUME_FIXTURE"; rm -rf "$DRY_FIXTURE"; }
 trap cleanup_tmp EXIT
 {
   echo "=== Row 1: silver-router (/sb) ==="
@@ -292,17 +294,17 @@ cat >"$LEDGER_RESUME_FIXTURE" <<'LEDGER'
 | 3 | `silver-feature` | | | Fail | | | | |
 LEDGER
 inc="$(enterprise_e2e_incomplete_rows "$TMP_LOG" "$LEDGER_RESUME_FIXTURE" | tr '\n' ' ' | xargs)"
-if printf '%s\n' "$inc" | grep -qw 1; then
+if grep -qw 1 <<<"$inc"; then
   fail "resume must not include row 1 when ledger Pass"
 else
   pass "resume excludes row 1 when ledger Pass"
 fi
-if printf '%s\n' "$inc" | grep -qw 2; then
+if grep -qw 2 <<<"$inc"; then
   pass "resume includes row 2 when ledger incomplete despite log SKIP"
 else
   fail "resume includes row 2 when ledger incomplete — got [$inc]"
 fi
-if printf '%s\n' "$inc" | grep -qw 3; then
+if grep -qw 3 <<<"$inc"; then
   pass "resume includes ledger Fail row 3"
 else
   fail "resume includes ledger Fail row 3 — got [$inc]"
@@ -373,7 +375,11 @@ cat >"$LEDGER_FIXTURE" <<'LEDGER'
 LEDGER
 # shellcheck source=scripts/lib/enterprise-e2e-ledger-reconcile.sh
 source "${REPO_ROOT}/scripts/lib/enterprise-e2e-ledger-reconcile.sh"
-SB_E2E_LEDGER_FILE="$LEDGER_FIXTURE" reconcile_status="$(enterprise_e2e_ledger_reconcile_status)"
+# Stays set (unexported) for the rest of the suite, so the later host-default
+# helpers keep the fixture instead of exporting the host ledger path.
+# shellcheck disable=SC2034  # read by the sourced enterprise-e2e-ledger-reconcile.sh
+SB_E2E_LEDGER_FILE="$LEDGER_FIXTURE"
+reconcile_status="$(enterprise_e2e_ledger_reconcile_status)"
 if [[ "$reconcile_status" == "STALE" ]]; then
   pass "ledger reconcile STALE when <22 rows"
 else
@@ -464,7 +470,7 @@ else
 fi
 rm -rf "$CONSEC_TMP"
 consec_host_out="$(RTK_DISABLED=1 bash "$CONSEC_CHECK" --host codex 2>&1 || true)"
-if printf '%s\n' "$consec_host_out" | grep -q "${REPO_ROOT}/.planning/enterprise-e2e/ROUND-CODEX-1-GATES.md"; then
+if grep -q "${REPO_ROOT}/.planning/enterprise-e2e/ROUND-CODEX-1-GATES.md" <<<"$consec_host_out"; then
   pass "consecutive rounds --host resolves repo-root gate paths"
 else
   fail "consecutive rounds --host must resolve gates under repo .planning/"

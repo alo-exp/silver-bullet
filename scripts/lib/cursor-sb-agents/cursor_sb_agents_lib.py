@@ -260,9 +260,6 @@ def base_model_from_slug(model_id: str) -> str:
         suffix = f"-{effort}"
         if model_id.endswith(suffix):
             return model_id[: -len(suffix)]
-        fast_suffix = f"-fast{suffix}"
-        if model_id.endswith(fast_suffix):
-            return model_id[: -len(fast_suffix)]
     if "[" in model_id:
         return model_id.split("[", 1)[0]
     return model_id
@@ -589,6 +586,23 @@ def fetch_and_cache_catalog(
     agent_entries, cli = run_agent_models()
     catalog = build_catalog(docs_pricing, agent_entries)
     catalog["agent_cli"] = cli or catalog.get("agent_cli")
+
+    # Offline with no agent CLI, the refresh finds no models at all. Keep a
+    # cached catalog that has models instead of overwriting it with an empty one.
+    if not catalog.get("models"):
+        for cached_path in (global_cache, project_cache):
+            if cached_path is None:
+                continue
+            try:
+                cached = load_json(cached_path)
+            except (OSError, ValueError):
+                continue
+            if isinstance(cached, dict) and cached.get("models"):
+                print(
+                    f"WARN: catalog refresh found no models; keeping cached catalog {cached_path}",
+                    file=sys.stderr,
+                )
+                return cached
 
     write_json(global_cache, catalog)
     if project_cache:

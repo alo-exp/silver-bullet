@@ -37,12 +37,69 @@ SB_TRIHOST_CMD_TIMEOUT="${SB_TRIHOST_CMD_TIMEOUT:-180}"
 SB_TRIHOST_DIAG_TIMEOUT="${SB_TRIHOST_DIAG_TIMEOUT:-90}"
 export RT_SKIP_POST_INSTALL="${RT_SKIP_POST_INSTALL:-1}"
 
-# Re-exec under overall wall-clock so a hung host cannot stall run-all-tests forever.
-if [[ "${SB_TRIHOST_INNER:-0}" != "1" ]]; then
-  export SB_TRIHOST_INNER=1
+# sb_trihost_snapshot <pid> [exclude-pid]: "pid|start time" for <pid> and every descendant, from a
+# single ps call (timeout wrappers move their child into a group of its own, so process groups
+# cannot be used). The start time identifies the process: a recycled pid never matches it.
+sb_trihost_snapshot() {
+  ps -A -o pid= -o ppid= -o lstart= | awk -v root="$1" -v skip="${2:-}" '
+    {
+      start = ""
+      for (i = 3; i <= NF; i++) start = start (i > 3 ? " " : "") $i
+      began[$1] = start
+      kids[$2] = kids[$2] " " $1
+    }
+    END {
+      queue[0] = root
+      count = 1
+      for (k = 0; k < count; k++) {
+        pid = queue[k]
+        if (pid in began && pid != skip) print pid "|" began[pid]
+        n = split(kids[pid], child, " ")
+        for (j = 1; j <= n; j++) queue[count++] = child[j]
+      }
+    }'
+}
+
+# sb_trihost_survivors <snapshot>: the pids of <snapshot> that are still the same, running process.
+sb_trihost_survivors() {
+  ps -A -o pid= -o stat= -o lstart= | awk -v snap="$1" '
+    BEGIN {
+      n = split(snap, line, "\n")
+      for (i = 1; i <= n; i++) {
+        split(line[i], f, "|")
+        want[f[1]] = f[2]
+      }
+    }
+    {
+      start = ""
+      for (i = 3; i <= NF; i++) start = start (i > 3 ? " " : "") $i
+      if (($1 in want) && $2 !~ /^Z/ && want[$1] == start) print $1
+    }'
+}
+
+# sb_trihost_kill_tree <pid> [exclude-pid]: TERM the process and all of its descendants, then KILL
+# what is still the same process shortly after. Cheap on purpose: two ps calls and one short wait.
+sb_trihost_kill_tree() {
+  local snapshot p
+  snapshot="$(sb_trihost_snapshot "$@")"
+  for p in $(printf '%s\n' "$snapshot" | cut -d'|' -f1); do
+    # A process that already exited is not an error.
+    if kill -TERM "$p" 2>/dev/null; then :; fi
+  done
+  command -p sleep 0.3
+  for p in $(sb_trihost_survivors "$snapshot"); do
+    if kill -KILL "$p" 2>/dev/null; then :; fi
+  done
+}
+
+# Three levels: the launcher applies the overall wall-clock, the supervisor (a child of the
+# timeout wrapper) runs the smoke in a process group of its own and, when the wrapper
+# signals it, takes down the smoke together with every descendant, so a hung host cannot
+# stall run-all-tests nor outlive the run.
+if [[ "${SB_TRIHOST_INNER:-0}" != "1" && "${SB_TRIHOST_SUPERVISOR:-0}" != "1" ]]; then
   overall_rc=0
   sb_run_with_timeout "$SB_TRIHOST_OVERALL_TIMEOUT" "tri-host-install-smoke overall" -- \
-    env SB_TRIHOST_INNER=1 \
+    env SB_TRIHOST_SUPERVISOR=1 \
       SB_TRIHOST_OVERALL_TIMEOUT="$SB_TRIHOST_OVERALL_TIMEOUT" \
       SB_TRIHOST_CMD_TIMEOUT="$SB_TRIHOST_CMD_TIMEOUT" \
       SB_TRIHOST_DIAG_TIMEOUT="$SB_TRIHOST_DIAG_TIMEOUT" \
@@ -54,6 +111,33 @@ if [[ "${SB_TRIHOST_INNER:-0}" != "1" ]]; then
   fi
   exit "$overall_rc"
 fi
+if [[ "${SB_TRIHOST_INNER:-0}" != "1" ]]; then
+  set -m
+  smoke_pid=""
+  # The trap exists before the smoke does, so a signal in between cannot orphan it.
+  trap 'if [[ -n "$smoke_pid" ]]; then sb_trihost_kill_tree "$smoke_pid"; fi; exit 143' TERM INT
+  env SB_TRIHOST_INNER=1 bash "$0" "$@" &
+  smoke_pid=$!
+  smoke_rc=0
+  wait "$smoke_pid" || smoke_rc=$?
+  exit "$smoke_rc"
+fi
+
+# Parent-death watchdog: a supervisor that is SIGKILLed cannot clean up, so the smoke itself
+# notices that its parent is gone and takes its own tree down (the watchdog excepted).
+sb_trihost_watchdog() {
+  local parent="$1" smoke="$2"
+  # shellcheck disable=SC2046
+  trap 'kill $(jobs -p) 2>/dev/null; exit 0' TERM
+  while kill -0 "$parent" 2>/dev/null && kill -0 "$smoke" 2>/dev/null; do
+    command -p sleep 1 &
+    wait $!
+  done
+  if kill -0 "$smoke" 2>/dev/null; then sb_trihost_kill_tree "$smoke" "$BASHPID"; fi
+}
+sb_trihost_watchdog "$PPID" "$$" &
+watchdog_pid=$!
+trap 'if kill "$watchdog_pid" 2>/dev/null; then :; fi' EXIT
 
 HOST_FILTER="${1:-all}"
 if [[ "$HOST_FILTER" == --host ]]; then
@@ -85,6 +169,10 @@ run_timed() {
   fi
   if [[ $rc -ne 0 ]]; then
     echo "ERROR: ${label} failed (rc=${rc}). Log: ${log_file}" >&2
+    # The log lives in a temp dir that CI discards: show its tail here.
+    echo "----- last 40 lines of ${label} log -----" >&2
+    tail -n 40 "$log_file" >&2 || true
+    echo "----- end of ${label} log -----" >&2
     return "$rc"
   fi
   rm -f "$log_file"

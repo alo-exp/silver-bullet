@@ -102,8 +102,6 @@ sync_materialized_package_surface() {
     LICENSE \
     README.md \
     SECURITY.md \
-    SENTINEL-audit-silver-bullet-v0.15.1.md \
-    SENTINEL-audit-silver-init.md \
     .silver-bullet.json \
     silver-bullet.md; do
     if [[ -e "${marketplace_root}/${file}" ]]; then

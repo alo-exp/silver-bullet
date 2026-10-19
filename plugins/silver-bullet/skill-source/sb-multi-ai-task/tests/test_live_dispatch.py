@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -25,6 +26,12 @@ import live_dispatch  # noqa: E402
 
 
 class LiveDispatchModelRoutingTests(unittest.TestCase):
+    def _out_dir(self) -> Path:
+        # A private directory per test: a fixed /tmp path collides across runs and users.
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        return Path(tmp.name)
+
     def test_cursor_model_map_hyphenated_slugs(self) -> None:
         self.assertEqual(cursor_model_for("claude-opus-4.8-medium"), "claude-opus-4-8-medium")
         self.assertEqual(cursor_model_for("glm-5.2"), "glm-5.2-high")
@@ -64,7 +71,7 @@ class LiveDispatchModelRoutingTests(unittest.TestCase):
                 query="q",
                 run_id="run-test",
                 work_item_id="work-test",
-                output_dir=Path("/tmp/sb-live-dispatch-test"),
+                output_dir=self._out_dir(),
                 context="",
                 timeout_sec=30,
             )
@@ -79,8 +86,7 @@ class LiveDispatchModelRoutingTests(unittest.TestCase):
                 return mock.Mock(returncode=1, stdout="", stderr="ActionRequiredError: quota")
             return mock.Mock(returncode=0, stdout='{"ok": true}', stderr="")
 
-        out_dir = Path("/tmp/sb-live-dispatch-test")
-        out_dir.mkdir(parents=True, exist_ok=True)
+        out_dir = self._out_dir()
 
         with mock.patch.dict(os.environ, {"SB_CURSOR_MODEL_ALLOW_FALLBACK": "1"}, clear=False):
             with mock.patch.object(live_dispatch.subprocess, "run", side_effect=fake_run):
@@ -100,8 +106,7 @@ class LiveDispatchModelRoutingTests(unittest.TestCase):
                 return mock.Mock(returncode=1, stdout="", stderr="ActionRequiredError: quota")
             return mock.Mock(returncode=0, stdout='{"ok": true}', stderr="")
 
-        out_dir = Path("/tmp/sb-live-dispatch-test")
-        out_dir.mkdir(parents=True, exist_ok=True)
+        out_dir = self._out_dir()
 
         with mock.patch.dict(os.environ, {}, clear=False):
             os.environ.pop("SB_CURSOR_MODEL_ALLOW_FALLBACK", None)

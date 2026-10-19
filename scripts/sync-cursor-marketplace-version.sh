@@ -26,11 +26,19 @@ requested_version="${1:-}"
 command -v jq >/dev/null || { echo "jq required"; exit 1; }
 
 
+# A manifest that does not parse is a different problem from one without our entry.
+require_valid_json() {
+  if ! jq -e . "$1" >/dev/null 2>&1; then
+    echo "ERROR: $1 is not valid JSON" >&2
+    exit 1
+  fi
+}
+
 resolve_release_commit_sha() {
   local version="$1"
   local tag_sha head_sha
   head_sha="$(git -C "$repo_root" rev-parse HEAD)"
-  tag_sha="$(git -C "$repo_root" rev-parse "v${version}^{commit}" 2>/dev/null || git -C "$repo_root" rev-parse "v${version}" 2>/dev/null || true)"
+  tag_sha="$(git -C "$repo_root" rev-parse --verify --quiet "v${version}^{commit}" 2>/dev/null || true)"
   if [[ -n "$tag_sha" && "$head_sha" != "$tag_sha" ]]; then
     printf '%s\n' "$head_sha"
     return 0
@@ -46,7 +54,7 @@ resolve_marketplace_source_ref() {
   local version="$1"
   local tag_sha head_sha
   head_sha="$(git -C "$repo_root" rev-parse HEAD)"
-  tag_sha="$(git -C "$repo_root" rev-parse "v${version}^{commit}" 2>/dev/null || git -C "$repo_root" rev-parse "v${version}" 2>/dev/null || true)"
+  tag_sha="$(git -C "$repo_root" rev-parse --verify --quiet "v${version}^{commit}" 2>/dev/null || true)"
   if [[ -n "$tag_sha" && "$head_sha" != "$tag_sha" ]]; then
     printf 'main\n'
     return 0
@@ -58,6 +66,11 @@ update_marketplace_plugin_source() {
   local manifest="$1"
   local version="$2"
   local release_sha source_ref
+  # Nothing to pin without a silver-bullet entry: fail instead of reporting a no-op as synced.
+  if ! jq -e '[.plugins[]? | select(.name=="silver-bullet")] | length > 0' "$manifest" >/dev/null; then
+    echo "ERROR: $manifest has no silver-bullet entry to sync" >&2
+    exit 1
+  fi
   release_sha="$(resolve_release_commit_sha "$version")"
   source_ref="$(resolve_marketplace_source_ref "$version")"
   local tmp
@@ -69,6 +82,8 @@ update_marketplace_plugin_source() {
     | (.plugins[] | select(.name=="silver-bullet") | .source.path) = $path
   ' "$manifest" > "$tmp"
   mv "$tmp" "$manifest"
+  # mktemp creates 0600; keep the tracked manifest world-readable.
+  chmod 644 "$manifest"
   rm -f -- "$tmp"
 }
 
@@ -82,6 +97,7 @@ if [[ -n "$requested_version" ]]; then
 else
   plugin_v="$current_plugin_v"
 fi
+require_valid_json "$marketplace_json"
 market_v=$(jq -r '.plugins[] | select(.name=="silver-bullet") | .version' "$marketplace_json")
 
 if [[ "$plugin_v" == "$market_v" ]]; then
@@ -123,6 +139,7 @@ sync_marketplace_repo() {
     exit 1
   }
 
+  require_valid_json "$manifest"
   remote_before=$(jq -r '.plugins[] | select(.name=="silver-bullet") | .version' "$manifest")
   update_marketplace_plugin_source "$manifest" "$version"
 

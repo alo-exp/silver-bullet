@@ -5,15 +5,18 @@ ca_run_planning_tier_gate() {
   # DevOps workflow requires silver-blast-radius + devops-quality-gates instead of silver-quality-gates
   # DEFAULT_PLANNING populated by required-skills.sh (sourced at top).
   default_planning="${DEFAULT_PLANNING:-${__SB_RS_PLANNING_FALLBACK:-silver-quality-gates silver-context silver-plan}}"
+  # shellcheck disable=SC2154  # set by completion-audit.sh from .silver-bullet.json
   if [[ "$active_workflow" == "devops-cycle" ]]; then
     default_planning="${DEVOPS_DEFAULT_PLANNING:-${__SB_RS_DEVOPS_PLANNING_FALLBACK:-silver-blast-radius devops-quality-gates silver-context silver-plan}}"
   fi
   if [[ "$active_workflow" == "devops-cycle" && -n "$required_planning_devops_cfg" ]]; then
     configured_planning="$required_planning_devops_cfg"
   else
+    # shellcheck disable=SC2154  # set by completion-audit.sh from .silver-bullet.json
     configured_planning="$required_planning_cfg"
   fi
   if declare -F sb_required_skills_normalize_configured_list >/dev/null 2>&1; then
+    # shellcheck disable=SC2154  # config_file is set by completion-audit.sh
     planning_skills="$(sb_required_skills_normalize_configured_list "$config_file" "$configured_planning" "$default_planning")"
   else
     planning_skills="${configured_planning:-$default_planning}"
@@ -49,7 +52,8 @@ ca_run_planning_tier_gate() {
   fi
 
   # VFY-01 plan-boundary: block plan-seal commits without completion-audit since last plan work
-  if printf '%s' "$cmd" | grep -qE 'docs\([0-9]+-[0-9]+\): complete'; then
+  # shellcheck disable=SC2154  # cmd is set by completion-audit.sh
+  if grep -qE 'docs\([0-9]+-[0-9]+\): complete' <<<"$cmd"; then
     if ! has_skill "silver-completion-audit"; then
       emit_block "$(printf '🛑 PLAN SEAL BLOCKED — Plan completion commit detected but /sb:completion-audit has not been recorded this session.\n\nRun /sb:completion-audit to verify completion claims, then retry the plan-seal commit.')"
       exit 0
@@ -60,7 +64,6 @@ ca_run_planning_tier_gate() {
       exit 0
     fi
     _pr="$(dirname "$config_file")"
-    [[ -z "$_pr" ]] && _pr="$PWD"
     vfile=""
     for candidate in "$_pr/.planning/VERIFICATION.md" "$_pr/.planning/phases"/*/*-VERIFICATION.md; do
       [[ -f "$candidate" && ! -L "$candidate" ]] || continue

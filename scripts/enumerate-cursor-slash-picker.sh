@@ -21,15 +21,18 @@ WORKSPACE=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --cursor-home)
-      CURSOR_HOME="${2:-}"
+      [[ $# -ge 2 ]] || { printf 'enumerate-cursor-slash-picker: --cursor-home requires a value\n' >&2; exit 2; }
+      CURSOR_HOME="$2"
       shift 2
       ;;
     --surface)
-      SURFACE="${2:-}"
+      [[ $# -ge 2 ]] || { printf 'enumerate-cursor-slash-picker: --surface requires a value\n' >&2; exit 2; }
+      SURFACE="$2"
       shift 2
       ;;
     --workspace)
-      WORKSPACE="${2:-}"
+      [[ $# -ge 2 ]] || { printf 'enumerate-cursor-slash-picker: --workspace requires a value\n' >&2; exit 2; }
+      WORKSPACE="$2"
       shift 2
       ;;
     -h|--help)
@@ -238,6 +241,10 @@ def enumerate_workspace(root: Path) -> dict[str, object]:
     }
 
 
+sys.path.insert(0, str(repo_root / "scripts" / "lib" / "cursor-sb-agents"))
+from sb_managed_agent import is_installer_managed_agent  # noqa: E402
+
+
 def enumerate_global_custom_agents(root: Path) -> list[dict[str, str]]:
     if not root.is_dir():
         return []
@@ -252,6 +259,9 @@ def enumerate_global_custom_agents(root: Path) -> list[dict[str, str]]:
         if path.suffix.lower() not in {".md", ".json", ".yaml", ".yml"}:
             continue
         text = path.read_text(errors="ignore")
+        if is_installer_managed_agent(path, root):
+            # Subagents written by install-cursor-sb-agents.sh are intentional.
+            continue
         meta = parse_frontmatter(path)
         name = meta.get("name") or meta.get("title") or path.stem
         if name.startswith("sb:") or name.startswith("silver-") or "Silver Bullet" in text[:2000]:

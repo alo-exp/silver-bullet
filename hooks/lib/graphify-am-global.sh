@@ -332,7 +332,8 @@ ga_bridge_path_env() {
 }
 
 ga_ensure_gitleaks() {
-  if ga_gitleaks_path >/dev/null; then
+  # ga_gitleaks_path always exits 0 (prints nothing when absent), so test its output.
+  if [[ -n "$(ga_gitleaks_path)" ]]; then
     return 0
   fi
   if ga_dry_run; then
@@ -355,12 +356,12 @@ ga_ensure_gitleaks() {
     printf 'WARN: gitleaks not installed — brew install gitleaks (macOS) or see docs/AGENTMEMORY.md\n'
     return 1
   fi
-  ga_gitleaks_path >/dev/null
+  [[ -n "$(ga_gitleaks_path)" ]]
 }
 
 ga_graphify_hooks_installed() {
   command -v graphify >/dev/null 2>&1 || return 1
-  graphify hook status 2>/dev/null | grep -qiE 'installed|active|enabled'
+  grep -qiE 'installed|active|enabled' < <(graphify hook status 2>/dev/null)
 }
 
 ga_run_cmd() {
@@ -381,7 +382,8 @@ ga_apply_shared_agentmemory() {
     ga_run_cmd 'agentmemory init'
   fi
   ga_merge_agentmemory_env "$export_abs"
-  ga_ensure_gitleaks
+  # A missing gitleaks is a warning (bridge falls back to regex scan), never fatal under set -e.
+  ga_ensure_gitleaks || true
   if ! ga_skip_host_hooks && command -v launchctl >/dev/null 2>&1; then
     ga_launchd_server_plist "$export_abs"
     ga_launchd_bridge_plist "$repo"
@@ -497,7 +499,7 @@ ga_verify_host() {
     _ga_check warn graphify-hooks "run graphify hook install"
   fi
 
-  if ga_gitleaks_path >/dev/null; then
+  if [[ -n "$(ga_gitleaks_path)" ]]; then
     _ga_check pass gitleaks "installed ($(ga_gitleaks_path))"
   else
     _ga_check warn gitleaks "required for bridge second-line scan — brew install gitleaks"

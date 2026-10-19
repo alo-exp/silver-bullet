@@ -37,11 +37,11 @@ check() {
 
 is_denied() {
   local output="$1"
-  [[ -n "$output" ]] && printf '%s' "$output" | grep -qE '"permissionDecision"\s*:\s*"deny"|"decision"\s*:\s*"block"'
+  [[ -n "$output" ]] && grep -qE '"permissionDecision"\s*:\s*"deny"|"decision"\s*:\s*"block"' <<<"$output"
 }
 
 run_hook() {
-  local event="$1" tool="$2" json="$3"
+  local json="$3" # $1 (event) and $2 (tool) label the call site only
   (cd "$WORK" && printf '%s' "$json" | env SILVER_BULLET_RUNTIME=cursor bash "$HOOK" 2>/dev/null)
 }
 

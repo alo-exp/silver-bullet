@@ -219,9 +219,7 @@ record_completed_surface() {
   fi
 }
 
-LOCAL_SKILL_SOURCE_REGEX='/Users/shafqat/projects/codex-plugins/skills/[^[:space:]]+'
 LOCAL_SKILL_SOURCE_ROOT='/Users/shafqat/projects/codex-plugins/skills'
-LOCAL_SKILL_SOURCE_NEGATIVE_CONTEXT="do[[:space:]]*not[[:space:]]*read[[:space:]]*or[[:space:]]*use[[:space:]]*local[[:space:]]*${LOCAL_SKILL_SOURCE_ROOT}|avoid(ed|s|ing)?[[:space:]]*local[[:space:]]*codex-plugins[[:space:]]*skill[[:space:]]*sources|not[[:space:]]*read[[:space:]]*or[[:space:]]*use[[:space:]]*local[[:space:]]*${LOCAL_SKILL_SOURCE_ROOT}|not[[:space:]]*read[[:space:]]*from[[:space:]]*${LOCAL_SKILL_SOURCE_ROOT}|not[[:space:]]*using[[:space:]]*${LOCAL_SKILL_SOURCE_ROOT}|prohibited[[:space:]]*${LOCAL_SKILL_SOURCE_ROOT}|from[[:space:]]*${LOCAL_SKILL_SOURCE_ROOT}[[:space:]]*as[[:space:]]*requested|!${LOCAL_SKILL_SOURCE_ROOT}"
 
 resolve_silver_skill_path() {
   if [[ "$E2E_RUNTIME" == "codex" || "$E2E_RUNTIME" == "kay" ]]; then
@@ -720,7 +718,7 @@ else
   if [[ "$issue_num" == "0" ]]; then
     echo "PASS: sb:add filed todo-app issue ${issue_num} (local fallback)"
     PASS=$((PASS + 1))
-  elif gh issue view "$issue_num" --repo "$owner_repo" --json labels -q '.labels[].name' 2>/dev/null | grep -qx 'todo-app'; then
+  elif grep -qx 'todo-app' < <(gh issue view "$issue_num" --repo "$owner_repo" --json labels -q '.labels[].name' 2>/dev/null); then
     echo "PASS: sb:add filed todo-app issue ${issue_num}"
     PASS=$((PASS + 1))
   else
@@ -1124,15 +1122,15 @@ if [[ -d "$RELEASE_WORK_DIR" ]] && git -C "$RELEASE_WORK_DIR" rev-parse --is-ins
   fi
 
   echo "DEBUG: release tags before ensure: $(git -C "$RELEASE_WORK_DIR" tag -l 'v1.0.0-inline' 2>/dev/null | tr '\n' ' ')"
-  if git -C "$RELEASE_WORK_DIR" tag -l "v1.0.0-inline" | grep -qx "v1.0.0-inline" \
-    || ([[ -n "${INLINE_RELEASE_WORK_DIR:-}" ]] && git -C "$INLINE_RELEASE_WORK_DIR" tag -l "v1.0.0-inline" | grep -qx "v1.0.0-inline"); then
+  if grep -qx "v1.0.0-inline" < <(git -C "$RELEASE_WORK_DIR" tag -l "v1.0.0-inline") \
+    || ([[ -n "${INLINE_RELEASE_WORK_DIR:-}" ]] && grep -qx "v1.0.0-inline" < <(git -C "$INLINE_RELEASE_WORK_DIR" tag -l "v1.0.0-inline")); then
     echo "PASS: local git tag v1.0.0-inline exists"
     PASS=$((PASS + 1))
   else
     ensure_inline_release_tag_exists "$RELEASE_WORK_DIR"
     echo "DEBUG: release tags after ensure: $(git -C "$RELEASE_WORK_DIR" tag -l 'v1.0.0-inline' 2>/dev/null | tr '\n' ' ')"
-    if git -C "$RELEASE_WORK_DIR" tag -l "v1.0.0-inline" | grep -qx "v1.0.0-inline" \
-      || ([[ -n "${INLINE_RELEASE_WORK_DIR:-}" ]] && git -C "$INLINE_RELEASE_WORK_DIR" tag -l "v1.0.0-inline" | grep -qx "v1.0.0-inline"); then
+    if grep -qx "v1.0.0-inline" < <(git -C "$RELEASE_WORK_DIR" tag -l "v1.0.0-inline") \
+      || ([[ -n "${INLINE_RELEASE_WORK_DIR:-}" ]] && grep -qx "v1.0.0-inline" < <(git -C "$INLINE_RELEASE_WORK_DIR" tag -l "v1.0.0-inline")); then
       echo "PASS: local git tag v1.0.0-inline exists"
       PASS=$((PASS + 1))
     else

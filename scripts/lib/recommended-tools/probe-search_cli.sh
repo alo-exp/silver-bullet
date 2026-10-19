@@ -15,6 +15,7 @@ fi
 rt_search_cli_pin_version() {
   local pin
   pin="$(sb_recommended_tool_install_pin search_cli 2>/dev/null || true)"
+  [[ -n "$pin" ]] || pin='{}'
   printf '%s' "$pin" | jq -r '.version // "0.9.0"'
 }
 
@@ -58,7 +59,7 @@ rt_probe_search_cli_providers() {
   # Never dump config secrets or API keys.
   local out
   out="$(search config check </dev/null 2>/dev/null || true)"
-  if printf '%s' "$out" | grep -qiE '(:[[:space:]]*set\b|\bok\b|configured)'; then
+  if grep -qiE '(:[[:space:]]*set\b|\bok\b|configured)' <<<"$out"; then
     return 0
   fi
   return 1
@@ -67,9 +68,7 @@ rt_probe_search_cli_providers() {
 rt_search_cli_project_install_commands() {
   local cfg
   cfg="$(rt_project_config)" || { printf ''; return 0; }
-  [[ -n "$cfg" && -f "$cfg" ]] || { printf ''; return 0; }
-  jq -r '.recommended_tools.search_cli.install_commands[]? // empty' "$cfg" 2>/dev/null \
-    | paste -sd ' && ' -
+  jq -r '[.recommended_tools.search_cli.install_commands[]?] | join(" && ")' "$cfg" 2>/dev/null
 }
 
 rt_probe_search_cli() {

@@ -25,7 +25,11 @@ source "$LIB"
 CONFIG="${REPO_ROOT}/.silver-bullet.json"
 [[ -f "$CONFIG" ]] || { echo "FAIL: .silver-bullet.json missing" >&2; exit 1; }
 
-score="$(sb_optimization_score "$REPO_ROOT" "$CONFIG")"
+# Run in this shell (not a command substitution) so the SB_STACK_SCORE_* exports survive.
+
+sb_optimization_score "$REPO_ROOT" "$CONFIG" >/dev/null
+
+score="$SB_STACK_SCORE"
 verdict="NEEDS_WORK"
 if [[ "$score" -ge 85 && "${SB_STACK_SCORE_FAILS:-0}" -eq 0 ]]; then
   verdict="OPTIMAL"

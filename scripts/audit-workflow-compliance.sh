@@ -230,7 +230,6 @@ parse_skill_pre_exec() {
   local -a tokens=()
   local line t spec_absent=1
 
-  [[ -f "$skill_file" ]] || return 1
   [[ -f "${REPO_ROOT}/.planning/SPEC.md" ]] && spec_absent=0
 
   if grep -q '^\*\*Pre-execution' "$skill_file"; then
@@ -243,8 +242,8 @@ parse_skill_pre_exec() {
       print block
       exit
     }' "$skill_file")"
+    # shellcheck disable=SC2016  # backticks are literal regex characters
     while IFS= read -r t; do
-      [[ -z "$t" ]] && continue
       case "$t" in
         "sb:clarify --spec")
           [[ "$spec_absent" -eq 1 ]] && tokens+=("silver-clarify")
@@ -259,8 +258,8 @@ parse_skill_pre_exec() {
     done < <(printf '%s' "$line" | grep -oE '`[^`]+`' | tr -d '`')
   elif grep -q '^## Enforcement queue' "$skill_file"; then
     line="$(awk '/^## Enforcement queue/{found=1;next} found && /^## /{exit} found && /`[^`]+`/{print; exit}' "$skill_file")"
+    # shellcheck disable=SC2016  # backticks are literal regex characters
     while IFS= read -r t; do
-      [[ -z "$t" ]] && continue
       [[ "$t" == *conditional* ]] && continue
       tokens+=("$t")
     done < <(printf '%s' "$line" | grep -oE '`[^`]+`' | tr -d '`' | head -4)

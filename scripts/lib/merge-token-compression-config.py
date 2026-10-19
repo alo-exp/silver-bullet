@@ -7,8 +7,10 @@ import argparse
 import json
 import os
 import pathlib
+import re
 import shutil
 import sys
+from typing import Any
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent / "global-toolstack"))
 
@@ -44,8 +46,29 @@ LEANCTX_ENV_BASE = {"LEANCTX_MCP_TOOL_PREFIX": "lctx_"}
 def load_json(path: pathlib.Path, default: dict | None = None) -> dict:
     if path.is_file():
         with path.open(encoding="utf-8") as handle:
-            return json.load(handle)
+            data = json.load(handle)
+        if not isinstance(data, dict):
+            raise ValueError(f"{path}: expected a JSON object at the top level")
+        return data
     return default or {}
+
+
+def json_member(data: dict, key: str, kind: type, path: pathlib.Path) -> Any:
+    """Return ``data[key]`` as ``kind`` (dict or list).
+
+    A missing, null or empty ({} / []) value is replaced by a fresh ``kind()``.
+    Any other value of the wrong type is user data we must not destroy, so raise
+    before anything is written.
+    """
+    value = data.get(key)
+    if isinstance(value, kind):
+        return value
+    if value is None or value == {} or value == []:
+        value = kind()
+        data[key] = value
+        return value
+    label = "object" if kind is dict else "array"
+    raise ValueError(f"{path}: {key} must be a JSON {label}")
 
 
 def save_json(path: pathlib.Path, data: dict, dry_run: bool) -> None:
@@ -65,11 +88,15 @@ def backup_file(path: pathlib.Path) -> None:
 
 
 def hook_command(entry: dict) -> str:
+    if not isinstance(entry, dict):
+        return ""
     return str(entry.get("command", ""))
 
 
 def hook_entry_key(entry: dict) -> tuple[str, str]:
     """Dedupe key: same command with different matchers must both be kept."""
+    if not isinstance(entry, dict):
+        return ("", "")
     return (hook_command(entry), str(entry.get("matcher", "")))
 
 
@@ -112,11 +139,11 @@ def reorder_pretooluse_rtk_before_cm(hooks: dict) -> bool:
 def merge_hooks_file(target: pathlib.Path, fragments: list[dict], dry_run: bool) -> int:
     settings = load_json(target, {"version": 1, "hooks": {}})
     settings.setdefault("version", 1)
-    hooks = settings.setdefault("hooks", {})
+    hooks = json_member(settings, "hooks", dict, target)
     total_added = 0
     for fragment in fragments:
         for event, entries in fragment.get("hooks", {}).items():
-            event_list = hooks.setdefault(event, [])
+            event_list = json_member(hooks, event, list, target)
             merged, added = merge_hook_entries(event_list, entries)
             hooks[event] = merged
             total_added += added
@@ -128,10 +155,10 @@ def merge_hooks_file(target: pathlib.Path, fragments: list[dict], dry_run: bool)
 def merge_codex_hooks_file(target: pathlib.Path, fragment: dict, dry_run: bool) -> int:
     """Merge Codex hooks.json (nested hooks[].hooks structure)."""
     settings = load_json(target, {"hooks": {}})
-    hooks = settings.setdefault("hooks", {})
+    hooks = json_member(settings, "hooks", dict, target)
     added = 0
     for event, groups in fragment.get("hooks", {}).items():
-        event_list = hooks.setdefault(event, [])
+        event_list = json_member(hooks, event, list, target)
         for group in groups:
             cmd_entries = group.get("hooks", [])
             new_cmds = [
@@ -151,7 +178,7 @@ def merge_codex_hooks_file(target: pathlib.Path, fragment: dict, dry_run: bool) 
                 if any(c in existing_cmds for c in new_cmds):
                     found = True
                     break
-            if not found:
+            if not found and group not in event_list:
                 event_list.append(group)
                 added += 1
     save_json(target, settings, dry_run)
@@ -160,7 +187,7 @@ def merge_codex_hooks_file(target: pathlib.Path, fragment: dict, dry_run: bool) 
 
 def merge_mcp_server(target: pathlib.Path, server_name: str, server_cfg: dict, dry_run: bool) -> bool:
     data = load_json(target, {"mcpServers": {}})
-    servers = data.setdefault("mcpServers", {})
+    servers = json_member(data, "mcpServers", dict, target)
     if server_name in servers:
         return False
     servers[server_name] = server_cfg
@@ -173,7 +200,7 @@ def merge_shared_claude_context_mode(
 ) -> bool:
     """Keep Claude's Context Mode server canonical and manifest-backed."""
     data = load_json(target, {"mcpServers": {}})
-    servers = data.setdefault("mcpServers", {})
+    servers = json_member(data, "mcpServers", dict, target)
     changed = False
     existing = servers.get("context-mode")
     legacy = servers.get("user-context-mode")
@@ -201,8 +228,8 @@ def merge_shared_claude_context_mode(
 def merge_cli_allowlist(target: pathlib.Path, allow_entries: list[str], dry_run: bool) -> int:
     data = load_json(target, {"version": 1, "permissions": {"allow": [], "deny": []}})
     data.setdefault("version", 1)
-    perms = data.setdefault("permissions", {})
-    allow = perms.setdefault("allow", [])
+    perms = json_member(data, "permissions", dict, target)
+    allow = json_member(perms, "allow", list, target)
     added = 0
     for entry in allow_entries:
         if entry not in allow:
@@ -365,39 +392,85 @@ def merge_codex_config_toml(target: pathlib.Path, dry_run: bool) -> bool:
         if target.stat().st_size > 0:
             handle.write("\n")
         handle.write(snippet)
-        if not snippet.endswith("\n"):
-            handle.write("\n")
     return True
 
 
+def _hermes_child_block(indent: str, marker: str, end_marker: str) -> str:
+    step = indent + "  "
+    return (
+        f"{indent}{marker}\n"
+        f"{indent}context-mode:\n"
+        f"{step}command: context-mode\n"
+        f"{step}args: [mcp]\n"
+        f"{step}env: {{}}\n"
+        f"{indent}{end_marker}"
+    )
+
+
+def _hermes_child_indent(lines: list[str]) -> str | None:
+    """Indent of the first child under ``mcp_servers:``; None if we cannot extend it.
+
+    Defaults to two spaces when the key has no children. Block sequences and
+    tab indentation are refused because inserting a mapping would corrupt them.
+    """
+    for line in lines:
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        if line[0] not in " \t":
+            return None if stripped.startswith("-") else "  "
+        indent = line[: len(line) - len(line.lstrip(" \t"))]
+        if "\t" in indent or stripped.startswith("-"):
+            return None
+        return indent
+    return "  "
+
+
 def merge_hermes_context_mode_mcp(config_path: pathlib.Path, dry_run: bool) -> bool:
+    """Register Context Mode under Hermes ``mcp_servers`` without duplicating the key.
+
+    Returns False (and writes nothing) when Context Mode is already configured,
+    or when ``mcp_servers`` is in a form we cannot safely extend (inline value,
+    quoted key, block sequence, tab indentation).  Line endings are preserved.
+    """
     marker = "# === rtk-cm context-mode MCP block ==="
     end_marker = "# === end rtk-cm context-mode MCP block ==="
-    block = f"""{marker}
-mcp_servers:
-  context-mode:
-    command: context-mode
-    args: [mcp]
-    env: {{}}
-{end_marker}
-"""
-    if config_path.is_file():
-        text = config_path.read_text(encoding="utf-8")
-        if "context-mode:" in text and "mcp_servers:" in text:
+    original = config_path.read_bytes().decode("utf-8") if config_path.is_file() else ""
+    crlf = "\r\n" in original
+    text = original.replace("\r\n", "\n")
+    if marker in text or re.search(r"^[ \t]+context-mode:", text, re.M):
+        return False
+    if re.search(r"""^["']mcp_servers["'][ \t]*:""", text, re.M):
+        return False
+    header = re.search(r"^mcp_servers:[ \t]*(#.*)?$", text, re.M)
+    if header is None and re.search(r"^mcp_servers:", text, re.M):
+        return False  # inline value such as ``mcp_servers: {}``
+    indent = "  "
+    if header is not None:
+        found = _hermes_child_indent(text[header.end():].split("\n")[1:])
+        if found is None:
             return False
-        if marker in text:
-            return False
+        indent = found
     if dry_run:
         print(f"DRY-RUN: would append context-mode MCP to {config_path}")
         return True
     config_path.parent.mkdir(parents=True, exist_ok=True)
-    if config_path.is_file():
-        backup_file(config_path)
-        with config_path.open("a", encoding="utf-8") as handle:
-            handle.write("\n")
-            handle.write(block)
+    if header is not None:
+        rest = text[header.end():]
+        child = _hermes_child_block(indent, marker, end_marker)
+        updated = text[: header.end()] + "\n" + child + (rest if rest else "\n")
     else:
-        config_path.write_text(f"plugins:\n  enabled: []\n\n{block}", encoding="utf-8")
+        block = f"{marker}\nmcp_servers:\n" + _hermes_child_block("  ", marker, end_marker).split(
+            "\n", 1
+        )[1].replace(f"  {end_marker}", end_marker) + "\n"
+        if config_path.is_file():
+            updated = text + "\n" + block
+        else:
+            updated = f"plugins:\n  enabled: []\n\n{block}"
+    if crlf:
+        updated = updated.replace("\n", "\r\n")
+    backup_file(config_path)
+    config_path.write_bytes(updated.encode("utf-8"))
     return True
 
 
@@ -424,7 +497,9 @@ def optimize_cursor(repo_root: pathlib.Path, dry_run: bool, skip_cli_config: boo
         cm_mcp = cm_pkg / "configs" / "cursor" / "mcp.json"
         if cm_mcp.is_file():
             mcp_data = load_json(cm_mcp)
-            servers = mcp_data.get("mcpServers", {})
+            servers = mcp_data.get("mcpServers")
+            if not isinstance(servers, dict):
+                servers = {}
             for name, cfg in servers.items():
                 if name in ("context-mode", "user-context-mode"):
                     cfg = mcp_server_spec(manifest, "context_mode")
@@ -520,7 +595,6 @@ def optimize_opencode(
     opencode_home = pathlib.Path.home() / ".config" / "opencode"
     cfg_path = opencode_home / "opencode.json"
     cm_pkg = context_mode_pkg_root()
-    manifest = ensure_global_instances(dry_run=dry_run)
 
     data = load_json(
         cfg_path,
@@ -531,10 +605,10 @@ def optimize_opencode(
         },
     )
     data.setdefault("$schema", "https://opencode.ai/config.json")
-    plugins = data.setdefault("plugin", [])
-    if not isinstance(plugins, list):
-        plugins = []
-        data["plugin"] = plugins
+    # Validate the user's config before any side effect (manifest, rtk.ts).
+    plugins = json_member(data, "plugin", list, cfg_path)
+    mcp = json_member(data, "mcp", dict, cfg_path)
+    manifest = ensure_global_instances(dry_run=dry_run)
     configure_rtk = not context_mode_only
     configure_context_mode = not rtk_only
     plugin_added = False
@@ -559,10 +633,6 @@ def optimize_opencode(
             dry_run,
         )
 
-    mcp = data.setdefault("mcp", {})
-    if not isinstance(mcp, dict):
-        mcp = {}
-        data["mcp"] = mcp
     mcp_added = False
     if cm_plugin_active:
         mcp_added = opencode_remove_context_mode_mcp(mcp) or mcp_added

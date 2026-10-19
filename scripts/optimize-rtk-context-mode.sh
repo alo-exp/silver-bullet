@@ -46,8 +46,11 @@ EOF
 
 # shellcheck source=../hooks/lib/rtk-cm-global.sh
 source "$LIB"
+# shellcheck source=../hooks/lib/recommended-tools.sh
 [[ -f "$RECOMMENDED_TOOLS_LIB" ]] && source "$RECOMMENDED_TOOLS_LIB"
+# shellcheck source=../hooks/lib/context-mode-gate.sh
 [[ -f "$CONTEXT_MODE_LIB" ]] && source "$CONTEXT_MODE_LIB"
+# shellcheck source=../hooks/lib/rtk-gate.sh
 [[ -f "$RTK_GATE_LIB" ]] && source "$RTK_GATE_LIB"
 
 detect_host() {
@@ -71,7 +74,7 @@ detect_host() {
     printf '%s' "pi"
     return 0
   fi
-  if [[ -d "${HOME}/.codex" ]]; then
+  if [[ -d "${HOME}/.claude" ]]; then
     printf '%s' "claude"
     return 0
   fi
@@ -88,10 +91,11 @@ run_cmd() {
 }
 
 rtk_binary_ok() {
-  local bin="$(sb_rtk_cli_path 2>/dev/null || true)"
+  local bin
+  bin="$(sb_rtk_cli_path 2>/dev/null || true)"
   [[ -n "$bin" ]] || return 1
   "$bin" gain --help >/dev/null 2>&1 || return 1
-  ! "$bin" --help 2>&1 | head -5 | grep -qiE 'rust type kit|rtk-check'
+  ! grep -qiE 'rust type kit|rtk-check' < <("$bin" --help 2>&1 | head -5)
 }
 
 ensure_context_mode_cli() {
@@ -114,8 +118,8 @@ claude_native_context_mode_enabled() {
     return 0
   fi
   if command -v claude >/dev/null 2>&1; then
-    claude plugin list 2>/dev/null | \
-      grep -A3 -F 'context-mode@context-mode' | grep -q 'enabled' && return 0
+    grep -q 'enabled' < <(claude plugin list 2>/dev/null |
+      grep -A3 -F 'context-mode@context-mode') && return 0
   fi
   return 1
 }
@@ -332,8 +336,12 @@ run_cm_doctor() {
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --host) HOST="${2:-}"; shift 2 ;;
-    --project-root) PROJECT_ROOT="${2:-}"; shift 2 ;;
+    --host|--project-root)
+      # A trailing option has no value; `shift 2` would abort silently under set -e.
+      if [[ $# -lt 2 ]]; then echo "ERROR: $1 requires a value" >&2; usage >&2; exit 2; fi
+      if [[ "$1" == "--host" ]]; then HOST="$2"; else PROJECT_ROOT="$2"; fi
+      shift 2
+      ;;
     --dry-run) DRY_RUN=1; export RTCM_DRY_RUN=1; shift ;;
     --skip-cli-config) SKIP_CLI_CONFIG=1; shift ;;
     --skip-rtk-init) SKIP_RTK_INIT=1; shift ;;

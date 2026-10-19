@@ -26,12 +26,12 @@ sb_branch_scope_write() {
   [[ -n "$branch" ]] || return 1
   file="$(sb_branch_scope_file)"
   if declare -f sb_guard_nofollow >/dev/null 2>&1; then
-    sb_guard_nofollow "$file" 2>/dev/null || true
+    sb_guard_nofollow "$file" 2>/dev/null
   fi
   if [[ -n "$toplevel" ]]; then
-    printf '%s\n%s\n' "$branch" "$toplevel" >"$file" 2>/dev/null || true
+    printf '%s\n%s\n' "$branch" "$toplevel" 2>/dev/null >"$file" || true
   else
-    printf '%s\n' "$branch" >"$file" 2>/dev/null || true
+    printf '%s\n' "$branch" 2>/dev/null >"$file" || true
   fi
 }
 
@@ -42,7 +42,6 @@ sb_branch_scope_mismatch() {
   sb_branch_scope_read "$(sb_branch_scope_file)" || return 1
   stored_branch="$SB_BRANCH_SCOPE_STORED_BRANCH"
   stored_toplevel="$SB_BRANCH_SCOPE_STORED_TOPLEVEL"
-  [[ -n "$stored_branch" ]] || return 1
   if [[ "$stored_branch" != "$current_branch" ]]; then
     return 0
   fi

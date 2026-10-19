@@ -134,7 +134,7 @@ run_hook() {
 is_blocked() {
   local output="$1"
   [[ -z "$output" ]] && return 1
-  printf '%s' "$output" | grep -qE '"decision"\s*:\s*"block"'
+  grep -qE '"decision"\s*:\s*"block"' <<<"$output"
 }
 
 assert_blocks() {
@@ -165,7 +165,7 @@ assert_contains() {
   local label="$1"
   local output="$2"
   local needle="$3"
-  if printf '%s' "$output" | grep -q "$needle"; then
+  if grep -q "$needle" <<<"$output"; then
     echo "  PASS: $label"
     PASS=$((PASS + 1))
   else
@@ -197,7 +197,7 @@ assert_decoded_message_real_newlines() {
     FAIL=$((FAIL + 1))
     return
   fi
-  if printf '%s' "$decoded" | grep -qF '\n'; then
+  if grep -qF '\n' <<<"$decoded"; then
     echo "  FAIL: $label — decoded text still contains literal backslash-n"
     FAIL=$((FAIL + 1))
     return
@@ -1004,8 +1004,8 @@ assert_skillnorm_rc "SKILLNORM-E: hyphen-on-disk matches colon require" 0 "$_rc"
 
 if declare -F sb_skill_name_variants >/dev/null 2>&1; then
   variant_list=$(sb_skill_name_variants "silver-quality-gates" | tr '\n' ' ')
-  if printf '%s' "$variant_list" | grep -Fq 'silver-quality-gates' \
-    && printf '%s' "$variant_list" | grep -Fq 'sb:quality-gates'; then
+  if grep -Fq 'silver-quality-gates' <<<"$variant_list" \
+    && grep -Fq 'sb:quality-gates' <<<"$variant_list"; then
     echo "  PASS: SKILLNORM-F: sb_skill_name_variants emits hyphen and colon forms"
     PASS=$((PASS + 1))
   else

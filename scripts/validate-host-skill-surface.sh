@@ -17,7 +17,8 @@ repo_root="$(cd "$(dirname "$0")/.." && pwd)"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --repo-root)
-      repo_root="${2:-}"
+      [[ $# -ge 2 ]] || { printf 'validate-host-skill-surface: %s requires a value\n' "$1" >&2; exit 2; }
+      repo_root="$2"
       shift 2
       ;;
     -h|--help)

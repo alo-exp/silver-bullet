@@ -98,7 +98,7 @@ enterprise_e2e_test_app_refuse_main_target() {
   local branch="$1"
   if [[ "$branch" == "main" || "$branch" == "master" ]]; then
     enterprise_e2e_preflight_fail \
-      "refusing to target test-app branch '${branch}' — use enterprise-e2e/round-N-{host} (see TEST-APP-BRANCH-POLICY.md)"
+      "refusing to target test-app branch '${branch}' — use enterprise-e2e/round-N-{host} (see TEST-APP-BRANCH-POLICY.md)" || return 1
   fi
 }
 
@@ -114,9 +114,9 @@ enterprise_e2e_assert_test_app_branch() {
     return 0
   fi
 
-  [[ -d "$fixture_dir" ]] || enterprise_e2e_preflight_fail "test app fixture missing: ${fixture_dir}"
+  [[ -d "$fixture_dir" ]] || enterprise_e2e_preflight_fail "test app fixture missing: ${fixture_dir}" || return 1
   enterprise_e2e_test_app_is_git_repo "$fixture_dir" \
-    || enterprise_e2e_preflight_fail "test app is not a git repo: ${fixture_dir}"
+    || enterprise_e2e_preflight_fail "test app is not a git repo: ${fixture_dir}" || return 1
 
   expected_branch="$(enterprise_e2e_test_app_expected_branch 2>/dev/null || true)"
   if [[ -z "$expected_branch" ]]; then
@@ -124,7 +124,7 @@ enterprise_e2e_assert_test_app_branch() {
     return 0
   fi
 
-  enterprise_e2e_test_app_refuse_main_target "$expected_branch"
+  enterprise_e2e_test_app_refuse_main_target "$expected_branch" || return 1
   current_branch="$(git -C "$fixture_dir" branch --show-current 2>/dev/null || true)"
   dirty=0
   enterprise_e2e_test_app_is_dirty "$fixture_dir" && dirty=1
@@ -133,7 +133,7 @@ enterprise_e2e_assert_test_app_branch() {
 
   if [[ "$current_branch" != "$expected_branch" ]]; then
     enterprise_e2e_preflight_fail \
-      "test app on '${current_branch:-detached}' — expected '${expected_branch}' at ${fixture_dir}. Use an isolated worktree (see TEST-APP-BRANCH-POLICY.md); refusing checkout during parallel matrix."
+      "test app on '${current_branch:-detached}' — expected '${expected_branch}' at ${fixture_dir}. Use an isolated worktree (see TEST-APP-BRANCH-POLICY.md); refusing checkout during parallel matrix." || return 1
   fi
 
   if [[ "$dirty" -eq 1 ]]; then
@@ -155,7 +155,7 @@ enterprise_e2e_ensure_test_app_branch() {
   fi
 
   enterprise_e2e_test_app_is_git_repo "$fixture_dir" \
-    || enterprise_e2e_preflight_fail "test app is not a git repo: ${fixture_dir}"
+    || enterprise_e2e_preflight_fail "test app is not a git repo: ${fixture_dir}" || return 1
 
   expected_branch="$(enterprise_e2e_test_app_expected_branch 2>/dev/null || true)"
   if [[ -z "$expected_branch" ]]; then
@@ -163,7 +163,7 @@ enterprise_e2e_ensure_test_app_branch() {
     return 0
   fi
 
-  enterprise_e2e_test_app_refuse_main_target "$expected_branch"
+  enterprise_e2e_test_app_refuse_main_target "$expected_branch" || return 1
   baseline_sha="$(enterprise_e2e_test_app_default_baseline_sha)"
   current_branch="$(git -C "$fixture_dir" branch --show-current 2>/dev/null || true)"
   dirty=0
@@ -197,7 +197,7 @@ enterprise_e2e_ensure_test_app_branch() {
       return 0
     fi
     enterprise_e2e_preflight_fail \
-      "test app on '${current_branch:-detached}' with dirty tree — expected '${expected_branch}'. Refusing checkout (would stomp other agent work). Stash/commit, use SB_E2E_TEST_APP_BRANCH_CREATE_ONLY=1, or use an isolated worktree."
+      "test app on '${current_branch:-detached}' with dirty tree — expected '${expected_branch}'. Refusing checkout (would stomp other agent work). Stash/commit, use SB_E2E_TEST_APP_BRANCH_CREATE_ONLY=1, or use an isolated worktree." || return 1
   fi
 
   if [[ "$current_branch" == "main" || "$current_branch" == "master" ]]; then
@@ -210,7 +210,7 @@ enterprise_e2e_ensure_test_app_branch() {
     git -C "$fixture_dir" checkout -b "$expected_branch" "$baseline_sha"
   else
     enterprise_e2e_preflight_fail \
-      "baseline SHA ${baseline_sha} not found in test app — fetch tags or set SB_E2E_TEST_APP_BASELINE_SHA"
+      "baseline SHA ${baseline_sha} not found in test app — fetch tags or set SB_E2E_TEST_APP_BASELINE_SHA" || return 1
   fi
 
   echo "  checked out ${expected_branch} @ $(git -C "$fixture_dir" rev-parse --short HEAD)"

@@ -441,7 +441,7 @@ else
   echo "  FAIL: startup should preserve fresh orchestrator-worker-active.json (#275)"
   FAIL=$((FAIL + 1))
 fi
-if printf '%s' "$out_worker" | grep -qF 'SB WORKER SUBAGENT'; then
+if grep -qF 'SB WORKER SUBAGENT' <<<"$out_worker"; then
   echo "  PASS: SessionStart injects worker banner when marker fresh (#275)"
   PASS=$((PASS + 1))
 else
@@ -554,14 +554,14 @@ except Exception:
   if [[ -z "$decoded" ]]; then
     decoded="$out"
   fi
-  if grep "Non-Negotiable\|Process is non-negotiable\|SessionStart digest" >/dev/null <<<"$decoded"; then
+  if grep "Non-Negotiable\|Process is non-negotiable\|SessionStart digest" <<<"$decoded" >/dev/null; then
     echo "  PASS: core-rules digest markers present in output"
     PASS=$((PASS + 1))
   else
     echo "  FAIL: core-rules digest not found in output: ${decoded:0:200}..."
     FAIL=$((FAIL + 1))
   fi
-  if grep "Full rules (on demand)\|core-rules.md" >/dev/null <<<"$decoded"; then
+  if grep "Full rules (on demand)\|core-rules.md" <<<"$decoded" >/dev/null; then
     echo "  PASS: digest points to full core-rules.md"
     PASS=$((PASS + 1))
   else
@@ -591,7 +591,7 @@ print(len(chunk.encode("utf-8")))
     echo "  FAIL: SessionStart digest size ${digest_bytes}B exceeds 3072B budget (or missing)"
     FAIL=$((FAIL + 1))
   fi
-  if printf '%s' "$decoded" | grep -q "16. \*\*Context Mode install gate\*\*"; then
+  if grep -q "16. \*\*Context Mode install gate\*\*" <<<"$decoded"; then
     echo "  FAIL: full core-rules layer list still inlined (digest not applied)"
     FAIL=$((FAIL + 1))
   else
@@ -613,7 +613,7 @@ echo "--- Test 9: Invalid SILVER_BULLET_STATE_FILE outside ${SB_RUNTIME_HOME_ROO
 HOOK_WORKDIR=$(make_git_repo)
 new_branch=$(git -C "$HOOK_WORKDIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
 printf '%s' "$new_branch" > "$TMPBRANCH"
-OUTSIDE_PATH="/tmp/evil-state-file-${TEST_RUN_ID}"
+OUTSIDE_PATH="${TMPDIR:-/tmp}/evil-state-file-${TEST_RUN_ID}"
 REAL_STATE_FILE="${SB_TEST_DIR}/state"
 # Ensure the real default state file is absent so we can detect the fallback
 rm -f "$REAL_STATE_FILE" 2>/dev/null || true

@@ -66,7 +66,7 @@ assert_invoke_route() {
       bash "$INVOKE_ADAPTER" invoke-skill "$SMOKE_SKILL" 2>&1
   )" || true
 
-  if printf '%s' "$out" | grep -qiE "BEGIN SKILL ${SMOKE_SKILL_CANONICAL}|Skill: ${SMOKE_SKILL_CANONICAL}"; then
+  if grep -qiE "BEGIN SKILL ${SMOKE_SKILL_CANONICAL}|Skill: ${SMOKE_SKILL_CANONICAL}" <<<"$out"; then
     smoke_pass "${host}: invoke-skill routes ${SMOKE_SKILL}"
   else
     smoke_fail "${host}: invoke-skill routes ${SMOKE_SKILL}"

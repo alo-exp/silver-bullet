@@ -172,7 +172,7 @@ Install Graphify with the MCP extra so `graphify-mcp` is on PATH:
 uv tool install "graphifyy[mcp]"
 ```
 
-SB writes Cursor MCP config only after a successful `graphify-mcp` stdio handshake. **Configured ≠ live:** after host config changes, the reconciler emits a reload receipt at `${SB_RUNTIME_STATE}/recommended-tools/reload-receipts/<host>/<project-id>/<worktree-id>/`. Canonical state stays `reload_required` until the current Cursor session supplies a fresh schema-v1 attestation via `--host-evidence-stdin` (max 64KiB, single JSON document) showing every expected tool succeeded.
+SB writes Cursor MCP config only after a successful `graphify-mcp` stdio handshake. **Configured ≠ live:** after host config changes, the reconciler emits a reload receipt at `${SB_RUNTIME_STATE_DIR}/recommended-tools/reload-receipts/<host>/<project-id>/<worktree-id>/`. Canonical state stays `reload_required` until the current Cursor session supplies a fresh schema-v1 attestation via `--host-evidence-stdin` (max 64KiB, single JSON document) showing every expected tool succeeded.
 
 | Signal | Meaning |
 |--------|---------|

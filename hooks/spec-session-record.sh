@@ -27,7 +27,6 @@ if [[ -n "$_lib_dir" && -f "$_lib_dir/nofollow-guard.sh" ]]; then
   source "$_lib_dir/nofollow-guard.sh"
 else
   sb_guard_nofollow() { [[ -L "$1" ]] && { printf 'ERROR: refusing to write through symlink: %s\n' "$1" >&2; exit 1; }; return 0; }
-  sb_safe_write()    { [[ -L "$1" ]] && rm -f -- "$1"; return 0; }
 fi
 
 # jq is required for JSON parsing
@@ -52,11 +51,11 @@ jira_id=$(grep -m1 '^jira-id:' "$SPEC" | awk '{print $2}' | tr -d '"' | tr -d "'
 
 # Validate against allowlists before any interpolation (SEC: content injection guard)
 # spec-version: digits and dots only (e.g. 1.0, 2.3.1)
-if ! printf '%s' "${spec_version:-}" | grep -qE '^[0-9]+(\.[0-9]+)*$'; then
+if ! grep -qE '^[0-9]+(\.[0-9]+)*$' <<<"${spec_version:-}"; then
   spec_version=""
 fi
 # jira-id: PROJECT-NNN format (e.g. FOO-123)
-if ! printf '%s' "${jira_id:-}" | grep -qE '^[A-Z][A-Z0-9_]*-[0-9]+$'; then
+if ! grep -qE '^[A-Z][A-Z0-9_]*-[0-9]+$' <<<"${jira_id:-}"; then
   jira_id=""
 fi
 

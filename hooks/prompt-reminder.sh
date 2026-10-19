@@ -47,7 +47,6 @@ resolve_silver_bullet_codex_adapter() {
     "${SB_RUNTIME_PLUGIN_CACHE_ROOT:-}/alo-labs-codex/silver-bullet/current/scripts/silver-bullet" \
     "${SB_RUNTIME_HOME_ROOT:-}/.tmp/marketplaces/alo-labs-codex/plugins/silver-bullet/scripts/silver-bullet" \
     "${SB_RUNTIME_HOME_ROOT:-}/bin/silver-bullet"; do
-    [[ -n "$candidate" ]] || continue
     if [[ -f "$candidate" ]]; then
       printf '%s' "$candidate"
       return 0
@@ -152,7 +151,7 @@ state_contents=""
 # ── Detect current git branch (for main-branch exemptions) ───────────────────
 current_branch=""
 current_branch=$(git -C "$PWD" rev-parse --abbrev-ref HEAD 2>/dev/null || true)
-if [[ -n "$current_branch" ]] && ! printf '%s' "$current_branch" | grep -qE '^[a-zA-Z0-9/_.-]+$'; then
+if [[ -n "$current_branch" ]] && ! grep -qE '^[a-zA-Z0-9/_.-]+$' <<<"$current_branch"; then
   current_branch=""
 fi
 on_main=false
@@ -189,7 +188,7 @@ if [[ "$delivery_adjacent" != true ]]; then
     if sb_required_skill_is_recorded "$state_contents" "silver-execute"; then
       delivery_adjacent=true
     fi
-  elif printf '%s\n' "$state_contents" | grep -Fqx -- "silver-execute" 2>/dev/null; then
+  elif grep -Fqx -- "silver-execute" <<<"$state_contents" 2>/dev/null; then
     delivery_adjacent=true
   fi
 fi
@@ -204,11 +203,11 @@ fi
 
 if [[ "$delivery_adjacent" == true ]]; then
   if declare -F sb_required_skills_normalize_configured_list >/dev/null 2>&1; then
-    required_skills="$(sb_required_skills_normalize_configured_list "$config_file" "$required_deploy_cfg" "$DEFAULT_REQUIRED")"
+    required_skills="$(sb_required_skills_normalize_configured_list "$config_file" "$required_deploy_cfg" "${DEFAULT_REQUIRED:-silver-quality-gates silver-context silver-plan silver-execute silver-verify silver-ship silver-review security silver-secure silver-validate silver-review-request silver-review-triage silver-triage silver-branch-finish silver-completion-audit tdd verify-tests}")"
   elif [[ -n "$required_deploy_cfg" ]]; then
     required_skills="$required_deploy_cfg"
   else
-    required_skills="$DEFAULT_REQUIRED"
+    required_skills="${DEFAULT_REQUIRED:-silver-quality-gates silver-context silver-plan silver-execute silver-verify silver-ship silver-review security silver-secure silver-validate silver-review-request silver-review-triage silver-triage silver-branch-finish silver-completion-audit tdd verify-tests}"
   fi
 else
   if declare -F sb_required_skills_normalize_configured_list >/dev/null 2>&1; then
@@ -239,7 +238,7 @@ for skill in $required_skills; do
     else
       missing_list="${missing_list:+$missing_list, }${skill}"
     fi
-  elif printf '%s\n' "$state_contents" | grep -Fqx -- "$skill" 2>/dev/null; then
+  elif grep -Fqx -- "$skill" <<<"$state_contents" 2>/dev/null; then
     completed=$((completed + 1))
   else
     missing_list="${missing_list:+$missing_list, }${skill}"

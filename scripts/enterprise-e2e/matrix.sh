@@ -159,7 +159,7 @@ EOF
 
 should_run_row() {
   local row_num="$1"
-  shift || true
+  shift
   if [[ "$#" -eq 0 ]]; then
     return 0
   fi
@@ -285,7 +285,7 @@ verify_row_routing_state_delta() {
     <(printf '%s\n' "$ROUTING_STATE_SNAPSHOT" | sed '/^$/d' | sort -u) \
     <(sed '/^$/d' "$state_file" | sort -u) 2>/dev/null || true)"
   [[ -n "$new_skills" ]] || return 1
-  printf '%s\n' "$new_skills" | grep -qE '^(silver-feature|silver-fast|silver-clarify|silver-context|silver-quality-gates)$'
+  grep -qE '^(silver-feature|silver-fast|silver-clarify|silver-context|silver-quality-gates)$' <<<"$new_skills"
 }
 
 verify_row_routing_state_present() {
@@ -297,7 +297,7 @@ verify_row_routing_state_present() {
 
 verify_row_routing_output() {
   local output="$1"
-  printf '%s\n' "$output" | grep -qE 'SILVER BULLET.*ROUTING|Skill\(silver-bullet:silver-(feature|fast|clarify|context|quality-gates)'
+  grep -qE 'SILVER BULLET.*ROUTING|Skill\(silver-bullet:silver-(feature|fast|clarify|context|quality-gates)' <<<"$output"
 }
 
 verify_row_success() {
@@ -336,6 +336,12 @@ verify_row_evidence() {
   return 1
 }
 
+# True when any workflow file mentions the marker. Captures the listing instead of piping into
+# `grep -q`, which would SIGPIPE the producer under pipefail.
+matrix_marker_present() {
+  [[ -n "$(find "${WORK_DIR}/.planning/workflows" -name '*.md' -exec grep -l "$1" {} + 2>/dev/null)" ]]
+}
+
 verify_row_internal() {
   local row_num="$1"
   local slug="$2"
@@ -343,10 +349,9 @@ verify_row_internal() {
   case "$row_num" in
     21) marker='post-exec-gates'; parent_row=3 ;;
     22) marker='validate-substep'; parent_row=4 ;;
-    *) return 1 ;;
   esac
   enterprise_e2e_matrix_seed_internal_gate_markers "$parent_row"
-  if find "${WORK_DIR}/.planning/workflows" -name '*.md' -exec grep -l "$marker" {} + 2>/dev/null | grep -q .; then
+  if matrix_marker_present "$marker"; then
     return 0
   fi
   parent_log="$(enterprise_e2e_row_attempt_log "$parent_row" 2>/dev/null || true)"
@@ -363,7 +368,7 @@ verify_row_internal() {
     if enterprise_e2e_outcome_row_passes "$parent_row" "$WORK_DIR" "$state_dir" \
         "$parent_log" "$ledger" "$ev" 2>/dev/null; then
       enterprise_e2e_matrix_seed_internal_gate_markers "$parent_row"
-      find "${WORK_DIR}/.planning/workflows" -name '*.md' -exec grep -l "$marker" {} + 2>/dev/null | grep -q .
+      matrix_marker_present "$marker"
       return $?
     fi
   fi
@@ -376,7 +381,7 @@ verify_row_internal() {
       status="$(enterprise_e2e_outcome_ledger_parse_workflow_row "$line" | sed -n '3p')"
       if [[ "$status" == "pass" || "$status" == "Pass" ]]; then
         enterprise_e2e_matrix_seed_internal_gate_markers "$parent_row"
-        find "${WORK_DIR}/.planning/workflows" -name '*.md' -exec grep -l "$marker" {} + 2>/dev/null | grep -q .
+        matrix_marker_present "$marker"
         return $?
       fi
     fi
@@ -596,10 +601,6 @@ run_matrix_row() {
         if [[ "$row_num" == "3" || "$row_num" == "4" ]]; then
           enterprise_e2e_matrix_seed_internal_gate_markers "$row_num"
         fi
-      elif [[ "$row_num" == "1" ]] && verify_row_routing_state_delta; then
-        echo "  PASS: routing skill recorded in $(claude_routing_state_file) (row 1 routing-only criterion)"
-      elif [[ "$row_num" == "1" ]] && verify_row_routing_output "$output"; then
-        echo "  PASS: routing markers in session output (row 1 routing-only criterion)"
       fi
       if [[ "$row_num" == "1" ]]; then
         sb_e2e_matrix_clear_routing_row_marker
@@ -775,6 +776,7 @@ main() {
   fi
   setup_workspace
   if [[ -n "$_matrix_batch_pid_file" ]]; then
+    # shellcheck disable=SC2064  # capture the pid-file path now, as intended
     trap "rm -f '$_matrix_batch_pid_file'; cleanup_workspace" EXIT
   else
     trap cleanup_workspace EXIT
@@ -803,7 +805,6 @@ main() {
     _row_order+=("$_rn")
   done < <(matrix_row_execution_order "${requested[@]+"${requested[@]}"}")
   for row_num in "${_row_order[@]}"; do
-    [[ -z "$row_num" ]] && continue
     local slug="" route="" prompt_card="" evidence_path="" row="" rn=""
     for row in "${MATRIX_ROWS[@]}"; do
       IFS='|' read -r rn slug route prompt_card evidence_path <<<"$row"

@@ -47,7 +47,7 @@ fi
 
 sb_smoke_begin_cursor
 workspace="$(sb_smoke_cursor_workspace)"
-plugin_dir="$(sb_smoke_cursor_plugin_dir)"
+plugin_dir="$(sb_smoke_cursor_plugin_dir)" || plugin_dir=""
 config_dir="$(sb_smoke_cursor_config_dir)"
 mkdir -p "$workspace"
 
@@ -126,7 +126,7 @@ except subprocess.TimeoutExpired as exc:
 PY
 )" || true
 
-if printf '%s' "$out" | grep -qi 'SB_ROUTING_OK'; then
+if grep -qi 'SB_ROUTING_OK' <<<"$out"; then
   printf 'pre-release-cursor-cli-smoke: PASS\n'
   exit 0
 fi

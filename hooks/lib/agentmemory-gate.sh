@@ -125,7 +125,7 @@ sb_agentmemory_server_healthy() {
   am_bin="$(sb_agentmemory_cli_path 2>/dev/null || true)"
   if [[ -n "$am_bin" ]]; then
     status_out="$("$am_bin" status 2>/dev/null || true)"
-    if printf '%s\n' "$status_out" | grep -qE 'Connected|Health:[[:space:]]+healthy'; then
+    if grep -qE 'Connected|Health:[[:space:]]+healthy' <<<"$status_out"; then
       return 0
     fi
   fi
@@ -189,7 +189,7 @@ sb_agentmemory_usage_state_path() {
     state_path="${SB_RUNTIME_STATE_DIR:-${HOME}/.silver-bullet}/agentmemory-usage"
   fi
   # Reject unresolved ${...} leftovers — never mkdir a literal placeholder path.
-  if [[ "$state_path" == *'${'* ]]; then
+  if [[ "$state_path" == *"\${"* ]]; then
     state_path="${SB_RUNTIME_STATE_DIR:-${HOME}/.silver-bullet}/agentmemory-usage"
   fi
   if declare -f sb_runtime_path_is_state_scoped >/dev/null 2>&1; then
@@ -259,13 +259,13 @@ sb_agentmemory_graphify_synergy_active() {
 sb_agentmemory_command_is_retrieval() {
   local cmd="${1:-}"
   [[ -n "$cmd" ]] || return 1
-  if printf '%s' "$cmd" | grep -qE 'localhost:3111/agentmemory/(smart-search|search|recall|file-history)'; then
+  if grep -qE 'localhost:3111/agentmemory/(smart-search|search|recall|file-history)' <<<"$cmd"; then
     return 0
   fi
-  if printf '%s' "$cmd" | grep -qE '(^|[[:space:]/])agentmemory([[:space:]]|$)'; then
-    printf '%s' "$cmd" | grep -qE '\b(search|recall|smart-search|file-history|query)\b' && return 0
+  if grep -qE '(^|[[:space:]/])agentmemory([[:space:]]|$)' <<<"$cmd"; then
+    grep -qE '\b(search|recall|smart-search|file-history|query)\b' <<<"$cmd" && return 0
   fi
-  if printf '%s' "$cmd" | grep -qE '@agentmemory/mcp'; then
+  if grep -qE '@agentmemory/mcp' <<<"$cmd"; then
     return 0
   fi
   return 1
@@ -277,16 +277,16 @@ sb_agentmemory_command_is_exempt() {
   if sb_agentmemory_command_is_retrieval "$cmd"; then
     return 0
   fi
-  if printf '%s' "$cmd" | grep -qE '(^|[[:space:]/])agentmemory([[:space:]]|$)'; then
+  if grep -qE '(^|[[:space:]/])agentmemory([[:space:]]|$)' <<<"$cmd"; then
     return 0
   fi
-  if printf '%s' "$cmd" | grep -qE 'localhost:3111/agentmemory'; then
+  if grep -qE 'localhost:3111/agentmemory' <<<"$cmd"; then
     return 0
   fi
-  if printf '%s' "$cmd" | grep -qE '(^|[[:space:]])(curl|mkdir|chmod|cat|head|tail|grep|jq|npm install|nohup|kill|lsof|curl|which|command -v|echo|printf|true|false|systemctl|launchctl)(\s|$)'; then
+  if grep -qE '(^|[[:space:]])(curl|mkdir|chmod|cat|head|tail|grep|jq|npm install|nohup|kill|lsof|curl|which|command -v|echo|printf|true|false|systemctl|launchctl)(\s|$)' <<<"$cmd"; then
     return 0
   fi
-  if printf '%s' "$cmd" | grep -qE '(^|[[:space:]/])(graphify|graphifyy)([[:space:]]|$)'; then
+  if grep -qE '(^|[[:space:]/])(graphify|graphifyy)([[:space:]]|$)' <<<"$cmd"; then
     return 0
   fi
   return 1

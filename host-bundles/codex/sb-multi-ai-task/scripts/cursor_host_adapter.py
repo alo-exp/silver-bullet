@@ -166,11 +166,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "cancel":
         print(json.dumps(cancel(args.attempt_id, args.idempotency_key), indent=2))
         return 0
-    if args.command == "cas":
-        aid = args.authoritative_attempt_id or None
-        print(json.dumps(cas_select_authoritative_attempt(args.current_generation, args.expected_generation, aid), indent=2))
-        return 0
-    return 2
+    aid = args.authoritative_attempt_id or None
+    print(json.dumps(cas_select_authoritative_attempt(args.current_generation, args.expected_generation, aid), indent=2))
+    return 0
 
 
 if __name__ == "__main__":

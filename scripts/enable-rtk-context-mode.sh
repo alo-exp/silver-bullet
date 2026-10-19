@@ -7,7 +7,7 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TOOL="all"
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --tool) TOOL="${2:-all}"; shift 2 ;;
+    --tool) TOOL="${2:-all}"; shift $(( $# > 1 ? 2 : 1 )) ;;
     -h|--help)
       cat <<'EOF'
 Usage: bash scripts/enable-rtk-context-mode.sh [--tool rtk|context_mode|all]
