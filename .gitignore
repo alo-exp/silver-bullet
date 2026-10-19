@@ -37,3 +37,4 @@ node_modules/
 .claude/worktrees/
 graphify-out/.graphify_*
 graphify-out/graph.html
+graphify-out/.graph.html.stale
