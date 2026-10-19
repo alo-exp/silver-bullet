@@ -150,6 +150,15 @@ bash tests/coverage/run-coverage.sh --suite hooks --jobs 4 --only 'hooks/*' --fa
 
 **Known limits.** `tests/coverage/known-limits.json` lists the few statements no test can cover. Each entry has `file`, `line`, `word` (the statement's command word exactly as `--show-missing` prints it; `*` for a dynamic command), `kind` (`unreachable` for dead code that cannot run, `unmeasurable` for code that runs but that xtrace cannot attribute), `reason` and `evidence`. `sbcov.py report` removes each matching statement from both the covered count and the total, as a scope exclusion does (it is never counted as covered; function counts are unchanged), and lists the entries under a "Known limits" heading and in `coverage-summary.json`. The rules are strict: an entry whose file is not in `scope.json`, or whose `file:line` holds no statement with that word, is an error; so is an entry whose statement was covered in the run (`stale known limit: now covered`), so the list cannot rot. Any error makes the report exit 3. Entries for files a run did not measure (`--only`) are skipped. Python and JavaScript entries (file plus line) are supported; none are needed. CI runs `--fail-under 100`, which is therefore enforced on the denominator minus the four audited statements listed in [the coverage campaign notes](testing/coverage-campaign/README.md#known-measurement-limits). Never add an entry for a gap a test could close.
 
+**Current result.** CI run 39176781413 (commit `bd0cdb2`, coverage job with `--fail-under 100`, all jobs green): 31376 tests passed, 0 failed (8/8 suites green), 64/64 hooks covered by the hook coverage matrix. Bash (355 files): statements 44094/44094, lines 31807/31807, functions 2107/2107. Python (111 files): statements 19782/19782, branches 8442/8442. JS/TS (7 files): lines 1543/1543, functions 116/116, branches 486/486. All are 100.00%.
+
+**Measurement limits.**
+
+- The totals above exclude the four audited statements in `tests/coverage/known-limits.json` (`phase-lock.sh` lines 478 and 490 unreachable; `orchestrator-scheduler.sh` line 797 and `enterprise-e2e/lib/core.sh` line 26 unmeasurable). Strict validation: exit 3 on a stale or mismatched entry, exit 2 below the threshold.
+- The report prints that 259 modified staged copies are ignored because their traces do not match the source, and that 313 bash trace hits are unattributed (eval/trap bodies or analyzer gaps).
+- Bash parse errors near `hooks/lib/agentmemory-gate.sh` line 302, `hooks/lib/graphify-gate.sh` line 180 and `scripts/lib/global-toolstack/common.sh` lines 390 and 540 mean statements near those lines may be miscounted.
+- Bash has statements, lines and functions only (no branch metric); JS/TS has lines, functions and branches (no statement metric); Python has statements and branches.
+
 `tests/coverage/test-sbcov.sh` calibrates the analyzer against `tests/coverage/fixtures/` and runs in the default suite.
 
 ## Live and Opt-In Suites

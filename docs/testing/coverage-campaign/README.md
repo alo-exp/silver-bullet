@@ -1,13 +1,28 @@
 # Coverage campaign — handoff
 
-Working state of the effort to bring first-party code to 100% measured coverage with meaningful tests. Pull request: alo-exp/silver-bullet#291 (branch `claude/optimistic-ramanujan-tccfud`).
+Handoff for the effort to bring first-party code to 100% measured coverage with meaningful tests. The campaign is complete: see [Final result](#final-result). Pull request: alo-exp/silver-bullet#291 (branch `claude/optimistic-ramanujan-tccfud`).
 
 ## Goal and measurement
 
 - Tooling: `tests/coverage/run-coverage.sh` (`make coverage`), engine `tests/coverage/sbcov.py`, scope `tests/coverage/scope.json`. See [../../TESTING.md](../../TESTING.md).
 - Metrics: Bash statements, lines and functions; Python statements and branches; JS/TS lines, functions and branches.
 - Target: `--fail-under 100`, enforced by the CI coverage job. It is evaluated on the denominator minus four audited statements listed in `tests/coverage/known-limits.json` (see Known measurement limits); no other statement is excluded.
-- Denominator (2026-10-17): Bash 44,168 statements in 353 files; Python 19,483 statements in 108 files; JS/TS 7 files (about 1,400 lines). Generated mirrors and test code are excluded.
+- Denominator at the baseline (2026-10-17): Bash 44,168 statements in 353 files; Python 19,483 statements in 108 files; JS/TS 7 files (about 1,400 lines). Generated mirrors and test code are excluded.
+
+## Final result
+
+CI run 39176781413 on commit `bd0cdb2` (coverage job with `--fail-under 100`; all jobs green):
+
+| Item | Result |
+|---|---|
+| Tests | TOTAL 31376 passed, 0 failed (8/8 suites green); 64/64 hooks covered by the hook coverage matrix |
+| Bash | 355 files; statements 44094/44094 (100.00%), lines 31807/31807 (100.00%), functions 2107/2107 (100.00%) |
+| Python | 111 files; statements 19782/19782 (100.00%), branches 8442/8442 (100.00%) |
+| JS/TS | 7 files; lines 1543/1543, functions 116/116, branches 486/486 (all 100.00%) |
+
+These totals exclude the four audited statements in `tests/coverage/known-limits.json` (see Known measurement limits). Measurement limits the report itself prints: 259 modified staged copies are ignored because their traces do not match the source; 313 bash trace hits are unattributed (eval/trap bodies or analyzer gaps); Bash parse errors near `hooks/lib/agentmemory-gate.sh` line 302, `hooks/lib/graphify-gate.sh` line 180 and `scripts/lib/global-toolstack/common.sh` lines 390 and 540 mean statements near those lines may be miscounted. Bash has no branch metric (statements, lines and functions only); JS/TS has no statement metric.
+
+Final packages merged in the last round: Q-final-gaps (last Bash and Python gaps, lint-shell test), limits (known-limits mechanism, CI `--fail-under 100`), R-default-paths (tests for the sibling-directory defaults from the portability fix `f088c3f`), and the minimax-proxy test race fix (`bd0cdb2`).
 
 ## Baseline (2026-10-17, commit 990268442b)
 
@@ -80,7 +95,14 @@ Update the base commit named in coverage-agent-prompt.md to the PR branch head b
 | K-agents-live-2 | Merged after review (agent-mode resolver dirname fix, host-smoke-cell claim exit code, status listing reads RUNS_DIR; log-floor boundary pinned after review) |
 | M-dr-multi-ai-1 | Merged after three reviews (tests made hermetic: no network, was 3,525 connection attempts; JS regex escapes fixed; discover_solutions fallback returns slugs; font cache restored between tests) |
 | M-dr-multi-ai-2 | Merged after review and one repair round (code-span URL with spaces, hash-seed-dependent label tie-break, nested links for overlapping labels) |
-| All others | Not started |
+| N-deep-research-1 | Merged |
+| N-deep-research-2 | Merged |
+| O-skills-other | Merged |
+| P-site-js | Merged |
+| Q-final-gaps | Merged (last Bash and Python gaps, lint-shell test) |
+| limits | Merged (known-limits mechanism, CI `--fail-under 100`) |
+| R-default-paths | Merged (tests for the sibling-directory defaults from `f088c3f`) |
+| Final result | 100% on every supported metric, CI run 39176781413 at `bd0cdb2` (see [Final result](#final-result)) |
 
 Each package is merged into the PR branch only after an adversarial review passes and its tests pass under both the `claude` and `codex` runtimes.
 
