@@ -41,6 +41,11 @@ RESIDUAL_ONLY_RULES = (
     "are **APPLY'd as a pack** that pass (order-dependent findings together).",
     "Orthogonal to Policy F (ladder completion): 2 consecutive CLEAN on "
     "unchanged SHA; `accept-apply` still resets that rung's streak to 0.",
+    "Flag recurrence: tag a finding `RECURRING: <class>` when it is the "
+    "same kind as a ledger row from an earlier hop or re-raises a deferred "
+    "Low/NIT. The launcher eliminates the class at its source before the "
+    "next hop; still file every instance, and if a guard for that class "
+    "already exists, report that the guard missed it.",
 )
 
 

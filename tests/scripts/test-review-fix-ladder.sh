@@ -317,6 +317,20 @@ fi
 
 SCENARIO="${REPO_ROOT}/tests/skill-scenarios/silver-review-fix-ladder.md"
 assert_file_exists "$SCENARIO" "review-fix-ladder skill scenario exists"
+if grep -qF 'Recurring low-yield class' "$WORKER" \
+  && grep -qF 'eliminate it at its source' "$WORKER" \
+  && grep -qF 'a post-guard recurrence is a bug in the guard' "$WORKER"; then
+  pass "REVIEW-TRIAGE worker encodes recurring-class source elimination"
+else
+  fail "REVIEW-TRIAGE worker encodes recurring-class source elimination"
+fi
+if grep -qF 'Eliminate recurring low-yield classes at the source (HARD)' "$SKILL" \
+  && grep -qF 'is a bug in the guard: ACCEPT it and fix the guard' "$SKILL" \
+  && grep -qF 'Eliminate recurring low-yield classes at the source' "$SCENARIO"; then
+  pass "SKILL and scenario encode recurring-class source elimination"
+else
+  fail "SKILL and scenario encode recurring-class source elimination"
+fi
 if grep -qF 'APPLY ACCEPT completeness (HARD)' "$SCENARIO" \
   && grep -qF 'Low, deferred, nitpicks, and minor' "$SCENARIO" \
   && grep -qF 'The fix step is launcher APPLY ACCEPT, not a fixer rung' "$SCENARIO"; then

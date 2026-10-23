@@ -67,6 +67,7 @@ After each rung's review, the agent that launched the RFL applies ACCEPT fixes. 
 - After each verify **FAIL**, Policy B the leftovers in the **same** follow-up turn (launcher Edit/Write; still one subagent `Task` per turn), then launch re-verify as the next Task. Do not wait for the user.
 - After **CLEAN** `verify_1` and clean orchestrator grep, immediately launch `verify_2`. On already-triaged **NOT CLEAN**, skip `verify_2` (`verify_1` still required). After required CLEAN verifies + greps, immediately start the next rung or same-model re-review.
 - **Corpus sweep, not one-line cycles:** If the same defect class fails verify more than **twice**, the next Policy B pass MUST scan **all** in-scope plan/spec artifacts for that class and patch every live hit in one pass.
+- **Eliminate recurring low-yield classes at the source (HARD):** A corpus sweep patches hits; this removes the cause. When the same kind of finding is ACCEPTed in **2+ review hops** (any rungs), or a deferred Low/NIT is re-raised, the launcher MUST, before the next review hop, remove the class at its source — generate the content instead of copying it by hand, add an automated check (lint, test, or encoder assert) that fails on any instance, or, for deferred presentation items, do one editorial pass — and record the class, the source fix, and the guard in `APPLY.md`. Example: stale hand-copied "today" figures in prose → placeholders rendered from the build's data plus a check that fails on any mismatch or unmarked figure. Eliminating a class removes the defect; it never narrows the brief, suppresses reviewers, or turns those findings into REJECTs. An instance found after the guard exists is a bug in the guard: ACCEPT it and fix the guard.
 - **Cap residual loops:** After **5** leftover cycles on the same rung verify, STOP and escalate to the user with the remaining `file:line` list. Do not start a sixth one-line patch.
 - **Launch/timeout retry then skip (HARD):** If a rung’s subagent **cannot be launched** or **times out** (timeout, empty/"Let" after re-spawn, OpenCode `Endpoint is unavailable`, OmniRoute/OpenCode `401` `Missing API key` / `invalid_api_key`, hung invoke with no `review.md`), retry **once immediately**. If that second attempt also fails to produce a verdict **and the failed host is OpenCode or Pi** (including Pi `PI_PROVIDER=omniroute` / `opencode-go/*` slugs): **do not skip** — substitute Cursor **Grok 4.6 High** (`cursor-grok-4.6-high` / `sb-grok-4-6-high`). Never Fast. Never Extra High as the unspecified default. Encoder: `python3 scripts/review-fix-ladder.py --launch-policy --host opencode|pi --attempts 2 --outcome cannot_launch` → `substitute_grok`. For other hosts, **skip** the rung and continue the ladder. After the **entire ladder** finishes, **retry skipped rungs once more**. Record skip/retry in the rung dir (`SKIPPED.md` plus launcher skip/retry JSON: reason, attempt count, timestamps, next rung, `post_ladder_retry_pending`). Encoder: `python3 scripts/review-fix-ladder.py --launch-policy` / `--skip-artifact`. Do **not** skip because of a CLEAN/NOT CLEAN review — only when the rung **failed to produce a verdict**. Mixed-host: skip does not change the next rung’s required model. Skipping a rung is **not** permission to use Fast or a different family as a silent substitute **on that skipped rung**. **Never Fast.**
 
@@ -522,6 +523,7 @@ Tasks:
 1. Audit scoped work against the charter goals.
 2. Report every valid residual finding with ID, line references, and severity (HIGH|MED|LOW|NIT).
 3. Do NOT classify ACCEPT/REJECT, PM-file issues, or apply fixes (launcher/parent does that).
+4. Tag a finding `RECURRING: <class>` when it is the same kind as a ledger row from an earlier hop or re-raises a deferred Low/NIT; if a guard for that class already exists, say the guard missed it.
 
 FORBIDDEN behaviors:
 - Do NOT triage findings (launcher/parent triages with Policy A after you return).
@@ -552,6 +554,7 @@ Tasks:
 3. Classify each finding ACCEPT or REJECT-as-wrong (state why it is wrong).
 4. Forbidden reject reasons: advisory, doc-only, documentation nit, non-gating, nice-to-have, not a contract hole, CLEAN so ignore mediums, CLEAN for ladder purposes, non-blocking nit.
 5. Produce a triage table. Do not spawn a fix Task at the rung model.
+6. Check for a recurring low-yield class (same kind ACCEPTed in 2+ hops, a deferred Low/NIT re-raised, or a reviewer `RECURRING:` tag). If found, plan its source elimination for APPLY (Policy B); a post-guard recurrence is ACCEPT plus a guard fix.
 
 FORBIDDEN: asking the rung model to patch; rejecting for severity or "advisory"; skipping the per-rung user update.
 ```
@@ -572,6 +575,7 @@ Tasks:
 3. Do **not** treat “CLEAN for ladder purposes” or “non-blocking nit” as a reason to skip a still-valid nit.
 4. Record REJECT-as-wrong with why-wrong evidence.
 5. Smallest safe change.
+6. For a recurring low-yield class flagged at triage, land the source elimination (generate instead of copy, automated check, or one editorial pass) before the next review hop and record class, source fix, and guard in `APPLY.md`.
 
 FORBIDDEN: asking the same Composer/GLM/Kimi/Codex/Claude/OpenCode rung to patch the plan after NOT CLEAN.
 FORBIDDEN: advancing to the next rung before ACCEPTs are applied (or REJECT-as-wrong recorded).

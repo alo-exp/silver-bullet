@@ -86,6 +86,8 @@ grep -q 'all severities' <<<"$brief" && pass "brief all severities" || fail "bri
 grep -q "APPLY'd as a pack" <<<"$brief" && pass "brief pack APPLY" || fail "brief pack APPLY"
 grep -q 'Orthogonal to Policy F' <<<"$brief" && pass "brief orthogonal to Policy F" || fail "brief orthogonal to Policy F"
 grep -q '| R2-F02 | NIT | ACCEPT |' <<<"$brief" && pass "brief includes nit pack row" || fail "brief includes nit pack row"
+grep -qF 'RECURRING: <class>' <<<"$brief" && pass "brief flags recurring classes" || fail "brief flags recurring classes"
+grep -qF 'RECURRING: <class>' "$BRIEF" && pass "brief template flags recurring classes" || fail "brief template flags recurring classes"
 if grep -q 'verify_2 is skipped' <<<"$brief"; then
   fail "brief must not bake skip-verify_2"
 else
