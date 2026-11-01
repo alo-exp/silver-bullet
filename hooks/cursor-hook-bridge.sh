@@ -144,7 +144,12 @@ if payload.get("decision") == "block":
     raise SystemExit(0)
 
 hook_specific = payload.get("hookSpecificOutput")
-if isinstance(hook_specific, dict):
+if not isinstance(hook_specific, dict):
+    hook_specific = {}
+# hooks/lib/hook-output.sh emits user-visible notices as top-level systemMessage.
+if "message" not in hook_specific and "systemMessage" in payload:
+    hook_specific["message"] = payload["systemMessage"]
+if hook_specific:
     message = hook_specific.get("message")
     additional = hook_specific.get("additionalContext")
     decision = hook_specific.get("permissionDecision")

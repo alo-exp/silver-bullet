@@ -15,7 +15,7 @@ CUR_VER="$(jq -r .config_version "$TL_REPO_ROOT/templates/silver-bullet.config.j
 run_cs() { # [hook] [payload]
   tl_run_stdin "${2:-{\}}" bash -c 'cd "$1" && exec bash "$2"' _ "${EC_RUN_DIR:-$EC_PROJ}" "${1:-$HOOK}"
 }
-msg() { jq -r '.hookSpecificOutput.message // ""' <<<"$TL_OUT"; }
+msg() { jq -r '.systemMessage // ""' <<<"$TL_OUT"; }
 reset() {
   local f
   rm -f "${SD:?}/state" "${SD:?}/mode"

@@ -61,16 +61,16 @@ assert_eq "gate library absent: fail open" "after" "$out"
 # shellcheck source=../../hooks/lib/hook-output.sh
 source "$LIB/hook-output.sh"
 if sb_emit_hook_message PostToolUse "" >/dev/null; then tl_fail "empty message rejected"; else tl_pass "empty message rejected"; fi
-assert_eq "emit with jq" '{"hookSpecificOutput":{"hookEventName":"PostToolUse","message":"hi \"x\""}}' "$(sb_emit_hook_message PostToolUse 'hi "x"')"
+assert_eq "emit with jq" '{"systemMessage":"hi \"x\""}' "$(sb_emit_hook_message PostToolUse 'hi "x"')"
 out="$(PATH="$NOJQ" bash -c 'source "$1"; sb_emit_hook_message PreToolUse "a\"b"' _ "$LIB/hook-output.sh")"
-assert_eq "emit without jq escapes via python" '{"hookSpecificOutput":{"hookEventName":"PreToolUse","message":"a\"b"}}' "$out"
+assert_eq "emit without jq escapes via python" '{"systemMessage":"a\"b"}' "$out"
 out="$(PATH="$NOJQPY" bash -c 'source "$1"; sb_emit_hook_message PreToolUse "plain"' _ "$LIB/hook-output.sh")"
-assert_eq "emit without jq and python quotes plainly" '{"hookSpecificOutput":{"hookEventName":"PreToolUse","message":"plain"}}' "$out"
+assert_eq "emit without jq and python encodes in Bash" '{"systemMessage":"plain"}' "$out"
 
 if sb_emit_hook_message_json PostToolUse "" >/dev/null; then tl_fail "empty json message rejected"; else tl_pass "empty json message rejected"; fi
-assert_eq "emit_json with jq" '{"hookSpecificOutput":{"hookEventName":"Stop","message":"m\n2"}}' "$(sb_emit_hook_message_json Stop '"m\n2"')"
+assert_eq "emit_json with jq" '{"systemMessage":"m\n2"}' "$(sb_emit_hook_message_json Stop '"m\n2"')"
 out="$(PATH="$NOJQ" bash -c 'source "$1"; sb_emit_hook_message_json Stop "\"raw\""' _ "$LIB/hook-output.sh")"
-assert_eq "emit_json without jq passes json through" '{"hookSpecificOutput":{"hookEventName":"Stop","message":"raw"}}' "$out"
+assert_eq "emit_json without jq passes json through" '{"systemMessage":"raw"}' "$out"
 
 # ---- cert-bypass ---------------------------------------------------------
 for v in 1 true; do
