@@ -1,8 +1,40 @@
 # shellcheck shell=bash
 # Branch + git worktree scope — shared by session-start and stop-check.
+#
+# API:
+#   sb_branch_scope_file                    the validated branch file: SILVER_BULLET_BRANCH_FILE
+#                                           when it resolves inside the runtime state root,
+#                                           else $SB_RUNTIME_STATE_DIR/branch. Status 1 (no
+#                                           output) when there is no state dir: never /tmp.
+#   sb_branch_scope_read [FILE]             stored branch (line 1) and toplevel (line 2) into
+#                                           SB_BRANCH_SCOPE_STORED_{BRANCH,TOPLEVEL}.
+#   sb_branch_scope_write BRANCH [TOPLEVEL] [FILE]
+#                                           store the scope in FILE (a path the caller already
+#                                           validated) or sb_branch_scope_file. Status 1 for an
+#                                           empty BRANCH, no path, or a symlinked file (refused
+#                                           without exiting the caller).
+#   sb_branch_scope_mismatch BRANCH [TOPLEVEL]  true when the stored scope differs.
+
+if ! declare -f sb_runtime_state_path >/dev/null 2>&1; then
+  _sb_branch_scope_rp="${BASH_SOURCE[0]:-$0}"
+  _sb_branch_scope_rp="${_sb_branch_scope_rp%/*}/runtime-paths.sh"
+  if [[ -f "$_sb_branch_scope_rp" ]]; then
+    # shellcheck source=runtime-paths.sh
+    source "$_sb_branch_scope_rp"
+  fi
+  unset _sb_branch_scope_rp
+fi
 
 sb_branch_scope_file() {
-  printf '%s' "${SILVER_BULLET_BRANCH_FILE:-${SB_RUNTIME_STATE_DIR:-/tmp}/branch}"
+  local file=""
+  if [[ -n "${SILVER_BULLET_BRANCH_FILE:-}" ]] && declare -f sb_runtime_state_path >/dev/null 2>&1; then
+    file="$(sb_runtime_state_path "$SILVER_BULLET_BRANCH_FILE" || true)"
+  fi
+  [[ -n "$file" ]] || {
+    [[ -n "${SB_RUNTIME_STATE_DIR:-}" ]] || return 1
+    file="${SB_RUNTIME_STATE_DIR}/branch"
+  }
+  printf '%s' "$file"
 }
 
 sb_branch_scope_git_toplevel() {
@@ -12,9 +44,10 @@ sb_branch_scope_git_toplevel() {
 
 # Read stored branch (line 1) and optional git toplevel (line 2).
 sb_branch_scope_read() {
-  local file="${1:-$(sb_branch_scope_file)}"
+  local file="${1:-}"
   SB_BRANCH_SCOPE_STORED_BRANCH=""
   SB_BRANCH_SCOPE_STORED_TOPLEVEL=""
+  [[ -n "$file" ]] || file="$(sb_branch_scope_file)" || return 1
   [[ -f "$file" && ! -L "$file" ]] || return 1
   SB_BRANCH_SCOPE_STORED_BRANCH="$(sed -n '1p' "$file" 2>/dev/null | tr -d '\n' || true)"
   SB_BRANCH_SCOPE_STORED_TOPLEVEL="$(sed -n '2p' "$file" 2>/dev/null | tr -d '\n' || true)"
@@ -22,12 +55,10 @@ sb_branch_scope_read() {
 }
 
 sb_branch_scope_write() {
-  local branch="${1:-}" toplevel="${2:-}" file
+  local branch="${1:-}" toplevel="${2:-}" file="${3:-}"
   [[ -n "$branch" ]] || return 1
-  file="$(sb_branch_scope_file)"
-  if declare -f sb_guard_nofollow >/dev/null 2>&1; then
-    sb_guard_nofollow "$file" 2>/dev/null
-  fi
+  [[ -n "$file" ]] || file="$(sb_branch_scope_file)" || return 1
+  [[ ! -L "$file" ]] || return 1
   if [[ -n "$toplevel" ]]; then
     printf '%s\n%s\n' "$branch" "$toplevel" 2>/dev/null >"$file" || true
   else
