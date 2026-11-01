@@ -125,7 +125,7 @@ It refuses to publish unless the tag `vX.Y.Z` exists locally and on `origin` (th
 Release closure requires:
 
 - The published GitHub Release triggers `.github/workflows/announce-release.yml`, which waits for the release commit's CI to settle (`scripts/verify-release-announcement-ci.sh`) and posts the release card to the `silver-bullet-updates` Google Chat thread. The reusable announcement prompt for other Ālo Labs plugins lives in `docs/internal/google-chat-release-announcement-prompt.md`.
-- `bash scripts/post-release-host-verify.sh --version vX.Y.Z` (or `post-release-refresh.sh`, which delegates to it) verifies the released build on **cursor, codex and claude**: per host it removes only the SB install, reinstalls from the tag (or `--public-release` for the marketplace path), runs `sb-diagnostics.sh` plus an RC fresh cell, and writes a marker under `${SB_RUNTIME_STATE_DIR}/post-release-verify/`. Limit to one host with `--host`.
+- `bash scripts/post-release-host-verify.sh --version vX.Y.Z` (or `post-release-refresh.sh`, which delegates to it) verifies the released build on **cursor, codex and claude**: per host it removes only the SB install, reinstalls from a detached clone of the release tag (never the working tree, so later commits and uncommitted edits are not what gets verified; `--public-release` installs through the marketplace path), runs that clone's `sb-diagnostics.sh` plus an RC fresh cell, and writes a marker with the version and the tagged commit under `${SB_RUNTIME_STATE_DIR}/post-release-verify/`. It refuses a version whose tag does not exist locally (`git fetch --tags`). Limit to one host with `--host`.
 - Confirm plugin cache update works via `/sb:update`.
 - Update the site if Stage 4a missed anything.
 
