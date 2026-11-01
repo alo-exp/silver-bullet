@@ -41,7 +41,8 @@ tl_run bash "$SCRIPT"
 assert_eq "repository passes all checks" 0 "$TL_STATUS"
 for check in json-valid manifest-versions release-identity hook-executable hook-references \
   template-placeholders deploy-snippet-list required-subset-tracked config-matches-template \
-  workflows-mirror worm-indicators binary-signatures vendored-skills-lock tracked-file-size; do
+  workflows-mirror worm-indicators binary-signatures vendored-skills-lock tracked-file-size \
+  site-duplicate-ids workflow-hardening; do
   assert_contains "check runs: $check" "$TL_OUT" "PASS $check"
 done
 
@@ -233,6 +234,35 @@ expect_fail "tampered vendored skill" vendored-skills-lock "topgun: content does
 FIX="$TL_TMP/lock-unlisted"; fixture "$FIX"
 mkdir -p "$FIX/.agents/skills/rogue"; printf '# rogue\n' >"$FIX/.agents/skills/rogue/SKILL.md"
 expect_fail "vendored skill missing from the lock" vendored-skills-lock "rogue: vendored skill is not in skills-lock.json"
+
+# --- Site pages: unique element ids at every depth (R13-17) ------------------------------------------------
+FIX="$TL_TMP/site-ids"; fixture "$FIX"
+mkdir -p "$FIX/site/help/concepts"
+printf '<!doctype html><title>x</title><h2 id="a">A</h2><h2 id="b">B</h2>\n' >"$FIX/site/help/concepts/index.html"
+expect_pass "unique ids in a third-level help page" site-duplicate-ids
+printf '<!doctype html><title>x</title><h2 id="a">A</h2><p id="a">again</p>\n' >"$FIX/site/help/concepts/index.html"
+expect_fail "duplicate id in a third-level help page" site-duplicate-ids "site/help/concepts/index.html: duplicate id a"
+
+# --- Workflow hardening (R13-04, R13-14, R13-16, R13-22) ---------------------------------------------------
+FIX="$TL_TMP/workflows-hardening"; fixture "$FIX"
+mkdir -p "$FIX/.github/workflows"
+cp "$TL_REPO_ROOT"/.github/workflows/*.yml "$FIX/.github/workflows/"
+expect_pass "the repository's workflows" workflow-hardening
+cat >"$FIX/.github/workflows/announce.yml" <<'YAML'
+name: Announce
+on:
+  release:
+    types: [published]
+jobs:
+  announce:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          tag="${{ github.event.release.tag_name }}"
+YAML
+expect_fail "an unhardened workflow" workflow-hardening ".github/workflows/announce.yml: no top-level permissions block"
+assert_contains "unhardened workflow: script injection named" "$TL_OUT" "announce.yml:11: \${{ }} expression inside a run script"
 
 # --- Tracked file size (R13-13) ------------------------------------------------------------------------------
 FIX="$TL_TMP/size"; fixture "$FIX"

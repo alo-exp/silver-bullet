@@ -2,7 +2,8 @@
 # Repository invariants checked in CI and by `make check`: valid JSON manifests, aligned
 # marketplace versions and release identity, executable entry points, hooks.json script
 # references, template placeholders, required-skill lists, mirrored workflow docs, worm
-# indicators, file signatures, vendored skills and tracked file sizes.
+# indicators, file signatures, vendored skills, tracked file sizes, unique site element ids
+# and hardened GitHub Actions workflows.
 #
 # Usage:
 #   bash scripts/check-repo-invariants.sh                 # every check
@@ -18,7 +19,8 @@ SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "${SELF_DIR}/.." && pwd)"
 CHECKS=(json-valid manifest-versions release-identity hook-executable hook-references
   template-placeholders deploy-snippet-list required-subset-tracked config-matches-template
-  workflows-mirror worm-indicators binary-signatures vendored-skills-lock tracked-file-size)
+  workflows-mirror worm-indicators binary-signatures vendored-skills-lock tracked-file-size
+  site-duplicate-ids workflow-hardening)
 SELECTED=()
 
 usage_error() {
@@ -236,6 +238,8 @@ check_worm-indicators() { python3 "$SELF_DIR/lib/repo_invariants.py" worm-indica
 check_binary-signatures() { python3 "$SELF_DIR/lib/repo_invariants.py" binary-signatures .; }
 check_vendored-skills-lock() { python3 "$SELF_DIR/lib/repo_invariants.py" vendored-skills-lock .; }
 check_tracked-file-size() { python3 "$SELF_DIR/lib/repo_invariants.py" tracked-file-size .; }
+check_site-duplicate-ids() { python3 "$SELF_DIR/lib/repo_invariants.py" site-duplicate-ids .; }
+check_workflow-hardening() { python3 "$SELF_DIR/lib/repo_invariants.py" workflow-hardening .; }
 
 status=0
 for check in "${SELECTED[@]}"; do

@@ -167,6 +167,112 @@ class VendoredSkillsLockTest(TempRoot):
                              ['skills-lock.json: not valid JSON with a "skills" object'])
 
 
+class SiteDuplicateIdsTest(TempRoot):
+    def test_duplicates_at_any_depth_and_only_in_site_pages(self):
+        write(self.root, "site/index.html", '<p id="x"></p><img id="x"/><b id=""></b><i id=""></i>')
+        write(self.root, "site/help/a/b.html", '<a id="k"></a><a id="j"></a><svg><g id="k"/></svg>')
+        write(self.root, "site/ok.html", '<p id="one"></p><p id="two"></p><p class="c"></p>')
+        write(self.root, "research/report.html", '<p id="d"></p><p id="d"></p>')
+        write(self.root, "site/notes.md", 'id="d" id="d"')
+        files = ri.tracked_files(self.root) + ["site/gone.html"]
+        self.assertEqual(ri.site_duplicate_ids(self.root, sorted(files)), [
+            "site/help/a/b.html: duplicate id k",
+            "site/index.html: duplicate id x",
+        ])
+
+
+HARDENED = """\
+name: CI
+on: [push]
+permissions:
+  contents: read
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - name: Use an input safely
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          echo "$TAG"
+      - run: echo inline
+  second:
+    if: ${{ github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: checkout
+        uses: actions/checkout@v5
+        with: { fetch-depth: 0, persist-credentials: false }
+"""
+
+
+class WorkflowHardeningTest(TempRoot):
+    def problems(self, text, rel=".github/workflows/w.yml"):
+        write(self.root, rel, text)
+        return ri.workflow_hardening(self.root, [rel])
+
+    def test_hardened_workflow_passes(self):
+        self.assertEqual(self.problems(HARDENED), [])
+
+    def test_other_files_are_ignored(self):
+        write(self.root, ".github/dependabot.yml", "version: 2\n")
+        self.assertEqual(ri.workflow_hardening(self.root, [".github/dependabot.yml", ".github/workflows/gone.yml"]), [])
+
+    def test_each_weakness_is_reported(self):
+        weak = """\
+name: Weak
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - run: npx --yes html-validate@latest site
+      - name: Interpolated
+        run: |
+          tag="${{ github.event.release.tag_name }}"
+          # comment lines are skipped, even ${{ x }} and npx -y
+          npx -y html-validate site
+      - run: echo "${{ inputs.runtimes }}"
+"""
+        problems = self.problems(weak)
+        rel = ".github/workflows/w.yml"
+        self.assertEqual(problems, [
+            f"{rel}: no top-level permissions block (least privilege)",
+            f"{rel}: FORCE_JAVASCRIPT_ACTIONS_TO_NODE24 is not set to true in the top-level env",
+            f"{rel}:6: continue-on-error hides failures",
+            f"{rel}:8: actions/checkout without persist-credentials: false",
+            f"{rel}:9: unpinned @latest or npx --yes",
+            f"{rel}:12: ${{{{ }}}} expression inside a run script (pass it through env)",
+            f"{rel}:14: unpinned @latest or npx --yes",
+            f"{rel}:15: ${{{{ }}}} expression inside a run script (pass it through env)",
+            f"{rel}: job build has no timeout-minutes",
+        ])
+
+    def test_step_level_timeout_does_not_count_for_the_job(self):
+        text = HARDENED.replace("    timeout-minutes: 5\n", "").replace(
+            "        uses: actions/checkout@v5\n", "        uses: actions/checkout@v5\n        timeout-minutes: 5\n")
+        self.assertEqual(self.problems(text), [".github/workflows/w.yml: job second has no timeout-minutes"])
+
+    def test_force_flag_only_counts_at_the_top_level(self):
+        text = HARDENED.replace("env:\n  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true\n", "").replace(
+            "    timeout-minutes: 20\n", "    timeout-minutes: 20\n    env:\n      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true\n")
+        self.assertEqual(self.problems(text), [
+            ".github/workflows/w.yml: FORCE_JAVASCRIPT_ACTIONS_TO_NODE24 is not set to true in the top-level env"])
+
+    def test_workflow_without_jobs(self):
+        text = "on: [push]\npermissions: {}\nenv:\n  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true\n"
+        self.assertEqual(self.problems(text, ".github/workflows/empty.yaml"), [])
+
+
 class TrackedFileSizeTest(TempRoot):
     def test_large_and_missing_files(self):
         with (self.root / "big.bin").open("wb") as handle:

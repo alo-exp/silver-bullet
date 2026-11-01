@@ -14,6 +14,7 @@ for flag in --help -h; do
     "Repository invariants checked in CI and by \`make check\`: valid JSON manifests, aligned" \
     "$(head -1 <<<"$TL_OUT")"
   assert_contains "$flag prints the usage" "$TL_OUT" "bash scripts/check-repo-invariants.sh --list"
+  assert_eq "$flag ends with the exit-status line" "64 on a usage error." "$(tail -1 <<<"$TL_OUT")"
   assert_not_contains "$flag runs no check" "$TL_OUT" "PASS json-valid"
 done
 
