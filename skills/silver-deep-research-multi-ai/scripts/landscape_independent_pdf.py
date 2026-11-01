@@ -11,11 +11,13 @@ import os
 import re
 import shutil
 import subprocess
+import tempfile
 import urllib.error
 import urllib.request
 from pathlib import Path
 from typing import Any
 
+from generated_files import atomic_write_text
 from vendor_link_labels import BARE_HTTP_URL_RE, split_url_trailing_punct
 
 INDEPENDENT_PDF_MARKER = "sb-independent-landscape-pdf"
@@ -89,15 +91,22 @@ _REPORT_DATA_RE = re.compile(
 _MODEL_ID_RE = re.compile(r"(?:ocg-|claude-|gemini-|gpt-)[A-Za-z0-9._-]+")
 
 
+# Version the npx fallback may run. --no-install: npx uses an already installed copy and
+# never downloads one from the registry (R12-14).
+PLAYWRIGHT_NPX_PACKAGE = "playwright@1.49.0"
+
+
 def _playwright_argv() -> list[str]:
     exe = shutil.which("playwright")
     if exe:
         return [exe]
     npx = shutil.which("npx")
     if npx:
-        return [npx, "--yes", "playwright"]
+        return [npx, "--no-install", PLAYWRIGHT_NPX_PACKAGE]
     raise FileNotFoundError(
-        "playwright CLI not found — install Playwright to write landscape-report.pdf"
+        "playwright CLI not found: install Playwright and its Chromium "
+        f"(npm install {PLAYWRIGHT_NPX_PACKAGE} && npx playwright install chromium) "
+        "to write the landscape PDF"
     )
 
 
@@ -1426,6 +1435,40 @@ def assert_print_html_independent(print_html: str) -> None:
             raise RuntimeError(f"print HTML contains SPA chrome: {needle}")
 
 
+def _visible_text(fragment: str) -> str:
+    """Text a reader sees in an HTML fragment (tags dropped, entities decoded, spaces collapsed)."""
+    text = re.sub(r"<(script|style)\b.*?</\1>", " ", fragment, flags=re.S | re.I)
+    text = re.sub(r"<!--.*?-->", " ", text, flags=re.S)
+    text = re.sub(r"<[^>]+>", " ", text)
+    return " ".join(html.unescape(text).split())
+
+
+def print_html_missing_content(root: Path, print_html: str) -> list[str]:
+    """## headings and comparison features absent from the print HTML's visible text.
+
+    Each needle is rendered the way the print HTML renders it (inline markdown, escaping)
+    and compared as visible text, so apostrophes, '&' and inline formatting match (R12-13).
+    """
+    visible = _visible_text(print_html)
+    missing: list[str] = []
+    for heading, _ in _split_md_sections(load_landscape_markdown(root)):
+        if heading.startswith("## "):
+            title = _visible_text(_md_inline(heading[3:].strip()))
+            if title and title not in visible:
+                missing.append(f"SPA heading {title!r}")
+    for feat in _comparison_features(load_comparison(root)):
+        name = " ".join(str(feat.get("name") or "").split())
+        if name and name not in visible:
+            missing.append(f"comparison feature {name!r}")
+    return missing
+
+
+def _no_follow(path: Path) -> Path:
+    """Absolute path whose parent is resolved but whose final component is not followed."""
+    path = Path(path)
+    return path.parent.resolve() / path.name
+
+
 def write_independent_landscape_pdf(
     root: Path,
     pdf_path: Path | None = None,
@@ -1433,27 +1476,26 @@ def write_independent_landscape_pdf(
     timeout_ms: int = 120000,
     print_html_path: Path | None = None,
 ) -> dict[str, Any]:
-    """Write landscape-report.pdf from landscape-report.md + chart-data.json + comparison.json."""
+    """Write the landscape PDF from landscape-report.md + chart-data.json + comparison.json.
+
+    The print HTML is written atomically beside the PDF as <pdf stem>.print.html, Chromium
+    renders into a temp file that is then renamed into place, and neither write follows a
+    symlink sitting at the target name (R12-26).
+    """
     root = root.resolve()
-    pdf_path = (pdf_path or (root / "landscape-report.pdf")).resolve()
+    pdf_path = _no_follow(pdf_path or (root / "landscape-report.pdf"))
     print_html = build_independent_print_html(root)
     assert_print_html_independent(print_html)
-    markdown = load_landscape_markdown(root)
-    for heading, _ in _split_md_sections(markdown):
-        if heading.startswith("## "):
-            title_text = heading[3:].strip()
-            escaped = html.escape(title_text, quote=False)
-            if title_text and title_text not in print_html and escaped not in print_html:
-                raise RuntimeError(f"independent print HTML dropped SPA heading: {title_text}")
-    comparison = load_comparison(root)
-    for feat in _comparison_features(comparison):
-        name = str(feat.get("name") or "")
-        if name and name not in print_html:
-            raise RuntimeError(f"independent print HTML dropped comparison feature: {name}")
+    missing = print_html_missing_content(root, print_html)
+    if missing:
+        raise RuntimeError("independent print HTML dropped " + "; ".join(missing[:5]))
     if "Comparison matrix highlights" in print_html:
         raise RuntimeError("independent print HTML still uses highlights-only comparison")
-    source = (print_html_path or pdf_path.with_name("landscape-report.print.html")).resolve()
-    source.write_text(print_html, encoding="utf-8")
+    source = _no_follow(print_html_path or pdf_path.with_name(f"{pdf_path.stem}.print.html"))
+    atomic_write_text(source, print_html)
+    fd, tmp_name = tempfile.mkstemp(prefix=f".{pdf_path.stem}.", suffix=".pdf", dir=pdf_path.parent)
+    os.close(fd)
+    tmp_pdf = Path(tmp_name)
     cmd = [
         *_playwright_argv(),
         "pdf",
@@ -1466,17 +1508,21 @@ def write_independent_landscape_pdf(
         "--timeout",
         str(timeout_ms),
         source.as_uri(),
-        str(pdf_path),
+        str(tmp_pdf),
     ]
-    subprocess.run(cmd, check=True)
-    if not pdf_path.is_file() or pdf_path.stat().st_size < 8:
-        raise RuntimeError(f"Playwright did not write independent PDF: {pdf_path}")
-    header = pdf_path.read_bytes()[:4]
-    if header != b"%PDF":
-        raise RuntimeError(f"independent PDF is not a PDF file: {pdf_path}")
-    raw = pdf_path.read_bytes()
-    if b"pdfExportBtn" in raw or b"exportBar" in raw:
-        raise RuntimeError("independent PDF contains SPA chrome bytes")
+    try:
+        subprocess.run(cmd, check=True, timeout=timeout_ms / 1000 + 60)
+        raw = tmp_pdf.read_bytes()
+        if len(raw) < 8:
+            raise RuntimeError(f"Playwright did not write independent PDF: {pdf_path}")
+        if raw[:4] != b"%PDF":
+            raise RuntimeError(f"independent PDF is not a PDF file: {pdf_path}")
+        if b"pdfExportBtn" in raw or b"exportBar" in raw:
+            raise RuntimeError("independent PDF contains SPA chrome bytes")
+        os.replace(tmp_pdf, pdf_path)
+    finally:
+        if tmp_pdf.exists():
+            tmp_pdf.unlink()
     return {
         "status": "ok",
         "pdf": str(pdf_path),

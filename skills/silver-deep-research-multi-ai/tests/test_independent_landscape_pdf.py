@@ -451,9 +451,9 @@ class IndependentPdfWriteTests(unittest.TestCase):
             pdf_path = html_path.with_name("landscape-report.pdf")
             captured: dict = {}
 
-            def _fake_run(cmd, check):
+            def _fake_run(cmd, check, timeout=None):
                 captured["cmd"] = list(cmd)
-                pdf_path.write_bytes(b"%PDF-1.4 independent")
+                Path(cmd[-1]).write_bytes(b"%PDF-1.4 independent")
                 class _R:
                     returncode = 0
                 return _R()
@@ -463,7 +463,8 @@ class IndependentPdfWriteTests(unittest.TestCase):
             self.assertTrue(mocked.called)
             argv = captured["cmd"]
             self.assertIn("pdf", argv)
-            self.assertEqual(Path(argv[-1]).resolve(), pdf_path.resolve())
+            self.assertEqual(Path(argv[-1]).parent.resolve(), pdf_path.parent.resolve())
+            self.assertEqual(pdf_path.read_bytes(), b"%PDF-1.4 independent")
             source = str(argv[-2])
             self.assertTrue(source.startswith("file:"))
             self.assertNotIn("landscape-report.html", source)
@@ -479,8 +480,8 @@ class IndependentPdfWriteTests(unittest.TestCase):
             _write_fixture(root)
             pdf_path = root / "landscape-report.pdf"
 
-            def _fake_run(cmd, check):
-                pdf_path.write_bytes(b"%PDF-1.4 exportBar pdfExportBtn")
+            def _fake_run(cmd, check, timeout=None):
+                Path(cmd[-1]).write_bytes(b"%PDF-1.4 exportBar pdfExportBtn")
                 class _R:
                     returncode = 0
                 return _R()

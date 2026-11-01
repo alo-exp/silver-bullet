@@ -659,7 +659,13 @@ def _zuvo_ledger_vendor() -> dict[str, Any]:
     }
 
 
-def patch_inclusion_ledger(root: Path, *, pack: dict[str, Any] | None, audit: dict[str, Any] | None) -> dict[str, Any]:
+def patch_inclusion_ledger(
+    root: Path,
+    *,
+    pack: dict[str, Any] | None,
+    audit: dict[str, Any] | None,
+    preserved: list[str] | None = None,
+) -> dict[str, Any]:
     """Reuse inclusion-ledger.json; fix Magic.dev; add Zuvo coverage row. Keep run_id."""
     path = root / "landscape" / "inclusion-ledger.json"
     payload = load_inclusion_ledger(root)
@@ -704,9 +710,10 @@ def patch_inclusion_ledger(root: Path, *, pack: dict[str, Any] | None, audit: di
     if "zuvo" not in slugs:
         patched.append(_zuvo_ledger_vendor())
     payload["vendors"] = patched
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-    _write_inclusion_ledger_markdown(root, payload, pack=pack, audit=audit)
+    from generated_files import write_generated_text
+
+    write_generated_text(root, path, json.dumps(payload, indent=2) + "\n", preserved=preserved)
+    _write_inclusion_ledger_markdown(root, payload, pack=pack, audit=audit, preserved=preserved)
     return payload
 
 
@@ -716,6 +723,7 @@ def _write_inclusion_ledger_markdown(
     *,
     pack: dict[str, Any] | None,
     audit: dict[str, Any] | None,
+    preserved: list[str] | None = None,
 ) -> None:
     lines = [
         "# Inclusion ledger (3-of-7)",
@@ -774,5 +782,7 @@ def _write_inclusion_ledger_markdown(
                 )
             )
         lines.append("")
+    from generated_files import write_generated_text
+
     md_path = root / "landscape" / "inclusion-ledger.md"
-    md_path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
+    write_generated_text(root, md_path, "\n".join(lines).rstrip() + "\n", preserved=preserved)

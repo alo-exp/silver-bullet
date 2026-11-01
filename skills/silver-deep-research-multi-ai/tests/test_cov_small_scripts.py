@@ -261,7 +261,8 @@ class ConsolidateTests(unittest.TestCase):
             self._env("c", "f2", [], phase="DR-RETRIEVE"),
         ]
         envs.append(self._env("a", "f3", [{"text": "nameless"}]))
-        out = consolidate.consolidate(envs, self.INDEX, resolved_pool=5)
+        index5 = {"entries": [{"work_item_id": "w1", "logical_model_id": m} for m in "abcde"]}
+        out = consolidate.consolidate(envs, index5, resolved_pool=99)  # the index (5 agents) wins
         self.assertEqual(out["schema_id"], "consolidation-output-v1")
         by_text = {r["claim_key"]: r for r in out["consensus"] + out["divergence"]}
         alpha = by_text["alpha works"]
@@ -274,15 +275,19 @@ class ConsolidateTests(unittest.TestCase):
         # pool 5 -> strong threshold 3, so two agreeing agents are only weak consensus
         self.assertEqual(by_text["pair claim"]["label"], "weak_consensus")
         self.assertEqual(by_text["nameless"]["label"], "divergent")
-        self.assertEqual(out["coverage"]["indexed"], 3)
+        self.assertEqual(out["coverage"]["indexed"], 5)
+        self.assertEqual(out["resolved_pool"], 5)
         self.assertEqual(out["coverage"]["families_seen"], ["f1", "f2", "f3"])
         self.assertTrue(all(r["label"] == "divergent" for r in out["divergence"]))
         self.assertTrue(all(r["label"] != "divergent" for r in out["consensus"]))
 
     def test_consolidate_weak_consensus_with_large_pool(self) -> None:
         envs = [self._env("a", "f1", [{"text": "x"}]), self._env("b", "f2", [{"text": "x"}])]
-        out = consolidate.consolidate(envs, self.INDEX, resolved_pool=9)
+        index9 = {"entries": [{"work_item_id": "w1", "logical_model_id": m} for m in "abcdefghi"]}
+        out = consolidate.consolidate(envs, index9, resolved_pool=2)
         self.assertEqual(out["consensus"][0]["label"], "weak_consensus")
+        # an index without entries falls back to the caller's pool size
+        self.assertEqual(consolidate.consolidate([], {}, resolved_pool=7)["resolved_pool"], 7)
 
     def test_consolidate_agent_missing_is_not_counted(self) -> None:
         env = self._env("a", "f1", [{"text": "x"}])
@@ -309,7 +314,7 @@ class ConsolidateTests(unittest.TestCase):
             )
             (d / "idx.json").write_text(json.dumps(self.INDEX), encoding="utf-8")
             argv = ["consolidate", "--envelopes", str(d / "env.json"), "--index", str(d / "idx.json"),
-                    "--output", str(d / "out.json"), "--resolved-pool", "2"]
+                    "--output", str(d / "out.json"), "--resolved-pool", "3"]
             with mock.patch.object(sys, "argv", argv):
                 rc, stdout, _ = _run(consolidate.main)
             self.assertEqual(rc, 0)
@@ -339,7 +344,7 @@ class ConsolidateTests(unittest.TestCase):
             (d / "env.json").write_text("[]", encoding="utf-8")
             (d / "idx.json").write_text("{}", encoding="utf-8")
             argv = ["consolidate.py", "--envelopes", str(d / "env.json"), "--index", str(d / "idx.json"),
-                    "--output", str(d / "out.json"), "--resolved-pool", "1"]
+                    "--output", str(d / "out.json")]
             with mock.patch.object(sys, "argv", argv):
                 with self.assertRaises(SystemExit) as cm:
                     _run(runpy.run_path, str(SCRIPTS / "consolidate.py"), run_name="__main__")
@@ -733,13 +738,20 @@ class MigrateRunManifestTests(unittest.TestCase):
                 {"name": "no id at all"},
             ],
         }
-        out = migrate_run_manifest.migrate_v3_to_v4(source, research_root=Path("/root"), source_sha256="s" * 64)
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            wi = root / "work-items" / "w-given" / "multi-ai-work-item-manifest-v1.json"
+            wi.parent.mkdir(parents=True)
+            wi.write_text("{}", encoding="utf-8")
+            out = migrate_run_manifest.migrate_v3_to_v4(source, research_root=root, source_sha256="s" * 64)
+        self.assertEqual(out["report_dir"], str(root))
         self.assertEqual(out["run_id"], "run-fixed")
         self.assertEqual(out["query"], "why?")
         self.assertEqual(out["mode"], "quick")
         self.assertEqual(out["finished_at"], "2025-05-06T00:00:00Z")
         self.assertEqual(out["artifact_paths"], {"report": "r.md"})
-        self.assertEqual(out["report_dir"], "/root")
+        self.assertEqual(out["migration"]["started_at_source"], "source")
+        self.assertEqual(out["migration"]["defaults_applied"], ["total_tokens_cap"])
         budget = out["multi_ai"]["budget"]
         self.assertEqual(budget["currency_micro_usd_cap"], 5)
         self.assertEqual(budget["total_tokens_cap"], 2_000_000)
@@ -750,12 +762,22 @@ class MigrateRunManifestTests(unittest.TestCase):
         self.assertEqual(phases[0], {"phase_id": "P1", "work_item_id": "w-given", "parallel": False})
         self.assertTrue(phases[1]["parallel"])
         self.assertRegex(phases[1]["work_item_id"], r"^work-")
-        self.assertEqual(len(out["multi_ai"]["work_item_refs"]), 2)
-        self.assertEqual(out["multi_ai"]["work_item_refs"][0]["manifest_path"], "work-items/w-given/multi-ai-work-item-manifest-v1.json")
+        refs = out["multi_ai"]["work_item_refs"]
+        self.assertEqual(len(refs), 1)  # only the work item whose manifest exists
+        self.assertEqual(refs[0]["manifest_path"], "work-items/w-given/multi-ai-work-item-manifest-v1.json")
+        import hashlib
+        self.assertEqual(refs[0]["manifest_sha256"], hashlib.sha256(b"{}").hexdigest())
 
     def test_migrate_defaults(self) -> None:
         source = {"schema_id": "deep-research-run-manifest-strict-v3", "version": "3.0.0"}
-        out = migrate_run_manifest.migrate_v3_to_v4(source, research_root=Path("/r"), source_sha256="a" * 64)
+        with self.assertRaisesRegex(ValueError, "no started_at"):
+            migrate_run_manifest.migrate_v3_to_v4(source, research_root=Path("/r"), source_sha256="a" * 64)
+        out = migrate_run_manifest.migrate_v3_to_v4(source, research_root=Path("/r"), source_sha256="a" * 64,
+                                                    source_mtime="2026-01-02T03:04:05Z")
+        self.assertEqual((out["started_at"], out["migration"]["started_at_source"]),
+                         ("2026-01-02T03:04:05Z", "source-file-mtime"))
+        self.assertEqual(out["multi_ai"]["budget"]["currency_micro_usd_cap"], 5_000_000)
+        self.assertFalse(out["multi_ai"]["budget"]["usage_metered"])
         self.assertRegex(out["run_id"], r"^run-[0-9a-f]{32}$")
         self.assertEqual(out["query"], "")
         self.assertEqual(out["mode"], "deep")
@@ -899,7 +921,7 @@ class DrMultiAiCliTests(unittest.TestCase):
 
     def test_default_output_root_slug(self) -> None:
         root = dr_multi_ai_cli.default_output_root("  Hello World " + "x" * 200)
-        self.assertEqual(root.parent, dr_multi_ai_cli.REPO_ROOT / "research")
+        self.assertEqual(root.parent, Path.cwd() / "research")
         self.assertRegex(root.name, r"^\d{4}-\d{2}-\d{2}-hello-world-x+$")
         self.assertEqual(len(root.name) - len("2000-01-01-"), 80)
 
@@ -1036,11 +1058,12 @@ class DrMultiAiCliTests(unittest.TestCase):
             self.assertNotIn("pkg", calls)
             self.assertEqual(os.environ.get("SB_HOST"), "cursor")
 
-    def test_live_force_clears_output_root_and_keeps_existing_host(self) -> None:
+    def test_live_force_moves_previous_run_aside_and_keeps_existing_host(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp) / "out"
             root.mkdir()
             (root / "stale.txt").write_text("x", encoding="utf-8")
+            (root / "run_manifest.json").write_text(json.dumps({"workflow_id": dr_multi_ai_cli.WORKFLOW_ID}), encoding="utf-8")
             os.environ["SB_HOST"] = "codex"
             seen = {}
 
@@ -1054,15 +1077,30 @@ class DrMultiAiCliTests(unittest.TestCase):
 
             with mock.patch.object(multi_ai_core, "host_gate", return_value={"ok": True}), \
                     mock.patch.dict(sys.modules, {"dr_live_runner": runner}):
-                rc, _, _ = _run(dr_multi_ai_cli.main, ["q", "--output-root", str(root), "--force"])
-            self.assertEqual(rc, 0)
-            self.assertFalse(seen["exists"])
-            self.assertEqual(os.environ["SB_HOST"], "codex")
+                rc, out, _ = _run(dr_multi_ai_cli.main, ["q", "--output-root", str(root), "--force"])
+                self.assertEqual(rc, 0)
+                self.assertFalse(seen["exists"])
+                moved = Path(json.loads(out)["moved_aside"])
+                self.assertEqual((moved / "stale.txt").read_text(encoding="utf-8"), "x")
+                self.assertEqual(os.environ["SB_HOST"], "codex")
+                # without --force an existing run is never overwritten
+                root.mkdir()
+                (root / "run_manifest.json").write_text(json.dumps({"workflow_id": dr_multi_ai_cli.WORKFLOW_ID}),
+                                                        encoding="utf-8")
+                rc, out, _ = _run(dr_multi_ai_cli.main, ["q", "--output-root", str(root)])
+                self.assertEqual((rc, json.loads(out)["error_code"]), (2, "OUTPUT_ROOT_HAS_RUN"))
+                # a second move in the same second gets a numbered name
+                with mock.patch.object(dr_multi_ai_cli, "datetime") as fake_dt:
+                    fake_dt.now.return_value.strftime.return_value = "20260101T000000Z"
+                    first = dr_multi_ai_cli.move_previous_run_aside(root)
+                    root.mkdir()
+                    second = dr_multi_ai_cli.move_previous_run_aside(root)
+                self.assertEqual((first.name, second.name), ("out.replaced-20260101T000000Z", "out.replaced-20260101T000000Z-2"))
 
     def test_live_default_output_root_used_without_flag(self) -> None:
         rc, out, calls = self._live(["My Query"], run_result={"ok": True})
         self.assertEqual(rc, 0)
-        self.assertEqual(calls["live"]["output_root"].parent, dr_multi_ai_cli.REPO_ROOT / "research")
+        self.assertEqual(calls["live"]["output_root"].parent, Path.cwd() / "research")
 
     def test_live_runner_exception_and_not_ok_result(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
