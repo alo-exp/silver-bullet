@@ -102,12 +102,13 @@ It polls until the `CI` and `Secret Scan` workflows for `HEAD` have finished gre
 ## 7. Tag and Release
 
 ```bash
-git tag vX.Y.Z
-gh release create vX.Y.Z --title "vX.Y.Z" --notes "..."
-bash scripts/validate-github-release-notes.sh --tag vX.Y.Z
+git tag -a vX.Y.Z -m "Release vX.Y.Z"
+git push origin vX.Y.Z
+bash scripts/validate-github-release-notes.sh --file notes.md
+gh release create vX.Y.Z --verify-tag --title "vX.Y.Z" --notes-file notes.md
 ```
 
-`scripts/validate-github-release-notes.sh` rejects generic bodies such as `See CHANGELOG.md for details.` Release notes must include categorized sections (Features, Fixes, and so on) directly in the GitHub Release. The `sb:create-release` skill runs this validation in Step 7b.
+Validate the notes file **before** `gh release create`: publishing starts the announcement workflow at once, so notes rejected afterwards have already gone out. The validator rejects generic bodies such as `See CHANGELOG.md for details.` and requires at least one categorized `#`–`###` heading from the CHANGELOG's categories (Features, Added, Changed, Fixes, Bug Fixes, Fixed, Docs, Documentation, Tests, Security, Breaking Changes, and so on, in any letter case), so a CHANGELOG entry used as the notes passes. `--tag vX.Y.Z` re-checks a published release. `--verify-tag` makes `gh` refuse to create the tag on GitHub when it was not pushed.
 
 On `gh release create`, `completion-audit.sh` requires all `required_deploy` skills, the `required_release` skills, and the release gates enabled in `.silver-bullet.json` (`release.require_plugin_runtime_matrix`, `release.require_pre_release_quality_gate`, `release.require_rc_matrix`) — see [ENFORCEMENT.md](ENFORCEMENT.md#release-gates). Downstream projects choose their own release settings; this repository enables all three because Silver Bullet is itself a multi-host plugin.
 
