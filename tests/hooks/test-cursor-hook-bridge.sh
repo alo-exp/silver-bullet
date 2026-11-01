@@ -19,5 +19,10 @@ assert_field "deny permission" "$out" '.permission' 'deny'
 stub2=$(mktemp); printf '#!/bin/bash\nprintf '"'"'{"decision":"block","reason":"missing ship"}'"'"'' >"$stub2"; chmod +x "$stub2"
 out2=$(printf '{}' | "$BRIDGE" stop "$stub2")
 assert_field "stop followup" "$out2" '.followup_message' 'missing ship'
-rm -f "$stub" "$stub2"
+stub3=$(mktemp); printf '#!/bin/bash\nprintf '"'"'{"systemMessage":"Skill recorded"}'"'"'' >"$stub3"; chmod +x "$stub3"
+out3=$(printf '{}' | "$BRIDGE" postToolUse "$stub3")
+assert_field "systemMessage notice reaches Cursor as additional_context" "$out3" '.additional_context' 'Skill recorded'
+out4=$(printf '{}' | "$BRIDGE" preToolUse "$stub3")
+assert_field "systemMessage notice reaches Cursor preToolUse as agent_message" "$out4" '.agent_message' 'Skill recorded'
+rm -f "$stub" "$stub2" "$stub3"
 echo; echo "Passed: $PASS"; echo "Failed: $FAIL"; [[ "$FAIL" -eq 0 ]]
