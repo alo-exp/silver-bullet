@@ -249,8 +249,8 @@ class ShimEndToEndTests(unittest.TestCase):
         self.write_cursor_hooks()
         self.cursor_settings().parent.mkdir()
         for body, message in (
-            ("{not json", "JSONDecodeError"),
-            ('"text"', "expected a JSON object at the top level"),
+            ("{not json", "not valid JSON"),
+            ('"text"', "expected an object at the top level"),
             ('{"hooks": "text"}', "hooks must be a JSON object"),
         ):
             self.cursor_settings().write_text(body)
@@ -268,7 +268,7 @@ class ShimEndToEndTests(unittest.TestCase):
     def test_host_missing_cursor_hooks_json_creates_no_settings(self) -> None:
         proc = self.run_shim(HOST_SHIM, str(self.install))
         self.assertNotEqual(proc.returncode, 0)
-        self.assertIn("FileNotFoundError", proc.stderr)
+        self.assertIn("hook manifest not found", proc.stderr)
         self.assertFalse(self.cursor_settings().exists())
 
     def test_host_symlinked_settings_are_updated_in_place(self) -> None:
