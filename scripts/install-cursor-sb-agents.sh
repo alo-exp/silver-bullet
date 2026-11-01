@@ -140,25 +140,21 @@ if [[ -z "$CONFIG_JSON" ]]; then
     echo "Eligible models (pricing per 1M tokens):"
     echo " #  Model ID              Display name                     Pricing"
     echo " -- --------------------- -------------------------------- --------------------------------"
-    FAST_ARGS=()
-    MAX_ARGS=()
-    [[ "$INCLUDE_FAST" -eq 1 ]] && FAST_ARGS+=(--include-fast)
-    [[ "$INCLUDE_MAX" -eq 1 ]] && MAX_ARGS+=(--include-max)
-    OFFLINE_ARGS=()
-    [[ "${SB_CURSOR_SB_AGENTS_OFFLINE:-}" == "1" ]] && OFFLINE_ARGS+=(--no-fetch)
-    ROWS=()
-    LISTING="$("${CSBA_PYTHON}" "$CSBA_FETCH" --list-selectable "${FAST_ARGS[@]}" "${MAX_ARGS[@]}" "${OFFLINE_ARGS[@]}" --repo-root "$PROJECT_ROOT" 2>/dev/null)" || LISTING=""
-    while IFS= read -r row; do
-      [[ -n "$row" ]] && ROWS+=("$row")
-    done <<<"$LISTING"
+    # Bash before 4.4 (macOS /bin/bash 3.2) treats "${empty[@]}" as unbound under set -u, so
+    # the argument array always holds at least --list-selectable and rows are read by index.
+    LIST_ARGS=(--list-selectable)
+    [[ "$INCLUDE_FAST" -eq 1 ]] && LIST_ARGS+=(--include-fast)
+    [[ "$INCLUDE_MAX" -eq 1 ]] && LIST_ARGS+=(--include-max)
+    [[ "${SB_CURSOR_SB_AGENTS_OFFLINE:-}" == "1" ]] && LIST_ARGS+=(--no-fetch)
+    LISTING="$("${CSBA_PYTHON}" "$CSBA_FETCH" "${LIST_ARGS[@]}" --repo-root "$PROJECT_ROOT" 2>/dev/null)" || LISTING=""
     declare -a IDS=()
     local_i=1
-    for row in "${ROWS[@]:-}"; do
-      IFS=$'\t' read -r mid display pricing <<<"$row"
+    while IFS=$'\t' read -r mid display pricing; do
+      [[ -n "$mid" ]] || continue
       IDS+=("$mid")
       printf " %2d %-21s %-32s %s\n" "$local_i" "$mid" "$display" "$pricing"
       local_i=$((local_i + 1))
-    done
+    done <<<"$LISTING"
     echo ""
     echo "Select models (comma-separated numbers or ids; default: composer-2.5,grok-4.5):"
     read -r -p "> " selection || true
@@ -247,7 +243,8 @@ for model in cfg.get("selected_models", []):
 
 pruned = []
 prefix = cfg.get("agent_name_prefix", "sb")
-for path in sorted(agents_dir.glob(f"{prefix}-*.md")):
+# List the agents directory itself: a prefix from project config never becomes a glob path.
+for path in sorted(p for p in agents_dir.glob("*.md") if p.name.startswith(f"{prefix}-")):
     # Only files this installer generated are ever pruned; a user file that merely
     # contains the marker text is left alone.
     if not is_installer_managed_agent(path, agents_dir):
