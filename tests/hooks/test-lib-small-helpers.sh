@@ -27,13 +27,14 @@ assert_contains "block uses the emit function" "$out" "EMIT:"
 assert_not_contains "block exits after emit" "$out" "after"
 
 out="$(PATH="$NOJQ" bash -c 'source "$1"; sb_jq_enforcement_block h nosuchfn; echo after' _ "$LIB/jq-gate.sh")"
-assert_contains "python fallback emits deny" "$out" '"permissionDecision": "deny"'
-assert_contains "python fallback carries message" "$out" "jq is required"
-assert_not_contains "python fallback exits" "$out" "after"
+assert_contains "no emit function: deny from hook-output" "$out" '"permissionDecision":"deny"'
+assert_contains "no emit function: carries message" "$out" "jq is required"
+assert_not_contains "no emit function: exits" "$out" "after"
 
 NOJQPY="$(tl_path_without jq python3)"
 out="$(PATH="$NOJQPY" bash -c 'source "$1"; sb_jq_enforcement_block h; echo after' _ "$LIB/jq-gate.sh")"
-assert_eq "printf fallback" '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"jq required for Silver Bullet enforcement"}}' "$out"
+assert_contains "no jq and no python3: deny still carries the recovery text" "$out" '"permissionDecision":"deny","permissionDecisionReason":"🛑 ENFORCEMENT BLOCKED — jq is required'
+assert_not_contains "no jq and no python3: exits" "$out" "after"
 
 # sb_jq_enforcement_block_sb_initiated
 out="$(bash -c 'source "$1"; sb_jq_enforcement_block_sb_initiated h emit; echo after' _ "$LIB/jq-gate.sh")"
@@ -48,7 +49,7 @@ assert_eq "no project: fail open" "after" "$out"
 
 printf '{}' >"$proj/.silver-bullet.json"
 printf '# SB\n' >"$proj/silver-bullet.md"
-out="$(cd "$proj" && PATH="$NOJQ" SB_RUNTIME_STATE_DIR="$TL_TMP/st" bash -c 'source "$1"; emit(){ echo EMIT; }; sb_jq_enforcement_block_sb_initiated h emit; echo after' _ "$LIB/jq-gate.sh")"
+out="$(cd "$proj" && PATH="$NOJQ" SB_RUNTIME_STATE_DIR="$TL_TMP/st" bash -c 'source "$1"; emit(){ echo EMIT; }; sb_jq_enforcement_block_sb_initiated h emit; echo after' _ "$LIB/jq-gate.sh" </dev/null)"
 assert_eq "initiated project without jq blocks through emit fn" "EMIT" "$out"
 
 # Library missing: copy jq-gate alone into a temp dir.
