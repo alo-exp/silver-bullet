@@ -26,6 +26,15 @@ import re
 import sys
 from datetime import datetime, timezone
 
+from jsonl_store import (  # noqa: F401
+    add_json_input_args,
+    append_jsonl,
+    append_unique,
+    load_json_input,
+    locked,
+    read_jsonl,
+)
+
 
 # ---------------------------------------------------------------------------
 # Claim ID computation
@@ -46,27 +55,6 @@ def compute_claim_id(section_id: str, text: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# JSONL helpers
-# ---------------------------------------------------------------------------
-
-def append_jsonl(path: str, obj: dict) -> None:
-    with open(path, 'a') as f:
-        f.write(json.dumps(obj, ensure_ascii=False) + '\n')
-
-
-def read_jsonl(path: str) -> list[dict]:
-    rows = []
-    if not os.path.exists(path):
-        return rows
-    with open(path) as f:
-        for line in f:
-            line = line.strip()
-            if line:
-                rows.append(json.loads(line))
-    return rows
-
-
-# ---------------------------------------------------------------------------
 # Report parsing helpers
 # ---------------------------------------------------------------------------
 
@@ -82,35 +70,44 @@ SECTION_PATTERNS = [
     (re.compile(r'^##\s+(.+)', re.I), lambda m: re.sub(r'\W+', '_', m.group(1).strip().lower())[:30]),
 ]
 
-# Citation pattern [N] or [N, M]
-CITATION_RE = re.compile(r'\[(\d+(?:,\s*\d+)*)\]')
+# Citation pattern [N] or [N, M]; bounded so an ID such as [20240101...] in body text can
+# neither become a citation number nor overflow int() on a long digit run.
+CITATION_RE = re.compile(r'\[(\d{1,4}(?:,\s*\d{1,4})*)\]')
+
+# Sections that list sources rather than make claims.
+NON_CLAIM_SECTIONS = frozenset(['bibliography', 'references', 'sources', 'works_cited'])
 
 # Sentence splitting (basic but handles abbreviations)
 SENTENCE_RE = re.compile(r'(?<=[.!?])\s+(?=[A-Z])')
 
 
+# Whole-word cues: "considerable", "suggests" (as in "data suggests") and "Mighty" must not
+# turn a factual sentence into a recommendation or speculation that escapes the hard gate.
+RECOMMENDATION_RE = re.compile(
+    r"\bshould\b|\brecommend(?:s|ed|ation|ations)?\b|\badvis(?:e|es|ed|able)\b"
+    r"|\b(?:we|i) (?:suggest|propose)\b|^consider\b",
+    re.IGNORECASE,
+)
+SPECULATION_RE = re.compile(
+    r"\bmight\b|\bcould potentially\b|\bit is possible\b|\bmay eventually\b"
+    r"|\bhypothetically\b|\bspeculatively\b",
+    re.IGNORECASE,
+)
+SYNTHESIS_RE = re.compile(
+    r"\boverall\b|\btaken together\b|\bcollectively\b|\bthe evidence suggests\b|\bthis implies\b",
+    re.IGNORECASE,
+)
+
+
 def classify_claim(text: str, section_id: str) -> str:
-    """Heuristic claim type classification."""
-    lower = text.lower()
-
-    # Recommendation indicators
-    if any(w in lower for w in ['should', 'recommend', 'suggest', 'advise', 'consider']):
-        if section_id == 'recommendations':
-            return 'recommendation'
+    """Heuristic claim type classification (whole-word cues only)."""
+    stripped = text.strip()
+    if RECOMMENDATION_RE.search(stripped):
         return 'recommendation'
-
-    # Speculation indicators
-    if any(w in lower for w in ['might', 'could potentially', 'it is possible', 'may eventually',
-                                 'hypothetically', 'speculatively']):
+    if SPECULATION_RE.search(stripped):
         return 'speculation'
-
-    # Synthesis indicators (often in synthesis/conclusion sections)
-    if section_id in ('synthesis', 'conclusion', 'limitations'):
-        if any(w in lower for w in ['overall', 'taken together', 'collectively',
-                                     'the evidence suggests', 'this implies']):
-            return 'synthesis'
-
-    # Default: factual
+    if section_id in ('synthesis', 'conclusion', 'limitations') and SYNTHESIS_RE.search(stripped):
+        return 'synthesis'
     return 'factual'
 
 
@@ -173,14 +170,25 @@ def cmd_extract(args: argparse.Namespace) -> None:
         markdown = f.read()
 
     claims_path = os.path.join(args.dir, 'claims.jsonl')
-    existing_ids = {r['claim_id'] for r in read_jsonl(claims_path)}
+    with locked(claims_path):
+        added, skipped, total = _extract_into(claims_path, markdown)
 
-    sections = parse_sections(markdown)
+    print(json.dumps({
+        'status': 'ok',
+        'claims_added': added,
+        'claims_skipped': skipped,
+        'total_claims': total,
+    }))
+
+
+def _extract_into(claims_path: str, markdown: str) -> tuple[int, int, int]:
+    """Append new claims from ``markdown``; the caller holds the store lock."""
+    existing_ids = {r.get('claim_id') for r in read_jsonl(claims_path)}
     added = 0
     skipped = 0
 
-    for section_id, content in sections:
-        if section_id == 'preamble':
+    for section_id, content in parse_sections(markdown):
+        if section_id == 'preamble' or section_id in NON_CLAIM_SECTIONS:
             continue
         sentences = extract_sentences(content)
         for sentence in sentences:
@@ -209,18 +217,12 @@ def cmd_extract(args: argparse.Namespace) -> None:
             append_jsonl(claims_path, claim)
             existing_ids.add(claim_id)
             added += 1
-
-    print(json.dumps({
-        'status': 'ok',
-        'claims_added': added,
-        'claims_skipped': skipped,
-        'total_claims': len(existing_ids),
-    }))
+    return added, skipped, len(existing_ids)
 
 
 def cmd_add(args: argparse.Namespace) -> None:
     """Manually add a single claim."""
-    data = json.loads(args.json)
+    data = load_json_input(args)
     section_id = data.get('section_id', 'unknown')
     text = data.get('text', '')
     if not text:
@@ -229,12 +231,6 @@ def cmd_add(args: argparse.Namespace) -> None:
 
     claim_id = compute_claim_id(section_id, text)
     claims_path = os.path.join(args.dir, 'claims.jsonl')
-
-    existing = read_jsonl(claims_path)
-    for row in existing:
-        if row.get('claim_id') == claim_id:
-            print(json.dumps({'status': 'duplicate', 'claim_id': claim_id}))
-            return
 
     valid_types = {'factual', 'synthesis', 'recommendation', 'speculation'}
     claim_type = data.get('claim_type', 'factual')
@@ -251,7 +247,9 @@ def cmd_add(args: argparse.Namespace) -> None:
         'support_status': 'unverified',
         'extracted_at': datetime.now(timezone.utc).isoformat(),
     }
-    append_jsonl(claims_path, claim)
+    if append_unique(claims_path, claim, 'claim_id') is not None:
+        print(json.dumps({'status': 'duplicate', 'claim_id': claim_id}))
+        return
     print(json.dumps({'status': 'added', 'claim_id': claim_id}))
 
 
@@ -330,7 +328,7 @@ def main() -> None:
 
     # add
     p_add = sub.add_parser('add', help='Manually add a single claim')
-    p_add.add_argument('--json', required=True, help='JSON with section_id, text, claim_type')
+    add_json_input_args(p_add, 'JSON with section_id, text, claim_type')
     p_add.add_argument('--dir', required=True, help='Run directory')
 
     # list

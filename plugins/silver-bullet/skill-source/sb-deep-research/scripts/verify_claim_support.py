@@ -9,8 +9,9 @@ CLI subcommands:
 Version 1 is deterministic and cheap: entity, number, date, and
 lexical-overlap checks over stored evidence. No LLM calls.
 
-Only factual claims hard-fail on unsupported status.
-Synthesis/recommendation need traceability but softer thresholds.
+Factual claims hard-fail under --strict unless their status is 'supported'.
+Synthesis/recommendation need traceability but softer thresholds; speculation and
+bibliography rows are 'not_applicable'.
 """
 
 import argparse
@@ -19,33 +20,13 @@ import os
 import re
 import sys
 from collections import Counter
-from datetime import datetime, timezone
 from glob import glob
 from hashlib import sha256
 from typing import Optional
 from urllib.parse import urlparse, urlunparse
 
-
-# ---------------------------------------------------------------------------
-# JSONL helpers
-# ---------------------------------------------------------------------------
-
-def read_jsonl(path: str) -> list[dict]:
-    rows = []
-    if not os.path.exists(path):
-        return rows
-    with open(path) as f:
-        for line in f:
-            line = line.strip()
-            if line:
-                rows.append(json.loads(line))
-    return rows
-
-
-def write_jsonl(path: str, rows: list[dict]) -> None:
-    with open(path, 'w') as f:
-        for row in rows:
-            f.write(json.dumps(row, ensure_ascii=False) + '\n')
+from extract_claims import NON_CLAIM_SECTIONS, compute_claim_id
+from jsonl_store import JsonlError, locked, read_jsonl, write_jsonl_atomic  # noqa: F401
 
 
 # ---------------------------------------------------------------------------
@@ -67,6 +48,13 @@ STOP_ENTITIES = frozenset([
     'Moreover', 'Additionally', 'Therefore', 'Nevertheless',
 ])
 
+# Weights of the feature classes; renormalised over the classes the claim actually contains,
+# so a class the claim lacks is neutral rather than a free full match.
+WEIGHTS = {'tokens': 0.4, 'numbers': 0.25, 'years': 0.15, 'entities': 0.2}
+SUPPORTED_SCORE = 0.6
+PARTIAL_SCORE = 0.35
+MIN_TOKEN_OVERLAP = 0.3
+
 
 def extract_tokens(text: str) -> set[str]:
     """Extract significant lowercase tokens (>3 chars)."""
@@ -75,8 +63,8 @@ def extract_tokens(text: str) -> set[str]:
 
 
 def extract_numbers(text: str) -> set[str]:
-    """Extract numeric values."""
-    return set(NUMBER_RE.findall(text))
+    """Extract numeric values other than years (years are checked separately)."""
+    return set(NUMBER_RE.findall(text)) - extract_years(text)
 
 
 def extract_years(text: str) -> set[str]:
@@ -90,84 +78,67 @@ def extract_entities(text: str) -> set[str]:
     return ents - STOP_ENTITIES
 
 
+def _fraction_present(wanted: set[str], have: set[str]) -> float:
+    return len(wanted & have) / len(wanted)
+
+
+def _entity_coverage(entities: set[str], quote: str) -> float:
+    """Share of claim entities named in the quote (whole words, any case)."""
+    lower = quote.lower()
+    found = sum(1 for e in entities if re.search(r'\b' + re.escape(e.lower()) + r'\b', lower))
+    return found / len(entities)
+
+
 def compute_support_score(claim_text: str, evidence_quotes: list[str]) -> tuple[str, float, str]:
     """
     Compute support status for a claim given its linked evidence quotes.
 
-    Returns (status, score, notes).
-    Score range: 0.0 (no overlap) to 1.0 (strong support).
+    Returns (status, score, notes). A claim is 'supported' only when the best quote scores at
+    least 0.6, shares at least 30% of the claim's significant words, and contains every number,
+    year and named entity of the claim: a missing one counts as non-support.
     """
     if not evidence_quotes:
         return ('unsupported', 0.0, 'no evidence linked')
 
+    # Inline citation markers such as [1] or [2, 3] are references, not claimed numbers.
+    claim_text = INLINE_CITATION_RE.sub(' ', claim_text)
     claim_tokens = extract_tokens(claim_text)
     claim_numbers = extract_numbers(claim_text)
     claim_years = extract_years(claim_text)
     claim_entities = extract_entities(claim_text)
 
-    best_score = -1.0
-    best_notes = []
-
+    best: tuple[float, bool, list[str]] = (-1.0, False, [])
     for quote in evidence_quotes:
-        ev_tokens = extract_tokens(quote)
-        ev_numbers = extract_numbers(quote)
-        ev_years = extract_years(quote)
-        ev_entities = extract_entities(quote)
+        token_overlap = _fraction_present(claim_tokens, extract_tokens(quote)) if claim_tokens else 0.0
+        parts = [('tokens', token_overlap)]
+        notes: list[str] = []
+        complete = token_overlap >= MIN_TOKEN_OVERLAP
+        if token_overlap < MIN_TOKEN_OVERLAP:
+            notes.append('low lexical overlap')
+        for name, wanted, measure, note in (
+            ('numbers', claim_numbers, lambda w: _fraction_present(w, extract_numbers(quote)), 'number mismatch'),
+            ('years', claim_years, lambda w: _fraction_present(w, extract_years(quote)), 'year mismatch'),
+            ('entities', claim_entities, lambda w: _entity_coverage(w, quote), 'entity mismatch'),
+        ):
+            if not wanted:
+                continue
+            value = measure(wanted)
+            parts.append((name, value))
+            if value < 1.0:
+                complete = False
+                notes.append(note)
+        score = sum(WEIGHTS[name] * value for name, value in parts) / sum(WEIGHTS[name] for name, _ in parts)
+        if score > best[0]:
+            best = (score, complete, notes)
 
-        # Token overlap (Jaccard-like)
-        if claim_tokens:
-            token_overlap = len(claim_tokens & ev_tokens) / len(claim_tokens)
-        else:
-            token_overlap = 0.0
-
-        # Number match
-        if claim_numbers:
-            number_match = len(claim_numbers & ev_numbers) / len(claim_numbers)
-        else:
-            number_match = 1.0  # No numbers to check
-
-        # Year match
-        if claim_years:
-            year_match = len(claim_years & ev_years) / len(claim_years)
-        else:
-            year_match = 1.0
-
-        # Entity match
-        if claim_entities:
-            entity_match = len(claim_entities & ev_entities) / len(claim_entities)
-        else:
-            entity_match = 1.0
-
-        # Weighted composite
-        score = (
-            0.4 * token_overlap +
-            0.25 * number_match +
-            0.15 * year_match +
-            0.2 * entity_match
-        )
-
-        if score > best_score:
-            best_score = score
-            best_notes = []
-            if token_overlap < 0.3:
-                best_notes.append('low lexical overlap')
-            if claim_numbers and number_match < 0.5:
-                best_notes.append('number mismatch')
-            if claim_years and year_match < 1.0:
-                best_notes.append('year mismatch')
-            if claim_entities and entity_match < 0.3:
-                best_notes.append('entity mismatch')
-
-    # Threshold decision
-    if best_score >= 0.6:
+    score, complete, notes = best
+    if score >= SUPPORTED_SCORE and complete:
         status = 'supported'
-    elif best_score >= 0.35:
+    elif score >= PARTIAL_SCORE:
         status = 'partial'
     else:
         status = 'needs_review'
-
-    notes = '; '.join(best_notes) if best_notes else 'adequate overlap'
-    return (status, round(best_score, 3), notes)
+    return (status, round(score, 3), '; '.join(notes) if notes else 'adequate overlap')
 
 # Kept identical to citation_manager.py so source_id matching stays stable
 # (tests/test_verify_claim_support_unit.py::TestCanonicalParity enforces it).
@@ -213,44 +184,52 @@ def compute_source_id(canonical_locator: str) -> str:
 
 
 BIB_HEADING_RE = re.compile(r'^##\s+Bibliography\s*$', re.I)
-# Citation numbers are bounded to 9 digits so int() can never hit the 4300-digit cap.
-BIB_ENTRY_RE = re.compile(r'^\[(\d{1,9})\]\s+')
+# Citation numbers are bounded to 4 digits: an ID such as [20240101] is not a citation, and
+# int() can never hit the 4300-digit cap.
+BIB_ENTRY_RE = re.compile(r'^\[(\d{1,4})\]\s+')
 MD_LINK_URL_RE = re.compile(r'\]\((https?://[^)\s]+)\)')
-INLINE_CITATION_RE = re.compile(r'\[(\d{1,9}(?:,\s*\d{1,9})*)\]')
+PLAIN_URL_RE = re.compile(r'https?://[^\s<>()\[\]]+')
+INLINE_CITATION_RE = re.compile(r'\[(\d{1,4}(?:,\s*\d{1,4})*)\]')
+# Where an uncited sentence's own paragraph ends: a blank line, a heading or a new list item.
+PARAGRAPH_END_RE = re.compile(r'\n\s*\n|\n#|\n\s*(?:[-*+]|\d+[.)])\s')
+REPORT_NAME = 'research_report.md'
 
 
 def _find_report_path(run_dir: str) -> Optional[str]:
-    """Locate the markdown report file for a run directory."""
-    # Prefer run_manifest.json's artifact_paths.report if it exists and is valid.
+    """Locate the run's report: manifest artifact_paths.report, research_report.md, or a
+    single legacy research_report_*.md. Never guesses from other markdown files (critique.md,
+    handoff.md and decision-record.md are not the report)."""
     manifest_path = os.path.join(run_dir, 'run_manifest.json')
     if os.path.exists(manifest_path):
         try:
-            with open(manifest_path) as f:
+            with open(manifest_path, encoding='utf-8') as f:
                 manifest = json.load(f)
             rel = (manifest.get('artifact_paths') or {}).get('report')
-            if rel:
-                cand = os.path.join(run_dir, rel)
-                if os.path.exists(cand):
-                    return cand
-        except Exception:
-            # Fall back to glob-based discovery below.
-            pass
+        except (OSError, ValueError, AttributeError):
+            rel = None
+        if rel:
+            cand = os.path.join(run_dir, rel)
+            if os.path.isfile(cand):
+                return cand
 
-    # Common deep-research convention.
-    cands = glob(os.path.join(run_dir, 'research_report_*.md'))
-    if len(cands) == 1:
-        return cands[0]
-    if len(cands) > 1:
-        cands.sort(key=lambda p: os.path.getmtime(p), reverse=True)
-        return cands[0]
+    cand = os.path.join(run_dir, REPORT_NAME)
+    if os.path.isfile(cand):
+        return cand
 
-    # Last-resort: any .md in the run dir (excluding common non-report names).
-    md_files = [p for p in glob(os.path.join(run_dir, '*.md')) if os.path.isfile(p)]
-    md_files = [p for p in md_files if os.path.basename(p).lower() not in ('readme.md',)]
-    if not md_files:
-        return None
-    md_files.sort(key=lambda p: os.path.getmtime(p), reverse=True)
-    return md_files[0]
+    # Legacy convention: research_report_<date>_<slug>.md (newest wins).
+    cands = sorted(glob(os.path.join(run_dir, 'research_report_*.md')), key=os.path.getmtime, reverse=True)
+    return cands[0] if cands else None
+
+
+def _first_url(line: str) -> Optional[str]:
+    """First URL on a bibliography line: a markdown link, a plain URL or 'Title - URL'."""
+    m = MD_LINK_URL_RE.search(line)
+    if m:
+        return m.group(1)
+    m = PLAIN_URL_RE.search(line)
+    if m:
+        return m.group(0).rstrip('.,;:')
+    return None
 
 
 def parse_bibliography_number_to_url(report_md: str) -> dict[int, str]:
@@ -268,12 +247,9 @@ def parse_bibliography_number_to_url(report_md: str) -> dict[int, str]:
         m = BIB_ENTRY_RE.match(line.strip())
         if not m:
             continue
-        num = int(m.group(1))
-        urls = MD_LINK_URL_RE.findall(line)
-        if not urls:
-            continue
-        # Use the first markdown-link url on the line.
-        out[num] = urls[0]
+        url = _first_url(line)
+        if url:
+            out[int(m.group(1))] = url
     return out
 
 
@@ -337,33 +313,16 @@ def infer_citation_numbers_from_context(report_md: str, claim_text: str) -> list
             return []
         report_md = simplified
 
-    # Prefer citations in the same paragraph (until blank line), else fall back
-    # to a small forward window.
-    para_end = report_md.find('\n\n', pos)
-    if para_end < 0:
-        para_end = min(len(report_md), pos + 1200)
-    snippet = report_md[pos:para_end]
-    nums: list[int] = []
-    for m in INLINE_CITATION_RE.finditer(snippet):
-        for n in m.group(1).split(','):
-            nums.append(int(n.strip()))
-    if nums:
-        # Deduplicate while preserving order.
-        out: list[int] = []
-        for n in nums:
-            if n not in out:
-                out.append(n)
-        return out
-
-    # Fallback: scan a bounded window after the match.
-    snippet = report_md[pos: min(len(report_md), pos + 800)]
-    for m in INLINE_CITATION_RE.finditer(snippet):
-        for n in m.group(1).split(','):
-            nums.append(int(n.strip()))
+    # Only the claim's own paragraph counts: up to a blank line, a heading or the next list
+    # item. An uncited claim never inherits a citation from a later paragraph or bullet.
+    end = PARAGRAPH_END_RE.search(report_md, pos)
+    snippet = report_md[pos:end.start() if end else len(report_md)]
     out: list[int] = []
-    for n in nums:
-        if n not in out:
-            out.append(n)
+    for m in INLINE_CITATION_RE.finditer(snippet):
+        for n in m.group(1).split(','):
+            num = int(n.strip())
+            if num not in out:
+                out.append(num)
     return out
 
 
@@ -371,143 +330,126 @@ def infer_citation_numbers_from_context(report_md: str, claim_text: str) -> list
 # Subcommands
 # ---------------------------------------------------------------------------
 
-def cmd_verify(args: argparse.Namespace) -> None:
-    """Verify all claims against evidence, update claims.jsonl."""
-    claims_path = os.path.join(args.dir, 'claims.jsonl')
-    evidence_path = os.path.join(args.dir, 'evidence.jsonl')
-    sources_path = os.path.join(args.dir, 'sources.jsonl')
-
-    claims = read_jsonl(claims_path)
-    evidence = read_jsonl(evidence_path)
-    sources = read_jsonl(sources_path)
-
-    # Attempt to link claims' citation numbers -> source_ids using Bibliography.
-    report_path = _find_report_path(args.dir)
-    report_md = None
-    bib_num_to_url = None
-    if report_path and os.path.exists(report_path):
-        try:
-            with open(report_path) as f:
-                report_md = f.read()
-                bib_num_to_url = parse_bibliography_number_to_url(report_md)
-        except Exception:
-            report_md = None
-            bib_num_to_url = None
-    display_num_to_source_id = build_display_number_to_source_id(sources, bib_num_to_url)
-
-    # Build evidence index by source_id
-    ev_by_source: dict[str, list[str]] = {}
-    ev_by_id: dict[str, dict] = {}
-    for ev in evidence:
-        sid = ev.get('source_id', '')
-        eid = ev.get('evidence_id', '')
-        ev_by_source.setdefault(sid, []).append(ev.get('quote', ''))
-        ev_by_id[eid] = ev
-
-    # Deduplicate claims
-    seen = set()
-    unique_claims = []
+def _unique_claims(claims: list[dict]) -> list[dict]:
+    """De-duplicate by claim_id, computing a missing id from section and text (never by None)."""
+    seen: set[str] = set()
+    unique = []
     for c in claims:
-        cid = c.get('claim_id')
+        cid = c.get('claim_id') or compute_claim_id(c.get('section_id', ''), c.get('text', ''))
+        c['claim_id'] = cid
         if cid not in seen:
             seen.add(cid)
-            unique_claims.append(c)
+            unique.append(c)
+    return unique
 
-    verified = 0
-    updated_claims = []
 
-    for claim in unique_claims:
-        section_id = claim.get('section_id', '')
+def _resolve_report(args: argparse.Namespace) -> str:
+    """The report to read: --report when given, else the run's own report. Exit 2 if missing."""
+    path = args.report or _find_report_path(args.dir)
+    if not path or not os.path.isfile(path):
+        wanted = args.report or os.path.join(args.dir, REPORT_NAME)
+        print(json.dumps({'error': f'report not found: {wanted} (pass --report PATH)'}), file=sys.stderr)
+        sys.exit(2)
+    return path
 
-        # Drop bibliography entries; they are citations, not claims.
-        if section_id == 'bibliography':
-            continue
 
-        claim_type = claim.get('claim_type', 'factual')
-        claim['claim_type'] = claim_type
+def _verify_claim(claim: dict, report_md: str, display_num_to_source_id: dict[int, str],
+                  ev_by_source: dict[str, list[str]], ev_by_id: dict[str, dict]) -> None:
+    section_id = claim.get('section_id', '')
+    claim_type = claim.get('claim_type', 'factual')
 
-        # Normalize claim types based on section intent.
-        if section_id == 'recommendations':
-            claim_type = 'recommendation'
-            claim['claim_type'] = claim_type
-        elif section_id in ('limitations', 'synthesis', 'conclusion'):
-            # Uncited statements in these sections are usually interpretive synthesis.
-            if claim_type == 'factual' and not claim.get('_citation_numbers'):
-                claim_type = 'synthesis'
-                claim['claim_type'] = claim_type
+    # Normalize claim types based on section intent.
+    if section_id == 'recommendations':
+        claim_type = 'recommendation'
+    elif section_id in ('limitations', 'synthesis', 'conclusion'):
+        # Uncited statements in these sections are usually interpretive synthesis.
+        if claim_type == 'factual' and not claim.get('_citation_numbers'):
+            claim_type = 'synthesis'
+    claim['claim_type'] = claim_type
 
-        # If the extracted sentence has no inline citations, try to infer them
-        # from nearby paragraph context in the report text.
-        if report_md and not claim.get('_citation_numbers'):
-            inferred = infer_citation_numbers_from_context(report_md, claim.get('text', ''))
-            if inferred:
-                claim['_citation_numbers'] = inferred
+    # If the sentence has no inline citations, use citations from its own paragraph only.
+    if not claim.get('_citation_numbers'):
+        inferred = infer_citation_numbers_from_context(report_md, claim.get('text', ''))
+        if inferred:
+            claim['_citation_numbers'] = inferred
 
-        # Backfill cited_source_ids from extracted citation numbers if missing.
-        if not claim.get('cited_source_ids') and claim.get('_citation_numbers'):
-            cited = []
-            for n in claim.get('_citation_numbers', []):
-                sid = display_num_to_source_id.get(n)
-                if sid and sid not in cited:
-                    cited.append(sid)
-            claim['cited_source_ids'] = cited
+    # Backfill cited_source_ids from extracted citation numbers if missing.
+    if not claim.get('cited_source_ids') and claim.get('_citation_numbers'):
+        cited = []
+        for n in claim.get('_citation_numbers', []):
+            sid = display_num_to_source_id.get(n)
+            if sid and sid not in cited:
+                cited.append(sid)
+        claim['cited_source_ids'] = cited
 
-        # Gather evidence for this claim
-        cited_ids = claim.get('cited_source_ids', [])
-        evidence_ids = claim.get('evidence_ids', [])
+    cited_ids = claim.get('cited_source_ids', [])
+    evidence_ids = claim.get('evidence_ids', [])
+    quotes = [ev_by_id[eid].get('quote', '') for eid in evidence_ids if eid in ev_by_id]
+    for sid in cited_ids:
+        quotes.extend(ev_by_source.get(sid, []))
 
-        # Collect evidence quotes from linked evidence_ids
-        quotes = []
-        for eid in evidence_ids:
-            if eid in ev_by_id:
-                quotes.append(ev_by_id[eid].get('quote', ''))
+    if claim_type == 'speculation' and not quotes:
+        claim['support_status'] = 'not_applicable'  # labelled speculation needs no evidence
+    elif not quotes and not cited_ids and not evidence_ids:
+        claim['support_status'] = 'unsupported'
+    elif not quotes:
+        # Has cited sources but no evidence captured yet
+        claim['support_status'] = 'needs_review'
+    else:
+        status, score, notes = compute_support_score(claim['text'], quotes)
+        claim['support_status'] = status
+        claim['_support_score'] = score
+        claim['_support_notes'] = notes
 
-        # Also gather from cited sources
-        for sid in cited_ids:
-            if sid in ev_by_source:
-                quotes.extend(ev_by_source[sid])
 
-        if not quotes and not cited_ids and not evidence_ids:
-            # No links at all
-            if claim_type == 'speculation':
-                claim['support_status'] = 'supported'  # Speculation doesn't need evidence
-            else:
-                claim['support_status'] = 'unsupported'
-        elif not quotes:
-            # Has cited sources but no evidence captured yet
-            claim['support_status'] = 'needs_review'
-        else:
-            status, score, notes = compute_support_score(claim['text'], quotes)
-            claim['support_status'] = status
-            claim['_support_score'] = score
-            claim['_support_notes'] = notes
+def cmd_verify(args: argparse.Namespace) -> None:
+    """Verify all claims against evidence, update claims.jsonl (atomically, losing no row)."""
+    claims_path = os.path.join(args.dir, 'claims.jsonl')
+    report_path = _resolve_report(args)
+    with open(report_path, encoding='utf-8') as f:
+        report_md = f.read()
 
-        verified += 1
-        updated_claims.append(claim)
+    with locked(claims_path):
+        claims = read_jsonl(claims_path)
+        evidence = read_jsonl(os.path.join(args.dir, 'evidence.jsonl'))
+        sources = read_jsonl(os.path.join(args.dir, 'sources.jsonl'))
+        display_num_to_source_id = build_display_number_to_source_id(
+            sources, parse_bibliography_number_to_url(report_md))
 
-    # Rewrite claims.jsonl with updated statuses
-    write_jsonl(claims_path, updated_claims)
+        ev_by_source: dict[str, list[str]] = {}
+        ev_by_id: dict[str, dict] = {}
+        for ev in evidence:
+            ev_by_source.setdefault(ev.get('source_id', ''), []).append(ev.get('quote', ''))
+            ev_by_id[ev.get('evidence_id', '')] = ev
 
-    # Compute summary
-    status_counts = Counter(c.get('support_status') for c in updated_claims)
-    factual_unsupported = sum(
-        1 for c in updated_claims
-        if c.get('claim_type') == 'factual' and c.get('support_status') == 'unsupported'
-    )
-    total_factual = sum(1 for c in updated_claims if c.get('claim_type') == 'factual')
+        claims = _unique_claims(claims)
+        for claim in claims:
+            if claim.get('section_id', '') in NON_CLAIM_SECTIONS:
+                # Bibliography rows are citations, not claims: kept, but never scored.
+                claim['support_status'] = 'not_applicable'
+                continue
+            _verify_claim(claim, report_md, display_num_to_source_id, ev_by_source, ev_by_id)
 
-    # Strict mode: fail if any factual claim is unsupported
-    passed = True
-    if args.strict and factual_unsupported > 0:
-        passed = False
+        write_jsonl_atomic(claims_path, claims)
+
+    scored = [c for c in claims if c.get('support_status') != 'not_applicable']
+    status_counts = Counter(c.get('support_status') for c in claims)
+    factual = [c for c in scored if c.get('claim_type') == 'factual']
+    factual_unsupported = sum(1 for c in factual if c.get('support_status') == 'unsupported')
+    factual_not_supported = sum(1 for c in factual if c.get('support_status') != 'supported')
+
+    # Strict mode: every factual claim must be supported (partial and needs_review fail too).
+    passed = not (args.strict and factual_not_supported > 0)
 
     print(json.dumps({
         'status': 'pass' if passed else 'fail',
-        'verified': verified,
+        'report': os.path.basename(report_path),
+        'verified': len(scored),
         'support_status_counts': dict(status_counts),
         'factual_unsupported': factual_unsupported,
-        'total_factual': total_factual,
-        'unsupported_rate': round(factual_unsupported / max(total_factual, 1), 3),
+        'factual_not_supported': factual_not_supported,
+        'total_factual': len(factual),
+        'unsupported_rate': round(factual_not_supported / max(len(factual), 1), 3),
     }, indent=2))
 
     if not passed:
@@ -517,16 +459,7 @@ def cmd_verify(args: argparse.Namespace) -> None:
 def cmd_report(args: argparse.Namespace) -> None:
     """Generate human-readable support verification report."""
     claims_path = os.path.join(args.dir, 'claims.jsonl')
-    claims = read_jsonl(claims_path)
-
-    # Deduplicate
-    seen = set()
-    unique = []
-    for c in claims:
-        cid = c.get('claim_id')
-        if cid not in seen:
-            seen.add(cid)
-            unique.append(c)
+    unique = _unique_claims(read_jsonl(claims_path))
 
     lines = ['# Claim Support Verification Report', '']
 
@@ -538,16 +471,17 @@ def cmd_report(args: argparse.Namespace) -> None:
     lines.append(f'**By status:** {dict(status_counts)}')
     lines.append('')
 
-    # Unsupported factual claims (the failures)
+    # Factual claims that are not fully supported (the strict-gate failures)
     unsupported_factual = [
         c for c in unique
-        if c.get('claim_type') == 'factual' and c.get('support_status') in ('unsupported', 'needs_review')
+        if c.get('claim_type') == 'factual'
+        and c.get('support_status') in ('unsupported', 'needs_review', 'partial')
     ]
     if unsupported_factual:
         lines.append('## Unsupported/Review-needed Factual Claims')
         lines.append('')
         for c in unsupported_factual:
-            lines.append(f'- [{c["support_status"]}] `{c["section_id"]}`: {c["text"][:100]}...')
+            lines.append(f'- [{c["support_status"]}] `{c.get("section_id", "")}`: {c.get("text", "")[:100]}...')
             if c.get('_support_notes'):
                 lines.append(f'  Notes: {c["_support_notes"]}')
         lines.append('')
@@ -574,7 +508,8 @@ def main() -> None:
     # verify
     p_ver = sub.add_parser('verify', help='Verify claims against evidence')
     p_ver.add_argument('--dir', required=True, help='Run directory')
-    p_ver.add_argument('--strict', action='store_true', help='Exit 1 if any factual claim unsupported')
+    p_ver.add_argument('--report', help=f'Report markdown (default: the manifest report or {REPORT_NAME})')
+    p_ver.add_argument('--strict', action='store_true', help='Exit 1 unless every factual claim is supported')
 
     # report
     p_rep = sub.add_parser('report', help='Generate verification report')
@@ -585,7 +520,11 @@ def main() -> None:
         'verify': cmd_verify,
         'report': cmd_report,
     }
-    dispatch[args.command](args)
+    try:
+        dispatch[args.command](args)
+    except JsonlError as exc:
+        print(json.dumps({'error': str(exc)}), file=sys.stderr)
+        sys.exit(2)
 
 
 if __name__ == '__main__':

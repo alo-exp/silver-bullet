@@ -39,6 +39,8 @@ class TestVerifySupported(unittest.TestCase):
 
     def setUp(self):
         self.tmpdir = tempfile.mkdtemp()
+        with open(os.path.join(self.tmpdir, "research_report.md"), "w") as f:
+            f.write("# Report\n")
         # Sources
         write_jsonl(os.path.join(self.tmpdir, 'sources.jsonl'), [
             {'source_id': 'src_quantum_001', 'title': 'Quantum Computing 2024'},
@@ -86,6 +88,8 @@ class TestVerifyUnsupported(unittest.TestCase):
 
     def setUp(self):
         self.tmpdir = tempfile.mkdtemp()
+        with open(os.path.join(self.tmpdir, "research_report.md"), "w") as f:
+            f.write("# Report\n")
         write_jsonl(os.path.join(self.tmpdir, 'sources.jsonl'), [])
         write_jsonl(os.path.join(self.tmpdir, 'evidence.jsonl'), [])
         write_jsonl(os.path.join(self.tmpdir, 'claims.jsonl'), [
@@ -118,6 +122,8 @@ class TestVerifyMixed(unittest.TestCase):
 
     def setUp(self):
         self.tmpdir = tempfile.mkdtemp()
+        with open(os.path.join(self.tmpdir, "research_report.md"), "w") as f:
+            f.write("# Report\n")
         write_jsonl(os.path.join(self.tmpdir, 'sources.jsonl'), [])
         write_jsonl(os.path.join(self.tmpdir, 'evidence.jsonl'), [])
         write_jsonl(os.path.join(self.tmpdir, 'claims.jsonl'), [
@@ -152,7 +158,9 @@ class TestVerifyMixed(unittest.TestCase):
             for line in f:
                 claims.append(json.loads(line))
         spec = [c for c in claims if c['claim_type'] == 'speculation'][0]
-        self.assertEqual(spec['support_status'], 'supported')
+        # Labelled speculation needs no evidence, but it is not "supported" either.
+        self.assertEqual(spec['support_status'], 'not_applicable')
+        self.assertEqual(out['status'], 'pass')
 
 
 class TestVerifyPartial(unittest.TestCase):
@@ -160,6 +168,8 @@ class TestVerifyPartial(unittest.TestCase):
 
     def setUp(self):
         self.tmpdir = tempfile.mkdtemp()
+        with open(os.path.join(self.tmpdir, "research_report.md"), "w") as f:
+            f.write("# Report\n")
         write_jsonl(os.path.join(self.tmpdir, 'sources.jsonl'), [
             {'source_id': 'src_nist_001', 'title': 'NIST PQC Standards'},
         ])

@@ -17,6 +17,8 @@ import unittest
 from unittest import mock
 
 SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'scripts', 'verify_claim_support.py')
+if os.path.dirname(os.path.abspath(SCRIPT)) not in sys.path:
+    sys.path.insert(0, os.path.dirname(os.path.abspath(SCRIPT)))
 _spec = importlib.util.spec_from_file_location('verify_claim_support_under_test', SCRIPT)
 vcs = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(vcs)
@@ -72,7 +74,7 @@ class TestJsonl(unittest.TestCase):
     def test_roundtrip_skips_blank_lines(self):
         d = tmpdir()
         p = os.path.join(d, 'a.jsonl')
-        vcs.write_jsonl(p, [{'a': 'é'}, {'b': 2}])
+        vcs.write_jsonl_atomic(p, [{'a': 'é'}, {'b': 2}])
         with open(p, 'a') as f:
             f.write('\n   \n')
         self.assertEqual(vcs.read_jsonl(p), [{'a': 'é'}, {'b': 2}])
@@ -94,7 +96,8 @@ class TestExtractors(unittest.TestCase):
 
     def test_extractors(self):
         self.assertEqual(vcs.extract_tokens('The Quick fox jumped'), {'quick', 'jumped'})
-        self.assertEqual(vcs.extract_numbers('grew 12.5 in 2020 by 3x'), {'12.5', '2020', '3x'})
+        # Years are checked on their own, so they are not also counted as numbers.
+        self.assertEqual(vcs.extract_numbers('grew 12.5 in 2020 by 3x'), {'12.5', '3x'})
         self.assertEqual(vcs.extract_years('in 1999 and 2024 but 3000'), {'1999', '2024'})
         self.assertEqual(vcs.extract_entities('Big Apple, However, Tesla'), {'Big Apple', 'Tesla'})
 
@@ -112,8 +115,9 @@ class TestScore(unittest.TestCase):
         claim = 'revenue growth accelerated sharply markets 2020'
         quote = 'revenue growth markets'
         status, score, notes = vcs.compute_support_score(claim, [quote])
-        self.assertEqual((status, score), ('partial', 0.44))
-        self.assertEqual(notes, 'number mismatch; year mismatch')
+        # tokens 3/5 (0.24) and a missing year (0), renormalised over 0.4 + 0.15.
+        self.assertEqual((status, score), ('partial', 0.436))
+        self.assertEqual(notes, 'year mismatch')
 
     def test_year_mismatch_is_detected_between_different_years(self):
         # Regression: the year regex captured only the century prefix, so
@@ -122,6 +126,7 @@ class TestScore(unittest.TestCase):
         quote = 'Tesla shipped vehicles in 2019'
         status, score, notes = vcs.compute_support_score(claim, [quote])
         self.assertIn('year mismatch', notes)
+        self.assertNotEqual(status, 'supported')
         self.assertLess(score, 1.0)
 
     def test_zero_score_still_reports_notes(self):
@@ -139,45 +144,56 @@ class TestScore(unittest.TestCase):
         self.assertEqual(status, 'needs_review')
         self.assertEqual(notes, 'low lexical overlap; number mismatch; year mismatch; entity mismatch')
 
-    def test_best_of_multiple_quotes_and_empty_claim_tokens(self):
-        claim = 'Hi'  # no tokens (<4 chars), entity {Hi}
-        status, score, _ = vcs.compute_support_score(claim, ['nothing', 'Hi there'])
-        self.assertEqual(score, 0.6)
-        self.assertEqual(status, 'supported')
+    def test_absent_classes_are_neutral_not_a_free_match(self):
+        # R11-02: a claim without numbers, years or entities used to score 0.6 ("supported")
+        # with zero lexical overlap. Absent classes now carry no weight at all.
+        status, score, _ = vcs.compute_support_score(
+            'the vendor guarantees zero downtime', ['the weather was cold and windy yesterday'])
+        self.assertEqual((status, score), ('needs_review', 0.0))
+        # A claim with no significant words can never be supported by an entity alone.
+        status, score, _ = vcs.compute_support_score('Hi', ['nothing', 'Hi there'])
+        self.assertEqual((status, score), ('needs_review', 0.333))
 
     def test_later_lower_quote_does_not_override(self):
         claim = 'alpha bravo charlie delta'
         status, score, notes = vcs.compute_support_score(claim, [claim, 'zzz'])
         self.assertEqual((status, score), ('supported', 1.0))
 
+    def test_best_quote_wins(self):
+        claim = 'alpha bravo charlie delta'
+        status, score, _ = vcs.compute_support_score(claim, ['zzz', 'alpha bravo charlie delta'])
+        self.assertEqual((status, score), ('supported', 1.0))
+
+    def test_inline_citation_markers_are_not_claimed_numbers(self):
+        status, _, notes = vcs.compute_support_score('Acme shipped 500 units [12]', ['Acme shipped 500 units'])
+        self.assertEqual((status, notes), ('supported', 'adequate overlap'))
+
 
 class TestScoreBoundaries(unittest.TestCase):
-    """Exact threshold and note boundaries of compute_support_score."""
+    """Thresholds of compute_support_score: 0.6 and complete for 'supported', 0.35 for 'partial'."""
 
     def score(self, claim, *quotes):
         return vcs.compute_support_score(claim, list(quotes))
 
-    def test_status_thresholds(self):
-        # (tokens, numbers, years, entities) = (0.5, 1, 1, 0) -> exactly 0.6
-        self.assertEqual(self.score('alpha bravo 2020 Qux', 'alpha 2020')[:2], ('supported', 0.6))
-        # (0, 1, 1, 0.5) -> exactly 0.5: still partial
-        self.assertEqual(self.score('alpha 2020 Qux, Zed', 'Qux 2020')[:2], ('partial', 0.5))
-        # (0.5, 0, 1, 0) -> exactly 0.35: partial
-        self.assertEqual(self.score('alpha bravo 12 Qux', 'alpha 13')[:2], ('partial', 0.35))
-        # (0.25, 0, 1, 0) -> 0.25: just below 0.35
-        self.assertEqual(self.score('alpha bravo charlie delta 12 Qux', 'alpha 13')[:2], ('needs_review', 0.25))
-        # (0.75, 0, 0, 0) -> 0.3: just below the partial threshold
-        self.assertEqual(self.score('alpha bravo charlie delta 2020 Qux', 'alpha bravo charlie 2019')[:2],
-                         ('needs_review', 0.3))
-        self.assertEqual(self.score('alpha bravo 12 Qux, Zed', 'Zed 13')[:2], ('needs_review', 0.25))
+    FIVE = 'alpha bravo charlie delta eeee'
 
-    def test_just_above_and_below_sixty(self):
-        status, score, _ = self.score('Hi', 'Hi there')  # 0.6000000000000001 rounded to 0.6
-        self.assertEqual((status, score), ('supported', 0.6))
-        # (0.25, 1, 1, 0.5) = 0.6 also supported; (0.25, 1, 1, 0) = 0.5 partial
-        self.assertEqual(self.score('alpha bravo charlie delta 2020 Qux, Zed', 'charlie 2020 Qux')[:2],
-                         ('supported', 0.6))
-        self.assertEqual(self.score('alpha bravo charlie delta 2020 Qux', 'charlie 2020')[:2], ('partial', 0.5))
+    def test_status_thresholds(self):
+        # Tokens only: 3/5 = exactly 0.6 and complete -> supported; 2/5 = 0.4 -> partial; 1/5 -> needs_review.
+        self.assertEqual(self.score(self.FIVE, 'alpha bravo charlie')[:2], ('supported', 0.6))
+        self.assertEqual(self.score(self.FIVE, 'alpha bravo')[:2], ('partial', 0.4))
+        self.assertEqual(self.score(self.FIVE, 'alpha')[:2], ('needs_review', 0.2))
+        # tokens 1/2 (0.2) and a missing year, over 0.55: 0.364 is partial.
+        self.assertEqual(self.score('alpha bravo 2020', 'alpha')[:2], ('partial', 0.364))
+
+    def test_high_score_with_a_missing_number_is_only_partial(self):
+        status, score, notes = self.score('alpha bravo 12', 'alpha bravo 13')
+        self.assertEqual((status, score), ('partial', 0.615))
+        self.assertEqual(notes, 'number mismatch')
+
+    def test_high_score_with_low_word_overlap_is_only_partial(self):
+        status, score, notes = self.score('alpha bravo charlie delta 12 2020 Qux', 'alpha 12 2020 Qux')
+        self.assertEqual((status, score), ('partial', 0.7))
+        self.assertEqual(notes, 'low lexical overlap')
 
     TEN_TOKENS = 'aaaa bbbb cccc dddd eeee ffff gggg hhhh iiii jjjj'
 
@@ -187,21 +203,18 @@ class TestScoreBoundaries(unittest.TestCase):
         self.assertNotIn('low lexical overlap', at)
         self.assertIn('low lexical overlap', below)
 
-    def test_number_note_boundary(self):
-        _, _, at = self.score('alpha 10 20', 'alpha 10')
-        _, _, below = self.score('alpha 10 20 30', 'alpha 10')
-        self.assertNotIn('number mismatch', at)
-        self.assertIn('number mismatch', below)
+    def test_any_missing_number_is_a_mismatch(self):
+        _, _, missing = self.score('alpha 10 20', 'alpha 10')
         _, _, full = self.score('alpha 10 20', 'alpha 10 20')
+        self.assertIn('number mismatch', missing)
         self.assertNotIn('number mismatch', full)
 
-    ENTITIES = 'Alpha, Bravo, Charlie, Delta, Echo, Foxtrot, Golf, Hotel, India, Juliet'
-
-    def test_entity_note_boundary(self):
-        _, _, at = self.score(self.ENTITIES, 'Alpha, Bravo, Charlie')
-        _, _, below = self.score(self.ENTITIES, 'Alpha, Bravo')
-        self.assertNotIn('entity mismatch', at)
-        self.assertIn('entity mismatch', below)
+    def test_any_missing_entity_is_a_mismatch_and_case_is_ignored(self):
+        status, _, notes = self.score('Alpha acquired Bravo last spring', 'gamma acquired bravo last spring')
+        self.assertEqual(status, 'partial')
+        self.assertIn('entity mismatch', notes)
+        status, _, notes = self.score('Revenue at Acme grew strongly', 'acme revenue grew strongly')
+        self.assertEqual((status, notes), ('supported', 'adequate overlap'))
 
     def test_year_note_boundary(self):
         _, _, partial = self.score('alpha 2019 2020', 'alpha 2020')
@@ -209,36 +222,24 @@ class TestScoreBoundaries(unittest.TestCase):
         self.assertIn('year mismatch', partial)
         self.assertNotIn('year mismatch', full)
 
-    def test_tie_keeps_first_quote_notes(self):
-        claim = 'alpha bravo charlie delta 2020 Qux, Zed'
-        first = 'alpha bravo 2020'      # (0.5, 1, 1, 0) -> 0.6, entity mismatch
-        second = 'charlie 2020 Qux'     # (0.25, 1, 1, 0.5) -> 0.6, low lexical overlap
-        s1 = self.score(claim, first)
-        s2 = self.score(claim, second)
-        self.assertEqual((s1[1], s2[1]), (0.6, 0.6))
-        self.assertNotEqual(s1[2], s2[2])
-        self.assertEqual(self.score(claim, first, second)[2], s1[2])
-        self.assertEqual(self.score(claim, second, first)[2], s2[2])
 
+class TestParagraphBoundaries(unittest.TestCase):
+    """Citation inference stays inside the claim's own paragraph (R11-02)."""
 
-class TestInferWindows(unittest.TestCase):
-    CLAIM = 'Windowed claim.'
+    def infer(self, md, claim):
+        return vcs.infer_citation_numbers_from_context(md, claim)
 
-    def doc(self, end_index):
-        """Claim, blank line, filler, then '[7]' ending exactly at end_index."""
-        head = self.CLAIM + '\n\n'
-        filler = 'x' * (end_index - len(head) - 3)
-        return head + filler + '[7]'
+    def test_long_paragraph_has_no_length_cap(self):
+        md = 'Claim here. ' + 'x' * 3000 + ' [7]'
+        self.assertEqual(self.infer(md, 'Claim here.'), [7])
 
-    def test_forward_window_800(self):
-        self.assertEqual(vcs.infer_citation_numbers_from_context(self.doc(800), self.CLAIM), [7])
-        self.assertEqual(vcs.infer_citation_numbers_from_context(self.doc(801), self.CLAIM), [])
-
-    def test_unparagraphed_window_1200(self):
-        def one_para(end):
-            return self.CLAIM + ' ' + 'x' * (end - len(self.CLAIM) - 1 - 3) + '[7]'
-        self.assertEqual(vcs.infer_citation_numbers_from_context(one_para(1200), self.CLAIM), [7])
-        self.assertEqual(vcs.infer_citation_numbers_from_context(one_para(1201), self.CLAIM), [])
+    def test_blank_line_heading_and_list_items_end_the_paragraph(self):
+        self.assertEqual(self.infer('Claim here.\n\n[7]', 'Claim here.'), [])
+        self.assertEqual(self.infer('Claim here.\n## H\n[7]', 'Claim here.'), [])
+        self.assertEqual(self.infer('- Claim here.\n- other [7]', 'Claim here.'), [])
+        self.assertEqual(self.infer('1. Claim here.\n2) other [7]', 'Claim here.'), [])
+        # A wrapped line inside the same paragraph still counts.
+        self.assertEqual(self.infer('Claim here and\nit continues [7].\n\nNext [8].', 'Claim here and'), [7])
 
 
 class TestLocators(unittest.TestCase):
@@ -322,16 +323,16 @@ class TestFindReport(unittest.TestCase):
         os.utime(a, (3000, 3000))
         self.assertEqual(vcs._find_report_path(d), a)
 
-    def test_any_md_excluding_readme(self):
+    def test_other_markdown_is_never_taken_for_the_report(self):
+        # R11-14: critique.md, handoff.md or decision-record.md must never stand in for the report.
         d = tmpdir()
         put(d, 'README.md', 'r')
-        self.assertIsNone(vcs._find_report_path(d))
-        put(d, 'old.md', 'o')
-        put(d, 'new.md', 'n')
+        put(d, 'critique.md', 'c')
         os.mkdir(os.path.join(d, 'dir.md'))
-        os.utime(os.path.join(d, 'old.md'), (1000, 1000))
-        os.utime(os.path.join(d, 'new.md'), (2000, 2000))
-        self.assertEqual(vcs._find_report_path(d), os.path.join(d, 'new.md'))
+        self.assertIsNone(vcs._find_report_path(d))
+        put(d, 'research_report.md', 'the report')
+        os.utime(os.path.join(d, 'critique.md'), (4_000_000_000, 4_000_000_000))
+        self.assertEqual(vcs._find_report_path(d), os.path.join(d, 'research_report.md'))
 
     def test_empty_dir(self):
         self.assertIsNone(vcs._find_report_path(tmpdir()))
@@ -373,11 +374,11 @@ class TestHugeNumbers(unittest.TestCase):
         md = 'Claim here.\n\n[' + '9' * 5000 + ', 2]'
         self.assertEqual(vcs.infer_citation_numbers_from_context(md, 'Claim here.'), [])
 
-    def test_nine_digit_numbers_still_parsed(self):
-        md = '## Bibliography\n[123456789] [x](http://a.com)\n'
-        self.assertEqual(vcs.parse_bibliography_number_to_url(md), {123456789: 'http://a.com'})
-        self.assertEqual(vcs.infer_citation_numbers_from_context('Claim [123456789, 5]', 'Claim'),
-                         [123456789, 5])
+    def test_citation_numbers_are_bounded_to_four_digits(self):
+        # An identifier such as [20240101] in body text is not a citation.
+        md = '## Bibliography\n[12345] [x](http://a.com)\n[1234] [y](http://b.com)\n'
+        self.assertEqual(vcs.parse_bibliography_number_to_url(md), {1234: 'http://b.com'})
+        self.assertEqual(vcs.infer_citation_numbers_from_context('Claim [20240101] [1234, 5]', 'Claim'), [1234, 5])
 
 
 class TestDisplayMapping(unittest.TestCase):
@@ -426,12 +427,9 @@ class TestInfer(unittest.TestCase):
         md = 'Start claim here [5]'
         self.assertEqual(vcs.infer_citation_numbers_from_context(md, 'Start claim here'), [5])
 
-    def test_forward_window_when_paragraph_has_none(self):
+    def test_no_inheritance_from_the_next_paragraph(self):
         md = 'Claim only.\n\nNext para cites [7].'
-        self.assertEqual(vcs.infer_citation_numbers_from_context(md, 'Claim only.'), [7])
-        # duplicates collapse in the window as well
-        md = 'Claim only.\n\nNext [7] and [7, 8].'
-        self.assertEqual(vcs.infer_citation_numbers_from_context(md, 'Claim only.'), [7, 8])
+        self.assertEqual(vcs.infer_citation_numbers_from_context(md, 'Claim only.'), [])
 
     def test_no_citations_anywhere(self):
         self.assertEqual(vcs.infer_citation_numbers_from_context('Claim.\n\nNothing.', 'Claim.'), [])
@@ -460,7 +458,7 @@ class TestCmdVerify(unittest.TestCase):
             {'evidence_id': 'e2', 'source_id': 'other', 'quote': 'unrelated'},
         ])
         put_jsonl(d, 'claims.jsonl', [
-            {'claim_id': 'c1', 'section_id': 'bibliography', 'text': 'dropped'},
+            {'claim_id': 'c1', 'section_id': 'bibliography', 'text': 'kept, not scored'},
             {'claim_id': 'c2', 'section_id': 'findings', 'claim_type': 'factual',
              'text': 'Tesla shipped 500 cars in 2023', '_citation_numbers': [1]},
             {'claim_id': 'c2', 'section_id': 'findings', 'text': 'duplicate dropped'},
@@ -476,83 +474,95 @@ class TestCmdVerify(unittest.TestCase):
             {'claim_id': 'c10', 'section_id': 'findings', 'claim_type': 'factual', 'text': 'Tesla',
              'evidence_ids': ['e1', 'missing']},
         ])
-        code, out = run_cmd(vcs.cmd_verify, dir=d, strict=False)
+        code, out = run_cmd(vcs.cmd_verify, dir=d, strict=False, report=None)
         self.assertIsNone(code)
         summary = json.loads(out)
         rows = {c['claim_id']: c for c in get_jsonl(d, 'claims.jsonl')}
-        self.assertNotIn('c1', rows)
+        self.assertEqual(len(rows), 10)  # every distinct claim survives, the duplicate is merged
+        self.assertEqual(rows['c1']['support_status'], 'not_applicable')
         self.assertEqual(rows['c2']['support_status'], 'supported')
         self.assertEqual(rows['c2']['cited_source_ids'], ['s1'])
         self.assertEqual(rows['c3']['_citation_numbers'], [1])
         self.assertEqual(rows['c3']['cited_source_ids'], ['s1'])
         self.assertEqual(rows['c4']['support_status'], 'unsupported')
-        self.assertEqual(rows['c5']['support_status'], 'supported')
+        self.assertEqual(rows['c5']['support_status'], 'not_applicable')
         self.assertEqual(rows['c6']['claim_type'], 'recommendation')
         self.assertEqual(rows['c6']['support_status'], 'unsupported')
         self.assertEqual(rows['c7']['claim_type'], 'synthesis')
         self.assertEqual(rows['c8']['claim_type'], 'factual')  # had citations: stays factual
         self.assertEqual(rows['c8']['cited_source_ids'], [])
         self.assertEqual(rows['c9']['support_status'], 'needs_review')
-        self.assertIn(rows['c10']['support_status'], ('supported', 'partial', 'needs_review'))
+        self.assertEqual(rows['c10']['support_status'], 'supported')
         self.assertIn('_support_score', rows['c10'])
         self.assertEqual(summary['status'], 'pass')
-        self.assertEqual(summary['verified'], 9)
+        self.assertEqual(summary['report'], 'research_report_x.md')
+        self.assertEqual(summary['verified'], 8)  # not_applicable rows are not scored
         self.assertEqual(summary['factual_unsupported'], 2)  # c4 and c8
-        self.assertEqual(summary['total_factual'], sum(1 for c in rows.values() if c['claim_type'] == 'factual'))
+        self.assertEqual(summary['factual_not_supported'], 4)  # c3, c4, c8 and c9
+        self.assertEqual(summary['total_factual'], 6)
         self.assertEqual(summary['support_status_counts']['unsupported'], 4)
 
     def test_strict_fails_exit_1(self):
         d = tmpdir()
+        put(d, 'research_report.md', '# R\n')
         put_jsonl(d, 'claims.jsonl', [{'claim_id': 'a', 'section_id': 's', 'claim_type': 'factual', 'text': 't'}])
-        code, out = run_cmd(vcs.cmd_verify, dir=d, strict=True)
+        code, out = run_cmd(vcs.cmd_verify, dir=d, strict=True, report=None)
         self.assertEqual(code, 1)
         self.assertEqual(json.loads(out)['status'], 'fail')
         self.assertEqual(json.loads(out)['unsupported_rate'], 1.0)
+
+    def test_strict_fails_partial_and_needs_review_factual_claims(self):
+        d = tmpdir()
+        put(d, 'research_report.md', '# R\n')
+        put_jsonl(d, 'evidence.jsonl', [{'evidence_id': 'e1', 'source_id': 's', 'quote': 'alpha bravo'}])
+        put_jsonl(d, 'claims.jsonl', [{'claim_id': 'a', 'section_id': 's', 'claim_type': 'factual',
+                                       'text': 'alpha bravo charlie delta eeee', 'evidence_ids': ['e1']}])
+        code, out = run_cmd(vcs.cmd_verify, dir=d, strict=True, report=None)
+        self.assertEqual(code, 1)
+        summary = json.loads(out)
+        self.assertEqual((summary['factual_unsupported'], summary['factual_not_supported']), (0, 1))
 
     def test_claim_without_claim_type_defaults_to_factual_and_is_persisted(self):
         # Regression: the 'factual' default was applied to a local variable
         # only, so such a claim was never counted as factual and --strict
         # could not fail on it.
         d = tmpdir()
+        put(d, 'research_report.md', '# R\n')
         put_jsonl(d, 'claims.jsonl', [{'claim_id': 'a', 'section_id': 's', 'text': 't'}])
-        code, out = run_cmd(vcs.cmd_verify, dir=d, strict=True)
+        code, out = run_cmd(vcs.cmd_verify, dir=d, strict=True, report=None)
         self.assertEqual(code, 1)
         summary = json.loads(out)
         self.assertEqual((summary['factual_unsupported'], summary['total_factual']), (1, 1))
         self.assertEqual(get_jsonl(d, 'claims.jsonl')[0]['claim_type'], 'factual')
 
-    def test_strict_passes_when_no_unsupported(self):
+    def test_strict_passes_when_no_factual_claims(self):
         d = tmpdir()
+        put(d, 'research_report.md', '# R\n')
         put_jsonl(d, 'claims.jsonl', [{'claim_id': 'a', 'section_id': 's', 'claim_type': 'speculation', 'text': 't'}])
-        code, out = run_cmd(vcs.cmd_verify, dir=d, strict=True)
+        code, out = run_cmd(vcs.cmd_verify, dir=d, strict=True, report=None)
         self.assertIsNone(code)
         self.assertEqual(json.loads(out)['status'], 'pass')
 
-    def test_empty_dir_and_unreadable_report(self):
+    def test_explicit_report_wins(self):
         d = tmpdir()
-        code, out = run_cmd(vcs.cmd_verify, dir=d, strict=True)
+        put(d, 'research_report.md', 'not this one')
+        other = os.path.join(d, 'other-report.md')
+        put(d, 'other-report.md', '# R\n')
+        code, out = run_cmd(vcs.cmd_verify, dir=d, strict=False, report=other)
         self.assertIsNone(code)
-        self.assertEqual(json.loads(out)['verified'], 0)
-        # report exists but open() fails -> tolerated
-        put(d, 'research_report_a.md', '# x')
-        put_jsonl(d, 'claims.jsonl', [{'claim_id': 'a', 'section_id': 's', 'text': 't', 'claim_type': 'speculation'}])
-        real_open = open
+        self.assertEqual(json.loads(out)['report'], 'other-report.md')
 
-        def flaky(path, *a, **k):
-            if str(path).endswith('research_report_a.md'):
-                raise OSError('denied')
-            return real_open(path, *a, **k)
-        with mock.patch('builtins.open', flaky):
-            code, out = run_cmd(vcs.cmd_verify, dir=d, strict=False)
-        self.assertIsNone(code)
-        self.assertEqual(json.loads(out)['verified'], 1)
-
-    def test_report_path_without_existing_file(self):
+    def test_missing_report_fails_closed(self):
         d = tmpdir()
-        with mock.patch.object(vcs, '_find_report_path', return_value=os.path.join(d, 'ghost.md')):
-            code, out = run_cmd(vcs.cmd_verify, dir=d, strict=False)
-        self.assertIsNone(code)
-        self.assertEqual(json.loads(out)['status'], 'pass')
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            code, _ = run_cmd(vcs.cmd_verify, dir=d, strict=True, report=None)
+        self.assertEqual(code, 2)
+        self.assertIn('report not found', err.getvalue())
+        with mock.patch.object(vcs, '_find_report_path', return_value=os.path.join(d, 'ghost.md')), \
+                contextlib.redirect_stderr(io.StringIO()):
+            code, _ = run_cmd(vcs.cmd_verify, dir=d, strict=False, report=None)
+        self.assertEqual(code, 2)
 
 
 class TestCmdReport(unittest.TestCase):
@@ -564,15 +574,17 @@ class TestCmdReport(unittest.TestCase):
             {'claim_id': 'a', 'section_id': 'sec', 'claim_type': 'factual', 'support_status': 'unsupported', 'text': 'dup'},
             {'claim_id': 'b', 'section_id': 'sec2', 'claim_type': 'factual', 'support_status': 'needs_review', 'text': 'short'},
             {'claim_id': 'c', 'section_id': 'sec', 'claim_type': 'synthesis', 'support_status': 'unsupported', 'text': 'n/a'},
+            {'claim_id': 'd', 'section_id': 'sec', 'claim_type': 'factual', 'support_status': 'partial', 'text': 'half'},
         ])
         code, out = run_cmd(vcs.cmd_report, dir=d)
         self.assertIsNone(code)
-        self.assertIn('**Total claims:** 3', out)
+        self.assertIn('**Total claims:** 4', out)
         self.assertIn('## Unsupported/Review-needed Factual Claims', out)
         self.assertIn('- [unsupported] `sec`: ' + 'T' * 100 + '...', out)
         self.assertNotIn('T' * 101, out)
         self.assertIn('  Notes: low lexical overlap', out)
         self.assertIn('- [needs_review] `sec2`: short...', out)
+        self.assertIn('- [partial] `sec`: half...', out)
         self.assertNotIn('All factual claims', out)
 
     def test_all_clear(self):
@@ -591,6 +603,7 @@ class TestCmdReport(unittest.TestCase):
 class TestMain(unittest.TestCase):
     def test_dispatch(self):
         d = tmpdir()
+        put(d, 'research_report.md', '# R\n')
         out = io.StringIO()
         with mock.patch.object(sys, 'argv', ['v', 'report', '--dir', d]), contextlib.redirect_stdout(out):
             vcs.main()
@@ -599,6 +612,17 @@ class TestMain(unittest.TestCase):
         with mock.patch.object(sys, 'argv', ['v', 'verify', '--dir', d]), contextlib.redirect_stdout(out):
             vcs.main()
         self.assertEqual(json.loads(out.getvalue())['status'], 'pass')
+
+    def test_corrupt_ledger_exits_2(self):
+        d = tmpdir()
+        put(d, 'research_report.md', '# R\n')
+        put(d, 'claims.jsonl', '[1, 2]\n')
+        err = io.StringIO()
+        with mock.patch.object(sys, 'argv', ['v', 'verify', '--dir', d]), contextlib.redirect_stderr(err), \
+                self.assertRaises(SystemExit) as ctx:
+            vcs.main()
+        self.assertEqual(ctx.exception.code, 2)
+        self.assertIn('expected a JSON object', err.getvalue())
 
     def test_missing_command_is_usage_error(self):
         err = io.StringIO()
