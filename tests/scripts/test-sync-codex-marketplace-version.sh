@@ -44,7 +44,7 @@ trap 'rm -rf "$TMP"' EXIT
 # checkout it runs from: work on a snapshot so the repository is never written.
 # shellcheck source=tests/lib/repo-snapshot.sh
 source "$SOURCE_REPO_ROOT/tests/lib/repo-snapshot.sh"
-REPO_ROOT="$(sb_repo_snapshot "$SOURCE_REPO_ROOT" "$TMP/repo")"
+REPO_ROOT="$(sb_repo_snapshot --git "$SOURCE_REPO_ROOT" "$TMP/repo")"
 SCRIPT="$REPO_ROOT/scripts/sync-codex-marketplace-version.sh"
 
 MARKETPLACE="$TMP/marketplace"
@@ -69,8 +69,16 @@ git -C "$MARKETPLACE" push -q -u origin HEAD:main
 
 bash "$REPO_ROOT/scripts/sync-codex-package.sh" >/dev/null
 plugin_v="$(jq -r '.version' "$REPO_ROOT/package.json")"
+snap_git() { git -C "$REPO_ROOT" -c user.name=Tests -c user.email=tests@example.invalid -c commit.gpgsign=false -c tag.gpgsign=false "$@"; }
 
+# Release step 1 (this repository only), then step 2 once the release commit is tagged.
 AGENT_PLUGINS_REPO_ROOT="$MARKETPLACE" bash "$SCRIPT" >/dev/null
+assert_equal "in-repo sync publishes nothing" "0.0.1" \
+  "$(git -C "$REMOTE" show main:.agents/plugins/marketplace.json | jq -r '.plugins[] | select(.name=="silver-bullet") | .version')"
+snap_git add -A
+snap_git commit -q --allow-empty -m "chore(release): $plugin_v"
+snap_git tag -a "v$plugin_v" -m "Release $plugin_v"
+AGENT_PLUGINS_REPO_ROOT="$MARKETPLACE" bash "$SCRIPT" --publish >/dev/null
 
 manifest_v="$(jq -r '.plugins[] | select(.name=="silver-bullet") | .version' "$MARKETPLACE/.agents/plugins/marketplace.json")"
 manifest_ref="$(jq -r '.plugins[] | select(.name=="silver-bullet") | .source.ref' "$MARKETPLACE/.agents/plugins/marketplace.json")"

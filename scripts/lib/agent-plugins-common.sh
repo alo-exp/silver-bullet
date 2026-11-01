@@ -27,29 +27,124 @@ resolve_agent_plugins_repo_url() {
   agent_plugins_repo_url
 }
 
-agent_plugins_commit_push_if_dirty() {
-  local root="$1"
-  local message="$2"
-  local skip_push="${AGENT_PLUGINS_SKIP_PUSH:-0}"
+# agent_plugins_parse_sync_args ARG...: the per-host sync scripts take [--publish] [version].
+# Sets AGENT_PLUGINS_PUBLISH (1 with --publish, else 0) and AGENT_PLUGINS_VERSION.
+agent_plugins_parse_sync_args() {
+  # shellcheck disable=SC2034  # AGENT_PLUGINS_PUBLISH is read by the scripts that source this file
+  AGENT_PLUGINS_PUBLISH=0
+  AGENT_PLUGINS_VERSION=""
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --publish)
+        # shellcheck disable=SC2034  # read by the scripts that source this file
+        AGENT_PLUGINS_PUBLISH=1
+        ;;
+      -*)
+        echo "ERROR: unknown option: $1" >&2
+        return 1
+        ;;
+      *)
+        if [[ -n "$AGENT_PLUGINS_VERSION" ]]; then
+          echo "ERROR: unexpected argument: $1" >&2
+          return 1
+        fi
+        AGENT_PLUGINS_VERSION="$1"
+        ;;
+    esac
+    shift
+  done
+}
 
-  if git -C "$root" diff --quiet && git -C "$root" diff --cached --quiet; then
+# agent_plugins_release_tag_commit REPO_ROOT VERSION: print the commit that the release tag
+# vVERSION points at. The unified marketplace is published only after that tag exists.
+agent_plugins_release_tag_commit() {
+  local repo_root="$1" version="$2" sha
+  sha="$(git -C "$repo_root" rev-parse --verify --quiet "refs/tags/v${version}^{commit}" 2>/dev/null || true)"
+  if [[ -z "$sha" ]]; then
+    echo "ERROR: release tag v${version} does not exist in ${repo_root}. The unified marketplace is published only after the release is tagged and its CI is green (docs/RELEASE.md): run scripts/sync-release-marketplace-versions.sh --publish ${version}" >&2
+    return 1
+  fi
+  printf '%s\n' "$sha"
+}
+
+# agent_plugins_json_rewrite FILE JQ_ARG...: replace FILE with `jq JQ_ARG... FILE`. The output
+# goes to a temporary file in FILE's directory that already carries FILE's mode (mktemp
+# alone creates 0600) and is then renamed over FILE, so the rewrite is atomic and keeps the
+# permissions. When jq fails, FILE is untouched and no temporary file remains.
+agent_plugins_json_rewrite() {
+  local file="$1" tmp
+  shift
+  tmp="$(mktemp "${file}.XXXXXX")"
+  if cp -p -- "$file" "$tmp" && jq "$@" "$file" >"$tmp"; then
+    mv -f -- "$tmp" "$file"
     return 0
   fi
+  rm -f -- "$tmp"
+  return 1
+}
 
-  git -C "$root" add -A
-  git -C "$root" commit -m "$message"
-
-  if [[ "$skip_push" == "1" ]]; then
-    return 0
+# agent_plugins_upstream ROOT: print the REMOTE/BRANCH that ROOT's current branch tracks.
+agent_plugins_upstream() {
+  local root="$1" upstream
+  upstream="$(git -C "$root" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || true)"
+  if [[ "$upstream" != */* ]]; then
+    echo "ERROR: $root does not track an upstream branch; set one with: git -C $root branch --set-upstream-to=origin/<branch>" >&2
+    return 1
   fi
+  printf '%s\n' "$upstream"
+}
 
-  local upstream_ref
-  upstream_ref="$(git -C "$root" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || true)"
-  if [[ "$upstream_ref" == */* ]]; then
-    git -C "$root" push "${upstream_ref%%/*}" "HEAD:${upstream_ref#*/}"
-  else
-    git -C "$root" push
+# agent_plugins_check_publishable ROOT: a marketplace checkout about to be pushed must track
+# an upstream branch and hold no unpushed commits, so the push publishes this sync only.
+agent_plugins_check_publishable() {
+  local root="$1" upstream ahead
+  upstream="$(agent_plugins_upstream "$root")" || return 1
+  ahead="$(git -C "$root" rev-list --count "${upstream}..HEAD")"
+  if [[ "$ahead" != "0" ]]; then
+    echo "ERROR: $root has $ahead unpushed commit(s) on top of $upstream; push or drop them first, or the marketplace sync would publish them" >&2
+    return 1
   fi
+}
+
+# agent_plugins_require_clean_path ROOT PATH: refuse to rewrite, and so commit, a file that
+# already holds uncommitted changes (someone's work in progress in a shared checkout).
+agent_plugins_require_clean_path() {
+  local root="$1" path="$2"
+  if [[ -n "$(git -C "$root" status --porcelain -- "$path")" ]]; then
+    echo "ERROR: $root/$path has uncommitted changes; commit or discard them before the marketplace sync" >&2
+    return 1
+  fi
+}
+
+# agent_plugins_commit_paths ROOT MESSAGE PATH...: commit PATH... and nothing else. Other
+# modified, staged or untracked files in ROOT stay out of the commit.
+agent_plugins_commit_paths() {
+  local root="$1" message="$2"
+  shift 2
+  git -C "$root" add -- "$@"
+  git -C "$root" diff --cached --quiet -- "$@" && return 0
+  git -C "$root" commit -q -m "$message" -- "$@"
+}
+
+# agent_plugins_push ROOT: push ROOT's unpushed commits to its upstream branch, then confirm
+# that the remote branch points at HEAD. Nothing happens when nothing is unpushed.
+# AGENT_PLUGINS_SKIP_PUSH=1 keeps the commits local; the release wrapper pushes them once.
+agent_plugins_push() {
+  local root="$1" upstream remote branch ahead head remote_head
+  [[ "${AGENT_PLUGINS_SKIP_PUSH:-0}" != "1" ]] || return 0
+  upstream="$(agent_plugins_upstream "$root")" || return 1
+  remote="${upstream%%/*}"
+  branch="${upstream#*/}"
+  ahead="$(git -C "$root" rev-list --count "${upstream}..HEAD")"
+  [[ "$ahead" != "0" ]] || return 0
+  git -C "$root" push "$remote" "HEAD:refs/heads/${branch}"
+  head="$(git -C "$root" rev-parse HEAD)"
+  remote_head="$(git -C "$root" ls-remote "$remote" "refs/heads/${branch}" | cut -f1)"
+  if [[ "$remote_head" != "$head" ]]; then
+    echo "ERROR: the push to $remote/$branch did not land: the remote branch is at ${remote_head:-<missing>}, expected $head" >&2
+    return 1
+  fi
+  echo "✓ Pushed $ahead commit(s) to $remote/$branch"
 }
 
 agent_plugins_catalog_path() {

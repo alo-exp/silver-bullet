@@ -37,11 +37,21 @@ git -C "$MARKETPLACE" push -q -u origin HEAD:main
 
 REAL_BEFORE="$(git -C "$TL_REPO_ROOT" status --porcelain --untracked-files=all -- .claude-plugin)"
 plugin_v="$(jq -r '.version' "$SNAP/.claude-plugin/plugin.json")"
-tl_run env AGENT_PLUGINS_REPO_ROOT="$MARKETPLACE" timeout 60 bash "$SCRIPT" "$plugin_v"
-assert_eq "sync exits 0" 0 "$TL_STATUS"
+snap_git() { git -C "$SNAP" -c user.name=Tests -c user.email=tests@example.invalid -c commit.gpgsign=false -c tag.gpgsign=false "$@"; }
 
-assert_eq "remote Claude marketplace version bumped" "$plugin_v" "$(sb_version "$MARKETPLACE/.claude-plugin/marketplace.json")"
+# Release step 1: align this repository's manifest; nothing is published yet.
+remote_seed="$(git -C "$REMOTE" rev-parse main)"
+tl_run env AGENT_PLUGINS_REPO_ROOT="$MARKETPLACE" timeout 60 bash "$SCRIPT" "$plugin_v"
+assert_eq "in-repo sync exits 0" 0 "$TL_STATUS"
 assert_eq "snapshot Claude marketplace version matches plugin.json" "$plugin_v" "$(sb_version "$SNAP/.claude-plugin/marketplace.json")"
+assert_eq "in-repo sync publishes nothing" "$remote_seed" "$(git -C "$REMOTE" rev-parse main)"
+
+# Release step 2, after the release commit is tagged: publish.
+snap_git commit -q --allow-empty -am "chore(release): $plugin_v"
+snap_git tag -a "v$plugin_v" -m "Release $plugin_v"
+tl_run env AGENT_PLUGINS_REPO_ROOT="$MARKETPLACE" timeout 60 bash "$SCRIPT" --publish "$plugin_v"
+assert_eq "publish exits 0" 0 "$TL_STATUS"
+assert_eq "remote Claude marketplace version bumped" "$plugin_v" "$(sb_version "$MARKETPLACE/.claude-plugin/marketplace.json")"
 assert_eq "bump pushed to the remote" "$plugin_v" "$(git -C "$REMOTE" show main:.claude-plugin/marketplace.json | jq -r '.plugins[] | select(.name=="silver-bullet") | .version')"
 assert_eq "the real checkout is untouched" "$REAL_BEFORE" "$(git -C "$TL_REPO_ROOT" status --porcelain --untracked-files=all -- .claude-plugin)"
 
