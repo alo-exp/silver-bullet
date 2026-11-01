@@ -633,7 +633,7 @@ class TemplateContractTests(unittest.TestCase):
             "_homepageFromHeading",
             "vc-name-link",
             "ensureExternalLinksNewTab",
-            'target="_blank"',
+            "a.target = '_blank'",
             "noopener noreferrer",
             "landscape-report.pdf",
             "landscape-report.pdf?v=",
@@ -679,13 +679,17 @@ class TemplateContractTests(unittest.TestCase):
         self.assertIn("e.preventDefault()", snav)
         self.assertIn("_vendorCardDomId", snav)
         self.assertIn("Jump to ${display}", snav)
-        # Card titles keep new-tab attrs
-        self.assertIn('target="_blank" rel="noopener noreferrer"', template)
+        # Card titles and vendor links are built by externalLink(): new tab, noopener, http(s) only.
+        link_fn = template.split("function externalLink(", 1)[1].split("function lucideIcon(", 1)[0]
+        self.assertIn("a.target = '_blank';", link_fn)
+        self.assertIn("a.rel = 'noopener noreferrer';", link_fn)
+        self.assertIn("safeHttpUrl(url)", link_fn)
+        self.assertIn("externalLink(displayName, vendorUrl, 'vc-name-link')", template)
         from landscape_preview_render import _patch_chart_bootstrap
 
         boot = _patch_chart_bootstrap(template)
         self.assertIn("ensureExternalLinksNewTab", boot)
-        self.assertIn('target="_blank" rel="noopener noreferrer"', boot)
+        self.assertIn("externalLink(label, vendorUrlForLabel(label), 'vname-link')", boot)
 
     def test_pdf_export_opens_sibling_file_not_blob_or_print(self) -> None:
         """Create PDF must open sibling landscape-report.pdf — never blob:null or print()."""
@@ -822,8 +826,10 @@ class TemplateContractTests(unittest.TestCase):
         )[0]
         self.assertIn("HOMEPAGE_VENDOR_URLS[label] = url", apply_fn)
         self.assertIn("_homepageFromHeading(h3, displayName)", boot)
-        vendor_url_fn = boot.split("function _vendorUrl", 1)[1].split("function ", 1)[0]
+        vendor_url_fn = boot.split("function vendorUrlForLabel", 1)[1].split("function ", 1)[0]
         self.assertIn("HOMEPAGE_VENDOR_URLS[label]", vendor_url_fn)
+        self.assertIn("safeHttpUrl(", vendor_url_fn)
+        self.assertIn("return vendorUrlForLabel(label);", boot.split("function _vendorUrl", 1)[1].split("function ", 1)[0])
 
     def test_matrix_charts_use_quadrant_fills_not_wave_zones(self) -> None:
         template = (ASSETS / "landscape-preview.template.html").read_text(encoding="utf-8")
