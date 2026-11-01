@@ -1,7 +1,7 @@
 """Safe edits of host configuration files for the Silver Bullet installers.
 
-The installers change files that belong to the user's coding hosts (~/.claude, ~/.codex,
-~/.cursor). Everything here follows the same rules:
+The installers change files that belong to the user's coding hosts (their per-user config
+directories). Everything here follows the same rules:
 
 * Reads refuse instead of guessing: an unparseable or wrongly typed file raises
   ``ConfigError`` and the caller leaves the file alone.
@@ -164,9 +164,9 @@ def is_sb_hook_command(command, *, hook_names=frozenset(), install_roots=()) -> 
     install mirror (``.../silver-bullet/<x.y.z>|current/hooks/``) or one of
     ``install_roots``; and, when the file name is one of ``hook_names``, Silver Bullet's
     checkout and mirror layouts (``.../silver-bullet/<dir>/hooks/``,
-    ``.../plugins/silver-bullet/hooks/``) and the unexpanded ``${CLAUDE_PLUGIN_ROOT}`` /
-    ``${CURSOR_PLUGIN_ROOT}`` placeholders. A user hook that merely mentions Silver
-    Bullet, or runs its own script through ``$HOME`` or a project path, is never owned.
+    ``.../plugins/silver-bullet/hooks/``) and the unexpanded host plugin-root placeholders.
+    A user hook that merely mentions Silver Bullet, or runs its own script through ``$HOME``
+    or a project path, is never owned.
     """
     program = command_program(command)
     root, sep, name = program.rpartition("/hooks/")

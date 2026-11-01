@@ -220,7 +220,7 @@ install_cursor_plugin_manifest() {
   # SB's hooks into ~/.cursor/hooks.json, and a second plugin-rooted copy would run every
   # hook twice (or fail with 127 in the commands-only copies, which ship no hooks/).
   # The manifest field stays set so Cursor does not fall back to discovering
-  # hooks/hooks.json, which is the Claude-format manifest (R7-26).
+  # hooks/hooks.json, the canonical manifest in another host's format (R7-26).
   printf '{\n  "version": 1,\n  "hooks": {}\n}\n' >"${dest}/cursor-hooks.json"
   chmod 644 "${dest}/cursor-hooks.json"
 }
