@@ -124,8 +124,10 @@ if SB_PROJECT_ROOT="$(find_silver_bullet_project_root)"; then
     merge_silver_bullet_hooks_into_user_config
   fi
 else
-  remove_plugin_enabled "silver-bullet@alo-labs-codex"
-  printf 'Skipping Silver Bullet plugin auto-enable outside a Silver Bullet project root.\n'
+  # Plugin enablement in ~/.codex/config.toml is global: running the installer from
+  # some other directory must neither enable nor disable Silver Bullet for every
+  # project (R7-10). An existing [plugins."silver-bullet@alo-labs-codex"] stays.
+  printf 'Skipping Silver Bullet plugin auto-enable outside a Silver Bullet project root (existing Codex enablement left unchanged).\n'
 fi
 
 if [[ -n "$SB_PROJECT_ROOT" ]]; then
