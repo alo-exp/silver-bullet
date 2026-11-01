@@ -32,7 +32,7 @@ class ClaudeBinFallbackTests(HermeticCase):
             return proc(0, "{}")
 
         with mock.patch.dict(os.environ, env), mock.patch.object(ld, "AGENT_CLAUDE_INVOKE", invoke), \
-                mock.patch.object(ld.subprocess, "run", side_effect=fake):
+                mock.patch.object(ld, "_run_cli", side_effect=fake):
             ld.run_claude_worker(logical_model_id="claude-opus-4.8-medium", prompt="P", output_dir=self.subdir("o"))
         return captured["env"]
 
@@ -85,7 +85,7 @@ class RecursionTests(HermeticCase):
             Path(cmd[cmd.index("--cohort-output") + 1]).write_text(DEEP)
             return proc(0, stdout)
 
-        with mock.patch.object(ld, "AGENT_OPENCODE_DELEGATE", delegate), mock.patch.object(ld.subprocess, "run", side_effect=fake):
+        with mock.patch.object(ld, "AGENT_OPENCODE_DELEGATE", delegate), mock.patch.object(ld, "_run_cli", side_effect=fake):
             results = ld.run_ocg_pool_cohort(
                 ocg_items=[{"logical_model_id": "ocg-minimax-m3"}], phase_id="p", query="q", run_id="r",
                 work_item_id="w", output_dir=self.tmp / "ph", context="", pool="lite")
@@ -94,11 +94,14 @@ class RecursionTests(HermeticCase):
 
 class CursorMutantPins(HermeticCase):
     def test_exact_fallback_sequences(self) -> None:
-        self.assertEqual(
-            ld.cursor_models_to_try("gpt-5.6-sol-medium"),
-            ["gpt-5.6-sol-medium", "gpt-5.6-sol-low", "gpt-5.6-sol-none", "gpt-5.5-medium"],
-        )
-        self.assertEqual(ld.cursor_models_to_try("glm-5.2"), ["glm-5.2-high", "glm-5.2-max"])
+        with mock.patch.dict(os.environ, {"SB_CURSOR_MODEL_ALLOW_FALLBACK": "1"}):
+            self.assertEqual(
+                ld.cursor_models_to_try("gpt-5.6-sol-medium"),
+                ["gpt-5.6-sol-medium", "gpt-5.6-sol-low", "gpt-5.6-sol-none", "gpt-5.5-medium"],
+            )
+            self.assertEqual(ld.cursor_models_to_try("glm-5.2"), ["glm-5.2-high", "glm-5.2-max"])
+        # Fallback disabled (the default): the primary only.
+        self.assertEqual(ld.cursor_models_to_try("gpt-5.6-sol-medium"), ["gpt-5.6-sol-medium"])
 
     def _worker(self, responses: list, logical: str = "composer-2.5"):
         calls: list = []
@@ -108,7 +111,7 @@ class CursorMutantPins(HermeticCase):
             calls.append((cmd, kwargs))
             return queue.pop(0)
 
-        with mock.patch.object(ld.subprocess, "run", side_effect=fake):
+        with mock.patch.object(ld, "_run_cli", side_effect=fake):
             result = ld.run_cursor_worker(logical_model_id=logical, prompt="P", output_dir=self.subdir("o"), timeout_sec=7)
         return result, calls
 

@@ -1,7 +1,7 @@
 """Behavioral tests for live_dispatch: pure helpers, workers, cohort fan-out, orchestration.
 
-All external CLIs are replaced by ``subprocess.run`` doubles; nothing here starts a
-process, touches the network or reads the real HOME.
+All external CLIs are replaced by ``live_dispatch._run_cli`` doubles; nothing here starts
+a process, touches the network or reads the real HOME.
 """
 
 from __future__ import annotations
@@ -38,8 +38,18 @@ class CursorHelperTests(HermeticCase):
             self.assertEqual(ld.cursor_last_resort_model(), "auto")
 
     def test_models_to_try_dedupes_last_resort_equal_to_primary(self) -> None:
-        with mock.patch.dict(os.environ, {"SB_CURSOR_MODEL_LAST_RESORT": "composer-2.5"}):
+        env = {"SB_CURSOR_MODEL_LAST_RESORT": "composer-2.5", "SB_CURSOR_MODEL_ALLOW_FALLBACK": "1"}
+        with mock.patch.dict(os.environ, env):
             self.assertEqual(ld.cursor_models_to_try("composer-2.5"), ["composer-2.5"])
+
+    def test_models_to_try_is_primary_only_unless_fallback_is_allowed(self) -> None:
+        with mock.patch.dict(os.environ, {"SB_CURSOR_MODEL_LAST_RESORT": "auto"}):
+            self.assertEqual(ld.cursor_models_to_try("gemini-3.5-flash"), ["gemini-3.5-flash"])
+        env = {"SB_CURSOR_MODEL_LAST_RESORT": "auto", "SB_CURSOR_MODEL_ALLOW_FALLBACK": "1"}
+        with mock.patch.dict(os.environ, env):
+            self.assertEqual(ld.cursor_models_to_try("gemini-3.5-flash"), ["gemini-3.5-flash", "gemini-3-flash", "auto"])
+        with mock.patch.dict(os.environ, {"SB_CURSOR_MODEL_ALLOW_FALLBACK": "1"}):
+            self.assertEqual(ld.cursor_models_to_try("gemini-3.5-flash"), ["gemini-3.5-flash", "gemini-3-flash"])
 
     def test_models_to_try_unknown_logical_id_maps_to_itself(self) -> None:
         self.assertEqual(ld.cursor_models_to_try("brand-new-model"), ["brand-new-model"])
@@ -110,17 +120,20 @@ class PureHelperTests(HermeticCase):
         cursor = ld.build_worker_prompt(phase_id="DR-RETRIEVE", query="Q?", logical_model_id="grok-4.5")
         self.assertIn("(grok-4.5)", cursor)
         self.assertIn("DR-RETRIEVE phase", cursor)
-        self.assertIn("Research query: Q?", cursor)
+        self.assertRegex(cursor, r"Research query:\n<<<BEGIN UNTRUSTED QUERY [0-9a-f]{16}>>>\nQ\?\n<<<END UNTRUSTED QUERY")
+        self.assertIn(ld.WORKER_TOOL_RULES, cursor)
         self.assertNotIn("Do NOT use tools", cursor)
         self.assertNotIn("Prior context", cursor)
         ocg = ld.build_worker_prompt(
             phase_id="DR-CRITIQUE", query="Q?", logical_model_id="ocg-minimax-m3", context="prior", backend="ocg"
         )
         self.assertIn("Do NOT use tools", ocg)
-        self.assertIn("Prior context:\nprior", ocg)
+        self.assertRegex(ocg, r"<<<BEGIN UNTRUSTED CONTEXT [0-9a-f]{16}>>>\nprior\n<<<END UNTRUSTED CONTEXT")
         self.assertIn("DR-CRITIQUE phase", ocg)
         unknown = ld.build_worker_prompt(phase_id="DR-ODD", query="Q", logical_model_id="m")
         self.assertIn("Execute phase DR-ODD.", unknown)
+        task = ld.build_worker_prompt(phase_id=ld.DEFAULT_PHASE_ID, query="Q", logical_model_id="m")
+        self.assertIn("Task: complete the work described in the query block", task)
 
     def test_build_envelope_without_and_with_routing(self) -> None:
         plain = ld.build_envelope(
@@ -170,7 +183,7 @@ class RunCursorWorkerTests(HermeticCase):
             return item
 
         with mock.patch.dict(os.environ, env):
-            with mock.patch.object(ld.subprocess, "run", side_effect=fake):
+            with mock.patch.object(ld, "_run_cli", side_effect=fake):
                 result = ld.run_cursor_worker(logical_model_id=logical, prompt="P", output_dir=self.out, timeout_sec=7)
         return result, calls
 
@@ -182,24 +195,34 @@ class RunCursorWorkerTests(HermeticCase):
         self.assertEqual(result.raw_output, '{"x": 1}\nwarn')
         cmd, kwargs = calls[0]
         self.assertEqual(cmd[1:4], ["agent", "--print", "--output-format"])
-        self.assertEqual(cmd[-1], "P")
+        self.assertEqual(cmd[-2:], ["--", "P"])
+        self.assertNotIn("--force", cmd)
         self.assertEqual(kwargs["timeout"], 7)
-        self.assertEqual(kwargs["cwd"], str(self.out))
+        # Workers start in a throwaway sandbox, never in the research output directory.
+        self.assertNotEqual(kwargs["cwd"], str(self.out))
+        self.assertFalse(Path(kwargs["cwd"]).exists())
         written = list(self.out.glob("composer-2-5-*.txt"))
         self.assertEqual(len(written), 1)
         self.assertEqual(written[0].read_text(), result.raw_output)
 
-    def test_fallback_success_is_skipped_when_fallback_disallowed_then_fails(self) -> None:
-        # Primary fails on quota; the fallback "succeeds" but fallback is disabled; the rest fail.
-        models = ld.cursor_models_to_try("gpt-5.6-sol-medium")
-        responses = [proc(1, "", "ActionRequiredError: quota"), proc(0, '{"ok": 1}')] + [proc(1, "", "Error: nope")] * (len(models) - 2)
-        result, calls = self.run_worker("gpt-5.6-sol-medium", responses)
+    def test_fallback_models_never_run_when_fallback_disallowed(self) -> None:
+        # Primary fails on quota and fallback is disabled: no fallback session is started.
+        result, calls = self.run_worker("gpt-5.6-sol-medium", [proc(1, "", "ActionRequiredError: quota")])
         self.assertEqual(result.status, "failed")
-        self.assertEqual(len(calls), len(models))
-        self.assertIn("gpt-5.6-sol-medium: quota", result.error)
-        self.assertIn("gpt-5.6-sol-low: fallback disabled (requested gpt-5.6-sol-medium)", result.error)
-        self.assertEqual(result.effective_model_id, models[-1])
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(result.error, "gpt-5.6-sol-medium: quota")
+        self.assertEqual(result.effective_model_id, "gpt-5.6-sol-medium")
         self.assertEqual(self.sleeps, [])
+
+    def test_all_allowed_fallbacks_failing_reports_each(self) -> None:
+        result, calls = self.run_worker(
+            "gemini-3.5-flash",
+            [proc(1, "", "ActionRequiredError: q"), proc(1, "", "Error: nope")],
+            SB_CURSOR_MODEL_ALLOW_FALLBACK="1",
+        )
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(result.error, "gemini-3.5-flash: q; gemini-3-flash: Error: nope")
+        self.assertEqual(result.effective_model_id, "gemini-3-flash")
 
     def test_fallback_success_when_allowed(self) -> None:
         result, _ = self.run_worker(
@@ -220,8 +243,6 @@ class RunCursorWorkerTests(HermeticCase):
         self.assertEqual(result.raw_output, '{"ok": 1}')
 
     def test_transient_retry_success_on_fallback_model_when_allowed(self) -> None:
-        models = ld.cursor_models_to_try("gemini-3.5-flash")
-        self.assertEqual(models, ["gemini-3.5-flash", "gemini-3-flash"])
         result, calls = self.run_worker(
             "gemini-3.5-flash",
             [proc(1, "", "ActionRequiredError: q"), proc(1, "", "Connection lost"), proc(0, '{"ok": 1}')],
@@ -234,17 +255,11 @@ class RunCursorWorkerTests(HermeticCase):
         )
         self.assertEqual(len(calls), 3)
 
-    def test_transient_retry_success_on_fallback_model_disallowed(self) -> None:
-        result, _ = self.run_worker(
-            "gemini-3.5-flash",
-            [proc(1, "", "ActionRequiredError: q"), proc(1, "", "ETIMEDOUT"), proc(0, '{"ok": 1}')],
-        )
-        self.assertEqual(result.status, "failed")
-        self.assertEqual(
-            result.error,
-            "gemini-3.5-flash: q; gemini-3-flash: fallback disabled after retry (requested gemini-3.5-flash, got gemini-3-flash)",
-        )
-        self.assertEqual(result.raw_output, '{"ok": 1}')
+    def test_transient_primary_failure_without_fallback_retries_the_primary(self) -> None:
+        result, calls = self.run_worker("gemini-3.5-flash", [proc(1, "", "ETIMEDOUT"), proc(0, '{"ok": 1}')])
+        self.assertEqual(result.status, "completed")
+        self.assertEqual(result.error, "retry after transient error (gemini-3.5-flash)")
+        self.assertEqual([c[0][c[0].index("--model") + 1] for c in calls], ["gemini-3.5-flash"] * 2)
 
     def test_transient_retry_failure_reports_retry_output(self) -> None:
         result, _ = self.run_worker(
@@ -256,11 +271,10 @@ class RunCursorWorkerTests(HermeticCase):
         self.assertEqual(result.effective_model_id, "composer-2.5")
 
     def test_transient_error_on_non_last_model_does_not_retry(self) -> None:
-        models = ld.cursor_models_to_try("gemini-3.5-flash")
         result, calls = self.run_worker(
-            "gemini-3.5-flash", [proc(1, "", "network down"), proc(1, "", "Error: x")]
+            "gemini-3.5-flash", [proc(1, "", "network down"), proc(1, "", "Error: x")], SB_CURSOR_MODEL_ALLOW_FALLBACK="1"
         )
-        self.assertEqual(len(calls), len(models))
+        self.assertEqual(len(calls), 2)
         self.assertEqual(self.sleeps, [])
         self.assertEqual(result.status, "failed")
 
@@ -273,6 +287,14 @@ class RunCursorWorkerTests(HermeticCase):
         exc_none = subprocess.TimeoutExpired(cmd="x", timeout=1)
         result, _ = self.run_worker("composer-2.5", [exc_none])
         self.assertEqual(result.raw_output, "")
+        exc_text = subprocess.TimeoutExpired(cmd="x", timeout=1, output="already text")
+        result, _ = self.run_worker("composer-2.5", [exc_text])
+        self.assertEqual(result.raw_output, "already text")
+
+    def test_other_launch_errors_are_failed_workers(self) -> None:
+        result, _ = self.run_worker("composer-2.5", [PermissionError(13, "Permission denied")])
+        self.assertEqual(result.status, "failed")
+        self.assertIn("cursor launch failed", result.error)
 
     def test_missing_cli(self) -> None:
         result, _ = self.run_worker("composer-2.5", [FileNotFoundError("cursor")])
@@ -304,11 +326,11 @@ class DelegateWorkerTests(HermeticCase):
         with mock.patch.object(ld.shutil, "which", return_value=None):
             self.assertEqual(ld._resolve_codex_bin(), "codex")
 
-    def test_delegate_work_dir_is_repo_root(self) -> None:
-        self.assertEqual(ld._delegate_work_dir(self.out), ld.REPO_ROOT)
+    def test_repo_root_is_the_silver_bullet_root(self) -> None:
         self.assertTrue((ld.REPO_ROOT / "skills" / "silver-multi-ai-task").is_dir())
+        self.assertEqual(ld.SKILL_DIR, ld.REPO_ROOT / "skills" / "silver-multi-ai-task")
 
-    def _run(self, fn, logical: str, outcome, invoke_attr: str):
+    def _run(self, fn, logical: str, outcome, invoke_attr: str, prompt: str = "PR"):
         # The invoke script is a temp file, so the tests do not depend on the checkout's scripts/.
         invoke = self.tmp / f"{invoke_attr}.sh"
         invoke.write_text("#!/bin/sh\n")
@@ -316,12 +338,13 @@ class DelegateWorkerTests(HermeticCase):
 
         def fake(cmd, **kwargs):  # noqa: ANN001
             self.captured = (cmd, kwargs)
+            self.prompt_text = Path(cmd[cmd.index("--prompt-file") + 1]).read_text(encoding="utf-8")
             if isinstance(outcome, BaseException):
                 raise outcome
             return outcome
 
-        with mock.patch.object(ld, invoke_attr, invoke), mock.patch.object(ld.subprocess, "run", side_effect=fake):
-            return fn(logical_model_id=logical, prompt="PR", output_dir=self.out, timeout_sec=9)
+        with mock.patch.object(ld, invoke_attr, invoke), mock.patch.object(ld, "_run_cli", side_effect=fake):
+            return fn(logical_model_id=logical, prompt=prompt, output_dir=self.out, timeout_sec=9)
 
     def test_codex_worker_success_and_environment(self) -> None:
         with mock.patch.object(ld, "_resolve_codex_bin", return_value="/x/codex"):
@@ -333,14 +356,18 @@ class DelegateWorkerTests(HermeticCase):
         self.assertEqual(cmd[0], "bash")
         self.assertEqual(cmd[1], str(self.invoke))
         self.assertIn("--use-exec", cmd)
-        self.assertEqual(cmd[cmd.index("--prompt") + 1], "PR")
+        self.assertNotIn("--prompt", cmd)
+        self.assertEqual(self.prompt_text, "PR")
+        self.assertEqual(cmd[cmd.index("--mode") + 1], "strict")
+        self.assertEqual(cmd[cmd.index("--sb-root") + 1], str(ld.REPO_ROOT))
         env = kwargs["env"]
         self.assertEqual(env["CODEX_MODEL"], "gpt-5.6-luna")
         self.assertEqual(env["CODEX_REASONING_EFFORT"], "medium")
         self.assertEqual(env["CODEX_BIN"], "/x/codex")
         self.assertEqual(env["SB_AGENT_CODEX_DELEGATE"], "1")
         self.assertEqual(env["SB_ORCHESTRATOR_PARENT"], "0")
-        self.assertEqual(kwargs["cwd"], str(ld.REPO_ROOT))
+        self.assertEqual(kwargs["cwd"], cmd[cmd.index("--work-dir") + 1])
+        self.assertNotEqual(kwargs["cwd"], str(ld.REPO_ROOT))
         self.assertEqual(len(list(self.out.glob("gpt-5-6-luna-medium-*.txt"))), 1)
 
     def test_codex_worker_unknown_model_defaults_to_medium(self) -> None:
@@ -363,13 +390,26 @@ class DelegateWorkerTests(HermeticCase):
             self.assertEqual(timeout_empty.raw_output, "")
             gone = self._run(ld.run_codex_worker, "gpt-5.6-luna-medium", FileNotFoundError("bash"), "AGENT_CODEX_INVOKE")
             self.assertEqual((gone.status, gone.error), ("failed", "agent-codex invoke not found"))
+            denied = self._run(ld.run_codex_worker, "gpt-5.6-luna-medium", PermissionError(13, "denied"), "AGENT_CODEX_INVOKE")
+            self.assertEqual(denied.status, "failed")
+            self.assertIn("agent-codex launch failed", denied.error)
+
+    def test_delegate_refuses_an_oversized_prompt_without_spawning(self) -> None:
+        invoke = self.tmp / "invoke.sh"
+        invoke.write_text("#!/bin/sh\n")
+        with mock.patch.object(ld, "AGENT_CODEX_INVOKE", invoke), mock.patch.object(ld, "_run_cli") as run:
+            result = ld.run_codex_worker(logical_model_id="gpt-5.6-luna-medium", prompt="y" * (ld.MAX_PROMPT_BYTES + 1), output_dir=self.out)
+        run.assert_not_called()
+        self.assertEqual(result.status, "failed")
+        self.assertIn("prompt too large", result.error)
 
     def test_codex_worker_missing_invoke_script_does_not_spawn(self) -> None:
         missing = self.tmp / "nope" / "invoke.sh"
-        with mock.patch.object(ld, "AGENT_CODEX_INVOKE", missing), mock.patch.object(ld.subprocess, "run") as run:
+        with mock.patch.object(ld, "AGENT_CODEX_INVOKE", missing), mock.patch.object(ld, "_run_cli") as run:
             result = ld.run_codex_worker(logical_model_id="gpt-5.6-luna-medium", prompt="P", output_dir=self.out)
         run.assert_not_called()
-        self.assertEqual((result.status, result.error), ("failed", f"missing {missing}"))
+        # The error names the script relative to the Silver Bullet root, not a local absolute path.
+        self.assertEqual((result.status, result.error), ("failed", "missing scripts/agent-codex/invoke.sh"))
 
     def test_claude_worker_success_and_environment(self) -> None:
         with mock.patch.dict(os.environ, {"CLAUDE_BIN": "/x/claude"}):
@@ -412,34 +452,54 @@ class DelegateWorkerTests(HermeticCase):
 
     def test_claude_worker_missing_invoke_script_does_not_spawn(self) -> None:
         missing = self.tmp / "nope" / "invoke.sh"
-        with mock.patch.object(ld, "AGENT_CLAUDE_INVOKE", missing), mock.patch.object(ld.subprocess, "run") as run:
+        with mock.patch.object(ld, "AGENT_CLAUDE_INVOKE", missing), mock.patch.object(ld, "_run_cli") as run:
             result = ld.run_claude_worker(logical_model_id="claude-opus-4.8-medium", prompt="P", output_dir=self.out)
         run.assert_not_called()
-        self.assertEqual((result.status, result.error), ("failed", f"missing {missing}"))
+        self.assertEqual((result.status, result.error), ("failed", "missing scripts/agent-claude/invoke.sh"))
 
-    def test_ocg_worker_paths(self) -> None:
-        def go(outcome):  # noqa: ANN001
-            def fake(cmd, **kwargs):  # noqa: ANN001
-                self.captured = (cmd, kwargs)
-                if isinstance(outcome, BaseException):
-                    raise outcome
-                return outcome
 
-            with mock.patch.object(ld, "OPENCODE_BIN", "/oc/opencode"), mock.patch.object(ld.subprocess, "run", side_effect=fake):
-                return ld.run_ocg_worker(logical_model_id="ocg-minimax-m3", prompt="P", output_dir=self.out, timeout_sec=5)
+class ProcessPlumbingTests(HermeticCase):
+    """_run_cli and _kill_process_group, with real short-lived processes where it matters."""
 
-        ok = go(proc(0, "o", "e"))
-        self.assertEqual((ok.status, ok.backend, ok.error, ok.raw_output), ("completed", "ocg", None, "o\ne"))
-        self.assertEqual(self.captured[0], ["/oc/opencode", "run", "--model", "opencode-go/minimax-m3", "P"])
-        self.assertEqual(self.captured[1]["timeout"], 5)
-        self.assertEqual(len(list(self.out.glob("ocg-minimax-m3-*.txt"))), 1)
-        bad = go(proc(4, "o", ""))
-        self.assertEqual((bad.status, bad.error), ("failed", "exit 4"))
-        part = go(subprocess.TimeoutExpired("x", 1, output=b"half"))
-        self.assertEqual((part.status, part.error, part.raw_output), ("partial", "timeout", "half"))
-        self.assertEqual(go(subprocess.TimeoutExpired("x", 1)).raw_output, "")
-        gone = go(FileNotFoundError("opencode"))
-        self.assertEqual((gone.status, gone.error), ("failed", "opencode CLI not found"))
+    def test_run_cli_returns_output_and_decodes_invalid_bytes(self) -> None:
+        done = ld._run_cli(["bash", "-c", "printf 'ok\\377'; printf 'warn' >&2; exit 3"], timeout=10, cwd=str(self.tmp))
+        self.assertEqual((done.returncode, done.stdout, done.stderr), (3, "ok�", "warn"))
+
+    def test_run_cli_timeout_keeps_partial_output_and_kills_the_group(self) -> None:
+        with mock.patch.object(ld, "KILL_GRACE_SEC", 2):
+            with self.assertRaises(subprocess.TimeoutExpired) as ctx:
+                ld._run_cli(["bash", "-c", "echo early; exec sleep 30"], timeout=1, cwd=str(self.tmp))
+        self.assertEqual(ctx.exception.stdout, b"early\n")
+
+    def test_kill_process_group_escalates_and_stops_when_the_group_is_gone(self) -> None:
+        sent: list[int] = []
+
+        class Proc:
+            pid = 999_999_993
+
+            def __init__(self, wait_outcome):  # noqa: ANN001
+                self.wait_outcome = wait_outcome
+
+            def wait(self, timeout=None):  # noqa: ANN001
+                if isinstance(self.wait_outcome, BaseException):
+                    raise self.wait_outcome
+                return 0
+
+        def record(pgid: int, sig: int) -> None:
+            sent.append(sig)
+
+        with mock.patch.object(ld.os, "killpg", record):
+            ld._kill_process_group(Proc(subprocess.TimeoutExpired("x", 1)))
+        self.assertEqual(sent, [ld.signal.SIGTERM, ld.signal.SIGKILL])
+
+        def gone(pgid: int, sig: int) -> None:
+            sent.append(sig)
+            raise ProcessLookupError
+
+        sent.clear()
+        with mock.patch.object(ld.os, "killpg", gone):
+            ld._kill_process_group(Proc(None))
+        self.assertEqual(sent, [ld.signal.SIGTERM])
 
 
 COHORT = "ocg-pool-cohort-result-v1"
@@ -484,7 +544,7 @@ class OcgPoolCohortTests(HermeticCase):
                 raise outcome
             return outcome
 
-        with mock.patch.object(ld.subprocess, "run", side_effect=fake):
+        with mock.patch.object(ld, "_run_cli", side_effect=fake):
             results = ld.run_ocg_pool_cohort(
                 ocg_items=self.ITEMS if items is None else items,
                 phase_id="DR-RETRIEVE",
@@ -500,7 +560,7 @@ class OcgPoolCohortTests(HermeticCase):
         return results
 
     def test_no_items_is_a_noop(self) -> None:
-        with mock.patch.object(ld.subprocess, "run") as run:
+        with mock.patch.object(ld, "_run_cli") as run:
             self.assertEqual(ld.run_ocg_pool_cohort(
                 ocg_items=[], phase_id="p", query="q", run_id="r", work_item_id="w",
                 output_dir=self.out, context="", pool="lite"), [])
@@ -509,13 +569,13 @@ class OcgPoolCohortTests(HermeticCase):
 
     def test_missing_delegate_script_fails_every_item_and_still_writes_request(self) -> None:
         missing = self.tmp / "gone.sh"
-        with mock.patch.object(ld, "AGENT_OPENCODE_DELEGATE", missing), mock.patch.object(ld.subprocess, "run") as run:
+        with mock.patch.object(ld, "AGENT_OPENCODE_DELEGATE", missing), mock.patch.object(ld, "_run_cli") as run:
             results = ld.run_ocg_pool_cohort(
                 ocg_items=self.ITEMS, phase_id="DR-RETRIEVE", query="Q", run_id="r", work_item_id="w",
                 output_dir=self.out, context="", pool="lite")
         run.assert_not_called()
         self.assertEqual([r.status for r in results], ["failed", "failed"])
-        self.assertTrue(all(r.error == f"missing agent-opencode delegate at {missing}" for r in results))
+        self.assertTrue(all(r.error == "missing scripts/agent-opencode-delegate.sh" for r in results))
         self.assertEqual(len(list(self.out.glob("ocg-cohort-request-*.json"))), 1)
 
     def test_success_reads_result_file_and_builds_envelopes(self) -> None:
@@ -546,7 +606,10 @@ class OcgPoolCohortTests(HermeticCase):
         self.assertEqual(request["timeout_sec"], 100)
         self.assertEqual(request["logical_model_ids"], ["ocg-minimax-m3", "ocg-mimo-v2.5"])
         self.assertEqual(request["context"], "ctx")
-        self.assertEqual(request["work_dir"], str(self.out.resolve()))
+        # Stored relative to the request file; the delegate gets absolute paths on its argv only.
+        self.assertEqual(request["work_dir"], ".")
+        self.assertEqual(cmd[cmd.index("--work-dir") + 1], str(self.out.resolve()))
+        self.assertEqual(self.captured["kwargs"]["cwd"], str(self.out.resolve()))
 
     def test_partial_contribution_with_payload_gets_envelope(self) -> None:
         body = json.dumps({"schema_id": COHORT, "contributions": [
@@ -591,6 +654,8 @@ class OcgPoolCohortTests(HermeticCase):
         self.assertEqual([(r.status, r.error) for r in results], [("partial", "ocg cohort timeout")] * 2)
         results = self.cohort(FileNotFoundError("bash"))
         self.assertEqual([(r.status, r.error) for r in results], [("failed", "agent-opencode delegate not found")] * 2)
+        results = self.cohort(PermissionError(13, "denied"))
+        self.assertTrue(all(r.status == "failed" and "agent-opencode launch failed" in r.error for r in results))
 
 
 class DispatchAgentTests(HermeticCase):
@@ -606,7 +671,7 @@ class DispatchAgentTests(HermeticCase):
         out, worker = self.dispatch({"logical_model_id": "grok-4.5"}, "run_cursor_worker", res)
         kwargs = worker.call_args.kwargs
         self.assertEqual((kwargs["logical_model_id"], kwargs["timeout_sec"]), ("grok-4.5", 11))
-        self.assertIn("Prior context:\nc", kwargs["prompt"])
+        self.assertRegex(kwargs["prompt"], r"<<<BEGIN UNTRUSTED CONTEXT [0-9a-f]{16}>>>\nc\n<<<END UNTRUSTED CONTEXT")
         self.assertTrue(out.envelope["authoritative"])
         self.assertEqual(out.envelope["model_routing"]["requested_model_id"], "cursor-grok-4.5-high")
         self.assertEqual(out.envelope["model_routing"]["effective_model_id"], "m")
@@ -717,9 +782,10 @@ class RunMultiAiLiveTests(HermeticCase):
             return proc(0, '{"sources": []}')
 
         selection = PoolSelection(ocg_pool="none", cursor_pool="none", include_only=["composer-2.5", "grok-4.5"])
-        with mock.patch.object(ld.subprocess, "run", side_effect=fake):
+        with mock.patch.object(ld, "_run_cli", side_effect=fake):
             out = ld.run_multi_ai_live(output_root=root, selection=selection, task_prompt="topic", phase_id="DR-CRITIQUE")
         self.assertTrue(out["ok"])
+        self.assertEqual((out["status"], out["authoritative_count"]), ("partial", 1))
         self.assertEqual(out["phase_id"], "DR-CRITIQUE")
         self.assertEqual(out["resolved_count"], 2)
         self.assertEqual(out["envelopes_count"], 1)
@@ -744,6 +810,14 @@ class RunMultiAiLiveTests(HermeticCase):
         self.assertIn("Error: broken", entries["grok-4.5"]["terminal_reason"])
         ledger = json.loads((root / "dispatch-ledger.json").read_text())
         self.assertEqual(ledger["run_id"], out["run_id"])
+        self.assertEqual([e["status"] for e in ledger["entries"]], [statuses[e["logical_model_id"]] for e in ledger["entries"]])
+        self.assertEqual(index["ledger_head_hash"], ledger["head_hash"])
+
+    def test_every_agent_authoritative_is_a_completed_run(self) -> None:
+        selection = PoolSelection(ocg_pool="none", cursor_pool="none", include_only=["composer-2.5"])
+        with mock.patch.object(ld, "_run_cli", return_value=proc(0, '{"result": 1}')):
+            out = ld.run_multi_ai_live(output_root=self.tmp / "ok", selection=selection, task_prompt="t")
+        self.assertEqual((out["ok"], out["status"], out["authoritative_count"]), (True, "completed", 1))
 
     def test_defaults_phase_and_clamps_unknown_ocg_pool_to_lite(self) -> None:
         root = self.tmp / "root"
@@ -751,9 +825,10 @@ class RunMultiAiLiveTests(HermeticCase):
         with mock.patch.object(ld, "dispatch_phase_parallel", return_value=[]) as dpp:
             out = ld.run_multi_ai_live(output_root=root, selection=selection)
         kwargs = dpp.call_args.kwargs
-        self.assertEqual((kwargs["phase_id"], kwargs["query"], kwargs["ocg_pool"]), ("DR-RETRIEVE", "multi-ai-task", "lite"))
-        self.assertEqual(out["phase_id"], "DR-RETRIEVE")
+        self.assertEqual((kwargs["phase_id"], kwargs["query"], kwargs["ocg_pool"]), ("TASK", "multi-ai-task", "lite"))
+        self.assertEqual(out["phase_id"], "TASK")
         self.assertEqual(out["envelopes_count"], 0)
+        self.assertEqual((out["ok"], out["status"]), (False, "failed"))
 
     def test_regular_ocg_pool_is_forwarded(self) -> None:
         selection = PoolSelection(ocg_pool="regular", cursor_pool="none", include_only=["ocg-minimax-m3"])
