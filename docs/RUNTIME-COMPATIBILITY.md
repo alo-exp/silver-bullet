@@ -98,8 +98,10 @@ SB_DOCTOR_FORMAT=json bash scripts/sb-doctor.sh
 | Cursor | [alo-labs/agent-plugins](https://github.com/alo-labs/agent-plugins) (`alo-labs-cursor` catalog) | `scripts/install-cursor.sh` |
 
 Release prep runs `scripts/sync-release-marketplace-versions.sh <version>` to
-keep all three marketplace repos aligned with `.claude-plugin/plugin.json` /
-`.cursor-plugin/plugin.json` / `plugins/silver-bullet/.codex-plugin/plugin.json`.
+align the in-repo marketplace manifests with `.claude-plugin/plugin.json` /
+`.cursor-plugin/plugin.json` / `plugins/silver-bullet/.codex-plugin/plugin.json`; once
+the release tag is pushed and green, `--publish <version>` updates the unified
+marketplace ([RELEASE.md](RELEASE.md#8-publish-the-unified-marketplace)).
 
 Cursor release smoke (no live agent required): `bash scripts/release-live-matrix-cursor-smoke.sh`.
 

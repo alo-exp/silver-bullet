@@ -29,51 +29,146 @@ assert_eq "resolve prefers legacy" "legacy-codex" "$(resolve_agent_plugins_repo_
 assert_eq "resolve unknown host falls back to unified" "file:///x/y.git" "$(resolve_agent_plugins_repo_url bogus)"
 assert_eq "resolve no host falls back to unified" "file:///x/y.git" "$(resolve_agent_plugins_repo_url)"
 
-# --- commit/push helper ---
+# --- commit and push helpers (a local bare repository stands in for the remote) ---
 BARE="$TL_TMP/remote.git"
 git init -q --bare -b main "$BARE"
 WORK="$TL_TMP/work"
 tl_git_repo "$WORK"
 git -C "$WORK" checkout -q main
+echo seed >"$WORK/m.json"
+echo seed >"$WORK/notes.txt"
+git -C "$WORK" add m.json notes.txt
+git -C "$WORK" commit -q -m seed
 git -C "$WORK" remote add origin "$BARE"
 git -C "$WORK" push -q -u origin main
 
-# clean tree: returns 0 and creates no commit
+# Nothing to commit: no commit is made.
 before="$(git -C "$WORK" rev-parse HEAD)"
-rc=0; agent_plugins_commit_push_if_dirty "$WORK" "noop" || rc=$?
-assert_eq "clean tree returns 0" "0" "$rc"
-assert_eq "clean tree makes no commit" "$before" "$(git -C "$WORK" rev-parse HEAD)"
+rc=0; agent_plugins_commit_paths "$WORK" "noop" m.json || rc=$?
+assert_eq "unchanged path: returns 0" "0" "$rc"
+assert_eq "unchanged path: no commit" "$before" "$(git -C "$WORK" rev-parse HEAD)"
 
-# dirty + skip push: commits, remote untouched
-echo a >"$WORK/a.txt"; git -C "$WORK" add a.txt; git -C "$WORK" commit -q -m seed-a; before="$(git -C "$WORK" rev-parse HEAD)"; git -C "$WORK" push -q origin main; echo a2 >"$WORK/a.txt"
-rc=0; AGENT_PLUGINS_SKIP_PUSH=1 agent_plugins_commit_push_if_dirty "$WORK" "add a" || rc=$?
+# Only the named path is committed (R8-19): an unrelated edit, a staged file and an
+# untracked file in the marketplace checkout stay out of the bump commit.
+echo bumped >"$WORK/m.json"
+echo "work in progress" >"$WORK/notes.txt"
+echo scratch >"$WORK/scratch-untracked.txt"
+echo staged >"$WORK/staged.txt"; git -C "$WORK" add staged.txt
+rc=0; agent_plugins_commit_paths "$WORK" "Bump m" m.json || rc=$?
+assert_eq "commit of one path returns 0" "0" "$rc"
+assert_eq "bump commit message" "Bump m" "$(git -C "$WORK" log -1 --format=%s)"
+assert_eq "bump commit touches only the named path" "m.json" "$(git -C "$WORK" show --name-only --format= HEAD)"
+assert_eq "unrelated edit left uncommitted" " M notes.txt" "$(git -C "$WORK" status --porcelain -- notes.txt)"
+assert_eq "staged file left staged" "A  staged.txt" "$(git -C "$WORK" status --porcelain -- staged.txt)"
+assert_eq "untracked file left untracked" "?? scratch-untracked.txt" "$(git -C "$WORK" status --porcelain -- scratch-untracked.txt)"
+
+# A path with uncommitted changes is refused before the sync rewrites and commits it.
+rc=0; out="$(agent_plugins_require_clean_path "$WORK" notes.txt 2>&1)" || rc=$?
+assert_eq "dirty path refused" "1" "$rc"
+assert_contains "dirty path named" "$out" "$WORK/notes.txt has uncommitted changes"
+rc=0; agent_plugins_require_clean_path "$WORK" m.json || rc=$?
+assert_eq "clean path accepted" "0" "$rc"
+git -C "$WORK" checkout -q -- notes.txt; git -C "$WORK" reset -q -- staged.txt; rm -f "$WORK/staged.txt" "$WORK/scratch-untracked.txt"
+
+# A local commit is pushed even though the working tree is clean (R13-01: the per-host
+# scripts commit, the release wrapper pushes once at the end), and the remote is checked.
+assert_eq "local commit not yet on the remote" 1 "$(git -C "$WORK" rev-list --count origin/main..HEAD)"
+rc=0; AGENT_PLUGINS_SKIP_PUSH=1 agent_plugins_push "$WORK" || rc=$?
 assert_eq "skip-push returns 0" "0" "$rc"
-assert_eq "skip-push commit message" "add a" "$(git -C "$WORK" log -1 --format=%s)"
-assert_eq "skip-push leaves remote behind" "$before" "$(git -C "$BARE" rev-parse main)"
+assert_eq "skip-push leaves the remote behind" "$before" "$(git -C "$BARE" rev-parse main)"
+rc=0; out="$(agent_plugins_push "$WORK" 2>&1)" || rc=$?
+assert_eq "push of a clean, ahead checkout returns 0" "0" "$rc"
+assert_eq "push reaches the remote" "$(git -C "$WORK" rev-parse HEAD)" "$(git -C "$BARE" rev-parse main)"
+assert_contains "push reported" "$out" "Pushed 1 commit(s) to origin/main"
+rc=0; out="$(agent_plugins_push "$WORK" 2>&1)" || rc=$?
+assert_eq "nothing unpushed: returns 0" "0" "$rc"
+assert_eq "nothing unpushed: says nothing" "" "$out"
 
-# dirty with upstream: pushes to the upstream branch
-echo b >"$WORK/a.txt"
-rc=0; agent_plugins_commit_push_if_dirty "$WORK" "add b" || rc=$?
-assert_eq "upstream push returns 0" "0" "$rc"
-assert_eq "upstream push reaches remote" "$(git -C "$WORK" rev-parse HEAD)" "$(git -C "$BARE" rev-parse main)"
+# A push that does not land (a remote hook rejects it) fails loudly.
+cat >"$BARE/hooks/pre-receive" <<'HOOK'
+#!/usr/bin/env bash
+echo "rejected by test hook" >&2
+exit 1
+HOOK
+chmod +x "$BARE/hooks/pre-receive"
+echo rejected >"$WORK/m.json"; agent_plugins_commit_paths "$WORK" "Bump again" m.json
+rc=0; out="$(bash -c 'set -euo pipefail; source "$1"; agent_plugins_push "$2"' _ "$LIB" "$WORK" 2>&1)" || rc=$?
+assert_eq "rejected push fails" "1" "$rc"
+assert_contains "remote rejection surfaced" "$out" "rejected by test hook"
+rm -f "$BARE/hooks/pre-receive"
 
-# staged-only change is also treated as dirty
-echo c >"$WORK/c.txt"
-git -C "$WORK" add c.txt
-rc=0; agent_plugins_commit_push_if_dirty "$WORK" "add c" || rc=$?
-assert_eq "staged change committed" "add c" "$(git -C "$WORK" log -1 --format=%s)"
+# A push reported as successful but not visible on the remote branch fails the check.
+REAL_GIT="$(command -v git)"
+tl_stub git "if [[ \" \$* \" == *' push '* ]]; then exit 0; fi; exec '$REAL_GIT' \"\$@\""
+hash -r
+rc=0; out="$(agent_plugins_push "$WORK" 2>&1)" || rc=$?
+assert_eq "push that did not land fails" "1" "$rc"
+assert_contains "missing push explained" "$out" "the push to origin/main did not land: the remote branch is at $(git -C "$BARE" rev-parse main), expected $(git -C "$WORK" rev-parse HEAD)"
+rm -f "$TL_BIN/git"; hash -r
 
-# dirty without upstream: falls back to plain `git push` (stubbed, argument recorded)
+# Publishable: an upstream to push to and no unpushed commits of anyone else's.
+rc=0; out="$(agent_plugins_check_publishable "$WORK" 2>&1)" || rc=$?
+assert_eq "unpushed commit refused" "1" "$rc"
+assert_contains "unpushed commit explained" "$out" "$WORK has 1 unpushed commit(s) on top of origin/main"
+git -C "$WORK" push -q origin main
+rc=0; agent_plugins_check_publishable "$WORK" || rc=$?
+assert_eq "pushed checkout is publishable" "0" "$rc"
+
 NOUP="$TL_TMP/noup"
 tl_git_repo "$NOUP"
-echo d >"$NOUP/.gitkeep"
-REAL_GIT="$(command -v git)"
-tl_stub git "if [[ \"\$*\" == *' push'* || \"\$1\" == push ]]; then echo \"PUSH:\$*\" >>'$TL_TMP/git-push.log'; exit 0; fi; exec '$REAL_GIT' \"\$@\""
-hash -r
-rc=0; agent_plugins_commit_push_if_dirty "$NOUP" "add d" || rc=$?
-assert_eq "no-upstream push returns 0" "0" "$rc"
-assert_contains "no-upstream uses bare push" "$(cat "$TL_TMP/git-push.log")" "PUSH:-C $NOUP push"
-rm -f "$TL_BIN/git"; hash -r
+rc=0; out="$(agent_plugins_check_publishable "$NOUP" 2>&1)" || rc=$?
+assert_eq "no upstream: not publishable" "1" "$rc"
+assert_contains "no upstream explained" "$out" "$NOUP does not track an upstream branch"
+rc=0; out="$(agent_plugins_push "$NOUP" 2>&1)" || rc=$?
+assert_eq "no upstream: push refused" "1" "$rc"
+
+# --- JSON rewrite: atomic, in place, mode kept (R13-28) ---
+JSONF="$TL_TMP/json/m.json"
+mkdir -p "$TL_TMP/json"
+printf '{"v": 1}\n' >"$JSONF"
+chmod 644 "$JSONF"
+rc=0; agent_plugins_json_rewrite "$JSONF" --arg v 2 '.v = ($v | tonumber)' || rc=$?
+assert_eq "rewrite returns 0" "0" "$rc"
+assert_eq "rewrite applied" "2" "$(jq -r .v "$JSONF")"
+assert_eq "rewrite keeps mode 644" "644" "$(stat -c %a "$JSONF" 2>/dev/null || stat -f %Lp "$JSONF")"
+chmod 640 "$JSONF"
+agent_plugins_json_rewrite "$JSONF" '.w = true'
+assert_eq "rewrite keeps mode 640" "640" "$(stat -c %a "$JSONF" 2>/dev/null || stat -f %Lp "$JSONF")"
+assert_eq "no temporary file left" "m.json" "$(ls -A "$TL_TMP/json")"
+before_json="$(<"$JSONF")"
+rc=0; agent_plugins_json_rewrite "$JSONF" '.v |= error("boom")' 2>/dev/null || rc=$?
+assert_eq "failing filter returns 1" "1" "$rc"
+assert_eq "failing filter leaves the file byte-identical" "$before_json" "$(<"$JSONF")"
+assert_eq "failing filter leaves no temporary file" "m.json" "$(ls -A "$TL_TMP/json")"
+
+# --- argument parsing shared by the per-host sync scripts ---
+agent_plugins_parse_sync_args
+assert_eq "no args: in-repo mode" "0" "$AGENT_PLUGINS_PUBLISH"
+assert_eq "no args: no version" "" "$AGENT_PLUGINS_VERSION"
+agent_plugins_parse_sync_args --publish v2.0.0
+assert_eq "--publish sets publish mode" "1" "$AGENT_PLUGINS_PUBLISH"
+assert_eq "--publish keeps the version" "v2.0.0" "$AGENT_PLUGINS_VERSION"
+agent_plugins_parse_sync_args 2.0.0
+assert_eq "version alone: in-repo mode" "0" "$AGENT_PLUGINS_PUBLISH"
+rc=0; out="$(agent_plugins_parse_sync_args --bogus 2>&1)" || rc=$?
+assert_eq "unknown option refused" "1" "$rc"
+assert_contains "unknown option named" "$out" "unknown option: --bogus"
+rc=0; out="$(agent_plugins_parse_sync_args 1.0.0 2.0.0 2>&1)" || rc=$?
+assert_eq "second version refused" "1" "$rc"
+assert_contains "extra argument named" "$out" "unexpected argument: 2.0.0"
+
+# --- release tag lookup ---
+TAGREPO="$TL_TMP/tagrepo"
+tl_git_repo "$TAGREPO"
+rc=0; out="$(agent_plugins_release_tag_commit "$TAGREPO" 2.0.0 2>&1)" || rc=$?
+assert_eq "missing tag refused" "1" "$rc"
+assert_contains "missing tag explains the release order" "$out" "release tag v2.0.0 does not exist in $TAGREPO"
+assert_contains "missing tag names the publish step" "$out" "sync-release-marketplace-versions.sh --publish 2.0.0"
+git -C "$TAGREPO" tag -a v2.0.0 -m release
+assert_eq "annotated tag resolves to its commit" "$(git -C "$TAGREPO" rev-parse HEAD)" "$(agent_plugins_release_tag_commit "$TAGREPO" 2.0.0)"
+git -C "$TAGREPO" tag v3.0.0 "$(git -C "$TAGREPO" rev-parse 'HEAD^{tree}')"
+rc=0; agent_plugins_release_tag_commit "$TAGREPO" 3.0.0 >/dev/null 2>&1 || rc=$?
+assert_eq "a tag that is not a commit is refused" "1" "$rc"
 
 # --- catalog path ---
 REPO="$TL_TMP/repo"
