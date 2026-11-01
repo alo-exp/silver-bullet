@@ -3,7 +3,13 @@
   "title": "Claim",
   "description": "An atomic claim extracted from the report. claim_id = sha256(section_id + sentence_text)[:16].",
   "type": "object",
-  "required": ["claim_id", "section_id", "text", "claim_type", "support_status"],
+  "required": [
+    "claim_id",
+    "section_id",
+    "text",
+    "claim_type",
+    "support_status"
+  ],
   "properties": {
     "claim_id": {
       "type": "string",
@@ -20,29 +26,65 @@
     },
     "claim_type": {
       "type": "string",
-      "enum": ["factual", "synthesis", "recommendation", "speculation"],
-      "description": "Only factual claims hard-fail on lack of support"
+      "enum": [
+        "factual",
+        "synthesis",
+        "recommendation",
+        "speculation"
+      ],
+      "description": "Factual claims hard-fail under --strict unless supported"
     },
     "cited_source_ids": {
       "type": "array",
-      "items": { "type": "string", "pattern": "^[0-9a-f]{16}$" },
+      "items": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{16}$"
+      },
       "default": [],
       "description": "Stable source_ids cited for this claim"
     },
     "evidence_ids": {
       "type": "array",
-      "items": { "type": "string", "pattern": "^[0-9a-f]{16}$" },
+      "items": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{16}$"
+      },
       "default": [],
       "description": "Evidence rows that support this claim"
     },
     "support_status": {
       "type": "string",
-      "enum": ["unverified", "supported", "partial", "unsupported", "needs_review"],
-      "description": "Set by verify_claim_support.py (PR5)"
+      "enum": [
+        "unverified",
+        "supported",
+        "partial",
+        "unsupported",
+        "needs_review",
+        "not_applicable"
+      ],
+      "description": "Set by verify_claim_support.py; not_applicable for speculation and bibliography rows"
     },
     "extracted_at": {
       "type": "string",
       "format": "date-time"
+    },
+    "_citation_numbers": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "description": "Inline [N] markers found for the claim (working field)"
+    },
+    "_support_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Best evidence score from verify_claim_support.py"
+    },
+    "_support_notes": {
+      "type": "string",
+      "description": "Why the claim is not fully supported"
     }
   },
   "additionalProperties": false
