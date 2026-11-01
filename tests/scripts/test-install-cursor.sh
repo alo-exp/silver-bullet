@@ -86,11 +86,18 @@ else
   fail "install-cursor creates current symlink"
 fi
 
-if [[ ! -e "${CURSOR_HOME}/agents/subagent-sb:init" ]] && [[ ! -e "${CURSOR_HOME}/agents/full-conversation" ]] && \
+if [[ ! -e "${CURSOR_HOME}/agents/subagent-sb:init" ]] && \
    compgen -G "${CURSOR_HOME}/.silver-bullet-quarantine/cursor-agents/*/user/*" >/dev/null; then
   pass "install-cursor quarantines stale SB custom agents"
 else
   fail "install-cursor quarantines stale SB custom agents"
+fi
+
+# A generic legacy name whose content is not Silver Bullet's is the user's (R7-11).
+if [[ -f "${CURSOR_HOME}/agents/full-conversation/SKILL.md" ]]; then
+  pass "install-cursor leaves an unverifiable legacy-named agent in place"
+else
+  fail "install-cursor leaves an unverifiable legacy-named agent in place"
 fi
 
 if [[ ! -e "${CURSOR_HOME}/plugins/cache/alo-labs-agent-plugins/silver-bullet/1111111111111111111111111111111111111111/skills" ]] && \
@@ -117,6 +124,29 @@ if [[ -f "${current_link}/.cursor-plugin/plugin.json" ]] && [[ -f "${current_lin
   pass "install-cursor installs Cursor plugin manifest"
 else
   fail "install-cursor installs Cursor plugin manifest"
+fi
+
+# R7-26: hooks reach Cursor once, through ~/.cursor/hooks.json. Every plugin root the
+# installer wrote names a hook manifest that declares no hooks, so no plugin-rooted copy
+# runs a second time or fails with 127 in a commands-only root.
+plugin_roots_checked=0
+plugin_roots_with_hooks=""
+for manifest in \
+  "${CURSOR_HOME}"/plugins/cache/*/silver-bullet/*/.cursor-plugin/plugin.json \
+  "${CURSOR_HOME}"/plugins/local/silver-bullet/.cursor-plugin/plugin.json \
+  "${CURSOR_HOME}"/plugins/marketplaces/github.com/alo-exp/silver-bullet/*/.cursor-plugin/plugin.json; do
+  [[ -f "$manifest" ]] || continue
+  plugin_roots_checked=$((plugin_roots_checked + 1))
+  root="$(dirname "$(dirname "$manifest")")"
+  hooks_rel="$(jq -r '.hooks // empty' "$manifest")"
+  if [[ -z "$hooks_rel" ]] || [[ "$(jq '[.hooks // {} | .[][]?] | length' "${root}/${hooks_rel#./}" 2>/dev/null || echo missing)" != 0 ]]; then
+    plugin_roots_with_hooks+="${root} "
+  fi
+done
+if [[ "$plugin_roots_checked" -ge 3 && -z "$plugin_roots_with_hooks" ]]; then
+  pass "installer-written plugin roots declare no plugin-rooted hooks (${plugin_roots_checked} roots)"
+else
+  fail "installer-written plugin roots declare no plugin-rooted hooks (${plugin_roots_checked} roots): ${plugin_roots_with_hooks}"
 fi
 
 source_manifest="${REPO_ROOT}/.cursor-plugin/plugin.json"

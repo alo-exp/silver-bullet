@@ -57,6 +57,20 @@ resolve_cursor_install_dest() {
   fi
 }
 
+# The version an existing install records: its stamped plugin manifest, else the name of
+# its versioned directory. --merge-hooks-only uses it, because the installed cache (where
+# sb-doctor --fix runs this script from) ships no package.json (R7-24).
+cursor_install_dest_version() {
+  local dest="$1"
+  local version
+
+  version="$(jq -r '.version // empty' "${dest}/.cursor-plugin/plugin.json" 2>/dev/null || true)"
+  if [[ -z "$version" ]]; then
+    version="$(basename "$dest")"
+  fi
+  printf '%s\n' "$version"
+}
+
 cursor_plugin_commands_src() {
   local source_root="$1"
   if [[ -d "${source_root}/plugins/silver-bullet/commands" ]]; then
@@ -202,7 +216,13 @@ install_cursor_plugin_manifest() {
   fi
   install -m 644 "$tmp" "${dest}/.cursor-plugin/plugin.json"
   rm -f -- "$tmp"
-  install -m 644 "${dest}/hooks/cursor-hooks.json" "${dest}/cursor-hooks.json"
+  # Installer-managed plugin roots deliver no hooks themselves: install-cursor.sh merges
+  # SB's hooks into ~/.cursor/hooks.json, and a second plugin-rooted copy would run every
+  # hook twice (or fail with 127 in the commands-only copies, which ship no hooks/).
+  # The manifest field stays set so Cursor does not fall back to discovering
+  # hooks/hooks.json, which is the Claude-format manifest (R7-26).
+  printf '{\n  "version": 1,\n  "hooks": {}\n}\n' >"${dest}/cursor-hooks.json"
+  chmod 644 "${dest}/cursor-hooks.json"
 }
 
 cursor_github_marketplace_gitpath_root() {
@@ -504,19 +524,21 @@ verify_cursor_plugin_discovery_paths() {
   return "$failures"
 }
 
+# Record the install in Cursor's installed_plugins.json. Only silver-bullet@alo-labs is
+# written; every other plugin's record is kept as it is. An unparseable or wrongly typed
+# registry is refused (left untouched, installer stops) instead of being replaced, and the
+# write is atomic with the previous content kept in installed_plugins.json.sb-backup (R7-14).
 ensure_cursor_installed_plugins_registry() {
   local dest="$1"
   local version="$2"
   local commit_sha="${3:-}"
   local registry_file="${CURSOR_HOME}/plugins/installed_plugins.json"
   local now
-  local tmp
 
   now="$(date -u +%Y-%m-%dT%H:%M:%S.000Z)"
   mkdir -p "$(dirname "$registry_file")"
 
-  python3 - "$registry_file" "$dest" "$version" "$now" "$commit_sha" "$CURSOR_HOME" <<'PY'
-import json
+  python3 - "$registry_file" "$dest" "$version" "$now" "$commit_sha" "$CURSOR_HOME" "${REPO_ROOT}/scripts/lib" <<'PY'
 import pathlib
 import sys
 
@@ -526,16 +548,19 @@ version = sys.argv[3]
 now = sys.argv[4]
 commit_sha = sys.argv[5]
 cursor_home = pathlib.Path(sys.argv[6]).expanduser()
+sys.path.insert(0, sys.argv[7])
+from sb_host_config import ConfigError, read_json, write_json  # noqa: E402
+
 plugin_id = "silver-bullet@alo-labs"
 
-data = {"version": 2, "plugins": {}}
-if registry_path.is_file():
-    try:
-        data = json.loads(registry_path.read_text())
-    except Exception:
-        pass
+try:
+    data = read_json(registry_path, default={"version": 2, "plugins": {}})
+    plugins = data.setdefault("plugins", {})
+    if not isinstance(plugins, dict):
+        raise ConfigError(f"{registry_path}: 'plugins' must be an object; left unchanged")
+except ConfigError as exc:
+    sys.exit(f"ERROR: {exc}. Repair or move the file aside, then re-run install-cursor.sh.")
 
-plugins = data.setdefault("plugins", {})
 entry = {
     "scope": "user",
     "installPath": install_path,
@@ -558,17 +583,15 @@ if commit_sha:
     entry["gitPath"] = str(gitpath.resolve())
 
 existing = plugins.get(plugin_id)
-if isinstance(existing, list) and existing:
+if isinstance(existing, list) and existing and isinstance(existing[0], dict):
     existing[0].update(entry)
-    plugins[plugin_id] = existing
 elif isinstance(existing, dict):
-    entry = {**existing, **entry}
-    plugins[plugin_id] = [entry]
+    plugins[plugin_id] = [{**existing, **entry}]
 else:
     plugins[plugin_id] = [entry]
 
 data["version"] = 2
-registry_path.write_text(json.dumps(data, indent=2) + "\n")
+write_json(registry_path, data)
 PY
 }
 
@@ -691,18 +714,49 @@ sync_plugin_tree() {
   printf '%s\n' "$dest"
 }
 
+# Fetch the published release into $1 (an empty directory). With a pinned sha in the
+# marketplace manifest, exactly that commit is fetched and verified; otherwise the release
+# tag v<version> (or <version>). There is no fallback to the default branch: an unpinned
+# checkout would run unreleased hooks labelled as the release (R7-15).
+clone_public_release_checkout() {
+  local checkout_dir="$1"
+  local release_version="$2"
+  local pinned_sha="$3"
+  local ref
+
+  if [[ -n "$pinned_sha" ]]; then
+    git init -q "$checkout_dir" &&
+      git -C "$checkout_dir" fetch -q --depth 1 -- "$CURSOR_GITHUB_REPO_URL" "$pinned_sha" &&
+      git -C "$checkout_dir" checkout -q --detach FETCH_HEAD &&
+      [[ "$(git -C "$checkout_dir" rev-parse HEAD)" == "$pinned_sha" ]]
+    return
+  fi
+  for ref in "v${release_version}" "$release_version"; do
+    if git clone -q --depth 1 --branch "$ref" -- "$CURSOR_GITHUB_REPO_URL" "$checkout_dir" 2>/dev/null; then
+      return 0
+    fi
+  done
+  return 1
+}
+
 sync_plugin_tree_from_public_release() {
-  local release_version checkout_dir
+  local release_version checkout_dir pinned_sha
 
   ensure_marketplace_checkout "$CURSOR_SB_PUBLIC_MARKETPLACE_SOURCE"
   release_version="$(read_marketplace_version)"
+  if [[ -z "$release_version" || "$release_version" == "null" ]]; then
+    printf 'ERROR: %s names no silver-bullet release version; nothing was installed\n' "$(marketplace_manifest_path)" >&2
+    exit 1
+  fi
+  pinned_sha="$(read_marketplace_manifest_sha)"
   checkout_dir="$(mktemp -d "${TMPDIR:-/tmp}/sb-cursor-release.XXXXXX")"
 
-  git clone --depth 1 --branch "v${release_version}" \
-    https://github.com/alo-exp/silver-bullet.git "$checkout_dir" >/dev/null 2>&1 || \
-    git clone --depth 1 --branch "$release_version" \
-      https://github.com/alo-exp/silver-bullet.git "$checkout_dir" >/dev/null 2>&1 || \
-    git clone --depth 1 https://github.com/alo-exp/silver-bullet.git "$checkout_dir" >/dev/null
+  if ! clone_public_release_checkout "$checkout_dir" "$release_version" "$pinned_sha"; then
+    rm -rf -- "$checkout_dir"
+    printf 'ERROR: could not fetch Silver Bullet %s%s from %s; nothing was installed (no fallback to an unpinned branch)\n' \
+      "$release_version" "${pinned_sha:+ at pinned commit ${pinned_sha}}" "$CURSOR_GITHUB_REPO_URL" >&2
+    exit 1
+  fi
 
   mkdir -p "${checkout_dir}/host-bundles"
   python3 "$AGENT_RENDERER" render \
@@ -770,6 +824,7 @@ else
     printf 'ERROR: no installed Cursor plugin at %s; run without --merge-hooks-only first\n' "$(cursor_install_current_link)" >&2
     exit 1
   fi
+  VERSION="$(cursor_install_dest_version "$DEST_ROOT")"
   INSTALL_COMMIT_SHA="$(read_installed_plugins_git_sha)"
   if [[ -z "$INSTALL_COMMIT_SHA" ]]; then
     INSTALL_COMMIT_SHA="$(resolve_install_commit_sha "$REPO_ROOT")"
