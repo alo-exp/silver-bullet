@@ -132,9 +132,10 @@ class ShimEndToEndTests(unittest.TestCase):
         self.assertEqual(settings["theme"], "dark")
         pre = settings["hooks"]["PreToolUse"]
         self.assertIn("foreign-entry", pre)
-        bash_group = next(g for g in pre if isinstance(g, dict) and g["matcher"] == "Bash")
-        commands = [h["command"] for h in bash_group["hooks"]]
-        self.assertEqual(commands, ["/home/me/bin/my-hook.sh", f"{self.install}/hooks/gate.sh"])
+        bash_groups = [g for g in pre if isinstance(g, dict) and g["matcher"] == "Bash"]
+        commands = [[h["command"] for h in g["hooks"]] for g in bash_groups]
+        # the user's group is untouched; SB's hook gets a group of its own
+        self.assertEqual(commands, [["/home/me/bin/my-hook.sh"], [f"{self.install}/hooks/gate.sh"]])
         self.assertNotIn("Stop", settings["hooks"])  # only held a stale SB entry
         self.assertEqual(settings["hooks"]["Notification"], [{"matcher": "", "hooks": [user_hook]}])
         first = self.claude_settings().read_text()
@@ -147,14 +148,14 @@ class ShimEndToEndTests(unittest.TestCase):
         self.claude_settings().write_text("{not json")
         proc = self.run_shim(CLAUDE_SHIM, str(self.install))
         self.assertNotEqual(proc.returncode, 0)
-        self.assertIn("JSONDecodeError", proc.stderr)
+        self.assertIn("not valid JSON", proc.stderr)
         self.assertEqual(self.claude_settings().read_text(), "{not json")
 
     def test_claude_wrong_shapes_are_refused(self) -> None:
         self.write_claude_hooks()
         self.claude_settings().parent.mkdir()
         for body, message in (
-            ('["array"]', "expected a JSON object at the top level"),
+            ('["array"]', "expected an object at the top level"),
             ('{"hooks": "text"}', "hooks must be a JSON object"),
             ('{"hooks": {"PreToolUse": "text"}}', "PreToolUse must be a JSON array"),
         ):
@@ -167,13 +168,26 @@ class ShimEndToEndTests(unittest.TestCase):
     def test_claude_missing_hooks_json_creates_no_settings(self) -> None:
         proc = self.run_shim(CLAUDE_SHIM, str(self.install))
         self.assertNotEqual(proc.returncode, 0)
-        self.assertIn("FileNotFoundError", proc.stderr)
+        self.assertIn("hook manifest not found", proc.stderr)
         self.assertFalse(self.claude_settings().exists())
 
     def test_claude_without_arguments_fails(self) -> None:
         proc = self.run_shim(CLAUDE_SHIM)
         self.assertNotEqual(proc.returncode, 0)
-        self.assertIn("IndexError", proc.stderr)
+        self.assertIn("usage: merge-hooks.py <sb_install_path>", proc.stderr)
+
+    def test_claude_plugin_install_gets_no_settings_copies(self) -> None:
+        """R7-21: with the plugin installed, sb:init leaves no SB hooks in settings.json."""
+        self.write_claude_hooks()
+        registry = self.home / ".claude" / "plugins" / "installed_plugins.json"
+        registry.parent.mkdir(parents=True)
+        registry.write_text(json.dumps({"plugins": {"silver-bullet@alo-labs": [{"installPath": str(self.install)}]}}))
+        self.claude_settings().write_text(json.dumps({"hooks": {"PreToolUse": [
+            {"matcher": "Bash", "hooks": [{"type": "command", "command": f"{self.install}/hooks/gate.sh"}]}]}}))
+        proc = self.run_shim(CLAUDE_SHIM, str(self.install))
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertIn("delivered by the Claude Code plugin", proc.stdout)
+        self.assertEqual(json.loads(self.claude_settings().read_text())["hooks"], {})
 
     def test_claude_symlinked_settings_are_updated_in_place(self) -> None:
         self.write_claude_hooks()

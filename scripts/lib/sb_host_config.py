@@ -180,6 +180,37 @@ def is_sb_hook_command(command, *, hook_names=frozenset(), install_roots=()) -> 
     return name in hook_names and bool(_NAMED_ROOT_RE.search(root))
 
 
+def remove_hooks(events, owned) -> int:
+    """Remove the hook entries ``owned(entry)`` selects from a Claude/Codex hooks object
+    ({event: [{"matcher": ..., "hooks": [entry, ...]}, ...]}); return how many went.
+
+    A group or event emptied by the removal is dropped; anything else (other entries,
+    groups without a hook list, non-list events, empty events) is kept as it was.
+    """
+    removed = 0
+    for event in list(events):
+        groups = events[event]
+        if not isinstance(groups, list) or not groups:
+            continue
+        kept_groups = []
+        for group in groups:
+            hooks = group.get("hooks") if isinstance(group, dict) else None
+            if not isinstance(hooks, list):
+                kept_groups.append(group)
+                continue
+            kept = [hook for hook in hooks if not (isinstance(hook, dict) and owned(hook))]
+            removed += len(hooks) - len(kept)
+            if len(kept) == len(hooks):
+                kept_groups.append(group)
+            elif kept:
+                kept_groups.append({**group, "hooks": kept})
+        if kept_groups:
+            events[event] = kept_groups
+        else:
+            del events[event]
+    return removed
+
+
 # ---------------------------------------------------------------------------- TOML
 
 _BARE_KEY_RE = re.compile(r"[A-Za-z0-9_-]+")
