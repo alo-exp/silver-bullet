@@ -1,68 +1,86 @@
 #!/usr/bin/env bash
-# scripts/validate-plugin-mirror.sh against minimal fixture trees (copies, never the checkout).
+# scripts/validate-plugin-mirror.sh against a regenerated copy of the generator
+# inputs and outputs (never the checkout): a fresh regeneration passes, and
+# every seeded kind of drift fails with the drifting path named (R8-03).
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
 
-COMPOSERS=(sb-feature sb-ui sb-devops sb-bugfix sb-deep-research sb-release)
 FX="$TL_TMP/fx"
-
-build() {
-  rm -rf "$FX"
-  mkdir -p "$FX/scripts/lib" "$FX/hooks/lib" "$FX/plugins/silver-bullet/hooks/lib" "$FX/plugins/silver-bullet/scripts"
-  cp "$TL_REPO_ROOT/scripts/validate-plugin-mirror.sh" "$FX/scripts/"
-  cp "$TL_REPO_ROOT/scripts/lib/agent-bundle-paths.sh" "$FX/scripts/lib/"
-  local f
-  for f in hooks/flow-advance.sh hooks/orchestrator-directive-guard.sh hooks/session-start hooks/core-rules.md \
-           hooks/core-rules.sha256 hooks/hooks.json hooks/lib/orchestrator-state.sh hooks/lib/orchestrator-directive.sh \
-           scripts/workflows.sh; do
-    echo "content of $f" >"$FX/$f"
-    cp "$FX/$f" "$FX/plugins/silver-bullet/$f"
-  done
-  mkdir -p "$FX/hooks/__pycache__"; echo junk >"$FX/hooks/__pycache__/x.sh"
-  local c
-  for c in "${COMPOSERS[@]}"; do
-    mkdir -p "$FX/host-bundles/codex/$c" "$FX/plugins/silver-bullet/skill-source/$c"
-    echo "skill $c" >"$FX/host-bundles/codex/$c/SKILL.md"
-    cp "$FX/host-bundles/codex/$c/SKILL.md" "$FX/plugins/silver-bullet/skill-source/$c/SILVER_SOURCE"
-  done
-}
+PKG="$FX/plugins/silver-bullet"
+mkdir -p "$FX/plugins"
+rsync -a --exclude='__pycache__/' --exclude='*.render.lock' \
+  "$TL_REPO_ROOT/skills" "$TL_REPO_ROOT/templates" "$TL_REPO_ROOT/scripts" "$TL_REPO_ROOT/hooks" \
+  "$TL_REPO_ROOT/agents" "$TL_REPO_ROOT/host-bundles" "$TL_REPO_ROOT/package.json" \
+  "$TL_REPO_ROOT/.cursor-plugin" "$FX/"
+rsync -a "$TL_REPO_ROOT/plugins/silver-bullet" "$FX/plugins/"
+for f in AGENTS.md CHANGELOG.md CODE_OF_CONDUCT.md CONTRIBUTING.md LICENSE README.md SECURITY.md .silver-bullet.json; do
+  : >"$FX/$f"
+done
+mkdir -p "$FX/docs"
+# Clean by construction, whatever state the checkout's mirrors are in.
+bash "$FX/scripts/sync-codex-package.sh" >/dev/null 2>&1
 run() { tl_run bash "$FX/scripts/validate-plugin-mirror.sh"; }
 
-build; run
-assert_eq "clean fixture passes" 0 "$TL_STATUS"
+run
+assert_eq "fresh regeneration passes" 0 "$TL_STATUS"
 assert_contains "OK message" "$TL_OUT" "Plugin mirror OK"
-assert_not_contains "pycache ignored" "$TL_OUT" "__pycache__"
 
-build; rm "$FX/hooks/flow-advance.sh"
+# --- every drift class at once, each named ------------------------------------
+REF="$FX/skills/silver-init/references/scaffold-steps.md"
+cp "$REF" "$TL_TMP/ref.bak"
+printf '\nseeded drift\n' >>"$REF"                               # source edited, mirrors not regenerated
+mkdir -p "$FX/agents/claude/sb:stale-route"
+printf -- '---\nname: sb:stale-route\n---\n' >"$FX/agents/claude/sb:stale-route/SKILL.md"   # stray skill
+printf 'stale\n' >>"$PKG/commands/sb-feature.md"                # hand-edited stub
+printf 'stale\n' >>"$PKG/templates/silver-bullet.md.base"       # hand-edited template mirror
+printf ' ' >>"$FX/hooks/cursor-hooks.json"                       # hand-edited generated hooks
+rm "$PKG/hooks" && cp -R "$FX/hooks" "$PKG/hooks"               # link replaced by a stale copy
+mkdir -p "$PKG/skills/x"                                          # entry the sync would prune
+touch "$FX/skills/silver-feature/bad:name.md"                    # Windows-unsafe generated path
 run
-assert_eq "source missing for a spot-checked hook fails" 1 "$TL_STATUS"
-assert_contains "reports missing source" "$TL_OUT" "MISSING source: hooks/flow-advance.sh"
-assert_contains "error annotation" "$TL_OUT" "::error::Plugin mirror drift detected"
+assert_eq "drift fails" 1 "$TL_STATUS"
+for drifted in \
+  "agents/claude/sb:init/references/scaffold-steps.md" \
+  "host-bundles/codex/sb-init/references/scaffold-steps.md" \
+  "plugins/silver-bullet/skill-source/sb-init/references/scaffold-steps.md" \
+  "plugins/silver-bullet/cursor-skill-source/sb-init/references/scaffold-steps.md" \
+  "agents/claude/sb:stale-route/SKILL.md" \
+  "plugins/silver-bullet/commands/sb-feature.md" \
+  "plugins/silver-bullet/templates/silver-bullet.md.base" \
+  "hooks/cursor-hooks.json" \
+  "plugins/silver-bullet/hooks must be a symlink to ../../hooks" \
+  "plugins/silver-bullet/skills (the sync would remove or create it)" \
+  "host-bundles/codex/sb-feature/bad:name.md"; do
+  assert_contains "drift named: $drifted" "$TL_OUT" "DRIFT: $drifted"
+done
+assert_contains "Windows-unsafe path flagged" "$TL_OUT" "plugins/silver-bullet/skill-source/sb-feature/bad:name.md (Windows-unsafe path)"
+assert_not_contains "colon route directories are the documented exception" "$TL_OUT" "agents/claude/sb:init/SKILL.md (Windows-unsafe"
+assert_contains "error annotation names the fix" "$TL_OUT" "::error::Plugin mirror drift detected"
+assert_contains "error annotation tells how to fix" "$TL_OUT" "run: bash scripts/sync-codex-package.sh"
 
-build; rm "$FX/plugins/silver-bullet/hooks/session-start"
+# restore
+cp "$TL_TMP/ref.bak" "$REF"
+rm -rf "$FX/agents/claude/sb:stale-route" "$PKG/skills" "$PKG/hooks" "$FX/skills/silver-feature/bad:name.md"
+ln -s ../../hooks "$PKG/hooks"
+bash "$FX/scripts/sync-codex-package.sh" >/dev/null 2>&1
 run
-assert_eq "missing mirror file fails" 1 "$TL_STATUS"
-assert_contains "reports missing in mirror" "$TL_OUT" "DRIFT missing in plugin mirror: hooks/session-start"
+assert_eq "restored fixture passes again" 0 "$TL_STATUS"
 
-build; echo changed >"$FX/plugins/silver-bullet/hooks/core-rules.md"
+# --- a large drift is capped in the report ------------------------------------
+mv "$FX/host-bundles/codex" "$TL_TMP/codex.bak"
 run
-assert_eq "content drift fails" 1 "$TL_STATUS"
-assert_contains "reports content mismatch" "$TL_OUT" "DRIFT content mismatch: hooks/core-rules.md"
+assert_eq "missing bundle fails" 1 "$TL_STATUS"
+assert_match "long reports are capped" '\.\.\. and [0-9]+ more' "$TL_OUT"
+mv "$TL_TMP/codex.bak" "$FX/host-bundles/codex"
 
-build; rm "$FX/host-bundles/codex/sb-ui/SKILL.md"
+# --- a regeneration that fails is reported, not passed --------------------------
+mkdir -p "$FX/skills/sb-feature"
+printf -- '---\nname: sb-feature\n---\n' >"$FX/skills/sb-feature/SKILL.md"
 run
-assert_eq "missing codex bundle fails" 1 "$TL_STATUS"
-assert_contains "reports missing codex bundle" "$TL_OUT" "MISSING codex bundle: host-bundles/codex/sb-ui/SKILL.md"
-
-build; rm "$FX/plugins/silver-bullet/skill-source/sb-devops/SILVER_SOURCE"
-run
-assert_eq "missing SILVER_SOURCE fails" 1 "$TL_STATUS"
-assert_contains "reports missing SILVER_SOURCE" "$TL_OUT" "DRIFT missing in plugin mirror: plugins/silver-bullet/skill-source/sb-devops/SILVER_SOURCE"
-
-build; echo changed >"$FX/plugins/silver-bullet/skill-source/sb-release/SILVER_SOURCE"
-run
-assert_eq "SILVER_SOURCE drift fails" 1 "$TL_STATUS"
-assert_contains "reports SILVER_SOURCE mismatch" "$TL_OUT" "DRIFT content mismatch: plugins/silver-bullet/skill-source/sb-release/SILVER_SOURCE"
+assert_eq "failed regeneration fails the check" 1 "$TL_STATUS"
+assert_contains "renderer error shown" "$TL_OUT" "skill rename collision: silver-feature -> sb-feature"
+assert_contains "regeneration failure annotated" "$TL_OUT" "could not regenerate the package"
+rm -rf "$FX/skills/sb-feature"
 
 tl_results

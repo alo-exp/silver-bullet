@@ -73,7 +73,7 @@ hd_happy() {
   [[ -n "${1:-}" ]] || { rt=claude; root="$HOME/.claude"; }
   rm -rf "$HOME/.claude" "$HOME/.codex" "$HOME/.cursor" "$HD_PROJ"
   case "$rt" in codex) cache="$root/plugins/cache/alo-labs-codex/silver-bullet" ;; *) cache="$root/plugins/cache/alo-labs/silver-bullet" ;; esac
-  mkdir -p "$cache/$ver/hooks" "$cache/$ver/agents/claude" "$cache/$ver/skill-source" "$cache/$ver/commands" "$root/.silver-bullet"
+  mkdir -p "$cache/$ver/hooks" "$cache/$ver/agents/claude" "$cache/$ver/skill-source" "$cache/$ver/cursor-skill-source" "$cache/$ver/commands" "$root/.silver-bullet"
   echo '{}' >"$cache/$ver/hooks/hooks.json"
   echo x >"$cache/$ver/commands/sb.md"
   ln -s "$cache/$ver" "$cache/current"

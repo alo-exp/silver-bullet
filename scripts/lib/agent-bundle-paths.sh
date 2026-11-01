@@ -31,11 +31,12 @@ sb_agent_bundle_root() {
 }
 
 # Host bundle path inside an installed plugin cache (differs from source checkout).
+# Codex and Cursor read their own render of the hidden skill sources.
 sb_agent_cache_rel() {
   case "${1:-}" in
     claude) printf '%s\n' 'agents/claude' ;;
     codex) printf '%s\n' 'skill-source' ;;
-    cursor) printf '%s\n' 'skill-source' ;;
+    cursor) printf '%s\n' 'cursor-skill-source' ;;
     *)
       printf 'sb_agent_cache_rel: unknown host: %s\n' "${1:-}" >&2
       return 1
