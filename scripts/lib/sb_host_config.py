@@ -32,7 +32,7 @@ from pathlib import Path
 BACKUP_SUFFIX = ".sb-backup"
 
 
-class ConfigError(Exception):
+class ConfigError(ValueError):
     """A host config file cannot be read or changed safely; it was left unchanged."""
 
 
@@ -125,7 +125,7 @@ def write_json(path, data, *, backup: bool = True) -> bool:
 # ------------------------------------------------------------------ hook ownership
 
 _INTERPRETERS = frozenset({"bash", "sh", "zsh", "node", "python", "python3", "env"})
-_CACHE_ROOT_RE = re.compile(r"/plugins/cache/[^/]+/silver-bullet/[^/]+$")
+_CACHE_ROOT_RE = re.compile(r"(?:/plugins/cache/[^/]+/silver-bullet/[^/]+|/silver-bullet/(?:\d+\.\d+\.\d+[^/]*|current))$")
 _NAMED_ROOT_RE = re.compile(r"(?:/silver-bullet(?:/[^/]+)?|^\$\{(?:CLAUDE|CURSOR)_PLUGIN_ROOT\})$")
 _ASSIGNMENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
 
@@ -160,7 +160,8 @@ def is_sb_hook_command(command, *, hook_names=frozenset(), install_roots=()) -> 
     """True when the program ``command`` runs lives in a Silver Bullet hooks directory.
 
     Owned: anything under an installed host plugin cache
-    (``.../plugins/cache/<marketplace>/silver-bullet/<version>/hooks/``) or under one of
+    (``.../plugins/cache/<marketplace>/silver-bullet/<version>/hooks/``), a versioned
+    install mirror (``.../silver-bullet/<x.y.z>|current/hooks/``) or one of
     ``install_roots``; and, when the file name is one of ``hook_names``, Silver Bullet's
     checkout and mirror layouts (``.../silver-bullet/<dir>/hooks/``,
     ``.../plugins/silver-bullet/hooks/``) and the unexpanded ``${CLAUDE_PLUGIN_ROOT}`` /
