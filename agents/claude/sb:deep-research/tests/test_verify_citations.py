@@ -59,8 +59,8 @@ class FakeResp:
         self._body = body
         self.status = status
 
-    def read(self):
-        return self._body
+    def read(self, size=-1):
+        return self._body if size is None or size < 0 else self._body[:size]
 
     def __enter__(self):
         return self
@@ -69,11 +69,16 @@ class FakeResp:
         return False
 
 
+def _public_resolver(host, port, *args, **kwargs):
+    """Resolve every test host to a public documentation address (no DNS)."""
+    return [(2, 1, 6, '', ('93.184.216.34', port))]
+
+
 def make_verifier(text='## Bibliography\n', strict=False):
     d = tempfile.mkdtemp(dir=_ROOT)
     p = Path(d) / 'report.md'
     p.write_text(text, encoding='utf-8')
-    return vc.CitationVerifier(p, strict_mode=strict)
+    return vc.CitationVerifier(p, strict_mode=strict, resolver=_public_resolver)
 
 
 def entry(**kw):
@@ -133,7 +138,7 @@ class TestVerifyDoi(unittest.TestCase):
             'title': 'T', 'issued': {'date-parts': [[2020]]},
             'author': [{'family': 'Doe', 'given': 'J'}], 'container-title': 'V',
         }).encode()
-        with mock.patch.object(vc.request, 'urlopen', return_value=FakeResp(body)) as uo:
+        with mock.patch.object(vc, '_urlopen', return_value=FakeResp(body)) as uo:
             ok, md = self.v.verify_doi('10.1/x y')
         self.assertTrue(ok)
         self.assertEqual(md, {'title': 'T', 'year': 2020, 'authors': ['Doe J'], 'venue': 'V'})
@@ -142,7 +147,7 @@ class TestVerifyDoi(unittest.TestCase):
         self.assertEqual(req.get_header('Accept'), 'application/vnd.citationstyles.csl+json')
 
     def test_success_missing_fields_defaults(self):
-        with mock.patch.object(vc.request, 'urlopen', return_value=FakeResp(b'{"issued": {}}')):
+        with mock.patch.object(vc, '_urlopen', return_value=FakeResp(b'{"issued": {}}')):
             ok, md = self.v.verify_doi('10.1/x')
         self.assertTrue(ok)
         self.assertEqual(md['title'], '')
@@ -151,16 +156,16 @@ class TestVerifyDoi(unittest.TestCase):
 
     def test_http_404(self):
         exc = error.HTTPError('u', 404, 'nf', {}, None)
-        with mock.patch.object(vc.request, 'urlopen', side_effect=exc):
+        with mock.patch.object(vc, '_urlopen', side_effect=exc):
             self.assertEqual(self.v.verify_doi('10.1/x'), (False, {'error': 'DOI not found (404)'}))
 
     def test_http_other(self):
         exc = error.HTTPError('u', 503, 'x', {}, None)
-        with mock.patch.object(vc.request, 'urlopen', side_effect=exc):
+        with mock.patch.object(vc, '_urlopen', side_effect=exc):
             self.assertEqual(self.v.verify_doi('10.1/x'), (False, {'error': 'HTTP 503'}))
 
     def test_generic_exception(self):
-        with mock.patch.object(vc.request, 'urlopen', side_effect=ValueError('boom')):
+        with mock.patch.object(vc, '_urlopen', side_effect=ValueError('boom')):
             self.assertEqual(self.v.verify_doi('10.1/x'), (False, {'error': 'boom'}))
 
 
@@ -172,27 +177,29 @@ class TestVerifyUrl(unittest.TestCase):
         self.assertEqual(self.v.verify_url(''), (False, 'No URL'))
 
     def test_ok(self):
-        with mock.patch.object(vc.request, 'urlopen', return_value=FakeResp(status=200)) as uo:
+        with mock.patch.object(vc, '_urlopen', return_value=FakeResp(status=200)) as uo:
             self.assertEqual(self.v.verify_url('https://e.com'), (True, 'URL accessible'))
         req = uo.call_args[0][0]
         self.assertEqual(req.get_method(), 'HEAD')
         self.assertIn('Citation Verifier', req.get_header('User-agent'))
 
-    def test_non_200(self):
-        with mock.patch.object(vc.request, 'urlopen', return_value=FakeResp(status=204)):
-            self.assertEqual(self.v.verify_url('https://e.com'), (False, 'HTTP 204'))
+    def test_non_2xx(self):
+        with mock.patch.object(vc, '_urlopen', return_value=FakeResp(status=204)):
+            self.assertEqual(self.v.verify_url('https://e.com'), (True, 'URL accessible'))
+        with mock.patch.object(vc, '_urlopen', return_value=FakeResp(status=304)):
+            self.assertEqual(self.v.verify_url('https://e.com'), (False, 'HTTP 304'))
 
     def test_http_error(self):
         exc = error.HTTPError('u', 403, 'x', {}, None)
-        with mock.patch.object(vc.request, 'urlopen', side_effect=exc):
+        with mock.patch.object(vc, '_urlopen', side_effect=exc):
             self.assertEqual(self.v.verify_url('https://e.com'), (False, 'HTTP 403'))
 
     def test_url_error(self):
-        with mock.patch.object(vc.request, 'urlopen', side_effect=error.URLError('dns fail')):
+        with mock.patch.object(vc, '_urlopen', side_effect=error.URLError('dns fail')):
             self.assertEqual(self.v.verify_url('https://e.com'), (False, 'URL error: dns fail'))
 
     def test_other_exception_truncated(self):
-        with mock.patch.object(vc.request, 'urlopen', side_effect=OSError('x' * 80)):
+        with mock.patch.object(vc, '_urlopen', side_effect=OSError('x' * 80)):
             ok, msg = self.v.verify_url('https://e.com')
         self.assertFalse(ok)
         self.assertEqual(msg, 'Connection error: ' + 'x' * 50)
@@ -333,8 +340,13 @@ class TestVerifyEntry(unittest.TestCase):
         self.assertEqual(r['issues'], [])
         self.assertIn('Checking DOI 10.1/x', out)
 
-    def test_doi_verified_without_titles_or_years(self):
+    def test_doi_without_a_matchable_title_does_not_verify(self):
+        # R11-06: any resolving DOI used to verify a title-less entry.
         r, _ = self.run_entry(entry(doi='10.1/x'), doi=(True, {}))
+        self.assertEqual(r['status'], 'suspicious')
+        self.assertIn('DOI metadata title not found in the entry', r['issues'])
+        r, _ = self.run_entry(entry(doi='10.1/x', raw='Doe. Deep sea mining risks. 2020.'),
+                              doi=(True, {'title': 'Deep sea mining risks'}))
         self.assertEqual(r['status'], 'verified')
 
     def test_doi_title_and_year_mismatch(self):
@@ -369,7 +381,7 @@ class TestVerifyEntry(unittest.TestCase):
 
     def test_url_fail(self):
         r, _ = self.run_entry(entry(url='http://e.com'), url=(False, 'HTTP 404'))
-        self.assertEqual(r['status'], 'unknown')
+        self.assertEqual(r['status'], 'unverified')
         self.assertEqual(r['issues'], ['URL check failed: HTTP 404'])
 
     def test_no_doi_no_url(self):
@@ -379,8 +391,9 @@ class TestVerifyEntry(unittest.TestCase):
 
 
 class TestVerifyAll(unittest.TestCase):
-    def run_all(self, entries, strict=False):
+    def run_all(self, entries, strict=False, lenient=False):
         v = make_verifier(strict=strict)
+        v.lenient = lenient
         out = io.StringIO()
         results = iter(entries)
 
@@ -413,26 +426,34 @@ class TestVerifyAll(unittest.TestCase):
         self.assertIn('URL Verified: 1/2', out)
         self.assertEqual(sl.call_count, 2)
 
-    def test_low_verification_warns_but_passes(self):
-        ok, out, _ = self.run_all([self.res('1', 'unverified', ['DOI resolution failed: x']),
-                                   self.res('2', 'unknown')])
-        self.assertTrue(ok)
+    def test_low_verification_fails_by_default(self):
+        # R11-06: a bibliography with nothing verified used to exit 0.
+        entries = [self.res('1', 'unverified', ['DOI resolution failed: x']), self.res('2', 'unknown')]
+        ok, out, _ = self.run_all(entries)
+        self.assertFalse(ok)
         self.assertIn('UNVERIFIED CITATIONS', out)
         self.assertIn('[1] DOI resolution failed: x', out)
         self.assertIn('[2] Unknown', out)
         self.assertIn('Less than 50%', out)
-
-    def test_suspicious_nonstrict_continues(self):
-        ok, out, _ = self.run_all([self.res('1', 'verified'), self.res('2', 'suspicious', ['bad thing'])])
+        self.assertIn('CITATION VERIFICATION FAILED', out)
+        ok, out, _ = self.run_all(entries, lenient=True)
         self.assertTrue(ok)
+        self.assertIn('(--lenient: reporting only, not failing)', out)
+
+    def test_suspicious_fails_unless_lenient(self):
+        entries = [self.res('1', 'verified'), self.res('2', 'suspicious', ['bad thing'])]
+        ok, out, _ = self.run_all(entries)
+        self.assertFalse(ok)
         self.assertIn('SUSPICIOUS CITATIONS', out)
         self.assertIn('- bad thing', out)
-        self.assertIn('(Continuing in non-strict mode)', out)
+        self.assertIn('WARNING: Suspicious citations detected', out)
+        ok, _, _ = self.run_all(entries, lenient=True)
+        self.assertTrue(ok)
 
     def test_suspicious_strict_fails(self):
         ok, out, _ = self.run_all([self.res('1', 'suspicious', ['bad'])], strict=True)
         self.assertFalse(ok)
-        self.assertIn('STRICT MODE: Failing due to suspicious citations', out)
+        self.assertIn('WARNING: Suspicious citations detected', out)
 
     def test_strict_unverified_fails(self):
         ok, out, _ = self.run_all([self.res('1', 'verified'), self.res('2', 'unverified')], strict=True)
