@@ -160,6 +160,10 @@ assert_file_exists "commands synced" "$D/commands/sb.md"
 assert_eq "manifest version stamped" 9.1.0 "$(jq -r .version "$D/.cursor-plugin/plugin.json")"
 assert_eq "manifest points at the commands dir" "./commands" "$(jq -r .commands "$D/.cursor-plugin/plugin.json")"
 assert_eq "manifest drops skills" null "$(jq -c .skills "$D/.cursor-plugin/plugin.json")"
+# R7-26: an installer-written plugin root delivers no hooks of its own; they come from the
+# merged ~/.cursor/hooks.json. The field stays set so Cursor does not discover hooks/hooks.json.
+assert_eq "plugin manifest names the root hook manifest" '"./cursor-hooks.json"' "$(jq -c .hooks "$D/.cursor-plugin/plugin.json")"
+assert_eq "root hook manifest declares no hooks" '{}' "$(jq -c .hooks "$D/cursor-hooks.json")"
 # second tree without commands/skill-source: stale copies are removed, manifest loses commands
 make_source "$TL_TMP/srcB" "" "" with-generator
 sub sync_plugin_tree_from_checkout "$TL_TMP/srcB" 9.1.0
@@ -319,6 +323,35 @@ printf 'not json' >"$REG"
 sub read_installed_plugins_git_sha
 assert_eq "unparseable registry tolerated" 0 "$TL_STATUS"
 
+# ---- R7-14: installed_plugins.json is refused when unparseable; otherwise only SB's record changes
+reset_home
+REG="$CH/plugins/installed_plugins.json"
+mkdir -p "$CH/plugins" "$TL_TMP/regdest"
+printf '{"version":2,"plugins":{"sidekick@alo-labs-cursor":[{"version":"1.0"}],"github@cursor":[{"v' >"$REG"
+cp "$REG" "$TL_TMP/reg.before"
+sub ensure_cursor_installed_plugins_registry "$TL_TMP/regdest" 7.0.0 ""
+assert_eq "truncated registry refused" 1 "$TL_STATUS"
+assert_contains "refusal names the file" "$TL_ERR" "installed_plugins.json: not valid JSON"
+assert_eq "truncated registry left byte-identical" "$(cat "$TL_TMP/reg.before")" "$(cat "$REG")"
+printf '{"version":2,"plugins":[]}' >"$REG"
+sub ensure_cursor_installed_plugins_registry "$TL_TMP/regdest" 7.0.0 ""
+assert_eq "wrongly typed plugins refused" 1 "$TL_STATUS"
+assert_contains "wrong type explained" "$TL_ERR" "'plugins' must be an object"
+printf '{"version":2,"plugins":{"sidekick@alo-labs-cursor":[{"version":"1.0","enabled":true}],"silver-bullet@alo-labs":[{"installedAt":"old","custom":1}]}}\n' >"$REG"
+chmod 600 "$REG"
+sub ensure_cursor_installed_plugins_registry "$TL_TMP/regdest" 7.0.0 "$SNAP_SHA"
+assert_eq "registry update exits 0" 0 "$TL_STATUS"
+assert_eq "other plugins kept" '[{"version":"1.0","enabled":true}]' "$(jq -c '.plugins["sidekick@alo-labs-cursor"]' "$REG")"
+assert_eq "SB record updated in place" '7.0.0 1' "$(jq -r '.plugins["silver-bullet@alo-labs"][0] | "\(.version) \(.custom)"' "$REG")"
+assert_eq "registry mode kept" 600 "$(stat -c %a "$REG" 2>/dev/null || stat -f %Lp "$REG")"
+assert_file_exists "previous registry backed up" "$REG.sb-backup"
+printf '{"plugins":{"silver-bullet@alo-labs":{"custom":2}}}\n' >"$REG"
+sub ensure_cursor_installed_plugins_registry "$TL_TMP/regdest" 7.0.1 ""
+assert_eq "dict-shaped record converted, its fields kept" '7.0.1 2' "$(jq -r '.plugins["silver-bullet@alo-labs"][0] | "\(.version) \(.custom)"' "$REG")"
+printf '{"plugins":{"silver-bullet@alo-labs":["junk"]}}\n' >"$REG"
+sub ensure_cursor_installed_plugins_registry "$TL_TMP/regdest" 7.0.2 ""
+assert_eq "unusable SB record replaced" 7.0.2 "$(jq -r '.plugins["silver-bullet@alo-labs"][0].version' "$REG")"
+
 # ---- remote head
 sub resolve_remote_github_head_sha
 assert_eq "remote HEAD resolved from the upstream" "$UP_SHA2" "$TL_OUT"
@@ -451,21 +484,50 @@ assert_eq "a destination not named after the version fails" 1 "$TL_STATUS"
 assert_contains "unmaterialized version reported" "$TL_ERR" "Cursor cache claimed version 9.9.9 is not materialized at $TL_TMP/other-name"
 assert_contains "missing claimed cache version reported" "$TL_ERR" "Cursor claimed cache version is missing: $CACHE/9.9.9"
 
-# ---- public-release sync, with GitHub redirected to local repositories
-reset_home
+# ---- public-release sync, with GitHub redirected to local repositories (R7-15: fail closed)
 MKT="$TL_TMP/marketplace-src"
 mkdir -p "$MKT/.cursor-plugin"
-printf '{"plugins":[{"name":"silver-bullet","version":"5.5.5"}]}\n' >"$MKT/.cursor-plugin/marketplace.json"
 git -C "$MKT" init -q; git -C "$MKT" config user.email t@example.invalid; git -C "$MKT" config user.name t; git -C "$MKT" config gc.auto 0
-git -C "$MKT" add -A; git -C "$MKT" -c commit.gpgsign=false commit -q -m m
-git config --global url."file://$SNAP".insteadOf https://github.com/alo-exp/silver-bullet.git
-tl_run env CURSOR_HOME="$CH" CURSOR_GITHUB_REPO_URL="file://$UPSTREAM" CURSOR_SB_PUBLIC_MARKETPLACE_SOURCE="file://$MKT" SB_INSTALL_CURSOR_SOURCE_ONLY=1 \
-  bash -c 'source "$1"; sync_plugin_tree_from_public_release; echo "version=$VERSION dest=$DEST_ROOT"' _ "$SCRIPT"
-assert_eq "public-release sync exits 0" 0 "$TL_STATUS"
-assert_contains "release version adopted" "$TL_OUT" "version=5.5.5 dest=$CACHE/5.5.5"
+publish() { # publish <marketplace.json body>: commit a new published manifest
+  printf '%s\n' "$1" >"$MKT/.cursor-plugin/marketplace.json"
+  git -C "$MKT" add -A; git -C "$MKT" -c commit.gpgsign=false commit -q --allow-empty -m m
+}
+public_sync() {
+  reset_home
+  tl_run env CURSOR_HOME="$CH" CURSOR_GITHUB_REPO_URL="file://$SNAP" CURSOR_SB_PUBLIC_MARKETPLACE_SOURCE="file://$MKT" SB_INSTALL_CURSOR_SOURCE_ONLY=1 \
+    bash -c 'source "$1"; sync_plugin_tree_from_public_release; echo "version=$VERSION dest=$DEST_ROOT sha=$INSTALL_COMMIT_SHA"' _ "$SCRIPT"
+}
+# the release tag
+git -C "$SNAP" tag v5.5.5
+publish '{"plugins":[{"name":"silver-bullet","version":"5.5.5"}]}'
+public_sync
+assert_eq "public-release sync from the release tag exits 0" 0 "$TL_STATUS"
+assert_contains "release version adopted" "$TL_OUT" "version=5.5.5 dest=$CACHE/5.5.5 sha=$SNAP_SHA"
 assert_file_exists "release plugin tree materialized" "$CACHE/5.5.5/.cursor-plugin/plugin.json"
 assert_eq "release manifest stamped" 5.5.5 "$(jq -r .version "$CACHE/5.5.5/.cursor-plugin/plugin.json")"
 assert_file_exists "release commands synced" "$CACHE/5.5.5/commands/sb.md"
-git config --global --unset-all url."file://$SNAP".insteadOf
+git -C "$SNAP" tag -d v5.5.5 >/dev/null
+# the manifest's pinned sha wins and is verified; no tag is needed
+publish '{"plugins":[{"name":"silver-bullet","version":"5.5.6","source":{"sha":"'"$SNAP_SHA"'"}}]}'
+public_sync
+assert_eq "pinned-sha public release exits 0" 0 "$TL_STATUS"
+assert_contains "pinned commit installed" "$TL_OUT" "version=5.5.6 dest=$CACHE/5.5.6 sha=$SNAP_SHA"
+# no tag and no pin: refused, never the default branch
+publish '{"plugins":[{"name":"silver-bullet","version":"6.6.6"}]}'
+public_sync
+assert_eq "untagged unpinned release refused" 1 "$TL_STATUS"
+assert_contains "refusal explained" "$TL_ERR" "could not fetch Silver Bullet 6.6.6 from file://$SNAP; nothing was installed (no fallback to an unpinned branch)"
+assert_file_absent "nothing installed for the refused release" "$CACHE/6.6.6"
+# a pinned sha the repository does not have
+publish '{"plugins":[{"name":"silver-bullet","version":"6.6.7","source":{"sha":"'"$SHA_X"'"}}]}'
+public_sync
+assert_eq "unreachable pinned sha refused" 1 "$TL_STATUS"
+assert_contains "pinned sha named in the refusal" "$TL_ERR" "6.6.7 at pinned commit $SHA_X"
+assert_file_absent "nothing installed for the unreachable pin" "$CACHE/6.6.7"
+# a manifest without a silver-bullet version
+publish '{"plugins":[{"name":"other","version":"1.0.0"}]}'
+public_sync
+assert_eq "manifest without silver-bullet refused" 1 "$TL_STATUS"
+assert_contains "missing version explained" "$TL_ERR" "names no silver-bullet release version; nothing was installed"
 
 tl_results
