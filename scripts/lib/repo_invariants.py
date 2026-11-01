@@ -11,6 +11,7 @@ CHECK is one of:
                         text saved under a font or image name)
   vendored-skills-lock  the third-party skills under .agents/skills match skills-lock.json
   tracked-file-size     no tracked file nears GitHub's 100 MB per-file limit
+  site-duplicate-ids    no page of the public site (site/**/*.html) repeats an element id
 
 ROOT (default: the current directory) is the repository to check. The files checked are
 the ones git tracks there, or every file under ROOT when ROOT is not the top of a git work
@@ -25,6 +26,8 @@ import os
 import re
 import subprocess
 import sys
+from collections import Counter
+from html.parser import HTMLParser
 from pathlib import Path
 
 # --- which files ---------------------------------------------------------------------------
@@ -189,11 +192,144 @@ def tracked_file_size(root: Path, files: list[str]) -> list[str]:
     return problems
 
 
+# --- site pages ----------------------------------------------------------------------------------
+
+
+class IdCollector(HTMLParser):
+    """Collects the non-empty id attribute of every element."""
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.ids: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        self.ids.extend(value for name, value in attrs if name == "id" and value)
+
+    handle_startendtag = handle_starttag
+
+
+def site_duplicate_ids(root: Path, files: list[str]) -> list[str]:
+    problems = []
+    for rel in files:
+        if not (rel.startswith("site/") and rel.endswith(".html")):
+            continue
+        data = read_bytes(root, rel)
+        if data is None:
+            continue
+        collector = IdCollector()
+        collector.feed(data.decode("utf-8", "replace"))
+        duplicates = sorted(i for i, count in Counter(collector.ids).items() if count > 1)
+        if duplicates:
+            problems.append(f"{rel}: duplicate id {', '.join(duplicates)}")
+    return problems
+
+
+# --- GitHub Actions workflows ----------------------------------------------------------------------
+# A line-oriented reading of the block-style YAML the workflows use (no YAML parser in the
+# standard library): top-level keys start in column 0, children are indented below them.
+
+WORKFLOW_FILE = re.compile(r"^\.github/workflows/[^/]+\.ya?ml$")
+UNPINNED = re.compile(r"@latest\b|\bnpx\s+(--yes|-y)\b")
+RUN_KEY = re.compile(r"^(\s*(?:-\s+)?)run:\s*(.*)$")
+CONTINUE_ON_ERROR = re.compile(r"^\s*(?:-\s+)?continue-on-error:\s*true\b")
+FORCE_NODE24 = re.compile(r"^\s+FORCE_JAVASCRIPT_ACTIONS_TO_NODE24:\s*true\s*$")
+JOB_HEADER = re.compile(r"^\s+[A-Za-z0-9_-]+:\s*$")
+
+
+def indent_of(line: str) -> int:
+    return len(line) - len(line.lstrip(" "))
+
+
+def top_level_block(lines: list[str], key: str) -> list[tuple[int, str]]:
+    """(line number, line) of the lines nested under the top-level KEY."""
+    block, inside = [], False
+    for number, line in enumerate(lines, 1):
+        if line[:1] not in ("", " ", "#"):
+            inside = line.startswith(key + ":")
+        elif inside:
+            block.append((number, line))
+    return block
+
+
+def block_extent(lines: list[str], start: int, parent_indent: int) -> list[tuple[int, str]]:
+    """The lines after line START (1-based) that are nested deeper than PARENT_INDENT."""
+    extent = []
+    for number in range(start + 1, len(lines) + 1):
+        line = lines[number - 1]
+        if line.strip() and indent_of(line) <= parent_indent:
+            break
+        extent.append((number, line))
+    return extent
+
+
+def job_timeout_problems(rel: str, lines: list[str]) -> list[str]:
+    jobs = [(n, line) for n, line in top_level_block(lines, "jobs") if line.strip() and not line.lstrip().startswith("#")]
+    if not jobs:
+        return []
+    job_indent = min(indent_of(line) for _, line in jobs)
+    problems = []
+    for number, line in jobs:
+        if indent_of(line) != job_indent or not JOB_HEADER.match(line):
+            continue
+        body = [entry for entry in block_extent(lines, number, job_indent) if entry[1].strip()]
+        child_indent = indent_of(body[0][1]) if body else job_indent + 2
+        if not any(indent_of(text) == child_indent and text.strip().startswith("timeout-minutes:") for _, text in body):
+            problems.append(f"{rel}: job {line.strip()[:-1]} has no timeout-minutes")
+    return problems
+
+
+def workflow_problems(rel: str, lines: list[str]) -> list[str]:
+    problems = []
+    if not any(line.startswith("permissions:") for line in lines):
+        problems.append(f"{rel}: no top-level permissions block (least privilege)")
+    if not any(FORCE_NODE24.match(line) for _, line in top_level_block(lines, "env")):
+        problems.append(f"{rel}: FORCE_JAVASCRIPT_ACTIONS_TO_NODE24 is not set to true in the top-level env")
+    script_until = 0  # last line number of the run script being read
+    for number, line in enumerate(lines, 1):
+        code = line.strip()
+        if code.startswith("#"):
+            continue
+        if UNPINNED.search(line):
+            problems.append(f"{rel}:{number}: unpinned @latest or npx --yes")
+        if number <= script_until:
+            if "${{" in line:
+                problems.append(f"{rel}:{number}: ${{{{ }}}} expression inside a run script (pass it through env)")
+            continue
+        if CONTINUE_ON_ERROR.match(line):
+            problems.append(f"{rel}:{number}: continue-on-error hides failures")
+        run = RUN_KEY.match(line)
+        if run:
+            if "${{" in run.group(2):
+                problems.append(f"{rel}:{number}: ${{{{ }}}} expression inside a run script (pass it through env)")
+            extent = block_extent(lines, number, len(run.group(1)))
+            script_until = extent[-1][0] if extent else number
+        if code.startswith("- "):
+            item = [(number, line)] + block_extent(lines, number, indent_of(line))
+            text = "\n".join(entry for _, entry in item)
+            checkout = next((n for n, entry in item if "uses: actions/checkout@" in entry), None)
+            if checkout is not None and not re.search(r"persist-credentials:\s*false\b", text):
+                problems.append(f"{rel}:{checkout}: actions/checkout without persist-credentials: false")
+    return problems + job_timeout_problems(rel, lines)
+
+
+def workflow_hardening(root: Path, files: list[str]) -> list[str]:
+    problems = []
+    for rel in files:
+        if not WORKFLOW_FILE.match(rel):
+            continue
+        data = read_bytes(root, rel)
+        if data is not None:
+            problems.extend(workflow_problems(rel, data.decode("utf-8", "replace").splitlines()))
+    return problems
+
+
 CHECKS = {
     "worm-indicators": worm_indicators,
     "binary-signatures": binary_signatures,
     "vendored-skills-lock": vendored_skills_lock,
     "tracked-file-size": tracked_file_size,
+    "site-duplicate-ids": site_duplicate_ids,
+    "workflow-hardening": workflow_hardening,
 }
 
 
