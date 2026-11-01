@@ -110,6 +110,9 @@ PY
 # config.toml edits go through sb_host_config.TomlDocument (R7-09): tables are found by
 # their key path whatever the header spacing, comments and other keys are kept, and a
 # result that would not parse is never written.
+#   _sb_codex_edit_config <file> set <table...> <key> <toml literal>
+#   _sb_codex_edit_config <file> set-string <table...> <key> <string, escaped here>
+#   _sb_codex_edit_config <file> remove <table...>
 _sb_codex_edit_config() {
   local config_file="$1" action="$2"
   shift 2
@@ -119,15 +122,15 @@ import sys
 config_path, action = sys.argv[1], sys.argv[2]
 sys.path.insert(0, sys.argv[3])
 args = sys.argv[4:]
-from sb_host_config import ConfigError, read_toml, write_toml  # noqa: E402
+from sb_host_config import ConfigError, read_toml, toml_string, write_toml  # noqa: E402
 
 try:
     doc = read_toml(config_path)
-    if action == "set":
-        table, key, literal = tuple(args[:-2]), args[-2], args[-1]
-        doc.set_value(table, key, literal)
-    else:
+    if action == "remove":
         doc.remove(lambda path: path[: len(args)] == tuple(args))
+    else:
+        literal = toml_string(args[-1]) if action == "set-string" else args[-1]
+        doc.set_value(tuple(args[:-2]), args[-2], literal)
     write_toml(config_path, doc)
 except ConfigError as exc:
     sys.exit(f"ERROR: {exc}")

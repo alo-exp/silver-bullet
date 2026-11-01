@@ -99,6 +99,14 @@ sub resolve_cursor_install_dest
 assert_eq "current as a real directory is used directly" "$CACHE/current" "$TL_OUT"
 rmdir "$CACHE/current"
 
+# ---- R7-24: the version of an installed tree (merge-only runs from the cache, which has no package.json)
+mkdir -p "$TL_TMP/dest-ver/4.5.6/.cursor-plugin" "$TL_TMP/dest-ver/7.8.9"
+printf '{"version":"4.5.7"}\n' >"$TL_TMP/dest-ver/4.5.6/.cursor-plugin/plugin.json"
+sub cursor_install_dest_version "$TL_TMP/dest-ver/4.5.6"
+assert_eq "installed version read from the stamped manifest" 4.5.7 "$TL_OUT"
+sub cursor_install_dest_version "$TL_TMP/dest-ver/7.8.9"
+assert_eq "no manifest: the versioned directory name" 7.8.9 "$TL_OUT"
+
 # ---- commands source
 mkdir -p "$TL_TMP/src1/plugins/silver-bullet/commands" "$TL_TMP/src2"
 sub cursor_plugin_commands_src "$TL_TMP/src1"

@@ -517,6 +517,23 @@ assert_eq "an invalid config is refused" 1 "$TL_STATUS"
 assert_contains "refusal explains" "$TL_ERR" "not valid TOML"
 assert_eq "invalid config left byte-identical" $'[a]\nx = 1\n[a]' "$(<"$CFG")"
 
+# ---- R7-09: marketplace registration is structural too
+reset_home
+printf '# keep\n[marketplaces.alo-labs-codex] # mine\nsource_type = "git"\nsource = "https://example.invalid/x"\nextra = 1\n\n[marketplaces.silver-bullet-local]\nsource = "/old"\n' >"$CFG"
+sub ensure_marketplace_registered '/srv/my "quoted" path'
+assert_eq "marketplace registration exits 0" 0 "$TL_STATUS"
+assert_eq "source re-pointed, escaped, other keys kept" '{"extra": 1, "source": "/srv/my \"quoted\" path", "source_type": "local"}' \
+  "$(toml_get "$CFG" 'd["marketplaces"]["alo-labs-codex"]')"
+assert_contains "the header comment survives" "$(<"$CFG")" "[marketplaces.alo-labs-codex] # mine"
+sub remove_marketplace_if_present silver-bullet-local
+assert_eq "only the named marketplace removed" '["alo-labs-codex"]' "$(toml_get "$CFG" 'sorted(d["marketplaces"])')"
+sub ensure_marketplace_registered "https://github.com/obra/superpowers"
+assert_eq "a new git marketplace gets its own table" '{"source": "https://github.com/obra/superpowers", "source_type": "git"}' \
+  "$(toml_get "$CFG" 'd["marketplaces"]["superpowers-marketplace"]')"
+rm -f "$CFG"
+sub remove_marketplace_if_present silver-bullet-local
+assert_eq "removing from a missing config is a no-op" 0 "$TL_STATUS"
+
 # ---- R7-09: trust seeding over implicit tables, commented headers and SB's own duplicates
 reset_home
 make_pkg "$MP/plugins/silver-bullet" 1.0.0
