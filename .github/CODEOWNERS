@@ -1,0 +1,13 @@
+# Paths whose changes run code automatically (CI, host configuration that editors and
+# agents load when the folder is opened, Silver Bullet's hooks and scripts) need the
+# maintainer's review. Enable "Require review from Code Owners" in the main branch
+# protection for this to block merges.
+#
+# Maintainer: confirm this handle has write access; GitHub ignores owners it cannot resolve.
+/.github/   @shafqatevo
+/.vscode/   @shafqatevo
+/.claude/   @shafqatevo
+/.codex/    @shafqatevo
+/.cursor/   @shafqatevo
+/hooks/     @shafqatevo
+/scripts/   @shafqatevo
