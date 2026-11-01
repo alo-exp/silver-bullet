@@ -171,6 +171,29 @@ class OwnershipTest(Tmp):
             self.assertFalse(self.owned(command, roots=("/opt/sb",)), command)
 
 
+class RemoveHooksTest(unittest.TestCase):
+    def test_removes_selected_entries_and_keeps_every_other_shape(self):
+        sb = {"command": "sb"}
+        events = {
+            "Pre": [{"matcher": "Bash", "hooks": [{"command": "mine"}, sb]}, "foreign", {"hooks": "str"}],
+            "Only": [{"hooks": [sb]}],
+            "Mixed": [{"hooks": [sb]}, {"hooks": [{"command": "keep"}]}],
+            "Empty": [],
+            "Text": "x",
+            "Odd": [{"hooks": ["str", None, sb]}],
+        }
+        removed = m.remove_hooks(events, lambda hook: hook.get("command") == "sb")
+        self.assertEqual(removed, 4)
+        self.assertEqual(events, {
+            "Pre": [{"matcher": "Bash", "hooks": [{"command": "mine"}]}, "foreign", {"hooks": "str"}],
+            "Mixed": [{"hooks": [{"command": "keep"}]}],
+            "Empty": [],
+            "Text": "x",
+            "Odd": [{"hooks": ["str", None]}],
+        })
+        self.assertEqual(m.remove_hooks(events, lambda hook: False), 0)
+
+
 class TomlHelpersTest(unittest.TestCase):
     def test_parser_lookup_and_fallbacks(self):
         self.assertIs(m.toml_parser(), tomllib.loads)
