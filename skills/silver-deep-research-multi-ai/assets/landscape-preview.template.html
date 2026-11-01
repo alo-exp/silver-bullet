@@ -3152,7 +3152,8 @@ async function copyForGoogleDocs() {
 async function exportToPDF() {
   const btn = document.getElementById('pdfExportBtn');
   const origHTML = btn.innerHTML;
-  const pdfHref = 'landscape-report.pdf?v=' + Date.now();
+  const pdfBase = safeRelativeHref((window.__SB_REPORT__ || {}).pdf_href) || 'landscape-report.pdf';
+  const pdfHref = pdfBase + '?v=' + Date.now();
   btn.disabled = true;
   try {
     const opened = window.open(pdfHref, '_blank', 'noopener,noreferrer');

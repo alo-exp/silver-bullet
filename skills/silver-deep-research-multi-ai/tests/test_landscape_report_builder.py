@@ -636,7 +636,7 @@ class TemplateContractTests(unittest.TestCase):
             "a.target = '_blank'",
             "noopener noreferrer",
             "landscape-report.pdf",
-            "landscape-report.pdf?v=",
+            "pdfBase + '?v=' + Date.now()",
             "Date.now()",
             "window.open(pdfHref, '_blank', 'noopener,noreferrer')",
             "function _marketChartSource(anchor)",
@@ -700,7 +700,9 @@ class TemplateContractTests(unittest.TestCase):
             "function _inlineStylesForGDocs", 1
         )[0]
         self.assertIn("landscape-report.pdf", fn)
-        self.assertIn("landscape-report.pdf?v=", fn)
+        self.assertIn("pdfBase + '?v=' + Date.now()", fn)
+        self.assertIn("|| 'landscape-report.pdf'", fn)
+        self.assertIn("safeRelativeHref((window.__SB_REPORT__ || {}).pdf_href)", fn)
         self.assertIn("Date.now()", fn)
         self.assertIn("window.open(pdfHref, '_blank', 'noopener,noreferrer')", fn)
         self.assertNotIn("createObjectURL", fn)
@@ -710,7 +712,7 @@ class TemplateContractTests(unittest.TestCase):
         pfn = patched.split("async function exportToPDF()", 1)[1].split(
             "function _inlineStylesForGDocs", 1
         )[0]
-        self.assertIn("landscape-report.pdf?v=", pfn)
+        self.assertIn("pdfBase + '?v=' + Date.now()", pfn)
         self.assertIn("Date.now()", pfn)
         self.assertIn("window.open(pdfHref, '_blank'", pfn)
         self.assertNotIn("createObjectURL", pfn)
@@ -761,8 +763,8 @@ class TemplateContractTests(unittest.TestCase):
             )
             pdf_path = html_path.with_name("landscape-report.pdf")
 
-            def _fake_run(cmd, check):
-                pdf_path.write_bytes(b"%PDF-1.4 fake")
+            def _fake_run(cmd, check, timeout=None):
+                Path(cmd[-1]).write_bytes(b"%PDF-1.4 fake")
                 class _R:
                     returncode = 0
                 return _R()
@@ -774,7 +776,7 @@ class TemplateContractTests(unittest.TestCase):
             self.assertTrue(pdf_path.is_file())
             argv = mocked.call_args[0][0]
             self.assertIn("pdf", argv)
-            self.assertEqual(Path(argv[-1]).resolve(), pdf_path.resolve())
+            self.assertEqual(Path(argv[-1]).parent.resolve(), pdf_path.parent.resolve())
             self.assertTrue(str(argv[-2]).startswith("file:"))
             self.assertNotIn("landscape-report.html", str(argv[-2]))
             self.assertIn("--wait-for-selector", argv)
@@ -792,7 +794,7 @@ class TemplateContractTests(unittest.TestCase):
             "function _inlineStylesForGDocs(root) {}\n"
         )
         patched = _patch_pdf_export(stale)
-        self.assertIn("landscape-report.pdf?v=", patched)
+        self.assertIn("pdfBase + '?v=' + Date.now()", patched)
         self.assertIn("Date.now()", patched)
         self.assertIn("window.open(pdfHref, '_blank'", patched)
         self.assertNotIn("window.print(", patched)
@@ -1063,7 +1065,7 @@ class FreshSynthesizeRenderContractTests(unittest.TestCase):
             self.assertIn("data-sb-landscape-viewer", html)
             self.assertIn('target="_blank"', html)
             self.assertIn("noopener noreferrer", html)
-            self.assertIn("landscape-report.pdf?v=", html)
+            self.assertIn("pdfBase + '?v=' + Date.now()", html)
             start = html.find('id="report-data"')
             self.assertGreater(start, 0)
             script_start = html.find(">", start) + 1

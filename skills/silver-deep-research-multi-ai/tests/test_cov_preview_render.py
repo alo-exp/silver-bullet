@@ -443,7 +443,7 @@ class TemplatePatchTests(OfflineCase):
         legacy = "A\nasync function exportToPDF() { window.print(); }\nfunction _inlineStylesForGDocs(r) {}\nZ"
         out = lpr._patch_pdf_export(legacy)
         self.assertTrue(out.startswith("A\nasync function exportToPDF() {\n  const btn"))
-        self.assertIn("landscape-report.pdf?v=", out)
+        self.assertIn("pdfBase + '?v=' + Date.now()", out)
         self.assertNotIn("window.print(", out)
         self.assertTrue(out.endswith("function _inlineStylesForGDocs(r) {}\nZ"))
         self.assertEqual(lpr._patch_pdf_export(out), out)  # already patched

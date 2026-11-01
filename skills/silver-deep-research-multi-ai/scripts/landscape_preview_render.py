@@ -12,15 +12,16 @@ import base64
 import hashlib
 import html
 import json
-import math
 import os
 import re
+import subprocess
 from pathlib import Path
 from typing import Any
 
 from skill_paths import ensure_multi_ai_scripts_on_path, ensure_scripts_on_path
 
 from compression_markers import assert_no_compression_markers, sanitize_compression_markers
+from generated_files import atomic_write_text, json_safe
 
 ensure_multi_ai_scripts_on_path()
 ensure_scripts_on_path("silver-deep-research", marker="spa_embed.py")
@@ -371,21 +372,6 @@ CANONICAL_SOURCE_PATHS = {
     "chart_data": "landscape/chart-data.json",
     "comparison": "comparison/comparison.json",
 }
-
-
-def json_safe(value: Any) -> Any:
-    """Copy of value with non-finite floats (NaN, Infinity) replaced by None.
-
-    Python's json accepts and re-emits NaN/Infinity, but JSON.parse in the viewer rejects
-    them, so one model emitting NaN would blank the whole report (R12-28).
-    """
-    if isinstance(value, float):
-        return value if math.isfinite(value) else None
-    if isinstance(value, dict):
-        return {key: json_safe(item) for key, item in value.items()}
-    if isinstance(value, (list, tuple)):
-        return [json_safe(item) for item in value]
-    return value
 
 
 def collect_landscape_payload(root: Path, *, report_html: Path | None = None) -> dict[str, Any]:
@@ -829,7 +815,8 @@ def _inject_matrix_ui(template: str) -> str:
 _EXPORT_TO_PDF_FN = """async function exportToPDF() {
   const btn = document.getElementById('pdfExportBtn');
   const origHTML = btn.innerHTML;
-  const pdfHref = 'landscape-report.pdf?v=' + Date.now();
+  const pdfBase = safeRelativeHref((window.__SB_REPORT__ || {}).pdf_href) || 'landscape-report.pdf';
+  const pdfHref = pdfBase + '?v=' + Date.now();
   btn.disabled = true;
   try {
     const opened = window.open(pdfHref, '_blank', 'noopener,noreferrer');
@@ -861,8 +848,8 @@ def _patch_pdf_export(template: str) -> str:
         return template
     body = template[start:end]
     already = (
-        "landscape-report.pdf?v=" in body
-        and "Date.now()" in body
+        "pdfBase + '?v=' + Date.now()" in body
+        and "pdf_href" in body
         and "createObjectURL" not in body
         and "window.print(" not in body
     )
@@ -992,14 +979,18 @@ def write_sibling_landscape_pdf(
     timeout_ms: int = 120000,
     research_root: Path | None = None,
 ) -> dict[str, Any]:
-    """Write landscape-report.pdf beside the SPA via the independent (non-SPA) renderer."""
+    """Write <stem>.pdf beside the SPA via the independent (non-SPA) renderer.
+
+    Sibling names follow the HTML file's stem (landscape-report.html → landscape-report.pdf),
+    so two reports in one folder never overwrite each other's PDF (R12-26).
+    """
     from landscape_independent_pdf import write_independent_landscape_pdf
 
     html_path = html_path.resolve()
     if not html_path.is_file():
         raise FileNotFoundError(f"landscape HTML missing: {html_path}")
-    pdf_path = html_path.with_name("landscape-report.pdf")
-    print_html_path = html_path.with_name("landscape-report.print.html")
+    pdf_path = html_path.with_name(f"{html_path.stem}.pdf")
+    print_html_path = html_path.with_name(f"{html_path.stem}.print.html")
     source_root = _research_root_for_pdf(html_path, research_root)
     return write_independent_landscape_pdf(
         source_root,
@@ -1013,21 +1004,29 @@ def render_landscape_outputs(root: Path, out: Path | None = None) -> dict[str, A
     """One render step: HTML + PDF from landscape-report.md, chart-data.json, comparison.json."""
     out_path = out or root / "landscape-report.html"
     data = collect_landscape_payload(root, report_html=out_path)
-    out_path.write_text(render_landscape_preview(data), encoding="utf-8")
+    pdf_href = f"{out_path.stem}.pdf"
+    data["pdf_href"] = pdf_href
+    atomic_write_text(out_path, render_landscape_preview(data))
     result: dict[str, Any] = {
         "status": "ok",
         "out": str(out_path),
         "profile": "landscape",
         "markers": LANDSCAPE_MARKERS,
         "viewer": "multai-parity-v1",
-        "pdf_href": "landscape-report.pdf",
+        "pdf_href": pdf_href,
         "sources": {key: str(root / rel) for key, rel in CANONICAL_SOURCE_PATHS.items()},
     }
     skip = _skip_landscape_pdf()
     if skip:
         result["pdf"] = "skipped"
         return result
-    pdf_info = write_sibling_landscape_pdf(out_path, research_root=root)
+    try:
+        pdf_info = write_sibling_landscape_pdf(out_path, research_root=root)
+    except (OSError, RuntimeError, subprocess.SubprocessError) as exc:
+        # The HTML report is complete without the PDF: report the failure, keep packaging.
+        result["pdf"] = "failed"
+        result["pdf_error"] = str(exc)
+        return result
     result["pdf"] = pdf_info["pdf"]
     result["pdf_bytes"] = pdf_info["bytes"]
     return result

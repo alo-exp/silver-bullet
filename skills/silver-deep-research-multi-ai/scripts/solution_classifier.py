@@ -397,12 +397,17 @@ def classify_solutions(
     }
 
 
-def write_catalog_audit(research_dir: Path, audit: dict[str, Any]) -> Path:
+def write_catalog_audit(
+    research_dir: Path,
+    audit: dict[str, Any],
+    *,
+    preserved: list[str] | None = None,
+) -> Path:
+    from generated_files import write_generated_text
+
     research_dir = Path(research_dir)
-    landscape_dir = research_dir / "landscape"
-    landscape_dir.mkdir(parents=True, exist_ok=True)
-    out = landscape_dir / "catalog_audit.json"
-    out.write_text(json.dumps(audit, indent=2) + "\n", encoding="utf-8")
+    out = research_dir / "landscape" / "catalog_audit.json"
+    write_generated_text(research_dir, out, json.dumps(audit, indent=2) + "\n", preserved=preserved)
     return out
 
 

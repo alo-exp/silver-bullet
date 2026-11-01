@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "category_id": "agentic-sdlc-process-orchestrator",
+  "description": "Synthesis data for the agentic-sdlc-process-orchestrator category pack. category_pack.load_pack_overlay attaches it to the pack only when a need profile selects that pack; no other research uses it.",
+  "naming_rules": "Use product-level names (e.g. Augment Cosmos not Augment Code; Devin not Cognition+Devin). Apply parent/child dedupe from pack aliases.",
+  "research_brief_lines": [
+    "Multi-market landscape — chart + solution cards **per market**:",
+    "  1. **Primary (APO):** Agentic Process Orchestrators — compliance wrappers above host runtimes.",
+    "  2. **Secondary (SDLC plugins):** OSS methodology packs (BMAD, GSD, Superpowers, GitHub Spec Kit, Oh My plugins, Zuvo, SuperClaude, Ruflo) — substitutes for an APO even when adjacent to it.",
+    "  3. **Tertiary (agentic SDLC SaaS):** Factory/Factory.ai, Devin, Augment Cosmos, Tembo — substitutes even when vendors do not self-label APO.",
+    "APO targeting must NOT exclude secondary-market OSS/plugin substitutes from solution cards or charts.",
+    "Apply the factory↔factory-ai aliases from the category pack.",
+    "Few products self-label APO; map Cosmos/Factory/Devin-class vendors as landscape peers per the market definition."
+  ]
+}

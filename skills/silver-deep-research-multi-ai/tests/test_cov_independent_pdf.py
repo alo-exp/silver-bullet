@@ -53,7 +53,9 @@ class PlaywrightArgvTests(unittest.TestCase):
         with mock.patch.object(lp.shutil, "which", side_effect=lambda n: "/bin/playwright" if n == "playwright" else "/bin/npx"):
             self.assertEqual(lp._playwright_argv(), ["/bin/playwright"])
         with mock.patch.object(lp.shutil, "which", side_effect=lambda n: "/bin/npx" if n == "npx" else None):
-            self.assertEqual(lp._playwright_argv(), ["/bin/npx", "--yes", "playwright"])
+            # never --yes: npx may only run an installed, pinned copy (R12-14)
+            self.assertEqual(lp._playwright_argv(), ["/bin/npx", "--no-install", lp.PLAYWRIGHT_NPX_PACKAGE])
+            self.assertRegex(lp.PLAYWRIGHT_NPX_PACKAGE, r"^playwright@\d+\.\d+\.\d+$")
         with mock.patch.object(lp.shutil, "which", return_value=None):
             with self.assertRaisesRegex(FileNotFoundError, "playwright CLI not found"):
                 lp._playwright_argv()
@@ -811,12 +813,17 @@ class WritePdfTests(unittest.TestCase):
         (self.root / "landscape" / "landscape-report.md").write_text("# Rep\n\n## Alpha Heading\nbody text\n## R&D Heading\nmore\n", encoding="utf-8")
         (self.root / "landscape" / "chart-data.json").write_text(json.dumps(PrintHtmlTests.CHART), encoding="utf-8")
         (self.root / "comparison" / "comparison.json").write_text(json.dumps(PrintHtmlTests.CMP), encoding="utf-8")
+        self.timeouts = []
+
+    def leftover_temp_pdfs(self) -> list:
+        return sorted(p.name for p in self.root.rglob(".*.pdf"))
 
     def fake_run(self, content: bytes = b"%PDF-1.4 fake", write: bool = True):
         calls = []
 
-        def run(cmd, check=False):
+        def run(cmd, check=False, timeout=None):
             calls.append((cmd, check))
+            self.timeouts.append(timeout)
             if write:
                 Path(cmd[-1]).write_bytes(content)
             return mock.Mock(returncode=0)
@@ -838,10 +845,40 @@ class WritePdfTests(unittest.TestCase):
         self.assertTrue(check)
         self.assertEqual(cmd[:3], ["/x/playwright", "pdf", "--paper-format"])
         self.assertIn("555", cmd)
-        self.assertEqual(cmd[-1], str(pdf))
+        # Chromium renders into a temp file in the same folder, renamed into place afterwards.
+        tmp_pdf = Path(cmd[-1])
+        self.assertEqual(tmp_pdf.parent, pdf.parent)
+        self.assertTrue(tmp_pdf.name.startswith(".landscape-report.") and tmp_pdf.name.endswith(".pdf"))
+        self.assertEqual(pdf.read_bytes(), b"%PDF-1.4 fake")
+        self.assertEqual(self.leftover_temp_pdfs(), [])
+        self.assertEqual(self.timeouts, [555 / 1000 + 60])
         self.assertTrue(cmd[-2].startswith("file://") and cmd[-2].endswith("landscape-report.print.html"))
         printed = (self.root / "landscape-report.print.html").read_text(encoding="utf-8")
         self.assertIn(lp.INDEPENDENT_PDF_MARKER, printed)
+
+    def test_symlink_at_the_pdf_name_is_replaced_not_written_through(self) -> None:
+        victim = self.root / "victim.txt"
+        victim.write_text("keep", encoding="utf-8")
+        (self.root / "landscape-report.pdf").symlink_to(victim)
+        (self.root / "landscape-report.print.html").symlink_to(victim)
+        run, _ = self.fake_run()
+        with mock.patch.object(lp.shutil, "which", return_value="/x/playwright"), mock.patch.object(lp.subprocess, "run", run):
+            lp.write_independent_landscape_pdf(self.root)
+        self.assertEqual(victim.read_text(encoding="utf-8"), "keep")
+        self.assertFalse((self.root / "landscape-report.pdf").is_symlink())
+
+    def test_real_print_html_accepts_apostrophes_ampersands_and_inline_formatting(self) -> None:
+        (self.root / "landscape" / "landscape-report.md").write_text(
+            "# Rep\n\n## Buyer's guide\ntext\n## **Key** findings\ntext\n## Q&A \"quoted\"\ntext\n", encoding="utf-8")
+        cmp = {"rankings": [{"solution": "alpha", "score": 3}],
+               "rows": [{"type": "feature", "name": "Audit & compliance <SSO>", "priority": "High", "solutions": {"alpha": "✔"}}]}
+        (self.root / "comparison" / "comparison.json").write_text(json.dumps(cmp), encoding="utf-8")
+        run, _ = self.fake_run()
+        with mock.patch.object(lp.shutil, "which", return_value="/x/playwright"), mock.patch.object(lp.subprocess, "run", run):
+            self.assertEqual(lp.write_independent_landscape_pdf(self.root)["status"], "ok")
+        self.assertEqual(lp.print_html_missing_content(self.root, "<p>nothing</p>"), [
+            "SPA heading \"Buyer's guide\"", "SPA heading 'Key findings'", "SPA heading 'Q&A \"quoted\"'",
+            "comparison feature 'Audit & compliance <SSO>'"])
 
     def test_custom_output_paths(self) -> None:
         run, calls = self.fake_run()
@@ -865,14 +902,15 @@ class WritePdfTests(unittest.TestCase):
                 lp.write_independent_landscape_pdf(self.root)
         self.assertEqual(len(calls), 1 if renders else 0)
         self.assertEqual(printed.is_file(), renders)
+        self.assertEqual(self.leftover_temp_pdfs(), [])
 
     def valid_html(self, extra: str = "") -> str:
         return (f'<!-- {lp.INDEPENDENT_PDF_MARKER} --><body id="{lp.PRINT_ROOT_ID}"><svg><circle class="fig-pt"/></svg>'
                 f"Alpha Heading R&amp;D Heading Gate feature{extra}</body>")
 
     def test_rejections(self) -> None:
-        self.expect_error("dropped SPA heading: Alpha Heading", patch_html=self.valid_html().replace("Alpha Heading", ""))
-        self.expect_error("dropped comparison feature: Gate feature", patch_html=self.valid_html().replace("Gate feature", ""))
+        self.expect_error("dropped SPA heading 'Alpha Heading'", patch_html=self.valid_html().replace("Alpha Heading", ""))
+        self.expect_error("dropped comparison feature 'Gate feature'", patch_html=self.valid_html().replace("Gate feature", ""))
         self.expect_error("still uses highlights-only comparison", patch_html=self.valid_html(" Comparison matrix highlights"))
         self.expect_error("did not write independent PDF", write=False, patch_html=self.valid_html(), renders=True)
         self.expect_error("did not write independent PDF", content=b"%PD", patch_html=self.valid_html(), renders=True)

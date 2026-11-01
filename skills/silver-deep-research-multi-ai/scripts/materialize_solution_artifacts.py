@@ -8,6 +8,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+from generated_files import write_generated_text
 from category_pack import (
     build_known_solutions,
     build_overview_seeds,
@@ -1513,9 +1514,15 @@ def write_run_features_json(
     comparison: dict[str, Any] | None = None,
     support: dict[str, dict[str, bool | None]] | None = None,
     known: dict[str, str] | None = None,
+    preserved: list[str] | None = None,
 ) -> dict[str, Any]:
-    """Write landscape/features-rubric.json and per-solution features.json from the run rubric."""
+    """Write landscape/features-rubric.json and per-solution features.json from the run rubric.
+
+    Only ranked solutions are written, and a features.json the host or user wrote is kept
+    as is (see generated_files); folders that are not ranked solutions are never touched.
+    """
     research_dir = Path(research_dir)
+    preserved = preserved if preserved is not None else []
     comparison = comparison if isinstance(comparison, dict) else {}
     if not comparison:
         cmp_path = research_dir / "comparison" / "comparison.json"
@@ -1527,34 +1534,28 @@ def write_run_features_json(
             if isinstance(loaded, dict):
                 comparison = loaded
     rubric = synthesize_feature_rubric(comparison=comparison, support=support)
-    landscape_dir = research_dir / "landscape"
-    landscape_dir.mkdir(parents=True, exist_ok=True)
-    (landscape_dir / "features-rubric.json").write_text(
+    write_generated_text(
+        research_dir,
+        research_dir / "landscape" / "features-rubric.json",
         json.dumps(rubric, indent=2) + "\n",
-        encoding="utf-8",
+        preserved=preserved,
     )
     effective = known or KNOWN_SOLUTIONS
     slugs: list[str] = []
     for item in comparison.get("rankings") or []:
-        if isinstance(item, dict) and item.get("solution"):
+        if isinstance(item, dict) and item.get("solution") and str(item["solution"]) not in slugs:
             slugs.append(str(item["solution"]))
-    solutions_root = research_dir / "solutions"
-    if solutions_root.is_dir():
-        for sol_dir in sorted(solutions_root.iterdir()):
-            if sol_dir.is_dir() and sol_dir.name not in slugs:
-                slugs.append(sol_dir.name)
     written: list[str] = []
     for slug in slugs:
-        sol_dir = solutions_root / slug
-        sol_dir.mkdir(parents=True, exist_ok=True)
         payload = build_features_json(slug, support or {}, known=effective, rubric=rubric)
-        path = sol_dir / "features.json"
-        path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-        written.append(str(path.relative_to(research_dir)))
+        path = research_dir / "solutions" / slug / "features.json"
+        if write_generated_text(research_dir, path, json.dumps(payload, indent=2) + "\n", preserved=preserved):
+            written.append(str(path.relative_to(research_dir)))
     return {
         "status": "ok",
         "rubric_source": rubric.get("source"),
         "features_written": written,
+        "preserved": preserved,
         "rubric_path": "landscape/features-rubric.json",
     }
 
@@ -1633,12 +1634,17 @@ def materialize_solution_artifacts(
 
     known = _effective_known_solutions(need)
     pack = resolve_pack_from_need(need)
+    preserved: list[str] = []
+
+    def emit(path: Path, text: str) -> bool:
+        return write_generated_text(research_dir, path, text, preserved=preserved)
+
     audit: dict[str, Any] | None = None
     if pack:
         from solution_classifier import classify_solutions, write_catalog_audit
 
         audit = classify_solutions(envelopes, need, pack)
-        write_catalog_audit(research_dir, audit)
+        write_catalog_audit(research_dir, audit, preserved=preserved)
 
     slugs = discover_solutions(envelopes, need=need)
     support = parse_feature_support(envelopes, known=known, pack=pack)
@@ -1646,30 +1652,20 @@ def materialize_solution_artifacts(
     shortlist = slugs[:shortlist_count]
 
     solutions_root = research_dir / "solutions"
-    solutions_root.mkdir(parents=True, exist_ok=True)
-
     written: list[str] = []
-    slug_set = set(slugs)
     for slug in slugs:
-        sol_dir = solutions_root / slug
-        sol_dir.mkdir(parents=True, exist_ok=True)
-        features_path = sol_dir / "features.json"
-        features_path.write_text(
-            json.dumps(build_features_json(slug, support, known=known, rubric=rubric), indent=2) + "\n",
-            encoding="utf-8",
-        )
-        (sol_dir / "scr.md").write_text(build_scr_md(slug, envelopes), encoding="utf-8")
-        written.append(str(features_path.relative_to(research_dir)))
+        features_path = solutions_root / slug / "features.json"
+        if emit(features_path, json.dumps(build_features_json(slug, support, known=known, rubric=rubric), indent=2) + "\n"):
+            written.append(str(features_path.relative_to(research_dir)))
+        emit(solutions_root / slug / "scr.md", build_scr_md(slug, envelopes))
 
-    if pack and solutions_root.is_dir():
-        import shutil
+    # Folders outside this run's solution set (earlier runs, the host's own notes) are
+    # reported, never deleted.
+    slug_set = set(slugs)
+    stale = sorted(
+        d.name for d in (solutions_root.iterdir() if solutions_root.is_dir() else []) if d.is_dir() and d.name not in slug_set
+    )
 
-        for sol_dir in solutions_root.iterdir():
-            if sol_dir.is_dir() and sol_dir.name not in slug_set:
-                shutil.rmtree(sol_dir)
-
-    shortlist_dir = research_dir / "shortlist"
-    shortlist_dir.mkdir(parents=True, exist_ok=True)
     shortlist_payload = {
         "count": len(shortlist),
         "solutions": [
@@ -1682,10 +1678,7 @@ def materialize_solution_artifacts(
             for i, slug in enumerate(shortlist, start=1)
         ],
     }
-    (shortlist_dir / "shortlist.json").write_text(
-        json.dumps(shortlist_payload, indent=2) + "\n",
-        encoding="utf-8",
-    )
+    emit(research_dir / "shortlist" / "shortlist.json", json.dumps(shortlist_payload, indent=2) + "\n")
 
     solutions_index = {
         "count": len(slugs),
@@ -1700,22 +1693,16 @@ def materialize_solution_artifacts(
             for slug in slugs
         ],
     }
-    (research_dir / "solutions.json").write_text(
-        json.dumps(solutions_index, indent=2) + "\n",
-        encoding="utf-8",
-    )
-    landscape_dir = research_dir / "landscape"
-    landscape_dir.mkdir(parents=True, exist_ok=True)
-    (landscape_dir / "features-rubric.json").write_text(
-        json.dumps(rubric, indent=2) + "\n",
-        encoding="utf-8",
-    )
+    emit(research_dir / "solutions.json", json.dumps(solutions_index, indent=2) + "\n")
+    emit(research_dir / "landscape" / "features-rubric.json", json.dumps(rubric, indent=2) + "\n")
 
     result: dict[str, Any] = {
         "status": "ok",
         "solutions_count": len(slugs),
         "shortlist_count": len(shortlist),
         "features_written": written,
+        "preserved": preserved,
+        "stale_solution_dirs": stale,
         "solutions_index": "solutions.json",
         "shortlist": "shortlist/shortlist.json",
     }

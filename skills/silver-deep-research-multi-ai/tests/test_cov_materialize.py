@@ -600,7 +600,9 @@ class WriteRunFeaturesTests(unittest.TestCase):
             self.assertEqual(result["status"], "ok")
             self.assertEqual(result["rubric_source"], "comparison.json")
             self.assertEqual(result["rubric_path"], "landscape/features-rubric.json")
-            self.assertEqual(result["features_written"], ["solutions/devin/features.json", "solutions/extra-dir/features.json"])
+            # only ranked solutions get features.json; other folders are not touched
+            self.assertEqual(result["features_written"], ["solutions/devin/features.json"])
+            self.assertFalse((root / "solutions" / "extra-dir" / "features.json").exists())
             devin = json.loads((root / "solutions" / "devin" / "features.json").read_text(encoding="utf-8"))
             self.assertEqual(devin["categories"][0]["features"], [{"name": "SSO", "supported": True}])
             self.assertEqual(json.loads((root / "landscape" / "features-rubric.json").read_text(encoding="utf-8"))["source"], "comparison.json")
@@ -690,7 +692,7 @@ class MaterializeTests(unittest.TestCase):
             self.assertEqual(shortlist["count"], 1)
             self.assertEqual(shortlist["solutions"][0]["rank"], 1)
 
-    def test_pack_run_prunes_stale_solution_directories(self) -> None:
+    def test_pack_run_reports_but_never_deletes_stale_solution_directories(self) -> None:
         audit = {"matrix_slugs": ["devin", "aider"], "core": ["devin", "aider", "cline"]}
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -703,7 +705,8 @@ class MaterializeTests(unittest.TestCase):
             write_audit.assert_called_once()
             self.assertEqual(result["catalog_audit"], "landscape/catalog_audit.json")
             self.assertEqual(result["core_count"], 3)
-            self.assertFalse((root / "solutions" / "stale-vendor").exists())
+            self.assertEqual((root / "solutions" / "stale-vendor" / "scr.md").read_text(encoding="utf-8"), "old")
+            self.assertEqual(result["stale_solution_dirs"], ["stale-vendor"])
             self.assertTrue((root / "solutions" / "note.txt").is_file())
             self.assertTrue((root / "solutions" / "devin" / "features.json").is_file())
 

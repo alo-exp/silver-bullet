@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from compression_markers import assert_no_compression_markers, sanitize_compression_markers
+from generated_files import write_generated_text
 from category_pack import (
     apply_parent_child_dedupe,
     build_known_solutions,
@@ -3085,7 +3086,9 @@ def build_report_markdown(
     claims: list[str],
     root: Path,
     report_date: str,
+    preserved: list[str] | None = None,
 ) -> str:
+    preserved = preserved if preserved is not None else []
     scope_text = _normalize_scope_markdown(_clean_text(scope_text))
     claims = [_clean_text(claim) for claim in claims if _clean_text(claim)]
     consolidation = {
@@ -3128,8 +3131,8 @@ def build_report_markdown(
     if pack and audit:
         from solution_classifier import write_catalog_audit
 
-        write_catalog_audit(root, audit)
-        patch_inclusion_ledger(root, pack=pack, audit=audit)
+        write_catalog_audit(root, audit, preserved=preserved)
+        patch_inclusion_ledger(root, pack=pack, audit=audit, preserved=preserved)
 
     chart = (
         build_multi_market_chart_data(
@@ -3630,17 +3633,25 @@ def synthesize_landscape(
         need,
         matrix_slugs=set((_audit or {}).get("matrix_slugs") or []) or None,
     )
+    preserved: list[str] = []
     comparison_path = research_dir / "comparison" / "comparison.json"
     if comparison_path.parent.is_dir():
-        comparison_path.write_text(json.dumps(comparison, indent=2) + "\n", encoding="utf-8")
-        matrix_md_path = comparison_path.parent / "comparison-matrix.md"
-        matrix_md_path.write_text(_comparison_rankings_markdown(comparison), encoding="utf-8")
+        write_generated_text(
+            research_dir, comparison_path, json.dumps(comparison, indent=2) + "\n", preserved=preserved
+        )
+        write_generated_text(
+            research_dir,
+            comparison_path.parent / "comparison-matrix.md",
+            _comparison_rankings_markdown(comparison),
+            preserved=preserved,
+        )
     support = _build_chart_support(comparison, root=research_dir)
     write_run_features_json(
         research_dir,
         comparison=comparison,
         support=support,
         known=known,
+        preserved=preserved,
     )
 
     report_date = date.today().strftime("%B %d, %Y")
@@ -3655,9 +3666,11 @@ def synthesize_landscape(
         claims=claims,
         root=research_dir,
         report_date=report_date,
+        preserved=preserved,
     )
     assert_no_compression_markers(markdown, context=str(md_path))
-    md_path.write_text(markdown, encoding="utf-8")
+    # A landscape report the host's synthesis workers wrote is kept, not replaced (R12-12).
+    write_generated_text(research_dir, md_path, markdown, preserved=preserved)
     if skip_charts:
         return {
             "status": "ok",
@@ -3667,6 +3680,7 @@ def synthesize_landscape(
             "chart_data_bytes": chart_path.stat().st_size if chart_path.is_file() else 0,
             "sections": len(SECTION_TITLES),
             "charts": "skipped",
+            "preserved": preserved,
         }
 
     chart_data = (
@@ -3693,7 +3707,7 @@ def synthesize_landscape(
             known=known,
         )
     )
-    chart_path.write_text(json.dumps(chart_data, indent=2) + "\n", encoding="utf-8")
+    write_generated_text(research_dir, chart_path, json.dumps(chart_data, indent=2) + "\n", preserved=preserved)
 
     return {
         "status": "ok",
@@ -3704,6 +3718,7 @@ def synthesize_landscape(
         "sections": len(SECTION_TITLES),
         "mq_points": len(chart_data.get("mq_data") or []),
         "wave_points": len(chart_data.get("wave_data") or []),
+        "preserved": preserved,
     }
 
 
