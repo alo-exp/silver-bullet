@@ -91,7 +91,7 @@ ln -s "$TL_TMP/real" "$TL_TMP/link"
 assert_eq "symlink resolved" "$TL_TMP/real" "$(sb_canonical_path "$TL_TMP/link")"
 tilde_path="~"/x
 assert_eq "home expanded" "$HOME/x" "$(sb_canonical_path "$tilde_path")"
-assert_eq "python missing: path echoed back" "$TL_TMP/link" "$(PATH="$NOJQPY" bash -c 'source "$1"; sb_canonical_path "$2"' _ "$LIB/path-canonical.sh" "$TL_TMP/link")"
+assert_eq "python missing: symlink still resolved (pure Bash)" "$TL_TMP/real" "$(PATH="$NOJQPY" bash -c 'source "$1"; sb_canonical_path "$2"' _ "$LIB/path-canonical.sh" "$TL_TMP/link")"
 
 # ---- github-run-list -----------------------------------------------------
 # shellcheck source=../../hooks/lib/github-run-list.sh
