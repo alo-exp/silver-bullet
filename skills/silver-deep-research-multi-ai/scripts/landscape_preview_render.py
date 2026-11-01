@@ -1,14 +1,20 @@
 #!/usr/bin/env python3
-"""Render MultAI-parity landscape SPA (self-contained, file:// safe)."""
+"""Render the MultAI-parity landscape SPA (one file, opens from file://).
+
+The report body is rendered to static HTML here (escape-then-construct, http(s) links only),
+so it reads offline and with JavaScript off. The optional CDN libraries (Chart.js, lucide)
+only add charts and icons, and a Content-Security-Policy pins every script the page may run.
+"""
 
 from __future__ import annotations
 
+import base64
+import hashlib
 import html
 import json
+import math
 import os
 import re
-import shutil
-import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -360,36 +366,32 @@ def _load_comparison(root: Path) -> dict[str, Any]:
     return data if isinstance(data, dict) else {}
 
 
-def _load_consolidation(root: Path) -> dict[str, Any]:
-    data = _load_json(root / "consolidated" / "consolidation.json")
-    return data if isinstance(data, dict) else {}
+CANONICAL_SOURCE_PATHS = {
+    "markdown": "landscape/landscape-report.md",
+    "chart_data": "landscape/chart-data.json",
+    "comparison": "comparison/comparison.json",
+}
 
 
-def _load_envelopes(root: Path) -> list[dict[str, Any]]:
-    data = _load_json(root / "contributions" / "all-envelopes.json")
-    if isinstance(data, list):
-        return [item for item in data if isinstance(item, dict)]
-    return []
+def json_safe(value: Any) -> Any:
+    """Copy of value with non-finite floats (NaN, Infinity) replaced by None.
 
-
-def _audit_link_slugs(root: Path) -> list[str]:
-    """Matrix + adjacent slugs for homepage link_pairs (SPA + markdown linkify)."""
-    audit_path = root / "landscape" / "catalog_audit.json"
-    audit = _load_json(audit_path)
-    if not isinstance(audit, dict):
-        return []
-    slugs: list[str] = list(audit.get("matrix_slugs") or [])
-    for slug in audit.get("adjacent") or []:
-        if slug and slug not in slugs:
-            slugs.append(str(slug))
-    return slugs
+    Python's json accepts and re-emits NaN/Infinity, but JSON.parse in the viewer rejects
+    them, so one model emitting NaN would blank the whole report (R12-28).
+    """
+    if isinstance(value, float):
+        return value if math.isfinite(value) else None
+    if isinstance(value, dict):
+        return {key: json_safe(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [json_safe(item) for item in value]
+    return value
 
 
 def collect_landscape_payload(root: Path, *, report_html: Path | None = None) -> dict[str, Any]:
+    """Data the viewer renders. Raw worker envelopes and local paths stay out of the
+    shareable HTML (R12-24); the viewer reads only comparison, chart data and markdown."""
     from landscape_independent_pdf import load_canonical_landscape_sources  # noqa: E402
-    from category_pack import resolve_pack_from_need  # noqa: E402
-    from synthesize_landscape import scrub_membership_framing  # noqa: E402
-    from vendor_link_labels import scrub_embedded_vendor_urls  # noqa: E402
 
     sources = load_canonical_landscape_sources(root)
     markdown = sources["markdown"] if isinstance(sources["markdown"], str) else ""
@@ -410,10 +412,6 @@ def collect_landscape_payload(root: Path, *, report_html: Path | None = None) ->
 
     manifest = _load_manifest(root)
     need_profile = _load_need_profile(root)
-    consolidation = _load_consolidation(root)
-    envelopes = _load_envelopes(root)
-    pack = resolve_pack_from_need(need_profile or {})
-    envelopes = scrub_embedded_vendor_urls(envelopes)
     commercial, oss = _derive_vendors_from_comparison(comparison, need=need_profile)
     ensure_scripts_on_path("silver-deep-research", marker="matrix_core.py")
     from matrix_core import comparison_matrix_xlsx_href  # noqa: E402
@@ -427,83 +425,39 @@ def collect_landscape_payload(root: Path, *, report_html: Path | None = None) ->
         or "Market Landscape Report"
     )
 
-    consolidation = {
-        **consolidation,
-        "consensus": [
-            {
-                **item,
-                "text": scrub_membership_framing(str(item.get("text") or ""), pack),
-            }
-            for item in (consolidation.get("consensus") or [])
-            if isinstance(item, dict)
-        ],
-        "divergence": [
-            {
-                **item,
-                "text": scrub_membership_framing(str(item.get("text") or ""), pack),
-            }
-            for item in (consolidation.get("divergence") or [])
-            if isinstance(item, dict)
-        ],
-    }
-
-    def _scrub_embedded_strings(obj: Any) -> Any:
-        """Scrub Conductor-as-APO framing inside embedded envelope/claim JSON."""
-        if isinstance(obj, str):
-            return scrub_membership_framing(obj, pack)
-        if isinstance(obj, list):
-            return [_scrub_embedded_strings(x) for x in obj]
-        if isinstance(obj, dict):
-            out: dict[str, Any] = {}
-            for key, val in obj.items():
-                if key in {"claim", "text", "summary", "rationale", "notes"} and isinstance(
-                    val, str
-                ):
-                    out[key] = scrub_membership_framing(val, pack)
-                else:
-                    out[key] = _scrub_embedded_strings(val)
-            return out
-        return obj
-
-    envelopes = _scrub_embedded_strings(envelopes)
-
     try:
-        markdown_rel = str(md_path.relative_to(root)) if md_path.is_file() else "landscape/landscape-report.md"
+        markdown_rel = str(md_path.relative_to(root)) if md_path.is_file() else CANONICAL_SOURCE_PATHS["markdown"]
     except ValueError:
-        markdown_rel = "landscape/landscape-report.md"
+        markdown_rel = CANONICAL_SOURCE_PATHS["markdown"]
 
-    return {
-        "title": title,
-        "research_type": manifest.get("research_type", "solution-landscape"),
-        "need_profile": need_profile or {"category": "landscape"},
-        "comparison": comparison,
-        "xlsx_href": xlsx_href,
-        "pdf_href": "landscape-report.pdf",
-        "research_slug": root.name,
-        "landscape": {
-            "markdown_path": markdown_rel,
-            "commercial_vendors": commercial,
-            "oss_vendors": oss,
-        },
-        "chart_data": chart_data,
-        "markdown": markdown,
-        "manifest": {
-            "run_id": manifest.get("run_id"),
-            "mode": manifest.get("mode"),
-            "workflow_id": manifest.get("workflow_id"),
-            "started_at": manifest.get("started_at"),
-            "finished_at": manifest.get("finished_at"),
-            "multi_ai": manifest.get("multi_ai") if isinstance(manifest.get("multi_ai"), dict) else {},
-        },
-        "consolidation": consolidation,
-        "envelopes": envelopes,
-        "generated_by": "silver-deep-research-multi-ai/landscape_preview_render.py",
-        "canonical_paths": {
-            "markdown": str(root / "landscape" / "landscape-report.md"),
-            "chart_data": str(root / "landscape" / "chart-data.json"),
-            "comparison": str(root / "comparison" / "comparison.json"),
-        },
-    }
+    return json_safe(
+        {
+            "title": title,
+            "research_type": manifest.get("research_type", "solution-landscape"),
+            "need_profile": need_profile or {"category": "landscape"},
+            "comparison": comparison,
+            "xlsx_href": xlsx_href,
+            "pdf_href": "landscape-report.pdf",
+            "research_slug": root.name,
+            "landscape": {
+                "markdown_path": markdown_rel,
+                "commercial_vendors": commercial,
+                "oss_vendors": oss,
+            },
+            "chart_data": chart_data,
+            "markdown": markdown,
+            "manifest": {
+                "run_id": manifest.get("run_id"),
+                "mode": manifest.get("mode"),
+                "workflow_id": manifest.get("workflow_id"),
+                "started_at": manifest.get("started_at"),
+                "finished_at": manifest.get("finished_at"),
+                "multi_ai": manifest.get("multi_ai") if isinstance(manifest.get("multi_ai"), dict) else {},
+            },
+            "generated_by": "silver-deep-research-multi-ai/landscape_preview_render.py",
+            "canonical_paths": dict(CANONICAL_SOURCE_PATHS),
+        }
+    )
 
 
 def _patch_chart_bootstrap(template: str) -> str:
@@ -567,20 +521,18 @@ function applyChartData(cd) {
   VC_KCFS = cd.vc_kcfs || [];
   VC_COMMERCIAL = cd.vc_commercial || [];
   VC_OSS = cd.vc_oss || [];
-  LINK_PAIRS = cd.link_pairs || [];
-  VENDOR_URLS = cd.vendor_urls || Object.fromEntries(LINK_PAIRS);
+  // Vendor links come from model output: keep only http(s) targets.
+  LINK_PAIRS = (cd.link_pairs || []).filter(pair =>
+    Array.isArray(pair) && pair.length >= 2 && String(pair[0] || '').trim() && safeHttpUrl(pair[1]));
+  VENDOR_URLS = {};
+  Object.entries(cd.vendor_urls || Object.fromEntries(LINK_PAIRS)).forEach(([label, url]) => {
+    if (label && safeHttpUrl(url)) VENDOR_URLS[label] = safeHttpUrl(url);
+  });
   VENDOR_BUCKETS = cd.vendor_buckets || VENDOR_BUCKETS;
   // Accumulate known vendor homepages; market chart inject must not drop other markets' URLs.
   if (typeof HOMEPAGE_VENDOR_URLS !== 'object' || !HOMEPAGE_VENDOR_URLS) HOMEPAGE_VENDOR_URLS = {};
-  Object.entries(VENDOR_URLS || {}).forEach(([label, url]) => {
-    if (label && typeof url === 'string' && url.startsWith('http')) HOMEPAGE_VENDOR_URLS[label] = url;
-  });
-  (LINK_PAIRS || []).forEach(pair => {
-    if (!Array.isArray(pair) || pair.length < 2) return;
-    const label = String(pair[0] || '').trim();
-    const url = String(pair[1] || '').trim();
-    if (label && url.startsWith('http')) HOMEPAGE_VENDOR_URLS[label] = url;
-  });
+  Object.entries(VENDOR_URLS).forEach(([label, url]) => { HOMEPAGE_VENDOR_URLS[label] = url; });
+  LINK_PAIRS.forEach(pair => { HOMEPAGE_VENDOR_URLS[String(pair[0]).trim()] = safeHttpUrl(pair[1]); });
   normalizeChartPalette();
   if (typeof _refreshVendorSets === 'function') {
     try { _refreshVendorSets(); } catch (_) { /* post-render may not be ready yet */ }
@@ -611,6 +563,9 @@ function applyMarketChartFromHeading(heading) {
 }
 
 function bootstrapFromEmbedded() {
+  // The report body is static HTML rendered by landscape_preview_render.py; this only
+  // enhances it (TOC, charts, cards). A failure here never hides the report text.
+  const content = document.getElementById('content');
   try {
     const raw = document.getElementById('report-data');
     if (!raw) throw new Error('missing #report-data payload');
@@ -620,10 +575,9 @@ function bootstrapFromEmbedded() {
     MARKET_CHARTS = cd.markets || {};
     PRIMARY_CHART_DATA = cd;
     applyChartData(cd);
-    if (data.title) document.title = data.title;
-    const md = data.markdown || '';
-    document.getElementById('content').innerHTML = marked.parse(md);
-    if (typeof ensureExternalLinksNewTab === 'function') ensureExternalLinksNewTab(document.getElementById('content'));
+    if (data.title) document.title = String(data.title);
+    const md = String(data.markdown || '');
+    if (typeof ensureExternalLinksNewTab === 'function') ensureExternalLinksNewTab(content);
     buildTOC();
     document.getElementById('stats').textContent =
       md ? `${(md.length/1000).toFixed(1)}K chars · ${md.split('\\n').length} lines` : 'No markdown body';
@@ -631,8 +585,8 @@ function bootstrapFromEmbedded() {
     setTimeout(() => {
       injectCharts();
       linkify();
-      if (typeof linkifyBareHttpUrls === 'function') linkifyBareHttpUrls(document.getElementById('content'));
-      if (typeof ensureExternalLinksNewTab === 'function') ensureExternalLinksNewTab(document.getElementById('content'));
+      if (typeof linkifyBareHttpUrls === 'function') linkifyBareHttpUrls(content);
+      if (typeof ensureExternalLinksNewTab === 'function') ensureExternalLinksNewTab(content);
       renderMatrixPanel();
       if (typeof linkifyBareHttpUrls === 'function') linkifyBareHttpUrls(document.getElementById('matrixPanelBody'));
       if (typeof ensureExternalLinksNewTab === 'function') ensureExternalLinksNewTab(document.getElementById('matrixPanelBody'));
@@ -640,8 +594,12 @@ function bootstrapFromEmbedded() {
     }, 0);
   } catch (e) {
     console.error('bootstrapFromEmbedded failed', e);
-    const el = document.getElementById('content');
-    if (el) el.innerHTML = `<pre style="color:red;padding:24px;">Report render failed: ${e}</pre>`;
+    if (content) {
+      const note = document.createElement('p');
+      note.className = 'muted';
+      note.textContent = 'Interactive report features failed to load: ' + String(e);
+      content.insertBefore(note, content.firstChild);
+    }
   }
 }
 
@@ -651,13 +609,13 @@ function renderMatrixPanel() {
   const cmp = window.__SB_REPORT__.comparison || {};
   const rows = (cmp.rows || []).filter(r => r && r.type === 'feature');
   const rankings = (cmp.rankings || []).filter(r => r && r.solution);
-  const solutions = rankings.map(r => r.solution);
+  const cols = rankings.map(r => String(r.solution));
   const scoreBySolution = Object.fromEntries(
-    rankings.map(r => [r.solution, r.score != null ? r.score : (r.total_score != null ? r.total_score : '—')])
+    rankings.map(r => [String(r.solution), r.score != null ? r.score : (r.total_score != null ? r.total_score : '—')])
   );
-  const cols = solutions.length ? solutions : [];
+  host.textContent = '';
   if (!cols.length || !rows.length) {
-    host.innerHTML = '<p class="muted">Comparison matrix not populated yet.</p>';
+    host.appendChild(mkEl('p', 'muted', 'Comparison matrix not populated yet.'));
     return;
   }
   const slugifyLabel = (label) => String(label || '').toLowerCase()
@@ -667,49 +625,56 @@ function renderMatrixPanel() {
     .replace(/[\\s_]+/g, '-');
   const labelForSlug = (slug) => {
     for (const [name] of (LINK_PAIRS || [])) {
-      if (slugifyLabel(name) === slug) return name;
+      if (slugifyLabel(name) === slug) return String(name);
     }
     for (const d of [...MQ_DATA, ...GMQ_DATA, ...WAVE_DATA, ...VC_COMMERCIAL, ...VC_OSS]) {
-      if (d && (d.slug === slug || slugifyLabel(d.label) === slug)) return d.label;
+      if (d && (d.slug === slug || slugifyLabel(d.label) === slug)) return String(d.label);
     }
     return String(slug || '').replace(/-/g, ' ').replace(/\\b\\w/g, c => c.toUpperCase());
   };
-  const urlForLabel = (label) => {
-    if (typeof HOMEPAGE_VENDOR_URLS === 'object' && HOMEPAGE_VENDOR_URLS[label]) return HOMEPAGE_VENDOR_URLS[label];
-    if (typeof VENDOR_URLS === 'object' && VENDOR_URLS[label]) return VENDOR_URLS[label];
-    const hit = (LINK_PAIRS || []).find(([name]) => name === label);
-    return hit ? hit[1] : '';
-  };
-  const headerHtml = (slug) => {
-    const label = labelForSlug(slug);
-    const url = urlForLabel(label);
-    if (url) {
-      return `<a class="vname-link" href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>`;
-    }
-    return label;
-  };
-  let html = '<div class="table-wrap"><table class="matrix"><thead><tr><th>Feature</th><th>Priority</th>';
+  const scoreOf = (s) => (scoreBySolution[s] != null ? scoreBySolution[s] : '—');
+  const wrap = mkEl('div', 'table-wrap');
+  const table = mkEl('table', 'matrix');
+  const thead = mkEl('thead');
+  const headRow = mkEl('tr');
+  headRow.appendChild(mkEl('th', '', 'Feature'));
+  headRow.appendChild(mkEl('th', '', 'Priority'));
   cols.forEach(s => {
-    const score = scoreBySolution[s] != null ? scoreBySolution[s] : '—';
-    html += '<th>' + headerHtml(s) + '<div style="font-size:10px;font-weight:600;color:var(--sb-primary-mid);margin-top:2px;">Score ' + score + '</div></th>';
+    const label = labelForSlug(s);
+    const th = mkEl('th');
+    th.appendChild(externalLink(label, vendorUrlForLabel(label), 'vname-link'));
+    const score = mkEl('div', '', 'Score ' + scoreOf(s));
+    score.style.cssText = 'font-size:10px;font-weight:600;color:var(--sb-primary-mid);margin-top:2px;';
+    th.appendChild(score);
+    headRow.appendChild(th);
   });
-  html += '</tr></thead><tbody>';
-  html += '<tr class="cmp-score-row"><td><strong>Weighted score</strong></td><td>—</td>';
+  thead.appendChild(headRow);
+  const tbody = mkEl('tbody');
+  const scoreRow = mkEl('tr', 'cmp-score-row');
+  const scoreHead = mkEl('td');
+  scoreHead.appendChild(mkEl('strong', '', 'Weighted score'));
+  scoreRow.appendChild(scoreHead);
+  scoreRow.appendChild(mkEl('td', '', '—'));
   cols.forEach(s => {
-    const score = scoreBySolution[s] != null ? scoreBySolution[s] : '—';
-    html += '<td style="font-weight:700;text-align:center;">' + score + '</td>';
+    const td = mkEl('td', '', scoreOf(s));
+    td.style.cssText = 'font-weight:700;text-align:center;';
+    scoreRow.appendChild(td);
   });
-  html += '</tr>';
+  tbody.appendChild(scoreRow);
   rows.slice(0, 120).forEach(row => {
-    html += '<tr><td>' + (row.name || '') + '</td><td>' + (row.priority || '—') + '</td>';
+    const tr = mkEl('tr');
+    tr.appendChild(mkEl('td', '', row.name || ''));
+    tr.appendChild(mkEl('td', '', row.priority || '—'));
     cols.forEach(s => {
       const v = (row.solutions || {})[s] || '—';
-      html += '<td class="' + (v ? 'tick' : '') + '">' + v + '</td>';
+      tr.appendChild(mkEl('td', v ? 'tick' : '', v));
     });
-    html += '</tr>';
+    tbody.appendChild(tr);
   });
-  html += '</tbody></table></div>';
-  host.innerHTML = html;
+  table.appendChild(thead);
+  table.appendChild(tbody);
+  wrap.appendChild(table);
+  host.appendChild(wrap);
 }
 
 """
@@ -730,7 +695,7 @@ def _strip_hardcoded_link_pairs(template: str) -> str:
 
 
 BOOTSTRAP_COMMENT = (
-    "// Embedded bootstrap (landscape_preview_render.py) calls bootstrapFromEmbedded() instead of loadFile."
+    "// Embedded bootstrap (landscape_preview_render.py) calls bootstrapFromEmbedded() on load."
 )
 
 BOOTSTRAP_AUTOSTART = """
@@ -835,7 +800,8 @@ def _inject_matrix_ui(template: str) -> str:
   if (matrixBtn) matrixBtn.addEventListener('click', () => {
     const slug = (window.__SB_REPORT__ && window.__SB_REPORT__.research_slug) || '';
     const fallback = slug ? ('comparison/' + slug + '-comparison-matrix.xlsx') : '';
-    const href = (window.__SB_REPORT__ && window.__SB_REPORT__.xlsx_href) || fallback;
+    const href = safeRelativeHref((window.__SB_REPORT__ && window.__SB_REPORT__.xlsx_href) || fallback);
+    if (!href) return;
     const fname = href.split('/').pop() || 'comparison-matrix.xlsx';
     const a = document.createElement('a');
     a.href = href;
@@ -906,17 +872,78 @@ def _patch_pdf_export(template: str) -> str:
 
 
 def _inject_report_data(template: str, payload: dict[str, Any]) -> str:
+    """Embed the payload as a JSON data block at the end of <head> (after <meta charset>)."""
     safe = safe_json_payload(payload)
     block = f'<script type="application/json" id="report-data">{safe}</script>\n'
-    if "<head>" in template:
-        template = template.replace("<head>", "<head>\n" + block, 1)
+    if "</head>" in template:
+        template = template.replace("</head>", block + "</head>", 1)
     template = template.replace('<html lang="en">', '<html lang="en" data-sb-landscape-viewer="multai-v1">', 1)
     return template
+
+
+CONTENT_PLACEHOLDER = (
+    '<div id="content"><p style="color:var(--sb-muted);padding:40px 0;">Loading report…</p></div>'
+)
+
+
+def _inject_static_content(template: str, markdown: str) -> str:
+    """Pre-render the report body: readable offline, with JavaScript off, and never live markup."""
+    from landscape_independent_pdf import markdown_to_html  # noqa: E402
+
+    if CONTENT_PLACEHOLDER not in template:
+        raise ValueError("landscape template is missing the #content placeholder")
+    body = markdown_to_html(markdown) if markdown.strip() else '<p class="muted">No markdown body.</p>'
+    return template.replace(CONTENT_PLACEHOLDER, f'<div id="content">\n{body}\n</div>', 1)
+
+
+_SCRIPT_RE = re.compile(r"<script\b([^>]*)>(.*?)</script>", re.I | re.S)
+_SCRIPT_SRC_RE = re.compile(r'\bsrc="([^"]+)"', re.I)
+_JSON_SCRIPT_RE = re.compile(r'\btype="application/json"', re.I)
+
+
+def content_security_policy(page: str) -> str:
+    """CSP for the rendered page: only the page's own inline scripts (by hash) and its
+    pinned https script URLs may run; no inline event handlers, no plugins, no <base>."""
+    allowed: list[str] = []
+    for attrs, body in _SCRIPT_RE.findall(page):
+        src = _SCRIPT_SRC_RE.search(attrs)
+        if src:
+            if not src.group(1).startswith("https://"):
+                raise ValueError(f"landscape template loads a non-https script: {src.group(1)}")
+            allowed.append(src.group(1))
+        elif not _JSON_SCRIPT_RE.search(attrs):
+            digest = base64.b64encode(hashlib.sha256(body.encode("utf-8")).digest()).decode("ascii")
+            allowed.append(f"'sha256-{digest}'")
+    return "; ".join(
+        [
+            "default-src 'none'",
+            "script-src " + " ".join(dict.fromkeys(allowed)),
+            "style-src 'unsafe-inline' https://fonts.googleapis.com",
+            "font-src https://fonts.gstatic.com data:",
+            "img-src data: blob:",
+            "connect-src 'none'",
+            "object-src 'none'",
+            "base-uri 'none'",
+            "form-action 'none'",
+        ]
+    )
+
+
+def _inject_content_security_policy(page: str) -> str:
+    if "<head>" not in page:
+        raise ValueError("landscape template is missing <head>")
+    meta = (
+        '<meta http-equiv="Content-Security-Policy" content="'
+        + html.escape(content_security_policy(page), quote=False)
+        + '">'
+    )
+    return page.replace("<head>", "<head>\n" + meta, 1)
 
 
 def render_landscape_preview(data: dict[str, Any]) -> str:
     if not TEMPLATE_PATH.is_file():
         raise FileNotFoundError(f"landscape template missing: {TEMPLATE_PATH}")
+    data = json_safe(data)
     template = TEMPLATE_PATH.read_text(encoding="utf-8")
     template = _patch_chart_bootstrap(template)
     template = _strip_hardcoded_link_pairs(template)
@@ -924,21 +951,10 @@ def render_landscape_preview(data: dict[str, Any]) -> str:
     template = _inject_modern_theme(template)
     template = _inject_matrix_ui(template)
     template = _patch_pdf_export(template)
+    template = _inject_static_content(template, str(data.get("markdown") or ""))
     template = _inject_report_data(template, data)
     template = template.replace("<title>Report Preview</title>", f"<title>{html.escape(str(data.get('title', 'Landscape Report')))}</title>", 1)
-    return template
-
-
-def _playwright_argv() -> list[str]:
-    exe = shutil.which("playwright")
-    if exe:
-        return [exe]
-    npx = shutil.which("npx")
-    if npx:
-        return [npx, "--yes", "playwright"]
-    raise FileNotFoundError(
-        "playwright CLI not found — install Playwright to write landscape-report.pdf"
-    )
+    return _inject_content_security_policy(template)
 
 
 def _skip_landscape_pdf() -> bool:
@@ -1005,12 +1021,7 @@ def render_landscape_outputs(root: Path, out: Path | None = None) -> dict[str, A
         "markers": LANDSCAPE_MARKERS,
         "viewer": "multai-parity-v1",
         "pdf_href": "landscape-report.pdf",
-        "sources": data.get("canonical_paths")
-        or {
-            "markdown": str(root / "landscape" / "landscape-report.md"),
-            "chart_data": str(root / "landscape" / "chart-data.json"),
-            "comparison": str(root / "comparison" / "comparison.json"),
-        },
+        "sources": {key: str(root / rel) for key, rel in CANONICAL_SOURCE_PATHS.items()},
     }
     skip = _skip_landscape_pdf()
     if skip:
@@ -1020,8 +1031,3 @@ def render_landscape_outputs(root: Path, out: Path | None = None) -> dict[str, A
     result["pdf"] = pdf_info["pdf"]
     result["pdf_bytes"] = pdf_info["bytes"]
     return result
-
-
-def render_landscape_preview_file(root: Path, out: Path | None = None) -> dict[str, Any]:
-    return render_landscape_outputs(root, out=out)
-

@@ -218,7 +218,8 @@ class IndependentPrintHtmlTests(unittest.TestCase):
             _write_fixture(root)
             print_html = build_independent_print_html(root)
             self.assertIn(SPA_FONT_FAMILY, print_html)
-            self.assertIn(GOOGLE_FONTS_HREF, print_html)
+            # Font stack only: a PDF build fetches nothing unless web fonts are opted into.
+            self.assertNotIn(GOOGLE_FONTS_HREF, print_html)
             self.assertIn("font-weight: 300", print_html)
             self.assertNotIn("Palatino", print_html)
             self.assertNotIn("Georgia, serif", print_html)
@@ -550,7 +551,7 @@ class IndependentPdfWriteTests(unittest.TestCase):
                 self.assertFalse(overlap, msg=f"label overlap {i}/{j}")
 
     def test_html_regen_writes_sibling_pdf_by_default(self) -> None:
-        from landscape_preview_render import render_landscape_preview_file
+        from landscape_preview_render import render_landscape_outputs
 
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -578,12 +579,12 @@ class IndependentPdfWriteTests(unittest.TestCase):
                                 "bytes": 12,
                             },
                         ) as writer:
-                            result = render_landscape_preview_file(root, out=html_path)
+                            result = render_landscape_outputs(root, out=html_path)
             writer.assert_called_once()
             self.assertNotEqual(result.get("pdf"), "skipped")
 
     def test_html_regen_skip_requires_allow_flag(self) -> None:
-        from landscape_preview_render import render_landscape_preview_file
+        from landscape_preview_render import render_landscape_outputs
 
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -604,12 +605,12 @@ class IndependentPdfWriteTests(unittest.TestCase):
                             "landscape_preview_render.write_sibling_landscape_pdf",
                             return_value={"pdf": "x", "bytes": 1},
                         ) as writer:
-                            result = render_landscape_preview_file(root, out=html_path)
+                            result = render_landscape_outputs(root, out=html_path)
             writer.assert_not_called()
             self.assertEqual(result.get("pdf"), "skipped")
 
     def test_html_regen_ignores_bare_skip_outside_tests(self) -> None:
-        from landscape_preview_render import render_landscape_preview_file
+        from landscape_preview_render import render_landscape_outputs
 
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -637,7 +638,7 @@ class IndependentPdfWriteTests(unittest.TestCase):
                                 "bytes": 12,
                             },
                         ) as writer:
-                            result = render_landscape_preview_file(root, out=html_path)
+                            result = render_landscape_outputs(root, out=html_path)
             writer.assert_called_once()
             self.assertNotEqual(result.get("pdf"), "skipped")
 

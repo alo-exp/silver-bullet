@@ -196,10 +196,16 @@ class VendorBucketMqAuthorityTests(unittest.TestCase):
 
 
 class SpaTemplateContracts(unittest.TestCase):
-    def test_marked_cdn_pinned_to_11_1_1(self) -> None:
+    def test_markdown_is_prerendered_and_cdn_scripts_are_pinned(self) -> None:
         text = TEMPLATE.read_text(encoding="utf-8")
-        self.assertIn("marked@11.1.1/marked.min.js", text)
-        self.assertNotRegex(text, r"marked(?!@11\.1\.1)@")
+        # The body is rendered server-side; no client-side markdown parser is loaded or called.
+        self.assertNotIn("marked", text)
+        srcs = re.findall(r'<script src="([^"]+)"([^>]*)>', text)
+        self.assertEqual(len(srcs), 3)
+        for src, attrs in srcs:
+            self.assertRegex(src, r"^https://[^ ]+@\d+\.\d+\.\d+/", src)  # exact version
+            self.assertIn('crossorigin="anonymous"', attrs)
+            self.assertIn('referrerpolicy="no-referrer"', attrs)
 
     def test_fontsource_500_css_not_used(self) -> None:
         text = TEMPLATE.read_text(encoding="utf-8")
@@ -219,8 +225,7 @@ class SpaTemplateContracts(unittest.TestCase):
         self.assertNotIn("text-decoration:underline;", text)
         self.assertNotIn("border-bottom: 1px solid var(--sb-link-underline)", text)
         self.assertIn("function linkifyBareHttpUrls", text)
-        self.assertIn("linkifyBareHttpUrls(document.getElementById('content'))", text)
-        self.assertIn('target="_blank"', text)
+        self.assertIn("a.target = '_blank'", text)
         self.assertIn("noopener noreferrer", text)
         # Filter refresh must prefer primary buckets (avoids last-market bleed).
         self.assertIn("primaryBuckets", text)

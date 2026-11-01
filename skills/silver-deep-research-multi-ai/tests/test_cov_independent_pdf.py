@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import sys
 import tempfile
@@ -189,6 +190,16 @@ class FontEmbedTests(unittest.TestCase):
         saved = lp._FONT_CSS_CACHE
         lp._FONT_CSS_CACHE = None
         self.addCleanup(setattr, lp, "_FONT_CSS_CACHE", saved)
+        env = mock.patch.dict(os.environ, {lp.WEB_FONTS_ENV: "1"})
+        env.start()
+        self.addCleanup(env.stop)
+
+    def test_web_fonts_are_opt_in_and_default_makes_no_request(self) -> None:
+        for value in ("", "0", "no"):
+            with mock.patch.dict(os.environ, {lp.WEB_FONTS_ENV: value}):
+                with mock.patch.object(lp.urllib.request, "urlopen", side_effect=AssertionError("network")) as m:
+                    self.assertEqual(lp._embed_roboto_font_css(), "")
+                m.assert_not_called()
 
     def test_cache_hit_skips_network(self) -> None:
         lp._FONT_CSS_CACHE = "cached-css"

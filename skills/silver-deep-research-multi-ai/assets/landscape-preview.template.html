@@ -9,11 +9,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- Broken fontsource@5.0.8 weight 500 removed; Roboto Condensed 300/400/500 via Google Fonts -->
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300;400;500&display=swap">
-<script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
-<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300;400;500&display=swap" referrerpolicy="no-referrer">
+<!-- The report body is pre-rendered HTML (landscape_preview_render.py); these optional,
+     version-pinned libraries only draw charts and icons. Without them the report still reads. -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <style>
   :root {
     --sb-sidebar-w: 260px;
@@ -888,10 +889,81 @@
 </div>
 
 <script>
-Chart.register(ChartDataLabels);
-Chart.defaults.font.family = "'Roboto Condensed', 'Arial Narrow', Arial, sans-serif";
-Chart.defaults.font.size = 11;
-marked.setOptions({ breaks: true, gfm: true });
+// Chart.js and lucide come from CDNs and may be missing (offline, blocked network). The
+// report body is static HTML, so it stays readable; charts fall back to their tables.
+const SB_HAS_CHART = typeof Chart !== 'undefined';
+if (SB_HAS_CHART) {
+  if (typeof ChartDataLabels !== 'undefined') Chart.register(ChartDataLabels);
+  Chart.defaults.font.family = "'Roboto Condensed', 'Arial Narrow', Arial, sans-serif";
+  Chart.defaults.font.size = 11;
+}
+
+// ─── Safe DOM helpers ─────────────────────────────────────────────────────────
+// Report data (vendor names, feature rows, chart titles, URLs) comes from model and web
+// output. It is inserted only as text (textContent / createElement), never parsed as HTML.
+function escHtml(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+/** The URL when it is http(s); '' for javascript:, data:, file:, protocol-relative, … */
+function safeHttpUrl(value) {
+  const raw = String(value == null ? '' : value).trim();
+  const probe = raw.replace(/[\x00-\x20\x7f]/g, '');
+  return /^https?:\/\//i.test(probe) ? raw : '';
+}
+
+/** A relative path or #fragment (no scheme, no //host), else ''. */
+function safeRelativeHref(value) {
+  const raw = String(value == null ? '' : value).trim();
+  const probe = raw.replace(/[\x00-\x20\x7f]/g, '');
+  if (!probe || /^[a-z][a-z0-9+.-]*:/i.test(probe) || /^[\\/]{2}/.test(probe)) return '';
+  return raw;
+}
+
+function mkEl(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text != null) node.textContent = String(text);
+  return node;
+}
+
+/** <a target=_blank> for an http(s) URL; a plain text node when the URL is not http(s). */
+function externalLink(text, url, className) {
+  const href = safeHttpUrl(url);
+  const label = String(text == null ? '' : text);
+  if (!href) return document.createTextNode(label);
+  const a = mkEl('a', className || '', label);
+  a.href = href;
+  a.target = '_blank';
+  a.rel = 'noopener noreferrer';
+  return a;
+}
+
+function lucideIcon(name, className = 'lucide-icon') {
+  const i = document.createElement('i');
+  i.setAttribute('data-lucide', String(name));
+  i.className = className;
+  i.setAttribute('aria-hidden', 'true');
+  return i;
+}
+
+/** Link a text node that is exactly a known vendor label (never a word inside prose). */
+function _linkExactLabelNode(tn, urlByLabel) {
+  const raw = tn.textContent || '';
+  const label = raw.trim();
+  const url = label ? urlByLabel.get(label) : '';
+  if (!url) return false;
+  const frag = document.createDocumentFragment();
+  const lead = raw.slice(0, raw.indexOf(label));
+  const trail = raw.slice(raw.indexOf(label) + label.length);
+  if (lead) frag.appendChild(document.createTextNode(lead));
+  frag.appendChild(externalLink(label, url, 'vname-link'));
+  if (trail) frag.appendChild(document.createTextNode(trail));
+  tn.parentNode.replaceChild(frag, tn);
+  return true;
+}
 
 /** Stamp http(s) anchors so they always open in a new tab. */
 function ensureExternalLinksNewTab(root) {
@@ -905,42 +977,8 @@ function ensureExternalLinksNewTab(root) {
   });
 }
 
-try {
-  const renderer = new marked.Renderer();
-  const priorLink = renderer.link.bind(renderer);
-  renderer.link = function (href, title, text) {
-    // marked v9+ may pass a single token object as the first arg
-    const html = (href && typeof href === 'object')
-      ? priorLink(href)
-      : priorLink(href, title, text);
-    const url = (href && typeof href === 'object')
-      ? String(href.href || '')
-      : String(href || '');
-    if (!(/^https?:\/\//i.test(url) || url.startsWith('//'))) return html;
-    let out = html.replace(/\s+target="[^"]*"/gi, '').replace(/\s+rel="[^"]*"/gi, '');
-    return out.replace(/<a\s/i, '<a target="_blank" rel="noopener noreferrer" ');
-  };
-  const priorCodespan = renderer.codespan.bind(renderer);
-  renderer.codespan = function (code) {
-    const html = (code && typeof code === 'object') ? priorCodespan(code) : priorCodespan(code);
-    const text = (code && typeof code === 'object') ? String(code.text || '') : String(code || '');
-    const raw = String(text).trim();
-    let url = raw;
-    while (url && /[.,;:!?]$/.test(url)) url = url.slice(0, -1);
-    if (!/^https?:\/\//i.test(url)) return html;
-    const safe = url.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
-    return html.replace(/^<code>([\s\S]*)<\/code>$/i, (_all, inner) => {
-      if (/<a\s/i.test(inner)) return _all;
-      return `<code><a href="${safe}" target="_blank" rel="noopener noreferrer">${inner}</a></code>`;
-    });
-  };
-  marked.use({ renderer });
-} catch (e) {
-  console.warn('marked renderer target=_blank wiring failed', e);
-}
-
 function lucideIconHtml(name, className = 'lucide-icon') {
-  return `<i data-lucide="${name}" class="${className}" aria-hidden="true"></i>`;
+  return `<i data-lucide="${escHtml(name)}" class="${escHtml(className)}" aria-hidden="true"></i>`;
 }
 
 function refreshLucideIcons(root) {
@@ -952,7 +990,7 @@ function refreshLucideIcons(root) {
 function setActionBtnState(btn, iconName, label, spin = false) {
   if (!btn) return;
   const spinCls = spin ? ' is-spinning' : '';
-  btn.innerHTML = `${lucideIconHtml(iconName, `btn-icon lucide-icon${spinCls}`)}${label ? ' ' + label : ''}`;
+  btn.innerHTML = `${lucideIconHtml(iconName, `btn-icon lucide-icon${spinCls}`)}${label ? ' ' + escHtml(label) : ''}`;
   refreshLucideIcons(btn);
 }
 
@@ -1512,10 +1550,10 @@ function _drawResolvedLabels(chart, layout, colorFn) {
 
 function vendorUrlForLabel(label) {
   if (!label) return '';
-  if (typeof HOMEPAGE_VENDOR_URLS === 'object' && HOMEPAGE_VENDOR_URLS[label]) return HOMEPAGE_VENDOR_URLS[label];
-  if (typeof VENDOR_URLS === 'object' && VENDOR_URLS[label]) return VENDOR_URLS[label];
+  if (typeof HOMEPAGE_VENDOR_URLS === 'object' && HOMEPAGE_VENDOR_URLS[label]) return safeHttpUrl(HOMEPAGE_VENDOR_URLS[label]);
+  if (typeof VENDOR_URLS === 'object' && VENDOR_URLS[label]) return safeHttpUrl(VENDOR_URLS[label]);
   const hit = (LINK_PAIRS || []).find(([name]) => name === label);
-  return hit ? hit[1] : '';
+  return hit ? safeHttpUrl(hit[1]) : '';
 }
 
 function _openVendorLabelUrl(label) {
@@ -1877,12 +1915,12 @@ function setupNarrowLayoutToggles() {
 // ─── Hyperlinks ──────────────────────────────────────────────────────────────
 // Populated from embedded chart_data.link_pairs at runtime (no domain-specific defaults).
 let LINK_PAIRS = [];
+// Links a vendor name only where a text node is exactly that name (table cells, labels the
+// synthesizer wrote). Ordinary words in prose ("Continue", "Linear") are never linked.
 function linkify() {
-  const sorted = [...LINK_PAIRS].sort((a, b) => b[0].length - a[0].length);
-  const lu = new Map(sorted.map(([t, u]) => [t, u]));
-  const pat = sorted.map(([t]) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
-  const re = new RegExp(`\\b(${pat})\\b`, 'g');
   const content = document.getElementById('content');
+  const urlByLabel = _linkPairUrlMap();
+  if (!content || !urlByLabel.size) return;
   const walker = document.createTreeWalker(content, NodeFilter.SHOW_TEXT, {
     acceptNode(node) {
       let el = node.parentElement;
@@ -1897,23 +1935,19 @@ function linkify() {
   const nodes = [];
   let n;
   while ((n = walker.nextNode())) nodes.push(n);
-  for (const tn of nodes) {
-    const txt = tn.textContent;
-    re.lastIndex = 0;
-    if (!re.test(txt)) continue;
-    re.lastIndex = 0;
-    const html = txt.replace(re, m => {
-      const url = lu.get(m);
-      return url
-        ? `<a class="vname-link" href="${url}" target="_blank" rel="noopener noreferrer">${m}</a>`
-        : m;
-    });
-    if (html !== txt) {
-      const sp = document.createElement('span');
-      sp.innerHTML = html;
-      tn.parentNode.replaceChild(sp, tn);
-    }
-  }
+  for (const tn of nodes) _linkExactLabelNode(tn, urlByLabel);
+}
+
+/** Vendor label → http(s) homepage from the embedded link pairs (other schemes dropped). */
+function _linkPairUrlMap() {
+  const urlByLabel = new Map();
+  (LINK_PAIRS || []).forEach(pair => {
+    if (!Array.isArray(pair) || pair.length < 2) return;
+    const label = String(pair[0] || '').trim();
+    const url = safeHttpUrl(pair[1]);
+    if (label && url && !urlByLabel.has(label)) urlByLabel.set(label, url);
+  });
+  return urlByLabel;
 }
 
 function _trimUrlTrail(raw) {
@@ -2093,9 +2127,6 @@ function _seriesColorFromPayload(label, payload) {
 
 function _marketShortLabel(marketId) {
   const mid = String(marketId || '');
-  if (mid === 'apo') return 'APO';
-  if (mid === 'sdlc-plugins') return 'Plugins';
-  if (mid === 'agentic-sdlc-saas') return 'SaaS';
   const chart = (typeof MARKET_CHARTS === 'object' && MARKET_CHARTS) ? MARKET_CHARTS[mid] : null;
   const dn = chart && chart.market_display_name;
   if (dn) {
@@ -2277,6 +2308,44 @@ function _wireLegendVendorNav(el, label) {
   });
 }
 
+/** Title, subtitle and canvas for a chart frame, built from text (titles come from data). */
+function _chartFrameChrome(wrap, title, subtitle, canvasPrefix, extraWrapClass) {
+  wrap.appendChild(mkEl('div', 'chart-title', title));
+  wrap.appendChild(mkEl('div', 'chart-subtitle', subtitle));
+  const canvasWrap = mkEl('div', 'chart-canvas-wrap' + (extraWrapClass ? ' ' + extraWrapClass : ''));
+  const canvas = document.createElement('canvas');
+  canvas.id = nextChartCanvasId(canvasPrefix);
+  canvasWrap.appendChild(canvas);
+  wrap.appendChild(canvasWrap);
+  return canvas;
+}
+
+function _legendDot(color, size) {
+  const dot = mkEl('span');
+  dot.style.cssText = `display:inline-block;width:${size}px;height:${size}px;border-radius:50%;`;
+  dot.style.background = String(color || '');
+  return dot;
+}
+
+function _quadrantLegend(gap) {
+  const row = mkEl('div');
+  row.style.cssText = `display:flex;gap:${gap}px;flex-wrap:wrap;font-size:12px;`;
+  Object.entries(sbQuadrantColors()).forEach(([q, c]) => {
+    const item = mkEl('span');
+    item.style.cssText = 'display:flex;align-items:center;gap:5px;';
+    item.appendChild(_legendDot(c, 12));
+    item.appendChild(document.createTextNode(q));
+    row.appendChild(item);
+  });
+  return row;
+}
+
+/** Without Chart.js keep the source table visible and say why there is no chart. */
+function _chartUnavailable(wrap, anchorH3) {
+  wrap.appendChild(mkEl('p', 'muted', 'Interactive chart unavailable (Chart.js did not load); the table below has the same data.'));
+  anchorH3.after(wrap);
+}
+
 // ─── 3A: Positioning Matrix ─────────────────────────────────────────────────
 function inject2x2(anchorH3) {
   const payload = _marketChartSource(anchorH3);
@@ -2286,24 +2355,22 @@ function inject2x2(anchorH3) {
   if (_chartMarketId) wrap.dataset.market = _chartMarketId;
   const titles = payload.titles || {};
   const mqData = payload.mq_data;
-  wrap.innerHTML = `
-    <div class="chart-title">${titles.mq || '3A · Positioning Matrix'}</div>
-    <div class="chart-subtitle">
-      ${titles.mq_x || '← Lower (x-axis)         Higher (x-axis) →'} &nbsp;|&nbsp;
-      ${titles.mq_y || '← Lower (y-axis)         Higher (y-axis) →'}
-    </div>
-    <div class="chart-canvas-wrap"><canvas id="${nextChartCanvasId('mqChart')}"></canvas></div>
-    <div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:14px;font-size:12px;">
-      ${Object.entries(sbQuadrantColors()).map(([q,c])=>`<span style="display:flex;align-items:center;gap:5px">
-        <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${c}"></span>${q}</span>`).join('')}
-    </div>`;
+  const mqCanvas = _chartFrameChrome(
+    wrap,
+    titles.mq || '3A · Positioning Matrix',
+    `${titles.mq_x || '← Lower (x-axis)         Higher (x-axis) →'} | ${titles.mq_y || '← Lower (y-axis)         Higher (y-axis) →'}`,
+    'mqChart',
+  );
+  const legend = _quadrantLegend(18);
+  legend.style.marginTop = '14px';
+  wrap.appendChild(legend);
+  if (!SB_HAS_CHART) { _chartUnavailable(wrap, anchorH3); return; }
 
   // Insert after the existing table (hide the table)
   const tbl = findNextTable(anchorH3);
   if (tbl) tbl.style.display = 'none';
   anchorH3.after(wrap);
 
-  const mqCanvas = wrap.querySelector('canvas');
   whenChartParentReady(mqCanvas, () => {
   const ctx = mqCanvas.getContext('2d');
   const datasets = [{
@@ -2395,13 +2462,6 @@ function injectGMQ(anchorH3) {
   const payload = _marketChartSource(anchorH3);
   const titles = payload.titles || {};
   const gmqData = payload.gmq_data;
-  const legendHTML = `
-    <div style="display:flex;gap:18px;flex-wrap:wrap;font-size:12px;">
-      ${Object.entries(sbQuadrantColors()).map(([q,c])=>`
-        <span style="display:flex;align-items:center;gap:5px;">
-          <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${c}"></span>${q}
-        </span>`).join('')}
-    </div>`;
 
   const wrap = document.createElement('div');
   wrap.className = 'chart-frame';
@@ -2409,20 +2469,19 @@ function injectGMQ(anchorH3) {
     || (anchorH3 && anchorH3.dataset && anchorH3.dataset.market)
     || '';
   if (_chartMarketId) wrap.dataset.market = _chartMarketId;
-  wrap.innerHTML = `
-    <div class="chart-title">${titles.gmq || '3B · Magic Quadrant'}</div>
-    <div class="chart-subtitle">
-      ${titles.gmq_x || 'X-axis: Completeness of Vision'} &nbsp;|&nbsp;
-      ${titles.gmq_y || 'Y-axis: Ability to Execute'}
-    </div>
-    <div class="chart-canvas-wrap"><canvas id="${nextChartCanvasId('gmqChart')}"></canvas></div>
-    ${legendHTML}`;
+  const gmqCanvas = _chartFrameChrome(
+    wrap,
+    titles.gmq || '3B · Magic Quadrant',
+    `${titles.gmq_x || 'X-axis: Completeness of Vision'} | ${titles.gmq_y || 'Y-axis: Ability to Execute'}`,
+    'gmqChart',
+  );
+  wrap.appendChild(_quadrantLegend(18));
+  if (!SB_HAS_CHART) { _chartUnavailable(wrap, anchorH3); return; }
 
   const tbl = findNextTable(anchorH3);
   if (tbl) tbl.style.display = 'none';
   anchorH3.after(wrap);
 
-  const gmqCanvas = wrap.querySelector('canvas');
   whenChartParentReady(gmqCanvas, () => {
   const ctx = gmqCanvas.getContext('2d');
   const datasets = [{
@@ -2518,32 +2577,38 @@ function injectWave(anchorH3) {
   const titles = payload.titles || {};
   const waveData = payload.wave_data;
   const palette = themedSeriesPalette();
-  const legendHTML = waveData.map((d, i) => `
-    <span data-wave-idx="${i}" style="display:flex;align-items:center;gap:5px;font-size:12px;
-          cursor:pointer;padding:3px 7px;border-radius:5px;transition:opacity .15s,background .15s;">
-      <span style="display:inline-block;width:13px;height:13px;border-radius:50%;
-                   background:${palette[i % palette.length]};border:2px solid ${palette[i % palette.length]}88;"></span>
-      ${d.label}
-    </span>`).join('');
 
   const wrap = document.createElement('div');
   wrap.className = 'chart-frame';
   const _chartMarketId = payload.marketId;
   if (_chartMarketId) wrap.dataset.market = _chartMarketId;
-  wrap.innerHTML = `
-    <div class="chart-title">${titles.wave || '3C · Wave-Style Assessment'}</div>
-    <div class="chart-subtitle">
-      X-axis: Strength of Strategy &nbsp;|&nbsp; Y-axis: Strength of Offering &nbsp;|&nbsp;
-      Bubble size = Market Presence &nbsp;·&nbsp; Strong=4 · Good=3 · Moderate=2
-    </div>
-    <div class="chart-canvas-wrap"><canvas id="${nextChartCanvasId('waveChart')}"></canvas></div>
-    <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:14px;">${legendHTML}</div>`;
+  const waveCanvas = _chartFrameChrome(
+    wrap,
+    titles.wave || '3C · Wave-Style Assessment',
+    'X-axis: Strength of Strategy | Y-axis: Strength of Offering | '
+      + 'Bubble size = Market Presence · Strong=4 · Good=3 · Moderate=2',
+    'waveChart',
+  );
+  const legendRow = mkEl('div');
+  legendRow.style.cssText = 'display:flex;gap:14px;flex-wrap:wrap;margin-top:14px;';
+  waveData.forEach((d, i) => {
+    const item = mkEl('span');
+    item.dataset.waveIdx = String(i);
+    item.style.cssText = 'display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;'
+      + 'padding:3px 7px;border-radius:5px;transition:opacity .15s,background .15s;';
+    const dot = _legendDot(palette[i % palette.length], 13);
+    dot.style.border = `2px solid ${palette[i % palette.length]}88`;
+    item.appendChild(dot);
+    item.appendChild(document.createTextNode(String((d && d.label) || '')));
+    legendRow.appendChild(item);
+  });
+  wrap.appendChild(legendRow);
+  if (!SB_HAS_CHART) { _chartUnavailable(wrap, anchorH3); return; }
 
   const tbl = findNextTable(anchorH3);
   if (tbl) tbl.style.display = 'none';
   anchorH3.after(wrap);
 
-  const waveCanvas = wrap.querySelector('canvas');
   whenChartParentReady(waveCanvas, () => {
   // Forrester convention: X = Strategy, Y = Offering
   const bubbleR = { 4: 26, 3: 18, 2: 13, 1: 8 };
@@ -2734,34 +2799,47 @@ function injectValueCurve(anchorH3) {
   const allSeries = (leaderSeries.length ? leaderSeries : [...payload.vc_commercial, ...payload.vc_oss].slice(0, 6))
     .map((s, i) => Object.assign({}, s, { color: s.color || palette[i % palette.length] }));
 
-  const mkSwatch = s =>
-    `<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${s.color}"></span>`;
-  const mkItem = (s, idx) =>
-    `<span data-vc-idx="${idx}" style="display:flex;align-items:center;gap:5px;font-size:11.5px;
-           cursor:pointer;padding:3px 7px;border-radius:5px;transition:opacity .15s,background .15s;">${mkSwatch(s)}${s.label}</span>`;
-  const legendHTML = `
-    <div style="display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;margin-top:4px;">
-      <span style="font-size:10px;font-weight:500;color:var(--sb-muted);letter-spacing:.6px;">MQ LEADERS</span>
-      ${allSeries.map((s, i) => mkItem(s, i)).join('') || '<span style="font-size:12px;color:var(--sb-muted);">No Leaders in Magic Quadrant</span>'}
-    </div>`;
+  const legendBox = mkEl('div');
+  legendBox.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;margin-top:4px;';
+  const leadersLabel = mkEl('span', '', 'MQ LEADERS');
+  leadersLabel.style.cssText = 'font-size:10px;font-weight:500;color:var(--sb-muted);letter-spacing:.6px;';
+  legendBox.appendChild(leadersLabel);
+  allSeries.forEach((s, idx) => {
+    const item = mkEl('span');
+    item.dataset.vcIdx = String(idx);
+    item.style.cssText = 'display:flex;align-items:center;gap:5px;font-size:11.5px;cursor:pointer;'
+      + 'padding:3px 7px;border-radius:5px;transition:opacity .15s,background .15s;';
+    item.appendChild(_legendDot(s.color, 12));
+    item.appendChild(document.createTextNode(String(s.label || '')));
+    legendBox.appendChild(item);
+  });
+  if (!allSeries.length) {
+    const none = mkEl('span', '', 'No Leaders in Magic Quadrant');
+    none.style.cssText = 'font-size:12px;color:var(--sb-muted);';
+    legendBox.appendChild(none);
+  }
 
   const wrap = document.createElement('div');
   wrap.className = 'chart-frame';
   const _chartMarketId = payload.marketId;
   if (_chartMarketId) wrap.dataset.market = _chartMarketId;
-  wrap.innerHTML = `
-    <div class="chart-title">${titles.vc || '3D · Blue Ocean Value Curve (Leaders Radar)'}</div>
-    <div class="chart-subtitle">
-      Magic Quadrant Leaders only · Scale 1–5 across ${vcKcfs.length || 'N'} Key Competitive Factors
-    </div>
-    <div class="chart-canvas-wrap chart-canvas-wrap--vc"><canvas id="${nextChartCanvasId('vcChart')}"></canvas></div>
-    <div style="margin-top:14px;">${legendHTML}</div>`;
+  const vcCanvas = _chartFrameChrome(
+    wrap,
+    titles.vc || '3D · Blue Ocean Value Curve (Leaders Radar)',
+    `Magic Quadrant Leaders only · Scale 1–5 across ${vcKcfs.length || 'N'} Key Competitive Factors`,
+    'vcChart',
+    'chart-canvas-wrap--vc',
+  );
+  const legendWrap = mkEl('div');
+  legendWrap.style.marginTop = '14px';
+  legendWrap.appendChild(legendBox);
+  wrap.appendChild(legendWrap);
+  if (!SB_HAS_CHART) { _chartUnavailable(wrap, anchorH3); return; }
 
   const tbl = findNextTable(anchorH3);
   if (tbl) tbl.style.display = 'none';
   anchorH3.after(wrap);
 
-  const vcCanvas = wrap.querySelector('canvas');
   whenChartParentReady(vcCanvas, () => {
   const ctx = vcCanvas.getContext('2d');
   const datasets = allSeries.map(s => ({
@@ -2923,37 +3001,6 @@ function injectCharts() {
   requestAnimationFrame(() => resizeAllCharts());
 }
 
-// ─── Main load ───────────────────────────────────────────────────────────────
-async function loadFile(path) {
-  destroyCharts();
-  document.getElementById('content').innerHTML = '<p style="color:var(--sb-muted);padding:40px 0;">Loading…</p>';
-  document.getElementById('toc').innerHTML = '';
-  try {
-    const r = await fetch('/' + path);
-    const md = await r.text();
-    document.getElementById('content').innerHTML = marked.parse(md);
-    ensureExternalLinksNewTab(document.getElementById('content'));
-    buildTOC();
-    document.getElementById('stats').textContent =
-      `${(md.length/1000).toFixed(1)}K chars · ${md.split('\n').length} lines`;
-    window.scrollTo(0, 0);
-    // Inject charts (consolidated report only), then linkify all files
-    if (path.includes('Consolidated Intelligence Report') || path.includes('Market Landscape Report')) {
-      setTimeout(() => {
-        injectCharts();
-        linkify();
-        linkifyBareHttpUrls(document.getElementById('content'));
-        ensureExternalLinksNewTab(document.getElementById('content'));
-        setTimeout(() => postRender(), 0);
-      }, 0);
-    } else {
-      setTimeout(() => { linkify(); linkifyBareHttpUrls(document.getElementById('content')); ensureExternalLinksNewTab(document.getElementById('content')); setTimeout(() => postRender(), 0); }, 0);
-    }
-  } catch(e) {
-    document.getElementById('content').innerHTML = `<pre style="color:red">${e}</pre>`;
-  }
-}
-
 function buildTOC() {
   const toc = document.getElementById('toc');
   toc.innerHTML = '';
@@ -2969,7 +3016,7 @@ function buildTOC() {
   });
 }
 
-// Embedded bootstrap (landscape_preview_render.py) calls bootstrapFromEmbedded() instead of loadFile.
+// Embedded bootstrap (landscape_preview_render.py) calls bootstrapFromEmbedded() on load.
 
 // ─── #6 Progress bar + scroll polling fallback ──────────────────────────────
 let _progressBar = null;
@@ -3205,10 +3252,14 @@ function _inlineStylesForGDocs(root) {
     if (!prosCol || !consCol) return;
     const tbl = document.createElement('table');
     tbl.style.cssText = 'width:100%;border-collapse:collapse;margin:10px 0;';
-    tbl.innerHTML = `<tr>
-      <td style="vertical-align:top;width:50%;padding:8px 12px;border:1px solid #d0d7de;">${prosCol.innerHTML}</td>
-      <td style="vertical-align:top;width:50%;padding:8px 12px;border:1px solid #d0d7de;">${consCol.innerHTML}</td>
-    </tr>`;
+    const tr = document.createElement('tr');
+    [prosCol, consCol].forEach(col => {
+      const td = document.createElement('td');
+      td.style.cssText = 'vertical-align:top;width:50%;padding:8px 12px;border:1px solid #d0d7de;';
+      while (col.firstChild) td.appendChild(col.firstChild);
+      tr.appendChild(td);
+    });
+    tbl.appendChild(tr);
     grid.replaceWith(tbl);
   });
 
@@ -3229,21 +3280,28 @@ function _inlineStylesForGDocs(root) {
     if (cards.length === 0) return;
     const tbl = document.createElement('table');
     tbl.style.cssText = 'width:100%;border-collapse:collapse;margin:12px 0;';
-    let rowHTML = '<tr>';
+    let tr = document.createElement('tr');
+    tbl.appendChild(tr);
+    const cellWidth = Math.floor(100 / Math.min(cards.length, 4));
     cards.forEach((card, i) => {
-      const icon = card.querySelector('.tc-icon')?.textContent || '';
-      const title = card.querySelector('.tc-title')?.textContent || '';
-      const body = card.querySelector('.tc-body')?.textContent || '';
-      rowHTML += `<td style="vertical-align:top;padding:10px;border:1px solid #d0d7de;width:${Math.floor(100/Math.min(cards.length,4))}%;background:#f6f8fa;">
-        <div style="font-size:16pt;margin-bottom:4px;">${icon}</div>
-        <div style="font-size:10pt;font-weight:bold;color:#1a1a1a;margin-bottom:4px;">${title}</div>
-        <div style="font-size:9pt;color:#5f6368;line-height:1.4;">${body}</div>
-      </td>`;
+      const td = document.createElement('td');
+      td.style.cssText = `vertical-align:top;padding:10px;border:1px solid #d0d7de;width:${cellWidth}%;background:#f6f8fa;`;
+      [
+        ['.tc-icon', 'font-size:16pt;margin-bottom:4px;'],
+        ['.tc-title', 'font-size:10pt;font-weight:bold;color:#1a1a1a;margin-bottom:4px;'],
+        ['.tc-body', 'font-size:9pt;color:#5f6368;line-height:1.4;'],
+      ].forEach(([sel, css]) => {
+        const div = mkEl('div', '', card.querySelector(sel)?.textContent || '');
+        div.style.cssText = css;
+        td.appendChild(div);
+      });
+      tr.appendChild(td);
       // Max 4 per row
-      if ((i + 1) % 4 === 0 && i < cards.length - 1) rowHTML += '</tr><tr>';
+      if ((i + 1) % 4 === 0 && i < cards.length - 1) {
+        tr = document.createElement('tr');
+        tbl.appendChild(tr);
+      }
     });
-    rowHTML += '</tr>';
-    tbl.innerHTML = rowHTML;
     strip.replaceWith(tbl);
   });
 
@@ -3351,11 +3409,7 @@ function _inlineStylesForGDocs(root) {
   }
 
   function _vendorUrl(label) {
-    if (!label) return '';
-    if (typeof HOMEPAGE_VENDOR_URLS === 'object' && HOMEPAGE_VENDOR_URLS[label]) return HOMEPAGE_VENDOR_URLS[label];
-    if (typeof VENDOR_URLS === 'object' && VENDOR_URLS[label]) return VENDOR_URLS[label];
-    const hit = (LINK_PAIRS || []).find(([name]) => name === label);
-    return hit ? hit[1] : '';
+    return vendorUrlForLabel(label);
   }
 
   function _homepageFromHeading(h3, displayName) {
@@ -3370,13 +3424,6 @@ function _inlineStylesForGDocs(root) {
     });
     if (fuzzy) return fuzzy.href;
     return anchors[anchors.length - 1].href || '';
-  }
-
-  function _escAttr(s) {
-    return String(s || '')
-      .replace(/&/g, '&amp;')
-      .replace(/"/g, '&quot;')
-      .replace(/</g, '&lt;');
   }
 
   function _normalizeVendorLabel(name) {
@@ -3512,7 +3559,7 @@ function _inlineStylesForGDocs(root) {
       else if (typeText.startsWith('stat'))       type = 'stat';
       const div = document.createElement('div');
       div.className = 'callout callout-' + type;
-      div.innerHTML = bq.innerHTML;
+      while (bq.firstChild) div.appendChild(bq.firstChild);
       bq.parentNode.replaceChild(div, bq);
     });
   }
@@ -3592,10 +3639,11 @@ function _inlineStylesForGDocs(root) {
       card.setAttribute('role', 'listitem');
       // Truncate body to ~120 chars for card readability
       const shortBody = body.length > 130 ? body.slice(0, 127) + '…' : body;
-      card.innerHTML =
-        `<div class="tc-icon">${lucideIconHtml(TREND_ICONS[idx % TREND_ICONS.length], 'lucide-icon')}</div>` +
-        `<div class="tc-title">${title}</div>` +
-        `<div class="tc-body">${shortBody}</div>`;
+      const icon = mkEl('div', 'tc-icon');
+      icon.appendChild(lucideIcon(TREND_ICONS[idx % TREND_ICONS.length], 'lucide-icon'));
+      card.appendChild(icon);
+      card.appendChild(mkEl('div', 'tc-title', title));
+      card.appendChild(mkEl('div', 'tc-body', shortBody));
       strip.appendChild(card);
     });
 
@@ -3645,7 +3693,12 @@ function _inlineStylesForGDocs(root) {
 
         const hdr = document.createElement('div');
         hdr.className = 'info-card-header';
-        hdr.innerHTML = `<span style="flex:1">${title}</span><span class="info-card-toggle">${lucideIconHtml('chevron-down', 'lucide-icon')}</span>`;
+        const hdrTitle = mkEl('span', '', title);
+        hdrTitle.style.flex = '1';
+        const hdrToggle = mkEl('span', 'info-card-toggle');
+        hdrToggle.appendChild(lucideIcon('chevron-down', 'lucide-icon'));
+        hdr.appendChild(hdrTitle);
+        hdr.appendChild(hdrToggle);
 
         const body = document.createElement('div');
         body.className = 'info-card-body'; // collapsed by default
@@ -3744,13 +3797,12 @@ function _inlineStylesForGDocs(root) {
       if (!strong || !/^overview$/i.test(strong.textContent.trim())) return;
       const raw = el.textContent.replace(/^overview\s*:?\s*/i, '').trim();
       const cleaned = sanitizeOverviewText(raw);
-      if (cleaned && cleaned !== raw) {
-        el.innerHTML = '<strong>Overview</strong>: ' + cleaned;
-      } else if (!cleaned) {
-        const name = fallbackName || 'This solution';
-        el.innerHTML = '<strong>Overview</strong>: ' + name +
-          ' is a product in the agentic SDLC orchestration landscape.';
-      }
+      if (cleaned && cleaned === raw) return;
+      const text = cleaned
+        || `No usable overview text was extracted for ${fallbackName || 'this solution'} in this run.`;
+      el.textContent = '';
+      el.appendChild(mkEl('strong', '', 'Overview'));
+      el.appendChild(document.createTextNode(': ' + text));
     });
   }
 
@@ -3808,14 +3860,20 @@ function _inlineStylesForGDocs(root) {
         const header = document.createElement('div');
         header.className = 'vc-header';
         const vendorUrl = _vendorUrl(displayName) || _vendorUrl(rawName) || _homepageFromHeading(h3, displayName);
-        const nameHtml = vendorUrl
-          ? `<a class="vc-name-link" href="${_escAttr(vendorUrl)}" target="_blank" rel="noopener noreferrer">${displayName}</a>`
-          : displayName;
-        header.innerHTML =
-          `<label class="vc-compare" title="Add to Compare"><input type="checkbox" class="vc-compare-cb" data-vendor="${displayName.replace(/"/g, '&quot;')}" aria-label="Compare ${displayName.replace(/"/g, '')}"></label>` +
-          `<div class="vc-avatar" style="background:${color}">${initial}</div>` +
-          `<div class="vc-name">${nameHtml}</div>` +
-          `<span class="vc-toggle is-closed">${lucideIconHtml('chevron-down', 'lucide-icon')}</span>`;
+        const compareLabelEl = mkEl('label', 'vc-compare');
+        compareLabelEl.title = 'Add to Compare';
+        const compareInput = mkEl('input', 'vc-compare-cb');
+        compareInput.type = 'checkbox';
+        compareInput.dataset.vendor = displayName;
+        compareInput.setAttribute('aria-label', 'Compare ' + displayName);
+        compareLabelEl.appendChild(compareInput);
+        const avatar = mkEl('div', 'vc-avatar', initial);
+        avatar.style.background = color;
+        const nameBox = mkEl('div', 'vc-name');
+        nameBox.appendChild(externalLink(displayName, vendorUrl, 'vc-name-link'));
+        const toggleEl = mkEl('span', 'vc-toggle is-closed');
+        toggleEl.appendChild(lucideIcon('chevron-down', 'lucide-icon'));
+        [compareLabelEl, avatar, nameBox, toggleEl].forEach(node => header.appendChild(node));
 
         const tagsDiv = document.createElement('div');
         tagsDiv.className = 'vc-tags';
@@ -4161,9 +4219,9 @@ function _inlineStylesForGDocs(root) {
     banner.id = 'matrixFillGapBanner';
     banner.className = 'matrix-fill-gap';
     banner.setAttribute('role', 'note');
-    banner.innerHTML =
-      `<strong>Critical matrix gaps (missing research evidence):</strong> ` +
-      `${gaps.join('; ')}. Empty cells render as — and must not be read as feature support.`;
+    banner.appendChild(mkEl('strong', '', 'Critical matrix gaps (missing research evidence):'));
+    banner.appendChild(document.createTextNode(
+      ` ${gaps.join('; ')}. Empty cells render as — and must not be read as feature support.`));
     const content = document.getElementById('content');
     if (content && content.firstChild) {
       content.insertBefore(banner, content.firstChild);
@@ -4269,6 +4327,8 @@ function _inlineStylesForGDocs(root) {
   }
 
   // ── #7 wrapVendorNameLinks + comparison drawer ────────────────────────────────
+  // Links vendor names where a text node is exactly the vendor label (matrix headers, compare
+  // table, table cells). Words inside prose are left alone (R12-18).
   function wrapVendorNameLinks() {
     const roots = [
       document.getElementById('content'),
@@ -4278,7 +4338,13 @@ function _inlineStylesForGDocs(root) {
     ].filter(Boolean);
     if (!roots.length) return;
 
-    const names = [...ALL_VENDORS].sort((a, b) => b.length - a.length);
+    const urlByLabel = new Map();
+    [...ALL_VENDORS].forEach(name => {
+      if (!_isLinkableVendorName(name)) return;
+      const url = _vendorUrl(name);
+      if (url) urlByLabel.set(String(name).trim(), url);
+    });
+    if (!urlByLabel.size) return;
     for (const content of roots) {
     const walker = document.createTreeWalker(content, NodeFilter.SHOW_TEXT, {
       acceptNode(node) {
@@ -4297,30 +4363,7 @@ function _inlineStylesForGDocs(root) {
     const nodes = [];
     let nd;
     while ((nd = walker.nextNode())) nodes.push(nd);
-
-    for (const tn of nodes) {
-      let result = tn.textContent;
-      let replaced = false;
-      for (const name of names) {
-        if (!_isLinkableVendorName(name)) continue;
-        const url = _vendorUrl(name);
-        if (!url) continue;
-        const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const re = new RegExp(`\\b${escaped}\\b`, 'g');
-        if (re.test(result)) {
-          result = result.replace(
-            new RegExp(`\\b${escaped}\\b`, 'g'),
-            `<a class="vname-link" href="${url}" target="_blank" rel="noopener noreferrer">${name}</a>`
-          );
-          replaced = true;
-        }
-      }
-      if (replaced) {
-        const sp = document.createElement('span');
-        sp.innerHTML = result;
-        tn.parentNode.replaceChild(sp, tn);
-      }
-    }
+    for (const tn of nodes) _linkExactLabelNode(tn, urlByLabel);
     }
   }
 
@@ -4395,66 +4438,82 @@ function _inlineStylesForGDocs(root) {
     const slugs = vendors.map(v => _resolveVendorSlug(v));
     const cmp = (window.__SB_REPORT__ && window.__SB_REPORT__.comparison) || {};
     const rows = (cmp.rows || []).filter(r => r && r.type === 'feature');
-    const scoreCells = slugs.map(s => {
-      const score = _formatCompareScore(s);
-      return `<td style="padding:6px 8px;border:1px solid var(--sb-border);text-align:center;font-weight:500;background:var(--sb-accent-soft);">${score}</td>`;
-    }).join('');
-    const scoreRow = `<tr class="cmp-score-row"><td style="padding:6px 8px;border:1px solid var(--sb-border);font-weight:500;">Weighted score</td>` +
-      (rows.length ? `<td style="padding:6px 8px;border:1px solid var(--sb-border);text-align:center;">—</td>` : '') +
-      `${scoreCells}</tr>`;
+    const CELL = 'padding:6px 8px;border:1px solid var(--sb-border);';
+    const HEAD = 'padding:6px 8px;background:var(--sb-surface-muted);border:1px solid var(--sb-border);';
+    const cell = (tag, text, css) => { const c = mkEl(tag, '', text); c.style.cssText = css; return c; };
+    const headerCell = (v) => {
+      const th = cell('th', v, HEAD + 'text-align:center;');
+      th.appendChild(mkEl('span', 'cmp-col-score', 'Score ' + _formatCompareScore(v)));
+      return th;
+    };
 
-    const removeLinks = vendors.map(v =>
-      `<span class="cmp-remove" data-vendor="${v.replace(/"/g, '&quot;')}">${lucideIconHtml('x', 'lucide-icon')} ${v}</span>`
-    ).join('');
+    const scoreRow = mkEl('tr', 'cmp-score-row');
+    scoreRow.appendChild(cell('td', 'Weighted score', CELL + 'font-weight:500;'));
+    if (rows.length) scoreRow.appendChild(cell('td', '—', CELL + 'text-align:center;'));
+    slugs.forEach(s => {
+      scoreRow.appendChild(cell('td', _formatCompareScore(s), CELL + 'text-align:center;font-weight:500;background:var(--sb-accent-soft);'));
+    });
 
-    let tableHtml = '';
+    const removeBar = mkEl('div');
+    removeBar.style.marginBottom = '10px';
+    vendors.forEach(v => {
+      const chip = mkEl('span', 'cmp-remove');
+      chip.dataset.vendor = v;
+      chip.appendChild(lucideIcon('x', 'lucide-icon'));
+      chip.appendChild(document.createTextNode(' ' + v));
+      chip.addEventListener('click', () => _toggleCompare(chip.dataset.vendor));
+      removeBar.appendChild(chip);
+    });
+
+    const table = mkEl('table');
+    table.style.cssText = 'width:100%;border-collapse:collapse;';
+    const thead = mkEl('thead');
+    const headRow = mkEl('tr');
+    const tbody = mkEl('tbody');
+    tbody.appendChild(scoreRow);
     if (rows.length) {
-      const headerCols = vendors.map(v => {
-        const score = _formatCompareScore(v);
-        return `<th style="padding:6px 8px;background:var(--sb-surface-muted);border:1px solid var(--sb-border);text-align:center;">${v}<span class="cmp-col-score">Score ${score}</span></th>`;
-      }).join('');
-      const bodyRows = rows.map(row => {
-        const cells = slugs.map(slug => {
-          const val = ((row.solutions || {})[slug] || '').trim() || '—';
+      headRow.appendChild(cell('th', 'Feature', HEAD + 'text-align:left;'));
+      headRow.appendChild(cell('th', 'Priority', HEAD + 'text-align:left;'));
+      vendors.forEach(v => headRow.appendChild(headerCell(v)));
+      rows.forEach(row => {
+        const tr = mkEl('tr');
+        tr.appendChild(cell('td', row.name || '', CELL + 'font-weight:500;'));
+        tr.appendChild(cell('td', row.priority || '—', CELL + 'text-align:center;'));
+        slugs.forEach(slug => {
+          const val = String((row.solutions || {})[slug] || '').trim() || '—';
           const tick = val === '✔' || val === '✓';
-          return `<td style="padding:6px 8px;border:1px solid var(--sb-border);text-align:center;${tick ? 'font-weight:500;' : ''}">${val}</td>`;
-        }).join('');
-        return `<tr><td style="padding:6px 8px;border:1px solid var(--sb-border);font-weight:500;">${row.name || ''}</td>` +
-          `<td style="padding:6px 8px;border:1px solid var(--sb-border);text-align:center;">${row.priority || '—'}</td>${cells}</tr>`;
-      }).join('');
-      tableHtml =
-        `<div class="table-scroll-wrap"><table style="width:100%;border-collapse:collapse;">` +
-        `<thead><tr><th style="text-align:left;padding:6px 8px;background:var(--sb-surface-muted);border:1px solid var(--sb-border);">Feature</th>` +
-        `<th style="text-align:left;padding:6px 8px;background:var(--sb-surface-muted);border:1px solid var(--sb-border);">Priority</th>${headerCols}</tr></thead>` +
-        `<tbody>${scoreRow}${bodyRows}</tbody></table></div>`;
+          tr.appendChild(cell('td', val, CELL + 'text-align:center;' + (tick ? 'font-weight:500;' : '')));
+        });
+        tbody.appendChild(tr);
+      });
     } else {
-      const allVc = [...VC_COMMERCIAL, ...VC_OSS];
       const lookup = {};
-      allVc.forEach(v => { lookup[v.label] = v.data; });
-      VC_OSS.forEach(v => { lookup[v.label.replace(' (OSS)','')] = v.data; });
-      const headerCols = vendors.map(v => {
-        const score = _formatCompareScore(v);
-        return `<th style="padding:6px 8px;background:var(--sb-surface-muted);border:1px solid var(--sb-border);text-align:center;">${v}<span class="cmp-col-score">Score ${score}</span></th>`;
-      }).join('');
-      const bodyRows = VC_KCFS.map((kcf, i) => {
-        const cells = vendors.map(v => {
+      [...VC_COMMERCIAL, ...VC_OSS].forEach(v => { lookup[v.label] = v.data; });
+      VC_OSS.forEach(v => { lookup[String(v.label).replace(' (OSS)', '')] = v.data; });
+      headRow.appendChild(cell('th', 'KCF', HEAD + 'text-align:left;'));
+      vendors.forEach(v => headRow.appendChild(headerCell(v)));
+      VC_KCFS.forEach((kcf, i) => {
+        const tr = mkEl('tr');
+        tr.appendChild(cell('td', kcf, CELL + 'font-weight:500;'));
+        vendors.forEach(v => {
           const data = lookup[v];
           const score = data ? data[i] : null;
-          const bg = score !== null ? (SCORE_BG[score] || 'var(--sb-surface-muted)') : 'var(--sb-surface-muted)';
-          return `<td style="padding:6px 8px;border:1px solid var(--sb-border);text-align:center;background:${bg};">${score !== null ? score : '—'}</td>`;
-        }).join('');
-        return `<tr><td style="padding:6px 8px;border:1px solid var(--sb-border);font-weight:500;">${kcf}</td>${cells}</tr>`;
-      }).join('');
-      tableHtml =
-        `<div class="table-scroll-wrap"><table style="width:100%;border-collapse:collapse;">` +
-        `<thead><tr><th style="text-align:left;padding:6px 8px;background:var(--sb-surface-muted);border:1px solid var(--sb-border);">KCF</th>${headerCols}</tr></thead>` +
-        `<tbody>${scoreRow}${bodyRows}</tbody></table></div>`;
+          const td = cell('td', score !== null && score !== undefined ? score : '—', CELL + 'text-align:center;');
+          td.style.background = (score !== null && SCORE_BG[score]) || 'var(--sb-surface-muted)';
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
     }
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+    table.appendChild(tbody);
+    const scroll = mkEl('div', 'table-scroll-wrap');
+    scroll.appendChild(table);
 
-    body.innerHTML = `<div style="margin-bottom:10px;">${removeLinks}</div>${tableHtml}`;
-    body.querySelectorAll('.cmp-remove').forEach(el => {
-      el.addEventListener('click', () => _toggleCompare(el.dataset.vendor));
-    });
+    body.textContent = '';
+    body.appendChild(removeBar);
+    body.appendChild(scroll);
     refreshLucideIcons(body);
 
     if (drawer) {

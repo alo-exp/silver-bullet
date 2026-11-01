@@ -7,6 +7,7 @@ import base64
 import html
 import json
 import math
+import os
 import re
 import shutil
 import subprocess
@@ -54,6 +55,9 @@ SPA_FONT_STACK = "'Roboto Condensed', 'Arial Narrow', Arial, sans-serif"
 GOOGLE_FONTS_HREF = (
     "https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300;400;500&display=swap"
 )
+# The print HTML is built from model output and rendered by headless Chromium: no script
+# may run and nothing may be fetched (fonts and figures are inline).
+PRINT_CSP = "default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:"
 
 # SPA Chart.js bubble radii (canvas px) — reused on the independent SVG Wave.
 _WAVE_BUBBLE_R = {4: 26.0, 3: 18.0, 2: 13.0, 1: 8.0}
@@ -219,10 +223,35 @@ def _esc(text: Any) -> str:
     return html.escape(str(text), quote=True)
 
 
+_URL_SCHEME_RE = re.compile(r"^([a-zA-Z][a-zA-Z0-9+.-]*):")
+
+
+def safe_href(url: Any) -> str | None:
+    """`url` when it is http(s), a #fragment or a scheme-less relative path, else None.
+
+    Link targets come from model text: javascript:, data:, file:, vbscript: and
+    protocol-relative (//host, which resolves to file://host from a local report) are
+    refused. Browsers drop ASCII whitespace/control characters inside a scheme, so the
+    check runs on the URL with those removed.
+    """
+    raw = str(url or "").strip()
+    probe = re.sub(r"[\x00-\x20\x7f]", "", raw)
+    if not probe or probe[:2] in {"//", "\\\\", "/\\", "\\/"}:
+        return None
+    scheme = _URL_SCHEME_RE.match(probe)
+    if scheme and scheme.group(1).lower() not in {"http", "https"}:
+        return None
+    return raw
+
+
 def _html_ext_anchor(url: str, inner_html: str) -> str:
-    return (
-        f'<a href="{_esc(url)}" target="_blank" rel="noopener noreferrer">{inner_html}</a>'
-    )
+    """Anchor for a markdown link; an unsafe target leaves only the (escaped) link text."""
+    href = safe_href(url)
+    if href is None:
+        return inner_html
+    if not _URL_SCHEME_RE.match(href):
+        return f'<a href="{_esc(href)}">{inner_html}</a>'
+    return f'<a href="{_esc(href)}" target="_blank" rel="noopener noreferrer">{inner_html}</a>'
 
 
 def _clip_id(chart_kind: str) -> str:
@@ -230,11 +259,19 @@ def _clip_id(chart_kind: str) -> str:
 
 
 _FONT_CSS_CACHE: str | None = None
+WEB_FONTS_ENV = "SB_LANDSCAPE_PDF_WEB_FONTS"
 
 
 def _embed_roboto_font_css() -> str:
-    """Inline Roboto Condensed woff2 so Playwright PDF does not fall back to Times."""
+    """Inline Roboto Condensed woff2 so Playwright PDF does not fall back to Times.
+
+    Off by default: a PDF build makes no network requests and uses the local font stack
+    (SPA_FONT_STACK). Set SB_LANDSCAPE_PDF_WEB_FONTS=1 to download the web font once per
+    process from Google Fonts and embed it as data: URIs.
+    """
     global _FONT_CSS_CACHE
+    if os.environ.get(WEB_FONTS_ENV, "").strip().lower() not in {"1", "true", "yes"}:
+        return ""
     if _FONT_CSS_CACHE is not None:
         return _FONT_CSS_CACHE
     req = urllib.request.Request(
@@ -823,8 +860,17 @@ def _parse_list_line(line: str) -> tuple[int, str, str] | None:
     return None
 
 
-def markdown_to_html(md: str) -> str:
-    """Small markdown subset for print (headings, nested lists, tables, paragraphs)."""
+_HR_RE = re.compile(r"\s*(?:-{3,}|\*{3,}|_{3,})\s*")
+_MAX_QUOTE_DEPTH = 8
+
+
+def markdown_to_html(md: str, *, _depth: int = 0) -> str:
+    """Markdown subset → HTML for the landscape SPA body and the print PDF.
+
+    Headings, nested lists, tables, blockquotes, fenced code, rules and paragraphs. Every
+    text run is HTML-escaped and raw HTML in the source stays text; links keep only
+    http(s), relative and #fragment targets (see safe_href).
+    """
     lines = md.replace("\r\n", "\n").split("\n")
     html_parts: list[str] = []
     i = 0
@@ -865,6 +911,34 @@ def markdown_to_html(md: str) -> str:
 
     while i < len(lines):
         line = lines[i]
+        stripped = line.strip()
+        if stripped.startswith("```"):
+            close_lists()
+            code: list[str] = []
+            i += 1
+            while i < len(lines) and not lines[i].strip().startswith("```"):
+                code.append(lines[i])
+                i += 1
+            i += 1  # closing fence (or end of input)
+            html_parts.append("<pre><code>" + html.escape("\n".join(code)) + "</code></pre>")
+            continue
+        if stripped.startswith(">"):
+            close_lists()
+            quoted: list[str] = []
+            while i < len(lines) and lines[i].strip().startswith(">"):
+                quoted.append(re.sub(r"^\s*>\s?", "", lines[i]))
+                i += 1
+            inner = "\n".join(quoted)
+            if _depth >= _MAX_QUOTE_DEPTH:
+                html_parts.append(f"<blockquote><p>{_md_inline(inner)}</p></blockquote>")
+            else:
+                html_parts.append(f"<blockquote>{markdown_to_html(inner, _depth=_depth + 1)}</blockquote>")
+            continue
+        if _HR_RE.fullmatch(line):
+            close_lists()
+            html_parts.append("<hr>")
+            i += 1
+            continue
         if line.strip().startswith("|") and i + 1 < len(lines) and re.match(r"^\s*\|?\s*:?-{3,}", lines[i + 1]):
             close_lists()
             rows = []
@@ -1314,10 +1388,8 @@ code {{ font-family: 'SF Mono', Consolas, 'Liberation Mono', monospace; font-siz
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
+<meta http-equiv="Content-Security-Policy" content="{PRINT_CSP}"/>
 <title>{_esc(title)}</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
-<link rel="stylesheet" href="{GOOGLE_FONTS_HREF}"/>
 <style>
 {font_face}
 {css}
