@@ -135,8 +135,15 @@ check_hook-executable() {
 # would resolve against the user's project at runtime and run project-controlled code.
 check_hook-references() {
   local cmd script bare rel ok=0 named
+  # The only accepted shape: [bash|sh] <plugin-root script> followed by plain arguments. Anything
+  # else (chained commands, substitutions, project-relative interpreters) is rejected (allowlist).
+  local shape='^((bash|sh) +)?("\$\{CLAUDE_PLUGIN_ROOT\}/[A-Za-z0-9_./-]+"|"?\$CLAUDE_PLUGIN_ROOT"?/[A-Za-z0-9_./-]+)( +[A-Za-z0-9_./=:@-]+)*$'
   while IFS= read -r cmd; do
     named=0
+    if [[ ! "$cmd" =~ $shape || "$cmd" == *..* ]]; then
+      echo "  hooks.json command is not a single plugin-root script with plain arguments: $cmd"
+      ok=1
+    fi
     # Every ${CLAUDE_PLUGIN_ROOT}/ path in the command must exist, not only the first.
     while IFS= read -r script; do
       named=1

@@ -292,11 +292,7 @@ def refresh_skills_lock(root: Path) -> list[str]:
     lock = json.loads(lock_path.read_text(encoding="utf-8")) if lock_path.is_file() else {"version": 1, "skills": {}}
     if not isinstance(lock, dict):
         raise ValueError(f"{LOCK_FILE} is not a JSON object")
-    files = sorted(
-        path.relative_to(root).as_posix()
-        for base in SKILLS_DIRS
-        for path in (root / base).rglob("*") if path.is_file()
-    )
+    files = [f for f in tracked_files(root) if f.startswith(tuple(base + "/" for base in SKILLS_DIRS))]  # tracked only, as the check reads them
     managed = {}
     for directory in tool_managed_dirs(files):
         entry = {"computedHash": dir_hash(root / directory, dir_files(root, directory, files))}
@@ -330,17 +326,38 @@ def tracked_file_size(root: Path, files: list[str]) -> list[str]:
 # Machine-specific home directories and personal email addresses leak who built the repository
 # and where; they also ship to every plugin install. Reported by line, never by value.
 
-UNIX_OR_WINDOWS_HOME = re.compile(r"(?<![A-Za-z0-9])(?:/(?:Users|home)/|[A-Za-z]:[\\/]+Users[\\/]+)([A-Za-z0-9][A-Za-z0-9._-]*)")
-DASHED_HOME = re.compile(r"(?<![A-Za-z0-9])-Users-([A-Za-z0-9]+)-")
-# Generic names that stand for "some user" in examples, fixtures and CI runners.
+# Path forms: /Users/<n>, /home/<n>, /var/home/<n>, C:\\Users\\<n> (any case, any slash count).
+HOME_PATH = re.compile(
+    r"(?<![A-Za-z0-9])(?:/(?:var/)?(?:Users|home)/|(?<![A-Za-z0-9])[A-Za-z]:[\\/]+Users[\\/]+)([A-Za-z0-9][A-Za-z0-9._-]*)", re.I)
+# Flattened forms that tools derive from a home path: Cursor's Users-<n>-projects-..., the lean-ctx
+# _Users_<n>_..., Claude's -home-<n>-... project directories, and normalised graph labels.
+FLAT_HOME = re.compile(
+    r"(?<![A-Za-z0-9])(?:[-_]?Users[-_]|-home-|users_(?=[A-Za-z0-9]+_(?:projects|desktop|documents|downloads|library|code|dev|work|repos|src|github)\b))"
+    r"([A-Za-z0-9]+)[-_]")
+# Generic names that stand for "some user" in examples, fixtures, system and CI accounts.
 GENERIC_HOME_NAMES = frozenset({
-    "user", "users", "username", "name", "you", "me", "example", "shared", "guest", "runner", "ubuntu",
-    "node", "vscode", "zed", "alice", "bob", "jane", "ada", "u", "foo", "test", "x",
+    "user", "users", "username", "name", "you", "me", "example", "shared", "guest", "u", "foo", "bar", "test", "x",
+    "alice", "bob", "jane", "ada", "dev", "developer", "demo", "sample", "someone", "yourname", "your-name", "nobody",
+    "root", "admin", "agent", "sandbox", "claude", "docker", "build", "builder",
+    # CI, container and package-manager accounts
+    "runner", "runneradmin", "ubuntu", "node", "vscode", "zed", "linuxbrew", "codespace", "gitpod", "ec2-user",
+    "vagrant", "jovyan", "pi", "circleci", "coder", "jenkins", "travis", "appveyor", "github", "www-data",
+    "public", "default", "all", "guide", "manual", "docs", "doc", "list", "table", "profile", "profiles", "data",
+    "and", "or", "of", "the", "who", "with",
 })
-EMAIL = re.compile(r"([A-Za-z0-9._%+-]+)@((?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,})")
+EMAIL_DOMAIN = re.compile(r"((?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,})")
+EMAIL_LOCAL = re.compile(r"[A-Za-z0-9._%+-]+\Z")
 # The maintainer's public addresses and the placeholder domains used by tests and docs.
 EMAIL_DOMAINS = ("alolabs.dev", "alolabs.io", "sourcevo.com", "example.com", "example.org", "example.net", "test.com", "t.com", "evil.md")
-EMAIL_TEST_TLDS = frozenset({"invalid", "test", "local", "localhost", "example"})
+EMAIL_TEST_TLDS = frozenset({"invalid", "test", "localhost", "example"})
+# name@2x.png, pkg@1.0.js: asset and package references, not mailboxes.
+EMAIL_FILE_TLDS = frozenset({"png", "jpg", "jpeg", "gif", "svg", "webp", "avif", "ico", "bmp", "tif", "tiff", "js", "mjs", "css",
+                             "json", "md", "txt", "html", "tgz", "zip", "woff", "woff2", "ttf"})
+# Plainly organisational mailboxes (vendors, support desks, bots), whatever the domain.
+EMAIL_ROLE_LOCALS = frozenset({
+    "noreply", "no-reply", "support", "security", "contact", "help", "sales", "press", "abuse", "privacy", "legal", "billing",
+    "feedback", "team", "hello", "info", "admin", "postmaster", "webmaster", "bot", "dependabot", "notifications", "service",
+})
 GITHUB_URL_USERS = frozenset({"git", "token", "x-access-token"})
 
 
@@ -348,28 +365,55 @@ def email_allowed(local: str, domain: str) -> bool:
     local, domain = local.lower(), domain.lower()
     return (
         local.startswith(("noreply", "no-reply"))
+        or local in EMAIL_ROLE_LOCALS
+        or local == "git"  # ssh remotes: git@<host>:org/repo
         or domain.endswith("noreply.github.com")
         or any(domain == allowed or domain.endswith("." + allowed) for allowed in EMAIL_DOMAINS)
-        or domain.rsplit(".", 1)[-1] in EMAIL_TEST_TLDS
+        or domain.rsplit(".", 1)[-1] in EMAIL_TEST_TLDS | EMAIL_FILE_TLDS
         or (domain == "github.com" and local in GITHUB_URL_USERS)
     )
+
+
+def email_hits(text: str) -> list[int]:
+    """Offsets of email addresses outside the allowlist; scans only around each '@'."""
+    hits, at = [], text.find("@")
+    while at != -1:
+        local = EMAIL_LOCAL.search(text, max(0, at - 64), at)
+        domain = EMAIL_DOMAIN.match(text, at + 1, at + 256)
+        if local and domain and not email_allowed(local.group(), domain.group(1)):
+            hits.append(local.start())
+        at = text.find("@", at + 1)
+    return hits
+
+
+def generic_name(name: str) -> bool:
+    """A placeholder, system or CI account, or a run of x (a redaction mask)."""
+    name = name.lower()
+    return name in GENERIC_HOME_NAMES or set(name) == {"x"}
+
+
+HOME_MESSAGE = "personal home-directory path (use a placeholder such as /Users/<user>/)"
+EMAIL_MESSAGE = "email address outside the allowlist (alolabs.dev, sourcevo.com, noreply, role mailboxes, test domains)"
+SCANNED_BINARY = (".pdf",)  # link annotations and metadata sit in the clear
 
 
 def personal_data(root: Path, files: list[str]) -> list[str]:
     problems = []
     for rel in files:
         raw = read_bytes(root, rel)
-        if raw is None or b"\0" in raw[:8000]:
+        if raw is None:
             continue
-        text = raw.decode("utf-8", "replace")
-        hits: list[tuple[int, str]] = []
-        for rx in (UNIX_OR_WINDOWS_HOME, DASHED_HOME):
-            hits += [(m.start(), "personal home-directory path (use a placeholder such as /Users/<user>/)")
-                     for m in rx.finditer(text) if m.group(1).lower() not in GENERIC_HOME_NAMES]
-        hits += [(m.start(), "email address outside the allowlist (alolabs.dev, sourcevo.com, noreply, test domains)")
-                 for m in EMAIL.finditer(text) if not email_allowed(m.group(1), m.group(2))]
-        for offset, message in sorted(hits):
-            problems.append(f"{rel}:{text.count(chr(10), 0, offset) + 1}: {message}")
+        if b"\0" in raw[:8000] and not rel.lower().endswith(SCANNED_BINARY):
+            continue
+        text = raw.decode("latin-1" if b"\0" in raw[:8000] else "utf-8", "replace")
+        if "@" in text or "sers" in text or "home" in text or "HOME" in text or "SERS" in text:
+            # JSON-escaped (\/) and URL-encoded (%2F, %5C) separators; newlines stay put, so line numbers hold.
+            text = text.replace("\\/", "/").replace("%2F", "/").replace("%2f", "/").replace("%5C", "\\").replace("%5c", "\\")
+            hits = [(m.start(), HOME_MESSAGE) for rx in (HOME_PATH, FLAT_HOME) for m in rx.finditer(text)
+                    if not generic_name(m.group(1))]
+            hits += [(offset, EMAIL_MESSAGE) for offset in email_hits(text)]
+            for offset, message in sorted(hits):
+                problems.append(f"{rel}:{text.count(chr(10), 0, offset) + 1}: {message}")
     return problems
 
 
@@ -412,11 +456,13 @@ def site_duplicate_ids(root: Path, files: list[str]) -> list[str]:
 WORKFLOW_FILE = re.compile(r"^\.github/workflows/[^/]+\.ya?ml$")
 UNPINNED = re.compile(r"@latest\b|\bnpx\s+(--yes|-y)\b")
 RUN_KEY = re.compile(r"^(\s*(?:-\s+)?)run:\s*(.*)$")
-CONTINUE_ON_ERROR = re.compile(r"^\s*(?:-\s+)?continue-on-error:\s*(?!false\s*(?:#.*)?$)(?:\S|$)")
+CONTINUE_ON_ERROR = re.compile(r"^\s*(?:-\s+)?continue-on-error\s*:\s*(?!false\s*(?:#.*)?$)(?:\S|$)")
 QUOTED_KEY = re.compile(r"""^\s*(?:-\s+)?["'][A-Za-z_-]+["']\s*:""")
 FLOW_STEP = re.compile(r"^\s*-\s+\{")
 FLOW_STEPS_KEY = re.compile(r"""^\s*(?:-\s+)?["']?steps["']?\s*:\s*[\[{]""")
-BLOCK_SCALAR = re.compile(r":\s*[|>][+-]?[0-9]*\s*(?:#.*)?$")
+# group(1) is the indentation up to the key (past a list dash), the column the scalar's text must exceed.
+BLOCK_SCALAR = re.compile(r"^(\s*(?:-\s+)?)[^#\s][^#]*?:\s*[|>][+-]?[0-9]*\s*(?:#.*)?$")
+FLOW_LINE = re.compile(r"^\s*(?:[\[{]|-\s+[&*!]|jobs\s*:\s*[\[{])")
 CHECKOUT_GUARD = re.compile(r"git status --porcelain --ignored\b")
 WRITE_ALL = re.compile(r"""^\s*permissions:\s*["']?write-all\b""")
 FORCE_NODE24 = re.compile(r"^\s+FORCE_JAVASCRIPT_ACTIONS_TO_NODE24:\s*true\s*$")
@@ -499,10 +545,11 @@ def workflow_problems(rel: str, lines: list[str]) -> list[str]:
             continue
         if number <= scalar_until:
             continue  # literal text of a block scalar, not workflow structure
-        if QUOTED_KEY.match(line) or FLOW_STEP.match(line) or FLOW_STEPS_KEY.match(line) or number in flow_jobs:
+        if QUOTED_KEY.match(line) or FLOW_STEP.match(line) or FLOW_STEPS_KEY.match(line) or FLOW_LINE.match(line) or number in flow_jobs:
             problems.append(f"{rel}:{number}: quoted keys and flow-style jobs or steps hide settings from the hardening check; use plain block YAML")
-        if BLOCK_SCALAR.search(line):
-            extent = block_extent(lines, number, indent_of(line))
+        scalar = BLOCK_SCALAR.match(line)
+        if scalar:
+            extent = block_extent(lines, number, len(scalar.group(1)))
             scalar_until = extent[-1][0] if extent else number
         if CONTINUE_ON_ERROR.match(line):
             problems.append(f"{rel}:{number}: continue-on-error hides failures")
