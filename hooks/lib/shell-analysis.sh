@@ -19,6 +19,8 @@
 #                     actions an opaque part could perform, judged from its visible arguments
 #                     (`$G commit -m x` -> commit; `$PYTHON -m pytest` -> none)
 #   SB_SA_OPAQUE (true|false), SB_SA_OPAQUE_REASONS (one per line)
+#   SB_SA_UNSEEN_REASONS  why code "cannot be inspected" (one per line); empty unless the analysis
+#                     reports the pseudo action `unseen`
 #   SB_SA_READ_ONLY (strict allowlist), SB_SA_READ_ONLY_LEGACY (also plain test runners)
 #   SB_SA_WRITE_PATHS (one per line), SB_SA_SKILL_ADAPTER, SB_SA_RTK_UNWRAPPED,
 #   SB_SA_INVOKED_SCRIPT, SB_SA_LEGACY_FIRST_LINE
@@ -41,7 +43,7 @@ _sb_sa_reset() {
   SB_TI_ERROR="${1:-}"
   SB_TI_TOOL_NAME="" SB_TI_TOOL_KIND="" SB_TI_COMMAND="" SB_TI_FILE_PATH="" SB_TI_PATCH_PATHS=""
   SB_SA_ACTIONS="" SB_SA_TIER="none" SB_SA_POSSIBLE_ACTIONS="" SB_SA_POSSIBLE_TIER="none"
-  SB_SA_COULD_BE_DELIVERY="false" SB_SA_OPAQUE="false" SB_SA_OPAQUE_REASONS=""
+  SB_SA_COULD_BE_DELIVERY="false" SB_SA_OPAQUE="false" SB_SA_OPAQUE_REASONS="" SB_SA_UNSEEN_REASONS=""
   SB_SA_READ_ONLY="false" SB_SA_READ_ONLY_LEGACY="false" SB_SA_WRITE_PATHS="" SB_SA_SKILL_ADAPTER="false"
   SB_SA_RTK_UNWRAPPED="" SB_SA_INVOKED_SCRIPT="" SB_SA_LEGACY_FIRST_LINE="" SB_SA_JSON="{}"
   _SB_SA_LOADED=0
@@ -68,6 +70,7 @@ _sb_sa_run() {
       could_be_delivery) SB_SA_COULD_BE_DELIVERY="$value" ;;
       opaque) SB_SA_OPAQUE="$value" ;;
       opaque_reasons) SB_SA_OPAQUE_REASONS="$value" ;;
+      unseen_reasons) SB_SA_UNSEEN_REASONS="$value" ;;
       read_only) SB_SA_READ_ONLY="$value" ;;
       read_only_legacy) SB_SA_READ_ONLY_LEGACY="$value" ;;
       write_paths) SB_SA_WRITE_PATHS="$value" ;;

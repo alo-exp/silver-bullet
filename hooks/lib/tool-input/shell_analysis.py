@@ -15,10 +15,12 @@ limited by argv; importing this module lets Python reuse its cached bytecode):
 print NUL-terminated ``key``/``value`` pairs for hooks/lib/shell-analysis.sh, ending
 with the key ``__end__``. A missing ``__end__`` means the helper failed.
 
-Bounded work: input over MAX_INPUT_CHARS is not parsed; the parser stops after
-MAX_PARSE_SECONDS, the walker after MAX_STEPS commands or MAX_SECONDS, brace sequences and
-GIT_CONFIG_COUNT are capped, and an unexpected exception becomes status "parse_failed". Each of
-these reports ``unseen`` (strictest tier); none can raise or hang a hook.
+Bounded work: input over MAX_INPUT_CHARS is not parsed; the parser stops after MAX_PARSE_SECONDS and the
+walker after MAX_STEPS commands or MAX_SECONDS (the deadline is checked at every step); a stored value over
+MAX_VALUE_CHARS and an array over MAX_SEQUENCE items becomes unknown, brace sequences and GIT_CONFIG_COUNT are
+capped, regular expressions over command text are linear, and an unexpected exception (the parser's included)
+becomes status "parse_failed". Each of these reports ``unseen`` (strictest tier). Together they keep one analysis
+under 2 s, so the three analyses a hook can make fit its 15 s limit.
 
 Analysis schema (version 1):
 
@@ -44,16 +46,21 @@ Analysis schema (version 1):
                     e.g. ``$X commit -m m`` -> commit; ``$PYTHON -m pytest`` -> none.
                     The pseudo action ``unseen`` (tier completion, canonical "deploy
                     [unseen: why]") stands for code that runs but cannot be read:
-                    eval of computed text, a shell or interpreter fed by a pipe, bash -s,
-                    <(...), "$@"/arrays/substitutions as the program, awk system(var),
-                    sed e, arithmetic or subscripts that evaluate a variable holding $(...),
-                    IFS changes, parse errors, and any exceeded budget. It makes
-                    possible_tier "completion" and could_be_delivery true.
+                    eval of computed text, a shell or interpreter fed by a pipe or an
+                    open descriptor, bash -s, <(...), a program word computed in the
+                    command (assigned from $(...), read, mapfile, cut by an operator,
+                    xargs input), awk system(var), sed e, inline interpreter code that
+                    runs a command that is not written out, arithmetic or subscripts
+                    that evaluate a variable holding $(...), an IFS nobody knows, parse
+                    errors, a script this command wrote from text it cannot read and then
+                    runs, and any exceeded budget. Script files are opaque, not unseen.
+                    It makes possible_tier "completion" and could_be_delivery true.
   possible_tier     highest tier of ``possible_actions``
   could_be_delivery true when ``possible_actions`` is not empty
   opaque            true when some part cannot be resolved statically (including every
                     script file, sourced file and interpreter program that is run)
   opaque_reasons    why: dynamic command words, non-literal eval/sh -c, parse errors...
+  unseen_reasons    why code "cannot be inspected" (the reasons behind ``unseen``)
   read_only         strict allowlist verdict: every command is a known read-only
                     program with read-only arguments and nothing is written
   read_only_legacy  ``read_only`` or only plain test runners in addition
@@ -96,10 +103,13 @@ MAX_EXPANSIONS = 64
 MAX_LOOP_VALUES = 16
 # Analysis budget: exceeding any limit ends the walk and reports unseen code (strictest tier),
 # so a crafted command can neither stall a hook until its timeout nor crash the analyzer.
-MAX_INPUT_CHARS = 2 * 1024 * 1024
+MAX_INPUT_CHARS = 512 * 1024
 MAX_STEPS = 20000
-MAX_SECONDS = 4.0
-MAX_PARSE_SECONDS = 3.0
+# One analysis takes at most MAX_PARSE_SECONDS + MAX_SECONDS; dev-cycle-check runs three (write paths,
+# invoked script, read-only) and the host stops a hook at 15 s, so all three stay well inside it.
+MAX_SECONDS = 1.0
+MAX_PARSE_SECONDS = 1.0
+MAX_VALUE_CHARS = 64 * 1024   # a variable, array or stdin feed larger than this becomes unknown
 MAX_SEQUENCE = 4096
 MAX_GIT_CONFIG = 64
 
@@ -231,17 +241,17 @@ _KEYWORDS = (("{", "kw_brace"), ("if", "kw_if"), ("while", "kw_while"), ("until"
 
 
 class _Parser:
-    def __init__(self, src):
+    def __init__(self, src, deadline=None):
         self.s = src
         self.n = len(src)
         self.i = 0
         self.heredocs = []
         self.ticks = 0
-        self.deadline = time.monotonic() + MAX_PARSE_SECONDS
+        self.deadline = deadline if deadline is not None else time.monotonic() + MAX_PARSE_SECONDS
 
     def tick(self):
         self.ticks += 1
-        if self.ticks % 128 == 0 and time.monotonic() > self.deadline:
+        if self.ticks % 16 == 0 and time.monotonic() > self.deadline:
             raise ParseError("analysis time budget exceeded")
 
     # -- characters ---------------------------------------------------------
@@ -310,16 +320,15 @@ class _Parser:
     def parse_list(self, stops, top=False):
         items = []
         while True:
-            self.skip_newlines()
-            if self.i >= self.n or self.at_stop(stops):
-                return Script(items)
-            if top:
-                try:
-                    item = self.parse_item()
-                except ParseError as exc:
-                    return Script(items, str(exc))
-            else:
+            try:  # skip_newlines reads here-documents too, so it can fail like parse_item
+                self.skip_newlines()
+                if self.i >= self.n or self.at_stop(stops):
+                    return Script(items)
                 item = self.parse_item()
+            except Exception as exc:  # noqa: BLE001 - keep the commands read so far, whatever went wrong
+                if not top:
+                    raise
+                return Script(items, _parse_failure(exc))
             items.append(item)
 
     def parse_item(self):
@@ -441,7 +450,10 @@ class _Parser:
                     self.skip_blanks()
                     if self.peek() in ("", "\n", ";"):
                         break
+                    start = self.i
                     values.append(self.parse_word())
+                    if self.i == start:  # a metacharacter such as ")" or "|" ends no word: do not loop on it
+                        raise ParseError("unexpected '%s' in the word list of a for loop" % self.peek())
             nested = []
         self.skip_blanks()
         if self.peek() == ";":
@@ -534,6 +546,7 @@ class _Parser:
         """Scan an arithmetic body up to the closing '))'; collect its substitutions."""
         depth, atoms, nested = 0, [], []
         while True:
+            self.tick()
             if self.i >= self.n:
                 raise ParseError("unterminated arithmetic expression")
             c = self.s[self.i]
@@ -659,7 +672,7 @@ class _Parser:
             lines.append(line)
         redir.body = "".join(line + "\n" for line in lines)
         if not redir.quoted:
-            sub = _Parser(redir.body)
+            sub = _Parser(redir.body, self.deadline)
             redir.body_word = sub.scan_text(None)
 
     # -- words --------------------------------------------------------------
@@ -678,6 +691,7 @@ class _Parser:
             self.expect(")")
             atoms.append(("dyn", self.s[start:self.i], False))
         while self.i < self.n:
+            self.tick()
             m = _WORD_PLAIN.match(self.s, self.i)
             if m is not None:
                 buf.append(m.group())
@@ -734,6 +748,7 @@ class _Parser:
     def balanced_parens(self):
         start, depth = self.i, 0
         while True:
+            self.tick()
             c = self.peek()
             if c == "":
                 raise ParseError("unterminated pattern")
@@ -754,6 +769,7 @@ class _Parser:
         plain = _DQ_PLAIN if terminator else _HEREDOC_PLAIN
         escapable = '$`"\\\n' if terminator else "$`\\\n"
         while True:
+            self.tick()
             if self.i >= self.n:
                 if terminator:
                     raise ParseError("unterminated double quote")
@@ -830,6 +846,7 @@ class _Parser:
         self.i += 2
         depth = 1
         while True:
+            self.tick()
             c = self.peek()
             if c == "":
                 raise ParseError("unterminated ${")
@@ -870,6 +887,7 @@ class _Parser:
         out = []
         escapable = '$`\\"' if quoted else "$`\\"
         while True:
+            self.tick()
             if j >= self.n:
                 raise ParseError("unterminated backquote")
             c = self.s[j]
@@ -882,7 +900,7 @@ class _Parser:
             out.append(c)
             j += 1
         self.i = j + 1
-        script = _Parser("".join(out)).parse_list(())
+        script = _Parser("".join(out), self.deadline).parse_list(())
         nested.append(script)
         return ("cmd", script, quoted, self.s[start:self.i])
 
@@ -890,6 +908,7 @@ class _Parser:
         j = self.i + 2
         out = []
         while True:
+            self.tick()
             if j >= self.n:
                 raise ParseError("unterminated $'")
             c = self.s[j]
@@ -923,13 +942,21 @@ class _Parser:
         return "".join(out).split("\x00", 1)[0]
 
 
-def parse(text):
-    """Parse ``text``; on a syntax error keep the complete commands before it."""
-    parser = _Parser(text)
+def _parse_failure(exc):
+    if isinstance(exc, ParseError):
+        return str(exc)
+    return "nesting too deep" if isinstance(exc, RecursionError) else "parser error: %s" % type(exc).__name__
+
+
+def parse(text, deadline=None):
+    """Parse ``text``; on a syntax error keep the complete commands before it.
+
+    Never raises: an unexpected fault in the parser is a parse error like any other.
+    """
     try:
-        return parser.parse_list((), top=True)
-    except RecursionError:
-        return Script([], "nesting too deep")
+        return _Parser(text, deadline).parse_list((), top=True)
+    except Exception as exc:  # noqa: BLE001 - the parser must not crash a hook, whatever the input
+        return Script([], _parse_failure(exc))
 
 
 # =============================================================================
@@ -941,14 +968,18 @@ class Dyn:
     """An argument whose value is unknown statically.
 
     ``roots`` lists the paths it stands for when known (find -exec's {}, xargs input
-    produced by find).
+    produced by find). ``tainted`` marks a value computed in the command itself.
     """
 
-    __slots__ = ("text", "roots")
+    __slots__ = ("text", "roots", "tainted")
 
-    def __init__(self, text, roots=None):
+    def __init__(self, text, roots=None, tainted=False):
         self.text = text
         self.roots = roots
+        # tainted: the value was computed in this very command (read from a file or a substitution, cut
+        # by an operator, taken from stdin...), so used as a program it runs code nobody can read. An
+        # untainted Dyn is only unknown (an inherited variable such as $PYTHON), and is judged by its arguments.
+        self.tainted = tainted
 
 
 class GlobStr(str):
@@ -957,6 +988,12 @@ class GlobStr(str):
 
 def _text(item):
     return item.text if isinstance(item, Dyn) else str(item)
+
+
+def _cap(value):
+    """A stored value larger than MAX_VALUE_CHARS is treated as unknown (None), so repeated
+    doubling (x=$x$x) cannot make each step cost more than the budget allows."""
+    return None if isinstance(value, str) and len(value) > MAX_VALUE_CHARS else value
 
 
 def _lit(item):
@@ -980,6 +1017,9 @@ class Env:
         self.git_aliases = {}
         self.positional = None
         self.arrays = {}
+        self.files = {}         # path -> text a redirect in this command wrote there (None: content unknown)
+        self.integers = set()   # names declared with -i: their assignments are arithmetic
+        self.arg0 = None        # $0 of a `sh -c` script: text, False (unknown item) or None (the shell's own)
 
     def copy(self):
         new = Env(self.cwd, self.home)
@@ -991,19 +1031,37 @@ class Env:
         new.git_aliases = dict(self.git_aliases)
         new.arrays = dict(self.arrays)
         new.positional = None if self.positional is None else list(self.positional)
+        new.integers = set(self.integers)
+        new.files = dict(self.files)
+        new.arg0 = self.arg0
         return new
 
-    def get(self, name):
+    def lookup(self, name):
+        """``(value, tainted)``: the value when known, else None; tainted when the command itself
+        assigned the name something the analysis cannot know (an inherited variable is not)."""
         if name in self.vars:
-            return self.vars[name]
+            value = self.vars[name]
+            return value, value is None
+        if name == "IFS":
+            return " \t\n", False
+        if name == "0":
+            return (None, True) if self.arg0 is False else (self.arg0, False)
         if name.isdigit() or name in ("@", "*"):
-            if self.positional is None or name == "0":
-                return None
+            if self.positional is None:
+                return None, False
             if name in ("@", "*"):
-                return None if None in self.positional else " ".join(self.positional)
+                if all(_lit(item) is not None for item in self.positional):
+                    return " ".join(self.positional), False
+                return None, any(isinstance(item, Dyn) and item.tainted for item in self.positional)
             index = int(name)
-            return self.positional[index - 1] if index <= len(self.positional) else ""
-        return {"HOME": self.home, "PWD": self.cwd, "OLDPWD": self.oldpwd}.get(name)
+            if index > len(self.positional):
+                return "", False
+            value = self.positional[index - 1]
+            return _lit(value), isinstance(value, Dyn) and value.tainted
+        return {"HOME": self.home, "PWD": self.cwd, "OLDPWD": self.oldpwd}.get(name), False
+
+    def get(self, name):
+        return self.lookup(name)[0]
 
     def chdir(self, item):
         """cd to an argv item; an unknown target makes the directory dynamic."""
@@ -1017,18 +1075,100 @@ class Env:
         self.cwd_text = self.cwd
 
 
-# `eval "$(tool init)"` setup lines that print shell code from a well-known environment tool
-_ENV_GENERATOR = re.compile(
-    r"^\$\(\s*(?:ssh-agent|direnv\s+(?:export|hook)|pyenv\s+init|rbenv\s+init|nodenv\s+init|fnm\s+env|"
-    r"mise\s+(?:activate|env)|asdf\s+exec|brew\s+shellenv|starship\s+init|zoxide\s+init|opam\s+env|"
-    r"luarocks\s+path|dircolors|conda\s+shell|register-python-argcomplete|gpg-agent|keychain|"
-    r"minikube\s+docker-env|docker-machine\s+env|aws\s+configure\s+export-credentials|"
-    r"(?:/\S+)?/(?:ssh-agent|brew)\b)\b")
-_GIT_VALUE_OPTS = {"-m", "--message", "-F", "--file", "-C", "-c", "-t", "--template", "--author", "--date",
-                   "--cleanup", "--fixup", "--squash", "--trailer", "--pathspec-from-file", "--reuse-message",
-                   "--reedit-message", "-o", "--push-option", "--repo", "--exec", "--receive-pack", "-s",
-                   "--strategy", "-X", "--strategy-option", "--onto", "-b", "-B", "--origin", "--branch",
-                   "--upload-pack", "-u", "--format", "--pretty", "--grep", "-e", "--source"}
+# `eval "$(tool init)"` setup lines: the whole substitution is one well-known environment tool with plain
+# arguments (nothing chained, piped, concatenated or quoted), whose output is shell code for the environment
+_GENERATOR_TOOLS = (
+    # tools that print shell code and take only plain words as arguments (no sub-command is ever run)
+    r"(?:direnv\s+(?:export|hook)|(?:pyenv|rbenv|nodenv|plenv|jenv|goenv)\s+init|fnm\s+env|mise\s+(?:activate|env)|"
+    r"(?:/opt/homebrew/bin/|/usr/local/bin/|/home/linuxbrew/\.linuxbrew/bin/)?brew\s+shellenv|starship\s+init|"
+    r"zoxide\s+init|opam\s+env|luarocks\s+path|dircolors|conda\s+shell\.\w+\s+hook|poetry\s+env\s+activate|"
+    r"register-python-argcomplete|keychain\s+--eval|minikube\s+docker-env|docker-machine\s+env|"
+    r"aws\s+configure\s+export-credentials|(?:kubectl|gh|helm|npm|pip3?|poetry|docker|kind|minikube|k3d|just|uv|ruff|"
+    r"pipx|rustup|cargo|flux|argocd|istioctl|oc|gcloud|aws_completer)\s+completions?)(?:\s+[\w./=:@-]+)*|"
+    # agents that run whatever follows their flags: only the flags that print the environment are allowed
+    r"(?:/usr/bin/)?ssh-agent(?:\s+-[sc])?|gpg-agent\s+--daemon")
+_ENV_GENERATOR = re.compile(r"^(?:\$|<)\(\s*(?:%s)\s*(?:2>/dev/null\s*)?\)$" % _GENERATOR_TOOLS)
+# a substitution that prints a path or a program name, not command text (`$(which python) -m pytest`)
+_PATH_PRODUCER = re.compile(
+    r"^\$\(\s*(?:which|command\s+-v|type\s+-p|whereis|readlink|realpath|dirname|basename|pwd|pyenv\s+which|"
+    r"rbenv\s+which|asdf\s+which|mise\s+which|nvm\s+which|npm\s+(?:bin|root)|yarn\s+(?:bin|global\s+dir)|"
+    r"git\s+(?:rev-parse|--exec-path)|brew\s+--prefix|xcrun\s+--find|go\s+env|python[0-9.]*\s+-c\s+'import sys; print\(sys\.executable\)')"
+    r"(?:\s+[^;&|`()<>]*)?\s*\)$")
+_PARAM = re.compile(r"^\$\{([!#]?)([A-Za-z_][A-Za-z0-9_]*|[0-9]+|[@*])(?:\[([^\]]*)\])?(.*)\}$", re.S)
+
+
+def _glob_regex(pattern, greedy=True):
+    """A shell glob pattern as a regular expression; None when it does not translate."""
+    out, i = [], 0
+    while i < len(pattern):
+        c = pattern[i]
+        if c == "*":
+            out.append(".*" if greedy else ".*?")
+        elif c == "?":
+            out.append(".")
+        elif c == "[" and pattern.find("]", i + 2) > 0:
+            j = pattern.find("]", i + 2)
+            body = pattern[i + 1:j]
+            out.append("[" + ("^" + body[1:] if body[:1] == "!" else body).replace("\\", "\\\\") + "]")
+            i = j
+        elif c == "\\" and i + 1 < len(pattern):
+            i += 1
+            out.append(re.escape(pattern[i]))
+        else:
+            out.append(re.escape(c))
+        i += 1
+    return "".join(out)
+
+
+def _param_operator(value, op):
+    """The result of a parameter-expansion operator on a known ``value``; None when not modelled."""
+    if len(value) > 4096 or "$" in op or "`" in op or "'" in op or '"' in op:
+        return None
+    try:
+        if op[:1] in ("#", "%"):
+            greedy = op[1:2] == op[:1]
+            pattern = op[2:] if greedy else op[1:]
+            regex = re.compile(_glob_regex(pattern), re.S)
+            cuts = range(len(value) + 1) if op[0] == "#" else range(len(value), -1, -1)
+            spans = [(k, value[:k]) if op[0] == "#" else (k, value[k:]) for k in cuts]
+            hits = [k for k, part in spans if regex.fullmatch(part)]
+            if not hits:
+                return value
+            k = (max(hits) if greedy else min(hits)) if op[0] == "#" else (min(hits) if greedy else max(hits))
+            return value[k:] if op[0] == "#" else value[:k]
+        if op[:1] == "/":
+            mode = op[1:2] if op[1:2] in ("/", "#", "%") else ""
+            body = op[1 + len(mode):]
+            pattern, sep, replacement = body.partition("/")
+            if not pattern:
+                return value
+            regex = _glob_regex(pattern)
+            if mode == "#":
+                regex = "^" + regex
+            elif mode == "%":
+                regex = regex + "$"
+            return re.sub(regex, lambda _m: replacement, value, count=0 if mode == "/" else 1, flags=re.S)
+        if op[:1] == ":" and (op[1:2].isdigit() or op[1:2] in (" ", "-")):
+            numbers = [part.strip() for part in op[1:].split(":")]
+            offset = int(numbers[0])
+            length = int(numbers[1]) if len(numbers) > 1 else None
+            if offset < 0:
+                offset = max(len(value) + offset, 0)
+            end = None if length is None else offset + length if length >= 0 else len(value) + length
+            return value[offset:end]
+        if op in ("^^", "@U"):
+            return value.upper()
+        if op in (",,", "@L"):
+            return value.lower()
+        if op == "^":
+            return value[:1].upper() + value[1:]
+        if op == ",":
+            return value[:1].lower() + value[1:]
+    except (re.error, ValueError):
+        return None
+    return None
+
+
 _GH_VALUE_OPTS = {"-t", "--title", "-b", "--body", "-F", "--body-file", "-R", "--repo", "-B", "--base", "-H",
                   "--head", "-a", "--assignee", "-l", "--label", "-m", "--milestone", "-p", "--project", "-r",
                   "--reviewer", "-n", "--notes", "--notes-file", "-N", "--notes-start-tag", "--target",
@@ -1058,14 +1198,27 @@ _GIT_CONFIG_SOURCES = ("GIT_CONFIG_GLOBAL", "GIT_CONFIG_SYSTEM", "GIT_CONFIG", "
                        "XDG_CONFIG_HOME", "GIT_DIR")
 _GIT_CONFIG_FILE = re.compile(r"(^|/)(\.git/config|\.gitconfig|\.config/git/config|gitconfig)$")
 _GITHUB_API_URL = re.compile(r"^(?:https?://)?(?:api|uploads)\.github\.com(?:/|$)|^https?://[^/]+/api/v3/", re.I)
-_STDIN_NAMES = ("-", "/dev/stdin", "/dev/fd/0", "/proc/self/fd/0")
+_STDIN_NAME = re.compile(r"^(?:-|/dev/stdin|/(?:dev|proc/self)/fd/\d+)$")
+_GH_CONFIG_SOURCES = ("GH_CONFIG_DIR", "XDG_CONFIG_HOME", "HOME")
+_GH_CONFIG_FILE = re.compile(r"(^|/)gh/(?:config|hosts)\.yml$")
 _GIT_HELPER = re.compile(r"^git-([a-z][a-z-]*)$")
 _ARRAY_ALL = re.compile(r"^\$\{([A-Za-z_][A-Za-z0-9_]*)\[[@*]\]\}$")
 _ARRAY_OR_ARGS = re.compile(r"^\$(\{[A-Za-z_][A-Za-z0-9_]*\[[@*]\]\}|[@*]|\{[@*]\})$")
-_SUBSCRIPT_EXEC = re.compile(r"\[[^\]]*(\$\(|`)")
+# `[` ... `$(` / backquote before the closing `]`; no class contains `[`, so a search is linear in the text
+_SUBSCRIPT_EXEC = re.compile(r"\[(?:[^\][$`]|\$(?!\())*(?:\$\(|`)")
 _EXEC_TEXT = re.compile(r"\$\(|`")
 _ARITH_NAMES = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
-_GLOB_CHARS = re.compile(r"[*?]|\[.*\]")
+_GLOB_CHARS = re.compile(r"[*?]")
+
+
+def _has_glob(text):
+    """Unquoted glob characters (`*`, `?`, or `[` ... `]`); linear, unlike a `\\[.*\\]` search."""
+    if _GLOB_CHARS.search(text):
+        return True
+    start = text.find("[")
+    return start >= 0 and text.find("]", start + 1) >= 0
+
+
 _SEQUENCE = re.compile(r"(-?\d+)\.\.(-?\d+)(?:\.\.(-?\d+))?$|([A-Za-z])\.\.([A-Za-z])$")
 
 
@@ -1244,7 +1397,7 @@ _TAG_LISTING = {"--list", "-l", "-n", "--contains", "--no-contains", "--merged",
 
 _GH_BUILTINS = {
     "agent-task", "alias", "api", "attestation", "auth", "browse", "cache", "codespace", "completion", "config",
-    "copilot", "extension", "gist", "gpg-key", "help", "issue", "label", "org", "pr", "preview", "project",
+    "copilot", "ext", "extension", "extensions", "gist", "gpg-key", "help", "issue", "label", "org", "pr", "preview", "project",
     "release", "repo", "ruleset", "run", "search", "secret", "ssh-key", "status", "variable", "workflow",
 }
 _GH_API_VALUE = {"-X", "--method", "-f", "-F", "--field", "--raw-field", "--input", "-H", "--header", "-q",
@@ -1392,12 +1545,168 @@ _CODE_DELIVERY = (
     (re.compile(r"""\bgh\b[\s'",]+release[\s'",]+(create|new)\b"""), "release_create"),
     (re.compile(r"""api\.github\.com/repos/[^'"\s]*/(pulls|merges|releases|git/refs|contents)\b"""), "remote_write"),
 )
-_CODE_RUNS_COMMANDS = re.compile(
-    r"os\.system|os\.popen|\bsubprocess\b|\bPopen\b|\bexec\(|\beval\(|__import__|child_process|execSync|"
-    r"spawnSync|\bsystem\(|\bpassthru\(|\bshell_exec\(|`")
-_CODE_BUILDS_STRINGS = re.compile(
-    r"""["']\s*\+\s*["']|\.join\(|\bchr\(|b64decode|\bbase64\b|\\x[0-9a-fA-F]{2}|fromCharCode|\batob\(|"""
-    r"""\bformat\(|%s""")
+# calls that run a command; the text after the "(" is judged by _first_argument
+_RUN_CALL = re.compile(
+    r"(?<![A-Za-z0-9_$])(?:os\.(?:system|popen|exec[lv]p?e?|spawn[lv]p?e?|posix_spawnp?)|"
+    r"subprocess\.(?:run|call|check_call|check_output|Popen|getoutput|getstatusoutput)|Popen|commands\.getoutput|"
+    r"pty\.spawn|asyncio\.create_subprocess_(?:exec|shell)|(?:child_process\.)?(?:execSync|spawnSync|execFileSync|"
+    r"execFile|exec|spawn|fork)|Bun\.(?:spawn|spawnSync)|Deno\.Command|Kernel\.(?:system|exec|spawn)|IO\.popen|"
+    r"Open3\.\w+|system|spawn|popen|passthru|shell_exec|proc_open|pcntl_exec|backtick|qx)\s*\(")
+_RUN_BACKTICK = re.compile(r"`([^`]*)`|%x\{([^}]*)\}|%x\(([^)]*)\)|\bqx\{([^}]*)\}|\bqx\(([^)]*)\)")
+# code that executes text it builds or decodes: the command cannot be read from the source
+_CODE_EXECUTES_TEXT = re.compile(
+    r"(?<![A-Za-z0-9_.$])(?:eval|exec|compile)\s*\(|__import__|new\s+Function\(|\bFunction\(|\bmarshal\b|\bpickle\b")
+_CODE_REACHES_BY_NAME = re.compile(r"\bgetattr\(|importlib|\bglobals\(\)|\b__builtins__")
+_CODE_DECODES_TEXT = re.compile(
+    r"\bchr\(|b64decode|\bbase64\b|\\x(?![1][bB])[0-9a-fA-F]{2}|fromCharCode|\batob\(|codecs|fromhex|"
+    r"\\u[0-9a-fA-F]{4}")
+_CODE_MENTIONS_PROCESSES = re.compile(r"\bos\b|subprocess|child_process|\bsystem\b|\bpopen\b|\bspawn\b")
+_HOLE = "${_hole}"
+_EXECUTABLES = {"sys.executable": "python3", "process.execPath": "node", "process.argv0": "node",
+                "sys.executable,": "python3"}
+
+
+def _read_string(code, j):
+    """The string literal at code[j:] (an optional r/b/f/u prefix, quotes ' " or `): (text, end) or None.
+    Holes ({x} in an f-string, ${x} in a template, %s and {} before a formatting operator) become ${_hole}."""
+    m = re.compile(r"([rRbBuUfF]{0,2})(['\"`])").match(code, j)
+    if m is None:
+        return None
+    prefix, quote, k, out = m.group(1).lower(), m.group(2), m.end(), []
+    triple = code.startswith(quote * 3, m.start(2)) and quote != "`"
+    if triple:
+        k += 2
+    while k < len(code):
+        c = code[k]
+        if c == "\\" and "r" not in prefix and k + 1 < len(code):
+            out.append(code[k:k + 2])
+            k += 2
+            continue
+        if code.startswith(quote * 3 if triple else quote, k):
+            k += 3 if triple else 1
+            break
+        out.append(c)
+        k += 1
+    else:
+        return None
+    text = "".join(out)
+    if "f" in prefix or quote == "`":
+        text = re.sub(r"\$?\{[^{}]*\}", _HOLE, text)
+    if code[k:k + 12].lstrip().startswith(("%", ".format")):
+        text = re.sub(r"%[sdrif]|\{[^{}]*\}", _HOLE, text)
+        k = _skip_format(code, k)
+    return text, k
+
+
+def _skip_format(code, k):
+    """Past a `% x` / `.format(...)` that follows a string: up to the `,` or `)` that ends the argument."""
+    depth = 0
+    while k < len(code):
+        c = code[k]
+        if c in "'\"`":
+            string = _read_string(code, k)
+            if string is None:
+                return len(code)
+            k = string[1]
+            continue
+        if c in "([{":
+            depth += 1
+        elif c in ")]}":
+            if depth == 0:
+                return k
+            depth -= 1
+        elif c == "," and depth == 0:
+            return k
+        k += 1
+    return k
+
+
+def _split_items(code, j):
+    """The items of the list literal whose "[" is at code[j]: ([item texts], end) or None."""
+    depth, items, start, k = 0, [], j + 1, j
+    while k < len(code):
+        c = code[k]
+        if c in "'\"`":
+            string = _read_string(code, k)
+            if string is None:
+                return None
+            k = string[1]
+            continue
+        if c in "[({":
+            depth += 1
+        elif c in "])}":
+            depth -= 1
+            if depth == 0:
+                if code[start:k].strip():
+                    items.append(code[start:k].strip())
+                return items, k + 1
+        elif c == "," and depth == 1:
+            items.append(code[start:k].strip())
+            start = k + 1
+        k += 1
+    return None
+
+
+def _literal_value(source):
+    """A string literal, or a hole for any other expression: (text, is_literal)."""
+    source = _EXECUTABLES.get(source.strip(), source.strip())
+    if source in ("python3", "node"):
+        return source, True
+    string = _read_string(source, 0)
+    if string is not None and string[1] >= len(source.rstrip()):
+        return string[0], _HOLE not in string[0]
+    return _HOLE, False
+
+
+def _call_commands(code, kind):
+    """Commands the inline ``code`` runs: ``[("code", text) | ("argv", [items]) | ("unknown", None)]``."""
+    assigned = {}
+    for m in re.finditer(r"(?:^|[;\n]\s*)(?:const\s+|let\s+|var\s+)?([A-Za-z_]\w*)\s*=\s*(?=['\"`\[rbfu])", code):
+        assigned[m.group(1)] = assigned.get(m.group(1), 0) + 1
+    runs = []
+    pattern = _RUN_CALL
+    imported = [alias for module, alias in re.findall(r"import\s+(subprocess|os)\s+as\s+(\w+)", code)]
+    imported += re.findall(r"from\s+(?:subprocess|os)\s+import\s+([\w, ]+)", code)
+    names = {name.strip() for group in imported for name in group.split(",") if name.strip()}
+    if names:
+        pattern = re.compile(_RUN_CALL.pattern + "|(?<![A-Za-z0-9_$.])(?:%s)(?:\\.\\w+)?\\s*\\(" % "|".join(
+            map(re.escape, sorted(names))))
+    for m in pattern.finditer(code):
+        j = m.end()
+        while code[j:j + 1].isspace():
+            j += 1
+        argument = code[j:j + 1]
+        name = re.match(r"\s*([A-Za-z_]\w*)\s*[,)]", code[j:]) if argument.isalpha() or argument == "_" else None
+        named = name is not None and assigned.get(name.group(1)) == 1
+        if named:
+            found = re.search(r"(?:^|[;\n]\s*)(?:const\s+|let\s+|var\s+)?%s\s*=\s*" % re.escape(name.group(1)), code)
+            j = found.end()
+            argument = code[j:j + 1]
+        if argument == "[":
+            listed = _split_items(code, j)
+            texts = None if listed is None else [_literal_value(item) for item in listed[0]]
+            if not texts or texts[0][1] is False and texts[0][0] == _HOLE:
+                runs.append(("unknown", None))
+            else:
+                runs.append(("argv", [text for text, _ in texts]))
+            continue
+        string = _read_string(code, j)
+        if string is None or string[0].startswith(_HOLE) or \
+                not named and not re.match(r"\s*[,)]", code[string[1]:string[1] + 8]):
+            runs.append(("unknown", None))
+            continue
+        tail = code[string[1]:].lstrip()
+        if tail.startswith(",") and tail[1:].lstrip().startswith("["):  # spawn("git", ["commit"])
+            listed = _split_items(tail, tail.index("["))
+            if listed is not None:
+                runs.append(("argv", [string[0]] + [_literal_value(item)[0] for item in listed[0]]))
+                continue
+        runs.append(("code", string[0]))
+    for m in _RUN_BACKTICK.finditer(code if kind in ("ruby", "perl", "php") else ""):
+        runs.append(("code", next(group for group in m.groups() if group is not None)))
+    return runs
+
+
 _INLINE_WRITES = {
     "python": (
         re.compile(r"""(?:pathlib\.)?Path\(\s*(['"])((?:(?!\1).)+)\1\s*\)\.(?:write_text|write_bytes|touch|mkdir|unlink|rename|replace)\s*\("""),
@@ -1457,6 +1766,43 @@ _DEPLOY_DIRS = {"deploy", "deploys", "deployment", "deployments", "release", "re
 _DEPLOY_USER = re.compile(r"^(?:deploy|deployer|deployment|release|publish|ship)@", re.I)
 _REMOTE_READ_ONLY = {"ls", "cat", "tail", "head", "grep", "journalctl", "uptime", "df", "du", "ps", "whoami", "id",
                      "hostname", "date", "uname", "free", "top", "less", "more", "wc", "stat", "file", "which"}
+_REMOTE_READ_PAIRS = {("docker", "ps"), ("docker", "logs"), ("docker", "inspect"), ("docker", "images"),
+                      ("docker", "stats"), ("docker", "top"), ("docker", "version"), ("docker", "info"),
+                      ("kubectl", "get"), ("kubectl", "logs"), ("kubectl", "describe"), ("kubectl", "top"),
+                      ("kubectl", "version"), ("systemctl", "status"), ("systemctl", "is-active"),
+                      ("systemctl", "is-enabled"), ("systemctl", "list-units"), ("git", "status"), ("git", "log"),
+                      ("git", "diff"), ("git", "show"), ("pm2", "list"), ("pm2", "status"), ("pm2", "logs"),
+                      ("service", "status")}
+
+
+# git settings and environment variables whose value is a command line git runs
+_GIT_COMMAND_KEY = re.compile(
+    r"^(?:core\.(?:pager|editor|sshcommand|fsmonitor|askpass|gitproxy)|pager\..+|sequence\.editor|diff\.external|"
+    r"diff\..+\.(?:command|textconv)|merge\..+\.driver|filter\..+\.(?:clean|smudge|process)|"
+    r"(?:difftool|mergetool)\..+\.(?:cmd|path)|credential(?:\..+)?\.helper|gpg(?:\..+)?\.program|web\.browser|"
+    r"help\.browser|browser\..+\.(?:cmd|path)|man\..+\.cmd|uploadpack\.packobjectshook|trailer\..+\.command)$")
+_GIT_COMMAND_ENV = ("GIT_EXTERNAL_DIFF", "GIT_PAGER", "GIT_EDITOR", "GIT_SSH", "GIT_SSH_COMMAND", "GIT_ASKPASS",
+                    "GIT_SEQUENCE_EDITOR", "GIT_PROXY_COMMAND", "PAGER", "EDITOR", "VISUAL", "SSH_ASKPASS")
+_STASH_REF = re.compile(r"^(?:refs/)?stash(?:@\{[^}]*\})?$")
+
+
+def _local_repository(positionals, cwd):
+    """`git pull <repository>` names this very repository (., ./, .git, $PWD, file://...)."""
+    repo = _lit(positionals[0]) if positionals else None
+    if repo is None:
+        return False
+    if repo in (".", "./", ".git", "./.git") or repo.startswith("file://"):
+        return True
+    return cwd is not None and os.path.realpath(os.path.join(cwd, repo)) == os.path.realpath(cwd)
+
+
+def _remote_reads_only(items):
+    """The command an ssh session runs only reads: a plain read-only program, no shell metacharacters."""
+    texts = [_lit(item) for item in items]
+    if not texts or any(t is None or re.search(r"[;&|<>$`()\\\n]", t) for t in texts):
+        return False
+    words = " ".join(texts).split()
+    return bool(words) and (words[0] in _REMOTE_READ_ONLY or tuple(words[:2]) in _REMOTE_READ_PAIRS)
 
 
 def _deploy_path(path):
@@ -1714,6 +2060,10 @@ def _split_words(text):
         for pipeline in andor:
             for node in pipeline:
                 if isinstance(node, Simple):
+                    for assign in node.assigns:  # NAME=value words before the program (env -S "A=1 prog")
+                        value = None if assign.array or len(assign.value) != 1 else assign.value[0].literal()
+                        words.append(assign.name + ("+=" if assign.append else "=") + value if value is not None
+                                     else Dyn(assign.name + "=" + " ".join(w.text for w in assign.value)))
                     for word in node.words:
                         literal = word.literal()
                         words.append(literal if literal is not None else Dyn(word.text))
@@ -1737,6 +2087,51 @@ def _is_in_place_flag(command_name, arg):
         if ch in stop:
             return False
     return False
+
+
+def _word_source(word):
+    """The word's atoms as shell text: literals as they are, expansions as `$name` or their raw text."""
+    return "".join(atom[1] if atom[0] == "lit" else "$" + atom[1] if atom[0] == "var" else
+                   atom[3] if atom[0] == "cmd" else atom[1] for atom in word.atoms)
+
+
+def _delivery_verbs(text):
+    """Delivery actions named literally in ``text`` (no parsing: the text may be a makefile, a vim script...)."""
+    return {name for pattern, name in _CODE_DELIVERY if pattern.search(text)}
+
+
+def _command_text(text):
+    """The text reads as a shell command line: several words, the first one a program (not prose)."""
+    text = text.lstrip("!: \t")
+    if not re.search(r"\s", text.strip()):
+        return False
+    first = re.match(r"(?:[A-Za-z_][A-Za-z0-9_]*=\S*\s+)*([A-Za-z0-9_./+-]+)", text)
+    if first is None:
+        return False
+    word = os.path.basename(first.group(1))
+    return word in _PROBED_WORDS or word in _HANDLERS or word in ("cd", "true", "false", "exec")
+
+
+def _path_form(word):
+    """The word is `<expansion>/literal/path`: a script below a directory that is computed."""
+    atoms = word.atoms
+    return len(atoms) > 1 and atoms[0][0] in ("var", "cmd", "dyn") and atoms[1][0] == "lit" and \
+        atoms[1][1].startswith("/") and not (atoms[0][0] == "dyn" and atoms[0][1].startswith(("<(", ">(")))
+
+
+# handlers whose arguments may carry a command (`taskset -c 0 git commit`, `kubectl exec -- gh pr create`)
+_ARGUMENT_COMMANDS = {"unknown", "deploy_tool", "task_runner", "npm", "node_runner", "editor", "vercel", "ssh",
+                      "runner"}
+# programs that run the commands they read on stdin
+_STDIN_RUNNERS = {"at", "batch", "crontab", "newgrp", "sg", "expect", "ed", "ex", "vi", "vim", "nvim", "make", "gmake"}
+# programs that only display or search text: a delivery verb among their arguments is a topic, not a command
+_NOT_COMMAND_ARGS = {"man", "tldr", "help", "info", "apropos", "whatis", "cheat", "navi", "glow", "mdcat", "pandoc",
+                     "code", "cursor", "subl", "open", "xdg-open", "idea", "less", "more", "bat", "batcat"}
+# options whose value is a pattern, a message or a label, not a command
+_PATTERN_OPTIONS = {"-k", "-m", "-t", "-b", "--grep", "--filter", "--match", "--message", "--title", "--body",
+                    "--description", "--name", "--label", "--tag", "--reason", "--summary", "--subject", "--text",
+                    "--comment", "--notes", "--testNamePattern", "--regexp", "--pattern", "--query", "--search",
+                    "--msg", "--note"}
 
 
 class _Feed:
@@ -1789,11 +2184,12 @@ class _Analysis:
         self.active = set()
         self.gh_aliases = None
         self.repo_aliases = {}
+        self.suffix_probe = False
 
     # -- recording ------------------------------------------------------------
     def tick(self):
         self.steps += 1
-        if self.steps > MAX_STEPS or (self.steps % 64 == 0 and time.monotonic() > self.deadline):
+        if self.steps > MAX_STEPS or time.monotonic() > self.deadline:
             raise _Budget()
 
     def unseen(self, text):
@@ -1833,9 +2229,13 @@ class _Analysis:
             for root in item.roots:
                 self.write(root, env, via, scope)
             return
-        if _GIT_CONFIG_FILE.search(text):
-            self.config_unknown = True  # git aliases may have been added to the configuration
+        if _GIT_CONFIG_FILE.search(text) or _GH_CONFIG_FILE.search(text) or \
+                isinstance(item, Dyn) and re.search(r"(^|/)(config|gitconfig|config\.yml)$", text):
+            self.config_unknown = True  # git or gh aliases may have been added to the configuration
         path = os.path.expanduser(text)
+        key = None if isinstance(item, Dyn) else self.file_key(text, env)
+        if key in env.files and via not in ("redirect", "chmod", "chown", "chgrp", "touch", "chattr"):
+            env.files[key] = None  # rewritten by something else: what it holds now is not known
         dynamic = isinstance(item, Dyn) or (env.cwd is None and not os.path.isabs(path))
         full = os.path.join(env.cwd_text, path) if dynamic else os.path.realpath(os.path.join(env.cwd or "/", path))
         self.writes.append({"path": full, "raw": text, "dynamic": dynamic, "via": via, "scope": scope})
@@ -1862,17 +2262,88 @@ class _Analysis:
         return items
 
     def expand_all(self, atom, env):
-        """Fields of a word that is exactly "$@" or ${name[@]}; None for any other word."""
+        """Fields of a word that is exactly "$@", "${@:N}", ${name[@]} or "${name[@]:N:M}"; else None."""
         if atom[0] == "var" and atom[1] == "@" and env.positional is not None:
-            return [Dyn("$@") if item is None else item for item in env.positional]
-        if atom[0] == "dyn":
-            m = _ARRAY_ALL.match(atom[1])
-            if m is not None and env.arrays.get(m.group(1)) is not None:
-                return list(env.arrays[m.group(1)])
-        return None
+            return list(env.positional)
+        if atom[0] != "dyn":
+            return None
+        m = _PARAM.match(atom[1])
+        if m is None or m.group(1):
+            return None
+        name, subscript, rest = m.group(2), m.group(3), m.group(4)
+        positional = name in ("@", "*") and subscript is None
+        if positional and env.positional is not None:
+            items = list(env.positional)
+        elif subscript in ("@", "*"):
+            items = env.arrays.get(name)
+        else:
+            return None
+        if items is None:
+            return None
+        if not rest:
+            return list(items)
+        if not re.fullmatch(r":\s*-?\d+(?::\s*-?\d+)?", rest):
+            return None
+        numbers = [int(part) for part in rest[1:].split(":")]
+        first = numbers[0] - 1 if positional and numbers[0] > 0 else numbers[0]  # ${@:N} starts at $N
+        start = first if first >= 0 else max(len(items) + first, 0)
+        end = None if len(numbers) < 2 else start + numbers[1] if numbers[1] >= 0 else len(items) + numbers[1]
+        return list(items[start:end])
+
+    def ifs_chars(self, env):
+        """The characters unquoted expansions split at; None when IFS holds something unknown."""
+        if "IFS" not in env.vars:
+            return " \t\n"
+        return env.vars["IFS"]
+
+    def param_value(self, raw, env):
+        """``${name op word}``: ``(value, tainted)`` with value a string when it can be worked out."""
+        m = _PARAM.match(raw)
+        if m is None or m.group(1) == "!":
+            return None, True
+        indirect, name, subscript, rest = m.group(1), m.group(2), m.group(3), m.group(4)
+        if subscript is None:
+            value, tainted = env.lookup(name)
+        elif subscript in ("@", "*") or not re.fullmatch(r"\s*\d+\s*", subscript) or name not in env.arrays:
+            joined = env.arrays.get(name) if subscript in ("@", "*") and not rest else None
+            if joined is not None and all(_lit(item) is not None for item in joined):
+                return " ".join(joined), False
+            return None, True
+        else:
+            array = env.arrays[name]
+            value = _lit(array[int(subscript)]) if int(subscript) < len(array) else ""
+            tainted = value is None
+        if indirect == "#":
+            return (None if value is None else str(len(value))), False
+        if not rest:
+            return value, tainted
+        kind = rest[:2] if rest[:2] in (":-", ":=", ":+", ":?") else rest[:1] if rest[:1] in "-=+?" else None
+        if kind is None:
+            if tainted or value is None:
+                return None, tainted
+            result = _param_operator(value, rest)
+            return result, result is None
+        word = rest[len(kind):]
+        if tainted or any(c in word for c in "$`'\"\\"):
+            return None, True
+        colon, test = kind[0] == ":", kind[-1]
+        unset = value is None or colon and value == ""
+        if test in "-=":
+            return (word, False) if unset else (value, False)
+        if test == "+":
+            return (word, False) if value is None or not unset else ("", False)
+        return (None, False) if unset else (value, False)
+
+    def dyn_value(self, raw, env):
+        """Value of a dynamic atom (a brace expansion, arithmetic...): ``(text or None, tainted)``."""
+        if raw.startswith(("<(", ">(")):
+            return None, True
+        if raw.startswith("${"):
+            return self.param_value(raw, env)
+        return None, False
 
     def expand_atoms(self, atoms, env):
-        pieces = []
+        pieces, total, ifs = [], 0, self.ifs_chars(env)
         for index, atom in enumerate(atoms):
             kind, quoted = atom[0], atom[2]
             if kind == "lit":
@@ -1880,33 +2351,43 @@ class _Analysis:
                 if index == 0 and not quoted and text[:1] == "~":
                     text = self.tilde(text, env)
                 pieces.append((text, quoted, False))
+                total += len(text)
                 continue
             if kind == "var":
-                value, raw = env.get(atom[1]), "$" + atom[1]
+                value, tainted = env.lookup(atom[1])
+                raw = "$" + atom[1]
             elif kind == "cmd":
                 value, raw = self.static_output(atom[1], env), atom[3]
                 value = None if value is None else value.rstrip("\n")
+                tainted = value is None and not _PATH_PRODUCER.match(raw)
             else:
-                value, raw = None, atom[1]
-            if value is not None and not quoted and "IFS" in env.vars:
-                value = None  # unquoted expansions split at the changed IFS, not at blanks
-            pieces.append((Dyn(raw),) if value is None else (value, quoted, not quoted))
-        fields, parts, flags = [], [], {"dyn": False, "glob": False, "started": False}
+                (value, tainted), raw = self.dyn_value(atom[1], env), atom[1]
+            if value is not None and not quoted and ifs is None:
+                value, tainted = None, True  # unquoted expansions split at an IFS nobody knows
+            total += len(value or "")
+            pieces.append((Dyn(raw, tainted=tainted),) if value is None else (value, quoted, not quoted))
+            if total > MAX_VALUE_CHARS:  # repeated doubling: stop growing, the value is unknown
+                return [Dyn("<oversized expansion>", tainted=True)]
+        fields, parts, flags = [], [], {"dyn": False, "glob": False, "started": False, "tainted": False}
+        splitter = re.compile("([%s]+)" % "".join("\\" + c if c in "]\\^-" else c for c in ifs)) if ifs else None
 
         def push():
             text = "".join(parts)
-            fields.append(Dyn(text) if flags["dyn"] else GlobStr(text) if flags["glob"] else text)
+            fields.append(Dyn(text, tainted=flags["tainted"]) if flags["dyn"] else GlobStr(text) if flags["glob"]
+                          else text)
             del parts[:]
-            flags.update(dyn=False, glob=False, started=False)
+            flags.update(dyn=False, glob=False, started=False, tainted=False)
 
         for piece in pieces:
             if len(piece) == 1:
                 parts.append(piece[0].text)
                 flags["dyn"] = flags["started"] = True
+                flags["tainted"] = flags["tainted"] or piece[0].tainted
                 continue
             text, quoted, split = piece
-            for chunk in re.split(r"([ \t\n]+)", text) if split else [text]:
-                if split and chunk[:1] in (" ", "\t", "\n"):
+            split = split and splitter is not None
+            for chunk in splitter.split(text) if split else [text]:
+                if split and chunk and chunk[0] in ifs:
                     if flags["started"]:
                         push()
                     continue
@@ -1914,7 +2395,7 @@ class _Analysis:
                     continue
                 parts.append(chunk)
                 flags["started"] = True
-                if not quoted and _GLOB_CHARS.search(chunk):
+                if not quoted and _has_glob(chunk):
                     flags["glob"] = True
         if flags["started"]:
             push()
@@ -1987,12 +2468,25 @@ class _Analysis:
             raw = atom[1]
             if raw.startswith(("$((", "$[")):
                 self.arith_check(raw, env)
+            elif raw.startswith("${") and not raw.startswith("${!") and not raw.endswith("@P}"):
+                self.scan_parameter(raw, env)
             elif raw.startswith("${!") or raw.endswith("@P}"):
                 self.mark("no")
                 name = raw[3:-1] if raw.startswith("${!") else raw[2:-3]
                 value = env.vars.get(name)
                 if isinstance(value, str) and _EXEC_TEXT.search(value):
                     self.unseen("indirect expansion of a variable that holds a command substitution")
+
+    def scan_parameter(self, raw, env):
+        """${a[x]} and ${x:off:len} evaluate their subscript, offset and length as arithmetic."""
+        m = _PARAM.match(raw)
+        if m is None:
+            return
+        if m.group(3) is not None and m.group(3) not in ("@", "*"):
+            self.arith_check(m.group(3), env)
+        rest = m.group(4)
+        if rest[:1] == ":" and rest[1:2] not in ("-", "=", "+", "?"):
+            self.arith_check(rest[1:], env)
 
     def arith_check(self, text, env):
         """Arithmetic evaluates variable values (a[$(cmd)] runs cmd): a variable that holds a
@@ -2016,6 +2510,9 @@ class _Analysis:
         for text in texts:
             if text is not None and _SUBSCRIPT_EXEC.search(text):
                 self.unseen("test operand with a subscript that runs a command substitution")
+        for index, text in enumerate(texts[:-1]):  # [[ -v $x ]] evaluates the subscript in the value of x
+            if text in ("-v", "-R"):
+                self.arith_check(_word_source(words[index + 1]), env)
         if any(text in ("-eq", "-ne", "-lt", "-gt", "-le", "-ge") for text in texts):
             names = []
             for w in words:
@@ -2090,19 +2587,51 @@ class _Analysis:
                     items.extend(self.expand(item_word, env))
                 self.assign_array(assign, items, env)
                 continue
+            if assign.name in env.integers:
+                self.arith_check(_word_source(assign.value[0]), env)  # y=x on an integer evaluates x
             value = self.literal_text(assign.value[0], env)
             if assign.append and value is not None:
                 prior = env.get(assign.name)
                 value = None if prior is None else prior + value
-            values[assign.name] = value
+            values[assign.name] = _cap(value)
         argv = []
         for word in cmd.words:
             argv.extend(self.expand(word, env))
         stdin = self.redirections(cmd.redirs, env) or stdin
         if not argv:
             env.vars.update(values)
+            self.record_files(cmd.redirs, env, _Feed("text", ""))  # `> run.sh` empties the file
             return None
-        return self.execute(argv, env, values, stdin, cmd.words[0])
+        feed = self.execute(argv, env, values, stdin, cmd.words[0])
+        self.record_files(cmd.redirs, env, feed)
+        return feed
+
+    @staticmethod
+    def file_key(path, env):
+        """The absolute path a command-line path names, or None when the directory is not known."""
+        path = os.path.expanduser(path)
+        if not os.path.isabs(path) and env.cwd is None:
+            return None
+        return os.path.normpath(os.path.join(env.cwd or "/", path))
+
+    def record_files(self, redirs, env, feed):
+        """`printf 'git push' > run.sh`: remember what a redirect wrote, so running the file later in the
+        same command is judged by its text (content that cannot be read stays None)."""
+        for redir in redirs:
+            if redir.op not in (">", ">>", ">|", "&>", "&>>") or redir.fd not in (None, "1"):
+                continue
+            names = self.expand(redir.target, env)
+            path = _lit(names[0]) if len(names) == 1 else None
+            key = None if path is None or path in _DISCARD else self.file_key(path, env)
+            if key is None:
+                continue
+            text = feed.value if feed is not None and feed.kind == "text" else None
+            if redir.op.endswith(">>"):
+                if key not in env.files:  # appended to a file that was there before: an ordinary script file
+                    continue
+                prior = env.files[key]
+                text = None if text is None or prior is None else prior + text
+            env.files[key] = _cap(text)
 
     def assign_array(self, assign, items, env):
         """Remember a literal array so "${a[@]}" can be read; a subscript that runs code is unseen."""
@@ -2118,6 +2647,8 @@ class _Analysis:
             env.arrays.pop(assign.name, None)
         else:
             env.arrays[assign.name] = items
+        if len(env.arrays.get(assign.name, ())) > MAX_SEQUENCE:  # repeated doubling: the array is unknown
+            del env.arrays[assign.name]
 
     def redirections(self, redirs, env):
         stdin = None
@@ -2131,7 +2662,14 @@ class _Analysis:
             elif op == "<<<":
                 text = self.literal_text(target, env)
                 stdin = _Feed("text", text + "\n") if text is not None else _UNKNOWN_FEED
-            elif op in ("<", "<&"):
+            elif op in ("<", "<&") and redir.fd not in (None, "0"):
+                continue  # 3< file feeds another descriptor, not stdin
+            elif op == "<":
+                names = self.expand(target, env)
+                path = _lit(names[0]) if len(names) == 1 else None
+                stdin = _Feed("file", path) if path is not None and not _STDIN_NAME.match(path) and \
+                    not path.startswith(("/dev/", "/proc/")) else _UNKNOWN_FEED
+            elif op == "<&":
                 stdin = _UNKNOWN_FEED
             elif not (op == ">&" and (target.text.isdigit() or target.text == "-")):
                 for item in self.expand(target, env):
@@ -2156,11 +2694,14 @@ class _Analysis:
         if name in env.functions and name not in self.active:
             self.active.add(name)
             scope = env.copy()
-            scope.positional = [_lit(a) for a in argv[1:]]
+            scope.positional = list(argv[1:])
             self.walk_script(env.functions[name], scope)
             self.active.discard(name)
         handler = _HANDLERS.get(name) or ("interpreter" if _INTERPRETER.match(name) else "unknown")
-        return getattr(self, "h_" + handler)(argv, env, prefix, stdin)
+        result = getattr(self, "h_" + handler)(argv, env, prefix, stdin)
+        if handler in _ARGUMENT_COMMANDS and name not in _NOT_COMMAND_ARGS:
+            self.probe_arguments(argv, env, stdin)
+        return result
 
     def execute_dynamic(self, argv, env, prefix, stdin, first_word):
         """A command whose program is not known statically."""
@@ -2168,18 +2709,23 @@ class _Analysis:
         text = _text(program)
         self.reason("dynamic command word: " + text)
         self.mark("no")
-        if "IFS" in env.vars:
-            self.unseen("IFS is changed, so unquoted expansions split at unknown places")
         tail = os.path.basename(text)
         helper = _GIT_HELPER.match(tail)
         if helper is not None and helper.group(1) in _GIT_SUBCOMMANDS:
             return self.h_git(["git", helper.group(1)] + list(argv[1:]), env, prefix, stdin)
         if tail in ("git", "gh", "hub") and "$" not in tail and "`" not in tail:
             return getattr(self, "h_" + tail)([tail] + list(argv[1:]), env, prefix, stdin)
+        if first_word is not None and _path_form(first_word):  # "$(git rev-parse --show-toplevel)/scripts/x.sh"
+            self.opaque_writer(program, "runs a script")
+            self.reason("runs a script (contents not analysed)")
+            if _deploy_path("".join(atom[1] for atom in first_word.atoms[1:] if atom[0] == "lit")):
+                self.action("deploy", argv)
+            return None
         self.guess(argv, env)
-        from_substitution = first_word is not None and any(atom[0] == "cmd" for atom in first_word.atoms)
-        if _ARRAY_OR_ARGS.match(text) or (len(argv) == 1 and (from_substitution or _ARRAY_ALL.match(text))):
-            self.unseen("the program is the result of an expansion that cannot be resolved: " + text)
+        if _ARRAY_OR_ARGS.match(text) or getattr(program, "tainted", False):
+            self.unseen("the program is computed at run time (read, substituted or cut from other text): " + text)
+        elif self.ifs_chars(env) is None:
+            self.unseen("IFS is changed to a value that is not known, so unquoted expansions split at unknown places")
         return None
 
     def check_env(self, prefix):
@@ -2212,9 +2758,11 @@ class _Analysis:
             i += 1
         return out
 
-    def probe(self, argv, env):
-        """Actions ``argv`` would perform, from a throw-away analysis without lookups."""
+    def probe(self, argv, env, suffix=False):
+        """Actions ``argv`` would perform, from a throw-away analysis without lookups. ``suffix`` marks
+        a probe of the tail of another program's arguments, whose own tail is probed by the caller's loop."""
         probe = _Analysis(self.base, lookups=False)
+        probe.suffix_probe = suffix
         probe.gh_aliases = {}
         probe.steps, probe.deadline, probe.depth = self.steps, self.deadline, self.depth
         probe.config_unknown = self.config_unknown
@@ -2234,6 +2782,46 @@ class _Analysis:
         finally:
             self.steps = probe.steps
         return probe.actions | probe.possible
+
+    def code_possible(self, text, argv, env):
+        """A command line that a program will run (a git pager, a bisect script): record what it could do."""
+        for name in sorted(self.probe_code(text, env)):
+            if name == "unseen":
+                self.unseen("a command line handed to a program runs code that cannot be read")
+            else:
+                self.action(name, argv, possible=True)
+
+    def probe_arguments(self, argv, env, stdin=None):
+        """A program that runs what its arguments say (taskset, uv run, tmux, vim -c, kubectl exec --, ssh host
+        'cmd') hides a command among them: judge every suffix that starts at a program word, and every
+        argument that reads as command text, and record what they could do."""
+        found, previous, name = set(), None, os.path.basename(_text(argv[0]))
+        for i in range(1, len(argv)):
+            token = _lit(argv[i])
+            if token is None:
+                previous = None
+                continue
+            word = os.path.basename(token) if token.startswith("/") else token
+            if word in _PROBED_WORDS or _INTERPRETER.match(word):
+                if not self.suffix_probe:  # inside such a probe the caller's loop reaches every later word itself
+                    found |= self.probe(argv[i:], env, suffix=True)
+            else:
+                text = token
+                if token.startswith("--") and "=" in token:
+                    option, _, text = token.partition("=")
+                    previous = option
+                if text[:1] != "-" and previous not in _PATTERN_OPTIONS and re.search(r"\s", text):
+                    if _command_text(text):
+                        found |= self.probe_code(text.lstrip("!: \t"), env)
+                    else:  # osascript -e 'do shell script "gh pr create"', gdb -ex 'shell ...', expect -c 'spawn ...'
+                        found |= _delivery_verbs(text)
+            previous = token
+        if name in _STDIN_RUNNERS and stdin is not None and stdin.kind == "text":
+            found |= self.probe_code(stdin.value, env) if name not in ("ed", "ex", "vi", "vim", "nvim") else \
+                self.probe_code("\n".join(line[1:] for line in stdin.value.splitlines() if line[:1] == "!"), env)
+        found.discard("unseen")
+        for verb in sorted(found):
+            self.action(verb, argv, possible=True)
 
     def guess(self, argv, env):
         """Actions a dynamic program could perform, judged from its visible arguments."""
@@ -2272,7 +2860,10 @@ class _Analysis:
         self.opaque_writer(script, reason)
         self.reason(reason + " (contents not analysed)")
         target = _lit(script)
-        if _text(script).startswith("<(") or target in _STDIN_NAMES:
+        if target is not None and re.fullmatch(r"/(?:dev|proc/self)/fd/(?:[1-9]\d*)", target):
+            self.unseen("a script is read from an open file descriptor")
+            return
+        if _text(script).startswith("<(") or (target is not None and _STDIN_NAME.match(target)):
             if shell:
                 self.shell_input(script, stdin, env)
             else:
@@ -2281,11 +2872,20 @@ class _Analysis:
         if target is None:
             self.reason("script path is dynamic: " + _text(script))
             return
+        key = self.file_key(target, env)
+        if key in env.files:  # written earlier in this very command: judge the text it was given
+            if env.files[key] is None:
+                self.unseen("runs a script that this command wrote with content that cannot be read")
+            elif shell:
+                self.run_code(env.files[key], env.copy())
+            else:
+                self.inline_code(kind, env.files[key], argv, env)
+            return
         if shell and env.cwd is not None:
             path = os.path.realpath(os.path.join(env.cwd, os.path.expanduser(target)))
             if os.path.isfile(path):
                 self.scripts.append(path)
-        if _deploy_path(target):
+        if _deploy_path(target) and not _dry_run(argv[1:]):
             self.action("deploy", argv)
 
     # -- read-only programs ---------------------------------------------------------
@@ -2321,7 +2921,10 @@ class _Analysis:
             self.mark("no")  # file -C writes a compiled magic file
 
     def ro_cat(self, args, env, stdin):
-        return stdin if not _positionals(args) and stdin is not None else _UNKNOWN_FEED
+        files = _positionals(args)
+        if len(files) == 1 and _lit(files[0]) is not None and stdin is None and not _STDIN_NAME.match(files[0]):
+            return _Feed("file", files[0])  # cat setup.sh | bash
+        return stdin if not files and stdin is not None else _UNKNOWN_FEED
 
     def ro_ls(self, args, env, stdin):
         return _Feed("roots", _positionals(args, "IwT") or ["."])
@@ -2483,15 +3086,24 @@ class _Analysis:
         elif name == "popd":
             env.chdir(Dyn("$DIRSTACK"))
         elif name in _DECLARATIONS:
+            integer = _has_flag(args, "i")
             for item in _positionals(args):
                 key, eq, value = _text(item).partition("=")
+                if integer and _NAME.fullmatch(key):
+                    env.integers.add(key)
+                    if eq:
+                        self.arith_check(value, env)  # declare -i y=x evaluates x
                 if eq and _NAME.fullmatch(key):
-                    env.vars[key] = value if _lit(item) is not None else None
+                    env.vars[key] = _cap(value) if _lit(item) is not None else None
         elif name == "history":
             if _has_flag(args, "awrnscd"):
                 self.mark("no")
         elif name == "let":
             self.arith_check(" ".join(_text(a) for a in args), env)
+        elif name == "shift":
+            count = _lit(args[0]) if args else "1"
+            if env.positional is not None:
+                env.positional = env.positional[int(count):] if count is not None and count.isdigit() else None
         elif name == "unset":
             for item in _positionals(args):
                 env.vars[_text(item)] = ""
@@ -2515,7 +3127,9 @@ class _Analysis:
                 env.aliases.pop(_text(item), None)
         elif name == "set" and "--" in [_lit(a) for a in args]:
             literal = [_lit(a) for a in args]
-            env.positional = literal[literal.index("--") + 1:]
+            env.positional = list(args[literal.index("--") + 1:])
+            if len(env.positional) > MAX_SEQUENCE:  # repeated doubling: the parameters are unknown
+                env.positional = None
         return None
 
     def h_eval(self, argv, env, prefix, stdin):
@@ -2524,14 +3138,12 @@ class _Analysis:
             return None
         self.reason("eval with a non-literal argument")
         self.mark("no")
-        if not all(_ENV_GENERATOR.match(_text(a)) for a in argv[1:]):
-            self.unseen("eval of text that is not known statically")
-        words = _split_words(" ".join(_text(a) for a in argv[1:]))
-        if words and _lit(words[0]) is not None:
-            for name in sorted(self.probe(words, env)):
-                self.action(name, argv, possible=True)
-        elif words:
-            self.guess(words, env)
+        if all(_ENV_GENERATOR.match(_text(a)) for a in argv[1:]):
+            return None  # eval "$(ssh-agent -s)": the whole argument is one well-known environment tool
+        # whatever is visible in the text (its expansions are still to be done) is judged as well
+        self.unseen("eval of text that is not known statically")
+        for name in sorted(self.probe_code(" ".join(_text(a) for a in argv[1:]), env) - {"unseen"}):
+            self.action(name, argv, possible=True)
         return None
 
     def h_source(self, argv, env, prefix, stdin):
@@ -2546,8 +3158,7 @@ class _Analysis:
         if _lit(args[0]) is None:
             self.reason("trap with a non-literal handler")
             self.mark("no")
-            return None
-        self.run_code(args[0], env)
+        self.run_code(_text(args[0]), env)  # the handler with its expansions still to be done
         return None
 
     def h_command(self, argv, env, prefix, stdin):
@@ -2623,11 +3234,11 @@ class _Analysis:
                 scope.chdir(value)
             elif name in ("-S", "--split-string"):
                 split = _split_words(value)
-        while i < len(args) and _lit(args[i]) is not None and _ASSIGN.match(args[i]):
-            key, _, value = args[i].partition("=")
-            prefix[key] = value
-            i += 1
         rest = split + list(args[i:])
+        while rest and _ASSIGN.match(_text(rest[0])):  # NAME=value, whether or not the value is known
+            key, _, value = _text(rest[0]).partition("=")
+            prefix[key] = value if _lit(rest[0]) is not None else None
+            rest = rest[1:]
         return self.execute(rest, scope, prefix, stdin) if rest else None
 
     def h_rtk(self, argv, env, prefix, stdin):
@@ -2657,21 +3268,28 @@ class _Analysis:
         if stdin is not None and stdin.kind == "text":
             items = stdin.value.splitlines() if replace is not None else stdin.value.split()
         else:
-            items = [Dyn("{xargs input}", stdin.value if stdin is not None and stdin.kind == "roots" else None)]
+            items = [Dyn("{xargs input}", stdin.value if stdin is not None and stdin.kind == "roots" else None,
+                         tainted=True)]
         if replace is None:
             return self.execute(rest + items[:MAX_LOOP_VALUES], env.copy(), prefix, None)
         for item in items[:MAX_LOOP_VALUES]:
-            command = []
+            command, scope = [], env.copy()
+            runs_shell = bool(rest) and _lit(rest[0]) is not None and os.path.basename(rest[0]) in _SHELLS
             for arg in rest:
                 text = _text(arg)
                 if replace not in text:
                     command.append(arg)
                 elif _lit(item) is not None and _lit(arg) is not None:
                     command.append(text.replace(replace, item))
+                elif runs_shell and _lit(arg) is not None and text != replace:
+                    # sh -c 'tool {}': the item is data for the script, unknown to the analysis
+                    scope.vars["_xargs_item"] = None
+                    command.append(text.replace(replace, "${_xargs_item}"))
                 else:
                     roots = getattr(item, "roots", None) if text.startswith(replace) else None
-                    command.append(item if text == replace else Dyn(text.replace(replace, _text(item)), roots))
-            self.execute(command, env.copy(), prefix, None)
+                    command.append(item if text == replace else Dyn(text.replace(replace, _text(item)), roots,
+                                                                    tainted=True))
+            self.execute(command, scope, prefix, None)
         return None
 
     def h_shell(self, argv, env, prefix, stdin):
@@ -2696,7 +3314,8 @@ class _Analysis:
         if command_mode:
             if rest and _lit(rest[0]) is not None:
                 scope = env.copy()
-                scope.positional = [_lit(a) for a in rest[2:]]
+                scope.positional = list(rest[2:])
+                scope.arg0 = None if len(rest) < 2 else _lit(rest[1]) if _lit(rest[1]) is not None else False
                 self.run_code(rest[0], scope)
                 return None
             self.unseen("shell -c with a missing or non-literal script")
@@ -2710,7 +3329,10 @@ class _Analysis:
     def shell_input(self, item, stdin, env):
         """Code a shell reads from stdin (bash -s, a here-document or pipe) or from <(...)."""
         if item is not None and _text(item).startswith("<("):
-            self.unseen("shell runs the output of a process substitution")
+            if not _ENV_GENERATOR.match(_text(item)):  # source <(kubectl completion bash)
+                self.unseen("shell runs the output of a process substitution")
+        elif stdin is not None and stdin.kind == "file":  # bash < setup.sh runs the script like bash setup.sh
+            self.run_script(stdin.value, ["bash", stdin.value], env, "runs a shell script")
         elif stdin is not None and stdin.kind == "text":
             self.run_code(stdin.value, env.copy())
         elif stdin is not None:
@@ -2723,6 +3345,8 @@ class _Analysis:
         """Program text an interpreter reads from stdin or <(...)."""
         if item is not None and _text(item).startswith("<("):
             self.unseen("%s runs the output of a process substitution" % kind)
+        elif stdin is not None and stdin.kind == "file":
+            self.run_script(stdin.value, argv, env, "runs a %s script" % kind, shell=False, kind=kind)
         elif stdin is not None and stdin.kind == "text":
             self.inline_code(kind, stdin.value, argv, env)
         elif stdin is not None:
@@ -2791,17 +3415,32 @@ class _Analysis:
         self.opaque_writer(argv[0], "inline %s code" % kind)
         if _lit(code) is None:
             self.reason("dynamic inline %s code" % kind)
-            return
+            if re.match(r"\s*[$`]", _text(code)) or getattr(code, "tainted", False):
+                self.unseen("inline %s code is read or computed at run time" % kind)
+            code = _text(code)
         for pattern in _INLINE_WRITES.get(kind, ()):
             for m in pattern.finditer(code):
                 self.write(m.groups()[-1], env, "inline " + kind)
-        found = False
         for pattern, name in _CODE_DELIVERY:
             if pattern.search(code):
                 self.action(name, argv, possible=True)
-                found = True
-        if not found and _CODE_RUNS_COMMANDS.search(code) and _CODE_BUILDS_STRINGS.search(code):
-            self.unseen("inline %s code builds the command it runs" % kind)
+        runs = _call_commands(code, kind)
+        for run, payload in runs:
+            if run == "unknown":
+                self.unseen("inline %s code runs a command that is not written out in the source" % kind)
+                continue
+            if run == "code":
+                found = self.probe_code(payload.lstrip("!: \t"), env)
+            else:
+                found = self.probe([Dyn("$_hole") if _HOLE in part else part for part in payload], env)
+            if "unseen" in found:
+                self.unseen("inline %s code runs a command that cannot be read" % kind)
+            for name in sorted(found - {"unseen"}):
+                self.action(name, argv, possible=True)
+        mentions = bool(runs) or _CODE_MENTIONS_PROCESSES.search(code) is not None
+        if _CODE_EXECUTES_TEXT.search(code) or mentions and (
+                _CODE_DECODES_TEXT.search(code) or _CODE_REACHES_BY_NAME.search(code)):
+            self.unseen("inline %s code builds or decodes the code it runs" % kind)
 
     # -- writers ----------------------------------------------------------------------
     def h_copy(self, argv, env, prefix, stdin):
@@ -2848,18 +3487,16 @@ class _Analysis:
         positionals = _positionals(argv[1:], "bcDEeFIiJLlmOopQRSWw")
         if not positionals or not _DEPLOY_USER.match(_text(positionals[0])):
             return None
-        remote = [_lit(t) for t in positionals[1:2]]
-        words = (remote[0] or "x").split() if remote else []
-        if os.path.basename(argv[0]) == "ssh" and words and words[0] in _REMOTE_READ_ONLY:
+        if os.path.basename(argv[0]) == "ssh" and _remote_reads_only(positionals[1:]):
             return None
         self.action("deploy", argv)
         return None
 
     def h_sync_copy(self, argv, env, prefix, stdin):
         self.mark("no")
-        if any(_DEPLOY_USER.match(_text(a)) for a in _positionals(argv[1:], "eBfTMiFPoS", _RSYNC_VALUE_LONG)):
-            self.action("deploy", argv)
         positionals = _positionals(argv[1:], "eBfTMiFPoS", _RSYNC_VALUE_LONG)
+        if positionals and _DEPLOY_USER.match(_text(positionals[-1])):  # only a copy TO the deploy user ships
+            self.action("deploy", argv)
         if len(positionals) > 1 and not re.match(r"^[^/]*:", _text(positionals[-1])):
             self.write(positionals[-1], env, os.path.basename(argv[0]))
         return None
@@ -3041,6 +3678,11 @@ class _Analysis:
             i += 1
         if not all(_git_config_safe(key, value) for key, value in config.items()):
             self.mark("no")
+        for key, value in list(config.items()) + [(name, _lit(prefix[name]) if name in prefix else
+                                                     env.vars.get(name)) for name in _GIT_COMMAND_ENV
+                                                    if name in prefix or name in env.vars]:
+            if value and (key in _GIT_COMMAND_ENV or _GIT_COMMAND_KEY.match(key)):
+                self.code_possible(value.lstrip("!"), argv, env)
         if i >= len(args):
             if not info:
                 self.mark("no")
@@ -3050,8 +3692,10 @@ class _Analysis:
             self.reason("dynamic git subcommand: " + _text(args[i]))
             self.mark("no")
             self.guess_git(argv, rest)
+            if getattr(args[i], "tainted", False):
+                self.unseen("the git subcommand is computed at run time: " + _text(args[i]))
             return None
-        if _help_requested(rest, _GIT_VALUE_OPTS):
+        if rest and _lit(rest[0]) in ("-h", "--help"):  # git itself honours it only as the first argument
             return None
         if sub not in _GIT_SUBCOMMANDS:
             return self.git_alias(argv[:i + 1], sub, rest, scope, prefix, stdin, config, depth)
@@ -3063,6 +3707,8 @@ class _Analysis:
 
         config = {}
         count = lookup("GIT_CONFIG_COUNT")
+        if count is None and ("GIT_CONFIG_COUNT" in prefix or "GIT_CONFIG_COUNT" in env.vars):
+            self.config_unknown = True  # set to something nobody can read
         if count is not None and not re.fullmatch(r"[0-9]{1,3}", count):
             count = None
             self.config_unknown = True
@@ -3132,7 +3778,7 @@ class _Analysis:
         # -n is --no-commit for cherry-pick and revert, but --no-stat for merge
         no_commit = sub in ("merge", "cherry-pick", "revert") and (
             "--no-commit" in literal or sub != "merge" and "-n" in literal)
-        kind = self.git_action_kind(sub, rest, literal)
+        kind = self.git_action_kind(sub, rest, literal, env.cwd)
         if kind == "update-ref-branch":
             self.action("commit", argv)
         elif kind in _GIT_COMMIT and not control and not no_commit:
@@ -3151,6 +3797,9 @@ class _Analysis:
         if sub == "reset" and ("--soft" in literal or "--mixed" in literal) and any(
                 isinstance(t, Dyn) or _EXEC_TEXT.search(_text(t)) for t in _positionals(rest)):
             self.action("commit", argv, possible=True)
+        self.git_runs_commands(sub, rest, literal, argv, env)
+        if self.moves_branch_to_stash(sub, rest, literal):
+            self.action("commit", argv)  # the stash commit holds the agent's own work: it lands on the branch
         if sub in ("add", "stage"):
             self.staged.extend(_text(a) for a in _positionals(rest, "", ("--chmod", "--pathspec-from-file")))
         if sub == "config":
@@ -3163,7 +3812,7 @@ class _Analysis:
         return None
 
     @staticmethod
-    def git_action_kind(sub, rest, literal):
+    def git_action_kind(sub, rest, literal, cwd=None):
         """The git command ``sub`` acts as: subtree and a local `pull .` commit, http-push pushes,
         a forced branch move rewrites refs/heads/* like update-ref."""
         if sub == "subtree":
@@ -3171,13 +3820,51 @@ class _Analysis:
             return "push" if verb == "push" else "commit" if verb in ("add", "merge", "pull") else sub
         if sub == "http-push":
             return "push"
-        if sub == "pull" and _positionals(rest, "o", ("--repo",))[:1] == ["."]:
+        if sub == "pull" and _local_repository(_positionals(rest, "o", ("--repo",))[:1], cwd):
             return "merge"  # `git pull . other` merges a local branch
         if sub == "branch" and _positionals(rest) and any(
                 t and (t in ("--force", "--move", "--copy") or re.fullmatch(r"-[a-zA-Z]*[fMC][a-zA-Z]*", t))
                 for t in literal):
             return "update-ref-branch"
         return sub
+
+    def git_runs_commands(self, sub, rest, literal, argv, env):
+        """Subcommands and options that hand a command line to a program (difftool -x, bisect run, grep -O...)."""
+        commands = []
+        if sub == "difftool":
+            commands = _option_values(rest, "x", ("--extcmd",), "xtg", ("--tool", "--gui"))
+        elif sub == "rebase":
+            commands = _option_values(rest, "x", ("--exec",), "xsXCS", ("--onto", "--strategy", "--strategy-option"))
+        elif sub == "grep":
+            commands = [t[2:] for t in literal if t and t.startswith("-O") and len(t) > 2] + \
+                [t.partition("=")[2] for t in literal if t and t.startswith("--open-files-in-pager=")]
+        elif sub == "submodule":
+            words = [_text(a) for a in _positionals(rest)]
+            if words[:1] == ["foreach"] and len(words) > 1:
+                commands = [" ".join(words[1:])]
+        elif sub == "filter-branch":
+            commands = _option_values(rest, "", ("--msg-filter", "--tree-filter", "--index-filter", "--commit-filter",
+                                                 "--env-filter", "--parent-filter", "--subdirectory-filter",
+                                                 "--tag-name-filter"))
+        elif sub == "bisect" and literal[:1] == ["run"]:
+            commands = [" ".join(shlex.quote(_text(a)) for a in rest[1:])]
+        for text in commands:
+            self.code_possible(_text(text), argv, env)
+
+    @staticmethod
+    def moves_branch_to_stash(sub, rest, literal):
+        """checkout -B / switch -C / branch NAME / reset to a stash ref: the work stashed so far becomes
+        the branch's commit without a `git commit`."""
+        if sub == "reset":
+            targets = _positionals(rest)[:1]
+        elif sub in ("checkout", "switch") and any(t and re.fullmatch(r"-[bBcC]|--(?:force-)?create", t)
+                                                   for t in literal):
+            targets = _positionals(rest, "bBcC", ("--orphan", "--conflict", "--create", "--force-create"))[:1]
+        elif sub == "branch":
+            targets = _positionals(rest)[1:2]
+        else:
+            return False
+        return any(_lit(t) is not None and _STASH_REF.match(t) for t in targets)
 
     def git_commit_info(self, rest):
         value_long = ("--message", "--file", "--author", "--date", "--template", "--fixup", "--squash", "--cleanup",
@@ -3288,6 +3975,8 @@ class _Analysis:
     # -- GitHub ---------------------------------------------------------------------
     def h_gh(self, argv, env, prefix, stdin, depth=0):
         self.mark("no")
+        if any(name in prefix or name in env.vars for name in _GH_CONFIG_SOURCES):
+            self.config_unknown = True  # gh reads its aliases from a configuration the analysis cannot see
         args = argv[1:]
         i = 0
         while i < len(args) and _lit(args[i]) is not None and args[i].startswith("-"):
@@ -3297,6 +3986,8 @@ class _Analysis:
         group, rest = _lit(args[i]), args[i + 1:]
         if group is None:
             self.reason("dynamic gh command: " + _text(args[i]))
+            if getattr(args[i], "tainted", False):
+                self.unseen("the gh command is computed at run time: " + _text(args[i]))
             visible = {_lit(a) for a in args[i + 1:]}
             for name in sorted((visible & {"create", "new"} and {"pr_create", "release_create"} or set()) |
                                (visible & {"merge"} and {"pr_merge"} or set())):
@@ -3329,11 +4020,9 @@ class _Analysis:
             self.action("release_create", argv)
         elif group == "api":
             self.gh_api(rest, argv)
-        elif group == "alias" and sub in ("set", "import", "delete"):
-            self.config_unknown = True  # gh aliases changed in this command
-        elif group == "auth" and sub == "token":
-            self.reason("gh auth token hands out the credential")
-            self.action("remote_write", argv, possible=True)
+        elif group == "alias" and sub in ("set", "import", "delete") or \
+                group in ("extension", "extensions", "ext") and sub in ("install", "upgrade", "create", "remove"):
+            self.config_unknown = True  # gh aliases or commands changed in this command
         elif group == "repo" and sub == "sync":
             self.action("remote_write", argv)
         elif group == "workflow" and sub == "run":
@@ -3497,6 +4186,14 @@ class _Analysis:
         if _dry_run(args) or name in ("make", "gmake") and _has_flag(args, "nq", ("--just-print", "--recon",
                                                                                  "--question")):
             return None
+        if name in ("make", "gmake"):  # makefile text given inline or on stdin: judge the commands it names
+            texts = [_text(a) for a in _option_values(args, "E", ("--eval",), _TASK_VALUE_SHORT["make"],
+                                                       _TASK_VALUE_LONG)]
+            if stdin is not None and stdin.kind == "text" and "-" in [_lit(a) for a in args]:
+                texts.append(stdin.value)
+            for text in texts:
+                for verb in sorted(_delivery_verbs(text)):
+                    self.action(verb, argv, possible=True)
         targets = [p for p in _positionals(args, _TASK_VALUE_SHORT.get(name, "f"), _TASK_VALUE_LONG)
                    if _lit(p) is not None and "=" not in p]
         if any(_deploy_name(t) for t in targets):
@@ -3621,6 +4318,10 @@ _HANDLERS.update({
     "glab": "forge", "tea": "forge", "lab": "forge", "jj": "forge", "sl": "forge",
     "ssh": "ssh", "sftp": "ssh", "http": "httpie", "https": "httpie", "xh": "httpie", "xhs": "httpie", "script": "runner", "su": "runner", "runuser": "runner", "unzip": "unzip", "patch": "patch", "split": "split", "git": "git", "gh": "gh", "hub": "hub",
 })
+# program words whose appearance among the arguments of another program starts a command
+_PROBED_WORDS = (set(_DEPLOY_SUBCOMMANDS) | set(_TOOL_ALIASES) | _TASK_RUNNERS | _NPM_LIKE | _SHELLS | set(_WRAPPERS) |
+                 {"git", "gh", "hub", "glab", "tea", "lab", "jj", "sl", "eval", "xargs", "env", "rtk", "command",
+                  "gcloud", "az", "aws", "argocd", "vercel", "surge", "curl", "wget", "ssh", "scp", "rsync"})
 
 
 # =============================================================================
@@ -3633,7 +4334,7 @@ _REGEX_REDIRECT = re.compile(r'(^|[\s;|&])(?:>>|[0-9]?>)\s*(?:"([^"]+)"|\'([^\']
 _LOAD_KEYS = ("status", "error", "tool_name", "tool_kind", "command", "file_path", "patch_paths", "actions",
               "tier", "possible_actions", "possible_tier", "could_be_delivery", "opaque", "opaque_reasons",
               "read_only", "read_only_legacy", "write_paths", "skill_adapter", "rtk_unwrapped", "invoked_script",
-              "legacy_first_line", "base_dir")
+              "legacy_first_line", "unseen_reasons", "base_dir")
 
 
 def _tier(actions):
@@ -3734,6 +4435,7 @@ def _result(analysis, script, text):
         "could_be_delivery": bool(possible),
         "opaque": opaque,
         "opaque_reasons": list(analysis.reasons),
+        "unseen_reasons": list(analysis.unseen_reasons),
         "read_only": analysis.read_only and not opaque,
         "read_only_legacy": analysis.read_only_legacy and not opaque,
         "test_runner": analysis.test_runner,
@@ -3777,6 +4479,7 @@ def analyze_command(command, base_dir=None, lookups=True):
         analysis.unseen("command too large to analyze")
         return _result(analysis, Script([], ""), text[:4096])
     script = parse(text)
+    analysis.deadline = time.monotonic() + MAX_SECONDS  # the walk's own budget starts after the parse
     _guarded(analysis, lambda: analysis.walk_script(script, Env(base, _home())))
     return _result(analysis, script, text)
 
