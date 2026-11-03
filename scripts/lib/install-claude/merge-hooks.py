@@ -16,7 +16,7 @@ in settings.json therefore runs every hook a second time. So:
     matchers keeps all of them).
 
 <config> is $CLAUDE_CONFIG_DIR, default ~/.claude. An install path inside another host's
-directory (.codex) is not merged into Claude's settings. Silver Bullet's entries are
+directory (.codex, .cursor) is not merged into Claude's settings. Silver Bullet's entries are
 the ones whose program lives in a Silver Bullet hooks directory
 (sb_host_config.is_sb_hook_command); every other entry is kept as it is. The settings file is
 written atomically (symlink followed, mode kept, previous content in settings.json.sb-backup)
@@ -43,7 +43,7 @@ from sb_host_config import (  # noqa: E402
 )
 
 PLACEHOLDER = "${CLAUDE_PLUGIN_ROOT}"
-OTHER_HOST_RE = re.compile(r"/\.codex(?:/|$)")
+OTHER_HOST_RE = re.compile(r"/\.(?:codex|cursor)(?:/|$)")
 
 
 def alias_path_of(raw_install_path: str) -> str:
