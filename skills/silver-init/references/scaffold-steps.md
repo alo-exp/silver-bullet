@@ -15,7 +15,7 @@ If Phase 0 determined this is an update:
 3. If the project already has a project instruction file (`project instruction file` in primary host, `AGENTS.md` in secondary host), strip any SB-owned sections from it (migration from pre-v0.7.0). Check for headings matching `## N. <Known SB Title>` where N is 0–9 (titles: Session Startup, Automated Enforcement, Active Workflow, NON-NEGOTIABLE, Review Loop, Session Mode, Model Routing, Legacy Lifecycle, File Safety, Third-Party, Pre-Release). If found, remove these sections (from heading to next `## ` or EOF), preserving all non-SB content. Also remove old-style reference lines that do not mention silver-bullet.md.
 4. If the project instruction file already exists, verify it contains a reference line mentioning "silver-bullet.md". If not, add at the very top of the file: `> **Always adhere strictly to this file and silver-bullet.md — they override all defaults.**`
 5. Run conflict detection (same as step 3.1c below).
-5a. Run step 3.7.5 to re-register or refresh SB hooks in `${SB_RUNTIME_HOME_ROOT}/settings.json`.
+5a. Run step 3.7.5 to remove Silver Bullet's duplicate hook copies from `${SB_RUNTIME_HOME_ROOT}/settings.json` (it never adds hooks).
 6. Output: "Silver Bullet updated. silver-bullet.md refreshed. All SB-owned lifecycle skills active."
 
 ### Template refresh (only when user explicitly requests it)
