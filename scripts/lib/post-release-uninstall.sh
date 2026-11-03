@@ -83,7 +83,11 @@ sb_post_release_uninstall_codex() {
   export CODEX_HOME_ROOT="$codex_home"
   # shellcheck source=scripts/lib/install-codex/legacy.sh
   source "${lib}/legacy.sh"
+  # shellcheck source=scripts/lib/install-codex/hooks.sh
+  source "${lib}/hooks.sh"
   purge_legacy_silver_bullet_standalone_skills
+  # SB's own duplicated trust tables make config.toml invalid TOML; repair them first so the purge can read it.
+  repair_silver_bullet_duplicate_trust_tables
   purge_legacy_silver_bullet_hooks_from_user_config --all
   _sb_post_release_rm_dir "${codex_home}/.codex/plugins/cache/alo-labs-codex/silver-bullet"
   _sb_post_release_rm_dir "${codex_home}/.codex/plugins/cache/silver-bullet-local/silver-bullet"
