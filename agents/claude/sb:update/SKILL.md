@@ -366,7 +366,7 @@ Ask the user:
 
 **On A:**
 1. Invoke **`/sb:migrate`** — workflow tracker, orchestrator parent mode, config defaults merge, task host rule scaffold.
-2. Invoke **`/sb:init`** in **update mode** — refresh `silver-bullet.md` from template, re-register host hooks, conflict detection.
+2. Invoke **`/sb:init`** in **update mode** — refresh `silver-bullet.md` from template, remove duplicate SB hook copies from the host settings, conflict detection.
 3. Bump `config_version` in `.silver-bullet.json` (preserve user customizations).
 4. Run **`/sb:doctor`** automatically; surface every FAIL for inline fix.
 
