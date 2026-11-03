@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import sys
 import tempfile
@@ -52,10 +53,83 @@ class PlaywrightArgvTests(unittest.TestCase):
         with mock.patch.object(lp.shutil, "which", side_effect=lambda n: "/bin/playwright" if n == "playwright" else "/bin/npx"):
             self.assertEqual(lp._playwright_argv(), ["/bin/playwright"])
         with mock.patch.object(lp.shutil, "which", side_effect=lambda n: "/bin/npx" if n == "npx" else None):
-            self.assertEqual(lp._playwright_argv(), ["/bin/npx", "--yes", "playwright"])
+            # never --yes: npx may only run an installed, pinned copy (R12-14)
+            self.assertEqual(lp._playwright_argv(), ["/bin/npx", "--no-install", lp.PLAYWRIGHT_NPX_PACKAGE])
+            self.assertRegex(lp.PLAYWRIGHT_NPX_PACKAGE, r"^playwright@\d+\.\d+\.\d+$")
         with mock.patch.object(lp.shutil, "which", return_value=None):
             with self.assertRaisesRegex(FileNotFoundError, "playwright CLI not found"):
                 lp._playwright_argv()
+
+
+class PrintLinkAndModeTests(unittest.TestCase):
+    def test_print_html_keeps_no_relative_links_but_the_spa_does(self) -> None:
+        md = "See [notes](solutions/x/scr.md), [site](https://x.example/), [top](#top) and [bad](javascript:alert(1))."
+        spa = lp.markdown_to_html(md)
+        self.assertIn('href="solutions/x/scr.md"', spa)
+        lp._PRINT_MODE[0] = True
+        try:
+            printed = lp.markdown_to_html(md)
+        finally:
+            lp._PRINT_MODE[0] = False
+        self.assertNotIn("solutions/x/scr.md", printed)  # would become file:///<local path> in the PDF
+        self.assertIn("See notes, ", printed)
+        self.assertIn('href="https://x.example/"', printed)
+        self.assertIn('href="#top"', printed)
+        self.assertNotIn("javascript", printed)
+        self.assertFalse(lp._PRINT_MODE[0])
+
+    def test_build_resets_print_mode_even_on_failure(self) -> None:
+        with mock.patch.object(lp, "_build_independent_print_html", side_effect=RuntimeError("boom")):
+            with self.assertRaises(RuntimeError):
+                lp.build_independent_print_html(Path("/nonexistent"))
+        self.assertFalse(lp._PRINT_MODE[0])
+
+
+class RenderCommandTests(unittest.TestCase):
+    def test_node_missing_is_a_clear_error_and_node_path_is_extended(self) -> None:
+        with mock.patch.object(lp.shutil, "which", side_effect=lambda n: "/x/playwright" if n == "playwright" else None):
+            with self.assertRaisesRegex(FileNotFoundError, "node not found"):
+                lp._render_command("file:///a.html", Path("/tmp/a.pdf"), 1000)
+        with mock.patch.object(lp.shutil, "which", return_value="/x/bin"), \
+                mock.patch.dict(os.environ, {"NODE_PATH": "/preset/node_modules"}):
+            cmd, env = lp._render_command("file:///a.html", Path("/tmp/a.pdf"), 1000)
+        self.assertEqual(cmd[2:], ["file:///a.html", "/tmp/a.pdf", "1000", f"#{lp.PRINT_ROOT_ID}"])
+        self.assertIn("/preset/node_modules", env["NODE_PATH"].split(os.pathsep))
+        with mock.patch.object(lp.shutil, "which", return_value="/x/bin"), \
+                mock.patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("NODE_PATH", None)
+            _cmd, env2 = lp._render_command("file:///a.html", Path("/tmp/a.pdf"), 1000)
+        self.assertNotIn("/preset/node_modules", env2["NODE_PATH"])
+
+    def test_real_render_script_sandbox_policy(self) -> None:
+        import shutil as _sh
+        import subprocess as _sp
+        import tempfile as _tf
+
+        node = _sh.which("node")
+        cli = _sh.which("playwright")
+        if not node or not cli:
+            self.skipTest("node/playwright not installed")
+        with _tf.TemporaryDirectory() as tmp:
+            html = Path(tmp) / "t.html"
+            html.write_text('<html><body><div id="r">hi</div><script>document.title="js"</script></body></html>', encoding="utf-8")
+            pdf = Path(tmp) / "o.pdf"
+            cmd, env = lp._render_command(html.as_uri(), pdf, 30000)
+            cmd[-1] = "#r"
+            env = {k: v for k, v in env.items() if k != "SB_LANDSCAPE_PDF_NO_SANDBOX"}
+            first = _sp.run(cmd, env=env, capture_output=True, text=True, timeout=90)
+            if first.returncode == 0:
+                self.assertEqual(pdf.read_bytes()[:4], b"%PDF")  # sandboxed render worked
+            else:
+                # no usable sandbox here (e.g. root in a container): a clear failure, never a silent downgrade
+                self.assertEqual(first.returncode, 4, first.stderr)
+                self.assertIn("SB_LANDSCAPE_PDF_NO_SANDBOX=1", first.stderr)
+                self.assertFalse(pdf.exists())
+                second = _sp.run(cmd, env=dict(env, SB_LANDSCAPE_PDF_NO_SANDBOX="1"), capture_output=True, text=True, timeout=90)
+                if second.returncode != 0:
+                    self.skipTest("Chromium cannot run at all in this environment: " + second.stderr[:200])
+                self.assertIn("WARNING: rendering the landscape PDF without the Chromium sandbox", second.stderr)
+                self.assertEqual(pdf.read_bytes()[:4], b"%PDF")
 
 
 class LoaderTests(unittest.TestCase):
@@ -99,22 +173,6 @@ class LoaderTests(unittest.TestCase):
             self.assertEqual(lp.load_comparison(Path(".")), {})
             self.assertEqual(lp.load_landscape_markdown(Path(".")), "")
 
-    def test_load_spa_report_data(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            self.assertEqual(lp.load_spa_report_data(root), {})
-            page = root / "landscape-report.html"
-            page.write_text("<html>no data</html>", encoding="utf-8")
-            self.assertEqual(lp.load_spa_report_data(root), {})
-            page.write_text("<script id='report-data' type='application/json'>{bad</script>", encoding="utf-8")
-            self.assertEqual(lp.load_spa_report_data(root), {})
-            page.write_text('<script type="application/json" id="report-data">[1]</script>', encoding="utf-8")
-            self.assertEqual(lp.load_spa_report_data(root), {})
-            page.write_text('<script type="application/json" id="report-data">{"markdown": "m"}</script>', encoding="utf-8")
-            self.assertEqual(lp.load_spa_report_data(root), {"markdown": "m"})
-            with mock.patch.object(Path, "read_text", side_effect=OSError("io")):
-                self.assertEqual(lp.load_spa_report_data(root), {})
-
 
 class ChartStructureTests(unittest.TestCase):
     def test_market_chart_block_and_ids(self) -> None:
@@ -128,20 +186,6 @@ class ChartStructureTests(unittest.TestCase):
         self.assertEqual(lp.iter_market_ids({"primary_market_id": "gone", "markets": {"a": {}}}), ["a"])
         self.assertEqual(lp.iter_market_ids({"primary_market_id": "solo"}), ["solo"])
         self.assertEqual(lp.iter_market_ids({}), ["primary"])
-
-    def test_quadrant_divergences(self) -> None:
-        chart = {"markets": {"m": {
-            "mq_data": [{"slug": "a", "label": "A", "q": "Leaders"}, {"slug": "b", "q": "Niche Players"}, {"slug": "c", "q": ""},
-                        {"slug": "only-mq", "q": "Leaders"}, "junk"],
-            "gmq_data": [{"slug": "a", "q": "Challengers"}, {"slug": "b", "label": "Bee", "q": "Niche Players"},
-                         {"slug": "c", "q": "Leaders"}, "junk"],
-        }}}
-        self.assertEqual(lp.quadrant_divergences(chart), [{"market": "m", "slug": "a", "label": "A", "mq": "Leaders", "gmq": "Challengers"}])
-        chart2 = {"markets": {"m": {"mq_data": [{"slug": "z", "q": "Leaders"}], "gmq_data": [{"slug": "z", "label": "Zed", "q": "Niche Players"}]}}}
-        self.assertEqual(lp.quadrant_divergences(chart2)[0]["label"], "Zed")
-        chart3 = {"markets": {"m": {"mq_data": [{"slug": "z", "q": "Leaders"}], "gmq_data": [{"slug": "z", "q": "Niche Players"}]}}}
-        self.assertEqual(lp.quadrant_divergences(chart3)[0]["label"], "z")
-        self.assertEqual(lp.quadrant_divergences({}), [])
 
 
 class SmallHelperTests(unittest.TestCase):
@@ -189,6 +233,16 @@ class FontEmbedTests(unittest.TestCase):
         saved = lp._FONT_CSS_CACHE
         lp._FONT_CSS_CACHE = None
         self.addCleanup(setattr, lp, "_FONT_CSS_CACHE", saved)
+        env = mock.patch.dict(os.environ, {lp.WEB_FONTS_ENV: "1"})
+        env.start()
+        self.addCleanup(env.stop)
+
+    def test_web_fonts_are_opt_in_and_default_makes_no_request(self) -> None:
+        for value in ("", "0", "no"):
+            with mock.patch.dict(os.environ, {lp.WEB_FONTS_ENV: value}):
+                with mock.patch.object(lp.urllib.request, "urlopen", side_effect=AssertionError("network")) as m:
+                    self.assertEqual(lp._embed_roboto_font_css(), "")
+                m.assert_not_called()
 
     def test_cache_hit_skips_network(self) -> None:
         lp._FONT_CSS_CACHE = "cached-css"
@@ -557,33 +611,6 @@ class SectionHelperTests(unittest.TestCase):
         self.assertEqual(lp._solution_label("some-unknown", chart), "some unknown")
         self.assertEqual(lp._solution_label("some-unknown", None), "some unknown")
 
-    def test_needles_and_haystack(self) -> None:
-        body = "\n# heading\n\n|---|:--|\nA short line\n" + "This is a sufficiently long body sentence with [a link](https://x.example/very/long) inside. " * 2 + "\n"
-        needles = lp.section_body_needles(body)
-        self.assertEqual(len(needles), 1)
-        self.assertLessEqual(len(needles[0]), 80)
-        self.assertNotIn("https", needles[0])
-        self.assertEqual(lp.section_body_needles(body, min_len=5)[0], "A short line")
-        self.assertEqual(lp.section_body_needles(""), [])
-        self.assertEqual(lp.section_body_needles(None), [])  # type: ignore[arg-type]
-        self.assertEqual(lp._norm_body_haystack("Hello, [World](https://x.example) https://y.example/z OK!"), "hello world ok")
-        self.assertEqual(lp._norm_body_haystack(None), "")  # type: ignore[arg-type]
-
-    def test_assert_section_bodies(self) -> None:
-        body_a = "The quick brown fox jumps over the lazy dog near the riverbank today."
-        body_b = "Another distinct paragraph that talks about completely different subject matter."
-        md = f"preamble ignored text that is long enough to be a needle but has no heading\n## Alpha\n{body_a}\n## Beta\n{body_b}\n## Empty\n\n## Short\nshort words only\n"
-        lp.assert_section_bodies_in_text(md, f"{body_a} {body_b}")
-        with self.assertRaisesRegex(AssertionError, "missing from PDF/print text: ## Beta"):
-            lp.assert_section_bodies_in_text(md, body_a)
-        with self.assertRaisesRegex(AssertionError, "## Alpha, ## Beta"):
-            lp.assert_section_bodies_in_text(md, "nothing relevant at all")
-        lp.assert_section_bodies_in_text("", "")
-        lp.assert_section_bodies_in_text(None, "x")  # type: ignore[arg-type]
-        # needles with fewer than four words never count as a hit, so such a section is reported
-        with self.assertRaises(AssertionError):
-            lp.assert_section_bodies_in_text("## Tiny\n" + "x" * 60 + "\n", "x" * 60)
-
 
 class ComparisonHtmlTests(unittest.TestCase):
     def comparison(self, n: int = 2):
@@ -597,21 +624,6 @@ class ComparisonHtmlTests(unittest.TestCase):
             "caveats": ["keep me", "mentions landscape-report.html", "Interactive SPA only", 5, "see [l](https://c.example)"],
         }
 
-    def test_matrix_chunks_scores_and_caveats(self) -> None:
-        out = lp.comparison_matrix_html(self.comparison(9), {"vendor_urls": {"Sol 0": "u"}})
-        self.assertIn("Winner: <strong>w&lt;1&gt;</strong>. Runner-up: <strong>r</strong>.", out)
-        self.assertEqual(out.count('<table class="matrix">'), 2)  # 9 solutions -> columns 7 + 2
-        self.assertIn('<td>yes</td>\n<td>no</td>', out)
-        self.assertIn("<td>—</td>", out)  # Feature B has no per-solution cells
-        self.assertIn("Feature &lt;A&gt;", out)
-        self.assertIn('<th>Sol 0<div class="score">Score 10</div></th>', out)
-        self.assertIn('<tr class="cmp-score-row"><td><strong>Weighted score</strong></td><td>—</td>\n<td>10</td>\n<td>9</td>', out)
-        self.assertIn("<h3>Matrix caveats</h3><ul>", out)
-        self.assertIn("<li>keep me</li>", out)
-        self.assertNotIn("landscape-report.html", out)
-        self.assertNotIn("Interactive SPA", out)
-        self.assertIn('href="https://c.example"', out)
-        self.assertEqual(lp.comparison_highlights_html(self.comparison(2)), lp.comparison_matrix_html(self.comparison(2)))
 
     def test_score_fallbacks_and_empty_matrix(self) -> None:
         cmp_ = {"rankings": [{"solution": "a", "total_score": 7}, {"solution": "b"}],
@@ -625,85 +637,6 @@ class ComparisonHtmlTests(unittest.TestCase):
         self.assertIn("Winner: <strong></strong>", lp.comparison_matrix_html({}))
         only_shown = lp.comparison_matrix_html({"caveats": ["landscape-report.html only"]})
         self.assertNotIn("Matrix caveats", only_shown)
-
-
-class SyncPayloadTests(unittest.TestCase):
-    def test_writes_each_canonical_file(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            written = lp.sync_canonical_payload_files(root, {"markdown": "# T", "chart_data": {"a": "é"}, "comparison": {"k": 1}})
-            self.assertEqual(set(written), {"markdown", "chart_data", "comparison"})
-            self.assertEqual((root / "landscape" / "landscape-report.md").read_text(encoding="utf-8"), "# T\n")
-            self.assertEqual(json.loads((root / "landscape" / "chart-data.json").read_text(encoding="utf-8")), {"a": "é"})
-            self.assertIn("é", (root / "landscape" / "chart-data.json").read_text(encoding="utf-8"))
-            self.assertEqual(json.loads((root / "comparison" / "comparison.json").read_text(encoding="utf-8")), {"k": 1})
-            lp.sync_canonical_payload_files(root, {"markdown": "keeps newline\n"})
-            self.assertEqual((root / "landscape" / "landscape-report.md").read_text(encoding="utf-8"), "keeps newline\n")
-
-    def test_ignores_blank_or_wrongly_typed_fields_and_empty_payload(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            self.assertEqual(lp.sync_canonical_payload_files(root, {"markdown": "  ", "chart_data": {}, "comparison": []}), {})
-            self.assertEqual(lp.sync_canonical_payload_files(root, {"markdown": 5, "chart_data": [1], "comparison": "x"}), {})
-            self.assertEqual(lp.sync_canonical_payload_files(root), {})  # no payload and no SPA page on disk
-            self.assertFalse((root / "landscape").exists())
-
-    def test_falls_back_to_the_embedded_spa_payload(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            blob = json.dumps({"markdown": "# From SPA"})
-            (root / "landscape-report.html").write_text(f'<script id="report-data" type="application/json">{blob}</script>', encoding="utf-8")
-            written = lp.sync_canonical_payload_files(root)
-            self.assertEqual(set(written), {"markdown"})
-            self.assertEqual((root / "landscape" / "landscape-report.md").read_text(encoding="utf-8"), "# From SPA\n")
-            # an empty-dict payload also falls back to the page
-            self.assertEqual(set(lp.sync_canonical_payload_files(root, {})), {"markdown"})
-
-
-class DivergenceTests(unittest.TestCase):
-    def test_bullets_from_markdown(self) -> None:
-        md = (
-            "## A\ntext\n**Notable divergences** (inter-model)\n\n- `a` said X\n\n- `b` said Y\nstray line\n- `c` said Z\n"
-            "**Another bold block**\n- not included\n## Next\n- also not\n"
-        )
-        self.assertEqual(lp.notable_divergence_bullets(md), ["`a` said X", "`b` said Y", "`c` said Z"])
-        stop_at_heading = "**Notable divergences**\n\n- one\n## H\n- two\n"
-        self.assertEqual(lp.notable_divergence_bullets(stop_at_heading), ["one"])
-        nested_header = "**Notable divergences**\n\n**Notable divergences** again\n- x\n"
-        self.assertEqual(lp.notable_divergence_bullets(nested_header), ["x"])
-
-    def test_falls_back_to_consolidation(self) -> None:
-        consolidation = {"divergence": [
-            "junk",
-            {"text": "", "claim_key": ""},
-            {"claim_key": "key-only claim", "supporting_agents": ["agent-a", "", "agent-a", "agent-b"], "model_families": "fam-x", "agents": ["agent-c"]},
-            {"text": "Plain text with ocg-minimax-m3 and claude-opus mention", "model_families": ["  "]},
-            {"text": "nothing attributable"},
-            {"text": "many", "supporting_agents": [f"a{i}" for i in range(12)]},
-            {"text": "dup string", "model_families": "agent-a", "agents": " agent-a "},
-            {"text": "mentions ocg-dup-model again", "supporting_agents": ["ocg-dup-model"]},
-        ]}
-        out = lp.notable_divergence_bullets("no divergence block here", consolidation)
-        self.assertEqual(out[0], "`agent-a`, `agent-b`, `fam-x`, `agent-c` — key-only claim")
-        self.assertEqual(out[1], "`ocg-minimax-m3`, `claude-opus` — Plain text with ocg-minimax-m3 and claude-opus mention")
-        self.assertEqual(out[2], "nothing attributable")
-        self.assertEqual(out[3].count("`"), 16)  # capped at eight ids
-        self.assertEqual(out[4], "`agent-a` — dup string")
-        self.assertEqual(out[5], "`ocg-dup-model` — mentions ocg-dup-model again")
-        self.assertEqual(len(out), 6)
-        # a heading with no bullets after it also falls back
-        self.assertEqual(lp.notable_divergence_bullets("**Notable divergences**\n\nno bullets\n", {"divergence": [{"text": "t"}]}), ["t"])
-        self.assertEqual(lp.notable_divergence_bullets("", None), [])
-        self.assertEqual(lp.notable_divergence_bullets("", {"divergence": None}), [])
-
-    def test_divergences_html(self) -> None:
-        with_bullets = lp.divergences_html({}, {}, "**Notable divergences**\n\n- `a` said **X**\n")
-        self.assertIn("<ul>", with_bullets)
-        self.assertIn("<li><code>a</code> said <strong>X</strong></li>", with_bullets)
-        empty = lp.divergences_html({}, {}, "", None)
-        self.assertIn("No inter-model research disagreements were extracted", empty)
-        self.assertNotIn("<ul>", empty)
-        self.assertTrue(empty.startswith('<section class="divergences">'))
 
 
 class PrintHtmlTests(unittest.TestCase):
@@ -800,21 +733,45 @@ class WritePdfTests(unittest.TestCase):
         (self.root / "landscape" / "landscape-report.md").write_text("# Rep\n\n## Alpha Heading\nbody text\n## R&D Heading\nmore\n", encoding="utf-8")
         (self.root / "landscape" / "chart-data.json").write_text(json.dumps(PrintHtmlTests.CHART), encoding="utf-8")
         (self.root / "comparison" / "comparison.json").write_text(json.dumps(PrintHtmlTests.CMP), encoding="utf-8")
+        self.timeouts = []
+
+    def leftover_temp_pdfs(self) -> list:
+        return sorted(p.name for p in self.root.rglob(".*.pdf"))
 
     def fake_run(self, content: bytes = b"%PDF-1.4 fake", write: bool = True):
         calls = []
 
-        def run(cmd, check=False):
+        def run(cmd, check=False, timeout=None, env=None):
             calls.append((cmd, check))
+            self.last_env = env
+            self.timeouts.append(timeout)
             if write:
-                Path(cmd[-1]).write_bytes(content)
+                Path(cmd[3]).write_bytes(content)
             return mock.Mock(returncode=0)
 
         return run, calls
 
+    def test_written_pdf_is_not_private(self) -> None:
+        import stat as _stat
+
+        run, _calls = self.fake_run()
+        old = os.umask(0o022)
+        try:
+            with mock.patch.object(lp.shutil, "which", side_effect=lambda n: {"playwright": "/x/playwright", "node": "/x/node"}.get(n)), \
+                    mock.patch.object(lp.subprocess, "run", run):
+                lp.write_independent_landscape_pdf(self.root)
+                first = _stat.S_IMODE((self.root / "landscape-report.pdf").stat().st_mode)
+                (self.root / "landscape-report.pdf").chmod(0o640)
+                lp.write_independent_landscape_pdf(self.root)
+                second = _stat.S_IMODE((self.root / "landscape-report.pdf").stat().st_mode)
+        finally:
+            os.umask(old)
+        self.assertEqual(first, 0o644)  # umask default, not mkstemp's 0600
+        self.assertEqual(second, 0o640)  # an existing file keeps its mode
+
     def test_writes_pdf_through_playwright(self) -> None:
         run, calls = self.fake_run()
-        with mock.patch.object(lp.shutil, "which", side_effect=lambda n: "/x/playwright" if n == "playwright" else None), \
+        with mock.patch.object(lp.shutil, "which", side_effect=lambda n: {"playwright": "/x/playwright", "node": "/x/node"}.get(n)), \
                 mock.patch.object(lp.subprocess, "run", run):
             info = lp.write_independent_landscape_pdf(self.root, timeout_ms=555)
         pdf = (self.root / "landscape-report.pdf").resolve()
@@ -825,12 +782,44 @@ class WritePdfTests(unittest.TestCase):
         self.assertEqual(info["print_selector"], f"#{lp.PRINT_ROOT_ID}")
         cmd, check = calls[0]
         self.assertTrue(check)
-        self.assertEqual(cmd[:3], ["/x/playwright", "pdf", "--paper-format"])
-        self.assertIn("555", cmd)
-        self.assertEqual(cmd[-1], str(pdf))
-        self.assertTrue(cmd[-2].startswith("file://") and cmd[-2].endswith("landscape-report.print.html"))
+        self.assertEqual(cmd[:2], ["/x/node", str(lp.PDF_RENDER_SCRIPT)])
+        self.assertEqual(cmd[4:], ["555", f"#{lp.PRINT_ROOT_ID}"])
+        self.assertNotIn("--no-sandbox", cmd)  # R12-27: the render script enables Chromium's sandbox
+        self.assertIn(str(Path.cwd() / "node_modules"), self.last_env["NODE_PATH"].split(os.pathsep))
+        # Chromium renders into a temp file in the same folder, renamed into place afterwards.
+        tmp_pdf = Path(cmd[3])
+        self.assertEqual(tmp_pdf.parent, pdf.parent)
+        self.assertTrue(tmp_pdf.name.startswith(".landscape-report.") and tmp_pdf.name.endswith(".pdf"))
+        self.assertEqual(pdf.read_bytes(), b"%PDF-1.4 fake")
+        self.assertEqual(self.leftover_temp_pdfs(), [])
+        self.assertEqual(self.timeouts, [555 / 1000 + 60])
+        self.assertTrue(cmd[2].startswith("file://") and cmd[2].endswith("landscape-report.print.html"))
         printed = (self.root / "landscape-report.print.html").read_text(encoding="utf-8")
         self.assertIn(lp.INDEPENDENT_PDF_MARKER, printed)
+
+    def test_symlink_at_the_pdf_name_is_replaced_not_written_through(self) -> None:
+        victim = self.root / "victim.txt"
+        victim.write_text("keep", encoding="utf-8")
+        (self.root / "landscape-report.pdf").symlink_to(victim)
+        (self.root / "landscape-report.print.html").symlink_to(victim)
+        run, _ = self.fake_run()
+        with mock.patch.object(lp.shutil, "which", return_value="/x/playwright"), mock.patch.object(lp.subprocess, "run", run):
+            lp.write_independent_landscape_pdf(self.root)
+        self.assertEqual(victim.read_text(encoding="utf-8"), "keep")
+        self.assertFalse((self.root / "landscape-report.pdf").is_symlink())
+
+    def test_real_print_html_accepts_apostrophes_ampersands_and_inline_formatting(self) -> None:
+        (self.root / "landscape" / "landscape-report.md").write_text(
+            "# Rep\n\n## Buyer's guide\ntext\n## **Key** findings\ntext\n## Q&A \"quoted\"\ntext\n", encoding="utf-8")
+        cmp = {"rankings": [{"solution": "alpha", "score": 3}],
+               "rows": [{"type": "feature", "name": "Audit & compliance <SSO>", "priority": "High", "solutions": {"alpha": "✔"}}]}
+        (self.root / "comparison" / "comparison.json").write_text(json.dumps(cmp), encoding="utf-8")
+        run, _ = self.fake_run()
+        with mock.patch.object(lp.shutil, "which", return_value="/x/playwright"), mock.patch.object(lp.subprocess, "run", run):
+            self.assertEqual(lp.write_independent_landscape_pdf(self.root)["status"], "ok")
+        self.assertEqual(lp.print_html_missing_content(self.root, "<p>nothing</p>"), [
+            "SPA heading \"Buyer's guide\"", "SPA heading 'Key findings'", "SPA heading 'Q&A \"quoted\"'",
+            "comparison feature 'Audit & compliance <SSO>'"])
 
     def test_custom_output_paths(self) -> None:
         run, calls = self.fake_run()
@@ -854,14 +843,15 @@ class WritePdfTests(unittest.TestCase):
                 lp.write_independent_landscape_pdf(self.root)
         self.assertEqual(len(calls), 1 if renders else 0)
         self.assertEqual(printed.is_file(), renders)
+        self.assertEqual(self.leftover_temp_pdfs(), [])
 
     def valid_html(self, extra: str = "") -> str:
         return (f'<!-- {lp.INDEPENDENT_PDF_MARKER} --><body id="{lp.PRINT_ROOT_ID}"><svg><circle class="fig-pt"/></svg>'
                 f"Alpha Heading R&amp;D Heading Gate feature{extra}</body>")
 
     def test_rejections(self) -> None:
-        self.expect_error("dropped SPA heading: Alpha Heading", patch_html=self.valid_html().replace("Alpha Heading", ""))
-        self.expect_error("dropped comparison feature: Gate feature", patch_html=self.valid_html().replace("Gate feature", ""))
+        self.expect_error("dropped SPA heading 'Alpha Heading'", patch_html=self.valid_html().replace("Alpha Heading", ""))
+        self.expect_error("dropped comparison feature 'Gate feature'", patch_html=self.valid_html().replace("Gate feature", ""))
         self.expect_error("still uses highlights-only comparison", patch_html=self.valid_html(" Comparison matrix highlights"))
         self.expect_error("did not write independent PDF", write=False, patch_html=self.valid_html(), renders=True)
         self.expect_error("did not write independent PDF", content=b"%PD", patch_html=self.valid_html(), renders=True)

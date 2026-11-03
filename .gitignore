@@ -28,8 +28,10 @@ graphify-out/converted/
 /.claude/launch.json
 /data/iii-config.yaml
 
-# Lock files written by scripts/render-agent-bundle.py
+# Lock files written by scripts/render-agent-bundle.py, and the staging tree a
+# render killed mid-run (SIGKILL) can leave beside agents/ or host-bundles/
 *.render.lock
+.*.staging-*/
 
 # Runtime state written into the checkout by optional tools
 .github/context-mode/

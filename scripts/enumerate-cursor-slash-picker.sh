@@ -294,6 +294,11 @@ print(f"agents/cursor on disk={result['agents_cursor_present']}")
 print(f"commands={len(commands)} subagents={len(subagents)} overlap={len(overlap)}")
 print()
 
+if not commands:
+    print("NO COMMANDS: the manifest declares no commands path or its commands directory holds no .md file")
+    print("(an empty / picker)")
+    print()
+
 if bad_colon:
     print("COLON/FILENAME VIOLATIONS:")
     for item in bad_colon:
@@ -329,13 +334,15 @@ if overlap:
     failures += 1
 if bad_colon:
     failures += 1
+if not commands:
+    failures += 1
 
 print()
 if failures:
     print(f"RESULT: FAIL — {failures} picker policy violation(s)")
     raise SystemExit(1)
 
-print("RESULT: OK — commands-only slash picker with colon routes")
+print("RESULT: OK — commands-only slash picker with kebab-case routes")
 
 workspace_root = Path(workspace_arg) if workspace_arg else repo_root
 if workspace_root.is_dir():

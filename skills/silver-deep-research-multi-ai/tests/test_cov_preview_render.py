@@ -60,7 +60,6 @@ class LoaderTests(OfflineCase):
             ("manifest", lpr._load_manifest, "run_manifest.json"),
             ("need", lpr._load_need_profile, "need_profile.json"),
             ("comparison", lpr._load_comparison, "comparison/comparison.json"),
-            ("consolidation", lpr._load_consolidation, "consolidated/consolidation.json"),
         ):
             with self.subTest(name):
                 self.assertEqual(loader(self.root), {})
@@ -69,19 +68,11 @@ class LoaderTests(OfflineCase):
                 write_json(self.root / rel, {"ok": name})
                 self.assertEqual(loader(self.root), {"ok": name})
 
-    def test_load_envelopes(self) -> None:
-        self.assertEqual(lpr._load_envelopes(self.root), [])
-        write_json(self.root / "contributions" / "all-envelopes.json", {"not": "list"})
-        self.assertEqual(lpr._load_envelopes(self.root), [])
-        write_json(self.root / "contributions" / "all-envelopes.json", [{"a": 1}, "junk", 2])
-        self.assertEqual(lpr._load_envelopes(self.root), [{"a": 1}])
+    def test_json_safe_nulls_non_finite_numbers(self) -> None:
+        import math
 
-    def test_audit_link_slugs(self) -> None:
-        self.assertEqual(lpr._audit_link_slugs(self.root), [])
-        write_json(self.root / "landscape" / "catalog_audit.json", ["x"])
-        self.assertEqual(lpr._audit_link_slugs(self.root), [])
-        write_json(self.root / "landscape" / "catalog_audit.json", {"matrix_slugs": ["a", "b"], "adjacent": ["b", "c", "", None]})
-        self.assertEqual(lpr._audit_link_slugs(self.root), ["a", "b", "c"])
+        value = {"a": math.nan, "b": [math.inf, -math.inf, 1.5, (2, math.nan)], "c": "NaN", "d": 3}
+        self.assertEqual(lpr.json_safe(value), {"a": None, "b": [None, None, 1.5, [2, None]], "c": "NaN", "d": 3})
 
     def test_load_chart_data_search_order(self) -> None:
         self.assertEqual(lpr._load_chart_data(self.root), lpr.CHART_DEFAULTS)
@@ -256,24 +247,34 @@ class EnrichTests(OfflineCase):
         self.assertIsNone(out["markets"])
 
 
+from apo_pack_run_fixture import with_apo_pack_run  # noqa: E402
+
+
+@with_apo_pack_run
 class DeriveVendorTests(OfflineCase):
     def test_license_tags_and_dedupe(self) -> None:
         comparison = {"rankings": [
             {"solution": "plain"}, {"solution": "plain"}, {"solution": ""}, "junk",
             {"solution": "tagged-oss", "license": "OSS"}, {"solution": "opened", "type": "Open source"},
-            {"solution": "beta"}, {"solution": "silver-bullet"},
+            {"solution": "beta"}, {"solution": "gamma"},
         ]}
         with mock.patch("category_pack.resolve_pack_from_need", return_value=pack()):
             commercial, oss = lpr._derive_vendors_from_comparison(comparison, need={"category_pack_id": "x"})
-        self.assertEqual(commercial, ["plain"])
-        self.assertEqual(oss, ["tagged-oss", "opened", "beta", "silver-bullet"])
+        self.assertEqual(oss, ["tagged-oss", "opened", "beta"])  # beta: licence from the pack seed
+        self.assertEqual(commercial, ["plain", "gamma"])
 
     def test_no_pack_and_column_fallback(self) -> None:
         with mock.patch("category_pack.resolve_pack_from_need", return_value=None):
             self.assertEqual(lpr._derive_vendors_from_comparison({}), ([], []))
-            rows = {"rows": [{"type": "feature", "name": "F", "solutions": {"zeta": "y", "silver-bullet": "y"}}]}
+            rows = {"rows": [{"type": "feature", "name": "F", "solutions": {"zeta": "y", "metagpt": "y"}}]}
             commercial, oss = lpr._derive_vendors_from_comparison(rows)
-        self.assertEqual((commercial, oss), (["zeta"], ["silver-bullet"]))
+        self.assertEqual((commercial, oss), (["metagpt", "zeta"], []))  # nothing marks a vendor open source without a pack
+
+    def test_column_fallback_uses_the_packs_licences(self) -> None:
+        rows = {"rows": [{"type": "feature", "name": "F", "solutions": {"beta": "y", "alpha": "y"}}]}
+        with mock.patch("category_pack.resolve_pack_from_need", return_value=pack()):
+            commercial, oss = lpr._derive_vendors_from_comparison(rows, need={"category_pack_id": "x"})
+        self.assertEqual((commercial, oss), (["alpha"], ["beta"]))  # beta: licence from the pack seed
 
     def test_solution_columns(self) -> None:
         self.assertEqual(lpr._solution_columns({"rankings": [{"solution": "b"}, {"solution": "a"}, {"x": 1}, "junk"]}), ["b", "a"])
@@ -296,12 +297,10 @@ class CollectPayloadTests(OfflineCase):
         write_json(self.root / "run_manifest.json", {"query": "Q?", "research_type": "solution-compare", "run_id": "r1", "mode": "deep",
                                                       "workflow_id": "wf", "started_at": "s", "finished_at": "f", "multi_ai": {"k": 1}})
         write_json(self.root / "need_profile.json", {"category": "Cat"})
-        write_json(self.root / "consolidated" / "consolidation.json",
-                   {"consensus": [{"text": "c1", "n": 1}, "junk"], "divergence": [{"text": "d1"}, {"nothing": 1}], "other": 7})
+        write_json(self.root / "consolidated" / "consolidation.json", {"consensus": [{"text": "c1"}]})
         write_json(self.root / "contributions" / "all-envelopes.json",
-                   [{"payload": {"claim": "env claim", "list": ["x", {"text": "nested"}], "n": 3}}])
-        with mock.patch("synthesize_landscape.scrub_membership_framing", side_effect=lambda text, p: text.upper()):
-            data = lpr.collect_landscape_payload(self.root)
+                   [{"payload": {"claim": "env claim", "raw_text": "worker output"}}])
+        data = lpr.collect_landscape_payload(self.root)
         self.assertEqual(data["title"], "Q?")
         self.assertEqual(data["research_type"], "solution-compare")
         self.assertEqual(data["need_profile"], {"category": "Cat"})
@@ -310,14 +309,14 @@ class CollectPayloadTests(OfflineCase):
         self.assertEqual(data["landscape"]["markdown_path"], "landscape/landscape-report.md")
         self.assertEqual(data["markdown"], "# Report title\n\nBody text\n")
         self.assertEqual(data["manifest"], {"run_id": "r1", "mode": "deep", "workflow_id": "wf", "started_at": "s", "finished_at": "f", "multi_ai": {"k": 1}})
-        self.assertEqual(data["consolidation"]["consensus"], [{"text": "C1", "n": 1}])
-        self.assertEqual(data["consolidation"]["divergence"], [{"text": "D1"}, {"nothing": 1, "text": ""}])
-        self.assertEqual(data["consolidation"]["other"], 7)
-        self.assertEqual(data["envelopes"], [{"payload": {"claim": "ENV CLAIM", "list": ["X", {"text": "NESTED"}], "n": 3}}])
+        # Raw worker envelopes and unrendered consolidation stay out of the shareable HTML.
+        self.assertNotIn("envelopes", data)
+        self.assertNotIn("consolidation", data)
         self.assertEqual(data["chart_data"]["mq_data"], [{"slug": "alpha"}])
         self.assertIn("anchors", data["chart_data"])
         self.assertEqual(data["landscape"]["commercial_vendors"], ["alpha"])
-        self.assertEqual(data["canonical_paths"]["comparison"], str(self.root / "comparison" / "comparison.json"))
+        self.assertEqual(data["canonical_paths"]["comparison"], "comparison/comparison.json")
+        self.assertNotIn(str(self.root), json.dumps(data))
         self.assertTrue(data["generated_by"].endswith("landscape_preview_render.py"))
         self.assertIn("xlsx_href", data)
 
@@ -454,7 +453,7 @@ class TemplatePatchTests(OfflineCase):
         legacy = "A\nasync function exportToPDF() { window.print(); }\nfunction _inlineStylesForGDocs(r) {}\nZ"
         out = lpr._patch_pdf_export(legacy)
         self.assertTrue(out.startswith("A\nasync function exportToPDF() {\n  const btn"))
-        self.assertIn("landscape-report.pdf?v=", out)
+        self.assertIn("pdfBase + '?v=' + Date.now()", out)
         self.assertNotIn("window.print(", out)
         self.assertTrue(out.endswith("function _inlineStylesForGDocs(r) {}\nZ"))
         self.assertEqual(lpr._patch_pdf_export(out), out)  # already patched
@@ -463,11 +462,36 @@ class TemplatePatchTests(OfflineCase):
 
     def test_inject_report_data(self) -> None:
         out = lpr._inject_report_data('<html lang="en"><head><title>x</title></head>', {"k": "</script>"})
-        self.assertIn('<head>\n<script type="application/json" id="report-data">', out)
+        self.assertIn('<title>x</title><script type="application/json" id="report-data">', out)
+        self.assertTrue(out.endswith("</script>\n</head>"))
         self.assertIn('data-sb-landscape-viewer="multai-v1"', out)
         self.assertNotIn("</script></script>", out)
         bare = lpr._inject_report_data("<html>no head</html>", {"k": 1})
         self.assertEqual(bare, "<html>no head</html>")
+
+    def test_static_content_requires_the_template_placeholder(self) -> None:
+        page = lpr._inject_static_content(lpr.CONTENT_PLACEHOLDER, "# Title\n\n<b>x</b>")
+        self.assertIn("<h1>Title</h1>", page)
+        self.assertIn("&lt;b&gt;x&lt;/b&gt;", page)
+        self.assertIn('<p class="muted">No markdown body.</p>', lpr._inject_static_content(lpr.CONTENT_PLACEHOLDER, "  "))
+        with self.assertRaisesRegex(ValueError, "#content placeholder"):
+            lpr._inject_static_content("<div id=content></div>", "# T")
+
+    def test_content_security_policy_hashes_inline_and_pins_https_sources(self) -> None:
+        page = (
+            "<head><script>a()</script><script src=\"https://cdn.example/x.js\"></script>"
+            "<script type=\"application/json\" id=\"report-data\">{}</script><script>a()</script></head>"
+        )
+        policy = lpr.content_security_policy(page)
+        script_src = [part for part in policy.split("; ") if part.startswith("script-src")][0]
+        self.assertEqual(script_src.count("'sha256-"), 1)  # duplicates collapse; JSON data is not a script
+        self.assertIn("https://cdn.example/x.js", script_src)
+        with self.assertRaisesRegex(ValueError, "non-https script"):
+            lpr.content_security_policy('<script src="http://cdn.example/x.js"></script>')
+        out = lpr._inject_content_security_policy(page)
+        self.assertTrue(out.startswith('<head>\n<meta http-equiv="Content-Security-Policy" content="default-src'))
+        with self.assertRaisesRegex(ValueError, "missing <head>"):
+            lpr._inject_content_security_policy("<html></html>")
 
 
 class RenderPreviewTests(OfflineCase):
@@ -491,15 +515,6 @@ class RenderPreviewTests(OfflineCase):
 
 
 class PdfRoutingTests(OfflineCase):
-    def test_playwright_argv(self) -> None:
-        with mock.patch.object(lpr.shutil, "which", side_effect=lambda n: "/b/pw" if n == "playwright" else "/b/npx"):
-            self.assertEqual(lpr._playwright_argv(), ["/b/pw"])
-        with mock.patch.object(lpr.shutil, "which", side_effect=lambda n: "/b/npx" if n == "npx" else None):
-            self.assertEqual(lpr._playwright_argv(), ["/b/npx", "--yes", "playwright"])
-        with mock.patch.object(lpr.shutil, "which", return_value=None):
-            with self.assertRaisesRegex(FileNotFoundError, "playwright CLI not found"):
-                lpr._playwright_argv()
-
     def test_skip_flag_matrix(self) -> None:
         def skip(**env):
             with mock.patch.dict(os.environ, {"SB_SKIP_LANDSCAPE_PDF": "", "SB_ALLOW_SKIP_LANDSCAPE_PDF": "", "PYTEST_CURRENT_TEST": ""}):
@@ -596,7 +611,7 @@ class PdfRoutingTests(OfflineCase):
         custom = self.root / "custom.html"
         with mock.patch.dict(os.environ, {"SB_SKIP_LANDSCAPE_PDF": "1", "SB_ALLOW_SKIP_LANDSCAPE_PDF": "1"}):
             with mock.patch.object(lpr, "collect_landscape_payload", return_value={"title": "T", "canonical_paths": {}}):
-                result = lpr.render_landscape_preview_file(self.root, out=custom)
+                result = lpr.render_landscape_outputs(self.root, out=custom)
         self.assertTrue(custom.is_file())
         self.assertEqual(result["out"], str(custom))
         self.assertEqual(result["sources"]["chart_data"], str(self.root / "landscape" / "chart-data.json"))

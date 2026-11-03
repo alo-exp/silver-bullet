@@ -8,9 +8,11 @@ import json
 import unittest
 from unittest import mock
 
+from apo_pack_run_fixture import with_apo_pack_run  # noqa: E402
 from synth_helpers import APO_NEED, TmpCase, sl
 
 
+@with_apo_pack_run
 class AxisAndLoaderTests(TmpCase):
     def test_axis_profile(self):
         explicit = {"landscape_axes": {"mq_x": "X", "mq_y": "Y"}}
@@ -95,12 +97,13 @@ class ScrTests(TmpCase):
         self.assertIsNone(h(p))
 
 
+@with_apo_pack_run
 class ProfileTests(TmpCase):
     def test_synthetic_overview(self):
         self.assertEqual(sl._synthetic_overview("N", commercial=True, positives=[], negatives=[]),
-                         "N is a commercial option for agentic SDLC orchestration.")
+                         "N is a commercial option in this landscape.")
         got = sl._synthetic_overview("N", commercial=False, positives=["a", "b", "c", "d"], negatives=["x", "y", "z"])
-        self.assertEqual(got, "N is a open-source option for agentic SDLC orchestration. "
+        self.assertEqual(got, "N is a open-source option in this landscape. "
                               "Noted strengths include a, b, c. Relative gaps include x, y.")
 
     def test_claims_for_slug(self):
@@ -144,26 +147,21 @@ class ProfileTests(TmpCase):
         self.assertEqual(got["url"], "")
 
     def test_pros_cons(self):
-        used = {"Workflow composition", "Atomic flow catalog", "Hook-enforced gates", "Managed hosting"}
-        kcf = next(k for k in sl.KCF_NAMES if k not in used)
-        sup = {"my-tool": {"Workflow composition": True, "Atomic flow catalog": True,
-                           "Hook-enforced gates": True, "Managed hosting": True, kcf: False,
-                           "A": True, "B": True, "C": True, "D": True}}
+        sup = {"my-tool": {"Alpha": True, "Beta": True, "Gamma": True, "Delta": True, "Epsilon": True,
+                           "Zeta": True, "Eta": False, "Theta": False}}
         got = self.profile(commercial=True, support=sup)
         self.assertEqual(len(got["pros"]), 6)
-        self.assertIn("**Managed path**", got["pros"][-1] if len(got["pros"]) < 6 else "**Managed path**")
-        self.assertEqual(got["cons"][0].split(":")[0], "**Operational depth**")
-        self.assertEqual(got["cons"][-1].split(":")[0], "**Pricing opacity**")
-        self.assertTrue(got["best_for"].startswith("SMB teams prioritising workflow composition with My Tool"))
-        self.assertIn(kcf, got["avoid_if"])
+        self.assertEqual(got["pros"][-1].split(":")[0], "**Managed path**")  # five features + managed path
+        self.assertEqual([c.split(":")[0] for c in got["cons"]], ["**No Eta credited**", "**No Theta credited**", "**Pricing opacity**"])
+        self.assertEqual(got["best_for"], "Teams prioritising alpha with My Tool.")
+        self.assertIn("Eta", got["avoid_if"])
         bare = self.profile(commercial=True)
-        self.assertEqual(len(bare["pros"]), 4)
-        self.assertTrue(bare["pros"][0].startswith("**Managed path**"))
-        self.assertEqual([c.split(":")[0] for c in bare["cons"]],
-                         ["**Hosting burden**", "**Weak hook gates**", "**No atomic catalog**",
-                          "**Limited composition**", "**Pricing opacity**"])
-        self.assertIn("agentic SDLC automation", bare["best_for"])
+        self.assertEqual([p.split(":")[0] for p in bare["pros"]], ["**Managed path**"])
+        self.assertEqual([c.split(":")[0] for c in bare["cons"]], ["**Pricing opacity**"])
+        self.assertEqual(bare["best_for"], "Teams evaluating My Tool against the matrix.")
         self.assertIn("unverified gaps", bare["avoid_if"])
+        # no category wording is invented for the card
+        self.assertNotIn("SDLC", " ".join(got["pros"] + got["cons"] + [got["best_for"], bare["best_for"]]))
         oss = self.profile(commercial=False)
         self.assertTrue(oss["pros"][0].startswith("**Control & flexibility**"))
         self.assertNotIn("**Hosting burden**", " ".join(oss["cons"]))
@@ -171,10 +169,13 @@ class ProfileTests(TmpCase):
         self.assertNotIn("**Hosting burden**", " ".join(no_hosting_burden["cons"]))
 
 
+from apo_pack_run_fixture import with_apo_pack_run  # noqa: E402
+
+
+@with_apo_pack_run
 class CatalogLabelTests(TmpCase):
     def test_catalog_entries_and_labels(self):
-        everything = sl._catalog_entries()
-        self.assertEqual(len(everything), len(sl.COMMERCIAL_CATALOG) + len(sl.OSS_CATALOG) + len(sl.EMERGING_CATALOG))
+        self.assertEqual(sl._catalog_entries(), [])
         a, b = {"slug": "a"}, {"slug": "b"}
         self.assertEqual(sl._catalog_entries([a], [b]), [a, b])
         self.assertEqual(sl._catalog_entries([a], None), [a])
@@ -183,7 +184,7 @@ class CatalogLabelTests(TmpCase):
         self.assertEqual(sl._catalog_label({"slug": "x-y", "name": "Named"}), "Named")
         self.assertEqual(sl._catalog_label({"slug": "x-y"}, known={"x-y": "Known"}), "Known")
         self.assertEqual(sl._catalog_label({"slug": "x-y"}, known={}), "X Y")
-        self.assertEqual(sl._catalog_label({"slug": "silver-bullet"}), sl.KNOWN_SOLUTIONS["silver-bullet"])
+        self.assertEqual(sl._catalog_label({"slug": "silver-bullet"}), "Silver Bullet")  # title-cased slug without known names
 
     def test_scope_markdown_and_slugify(self):
         self.assertEqual(sl._normalize_scope_markdown("# Title\nbody\n"), "**Title**\nbody")
@@ -200,19 +201,12 @@ class CatalogLabelTests(TmpCase):
         self.assertEqual(got, {"label": "My Tool", "data": [5, 1], "color": "#4f46e5"})
         full = sl._vc_series_entry("my-tool", "My Tool", {}, known={}, oss=[{"slug": "my-tool"}])
         self.assertEqual((len(full["data"]), full["color"]), (len(sl.KCF_NAMES), "#22d3ee"))
-        self.assertEqual(sl._vc_series_entry("langchain", "L", {}, known={})["color"], "#22d3ee")
+        self.assertEqual(sl._vc_series_entry("langchain", "L", {}, known={})["color"], "#4f46e5")  # no catalogue marks it OSS
         self.assertEqual(sl._vc_series_entry("zz", "Z", {}, known={}, oss=[])["color"], "#4f46e5")
 
 
+@with_apo_pack_run
 class UrlTests(TmpCase):
-    def test_legacy_urls(self):
-        urls = sl._legacy_slug_urls()
-        self.assertTrue(urls)
-        with mock.patch.object(sl, "COMMERCIAL_CATALOG", [{"slug": "nourl", "name": "N"},
-                                                          {"slug": "hasurl", "name": "H", "url": "https://h"}]), \
-                mock.patch.object(sl, "OSS_CATALOG", []), mock.patch.object(sl, "EMERGING_CATALOG", []):
-            self.assertEqual(sl._legacy_slug_urls(), {"hasurl": "https://h"})
-
     def test_resolve_slug_url(self):
         r = sl._resolve_slug_url
         urls = {"real": "https://real", "other": "https://other"}
@@ -251,10 +245,10 @@ class UrlTests(TmpCase):
         self.assertNotIn("Nohome", by)
 
     def test_build_link_pairs_pack_and_defaults(self):
-        pairs = sl.build_link_pairs(pack=self.pack())
+        pairs = sl.build_link_pairs(pack=self.pack(), matrix_slugs=["devin", "silver-bullet"])
         self.assertTrue(pairs)
         self.assertTrue(all(u.startswith("http") for _l, u in pairs))
-        self.assertTrue(sl.build_link_pairs())
+        self.assertEqual(sl.build_link_pairs(), [])  # no pack, no catalogue, no ranking: nothing to link
 
     def test_build_link_pairs_generic_and_duplicate_labels(self):
         catalog = [{"slug": "a", "name": "API", "url": "https://a.example"},
@@ -315,6 +309,7 @@ class LinkifyTests(TmpCase):
         self.assertEqual(out, "Bad [Ok](https://ok)")
 
 
+@with_apo_pack_run
 class BucketTests(unittest.TestCase):
     def test_buckets(self):
         mq = [{"label": "A", "q": "Leaders"}, {"label": "B", "q": "Challengers"}, {"label": "", "q": "Leaders"},
@@ -328,8 +323,8 @@ class BucketTests(unittest.TestCase):
                                "challengers": ["B"]})
         empty = sl.build_vendor_buckets([], commercial=[], oss=[])
         self.assertEqual(empty, {"commercial": [], "oss": [], "leaders": [], "challengers": []})
-        legacy = sl.build_vendor_buckets([])
-        self.assertTrue(legacy["commercial"] and legacy["oss"])
+        none_given = sl.build_vendor_buckets([])
+        self.assertEqual((none_given["commercial"], none_given["oss"]), ([], []))
 
 
 if __name__ == "__main__":
