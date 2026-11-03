@@ -106,6 +106,16 @@ for form in 'bash ./hooks/evil.sh' 'bash "$PWD/hooks/evil.sh"' 'bash ${CLAUDE_PR
   expect_fail "chained project-relative path: $form" hook-references "from the user's project; use \${CLAUDE_PLUGIN_ROOT}/"
 done
 
+# A registration that names no hooks/ or scripts/ file at all is refused.
+FIX="$TL_TMP/refs-none"; fixture "$FIX"
+jq '.hooks.Stop[0].hooks += [{"type": "command", "command": "echo hello"}]' "$FIX/hooks/hooks.json" >"$FIX/h.json" \
+  && mv "$FIX/h.json" "$FIX/hooks/hooks.json"
+expect_fail "command naming no plugin script" hook-references "names no hooks/ or scripts/ file"
+
+tl_run bash "$SCRIPT" --help
+assert_eq "--help exits 0" 0 "$TL_STATUS"
+assert_contains "--help shows the usage" "$TL_OUT" "--check NAME"
+
 FIX="$TL_TMP/placeholders"; fixture "$FIX"
 sed -i 's/{{TECH_STACK}}/stack/g' "$FIX/scripts/lib/install-claude/templates/CLAUDE.md.base"
 expect_fail "missing template placeholder" template-placeholders "TECH_STACK"
@@ -262,9 +272,9 @@ expect_pass "the repository files carry no personal paths or foreign emails" per
 printf 'see /Users/%s/projects/x\n' "alice-real" >"$FIX/docs/leak.md"
 expect_fail "personal home directory" personal-data "docs/leak.md:1: personal home-directory path"
 assert_eq "the path value is never printed" "0" "$(printf '%s' "$TL_OUT$TL_ERR" | grep -c 'alice-real' || true)"
-printf 'mail %s\n' "someone@gmail.com" >"$FIX/docs/leak.md"
+printf 'mail %s\n' "someone@""gmail.com" >"$FIX/docs/leak.md"
 expect_fail "personal email address" personal-data "docs/leak.md:1: email address outside the allowlist"
-assert_eq "the address is never printed" "0" "$(printf '%s' "$TL_OUT$TL_ERR" | grep -c 'someone@' || true)"
+assert_eq "the address is never printed" "0" "$(printf '%s' "$TL_OUT$TL_ERR" | grep -c "someone""@" || true)"
 printf 'mail info@alolabs.dev, noreply@anthropic.com, /Users/<user>/x\n' >"$FIX/docs/leak.md"
 expect_pass "maintainer, noreply and placeholder values" personal-data
 
