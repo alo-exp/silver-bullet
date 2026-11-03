@@ -18,8 +18,5 @@
     "orchestrator",
     "devops",
     "workflow"
-  ],
-  "dependencies": {
-    "playwright": "^1.49.0"
-  }
+  ]
 }

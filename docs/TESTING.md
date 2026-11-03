@@ -39,7 +39,7 @@ The `Makefile` wraps the same commands:
 
 | Target | Runs |
 |--------|------|
-| `make setup` | Checks required tools (`bash git jq python3 rsync`; warns about `shellcheck expect tmux node`) and runs `python3 -m pip install -r requirements-dev.txt` |
+| `make setup` | Checks required tools (`bash git jq python3 rsync`; warns about `shellcheck expect tmux node`) and creates the `.venv` virtualenv and installs `requirements-dev.txt` into it (later `make` targets put `.venv/bin` first on `PATH`) |
 | `make lint` | `bash -n` over every shell source, `jq empty` over the manifests and config, then `shellcheck --exclude=SC2317,SC1091,SC2329` over hooks and scripts |
 | `make test` | `bash tests/run-all-tests.sh --jobs $(JOBS)` (default 4); `SUITE=hooks make test` limits it |
 | `make coverage` | `bash tests/coverage/run-coverage.sh --jobs $(JOBS)`; `FAIL_UNDER=100 make coverage` adds a threshold |
@@ -132,7 +132,7 @@ Every `skills/*/SKILL.md` needs a fixture `tests/skill-scenarios/<skill-name>.md
 ## Coverage
 
 ```bash
-python3 -m pip install -r requirements-dev.txt     # or: make setup (coverage tooling is pinned in tests/coverage/requirements.txt)
+make setup     # creates .venv; in CI: python3 -m pip install -r requirements-dev.txt (coverage tooling is pinned in tests/coverage/requirements.txt)
 bash tests/coverage/run-coverage.sh                # full suite with coverage (or: make coverage)
 bash tests/coverage/run-coverage.sh tests/hooks/test-ci-status-check.sh --show-missing
 bash tests/coverage/run-coverage.sh --suite hooks --jobs 4 --only 'hooks/*' --fail-under 80

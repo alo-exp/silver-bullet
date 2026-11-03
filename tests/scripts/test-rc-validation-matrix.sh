@@ -54,14 +54,18 @@ test -f "$REPO_ROOT/.github/workflows/rc-validation.yml"
 assert_pass "rc-validation workflow exists" test $? -eq 0
 
 workflow_body="$(<"$REPO_ROOT/.github/workflows/rc-validation.yml")"
-assert_pass "workflow is optional non-blocking" assert_contains "$workflow_body" 'continue-on-error: true'
-assert_pass "workflow sets SB_RC_CI_MODE" assert_contains "$workflow_body" 'SB_RC_CI_MODE=1'
 assert_not_contains() {
   local haystack="$1" needle="$2"
   ! grep -F -- "$needle" <<<"$haystack" >/dev/null
 }
+# Optional means manual: it runs only when dispatched, and it reports failures honestly.
+assert_pass "workflow is manual only" assert_contains "$workflow_body" 'workflow_dispatch:'
+assert_pass "workflow does not hide failures" assert_not_contains "$workflow_body" 'continue-on-error'
+assert_pass "workflow sets SB_RC_CI_MODE" assert_contains "$workflow_body" 'SB_RC_CI_MODE=1'
+assert_pass "workflow summarises every cell" assert_contains "$workflow_body" 'GITHUB_STEP_SUMMARY'
 
 assert_pass "workflow excludes ANTHROPIC_API_KEY" assert_not_contains "$workflow_body" 'ANTHROPIC_API_KEY'
+assert_pass "workflow passes no unused CURSOR_API_KEY" assert_not_contains "$workflow_body" 'CURSOR_API_KEY'
 assert_pass "matrix supports SB_RC_CI_MODE" assert_contains "$matrix_body" 'RC_CI_MODE'
 assert_pass "matrix skips codex/claude live in CI" assert_contains "$matrix_body" 'ci-no-first-party-keys'
 assert_pass "deploy-tier mentions operator-local RC" assert_contains "$(<"$REPO_ROOT/hooks/lib/completion-audit/deploy-tier.sh")" 'operator-local'
