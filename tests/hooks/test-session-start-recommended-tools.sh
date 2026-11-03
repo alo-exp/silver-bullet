@@ -6,7 +6,7 @@ REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 # Keep the fixture's state/cache roots aligned with the runtime used by
 # run_session below. CI seeds Codex runtime variables globally, but this
 # test intentionally exercises the Cursor SessionStart path.
-export SILVER_BULLET_RUNTIME=cursor
+export SILVER_BULLET_RUNTIME=claude
 if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
   # shellcheck source=hooks/lib/runtime-paths.sh
   source "$REPO_ROOT/hooks/lib/runtime-paths.sh"
@@ -67,7 +67,7 @@ EOF
 }
 
 run_session() {
-  (cd "$TMP" && export SILVER_BULLET_SESSION_SOURCE=startup SILVER_BULLET_RUNTIME=cursor SILVER_BULLET_UPDATE_CHECK_DISABLED=1 CLAUDE_PLUGIN_ROOT="$REPO_ROOT" \
+  (cd "$TMP" && export SILVER_BULLET_SESSION_SOURCE=startup SILVER_BULLET_RUNTIME=claude SILVER_BULLET_UPDATE_CHECK_DISABLED=1 CLAUDE_PLUGIN_ROOT="$REPO_ROOT" \
     && printf '{"source":"startup"}' | bash "$SESSION" 2>/dev/null)
 }
 
@@ -189,7 +189,7 @@ export SB_RUNTIME_STATE_DIR="${TMP}/.silver-bullet"
 export SB_RUNTIME_PRESERVE_STATE_DIR=1
 mkdir -p "$SB_RUNTIME_STATE_DIR"
 out="$(cd "$TMP" && export SB_RUNTIME_STATE_DIR SB_RUNTIME_PRESERVE_STATE_DIR \
-  SILVER_BULLET_SESSION_SOURCE=compact SILVER_BULLET_RUNTIME=cursor CLAUDE_PLUGIN_ROOT="$REPO_ROOT" \
+  SILVER_BULLET_SESSION_SOURCE=compact SILVER_BULLET_RUNTIME=claude CLAUDE_PLUGIN_ROOT="$REPO_ROOT" \
   && printf '{"source":"compact"}' | bash "$SESSION" 2>/dev/null)"
 hb_file=""
 hb_file="$(find "$SB_RUNTIME_STATE_DIR/recommended-tools/heartbeats" -name '*.json' -type f 2>/dev/null | head -1 || true)"

@@ -10,9 +10,6 @@ for _lib in runtime-paths.sh sb-project-gate.sh agent-delegation-state.sh hook-a
   # shellcheck disable=SC1090
   [[ -f "$_lib_dir/$_lib" ]] && source "$_lib_dir/$_lib"
 done
-# shellcheck source=hooks/agent-delegation-progress-surface.sh
-[[ -f "$(dirname "${BASH_SOURCE[0]}")/agent-delegation-progress-surface.sh" ]] && \
-  source "$(dirname "${BASH_SOURCE[0]}")/agent-delegation-progress-surface.sh"
 
 _sb_adg_have_jq=false
 command -v jq >/dev/null 2>&1 && _sb_adg_have_jq=true

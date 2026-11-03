@@ -84,7 +84,6 @@ vcase "unparseable version" "rtk dev" "1.2.3" 1
 # ---------- hook artifact / presence ----------
 PR="$TL_TMP/proj"; mkdir -p "$PR"
 assert_eq "artifact override" "/ovr/file" "$(SB_RTK_HOOK_ARTIFACT=/ovr/file sb_rtk_platform_hook_artifact_path "$PR" claude)"
-assert_eq "artifact cursor" "$HOME/.cursor/hooks.json" "$(sb_rtk_platform_hook_artifact_path "$PR" cursor)"
 assert_eq "artifact codex default" "$HOME/.codex/AGENTS.md" "$(env -u CODEX_HOME bash -c 'source "$1"; sb_rtk_platform_hook_artifact_path /x codex' _ "$TL_REPO_ROOT/hooks/lib/rtk-gate.sh")"
 assert_eq "artifact codex CODEX_HOME" "/ch/AGENTS.md" "$(CODEX_HOME=/ch sb_rtk_platform_hook_artifact_path "$PR" codex)"
 assert_eq "artifact claude" "$HOME/.claude/settings.json" "$(sb_rtk_platform_hook_artifact_path "$PR" claude)"
@@ -98,9 +97,8 @@ A="$TL_TMP/artifact"
 export SB_RTK_HOOK_ARTIFACT="$A"
 no_t "hook_present missing artifact" sb_rtk_platform_hook_present "$PR" claude
 printf 'nothing here' >"$A"
-for h in cursor codex opencode pi claude hermes; do no_t "hook_present $h no marker" sb_rtk_platform_hook_present "$PR" "$h"; done
-printf '{"cmd":"rtk hook cursor"}' >"$A"
-yes_t "hook_present cursor" sb_rtk_platform_hook_present "$PR" cursor
+for h in codex opencode pi claude hermes; do no_t "hook_present $h no marker" sb_rtk_platform_hook_present "$PR" "$h"; done
+printf '{"cmd":"rtk"}' >"$A"
 printf 'Rust Token Killer notes' >"$A"
 yes_t "hook_present codex (case-insensitive)" sb_rtk_platform_hook_present "$PR" codex
 printf 'plugin rtk' >"$A"
@@ -114,7 +112,7 @@ unset SB_RTK_HOOK_ARTIFACT
 
 # ---------- exemptions ----------
 no_t "edit exempt empty path" sb_rtk_edit_path_is_exempt ""
-for p in /p/.silver-bullet.json /p/SETUP_REPORT.md /p/silver-bullet.md /p/CLAUDE.md /p/AGENTS.md /p/.silver-bullet/state /h/.cursor/hooks.json /h/.claude/settings.json; do
+for p in /p/.silver-bullet.json /p/SETUP_REPORT.md /p/silver-bullet.md /p/CLAUDE.md /p/AGENTS.md /p/.silver-bullet/state /h/.claude/settings.json; do
   yes_t "edit exempt $p" sb_rtk_edit_path_is_exempt "$p" "$CFG"
 done
 no_t "edit not exempt src" sb_rtk_edit_path_is_exempt /p/src/app.py "$CFG"
@@ -204,7 +202,7 @@ no_t "dry_run off" rtcm_dry_run
 export RTCM_DRY_RUN=1
 yes_t "dry_run on" rtcm_dry_run
 export RTCM_DRY_RUN=0
-for h in claude codex cursor opencode pi hermes goose; do yes_t "validate_host $h" rtcm_validate_host "$h"; done
+for h in claude codex opencode pi hermes goose; do yes_t "validate_host $h" rtcm_validate_host "$h"; done
 no_t "validate_host unknown" rtcm_validate_host nope
 no_t "validate_host empty" rtcm_validate_host ""
 assert_eq "host_status goose" "unsupported" "$(rtcm_host_status goose)"
@@ -222,16 +220,15 @@ assert_file_exists "backup written" "$F.bak"
 assert_eq "backup content" "data" "$(cat "$F.bak")"
 
 # host config detection in a clean HOME
-rm -rf "$HOME/.claude" "$HOME/.codex" "$HOME/.cursor" "$HOME/.config" "$HOME/.pi" "$HOME/.hermes"
+rm -rf "$HOME/.claude" "$HOME/.codex" "$HOME/.config" "$HOME/.pi" "$HOME/.hermes"
 unset PI_CODING_AGENT_DIR
-for h in claude codex cursor opencode pi hermes goose nope; do no_t "no config $h" rtcm_host_config_present "$h"; done
+for h in claude codex opencode pi hermes goose nope; do no_t "no config $h" rtcm_host_config_present "$h"; done
 assert_eq "detect none" "" "$(rtcm_detect_configured_hosts)"
-mkdir -p "$HOME/.claude" "$HOME/.cursor" "$HOME/.hermes"
+mkdir -p "$HOME/.claude" "$HOME/.hermes"
 yes_t "config claude" rtcm_host_config_present claude
-yes_t "config cursor" rtcm_host_config_present cursor
 yes_t "config hermes" rtcm_host_config_present hermes
-assert_eq "detect configured" "claude cursor hermes" "$(rtcm_detect_configured_hosts | tr '\n' ' ' | sed 's/ $//')"
-rm -rf "$HOME/.claude" "$HOME/.cursor" "$HOME/.hermes"
+assert_eq "detect configured" "claude hermes" "$(rtcm_detect_configured_hosts | tr '\n' ' ' | sed 's/ $//')"
+rm -rf "$HOME/.claude" "$HOME/.hermes"
 mkdir -p "$HOME/.codex"; yes_t "config codex dir" rtcm_host_config_present codex
 rm -rf "$HOME/.codex"; mkdir -p "$HOME/.config/opencode"; yes_t "config opencode dir" rtcm_host_config_present opencode
 rm -rf "$HOME/.config"; mkdir -p "$TL_TMP/pidir"; export PI_CODING_AGENT_DIR="$TL_TMP/pidir"
@@ -247,7 +244,7 @@ assert_eq "doctor opencode" "opencode" "$(rtcm_doctor_platform opencode)"
 assert_eq "doctor pi" "" "$(rtcm_doctor_platform pi)"
 assert_eq "doctor goose" "" "$(rtcm_doctor_platform goose)"
 assert_eq "doctor hermes" "" "$(rtcm_doctor_platform hermes)"
-assert_eq "doctor unknown" "cursor" "$(rtcm_doctor_platform zzz)"
+assert_eq "doctor unknown" "claude" "$(rtcm_doctor_platform zzz)"
 assert_contains "log unsupported" "$(rtcm_log_unsupported goose)" "SKIP: goose"
 assert_contains "log unsupported path" "$(rtcm_log_unsupported goose)" "goose-verify-rtk-cm.md"
 

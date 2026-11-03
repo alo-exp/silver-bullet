@@ -73,7 +73,7 @@ wire_test_mcp() {
   mkdir -p "${TEST_HOME}/.cursor"
   TEST_MCP="${TEST_HOME}/.cursor/mcp.json"
   printf '{"mcpServers":{"agentmemory":{"command":"npx"}}}\n' >"$TEST_MCP"
-  export TEST_HOME TEST_MCP SB_AGENTMEMORY_MCP_ARTIFACT="$TEST_MCP" SILVER_BULLET_RUNTIME=cursor
+  export TEST_HOME TEST_MCP SB_AGENTMEMORY_MCP_ARTIFACT="$TEST_MCP" SILVER_BULLET_RUNTIME=claude
 }
 
 unwire_test_mcp() {
@@ -136,7 +136,7 @@ sb_stack_coordinator_needed "$TMPCFG" || pass "coordinator not required without 
 
 input=$(jq -n --arg f "$TMPFILE" \
   '{hook_event_name:"PreToolUse", tool_name:"Edit", tool_input:{file_path:$f, old_string:"a", new_string:"b"}}')
-out="$(cd "$TMPDIR_TEST" && export SILVER_BULLET_PROJECT_ROOT="$TMPDIR_TEST" HOME="$TEST_HOME" SB_AGENTMEMORY_MCP_ARTIFACT="$TEST_MCP" SILVER_BULLET_RUNTIME=cursor PATH="$PATH" && printf '%s' "$input" | bash "$GATE_HOOK" 2>/dev/null)"
+out="$(cd "$TMPDIR_TEST" && export SILVER_BULLET_PROJECT_ROOT="$TMPDIR_TEST" HOME="$TEST_HOME" SB_AGENTMEMORY_MCP_ARTIFACT="$TEST_MCP" SILVER_BULLET_RUNTIME=claude PATH="$PATH" && printf '%s' "$input" | bash "$GATE_HOOK" 2>/dev/null)"
 unwire_test_mcp
 if [[ -z "$out" ]] || ! printf '%s' "$out" | jq -e '.hookSpecificOutput.permissionDecision == "deny"' >/dev/null 2>&1; then
   pass "gate allows edit when Graphify synergy active"

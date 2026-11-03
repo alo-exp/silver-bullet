@@ -68,9 +68,10 @@ EOF
 
 wire_platform() {
   TEST_HOME="$(mktemp -d)"
-  mkdir -p "$TEST_HOME/.cursor"
-  printf '{"mcpServers":{"context-mode":{"command":"context-mode"}}}\n' >"$TEST_HOME/.cursor/mcp.json"
-  export HOME="$TEST_HOME" SILVER_BULLET_RUNTIME=cursor
+  mkdir -p "$TEST_HOME/.codex"
+  printf '[mcp_servers.context-mode]\ncommand = "context-mode"\n' >"$TEST_HOME/.codex/config.toml"
+  printf '{"hooks":{"PreToolUse":[{"hooks":[{"command":"context-mode hook"}]}]}}\n' >"$TEST_HOME/.codex/hooks.json"
+  export HOME="$TEST_HOME" SILVER_BULLET_RUNTIME=codex
 }
 
 write_cfg() {

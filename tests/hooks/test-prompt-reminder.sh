@@ -253,7 +253,7 @@ echo "--- Test 8: Bare work prompt -> route through Silver before direct work --
 setup
 write_cfg
 echo "silver-quality-gates" > "$TMPSTATE"
-export SILVER_BULLET_RUNTIME=cursor
+export SILVER_BULLET_RUNTIME=claude
 out=$(run_hook 'Add a due date field to todos. Keep it simple: accept dueDate in the API payload and return it in todo responses.')
 unset SILVER_BULLET_RUNTIME
 assert_contains "bare work prompt: hook identifies bare prompt interception" "$out" "BARE PROMPT INTERCEPTED"

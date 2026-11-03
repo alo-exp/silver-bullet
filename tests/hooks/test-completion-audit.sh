@@ -896,7 +896,7 @@ unset SB_ALLOW_CODEX_ONLY_LIVE_RELEASE
 assert_passes "release passes with codex-only live markers when legacy override is set" "$out"
 teardown
 
-# Test 13c-b: gh release create passes with cursor-smoke release marker + codex-only e2e
+# Test 13c-b: gh release create is blocked by the retired cursor-smoke release marker
 setup
 cat > "$TMPSTATE" << 'EOF'
 silver-quality-gates
@@ -931,7 +931,7 @@ full-test-suite-rerun
 EOF
 write_verify_tests_state
 out=$(run_hook "PreToolUse" "gh release create v1.0.0")
-assert_passes "release passes with cursor-smoke live markers" "$out"
+assert_blocks "release blocked by the retired cursor-smoke live marker" "$out"
 teardown
 
 # Test 13d: gh release create blocked when the latest CI run is still in progress

@@ -110,8 +110,8 @@ run_ca PreToolUse "$REL"; assert_eq "full claude+codex matrix accepted" "allow" 
 set_matrix codex-only codex-only inline-full-surface
 run_ca PreToolUse "$REL"; assert_eq "codex-only matrix accepted" "allow" "$(decision)"
 set_matrix cursor-smoke codex-only inline-full-surface
-run_ca PreToolUse "$REL"; assert_eq "cursor smoke + codex e2e accepted" "allow" "$(decision)"
-set_matrix cursor-smoke claude-only inline-full-surface
+run_ca PreToolUse "$REL"; assert_eq "the retired cursor-smoke release marker is rejected" "deny" "$(decision)"
+set_matrix codex-only claude-only inline-full-surface
 run_ca PreToolUse "$REL"; assert_eq "inconsistent matrix pair rejected" "deny" "$(decision)"
 set_matrix claude-only claude-only inline-partial
 run_ca PreToolUse "$REL"; assert_eq "inline matrix must be the full surface" "deny" "$(decision)"

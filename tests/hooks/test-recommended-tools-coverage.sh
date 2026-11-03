@@ -140,14 +140,12 @@ sb_global_tool_command abs >/dev/null && tl_fail "tool_command no manifest" || t
 unset SB_GLOBAL_TOOLSTACK_MANIFEST
 
 # ---- host detection ----
-host_clean() { env -u SILVER_BULLET_RUNTIME -u CODEX_CI -u CODEX_THREAD_ID -u CODEX_INTERNAL_ORIGINATOR_OVERRIDE -u CURSOR_PLUGIN_ROOT -u CLAUDE_PLUGIN_ROOT -u OPENCODE -u OPENCODE_PID -u PI_CODING_AGENT_DIR "$@" bash -c 'source "$1"; sb_runtime_host' _ "$TL_REPO_ROOT/hooks/lib/recommended-tools.sh"; }
+host_clean() { env -u SILVER_BULLET_RUNTIME -u CODEX_CI -u CODEX_THREAD_ID -u CODEX_INTERNAL_ORIGINATOR_OVERRIDE -u CLAUDE_PLUGIN_ROOT -u OPENCODE -u OPENCODE_PID -u PI_CODING_AGENT_DIR "$@" bash -c 'source "$1"; sb_runtime_host' _ "$TL_REPO_ROOT/hooks/lib/recommended-tools.sh"; }
 assert_eq "host explicit goose" "goose" "$(host_clean SILVER_BULLET_RUNTIME=goose)"
 assert_eq "host explicit invalid falls back" "claude" "$(host_clean SILVER_BULLET_RUNTIME=bogus)"
 assert_eq "host codex CI" "codex" "$(host_clean CODEX_CI=1)"
 assert_eq "host codex thread" "codex" "$(host_clean CODEX_THREAD_ID=t)"
-assert_eq "host cursor root" "cursor" "$(host_clean CURSOR_PLUGIN_ROOT=/x)"
 assert_eq "host plugin root codex" "codex" "$(host_clean CLAUDE_PLUGIN_ROOT=/h/.codex/p)"
-assert_eq "host plugin root cursor" "cursor" "$(host_clean CLAUDE_PLUGIN_ROOT=/h/.cursor/p)"
 assert_eq "host plugin root other is claude" "claude" "$(host_clean CLAUDE_PLUGIN_ROOT=/h/.claude/p)"
 assert_eq "host opencode" "opencode" "$(host_clean OPENCODE=1)"
 assert_eq "host opencode pid" "opencode" "$(host_clean OPENCODE_PID=9)"
@@ -168,18 +166,15 @@ assert_eq "gfy pre opencode" "graphify install --project --platform opencode" "$
 assert_contains "gfy pre pi" "$(pre graphify pi)" "install-pi.py"
 assert_eq "gfy pre goose" "graphify install --project --platform pi" "$(pre graphify goose)"
 assert_eq "gfy pre hermes" "graphify install --project --platform hermes" "$(pre graphify hermes)"
-assert_eq "gfy pre cursor none" "" "$(pre graphify cursor)"
 assert_contains "am pre codex" "$(pre agentmemory codex)" "codex plugin add agentmemory@agentmemory"
 assert_contains "am pre pi" "$(pre agentmemory pi)" "agentmemory connect pi"
 assert_eq "am pre claude none" "" "$(pre agentmemory claude)"
 assert_eq "rtk pre claude" "rtk init -g" "$(pre rtk claude)"
-assert_eq "rtk pre cursor" "rtk init -g --agent cursor" "$(pre rtk cursor)"
 assert_eq "rtk pre codex" "rtk init -g --codex" "$(pre rtk codex)"
 assert_contains "rtk pre opencode" "$(pre rtk opencode)" "--host opencode"
 assert_contains "rtk pre pi" "$(pre rtk pi)" "--host pi"
 assert_eq "rtk pre hermes none" "" "$(pre rtk hermes)"
 assert_contains "cm pre claude" "$(pre context_mode claude)" "npm install -g context-mode"
-assert_contains "cm pre cursor" "$(pre context_mode cursor)" "context-mode.mdc"
 assert_contains "cm pre codex" "$(pre context_mode codex)" "config.toml"
 assert_contains "cm pre opencode" "$(pre context_mode opencode)" "opencode.json"
 assert_contains "cm pre pi" "$(pre context_mode pi)" "install-pi.py"
@@ -198,9 +193,7 @@ w '{}'
 assert_eq "platform install default host" "$(pre graphify "$(sb_runtime_host)")
 $(post graphify "$(sb_runtime_host)")" "$(sb_recommended_tool_platform_install_commands "$CFG" graphify)"
 assert_eq "platform install pre only" "$(pre graphify opencode)" "$(sb_recommended_tool_platform_install_commands "$CFG" graphify opencode)"
-assert_eq "platform install post only" "graphify cursor install" "$(sb_recommended_tool_platform_install_commands "$CFG" graphify cursor)"
 
-assert_eq "gfy post cursor" "graphify cursor install" "$(post graphify cursor)"
 assert_eq "gfy post claude" "graphify claude install --project" "$(post graphify claude)"
 assert_eq "gfy post codex" "graphify codex install --project" "$(post graphify codex)"
 assert_eq "gfy post opencode none" "" "$(post graphify opencode)"
@@ -210,13 +203,11 @@ assert_eq "am post goose" "agentmemory connect pi" "$(post agentmemory goose)"
 assert_eq "am post pi" "agentmemory connect pi" "$(post agentmemory pi)"
 assert_eq "am post hermes" "agentmemory connect hermes" "$(post agentmemory hermes)"
 assert_contains "am post opencode" "$(post agentmemory opencode)" "Merge agentmemory MCP"
-assert_eq "am post cursor none" "" "$(post agentmemory cursor)"
 assert_contains "cm post claude" "$(post context_mode claude)" "Restart Claude Code"
 assert_eq "cm post codex none" "" "$(post context_mode codex)"
 assert_eq "other tool post none" "" "$(post rtk claude)"
 # legacy flat arrays
-w '{"recommended_tools":{"graphify":{"platform_install_commands":{"cursor":["c1","c2"],"claude":["a1","a2"],"pi":["p1"]}}}}'
-assert_eq "legacy flat cursor post-only" "c1c2" "$(post graphify cursor | tr -d '\n')"
+w '{"recommended_tools":{"graphify":{"platform_install_commands":{"claude":["a1","a2"],"pi":["p1"]}}}}'
 assert_eq "legacy flat claude last cmd" "a2" "$(post graphify claude)"
 assert_eq "legacy flat pi falls to builtin (none)" "" "$(post graphify pi)"
 
@@ -228,7 +219,6 @@ assert_eq "post with unparsable config uses builtin" "agentmemory connect claude
 
 # ---- graphify platform artifact ----
 PR="$TL_TMP/proj"; mkdir -p "$PR"
-assert_eq "artifact cursor" "$PR/.cursor/rules/graphify.mdc" "$(sb_graphify_platform_artifact_path "$PR/" cursor)"
 assert_eq "artifact codex" "$PR/.codex/hooks.json" "$(sb_graphify_platform_artifact_path "$PR" codex)"
 assert_eq "artifact opencode" "$HOME/.config/opencode/opencode.json" "$(sb_graphify_platform_artifact_path "$PR" opencode)"
 assert_eq "artifact pi env" "/pidir/extensions/silver-bullet-five-tool-stack/config.json" "$(PI_CODING_AGENT_DIR=/pidir sb_graphify_platform_artifact_path "$PR" pi)"
