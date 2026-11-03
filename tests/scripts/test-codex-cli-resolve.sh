@@ -67,6 +67,13 @@ assert_eq "npm install (codex -> codex.js) resolves to the vendored native binar
 rm -rf "$PKG/vendor"
 assert_eq "npm shim without a runnable vendored binary is used when it reports a Codex version" \
   "$NPM/bin/codex" "$(PATH="$NPM/bin:$NOCODEX_PATH" resolve_native_codex_cli_path)"
+# a .js shim from some other package is not the Codex npm layout
+OTHERPKG="$TL_TMP/other-pkg/node_modules/some-tool"
+mkdir -p "$OTHERPKG/bin"
+printf '#!/usr/bin/env bash\necho "some-tool 1.0"\n' >"$OTHERPKG/bin/tool.js"; chmod +x "$OTHERPKG/bin/tool.js"
+ln -s "$OTHERPKG/bin/tool.js" "$TL_TMP/other-pkg/codex"
+rc=0; PATH="$TL_TMP/other-pkg:$NOCODEX_PATH" resolve_native_codex_cli_path >/dev/null || rc=$?
+assert_eq "a .js binary outside @openai/codex that is not Codex is rejected" 1 "$rc"
 BREW="$TL_TMP/brew"
 mkdir -p "$BREW/bin" "$BREW/cask/codex/0.50.0"
 mkver "$BREW/cask/codex/0.50.0/codex-aarch64-apple-darwin"

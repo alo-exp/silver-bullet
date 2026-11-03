@@ -183,6 +183,11 @@ assert_contains "claude settings without hooks" "$TL_OUT" "FAIL: D4 — Claude s
 hd_happy claude
 mkdir -p "$TL_TMP/claude-cfg"; echo '{"hooks":"silver-bullet"}' >"$TL_TMP/claude-cfg/settings.json"; echo '{}' >"$HOME/.claude/settings.json"
 run CLAUDE_CONFIG_DIR="$TL_TMP/claude-cfg" -- "$HD_PROJ"
+echo '{"hooks":"silver-bullet","path":"/home/u/.codex/plugins/cache/x"}' >"$TL_TMP/claude-cfg/settings.json"
+run CLAUDE_CONFIG_DIR="$TL_TMP/claude-cfg" -- "$HD_PROJ"
+assert_contains "D13 reads the redirected settings.json too" "$TL_OUT" "FAIL: D13 — $TL_TMP/claude-cfg/settings.json contains foreign host plugin paths"
+echo '{"hooks":"silver-bullet"}' >"$TL_TMP/claude-cfg/settings.json"
+run CLAUDE_CONFIG_DIR="$TL_TMP/claude-cfg" -- "$HD_PROJ"
 assert_contains "CLAUDE_CONFIG_DIR settings.json is audited" "$TL_OUT" "PASS: D4 — Claude settings.json references silver-bullet hooks"
 hd_happy codex
 mkdir -p "$TL_TMP/codex-cfg"; echo '[plugins."silver-bullet@alo-labs-codex"]' >"$TL_TMP/codex-cfg/config.toml"; rm -f "$HOME/.codex/config.toml"

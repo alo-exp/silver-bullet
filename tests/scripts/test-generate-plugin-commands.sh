@@ -23,6 +23,10 @@ skill silver-ui 'name: silver-ui' 'description: >' '  Build the UI: screens,' ''
 skill silver-fast 'name: silver-fast' 'description: Quick fix "now"'
 skill silver-devops 'name: silver-devops' 'description: >-' '  Infra work' 'argument-hint: |' '  <infra task>'
 skill silver-orient 'description: no name line'
+# every other composer exists too (a missing composer skill is an error, tested below)
+for d in $(sed -n 's/^COMPOSERS=(\(.*\))$/\1/p' "$ROOT/scripts/generate-plugin-commands.sh"); do
+  [[ -f "$ROOT/skills/$d/SKILL.md" ]] || skill "$d" "name: $d"
+done
 
 # Pre-existing stubs from older generators / hosts
 echo old >"$OUT/source-command-feature.md"
@@ -32,7 +36,8 @@ echo old >"$OUT/sb:feature.md"          # colon-named, safe name sb-feature.md w
 echo legacy >"$OUT/sb:custom.md"        # colon-named, no safe twin: migrated
 echo twin >"$OUT/sb-twin.md"
 echo dup >"$OUT/sb:twin.md"             # colon-named with an existing safe twin: dropped
-printf 'Retained body\n' >"$OUT/extra.md"
+printf 'Hand written body\n' >"$OUT/sb-doctor.md"
+printf 'Orphan body\n' >"$OUT/extra.md"       # no composer produces it: its skill is gone
 printf -- '---\nname: "kept"\n---\n\nKept body\n' >"$OUT/kept.md"
 echo silver >"$OUT/silver.md"
 echo custom >"$OUT/silver-custom.md"   # not a composer route: removed by the sweep
@@ -40,7 +45,6 @@ echo custom >"$OUT/silver-custom.md"   # not a composer route: removed by the sw
 tl_run bash "$ROOT/scripts/generate-plugin-commands.sh"
 assert_eq "generator exits 0" 0 "$TL_STATUS"
 assert_contains "summary line" "$TL_OUT" "Generated 17 composer command stubs in $OUT"
-assert_contains "missing skill warned" "$TL_ERR" "WARN: missing $ROOT/skills/silver-init/SKILL.md"
 assert_contains "wrote the main route" "$TL_OUT" "Wrote $OUT/sb.md"
 
 assert_file_absent "source-command stubs removed" "$OUT/source-command-feature.md"
@@ -50,9 +54,8 @@ assert_file_absent "colon-named stub removed" "$OUT/sb:feature.md"
 assert_file_absent "colon twin removed" "$OUT/sb:twin.md"
 assert_file_absent "legacy silver.md removed" "$OUT/silver.md"
 assert_file_absent "unlisted silver-* stub swept" "$OUT/silver-custom.md"
-assert_contains "colon-named stub migrated to safe name" "$(<"$OUT/sb-custom.md")" "legacy"
-assert_contains "existing safe twin kept" "$(<"$OUT/sb-twin.md")" "twin"
-assert_not_contains "colon twin content not merged" "$(<"$OUT/sb-twin.md")" "dup"
+assert_file_absent "migrated colon-named orphan is then pruned" "$OUT/sb-custom.md"
+assert_file_absent "orphan safe twin pruned" "$OUT/sb-twin.md"
 
 SB="$(<"$OUT/sb.md")"
 assert_contains "main route name" "$SB" 'name: "sb"'
@@ -95,15 +98,11 @@ print("bad=" + ",".join(bad))
 PY
 )" "bad="
 
-EXTRA="$(<"$OUT/extra.md")"
-assert_contains "retained route gets frontmatter" "$EXTRA" 'name: "extra"'
-assert_contains "retained route gets description" "$EXTRA" 'description: "Silver Bullet extra workflow"'
-assert_contains "retained route keeps its body" "$EXTRA" "Retained body"
-assert_eq "route with frontmatter is not rewritten" '---
-name: "kept"
----
-
-Kept body' "$(<"$OUT/kept.md")"
+DOCTOR="$(<"$OUT/sb-doctor.md")"
+assert_contains "hand-written route gets frontmatter" "$DOCTOR" 'name: "sb-doctor"'
+assert_contains "hand-written route keeps its body" "$DOCTOR" "Hand written body"
+assert_file_absent "orphan stub without frontmatter is pruned" "$OUT/extra.md"
+assert_file_absent "orphan stub with frontmatter is pruned" "$OUT/kept.md"
 
 # Idempotent: a second run reproduces identical files
 BEFORE="$(cd "$OUT" && sha256sum -- *.md)"
@@ -129,6 +128,29 @@ assert_contains "missing stub named" "$TL_ERR" "DRIFT: plugins/silver-bullet/com
 assert_contains "--check tells how to fix" "$TL_ERR" "run: bash scripts/generate-plugin-commands.sh"
 assert_file_exists "--check never repairs" "$OUT/silver-feature.md"
 assert_file_absent "--check never regenerates" "$OUT/sb-ui.md"
+
+# --check flags an orphan stub (its composer was removed) as drift
+printf -- '---\nname: "sb-bogus"\n---\n\nx\n' >"$OUT/sb-bogus.md"
+tl_run bash "$ROOT/scripts/generate-plugin-commands.sh" --check
+assert_contains "orphan stub named as drift" "$TL_ERR" "DRIFT: plugins/silver-bullet/commands/sb-bogus.md"
+rm -f "$OUT/sb-bogus.md"
+
+# a removed composer skill is an error, not a warning
+mv "$ROOT/skills/silver-fast" "$TL_TMP/silver-fast.away"
+tl_run bash "$ROOT/scripts/generate-plugin-commands.sh"
+assert_eq "missing composer skill fails generation" 1 "$TL_STATUS"
+assert_contains "missing composer named" "$TL_ERR" "ERROR: missing composer skill $ROOT/skills/silver-fast/SKILL.md"
+tl_run bash "$ROOT/scripts/generate-plugin-commands.sh" --check
+assert_eq "missing composer skill fails --check" 1 "$TL_STATUS"
+mv "$TL_TMP/silver-fast.away" "$ROOT/skills/silver-fast"
+tl_run bash "$ROOT/scripts/generate-plugin-commands.sh"
+
+# --check with no committed commands directory: every stub is missing
+rm -rf "$OUT"
+tl_run bash "$ROOT/scripts/generate-plugin-commands.sh" --check
+assert_eq "--check without a commands directory fails" 1 "$TL_STATUS"
+assert_contains "--check reports the missing stubs" "$TL_ERR" "DRIFT: plugins/silver-bullet/commands/sb.md"
+mkdir -p "$OUT"
 
 tl_run bash "$ROOT/scripts/generate-plugin-commands.sh" --bogus
 assert_eq "unknown argument exits 2" 2 "$TL_STATUS"

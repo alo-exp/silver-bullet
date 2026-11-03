@@ -60,10 +60,19 @@ report() {
   return 0
 }
 
-# list_files <dir>: relative paths of the regular files below <dir>.
+# same_entry <a> <b>: identical regular files. The renderers write no symlinks, so
+# a symlink on either side (one smuggled into a generated tree) is drift.
+same_entry() {
+  if [[ -L "$1" || -L "$2" ]]; then
+    return 1
+  fi
+  cmp -s "$1" "$2"
+}
+
+# list_files <dir>: relative paths of the files and symlinks below <dir>.
 list_files() {
   if [[ -d "$1" ]]; then
-    (cd "$1" && find . -type f ! -name '*.render.lock' ! -path '*/__pycache__/*' | sed 's|^\./||')
+    (cd "$1" && find . ! -type d ! -name '*.render.lock' ! -path '*/__pycache__/*' | sed 's|^\./||')
   fi
 }
 
@@ -76,7 +85,7 @@ for rel in "${GENERATED[@]}"; do
     continue
   fi
   while IFS= read -r file; do
-    cmp -s "${committed}/${file}" "${fresh}/${file}" || report "${rel}/${file}"
+    same_entry "${committed}/${file}" "${fresh}/${file}" || report "${rel}/${file}"
   done < <({ list_files "$committed"; list_files "$fresh"; } | sort -u)
 done
 

@@ -16,9 +16,18 @@ FAIL=0
 TMP_BASE="$(mktemp -d)"
 trap 'rm -rf "$TMP_BASE"' EXIT
 
+# same_entry <a> <b>: identical regular files. The renderers write no symlinks, so
+# a symlink on either side (one smuggled into a generated tree) is drift.
+same_entry() {
+  if [[ -L "$1" || -L "$2" ]]; then
+    return 1
+  fi
+  cmp -s "$1" "$2"
+}
+
 list_files() {
   if [[ -d "$1" ]]; then
-    (cd "$1" && find . -type f ! -name '*.render.lock' ! -path '*/__pycache__/*' | sed 's|^\./||')
+    (cd "$1" && find . ! -type d ! -name '*.render.lock' ! -path '*/__pycache__/*' | sed 's|^\./||')
   fi
 }
 
@@ -26,7 +35,7 @@ list_files() {
 check_tree() {
   local label="$1" committed="$2" fresh="$3" rel
   while IFS= read -r rel; do
-    if cmp -s "${committed}/${rel}" "${fresh}/${rel}"; then
+    if same_entry "${committed}/${rel}" "${fresh}/${rel}"; then
       PASS=$((PASS + 1))
     else
       echo "FAIL: ${label}/${rel} drift — run: bash scripts/sync-codex-package.sh"

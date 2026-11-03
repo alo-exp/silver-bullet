@@ -125,10 +125,12 @@ expect_verdict 1 "skills/*/scripts/sync-* is not excluded by a substring match" 
 
 printf '#!/usr/bin/env bash\nrm -rf "$HOME/.codex/plugins"  # validate-host\n' >"$probe_root/scripts/install-claude.sh"
 expect_verdict 1 "a skip marker inside a comment does not exempt an installer line" "scripts/install-claude.sh:2: foreign host 'codex'"
+printf '#!/usr/bin/env bash\nrm -rf "$HOME/.codex/plugins"; : validate-host\n' >"$probe_root/scripts/install-claude.sh"
+expect_verdict 1 "an annotation word inside the code part (a no-op argument) does not exempt the line" "scripts/install-claude.sh:2: foreign host 'codex'"
 printf '#!/usr/bin/env bash\n# Codex and Cursor installs live in their own scripts.\necho claude-only\n' >"$probe_root/scripts/install-claude.sh"
 expect_verdict 0 "an installer comment may name other hosts"
 printf '#!/usr/bin/env bash\nrender_agent_bundle "codex"\n' >"$probe_root/scripts/install-claude.sh"
-expect_verdict 0 "a skip marker in code still exempts the line"
+expect_verdict 0 "a structural path marker in code (render_agent_bundle) still exempts the line"
 
 if bash "$SCRIPT" --repo-root "$REPO_ROOT" >/dev/null 2>&1; then
   pass "live repo passes validate-host-agnostic-core"

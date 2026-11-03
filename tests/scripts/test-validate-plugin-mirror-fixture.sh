@@ -38,6 +38,8 @@ printf ' ' >>"$FX/hooks/cursor-hooks.json"                       # hand-edited g
 rm "$PKG/hooks" && cp -R "$FX/hooks" "$PKG/hooks"               # link replaced by a stale copy
 mkdir -p "$PKG/skills/x"                                          # entry the sync would prune
 touch "$FX/skills/silver-feature/bad:name.md"                    # Windows-unsafe generated path
+ln -s /etc/hostname "$FX/agents/claude/sb:init/evil-link"        # symlink smuggled into a generated tree
+printf -- '---\nname: "sb-bogus"\n---\n\nx\n' >"$PKG/commands/sb-bogus.md"   # orphan stub: no composer produces it
 run
 assert_eq "drift fails" 1 "$TL_STATUS"
 for drifted in \
@@ -51,6 +53,8 @@ for drifted in \
   "hooks/cursor-hooks.json" \
   "plugins/silver-bullet/hooks must be a symlink to ../../hooks" \
   "plugins/silver-bullet/skills (the sync would remove or create it)" \
+  "agents/claude/sb:init/evil-link" \
+  "plugins/silver-bullet/commands/sb-bogus.md" \
   "host-bundles/codex/sb-feature/bad:name.md"; do
   assert_contains "drift named: $drifted" "$TL_OUT" "DRIFT: $drifted"
 done
@@ -61,7 +65,7 @@ assert_contains "error annotation tells how to fix" "$TL_OUT" "run: bash scripts
 
 # restore
 cp "$TL_TMP/ref.bak" "$REF"
-rm -rf "$FX/agents/claude/sb:stale-route" "$PKG/skills" "$PKG/hooks" "$FX/skills/silver-feature/bad:name.md"
+rm -rf "$FX/agents/claude/sb:stale-route" "$PKG/skills" "$PKG/hooks" "$FX/skills/silver-feature/bad:name.md" "$FX/agents/claude/sb:init/evil-link" "$PKG/commands/sb-bogus.md"
 ln -s ../../hooks "$PKG/hooks"
 bash "$FX/scripts/sync-codex-package.sh" >/dev/null 2>&1
 run

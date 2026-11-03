@@ -12,7 +12,9 @@ FORMAT="${SB_DIAG_FORMAT:-text}"
 PROJECT_ROOT="${1:-${SB_DIAG_PROJECT_ROOT:-$PWD}}"
 PROJECT_ROOT="$(cd "$PROJECT_ROOT" 2>/dev/null && pwd -P || printf '%s' "$PROJECT_ROOT")"
 _sb_diag_dir="$PROJECT_ROOT"
-while [[ "$_sb_diag_dir" != "/" && ! -f "${_sb_diag_dir}/.silver-bullet.json" ]]; do
+# The walk stops at the enclosing repository (.git), like the hooks: a repository
+# nested inside an opted-in project is its own project.
+while [[ "$_sb_diag_dir" != "/" && ! -f "${_sb_diag_dir}/.silver-bullet.json" && ! -e "${_sb_diag_dir}/.git" ]]; do
   _sb_diag_dir="$(dirname "$_sb_diag_dir")"
 done
 [[ -f "${_sb_diag_dir}/.silver-bullet.json" ]] && PROJECT_ROOT="$_sb_diag_dir"
