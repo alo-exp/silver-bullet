@@ -72,7 +72,7 @@ Checks: `jq`, hook config presence, Graphify availability, package version,
 state root, inferred runtime name, and capability tier. The scripts take no runtime
 argument; set `SILVER_BULLET_RUNTIME` to check a specific host.
 
-Host detection follows `hooks/lib/runtime-paths.sh`: `SILVER_BULLET_RUNTIME` when set, otherwise Codex env markers, `PI_CODING_AGENT_DIR`, OpenCode markers, or `CLAUDE_PLUGIN_ROOT` paths, defaulting to `claude`. Accepted runtime names are `claude`, `codex`, `opencode`, `pi`, `goose` and `hermes`; each has its own state root (`~/.claude`, `~/.codex`, `~/.config/opencode`, `~/.pi/agent`, `~/.config/goose`, `~/.hermes`). Doctor and diagnostics **do not** infer Cursor from unrelated hosts' config files on the same machine.
+Host detection follows `hooks/lib/runtime-paths.sh`: `SILVER_BULLET_RUNTIME` when set, otherwise Codex env markers, `PI_CODING_AGENT_DIR`, OpenCode markers, or `CLAUDE_PLUGIN_ROOT` paths, defaulting to `claude`. Accepted runtime names are `claude`, `codex`, `opencode`, `pi`, `goose` and `hermes`; each has its own state root (`~/.claude`, `~/.codex`, `~/.config/opencode`, `~/.pi/agent`, `~/.config/goose`, `~/.hermes`). Doctor and diagnostics **do not** infer a host from unrelated hosts' config files on the same machine. Cursor is no longer a supported host; `scripts/uninstall-cursor-legacy.sh` removes what an older install left under `~/.cursor`.
 
 ### sb:doctor host-scoped checks
 

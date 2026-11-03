@@ -86,7 +86,7 @@ The live harnesses default to the Claude runtime (`SB_LIVE_RUNTIMES` / `SB_E2E_L
 bash scripts/sync-release-marketplace-versions.sh <version>
 ```
 
-It runs the local pre-release gate, then aligns this repository's Claude and Codex marketplace and package manifests with the release. Nothing leaves the machine: commit the result as part of the release commit. Without `--publish`, the per-host scripts it calls (`sync-marketplace-version.sh`, `sync-codex-marketplace-version.sh`, `sync-cursor-marketplace-version.sh`) do the same for one host; each refuses a version that differs from its manifest (`package.json` for Codex).
+It runs the local pre-release gate, then aligns this repository's Claude and Codex marketplace and package manifests with the release. Nothing leaves the machine: commit the result as part of the release commit. Without `--publish`, the per-host scripts it calls (`sync-marketplace-version.sh`, `sync-codex-marketplace-version.sh`) do the same for one host; each refuses a version that differs from its manifest (`package.json` for Codex).
 
 ## 6. Green CI on the Release Commit
 
@@ -117,7 +117,7 @@ On `gh release create`, `completion-audit.sh` requires all `required_deploy` ski
 GITHUB_REPOSITORY=alo-exp/silver-bullet bash scripts/sync-release-marketplace-versions.sh --publish vX.Y.Z
 ```
 
-It refuses to publish unless the tag `vX.Y.Z` exists locally and on `origin` (the same tag object), `package.json` is at that version, the in-repo manifests from step 5 are aligned, and `scripts/verify-release-commit-ci.sh` reports `CI` and `Secret Scan` green for the tag's commit. It then clones `alo-labs/agent-plugins` (or uses the checkout in `AGENT_PLUGINS_REPO_ROOT`, which must hold no unpushed commits), commits each host's manifest on its own — the Codex entry pinned to the tag, the Cursor entry to the tag's commit — pushes once, and fails unless the remote branch then points at that push. A failed clone or host update publishes nothing.
+It refuses to publish unless the tag `vX.Y.Z` exists locally and on `origin` (the same tag object), `package.json` is at that version, the in-repo manifests from step 5 are aligned, and `scripts/verify-release-commit-ci.sh` reports `CI` and `Secret Scan` green for the tag's commit. It then clones `alo-labs/agent-plugins` (or uses the checkout in `AGENT_PLUGINS_REPO_ROOT`, which must hold no unpushed commits), commits each host's manifest on its own — the Codex entry pinned to the tag — pushes once, and fails unless the remote branch then points at that push. A failed clone or host update publishes nothing.
 
 ## 9. Post-Release
 

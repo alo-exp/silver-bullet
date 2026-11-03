@@ -108,5 +108,5 @@ Run the same shared executable from Claude's configured MCP entry; the terminal 
 
 ## Known gaps
 
-- `rtk gain` tracks global savings; Claude hook is in `settings.json` not `~/.cursor/hooks.json`.
+- `rtk gain` tracks global savings; Claude hook is in `settings.json`.
 - Restart required after plugin install.

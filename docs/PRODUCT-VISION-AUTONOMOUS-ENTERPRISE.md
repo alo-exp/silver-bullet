@@ -65,7 +65,7 @@ Autonomous mode is not "no rules." It is **process-autonomous with evidence-auto
 | **Cold-start autonomy** — vague prompt → shipped app without operator babysitting | Early E2E rounds needed heavy operator intervention ([`docs/testing/ENTERPRISE-E2E-EFFECTIVENESS-PLAN.md`](testing/ENTERPRISE-E2E-EFFECTIVENESS-PLAN.md) §1) |
 | **Durable orchestration** — retries, sagas, replay across sessions | Workers are LLM calls in hooks; no Conductor/Temporal substrate ([`research/2026-06-24-prior-art-and-extensibility/SB_CONSOLIDATED_PRIOR_ART_REPORT.md`](../research/2026-06-24-prior-art-and-extensibility/SB_CONSOLIDATED_PRIOR_ART_REPORT.md) §8) |
 | **Full parallel DAG scheduling** | Designed ([`research/2026-06-24-prior-art-and-extensibility/atomic-flow-redesign.plan.md`](../research/2026-06-24-prior-art-and-extensibility/atomic-flow-redesign.plan.md) §Parallel execution rules); host multitask adapters not fully realized |
-| **Tri-host parity** | Claude/Codex/Cursor E2E tracks in flight; early program was Claude-centric ([`docs/testing/ENTERPRISE-E2E-EFFECTIVENESS-PLAN.md`](testing/ENTERPRISE-E2E-EFFECTIVENESS-PLAN.md) §2 blind spots) |
+| **Tri-host parity** | Claude and Codex E2E tracks in flight; early program was Claude-centric ([`docs/testing/ENTERPRISE-E2E-EFFECTIVENESS-PLAN.md`](testing/ENTERPRISE-E2E-EFFECTIVENESS-PLAN.md) §2 blind spots) |
 | **Claims-grade measurement** | 22/22 ≠ world-class reliability; monitor/ledger drift observed ([`docs/testing/ENTERPRISE-E2E-EFFECTIVENESS-PLAN.md`](testing/ENTERPRISE-E2E-EFFECTIVENESS-PLAN.md)) |
 | **True deploy autonomy** | Tags/releases and some destructive ops still user-triggered by policy ([`AGENTS.md`](../AGENTS.md); [`silver-bullet.md`](../silver-bullet.md) §7 file safety) |
 | **Default autonomous onboarding** | Session still prompts interactive vs. autonomous unless bypass-permissions ([`silver-bullet.md`](../silver-bullet.md) §4) |
@@ -274,7 +274,7 @@ Per-row applicability: [`.planning/enterprise-e2e/OUTCOME-ASSESSMENT-RUBRIC.md`]
 
 ### 6.3 Tri-host certification
 
-Parallel tracks: Claude, Codex, Cursor — each must achieve 2 consecutive strict-clean rounds on `enterprise-e2e/{claude,codex,cursor}` branches ([`.planning/enterprise-e2e/HOST-CONFIG.md`](../.planning/enterprise-e2e/HOST-CONFIG.md); execution prompts in same directory).
+Parallel tracks: Claude and Codex — each must achieve 2 consecutive strict-clean rounds on `enterprise-e2e/{claude,codex}` branches ([`.planning/enterprise-e2e/HOST-CONFIG.md`](../.planning/enterprise-e2e/HOST-CONFIG.md); execution prompts in same directory).
 
 Matrix rows run in **autonomous Agent mode** — no Plan/Debug mid-row ([`docs/ORCHESTRATOR.md`](ORCHESTRATOR.md) §Host modes).
 
@@ -302,7 +302,7 @@ SB's moat (catalog + V-loop rollups + hook blocking + SE+DevOps unity) is **arch
 | 22 routes can complete **once** with babysitting | Evidence **quality** (parent inline code, fake gates) |
 | Structural CI suite | Homepage marketing claims (cost, Veracode stats) |
 | | Monitor vs. ledger truth (Round 3 drift — P0 measurement defect) |
-| | Codex/Cursor parity at same enforcement tier (in progress) |
+| | Codex parity at same enforcement tier (in progress) |
 | | Statistical flake budget / consecutive-round rigor |
 
 ### 7.3 Architectural/runtime gaps
@@ -334,7 +334,7 @@ From [`research/2026-06-24-prior-art-and-extensibility/SB_CONSOLIDATED_PRIOR_ART
 - Fix measurement: ledger reconcile, eliminate monitor/ledger drift ([`docs/testing/ENTERPRISE-E2E-EFFECTIVENESS-PLAN.md`](testing/ENTERPRISE-E2E-EFFECTIVENESS-PLAN.md))
 - Claims registry → test mapping for homepage mechanisms ([`docs/testing/claims-registry.json`](testing/claims-registry.json))
 
-**Exit criteria:** Cursor + Codex + Claude each strict-clean × 2; OUT-AUTO-01 pass on all 22 rows; parent never implements inline (**OUT-ORCH-01**).
+**Exit criteria:** Codex + Claude each strict-clean × 2; OUT-AUTO-01 pass on all 22 rows; parent never implements inline (**OUT-ORCH-01**).
 
 ### Phase B — **Harden runtime orchestration**
 
@@ -346,7 +346,7 @@ Aligned with [`research/2026-06-24-prior-art-and-extensibility/atomic-flow-redes
 - `test-parallel-scheduling-safety.sh`, `test-step-vloop-runtime-rollup.sh`, `test-dynamic-composition-audit.sh`
 - WBS meta-supervision to completion (**OUT-SUPER-01**) — parent cannot exit with pending `current_flow`
 
-**Exit criteria:** Independent `AF-*` parallelize on Cursor Multitask / host equivalents; V-gate failures trigger repair flows without human.
+**Exit criteria:** Independent `AF-*` parallelize on host-native parallel-task features; V-gate failures trigger repair flows without human.
 
 ### Phase C — **Default autonomous enterprise onboarding**
 

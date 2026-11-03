@@ -6,7 +6,7 @@ Maintainer rules for work under `site/` (homepage, help center, changelog page, 
 
 - Help pages share `site/chrome.css`, `site/tokens.css` and the nav/footer fragments in `site/_chrome/`. `scripts/apply-site-chrome.py` rewrites every page's nav and footer from those fragments (it takes no options and edits files in place), and `hooks/site-chrome-guard.sh` blocks inline `<nav>`/`<footer>` edits.
 - Add new help pages to `site/help/search.js` so search finds them.
-- Website and help-center copy is written and reviewed by delegated subagents rather than by the parent agent alone; the maintainer's host-level subagent model policy lives in their global Cursor rules, not in this repository.
+- Website and help-center copy is written and reviewed by delegated subagents rather than by the parent agent alone; the maintainer's host-level subagent model policy lives in their global agent rules, not in this repository.
 
 ## Workflow catalog order
 

@@ -58,7 +58,7 @@ For Graphify+agentmemory on Goose, see `docs/graphify-am/verification/goose-veri
 | Optimizer skips goose | ✅ / ❌ |
 | No fake config files | ✅ / ❌ |
 
-**Overall:** ⏭️ **SKIP** — use Claude, Codex, Cursor, or OpenCode for full RTK+CM stack.
+**Overall:** ⏭️ **SKIP** — use Claude, Codex, or OpenCode for full RTK+CM stack.
 
 ## Cross-reference
 
