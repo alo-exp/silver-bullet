@@ -382,9 +382,9 @@ class IndependentPdfWriteTests(unittest.TestCase):
             pdf_path = html_path.with_name("landscape-report.pdf")
             captured: dict = {}
 
-            def _fake_run(cmd, check, timeout=None):
+            def _fake_run(cmd, check, timeout=None, env=None):
                 captured["cmd"] = list(cmd)
-                Path(cmd[-1]).write_bytes(b"%PDF-1.4 independent")
+                Path(cmd[3]).write_bytes(b"%PDF-1.4 independent")
                 class _R:
                     returncode = 0
                 return _R()
@@ -393,10 +393,10 @@ class IndependentPdfWriteTests(unittest.TestCase):
                 info = write_sibling_landscape_pdf(html_path)
             self.assertTrue(mocked.called)
             argv = captured["cmd"]
-            self.assertIn("pdf", argv)
-            self.assertEqual(Path(argv[-1]).parent.resolve(), pdf_path.parent.resolve())
+            self.assertNotIn("--no-sandbox", argv)
+            self.assertEqual(Path(argv[3]).parent.resolve(), pdf_path.parent.resolve())
             self.assertEqual(pdf_path.read_bytes(), b"%PDF-1.4 independent")
-            source = str(argv[-2])
+            source = str(argv[2])
             self.assertTrue(source.startswith("file:"))
             self.assertNotIn("landscape-report.html", source)
             self.assertIn(".print.html", source)
@@ -411,8 +411,8 @@ class IndependentPdfWriteTests(unittest.TestCase):
             _write_fixture(root)
             pdf_path = root / "landscape-report.pdf"
 
-            def _fake_run(cmd, check, timeout=None):
-                Path(cmd[-1]).write_bytes(b"%PDF-1.4 exportBar pdfExportBtn")
+            def _fake_run(cmd, check, timeout=None, env=None):
+                Path(cmd[3]).write_bytes(b"%PDF-1.4 exportBar pdfExportBtn")
                 class _R:
                     returncode = 0
                 return _R()

@@ -81,15 +81,28 @@ class CollisionTests(unittest.TestCase):
         self.assertIn("adjacent competitor", d["unplotted"][0]["reason"])
         self.assertEqual(sl.chart_listed_membership(core=[])["unplotted"], [])
 
+    def test_no_vendor_catalogue_or_market_profile_is_built_in(self):
+        self.assertEqual((sl.COMMERCIAL_CATALOG, sl.OSS_CATALOG, sl.EMERGING_CATALOG), ([], [], []))
+        self.assertEqual(sl._market_chart_profile("apo"), sl._NEUTRAL_CHART_PROFILE)
+
     def test_market_profile(self):
-        self.assertEqual(sl._market_chart_profile("sdlc-plugins")["mq_base"], (3.4, 2.4))
-        self.assertEqual(sl._market_chart_profile("unknown")["mq_base"], (3.0, 3.0))
-        self.assertEqual(sl._market_chart_profile(None)["mq_base"], (3.0, 3.0))
-        p = sl._market_chart_profile("apo")
+        neutral = sl._market_chart_profile("sdlc-plugins")  # no pack: neutral axes, no feature terms
+        self.assertEqual((neutral["mq_base"], neutral["mq_x_feats"]), ((3.0, 3.0), ()))
+        from category_pack import load_pack_overlay
+
+        pack = {"overlay": load_pack_overlay("agentic-sdlc-process-orchestrator")}
+        self.assertEqual(sl._market_chart_profile("sdlc-plugins", pack)["mq_base"], (3.4, 2.4))
+        self.assertEqual(sl._market_chart_profile("unknown", pack)["mq_base"], (3.0, 3.0))  # overlay default
+        self.assertEqual(sl._market_chart_profile(None, pack)["mq_base"], (3.0, 3.0))
+        p = sl._market_chart_profile("apo", pack)
         p["mq_base"] = None
-        self.assertEqual(sl._market_chart_profile("apo")["mq_base"], (3.0, 3.0))
+        self.assertEqual(sl._market_chart_profile("apo", pack)["mq_base"], (3.0, 3.0))
 
 
+from legacy_catalog_fixture import with_legacy_catalogs  # noqa: E402
+
+
+@with_legacy_catalogs
 class BuildChartTests(TmpCase):
     def support(self):
         return {"alpha": dict(GATES), "beta": {"Workflow composition": True}, "gamma": dict(GATES)}

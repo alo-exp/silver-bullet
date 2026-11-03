@@ -234,6 +234,40 @@ class ProseInferenceTests(unittest.TestCase):
         m._assign_support(support, "a", "F", False)
         self.assertIs(support["a"]["F"], False)
 
+    def test_structured_matrix_entries_decide_their_cells(self) -> None:
+        known = {"tembo": "Tembo", "devin": "Devin"}
+
+        def env(model, rows=None, claim=None):
+            payload = {}
+            if rows is not None:
+                payload["matrix_entries"] = rows
+            if claim:
+                payload["evidence"] = [{"claim": claim}]
+            return {"logical_model_id": model, "phase_id": "DR-RETRIEVE", "payload": payload}
+
+        row = lambda v, f, s: {"vendor": v, "feature": f, "supported": s, "source_ref": "u"}  # noqa: E731
+        envs = [
+            env("m1", [row("Tembo", "SSO", False)]),
+            env("m2", [row("tembo", "single sign-on", "no"), row("Tembo", "Audit log", "YES")]),
+            env("m3", [row("Tembo", "SSO", True)], claim="Tembo supports SSO and audit logs"),
+            env("m4", [row("Tembo", "SSO", "maybe"), row("Nobody", "SSO", True), row("Tembo", "Not a feature", True),
+                       row("Tembo", "RBAC", None), "junk"]),
+            env("m5", "not-a-list"),
+        ]
+        self.assertEqual(m.parse_structured_matrix_entries(["not-an-envelope"], known=known), {})
+        got = m.parse_feature_support(envs, known=known)
+        # two workers say no, one says yes: the structured votes decide, the prose claim cannot tip it
+        self.assertIs(got["tembo"]["SSO"], False)
+        self.assertIs(got["tembo"]["Audit log"], True)
+        self.assertNotIn("RBAC", got["tembo"])
+        self.assertIs(got["nobody"]["SSO"], True)  # a vendor only a worker named is still a column
+        # a cell nobody voted on still comes from prose
+        prose_only = m.parse_feature_support(
+            [env("m1", [row("Tembo", "SSO", True)]), env("m2", None, "Devin supports audit logs")], known=known)
+        self.assertIs(prose_only["devin"]["Audit log"], True)
+        self.assertIs(prose_only["tembo"]["SSO"], True)
+        self.assertEqual(m.parse_structured_matrix_entries([], known=known), {})
+
     def test_clause_without_a_vendor_and_features_without_cues(self) -> None:
         known = {"devin": "Devin", "cline": "Cline"}
         # the first clause names no vendor and does not continue a previous subject: it is skipped

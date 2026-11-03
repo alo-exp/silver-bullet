@@ -12,9 +12,9 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300;400;500&display=swap" referrerpolicy="no-referrer">
 <!-- The report body is pre-rendered HTML (landscape_preview_render.py); these optional,
      version-pinned libraries only draw charts and icons. Without them the report still reads. -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" integrity="sha384-e6nUZLBkQ86NJ6TVVKAeSaK8jWa3NhkYWZFomE39AvDbQWeie9PlQqM3pmYW5d1g" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js" integrity="sha384-y49Zu59jZHJL/PLKgZPv3k2WI9c0Yp3pWB76V8OBVCb0QBKS8l4Ff3YslzHVX76Y" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js" integrity="sha384-hJnF5AwidE18GSWTAGHv3ByzzvfNZ1Tcx5y1UUV3WkauuMCEzBJBMSwSt/PUPXnM" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <style>
   :root {
     --sb-sidebar-w: 260px;
@@ -950,11 +950,19 @@ function lucideIcon(name, className = 'lucide-icon') {
 }
 
 /** Link a text node that is exactly a known vendor label (never a word inside prose). */
-function _linkExactLabelNode(tn, urlByLabel) {
+function _linkExactLabelNode(tn, urlByLabel, firstOnly) {
   const raw = tn.textContent || '';
   const label = raw.trim();
   const url = label ? urlByLabel.get(label) : '';
   if (!url) return false;
+  // Prose links a vendor at its first mention only; table cells are structured data and always link.
+  if (firstOnly) {
+    const tag = tn.parentElement ? tn.parentElement.tagName : '';
+    if (tag !== 'TD' && tag !== 'TH') {
+      if (firstOnly.has(label)) return false;
+      firstOnly.add(label);
+    }
+  }
   const frag = document.createDocumentFragment();
   const lead = raw.slice(0, raw.indexOf(label));
   const trail = raw.slice(raw.indexOf(label) + label.length);
@@ -1935,7 +1943,8 @@ function linkify() {
   const nodes = [];
   let n;
   while ((n = walker.nextNode())) nodes.push(n);
-  for (const tn of nodes) _linkExactLabelNode(tn, urlByLabel);
+  const linkedOnce = new Set();
+  for (const tn of nodes) _linkExactLabelNode(tn, urlByLabel, linkedOnce);
 }
 
 /** Vendor label → http(s) homepage from the embedded link pairs (other schemes dropped). */

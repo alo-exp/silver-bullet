@@ -247,6 +247,10 @@ class EnrichTests(OfflineCase):
         self.assertIsNone(out["markets"])
 
 
+from legacy_catalog_fixture import with_legacy_catalogs  # noqa: E402
+
+
+@with_legacy_catalogs
 class DeriveVendorTests(OfflineCase):
     def test_license_tags_and_dedupe(self) -> None:
         comparison = {"rankings": [
