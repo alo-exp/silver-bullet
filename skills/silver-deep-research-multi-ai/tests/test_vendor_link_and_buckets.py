@@ -79,7 +79,8 @@ class VendorLinkCollisionTests(unittest.TestCase):
             return _Resp()
 
         with patch.dict(os.environ, {"SB_SKIP_VENDOR_URL_HEALTH": "0"}, clear=False):
-            with patch("vendor_link_labels.urllib.request.urlopen", side_effect=fake_urlopen):
+            with patch("vendor_link_labels._resolve_host", return_value=["93.184.216.34"]), \
+                    patch("vendor_link_labels.urllib.request.urlopen", side_effect=fake_urlopen):
                 dead = check_url_health(dead_url)
                 self.assertFalse(dead.get("ok"))
                 self.assertEqual(dead.get("status"), 404)
