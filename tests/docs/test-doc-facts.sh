@@ -5,13 +5,12 @@
 # number the docs state next to the matching noun:
 #
 #   skills          skills/*/SKILL.md
-#   command stubs   plugins/silver-bullet/commands/*.md
 #   atomic flows    docs/apo-catalog.json .atomic_flows
 #   workflows       docs/apo-catalog.json .workflows (public = not type reusable_component)
 #   flow steps      docs/apo-catalog.json .flow_steps (each carries one V-loop)
 #   hook commands   hooks/hooks.json registrations; hook scripts = distinct scripts
 #
-# README.md and AGENTS.md must state the skill, command-stub and catalog counts;
+# README.md and AGENTS.md must state the skill and catalog counts;
 # the other files are only checked for stale numbers. docs/SECURITY.md must not
 # name a release series other than the current one.
 set -euo pipefail
@@ -38,7 +37,6 @@ hook_scripts = {re.sub(r".*/hooks/", "", h["command"]).strip('"') for h in regis
 
 facts = {
     "skills": len(list((root / "skills").glob("*/SKILL.md"))),
-    "command stubs": len(list((root / "plugins" / "silver-bullet" / "commands").glob("*.md"))),
     "atomic flows": len(catalog["atomic_flows"]),
     "workflows": len(workflows),
     "public workflows": len(public_workflows),
@@ -51,8 +49,6 @@ facts = {
 # (fact, pattern). Each pattern captures the number a doc states for that fact.
 PATTERNS = [
     ("skills", r"\b(\d+)\s+(?:canonical\s+|source\s+|SB\s+)?skills\b"),
-    ("command stubs", r"\b(\d+)\s+(?:plugin\s+)?command stubs\b"),
-    ("command stubs", r"\((\d+)\s+stubs\b"),
     ("atomic flows", r"\b(\d+)\s+(?:canonical\s+)?atomic flows\b"),
     ("atomic flows", r"Atomic flows \(`AF-\*`\)\s*\|\s*(\d+)\b"),
     ("workflows", r"Workflows \(`WF-\*`\)\s*\|\s*(\d+)\b"),
@@ -67,8 +63,8 @@ PATTERNS = [
 ]
 
 REQUIRED = {
-    "README.md": ["skills", "command stubs", "atomic flows", "workflows", "flow steps"],
-    "AGENTS.md": ["skills", "command stubs"],
+    "README.md": ["skills", "atomic flows", "workflows", "flow steps"],
+    "AGENTS.md": ["skills"],
 }
 CHECKED = [
     "README.md",

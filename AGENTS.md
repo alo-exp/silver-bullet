@@ -50,7 +50,7 @@ bash scripts/check-repo-invariants.sh   # manifests, versions, hook references, 
 | `hooks/hooks.json` + `docs/hooks-purpose.json` | `docs/HOOKS.md` | `python3 scripts/generate-hook-reference.py` |
 | `docs/apo-catalog.json` | `docs/composable-flows-contracts.md`, `docs/workflow-composition-matrix.md`, `docs/generated/` | `python3 scripts/generate-apo-artifacts.py` |
 
-**Commands vs skills:** 98 skills live under `skills/`. The command stubs cover the composer routes listed in `scripts/generate-plugin-commands.sh` plus retained hand-written routes such as `sb-doctor.md`; every other skill is Skill-tool-only (invoke it through the host skill picker, or `silver-bullet invoke-skill` on Codex). Tests enforce `silver-bullet.md` ↔ `templates/silver-bullet.md.base` parity (`tests/scripts/test-silver-bullet-template-parity.sh`), render freshness (`tests/scripts/test-render-agent-bundle-freshness.sh`), the plugin mirror (`bash scripts/validate-plugin-mirror.sh`) and the stated skill and stub counts (`tests/docs/test-doc-facts.sh`).
+**Skills:** 97 skills live under `skills/`; invoke them through the host skill picker, or `silver-bullet invoke-skill` on Codex. Tests enforce `silver-bullet.md` ↔ `templates/silver-bullet.md.base` parity (`tests/scripts/test-silver-bullet-template-parity.sh`), render freshness (`tests/scripts/test-render-agent-bundle-freshness.sh`), the plugin mirror (`bash scripts/validate-plugin-mirror.sh`) and the stated skill and stub counts (`tests/docs/test-doc-facts.sh`).
 
 ## Working Rules
 

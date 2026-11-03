@@ -267,7 +267,7 @@ Per-row applicability: [`.planning/enterprise-e2e/OUTCOME-ASSESSMENT-RUBRIC.md`]
 |------|---------------|-------------|-----------------|
 | **Supervised (interactive)** | Approves phase gates; answers clarifications | Pauses at decision points ([`silver-bullet.md`](../silver-bullet.md) §4) | Legacy matrix runs; **not** the autonomy vision target |
 | **Autonomous** | Watches commentary; intervenes only on blockers | Drives queue; parent spawns workers; no babysitting ([`silver-bullet.md`](../silver-bullet.md) §2f, §4) | **OUT-AUTO-01** blocking PASS required |
-| **Supervised delegation** | Parent supervises **external** host TUI (`sb:agent-cursor`, etc.) | Single-task subagent — **not** enterprise matrix ([`agents/claude/sb:agent-cursor/SKILL.md`](../agents/claude/sb:agent-cursor/SKILL.md)) | Distinct from full SB autonomy |
+| **Supervised delegation** | Parent supervises **external** host TUI (`sb:agent-codex`, etc.) | Single-task subagent — **not** enterprise matrix ([`agents/claude/sb:agent-codex/SKILL.md`](../agents/claude/sb:agent-codex/SKILL.md)) | Distinct from full SB autonomy |
 | **Enterprise E2E operator** | Historically babysat TUI sessions | Policy: "never pause for operator on blockers — diagnose, fix SB, re-run" ([`.planning/enterprise-e2e/OPERATIONAL-ADDENDUM.md`](../.planning/enterprise-e2e/OPERATIONAL-ADDENDUM.md) §C) | Converging operator role toward **harness maintainer**, not **workflow driver** |
 
 **Assist-only = FAIL** for autonomy scoring: SB must drive completion from vague prompts; `sb:clarify` when needed instead of wrong-route execution ([`.planning/enterprise-e2e/CURSOR-ENTERPRISE-E2E-EXECUTION-PROMPT.md`](../.planning/enterprise-e2e/CURSOR-ENTERPRISE-E2E-EXECUTION-PROMPT.md) §Outcome assessment).
