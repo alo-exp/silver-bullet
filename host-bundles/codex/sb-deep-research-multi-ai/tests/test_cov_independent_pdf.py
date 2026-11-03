@@ -71,6 +71,11 @@ class RenderCommandTests(unittest.TestCase):
             cmd, env = lp._render_command("file:///a.html", Path("/tmp/a.pdf"), 1000)
         self.assertEqual(cmd[2:], ["file:///a.html", "/tmp/a.pdf", "1000", f"#{lp.PRINT_ROOT_ID}"])
         self.assertIn("/preset/node_modules", env["NODE_PATH"].split(os.pathsep))
+        with mock.patch.object(lp.shutil, "which", return_value="/x/bin"), \
+                mock.patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("NODE_PATH", None)
+            _cmd, env2 = lp._render_command("file:///a.html", Path("/tmp/a.pdf"), 1000)
+        self.assertNotIn("/preset/node_modules", env2["NODE_PATH"])
 
     def test_real_render_script_sandbox_policy(self) -> None:
         import shutil as _sh
