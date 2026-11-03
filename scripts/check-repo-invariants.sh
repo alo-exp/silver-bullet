@@ -119,11 +119,13 @@ check_release-identity() {
 # starts with a Bash shebang (hooks/session-start, scripts/silver-bullet, ...). Libraries
 # below hooks/lib and scripts/lib are sourced, not run.
 check_hook-executable() {
-  local f ok=0
+  local f ok=0 bash_shebang_re='^#!.*[/ ]bash([[:space:]]|$)'
   for f in hooks/* scripts/*; do
     [[ -f "$f" ]] || continue
     if [[ "$f" != *.sh ]]; then
-      head -n 1 "$f" | grep -qE '^#!.*[/ ]bash([[:space:]]|$)' || continue
+      local first=""
+      IFS= read -r first <"$f" || true
+      [[ "$first" =~ $bash_shebang_re ]] || continue
     fi
     [[ -x "$f" ]] || { echo "  not executable: $f"; ok=1; }
   done
