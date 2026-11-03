@@ -15,10 +15,10 @@ def side(text, agents=(), families=(), wave="DR-TRIANGULATE", **extra):
     return out
 
 
-from legacy_catalog_fixture import with_legacy_catalogs  # noqa: E402
+from apo_pack_run_fixture import with_apo_pack_run  # noqa: E402
 
 
-@with_legacy_catalogs
+@with_apo_pack_run
 class TextHelperTests(unittest.TestCase):
     def test_apply_preserving(self):
         up = str.upper
@@ -240,7 +240,7 @@ class DisagreementTests(unittest.TestCase):
         self.assertFalse(d([neg(wave="DR-CRITIQUE"), neg(agents=["b"])]))
 
 
-@with_legacy_catalogs
+@with_apo_pack_run
 class FormatTests(unittest.TestCase):
     def test_format(self):
         sides = [
@@ -261,7 +261,7 @@ class FormatTests(unittest.TestCase):
                          "**BMAD / secondary packs:** `a` (f) — t")
 
 
-@with_legacy_catalogs
+@with_apo_pack_run
 class SelectTests(unittest.TestCase):
     def items(self):
         return [

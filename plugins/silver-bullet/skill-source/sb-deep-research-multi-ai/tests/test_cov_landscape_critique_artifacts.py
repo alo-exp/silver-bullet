@@ -151,10 +151,10 @@ class ExecutiveSummaryTests(unittest.TestCase):
         self.assertIn("scores 2 market(s) separately", plain)
 
 
-from legacy_catalog_fixture import with_legacy_catalogs  # noqa: E402
+from apo_pack_run_fixture import with_apo_pack_run  # noqa: E402
 
 
-@with_legacy_catalogs
+@with_apo_pack_run
 class LedgerEmbedTests(unittest.TestCase):
     def write_ledger(self, root: Path, vendors) -> None:
         path = root / "landscape" / "inclusion-ledger.json"
@@ -320,7 +320,7 @@ class ConsensusTableTests(unittest.TestCase):
         self.assertIn("| Magic.dev membership | `only-model` | — | Excluded by the pack. | pack hard_exclusions |", text)
 
 
-@with_legacy_catalogs
+@with_apo_pack_run
 class PatchLedgerTests(unittest.TestCase):
     def test_patch_creates_empty_ledger_without_inventing_vendors_or_run_id(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

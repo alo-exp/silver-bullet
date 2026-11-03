@@ -27,7 +27,7 @@ from category_pack import (
     resolve_pack_from_need,
     slugify,
 )
-from materialize_solution_artifacts import _iter_claim_texts, mentions_vendor
+from materialize_solution_artifacts import _iter_claim_texts, mentions_vendor, structured_vendor_names
 from pack_vocabulary import activated
 
 Classification = str  # core | adjacent | excluded | sunset
@@ -142,10 +142,13 @@ def _envelope_evidence_slugs(
     envelopes: list[dict[str, Any]],
     pack: dict[str, Any],
 ) -> set[str]:
-    """Slugs found in envelope text only (not pack seed injection)."""
+    """Slugs found in envelope text only (not pack seed injection).
+
+    Vendors that workers named in structured ``matrix_entries`` rows count too (exact match).
+    """
     aliases = build_alias_map(pack)
     known = build_known_solutions(pack)
-    found: set[str] = set()
+    found: set[str] = {resolve_canonical_slug(slug, pack) for slug in structured_vendor_names(envelopes, known, pack)}
     for text in _iter_claim_texts(envelopes):
         for slug in _extract_candidates_from_text(text, aliases, known):
             found.add(resolve_canonical_slug(slug, pack))

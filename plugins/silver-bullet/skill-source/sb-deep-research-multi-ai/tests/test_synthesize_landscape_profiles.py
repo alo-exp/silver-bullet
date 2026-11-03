@@ -8,11 +8,11 @@ import json
 import unittest
 from unittest import mock
 
-from legacy_catalog_fixture import with_legacy_catalogs  # noqa: E402
+from apo_pack_run_fixture import with_apo_pack_run  # noqa: E402
 from synth_helpers import APO_NEED, TmpCase, sl
 
 
-@with_legacy_catalogs
+@with_apo_pack_run
 class AxisAndLoaderTests(TmpCase):
     def test_axis_profile(self):
         explicit = {"landscape_axes": {"mq_x": "X", "mq_y": "Y"}}
@@ -97,7 +97,7 @@ class ScrTests(TmpCase):
         self.assertIsNone(h(p))
 
 
-@with_legacy_catalogs
+@with_apo_pack_run
 class ProfileTests(TmpCase):
     def test_synthetic_overview(self):
         self.assertEqual(sl._synthetic_overview("N", commercial=True, positives=[], negatives=[]),
@@ -169,14 +169,13 @@ class ProfileTests(TmpCase):
         self.assertNotIn("**Hosting burden**", " ".join(no_hosting_burden["cons"]))
 
 
-from legacy_catalog_fixture import with_legacy_catalogs  # noqa: E402
+from apo_pack_run_fixture import with_apo_pack_run  # noqa: E402
 
 
-@with_legacy_catalogs
+@with_apo_pack_run
 class CatalogLabelTests(TmpCase):
     def test_catalog_entries_and_labels(self):
-        everything = sl._catalog_entries()
-        self.assertEqual(len(everything), len(sl.COMMERCIAL_CATALOG) + len(sl.OSS_CATALOG) + len(sl.EMERGING_CATALOG))
+        self.assertEqual(sl._catalog_entries(), [])
         a, b = {"slug": "a"}, {"slug": "b"}
         self.assertEqual(sl._catalog_entries([a], [b]), [a, b])
         self.assertEqual(sl._catalog_entries([a], None), [a])
@@ -185,7 +184,7 @@ class CatalogLabelTests(TmpCase):
         self.assertEqual(sl._catalog_label({"slug": "x-y", "name": "Named"}), "Named")
         self.assertEqual(sl._catalog_label({"slug": "x-y"}, known={"x-y": "Known"}), "Known")
         self.assertEqual(sl._catalog_label({"slug": "x-y"}, known={}), "X Y")
-        self.assertEqual(sl._catalog_label({"slug": "silver-bullet"}), sl.KNOWN_SOLUTIONS["silver-bullet"])
+        self.assertEqual(sl._catalog_label({"slug": "silver-bullet"}), "Silver Bullet")  # title-cased slug without known names
 
     def test_scope_markdown_and_slugify(self):
         self.assertEqual(sl._normalize_scope_markdown("# Title\nbody\n"), "**Title**\nbody")
@@ -202,20 +201,12 @@ class CatalogLabelTests(TmpCase):
         self.assertEqual(got, {"label": "My Tool", "data": [5, 1], "color": "#4f46e5"})
         full = sl._vc_series_entry("my-tool", "My Tool", {}, known={}, oss=[{"slug": "my-tool"}])
         self.assertEqual((len(full["data"]), full["color"]), (len(sl.KCF_NAMES), "#22d3ee"))
-        self.assertEqual(sl._vc_series_entry("langchain", "L", {}, known={})["color"], "#22d3ee")
+        self.assertEqual(sl._vc_series_entry("langchain", "L", {}, known={})["color"], "#4f46e5")  # no catalogue marks it OSS
         self.assertEqual(sl._vc_series_entry("zz", "Z", {}, known={}, oss=[])["color"], "#4f46e5")
 
 
-@with_legacy_catalogs
+@with_apo_pack_run
 class UrlTests(TmpCase):
-    def test_legacy_urls(self):
-        urls = sl._legacy_slug_urls()
-        self.assertTrue(urls)
-        with mock.patch.object(sl, "COMMERCIAL_CATALOG", [{"slug": "nourl", "name": "N"},
-                                                          {"slug": "hasurl", "name": "H", "url": "https://h"}]), \
-                mock.patch.object(sl, "OSS_CATALOG", []), mock.patch.object(sl, "EMERGING_CATALOG", []):
-            self.assertEqual(sl._legacy_slug_urls(), {"hasurl": "https://h"})
-
     def test_resolve_slug_url(self):
         r = sl._resolve_slug_url
         urls = {"real": "https://real", "other": "https://other"}
@@ -254,10 +245,10 @@ class UrlTests(TmpCase):
         self.assertNotIn("Nohome", by)
 
     def test_build_link_pairs_pack_and_defaults(self):
-        pairs = sl.build_link_pairs(pack=self.pack())
+        pairs = sl.build_link_pairs(pack=self.pack(), matrix_slugs=["devin", "silver-bullet"])
         self.assertTrue(pairs)
         self.assertTrue(all(u.startswith("http") for _l, u in pairs))
-        self.assertTrue(sl.build_link_pairs())
+        self.assertEqual(sl.build_link_pairs(), [])  # no pack, no catalogue, no ranking: nothing to link
 
     def test_build_link_pairs_generic_and_duplicate_labels(self):
         catalog = [{"slug": "a", "name": "API", "url": "https://a.example"},
@@ -318,7 +309,7 @@ class LinkifyTests(TmpCase):
         self.assertEqual(out, "Bad [Ok](https://ok)")
 
 
-@with_legacy_catalogs
+@with_apo_pack_run
 class BucketTests(unittest.TestCase):
     def test_buckets(self):
         mq = [{"label": "A", "q": "Leaders"}, {"label": "B", "q": "Challengers"}, {"label": "", "q": "Leaders"},
@@ -332,8 +323,8 @@ class BucketTests(unittest.TestCase):
                                "challengers": ["B"]})
         empty = sl.build_vendor_buckets([], commercial=[], oss=[])
         self.assertEqual(empty, {"commercial": [], "oss": [], "leaders": [], "challengers": []})
-        legacy = sl.build_vendor_buckets([])
-        self.assertTrue(legacy["commercial"] and legacy["oss"])
+        none_given = sl.build_vendor_buckets([])
+        self.assertEqual((none_given["commercial"], none_given["oss"]), ([], []))
 
 
 if __name__ == "__main__":

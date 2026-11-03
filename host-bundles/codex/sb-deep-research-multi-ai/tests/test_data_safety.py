@@ -283,13 +283,33 @@ class CliOutputRootTests(_Tmp):
         self.assertFalse((self.root / "need_profile.json").exists())
         self.assertFalse((self.root / "scope.md").exists())
         # unreadable or non-object profiles are not "generated" either, so they are carried as the user's
-        self.assertFalse(cli._generated_for_old_query(self.base / "missing.json"))
+        self.assertFalse(cli._generated_for_old_query(self.base / "missing.json", "q"))
         broken = self.base / "bad.json"
         broken.write_text("{nope", encoding="utf-8")
-        self.assertFalse(cli._generated_for_old_query(broken))
+        self.assertFalse(cli._generated_for_old_query(broken, "q"))
         listy = self.base / "list.json"
         listy.write_text("[]", encoding="utf-8")
-        self.assertFalse(cli._generated_for_old_query(listy))
+        self.assertFalse(cli._generated_for_old_query(listy, "q"))
+
+    def test_force_for_the_same_query_keeps_the_auto_profile_the_user_edited(self) -> None:
+        """Following the gate message (add must-haves to the auto profile) must survive a --force re-run."""
+        self.put("run_manifest.json", {"workflow_id": "WF-SILVER-DEEP-RESEARCH-MULTI-AI", "run_id": "run-old"})
+        self.put("need_profile.json", {"category": "Event streaming", "auto_assumed": True,
+                                       "must_haves": ["Exactly-once semantics", "SSO"], "category_pack_id": "demo"})
+        self.put("scope.md", "# Research scope\n\nResearch topic: Event streaming\n\nMy extra constraint.\n")
+        with mock.patch.object(cli.Path, "cwd", return_value=self.base):
+            self._main(["Event streaming", "--output-root", str(self.root), "--force"])
+        profile = json.loads((self.root / "need_profile.json").read_text(encoding="utf-8"))
+        self.assertEqual(profile["must_haves"], ["Exactly-once semantics", "SSO"])
+        self.assertIn("My extra constraint.", (self.root / "scope.md").read_text(encoding="utf-8"))
+        # an empty query names the generic "research" topic
+        self.assertFalse(cli._generated_for_old_query(self._write_auto("research"), ""))
+        self.assertTrue(cli._generated_for_old_query(self._write_auto("research"), "something else"))
+
+    def _write_auto(self, category):
+        path = self.base / "auto.json"
+        path.write_text(json.dumps({"category": category, "auto_assumed": True}), encoding="utf-8")
+        return path
 
     def test_carry_over_skips_missing_and_symlinked_inputs(self) -> None:
         old = self.base / "old"

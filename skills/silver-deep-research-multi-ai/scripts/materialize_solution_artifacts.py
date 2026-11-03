@@ -3,12 +3,13 @@
 
 from __future__ import annotations
 
+import contextlib
 import json
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 
-from generated_files import atomic_write_text, write_generated_text
+from generated_files import write_generated_text
 from pack_vocabulary import activated, for_research_dir
 from category_pack import (
     build_known_solutions,
@@ -202,16 +203,48 @@ def _mentions(lower_text: str, name: str) -> bool:
 
 
 # Product names that are also ordinary English words ("director", "factory", "cursor", ...). Pack
-# vocabulary; they count as a vendor mention only next to a product cue (see mentions_vendor).
+# vocabulary; a capitalised mention counts as a vendor only where it reads as a proper noun (see
+# mentions_vendor). NON_VENDOR_TERMS are category words that a pack alias maps to a product ("sdlc"
+# -> a plugin): a pack alias that is a plain category word never counts as a vendor mention.
 AMBIGUOUS_NAMES: frozenset[str] = frozenset()
+NON_VENDOR_TERMS: frozenset[str] = frozenset()
 _CUE_AFTER = re.compile(
     r"\s*(?:\((?!\s*\d)|\.(?:ai|dev|com|io|app)\b|\s(?:AI|IDE|Agents?|Plugins?|Cloud|Platform|CLI|App|SaaS|Code|Copilot|Labs)\b)"
 )
 _CUE_BEFORE = re.compile(r"\b(?:by|from|using|via|with|vs\.?|versus)\s+$", re.IGNORECASE)
+_SENTENCE_OPENERS = "\"'“‘([*_#>•- \t\r\n"
+# A sentence-initial capital proves nothing ("Linear scaling is expected"), so there the name must be
+# the subject of a finite verb or a possessive ("Director is ...", "Factory provides ...", "Director's README").
+_SUBJECT_OF = re.compile(
+    r"[*_\"']*(?:['’]s\b|\s+(?:is|are|was|were|has|have|had|does|did|can|could|will|would|should|may|"
+    r"(?:support|provide|offer|ship|add|use|run|enforce|orchestrate|install|integrate|include|require|lack|enable|"
+    r"deliver|automate|claim|position|target|wrap|extend|expose|implement|ensure|bundle|cover|handle|package)s?)\b)"
+)
+_NOT_A_NAME_BEFORE_OF = re.compile(r"\s+of\b")
+
+
+def _sentence_initial(text: str, start: int) -> bool:
+    before = text[:start].rstrip(_SENTENCE_OPENERS) if text[:start].strip(_SENTENCE_OPENERS) else ""
+    if not before:
+        return True
+    gap = text[len(before):start]
+    return before[-1] in ".!?:;" or "\n" in gap
+
 
 # The vendor set of the run being parsed (known names incl. discovered vendors, and its pack):
 # prose parsers that take no explicit `known` resolve vendors from it.
 _RUN: dict[str, Any] = {"known": None, "pack": None}
+
+
+@contextlib.contextmanager
+def run_context(known: dict[str, str] | None, pack: dict[str, Any] | None) -> Iterator[None]:
+    """Install the run's vendor set and pack for the prose parsers; restored on exit."""
+    previous = dict(_RUN)
+    _RUN["known"], _RUN["pack"] = known or previous["known"], pack or previous["pack"]
+    try:
+        yield
+    finally:
+        _RUN.update(previous)
 
 
 def _known_or_run(known: dict[str, str] | None) -> dict[str, str]:
@@ -219,8 +252,13 @@ def _known_or_run(known: dict[str, str] | None) -> dict[str, str]:
 
 
 def mentions_vendor(text: str, lower: str, name: str) -> bool:
-    """Whole-word vendor mention; an ambiguous common-word name needs a product cue beside it."""
-    if not _mentions(lower, name):
+    """Whole-word vendor mention.
+
+    A category word (NON_VENDOR_TERMS) never counts. An ambiguous common-word name counts when it
+    reads as a proper noun: capitalised AND (next to a product cue, or inside a sentence and not
+    "<Name> of ...", or opening a sentence as the subject of a verb).
+    """
+    if name.lower() in NON_VENDOR_TERMS or not _mentions(lower, name):
         return False
     if name.lower() not in AMBIGUOUS_NAMES:
         return True
@@ -229,6 +267,10 @@ def mentions_vendor(text: str, lower: str, name: str) -> bool:
         if not word[:1].isupper():
             continue  # a vendor name is a proper noun: "director of engineering" is not one
         if _CUE_AFTER.match(text, match.end()) or _CUE_BEFORE.search(text[: match.start()]):
+            return True
+        if _NOT_A_NAME_BEFORE_OF.match(text, match.end()):
+            continue
+        if not _sentence_initial(text, match.start()) or _SUBJECT_OF.match(text, match.end()):
             return True
     return False
 
@@ -255,6 +297,8 @@ def _extract_slugs_from_text(
         for alias, canonical in aliases.items():
             if len(alias) >= 2 and mentions_vendor(text, lower, alias) and canonical not in found:
                 found.append(canonical)
+        # one product is one vendor: "copilot" and "github-copilot" are the pack's names for the same slug
+        found = list(dict.fromkeys(aliases.get(slug, slug) for slug in found))
     return found
 
 
@@ -837,7 +881,7 @@ def _parse_must_have_satisfaction(
         "Parent/child agent delegation",
         "Hook-enforced gates",
     ):
-        _assign_support(support, slug, feature, True)
+        _assign_rubric(support, slug, feature, True)  # only where the run's rubric has the feature
     if re.search(r"\bci\b|ci execution|ci integration", text, re.IGNORECASE):
         _assign_rubric(support, slug, "CI integration", True)
 
@@ -1183,8 +1227,12 @@ def _parse_host_runtime_substrate_claim(
 
 
 def _feature_key(raw: Any) -> str:
-    """Folding key for feature names: case, spacing and punctuation/hyphen differences vanish."""
-    return re.sub(r"[^a-z0-9]+", " ", str(raw or "").casefold()).strip()
+    """Folding key for feature names: case, spacing, hyphens and other punctuation vanish.
+
+    "+" and "#" are part of a name ("C++ support" is not "C# support" is not "C support").
+    """
+    text = str(raw or "").casefold().replace("+", " plus ").replace("#", " sharp ")
+    return re.sub(r"[^a-z0-9]+", " ", text).strip()
 
 
 def _feature_name(raw: Any) -> str | None:
@@ -1319,20 +1367,27 @@ def open_world_known(
     return known
 
 
+MIN_DERIVED_PRIORITIES = 2
+DERIVED_REASON = "no must-have matched the matrix, so the most-evidenced features that separate vendors were treated as Critical"
+
+
 def derive_critical_features(
     need: dict[str, Any],
     support: dict[str, dict[str, bool | None]],
     limit: int = 5,
 ) -> dict[str, str]:
-    """{feature: "Critical"} for the most-ticked features when the need names no usable must-have.
+    """{feature: "Critical"} for the most-evidenced features when the need names no usable must-have.
 
     The comparator ranks by priority and the content gate needs Critical rows; a run whose
     profile has no must-haves (an auto profile, or wording that matches no matrix feature) would
-    otherwise fail after every model call was spent. Returns {} when must-haves match, when the
-    user already set weights_override, or when nothing is ticked.
+    otherwise fail after every model call was spent. Only features that tell vendors apart count
+    (ticked for some but not all), and at least MIN_DERIVED_PRIORITIES of them are needed: a
+    matrix with nothing to discriminate on gets no invented priorities and fails the gate.
+    Returns {} when must-haves match or the user set a weights_override of their own. The result
+    is recomputed on every packaging and never written into the user's need profile.
     """
-    if need.get("weights_override"):
-        return {}
+    if need.get("weights_override") and not need.get("weights_override_derived"):
+        return {}  # (a flagged override is a derived one an earlier version saved into the profile)
     declared = {_feature_key(x) for x in need.get("must_haves") or []}
     ticks: dict[str, int] = {}
     for cells in support.values():
@@ -1340,8 +1395,9 @@ def derive_critical_features(
             ticks[feature] = ticks.get(feature, 0) + (1 if ok else 0)
     if declared & {_feature_key(f) for f in ticks}:
         return {}
-    ranked = sorted((f for f, n in ticks.items() if n), key=lambda f: (-ticks[f], f))
-    return {feature: "Critical" for feature in ranked[:limit]}
+    ranked = sorted((f for f, n in ticks.items() if 0 < n < len(support)), key=lambda f: (-ticks[f], f))
+    derived = {feature: "Critical" for feature in ranked[:limit]}
+    return derived if len(derived) >= MIN_DERIVED_PRIORITIES else {}
 
 
 def disputed_cells(support: dict[str, dict[str, bool | None]]) -> list[dict[str, Any]]:
@@ -1383,14 +1439,57 @@ def _parse_feature_support(
     structured = parse_structured_matrix_entries(
         envelopes, known=known, pack=pack, preferred_features=preferred_features
     )
-    support = _parse_prose_feature_support(envelopes, known=known, pack=pack)
-    for slug, cells in structured.items():
-        merged = _VoteMap(support.get(slug) or {})
-        merged.votes = dict(getattr(support.get(slug), "votes", {}))
-        merged.update(cells)  # a cell any worker voted on is decided by those votes alone
-        merged.votes.update(getattr(cells, "votes", {}))
-        support[slug] = merged
-    return support
+    prose = _parse_prose_feature_support(envelopes, known=known, pack=pack)
+    return _merge_folded(structured, prose, preferred_features)
+
+
+def _merge_folded(
+    structured: dict[str, dict[str, bool | None]],
+    prose: dict[str, dict[str, bool | None]],
+    preferred_features: list[str] | None,
+) -> dict[str, dict[str, bool | None]]:
+    """One cell per (vendor, folded feature): a cell any worker voted on is decided by those
+    structured votes alone, otherwise by the prose votes.
+
+    Every spelling of a feature (rubric, claim prose, worker rows, the user's must-have) folds to
+    one key and is shown once: the rubric spelling, unless the user wrote the must-have differently
+    (the comparator matches priorities on that wording), else the most common spelling.
+    """
+    template = {_feature_key(f): f for f in _all_template_features()}
+    wanted = {_feature_key(f): str(f).strip() for f in preferred_features or []}
+    spellings: dict[str, dict[str, int]] = {}
+    for source in (prose, structured):
+        for cells in source.values():
+            for feature in cells:
+                counts = spellings.setdefault(_feature_key(feature) or feature, {})
+                counts[feature] = counts.get(feature, 0) + max(1, len(getattr(cells, "votes", {}).get(feature, {})))
+
+    def shown(key: str) -> str:
+        rubric, user = template.get(key), wanted.get(key)
+        if rubric and (not user or rubric.lower().strip() == user.lower().strip()):
+            return rubric
+        counts = spellings[key]
+        return user or rubric or max(counts, key=lambda spelling: (counts[spelling], -list(counts).index(spelling)))
+
+    merged: dict[str, dict[str, bool | None]] = {}
+    for slug in dict.fromkeys([*prose, *structured]):
+        ballots: dict[str, dict[str, dict[Any, bool]]] = {}  # folded key -> source -> voter -> verdict
+        for label, source in (("prose", prose), ("structured", structured)):
+            cells = source.get(slug) or {}
+            for feature in cells:
+                key = _feature_key(feature) or feature
+                by_voter = ballots.setdefault(key, {}).setdefault(label, {})
+                for voter, verdict in getattr(cells, "votes", {}).get(feature, {}).items():
+                    by_voter[voter] = by_voter[voter] and verdict if voter in by_voter else verdict
+        cell = _VoteMap()
+        for key, by_source in ballots.items():
+            chosen = by_source.get("structured") or by_source["prose"]
+            name = shown(key)
+            cell.votes[name] = chosen
+            yes = sum(1 for verdict in chosen.values() if verdict)
+            cell[name] = yes > len(chosen) - yes
+        merged[slug] = cell
+    return merged
 
 
 def _parse_prose_feature_support(
@@ -1400,12 +1499,8 @@ def _parse_prose_feature_support(
     pack: dict[str, Any] | None = None,
 ) -> dict[str, dict[str, bool | None]]:
     """Prose heuristics, resolving vendors from this run's `known` set and pack."""
-    previous = dict(_RUN)
-    _RUN["known"], _RUN["pack"] = known or previous["known"], pack or previous["pack"]
-    try:
+    with run_context(known, pack):
         return _parse_prose_unscoped(envelopes, known=known, pack=pack)
-    finally:
-        _RUN.update(previous)
 
 
 def _parse_prose_unscoped(
@@ -1714,13 +1809,10 @@ def materialize_solution_artifacts(
     rubric = synthesize_feature_rubric(support=support)
     shortlist = slugs[:shortlist_count]
     derived = derive_critical_features(need, support)
-    need_path = research_dir / "need_profile.json"
-    if derived and need_path.is_file():
-        # The profile only gains a derived weights_override (flagged); nothing the user wrote changes.
-        profile = json.loads(need_path.read_text(encoding="utf-8"))
-        profile["weights_override"] = derived
-        profile["weights_override_derived"] = "most-ticked features, because no must-have matched the matrix"
-        atomic_write_text(need_path, json.dumps(profile, indent=2) + "\n")
+    # The user's need_profile.json is never rewritten: derived priorities are a per-run file that
+    # packaging hands to the comparator and the report discloses (recomputed every run).
+    emit(research_dir / "landscape" / "derived-priorities.json",
+         json.dumps({"weights_override": derived, "reason": DERIVED_REASON if derived else ""}, indent=2) + "\n")
     disputed = disputed_cells(support)
     emit(research_dir / "landscape" / "disputed-cells.json", json.dumps(disputed, indent=2) + "\n")
 
@@ -1774,6 +1866,7 @@ def materialize_solution_artifacts(
         "solutions_count": len(slugs),
         "disputed_cells": len(disputed),
         "derived_critical_features": sorted(derived),
+        "derived_priorities": derived,
         "shortlist_count": len(shortlist),
         "features_written": written,
         "preserved": preserved,

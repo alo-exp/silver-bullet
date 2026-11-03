@@ -54,10 +54,10 @@ def tearDownModule() -> None:
 
 
 import materialize_solution_artifacts as _mat  # noqa: E402
-from legacy_catalog_fixture import with_legacy_catalogs  # noqa: E402
+from apo_pack_run_fixture import with_apo_pack_run  # noqa: E402
 
 
-@with_legacy_catalogs
+@with_apo_pack_run
 class OverviewQualityTests(unittest.TestCase):
     def test_rejects_meta_research_overviews(self) -> None:
         self.assertTrue(
@@ -85,9 +85,10 @@ class OverviewQualityTests(unittest.TestCase):
         )
 
     def test_overview_seeds_cover_core_catalog(self) -> None:
+        seeds = _mat._effective_overview_seeds({"category_pack_id": "agentic-sdlc-process-orchestrator"})
         for slug in ("factory-ai", "devin", "openhands", "langgraph-platform"):
-            self.assertIn(slug, _mat.OVERVIEW_SEEDS)
-            self.assertGreater(len(_mat.OVERVIEW_SEEDS[slug]), 20)
+            self.assertIn(slug, seeds)
+            self.assertGreater(len(seeds[slug]), 20)
 
     def test_build_scr_prefers_seed_over_meta_claim(self) -> None:
         envelopes = [
@@ -107,12 +108,13 @@ class OverviewQualityTests(unittest.TestCase):
                 },
             }
         ]
-        scr = build_scr_md("cline", envelopes)
-        self.assertIn(_mat.OVERVIEW_SEEDS["cline"][:40], scr)
+        seeds = _mat._effective_overview_seeds({"category_pack_id": "agentic-sdlc-process-orchestrator"})
+        scr = build_scr_md("cline", envelopes, None, seeds)
+        self.assertIn(seeds["cline"][:40], scr)
         self.assertNotIn("participates in the agentic", scr)
 
 
-@with_legacy_catalogs
+@with_apo_pack_run
 class ChartBuilderTests(unittest.TestCase):
     def test_mq_and_gmq_are_distinct(self) -> None:
         comparison = {
@@ -177,7 +179,7 @@ class ChartBuilderTests(unittest.TestCase):
             comparison,
             category="Agentic SDLC orchestration",
             support=support,
-            need={},
+            need={"category_pack_id": "agentic-sdlc-process-orchestrator"},
             scope_text="agentic sdlc orchestration landscape",
         )
         self.assertNotEqual(chart["mq_data"], chart["gmq_data"])
@@ -254,7 +256,7 @@ class ChartBuilderTests(unittest.TestCase):
             comparison,
             category="Agentic SDLC orchestration",
             support=support,
-            need={},
+            need={"category_pack_id": "agentic-sdlc-process-orchestrator"},
             scope_text="agentic sdlc orchestration landscape",
             commercial=commercial,
             oss=oss,
@@ -345,7 +347,7 @@ class ChartBuilderTests(unittest.TestCase):
             comparison,
             category="Agentic SDLC orchestration",
             support=support,
-            need={},
+            need={"category_pack_id": "agentic-sdlc-process-orchestrator"},
             scope_text="agentic sdlc orchestration landscape",
             commercial=commercial,
             oss=[],
@@ -606,7 +608,7 @@ class ChartBuilderTests(unittest.TestCase):
         self.assertNotIn("cc10x", plugin_leaders)
 
 
-@with_legacy_catalogs
+@with_apo_pack_run
 class TemplateContractTests(unittest.TestCase):
 
     def test_template_contains_durable_spa_contracts(self) -> None:

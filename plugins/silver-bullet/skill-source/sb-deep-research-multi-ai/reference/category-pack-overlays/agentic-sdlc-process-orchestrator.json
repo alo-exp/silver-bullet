@@ -1226,6 +1226,9 @@
       "C6 Enf",
       "C7 Proc"
     ],
+    "materialize_solution_artifacts.NON_VENDOR_TERMS": [
+      "sdlc"
+    ],
     "materialize_solution_artifacts.AMBIGUOUS_NAMES": [
       "director",
       "factory",

@@ -78,21 +78,30 @@ def force_refusal(output_root: Path) -> str | None:
     return None
 
 
-def _generated_for_old_query(path: Path) -> bool:
-    """True for the need profile / scope that dr_live_runner generated (they name the old query)."""
+def _generated_for_old_query(path: Path, query: str) -> bool:
+    """True for a need profile / scope that dr_live_runner generated for a DIFFERENT query.
+
+    Those name the old topic and would brief the new run on it. The ones generated for the same
+    query are carried: a regenerated file would be identical, and one the user edited since (must-haves,
+    a category pack) must not be lost.
+    """
     try:
         text = path.read_text(encoding="utf-8")
     except OSError:
         return False
+    topic = query.strip()
     if path.name == "scope.md":
-        return text.startswith("# Research scope\n\nResearch topic: ")
+        return text.startswith("# Research scope\n\nResearch topic: ") and not text.startswith(
+            f"# Research scope\n\nResearch topic: {topic}\n"
+        )
     try:
-        return bool(json.loads(text).get("auto_assumed"))
+        profile = json.loads(text)
+        return bool(profile.get("auto_assumed")) and profile.get("category") != (topic or "research")
     except (ValueError, AttributeError):
         return False
 
 
-def carry_over_user_inputs(previous: Path, output_root: Path) -> list[str]:
+def carry_over_user_inputs(previous: Path, output_root: Path, query: str = "") -> list[str]:
     """Copy the user's need_profile.json and scope.md from the moved-aside run into the new one.
 
     A fresh run must keep the user's category pack and must-haves instead of silently
@@ -102,7 +111,7 @@ def carry_over_user_inputs(previous: Path, output_root: Path) -> list[str]:
     for name in ("need_profile.json", "scope.md"):
         source = previous / name
         if source.is_file() and not source.is_symlink():
-            if _generated_for_old_query(source):
+            if _generated_for_old_query(source, query):
                 continue  # auto-written for the previous query: it would brief the new run on the old topic
             output_root.mkdir(parents=True, exist_ok=True)
             shutil.copy2(source, output_root / name)
@@ -241,7 +250,7 @@ def main(argv: list[str] | None = None) -> int:
                               "message": refusal}, indent=2))
             return 2
         moved_aside = move_previous_run_aside(output_root)
-        carry_over_user_inputs(moved_aside, output_root)
+        carry_over_user_inputs(moved_aside, output_root, args.query)
     os.environ.setdefault("SB_HOST", "cursor")
 
     from dr_live_runner import run_dr_live  # noqa: E402

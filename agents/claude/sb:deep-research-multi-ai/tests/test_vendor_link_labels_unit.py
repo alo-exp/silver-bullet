@@ -73,10 +73,10 @@ class _NoNetwork(unittest.TestCase):
                 os.environ[k] = v
 
 
-from legacy_catalog_fixture import with_legacy_catalogs  # noqa: E402
+from apo_pack_run_fixture import with_apo_pack_run  # noqa: E402
 
 
-@with_legacy_catalogs
+@with_apo_pack_run
 class RewriteTests(unittest.TestCase):
     def test_normalize_key(self):
         self.assertEqual(vll.normalize_vendor_url_key(" https://a.b/ "), "https://a.b")
@@ -102,7 +102,7 @@ class RewriteTests(unittest.TestCase):
         self.assertEqual(r("https://developer.ibm.com/other"), "https://developer.ibm.com/other")
 
 
-@with_legacy_catalogs
+@with_apo_pack_run
 class LabelTests(unittest.TestCase):
     def test_generic_labels(self):
         g = vll.is_generic_link_label
@@ -216,7 +216,7 @@ class HealthTests(_NoNetwork):
             self.assertIn(type(exc).__name__, r["error"])
 
 
-@with_legacy_catalogs
+@with_apo_pack_run
 class AutoLinkTests(unittest.TestCase):
     def test_english_word_labels_are_never_prose_links(self):
         for word in ("Continue", "Linear", "Sweep", "Factory", "Director", "Conductor", "Scout", "Harness"):
@@ -456,7 +456,7 @@ class FilterTests(_NoNetwork):
         self.assertEqual([d["label"] for d in dropped], ["B"])
 
 
-@with_legacy_catalogs
+@with_apo_pack_run
 class PairTests(unittest.TestCase):
     def test_token_score(self):
         self.assertEqual(vll._url_label_token_score("Claude Plugins Pack", "https://claude.com/plugins"), 2)

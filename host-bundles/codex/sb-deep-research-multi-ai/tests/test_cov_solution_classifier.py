@@ -160,10 +160,10 @@ class ExtractionTests(unittest.TestCase):
         self.assertEqual(len(out), len(set(out)))
 
 
-from legacy_catalog_fixture import with_legacy_catalogs  # noqa: E402
+from apo_pack_run_fixture import with_apo_pack_run  # noqa: E402
 
 
-@with_legacy_catalogs
+@with_apo_pack_run
 class ClassifySlugTests(unittest.TestCase):
     def kw(self, **over):
         base = dict(

@@ -94,10 +94,10 @@ class FilterComparisonTests(unittest.TestCase):
         self.assertEqual([r["solution"] for r in out["rankings"]], ["real-x", "other", "allowed"])
 
 
-from legacy_catalog_fixture import with_legacy_catalogs  # noqa: E402
+from apo_pack_run_fixture import with_apo_pack_run  # noqa: E402
 
 
-@with_legacy_catalogs
+@with_apo_pack_run
 class CatalogAndBucketTests(TmpCase):
     def test_resolve_catalogs_with_prepared_audit(self):
         audit = {"matrix_slugs": ["silver-bullet", "ai-dlc"], "core": ["ignored"]}
@@ -116,10 +116,9 @@ class CatalogAndBucketTests(TmpCase):
         self.assertIs(got, fake)
         self.assertIn("silver-bullet", {e["slug"] for e in commercial + oss})
 
-    def test_resolve_catalogs_legacy(self):
+    def test_resolve_catalogs_open_world(self):
         commercial, oss, audit = sl._resolve_catalogs({}, [], None)
-        self.assertEqual(audit, {})
-        self.assertTrue(commercial)
+        self.assertEqual((commercial, oss, audit), ([], [], {}))  # no pack, nobody named: no vendors are invented
 
     def test_known_and_overview_for_need(self):
         self.assertIsInstance(sl._known_for_need({}), dict)
@@ -128,10 +127,8 @@ class CatalogAndBucketTests(TmpCase):
     def test_vendor_license_bucket(self):
         b = sl.vendor_license_bucket
         self.assertEqual(b("zz", license_map={"zz": "oss"}), "oss")
-        self.assertEqual(b("langchain"), "oss")  # in OSS catalog
+        self.assertEqual(b("langchain"), "commercial")  # no built-in catalogue marks any vendor
         self.assertEqual(b("cursor", license_map={"cursor": "commercial"}), "commercial")
-        com = next(iter(sl.COMMERCIAL_SLUGS - sl.NON_COMMERCIAL_SLUGS))
-        self.assertEqual(b(com), "commercial")
         self.assertEqual(b("unlisted", license_map={"unlisted": "mixed"}), "commercial")
         self.assertEqual(b("unlisted", license_map={"unlisted": "unknown"}), "commercial")
         self.assertEqual(b("unlisted", license_map={"unlisted": "weird"}), "commercial")
@@ -139,7 +136,7 @@ class CatalogAndBucketTests(TmpCase):
         self.assertEqual(b("unlisted", fallback="oss"), "oss")
 
 
-@with_legacy_catalogs
+@with_apo_pack_run
 class FeatureSupportTests(unittest.TestCase):
     def test_feat_supported(self):
         f = sl._feat_supported
@@ -201,7 +198,7 @@ class LedgerTests(TmpCase):
         self.assertEqual(sl._cross_session_status("silver-bullet", self.root), "fail")
 
 
-@with_legacy_catalogs
+@with_apo_pack_run
 class LeaderRulesTests(TmpCase):
     def test_methodology_and_leader_rules(self):
         gates = {"Hook-enforced gates": True}
@@ -288,7 +285,7 @@ class AxisEnforcementTests(unittest.TestCase):
         self.assertEqual(out[0]["x"], 2.0)
 
 
-@with_legacy_catalogs
+@with_apo_pack_run
 class ScrBonusTests(TmpCase):
     def test_load_scr_text(self):
         self.assertEqual(sl._load_scr_text(None, "a"), "")
@@ -322,7 +319,7 @@ class ScrBonusTests(TmpCase):
         self.assertAlmostEqual(sl._wave_strategy_score({}, scr_text="roadmap"), 1.1)
 
 
-@with_legacy_catalogs
+@with_apo_pack_run
 class ChartSupportTests(TmpCase):
     def test_avoid_wave_collisions(self):
         pts = [{"label": "a", "strategy": 2.0, "offering": 2.0},
