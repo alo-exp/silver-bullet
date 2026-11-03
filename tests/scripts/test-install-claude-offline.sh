@@ -81,7 +81,7 @@ cat >"$CLAUDE_DIR/settings.json" <<JSON
  {"type":"command","command":"$CACHE/0.0.1/hooks/a.sh"},
  {"type":"command","command":"\${CLAUDE_PLUGIN_ROOT}/hooks/stop-check.sh"},
  {"type":"command","command":"\${CLAUDE_PLUGIN_ROOT}/hooks/other-plugin.sh"},
- {"type":"command","command":"/x/silver-bullet/1.2.3/hooks/c.sh"},
+ {"type":"command","command":"/x/silver-bullet/1.2.3/hooks/stop-check.sh"},
  {"type":"command","command":"/usr/bin/user-hook"}]}],
  "Stop":[]},"keep":"yes","theme":null,"env":{"A":null,"B":"x"},"list":[1,null,2],"only":[null],"zeta":"é日本😀","alpha":{"ключ":"значение"}}
 JSON
