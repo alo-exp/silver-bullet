@@ -55,6 +55,7 @@ OSS_CATALOG: list[dict[str, str]] = [
 
 
 def with_legacy_catalogs(cls):
+    cls._uses_legacy_catalogs = True  # lets tools run only the production-configuration tests
     """Class decorator: run every test with the fixture catalogues installed in synthesize_landscape."""
     import synthesize_landscape as sl
     from category_pack import load_pack_overlay
@@ -65,14 +66,12 @@ def with_legacy_catalogs(cls):
     import materialize_solution_artifacts as mat
 
     overlay = load_pack_overlay("agentic-sdlc-process-orchestrator")
-    vendor_data = {
-        "KNOWN_SOLUTIONS": dict(overlay["known_solutions"]),
-        "OVERVIEW_SEEDS": dict(overlay["overview_seeds"]),
-        "SLUG_ALIASES": dict(overlay["slug_aliases"]),
-        "_HEAD_SLUG_ALIASES": dict(overlay["head_slug_aliases"]),
-    }
-    mat_patch = mock.patch.multiple(mat, **vendor_data)
-    sl_patch = mock.patch.multiple(sl, KNOWN_SOLUTIONS=vendor_data["KNOWN_SOLUTIONS"], OVERVIEW_SEEDS=vendor_data["OVERVIEW_SEEDS"])
+    # The module-level vendor lists stay EMPTY (as in production). The tests instead run inside a
+    # run context -- the pack's names and the pack itself -- which is what a real run installs.
+    seeds = dict(overlay["overview_seeds"])
+    mat_patch = mock.patch.multiple(mat, OVERVIEW_SEEDS=seeds)
+    sl_patch = mock.patch.multiple(sl, OVERVIEW_SEEDS=seeds, KNOWN_SOLUTIONS=dict(overlay["known_solutions"]))  # catalogue-only helpers
+    run_context = {"known": dict(overlay["known_solutions"]), "pack": {"overlay": overlay}}
     patcher = mock.patch.multiple(
         sl,
         _NEUTRAL_CHART_PROFILE=apo,
@@ -89,7 +88,7 @@ def with_legacy_catalogs(cls):
     def with_vocabulary(test):
         @functools.wraps(test)
         def run(*args, **kwargs):
-            with pack_vocabulary.apply_values(values):
+            with pack_vocabulary.apply_values(values), mock.patch.dict(mat._RUN, run_context):
                 return test(*args, **kwargs)
 
         return run

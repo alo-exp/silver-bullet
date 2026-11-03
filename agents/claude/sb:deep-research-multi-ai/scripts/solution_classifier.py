@@ -27,7 +27,7 @@ from category_pack import (
     resolve_pack_from_need,
     slugify,
 )
-from materialize_solution_artifacts import _iter_claim_texts, _mentions
+from materialize_solution_artifacts import _iter_claim_texts, mentions_vendor
 from pack_vocabulary import activated
 
 Classification = str  # core | adjacent | excluded | sunset
@@ -128,11 +128,11 @@ def _extract_candidates_from_text(
     for alias, canonical in sorted(aliases.items(), key=lambda x: -len(x[0])):
         if len(alias) < 2:
             continue
-        if _mentions(lower, alias) or _mentions(lower, alias.replace("-", " ")):
+        if mentions_vendor(text, lower, alias) or mentions_vendor(text, lower, alias.replace("-", " ")):
             if canonical not in found:
                 found.append(canonical)
     for slug, display in known.items():
-        if any(_mentions(lower, name) for name in (slug.replace("-", " "), slug, display.lower())):
+        if any(mentions_vendor(text, lower, name) for name in (slug.replace("-", " "), slug, display.lower())):
             if slug not in found:
                 found.append(slug)
     return found

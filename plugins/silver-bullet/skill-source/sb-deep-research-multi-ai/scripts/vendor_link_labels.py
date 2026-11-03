@@ -33,26 +33,16 @@ GENERIC_LINK_BLOCKED_LABELS: frozenset[str] = frozenset(
         "orchestration",
         "workflow",
         "workflows",
-        # ordinary English words that are also product names: linking every sentence that
-        # starts with "Continue" or "Linear" sends readers to an unrelated homepage
-        "continue",
-        "linear",
-        "sweep",
-        "factory",
-        "director",
-        "conductor",
-        "scout",
-        "harness",
     }
 )
 
 # Intentional short product aliases (uppercase acronyms) that may link in prose.
-ALLOWED_SHORT_ACRONYM_LABELS: frozenset[str] = frozenset({"BMAD", "GSD"})
+ALLOWED_SHORT_ACRONYM_LABELS: frozenset[str] = frozenset()
+# Ordinary English words that are also product names; the pack lists them (pack vocabulary).
+EXTRA_BLOCKED_LABELS: frozenset[str] = frozenset()
 
 # Slug → canonical link/display label when pack seeds use ambiguous short names.
-SLUG_LINK_LABEL_OVERRIDES: dict[str, str] = {
-    "sdlc-plugin": "SDLC Plugin",
-}
+SLUG_LINK_LABEL_OVERRIDES: dict[str, str] = {}
 
 # Known wrong / sunset vendor URLs → corrected research-backed targets (or drop).
 # Keys normalized without trailing slash, lowercased host+path.
@@ -110,6 +100,24 @@ def _resolve_host(host: str) -> list[str]:
     return sorted({str(info[4][0]) for info in infos})
 
 
+_SITE_LOCAL = ipaddress.ip_network("fec0::/10")  # deprecated site-local space is still routable inside networks
+_NAT64_PREFIXES = (ipaddress.ip_network("64:ff9b::/96"), ipaddress.ip_network("64:ff9b:1::/48"))
+_IPV4_COMPATIBLE = ipaddress.ip_network("::/96")
+
+
+def _embedded_ipv4(ip: ipaddress.IPv6Address) -> ipaddress.IPv4Address | None:
+    """The IPv4 address an IPv6 one carries (mapped, NAT64 well-known prefixes, IPv4-compatible).
+
+    NAT64 gateways translate these to the embedded IPv4 address, so `64:ff9b::a00:1` reaches
+    10.0.0.1: the embedded address is what must be public.
+    """
+    if ip.ipv4_mapped:
+        return ip.ipv4_mapped
+    if any(ip in net for net in _NAT64_PREFIXES) or (ip in _IPV4_COMPATIBLE and int(ip) > 1):
+        return ipaddress.IPv4Address(int(ip) & 0xFFFFFFFF)
+    return None
+
+
 def unsafe_target_reason(url: str) -> str | None:
     """Why a model-supplied URL must not be requested, or None when it may be.
 
@@ -135,8 +143,10 @@ def unsafe_target_reason(url: str) -> str | None:
         return "unresolvable-host"
     for raw in addresses:
         ip = ipaddress.ip_address(raw)
-        if isinstance(ip, ipaddress.IPv6Address) and ip.ipv4_mapped:
-            ip = ip.ipv4_mapped
+        if isinstance(ip, ipaddress.IPv6Address):
+            ip = _embedded_ipv4(ip) or ip
+            if isinstance(ip, ipaddress.IPv6Address) and ip in _SITE_LOCAL:
+                return f"non-public-address:{raw}"
         # Allowlist: only globally routable addresses (this also refuses 100.64.0.0/10 shared
         # space such as tailnets and Alibaba's 100.100.100.200 metadata endpoint).
         if not ip.is_global or ip.is_multicast:
@@ -165,10 +175,10 @@ def is_generic_link_label(label: str) -> bool:
     norm = normalize_vendor_link_label(label)
     if not norm:
         return True
-    if norm.lower() in GENERIC_LINK_BLOCKED_LABELS:
+    if norm.lower() in GENERIC_LINK_BLOCKED_LABELS or norm.lower() in EXTRA_BLOCKED_LABELS:
         return True
     # Block bare short uppercase tokens unless explicitly allow-listed (BMAD, GSD).
-    if norm.isupper() and len(norm) <= 4 and norm not in ALLOWED_SHORT_ACRONYM_LABELS:
+    if norm.isupper() and len(norm) <= 3 and norm not in ALLOWED_SHORT_ACRONYM_LABELS:
         return True
     return False
 

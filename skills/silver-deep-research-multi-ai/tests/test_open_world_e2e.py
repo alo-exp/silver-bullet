@@ -108,6 +108,43 @@ class OpenWorldEndToEndTests(unittest.TestCase):
             self.assertIn("### Disputed matrix cells", report)
             self.assertIn("Confluent Cloud — SSO: 2 yes / 1 no", report)
 
+    def _run_and_package(self, need):
+        pool = [{"logical_model_id": m, "backend": "stub", "model_family_id": f} for m, f in MODELS]
+        env = {"SB_SKIP_VENDOR_URL_HEALTH": "1", "SB_SKIP_LANDSCAPE_PDF": "1", "SB_ALLOW_SKIP_LANDSCAPE_PDF": "1"}
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.dict(os.environ, env), \
+                mock.patch.object(runner, "resolve_pool", return_value=pool), \
+                mock.patch.object(runner, "stub_mode", return_value=False), \
+                mock.patch.object(runner, "dispatch_phase_parallel", side_effect=_fake_dispatch):
+            out = Path(tmp) / "run"
+            out.mkdir()
+            if need is not None:
+                (out / "need_profile.json").write_text(json.dumps(need), encoding="utf-8")
+            res = runner.run_dr_live(
+                query="Event streaming platforms", output_root=out,
+                selection=PoolSelection(ocg_pool="none", cursor_pool="default"),
+                parallel_phases=["DR-RETRIEVE", "DR-TRIANGULATE", "DR-CRITIQUE"], research_type="solution-landscape")
+            pkg = package_solution_outputs(out, skip_xlsx=True)
+            profile = json.loads((out / "need_profile.json").read_text(encoding="utf-8"))
+            return res, pkg, profile
+
+    def test_a_run_with_no_must_haves_still_packages_with_derived_priorities(self) -> None:
+        res, pkg, profile = self._run_and_package(None)  # the runner writes an auto profile
+        self.assertTrue(res["ok"])
+        self.assertEqual(pkg.get("status"), "ok")
+        self.assertTrue(profile["auto_assumed"])
+        self.assertEqual(set(profile["weights_override"].values()), {"Critical"})
+        self.assertIn("Exactly-once semantics", profile["weights_override"])
+        self.assertIn("because no must-have matched", profile["weights_override_derived"])
+        self.assertIn("derived_critical_features", res["materialize"])
+
+    def test_user_weights_are_kept_and_unmatched_must_haves_still_fail_the_gate(self) -> None:
+        _res, _pkg, kept = self._run_and_package({"category": "x", "weights_override": {"SSO": "Critical"}})
+        self.assertEqual(kept["weights_override"], {"SSO": "Critical"})
+        self.assertNotIn("weights_override_derived", kept)
+        # a must-have no vendor offers is a real content gap, reported by the gate, not papered over
+        with self.assertRaisesRegex(ValueError, "lacks must-have 'Quantum teleportation'"):
+            self._run_and_package({"category": "x", "must_haves": ["Quantum teleportation"]})
+
 
 if __name__ == "__main__":
     unittest.main()

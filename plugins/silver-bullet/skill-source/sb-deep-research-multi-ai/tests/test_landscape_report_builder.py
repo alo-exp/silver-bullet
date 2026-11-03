@@ -606,6 +606,7 @@ class ChartBuilderTests(unittest.TestCase):
         self.assertNotIn("cc10x", plugin_leaders)
 
 
+@with_legacy_catalogs
 class TemplateContractTests(unittest.TestCase):
 
     def test_template_contains_durable_spa_contracts(self) -> None:

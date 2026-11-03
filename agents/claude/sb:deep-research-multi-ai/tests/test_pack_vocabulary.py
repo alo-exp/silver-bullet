@@ -60,6 +60,49 @@ class ActivationTests(unittest.TestCase):
                 raise RuntimeError("restored even on failure")
         self.assertEqual(sl.KCF_NAMES, [])
 
+    def test_pack_vocabulary_also_reaches_a_script_run_as_main(self) -> None:
+        import runpy
+        import types
+
+        script = SCRIPTS / "synthesize_landscape.py"
+        seen: dict = {}
+        fake_main = types.ModuleType("__main__")
+        fake_main.__file__ = str(script)
+        fake_main.KCF_NAMES = []
+        original = sys.modules["__main__"]
+        sys.modules["__main__"] = fake_main
+        try:
+            with pv.apply_values({"synthesize_landscape.KCF_NAMES": ["Feature X"]}):
+                seen["main"] = list(fake_main.KCF_NAMES)
+                seen["module"] = list(sl.KCF_NAMES)
+            seen["restored"] = (fake_main.KCF_NAMES, sl.KCF_NAMES)
+        finally:
+            sys.modules["__main__"] = original
+        self.assertEqual(seen, {"main": ["Feature X"], "module": ["Feature X"], "restored": ([], [])})
+        # unrelated __main__ scripts are left alone
+        with pv.apply_values({"synthesize_landscape.KCF_NAMES": ["Y"]}):
+            self.assertFalse(hasattr(sys.modules["__main__"], "KCF_NAMES"))
+        # and the real CLI path: run the script as __main__ against an APO run directory
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for rel, data in {
+                "contributions/all-envelopes.json": [],
+                "comparison/comparison.json": {"rankings": [], "rows": []},
+                "need_profile.json": {"category": "Cat", "category_pack_id": PACK_ID},
+                "run_manifest.json": {"query": "q"},
+            }.items():
+                (root / rel).parent.mkdir(parents=True, exist_ok=True)
+                (root / rel).write_text(json.dumps(data), encoding="utf-8")
+            argv = sys.argv
+            sys.argv = [str(script), "--dir", str(root), "--skip-charts"]
+            try:
+                with self.assertRaises(SystemExit):
+                    runpy.run_path(str(script), run_name="__main__")
+            finally:
+                sys.argv = argv
+            md = (root / "landscape" / "landscape-report.md").read_text(encoding="utf-8")
+        self.assertIn("SDLC plugins need hook-enforced gates", md)  # the pack's Leader rule text reached __main__
+
     def test_research_dir_decorator_reads_the_need_profile(self) -> None:
         seen = []
 

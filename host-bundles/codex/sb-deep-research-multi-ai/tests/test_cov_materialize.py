@@ -22,7 +22,7 @@ PACK = {
     "markets": [{"id": "x", "seeds": [{"slug": "zeta-tool", "name": "Zeta Tool"}, {"slug": "omega", "name": "Omega"}]}],
     "product_aliases": {"zt": "zeta-tool"},
 }
-KNOWN_WITH_PACK = {**m.KNOWN_SOLUTIONS, **cp.build_known_solutions(PACK)}
+KNOWN_WITH_PACK = {**m._known_or_run(None), **cp.build_known_solutions(PACK)}
 
 
 def support_of(func, *args, **kwargs) -> dict:
@@ -94,7 +94,7 @@ class SlugTests(unittest.TestCase):
         with mock.patch.object(m, "resolve_pack_from_need", return_value=None):
             self.assertEqual(m._effective_overview_seeds(), m.OVERVIEW_SEEDS)
             self.assertIsNot(m._effective_overview_seeds(), m.OVERVIEW_SEEDS)
-            self.assertEqual(m._effective_known_solutions(), m.KNOWN_SOLUTIONS)
+            self.assertEqual(m._effective_known_solutions(), m._known_or_run(None))
         pack = {**PACK, "overview_seeds": {"zeta-tool": "Zeta overview", "devin": "Overridden"}}
         with mock.patch.object(m, "resolve_pack_from_need", return_value=pack):
             seeds = m._effective_overview_seeds({"category_pack_id": "demo"})
@@ -104,7 +104,7 @@ class SlugTests(unittest.TestCase):
         self.assertEqual(seeds["factory-ai"], m.OVERVIEW_SEEDS["factory-ai"])
         self.assertNotIn("silver-bullet", seeds)
         self.assertEqual(known["zeta-tool"], "Zeta Tool")
-        self.assertEqual(known["devin"], m.KNOWN_SOLUTIONS["devin"])
+        self.assertIn("devin", known)  # the run context supplies the pack names
         self.assertEqual(m.OVERVIEW_SEEDS["devin"], m._effective_overview_seeds() ["devin"])
 
     def test_extract_slugs_from_text(self) -> None:
@@ -581,8 +581,8 @@ class BulkClaimTests(unittest.TestCase):
         support: dict = {}
         self.assertFalse(m._parse_host_runtime_substrate_claim(support, "unrelated"))
         self.assertFalse(m._parse_host_runtime_substrate_claim(support, "host runtime substrate row for zzz"))
-        known = {**m.KNOWN_SOLUTIONS, "cursor": "Cursor", "claude-code": "Claude Code"}
-        self.assertTrue(m._parse_host_runtime_substrate_claim(support, "Host runtime: Cursor and Claude Code", known=known))
+        known = {**m._known_or_run(None), "cursor": "Cursor", "claude-code": "Claude Code"}
+        self.assertTrue(m._parse_host_runtime_substrate_claim(support, "Host runtime: Cursor IDE and Claude Code", known=known))
         self.assertEqual(support, {"cursor": {"IDE-native integration": True}, "claude-code": {"IDE-native integration": True}})
 
 
@@ -592,7 +592,7 @@ class ParseFeatureSupportTests(unittest.TestCase):
         envelopes = env(
             "Confirmed in-scope core set: devin",
             "matrix leaders are aider",
-            "Host runtime: cursor",
+            "Host runtime: Cursor IDE",
             "Matrix — CI integration: cline",
             "Hook-enforced gates ✔ for openhands",
             "Matrix entry — Continue: has hooks and CI/CD",
@@ -601,7 +601,7 @@ class ParseFeatureSupportTests(unittest.TestCase):
             "Matrix entry gibberish without colon",
             "Linear offers hook gates",
         )
-        known = {**m.KNOWN_SOLUTIONS, "cursor": "Cursor"}
+        known = {**m._known_or_run(None), "cursor": "Cursor"}
         support = m.parse_feature_support(envelopes, known=known)
         self.assertTrue(support["devin"]["Hook-enforced gates"])
         self.assertTrue(support["aider"]["IDE-native integration"])
@@ -897,7 +897,33 @@ class OpenDiscoveryTests(unittest.TestCase):
         self.assertEqual(r("The Dev", known, pack), "devika")
         self.assertIsNone(r("Unknown vendor", known, pack))  # with a pack unknown vendors are ignored
 
-    def test_blank_vendor_rows_are_ignored_and_the_last_row_of_a_model_wins(self) -> None:
+    def test_feature_spellings_are_folded_and_the_users_spelling_wins(self) -> None:
+        known = {"devika": "Devika"}
+        envs = [
+            self.rows(self.row("Devika", "Single sign-on"), model="m1"),
+            self.rows(self.row("Devika", "single SIGN ON", False), model="m2"),
+            self.rows(self.row("Devika", "Single Sign-On", False), model="m3"),
+            self.rows(self.row("Devika", "Single sign on", False), model="m4"),
+        ]
+        got = m.parse_structured_matrix_entries(envs, known=known)
+        self.assertEqual(list(got["devika"]), ["Single sign-on"])  # most common spelling; one row
+        self.assertIs(got["devika"]["Single sign-on"], False)  # 1 yes vs 3 no, all on the same cell
+        wanted = m.parse_structured_matrix_entries(envs, known=known, preferred_features=["Single Sign-on (SSO)", "Single sign-on"])
+        self.assertEqual(list(wanted["devika"]), ["Single sign-on"])
+        user = m.parse_structured_matrix_entries(envs, known=known, preferred_features=["SINGLE SIGN-ON"])
+        self.assertEqual(list(user["devika"]), ["SINGLE SIGN-ON"])  # the need profile's spelling is used
+        self.assertEqual(m._feature_key("  Exactly-once   Semantics! "), "exactly once semantics")
+
+    def test_derived_critical_features(self) -> None:
+        support = {"a": {"X": True, "Y": True, "Z": False}, "b": {"X": True, "Y": False, "W": None}}
+        self.assertEqual(m.derive_critical_features({}, support), {"X": "Critical", "Y": "Critical"})
+        self.assertEqual(m.derive_critical_features({}, support, limit=1), {"X": "Critical"})
+        self.assertEqual(m.derive_critical_features({"must_haves": ["x"]}, support), {})  # a must-have matches (folded)
+        self.assertEqual(m.derive_critical_features({"must_haves": ["nope"]}, support), {"X": "Critical", "Y": "Critical"})
+        self.assertEqual(m.derive_critical_features({"weights_override": {"Z": "Low"}}, support), {})  # the user decided
+        self.assertEqual(m.derive_critical_features({}, {"a": {"Z": False}}), {})  # nothing ticked
+
+
         known = {"devika": "Devika"}
         envs = [
             self.rows(self.row(""), self.row(None), {"feature": "SSO", "supported": True}, self.row("Devika", "SSO", False)),
