@@ -78,7 +78,9 @@ CITATION_RE = re.compile(r'\[(\d{1,4}(?:,\s*\d{1,4})*)\]')
 NON_CLAIM_SECTIONS = frozenset(['bibliography', 'references', 'sources', 'works_cited'])
 
 # Sentence splitting (basic but handles abbreviations)
-SENTENCE_RE = re.compile(r'(?<=[.!?])\s+(?=[A-Z])')
+# A sentence ends at ". " before a capital letter; at a blank line (a paragraph break); and after a
+# citation marker ("... [1]. 62% of ...") before a digit or a lower-case brand ("iPhone sales ...").
+SENTENCE_RE = re.compile(r'(?<=[.!?])\s+(?=[A-Z])|[ \t]*\n[ \t]*\n\s*|(?<=\][.!?])\s+(?=[\da-z])')
 
 
 # Whole-word cues: "considerable", "suggests" (as in "data suggests") and "Mighty" must not
