@@ -51,6 +51,10 @@ def _envelopes_from_claims(claims: list[str]) -> list[dict]:
     ]
 
 
+from apo_pack_run_fixture import with_apo_pack_run  # noqa: E402
+
+
+@with_apo_pack_run
 class MaterializeSolutionArtifactsTests(unittest.TestCase):
     def test_materialize_from_matrix_claim(self) -> None:
         envelopes = [
@@ -254,6 +258,7 @@ if __name__ == "__main__":
     unittest.main()
 
 
+@with_apo_pack_run
 class OverviewIdentityLeakTests(unittest.TestCase):
     def test_director_superpowers_overview_rejected(self) -> None:
         from materialize_solution_artifacts import is_unusable_overview_claim
