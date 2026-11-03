@@ -263,6 +263,7 @@ AG="$HOME/.cursor/agents"
 mkdir -p "$AG/silver-legacy"
 printf -- '---\nname: silver-legacy\n---\nSilver Bullet legacy agent\n' >"$AG/silver-legacy/SKILL.md"
 printf -- '---\nname: my-own\n---\nunrelated agent\n' >"$AG/my-own.md"
+mkdir -p "$SNAP/host-bundles/cursor/silver-legacy"
 BEFORE_COUNT="$(find "$AG" -maxdepth 1 -name 'sb-*.md' | wc -l | tr -d ' ')"
 tl_run env CURSOR_HOME="$HOME/.cursor" SB_INSTALL_CURSOR_SOURCE_ONLY=1 bash -c 'source "$1"; cleanup_cursor_custom_agents ""' _ "$SCRIPT"
 assert_eq "cleanup exits 0" 0 "$TL_STATUS"
@@ -270,6 +271,7 @@ assert_eq "installer-managed sb-* agents stay" "$BEFORE_COUNT" "$(find "$AG" -ma
 assert_file_absent "legacy Silver Bullet agent quarantined" "$AG/silver-legacy"
 assert_file_exists "unrelated agent untouched" "$AG/my-own.md"
 assert_file_exists "legacy agent kept in quarantine" "$(find "$HOME/.cursor/.silver-bullet-quarantine" -path '*silver-legacy*' -name SKILL.md | head -1)"
+rm -rf "${SNAP:?}/host-bundles"
 
 # marker evasion: only genuine installer output is exempt from the quarantine
 AG2="$TL_TMP/agents2/agents"; rm -rf "${TL_TMP:?}/agents2"; mkdir -p "$AG2/sub"
@@ -314,7 +316,10 @@ for f in team-gpt-5-high sb-Claude-4-5-Sonnet-high 'sb-gemini 3-high'; do
 done
 
 # ---- R7-11: only provable Silver Bullet agents are quarantined; user agents never move
-AG3="$TL_TMP/agents3/agents"; rm -rf "${TL_TMP:?}/agents3"; mkdir -p "$AG3/team" "$AG3/my-skill" "$AG3/silver-old" "$AG3/tdd-copy"
+AG3="$TL_TMP/agents3/agents"; rm -rf "${TL_TMP:?}/agents3"; mkdir -p "$AG3/team" "$AG3/my-skill" "$AG3/silver-old" "$AG3/tdd-copy" "$AG3/silver-surfer"
+printf -- '---\nname: silver-surfer\n---\nMy own agent.\n' >"$AG3/silver-surfer/SKILL.md"
+printf -- '---\nname: silver-lining\n---\nMy own agent.\n' >"$AG3/silver-lining.md"
+mkdir -p "$SNAP/host-bundles/cursor/silver-old" "$SNAP/host-bundles/cursor/subagent-sb:plan"
 printf -- '---\nname: tdd\n---\nMy own TDD coach.\n' >"$AG3/tdd.md"
 printf -- '---\nname: code-reviewer\n---\nWe follow the silver-bullet workflow (Silver Bullet).\n' >"$AG3/code-reviewer.md"
 printf -- '---\nname: silverlight-porter\n---\nPorts Silverlight apps.\n' >"$AG3/silverlight-porter.md"
@@ -335,6 +340,9 @@ assert_eq "provable cleanup exits 0" 0 "$TL_STATUS"
 for f in tdd.md code-reviewer.md silverlight-porter.md team/notes.json my-skill/SKILL.md my-skill/helper.md full-conversation/SKILL.md; do
   assert_file_exists "user agent $f stays in place" "$AG3/$f"
 done
+assert_file_exists "silver-* user agent SB never shipped stays (dir)" "$AG3/silver-surfer/SKILL.md"
+assert_file_exists "silver-* user agent SB never shipped stays (file)" "$AG3/silver-lining.md"
+assert_contains "unshipped namespace-named agent reported, not moved" "$TL_ERR" "left $AG3/silver-lining.md in place"
 assert_eq "symlinked entry is never moved" 1 "$([[ -L "$AG3/silver-link.md" ]] && echo 1 || echo 0)"
 assert_file_absent "SB-namespace agent dir quarantined" "$AG3/silver-old"
 assert_file_absent "SB-namespace agent file quarantined" "$AG3/subagent-sb:plan.md"

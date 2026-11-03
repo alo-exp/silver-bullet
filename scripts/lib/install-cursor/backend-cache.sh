@@ -227,6 +227,11 @@ LEGACY_GENERIC = {"subagent-tdd", "tdd", "full-conversation", "ai-llm-safety", "
 AGENT_SUFFIXES = {".md", ".json", ".yaml", ".yml"}
 
 
+def shipped_name(name: str) -> bool:
+    """True when Silver Bullet ships a bundle called ``name`` (the namespace alone proves nothing)."""
+    return bundle_root is not None and (bundle_root / name).is_dir()
+
+
 def shipped_copy(name: str, item: Path) -> bool:
     """True when ``item`` is byte-identical to the bundle Silver Bullet ships as ``name``."""
     if bundle_root is None:
@@ -264,8 +269,14 @@ for scope, root in roots:
         else:
             continue
         key = name.lower()
-        if SB_NAMESPACE.match(key) or (key in LEGACY_GENERIC and shipped_copy(name, item)):
+        if (SB_NAMESPACE.match(key) and shipped_name(name)) or (key in LEGACY_GENERIC and shipped_copy(name, item)):
             quarantine_path(scope, item, bucket)
+        elif SB_NAMESPACE.match(key):
+            print(
+                f"Note: left {item} in place: its name is in Silver Bullet's namespace, "
+                "but Silver Bullet does not ship it. Remove it yourself if it is stale.",
+                file=sys.stderr,
+            )
         elif key in LEGACY_GENERIC:
             print(
                 f"Note: left {item} in place: its name matches a legacy Silver Bullet agent, "
