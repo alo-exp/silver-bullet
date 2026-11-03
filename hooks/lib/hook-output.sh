@@ -58,12 +58,16 @@ _sb_hook_replace_all() {
 # Linear time: the text is encoded in 256-character chunks, so the rescanning replace loop
 # never works on more than one chunk (a chunk boundary can never split an escape).
 _sb_hook_json_bash() {
-  local s="$1" bs="\\" q='"' nl=$'\n' cr=$'\r' tab=$'\t' i oct hex pos=0 out="" len="${#1}"
+  # Byte-oriented: Bash 5.2 returns uninitialised bytes from "${s%%"\\"*}" in a UTF-8 locale
+  # when a lone lead byte precedes the pattern. Only ever called inside $(...), so no leak.
+  local LC_ALL=C
+  local s="$1" bs="\\" q='"' nl=$'\n' cr=$'\r' tab=$'\t' i oct hex ch pos=0 out="" len="${#1}"
   local -a ctl_ch=() ctl_esc=()
   for i in 1 2 3 4 5 6 7 8 11 12 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31; do
     printf -v oct '%03o' "$i"
     printf -v hex '%04x' "$i"
-    printf -v 'ctl_ch[i]' '%b' "\\0$oct"
+    printf -v ch '%b' "\\0$oct"
+    ctl_ch[i]="$ch"
     ctl_esc[i]="${bs}u$hex"
   done
   while [[ "$pos" -lt "$len" ]]; do
