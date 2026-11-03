@@ -110,6 +110,13 @@ assert_file_exists "foreign codex cache preserved" "$CX/plugins/cache/alo-labs-c
 assert_eq "SB hooks stripped, foreign kept" '["/usr/bin/keep"]' "$(jq -c '[.. | .command? // empty]' "$CX/hooks.json")"
 assert_not_contains "hook state stripped from config" "$(<"$CX/config.toml")" "hooks.state"
 assert_contains "other config tables preserved" "$(<"$CX/config.toml")" "[other]"
+# SB's own duplicated trust tables (older installers) must not stop the uninstall: it repairs first
+DUP="$TL_TMP/dup"; mkdir -p "$DUP/.codex"
+printf '[model]\nname = "x"\n\n[hooks.state."silver-bullet@alo-labs-codex:hooks/hooks.json:pre_tool_use:0:0"]\ntrusted_hash = "sha256:a"\n\n[hooks.state]\n\n[hooks.state."silver-bullet@alo-labs-codex:hooks/hooks.json:pre_tool_use:0:0"]\ntrusted_hash = "sha256:b"\n\n[other]\nk = 1\n' >"$DUP/.codex/config.toml"
+tl_run env CODEX_HOME_ROOT="$DUP" bash -c 'set -euo pipefail; source "$1"; sb_post_release_uninstall_codex' _ "$LIB"
+assert_eq "uninstall over duplicated SB trust tables exits 0" 0 "$TL_STATUS"
+assert_not_contains "duplicated SB trust tables removed" "$(<"$DUP/.codex/config.toml")" "silver-bullet@"
+assert_contains "user config kept after the repair" "$(<"$DUP/.codex/config.toml")" "[other]"
 # CODEX_HOME_ROOT is honoured
 mkdir -p "$TL_TMP/alt/.codex/plugins/cache/alo-labs-codex/silver-bullet"
 tl_run env CODEX_HOME_ROOT="$TL_TMP/alt" bash -c 'source "$1"; sb_post_release_uninstall_codex' _ "$LIB"
