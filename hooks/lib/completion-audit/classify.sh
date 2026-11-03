@@ -87,9 +87,12 @@ _ca_regex_tier() {
 #   change class and enterprise policy match ("gh pr create [gh pr new --fill]",
 #   "deploy [make Deploy]"); without delivery it is the first line, as before.
 # Also sets, for gates that want more detail:
-#   ca_tier, ca_actions, ca_possible_actions, ca_could_be_delivery, ca_opaque, and
+#   ca_tier, ca_actions, ca_possible_actions, ca_could_be_delivery, ca_opaque,
+#   ca_unseen_reasons (why the command "cannot be inspected": one per line; gates that block on
+#   the `unseen` pseudo action should say so instead of presenting it as a production delivery), and
 #   ca_analysis_status (ok|empty|parse_failed|helper_unavailable; the last two use a regex
-#   fallback over every line, which gates should treat as a reason to fail closed).
+#   fallback over every line, which gates should treat as a reason to fail closed). When the library
+#   and python3 are installed but the helper did not finish, the command counts as completion-tier unseen code.
 # Returns 0 when the command matches a delivery gate; 1 to skip (no gate).
 # shellcheck disable=SC2034  # the globals are outputs, read by completion-audit.sh and its tiers
 ca_classify_command() {
@@ -98,9 +101,21 @@ ca_classify_command() {
   is_completion=false
   cmd_first_line=$(printf '%s' "$cmd" | head -1)
   ca_tier="none" ca_actions="" ca_possible_actions="" ca_could_be_delivery=false ca_opaque=false
+  ca_unseen_reasons=""
 
   _ca_analyse "$cmd"
   ca_analysis_status="${SB_TI_STATUS:-helper_unavailable}"
+  if [[ "$ca_analysis_status" == "helper_unavailable" ]] && declare -f sb_shell_analysis_load >/dev/null 2>&1 &&
+    command -v python3 >/dev/null 2>&1; then
+    # the library and python3 are there but the helper did not finish: the command cannot be inspected, and
+    # the plain-verb regex below misses aliases and escapes, so apply the strictest floor instead of trusting
+    # it (a partial install without shell-analysis.sh, or no python3, keeps the regex tier)
+    ca_tier="completion" ca_possible_actions="unseen" ca_could_be_delivery=true ca_opaque=true
+    ca_unseen_reasons="the shell analysis helper failed (${SB_TI_ERROR:-no output})"
+    cmd_first_line="deploy [unseen: $ca_unseen_reasons]"
+    is_completion=true
+    return 0
+  fi
   if [[ "$ca_analysis_status" != "helper_unavailable" ]]; then
     [[ "${SB_SA_SKILL_ADAPTER:-}" == "true" ]] && return 1
     ca_tier="$(sb_shell_analysis_effective_tier)"
@@ -108,6 +123,7 @@ ca_classify_command() {
     ca_possible_actions="${SB_SA_POSSIBLE_ACTIONS:-}"
     ca_could_be_delivery="${SB_SA_COULD_BE_DELIVERY:-false}"
     ca_opaque="${SB_SA_OPAQUE:-false}"
+    ca_unseen_reasons="${SB_SA_UNSEEN_REASONS:-}"
     [[ "$ca_tier" == "none" ]] || cmd_first_line="${SB_SA_LEGACY_FIRST_LINE:-$cmd_first_line}"
   fi
   if [[ "$ca_analysis_status" == "helper_unavailable" || "$ca_analysis_status" == "parse_failed" ]]; then
