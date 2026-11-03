@@ -110,6 +110,25 @@ assert_file_exists "foreign codex cache preserved" "$CX/plugins/cache/alo-labs-c
 assert_eq "SB hooks stripped, foreign kept" '["/usr/bin/keep"]' "$(jq -c '[.. | .command? // empty]' "$CX/hooks.json")"
 assert_not_contains "hook state stripped from config" "$(<"$CX/config.toml")" "hooks.state"
 assert_contains "other config tables preserved" "$(<"$CX/config.toml")" "[other]"
+# SB's own duplicated trust tables (older installers) must not stop the uninstall: it repairs first
+DUP="$TL_TMP/dup"; mkdir -p "$DUP/.codex"
+printf '[model]\nname = "x"\n\n[hooks.state."silver-bullet@alo-labs-codex:hooks/hooks.json:pre_tool_use:0:0"]\ntrusted_hash = "sha256:a"\n\n[hooks.state]\n\n[hooks.state."silver-bullet@alo-labs-codex:hooks/hooks.json:pre_tool_use:0:0"]\ntrusted_hash = "sha256:b"\n\n[other]\nk = 1\n' >"$DUP/.codex/config.toml"
+tl_run env CODEX_HOME_ROOT="$DUP" bash -c 'set -euo pipefail; source "$1"; sb_post_release_uninstall_codex' _ "$LIB"
+assert_eq "uninstall over duplicated SB trust tables exits 0" 0 "$TL_STATUS"
+assert_not_contains "duplicated SB trust tables removed" "$(<"$DUP/.codex/config.toml")" "silver-bullet@"
+assert_contains "user config kept after the repair" "$(<"$DUP/.codex/config.toml")" "[other]"
+# Every config.toml write in one uninstall run keeps the pre-run original in .sb-backup, however long the
+# purge starts after the repair (the run start is exported once at entry, not guessed from a 2 s margin)
+SLOW="$TL_TMP/slow"; mkdir -p "$SLOW/.codex" "$SLOW/bin"
+printf '[model]\nname = "x"\n\n[hooks.state."silver-bullet@alo-labs-codex:hooks/hooks.json:pre_tool_use:0:0"]\ntrusted_hash = "sha256:a"\n\n[hooks.state]\n\n[hooks.state."silver-bullet@alo-labs-codex:hooks/hooks.json:pre_tool_use:0:0"]\ntrusted_hash = "sha256:b"\n\n[other]\nk = 1\n' >"$SLOW/.codex/config.toml"
+cp "$SLOW/.codex/config.toml" "$SLOW/original.toml"
+REAL_PY="$(command -v python3)"
+printf '#!/bin/bash\nif [[ -e "%s/seen" ]]; then sleep 3; fi\n: >"%s/seen"\nexec "%s" "$@"\n' "$SLOW" "$SLOW" "$REAL_PY" >"$SLOW/bin/python3"
+chmod +x "$SLOW/bin/python3"
+tl_run env -u SB_INSTALL_RUN_START CODEX_HOME_ROOT="$SLOW" PATH="$SLOW/bin:$PATH" bash -c 'source "$1"; sb_post_release_uninstall_codex' _ "$LIB"
+assert_eq "slow two-writer uninstall exits 0" 0 "$TL_STATUS"
+assert_not_contains "slow uninstall removed SB tables" "$(<"$SLOW/.codex/config.toml")" "silver-bullet@"
+assert_eq ".sb-backup keeps the pre-run original after two writes" "$(<"$SLOW/original.toml")" "$(<"$SLOW/.codex/config.toml.sb-backup")"
 # CODEX_HOME_ROOT is honoured
 mkdir -p "$TL_TMP/alt/.codex/plugins/cache/alo-labs-codex/silver-bullet"
 tl_run env CODEX_HOME_ROOT="$TL_TMP/alt" bash -c 'source "$1"; sb_post_release_uninstall_codex' _ "$LIB"
