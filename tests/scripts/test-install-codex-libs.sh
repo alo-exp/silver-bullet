@@ -571,6 +571,16 @@ sub seed_silver_bullet_hook_trust_state
 assert_contains "SB's own duplicate tables repaired" "$TL_ERR" "removed Silver Bullet hook-trust tables declared twice"
 assert_eq "repaired config parses with one SB entry" 1 "$(toml_get "$CFG" 'len(d["hooks"]["state"])')"
 assert_eq "repair keeps other tables" 1 "$(toml_get "$CFG" 'd["other"]["keep"]')"
+# the repair also runs at the start of a full install, before any other config.toml edit
+printf '[hooks.state."%s"]\ntrusted_hash = "sha256:a"\n[hooks.state."%s"]\ntrusted_hash = "sha256:b"\n[other]\nkeep = 1\n' "$SBKEY" "$SBKEY" >"$CFG"
+sub repair_silver_bullet_duplicate_trust_tables
+assert_contains "install-time repair reports" "$TL_ERR" "removed Silver Bullet hook-trust tables declared twice"
+assert_eq "install-time repair leaves a valid config" '{"other": {"keep": 1}}' "$(toml_get "$CFG" 'd' | sed 's/{"hooks": {"state": {}}, /{/')"
+sub repair_silver_bullet_duplicate_trust_tables
+assert_eq "a valid config is not touched by the repair" 0 "$TL_STATUS"
+printf '[other]\nkeep = 1\n[other]\n' >"$CFG"
+sub repair_silver_bullet_duplicate_trust_tables
+assert_eq "an unrelated invalid config is left for the edit that reports it" $'[other]\nkeep = 1\n[other]' "$(<"$CFG")"
 printf '[other]\nkeep = 1\n[other]\n' >"$CFG"
 sub seed_silver_bullet_hook_trust_state
 assert_eq "an unrelated invalid config does not stop the install" 0 "$TL_STATUS"

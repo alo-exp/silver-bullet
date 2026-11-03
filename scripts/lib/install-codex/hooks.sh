@@ -80,8 +80,7 @@ home = pathlib.Path(sys.argv[4]).expanduser()
 lib_dir = pathlib.Path(sys.argv[5])
 sys.path.insert(0, str(lib_dir))
 from sb_host_config import (  # noqa: E402
-    ConfigError, TomlDocument, check_toml, is_sb_hook_command, read_bytes, read_json, read_toml,
-    sb_hook_names, toml_string, write_toml,
+    ConfigError, is_sb_hook_command, read_json, read_toml_repairing, sb_hook_names, toml_string, write_toml,
 )
 
 package_hooks_src = package_root / "hooks" / "hooks.json"
@@ -176,17 +175,10 @@ def sb_trust(path) -> bool:
 
 
 def load_config():
-    try:
-        return read_toml(config_path)
-    except ConfigError as first:
-        try:
-            doc = TomlDocument((read_bytes(config_path) or b"").decode("utf-8"), str(config_path))
-            doc.remove(sb_trust)
-            check_toml(doc.text, str(config_path))
-        except (ConfigError, UnicodeDecodeError):
-            raise first from None
+    doc, repaired = read_toml_repairing(config_path, sb_trust)
+    if repaired:
         print(f"Repaired {config_path}: removed Silver Bullet hook-trust tables declared twice", file=sys.stderr)
-        return doc
+    return doc
 
 
 try:
@@ -201,6 +193,29 @@ try:
     write_toml(config_path, doc)
 except ConfigError as exc:
     print(f"WARN: Silver Bullet hook trust not seeded: {exc}. Codex will ask you to review the hooks.", file=sys.stderr)
+PY
+}
+
+
+# Older installers could leave Silver Bullet's own hook-trust tables declared twice, which makes
+# config.toml invalid TOML and would stop every later structural edit. Run first in install-codex.sh:
+# when that is the file's only fault, those tables are removed (the trust seeding writes them
+# again); any other fault is left alone, for the edit that needs it to report.
+repair_silver_bullet_duplicate_trust_tables() {
+  python3 - "${CODEX_HOME_ROOT}/.codex/config.toml" "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)" <<'PY'
+import sys
+
+sys.path.insert(0, sys.argv[2])
+from sb_host_config import ConfigError, read_toml_repairing, write_toml  # noqa: E402
+
+path = sys.argv[1]
+try:
+    doc, repaired = read_toml_repairing(path, lambda p: len(p) >= 3 and p[:2] == ("hooks", "state") and p[2].startswith("silver-bullet@"))
+    if repaired:
+        write_toml(path, doc)
+        print(f"Repaired {path}: removed Silver Bullet hook-trust tables declared twice", file=sys.stderr)
+except ConfigError:
+    pass
 PY
 }
 

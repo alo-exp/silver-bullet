@@ -73,6 +73,7 @@ if ! command -v "${CODEX_BIN}" >/dev/null 2>&1; then
   exit 1
 fi
 
+repair_silver_bullet_duplicate_trust_tables
 remove_marketplace_if_present "${CODEX_MARKETPLACE_LEGACY_NAME}"
 if [[ "$PUBLIC_RELEASE_ONLY" -eq 1 ]]; then
   ensure_marketplace_registered "${CODEX_MARKETPLACE_SOURCE}"

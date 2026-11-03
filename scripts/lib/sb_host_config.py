@@ -636,6 +636,22 @@ def read_toml(path, label=None) -> TomlDocument:
     return TomlDocument(text, label)
 
 
+def read_toml_repairing(path, repairable, label=None):
+    """Like ``read_toml``, but a file that only fails because of tables ``repairable(path)``
+    selects (Silver Bullet's own duplicated trust tables) is loaded without them.
+    Return ``(document, repaired)``; any other fault raises ConfigError."""
+    try:
+        return read_toml(path, label), False
+    except ConfigError as first:
+        try:
+            doc = TomlDocument((read_bytes(path) or b"").decode("utf-8"), label or str(path))
+            doc.remove(repairable)
+            check_toml(doc.text, label or str(path))
+        except (ConfigError, UnicodeDecodeError):
+            raise first from None
+        return doc, True
+
+
 def write_toml(path, document: TomlDocument, *, backup: bool = True) -> bool:
     """Validate and atomically write ``document``; return False when nothing changed."""
     check_toml(document.text, document.label)

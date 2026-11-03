@@ -98,6 +98,20 @@ class FileWriteTest(Tmp):
         self.assertEqual(crlf.text, '[x.b]\r\nk = 1\r\n')
         self.assertEqual(m.TomlDocument("[a]\n").rename_tables({}), 0)
 
+    def test_read_toml_repairing_only_repairs_what_it_is_told_to(self):
+        path = self.tmp / "c.toml"
+        path.write_text('[a."x"]\nk = 1\n[a."x"]\nk = 2\n[b]\nk = 1\n')
+        doc, repaired = m.read_toml_repairing(path, lambda p: p[:1] == ("a",))
+        self.assertEqual((tomllib.loads(doc.text), repaired), ({"b": {"k": 1}}, True))
+        path.write_text("[a]\nk = 1\n")
+        self.assertTrue(m.read_toml_repairing(path, lambda p: True)[1] is False)
+        path.write_text('[b]\nk = 1\n[b]\n')
+        with self.assertRaises(m.ConfigError):
+            m.read_toml_repairing(path, lambda p: p[:1] == ("a",))
+        path.write_bytes(b"\xff\xfe")
+        with self.assertRaises(m.ConfigError):
+            m.read_toml_repairing(path, lambda p: True)
+
     def test_symlink_is_written_through(self):
         real = self.tmp / "dotfiles" / "settings.json"
         real.parent.mkdir()
