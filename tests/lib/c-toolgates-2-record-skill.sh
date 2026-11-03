@@ -21,7 +21,7 @@ bash_input() { # command [tool] [exit_code]
     '{hook_event_name:"PostToolUse", tool_name:$t, tool_input:{command:$c}, tool_response:{exit_code:$x}}'
 }
 rs() { tg2_run "$HOOK" "$1" SILVER_BULLET_SESSION_LOG_PATH_FILE="$LOG_PATH_FILE" "${@:2}"; }
-msg() { printf '%s' "$TL_OUT" | jq -r '.hookSpecificOutput.message // ""' 2>/dev/null || true; }
+msg() { printf '%s' "$TL_OUT" | jq -r '.systemMessage // ""' 2>/dev/null || true; }
 lines() { [[ -f "$1" ]] && cat "$1" || true; }
 in_state() { grep -Fqx -- "$2" "$1" 2>/dev/null; }
 assert_in() { # name file line

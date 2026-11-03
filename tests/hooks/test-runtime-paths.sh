@@ -72,6 +72,74 @@ if scoped SB_RUNTIME_EXTRA_STATE_ROOTS="/kay/.silver-bullet/" "/kay/.silver-bull
 if scoped SB_RUNTIME_EXTRA_STATE_ROOTS="/odd/root" "/odd/root/state"; then tl_fail "extra root not ending in .silver-bullet rejected"; else tl_pass "extra root not ending in .silver-bullet rejected"; fi
 if scoped SB_RUNTIME_EXTRA_STATE_ROOTS="/kay/.silver-bullet" "/elsewhere/state"; then tl_fail "unrelated path with extra roots rejected"; else tl_pass "unrelated path with extra roots rejected"; fi
 
+# ---- canonical containment (R2-28, R3-05, R5-01) ------------------------------
+# A string-prefix test let '..', the root itself and symlinked components through.
+SR="$H/.claude/.silver-bullet"
+mkdir -p "$SR/sub" "$H/outside"
+: >"$H/outside/victim"
+ln -s "$H/outside" "$SR/escape"
+ln -s "$H/outside/victim" "$SR/leaflink"
+ln -s "$H/outside/not-yet" "$SR/dangling"
+ln -s "$SR/sub" "$SR/inlink"
+ln -s "$SR/sub/real" "$SR/inleaf"
+for bad in "$SR/../../victim" "$SR/../.silver-bullet-evil/state" "$SR/sub/../../x" \
+  "$SR/a/../../../x" "$SR/nonexist/../../x" "$SR/escape/state" "$SR/leaflink" \
+  "$SR/dangling/state" "$SR" "$SR/" "$SR/." "$SR/sub/.." "$SR/.." "relative/state" \
+  "~"/.claude/.silver-bullet/state "$SR/new"$'\n'"line" "C:\\Users\\x\\.claude\\.silver-bullet\\state"; do
+  if scoped "$bad"; then tl_fail "escape rejected: $bad"; else tl_pass "escape rejected: $bad"; fi
+done
+for good in "$SR/state" "$SR//state" "$SR/./state" "$SR/sub/../state" "$SR/inlink/state" \
+  "$SR/state/" "$SR/new/dir/state" "$H//.claude/.silver-bullet/state" "$SR/inleaf"; do
+  if scoped "$good"; then tl_pass "honest path accepted: $good"; else tl_fail "honest path accepted: $good"; fi
+done
+if scoped SB_RUNTIME_EXTRA_STATE_ROOTS="/kay/.silver-bullet" "/kay/.silver-bullet/../x"; then tl_fail "extra root escape rejected"; else tl_pass "extra root escape rejected"; fi
+if scoped SB_RUNTIME_EXTRA_STATE_ROOTS="relative/.silver-bullet" "/relative/.silver-bullet/x"; then tl_fail "relative extra root ignored"; else tl_pass "relative extra root ignored"; fi
+
+# sb_runtime_state_path: the single safe helper prints a validated canonical path or fails.
+sp() { rp "${@:1:$#-1}" -- "sb_runtime_state_path \"$(printf '%s' "${!#}")\" || echo REJECTED"; }
+assert_eq "state path: plain" "$SR/state" "$(sp "$SR/state")"
+assert_eq "state path: tilde expanded" "$SR/state" "$(sp "~"/.claude/.silver-bullet/state)"
+assert_eq "state path: '//', '/./' and trailing slash removed" "$SR/state" "$(sp "$SR//./state/")"
+assert_eq "state path: inner '..' resolved" "$SR/state" "$(sp "$SR/sub/../state")"
+assert_eq "state path: symlinked parent resolved" "$SR/sub/state" "$(sp "$SR/inlink/state")"
+assert_eq "state path: in-root leaf symlink kept as the link" "$SR/inleaf" "$(sp "$SR/inleaf")"
+assert_eq "state path: traversal rejected" "REJECTED" "$(sp "$SR/../../victim")"
+assert_eq "state path: symlinked parent escaping rejected" "REJECTED" "$(sp "$SR/escape/state")"
+assert_eq "state path: leaf symlink escaping rejected" "REJECTED" "$(sp "$SR/leaflink")"
+assert_eq "state path: dangling parent symlink rejected" "REJECTED" "$(sp "$SR/dangling/state")"
+assert_eq "state path: root itself rejected" "REJECTED" "$(sp "$SR/")"
+assert_eq "state path: dot-dot leaf rejected" "REJECTED" "$(sp "$SR/sub/..")"
+assert_eq "state path: dot leaf inside the root" "$SR/sub" "$(sp "$SR/sub/.")"
+assert_eq "state path: relative rejected" "REJECTED" "$(sp "state")"
+assert_eq "state path: empty rejected" "REJECTED" "$(sp "")"
+assert_eq "state path: carriage return rejected" "REJECTED" "$(sp "$SR/a"$'\r'"b")"
+assert_eq "state path: extra root accepted" "/kay/.silver-bullet/state" "$(sp SB_RUNTIME_EXTRA_STATE_ROOTS=/kay/.silver-bullet "/kay/.silver-bullet/state")"
+assert_eq "state path: extra root traversal rejected" "REJECTED" "$(sp SB_RUNTIME_EXTRA_STATE_ROOTS=/kay/.silver-bullet "/kay/.silver-bullet/../.bashrc")"
+assert_eq "state path: pinned state dir is not a root" "REJECTED" "$(sp SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR=/pinned "/pinned/state")"
+# A runtime home reached through a symlink (dotfiles setups): compare canonical forms.
+H2="$TL_TMP/h2"
+mkdir -p "$H2/dotfiles/claude"
+ln -s "$H2/dotfiles/claude" "$H2/.claude"
+assert_eq "state path: symlinked runtime home" "$H2/dotfiles/claude/.silver-bullet/state" "$(env -i PATH="$PATH" HOME="$H2" BASH_ENV="${BASH_ENV:-}" SB_COV_DIR="${SB_COV_DIR:-}" bash -c 'source "$1"; sb_runtime_state_path "$HOME/.claude/.silver-bullet/state"' _ "$LIB")"
+if env -i PATH="$PATH" HOME="$H2" BASH_ENV="${BASH_ENV:-}" SB_COV_DIR="${SB_COV_DIR:-}" bash -c 'source "$1"; sb_runtime_path_is_state_scoped "$HOME/.claude/.silver-bullet/../../escape"' _ "$LIB"; then
+  tl_fail "symlinked runtime home: traversal rejected"
+else
+  tl_pass "symlinked runtime home: traversal rejected"
+fi
+# Symlink loops anywhere in the candidate fail closed.
+ln -s loop "$SR/loop"
+ln -s selfloop "$SR/selfloop"
+assert_eq "state path: loop under a dot-dot leaf rejected" "REJECTED" "$(sp "$SR/loop/..")"
+assert_eq "state path: loop in the parent rejected" "REJECTED" "$(sp "$SR/loop/state")"
+assert_eq "state path: looping leaf symlink rejected" "REJECTED" "$(sp "$SR/selfloop")"
+# Fail closed when the canonicalisation library is not installed next to runtime-paths.sh
+# (a symlink farm, so coverage maps the run to the real file).
+mkdir -p "$TL_TMP/solo/hooks/lib"
+ln -s "$LIB" "$TL_TMP/solo/hooks/lib/runtime-paths.sh"
+assert_eq "no path-canonical library: everything rejected" "REJECTED" "$(env -i PATH="$PATH" HOME="$H" BASH_ENV="${BASH_ENV:-}" SB_COV_DIR="${SB_COV_DIR:-}" bash -c 'source "$1"; sb_runtime_state_path "$HOME/.claude/.silver-bullet/state" || echo REJECTED' _ "$TL_TMP/solo/hooks/lib/runtime-paths.sh")"
+# Sourced by bare name from its own directory: the library is still found.
+assert_eq "bare-name source still loads path-canonical.sh" "$SR/state" "$(cd "$TL_REPO_ROOT/hooks/lib" && env -i PATH="$PATH" HOME="$H" BASH_ENV="${BASH_ENV:-}" SB_COV_DIR="${SB_COV_DIR:-}" bash -c 'source runtime-paths.sh; sb_runtime_state_path "$HOME/.claude/.silver-bullet/state"')"
+
 # ---- receipt dirs -----------------------------------------------------------
 dirs="$(rp SILVER_BULLET_RUNTIME=claude KAY_HOME=/kay PI_CODING_AGENT_DIR=/pi SB_RUNTIME_EXTRA_STATE_ROOTS="/e1/.silver-bullet:/e2::$H/.claude/.silver-bullet" -- 'sb_runtime_skill_receipt_dirs')"
 assert_contains "state dir first" "$(sed -n 1p <<<"$dirs")" "$H/.claude/.silver-bullet/skill-invocations"
