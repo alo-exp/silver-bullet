@@ -177,6 +177,7 @@ if [[ "$market_v" != "$plugin_v" ]]; then
 fi
 require_package_version "$plugin_v"
 release_sha="$(agent_plugins_release_tag_commit "$repo_root" "$plugin_v")"
+agent_plugins_require_tag_on_origin "$repo_root" "$plugin_v"
 
 if [[ -n "$marketplace_repo_root" ]]; then
   publish_marketplace_repo "$marketplace_repo_root" "$plugin_v" "$release_sha"

@@ -114,6 +114,32 @@ git -C "$WORK" push -q origin main
 rc=0; agent_plugins_check_publishable "$WORK" || rc=$?
 assert_eq "pushed checkout is publishable" "0" "$rc"
 
+# A remote that cannot be fetched is an error, not a silent comparison with a stale ref.
+git -C "$WORK" remote set-url origin "$TL_TMP/does-not-exist.git"
+rc=0; out="$(agent_plugins_check_publishable "$WORK" 2>&1)" || rc=$?
+assert_eq "unreachable remote: not publishable" "1" "$rc"
+assert_contains "unreachable remote explained" "$out" "could not fetch origin/main"
+git -C "$WORK" remote set-url origin "$BARE"
+
+# The release tag must be on origin too, unless a batch wrapper already checked it.
+TAGSRC="$TL_TMP/tagsrc"; tl_git_repo "$TAGSRC"
+TAGORIGIN="$TL_TMP/tagorigin.git"; git init -q --bare "$TAGORIGIN"
+git -C "$TAGSRC" remote add origin "$TAGORIGIN"
+git -C "$TAGSRC" tag -a v3.0.0 -m r
+rc=0; out="$(agent_plugins_require_tag_on_origin "$TAGSRC" 3.0.0 2>&1)" || rc=$?
+assert_eq "tag only local: refused" "1" "$rc"
+assert_contains "tag only local explained" "$out" "release tag v3.0.0 is not on origin"
+rc=0; AGENT_PLUGINS_SKIP_PUSH=1 agent_plugins_require_tag_on_origin "$TAGSRC" 3.0.0 || rc=$?
+assert_eq "batch mode leaves the origin check to the wrapper" "0" "$rc"
+rc=0; out="$(agent_plugins_require_tag_on_origin "$TAGSRC" 9.9.9 2>&1)" || rc=$?
+assert_eq "tag missing everywhere: refused" "1" "$rc"
+NOORIGIN="$TL_TMP/noorigin"; tl_git_repo "$NOORIGIN"; git -C "$NOORIGIN" tag -a v3.0.0 -m r
+rc=0; out="$(agent_plugins_require_tag_on_origin "$NOORIGIN" 3.0.0 2>&1)" || rc=$?
+assert_eq "no origin at all: refused" "1" "$rc"
+git -C "$TAGSRC" push -q origin v3.0.0
+rc=0; agent_plugins_require_tag_on_origin "$TAGSRC" 3.0.0 || rc=$?
+assert_eq "tag on origin: accepted" "0" "$rc"
+
 NOUP="$TL_TMP/noup"
 tl_git_repo "$NOUP"
 rc=0; out="$(agent_plugins_check_publishable "$NOUP" 2>&1)" || rc=$?

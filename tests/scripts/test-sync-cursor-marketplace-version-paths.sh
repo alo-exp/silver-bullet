@@ -37,6 +37,14 @@ PKG
   git -C "$T" add -A
   git -C "$T" commit -q -m first
 }
+# push_tag TAG: give the source tree an origin that holds TAG, as after `git push origin TAG`.
+push_tag() {
+  local o="$TL_TMP/srcorigin.$$.$RANDOM.git"
+  git init -q --bare "$o"
+  git -C "$T" remote remove origin 2>/dev/null || true
+  git -C "$T" remote add origin "$o"
+  git -C "$T" push -q origin "$1"
+}
 # prepared_tree: in-repo manifests aligned and committed, release tag v2.0.0 on that commit.
 prepared_tree() {
   new_tree
@@ -44,6 +52,7 @@ prepared_tree() {
   git -C "$T" add -A
   git -C "$T" commit -q -m "align manifests"
   git -C "$T" tag -a v2.0.0 -m release
+  push_tag v2.0.0
 }
 SCRIPT="$T/scripts/sync-cursor-marketplace-version.sh"
 sync_run() { tl_run env -u AGENT_PLUGINS_REPO_ROOT -u CURSOR_MARKETPLACE_REPO_ROOT -u AGENT_PLUGINS_REPO_URL -u CURSOR_MARKETPLACE_REPO_URL -u AGENT_PLUGINS_SKIP_PUSH timeout 60 "$@"; }

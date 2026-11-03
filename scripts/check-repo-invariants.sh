@@ -130,8 +130,9 @@ check_hook-executable() {
   return "$ok"
 }
 
-# Every hooks.json command must name a plugin script, written as ${CLAUDE_PLUGIN_ROOT}/...,
-# $CLAUDE_PLUGIN_ROOT/... or a bare hooks/... or scripts/... path, and that script must exist.
+# Every hooks.json command must name a plugin script written as ${CLAUDE_PLUGIN_ROOT}/... or
+# $CLAUDE_PLUGIN_ROOT/..., and that script must exist. A bare hooks/... or scripts/... path
+# would resolve against the user's project at runtime and run project-controlled code.
 check_hook-references() {
   local cmd script ok=0
   local -r root_re='\$\{?CLAUDE_PLUGIN_ROOT\}?"?/([^"'"'"'[:space:]]+)'
@@ -140,7 +141,9 @@ check_hook-references() {
     if [[ "$cmd" =~ $root_re ]]; then
       script="${BASH_REMATCH[1]}"
     elif [[ "$cmd" =~ $bare_re ]]; then
-      script="${BASH_REMATCH[2]}"
+      echo "  hooks.json runs ${BASH_REMATCH[2]} relative to the working directory (the user's project); use \${CLAUDE_PLUGIN_ROOT}/${BASH_REMATCH[2]}"
+      ok=1
+      continue
     else
       echo "  hooks.json command names no hooks/ or scripts/ file: $cmd"
       ok=1

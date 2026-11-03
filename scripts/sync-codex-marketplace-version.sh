@@ -133,6 +133,7 @@ if [[ "$(manifest_versions)" != "$plugin_v (config_version $plugin_v)" ]]; then
   exit 1
 fi
 agent_plugins_release_tag_commit "$repo_root" "$plugin_v" >/dev/null
+agent_plugins_require_tag_on_origin "$repo_root" "$plugin_v"
 
 if [[ -n "$marketplace_repo_root" ]]; then
   publish_codex_marketplace_manifest "$marketplace_repo_root" "$plugin_v"

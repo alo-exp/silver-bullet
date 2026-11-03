@@ -67,6 +67,20 @@ agent_plugins_release_tag_commit() {
   printf '%s\n' "$sha"
 }
 
+# agent_plugins_require_tag_on_origin REPO_ROOT VERSION: the release tag must also be on the
+# repository's origin with the same target, so a standalone --publish cannot advertise a
+# version nobody can fetch. Batch runs (AGENT_PLUGINS_SKIP_PUSH=1) are checked by the wrapper.
+agent_plugins_require_tag_on_origin() {
+  local repo_root="$1" version="$2" local_ref remote_ref
+  [[ "${AGENT_PLUGINS_SKIP_PUSH:-0}" != "1" ]] || return 0
+  local_ref="$(git -C "$repo_root" rev-parse --verify --quiet "refs/tags/v${version}" 2>/dev/null || true)"
+  remote_ref="$(git -C "$repo_root" ls-remote origin "refs/tags/v${version}" 2>/dev/null | awk -v r="refs/tags/v${version}" '$2 == r { print $1 }' || true)"
+  if [[ -z "$local_ref" || "$remote_ref" != "$local_ref" ]]; then
+    echo "ERROR: release tag v${version} is not on origin (or origin holds a different v${version}); push it first: git push origin v${version}" >&2
+    return 1
+  fi
+}
+
 # agent_plugins_json_rewrite FILE JQ_ARG...: replace FILE with `jq JQ_ARG... FILE`. The output
 # goes to a temporary file in FILE's directory that already carries FILE's mode (mktemp
 # alone creates 0600) and is then renamed over FILE, so the rewrite is atomic and keeps the
@@ -99,6 +113,11 @@ agent_plugins_upstream() {
 agent_plugins_check_publishable() {
   local root="$1" upstream ahead
   upstream="$(agent_plugins_upstream "$root")" || return 1
+  # Compare against the remote's current state, not a stale tracking ref.
+  git -C "$root" fetch -q "${upstream%%/*}" "${upstream#*/}" 2>/dev/null || {
+    echo "ERROR: could not fetch ${upstream} for $root; check the network and the remote before publishing" >&2
+    return 1
+  }
   ahead="$(git -C "$root" rev-list --count "${upstream}..HEAD")"
   if [[ "$ahead" != "0" ]]; then
     echo "ERROR: $root has $ahead unpushed commit(s) on top of $upstream; push or drop them first, or the marketplace sync would publish them" >&2
