@@ -37,11 +37,12 @@ emit_deny() {
 }
 
 payload_has_compression_markers() {
-  local payload="$1"
-  python3 - "$payload" <<'PY'
+  local payload="$1" script
+  # the payload goes to python3 on stdin: as an argument it fails past 128 KiB and the guard would allow
+  script=$(cat <<'PY'
 import json, re, sys
 try:
-    data = json.loads(sys.argv[1] or "{}")
+    data = json.loads(sys.stdin.read() or "{}")
 except Exception:
     raise SystemExit(0)
 
@@ -67,6 +68,8 @@ for text in walk(data.get("tool_input", {})):
             raise SystemExit(0)
 raise SystemExit(1)
 PY
+)
+  printf '%s' "$payload" | python3 -c "$script"
 }
 
 if payload_has_compression_markers "$input"; then

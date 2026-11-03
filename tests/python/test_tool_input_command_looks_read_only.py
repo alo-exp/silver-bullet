@@ -141,15 +141,19 @@ class CommandLooksReadOnlyTest(unittest.TestCase):
 
     # --- test runners ------------------------------------------------------
     def test_test_runners_are_allowed(self):
-        for cmd in (
-            "node --test tests/", "node --test=x", "jest", "mocha --watch", "tap", "vitest run",
-            "npm test", "npm t", "npm run test", "npm run test:unit", "pnpm test", "npm -C pkg test",
-            "npm --prefix pkg test", "npm -- test", "npm exec -- jest", "npm exec vitest run",
-            "npm exec -- npm test", "yarn test", "yarn jest", "yarn vitest", "yarn run test:ci",
-            "yarn --silent test", "npx vitest", "npx --yes jest", "npx npm test",
-        ):
+        # runners that execute test files directly stay allowed (they are not package scripts)
+        for cmd in ("node --test tests/", "node --test=x", "jest", "mocha --watch", "tap", "vitest run",
+                    "npm exec -- jest", "npm exec vitest run", "npx vitest", "npx --yes jest"):
             with self.subTest(cmd=cmd):
                 self.assertReadOnly(cmd)
+
+    def test_package_manager_test_scripts_may_write(self):
+        # `npm test` runs whatever the package.json script says (R4-04): never read-only
+        for cmd in ("npm test", "npm t", "npm run test", "npm run test:unit", "pnpm test", "npm -C pkg test",
+                    "npm --prefix pkg test", "npm -- test", "npm exec -- npm test", "yarn test", "yarn jest",
+                    "yarn vitest", "yarn run test:ci", "yarn --silent test", "npx npm test"):
+            with self.subTest(cmd=cmd):
+                self.assertMayWrite(cmd)
 
     def test_non_test_invocations_of_runner_binaries_may_write(self):
         for cmd in (

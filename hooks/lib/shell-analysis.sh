@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC2034  # the SB_* variables are outputs, read by the hooks that source this file
-# Shell-command and hook-payload analysis for Silver Bullet gates (parse once, then query).
+# Shell-command and hook-payload analysis for Silver Bullet gates (load once per hook, then query).
 #
 #   sb_tool_input_load "$input" [base-dir]   # the hook payload JSON; call once, in the hook's
 #                                            # main shell (not inside $(...)), right after input=$(cat)
@@ -26,7 +26,13 @@
 #
 # Fail closed in core gates on SB_TI_STATUS=parse_failed|helper_unavailable (shell tools),
 # using sb_shell_analysis_helper_message for the second. The legacy accessors in
-# tool-input.sh reuse a load of the same payload or command instead of parsing again.
+# tool-input.sh reuse a load of the same payload or command when the hook made one;
+# without a prior load each accessor starts python3 itself (completion-audit's
+# classifier loads once; other gates adopt sb_tool_input_load as they are reworked).
+#
+# SB_SA_POSSIBLE_ACTIONS may contain `unseen`: code that runs but cannot be read (see the
+# schema in shell_analysis.py). It makes SB_SA_POSSIBLE_TIER completion, so gates that use
+# sb_shell_analysis_effective_tier hold it at the strictest floor.
 
 _sb_sa_helper="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/tool-input/analyze.py"
 
