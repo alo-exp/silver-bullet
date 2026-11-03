@@ -39,6 +39,11 @@ assert_contains "possible action may deliver" "$TL_OUT" "may"
 assert_contains "other actions may not" "$TL_OUT" "not-push"
 assert_contains "effective tier includes the possible tier" "$TL_OUT" "tier=intermediate opaque=true"
 assert_contains "reasons are listed" "$TL_OUT" 'reasons=dynamic command word: $X'
+drive 'sb_shell_analysis_load "c=\$(cat f); \$c"; echo "tier=$(sb_shell_analysis_effective_tier) unseen=$SB_SA_UNSEEN_REASONS";
+  sb_shell_analysis_load "ls"; echo "none-unseen=[$SB_SA_UNSEEN_REASONS]"'
+assert_contains "unseen code: tier completion" "$TL_OUT" "tier=completion"
+assert_contains "unseen code: the reason says the program is computed" "$TL_OUT" "unseen=the program is computed at run time"
+assert_contains "no unseen code: no reason" "$TL_OUT" "none-unseen=[]"
 drive 'sb_shell_analysis_load "git push && npm publish"; echo "$(sb_shell_analysis_effective_tier)";
   sb_shell_analysis_load "ls"; echo "$(sb_shell_analysis_effective_tier)"'
 assert_eq "effective tier: completion then none" $'completion\nnone' "$TL_OUT"
