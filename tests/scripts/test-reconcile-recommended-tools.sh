@@ -134,7 +134,13 @@ fi
 # patch-hooks removes legacy routing hooks when RTK is consented and counts removals
 printf '%s\n' '{"hooks":{"preToolUse":[{"command":"rtk hook cursor","matcher":"Shell"},{"command":"lean-ctx hook rewrite cursor pretooluse","matcher":"Shell"},{"command":"lean-ctx hook deny","matcher":"Grep"},{"command":"lean-ctx hook redirect","matcher":"Read"},{"command":"/old/cursor-hook-bridge.sh preToolUse /old/rtk-gate.sh","matcher":"Shell"}]}}' \
   >"${TEST_HOME}/.cursor/hooks.json"
-patch_lean_out="$(PATH="${RTK_STUB_BIN}:$PATH" RT_PATCH_RTK=1 python3 "$REPO_ROOT/scripts/lib/global-toolstack/patch-hooks.py" 2>&1 || true)"
+# R6-25: with RTK alone the user's LeanCTX hooks stay (only a LeanCTX-consented run removes them)
+cp "${TEST_HOME}/.cursor/hooks.json" "${TEST_HOME}/.cursor/hooks.keep.json"
+PATH="${RTK_STUB_BIN}:$PATH" RT_PATCH_RTK=1 python3 "$REPO_ROOT/scripts/lib/global-toolstack/patch-hooks.py" >/dev/null 2>&1 || true
+jq -e '[.hooks.preToolUse[] | select(.command | test("lean-ctx hook (deny|redirect|rewrite)"))] | length == 3' "${TEST_HOME}/.cursor/hooks.json" >/dev/null 2>&1 \
+  && pass "patch-hooks keeps LeanCTX's own hooks without LeanCTX consent" || fail "patch-hooks keeps LeanCTX's own hooks without LeanCTX consent"
+cp "${TEST_HOME}/.cursor/hooks.keep.json" "${TEST_HOME}/.cursor/hooks.json"
+patch_lean_out="$(PATH="${RTK_STUB_BIN}:$PATH" RT_PATCH_RTK=1 RT_PATCH_LEANCTX=1 python3 "$REPO_ROOT/scripts/lib/global-toolstack/patch-hooks.py" 2>&1 || true)"
 if jq -e '.hooks.preToolUse[] | select(.command | test("lean-ctx hook (deny|redirect|rewrite)|cursor-hook-bridge.sh"))' "${TEST_HOME}/.cursor/hooks.json" >/dev/null 2>&1; then
   fail "patch-hooks removes legacy routing hooks"
 else
