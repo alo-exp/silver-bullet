@@ -47,7 +47,7 @@ bash scripts/install-recommended-tools-cursor.sh
 
 | Source | Generated / mirrored | Sync command |
 |--------|---------------------|--------------|
-| `skills/` | `agents/claude/`, `host-bundles/codex/`, `host-bundles/cursor/`, `plugins/silver-bullet/skill-source/` | `bash scripts/sync-codex-package.sh` |
+| `skills/` | `agents/claude/`, `host-bundles/codex/`, `host-bundles/cursor/`, `plugins/silver-bullet/{skill-source,cursor-skill-source}/` | `bash scripts/sync-codex-package.sh` |
 | `templates/` | `plugins/silver-bullet/templates/` | `bash scripts/sync-templates.sh` (also run by `sync-codex-package.sh`) |
 | Composer `SKILL.md` frontmatter | `plugins/silver-bullet/commands/` (18 stubs) | `bash scripts/generate-plugin-commands.sh` |
 | `hooks/hooks.json` | `hooks/cursor-hooks.json`, `plugins/silver-bullet/cursor-hooks.json` | `python3 scripts/generate-cursor-hooks.py` |

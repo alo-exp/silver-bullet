@@ -404,17 +404,25 @@ else
     exit 2
   fi
 
-  if [[ -x "$skill_surface_script" ]]; then
+  # Sub-validators run through bash, so a checkout or archive that dropped the
+  # exec bits still runs them; a missing one is a failure, never a silent skip.
+  if [[ -f "$skill_surface_script" ]]; then
     if ! bash "$skill_surface_script" --repo-root "$repo_root"; then
       exit_code=1
     fi
+  else
+    printf 'validate-host-install-surface: missing sub-validator %s\n' "$skill_surface_script" >&2
+    exit_code=1
   fi
 
   if [[ "$host_filter" == "all" || "$host_filter" == "claude" ]]; then
-    if [[ -x "$token_budget_script" ]]; then
+    if [[ -f "$token_budget_script" ]]; then
       if ! bash "$token_budget_script" --repo-root "$repo_root" --max-tokens "$max_claude_tokens"; then
         exit_code=1
       fi
+    else
+      printf 'validate-host-install-surface: missing sub-validator %s\n' "$token_budget_script" >&2
+      exit_code=1
     fi
   fi
 fi

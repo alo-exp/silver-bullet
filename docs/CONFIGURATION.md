@@ -43,8 +43,10 @@ Project lists replace the template defaults (`hooks/lib/required-skills.sh` supp
 
 | Key | Default | Meaning |
 |-----|---------|---------|
-| `state.state_file` | `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state` | Skill-marker state file. Paths outside the runtime home are rejected and the default is used |
+| `state.state_file` | `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state` | Skill-marker state file. Paths that do not resolve inside the state root are rejected and the default is used |
 | `state.trivial_file` | `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial` | Legacy trivial-session marker; `session-start` deletes it and agents cannot create it |
+
+Configured and overridden state paths are checked after resolving `.`, `..`, `//` and symlinked directories (`sb_runtime_state_path` in `hooks/lib/runtime-paths.sh`): they must lie strictly inside `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/`, and a symlinked file must point inside it too, so a repository's config cannot make the hooks delete or write files elsewhere.
 
 Tests override these with `SILVER_BULLET_STATE_FILE`, `SILVER_BULLET_BRANCH_FILE`, `SILVER_BULLET_QUALITY_GATE_STATE_FILE` and `SILVER_BULLET_VERIFY_TESTS_STATE_FILE` ([ENFORCEMENT.md](ENFORCEMENT.md#environment-variables)).
 

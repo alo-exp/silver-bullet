@@ -113,8 +113,31 @@ class FileWriteTest(Tmp):
             m.read_toml_repairing(path, lambda p: True)
 
     def test_string_values_reads_strings_without_a_parser(self):
-        doc = m.TomlDocument('[a.b] # c\nsource = "x \\"q\\" \\\\ y"\nlit = \'C:\\dir\'\nn = 5\nml = """m"""\nlml = \'\'\'l\'\'\'\nbad = "\\e"\n[a]\nb.dotted = "d"\n')
+        doc = m.TomlDocument('[a.b] # c\nsource = "x \\"q\\" \\\\ y"\nlit = \'C:\\dir\'\nn = 5\nml = """m"""\nlml = \'\'\'l\'\'\'\n[a]\nb.dotted = "d"\n[other]\nk = "ignored"\n')
         self.assertEqual(doc.string_values(("a", "b")), {"source": 'x "q" \\ y', "lit": "C:\\dir", "dotted": "d"})
+
+    def test_string_values_decodes_with_the_toml_lexer(self):
+        doc = m.TomlDocument('[a]\nu = "e\\U0001F600d"\nt = "x\ty"\nx = "\\x41\\u00e9"\n')
+        self.assertEqual(doc.string_values(("a",)), {"u": "e\U0001F600d", "t": "x\ty", "x": "A\u00e9"})
+        with self.assertRaises(m.ConfigError):
+            m.TomlDocument('[a]\nbad = "\\q"\n').string_values(("a",))
+
+    def test_string_values_reads_an_inline_table_value(self):
+        doc = m.TomlDocument(
+            "[marketplaces]\n"
+            "alo = { source_type = \"local\", source = 'C:\\d', n = 3, ml = \"\"\"m\"\"\", dotted.k = \"z\", # c\n"
+            "  tab = \"a\\U0001F600\" }\n"
+        )
+        self.assertEqual(
+            doc.string_values(("marketplaces", "alo")),
+            {"source_type": "local", "source": "C:\\d", "tab": "a\U0001F600"},
+        )
+        self.assertEqual(m.TomlDocument("a = {}\n").string_values(("a",)), {})
+
+    def test_string_values_refuses_a_non_table_where_a_table_is_expected(self):
+        for text in ('[marketplaces]\nalo = "x"\n', "marketplaces = 3\n", 'marketplaces.alo = 1\n'):
+            with self.assertRaises(m.ConfigError, msg=text):
+                m.TomlDocument(text).string_values(("marketplaces", "alo"))
 
     def test_rename_handles_dotted_keys_and_stale_dotted_targets(self):
         doc = m.TomlDocument('[hooks.state]\n"k:0:1".trusted_hash = "stale"\n"k:1:0".trusted_hash = "A"\n  "k:1:1".trusted_hash = "B"\n[other]\nx = 1\n')

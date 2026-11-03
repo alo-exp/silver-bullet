@@ -52,6 +52,49 @@ rc=0; resolve_native_codex_cli_path >/dev/null || rc=$?
 assert_eq "PATH codex wrapper around another binary rejected" 1 "$rc"
 rm -f "$TL_BIN/codex"
 
+# ---- R8-17: package-manager layouts are judged by what the binary is, not its name
+mkver() { printf '#!/usr/bin/env bash\n[[ "$1" == --version ]] && echo "codex-cli 0.50.0"\nexit 0\n' >"$1"; chmod +x "$1"; }
+NPM="$TL_TMP/npm-prefix"
+PKG="$NPM/lib/node_modules/@openai/codex"
+mkdir -p "$NPM/bin" "$PKG/bin" "$PKG/vendor/aarch64-apple-darwin/codex" "$PKG/vendor/x86_64-unknown-linux-musl/codex"
+mkver "$PKG/bin/codex.js"
+printf '#!/usr/bin/env bash\nexit 126\n' >"$PKG/vendor/aarch64-apple-darwin/codex/codex"   # other arch: does not run here
+chmod +x "$PKG/vendor/aarch64-apple-darwin/codex/codex"
+mkver "$PKG/vendor/x86_64-unknown-linux-musl/codex/codex"
+ln -s ../lib/node_modules/@openai/codex/bin/codex.js "$NPM/bin/codex"
+assert_eq "npm install (codex -> codex.js) resolves to the vendored native binary" \
+  "$PKG/vendor/x86_64-unknown-linux-musl/codex/codex" "$(PATH="$NPM/bin:$NOCODEX_PATH" resolve_native_codex_cli_path)"
+rm -rf "$PKG/vendor"
+assert_eq "npm shim without a runnable vendored binary is used when it reports a Codex version" \
+  "$NPM/bin/codex" "$(PATH="$NPM/bin:$NOCODEX_PATH" resolve_native_codex_cli_path)"
+# a .js shim from some other package is not the Codex npm layout
+OTHERPKG="$TL_TMP/other-pkg/node_modules/some-tool"
+mkdir -p "$OTHERPKG/bin"
+printf '#!/usr/bin/env bash\necho "some-tool 1.0"\n' >"$OTHERPKG/bin/tool.js"; chmod +x "$OTHERPKG/bin/tool.js"
+ln -s "$OTHERPKG/bin/tool.js" "$TL_TMP/other-pkg/codex"
+rc=0; PATH="$TL_TMP/other-pkg:$NOCODEX_PATH" resolve_native_codex_cli_path >/dev/null || rc=$?
+assert_eq "a .js binary outside @openai/codex that is not Codex is rejected" 1 "$rc"
+BREW="$TL_TMP/brew"
+mkdir -p "$BREW/bin" "$BREW/cask/codex/0.50.0"
+mkver "$BREW/cask/codex/0.50.0/codex-aarch64-apple-darwin"
+ln -s ../cask/codex/0.50.0/codex-aarch64-apple-darwin "$BREW/bin/codex"
+assert_eq "symlink to an arch-suffixed native binary that reports a Codex version" \
+  "$BREW/bin/codex" "$(PATH="$BREW/bin:$NOCODEX_PATH" resolve_native_codex_cli_path)"
+assert_eq "explicit CODEX_BIN with another name is accepted when it reports a Codex version" \
+  "$BREW/cask/codex/0.50.0/codex-aarch64-apple-darwin" \
+  "$(CODEX_BIN="$BREW/cask/codex/0.50.0/codex-aarch64-apple-darwin" PATH="$NOCODEX_PATH" resolve_native_codex_cli_path)"
+mkdir -p "$TL_TMP/dir/codex"
+rc=0; PATH="$NOCODEX_PATH" resolve_native_codex_cli_path "$TL_TMP/dir/codex" >/dev/null || rc=$?
+assert_eq "a directory named codex is never a CLI" 1 "$rc"
+printf '#!/usr/bin/env bash\necho "ollama version 1.0"\n' >"$TL_TMP/other/wrong-product"
+chmod +x "$TL_TMP/other/wrong-product"
+rc=0; PATH="$NOCODEX_PATH" resolve_native_codex_cli_path "$TL_TMP/other/wrong-product" >/dev/null || rc=$?
+assert_eq "a binary reporting another product is rejected" 1 "$rc"
+printf '#!/usr/bin/env bash\nexit 3\n' >"$TL_TMP/other/failing"
+chmod +x "$TL_TMP/other/failing"
+rc=0; PATH="$NOCODEX_PATH" resolve_native_codex_cli_path "$TL_TMP/other/failing" >/dev/null || rc=$?
+assert_eq "a binary whose --version fails is rejected" 1 "$rc"
+
 # ---- agent_codex_export_bin
 unset CODEX_BIN
 rc=0; PATH="$NOCODEX_PATH" agent_codex_export_bin || rc=$?
