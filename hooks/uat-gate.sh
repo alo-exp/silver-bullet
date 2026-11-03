@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-trap 'printf "{\"hookSpecificOutput\":{\"message\":\"⚠️ uat-gate: hook error — check jq/input format\"}}" ; exit 0' ERR
+trap 'sb_emit_hook_message PreToolUse "⚠️ uat-gate: hook error — check jq/input format"; exit 0' ERR
 
 # PreToolUse hook (matcher: Skill)
 # UAT GATE — blocks sb:release / milestone completion when UAT.md is missing,
@@ -10,7 +10,7 @@ trap 'printf "{\"hookSpecificOutput\":{\"message\":\"⚠️ uat-gate: hook error
 umask 0077
 
 _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
-for _lib in jq-gate.sh sb-project-gate.sh skill-discovery.sh; do
+for _lib in jq-gate.sh sb-project-gate.sh skill-discovery.sh planning-floor.sh; do
   if [[ -f "$_lib_dir/$_lib" ]]; then
     # shellcheck source=/dev/null
     source "$_lib_dir/$_lib"
@@ -27,7 +27,12 @@ emit_block_jq_missing() {
 if declare -f sb_jq_enforcement_block_sb_initiated >/dev/null 2>&1; then
   sb_jq_enforcement_block_sb_initiated "uat-gate" "emit_block_jq_missing"
 elif ! command -v jq >/dev/null 2>&1; then
-  printf '{"hookSpecificOutput":{"message":"⚠️ Silver Bullet hooks require jq. Install: brew install jq (macOS) / apt install jq (Linux)"}}'
+  printf '{"systemMessage":"⚠️ Silver Bullet hooks require jq. Install: brew install jq (macOS) / apt install jq (Linux)"}'
+  exit 0
+fi
+
+if ! declare -f sb_pf_skill_calls >/dev/null 2>&1; then
+  printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"Silver Bullet hook libraries are missing (hooks/lib/planning-floor.sh). Reinstall the plugin."}}'
   exit 0
 fi
 
@@ -38,23 +43,28 @@ if declare -f sb_project_gate_or_exit >/dev/null 2>&1; then
   sb_project_gate_or_exit
 fi
 
+hook_event=$(printf '%s' "$input" | jq -r '.hook_event_name // "PreToolUse"')
+
 # Emit a block (PreToolUse deny)
 emit_block() {
-  local reason="$1"
-  local json_reason
-  json_reason=$(printf '%s' "$reason" | jq -Rs '.')
-  printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":%s}}' "$json_reason"
+  sb_emit_hook_decision "$hook_event" deny "$1"
 }
 
-# Extract skill name from supported skill invocation input
-skill=$(printf '%s' "$input" | jq -r '.tool_input.skill // .tool_input.skillName // ""')
-
-if declare -F sb_skill_canonical_name >/dev/null 2>&1; then
-  skill="$(sb_skill_canonical_name "$skill" || true)"
+# The invoked skill(s): the Skill tool, or the Codex invoke-skill adapter. A skill named in a
+# payload under the tool_input.skillName spelling is read by sb_pf_invoked_skills too.
+rc=0
+sb_pf_skill_calls "$input" || rc=$?
+[[ "$rc" -eq 1 ]] && exit 0
+if [[ "$rc" -eq 2 ]]; then
+  emit_block "$(sb_pf_unanalysable_message)"
+  exit 0
 fi
+skill="$SB_PF_SKILLS"
 
-UAT=".planning/UAT.md"
-SPEC=".planning/SPEC.md"
+project_root="$(sb_find_project_root_walk_only 2>/dev/null || true)"
+[[ -n "$project_root" ]] || project_root="$PWD"
+UAT="$project_root/.planning/UAT.md"
+SPEC="$project_root/.planning/SPEC.md"
 
 # Gate milestone release only — phase-level ship (sb:ship) does not require UAT.md.
 # UAT is generated at milestone completion (sb:feature Step 17) before sb:release.
@@ -103,5 +113,5 @@ if [[ -f "$SPEC" ]]; then
 fi
 
 # All checks passed
-printf '{"hookSpecificOutput":{"message":"✓ UAT gate passed. Milestone completion allowed."}}'
+sb_emit_hook_message "$hook_event" "✓ UAT gate passed. Milestone completion allowed."
 exit 0

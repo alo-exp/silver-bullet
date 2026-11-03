@@ -82,6 +82,35 @@ dg_run_nolib_in "$P" "$H" "$(skill executing-plans)" PATH="$(tl_path_without jq)
 assert_contains "no libs and no jq: visible warning" "$TL_OUT" "ENFORCEMENT INACTIVE"
 assert_eq "no libs and no jq: exit 0" 0 "$TL_STATUS"
 dg_run_nolib_in "$P" "$H" "$(skill executing-plans)"
-assert_eq "no libs: hardcoded list still enforced" "deny" "$(dec)"
+assert_eq "no libs: a broken install fails closed" "deny" "$(dec)"
+assert_contains "no libs: the deny says to reinstall" "$TL_OUT" "Reinstall the plugin"
+
+# --- Codex: the invoke-skill adapter carries the skill name (R2-16) -------------------------
+AD="$TL_REPO_ROOT/scripts/silver-bullet"
+cmd() { jq -cn --arg c "$1" '{hook_event_name:"PreToolUse",tool_name:"Bash",tool_input:{command:$c}}'; }
+dg_run "$P" "$H" "$(cmd "$AD invoke-skill executing-plans")"
+assert_eq "Codex invoke-skill of a forbidden skill is denied" "deny" "$(dec)"
+assert_eq "the deny is one JSON document" 1 "$(jq -s length <<<"$TL_OUT")"
+dg_run "$P" "$H" "$(cmd "bash $AD invoke-skill outer:subagent-driven-development")"
+assert_eq "bash-wrapped, namespaced forbidden skill is denied" "deny" "$(dec)"
+dg_run "$P" "$H" "$(cmd "$AD invoke-skill ${NS}:plan-phase")"
+assert_eq "Codex invoke-skill of a retired-namespace skill is denied" "deny" "$(dec)"
+dg_run "$P" "$H" "$(cmd "$AD invoke-skill sb:plan")"
+assert_eq "Codex invoke-skill of an ordinary skill is allowed" "" "$TL_OUT"
+dg_run "$P" "$H" "$(cmd "grep executing-plans README.md")"
+assert_eq "prose mentioning a forbidden skill is allowed" "" "$TL_OUT"
+dg_run "$P" "$H" "$(cmd "$AD invoke-skill executing-plans 'unterminated")"
+assert_eq "an unparsable invoke-skill command fails closed" "deny" "$(dec)"
+dg_run "$P" "$H" "$(cmd "$AD invoke-skill executing-plans")" PATH="$(tl_path_without python3)"
+assert_eq "no python3: invoke-skill fails closed" "deny" "$(dec)"
+assert_contains "no python3: the reason says how to proceed" "$(reason)" "python3"
+dg_run "$P" "$H" "$(cmd "ls")" PATH="$(tl_path_without python3)"
+assert_eq "no python3: a read-only command gets no message" "" "$TL_OUT"
+dg_run "$P" "$H" "$(skill executing-plans)" PATH="$(tl_path_without python3)"
+assert_eq "no python3: the Skill route needs no helper" "deny" "$(dec)"
+dg_run "$P" "$H" '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":""}}'
+assert_eq "an empty command is ignored" "" "$TL_OUT"
+dg_run "$P" "$H" '{"hook_event_name":"PreToolUse","tool_name":"Read","tool_input":{"file_path":"/x"}}'
+assert_eq "a non-skill tool is ignored" "" "$TL_OUT"
 
 tl_results
