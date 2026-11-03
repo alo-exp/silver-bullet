@@ -250,11 +250,11 @@ tl_run env F4_NO_LOGBYTES=1 timeout 30 bash -c "$F4_LAUNCH" _ "$MON"
 assert_contains "fallback byte count is 0 without a log" "$(cat "$STATUS")" "matrix log bytes: 0"
 
 # --- agent children are looked up per host ---
-for h in codex cursor; do
+for h in codex; do
   f4_mon_reset
   live_batch 7000
   roster 1:PASS
-  echo "4321 $h-process" >"$P/pgrep.$([[ $h == codex ]] && echo codex-interactive || echo cursor-agent)"
+  echo "4321 $h-process" >"$P/pgrep.codex-interactive"
   f4_mon_run SB_E2E_LIVE_RUNTIME=$h
   assert_contains "$h children listed" "$(cat "$STATUS")" "  4321 $h-process"
   f4_mon_reset

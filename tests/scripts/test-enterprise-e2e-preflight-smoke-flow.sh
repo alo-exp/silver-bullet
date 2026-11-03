@@ -73,9 +73,9 @@ cat >"$R/scripts/run-enterprise-e2e-matrix.sh" <<EOS
 #!/usr/bin/env bash
 printf 'matrix dry=%s live=%s rt=%s\n' "\${SB_E2E_MATRIX_DRY_RUN:-}" "\${SB_E2E_LIVE_RUNTIME:-}" "\${SILVER_BULLET_RUNTIME:-}" >>"\$F2_CALLS"
 EOS
-run bash "$PRE" --harness-only --host cursor
-assert_contains "host banner" "$TL_OUT" "host=cursor"
-assert_contains "dry-run matrix env" "$CALLS" "matrix dry=1 live=cursor rt=cursor"
+run bash "$PRE" --harness-only --host codex
+assert_contains "host banner" "$TL_OUT" "host=codex"
+assert_contains "dry-run matrix env" "$CALLS" "matrix dry=1 live=codex rt=codex"
 run bash "$PRE" --host bogus --harness-only
 assert_contains "unknown host falls back to claude" "$TL_OUT" "host=claude"
 f2_stub_script "$R/scripts/run-enterprise-e2e-matrix.sh" scripts/run-enterprise-e2e-matrix.sh

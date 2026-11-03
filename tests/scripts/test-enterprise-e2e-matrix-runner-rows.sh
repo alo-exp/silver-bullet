@@ -25,7 +25,7 @@ assert_file_exists "outcome checklist written" "$APP/.planning/enterprise-e2e/ou
 assert_contains "checklist args forwarded" "$CALLS" "checklist row=2 out=$APP/.planning/enterprise-e2e/outcomes/row-2-outcomes.md work=$APP state=$SB_RUNTIME_STATE_DIR log=$R/.e2e-row2-attempt.log ledger=$TL_TMP/ledger.md evidence=docs/ADR-001-runtime.md"
 assert_contains "telemetry pass" "$CALLS" "telemetry matrix_row row=2 slug=silver-deep-research result=pass log=$R/.e2e-row2-attempt.log"
 assert_contains "prompt carries slug route and evidence" "$CALLS" "prompt#1 /sb Should we use Postgres or SQLite for orders? Enterprise E2E matrix validation. Route this through the silver-deep-research workflow"
-assert_contains "agent env: workflow quiet timeout" "$CALLS" "agent-env#1 quiet=600 timeout=900 cursor_timeout=900 evidence=docs/ADR-001-runtime.md routing=0"
+assert_contains "agent env: workflow quiet timeout" "$CALLS" "agent-env#1 quiet=600 timeout=900 evidence=docs/ADR-001-runtime.md routing=0"
 assert_contains "attempt log header" "$(cat "$R/.e2e-row2-attempt.log")" 'HARNESS graphify: graphify query "silver-deep-research routes hooks skills orchestrator"'
 assert_contains "agent output stored in attempt log" "$(cat "$R/.e2e-row2-attempt.log")" "agent said hello"
 assert_contains "slug recorded in routing state" "$(cat "$STATE")" "silver-deep-research"

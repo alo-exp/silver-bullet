@@ -28,7 +28,7 @@ fi
   || fail "site certification JSON missing"
 
 if command -v jq >/dev/null 2>&1 && [[ -f "$SITE_JSON" ]]; then
-  jq -e '.hosts | length == 3' "$SITE_JSON" >/dev/null && pass "site JSON has 3 hosts" \
+  jq -e '.hosts | length == 2' "$SITE_JSON" >/dev/null && pass "site JSON has 2 hosts" \
     || fail "site JSON host count"
   jq -e '.conservative_summary.public_autonomous_enterprise_claim_ready == false' "$SITE_JSON" >/dev/null \
     && pass "site JSON conservatively marks claim not ready" \

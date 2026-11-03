@@ -58,10 +58,9 @@ assert_contains "alumnium: unrelated artifact is not wiring" "$TL_OUT" "MCP not 
 unset SB_ALUMNIUM_MCP_ARTIFACT TL_MARK
 
 # ------------------------------------------------------- rtk + context mode
-export SILVER_BULLET_RUNTIME=cursor
-mkdir -p "$HOME/.cursor"
-printf '{"hooks":{"preToolUse":[{"command":"rtk hook cursor"}]}}\n' >"$HOME/.cursor/hooks.json"
-printf '{"mcpServers":{"context-mode":{}}}\n' >"$HOME/.cursor/mcp.json"
+export SILVER_BULLET_RUNTIME=claude
+mkdir -p "$HOME/.claude/plugins/context-mode"
+printf '{"hooks":{"PreToolUse":[{"hooks":[{"command":"rtk hook claude"}]}]}}\n' >"$HOME/.claude/settings.json"
 printf '# SB\n<!-- BEGIN context-mode hint (do not edit) -->\nuse ctx_execute\n<!-- END context-mode hint (do not edit) -->\n' >"$STAGE/silver-bullet.md"
 tl_stub rtk 'case "$1" in --version) echo "rtk 0.42.3";; esac; exit 0'
 tl_stub node 'echo v22.9.0'
@@ -71,10 +70,10 @@ tl_run bash "$RCM"
 assert_eq "rcm: healthy stack exits 0" "0" "$TL_STATUS"
 assert_contains "rcm: rtk binary" "$TL_OUT" "[x] binary present: rtk 0.42.3"
 assert_contains "rcm: rtk version" "$TL_OUT" "[x] version OK (v0.4x)"
-assert_contains "rcm: rtk hook" "$TL_OUT" "[x] host hook wired (cursor: ${HOME}/.cursor/hooks.json)"
+assert_contains "rcm: rtk hook" "$TL_OUT" "[x] host hook wired (claude: ${HOME}/.claude/settings.json)"
 assert_contains "rcm: node" "$TL_OUT" "[x] Node 22.9.0 (>= 22.5)"
 assert_contains "rcm: cli" "$TL_OUT" "[x] CLI or Claude plugin present"
-assert_contains "rcm: artifact" "$TL_OUT" "[x] platform artifact (cursor: ${HOME}/.cursor/mcp.json)"
+assert_contains "rcm: artifact" "$TL_OUT" "[x] platform artifact (claude: ${HOME}/.claude/plugins/context-mode)"
 assert_contains "rcm: fragment" "$TL_OUT" "[x] instruction fragment in project docs"
 assert_contains "rcm: summary" "$TL_OUT" "=== Summary: 7 passed, 0 failed, 0 hints ==="
 assert_contains "rcm: header names the repo" "$TL_OUT" "=== RTK + Context Mode verification (repo: ${STAGE}) ==="
@@ -107,11 +106,11 @@ assert_contains "rcm --tool without value defaults to all (Context Mode section)
 
 # rtk degraded: too old, hook missing
 tl_stub rtk 'case "$1" in --version) echo "rtk 0.30.1";; esac; exit 0'
-rm -f "$HOME/.cursor/hooks.json"
+rm -f "$HOME/.claude/settings.json"
 tl_run bash "$RCM" --tool rtk
 assert_eq "rcm: failing checks exit 1" "1" "$TL_STATUS"
 assert_contains "rcm: too old" "$TL_OUT" "[ ] version too old — upgrade to rtk >= 0.42.0"
-assert_contains "rcm: hook missing" "$TL_OUT" "[ ] host hook missing (cursor) — run rtk init for host — see docs/RTK.md"
+assert_contains "rcm: hook missing" "$TL_OUT" "[ ] host hook missing (claude) — run rtk init for host — see docs/RTK.md"
 assert_contains "rcm: failure notice on stderr" "$TL_ERR" "Some checks failed. Resolve [ ] lines and re-run."
 
 # wrong rtk binary on PATH (gain --help fails)
@@ -128,32 +127,32 @@ assert_contains "rcm: rtk missing" "$TL_OUT" "[ ] rtk not on PATH — brew tap r
 
 # context mode degraded: old node, no cli, no artifact, no fragment -> hint only
 tl_stub node 'echo v18.1.0'
-rm -f "$HOME/.cursor/mcp.json" "$TL_BIN/context-mode" "$STAGE/silver-bullet.md"
+rm -rf "$HOME/.claude/plugins/context-mode"; rm -f "$TL_BIN/context-mode" "$STAGE/silver-bullet.md"
 NOPATH="$(tl_path_without context-mode)"
 tl_run env PATH="$NOPATH" bash "$RCM" --tool context_mode
 assert_eq "rcm: context mode failures exit 1" "1" "$TL_STATUS"
 assert_contains "rcm: node too old" "$TL_OUT" "[ ] Node too old or missing — upgrade to Node >= 22.5"
 assert_contains "rcm: cli missing" "$TL_OUT" "[ ] context-mode not installed — npm install -g context-mode or Claude plugin"
-assert_contains "rcm: artifact missing" "$TL_OUT" "[ ] MCP/plugin not wired (cursor) — see docs/CONTEXT-MODE.md"
+assert_contains "rcm: artifact missing" "$TL_OUT" "[ ] MCP/plugin not wired (claude) — see docs/CONTEXT-MODE.md"
 assert_contains "rcm: fragment hint" "$TL_OUT" "[!] instruction fragment missing"
 assert_contains "rcm: summary counts hints" "$TL_OUT" "0 passed, 3 failed, 1 hints"
 
 # a missing fragment alone is only a hint: exit 0
 tl_stub node 'echo v23.0.0'
 tl_stub context-mode 'exit 0'
-printf '{"mcpServers":{"context-mode":{}}}\n' >"$HOME/.cursor/mcp.json"
+mkdir -p "$HOME/.claude/plugins/context-mode"
 tl_run bash "$RCM" --tool context_mode
 assert_eq "rcm: hint alone does not fail" "0" "$TL_STATUS"
 assert_contains "rcm: hint counted" "$TL_OUT" "3 passed, 0 failed, 1 hints"
 
-# host cannot be resolved by the runtime helper: falls back to cursor
+# host cannot be resolved by the runtime helper: falls back to claude
 unset SILVER_BULLET_RUNTIME
 tl_run env -u SILVER_BULLET_RUNTIME PATH="$PATH" bash -c 'cd "$1" && bash "$2" --tool context_mode' _ "$STAGE" "$RCM"
 assert_contains "rcm: unset runtime still resolves a host" "$TL_OUT" "Context Mode:"
 
 # -------------------------------------------------- degraded helper libraries
 # Wrapper libs source the real ones, then drop helpers so the scripts' "|| echo"
-# / "|| true" fallbacks run (a host that cannot be resolved falls back to cursor).
+# / "|| true" fallbacks run (a host that cannot be resolved falls back to claude).
 DEG="$TL_TMP/degraded"
 mkdir -p "$DEG/scripts" "$DEG/hooks/lib"
 cp "$ALU" "$RCM" "$DEG/scripts/"
@@ -166,15 +165,16 @@ mk_wrapper recommended-tools.sh sb_runtime_host
 mk_wrapper rtk-gate.sh sb_runtime_host sb_rtk_version_string sb_rtk_platform_hook_artifact_path
 mk_wrapper context-mode-gate.sh sb_runtime_host sb_context_mode_platform_artifact_path
 mk_wrapper alumnium-gate.sh sb_runtime_host sb_alumnium_platform_artifact_path
-export SILVER_BULLET_RUNTIME=cursor
+export SILVER_BULLET_RUNTIME=claude
+rm -rf "$HOME/.claude/plugins/context-mode"
 tl_stub rtk 'case "$1" in --version) echo "rtk 0.42.3";; esac; exit 0'
 tl_stub node 'echo v22.9.0'
 tl_run bash "$DEG/scripts/enable-rtk-context-mode.sh"
 assert_contains "rcm degraded: version string falls back to 'rtk'" "$TL_OUT" "[x] binary present: rtk"
-assert_contains "rcm degraded: unresolvable rtk artifact path leaves it blank" "$TL_OUT" "[ ] host hook missing (cursor)"
-assert_contains "rcm degraded: unresolvable context-mode artifact" "$TL_OUT" "[ ] MCP/plugin not wired (cursor)"
+assert_contains "rcm degraded: unresolvable rtk artifact path leaves it blank" "$TL_OUT" "[ ] host hook missing (claude)"
+assert_contains "rcm degraded: unresolvable context-mode artifact" "$TL_OUT" "[ ] MCP/plugin not wired (claude)"
 assert_eq "rcm degraded: exits 1" "1" "$TL_STATUS"
 tl_run bash "$DEG/scripts/enable-alumnium.sh"
-assert_contains "alumnium degraded: artifact path fallback" "$TL_OUT" "[ ] MCP not wired (cursor)"
+assert_contains "alumnium degraded: artifact path fallback" "$TL_OUT" "[ ] MCP not wired (claude)"
 
 tl_results

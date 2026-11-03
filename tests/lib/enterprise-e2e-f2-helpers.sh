@@ -107,8 +107,8 @@ run_prompt() {
   n=$((n + 1))
   echo "$n" >"$F2_CTL/prompt-count"
   printf 'prompt#%s %s\n' "$n" "$prompt" >>"$F2_CALLS"
-  printf 'agent-env#%s quiet=%s timeout=%s cursor_timeout=%s evidence=%s routing=%s codex_trust=%s bypass=%s log=%s\n' "$n" \
-    "${CLAUDE_INTERACTIVE_QUIET_TIMEOUT:-}" "${CLAUDE_INTERACTIVE_TIMEOUT:-}" "${CURSOR_AGENT_TIMEOUT:-}" \
+  printf 'agent-env#%s quiet=%s timeout=%s evidence=%s routing=%s codex_trust=%s bypass=%s log=%s\n' "$n" \
+    "${CLAUDE_INTERACTIVE_QUIET_TIMEOUT:-}" "${CLAUDE_INTERACTIVE_TIMEOUT:-}" \
     "${SB_E2E_MATRIX_EVIDENCE_PATH:-}" "${SB_E2E_MATRIX_ROUTING_ROW:-}" "${CODEX_AUTO_TRUST_HOOKS:-}" \
     "${CODEX_BYPASS_HOOK_TRUST:-}" "${CLAUDE_INTERACTIVE_LOG_FILE:-}" >>"$F2_CALLS"
   if [[ -f "$F2_CTL/agent.sh" ]]; then

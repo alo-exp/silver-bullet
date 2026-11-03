@@ -315,20 +315,6 @@ else
 fi
 kill "$SLEEP2" 2>/dev/null || true
 
-# in-wave Cursor (I-50)
-CDIR="${TMPROOT}/agent-cursor/wave"
-mkdir -p "$CDIR"
-cat >"${CDIR}/session.json" <<EOF
-{"status":"live","conversation_id":"cursor-sess-1","updated_at":"$(date -u +%Y-%m-%dT%H:%M:%SZ)","turns":2,"wave_started_at":"$(date -u +%Y-%m-%dT%H:%M:%SZ)"}
-EOF
-agent_mode_reset
-export SB_AGENT_MODE_TUI_AVAILABLE=1
-# shellcheck disable=SC2218  # real definition comes from the sourced agent-mode.sh; the later one is a stub
-agent_mode_classify_task "Add a unit test." "$CDIR" "cursor" ""
-[[ "$SB_AM_CLASSIFIED" == "interactive" ]] && agent_mode_reason_has "d3-in-wave-cursor" \
-  && check "in-wave Cursor status=live + conversation_id is D3 (2)" pass \
-  || check "in-wave Cursor status=live + conversation_id is D3 (2)" fail
-
 # pin interactive TUI miss without fallback
 agent_mode_reset
 export SB_AGENT_MODE_TUI_AVAILABLE=0
@@ -476,13 +462,6 @@ agent_mode_apply_host_launch_env "opencode"
 [[ "$OPENCODE_USE_INTERACTIVE" == "1" && "$SB_LIVE_OPENCODE_USE_INTERACTIVE" == "1" ]] \
   && check "OpenCode interactive sets SB_LIVE_OPENCODE_USE_INTERACTIVE=1" pass \
   || check "OpenCode interactive sets SB_LIVE_OPENCODE_USE_INTERACTIVE=1" fail
-
-# Cursor follow-up env: interactive sets session flag
-agent_mode_reset
-SB_AM_RESOLVED="interactive"
-agent_mode_apply_host_launch_env "cursor"
-[[ "$SB_AGENT_CURSOR_SESSION" == "1" ]] && check "Cursor interactive uses session-id follow-up env" pass \
-  || check "Cursor interactive uses session-id follow-up env" fail
 
 # AF seed round-trip
 agent_mode_reset
@@ -679,22 +658,6 @@ fi
 # shellcheck source=../../scripts/lib/agent-mode.sh
 source "$MODE_LIB"
 
-# Cursor TUI available without SB_AGENT_CURSOR_SESSION_AVAILABLE
-CURBIN="${TMPROOT}/cur-bin"
-mkdir -p "$CURBIN"
-printf '#!/usr/bin/env bash\nexit 0\n' >"${CURBIN}/cursor-agent"
-chmod +x "${CURBIN}/cursor-agent"
-if (
-  unset SB_AGENT_CURSOR_SESSION_AVAILABLE SB_AGENT_MODE_TUI_AVAILABLE
-  export PATH="${CURBIN}:$PATH"
-  agent_mode_reset
-  agent_mode_tui_available cursor
-); then
-  check "Cursor TUI available when cursor-agent exists (no session env)" pass
-else
-  check "Cursor TUI available when cursor-agent exists (no session env)" fail
-fi
-
 # Pi TUI available without REPL banner grep
 PIBIN="${TMPROOT}/pi-bin"
 mkdir -p "$PIBIN"
@@ -730,12 +693,12 @@ PY
   fi
 fi
 
-# Native argv: Pi interactive has no -p; Cursor interactive has no --print
+# Native argv: Pi interactive has no -p
 # shellcheck source=../../scripts/lib/agent-host-exec.sh
 source "${REPO_ROOT}/scripts/lib/agent-host-exec.sh"
 HOSTBIN="${TMPROOT}/host-bin"
 mkdir -p "$HOSTBIN"
-for fake in pi cursor-agent claude opencode; do
+for fake in pi claude opencode; do
   printf '#!/usr/bin/env bash\nexit 0\n' >"${HOSTBIN}/${fake}"
   chmod +x "${HOSTBIN}/${fake}"
 done
@@ -755,20 +718,6 @@ if (
 else
   check "Pi interactive argv has no -p; NI argv has -p" fail
 fi
-if (
-  export PATH="${HOSTBIN}:$PATH"
-  agent_host_build_argv cursor interactive "$NIFAST" "hello" permissive
-  ! grep -qx -- '--print' <<<"$(printf '%s\n' "${AGENT_HOST_ARGV[@]}")"
-) && (
-  export PATH="${HOSTBIN}:$PATH"
-  agent_host_build_argv cursor non-interactive "$NIFAST" "hello" permissive
-  grep -qx -- '--print' <<<"$(printf '%s\n' "${AGENT_HOST_ARGV[@]}")"
-); then
-  check "Cursor interactive argv has no --print; NI argv has --print" pass
-else
-  check "Cursor interactive argv has no --print; NI argv has --print" fail
-fi
-
 # Quota not default on pinned NI; --quota-retry re-enables
 # shellcheck source=../../scripts/lib/agent-delegate-common.sh
 source "${REPO_ROOT}/scripts/lib/agent-delegate-common.sh"

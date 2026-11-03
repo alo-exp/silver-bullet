@@ -31,15 +31,15 @@ else
 fi
 
 if [[ -d "${REPO_ROOT}/commands" ]]; then
-  fail "repo-root commands/ should not exist (Cursor command surface lives in plugins/silver-bullet/commands)"
+  fail "repo-root commands/ should not exist (command stubs were removed with Cursor)"
 else
   pass "repo-root commands/ is absent"
 fi
 
-if [[ -d "${REPO_ROOT}/plugins/silver-bullet/commands" ]]; then
-  pass "Cursor package commands directory exists"
+if [[ ! -d "${REPO_ROOT}/plugins/silver-bullet/commands" ]]; then
+  pass "plugin package has no commands directory (command stubs were Cursor-only)"
 else
-  fail "Cursor package commands directory exists"
+  fail "plugin package has no commands directory (command stubs were Cursor-only)"
 fi
 
 if jq -e '.agents' "$PLUGIN_JSON" >/dev/null 2>&1; then
@@ -50,15 +50,15 @@ fi
 
 cross_host_dirs="$(find "${REPO_ROOT}/agents" -mindepth 1 -maxdepth 1 -type d ! -name 'claude' 2>/dev/null | wc -l | tr -d ' ')"
 if [[ "$cross_host_dirs" == "0" ]]; then
-  pass "repo agents/ contains only Claude bundle (no codex/cursor siblings)"
+  pass "repo agents/ contains only Claude bundle (no codex sibling)"
 else
   fail "repo agents/ contains only Claude bundle — found $cross_host_dirs foreign host dirs"
 fi
 
-if [[ -d "${REPO_ROOT}/host-bundles/codex" && -d "${REPO_ROOT}/host-bundles/cursor" ]]; then
-  pass "Codex and Cursor bundles live under host-bundles/"
+if [[ -d "${REPO_ROOT}/host-bundles/codex" && ! -d "${REPO_ROOT}/host-bundles/cursor" ]]; then
+  pass "Codex bundle lives under host-bundles/ and no Cursor bundle ships"
 else
-  fail "Codex and Cursor bundles live under host-bundles/"
+  fail "Codex bundle lives under host-bundles/ and no Cursor bundle ships"
 fi
 
 if grep -qE '^name: sb:feature$' "${REPO_ROOT}/agents/claude/sb:feature/SKILL.md"; then

@@ -38,7 +38,7 @@ assert_file_exists "$SOURCES" "host-certification-sources.json exists"
 assert_file_exists "$BASELINE" "autonomous-enterprise-proof-baseline.json exists"
 
 if command -v jq >/dev/null 2>&1; then
-  for host in cursor codex claude; do
+  for host in codex claude; do
     if jq -e --arg h "$host" '.hosts[$h].canonical_ledger' "$SOURCES" >/dev/null 2>&1; then
       pass "sources registry has canonical ledger for $host"
     else
@@ -74,17 +74,17 @@ fi
 assert_file_exists "$TMP_ARTIFACT" "CERTIFICATION-STATUS.json written"
 
 if command -v jq >/dev/null 2>&1; then
-  if jq -e '.hosts | length == 3' "$TMP_ARTIFACT" >/dev/null 2>&1; then
-    pass "artifact has 3 host entries"
+  if jq -e '.hosts | length == 2' "$TMP_ARTIFACT" >/dev/null 2>&1; then
+    pass "artifact has 2 host entries"
   else
-    fail "artifact host count != 3"
+    fail "artifact host count != 2"
   fi
   if jq -e '.conservative_summary.public_autonomous_enterprise_claim_ready == false' "$TMP_ARTIFACT" >/dev/null 2>&1; then
     pass "artifact conservatively marks public claim not ready"
   else
     fail "artifact should not claim public autonomous enterprise ready"
   fi
-  for host in cursor codex claude; do
+  for host in codex claude; do
     if jq -e --arg h "$host" '.hosts[] | select(.host == $h) | .proof_level' "$TMP_ARTIFACT" >/dev/null 2>&1; then
       pass "artifact includes proof_level for $host"
     else

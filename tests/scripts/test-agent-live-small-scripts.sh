@@ -14,7 +14,6 @@ source "$SCRIPTS/lib/agent-bundle-paths.sh"
 
 assert_eq "bundle rel claude" "agents/claude" "$(sb_agent_bundle_rel claude)"
 assert_eq "bundle rel codex" "host-bundles/codex" "$(sb_agent_bundle_rel codex)"
-assert_eq "bundle rel cursor" "host-bundles/cursor" "$(sb_agent_bundle_rel cursor)"
 rc=0
 err="$(sb_agent_bundle_rel nope 2>&1 >/dev/null)" || rc=$?
 assert_eq "bundle rel unknown host fails" "1" "$rc"
@@ -33,7 +32,6 @@ assert_contains "bundle root unknown host message" "$err" "unknown host: nope"
 
 assert_eq "cache rel claude" "agents/claude" "$(sb_agent_cache_rel claude)"
 assert_eq "cache rel codex" "skill-source" "$(sb_agent_cache_rel codex)"
-assert_eq "cache rel cursor is the Cursor render" "cursor-skill-source" "$(sb_agent_cache_rel cursor)"
 rc=0
 err="$(sb_agent_cache_rel nope 2>&1 >/dev/null)" || rc=$?
 assert_eq "cache rel unknown host fails" "1" "$rc"

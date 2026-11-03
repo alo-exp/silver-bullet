@@ -59,7 +59,7 @@ test("renders a row per host with proof class, ledger, gates and gaps", async ()
     hosts: [
       { host: "claude", proof_level: "live_e2e_proven", ledger_pass: "pass", ledger_reconcile: "ok", gates_verdict: "pass", evidence_gaps: [] },
       { host: "codex", proof_level: "live_e2e_partial", ledger_pass: "partial", ledger_reconcile: "drift", gates_verdict: "n/a", evidence_gaps: ["a", "b"] },
-      { host: "cursor", proof_level: "shipped" },
+      { host: "pi", proof_level: "shipped" },
       { host: "x1", proof_level: "in_progress", gates_verdict: "warn" },
       { host: "x2", proof_level: "planned" },
       { host: "x3", proof_level: "mystery" },
@@ -72,13 +72,13 @@ test("renders a row per host with proof class, ledger, gates and gaps", async ()
   assert.match(html, /<tr data-host="claude">\s*<td>claude<\/td>\s*<td><span class="proof-proven">Live E2E \(proven\)<\/span><\/td>\s*<td>pass \(ok\); gates pass; gaps: none<\/td>/);
   assert.match(html, /<span class="proof-partial">Live E2E \(partial\)<\/span>/);
   assert.match(html, /partial \(drift\); gates n\/a; gaps: a, b/);
-  assert.match(html, /<tr data-host="cursor">[\s\S]*?<span class="proof-shipped">Shipped<\/span>[\s\S]*?\? \(\?\); gates n\/a; gaps: none/);
+  assert.match(html, /<tr data-host="pi">[\s\S]*?<span class="proof-shipped">Shipped<\/span>[\s\S]*?\? \(\?\); gates n\/a; gaps: none/);
   assert.match(html, /<span class="proof-progress">In progress<\/span>/);
   assert.match(html, /gates warn/);
   assert.match(html, /<span class="proof-planned">Planned<\/span>/);
   assert.match(html, /<span class="proof-planned">mystery<\/span>/, "unknown level falls back to the planned style with the raw label");
   assert.equal(meta.textContent, "Generated: 2026-01-02T03:04:05Z @ abc1234 — mirrors certification-status.json");
-  assert.equal(note.textContent, "public_autonomous_enterprise_claim_ready: false (1/3 hosts live_e2e_proven)");
+  assert.equal(note.textContent, "public_autonomous_enterprise_claim_ready: false (1/6 hosts live_e2e_proven)");
 });
 
 test("a successful render raises no swallowed error", async () => {
@@ -89,7 +89,7 @@ test("a successful render raises no swallowed error", async () => {
 test("missing metadata renders question marks and a zero host count", async () => {
   const { meta, note } = await load({ response: ok({ hosts: [], conservative_summary: { public_autonomous_enterprise_claim_ready: true } }) });
   assert.equal(meta.textContent, "Generated: ? @ ? — mirrors certification-status.json");
-  assert.equal(note.textContent, "public_autonomous_enterprise_claim_ready: true (0/3 hosts live_e2e_proven)");
+  assert.equal(note.textContent, "public_autonomous_enterprise_claim_ready: true (0/0 hosts live_e2e_proven)");
 });
 
 test("without a conservative summary the claim note keeps its static text", async () => {

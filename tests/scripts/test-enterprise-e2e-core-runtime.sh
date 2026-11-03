@@ -275,17 +275,17 @@ assert_contains "assert: unsatisfied message" "$TL_ERR" "ERROR: Session 0 not sa
 # --- host install / preflight dispatch ----------------------------------------
 run "enterprise_e2e_run_install_host" "SB_ROOT="
 assert_eq "install host: no root fails" 1 "$TL_STATUS"
-mkdir -p "$TL_TMP/cursor-sb/scripts"
-echo 'echo "cursor-install-ran"' >"$TL_TMP/cursor-sb/scripts/install-cursor.sh"
-run "enterprise_e2e_run_install_host '$TL_TMP/cursor-sb'" "SB_E2E_LIVE_RUNTIME=cursor"
-assert_eq "install host: cursor adapter used" 0 "$TL_STATUS"
-assert_contains "install host: cursor installer ran" "$TL_OUT" "cursor-install-ran"
-run "enterprise_e2e_run_install_host" "SB_E2E_LIVE_RUNTIME=cursor" "SB_ROOT=$TL_TMP/cursor-sb"
-assert_contains "install host: root defaults to SB_ROOT" "$TL_OUT" "cursor-install-ran"
-run "enterprise_e2e_preflight_host" "SB_E2E_LIVE_RUNTIME=cursor" "SB_ROOT=$TL_TMP/cursor-sb"
-assert_contains "preflight host: cursor adapter used" "$TL_OUT" "Cursor preflight: cursor-agent CLI or CURSOR_API_KEY required"
-run "enterprise_e2e_preflight_host '$TL_TMP/cursor-sb'" "SB_E2E_LIVE_RUNTIME=cursor" -u SB_ROOT
-assert_contains "preflight host: explicit root" "$TL_OUT" "Cursor preflight"
+mkdir -p "$TL_TMP/codex-sb/scripts"
+echo 'echo "codex-install-ran"' >"$TL_TMP/codex-sb/scripts/install-codex.sh"
+run "enterprise_e2e_run_install_host '$TL_TMP/codex-sb'" "SB_E2E_LIVE_RUNTIME=codex"
+assert_eq "install host: codex adapter used" 0 "$TL_STATUS"
+assert_contains "install host: codex installer ran" "$TL_OUT" "codex-install-ran"
+run "enterprise_e2e_run_install_host" "SB_E2E_LIVE_RUNTIME=codex" "SB_ROOT=$TL_TMP/codex-sb"
+assert_contains "install host: root defaults to SB_ROOT" "$TL_OUT" "codex-install-ran"
+run "enterprise_e2e_preflight_host" "SB_E2E_LIVE_RUNTIME=codex" "SB_ROOT=$TL_TMP/codex-sb"
+assert_contains "preflight host: codex adapter used" "$TL_OUT" "Codex preflight: native CLI required"
+run "enterprise_e2e_preflight_host '$TL_TMP/codex-sb'" "SB_E2E_LIVE_RUNTIME=codex" -u SB_ROOT
+assert_contains "preflight host: explicit root" "$TL_OUT" "Codex preflight"
 
 # Without adapters the Claude helpers are the fallback.
 STG="$TL_TMP/stage"
@@ -295,19 +295,19 @@ fallback() {
   e2e_script "source '$STG/scripts/enterprise-e2e/lib/core.sh'
 enterprise_e2e_run_install_claude() { echo \"claude-install:\$1\"; }
 enterprise_e2e_preflight_claude_token_gateway() { echo \"claude-preflight:\$1\"; }
-$1" "${BASE_ENV[@]}" "SB_E2E_LIVE_RUNTIME=codex" "SB_ROOT=$TL_TMP/cursor-sb"
+$1" "${BASE_ENV[@]}" "SB_E2E_LIVE_RUNTIME=codex" "SB_ROOT=$TL_TMP/codex-sb"
 }
 fallback "enterprise_e2e_run_install_host 2>/dev/null"
-assert_contains "install host: missing adapter falls back to Claude install" "$TL_OUT" "claude-install:$TL_TMP/cursor-sb"
+assert_contains "install host: missing adapter falls back to Claude install" "$TL_OUT" "claude-install:$TL_TMP/codex-sb"
 fallback "enterprise_e2e_preflight_host 2>/dev/null"
-assert_contains "preflight host: missing adapter falls back to the gateway check" "$TL_OUT" "claude-preflight:$TL_TMP/cursor-sb"
+assert_contains "preflight host: missing adapter falls back to the gateway check" "$TL_OUT" "claude-preflight:$TL_TMP/codex-sb"
 # An adapter that defines nothing also falls back.
 mkdir -p "$STG/scripts/enterprise-e2e/lib/adapters"
 echo ': # no adapter functions' >"$STG/scripts/enterprise-e2e/lib/adapters/codex.sh"
 fallback "enterprise_e2e_run_install_host"
-assert_contains "install host: empty adapter falls back to Claude install" "$TL_OUT" "claude-install:$TL_TMP/cursor-sb"
+assert_contains "install host: empty adapter falls back to Claude install" "$TL_OUT" "claude-install:$TL_TMP/codex-sb"
 fallback "enterprise_e2e_preflight_host"
-assert_contains "preflight host: empty adapter falls back to the gateway check" "$TL_OUT" "claude-preflight:$TL_TMP/cursor-sb"
+assert_contains "preflight host: empty adapter falls back to the gateway check" "$TL_OUT" "claude-preflight:$TL_TMP/codex-sb"
 # An adapter install failure is the install result.
 cat >"$STG/scripts/enterprise-e2e/lib/adapters/codex.sh" <<'A'
 enterprise_e2e_adapter_install() { return 7; }

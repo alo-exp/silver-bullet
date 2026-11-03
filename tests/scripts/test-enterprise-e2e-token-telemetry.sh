@@ -9,7 +9,7 @@ tl_init
 LIB="$TL_REPO_ROOT/scripts/lib/enterprise-e2e-token-telemetry.sh"
 CLEAN=(-u SB_ROOT -u SB_E2E_TELEMETRY_ROOT -u SB_E2E_TELEMETRY_ROW -u SB_E2E_TELEMETRY_ROW_SLUG
   -u SB_E2E_TELEMETRY_ROW_RESULT -u SB_E2E_TELEMETRY_ROW_LOG -u SB_E2E_LEDGER_FILE -u CLAUDE_MODEL
-  -u CURSOR_MODEL -u SB_E2E_VALIDATION_OVERLAY_DRY_RUN -u VALIDATION_OVERLAY_PASS
+  -u SB_E2E_VALIDATION_OVERLAY_DRY_RUN -u VALIDATION_OVERLAY_PASS
   -u VALIDATION_OVERLAY_FAIL -u VALIDATION_OVERLAY_SKIP)
 
 # Frozen clock and no matrix driver unless a test installs one.
@@ -101,14 +101,14 @@ assert_eq "minimal: overlay null" "null" "$(jq -c .overlay <<<"$rec")"
 assert_eq "minimal: rtk null" "null" "$(jq -c .rtk_stats <<<"$rec")"
 assert_eq "minimal: driver pid null" "null" "$(jq -c .matrix_driver_pid <<<"$rec")"
 
-# full: every field populated; dry-run overlay; CURSOR_MODEL fallback
+# full: every field populated; dry-run overlay
 rm -rf "$TR"
 tl_stub rtk 'printf "{\"saved\": 9}\n"'
 tl_stub pgrep 'echo 4321'
 e2e_call "$LIB" "${CLEAN[@]}" "SB_E2E_TELEMETRY_ROOT=$TR" "SB_ROOT=$TL_TMP/sbr" \
   SB_E2E_TELEMETRY_ROW=11 SB_E2E_TELEMETRY_ROW_SLUG=wf-eleven SB_E2E_TELEMETRY_ROW_RESULT=Pass \
   "SB_E2E_TELEMETRY_ROW_LOG=$TL_TMP/append.log" "SB_E2E_LEDGER_FILE=$TL_TMP/ledger.md" \
-  CURSOR_MODEL=cursor-m SB_E2E_VALIDATION_OVERLAY_DRY_RUN=1 \
+  SB_E2E_VALIDATION_OVERLAY_DRY_RUN=1 \
   VALIDATION_OVERLAY_PASS=4 VALIDATION_OVERLAY_FAIL=1 VALIDATION_OVERLAY_SKIP=2 \
   -- enterprise_e2e_telemetry_append "matrix-row"
 assert_eq "append full: status" 0 "$TL_STATUS"
@@ -117,14 +117,14 @@ assert_eq "full: event source" "matrix-row" "$(jq -r .event_source <<<"$rec")"
 assert_eq "full: sb_root from SB_ROOT" "$TL_TMP/sbr" "$(jq -r .sb_root <<<"$rec")"
 assert_eq "full: row" "{\"num\":11,\"slug\":\"wf-eleven\",\"result\":\"Pass\",\"log\":\"$TL_TMP/append.log\"}" "$(jq -c .row <<<"$rec")"
 assert_eq "full: ledger" "$TL_TMP/ledger.md" "$(jq -r .ledger_file <<<"$rec")"
-assert_eq "full: model falls back to CURSOR_MODEL" "cursor-m" "$(jq -r .model <<<"$rec")"
+assert_eq "full: model is unknown without CLAUDE_MODEL" "unknown" "$(jq -r .model <<<"$rec")"
 assert_eq "full: tui tokens" "777" "$(jq -r .tokens.tui_max <<<"$rec")"
 assert_eq "full: overlay dry-run" '{"mode":"dry-run","pass":4,"fail":1,"skip":2}' "$(jq -c .overlay <<<"$rec")"
 assert_eq "full: rtk snapshot" '{"saved":9}' "$(jq -r .rtk_stats <<<"$rec")"
 assert_eq "full: driver pid" "4321" "$(jq -r .matrix_driver_pid <<<"$rec")"
 
-# appends rather than overwrites; CLAUDE_MODEL beats CURSOR_MODEL; live overlay mode
-e2e_call "$LIB" "${CLEAN[@]}" "SB_E2E_TELEMETRY_ROOT=$TR" CLAUDE_MODEL=claude-m CURSOR_MODEL=cursor-m \
+# appends rather than overwrites; live overlay mode
+e2e_call "$LIB" "${CLEAN[@]}" "SB_E2E_TELEMETRY_ROOT=$TR" CLAUDE_MODEL=claude-m \
   VALIDATION_OVERLAY_PASS=1 VALIDATION_OVERLAY_FAIL=0 VALIDATION_OVERLAY_SKIP=0 SB_E2E_VALIDATION_OVERLAY_DRY_RUN=0 \
   -- enterprise_e2e_telemetry_append "second"
 assert_eq "second call appends to primary" 2 "$(wc -l <"$PRIMARY" | tr -d ' ')"

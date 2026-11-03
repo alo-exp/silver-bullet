@@ -53,10 +53,6 @@ echo "$n" >"$F2_CALLS.hook"
 printf 'hook-delivery attempt=%s skipbootstrap=%s\n' "$n" "${SB_E2E_HOOK_DELIVERY_SKIP_BOOTSTRAP:-}" >>"$F2_CALLS"
 (( n > ${F2_HOOK_FAILS:-0} ))
 EOS
-cat >"$R/tests/e2e-live/lib/session-start-preflight.sh" <<'EOS'
-printf 'session-start-preflight runtime=%s\n' "$SILVER_BULLET_RUNTIME" >>"$F2_CALLS"
-return 1
-EOS
 
 APP="$TL_TMP/app"
 mkdir -p "$APP"
@@ -107,7 +103,7 @@ run() { : >"$F2_CALLS"; rm -f "$F2_CALLS.hook"; tl_run "$@"; CALLS="$(cat "$F2_C
 # ------------------------------------------------------------------ usage / gates
 run bash "$LIVE" --help
 assert_eq "help exit" "0" "$TL_STATUS"
-assert_contains "help usage" "$TL_OUT" "Usage: live-test.sh [--host claude|codex|cursor] [--preflight-only]"
+assert_contains "help usage" "$TL_OUT" "Usage: live-test.sh [--host claude|codex] [--preflight-only]"
 run bash "$LIVE" -h
 assert_eq "-h exit" "0" "$TL_STATUS"
 
@@ -164,8 +160,8 @@ assert_file_absent "preflight-only takes no lock" "$TL_TMP/live.lock"
 assert_contains "code-intel preflight ran with fixture" "$CALLS" "code-intel $R $APP 0"
 assert_contains "hook delivery bootstrap skipped" "$CALLS" "hook-delivery attempt=1 skipbootstrap=1"
 assert_contains "npm test ran in the fixture" "$CALLS" "npm test cwd=$APP"
-assert_contains "session-start preflight sourced as cursor" "$CALLS" "session-start-preflight runtime=cursor"
-assert_eq "failing session-start preflight tolerated" "0" "$TL_STATUS"
+assert_not_contains "no session-start preflight (it was Cursor-only)" "$CALLS" "session-start-preflight"
+assert_eq "preflight-only run exits 0" "0" "$TL_STATUS"
 assert_contains "host install ran" "$CALLS" "install-host $R"
 assert_contains "host preflight ran" "$CALLS" "preflight-host $R"
 assert_not_contains "no session 0 gate in preflight-only" "$CALLS" "session0"
@@ -188,14 +184,9 @@ run env F2_HOOK_FAILS=3 bash "$LIVE" --preflight-only
 assert_eq "hook delivery exhausted exits 1" "1" "$TL_STATUS"
 assert_not_contains "install not reached after hook failure" "$CALLS" "install-host"
 
-# fixture test failure aborts; absent session-start preflight is skipped
+# fixture test failure aborts
 run env F2_NPM_RC=1 bash "$LIVE" --preflight-only
 assert_eq "fixture npm test failure aborts" "1" "$TL_STATUS"
-mv "$R/tests/e2e-live/lib/session-start-preflight.sh" "$TL_TMP/ssp.keep"
-run bash "$LIVE" --preflight-only
-assert_eq "no session-start preflight is fine" "0" "$TL_STATUS"
-assert_not_contains "session-start preflight skipped when absent" "$CALLS" "session-start-preflight"
-mv "$TL_TMP/ssp.keep" "$R/tests/e2e-live/lib/session-start-preflight.sh"
 
 # ------------------------------------------------------------------ live run with explicit rows
 export SB_ENTERPRISE_E2E_LIVE=1

@@ -56,8 +56,8 @@ argv_str() { printf '%s|' "${AGENT_HOST_ARGV[@]}"; }
 
 # =================== resolve_cli ===================
 STUB_BIN="$TL_TMP/stubs"; mkdir -p "$STUB_BIN"
-for n in claude codex opencode cursor-agent agent; do printf '#!/bin/sh\nexit 0\n' >"$STUB_BIN/$n"; chmod +x "$STUB_BIN/$n"; done
-NOHOSTS="$(tl_path_without claude codex opencode pi cursor-agent agent)"
+for n in claude codex opencode; do printf '#!/bin/sh\nexit 0\n' >"$STUB_BIN/$n"; chmod +x "$STUB_BIN/$n"; done
+NOHOSTS="$(tl_path_without claude codex opencode pi)"
 
 assert_eq "claude: CLAUDE_BIN" "$STUB_BIN/claude" "$(CLAUDE_BIN="$STUB_BIN/claude" agent_host_resolve_cli claude)"
 assert_eq "claude: PATH" "$STUB_BIN/claude" "$(PATH="$STUB_BIN:$NOHOSTS" CLAUDE_BIN="" agent_host_resolve_cli claude)"
@@ -72,12 +72,6 @@ assert_eq "claude: non-executable CLAUDE_BIN returns 1" 1 "$rc"
 assert_eq "codex: CODEX_BIN" "$STUB_BIN/codex" "$(CODEX_BIN="$STUB_BIN/codex" agent_host_resolve_cli codex)"
 assert_eq "opencode: OPENCODE_BIN" "$STUB_BIN/opencode" "$(OPENCODE_BIN="$STUB_BIN/opencode" agent_host_resolve_cli opencode)"
 assert_eq "pi: PI_BIN" "$TL_BIN/pi" "$(PI_BIN="$TL_BIN/pi" agent_host_resolve_cli pi)"
-assert_eq "cursor: cursor-agent preferred" "$STUB_BIN/cursor-agent" "$(PATH="$STUB_BIN:$NOHOSTS" agent_host_resolve_cli cursor)"
-rm -f "$STUB_BIN/cursor-agent"
-assert_eq "cursor: falls back to agent" "$STUB_BIN/agent" "$(PATH="$STUB_BIN:$NOHOSTS" agent_host_resolve_cli cursor)"
-rm -f "$STUB_BIN/agent"
-rc=0; PATH="$NOHOSTS" agent_host_resolve_cli cursor >/dev/null || rc=$?
-assert_eq "cursor: missing returns 1" 1 "$rc"
 rc=0; agent_host_resolve_cli bogus >/dev/null || rc=$?
 assert_eq "unknown host returns 1" 1 "$rc"
 rc=0; PATH="$NOHOSTS" PI_BIN="" HOME="$TL_TMP/nohome" agent_host_resolve_cli pi >/dev/null || rc=$?
@@ -95,10 +89,9 @@ agent_host_pi_ni_write_rails_needed mimo-v2.5 && tl_fail "no rails for mimo" || 
 
 # =================== build_argv ===================
 export CLAUDE_BIN="$STUB_BIN/claude" CODEX_BIN="$STUB_BIN/codex" OPENCODE_BIN="$STUB_BIN/opencode"
-cp "$STUB_BIN/claude" "$STUB_BIN/cursor-agent"; PATH="$STUB_BIN:$PATH"; hash -r
+PATH="$STUB_BIN:$PATH"; hash -r
 unset CLAUDE_MODEL CLAUDE_EFFORT CLAUDE_PRINT_VERBOSE CODEX_MODEL SB_LIVE_CODEX_MODEL CODEX_BYPASS_HOOK_TRUST CODEX_AUTO_TRUST_HOOKS \
-  OPENCODE_RUN_MODEL PI_PROVIDER PI_MODEL CURSOR_AGENT_OUTPUT_FORMAT SB_AGENT_CURSOR_STREAM_JSON SB_E2E_ENTERPRISE_MATRIX \
-  CURSOR_AGENT_RESUME CURSOR_AGENT_MODEL CURSOR_MODEL
+  OPENCODE_RUN_MODEL PI_PROVIDER PI_MODEL SB_E2E_ENTERPRISE_MATRIX
 
 rc=0; agent_host_build_argv bogus non-interactive /w p || rc=$?
 assert_eq "build: unknown host" 1 "$rc"
@@ -135,16 +128,6 @@ PI_MODEL=qwen3-max PI_PROVIDER=omni agent_host_build_argv pi non-interactive /w 
 assert_contains "build pi NI qwen rails" "$(argv_str)" "--provider|omni|--model|qwen3-max|--thinking|off|--no-context-files|--no-skills|--no-extensions|--tools|read,bash,edit,write|--append-system-prompt|NON-INTERACTIVE:"
 assert_eq "build pi NI prompt last" "p" "${AGENT_HOST_ARGV[$((${#AGENT_HOST_ARGV[@]} - 1))]}"
 
-agent_host_build_argv cursor non-interactive /w p
-assert_eq "build cursor NI permissive" "$STUB_BIN/cursor-agent|--trust|--force|--workspace|/w|--print|--output-format|text|--yolo|p|" "$(argv_str)"
-SB_AGENT_CURSOR_STREAM_JSON=1 CURSOR_MODEL=composer agent_host_build_argv cursor non-interactive /w p strict
-assert_eq "build cursor NI stream-json + model + strict" "$STUB_BIN/cursor-agent|--trust|--force|--workspace|/w|--print|--output-format|text|--output-format|stream-json|--stream-partial-output|--model|composer|p|" "$(argv_str)"
-SB_E2E_ENTERPRISE_MATRIX=1 CURSOR_AGENT_MODEL=m2 agent_host_build_argv cursor non-interactive /w p strict
-assert_contains "build cursor enterprise matrix streams, CURSOR_AGENT_MODEL wins" "$(argv_str)" "--stream-partial-output|--model|m2|"
-agent_host_build_argv cursor interactive /w p
-assert_eq "build cursor interactive" "$STUB_BIN/cursor-agent|--trust|--force|--workspace|/w|--yolo|p|" "$(argv_str)"
-CURSOR_AGENT_RESUME=chat-1 agent_host_build_argv cursor interactive /w p strict
-assert_eq "build cursor interactive resume" "$STUB_BIN/cursor-agent|--trust|--force|--workspace|/w|--resume|chat-1|p|" "$(argv_str)"
 
 # build_argv default case (impossible host past resolve): resolve succeeds via function override
 agent_host_resolve_cli() { printf '%s' "$STUB_BIN/claude"; }

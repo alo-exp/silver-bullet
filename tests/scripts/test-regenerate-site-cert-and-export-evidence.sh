@@ -28,7 +28,7 @@ cat >"$GEN" <<'EOS'
 echo "args=$* rtk=${RTK_DISABLED:-}" >>"$(dirname "$0")/gen.log"
 [[ "${NOWRITE:-}" == 1 ]] && exit 0
 mkdir -p "$(dirname "$SB_CERT_ARTIFACT")"
-printf '{"generated_at":"2026-01-01T00:00:00Z","sb_git_sha":"abc123","hosts":%s}\n' "${HOSTS_JSON:-[1,2,3]}" >"$SB_CERT_ARTIFACT"
+printf '{"generated_at":"2026-01-01T00:00:00Z","sb_git_sha":"abc123","hosts":%s}\n' "${HOSTS_JSON:-[1,2]}" >"$SB_CERT_ARTIFACT"
 EOS
 chmod +x "$GEN"
 

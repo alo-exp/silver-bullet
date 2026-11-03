@@ -18,7 +18,7 @@ unset "${CLEAN_ENV[@]}" 2>/dev/null || true
 # ---------------- reason codes ----------------
 fresh
 for r in pin tui-unavailable mode-unavailable incomplete result-missing escalate-unavailable escalated d3-process-alive d3-continue \
-  d3-in-wave-cursor classifier-interactive classifier-ni fallback_drop:attach fallback_drop:control-dir fallback_drop:max-turns \
+  classifier-interactive classifier-ni fallback_drop:attach fallback_drop:control-dir fallback_drop:max-turns \
   fallback_drop:auto-policy "mode_fallback:interactive→non-interactive:tui-unavailable:x"; do
   agent_mode_reason_ok "$r" && tl_pass "reason ok: $r" || tl_fail "reason ok: $r"
 done

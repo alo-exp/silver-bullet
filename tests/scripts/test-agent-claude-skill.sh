@@ -41,7 +41,6 @@ grep -q 'graphify' "$SKILL" && check "documents graphify capture" pass || check 
 grep -q 'AF-AGENT-DELEGATE' "$SKILL" && check "documents AF-AGENT-DELEGATE" pass || check "documents AF-AGENT-DELEGATE" fail
 grep -q 'SB_AGENT_DELEGATE_V2' "$SKILL" && check "documents V2 default-on flag" pass || check "documents V2 default-on flag" fail
 grep -q '/sb:agent-codex' "$SKILL" && check "documents codex tri-host sibling" pass || check "documents codex tri-host sibling" fail
-grep -q '/sb:agent-cursor' "$SKILL" && check "documents cursor tri-host sibling" pass || check "documents cursor tri-host sibling" fail
 grep -q 'E2E-081' "$SKILL" && check "R9 E2E-081 learning" pass || check "R9 E2E-081 learning" fail
 grep -q 'E2E-110' "$SKILL" && check "E2E-110 auth policy" pass || check "E2E-110 auth policy" fail
 
@@ -64,16 +63,6 @@ grep -q 'agent_claude_prepare_lightweight_config_dir' "$LIB" && check "isolated 
 grep -q 'scripts/agent-claude/' "$SKILL" && check "references agent-claude harness dir" pass || check "references agent-claude harness dir" fail
 grep -q 'SB_AGENT_CLAUDE_LOG_FLOOR' "$SKILL" && check "documents log floor" pass || check "documents log floor" fail
 grep -q 'Security (delegation boundary)' "$SKILL" && check "security section" pass || check "security section" fail
-
-CURSOR_BUNDLE="${REPO_ROOT}/host-bundles/cursor/sb:agent-claude/SKILL.md"
-if [[ -f "$CURSOR_BUNDLE" ]]; then
-  grep -q 'when Claude Code TUI is the intended executor' "$CURSOR_BUNDLE" \
-    && check "cursor bundle names Claude executor" pass || check "cursor bundle names Claude executor" fail
-  ! grep -q 'when Cursor TUI is the intended executor' "$CURSOR_BUNDLE" \
-    && check "cursor bundle no Cursor-as-executor typo" pass || check "cursor bundle no Cursor-as-executor typo" fail
-else
-  check "cursor bundle exists" fail
-fi
 
 AGENT_CLAUDE_DIR="${REPO_ROOT}/scripts/agent-claude"
 for script in lib.sh env.sh preflight.sh monitor.sh invoke.sh; do
