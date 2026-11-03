@@ -39,10 +39,10 @@
     },
     {
       "id": "tri-host-parity",
-      "summary": "Claude, Codex, Cursor enterprise E2E certification parity",
+      "summary": "Claude and Codex enterprise E2E certification parity",
       "proof_level": "live_e2e_partial",
       "evidence": ["host-certification-sources.json", "CERTIFICATION-STATUS.json"],
-      "notes": "Cursor + Codex have canonical strict-clean rounds; Claude R9 smoke 6/22 only"
+      "notes": "Codex has a canonical strict-clean round; Claude R9 smoke 6/22 only (the retired Cursor host had one too)"
     },
     {
       "id": "parallel-dag-scheduling",
@@ -75,7 +75,7 @@
       "summary": "Vague prompt to shipped app without operator babysitting",
       "proof_level": "live_e2e_partial",
       "evidence": ["ENTERPRISE-E2E-EFFECTIVENESS-PLAN.md §1"],
-      "notes": "Early rounds required heavy operator intervention; improving on Cursor/Codex tracks"
+      "notes": "Early rounds required heavy operator intervention; improving on the Codex track"
     },
     {
       "id": "monitor-ledger-integrity",
@@ -97,7 +97,7 @@
     },
     {
       "id": "minimal-intent-e2e-mi01",
-      "summary": "Minimal vision paragraph → full dev lifecycle via Cursor parent orchestrator (/sb:feature)",
+      "summary": "Minimal vision paragraph → full dev lifecycle via the parent orchestrator (/sb:feature)",
       "proof_level": "live_e2e_proven",
       "evidence": [
         ".planning/minimal-intent-e2e/MATRIX-LEDGER.json",
