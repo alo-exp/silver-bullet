@@ -37,7 +37,7 @@ fi
 # Read JSON from stdin
 input=$(cat)
 
-# Extract command from shell-like tool input
+# Shell-like tools only; the command itself is judged by the analyser below
 if declare -f sb_tool_name >/dev/null 2>&1; then
   tool_name="$(sb_tool_name "$input")"
 else
@@ -46,12 +46,6 @@ fi
 if declare -f sb_tool_is_shell_like >/dev/null 2>&1; then
   sb_tool_is_shell_like "$tool_name" || exit 0
 fi
-if declare -f sb_tool_command_string >/dev/null 2>&1; then
-  cmd="$(sb_tool_command_string "$input")"
-else
-  cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // ""')
-fi
-
 # Only trigger on a real `gh pr create` (judged by the shell analyser, so `grep "gh pr create"` or
 # `echo` do not count) that succeeded: the tool output must carry the new PR's URL (R1-27).
 if declare -f sb_tool_input_load >/dev/null 2>&1; then
@@ -135,12 +129,10 @@ if [[ -f "$SPEC" && ! -L "$SPEC" && ! -L ".planning" ]]; then
   # Insert entry after the <!-- Populated automatically comment (idempotent — skip if already inserted)
   if ! grep -qF "$pr_url" "$SPEC" 2>/dev/null; then
     spec_tmp=$(mktemp ".planning/.SPEC.md.XXXXXX")
-    if ENTRY="$entry" awk 'BEGIN{e=ENVIRON["ENTRY"]} /<!-- Populated automatically/ { print; print e; next } { print }' "$SPEC" >"$spec_tmp" &&
-      mv -f "$spec_tmp" "$SPEC"; then
-      git add "$SPEC" 2>/dev/null || true
-    else
-      rm -f -- "$spec_tmp"
-    fi
+    trap 'rm -f -- "$spec_tmp"' EXIT
+    ENTRY="$entry" awk 'BEGIN{e=ENVIRON["ENTRY"]} /<!-- Populated automatically/ { print; print e; next } { print }' "$SPEC" >"$spec_tmp"
+    mv -f "$spec_tmp" "$SPEC"
+    git add "$SPEC" 2>/dev/null || true
     # SPEC.md staged for commit — auto-commit removed (HI-03: hooks should not commit)
   fi
 fi

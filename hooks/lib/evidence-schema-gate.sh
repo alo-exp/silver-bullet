@@ -34,13 +34,9 @@ sb_evidence_schema_gate_enforce() {
   [[ "$mode" == "delivery" ]] || return 0
 
   if ! validator="$(_sb_evidence_gate__script_path)"; then
-    # The plugin install is incomplete: say so instead of passing silently (strict mode blocks).
-    message="EVIDENCE SCHEMA — the plugin validator scripts/validate-evidence-findings.sh is missing from the Silver Bullet install, so finding tables were not validated. Reinstall Silver Bullet."
-    if [[ "$strict" == "1" ]]; then
-      "$emit_block_fn" "$(printf '🛑 %s' "$message")"
-      exit 0
-    fi
-    "$emit_warn_fn" "⚠️  ${message}"
+    # The plugin install is incomplete (a project-tree validator is never used instead). Say so rather than
+    # passing silently; a partial install must not block every delivery, so this warns in strict mode too.
+    "$emit_warn_fn" "⚠️  EVIDENCE SCHEMA — the plugin validator scripts/validate-evidence-findings.sh is missing from the Silver Bullet install, so finding tables were not validated. Reinstall Silver Bullet."
     return 0
   fi
 

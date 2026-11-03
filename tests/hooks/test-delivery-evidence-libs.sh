@@ -128,7 +128,8 @@ assert_eq "script path: none" 1 "$(rc _sb_evidence_gate__script_path)"
 ev task "$R" emit_warn emit_block; assert_eq "task mode: no-op" 0 "$EVR"
 ev delivery "$R" emit_warn emit_block; assert_contains "missing plugin validator warns instead of passing silently" "$(cat "$WARN")" "validator scripts/validate-evidence-findings.sh is missing"
 SILVER_BULLET_EVIDENCE_SCHEMA_STRICT=1 ev delivery "$R" emit_warn emit_block
-assert_contains "missing plugin validator blocks in strict mode" "$(cat "$BLOCK")" "validator scripts/validate-evidence-findings.sh is missing"
+assert_file_absent "a partial install does not block delivery, even in strict mode" "$BLOCK"
+assert_contains "strict mode still says the validator is missing" "$(cat "$WARN")" "validator scripts/validate-evidence-findings.sh is missing"
 mv "$TL_TMP/v.sh" "$V"
 EV_JSON="$CLEAN" ev delivery "$R" emit_warn emit_block
 assert_eq "clean scan: silent" 0 "$EVR"; assert_file_absent "clean scan: no warning" "$WARN"

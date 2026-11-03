@@ -37,7 +37,7 @@
       {
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/completion-audit.sh\"",
         "timeout": 15,
-        "matcher": "Shell|Skill"
+        "matcher": "Shell|mcp__.*"
       },
       {
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/planning-file-guard.sh\"",

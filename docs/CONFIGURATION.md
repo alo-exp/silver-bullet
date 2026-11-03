@@ -57,13 +57,13 @@ Read by `completion-audit.sh` on `gh release create` ([ENFORCEMENT.md](ENFORCEME
 | Key | Template value | Meaning |
 |-----|----------------|---------|
 | `release.profile` | `"generic"` | Release profile label; carried forward by migration, not read by the hooks |
-| `release.require_plugin_runtime_matrix` | `true` | Require the live runtime matrix markers (`release-live-matrix`, `e2e-live-matrix`, `inline-e2e-matrix`) |
-| `release.require_pre_release_quality_gate` | `true` | Require the quality-gate markers `adversarial-review-clean`, `sentinel-skills-clean`, `quality-gate-stage-3`, `full-test-suite-rerun` |
-| `release.require_rc_matrix` | `true` | Require the six operator-local RC validation markers |
+| `release.require_plugin_runtime_matrix` | `false` | Require the live runtime matrix markers (`release-live-matrix`, `e2e-live-matrix`, `inline-e2e-matrix`) |
+| `release.require_pre_release_quality_gate` | `false` | Require the quality-gate markers `adversarial-review-clean`, `sentinel-skills-clean`, `quality-gate-stage-3`, `full-test-suite-rerun` |
+| `release.require_rc_matrix` | `false` | Require six operator-local live RC `pass` markers for the commit being released |
 | `release.quality_gate_state_file` | `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state` | Where the quality-gate markers are read; cleared at session start |
 | `release._comment_quality_gate_markers` | — | Comment only |
 
-These gates were built for multi-host plugin releases. A downstream project that does not run live matrices sets the `require_*` flags it does not need to `false`.
+These gates were built for Silver Bullet's own multi-host plugin releases, so the template leaves them off and this repository turns them on. A project that runs the live matrices sets the `require_*` flags it needs to `true`.
 
 ## `hooks`
 
@@ -128,7 +128,8 @@ Named settings bundles for the five-tool stack, read by `hooks/lib/stack-optimiz
 | `session_mode_default` | `interactive` or `autonomous`; `session-start` applies it as the default session mode (`autonomous` only on hook-enforced hosts, and never over an existing choice) |
 | `clarify_auto` | Allow bounded `sb:clarify --auto` |
 | `production_deploy_requires_human` | When true, `gh pr create/merge`, `gh release create` and deploy commands are blocked until a human creates `${SB_RUNTIME_STATE_DIR}/enterprise-human-deploy-approved` ([ENFORCEMENT.md](ENFORCEMENT.md#enterprise-policy-delivery-block)). It is true in every shipped profile and is the default when no profile is configured |
-| `non_production_deploy_autonomy` | Exempt delivery commands that name a non-production target (`internal_dogfood` only) |
+| `non_production_deploy_autonomy` | Exempt a plain deploy command that names a non-production target as a whole word (staging, preview, non-prod, sandbox, dogfood, internal); never `gh pr create/merge` or `gh release create` (`internal_dogfood` only) |
+| `human_approval_ttl_minutes` (on `enterprise_policy`, not per profile) | How long the human approval marker stays valid (default 480) |
 | `evidence_schema_strict` | Force strict evidence-schema validation |
 | `orchestrator_mode`, `label`, `description` | Informational |
 

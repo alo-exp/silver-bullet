@@ -121,6 +121,15 @@ None
 ```'
 assert_file_absent "no SPEC.md: none created" "$EC_PROJ/.planning/SPEC.md"
 
+# outside a git work tree `git add` fails and is tolerated
+reset
+printf '# Spec\n<!-- Populated automatically by the hook -->\n' >"$EC_PROJ/.planning/SPEC.md"
+NOGIT="$TL_TMP/nogit-proj"; cp -a "$EC_PROJ" "$NOGIT"; rm -rf "$NOGIT/.git"
+tl_run_stdin "$PAYLOAD" bash -c 'cd "$1" && exec bash "$2"' _ "$NOGIT" "$HOOK"
+assert_contains "no git repository: the SPEC.md entry is still written and the hook succeeds" "$(cat "$NOGIT/.planning/SPEC.md")" "- PR: $PR_URL"
+assert_contains "no git repository: success message" "$TL_OUT" "Spec traceability added"
+reset
+
 # gh edit failure is tolerated
 tl_stub gh '
 case "$*" in

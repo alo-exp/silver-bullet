@@ -157,6 +157,9 @@ assert_eq "no runs: silent" "" "$TL_OUT"
 export TL_TMP_GHOUT=''
 run_ci "$(pre 'git push')"
 assert_eq "empty gh output: silent" "" "$TL_OUT"
+export TL_TMP_GHOUT='not json at all'
+run_ci "$(pre 'git push')"
+assert_eq "gh output that is not JSON: silent" "" "$TL_OUT"
 # R1-21c: one run per workflow of the newest commit; a green run of another workflow does not hide a red one
 export TL_TMP_GHOUT='[{"conclusion":"success","status":"completed","name":"lint","headSha":"aaa","createdAt":"2026-01-02T00:00:00Z"},{"conclusion":"failure","status":"completed","name":"ci","headSha":"aaa","createdAt":"2026-01-01T00:00:00Z"},{"conclusion":"failure","status":"completed","name":"ci","headSha":"old","createdAt":"2025-01-01T00:00:00Z"}]'
 run_ci "$(pre 'git push')"
