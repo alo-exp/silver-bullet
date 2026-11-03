@@ -294,6 +294,24 @@ class PinnedConnectionTests(unittest.TestCase):
     def test_without_a_proxy_the_target_is_still_vetted(self):
         self.assertFalse(vc._is_proxied(request.Request("http://docs.example/p")))
 
+    def test_ambiguous_hosts_are_not_requested_and_never_count_as_proxied(self):
+        """urllib decodes ``%23`` and keeps userinfo, so the vetted name and the connected name could differ."""
+        for url in ("http://169.254.169.254%23@public.example/latest/meta-data/", "http://127.0.0.1%23@public.example/x",
+                    "http://a%2f@public.example/x", "http://user:pw@public.example/x"):
+            self.assertIn("userinfo or percent-encoding", vc.unsafe_url_reason(url, self.resolver("93.184.216.34")), url)
+        req = request.Request("http://169.254.169.254%23@public.example/x")
+        self.assertFalse(vc._is_proxied(req))  # no proxy configured: has_proxy() is urllib's own answer
+        with mock.patch.object(socket, "create_connection") as cc:
+            ok, _ = vc.CitationVerifier.verify_url(
+                types.SimpleNamespace(resolver=self.resolver("93.184.216.34")), "http://127.0.0.1%23@public.example/x")
+        self.assertFalse(ok)
+        cc.assert_not_called()
+
+    def test_proxy_decision_follows_urllibs_own_state(self):
+        req = request.Request("http://docs.example/p")
+        req.set_proxy("proxy.corp.example:3128", "http")
+        self.assertTrue(vc._is_proxied(req))
+
     def test_http_connects_to_the_vetted_address_and_keeps_the_host_header(self):
         sock = FakeSock()
         with mock.patch.object(socket, "create_connection", return_value=sock) as cc:

@@ -367,6 +367,9 @@ def _kill_process_group(proc: subprocess.Popen) -> None:
 # foreground group, and every worker has its own session) can still terminate them.
 _LIVE_PROCS: set[subprocess.Popen] = set()
 _LIVE_LOCK = threading.Lock()
+# Set when the dispatcher is interrupted: no worker may start a session (fallback or retry
+# included) after that.
+_CANCEL = threading.Event()
 
 
 def _terminate_live_workers() -> None:
@@ -402,6 +405,8 @@ def _run_cli(
     partial output — terminates the whole group, grandchildren included. Output is decoded as
     UTF-8 with replacement characters, so invalid bytes from a CLI cannot crash the run.
     """
+    if _CANCEL.is_set():
+        raise KeyboardInterrupt("dispatch cancelled")
     with subprocess.Popen(
         cmd,
         cwd=cwd,
@@ -495,7 +500,7 @@ def run_cursor_worker(*, logical_model_id: str, prompt: str, output_dir: Path, t
                 note = None
                 succeeded = cursor_attempt_succeeded(returncode=proc.returncode, raw=raw)
                 if not succeeded and model == models[-1] and cursor_failure_transient(raw):
-                    time.sleep(3)
+                    time.sleep(3)  # the retry's _run_cli refuses to launch once the dispatch is cancelled
                     proc = _run_cli(cmd, timeout=timeout_sec, cwd=str(sandbox))
                     raw = _merged_output(proc)
                     succeeded = cursor_attempt_succeeded(returncode=proc.returncode, raw=raw)
@@ -858,6 +863,7 @@ def dispatch_phase_parallel(*, phase_id: str, query: str, run_id: str, work_item
     ocg_items = [item for item in resolved_pool if item.get("backend") == "ocg"]
     results: list[WorkerResult] = []
     worker_count = max(1, len(cursor_items) + (1 if ocg_items else 0))
+    _CANCEL.clear()
     restore = _install_sigterm_as_interrupt()
     try:
         with ThreadPoolExecutor(max_workers=max(1, min(concurrency, worker_count))) as pool:
@@ -900,6 +906,7 @@ def _dispatch_in_pool(pool, cursor_items, ocg_items, results, *, phase_id, query
     except BaseException:
         # Ctrl-C/SIGTERM reach only the dispatcher (workers have their own sessions): queued
         # workers are cancelled first so none starts, then the live ones are stopped.
+        _CANCEL.set()
         pool.shutdown(wait=False, cancel_futures=True)
         _terminate_live_workers()
         raise

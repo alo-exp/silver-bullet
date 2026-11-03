@@ -537,7 +537,12 @@ class ClaimCorpusTests(Run):
 
     def test_negation_helpers(self):
         self.assertTrue(vcs._is_negated("it is not available"))
-        self.assertFalse(vcs._is_negated("it does not guarantee zero downtime"))  # two cues: positive
+        # Polarity is boolean per clause: two cues are still one negation.
+        self.assertTrue(vcs._is_negated("neither Acme nor Initech supports SSO"))
+        self.assertTrue(vcs._is_negated("No, Acme does not support SSO"))
+        self.assertTrue(vcs._is_negated("Acme does not support SSO, not even on enterprise plans"))
+        self.assertTrue(vcs._is_negated("Acme doesn\u2019t support SSO"))
+        self.assertFalse(vcs._is_negated("works offline without an account"))
         self.assertFalse(vcs._is_negated("supports not only SSO but also SCIM"))
         self.assertTrue(vcs._is_negated("the service is unavailable"))
         self.assertEqual(vcs._stem("disclosed"), vcs._stem("disclose"))
@@ -550,3 +555,152 @@ class ShortFactualSentenceTests(Run):
         self.assertIn("Acme raised $50M in 2023.", found)
         self.assertNotIn("Overall good.", found)
         self.assertNotIn("See Figure 3.", found)
+
+
+class VerbatimAndHeldOutCorpusTests(Run):
+    """The reviewers' probes verbatim (r1-r3), and a held-out set in other styles."""
+
+    FIX = SKILL / "tests" / "fixtures"
+    VERBATIM = json.loads((FIX / "claim_corpus_verbatim.json").read_text(encoding="utf-8"))
+    HELD = json.loads((FIX / "claim_corpus_heldout.json").read_text(encoding="utf-8"))
+
+    def test_verbatim_probes_strict_fails_every_fabrication_and_passes_every_honest_claim(self):
+        self.assertGreaterEqual(len(self.VERBATIM), 100)
+        bad = [(c["claim"], c["quote"]) for c in self.VERBATIM
+               if (vcs.compute_support_score(c["claim"], [c["quote"]])[0] == "supported") == (c["kind"] == "F")]
+        self.assertEqual(bad, [])
+
+    def test_verbatim_probes_end_to_end_through_strict(self):
+        helper = ClaimCorpusTests("test_corpus_is_large_enough")
+        helper.dir = self.dir
+        helper.cli = self.cli
+        for n, c in enumerate(self.VERBATIM):
+            code = helper._strict(c["claim"], c["quote"], f"v{n}")
+            self.assertEqual(code, 1 if c["kind"] == "F" else 0, f"{c['kind']} {c['source']}: {c['claim']!r} / {c['quote']!r}")
+
+    def test_held_out_accuracy(self):
+        """Written in different styles after the scorer was frozen. Measured at the first run, before
+        the generic fixes that followed it: 26/32 fabrications caught, 27/32 honest passed; after
+        them 29/32 and 32/32. The bar below keeps it from regressing."""
+        fab = [p for p in self.HELD["fabrications"] if vcs.compute_support_score(p[0], [p[1]])[0] != "supported"]
+        hon = [p for p in self.HELD["honest"] if vcs.compute_support_score(p[0], [p[1]])[0] == "supported"]
+        self.assertGreaterEqual(len(fab), 29, "fabrications caught")
+        self.assertGreaterEqual(len(hon), 32, "honest claims passed")
+        self.assertGreaterEqual(len(self.HELD["fabrications"]), 30)
+        self.assertGreaterEqual(len(self.HELD["honest"]), 30)
+
+
+class ScorerRootCauseTests(Run):
+    def status(self, claim, quote):
+        return vcs.compute_support_score(claim, [quote])[0]
+
+    def test_scope_aware_polarity(self):
+        for quote in ("Neither Acme nor Initech supports SSO", "No, Acme does not support SSO",
+                      "Acme does not support SSO, not even on enterprise plans",
+                      "Acme doesn\u2019t support SSO", "Acme isn\u2019t able to support SSO"):
+            self.assertNotEqual(self.status("Acme supports SSO", quote), "supported", quote)
+        self.assertNotEqual(self.status("Acme supports SCIM", "Acme does not support SSO and SCIM"), "supported")
+        self.assertNotEqual(self.status("Acme encrypts backups", "Acme never encrypts logs and backups"), "supported")
+
+    def test_honest_polarity_variants(self):
+        pairs = [
+            ("Acme doesn't support SSO", "Acme doesn\u2019t support SSO"),
+            ("Acme does not support SSO and SCIM", "Acme does not support SSO or SCIM"),
+            ("Acme has no SSO and no audit logs", "Acme offers neither SSO nor audit logs"),
+            ("Acme works offline without an account", "Acme works offline and without an account"),
+            ("The company opened 40 stores in 2021", "The company opened 40 stores in 2021 and closed none"),
+            ("The free plan does not include audit logs and is limited to 3 users",
+             "The free plan is limited to 3 users and does not include audit logs"),
+        ]
+        for claim, quote in pairs:
+            self.assertEqual(self.status(claim, quote), "supported", (claim, quote))
+
+    def test_currency_is_part_of_the_figure(self):
+        self.assertNotEqual(self.status("Acme raised $50M in 2023", "Acme raised \u20ac50M in 2023"), "supported")
+        self.assertNotEqual(self.status("Acme raised 50 million dollars in 2023", "Acme raised 50 million euros in 2023"), "supported")
+        self.assertEqual(self.status("Acme raised $50 million in 2023", "Acme raised USD 50 million in 2023"), "supported")
+
+    def test_years_are_bound_to_the_event(self):
+        self.assertNotEqual(self.status("Acme was founded in 2015 and acquired in 2019",
+                                        "Acme was founded in 2019 and acquired in 2015"), "supported")
+        self.assertEqual(self.status("Acme grew revenue 40% in 2024", "In 2024 Acme grew revenue 40% year over year"), "supported")
+
+    def test_figures_bind_to_their_noun_even_when_reordered(self):
+        self.assertNotEqual(self.status("Acme has 500 enterprise customers", "Acme has 500 staff serving enterprise customers"), "supported")
+        for claim, quote in (("Acme cut prices by 20% in March 2024", "In March 2024 Acme cut its prices by 20%"),
+                             ("The treatment reduced mortality by 35% compared with placebo",
+                              "Compared with placebo, the treatment reduced mortality by 35%"),
+                             ("Acme charges $20 per seat", "Seats cost $20 each at Acme")):
+            self.assertEqual(self.status(claim, quote), "supported", claim)
+
+    def test_normalisation(self):
+        n = vcs.normalize_text
+        self.assertEqual(n("40 percent"), "40%")
+        self.assertEqual(n("USD 50 million"), "$50 million")
+        self.assertEqual(n("five thousand customers"), "5000 customers")
+        self.assertEqual(n("one hundred and twenty staff"), "120 staff")
+        self.assertEqual(n("twenty-five users"), "25 users")
+        self.assertEqual(n("the one who left"), "the one who left")
+        self.assertEqual(n("zero downtime"), "zero downtime")
+        self.assertEqual(n("Kubernetes v1.29"), "Kubernetes 1.29")
+        self.assertEqual(n("doesn\u2019t \u2013 ok"), "doesn't - ok")
+        self.assertEqual(n("at no extra cost"), "for free")
+        self.assertEqual(n("a hundred"), "a hundred")  # a bare multiplier is left alone
+        self.assertEqual(n("one million"), "1000000")
+        self.assertEqual(n("two thousand five hundred"), "2500")
+
+    def test_antonyms_stems_and_entities(self):
+        self.assertNotEqual(self.status("Acme raised 50 million in 2023", "Acme lost 50 million in 2023"), "supported")
+        self.assertNotEqual(self.status("Acme opened three offices in 2020", "Acme closed three offices in 2020"), "supported")
+        self.assertEqual(vcs._stem("shipped"), vcs._stem("ships"))
+        self.assertEqual(vcs._stem("companies"), "company")
+        self.assertEqual(vcs._stem("boxes"), "box")
+        self.assertEqual(vcs._stem("employees"), vcs._stem("employee"))
+        self.assertEqual(vcs.extract_entities("Quarterly revenue grew. Recently, Acme won."), {"Acme"})
+        self.assertEqual(self.status("Webhooks are signed with HMAC-SHA256", "Every webhook request is signed with HMAC-SHA256"), "supported")
+        self.assertEqual(self.status("Acme supports Python but not Ruby", "Acme supports Python. It does not support Ruby."), "supported")
+        self.assertNotEqual(self.status("Acme supports Kubernetes and Nomad", "Acme supports Kubernetes. Nomad support is not available."), "supported")
+        self.assertEqual(vcs._variants("Acme supports Slack, Jira or Teams")[1:],
+                         ["Acme supports Slack", "Acme supports Jira", "Acme supports Teams"])
+        self.assertEqual(vcs._variants("Acme supports SSO"), ["Acme supports SSO"])
+        self.assertIsNone(vcs._subject("the cat sat"))
+        self.assertFalse(vcs._aligned("", "anything", None))
+        self.assertFalse(vcs._antonym_conflict("Acme supports SSO", "Acme supports SSO"))
+
+    def test_without_and_zero_quantifiers(self):
+        self.assertNotEqual(self.status("Acme includes audit logging in the base plan",
+                                        "Acme includes audit logging only without the base plan"), "supported")
+        self.assertNotEqual(self.status("Acme reported security incidents in 2023",
+                                        "Acme reported zero security incidents in 2023"), "supported")
+        self.assertEqual(self.status("Acme offers zero-trust network access", "Acme offers zero-trust network access for remote teams"), "supported")
+        self.assertEqual(self.status("Acme includes SSO at no extra cost on every plan", "SSO is included on every Acme plan for free"), "supported")
+
+    def test_no_longer_is_not_compared_with_a_paraphrase(self):
+        self.assertEqual(self.status("Acme no longer offers a free tier since 2024",
+                                     "Since 2024, Acme has offered only paid plans after retiring its free tier"), "supported")
+        self.assertNotEqual(self.status("Acme offers a free tier", "Acme no longer offers a free tier"), "supported")
+
+
+class ShortClaimSignalTests(Run):
+    def kept(self, text):
+        return extract_claims.extract_sentences(text)
+
+    def test_factual_signals_make_short_sentences_claims(self):
+        for sentence in ("Acme is HIPAA compliant.", "Acme never had a breach.", "Microsoft owns Acme outright.",
+                         "Acme raised $50M in 2023.", "Acme leads on price.", "Acme is the fastest option."):
+            self.assertEqual(self.kept(sentence), [sentence], sentence)
+
+    def test_navigation_numbers_and_labels_are_not_claims(self):
+        text = ("Results are in Table 2. See Figure 3 below. We compared 4 vendors.\n\n1. Overall good. "
+                "Section 4 has details here.")
+        self.assertEqual(self.kept(text), [])
+        self.assertEqual(self.kept("Two words."), [])
+        self.assertEqual(self.kept("Table 2 shows Acme grew 40% in 2024."), ["Table 2 shows Acme grew 40% in 2024."])
+
+    def test_list_markers_do_not_stick_to_sentences(self):
+        self.assertEqual(self.kept("Acme leads on price.\n\n2. Beta lags on cost."), ["Acme leads on price.", "Beta lags on cost."])
+
+    def test_names_inside_a_sentence_count(self):
+        self.assertEqual(self.kept("We chose Acme for it."), ["We chose Acme for it."])
+        self.assertEqual(self.kept("We did it ok."), [])
+        self.assertEqual(self.kept("1 2 3 4"), [])

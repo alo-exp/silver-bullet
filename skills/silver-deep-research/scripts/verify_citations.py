@@ -83,6 +83,9 @@ def unsafe_url_reason(url: str, resolver: Optional[Callable] = None) -> Optional
     parsed = urlparse(url)
     if parsed.scheme not in ('http', 'https'):
         return f"scheme {parsed.scheme or 'missing'} not allowed"
+    if '@' in parsed.netloc or '%' in parsed.netloc:
+        # urllib decodes and re-parses these differently from the check ("169.254.169.254%23@host").
+        return 'userinfo or percent-encoding in the host part'
     host = (parsed.hostname or '').lower()
     if not host:
         return 'no host'
@@ -143,8 +146,8 @@ class _PinnedHTTPSConnection(http.client.HTTPSConnection):
 
 
 def _is_proxied(req) -> bool:
-    """urllib points ``req.host`` at the proxy and keeps the real URL in ``full_url``."""
-    return (urlparse(req.full_url).hostname or '').lower() != (urlparse('//' + req.host).hostname or '').lower()
+    """urllib's own record of the decision: after ``set_proxy`` the selector is the full URL."""
+    return req.has_proxy()
 
 
 class _PinnedHTTPHandler(request.HTTPHandler):
@@ -580,8 +583,9 @@ class CitationVerifier:
         if total_verified / len(results) < 0.5:
             failures.append('Less than 50% citations verified')
         # --lenient is for offline runs: it excuses what a network check could not confirm
-        # (unverified entries, soft title heuristics) but still fails entries that are wrong on
-        # their face (placeholder or future-year citations, no DOI/URL, DOI title/year mismatch).
+        # (unverified entries, soft title heuristics such as placeholder or generic titles) but
+        # still fails entries that are wrong on their face (a future year, no DOI or URL, a
+        # recent year with no verification method, a DOI whose title or year differs).
         hard_suspicious = [r for r in suspicious if r.get('hard')]
 
         if not failures:
