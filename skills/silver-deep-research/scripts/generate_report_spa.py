@@ -195,8 +195,8 @@ pre {{ white-space: pre-wrap; background: var(--surface); padding: 1rem; border-
     if (cmp.runner_up) recHtml += '<p>Runner-up: ' + esc(cmp.runner_up) + '</p>';
     recHtml += '<ol>' + rankings.map(r => '<li>' + esc(r.solution) + ' — score ' + esc(String(r.score)) + '</li>').join('') + '</ol>';
   }}
-  if (!cmp.winner && (cmp.tie || []).length) {{
-    recHtml += '<h2>No winner: tie</h2><p>Tied: ' + esc(cmp.tie.join(', ')) + '</p>';
+  if ((cmp.tie || []).length) {{
+    recHtml += '<p><strong>Tie:</strong> ' + esc(cmp.tie.join(', ')) + ' have the same score; the matrix does not separate them.</p>';
   }}
   if (data.decision_excerpt) recHtml += '<pre>' + esc(data.decision_excerpt) + '</pre>';
   rec.innerHTML = recHtml || '<p>Recommendation pending synthesis.</p>';
