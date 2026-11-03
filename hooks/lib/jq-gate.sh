@@ -33,11 +33,14 @@ fi
 # Installing (or probing for) jq: optional sudo, a few harmless installer env prefixes (never
 # PATH, BASH_ENV, LD_PRELOAD and the like), one package manager; only apt refreshes metadata.
 _sb_jq_s='[[:space:]]+'
-_sb_jq_f='([[:space:]]+-[-A-Za-z0-9=]+)*'
-_SB_JQ_REMEDIATION_RE="^[[:space:]]*(sudo${_sb_jq_f}${_sb_jq_s})?((DEBIAN_FRONTEND|NONINTERACTIVE|HOMEBREW_NO_AUTO_UPDATE|HOMEBREW_NO_INSTALL_CLEANUP|HOMEBREW_NO_ENV_HINTS)=[A-Za-z0-9_]*${_sb_jq_s})*((brew|port|choco|scoop|winget|conda|mamba|snap)${_sb_jq_s}install${_sb_jq_f}${_sb_jq_s}(jq|jqlang\\.jq)|(apt|apt-get)${_sb_jq_f}${_sb_jq_s}(install${_sb_jq_f}${_sb_jq_s}jq|update)|(dnf|yum|zypper|microdnf)${_sb_jq_f}${_sb_jq_s}install${_sb_jq_f}${_sb_jq_s}jq|apk${_sb_jq_f}${_sb_jq_s}add${_sb_jq_f}${_sb_jq_s}jq|pacman${_sb_jq_s}-S[A-Za-z]*${_sb_jq_f}${_sb_jq_s}jq|nix-env${_sb_jq_s}-iA${_sb_jq_s}nixpkgs\\.jq|(which|type|command${_sb_jq_s}-v)${_sb_jq_s}jq|jq${_sb_jq_s}--version)${_sb_jq_f}[[:space:]]*$"
+# Value-less flags only: no '=' flag, so nothing can point a package manager at a config,
+# plugin, hook or repository file in the project (--config-file=, --setopt=, -c=, --hookdir=...).
+_sb_jq_f='([[:space:]]+(-y|--yes|--assume-yes|-q|-qq|--quiet|--noconfirm|--needed|--no-install-recommends|--no-cache|-E|-n|--))*'
+_sb_jq_env='((DEBIAN_FRONTEND|NONINTERACTIVE|HOMEBREW_NO_AUTO_UPDATE|HOMEBREW_NO_INSTALL_CLEANUP|HOMEBREW_NO_ENV_HINTS)=[A-Za-z0-9_]*[[:space:]]+)*'
+_SB_JQ_REMEDIATION_RE="^[[:space:]]*${_sb_jq_env}(sudo${_sb_jq_f}${_sb_jq_s}${_sb_jq_env})?((brew|port|choco|scoop|winget|conda|mamba|snap)${_sb_jq_s}install${_sb_jq_f}${_sb_jq_s}(jq|jqlang\\.jq)|(apt|apt-get)${_sb_jq_f}${_sb_jq_s}(install${_sb_jq_f}${_sb_jq_s}jq|update)|(dnf|yum|zypper|microdnf)${_sb_jq_f}${_sb_jq_s}install${_sb_jq_f}${_sb_jq_s}jq|apk${_sb_jq_f}${_sb_jq_s}add${_sb_jq_f}${_sb_jq_s}jq|pacman${_sb_jq_s}-Sy?${_sb_jq_f}${_sb_jq_s}jq|nix-env${_sb_jq_s}-iA${_sb_jq_s}nixpkgs\\.jq|(which|type|command${_sb_jq_s}-v)${_sb_jq_s}jq|jq${_sb_jq_s}--version)${_sb_jq_f}[[:space:]]*\$"
 # Delivery verbs (fallback when the caller has no classifier of its own).
 _SB_JQ_DELIVERY_RE='(^|[^[:alnum:]_-])(git[[:space:]]+(commit|push|write-tree|commit-tree|update-ref|hash-object)|gh[[:space:]]+(pr[[:space:]]+(create|merge)|release[[:space:]]+create)|deploy)([^[:alnum:]_-]|$)'
-unset _sb_jq_s _sb_jq_f
+unset _sb_jq_s _sb_jq_f _sb_jq_env
 
 sb_jq_missing_message() {
   printf '%s' '🛑 ENFORCEMENT BLOCKED — jq is required for Silver Bullet hooks.
@@ -109,7 +112,11 @@ if sys.argv[1] == "command":
     ti = d.get("tool_input") if isinstance(d.get("tool_input"), dict) else {}
     v = ti.get("command", ti.get("cmd"))
     if isinstance(v, list):
-        v = " ".join(shlex.quote(str(p)) for p in v)
+        # Codex/Kay argv arrays: [sh|bash|zsh, -c|-lc|..., SCRIPT] carries the script itself.
+        if len(v) == 3 and str(v[0]).rsplit("/", 1)[-1] in ("sh", "bash", "zsh", "dash") and str(v[1]) in ("-c", "-lc", "-cl", "-ic", "-lic") and isinstance(v[2], str):
+            v = v[2]
+        else:
+            v = " ".join(shlex.quote(str(p)) for p in v)
 else:
     v = d.get(sys.argv[1])
 sys.stdout.write(v if isinstance(v, str) else "")

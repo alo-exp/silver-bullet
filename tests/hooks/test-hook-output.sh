@@ -56,6 +56,12 @@ for compat in 32 42; do
   check "message via bash under BASH_COMPAT=$compat: nasty string round-trips" "$(PATH="$NOJQPY" BASH_COMPAT=$compat bash -c 'source "$1"; sb_emit_hook_message PostToolUse "$2"' _ "$LIB" "$NASTY")" "$same_as_nasty"
   check "decision via bash under BASH_COMPAT=$compat" "$(PATH="$NOJQPY" BASH_COMPAT=$compat bash -c 'source "$1"; sb_emit_hook_decision PreToolUse deny "$2" "$2"' _ "$LIB" "$NASTY")" "d['hookSpecificOutput']['permissionDecisionReason'].startswith(open('$EXPECT_PY', encoding='utf-8', newline='').read())"
 done
+# Linear time: a 64 KB mixed string (quotes, newlines, control bytes) encodes within seconds, not minutes.
+mixed="$(for _ in $(seq 1 800); do printf 'a"b\\c\nd\te\001 f0123456789012345678901234567890123456789012345678901234567890123456789\n'; done)"
+t0=$SECONDS
+perf_out="$(PATH="$NOJQPY" bash -c 'source "$1"; sb_emit_hook_message PostToolUse "$2"' _ "$LIB" "$mixed")"
+check "message via bash: 64 KB mixed string round-trips" "$perf_out" "len(d['systemMessage']) == ${#mixed}"
+if [[ $((SECONDS - t0)) -le 8 ]]; then tl_pass "message via bash: 64 KB mixed string is linear-time (${#mixed} chars in $((SECONDS - t0))s)"; else tl_fail "message via bash: 64 KB mixed string took $((SECONDS - t0))s"; fi
 check "message: very long value" "$(sb_emit_hook_message PostToolUse "$long")" "len(d['systemMessage']) == 300000"
 check "message via python3: very long value" "$(PATH="$NOJQ" bash -c 'source "$1"; sb_emit_hook_message PostToolUse "$(cat "$2")"' _ "$LIB" "$LONG_FILE")" "len(d['systemMessage']) == 300000"
 bad=$'bad \xff\xfe utf8'
