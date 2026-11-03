@@ -253,6 +253,10 @@ class CoverageMatrixTests(unittest.TestCase):
         self.assertIn("| Pack Bad | missing | no | `hard-excluded` / hard-excluded |", text)
         self.assertNotIn("Magic Dev", text)
         self.assertEqual(text.count("| Dup |"), 1)
+        # a market literally named "hard-excluded" does not duplicate the pack's excluded rows
+        a_hx = {"markets": {"hard-excluded": {"core": ["pack-bad"], "adjacent": []}}}
+        text_hx = "\n".join(lca.coverage_completeness_lines(root=None, audit=a_hx, comparison={}, pack=pack, known={}))
+        self.assertEqual(text_hx.count("| Pack Bad |"), 1)
         # a repeated slug within one market is listed once
         a_dup = {"markets": {"apo": {"core": ["x", "x"], "adjacent": []}}}
         text_dup = "\n".join(lca.coverage_completeness_lines(root=None, audit=a_dup, comparison={}, pack=None, known={}))

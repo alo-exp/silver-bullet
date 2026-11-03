@@ -234,6 +234,25 @@ class ProseInferenceTests(unittest.TestCase):
         m._assign_support(support, "a", "F", False)
         self.assertIs(support["a"]["F"], False)
 
+    def test_clause_without_a_vendor_and_features_without_cues(self) -> None:
+        known = {"devin": "Devin", "cline": "Cline"}
+        # the first clause names no vendor and does not continue a previous subject: it is skipped
+        got = m.parse_feature_support(
+            [{"payload": {"evidence": [{"claim": "Unlike the market leaders, Devin provides CI integration"}]}}], known=known)
+        self.assertIs(got["devin"]["CI integration"], True)
+        # a feature mentioned next to a vendor without any positive or negative cue earns nothing
+        got = m.parse_feature_support([{"payload": {"evidence": [{"claim": "Cline audit log"}]}}], known=known)
+        self.assertNotIn("Audit log", got.get("cline", {}))
+        # "whereas X and Y offer managed hosting" (no comma) credits both
+        support = support_of(m._parse_managed_hosting_offer, "Whereas devin and cline offer managed hosting")
+        self.assertTrue(support["devin"]["Managed hosting"])
+        self.assertTrue(support["cline"]["Managed hosting"])
+
+    def test_mentions_requires_a_name_and_whole_words(self) -> None:
+        self.assertFalse(m._mentions("anything", ""))
+        self.assertTrue(m._mentions("see devin.", "devin"))
+        self.assertFalse(m._mentions("an sbom", "sb"))
+
     def test_one_claim_is_one_vote_and_negation_wins_inside_it(self) -> None:
         support: dict = {}
         try:

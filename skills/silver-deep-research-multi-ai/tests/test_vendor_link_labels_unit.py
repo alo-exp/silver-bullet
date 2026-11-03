@@ -290,6 +290,13 @@ class AutoLinkTests(unittest.TestCase):
 class SsrfGuardTests(unittest.TestCase):
     """Model-supplied URLs are never requested when they point at non-public addresses."""
 
+    def setUp(self):
+        # the test runner sets SB_SKIP_VENDOR_URL_HEALTH=1 for hermetic runs; these tests need the real path
+        patcher = mock.patch.dict(os.environ)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        os.environ.pop("SB_SKIP_VENDOR_URL_HEALTH", None)
+
     def reason(self, url, resolved=None):
         with mock.patch.object(vll, "_resolve_host", return_value=resolved or []):
             return vll.unsafe_target_reason(url)

@@ -1091,13 +1091,6 @@ def comparison_matrix_html(
     return "\n".join(parts)
 
 
-def _norm_body_haystack(text: str) -> str:
-    text = re.sub(r"https?://\S+", " ", text or "")
-    text = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", text)
-    text = re.sub(r"[^a-zA-Z0-9]+", " ", text).lower()
-    return re.sub(r"\s+", " ", text).strip()
-
-
 def _plain_html_text(fragment: str) -> str:
     return re.sub(r"<[^>]+>", "", fragment or "")
 
