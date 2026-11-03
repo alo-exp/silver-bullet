@@ -265,6 +265,18 @@ class VendoredSkillsLockTest(TempRoot):
         data = json.loads((self.root / ri.LOCK_FILE).read_text())
         self.assertEqual(list(data["toolManaged"]), [".claude/skills/graphify"])
 
+    def test_refresh_hashes_tracked_files_only(self):
+        import subprocess
+        subprocess.run(["git", "init", "-q", str(self.root)], check=True)
+        write(self.root, ".gitignore", ".DS_Store\n.claude/skills/mine/\n")
+        write(self.root, ".claude/skills/graphify/SKILL.md", "g")
+        write(self.root, ".claude/skills/graphify/.graphify_version", "2.0")
+        subprocess.run(["git", "-C", str(self.root), "add", "-A"], check=True)
+        write(self.root, ".claude/skills/graphify/.DS_Store", "junk")
+        write(self.root, ".claude/skills/mine/.graphify_version", "1")
+        self.assertEqual(ri.refresh_skills_lock(self.root), [".claude/skills/graphify"])
+        self.assertEqual(ri.vendored_skills_lock(self.root, ri.tracked_files(self.root)), [])
+
     def test_refresh_handles_non_object_lock_and_dirs_without_a_version_file(self):
         write(self.root, ".claude/skills/plain/SKILL.md", "p")
         write(self.root, ri.LOCK_FILE, "[1]")
@@ -433,6 +445,34 @@ jobs:
             '      - uses: actions/github-script@v7\n        with:\n          script: |\n            - {not: a step}\n            "ref": "main"\n            continue-on-error: true\n', 1)
         self.assertEqual(self.problems(script), [])
 
+    def test_list_item_block_scalars_do_not_hide_sibling_keys(self):
+        # The scalar's text must be deeper than its KEY, not deeper than the list dash (REVF H3b).
+        run_then_coe = HARDENED.replace(
+            "      - run: echo inline\n", "      - run: |\n          git status --porcelain --ignored\n        continue-on-error: true\n", 1)
+        self.assertTrue(any("continue-on-error hides failures" in p for p in self.problems(run_then_coe)))
+        name_then_injection = HARDENED.replace(
+            "      - run: echo inline\n", "      - name: >-\n          Greet\n        run: echo \"${{ github.event.issue.title }}\"\n", 1)
+        self.assertTrue(any("expression inside a run script" in p for p in self.problems(name_then_injection)))
+        both = HARDENED.replace(
+            "      - run: echo inline\n",
+            "      - run: |\n          echo one\n          echo \"${{ github.event.issue.title }}\"\n        continue-on-error: true\n", 1)
+        found = self.problems(both)
+        self.assertTrue(any("expression inside a run script" in p for p in found))
+        self.assertTrue(any("continue-on-error" in p for p in found))
+
+    def test_remaining_flow_and_spelling_variants_are_caught(self):
+        variants = {
+            "steps_flow_on_next_line": ("    steps:\n      - name: checkout\n", "    steps:\n      [ {run: echo ok, continue-on-error: true} ]\n    xsteps:\n      - name: checkout\n"),
+            "anchored_flow_step": ("    steps:\n", "    steps:\n      - &s {run: echo ok, continue-on-error: true}\n"),
+            "tagged_flow_step": ("    steps:\n", "    steps:\n      - !!map {run: echo ok, continue-on-error: true}\n"),
+            "alias_step": ("    steps:\n", "    steps:\n      - *s\n"),
+        }
+        for name, (old, new) in variants.items():
+            self.assertTrue(any("flow-style" in p for p in self.problems(HARDENED.replace(old, new, 1))), name)
+        self.assertTrue(any("flow-style" in p for p in self.problems("jobs: {a: {runs-on: x}}\n" + HARDENED.split("jobs:\n")[0])))
+        spaced = HARDENED.replace("    timeout-minutes: 20\n", "    timeout-minutes: 20\n    continue-on-error : true\n", 1)
+        self.assertTrue(any("continue-on-error hides failures" in p for p in self.problems(spaced)))
+
     def test_flow_style_jobs_and_steps_cannot_hide_settings(self):
         flow_job = HARDENED + """  third: {runs-on: ubuntu-latest, timeout-minutes: 5, continue-on-error: true, steps: [{run: echo ok}]}\n"""
         self.assertTrue(any("flow-style" in p for p in self.problems(flow_job)))
@@ -506,17 +546,59 @@ class PersonalDataTest(TempRoot):
 
     def test_email_addresses_must_be_allowlisted(self):
         bad = self.problems("contact " + mail("someone", "gmail.com") + " or " + mail("x", "corp.io") + "\n")
-        self.assertEqual(bad, ["docs/x.md:1: email address outside the allowlist (alolabs.dev, sourcevo.com, noreply, test domains)"] * 2)
+        self.assertEqual(bad, ["docs/x.md:1: " + ri.EMAIL_MESSAGE] * 2)
         self.assertNotIn("gmail", bad[0])
 
     def test_allowlisted_addresses_pass(self):
         good = [mail("info", "alolabs.dev"), mail("hello", "alolabs.io"), mail("a", "sourcevo.com"), mail("noreply", "anthropic.com"),
                 mail("12345+x", "users.noreply.github.com"), mail("No-Reply", "other.org"), mail("a", "example.com"),
-                mail("a", "mail.example.org"), mail("a", "e.invalid"), mail("a", "x.test"), mail("a", "host.local"),
+                mail("a", "mail.example.org"), mail("a", "e.invalid"), mail("a", "x.test"),
                 mail("git", "github.com"), mail("token", "github.com"), mail("t", "test.com"), mail("a", "t.com")]
         self.assertEqual(self.problems("\n".join(good)), [])
         self.assertTrue(self.problems(mail("someone", "github.com")))
         self.assertTrue(self.problems(mail("a", "notexample.com")))
+
+    def test_flattened_escaped_and_encoded_home_forms_are_reported(self):
+        forms = [
+            "Users-" + "dave" + "-projects-repo",                 # Cursor project dir
+            "_Users_" + "dave" + "_projects_repo",                # lean-ctx
+            "/home/".replace("/home/", "-home-") + "dave" + "-proj",  # Claude project dir on Linux
+            "/var/home/" + "dave" + "/x",
+            "/users/" + "dave" + "/x",                            # lower case
+            "users_" + "dave" + "_projects",                      # normalised graph label
+            "\\/Users\\/" + "dave" + "\\/x",                      # JSON-escaped
+            "%2FUsers%2F" + "dave" + "%2Fx",                      # URL-encoded
+            "file:///Users/" + "dave" + "/.cursor/x",
+        ]
+        for form in forms:
+            self.assertEqual(self.problems("a\n" + form + "\n"), ["docs/x.md:2: " + ri.HOME_MESSAGE], form)
+
+    def test_personal_email_forms_are_reported(self):
+        for address in (mail("dave", "host.local"), mail("dave", "mac.local"), mail("dave", "gmail.com")):
+            self.assertEqual(len(self.problems(address)), 1, address)
+
+    def test_system_ci_and_vendor_content_is_not_flagged(self):
+        text = "\n".join([
+            "/home/linuxbrew/.linuxbrew/bin/brew", "/home/codespace/x", "/home/gitpod/x", "/home/ec2-user/x", "/home/vagrant/x",
+            "/home/jovyan/x", "/home/pi/x", "/home/circleci/x", "/home/coder/x", "C:" + "\\Users\\runneradmin\\x",
+            "C:" + "\\Users\\Public\\x", "C:" + "\\Users\\Default\\x",
+            "logo@2x.png", "icon@3x.webp", "git@gitlab.com:org/repo.git", "git@bitbucket.org:org/repo.git",
+            "security@anthropic.com", "support@vendor.io", "Users-and-goals", "_home_core_markets(slug)", "home-page-title",
+            "/Users/xxxxxxx/x"])
+        self.assertEqual(self.problems(text), [])
+
+    def test_pdf_links_are_scanned_and_other_binaries_skipped(self):
+        link = ("/URI (file:///Users/" + "dave" + "/.cursor/x)").encode()
+        write(self.root, "r.pdf", b"%PDF-1.4\n\x00\x01\n" + link + b"\n")
+        write(self.root, "r.png", b"\x00\x01" + link)
+        self.assertEqual(ri.personal_data(self.root, ["r.pdf", "r.png"]), ["r.pdf:3: " + ri.HOME_MESSAGE])
+
+    def test_big_files_with_many_at_signs_scan_quickly(self):
+        write(self.root, "big.json", ("a" * 70 + "@" + "b" * 300 + " ") * 4000)
+        import time
+        start = time.time()
+        ri.personal_data(self.root, ["big.json"])
+        self.assertLess(time.time() - start, 10)
 
     def test_binary_and_missing_files_are_skipped(self):
         write(self.root, "img.bin", b"\x00\x01" + home_path("dave").encode())
