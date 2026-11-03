@@ -1190,7 +1190,9 @@
         ]
       },
       "text": "SDLC plugins need hook-enforced gates **and** inclusion-ledger cross-session pass. APO seeds without shipped hook gates cannot occupy Leaders. Leader plots are a feature-gate outcome of the evidenced features, not a 'most complete product' claim.",
-      "methodology_wave_text": "Methodology-without-gates seeds (for example AI-DLC) are **omitted from Wave**."
+      "methodology_wave_text": "Methodology-without-gates seeds (for example AI-DLC) are **omitted from Wave**.",
+      "caps_text": "Leader eligibility and methodology-without-gates (below) can lower an axis; ",
+      "blue_ocean_note": "Unmanaged OSS hosting is not plotted as a flat factor when no Leader has hosting. Zero-infra bootstrap is **not** treated as Managed hosting."
     },
     "solution_classifier.RENAME_EXCLUSIONS": {
       "augment-code": "augment-cosmos"
@@ -1234,7 +1236,29 @@
       "scout",
       "harness",
       "sweep"
-    ]
+    ],
+    "synthesize_landscape.SOLO_HOST_MARKER": "claude",
+    "synthesize_landscape.PRESENCE_REQUIRES_FEATURE": "Managed hosting",
+    "synthesize_landscape.KCF_FALLBACK_EXCLUDE": [
+      "Managed hosting"
+    ],
+    "vendor_link_labels.EXTRA_BLOCKED_LABELS": [
+      "continue",
+      "linear",
+      "sweep",
+      "factory",
+      "director",
+      "conductor",
+      "scout",
+      "harness"
+    ],
+    "vendor_link_labels.ALLOWED_SHORT_ACRONYM_LABELS": [
+      "BMAD",
+      "GSD"
+    ],
+    "vendor_link_labels.SLUG_LINK_LABEL_OVERRIDES": {
+      "sdlc-plugin": "SDLC Plugin"
+    }
   },
   "market_chart_notes": {
     "apo": [

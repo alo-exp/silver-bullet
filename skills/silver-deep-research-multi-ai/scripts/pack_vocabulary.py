@@ -12,6 +12,8 @@ from __future__ import annotations
 import contextlib
 import importlib
 import re
+import sys
+from pathlib import Path
 from typing import Any, Iterator
 
 from category_pack import pack_overlay
@@ -68,6 +70,12 @@ CONVERTERS: dict[str, Any] = {
     "synthesize_landscape._DIVERGENCE_SUBJECTS": _pairs,
     "synthesize_landscape._DIVERGENCE_SUBJECT_LABELS": dict,
     "synthesize_landscape.FORBIDDEN_CHART_SLUGS": _frozen,
+    "synthesize_landscape.SOLO_HOST_MARKER": str,
+    "synthesize_landscape.PRESENCE_REQUIRES_FEATURE": str,
+    "synthesize_landscape.KCF_FALLBACK_EXCLUDE": _tuple,
+    "vendor_link_labels.EXTRA_BLOCKED_LABELS": _frozen,
+    "vendor_link_labels.SLUG_LINK_LABEL_OVERRIDES": dict,
+    "vendor_link_labels.ALLOWED_SHORT_ACRONYM_LABELS": _frozen,
     "synthesize_landscape.LEADER_RULES": dict,
     "synthesize_landscape.METHODOLOGY_GATE_FEATURE": str,
     "synthesize_landscape._DOMAIN_AXIS_PROFILES": dict,
@@ -86,20 +94,35 @@ def converted(vocabulary: dict[str, Any]) -> dict[str, Any]:
     return {key: CONVERTERS[key](vocabulary[key]) for key in CONVERTERS if key in vocabulary}
 
 
+def _targets(module_name: str) -> list[Any]:
+    """The importable module plus, when the module runs as a script, the ``__main__`` copy.
+
+    ``python3 synthesize_landscape.py`` executes the file as ``__main__``: its functions read
+    ``__main__``'s globals, a different object from ``import synthesize_landscape``.
+    """
+    module = importlib.import_module(module_name)
+    targets = [module]
+    main = sys.modules.get("__main__")
+    main_file = getattr(main, "__file__", None)
+    if main is not None and main is not module and main_file and Path(main_file).stem == module_name:
+        targets.append(main)
+    return targets
+
+
 @contextlib.contextmanager
 def apply_values(values: dict[str, Any]) -> Iterator[None]:
-    """Temporarily set module attributes ("module.ATTR" -> value)."""
+    """Temporarily set module attributes ("module.ATTR" -> value), on ``__main__`` too if it is that script."""
     saved: list[tuple[Any, str, Any]] = []
     try:
         for key, value in values.items():
             module_name, attr = key.rsplit(".", 1)
-            module = importlib.import_module(module_name)
-            saved.append((module, attr, getattr(module, attr)))
-            setattr(module, attr, value)
+            for target in _targets(module_name):
+                saved.append((target, attr, getattr(target, attr)))
+                setattr(target, attr, value)
         yield
     finally:
-        for module, attr, old in reversed(saved):
-            setattr(module, attr, old)
+        for target, attr, old in reversed(saved):
+            setattr(target, attr, old)
 
 
 def activated(pack: dict[str, Any] | None) -> contextlib.AbstractContextManager[None]:
@@ -112,7 +135,6 @@ def for_research_dir(fn: Any) -> Any:
     """Decorator: run ``fn(research_dir, ...)`` with the vocabulary of the dir's need-profile pack."""
     import functools
     import json
-    from pathlib import Path
 
     from category_pack import resolve_pack_from_need
 

@@ -260,6 +260,12 @@ _CHART_FEAT_EQUIV: dict[str, tuple[str, ...]] = {}
 _WAVE_STRATEGY_FEATURE_WEIGHTS: tuple[tuple[str, float], ...] = ()
 
 _WAVE_STRATEGY_HOST_MARKERS: tuple[str, ...] = ()
+# A lone mention of this word counts as one host runtime when no multi-word marker matched.
+SOLO_HOST_MARKER: str = ""
+# Wave presence is capped at 3 unless the vendor ticks this feature (pack data; none by default).
+PRESENCE_REQUIRES_FEATURE: str = ""
+# Features never used as the fallback Blue Ocean factors.
+KCF_FALLBACK_EXCLUDE: tuple[str, ...] = ()
 
 
 def _feat_supported(feats: dict[str, bool] | dict[str, bool | None], feature: str) -> bool:
@@ -524,8 +530,7 @@ def _scr_strategy_bonus(scr_text: str) -> float:
     text = scr_text.lower()
     bonus = 0.0
     host_hits = sum(1 for marker in _WAVE_STRATEGY_HOST_MARKERS if marker in text)
-    # "claude" alone counts as one host IDE mention when multi-word forms absent.
-    if host_hits == 0 and re.search(r"\bclaude\b", text):
+    if host_hits == 0 and SOLO_HOST_MARKER and re.search(rf"\b{re.escape(SOLO_HOST_MARKER)}\b", text):
         host_hits = 1
     if host_hits >= 2:
         bonus += 0.25  # multi-host / multi-runtime strategy
@@ -1893,7 +1898,7 @@ def build_chart_data(
         )
         presence = min(4, max(1, int(1 + score / 8)))
         # OSS/local install without vendor-operated hosting is not full Wave "presence".
-        if not _feat_supported(feats, "Managed hosting"):
+        if PRESENCE_REQUIRES_FEATURE and not _feat_supported(feats, PRESENCE_REQUIRES_FEATURE):
             presence = min(presence, 3)
         # Conceptual methodology without shipped gates is not a Wave peer of shipped orchestrators.
         if _is_methodology_without_gates(feats):
@@ -2013,7 +2018,7 @@ def build_chart_data(
     leader_series = _collect_mq_leader_series(gmq_data, mq_data)
     vc_kcfs = select_vc_kcfs([slug for slug, _ in leader_series if slug], support)
     if not vc_kcfs:
-        vc_kcfs = [k for k in (list(KCF_NAMES) or _derived_kcfs(support)) if k != "Managed hosting"][:6]
+        vc_kcfs = [k for k in (list(KCF_NAMES) or _derived_kcfs(support)) if k not in KCF_FALLBACK_EXCLUDE][:6]
     for slug, label in leader_series:
         _append_vc_series(slug, label)
 
@@ -2429,8 +2434,9 @@ def _scoring_methodology_lines(
         "points equal 1.0 chart unit**, so two vendors with the same axis ticks still "
         "separate slightly by overall matrix depth. Example: spread 15 means a 15-point "
         "ranking gap moves that axis by 1.0.",
-        "4. **Caps** — Leader eligibility and methodology-without-gates (below) can lower "
-        "an axis; they never invent ticks.",
+        "4. **Caps** — "
+        + str(LEADER_RULES.get("caps_text") or "Leader eligibility (below) can lower an axis; ")
+        + "they never invent ticks.",
         "5. **Collision slotting** — if two vendors would share an X or a Y at one decimal "
         "place, a deterministic 0.1-step walk takes the nearest free slot inside the chart "
         "bounds. Rank order of the true scores is preserved. This is collision avoidance, "
@@ -2442,12 +2448,15 @@ def _scoring_methodology_lines(
         "",
         "**3. Wave (3C).** Current Offering = floor 1.5 + ranking_score/10, cap 4 "
         "(matrix depth as current product). Strength of Strategy starts at 1.0, adds the "
-        "weighted feature ticks below, then small SCR-text bonuses (multi-host 0.10/0.25, "
-        "OSS license 0.20, marketplace/ecosystem 0.15, roadmap 0.10, bonus cap +0.55), "
+        "weighted feature ticks below, then small SCR-text bonuses ("
+        + ("multi-host 0.10/0.25, " if _WAVE_STRATEGY_HOST_MARKERS or SOLO_HOST_MARKER else "")
+        + "OSS license 0.20, marketplace/ecosystem 0.15, roadmap 0.10, bonus cap +0.55), "
         "then cap 4. Market Presence = "
-        "`int(1 + ranking_score/8)`, cap 4, then cap 3 without Managed hosting. "
-        "Packs that fail Leader eligibility are capped to presence ≤ 2 / offering ≤ 2.4 / "
-        "strategy ≤ 2.5." + (" " + str(LEADER_RULES["methodology_wave_text"]) if LEADER_RULES.get("methodology_wave_text") else ""),
+        "`int(1 + ranking_score/8)`, cap 4"
+        + (f", then cap 3 without {PRESENCE_REQUIRES_FEATURE}" if PRESENCE_REQUIRES_FEATURE else "")
+        + ". "
+        + ("Vendors that fail Leader eligibility are capped to presence ≤ 2 / offering ≤ 2.4 / strategy ≤ 2.5. " if LEADER_RULES.get("markets") else "")
+        + str(LEADER_RULES.get("methodology_wave_text") or ""),
         "",
     ]
     if _WAVE_STRATEGY_FEATURE_WEIGHTS:
@@ -2459,9 +2468,8 @@ def _scoring_methodology_lines(
         ]
     lines += [
         "**4. Blue Ocean (3D).** Leaders only. A factor is plotted only when at least one "
-        "Leader has matrix evidence. True = 5, otherwise 1. Unmanaged OSS hosting is not "
-        "plotted as a flat factor when no Leader has hosting. Zero-infra bootstrap is **not** "
-        "treated as Managed hosting.",
+        "Leader has matrix evidence. True = 5, otherwise 1. "
+        + str(LEADER_RULES.get("blue_ocean_note") or ""),
         "",
         "**Leader eligibility.** "
         + str(
@@ -2470,11 +2478,17 @@ def _scoring_methodology_lines(
             "follow from the evidenced features, not from a 'most complete product' claim."
         ),
         "",
-        "**Hard-exclusion membership.** A slug on the pack hard-exclusion list has **one** "
-        "membership — excluded. "
-        "It is not a core, not an MQ/Wave point, and not a comparison-matrix column. "
-        "Contributing-model seed lists that re-include it are envelope quotes, not membership.",
-        "",
+        *(
+            [
+                "**Hard-exclusion membership.** A slug on the pack hard-exclusion list has **one** "
+                "membership — excluded. "
+                "It is not a core, not an MQ/Wave point, and not a comparison-matrix column. "
+                "Contributing-model seed lists that re-include it are envelope quotes, not membership.",
+                "",
+            ]
+            if pack
+            else []
+        ),
         "**Not scored.** Multi-model triangulation, brand reputation, and COI. "
         "Triangulation is a research method for this document; vendors were not graded on it. "
         "This report does not call any vendor 'most complete'.",

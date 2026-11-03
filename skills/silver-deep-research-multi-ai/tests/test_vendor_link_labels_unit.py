@@ -102,15 +102,19 @@ class RewriteTests(unittest.TestCase):
         self.assertEqual(r("https://developer.ibm.com/other"), "https://developer.ibm.com/other")
 
 
+@with_legacy_catalogs
 class LabelTests(unittest.TestCase):
     def test_generic_labels(self):
         g = vll.is_generic_link_label
         self.assertTrue(g(""))
         self.assertTrue(g(None))
         self.assertTrue(g("SDLC"))
-        self.assertTrue(g("ABCD"))
+        self.assertTrue(g("ABC"))  # bare short uppercase tokens (AWS, API) are not auto-linked...
+        self.assertFalse(g("NATS"))  # ...but a 4-letter product name is (it was 'Nats' before)
         self.assertFalse(g("BMAD"))
         self.assertFalse(g("ABCDE"))
+        with mock.patch.object(vll, "ALLOWED_SHORT_ACRONYM_LABELS", frozenset({"AWS"})):
+            self.assertFalse(g("AWS"))
         self.assertFalse(g("Cursor"))
 
     def test_resolve(self):
@@ -212,6 +216,7 @@ class HealthTests(_NoNetwork):
             self.assertIn(type(exc).__name__, r["error"])
 
 
+@with_legacy_catalogs
 class AutoLinkTests(unittest.TestCase):
     def test_english_word_labels_are_never_prose_links(self):
         for word in ("Continue", "Linear", "Sweep", "Factory", "Director", "Conductor", "Scout", "Harness"):
