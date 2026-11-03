@@ -36,3 +36,26 @@ def with_apo_pack_run(cls):
         if name.startswith("test") and callable(value):
             setattr(cls, name, in_pack_run(value))
     return cls
+
+
+def with_apo_pack_run_plain_names(cls):
+    """Like ``with_apo_pack_run``, with no name treated as an ambiguous word.
+
+    For parser-structure tests that use the pack's vendors as bare synthetic names ("aider", "cline" in
+    lower case). What an ambiguous name needs in order to count is pinned by test_vendor_mention_corpus.
+    """
+    import materialize_solution_artifacts as mat
+    from unittest import mock
+
+    def plain(test):
+        @functools.wraps(test)
+        def run(*args, **kwargs):  # runs inside the pack activation, which would otherwise reinstall the names
+            with mock.patch.object(mat, "AMBIGUOUS_NAMES", frozenset()):
+                return test(*args, **kwargs)
+
+        return run
+
+    for name, value in list(vars(cls).items()):
+        if name.startswith("test") and callable(value):
+            setattr(cls, name, plain(value))
+    return with_apo_pack_run(cls)

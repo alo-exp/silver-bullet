@@ -204,76 +204,44 @@ def _mentions(lower_text: str, name: str) -> bool:
     return re.search(rf"(?<![a-z0-9]){re.escape(name)}(?![a-z0-9])", lower_text) is not None
 
 
-# Product names that are also ordinary English words ("director", "factory", "cursor", ...). Pack
-# vocabulary; a capitalised mention counts as a vendor only where it reads as a proper noun (see
-# mentions_vendor). NON_VENDOR_TERMS are category words that a pack alias maps to a product ("sdlc"
-# -> a plugin): a pack alias that is a plain category word never counts as a vendor mention.
+# Product names that are also ordinary English words or surnames ("director", "factory", "cursor", "cline", ...).
+# Pack vocabulary. Precision comes first (a false vendor tick is fabricated evidence), so such a name is credited
+# ONLY where an explicit product cue stands beside it (see _has_product_cue); without one it is a common word.
+# NON_VENDOR_TERMS are category words that a pack alias maps to a product ("sdlc" -> a plugin): they never count.
 AMBIGUOUS_NAMES: frozenset[str] = frozenset()
 NON_VENDOR_TERMS: frozenset[str] = frozenset()
-# Ambiguous name -> lower-case words of the company that makes it ("conductor": {"melty"}): "Melty Conductor"
-# is the product, "Netflix Conductor" is not. Pack vocabulary; nothing is built in.
+# The multi-word ambiguous names that are trusted when written in Title Case ("Silver Bullet uses ...", not
+# "no silver bullet", "No Silver Bullet: Essence", "Silver Bullet Thinking Is a Myth"). Pack vocabulary.
+PROPER_PHRASES: frozenset[str] = frozenset()
+# Ambiguous name -> lower-case words of the company that makes it ("conductor": {"melty"}). Pack vocabulary.
 PRODUCT_MAKERS: dict[str, frozenset[str]] = {}
 _CUE_AFTER = re.compile(
-    r"\s*(?:\((?!\s*\d)|\.(?:ai|dev|com|io|app)\b|\s(?:AI|IDE|Agents?|Plugins?|Cloud|Platform|CLI|App|SaaS|Code|Copilot|Labs|Dev|OSS|Pro|Plus|Max|Enterprise|Teams?|Composer|Droids?|SDK)\b|\s+coding\s+agents?\b)"
+    r"\.(?:ai|dev|com|io|app|sh)\b|\s*[✔✓✗✖✘]"
+    r"|\s(?:AI|IDE|Agents?|Plugins?|Cloud|Platform|CLI|App|SaaS|Code|Copilot|Dev|Composer|Droids?|SDK|Editor|Extension"
+    r"|Tool|Assistant)\b"
+    r"|(?i:\s+(?:ide|editor|extension|cli|app|plugins?|tool|assistant|sdk|coding\s+agents?)\b)"
 )
-_CUE_BEFORE = re.compile(r"\b(?:by|from|using|via|with|vs\.?|versus)\s+$", re.IGNORECASE)
-_SENTENCE_OPENERS = "\"'“‘([*_#>•- \t\r\n"
-# A sentence-initial capital proves nothing ("Linear scaling is expected"), so there the name must be
-# the subject of a finite verb or a possessive ("Director is ...", "Factory provides ...", "Director's README").
-_SUBJECT_OF = re.compile(
-    r"[*_\"']*(?:['’]s\b|\s*[✔✓✗✖✘]|\s+(?:is|are|was|were|has|have|had|does|did|can|could|will|would|should|may|"
-    r"(?:support|provide|offer|ship|add|use|run|enforce|orchestrate|install|integrate|include|require|lack|enable|"
-    r"deliver|automate|claim|extend|expose|implement|ensure|commit)s?"
-    r"|(?:generate|create|execute|launch|announce|raise|allow|let)(?:s|d|ed)?)\b)"
+_VERSION = re.compile(r"\s+v\d+(?:\.\d+)*\b|\s+\d+(?:\.\d+)+\b")
+# A maker beside the name is a cue only with a product verb after it: "Melty Conductor orchestrates" yes,
+# "Melty Conductor tracks distort" no.
+_PRODUCT_VERB = re.compile(
+    r"\s+(?:(?:support|provide|offer|ship|add|run|enforce|orchestrate|install|integrate|include|require|lack|enable"
+    r"|deliver|automate|claim|extend|expose|implement|ensure|commit)s?"
+    r"|(?:generate|create|execute|launch|announce|raise|allow|let)(?:s|d|ed)?)\b"
 )
-_NOT_A_NAME_BEFORE_OF = re.compile(r"\s+of\b")
-
-
-def _sentence_initial(text: str, start: int) -> bool:
-    """True when only opening punctuation separates `start` from a sentence boundary (or the text start).
-
-    Scans back over the opener characters only, so the cost does not grow with the claim length.
-    """
-    i = start
-    while i > 0 and text[i - 1] in _SENTENCE_OPENERS:
-        i -= 1
-    if i == 0:
-        return True
-    return text[i - 1] in ".!?:;" or "\n" in text[i:start]
-
-
-# A name inside an ordinary Title-Case phrase is not the product: "AI Factory", "Abstract Factory",
-# "Netflix Conductor", "Linear Regression", "Continue button", "the Director agent", "VP or Director".
-_LOOKBEHIND = 48  # enough for "versus" plus the whitespace after it; keeps the look-behind O(1)
+_DETERMINERS = frozenset("the a an no any this that these those our your their my his her its each every some".split())
 _PREV_WORD = re.compile(r"([A-Za-z][A-Za-z0-9'’-]*)[ \t]+$")
 _NEXT_WORD = re.compile(r"[ \t]+([A-Za-z][A-Za-z0-9'’-]*)")
-_ROLE_BEFORE_CONNECTOR = re.compile(r"([A-Za-z]+)\s+(?:or|and|/)\s+$", re.IGNORECASE)
-_ROLE_WORDS = frozenset(
-    "vp svp evp ceo cto cio coo cfo manager managers head lead officer president chair editor producer".split()
+_LIST_LEAD = re.compile(
+    r"\b(?:leaders|competitors|vendors|alternatives|rivals|peers|seeds|candidates|players|exclusions|APOs?|solutions|products|packs)\b",
+    re.IGNORECASE,
 )
-# Capitalised only because they open a sentence (or are connectives): they do not modify the name.
-_FUNCTION_WORDS = frozenset(
-    "the a an and or but nor so yet if then else when while where which who that this these those it its is "
-    "are was were be been has have had do does did can could will would should may might must in on at by "
-    "for from of to with without within into over under per via as than not no also only both each all any "
-    "some most many more our your their his her my we you they he she there here see using use run now "
-    "however thus still just even such other another one two unlike like besides notably install installs "
-    "compare comparing adopt choose pick try consider evaluate enable configure deploy integrate including "
-    "except beyond across among about against around between through during despite instead plus versus vs "
-    "since until because although though whereas rather similar similarly meanwhile additionally first second "
-    "third next finally today recently".split()
-)
-# Function words that open a sentence without taking an object ("Next Continue with ..."): the name after
-# one is judged as if it opened the sentence, so it needs a verb of its own ("Notably Director enforces ...").
-_OPENER_ADVERBS = frozenset(
-    "however thus still just even plus next first second third finally today recently similarly meanwhile "
-    "additionally also now instead rather then notably".split()
-)
-_HEAD_NOUNS = frozenset(
-    "pattern patterns button buttons regression settings scaling role roles view "
-    "class method interface node nodes tab menu step steps function process pagination key field label".split()
-)
-
+_LIST_JOIN = re.compile(r"(?:[,:(]|\b(?:and|or|are|is|include[sd]?|including|like)\b)\s*$", re.IGNORECASE)
+_SENTENCE_END = re.compile(r"[.!?;\n]")
+_LIST_STOP = re.compile(r"[.!?;\n:()]")
+_LIST_SPLIT = re.compile(r",|\band\b|\bor\b", re.IGNORECASE)
+_LIST_OPEN = re.compile(r"\s*(?:,|\band\b|\bor\b)", re.IGNORECASE)
+_SPAN = 4  # words of a list member compared with a product name
 
 _NEVER = re.compile(r"(?!x)x")
 _ALIASES: dict[str, Any] = {"pack": None, "map": {}}
@@ -303,108 +271,97 @@ def _known_phrases() -> frozenset[str]:
     return _PHRASES["phrases"]
 
 
-# An article, determiner or possessive (optionally with one adjective) before the name makes it a common noun:
-# "Hover the Cursor", "Each Director owns", "The Director's cut", "the blinking Cursor".
-_DET_BEFORE = re.compile(
-    r"(?<![A-Za-z0-9'’-])(?:the|a|an|each|every|this|that|these|those|our|their|my|your|his|her|its|some|any|no)"
-    r"[ \t]+(?:[a-z][a-z-]*[ \t]+)?$",
-    re.IGNORECASE,
-)
-# "The model is Linear in its parameters": after a copula, before a preposition, it is an adjective.
-_COPULA_BEFORE = re.compile(r"\b(?:is|are|was|were|be|been|being|becomes?|remains?)[ \t]+(?:[a-z]+ly[ \t]+)?$", re.IGNORECASE)
-_ADJECTIVE_COMPLEMENT = re.compile(r"[ \t]+(?:in|to|over|across)\b")
-_LIST_BEFORE = re.compile(r"((?:[A-Za-z][\w+.#-]*[ \t]+){0,2}[A-Za-z][\w+.#-]*)(?:,[ \t]*(?:(?:and|or)[ \t]+)?|[ \t]+(?:and|or)[ \t]+)$")
-_LIST_AFTER = re.compile(r"(?:,[ \t]*(?:(?:and|or)[ \t]+)?|[ \t]+(?:and|or)[ \t]+)([A-Za-z][\w+.#-]*(?:[ \t]+[A-Za-z][\w+.#-]*){0,2})")
-
-
 def _normal(phrase: str) -> str:
     return re.sub(r"[^a-z0-9]+", " ", phrase.lower()).strip()
 
 
-def _vendor_like(run: list[str], from_end: bool) -> bool:
-    """Is a capitalised neighbour a known product? A multi-word run must be a known phrase ("Claude Code");
-    "Netflix Conductor" is not Conductor."""
-    known = _known_phrases()
-    if len(run) == 1:
-        word = _normal(run[0])
-        return word in known or word in AMBIGUOUS_NAMES
-    spans = range(len(run) - 1) if from_end else range(2, len(run) + 1)
-    return any(_normal(" ".join(run[i:] if from_end else run[:i])) in known for i in spans)
+def _plain_products() -> frozenset[str]:
+    """The run's product names that are not ambiguous words: a list that holds one is a list of products."""
+    phrases = _known_phrases()
+    key = (id(phrases), id(AMBIGUOUS_NAMES))
+    if _PHRASES.get("plain_key") != key:
+        _PHRASES.update(plain_key=key, plain=frozenset(p for p in phrases if p not in AMBIGUOUS_NAMES and p not in NON_VENDOR_TERMS))
+    return _PHRASES["plain"]
 
 
-def _in_list_of_common_nouns(text: str, start: int, end: int) -> bool:
-    """A member of a list of capitalised words none of which is a known product ("Keyboard, Mouse, Cursor and Touch")."""
-    before = _LIST_BEFORE.search(text[max(0, start - _LOOKBEHIND):start])
-    after = _LIST_AFTER.match(text, end)
-    neighbours = []
-    known = _known_phrases()
-    if before:
-        run = []
-        for word in reversed(before.group(1).split()):
-            if not word[0].isupper() or word.lower() in _FUNCTION_WORDS:
-                break
-            run.insert(0, word)
-        if run:
-            neighbours.append(_vendor_like(run, True))
-        elif _normal(before.group(1).split()[-1]) in known:
-            neighbours.append(True)  # a lower-case product ("cc10x") beside it: a list of products
-    if after:
-        run = []
-        for word in after.group(1).split():
-            if not word[0].isupper() or word.lower() in _FUNCTION_WORDS:
-                break
-            run.append(word)
-        if run:
-            neighbours.append(_vendor_like(run, False))
-        elif _normal(after.group(1).split()[0]) in known:
-            neighbours.append(True)
-    return bool(neighbours) and not any(neighbours)
-
-
-def _then_a_product(text: str, end: int) -> bool:
-    """"Director and Conductor enforce ...": a sentence-initial name that heads a list whose next member is a known product."""
-    after = _LIST_AFTER.match(text, end)
-    if not after:
+def _in_vendor_list(text: str, start: int) -> bool:
+    """The name is a member of a list the sentence introduces as vendors ("The leaders are A, B and C")."""
+    prefix = text[max(0, start - 300):start]
+    breaks = [m.end() for m in _SENTENCE_END.finditer(prefix)]
+    prefix = prefix[breaks[-1]:] if breaks else prefix
+    if not _LIST_JOIN.search(prefix):
         return False
-    words = after.group(1).split()
-    known = _known_phrases()
-    return any(_normal(" ".join(words[:i])) in known for i in range(1, len(words) + 1))
+    return any(rx.search(prefix) for rx in (_LIST_LEAD, _MATRIX_LEADERS_RE, _CORE_SET_CLAIM_RE))
 
 
-def _modifier_before(text: str, start: int, name: str) -> str | None:
-    """How the capitalised word before the name bears on it: "compound", "opener" or None.
-
-    "compound": a modifier makes a different noun of it ("Netflix Conductor", "Abstract Factory", "Mouse
-    Cursor"), unless "<word> <name>" is a known product name of the run or the word is the product's
-    maker ("Melty Conductor"), which still needs a product context after the name ("maker"). "opener": a
-    sentence-initial adverb ("Notably Director ...", "Daily Linear sync"). Anything else (an article, a preposition, a verb: "Unlike Cursor", "Install Cursor") is None.
-    """
-    prev = _PREV_WORD.search(text[max(0, start - _LOOKBEHIND):start])
-    if not prev or not prev.group(1)[0].isupper():
-        return None
-    lower = prev.group(1).lower()
-    opens_sentence = _sentence_initial(text, start - len(prev.group(0)))
-    if lower in _FUNCTION_WORDS:
-        return "opener" if lower in _OPENER_ADVERBS and opens_sentence else None
-    if lower.endswith("ly"):
-        return "opener" if opens_sentence else "compound"
-    if f"{lower} {name.lower()}" in _known_phrases():
-        return None
-    return "maker" if lower in PRODUCT_MAKERS.get(name.lower(), ()) else "compound"
-
-
-def _inside_ordinary_phrase(text: str, start: int, end: int) -> bool:
-    window = text[max(0, start - _LOOKBEHIND):start]
-    connector = _ROLE_BEFORE_CONNECTOR.search(window)
-    if connector and connector.group(1).lower() in _ROLE_WORDS:
-        return True
-    following = _NEXT_WORD.match(text, end)
-    if following:
-        word = following.group(1)
-        if word.lower() in _HEAD_NOUNS:
+def _product_in(tokens: list[str], from_end: bool) -> bool:
+    products = _plain_products()
+    for token in tokens:
+        words = _normal(token).split()
+        spans = (words[-n:] for n in range(1, _SPAN + 1)) if from_end else (words[:n] for n in range(1, _SPAN + 1))
+        if any(" ".join(span) in products for span in spans if span):
             return True
-        return word[0].isupper() and word.lower() not in _FUNCTION_WORDS
     return False
+
+
+def _list_with_a_product(text: str, start: int, end: int) -> bool:
+    """The name sits in a comma/and/or list that also holds a product that is not an ambiguous word."""
+    before = text[max(0, start - 160):start]
+    breaks = [m.end() for m in _LIST_STOP.finditer(before)]
+    before = before[breaks[-1]:] if breaks else before
+    after = text[end:end + 160]
+    stop = _LIST_STOP.search(after)
+    after = after[:stop.start()] if stop else after
+    tokens_before = _LIST_SPLIT.split(before)[:-1] if _LIST_JOIN.search(before) and not before.rstrip().lower().endswith(("are", "is")) else []
+    tokens_after = _LIST_SPLIT.split(after)[1:] if _LIST_OPEN.match(after) else []
+    return _product_in(tokens_before, True) or _product_in(tokens_after, False)
+
+
+def _maker_cue(text: str, start: int, end: int, key: str) -> bool:
+    makers = PRODUCT_MAKERS.get(key, ())
+    if not makers:
+        return False
+    prev = _PREV_WORD.search(text[max(0, start - 48):start])
+    if prev and prev.group(1).lower().removesuffix("'s").removesuffix("’s") in makers:
+        return bool(_PRODUCT_VERB.match(text, end) or _CUE_AFTER.match(text, end))
+    after = text[end:end + 48].lower()
+    return any(re.match(rf"\s*\(\s*{re.escape(m)}\b|\s+by\s+{re.escape(m)}\b", after) for m in makers)
+
+
+def _known_pair(text: str, start: int, key: str) -> bool:
+    """"Claude Harness", "GitHub Copilot": the word before makes the full product name the run knows."""
+    prev = _PREV_WORD.search(text[max(0, start - 48):start])
+    if not prev or not prev.group(1)[0].isupper():
+        return False
+    pair = f"{_normal(prev.group(1))} {key}"
+    return pair in _known_phrases() and pair not in AMBIGUOUS_NAMES
+
+
+def _proper_phrase(text: str, start: int, end: int) -> bool:
+    """A Title-Case multi-word name that is not part of a longer capitalised run or after a determiner."""
+    if not all(word[:1].isupper() for word in text[start:end].split()):
+        return False
+    prev = _PREV_WORD.search(text[max(0, start - 48):start])
+    if prev and (prev.group(1)[0].isupper() or prev.group(1).lower() in _DETERMINERS):
+        return False
+    following = _NEXT_WORD.match(text, end)
+    return not (following and following.group(1)[0].isupper())
+
+
+def _has_product_cue(text: str, start: int, end: int, key: str) -> bool:
+    """An explicit product cue beside a capitalised ambiguous name; everything else is a common word."""
+    following = [_normal(w) for w in re.findall(r"[A-Za-z0-9.+#-]+", text[end:end + 80])[:3]]
+    if any(f"{key} {' '.join(following[:n])}" in _known_phrases() for n in range(1, len(following) + 1)):
+        return False  # "Cursor Background Agents" is that product, not Cursor
+    return bool(
+        _CUE_AFTER.match(text, end)
+        or _VERSION.match(text, end)
+        or (key in PROPER_PHRASES and _proper_phrase(text, start, end))
+        or _maker_cue(text, start, end, key)
+        or _known_pair(text, start, key)
+        or _in_vendor_list(text, start)
+        or _list_with_a_product(text, start, end)
+    )
 
 
 # The vendor set of the run being parsed (known names incl. discovered vendors, and its pack):
@@ -430,41 +387,21 @@ def _known_or_run(known: dict[str, str] | None) -> dict[str, str]:
 def mentions_vendor(text: str, lower: str, name: str) -> bool:
     """Whole-word vendor mention.
 
-    A category word (NON_VENDOR_TERMS) never counts. An ambiguous common-word name counts when it
-    reads as a proper noun: capitalised AND (next to a product cue, or inside a sentence and not
-    "<Name> of ..." and not inside a Title-Case phrase ("AI Factory", "Linear Regression"), or opening a
-    sentence as the subject of a verb). A qualifier before the name makes it another noun unless it is the
-    product's maker or part of a known product name. Linear in the claim length: every look-around is bounded.
+    A category word (NON_VENDOR_TERMS) never counts. An ambiguous name (a common English word or surname:
+    AMBIGUOUS_NAMES) counts only when it is capitalised AND an explicit product cue stands beside it: a
+    product head noun, domain or version after it, its maker, the full known product name, or a list of
+    vendors. Without one it is a common word ("Hover the Cursor", "Growth is Linear"). Every look-around is
+    bounded, so the cost is linear in the claim length.
     """
-    if name.lower() in NON_VENDOR_TERMS or not _mentions(lower, name):
+    key = name.lower()
+    if key in NON_VENDOR_TERMS or not _mentions(lower, name):
         return False
-    if name.lower() not in AMBIGUOUS_NAMES:
+    if key not in AMBIGUOUS_NAMES:
         return True
+    if re.search(rf"(?<![a-z0-9]){re.escape(key)}\.(?:com|ai|dev|io|app|sh)\b", lower):
+        return True  # the product's own domain, in any case
     for match in re.finditer(rf"(?<![A-Za-z0-9]){re.escape(name)}(?![A-Za-z0-9])", text, re.IGNORECASE):
-        word = match.group(0)
-        if not word[:1].isupper():
-            continue  # a vendor name is a proper noun: "director of engineering" is not one
-        if _CUE_BEFORE.search(text, max(0, match.start() - _LOOKBEHIND), match.start()):
-            return True
-        modifier = _modifier_before(text, match.start(), name)
-        if modifier == "compound":
-            continue  # a qualifier makes it another noun, whatever follows the name ("Abstract Factory Plus")
-        if modifier in ("opener", "maker"):
-            if _SUBJECT_OF.match(text, match.end()) or (modifier == "maker" and _CUE_AFTER.match(text, match.end())):
-                return True
-            continue
-        if _CUE_AFTER.match(text, match.end()):
-            return True
-        window = text[max(0, match.start() - _LOOKBEHIND):match.start()]
-        if (
-            _DET_BEFORE.search(window)
-            or _in_list_of_common_nouns(text, match.start(), match.end())
-            or (_COPULA_BEFORE.search(window) and _ADJECTIVE_COMPLEMENT.match(text, match.end()))
-        ):
-            continue  # "Hover the Cursor", "Keyboard, Mouse, Cursor and Touch", "the model is Linear in ..."
-        if _NOT_A_NAME_BEFORE_OF.match(text, match.end()) or _inside_ordinary_phrase(text, match.start(), match.end()):
-            continue
-        if not _sentence_initial(text, match.start()) or _SUBJECT_OF.match(text, match.end()) or _then_a_product(text, match.end()):
+        if match.group(0)[:1].isupper() and _has_product_cue(text, match.start(), match.end(), key):
             return True
     return False
 
@@ -701,7 +638,9 @@ _ABSENCE_MARKER = re.compile(
     rf"\b(?:no|zero|lacks?|lacking)\s+(?:[\w-]+\s+){{0,2}}(?:{_EVIDENCE}|claims?\b(?!\s+of\b))"
     rf"|\b(?:without|missing)\s+(?:[\w-]+\s+){{0,2}}{_EVIDENCE}"
     r"|\bunresearched\b|\bnot\s+(?:yet\s+)?researched\b|\bnone\s+(?:was|were|has\s+been|had\s+been)\s+found\b"
-    r"|\bshort\s+of\s+(?:[\w-]+\s+)?evidence\b",
+    r"|\bshort\s+of\s+(?:[\w-]+\s+)?evidence\b"
+    r"|\bunverified\b|\b(?:could\s+not|couldn['’]t|cannot|can['’]t|unable\s+to)\s+(?:be\s+)?(?:independently\s+)?verif(?:y|ied)\b"
+    r"|\bnothing\s+(?:backs|supports|substantiates)\b",
     re.IGNORECASE,
 )
 _EVIDENCE_PHRASE = re.compile(r"\b(?:no|zero|without|missing)\s+(?:\w+\s+){0,2}evidence\b")
@@ -716,13 +655,13 @@ _SENTENCE_START = re.compile(r"[;!?\n]|\.(?=\s)|,\s+and\s")
 _SENTENCE_END = re.compile(r"[;!?\n]|\.(?=\s|$)")
 # A clause that is only the absence ("No public evidence supports it.") is about the sentence before it.
 _ANAPHORIC_LEAD = re.compile(
-    r"\s*(?:(?:and|but|though|yet|while|whereas|although|with|however,?|moreover,?|still,?"
+    r"\s*(?:(?:and|but|though|yet|while|whereas|although|with|however,?|moreover,?|still,?|unfortunately,?|sadly,?|we|i"
     r"|(?:this|that|it)\s+(?:is|was|remains)(?:\s+still)?|there\s+(?:is|are|was|were|remains?))\s+)*", re.IGNORECASE)
 # A gate that "rejects PRs with no evidence of review" describes a feature, not a missing source. The verb
 # is a whole word and governs the marker (it stands a few words before it).
 _GATE_VERB_BEFORE = re.compile(
     r"\b(?:blocks?|blocking|blocked|refus(?:e|es|ed|ing)|rejects?|rejecting|fails?|failing|prevents?|preventing"
-    r"|den(?:y|ies|ying)|stops?|stopping|halts?|halting)\b(?:[ \t]+[\w'-]+){1,4}[ \t]*$",
+    r"|den(?:y|ies|ying)|stops?|stopping|halts?|halting)\b(?:[ \t]+(?!(?:nothing|none|no|not|never|short|some|and|but)\b)[\w'-]+){1,4}[ \t]*$",
     re.IGNORECASE,
 )
 # A negation keeps a hard-exclusion mention only when it governs it directly ("is not on the hard-exclusion list",
@@ -740,7 +679,7 @@ def _vendor_patterns() -> tuple[re.Pattern[str], re.Pattern[str]]:
     key = id(phrases)
     if _VENDORS["key"] != key:
         names = sorted(
-            (n for n in phrases if len(n) >= 3 and n not in AMBIGUOUS_NAMES and n not in NON_VENDOR_TERMS), key=len, reverse=True
+            (n for n in phrases if len(n) >= 3 and n not in NON_VENDOR_TERMS), key=len, reverse=True
         )
         if names:
             body = "|".join(re.escape(n).replace(r"\ ", r"[\s-]") for n in names)

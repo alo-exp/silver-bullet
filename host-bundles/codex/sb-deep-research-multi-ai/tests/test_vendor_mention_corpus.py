@@ -31,10 +31,12 @@ from apo_pack_run_fixture import with_apo_pack_run  # noqa: E402
 CORPUS = json.loads((Path(__file__).parent / "fixtures" / "vendor_mention_corpus.json").read_text(encoding="utf-8"))
 AMBIGUOUS = {"director", "factory-ai", "cursor", "continue", "linear", "conductor", "cognition-scout", "scout",
              "claude-harness", "harness", "sweep", "cursor-agents", "factory", "github-copilot", "devin", "aider",
-             "copilot-workspace"}
+             "copilot-workspace", "windsurf", "codex", "cline", "poolside", "superpowers", "silver-bullet",
+             "augment-cosmos", "open-interpreter", "deepwork", "tembo", "spec-kit", "magic-dev", "openhands"}
 EXPECTED_COUNTS = {"r4_false_positive": 14, "r2_false_positive": 31, "round1_recall": 26, "absence_keep": 23,
                    "absence_drop": 14, "r3_false_positive": 52, "r3b_false_positive": 25, "r3_recall": 24,
-                   "r3_absence": 34, "r1_absence": 7, "copilot": 7}
+                   "r3_absence": 34, "r1_absence": 7, "copilot": 7, "r4b_false_positive": 52,
+                   "r4c_false_positive": 30, "r4_recall": 25, "r4_absence": 24, "r4_absence_plain": 17}
 
 
 def envs(text):
@@ -62,7 +64,7 @@ class VendorMentionCorpusTests(unittest.TestCase):
 
     def test_the_corpus_has_every_probed_sentence(self) -> None:
         self.assertEqual(dict(collections.Counter(c["set"] for c in CORPUS)), EXPECTED_COUNTS)
-        self.assertEqual(len([c for c in CORPUS if c["set"].endswith("false_positive")]), 122)
+        self.assertEqual(len([c for c in CORPUS if c["set"].endswith("false_positive")]), 204)
 
     def test_plain_english_credits_no_vendor(self) -> None:
         failures = []
@@ -79,32 +81,42 @@ class VendorMentionCorpusTests(unittest.TestCase):
         missed = [c["text"] for c in recall if not self.credited(c["slug"], c["text"])]
         listed = [c["text"] for c in recall if c.get("known_miss")]
         self.assertEqual(sorted(missed), sorted(listed))
-        self.assertEqual((len(recall), len(missed)), (56, 5))  # the misses are listed in the fixture
+        self.assertEqual((len(recall), len(missed)), (81, 55))  # the misses are exactly the ones the fixture lists
 
-    def test_the_vendors_stay_when_the_name_is_qualified_by_its_maker_or_a_known_product_name(self) -> None:
-        self.assertTrue(m.mentions_vendor("Melty Conductor runs agents.", "melty conductor runs agents.", "conductor"))
-        self.assertTrue(m.mentions_vendor("Claude Harness is a pack.", "claude harness is a pack.", "harness"))
-        self.assertFalse(m.mentions_vendor("Netflix Conductor orchestrates services.", "netflix conductor orchestrates services.", "conductor"))
-
-    def test_a_sentence_opener_makes_the_name_need_a_verb(self) -> None:
-        for text in ("Notably Director enforces review gates.", "Then Director orchestrates agents."):
-            self.assertTrue(self.credited("director", text), text)
-        for text in ("Plus Director approval is needed.", "Daily Linear sync keeps issues current.",
-                     "Weekly Director reviews are held on Fridays."):
-            self.assertFalse(self.credited(text.split()[1].lower(), text), text)
-
-    def test_a_determiner_possessive_adjective_or_list_item_makes_the_name_a_common_noun(self) -> None:
-        for text, name in (("The Conductor raised the baton.", "conductor"), ("Hover the Cursor over the chart.", "cursor"),
-                           ("Each Director owns one region.", "director"), ("The Director's cut is longer.", "director"),
-                           ("Our Factory's output doubled.", "factory"), ("The blinking Cursor shows the caret.", "cursor"),
-                           ("Use Linear, Quadratic or Cubic interpolation.", "linear"), ("Keyboard, Mouse, Cursor and Touch events.", "cursor"),
-                           ("The model is Linear in its parameters.", "linear")):
-            self.assertFalse(m.mentions_vendor(text, text.lower(), name), text)
-        for text, name in (("We compared the Cursor IDE with Windsurf.", "cursor"), ("Teams run Claude Code and Cursor daily.", "cursor"),
-                           ("The leaders are Conductor, cc10x and Director.", "director"),
-                           ("Pricing for Director, Linear and Cursor differs.", "linear"), ("Pick the Copilot SDK.", "copilot"),
-                           ("The best choice is Cursor for most teams.", "cursor")):
+    def test_an_ambiguous_name_needs_an_explicit_product_cue(self) -> None:
+        yes = (("We tried Cursor IDE today.", "cursor"), ("Cursor extension adds chat.", "cursor"), ("Continue.dev supports local models.", "continue"),
+               ("Director 2.0 adds gates.", "director"), ("See https://cursor.com/pricing for plans.", "cursor"),
+               ("Melty Conductor orchestrates parallel agents.", "conductor"), ("Factory Droids ship PRs.", "factory"),
+               ("The leaders are Conductor, cc10x and Director.", "director"), ("Hard exclusions (never in-scope): Cursor Background Agents, Sweep, Windsurf.", "windsurf"),
+               ("Claude Code, Codex and Cursor ship hooks.", "cursor"), ("Silver Bullet uses deterministic gates.", "silver bullet"),
+               ("Conductor (Melty Labs) runs agents.", "conductor"), ("Cursor by Anysphere is an editor.", "cursor"),
+               ("Cursor v2 changed the panel.", "cursor"))
+        for text, name in yes:
             self.assertTrue(m.mentions_vendor(text, text.lower(), name), text)
+        no = (("Hover the Cursor over the chart.", "cursor"), ("Teams that use Cursor report faster refactors.", "cursor"),
+              ("Director orchestrates parallel agents.", "director"), ("Netflix Conductor and Temporal schedule jobs.", "conductor"),
+              ("Melty Conductor tracks distort when warm.", "conductor"), ("There is no Silver Bullet Thinking Is a Myth.", "silver bullet"),
+              ("No Silver Bullet: Essence and Accident.", "silver bullet"), ("Keyboard, Mouse, Cursor and Touch events.", "cursor"),
+              ("Growth is Linear for small inputs.", "linear"), ("the Director agent assigns tasks", "director"),
+              ("Ask Director (see below).", "director"), ("Press Continue v.", "continue"), ("Factory 2 workers", "factory"))
+        for text, name in no:
+            self.assertFalse(m.mentions_vendor(text, text.lower(), name), text)
+
+    def test_a_half_capitalised_phrase_and_a_bare_checkmark_for_are_not_products(self) -> None:
+        self.assertFalse(m.mentions_vendor("Silver bullet works.", "silver bullet works.", "silver bullet"))
+        self.assertFalse(m._parse_checkmark_for_claims({}, "ab ✔ for x"))
+        self.assertFalse(m._parse_checkmark_for_claims({}, "no marks here"))
+
+    def test_the_audited_english_word_names_are_ambiguous(self) -> None:
+        wanted = {"copilot", "cognition", "aider", "superpowers", "poolside", "windsurf", "codex", "silver bullet", "augment code",
+                  "open interpreter", "cline", "deepwork", "tembo", "magic dev", "spec kit", "open hands", "all hands", "workflow manager", "omp"}
+        self.assertLessEqual(wanted, m.AMBIGUOUS_NAMES)
+        self.assertLessEqual(m.PROPER_PHRASES, m.AMBIGUOUS_NAMES)
+
+    def test_discovery_judges_names_against_the_runs_products(self) -> None:
+        seeds = set(sc.get_all_market_seed_slugs(self.pack, include_adjacent=True))
+        found = set(sc.discover_candidate_slugs(envs("Hover the Cursor over the icon. Keyboard, Mouse, Cursor and Touch inputs."), self.pack)) - seeds
+        self.assertEqual(found & {"cursor"}, set())
 
     def test_lower_case_common_words_that_are_product_names_credit_nothing(self) -> None:
         self.assertTrue({"copilot", "cognition", "aider", "superpowers", "poolside"} <= m.AMBIGUOUS_NAMES)
@@ -112,11 +124,6 @@ class VendorMentionCorpusTests(unittest.TestCase):
                      "A good aider makes the job easier.", "Gives developers superpowers."):
             self.assertEqual(sc._envelope_evidence_slugs(envs(text), self.pack), set(), text)
             self.assertEqual(m._extract_slugs_from_text(text, self.known, self.pack), [], text)
-
-    def test_a_maker_qualified_name_still_needs_a_product_context(self) -> None:
-        self.assertFalse(m.mentions_vendor("Melty Conductor tracks distort when warm.", "melty conductor tracks distort when warm.", "conductor"))
-        self.assertTrue(m.mentions_vendor("Melty Conductor runs agents.", "melty conductor runs agents.", "conductor"))
-        self.assertTrue(m.mentions_vendor("Try Melty Conductor IDE today.", "try melty conductor ide today.", "conductor"))
 
     def test_a_negation_must_govern_the_hard_exclusion_to_keep_the_sentence(self) -> None:
         for text in ("Unlike Director, Sweep and Windsurf are hard exclusions that provide workflow composition.",
@@ -140,13 +147,6 @@ class VendorMentionCorpusTests(unittest.TestCase):
         self.support(unit * 200)  # about 26 KB
         self.assertLess(time.monotonic() - started, 2.0)
 
-    def test_a_sentence_initial_name_heading_a_list_of_products_counts(self) -> None:
-        for text in ("Director and Conductor enforce gates.", "Aider and cline offer CI integration."):
-            self.assertTrue(self.credited("director" if text.startswith("Director") else "aider", text), text)
-        for text in ("Director and Producer approve budgets.", "Linear and quadratic fits differ."):
-            self.assertFalse(m.mentions_vendor(text, text.lower(), text.split()[0].lower()), text)
-        self.assertFalse(m.mentions_vendor("Director.", "director.", "director"))
-
     def test_a_negated_vendor_earns_no_inferred_features_and_the_extract_cache_is_bounded(self) -> None:
         known = self.known
         self.assertTrue(m._negated_right_after_name("Barkain Workflow Orchestrator does not.", "barkain-workflow-orchestrator", known))
@@ -156,24 +156,6 @@ class VendorMentionCorpusTests(unittest.TestCase):
         for number in range(2050):
             m._extract_slugs_from_text(f"Devin {number}", known, self.pack)
         self.assertLessEqual(len(m._EXTRACTED), 2048)
-
-    def test_list_neighbours_decide_whether_a_name_is_a_product(self) -> None:
-        for text, name in (("Teams use cc10x, Director and Cursor.", "director"), ("Claude Code, Codex and Cursor ship hooks.", "cursor"),
-                           ("Netflix Conductor and Temporal schedule jobs.", "conductor")):
-            self.assertEqual(m.mentions_vendor(text, text.lower(), name), name != "conductor", text)
-        self.assertFalse(m.mentions_vendor("We saw Netflix Conductor, Mouse and Cursor.", "we saw netflix conductor, mouse and cursor.", "cursor"))
-        self.assertTrue(m.mentions_vendor("We saw Mouse, cc10x and Cursor today.", "we saw mouse, cc10x and cursor today.", "cursor"))
-
-    def test_a_lower_case_role_before_or_and_a_bare_checkmark_for_are_not_products(self) -> None:
-        text = "Sign-off needs a head or Director."
-        self.assertFalse(m.mentions_vendor(text, text.lower(), "director"))
-        self.assertFalse(m._parse_checkmark_for_claims({}, "ab ✔ for x"))
-        self.assertFalse(m._parse_checkmark_for_claims({}, "no marks here"))
-
-    def test_a_capitalised_adverb_inside_a_sentence_is_a_qualifier_not_an_opener(self) -> None:
-        for text, name in (("We joined the Daily Linear sync.", "linear"), ("See the Weekly Director review.", "director")):
-            self.assertFalse(m.mentions_vendor(text, text.lower(), name), text)
-        self.assertTrue(m.mentions_vendor("We use Anysphere Cursor IDE daily.", "we use anysphere cursor ide daily.", "cursor"))
 
     def test_the_known_phrases_follow_the_run_and_are_reused(self) -> None:
         phrases = m._known_phrases()

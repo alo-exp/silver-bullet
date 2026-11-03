@@ -67,6 +67,7 @@ CONVERTERS: dict[str, Any] = {
     "materialize_solution_artifacts.HOST_RUNTIME_SLUGS": _frozen,
     "materialize_solution_artifacts.AMBIGUOUS_NAMES": _frozen,
     "materialize_solution_artifacts.NON_VENDOR_TERMS": _frozen,
+    "materialize_solution_artifacts.PROPER_PHRASES": _frozen,
     "materialize_solution_artifacts.PRODUCT_MAKERS": _makers,
     "materialize_solution_artifacts.OVERVIEW_IDENTITY_FILTERS": list,
     "synthesize_landscape.KCF_NAMES": list,

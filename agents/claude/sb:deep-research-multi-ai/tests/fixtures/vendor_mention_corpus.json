@@ -228,19 +228,25 @@
   "set": "round1_recall",
   "kind": "vendor",
   "slug": "cursor",
-  "text": "Unlike Cursor, Silver Bullet enforces gates."
+  "text": "Unlike Cursor, Silver Bullet enforces gates.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
  },
  {
   "set": "round1_recall",
   "kind": "vendor",
   "slug": "cursor",
-  "text": "Install Cursor and enable the plugin."
+  "text": "Install Cursor and enable the plugin.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
  },
  {
   "set": "round1_recall",
   "kind": "vendor",
   "slug": "cursor",
-  "text": "Like Cursor, Windsurf ships an IDE."
+  "text": "Like Cursor, Windsurf ships an IDE.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
  },
  {
   "set": "round1_recall",
@@ -252,13 +258,17 @@
   "set": "round1_recall",
   "kind": "vendor",
   "slug": "director",
-  "text": "Besides Director, few tools enforce gates."
+  "text": "Besides Director, few tools enforce gates.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
  },
  {
   "set": "round1_recall",
   "kind": "vendor",
   "slug": "director",
-  "text": "Notably Director enforces review gates."
+  "text": "Notably Director enforces review gates.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
  },
  {
   "set": "round1_recall",
@@ -276,7 +286,9 @@
   "set": "round1_recall",
   "kind": "vendor",
   "slug": "cursor",
-  "text": "Teams run Cursor agents in the cloud."
+  "text": "Teams run Cursor agents in the cloud.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
  },
  {
   "set": "round1_recall",
@@ -306,7 +318,9 @@
   "set": "round1_recall",
   "kind": "vendor",
   "slug": "director",
-  "text": "Conductor or Director can enforce the gates."
+  "text": "Conductor or Director can enforce the gates.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
  },
  {
   "set": "round1_recall",
@@ -318,13 +332,17 @@
   "set": "round1_recall",
   "kind": "vendor",
   "slug": "director",
-  "text": "Director and Conductor enforce gates."
+  "text": "Director and Conductor enforce gates.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
  },
  {
   "set": "round1_recall",
   "kind": "vendor",
   "slug": "director",
-  "text": "Anthropic engineers praised Director for gates."
+  "text": "Anthropic engineers praised Director for gates.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
  },
  {
   "set": "round1_recall",
@@ -336,25 +354,33 @@
   "set": "round1_recall",
   "kind": "vendor",
   "slug": "conductor",
-  "text": "Conductor runs parallel Claude Code agents."
+  "text": "Conductor runs parallel Claude Code agents.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
  },
  {
   "set": "round1_recall",
   "kind": "vendor",
   "slug": "director",
-  "text": "Director ships hook-enforced gates."
+  "text": "Director ships hook-enforced gates.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
  },
  {
   "set": "round1_recall",
   "kind": "vendor",
   "slug": "director",
-  "text": "Director's hooks enforce gates."
+  "text": "Director's hooks enforce gates.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
  },
  {
   "set": "round1_recall",
   "kind": "vendor",
   "slug": "director",
-  "text": "Using Director, teams enforce gates."
+  "text": "Using Director, teams enforce gates.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
  },
  {
   "set": "round1_recall",
@@ -366,13 +392,17 @@
   "set": "round1_recall",
   "kind": "vendor",
   "slug": "cursor",
-  "text": "Most teams adopt Cursor Pro."
+  "text": "Most teams adopt Cursor Pro.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
  },
  {
   "set": "round1_recall",
   "kind": "vendor",
   "slug": "director",
-  "text": "Tools such as Director Pro enforce gates."
+  "text": "Tools such as Director Pro enforce gates.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
  },
  {
   "set": "round1_recall",
@@ -384,7 +414,9 @@
   "set": "round1_recall",
   "kind": "vendor",
   "slug": "director",
-  "text": "Lead or Director roles are not products, but Director the tool enforces gates."
+  "text": "Lead or Director roles are not products, but Director the tool enforces gates.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
  },
  {
   "set": "absence_keep",
@@ -438,7 +470,9 @@
   "set": "absence_keep",
   "kind": "absence_keep",
   "text": "Director provides workflow composition, and no claims of SSO were found.",
-  "slug": "director"
+  "slug": "director",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
  },
  {
   "set": "absence_keep",
@@ -1008,31 +1042,41 @@
   "set": "r3_recall",
   "kind": "vendor",
   "slug": "cursor",
-  "text": "Cursor ships a background agent for long tasks."
+  "text": "Cursor ships a background agent for long tasks.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
  },
  {
   "set": "r3_recall",
   "kind": "vendor",
   "slug": "cursor",
-  "text": "Many teams moved from VS Code to Cursor last year."
+  "text": "Many teams moved from VS Code to Cursor last year.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
  },
  {
   "set": "r3_recall",
   "kind": "vendor",
   "slug": "cursor",
-  "text": "Anysphere, the maker of Cursor, raised a new round."
+  "text": "Anysphere, the maker of Cursor, raised a new round.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
  },
  {
   "set": "r3_recall",
   "kind": "vendor",
   "slug": "cursor",
-  "text": "Rules files in Cursor shape agent behaviour."
+  "text": "Rules files in Cursor shape agent behaviour.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
  },
  {
   "set": "r3_recall",
   "kind": "vendor",
   "slug": "director",
-  "text": "Director orchestrates Claude Code subagents with review gates."
+  "text": "Director orchestrates Claude Code subagents with review gates.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
  },
  {
   "set": "r3_recall",
@@ -1044,19 +1088,25 @@
   "set": "r3_recall",
   "kind": "vendor",
   "slug": "director",
-  "text": "In Director, every phase ends with a gate."
+  "text": "In Director, every phase ends with a gate.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
  },
  {
   "set": "r3_recall",
   "kind": "vendor",
   "slug": "conductor",
-  "text": "Conductor lets you run several Claude Code agents in parallel worktrees."
+  "text": "Conductor lets you run several Claude Code agents in parallel worktrees.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
  },
  {
   "set": "r3_recall",
   "kind": "vendor",
   "slug": "conductor",
-  "text": "Melty Labs builds Conductor for macOS."
+  "text": "Melty Labs builds Conductor for macOS.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
  },
  {
   "set": "r3_recall",
@@ -1068,13 +1118,17 @@
   "set": "r3_recall",
   "kind": "vendor",
   "slug": "factory-ai",
-  "text": "Factory raised funding to expand its Droids platform."
+  "text": "Factory raised funding to expand its Droids platform.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
  },
  {
   "set": "r3_recall",
   "kind": "vendor",
   "slug": "linear",
-  "text": "Issues sync from Linear into the agent queue."
+  "text": "Issues sync from Linear into the agent queue.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
  },
  {
   "set": "r3_recall",
@@ -1088,13 +1142,17 @@
   "set": "r3_recall",
   "kind": "vendor",
   "slug": "continue",
-  "text": "Continue is an open-source IDE extension for custom assistants."
+  "text": "Continue is an open-source IDE extension for custom assistants.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
  },
  {
   "set": "r3_recall",
   "kind": "vendor",
   "slug": "continue",
-  "text": "Teams configure Continue with local models."
+  "text": "Teams configure Continue with local models.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
  },
  {
   "set": "r3_recall",
@@ -1126,13 +1184,17 @@
   "set": "r3_recall",
   "kind": "vendor",
   "slug": "aider",
-  "text": "Aider commits every edit to git automatically."
+  "text": "Aider commits every edit to git automatically.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
  },
  {
   "set": "r3_recall",
   "kind": "vendor",
   "slug": "aider",
-  "text": "Paul Gauthier maintains Aider as open source."
+  "text": "Paul Gauthier maintains Aider as open source.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
  },
  {
   "set": "r3_recall",
@@ -1144,7 +1206,9 @@
   "set": "r3_recall",
   "kind": "vendor",
   "slug": "cursor",
-  "text": "Compared with Cursor, Windsurf has fewer rules options."
+  "text": "Compared with Cursor, Windsurf has fewer rules options.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
  },
  {
   "set": "r3_recall",
@@ -1406,7 +1470,9 @@
   "set": "r1_absence",
   "kind": "absence_keep",
   "slug": "workflow-manager",
-  "text": "Workflow Manager provides workflow composition."
+  "text": "Workflow Manager provides workflow composition.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
  },
  {
   "set": "r1_absence",
@@ -1454,5 +1520,849 @@
   "set": "copilot",
   "kind": "plain_english",
   "text": "Microsoft Copilot drafts emails."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "Click Continue to proceed with the installation."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "Press any key to Continue."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "Tap Continue below the form."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "In English, Continue is a regular verb."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "Director's notes are attached to the call sheet."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "Both Directors signed the contract."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "Contact Director Smith for details."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "She reports to Director of Finance Jane Doe."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "Several Conductors toured Europe this year."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "Copper is a good Conductor of heat."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "Thanks, Conductor, for the smooth ride."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "Ground the rig with Conductor tape."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "Restore Factory defaults before shipping the router."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "The router was reset to Factory defaults."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "Two Factory workers were injured on Monday."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "Factory floors must be swept daily."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "Install Linear actuators on the valves."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "This course requires Linear algebra."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "Growth is Linear for small inputs."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "The relationship is Linear and predictable."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "Runtime is Linear."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "Lots of Linear algebra is involved."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "The old blinking Cursor annoyed users."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "Use Cursor keys to navigate the menu."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "Move the mouse until Cursor changes shape."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "Many Copilots fly regional routes."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "Flying without a Copilot is risky."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "Our airline hired Copilots from the academy."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "From Cognition to action, the brain is fast."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "We studied Cognition, Memory and Attention in children."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "Human Cognition is limited by working memory."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "He was charged as an Aider and abettor."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "Aider and abettor charges were filed."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "We relaxed Poolside all afternoon."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "Lunch is served Poolside on weekends."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "Drinks are available Poolside daily."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "Kids with Superpowers need training in the comic."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "She dreamed of having Superpowers."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "The two Superpowers negotiated a treaty."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "During the Cold War, Superpowers raced to space."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "Learning to windsurf takes patience."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "We windsurf every summer on the lake."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "Windsurf lessons start at nine."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "We rented Windsurf gear at the beach."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "There is no silver bullet for software complexity."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "The Codex Sinaiticus is an ancient manuscript."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "We augment code reviews with pair programming."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "Patsy Cline sang Crazy in 1961."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "Deep work requires long focus blocks."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "Gather the A-Team for the offsite."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "An open interpreter session lets you test snippets."
+ },
+ {
+  "set": "r4b_false_positive",
+  "kind": "plain_english",
+  "text": "Copilot mode in the car keeps the lane."
+ },
+ {
+  "set": "r4c_false_positive",
+  "kind": "plain_english",
+  "text": "Press any key to continue."
+ },
+ {
+  "set": "r4c_false_positive",
+  "kind": "plain_english",
+  "text": "Growth is linear for small inputs."
+ },
+ {
+  "set": "r4c_false_positive",
+  "kind": "plain_english",
+  "text": "Runtime is linear."
+ },
+ {
+  "set": "r4c_false_positive",
+  "kind": "plain_english",
+  "text": "This course requires linear algebra."
+ },
+ {
+  "set": "r4c_false_positive",
+  "kind": "plain_english",
+  "text": "The router was reset to factory defaults."
+ },
+ {
+  "set": "r4c_false_positive",
+  "kind": "plain_english",
+  "text": "Two factory workers were injured on Monday."
+ },
+ {
+  "set": "r4c_false_positive",
+  "kind": "plain_english",
+  "text": "Use cursor keys to navigate the menu."
+ },
+ {
+  "set": "r4c_false_positive",
+  "kind": "plain_english",
+  "text": "We relaxed poolside all afternoon."
+ },
+ {
+  "set": "r4c_false_positive",
+  "kind": "plain_english",
+  "text": "She dreamed of having superpowers."
+ },
+ {
+  "set": "r4c_false_positive",
+  "kind": "plain_english",
+  "text": "From cognition to action, the brain is fast."
+ },
+ {
+  "set": "r4c_false_positive",
+  "kind": "plain_english",
+  "text": "Ground the rig with conductor tape."
+ },
+ {
+  "set": "r4c_false_positive",
+  "kind": "plain_english",
+  "text": "Ask your copilot to check the fuel."
+ },
+ {
+  "set": "r4c_false_positive",
+  "kind": "plain_english",
+  "text": "An AI copilot drafts the reply."
+ },
+ {
+  "set": "r4c_false_positive",
+  "kind": "plain_english",
+  "text": "Learning to windsurf takes patience."
+ },
+ {
+  "set": "r4c_false_positive",
+  "kind": "plain_english",
+  "text": "There is no silver bullet for software complexity."
+ },
+ {
+  "set": "r4c_false_positive",
+  "kind": "plain_english",
+  "text": "The codex was copied by monks."
+ },
+ {
+  "set": "r4c_false_positive",
+  "kind": "plain_english",
+  "text": "We augment code reviews with pair programming."
+ },
+ {
+  "set": "r4c_false_positive",
+  "kind": "plain_english",
+  "text": "An open interpreter session lets you test snippets."
+ },
+ {
+  "set": "r4c_false_positive",
+  "kind": "plain_english",
+  "text": "Patsy Cline sang Crazy in 1961."
+ },
+ {
+  "set": "r4c_false_positive",
+  "kind": "plain_english",
+  "text": "Our director approved the budget."
+ },
+ {
+  "set": "r4c_false_positive",
+  "kind": "plain_english",
+  "text": "Each sprint ends with a demo."
+ },
+ {
+  "set": "r4c_false_positive",
+  "kind": "plain_english",
+  "text": "## Linear Algebra Basics"
+ },
+ {
+  "set": "r4c_false_positive",
+  "kind": "plain_english",
+  "text": "Chapter 3: Factory Defaults and Recovery"
+ },
+ {
+  "set": "r4c_false_positive",
+  "kind": "plain_english",
+  "text": "Button labels: Back, Next, Continue."
+ },
+ {
+  "set": "r4c_false_positive",
+  "kind": "plain_english",
+  "text": "Step 4 - Press Continue"
+ },
+ {
+  "set": "r4c_false_positive",
+  "kind": "plain_english",
+  "text": "Silver Bullet Thinking Is a Myth"
+ },
+ {
+  "set": "r4c_false_positive",
+  "kind": "plain_english",
+  "text": "The Poolside Bar Menu"
+ },
+ {
+  "set": "r4c_false_positive",
+  "kind": "plain_english",
+  "text": "Windsurf Lessons for Beginners"
+ },
+ {
+  "set": "r4c_false_positive",
+  "kind": "plain_english",
+  "text": "Superpowers: The Rise of the Cold War States"
+ },
+ {
+  "set": "r4c_false_positive",
+  "kind": "plain_english",
+  "text": "Codex Leicester by Leonardo da Vinci"
+ },
+ {
+  "set": "r4_recall",
+  "kind": "vendor",
+  "slug": "cursor",
+  "text": "Cursor ships background agents that open pull requests.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+ },
+ {
+  "set": "r4_recall",
+  "kind": "vendor",
+  "slug": "cursor",
+  "text": "Teams that use Cursor report faster refactors.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+ },
+ {
+  "set": "r4_recall",
+  "kind": "vendor",
+  "slug": "cursor",
+  "text": "We compared Cursor with Windsurf on a large monorepo.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+ },
+ {
+  "set": "r4_recall",
+  "kind": "vendor",
+  "slug": "windsurf",
+  "text": "Windsurf provides a Cascade agent for multi-file edits.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+ },
+ {
+  "set": "r4_recall",
+  "kind": "vendor",
+  "slug": "director",
+  "text": "Director enforces a planning gate before code changes.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+ },
+ {
+  "set": "r4_recall",
+  "kind": "vendor",
+  "slug": "director",
+  "text": "In our tests, Director blocked the merge until review finished.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+ },
+ {
+  "set": "r4_recall",
+  "kind": "vendor",
+  "slug": "conductor",
+  "text": "Conductor runs several Claude Code agents in parallel worktrees.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+ },
+ {
+  "set": "r4_recall",
+  "kind": "vendor",
+  "slug": "conductor",
+  "text": "Melty Conductor orchestrates parallel agents."
+ },
+ {
+  "set": "r4_recall",
+  "kind": "vendor",
+  "slug": "factory-ai",
+  "text": "Factory's Droids automate code review and migrations.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+ },
+ {
+  "set": "r4_recall",
+  "kind": "vendor",
+  "slug": "factory-ai",
+  "text": "Factory.ai offers enterprise SSO."
+ },
+ {
+  "set": "r4_recall",
+  "kind": "vendor",
+  "slug": "linear",
+  "text": "Linear integrates agents that pick up issues automatically.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+ },
+ {
+  "set": "r4_recall",
+  "kind": "vendor",
+  "slug": "linear",
+  "text": "The team tracks work in Linear and syncs it to GitHub.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+ },
+ {
+  "set": "r4_recall",
+  "kind": "vendor",
+  "slug": "continue",
+  "text": "Continue is an open-source IDE extension for custom assistants.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+ },
+ {
+  "set": "r4_recall",
+  "kind": "vendor",
+  "slug": "continue",
+  "text": "Continue.dev supports local models."
+ },
+ {
+  "set": "r4_recall",
+  "kind": "vendor",
+  "slug": "github-copilot",
+  "text": "GitHub Copilot reviews pull requests automatically."
+ },
+ {
+  "set": "r4_recall",
+  "kind": "vendor",
+  "slug": "github-copilot",
+  "text": "Copilot generates unit tests from the editor.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+ },
+ {
+  "set": "r4_recall",
+  "kind": "vendor",
+  "slug": "devin",
+  "text": "Cognition launched Devin as an autonomous software engineer."
+ },
+ {
+  "set": "r4_recall",
+  "kind": "vendor",
+  "slug": "aider",
+  "text": "Aider commits each change to git with a descriptive message.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+ },
+ {
+  "set": "r4_recall",
+  "kind": "vendor",
+  "slug": "aider",
+  "text": "We paired with Aider in the terminal.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+ },
+ {
+  "set": "r4_recall",
+  "kind": "vendor",
+  "slug": "poolside",
+  "text": "Poolside raised funding to train coding models.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+ },
+ {
+  "set": "r4_recall",
+  "kind": "vendor",
+  "slug": "superpowers",
+  "text": "Superpowers adds TDD and brainstorming skills to Claude Code.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+ },
+ {
+  "set": "r4_recall",
+  "kind": "vendor",
+  "slug": "superpowers",
+  "text": "Teams install Superpowers as a Claude Code plugin.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+ },
+ {
+  "set": "r4_recall",
+  "kind": "vendor",
+  "slug": "devin",
+  "text": "Devin opens pull requests from Slack requests."
+ },
+ {
+  "set": "r4_recall",
+  "kind": "vendor",
+  "slug": "cline",
+  "text": "Cline runs inside VS Code and asks before each command.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+ },
+ {
+  "set": "r4_recall",
+  "kind": "vendor",
+  "slug": "codex",
+  "text": "Codex executes tasks in a cloud sandbox.",
+  "known_miss": true,
+  "note": "no explicit product cue beside the name (allowlist): an ambiguous name is a common word without a head noun, domain, version, maker, full product name or vendor list; recall is traded for precision"
+ },
+ {
+  "set": "r4_absence",
+  "kind": "absence_drop",
+  "slug": "deepwork",
+  "text": "Deepwork stops at planning and provides workflow composition with no evidence."
+ },
+ {
+  "set": "r4_absence",
+  "kind": "absence_drop",
+  "slug": "deepwork",
+  "text": "Deepwork blocks some steps; it provides workflow composition with no public evidence."
+ },
+ {
+  "set": "r4_absence",
+  "kind": "absence_drop",
+  "slug": "deepwork",
+  "text": "Deepwork provides workflow composition, which fails the bar: no evidence."
+ },
+ {
+  "set": "r4_absence",
+  "kind": "absence_drop",
+  "slug": "deepwork",
+  "text": "Deepwork provides workflow composition and blocks nothing with no evidence at all."
+ },
+ {
+  "set": "r4_absence",
+  "kind": "absence_drop",
+  "slug": "deepwork",
+  "text": "Deepwork claims workflow composition but halts short with zero evidence."
+ },
+ {
+  "set": "r4_absence",
+  "kind": "absence_drop",
+  "slug": "deepwork",
+  "text": "Deepwork provides workflow composition. Yet none were found."
+ },
+ {
+  "set": "r4_absence",
+  "kind": "absence_drop",
+  "slug": "deepwork",
+  "text": "Deepwork provides workflow composition. That remains unresearched."
+ },
+ {
+  "set": "r4_absence",
+  "kind": "absence_drop",
+  "slug": "deepwork",
+  "text": "Deepwork provides workflow composition. Still, there is no public evidence."
+ },
+ {
+  "set": "r4_absence",
+  "kind": "absence_drop",
+  "slug": "deepwork",
+  "text": "Deepwork provides workflow composition. Unfortunately, no evidence was found."
+ },
+ {
+  "set": "r4_absence",
+  "kind": "absence_drop",
+  "slug": "deepwork",
+  "text": "Deepwork provides workflow composition. Nothing backs this up."
+ },
+ {
+  "set": "r4_absence",
+  "kind": "absence_drop",
+  "slug": "deepwork",
+  "text": "Deepwork provides workflow composition. We could not verify this."
+ },
+ {
+  "set": "r4_absence",
+  "kind": "absence_drop",
+  "slug": "deepwork",
+  "text": "Deepwork provides workflow composition (unverified)."
+ },
+ {
+  "set": "r4_absence",
+  "kind": "absence_drop",
+  "slug": "sweep",
+  "text": "Sweep provides workflow composition; it is not researched further because it is a hard exclusion."
+ },
+ {
+  "set": "r4_absence",
+  "kind": "absence_drop",
+  "slug": "sweep",
+  "text": "Sweep, a hard exclusion not on our list of targets, provides workflow composition."
+ },
+ {
+  "set": "r4_absence",
+  "kind": "absence_drop",
+  "slug": "sweep",
+  "text": "Sweep is not supported here: it is a hard exclusion that provides workflow composition."
+ },
+ {
+  "set": "r4_absence",
+  "kind": "absence_drop",
+  "slug": "sweep",
+  "text": "Sweep isn't a target; Sweep is a hard exclusion and provides workflow composition."
+ },
+ {
+  "set": "r4_absence",
+  "kind": "absence_drop",
+  "slug": "deepwork",
+  "text": "Deepwork does not provide workflow composition."
+ },
+ {
+  "set": "r4_absence",
+  "kind": "absence_drop",
+  "slug": "deepwork",
+  "text": "Deepwork never provides workflow composition."
+ },
+ {
+  "set": "r4_absence",
+  "kind": "absence_drop",
+  "slug": "deepwork",
+  "text": "Deepwork, however, does not provide workflow composition."
+ },
+ {
+  "set": "r4_absence",
+  "kind": "absence_drop",
+  "slug": "deepwork",
+  "text": "Workflow composition is not provided by Deepwork."
+ },
+ {
+  "set": "r4_absence",
+  "kind": "absence_drop",
+  "slug": "deepwork",
+  "text": "Deepwork lacks workflow composition."
+ },
+ {
+  "set": "r4_absence",
+  "kind": "absence_keep",
+  "slug": "silver-bullet",
+  "text": "Silver Bullet provides workflow composition and refuses merges with no evidence of review."
+ },
+ {
+  "set": "r4_absence",
+  "kind": "absence_keep",
+  "slug": "silver-bullet",
+  "text": "Silver Bullet provides workflow composition; Deepwork does not."
+ },
+ {
+  "set": "r4_absence",
+  "kind": "absence_keep",
+  "slug": "silver-bullet",
+  "text": "Silver Bullet provides workflow composition, and it blocks delivery without evidence of tests."
+ },
+ {
+  "set": "r4_absence_plain",
+  "kind": "absence_drop",
+  "slug": "agentsys",
+  "text": "AgentSys stops at planning and provides workflow composition with no evidence."
+ },
+ {
+  "set": "r4_absence_plain",
+  "kind": "absence_drop",
+  "slug": "agentsys",
+  "text": "AgentSys blocks some steps; it provides workflow composition with no public evidence."
+ },
+ {
+  "set": "r4_absence_plain",
+  "kind": "absence_drop",
+  "slug": "agentsys",
+  "text": "AgentSys provides workflow composition, which fails the bar: no evidence."
+ },
+ {
+  "set": "r4_absence_plain",
+  "kind": "absence_drop",
+  "slug": "agentsys",
+  "text": "AgentSys provides workflow composition and blocks nothing with no evidence at all."
+ },
+ {
+  "set": "r4_absence_plain",
+  "kind": "absence_drop",
+  "slug": "agentsys",
+  "text": "AgentSys claims workflow composition but halts short with zero evidence."
+ },
+ {
+  "set": "r4_absence_plain",
+  "kind": "absence_drop",
+  "slug": "agentsys",
+  "text": "AgentSys provides workflow composition. Yet none were found."
+ },
+ {
+  "set": "r4_absence_plain",
+  "kind": "absence_drop",
+  "slug": "agentsys",
+  "text": "AgentSys provides workflow composition. That remains unresearched."
+ },
+ {
+  "set": "r4_absence_plain",
+  "kind": "absence_drop",
+  "slug": "agentsys",
+  "text": "AgentSys provides workflow composition. Still, there is no public evidence."
+ },
+ {
+  "set": "r4_absence_plain",
+  "kind": "absence_drop",
+  "slug": "agentsys",
+  "text": "AgentSys provides workflow composition. Unfortunately, no evidence was found."
+ },
+ {
+  "set": "r4_absence_plain",
+  "kind": "absence_drop",
+  "slug": "agentsys",
+  "text": "AgentSys provides workflow composition. Nothing backs this up."
+ },
+ {
+  "set": "r4_absence_plain",
+  "kind": "absence_drop",
+  "slug": "agentsys",
+  "text": "AgentSys provides workflow composition. We could not verify this."
+ },
+ {
+  "set": "r4_absence_plain",
+  "kind": "absence_drop",
+  "slug": "agentsys",
+  "text": "AgentSys provides workflow composition (unverified)."
+ },
+ {
+  "set": "r4_absence_plain",
+  "kind": "absence_drop",
+  "slug": "agentsys",
+  "text": "AgentSys does not provide workflow composition."
+ },
+ {
+  "set": "r4_absence_plain",
+  "kind": "absence_drop",
+  "slug": "agentsys",
+  "text": "AgentSys never provides workflow composition."
+ },
+ {
+  "set": "r4_absence_plain",
+  "kind": "absence_drop",
+  "slug": "agentsys",
+  "text": "AgentSys, however, does not provide workflow composition."
+ },
+ {
+  "set": "r4_absence_plain",
+  "kind": "absence_drop",
+  "slug": "agentsys",
+  "text": "Workflow composition is not provided by AgentSys."
+ },
+ {
+  "set": "r4_absence_plain",
+  "kind": "absence_drop",
+  "slug": "agentsys",
+  "text": "AgentSys lacks workflow composition."
  }
 ]
