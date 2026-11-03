@@ -1,15 +1,14 @@
 #!/usr/bin/env bash
 # scripts/lib/pre-release-host-isolation.sh: smoke-root management, per-host isolation env,
-# Cursor auth resolution, tag helpers and RC markers. Each case runs in a subshell.
+# tag helpers and RC markers. Each case runs in a subshell.
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init claude
 
 LIB="$TL_REPO_ROOT/scripts/lib/pre-release-host-isolation.sh"
 export TMPDIR="$TL_TMP/tmpdir"; mkdir -p "$TMPDIR"
-unset SB_PRE_RELEASE_SMOKE_ROOT SB_PRE_RELEASE_REPO_ROOT SB_RC_PREVIOUS_TAG CURSOR_API_KEY HOST_API_KEY \
-  _SB_PRE_RELEASE_ISOLATION_LOADED SB_RUNTIME_PRESERVE_STATE_DIR CURSOR_HOME CURSOR_CONFIG_DIR \
-  AGENT_CLI_CREDENTIAL_STORE
+unset SB_PRE_RELEASE_SMOKE_ROOT SB_PRE_RELEASE_REPO_ROOT SB_RC_PREVIOUS_TAG \
+  _SB_PRE_RELEASE_ISOLATION_LOADED SB_RUNTIME_PRESERVE_STATE_DIR
 REAL_HOME="$HOME"
 
 # sub '<bash snippet>': run the snippet after sourcing the library, in a subshell.
@@ -36,16 +35,12 @@ before="$(find "$TMPDIR" -maxdepth 1 -name 'sb-pre-release-smoke.*' | wc -l | tr
 res="$(sub 'a="$(sb_smoke_host_root x 2>&1)"; echo "rc=$? out=$a"')"
 assert_contains "unpinned host root fails" "$res" "rc=1"
 assert_contains "unpinned host root explains" "$res" "smoke root not pinned"
-for helper in sb_smoke_begin_codex sb_smoke_begin_claude sb_smoke_begin_cursor; do
-  res="$(sub "$helper >/dev/null 2>&1; echo rc=\$?")"
-  assert_eq "unpinned $helper fails" "rc=1" "$res"
-done
-for helper in sb_smoke_cursor_workspace sb_smoke_cursor_config_dir; do
+for helper in sb_smoke_begin_codex sb_smoke_begin_claude; do
   res="$(sub "$helper >/dev/null 2>&1; echo rc=\$?")"
   assert_eq "unpinned $helper fails" "rc=1" "$res"
 done
 assert_eq "no stray roots created by unpinned helpers" "$before" "$(find "$TMPDIR" -maxdepth 1 -name 'sb-pre-release-smoke.*' | wc -l | tr -d ' ')"
-res="$(sub 'sb_smoke_init_root; a="$(sb_smoke_host_root x)"; b="$(sb_smoke_host_root y)"; c="$(sb_smoke_cursor_workspace)"; [[ "${a%/x}" == "$SB_PRE_RELEASE_SMOKE_ROOT" && "${b%/y}" == "$SB_PRE_RELEASE_SMOKE_ROOT" && "$c" == "$SB_PRE_RELEASE_SMOKE_ROOT/cursor/workspace" ]] && echo one-root || echo "split: $a $b $c"')"
+res="$(sub 'sb_smoke_init_root; a="$(sb_smoke_host_root x)"; b="$(sb_smoke_host_root y)"; [[ "${a%/x}" == "$SB_PRE_RELEASE_SMOKE_ROOT" && "${b%/y}" == "$SB_PRE_RELEASE_SMOKE_ROOT" ]] && echo one-root || echo "split: $a $b"')"
 assert_eq "after init every helper shares one root" "one-root" "$res"
 SM="$TL_TMP/sm"
 assert_eq "host root created" "$SM/h1" "$(SB_PRE_RELEASE_SMOKE_ROOT="$SM" sub 'sb_smoke_host_root h1')"
@@ -58,7 +53,7 @@ assert_eq "track dedupes" "/a /b" "$(sub 'sb_smoke_track_root /a; sb_smoke_track
 env_dump='echo "HOME=$HOME"; echo "RT=$SILVER_BULLET_RUNTIME"; echo "PRESERVE=$SB_RUNTIME_PRESERVE_STATE_DIR"; echo "STATE=$SB_RUNTIME_STATE_DIR"'
 # R8-12: variables that redirect a host's real config or SB state are cleared.
 redirects='KAY_HOME CLAUDE_CONFIG_DIR CODEX_HOME SILVER_BULLET_STATE_FILE SILVER_BULLET_BRANCH_FILE SB_RUNTIME_HOME_ROOT SB_RUNTIME_PLUGIN_CACHE_ROOT XDG_CONFIG_HOME XDG_DATA_HOME XDG_STATE_HOME XDG_CACHE_HOME'
-for host in codex claude cursor; do
+for host in codex claude; do
   out="$(env KAY_HOME=/real/kay CLAUDE_CONFIG_DIR=/real/claude CODEX_HOME=/real/codex SILVER_BULLET_STATE_FILE=/real/state \
     SILVER_BULLET_BRANCH_FILE=/real/branch SB_RUNTIME_HOME_ROOT=/real/rt SB_RUNTIME_PLUGIN_CACHE_ROOT=/real/cache \
     XDG_CONFIG_HOME=/real/xdg XDG_DATA_HOME=/real/xd XDG_STATE_HOME=/real/xs XDG_CACHE_HOME=/real/xc \
@@ -79,52 +74,6 @@ for host in codex claude; do
   assert_contains "$host: preserved state dir survives runtime-paths" "$out" "STATE=$SM/$host/.silver-bullet"
 done
 assert_contains "codex: CODEX_HOME_ROOT" "$(SB_PRE_RELEASE_SMOKE_ROOT="$SM" sub 'sb_smoke_begin_codex; echo "$CODEX_HOME_ROOT"')" "$SM/codex"
-
-# --- cursor ----------------------------------------------------------------------------------------------------------
-out="$(SB_PRE_RELEASE_REPO_ROOT="$TL_REPO_ROOT" SB_PRE_RELEASE_SMOKE_ROOT="$SM" CURSOR_HOME=/should/go sub "sb_smoke_begin_cursor; $env_dump"'; echo "CFG=$CURSOR_CONFIG_DIR"; echo "WS=$SB_SMOKE_CURSOR_WORKSPACE"; echo "PLUG=$SB_SMOKE_CURSOR_PLUGIN_DIR"; echo "FH=$SB_SMOKE_CURSOR_FAKE_HOME"; echo "CH=${CURSOR_HOME:-unset}"')"
-assert_contains "cursor: fake home" "$out" "HOME=$SM/cursor/fake-home"
-assert_contains "cursor: runtime" "$out" "RT=cursor"
-assert_contains "cursor: state dir" "$out" "STATE=$SM/cursor/.silver-bullet"
-assert_contains "cursor: config dir" "$out" "CFG=$SM/cursor/fake-home/.cursor"
-assert_contains "cursor: workspace" "$out" "WS=$SM/cursor/workspace"
-assert_contains "cursor: plugin dir from repo" "$out" "PLUG=$TL_REPO_ROOT/plugins/silver-bullet"
-assert_contains "cursor: fake home var" "$out" "FH=$SM/cursor/fake-home"
-assert_contains "cursor: CURSOR_HOME unset" "$out" "CH=unset"
-assert_eq "cursor: hooks.json seeded" '{"version":1,"hooks":{}}' "$(cat "$SM/cursor/fake-home/.cursor/hooks.json")"
-assert_eq "cursor: mcp.json seeded" '{"mcpServers":{}}' "$(cat "$SM/cursor/fake-home/.cursor/mcp.json")"
-assert_eq "cursor: cli-config permissions" '["Shell(bash *)","Shell(echo *)","Shell(pwd)","Shell(test *)"]' "$(jq -c .permissions.allow "$SM/cursor/fake-home/.cursor/cli-config.json")"
-assert_file_exists "cursor: workspace dir" "$SM/cursor/workspace"
-out="$(SB_PRE_RELEASE_SMOKE_ROOT="$TL_TMP/sm2" sub 'sb_smoke_begin_cursor; echo "PLUG=[$SB_SMOKE_CURSOR_PLUGIN_DIR]"')"
-assert_contains "cursor: no repo root -> empty plugin dir" "$out" "PLUG=[]"
-
-# a read-only CURSOR_HOME cannot be unset; begin_cursor carries on
-out="$(SB_PRE_RELEASE_SMOKE_ROOT="$SM" sub 'readonly CURSOR_HOME=/ro; sb_smoke_begin_cursor; echo "CH=$CURSOR_HOME"')"
-assert_contains "readonly CURSOR_HOME tolerated" "$out" "CH=/ro"
-
-# --- cursor helpers --------------------------------------------------------------------------------------------------------------
-assert_eq "plugin dir: unset repo" 1 "$(sub 'sb_smoke_cursor_plugin_dir >/dev/null; echo $?' || true)"
-mkdir -p "$TL_TMP/norepo"
-assert_eq "plugin dir: repo without plugin" 1 "$(SB_PRE_RELEASE_REPO_ROOT="$TL_TMP/norepo" sub 'sb_smoke_cursor_plugin_dir >/dev/null; echo $?' || true)"
-assert_eq "plugin dir: repo with plugin" "$TL_REPO_ROOT/plugins/silver-bullet" "$(SB_PRE_RELEASE_REPO_ROOT="$TL_REPO_ROOT" sub 'sb_smoke_cursor_plugin_dir')"
-assert_eq "cursor workspace path" "$SM/cursor/workspace" "$(SB_PRE_RELEASE_SMOKE_ROOT="$SM" sub 'sb_smoke_cursor_workspace')"
-assert_eq "cursor config dir path" "$SM/cursor/fake-home/.cursor" "$(SB_PRE_RELEASE_SMOKE_ROOT="$SM" sub 'sb_smoke_cursor_config_dir')"
-
-# --- cursor auth ------------------------------------------------------------------------------------------------------------------------
-auth() { # <env assignments...> -> "rc|key|store"
-  # shellcheck disable=SC2163  # arguments are NAME=value pairs
-  ( export "$@"
-    # shellcheck source=../../scripts/lib/pre-release-host-isolation.sh
-    source "$LIB"; rc=0; sb_smoke_cursor_cli_auth_env || rc=$?; echo "$rc|${CURSOR_API_KEY:-}|${AGENT_CLI_CREDENTIAL_STORE:-}" )
-}
-KH="$TL_TMP/keyhome"; mkdir -p "$KH/.silver-bullet"
-assert_eq "auth: env key" "0|envkey|memory" "$(auth HOME="$KH" SB_PRE_RELEASE_SMOKE_ROOT="$SM" CURSOR_API_KEY=envkey)"
-assert_eq "auth: HOST_API_KEY alias" "0|hostkey|memory" "$(auth HOME="$KH" SB_PRE_RELEASE_SMOKE_ROOT="$SM" HOST_API_KEY=hostkey)"
-assert_eq "auth: none available" "1||memory" "$(auth HOME="$KH" SB_PRE_RELEASE_SMOKE_ROOT="$SM")"
-echo homefilekey >"$KH/.silver-bullet/cursor-api-key"
-assert_eq "auth: operator key file" "0|homefilekey|memory" "$(auth HOME="$KH" SB_PRE_RELEASE_SMOKE_ROOT="$SM")"
-echo rootfilekey >"$SM/.cursor-api-key"
-assert_eq "auth: smoke-root key file wins over operator file" "0|rootfilekey|memory" "$(auth HOME="$KH" SB_PRE_RELEASE_SMOKE_ROOT="$SM")"
-assert_eq "auth: env beats files" "0|envkey|memory" "$(auth HOME="$KH" SB_PRE_RELEASE_SMOKE_ROOT="$SM" CURSOR_API_KEY=envkey)"
 
 # --- cleanup --------------------------------------------------------------------------------------------------------------------------------
 # R8-11: a root given in the environment (an operator directory or a parent
@@ -194,9 +143,9 @@ tl_stub date 'echo 2026-01-02T03:04:05Z'
 assert_eq "marker dir from state dir" "$TL_TMP/st/rc-validation" "$(SB_RUNTIME_STATE_DIR="$TL_TMP/st" sub 'sb_smoke_rc_marker_dir')"
 assert_eq "marker dir falls back to HOME" "$TL_TMP/hh/.silver-bullet/rc-validation" "$(env -u SB_RUNTIME_STATE_DIR HOME="$TL_TMP/hh" bash -c "source '$LIB'; sb_smoke_rc_marker_dir")"
 MD="$TL_TMP/mk"
-f="$(SB_RUNTIME_STATE_DIR="$MD" sub 'sb_smoke_write_rc_marker cursor fresh')"
-assert_eq "marker path returned" "$MD/rc-validation/cursor-fresh" "$f"
-assert_eq "marker defaults to pass, no artifact" "host=cursor
+f="$(SB_RUNTIME_STATE_DIR="$MD" sub 'sb_smoke_write_rc_marker claude fresh')"
+assert_eq "marker path returned" "$MD/rc-validation/claude-fresh" "$f"
+assert_eq "marker defaults to pass, no artifact" "host=claude
 mode=fresh
 status=pass
 timestamp=2026-01-02T03:04:05Z" "$(cat "$f")"
@@ -207,8 +156,8 @@ status=skip
 timestamp=2026-01-02T03:04:05Z
 artifact=/tmp/art.log" "$(cat "$f")"
 complete() { SB_RUNTIME_STATE_DIR="$MD" sub 'sb_smoke_rc_markers_complete; echo $?' || true; }
-assert_eq "markers incomplete (2 of 6)" 1 "$(complete)"
-for h in cursor codex claude; do for m in fresh upgrade; do SB_RUNTIME_STATE_DIR="$MD" sub "sb_smoke_write_rc_marker $h $m pass >/dev/null"; done; done
+assert_eq "markers incomplete (2 of 4)" 1 "$(complete)"
+for h in codex claude; do for m in fresh upgrade; do SB_RUNTIME_STATE_DIR="$MD" sub "sb_smoke_write_rc_marker $h $m pass >/dev/null"; done; done
 assert_eq "markers complete (all pass)" 0 "$(complete)"
 SB_RUNTIME_STATE_DIR="$MD" sub 'sb_smoke_write_rc_marker claude upgrade skip >/dev/null'
 assert_eq "markers complete (skip counts)" 0 "$(complete)"

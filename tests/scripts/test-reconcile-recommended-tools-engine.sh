@@ -77,7 +77,7 @@ run_r() {
   tl_run env "${envs[@]}" bash "$R" "$@"
 }
 logs() { cat "$LOG"; }
-R_ARGS=(--project-root "$PROJ" --host cursor)
+R_ARGS=(--project-root "$PROJ" --host claude)
 
 # ---------- arguments ----------
 run_r X=1 -- --help
@@ -120,7 +120,7 @@ assert_contains "missing common.sh reported" "$TL_ERR" "recommended-tools/common
 # ---------- validation ----------
 run_r X=1 -- "${R_ARGS[@]}" --host nope
 assert_eq "unknown host exits 2" "2" "$TL_STATUS"
-assert_contains "unknown host text" "$TL_ERR" "ERROR: unknown host: nope (allowed: cursor|claude|codex|opencode|pi|goose|hermes)"
+assert_contains "unknown host text" "$TL_ERR" "ERROR: unknown host: nope (allowed: claude|codex|opencode|pi|goose|hermes)"
 run_r X=1 -- "${R_ARGS[@]}" --host nope --format json
 assert_eq "unknown host json exits 2" "2" "$TL_STATUS"
 assert_eq "unknown host json error" "false" "$(jq -r '.ok' <<<"$TL_OUT")"
@@ -161,7 +161,7 @@ assert_not_contains "no evidence, nothing consumed" "$(logs)" "consume-evidence"
 # ---------- verify rendering and exit codes ----------
 run_r X=1 -- "${R_ARGS[@]}"
 assert_eq "all disabled is ok" "0" "$TL_STATUS"
-assert_contains "text header" "$TL_OUT" "=== reconcile-recommended-tools (verify/all host=cursor) ==="
+assert_contains "text header" "$TL_OUT" "=== reconcile-recommended-tools (verify/all host=claude) ==="
 assert_contains "text component line" "$TL_OUT" "graphify: disabled (activation=none)"
 assert_contains "all eight components probed" "$(logs)" "probe cross_tool #1"
 assert_not_contains "no restart banner" "$TL_OUT" "RESTART_REQUIRED"
@@ -274,7 +274,7 @@ run_r STUB_RECEIPT="$REC" STUB_PROBE_rtk="$(comp rtk ready)" STUB_PROBE_leanctx=
 assert_eq "reload receipt makes the run fail" "1" "$TL_STATUS"
 assert_contains "ready component becomes reload_required" "$TL_OUT" "rtk: reload_required (activation=pending)"
 assert_contains "non-ready component untouched" "$TL_OUT" "leanctx: failed (activation=none)"
-assert_contains "restart banner" "$TL_OUT" "RESTART_REQUIRED: yes — reload Cursor MCP after host config changes"
+assert_contains "restart banner" "$TL_OUT" "RESTART_REQUIRED: yes — reload the host's MCP servers after config changes"
 assert_contains "configured/live line" "$TL_OUT" "CONFIGURED: yes | LIVE: no | ACTION:"
 assert_contains "receipt line" "$TL_OUT" "RELOAD_RECEIPT: active (activation=pending, clear_eligible=false)"
 run_r STUB_RECEIPT="$REC" STUB_PROBE_rtk="$(comp rtk ready)" -- "${R_ARGS[@]}" --format json

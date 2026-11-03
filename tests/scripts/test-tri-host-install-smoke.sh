@@ -91,7 +91,7 @@ fi
 # and default to GitHub sources, the Codex installer needs a codex CLI, and the
 # Claude installer drives the real claude CLI against GitHub. Run everything
 # from a one-commit snapshot repository, offline: local marketplace and gitPath
-# sources, a stub codex CLI, the fixture Cursor model catalog, installer/network
+# sources, a stub codex CLI, installer/network
 # stand-ins on PATH. The same checks then run on every machine.
 # shellcheck source=tests/lib/repo-snapshot.sh
 source "${REPO_ROOT}/tests/lib/repo-snapshot.sh"
@@ -104,19 +104,13 @@ mkdir -p "${TRIHOST_TMP}/bin"
 printf '#!/usr/bin/env bash\nexit 0\n' >"${TRIHOST_TMP}/bin/codex"
 chmod +x "${TRIHOST_TMP}/bin/codex"
 export PATH="${TRIHOST_TMP}/bin:${PATH}"
-export CURSOR_UNIFIED_MARKETPLACE_SOURCE="$SMOKE_ROOT"
-export CURSOR_AGENT_PLUGINS_REPO_URL="$SMOKE_ROOT"
-export CURSOR_GITHUB_REPO_URL="$SMOKE_ROOT"
-export SB_CURSOR_SB_AGENTS_OFFLINE=1
-export SB_CURSOR_MODELS_CATALOG="${TRIHOST_TMP}/cursor-models-catalog.json"
-cp "${REPO_ROOT}/tests/fixtures/cursor-models-catalog.json" "$SB_CURSOR_MODELS_CATALOG"
 
 # Short overall timeout must loud-fail instead of hanging forever.
 overall_start=$(python3 -c 'import time; print(int(time.time()*1000))')
 overall_rc=0
 # Force inner path to a host that would otherwise run install; overall timeout=2 should win first.
 SB_TRIHOST_OVERALL_TIMEOUT=2 SB_TRIHOST_CMD_TIMEOUT=60 SB_TRIHOST_DIAG_TIMEOUT=60 \
-  RTK_DISABLED=1 bash "$SMOKE" --host cursor \
+  RTK_DISABLED=1 bash "$SMOKE" --host codex \
   >"${TRIHOST_TMP}/overall-timeout.log" 2>&1 || overall_rc=$?
 overall_end=$(python3 -c 'import time; print(int(time.time()*1000))')
 overall_elapsed=$((overall_end - overall_start))
@@ -125,22 +119,22 @@ if [[ "$overall_rc" -eq 124 && "$overall_elapsed" -lt 15000 ]]; then
 elif grep -q 'timed out after' "${TRIHOST_TMP}/overall-timeout.log" 2>/dev/null && [[ "$overall_elapsed" -lt 15000 ]]; then
   pass "overall timeout loud-fails within 15s (elapsed ${overall_elapsed}ms, rc=$overall_rc)"
 else
-  # If cursor install finishes under 2s (unlikely), still accept success — timeout path optional.
+  # If codex install finishes under 2s (unlikely), still accept success — timeout path optional.
   if [[ "$overall_rc" -eq 0 && "$overall_elapsed" -lt 15000 ]]; then
-    pass "cursor smoke completed before overall timeout (elapsed ${overall_elapsed}ms)"
+    pass "codex smoke completed before overall timeout (elapsed ${overall_elapsed}ms)"
   else
     dump_log "${TRIHOST_TMP}/overall-timeout.log"
     fail "overall timeout expected rc 124 or quick finish (elapsed ${overall_elapsed}ms, rc=$overall_rc)"
   fi
 fi
 
-# Codex + Cursor smoke always; Claude smoke on request (see below).
+# Codex smoke always; Claude smoke on request (see below).
 # Use generous but finite timeouts so a hang fails loud instead of stalling run-all-tests.
 export SB_TRIHOST_OVERALL_TIMEOUT="${SB_TRIHOST_OVERALL_TIMEOUT:-600}"
 export SB_TRIHOST_CMD_TIMEOUT="${SB_TRIHOST_CMD_TIMEOUT:-180}"
 export SB_TRIHOST_DIAG_TIMEOUT="${SB_TRIHOST_DIAG_TIMEOUT:-90}"
 
-for smoke_host in codex cursor; do
+for smoke_host in codex; do
   smoke_log="${TRIHOST_TMP}/${smoke_host}.log"
   if RTK_DISABLED=1 bash "$SMOKE" --host "$smoke_host" >"$smoke_log" 2>&1; then
     pass "${smoke_host} tri-host smoke executes"
