@@ -168,18 +168,19 @@ def discover_candidate_slugs(
     for slug in get_all_market_seed_slugs(pack, include_adjacent=True):
         scores[slug] = scores.get(slug, 0) + 1
 
-    for text in _iter_claim_texts(envelopes):
-        for slug in _extract_candidates_from_text(text, aliases, known):
-            canonical = resolve_canonical_slug(slug, pack)
-            scores[canonical] = scores.get(canonical, 0) + 1
-        for token in re.split(r"[,;/\n]", text):
-            token = token.strip()
-            if len(token) < 2 or len(token) > 40:
-                continue
-            if " " not in token and len(token.split()) == 1:
-                resolved = normalize_slug(token, pack)
-                if resolved and resolved in known:
-                    scores[resolved] = scores.get(resolved, 0) + 1
+    with run_context(known, pack):  # the same product names the evidence extraction judges a name against
+        for text in _iter_claim_texts(envelopes):
+            for slug in _extract_candidates_from_text(text, aliases, known):
+                canonical = resolve_canonical_slug(slug, pack)
+                scores[canonical] = scores.get(canonical, 0) + 1
+            for token in re.split(r"[,;/\n]", text):
+                token = token.strip()
+                if len(token) < 2 or len(token) > 40:
+                    continue
+                if " " not in token and len(token.split()) == 1:
+                    resolved = normalize_slug(token, pack)
+                    if resolved and resolved in known:
+                        scores[resolved] = scores.get(resolved, 0) + 1
 
     return sorted(scores, key=lambda s: (-scores[s], s))
 

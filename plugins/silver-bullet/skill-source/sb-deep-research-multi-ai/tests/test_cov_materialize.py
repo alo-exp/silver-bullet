@@ -35,7 +35,7 @@ def env(*claims: str) -> list[dict]:
     return [{"payload": {"evidence": [{"claim": c} for c in claims]}}]
 
 
-from apo_pack_run_fixture import with_apo_pack_run  # noqa: E402
+from apo_pack_run_fixture import with_apo_pack_run, with_apo_pack_run_plain_names  # noqa: E402
 
 
 @with_apo_pack_run
@@ -70,7 +70,7 @@ class ClaimClassificationTests(unittest.TestCase):
         self.assertFalse(m.is_unusable_overview_claim("Aider, Cline, Continue", focus_name="aider"))
 
 
-@with_apo_pack_run
+@with_apo_pack_run_plain_names
 class SlugTests(unittest.TestCase):
     def test_slugify_and_normalize(self) -> None:
         self.assertEqual(m._slugify(" Foo & Bar! "), "foo-bar")
@@ -193,7 +193,7 @@ class DiscoverTests(unittest.TestCase):
         self.assertEqual(m._iter_claim_texts(envelopes), ["e1", "e2", "c1", "c2", "f1", "t1", "d1", "a1"])
 
 
-@with_apo_pack_run
+@with_apo_pack_run_plain_names
 class ProseInferenceTests(unittest.TestCase):
     def test_explicit_criterion_flags_override_prose(self) -> None:
         body = ("lifecycle_span=yes; deterministic_gates=no; cross_session_state=partial; "
@@ -371,7 +371,7 @@ class ListParsingTests(unittest.TestCase):
         self.assertIs(support["cline"]["Hook-enforced gates"], False)
 
 
-@with_apo_pack_run
+@with_apo_pack_run_plain_names
 class ClaimParserTests(unittest.TestCase):
     def test_features_in_text_and_primary_slug(self) -> None:
         self.assertEqual(m._features_in_text("Has hook gates and CI/CD plus audit logs"),
@@ -514,7 +514,7 @@ class ClaimParserTests(unittest.TestCase):
         self.assertIn("Hook-enforced gates", defaults)
 
 
-@with_apo_pack_run
+@with_apo_pack_run_plain_names
 class SlugScopedProseTests(unittest.TestCase):
     def test_window_scan_positive_and_lack(self) -> None:
         support = support_of(m._apply_slug_scoped_prose, "Devin provides hook gates and workflow composition. Aider")
@@ -749,7 +749,7 @@ class ScrTests(unittest.TestCase):
         self.assertIn("_No direct prose evidence lines matched this solution slug in live envelopes._", bare)
 
 
-@with_apo_pack_run
+@with_apo_pack_run_plain_names
 class MaterializeTests(unittest.TestCase):
     def run_materialize(self, root: Path, **kw):
         with mock.patch.object(m, "resolve_pack_from_need", return_value=kw.pop("the_pack", None)):

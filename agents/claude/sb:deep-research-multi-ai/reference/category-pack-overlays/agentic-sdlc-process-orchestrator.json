@@ -1246,7 +1246,19 @@
       "poolside",
       "superpowers",
       "workflow manager",
-      "cognition scout"
+      "cognition scout",
+      "windsurf",
+      "codex",
+      "silver bullet",
+      "augment code",
+      "open interpreter",
+      "cline",
+      "deepwork",
+      "tembo",
+      "magic dev",
+      "spec kit",
+      "open hands",
+      "omp"
     ],
     "synthesize_landscape.SOLO_HOST_MARKER": "claude",
     "synthesize_landscape.PRESENCE_REQUIRES_FEATURE": "Managed hosting",
@@ -1280,7 +1292,15 @@
       "scout": [
         "Cognition"
       ]
-    }
+    },
+    "materialize_solution_artifacts.PROPER_PHRASES": [
+      "silver bullet",
+      "augment code",
+      "open interpreter",
+      "open hands",
+      "spec kit",
+      "magic dev"
+    ]
   },
   "market_chart_notes": {
     "apo": [

@@ -167,13 +167,15 @@ Skip steps with `--skip-compare`, `--skip-xlsx`, or `--skip-spa`.
 ## Vendor mentions in prose
 
 Precision comes first: a false vendor tick puts fabricated evidence in the comparison matrix. A pack lists
-the product names that are also ordinary words (`AMBIGUOUS_NAMES`: "Director", "Cursor", "Copilot",
-"Cognition", ...). Those count only where they read as a proper noun: capitalised, not after an article,
-determiner or possessive, not in a list of common nouns, not inside a Title-Case phrase ("Netflix Conductor"),
-and, opening a sentence, followed by a verb. A maker word (`PRODUCT_MAKERS`, "Melty Conductor") still needs a
-product context. Some genuine mentions are therefore missed ("The Cursor model picker"); the pinned corpus
-(`tests/fixtures/vendor_mention_corpus.json`) lists them. Residual risk: a person's first name that is also a
-product ("Devin from accounting") cannot be told apart lexically and is credited.
+the product names that are also ordinary words or surnames (`AMBIGUOUS_NAMES`: "Director", "Cursor",
+"Copilot", "Cline", "Codex", "Windsurf", ...). That is an allowlist: such a name is credited only when it is
+capitalised AND an explicit product cue stands beside it: a product head noun after it (IDE, editor, extension,
+CLI, app, plugin, tool, assistant, ...), a domain or version, its maker, the full known product name, or a list of
+vendors ("The leaders are ..." or a list that holds a product that is not an ambiguous word). Without a cue it is
+a common word, so some genuine mentions are missed ("Teams that use Cursor ..."); the pinned corpus
+(`tests/fixtures/vendor_mention_corpus.json`) lists them. A few Title-Case multi-word names (`PROPER_PHRASES`,
+"Silver Bullet") need no cue. Residual risk: a person's first name that is also a product ("Devin from
+accounting") cannot be told apart lexically and is credited.
 
 ## GLM-5.2 routing
 
