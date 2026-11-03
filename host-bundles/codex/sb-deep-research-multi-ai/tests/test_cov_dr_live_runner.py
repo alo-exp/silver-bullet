@@ -42,37 +42,55 @@ class SmallHelperTests(unittest.TestCase):
         self.assertNotEqual(a, drl.deterministic_work_item_id("run-1", "DR-CRITIQUE"))
         self.assertNotEqual(a, drl.deterministic_work_item_id("run-2", "DR-RETRIEVE"))
 
-    def test_research_brief(self) -> None:
+    def test_research_brief_comes_from_the_users_inputs_only(self) -> None:
         brief = drl.research_brief("my topic", "solution-compare")
         self.assertTrue(brief.startswith("Research topic: my topic\nResearch type: solution-compare\n"))
-        self.assertIn("Primary (APO)", brief)
+        self.assertIn("matrix_entries", brief)
+        self.assertNotIn("Silver Bullet", brief)
+        self.assertNotIn("APO", brief)
+        default = drl.research_brief("my topic", "default")
+        self.assertNotIn("matrix_entries", default)
+        need = {"category": "Streams", "must_haves": ["exactly-once", 3, None, " "], "audience": " SRE ",
+                "hard_vetoes": "kafka-lite", "license_preference": {"odd": 1}}
+        brief = drl.research_brief("my topic", "default", need)
+        self.assertIn("Category: Streams", brief)
+        self.assertIn("Must-haves: exactly-once, 3", brief)
+        self.assertIn("Audience: SRE", brief)
+        self.assertIn("Exclude: kafka-lite", brief)
+        self.assertNotIn("License preference", brief)
+        self.assertNotIn("Category:", drl.research_brief("Streams", "default", {"category": "Streams"}))
+        pack = {"overlay": {"research_brief_lines": ["Pack line one", "Pack line two"]}}
+        self.assertTrue(drl.research_brief("q", "default", {}, pack).endswith("Pack line one\nPack line two"))
 
-    def test_write_scope_creates_root_and_file(self) -> None:
+    def test_prepare_run_inputs_writes_only_missing_files(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp) / "new" / "root"
-            drl.write_scope(root, "topic `x`")
-            text = (root / "scope.md").read_text(encoding="utf-8")
-            self.assertTrue(text.startswith("# Landscape scope"))
-            self.assertIn("Research topic: `topic `x``", text)
+            self.assertEqual(drl.prepare_run_inputs(root, "  topic x  ", "default"), {"need_profile": True, "scope": True})
+            need = json.loads((root / "need_profile.json").read_text(encoding="utf-8"))
+            self.assertEqual((need["category"], need["auto_assumed"]), ("topic x", True))
+            self.assertEqual((root / "scope.md").read_text(encoding="utf-8"), "# Research scope\n\nResearch topic: topic x\n")
+            self.assertEqual(drl.prepare_run_inputs(root, "other", "default"), {"need_profile": False, "scope": False})
+            self.assertEqual(json.loads((root / "need_profile.json").read_text(encoding="utf-8"))["category"], "topic x")
+            empty = Path(tmp) / "empty"
+            drl.prepare_run_inputs(empty, "   ", "default")
+            self.assertEqual(json.loads((empty / "need_profile.json").read_text(encoding="utf-8"))["category"], "research")
 
-    def test_write_need_profile_from_real_pack(self) -> None:
+    def test_prepare_run_inputs_scope_uses_the_selected_pack_definition(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            drl.write_need_profile(Path(tmp))
-            need = json.loads((Path(tmp) / "need_profile.json").read_text(encoding="utf-8"))
-        self.assertEqual(need["category_pack_id"], "agentic-sdlc-process-orchestrator")
-        self.assertTrue(need["interview_complete"])
-        self.assertLessEqual(len(need["hard_vetoes"]), 8)
-        self.assertGreater(len(need["must_research"]), 0)
-        self.assertEqual(need["persona_id"], "startup")
+            root = Path(tmp)
+            (root / "need_profile.json").write_text(json.dumps({"category_pack_id": "agentic-sdlc-process-orchestrator"}),
+                                                    encoding="utf-8")
+            drl.prepare_run_inputs(root, "APO tools", "solution-landscape")
+            scope = (root / "scope.md").read_text(encoding="utf-8")
+            self.assertTrue(scope.startswith("# Research scope\n\nResearch topic: APO tools\n\n"))
+            self.assertGreater(len(scope), 60)
 
-    def test_write_need_profile_pack_without_display_name(self) -> None:
-        with mock.patch.object(drl, "load_category_pack", return_value={}):
-            with tempfile.TemporaryDirectory() as tmp:
-                drl.write_need_profile(Path(tmp))
-                need = json.loads((Path(tmp) / "need_profile.json").read_text(encoding="utf-8"))
-        self.assertEqual(need["category"], "Agentic SDLC Process Orchestrators")
-        self.assertEqual(need["hard_vetoes"], [])
-        self.assertEqual(need["must_research"], [])
+    def test_load_need_profile_rejects_non_objects(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.assertEqual(drl.load_need_profile(root), {})
+            (root / "need_profile.json").write_text("[1, 2]", encoding="utf-8")
+            self.assertEqual(drl.load_need_profile(root), {})
 
 
 class BuildPhaseQueryTests(unittest.TestCase):
@@ -87,7 +105,8 @@ class BuildPhaseQueryTests(unittest.TestCase):
             self.assertEqual(drl.build_phase_query(root, "q", "default"), brief)
             (root / "need_profile.json").write_text(json.dumps({"category_pack_id": "agentic-sdlc-process-orchestrator"}), encoding="utf-8")
             with_pack = drl.build_phase_query(root, "q", "default")
-            self.assertTrue(with_pack.startswith(brief + "\n\n[CATEGORY_PACK]\n## Category market contract"))
+            self.assertIn("\n\n[CATEGORY_PACK]\n## Category market contract", with_pack)
+            self.assertIn("Primary (APO)", with_pack)  # overlay lines apply because the user picked the pack
             with mock.patch.object(Path, "read_text", side_effect=OSError("denied")):
                 self.assertEqual(drl.build_phase_query(root, "q", "default"), brief)
 
@@ -103,10 +122,9 @@ class RunManifestTests(unittest.TestCase):
         m = self.manifest()
         wid = drl.deterministic_work_item_id("run-x", "DR-RETRIEVE")
         self.assertEqual(m["multi_ai"]["phases"][0], {"phase_id": "DR-RETRIEVE", "work_item_id": wid, "parallel": True})
-        self.assertEqual(len(m["multi_ai"]["work_item_refs"]), 2)
-        self.assertEqual(m["multi_ai"]["work_item_refs"][0]["manifest_path"], f"work-items/{wid}/multi-ai-work-item-manifest-v1.json")
-        self.assertEqual(m["multi_ai"]["work_item_refs"][0]["manifest_sha256"], "0" * 64)
-        self.assertTrue(m["multi_ai"]["budget"]["usage_metered"])
+        # No work-item manifests exist, so no placeholder refs; usage is not metered (R12-25).
+        self.assertEqual(m["multi_ai"]["work_item_refs"], [])
+        self.assertFalse(m["multi_ai"]["budget"]["usage_metered"])
         self.assertIsNone(m["finished_at"])
         pool = m["multi_ai"]["pool_config"]
         self.assertEqual({p["logical_model_id"] for p in pool["resolved_pool"]}, set(TWO_AGENTS))
@@ -210,14 +228,17 @@ class RunDrLiveTests(unittest.TestCase):
             mat.assert_called_once()
             self.assertEqual(len(mat.call_args.kwargs["envelopes"]), 4)
             syn.assert_called_once_with(root, force=True)
-            # first phase has no context, second carries the previous payloads (truncated to 2000 chars)
+            # first phase has no context; the second gets every model's structured claims (bounded)
             self.assertEqual(calls[0]["context"], "")
-            self.assertIn("claim from DR-RETRIEVE", calls[1]["context"])
+            ctx = json.loads(calls[1]["context"])
+            self.assertEqual([m["model"] for m in ctx["models"]], sorted(TWO_AGENTS))
+            self.assertEqual(ctx["models"][0]["evidence"][0]["claim"], "claim from DR-RETRIEVE")
             self.assertLessEqual(len(calls[1]["context"]), 2000)
             self.assertEqual(calls[0]["timeout_sec"], 7)
             self.assertEqual(calls[0]["concurrency"], 2)
             self.assertEqual(calls[0]["ocg_pool"], "lite")
-            self.assertIn("[CATEGORY_PACK]", calls[0]["query"])
+            self.assertNotIn("[CATEGORY_PACK]", calls[0]["query"])  # no pack unless the user selects one
+            self.assertIn("Research topic: the query", calls[0]["query"])
             for rel in ("scope.md", "need_profile.json", "result-index.json", "contributions/all-envelopes.json",
                         "consolidated/consolidation.json", "run_manifest.json"):
                 self.assertTrue((root / rel).is_file(), rel)
@@ -265,7 +286,7 @@ class RunDrLiveTests(unittest.TestCase):
             self.run_live(Path(tmp) / "o", dispatch, selection=sel, parallel_phases=["DR-RETRIEVE"], research_type="default", max_phases=1)
         self.assertEqual(seen, ["regular"])
 
-    def test_pool_incomplete_is_a_hard_failure_before_consolidation(self) -> None:
+    def test_pool_incomplete_stops_before_consolidation_and_keeps_the_evidence(self) -> None:
         def dispatch(**kw):
             ws = [worker(i["logical_model_id"], phase=kw["phase_id"], wid=kw["work_item_id"]) for i in kw["resolved_pool"]]
             ws[0] = worker(ws[0].logical_model_id, status="failed", envelope=False)
@@ -280,8 +301,11 @@ class RunDrLiveTests(unittest.TestCase):
             self.assertEqual(len(result["pool_errors"]), 1)
             self.assertEqual(result["phase_results"][0]["workers"][0]["authoritative"], False)
             self.assertEqual(result["phase_results"][0]["workers"][0]["error"], "boom")
-            self.assertFalse((root / "run_manifest.json").exists())
-            self.assertFalse((root / "result-index.json").exists())
+            # what was collected is persisted for inspection; nothing is consolidated
+            self.assertTrue((root / "run_manifest.json").exists())
+            self.assertTrue((root / "result-index.json").exists())
+            self.assertFalse((root / "consolidated" / "consolidation.json").exists())
+            self.assertEqual(result["envelopes_path"], str(root / "contributions" / "all-envelopes.json"))
             mat.assert_not_called()
 
     def test_falsy_envelopes_complete_the_pool_but_yield_not_ok_and_partial_stop_reason(self) -> None:

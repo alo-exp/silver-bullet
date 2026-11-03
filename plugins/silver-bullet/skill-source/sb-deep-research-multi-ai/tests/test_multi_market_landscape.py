@@ -372,6 +372,16 @@ class MultiMarketMembershipConsistencyTests(unittest.TestCase):
         self.assertEqual(len({p["x"] for p in fixed}), 3, msg=f"shared vertical: {fixed}")
         self.assertEqual(len({p["y"] for p in fixed}), 3, msg=f"shared horizontal: {fixed}")
 
+    def test_tied_vendors_keep_the_same_quadrant_in_any_order(self) -> None:
+        from synthesize_landscape import avoid_chart_coord_collisions
+
+        for order in ((0, 1), (1, 0)):
+            pts = [{"slug": "ab"[i], "x": 5.5, "y": 5.5, "q": "?"} for i in order]
+            fixed = avoid_chart_coord_collisions(pts)
+            # both sit on the Leader threshold; slotting may move a dot by 0.1 but not its quadrant
+            self.assertEqual({p["q"] for p in fixed}, {"Leaders"}, msg=fixed)
+            self.assertEqual(len({p["x"] for p in fixed}), 2)
+
 
 class AnalystGradeMembershipFixes(unittest.TestCase):
     @classmethod
@@ -618,29 +628,7 @@ class AnalystGradeMembershipFixes(unittest.TestCase):
         self.assertNotIn("sdlc-plugin", slugs)
         self.assertNotIn("claude-code-expert", filtered["rows"][0]["solutions"])
 
-    def test_scrub_claude_harness_apo_framing(self) -> None:
-        from synthesize_landscape import scrub_membership_framing
 
-        text = (
-            "Claude Harness is a primary-market APO candidate — Claude Code wrapper, "
-            "process enforcement, compliance layer above host."
-        )
-        out = scrub_membership_framing(text, self.pack)
-        self.assertNotIn("primary-market APO candidate", out)
-        self.assertRegex(out, r"(?i)sdlc-plugins|not an APO")
-
-    def test_scrub_claude_harness_apo_framing_markdown_link(self) -> None:
-        """Linked display names must scrub too — bare-name-only regex left SPA profiles dirty."""
-        from synthesize_landscape import scrub_membership_framing
-
-        text = (
-            "* **Overview**: [Claude Harness](https://github.com/anthropics/claude-code) "
-            "is a primary-market APO candidate — Claude Code wrapper, process enforcement."
-        )
-        out = scrub_membership_framing(text, self.pack)
-        self.assertNotIn("primary-market APO candidate", out)
-        self.assertRegex(out, r"(?i)sdlc-plugins|not an APO")
-        self.assertIn("github.com/anthropics/claude-code", out)
 
     def test_rewrite_agentsys_ai_url(self) -> None:
         from vendor_link_labels import rewrite_vendor_url, scrub_embedded_vendor_urls
@@ -837,7 +825,7 @@ class AnalystGradeMembershipFixes(unittest.TestCase):
         self.assertIn("Scoring methodology", text)
         self.assertIn("ticks ×", text)
         self.assertIn("Hard-exclusion membership", text)
-        self.assertIn("Magic.dev", text)
+        self.assertNotIn("Magic.dev", text)  # vendor names come from the pack, not the template
         self.assertIn("omitted from Wave", text)
         self.assertNotIn("tiny deterministic jitter", text)
         self.assertNotIn("0.85·jitter", text)

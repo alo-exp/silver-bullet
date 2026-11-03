@@ -181,19 +181,19 @@ class LedgerTests(TmpCase):
             self.assertEqual(sl._load_inclusion_ledger_statuses(self.root), {})
 
     def test_cross_session_status(self):
-        self.assertEqual(sl._cross_session_status("silver-bullet", None), "pass")
+        self.assertEqual(sl._cross_session_status("silver-bullet", None), "unknown")
         self.assertEqual(sl._cross_session_status("other", None), "unknown")
         self.put("landscape/inclusion-ledger.json", {"vendors": [
             {"slug": "v1", "criteria": [{"criterion": "Cross session", "status": "fail"}]},
             {"slug": "v2", "criteria": [{"criterion": "Persisted state", "status": "pass"}]},
             {"slug": "v3", "criteria": [{"criterion": "Cross session", "status": "partial"},
                                         {"criterion": "unrelated", "status": "pass"}]},
-            {"slug": "silver-bullet", "criteria": [{"criterion": "x", "status": "fail"}]},
+            {"slug": "silver-bullet", "criteria": [{"criterion": "cross session", "status": "fail"}]},
         ]})
         self.assertEqual(sl._cross_session_status("v1", self.root), "fail")
         self.assertEqual(sl._cross_session_status("v2", self.root), "pass")
         self.assertEqual(sl._cross_session_status("v3", self.root), "unknown")
-        self.assertEqual(sl._cross_session_status("silver-bullet", self.root), "pass")
+        self.assertEqual(sl._cross_session_status("silver-bullet", self.root), "fail")
 
 
 class LeaderRulesTests(TmpCase):
@@ -209,7 +209,7 @@ class LeaderRulesTests(TmpCase):
         self.assertFalse(sl._must_not_be_leader(None, "x", {}, None))
         self.assertTrue(sl._must_not_be_leader("sdlc-plugins", "x", gates, None))
         self.assertTrue(sl._must_not_be_leader("sdlc-plugins", "silver-bullet", {}, None))
-        self.assertFalse(sl._must_not_be_leader("sdlc-plugins", "silver-bullet", gates, None))
+        self.assertTrue(sl._must_not_be_leader("sdlc-plugins", "silver-bullet", gates, None))
 
     def test_feat_tick_and_vc_kcfs(self):
         t = sl._feat_tick

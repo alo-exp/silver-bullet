@@ -79,7 +79,8 @@ class VendorLinkCollisionTests(unittest.TestCase):
             return _Resp()
 
         with patch.dict(os.environ, {"SB_SKIP_VENDOR_URL_HEALTH": "0"}, clear=False):
-            with patch("vendor_link_labels.urllib.request.urlopen", side_effect=fake_urlopen):
+            with patch("vendor_link_labels._resolve_host", return_value=["93.184.216.34"]), \
+                    patch("vendor_link_labels.urllib.request.urlopen", side_effect=fake_urlopen):
                 dead = check_url_health(dead_url)
                 self.assertFalse(dead.get("ok"))
                 self.assertEqual(dead.get("status"), 404)
@@ -196,10 +197,16 @@ class VendorBucketMqAuthorityTests(unittest.TestCase):
 
 
 class SpaTemplateContracts(unittest.TestCase):
-    def test_marked_cdn_pinned_to_11_1_1(self) -> None:
+    def test_markdown_is_prerendered_and_cdn_scripts_are_pinned(self) -> None:
         text = TEMPLATE.read_text(encoding="utf-8")
-        self.assertIn("marked@11.1.1/marked.min.js", text)
-        self.assertNotRegex(text, r"marked(?!@11\.1\.1)@")
+        # The body is rendered server-side; no client-side markdown parser is loaded or called.
+        self.assertNotIn("marked", text)
+        srcs = re.findall(r'<script src="([^"]+)"([^>]*)>', text)
+        self.assertEqual(len(srcs), 3)
+        for src, attrs in srcs:
+            self.assertRegex(src, r"^https://[^ ]+@\d+\.\d+\.\d+/", src)  # exact version
+            self.assertIn('crossorigin="anonymous"', attrs)
+            self.assertIn('referrerpolicy="no-referrer"', attrs)
 
     def test_fontsource_500_css_not_used(self) -> None:
         text = TEMPLATE.read_text(encoding="utf-8")
@@ -219,8 +226,7 @@ class SpaTemplateContracts(unittest.TestCase):
         self.assertNotIn("text-decoration:underline;", text)
         self.assertNotIn("border-bottom: 1px solid var(--sb-link-underline)", text)
         self.assertIn("function linkifyBareHttpUrls", text)
-        self.assertIn("linkifyBareHttpUrls(document.getElementById('content'))", text)
-        self.assertIn('target="_blank"', text)
+        self.assertIn("a.target = '_blank'", text)
         self.assertIn("noopener noreferrer", text)
         # Filter refresh must prefer primary buckets (avoids last-market bleed).
         self.assertIn("primaryBuckets", text)
@@ -228,21 +234,6 @@ class SpaTemplateContracts(unittest.TestCase):
         self.assertIn("PRIMARY_CHART_DATA", render_js)
         self.assertIn("linkifyBareHttpUrls", render_js)
 
-    def test_scrub_removes_stale_sdlc_plugin_marketplace_link(self) -> None:
-        import sys
-
-        sys.path.insert(0, str(SCRIPTS))
-        from vendor_link_labels import scrub_vendor_markdown_links
-
-        md = "See [SDLC Plugin](https://claude.com/plugins) and [Zuvo](https://zuvo.dev/)."
-        out = scrub_vendor_markdown_links(
-            md,
-            vendor_urls={"Zuvo": "https://zuvo.dev/", "Claude Code Expert": "https://claude.com/plugins"},
-            known_labels={"SDLC Plugin", "Zuvo", "Claude Code Expert"},
-        )
-        self.assertIn("See SDLC Plugin and", out)
-        self.assertNotIn("[SDLC Plugin](https://claude.com/plugins)", out)
-        self.assertIn("[Zuvo](https://zuvo.dev/)", out)
 
     def test_critical_fill_gap_annotator_present(self) -> None:
         text = TEMPLATE.read_text(encoding="utf-8")
@@ -297,42 +288,7 @@ class BareHttpUrlLinkifyTests(unittest.TestCase):
 
 
 class MembershipFramingAndOssBucketTests(unittest.TestCase):
-    def test_scrub_conductor_mid_tier_apo_cluster(self) -> None:
-        import sys
 
-        sys.path.insert(0, str(SCRIPTS))
-        from category_pack import load_category_pack
-        from synthesize_landscape import scrub_membership_framing
-
-        pack = load_category_pack("agentic-sdlc-process-orchestrator")
-        before = (
-            "cc10x and Conductor form a mid-tier APO cluster sharing complementary strengths: "
-            "Conductor has stronger workflow orchestration UI."
-        )
-        after = scrub_membership_framing(before, pack)
-        self.assertIn("SaaS-adjacent", after)
-        self.assertTrue(re.search(r"not an? APO", after, flags=re.I), after)
-        self.assertNotIn("mid-tier APO cluster", after)
-
-    def test_scrub_preserves_multiline_markdown(self) -> None:
-        import sys
-
-        sys.path.insert(0, str(SCRIPTS))
-        from category_pack import load_category_pack
-        from synthesize_landscape import scrub_membership_framing
-
-        pack = load_category_pack("agentic-sdlc-process-orchestrator")
-        md = (
-            "# Title\n\n"
-            "Keep this line.\n"
-            "- cc10x and Conductor form a mid-tier APO cluster sharing complementary strengths.\n"
-            "Also keep this.\n"
-        )
-        out = scrub_membership_framing(md, pack)
-        self.assertIn("# Title", out)
-        self.assertIn("Keep this line.", out)
-        self.assertIn("Also keep this.", out)
-        self.assertNotIn("mid-tier APO cluster", out)
 
     def test_enrich_keeps_metagpt_in_apo_oss_without_mq_point(self) -> None:
         """SPA enrich must use audit core, not MQ-only slugs, for market OSS buckets."""
@@ -384,8 +340,8 @@ class MembershipFramingAndOssBucketTests(unittest.TestCase):
             )
         apo_oss = enriched["markets"]["apo"]["vendor_buckets"]["oss"]
         self.assertIn("MetaGPT", apo_oss)
-        self.assertIn("Silver Bullet", apo_oss)
-
+        # the pack records Silver Bullet as source-available (BUSL-1.1), so it is not listed as OSS
+        self.assertNotIn("Silver Bullet", apo_oss)
 
 
 class CategoryPackHomepageTests(unittest.TestCase):

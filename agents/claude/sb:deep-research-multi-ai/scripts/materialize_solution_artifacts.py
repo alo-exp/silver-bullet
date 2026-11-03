@@ -8,6 +8,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+from generated_files import write_generated_text
 from category_pack import (
     build_known_solutions,
     build_overview_seeds,
@@ -118,7 +119,6 @@ def _effective_overview_seeds(need: dict[str, Any] | None = None) -> dict[str, s
 
 # Curated product blurbs for solution-card Overviews (not research-meta notes).
 OVERVIEW_SEEDS: dict[str, str] = {
-    "silver-bullet": "Silver Bullet is an open-source Agentic Process Orchestrator — a process layer inside Cursor, Codex, and Claude Code that composes workflows, enforces hook gates, and records skills.",
     "factory-ai": "Factory.ai provides managed Droids with workflow composition, parent/child delegation, review loops, and cloud hosting for agentic software delivery.",
     "devin": "Devin is Cognition's autonomous software engineer that plans, implements, tests, and ships code via pull requests in customer repositories.",
     "github-copilot-workspace": "GitHub Copilot Workspace is a Copilot-native environment for issue→spec→plan→implement→PR workflows on GitHub.",
@@ -161,7 +161,6 @@ OVERVIEW_SEEDS: dict[str, str] = {
 }
 
 SLUG_ALIASES: dict[str, str] = {
-    "sb": "silver-bullet",
     "silver bullet": "silver-bullet",
     "factory.ai": "factory-ai",
     "factory ai": "factory-ai",
@@ -312,6 +311,13 @@ def _normalize_slug(token: str, known: dict[str, str] | None = None, pack: dict[
     return slug if slug in effective else None
 
 
+def _mentions(lower_text: str, name: str) -> bool:
+    """Whole-word match, so 'sbom' is not 'sb' and 'compliance' is not 'pi'."""
+    if not name:
+        return False
+    return re.search(rf"(?<![a-z0-9]){re.escape(name)}(?![a-z0-9])", lower_text) is not None
+
+
 def _extract_slugs_from_text(
     text: str,
     known: dict[str, str] | None = None,
@@ -321,17 +327,17 @@ def _extract_slugs_from_text(
     found: list[str] = []
     lower = text.lower()
     for slug, display in effective.items():
-        if slug.replace("-", " ") in lower or slug in lower or display.lower() in lower:
+        if any(_mentions(lower, name) for name in (slug.replace("-", " "), slug, display.lower())):
             found.append(slug)
     for alias, slug in SLUG_ALIASES.items():
-        if alias in lower and slug not in found:
+        if _mentions(lower, alias) and slug not in found:
             found.append(slug)
     if pack:
         from category_pack import build_alias_map
 
         aliases = build_alias_map(pack)
         for alias, canonical in aliases.items():
-            if len(alias) >= 2 and alias in lower and canonical not in found:
+            if len(alias) >= 2 and _mentions(lower, alias) and canonical not in found:
                 found.append(canonical)
     return found
 
@@ -359,9 +365,8 @@ def discover_solutions(
         for slug in _extract_slugs_from_text(text, known, pack):
             scores[slug] = scores.get(slug, 0) + 1
     ranked = sorted(scores, key=lambda s: (-scores[s], s))
-    if len(ranked) >= min_solutions:
-        return ranked
-    return sorted(known)[: max(min_solutions, 5)]
+    # Only vendors the models actually named: never pad with unrelated catalogue entries.
+    return ranked
 
 
 def _iter_claim_texts(envelopes: list[dict[str, Any]]) -> list[str]:
@@ -715,17 +720,40 @@ def _parse_solution_led_matrix_entry(
     return True
 
 
+class _VoteMap(dict):
+    """Per-vendor feature cells that remember who said yes and who said no.
+
+    One claim is one voter (however many parsers read it); inside a single claim a
+    negation beats a positive. The cell value is the majority outcome over voters and a
+    tie is not a tick, so a single positive mention can neither silence contrary claims
+    nor depend on the order the claims arrive in.
+    """
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.votes: dict[str, dict[Any, bool]] = {}
+
+
+_VOTER: list[Any] = [None]
+
+
 def _assign_support(
     support: dict[str, dict[str, bool | None]],
     slug: str,
     feature: str,
     value: bool,
 ) -> None:
-    current = support.setdefault(slug, {}).get(feature)
-    if value:
-        support[slug][feature] = True
-    elif current is not True:
-        support[slug][feature] = False
+    cell = support.get(slug)
+    if not isinstance(cell, _VoteMap):
+        cell = _VoteMap(cell or {})
+        support[slug] = cell
+    voter = _VOTER[0]
+    if voter is None:
+        voter = ("anonymous", len(cell.votes.get(feature, {})))
+    ballots = cell.votes.setdefault(feature, {})
+    ballots[voter] = ballots.get(voter, True) and value if voter in ballots else value
+    yes = sum(1 for v in ballots.values() if v)
+    cell[feature] = yes > len(ballots) - yes
 
 
 def _extract_slugs_from_list(
@@ -869,9 +897,6 @@ def _features_in_text(text: str) -> list[str]:
 
 
 def _primary_slug_in_text(text: str) -> str | None:
-    lower = text.lower()
-    if re.search(r"\bsb\b", lower[:80]):
-        return "silver-bullet"
     slugs = _extract_slugs_from_text(text)
     return slugs[0] if slugs else None
 
@@ -898,6 +923,46 @@ def _parse_comparative_claims(
                 _assign_support(support, slug, feature, True)
 
 
+_NEGATION_CUE_RE = re.compile(
+    r"\b(?:lacks?|lacking|without|does\s+not|doesn['’]t|do\s+not|don['’]t|has\s+no|have\s+no|"
+    r"no|not|never|cannot|can['’]t|fails?\s+to|scores?\s+poorly|trail(?:s)?)\b",
+    re.IGNORECASE,
+)
+_POSITIVE_CUE_RE = re.compile(r"\b(?:offers?|provides?|supports?|includes?|covers?)\b", re.IGNORECASE)
+_CLAUSE_SPLIT_RE = re.compile(
+    r"(?P<hard>[.;]\s+|\s*,?\s*\b(?:while|whereas|unlike)\b)|(?P<soft>\s*,?\s*\bbut\b\s*)",
+    re.IGNORECASE,
+)
+
+
+_OTHER_SUBJECT_RE = re.compile(
+    r"\b(?:that|which|because|since|others?|competitors?|alternatives?|vendors?|they)\b",
+    re.IGNORECASE,
+)
+
+
+def _negation_is_own(prefix: str) -> bool:
+    """False when the words before a negation cue introduce a different subject."""
+    return not _OTHER_SUBJECT_RE.search(prefix)
+
+
+def _split_clauses(text: str) -> list[tuple[str, bool]]:
+    """Split a sentence into clauses; the flag says the clause continues the previous subject.
+
+    "A offers X but lacks Y" continues the subject ("but"); "A lacks X, while B provides Y"
+    starts a new subject, so B is never judged by what was said about A.
+    """
+    out: list[tuple[str, bool]] = []
+    pos = 0
+    inherit = False
+    for match in _CLAUSE_SPLIT_RE.finditer(text):
+        out.append((text[pos: match.start()], inherit))
+        inherit = bool(match.group("soft"))
+        pos = match.end()
+    out.append((text[pos:], inherit))
+    return [(c, i) for c, i in out if c.strip()]
+
+
 def _parse_prose_claim(
     support: dict[str, dict[str, bool | None]],
     text: str,
@@ -915,25 +980,22 @@ def _parse_prose_claim(
         for feature in _features_in_text(check_match.group(1)):
             _assign_support(support, slug, feature, True)
 
-    parts = re.split(
-        r"\b(?:,\s*)?but\s+(?:lacks?|no|does not|without|not|scores? poorly|trail)\b",
-        text,
-        maxsplit=1,
-        flags=re.IGNORECASE,
-    )
-    pos = parts[0]
-    neg = parts[1] if len(parts) > 1 else ""
-
-    if re.search(
-        r"\b(offers?|provides?|supports?|includes?|covers?)\b",
-        pos,
-        re.IGNORECASE,
-    ):
-        for feature in _features_in_text(pos):
-            _assign_support(support, slug, feature, True)
-
-    for feature in _features_in_text(neg):
-        _assign_support(support, slug, feature, False)
+    previous: str | None = None
+    for clause, inherit in _split_clauses(text):
+        clause_slug = _primary_slug_in_text(clause) or (previous if inherit else None)
+        previous = clause_slug
+        if not clause_slug:
+            continue
+        negation = _NEGATION_CUE_RE.search(clause)
+        positive_part = clause[: negation.start()] if negation else clause
+        negative_part = clause[negation.end():] if negation else ""
+        if _POSITIVE_CUE_RE.search(positive_part):
+            for feature in _features_in_text(positive_part):
+                _assign_support(support, clause_slug, feature, True)
+        if negation and not _negation_is_own(clause[: negation.start()]):
+            continue
+        for feature in _features_in_text(negative_part):
+            _assign_support(support, clause_slug, feature, False)
 
 
 def _parse_checkmark_for_claims(
@@ -1075,35 +1137,19 @@ def _parse_managed_hosting_offer(
 ) -> None:
     if not re.search(r"offer managed hosting", text, re.IGNORECASE):
         return
-    exclude: set[str] = set()
-    if re.search(r"\bSB\b|silver[- ]bullet", text, re.IGNORECASE) and re.search(
-        r"\bwhile\b",
-        text,
-        re.IGNORECASE,
-    ):
-        exclude.add("silver-bullet")
-    for slug in _extract_slugs_from_text(text):
-        if slug in exclude:
-            continue
+    # Only the clause that follows "offer managed hosting" credits vendors; a vendor named
+    # in a contrasting "while ..." clause before it is not credited.
+    offer = re.search(r"offer managed hosting", text, re.IGNORECASE)
+    subject_text = text[: offer.start()]
+    contrast = list(re.finditer(r"\b(?:while|whereas|unlike)\b", subject_text, re.IGNORECASE))
+    if contrast:
+        subject_text = subject_text[contrast[-1].end():]
+        if "," in subject_text:  # "While X is local, Y and Z offer ...": X is the contrasted clause
+            subject_text = subject_text.split(",", 1)[1]
+    for slug in _extract_slugs_from_text(subject_text):
         _assign_support(support, slug, "Managed hosting", True)
         if re.search(r"managed hosting paths?", text, re.IGNORECASE):
             _assign_support(support, slug, "Zero-infra bootstrap", True)
-
-
-def _parse_startup_must_have_badge(
-    support: dict[str, dict[str, bool | None]],
-    text: str,
-) -> None:
-    if not re.search(r"all three startup must_haves", text, re.IGNORECASE):
-        return
-    if not re.search(r"\bSB\b|silver[- ]bullet", text, re.IGNORECASE):
-        return
-    for feature in (
-        "Workflow composition",
-        "Parent/child agent delegation",
-        "Hook-enforced gates",
-    ):
-        _assign_support(support, "silver-bullet", feature, True)
 
 
 def _parse_template_ttv(
@@ -1194,7 +1240,6 @@ def _apply_slug_scoped_prose(
     _parse_has_checkmark_features(support, text)
     _parse_solution_lead_negative(support, text)
     _parse_managed_hosting_offer(support, text)
-    _parse_startup_must_have_badge(support, text)
     _parse_template_ttv(support, text)
     _parse_autonomous_ship_claim(support, text)
     _parse_strong_composition_claim(support, text)
@@ -1207,22 +1252,29 @@ def _apply_slug_scoped_prose(
         if not slug_region:
             continue
         start = slug_region.end()
-        end = min(len(lower), slug_region.end() + 160)
-        window = lower[start:end]
-        slug_pat_text = slug.replace("-", " ")
+        window = lower[start: min(len(lower), start + 160)]
+        # the window ends where the clause does or where another vendor takes over
+        boundary = _CLAUSE_SPLIT_RE.search(window)
+        cut = boundary.start() if boundary else len(window)
+        for other in _extract_slugs_from_text(text):
+            if other == slug:
+                continue
+            other_pat = re.escape(other.replace("-", "[ -]"))
+            hit = re.search(rf"\b{other_pat}\b", window)
+            if hit:
+                cut = min(cut, hit.start())
+        window = window[:cut]
+        negation = _NEGATION_CUE_RE.search(window)
         for feature in _features_in_text(window):
-            lack = re.search(
-                rf"(?P<subj>[^.;:,]+?)\s+(?:lacks?|without|fails?)\s+[^.;]*{re.escape(feature.lower())}",
-                window,
-            )
-            if lack:
-                subj = lack.group("subj").strip()
-                if slug in subj or slug_pat_text in subj:
+            position = window.find(feature.lower())
+            if negation and position >= negation.start():
+                # the cue must belong to this vendor, not to another subject introduced between
+                if _negation_is_own(window[: negation.start()]):
                     _assign_support(support, slug, feature, False)
                 continue
             if re.search(
                 r"(?:\bsupports?\b|\bprovides?\b|\boffers?\b|\bpass\b|✔|✓|\byes\b|\bstrong\b|\bincludes?\b|\bcovers?\b|\bsatisfying\b|\bcompos)",
-                window,
+                window[: negation.start()] if negation else window,
             ):
                 _assign_support(support, slug, feature, True)
 
@@ -1363,7 +1415,8 @@ def parse_feature_support(
 ) -> dict[str, dict[str, bool | None]]:
     effective = known or KNOWN_SOLUTIONS
     support: dict[str, dict[str, bool | None]] = {}
-    for text in _iter_claim_texts(envelopes):
+    for voter, text in enumerate(_iter_claim_texts(envelopes)):
+        _VOTER[0] = voter
         if _parse_core_set_bulk_claim(support, text, known=effective, pack=pack):
             continue
         if _parse_matrix_leaders_claim(support, text, known=effective, pack=pack):
@@ -1398,6 +1451,7 @@ def parse_feature_support(
         if "matrix entry" in text.lower():
             continue
         _apply_slug_scoped_prose(support, text, known=effective, pack=pack)
+    _VOTER[0] = None
     return support
 
 
@@ -1513,9 +1567,15 @@ def write_run_features_json(
     comparison: dict[str, Any] | None = None,
     support: dict[str, dict[str, bool | None]] | None = None,
     known: dict[str, str] | None = None,
+    preserved: list[str] | None = None,
 ) -> dict[str, Any]:
-    """Write landscape/features-rubric.json and per-solution features.json from the run rubric."""
+    """Write landscape/features-rubric.json and per-solution features.json from the run rubric.
+
+    Only ranked solutions are written, and a features.json the host or user wrote is kept
+    as is (see generated_files); folders that are not ranked solutions are never touched.
+    """
     research_dir = Path(research_dir)
+    preserved = preserved if preserved is not None else []
     comparison = comparison if isinstance(comparison, dict) else {}
     if not comparison:
         cmp_path = research_dir / "comparison" / "comparison.json"
@@ -1527,34 +1587,28 @@ def write_run_features_json(
             if isinstance(loaded, dict):
                 comparison = loaded
     rubric = synthesize_feature_rubric(comparison=comparison, support=support)
-    landscape_dir = research_dir / "landscape"
-    landscape_dir.mkdir(parents=True, exist_ok=True)
-    (landscape_dir / "features-rubric.json").write_text(
+    write_generated_text(
+        research_dir,
+        research_dir / "landscape" / "features-rubric.json",
         json.dumps(rubric, indent=2) + "\n",
-        encoding="utf-8",
+        preserved=preserved,
     )
     effective = known or KNOWN_SOLUTIONS
     slugs: list[str] = []
     for item in comparison.get("rankings") or []:
-        if isinstance(item, dict) and item.get("solution"):
+        if isinstance(item, dict) and item.get("solution") and str(item["solution"]) not in slugs:
             slugs.append(str(item["solution"]))
-    solutions_root = research_dir / "solutions"
-    if solutions_root.is_dir():
-        for sol_dir in sorted(solutions_root.iterdir()):
-            if sol_dir.is_dir() and sol_dir.name not in slugs:
-                slugs.append(sol_dir.name)
     written: list[str] = []
     for slug in slugs:
-        sol_dir = solutions_root / slug
-        sol_dir.mkdir(parents=True, exist_ok=True)
         payload = build_features_json(slug, support or {}, known=effective, rubric=rubric)
-        path = sol_dir / "features.json"
-        path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-        written.append(str(path.relative_to(research_dir)))
+        path = research_dir / "solutions" / slug / "features.json"
+        if write_generated_text(research_dir, path, json.dumps(payload, indent=2) + "\n", preserved=preserved):
+            written.append(str(path.relative_to(research_dir)))
     return {
         "status": "ok",
         "rubric_source": rubric.get("source"),
         "features_written": written,
+        "preserved": preserved,
         "rubric_path": "landscape/features-rubric.json",
     }
 
@@ -1633,12 +1687,17 @@ def materialize_solution_artifacts(
 
     known = _effective_known_solutions(need)
     pack = resolve_pack_from_need(need)
+    preserved: list[str] = []
+
+    def emit(path: Path, text: str) -> bool:
+        return write_generated_text(research_dir, path, text, preserved=preserved)
+
     audit: dict[str, Any] | None = None
     if pack:
         from solution_classifier import classify_solutions, write_catalog_audit
 
         audit = classify_solutions(envelopes, need, pack)
-        write_catalog_audit(research_dir, audit)
+        write_catalog_audit(research_dir, audit, preserved=preserved)
 
     slugs = discover_solutions(envelopes, need=need)
     support = parse_feature_support(envelopes, known=known, pack=pack)
@@ -1646,30 +1705,20 @@ def materialize_solution_artifacts(
     shortlist = slugs[:shortlist_count]
 
     solutions_root = research_dir / "solutions"
-    solutions_root.mkdir(parents=True, exist_ok=True)
-
     written: list[str] = []
-    slug_set = set(slugs)
     for slug in slugs:
-        sol_dir = solutions_root / slug
-        sol_dir.mkdir(parents=True, exist_ok=True)
-        features_path = sol_dir / "features.json"
-        features_path.write_text(
-            json.dumps(build_features_json(slug, support, known=known, rubric=rubric), indent=2) + "\n",
-            encoding="utf-8",
-        )
-        (sol_dir / "scr.md").write_text(build_scr_md(slug, envelopes), encoding="utf-8")
-        written.append(str(features_path.relative_to(research_dir)))
+        features_path = solutions_root / slug / "features.json"
+        if emit(features_path, json.dumps(build_features_json(slug, support, known=known, rubric=rubric), indent=2) + "\n"):
+            written.append(str(features_path.relative_to(research_dir)))
+        emit(solutions_root / slug / "scr.md", build_scr_md(slug, envelopes))
 
-    if pack and solutions_root.is_dir():
-        import shutil
+    # Folders outside this run's solution set (earlier runs, the host's own notes) are
+    # reported, never deleted.
+    slug_set = set(slugs)
+    stale = sorted(
+        d.name for d in (solutions_root.iterdir() if solutions_root.is_dir() else []) if d.is_dir() and d.name not in slug_set
+    )
 
-        for sol_dir in solutions_root.iterdir():
-            if sol_dir.is_dir() and sol_dir.name not in slug_set:
-                shutil.rmtree(sol_dir)
-
-    shortlist_dir = research_dir / "shortlist"
-    shortlist_dir.mkdir(parents=True, exist_ok=True)
     shortlist_payload = {
         "count": len(shortlist),
         "solutions": [
@@ -1682,10 +1731,7 @@ def materialize_solution_artifacts(
             for i, slug in enumerate(shortlist, start=1)
         ],
     }
-    (shortlist_dir / "shortlist.json").write_text(
-        json.dumps(shortlist_payload, indent=2) + "\n",
-        encoding="utf-8",
-    )
+    emit(research_dir / "shortlist" / "shortlist.json", json.dumps(shortlist_payload, indent=2) + "\n")
 
     solutions_index = {
         "count": len(slugs),
@@ -1700,22 +1746,16 @@ def materialize_solution_artifacts(
             for slug in slugs
         ],
     }
-    (research_dir / "solutions.json").write_text(
-        json.dumps(solutions_index, indent=2) + "\n",
-        encoding="utf-8",
-    )
-    landscape_dir = research_dir / "landscape"
-    landscape_dir.mkdir(parents=True, exist_ok=True)
-    (landscape_dir / "features-rubric.json").write_text(
-        json.dumps(rubric, indent=2) + "\n",
-        encoding="utf-8",
-    )
+    emit(research_dir / "solutions.json", json.dumps(solutions_index, indent=2) + "\n")
+    emit(research_dir / "landscape" / "features-rubric.json", json.dumps(rubric, indent=2) + "\n")
 
     result: dict[str, Any] = {
         "status": "ok",
         "solutions_count": len(slugs),
         "shortlist_count": len(shortlist),
         "features_written": written,
+        "preserved": preserved,
+        "stale_solution_dirs": stale,
         "solutions_index": "solutions.json",
         "shortlist": "shortlist/shortlist.json",
     }

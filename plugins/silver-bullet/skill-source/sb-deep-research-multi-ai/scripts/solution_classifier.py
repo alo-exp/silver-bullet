@@ -98,7 +98,7 @@ def _classify_slug_for_market(
     if slug in hard_exclusions and slug not in core_seeds:
         return "excluded", "pack hard_exclusion"
     if slug in core_seeds:
-        if slug in envelope_slugs or slug == "silver-bullet":
+        if slug in envelope_slugs:
             return "core", f"{market_id} market_seed"
         return "excluded", f"{market_id} seed without envelope evidence (gap)"
     if slug in adjacent_seeds:
@@ -208,7 +208,7 @@ def _classify_slug(
     if slug in all_core_seeds:
         markets = market_core_map.get(slug, [])
         market_label = markets[0] if markets else "market"
-        if slug in envelope_slugs or slug == "silver-bullet":
+        if slug in envelope_slugs:
             if slug in core_seeds:
                 return "core", "pack core_seed"
             return "core", f"{market_label} market_seed"
@@ -397,31 +397,17 @@ def classify_solutions(
     }
 
 
-def write_catalog_audit(research_dir: Path, audit: dict[str, Any]) -> Path:
+def write_catalog_audit(
+    research_dir: Path,
+    audit: dict[str, Any],
+    *,
+    preserved: list[str] | None = None,
+) -> Path:
+    from generated_files import write_generated_text
+
     research_dir = Path(research_dir)
-    landscape_dir = research_dir / "landscape"
-    landscape_dir.mkdir(parents=True, exist_ok=True)
-    out = landscape_dir / "catalog_audit.json"
-    out.write_text(json.dumps(audit, indent=2) + "\n", encoding="utf-8")
+    out = research_dir / "landscape" / "catalog_audit.json"
+    write_generated_text(research_dir, out, json.dumps(audit, indent=2) + "\n", preserved=preserved)
     return out
 
 
-def classify_and_audit(
-    research_dir: Path,
-    envelopes: list[dict[str, Any]] | None = None,
-    need: dict[str, Any] | None = None,
-) -> dict[str, Any]:
-    research_dir = Path(research_dir)
-    if need is None:
-        need_path = research_dir / "need_profile.json"
-        need = json.loads(need_path.read_text(encoding="utf-8")) if need_path.is_file() else {}
-    if envelopes is None:
-        env_path = research_dir / "contributions" / "all-envelopes.json"
-        if env_path.is_file():
-            raw = json.loads(env_path.read_text(encoding="utf-8"))
-            envelopes = [e for e in raw if isinstance(e, dict)] if isinstance(raw, list) else []
-        else:
-            envelopes = []
-    audit = classify_solutions(envelopes, need)
-    write_catalog_audit(research_dir, audit)
-    return audit
