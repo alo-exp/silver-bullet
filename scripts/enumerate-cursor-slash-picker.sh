@@ -60,15 +60,22 @@ surface_arg = sys.argv[3]
 workspace_arg = sys.argv[4]
 
 
+# Cursor keeps two ignore lists: .cursorignore (AI access: agent file tools and @-references,
+# so it holds only generated mirrors) and .cursorindexingignore (indexing and the "/" picker,
+# which is where the source skills/ and templates/workflows/ are hidden, R13-26).
+CURSOR_IGNORE_FILES = (".cursorignore", ".cursorindexingignore")
+
+
 def load_cursorignore(root: Path) -> list[str]:
-    path = root / ".cursorignore"
-    if not path.is_file():
-        return []
     patterns: list[str] = []
-    for raw in path.read_text(errors="ignore").splitlines():
-        line = raw.strip()
-        if line and not line.startswith("#"):
-            patterns.append(line.lstrip("/"))
+    for name in CURSOR_IGNORE_FILES:
+        path = root / name
+        if not path.is_file():
+            continue
+        for raw in path.read_text(errors="ignore").splitlines():
+            line = raw.strip()
+            if line and not line.startswith("#"):
+                patterns.append(line.lstrip("/"))
     return patterns
 
 
@@ -341,7 +348,7 @@ if workspace_root.is_dir():
     print("Workspace slash-picker exposure (dev checkout)")
     print(f"workspace={workspace['root']}")
     print(f"manifest.skills={workspace['manifest_skills']!r}")
-    print(f".cursorignore patterns={workspace['ignore_patterns']!r}")
+    print(f".cursorignore + .cursorindexingignore patterns={workspace['ignore_patterns']!r}")
     print(f"workspace_subagents={len(ws_subagents)} ignored_workspace_entries={len(ws_ignored)}")
     print(f"workspace_bad_colon={len(ws_bad_colon)} global_custom_agents={len(global_custom)}")
     if workspace["manifest_skills"] or ws_subagents or ws_bad_colon or global_custom:
