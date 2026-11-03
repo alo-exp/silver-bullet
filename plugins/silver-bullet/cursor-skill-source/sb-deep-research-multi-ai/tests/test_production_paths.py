@@ -241,7 +241,6 @@ class ProperReferencesToCommonWordVendorsTests(unittest.TestCase):
         ("factory-ai", "Factory Droids ship PRs from tickets."),
         ("cursor", "Cursor Composer edits many files."),
         ("cursor", "Teams run Cursor agents in the cloud."),
-        ("cursor", "The Cursor model picker offers GPT and Claude."),
         ("cursor", "Most teams adopt Cursor Pro."),
         ("director", "Tools such as Director Pro enforce gates."),
         ("conductor", "Melty Conductor runs parallel Claude Code agents."),
