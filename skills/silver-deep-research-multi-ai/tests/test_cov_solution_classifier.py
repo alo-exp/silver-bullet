@@ -287,42 +287,6 @@ class AuditIoTests(unittest.TestCase):
             self.assertEqual(out, Path(tmp) / "landscape" / "catalog_audit.json")
             self.assertEqual(json.loads(out.read_text(encoding="utf-8")), {"a": 1})
 
-    def test_classify_and_audit_reads_files_and_handles_bad_shapes(self) -> None:
-        p = {"category_id": "tiny", "markets": [{"id": "only", "role": "primary", "seeds": [{"slug": "one"}]}]}
-        captured = {}
-
-        def fake_classify(envelopes, need):
-            captured["envelopes"] = envelopes
-            captured["need"] = need
-            return {"marker": True}
-
-        orig = sc.classify_solutions
-        sc.classify_solutions = fake_classify
-        try:
-            with tempfile.TemporaryDirectory() as tmp:
-                root = Path(tmp)
-                # nothing on disk: empty need and envelopes
-                audit = sc.classify_and_audit(root)
-                self.assertEqual(audit, {"marker": True})
-                self.assertEqual((captured["need"], captured["envelopes"]), ({}, []))
-                self.assertTrue((root / "landscape" / "catalog_audit.json").is_file())
-                (root / "need_profile.json").write_text(json.dumps({"k": 1}), encoding="utf-8")
-                (root / "contributions").mkdir()
-                env_path = root / "contributions" / "all-envelopes.json"
-                env_path.write_text(json.dumps([{"a": 1}, "junk", 3]), encoding="utf-8")
-                sc.classify_and_audit(root)
-                self.assertEqual(captured["need"], {"k": 1})
-                self.assertEqual(captured["envelopes"], [{"a": 1}])
-                env_path.write_text(json.dumps({"not": "a list"}), encoding="utf-8")
-                sc.classify_and_audit(root)
-                self.assertEqual(captured["envelopes"], [])
-                # explicit arguments bypass the files
-                sc.classify_and_audit(root, envelopes=[{"z": 1}], need={"n": 2})
-                self.assertEqual((captured["need"], captured["envelopes"]), ({"n": 2}, [{"z": 1}]))
-        finally:
-            sc.classify_solutions = orig
-        del p
-
 
 if __name__ == "__main__":
     unittest.main()

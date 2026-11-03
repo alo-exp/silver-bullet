@@ -540,34 +540,6 @@ def filter_vendor_link_pairs(pairs: list[list[str]]) -> list[list[str]]:
     return drop_ambiguous_shared_homepage_urls(out)
 
 
-def scrub_vendor_markdown_links(
-    markdown: str,
-    *,
-    vendor_urls: dict[str, str],
-    known_labels: set[str] | None = None,
-) -> str:
-    """Rewrite/remove vendor markdown links to match authoritative homepages only.
-
-    Labels in known_labels/vendor_urls with no homepage become plain text (never keep
-    a stale invented URL). Authoritative URLs are rewritten to the current mapping.
-    """
-    urls = {normalize_vendor_link_label(k): str(v).strip() for k, v in (vendor_urls or {}).items()}
-    known = {normalize_vendor_link_label(x) for x in (known_labels or set())} | set(urls)
-    pattern = re.compile(r"\[([^\]]+)\]\((https?://[^)]+)\)")
-
-    def _repl(match: re.Match[str]) -> str:
-        label = normalize_vendor_link_label(match.group(1))
-        url = match.group(2).strip()
-        if label not in known:
-            return match.group(0)
-        auth = urls.get(label)
-        if auth:
-            return f"[{label}]({auth})"
-        return label
-
-    return pattern.sub(_repl, markdown or "")
-
-
 # Bare http(s) autolink — wrap existing URLs only; never invent targets.
 BARE_HTTP_URL_RE = re.compile(r"https?://[^\s<>\"'`\\]+", re.IGNORECASE)
 _MD_LINK_OR_BARE_ANGLE_RE = re.compile(

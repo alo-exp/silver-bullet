@@ -411,22 +411,3 @@ def write_catalog_audit(
     return out
 
 
-def classify_and_audit(
-    research_dir: Path,
-    envelopes: list[dict[str, Any]] | None = None,
-    need: dict[str, Any] | None = None,
-) -> dict[str, Any]:
-    research_dir = Path(research_dir)
-    if need is None:
-        need_path = research_dir / "need_profile.json"
-        need = json.loads(need_path.read_text(encoding="utf-8")) if need_path.is_file() else {}
-    if envelopes is None:
-        env_path = research_dir / "contributions" / "all-envelopes.json"
-        if env_path.is_file():
-            raw = json.loads(env_path.read_text(encoding="utf-8"))
-            envelopes = [e for e in raw if isinstance(e, dict)] if isinstance(raw, list) else []
-        else:
-            envelopes = []
-    audit = classify_solutions(envelopes, need)
-    write_catalog_audit(research_dir, audit)
-    return audit

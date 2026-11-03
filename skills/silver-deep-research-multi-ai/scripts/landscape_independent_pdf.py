@@ -144,25 +144,6 @@ def load_canonical_landscape_sources(root: Path) -> dict[str, Any]:
     }
 
 
-def load_spa_report_data(root: Path) -> dict[str, Any]:
-    """SPA payload embedded in landscape-report.html (debug/legacy only)."""
-    html_path = root / "landscape-report.html"
-    if not html_path.is_file():
-        return {}
-    try:
-        text = html_path.read_text(encoding="utf-8")
-    except OSError:
-        return {}
-    match = _REPORT_DATA_RE.search(text)
-    if not match:
-        return {}
-    try:
-        data = json.loads(match.group(1))
-    except json.JSONDecodeError:
-        return {}
-    return data if isinstance(data, dict) else {}
-
-
 def load_chart_data(root: Path) -> dict[str, Any]:
     data = load_canonical_landscape_sources(root)["chart_data"]
     return data if isinstance(data, dict) else {}
@@ -200,32 +181,6 @@ def iter_market_ids(chart: dict[str, Any]) -> list[str]:
         ids.extend(mid for mid in markets if mid not in ids)
         return ids
     return [str(chart.get("primary_market_id") or "primary")]
-
-
-def quadrant_divergences(chart: dict[str, Any]) -> list[dict[str, str]]:
-    """Vendors whose MQ quadrant disagrees with GMQ (notable score divergence)."""
-    out: list[dict[str, str]] = []
-    for mid in iter_market_ids(chart):
-        block = market_chart_block(chart, mid)
-        mq = {str(p.get("slug")): p for p in block.get("mq_data") or [] if isinstance(p, dict)}
-        gmq = {str(p.get("slug")): p for p in block.get("gmq_data") or [] if isinstance(p, dict)}
-        for slug, mp in mq.items():
-            gp = gmq.get(slug)
-            if not gp:
-                continue
-            mq_q = str(mp.get("q") or "")
-            gmq_q = str(gp.get("q") or "")
-            if mq_q and gmq_q and mq_q != gmq_q:
-                out.append(
-                    {
-                        "market": mid,
-                        "slug": slug,
-                        "label": str(mp.get("label") or gp.get("label") or slug),
-                        "mq": mq_q,
-                        "gmq": gmq_q,
-                    }
-                )
-    return out
 
 
 def _esc(text: Any) -> str:
@@ -1136,167 +1091,11 @@ def comparison_matrix_html(
     return "\n".join(parts)
 
 
-def comparison_highlights_html(
-    comparison: dict[str, Any],
-    chart: dict[str, Any] | None = None,
-) -> str:
-    """Alias — full matrix, never a top-N summary."""
-    return comparison_matrix_html(comparison, chart)
-
-
-def section_body_needles(body: str, *, min_len: int = 48) -> list[str]:
-    """Distinctive ##-section body phrases (not the heading)."""
-    needles: list[str] = []
-    for raw in (body or "").splitlines():
-        line = raw.strip()
-        if not line or line.startswith("#") or re.fullmatch(r"[\s|:-]+", line):
-            continue
-        text = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", line)
-        text = re.sub(r"[*`_#>|-]+", " ", text)
-        text = re.sub(r"\s+", " ", text).strip()
-        if len(text) >= min_len:
-            needles.append(text[:80])
-    return needles
-
-
 def _norm_body_haystack(text: str) -> str:
     text = re.sub(r"https?://\S+", " ", text or "")
     text = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", text)
     text = re.sub(r"[^a-zA-Z0-9]+", " ", text).lower()
     return re.sub(r"\s+", " ", text).strip()
-
-
-def assert_section_bodies_in_text(markdown: str, haystack: str) -> None:
-    """Fail if a SPA ## section body is absent — headings alone are not enough."""
-    hay = f" {_norm_body_haystack(haystack)} "
-    missing: list[str] = []
-    for heading, body in _split_md_sections(markdown or ""):
-        if not heading:
-            continue
-        needles = section_body_needles(body)
-        if not needles:
-            continue
-        hits = 0
-        for needle in needles:
-            words = _norm_body_haystack(needle).split()
-            if len(words) < 4:
-                continue
-            # Tail window survives markdown links expanding to href + label in HTML/PDF.
-            window = " ".join(words[-5:])
-            if f" {window} " in hay:
-                hits += 1
-        if hits == 0:
-            missing.append(heading)
-    if missing:
-        raise AssertionError(
-            "SPA ## section bodies missing from PDF/print text: " + ", ".join(missing)
-        )
-
-
-def sync_canonical_payload_files(
-    root: Path,
-    payload: dict[str, Any] | None = None,
-) -> dict[str, str]:
-    """Write sibling md/json to the exact #report-data blobs both formats consume."""
-    data = payload if isinstance(payload, dict) and payload else load_spa_report_data(root)
-    written: dict[str, str] = {}
-    if not data:
-        return written
-    markdown = data.get("markdown")
-    if isinstance(markdown, str) and markdown.strip():
-        dest = root / "landscape" / "landscape-report.md"
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        dest.write_text(markdown if markdown.endswith("\n") else markdown + "\n", encoding="utf-8")
-        written["markdown"] = str(dest)
-    chart = data.get("chart_data")
-    if isinstance(chart, dict) and chart:
-        dest = root / "landscape" / "chart-data.json"
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        dest.write_text(json.dumps(chart, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-        written["chart_data"] = str(dest)
-    comparison = data.get("comparison")
-    if isinstance(comparison, dict) and comparison:
-        dest = root / "comparison" / "comparison.json"
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        dest.write_text(json.dumps(comparison, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-        written["comparison"] = str(dest)
-    return written
-
-
-def notable_divergence_bullets(
-    markdown: str,
-    consolidation: dict[str, Any] | None = None,
-) -> list[str]:
-    """Pull Notable divergences from SPA markdown (inter-model), else consolidation."""
-    match = re.search(r"\*\*Notable divergences\*\*[^\n]*\n+", markdown or "")
-    bullets: list[str] = []
-    if match:
-        for line in (markdown or "")[match.end() :].splitlines():
-            stripped = line.strip()
-            if stripped.startswith("## "):
-                break
-            if stripped.startswith("**") and "Notable divergences" not in stripped:
-                break
-            if line.startswith("- "):
-                bullets.append(line[2:].strip())
-                continue
-            if bullets and not stripped:
-                continue
-        if bullets:
-            return bullets
-    items = (consolidation or {}).get("divergence") or []
-    for item in items:
-        if not isinstance(item, dict):
-            continue
-        text = str(item.get("text") or item.get("claim_key") or "").strip()
-        if not text:
-            continue
-        ids: list[str] = []
-        for key in ("supporting_agents", "model_families", "agents"):
-            val = item.get(key)
-            if isinstance(val, list):
-                for raw in val:
-                    sid = str(raw).strip()
-                    if sid and sid not in ids:
-                        ids.append(sid)
-            elif isinstance(val, str) and val.strip() and val.strip() not in ids:
-                ids.append(val.strip())
-        for found in _MODEL_ID_RE.findall(text):
-            if found not in ids:
-                ids.append(found)
-        if ids:
-            joined = ", ".join(f"`{sid}`" for sid in ids[:8])
-            bullets.append(f"{joined} — {text}")
-        else:
-            bullets.append(text)
-    return bullets
-
-
-def divergences_html(
-    chart: dict[str, Any],
-    comparison: dict[str, Any],
-    markdown: str = "",
-    consolidation: dict[str, Any] | None = None,
-) -> str:
-    _ = (chart, comparison)
-    bullets = notable_divergence_bullets(markdown, consolidation)
-    parts = [
-        '<section class="divergences">',
-        "<h2>Notable divergences</h2>",
-        "<p>Disagreements among contributing models, triangulation waves, and critique SCRs "
-        "(model A said X, model B said Y) — not MQ vs GMQ chart-axis mismatches.</p>",
-    ]
-    if bullets:
-        parts.append("<ul>")
-        parts.extend(f"<li>{_md_inline(b)}</li>" for b in bullets)
-        parts.append("</ul>")
-    else:
-        parts.append(
-            "<p>No inter-model research disagreements were extracted from triangulation "
-            "or critique envelopes.</p>"
-        )
-    parts.append("</section>")
-    return "\n".join(parts)
 
 
 def _plain_html_text(fragment: str) -> str:
