@@ -105,6 +105,37 @@ SB uses one user-global agentmemory installation for every supported host. The h
 | Codex | `codex plugin marketplace add rohitg00/agentmemory`; `codex plugin add agentmemory@agentmemory` | `agentmemory connect codex --with-hooks` | `~/.codex/config.toml` |
 | OpenCode / Goose / Hermes | *(varies)* | See `platform_install_commands` in template | host config |
 
+### Step 5 — Git-backed auto-save (optional bridge)
+
+agentmemory exports markdown to `.agentmemory/` but does not auto-commit by default. Use the Python bridge from the setup runbook (`~/.agentmemory/bridge.py`) with systemd (Linux) or launchd (macOS) for secret scanning and auto-commit. See the full runbook in your team's `agentmemory-stack-setup.md`.
+
+## Graphify Synergy
+
+When **both** tools are opted in:
+
+1. **Capture (agentmemory)** — sessions write to `.agentmemory/memory/` and snapshots; proactive injection surfaces prior context.
+2. **Index (Graphify)** — `graphify update . --no-cluster` indexes `.agentmemory/` alongside code and docs.
+3. **Retrieve (Graphify)** — `graphify query "<context>"` returns structural + memory nodes; agentmemory usage gate defers to a fresh Graphify query.
+
+Hooks enforce: agentmemory infrastructure (CLI, server, MCP, export dir) + Graphify retrieval query before substantive edits.
+
+## Enforcement Summary
+
+When opted in and not suspended, hooks require before substantive edits:
+
+1. `agentmemory` CLI on PATH
+2. Server health at `http://localhost:3111/agentmemory/health`
+3. MCP wired for the active host
+4. `.agentmemory/` export root present
+5. Fresh agentmemory usage **or** fresh Graphify query (when Graphify is also enforced)
+
+Record usage via MCP tools or:
+
+```bash
+curl -s -X POST http://localhost:3111/agentmemory/smart-search \
+  -H "Content-Type: application/json" \
+  -d '{"query":"<task context>"}'
+```
 
 ## Related Docs
 
