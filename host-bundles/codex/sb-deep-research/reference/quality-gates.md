@@ -234,15 +234,14 @@ Only these differences are ignored, and the code has no others:
   token is compared as written;
 - punctuation: whitespace, `. , ; : !`, the ellipsis `…`, quotation marks, brackets and the backtick
   (`` `not` `` is `not`). A `?` and a `*` are not dropped;
-- the articles `a`, `an` and `the`, only in lowercase (or capitalised as the first word); a capital `A` in
-  the middle of a sentence is a name or a grade and is kept;
 - the digit script: every Unicode decimal digit is read as `0-9` (full-width `５０` and Arabic-Indic `٥` equal
   `50` and `5`); an accent written as one character or as base letter plus mark is one letter;
 - a contraction (`doesn't` = `does not`, `can't` and `cannot` = `can not`, `won't` = `will not`);
 - an inline citation marker such as `[3]` or `[1, 2]`, only when a space or a non-digit precedes it (`3[00]`
   keeps its `00`).
 
-There are no aliases, no filler words and no stemming: a plural is a different word (`glasses` is not
+There are no aliases, no filler words and no stemming. The articles `a`, `an` and `the` are words like any
+other: "the market leader" is not "a market leader", and an article added or left out is a difference. a plural is a different word (`glasses` is not
 `glass`, `news` is not `new`, `goods` is not `good`), and `this`/`that`, `its`/`their`, `all`/`only`/`no`/
 `not`/`never`, `is`/`are`, `staff`/`employee` and `client`/`customer` are all different words.
 
@@ -297,7 +296,7 @@ one quote.**
 1. Store as evidence exactly the one sentence or clause of the source that backs the claim, verbatim. Not a
    paragraph, not two sentences, not a sentence plus its heading.
 2. Write the report sentence to repeat that quote: same words, figures, dates and units, in the same order.
-   Only the first word's capital, punctuation and lowercase a/an/the may change; keep case, plurals, figures and marks as the quote has them.
+   Only the first word's capital and punctuation may change; keep case, plurals, figures and marks as the quote has them.
 3. Do not reword, reorder, change voice or merge two quotes into one claim. If a sentence needs two facts,
    write two sentences, each with its own quote.
 4. A deliberate paraphrase or summary is allowed, but it is `needs_review` and a reader checks it.
@@ -339,10 +338,10 @@ last run:
 | review 4 verbatim (36 + 69) | 0 / 36 / 0 / 0 | 0 / 69 / 0 |
 | review 5 verbatim (121 + 99) | 7 / 113 / 1 / 0 | 26 / 73 / 0 |
 | review 6 (91 + 65) | 1 / 90 / 0 / 0 | 1 / 64 / 0 |
-| review 7 (55 + 12) | 4 / 51 / 0 / 0 | 4 / 8 / 0 |
-| review 8 (79 + 19) | 9 / 70 / 0 / 0 | 16 / 3 / 0 |
+| review 7 (55 + 12) | 3 / 52 / 0 / 0 | 4 / 8 / 0 |
+| review 8 (84 + 19) | 9 / 75 / 0 / 0 | 16 / 3 / 0 |
 | curated (45 + 45) | 14 / 30 / 1 / 0 | 1 / 44 / 0 |
-| held-out (32 + 32) | 6 / 26 / 0 / 0 | 0 / 32 / 0 |
+| held-out (32 + 32) | 5 / 27 / 0 / 0 | 0 / 32 / 0 |
 
 Of the reviewer's 60 everyday honest claims, 4 are `supported` and 56 `needs_review`; of the 40 held-out
 everyday honest claims of review 6, 0 and 40. The honest claims that pass are the ones that repeat their

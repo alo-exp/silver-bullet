@@ -107,7 +107,7 @@ class EveryProbeOfEveryRound(unittest.TestCase):
         contradicted or unsupported."""
         items = load("claim_corpus_r8")
         fabrications = [c for c in items if c["kind"] == "F"]
-        self.assertEqual(len(fabrications), 79)
+        self.assertEqual(len(fabrications), 84)
         self.assertEqual(tally(fabrications).get("supported", 0), 0)
         honest = [c for c in items if c["kind"] == "H"]
         self.assertEqual(len(honest), 19)
