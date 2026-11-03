@@ -279,6 +279,20 @@ test("viewer renders hostile report text as text across every sink (libraries pr
   assertNoExecutableMarkup(allCreatedElements(doc), "viewer after copy", doc.chrome);
 });
 
+test("linkify links a vendor at its first prose mention only, but every table cell (R12-18)", () => {
+  const { doc, sandbox } = exerciseViewer(HTML, { libraries: true });
+  const content = doc.getElementById("content");
+  const holder = doc.createElement("div");
+  doc._parseInto(holder, "<p>Beta</p><p>Beta</p><table><tbody><tr><td>Beta</td></tr><tr><td>Beta</td></tr></tbody></table>");
+  holder.childNodes.slice().forEach((n) => content.appendChild(n));
+  const before = new Set(content.querySelectorAll("a.vname-link"));
+  sandbox.ctx.linkify();
+  const added = content.querySelectorAll("a.vname-link").filter((a) => !before.has(a) && a.textContent === "Beta");
+  const inCells = added.filter((a) => a.parentElement && a.parentElement.tagName === "TD");
+  assert.equal(added.length - inCells.length, 1, "one prose link");
+  assert.equal(inCells.length, 2, "both table cells link " + added.map((a) => a.parentElement.tagName + ":" + a.textContent).join(","));
+});
+
 test("viewer still shows the report body when the CDN libraries are unavailable", () => {
   const { doc } = exerciseViewer(HTML, { libraries: false });
   const content = doc.getElementById("content");
