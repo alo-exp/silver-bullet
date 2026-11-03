@@ -390,6 +390,32 @@ class _Lexer:
                 return tuple(parts), i
             i += 1
 
+    def string_at(self, i):
+        """(value, end) of the single-line string at ``i``; (None, end) for any other value."""
+        text = self.text
+        if text.startswith('"', i) and not text.startswith('"""', i):
+            return self.basic_string(i)
+        if text.startswith("'", i) and not text.startswith("'''", i):
+            return self.literal_string(i)
+        return None, self.value(i)
+
+    def inline_strings(self, i):
+        """The single-line string values of the plain keys of the inline table opening at ``i``."""
+        text = self.text
+        found = {}
+        i += 1
+        while True:
+            i = self.skip_space(i)
+            if text.startswith("}", i):
+                return found
+            key, i = self.key(i)
+            value, i = self.string_at(self.skip_ws(self.skip_ws(i) + 1))
+            if value is not None and len(key) == 1:
+                found[key[0]] = value
+            i = self.skip_space(i)
+            if text.startswith(",", i):
+                i += 1
+
     def multiline(self, i, quote):
         """Skip a multi-line string whose opening delimiter starts at ``i``."""
         text = self.text
@@ -504,19 +530,24 @@ class TomlDocument:
         return "\r\n" if "\r\n" in self.text else "\n"
 
     def string_values(self, table) -> dict:
-        """The string values of the keys directly in ``table`` (header or dotted form), read
-        without a TOML parser; values of any other type are left out."""
+        """The string values of the keys directly in ``table`` (header, dotted or inline-table
+        form), decoded with the module's own lexer, without a TOML parser; values of any other
+        type are left out. A table or parent of it set to a non-table value raises ConfigError."""
         table = tuple(table)
+        lexer = _Lexer(self.text, self.label)
         found = {}
         for st in self.statements:
-            if st.kind != "keyval" or st.path[:-1] != table:
+            if st.kind != "keyval":
                 continue
-            raw = self.text[st.value[0] : st.value[1]]
-            if raw.startswith('"') and not raw.startswith('"""'):
-                with contextlib.suppress(ValueError):
-                    found[st.path[-1]] = json.loads(raw)  # basic-string escapes match JSON's
-            elif raw.startswith("'") and not raw.startswith("'''"):
-                found[st.path[-1]] = raw[1:-1]
+            start = st.value[0]
+            if st.path == table and self.text.startswith("{", start):
+                found.update(lexer.inline_strings(start))
+            elif _within(table, st.path):  # the table itself, or a parent, is set to a non-table value
+                raise ConfigError(f"{self.label}: {'.'.join(st.path)} is not a table the reader can open; left unchanged")
+            elif st.path[:-1] == table:
+                value = lexer.string_at(start)[0]
+                if value is not None:
+                    found[st.path[-1]] = value
         return found
 
     def headers(self, path):
