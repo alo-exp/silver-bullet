@@ -524,13 +524,7 @@ def personal_data(root: Path, files: list[str]) -> list[str]:
         if "@" in text or "users" in low or "home" in low:
             hits += [(start, end, HOME_MESSAGE) for start, end, name in home_hits(text, text.lower()) if name.lower() not in allow.homes]
             hits += [(offset, offset, EMAIL_MESSAGE) for offset in email_hits(text, frozenset(allow.emails))]
-        found: list[tuple[int, str]] = []
-        reported_to = -1
-        for start, end, message in sorted(hits):
-            if start < reported_to:
-                continue  # the same text matched by two patterns
-            reported_to = max(end, start + 1)
-            found.append((text.count(chr(10), 0, start) + 1, message))
+        found = [(text.count(chr(10), 0, start) + 1, message) for start, _, message in hits]
         if not allow.allows_file(rel):
             found += [(line, IDENTITY_MESSAGE) for line in identity_lines(raw, hashes)]
         problems += [f"{rel}:{line}: {message}" for line, message in sorted(found, key=lambda item: item[0])]
