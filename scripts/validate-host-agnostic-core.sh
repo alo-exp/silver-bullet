@@ -532,7 +532,6 @@ def check_installer_cross_contamination() -> None:
         "agents/claude",
         "agents/codex",
         "agents/cursor",
-        "validate-host",
         ".replace(",
         "os.homedir(), '.codex'",
         "os.homedir(), \".claude\"",

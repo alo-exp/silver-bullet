@@ -76,6 +76,15 @@ assert_contains "no cache at all: the checkout hooks are searched" "$TL_OUT" "FA
 hd_stage
 hd_happy claude
 
+# validators run through bash: a checkout without exec bits is audited, not skipped
+chmod -x "$HD_ST"/scripts/validate-*.sh
+run -- "$HD_PROJ"
+assert_contains "D16 runs a non-executable validator" "$TL_OUT" "PASS: D16 — repo install surface clean"
+assert_contains "D17 runs a non-executable validator" "$TL_OUT" "PASS: D17 — SB core is host-agent agnostic"
+assert_contains "D15 runs a non-executable validator" "$TL_OUT" "PASS: D15 — Claude agent description token budget within limit"
+assert_not_contains "no 'not found' warning for existing validators" "$TL_OUT" "not found; skipped"
+chmod +x "$HD_ST"/scripts/validate-*.sh
+
 # ---------- D13 / D14: cross-host contamination and cache surface ----------
 echo '{"hooks":"silver-bullet","path":"/home/u/.codex/plugins/cache/x"}' >"$HOME/.claude/settings.json"
 run -- "$HD_PROJ"

@@ -27,13 +27,14 @@ hd_stage() {
   cp "$TL_REPO_ROOT/scripts/sb-doctor.sh" "$HD_ST/scripts/"
   ln -s "$TL_REPO_ROOT/scripts/lib/agent-bundle-paths.sh" "$HD_ST/scripts/lib/agent-bundle-paths.sh"
   ln -s "$TL_REPO_ROOT/hooks/lib" "$HD_ST/hooks/lib"
+  ln -s "$TL_REPO_ROOT/scripts/lib/pre-release-host-isolation.sh" "$HD_ST/scripts/lib/pre-release-host-isolation.sh"
   ln -s "$TL_REPO_ROOT/scripts/lib/command-timeout.sh" "$HD_ST/scripts/lib/command-timeout.sh"
   ln -s "$TL_REPO_ROOT/templates/silver-bullet.md.base" "$HD_ST/templates/silver-bullet.md.base"
   ln -s "$TL_REPO_ROOT/templates/silver-bullet.config.json.default" "$HD_ST/templates/silver-bullet.config.json.default"
   printf '{"version":"1.2.3"}\n' >"$HD_ST/package.json"
   local h
   for h in session-start outcomes-check stop-check; do
-    hd_sh "hooks/$h" 'p="$(cat)"; echo "hook '"$h"' $SB_HOOK_SMOKE $(jq -r .hook_event_name <<<"$p")" >>"$HD_LOG"; echo "hook-env '"$h"' home=$HOME state=${SB_RUNTIME_STATE_DIR-unset} cwd=$PWD source=$(jq -r .source <<<"$p") cfg=$(ls -A | tr "\n" ",")" >>"$HD_LOG"; exit "${STUB_RC_HOOK:-0}"'
+    hd_sh "hooks/$h" 'p="$(cat)"; echo "hook '"$h"' $SB_HOOK_SMOKE $(jq -r .hook_event_name <<<"$p")" >>"$HD_LOG"; echo "hook-env '"$h"' home=$HOME state=${SB_RUNTIME_STATE_DIR-unset} cwd=$PWD source=$(jq -r .source <<<"$p") cfg=$(ls -A | tr "\n" ",")" >>"$HD_LOG"; sd="$HOME/.claude/.silver-bullet"; mkdir -p "$sd"; rm -f "$sd/quality-gate-state" "$sd/release-live-matrix" "$sd/state"; echo "{\"blocking\":true}" >"$sd/orchestrator-directive.json"; exit "${STUB_RC_HOOK:-0}"'
   done
   hd_sh scripts/validate-host-install-surface.sh 'echo "surface $*" >>"$HD_LOG"; if [[ "$1" == --cache-root ]]; then exit "${STUB_RC_SURFACE_CACHE:-${STUB_RC_SURFACE:-0}}"; fi; exit "${STUB_RC_SURFACE_REPO:-${STUB_RC_SURFACE:-0}}"'
   hd_sh scripts/validate-claude-agent-token-budget.sh 'echo "tokens $*" >>"$HD_LOG"; exit "${STUB_RC_TOKENS:-0}"'

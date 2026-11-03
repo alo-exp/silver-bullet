@@ -12,6 +12,8 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=scripts/lib/agent-bundle-paths.sh
 source "${REPO_ROOT}/scripts/lib/agent-bundle-paths.sh"
+# shellcheck source=scripts/lib/pre-release-host-isolation.sh
+source "${REPO_ROOT}/scripts/lib/pre-release-host-isolation.sh"
 # shellcheck source=scripts/lib/command-timeout.sh
 source "${REPO_ROOT}/scripts/lib/command-timeout.sh"
 DOCTOR_FIX="${SB_DOCTOR_FIX:-0}"
@@ -114,7 +116,7 @@ source_runtime_paths() {
   SB_RUNTIME_HOME_ROOT="${HOME}/.${SILVER_BULLET_RUNTIME}"
   SB_RUNTIME_STATE_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet"
   SB_RUNTIME_PLUGIN_CACHE_ROOT="${SB_RUNTIME_HOME_ROOT}/plugins/cache"
-  sb_runtime_codex_home() { printf '%s' "${CODEX_HOME:-${HOME}/.codex}"; }
+  sb_runtime_codex_home() { printf '%s' "${SB_RUNTIME_HOME_ROOT}"; }
   return 0
 }
 
@@ -232,12 +234,9 @@ run_hook_smoke() {
   # SB_HOOK_SMOKE: session-start must not persist/mutate project config during doctor smoke (#257).
   (
     cd "${sandbox}/project" &&
-      printf '%s' "$payload" | env \
-        -u KAY_HOME -u CLAUDE_CONFIG_DIR -u CODEX_HOME -u CURSOR_CONFIG_DIR \
-        -u SILVER_BULLET_STATE_FILE -u SILVER_BULLET_BRANCH_FILE \
-        -u SB_RUNTIME_HOME_ROOT -u SB_RUNTIME_PLUGIN_CACHE_ROOT -u SB_RUNTIME_STATE_DIR -u SB_RUNTIME_PRESERVE_STATE_DIR \
-        -u XDG_CONFIG_HOME -u XDG_DATA_HOME -u XDG_STATE_HOME -u XDG_CACHE_HOME \
-        HOME="${sandbox}/home" SB_HOOK_SMOKE=1 bash "$hook_path" >/dev/null 2>&1
+      # the shared scrub (host tooling layer) drops every variable that redirects host config or SB state
+      sb_smoke_clear_host_env &&
+      printf '%s' "$payload" | env HOME="${sandbox}/home" SB_HOOK_SMOKE=1 bash "$hook_path" >/dev/null 2>&1
   ) || rc=1
   rm -rf -- "$sandbox"
   return "$rc"
@@ -804,7 +803,7 @@ run_doctor_checks() {
       fi
       ;;
     claude)
-      hooks_manifest_path="${SB_RUNTIME_HOME_ROOT}/settings.json"
+      hooks_manifest_path="${claude_settings}"
       agent_cache_dir="$(sb_agent_cache_rel claude)"
       if [[ -f "$hooks_manifest_path" ]] && grep -qE "$foreign_plugin_pattern" "$hooks_manifest_path" 2>/dev/null; then
         record fail D13 "${hooks_manifest_path} contains foreign host plugin paths"
@@ -813,7 +812,7 @@ run_doctor_checks() {
       fi
       ;;
     codex)
-      hooks_manifest_path="${SB_RUNTIME_HOME_ROOT}/config.toml"
+      hooks_manifest_path="${codex_config}"
       agent_cache_dir="$(sb_agent_cache_rel codex)"
       if [[ -f "$hooks_manifest_path" ]] && grep -qE "$foreign_plugin_pattern" "$hooks_manifest_path" 2>/dev/null; then
         record fail D13 "${hooks_manifest_path} contains foreign host plugin paths"
@@ -835,7 +834,7 @@ run_doctor_checks() {
   fi
 
   # D14 — foreign agent namespaces in active plugin cache
-  if [[ -n "$skill_root" && -d "$skill_root" && -x "$install_surface_script" ]]; then
+  if [[ -n "$skill_root" && -d "$skill_root" && -f "$install_surface_script" ]]; then
     if bash "$install_surface_script" --cache-root "$skill_root" --host "$runtime" >/dev/null 2>&1; then
       record pass D14 "plugin cache has no foreign host agent namespaces"
     else
@@ -848,9 +847,9 @@ run_doctor_checks() {
   # D15 — Claude agent description token budget
   if [[ "$runtime" == "claude" ]]; then
     local token_script="${REPO_ROOT}/scripts/validate-claude-agent-token-budget.sh"
-    if [[ -x "$token_script" ]] && bash "$token_script" --repo-root "$REPO_ROOT" >/dev/null 2>&1; then
+    if [[ -f "$token_script" ]] && bash "$token_script" --repo-root "$REPO_ROOT" >/dev/null 2>&1; then
       record pass D15 "Claude agent description token budget within limit"
-    elif [[ -x "$token_script" ]]; then
+    elif [[ -f "$token_script" ]]; then
       record fail D15 "Claude agent descriptions exceed token budget"
     else
       record warn D15 "validate-claude-agent-token-budget.sh not found; skipped"
@@ -860,9 +859,9 @@ run_doctor_checks() {
   fi
 
   # D16 — repo install surface
-  if [[ -x "$install_surface_script" ]] && bash "$install_surface_script" --repo-root "$REPO_ROOT" --host "$runtime" >/dev/null 2>&1; then
+  if [[ -f "$install_surface_script" ]] && bash "$install_surface_script" --repo-root "$REPO_ROOT" --host "$runtime" >/dev/null 2>&1; then
     record pass D16 "repo install surface clean for host=${runtime}"
-  elif [[ -x "$install_surface_script" ]]; then
+  elif [[ -f "$install_surface_script" ]]; then
     record fail D16 "repo install surface bleed — run: bash scripts/install-${runtime}.sh"
   else
     record warn D16 "validate-host-install-surface.sh not found; skipped"
@@ -870,9 +869,9 @@ run_doctor_checks() {
 
   # D17 — host-agnostic SB core (repo checkout)
   local agnostic_script="${REPO_ROOT}/scripts/validate-host-agnostic-core.sh"
-  if [[ -x "$agnostic_script" ]] && bash "$agnostic_script" --repo-root "$REPO_ROOT" >/dev/null 2>&1; then
+  if [[ -f "$agnostic_script" ]] && bash "$agnostic_script" --repo-root "$REPO_ROOT" >/dev/null 2>&1; then
     record pass D17 "SB core is host-agent agnostic"
-  elif [[ -x "$agnostic_script" ]]; then
+  elif [[ -f "$agnostic_script" ]]; then
     record fail D17 "host-specific bleed in SB core — run: bash scripts/validate-host-agnostic-core.sh"
   else
     record warn D17 "validate-host-agnostic-core.sh not found; skipped"

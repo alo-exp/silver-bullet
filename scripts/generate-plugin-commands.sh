@@ -97,10 +97,13 @@ for legacy in sorted(out_dir.glob("*:*.md")):
         legacy.rename(safe)
 
 written = 0
+missing = 0
+generated: set[str] = set()
 for skill in composers:
     src = skills_dir / skill / "SKILL.md"
     if not src.is_file():
-        print(f"WARN: missing {src}", file=sys.stderr)
+        print(f"ERROR: missing composer skill {src}: its command stub cannot be generated", file=sys.stderr)
+        missing += 1
         continue
     meta = frontmatter(src)
     raw_name = meta.get("name") or skill
@@ -125,6 +128,7 @@ for skill in composers:
         encoding="utf-8",
     )
     written += 1
+    generated.add(out.name)
     print(f"Wrote {out}")
     # Drop legacy Silver, bare-route, colon-named and Codex-migrated stubs.
     for legacy_name in (f"{cmd_name}.md", f"{codex_name}.md", "silver.md", f"silver-{cmd_name}.md"):
@@ -134,9 +138,16 @@ for skill in composers:
 for legacy in sorted(out_dir.glob("silver*.md")):
     legacy.unlink()
 
-# Retained routes that are not composers get the same Cursor metadata; their
-# prompt bodies are kept.
+# Stubs written by hand (not generated from a composer skill). Every other stub
+# that no composer produced is an orphan -- its skill was removed -- and is
+# deleted, so Cursor never lists a command whose source is gone.
+HAND_WRITTEN = {"sb-doctor.md"}
 for path in sorted(out_dir.glob("*.md")):
+    if path.name in generated:
+        continue
+    if path.name not in HAND_WRITTEN:
+        path.unlink()
+        continue
     text = path.read_text(encoding="utf-8")
     if text.split("\n", 1)[0].strip() == "---":
         continue
@@ -148,6 +159,7 @@ for path in sorted(out_dir.glob("*.md")):
         "---\n\n" + text.strip() + "\n",
         encoding="utf-8",
     )
+sys.exit(1 if missing else 0)
 PY
 }
 
@@ -157,18 +169,25 @@ if [[ "$CHECK" -eq 0 ]]; then
   exit 0
 fi
 
+# list_stubs <dir>: the stub file names under <dir> (nothing when it is absent)
+list_stubs() {
+  if [[ -d "$1" ]]; then
+    (cd "$1" && find . -type f)
+  fi
+}
+
 # --check: regenerate a copy of the committed stubs and compare both ways.
 work="$(mktemp -d "${TMPDIR:-/tmp}/sb-commands-check.XXXXXX")"
 trap 'rm -rf "$work"' EXIT
 mkdir -p "$work/commands"
-cp -R "$OUT_DIR/." "$work/commands/" 2>/dev/null || true
+[[ ! -d "$OUT_DIR" ]] || cp -R "$OUT_DIR/." "$work/commands/"
 generate "$work/commands" >/dev/null
 drift=0
 while IFS= read -r name; do
   printf 'DRIFT: plugins/silver-bullet/commands/%s\n' "$name" >&2
   drift=$((drift + 1))
 done < <(
-  { (cd "$OUT_DIR" 2>/dev/null && find . -type f) ; (cd "$work/commands" && find . -type f) ; } |
+  { list_stubs "$OUT_DIR"; list_stubs "$work/commands"; } |
     sed 's|^\./||' | sort -u |
     while IFS= read -r name; do
       cmp -s "$OUT_DIR/$name" "$work/commands/$name" || printf '%s\n' "$name"
