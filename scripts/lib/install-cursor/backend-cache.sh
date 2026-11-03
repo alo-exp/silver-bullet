@@ -195,19 +195,22 @@ prune_agents_from_all_cursor_backend_caches() {
 # Quarantine (move, never delete) Cursor custom agents an older Silver Bullet left in
 # ~/.cursor/agents or the project's .cursor/agents. Only top-level entries are considered,
 # symlinks are never followed or moved, and an entry moves only with proof that Silver
-# Bullet wrote it: a name in Silver Bullet's own namespace (silver-*, sb:*, subagent-sb*,
-# subagent-silver-*), or a legacy generic name (tdd, full-conversation, ...) whose content
-# is byte-identical to the bundle Silver Bullet ships under host-bundles/cursor. Agents
-# install-cursor-sb-agents.sh generates are always kept. Anything else stays; a legacy
-# generic name that cannot be verified is reported, not moved.
+# Bullet wrote it: an exact colon name on scripts/lib/install-cursor/shipped-agent-names.txt
+# (every name Silver Bullet has shipped; never a prefix, so a user's sb:my-agent stays), a
+# silver-* name Silver Bullet ships today, or a legacy generic name (tdd, full-conversation,
+# ...) whose content is byte-identical to the bundle Silver Bullet ships under
+# host-bundles/cursor. A file the project commits to git is never moved. Agents
+# install-cursor-sb-agents.sh generates are always kept. Anything else stays; a name that
+# looks like Silver Bullet's but cannot be verified is reported, not moved.
 cleanup_cursor_custom_agents() {
   local project_root="${1:-${REPO_ROOT:-}}"
   python3 - "$CURSOR_HOME" "$project_root" "$(cd "$(dirname "${BASH_SOURCE[0]}")/../cursor-sb-agents" && pwd)" \
-    "${REPO_ROOT:+${REPO_ROOT}/host-bundles/cursor}" <<'INNERPY'
+    "${REPO_ROOT:+${REPO_ROOT}/host-bundles/cursor}" "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/shipped-agent-names.txt" <<'INNERPY'
 from __future__ import annotations
 
 import re
 import shutil
+import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -218,15 +221,17 @@ sys.path.insert(0, sys.argv[3])
 bundle_root = Path(sys.argv[4]) if sys.argv[4] else None
 from sb_managed_agent import is_installer_managed_agent  # noqa: E402
 
+SHIPPED_COLON_NAMES = {
+    line.strip()
+    for line in Path(sys.argv[5]).read_text(encoding="utf-8").splitlines()
+    if line.strip() and not line.startswith("#")
+}
+
 roots: list[tuple[str, Path]] = [("user", cursor_home / "agents")]
 if project_root:
     roots.append(("project", project_root / ".cursor" / "agents"))
 
 SB_NAMESPACE = re.compile(r"^(?:silver[-:]|sb:|subagent-(?:sb[:-]|silver[:-]))", re.I)
-# Colon-namespaced names are Silver Bullet's own (earlier releases shipped silver:*, sb:*,
-# subagent-sb:*); hyphenated ones such as silver-surfer could be a user's, so they need a
-# bundle SB ships today.
-SB_COLON_NAMESPACE = re.compile(r"^(?:silver:|sb:|subagent-(?:sb|silver):)", re.I)
 LEGACY_GENERIC = {"subagent-tdd", "tdd", "full-conversation", "ai-llm-safety", "artifact-reviewer", "devops-skill-router"}
 AGENT_SUFFIXES = {".md", ".json", ".yaml", ".yml"}
 
@@ -246,6 +251,15 @@ def shipped_copy(name: str, item: Path) -> bool:
         return reference.is_file() and candidate.read_bytes() == reference.read_bytes()
     except OSError:
         return False
+
+
+def committed(path: Path) -> bool:
+    """True when ``path`` is tracked by the git repository around it (a project's own file)."""
+    done = subprocess.run(
+        ["git", "-C", str(path.parent), "ls-files", "--", path.name],
+        capture_output=True, text=True, check=False,
+    )
+    return done.returncode == 0 and bool(done.stdout.strip())
 
 
 def quarantine_path(scope: str, path: Path, bucket: Path) -> None:
@@ -273,7 +287,14 @@ for scope, root in roots:
         else:
             continue
         key = name.lower()
-        if (SB_COLON_NAMESPACE.match(key) or (SB_NAMESPACE.match(key) and shipped_name(name))) or (key in LEGACY_GENERIC and shipped_copy(name, item)):
+        provable = (
+            name in SHIPPED_COLON_NAMES
+            or (SB_NAMESPACE.match(key) and shipped_name(name))
+            or (key in LEGACY_GENERIC and shipped_copy(name, item))
+        )
+        if provable and scope == "project" and committed(item):
+            print(f"Note: left {item} in place: the project commits it to git.", file=sys.stderr)
+        elif provable:
             quarantine_path(scope, item, bucket)
         elif SB_NAMESPACE.match(key):
             print(
