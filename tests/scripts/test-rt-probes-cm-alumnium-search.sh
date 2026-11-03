@@ -5,6 +5,7 @@
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
+source "$TL_REPO_ROOT/tests/lib/consent-helpers.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/h-recommended-helpers.sh"
 cd "$TL_TMP"  # never run with the checkout as cwd: stubs and relative writes stay in the sandbox
 
@@ -110,6 +111,14 @@ out="$(PATH="$(hr_path_without context-mode)" rt_repair_context_mode 2>/dev/null
 assert_contains "cm repair: npm install when the cli is missing" "$(jq -c . <<<"$out")" '"npm_install_context_mode"'
 out="$(NPM_RC=1 PATH="$(hr_path_without context-mode)" rt_repair_context_mode 2>/dev/null)"
 assert_contains "cm repair: npm failure" "$(jq -c . <<<"$out")" '"npm_install_failed"'
+# the package install needs the "install" consent; "wire" alone installs nothing
+sb_test_consent_revoke_all
+sb_test_consent_grant context_mode wire
+: >"$HR_LOG"
+out="$(PATH="$(hr_path_without context-mode)" rt_repair_context_mode 2>/dev/null)"
+assert_contains "cm repair: install not consented" "$(jq -c . <<<"$out")" '"install_not_consented"'
+assert_not_contains "cm repair: no npm install without install consent" "$(cat "$HR_LOG")" "npm install"
+sb_test_consent_grant context_mode install,wire
 mv "$HR_STAGE/scripts/optimize-rtk-context-mode.sh" "$HR_STAGE/scripts/opt.off"
 assert_eq "cm repair: no optimizer" '{"actions":[],"failures":[],"restart_required":false}' "$(rt_repair_context_mode 2>/dev/null | jq -c .)"
 mv "$HR_STAGE/scripts/opt.off" "$HR_STAGE/scripts/optimize-rtk-context-mode.sh"
@@ -236,8 +245,8 @@ assert_eq "search: no package manager noted once" "ready|full|unsupported_packag
 RT_MODE=verify
 assert_eq "search repair: not authorized" '{"actions":[],"failures":["mutation_not_authorized"],"restart_required":false}' "$(rt_repair_search_cli)"
 export RT_MODE=apply RT_ENTRY_POINT=init RT_SCOPE=all
-# the pinned install runs through `bash -lc`; intercept it with a function (a PATH stub named bash would recurse)
-bash() { echo "bash $*" >>"$HR_LOG"; return "${BASH_RC:-0}"; }
+# the pinned install runs as plain `brew` commands (no shell, no login profile): stub brew
+hr_bin brew 'echo "brew $*" >>"$HR_LOG"; exit "${BREW_RC:-0}"'
 hr_project '{"sb_initiated":true,"recommended_tools":{"search_cli":{"enabled_by_user":true,"install_commands":["rm -rf /"]}}}'
 assert_eq "search repair: project install commands that differ from the pin are refused" '{"actions":[],"failures":["install_pin_mismatch"],"restart_required":false}' "$(rt_repair_search_cli | jq -c .)"
 hr_consent search_cli=enabled
@@ -248,10 +257,12 @@ assert_eq "search repair: unsupported package manager" '{"actions":[],"failures"
 assert_eq "search repair: missing pin argv" '{"actions":[],"failures":["install_pin_missing"],"restart_required":false}' "$( (rt_search_cli_pin_argv() { :; }; rt_repair_search_cli) | jq -c .)"
 : >"$HR_LOG"
 assert_eq "search repair: pinned install" '{"actions":["brew_install_search_cli_pin"],"failures":[],"restart_required":false}' "$(rt_repair_search_cli 2>/dev/null | jq -c .)"
-assert_contains "search repair: pin argv executed through a login shell" "$(cat "$HR_LOG")" "bash -lc brew tap paperfoot/tap && brew install paperfoot/tap/search-cli"
-assert_eq "search repair: install failure" '{"actions":[],"failures":["brew_install_failed"],"restart_required":false}' "$(BASH_RC=1 rt_repair_search_cli 2>/dev/null | jq -c .)"
+assert_eq "search repair: pin run as two plain brew commands, no shell" "brew tap paperfoot/tap|brew install paperfoot/tap/search-cli" "$(paste -sd'|' "$HR_LOG")"
+assert_eq "search repair: install failure" '{"actions":[],"failures":["brew_install_failed"],"restart_required":false}' "$(BREW_RC=1 rt_repair_search_cli 2>/dev/null | jq -c .)"
+: >"$HR_LOG"
+BREW_RC=1 rt_repair_search_cli >/dev/null 2>&1 || true
+assert_eq "search repair: a failing tap stops the chain" "brew tap paperfoot/tap" "$(cat "$HR_LOG")"
 hr_project '{"sb_initiated":true,"recommended_tools":{"search_cli":{"enabled_by_user":true,"install_commands":["brew tap paperfoot/tap","brew install paperfoot/tap/search-cli"]}}}'
 assert_eq "search repair: project commands equal to the pin (split over several entries) are accepted" '{"actions":["brew_install_search_cli_pin"],"failures":[],"restart_required":false}' "$(rt_repair_search_cli 2>/dev/null | jq -c .)"
 
-unset -f bash
 tl_results

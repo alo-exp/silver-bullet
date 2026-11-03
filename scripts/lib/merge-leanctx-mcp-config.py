@@ -17,11 +17,12 @@ import argparse
 import json
 import os
 import pathlib
-import re
-import shutil
 import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent / "global-toolstack"))
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+
+import sb_host_config as sbc  # noqa: E402
 
 from five_tool_instances import (  # noqa: E402
     ensure_global_instances,
@@ -52,12 +53,10 @@ CM_OVERLAP_TOOLS = [
 
 
 def load_json(path: pathlib.Path, default: dict | None = None) -> dict:
+    """The JSON object in PATH; DEFAULT when absent; sbc.ConfigError (a ValueError) when it
+    cannot be parsed - the file is then left alone."""
     if path.is_file():
-        with path.open(encoding="utf-8") as handle:
-            data = json.load(handle)
-        if not isinstance(data, dict):
-            raise ValueError(f"{path}: expected a JSON object at the top level")
-        return data
+        return sbc.read_json(path)
     return default or {}
 
 
@@ -85,15 +84,12 @@ def server_map(data: dict, key: str) -> dict:
 
 
 def save_json(path: pathlib.Path, data: dict, dry_run: bool) -> None:
+    """Write DATA atomically through a symlink, keeping the mode and the previous content in
+    <file>.sb-backup; nothing is written when the bytes would not change."""
     if dry_run:
         print(f"DRY-RUN: would write {path}")
         return
-    path.parent.mkdir(parents=True, exist_ok=True)
-    if path.is_file():
-        shutil.copy2(path, path.with_suffix(path.suffix + ".bak"))
-    with path.open("w", encoding="utf-8") as handle:
-        json.dump(data, handle, indent=2)
-        handle.write("\n")
+    sbc.write_json(path, data)
 
 
 def context_mode_present_cursor(mcp_path: pathlib.Path) -> bool:
@@ -117,10 +113,7 @@ def context_mode_present_opencode(cfg_path: pathlib.Path) -> bool:
 
 
 def context_mode_present_codex(config_toml: pathlib.Path) -> bool:
-    if not config_toml.is_file():
-        return False
-    text = config_toml.read_text(encoding="utf-8")
-    return "[mcp_servers.context-mode]" in text
+    return bool(sbc.read_toml(config_toml).headers(("mcp_servers", "context-mode")))
 
 
 # LeanCTX tools whose job belongs to another stack member in the routed profile.
@@ -284,108 +277,26 @@ def merge_opencode_mcp(target: pathlib.Path, dry_run: bool, manifest: dict) -> d
     return {"host": "opencode", "mcp_merged": changed, "cm_active": cm_active}
 
 
-def toml_section_bounds(text: str, header: str) -> tuple[int, int] | None:
-    match = re.search(rf"(?m)^{re.escape(header)}\s*$", text)
-    if not match:
-        return None
-    next_header = re.search(r"(?m)^\[", text[match.end() :])
-    end = match.end() + (next_header.start() if next_header else len(text[match.end() :]))
-    return match.start(), end
-
-
-def normalize_codex_root(text: str, server: str, manifest: dict) -> str:
-    spec = mcp_server_spec(manifest, "leanctx")
-    header = f"[mcp_servers.{server}]"
-    bounds = toml_section_bounds(text, header)
-    if bounds is None:
-        return text
-    start, end = bounds
-    if "\n" not in text[start:end]:  # header is the last line of the file
-        text += "\n"
-        start, end = toml_section_bounds(text, header)
-    header_end = text.find("\n", start, end)
-    body = text[header_end + 1 : end]
-    for key, value in (
-        ("command", f"command = {json.dumps(spec['command'])}"),
-        ("args", f"args = {json.dumps(spec['args'])}"),
-    ):
-        pattern = rf"(?m)^{re.escape(key)}\s*=.*$"
-        if re.search(pattern, body):
-            body = re.sub(pattern, value, body, count=1)
-        else:
-            body = f"{value}\n" + body
-    return text[: header_end + 1] + body + text[end:]
-
-
-def normalize_codex_env(text: str, env: dict[str, str]) -> str:
-    header = "[mcp_servers.leanctx.env]"
-    bounds = toml_section_bounds(text, header)
-    if bounds is None:
-        if text and not text.endswith("\n"):
-            text += "\n"
-        if text:
-            text += "\n"
-        text += header + "\n"
-        text += "\n".join(f"{key} = {json.dumps(value)}" for key, value in env.items()) + "\n"
-        return text
-    start, end = bounds
-    if "\n" not in text[start:end]:  # header is the last line of the file
-        text += "\n"
-        start, end = toml_section_bounds(text, header)
-    header_end = text.find("\n", start, end)
-    body = text[header_end + 1 : end]
-    for key, value in env.items():
-        line = f"{key} = {json.dumps(value)}"
-        pattern = rf"(?m)^{re.escape(key)}\s*=.*$"
-        if re.search(pattern, body):
-            body = re.sub(pattern, line, body, count=1)
-        else:
-            body = f"{line}\n" + body
-    return text[: header_end + 1] + body + text[end:]
-
-
 def merge_codex_toml(target: pathlib.Path, dry_run: bool, manifest: dict) -> dict:
-    cm_active = context_mode_present_codex(target)
-    original = target.read_text(encoding="utf-8") if target.is_file() else ""
-    text = re.sub(
-        r"(?ms)^\[mcp_servers\.lean-ctx(?:\.env)?\]\n.*?(?=^\[|\Z)",
-        "",
-        original,
-    )
-    changed = text != original
-    marker = "[mcp_servers.leanctx]"
-    env_lines = "\n".join(
-        f'{key} = "{val}"' for key, val in leanctx_server_env(cm_active).items()
-    )
+    """Make [mcp_servers.leanctx] (and its env table) hold the desired values and drop the legacy
+    [mcp_servers.lean-ctx] tables. The file is edited structurally and written atomically; a
+    config that does not parse is refused and left alone."""
+    doc = sbc.read_toml(target)
+    cm_active = bool(doc.headers(("mcp_servers", "context-mode")))
     spec = mcp_server_spec(manifest, "leanctx")
-    block = f"""{marker}
-command = {json.dumps(spec['command'])}
-args = {json.dumps(spec['args'])}
-
-[mcp_servers.leanctx.env]
-{env_lines}
-"""
-    if marker not in text:
-        if text and not text.endswith("\n"):
-            text += "\n"
-        if text:
-            text += "\n"
-        text += block
-        changed = True
-    else:
-        updated = normalize_codex_root(text, "leanctx", manifest)
-        updated = normalize_codex_env(updated, leanctx_server_env(cm_active))
-        changed = changed or updated != text
-        text = updated
+    table = ("mcp_servers", "leanctx")
+    changed = bool(doc.remove(lambda path: path[:2] == ("mcp_servers", "lean-ctx")))
+    changed = doc.set_value(table, "args", json.dumps(spec["args"], ensure_ascii=False)) or changed
+    changed = doc.set_value(table, "command", json.dumps(spec["command"], ensure_ascii=False)) or changed
+    env = leanctx_server_env(cm_active)
+    for key in reversed(list(env)):
+        changed = doc.set_value(table + ("env",), key, json.dumps(env[key], ensure_ascii=False)) or changed
     if not changed:
         return {"host": "codex", "mcp_merged": False, "cm_active": cm_active}
     if dry_run:
-        print(f"DRY-RUN: would append leanctx block to {target}")
+        print(f"DRY-RUN: would write leanctx block to {target}")
         return {"host": "codex", "mcp_merged": True, "cm_active": cm_active}
-    target.parent.mkdir(parents=True, exist_ok=True)
-    if target.is_file():
-        shutil.copy2(target, target.with_suffix(target.suffix + ".bak"))
-    target.write_text(text, encoding="utf-8")
+    sbc.write_toml(target, doc)
     return {"host": "codex", "mcp_merged": True, "cm_active": cm_active}
 
 

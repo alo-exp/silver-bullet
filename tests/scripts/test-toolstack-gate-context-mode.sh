@@ -63,8 +63,10 @@ ts_gate context-mode-gate.sh "$(ts_payload Bash "" "make build")" "$repo"; expec
 # --- SB bridge deferral ---
 sbp="$TL_TMP/sbp"; tl_git_repo "$sbp"
 ts_sb_project "$sbp"
-mkdir -p "$sbp/scripts/lib/recommended-tools"
-cat >"$sbp/scripts/lib/recommended-tools/heartbeat.sh" <<'HB'
+# Silver Bullet's own checkout, as the installer recorded it - the bridge heartbeat is read from
+# there, never from the project (a cloned repository could ship its own heartbeat.sh).
+ts_sb_bridge "$TL_TMP/sbroot"
+cat >"$TL_TMP/sbroot/scripts/lib/recommended-tools/heartbeat.sh" <<'HB'
 rt_project_id() { echo p; }
 rt_worktree_id() { echo w; }
 rt_current_session_id() { echo s; }

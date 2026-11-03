@@ -5,8 +5,8 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
 
 SCRIPT="$TL_REPO_ROOT/scripts/start-minimax-openai-proxy.sh"
-export MINIMAX_OPENAI_PROXY_PID_FILE="$TL_TMP/proxy.pid"
-export MINIMAX_OPENAI_PROXY_LOG="$TL_TMP/proxy.log"
+export MINIMAX_OPENAI_PROXY_PID_FILE="$TL_TMP/run/proxy.pid"
+export MINIMAX_OPENAI_PROXY_LOG="$TL_TMP/run/proxy.log"
 export MINIMAX_OPENAI_PROXY_PORT=19999
 
 cleanup_pids() {
@@ -34,7 +34,7 @@ wait_for_node_args() {
 }
 
 # 1. fresh start: node is launched with the proxy script and the port env.
-tl_stub node 'echo "port=$MINIMAX_OPENAI_PROXY_PORT args=$*" >"'"$TL_TMP"'/node.args"; exec "'"$REAL_SLEEP"'" 60'
+tl_stub node 'echo "port=$MINIMAX_OPENAI_PROXY_PORT args=$*" >"'"$TL_TMP"'/node.args"; exec bash -c "\"'"$REAL_SLEEP"'\" 60; :" "$@"'
 tl_run bash "$SCRIPT"
 assert_eq "fresh start exits 0" 0 "$TL_STATUS"
 assert_contains "announces url" "$TL_OUT" "MiniMax proxy: http://127.0.0.1:19999/v1"
@@ -81,5 +81,54 @@ assert_eq "failed start exits 1" 1 "$TL_STATUS"
 assert_contains "failed start message" "$TL_ERR" "Proxy failed to start — see $MINIMAX_OPENAI_PROXY_LOG"
 assert_not_contains "no success banner" "$TL_OUT" "MiniMax proxy:"
 assert_contains "node stderr went to log" "$(cat "$MINIMAX_OPENAI_PROXY_LOG")" "boom"
+
+# 5. a live pid that is not our proxy (a reused or planted pid) does not block a start (R6-20)
+rm -f "$MINIMAX_OPENAI_PROXY_PID_FILE" "$TL_TMP/wait-for-exit"
+"$REAL_SLEEP" 30 &
+UNRELATED=$!
+PIDS+=("$UNRELATED")
+echo "$UNRELATED" >"$MINIMAX_OPENAI_PROXY_PID_FILE"
+rm -f "$TL_TMP/node.args"
+tl_stub node 'echo started >"'"$TL_TMP"'/node.args"; exec bash -c "\"'"$REAL_SLEEP"'\" 60; :" "$@"'
+tl_run bash "$SCRIPT"
+assert_eq "an unrelated live pid does not count as the running proxy" 0 "$TL_STATUS"
+assert_not_contains "no false 'already running'" "$TL_OUT" "already running"
+PID5="$(cat "$MINIMAX_OPENAI_PROXY_PID_FILE")"
+PIDS+=("$PID5")
+assert_eq "a new pid replaced the unrelated one" "yes" "$([[ "$PID5" != "$UNRELATED" ]] && echo yes || echo no)"
+assert_eq "the unrelated process was left alone" "yes" "$(kill -0 "$UNRELATED" 2>/dev/null && echo yes || echo no)"
+kill "$PID5" 2>/dev/null || true
+
+# 5b. ps failing for a live pid: it is not our proxy, the start goes ahead
+echo "$UNRELATED" >"$MINIMAX_OPENAI_PROXY_PID_FILE"
+tl_stub ps 'exit 1'
+rm -f "$TL_TMP/node.args"
+tl_run bash "$SCRIPT"
+assert_eq "ps failing: the pid is not treated as the proxy" 0 "$TL_STATUS"
+assert_not_contains "ps failing: no false 'already running'" "$TL_OUT" "already running"
+PID5B="$(cat "$MINIMAX_OPENAI_PROXY_PID_FILE")"
+PIDS+=("$PID5B")
+kill "$PID5B" 2>/dev/null || true
+rm -f "$TL_BIN/ps"
+kill "$UNRELATED" 2>/dev/null || true
+
+# 6. pid and log live in a private directory, never through a planted symlink
+assert_eq "the run directory is private" "700" "$(stat -c %a "$TL_TMP/run" 2>/dev/null || stat -f %Lp "$TL_TMP/run")"
+VICTIM="$TL_TMP/victim"
+echo precious >"$VICTIM"
+rm -f "$MINIMAX_OPENAI_PROXY_LOG"
+ln -s "$VICTIM" "$MINIMAX_OPENAI_PROXY_LOG"
+tl_run bash "$SCRIPT"
+assert_eq "a symlinked log is refused" 1 "$TL_STATUS"
+assert_contains "refusal names the symlink" "$TL_ERR" "symlinked pid or log file"
+assert_eq "the symlink target is untouched" "precious" "$(cat "$VICTIM")"
+rm -f "$MINIMAX_OPENAI_PROXY_LOG"
+
+# 7. the default pid/log location is the per-user run directory, not /tmp
+unset MINIMAX_OPENAI_PROXY_PID_FILE MINIMAX_OPENAI_PROXY_LOG
+tl_stub node 'exit 3'
+tl_stub sleep 'for _ in $(seq 100); do kill -0 "$(cat "'"$TL_TMP"'/xdg/minimax-openai-proxy/proxy.pid")" 2>/dev/null || exit 0; "'"$REAL_SLEEP"'" 0.05; done; exit 0'
+tl_run env XDG_RUNTIME_DIR="$TL_TMP/xdg" bash "$SCRIPT"
+assert_contains "the default log is under the runtime dir" "$TL_ERR" "$TL_TMP/xdg/minimax-openai-proxy/proxy.log"
 
 tl_results

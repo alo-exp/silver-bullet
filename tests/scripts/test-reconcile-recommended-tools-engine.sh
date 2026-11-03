@@ -7,6 +7,7 @@
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init claude
+source "$TL_REPO_ROOT/tests/lib/consent-helpers.sh"
 cd "$TL_TMP"
 unset RT_PROJECT_ROOT RT_HOST RT_MODE RT_SCOPE RT_FORMAT RT_ENTRY_POINT RT_CROSS_TOOL_BATCH SB_RT_APPLY_ACTIVE RT_REPO_ROOT
 
@@ -62,7 +63,7 @@ EOF2
 PROJ="$TL_TMP/proj"; mkdir -p "$PROJ"
 git -C "$PROJ" init -q
 CANON="$(cd "$PROJ" && pwd -P)"
-cfg() { printf '%s\n' "$1" >"$PROJ/.silver-bullet.json"; }
+cfg() { printf '%s\n' "$1" >"$PROJ/.silver-bullet.json"; sb_test_consent_reset_mirror "$PROJ/.silver-bullet.json" install,wire,enforce; }
 cfg '{"sb_initiated":true,"recommended_tools":{}}'
 comp() {  # id state [repairable] [activation]
   jq -nc --arg id "$1" --arg st "$2" --argjson rp "${3:-false}" --arg act "${4:-none}" \

@@ -74,11 +74,33 @@ rt_project_config() {
   [[ -n "$root" && -f "${root}/.silver-bullet.json" ]] && printf '%s' "${root}/.silver-bullet.json"
 }
 
+# The user's consent for a tool: pending | enabled | disabled. It comes only from the per-user
+# consent store (hooks/lib/user-consent.sh, docs/CONSENT.md): the project file may turn a tool
+# off, but a recommendation in it ("enabled_by_user": true) is never consent.
+#   disabled  the project file turns the tool off, or the user declined it
+#   enabled   the user granted install, wire or enforce (machine-wide, or enforce for this project)
+#   pending   no decision
 rt_consent_for() {
-  local tool_id="${1:-}"
-  local cfg
-  cfg="$(rt_project_config)" || { printf 'pending'; return 0; }
-  sb_recommended_tool_consent "$cfg" "$tool_id"
+  local tool_id="${1:-}" cfg="" cap decision granted=0 declined=0
+  cfg="$(rt_project_config)" || cfg=""
+  if [[ -n "$cfg" && "$(sb_recommended_tool_project_preference "$cfg" "$tool_id")" == "disabled" ]]; then
+    printf 'disabled'
+    return 0
+  fi
+  for cap in install wire enforce; do
+    decision="$(sb_consent_decision "$tool_id" "$cap" "${RT_PROJECT_ROOT:-}")"
+    case "$decision" in
+      granted) granted=1 ;;
+      declined) declined=1 ;;
+    esac
+  done
+  if ((granted)); then
+    printf 'enabled'
+  elif ((declined)); then
+    printf 'disabled'
+  else
+    printf 'pending'
+  fi
 }
 
 rt_is_suspended() {
@@ -86,6 +108,44 @@ rt_is_suspended() {
   local cfg
   cfg="$(rt_project_config)" || return 1
   sb_recommended_tool_enforcement_suspended "$cfg" "$tool_id"
+}
+
+# rt_run_registry_command LINE PROGRAM...: run one line of Silver Bullet's built-in command table
+# without a shell. Status 2: not runnable (shell syntax, prose, or a program other than the listed
+# ones); 3: the program is not installed; otherwise the program's status. No eval, no bash -c.
+rt_run_registry_command() {
+  local line="${1:-}" prog allowed=0
+  local -a argv
+  shift
+  case "$line" in
+    *[!A-Za-z0-9\ ._/=:@-]*) return 2 ;;
+  esac
+  read -r -a argv <<<"$line"
+  prog="${argv[0]:-}"
+  for line in "$@"; do
+    [[ "$prog" == "$line" ]] && allowed=1
+  done
+  ((allowed)) || return 2
+  command -v "$prog" >/dev/null 2>&1 || return 3
+  "${argv[@]}"
+}
+
+# rt_run_registry_chain LINE PROGRAM...: run "cmd1 && cmd2 && ..." from the built-in table, each
+# part through rt_run_registry_command; stop at the first failure and return its status.
+rt_run_registry_chain() {
+  local line="${1:-}" part rc=0
+  local -a parts
+  shift
+  [[ -n "$line" ]] || return 2
+  while [[ "$line" == *" && "* ]]; do
+    parts+=("${line%% && *}")
+    line="${line#* && }"
+  done
+  parts+=("$line")
+  for part in "${parts[@]}"; do
+    rt_run_registry_command "$part" "$@" || { rc=$?; break; }
+  done
+  return "$rc"
 }
 
 rt_validate_host() {
@@ -130,6 +190,15 @@ rt_host_mcp_config_path() {
   esac
 }
 
+# rt_codex_toml_has_server FILE NAME: FILE declares the table [mcp_servers.NAME] in any valid
+# header spelling (spaces around the dots, a quoted key, a trailing comment). A sub-table such as
+# [mcp_servers.NAME.env] alone does not define a server.
+rt_codex_toml_has_server() {
+  local path="${1:-}" name="${2:-}" esc
+  esc="${name//./\\.}"
+  grep -qE "^[[:space:]]*\\[[[:space:]]*mcp_servers[[:space:]]*\\.[[:space:]]*(${esc}|\"${esc}\"|'${esc}')[[:space:]]*\\][[:space:]]*(#.*)?\$" "$path" 2>/dev/null
+}
+
 rt_host_mcp_server_configured() {
   local host="${1:-${RT_HOST:-cursor}}" server="${2:-}" path
   [[ -n "$server" ]] || return 1
@@ -153,7 +222,7 @@ rt_host_mcp_server_configured() {
       jq -e --arg server "$key" '.servers[$server].enabled == true' "$path" >/dev/null 2>&1
       ;;
     codex)
-      grep -qE "^\\[mcp_servers\\.${server//./\\.}\\]$" "$path" 2>/dev/null
+      rt_codex_toml_has_server "$path" "$server"
       ;;
     *) return 1 ;;
   esac
@@ -319,12 +388,21 @@ rt_scope_includes_component() {
   esac
 }
 
+# rt_mutation_allowed TOOL [CAPABILITY]: may this run change the machine for TOOL? Only in apply
+# mode with a valid entry point, when the user granted CAPABILITY (install or wire; default:
+# either) and neither the user nor the project file turned the tool off. Package installs pass
+# install, host-configuration writes pass wire.
 rt_mutation_allowed() {
-  local tool_id="${1:-}"
+  local tool_id="${1:-}" cap="${2:-}"
   [[ "${RT_MODE:-verify}" == "apply" ]] || return 1
   rt_validate_authorization || return 1
   [[ "$(rt_consent_for "$tool_id")" == "enabled" ]] || return 1
   rt_is_suspended "$tool_id" && return 1
+  if [[ -n "$cap" ]]; then
+    sb_consent_granted "$tool_id" "$cap" || return 1
+  else
+    sb_consent_granted "$tool_id" install || sb_consent_granted "$tool_id" wire || return 1
+  fi
   return 0
 }
 
@@ -350,22 +428,44 @@ rt_atomic_write_json() {
   mv -f "$tmp" "$dest"
 }
 
+# rt_lock_is_stale LOCK: the lock directory names a process that is gone or, with no pid
+# recorded, was created more than two minutes ago.
+rt_lock_is_stale() {
+  local lock_path="${1:-}" holder=""
+  [[ -d "$lock_path" ]] || return 1
+  if [[ -f "${lock_path}/pid" ]]; then
+    if IFS= read -r holder <"${lock_path}/pid"; then :; fi
+    if [[ "$holder" =~ ^[0-9]{1,9}$ ]]; then
+      kill -0 "$holder" 2>/dev/null && return 1
+      return 0
+    fi
+  fi
+  [[ -n "$(find "$lock_path" -maxdepth 0 -mmin +2 2>/dev/null)" ]]
+}
+
+# rt_with_lock LOCK TIMEOUT COMMAND...: run COMMAND holding the mkdir lock. The lock is released
+# when COMMAND returns (no RETURN trap: it would outlive this call and fire again when the
+# caller returns, deleting a lock somebody else holds), and a lock whose owner died is recovered.
 rt_with_lock() {
-  local lock_path="${1:-}" timeout_s="${2:-30}"
+  local lock_path="${1:-}" timeout_s="${2:-30}" rc=0 start now
   shift 2
   [[ -n "$lock_path" ]] || return 1
   # A parent that cannot be created is a permanent error, not contention: fail at once.
   mkdir -p "$(dirname "$lock_path")" 2>/dev/null || return 1
-  local start now
   start="$(date +%s)"
   while ! mkdir "$lock_path" 2>/dev/null; do
+    if rt_lock_is_stale "$lock_path"; then
+      rm -rf -- "$lock_path" 2>/dev/null || return 1
+      continue
+    fi
     now="$(date +%s)"
     if (( now - start > timeout_s )); then
       return 1
     fi
     sleep 0.1
   done
-  # shellcheck disable=SC2064
-  trap "rm -rf -- $(printf '%q' "$lock_path") 2>/dev/null || true" RETURN
-  "$@"
+  if printf '%s\n' "$$" >"${lock_path}/pid" 2>/dev/null; then :; fi
+  "$@" || rc=$?
+  if rm -rf -- "$lock_path" 2>/dev/null; then :; fi
+  return "$rc"
 }

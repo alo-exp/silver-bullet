@@ -37,4 +37,9 @@ if ! ts_rtk_hook_present; then
   ts_emit_deny "🚫 RTK HOOK MISSING — run bash scripts/install-global-toolstack.sh (rtk hook cursor before context-mode)" "$hook_event"
   exit 0
 fi
+# RTK is installed and its Cursor hook rewrites this shell command: that is the usage the commit
+# gate (token-compression-tools-gate.sh) asks for, and nothing else records it.
+if [[ -n "$command_str" ]]; then
+  ts_token_usage_record rtk || true
+fi
 exit 0

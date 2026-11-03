@@ -50,6 +50,17 @@ rt_graphify_record_build_commit() {
   printf '%s' "$commit" >"${root}/graphify-out/.build-commit"
 }
 
+# rt_graphify_run_update ROOT: the index update itself. ROOT is a function argument, never text
+# spliced into a shell string.
+rt_graphify_run_update() {
+  cd -- "${1:-}" || return 1
+  if command -v timeout >/dev/null 2>&1; then
+    timeout "${RT_GRAPHIFY_UPDATE_TIMEOUT}s" graphify update . --no-cluster
+  else
+    graphify update . --no-cluster
+  fi
+}
+
 rt_graphify_worktree_build_index() {
   local root="${1:-${RT_PROJECT_ROOT:-}}"
   root="$(rt_graphify_worktree_root "$root")"
@@ -64,15 +75,7 @@ rt_graphify_worktree_build_index() {
   fi
   command -v graphify >/dev/null 2>&1 || return 1
   lock_path="$(rt_graphify_lock_path "$root")"
-  rt_with_lock "$lock_path" "$RT_GRAPHIFY_UPDATE_TIMEOUT" bash -c "
-    set -euo pipefail
-    cd \"${root}\"
-    if command -v timeout >/dev/null 2>&1; then
-      timeout ${RT_GRAPHIFY_UPDATE_TIMEOUT}s graphify update . --no-cluster
-    else
-      graphify update . --no-cluster
-    fi
-  " || return 1
+  rt_with_lock "$lock_path" "$RT_GRAPHIFY_UPDATE_TIMEOUT" rt_graphify_run_update "$root" || return 1
   rt_graphify_record_build_commit "$root"
   return 0
 }

@@ -79,8 +79,42 @@ ts_call bash -c 'cd "$1" && source "$2/common.sh" && ts_sb_defer_to_bridge' _ "$
 assert_eq "no defer without SB project" 1 "$TL_STATUS"
 ts_call bash -c 'cd "$1" && source "$2/common.sh" && ts_sb_defer_to_bridge' _ "$TL_TMP/proj" "$TS_SRC"
 assert_eq "no defer without heartbeat lib" 1 "$TL_STATUS"
-hbdir="$TL_TMP/proj/scripts/lib/recommended-tools"
-mkdir -p "$hbdir"
+# R6-02: the heartbeat library is Silver Bullet's own, found through the root the installer recorded
+# in the user's state directory - a heartbeat.sh shipped by the opened project is never sourced.
+hbdir="$TL_TMP/sbroot/scripts/lib/recommended-tools"
+projhb="$TL_TMP/proj/scripts/lib/recommended-tools"
+mkdir -p "$projhb"
+printf 'touch "%s"\nrt_heartbeat_path() { echo /evil; }\nrt_heartbeat_is_valid() { return 0; }\n' "$TL_TMP/evil-ran" >"$projhb/heartbeat.sh"
+ts_call bash -c 'cd "$1" && source "$2/common.sh" && ts_sb_defer_to_bridge' _ "$TL_TMP/proj" "$TS_SRC"
+assert_eq "a project-shipped heartbeat does not make the gates defer" 1 "$TL_STATUS"
+assert_file_absent "a project-shipped heartbeat.sh is never sourced" "$TL_TMP/evil-ran"
+# ts_sb_root: only an absolute recorded root that holds the heartbeat library counts
+mkdir -p "$HOME/.cursor/state/toolstack"
+ts_call ts_sb_root
+assert_eq "no recorded root" 1 "$TL_STATUS"
+: >"$HOME/.cursor/state/toolstack/repo-root"
+ts_call ts_sb_root
+assert_eq "an empty repo-root record is refused" 1 "$TL_STATUS"
+printf '%s\n' "relative/root" >"$HOME/.cursor/state/toolstack/repo-root"
+ts_call ts_sb_root
+assert_eq "a relative recorded root is refused" 1 "$TL_STATUS"
+printf '%s\n' "$TL_TMP/sbroot" >"$HOME/.cursor/state/toolstack/repo-root"
+ts_call ts_sb_root
+assert_eq "a root without the heartbeat library is refused" 1 "$TL_STATUS"
+mkdir -p "$hbdir"; : >"$hbdir/heartbeat.sh"
+ts_call ts_sb_root
+assert_eq "an absolute root with the library is accepted" 0 "$TL_STATUS"
+assert_eq "and printed" "$TL_TMP/sbroot" "$TL_OUT"
+printf '%s' "$TL_TMP/sbroot" >"$HOME/.cursor/state/toolstack/repo-root"
+ts_call ts_sb_root
+assert_eq "a recorded root without a trailing newline is accepted" 0 "$TL_STATUS"
+rm -f "$HOME/.cursor/state/toolstack/repo-root"
+ln -s "$TL_TMP/real-root-file" "$HOME/.cursor/state/toolstack/repo-root"
+printf '%s\n' "$TL_TMP/sbroot" >"$TL_TMP/real-root-file"
+ts_call ts_sb_root
+assert_eq "a symlinked repo-root record is refused" 1 "$TL_STATUS"
+rm -f "$HOME/.cursor/state/toolstack/repo-root"
+printf '%s\n' "$TL_TMP/sbroot" >"$HOME/.cursor/state/toolstack/repo-root"
 # heartbeat lib that does not define rt_heartbeat_path
 printf '%s\n' ':' >"$hbdir/heartbeat.sh"
 ts_call bash -c 'cd "$1" && source "$2/common.sh" && ts_sb_defer_to_bridge' _ "$TL_TMP/proj" "$TS_SRC"

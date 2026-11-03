@@ -29,8 +29,10 @@ count() { if [[ -f "$calls" ]]; then wc -l <"$calls" | tr -d ' '; else echo 0; f
 
 sbp="$TL_TMP/sbp"; tl_git_repo "$sbp"
 ts_sb_project "$sbp"
-mkdir -p "$sbp/scripts/lib/recommended-tools"
-cat >"$sbp/scripts/lib/recommended-tools/heartbeat.sh" <<'HB'
+# Silver Bullet's own checkout, as the installer recorded it - the bridge heartbeat is read from
+# there, never from the project (a cloned repository could ship its own heartbeat.sh).
+ts_sb_bridge "$TL_TMP/sbroot"
+cat >"$TL_TMP/sbroot/scripts/lib/recommended-tools/heartbeat.sh" <<'HB'
 rt_project_id() { echo p; }
 rt_worktree_id() { echo w; }
 rt_current_session_id() { echo s; }
@@ -86,6 +88,14 @@ ts_write_config '{"enforcement":"always","state_dir":"~/st","tools":{"graphify":
 ts_gate $S "" "$repo"; expect_silent "custom args"
 wait_unlocked || assert_eq "lock removed" removed "still locked"
 assert_eq "custom args used" "update src" "$(cat "$calls")"
+
+# an empty args list falls back to the default arguments (and works without bash 4's mapfile - R6-16)
+reset
+ts_write_config '{"enforcement":"always","state_dir":"~/st","tools":{"graphify":{"required":true}},"worktree":{"bootstrap_graphify":true,"graphify_update_args":[]}}'
+ts_gate $S "" "$repo"; expect_silent "empty args list"
+wait_unlocked || assert_eq "lock removed" removed "still locked"
+assert_eq "empty args list: default args used" "update . --no-cluster" "$(cat "$calls")"
+assert_not_contains "the script uses no mapfile (bash 3.2 has none)" "$(cat "$TL_REPO_ROOT/scripts/lib/global-toolstack/session-bootstrap.sh")" "mapfile"
 
 # without timeout(1): plain graphify, failure ignored
 ts_write_config "$CFG"

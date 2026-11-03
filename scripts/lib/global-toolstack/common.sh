@@ -69,15 +69,27 @@ ts_find_sb_config() {
   return 1
 }
 
+# ts_sb_root: Silver Bullet's own checkout/plugin directory, as recorded by the installer in the
+# user's state directory. Never derived from the project that is open: a cloned repository can ship
+# any scripts/lib/recommended-tools/heartbeat.sh and these gates run on every tool call.
+ts_sb_root() {
+  local recorded="${HOME}/.cursor/state/toolstack/repo-root" root=""
+  [[ -f "$recorded" && ! -L "$recorded" ]] || return 1
+  IFS= read -r root <"$recorded" || [[ -n "$root" ]] || return 1
+  [[ "$root" == /* && -f "${root}/scripts/lib/recommended-tools/heartbeat.sh" ]] || return 1
+  printf '%s' "$root"
+}
+
 ts_sb_defer_to_bridge() {
-  local cfg project_root project_id worktree_id session_id hb_path
+  local cfg project_root project_id worktree_id session_id hb_path sb_root
   cfg="$(ts_find_sb_config 2>/dev/null || true)"
   [[ -n "$cfg" ]] || return 1
   project_root="$(dirname "$cfg")"
+  sb_root="$(ts_sb_root 2>/dev/null || true)"
   # Heartbeat schema-v1: defer only on valid, unexpired SB bridge heartbeat.
-  if [[ -f "${project_root}/scripts/lib/recommended-tools/heartbeat.sh" ]]; then
+  if [[ -n "$sb_root" ]]; then
     # shellcheck source=/dev/null
-    source "${project_root}/scripts/lib/recommended-tools/heartbeat.sh" 2>/dev/null || true
+    source "${sb_root}/scripts/lib/recommended-tools/heartbeat.sh" 2>/dev/null || true
     if declare -f rt_heartbeat_path >/dev/null 2>&1; then
       project_id="$(rt_project_id 2>/dev/null || true)"
       worktree_id="$(rt_worktree_id "$project_root" 2>/dev/null || true)"
@@ -582,6 +594,20 @@ ts_token_usage_is_fresh() {
   now="$(date +%s)"
   age=$((now - epoch))
   [[ "$age" -ge 0 && "$age" -le "$ttl" ]]
+}
+
+# ts_token_usage_record TOOL: stamp "TOOL was used" for this project (atomic; never through a symlink).
+ts_token_usage_record() {
+  local tool="${1:-rtk}" state_path dir tmp
+  state_path="$(ts_token_usage_state_path "$tool")"
+  dir="$(dirname "$state_path")"
+  mkdir -p "$dir" 2>/dev/null || return 1
+  tmp="$(mktemp "${state_path}.XXXXXX" 2>/dev/null)" || return 1
+  if date +%s >"$tmp" 2>/dev/null && mv -f -- "$tmp" "$state_path" 2>/dev/null; then
+    return 0
+  fi
+  rm -f -- "$tmp" 2>/dev/null
+  return 1
 }
 
 ts_rtk_cli_available() {

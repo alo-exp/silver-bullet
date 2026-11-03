@@ -75,12 +75,29 @@ if [[ -z "$HOST" && "$APPLY_ALL" -eq 0 ]]; then
   exit 2
 fi
 
+# Applying changes machine-wide host configuration for both tools: only with the user's consent
+# (docs/CONSENT.md). Verify and dry-run never write.
+require_wire_consent() {
+  [[ "$MODE" == "apply" && -z "${GA_GLOBAL_DRY_RUN:-}" ]] || return 0
+  local tool
+  # shellcheck source=../hooks/lib/user-consent.sh
+  source "${SCRIPT_DIR}/../hooks/lib/user-consent.sh"
+  for tool in graphify agentmemory; do
+    if ! sb_consent_granted "$tool" wire; then
+      echo "SKIP: ${tool} has no 'wire' consent. To allow it:" >&2
+      echo "  bash ${SCRIPT_DIR}/sb-consent.sh grant ${tool} --all-projects --capabilities wire" >&2
+      return 1
+    fi
+  done
+}
+
 run_for_host() {
   local h="${1:-}"
   ga_validate_host "$h" || {
     echo "Unsupported host: $h" >&2
     return 2
   }
+  require_wire_consent || return 3
   case "$MODE" in
     apply) ga_apply_host "$h" "$REPO_PATH" ;;
     verify) ga_verify_host "$h" "$REPO_PATH" ;;
@@ -89,7 +106,10 @@ run_for_host() {
 
 if [[ "$APPLY_ALL" -eq 1 ]]; then
   rc=0
-  mapfile -t detected < <(ga_detect_configured_hosts)
+  detected=()
+  while IFS= read -r _host; do
+    [[ -n "$_host" ]] && detected+=("$_host")
+  done < <(ga_detect_configured_hosts)
   if [[ "${#detected[@]}" -eq 0 ]]; then
     echo "No configured hosts detected (checked global config paths)." >&2
     exit 1

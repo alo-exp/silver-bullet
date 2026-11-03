@@ -3,6 +3,7 @@
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
+source "$TL_REPO_ROOT/tests/lib/consent-helpers.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/h-recommended-helpers.sh"
 cd "$TL_TMP"
 

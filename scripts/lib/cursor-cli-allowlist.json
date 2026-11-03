@@ -1,5 +1,5 @@
 {
-  "description": "Research-backed Cursor Shell allow-list for RTK preToolUse rewrite coupling. Commands not listed return {} from rtk hook cursor.",
+  "description": "Cursor Shell allow-list for RTK preToolUse rewrite coupling. Commands not listed return {} from rtk hook cursor. 'read_only' is merged by default: inspection commands that cannot write or reach the network. 'allow' is the full list and is merged only with --cli-allowlist full; it also pre-approves interpreters, rm, curl, docker and cloud CLIs.",
   "allow": [
     "Shell([[ *)",
     "Shell(awk *)",
@@ -98,5 +98,21 @@
     "Shell(yarn *)",
     "Shell(zip *)",
     "Shell(zsh *)"
+  ],
+  "read_only": [
+    "Shell(cat *)",
+    "Shell(git diff *)",
+    "Shell(git log *)",
+    "Shell(git show *)",
+    "Shell(git status *)",
+    "Shell(grep *)",
+    "Shell(head *)",
+    "Shell(ls)",
+    "Shell(ls *)",
+    "Shell(pwd)",
+    "Shell(tail *)",
+    "Shell(tree *)",
+    "Shell(wc *)",
+    "Shell(which *)"
   ]
 }

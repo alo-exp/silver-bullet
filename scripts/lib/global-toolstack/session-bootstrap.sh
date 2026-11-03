@@ -27,7 +27,11 @@ if [[ -f "$lock" ]]; then
 fi
 touch "$lock" 2>/dev/null || true
 args_json="$(ts_jq '.worktree.graphify_update_args // ["update",".","--no-cluster"]')" || args_json='["update",".","--no-cluster"]'
-mapfile -t gf_args < <(printf '%s' "$args_json" | jq -r '.[]' 2>/dev/null)
+gf_args=()
+while IFS= read -r gf_arg; do
+  gf_args+=("$gf_arg")
+done < <(printf '%s' "$args_json" | jq -r '.[]' 2>/dev/null)
+((${#gf_args[@]} > 0)) || gf_args=(update . --no-cluster)
 (
   cd "$project_root" || exit 0
   {

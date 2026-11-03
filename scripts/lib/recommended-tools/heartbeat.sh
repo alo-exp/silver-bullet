@@ -26,7 +26,7 @@ rt_heartbeat_consent_summary() {
   cfg="$(rt_project_config)" || { printf '{}'; return 0; }
   local -a parts=()
   for tool in graphify agentmemory rtk context_mode leanctx; do
-    consent="$(sb_recommended_tool_consent "$cfg" "$tool")"
+    consent="$(rt_consent_for "$tool")"
     parts+=("\"${tool}\":\"${consent}\"")
   done
   printf '{%s}' "$(IFS=,; printf '%s' "${parts[*]}")"

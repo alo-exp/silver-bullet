@@ -40,27 +40,46 @@ printf 'LEANCTX\n' >"$RULES/leanctx.mdc"
 printf 'TOKEN-TEMPLATE\n' >"$STAGE/scripts/lib/install-cursor/templates/cursor/token-compression-enforcement.mdc"
 WORK="$TL_TMP/work"; mkdir -p "$WORK"
 
+# R6-13: the project's rules go into the PROJECT (here the working directory), copied from the bundle
+PRULES="$WORK/.cursor/rules"
 tl_run bash -c 'cd "$1" && bash "$2"' _ "$WORK" "$CUR"
 assert_eq "cursor: default run exits 0" "0" "$TL_STATUS"
-assert_contains "cursor: existing rule reported OK" "$TL_OUT" "OK: ${RULES}/graphify.mdc"
-assert_contains "cursor: second existing rule reported OK" "$TL_OUT" "OK: ${RULES}/leanctx.mdc"
+assert_contains "cursor: existing rule installed into the project" "$TL_OUT" "OK: ${PRULES}/graphify.mdc"
+assert_contains "cursor: second existing rule installed into the project" "$TL_OUT" "OK: ${PRULES}/leanctx.mdc"
+assert_eq "cursor: the project got the bundle's rule" "GRAPHIFY" "$(cat "$PRULES/graphify.mdc")"
 assert_not_contains "cursor: missing rule not reported" "$TL_OUT" "agentmemory.mdc"
 assert_not_contains "cursor: missing rule warning is silenced" "$TL_ERR" "missing rule file"
-assert_eq "cursor: token-compression template installed when absent" "TOKEN-TEMPLATE" "$(cat "$RULES/token-compression-enforcement.mdc")"
-assert_contains "cursor: summary line" "$TL_OUT" "Cursor recommended-tool rules installed under ${RULES}"
+assert_eq "cursor: token-compression template installed when absent" "TOKEN-TEMPLATE" "$(cat "$PRULES/token-compression-enforcement.mdc")"
+assert_eq "cursor: the bundle itself is not written to" "GRAPHIFY|LEANCTX" "$(cat "$RULES/graphify.mdc" "$RULES/leanctx.mdc" | paste -sd'|' -)"
+assert_file_absent "cursor: the bundle got no token rule" "$RULES/token-compression-enforcement.mdc"
+assert_contains "cursor: summary line" "$TL_OUT" "Cursor recommended-tool rules installed under ${PRULES}"
 assert_contains "cursor: tip without --global" "$TL_OUT" "Tip: run with --global"
 assert_eq "cursor: no reconcile without project config or --global" "" "$(cat "$RECON_LOG")"
 assert_file_absent "cursor: no global rules without --global" "$HOME/.cursor/rules"
 
 # an existing token rule is left alone
-printf 'LOCAL-EDIT\n' >"$RULES/token-compression-enforcement.mdc"
+printf 'LOCAL-EDIT\n' >"$PRULES/token-compression-enforcement.mdc"
 tl_run bash -c 'cd "$1" && bash "$2"' _ "$WORK" "$CUR"
-assert_eq "cursor: existing token rule preserved" "LOCAL-EDIT" "$(cat "$RULES/token-compression-enforcement.mdc")"
+assert_eq "cursor: existing token rule preserved" "LOCAL-EDIT" "$(cat "$PRULES/token-compression-enforcement.mdc")"
+
+# a project rule that differs is replaced, and the previous content is kept once
+printf 'MY OWN GRAPHIFY RULE\n' >"$PRULES/graphify.mdc"
+tl_run bash -c 'cd "$1" && bash "$2"' _ "$WORK" "$CUR"
+assert_eq "cursor: the Silver Bullet rule is installed" "GRAPHIFY" "$(cat "$PRULES/graphify.mdc")"
+assert_eq "cursor: the user's version is kept in a backup" "MY OWN GRAPHIFY RULE" "$(cat "$PRULES/graphify.mdc.sb-backup")"
 
 # without the template nothing is created
-rm -f "$RULES/token-compression-enforcement.mdc" "$STAGE/scripts/lib/install-cursor/templates/cursor/token-compression-enforcement.mdc"
+rm -f "$PRULES/token-compression-enforcement.mdc" "$STAGE/scripts/lib/install-cursor/templates/cursor/token-compression-enforcement.mdc"
 tl_run bash -c 'cd "$1" && bash "$2"' _ "$WORK" "$CUR"
-assert_file_absent "cursor: no template, no token rule" "$RULES/token-compression-enforcement.mdc"
+assert_file_absent "cursor: no template, no token rule" "$PRULES/token-compression-enforcement.mdc"
+
+# an installed plugin has no .cursor/rules bundle: the run warns and still succeeds
+mv "$RULES" "$RULES.off"
+rm -rf "$WORK/.cursor"
+tl_run bash -c 'cd "$1" && bash "$2"' _ "$WORK" "$CUR"
+assert_eq "cursor: a bundle without rules does not abort the installer" "0" "$TL_STATUS"
+assert_file_absent "cursor: nothing is installed from a missing bundle" "$WORK/.cursor/rules/graphify.mdc"
+mv "$RULES.off" "$RULES"
 
 # help / bad args
 tl_run bash "$CUR" --help
@@ -127,6 +146,28 @@ assert_contains "cursor: --global reconcile failure warns" "$TL_ERR" "WARN: reco
 rm -rf "$HOME/.cursor" "$STAGE/scripts/lib/global-toolstack/global-recommended-tools.mdc"
 tl_run bash -c 'cd "$1" && bash "$2" --global' _ "$WORK" "$CUR"
 assert_eq "cursor: project recommended-tools rule used as fallback" "recommended-tools-project" "$(cat "$HOME/.cursor/rules/recommended-tools.mdc")"
+
+# a rule the bundle lacks but the project has is installed globally from the project's copy
+rm -rf "$HOME/.cursor"
+rm -f "$RULES/context-mode.mdc"
+mkdir -p "$WORK/.cursor/rules"
+printf 'FROM-PROJECT\n' >"$WORK/.cursor/rules/context-mode.mdc"
+tl_run bash -c 'cd "$1" && bash "$2" --global' _ "$WORK" "$CUR"
+assert_eq "cursor: a project-only rule is installed globally from the project" "FROM-PROJECT" "$(cat "$HOME/.cursor/rules/context-mode.mdc")"
+
+# a rule that cannot be installed (a dangling link in the way) is a warning, never an abort
+rm -rf "$WORK/.cursor"
+mkdir -p "$WORK/.cursor/rules"
+ln -s "$TL_TMP/no/such/dir/x" "$WORK/.cursor/rules/graphify.mdc"
+tl_run bash -c 'cd "$1" && bash "$2"' _ "$WORK" "$CUR"
+assert_eq "cursor: an uninstallable rule does not abort the installer" "0" "$TL_STATUS"
+rm -rf "$HOME/.cursor"
+mkdir -p "$HOME/.cursor/rules"
+ln -s "$TL_TMP/no/such/dir/x" "$HOME/.cursor/rules/graphify.mdc"
+printf 'bundle\n' >"$RULES/graphify.mdc"
+tl_run bash -c 'cd "$1" && bash "$2" --global' _ "$WORK" "$CUR"
+assert_eq "cursor: a global rule that cannot be installed does not abort either" "0" "$TL_STATUS"
+assert_contains "cursor: and is reported" "$TL_ERR" "WARN: could not install $HOME/.cursor/rules/graphify.mdc"
 rm -rf "$HOME/.cursor" "$RULES/recommended-tools.mdc"
 tl_run bash -c 'cd "$1" && bash "$2" --global' _ "$WORK" "$CUR"
 assert_file_absent "cursor: no recommended-tools rule at all" "$HOME/.cursor/rules/recommended-tools.mdc"
@@ -191,12 +232,19 @@ assert_contains "global pi: missing installer message" "$TL_ERR" "ERROR: Pi five
 printf 'import os, sys\nopen(os.environ["PI_LOG"], "a").write(" ".join(sys.argv[1:]) + "\\n")\n' >"$STAGE/scripts/lib/global-toolstack/install-pi.py"
 tl_run bash "$GLO" --host pi
 assert_eq "global pi: installer runs" "0" "$TL_STATUS"
-assert_eq "global pi: installer receives the repo root" "--repo-root ${STAGE}" "$(cat "$PI_LOG")"
+assert_eq "global pi: installer receives the repo root and no tool without consent" "--repo-root ${STAGE}" "$(cat "$PI_LOG")"
+source "$TL_REPO_ROOT/tests/lib/consent-helpers.sh"
+sb_test_consent_sandbox
+sb_test_consent_grant rtk wire
+sb_test_consent_grant leanctx install
+: >"$PI_LOG"
+tl_run bash "$GLO" --host pi
+assert_eq "global pi: only wire-consented tools are enabled" "--repo-root ${STAGE} --enable-tool rtk" "$(cat "$PI_LOG")"
 
 # cursor delegates to the cursor installer (which writes into the staged repo)
 tl_run bash -c 'cd "$1" && bash "$2" --host cursor' _ "$WORK" "$GLO"
 assert_eq "global cursor: delegates" "0" "$TL_STATUS"
-assert_contains "global cursor: cursor installer output" "$TL_OUT" "Cursor recommended-tool rules installed under ${RULES}"
+assert_contains "global cursor: cursor installer output" "$TL_OUT" "Cursor recommended-tool rules installed under ${WORK}/.cursor/rules"
 assert_eq "global cursor: --global rules synced" "context-mode" "$(cat "$HOME/.cursor/rules/context-mode.mdc")"
 
 # all supported hosts (goose excluded)
@@ -206,11 +254,12 @@ assert_eq "global all: exits 0" "0" "$TL_STATUS"
 assert_contains "global all: claude" "$TL_OUT" "RTK.md present"
 assert_contains "global all: hermes" "$TL_OUT" "Hermes: enable rtk-rewrite"
 assert_not_contains "global all: goose skipped" "$TL_OUT" "SKIP: goose"
-assert_eq "global all: pi ran once" "--repo-root ${STAGE}" "$(cat "$PI_LOG")"
+assert_eq "global all: pi ran once, with only the consented tool" "--repo-root ${STAGE} --enable-tool rtk" "$(cat "$PI_LOG")"
 
 # a host the validator accepts but install_host does not know
 rm -f "$STAGE/hooks/lib"
 mkdir -p "$STAGE/hooks/lib"
+cp "$TL_REPO_ROOT/hooks/lib/user-consent.sh" "$TL_REPO_ROOT/hooks/lib/recommended-tools-registry.sh" "$STAGE/hooks/lib/"
 printf 'source "%s/hooks/lib/rtk-cm-global.sh"\nRTCM_ALL_HOSTS="$RTCM_ALL_HOSTS mystery"\n' "$TL_REPO_ROOT" >"$STAGE/hooks/lib/rtk-cm-global.sh"
 tl_run bash "$GLO" --host mystery
 assert_eq "global: unknown-but-valid host returns 2" "2" "$TL_STATUS"

@@ -26,11 +26,36 @@ TS="$(date +%Y%m%dT%H%M%S)"
 mkdir -p "$TS_LIB" "$STATE_DIR" "$RULES_DIR"
 [[ -n "$REPO_ROOT" ]] && printf '%s' "$REPO_ROOT" >"${STATE_DIR}/repo-root"
 
+# The user's per-tool consent (docs/CONSENT.md): nothing is wired or required without it.
+ts_wired() { return 1; }
+if [[ -n "$REPO_ROOT" && -f "${REPO_ROOT}/hooks/lib/user-consent.sh" ]]; then
+  # shellcheck source=/dev/null
+  source "${REPO_ROOT}/hooks/lib/user-consent.sh"
+  ts_wired() { sb_consent_granted "$1" wire; }
+fi
+
+# ts_install_file SRC DEST: copy a Silver Bullet file, keeping the previous different content once in
+# DEST.sb-backup. cp writes through a symlinked DEST, so a rule linked into the user's dotfiles stays a link.
+ts_install_file() {
+  local src="$1" dest="$2"
+  if [[ -f "$dest" ]]; then
+    cmp -s "$src" "$dest" && return 0
+    [[ -f "${dest}.sb-backup" ]] || cp -p "$dest" "${dest}.sb-backup"
+  fi
+  cp -f "$src" "$dest"
+}
+
 [[ -f "${HOME_CURSOR}/hooks.json" ]] && cp -f "${HOME_CURSOR}/hooks.json" "${HOME_CURSOR}/hooks.json.bak.${TS}"
 [[ -f "${HOME_CURSOR}/mcp.json" ]] && cp -f "${HOME_CURSOR}/mcp.json" "${HOME_CURSOR}/mcp.json.bak.${TS}"
 
 # --- toolstack.json ---
-cat >"${HOME_CURSOR}/toolstack.json" <<'JSON'
+# The user's file wins: it is written only when absent, with "required" following the user's wire consent.
+TOOLSTACK_JSON="${HOME_CURSOR}/toolstack.json"
+if [[ -e "$TOOLSTACK_JSON" ]]; then
+  printf 'KEEP: %s exists - not overwritten\n' "$TOOLSTACK_JSON"
+else
+TOOLSTACK_TMP="$(mktemp "${HOME_CURSOR}/.toolstack.json.XXXXXX")"
+cat >"$TOOLSTACK_TMP" <<'JSON'
 {
   "version": 1,
   "enforcement": "always",
@@ -87,6 +112,20 @@ cat >"${HOME_CURSOR}/toolstack.json" <<'JSON'
   }
 }
 JSON
+_req='{}'
+for _t in graphify agentmemory context_mode leanctx rtk; do
+  if ts_wired "$_t"; then
+    _req="$(jq -c --arg t "$_t" '.[$t] = true' <<<"$_req")"
+  else
+    _req="$(jq -c --arg t "$_t" '.[$t] = false' <<<"$_req")"
+  fi
+done
+jq --argjson req "$_req" '
+  reduce ($req | keys[]) as $t (.; .tools[$t].required = $req[$t])
+  | .enforcement = (if ($req | any(.[]; . == true)) then "always" else "off" end)' \
+  "$TOOLSTACK_TMP" >"${TOOLSTACK_TMP}.new" && mv -f "${TOOLSTACK_TMP}.new" "$TOOLSTACK_JSON"
+rm -f "$TOOLSTACK_TMP"
+fi
 
 # --- deploy hook scripts from SRC_DIR ---
 for f in common.sh shell-compression.sh graphify-gate.sh agentmemory-gate.sh \
@@ -103,15 +142,16 @@ for f in common.sh shell-compression.sh graphify-gate.sh agentmemory-gate.sh \
   fi
 done
 
-for py in five_tool_instances.py patch-hooks.py patch-mcp.py fix-shell-compression-hook.py parity-verify.sh verify.sh; do
+for py in five_tool_instances.py opencode.py install-pi.py patch-hooks.py patch-mcp.py fix-shell-compression-hook.py parity-verify.sh verify.sh; do
   if [[ -f "${SRC_DIR}/${py}" ]]; then
     cp -f "${SRC_DIR}/${py}" "${TS_DIR}/${py}" 2>/dev/null || true
   fi
 done
+[[ -f "${SRC_DIR}/../sb_host_config.py" ]] && cp -f "${SRC_DIR}/../sb_host_config.py" "${TS_DIR}/sb_host_config.py"
 chmod +x "${TS_DIR}/parity-verify.sh" "${TS_DIR}/verify.sh" 2>/dev/null || true
 
 # --- graphify cursor install ---
-if command -v graphify >/dev/null 2>&1; then
+if command -v graphify >/dev/null 2>&1 && ts_wired graphify; then
   graphify cursor install 2>/dev/null || true
 fi
 
@@ -123,11 +163,11 @@ RULE_SRC="${REPO_ROOT}/.cursor/rules"
 [[ -d "$RULE_SRC" ]] || RULE_SRC="${SRC_DIR}"
 for rule in graphify.mdc agentmemory.mdc leanctx.mdc context-mode.mdc token-compression-enforcement.mdc; do
   if [[ -f "${RULE_SRC}/${rule}" ]]; then
-    cp -f "${RULE_SRC}/${rule}" "${RULES_DIR}/${rule}"
+    ts_install_file "${RULE_SRC}/${rule}" "${RULES_DIR}/${rule}"
   fi
 done
 if [[ -f "${SRC_DIR}/global-recommended-tools.mdc" ]]; then
-  cp -f "${SRC_DIR}/global-recommended-tools.mdc" "${RULES_DIR}/recommended-tools.mdc"
+  ts_install_file "${SRC_DIR}/global-recommended-tools.mdc" "${RULES_DIR}/recommended-tools.mdc"
 fi
 
 # --- five-tool reconciler (installer entry point; batches MCP + hook writes) ---
@@ -153,7 +193,7 @@ _self="$(cd "$(dirname "$0")" && pwd -P)/$(basename "$0")"
 _dest="$(cd "$TS_DIR" && pwd -P)/install.sh"
 if [[ "$_self" != "$_dest" ]]; then
   cp -f "$0" "${TS_DIR}/install.sh"
-  chmod +x "${TS_DIR}/install.sh"
+  chmod +x "${TS_DIR}/install.sh" 2>/dev/null || true
 fi
 
 printf '\n== Global toolstack install complete ==\n'

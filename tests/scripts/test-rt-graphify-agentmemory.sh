@@ -5,6 +5,7 @@
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
+source "$TL_REPO_ROOT/tests/lib/consent-helpers.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/h-recommended-helpers.sh"
 cd "$TL_TMP"  # never run with the checkout as cwd: stubs and relative writes stay in the sandbox
 # The checkout's tracked knowledge graph must never be touched by this test.
@@ -61,6 +62,7 @@ printf 'deadbeef' >"$HR_PROJ/graphify-out/.build-commit"
 assert_eq "stale: build commit differs" "0" "$(rc_of rt_probe_graphify_index_stale)"
 printf '%s' "$HEAD_COMMIT" >"$HR_PROJ/graphify-out/.build-commit"
 NOGITPROJ="$TL_TMP/nogit-proj"; mkdir -p "$NOGITPROJ/graphify-out"; echo '{}' >"$NOGITPROJ/graphify-out/graph.json"; echo '{}' >"$NOGITPROJ/.silver-bullet.json"
+sb_test_consent_reset_mirror "$NOGITPROJ/.silver-bullet.json" install,wire,enforce
 assert_eq "stale: outside git there is no HEAD" "1" "$(RT_PROJECT_ROOT="$NOGITPROJ" rc_of rt_probe_graphify_index_stale)"
 
 # an unreadable build-commit file counts as stale
@@ -207,6 +209,19 @@ assert_eq "packages: pipx upgrade" "pipx_upgrade_graphifyy_mcp
 ---FAILURES---" "$(PATH="$RG_NOUV" rt_repair_graphify_packages)"
 assert_eq "packages: pipx upgrade failure" "---FAILURES---
 pipx_upgrade_failed" "$(HR_PIPX_RC=1 PATH="$RG_NOUV" rt_repair_graphify_packages)"
+# R6-17: a package install or upgrade needs the "install" consent; "wire" alone changes nothing
+sb_test_consent_revoke_all
+sb_test_consent_grant graphify wire
+: >"$HR_LOG"
+assert_eq "packages: missing graphify without install consent" "---FAILURES---
+install_not_consented" "$(PATH="$RG_NOGR" rt_repair_graphify_packages)"
+hr_bin graphify 'exit 0'
+hr_nobin graphify-mcp
+assert_eq "packages: upgrade without install consent" "---FAILURES---
+install_not_consented" "$(rt_repair_graphify_packages)"
+hr_bin graphify-mcp 'exit 0'
+assert_eq "packages: no installer ran without install consent" "" "$(cat "$HR_LOG")"
+sb_test_consent_grant graphify install,wire
 RG_NONE="$(hr_path_without uv pipx)"
 assert_eq "packages: nothing to do without installers" "---FAILURES---" "$(PATH="$RG_NONE" rt_repair_graphify_packages)"
 hr_manifest "graphify=$HR_BIN/graphify-mcp"
@@ -229,14 +244,34 @@ hr_nobin graphify-mcp
 assert_eq "handshake: missing binary" "1" "$(PATH="$(hr_path_without graphify-mcp)" rc_of rt_graphify_mcp_handshake)"
 hr_bin graphify-mcp 'exit 0'
 
+# the index update runs in ROOT (a function argument, never spliced into a shell string)
+assert_eq "update: a missing directory fails without running graphify" "1" "$(rc_of rt_graphify_run_update "$TL_TMP/no/such/dir")"
+UPD="$TL_TMP/upd dir with \"quotes\" and \$(touch $TL_TMP/upd-pwned)"
+mkdir -p "$UPD"
+: >"$HR_LOG"
+hr_bin graphify 'echo "graphify $* in $PWD" >>"$HR_LOG"'
+RT_GRAPHIFY_UPDATE_TIMEOUT=5 rt_graphify_run_update "$UPD"
+assert_contains "update: runs in the given directory, whatever its name" "$(cat "$HR_LOG")" "graphify update . --no-cluster in $UPD"
+assert_file_absent "update: a hostile directory name is never evaluated" "$TL_TMP/upd-pwned"
+: >"$HR_LOG"
+RT_GRAPHIFY_UPDATE_TIMEOUT=5 PATH="$(hr_path_without timeout)" rt_graphify_run_update "$UPD"
+assert_contains "update: works without timeout(1)" "$(cat "$HR_LOG")" "graphify update . --no-cluster in $UPD"
+
 # platform refresh
 assert_eq "platform: no project config" "1" "$(RT_PROJECT_ROOT="$TL_TMP/nocfg" rc_of rt_repair_graphify_platform)"
+hr_bin graphify 'echo "graphify $*" >>"$HR_LOG"'
 hr_bin sb-platform-marker 'echo marker >>"$HR_LOG"'
 : >"$HR_LOG"
-sb_recommended_tool_platform_post_index_commands() { printf '%s\n' "" "sb-platform-marker" "false"; }
+PWNED="$TL_TMP/platform-pwned"
+sb_recommended_tool_platform_post_index_commands() {
+  printf '%s\n' "" "graphify claude install --project" "false" "graphify x; touch $PWNED" 'graphify $(touch '"$PWNED"')' \
+    "sb-platform-marker" "Merge the agentmemory MCP server by hand (manual)"
+  printf '%s' "graphify codex install --project"   # the last line has no trailing newline
+}
 # shellcheck disable=SC2218  # defined by the sourced repair-graphify.sh
 rt_repair_graphify_platform
-assert_eq "platform: post-index commands evaluated, failures tolerated, blanks skipped" "marker" "$(cat "$HR_LOG")"
+assert_eq "platform: only graphify commands from the table run, without a shell; the last line is not dropped (R6-14)" "graphify claude install --project|graphify codex install --project" "$(paste -sd'|' "$HR_LOG")"
+assert_file_absent "platform: shell syntax in a table line is never evaluated (R6-01)" "$PWNED"
 unset -f sb_recommended_tool_platform_post_index_commands
 # shellcheck source=/dev/null
 source "$TL_REPO_ROOT/hooks/lib/recommended-tools.sh"
@@ -394,6 +429,14 @@ assert_contains "am repair: npm install recorded" "$(jq -c . <<<"$out")" '"npm_i
 assert_contains "am repair: server start failure recorded" "$(jq -c . <<<"$out")" '"server_start_failed"'
 out="$(HR_NPM_RC=1 PATH="$AM_NOCLI2" rt_repair_agentmemory)"
 assert_contains "am repair: npm failure recorded" "$(jq -c . <<<"$out")" '"npm_install_failed"'
+# without the install consent the package is not installed (wire alone is not enough)
+sb_test_consent_revoke_all
+sb_test_consent_grant agentmemory wire
+: >"$HR_LOG"
+out="$(PATH="$AM_NOCLI2" rt_repair_agentmemory)"
+assert_contains "am repair: install not consented" "$(jq -c . <<<"$out")" '"install_not_consented"'
+assert_not_contains "am repair: no npm install without install consent" "$(cat "$HR_LOG")" "npm install"
+sb_test_consent_grant agentmemory install,wire
 # server down but agentmemory starts and becomes healthy
 hr_bin agentmemory 'echo "agentmemory $*" >>"$HR_LOG"; [[ -f "$HOME/.agentmemory/started" ]] && echo "Health: healthy"; touch "$HOME/.agentmemory/started"; exit 0'
 rm -rf "$HOME/.agentmemory"

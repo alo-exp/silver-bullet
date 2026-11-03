@@ -35,6 +35,9 @@ export SILVER_BULLET_RUNTIME=cursor
 export SB_RUNTIME_HOME_ROOT="${TEST_HOME}/.cursor"
 export SB_RUNTIME_STATE_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet"
 mkdir -p "${TEST_HOME}/.cursor" "${SB_RUNTIME_STATE_DIR}"
+# The user's consent (docs/CONSENT.md): LeanCTX is wired only for a user who said yes.
+source "$SOURCE_REPO_ROOT/tests/lib/consent-helpers.sh"
+sb_test_consent_grant_all
 
 # Seed CM + guard paths that must not be touched (conflict #8).
 printf '{"mcpServers":{"context-mode":{"command":"context-mode"}}}\n' >"${TEST_HOME}/.cursor/mcp.json"

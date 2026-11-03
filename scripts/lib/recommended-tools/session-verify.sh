@@ -13,22 +13,13 @@ rt_session_verify_block() {
   local host="${2:-cursor}"
   [[ -n "$project_root" && -f "${project_root}/.silver-bullet.json" ]] || return 0
   local repo_root reconciler out
+  # Silver Bullet's own reconciler only: never the opened project's copy (or one in an ancestor
+  # directory) - SessionStart would run whatever a cloned repository ships.
   repo_root=""
-  if [[ -f "${project_root}/scripts/reconcile-recommended-tools.sh" ]]; then
-    repo_root="$project_root"
-  elif [[ -n "${RT_REPO_ROOT:-}" && -f "${RT_REPO_ROOT}/scripts/reconcile-recommended-tools.sh" ]]; then
+  if [[ -n "${RT_REPO_ROOT:-}" && -f "${RT_REPO_ROOT}/scripts/reconcile-recommended-tools.sh" ]]; then
     repo_root="${RT_REPO_ROOT}"
   elif [[ -n "${CLAUDE_PLUGIN_ROOT:-}" && -f "${CLAUDE_PLUGIN_ROOT}/scripts/reconcile-recommended-tools.sh" ]]; then
     repo_root="${CLAUDE_PLUGIN_ROOT}"
-  else
-    local walk="$project_root"
-    while [[ "$walk" != "/" ]]; do
-      if [[ -f "${walk}/scripts/reconcile-recommended-tools.sh" ]]; then
-        repo_root="$walk"
-        break
-      fi
-      walk="$(dirname "$walk")"
-    done
   fi
   [[ -n "$repo_root" ]] || return 0
   reconciler="${repo_root}/scripts/reconcile-recommended-tools.sh"

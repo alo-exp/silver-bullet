@@ -1,18 +1,25 @@
 #!/usr/bin/env python3
-"""Install the Silver Bullet five-tool adapter into Pi's global agent dir."""
+"""Install the Silver Bullet five-tool adapter into Pi's global agent dir.
+
+Only the tools passed with --enable-tool (the ones the user consented to wire) are switched on, and
+pi-lean-ctx is registered only with leanctx. Pi's settings.json and the pi-lean-ctx config are user
+files: one that does not parse is reported and left alone, and every write is atomic, goes through
+a symlink, keeps the mode and leaves the previous content in <file>.sb-backup.
+"""
 from __future__ import annotations
 
 import argparse
 import json
 import os
-import shutil
-import tempfile
+import sys
 from pathlib import Path
 from typing import Any
 
-import sys
-
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+# sb_host_config.py sits in scripts/lib (the repository) or beside this file (the deployed copy).
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+
+import sb_host_config as sbc  # noqa: E402
 
 from five_tool_instances import ensure_global_instances, global_instances_manifest_path  # noqa: E402
 
@@ -32,25 +39,13 @@ def write_json(path: Path, data: dict[str, Any], dry_run: bool) -> None:
     if dry_run:
         print(f"DRY-RUN: would write {path}")
         return
-    path.parent.mkdir(parents=True, exist_ok=True)
-    encoded = json.dumps(data, indent=2) + "\n"
-    with tempfile.NamedTemporaryFile(
-        mode="w", encoding="utf-8", dir=path.parent, prefix=".sb-pi-", delete=False
-    ) as handle:
-        handle.write(encoded)
-        temporary = Path(handle.name)
-    temporary.chmod(0o600)
-    temporary.replace(path)
+    sbc.write_json(path, data)
 
 
 def load_json(path: Path) -> dict[str, Any]:
-    if not path.is_file():
-        return {}
-    try:
-        value = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, ValueError, TypeError):
-        return {}
-    return value if isinstance(value, dict) else {}
+    """The JSON object in PATH ({} when absent); sbc.ConfigError when it cannot be parsed, so a
+    user's file is never replaced by a near-empty one."""
+    return sbc.read_json(path, default={})
 
 
 def add_unique(items: list[Any], value: str) -> bool:
@@ -99,16 +94,18 @@ def install(
     if dry_run:
         print(f"DRY-RUN: would copy {source} -> {target}")
     else:
-        extension_dir.mkdir(parents=True, exist_ok=True)
-        if not target.is_file() or target.read_bytes() != source.read_bytes():
-            shutil.copy2(source, target)
+        sbc.write_atomic(target, source.read_bytes())
 
     config_path = extension_dir / "config.json"
-    previous_config = load_json(config_path)
+    try:
+        previous_config = load_json(config_path)
+    except sbc.ConfigError:
+        previous_config = {}  # Silver Bullet's own file; the write below keeps the old copy
     previous_servers = previous_config.get("servers")
     previous_servers = previous_servers if isinstance(previous_servers, dict) else {}
     all_tools = ("graphify", "agentmemory", "context_mode", "leanctx", "rtk")
-    requested = set(all_tools) if enabled_tools is None else set(enabled_tools)
+    # No --enable-tool means "enable nothing new": a tool is switched on only by the user's consent.
+    requested = set() if enabled_tools is None else set(enabled_tools)
     config = {
         "schema": "v1",
         "profile": "five_tool_routed",
@@ -138,16 +135,14 @@ def install(
     if not isinstance(packages, list):
         packages = []
         settings["packages"] = packages
-    if not any("pi-lean-ctx" in str(item) for item in packages):
+    if "leanctx" in requested and not any("pi-lean-ctx" in str(item) for item in packages):
         packages.append("npm:pi-lean-ctx")
     write_json(settings_path, settings, dry_run)
 
-    # Selective adapter updates (for example RTK-only receipt repair) must not
-    # silently take ownership of Pi's shell by rewriting pi-lean-ctx.  The
-    # full install and explicit LeanCTX updates still configure the additive
-    # bridge below.
+    # Only an explicit LeanCTX update configures the additive pi-lean-ctx bridge; RTK-only or
+    # Context-Mode-only updates must not take ownership of Pi's shell.
     leanctx_changed = False
-    if enabled_tools is None or "leanctx" in requested:
+    if "leanctx" in requested:
         leanctx_changed = update_pi_leanctx_config(
             agent_dir / "extensions" / "pi-lean-ctx" / "config.json", manifest, dry_run
         )
@@ -174,11 +169,18 @@ def main() -> int:
         "--enable-tool",
         action="append",
         choices=("graphify", "agentmemory", "context_mode", "leanctx", "rtk"),
-        help="Enable one tool while preserving previously enabled Pi tools (repeatable)",
+        help="Enable one consented tool while preserving previously enabled Pi tools (repeatable); none by default",
     )
     args = parser.parse_args()
     enabled_tools = set(args.enable_tool) if args.enable_tool else None
-    result = install(Path(args.repo_root).resolve(), args.dry_run, enabled_tools)
+    previous_umask = os.umask(0o077)  # new Pi files are private; existing files keep their mode
+    try:
+        result = install(Path(args.repo_root).resolve(), args.dry_run, enabled_tools)
+    except sbc.ConfigError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 2
+    finally:
+        os.umask(previous_umask)
     print(json.dumps(result, indent=2))
     return 0
 

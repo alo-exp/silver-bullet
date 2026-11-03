@@ -84,11 +84,9 @@ class LoadAndNormalizeTest(McpCase):
         target = self.root / "a" / "b.json"
         pm.atomic_write_json(target, {"k": 1})
         self.assertEqual(json.loads(target.read_text()), {"k": 1})
-        text = self.root / "c" / "d.toml"
-        pm.atomic_write_text(text, "x = 1\n")
-        self.assertEqual(text.read_text(), "x = 1\n")
-        self.assertEqual([p.name for p in text.parent.iterdir()], ["d.toml"])
         self.assertEqual([p.name for p in target.parent.iterdir()], ["b.json"])
+        pm.atomic_write_json(target, {"k": 2})
+        self.assertEqual(sorted(p.name for p in target.parent.iterdir()), ["b.json", "b.json.sb-backup"])
 
 
 class GraphifyHandshakeTest(McpCase):
@@ -537,6 +535,34 @@ class MainJsonHostsTest(McpCase):
         with mock.patch.object(pm, "graphify_mcp_handshake", return_value=(True, None)):
             code, out, _ = self.run_main()
         self.assertEqual(out, "OK: mcp.json unchanged (idempotent)")
+
+    def test_unparseable_mcp_json_is_refused_not_replaced(self):
+        # R6-26: a host config with comments/trailing commas is the user's; nothing is written over it
+        path = self.mcp_path("cursor")
+        path.parent.mkdir(parents=True)
+        path.write_text('{ "mcpServers": {}, // mine\n}')
+        self.flags(agentmemory=True)
+        code, out, err = self.run_main()
+        self.assertEqual(code, 2)
+        self.assertIn("not valid JSON", err)
+        self.assertEqual(path.read_text(), '{ "mcpServers": {}, // mine\n}')
+
+    def test_symlinked_mcp_json_stays_a_symlink_with_a_backup(self):
+        real = self.home / "dotfiles" / "mcp.json"
+        real.parent.mkdir(parents=True)
+        real.write_text(json.dumps({"mcpServers": {"mine": {"command": "x"}}}))
+        real.chmod(0o640)
+        link = self.mcp_path("cursor")
+        link.parent.mkdir(parents=True)
+        link.symlink_to(real)
+        self.flags(agentmemory=True)
+        self.run_main()
+        self.assertTrue(link.is_symlink())
+        self.assertEqual(real.stat().st_mode & 0o777, 0o640)
+        self.assertIn("agentmemory", json.loads(real.read_text())["mcpServers"])
+        self.assertEqual(
+            list(json.loads(real.with_name("mcp.json.sb-backup").read_text())["mcpServers"]), ["mine"]
+        )
 
     def test_cursor_preserves_unrelated_servers(self):
         path = self.mcp_path("cursor")

@@ -40,6 +40,8 @@ rt_deploy_toolstack_scripts() {
     [[ -f "${src_dir}/${f}" ]] || continue
     cp -f "${src_dir}/${f}" "${ts_dir}/${f}" 2>/dev/null || true
   done
+  [[ -f "${repo_root}/scripts/lib/sb_host_config.py" ]] \
+    && cp -f "${repo_root}/scripts/lib/sb_host_config.py" "${ts_dir}/sb_host_config.py" 2>/dev/null
   if [[ -d "$generic_src" ]]; then
     mkdir -p "${ts_lib}/five_tool_runtime" 2>/dev/null || true
     cp -f "${generic_src}"/*.py "${ts_lib}/five_tool_runtime/" 2>/dev/null || true

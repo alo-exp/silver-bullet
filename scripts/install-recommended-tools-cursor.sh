@@ -7,7 +7,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 INSTALL_GLOBAL=0
 PROJECT_ROOT=""
-RULES_DIR="${REPO_ROOT}/.cursor/rules"
+# Rule sources bundled with Silver Bullet (absent from some installed bundles); the project and
+# global rule directories are where the files are installed.
+RULES_SRC="${REPO_ROOT}/.cursor/rules"
+RULES_DIR=""
 
 usage() {
   cat <<'EOF'
@@ -38,43 +41,56 @@ if [[ -z "$PROJECT_ROOT" ]]; then
   fi
 fi
 PROJECT_ROOT="$(cd "$PROJECT_ROOT" && pwd -P)"
+RULES_DIR="${PROJECT_ROOT}/.cursor/rules"
 
+# keep_rule_backup SRC DEST: before DEST is replaced by a different SRC, keep its content once in DEST.sb-backup.
+keep_rule_backup() {
+  [[ -f "$2" ]] && ! cmp -s "$1" "$2" && [[ ! -f "${2}.sb-backup" ]] || return 0
+  cp -p "$2" "${2}.sb-backup"
+}
+
+# install_rule NAME DEST_DIR: copy a bundled rule into DEST_DIR. A missing bundled rule or an
+# uninstallable destination is a warning, never an abort (the status is always 0).
 install_rule() {
   local name="$1"
   local dest_dir="$2"
-  local src="${RULES_DIR}/${name}"
+  local src="${RULES_SRC}/${name}" dest="${dest_dir}/${name}"
   if [[ ! -f "$src" ]]; then
     printf 'WARN: missing rule file %s\n' "$src" >&2
-    return 1
+    return 0
   fi
-  if [[ "$dest_dir" != "$RULES_DIR" ]]; then
-    mkdir -p "$dest_dir"
-    cp "$src" "${dest_dir}/${name}"
+  if mkdir -p "$dest_dir" && keep_rule_backup "$src" "$dest" && cp -f "$src" "$dest"; then
+    printf 'OK: %s\n' "$dest"
+  else
+    printf 'WARN: could not install %s\n' "$dest" >&2
   fi
-  printf 'OK: %s\n' "${dest_dir}/${name}"
 }
 
-# Project rules (idempotent copy when missing)
+# Project rules (the user's project, not the Silver Bullet bundle)
 for rule in graphify.mdc agentmemory.mdc recommended-tools.mdc leanctx.mdc; do
-  install_rule "$rule" "$RULES_DIR" 2>/dev/null || true
+  install_rule "$rule" "$RULES_DIR" 2>/dev/null
 done
 
 TOKEN_ENFORCE_TPL="${REPO_ROOT}/scripts/lib/install-cursor/templates/cursor/token-compression-enforcement.mdc"
 if [[ ! -f "${RULES_DIR}/token-compression-enforcement.mdc" ]] && [[ -f "$TOKEN_ENFORCE_TPL" ]]; then
-  cp "$TOKEN_ENFORCE_TPL" "${RULES_DIR}/token-compression-enforcement.mdc"
+  if mkdir -p "$RULES_DIR" && cp "$TOKEN_ENFORCE_TPL" "${RULES_DIR}/token-compression-enforcement.mdc"; then :; fi
 fi
 
 GLOBAL_RULES_DIR="${HOME}/.cursor/rules"
 if [[ "$INSTALL_GLOBAL" -eq 1 ]]; then
   mkdir -p "$GLOBAL_RULES_DIR"
   for rule in context-mode.mdc token-compression-enforcement.mdc graphify.mdc agentmemory.mdc leanctx.mdc; do
-    [[ -f "${RULES_DIR}/${rule}" ]] && install_rule "$rule" "$GLOBAL_RULES_DIR"
+    if [[ -f "${RULES_SRC}/${rule}" ]]; then
+      install_rule "$rule" "$GLOBAL_RULES_DIR"
+    elif [[ -f "${RULES_DIR}/${rule}" ]]; then
+      RULES_SRC="$RULES_DIR" install_rule "$rule" "$GLOBAL_RULES_DIR"
+    fi
   done
   if [[ -f "${REPO_ROOT}/scripts/lib/global-toolstack/global-recommended-tools.mdc" ]]; then
     cp "${REPO_ROOT}/scripts/lib/global-toolstack/global-recommended-tools.mdc" \
       "${GLOBAL_RULES_DIR}/recommended-tools.mdc"
     printf 'OK: %s/recommended-tools.mdc (global variant)\n' "$GLOBAL_RULES_DIR"
-  elif [[ -f "${RULES_DIR}/recommended-tools.mdc" ]]; then
+  elif [[ -f "${RULES_SRC}/recommended-tools.mdc" ]]; then
     install_rule recommended-tools.mdc "$GLOBAL_RULES_DIR"
   fi
 fi

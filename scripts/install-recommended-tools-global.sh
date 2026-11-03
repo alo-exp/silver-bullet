@@ -27,6 +27,8 @@ EOF
 
 # shellcheck source=../hooks/lib/rtk-cm-global.sh
 source "$LIB"
+# shellcheck source=../hooks/lib/user-consent.sh
+source "${REPO_ROOT}/hooks/lib/user-consent.sh"
 
 install_cursor_global() {
   bash "${SCRIPT_DIR}/install-recommended-tools-cursor.sh" --global
@@ -76,7 +78,15 @@ install_pi_global() {
     printf 'ERROR: Pi five-tool installer missing: %s\n' "$installer" >&2
     return 1
   }
-  python3 "$installer" --repo-root "$REPO_ROOT"
+  # Only the tools the user consented to wire are switched on in Pi (docs/CONSENT.md).
+  local -a pi_args=(--repo-root "$REPO_ROOT")
+  local tool
+  for tool in graphify agentmemory context_mode leanctx rtk; do
+    if sb_consent_granted "$tool" wire; then
+      pi_args+=(--enable-tool "$tool")
+    fi
+  done
+  python3 "$installer" "${pi_args[@]}"
 }
 
 install_hermes_note() {

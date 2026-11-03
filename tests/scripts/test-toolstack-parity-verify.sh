@@ -126,15 +126,33 @@ run_pv
 assert_eq "wrong hook order exits 1" 1 "$TL_STATUS"
 assert_contains "order violation reported" "$TL_OUT" "[ ] hooks:rtk_before_cm: rtk=2 cm=1"
 
-# --- default SB repo root falls back under ~/.cursor/worktrees (absent => no parity checks) ---
+# --- default SB repo root is the one the installer recorded (absent => no parity checks) ---
 good_state
+mkdir -p "$CUR/worktrees/repo/r41j"
+printf '{"recommended_tools":{"graphify":{"query_budget":9},"agentmemory":{"export_root":"x"}}}' >"$CUR/worktrees/repo/r41j/.silver-bullet.json"
 tl_run bash "$SCRIPT"
 assert_eq "default SB root absent still passes" 0 "$TL_STATUS"
-assert_not_contains "default root: no parity section" "$TL_OUT" "parity:query_budget"
-mkdir -p "$CUR/worktrees/repo/r41j"
-printf '{"recommended_tools":{"graphify":{"query_budget":2000},"agentmemory":{"export_root":".agentmemory"}}}' >"$CUR/worktrees/repo/r41j/.silver-bullet.json"
+assert_not_contains "no recorded root: no parity section, and no developer worktree is read" "$TL_OUT" "parity:query_budget"
+mkdir -p "$TL_TMP/recorded-sb" "$CUR/state/toolstack"
+printf '{"recommended_tools":{"graphify":{"query_budget":2000},"agentmemory":{"export_root":".agentmemory"}}}' >"$TL_TMP/recorded-sb/.silver-bullet.json"
+printf '%s\n' "$TL_TMP/recorded-sb" >"$CUR/state/toolstack/repo-root"
 tl_run bash "$SCRIPT"
-assert_contains "default SB root is ~/.cursor/worktrees/repo/r41j" "$TL_OUT" "[x] parity:query_budget: 2000"
+assert_contains "the recorded SB root is used for the parity checks" "$TL_OUT" "[x] parity:query_budget: 2000"
+rm -f "$CUR/state/toolstack/repo-root"
+
+# --- a tool the user opted out of is a warning, not a failure (R6-31) ---
+good_state
+jq '.tools.rtk.required = false | .tools.leanctx.required = false' "$CUR/toolstack.json" >"$CUR/toolstack.json.new" && mv "$CUR/toolstack.json.new" "$CUR/toolstack.json"
+rm -f "$TL_BIN/rtk" "$TL_BIN/lean-ctx"
+tl_run bash "$SCRIPT"
+assert_contains "opted-out rtk is a warning" "$TL_OUT" "[!] required:rtk: opted out"
+assert_contains "opted-out rtk cli is a warning" "$TL_OUT" "[!] cli:rtk: not enabled (opted out)"
+assert_contains "opted-out leanctx cli is a warning" "$TL_OUT" "[!] cli:lean-ctx: not enabled (opted out)"
+assert_not_contains "opted-out tools are not failures" "$TL_OUT" "[ ] cli:rtk"
+# enforcement off is the expected state when every tool is opted out
+jq '.enforcement = "off" | (.tools[] | .required) = false' "$CUR/toolstack.json" >"$CUR/toolstack.json.new" && mv "$CUR/toolstack.json.new" "$CUR/toolstack.json"
+tl_run bash "$SCRIPT"
+assert_contains "off with nothing enabled is fine" "$TL_OUT" "[x] enforcement: off (no tool enabled)"
 
 # --- one process scoring a healthy and then a broken stack (both outcomes of every check) ---
 export CUR TSD SBREPO

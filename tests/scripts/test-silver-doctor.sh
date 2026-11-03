@@ -15,6 +15,10 @@ DOCTOR_TEST_TMP="$(mktemp -d)"
 # shellcheck source=tests/lib/offline-tools.sh
 source "${REPO_ROOT}/tests/lib/offline-tools.sh"
 sb_offline_tools_install "${DOCTOR_TEST_TMP}/offline-bin"
+# The user's consent lives in a private store (docs/CONSENT.md); a committed enabled_by_user only recommends.
+# shellcheck source=tests/lib/consent-helpers.sh
+source "${REPO_ROOT}/tests/lib/consent-helpers.sh"
+sb_test_consent_sandbox
 
 # last_byte_hex <file>: hex of the file's final byte (od is POSIX; xxd is not
 # installed everywhere).
@@ -305,6 +309,7 @@ jq '.recommended_tools.leanctx.enabled_by_user = true
       }
     }' "$RED4_FIXTURE/.silver-bullet.json" >"${RED4_FIXTURE}/.silver-bullet.json.tmp"
 mv "${RED4_FIXTURE}/.silver-bullet.json.tmp" "$RED4_FIXTURE/.silver-bullet.json"
+sb_test_consent_reset_mirror "$RED4_FIXTURE/.silver-bullet.json" install,wire,enforce
 cp "$REPO_ROOT/silver-bullet.md" "$RED4_FIXTURE/silver-bullet.md"
 mkdir -p "$RED4_FIXTURE/docs/workflows" "$RED4_FIXTURE/scripts"
 cp "$REPO_ROOT/scripts/workflows.sh" "$RED4_FIXTURE/scripts/workflows.sh"
@@ -513,6 +518,7 @@ fi
 jq '.recommended_tools.alumnium.enabled_by_user = true' \
   "$ALU_PROJ/.silver-bullet.json" >"${ALU_PROJ}/.silver-bullet.json.tmp"
 mv "${ALU_PROJ}/.silver-bullet.json.tmp" "$ALU_PROJ/.silver-bullet.json"
+sb_test_consent_grant alumnium install,wire,enforce
 alu_cli_out="$(alu_run_doctor)"
 if [[ "$alu_cli_out" == *"FAIL: D10-alumnium"* ]]; then
   echo "PASS: live D10-alumnium FAILs when opted in and CLI missing"
@@ -721,6 +727,7 @@ fi
 jq '.recommended_tools.search_cli.enabled_by_user = true' \
   "$SC_PROJ/.silver-bullet.json" >"${SC_PROJ}/.silver-bullet.json.tmp"
 mv "${SC_PROJ}/.silver-bullet.json.tmp" "$SC_PROJ/.silver-bullet.json"
+sb_test_consent_grant search_cli install,wire,enforce
 
 for sc_rt in cursor claude codex; do
   sc_cli_out="$(
@@ -1000,6 +1007,7 @@ jq '.sb_initiated = true
   | .recommended_tools.search_cli.enabled_by_user = false' \
   "$CANARY_PROJ/.silver-bullet.json" >"${CANARY_PROJ}/.silver-bullet.json.tmp"
 mv "${CANARY_PROJ}/.silver-bullet.json.tmp" "$CANARY_PROJ/.silver-bullet.json"
+sb_test_consent_reset_mirror "$CANARY_PROJ/.silver-bullet.json" install,wire,enforce
 cp "$REPO_ROOT/silver-bullet.md" "$CANARY_PROJ/silver-bullet.md"
 cp "$REPO_ROOT/scripts/workflows.sh" "$CANARY_PROJ/scripts/workflows.sh"
 chmod +x "$CANARY_PROJ/scripts/workflows.sh"
@@ -1127,12 +1135,16 @@ printf '{"hooks":{"preToolUse":[{"command":"other-hook","matcher":"Shell"}]}}\n'
   >"$FIX_HOME/.cursor/hooks.json"
 hooks_local_before="$(cksum "$FIX_HOME/.cursor/hooks.json")"
 mkdir -p "$FIX_HOME/.cursor/.silver-bullet"
-printf '{"violations":[{"route":"sb_shell"}]}\n' >"$FIX_HOME/.cursor/.silver-bullet/stack-compression-mutex"
+# The coordinator keeps its mutex state per project and session (stack-compression-mutex.d/...).
+FIX_MUTEX="$(env HOME="$FIX_HOME" SB_RUNTIME_STATE_DIR="$FIX_HOME/.cursor/.silver-bullet" bash -c 'source "$1/hooks/lib/stack-compression-coordinator.sh"; sb_stack_mutex_state_path "$2"' _ "$REPO_ROOT" "$FIX_PROJ/.silver-bullet.json")"
+mkdir -p "$(dirname "$FIX_MUTEX")"
+printf '{"violations":[{"route":"sb_shell"}]}\n' >"$FIX_MUTEX"
 jq '.recommended_tools.leanctx.enabled_by_user = true
   | .recommended_tools.rtk.enabled_by_user = true
   | .recommended_tools.context_mode.enabled_by_user = true' \
   "$FIX_PROJ/.silver-bullet.json" >"${FIX_PROJ}/.silver-bullet.json.tmp"
 mv "${FIX_PROJ}/.silver-bullet.json.tmp" "$FIX_PROJ/.silver-bullet.json"
+sb_test_consent_reset_mirror "$FIX_PROJ/.silver-bullet.json" install,wire,enforce
 env -u SB_RUNTIME_NAME HOME="$FIX_HOME" SILVER_BULLET_RUNTIME=cursor \
   PATH="${FIX_BIN}:${PATH}" RT_SKIP_VENDOR_DOCTOR=1 SB_DOCTOR_ASSUME_YES=1 \
   SB_DOCTOR_RECONCILER="$FIX_RECON_NOWWRITE" \
@@ -1146,7 +1158,7 @@ else
   echo "FAIL: --fix=local does not mutate host D4 hooks"
   FAIL=$((FAIL + 1))
 fi
-mutex_file="$FIX_HOME/.cursor/.silver-bullet/stack-compression-mutex"
+mutex_file="$FIX_MUTEX"
 if [[ ! -f "$mutex_file" ]] || [[ "$(jq -r '.violations | length' "$mutex_file" 2>/dev/null || echo 1)" == "0" ]]; then
   echo "PASS: --fix=local still clears D20 mutex"
   PASS=$((PASS + 1))
@@ -1158,7 +1170,8 @@ fi
 # --fix=all: two in-scope (D4 + D20) converge without break
 printf '{"hooks":{"preToolUse":[{"command":"other-hook","matcher":"Shell"}]}}\n' \
   >"$FIX_HOME/.cursor/hooks.json"
-printf '{"violations":[{"route":"sb_shell"}]}\n' >"$FIX_HOME/.cursor/.silver-bullet/stack-compression-mutex"
+mkdir -p "$(dirname "$FIX_MUTEX")"
+printf '{"violations":[{"route":"sb_shell"}]}\n' >"$FIX_MUTEX"
 FIX_STAMP="$FIX_HOME/host-install.stamp"
 rm -f "$FIX_STAMP"
 all_out="$(
@@ -1168,7 +1181,7 @@ all_out="$(
     SB_DOCTOR_STUB_HOST_INSTALL="$FIX_STAMP" \
     bash "$DOCTOR" --fix=all "$FIX_PROJ" 2>/dev/null || true
 )"
-mutex_all_file="$FIX_HOME/.cursor/.silver-bullet/stack-compression-mutex"
+mutex_all_file="$FIX_MUTEX"
 mutex_all_clean=0
 [[ ! -f "$mutex_all_file" ]] && mutex_all_clean=1
 [[ -f "$mutex_all_file" && "$(jq -r '.violations | length' "$mutex_all_file" 2>/dev/null || echo 1)" == "0" ]] && mutex_all_clean=1

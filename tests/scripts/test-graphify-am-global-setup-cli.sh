@@ -5,6 +5,7 @@
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
+source "$TL_REPO_ROOT/tests/lib/consent-helpers.sh"
 
 SCRIPT="$TL_REPO_ROOT/scripts/graphify-am-global-setup.sh"
 export GA_AGENTMEMORY_HOME="$HOME/.agentmemory"
@@ -93,6 +94,8 @@ assert_contains "--all applies codex" "$TL_OUT" "host=codex"
 fake_root="$TL_TMP/fakeroot"
 mkdir -p "$fake_root/scripts" "$fake_root/hooks/lib"
 cp "$SCRIPT" "$fake_root/scripts/"
+cp "$TL_REPO_ROOT/hooks/lib/user-consent.sh" "$TL_REPO_ROOT/hooks/lib/recommended-tools-registry.sh" "$fake_root/hooks/lib/"
+sb_test_consent_grant_all
 cat >"$fake_root/hooks/lib/graphify-am-global.sh" <<'LIB'
 GA_SUPPORTED_HOSTS="claude"
 ga_validate_host() { [[ "$1" == "claude" ]]; }
@@ -108,5 +111,31 @@ tl_run bash "$fake_root/scripts/graphify-am-global-setup.sh" --all --verify
 assert_eq "--all with unsupported detected host exits 1" 1 "$TL_STATUS"
 assert_contains "--all verifies the supported host" "$TL_OUT" "verified claude"
 assert_contains "--all reports unsupported" "$TL_ERR" "Unsupported host: bogus"
+
+# --- applying changes machine-wide host config: only with the user's consent (R5-04 consumers) ---
+sb_test_consent_revoke_all
+tl_run bash "$fake_root/scripts/graphify-am-global-setup.sh" --host claude --apply
+assert_eq "apply without consent exits 3" 3 "$TL_STATUS"
+assert_contains "apply without consent names the tool" "$TL_ERR" "SKIP: graphify has no 'wire' consent"
+assert_contains "apply without consent prints the grant command" "$TL_ERR" "sb-consent.sh grant graphify --all-projects --capabilities wire"
+assert_not_contains "nothing was applied" "$TL_OUT" "applied claude"
+sb_test_consent_grant graphify wire
+tl_run bash "$fake_root/scripts/graphify-am-global-setup.sh" --host claude --apply
+assert_eq "graphify consent alone is not enough (agentmemory is wired too)" 3 "$TL_STATUS"
+assert_contains "the missing tool is named" "$TL_ERR" "SKIP: agentmemory has no 'wire' consent"
+tl_run bash "$fake_root/scripts/graphify-am-global-setup.sh" --host claude --verify
+assert_eq "verify needs no consent" 0 "$TL_STATUS"
+assert_contains "verify ran" "$TL_OUT" "verified claude"
+GA_GLOBAL_DRY_RUN=1 tl_run bash "$fake_root/scripts/graphify-am-global-setup.sh" --host claude --apply --dry-run
+assert_eq "dry-run apply needs no consent" 0 "$TL_STATUS"
+sb_test_consent_grant agentmemory wire
+tl_run bash "$fake_root/scripts/graphify-am-global-setup.sh" --host claude --apply
+assert_eq "apply with both consents exits 0" 0 "$TL_STATUS"
+assert_contains "apply with both consents ran" "$TL_OUT" "applied claude"
+sb_test_consent_revoke_all
+printf '{}\n' >"$HOME/.claude.json"
+tl_run bash "$SCRIPT" --host all --apply
+assert_eq "--host all apply without consent exits 1" 1 "$TL_STATUS"
+assert_contains "--host all apply without consent explains" "$TL_ERR" "SKIP: graphify has no 'wire' consent"
 
 tl_results

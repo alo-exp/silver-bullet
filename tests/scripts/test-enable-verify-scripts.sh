@@ -29,27 +29,24 @@ assert_contains "alumnium: npm reachable with version" "$TL_OUT" "[x] npm packag
 assert_contains "alumnium: MCP wired line names host and artifact" "$TL_OUT" "[x] MCP wired (${HOST_NAME}: ${ART})"
 assert_contains "alumnium: summary" "$TL_OUT" "=== Summary: 2 passed, 0 failed ==="
 
-# npm view works for the gate but then fails for the version lookup -> "unknown"
-tl_stub npm 'if [[ "$2" == alumnium && -f "$TL_MARK" ]]; then exit 1; fi; if [[ "$1" == view ]]; then touch "$TL_MARK"; exit 0; fi; exit 1'
-export TL_MARK="$TL_TMP/npm-mark"
+# npx is on PATH (the gate no longer asks the registry) but the version lookup fails -> "unknown"
+tl_stub npm 'exit 1'
 tl_run bash "$ALU"
 assert_contains "alumnium: version falls back to unknown" "$TL_OUT" "alumnium@unknown"
-rm -f "$TL_MARK"
 
-# registry unreachable and MCP not wired
-tl_stub npm 'exit 1'
+# MCP not wired
 rm -f "$ART"
 tl_run bash "$ALU"
-assert_eq "alumnium: failures exit 1" "1" "$TL_STATUS"
-assert_contains "alumnium: unreachable npm reported" "$TL_OUT" "[ ] alumnium npm package not reachable — npm install -g alumnium or check network"
+assert_eq "alumnium: an unwired MCP exits 1" "1" "$TL_STATUS"
 assert_contains "alumnium: unwired MCP reported" "$TL_OUT" "[ ] MCP not wired (${HOST_NAME}) — see docs/ALUMNIUM.md"
-assert_contains "alumnium: failing summary" "$TL_OUT" "=== Summary: 0 passed, 2 failed ==="
+assert_contains "alumnium: one pass, one failure" "$TL_OUT" "=== Summary: 1 passed, 1 failed ==="
 
 # npx absent altogether
 NOPATH="$(tl_path_without npx npm)"
 tl_run env PATH="$NOPATH" bash "$ALU"
 assert_eq "alumnium: no npx exits 1" "1" "$TL_STATUS"
-assert_contains "alumnium: no npx reported" "$TL_OUT" "alumnium npm package not reachable"
+assert_contains "alumnium: no npx reported" "$TL_OUT" "[ ] alumnium npm package not reachable — npm install -g alumnium or check network"
+assert_contains "alumnium: failing summary" "$TL_OUT" "=== Summary: 0 passed, 2 failed ==="
 
 # artifact present but mentioning nothing of alumnium
 printf '{"mcpServers":{"other":{}}}\n' >"$ART"

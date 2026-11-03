@@ -5,6 +5,7 @@
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init claude
+source "$TL_REPO_ROOT/tests/lib/consent-helpers.sh"
 cd "$TL_TMP"
 unset CI SB_DIAG_SMOKE SB_DIAG_FORMAT SB_AGENTMEMORY_HOME SB_STACK_OPTIMIZER_DRY_RUN
 export SB_AGENTMEMORY_HOME="$TL_TMP/amhome"
@@ -21,6 +22,7 @@ tl_stub curl 'exit 1'
 tl_stub agentmemory 'case "$1" in status) echo "Health: healthy";; esac; exit 0'
 mkdir -p "$ST/.agentmemory/memory"
 printf '%s\n' "$GL_CFG" >"$ST/.silver-bullet.json"
+sb_test_consent_reset_mirror "$ST/.silver-bullet.json" install,wire,enforce
 
 # gitleaks required but not installed: warn, never "installed"
 SAFE="$(tl_path_without gitleaks)"
@@ -36,6 +38,7 @@ rm -f "$TL_BIN/gitleaks"
 
 # graphify opted in but absent: the score has critical gaps and diagnostics fails on them
 printf '{"recommended_tools":{"graphify":{"enabled_by_user":true}}}\n' >"$ST/.silver-bullet.json"
+sb_test_consent_reset_mirror "$ST/.silver-bullet.json" install,wire,enforce
 PATH="$SAFE" tl_run bash "$D"
 assert_eq "critical gaps make diagnostics fail" "1" "$TL_STATUS"
 assert_contains "optimize-score reports critical gaps" "$TL_OUT" "FAIL: optimize-score — stack optimization 10/100 with 2 critical gap(s)"

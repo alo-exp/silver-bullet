@@ -6,6 +6,7 @@
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
+source "$TL_REPO_ROOT/tests/lib/consent-helpers.sh"
 cd "$TL_TMP"
 
 RTLIB="$TL_REPO_ROOT/scripts/lib/recommended-tools"
@@ -16,6 +17,7 @@ export REAL_DATE
 PROJ="$TL_TMP/proj"
 tl_git_repo "$PROJ"
 printf '{"sb_initiated":true,"recommended_tools":{"graphify":{"enabled_by_user":true},"rtk":{"enabled_by_user":false}}}\n' >"$PROJ/.silver-bullet.json"
+sb_test_consent_reset_mirror "$PROJ/.silver-bullet.json" install,wire,enforce
 export RT_PROJECT_ROOT="$PROJ"
 export SILVER_BULLET_SESSION_ID="sess-1"
 
@@ -80,9 +82,11 @@ assert_eq "defaults: project root from RT_PROJECT_ROOT config" "true" "$(jq -r .
 
 # suspended tool anywhere marks the heartbeat suspended
 printf '{"sb_initiated":true,"recommended_tools":{"leanctx":{"enabled_by_user":true,"enforcement_suspended":true}}}\n' >"$PROJ/.silver-bullet.json"
+sb_test_consent_reset_mirror "$PROJ/.silver-bullet.json" install,wire,enforce
 assert_eq "suspended flag" "true" "$(rt_heartbeat_build_json "$PROJ" cursor | jq -r .suspended)"
 # unreadable config -> sb_initiated falls back to false
 printf 'not json\n' >"$PROJ/.silver-bullet.json"
+sb_test_consent_reset_mirror "$PROJ/.silver-bullet.json" install,wire,enforce
 assert_eq "invalid config -> not initiated" "false" "$(rt_heartbeat_build_json "$PROJ" cursor | jq -r .sb_initiated)"
 # no config at all
 rm -f "$PROJ/.silver-bullet.json"
@@ -92,6 +96,7 @@ assert_eq "no config and no root -> not initiated" "false" "$(RT_PROJECT_ROOT=''
 # git-less root: no project id, but the worktree id is still derived from the given root
 assert_eq "ids fall back to unknown" "unknown|$(rt_stable_id "$NOCFG")" "$(RT_PROJECT_ROOT="$NOCFG" rt_heartbeat_build_json "$NOCFG" cursor | jq -r '"\(.project_id)|\(.worktree_id)"')"
 printf '{"sb_initiated":true,"recommended_tools":{"graphify":{"enabled_by_user":true}}}\n' >"$PROJ/.silver-bullet.json"
+sb_test_consent_reset_mirror "$PROJ/.silver-bullet.json" install,wire,enforce
 
 # expiry computed without GNU/BSD date extensions
 tl_stub date '
@@ -210,9 +215,16 @@ assert_file_exists "the stuck file is still there" "$HBR/c/stuck.json"
 # ======================================================== session verify
 # shellcheck source=/dev/null
 source "$RTLIB/session-verify.sh"
-SV="$TL_TMP/sv"; SVP="$SV/project"; mkdir -p "$SVP/scripts"
+SV="$TL_TMP/sv"; SVP="$SV/project"; SBR="$SV/plugin"; mkdir -p "$SVP/scripts" "$SBR/scripts"
 printf '{}\n' >"$SVP/.silver-bullet.json"
-cat >"$SVP/scripts/reconcile-recommended-tools.sh" <<'EOF'
+sb_test_consent_reset_mirror "$SVP/.silver-bullet.json" install,wire,enforce
+export RT_REPO_ROOT="$SBR"   # Silver Bullet's own checkout/plugin: the only place the reconciler is taken from
+# R6-02: a reconciler shipped by the opened project (or by an ancestor directory) must never run
+export EVIL_MARK="$TL_TMP/evil-reconciler-ran"
+printf '#!/usr/bin/env bash\ntouch "${EVIL_MARK:?}"\n' >"$SVP/scripts/reconcile-recommended-tools.sh"
+mkdir -p "$SV/scripts"
+cp "$SVP/scripts/reconcile-recommended-tools.sh" "$SV/scripts/reconcile-recommended-tools.sh"
+cat >"$SBR/scripts/reconcile-recommended-tools.sh" <<'EOF'
 #!/usr/bin/env bash
 printf '%s\n' "$*" >>"${RECON_LOG:-/dev/null}"
 printf '%s' "${RECON_JSON:-}"
@@ -224,6 +236,16 @@ json() { # components json array
 }
 ALLREADY='[{"component":"graphify","canonical_state":"ready","activation_status":"full"},{"component":"cross_tool","canonical_state":"ready","activation_status":"full","evidence":[]}]'
 sv() { RECON_JSON="$1" rt_session_verify_block "${2-$SVP}" "${3-cursor}"; }
+# no Silver Bullet reconciler available: silent, and the project's own copy is not run
+mv "$SBR/scripts/reconcile-recommended-tools.sh" "$SBR/scripts/reconcile-recommended-tools.sh.off"
+assert_eq "no Silver Bullet reconciler -> silent" "" "$(env -u CLAUDE_PLUGIN_ROOT bash -c 'source "$1/session-verify.sh"; rt_session_verify_block "$2" cursor' _ "$RTLIB" "$SVP")"
+assert_file_absent "the project's and the ancestor's reconciler never ran" "$EVIL_MARK"
+mv "$SBR/scripts/reconcile-recommended-tools.sh.off" "$SBR/scripts/reconcile-recommended-tools.sh"
+# the plugin root (CLAUDE_PLUGIN_ROOT) is used when RT_REPO_ROOT is not a Silver Bullet checkout
+: >"$RECON_LOG"
+assert_eq "plugin root fallback runs the plugin's reconciler" "" "$(RT_REPO_ROOT="$SV/none" CLAUDE_PLUGIN_ROOT="$SBR" RECON_JSON="$(json "$ALLREADY")" rt_session_verify_block "$SVP" cursor)"
+assert_contains "plugin root fallback invoked the reconciler" "$(cat "$RECON_LOG")" "--project-root $SVP --host cursor"
+: >"$RECON_LOG"
 assert_eq "no project root -> silent" "" "$(sv "" "")"
 assert_eq "no config -> silent" "" "$(sv "" "$SV")"
 assert_eq "healthy report -> silent" "" "$(sv "$(json "$ALLREADY")")"
@@ -257,13 +279,14 @@ assert_eq "jq missing -> silent" "" "$(PATH="$NOJQ" sv "$(json '[{"component":"x
 # reconciler discovery
 rm -rf "$SV/disc"; mkdir -p "$SV/disc/plain" "$SV/disc/rtroot/scripts" "$SV/disc/plugin/scripts" "$SV/disc/up/scripts" "$SV/disc/up/deep/er"
 for d in plain "up/deep/er"; do printf '{}\n' >"$SV/disc/$d/.silver-bullet.json"; done
-for d in rtroot plugin up; do cp "$SVP/scripts/reconcile-recommended-tools.sh" "$SV/disc/$d/scripts/"; done
+for d in rtroot plugin up; do cp "$SBR/scripts/reconcile-recommended-tools.sh" "$SV/disc/$d/scripts/"; done
 FAILJSON="$(json '[{"component":"x","canonical_state":"failed","activation_status":"none"}]')"
 : >"$RECON_LOG"
 assert_eq "no reconciler anywhere -> silent" "" "$(cd /; RT_REPO_ROOT='' CLAUDE_PLUGIN_ROOT='' sv "$FAILJSON" "$SV/disc/plain")"
 assert_contains "RT_REPO_ROOT reconciler used" "$(RT_REPO_ROOT="$SV/disc/rtroot" CLAUDE_PLUGIN_ROOT='' sv "$FAILJSON" "$SV/disc/plain")" "TOOLSTACK x: failed"
 assert_contains "CLAUDE_PLUGIN_ROOT reconciler used" "$(RT_REPO_ROOT='' CLAUDE_PLUGIN_ROOT="$SV/disc/plugin" sv "$FAILJSON" "$SV/disc/plain")" "TOOLSTACK x: failed"
-assert_contains "ancestor directory reconciler used" "$(RT_REPO_ROOT='' CLAUDE_PLUGIN_ROOT='' sv "$FAILJSON" "$SV/disc/up/deep/er")" "TOOLSTACK x: failed"
+assert_eq "an ancestor directory's reconciler is never used (R6-02)" "" "$(cd /; RT_REPO_ROOT='' CLAUDE_PLUGIN_ROOT='' sv "$FAILJSON" "$SV/disc/up/deep/er")"
+assert_eq "the project's own reconciler is never used (R6-02)" "" "$(cd /; RT_REPO_ROOT='' CLAUDE_PLUGIN_ROOT='' sv "$FAILJSON" "$SV/disc/up")"
 
 # =========================================================== installer
 # shellcheck source=/dev/null
@@ -320,6 +343,7 @@ rm -rf "$HOME/.cursor"
 
 # project root resolution
 IP="$TL_TMP/inst-proj"; tl_git_repo "$IP"; printf '{}\n' >"$IP/.silver-bullet.json"
+sb_test_consent_reset_mirror "$IP/.silver-bullet.json" install,wire,enforce
 assert_eq "explicit root with a config" "$IP" "$(rt_installer_resolve_project_root "$IP")"
 assert_eq "root from SB_RECONCILE_PROJECT_ROOT" "$IP" "$(SB_RECONCILE_PROJECT_ROOT="$IP" rt_installer_resolve_project_root)"
 assert_eq "root from the git toplevel of the cwd" "$IP" "$(mkdir -p "$IP/sub"; cd "$IP/sub" && rt_installer_resolve_project_root)"

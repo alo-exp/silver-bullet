@@ -25,6 +25,9 @@ MANIFEST = {
 CM = "/bin/context-mode"
 
 
+REAL_COMMAND_RESOLVES = ph.command_resolves
+
+
 class HooksCase(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -41,6 +44,7 @@ class HooksCase(unittest.TestCase):
             ("TS", self.ts),
             ("HOOKS", self.hooks_path),
             ("ensure_global_instances", mock.Mock(return_value=MANIFEST)),
+            ("command_resolves", mock.Mock(return_value=True)),  # the manifest commands are installed
         ):
             p = mock.patch.object(ph, name, value)
             p.start()
@@ -455,14 +459,82 @@ class MainTest(HooksCase):
             }
         )
         code, out = self.run_main()
-        self.assertEqual(out, "OK: hooks.json patched (6 changes)")
+        self.assertEqual(out, "OK: hooks.json patched (5 changes)")
         data = self.read()["hooks"]
+        # lean-ctx is replaced only by a consented, working RTK hook: here RTK was not consented
         self.assertEqual(
             data["preToolUse"],
-            ["junk", {"command": f"{CM} hook cursor pretooluse", "matcher": "Shell|Edit", "timeout": 3}],
+            [{"command": "lean-ctx hook rewrite"}, "junk",
+             {"command": f"{CM} hook cursor pretooluse", "matcher": "Shell|Edit", "timeout": 3}],
         )
         self.assertEqual(data["stop"], "not-a-list")
         self.assertEqual(data["postToolUse"][0]["command"], f"{CM} hook cursor posttooluse")
+
+    def test_uninstalled_tools_never_replace_working_hooks(self):
+        # R6-25: LeanCTX hooks and Context Mode hooks stay when the replacement would not run.
+        ph.command_resolves.return_value = False
+        self.enable("RTK", "CONTEXT_MODE")
+        before = {
+            "hooks": {
+                "preToolUse": [
+                    {"command": "lean-ctx hook redirect"},
+                    {"command": "context-mode hook cursor pretooluse", "matcher": "Shell"},
+                ]
+            }
+        }
+        self.write(before)
+        code, out = self.run_main()
+        self.assertEqual(self.read()["hooks"]["preToolUse"][:2], before["hooks"]["preToolUse"])
+        self.assertNotIn("/bin/rtk hook cursor", json.dumps(self.read()))
+
+    def test_leanctx_hooks_survive_a_patch_run_that_did_not_consent_to_rtk(self):
+        self.all_scripts()
+        self.enable("GRAPHIFY")
+        self.write({"hooks": {"preToolUse": [{"command": "lean-ctx hook redirect"}]}})
+        self.run_main()
+        self.assertIn("lean-ctx hook redirect", json.dumps(self.read()))
+
+    def test_context_mode_hooks_are_not_rewritten_without_context_mode_consent(self):
+        self.all_scripts()
+        self.enable("GRAPHIFY")
+        self.write({"hooks": {"preToolUse": [{"command": "context-mode hook cursor pretooluse"}]}})
+        self.run_main()
+        self.assertIn("context-mode hook cursor pretooluse", json.dumps(self.read()))
+        self.assertNotIn(CM, json.dumps(self.read()))
+
+    def test_unparseable_hooks_json_exits_2_and_is_untouched(self):
+        self.enable("RTK")
+        self.hooks_path.write_text("{oops", encoding="utf-8")
+        code, _ = self.run_main()
+        self.assertEqual(code, 2)
+        self.assertEqual(self.hooks_path.read_text(encoding="utf-8"), "{oops")
+
+    def test_write_goes_through_a_symlink_and_keeps_a_backup(self):
+        self.all_scripts()
+        self.enable("GRAPHIFY")
+        real = self.root / "dotfiles" / "hooks.json"
+        real.parent.mkdir()
+        real.write_text(json.dumps({"hooks": {"stop": []}}), encoding="utf-8")
+        real.chmod(0o640)
+        self.hooks_path.symlink_to(real)
+        self.run_main()
+        self.assertTrue(self.hooks_path.is_symlink())
+        self.assertEqual(real.stat().st_mode & 0o777, 0o640)
+        self.assertEqual(json.loads(real.with_name("hooks.json.sb-backup").read_text()), {"hooks": {"stop": []}})
+        self.assertIn("graphify-gate.sh", real.read_text())
+
+    def test_command_resolves(self):
+        exe = self.root / "tool"
+        exe.write_text("#!/bin/sh\n")
+        exe.chmod(0o755)
+        plain = self.root / "plain"
+        plain.write_text("x")
+        self.assertTrue(REAL_COMMAND_RESOLVES(f"{exe} hook cursor"))
+        self.assertFalse(REAL_COMMAND_RESOLVES(f"{plain} hook cursor"))
+        self.assertFalse(REAL_COMMAND_RESOLVES(f"{self.root}/missing hook cursor"))
+        self.assertFalse(REAL_COMMAND_RESOLVES("   "))
+        self.assertTrue(REAL_COMMAND_RESOLVES("sh -c true"))
+        self.assertFalse(REAL_COMMAND_RESOLVES("surely-not-installed-xyz hook"))
 
     def test_non_list_event_values_are_skipped_not_clobbered(self):
         self.enable("GRAPHIFY")

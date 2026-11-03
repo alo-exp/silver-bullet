@@ -5,6 +5,8 @@
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
+source "$TL_REPO_ROOT/tests/lib/consent-helpers.sh"
+sb_test_consent_grant_all   # the user said yes to every tool (docs/CONSENT.md)
 
 STAGE="$TL_TMP/repo"
 INST="$STAGE/scripts/install-leanctx-sb.sh"

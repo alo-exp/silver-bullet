@@ -26,22 +26,31 @@ rt_graphify_mcp_handshake() {
 
 rt_repair_graphify_packages() {
   local actions=() failures=()
+  # Installing or upgrading a package needs the user's "install" consent, not just "wire".
+  if ! rt_mutation_allowed graphify install; then
+    if ! sb_graphify_cli_available 2>/dev/null || ! rt_probe_graphify_mcp_binary; then
+      failures+=("install_not_consented")
+    fi
+    printf '%s\n' '---FAILURES---'
+    ((${#failures[@]} > 0)) && printf '%s\n' "${failures[@]}"
+    return 0
+  fi
   if ! sb_graphify_cli_available 2>/dev/null; then
     if command -v uv >/dev/null 2>&1; then
-      uv tool install 'graphifyy[mcp]' 2>/dev/null && actions+=("uv_tool_install_graphifyy_mcp") \
+      uv tool install 'graphifyy[mcp]' >&2 && actions+=("uv_tool_install_graphifyy_mcp") \
         || failures+=("uv_tool_install_failed")
     elif command -v pipx >/dev/null 2>&1; then
-      pipx install 'graphifyy[mcp]' 2>/dev/null && actions+=("pipx_install_graphifyy_mcp") \
+      pipx install 'graphifyy[mcp]' >&2 && actions+=("pipx_install_graphifyy_mcp") \
         || failures+=("pipx_install_failed")
     else
       failures+=("no_uv_or_pipx")
     fi
   elif ! rt_probe_graphify_mcp_binary; then
     if command -v uv >/dev/null 2>&1; then
-      uv tool install --force 'graphifyy[mcp]' 2>/dev/null && actions+=("uv_upgrade_graphifyy_mcp") \
+      uv tool install --force 'graphifyy[mcp]' >&2 && actions+=("uv_upgrade_graphifyy_mcp") \
         || failures+=("uv_upgrade_failed")
     elif command -v pipx >/dev/null 2>&1; then
-      pipx install --force 'graphifyy[mcp]' 2>/dev/null && actions+=("pipx_upgrade_graphifyy_mcp") \
+      pipx install --force 'graphifyy[mcp]' >&2 && actions+=("pipx_upgrade_graphifyy_mcp") \
         || failures+=("pipx_upgrade_failed")
     fi
   fi
@@ -58,7 +67,7 @@ rt_repair_graphify_mcp_config() {
   local patch_py="${RT_REPO_ROOT}/scripts/lib/global-toolstack/patch-mcp.py"
   [[ -f "$patch_py" ]] || return 1
   rt_graphify_mcp_handshake || return 1
-  if rt_mutation_allowed graphify; then
+  if rt_mutation_allowed graphify wire; then
     export RT_PATCH_GRAPHIFY=1
   else
     export RT_PATCH_GRAPHIFY=0
@@ -71,12 +80,13 @@ rt_repair_graphify_mcp_config() {
 }
 
 rt_repair_graphify_platform() {
-  local host="${RT_HOST:-cursor}" cfg
+  local host="${RT_HOST:-cursor}" cfg cmd
   cfg="$(rt_project_config)" || return 1
-  local cmd
-  while IFS= read -r cmd; do
+  # Commands come from Silver Bullet's built-in table and run without a shell; the project file
+  # is never consulted for them (hooks/lib/recommended-tools.sh).
+  while IFS= read -r cmd || [[ -n "$cmd" ]]; do
     [[ -n "$cmd" ]] || continue
-    eval "$cmd" >/dev/null 2>/dev/null || true
+    rt_run_registry_command "$cmd" graphify >/dev/null 2>&1 || true
   done < <(sb_recommended_tool_platform_post_index_commands "$cfg" "graphify" "$host")
 }
 

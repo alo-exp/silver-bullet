@@ -7,6 +7,9 @@
 # project in $HD_PROJ for which every check passes. Tests then break one thing at a time.
 # Stubs are steered through STUB_* variables passed to hd_run.
 
+# shellcheck source=consent-helpers.sh
+source "$TL_REPO_ROOT/tests/lib/consent-helpers.sh"
+
 HD_ST="$TL_TMP/hd-stage"
 HD_PROJ="$TL_TMP/hd-proj"
 HD_LOG="$TL_TMP/hd-calls.log"
@@ -65,7 +68,13 @@ PY
   : >"$HD_LOG"
 }
 
-hd_cfg() { mkdir -p "$HD_PROJ"; printf '%s\n' "$1" >"$HD_PROJ/.silver-bullet.json"; }
+# The user's answers follow the recommendations in the file (a user who said yes to each one): a
+# committed enabled_by_user is only a recommendation, consent lives in the user's consent store.
+hd_cfg() {
+  mkdir -p "$HD_PROJ"
+  printf '%s\n' "$1" >"$HD_PROJ/.silver-bullet.json"
+  sb_test_consent_reset_mirror "$HD_PROJ/.silver-bullet.json" install,wire,enforce
+}
 
 # hd_happy [runtime]: a complete install for the runtime (claude by default)
 hd_happy() {

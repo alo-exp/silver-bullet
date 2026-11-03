@@ -8,6 +8,9 @@ import https from "node:https";
 import { EventEmitter } from "node:events";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import path from "node:path";
+import fs from "node:fs";
+import os from "node:os";
+import zlib from "node:zlib";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const proxyPath = path.resolve(here, "../../scripts/minimax-openai-proxy.mjs");
@@ -61,6 +64,14 @@ function installUpstream(responder) {
     const call = { proto, options, written: [] };
     calls.push(call);
     req.write = (chunk) => call.written.push(Buffer.from(chunk));
+    req.setTimeout = (ms, onTimeout) => {
+      call.timeoutMs = ms;
+      call.onTimeout = onTimeout;
+    };
+    req.destroy = (err) => {
+      call.destroyedWith = err;
+      setImmediate(() => req.emit("error", err));
+    };
     req.end = () => {
       const r = responder(call);
       if (r instanceof Error) {
@@ -166,7 +177,12 @@ test("forwards to the default https upstream: path mapping, headers and body", a
   assert.equal(c.options.port, 443);
   assert.equal(c.options.method, "POST");
   assert.equal(c.options.path, "/v1/chat?a=1");
-  assert.deepEqual(c.options.headers, { authorization: "Bearer k", host: "api.minimax.io" });
+  assert.deepEqual(c.options.headers, {
+    authorization: "Bearer k",
+    host: "api.minimax.io",
+    "accept-encoding": "identity",
+  });
+  assert.equal(c.timeoutMs, 120000);
   assert.equal(Buffer.concat(c.written).toString(), "hello");
 
   await send(server, { url: "/v1", method: "GET" });
@@ -293,4 +309,112 @@ test("upstream and request failures become 502 JSON errors", async (t) => {
   res = await send(server, { url: "/x", method: "GET" });
   assert.equal(res.status, 502);
   assert.equal(JSON.parse(res.body.toString()).error.message, "weird");
+});
+
+test("isMainModule compares real paths: symlinks, spaces and missing arguments", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "mm proxy "));
+  try {
+    const real = path.join(dir, "real dir");
+    fs.mkdirSync(real);
+    const script = path.join(real, "proxy.mjs");
+    fs.writeFileSync(script, "export {};\n");
+    const link = path.join(dir, "link dir");
+    fs.symlinkSync(real, link);
+    const meta = pathToFileURL(script).href;
+    const isMain = proxy.mod.isMainModule;
+    assert.equal(isMain(meta, script), true);
+    assert.equal(isMain(meta, path.join(link, "proxy.mjs")), true, "a symlinked directory");
+    assert.equal(isMain(meta, path.join(dir, "elsewhere.mjs")), false, "a missing file");
+    assert.equal(isMain(meta, undefined), false, "no script argument");
+    assert.equal(isMain(meta, ""), false);
+    assert.equal(isMain(pathToFileURL(path.join(dir, "gone.mjs")).href, script), false, "a missing module");
+    fs.writeFileSync(path.join(dir, "other.mjs"), "x");
+    assert.equal(isMain(meta, path.join(dir, "other.mjs")), false, "a different script");
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("decodeBody decodes gzip, deflate and brotli and passes unencoded bodies through", () => {
+  const raw = Buffer.from('{"parsed":true}');
+  const decode = proxy.mod.decodeBody;
+  assert.equal(decode(zlib.gzipSync(raw), "gzip").toString(), raw.toString());
+  assert.equal(decode(zlib.gzipSync(raw), " X-Gzip ").toString(), raw.toString());
+  assert.equal(decode(zlib.deflateSync(raw), "deflate").toString(), raw.toString());
+  assert.equal(decode(zlib.brotliCompressSync(raw), "BR").toString(), raw.toString());
+  assert.equal(decode(raw, undefined), raw);
+  assert.equal(decode(raw, "identity"), raw);
+});
+
+test("a gzipped JSON response is decoded and normalized, and hop-by-hop headers are dropped", async (t) => {
+  t.after(restoreUpstream);
+  installUpstream(() => ({
+    status: 200,
+    headers: {
+      "content-type": "application/json",
+      "content-encoding": "gzip",
+      "transfer-encoding": "chunked",
+      connection: "keep-alive",
+      "keep-alive": "timeout=5",
+      "x-keep": "yes",
+    },
+    chunks: [zlib.gzipSync(Buffer.from('{"choices":[{"parsed":true}]}'))],
+  }));
+  const res = await send(server, { url: "/x", method: "GET" });
+  assert.deepEqual(JSON.parse(res.body.toString()), { choices: [{ parsed: {} }] });
+  assert.equal(res.headers["content-length"], String(res.body.length));
+  for (const name of ["content-encoding", "transfer-encoding", "connection", "keep-alive"]) {
+    assert.equal(res.headers[name], undefined, name);
+  }
+  assert.equal(res.headers["x-keep"], "yes");
+});
+
+test("a chunked event-stream response keeps its data and loses its framing headers", async (t) => {
+  t.after(restoreUpstream);
+  installUpstream(() => ({
+    status: 200,
+    headers: { "content-type": "text/event-stream", "transfer-encoding": "chunked" },
+    chunks: ['data: {"parsed":true}\n', "\n"],
+  }));
+  const res = await send(server, { url: "/x", method: "POST" });
+  assert.equal(res.body.toString(), 'data: {"parsed":{}}\n\n');
+  assert.equal(res.headers["transfer-encoding"], undefined);
+  assert.equal(res.headers["content-length"], String(res.body.length));
+});
+
+test("an oversized request is refused with 413 and never reaches the upstream", async (t) => {
+  t.after(restoreUpstream);
+  const calls = installUpstream(() => ({ status: 200, headers: {}, body: "" }));
+  const big = Buffer.alloc(16 * 1024 * 1024 + 1);
+  const res = await send(server, { url: "/x", method: "POST", body: [big] });
+  assert.equal(res.status, 413);
+  assert.match(JSON.parse(res.body.toString()).error.message, /request body exceeds/);
+  assert.equal(calls.length, 0);
+});
+
+test("an oversized upstream response aborts the exchange with 502", async (t) => {
+  t.after(restoreUpstream);
+  const calls = installUpstream(() => ({
+    status: 200,
+    headers: {},
+    chunks: [Buffer.alloc(16 * 1024 * 1024), Buffer.alloc(1), Buffer.alloc(1)],
+  }));
+  const res = await send(server, { url: "/x", method: "GET" });
+  assert.equal(res.status, 502);
+  assert.match(JSON.parse(res.body.toString()).error.message, /upstream response exceeds/);
+  assert.ok(calls[0].destroyedWith instanceof Error);
+});
+
+test("an upstream that does not answer in time is aborted", async (t) => {
+  t.after(restoreUpstream);
+  let call;
+  installUpstream((c) => {
+    call = c;
+    call.onTimeout();
+    return new Error("unused");
+  });
+  const res = await send(server, { url: "/x", method: "GET" });
+  assert.equal(res.status, 502);
+  assert.equal(JSON.parse(res.body.toString()).error.message, "upstream timed out");
+  assert.equal(call.timeoutMs, 120000);
 });
