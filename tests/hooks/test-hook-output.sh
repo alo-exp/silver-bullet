@@ -56,12 +56,21 @@ for compat in 32 42; do
   check "message via bash under BASH_COMPAT=$compat: nasty string round-trips" "$(PATH="$NOJQPY" BASH_COMPAT=$compat bash -c 'source "$1"; sb_emit_hook_message PostToolUse "$2"' _ "$LIB" "$NASTY")" "$same_as_nasty"
   check "decision via bash under BASH_COMPAT=$compat" "$(PATH="$NOJQPY" BASH_COMPAT=$compat bash -c 'source "$1"; sb_emit_hook_decision PreToolUse deny "$2" "$2"' _ "$LIB" "$NASTY")" "d['hookSpecificOutput']['permissionDecisionReason'].startswith(open('$EXPECT_PY', encoding='utf-8', newline='').read())"
 done
-# Linear time: a 64 KB mixed string (quotes, newlines, control bytes) encodes within seconds, not minutes.
+# 64 KB mixed string (quotes, newlines, control bytes) round-trips exactly. No wall-clock bound:
+# it is load dependent and fails under the coverage runner's xtrace instrumentation.
 mixed="$(for _ in $(seq 1 800); do printf 'a"b\\c\nd\te\001 f0123456789012345678901234567890123456789012345678901234567890123456789\n'; done)"
-t0=$SECONDS
+MIXED_FILE="$TL_TMP/mixed.txt"
+printf '%s' "$mixed" >"$MIXED_FILE"
 perf_out="$(PATH="$NOJQPY" bash -c 'source "$1"; sb_emit_hook_message PostToolUse "$2"' _ "$LIB" "$mixed")"
-check "message via bash: 64 KB mixed string round-trips" "$perf_out" "len(d['systemMessage']) == ${#mixed}"
-if [[ $((SECONDS - t0)) -le 8 ]]; then tl_pass "message via bash: 64 KB mixed string is linear-time (${#mixed} chars in $((SECONDS - t0))s)"; else tl_fail "message via bash: 64 KB mixed string took $((SECONDS - t0))s"; fi
+check "message via bash: 64 KB mixed string round-trips" "$perf_out" "d['systemMessage'] == open('$MIXED_FILE', encoding='utf-8', newline='').read()"
+# A lone UTF-8 lead byte followed by a backslash corrupts Bash 5.2's %% removal in a UTF-8
+# locale (uninitialised bytes); the encoder is byte-oriented and pins the C locale.
+lead=$'a\\\xc3\\b'
+lead_out="$(PATH="$NOJQPY" LC_ALL=C.UTF-8 bash -c 'source "$1"; sb_emit_hook_message PostToolUse "$2"' _ "$LIB" "$lead" | od -An -c | tr -s ' ' | tr -d '\n')"
+lead_ref="$(printf '{"systemMessage":"a\\\\\xc3\\\\b"}' | od -An -c | tr -s ' ' | tr -d '\n')"
+if [[ "$lead_out" == "$lead_ref" ]]; then tl_pass "message via bash: lead byte next to a backslash is exact in a UTF-8 locale"; else tl_fail "message via bash: lead byte garbled: $lead_out"; fi
+# Control characters survive the encoder without printf -v into an array element (Bash >= 4.1 only).
+if grep -nE 'printf -v +.?[A-Za-z_]+\[' "$TL_REPO_ROOT"/hooks/*.sh "$TL_REPO_ROOT"/hooks/lib/*.sh >/dev/null 2>&1; then tl_fail "hooks/ assigns printf -v into an array element (breaks Bash 3.2)"; else tl_pass "hooks/ has no printf -v array-element assignment"; fi
 check "message: very long value" "$(sb_emit_hook_message PostToolUse "$long")" "len(d['systemMessage']) == 300000"
 check "message via python3: very long value" "$(PATH="$NOJQ" bash -c 'source "$1"; sb_emit_hook_message PostToolUse "$(cat "$2")"' _ "$LIB" "$LONG_FILE")" "len(d['systemMessage']) == 300000"
 bad=$'bad \xff\xfe utf8'
