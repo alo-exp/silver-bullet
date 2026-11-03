@@ -4,6 +4,7 @@ Covers tool_command_string.py, shell_unwrap_rtk.py, skill_adapter_invocation.py,
 patch_paths.py and invoked_script_path.py (argv in, stdout/exit code out).
 """
 
+import io
 import json
 import os
 import tempfile
@@ -50,6 +51,17 @@ class ToolCommandStringTest(unittest.TestCase):
     def test_tool_input_that_is_not_an_object_is_ignored(self):
         res = self.run_script(json.dumps({"tool_input": "git push"}))
         self.assertEqual((res.code, res.stdout), (0, ""))
+        res = self.run_script(json.dumps(["not", "an", "object"]))
+        self.assertEqual((res.code, res.stdout), (0, ""))
+
+    def test_payload_can_come_from_stdin(self):
+        # A payload over 128 KiB cannot be one argv element; the hooks send it on stdin.
+        big = payload(command="git commit -m x # " + "a" * 200000)
+        for args in ((), ("-",)):
+            with self.subTest(args=args), mock.patch("sys.stdin", io.StringIO(big)):
+                res = run_tool_input_script("tool_command_string.py", *args)
+            self.assertTrue(res.stdout.startswith("git commit -m x # aaa"))
+            self.assertEqual(len(res.stdout), len("git commit -m x # ") + 200000)
 
 
 class ShellUnwrapRtkTest(unittest.TestCase):
@@ -212,6 +224,33 @@ class InvokedScriptPathTest(unittest.TestCase):
             with self.subTest(cmd=cmd):
                 res = self.run_script(cmd)
                 self.assertEqual((res.code, res.stdout), (0, ""))
+
+
+class StdinTransportTest(unittest.TestCase):
+    """Every helper takes its input on stdin when the argument is "-" (how tool-input.sh calls
+    them), so inputs larger than one argv element (128 KiB on Linux) still arrive whole."""
+
+    PAD = " # " + "a" * 200000
+
+    def run_stdin(self, name, text, *args):
+        with mock.patch("sys.stdin", io.StringIO(text)):
+            return run_tool_input_script(name, *args, "-")
+
+    def test_each_helper_reads_stdin(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = str(Path(tmp).resolve())
+            Path(base, "run.sh").write_text("echo hi\n")
+            self.assertEqual(self.run_stdin("shell_unwrap_rtk.py", "rtk git status" + self.PAD).stdout[:10],
+                             "git status")
+            self.assertEqual(self.run_stdin("skill_adapter_invocation.py",
+                                            "scripts/silver-bullet invoke-skill x" + self.PAD).code, 0)
+            self.assertEqual(self.run_stdin("command_looks_read_only.py", "ls" + self.PAD).code, 0)
+            self.assertEqual(self.run_stdin("candidate_write_paths.py", "echo x > o.txt" + self.PAD, base).lines,
+                             [str(Path(base, "o.txt"))])
+            self.assertEqual(self.run_stdin("invoked_script_path.py", "bash run.sh" + self.PAD, base).lines,
+                             [str(Path(base, "run.sh"))])
+            patch = json.dumps({"tool_input": {"input": "*** Add File: big.txt\n+" + "a" * 200000}})
+            self.assertEqual(self.run_stdin("patch_paths.py", patch).lines, ["big.txt"])
 
 
 if __name__ == "__main__":
