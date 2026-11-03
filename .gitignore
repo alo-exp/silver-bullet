@@ -53,7 +53,6 @@ data/iii-config.runtime.yaml
 # CLI session transcripts and logs, account or quota plans. scripts/check-repo-invariants.sh
 # (personal-data) fails when personal machine paths or foreign email addresses are tracked.
 /SETUP_REPORT.md
-*.err
 # Scoped to the directories where AI CLI runs write captures, so fixtures such as
 # tests/fixtures/expected-stdout.txt or x.log.sh stay committable.
 .planning/**/*.err.*
@@ -82,8 +81,13 @@ research/**/*.stderr
 research/**/*.stderr.*
 research/**/stdout-*.txt
 research/**/stderr-*.txt
-docs/**/*-stdout.txt
-docs/**/*-stderr.txt
+.planning/**/*.err
+.planning/**/*.out
+.planning/**/*.out.*
+research/**/*.err
+research/**/*.out
+research/**/*.out.*
+docs/**/*.err
 .planning/**/CLAUDE-QUOTA.md
 
 # Node

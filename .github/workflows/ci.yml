@@ -33,6 +33,10 @@ jobs:
             echo "SB_RUNTIME_PLUGIN_CACHE_ROOT=$SB_RUNTIME_PLUGIN_CACHE_ROOT"
           } >> "$GITHUB_ENV"
 
+      # The workflow-hardening invariant parses the workflows with PyYAML and fails without it.
+      - name: Install PyYAML (same pin as requirements-dev.txt)
+        run: python3 -m pip install PyYAML==6.0.2
+
       # Also lints every site page (site/**/*.html) for duplicate element ids, and fails on the
       # repository worm's indicators and on vendored skills that differ from skills-lock.json.
       - name: Repository invariants (manifests, versions, hook references, skill lists, mirrors, worm indicators, site ids)
