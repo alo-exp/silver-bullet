@@ -22,7 +22,8 @@ done
 assert_eq "no AI session transcripts (.err) are tracked" "" "$(git ls-files -- '*.err')"
 assert_eq "no planning run logs are tracked" "" "$(git ls-files -- '.planning/**/*.log' 'research/**/*.log')"
 assert_eq "no rotated run logs (.log.attemptN, .err.N) are tracked" "" "$(git ls-files | grep -E '\.(err|log)\.' || true)"
-for pattern in SETUP_REPORT.md x.err x.err.attempt2 .planning/a/opencode-run.log.attempt2 .planning/a/run.log research/a/run.log .planning/a/CLAUDE-QUOTA.md; do
+assert_eq "no AI CLI stdout/stderr captures are tracked" "" "$(git ls-files | grep -E -- "(^|/|-)(stdout|stderr)\.txt$" || true)"
+for pattern in .planning/a/logs/stdout.txt .planning/a/logs/review-stdout.txt .planning/a/logs/review-stderr.txt SETUP_REPORT.md x.err x.err.attempt2 .planning/a/opencode-run.log.attempt2 .planning/a/run.log research/a/run.log .planning/a/CLAUDE-QUOTA.md; do
   assert_eq ".gitignore covers $pattern" "0" "$(git check-ignore -q -- "$pattern" && echo 0 || echo 1)"
 done
 
