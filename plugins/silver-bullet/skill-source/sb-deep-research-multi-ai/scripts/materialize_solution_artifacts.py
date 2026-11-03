@@ -210,7 +210,7 @@ def _mentions(lower_text: str, name: str) -> bool:
 AMBIGUOUS_NAMES: frozenset[str] = frozenset()
 NON_VENDOR_TERMS: frozenset[str] = frozenset()
 _CUE_AFTER = re.compile(
-    r"\s*(?:\((?!\s*\d)|\.(?:ai|dev|com|io|app)\b|\s(?:AI|IDE|Agents?|Plugins?|Cloud|Platform|CLI|App|SaaS|Code|Copilot|Labs|Dev|OSS|Background)\b)"
+    r"\s*(?:\((?!\s*\d)|\.(?:ai|dev|com|io|app)\b|\s(?:AI|IDE|Agents?|Plugins?|Cloud|Platform|CLI|App|SaaS|Code|Copilot|Labs|Dev|OSS|Pro|Plus|Max|Enterprise|Teams?|Composer|Droids?)\b)"
 )
 _CUE_BEFORE = re.compile(r"\b(?:by|from|using|via|with|vs\.?|versus)\s+$", re.IGNORECASE)
 _SENTENCE_OPENERS = "\"'“‘([*_#>•- \t\r\n"
@@ -252,19 +252,28 @@ _FUNCTION_WORDS = frozenset(
     "are was were be been has have had do does did can could will would should may might must in on at by "
     "for from of to with without within into over under per via as than not no also only both each all any "
     "some most many more our your their his her my we you they he she there here see using use run now "
-    "however thus still just even such other another one two".split()
+    "however thus still just even such other another one two unlike like besides notably install installs "
+    "compare comparing adopt choose pick try consider evaluate enable configure deploy integrate including "
+    "except beyond across among about against around between through during despite instead plus versus vs "
+    "since until because although though whereas rather similar similarly meanwhile additionally first second "
+    "third next finally today recently".split()
 )
 _HEAD_NOUNS = frozenset(
-    "pattern patterns button buttons agent agents model models regression settings scaling role roles view "
+    "pattern patterns button buttons regression settings scaling role roles view "
     "class method interface node nodes tab menu step steps function process pagination key field label".split()
 )
+_ROLE_NOUN_AFTER_ARTICLE = re.compile(r"(?:the|a|an)[ \t]+$", re.IGNORECASE)
 
 
 def _inside_ordinary_phrase(text: str, start: int, end: int) -> bool:
+    if _SUBJECT_OF.match(text, end):
+        return False  # "Melty Conductor runs ...": the subject of a verb is the product
     window = text[max(0, start - _LOOKBEHIND):start]
     prev = _PREV_WORD.search(window)
-    if prev and prev.group(1)[0].isupper() and prev.group(1).lower() not in _FUNCTION_WORDS:
-        return True
+    if prev:
+        word = prev.group(1)
+        if word[0].isupper() and word.lower() not in _FUNCTION_WORDS and not word.lower().endswith("ly"):
+            return True
     connector = _ROLE_BEFORE_CONNECTOR.search(window)
     if connector and connector.group(1).lower() in _ROLE_WORDS:
         return True
@@ -273,6 +282,8 @@ def _inside_ordinary_phrase(text: str, start: int, end: int) -> bool:
         word = following.group(1)
         if word.lower() in _HEAD_NOUNS:
             return True
+        if word.lower() == "agent" and _ROLE_NOUN_AFTER_ARTICLE.search(window):
+            return True  # "the Director agent" is a role; "run Cursor agents" is the product
         return word[0].isupper() and word.lower() not in _FUNCTION_WORDS
     return False
 
@@ -535,10 +546,30 @@ def _resolve_solution_slug(
 
 
 _ABSENCE_MARKER = re.compile(
-    r"\b(?:no|zero|without|lacks?|lacking|missing)\s+(?:\w+\s+){0,2}(?:evidence|claims?)\b(?!\s+gaps?)"
-    r"|\bunresearched\b|\bnot\s+(?:yet\s+)?researched\b",
+    r"\b(?:no|zero|lacks?|lacking)\s+(?:\w+\s+){0,2}(?:evidence\b(?!\s+gaps?)|claims?\b(?!\s+of\b))"
+    r"|\bunresearched\b|\bnot\s+(?:yet\s+)?researched\b|\bhard[- ]exclusions?\b",
     re.IGNORECASE,
 )
+_CLAUSE_START = re.compile(r"[;!?\n]|\.(?=\s)|,\s+and\s")
+_CLAUSE_END = re.compile(r"[;!?\n]|\.(?=\s|$)")
+_GATE_VERB = re.compile(r"\b(?:block|refus|reject|fail|prevent|den[iy]|stop|halt)\w*", re.IGNORECASE)
+
+
+def _without_absence_clauses(text: str) -> str:
+    """Blank the clauses that say nothing was found ("Deepwork has no public evidence").
+
+    Only the clause that carries the marker goes; other clauses keep their votes. A gate that
+    "rejects PRs with no evidence of review" describes a feature, not a missing source.
+    """
+    for marker in list(_ABSENCE_MARKER.finditer(text)):
+        starts = [m.end() for m in _CLAUSE_START.finditer(text, 0, marker.start())]
+        begin = starts[-1] if starts else 0
+        ended = _CLAUSE_END.search(text, marker.end())
+        end = ended.start() if ended else len(text)
+        if _GATE_VERB.search(text, begin, marker.start()):
+            continue
+        text = text[:begin] + " " * (end - begin) + text[end:]
+    return text
 
 
 def _mask_feature_words_in_vendor_names(text: str) -> str:
@@ -659,6 +690,14 @@ def _assign_support(
     cell[feature] = yes > len(ballots) - yes
 
 
+_LIST_DECORATION = re.compile(r"\s*\([^)]*\)|[`*_]+|\s+v?\d+(?:\.\d+)*\s*$|[.:]+\s*$", re.IGNORECASE)
+
+
+def _clean_list_item(token: str) -> str:
+    """A list item without emphasis, code ticks, a parenthetical, a version or trailing punctuation."""
+    return _LIST_DECORATION.sub("", token).strip()
+
+
 def _extract_slugs_from_list(
     text: str,
     *,
@@ -675,13 +714,14 @@ def _extract_slugs_from_list(
         cleaned,
         flags=re.IGNORECASE,
     )
-    for token in re.split(r"[,;/]", cleaned):
+    for token in re.split(r"[,;/]|\s+and\s+", cleaned):
         token = re.sub(
             r"\b(pass|fail|scores?|✔|✓|✖|✗|true|yes|no|not|and|partially)\b",
             "",
             token,
             flags=re.IGNORECASE,
-        ).strip()
+        )
+        token = _clean_list_item(token)
         if not token:
             continue
         token_key = token.lower()
@@ -749,7 +789,7 @@ def _split_solution_lists(
 
     for token in re.split(r"[,;]", pos_text):
         token = re.sub(r"\b(pass|fail|scores?|✔|✓|true|yes)\b", "", token, flags=re.IGNORECASE)
-        slug = _normalize_slug(token, effective, pack)
+        slug = _normalize_slug(_clean_list_item(token), effective, pack)
         if slug in effective:
             positive.append(slug)
 
@@ -1128,8 +1168,9 @@ def _apply_slug_scoped_prose(
     known: dict[str, str] | None = None,
     pack: dict[str, Any] | None = None,
 ) -> None:
-    if _ABSENCE_MARKER.search(text):
-        return  # a claim that says nothing was found is not a vote for any feature
+    text = _without_absence_clauses(text)  # a clause that says nothing was found casts no vote
+    if not text.strip():
+        return
     _parse_comparative_claims(support, text)
     _parse_prose_claim(support, text)
     _parse_must_have_satisfaction(support, text)

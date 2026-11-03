@@ -230,6 +230,21 @@ class ProperReferencesToCommonWordVendorsTests(unittest.TestCase):
         ("cursor", "Run Cursor in the cloud, or Devin."),
         ("factory-ai", "Droids from Factory ship PRs."),
         ("factory-ai", "BMAD and Factory provide SSO."),
+        # review repair: a capitalised opener or a product qualifier does not hide the vendor
+        ("cursor", "Unlike Cursor, Silver Bullet enforces gates."),
+        ("cursor", "Install Cursor and enable the plugin."),
+        ("cursor", "Like Cursor, Windsurf ships an IDE."),
+        ("director", "Unlike Director, cc10x has no hooks."),
+        ("director", "Besides Director, few tools enforce gates."),
+        ("director", "Notably Director enforces review gates."),
+        ("director", "Compare Director and cc10x."),
+        ("factory-ai", "Factory Droids ship PRs from tickets."),
+        ("cursor", "Cursor Composer edits many files."),
+        ("cursor", "Teams run Cursor agents in the cloud."),
+        ("cursor", "The Cursor model picker offers GPT and Claude."),
+        ("cursor", "Most teams adopt Cursor Pro."),
+        ("director", "Tools such as Director Pro enforce gates."),
+        ("conductor", "Melty Conductor runs parallel Claude Code agents."),
     )
 
     def setUp(self) -> None:
@@ -249,6 +264,46 @@ class ProperReferencesToCommonWordVendorsTests(unittest.TestCase):
         for slug, text in self.STILL_COUNTS:
             self.assertIn(slug, sc._envelope_evidence_slugs(envs(text), self.pack), text)
             self.assertIn(slug, m._extract_slugs_from_text(text, self.known, self.pack), text)
+
+    def test_cursor_background_agents_is_one_product_with_one_slug(self) -> None:
+        text = "Hard exclusions: Cursor Background Agents, Sweep."
+        self.assertNotIn("cursor", m._extract_slugs_from_text(text, self.known, self.pack))
+        self.assertNotIn("cursor", sc._envelope_evidence_slugs(envs(text), self.pack))
+        self.assertIn("cursor-background-agents", m._extract_slugs_from_text(text, self.known, self.pack))
+
+    def test_a_hard_exclusion_list_casts_no_feature_votes(self) -> None:
+        text = ("The APO market has ~19 in-scope solutions, within the 8-24 core-count bound. Hard exclusions "
+                "(Cursor Background Agents, Windsurf, Aider, Cline, OpenHands, CodeRabbit, etc.) are correctly "
+                "excluded as single-step tools, coding agents, or host runtimes - not process orchestrators.")
+        support = m.parse_feature_support(envs(text), known=self.known, pack=self.pack)
+        self.assertFalse(set(support) & {"aider", "cline", "coderabbit", "windsurf", "cursor", "openhands"}, support)
+
+    def test_decorated_list_items_resolve_exactly(self) -> None:
+        cases = {"Conductor (Melty Labs)": "conductor", "Director 2.0": "director", "`director`": "director",
+                 "**Director**": "director", "Factory": "factory", "Director.": "director",
+                 "Cavekit v3.1": "cavekit-v31"}
+        for item, slug in cases.items():
+            for text in (f"Confirmed in-scope core set: {item}, Devin", f"APO matrix leaders are {item} and Devin"):
+                support = m.parse_feature_support(envs(text), known=self.known, pack=self.pack)
+                self.assertIn(slug, support, (item, text, sorted(support)))
+        for text in ("Confirmed in-scope core set: Claude, Devin", "APO matrix leaders are Claude 2 and Devin"):
+            support = m.parse_feature_support(envs(text), known=self.known, pack=self.pack)
+            self.assertEqual(sorted(support), ["devin"], text)
+
+    def test_the_absence_veto_is_scoped_to_its_clause(self) -> None:
+        keep = (
+            ("silver-bullet", "Silver Bullet provides workflow composition; Deepwork has no public evidence."),
+            ("director", "Director provides workflow composition, and no claims of SSO were found."),
+            ("silver-bullet", "Silver Bullet supports workflow composition with zero claims of regressions."),
+            ("silver-bullet", "Silver Bullet provides workflow composition and rejects PRs with no evidence of review."),
+        )
+        for slug, text in keep:
+            support = m.parse_feature_support(envs(text), known=self.known, pack=self.pack)
+            self.assertTrue(any(support.get(slug, {}).values()), (text, support))
+        gone = m.parse_feature_support(
+            envs("Silver Bullet provides workflow composition; Deepwork has no public evidence."),
+            known=self.known, pack=self.pack)
+        self.assertNotIn("deepwork", gone)
 
     def test_compound_and_role_prose_gives_no_vendor_votes(self) -> None:
         for text in self.STILL_PLAIN_ENGLISH:

@@ -108,6 +108,22 @@ def _generated_for_old_query(path: Path, query: str) -> bool:
         return False
 
 
+def _same_query(previous: Path, query: str) -> bool:
+    """True when the moved-aside run was made for `query`: its manifest or its generated scope says so."""
+    topic = query.strip()
+    try:
+        recorded = json.loads((previous / "run_manifest.json").read_text(encoding="utf-8")).get("query")
+    except (OSError, ValueError, AttributeError):
+        recorded = None
+    if isinstance(recorded, str) and recorded.strip() == topic:
+        return True
+    try:
+        scope = (previous / "scope.md").read_text(encoding="utf-8")
+    except OSError:
+        return False
+    return scope.startswith(f"# Research scope\n\nResearch topic: {topic}\n")
+
+
 def carry_over_user_inputs(previous: Path, output_root: Path, query: str = "") -> list[str]:
     """Copy the user's need_profile.json and scope.md from the moved-aside run into the new one.
 
@@ -115,10 +131,11 @@ def carry_over_user_inputs(previous: Path, output_root: Path, query: str = "") -
     falling back to an automatic profile. Returns the names copied.
     """
     copied: list[str] = []
+    same_query = _same_query(previous, query)  # then any edit of the profile (a rename too) is the user's
     for name in ("need_profile.json", "scope.md"):
         source = previous / name
         if source.is_file() and not source.is_symlink():
-            if _generated_for_old_query(source, query):
+            if not same_query and _generated_for_old_query(source, query):
                 continue  # auto-written for the previous query: it would brief the new run on the old topic
             output_root.mkdir(parents=True, exist_ok=True)
             shutil.copy2(source, output_root / name)

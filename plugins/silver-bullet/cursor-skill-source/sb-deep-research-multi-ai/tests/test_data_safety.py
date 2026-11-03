@@ -306,6 +306,61 @@ class CliOutputRootTests(_Tmp):
         self.assertFalse(cli._generated_for_old_query(self._write_auto("research"), ""))
         self.assertTrue(cli._generated_for_old_query(self._write_auto("research"), "something else"))
 
+    def test_force_keeps_an_edited_auto_profile_whose_category_was_renamed_too(self) -> None:
+        """Following the note (must-haves, a category) must survive --force for the same query."""
+        self.put("run_manifest.json", {"workflow_id": "WF-SILVER-DEEP-RESEARCH-MULTI-AI", "run_id": "run-old"})
+        self.put("need_profile.json", {"category": "Event streaming", "auto_assumed": True,
+                                       "must_haves": ["SSO"], "research_type": "solution-landscape"})
+        with mock.patch.object(cli.Path, "cwd", return_value=self.base):
+            self._main(["Event streaming platforms", "--output-root", str(self.root), "--force"])
+        profile = json.loads((self.root / "need_profile.json").read_text(encoding="utf-8"))
+        self.assertEqual(profile["must_haves"], ["SSO"])
+        self.assertEqual(profile["category"], "Event streaming")
+
+    def test_an_unedited_auto_profile_of_another_query_is_still_left_behind(self) -> None:
+        for extra in ({}, {"note": "n", "research_type": "solution-landscape", "interview_complete": False}):
+            path = self.base / "auto.json"
+            path.write_text(json.dumps({"category": "old topic", "auto_assumed": True, **extra}), encoding="utf-8")
+            self.assertTrue(cli._generated_for_old_query(path, "new topic"), extra)
+        for edit in ({"must_haves": ["SSO"]}, {"category_pack_id": "p"}, {"interview_complete": True}, {"x": 1}):
+            path.write_text(json.dumps({"category": "old topic", "auto_assumed": True, **edit}), encoding="utf-8")
+            self.assertFalse(cli._generated_for_old_query(path, "new topic"), edit)
+
+    def test_force_for_the_same_query_keeps_a_rename_only_or_note_only_edit(self) -> None:
+        for edit in ({"category": "Event streaming"}, {"note": "mine"}, {"research_type": "solution-compare"}):
+            self.tearDown()
+            self.setUp()
+            self.put("run_manifest.json", {"workflow_id": "WF-SILVER-DEEP-RESEARCH-MULTI-AI", "run_id": "run-old"})
+            self.put("need_profile.json", {"category": "Event streaming platforms", "auto_assumed": True, **edit})
+            self.put("scope.md", "# Research scope\n\nResearch topic: Event streaming platforms\n")
+            with mock.patch.object(cli.Path, "cwd", return_value=self.base):
+                self._main(["Event streaming platforms", "--output-root", str(self.root), "--force"])
+            profile = json.loads((self.root / "need_profile.json").read_text(encoding="utf-8"))
+            self.assertEqual({k: profile[k] for k in edit}, edit)
+
+    def test_the_recorded_manifest_query_also_identifies_the_same_query(self) -> None:
+        self.put("run_manifest.json", {"workflow_id": "WF-SILVER-DEEP-RESEARCH-MULTI-AI", "query": "q1"})
+        self.put("need_profile.json", {"category": "mine", "auto_assumed": True})
+        self.assertTrue(cli._same_query(self.root, "q1"))
+        self.assertFalse(cli._same_query(self.root, "q2"))
+        (self.root / "run_manifest.json").write_text("{nope", encoding="utf-8")
+        self.assertFalse(cli._same_query(self.root, "q1"))
+        (self.root / "run_manifest.json").unlink()
+        self.assertFalse(cli._same_query(self.root, "q1"))
+
+    def test_main_reports_carried_and_skipped_inputs(self) -> None:
+        self.put("run_manifest.json", {"workflow_id": "WF-SILVER-DEEP-RESEARCH-MULTI-AI", "run_id": "run-old"})
+        self.put("need_profile.json", {"category": "old", "auto_assumed": True, "must_haves": ["SSO"]})
+        self.put("scope.md", "# Research scope\n\nResearch topic: old\n")
+        with mock.patch.object(cli.Path, "cwd", return_value=self.base):
+            with mock.patch("dr_live_runner.run_dr_live", return_value={"ok": True}):
+                out = io.StringIO()
+                with mock.patch("multi_ai_core.host_gate", return_value={"ok": True}), redirect_stdout(out):
+                    cli.main(["new", "--output-root", str(self.root), "--force"])
+        result = json.loads(out.getvalue())
+        self.assertEqual(result["carried_inputs"], ["need_profile.json"])
+        self.assertEqual(result["skipped_inputs"], ["scope.md"])
+
     def _write_auto(self, category):
         path = self.base / "auto.json"
         path.write_text(json.dumps({"category": category, "auto_assumed": True}), encoding="utf-8")

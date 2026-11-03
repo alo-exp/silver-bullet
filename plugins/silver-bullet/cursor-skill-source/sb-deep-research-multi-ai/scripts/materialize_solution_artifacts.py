@@ -14,6 +14,7 @@ from pack_vocabulary import activated, for_research_dir
 from category_pack import (
     build_known_solutions,
     build_overview_seeds,
+    feature_key,
     get_core_seed_slugs,
     normalize_slug,
     pack_overlay,
@@ -209,7 +210,7 @@ def _mentions(lower_text: str, name: str) -> bool:
 AMBIGUOUS_NAMES: frozenset[str] = frozenset()
 NON_VENDOR_TERMS: frozenset[str] = frozenset()
 _CUE_AFTER = re.compile(
-    r"\s*(?:\((?!\s*\d)|\.(?:ai|dev|com|io|app)\b|\s(?:AI|IDE|Agents?|Plugins?|Cloud|Platform|CLI|App|SaaS|Code|Copilot|Labs)\b)"
+    r"\s*(?:\((?!\s*\d)|\.(?:ai|dev|com|io|app)\b|\s(?:AI|IDE|Agents?|Plugins?|Cloud|Platform|CLI|App|SaaS|Code|Copilot|Labs|Dev|OSS|Pro|Plus|Max|Enterprise|Teams?|Composer|Droids?)\b)"
 )
 _CUE_BEFORE = re.compile(r"\b(?:by|from|using|via|with|vs\.?|versus)\s+$", re.IGNORECASE)
 _SENTENCE_OPENERS = "\"'“‘([*_#>•- \t\r\n"
@@ -224,11 +225,67 @@ _NOT_A_NAME_BEFORE_OF = re.compile(r"\s+of\b")
 
 
 def _sentence_initial(text: str, start: int) -> bool:
-    before = text[:start].rstrip(_SENTENCE_OPENERS) if text[:start].strip(_SENTENCE_OPENERS) else ""
-    if not before:
+    """True when only opening punctuation separates `start` from a sentence boundary (or the text start).
+
+    Scans back over the opener characters only, so the cost does not grow with the claim length.
+    """
+    i = start
+    while i > 0 and text[i - 1] in _SENTENCE_OPENERS:
+        i -= 1
+    if i == 0:
         return True
-    gap = text[len(before):start]
-    return before[-1] in ".!?:;" or "\n" in gap
+    return text[i - 1] in ".!?:;" or "\n" in text[i:start]
+
+
+# A name inside an ordinary Title-Case phrase is not the product: "AI Factory", "Abstract Factory",
+# "Netflix Conductor", "Linear Regression", "Continue button", "the Director agent", "VP or Director".
+_LOOKBEHIND = 48  # enough for "versus" plus the whitespace after it; keeps the look-behind O(1)
+_PREV_WORD = re.compile(r"([A-Za-z][A-Za-z0-9'’-]*)[ \t]+$")
+_NEXT_WORD = re.compile(r"[ \t]+([A-Za-z][A-Za-z0-9'’-]*)")
+_ROLE_BEFORE_CONNECTOR = re.compile(r"([A-Za-z]+)\s+(?:or|and|/)\s+$", re.IGNORECASE)
+_ROLE_WORDS = frozenset(
+    "vp svp evp ceo cto cio coo cfo manager managers head lead officer president chair editor producer".split()
+)
+# Capitalised only because they open a sentence (or are connectives): they do not modify the name.
+_FUNCTION_WORDS = frozenset(
+    "the a an and or but nor so yet if then else when while where which who that this these those it its is "
+    "are was were be been has have had do does did can could will would should may might must in on at by "
+    "for from of to with without within into over under per via as than not no also only both each all any "
+    "some most many more our your their his her my we you they he she there here see using use run now "
+    "however thus still just even such other another one two unlike like besides notably install installs "
+    "compare comparing adopt choose pick try consider evaluate enable configure deploy integrate including "
+    "except beyond across among about against around between through during despite instead plus versus vs "
+    "since until because although though whereas rather similar similarly meanwhile additionally first second "
+    "third next finally today recently".split()
+)
+_HEAD_NOUNS = frozenset(
+    "pattern patterns button buttons regression settings scaling role roles view "
+    "class method interface node nodes tab menu step steps function process pagination key field label".split()
+)
+_ROLE_NOUN_AFTER_ARTICLE = re.compile(r"(?:the|a|an)[ \t]+$", re.IGNORECASE)
+
+
+def _inside_ordinary_phrase(text: str, start: int, end: int) -> bool:
+    if _SUBJECT_OF.match(text, end):
+        return False  # "Melty Conductor runs ...": the subject of a verb is the product
+    window = text[max(0, start - _LOOKBEHIND):start]
+    prev = _PREV_WORD.search(window)
+    if prev:
+        word = prev.group(1)
+        if word[0].isupper() and word.lower() not in _FUNCTION_WORDS and not word.lower().endswith("ly"):
+            return True
+    connector = _ROLE_BEFORE_CONNECTOR.search(window)
+    if connector and connector.group(1).lower() in _ROLE_WORDS:
+        return True
+    following = _NEXT_WORD.match(text, end)
+    if following:
+        word = following.group(1)
+        if word.lower() in _HEAD_NOUNS:
+            return True
+        if word.lower() == "agent" and _ROLE_NOUN_AFTER_ARTICLE.search(window):
+            return True  # "the Director agent" is a role; "run Cursor agents" is the product
+        return word[0].isupper() and word.lower() not in _FUNCTION_WORDS
+    return False
 
 
 # The vendor set of the run being parsed (known names incl. discovered vendors, and its pack):
@@ -256,7 +313,8 @@ def mentions_vendor(text: str, lower: str, name: str) -> bool:
 
     A category word (NON_VENDOR_TERMS) never counts. An ambiguous common-word name counts when it
     reads as a proper noun: capitalised AND (next to a product cue, or inside a sentence and not
-    "<Name> of ...", or opening a sentence as the subject of a verb).
+    "<Name> of ..." and not inside a Title-Case phrase ("AI Factory", "Linear Regression"), or opening a
+    sentence as the subject of a verb). Linear in the claim length: every look-around is bounded.
     """
     if name.lower() in NON_VENDOR_TERMS or not _mentions(lower, name):
         return False
@@ -266,9 +324,9 @@ def mentions_vendor(text: str, lower: str, name: str) -> bool:
         word = match.group(0)
         if not word[:1].isupper():
             continue  # a vendor name is a proper noun: "director of engineering" is not one
-        if _CUE_AFTER.match(text, match.end()) or _CUE_BEFORE.search(text[: match.start()]):
+        if _CUE_AFTER.match(text, match.end()) or _CUE_BEFORE.search(text, max(0, match.start() - _LOOKBEHIND), match.start()):
             return True
-        if _NOT_A_NAME_BEFORE_OF.match(text, match.end()):
+        if _NOT_A_NAME_BEFORE_OF.match(text, match.end()) or _inside_ordinary_phrase(text, match.start(), match.end()):
             continue
         if not _sentence_initial(text, match.start()) or _SUBJECT_OF.match(text, match.end()):
             return True
@@ -487,11 +545,59 @@ def _resolve_solution_slug(
     return None
 
 
+_ABSENCE_MARKER = re.compile(
+    r"\b(?:no|zero|lacks?|lacking)\s+(?:\w+\s+){0,2}(?:evidence\b(?!\s+gaps?)|claims?\b(?!\s+of\b))"
+    r"|\bunresearched\b|\bnot\s+(?:yet\s+)?researched\b|\bhard[- ]exclusions?\b",
+    re.IGNORECASE,
+)
+_CLAUSE_START = re.compile(r"[;!?\n]|\.(?=\s)|,\s+and\s")
+_CLAUSE_END = re.compile(r"[;!?\n]|\.(?=\s|$)")
+_GATE_VERB = re.compile(r"\b(?:block|refus|reject|fail|prevent|den[iy]|stop|halt)\w*", re.IGNORECASE)
+
+
+def _without_absence_clauses(text: str) -> str:
+    """Blank the clauses that say nothing was found ("Deepwork has no public evidence").
+
+    Only the clause that carries the marker goes; other clauses keep their votes. A gate that
+    "rejects PRs with no evidence of review" describes a feature, not a missing source.
+    """
+    for marker in list(_ABSENCE_MARKER.finditer(text)):
+        starts = [m.end() for m in _CLAUSE_START.finditer(text, 0, marker.start())]
+        begin = starts[-1] if starts else 0
+        ended = _CLAUSE_END.search(text, marker.end())
+        end = ended.start() if ended else len(text)
+        if _GATE_VERB.search(text, begin, marker.start()):
+            continue
+        text = text[:begin] + " " * (end - begin) + text[end:]
+    return text
+
+
+def _mask_feature_words_in_vendor_names(text: str) -> str:
+    """Blank the vendor names that contain a feature phrase ("Barkain Workflow Orchestrator").
+
+    The words of a product's name say nothing about what the other products in the claim do.
+    """
+    names = sorted(
+        {
+            name
+            for display in _known_or_run(None).values()
+            if (name := display.lower()) and (_features_in_text(name) or any(p.search(name) for p, _ in _PROSE_POSITIVE_SIGNALS))
+        },
+        key=len,
+        reverse=True,
+    )
+    if not names:
+        return text
+    pattern = re.compile(r"(?<![a-z0-9])(?:" + "|".join(re.escape(n) for n in names) + r")(?![a-z0-9])", re.IGNORECASE)
+    return pattern.sub(lambda m: " " * len(m.group(0)), text)
+
+
 def _infer_features_from_solution_prose(
     support: dict[str, dict[str, bool | None]],
     slug: str,
     body: str,
 ) -> None:
+    body = _mask_feature_words_in_vendor_names(body)
     if re.search(r"lifecycle_span\s*=", body, re.IGNORECASE):
         for criterion, features in _INCLUSION_CRITERION_FEATURES.items():
             match = re.search(
@@ -584,6 +690,14 @@ def _assign_support(
     cell[feature] = yes > len(ballots) - yes
 
 
+_LIST_DECORATION = re.compile(r"\s*\([^)]*\)|[`*_]+|\s+v?\d+(?:\.\d+)*\s*$|[.:]+\s*$", re.IGNORECASE)
+
+
+def _clean_list_item(token: str) -> str:
+    """A list item without emphasis, code ticks, a parenthetical, a version or trailing punctuation."""
+    return _LIST_DECORATION.sub("", token).strip()
+
+
 def _extract_slugs_from_list(
     text: str,
     *,
@@ -600,13 +714,14 @@ def _extract_slugs_from_list(
         cleaned,
         flags=re.IGNORECASE,
     )
-    for token in re.split(r"[,;/]", cleaned):
+    for token in re.split(r"[,;/]|\s+and\s+", cleaned):
         token = re.sub(
             r"\b(pass|fail|scores?|✔|✓|✖|✗|true|yes|no|not|and|partially)\b",
             "",
             token,
             flags=re.IGNORECASE,
-        ).strip()
+        )
+        token = _clean_list_item(token)
         if not token:
             continue
         token_key = token.lower()
@@ -614,12 +729,11 @@ def _extract_slugs_from_list(
             slug = head_aliases[token_key]
         else:
             slug = _normalize_slug(token, effective, pack)
-        if slug and slug not in found:
-            found.append(_canonical_known_slug(slug, effective))
+        if slug in effective and slug not in found:  # exact: a list item is a known vendor or nothing
+            found.append(slug)
     for slug in _extract_slugs_from_text(cleaned, effective, pack):
-        canonical = _canonical_known_slug(slug, effective)
-        if canonical not in found:
-            found.append(canonical)
+        if slug not in found:
+            found.append(slug)
     return found
 
 
@@ -675,14 +789,14 @@ def _split_solution_lists(
 
     for token in re.split(r"[,;]", pos_text):
         token = re.sub(r"\b(pass|fail|scores?|✔|✓|true|yes)\b", "", token, flags=re.IGNORECASE)
-        slug = _normalize_slug(token, effective, pack)
-        if slug:
-            positive.append(_canonical_known_slug(slug, effective))
+        slug = _normalize_slug(_clean_list_item(token), effective, pack)
+        if slug in effective:
+            positive.append(slug)
 
     for match in _SLUG_NEGATION_RE.finditer(neg_text or body):
         slug = _normalize_slug(match.group("slug"), effective, pack)
-        if slug:
-            negative.append(_canonical_known_slug(slug, effective))
+        if slug in effective:
+            negative.append(slug)
     for token in re.split(r"[,;]", neg_text):
         if not re.search(r"\bdo(?:es)?\s+not\b", token, re.IGNORECASE):
             continue
@@ -691,8 +805,8 @@ def _split_solution_lists(
             effective,
             pack,
         )
-        if slug:
-            negative.append(_canonical_known_slug(slug, effective))
+        if slug in effective:
+            negative.append(slug)
     return positive, negative
 
 
@@ -1054,6 +1168,9 @@ def _apply_slug_scoped_prose(
     known: dict[str, str] | None = None,
     pack: dict[str, Any] | None = None,
 ) -> None:
+    text = _without_absence_clauses(text)  # a clause that says nothing was found casts no vote
+    if not text.strip():
+        return
     _parse_comparative_claims(support, text)
     _parse_prose_claim(support, text)
     _parse_must_have_satisfaction(support, text)
@@ -1227,12 +1344,8 @@ def _parse_host_runtime_substrate_claim(
 
 
 def _feature_key(raw: Any) -> str:
-    """Folding key for feature names: case, spacing, hyphens and other punctuation vanish.
-
-    "+" and "#" are part of a name ("C++ support" is not "C# support" is not "C support").
-    """
-    text = str(raw or "").casefold().replace("+", " plus ").replace("#", " sharp ")
-    return re.sub(r"[^a-z0-9]+", " ", text).strip()
+    """Folding key for feature names (see category_pack.feature_key)."""
+    return feature_key(raw)
 
 
 def _feature_name(raw: Any) -> str | None:
