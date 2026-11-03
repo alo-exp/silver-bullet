@@ -346,7 +346,7 @@ class ListParsingTests(unittest.TestCase):
         self.assertEqual(m._extract_slugs_from_list("a-team; ateam/ AI-team"), ["ateam"])
 
     def test_checkmark_body_sections(self) -> None:
-        pos, neg = m._parse_checkmark_body("✔ devin, aider only extras; ✖ cline; devin ✔ ; aider ✗ x; ; plain")
+        pos, neg = m._parse_checkmark_body("✔ devin, Aider only extras; ✖ cline; devin ✔ ; Aider ✗ x; ; plain")
         self.assertEqual(pos, ["devin", "aider", "devin"])
         self.assertEqual(neg, ["cline", "aider"])
         self.assertEqual(m._parse_checkmark_body("   "), ([], []))
@@ -384,7 +384,7 @@ class ClaimParserTests(unittest.TestCase):
         self.assertIsNone(m._primary_slug_in_text("x" * 100 + " zzz"))
 
     def test_comparative_claims(self) -> None:
-        support = support_of(m._parse_comparative_claims, "Devin lacks hook gates; while aider and cline offer CI integration.")
+        support = support_of(m._parse_comparative_claims, "Devin lacks hook gates; while Aider and cline offer CI integration.")
         self.assertIs(support["devin"]["Hook-enforced gates"], False)
         self.assertTrue(support["aider"]["CI integration"])
         self.assertTrue(support["cline"]["CI integration"])
@@ -465,7 +465,7 @@ class ClaimParserTests(unittest.TestCase):
 
     def test_managed_hosting_offer(self) -> None:
         self.assertEqual(support_of(m._parse_managed_hosting_offer, "nothing"), {})
-        support = support_of(m._parse_managed_hosting_offer, "While Silver Bullet is local, devin and aider offer managed hosting paths")
+        support = support_of(m._parse_managed_hosting_offer, "While Silver Bullet is local, devin and Aider offer managed hosting paths")
         self.assertNotIn("silver-bullet", support)
         self.assertTrue(support["devin"]["Managed hosting"])
         self.assertTrue(support["aider"]["Zero-infra bootstrap"])

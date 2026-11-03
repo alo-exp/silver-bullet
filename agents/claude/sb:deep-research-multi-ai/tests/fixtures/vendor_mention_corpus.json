@@ -283,20 +283,24 @@
   "kind": "vendor",
   "slug": "director",
   "text": "Director agents enforce review gates.",
-  "known_miss": true
+  "known_miss": true,
+  "note": "a name that opens a sentence needs a verb of its own right after it"
  },
  {
   "set": "round1_recall",
   "kind": "vendor",
   "slug": "cursor",
-  "text": "The Cursor model picker offers GPT and Claude."
+  "text": "The Cursor model picker offers GPT and Claude.",
+  "known_miss": true,
+  "note": "accepted: a name after an article is a common noun (\"Hover the Cursor\"); only a product cue after it rescues it"
  },
  {
   "set": "round1_recall",
   "kind": "vendor",
   "slug": "linear",
   "text": "Silver Bullet reads Linear Issues and GitHub PRs.",
-  "known_miss": true
+  "known_miss": true,
+  "note": "a name that opens a sentence needs a verb of its own right after it"
  },
  {
   "set": "round1_recall",
@@ -314,8 +318,7 @@
   "set": "round1_recall",
   "kind": "vendor",
   "slug": "director",
-  "text": "Director and Conductor enforce gates.",
-  "known_miss": true
+  "text": "Director and Conductor enforce gates."
  },
  {
   "set": "round1_recall",
@@ -466,7 +469,8 @@
   "kind": "absence_keep",
   "text": "Director, which is not a hard exclusion, provides workflow composition.",
   "slug": "director",
-  "known_miss": true
+  "known_miss": true,
+  "note": "the feature parser does not read '<Vendor>, which ..., provides' (an appositive before the verb) as a positive; the absence pass blanks nothing here (recall, not precision)"
  },
  {
   "set": "absence_keep",
@@ -605,5 +609,850 @@
   "kind": "absence_keep",
   "slug": "silver-bullet",
   "text": "Silver Bullet provides workflow composition and, unlike Sweep, is not a hard exclusion."
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "Cursor position is restored when the editor reopens."
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "Move the Cursor to the end of the line and press Enter."
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "The blinking Cursor shows where text will be inserted."
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "Keyboard, Mouse, Cursor and Touch events are all logged."
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "## Cursor Handling"
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "Database Cursor objects must be closed after each query."
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "Hover the Cursor over the chart to see values."
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "Director approval is required for budget changes."
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "The Managing Director signed off on the plan."
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "Ask the Director, the Manager or the Lead for sign-off."
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "### Director Responsibilities"
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "Each Director owns one region and reports quarterly."
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "Formerly Director of Engineering, she now advises startups."
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "The Conductor raised the baton and the orchestra began."
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "Copper is a good Conductor of heat."
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "Lightning Conductor installation is mandatory on tall buildings."
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "Train Conductor staff check tickets on every carriage."
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "Melty Cheese pairs well with the Conductor's favourite bread."
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "Melty Conductor tracks distort when the vinyl gets warm."
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "Factory workers ship the parts on Monday."
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "The Factory pattern hides the constructor behind a method."
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "Car Factory output rose by ten percent."
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "Factory reset the device before returning it."
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "## Factory Settings"
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "Their Factory, warehouse and office moved to Ohio."
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "Previously Factory staff worked double shifts."
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "Linear growth was observed for the first year."
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "Linear Algebra is a prerequisite for the course."
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "The model is Linear in its parameters."
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "Use Linear, Quadratic or Cubic interpolation."
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "# Linear Models"
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "Strictly Linear scaling is rare in practice."
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "Continue reading for the full analysis."
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "Click Continue, then Finish."
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "Continue to monitor the metrics after deploy."
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "Please Continue only after the tests pass."
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "## Continue Here"
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "The copilot took control of the aircraft during the storm."
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "An AI copilot for spreadsheets drafts formulas."
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "Devin from accounting approved the invoice.",
+  "residual": [
+   "devin"
+  ]
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "Ask Devin to review the slides before Friday.",
+  "residual": [
+   "devin"
+  ]
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "My colleague Devin Smith runs the meetup.",
+  "residual": [
+   "devin"
+  ]
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "The aider of the robbery was arrested."
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "Copilot seats are billed monthly by the airline."
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "Social Cognition Scout volunteers met at noon."
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "Cognition Scout badges are earned by solving puzzles."
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "Sweep the floor before the inspection."
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "Harness the power of automation in your team."
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "A Wiring Harness connects the sensors."
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "Netflix Conductor and Director approval both feature in the workflow."
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "Notably Linear regression outperformed the baseline."
+ },
+ {
+  "set": "r3_false_positive",
+  "kind": "plain_english",
+  "text": "Actually Cursor movement felt sluggish."
+ },
+ {
+  "set": "r3b_false_positive",
+  "kind": "plain_english",
+  "text": "## Cursor"
+ },
+ {
+  "set": "r3b_false_positive",
+  "kind": "plain_english",
+  "text": "# Director"
+ },
+ {
+  "set": "r3b_false_positive",
+  "kind": "plain_english",
+  "text": "### Linear"
+ },
+ {
+  "set": "r3b_false_positive",
+  "kind": "plain_english",
+  "text": "Factory:"
+ },
+ {
+  "set": "r3b_false_positive",
+  "kind": "plain_english",
+  "text": "- Cursor\n- Keyboard\n- Mouse"
+ },
+ {
+  "set": "r3b_false_positive",
+  "kind": "plain_english",
+  "text": "1. Continue\n2. Cancel"
+ },
+ {
+  "set": "r3b_false_positive",
+  "kind": "plain_english",
+  "text": "Options: Continue, Retry, Abort."
+ },
+ {
+  "set": "r3b_false_positive",
+  "kind": "plain_english",
+  "text": "Roles: Director, Producer, Editor."
+ },
+ {
+  "set": "r3b_false_positive",
+  "kind": "plain_english",
+  "text": "The algorithm is Truly Linear in time."
+ },
+ {
+  "set": "r3b_false_positive",
+  "kind": "plain_english",
+  "text": "It was a Deeply Linear narrative."
+ },
+ {
+  "set": "r3b_false_positive",
+  "kind": "plain_english",
+  "text": "Research on human cognition shows memory limits."
+ },
+ {
+  "set": "r3b_false_positive",
+  "kind": "plain_english",
+  "text": "Embodied Cognition theories explain gesture."
+ },
+ {
+  "set": "r3b_false_positive",
+  "kind": "plain_english",
+  "text": "Pilots and copilots train together."
+ },
+ {
+  "set": "r3b_false_positive",
+  "kind": "plain_english",
+  "text": "Enable copilot mode in the car settings."
+ },
+ {
+  "set": "r3b_false_positive",
+  "kind": "plain_english",
+  "text": "A good aider makes the job easier."
+ },
+ {
+  "set": "r3b_false_positive",
+  "kind": "plain_english",
+  "text": "The username devin42 owns the repo."
+ },
+ {
+  "set": "r3b_false_positive",
+  "kind": "plain_english",
+  "text": "Directors, Conductors and Producers attended the gala."
+ },
+ {
+  "set": "r3b_false_positive",
+  "kind": "plain_english",
+  "text": "Our Factory's output doubled."
+ },
+ {
+  "set": "r3b_false_positive",
+  "kind": "plain_english",
+  "text": "Cursor-based pagination avoids offset scans."
+ },
+ {
+  "set": "r3b_false_positive",
+  "kind": "plain_english",
+  "text": "Linear-time algorithms scale well."
+ },
+ {
+  "set": "r3b_false_positive",
+  "kind": "plain_english",
+  "text": "Director-level approval is required."
+ },
+ {
+  "set": "r3b_false_positive",
+  "kind": "plain_english",
+  "text": "Continue-on-error steps let the job proceed."
+ },
+ {
+  "set": "r3b_false_positive",
+  "kind": "plain_english",
+  "text": "The Director's cut is longer."
+ },
+ {
+  "set": "r3b_false_positive",
+  "kind": "plain_english",
+  "text": "A Sweep of the area found nothing."
+ },
+ {
+  "set": "r3b_false_positive",
+  "kind": "plain_english",
+  "text": "Harness racing is popular in Ohio."
+ },
+ {
+  "set": "r3_recall",
+  "kind": "vendor",
+  "slug": "cursor",
+  "text": "Cursor ships a background agent for long tasks."
+ },
+ {
+  "set": "r3_recall",
+  "kind": "vendor",
+  "slug": "cursor",
+  "text": "Many teams moved from VS Code to Cursor last year."
+ },
+ {
+  "set": "r3_recall",
+  "kind": "vendor",
+  "slug": "cursor",
+  "text": "Anysphere, the maker of Cursor, raised a new round."
+ },
+ {
+  "set": "r3_recall",
+  "kind": "vendor",
+  "slug": "cursor",
+  "text": "Rules files in Cursor shape agent behaviour."
+ },
+ {
+  "set": "r3_recall",
+  "kind": "vendor",
+  "slug": "director",
+  "text": "Director orchestrates Claude Code subagents with review gates."
+ },
+ {
+  "set": "r3_recall",
+  "kind": "vendor",
+  "slug": "director",
+  "text": "We compared Director, Deepwork and GSD."
+ },
+ {
+  "set": "r3_recall",
+  "kind": "vendor",
+  "slug": "director",
+  "text": "In Director, every phase ends with a gate."
+ },
+ {
+  "set": "r3_recall",
+  "kind": "vendor",
+  "slug": "conductor",
+  "text": "Conductor lets you run several Claude Code agents in parallel worktrees."
+ },
+ {
+  "set": "r3_recall",
+  "kind": "vendor",
+  "slug": "conductor",
+  "text": "Melty Labs builds Conductor for macOS."
+ },
+ {
+  "set": "r3_recall",
+  "kind": "vendor",
+  "slug": "factory-ai",
+  "text": "Factory.ai Droids turn tickets into pull requests."
+ },
+ {
+  "set": "r3_recall",
+  "kind": "vendor",
+  "slug": "factory-ai",
+  "text": "Factory raised funding to expand its Droids platform."
+ },
+ {
+  "set": "r3_recall",
+  "kind": "vendor",
+  "slug": "linear",
+  "text": "Issues sync from Linear into the agent queue."
+ },
+ {
+  "set": "r3_recall",
+  "kind": "vendor",
+  "slug": "linear",
+  "text": "Linear tickets trigger the Factory Droids.",
+  "known_miss": true,
+  "note": "a name that opens a sentence needs a verb; 'tickets' is not one"
+ },
+ {
+  "set": "r3_recall",
+  "kind": "vendor",
+  "slug": "continue",
+  "text": "Continue is an open-source IDE extension for custom assistants."
+ },
+ {
+  "set": "r3_recall",
+  "kind": "vendor",
+  "slug": "continue",
+  "text": "Teams configure Continue with local models."
+ },
+ {
+  "set": "r3_recall",
+  "kind": "vendor",
+  "slug": "github-copilot",
+  "text": "GitHub Copilot now offers an agent mode."
+ },
+ {
+  "set": "r3_recall",
+  "kind": "vendor",
+  "slug": "github-copilot",
+  "text": "Copilot reviews pull requests on GitHub.",
+  "known_miss": true,
+  "note": "'reviews' is not a subject verb (it is also a plural noun: 'Director reviews'); precision first"
+ },
+ {
+  "set": "r3_recall",
+  "kind": "vendor",
+  "slug": "devin",
+  "text": "Devin by Cognition opens PRs autonomously."
+ },
+ {
+  "set": "r3_recall",
+  "kind": "vendor",
+  "slug": "devin",
+  "text": "Teams assign Jira tickets to Devin."
+ },
+ {
+  "set": "r3_recall",
+  "kind": "vendor",
+  "slug": "aider",
+  "text": "Aider commits every edit to git automatically."
+ },
+ {
+  "set": "r3_recall",
+  "kind": "vendor",
+  "slug": "aider",
+  "text": "Paul Gauthier maintains Aider as open source."
+ },
+ {
+  "set": "r3_recall",
+  "kind": "vendor",
+  "slug": "sweep",
+  "text": "Sweep AI turns GitHub issues into PRs."
+ },
+ {
+  "set": "r3_recall",
+  "kind": "vendor",
+  "slug": "cursor",
+  "text": "Compared with Cursor, Windsurf has fewer rules options."
+ },
+ {
+  "set": "r3_recall",
+  "kind": "vendor",
+  "slug": "director",
+  "text": "Unlike GSD, Director enforces gates through hooks."
+ },
+ {
+  "set": "r3_absence",
+  "kind": "absence_keep",
+  "slug": "silver-bullet",
+  "text": "Silver Bullet provides workflow composition, whereas Deepwork has no public evidence."
+ },
+ {
+  "set": "r3_absence",
+  "kind": "absence_keep",
+  "slug": "silver-bullet",
+  "text": "Silver Bullet provides workflow composition — Deepwork has no public evidence."
+ },
+ {
+  "set": "r3_absence",
+  "kind": "absence_keep",
+  "slug": "silver-bullet",
+  "text": "Deepwork has no public evidence, but Silver Bullet provides workflow composition."
+ },
+ {
+  "set": "r3_absence",
+  "kind": "absence_keep",
+  "slug": "silver-bullet",
+  "text": "No public evidence exists for Deepwork. Silver Bullet provides workflow composition."
+ },
+ {
+  "set": "r3_absence",
+  "kind": "absence_keep",
+  "slug": "silver-bullet",
+  "text": "Silver Bullet provides workflow composition and denies merges without evidence of review."
+ },
+ {
+  "set": "r3_absence",
+  "kind": "absence_keep",
+  "slug": "silver-bullet",
+  "text": "Silver Bullet provides hook-enforced gates that stop delivery with missing evidence of tests."
+ },
+ {
+  "set": "r3_absence",
+  "kind": "absence_keep",
+  "slug": "silver-bullet",
+  "text": "Silver Bullet provides workflow composition, not on the hard exclusion list."
+ },
+ {
+  "set": "r3_absence",
+  "kind": "absence_keep",
+  "slug": "silver-bullet",
+  "text": "Silver Bullet, never a hard exclusion, provides workflow composition.",
+  "known_miss": true,
+  "note": "the feature parser does not read '<Vendor>, which ..., provides' (an appositive before the verb) as a positive; the absence pass blanks nothing here (recall, not precision)"
+ },
+ {
+  "set": "r3_absence",
+  "kind": "absence_keep",
+  "slug": "silver-bullet",
+  "text": "Silver Bullet provides workflow composition (unlike the hard exclusions)."
+ },
+ {
+  "set": "r3_absence",
+  "kind": "absence_keep",
+  "slug": "silver-bullet",
+  "text": "Silver Bullet provides workflow composition; Sweep and Windsurf are hard exclusions."
+ },
+ {
+  "set": "r3_absence",
+  "kind": "absence_drop",
+  "slug": "deepwork",
+  "text": "Deepwork provides workflow composition, though there is no evidence."
+ },
+ {
+  "set": "r3_absence",
+  "kind": "absence_drop",
+  "slug": "deepwork",
+  "text": "Deepwork provides workflow composition, yet we found no public evidence."
+ },
+ {
+  "set": "r3_absence",
+  "kind": "absence_drop",
+  "slug": "deepwork",
+  "text": "Deepwork provides workflow composition; however, no independent evidence was found."
+ },
+ {
+  "set": "r3_absence",
+  "kind": "absence_drop",
+  "slug": "deepwork",
+  "text": "Deepwork provides workflow composition. However, there are no claims backing this."
+ },
+ {
+  "set": "r3_absence",
+  "kind": "absence_drop",
+  "slug": "deepwork",
+  "text": "Deepwork provides workflow composition. This is unresearched."
+ },
+ {
+  "set": "r3_absence",
+  "kind": "absence_drop",
+  "slug": "deepwork",
+  "text": "Deepwork provides workflow composition (lacking evidence)."
+ },
+ {
+  "set": "r3_absence",
+  "kind": "absence_drop",
+  "slug": "deepwork",
+  "text": "Deepwork provides workflow composition - no evidence."
+ },
+ {
+  "set": "r3_absence",
+  "kind": "absence_drop",
+  "slug": "deepwork",
+  "text": "Deepwork provides workflow composition, a claim that stopped short of evidence: none was found."
+ },
+ {
+  "set": "r3_absence",
+  "kind": "absence_drop",
+  "slug": "deepwork",
+  "text": "Deepwork blocks nothing and provides workflow composition with no evidence."
+ },
+ {
+  "set": "r3_absence",
+  "kind": "absence_drop",
+  "slug": "deepwork",
+  "text": "Deepwork stops at marketing copy and provides workflow composition with no evidence."
+ },
+ {
+  "set": "r3_absence",
+  "kind": "absence_drop",
+  "slug": "deepwork",
+  "text": "Deepwork provides workflow composition with zero public evidence."
+ },
+ {
+  "set": "r3_absence",
+  "kind": "absence_drop",
+  "slug": "deepwork",
+  "text": "Deepwork provides workflow composition without any public evidence."
+ },
+ {
+  "set": "r3_absence",
+  "kind": "absence_drop",
+  "slug": "sweep",
+  "text": "Hard exclusions include Sweep, which provides workflow composition."
+ },
+ {
+  "set": "r3_absence",
+  "kind": "absence_drop",
+  "slug": "sweep",
+  "text": "Sweep is a hard exclusion; it provides workflow composition."
+ },
+ {
+  "set": "r3_absence",
+  "kind": "absence_drop",
+  "slug": "sweep",
+  "text": "Sweep provides workflow composition but is a hard exclusion."
+ },
+ {
+  "set": "r3_absence",
+  "kind": "absence_drop",
+  "slug": "sweep",
+  "text": "Not every tool qualifies: Sweep is a hard exclusion and provides workflow composition."
+ },
+ {
+  "set": "r3_absence",
+  "kind": "absence_drop",
+  "slug": "sweep",
+  "text": "Unlike Director, Sweep is a hard exclusion that provides workflow composition."
+ },
+ {
+  "set": "r3_absence",
+  "kind": "absence_drop",
+  "slug": "barkain-workflow-orchestrator",
+  "text": "Silver Bullet provides workflow composition; Barkain Workflow Orchestrator does not."
+ },
+ {
+  "set": "r3_absence",
+  "kind": "absence_keep",
+  "slug": "director",
+  "text": "Director, which is in scope, provides workflow composition.",
+  "known_miss": true,
+  "note": "the feature parser does not read '<Vendor>, which ..., provides' or 'is not X and provides' as a positive; nothing is blanked by the absence pass"
+ },
+ {
+  "set": "r3_absence",
+  "kind": "absence_keep",
+  "slug": "silver-bullet",
+  "text": "Silver Bullet, never excluded, provides workflow composition.",
+  "known_miss": true,
+  "note": "the feature parser does not read '<Vendor>, which ..., provides' or 'is not X and provides' as a positive; nothing is blanked by the absence pass"
+ },
+ {
+  "set": "r3_absence",
+  "kind": "absence_keep",
+  "slug": "silver-bullet",
+  "text": "Silver Bullet, which is not a hard exclusion, provides workflow composition.",
+  "known_miss": true,
+  "note": "the feature parser does not read '<Vendor>, which ..., provides' or 'is not X and provides' as a positive; nothing is blanked by the absence pass"
+ },
+ {
+  "set": "r3_absence",
+  "kind": "absence_keep",
+  "slug": "silver-bullet",
+  "text": "Silver Bullet is not a hard exclusion and provides workflow composition.",
+  "known_miss": true,
+  "note": "the feature parser does not read '<Vendor>, which ..., provides' or 'is not X and provides' as a positive; nothing is blanked by the absence pass"
+ },
+ {
+  "set": "r3_absence",
+  "kind": "absence_drop",
+  "slug": "sweep-ai",
+  "text": "Unlike Director, Sweep and Windsurf are hard exclusions that provide workflow composition."
+ },
+ {
+  "set": "r3_absence",
+  "kind": "absence_drop",
+  "slug": "windsurf",
+  "text": "Unlike Director, Sweep and Windsurf are hard exclusions that provide workflow composition."
+ },
+ {
+  "set": "r1_absence",
+  "kind": "absence_keep",
+  "slug": "silver-bullet",
+  "text": "Silver Bullet enforces hook-enforced gates that refuse delivery on missing evidence files.",
+  "known_miss": true,
+  "note": "the feature parser does not read this verb ('enforces', 'is a ... plugin', 'integrates') as a positive for the feature; unrelated to the absence pass, nothing is blanked (recall, not precision)"
+ },
+ {
+  "set": "r1_absence",
+  "kind": "absence_keep",
+  "slug": "barkain-workflow-orchestrator",
+  "text": "Barkain Workflow Orchestrator provides hook-enforced gates."
+ },
+ {
+  "set": "r1_absence",
+  "kind": "absence_keep",
+  "slug": "barkain-workflow-orchestrator",
+  "text": "Barkain Workflow Orchestrator provides workflow composition."
+ },
+ {
+  "set": "r1_absence",
+  "kind": "absence_keep",
+  "slug": "silver-bullet",
+  "text": "Silver Bullet is a Claude Code plugin with hook-enforced gates.",
+  "known_miss": true,
+  "note": "the feature parser does not read this verb ('enforces', 'is a ... plugin', 'integrates') as a positive for the feature; unrelated to the absence pass, nothing is blanked (recall, not precision)"
+ },
+ {
+  "set": "r1_absence",
+  "kind": "absence_keep",
+  "slug": "silver-bullet",
+  "text": "Silver Bullet integrates natively with Cursor IDE and Claude Code.",
+  "known_miss": true,
+  "note": "the feature parser does not read this verb ('enforces', 'is a ... plugin', 'integrates') as a positive for the feature; unrelated to the absence pass, nothing is blanked (recall, not precision)"
+ },
+ {
+  "set": "r1_absence",
+  "kind": "absence_keep",
+  "slug": "workflow-manager",
+  "text": "Workflow Manager provides workflow composition."
+ },
+ {
+  "set": "r1_absence",
+  "kind": "absence_keep",
+  "slug": "silver-bullet",
+  "text": "Silver Bullet provides workflow composition."
+ },
+ {
+  "set": "copilot",
+  "kind": "vendor",
+  "slug": "github-copilot",
+  "text": "GitHub Copilot Enterprise adds org knowledge."
+ },
+ {
+  "set": "copilot",
+  "kind": "vendor",
+  "slug": "copilot-workspace",
+  "text": "Copilot Workspace plans tasks."
+ },
+ {
+  "set": "copilot",
+  "kind": "vendor",
+  "slug": "copilot-workspace",
+  "text": "GitHub Copilot Workspace was sunset."
+ },
+ {
+  "set": "copilot",
+  "kind": "vendor",
+  "slug": "github-copilot",
+  "text": "Copilot coding agent opens PRs."
+ },
+ {
+  "set": "copilot",
+  "kind": "vendor",
+  "slug": "github-copilot",
+  "text": "We use github-copilot daily."
+ },
+ {
+  "set": "copilot",
+  "kind": "vendor",
+  "slug": "github-copilot",
+  "text": "The Copilot SDK exposes hooks."
+ },
+ {
+  "set": "copilot",
+  "kind": "plain_english",
+  "text": "Microsoft Copilot drafts emails."
  }
 ]

@@ -1238,7 +1238,15 @@
       "conductor",
       "scout",
       "harness",
-      "sweep"
+      "sweep",
+      "copilot",
+      "cognition",
+      "aider",
+      "all hands",
+      "poolside",
+      "superpowers",
+      "workflow manager",
+      "cognition scout"
     ],
     "synthesize_landscape.SOLO_HOST_MARKER": "claude",
     "synthesize_landscape.PRESENCE_REQUIRES_FEATURE": "Managed hosting",

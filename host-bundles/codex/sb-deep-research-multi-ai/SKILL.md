@@ -165,6 +165,17 @@ For `solution-landscape` / `solution-compare`, packaging **always** re-runs
 and `validate_landscape_content` gate. Host-written files are preserved, not replaced.
 Skip steps with `--skip-compare`, `--skip-xlsx`, or `--skip-spa`.
 
+## Vendor mentions in prose
+
+Precision comes first: a false vendor tick puts fabricated evidence in the comparison matrix. A pack lists
+the product names that are also ordinary words (`AMBIGUOUS_NAMES`: "Director", "Cursor", "Copilot",
+"Cognition", ...). Those count only where they read as a proper noun: capitalised, not after an article,
+determiner or possessive, not in a list of common nouns, not inside a Title-Case phrase ("Netflix Conductor"),
+and, opening a sentence, followed by a verb. A maker word (`PRODUCT_MAKERS`, "Melty Conductor") still needs a
+product context. Some genuine mentions are therefore missed ("The Cursor model picker"); the pinned corpus
+(`tests/fixtures/vendor_mention_corpus.json`) lists them. Residual risk: a person's first name that is also a
+product ("Devin from accounting") cannot be told apart lexically and is credited.
+
 ## GLM-5.2 routing
 
 Subscription-gated: Cursor pool if subscribed; OCG pool otherwise. `unknown` blocks dispatch.
