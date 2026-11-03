@@ -67,13 +67,9 @@ SECTION_TITLES = [
     "Source Reliability Assessment",
 ]
 
-# Legacy catalogs retained for fallback when no category pack is active.
 # No vendor catalogue is built in: the vendors of a run come from the category pack seeds
 # (commercial/open-source split by seed licence) or from what the models named. Chart axis
 # profiles live in the pack overlay ("market_chart_profiles").
-COMMERCIAL_CATALOG: list[dict[str, str]] = []
-EMERGING_CATALOG: list[dict[str, str]] = []
-OSS_CATALOG: list[dict[str, str]] = []
 
 
 def _comparison_rankings_markdown(comparison: dict[str, Any]) -> str:
@@ -179,7 +175,7 @@ def _resolve_catalogs(
     envelopes: list[dict[str, Any]],
     audit: dict[str, Any] | None = None,
 ) -> tuple[list[dict[str, str]], list[dict[str, str]], dict[str, Any]]:
-    """Return (commercial_catalog, oss_catalog, audit) from pack classifier or legacy fallback."""
+    """Return (commercial_catalog, oss_catalog, audit): the pack classifier's, or what the workers named."""
     pack = resolve_pack_from_need(need)
     if pack:
         if audit is None:
@@ -190,8 +186,6 @@ def _resolve_catalogs(
         matrix = apply_parent_child_dedupe(matrix, pack)
         commercial, oss = catalog_entries_from_pack(pack, matrix)
         return commercial, oss, audit
-    if COMMERCIAL_CATALOG or OSS_CATALOG or EMERGING_CATALOG:
-        return list(COMMERCIAL_CATALOG), list(OSS_CATALOG) + list(EMERGING_CATALOG), audit or {}
     # Open world: the vendors the workers named, with no licence claim.
     known = open_world_known(envelopes, need)
     entries = [
@@ -199,12 +193,6 @@ def _resolve_catalogs(
         for slug in discover_solutions(envelopes, need=need)
     ]
     return entries, [], audit or {}
-
-
-COMMERCIAL_SLUGS: frozenset[str] = frozenset(e["slug"] for e in COMMERCIAL_CATALOG)
-OSS_SLUGS: frozenset[str] = frozenset(e["slug"] for e in OSS_CATALOG)
-EMERGING_SLUGS: frozenset[str] = frozenset(e["slug"] for e in EMERGING_CATALOG)
-NON_COMMERCIAL_SLUGS: frozenset[str] = OSS_SLUGS | EMERGING_SLUGS
 
 
 def _known_for_need(need: dict[str, Any]) -> dict[str, str]:
@@ -224,10 +212,6 @@ def vendor_license_bucket(
     """Classify solution slug for landscape vendor panels ."""
     if license_map and license_map.get(slug) == "oss":
         return "oss"
-    if slug in NON_COMMERCIAL_SLUGS:
-        return "oss"
-    if slug in COMMERCIAL_SLUGS:
-        return "commercial"
     if license_map and license_map.get(slug) in {"commercial", "mixed", "unknown"}:
         return "commercial"
     return fallback
@@ -1240,7 +1224,7 @@ def _build_solution_profile(
     overview = re.sub(r"\s+", " ", overview).strip()[:420]
     pros = []
     for feat in positives[:5]:
-        pros.append(f"**{feat}**: Supported in startup-weighted comparison matrix.")
+        pros.append(f"**{feat}**: Supported in the priority-weighted comparison matrix.")
     if entry.get("unclassified"):
         pass  # licence/deployment model not assessed: claim neither a managed nor a self-hosted path
     elif commercial:
@@ -1296,8 +1280,6 @@ def _catalog_entries(
     commercial: list[dict[str, str]] | None = None,
     oss: list[dict[str, str]] | None = None,
 ) -> list[dict[str, str]]:
-    if commercial is None and oss is None:
-        return [*COMMERCIAL_CATALOG, *OSS_CATALOG, *EMERGING_CATALOG]
     entries: list[dict[str, str]] = []
     if commercial:
         entries.extend(commercial)
@@ -1355,19 +1337,9 @@ def _vc_series_entry(
         # Evidenced true = 5; evidenced false or unknown-on-a-selected-factor = 1.
         # Do not invent mid-scores (3/2) for unverified cells.
         data.append(5 if tick is True else 1)
-    oss_slugs = {e["slug"] for e in (OSS_CATALOG if oss is None else oss)}
-    color = "#22d3ee" if vendor_license_bucket(slug) == "oss" or slug in oss_slugs else "#4f46e5"
+    oss_slugs = {e["slug"] for e in (oss or [])}
+    color = "#22d3ee" if slug in oss_slugs else "#4f46e5"
     return {"label": label, "data": data, "color": color}
-
-
-def _legacy_slug_urls() -> dict[str, str]:
-    """Slug → official URL from built-in commercial/OSS/emerging catalogs."""
-    urls: dict[str, str] = {}
-    for entry in _catalog_entries(None, None):
-        url = entry.get("url")
-        if url:
-            urls[str(entry["slug"])] = str(url)
-    return urls
 
 
 def _resolve_slug_url(
@@ -1424,7 +1396,7 @@ def build_link_pairs(
     catalog = _catalog_entries(commercial, oss)
     pairs: list[list[str]] = []
     seen_labels: set[str] = set()
-    slug_urls: dict[str, str] = dict(_legacy_slug_urls())
+    slug_urls: dict[str, str] = {}
     if pack:
         from category_pack import build_homepage_by_slug
 
@@ -1574,10 +1546,8 @@ def build_vendor_buckets(
     oss: list[dict[str, str]] | None = None,
     known: dict[str, str] | None = None,
 ) -> dict[str, list[str]]:
-    # None → legacy global catalogs. Empty list must stay empty (all-OSS or
-    # all-commercial markets) — `or` would wrongly inject cross-market vendors.
-    commercial_src = COMMERCIAL_CATALOG if commercial is None else commercial
-    oss_src = [*OSS_CATALOG, *EMERGING_CATALOG] if oss is None else oss
+    commercial_src = commercial or []
+    oss_src = oss or []
     commercial_labels = [_catalog_label(e, known=known) for e in commercial_src]
     oss_labels = [_catalog_label(e, known=known) for e in oss_src]
     # Positioning Matrix (MQ) is authoritative for Leaders/Challengers filters.
@@ -2023,8 +1993,8 @@ def build_chart_data(
         _append_vc_series(slug, label)
 
     if not existing_vc:
-        commercial_src = COMMERCIAL_CATALOG if commercial is None else commercial
-        oss_src = OSS_CATALOG if oss is None else oss
+        commercial_src = commercial or []
+        oss_src = oss or []
         vc_core = list(commercial_src)[:5] + list(oss_src)[:5]
         if not vc_core and top:
             vc_core = [
@@ -2401,9 +2371,26 @@ def build_consensus_patterns(
     return patterns
 
 
+def _derived_priorities_note(root: Path) -> str:
+    """Disclosure line when materialize derived the Critical rows because no must-have matched."""
+    try:
+        derived = json.loads((root / "landscape" / "derived-priorities.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return ""
+    names = derived.get("weights_override") if isinstance(derived, dict) else None
+    if not isinstance(names, dict) or not names:
+        return ""
+    return (
+        f"*Machine-derived priorities:* no buyer must-have matched the matrix, so the {len(names)} most-evidenced "
+        f"features that separate the vendors were treated as Critical ({', '.join(sorted(names))}). "
+        "Name your must-haves in the need profile to rank on what you need."
+    )
+
+
 def _scoring_methodology_lines(
     comparison: dict[str, Any],
     pack: dict[str, Any] | None,
+    derived_note: str = "",
 ) -> list[str]:
     """Buyer-readable scoring rubric — ticks × weights, no jitter, no hidden model."""
     lines = [
@@ -2435,7 +2422,10 @@ def _scoring_methodology_lines(
         "separate slightly by overall matrix depth. Example: spread 15 means a 15-point "
         "ranking gap moves that axis by 1.0.",
         "4. **Caps** — "
-        + str(LEADER_RULES.get("caps_text") or "Leader eligibility (below) can lower an axis; ")
+        + str(
+            LEADER_RULES.get("caps_text")
+            or ("Leader eligibility (below) can lower an axis; " if LEADER_RULES.get("markets") else "no rule lowers an axis; ")
+        )
         + "they never invent ticks.",
         "5. **Collision slotting** — if two vendors would share an X or a Y at one decimal "
         "place, a deterministic 0.1-step walk takes the nearest free slot inside the chart "
@@ -2515,6 +2505,8 @@ def _scoring_methodology_lines(
                 wt = {"Critical": 5, "Very High": 4, "High": 3, "Medium": 2, "Low": 1}.get(pri, 1)
                 lines.append(f"- **{pri} ({wt} pts per ✔)**: {', '.join(names)}")
         lines.append("")
+        if derived_note:
+            lines.extend([derived_note, ""])
     if pack:
         from category_pack import get_markets
 
@@ -2776,7 +2768,7 @@ def _build_report_markdown(
             "researched, with meaningful adoption signals and active maintenance."
         )
         lines.append("")
-    lines.extend(_scoring_methodology_lines(comparison, pack))
+    lines.extend(_scoring_methodology_lines(comparison, pack, _derived_priorities_note(root)))
     lines.extend(
         inclusion_ledger_embed_lines(root=root, audit=audit, pack=pack, known=known)
     )
@@ -2810,7 +2802,7 @@ def _build_report_markdown(
             for point in mchart.get("gmq_data") or []:
                 lines.append(
                     f"| {point['label']} | {point['q']} | "
-                    "Positioned on Completeness of Vision × Ability to Execute from feature support and startup-weighted score. |"
+                    "Positioned on Completeness of Vision × Ability to Execute from feature support and priority-weighted score. |"
                 )
             lines.extend([
                 "",
@@ -2859,7 +2851,7 @@ def _build_report_markdown(
         for point in chart["gmq_data"]:
             lines.append(
                 f"| {point['label']} | {point['q']} | "
-                "Positioned on Completeness of Vision × Ability to Execute from feature support and startup-weighted score. |"
+                "Positioned on Completeness of Vision × Ability to Execute from feature support and priority-weighted score. |"
             )
         lines.extend(["", "### 3C. Wave-Style Assessment", "", "| Vendor | Current Offering | Strategy | Market Presence |", "|--------|------------------|----------|-----------------|"])
         for item in (comparison.get("rankings") or [])[:8]:
@@ -2917,33 +2909,21 @@ def _build_report_markdown(
                     _render_solution_entry(profile, commercial=section["kind"] == "commercial")
                 )
     else:
-        open_entries = [e for e in commercial_catalog if e.get("unclassified")]
+        # No pack: every vendor is one the workers named, so there is no licence split to show.
+        open_entries = [*commercial_catalog, *oss_catalog]
         if open_entries:
             lines.extend([f"### Solutions evaluated ({len(open_entries)})", ""])
-            commercial_catalog = [e for e in commercial_catalog if not e.get("unclassified")]
             for entry in open_entries:
                 profile = _build_solution_profile(
                     entry, commercial=False, root=root, claims=claims, support=support,
                     known=known, overview_seeds=overview_seeds,
                 )
                 lines.extend(_render_solution_entry(profile, commercial=False))
-        if commercial_catalog or not open_entries:
-            lines.extend([f"### Top Commercial Solutions for SMBs ({len(commercial_catalog)} core)", ""])
-        for entry in commercial_catalog:
-            profile = _build_solution_profile(
-                entry, commercial=True, root=root, claims=claims, support=support,
-                known=known, overview_seeds=overview_seeds,
-            )
-            lines.extend(_render_solution_entry(profile, commercial=True))
-
-        if oss_catalog or not open_entries:
-            lines.extend([f"### Top Open Source Solutions ({len(oss_catalog)} core)", ""])
-        for entry in oss_catalog:
-            profile = _build_solution_profile(
-                entry, commercial=False, root=root, claims=claims, support=support,
-                known=known, overview_seeds=overview_seeds,
-            )
-            lines.extend(_render_solution_entry(profile, commercial=False))
+        else:
+            lines.extend([
+                "### Top Commercial Solutions for SMBs (0 core)", "",
+                "### Top Open Source Solutions (0 core)", "",
+            ])
 
     # Adjacent and Excluded stay in Findings
     if audit:

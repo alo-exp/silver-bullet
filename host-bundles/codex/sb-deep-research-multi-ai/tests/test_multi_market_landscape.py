@@ -387,10 +387,10 @@ class MultiMarketMembershipConsistencyTests(unittest.TestCase):
         self.assertTrue(all(p["x"] < 5.5 and p["y"] < 5.5 for p in below), msg=below)
 
 
-from legacy_catalog_fixture import with_legacy_catalogs  # noqa: E402
+from apo_pack_run_fixture import with_apo_pack_run  # noqa: E402
 
 
-@with_legacy_catalogs
+@with_apo_pack_run
 class AnalystGradeMembershipFixes(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:

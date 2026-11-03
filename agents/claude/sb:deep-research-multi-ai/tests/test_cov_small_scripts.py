@@ -623,6 +623,28 @@ class PackageSolutionOutputsTests(unittest.TestCase):
         payload = {} if research_type is None else {"research_type": research_type}
         (root / "run_manifest.json").write_text(json.dumps(payload), encoding="utf-8")
 
+    def test_effective_need_profile_adds_derived_priorities_without_touching_the_users_profile(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            original = {"category": "x", "must_haves": ["nope"], "weights_override": {"Old": "Critical"},
+                        "weights_override_derived": "saved by an earlier version"}
+            (root / "need_profile.json").write_text(json.dumps(original), encoding="utf-8")
+            self.assertIsNone(package_solution_outputs._effective_need_profile(root, None))  # no derivation was done
+            path = package_solution_outputs._effective_need_profile(root, {"A": "Critical", "B": "Critical"})
+            self.assertEqual(path, root / "comparison" / "effective-need-profile.json")
+            effective = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(effective["weights_override"], {"A": "Critical", "B": "Critical"})
+            self.assertNotIn("weights_override_derived", effective)
+            # nothing derived this time: the stale derived block is dropped, the must-haves rank alone
+            effective = json.loads(package_solution_outputs._effective_need_profile(root, {}).read_text(encoding="utf-8"))
+            self.assertNotIn("weights_override", effective)
+            self.assertEqual(effective["must_haves"], ["nope"])
+            # a user's own weights_override (no derived flag) is kept
+            (root / "need_profile.json").write_text(json.dumps({"weights_override": {"SSO": "High"}}), encoding="utf-8")
+            kept = json.loads(package_solution_outputs._effective_need_profile(root, {}).read_text(encoding="utf-8"))
+            self.assertEqual(kept["weights_override"], {"SSO": "High"})
+            self.assertEqual(json.loads((root / "need_profile.json").read_text(encoding="utf-8")), {"weights_override": {"SSO": "High"}})
+
     def test_spa_without_manifest_is_an_error(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             with self.assertRaisesRegex(FileNotFoundError, "run_manifest.json required for SPA packaging"):
@@ -633,7 +655,7 @@ class PackageSolutionOutputsTests(unittest.TestCase):
             calls: list = []
             result = self._run(Path(tmp), calls, skip_spa=True)
             self.assertEqual([c[0] for c in calls], ["compare"])
-            self.assertEqual(calls[0][2], {"emit_xlsx": True})
+            self.assertEqual(calls[0][2], {"need_profile": None, "emit_xlsx": True})
             self.assertEqual(result["status"], "ok")
             self.assertEqual(result["compare"], {"c": 1})
             self.assertNotIn("materialize", result)
@@ -656,7 +678,7 @@ class PackageSolutionOutputsTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             calls: list = []
             self._run(Path(tmp), calls, skip_xlsx=True, skip_spa=True)
-            self.assertEqual(calls[0][2], {"emit_xlsx": False})
+            self.assertEqual(calls[0][2], {"need_profile": None, "emit_xlsx": False})
 
     def test_non_landscape_manifest_runs_general_report_only(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

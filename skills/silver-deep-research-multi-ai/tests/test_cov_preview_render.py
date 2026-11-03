@@ -247,28 +247,34 @@ class EnrichTests(OfflineCase):
         self.assertIsNone(out["markets"])
 
 
-from legacy_catalog_fixture import with_legacy_catalogs  # noqa: E402
+from apo_pack_run_fixture import with_apo_pack_run  # noqa: E402
 
 
-@with_legacy_catalogs
+@with_apo_pack_run
 class DeriveVendorTests(OfflineCase):
     def test_license_tags_and_dedupe(self) -> None:
         comparison = {"rankings": [
             {"solution": "plain"}, {"solution": "plain"}, {"solution": ""}, "junk",
             {"solution": "tagged-oss", "license": "OSS"}, {"solution": "opened", "type": "Open source"},
-            {"solution": "beta"}, {"solution": "metagpt"},
+            {"solution": "beta"}, {"solution": "gamma"},
         ]}
         with mock.patch("category_pack.resolve_pack_from_need", return_value=pack()):
             commercial, oss = lpr._derive_vendors_from_comparison(comparison, need={"category_pack_id": "x"})
-        self.assertEqual(commercial, ["plain"])
-        self.assertEqual(oss, ["tagged-oss", "opened", "beta", "metagpt"])
+        self.assertEqual(oss, ["tagged-oss", "opened", "beta"])  # beta: licence from the pack seed
+        self.assertEqual(commercial, ["plain", "gamma"])
 
     def test_no_pack_and_column_fallback(self) -> None:
         with mock.patch("category_pack.resolve_pack_from_need", return_value=None):
             self.assertEqual(lpr._derive_vendors_from_comparison({}), ([], []))
             rows = {"rows": [{"type": "feature", "name": "F", "solutions": {"zeta": "y", "metagpt": "y"}}]}
             commercial, oss = lpr._derive_vendors_from_comparison(rows)
-        self.assertEqual((commercial, oss), (["zeta"], ["metagpt"]))
+        self.assertEqual((commercial, oss), (["metagpt", "zeta"], []))  # nothing marks a vendor open source without a pack
+
+    def test_column_fallback_uses_the_packs_licences(self) -> None:
+        rows = {"rows": [{"type": "feature", "name": "F", "solutions": {"beta": "y", "alpha": "y"}}]}
+        with mock.patch("category_pack.resolve_pack_from_need", return_value=pack()):
+            commercial, oss = lpr._derive_vendors_from_comparison(rows, need={"category_pack_id": "x"})
+        self.assertEqual((commercial, oss), (["alpha"], ["beta"]))  # beta: licence from the pack seed
 
     def test_solution_columns(self) -> None:
         self.assertEqual(lpr._solution_columns({"rankings": [{"solution": "b"}, {"solution": "a"}, {"x": 1}, "junk"]}), ["b", "a"])

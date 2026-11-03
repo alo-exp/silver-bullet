@@ -48,7 +48,8 @@ python3 skills/silver-deep-research-multi-ai/scripts/dr_multi_ai_cli.py \
 Without `--output-root` the run directory is `<cwd>/research/<date>-<slug>` (never inside the
 skill's install tree). An existing run is never overwritten; `--force` moves a previous run
 aside as `<name>.replaced-<UTC>` instead of deleting it, and refuses `/`, `$HOME`, the working
-directory and its parents. The tool writes only inside the run directory and never deletes
+directory and its parents. With `--force` your `need_profile.json` and `scope.md` carry over to the new run, except an
+auto-generated pair that names a different query. The tool writes only inside the run directory and never deletes
 user files: folders it did not generate, and `scr.md` / `features.json` / landscape files you
 or the host wrote, are left alone and listed under `preserved` / `stale_solution_dirs`.
 
@@ -129,10 +130,15 @@ alias exactly (a blank or partial name never matches); without a category pack a
 vendor becomes its own column, so any topic works with no built-in catalogue. Claim prose is
 parsed heuristically only for cells no worker voted on, resolving vendors from the run's own set
 (pack names plus the vendors workers named). Feature names are folded (case, spacing,
-punctuation) before voting and shown in the user's must-have spelling, else the most common one.
-A run whose need profile names no must-have that matches the matrix gets a derived
-`weights_override` (the most-ticked features as Critical, flagged `weights_override_derived`) so
-the content gate has Critical rows; a must-have no vendor offers is still reported by the gate.
+punctuation) before voting, for worker rows and claim prose alike, and each feature is shown once: in
+the rubric spelling, the user's must-have spelling when it differs (the comparator ranks on that
+wording), else the most common one; "+" and "#" stay part of a name ("C++" is not "C#"). A run whose
+need profile names no must-have that matches the matrix gets derived priorities: the most-evidenced
+features that separate the vendors (at least two; none ticked for every vendor) are treated as
+Critical. They are recomputed on every packaging and written only to `landscape/derived-priorities.json`
+and `comparison/effective-need-profile.json`, never into the user's `need_profile.json`, and the report
+says so in its scoring methodology. A matrix with nothing to separate vendors fails the content gate
+instead. A must-have no vendor offers is still reported by the gate.
 
 **Category packs.** Category-specific prose (market overview, trends, buying guidance,
 consensus themes, vendor notes) is data in `reference/category-pack-overlays/<pack>.json` and

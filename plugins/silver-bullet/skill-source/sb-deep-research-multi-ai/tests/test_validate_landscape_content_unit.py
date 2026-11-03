@@ -88,10 +88,10 @@ class _Base(unittest.TestCase):
         return self.run_validate(**kw)["errors"]
 
 
-from legacy_catalog_fixture import with_legacy_catalogs  # noqa: E402
+from apo_pack_run_fixture import with_apo_pack_run  # noqa: E402
 
 
-@with_legacy_catalogs
+@with_apo_pack_run
 class HelperTests(_Base):
     def test_load_json(self):
         self.assertIsNone(vlc._load_json(self.root / "missing.json"))
@@ -423,7 +423,7 @@ class SpaGateTests(_Base):
         self.assertNotIn("landscape-report.html missing after landscape synthesis", self.errors())
 
 
-@with_legacy_catalogs
+@with_apo_pack_run
 class CatalogGateTests(_Base):
     def setUp(self):
         super().setUp()

@@ -1073,7 +1073,7 @@ def comparison_matrix_html(
         '<section class="comparison">',
         "<h2>Comparison matrix</h2>",
         f"<p>Winner: <strong>{_esc(winner)}</strong>. Runner-up: <strong>{_esc(runner)}</strong>. "
-        "Same startup-weighted feature matrix as the SPA <code>#report-data</code> comparison "
+        "Same priority-weighted feature matrix as the SPA <code>#report-data</code> comparison "
         "payload (static table — not filter chips).</p>",
     ]
     if not slugs or not features:

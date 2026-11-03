@@ -15,6 +15,27 @@ from pathlib import Path
 from skill_paths import ensure_dir_on_path, ensure_multi_ai_scripts_on_path, ensure_scripts_on_path
 
 from compression_markers import assert_file_free_of_compression_markers
+from generated_files import atomic_write_text
+
+
+def _effective_need_profile(research_dir: Path, derived: dict | None) -> Path | None:
+    """The need profile the comparator ranks with: the user's, plus this run's derived priorities.
+
+    need_profile.json itself is never rewritten. A ``weights_override_derived`` flag in it marks
+    priorities an earlier version saved there; they are dropped and recomputed. Without a
+    materialize step (no derivation was done) the user's profile is used as is.
+    """
+    if derived is None:
+        return None
+    need_path = research_dir / "need_profile.json"
+    need = json.loads(need_path.read_text(encoding="utf-8"))
+    if need.pop("weights_override_derived", None):
+        need.pop("weights_override", None)
+    if derived:
+        need["weights_override"] = derived
+    effective = research_dir / "comparison" / "effective-need-profile.json"
+    atomic_write_text(effective, json.dumps(need, indent=2) + "\n")
+    return effective
 
 
 def package_solution_outputs(
@@ -52,7 +73,11 @@ def package_solution_outputs(
         from compare_solutions import compare_solutions
         from generated_files import adopt_generated
 
-        results["compare"] = compare_solutions(research_dir, emit_xlsx=not skip_xlsx)
+        results["compare"] = compare_solutions(
+            research_dir,
+            need_profile=_effective_need_profile(research_dir, (results.get("materialize") or {}).get("derived_priorities")),
+            emit_xlsx=not skip_xlsx,
+        )
         # Packaging produced these this run, so synthesis may refine them in place.
         for rel in ("comparison/comparison.json", "comparison/comparison-matrix.md"):
             adopt_generated(research_dir, research_dir / rel)

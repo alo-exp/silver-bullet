@@ -140,10 +140,10 @@ class MethodologyAndGuidanceTests(unittest.TestCase):
         self.assertNotIn("P8", g(audit=many, pack=pack))
 
 
-from legacy_catalog_fixture import with_legacy_catalogs  # noqa: E402
+from apo_pack_run_fixture import with_apo_pack_run  # noqa: E402
 
 
-@with_legacy_catalogs
+@with_apo_pack_run
 class ReportTests(TmpCase):
     ENV = [{"phase_id": "DR-RETRIEVE", "logical_model_id": "gemini-x", "payload": {"evidence": [
         {"claim": "Silver Bullet provides process orchestration above coding agents."}]}},
@@ -175,6 +175,22 @@ class ReportTests(TmpCase):
         self.assertIn("### Disputed matrix cells", md)
         self.assertRegex(md, r"- (?i:devin)[^\n]* — SSO: 1 yes / 2 no")
 
+    def test_derived_priorities_note_reads_the_materialized_file(self):
+        root = self.root
+        self.assertEqual(sl._derived_priorities_note(root), "")  # no file
+        for bad in ("{not json", "[]", json.dumps({"weights_override": {}}), json.dumps({"weights_override": "x"})):
+            self.put("landscape/derived-priorities.json", bad)
+            self.assertEqual(sl._derived_priorities_note(root), "", bad)
+        self.put("landscape/derived-priorities.json", {"weights_override": {"SSO": "Critical", "Audit log": "Critical"}})
+        note = sl._derived_priorities_note(root)
+        self.assertIn("Machine-derived priorities", note)
+        self.assertIn("2 most-evidenced features", note)
+        self.assertIn("Audit log, SSO", note)
+        comp = {"rows": [{"type": "feature", "name": "SSO", "priority": "Critical"}], "rankings": []}
+        text = "\n".join(sl._scoring_methodology_lines(comp, None, note))
+        self.assertIn("Machine-derived priorities", text)
+        self.assertNotIn("Machine-derived", "\n".join(sl._scoring_methodology_lines(comp, None)))
+
     def test_legacy_report_without_pack(self):
         md = self.report()
         self.assertIn("# Cat Market Landscape Report", md)
@@ -183,10 +199,10 @@ class ReportTests(TmpCase):
         self.assertIn("### 3B. Magic Quadrant — Cat", md)
         self.assertIn("### 3C. Wave-Style Assessment", md)
         self.assertNotIn("sb.alolabs.dev", md)
-        self.assertIn("Devin](https://devin.ai/) (Cognition) | Emerging | Emerging | Emerging |", md)
+        self.assertIn("| Devin | Emerging | Emerging | Emerging |", md)  # no catalogue: no invented homepage link
         self.assertIn("### 3D. Blue Ocean Value Curve", md)
-        self.assertIn("### Top Commercial Solutions for SMBs", md)
-        self.assertIn("### Top Open Source Solutions", md)
+        self.assertIn("### Solutions evaluated (1)", md)  # no catalogue: the vendors the workers named, unclassified
+        self.assertNotIn("Top Commercial Solutions", md)
         self.assertIn("No cross-family consensus claims", md)
         self.assertIn("| gemini-x |", md)
         self.assertNotIn("Heavy—Primary", md)  # no model is weighted by its name
@@ -194,6 +210,12 @@ class ReportTests(TmpCase):
         self.assertEqual(md.count("**Equal**"), 2)
         self.assertNotIn("Adjacent Markets (not core peers)", md)
         self.assertNotIn("lean-ctx", md)
+
+    def test_report_with_no_named_vendor_has_empty_solution_sections(self):
+        md = self.report(envelopes=[])
+        self.assertIn("### Top Commercial Solutions for SMBs (0 core)", md)
+        self.assertIn("### Top Open Source Solutions (0 core)", md)
+        self.assertNotIn("### Solutions evaluated", md)
 
     def test_legacy_report_empty_scope_and_no_vc_labels(self):
         md = self.report(scope_text="")
@@ -205,8 +227,7 @@ class ReportTests(TmpCase):
             md = self.report()
         self.assertIn("### 3D. Blue Ocean Value Curve", md)
         header = next(line for line in md.splitlines() if line.startswith("| Key Competitive Factor |"))
-        for entry in (sl.COMMERCIAL_CATALOG + sl.OSS_CATALOG)[:5]:
-            self.assertIn(entry.get("name", entry["slug"]).split(" (")[0], header)
+        self.assertEqual(header.strip(), "| Key Competitive Factor | Silver Bullet |")  # only the ranked vendor, no catalogue columns
 
     def test_legacy_wave_rows_from_rankings(self):
         chart = {"mq_data": [], "gmq_data": [{"label": "G", "q": "Leaders"}], "wave_data": [],
@@ -318,7 +339,7 @@ class ReportTests(TmpCase):
         self.assertIn("Consensus Resolution Table", md)
 
 
-@with_legacy_catalogs
+@with_apo_pack_run
 class SynthesizeTests(TmpCase):
     def seed(self, **extra):
         self.put("contributions/all-envelopes.json", ReportTests.ENV)

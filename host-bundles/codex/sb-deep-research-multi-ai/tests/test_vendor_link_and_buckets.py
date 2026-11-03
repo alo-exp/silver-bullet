@@ -348,10 +348,10 @@ class MembershipFramingAndOssBucketTests(unittest.TestCase):
         self.assertNotIn("Silver Bullet", apo_oss)
 
 
-from legacy_catalog_fixture import with_legacy_catalogs  # noqa: E402
+from apo_pack_run_fixture import with_apo_pack_run  # noqa: E402
 
 
-@with_legacy_catalogs
+@with_apo_pack_run
 class CategoryPackHomepageTests(unittest.TestCase):
     def test_sdlc_plugin_has_no_marketplace_homepage(self) -> None:
         import json

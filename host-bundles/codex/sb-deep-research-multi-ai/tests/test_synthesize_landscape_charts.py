@@ -82,7 +82,8 @@ class CollisionTests(unittest.TestCase):
         self.assertEqual(sl.chart_listed_membership(core=[])["unplotted"], [])
 
     def test_no_vendor_catalogue_or_market_profile_is_built_in(self):
-        self.assertEqual((sl.COMMERCIAL_CATALOG, sl.OSS_CATALOG, sl.EMERGING_CATALOG), ([], [], []))
+        for name in ("COMMERCIAL_CATALOG", "OSS_CATALOG", "EMERGING_CATALOG", "COMMERCIAL_SLUGS", "NON_COMMERCIAL_SLUGS"):
+            self.assertFalse(hasattr(sl, name), name)  # the module-level catalogues were never populated
         self.assertEqual(sl._market_chart_profile("apo"), sl._NEUTRAL_CHART_PROFILE)
 
     def test_market_profile(self):
@@ -100,10 +101,10 @@ class CollisionTests(unittest.TestCase):
 
 
 from category_pack import load_pack_overlay  # noqa: E402
-from legacy_catalog_fixture import with_legacy_catalogs  # noqa: E402
+from apo_pack_run_fixture import with_apo_pack_run  # noqa: E402
 
 
-@with_legacy_catalogs
+@with_apo_pack_run
 class BuildChartTests(TmpCase):
     def support(self):
         return {"alpha": dict(GATES), "beta": {"Workflow composition": True}, "gamma": dict(GATES)}

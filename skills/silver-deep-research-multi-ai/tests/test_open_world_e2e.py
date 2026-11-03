@@ -125,6 +125,11 @@ class OpenWorldEndToEndTests(unittest.TestCase):
                 parallel_phases=["DR-RETRIEVE", "DR-TRIANGULATE", "DR-CRITIQUE"], research_type="solution-landscape")
             pkg = package_solution_outputs(out, skip_xlsx=True)
             profile = json.loads((out / "need_profile.json").read_text(encoding="utf-8"))
+            self.out = out  # the directory is removed on return: read what a test needs through `read`
+            self.read = {p: (out / p).read_text(encoding="utf-8") for p in (
+                "comparison/comparison.json", "landscape/derived-priorities.json", "landscape/landscape-report.md")
+                if (out / p).is_file()}
+            self.read["effective"] = (out / "comparison" / "effective-need-profile.json").is_file()
             return res, pkg, profile
 
     def test_a_run_with_no_must_haves_still_packages_with_derived_priorities(self) -> None:
@@ -132,10 +137,71 @@ class OpenWorldEndToEndTests(unittest.TestCase):
         self.assertTrue(res["ok"])
         self.assertEqual(pkg.get("status"), "ok")
         self.assertTrue(profile["auto_assumed"])
-        self.assertEqual(set(profile["weights_override"].values()), {"Critical"})
-        self.assertIn("Exactly-once semantics", profile["weights_override"])
-        self.assertIn("because no must-have matched", profile["weights_override_derived"])
-        self.assertIn("derived_critical_features", res["materialize"])
+        # the user's profile is never rewritten with machine-chosen priorities (R12-22, round 3)
+        self.assertNotIn("weights_override", profile)
+        self.assertNotIn("weights_override_derived", profile)
+        derived = res["materialize"]["derived_priorities"]
+        self.assertEqual(set(derived.values()), {"Critical"})
+        self.assertIn("Exactly-once semantics", derived)
+        self.assertGreaterEqual(len(derived), 2)
+        self.assertEqual(json.loads(self.read["landscape/derived-priorities.json"])["weights_override"], derived)
+        comparison = json.loads(self.read["comparison/comparison.json"])
+        critical = {r["name"] for r in comparison["rows"] if r.get("type") == "feature" and r.get("priority") == "Critical"}
+        self.assertEqual(critical, set(derived))
+        self.assertTrue(self.read["effective"])
+        # the report says so: the buyer is not shown machine-chosen rows as their own requirements
+        self.assertIn("Machine-derived priorities", self.read["landscape/landscape-report.md"])
+
+    def test_derived_priorities_are_not_sticky_once_the_user_names_must_haves(self) -> None:
+        """Package, fix the must-haves as the gate message says, package again: only the must-have ranks."""
+        pool = [{"logical_model_id": m, "backend": "stub", "model_family_id": f} for m, f in MODELS]
+        env = {"SB_SKIP_VENDOR_URL_HEALTH": "1", "SB_SKIP_LANDSCAPE_PDF": "1", "SB_ALLOW_SKIP_LANDSCAPE_PDF": "1"}
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.dict(os.environ, env), \
+                mock.patch.object(runner, "resolve_pool", return_value=pool), \
+                mock.patch.object(runner, "stub_mode", return_value=False), \
+                mock.patch.object(runner, "dispatch_phase_parallel", side_effect=_fake_dispatch):
+            out = Path(tmp) / "run"
+            out.mkdir()
+            need = out / "need_profile.json"
+            first = {"category": "Event streaming", "interview_complete": True,
+                     "must_haves": ["single sign-on", "exactly-once delivery"]}  # neither is a matrix feature
+            need.write_text(json.dumps(first), encoding="utf-8")
+            runner.run_dr_live(
+                query="Event streaming platforms", output_root=out,
+                selection=PoolSelection(ocg_pool="none", cursor_pool="default"),
+                parallel_phases=["DR-RETRIEVE", "DR-TRIANGULATE", "DR-CRITIQUE"], research_type="solution-landscape")
+            with self.assertRaisesRegex(ValueError, "lacks must-have 'single sign-on'"):
+                package_solution_outputs(out, skip_xlsx=True)
+            self.assertEqual(json.loads(need.read_text(encoding="utf-8")), first)  # not rewritten, even on failure
+            self.assertGreaterEqual(len(json.loads((out / "landscape" / "derived-priorities.json").read_text())["weights_override"]), 2)
+            need.write_text(json.dumps({"category": "Event streaming", "must_haves": ["Exactly-once semantics"]}), encoding="utf-8")
+            package_solution_outputs(out, skip_xlsx=True)
+            comparison = json.loads((out / "comparison" / "comparison.json").read_text(encoding="utf-8"))
+            critical = [r["name"] for r in comparison["rows"] if r.get("type") == "feature" and r.get("priority") == "Critical"]
+            self.assertEqual(critical, ["Exactly-once semantics"])
+            self.assertNotIn("weights_override", json.loads(need.read_text(encoding="utf-8")))
+            self.assertNotIn("Machine-derived priorities", (out / "landscape" / "landscape-report.md").read_text(encoding="utf-8"))
+            self.assertEqual(json.loads((out / "landscape" / "derived-priorities.json").read_text())["weights_override"], {})
+
+    def test_a_matrix_with_nothing_to_discriminate_on_fails_the_gate_instead_of_inventing_priorities(self) -> None:
+        def hollow(phase, model):
+            rows = [{"vendor": v, "feature": "Has a website", "supported": True, "source_ref": "https://x.example"}
+                    for v in ("Alpha Tool", "Beta Tool", "Gamma Tool", "Delta Tool")]
+            claims = [{"claim": "Alpha Tool is a tool.", "source_ref": "https://x.example"}]
+            return {"evidence": claims, "matrix_entries": rows} if phase == "DR-RETRIEVE" else {"claim_candidates": [{"text": c["claim"]} for c in claims], "matrix_entries": rows}
+
+        with mock.patch.object(sys.modules[__name__], "_payload", hollow):
+            with self.assertRaisesRegex(ValueError, "no Critical feature rows"):
+                self._run_and_package({"category": "Tools"})
+
+    def test_a_profile_saved_by_an_earlier_version_with_derived_priorities_is_recomputed(self) -> None:
+        stale = {"category": "Event streaming", "must_haves": ["Exactly-once semantics"],
+                 "weights_override": {"Tiered storage": "Critical", "Managed hosting": "Critical"},
+                 "weights_override_derived": "most-ticked features, because no must-have matched the matrix"}
+        self._run_and_package(stale)
+        comparison = json.loads(self.read["comparison/comparison.json"])
+        critical = [r["name"] for r in comparison["rows"] if r.get("type") == "feature" and r.get("priority") == "Critical"]
+        self.assertEqual(critical, ["Exactly-once semantics"])
 
     def test_user_weights_are_kept_and_unmatched_must_haves_still_fail_the_gate(self) -> None:
         _res, _pkg, kept = self._run_and_package({"category": "x", "weights_override": {"SSO": "Critical"}})

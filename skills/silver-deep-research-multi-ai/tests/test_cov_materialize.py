@@ -35,10 +35,10 @@ def env(*claims: str) -> list[dict]:
     return [{"payload": {"evidence": [{"claim": c} for c in claims]}}]
 
 
-from legacy_catalog_fixture import with_legacy_catalogs  # noqa: E402
+from apo_pack_run_fixture import with_apo_pack_run  # noqa: E402
 
 
-@with_legacy_catalogs
+@with_apo_pack_run
 class ClaimClassificationTests(unittest.TestCase):
     def test_matrix_dump_claims(self) -> None:
         for text in ("", "   ", "startup-weighted matrix stuff", "foo maps to must_have bar", "x maps to must-have",
@@ -70,7 +70,7 @@ class ClaimClassificationTests(unittest.TestCase):
         self.assertFalse(m.is_unusable_overview_claim("Aider, Cline, Continue", focus_name="aider"))
 
 
-@with_legacy_catalogs
+@with_apo_pack_run
 class SlugTests(unittest.TestCase):
     def test_slugify_and_normalize(self) -> None:
         self.assertEqual(m._slugify(" Foo & Bar! "), "foo-bar")
@@ -101,17 +101,17 @@ class SlugTests(unittest.TestCase):
             known = m._effective_known_solutions({"category_pack_id": "demo"})
         self.assertEqual(seeds["zeta-tool"], "Zeta overview")
         self.assertEqual(seeds["devin"], "Overridden")
-        self.assertEqual(seeds["factory-ai"], m.OVERVIEW_SEEDS["factory-ai"])
+        self.assertNotIn("factory-ai", seeds)  # nothing is built in: only the pack's own seeds
         self.assertNotIn("silver-bullet", seeds)
         self.assertEqual(known["zeta-tool"], "Zeta Tool")
         self.assertIn("devin", known)  # the run context supplies the pack names
-        self.assertEqual(m.OVERVIEW_SEEDS["devin"], m._effective_overview_seeds() ["devin"])
+        self.assertEqual((m.OVERVIEW_SEEDS, m._effective_overview_seeds()), ({}, {}))
 
     def test_extract_slugs_from_text(self) -> None:
         self.assertEqual(m._extract_slugs_from_text("Silver Bullet and github copilot with cline"),
-                         ["silver-bullet", "cline", "github-copilot-workspace"])
+                         ["silver-bullet", "cline", "github-copilot", "github-copilot-workspace"])  # one product, one slug
         self.assertEqual(m._extract_slugs_from_text("nothing here"), [])
-        self.assertEqual(m._extract_slugs_from_text("zt rocks and omega", KNOWN_WITH_PACK, PACK), ["omega", "zt", "zeta-tool"])
+        self.assertEqual(m._extract_slugs_from_text("zt rocks and omega", KNOWN_WITH_PACK, PACK), ["omega", "zeta-tool"])  # "zt" is the pack alias of zeta-tool
 
     def test_resolve_features(self) -> None:
         self.assertEqual(m._resolve_features("Hook-enforced gates and ci/cd"), ["Hook-enforced gates", "CI integration"])
@@ -136,7 +136,7 @@ class SlugTests(unittest.TestCase):
         self.assertEqual(m._canonical_known_slug("devin-extra"), "devin")
         self.assertEqual(m._canonical_known_slug("dev"), "dev")
         self.assertEqual(m._canonical_known_slug("silver"), "silver-bullet")  # known slug that extends the token
-        self.assertEqual(m._canonical_known_slug("sdlc"), "sdlc-plugin")  # candidate "sdlc-plugin" starts with "sdlc-"
+        self.assertEqual(m._canonical_known_slug("claude"), "claude-code-expert")  # the longest known slug that starts with "claude-"
         self.assertEqual(m._canonical_known_slug("x", {"x": "X"}), "x")
 
     def test_resolve_solution_slug(self) -> None:
@@ -152,13 +152,13 @@ class SlugTests(unittest.TestCase):
         self.assertEqual(r("Zeta Tool", KNOWN_WITH_PACK, PACK), "zeta-tool")
         self.assertEqual(r("barkain extras"), "barkain-workflow-orchestrator")
         # a head that only extends a known display name via the alias prefix rule
-        self.assertEqual(r("cavekit v3.1 notes"), "cavekit")  # canonicalised onto the known "cavekit" slug
+        self.assertEqual(r("cavekit v3.1 notes"), "cavekit-v31")  # the pack's product alias for the versioned name
         # a lookup that finds a pack slug through the pack resolver, not the display names
         self.assertEqual(r("zt", KNOWN_WITH_PACK, PACK), "zt")
         self.assertEqual(r("Zeta unknown tool", KNOWN_WITH_PACK, PACK), "zeta-unknown-tool")
 
 
-@with_legacy_catalogs
+@with_apo_pack_run
 class DiscoverTests(unittest.TestCase):
     def test_pack_branch_uses_classifier(self) -> None:
         audit = {"matrix_slugs": ["a", "b", "c"], "core": ["x"]}
@@ -193,7 +193,7 @@ class DiscoverTests(unittest.TestCase):
         self.assertEqual(m._iter_claim_texts(envelopes), ["e1", "e2", "c1", "c2", "f1", "t1", "d1", "a1"])
 
 
-@with_legacy_catalogs
+@with_apo_pack_run
 class ProseInferenceTests(unittest.TestCase):
     def test_explicit_criterion_flags_override_prose(self) -> None:
         body = ("lifecycle_span=yes; deterministic_gates=no; cross_session_state=partial; "
@@ -336,12 +336,12 @@ class ProseInferenceTests(unittest.TestCase):
             self.assertFalse(m._parse_solution_led_matrix_entry(support, "???", "body"))
 
 
-@with_legacy_catalogs
+@with_apo_pack_run
 class ListParsingTests(unittest.TestCase):
     def test_extract_slugs_from_list(self) -> None:
         self.assertEqual(m._extract_slugs_from_list("Devin, Aider (oss), cline only among peers"), ["devin", "aider", "cline"])
         self.assertEqual(m._extract_slugs_from_list("Director Mode, zzz, BMAD, ✔ devin, devin-agent, , a(i)-team"),
-                         ["director", "bmad-method", "devin"])
+                         ["director", "bmad", "devin"])
         self.assertEqual(m._extract_slugs_from_list(""), [])
         self.assertEqual(m._extract_slugs_from_list("a-team; ateam/ AI-team"), ["ateam"])
 
@@ -371,7 +371,7 @@ class ListParsingTests(unittest.TestCase):
         self.assertIs(support["cline"]["Hook-enforced gates"], False)
 
 
-@with_legacy_catalogs
+@with_apo_pack_run
 class ClaimParserTests(unittest.TestCase):
     def test_features_in_text_and_primary_slug(self) -> None:
         self.assertEqual(m._features_in_text("Has hook gates and CI/CD plus audit logs"),
@@ -514,7 +514,7 @@ class ClaimParserTests(unittest.TestCase):
         self.assertIn("Hook-enforced gates", defaults)
 
 
-@with_legacy_catalogs
+@with_apo_pack_run
 class SlugScopedProseTests(unittest.TestCase):
     def test_window_scan_positive_and_lack(self) -> None:
         support = support_of(m._apply_slug_scoped_prose, "Devin provides hook gates and workflow composition. Aider")
@@ -533,10 +533,10 @@ class SlugScopedProseTests(unittest.TestCase):
         # "github copilot" resolves to a slug whose own pattern ("github copilot workspace") is not in the
         # text, so the window scan skips it; the sentence-level parsers still record the claim.
         support = support_of(m._apply_slug_scoped_prose, "github copilot supports hook gates")
-        self.assertEqual(support, {"github-copilot-workspace": {"Hook-enforced gates": True}})
+        self.assertEqual(support, {"github-copilot": {"Hook-enforced gates": True}})
 
 
-@with_legacy_catalogs
+@with_apo_pack_run
 class BulkClaimTests(unittest.TestCase):
     def test_extract_bulk_solution_list(self) -> None:
         f = m._extract_bulk_solution_list
@@ -586,7 +586,7 @@ class BulkClaimTests(unittest.TestCase):
         self.assertEqual(support, {"cursor": {"IDE-native integration": True}, "claude-code": {"IDE-native integration": True}})
 
 
-@with_legacy_catalogs
+@with_apo_pack_run
 class ParseFeatureSupportTests(unittest.TestCase):
     def test_dispatch_order(self) -> None:
         envelopes = env(
@@ -610,7 +610,7 @@ class ParseFeatureSupportTests(unittest.TestCase):
         self.assertTrue(support["openhands"]["Hook-enforced gates"])
         self.assertTrue(support["continue"]["CI integration"])
         self.assertTrue(support["crewai"]["Workflow composition"])
-        self.assertIs(support["sweep-ai"]["Workflow composition"], False)
+        self.assertIs(support["sweep"]["Workflow composition"], False)
         self.assertTrue(support["tembo"]["Managed hosting"])
 
     def test_matrix_entry_without_solution_head_is_a_feature_row(self) -> None:
@@ -623,7 +623,7 @@ class ParseFeatureSupportTests(unittest.TestCase):
         self.assertEqual(m.parse_feature_support(env("matrix entry with nothing parseable")), {})
 
 
-@with_legacy_catalogs
+@with_apo_pack_run
 class RubricTests(unittest.TestCase):
     def test_group_features_into_categories(self) -> None:
         grouped = m._group_features_into_categories(["SSO", "Custom thing", "SSO", "Workflow composition", "Another custom"])
@@ -663,7 +663,7 @@ class RubricTests(unittest.TestCase):
             {"features": ["Unknown"]}, {"name": "Empty", "features": []}, {"name": "Nothing"},
         ]}
         out = m.build_features_json("devin", support, rubric=rubric)
-        self.assertEqual(out["display_name"], "Devin (Cognition)")
+        self.assertEqual(out["display_name"], "Devin")
         self.assertEqual(out["source"], "r")
         self.assertEqual(out["rubric_source"], "r")
         self.assertEqual(out["categories"], [
@@ -679,7 +679,7 @@ class RubricTests(unittest.TestCase):
         self.assertEqual(no_source["source"], "live-envelopes")
 
 
-@with_legacy_catalogs
+@with_apo_pack_run
 class WriteRunFeaturesTests(unittest.TestCase):
     def test_writes_rubric_and_per_solution_files(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -720,7 +720,7 @@ class WriteRunFeaturesTests(unittest.TestCase):
                 self.assertEqual(m.write_run_features_json(root, comparison={})["rubric_source"], "fallback-template")
 
 
-@with_legacy_catalogs
+@with_apo_pack_run
 class ScrTests(unittest.TestCase):
     def test_claims_selection(self) -> None:
         texts = [f"Aider supports workflow number {i}" for i in range(15)]
@@ -741,14 +741,15 @@ class ScrTests(unittest.TestCase):
         self.assertIn("- Silver Bullet is local", with_seed)
         claims_only = m.build_scr_md("ai-dlc", env("AI-DLC is a methodology from AWS"))
         self.assertIn("## Executive summary\n\nAI-DLC is a methodology from AWS", claims_only)
-        seed_only = m.build_scr_md("devin", env("nothing relevant"))
-        self.assertIn(f"- {m.OVERVIEW_SEEDS['devin']}", seed_only)
+        seeds = m._effective_overview_seeds({"category_pack_id": "agentic-sdlc-process-orchestrator"})
+        seed_only = m.build_scr_md("devin", env("nothing relevant"), None, seeds)
+        self.assertIn(f"- {seeds['devin']}", seed_only)
         bare = m.build_scr_md("agentgpt-clone", env("nothing relevant"))
         self.assertIn("agentgpt-clone is a solution identified in this research run.", bare)
         self.assertIn("_No direct prose evidence lines matched this solution slug in live envelopes._", bare)
 
 
-@with_legacy_catalogs
+@with_apo_pack_run
 class MaterializeTests(unittest.TestCase):
     def run_materialize(self, root: Path, **kw):
         with mock.patch.object(m, "resolve_pack_from_need", return_value=kw.pop("the_pack", None)):
@@ -815,7 +816,7 @@ class MaterializeTests(unittest.TestCase):
         self.assertNotIn("catalog_audit", result)
 
 
-@with_legacy_catalogs
+@with_apo_pack_run
 class MainTests(unittest.TestCase):
     def run_main(self, root: Path):
         out = io.StringIO()
@@ -915,13 +916,21 @@ class OpenDiscoveryTests(unittest.TestCase):
         self.assertEqual(m._feature_key("  Exactly-once   Semantics! "), "exactly once semantics")
 
     def test_derived_critical_features(self) -> None:
-        support = {"a": {"X": True, "Y": True, "Z": False}, "b": {"X": True, "Y": False, "W": None}}
-        self.assertEqual(m.derive_critical_features({}, support), {"X": "Critical", "Y": "Critical"})
-        self.assertEqual(m.derive_critical_features({}, support, limit=1), {"X": "Critical"})
-        self.assertEqual(m.derive_critical_features({"must_haves": ["x"]}, support), {})  # a must-have matches (folded)
-        self.assertEqual(m.derive_critical_features({"must_haves": ["nope"]}, support), {"X": "Critical", "Y": "Critical"})
+        # X is ticked for every vendor (it tells them apart not at all): never a derived priority
+        support = {"a": {"X": True, "Y": True, "Z": True, "W": False}, "b": {"X": True, "Y": True, "Z": False, "W": None},
+                   "c": {"X": True, "Y": False, "Z": False}}
+        both = {"Y": "Critical", "Z": "Critical"}
+        self.assertEqual(m.derive_critical_features({}, support), both)
+        self.assertEqual(m.derive_critical_features({}, support, limit=1), {})  # fewer than MIN_DERIVED_PRIORITIES
+        self.assertEqual(m.derive_critical_features({"must_haves": ["y"]}, support), {})  # a must-have matches (folded)
+        self.assertEqual(m.derive_critical_features({"must_haves": ["nope"]}, support), both)
         self.assertEqual(m.derive_critical_features({"weights_override": {"Z": "Low"}}, support), {})  # the user decided
+        # a derived override an earlier version saved into the profile is recomputed, not trusted
+        stale = {"weights_override": {"Old": "Critical"}, "weights_override_derived": "x", "must_haves": ["nope"]}
+        self.assertEqual(m.derive_critical_features(stale, support), both)
         self.assertEqual(m.derive_critical_features({}, {"a": {"Z": False}}), {})  # nothing ticked
+        hollow = {"a": {"Site": True}, "b": {"Site": True}, "c": {"Site": True, "SSO": True}}
+        self.assertEqual(m.derive_critical_features({}, hollow), {})  # one universal feature: nothing to rank on
 
 
         known = {"devika": "Devika"}
