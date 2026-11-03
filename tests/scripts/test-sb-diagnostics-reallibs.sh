@@ -16,6 +16,7 @@ cp "$TL_REPO_ROOT/scripts/sb-diagnostics.sh" "$ST/scripts/"
 ln -s "$TL_REPO_ROOT/hooks/lib" "$ST/hooks/lib"
 printf '{"version":"9.9.9"}\n' >"$ST/package.json"
 D="$ST/scripts/sb-diagnostics.sh"
+export SB_DIAG_PROJECT_ROOT="$ST"
 GL_CFG='{"recommended_tools":{"agentmemory":{"enabled_by_user":true}},"optimization_profiles":{"synergy_max":{"agentmemory":{"gitleaks_required":true}}}}'
 
 tl_stub curl 'exit 1'
@@ -42,5 +43,31 @@ sb_test_consent_reset_mirror "$ST/.silver-bullet.json" install,wire,enforce
 PATH="$SAFE" tl_run bash "$D"
 assert_eq "critical gaps make diagnostics fail" "1" "$TL_STATUS"
 assert_contains "optimize-score reports critical gaps" "$TL_OUT" "FAIL: optimize-score — stack optimization 10/100 with 2 critical gap(s)"
+
+# R8-21: the audited project is the caller's, never the plugin checkout's.
+# The plugin checkout opts in to graphify; two user projects with opposite settings must
+# each get their own verdict, selected by argument, SB_DIAG_PROJECT_ROOT or the working directory.
+unset SB_DIAG_PROJECT_ROOT
+printf '{"recommended_tools":{"graphify":{"enabled_by_user":true}}}\n' >"$ST/.silver-bullet.json"
+mkdir -p "$TL_TMP/projA/sub/dir" "$TL_TMP/projB"
+printf '{"recommended_tools":{"graphify":{"enabled_by_user":false}}}\n' >"$TL_TMP/projA/.silver-bullet.json"
+printf '{"recommended_tools":{"graphify":{"enabled_by_user":true}}}\n' >"$TL_TMP/projB/.silver-bullet.json"
+tl_stub graphify 'exit 0'
+tl_run bash -c "cd '$TL_TMP/projA/sub/dir' && bash '$D'"
+assert_contains "cwd inside a project: project A opted out" "$TL_OUT" "graphify-cli — CLI available"
+assert_not_contains "plugin checkout opt-in not reported for project A" "$TL_OUT" "CLI available (opted in)"
+tl_run bash -c "cd '$TL_TMP/projA' && bash '$D' '$TL_TMP/projB'"
+assert_contains "argument selects project B (opted in)" "$TL_OUT" "graphify-cli — CLI available (opted in)"
+tl_run env SB_DIAG_PROJECT_ROOT="$TL_TMP/projA" bash "$D"
+assert_not_contains "env selects project A (opted out)" "$TL_OUT" "CLI available (opted in)"
+# a repository nested in an opted-in project is its own project (the walk stops at .git)
+mkdir -p "$TL_TMP/projB/vendor/newrepo/src"
+git -C "$TL_TMP/projB/vendor/newrepo" init -q
+tl_run bash -c "cd '$TL_TMP/projB/vendor/newrepo/src' && bash '$D'"
+assert_not_contains "nested repo is not diagnosed as the parent project" "$TL_OUT" "CLI available (opted in)"
+rm -f "$TL_BIN/graphify"
+# a project path that does not exist is audited as given (reported, not a crash)
+tl_run bash "$D" "$TL_TMP/no-such-project"
+assert_contains "nonexistent project argument still audits" "$TL_OUT" "PASS: jq"
 
 tl_results

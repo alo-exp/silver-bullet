@@ -1,97 +1,84 @@
 #!/usr/bin/env bash
-# sync-runtime-mirrors.sh: regenerate and --check modes, drift reporting for
-# files and directory trees, and tolerance for a missing canonical source.
+# sync-runtime-mirrors.sh: the plugin package's runtime scripts/ and hooks/ are
+# relative symlinks to the canonical trees (the committed layout, R8-01).
+# Regenerate repairs the links; --check fails on any other layout.
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
 
-SCRIPTS=(reconcile-recommended-tools.sh sb-doctor.sh optimize-five-tool-stack.sh
-  optimize-rtk-context-mode.sh install-leanctx-sb.sh install-cursor.sh
-  install-global-toolstack.sh install-recommended-tools-cursor.sh)
-
-# Minimal tree: the script locates its repo root from its own path.
+# Minimal tree in the committed layout: the script locates its repo root from its own path.
 new_tree() {
-  local t="$1" f
+  local t="$1"
   rm -rf "$t"
-  mkdir -p "$t/scripts/lib/recommended-tools" "$t/scripts/lib/global-toolstack" \
-    "$t/hooks/lib/sub" "$t/plugins/silver-bullet"
+  mkdir -p "$t/scripts/lib" "$t/hooks/lib" "$t/plugins/silver-bullet"
   cp "$TL_REPO_ROOT/scripts/sync-runtime-mirrors.sh" "$t/scripts/"
-  for f in "${SCRIPTS[@]}"; do printf '#!/bin/sh\necho %s\n' "$f" >"$t/scripts/$f"; done
-  printf 'rt\n' >"$t/scripts/lib/recommended-tools/a.sh"
-  printf 'gt\n' >"$t/scripts/lib/global-toolstack/b.sh"
-  printf '#!/bin/sh\n' >"$t/hooks/session-start"
-  printf '{}\n' >"$t/hooks/hooks.json"
+  printf '#!/bin/sh\necho doctor\n' >"$t/scripts/sb-doctor.sh"
   printf 'lib\n' >"$t/hooks/lib/x.sh"
-  printf 'deep\n' >"$t/hooks/lib/sub/y.sh"
+  printf '{}\n' >"$t/hooks/hooks.json"
+  ln -s ../../scripts "$t/plugins/silver-bullet/scripts"
+  ln -s ../../hooks "$t/plugins/silver-bullet/hooks"
 }
 
 T="$TL_TMP/tree"
 M="$T/plugins/silver-bullet"
 SYNC="$T/scripts/sync-runtime-mirrors.sh"
 
-# --- regenerate ---------------------------------------------------------
+# --- committed layout: regenerate is a no-op, --check passes ---------------
 new_tree "$T"
 tl_run bash "$SYNC"
-assert_eq "regenerate exits 0" 0 "$TL_STATUS"
-assert_contains "regenerate counts every operation" "$TL_OUT" "Synced runtime mirrors (13 operations)"
-assert_eq "script copied" "#!/bin/sh
-echo sb-doctor.sh" "$(<"$M/scripts/sb-doctor.sh")"
-assert_eq "lib tree copied" "rt" "$(<"$M/scripts/lib/recommended-tools/a.sh")"
-assert_eq "nested hook lib copied" "deep" "$(<"$M/hooks/lib/sub/y.sh")"
-assert_eq "hooks.json copied" "{}" "$(<"$M/hooks/hooks.json")"
-if [[ -x "$M/scripts/reconcile-recommended-tools.sh" ]]; then
-  tl_pass "reconcile script is executable in the mirror"
-else
-  tl_fail "reconcile script is executable in the mirror"
-fi
-
-# --- check: fresh -------------------------------------------------------
+assert_eq "regenerate on the symlink layout exits 0 (no cp onto itself)" 0 "$TL_STATUS"
+assert_contains "regenerate reports links in place" "$TL_OUT" "Runtime mirrors linked (2 links)"
+assert_eq "scripts link kept" "../../scripts" "$(readlink "$M/scripts")"
 tl_run bash "$SYNC" --check
-assert_eq "fresh mirror passes --check" 0 "$TL_STATUS"
-assert_contains "check reports path count" "$TL_OUT" "Runtime mirrors fresh (13 paths checked)"
+assert_eq "fresh links pass --check" 0 "$TL_STATUS"
+assert_contains "check reports fresh" "$TL_OUT" "Runtime mirrors fresh (2 links)"
+assert_eq "mirror resolves to the canonical file" "lib" "$(<"$M/hooks/lib/x.sh")"
 
-# --- check: drift -------------------------------------------------------
-printf 'changed\n' >"$M/scripts/sb-doctor.sh"
-rm -f "$M/hooks/hooks.json"
-printf 'changed\n' >"$M/hooks/lib/sub/y.sh"
-rm -f "$M/scripts/lib/global-toolstack/b.sh"
+# --- a link to a stale copy is drift ----------------------------------------
+mkdir -p "$T/stale/scripts"
+printf 'old\n' >"$T/stale/scripts/sb-doctor.sh"
+rm "$M/scripts"
+ln -s ../../stale/scripts "$M/scripts"
 tl_run bash "$SYNC" --check
-assert_eq "drift fails --check" 1 "$TL_STATUS"
-assert_contains "changed file named" "$TL_OUT" "DRIFT: plugins/silver-bullet/scripts/sb-doctor.sh"
-assert_contains "missing file named" "$TL_OUT" "DRIFT: plugins/silver-bullet/hooks/hooks.json"
-assert_contains "changed nested file named" "$TL_OUT" "DRIFT: plugins/silver-bullet/hooks/lib/sub/y.sh"
-assert_contains "missing tree file named" "$TL_OUT" "DRIFT: plugins/silver-bullet/scripts/lib/global-toolstack/b.sh"
-assert_contains "drift summary counts files" "$TL_ERR" "Runtime mirror drift: 4 file(s)"
-assert_eq "--check never repairs" "changed" "$(<"$M/scripts/sb-doctor.sh")"
-
-# Regenerate repairs the drift.
+assert_eq "link to a stale directory fails --check" 1 "$TL_STATUS"
+assert_contains "wrong link named" "$TL_OUT" "DRIFT: plugins/silver-bullet/scripts -> ../../stale/scripts (expected ../../scripts)"
+assert_contains "drift summary" "$TL_ERR" "Runtime mirror drift: 1 path(s) — run: bash scripts/sync-runtime-mirrors.sh"
+assert_eq "--check never repairs" "../../stale/scripts" "$(readlink "$M/scripts")"
 tl_run bash "$SYNC"
-tl_run bash "$SYNC" --check
-assert_eq "regenerate repairs drift" 0 "$TL_STATUS"
+assert_eq "regenerate repairs a wrong link" 0 "$TL_STATUS"
+assert_eq "link repointed" "../../scripts" "$(readlink "$M/scripts")"
+assert_eq "stale tree left alone" "old" "$(<"$T/stale/scripts/sb-doctor.sh")"
 
-# --- missing sources ----------------------------------------------------
-# A missing canonical file warns (regenerate) or is skipped (check) without failing.
-rm -f "$T/scripts/install-cursor.sh" "$M/scripts/install-cursor.sh"
+# --- a physical directory (legacy mirror) and a missing link are drift ------
+rm "$M/hooks"
+mkdir -p "$M/hooks/lib"
+printf 'lib\n' >"$M/hooks/lib/x.sh"
+rm "$M/scripts"
+tl_run bash "$SYNC" --check
+assert_eq "physical copy and missing link fail --check" 1 "$TL_STATUS"
+assert_contains "physical copy named" "$TL_OUT" "DRIFT: plugins/silver-bullet/hooks is a directory, not a link to ../../hooks"
+assert_contains "missing link named" "$TL_OUT" "DRIFT: plugins/silver-bullet/scripts is missing"
+assert_contains "two paths drift" "$TL_ERR" "Runtime mirror drift: 2 path(s)"
 tl_run bash "$SYNC"
-assert_eq "missing source file does not fail regenerate" 0 "$TL_STATUS"
-assert_contains "missing source warned" "$TL_ERR" "WARN: missing source $T/scripts/install-cursor.sh"
-assert_contains "one operation fewer" "$TL_OUT" "Synced runtime mirrors (12 operations)"
+assert_eq "regenerate replaces the copy and restores the link" 0 "$TL_STATUS"
+assert_eq "hooks relinked" "../../hooks" "$(readlink "$M/hooks")"
+assert_eq "scripts relinked" "../../scripts" "$(readlink "$M/scripts")"
 tl_run bash "$SYNC" --check
-assert_eq "missing source file does not fail --check" 0 "$TL_STATUS"
+assert_eq "repaired layout passes --check" 0 "$TL_STATUS"
 
-# Missing canonical directories are skipped silently.
-rm -rf "$T/scripts/lib/recommended-tools" "$T/hooks/lib"
-tl_run bash "$SYNC"
-assert_eq "missing source dirs do not fail regenerate" 0 "$TL_STATUS"
-assert_contains "dir operations skipped" "$TL_OUT" "Synced runtime mirrors (10 operations)"
-tl_run bash "$SYNC" --check
-assert_eq "missing source dirs do not fail --check" 0 "$TL_STATUS"
-
-# Without reconcile-recommended-tools.sh the chmod fallback keeps the run green.
+# --- a missing canonical tree cannot be linked -------------------------------
 new_tree "$T"
-rm -f "$T/scripts/reconcile-recommended-tools.sh"
+rm -rf "$T/hooks"
 tl_run bash "$SYNC"
-assert_eq "no reconcile script: regenerate still exits 0" 0 "$TL_STATUS"
-assert_file_absent "no reconcile script: nothing invented in mirror" "$M/scripts/reconcile-recommended-tools.sh"
+assert_eq "missing canonical tree fails regenerate" 1 "$TL_STATUS"
+assert_contains "missing source named" "$TL_ERR" "ERROR: missing canonical tree $T/hooks"
+
+tl_run bash "$SYNC" --nope
+assert_eq "unknown argument exits 2" 2 "$TL_STATUS"
+assert_contains "usage printed" "$TL_ERR" "Usage: sync-runtime-mirrors.sh [--check]"
+
+# --- the repository's own package passes --check -----------------------------
+tl_run bash "$TL_REPO_ROOT/scripts/sync-runtime-mirrors.sh" --check
+assert_eq "repository runtime mirrors are fresh" 0 "$TL_STATUS"
 
 tl_results

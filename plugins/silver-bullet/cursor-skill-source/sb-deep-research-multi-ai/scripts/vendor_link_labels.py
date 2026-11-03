@@ -1,0 +1,537 @@
+"""Guardrails for landscape vendor hyperlinks — solution names only, not category words."""
+
+from __future__ import annotations
+
+import ipaddress
+import os
+import re
+import socket
+import ssl
+import time
+import urllib.error
+import urllib.parse
+import urllib.request
+from typing import Any
+
+# Bare labels that must never become prose hyperlinks (category / market jargon).
+GENERIC_LINK_BLOCKED_LABELS: frozenset[str] = frozenset(
+    {
+        "sdlc",
+        "apo",
+        "saas",
+        "oss",
+        "ai",
+        "plugin",
+        "plugins",
+        "api",
+        "cli",
+        "ide",
+        "pr",
+        "ci",
+        "cd",
+        "devops",
+        "orchestration",
+        "workflow",
+        "workflows",
+    }
+)
+
+# Intentional short product aliases (uppercase acronyms) that may link in prose.
+ALLOWED_SHORT_ACRONYM_LABELS: frozenset[str] = frozenset()
+# Ordinary English words that are also product names; the pack lists them (pack vocabulary).
+EXTRA_BLOCKED_LABELS: frozenset[str] = frozenset()
+
+# Slug → canonical link/display label when pack seeds use ambiguous short names.
+SLUG_LINK_LABEL_OVERRIDES: dict[str, str] = {}
+
+# Known wrong / sunset vendor URLs → corrected research-backed targets (or drop).
+# Keys normalized without trailing slash, lowercased host+path.
+VENDOR_URL_REWRITES: dict[str, str | None] = {}
+
+
+def normalize_vendor_url_key(url: str) -> str:
+    return str(url or "").strip().rstrip("/")
+
+
+def rewrite_vendor_url(url: str) -> str | None:
+    """Rewrite known-wrong vendor URLs; return None to drop the link."""
+    raw = str(url or "").strip()
+    if not raw:
+        return None
+    if raw in VENDOR_URL_REWRITES:
+        return VENDOR_URL_REWRITES[raw]
+    key = normalize_vendor_url_key(raw)
+    for bad, good in VENDOR_URL_REWRITES.items():
+        if normalize_vendor_url_key(bad) == key:
+            return good
+    return raw
+
+
+# Env: set SB_SKIP_VENDOR_URL_HEALTH=1 to skip network checks (offline unit tests).
+_SKIP_HEALTH_ENV = "SB_SKIP_VENDOR_URL_HEALTH"
+_DEFAULT_HEALTH_TIMEOUT = 12.0
+_OK_STATUSES = frozenset({200, 201, 202, 203, 204, 301, 302, 303, 307, 308})
+# Rate-limit / gateway blips are not dead homepages — keep unless STRICT.
+_TRANSIENT_HTTP = frozenset({429, 502, 503, 504})
+
+
+# Process-wide: a live run calls the filter many times (phases, synthesis, packaging); each vendor
+# URL is probed once and the whole process shares one budget.
+_HEALTH_STATE: dict[str, Any] = {"reports": {}, "start": None}
+
+
+def reset_health_state() -> None:
+    """Forget cached probe results and the budget clock (tests, long-lived hosts)."""
+    _HEALTH_STATE["reports"] = {}
+    _HEALTH_STATE["start"] = None
+
+
+_MAX_REDIRECTS = 3
+_MAX_HEALTH_CHECKS = 60  # distinct URLs probed per process; the rest are kept unverified
+_HEALTH_BUDGET_SECONDS = 120.0
+
+
+def _resolve_host(host: str) -> list[str]:
+    """All addresses a host name resolves to (empty when it does not resolve)."""
+    try:
+        infos = socket.getaddrinfo(host, None, type=socket.SOCK_STREAM)
+    except (OSError, UnicodeError):
+        return []
+    return sorted({str(info[4][0]) for info in infos})
+
+
+_SITE_LOCAL = ipaddress.ip_network("fec0::/10")  # deprecated site-local space is still routable inside networks
+_NAT64_PREFIXES = (ipaddress.ip_network("64:ff9b::/96"), ipaddress.ip_network("64:ff9b:1::/48"))
+_IPV4_COMPATIBLE = ipaddress.ip_network("::/96")
+
+
+def _embedded_ipv4(ip: ipaddress.IPv6Address) -> ipaddress.IPv4Address | None:
+    """The IPv4 address an IPv6 one carries (mapped, NAT64 well-known prefixes, IPv4-compatible).
+
+    NAT64 gateways translate these to the embedded IPv4 address, so `64:ff9b::a00:1` reaches
+    10.0.0.1: the embedded address is what must be public.
+    """
+    if ip.ipv4_mapped:
+        return ip.ipv4_mapped
+    if any(ip in net for net in _NAT64_PREFIXES) or (ip in _IPV4_COMPATIBLE and int(ip) > 1):
+        return ipaddress.IPv4Address(int(ip) & 0xFFFFFFFF)
+    return None
+
+
+def unsafe_target_reason(url: str) -> str | None:
+    """Why a model-supplied URL must not be requested, or None when it may be.
+
+    Only http(s) to a globally routable address (`ip.is_global`); loopback, private, link-local
+    (cloud metadata), shared/CGNAT, multicast, reserved and unspecified targets are refused, as
+    are URLs with credentials.
+    """
+    try:
+        parts = urllib.parse.urlsplit(url)
+        host = parts.hostname
+    except ValueError:
+        return "unparseable-url"
+    if parts.scheme not in {"http", "https"} or not host:
+        return "not-http"
+    if parts.username or parts.password:
+        return "credentials-in-url"
+    try:
+        literal = [str(ipaddress.ip_address(host))]
+    except ValueError:
+        literal = []
+    addresses = literal or _resolve_host(host)
+    if not addresses:
+        return "unresolvable-host"
+    for raw in addresses:
+        ip = ipaddress.ip_address(raw)
+        if isinstance(ip, ipaddress.IPv6Address):
+            ip = _embedded_ipv4(ip) or ip
+            if isinstance(ip, ipaddress.IPv6Address) and ip in _SITE_LOCAL:
+                return f"non-public-address:{raw}"
+        # Allowlist: only globally routable addresses (this also refuses 100.64.0.0/10 shared
+        # space such as tailnets and Alibaba's 100.100.100.200 metadata endpoint).
+        if not ip.is_global or ip.is_multicast:
+            return f"non-public-address:{raw}"
+    return None
+
+
+class _CheckedRedirects(urllib.request.HTTPRedirectHandler):
+    """Follow at most _MAX_REDIRECTS hops, each to a public http(s) address."""
+
+    max_redirections = _MAX_REDIRECTS
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):  # noqa: ANN001
+        reason = unsafe_target_reason(newurl)
+        if reason:
+            raise urllib.error.URLError(f"redirect-blocked:{reason}")
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+def normalize_vendor_link_label(label: str) -> str:
+    return str(label or "").strip()
+
+
+def is_generic_link_label(label: str) -> bool:
+    """True when label is a category word, not a product name."""
+    norm = normalize_vendor_link_label(label)
+    if not norm:
+        return True
+    if norm.lower() in GENERIC_LINK_BLOCKED_LABELS or norm.lower() in EXTRA_BLOCKED_LABELS:
+        return True
+    # Block bare short uppercase tokens unless explicitly allow-listed (BMAD, GSD).
+    if norm.isupper() and len(norm) <= 3 and norm not in ALLOWED_SHORT_ACRONYM_LABELS:
+        return True
+    return False
+
+
+def resolve_vendor_link_label(slug: str, label: str) -> str:
+    """Prefer full product titles; never keep bare generic collisions."""
+    slug_key = str(slug or "").strip()
+    resolved = normalize_vendor_link_label(label)
+    if slug_key in SLUG_LINK_LABEL_OVERRIDES:
+        return SLUG_LINK_LABEL_OVERRIDES[slug_key]
+    if is_generic_link_label(resolved) and slug_key:
+        derived = slug_key.replace("-", " ").title()
+        if not is_generic_link_label(derived):
+            return derived
+    return resolved
+
+
+def check_url_health(
+    url: str,
+    *,
+    timeout: float = _DEFAULT_HEALTH_TIMEOUT,
+) -> dict[str, Any]:
+    """Probe a vendor/homepage URL; non-OK HTTP (incl. 404) → ok=False.
+
+    Returns dict: ok, status (int|None), final_url, error (str|None),
+    transport_error (bool) — True when the probe failed before an HTTP status
+    (timeout/DNS/SSL). Transport errors are treated as soft failures by
+    filter_healthy_* (keep URL, do not invent replacements).
+    """
+    target = str(url or "").strip()
+    if not target.startswith("http"):
+        return {
+            "ok": False,
+            "status": None,
+            "final_url": target,
+            "error": "not-http",
+            "transport_error": False,
+        }
+    if os.environ.get(_SKIP_HEALTH_ENV, "").strip() in {"1", "true", "yes"}:
+        return {
+            "ok": True,
+            "status": 0,
+            "final_url": target,
+            "error": "skipped",
+            "transport_error": False,
+        }
+
+    blocked = unsafe_target_reason(target)
+    if blocked:
+        return {
+            "ok": False,
+            "status": None,
+            "final_url": target,
+            "error": f"blocked:{blocked}",
+            "transport_error": blocked == "unresolvable-host",
+        }
+
+    ctx = ssl.create_default_context()
+    headers = {"User-Agent": "SB-vendor-link-health/1.0"}
+    # urlopen uses the process-wide opener; swap in the redirect-checking one for this probe.
+    opener = urllib.request.build_opener(
+        _CheckedRedirects, urllib.request.HTTPSHandler(context=ctx)
+    )
+
+    def _open(method: str) -> dict[str, Any]:
+        req = urllib.request.Request(target, method=method, headers=headers)
+        previous = urllib.request._opener  # type: ignore[attr-defined]
+        urllib.request.install_opener(opener)
+        try:
+            response = urllib.request.urlopen(req, timeout=timeout)
+        finally:
+            urllib.request._opener = previous  # type: ignore[attr-defined]
+        with response as resp:
+            status = int(getattr(resp, "status", 200) or 200)
+            final = str(resp.geturl() or target)
+            return {
+                "ok": status in _OK_STATUSES,
+                "status": status,
+                "final_url": final,
+                "error": None if status in _OK_STATUSES else f"http-{status}",
+                "transport_error": False,
+            }
+
+    try:
+        return _open("HEAD")
+    except urllib.error.HTTPError as exc:
+        # Some hosts reject HEAD; retry GET for 401/403/405.
+        if exc.code in (401, 403, 405):
+            try:
+                return _open("GET")
+            except urllib.error.HTTPError as retry_http:
+                return {
+                    "ok": False,
+                    "status": int(retry_http.code),
+                    "final_url": target,
+                    "error": f"http-{retry_http.code}",
+                    "transport_error": False,
+                }
+            except Exception as retry_exc:  # noqa: BLE001
+                return {
+                    "ok": False,
+                    "status": None,
+                    "final_url": target,
+                    "error": f"{type(retry_exc).__name__}: {retry_exc}",
+                    "transport_error": True,
+                }
+        return {
+            "ok": False,
+            "status": int(exc.code),
+            "final_url": target,
+            "error": f"http-{exc.code}",
+            "transport_error": False,
+        }
+    except Exception as exc:  # noqa: BLE001
+        return {
+            "ok": False,
+            "status": None,
+            "final_url": target,
+            "error": f"{type(exc).__name__}: {exc}",
+            "transport_error": True,
+        }
+
+
+def filter_healthy_vendor_urls(
+    urls: dict[str, str],
+    *,
+    timeout: float = _DEFAULT_HEALTH_TIMEOUT,
+) -> tuple[dict[str, str], list[dict[str, Any]]]:
+    """Drop URLs with confirmed non-OK HTTP status. Keep transport-error URLs.
+
+    Returns (kept, dropped_reports). Transport failures are recorded on kept
+    entries via warnings in dropped with action='kept_transport_error' only when
+    SB_VENDOR_URL_HEALTH_STRICT=1 is set (then transport errors also drop).
+    """
+    strict_transport = os.environ.get("SB_VENDOR_URL_HEALTH_STRICT", "").strip() in {
+        "1",
+        "true",
+        "yes",
+    }
+    kept: dict[str, str] = {}
+    dropped: list[dict[str, Any]] = []
+    for label, url in (urls or {}).items():
+        label_n = normalize_vendor_link_label(label)
+        url_n = str(url or "").strip()
+        if not label_n or not url_n.startswith("http"):
+            continue
+        report = _HEALTH_STATE["reports"].get(url_n)
+        if report is None:
+            now = time.monotonic()
+            if _HEALTH_STATE["start"] is None:
+                _HEALTH_STATE["start"] = now
+            if len(_HEALTH_STATE["reports"]) >= _MAX_HEALTH_CHECKS or now - _HEALTH_STATE["start"] > _HEALTH_BUDGET_SECONDS:
+                # Over the process-wide budget: keep the link unverified rather than stall the report.
+                kept[label_n] = url_n
+                continue
+            report = _HEALTH_STATE["reports"][url_n] = check_url_health(url_n, timeout=timeout)
+        if report.get("ok"):
+            kept[label_n] = url_n
+            continue
+        if report.get("transport_error") and not strict_transport:
+            # Ambiguous network failure — do not unlink (avoid false 404 drops).
+            kept[label_n] = url_n
+            continue
+        status = report.get("status")
+        if status in _TRANSIENT_HTTP and not strict_transport:
+            kept[label_n] = url_n
+            continue
+        dropped.append(
+            {
+                "label": label_n,
+                "url": url_n,
+                "status": report.get("status"),
+                "error": report.get("error"),
+                "final_url": report.get("final_url"),
+                "transport_error": bool(report.get("transport_error")),
+            }
+        )
+    return kept, dropped
+
+
+def filter_healthy_link_pairs(
+    pairs: list[list[str]],
+    *,
+    timeout: float = _DEFAULT_HEALTH_TIMEOUT,
+) -> tuple[list[list[str]], list[dict[str, Any]]]:
+    """Drop link pairs whose URL fails health check."""
+    as_dict = {
+        normalize_vendor_link_label(str(p[0])): str(p[1]).strip()
+        for p in pairs
+        if isinstance(p, (list, tuple)) and len(p) >= 2
+    }
+    kept_map, dropped = filter_healthy_vendor_urls(as_dict, timeout=timeout)
+    kept_pairs = [[label, kept_map[label]] for label in as_dict if label in kept_map]
+    return kept_pairs, dropped
+
+
+def _url_label_token_score(label: str, url: str) -> int:
+    """How well a display label matches tokens in the URL host/path."""
+    url_l = str(url or "").lower()
+    tokens = re.findall(r"[a-z0-9]+", str(label or "").lower())
+    return sum(1 for tok in tokens if len(tok) > 2 and tok in url_l)
+
+
+def drop_ambiguous_shared_homepage_urls(pairs: list[list[str]]) -> list[list[str]]:
+    """Drop colliding product→URL mappings that share one homepage across distinct labels.
+
+    Marketplace roots (e.g. claude.com/plugins) must not be reused as the homepage for
+    unrelated products. When multiple labels share an exact URL, keep only the best
+    URL-token match; if none match, drop all (do not invent a winner).
+    """
+    by_url: dict[str, list[str]] = {}
+    for pair in pairs:
+        if not isinstance(pair, (list, tuple)) or len(pair) < 2:
+            continue
+        label = normalize_vendor_link_label(str(pair[0]))
+        url = str(pair[1]).strip()
+        if not label or not url.startswith("http"):
+            continue
+        by_url.setdefault(url, []).append(label)
+
+    drop: set[str] = set()
+    for url, labels in by_url.items():
+        unique = list(dict.fromkeys(labels))
+        if len(unique) < 2:
+            continue
+        # Same-product aliases ("Devin" + "Devin (Cognition)") share a homepage on
+        # purpose so bare prose still linkifies. That is not a marketplace collision.
+        shortest = min(unique, key=len)
+        if shortest and all(
+            lab == shortest
+            or lab.startswith(shortest + " ")
+            or lab.startswith(shortest + "(")
+            for lab in unique
+        ):
+            continue
+        scored = sorted(
+            (
+                (_url_label_token_score(lab, url), len(lab), lab)
+                for lab in unique
+            ),
+            reverse=True,
+        )
+        best_score = scored[0][0]
+        if best_score <= 0:
+            drop.update(unique)
+            continue
+        keep = {lab for score, _length, lab in scored if score == best_score}
+        if len(keep) > 1:
+            keep = {max(keep, key=lambda lab: (len(lab), lab))}
+        drop.update(set(unique) - keep)
+
+    return [
+        [normalize_vendor_link_label(str(pair[0])), str(pair[1]).strip()]
+        for pair in pairs
+        if isinstance(pair, (list, tuple))
+        and len(pair) >= 2
+        and normalize_vendor_link_label(str(pair[0])) not in drop
+    ]
+
+
+def filter_vendor_link_pairs(pairs: list[list[str]]) -> list[list[str]]:
+    """Drop generic labels; keep longest unique labels first; reject shared homepage collisions."""
+    out: list[list[str]] = []
+    seen: set[str] = set()
+    for pair in sorted(pairs, key=lambda p: -len(str(p[0]))):
+        if not isinstance(pair, (list, tuple)) or len(pair) < 2:
+            continue
+        label = normalize_vendor_link_label(str(pair[0]))
+        url = rewrite_vendor_url(str(pair[1]).strip())
+        if not label or not url or not url.startswith("http"):
+            continue
+        if is_generic_link_label(label) or label in seen:
+            continue
+        # Claude Harness is unverified — never borrow the Claude Code host repo as homepage.
+        if re.search(r"(?i)^claude\s*harness$", label) and "anthropics/claude-code" in url.lower():
+            continue
+        out.append([label, url])
+        seen.add(label)
+    return drop_ambiguous_shared_homepage_urls(out)
+
+
+# Bare http(s) autolink — wrap existing URLs only; never invent targets.
+BARE_HTTP_URL_RE = re.compile(r"https?://[^\s<>\"'`\\]+", re.IGNORECASE)
+_MD_LINK_OR_BARE_ANGLE_RE = re.compile(
+    r"(\[[^\]]+\]\([^)]+\)|<https?://[^>]+>)",
+    re.IGNORECASE,
+)
+_MD_CODE_SPAN_RE = re.compile(r"(`[^`]+`)")
+
+
+def split_url_trailing_punct(raw: str) -> tuple[str, str]:
+    """Split a matched URL from trailing sentence punctuation."""
+    url = raw or ""
+    trail = ""
+    while url and url[-1] in ".,;:!?":
+        trail = url[-1] + trail
+        url = url[:-1]
+    while url.endswith(")") and url.count("(") < url.count(")"):
+        trail = ")" + trail
+        url = url[:-1]
+    while url.endswith("]") and url.count("[") < url.count("]"):
+        trail = "]" + trail
+        url = url[:-1]
+    while url.endswith(">") and url.count("<") < url.count(">"):
+        trail = ">" + trail
+        url = url[:-1]
+    return url, trail
+
+
+def _linkify_prose_urls(text: str) -> str:
+    def _repl(match: re.Match[str]) -> str:
+        url, trail = split_url_trailing_punct(match.group(0))
+        if not url.lower().startswith("http://") and not url.lower().startswith("https://"):
+            return match.group(0)
+        return f"[{url}]({url}){trail}"
+
+    return BARE_HTTP_URL_RE.sub(_repl, text)
+
+
+def _linkify_code_span_url(span: str) -> str:
+    """Turn `https://example` into [`https://example`](https://example)."""
+    if len(span) < 3 or span[0] != "`" or span[-1] != "`":
+        return span
+    inner = span[1:-1]
+    stripped = inner.strip()
+    url, trail = split_url_trailing_punct(stripped)
+    lowered = url.lower()
+    if not lowered.startswith("http://") and not lowered.startswith("https://"):
+        return span
+    if any(ch.isspace() for ch in url):
+        # `https://a.b and more` is prose in a code span, not a bare URL.
+        return span
+    return f"[`{url}`]({url})" + trail
+
+
+def linkify_bare_http_urls(markdown: str) -> str:
+    """Wrap remaining bare http(s) URLs as markdown links.
+
+    Skips existing ``[text](url)`` and ``<https://...>`` autolinks. Code-span URLs
+    become ``[`url`](url)`` so SPA/PDF render real anchors. Does not invent URLs.
+    """
+    if not markdown:
+        return markdown
+    parts: list[str] = []
+    for i, block in enumerate(_MD_LINK_OR_BARE_ANGLE_RE.split(markdown)):
+        if i % 2 == 1:
+            parts.append(block)
+            continue
+        span_parts: list[str] = []
+        for j, piece in enumerate(_MD_CODE_SPAN_RE.split(block)):
+            if j % 2 == 1:
+                span_parts.append(_linkify_code_span_url(piece))
+            else:
+                span_parts.append(_linkify_prose_urls(piece))
+        parts.append("".join(span_parts))
+    return "".join(parts)

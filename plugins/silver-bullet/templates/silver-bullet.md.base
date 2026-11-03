@@ -20,7 +20,7 @@ At the very start of any new session, perform these steps automatically:
    **5.1 Silver Bullet**
    The SessionStart hook (`session-start`) performs this check deterministically on `startup` and `clear` events: it reads `installed_plugins.json`, compares semver to GitHub latest, and injects the A/B prompt below when installed < latest. Honor the injected prompt when present; otherwise run:
    ```bash
-   cat "$HOME/.codex/plugins/installed_plugins.json" | jq -r '.plugins["silver-bullet@alo-labs"][0].version // .plugins["silver-bullet@silver-bullet"][0].version // "unknown"'
+   cat "${SB_RUNTIME_HOME_ROOT}/plugins/installed_plugins.json" | jq -r '.plugins["silver-bullet@alo-labs"][0].version // .plugins["silver-bullet@silver-bullet"][0].version // "unknown"'
    curl -s https://api.github.com/repos/alo-exp/silver-bullet/releases/latest | grep '"tag_name"' | sed 's/.*"tag_name": *"v\([^"]*\)".*/\1/'
    ```
    Compare as semver. If installed < latest, ask the user directly:
@@ -54,7 +54,7 @@ At the very start of any new session, perform these steps automatically:
 
 Twelve enforcement layers enforce compliance:
 
-1. **Skill tracker** (PostToolUse/Skill or Codex invoke-skill receipt or host `silver-bullet invoke-skill`) — Records every supported Silver Bullet skill invocation to the state file
+1. **Skill tracker** (PostToolUse/Skill or host `silver-bullet invoke-skill`) — Records every supported Silver Bullet skill invocation to the state file
 2. **Stage enforcer** (Pre+PostToolUse/Edit|Write|MultiEdit|Bash, with the workflow chain guard) — HARD STOP if planning skills (or the active composed workflow's pre-execution chain) are incomplete before source edits
 3. **Compliance status** (PostToolUse/all) — Shows workflow progress on every tool use (informational)
 4. **Planning file guard** (PreToolUse/Edit|Write|MultiEdit) — `planning-file-guard.sh` blocks direct edits to SB-managed planning artifacts (ROADMAP.md, STATE.md, etc.); forces use of the owning SB skill or workflow
@@ -102,7 +102,7 @@ successfully.
 
 **Trivial changes** (typos, copy fixes, config tweaks): Route through `/sb:fast`
 for classification — do not rely on a manual trivial bypass file. SessionStart clears
-any stale `$HOME/.codex/.silver-bullet/trivial` marker; hooks do not
+any stale `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial` marker; hooks do not
 auto-create it. The trivial file is a legacy compatibility escape hatch only.
 **Note**: In the `devops-cycle` workflow, `.yml`, `.yaml`, `.json`, and
 `.toml` files are infrastructure code and are NOT auto-exempted.
@@ -225,10 +225,10 @@ transition and step boundary, derive the user's current position from `.planning
 1. `.planning/STATE.md` — parse YAML front matter for `current_plan`, `status`, `stopped_at`, `progress.total_phases`, `progress.completed_phases`, `progress.total_plans`, `progress.completed_plans`, `progress.percent`
 2. `.planning/ROADMAP.md` — identify current phase name, its goal, and how many plans it contains
 
-**SB state file (`$HOME/.codex/.silver-bullet/state`) is ONLY for:**
+**SB state file (`${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state`) is ONLY for:**
 - Skill invocation markers (recorded by `record-skill.sh`)
-- Session mode (`$HOME/.codex/.silver-bullet/mode`)
-- Session init sentinel (`$HOME/.codex/.silver-bullet/session-init`)
+- Session mode (`${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode`)
+- Session init sentinel (`${SB_RUNTIME_HOME_ROOT}/.silver-bullet/session-init`)
 
 These runtime marker files do not replace `.planning/STATE.md`. Use the SB runtime state
 only for invocation evidence, mode, and session sentinels.
@@ -254,7 +254,7 @@ narrate at each plan boundary:
 
 ### 2f. Autonomous Commentary
 
-In autonomous mode (when `$HOME/.codex/.silver-bullet/mode` contains `autonomous`),
+In autonomous mode (when `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode` contains `autonomous`),
 do NOT ask questions or pause, but DO output structured commentary at each major step:
 
 **Before each SB lifecycle skill invocation:**
@@ -408,7 +408,7 @@ SB recommends **LeanCTX** as a separate opt-in tool (`recommended_tools.leanctx.
 
 Install and wiring: `docs/LEANCTX.md`. Stack optimizer (Phase 2): `bash scripts/optimize-five-tool-stack.sh`.
 
-**Recovery when wedged (`sb_stack_double_compression`):** The stack compression mutex is global (`$HOME/.codex/.silver-bullet/stack-compression-mutex`) — subagents share it and cannot bypass a dirty mutex. When wedged, prior tool self-reports from the host model may be unreliable; verify with fresh tool calls after recovery. Escape hatches: complete one compliant routed-owner tool call (e.g. `ctx_search`, `lctx_read_ast`, RTK Bash without LeanCTX shell rewrite), run `/sb:clear-stack-state`, or `bash scripts/sb-doctor.sh --fix` (check **D20**). See `docs/LEANCTX.md` Recovery section.
+**Recovery when wedged (`sb_stack_double_compression`):** The stack compression mutex is global (`${SB_RUNTIME_STATE_DIR}/stack-compression-mutex`) — subagents share it and cannot bypass a dirty mutex. When wedged, prior tool self-reports from the host model may be unreliable; verify with fresh tool calls after recovery. Escape hatches: complete one compliant routed-owner tool call (e.g. `ctx_search`, `lctx_read_ast`, RTK Bash without LeanCTX shell rewrite), run `/sb:clear-stack-state`, or `bash scripts/sb-doctor.sh --fix` (check **D20**). See `docs/LEANCTX.md` Recovery section.
 
 **Operating guide:** Read [`docs/LEANCTX-OPERATING-GUIDE.md`](docs/LEANCTX-OPERATING-GUIDE.md) for practical routing, timeout, allowlist, output, and edit-safety guidance before using LeanCTX.
 
@@ -798,7 +798,7 @@ at the workflow level.
 user confirmation prompts), skip the interactive/autonomous question entirely.
 Auto-set autonomous mode immediately:
 ```bash
-echo "autonomous" > $HOME/.codex/.silver-bullet/mode
+echo "autonomous" > ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode
 ```
 Log: "Autonomous mode auto-set: bypass-permissions detected".
 Also suppress ALL other confirmation-asking behaviors for the remainder of the session
@@ -808,7 +808,7 @@ Use defaults for any skipped questions. Log each suppressed question under
 
 **Persistent permission mode**: If the user reports that the host runtime keeps asking
 for permissions despite setting bypass-permissions, the issue is that the UI toggle
-only applies to the current session. To persist it, add to `$HOME/.codex/settings.local.json`:
+only applies to the current session. To persist it, add to `${SB_RUNTIME_HOME_ROOT}/settings.local.json`:
 
 > ⚠️ **CAUTION — bypassPermissions:** Only use this setting in a **fully isolated environment** (container, VM, or dedicated CI runner with no access to production systems, credentials, or sensitive files). Verify isolation **before** applying this setting. Misuse in non-isolated environments permanently disables the host runtime permission guardrails.
 
@@ -821,7 +821,7 @@ Or for safer auto-approval (recommended for non-isolated environments):
 ```
 This is a host runtime platform setting, not a Silver Bullet setting.
 
-**Enterprise policy auto-default:** When `.silver-bullet.json` has `enterprise_policy.active_profile` set to `autonomous_safe` or `internal_dogfood` on a tier 2+ host, SessionStart writes `autonomous` to `$HOME/.codex/.silver-bullet/mode` automatically (no mode file yet, or after `/clear`). Skip the interactive/autonomous question in that case; log "Autonomous mode auto-set: enterprise_policy profile <name>". Supervised and regulated profiles default `interactive` when the mode file is absent.
+**Enterprise policy auto-default:** When `.silver-bullet.json` has `enterprise_policy.active_profile` set to `autonomous_safe` or `internal_dogfood` on a tier 2+ host, SessionStart writes `autonomous` to `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode` automatically (no mode file yet, or after `/clear`). Skip the interactive/autonomous question in that case; log "Autonomous mode auto-set: enterprise_policy profile <name>". Supervised and regulated profiles default `interactive` when the mode file is absent.
 
 **Unless enterprise policy or bypass-permissions already set mode**, at the start of every session, before any work begins, ask the user directly:
 - Question: "Run this session interactively or autonomously?"
@@ -831,12 +831,12 @@ This is a host runtime platform setting, not a Silver Bullet setting.
 
 Write the choice:
 ```bash
-echo "interactive" > $HOME/.codex/.silver-bullet/mode
+echo "interactive" > ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode
 # or
-echo "autonomous" > $HOME/.codex/.silver-bullet/mode
+echo "autonomous" > ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode
 ```
 
-**Fallback**: if `$HOME/.codex/.silver-bullet/mode` is unreadable at any point, default to interactive
+**Fallback**: if `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode` is unreadable at any point, default to interactive
 and log "Mode fallback: defaulted to interactive" in the session log.
 
 **In autonomous mode:**
@@ -855,7 +855,7 @@ and log "Mode fallback: defaulted to interactive" in the session log.
 - On completion: output structured summary (phases done, autonomous decisions, blockers queued,
   agents dispatched, commits made, virtual cost)
 
-> **Anti-Skip:** You are violating this rule if the mode file ($HOME/.codex/.silver-bullet/mode) does not exist when you begin work. The compliance-status hook displays mode on every tool call — if it shows "unknown", you skipped this step.
+> **Anti-Skip:** You are violating this rule if the mode file (${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode) does not exist when you begin work. The compliance-status hook displays mode on every tool call — if it shows "unknown", you skipped this step.
 
 ---
 
@@ -936,7 +936,7 @@ stop, notify the user, and offer remediation in this order:
 3. Switch to a different workflow or stop
 
 You MUST NOT:
-- Edit any file under `$HOME/.codex/plugins/cache/` (third-party plugin caches)
+- Edit any file under `${SB_RUNTIME_HOME_ROOT}/plugins/cache/` (third-party plugin caches)
 - Modify an optional extension or provider skill file to change behavior
 - Fork or patch an upstream skill — wrap it in a Silver Bullet hook or workflow step instead
 
@@ -991,7 +991,7 @@ These rules apply to `site/**`, Help Center pages, homepage copy, `site/help/sea
 - Do **not** tell the user changes are **LIVE** until deployed page content is verified at the public URL (e.g. `https://sb.alolabs.dev/` or the specific `site/help/` path).
 - A commit pushed to `main` or a queued/succeeded Pages workflow is **not** sufficient alone.
 - Before claiming live status: fetch URL(s), confirm key markers match the commit, inspect headers (`Last-Modified`, `ETag`, `Cache-Control`, `Age`), wait for `pages.yml` when needed.
-- Write `$HOME/.codex/.silver-bullet/live-publish-evidence.json` with `commit_sha`, `urls`, `markers_matched`, `status` (`LIVE`|`NOT_LIVE`), `verified_at`.
+- Write `${SB_RUNTIME_STATE_DIR}/live-publish-evidence.json` with `commit_sha`, `urls`, `markers_matched`, `status` (`LIVE`|`NOT_LIVE`), `verified_at`.
 - Notify the user with: commit SHA; what went live; explicit **LIVE** or **NOT LIVE** with fetched-page evidence; GitHub release URL if applicable.
 
 **Runtime hooks:** `site-regression-gate.sh`, `live-publish-evidence-gate.sh`, `instruction-ledger-gate.sh`, `subagent-stop-enforcement.sh` enforce the above at Stop/push.

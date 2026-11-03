@@ -120,6 +120,16 @@ sub sanitize_codex_package_surface
 assert_eq "fat marketplace sanitized" 0 "$TL_STATUS"
 assert_contains "package text rewritten for Codex" "$(<"$MP/plugins/silver-bullet/hooks/core-rules.md")" "active runtime delegation mechanism"
 assert_eq "pin refreshed after sanitizing" "$(sha256sum "$MP/plugins/silver-bullet/hooks/core-rules.md" | awk '{print $1}')" "$(<"$MP/plugins/silver-bullet/hooks/core-rules.sha256")"
+# R8-02: the checkout's own package is host-neutral and shared with Cursor; a
+# local-source marketplace pointing at the checkout must not rewrite it.
+reset_home
+set_marketplace_source "$FAKE_REPO"
+make_pkg "$FAKE_REPO/plugins/silver-bullet"
+printf 'Use the Agent tool\n' >"$FAKE_REPO/plugins/silver-bullet/hooks/core-rules.md"
+sub sanitize_codex_package_surface
+assert_eq "checkout package: sanitizing is a no-op" 0 "$TL_STATUS"
+assert_eq "checkout package text is never rewritten" "Use the Agent tool" "$(<"$FAKE_REPO/plugins/silver-bullet/hooks/core-rules.md")"
+rm -rf "$FAKE_REPO/plugins"
 # thin marketplace: manifest names the version, the package lives in the cache
 reset_home
 mkdir -p "$MP/.agents/plugins"
@@ -168,6 +178,7 @@ assert_file_absent "nothing cached without a version" "$CACHE"
 reset_home
 make_pkg "$MP/plugins/silver-bullet" 2.10.0
 printf "pin\n" >"$MP/plugins/silver-bullet/hooks/core-rules.sha256"
+printf 'Use the Agent tool\n' >"$MP/plugins/silver-bullet/hooks/core-rules.md"
 make_pkg "$CACHE/1.0.0" 1.0.0
 mkdir -p "$CACHE/current"
 printf 'stray' >"$CACHE/not-a-dir"
@@ -178,6 +189,11 @@ assert_file_exists "pin present in the new version" "$CACHE/2.10.0/hooks/core-ru
 assert_eq "older versions are refreshed from the marketplace package" 2.10.0 "$(jq -r .version "$CACHE/1.0.0/.codex-plugin/plugin.json")"
 assert_eq "stray files in the cache root left alone" stray "$(<"$CACHE/not-a-dir")"
 assert_file_absent "'current' directory not overwritten" "$CACHE/current/.codex-plugin"
+assert_eq "cached copy is sanitized for Codex" "Use the active runtime delegation mechanism" "$(<"$CACHE/2.10.0/hooks/core-rules.md")"
+assert_eq "refreshed older version is sanitized too" "Use the active runtime delegation mechanism" "$(<"$CACHE/1.0.0/hooks/core-rules.md")"
+for v in 2.10.0 1.0.0; do
+  assert_eq "cache pin matches the sanitized rules ($v)" "$(sha256sum "$CACHE/$v/hooks/core-rules.md" | awk '{print $1}')" "$(<"$CACHE/$v/hooks/core-rules.sha256")"
+done
 
 # ------------------------------------------------------- cache.sh: pruning helpers
 reset_home

@@ -25,6 +25,29 @@ run -- "$HD_PROJ"
 assert_contains "session-start smoke payload" "$(hd_logs)" "hook session-start 1 SessionStart"
 assert_contains "outcomes-check smoke payload" "$(hd_logs)" "hook outcomes-check 1 UserPromptSubmit"
 assert_contains "stop-check smoke payload" "$(hd_logs)" "hook stop-check 1 Stop"
+# R8-09: the smoke runs in a sandbox (temp HOME, throwaway project, source=resume), never on the user's state.
+assert_not_contains "no smoke hook saw the user's HOME" "$(hd_logs)" "home=$HOME "
+assert_not_contains "no smoke hook ran inside the user's project" "$(hd_logs)" "cwd=$HD_PROJ"
+assert_contains "smoke HOME is a temp sandbox" "$(hd_logs)" "hook-env session-start home=$TMPDIR/sb-doctor-smoke."
+assert_contains "smoke sends source=resume" "$(hd_logs)" "source=resume cfg=.git,.silver-bullet.json,silver-bullet.md,"
+assert_contains "state dir is not pinned to the user's" "$(hd_logs)" "state=unset"
+assert_eq "sandbox removed afterwards" "" "$(find "$TMPDIR" -maxdepth 1 -name 'sb-doctor-smoke.*')"
+# the sandbox is best effort: no git still smokes, no temp dir fails the check
+tl_stub git 'exit 1'
+run -- "$HD_PROJ"
+assert_contains "smoke tolerates a failing git init" "$TL_OUT" "PASS: D11 — session-start smoke exit 0"
+rm -f "$TL_BIN/git"
+run TMPDIR="$TL_TMP/no-such-tmp" -- "$HD_PROJ"
+assert_contains "no sandbox dir: the smoke fails, the audit goes on" "$TL_OUT" "FAIL: D11 — session-start smoke failed"
+# a user's runtime state survives the doctor
+mkdir -p "$HOME/.claude/.silver-bullet"
+printf 'adversarial-review-clean\n' >"$HOME/.claude/.silver-bullet/quality-gate-state"
+printf 'matrix=cursor-smoke\n' >"$HOME/.claude/.silver-bullet/release-live-matrix"
+printf 'silver-quality-gates\n' >"$HOME/.claude/.silver-bullet/state"
+before="$(cd "$HOME/.claude/.silver-bullet" && find . -type f | LC_ALL=C sort | xargs cat | cksum)"
+run -- "$HD_PROJ"
+assert_eq "user runtime state untouched by the doctor" "$before" "$(cd "$HOME/.claude/.silver-bullet" && find . -type f | LC_ALL=C sort | xargs cat | cksum)"
+assert_file_absent "no orchestrator directive written" "$HOME/.claude/.silver-bullet/orchestrator-directive.json"
 run STUB_RC_HOOK=1 -- "$HD_PROJ"
 assert_eq "failing smoke exits 1" "1" "$TL_STATUS"
 assert_contains "session-start smoke failure" "$TL_OUT" "FAIL: D11 — session-start smoke failed"
@@ -47,12 +70,21 @@ run -- "$HD_PROJ"
 assert_contains "smoke runs the cached hooks" "$(hd_logs)" "cachehook session-start"
 rm -f -- "${CACHE:?}/current"
 run -- "$HD_PROJ"
-assert_contains "no current link: the hooks are looked up under the dangling cache path" "$TL_OUT" "FAIL: D11 — session-start not found under $CACHE/current/hooks"
+assert_contains "no current link: the checkout hooks are searched" "$TL_OUT" "FAIL: D11 — session-start not found under $HD_ST/hooks"
 rm -rf -- "${HOME:?}/.claude/plugins"
 run -- "$HD_PROJ"
 assert_contains "no cache at all: the checkout hooks are searched" "$TL_OUT" "FAIL: D11 — session-start not found under $HD_ST/hooks"
 hd_stage
 hd_happy claude
+
+# validators run through bash: a checkout without exec bits is audited, not skipped
+chmod -x "$HD_ST"/scripts/validate-*.sh
+run -- "$HD_PROJ"
+assert_contains "D16 runs a non-executable validator" "$TL_OUT" "PASS: D16 — repo install surface clean"
+assert_contains "D17 runs a non-executable validator" "$TL_OUT" "PASS: D17 — SB core is host-agent agnostic"
+assert_contains "D15 runs a non-executable validator" "$TL_OUT" "PASS: D15 — Claude agent description token budget within limit"
+assert_not_contains "no 'not found' warning for existing validators" "$TL_OUT" "not found; skipped"
+chmod +x "$HD_ST"/scripts/validate-*.sh
 
 # ---------- D13 / D14: cross-host contamination and cache surface ----------
 echo '{"hooks":"silver-bullet","path":"/home/u/.codex/plugins/cache/x"}' >"$HOME/.claude/settings.json"
