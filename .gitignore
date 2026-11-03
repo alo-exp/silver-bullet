@@ -55,6 +55,10 @@ data/iii-config.runtime.yaml
 /SETUP_REPORT.md
 *.err
 *.err.*
+*-stdout.txt
+*-stderr.txt
+stdout.txt
+stderr.txt
 *.log.*
 .planning/**/*.log
 .planning/**/*.log.*
