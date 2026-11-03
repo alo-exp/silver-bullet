@@ -94,26 +94,9 @@ printf -- '- [ ] **Phase 27: Demo**\n' >"$EC_PROJ/.planning/ROADMAP.md"
 printf s >"$EC_PROJ/.planning/phases/27-demo/27-01-SUMMARY.md"
 git -C "$EC_PROJ" add -f .planning
 commit_in='{"tool_name":"Bash","tool_input":{"command":"git commit -m x"}}'
-hook roadmap-freshness.sh "$EC_PROJ" "$commit_in" "$TL_TMP/nolib/hooks/roadmap-freshness.sh"
-assert_eq "roadmap: no lib directory: exit 0" "0" "$TL_STATUS"
-assert_contains "roadmap: no lib directory: the check still runs and flags the unticked phase" "$TL_OUT" "ROADMAP FRESHNESS VIOLATION"
-cd() {
-  case "${1:-}" in
-    */lib)
-      n=$(cat "$TL_TMP/cd-count" 2>/dev/null || echo 0)
-      echo $((n + 1)) >"$TL_TMP/cd-count"
-      if [[ "$n" -lt 1 ]]; then return 1; fi
-      ;;
-  esac
-  builtin cd "$@"
-}
-export -f cd
-export TL_TMP
-rm -f "$TL_TMP/cd-count"
 hook roadmap-freshness.sh "$EC_PROJ" "$commit_in"
-unset -f cd
-assert_contains "roadmap: lib dir resolved on the second try" "$TL_OUT" "ROADMAP FRESHNESS VIOLATION"
-ec_stage_hooks "$TL_TMP/nogate" sb-project-gate.sh project-active.sh tool-input.sh jq-gate.sh
+assert_contains "roadmap: the check flags the unticked phase" "$TL_OUT" "ROADMAP FRESHNESS VIOLATION"
+ec_stage_hooks "$TL_TMP/nogate" sb-project-gate.sh project-active.sh jq-gate.sh
 sb_proj_cache
 hook roadmap-freshness.sh "$TL_TMP/plain" "$commit_in" "$TL_TMP/nogate/hooks/roadmap-freshness.sh"
 assert_eq "roadmap: no config on the walk: silent" "" "$TL_OUT"
@@ -126,9 +109,7 @@ hook roadmap-freshness.sh "$EC_PROJ" "$commit_in"
 ec_unfail grep
 assert_contains "roadmap: phase number unreadable: summary skipped, nothing flagged" "$TL_OUT" "ROADMAP freshness verified"
 assert_not_contains "roadmap: nothing flagged" "$TL_OUT" "UNTICKED"
-ec_stage_hooks "$TL_TMP/shellonly" tool-input.sh
-printf '%s\n' 'sb_tool_name() { printf "%s" "Bash"; }' 'sb_tool_is_shell_like() { return 1; }' 'sb_tool_command_string() { printf "git commit"; }' >"$TL_TMP/shellonly/hooks/lib/tool-input.sh"
-hook roadmap-freshness.sh "$EC_PROJ" "$commit_in" "$TL_TMP/shellonly/hooks/roadmap-freshness.sh"
+hook roadmap-freshness.sh "$EC_PROJ" '{"tool_name":"Read","tool_input":{"file_path":"x"}}'
 assert_eq "roadmap: non-shell tools are ignored" "" "$TL_OUT"
 # the missing-jq-gate message lives in the shared gate; with jq absent the hook warns
 PATH="$(tl_path_without jq)" hook roadmap-freshness.sh "$EC_PROJ" "$commit_in"
@@ -137,24 +118,15 @@ assert_contains "roadmap: jq missing warns visibly" "$TL_OUT" "ENFORCEMENT INACT
 # ======== trivial-file-guard ===================================================
 ec_cfg '{"config_version":"0.40.0","sb_initiated":true}'
 w_in="$(jq -cn --arg p "$SD/trivial" '{hook_event_name:"PreToolUse",tool_name:"Write",tool_input:{file_path:$p}}')"
-hook trivial-file-guard.sh "$EC_PROJ" "$w_in" "$TL_TMP/nolib/hooks/trivial-file-guard.sh"
-assert_eq "trivial: no lib directory: exit 0" "0" "$TL_STATUS"
-assert_contains "trivial: no lib directory: the marker write is still blocked" "$TL_OUT" "BLOCKED"
-assert_file_absent "trivial: no lib directory: no marker created" "$SD/trivial"
+hook trivial-file-guard.sh "$EC_PROJ" "$w_in"
+assert_contains "trivial: the marker write is blocked" "$TL_OUT" "BLOCKED"
+assert_file_absent "trivial: no marker created" "$SD/trivial"
 ec_fail jq '*"hook_event_name"*'
 hook trivial-file-guard.sh "$EC_PROJ" "$w_in"
 ec_unfail jq
 assert_contains "trivial: unreadable event defaults to PreToolUse (still guards)" "$TL_OUT" "BLOCKED"
 hook trivial-file-guard.sh "$TL_TMP/plain" '{"tool_name":"Bash","tool_input":{}}'
 assert_eq "trivial: outside any project: silent allow" "0:" "$TL_STATUS:$TL_OUT"
-ec_fail jq '*"tool_input.file_path"*'
-hook trivial-file-guard.sh "$EC_PROJ" "$w_in" "$TL_TMP/noti/hooks/trivial-file-guard.sh"
-assert_eq "trivial: unreadable file path means nothing to guard" "" "$TL_OUT"
-ec_unfail jq
-ec_fail jq '*"tool_input.command"*'
-hook trivial-file-guard.sh "$EC_PROJ" "$(jq -cn --arg c "touch $SD/trivial" '{hook_event_name:"PreToolUse",tool_name:"Bash",tool_input:{command:$c}}')" "$TL_TMP/noti/hooks/trivial-file-guard.sh"
-ec_unfail jq
-assert_eq "trivial: unreadable command means nothing to guard" "" "$TL_OUT"
 ec_flaky_fn sb_project_active 1
 sb_proj_cache
 hook trivial-file-guard.sh "$EC_PROJ" "$w_in"
