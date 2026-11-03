@@ -56,6 +56,31 @@ for cmd in 'BASH_ENV=./x.sh brew install jq' 'PATH=./bin:/usr/bin brew install j
   gate "$SB" "$NOJQ" gate "$(payload PreToolUse Bash "$cmd")"
   assert_eq "gate blocks wider-than-jq remediation: $cmd" deny "$(verdict)"
 done
+for cmd in 'sudo apt-get --config-file=evil install -y jq' 'sudo apt-get -c=evil install jq' 'sudo dnf --setopt=pluginpath=evil install -y jq' \
+  'sudo yum --config=evil install jq' 'sudo pacman -S --hookdir=evil jq' 'sudo pacman -S --config=evil jq' 'apk add --repositories-file=evil jq' \
+  'nix-env -iA nixpkgs.jq --file=evil' 'sudo zypper --root=evil install jq' 'conda install -c=evil jq' 'sudo pacman -Syu jq' 'sudo pacman -Su jq' \
+  'sudo apt-get -o Dir::Etc=evil install jq'; do
+  gate "$SB" "$NOJQ" gate "$(payload PreToolUse Bash "$cmd")"
+  assert_eq "gate blocks option flags that load external config: $cmd" deny "$(verdict)"
+done
+for cmd in 'DEBIAN_FRONTEND=noninteractive sudo apt-get install -y jq' 'sudo -E apt-get -qq install jq' 'pacman -Sy --noconfirm --needed jq'; do
+  gate "$SB" "$NOJQ" gate "$(payload PreToolUse Bash "$cmd")"
+  assert_eq "gate allows value-less flags and env before sudo: $cmd" allow "$(verdict)"
+done
+# Codex/Kay argv-array payloads: [shell, -c|-lc, SCRIPT] carries the script.
+arr_payload() { jq -cn --arg c "$2" --arg s "${3:-bash}" '{hook_event_name:"PreToolUse", tool_name:"'"$1"'", tool_input:{command:[$s,"-lc",$c]}}'; }
+for cmd in 'brew install jq' 'sudo apt-get install -y jq' 'brew install jq && jq --version'; do
+  gate "$SB" "$NOJQ" gate "$(arr_payload Bash "$cmd")"
+  assert_eq "argv array: jq install allowed: $cmd" allow "$(verdict)"
+  gate "$SB" "$NOJQ" gate "$(arr_payload exec_command "$cmd" /bin/zsh)"
+  assert_eq "argv array (exec_command, /bin/zsh): jq install allowed: $cmd" allow "$(verdict)"
+done
+for cmd in 'brew install jq; rm -rf src' 'git push' 'touch src/app.py'; do
+  gate "$SB" "$NOJQ" gate "$(arr_payload Bash "$cmd")"
+  assert_eq "argv array: still blocked: $cmd" deny "$(verdict)"
+done
+gate "$SB" "$NOJQ" gate '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":["python3","-c","print(1)"]}}'
+assert_eq "argv array that is not a shell -c wrapper is not unwrapped" deny "$(verdict)"
 for cmd in 'HOMEBREW_NO_AUTO_UPDATE=1 brew install jq' 'NONINTERACTIVE=1 brew install jq' 'sudo DEBIAN_FRONTEND=noninteractive apt-get update'; do
   gate "$SB" "$NOJQ" gate "$(payload PreToolUse Bash "$cmd")"
   assert_eq "gate allows a harmless env prefix: $cmd" allow "$(verdict)"

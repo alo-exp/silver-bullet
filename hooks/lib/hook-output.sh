@@ -55,20 +55,30 @@ _sb_hook_replace_all() {
 }
 
 # _sb_hook_json_bash TEXT: last-resort JSON string encoder (non-ASCII bytes pass through).
+# Linear time: the text is encoded in 256-character chunks, so the rescanning replace loop
+# never works on more than one chunk (a chunk boundary can never split an escape).
 _sb_hook_json_bash() {
-  local s="$1" bs="\\" q='"' nl=$'\n' cr=$'\r' tab=$'\t' i oct ch hex
-  _sb_hook_replace_all "$s" "$bs" "$bs$bs"
-  _sb_hook_replace_all "$_SB_HOOK_OUT" "$q" "$bs$q"
-  _sb_hook_replace_all "$_SB_HOOK_OUT" "$nl" "${bs}n"
-  _sb_hook_replace_all "$_SB_HOOK_OUT" "$cr" "${bs}r"
-  _sb_hook_replace_all "$_SB_HOOK_OUT" "$tab" "${bs}t"
+  local s="$1" bs="\\" q='"' nl=$'\n' cr=$'\r' tab=$'\t' i oct hex pos=0 out="" len="${#1}"
+  local -a ctl_ch=() ctl_esc=()
   for i in 1 2 3 4 5 6 7 8 11 12 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31; do
     printf -v oct '%03o' "$i"
-    printf -v ch '%b' "\\0$oct"
     printf -v hex '%04x' "$i"
-    _sb_hook_replace_all "$_SB_HOOK_OUT" "$ch" "${bs}u$hex"
+    printf -v 'ctl_ch[i]' '%b' "\\0$oct"
+    ctl_esc[i]="${bs}u$hex"
   done
-  printf '"%s"' "$_SB_HOOK_OUT"
+  while [[ "$pos" -lt "$len" ]]; do
+    _sb_hook_replace_all "${s:pos:256}" "$bs" "$bs$bs"
+    _sb_hook_replace_all "$_SB_HOOK_OUT" "$q" "$bs$q"
+    _sb_hook_replace_all "$_SB_HOOK_OUT" "$nl" "${bs}n"
+    _sb_hook_replace_all "$_SB_HOOK_OUT" "$cr" "${bs}r"
+    _sb_hook_replace_all "$_SB_HOOK_OUT" "$tab" "${bs}t"
+    for i in "${!ctl_ch[@]}"; do
+      _sb_hook_replace_all "$_SB_HOOK_OUT" "${ctl_ch[i]}" "${ctl_esc[i]}"
+    done
+    out="$out$_SB_HOOK_OUT"
+    pos=$((pos + 256))
+  done
+  printf '"%s"' "$out"
 }
 
 # _sb_hook_json_str TEXT: print TEXT as a JSON string literal.

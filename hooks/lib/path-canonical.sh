@@ -35,6 +35,10 @@
 #                                       cannot be resolved (symlink loop) counts as inside, so
 #                                       'if sb_path_is_within ...; then deny' fails closed. It
 #                                       is a union of forms: never use it to grant access.
+#                                       Two edge cases the caller owns: an empty PATH or ROOT
+#                                       returns 1 (a guard fed an unparsed path must deny on
+#                                       its own), and a symlink loop anywhere in ROOT makes
+#                                       every PATH count as inside.
 
 _SB_PATH_OUT=""
 

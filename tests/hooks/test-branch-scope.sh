@@ -96,15 +96,26 @@ assert_file_absent "session-start: rejected branch file is not written" "$OUTSID
 assert_eq "session-start: validated branch file initialised" "feature/test" "$(sed -n 1p "$SD/branch" 2>/dev/null)"
 assert_not_contains "session-start: no write-failure warning" "$TL_ERR" "branch file write failed"
 
-# session-start with non-canonical spellings: written where it reads, no failure warning,
-# and a branch switch is detected (the stored scope is found again by the next start).
+# session-start with non-canonical spellings: the branch lands in exactly the resolved file (never
+# the default), no failure warning, and a branch switch on the next start is detected and resets state.
 # shellcheck disable=SC2088 # the literal tilde spelling is the point of the case
-for spelling in "$SD/nonexist/../branch-dots" "$SD/branch-slash/x/.." "~/.claude/.silver-bullet/branch-tilde"; do
-  rm -f "$SD/branch-dots" "$SD/branch-slash" "$SD/branch" "$SD/branch-tilde"
+spellings=("$SD/nonexist/../branch-dots" "$SD/branch-slash/" "$SD/branch-slash2/x/.." "${SD/#"$HOME"/\~}/branch-tilde" "$SD/./branch-dot")
+expected=("$SD/branch-dots" "$SD/branch-slash" "$SD/branch-slash2" "$SD/branch-tilde" "$SD/branch-dot")
+for n in "${!spellings[@]}"; do
+  spelling="${spellings[n]}"
+  want="${expected[n]}"
+  git -C "$EC_PROJ" checkout -q feature/test
+  rm -f "$SD/branch" "$SD/state" "$SD"/branch-dots "$SD"/branch-slash "$SD"/branch-slash2 "$SD"/branch-tilde "$SD"/branch-dot
   tl_run_stdin '{"hook_event_name":"SessionStart","source":"startup"}' env SILVER_BULLET_BRANCH_FILE="$spelling" bash -c 'cd "$1" && exec bash "$2"' _ "$EC_PROJ" "$TL_REPO_ROOT/hooks/session-start"
   assert_not_contains "session-start: no write-failure warning for $spelling" "$TL_ERR" "branch file write failed"
-  stored="$(cat "$SD/branch-dots" "$SD/branch-slash" "$SD/branch-tilde" "$SD/branch" 2>/dev/null | sed -n 1p || true)"
-  assert_eq "session-start: branch recorded for $spelling" "feature/test" "$stored"
+  assert_eq "session-start: branch recorded in the resolved file for $spelling" "feature/test" "$(sed -n 1p "$want" 2>/dev/null || true)"
+  assert_file_absent "session-start: default branch file not used for $spelling" "$SD/branch"
+  git -C "$EC_PROJ" checkout -q -b "other-$n"
+  printf 'silver-plan\n' >"$SD/state"
+  tl_run_stdin '{"hook_event_name":"SessionStart","source":"startup"}' env SILVER_BULLET_BRANCH_FILE="$spelling" bash -c 'cd "$1" && exec bash "$2"' _ "$EC_PROJ" "$TL_REPO_ROOT/hooks/session-start"
+  assert_contains "session-start: branch switch detected for $spelling" "$TL_OUT" "git scope changed"
+  assert_eq "session-start: branch switch recorded for $spelling" "other-$n" "$(sed -n 1p "$want" 2>/dev/null || true)"
+  git -C "$EC_PROJ" checkout -q feature/test
 done
 
 tl_results
