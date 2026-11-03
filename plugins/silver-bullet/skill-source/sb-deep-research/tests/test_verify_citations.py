@@ -374,10 +374,16 @@ class TestVerifyEntry(unittest.TestCase):
         r, _ = self.run_entry(entry(url='http://e.com'), url=(True, 'ok'))
         self.assertEqual(r['status'], 'url_verified')
 
-    def test_url_ok_keeps_suspicious_status(self):
+    def test_url_ok_keeps_a_soft_title_hit_as_a_warning(self):
         r, _ = self.run_entry(entry(url='http://e.com', title='A Study of Things Here'), url=(True, 'ok'))
-        self.assertEqual(r['status'], 'suspicious')
+        self.assertEqual(r['status'], 'url_verified')
         self.assertEqual(r['verification_methods'], ['URL'])
+        self.assertEqual(r['warnings'], ['Suspicious title pattern: Generic academic title pattern'])
+
+    def test_url_ok_does_not_clear_a_hard_flag(self):
+        r, _ = self.run_entry(entry(url='http://e.com', title='TBD findings'), url=(True, 'ok'))
+        self.assertEqual(r['status'], 'suspicious')
+        self.assertTrue(r['hard'])
 
     def test_url_fail(self):
         r, _ = self.run_entry(entry(url='http://e.com'), url=(False, 'HTTP 404'))
@@ -438,7 +444,7 @@ class TestVerifyAll(unittest.TestCase):
         self.assertIn('CITATION VERIFICATION FAILED', out)
         ok, out, _ = self.run_all(entries, lenient=True)
         self.assertTrue(ok)
-        self.assertIn('(--lenient: reporting only, not failing)', out)
+        self.assertIn('(--lenient: unconfirmed citations reported, not failing)', out)
 
     def test_suspicious_fails_unless_lenient(self):
         entries = [self.res('1', 'verified'), self.res('2', 'suspicious', ['bad thing'])]

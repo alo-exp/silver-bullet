@@ -188,8 +188,8 @@ class TestBuildComparison(unittest.TestCase):
                 {"features": [{"feature": "Export", "present": True}]},
              ],
              "features": ["Loose", "SSO"]}
-        b = {"categories": [{"name": "Sec", "features": [{"name": "SSO"}]}],
-             "features": [{"name": "Loose", "supported": False}, {"name": "Audit"}, {"name": ""}]}
+        b = {"categories": [{"name": "Sec", "features": [{"name": "SSO", "evidence_ids": ["E1"]}]}],
+             "features": [{"name": "Loose", "supported": False}, {"name": "Audit", "supported": True}, {"name": ""}]}
         need = {"must_haves": ["sso"], "constraints": ["c1"], "research_type": "rt",
                 "license_preference": "oss"}
         comp = cs.build_comparison_json({"A": a, "B": b}, need)

@@ -118,7 +118,7 @@ class LeastPrivilegeTests(PopenCase):
     def test_codex_and_claude_delegates_run_strict_in_an_empty_sandbox(self) -> None:
         invoke = self.tmp / "invoke.sh"
         invoke.write_text("#!/bin/sh\n")
-        for fn, attr in ((ld.run_codex_worker, "AGENT_CODEX_INVOKE"), (ld.run_claude_worker, "AGENT_CLAUDE_INVOKE")):
+        for fn, attr in ((ld.run_claude_worker, "AGENT_CLAUDE_INVOKE"),):
             FakePopen.launches = []
             with mock.patch.object(ld, attr, invoke), mock.patch.object(ld, "_resolve_codex_bin", return_value="codex"):
                 result = fn(logical_model_id="gpt-5.6-luna-medium", prompt="THE PROMPT", output_dir=self.out)
@@ -136,6 +136,27 @@ class LeastPrivilegeTests(PopenCase):
             self.assertEqual((env["CODEX_BYPASS_HOOK_TRUST"], env["CODEX_AUTO_TRUST_HOOKS"]), ("0", "0"))
             # A throwaway sandbox must never be recorded in the user's global $HOME/.codex.json.
             self.assertEqual(env["SB_AGENT_CLAUDE_SEED_FOLDER_TRUST_GLOBAL"], "0")
+
+    def test_claude_delegate_ignores_inherited_permission_overrides(self) -> None:
+        invoke = self.tmp / "invoke.sh"
+        invoke.write_text("#!/bin/sh\n")
+        inherited = {"CLAUDE_PERMISSION_MODE": "bypassPermissions", "SB_AGENT_CERT_RUN": "1"}
+        with mock.patch.dict(os.environ, inherited), mock.patch.object(ld, "AGENT_CLAUDE_INVOKE", invoke):
+            ld.run_claude_worker(logical_model_id="claude-opus-4.8-medium", prompt="P", output_dir=self.out)
+        env = FakePopen.launches[0].kwargs["env"]
+        self.assertEqual(env["CLAUDE_PERMISSION_MODE"], "default")
+        self.assertNotIn("SB_AGENT_CERT_RUN", env)
+
+    def test_codex_worker_is_read_only_and_never_bypasses_the_sandbox(self) -> None:
+        with mock.patch.object(ld, "_resolve_codex_bin", return_value="codex"):
+            result = ld.run_codex_worker(logical_model_id="gpt-5.6-luna-medium", prompt="THE PROMPT", output_dir=self.out)
+        self.assertEqual(result.status, "completed")
+        launch = FakePopen.launches[0]
+        self.assertEqual(launch.args[launch.args.index("--sandbox") + 1], "read-only")
+        self.assertNotIn("danger-full-access", launch.args)
+        self.assertNotIn("THE PROMPT", launch.args)
+        self.assertEqual(launch.cwd_entries_at_launch, [])
+        self.assert_fresh_sandbox(launch, launch.kwargs["cwd"])
 
     def test_ocg_profile_runs_without_auto_in_its_own_sandbox(self) -> None:
         work = self.subdir("phase")
@@ -251,8 +272,7 @@ class LiveBudgetTests(PopenCase):
         invoke.write_text("#!/bin/sh\n")
         FakePopen.script = [(0, '{"a": 1}', "")] * 2 + [(1, "", "ActionRequiredError: quota"), (0, '{"b": 2}', "")]
         env = {"SB_CURSOR_MODEL_ALLOW_FALLBACK": "1"}
-        with mock.patch.dict(os.environ, env), mock.patch.object(ld, "AGENT_CODEX_INVOKE", invoke), \
-                mock.patch.object(ld, "AGENT_CLAUDE_INVOKE", invoke), mock.patch.object(ld, "_resolve_codex_bin", return_value="codex"):
+        with mock.patch.dict(os.environ, env), mock.patch.object(ld, "AGENT_CLAUDE_INVOKE", invoke), mock.patch.object(ld, "_resolve_codex_bin", return_value="codex"):
             out = ld.run_multi_ai_live(output_root=self.out, selection=selection, task_prompt="t", budget=core.BudgetPolicy(concurrency=1))
         self.assertTrue(out["ok"])
         manifest = json.loads(Path(out["manifest_path"]).read_text())
@@ -407,3 +427,87 @@ def _wait_dead(pid: int, seconds: float) -> bool:
 def _kill_if_alive(pid: int) -> None:
     if _alive(pid):
         os.kill(pid, signal.SIGKILL)
+
+class InterruptTests(PopenCase):
+    """Workers run in their own sessions, so Ctrl-C/SIGTERM must be forwarded explicitly."""
+
+    def test_run_cli_tracks_the_worker_group_only_while_it_runs(self) -> None:
+        seen = []
+        orig = FakePopen.communicate
+
+        def spy(self_, input=None, timeout=None):  # noqa: A002, ANN001
+            seen.append(self_ in ld._LIVE_PROCS)
+            return orig(self_, input, timeout)
+
+        with mock.patch.object(FakePopen, "communicate", spy):
+            ld._run_cli(["x"], timeout=1, cwd=str(self.out))
+        self.assertEqual(seen, [True])
+        self.assertEqual(len(ld._LIVE_PROCS), 0)
+
+    def test_terminate_live_workers_signals_every_group(self) -> None:
+        class P:
+            def __init__(self, pid, raise_on_wait=False, gone=False):
+                self.pid, self.raise_on_wait, self.gone = pid, raise_on_wait, gone
+
+            def wait(self, timeout=None):  # noqa: ANN001
+                if self.raise_on_wait:
+                    raise subprocess.TimeoutExpired("x", 0)
+
+        def killpg(pgid, sig):
+            self.killpg_calls.append((pgid, sig))
+            if pgid == 3:
+                raise ProcessLookupError
+
+        procs = [P(1), P(2, raise_on_wait=True), P(3)]
+        ld._LIVE_PROCS.update(procs)
+        self.addCleanup(ld._LIVE_PROCS.clear)
+        with mock.patch.object(os, "killpg", killpg), mock.patch.object(ld, "KILL_GRACE_SEC", 0.0):
+            ld._terminate_live_workers()
+        import signal as sg
+        self.assertEqual({(p, s) for p, s in self.killpg_calls if s == sg.SIGTERM}, {(1, sg.SIGTERM), (2, sg.SIGTERM), (3, sg.SIGTERM)})
+        self.assertEqual({p for p, s in self.killpg_calls if s == sg.SIGKILL}, {1, 2, 3})
+
+    def test_keyboard_interrupt_terminates_workers_before_propagating(self) -> None:
+        item = {"logical_model_id": "composer-2.5", "backend": "cursor"}
+        with mock.patch.object(ld, "dispatch_agent", side_effect=KeyboardInterrupt), \
+                mock.patch.object(ld, "_terminate_live_workers") as term:
+            with self.assertRaises(KeyboardInterrupt):
+                ld.dispatch_phase_parallel(phase_id="p", query="q", run_id="r", work_item_id="w",
+                                           resolved_pool=[item], output_dir=self.out)
+        term.assert_called_once()
+
+    def test_sigterm_becomes_keyboard_interrupt_on_the_main_thread_and_is_restored(self) -> None:
+        import signal as sg
+        before = sg.getsignal(sg.SIGTERM)
+        restore = ld._install_sigterm_as_interrupt()
+        handler = sg.getsignal(sg.SIGTERM)
+        with self.assertRaises(KeyboardInterrupt):
+            handler(sg.SIGTERM, None)
+        restore()
+        self.assertEqual(sg.getsignal(sg.SIGTERM), before)
+
+    def test_sigterm_handler_is_not_installed_off_the_main_thread(self) -> None:
+        import threading
+        import signal as sg
+        before = sg.getsignal(sg.SIGTERM)
+        out = []
+        t = threading.Thread(target=lambda: out.append(ld._install_sigterm_as_interrupt()))
+        t.start()
+        t.join()
+        out[0]()
+        self.assertEqual(sg.getsignal(sg.SIGTERM), before)
+
+    def test_stdin_prompt_is_sent_to_the_worker(self) -> None:
+        seen = {}
+        orig = FakePopen.communicate
+
+        def spy(self_, input=None, timeout=None):  # noqa: A002, ANN001
+            seen["input"] = input
+            seen["stdin"] = self_.kwargs["stdin"]
+            return orig(self_, input, timeout)
+
+        with mock.patch.object(FakePopen, "communicate", spy):
+            ld._run_cli(["x"], timeout=1, cwd=str(self.out), stdin_text="hello")
+        self.assertEqual((seen["input"], seen["stdin"]), ("hello", subprocess.PIPE))
+
+

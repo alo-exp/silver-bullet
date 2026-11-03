@@ -135,6 +135,17 @@ class CompareScoringTests(unittest.TestCase):
         self.assertEqual(rows["SSO"]["solutions"]["A"], "")
         self.assertNotEqual(rows["API"]["solutions"]["A"], "")
 
+    def test_dict_feature_without_evidence_or_support_is_not_a_tick(self):
+        rows, _ = self._rows(
+            {"features": [{"name": "SSO"}, {"name": "API", "evidence_ids": ["E1"]},
+                          {"name": "RBAC", "supported": True}, "Legacy listed"]},
+            {"features": ["SSO", "API", "RBAC", "Legacy listed"]})
+        a = {n: r["solutions"]["A"] for n, r in rows.items()}
+        self.assertEqual(a["SSO"], "")
+        self.assertNotEqual(a["API"], "")
+        self.assertNotEqual(a["RBAC"], "")
+        self.assertNotEqual(a["Legacy listed"], "")
+
     def test_feature_in_two_categories_is_one_row(self):
         a = {"categories": [{"name": "Security", "features": ["SSO"]},
                             {"name": "Identity", "features": ["SSO", "SCIM"]}]}
@@ -281,6 +292,8 @@ class SpaTests(unittest.TestCase):
         self.assertIn("esc(String(r.score))", html)
         self.assertNotIn("' + r.score +", html)
         self.assertIn("<strong>Tie:</strong>", html)
+        self.assertIn("Top-ranked (tie): ", html)
+        self.assertIn("(tied ? ", html)
         self.assertIn("esc(cmp.tie.join(", html)
 
     def test_malicious_score_stays_inside_the_json_block(self):
@@ -426,6 +439,14 @@ class SearchOrchestratorFaultTests(unittest.TestCase):
         self.assertNotIn("skill_md_url", out["items"][1])
         self.assertEqual(self.so._enrich_github_results({"raw": "x"}), {"raw": "x"})
         self.assertEqual(self.so._enrich_github_results("text"), "text")
+
+    def test_authorization_is_unredirected_so_redirects_cannot_forward_it(self):
+        seen = []
+        with unittest.mock.patch("urllib.request.urlopen", self._open(raw=b"[]", seen=seen)):
+            self.so.fetch_portal("github", "q")
+        req = seen[0]
+        self.assertNotIn("Authorization", req.headers)
+        self.assertEqual(req.unredirected_hdrs["Authorization"], "Bearer tok")
 
     def test_failed_portal_is_recorded_and_the_manifest_is_still_written(self):
         root = _tree(self)

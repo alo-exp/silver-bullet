@@ -99,16 +99,33 @@ SYNTHESIS_RE = re.compile(
 )
 
 
+CITATION_MARK_RE = re.compile(r'\[\d{1,4}(?:,\s*\d{1,4})*\]')
+# A year, a percentage, a currency amount or a scaled quantity: figures that state a fact
+# ("recommend 3 vendors" does not).
+CHECKABLE_FIGURE_RE = re.compile(
+    r'\b(?:19|20)\d{2}\b|\d\s*%|[$€£]\s*\d|\b\d+(?:\.\d+)?\s*(?:k|m|bn|million|billion|trillion|thousand)\b',
+    re.IGNORECASE,
+)
+
+
 def classify_claim(text: str, section_id: str) -> str:
     """Heuristic claim type classification (whole-word cues only)."""
     stripped = text.strip()
+    # A hedge or recommendation clause does not exempt a checkable figure: "Acme raised 50
+    # million in 2023 and should be shortlisted" still asserts a fact that needs evidence.
+    if CHECKABLE_FIGURE_RE.search(CITATION_MARK_RE.sub(' ', stripped)):
+        return 'synthesis' if _is_synthesis(stripped, section_id) else 'factual'
     if RECOMMENDATION_RE.search(stripped):
         return 'recommendation'
     if SPECULATION_RE.search(stripped):
         return 'speculation'
-    if section_id in ('synthesis', 'conclusion', 'limitations') and SYNTHESIS_RE.search(stripped):
+    if _is_synthesis(stripped, section_id):
         return 'synthesis'
     return 'factual'
+
+
+def _is_synthesis(stripped: str, section_id: str) -> bool:
+    return section_id in ('synthesis', 'conclusion', 'limitations') and bool(SYNTHESIS_RE.search(stripped))
 
 
 def parse_sections(markdown: str) -> list[tuple[str, str]]:

@@ -346,70 +346,68 @@ class DelegateWorkerTests(HermeticCase):
         with mock.patch.object(ld, invoke_attr, invoke), mock.patch.object(ld, "_run_cli", side_effect=fake):
             return fn(logical_model_id=logical, prompt=prompt, output_dir=self.out, timeout_sec=9)
 
-    def test_codex_worker_success_and_environment(self) -> None:
-        with mock.patch.object(ld, "_resolve_codex_bin", return_value="/x/codex"):
-            result = self._run(ld.run_codex_worker, "gpt-5.6-luna-medium", proc(0, "out", "err"), "AGENT_CODEX_INVOKE")
+    def _run_codex(self, outcome, logical="gpt-5.6-luna-medium", prompt="PR"):
+        def fake(cmd, **kwargs):  # noqa: ANN001
+            self.captured = (cmd, kwargs)
+            if isinstance(outcome, BaseException):
+                raise outcome
+            return outcome
+
+        with mock.patch.object(ld, "_resolve_codex_bin", return_value="/x/codex"), \
+                mock.patch.object(ld, "_run_cli", side_effect=fake):
+            return ld.run_codex_worker(logical_model_id=logical, prompt=prompt, output_dir=self.out, timeout_sec=9)
+
+    def test_codex_worker_runs_read_only_with_the_prompt_on_stdin(self) -> None:
+        result = self._run_codex(proc(0, "out", "err"))
         self.assertEqual((result.status, result.backend, result.error), ("completed", "codex", None))
         self.assertEqual(result.effective_model_id, "gpt-5.6-luna-medium")
         self.assertEqual(result.raw_output, "out\nerr")
         cmd, kwargs = self.captured
-        self.assertEqual(cmd[0], "bash")
-        self.assertEqual(cmd[1], str(self.invoke))
-        self.assertIn("--use-exec", cmd)
-        self.assertNotIn("--prompt", cmd)
-        self.assertEqual(self.prompt_text, "PR")
-        self.assertEqual(cmd[cmd.index("--mode") + 1], "strict")
-        self.assertEqual(cmd[cmd.index("--sb-root") + 1], str(ld.REPO_ROOT))
-        env = kwargs["env"]
-        self.assertEqual(env["CODEX_MODEL"], "gpt-5.6-luna")
-        self.assertEqual(env["CODEX_REASONING_EFFORT"], "medium")
-        self.assertEqual(env["CODEX_BIN"], "/x/codex")
-        self.assertEqual(env["SB_AGENT_CODEX_DELEGATE"], "1")
-        self.assertEqual(env["SB_ORCHESTRATOR_PARENT"], "0")
-        self.assertEqual(kwargs["cwd"], cmd[cmd.index("--work-dir") + 1])
+        self.assertEqual(cmd[:2], ["/x/codex", "exec"])
+        self.assertEqual(cmd[cmd.index("--sandbox") + 1], "read-only")
+        self.assertNotIn("danger-full-access", cmd)
+        self.assertFalse(any("bypass" in c for c in cmd))
+        self.assertEqual(cmd[cmd.index("--model") + 1], "gpt-5.6-luna")
+        self.assertIn("model_reasoning_effort=medium", cmd)
+        self.assertEqual(cmd[-1], "-")
+        self.assertNotIn("PR", cmd)
+        self.assertEqual(kwargs["stdin_text"], "PR")
+        self.assertEqual(kwargs["cwd"], cmd[cmd.index("--cd") + 1])
         self.assertNotEqual(kwargs["cwd"], str(ld.REPO_ROOT))
         self.assertEqual(len(list(self.out.glob("gpt-5-6-luna-medium-*.txt"))), 1)
 
     def test_codex_worker_unknown_model_defaults_to_medium(self) -> None:
-        with mock.patch.object(ld, "_resolve_codex_bin", return_value="codex"):
-            result = self._run(ld.run_codex_worker, "other-model", proc(0, "o"), "AGENT_CODEX_INVOKE")
+        result = self._run_codex(proc(0, "o"), logical="other-model")
         self.assertEqual(result.effective_model_id, "other-model-medium")
 
     def test_codex_worker_failure_timeout_and_missing(self) -> None:
-        with mock.patch.object(ld, "_resolve_codex_bin", return_value="codex"):
-            failed = self._run(ld.run_codex_worker, "gpt-5.6-luna-medium", proc(3, "o", ""), "AGENT_CODEX_INVOKE")
-            self.assertEqual((failed.status, failed.error), ("failed", "agent-codex exit 3"))
-            self.assertEqual(failed.raw_output, "o")
-            timeout = self._run(
-                ld.run_codex_worker, "gpt-5.6-luna-medium", subprocess.TimeoutExpired("x", 1, output=b"half"), "AGENT_CODEX_INVOKE"
-            )
-            self.assertEqual((timeout.status, timeout.error, timeout.raw_output), ("partial", "timeout", "half"))
-            timeout_empty = self._run(
-                ld.run_codex_worker, "gpt-5.6-luna-medium", subprocess.TimeoutExpired("x", 1), "AGENT_CODEX_INVOKE"
-            )
-            self.assertEqual(timeout_empty.raw_output, "")
-            gone = self._run(ld.run_codex_worker, "gpt-5.6-luna-medium", FileNotFoundError("bash"), "AGENT_CODEX_INVOKE")
-            self.assertEqual((gone.status, gone.error), ("failed", "agent-codex invoke not found"))
-            denied = self._run(ld.run_codex_worker, "gpt-5.6-luna-medium", PermissionError(13, "denied"), "AGENT_CODEX_INVOKE")
-            self.assertEqual(denied.status, "failed")
-            self.assertIn("agent-codex launch failed", denied.error)
+        failed = self._run_codex(proc(3, "o", ""))
+        self.assertEqual((failed.status, failed.error), ("failed", "codex exit 3"))
+        self.assertEqual(failed.raw_output, "o")
+        timeout = self._run_codex(subprocess.TimeoutExpired("x", 1, output=b"half"))
+        self.assertEqual((timeout.status, timeout.error, timeout.raw_output), ("partial", "timeout", "half"))
+        self.assertEqual(self._run_codex(subprocess.TimeoutExpired("x", 1)).raw_output, "")
+        gone = self._run_codex(FileNotFoundError("codex"))
+        self.assertEqual((gone.status, gone.error), ("failed", "codex CLI not found"))
+        denied = self._run_codex(PermissionError(13, "denied"))
+        self.assertEqual(denied.status, "failed")
+        self.assertIn("codex launch failed", denied.error)
 
-    def test_delegate_refuses_an_oversized_prompt_without_spawning(self) -> None:
-        invoke = self.tmp / "invoke.sh"
-        invoke.write_text("#!/bin/sh\n")
-        with mock.patch.object(ld, "AGENT_CODEX_INVOKE", invoke), mock.patch.object(ld, "_run_cli") as run:
+    def test_codex_refuses_an_oversized_prompt_without_spawning(self) -> None:
+        with mock.patch.object(ld, "_run_cli") as run:
             result = ld.run_codex_worker(logical_model_id="gpt-5.6-luna-medium", prompt="y" * (ld.MAX_PROMPT_BYTES + 1), output_dir=self.out)
         run.assert_not_called()
         self.assertEqual(result.status, "failed")
         self.assertIn("prompt too large", result.error)
 
-    def test_codex_worker_missing_invoke_script_does_not_spawn(self) -> None:
-        missing = self.tmp / "nope" / "invoke.sh"
-        with mock.patch.object(ld, "AGENT_CODEX_INVOKE", missing), mock.patch.object(ld, "_run_cli") as run:
-            result = ld.run_codex_worker(logical_model_id="gpt-5.6-luna-medium", prompt="P", output_dir=self.out)
+    def test_delegate_refuses_an_oversized_prompt_without_spawning(self) -> None:
+        invoke = self.tmp / "invoke.sh"
+        invoke.write_text("#!/bin/sh\n")
+        with mock.patch.object(ld, "AGENT_CLAUDE_INVOKE", invoke), mock.patch.object(ld, "_run_cli") as run:
+            result = ld.run_claude_worker(logical_model_id="claude-opus-4.8-medium", prompt="y" * (ld.MAX_PROMPT_BYTES + 1), output_dir=self.out)
         run.assert_not_called()
-        # The error names the script relative to the Silver Bullet root, not a local absolute path.
-        self.assertEqual((result.status, result.error), ("failed", "missing scripts/agent-codex/invoke.sh"))
+        self.assertEqual(result.status, "failed")
+        self.assertIn("prompt too large", result.error)
 
     def test_claude_worker_success_and_environment(self) -> None:
         with mock.patch.dict(os.environ, {"CLAUDE_BIN": "/x/claude"}):
@@ -449,6 +447,9 @@ class DelegateWorkerTests(HermeticCase):
         self.assertEqual(timeout_empty.raw_output, "")
         gone = self._run(ld.run_claude_worker, "claude-opus-4.8-medium", FileNotFoundError("bash"), "AGENT_CLAUDE_INVOKE")
         self.assertEqual((gone.status, gone.error), ("failed", "agent-claude invoke not found"))
+        denied = self._run(ld.run_claude_worker, "claude-opus-4.8-medium", PermissionError(13, "denied"), "AGENT_CLAUDE_INVOKE")
+        self.assertEqual(denied.status, "failed")
+        self.assertIn("agent-claude launch failed", denied.error)
 
     def test_claude_worker_missing_invoke_script_does_not_spawn(self) -> None:
         missing = self.tmp / "nope" / "invoke.sh"

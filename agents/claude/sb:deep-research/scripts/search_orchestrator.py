@@ -115,6 +115,7 @@ def fetch_portal(portal_id: str, query: str, mock_responses: dict | None = None)
         }
 
     headers = {"User-Agent": "silver-deep-research/1.0"}
+    auth = None
     if portal_id == "github":
         # GitHub code search needs authentication; without a token skip rather than 401.
         token = _github_token()
@@ -124,11 +125,14 @@ def fetch_portal(portal_id: str, query: str, mock_responses: dict | None = None)
                 "status": "skipped",
                 "reason": "GitHub code search requires GITHUB_TOKEN or GH_TOKEN; none is set",
             }
-        headers["Authorization"] = f"Bearer {token}"
+        auth = f"Bearer {token}"
 
     url = url_tmpl.format(query=quote(query))
     try:
         req = urllib.request.Request(url, headers=headers)
+        if auth:
+            # Unredirected: never copied onto a redirect to another host.
+            req.add_unredirected_header("Authorization", auth)
         with urllib.request.urlopen(req, timeout=10) as resp:
             raw = resp.read(MAX_PORTAL_BYTES + 1)
             if len(raw) > MAX_PORTAL_BYTES:

@@ -8,7 +8,9 @@ needs:
 * every worker starts in a fresh, empty sandbox directory that is removed afterwards — never
   in the Silver Bullet install root or the user's project;
 * Cursor runs without ``--force``/``--yolo`` (no auto-approved shell commands or file writes),
-  agent-codex / agent-claude delegates run with ``--mode strict``, and the OCG cohort runs
+  codex runs directly with ``--sandbox read-only`` (the delegate chain would force
+  ``danger-full-access``), the agent-claude delegate runs ``--mode strict`` with
+  ``CLAUDE_PERMISSION_MODE=default`` (inherited overrides are ignored), and the OCG cohort runs
   ``opencode run`` without ``--auto``;
 * the prompt fences the query and prior context as untrusted data between per-prompt nonce
   markers, with a rule never to follow instructions found inside them;
@@ -18,6 +20,7 @@ needs:
 
 from __future__ import annotations
 
+import atexit
 import contextlib
 import json
 import os
@@ -27,6 +30,7 @@ import shutil
 import signal
 import subprocess
 import tempfile
+import threading
 import time
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
@@ -56,11 +60,14 @@ SKILL_DIR = Path(__file__).resolve().parents[1]
 # Silver Bullet root: the repository checkout, or plugins/silver-bullet in the packaged layout.
 REPO_ROOT = SKILL_DIR.parents[1]
 AGENT_OPENCODE_DELEGATE = REPO_ROOT / "scripts" / "agent-opencode-delegate.sh"
-AGENT_CODEX_INVOKE = REPO_ROOT / "scripts" / "agent-codex" / "invoke.sh"
 AGENT_CLAUDE_INVOKE = REPO_ROOT / "scripts" / "agent-claude" / "invoke.sh"
 
-# Delegates get --mode strict: research workers never need approval-free shell or writes.
+# Claude runs through its delegate with --mode strict AND an explicit CLAUDE_PERMISSION_MODE=default
+# (headless default mode auto-approves nothing: no shell, no edits). Codex is launched directly
+# with --sandbox read-only because the delegate chain hard-codes --sandbox danger-full-access.
 WORKER_PERMISSION_MODE = "strict"
+CLAUDE_WORKER_PERMISSION_MODE = "default"
+CODEX_WORKER_SANDBOX = "read-only"
 # One argv element is capped at 128 KiB on Linux (MAX_ARG_STRLEN); stay well below it.
 MAX_PROMPT_BYTES = 100_000
 # Seconds a timed-out worker group gets between SIGTERM and SIGKILL.
@@ -357,7 +364,39 @@ def _kill_process_group(proc: subprocess.Popen) -> None:
                 pass
 
 
-def _run_cli(cmd: list[str], *, timeout: float, cwd: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess:
+# Live worker process groups, so an interrupt of the dispatcher (Ctrl-C only reaches the
+# foreground group, and every worker has its own session) can still terminate them.
+_LIVE_PROCS: set[subprocess.Popen] = set()
+_LIVE_LOCK = threading.Lock()
+
+
+def _terminate_live_workers() -> None:
+    with _LIVE_LOCK:
+        procs = list(_LIVE_PROCS)
+    for proc in procs:
+        try:
+            os.killpg(proc.pid, signal.SIGTERM)
+        except (ProcessLookupError, PermissionError):
+            continue
+    deadline = time.monotonic() + KILL_GRACE_SEC
+    for proc in procs:
+        try:
+            proc.wait(timeout=max(0.0, deadline - time.monotonic()))
+        except subprocess.TimeoutExpired:
+            pass
+    for proc in procs:
+        try:
+            os.killpg(proc.pid, signal.SIGKILL)
+        except (ProcessLookupError, PermissionError):
+            continue
+
+
+atexit.register(_terminate_live_workers)
+
+
+def _run_cli(
+    cmd: list[str], *, timeout: float, cwd: str, env: dict[str, str] | None = None, stdin_text: str | None = None
+) -> subprocess.CompletedProcess:
     """Run one worker CLI in a new session (its own process group).
 
     Any interruption — above all the timeout, which re-raises ``TimeoutExpired`` with the
@@ -368,7 +407,7 @@ def _run_cli(cmd: list[str], *, timeout: float, cwd: str, env: dict[str, str] | 
         cmd,
         cwd=cwd,
         env=env,
-        stdin=subprocess.DEVNULL,
+        stdin=subprocess.DEVNULL if stdin_text is None else subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
@@ -376,11 +415,16 @@ def _run_cli(cmd: list[str], *, timeout: float, cwd: str, env: dict[str, str] | 
         errors="replace",
         start_new_session=True,
     ) as proc:
+        with _LIVE_LOCK:
+            _LIVE_PROCS.add(proc)
         try:
-            stdout, stderr = proc.communicate(timeout=timeout)
+            stdout, stderr = proc.communicate(input=stdin_text, timeout=timeout)
         except BaseException:
             _kill_process_group(proc)
             raise
+        finally:
+            with _LIVE_LOCK:
+                _LIVE_PROCS.discard(proc)
     return subprocess.CompletedProcess(cmd, proc.returncode, stdout, stderr)
 
 
@@ -505,6 +549,9 @@ def _delegate_env(extra: dict[str, str]) -> dict[str, str]:
         }
     )
     env.update(extra)
+    # The claude delegate honours these two and would turn a "strict" worker into bypassPermissions.
+    env.pop("SB_AGENT_CERT_RUN", None)
+    env["CLAUDE_PERMISSION_MODE"] = CLAUDE_WORKER_PERMISSION_MODE
     return env
 
 
@@ -564,32 +611,41 @@ def _run_delegate_worker(
 
 
 def run_codex_worker(*, logical_model_id: str, prompt: str, output_dir: Path, timeout_sec: int = 600) -> WorkerResult:
-    """Dispatch via /sb:agent-codex → scripts/agent-codex/invoke.sh (--use-exec, strict)."""
+    """Run `codex exec` directly: read-only sandbox, fresh empty cwd, prompt on stdin.
+
+    The delegate chain (scripts/agent-codex) always passes --sandbox danger-full-access, and
+    `codex exec` never asks for approval, so it would hand a shell to web-derived prompt text.
+    """
     model, effort = CODEX_DELEGATE_MODEL.get(logical_model_id, (logical_model_id, "medium"))
-    env = _delegate_env(
-        {
-            "CODEX_BIN": _resolve_codex_bin(),
-            "CODEX_MODEL": model,
-            "CODEX_REASONING_EFFORT": effort,
-            "SB_AGENT_CODEX_DELEGATE": "1",
-            "SB_AGENT_CODEX_LIGHTWEIGHT": "1",
-        }
-    )
-    return _run_delegate_worker(
-        backend="codex",
-        invoke=AGENT_CODEX_INVOKE,
-        launch_flag="--use-exec",
-        env=env,
-        effective=f"{model}-{effort}",
-        logical_model_id=logical_model_id,
-        prompt=prompt,
-        output_dir=output_dir,
-        timeout_sec=timeout_sec,
-    )
+    attempt_id = new_attempt_id()
+    out_file = output_dir / f"{logical_model_id.replace('.', '-')}-{attempt_id}.txt"
+    effective = f"{model}-{effort}"
+    too_large = _prompt_too_large(prompt)
+    if too_large:
+        return _failed(logical_model_id, "codex", attempt_id, too_large)
+    try:
+        with _worker_sandbox("codex") as sandbox:
+            cmd = [
+                _resolve_codex_bin(), "exec", "--cd", str(sandbox), "--sandbox", CODEX_WORKER_SANDBOX,
+                "--color", "never", "--skip-git-repo-check", "--model", model,
+                "--config", f"model_reasoning_effort={effort}", "-",
+            ]
+            proc = _run_cli(cmd, timeout=timeout_sec, cwd=str(sandbox), stdin_text=prompt)
+    except subprocess.TimeoutExpired as exc:
+        return WorkerResult(logical_model_id, "codex", attempt_id, "partial", None, _partial_text(exc), "timeout")
+    except FileNotFoundError:
+        return _failed(logical_model_id, "codex", attempt_id, "codex CLI not found")
+    except OSError as exc:
+        return _failed(logical_model_id, "codex", attempt_id, f"codex launch failed: {exc}")
+    raw = _merged_output(proc)
+    out_file.write_text(raw, encoding="utf-8")
+    if proc.returncode != 0:
+        return _failed(logical_model_id, "codex", attempt_id, f"codex exit {proc.returncode}", raw, effective_model_id=effective)
+    return WorkerResult(logical_model_id, "codex", attempt_id, "completed", None, raw, effective_model_id=effective)
 
 
 def run_claude_worker(*, logical_model_id: str, prompt: str, output_dir: Path, timeout_sec: int = 600) -> WorkerResult:
-    """Dispatch via /sb:agent-claude → scripts/agent-claude/invoke.sh (--use-print, strict)."""
+    """Dispatch via /sb:agent-claude → scripts/agent-claude/invoke.sh (--use-print, strict, default permission mode)."""
     model, effort = CLAUDE_DELEGATE_MODEL.get(logical_model_id, ("sonnet", "low"))
     env = _delegate_env(
         {
@@ -856,35 +912,60 @@ def dispatch_phase_parallel(*, phase_id: str, query: str, run_id: str, work_item
     ocg_items = [item for item in resolved_pool if item.get("backend") == "ocg"]
     results: list[WorkerResult] = []
     worker_count = max(1, len(cursor_items) + (1 if ocg_items else 0))
-    with ThreadPoolExecutor(max_workers=max(1, min(concurrency, worker_count))) as pool:
-        futures: dict[Future, list[dict[str, Any]]] = {}
-        for item in cursor_items:
-            fut = pool.submit(
-                dispatch_agent,
-                item,
-                phase_id=phase_id,
-                query=query,
-                run_id=run_id,
-                work_item_id=work_item_id,
-                output_dir=phase_dir,
-                context=context,
+    restore = _install_sigterm_as_interrupt()
+    try:
+        with ThreadPoolExecutor(max_workers=max(1, min(concurrency, worker_count))) as pool:
+            return _dispatch_in_pool(
+                pool, cursor_items, ocg_items, results, phase_id=phase_id, query=query, run_id=run_id,
+                work_item_id=work_item_id, phase_dir=phase_dir, context=context, ocg_pool=ocg_pool,
                 timeout_sec=timeout_sec,
             )
-            futures[fut] = [item]
-        if ocg_items:
-            fut = pool.submit(
-                run_ocg_pool_cohort,
-                ocg_items=ocg_items,
-                phase_id=phase_id,
-                query=query,
-                run_id=run_id,
-                work_item_id=work_item_id,
-                output_dir=phase_dir,
-                context=context,
-                pool=ocg_pool,
-                timeout_sec=timeout_sec,
-            )
-            futures[fut] = ocg_items
+    finally:
+        restore()
+
+
+def _install_sigterm_as_interrupt():
+    """Turn SIGTERM into KeyboardInterrupt (main thread only) so workers can be stopped; returns a restorer."""
+    if threading.current_thread() is not threading.main_thread():
+        return lambda: None
+
+    def handler(signum, frame):  # noqa: ANN001
+        raise KeyboardInterrupt
+
+    previous = signal.signal(signal.SIGTERM, handler)
+    return lambda: signal.signal(signal.SIGTERM, previous)
+
+
+def _dispatch_in_pool(pool, cursor_items, ocg_items, results, *, phase_id, query, run_id, work_item_id, phase_dir, context, ocg_pool, timeout_sec):  # noqa: ANN001
+    futures: dict[Future, list[dict[str, Any]]] = {}
+    for item in cursor_items:
+        fut = pool.submit(
+            dispatch_agent,
+            item,
+            phase_id=phase_id,
+            query=query,
+            run_id=run_id,
+            work_item_id=work_item_id,
+            output_dir=phase_dir,
+            context=context,
+            timeout_sec=timeout_sec,
+        )
+        futures[fut] = [item]
+    if ocg_items:
+        fut = pool.submit(
+            run_ocg_pool_cohort,
+            ocg_items=ocg_items,
+            phase_id=phase_id,
+            query=query,
+            run_id=run_id,
+            work_item_id=work_item_id,
+            output_dir=phase_dir,
+            context=context,
+            pool=ocg_pool,
+            timeout_sec=timeout_sec,
+        )
+        futures[fut] = ocg_items
+    try:
         for fut in as_completed(futures):
             try:
                 outcome = fut.result()
@@ -894,6 +975,10 @@ def dispatch_phase_parallel(*, phase_id: str, query: str, run_id: str, work_item
                 results.extend(outcome)
             else:
                 results.append(outcome)
+    except BaseException:
+        # Ctrl-C reaches only the dispatcher, never the workers (own sessions): stop them first.
+        _terminate_live_workers()
+        raise
     return results
 
 
