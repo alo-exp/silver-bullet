@@ -30,7 +30,7 @@ mkdir -p "$SB_TEST_DIR"
 TEST_RUN_ID="$$"
 
 cleanup_all() {
-  rm -rf "$TMPDIR_TEST" "${SB_TEST_DIR}/graphify-query-${TEST_RUN_ID}"
+  rm -rf "$TMPDIR_TEST" "${SB_TEST_DIR}/t${TEST_RUN_ID}-graphify-query"
 }
 trap cleanup_all EXIT
 
@@ -39,7 +39,7 @@ fail() { echo "  FAIL: $1"; FAIL=$((FAIL + 1)); }
 
 setup() {
   TMPDIR_TEST="$(mktemp -d)"
-  GRAPHIFY_STATE="${SB_TEST_DIR}/graphify-query-${TEST_RUN_ID}"
+  GRAPHIFY_STATE="${SB_TEST_DIR}/t${TEST_RUN_ID}-graphify-query"
   rm -f "$GRAPHIFY_STATE"
   cat >"$TMPDIR_TEST/silver-bullet.md" <<'EOF'
 # Silver Bullet

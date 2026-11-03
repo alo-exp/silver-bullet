@@ -24,7 +24,7 @@ mkdir -p "$SB_TEST_DIR"
 TEST_RUN_ID="$$"
 
 cleanup_all() {
-  rm -rf "$TMPDIR_TEST" "${SB_TEST_DIR}/leanctx-usage-test-${TEST_RUN_ID}"
+  rm -rf "$TMPDIR_TEST" "${SB_TEST_DIR}/ttest-${TEST_RUN_ID}-leanctx-usage"
 }
 trap cleanup_all EXIT
 
@@ -33,7 +33,7 @@ fail() { echo "  FAIL: $1"; FAIL=$((FAIL + 1)); }
 
 setup() {
   TMPDIR_TEST="$(mktemp -d)"
-  USAGE_STATE="${SB_TEST_DIR}/leanctx-usage-test-${TEST_RUN_ID}"
+  USAGE_STATE="${SB_TEST_DIR}/ttest-${TEST_RUN_ID}-leanctx-usage"
   rm -f "$USAGE_STATE"
   cat >"$TMPDIR_TEST/silver-bullet.md" <<'EOF'
 # Silver Bullet

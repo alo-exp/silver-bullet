@@ -32,7 +32,7 @@ MOCK_BIN=""
 
 cleanup_all() {
   rm -rf "$TMPDIR_TEST" "${TEST_HOME:-}" "${SB_TEST_DIR}/test-state-${TEST_RUN_ID}" \
-    "${SB_TEST_DIR}/agentmemory-usage-${TEST_RUN_ID}" \
+    "${SB_TEST_DIR}/t${TEST_RUN_ID}-agentmemory-usage" \
     "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" "$MOCK_BIN"
 }
 trap cleanup_all EXIT
@@ -122,7 +122,7 @@ EOF
 setup() {
   TMPDIR_TEST="$(mktemp -d)"
   TMPSTATE="${SB_TEST_DIR}/test-state-${TEST_RUN_ID}"
-  AM_STATE="${SB_TEST_DIR}/agentmemory-usage-${TEST_RUN_ID}"
+  AM_STATE="${SB_TEST_DIR}/t${TEST_RUN_ID}-agentmemory-usage"
   TMPCFG="${TMPDIR_TEST}/.silver-bullet.json"
   TMPFILE="${TMPDIR_TEST}/src/app.js"
   rm -f "$TMPSTATE" "$AM_STATE" "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}" "${SB_TEST_DIR}/agentmemory-health"
@@ -227,7 +227,7 @@ assert_deny "MCP wired but no fresh usage blocks edit" "$out"
 # RED-5: auto-scaffold export root on substantive Write when opted in.
 setup
 write_cfg true true
-GF_STATE="${SB_TEST_DIR}/graphify-query-${TEST_RUN_ID}"
+GF_STATE="${SB_TEST_DIR}/t${TEST_RUN_ID}-graphify-query"
 jq --arg gf "$GF_STATE" \
   '.recommended_tools.graphify = {"enabled_by_user": true, "query_state_file": $gf}' \
   "$TMPCFG" >"${TMPCFG}.tmp" && mv "${TMPCFG}.tmp" "$TMPCFG"

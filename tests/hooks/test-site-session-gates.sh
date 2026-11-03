@@ -62,7 +62,7 @@ teardown() {
 
 setup_with_agentmemory() {
   setup
-  AM_STATE="${SB_TEST_DIR}/agentmemory-usage-$$"
+  AM_STATE="${SB_TEST_DIR}/t$$-agentmemory-usage"
   CURRENT_CONFIG_VERSION="$(jq -r '.config_version' "$REPO_ROOT/templates/silver-bullet.config.json.default")"
   cat >"$TMPDIR_TEST/.silver-bullet.json" <<EOF
 {"sb_initiated":true,"config_version":"${CURRENT_CONFIG_VERSION}","orchestrator_mode":"parent","project":{"name":"test","active_workflow":"full-dev-cycle"},"skills":{"required_planning":["silver-quality-gates"]},"recommended_tools":{"agentmemory":{"enabled_by_user":true,"usage_state_file":"${AM_STATE}"}}}

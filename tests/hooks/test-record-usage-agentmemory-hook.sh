@@ -110,11 +110,11 @@ assert_not_recorded "agentmemory: a non-object response is not success" "$AM_STA
 reset; tg2_run "$AMH" "$(tg2_mcp_input agentmemory memory_recall CallMcpTool)"
 assert_not_recorded "agentmemory: the Bash recorder ignores MCP calls" "$AM_STATE"
 # Unwritable state path (a directory) -> record fails, hook stays silent and exits 0.
-reset; mkdir -p "$SB_RUNTIME_STATE_DIR/am-dir"
-jq --arg p "$SB_RUNTIME_STATE_DIR/am-dir" '.recommended_tools.agentmemory.usage_state_file=$p' <<<"$all_cfg" >"$TG2_CFG"
+reset; mkdir -p "$SB_RUNTIME_STATE_DIR/am-dir-usage"
+jq --arg p "$SB_RUNTIME_STATE_DIR/am-dir-usage" '.recommended_tools.agentmemory.usage_state_file=$p' <<<"$all_cfg" >"$TG2_CFG"
 tg2_run "$AMH" "$am_cmd"
 assert_silent_ok "agentmemory: failed state write is silent (command path)"
-rmdir "$SB_RUNTIME_STATE_DIR/am-dir"
+rmdir "$SB_RUNTIME_STATE_DIR/am-dir-usage"
 # jq-free farm: no tool-input.sh -> jq fallbacks parse the payload.
 reset; tg2_farm notoolinput "$AMH" tool-input.sh
 TG2_REPO="$TG2_FARM" tg2_run "$AMH" "$am_cmd"

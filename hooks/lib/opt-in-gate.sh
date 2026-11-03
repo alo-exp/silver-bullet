@@ -19,7 +19,7 @@
 #       a command that delivers (commit, PR, release, or an opaque program word) an install, or that the
 #       shared analyzer finds writing a file. TOOL's own setup/retrieval commands and
 #       commands proven read-only are exempt; tests, builds and inspections are not gated.
-#   sb_opt_in_shell_is_delivery CMD      status 0 when CMD commits, opens a PR or a release
+#   sb_opt_in_shell_is_delivery CMD      status 0 when CMD commits, opens/merges a PR, releases, deploys or could
 #   sb_opt_in_shell_is_install CMD       status 0 for a machine-wide install or a download piped to a shell
 #   sb_opt_in_rtk_unwrap CMD             CMD without a leading RTK_DISABLED=… / rtk prefix
 
@@ -371,26 +371,58 @@ _sb_opt_in_tool_extra_lines() {
   esac
 }
 
-# Status 0 when CMD is a delivery step (commit, PR create, release create). Quotes around
-# the program words are removed first ("git" commit), and a command word that is a variable
-# or an eval is opaque, so it counts as delivery (G=git; $G commit).
-sb_opt_in_shell_is_delivery() {
-  local cmd="${1:-}" plain
-  [[ -n "$cmd" ]] || return 1
-  plain="${cmd//[\"\']/}"
-  grep -qE '(^|[^A-Za-z0-9_.-])git([[:space:]]+-[Cc][[:space:]]+[^[:space:]]+)*[[:space:]]+commit([^A-Za-z0-9_-]|$)|(^|[^A-Za-z0-9_.-])gh[[:space:]]+(pr|release)[[:space:]]+create([^A-Za-z0-9_-]|$)|(^|[;&|(])[[:space:]]*(\$[{(A-Za-z_]|eval[[:space:]])' <<<"$plain"
-}
-
-# Status 0 when CMD installs software machine-wide (a global package install, brew, sudo) or
-# pipes a download into a shell. These change the machine, not just the project.
-sb_opt_in_shell_is_install() {
+# Shell classification uses the shared analyzer (shell-analysis.sh): one python3 run per
+# command, with real tokenizing, so quoting, wrappers, git aliases and variables are seen
+# through. _sb_opt_in_classify loads CMD and sets _SB_OPT_IN_{DELIVERY,INSTALL,WRITES,READ_ONLY}
+# (1/0). When the analyzer is unavailable (python3 or tool-input.sh missing) every command counts as possible delivery, so a consented gate still gates.
+_sb_opt_in_classify() {
   local cmd="${1:-}"
-  [[ -n "$cmd" ]] || return 1
-  grep -qE '(^|[;&|(])[[:space:]]*sudo[[:space:]]|(^|[;&|(])[[:space:]]*(npm|pnpm|yarn|bun)[[:space:]]+(global[[:space:]]+add|(install|i|add)[[:space:]]+([^;&|]*[[:space:]])?(-g|--global)([[:space:]]|$))|(^|[;&|(])[[:space:]]*brew[[:space:]]+(install|upgrade|tap)[[:space:]]|\|[[:space:]]*(ba|z)?sh([[:space:]]|$)' <<<"$cmd"
+  _SB_OPT_IN_DELIVERY=0 _SB_OPT_IN_INSTALL=0 _SB_OPT_IN_WRITES=0 _SB_OPT_IN_READ_ONLY=0
+  # Without the analyzer nothing can be told apart: treat the command as possible delivery.
+  if ! declare -f sb_shell_analysis_load >/dev/null 2>&1; then _SB_OPT_IN_DELIVERY=1; return 0; fi
+  sb_shell_analysis_load "$cmd" "$PWD"
+  if [[ "$SB_TI_STATUS" != "ok" ]]; then _SB_OPT_IN_DELIVERY=1; return 0; fi
+  [[ "$SB_SA_READ_ONLY" == "true" ]] && _SB_OPT_IN_READ_ONLY=1
+  [[ -n "$SB_SA_WRITE_PATHS" ]] && _SB_OPT_IN_WRITES=1
+  # A commit, PR, release or deploy, or code that could be one (`$G commit`, eval, a download
+  # piped into a shell: the analyzer reports those as opaque/unseen).
+  case " $SB_SA_ACTIONS $SB_SA_POSSIBLE_ACTIONS " in
+    *" commit "* | *" pr_create "* | *" pr_merge "* | *" release_create "* | *" deploy "* | *" unseen "*)
+      _SB_OPT_IN_DELIVERY=1 ;;
+  esac
+  # Machine-wide installs, from the parsed argv of every command.
+  jq -e '[.commands[]? | .argv as $a | ($a[0] // "" | split("/") | last) as $p
+      | ($a[1:] | map(select(startswith("-") | not))) as $w
+      | ($a[1:] | any(. == "-g" or . == "--global")) as $g
+      | ($p == "sudo")
+        or (($p == "npm" or $p == "pnpm" or $p == "yarn" or $p == "bun")
+            and (($g and ($w | any(. == "install" or . == "i" or . == "add"))) or ($w[0:2] == ["global", "add"])))
+        or ($p == "brew" and ($w[0] | IN("install", "upgrade", "tap")))
+        or (($p == "pipx" or $p == "cargo" or $p == "gem" or $p == "go") and ($w[0] == "install"))
+        or ($p == "uv" and ($w[0:2] == ["tool", "install"]))] | any' <<<"$SB_SA_JSON" >/dev/null 2>&1 \
+    && _SB_OPT_IN_INSTALL=1
+  return 0
 }
 
-# A shell command is gated when it writes files or delivers; ordinary test, build and
-# inspection commands (pytest, make test, cargo build, docker ps) are never gated.
+# Status 0 when CMD commits, opens or merges a PR, creates a release, deploys, or could
+# (git merge/cherry-pick/revert/am, `git --no-pager commit`, aliases, `$G commit`, eval).
+sb_opt_in_shell_is_delivery() {
+  [[ -n "${1:-}" ]] || return 1
+  _sb_opt_in_classify "$1"
+  [[ "$_SB_OPT_IN_DELIVERY" == 1 ]]
+}
+
+# Status 0 when CMD installs software machine-wide (sudo, a global package install, brew,
+# pipx/cargo/go/gem/uv tool install).
+sb_opt_in_shell_is_install() {
+  [[ -n "${1:-}" ]] || return 1
+  _sb_opt_in_classify "$1"
+  [[ "$_SB_OPT_IN_INSTALL" == 1 ]]
+}
+
+# A shell command is gated when it writes files, delivers or installs; ordinary test, build
+# and inspection commands (pytest, $PYTHON -m pytest, make test, cargo build, docker ps) are
+# never gated.
 sb_opt_in_shell_needs_gate() {
   local tool="${1:-}" cmd="${2:-}" unwrapped
   [[ -n "$cmd" ]] || return 1
@@ -398,15 +430,7 @@ sb_opt_in_shell_needs_gate() {
   if sb_opt_in_tool_command "$tool" "$cmd" || sb_opt_in_tool_command "$tool" "$unwrapped"; then
     return 1
   fi
-  if declare -f sb_shell_command_looks_read_only >/dev/null 2>&1 \
-    && sb_shell_command_looks_read_only "$unwrapped" >/dev/null 2>&1; then
-    return 1
-  fi
-  sb_opt_in_shell_is_delivery "$unwrapped" && return 0
-  sb_opt_in_shell_is_install "$unwrapped" && return 0
-  if declare -f sb_shell_candidate_write_paths >/dev/null 2>&1 \
-    && [[ -n "$(sb_shell_candidate_write_paths "$unwrapped" "$PWD" 2>/dev/null)" ]]; then
-    return 0
-  fi
-  return 1
+  _sb_opt_in_classify "$unwrapped"
+  [[ "$_SB_OPT_IN_READ_ONLY" == 1 ]] && return 1
+  [[ "$_SB_OPT_IN_DELIVERY" == 1 || "$_SB_OPT_IN_INSTALL" == 1 || "$_SB_OPT_IN_WRITES" == 1 ]]
 }

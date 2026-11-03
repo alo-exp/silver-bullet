@@ -42,7 +42,7 @@ fi
 mkdir -p "${SB_TEST_DIR}"
 
 cleanup_all() {
-  rm -rf "$TMPDIR_TEST" "${TEST_HOME:-}" "${SB_TEST_DIR}/graphify-query-${TEST_RUN_ID}" "$MOCK_BIN"
+  rm -rf "$TMPDIR_TEST" "${TEST_HOME:-}" "${SB_TEST_DIR}/t${TEST_RUN_ID}-graphify-query" "$MOCK_BIN"
 }
 trap cleanup_all EXIT
 
@@ -88,7 +88,7 @@ unwire_test_mcp() {
 echo "=== agentmemory + Graphify synergy tests ==="
 
 TMPDIR_TEST="$(mktemp -d)"
-GRAPHIFY_STATE="${SB_TEST_DIR}/graphify-query-${TEST_RUN_ID}"
+GRAPHIFY_STATE="${SB_TEST_DIR}/t${TEST_RUN_ID}-graphify-query"
 TMPCFG="${TMPDIR_TEST}/.silver-bullet.json"
 TMPFILE="${TMPDIR_TEST}/src/app.js"
 mkdir -p "$(dirname "$TMPFILE")" "${TMPDIR_TEST}/.agentmemory/memory" "${TMPDIR_TEST}/graphify-out"
