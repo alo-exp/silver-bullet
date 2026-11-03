@@ -69,6 +69,10 @@ input='{"tool_name":"CallMcpTool","tool_input":{"server":"s","toolName":"t","arg
 yes_t "mcp call: Cursor shape" sb_opt_in_mcp_call
 assert_eq "mcp call: server" "s" "$mcp_server"
 assert_eq "mcp call: arguments" '{"q":1}' "$mcp_args"
+input='not json'; tool_name="CallMcpTool"
+no_t "mcp call: an unparsable Cursor payload is not an MCP call" sb_opt_in_mcp_call
+assert_eq "mcp call: unparsable payload has no server" "" "$mcp_server"
+assert_eq "mcp call: unparsable payload has empty args" "{}" "$mcp_args"
 input='{"tool_input":{"cmd":["git","commit","-m","a b"]}}'
 assert_eq "command string: an argv list is shell-quoted" "'git' 'commit' '-m' 'a b'" "$(sb_opt_in_command_string)"
 input='{"tool_input":{"command":5}}'
