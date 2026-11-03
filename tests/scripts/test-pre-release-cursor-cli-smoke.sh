@@ -42,6 +42,16 @@ NOCLI="$(tl_path_without cursor-agent agent)"
 run_smoke PATH="$NOCLI" CURSOR_API_KEY=k
 assert_eq "no CLI exits 1" 1 "$TL_STATUS"
 assert_contains "no CLI reported" "$TL_ERR" "cursor-agent CLI not found on PATH"
+assert_contains "no CLI: override named" "$TL_ERR" "CURSOR_AGENT_BIN"
+# R8-10: a bare `agent` binary is not trusted with the API key.
+mkdir -p "$TL_TMP/agentbin"
+printf '#!/usr/bin/env bash\necho "$*" >>"%s/agent-calls.log"\necho SB_ROUTING_OK\n' "$TL_TMP" >"$TL_TMP/agentbin/agent"
+chmod +x "$TL_TMP/agentbin/agent"
+mkdir -p "$T/plugins/silver-bullet"
+run_smoke PATH="$TL_TMP/agentbin:$NOCLI" CURSOR_API_KEY=k
+assert_eq "bare agent binary is not used" 1 "$TL_STATUS"
+assert_file_absent "bare agent binary never ran" "$TL_TMP/agent-calls.log"
+rmdir "$T/plugins/silver-bullet"
 
 # --- broken CLI ---------------------------------------------------------
 tl_stub cursor-agent "$cli_stub_body"
@@ -70,7 +80,10 @@ assert_contains "PASS verdict" "$TL_OUT" "pre-release-cursor-cli-smoke: PASS"
 calls="$(<"$CALLS")"
 assert_contains "print mode" "$calls" "ARG=--print"
 assert_contains "trust flag" "$calls" "ARG=--trust"
-assert_contains "api key passed on the command line" "$calls" "ARG=secret-key"
+# R8-10: the key reaches the CLI through its environment only, never argv
+# (argv is world-readable through ps and /proc/<pid>/cmdline).
+assert_not_contains "api key never on the command line" "$calls" "ARG=secret-key"
+assert_not_contains "no --api-key flag" "$calls" "ARG=--api-key"
 assert_contains "plugin dir passed" "$calls" "ARG=$T/plugins/silver-bullet"
 assert_contains "workspace under the smoke root" "$calls" "ARG=$SMOKE_ROOT/cursor/workspace"
 assert_contains "model passed" "$calls" "ARG=m-1"
@@ -93,8 +106,30 @@ printf 'file-key' >"$SMOKE_ROOT/.cursor-api-key"
 run_smoke CURSOR_MODEL=fallback-model
 assert_eq "key file credential passes" 0 "$TL_STATUS"
 assert_contains "CURSOR_MODEL used" "$(<"$CALLS")" "ARG=fallback-model"
-assert_contains "key read from file" "$(<"$CALLS")" "ARG=file-key"
+assert_contains "key read from file" "$(<"$CALLS")" "ENV_KEY=file-key"
+assert_not_contains "file key not on the command line" "$(<"$CALLS")" "ARG=file-key"
 rm -f "$SMOKE_ROOT/.cursor-api-key"
+
+# An explicit CURSOR_AGENT_BIN is used (for a CLI installed under another name).
+: >"$CALLS"
+cp "$TL_BIN/cursor-agent" "$TL_TMP/my-cursor-cli"
+run_smoke PATH="$NOCLI" CURSOR_AGENT_BIN="$TL_TMP/my-cursor-cli" CURSOR_API_KEY=k
+assert_eq "CURSOR_AGENT_BIN override runs" 0 "$TL_STATUS"
+assert_contains "override CLI received the call" "$(<"$CALLS")" "ARG=--print"
+
+# R8-11: standalone (no smoke root given) the run pins one root and removes it.
+STANDALONE_TMP="$TL_TMP/standalone-tmp"
+mkdir -p "$STANDALONE_TMP"
+tl_run env -u CURSOR_API_KEY -u HOST_API_KEY -u SB_PRE_RELEASE_SMOKE_ROOT TMPDIR="$STANDALONE_TMP" \
+  CURSOR_API_KEY=k timeout 60 bash "$SCRIPT"
+assert_eq "standalone run passes" 0 "$TL_STATUS"
+assert_eq "standalone run leaves no smoke roots behind" "" "$(ls -A "$STANDALONE_TMP")"
+# A caller's root (operator directory) is reused and kept, contents intact.
+mkdir -p "$TL_TMP/operator-root/keep"; echo mine >"$TL_TMP/operator-root/keep/notes"
+tl_run env -u CURSOR_API_KEY -u HOST_API_KEY SB_PRE_RELEASE_SMOKE_ROOT="$TL_TMP/operator-root" \
+  CURSOR_API_KEY=k timeout 60 bash "$SCRIPT"
+assert_eq "operator root run passes" 0 "$TL_STATUS"
+assert_eq "operator root kept with its files" mine "$(cat "$TL_TMP/operator-root/keep/notes")"
 
 # --- failure verdicts ---------------------------------------------------
 long="$(printf 'x%.0s' $(seq 1 600))"
