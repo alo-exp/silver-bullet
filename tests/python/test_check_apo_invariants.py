@@ -330,7 +330,7 @@ class AgentDelegationContractTest(unittest.TestCase):
             "flow_steps": [{"id": i} for i in ("FS-DELEGATE-BRIEF", "FS-DELEGATE-LAUNCH", "FS-DELEGATE-VERIFY")],
             "migration_map": {"skill_to_entity": {
                 k: "AF-AGENT-DELEGATE" for k in
-                ("silver-agent-worker", "silver-agent-codex", "silver-agent-cursor", "silver-agent-claude")}},
+                ("silver-agent-worker", "silver-agent-codex", "silver-agent-claude")}},
         }
 
     def _res(self, cat, with_files):
@@ -347,7 +347,7 @@ class AgentDelegationContractTest(unittest.TestCase):
 
     def test_all_pass(self):
         res = self._res(self._good(), True)
-        self.assertEqual(len(res), 11)
+        self.assertEqual(len(res), 10)
         self.assertEqual(set(by_label(res).values()), {"PASS"})
 
     def test_all_fail_on_empty_catalog(self):

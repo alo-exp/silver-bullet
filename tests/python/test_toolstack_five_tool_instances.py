@@ -1,5 +1,4 @@
-"""Unit tests for scripts/lib/global-toolstack/five_tool_instances.py and the
-fix-shell-compression-hook.py compatibility shim."""
+"""Unit tests for scripts/lib/global-toolstack/five_tool_instances.py."""
 
 import io
 import json
@@ -15,7 +14,6 @@ from unittest import mock
 from sbtest import load_module
 
 fti = load_module("scripts/lib/global-toolstack/five_tool_instances.py")
-shim = load_module("scripts/lib/global-toolstack/fix-shell-compression-hook.py")
 
 BASE_ENV_KEYS = (
     "SB_GLOBAL_TOOLSTACK_HOME",
@@ -236,21 +234,6 @@ class EnsureInstancesTest(IsolatedHome):
         self.assertEqual(fti.mcp_server_spec(manifest, "rtk"), spec)
         with self.assertRaises(KeyError):
             fti.tool_spec(manifest, "graphify")
-
-
-class ShimTest(unittest.TestCase):
-    def test_main_prints_delegation_notice(self):
-        buf = io.StringIO()
-        with redirect_stdout(buf):
-            self.assertEqual(shim.main(), 0)
-        self.assertEqual(buf.getvalue().strip(), "delegated to patch-hooks via reconciler")
-
-    def test_script_exit_code(self):
-        res = subprocess.run(
-            [sys.executable, str(Path(shim.__file__))], capture_output=True, text=True, check=False
-        )
-        self.assertEqual(res.returncode, 0)
-        self.assertEqual(res.stdout.strip(), "delegated to patch-hooks via reconciler")
 
 
 if __name__ == "__main__":
