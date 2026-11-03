@@ -73,7 +73,7 @@ def load_json(path: Path) -> dict[str, Any]:
 def normalize_mcp_config(data: dict[str, Any]) -> dict[str, Any]:
     """Canonical form for idempotent comparison (empty mcpServers/mcp ≡ missing key)."""
     normalized = json.loads(json.dumps(data))
-    # "mcpServers" is the Cursor/Claude key, "mcp" the OpenCode one.
+    # "mcpServers" is the Claude key, "mcp" the OpenCode one.
     for key in ("mcpServers", "mcp"):
         servers = normalized.get(key)
         if isinstance(servers, dict) and not servers:
@@ -543,7 +543,7 @@ def main() -> int:
 
     manifest = ensure_global_instances()
 
-    host = os.environ.get("RT_HOST", "cursor")
+    host = os.environ.get("RT_HOST", "claude")
     if host == "claude" and patch_context_mode:
         try:
             disable_claude_native_context_mode()
@@ -596,7 +596,10 @@ def main() -> int:
         print(message)
         return 0
 
-    mcp_path = Path.home() / (".claude.json" if host == "claude" else ".cursor/mcp.json")
+    if host != "claude":
+        print(f"ERROR: unsupported host for MCP patching: {host}", file=sys.stderr)
+        return 2
+    mcp_path = Path.home() / ".claude.json"
     original = load_json(mcp_path)
     original_normalized = normalize_mcp_config(original)
     data = json.loads(json.dumps(original))
