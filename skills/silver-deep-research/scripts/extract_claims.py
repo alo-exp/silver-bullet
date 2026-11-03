@@ -108,10 +108,58 @@ CHECKABLE_FIGURE_RE = re.compile(
 )
 
 
+COMPLIANCE_RE = re.compile(
+    r'\b(?:hipaa|gdpr|ccpa|soc\s?[12]|iso\s?\d+|pci|fedramp|certified|certification|compliant|compliance|'
+    r'audited|accredited|encrypts?|encrypted)\b',
+    re.IGNORECASE,
+)
+SUPERLATIVE_RE = re.compile(
+    r'\b(?:largest|biggest|smallest|fastest|slowest|cheapest|best|worst|leading|leader|leads|'
+    r'only|first|last|most|least|never|always|every|all)\b',
+    re.IGNORECASE,
+)
+# A reference to a table, figure or section is navigation, not a finding.
+NAVIGATION_RE = re.compile(
+    r'^(?:see|refer to|as shown in|shown in|results are in|details are in|presented in|listed in)\b'
+    r'|\b(?:table|figure|fig\.|section|appendix|chapter|page)\s+\d+',
+    re.IGNORECASE,
+)
+# Words that open a sentence without naming anything.
+SENTENCE_STARTERS = frozenset(
+    'the this that these those it its they their we our you your i he she there here see overall '
+    'however also but and so then thus hence note notes results result summary conclusion in on at by for '
+    'from with without as of to if when while although because since after before during some many most '
+    'several each every all both either neither none one two three four five six seven eight nine ten '
+    'recent recently currently today now first second third finally additionally moreover furthermore'.split()
+)
+
+
+def _has_name(sentence: str) -> bool:
+    """A named thing: a capitalised word that is not the sentence opener, an opener that is not a
+    common starter ("Acme leads on price"), an acronym or an identifier."""
+    words = re.findall(r"[A-Za-z][\w.+-]*", sentence)
+    if not words:
+        return False
+    if words[0].lower() not in SENTENCE_STARTERS and words[0][0].isupper():
+        return True
+    return any(w[0].isupper() and (len(w) > 1 or w == 'I') and w != 'I' for w in words[1:])
+
+
 def _long_enough(sentence: str) -> bool:
-    """A sentence over 30 characters, or a shorter one of 4+ words that states a figure
-    ("Acme raised $50M in 2023."): short factual sentences must not slip past the gate."""
-    return len(sentence) > 30 or (len(sentence.split()) >= 4 and bool(re.search(r'\d', sentence)))
+    """A claim is a sentence over 30 characters, or a shorter one with a factual signal: a figure,
+    a named thing, a compliance/certification term or a superlative. Navigation ("See Figure 3
+    below."), list numbers and bare labels are not claims."""
+    sentence = re.sub(r'\s*\n\s*\d+[.)]\s*$', '', sentence).strip()
+    if len(sentence) > 30:
+        return True
+    if len(sentence.split()) < 3:
+        return False
+    plain = CITATION_MARK_RE.sub(' ', sentence)
+    if CHECKABLE_FIGURE_RE.search(plain):
+        return True
+    if NAVIGATION_RE.search(plain):
+        return False
+    return bool(_has_name(plain) or COMPLIANCE_RE.search(plain) or SUPERLATIVE_RE.search(plain))
 
 
 def classify_claim(text: str, section_id: str) -> str:
@@ -174,7 +222,7 @@ def extract_sentences(text: str) -> list[str]:
         s = s.strip()
         # Filter out very short fragments, headings, empty lines
         if _long_enough(s) and not s.startswith('#') and not s.startswith('|'):
-            result.append(s)
+            result.append(re.sub(r'\s*\n\s*\d+[.)]\s*$', '', s).strip())
     return result
 
 

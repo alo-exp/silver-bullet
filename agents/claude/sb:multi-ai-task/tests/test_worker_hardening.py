@@ -517,6 +517,47 @@ class InterruptTests(PopenCase):
         term.assert_called_once()
         self.assertEqual(started, ["m0"])
 
+    def test_a_cancelled_dispatch_never_launches_a_session(self) -> None:
+        ld._CANCEL.set()
+        self.addCleanup(ld._CANCEL.clear)
+        with self.assertRaises(KeyboardInterrupt):
+            ld._run_cli(["x"], timeout=1, cwd=str(self.out))
+        self.assertEqual(FakePopen.launches, [])
+
+    def test_no_fallback_or_retry_session_starts_after_an_interrupt(self) -> None:
+        """A running worker killed by Ctrl-C must not fall back to another model or retry."""
+        def interrupted(self_, input=None, timeout=None):  # noqa: A002, ANN001
+            ld._CANCEL.set()  # what the dispatcher does before terminating workers
+            self_.returncode = 1
+            return ("network error: Connection lost reconnecting", "")
+
+        self.addCleanup(ld._CANCEL.clear)
+        with mock.patch.dict(os.environ, {"SB_CURSOR_MODEL_ALLOW_FALLBACK": "1"}), \
+                mock.patch.object(FakePopen, "communicate", interrupted):
+            with self.assertRaises(KeyboardInterrupt):
+                ld.run_cursor_worker(logical_model_id="claude-opus-4.8-medium", prompt="p", output_dir=self.out)
+        self.assertEqual(len(FakePopen.launches), 1)  # no second model, no transient retry
+
+    def test_dispatch_resets_the_cancel_flag_for_the_next_run(self) -> None:
+        ld._CANCEL.set()
+        self.addCleanup(ld._CANCEL.clear)
+        with mock.patch.object(ld, "dispatch_agent", return_value=ld.WorkerResult("m0", "cursor", "a", "completed", None, "{}")):
+            out = ld.dispatch_phase_parallel(phase_id="p", query="q", run_id="r", work_item_id="w",
+                                             resolved_pool=self._items(1), output_dir=self.out)
+        self.assertEqual(len(out), 1)
+        self.assertFalse(ld._CANCEL.is_set())
+
+    def test_interrupt_sets_the_cancel_flag_before_stopping_workers(self) -> None:
+        order = []
+        self.addCleanup(ld._CANCEL.clear)
+        with mock.patch.object(ld, "as_completed", side_effect=KeyboardInterrupt), \
+                mock.patch.object(ld, "dispatch_agent", return_value=None), \
+                mock.patch.object(ld, "_terminate_live_workers", lambda: order.append(ld._CANCEL.is_set())):
+            with self.assertRaises(KeyboardInterrupt):
+                ld.dispatch_phase_parallel(phase_id="p", query="q", run_id="r", work_item_id="w",
+                                           resolved_pool=self._items(1), output_dir=self.out)
+        self.assertEqual(order, [True])
+
     def test_interrupt_while_submitting_still_cleans_up(self) -> None:
         with mock.patch.object(ld, "_submit_all", side_effect=KeyboardInterrupt), \
                 mock.patch.object(ld, "_terminate_live_workers") as term:

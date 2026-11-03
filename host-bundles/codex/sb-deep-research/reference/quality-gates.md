@@ -13,6 +13,14 @@ python scripts/verify_citations.py --report [path]
 - Title/year matching (detects mismatched metadata)
 - Flags suspicious entries (recent year without DOI, no URL, failed verification)
 
+**Modes:** the default fails on any suspicious entry or when fewer than half of the entries are verified;
+`--strict` also fails any unverified entry; `--lenient` is for offline runs and excuses only what a network
+check could not confirm (unverified entries, soft title heuristics such as placeholder, generic-looking or
+anachronistic titles, which are warnings once a DOI/URL confirms the entry). It still fails entries wrong on
+their face: a future year, no DOI or URL, a recent year with no verification method, or a DOI whose title
+or year differs. With `HTTPS_PROXY` set, https checks tunnel through the proxy (CONNECT); URLs with
+userinfo or `%` in the host are not requested.
+
 **On suspicious citations:** Review flagged, remove/replace fabricated, re-run until clean.
 
 ### Structure & Quality Validation
@@ -193,21 +201,39 @@ Options:
 
 ## Known limits of the claim-support gate (v1)
 
-`verify_claim_support.py` is a lexical check, not a reader. A claim is `supported` only when:
+`verify_claim_support.py` is a lexical check, not a reader. After normalising text (typographic
+quotes and dashes, `40 percent` = `40%`, `USD 50` = `$50`, number words, `v1.29`), a claim is
+`supported` only when:
 
-- at least 30% of its significant words and every named entity (capitalised phrases, acronyms such
-  as AWS, camelCase brands such as GitHub, identifiers such as EC2, GPT4, FY2018, Q3) appear in a
-  linked quote;
-- every figure matches a quote figure of the same normalised value and unit (`$50M` = `50 million
-  dollars` = `50,000,000`; `2,500` is not `500`; `%` and `x` are distinct) and is attached to the
-  same thing: the claim's head noun follows the figure, or, with no noun, the words just before it
-  also precede the quote's figure;
-- no aligned quote clause contradicts a claim clause's negation (checked per clause, across the
-  whole quote; `not only ... but also` is ignored; "zero"/"no"/"never"/"cannot"/"un-" count).
+- enough of its significant words appear in a linked quote (claims with no named thing and no figure
+  need 90% of them), and every named entity (capitalised phrases, acronyms such as AWS, camelCase
+  brands such as GitHub, identifiers such as EC2, GPT4, FY2018, Q3) appears, by word or word stem;
+- every figure matches a quote figure with the same value, unit and currency (`$50M` = `50 million
+  dollars` = `50,000,000`; `$` is not `EUR`; `2,500` is not `500`) in a segment (split at sentence ends,
+  commas and "and") that shares a word with the claim's segment, so swapped years or percentages fail;
+  non-year figures must also be attached to the same noun (after the figure, or before it as in
+  "Seats cost $20") or, without a noun, to the same preceding words;
+- no aligned quote clause contradicts a claim clause. Polarity is boolean per clause (neither/nor,
+  "No, ... does not", "not even" are each one negation; "not only ... but also" is none; "without X"
+  and "zero X" are compared as terms; "no longer" is not compared with a paraphrase). A quote clause is
+  aligned when it contains all of the claim clause's named terms and figures, whatever else the claim adds,
+  and any clause of the whole quote can contradict. Coordinated names ("Kubernetes and Nomad") are checked
+  one by one. A small table of opposites (raised/lost, increased/decreased, acquired/sold, opened/closed,
+  mandatory/optional, ...) catches verb swaps.
 
-It still cannot catch: antonym or verb/role swaps with the same words ("acquired" vs "sold",
-"A acquired B" vs "B acquired A"), figures written as words ("five thousand"), pronoun-only
-subjects when the claim has no other term to align on, and paraphrased units ("500 employees" vs
-"500 people" is reported as a mismatch and needs a manual look). A recommendation or hedge sentence
-without a year, percentage, currency or scaled figure is exempt from `--strict`. The curated corpus
-in `tests/fixtures/claim_corpus.json` (45 fabrications, 45 honest claims) pins the behaviour.
+Corpora pinning the behaviour (`tests/fixtures/`): `claim_corpus_verbatim.json` holds every probe from the
+three reviews unshortened (55 fabrications, 50 honest claims; strict fails every fabrication and passes every
+honest claim), `claim_corpus.json` a curated 45 + 45, and `claim_corpus_heldout.json` 32 + 32 written in other
+styles (news, financial, product docs, academic) after the scorer was frozen. On the held-out set the first
+run caught 26/32 fabrications and passed 27/32 honest claims; after the generic fixes it prompted (sentence
+openers such as "Quarterly", singular/plural entities, prepositional adjuncts after a figure, a few more
+opposites) it catches 29/32 and passes 32/32.
+
+It still cannot catch: role swaps ("A acquired B" vs "B acquired A"), an antonym outside the table, a negated
+lowercase conjunct ("liver and kidney" vs "liver but not in the kidney"), and "cuts" style three-letter
+verbs; paraphrased units outside the small synonym table ("500 employees" vs "500 contractors"), idioms
+that restate a negation ("no longer offers" vs "retired") and sentences whose meaning needs world knowledge.
+Short sentences (30 characters or fewer) are claims when they carry a figure, a named thing, a compliance
+or certification term or a superlative; navigation ("See Figure 3 below.") and bare labels are not. A
+recommendation or hedge sentence without a year, percentage, currency or scaled figure is exempt from
+`--strict`.

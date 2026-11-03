@@ -177,6 +177,7 @@ class TestScoreBoundaries(unittest.TestCase):
 
     FIVE = 'alpha bravo charlie delta eeee'
 
+    @mock.patch.object(vcs, 'PROSE_TOKEN_OVERLAP', 0.3)
     def test_status_thresholds(self):
         # Tokens only: 3/5 = exactly 0.6 and complete -> supported; 2/5 = 0.4 -> partial; 1/5 -> needs_review.
         self.assertEqual(self.score(self.FIVE, 'alpha bravo charlie')[:2], ('supported', 0.6))
@@ -195,8 +196,16 @@ class TestScoreBoundaries(unittest.TestCase):
         self.assertEqual((status, score), ('partial', 0.7))
         self.assertEqual(notes, 'low lexical overlap')
 
+    def test_claims_without_names_or_figures_need_nearly_all_their_words(self):
+        claim = 'the product supports single sign on for enterprise customers'
+        self.assertEqual(self.score(claim, claim)[0], 'supported')
+        status, _, notes = self.score(claim, 'the product supports enterprise customers on single plans only')
+        self.assertNotEqual(status, 'supported')
+        self.assertIn('low lexical overlap', notes)
+
     TEN_TOKENS = 'aaaa bbbb cccc dddd eeee ffff gggg hhhh iiii jjjj'
 
+    @mock.patch.object(vcs, 'PROSE_TOKEN_OVERLAP', 0.3)
     def test_lexical_overlap_note_boundary(self):
         _, _, at = self.score(self.TEN_TOKENS, 'aaaa bbbb cccc')
         _, _, below = self.score(self.TEN_TOKENS, 'aaaa bbbb')
