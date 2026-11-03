@@ -33,6 +33,8 @@ prereqs:
 	for cmd in shellcheck expect tmux node xxd zip unzip; do \
 	  command -v $$cmd >/dev/null 2>&1 || echo "optional tool not found: $$cmd (some checks/tests will be skipped or fail)"; \
 	done; \
+	if [ "$${BASH_VERSINFO:-0}" -lt 4 ] 2>/dev/null; then echo "note: bash $${BASH_VERSION:-?} is older than 4 (the full suite expects bash >= 4; Homebrew: brew install bash)"; fi; \
+	command -v timeout >/dev/null 2>&1 || command -v gtimeout >/dev/null 2>&1 || echo "optional tool not found: timeout (GNU coreutils)"; \
 	exit $$missing
 
 setup: prereqs

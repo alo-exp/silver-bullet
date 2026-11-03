@@ -8,10 +8,12 @@ tl_init
 
 cd "$TL_REPO_ROOT"
 
-for f in .codex/hooks.json .github/hooks/context-mode.json .claude/launch.json data/iii-config.yaml; do
+for f in .github/hooks/context-mode.json .claude/launch.json data/iii-config.yaml; do
   assert_eq "$f is not tracked" "" "$(git ls-files -- "$f")"
   git check-ignore -q -- "$f" && tl_pass "$f is ignored" || tl_fail "$f is ignored"
 done
+
+assert_eq ".codex/hooks.json stays tracked (portable dogfood config)" .codex/hooks.json "$(git ls-files -- .codex/hooks.json)"
 
 # No tracked host-config file may contain one developer's absolute home.
 hits="$(git ls-files -z -- .codex .github/hooks .claude data | xargs -0 grep -lE '/(Users|home)/[A-Za-z0-9._-]+/' -- 2>/dev/null | grep -v '^\.claude/skills/' || true)"

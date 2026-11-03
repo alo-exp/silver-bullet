@@ -321,6 +321,8 @@ CALL_ENV=("SB_ROOT=$IV" "SB_E2E_INSTALL_VERSION_KEY=forced@key"); call enterpris
 assert_eq "key override" "forced@key" "$TL_OUT"
 CALL_ENV=("SB_ROOT=$TL_TMP/no-pkg"); mkdir -p "$TL_TMP/no-pkg"; call enterprise_e2e_sb_install_version_key
 assert_eq "key without package.json or git" "0.0.0@unknown" "$TL_OUT"
+CALL_ENV=("SB_ROOT=$IV" "SB_E2E_PASS_AT_VERSION_REGISTRY=$IV/elsewhere.tsv"); call enterprise_e2e_pass_at_version_registry
+assert_eq "registry override" "$IV/elsewhere.tsv" "$TL_OUT"
 CALL_ENV=("E2E_X=1"); call enterprise_e2e_install_version_file
 assert_contains "install version file without SB_ROOT derives from the repo" "$TL_OUT" "$TL_REPO_ROOT/.e2e-cursor-install-version.txt"
 call enterprise_e2e_pass_at_version_registry

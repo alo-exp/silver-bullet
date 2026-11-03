@@ -25,7 +25,7 @@ Contributions are accepted on an inbound = outbound basis: by submitting a contr
 | `xxd`, `zip`/`unzip`, GNU `timeout` | Used by a few script tests (`test-silver-doctor.sh`, `test-export-enterprise-evidence.sh`, `test-reconcile-recommended-tools.sh`); macOS ships `xxd` and `zip`, and `timeout` comes from Homebrew `coreutils` | Yes, for the full suite |
 | `make` | The `Makefile` entry points (`make setup`, `lint`, `test`, `coverage`, `check`) | Recommended |
 | `make setup` (creates `.venv` and installs `requirements-dev.txt` into it) | Coverage tooling (`coverage`, `tree-sitter`, `tree-sitter-bash`, pinned in `tests/coverage/requirements.txt`) plus `openpyxl` and `PyYAML` for the deep-research skill tests (some skip without them). Runtime hooks need only the standard library | For coverage and the full skill tests |
-| `node` / `npx` | `tests/js/` unit tests and JavaScript coverage (skipped without Node), CI's site HTML lint (`html-validate`), and the opt-in Node tools (Context Mode, agentmemory, Alumnium) | Optional |
+| `node` / `npx` | `tests/js/` unit tests and JavaScript coverage (skipped without Node), the `site-duplicate-ids` repository invariant, and the opt-in Node tools (Context Mode, agentmemory, Alumnium) | Optional |
 | `tmux` | `scripts/agent-claude-autonomous-test.sh --tmux` and the enterprise E2E matrix drivers (operator-only) | Optional |
 | `gh` | Release scripts and live suites; `tests/run-all-tests.sh` hides it from tests | Optional |
 
@@ -75,10 +75,10 @@ To dogfood enforcement while you work, install the plugin into your host from th
 | `agents/`, `host-bundles/` | **Generated** skill bundles: `agents/claude/` for Claude Code, `host-bundles/codex/` and `host-bundles/cursor/` for the other hosts. Rendered from `skills/` by `scripts/sync-codex-package.sh`; never edit by hand. |
 | `plugins/silver-bullet/` | Codex/Cursor package surface. `hooks`, `scripts`, `docs` and the root docs are symlinks; `skill-source/`, `templates/` and `cursor-hooks.json` are generated; `commands/` holds the command stubs. |
 | `.claude-plugin/`, `.cursor-plugin/`, `.agents/plugins/` | Plugin and marketplace manifests for Claude Code, Cursor and Codex. |
-| `.claude/`, `.codex/`, `.cursor/`, `.opencode/`, `.pi/`, `.hermes/`, `.agents/skills/` | Host configuration used when dogfooding Silver Bullet in this repo (project hooks, rules, skills). `skills-lock.json` pins the third-party skills under `.agents/skills/`. |
+| `.claude/`, `.codex/`, `.cursor/`, `.opencode/`, `.pi/`, `.hermes/`, `.agents/skills/` | Host configuration used when dogfooding Silver Bullet in this repo (project hooks, rules, skills); machine-generated variants (`.claude/launch.json`, `.github/hooks/`) are git-ignored. `skills-lock.json` pins the third-party skills under `.agents/skills/`. |
 | `.planning/`, `.agentmemory/`, `.silver-bullet/`, `.silver-bullet.json`, `silver-bullet.md` | This repo's own Silver Bullet project state. `.planning/` is edited only through SB skills; `silver-bullet.md` is the live copy of `templates/silver-bullet.md.base`. |
 | `graphify-out/` | Committed Graphify knowledge graph of the repo (refreshed with `graphify update .`). |
-| `data/` | Local agentmemory engine config (`iii-config.yaml`). |
+| `data/` | Local agentmemory engine state; its machine-specific `iii-config.yaml` is generated and git-ignored. |
 | `subagent-model-scores.csv` | Maintainer log of subagent assessments. |
 | `SETUP_REPORT.md` | Output of `bash scripts/sb-verify-synergy.sh --write-setup-report` (a point-in-time machine report). |
 | `CHANGELOG.md` | Release notes per version. `docs/CHANGELOG.md` is the task log. |
