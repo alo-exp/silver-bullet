@@ -1,6 +1,6 @@
 # Contributing to Silver Bullet
 
-Thank you for your interest in contributing! Silver Bullet is an agentic process orchestrator for AI coding agents (Claude Code, Codex and Cursor). This guide covers the development setup, the repository layout, how to test and how to send changes. [docs/README.md](docs/README.md) indexes the rest of the documentation.
+Thank you for your interest in contributing! Silver Bullet is an agentic process orchestrator for AI coding agents (Claude Code and Codex). This guide covers the development setup, the repository layout, how to test and how to send changes. [docs/README.md](docs/README.md) indexes the rest of the documentation.
 
 ## Licensing of contributions
 
@@ -10,7 +10,7 @@ Contributions are accepted on an inbound = outbound basis: by submitting a contr
 
 ## Prerequisites
 
-**To use Silver Bullet** in a project you need a supported host (Claude Code, Codex or Cursor) plus `bash`, `jq`, `git` and `python3`; `gh` is optional (the CI and release gates query GitHub Actions). Hooks avoid Bash 4-only features, so the macOS system bash runs them.
+**To use Silver Bullet** in a project you need a supported host (Claude Code or Codex) plus `bash`, `jq`, `git` and `python3`; `gh` is optional (the CI and release gates query GitHub Actions). Hooks avoid Bash 4-only features, so the macOS system bash runs them.
 
 **To develop Silver Bullet** you need more:
 
@@ -57,13 +57,13 @@ make test      # bash tests/run-all-tests.sh --jobs 4: confirm a green baseline
 
 On macOS, make sure the Homebrew bash runs the test runner: put `$(brew --prefix)/bin` first on `PATH` (the Makefile runs `bash` from `PATH`), or call it explicitly (`$(brew --prefix)/bin/bash tests/run-all-tests.sh`).
 
-To dogfood enforcement while you work, install the plugin into your host from this checkout (`./scripts/install-codex.sh --purge-legacy-skills`, `bash scripts/install-cursor.sh`, or the Claude Code marketplace) and run `/sb:init` in the repo. `bash scripts/sb-doctor.sh` audits the install.
+To dogfood enforcement while you work, install the plugin into your host from this checkout (`./scripts/install-codex.sh --purge-legacy-skills`, or the Claude Code marketplace) and run `/sb:init` in the repo. `bash scripts/sb-doctor.sh` audits the install.
 
 ## Repository Layout
 
 | Path | What it is |
 |------|------------|
-| `hooks/` | Runtime enforcement: `hooks.json` (registrations), hook scripts, `hooks/lib/` helpers, `cursor-hooks.json` (generated). See [docs/HOOKS.md](docs/HOOKS.md). |
+| `hooks/` | Runtime enforcement: `hooks.json` (registrations), hook scripts, `hooks/lib/` helpers. See [docs/HOOKS.md](docs/HOOKS.md). |
 | `scripts/` | Runtime CLI (`scripts/silver-bullet`), installers, sync/generate tools, validators, release and live-test drivers. See [scripts/README.md](scripts/README.md). Installed hooks and skills call these by path through the plugin root, so scripts are not moved or renamed casually. |
 | `skills/` | Source skills, one `skills/<name>/SKILL.md` each (some with `scripts/`, `references/` or Python `tests/`). |
 | `templates/` | Files `/sb:init` stamps into projects: `silver-bullet.md.base`, `silver-bullet.config.json.default`, workflow docs, doc-scheme files. |
@@ -72,10 +72,10 @@ To dogfood enforcement while you work, install the plugin into your host from th
 | `tests/` | Test suites. See [docs/TESTING.md](docs/TESTING.md). |
 | `research/` | Dated research reports (historical; not live guidance). |
 | `design-system/` | Site design tokens and themes (`DESIGN.md`). |
-| `agents/`, `host-bundles/` | **Generated** skill bundles: `agents/claude/` for Claude Code, `host-bundles/codex/` and `host-bundles/cursor/` for the other hosts. Rendered from `skills/` by `scripts/sync-codex-package.sh`; never edit by hand. |
-| `plugins/silver-bullet/` | Codex/Cursor package surface. `hooks`, `scripts`, `docs` and the root docs are symlinks; `skill-source/` (Codex), `cursor-skill-source/` (Cursor), `templates/` and `cursor-hooks.json` are generated; `commands/` holds the command stubs. |
-| `.claude-plugin/`, `.cursor-plugin/`, `.agents/plugins/` | Plugin and marketplace manifests for Claude Code, Cursor and Codex. |
-| `.claude/`, `.codex/`, `.cursor/`, `.opencode/`, `.pi/`, `.hermes/`, `.agents/skills/` | Host configuration used when dogfooding Silver Bullet in this repo (project hooks, rules, skills); machine-generated variants (`.claude/launch.json`, `.github/hooks/`) are git-ignored. `skills-lock.json` pins the third-party skills under `.agents/skills/`. |
+| `agents/`, `host-bundles/` | **Generated** skill bundles: `agents/claude/` for Claude Code, `host-bundles/codex/` for Codex. Rendered from `skills/` by `scripts/sync-codex-package.sh`; never edit by hand. |
+| `plugins/silver-bullet/` | Codex package surface. `hooks`, `scripts`, `docs` and the root docs are symlinks; `skill-source/` and `templates/` are generated. |
+| `.claude-plugin/`, `.agents/plugins/` | Plugin and marketplace manifests for Claude Code and Codex. |
+| `.claude/`, `.codex/`, `.opencode/`, `.pi/`, `.hermes/`, `.agents/skills/` | Host configuration used when dogfooding Silver Bullet in this repo (project hooks, rules, skills); machine-generated variants (`.claude/launch.json`, `.github/hooks/`) are git-ignored. `skills-lock.json` pins the third-party skills under `.agents/skills/`. |
 | `.planning/`, `.agentmemory/`, `.silver-bullet/`, `.silver-bullet.json`, `silver-bullet.md` | This repo's own Silver Bullet project state. `.planning/` is edited only through SB skills; `silver-bullet.md` is the live copy of `templates/silver-bullet.md.base`. |
 | `graphify-out/` | Committed Graphify knowledge graph of the repo (refreshed with `graphify update .`). |
 | `data/` | Local agentmemory engine state; its machine-specific `iii-config.yaml` is generated and git-ignored. |
@@ -110,7 +110,7 @@ Every target wraps a script you can also run directly. `make lint` fails on any 
 3. If enforcement should track the skill, add it to `skills.all_tracked` in `templates/silver-bullet.config.json.default` **and** in `.silver-bullet.json` (CI requires the two to match).
 4. If it is a top-level route that needs a command stub, add it to `COMPOSERS` in `scripts/generate-plugin-commands.sh` and run that script.
 5. If it owns a workflow or atomic flow, update `docs/apo-catalog.json` and run `python3 scripts/generate-apo-artifacts.py`.
-6. Render the host bundles: `bash scripts/sync-codex-package.sh` (updates `agents/claude/`, `host-bundles/`, `plugins/silver-bullet/{skill-source,cursor-skill-source}/`), then `bash scripts/validate-plugin-mirror.sh`.
+6. Render the host bundles: `bash scripts/sync-codex-package.sh` (updates `agents/claude/`, `host-bundles/`, `plugins/silver-bullet/skill-source/`), then `bash scripts/validate-plugin-mirror.sh`.
 7. For a user-facing skill, add a help-center entry and a `site/help/search.js` record.
 8. Run `bash tests/run-all-tests.sh`.
 
@@ -118,9 +118,8 @@ Every target wraps a script you can also run directly. `make lint` fails on any 
 
 1. Create `hooks/<name>.sh` and make it executable (`chmod +x`; CI checks every hook). Follow the existing pattern: `set -euo pipefail`, an `ERR` trap that exits 0, source `hooks/lib/runtime-paths.sh` and `hooks/lib/sb-project-gate.sh`, read the JSON payload from stdin with `jq`, and emit host-correct JSON (see `hooks/lib/hook-output.sh`).
 2. Register it in `hooks/hooks.json` with `"${CLAUDE_PLUGIN_ROOT}/hooks/<name>.sh"`, a matcher covering both Claude and Codex tool names (for example `Bash|exec_command`, `Edit|Write|MultiEdit|apply_patch`) and a timeout.
-3. Regenerate the Cursor manifest: `python3 scripts/generate-cursor-hooks.py` (writes `hooks/cursor-hooks.json` and `plugins/silver-bullet/cursor-hooks.json`).
-4. Add a one-line purpose under `purposes` in `docs/hooks-purpose.json` and run `python3 scripts/generate-hook-reference.py` to refresh `docs/HOOKS.md`.
-5. Add `tests/hooks/test-<name>.sh`; the coverage matrix fails when a registered hook is not referenced by any test.
+3. Add a one-line purpose under `purposes` in `docs/hooks-purpose.json` and run `python3 scripts/generate-hook-reference.py` to refresh `docs/HOOKS.md`.
+4. Add `tests/hooks/test-<name>.sh`; the coverage matrix fails when a registered hook is not referenced by any test.
 6. Run `bash -n`, `shellcheck`, `bash scripts/validate-plugin-mirror.sh` and the test suite.
 
 ### Changing templates or instruction text

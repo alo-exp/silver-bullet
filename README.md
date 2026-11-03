@@ -6,7 +6,7 @@
 
 **Agentic Process Orchestrator for AI-native Software Engineering and DevOps.**
 
-*The process layer of AI-driven dev.* Silver Bullet runs inside your Claude Code, Codex, or Cursor session. It composes the right workflow for the task, blocks unsafe commits, PRs, and releases until the evidence is real, and stays out of the way for work that should be fast.
+*The process layer of AI-driven dev.* Silver Bullet runs inside your Claude Code or Codex session. It composes the right workflow for the task, blocks unsafe commits, PRs, and releases until the evidence is real, and stays out of the way for work that should be fast.
 
 > "There is no single development, in either technology or management technique,
 > which by itself promises even one order-of-magnitude improvement..." -
@@ -85,7 +85,6 @@ Capability tiers per host are documented in [docs/RUNTIME-COMPATIBILITY.md](docs
 |---------|--------|-----------------|
 | Claude Code | Primary plugin runtime | `/plugin install alo-exp/silver-bullet` or `alo-labs/agent-plugins` marketplace (`alo-labs` catalog) |
 | Codex | Supported package runtime | Public `alo-labs/agent-plugins` marketplace (`alo-labs-codex`); native `/sb:` namespace |
-| Cursor | Supported plugin runtime | Public `alo-labs/agent-plugins` (`alo-labs-cursor`) or `bash scripts/install-cursor.sh --public-release` |
 
 Hook-backed enforcement requires a runtime that supports the relevant hook events. In less capable runtimes, Silver Bullet still provides workflow guidance, but hard blocks depend on host support.
 
@@ -95,7 +94,7 @@ Requirements on the machine that runs your coding agent:
 
 | Tool | Why |
 |------|-----|
-| A supported host | Claude Code, Codex or Cursor (see Runtime Support) |
+| A supported host | Claude Code or Codex (see Runtime Support) |
 | `bash` | Hooks are Bash scripts; they avoid Bash 4-only features, so the macOS system bash works |
 | `jq` | Every hook reads JSON with `jq`. Without it most hooks only warn, but the core gates block (see [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)) |
 | `git` | Branch-scoped state, commit gates, CI lookups |
@@ -112,7 +111,7 @@ Onboarding probe and capability report (run from a Silver Bullet checkout or the
 ```bash
 bash scripts/sb-bootstrap.sh
 bash scripts/sb-diagnostics.sh                               # runtime auto-detected
-SILVER_BULLET_RUNTIME=codex bash scripts/sb-diagnostics.sh   # or force claude | codex | cursor
+SILVER_BULLET_RUNTIME=codex bash scripts/sb-diagnostics.sh   # or force claude | codex
 ```
 
 ### Claude Code
@@ -142,14 +141,6 @@ For local development from this checkout:
 `--purge-legacy-skills` removes only skill copies Silver Bullet marked as its own; an unmarked copy under an SB name (`silver-*`, `sb-*`, `sb:*`) is moved to `~/.codex/.silver-bullet-backup/`, and your own skills (a `security` or `tdd` you wrote) are left in place.
 
 On Codex, use `silver-bullet invoke-skill <name>` when SB requires a recorded skill invocation and the runtime has no callable `Skill` tool.
-
-### Cursor
-
-Install from the public `alo-labs/agent-plugins` package (`alo-labs-cursor` catalog), or from a checkout:
-
-```bash
-bash scripts/install-cursor.sh --public-release
-```
 
 ### Initialize Your Project
 
@@ -277,8 +268,8 @@ docs/                             Product, architecture, enforcement, testing do
 site/                             Public website (sb.alolabs.dev)
 tests/                            Unit, integration, harness, docs, live and E2E suites
 agents/, host-bundles/            Generated per-host skill bundles (do not edit)
-plugins/silver-bullet/            Codex/Cursor package surface (mostly symlinks)
-.claude-plugin/, .cursor-plugin/  Plugin and marketplace manifests
+plugins/silver-bullet/            Codex package surface (mostly symlinks)
+.claude-plugin/                 Plugin and marketplace manifests
 ```
 
 [CONTRIBUTING.md](CONTRIBUTING.md#repository-layout) describes every top-level directory.
