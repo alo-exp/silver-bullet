@@ -6,6 +6,7 @@ import io
 import json
 import pathlib
 import runpy
+import shlex
 import tempfile
 import unittest
 from unittest import mock
@@ -84,13 +85,13 @@ class RewriteCommandTest(unittest.TestCase):
     def test_plain_hook_is_wrapped_in_bridge(self):
         self.assertEqual(
             g.rewrite_command("${CLAUDE_PLUGIN_ROOT}/hooks/x.sh", "stop"),
-            f'"{P}/hooks/cursor-hook-bridge.sh" stop {P}/hooks/x.sh',
+            f'"{P}/hooks/cursor-hook-bridge.sh" stop "{P}/hooks/x.sh"',
         )
 
     def test_path_with_space_is_quoted(self):
         out = g.rewrite_command("/odd dir/x.sh", "stop")
         # last token only: shlex split yields '/odd dir/x.sh' as two tokens -> 'dir/x.sh'
-        self.assertTrue(out.endswith(" dir/x.sh"))
+        self.assertTrue(out.endswith(' "dir/x.sh"'))
         quoted = g.rewrite_command('"/odd dir/x.sh"', "stop")
         self.assertTrue(quoted.endswith(' "/odd dir/x.sh"'))
 
@@ -100,6 +101,23 @@ class RewriteCommandTest(unittest.TestCase):
             out = g.rewrite_command("whatever", "stop")
         self.assertTrue(out.endswith(' "/a b/x.sh"'))
         self.assertNotIn('""', out)
+
+
+class QuotingTest(unittest.TestCase):
+    """R7-02: a plugin root with a space must not split the hook path argument."""
+
+    def test_every_command_survives_a_plugin_root_with_spaces(self):
+        root = "/Users/Jane Doe/.cursor/plugins/cache/alo-labs/silver-bullet/current"
+        src = json.loads((REPO_ROOT / "hooks" / "hooks.json").read_text())
+        checked = 0
+        for event, entries in g.build_cursor_hooks(src)["hooks"].items():
+            for entry in entries:
+                tokens = shlex.split(entry["command"].replace(P, root))
+                self.assertEqual(len(tokens), 3, entry["command"])
+                self.assertEqual(tokens[:2], [f"{root}/hooks/cursor-hook-bridge.sh", event])
+                self.assertTrue(tokens[2].startswith(f"{root}/hooks/"), tokens[2])
+                checked += 1
+        self.assertGreater(checked, 50)
 
 
 class TranslateMatcherTest(unittest.TestCase):
@@ -169,11 +187,11 @@ class BuildCursorHooksTest(unittest.TestCase):
         pre = h["preToolUse"]
         self.assertEqual(pre[0]["matcher"], "Shell")
         self.assertEqual(pre[0]["timeout"], 7)
-        self.assertTrue(pre[0]["command"].endswith(f"preToolUse {P}/hooks/compliance-status.sh"))
+        self.assertTrue(pre[0]["command"].endswith(f'preToolUse "{P}/hooks/compliance-status.sh"'))
         self.assertTrue(all("rtk-gate" not in e["command"] for e in pre))
         self.assertTrue(all("skipped.sh" not in e["command"] for e in pre))
         self.assertNotIn("matcher", pre[-1])
-        self.assertTrue(pre[-1]["command"].endswith("nomatcher.sh"))
+        self.assertTrue(pre[-1]["command"].endswith('nomatcher.sh"'))
         before = h["beforeShellExecution"]
         self.assertEqual(len(before), 2)  # the Bash group and the exec_command group
         self.assertEqual(before[0]["matcher"], ".*")

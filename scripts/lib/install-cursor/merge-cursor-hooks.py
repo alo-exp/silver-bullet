@@ -1,21 +1,35 @@
 #!/usr/bin/env python3
-"""Idempotently merge Silver Bullet hooks from cursor-hooks.json into ~/.cursor/hooks.json."""
+"""Merge Silver Bullet's Cursor hooks into the user's hooks.json.
+
+Usage: merge-cursor-hooks.py <sb_install_path>
+
+Target: $CURSOR_HOME/hooks.json, default ~/.cursor/hooks.json. Every entry Silver Bullet
+owns is removed and the install's hooks/cursor-hooks.json is appended as-is, so the merge
+is idempotent (running it twice is a no-op), drops hooks a release removed and picks up
+changed timeouts and matchers. An entry is Silver Bullet's when the program its command
+runs lives in a Silver Bullet hooks directory (sb_host_config.is_sb_hook_command) or when
+it calls codex-hook-adapter (left by an earlier, malformed merge). Every other entry is
+kept exactly as it was, in order.
+
+The file is written atomically (a symlink is followed, the mode kept, the previous content
+saved as hooks.json.sb-backup) and only when it changes. An unparseable or wrongly typed
+file is refused: exit 1, file untouched.
+"""
 
 from __future__ import annotations
 
-import json
 import os
 import pathlib
 import re
 import shutil
 import sys
 
-install_path = sys.argv[1] if len(sys.argv) > 1 else ""
-if not install_path:
-    raise SystemExit("usage: merge-cursor-hooks.py <sb_install_path>")
+LIB_DIR = pathlib.Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(LIB_DIR))
+from sb_host_config import ConfigError, command_program, is_sb_hook_command, read_json, sb_hook_names, write_json  # noqa: E402
 
-hooks_src = os.path.join(install_path, "hooks", "cursor-hooks.json")
-settings_path = os.path.join(os.path.expanduser("~"), ".cursor", "hooks.json")
+PLACEHOLDER = "${CURSOR_PLUGIN_ROOT}"
+REPO_HOOKS = LIB_DIR.parents[1] / "hooks"
 
 
 def stable_install_path(raw_install_path: str) -> str:
@@ -37,26 +51,19 @@ def stable_install_path(raw_install_path: str) -> str:
         return raw_install_path
 
 
-install_path = stable_install_path(install_path)
-with open(hooks_src, encoding="utf-8") as handle:
-    src = json.load(handle)
-
-sb_hooks = src.get("hooks", {})
+def shell_escaped(root: str) -> str:
+    """``root`` with the characters a shell still expands inside double quotes escaped."""
+    return re.sub(r'(["\\$`])', r"\\\1", root)
 
 
 def sub_path(obj, root: str):
     if isinstance(obj, str):
-        return obj.replace("${CURSOR_PLUGIN_ROOT}", root)
+        return obj.replace(PLACEHOLDER, root)
     if isinstance(obj, list):
         return [sub_path(item, root) for item in obj]
     if isinstance(obj, dict):
         return {key: sub_path(value, root) for key, value in obj.items()}
     return obj
-
-
-sb_hooks = sub_path(sb_hooks, install_path)
-SB_HOOK_RE = re.compile(r"/silver-bullet/[^/]+/hooks/")
-DEV_CHECKOUT_RE = re.compile(r"/plugins/silver-bullet/hooks/")
 
 
 def entry_command(entry) -> str:
@@ -67,23 +74,7 @@ def entry_command(entry) -> str:
     return command if isinstance(command, str) else ""
 
 
-def is_malformed_sb_hook(entry: dict) -> bool:
-    command = entry_command(entry)
-    return "codex-hook-adapter" in command
-
-
-def is_stale_sb_hook(entry: dict) -> bool:
-    command = entry_command(entry)
-    if is_malformed_sb_hook(entry):
-        return True
-    if "${CURSOR_PLUGIN_ROOT}/hooks/" in command:
-        return True
-    if DEV_CHECKOUT_RE.search(command) and install_path not in command:
-        return True
-    return bool(SB_HOOK_RE.search(command)) and install_path not in command
-
-
-def json_member(data: dict, key: str, kind: type):
+def json_member(data: dict, key: str, kind: type, label: str):
     """Return ``data[key]`` as ``kind``; repair missing/null/empty, refuse other wrong types."""
     value = data.get(key)
     if isinstance(value, kind):
@@ -92,98 +83,73 @@ def json_member(data: dict, key: str, kind: type):
         value = kind()
         data[key] = value
         return value
-    label = "object" if kind is dict else "array"
-    raise ValueError(f"{settings_path}: {key} must be a JSON {label}")
+    name = "object" if kind is dict else "array"
+    raise ConfigError(f"{label}: {key} must be a JSON {name}; left unchanged")
 
 
-if os.path.exists(settings_path):
-    with open(settings_path, encoding="utf-8") as handle:
-        settings = json.load(handle)
-    if not isinstance(settings, dict):
-        raise ValueError(f"{settings_path}: expected a JSON object at the top level")
-else:
-    settings = {"version": 1, "hooks": {}}
-
-settings.setdefault("version", 1)
-existing_hooks = json_member(settings, "hooks", dict)
+def cursor_hooks_path() -> tuple[str, str]:
+    """The hooks.json to update and how to name it in messages."""
+    default = os.path.join(os.path.expanduser("~"), ".cursor")
+    cursor_home = os.environ.get("CURSOR_HOME") or default
+    path = os.path.join(cursor_home, "hooks.json")
+    return path, ("~/.cursor/hooks.json" if cursor_home == default else path)
 
 
-def merge_matchers(entries: list[dict]) -> str | None:
-    """Return the union of Cursor matchers, or None for an unrestricted hook."""
-    alternatives: list[str] = []
-    for entry in entries:
-        matcher = entry.get("matcher")
-        if not matcher or matcher == ".*":
-            return None
-        for part in str(matcher).split("|"):
-            part = part.strip()
-            if part and part not in alternatives:
-                alternatives.append(part)
-    return "|".join(alternatives) or None
+def merge(raw_install_path: str) -> str:
+    manifest_path = os.path.join(raw_install_path, "hooks", "cursor-hooks.json")
+    manifest = read_json(manifest_path)
+    if manifest is None:
+        raise ConfigError(f"{manifest_path}: Silver Bullet hook manifest not found")
+    sb_hooks = json_member(manifest, "hooks", dict, manifest_path)
+    for event in sb_hooks:
+        if not isinstance(sb_hooks[event], list):
+            raise ConfigError(f"{manifest_path}: {event} must be a JSON array; nothing merged")
 
+    install_path = stable_install_path(raw_install_path)
+    sb_hooks = sub_path(sb_hooks, shell_escaped(install_path))
+    install_roots = (install_path, raw_install_path, os.path.realpath(raw_install_path))
+    names = sb_hook_names(pathlib.Path(raw_install_path) / "hooks", REPO_HOOKS)
 
-def deduplicate_hook_entries(entries: list) -> list:
-    """Collapse repeated commands while preserving the union of their matchers."""
-    result: list = []
-    indexes: dict[str, int] = {}
-    grouped: dict[str, list[dict]] = {}
-    for item in entries:
-        if not isinstance(item, dict) or not item.get("command"):
-            result.append(item)
+    settings_path, display = cursor_hooks_path()
+    settings = read_json(settings_path, default={"version": 1, "hooks": {}})
+    settings.setdefault("version", 1)
+    existing = json_member(settings, "hooks", dict, settings_path)
+
+    def is_sb_entry(entry) -> bool:
+        command = entry_command(entry)
+        if "codex-hook-adapter" in command and "cursor-hook-bridge" in command:
+            return True  # an earlier malformed merge (same rule as strip-cursor-sb-hooks.py)
+        if os.path.basename(command_program(command)) == "codex-hook-adapter.sh":
+            return True  # SB's adapter script (never a user script that merely shares a prefix)
+        return is_sb_hook_command(command, hook_names=names, install_roots=install_roots)
+
+    for event, entries in list(existing.items()):
+        if not isinstance(entries, list):
             continue
-        command = str(item["command"])
-        if command not in indexes:
-            indexes[command] = len(result)
-            grouped[command] = []
-            result.append(item)
-        grouped[command].append(item)
-
-    for command, items in grouped.items():
-        if len(items) == 1:
-            continue
-        merged = result[indexes[command]]
-        matcher = merge_matchers(items)
-        if matcher is None:
-            merged.pop("matcher", None)
+        kept = [entry for entry in entries if not is_sb_entry(entry)]
+        if kept:
+            existing[event] = kept
         else:
-            merged["matcher"] = matcher
-        timeouts = [
-            item.get("timeout")
-            for item in items
-            if isinstance(item.get("timeout"), (int, float))
-        ]
-        if timeouts:
-            merged["timeout"] = max(timeouts)
-    return result
+            del existing[event]
+
+    for event, entries in sb_hooks.items():
+        json_member(existing, event, list, settings_path).extend(entries)
+
+    write_json(settings_path, settings)
+    return display
 
 
-for event, entries in list(existing_hooks.items()):
-    if not isinstance(entries, list):
-        continue
-    cleaned = [entry for entry in entries if not is_stale_sb_hook(entry)]
-    cleaned = deduplicate_hook_entries(cleaned)
-    if cleaned:
-        existing_hooks[event] = cleaned
-    else:
-        del existing_hooks[event]
+def main(argv) -> int:
+    install_path = argv[1] if len(argv) > 1 else ""
+    if not install_path:
+        raise SystemExit("usage: merge-cursor-hooks.py <sb_install_path>")
+    try:
+        display = merge(install_path)
+    except ConfigError as exc:
+        raise SystemExit(f"merge-cursor-hooks: ERROR: {exc}") from exc
+    print(f"SB hooks registered in {display}")
+    return 0
 
 
-def hook_entry_key(entry: dict) -> tuple[str, str]:
-    if not isinstance(entry, dict):
-        return ("", "")
-    return (entry_command(entry), entry.get("matcher", ""))
-
-
-for event, entries in sb_hooks.items():
-    event_list = json_member(existing_hooks, event, list)
-    for new_entry in entries:
-        new_key = hook_entry_key(new_entry)
-        if not any(hook_entry_key(entry) == new_key for entry in event_list):
-            event_list.append(new_entry)
-
-pathlib.Path(settings_path).parent.mkdir(parents=True, exist_ok=True)
-with open(settings_path, "w", encoding="utf-8") as handle:
-    json.dump(settings, handle, indent=2)
-    handle.write("\n")
-
-print("SB hooks registered in ~/.cursor/hooks.json")
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv))

@@ -15,8 +15,16 @@ git -C "$MKT" init -q
 git -C "$MKT" config user.email t@example.invalid; git -C "$MKT" config user.name t; git -C "$MKT" config gc.auto 0
 git -C "$MKT" add -A
 git -C "$MKT" -c commit.gpgsign=false commit -q -m published
-git config --global url."file://$SNAP".insteadOf https://github.com/alo-exp/silver-bullet.git
 
+# R7-15: the release is fetched from its tag (or pinned sha), never the default branch.
+fresh
+tl_run env CURSOR_UNIFIED_MARKETPLACE_SOURCE="file://$MKT" CURSOR_SB_PUBLIC_MARKETPLACE_SOURCE="file://$MKT" bash "$SCRIPT" --public-release
+assert_eq "untagged release refused" 1 "$TL_STATUS"
+assert_contains "refusal says nothing was installed" "$TL_ERR" "could not fetch Silver Bullet 5.5.5"
+assert_file_absent "no release tree for a refused install" "$CACHE/5.5.5"
+assert_file_absent "no registry written for a refused install" "$CURSOR_HOME/plugins/installed_plugins.json"
+
+git -C "$SNAP" tag v5.5.5
 fresh
 tl_run env CURSOR_UNIFIED_MARKETPLACE_SOURCE="file://$MKT" CURSOR_SB_PUBLIC_MARKETPLACE_SOURCE="file://$MKT" bash "$SCRIPT" --public-release
 assert_eq "public-release install exits 0" 0 "$TL_STATUS"

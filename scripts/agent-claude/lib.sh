@@ -127,7 +127,7 @@ agent_claude_prepare_lightweight_config_dir() {
   printf '[agent-claude] lightweight CLAUDE_CONFIG_DIR: %s\n' "$lightweight_config" >&2
 }
 
-# Copy global Claude settings into ephemeral config, stripping broken user hook refs.
+# Copy global Claude settings into ephemeral config, dropping only stale Silver Bullet hooks.
 agent_claude_seed_lightweight_settings() {
   local config_dir="${1:-${CLAUDE_CONFIG_DIR:-}}"
   local global_settings="${HOME}/.claude/settings.json"
@@ -139,7 +139,6 @@ agent_claude_seed_lightweight_settings() {
 import json
 import os
 import pathlib
-import re
 import sys
 
 src = pathlib.Path(sys.argv[1])
@@ -153,50 +152,15 @@ if src.is_file():
     except json.JSONDecodeError:
         doc = {}
 
-hook_re = re.compile(r'gsd-session-state|gsd-[a-z-]+\.sh', re.I)
-
-
-def hook_command_broken(cmd):
-    if not isinstance(cmd, str):
-        return False
-    if hook_re.search(cmd):
-        return True
-    m = re.search(r'(["\'])([^"\']+\.(?:sh|js|mjs))\1', cmd)
-    if m:
-        p = os.path.expanduser(m.group(2))
-        if not os.path.isfile(p):
-            return True
-    return False
-
-
-def filter_hooks(hooks):
-    if not isinstance(hooks, list):
-        return hooks
-    kept = []
-    for entry in hooks:
-        if not isinstance(entry, dict):
-            kept.append(entry)
-            continue
-        inner = entry.get("hooks") or []
-        new_inner = [h for h in inner if not hook_command_broken((h or {}).get("command", ""))]
-        if new_inner:
-            entry = dict(entry)
-            entry["hooks"] = new_inner
-            kept.append(entry)
-    return kept
-
-hooks = doc.get("hooks")
-if isinstance(hooks, dict):
-    for event, groups in list(hooks.items()):
-        if isinstance(groups, list):
-            hooks[event] = filter_hooks(groups)
-
 cert = os.environ.get("SB_AGENT_CERT_RUN", "")
 if cert in ("1", "true"):
     doc.setdefault("env", {})["SB_AGENT_CERT_RUN"] = "1"
 
 dest.write_text(json.dumps(doc, indent=2) + "\n")
 PY
+  # Only stale Silver Bullet hooks are dropped; the user's own hooks (any path style, GSD's
+  # gsd-*.sh included) reach the worker unchanged (R8-16).
+  python3 "$(agent_claude_repo_root)/scripts/lib/prune-claude-settings.py" "$dest_settings" >/dev/null 2>&1 || true
 }
 
 agent_claude_cleanup_lightweight_config_dir() {

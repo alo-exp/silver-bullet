@@ -117,7 +117,7 @@ The project instruction skeleton is `scripts/lib/install-claude/templates/CLAUDE
 
 | Host | Global hooks manifest | Hook merge script |
 |------|----------------------|-------------------|
-| Claude Code | `${SB_RUNTIME_HOME_ROOT}/settings.json` | `scripts/lib/install-claude/merge-hooks.py` (also reachable through the `skills/silver-init/scripts/merge-hooks.py` shim) |
+| Claude Code | Plugin-delivered hooks (`hooks/hooks.json`); `${SB_RUNTIME_HOME_ROOT}/settings.json` only for manual installs | `scripts/lib/install-claude/merge-hooks.py` (also reachable through the `skills/silver-init/scripts/merge-hooks.py` shim): with the plugin installed it removes SB's settings copies, which would run every hook twice; otherwise it registers every (event, matcher, command) |
 | Codex | Plugin-delivered hooks (optional user merge) | `scripts/install-codex.sh`, which routes hook commands through `hooks/codex-hook-adapter.sh` |
 | Cursor | `${SB_RUNTIME_HOME_ROOT}/hooks.json` | `scripts/lib/install-cursor/merge-cursor-hooks.py` (merges the generated `hooks/cursor-hooks.json`) |
 
