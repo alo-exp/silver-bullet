@@ -139,6 +139,7 @@ class CatalogAndBucketTests(TmpCase):
         self.assertEqual(b("unlisted", fallback="oss"), "oss")
 
 
+@with_legacy_catalogs
 class FeatureSupportTests(unittest.TestCase):
     def test_feat_supported(self):
         f = sl._feat_supported
@@ -200,6 +201,7 @@ class LedgerTests(TmpCase):
         self.assertEqual(sl._cross_session_status("silver-bullet", self.root), "fail")
 
 
+@with_legacy_catalogs
 class LeaderRulesTests(TmpCase):
     def test_methodology_and_leader_rules(self):
         gates = {"Hook-enforced gates": True}
@@ -286,6 +288,7 @@ class AxisEnforcementTests(unittest.TestCase):
         self.assertEqual(out[0]["x"], 2.0)
 
 
+@with_legacy_catalogs
 class ScrBonusTests(TmpCase):
     def test_load_scr_text(self):
         self.assertEqual(sl._load_scr_text(None, "a"), "")
@@ -319,6 +322,7 @@ class ScrBonusTests(TmpCase):
         self.assertAlmostEqual(sl._wave_strategy_score({}, scr_text="roadmap"), 1.1)
 
 
+@with_legacy_catalogs
 class ChartSupportTests(TmpCase):
     def test_avoid_wave_collisions(self):
         pts = [{"label": "a", "strategy": 2.0, "offering": 2.0},

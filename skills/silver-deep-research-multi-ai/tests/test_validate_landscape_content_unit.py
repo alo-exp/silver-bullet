@@ -351,6 +351,10 @@ class ChartGateTests(_Base):
         return fake
 
     def test_vendor_url_health(self):
+        import vendor_link_labels as _vll
+
+        _vll.reset_health_state()
+        self.addCleanup(_vll.reset_health_state)
         urls = {f"V{i}": f"https://dead{i}.example" for i in range(10)}
         urls["Fine"] = "https://fine.example"
         env = {k: v for k, v in os.environ.items() if k != "SB_SKIP_VENDOR_URL_HEALTH"}
@@ -368,6 +372,10 @@ class ChartGateTests(_Base):
         self.assertNotIn("Fine", msg[0])
 
     def test_vendor_url_health_all_good_and_non_dict(self):
+        import vendor_link_labels as _vll
+
+        _vll.reset_health_state()
+        self.addCleanup(_vll.reset_health_state)
         env = {k: v for k, v in os.environ.items() if k != "SB_SKIP_VENDOR_URL_HEALTH"}
         with mock.patch.dict(os.environ, env, clear=True), \
                 mock.patch("vendor_link_labels._resolve_host", return_value=["93.184.216.34"]), \

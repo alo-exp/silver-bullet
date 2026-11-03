@@ -95,6 +95,11 @@ class OpenWorldEndToEndTests(unittest.TestCase):
             for word in APO_WORDS:
                 self.assertNotIn(word, report, f"{word!r} leaked into a non-APO report")
             self.assertNotIn("Hook-enforced gates", html)
+            # models split on Confluent Cloud SSO (gpt-x says no): shown as disputed, not hidden
+            disputed = json.loads((out / "landscape" / "disputed-cells.json").read_text(encoding="utf-8"))
+            self.assertIn({"vendor": "confluent-cloud", "feature": "SSO", "yes": 2, "no": 1}, disputed)
+            self.assertIn("### Disputed matrix cells", report)
+            self.assertIn("Confluent Cloud — SSO: 2 yes / 1 no", report)
 
 
 if __name__ == "__main__":

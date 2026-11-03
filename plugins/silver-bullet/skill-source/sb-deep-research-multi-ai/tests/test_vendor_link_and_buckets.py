@@ -55,6 +55,10 @@ class VendorLinkCollisionTests(unittest.TestCase):
 
         sys.path.insert(0, str(SCRIPTS))
         from vendor_link_labels import check_url_health, filter_healthy_vendor_urls
+        import vendor_link_labels as _vll
+
+        _vll.reset_health_state()
+        self.addCleanup(_vll.reset_health_state)
 
         dead_url = "https://example.test/missing-vendor"
         live_url = "https://example.test/alive-vendor"
@@ -344,6 +348,10 @@ class MembershipFramingAndOssBucketTests(unittest.TestCase):
         self.assertNotIn("Silver Bullet", apo_oss)
 
 
+from legacy_catalog_fixture import with_legacy_catalogs  # noqa: E402
+
+
+@with_legacy_catalogs
 class CategoryPackHomepageTests(unittest.TestCase):
     def test_sdlc_plugin_has_no_marketplace_homepage(self) -> None:
         import json

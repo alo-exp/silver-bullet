@@ -381,8 +381,16 @@ class MultiMarketMembershipConsistencyTests(unittest.TestCase):
             # both sit on the Leader threshold; slotting may move a dot by 0.1 but not its quadrant
             self.assertEqual({p["q"] for p in fixed}, {"Leaders"}, msg=fixed)
             self.assertEqual(len({p["x"] for p in fixed}), 2)
+            # the dot is drawn on the Leader side of the line too: it never crosses 5.5 to make room
+            self.assertTrue(all(p["x"] >= 5.5 and p["y"] >= 5.5 for p in fixed), msg=fixed)
+        below = avoid_chart_coord_collisions([{"slug": s, "x": 5.4, "y": 5.4, "q": "?"} for s in "ab"])
+        self.assertTrue(all(p["x"] < 5.5 and p["y"] < 5.5 for p in below), msg=below)
 
 
+from legacy_catalog_fixture import with_legacy_catalogs  # noqa: E402
+
+
+@with_legacy_catalogs
 class AnalystGradeMembershipFixes(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -631,16 +639,15 @@ class AnalystGradeMembershipFixes(unittest.TestCase):
 
 
     def test_rewrite_agentsys_ai_url(self) -> None:
-        from vendor_link_labels import rewrite_vendor_url, scrub_embedded_vendor_urls
+        import vendor_link_labels as vll
+        from vendor_link_labels import rewrite_vendor_url
+
+        self.assertFalse(hasattr(vll, "scrub_embedded_vendor_urls"))  # model data is never rewritten
 
         self.assertEqual(
             rewrite_vendor_url("https://agentsys.ai"),
             "https://github.com/agent-sh/agentsys",
         )
-        payload = scrub_embedded_vendor_urls(
-            {"sources": [{"title": "AgentSys", "url": "https://agentsys.ai"}]}
-        )
-        self.assertEqual(payload["sources"][0]["url"], "https://github.com/agent-sh/agentsys")
 
     def test_multi_market_vendor_dom_ids_must_be_unique(self) -> None:
         """Silver Bullet in APO + sdlc-plugins must emit distinct market-scoped card ids."""

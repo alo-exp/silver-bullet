@@ -85,8 +85,19 @@ _OK_STATUSES = frozenset({200, 201, 202, 203, 204, 301, 302, 303, 307, 308})
 _TRANSIENT_HTTP = frozenset({429, 502, 503, 504})
 
 
+# Process-wide: a live run calls the filter many times (phases, synthesis, packaging); each vendor
+# URL is probed once and the whole process shares one budget.
+_HEALTH_STATE: dict[str, Any] = {"reports": {}, "start": None}
+
+
+def reset_health_state() -> None:
+    """Forget cached probe results and the budget clock (tests, long-lived hosts)."""
+    _HEALTH_STATE["reports"] = {}
+    _HEALTH_STATE["start"] = None
+
+
 _MAX_REDIRECTS = 3
-_MAX_HEALTH_CHECKS = 60  # distinct URLs probed per call; the rest are kept unverified
+_MAX_HEALTH_CHECKS = 60  # distinct URLs probed per process; the rest are kept unverified
 _HEALTH_BUDGET_SECONDS = 120.0
 
 
@@ -299,20 +310,21 @@ def filter_healthy_vendor_urls(
     }
     kept: dict[str, str] = {}
     dropped: list[dict[str, Any]] = []
-    reports: dict[str, dict[str, Any]] = {}
-    deadline = time.monotonic() + _HEALTH_BUDGET_SECONDS
     for label, url in (urls or {}).items():
         label_n = normalize_vendor_link_label(label)
         url_n = str(url or "").strip()
         if not label_n or not url_n.startswith("http"):
             continue
-        if url_n not in reports:
-            if len(reports) >= _MAX_HEALTH_CHECKS or time.monotonic() > deadline:
-                # Over budget: keep the link unverified rather than stall the report.
+        report = _HEALTH_STATE["reports"].get(url_n)
+        if report is None:
+            now = time.monotonic()
+            if _HEALTH_STATE["start"] is None:
+                _HEALTH_STATE["start"] = now
+            if len(_HEALTH_STATE["reports"]) >= _MAX_HEALTH_CHECKS or now - _HEALTH_STATE["start"] > _HEALTH_BUDGET_SECONDS:
+                # Over the process-wide budget: keep the link unverified rather than stall the report.
                 kept[label_n] = url_n
                 continue
-            reports[url_n] = check_url_health(url_n, timeout=timeout)
-        report = reports[url_n]
+            report = _HEALTH_STATE["reports"][url_n] = check_url_health(url_n, timeout=timeout)
         if report.get("ok"):
             kept[label_n] = url_n
             continue

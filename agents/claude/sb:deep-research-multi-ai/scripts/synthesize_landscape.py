@@ -13,6 +13,7 @@ from typing import Any
 
 from compression_markers import assert_no_compression_markers, sanitize_compression_markers
 from generated_files import write_generated_text
+from pack_vocabulary import activated, for_research_dir
 from category_pack import (
     pack_overlay,
     apply_parent_child_dedupe,
@@ -42,6 +43,7 @@ from materialize_solution_artifacts import (
     discover_solutions,
     is_matrix_dump_claim,
     is_unusable_overview_claim,
+    open_world_known,
     write_run_features_json,
 )
 from vendor_link_labels import (
@@ -52,7 +54,6 @@ from vendor_link_labels import (
     normalize_vendor_link_label,
     resolve_vendor_link_label,
     rewrite_vendor_url,
-    scrub_embedded_vendor_urls,
 )
 
 SECTION_TITLES = [
@@ -124,7 +125,7 @@ def filter_comparison_for_pack(
     forbidden = set(get_hard_exclusion_slugs(pack, need or {}))
     forbidden |= {str(e.get("slug")) for e in get_sunset_registry(pack) if e.get("slug")}
     # Always drop invented / aliased-duplicate columns even if research artifacts retain them.
-    forbidden |= {"claude-code-expert", "sdlc-plugin", "sdlc"}
+    forbidden |= set(FORBIDDEN_CHART_SLUGS)
     allow = {str(s) for s in (matrix_slugs or set()) if s}
 
     def _keep(slug: str) -> bool:
@@ -189,7 +190,15 @@ def _resolve_catalogs(
         matrix = apply_parent_child_dedupe(matrix, pack)
         commercial, oss = catalog_entries_from_pack(pack, matrix)
         return commercial, oss, audit
-    return list(COMMERCIAL_CATALOG), list(OSS_CATALOG) + list(EMERGING_CATALOG), audit or {}
+    if COMMERCIAL_CATALOG or OSS_CATALOG or EMERGING_CATALOG:
+        return list(COMMERCIAL_CATALOG), list(OSS_CATALOG) + list(EMERGING_CATALOG), audit or {}
+    # Open world: the vendors the workers named, with no licence claim.
+    known = open_world_known(envelopes, need)
+    entries = [
+        {"slug": slug, "name": known.get(slug, slug.replace("-", " ").title()), "license": "Not assessed", "unclassified": True}
+        for slug in discover_solutions(envelopes, need=need)
+    ]
+    return entries, [], audit or {}
 
 
 COMMERCIAL_SLUGS: frozenset[str] = frozenset(e["slug"] for e in COMMERCIAL_CATALOG)
@@ -236,24 +245,11 @@ TREND_SEEDS: list[dict[str, str]] = [
 ]
 
 
-KCF_NAMES = [
-    "Workflow composition",
-    "Atomic flow catalog",
-    "Hook-enforced gates",
-    "Parent/child delegation",
-    "Managed hosting",
-    "Prebuilt SDLC templates",
-    "CI integration",
-    "IDE-native integration",
-    "Free tier / OSS core",
-    "Predictable pricing",
-]
+KCF_NAMES = []
 
 
 # Matrix rows use "Parent/child agent delegation"; charts/KCF use the shorter label.
-_CHART_SUPPORT_ALIASES: dict[str, str] = {
-    "Parent/child agent delegation": "Parent/child delegation",
-}
+_CHART_SUPPORT_ALIASES: dict[str, str] = {}
 # Do NOT equate local/plugin bootstrap with vendor-operated hosting.
 # Zero-infra bootstrap ≠ Managed hosting (analyst-grade Ability-to-Execute).
 _CHART_FEAT_EQUIV: dict[str, tuple[str, ...]] = {}
@@ -261,34 +257,9 @@ _CHART_FEAT_EQUIV: dict[str, tuple[str, ...]] = {}
 # Wave "Strength of Strategy" — weighted research signals (features.json + SCR text).
 # A 2-feature staircase (Workflow composition + Atomic flow catalog) collapses almost
 # every peer to the same x-value (typically 2.2); use a broader evidence set instead.
-_WAVE_STRATEGY_FEATURE_WEIGHTS: tuple[tuple[str, float], ...] = (
-    ("Atomic flow catalog", 0.55),
-    ("Skill/plugin marketplace", 0.40),
-    ("Prebuilt SDLC templates", 0.35),
-    ("Free tier / OSS core", 0.30),
-    ("Hook-enforced gates", 0.30),
-    ("Automated review loops", 0.30),
-    ("Parent/child delegation", 0.30),
-    ("Managed hosting", 0.25),
-    ("Visual/E2E verification", 0.25),
-    ("IDE-native integration", 0.20),
-    ("Zero-infra bootstrap", 0.20),
-    ("CI integration", 0.20),
-    ("Predictable pricing", 0.20),
-    ("Per-seat transparency", 0.15),
-    ("Self-serve signup", 0.15),
-    ("Workflow composition", 0.15),
-    ("Quick onboarding", 0.10),
-)
+_WAVE_STRATEGY_FEATURE_WEIGHTS: tuple[tuple[str, float], ...] = ()
 
-_WAVE_STRATEGY_HOST_MARKERS: tuple[str, ...] = (
-    "cursor",
-    "codex",
-    "claude code",
-    "claude-code",
-    "github copilot",
-    "copilot sdk",
-)
+_WAVE_STRATEGY_HOST_MARKERS: tuple[str, ...] = ()
 
 
 def _feat_supported(feats: dict[str, bool] | dict[str, bool | None], feature: str) -> bool:
@@ -378,16 +349,25 @@ def _cross_session_status(slug: str, root: Path | None) -> str:
     return "unknown"
 
 
+# Leader eligibility is category knowledge: the pack overlay supplies LEADER_RULES
+# ({"markets": {id: {"require_features": [...], "require_cross_session_ledger": bool}},
+#   "methodology": {"gate_feature": str, "execute_features": [...]}, "text": str}).
+LEADER_RULES: dict[str, Any] = {}
+FORBIDDEN_CHART_SLUGS: frozenset[str] = frozenset()
+
+
 def _has_hook_gates(feats: dict[str, bool] | dict[str, bool | None]) -> bool:
-    return _feat_supported(feats, "Hook-enforced gates")
+    gate = str((LEADER_RULES.get("methodology") or {}).get("gate_feature") or "")
+    return bool(gate) and _feat_supported(feats, gate)
 
 
 def _is_methodology_without_gates(feats: dict[str, bool] | dict[str, bool | None]) -> bool:
     """Conceptual/methodology seed: no shipped gates and no vendor-operated execute path."""
-    return (
-        not _has_hook_gates(feats)
-        and not _feat_supported(feats, "Managed hosting")
-        and not _feat_supported(feats, "Automated review loops")
+    rule = LEADER_RULES.get("methodology") or {}
+    if not rule.get("gate_feature"):
+        return False
+    return not _has_hook_gates(feats) and not any(
+        _feat_supported(feats, str(feature)) for feature in rule.get("execute_features") or []
     )
 
 
@@ -397,15 +377,13 @@ def _must_not_be_leader(
     feats: dict[str, bool] | dict[str, bool | None],
     root: Path | None,
 ) -> bool:
-    """Secondary packs and methodology-without-gates APO seeds cannot occupy Leaders."""
-    mid = str(market_id or "")
-    if mid == "sdlc-plugins":
-        return not (
-            _has_hook_gates(feats) and _cross_session_status(slug, root) == "pass"
-        )
-    if mid == "apo":
-        return not _has_hook_gates(feats)
-    return False
+    """A market's Leader rule (pack data) is not met; markets without a rule never block."""
+    rule = (LEADER_RULES.get("markets") or {}).get(str(market_id or ""))
+    if not rule:
+        return False
+    if any(not _feat_supported(feats, str(f)) for f in rule.get("require_features") or []):
+        return True
+    return bool(rule.get("require_cross_session_ledger")) and _cross_session_status(slug, root) != "pass"
 
 
 def _feat_tick(
@@ -425,13 +403,22 @@ def _feat_tick(
     return None
 
 
+def _derived_kcfs(support: dict[str, dict[str, bool]], limit: int = 10) -> list[str]:
+    """Blue Ocean factors for a run with no pack list: the matrix features most vendors tick."""
+    counts: dict[str, int] = {}
+    for feats in support.values():
+        for feature, ok in (feats or {}).items():
+            counts[feature] = counts.get(feature, 0) + (1 if ok else 0)
+    return [name for name, _n in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))[:limit]]
+
+
 def select_vc_kcfs(
     leader_slugs: list[str],
     support: dict[str, dict[str, bool]],
 ) -> list[str]:
     """Blue Ocean factors that at least one Leader actually evidences (no all-false flatten)."""
     chosen: list[str] = []
-    for kcf in KCF_NAMES:
+    for kcf in (list(KCF_NAMES) or _derived_kcfs(support)):
         ticks = [_feat_tick(support.get(slug, {}), kcf) for slug in leader_slugs]
         if not any(tick is True for tick in ticks):
             continue
@@ -659,32 +646,7 @@ def _build_chart_support(
 
 
 # Domain axis profiles — never inherit PE/DevOps framing for unrelated research_type runs.
-_DOMAIN_AXIS_PROFILES: dict[str, dict[str, str]] = {
-    "agentic sdlc": {
-        "mq_anchor": "Process Orchestration",
-        "mq_x": "← Low process orchestration         High process orchestration →",
-        "mq_y": "← Low autonomous execution         High autonomous execution →",
-        "mq_x_label": "Process orchestration depth",
-        "mq_y_label": "Autonomous execution",
-        "section_3a": "Process Orchestration × Autonomous Execution Matrix",
-    },
-    "sdlc orchestration": {
-        "mq_anchor": "Process Orchestration",
-        "mq_x": "← Low process orchestration         High process orchestration →",
-        "mq_y": "← Low autonomous execution         High autonomous execution →",
-        "mq_x_label": "Process orchestration depth",
-        "mq_y_label": "Autonomous execution",
-        "section_3a": "Process Orchestration × Autonomous Execution Matrix",
-    },
-    "coding agent": {
-        "mq_anchor": "Process Orchestration",
-        "mq_x": "← Low process orchestration         High process orchestration →",
-        "mq_y": "← Low autonomous execution         High autonomous execution →",
-        "mq_x_label": "Process orchestration depth",
-        "mq_y_label": "Autonomous execution",
-        "section_3a": "Process Orchestration × Autonomous Execution Matrix",
-    },
-}
+_DOMAIN_AXIS_PROFILES: dict[str, dict[str, str]] = {}
 
 
 def _derive_axis_profile(category: str, need: dict[str, Any], scope_text: str) -> dict[str, str]:
@@ -790,56 +752,9 @@ def _divergence_token_jaccard(a: str, b: str) -> float:
     return inter / union if union else 0.0
 
 
-_DIVERGENCE_SUBJECTS: tuple[tuple[str, str], ...] = (
-    ("adjacent only band", "adjacent-only"),
-    ("adjacent-only band", "adjacent-only"),
-    ("generic agent frameworks", "adjacent-only"),
-    ("cognition scout", "cognition-scout"),
-    ("magic.dev", "magic-dev"),
-    ("magic dev", "magic-dev"),
-    ("github spec kit", "spec-kit"),
-    ("host runtime", "host-runtimes"),
-    ("augment cosmos", "augment-cosmos"),
-    ("augment code", "augment-cosmos"),
-    ("cross session", "cross-session"),
-    ("secondary market", "secondary-market"),
-    ("sdlc plugin", "secondary-market"),
-    ("tertiary market", "tertiary-market"),
-    ("tertiary agentic", "tertiary-market"),
-    ("sunset list", "sunset-list"),
-    ("primary apo market", "apo-maturity"),
-    ("ai dlc", "ai-dlc"),
-    ("aidlc", "ai-dlc"),
-    ("factory.ai", "factory-ai"),
-    ("factory ai", "factory-ai"),
-    ("bmad method", "bmad"),
-    ("cc10x", "cc10x"),
-    ("conductor", "conductor"),
-    ("factory", "factory-ai"),
-    ("devin", "devin"),
-    ("metagpt", "metagpt"),
-    ("bmad", "bmad"),
-)
+_DIVERGENCE_SUBJECTS: tuple[tuple[str, str], ...] = ()
 
-_DIVERGENCE_SUBJECT_LABELS = {
-    "ai-dlc": "AI-DLC",
-    "conductor": "Conductor positioning",
-    "magic-dev": "Magic.dev / Cognition Scout inclusion",
-    "cognition-scout": "Magic.dev / Cognition Scout inclusion",
-    "host-runtimes": "Host runtimes vs APO",
-    "secondary-market": "Secondary SDLC-plugin threat",
-    "cross-session": "Secondary-pack gates and state",
-    "apo-maturity": "Primary APO market maturity",
-    "factory-ai": "Factory.ai role",
-    "cc10x": "cc10x plugin vs APO",
-    "adjacent-only": "Adjacent-only frameworks",
-    "tertiary-market": "Tertiary SaaS inclusion",
-    "augment-cosmos": "Augment Cosmos naming",
-    "spec-kit": "GitHub Spec Kit",
-    "sunset-list": "Sunset-list handling",
-    "bmad": "BMAD / secondary packs",
-    "devin": "Devin vs tertiary SaaS",
-}
+_DIVERGENCE_SUBJECT_LABELS = {}
 
 _STANCE_NEG = (
     "weakest",
@@ -1270,7 +1185,7 @@ def _synthetic_overview(
     negatives: list[str],
 ) -> str:
     kind = "commercial" if commercial else "open-source"
-    parts = [f"{name} is a {kind} option for agentic SDLC orchestration."]
+    parts = [f"{name} is a {kind} option in this landscape."]
     if positives:
         parts.append("Noted strengths include " + ", ".join(positives[:3]) + ".")
     if negatives:
@@ -1308,7 +1223,7 @@ def _build_solution_profile(
     scr = _read_scr(root, slug)
     slug_support = support.get(slug, {})
     positives = [f for f, ok in slug_support.items() if ok]
-    negatives = [f for f, ok in slug_support.items() if ok is False and f in KCF_NAMES]
+    negatives = [f for f, ok in slug_support.items() if ok is False]
     claim_hits = _claims_for_slug(slug, claims, effective_known)
     seed = effective_overview.get(slug, "").strip()
     synthetic = _synthetic_overview(name, commercial=commercial, positives=positives, negatives=negatives)
@@ -1321,23 +1236,15 @@ def _build_solution_profile(
     pros = []
     for feat in positives[:5]:
         pros.append(f"**{feat}**: Supported in startup-weighted comparison matrix.")
-    if commercial:
+    if entry.get("unclassified"):
+        pass  # licence/deployment model not assessed: claim neither a managed nor a self-hosted path
+    elif commercial:
         pros.append("**Managed path**: Commercial offering with vendor-operated components.")
     else:
         pros.append("**Control & flexibility**: OSS/core deployable on your infrastructure.")
-    while len(pros) < 4:
-        pros.append("**Ecosystem momentum**: Active presence in the agentic SDLC orchestration category.")
     cons = []
-    if not slug_support.get("Managed hosting") and commercial:
-        cons.append("**Hosting burden**: May require self-managed integration for some deployment paths.")
-    if not slug_support.get("Hook-enforced gates"):
-        cons.append("**Weak hook gates**: Lacks explicit fail-closed lifecycle hooks versus process-first peers.")
-    if not slug_support.get("Atomic flow catalog"):
-        cons.append("**No atomic catalog**: No machine-readable atomic-flow catalog in evaluated matrix.")
-    if not slug_support.get("Workflow composition"):
-        cons.append("**Limited composition**: Workflow composition not credited in comparison matrix.")
-    if not cons:
-        cons.append("**Operational depth**: Requires agent-ops maturity to realise full value.")
+    for feat in negatives[:4]:
+        cons.append(f"**No {feat} credited**: The comparison matrix has no tick for it (absent evidence, not proof it is missing).")
     cons.append("**Pricing opacity**: Verify latest pricing — list prices were not web-verified in this synthesis.")
     license = entry.get("license", "Commercial")
     return {
@@ -1347,7 +1254,12 @@ def _build_solution_profile(
         "overview": overview,
         "pros": pros[:6],
         "cons": cons[:5],
-        "best_for": f"SMB teams prioritising {positives[0].lower() if positives else 'agentic SDLC automation'} with {name}.",
+        "best_for": (
+            f"Teams prioritising {positives[0].lower()} with {name}."
+            if positives
+            else f"Teams evaluating {name} against the matrix."
+        ),
+        "unclassified": bool(entry.get("unclassified")),
         "avoid_if": f"You need capabilities {name} lacks in the matrix ({', '.join(negatives[:2]) or 'unverified gaps'}).",
         "url": entry.get("url", ""),
     }
@@ -1431,7 +1343,7 @@ def _vc_series_entry(
     oss: list[dict[str, str]] | None = None,
     kcfs: list[str] | None = None,
 ) -> dict[str, Any]:
-    factors = kcfs if kcfs is not None else list(KCF_NAMES)
+    factors = kcfs if kcfs is not None else (list(KCF_NAMES) or _derived_kcfs({slug: feats}))
     data = []
     for kcf in factors:
         tick = _feat_tick(feats, kcf)
@@ -1719,6 +1631,10 @@ def _round_coord(value: float, precision: int = 1) -> float:
     return round(float(value), precision)
 
 
+def _same_side(candidate: float, target: float, boundary: float | None) -> bool:
+    return boundary is None or (candidate >= boundary) == (target >= boundary)
+
+
 def _uniquify_axis(
     values: list[float],
     *,
@@ -1727,13 +1643,15 @@ def _uniquify_axis(
     step: float = 0.1,
     precision: int = 1,
     tiebreak: list[float] | None = None,
+    boundary: float | None = None,
 ) -> list[float]:
     """Make axis values unique at `precision` decimals while preserving rank.
 
     Higher true scores claim slots first. Collisions take the nearest free slot
     toward the interior of [lo, hi] — deterministic collision avoidance around
     true scores, not random offset and not a global rescale. Idempotent when
-    values are already unique.
+    values are already unique. With `boundary`, a value never moves across it (a Leader stays
+    on the Leader side of the 5.5 line), so the drawn dot agrees with its quadrant label.
     """
     n = len(values)
     if n == 0:
@@ -1764,7 +1682,7 @@ def _uniquify_axis(
                 plus = _round_coord(target + k * step, precision)
                 seq = (minus, plus) if prefer_down else (plus, minus)
                 for cand in seq:
-                    if lo - 1e-12 <= cand <= hi + 1e-12 and cand not in used:
+                    if lo - 1e-12 <= cand <= hi + 1e-12 and cand not in used and _same_side(cand, target, boundary):
                         chosen = cand
                         break
                 k += 1
@@ -1772,7 +1690,7 @@ def _uniquify_axis(
             scan = lo
             while scan <= hi + 1e-12:
                 rv = _round_coord(scan, precision)
-                if rv not in used:
+                if rv not in used and _same_side(rv, target, boundary):
                     chosen = rv
                     break
                 scan = _round_coord(scan + step, precision)
@@ -1807,8 +1725,9 @@ def avoid_chart_coord_collisions(
     items = [dict(point) for point in points]
     xs = [float(item.get(x_key) or 0.0) for item in items]
     ys = [float(item.get(y_key) or 0.0) for item in items]
-    new_x = _uniquify_axis(xs, lo=x_lo, hi=x_hi, step=step, tiebreak=ys)
-    new_y = _uniquify_axis(ys, lo=y_lo, hi=y_hi, step=step, tiebreak=xs)
+    boundary = 5.5 if update_quadrant else None
+    new_x = _uniquify_axis(xs, lo=x_lo, hi=x_hi, step=step, tiebreak=ys, boundary=boundary)
+    new_y = _uniquify_axis(ys, lo=y_lo, hi=y_hi, step=step, tiebreak=xs, boundary=boundary)
     out: list[dict[str, Any]] = []
     for item, x, y, orig_x, orig_y in zip(items, new_x, new_y, xs, ys):
         orig_q = item.get("q")
@@ -2094,7 +2013,7 @@ def build_chart_data(
     leader_series = _collect_mq_leader_series(gmq_data, mq_data)
     vc_kcfs = select_vc_kcfs([slug for slug, _ in leader_series if slug], support)
     if not vc_kcfs:
-        vc_kcfs = [k for k in KCF_NAMES if k != "Managed hosting"][:6]
+        vc_kcfs = [k for k in (list(KCF_NAMES) or _derived_kcfs(support)) if k != "Managed hosting"][:6]
     for slug, label in leader_series:
         _append_vc_series(slug, label)
 
@@ -2118,24 +2037,9 @@ def build_chart_data(
     axes = _derive_axis_profile(category, need or {}, scope_text)
     chart_notes: list[str] = []
     mid = str(market_id or "")
-    if mid == "apo":
-        chart_notes.append(
-            "Methodology/framework seeds without shipped hook gates (for example AI-DLC) are omitted "
-            "from Wave and are not peer-complete on MQ: Completeness of Vision is capped so they do "
-            "not plot as shipped-orchestrator peers; Ability to Execute is capped below Leaders."
-        )
-    if mid == "sdlc-plugins":
-        chart_notes.append(
-            "Leaders require hook-enforced gates plus inclusion-ledger cross-session pass. "
-            "Methodology packs that fail those under-served criteria are Visionaries or lower "
-            "even when workflow ticks are dense. Wave presence, offering, and strategy are capped "
-            "for packs that fail Leader eligibility."
-        )
-    if mid == "agentic-sdlc-saas":
-        chart_notes.append(
-            "SaaS-core MQ/Wave plots shipped autonomous-delivery products with managed hosting. "
-            "Coding-model labs without orchestration evidence are hard-excluded, not tertiary core."
-        )
+    chart_notes.extend(
+        str(n) for n in ((pack_overlay(pack or resolve_pack_from_need(need)).get("market_chart_notes") or {}).get(mid) or [])
+    )
     if demoted:
         chart_notes.append(
             "Demoted from Leaders for missing gates and/or cross-session state: "
@@ -2356,7 +2260,9 @@ def build_multi_market_chart_data(
 
 def _render_solution_entry(profile: dict[str, Any], *, commercial: bool) -> list[str]:
     lines: list[str] = []
-    if commercial:
+    if profile.get("unclassified"):
+        lines.append(f"### {profile['name']}")
+    elif commercial:
         lines.append(f"### {profile['name']} (Commercial)")
     else:
         lines.append(f"### {profile['name']} (OSS — {profile.get('license', 'OSS')})")
@@ -2538,24 +2444,31 @@ def _scoring_methodology_lines(
         "(matrix depth as current product). Strength of Strategy starts at 1.0, adds the "
         "weighted feature ticks below, then small SCR-text bonuses (multi-host 0.10/0.25, "
         "OSS license 0.20, marketplace/ecosystem 0.15, roadmap 0.10, bonus cap +0.55), "
-        "then cap 4 — **not** `1.2 + count(Workflow, Atomic)`. Market Presence = "
+        "then cap 4. Market Presence = "
         "`int(1 + ranking_score/8)`, cap 4, then cap 3 without Managed hosting. "
         "Packs that fail Leader eligibility are capped to presence ≤ 2 / offering ≤ 2.4 / "
-        "strategy ≤ 2.5. Methodology-without-gates seeds are **omitted from Wave**.",
+        "strategy ≤ 2.5." + (" " + str(LEADER_RULES["methodology_wave_text"]) if LEADER_RULES.get("methodology_wave_text") else ""),
         "",
-        "**Strategy feature weights (points added when the matrix ticks that feature):** "
-        + "; ".join(f"{name} +{wt:.2f}" for name, wt in _WAVE_STRATEGY_FEATURE_WEIGHTS)
-        + ".",
-        "",
+    ]
+    if _WAVE_STRATEGY_FEATURE_WEIGHTS:
+        lines += [
+            "**Strategy feature weights (points added when the matrix ticks that feature):** "
+            + "; ".join(f"{name} +{wt:.2f}" for name, wt in _WAVE_STRATEGY_FEATURE_WEIGHTS)
+            + ".",
+            "",
+        ]
+    lines += [
         "**4. Blue Ocean (3D).** Leaders only. A factor is plotted only when at least one "
         "Leader has matrix evidence. True = 5, otherwise 1. Unmanaged OSS hosting is not "
         "plotted as a flat factor when no Leader has hosting. Zero-infra bootstrap is **not** "
         "treated as Managed hosting.",
         "",
-        "**Leader eligibility.** SDLC plugins need hook-enforced gates **and** "
-        "inclusion-ledger cross-session pass. APO seeds without shipped hook gates cannot "
-        "occupy Leaders. Leader plots are a feature-gate outcome of the evidenced "
-        "features, not a 'most complete product' claim.",
+        "**Leader eligibility.** "
+        + str(
+            LEADER_RULES.get("text")
+            or "A vendor plots as a Leader when both of its chart scores reach 5.5. Leader plots "
+            "follow from the evidenced features, not from a 'most complete product' claim."
+        ),
         "",
         "**Hard-exclusion membership.** A slug on the pack hard-exclusion list has **one** "
         "membership — excluded. "
@@ -2700,7 +2613,13 @@ def _buying_guidance_lines(
     return lines
 
 
-def build_report_markdown(
+def build_report_markdown(*args: Any, **kwargs: Any) -> str:
+    """Landscape markdown; the selected pack's vocabulary is active while it is built."""
+    with activated(resolve_pack_from_need(kwargs.get("need") or {})):
+        return _build_report_markdown(*args, **kwargs)
+
+
+def _build_report_markdown(
     *,
     category: str,
     platform_list: str,
@@ -2731,7 +2650,7 @@ def build_report_markdown(
         ],
     }
     support = _build_chart_support(comparison, root=root)
-    known = _known_for_need(need)
+    known = open_world_known(envelopes, need)
     overview_seeds = _overview_for_need(need)
     pack = resolve_pack_from_need(need)
     # What the models said is quoted as said: membership disagreements are reported in the
@@ -2839,8 +2758,8 @@ def build_report_markdown(
         lines.append("")
     else:
         lines.append(
-            "Meaningful SMB adoption signals, active maintenance, production-oriented "
-            "orchestration (not raw LLM APIs or single-shot copilots)."
+            "Vendors that the contributing models named with evidence for the capabilities "
+            "researched, with meaningful adoption signals and active maintenance."
         )
         lines.append("")
     lines.extend(_scoring_methodology_lines(comparison, pack))
@@ -2949,7 +2868,7 @@ def build_report_markdown(
             "| Key Competitive Factor | " + " | ".join(vc_labels) + " |",
         ])
         lines.append("|" + "---|" * (1 + len(vc_labels)))
-        for idx, kcf in enumerate(KCF_NAMES):
+        for idx, kcf in enumerate(chart.get("vc_kcfs") or KCF_NAMES):
             row = [kcf]
             for vc in (chart["vc_commercial"] + chart["vc_oss"])[:5]:
                 data = vc.get("data") or []
@@ -2984,7 +2903,18 @@ def build_report_markdown(
                     _render_solution_entry(profile, commercial=section["kind"] == "commercial")
                 )
     else:
-        lines.extend([f"### Top Commercial Solutions for SMBs ({len(commercial_catalog)} core)", ""])
+        open_entries = [e for e in commercial_catalog if e.get("unclassified")]
+        if open_entries:
+            lines.extend([f"### Solutions evaluated ({len(open_entries)})", ""])
+            commercial_catalog = [e for e in commercial_catalog if not e.get("unclassified")]
+            for entry in open_entries:
+                profile = _build_solution_profile(
+                    entry, commercial=False, root=root, claims=claims, support=support,
+                    known=known, overview_seeds=overview_seeds,
+                )
+                lines.extend(_render_solution_entry(profile, commercial=False))
+        if commercial_catalog or not open_entries:
+            lines.extend([f"### Top Commercial Solutions for SMBs ({len(commercial_catalog)} core)", ""])
         for entry in commercial_catalog:
             profile = _build_solution_profile(
                 entry, commercial=True, root=root, claims=claims, support=support,
@@ -2992,7 +2922,8 @@ def build_report_markdown(
             )
             lines.extend(_render_solution_entry(profile, commercial=True))
 
-        lines.extend([f"### Top Open Source Solutions ({len(oss_catalog)} core)", ""])
+        if oss_catalog or not open_entries:
+            lines.extend([f"### Top Open Source Solutions ({len(oss_catalog)} core)", ""])
         for entry in oss_catalog:
             profile = _build_solution_profile(
                 entry, commercial=False, root=root, claims=claims, support=support,
@@ -3086,6 +3017,19 @@ def build_report_markdown(
 
     notable = consolidation.get("divergence") or []
     lines.extend(consensus_resolution_table_lines(notable if isinstance(notable, list) else [], pack))
+    disputed_path = root / "landscape" / "disputed-cells.json"
+    try:
+        disputed = json.loads(disputed_path.read_text(encoding="utf-8")) if disputed_path.is_file() else []
+    except (OSError, ValueError):
+        disputed = []
+    disputed = [d for d in disputed if isinstance(d, dict) and d.get("vendor") and d.get("feature")]
+    if disputed:
+        lines.extend(["### Disputed matrix cells", "",
+                      "Models gave opposite answers; the matrix tick follows the majority and a tie is not a tick.", ""])
+        for cell in disputed[:40]:
+            vendor = known.get(str(cell["vendor"]), str(cell["vendor"]))
+            lines.append(f"- {vendor} — {cell['feature']}: {cell.get('yes', 0)} yes / {cell.get('no', 0)} no")
+        lines.append("")
 
     # Buying guidance
     lines.extend(["## 5. Buying Guidance & Shortlist Profiles", ""])
@@ -3174,6 +3118,7 @@ def build_report_markdown(
     return markdown
 
 
+@for_research_dir
 def synthesize_landscape(
     research_dir: Path,
     *,
@@ -3203,13 +3148,13 @@ def synthesize_landscape(
     manifest = _load_json(research_dir / "run_manifest.json") or {}
     scope = (research_dir / "scope.md").read_text(encoding="utf-8") if (research_dir / "scope.md").is_file() else ""
 
-    category = str(need.get("category") or manifest.get("query") or "Agentic SDLC Orchestration")
-    if category.startswith("2026-"):
-        category = "Agentic SDLC Orchestration"
+    category = str(need.get("category") or manifest.get("query") or "Research landscape")
+    if re.match(r"\d{4}-\d{2}-\d{2}", category):
+        category = str(manifest.get("query") or "Research landscape")
 
     claims = _iter_claim_texts(envelopes)
     discover_solutions(envelopes)  # warm slug discovery side effects
-    known = _known_for_need(need)
+    known = open_world_known(envelopes, need)
     commercial_catalog, oss_catalog, _audit = _resolve_catalogs(need, envelopes)
     pack = resolve_pack_from_need(need)
     comparison = filter_comparison_for_pack(

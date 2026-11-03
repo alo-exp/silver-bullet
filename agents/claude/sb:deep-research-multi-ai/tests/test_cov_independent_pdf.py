@@ -61,6 +61,30 @@ class PlaywrightArgvTests(unittest.TestCase):
                 lp._playwright_argv()
 
 
+class PrintLinkAndModeTests(unittest.TestCase):
+    def test_print_html_keeps_no_relative_links_but_the_spa_does(self) -> None:
+        md = "See [notes](solutions/x/scr.md), [site](https://x.example/), [top](#top) and [bad](javascript:alert(1))."
+        spa = lp.markdown_to_html(md)
+        self.assertIn('href="solutions/x/scr.md"', spa)
+        lp._PRINT_MODE[0] = True
+        try:
+            printed = lp.markdown_to_html(md)
+        finally:
+            lp._PRINT_MODE[0] = False
+        self.assertNotIn("solutions/x/scr.md", printed)  # would become file:///<local path> in the PDF
+        self.assertIn("See notes, ", printed)
+        self.assertIn('href="https://x.example/"', printed)
+        self.assertIn('href="#top"', printed)
+        self.assertNotIn("javascript", printed)
+        self.assertFalse(lp._PRINT_MODE[0])
+
+    def test_build_resets_print_mode_even_on_failure(self) -> None:
+        with mock.patch.object(lp, "_build_independent_print_html", side_effect=RuntimeError("boom")):
+            with self.assertRaises(RuntimeError):
+                lp.build_independent_print_html(Path("/nonexistent"))
+        self.assertFalse(lp._PRINT_MODE[0])
+
+
 class RenderCommandTests(unittest.TestCase):
     def test_node_missing_is_a_clear_error_and_node_path_is_extended(self) -> None:
         with mock.patch.object(lp.shutil, "which", side_effect=lambda n: "/x/playwright" if n == "playwright" else None):
@@ -726,6 +750,24 @@ class WritePdfTests(unittest.TestCase):
             return mock.Mock(returncode=0)
 
         return run, calls
+
+    def test_written_pdf_is_not_private(self) -> None:
+        import stat as _stat
+
+        run, _calls = self.fake_run()
+        old = os.umask(0o022)
+        try:
+            with mock.patch.object(lp.shutil, "which", side_effect=lambda n: {"playwright": "/x/playwright", "node": "/x/node"}.get(n)), \
+                    mock.patch.object(lp.subprocess, "run", run):
+                lp.write_independent_landscape_pdf(self.root)
+                first = _stat.S_IMODE((self.root / "landscape-report.pdf").stat().st_mode)
+                (self.root / "landscape-report.pdf").chmod(0o640)
+                lp.write_independent_landscape_pdf(self.root)
+                second = _stat.S_IMODE((self.root / "landscape-report.pdf").stat().st_mode)
+        finally:
+            os.umask(old)
+        self.assertEqual(first, 0o644)  # umask default, not mkstemp's 0600
+        self.assertEqual(second, 0o640)  # an existing file keeps its mode
 
     def test_writes_pdf_through_playwright(self) -> None:
         run, calls = self.fake_run()

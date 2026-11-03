@@ -55,6 +55,10 @@ class VendorLinkCollisionTests(unittest.TestCase):
 
         sys.path.insert(0, str(SCRIPTS))
         from vendor_link_labels import check_url_health, filter_healthy_vendor_urls
+        import vendor_link_labels as _vll
+
+        _vll.reset_health_state()
+        self.addCleanup(_vll.reset_health_state)
 
         dead_url = "https://example.test/missing-vendor"
         live_url = "https://example.test/alive-vendor"

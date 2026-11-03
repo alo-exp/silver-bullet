@@ -61,6 +61,8 @@ class _NoNetwork(unittest.TestCase):
         dns = mock.patch.object(vll, "_resolve_host", return_value=["93.184.216.34"])
         dns.start()
         self.addCleanup(dns.stop)
+        vll.reset_health_state()
+        self.addCleanup(vll.reset_health_state)
         self.addCleanup(self._restore)
 
     def _restore(self):
@@ -352,11 +354,26 @@ class HealthBudgetTests(_NoNetwork):
         self.assertEqual(len(kept), 140)  # unverified links stay, nothing is dropped for budget
         self.assertEqual(dropped, [])
 
+    def test_results_are_cached_across_calls_and_the_budget_is_process_wide(self):
+        calls = []
+
+        def fake(url, *, timeout):
+            calls.append(url)
+            return {"ok": True, "status": 200, "final_url": url, "error": None, "transport_error": False}
+
+        with mock.patch.object(vll, "check_url_health", side_effect=fake):
+            vll.filter_healthy_vendor_urls({"A": "https://a.example", "B": "https://b.example"})
+            vll.filter_healthy_vendor_urls({"A": "https://a.example", "C": "https://c.example"})
+            self.assertEqual(calls, ["https://a.example", "https://b.example", "https://c.example"])
+            vll.reset_health_state()
+            vll.filter_healthy_vendor_urls({"A": "https://a.example"})
+        self.assertEqual(calls[-1], "https://a.example")  # reset forgets the cache
+
     def test_wall_clock_budget_keeps_remaining_links_unverified(self):
         calls = []
         with mock.patch.object(vll, "check_url_health", side_effect=lambda u, timeout: calls.append(u) or
                                {"ok": True, "status": 200, "final_url": u, "error": None, "transport_error": False}), \
-                mock.patch("time.monotonic", side_effect=[0.0, 1.0, 10_000.0, 10_001.0]):
+                mock.patch("time.monotonic", side_effect=[0.0, 10_000.0]):
             kept, _ = vll.filter_healthy_vendor_urls({"A": "https://a.example", "B": "https://b.example"})
         self.assertEqual(calls, ["https://a.example"])
         self.assertEqual(set(kept), {"A", "B"})

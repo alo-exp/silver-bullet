@@ -56,48 +56,7 @@ SLUG_LINK_LABEL_OVERRIDES: dict[str, str] = {
 
 # Known wrong / sunset vendor URLs → corrected research-backed targets (or drop).
 # Keys normalized without trailing slash, lowercased host+path.
-VENDOR_URL_REWRITES: dict[str, str | None] = {
-    "https://agentsys.ai": "https://github.com/agent-sh/agentsys",
-    "https://agentsys.ai/": "https://github.com/agent-sh/agentsys",
-    "http://agentsys.ai": "https://github.com/agent-sh/agentsys",
-    "http://agentsys.ai/": "https://github.com/agent-sh/agentsys",
-    "https://aws.amazon.com/ai-dlc": "https://github.com/awslabs/aidlc-workflows",
-    "https://aws.amazon.com/ai-dlc/": "https://github.com/awslabs/aidlc-workflows",
-    "https://github.com/ai-dlc/ai-dlc": "https://github.com/awslabs/aidlc-workflows",
-    # Community IBM article is not the canonical AI-DLC product — AWS Labs is.
-    "https://developer.ibm.com/articles/ai-driven-development-life-cycle/": "https://github.com/awslabs/aidlc-workflows",
-    "https://developer.ibm.com/articles/ai-driven-development-life-cycle": "https://github.com/awslabs/aidlc-workflows",
-    "http://developer.ibm.com/articles/ai-driven-development-life-cycle/": "https://github.com/awslabs/aidlc-workflows",
-    "https://deepwork.ai": None,
-    "https://deepwork.ai/": None,
-    "http://deepwork.ai": None,
-    "http://deepwork.ai/": None,
-    "https://github.com/ruvnet/ruvnet-director": None,
-    "https://github.com/SuperClaude-Org/SuperClaude": "https://github.com/SuperClaude-Org/SuperClaude_Framework",
-    "https://github.com/nicobailon/oh-my-pi": None,
-    "https://github.com/oh-my-pi/oh-my-pi": None,
-    "https://github.com/director-ai/director": None,
-    "https://github.com/zuvo-ai/zuvo": "https://github.com/greglas75/zuvo",
-    "https://github.com/zuvo-labs/zuvo": "https://github.com/greglas75/zuvo",
-    "https://github.com/zuvo": "https://github.com/greglas75/zuvo",
-    # Invented/parked marketing domains — canonical repos verified 2026-08-14.
-    "https://cc10x.dev": "https://github.com/romiluz13/cc10x",
-    "https://cc10x.dev/": "https://github.com/romiluz13/cc10x",
-    "http://cc10x.dev": "https://github.com/romiluz13/cc10x",
-    "http://cc10x.dev/": "https://github.com/romiluz13/cc10x",
-    "https://cavekit.ai": "https://github.com/JuliusBrussee/cavekit",
-    "https://cavekit.ai/": "https://github.com/JuliusBrussee/cavekit",
-    "http://cavekit.ai": "https://github.com/JuliusBrussee/cavekit",
-    "http://cavekit.ai/": "https://github.com/JuliusBrussee/cavekit",
-    "https://www.cavekit.ai": "https://github.com/JuliusBrussee/cavekit",
-    "https://www.cavekit.ai/": "https://github.com/JuliusBrussee/cavekit",
-    "https://barkain.com": "https://github.com/barkain/claude-code-workflow-orchestration",
-    "https://barkain.com/": "https://github.com/barkain/claude-code-workflow-orchestration",
-    "http://barkain.com": "https://github.com/barkain/claude-code-workflow-orchestration",
-    "http://barkain.com/": "https://github.com/barkain/claude-code-workflow-orchestration",
-    "https://www.barkain.com": "https://github.com/barkain/claude-code-workflow-orchestration",
-    "https://www.barkain.com/": "https://github.com/barkain/claude-code-workflow-orchestration",
-}
+VENDOR_URL_REWRITES: dict[str, str | None] = {}
 
 
 def normalize_vendor_url_key(url: str) -> str:
@@ -115,73 +74,7 @@ def rewrite_vendor_url(url: str) -> str | None:
     for bad, good in VENDOR_URL_REWRITES.items():
         if normalize_vendor_url_key(bad) == key:
             return good
-    # Case-insensitive host match for agentsys.ai
-    lower = raw.lower()
-    if "agentsys.ai" in lower and "github.com/agent-sh/agentsys" not in lower:
-        return "https://github.com/agent-sh/agentsys"
-    if "aws.amazon.com/ai-dlc" in lower:
-        return "https://github.com/awslabs/aidlc-workflows"
-    if "developer.ibm.com" in lower and "ai-driven-development" in lower:
-        return "https://github.com/awslabs/aidlc-workflows"
-    if re.search(r"https?://(www\.)?deepwork\.ai/?$", lower):
-        return None
-    if re.search(r"github\.com/(zuvo-ai/zuvo|zuvo-labs/zuvo|zuvo)/?$", lower):
-        return "https://github.com/greglas75/zuvo"
     return raw
-
-
-def scrub_embedded_vendor_urls(obj: Any) -> Any:
-    """Recursively rewrite/drop known-wrong URLs inside envelopes / JSON payloads."""
-    if isinstance(obj, str):
-        if obj.startswith("http://") or obj.startswith("https://"):
-            rewritten = rewrite_vendor_url(obj)
-            return rewritten if rewritten is not None else ""
-        # Non-URL strings: rewrite IBM AI-DLC community attribution to AWS Labs canonical.
-        cleaned = obj
-        cleaned = re.sub(
-            r"AI-DLC\s*[—–-]\s*AI-Driven Development Lifecycle\s*\(developer\.ibm\.com\s*/\s*community\)",
-            "AI-DLC — AI-Driven Development Lifecycle (AWS Labs / awslabs/aidlc-workflows)",
-            cleaned,
-            flags=re.I,
-        )
-        cleaned = re.sub(
-            r"https?://(?:www\.)?developer\.ibm\.com/articles/ai-driven-development-life-cycle/?",
-            "https://github.com/awslabs/aidlc-workflows",
-            cleaned,
-            flags=re.I,
-        )
-        cleaned = re.sub(r"\bAI-DLC\s*\(IBM\)", "AI-DLC (AWS / awslabs)", cleaned, flags=re.I)
-        cleaned = re.sub(r"\bIBM'?s?\s+AI-DLC\b", "AWS AI-DLC", cleaned, flags=re.I)
-        return cleaned
-    if isinstance(obj, list):
-        return [x for x in (scrub_embedded_vendor_urls(i) for i in obj) if x is not None]
-    if isinstance(obj, dict):
-        out: dict[str, Any] = {}
-        title = str(obj.get("title") or obj.get("name") or "")
-        # Invented seed — drop source rows / null URLs entirely.
-        if re.search(r"claude\s*code\s*expert", title, flags=re.I):
-            return None
-        for key, val in obj.items():
-            if key in {"url", "homepage", "href", "source_ref"} and isinstance(val, str):
-                if "claude-code-expert" in val.lower():
-                    out[key] = None
-                    continue
-                rewritten = rewrite_vendor_url(val) if val.startswith("http") else scrub_embedded_vendor_urls(val)
-                out[key] = rewritten if rewritten is not None else None
-            elif key in {"claim", "text", "title", "name", "relevance"} and isinstance(val, str):
-                cleaned = re.sub(
-                    r"Claude Code Expert is a primary-market APO candidate[^.]*\.?",
-                    "Claude Code Expert is excluded (invented/sunset seed — not a product).",
-                    val,
-                    flags=re.I,
-                )
-                out[key] = scrub_embedded_vendor_urls(cleaned)
-            else:
-                scrubbed = scrub_embedded_vendor_urls(val)
-                if scrubbed is not None:
-                    out[key] = scrubbed
-        return out
-    return obj
 
 
 # Env: set SB_SKIP_VENDOR_URL_HEALTH=1 to skip network checks (offline unit tests).
@@ -192,8 +85,19 @@ _OK_STATUSES = frozenset({200, 201, 202, 203, 204, 301, 302, 303, 307, 308})
 _TRANSIENT_HTTP = frozenset({429, 502, 503, 504})
 
 
+# Process-wide: a live run calls the filter many times (phases, synthesis, packaging); each vendor
+# URL is probed once and the whole process shares one budget.
+_HEALTH_STATE: dict[str, Any] = {"reports": {}, "start": None}
+
+
+def reset_health_state() -> None:
+    """Forget cached probe results and the budget clock (tests, long-lived hosts)."""
+    _HEALTH_STATE["reports"] = {}
+    _HEALTH_STATE["start"] = None
+
+
 _MAX_REDIRECTS = 3
-_MAX_HEALTH_CHECKS = 60  # distinct URLs probed per call; the rest are kept unverified
+_MAX_HEALTH_CHECKS = 60  # distinct URLs probed per process; the rest are kept unverified
 _HEALTH_BUDGET_SECONDS = 120.0
 
 
@@ -209,8 +113,9 @@ def _resolve_host(host: str) -> list[str]:
 def unsafe_target_reason(url: str) -> str | None:
     """Why a model-supplied URL must not be requested, or None when it may be.
 
-    Only http(s) to a public address: loopback, private, link-local (cloud metadata),
-    multicast, reserved and unspecified targets are refused, as are URLs with credentials.
+    Only http(s) to a globally routable address (`ip.is_global`); loopback, private, link-local
+    (cloud metadata), shared/CGNAT, multicast, reserved and unspecified targets are refused, as
+    are URLs with credentials.
     """
     try:
         parts = urllib.parse.urlsplit(url)
@@ -230,7 +135,11 @@ def unsafe_target_reason(url: str) -> str | None:
         return "unresolvable-host"
     for raw in addresses:
         ip = ipaddress.ip_address(raw)
-        if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_multicast or ip.is_reserved or ip.is_unspecified:
+        if isinstance(ip, ipaddress.IPv6Address) and ip.ipv4_mapped:
+            ip = ip.ipv4_mapped
+        # Allowlist: only globally routable addresses (this also refuses 100.64.0.0/10 shared
+        # space such as tailnets and Alibaba's 100.100.100.200 metadata endpoint).
+        if not ip.is_global or ip.is_multicast:
             return f"non-public-address:{raw}"
     return None
 
@@ -401,20 +310,21 @@ def filter_healthy_vendor_urls(
     }
     kept: dict[str, str] = {}
     dropped: list[dict[str, Any]] = []
-    reports: dict[str, dict[str, Any]] = {}
-    deadline = time.monotonic() + _HEALTH_BUDGET_SECONDS
     for label, url in (urls or {}).items():
         label_n = normalize_vendor_link_label(label)
         url_n = str(url or "").strip()
         if not label_n or not url_n.startswith("http"):
             continue
-        if url_n not in reports:
-            if len(reports) >= _MAX_HEALTH_CHECKS or time.monotonic() > deadline:
-                # Over budget: keep the link unverified rather than stall the report.
+        report = _HEALTH_STATE["reports"].get(url_n)
+        if report is None:
+            now = time.monotonic()
+            if _HEALTH_STATE["start"] is None:
+                _HEALTH_STATE["start"] = now
+            if len(_HEALTH_STATE["reports"]) >= _MAX_HEALTH_CHECKS or now - _HEALTH_STATE["start"] > _HEALTH_BUDGET_SECONDS:
+                # Over the process-wide budget: keep the link unverified rather than stall the report.
                 kept[label_n] = url_n
                 continue
-            reports[url_n] = check_url_health(url_n, timeout=timeout)
-        report = reports[url_n]
+            report = _HEALTH_STATE["reports"][url_n] = check_url_health(url_n, timeout=timeout)
         if report.get("ok"):
             kept[label_n] = url_n
             continue

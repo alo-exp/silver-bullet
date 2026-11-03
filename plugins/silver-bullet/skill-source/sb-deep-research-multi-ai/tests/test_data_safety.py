@@ -263,6 +263,26 @@ class CliOutputRootTests(_Tmp):
         self.assertEqual((moved[0] / "notes.md").read_text(encoding="utf-8"), "keep me")
         self.assertIn(str(moved[0]), out)
 
+    def test_force_keeps_the_users_need_profile_and_scope(self) -> None:
+        self.put("run_manifest.json", {"workflow_id": "WF-SILVER-DEEP-RESEARCH-MULTI-AI", "run_id": "run-old"})
+        self.put("need_profile.json", {"category_pack_id": "agentic-sdlc-process-orchestrator", "must_haves": ["SSO"]})
+        self.put("scope.md", "# my scope")
+        with mock.patch.object(cli.Path, "cwd", return_value=self.base):
+            self._main(["q", "--output-root", str(self.root), "--force"])
+        self.assertEqual(json.loads((self.root / "need_profile.json").read_text(encoding="utf-8"))["must_haves"], ["SSO"])
+        self.assertEqual((self.root / "scope.md").read_text(encoding="utf-8"), "# my scope")
+        moved = next(p for p in self.base.iterdir() if p.name.startswith("run.replaced-"))
+        self.assertTrue((moved / "need_profile.json").is_file())  # the original stays with the old run
+
+    def test_carry_over_skips_missing_and_symlinked_inputs(self) -> None:
+        old = self.base / "old"
+        old.mkdir()
+        (old / "scope.md").symlink_to(self.base / "elsewhere.md")
+        new = self.base / "new"
+        self.assertEqual(cli.carry_over_user_inputs(old, new), [])
+        self.assertFalse(new.exists())
+
+
 
 def _worker(lid, phase, wid, *, ok=True, payload=None):
     env = None

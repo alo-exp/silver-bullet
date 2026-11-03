@@ -121,12 +121,19 @@ than overwritten. `consolidate.py` remains a deterministic claim merge for
 `consolidated/consolidation.json` only.
 
 **Matrix ticks.** Workers return `matrix_entries` (`{vendor, feature, supported, source_ref}`;
-optional in the envelope schema). Each row is one vote by that model and decides its cell;
-claim prose is parsed heuristically only for cells no worker voted on.
+optional in the envelope schema). A model casts one vote per (vendor, feature) (its latest row
+wins); the cell follows the majority, a tie is not a tick, and split cells are written to
+`landscape/disputed-cells.json` and listed in the report. A vendor must match a known name or
+alias exactly (a blank or partial name never matches); without a category pack an unnamed
+vendor becomes its own column, so any topic works with no built-in catalogue. Claim prose is
+parsed heuristically only for cells no worker voted on.
 
 **Category packs.** Category-specific prose (market overview, trends, buying guidance,
 consensus themes, vendor notes) is data in `reference/category-pack-overlays/<pack>.json` and
-applies only when the need profile selects that pack. The only pack shipped is
+applies only when the need profile selects that pack. The same holds for the feature rubric and
+aliases, Leader rules, scoring weights, key competitive factors, the inclusion ledger,
+brand-rename policies and URL rewrites: they sit under the overlay's `vocabulary` key
+(`scripts/pack_vocabulary.py`) and the code defaults are neutral. The only pack shipped is
 `agentic-sdlc-process-orchestrator` (the pack itself lives in `silver-deep-research`). For any
 other topic the report is built only from the run's own envelopes, matrix and audit; no vendor
 is built in or special-cased.

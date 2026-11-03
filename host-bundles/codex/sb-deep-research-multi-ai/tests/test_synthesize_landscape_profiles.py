@@ -8,9 +8,11 @@ import json
 import unittest
 from unittest import mock
 
+from legacy_catalog_fixture import with_legacy_catalogs  # noqa: E402
 from synth_helpers import APO_NEED, TmpCase, sl
 
 
+@with_legacy_catalogs
 class AxisAndLoaderTests(TmpCase):
     def test_axis_profile(self):
         explicit = {"landscape_axes": {"mq_x": "X", "mq_y": "Y"}}
@@ -95,12 +97,13 @@ class ScrTests(TmpCase):
         self.assertIsNone(h(p))
 
 
+@with_legacy_catalogs
 class ProfileTests(TmpCase):
     def test_synthetic_overview(self):
         self.assertEqual(sl._synthetic_overview("N", commercial=True, positives=[], negatives=[]),
-                         "N is a commercial option for agentic SDLC orchestration.")
+                         "N is a commercial option in this landscape.")
         got = sl._synthetic_overview("N", commercial=False, positives=["a", "b", "c", "d"], negatives=["x", "y", "z"])
-        self.assertEqual(got, "N is a open-source option for agentic SDLC orchestration. "
+        self.assertEqual(got, "N is a open-source option in this landscape. "
                               "Noted strengths include a, b, c. Relative gaps include x, y.")
 
     def test_claims_for_slug(self):
@@ -144,26 +147,21 @@ class ProfileTests(TmpCase):
         self.assertEqual(got["url"], "")
 
     def test_pros_cons(self):
-        used = {"Workflow composition", "Atomic flow catalog", "Hook-enforced gates", "Managed hosting"}
-        kcf = next(k for k in sl.KCF_NAMES if k not in used)
-        sup = {"my-tool": {"Workflow composition": True, "Atomic flow catalog": True,
-                           "Hook-enforced gates": True, "Managed hosting": True, kcf: False,
-                           "A": True, "B": True, "C": True, "D": True}}
+        sup = {"my-tool": {"Alpha": True, "Beta": True, "Gamma": True, "Delta": True, "Epsilon": True,
+                           "Zeta": True, "Eta": False, "Theta": False}}
         got = self.profile(commercial=True, support=sup)
         self.assertEqual(len(got["pros"]), 6)
-        self.assertIn("**Managed path**", got["pros"][-1] if len(got["pros"]) < 6 else "**Managed path**")
-        self.assertEqual(got["cons"][0].split(":")[0], "**Operational depth**")
-        self.assertEqual(got["cons"][-1].split(":")[0], "**Pricing opacity**")
-        self.assertTrue(got["best_for"].startswith("SMB teams prioritising workflow composition with My Tool"))
-        self.assertIn(kcf, got["avoid_if"])
+        self.assertEqual(got["pros"][-1].split(":")[0], "**Managed path**")  # five features + managed path
+        self.assertEqual([c.split(":")[0] for c in got["cons"]], ["**No Eta credited**", "**No Theta credited**", "**Pricing opacity**"])
+        self.assertEqual(got["best_for"], "Teams prioritising alpha with My Tool.")
+        self.assertIn("Eta", got["avoid_if"])
         bare = self.profile(commercial=True)
-        self.assertEqual(len(bare["pros"]), 4)
-        self.assertTrue(bare["pros"][0].startswith("**Managed path**"))
-        self.assertEqual([c.split(":")[0] for c in bare["cons"]],
-                         ["**Hosting burden**", "**Weak hook gates**", "**No atomic catalog**",
-                          "**Limited composition**", "**Pricing opacity**"])
-        self.assertIn("agentic SDLC automation", bare["best_for"])
+        self.assertEqual([p.split(":")[0] for p in bare["pros"]], ["**Managed path**"])
+        self.assertEqual([c.split(":")[0] for c in bare["cons"]], ["**Pricing opacity**"])
+        self.assertEqual(bare["best_for"], "Teams evaluating My Tool against the matrix.")
         self.assertIn("unverified gaps", bare["avoid_if"])
+        # no category wording is invented for the card
+        self.assertNotIn("SDLC", " ".join(got["pros"] + got["cons"] + [got["best_for"], bare["best_for"]]))
         oss = self.profile(commercial=False)
         self.assertTrue(oss["pros"][0].startswith("**Control & flexibility**"))
         self.assertNotIn("**Hosting burden**", " ".join(oss["cons"]))

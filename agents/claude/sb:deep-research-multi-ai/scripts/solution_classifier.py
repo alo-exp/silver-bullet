@@ -27,7 +27,8 @@ from category_pack import (
     resolve_pack_from_need,
     slugify,
 )
-from materialize_solution_artifacts import _iter_claim_texts
+from materialize_solution_artifacts import _iter_claim_texts, _mentions
+from pack_vocabulary import activated
 
 Classification = str  # core | adjacent | excluded | sunset
 
@@ -127,11 +128,11 @@ def _extract_candidates_from_text(
     for alias, canonical in sorted(aliases.items(), key=lambda x: -len(x[0])):
         if len(alias) < 2:
             continue
-        if alias in lower or alias.replace("-", " ") in lower:
+        if _mentions(lower, alias) or _mentions(lower, alias.replace("-", " ")):
             if canonical not in found:
                 found.append(canonical)
     for slug, display in known.items():
-        if slug.replace("-", " ") in lower or slug in lower or display.lower() in lower:
+        if any(_mentions(lower, name) for name in (slug.replace("-", " "), slug, display.lower())):
             if slug not in found:
                 found.append(slug)
     return found
@@ -203,8 +204,8 @@ def _classify_slug(
     if slug in hard_exclusions and slug not in all_core_seeds:
         exc = exclusion_map.get(slug, "hard_exclusion")
         return "excluded", f"pack hard_exclusion ({exc})"
-    if slug == "augment-code":
-        return "excluded", "augment-code brand excluded; use augment-cosmos if in scope"
+    if slug in RENAME_EXCLUSIONS:
+        return "excluded", f"{slug} brand excluded; use {RENAME_EXCLUSIONS[slug]} if in scope"
     if slug in all_core_seeds:
         markets = market_core_map.get(slug, [])
         market_label = markets[0] if markets else "market"
@@ -225,7 +226,19 @@ def _classify_slug(
     return "excluded", "not in pack seeds and no inclusion evidence"
 
 
-def classify_solutions(
+# Brand renames the pack enforces ({"old-slug": "new-slug"}); pack vocabulary data, none built in.
+RENAME_EXCLUSIONS: dict[str, str] = {}
+
+
+def classify_solutions(*args: Any, **kwargs: Any) -> dict[str, Any]:
+    """Classify solutions; the pack's vocabulary (rename rules) is active meanwhile."""
+    need = kwargs.get("need") if "need" in kwargs else (args[1] if len(args) > 1 else None)
+    pack = kwargs.get("pack") or (args[2] if len(args) > 2 else None) or resolve_pack_from_need(need)
+    with activated(pack):
+        return _classify_solutions(*args, **kwargs)
+
+
+def _classify_solutions(
     envelopes: list[dict[str, Any]],
     need: dict[str, Any] | None = None,
     pack: dict[str, Any] | None = None,

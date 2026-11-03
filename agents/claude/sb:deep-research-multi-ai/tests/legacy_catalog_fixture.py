@@ -82,7 +82,19 @@ def with_legacy_catalogs(cls):
         OSS_SLUGS=frozenset(e["slug"] for e in OSS_CATALOG),
         NON_COMMERCIAL_SLUGS=frozenset(e["slug"] for e in OSS_CATALOG),
     )
+    import pack_vocabulary
+
+    values = pack_vocabulary.converted(overlay["vocabulary"])
+
+    def with_vocabulary(test):
+        @functools.wraps(test)
+        def run(*args, **kwargs):
+            with pack_vocabulary.apply_values(values):
+                return test(*args, **kwargs)
+
+        return run
+
     for name, value in list(vars(cls).items()):
         if name.startswith("test") and callable(value):
-            setattr(cls, name, mat_patch(sl_patch(patcher(value))))
+            setattr(cls, name, mat_patch(sl_patch(patcher(with_vocabulary(value)))))
     return cls
