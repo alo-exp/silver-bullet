@@ -80,7 +80,7 @@ home = pathlib.Path(sys.argv[4]).expanduser()
 lib_dir = pathlib.Path(sys.argv[5])
 sys.path.insert(0, str(lib_dir))
 from sb_host_config import (  # noqa: E402
-    ConfigError, is_sb_hook_command, read_json, read_toml_repairing, sb_hook_names, toml_string, write_toml,
+    ConfigError, is_sb_hook_command, is_sb_trust_table, read_json, read_toml_repairing, sb_hook_names, toml_string, write_toml,
 )
 
 package_hooks_src = package_root / "hooks" / "hooks.json"
@@ -175,7 +175,7 @@ def sb_trust(path) -> bool:
 
 
 def load_config():
-    doc, repaired = read_toml_repairing(config_path, sb_trust)
+    doc, repaired = read_toml_repairing(config_path, is_sb_trust_table)
     if repaired:
         print(f"Repaired {config_path}: removed Silver Bullet hook-trust tables declared twice", file=sys.stderr)
     return doc
@@ -206,11 +206,11 @@ repair_silver_bullet_duplicate_trust_tables() {
 import sys
 
 sys.path.insert(0, sys.argv[2])
-from sb_host_config import ConfigError, read_toml_repairing, write_toml  # noqa: E402
+from sb_host_config import ConfigError, is_sb_trust_table, read_toml_repairing, write_toml  # noqa: E402
 
 path = sys.argv[1]
 try:
-    doc, repaired = read_toml_repairing(path, lambda p: len(p) >= 3 and p[:2] == ("hooks", "state") and p[2].startswith("silver-bullet@"))
+    doc, repaired = read_toml_repairing(path, is_sb_trust_table)
     if repaired:
         write_toml(path, doc)
         print(f"Repaired {path}: removed Silver Bullet hook-trust tables declared twice", file=sys.stderr)
