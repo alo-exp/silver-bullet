@@ -131,10 +131,11 @@ assert_eq "audit: a directory as the sink is tolerated (printf path)" "0" "$?"
 # shellcheck source=../../hooks/lib/branch-scope.sh
 source "$LIB/branch-scope.sh"
 printf 'feature/x\n/top\n' >"$SD/branch"
-ec_fail sed '*"1p"*'
+# Anchor on sed's own arguments: a bare *"2p"* also matches random temp names (sbtest.2pXXXX).
+ec_fail sed '"-n 1p "*'
 nok sb_branch_scope_read "$SD/branch"
 ec_unfail sed
-ec_fail sed '*"2p"*'
+ec_fail sed '"-n 2p "*'
 ok sb_branch_scope_read "$SD/branch"
 ec_unfail sed
 assert_eq "toplevel unreadable: empty" "" "$SB_BRANCH_SCOPE_STORED_TOPLEVEL"
