@@ -36,8 +36,15 @@ assert_eq "command string extracted" "git status" "$TL_OUT"
 
 tl_stub python3 'exit 3'
 call sb_tool_command_string '{"tool_input":{"command":"git status"}}'
-assert_eq "failing python helper yields empty output" "" "$TL_OUT"
+assert_eq "failing python helper: jq still reads the command (R1-06)" "git status" "$TL_OUT"
 assert_eq "failing python helper is swallowed" 0 "$TL_STATUS"
+call sb_tool_command_string '{"tool_input":{"cmd":["git","commit","-m","two words",3]}}'
+assert_eq "jq fallback quotes an argv list like shlex" "git commit -m 'two words' 3" "$TL_OUT"
+call sb_tool_command_string '{"tool_input":"git push"}'
+assert_eq "jq fallback: non-object tool_input gives nothing" "" "$TL_OUT"
+call sb_tool_command_string 'not json'
+assert_eq "jq fallback: invalid JSON gives nothing" "" "$TL_OUT"
+assert_eq "jq fallback: invalid JSON does not fail" 0 "$TL_STATUS"
 call sb_shell_command_looks_read_only "ls"
 assert_eq "status variant propagates helper failure" 3 "$TL_STATUS"
 rm -f "$TL_BIN/python3"
