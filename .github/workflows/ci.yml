@@ -34,6 +34,10 @@ jobs:
           } >> "$GITHUB_ENV"
 
       # The workflow-hardening invariant parses the workflows with PyYAML and fails without it.
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
       - name: Install PyYAML (same pin as requirements-dev.txt)
         run: python3 -m pip install PyYAML==6.0.2
 

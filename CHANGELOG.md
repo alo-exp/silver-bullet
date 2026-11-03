@@ -11,6 +11,7 @@
 - Workflow hardening: block scalars under `- key: |` no longer hide sibling keys; more flow-style variants are rejected; `hook-references` is an allowlist.
 - Workflow hardening: a `${{ }}` in a commented line of a run or github-script body is still reported; anchors, tags, aliases and complex keys fail closed. Personal-data: more flattened/escaped forms, WSL paths, cloud/CI accounts, placeholder and bot emails, and an audited allowlist file (`.github/personal-data-allow.txt`). Run captures (including `*.out`) are removed and their ignore patterns scoped to `.planning/`, `research/` and `docs/`.
 - Workflow hardening now parses the workflows with PyYAML (anchors, merge keys, flow style and escapes resolved; fails closed without PyYAML or on a parse error). Personal-data adds a hashed maintainer-identity token list and drops the known-directory regex.
+- Personal-data allowlist entries are now `file <glob> <context hash>` (one quoted string or line, never a whole file; a name in a home-directory-shaped path is always reported); identity tokens are matched after decoding JSON/URL/HTML escapes, zero-width characters and Unicode compatibility forms. Workflow hardening also checks more action code inputs (`inlineScript`, `*-command`, list values, container options), `pull_request_target`/`workflow_run` head checkouts and case-insensitive `actions/checkout`; the validate job installs PyYAML under `actions/setup-python`.
 
 ---
 
