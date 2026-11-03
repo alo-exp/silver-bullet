@@ -5,7 +5,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/png" href="../../favicon.png"><link rel="shortcut icon" href="../../favicon.ico">
 <title>Agent Delegation — Silver Bullet Help</title>
-<meta name="description" content="WF-AGENT-DELEGATE-ENTRY and AF-AGENT-DELEGATE: supervised Claude, Codex, or Cursor delegation with checkpoints and evidence-backed verification.">
+<meta name="description" content="WF-AGENT-DELEGATE-ENTRY and AF-AGENT-DELEGATE: supervised Claude or Codex delegation with checkpoints and evidence-backed verification.">
 <meta property="og:title" content="Agent Delegation — Silver Bullet Help"><meta property="og:description" content="Supervised external-agent delegation with bounded briefs, checkpoints, verification, and evidence."><meta property="og:type" content="website"><meta property="og:url" content="https://sb.alolabs.dev/help/workflows/silver-agent-delegate.html"><meta property="og:image" content="https://sb.alolabs.dev/og-image.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../../tokens.css?v=s3-site-icon-glyph-align5"><link rel="stylesheet" href="../../neutral-variants.css?v=s3-home-icons"><link rel="stylesheet" href="../../chrome.css?v=site-chrome-11">
@@ -17,10 +17,10 @@
 <div class="page-hero"><div class="container"><h1>Agent Delegation</h1><p>Supervised external-agent execution through <code>WF-AGENT-DELEGATE-ENTRY</code> and <code>AF-AGENT-DELEGATE</code>.</p></div></div>
 <div class="container-wide"><div class="doc-layout"><aside class="doc-sidebar"><ul class="sidebar-nav"><li class="sidebar-section">On This Page</li><li><a href="#overview">Overview</a></li><li><a href="#routes">Host Routes</a></li><li><a href="#composition">Catalog Composition</a></li><li><a href="#supervision">Supervision Contract</a></li><li class="sidebar-section">See Also</li><li><a href="silver-multi-ai-task.html">Multi-AI Task</a></li><li><a href="./">All Workflows</a></li></ul></aside><article class="doc-content">
 <h2 id="overview">Overview</h2>
-<p>Agent delegation hands one bounded task to an external Claude, Codex, or Cursor agent while the parent remains responsible for scope, checkpoints, verification, and the final success claim. It is a supervised execution flow, not an unsupervised replacement for the active workflow.</p>
+<p>Agent delegation hands one bounded task to an external Claude or Codex agent while the parent remains responsible for scope, checkpoints, verification, and the final success claim. It is a supervised execution flow, not an unsupervised replacement for the active workflow.</p>
 <h2 id="routes">Host Routes</h2>
-<ul><li><code>/sb:agent-claude</code> — delegate to Claude Code.</li><li><code>/sb:agent-codex</code> — delegate to Codex.</li><li><code>/sb:agent-cursor</code> — delegate to Cursor.</li></ul>
-<p>The generic catalog entry recognizes <code>agent-delegate</code>, <code>agent-claude</code>, <code>agent-codex</code>, and <code>agent-cursor</code> signals.</p>
+<ul><li><code>/sb:agent-claude</code> — delegate to Claude Code.</li><li><code>/sb:agent-codex</code> — delegate to Codex.</li></ul>
+<p>The generic catalog entry recognizes <code>agent-delegate</code>, <code>agent-claude</code>, and <code>agent-codex</code> signals.</p>
 <h2 id="composition">Catalog Composition</h2>
 <div class="code-block">WF-AGENT-DELEGATE-ENTRY
   → AF-AGENT-DELEGATE</div>

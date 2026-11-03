@@ -169,17 +169,17 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <tbody>
           <tr><td>APO catalog (29 AF / 26 WF: 22 public + 4 internal)</td><td><span class="proof-shipped">Shipped</span></td><td><code>validate-apo-catalog</code>, generated contract views; 3 process packs (<code>PP-SB-DEFAULT</code>, regulated, startup-fast)</td></tr>
           <tr><td>Parent-only orchestrator (tier&nbsp;2+)</td><td><span class="proof-shipped">Shipped</span></td><td>Directive guard, parent-guard hook tests; marketplace stubs for orchestrator/orient/execute/ship</td></tr>
-          <tr><td>Tri-criteria E2E harness (live/cold/greenfield)</td><td><span class="proof-proven">Live E2E (proven)</span></td><td>Greenfield 6/6 PASS (cursor+claude+codex); <code>composer_chain</code> multi-WF scheduler; evidence under <code>.planning/sb-tri-criteria-e2e/</code></td></tr>
+          <tr><td>Tri-criteria E2E harness (live/cold/greenfield)</td><td><span class="proof-proven">Live E2E (proven)</span></td><td>Greenfield 6/6 PASS (claude+codex); <code>composer_chain</code> multi-WF scheduler; evidence under <code>.planning/sb-tri-criteria-e2e/</code></td></tr>
           <tr><td>Twelve enforcement layers + V-loops</td><td><span class="proof-shipped">Shipped</span></td><td>Hook unit suite; completion audit</td></tr>
           <tr><td>Autonomous session mode</td><td><span class="proof-partial">Live E2E (partial)</span></td><td>Proven on fixture rows (OUT-AUTO-01); <code>autonomous_safe</code>/<code>internal_dogfood</code> auto-set mode on tier&nbsp;2+ at SessionStart</td></tr>
           <tr><td>Enterprise policy profiles (config)</td><td><span class="proof-shipped">Shipped</span></td><td>Schema + migration; SessionStart auto-sets mode when tier-safe; supervised/regulated stay interactive</td></tr>
-          <tr><td>22-row enterprise E2E matrix</td><td><span class="proof-partial">Live E2E (partial)</span></td><td>Cursor + Codex canonical 22/22 (<code>live_e2e_proven</code>); Claude 6/22 smoke — tri-host parity incomplete</td></tr>
+          <tr><td>22-row enterprise E2E matrix</td><td><span class="proof-partial">Live E2E (partial)</span></td><td>Codex canonical 22/22 (<code>live_e2e_proven</code>); Claude 6/22 smoke — host parity incomplete</td></tr>
           <tr><td>Parallel DAG scheduler</td><td><span class="proof-progress">In progress</span></td><td>Catalog + fixture runtime: batch planning, dispatch metadata, join gates, stop-check; flow_queue defers until batch joins; host parallel Task dispatch partial</td></tr>
           <tr><td>Policy profile runtime enforcement</td><td><span class="proof-partial">Live E2E (partial)</span></td><td><code>clarify_auto</code>, evidence strict, deploy gates partially wired; session mode auto-default shipped</td></tr>
           <tr><td>Generated certification artifact</td><td><span class="proof-shipped">Shipped</span></td><td><code>CERTIFICATION-STATUS.json</code> + <code>site/help/data/certification-status.json</code>; this page hydrates from site copy</td></tr>
           <tr><td>SOC2-style evidence export</td><td><span class="proof-shipped">Shipped</span></td><td><code>scripts/export-enterprise-evidence.sh</code> bundles audit entities + composition log + intent ledger excerpts</td></tr>
           <tr><td>Durable orchestration event log</td><td><span class="proof-planned">Planned</span></td><td>Replay/retry/saga substrate not shipped</td></tr>
-          <tr><td>Cold-start autonomy (vague prompt → shipped app)</td><td><span class="proof-partial">Live E2E (partial)</span></td><td>Improving on Cursor/Codex tracks; early rounds needed heavy operator intervention</td></tr>
+          <tr><td>Cold-start autonomy (vague prompt → shipped app)</td><td><span class="proof-partial">Live E2E (partial)</span></td><td>Improving on the Codex track; early rounds needed heavy operator intervention</td></tr>
           <tr><td>Production deploy without human gate</td><td><span class="proof-planned">Planned</span></td><td>Explicitly not offered; policy keeps prod human-gated</td></tr>
         </tbody>
       </table>
@@ -188,14 +188,13 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="tri-host">Tri-Host Certification Snapshot</h2>
-      <p>Release-grade enterprise autonomy requires reproducible <strong>strict-clean</strong> evidence on Claude Code, Codex, and Cursor — not structural tests alone.</p>
+      <p>Release-grade enterprise autonomy requires reproducible <strong>strict-clean</strong> evidence on Claude Code and Codex — not structural tests alone.</p>
       <div class="ref-table-wrap">
       <table class="ref-table">
         <thead>
           <tr><th>Host</th><th>Proof level</th><th>Evidence surface</th></tr>
         </thead>
         <tbody id="cert-host-tbody">
-          <tr><td>Cursor</td><td><span class="proof-proven">Live E2E (proven)</span></td><td>22/22 ledger; narrative matrix reconcile; evidence gaps: strict-clean narrative-only, legacy ledger format</td></tr>
           <tr><td>Codex</td><td><span class="proof-proven">Live E2E (proven)</span></td><td>22/22 ledger reconcile COMPLETE; gates closed_pass; product audit pass</td></tr>
           <tr><td>Claude Code</td><td><span class="proof-partial">Live E2E (partial)</span></td><td>6/22 registry smoke; gates in progress; strict-clean not eligible</td></tr>
         </tbody>

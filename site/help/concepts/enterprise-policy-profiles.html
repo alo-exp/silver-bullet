@@ -184,7 +184,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <h2 id="onboarding">Autonomous-Safe Onboarding Path</h2>
       <p>Recommended flow for teams moving toward enterprise autonomy <strong>without</strong> removing safeguards:</p>
       <ol>
-        <li>Install SB on a tier&nbsp;2+ host (Cursor recommended for parent/worker Task support).</li>
+        <li>Install SB on a tier&nbsp;2+ host (Claude Code or Codex, which support parent/worker subagents).</li>
         <li>Run <code>/sb:init</code> — confirm <code>orchestrator_mode: parent</code> and review <code>enterprise_policy</code>.</li>
         <li>Start with <code>active_profile: supervised</code>; complete one full <code>/sb:feature</code> cycle with evidence.</li>
         <li>When comfortable, switch to <code>autonomous_safe</code> on a tier&nbsp;2+ host — SessionStart writes <code>autonomous</code> to the mode file automatically (no interactive prompt).</li>

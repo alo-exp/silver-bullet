@@ -28,9 +28,9 @@
     },
     {
       "claim_id": "hero-tri-host",
-      "text": "Claude Code, Codex, or Cursor",
+      "text": "Claude Code or Codex",
       "source_selector": "#hero-main .hero-intro",
-      "test_ids": ["install-claude", "install-codex", "cursor-hook-bridge"]
+      "test_ids": ["install-claude", "install-codex"]
     },
     {
       "claim_id": "hero-evidence-gates",

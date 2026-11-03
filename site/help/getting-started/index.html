@@ -9,7 +9,7 @@
 <title>Getting Started — Silver Bullet Help</title>
 <meta name="description" content="Get started with Silver Bullet. Learn what AI-driven development is, install prerequisites, and run your first enforced workflow session.">
 <meta property="og:title" content="Getting Started — Silver Bullet Help">
-<meta property="og:description" content="Install Silver Bullet and run your first composable atomic flow session — hook-enforced /sb orchestration for Claude Code, Codex, and Cursor.">
+<meta property="og:description" content="Install Silver Bullet and run your first composable atomic flow session — hook-enforced /sb orchestration for Claude Code and Codex.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://sb.alolabs.dev/help/getting-started/">
 <meta property="og:image" content="https://sb.alolabs.dev/og-image.png">
@@ -140,7 +140,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 <div class="page-hero">
   <div class="container">
     <h1>Getting Started</h1>
-    <p>Install Silver Bullet from a public marketplace, initialize your repo with <code>/sb:init</code>, and run your first APO-composed workflow on Claude Code, Codex, or Cursor.</p>
+    <p>Install Silver Bullet from a public marketplace, initialize your repo with <code>/sb:init</code>, and run your first APO-composed workflow on Claude Code or Codex.</p>
   </div>
 </div>
 
@@ -186,7 +186,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="what-is-sb">What Silver Bullet Does</h2>
-      <p>Silver Bullet is an <strong>Agentic Process Orchestrator (APO)</strong> plugin for Claude Code, Codex, and Cursor. It owns the default software-engineering and DevOps lifecycle: routing, planning, execution, verification, review, ship, and release — enforced by hooks and recorded in catalog-backed workflow state.</p>
+      <p>Silver Bullet is an <strong>Agentic Process Orchestrator (APO)</strong> plugin for Claude Code and Codex. It owns the default software-engineering and DevOps lifecycle: routing, planning, execution, verification, review, ship, and release — enforced by hooks and recorded in catalog-backed workflow state.</p>
       <p>The process model is defined in <code>docs/apo-catalog.json</code>: <strong>Process → Workflow → Atomic Flow → Flow Step</strong>. Silver Bullet ships 29 canonical <code>AF-*</code> atomic flows, 26 <code>WF-*</code> workflows (22 public task-shaped workflows plus 4 internal reusable components), and 118 flow steps. Legacy <code>FLOW 1–18</code> names remain migration aliases only; new work should use catalog IDs.</p>
 
       <div class="prereq-grid" style="grid-template-columns:1fr 1fr">
@@ -218,7 +218,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
           <div class="prereq-icon"><i data-lucide="bot"></i></div>
           <div>
             <h4>Host Coding Agent <span class="tag tag-required">Required</span></h4>
-            <p>The AI coding assistant Silver Bullet runs inside. Claude Code, Codex, and Cursor are the supported hosts for the current public marketplace packages.</p>
+            <p>The AI coding assistant Silver Bullet runs inside. Claude Code and Codex are the supported hosts for the current public marketplace packages.</p>
             <div class="install-cmd">Install your supported host runtime first</div>
           </div>
         </div>
@@ -256,7 +256,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="install">Installing Silver Bullet</h2>
-      <p>Silver Bullet supports Claude Code, Codex, and Cursor. Install from the public marketplace for your host, then run <code>/sb:init</code> in the repo you want SB to manage. Codex keeps internal <code>skill-source/</code> files and exposes the native <code>/sb:</code> picker; Cursor merges hooks into <code>~/.cursor/hooks.json</code> with state under <code>~/.cursor/.silver-bullet/</code>.</p>
+      <p>Silver Bullet supports Claude Code and Codex. Install from the public marketplace for your host, then run <code>/sb:init</code> in the repo you want SB to manage. Codex keeps internal <code>skill-source/</code> files and exposes the native <code>/sb:</code> picker.</p>
 
       <h3>Adoption path (all hosts)</h3>
       <ol>
@@ -274,14 +274,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <p>After <code>/sb:update</code> or when hooks seem inactive, run the host-aware activation audit:</p>
       <div class="code-block"><span class="cmd">/sb:doctor</span></div>
 
-      <h3>Cursor Plugin</h3>
-      <p>For normal Cursor use, add the public <code>alo-labs/agent-plugins</code> marketplace in Cursor and install <code>silver-bullet</code> from <code>alo-labs-cursor</code>. The marketplace points at the upstream <code>alo-exp/silver-bullet</code> release; hooks merge into <code>~/.cursor/hooks.json</code> and state lives under <code>~/.cursor/.silver-bullet/</code>.</p>
-      <div class="code-label">Repository checkout installer targeting the public release</div>
-      <div class="code-block"><span class="cmd">bash scripts/install-cursor.sh --public-release</span></div>
-      <p>When developing Silver Bullet from a repository checkout, sync the plugin tree locally instead:</p>
-<div class="code-label">Development checkout only</div>
-<div class="code-block"><span class="cmd">bash scripts/install-cursor.sh</span></div>
-      <p>Use the Cursor Skill tool (or <code>silver-bullet invoke-skill</code>) so <code>record-skill</code> can track workflow progress. Marketplace users run <code>/sb:doctor</code> to confirm activation; repository contributors may also run checkout-only <code>bash scripts/sb-diagnostics.sh</code>.</p>
+      <p>Cursor is no longer a supported host. If you installed an older Silver Bullet into Cursor, run <code>bash scripts/uninstall-cursor-legacy.sh</code> once to remove what it left under <code>~/.cursor</code>.</p>
 
       <h3>Claude Code Plugin</h3>
       <p>Install Silver Bullet from the host plugin manager or the public <code>alo-labs/agent-plugins</code> marketplace (<code>alo-labs</code> catalog).</p>

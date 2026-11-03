@@ -113,7 +113,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 <div class="page-hero">
   <div class="container">
     <h1>Troubleshooting</h1>
-    <p>Diagnose hook failures, skill discovery, CI gates, APO catalog migration issues, and session recovery for Silver Bullet v0.53.0 on Claude Code, Codex, and Cursor. If your problem is not listed, open an issue on <a href="https://github.com/alo-exp/silver-bullet/issues" style="color:var(--accent-light);text-decoration:underline">GitHub</a>.</p>
+    <p>Diagnose hook failures, skill discovery, CI gates, APO catalog migration issues, and session recovery for Silver Bullet v0.53.0 on Claude Code and Codex. If your problem is not listed, open an issue on <a href="https://github.com/alo-exp/silver-bullet/issues" style="color:var(--accent-light);text-decoration:underline">GitHub</a>.</p>
   </div>
 </div>
 
@@ -142,13 +142,13 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="issue-card">
         <h4>Hooks never engage on a fresh clone</h4>
         <p class="ic-cause"><strong>Cause:</strong> The v0.53.0 hook activation guard requires both <code>silver-bullet.md</code> and <code>.silver-bullet.json</code>. Cloning a repo without running init leaves enforcement inactive by design.</p>
-        <p class="ic-fix"><strong>Fix:</strong> Run <code>/sb:init</code> in the project root. Re-run <code>bash scripts/sb-diagnostics.sh</code> and confirm tier 2 (hook-enforced) on Cursor/Codex/Claude when hooks are merged.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Run <code>/sb:init</code> in the project root. Re-run <code>bash scripts/sb-diagnostics.sh</code> and confirm tier 2 (hook-enforced) on Codex/Claude when hooks are merged.</p>
       </div>
 
       <div class="issue-card">
-        <h4>Cursor hooks not merged</h4>
-        <p class="ic-cause"><strong>Cause:</strong> <code>~/.cursor/hooks.json</code> does not include SB entries, or install used an old checkout path.</p>
-        <p class="ic-fix"><strong>Fix:</strong> Run <code>bash scripts/install-cursor.sh --public-release</code>, then <code>bash scripts/sb-diagnostics.sh</code>. Expect tier 2 (hook-enforced) when hooks are present.</p>
+        <h4>Old Cursor install still present</h4>
+        <p class="ic-cause"><strong>Cause:</strong> Cursor is no longer a supported host, but an older Silver Bullet install may have left hooks, rules and agents under <code>~/.cursor</code>.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Run <code>bash scripts/uninstall-cursor-legacy.sh --dry-run</code> to preview, then <code>bash scripts/uninstall-cursor-legacy.sh</code>. It only removes what Silver Bullet created and keeps a backup.</p>
       </div>
 
       <div class="issue-card">

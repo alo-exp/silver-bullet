@@ -52,7 +52,7 @@
 
     if (claimNote && data.conservative_summary) {
       const ready = data.conservative_summary.public_autonomous_enterprise_claim_ready;
-      claimNote.textContent = `public_autonomous_enterprise_claim_ready: ${ready} (${data.conservative_summary.tri_host_live_e2e_proven || 0}/3 hosts live_e2e_proven)`;
+      claimNote.textContent = `public_autonomous_enterprise_claim_ready: ${ready} (${data.conservative_summary.tri_host_live_e2e_proven || 0}/${data.hosts.length} hosts live_e2e_proven)`;
     }
   }
 
