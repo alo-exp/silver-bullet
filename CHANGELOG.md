@@ -1,5 +1,17 @@
 # Changelog
 
+## [Unreleased]
+
+- Security: the Claude marketplace entry is pinned to the release tag (`ref`, plus `sha` once tagged); the Codex entry is pinned by `ref` only; the alignment test enforces it.
+- Privacy: working-tree scrub of personal machine paths, a quota plan, a machine setup report and AI CLI transcripts (history not rewritten); the new `personal-data` invariant keeps them out.
+- Skills: the graphify-managed `.agents/skills/graphify` and `.claude/skills/graphify` are hash-locked in `skills-lock.json`.
+- Payload: the public install path is `alo-labs/agent-plugins` (`plugins/silver-bullet`, ref and sha bumped per release); `.gitattributes` export-ignores `research/`, `.planning/` transcripts, `graphify-out/graph.json`, `.agentmemory/` and `*.bak`.
+- Cursor: `skills/` and `templates/workflows/` moved from `.cursorignore` to `.cursorindexingignore`.
+- Privacy invariant: also catches `Users-<n>-`, `_Users_<n>_`, `-home-<n>-`, `/var/home`, JSON-escaped and URL-encoded paths, PDFs and personal `.local` emails; allowlists CI and container accounts, `@2x.png` assets, `git@host:` remotes and role mailboxes.
+- Workflow hardening: block scalars under `- key: |` no longer hide sibling keys; more flow-style variants are rejected; `hook-references` is an allowlist.
+
+---
+
 ## [0.53.0] — 2026-09-07
 
 Minor release: public Silver Bullet namespace migration to `/sb`, removal of the historical `source-command-` command artefact, and cross-host package mirror alignment.
@@ -1579,16 +1591,6 @@ Launch-hardening release. Remediates all blocker/high/medium findings from the p
 ### Chores
 
 - `chore(release): prepare v0.37.1`
-
----
-
-## [Unreleased]
-
-- Security: the Claude, Cursor and Codex marketplace entries are pinned to the release tag (`ref`, plus `sha` once tagged); the alignment test enforces it.
-- Privacy: working-tree scrub of personal machine paths, a quota plan, a machine setup report and AI CLI transcripts (history not rewritten); the new `personal-data` invariant keeps them out.
-- Skills: the graphify-managed `.agents/skills/graphify` and `.claude/skills/graphify` are hash-locked in `skills-lock.json`.
-- Payload: `.gitattributes` export-ignores `research/`, `.planning/` transcripts, `graphify-out/graph.json`, `.agentmemory/` and `*.bak`; `scripts/build-plugin-payload.sh` builds the slim tarball.
-- Cursor: `skills/` and `templates/workflows/` moved from `.cursorignore` to `.cursorindexingignore`.
 
 ---
 

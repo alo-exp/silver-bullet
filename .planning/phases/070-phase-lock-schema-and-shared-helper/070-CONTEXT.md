@@ -33,7 +33,7 @@ Out of scope for Phase 70 (handled in later phases):
 - Per-phase value shape:
   ```json
   {
-    "owner_id": "<short id, e.g. claude-shafqat-mac-23456>",
+    "owner_id": "<short id, e.g. claude-<host>-23456>",
     "agent_runtime": "claude",
     "claimed_at": "<ISO 8601 UTC>",
     "last_heartbeat_at": "<ISO 8601 UTC>",
@@ -139,7 +139,7 @@ Out of scope for Phase 70 (handled in later phases):
 
 - **Use `flock(1)`** on a sidecar `.lock` file rather than locking the JSON file itself — simpler, more portable across macOS/Linux, no risk of corrupting the JSON on a partial write.
 - **`jq` is mandatory** (consistent with existing `hooks/lib/*.sh` policy). Helper checks `command -v jq` at start; if absent, emits `ERR: jq required` to stderr and exits non-zero. Do NOT fail-open here — unlike hooks, this helper's correctness is critical; silent fail-open would let a runtime believe it owns a lock that was never written.
-- **Owner-id format:** `<runtime>-<hostname>-<pid>` (e.g. `claude-shafqat-mac-23456`). This is enough to disambiguate within a single machine; cross-machine coordination is out of scope.
+- **Owner-id format:** `<runtime>-<hostname>-<pid>` (e.g. `claude-<host>-23456`). This is enough to disambiguate within a single machine; cross-machine coordination is out of scope.
 - **`peek` output contract:** when free, prints empty string + exit 0 (callers can `[[ -z "$(peek)" ]]`). When held, prints valid JSON to stdout. When stale, prints valid JSON with extra `"expired": true` field.
 - **Lock file directory creation:** if `.planning/` exists but `.planning/.phase-locks.json` does not, the helper creates it as `{}` on first `claim`. If `.planning/` itself does not exist, exit non-zero with a clear message — the helper is for projects already initialized for SB.
 

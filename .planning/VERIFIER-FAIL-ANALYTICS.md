@@ -55,7 +55,7 @@ Verifier (`verify_1`, `verify_2`, or equivalent worker) **closed** with FAIL:
 | Source | Path | Files |
 |--------|------|------:|
 | Agent transcripts | `/Users/<user>/.cursor/projects/*/agent-transcripts/` | 6,085 `.jsonl` |
-| Silver Bullet transcripts | `.../Users-shafqat-projects-silver-bullet-repo/agent-transcripts/` | (subset) |
+| Silver Bullet transcripts | `.../Users-user-projects-silver-bullet-repo/agent-transcripts/` | (subset) |
 | Verify artifacts | `/Users/<user>/projects/**/verify_{1,2}.md`, `verify-*.md` | 449 |
 | SearchConversations | — | **not available** |
 

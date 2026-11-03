@@ -14,5 +14,5 @@
 - Plan SHA256: `061467c46de70f3ed4cda326fcaca0c013b12b39c8430e9a7ec7bc99e58bc257` (413 lines)
 - Brief: `.planning/rfl-agent-interaction-modes-17ed9bf7/rung-11-opus5-xhigh/brief.md`
 - Log: `.planning/rfl-agent-interaction-modes-17ed9bf7/rung-11-opus5-xhigh/claude-run.log`
-- Auth (pre): Claude Pro / `shafqat@sourcevo.com` (`claude auth status` loggedIn true)
+- Auth (pre): Claude <plan> / `<account>` (`claude auth status` loggedIn true)
 - Model probe: `claude -p --model claude-opus-5 --effort xhigh` → `PONG` (exit 0). `--bare` skipped (keychain skip → "Not logged in").

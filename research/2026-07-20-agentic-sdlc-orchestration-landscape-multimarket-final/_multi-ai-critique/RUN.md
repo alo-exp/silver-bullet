@@ -72,7 +72,7 @@ codex exec -m gpt-5.6-terra -c model_reasoning_effort=\"high\" \
 
 ```bash
 claude auth status
-# → loggedIn: true, authMethod: claude.ai, email: shafqat@sourcevo.com, subscriptionType: pro
+# → loggedIn: true, authMethod: claude.ai, email: <account>, subscriptionType: <plan>
 ```
 
 **Harness note:** `invoke.sh --use-print` hit 300s timeout (permission/hooks path). Successful run used the same print contract with `--dangerously-skip-permissions` (matches live adapter `bypassPermissions`):

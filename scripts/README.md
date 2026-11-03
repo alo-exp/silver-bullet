@@ -53,7 +53,6 @@ Called by skills and hooks while Silver Bullet runs in a project.
 
 | Script | Purpose |
 |--------|---------|
-| `build-plugin-payload.sh` | Build the slim runtime tarball of a ref (honours the `.gitattributes` export-ignore rules: no research/, .planning transcripts, graph.json) |
 | `sync-codex-package.sh` | Render `skills/` into `agents/claude/`, `host-bundles/{codex,cursor}/` and `plugins/silver-bullet/skill-source/`, refresh the package symlinks and template mirror |
 | `render-agent-bundle.py` | The per-host skill renderer used by the sync scripts |
 | `sync-cursor-package.sh` | Refresh the Cursor package surface (`cursor-hooks.json`, commands, manifest) |

@@ -52,7 +52,10 @@ data/iii-config.runtime.yaml
 # (personal-data) fails when personal machine paths or foreign email addresses are tracked.
 /SETUP_REPORT.md
 *.err
+*.err.*
+*.log.*
 .planning/**/*.log
+.planning/**/*.log.*
 research/**/*.log
 .planning/**/CLAUDE-QUOTA.md
 
