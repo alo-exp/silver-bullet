@@ -344,10 +344,13 @@ dg_assert_ok "regression: missing project gate => fail open: exits 0"
 dg_run_nolib_in "$P" "$H" "$(tl_hook_json PreToolUse Bash 'git push origin x')"
 assert_eq "regression: tool helpers unavailable => ignore" "" "$TL_OUT"
 dg_assert_ok "regression: tool helpers unavailable => ignore: exits 0"
+dg_run "$P" "$H" '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{}}'
+assert_eq "regression: no command in the payload => ignore" "" "$TL_OUT"
+dg_assert_ok "regression: no command in the payload => ignore: exits 0"
+# The shared tool-input reader falls back to jq, so a broken python3 must not hide a push.
 tl_stub python3 'exit 1'
 dg_run "$P" "$H" "$(tl_hook_json PreToolUse Bash 'git push origin x')"
-assert_eq "regression: command extraction failure => ignore" "" "$TL_OUT"
-dg_assert_ok "regression: command extraction failure => ignore: exits 0"
+assert_eq "regression: broken python3 still extracts the push (jq fallback) and gates" "deny" "$(decision)"
 rm -f "$TL_BIN/python3"
 site_session
 echo 'not json' >"$SESS"
