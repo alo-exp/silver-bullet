@@ -162,9 +162,9 @@ if [[ -n "$_rt_hb_script" && -f "${sb_project_root}/.silver-bullet.json" ]]; the
   if [[ "$_sb_initiated" == "true" ]]; then
     # Section 3: eligible SessionStart (all sources); rt_heartbeat_write enforces 60s cadence.
     # shellcheck source=/dev/null
-    if RT_PROJECT_ROOT="$sb_project_root" RT_HOST="${SILVER_BULLET_RUNTIME:-cursor}" \
+    if RT_PROJECT_ROOT="$sb_project_root" RT_HOST="${SILVER_BULLET_RUNTIME:-claude}" \
       source "$_rt_hb_script" 2>/dev/null; then
-      rt_heartbeat_write "$sb_project_root" "${SILVER_BULLET_RUNTIME:-cursor}" 2>/dev/null || true
+      rt_heartbeat_write "$sb_project_root" "${SILVER_BULLET_RUNTIME:-claude}" 2>/dev/null || true
     fi
   fi
 fi
@@ -565,18 +565,6 @@ if [[ -f "$_lib_dir/orchestrator-directive.sh" ]]; then
   fi
 fi
 
-# Cursor host note when tier < 2
-if [[ -f "$_lib_dir/capability-tier.sh" ]]; then
-  if [[ "$(sb_capability_runtime_name 2>/dev/null || echo unknown)" == "cursor" ]] \
-     && [[ "$(sb_capability_tier_number 2>/dev/null || echo 0)" -lt 2 ]]; then
-    combined="${combined:+$combined
-
----
-
-}Task host: merge host hooks manifest via scripts/lib/install-cursor/merge-cursor-hooks.py — orchestrator directive blocks Edit/Write/Bash until expected skill is recorded via PostToolUse/Skill."
-  fi
-fi
-
 # SB update check (§0 step 5.1) — startup/clear only; fail-soft when offline
 if [[ "$sb_should_mutate" == true && "${SILVER_BULLET_UPDATE_CHECK_DISABLED:-}" != "1" ]]; then
   if [[ -f "$_lib_dir/check-sb-update.sh" ]]; then
@@ -603,9 +591,9 @@ elif [[ -f "$sb_project_root/scripts/lib/recommended-tools/session-verify.sh" ]]
 fi
 if [[ -n "$_rt_verify_script" ]]; then
   # shellcheck source=/dev/null
-  RT_PROJECT_ROOT="$sb_project_root" RT_HOST="${SILVER_BULLET_RUNTIME:-cursor}" \
+  RT_PROJECT_ROOT="$sb_project_root" RT_HOST="${SILVER_BULLET_RUNTIME:-claude}" \
     source "$_rt_verify_script" 2>/dev/null || true
-  _rt_verify_ctx="$(rt_session_verify_block "$sb_project_root" "${SILVER_BULLET_RUNTIME:-cursor}" 2>/dev/null || true)"
+  _rt_verify_ctx="$(rt_session_verify_block "$sb_project_root" "${SILVER_BULLET_RUNTIME:-claude}" 2>/dev/null || true)"
 fi
 if [[ -n "$_rt_verify_ctx" ]]; then
   combined="${combined:+$combined

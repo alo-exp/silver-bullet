@@ -37,7 +37,6 @@ sb_alumnium_platform_artifact_path() {
   fi
   host="${host:-$(sb_runtime_host)}"
   case "$host" in
-    cursor) printf '%s/.cursor/mcp.json' "${HOME}" ;;
     codex) printf '%s/config.toml' "${CODEX_HOME:-${HOME}/.codex}" ;;
     # Explicit rather than correct-by-accident via the fallback.
     claude) printf '%s/.claude.json' "${HOME}" ;;
@@ -65,7 +64,7 @@ sb_alumnium_edit_path_is_exempt() {
   if [[ "$file_path" == *"/.silver-bullet/"* ]]; then
     return 0
   fi
-  if [[ "$file_path" == *"/.cursor/mcp.json" ]] || [[ "$file_path" == *"/.claude.json" ]]; then
+  if [[ "$file_path" == *"/.claude.json" ]]; then
     return 0
   fi
   return 1

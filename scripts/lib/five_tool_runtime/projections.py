@@ -19,7 +19,7 @@ def mcp_server_entries(
     *,
     native_context_mode: bool = False,
 ) -> Dict[str, Dict[str, Any]]:
-    """Build the common MCP server map used by Claude, Codex, and Cursor."""
+    """Build the common MCP server map used by Claude and Codex."""
     entries: Dict[str, Dict[str, Any]] = {}
     for tool in MCP_TOOL_NAMES:
         if tool == "context_mode" and native_context_mode:

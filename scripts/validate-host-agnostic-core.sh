@@ -3,7 +3,7 @@
 #
 # Core (skills, templates, silver-bullet.md, hooks runtime boundary, shared scripts)
 # must not embed host-specific prose, paths, or cross-host installer logic.
-# Host references belong in scripts/install-{claude,codex,cursor}.sh and
+# Host references belong in scripts/install-{claude,codex}.sh and
 # scripts/lib/install-{host}/ only.
 #
 # Usage:
@@ -63,8 +63,6 @@ STRICT_FILES = [
 # Host-specific template trees — excluded from core scan (owned by installers).
 TEMPLATE_EXCLUDE_PREFIXES = (
     "scripts/lib/install-claude/templates/CLAUDE.md.base",
-    "templates/cursor-rules/",
-    "templates/cursor/",
 )
 
 HOOKS_ROOT = "hooks"
@@ -72,7 +70,6 @@ HOOKS_ROOT = "hooks"
 # Bridge / runtime boundary files (host identifiers allowed).
 STRICT_ALLOWLIST = {
     "skills/silver-agent-codex/SKILL.md",
-    "skills/silver-agent-cursor/SKILL.md",
     "skills/silver-agent-claude/SKILL.md",
     "skills/silver-agent-opencode/SKILL.md",
     "skills/silver-agent-pi/SKILL.md",
@@ -112,10 +109,7 @@ STRICT_ALLOWLIST_PREFIXES = (
 )
 
 HOOKS_ALLOWLIST = {
-    "hooks/cursor-hook-bridge.sh",
     "hooks/kay-project-hook-bridge.sh",
-    "hooks/cursor-hooks.json",
-    "hooks/generate-cursor-hooks.py",
     "hooks/lib/runtime-paths.sh",
     "hooks/lib/recommended-tools.sh",
     "hooks/lib/context-mode-gate.sh",
@@ -150,7 +144,6 @@ SCRIPTS_ALLOWLIST = {
     "scripts/lib/apo_delegate_catalog.py",
     "scripts/lib/recommended-tools/heartbeat.sh",
     "scripts/lib/agent-plugins-common.sh",
-    "scripts/generate-cursor-hooks.py",
     "scripts/generate-apo-catalog.py",
     "scripts/lib/codex-cli.sh",
     "scripts/lib/plugin-cache-version.sh",
@@ -189,11 +182,6 @@ SCRIPTS_HOST_TOOLING_PREFIXES = (
     "scripts/silver-scan.py",
     "scripts/lib/enterprise-e2e",
     "scripts/agent-",
-    "scripts/diagnose-cursor-picker-duplicates.sh",
-    "scripts/enumerate-cursor-slash-picker.sh",
-    "scripts/install-cursor-sb-agents.sh",
-    "scripts/lib/cursor-sb-agents/",
-    "scripts/lib/strip-cursor-sb-hooks.py",
     "scripts/lib/post-release-uninstall.sh",
     "scripts/prune-stale-claude",
     "scripts/watch-enterprise-e2e",
@@ -215,12 +203,10 @@ HOME_FORM_ALLOWLIST = {
     "hooks/review-fix-ladder-guard.sh",
     "scripts/dogfood-orchestrator-parent-surface.sh",
     "scripts/lib/recommended-tools/common.sh",
-    "scripts/lib/recommended-tools/installer.sh",
     "scripts/lib/recommended-tools/probe-alumnium.sh",
     "scripts/lib/recommended-tools/probe-context-mode.sh",
     "scripts/lib/recommended-tools/probe-rtk.sh",
     "scripts/lib/recommended-tools/receipts.sh",
-    "scripts/minimal-intent-autonomous-e2e.sh",
     "scripts/run-visual-qa-pipeline.sh",
     "scripts/sb-doctor.sh",
     "scripts/sb-tri-criteria-e2e.sh",
@@ -231,20 +217,15 @@ HOME_FORM_LABEL = "$HOME/.<host>"
 INSTALLER_SCRIPTS = {
     "scripts/install-claude.sh",
     "scripts/install-codex.sh",
-    "scripts/install-cursor.sh",
-    "scripts/install-recommended-tools-cursor.sh",
 }
 
 INSTALLER_SCRIPT_PREFIXES = (
     "scripts/lib/install-claude/",
     "scripts/lib/install-codex/",
-    "scripts/lib/install-cursor/",
     "scripts/lib/host-install-guides/",
 )
 
 INSTALLER_ONLY_SCRIPT_GLOBS = (
-  "scripts/pre-release-cursor",
-  "scripts/release-live-matrix-cursor",
   "scripts/validate-claude-agent",
   "scripts/run-pre-release-host",
   "scripts/run-tri-host-install",
@@ -289,29 +270,22 @@ RUNTIME_LINE_MARKERS = (
     "CODEX_CI",
     "CODEX_THREAD",
     "CODEX_INTERNAL",
-    "CURSOR_PLUGIN_ROOT",
     "CLAUDE_PLUGIN_ROOT",
     "KAY_HOME",
     "install-claude",
     "install-codex",
-    "install-cursor",
 )
 
 INSTALLER_CROSS_RULES = {
     "scripts/install-claude.sh": {
         "forbidden_hosts": ("codex", "cursor"),
         "forbidden_paths": (r"~/.codex", r"~/.cursor", r"\.codex-plugin", r"\.cursor-plugin", r"CODEX_HOME", r"CURSOR_"),
-        "forbidden_scripts": ("install-codex.sh", "install-cursor.sh"),
+        "forbidden_scripts": ("install-codex.sh",),
     },
     "scripts/install-codex.sh": {
         "forbidden_hosts": ("claude", "cursor"),
         "forbidden_paths": (r"~/.claude", r"~/.cursor", r"\.claude-plugin", r"\.cursor-plugin", r"CURSOR_"),
-        "forbidden_scripts": ("install-claude.sh", "install-cursor.sh"),
-    },
-    "scripts/install-cursor.sh": {
-        "forbidden_hosts": ("claude", "codex"),
-        "forbidden_paths": (r"~/.claude", r"~/.codex", r"\.claude-plugin", r"\.codex-plugin", r"CODEX_HOME"),
-        "forbidden_scripts": ("install-claude.sh", "install-codex.sh"),
+        "forbidden_scripts": ("install-claude.sh",),
     },
 }
 
@@ -358,7 +332,7 @@ def is_installer_script(r: str) -> bool:
     for prefix in INSTALLER_ONLY_SCRIPT_GLOBS:
         if prefix in r:
             return True
-    if "/install-claude/" in r or "/install-codex/" in r or "/install-cursor/" in r:
+    if "/install-claude/" in r or "/install-codex/" in r:
         return True
     base = Path(r).name
     if base.startswith("install-") and base.endswith(".sh") and "recommended-tools" not in base:
@@ -435,8 +409,6 @@ def is_false_positive(word: str, text: str, start: int, end: int) -> bool:
     if word != "cursor":
         return False
     window = text[max(0, start - 24): min(len(text), end + 24)].lower()
-    if "merge-cursor-hooks" in window or "install-cursor/" in window:
-        return True
     for fp in FALSE_POSITIVE_WORDS["cursor"]:
         if fp in window:
             return True
@@ -531,7 +503,6 @@ def check_installer_cross_contamination() -> None:
         "host-bundles/",
         "agents/claude",
         "agents/codex",
-        "agents/cursor",
         ".replace(",
         "os.homedir(), '.codex'",
         "os.homedir(), \".claude\"",

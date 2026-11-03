@@ -49,7 +49,7 @@ lint:
 	  bash -n "$$f" || exit 1; \
 	done; echo "bash -n: ok"
 	@for f in hooks/hooks.json templates/silver-bullet.config.json.default .silver-bullet.json package.json \
-	  .claude-plugin/plugin.json .claude-plugin/marketplace.json .cursor-plugin/plugin.json .cursor-plugin/marketplace.json \
+	  .claude-plugin/plugin.json .claude-plugin/marketplace.json \
 	  .agents/plugins/marketplace.json; do jq empty "$$f" || exit 1; done; echo "json: ok"
 	bash scripts/lint-shell.sh --all
 

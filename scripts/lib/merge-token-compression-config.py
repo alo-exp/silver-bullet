@@ -87,71 +87,6 @@ def backup_file(path: pathlib.Path) -> None:
         shutil.copy2(path, path.with_suffix(path.suffix + ".bak"))
 
 
-def hook_command(entry: dict) -> str:
-    if not isinstance(entry, dict):
-        return ""
-    return str(entry.get("command", ""))
-
-
-def hook_entry_key(entry: dict) -> tuple[str, str]:
-    """Dedupe key: same command with different matchers must both be kept."""
-    if not isinstance(entry, dict):
-        return ("", "")
-    return (hook_command(entry), str(entry.get("matcher", "")))
-
-
-def merge_hook_entries(existing: list, new_entries: list) -> tuple[list, int]:
-    merged = list(existing)
-    added = 0
-    for entry in new_entries:
-        cmd = hook_command(entry)
-        if not cmd:
-            continue
-        new_key = hook_entry_key(entry)
-        if any(hook_entry_key(item) == new_key for item in merged):
-            continue
-        merged.append(entry)
-        added += 1
-    return merged, added
-
-
-def reorder_pretooluse_rtk_before_cm(hooks: dict) -> bool:
-    """Ensure rtk hook cursor runs before context-mode pretooluse on preToolUse."""
-    pretool = hooks.get("preToolUse")
-    if not isinstance(pretool, list):
-        return False
-    rtk_idx = cm_idx = None
-    for idx, entry in enumerate(pretool):
-        cmd = hook_command(entry)
-        if cmd == "rtk hook cursor":
-            rtk_idx = idx
-        elif "context-mode hook cursor pretooluse" in cmd:
-            cm_idx = idx
-    if rtk_idx is None or cm_idx is None or rtk_idx < cm_idx:
-        return False
-    rtk_entry = pretool.pop(rtk_idx)
-    insert_at = cm_idx - 1 if cm_idx > rtk_idx else cm_idx
-    pretool.insert(insert_at, rtk_entry)
-    hooks["preToolUse"] = pretool
-    return True
-
-
-def merge_hooks_file(target: pathlib.Path, fragments: list[dict], dry_run: bool) -> int:
-    settings = load_json(target, {"version": 1, "hooks": {}})
-    settings.setdefault("version", 1)
-    hooks = json_member(settings, "hooks", dict, target)
-    total_added = 0
-    for fragment in fragments:
-        for event, entries in fragment.get("hooks", {}).items():
-            event_list = json_member(hooks, event, list, target)
-            merged, added = merge_hook_entries(event_list, entries)
-            hooks[event] = merged
-            total_added += added
-    reorder_pretooluse_rtk_before_cm(hooks)
-    save_json(target, settings, dry_run)
-    return total_added
-
-
 def merge_codex_hooks_file(target: pathlib.Path, fragment: dict, dry_run: bool) -> int:
     """Merge Codex hooks.json (nested hooks[].hooks structure)."""
     settings = load_json(target, {"hooks": {}})
@@ -185,16 +120,6 @@ def merge_codex_hooks_file(target: pathlib.Path, fragment: dict, dry_run: bool) 
     return added
 
 
-def merge_mcp_server(target: pathlib.Path, server_name: str, server_cfg: dict, dry_run: bool) -> bool:
-    data = load_json(target, {"mcpServers": {}})
-    servers = json_member(data, "mcpServers", dict, target)
-    if server_name in servers:
-        return False
-    servers[server_name] = server_cfg
-    save_json(target, data, dry_run)
-    return True
-
-
 def merge_shared_claude_context_mode(
     target: pathlib.Path, server_cfg: dict, dry_run: bool
 ) -> bool:
@@ -223,20 +148,6 @@ def merge_shared_claude_context_mode(
     if changed:
         save_json(target, data, dry_run)
     return changed
-
-
-def merge_cli_allowlist(target: pathlib.Path, allow_entries: list[str], dry_run: bool) -> int:
-    data = load_json(target, {"version": 1, "permissions": {"allow": [], "deny": []}})
-    data.setdefault("version", 1)
-    perms = json_member(data, "permissions", dict, target)
-    allow = json_member(perms, "allow", list, target)
-    added = 0
-    for entry in allow_entries:
-        if entry not in allow:
-            allow.append(entry)
-            added += 1
-    save_json(target, data, dry_run)
-    return added
 
 
 def copy_file(src: pathlib.Path, dest: pathlib.Path, dry_run: bool) -> bool:
@@ -335,34 +246,6 @@ def context_mode_pkg_root() -> pathlib.Path | None:
     except (OSError, subprocess.CalledProcessError):
         pass
     return None
-
-
-def context_mode_cursor_hooks_path(repo_root: pathlib.Path) -> pathlib.Path | None:
-    cm_pkg = context_mode_pkg_root()
-    if cm_pkg:
-        candidate = cm_pkg / "configs" / "cursor" / "hooks.json"
-        if candidate.is_file():
-            return candidate
-    bundled = repo_root / "scripts" / "lib" / "context-mode-cursor-hooks.json"
-    if bundled.is_file():
-        return bundled
-    return None
-
-
-def context_mode_extended_cursor_hooks() -> dict:
-    return {
-        "hooks": {
-            "sessionStart": [
-                {
-                    "command": "context-mode hook cursor sessionstart",
-                    "matcher": "startup|clear|compact",
-                }
-            ],
-            "afterAgentResponse": [
-                {"command": "context-mode hook cursor afteragentresponse"}
-            ],
-        }
-    }
 
 
 def merge_codex_config_toml(target: pathlib.Path, dry_run: bool) -> bool:
@@ -472,70 +355,6 @@ def merge_hermes_context_mode_mcp(config_path: pathlib.Path, dry_run: bool) -> b
     backup_file(config_path)
     config_path.write_bytes(updated.encode("utf-8"))
     return True
-
-
-def optimize_cursor(repo_root: pathlib.Path, dry_run: bool, skip_cli_config: bool = False) -> dict:
-    cursor_home = pathlib.Path.home() / ".cursor"
-    hooks_path = cursor_home / "hooks.json"
-    mcp_path = cursor_home / "mcp.json"
-    cli_config_path = cursor_home / "cli-config.json"
-    global_rules = cursor_home / "rules"
-    project_rules = repo_root / ".cursor" / "rules"
-
-    cm_pkg = context_mode_pkg_root()
-    manifest = ensure_global_instances(dry_run=dry_run)
-    fragments: list[dict] = []
-    cm_hooks = context_mode_cursor_hooks_path(repo_root)
-    if cm_hooks:
-        fragments.append(load_json(cm_hooks))
-    fragments.append(context_mode_extended_cursor_hooks())
-
-    hooks_added = merge_hooks_file(hooks_path, fragments, dry_run) if fragments else 0
-
-    mcp_added = False
-    if cm_pkg:
-        cm_mcp = cm_pkg / "configs" / "cursor" / "mcp.json"
-        if cm_mcp.is_file():
-            mcp_data = load_json(cm_mcp)
-            servers = mcp_data.get("mcpServers")
-            if not isinstance(servers, dict):
-                servers = {}
-            for name, cfg in servers.items():
-                if name in ("context-mode", "user-context-mode"):
-                    cfg = mcp_server_spec(manifest, "context_mode")
-                if merge_mcp_server(mcp_path, name, cfg, dry_run):
-                    mcp_added = True
-
-    allow_added = 0
-    if not skip_cli_config:
-        allowlist_path = repo_root / "scripts" / "lib" / "cursor-cli-allowlist.json"
-        allow_data = load_json(allowlist_path, {"allow": []})
-        allow_added = merge_cli_allowlist(cli_config_path, allow_data.get("allow", []), dry_run)
-
-    rules_copied = 0
-    rule_sources = [
-        (repo_root / "templates" / "cursor" / "token-compression-enforcement.mdc", global_rules / "token-compression-enforcement.mdc"),
-        (repo_root / ".cursor" / "rules" / "context-mode.mdc", global_rules / "context-mode.mdc"),
-    ]
-    if cm_pkg:
-        rule_sources.insert(
-            1,
-            (cm_pkg / "configs" / "cursor" / "context-mode.mdc", global_rules / "context-mode.mdc"),
-        )
-    for src, dest in rule_sources:
-        if copy_file(src, dest, dry_run):
-            rules_copied += 1
-        if src.name == "context-mode.mdc":
-            copy_file(src, project_rules / "context-mode.mdc", dry_run)
-
-    return {
-        "host": "cursor",
-        "status": "supported",
-        "hooks_added": hooks_added,
-        "mcp_added": mcp_added,
-        "allow_added": allow_added,
-        "rules_copied": rules_copied,
-    }
 
 
 def optimize_codex(dry_run: bool) -> dict:
@@ -715,12 +534,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Merge RTK + Context Mode global host config")
     parser.add_argument(
         "--host",
-        choices=["cursor", "codex", "claude", "opencode", "hermes", "goose", "all"],
-        default="cursor",
+        choices=["codex", "claude", "opencode", "hermes", "goose", "all"],
+        default="claude",
     )
     parser.add_argument("--repo-root", default=".")
     parser.add_argument("--dry-run", action="store_true")
-    parser.add_argument("--skip-cli-config", action="store_true")
     parser.add_argument("--rtk-only", action="store_true", help="Only materialize OpenCode's RTK plugin")
     parser.add_argument("--context-mode-only", action="store_true", help="Only materialize OpenCode Context Mode")
     args = parser.parse_args()
@@ -730,13 +548,12 @@ def main() -> int:
     repo_root = pathlib.Path(args.repo_root).resolve()
     results: list[dict] = []
     hosts = (
-        ["cursor", "codex", "claude", "opencode", "hermes", "goose"]
+        ["codex", "claude", "opencode", "hermes", "goose"]
         if args.host == "all"
         else [args.host]
     )
 
     optimizers = {
-        "cursor": lambda: optimize_cursor(repo_root, args.dry_run, args.skip_cli_config),
         "codex": lambda: optimize_codex(args.dry_run),
         "claude": lambda: optimize_claude(args.dry_run),
         "opencode": lambda: optimize_opencode(

@@ -164,7 +164,7 @@ codex_skills_only_surface_present() {
 foreign_host_plugin_path_pattern() {
   local current_host="${1:-}" host
   local patterns=()
-  for host in claude codex cursor; do
+  for host in claude codex; do
     [[ "$host" == "$current_host" ]] && continue
     patterns+=("\\.${host}/plugins")
   done
@@ -172,7 +172,7 @@ foreign_host_plugin_path_pattern() {
   printf '%s' "${patterns[*]}"
 }
 
-# Claude v2 registry stores plugin entries as arrays; Cursor/Codex may use objects.
+# Claude v2 registry stores plugin entries as arrays; Codex may use objects.
 resolve_registry_plugin_field() {
   local reg="$1" plugin_id="$2" field="$3"
   jq -r --arg id "$plugin_id" --arg f "$field" '
@@ -246,7 +246,6 @@ doctor_host_install_script() {
   case "${1:-}" in
     claude) printf '%s\n' "${REPO_ROOT}/scripts/install-claude.sh" ;;
     codex) printf '%s\n' "${REPO_ROOT}/scripts/install-codex.sh" ;;
-    cursor) printf '%s\n' "${REPO_ROOT}/scripts/install-cursor.sh" ;;
     *) return 1 ;;
   esac
 }
@@ -320,7 +319,7 @@ doctor_run_reconciler() {
   local mode="$1"
   local reconciler="${SB_DOCTOR_RECONCILER:-${REPO_ROOT}/scripts/reconcile-recommended-tools.sh}"
   [[ -f "$reconciler" ]] || return 1
-  local host="${SB_RUNTIME_NAME:-${SILVER_BULLET_RUNTIME:-cursor}}"
+  local host="${SB_RUNTIME_NAME:-${SILVER_BULLET_RUNTIME:-claude}}"
   local scope="all"
   if [[ "$mode" == "apply" ]]; then
     scope="$(doctor_reconciler_scope)"
@@ -489,12 +488,12 @@ doctor_apply_fixes() {
   for check_id in "${FAILED_CHECK_IDS[@]}"; do
     if [[ "${DOCTOR_FIX_SCOPE:-all}" == "local" ]]; then
       case "$check_id" in
-        D4|D13|D14|D16|D18|D19|D21) continue ;;
+        D4|D13|D14|D16) continue ;;
       esac
     fi
     if [[ -n "${SB_DOCTOR_STUB_HOST_INSTALL:-}" ]]; then
       case "$check_id" in
-        D4|D13|D14|D16|D18|D19|D21)
+        D4|D13|D14|D16)
           printf '%s
 ' "$check_id" >> "${SB_DOCTOR_STUB_HOST_INSTALL}"
           fixed=1
@@ -531,34 +530,10 @@ doctor_apply_fixes() {
         printf 'sb-doctor: --fix D15 requires shortening Claude agent descriptions\n' >&2
         ;;
       D4)
-        case "$runtime" in
-          cursor) bash "${REPO_ROOT}/scripts/install-cursor.sh" --merge-hooks-only >&2 || true; fixed=1 ;;
-          *)
-            install_script="$(doctor_host_install_script "$runtime" || true)"
-            if [[ -n "$install_script" && -x "$install_script" ]]; then
-              bash "$install_script" >&2 || true
-            fi
-            fixed=1
-            ;;
-        esac
-        ;;
-      D21)
-        local csba_fix_scope="global"
-        if [[ -f "${PROJ_ROOT}/.silver-bullet.json" ]]; then
-          csba_fix_scope="$(jq -r '.cursor_sb_agents.agents_install_scope // "global"' "${PROJ_ROOT}/.silver-bullet.json")"
+        install_script="$(doctor_host_install_script "$runtime" || true)"
+        if [[ -n "$install_script" && -x "$install_script" ]]; then
+          bash "$install_script" >&2 || true
         fi
-        local csba_fix_flags=(--fix)
-        if [[ "$csba_fix_scope" == "project" ]]; then
-          csba_fix_flags+=(--project)
-        else
-          csba_fix_flags+=(--global)
-        fi
-        printf 'sb-doctor: --fix running install-cursor-sb-agents.sh for D21\n' >&2
-        # Target the project being doctored, not this checkout — the D21 probe
-        # above already scopes itself with CSBA_REPO_ROOT, and without the same
-        # scoping here --fix writes its config and agents into Silver Bullet.
-        CSBA_REPO_ROOT="$PROJ_ROOT" \
-          bash "${REPO_ROOT}/scripts/install-cursor-sb-agents.sh" "${csba_fix_flags[@]}" >&2 || true
         fixed=1
         ;;
     esac
@@ -636,17 +611,6 @@ run_doctor_checks() {
   local codex_config
   codex_config="$(sb_runtime_codex_home)/config.toml"
   case "$runtime" in
-    cursor)
-      if [[ -f "${SB_RUNTIME_HOME_ROOT}/hooks.json" ]] && grep -q 'silver-bullet' "${SB_RUNTIME_HOME_ROOT}/hooks.json" 2>/dev/null; then
-        if grep -q 'cursor-hook-bridge.sh' "${SB_RUNTIME_HOME_ROOT}/hooks.json" 2>/dev/null; then
-          record pass D4 "Cursor hooks.json references silver-bullet via cursor-hook-bridge.sh"
-        else
-          record fail D4 "Cursor hooks.json has silver-bullet entries without cursor-hook-bridge.sh"
-        fi
-      else
-        record fail D4 "Cursor hooks.json missing SB hook entries"
-      fi
-      ;;
     codex)
       if [[ -f "${codex_config}" ]] && grep -qE \
         '^\[(plugins|hooks\.state)\."silver-bullet@alo-labs-codex' "${codex_config}" 2>/dev/null; then
@@ -710,17 +674,6 @@ run_doctor_checks() {
     else
       record fail D7 "project silver-bullet.md is missing template sections (${d7_missing}) — run /sb:init to update"
     fi
-  fi
-
-  # D8 — Cursor orchestrator rule (Cursor host only; not required on Claude/Codex)
-  if [[ "$runtime" == "cursor" ]]; then
-    if [[ -f "${PROJ_ROOT}/.cursor/rules/silver-orchestrator.mdc" ]]; then
-      record pass D8 ".cursor/rules/silver-orchestrator.mdc present"
-    else
-      record fail D8 ".cursor/rules/silver-orchestrator.mdc missing (run sb:migrate or sb:init on Cursor)"
-    fi
-  else
-    record pass D8 "orchestrator rule N/A (host=${runtime})"
   fi
 
   # D9 — workflow tracker
@@ -793,15 +746,6 @@ run_doctor_checks() {
   skill_root="$(doctor_realpath "${cache_root}/current")"
   foreign_plugin_pattern="$(foreign_host_plugin_path_pattern "$runtime")"
   case "$runtime" in
-    cursor)
-      hooks_manifest_path="${SB_RUNTIME_HOME_ROOT}/hooks.json"
-      agent_cache_dir="$(sb_agent_cache_rel cursor)"
-      if [[ -f "$hooks_manifest_path" ]] && grep -qE "$foreign_plugin_pattern" "$hooks_manifest_path" 2>/dev/null; then
-        record fail D13 "${hooks_manifest_path} contains foreign host plugin paths"
-      else
-        record pass D13 "no foreign host plugin paths in Cursor hooks"
-      fi
-      ;;
     claude)
       hooks_manifest_path="${claude_settings}"
       agent_cache_dir="$(sb_agent_cache_rel claude)"
@@ -877,43 +821,6 @@ run_doctor_checks() {
     record warn D17 "validate-host-agnostic-core.sh not found; skipped"
   fi
 
-  # D18 — Cursor marketplace gitPath (required for /sb command discovery after restart)
-  if [[ "$runtime" == "cursor" ]]; then
-    local registry_sha backend_sha gitpath_root market_cache_link backend_cache_path resolved_current
-    registry_sha="$(resolve_registry_plugin_field "$reg" "silver-bullet@alo-labs" "gitCommitSha")"
-    resolved_current="$(doctor_realpath "${cache_root}/current")"
-    backend_sha="$(find "${HOME}/Library/Application Support/Cursor/logs" -name 'Cursor Plugins*.log' -type f -print0 2>/dev/null \
-      | xargs -0 grep -h 'Adding enabled plugin: silver-bullet from ' 2>/dev/null \
-      | sed -n 's/.*silver-bullet from \([0-9a-f]\{40\}\).*/\1/p' | tail -1 || true)"
-    [[ -n "$backend_sha" ]] || backend_sha="$registry_sha"
-    if [[ -n "$backend_sha" && "$backend_sha" != "null" ]]; then
-      gitpath_root="${HOME}/.cursor/plugins/marketplaces/github.com/alo-exp/silver-bullet/${backend_sha}"
-      market_cache_link="${HOME}/.cursor/plugins/cache/alo-labs-cursor/silver-bullet/${backend_sha}"
-      backend_cache_path="${HOME}/.cursor/plugins/cache/alo-labs-agent-plugins/silver-bullet/${backend_sha}"
-      if [[ -d "${gitpath_root}/.git" ]] && git -C "$gitpath_root" cat-file -e "${backend_sha}^{commit}" >/dev/null 2>&1; then
-        if [[ -d "$backend_cache_path" && -f "${backend_cache_path}/.cache-complete" && -f "${backend_cache_path}/commands/sb.md" ]]; then
-          record pass D18 "Cursor backend cache + gitPath ready (${backend_sha:0:8})"
-        elif [[ -L "$market_cache_link" ]] && [[ "$(doctor_realpath "$market_cache_link")" == "$resolved_current" ]]; then
-          record fail D18 "missing alo-labs-agent-plugins materialized cache for ${backend_sha:0:8} — run: bash scripts/install-cursor.sh"
-        else
-          record fail D18 "missing alo-labs-cursor cache symlink for ${backend_sha:0:8} — run: bash scripts/install-cursor.sh"
-        fi
-      else
-        record fail D18 "missing Cursor gitPath for ${backend_sha:0:8} — /sb commands fail to load — run: bash scripts/install-cursor.sh"
-      fi
-    else
-      record warn D18 "no gitCommitSha in installed_plugins.json — run: bash scripts/install-cursor.sh"
-    fi
-    if [[ -f "${resolved_current}/commands/sb.md" ]]; then
-      record pass D19 "composer /sb:* command stubs present in plugin cache"
-    else
-      record fail D19 "commands/ missing from plugin cache — slash menu will be empty"
-    fi
-  else
-    record pass D18 "Cursor gitPath check N/A (host=${runtime})"
-    record pass D19 "Cursor command stubs N/A (host=${runtime})"
-  fi
-
   # D20 — stack compression mutex (five-tool coordinator)
   local stack_cfg="${PROJ_ROOT}/.silver-bullet.json"
   if [[ -f "${REPO_ROOT}/hooks/lib/stack-compression-coordinator.sh" ]]; then
@@ -930,53 +837,6 @@ run_doctor_checks() {
     fi
   else
     record warn D20 "stack-compression-coordinator lib missing; skipped"
-  fi
-
-  # D21 — Cursor SB custom subagents (cursor_sb_agents; global or project scope)
-  if [[ "$runtime" == "cursor" ]]; then
-    local csba_probe="${REPO_ROOT}/scripts/lib/cursor-sb-agents/probe-global-agents.sh"
-    local csba_check=0 csba_scope="global" csba_agents_dir=""
-    if [[ -f "$sb_config" ]]; then
-      csba_check="$(jq -r '
-        if (.cursor_sb_agents.enabled // false) == true then 1
-        elif (.cursor_sb_agents.enabled_by_user // null) == true
-             and (.cursor_sb_agents.enforcement_suspended // false) != true then 1
-        else 0 end' "$sb_config" 2>/dev/null || echo 0)"
-      csba_scope="$(jq -r '.cursor_sb_agents.agents_install_scope // "global"' "$sb_config" 2>/dev/null || echo global)"
-    fi
-    if [[ "$csba_check" -eq 0 ]]; then
-      record pass D21 "cursor_sb_agents not enabled (N/A)"
-    elif [[ ! -x "$csba_probe" ]]; then
-      record warn D21 "probe-global-agents.sh missing; skipped"
-    else
-      if [[ "$csba_scope" == "project" ]]; then
-        csba_agents_dir="${PROJ_ROOT}/.cursor/agents"
-      else
-        csba_agents_dir="${HOME}/.cursor/agents"
-      fi
-      if CSBA_REPO_ROOT="$PROJ_ROOT" bash "$csba_probe" \
-        --agents-dir "$csba_agents_dir" --repo-root "$PROJ_ROOT" --quiet 2>/dev/null; then
-        record pass D21 "SB custom subagents (${csba_scope}): managed set matches config"
-      else
-        record fail D21 "SB custom subagents missing or stale — run: bash scripts/install-cursor-sb-agents.sh --fix"
-      fi
-    fi
-  else
-    record pass D21 "cursor_sb_agents N/A (host=${runtime})"
-  fi
-
-
-  # D22 — Cursor duplicate LeanCTX MCP servers (lean-ctx + leanctx)
-  if [[ "$runtime" == "cursor" ]]; then
-    local cursor_mcp="${HOME}/.cursor/mcp.json"
-    if [[ -f "$cursor_mcp" ]] \
-      && jq -e '.mcpServers["lean-ctx"] and .mcpServers.leanctx' "$cursor_mcp" >/dev/null 2>&1; then
-      record warn D22 "duplicate LeanCTX MCP servers (lean-ctx + leanctx) — remove lean-ctx, keep leanctx; run: RT_PATCH_LEANCTX=1 python3 scripts/lib/global-toolstack/patch-mcp.py"
-    else
-      record pass D22 "no duplicate LeanCTX MCP servers"
-    fi
-  else
-    record pass D22 "duplicate LeanCTX MCP check N/A (host=${runtime})"
   fi
 
   doctor_apply_fixes "$runtime"

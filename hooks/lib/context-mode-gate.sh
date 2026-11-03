@@ -70,7 +70,6 @@ sb_context_mode_platform_artifact_path() {
   fi
   host="${host:-$(sb_runtime_host)}"
   case "$host" in
-    cursor) printf '%s/.cursor/mcp.json' "${HOME}" ;;
     codex) printf '%s/config.toml' "${CODEX_HOME:-${HOME}/.codex}" ;;
     opencode) printf '%s/.config/opencode/opencode.json' "${HOME}" ;;
     pi) printf '%s/extensions/silver-bullet-five-tool-stack/config.json' \
@@ -88,11 +87,6 @@ sb_context_mode_platform_artifact_present() {
       sb_context_mode_claude_plugin_present && return 0
       artifact="$(sb_context_mode_platform_artifact_path "$project_root" "$host")"
       [[ -d "$artifact" ]]
-      ;;
-    cursor)
-      artifact="$(sb_context_mode_platform_artifact_path "$project_root" "$host")"
-      [[ -f "$artifact" && ! -L "$artifact" ]] || return 1
-      grep -q 'context-mode' "$artifact" 2>/dev/null
       ;;
     codex)
       artifact="$(sb_context_mode_platform_artifact_path "$project_root" "$host")"
@@ -124,10 +118,6 @@ sb_context_mode_hooks_present() {
     claude)
       sb_context_mode_claude_plugin_present
       ;;
-    cursor)
-      hooks_file="${HOME}/.cursor/hooks.json"
-      [[ -f "$hooks_file" ]] && grep -q 'context-mode' "$hooks_file" 2>/dev/null
-      ;;
     codex)
       hooks_file="${CODEX_HOME:-${HOME}/.codex}/hooks.json"
       [[ -f "$hooks_file" ]] && grep -q 'context-mode' "$hooks_file" 2>/dev/null
@@ -158,12 +148,6 @@ sb_context_mode_instruction_fragment_present() {
   return 1
 }
 
-sb_context_mode_cursor_rule_present() {
-  local project_root="${1:-$PWD}"
-  [[ -f "${project_root%/}/.cursor/rules/context-mode.mdc" ]] \
-    || grep -q . < <(grep -rl 'context-mode' "${project_root%/}/.cursor/rules/" 2>/dev/null)
-}
-
 sb_context_mode_is_windows_native() {
   case "$(uname -s 2>/dev/null)" in
     MINGW*|MSYS*|CYGWIN*|Windows_NT) return 0 ;;
@@ -183,9 +167,6 @@ sb_context_mode_edit_path_is_exempt() {
       ;;
   esac
   if [[ "$file_path" == *"/.silver-bullet/"* ]]; then
-    return 0
-  fi
-  if [[ "$file_path" == *"/.cursor/mcp.json" ]] || [[ "$file_path" == *"/.cursor/hooks.json" ]]; then
     return 0
   fi
   if [[ "$file_path" == *"/templates/context-mode-hint.md.base" ]]; then

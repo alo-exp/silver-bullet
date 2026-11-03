@@ -310,7 +310,7 @@ bare_prompt_context=""
 if [[ -n "$prompt" ]] && declare -F sb_prompt_is_bare_work_request >/dev/null 2>&1; then
   if sb_prompt_is_bare_work_request "$prompt"; then
     _bare_host="${SILVER_BULLET_RUNTIME:-${SB_RUNTIME_NAME:-claude}}"
-    # Parent orchestrator and Claude/Cursor prefer Skill tool; Codex uses invoke-skill adapter (#260).
+    # Parent orchestrator and Claude prefer Skill tool; Codex uses invoke-skill adapter (#260).
     _prefer_skill=false
     if [[ -f "$_lib_dir/orchestrator-parent.sh" ]]; then
       # shellcheck source=lib/orchestrator-parent.sh
@@ -350,7 +350,7 @@ Do not inspect, edit, run tests, or implement directly before routing. After loa
         bare_prompt_context="SILVER BULLET ► BARE PROMPT INTERCEPTED
 
 This is non-trivial user work expressed as a bare prompt, not an explicit skill command.
-First action: invoke the Skill tool with skill \"sb\" (Claude/Cursor). Do not use Codex invoke-skill branding on this host.
+First action: invoke the Skill tool with skill \"sb\" (Claude). Do not use Codex invoke-skill branding on this host.
 
 Router context: ${prompt}
 

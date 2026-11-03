@@ -85,7 +85,7 @@ sb_recommended_tool_benefits() {
   fi
   case "$tool_id" in
     graphify)
-      printf '%s' 'Scoped retrieval saves tokens; team-shared knowledge graph indexes code and docs; portable across Claude, Codex, Cursor, OpenCode, and Pi agents.'
+      printf '%s' 'Scoped retrieval saves tokens; team-shared knowledge graph indexes code and docs; portable across Claude, Codex, OpenCode, and Pi agents.'
       ;;
     agentmemory)
       printf '%s' 'Session capture with git-backed memory export; proactive context injection; pairs with Graphify for save-via-agentmemory, retrieve-via-Graphify synergy.'
@@ -162,21 +162,16 @@ sb_graphify_upstream_platform() {
 sb_runtime_host() {
   if [[ -n "${SILVER_BULLET_RUNTIME:-}" ]]; then
     case "$SILVER_BULLET_RUNTIME" in
-      claude|codex|cursor|opencode|pi|goose|hermes) printf '%s' "$SILVER_BULLET_RUNTIME"; return 0 ;;
+      claude|codex|opencode|pi|goose|hermes) printf '%s' "$SILVER_BULLET_RUNTIME"; return 0 ;;
     esac
   fi
   if [[ -n "${CODEX_CI:-}" || -n "${CODEX_THREAD_ID:-}" || -n "${CODEX_INTERNAL_ORIGINATOR_OVERRIDE:-}" ]]; then
     printf 'codex'
     return 0
   fi
-  if [[ -n "${CURSOR_PLUGIN_ROOT:-}" ]]; then
-    printf 'cursor'
-    return 0
-  fi
   if [[ -n "${CLAUDE_PLUGIN_ROOT:-}" ]]; then
     case "$CLAUDE_PLUGIN_ROOT" in
       */.codex/*) printf 'codex'; return 0 ;;
-      */.cursor/*) printf 'cursor'; return 0 ;;
     esac
   fi
   if [[ -n "${OPENCODE:-}" || -n "${OPENCODE_PID:-}" ]]; then
@@ -239,7 +234,6 @@ sb_recommended_tool_platform_pre_index_commands() {
   elif [[ "$tool_id" == "rtk" ]]; then
     case "$host" in
       claude) printf '%s\n' 'rtk init -g' ;;
-      cursor) printf '%s\n' 'rtk init -g --agent cursor' ;;
       codex) printf '%s\n' 'rtk init -g --codex' ;;
       opencode) printf '%s\n' "bash scripts/optimize-rtk-context-mode.sh --host opencode --project-root \"\$(pwd)\"" ;;
       pi) printf '%s\n' "bash scripts/optimize-rtk-context-mode.sh --host pi --project-root \"\$(pwd)\"" ;;
@@ -249,9 +243,6 @@ sb_recommended_tool_platform_pre_index_commands() {
       claude)
         printf '%s\n' 'npm install -g context-mode'
         printf '%s\n' "bash scripts/optimize-rtk-context-mode.sh --host claude --project-root \"\$(pwd)\""
-        ;;
-      cursor)
-        printf '%s\n' 'Copy context-mode.mdc to .cursor/rules/; merge MCP + hooks per docs/CONTEXT-MODE.md'
         ;;
       codex)
         printf '%s\n' 'Merge context-mode blocks into Codex config.toml and hooks.json per docs/CONTEXT-MODE.md'
@@ -265,7 +256,7 @@ sb_recommended_tool_platform_pre_index_commands() {
     esac
   elif [[ "$tool_id" == "leanctx" ]]; then
     case "$host" in
-      cursor|claude|codex|opencode|pi)
+      claude|codex|opencode|pi)
         printf '%s\n' "bash scripts/install-leanctx-sb.sh --host ${host} --project-root \"\$(pwd)\""
         ;;
     esac
@@ -283,12 +274,11 @@ sb_recommended_tool_platform_post_index_commands() {
     printf '%s' "$cmds"
     return 0
   fi
-  # Legacy flat-array config: cursor = post-only; claude/codex = second command post-index.
+  # Legacy flat-array config: claude/codex = second command post-index.
   if legacy="$(jq -r --arg id "$tool_id" --arg host "$host" \
     '.recommended_tools[$id].platform_install_commands[$host] | if type == "array" then .[] else empty end' \
     "$config_file" 2>/dev/null || true)" && [[ -n "$legacy" ]]; then
     case "$host" in
-      cursor) printf '%s' "$legacy"; return 0 ;;
       claude|codex|opencode|goose|hermes)
         printf '%s' "$legacy" | tail -n 1
         return 0
@@ -297,7 +287,6 @@ sb_recommended_tool_platform_post_index_commands() {
   fi
   if [[ "$tool_id" == "graphify" ]]; then
     case "$host" in
-      cursor) printf '%s\n' 'graphify cursor install' ;;
       claude) printf '%s\n' 'graphify claude install --project' ;;
       codex) printf '%s\n' 'graphify codex install --project' ;;
       opencode|pi|goose|hermes) ;;
@@ -324,7 +313,6 @@ sb_graphify_platform_artifact_path() {
   local project_root="${1:-$PWD}" host="${2:-}"
   host="${host:-$(sb_runtime_host)}"
   case "$host" in
-    cursor) printf '%s/.cursor/rules/graphify.mdc' "${project_root%/}" ;;
     codex) printf '%s/.codex/hooks.json' "${project_root%/}" ;;
     opencode) printf '%s/.config/opencode/opencode.json' "${HOME}" ;;
     pi) printf '%s/extensions/silver-bullet-five-tool-stack/config.json' \
@@ -347,7 +335,7 @@ sb_graphify_platform_artifact_present() {
   artifact="$(sb_graphify_platform_artifact_path "$project_root" "$host")"
   [[ -f "$artifact" && ! -L "$artifact" ]] || return 1
   case "$host" in
-    cursor|codex|claude|opencode|pi|goose|hermes) grep -q 'graphify' "$artifact" 2>/dev/null ;;
+    codex|claude|opencode|pi|goose|hermes) grep -q 'graphify' "$artifact" 2>/dev/null ;;
     *) grep -q 'graphify' "$artifact" 2>/dev/null ;;
   esac
 }

@@ -59,9 +59,8 @@ TEMPLATE="templates/silver-bullet.config.json.default"
 
 check_json-valid() {
   local f ok=0
-  for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json .cursor-plugin/plugin.json \
-    .cursor-plugin/marketplace.json .agents/plugins/marketplace.json \
-    plugins/silver-bullet/.cursor-plugin/plugin.json plugins/silver-bullet/.codex-plugin/plugin.json \
+  for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json .agents/plugins/marketplace.json \
+    plugins/silver-bullet/.codex-plugin/plugin.json \
     hooks/hooks.json "$TEMPLATE" "$CONFIG" package.json; do
     jq empty "$f" >/dev/null 2>&1 || { echo "  invalid JSON: $f"; ok=1; }
   done
@@ -76,7 +75,6 @@ market_version() {
 check_manifest-versions() {
   local ok=0 plugin market pair
   for pair in .claude-plugin/plugin.json:.claude-plugin/marketplace.json \
-    .cursor-plugin/plugin.json:.cursor-plugin/marketplace.json \
     plugins/silver-bullet/.codex-plugin/plugin.json:.agents/plugins/marketplace.json; do
     plugin="$(jq -r '.version' "${pair%%:*}")"
     market="$(market_version "${pair#*:}")"

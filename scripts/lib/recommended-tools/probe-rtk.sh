@@ -7,12 +7,8 @@ source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/vendor-doctor.sh"
 
 rt_probe_rtk_shell_owner() {
-  local host="${RT_HOST:-cursor}"
+  local host="${RT_HOST:-claude}"
   case "$host" in
-    cursor)
-      [[ -f "${HOME}/.cursor/hooks.json" ]] || return 1
-      grep -q 'rtk hook cursor' "${HOME}/.cursor/hooks.json" 2>/dev/null
-      ;;
     claude)
       [[ -f "${HOME}/.claude/settings.json" ]] || return 1
       grep -qE 'rtk hook claude|rtk' "${HOME}/.claude/settings.json" 2>/dev/null
@@ -31,11 +27,7 @@ rt_probe_rtk_shell_owner() {
 }
 
 rt_probe_rtk_leanctx_rewrite_absent() {
-  case "${RT_HOST:-cursor}" in
-    cursor)
-      [[ -f "${HOME}/.cursor/hooks.json" ]] || return 0
-      ! grep -q 'lean-ctx hook rewrite' "${HOME}/.cursor/hooks.json" 2>/dev/null
-      ;;
+  case "${RT_HOST:-claude}" in
     opencode|pi)
       local artifact
       artifact="$(sb_rtk_platform_hook_artifact_path "${RT_PROJECT_ROOT:-}" "${RT_HOST:-}")"
@@ -47,37 +39,18 @@ rt_probe_rtk_leanctx_rewrite_absent() {
 }
 
 rt_probe_rtk_before_cm() {
-  if [[ "${RT_HOST:-cursor}" == "opencode" ]]; then
+  if [[ "${RT_HOST:-claude}" == "opencode" ]]; then
     sb_rtk_platform_hook_present "${RT_PROJECT_ROOT:-}" opencode
     return $?
   fi
-  if [[ "${RT_HOST:-cursor}" == "pi" ]]; then
+  if [[ "${RT_HOST:-claude}" == "pi" ]]; then
     local pi_cfg="${PI_CODING_AGENT_DIR:-${HOME}/.pi/agent}/extensions/pi-lean-ctx/config.json"
     [[ -f "$pi_cfg" ]] || return 1
     [[ "$(jq -r 'if .routeShell == null then true else .routeShell end' "$pi_cfg" 2>/dev/null)" == "false" ]] || return 1
     jq -e '.disableTools | index("ctx_shell") != null' "$pi_cfg" >/dev/null 2>&1
     return $?
   fi
-  [[ "${RT_HOST:-cursor}" == "cursor" ]] || return 0
-  python3 - "${HOME}/.cursor/hooks.json" <<'PY'
-import json, sys
-from pathlib import Path
-p = Path(sys.argv[1])
-if not p.is_file():
-    sys.exit(1)
-data = json.loads(p.read_text())
-pt = data.get("hooks", {}).get("preToolUse", [])
-rtk = cm = None
-for i, h in enumerate(pt):
-    cmd = h.get("command", "")
-    if cmd.endswith("rtk hook cursor"):
-        rtk = i
-    if "context-mode hook cursor pretooluse" in cmd:
-        cm = i
-if rtk is None or cm is None:
-    sys.exit(0 if rtk is not None else 1)
-sys.exit(0 if rtk < cm else 1)
-PY
+  return 0
 }
 
 # Vendor `rtk doctor` when the subcommand exists and is non-interactive.
@@ -123,7 +96,7 @@ rt_probe_rtk() {
   local vd_rc=0
 
   consent="$(rt_consent_for "$tool_id")"
-  if ! rt_host_supported "${RT_HOST:-cursor}"; then fu=1
+  if ! rt_host_supported "${RT_HOST:-claude}"; then fu=1
   else
     case "$consent" in
       disabled) fd=1 ;;
@@ -161,7 +134,7 @@ rt_repair_rtk() {
   fi
   local opt="${RT_REPO_ROOT}/scripts/optimize-rtk-context-mode.sh"
   if [[ -f "$opt" ]]; then
-    local -a opt_args=(--host "${RT_HOST:-cursor}" --project-root "${RT_PROJECT_ROOT:-}" --skip-cm-doctor)
+    local -a opt_args=(--host "${RT_HOST:-claude}" --project-root "${RT_PROJECT_ROOT:-}" --skip-cm-doctor)
     rt_cross_tool_batch_active && opt_args+=(--skip-rtk-init)
     if rt_cross_tool_batch_active; then
       # Keep the nested global-tool installer from starting another
@@ -171,14 +144,6 @@ rt_repair_rtk() {
     else
       bash "$opt" "${opt_args[@]}" >&2 \
         && actions+=("optimize_rtk_context_mode") || failures+=("optimize_rtk_failed")
-    fi
-  fi
-  if [[ "${RT_HOST:-cursor}" == "cursor" ]] && ! rt_cross_tool_batch_active; then
-    local patch_py="${RT_REPO_ROOT}/scripts/lib/global-toolstack/patch-hooks.py"
-    if [[ -f "$patch_py" ]]; then
-      RT_PATCH_RTK=1 RT_PATCH_GRAPHIFY=0 RT_PATCH_AGENTMEMORY=0 RT_PATCH_CONTEXT_MODE=0 RT_PATCH_LEANCTX=0 \
-        python3 "$patch_py" >/dev/null 2>&1 \
-        && actions+=("patch_hooks") || failures+=("patch_hooks_failed")
     fi
   fi
   jq -n \

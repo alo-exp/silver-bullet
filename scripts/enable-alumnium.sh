@@ -24,7 +24,7 @@ else
   err "alumnium npm package not reachable" "npm install -g alumnium or check network"
 fi
 
-host="$(sb_runtime_host 2>/dev/null || echo cursor)"
+host="$(sb_runtime_host 2>/dev/null || echo claude)"
 artifact="$(sb_alumnium_platform_artifact_path "$REPO_ROOT" "$host" 2>/dev/null || true)"
 if sb_alumnium_platform_artifact_present "$REPO_ROOT" "$host" 2>/dev/null; then
   ok "MCP wired (${host}: ${artifact})"

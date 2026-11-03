@@ -1,19 +1,15 @@
 #!/usr/bin/env bash
-# Mandatory pre-release host smoke — Claude, Codex, and Cursor skill surface + routing.
+# Mandatory pre-release host smoke — Claude and Codex skill surface + routing.
 #
 # Isolation policy: each host uses a dedicated temp root (SB_PRE_RELEASE_SMOKE_ROOT);
-# never reads or writes ~/.claude, ~/.codex, or ~/.cursor.
+# never reads or writes ~/.claude or ~/.codex.
 #
-# Stage 1 (structural): validate-host-skill-surface.sh — all three hosts.
+# Stage 1 (structural): validate-host-skill-surface.sh — both hosts.
 # Stage 2 (route): per-host invoke-skill / install / CLI smoke without full E2E matrix.
 #
-# Cursor CLI isolation (official): fake HOME, CURSOR_CONFIG_DIR, --plugin-dir, --workspace.
-# Cursor CLI auth: CURSOR_API_KEY env only + AGENT_CLI_CREDENTIAL_STORE=memory.
-# Never uses macOS Keychain (cursor-user) or cursor-agent login/status.
-#
 # Usage:
-#   CURSOR_API_KEY=... (or HOST_API_KEY=...) RTK_DISABLED=1 bash scripts/run-pre-release-host-smoke.sh
-#   RTK_DISABLED=1 bash scripts/run-pre-release-host-smoke.sh --host cursor
+#   RTK_DISABLED=1 bash scripts/run-pre-release-host-smoke.sh
+#   RTK_DISABLED=1 bash scripts/run-pre-release-host-smoke.sh --host codex
 #
 # Claude host is skipped only when claude CLI is unavailable (first-class when present).
 set -euo pipefail
@@ -134,33 +130,6 @@ smoke_claude() {
   fi
 }
 
-smoke_cursor() {
-  printf '\n=== Cursor host smoke (isolated) ===\n'
-  sb_smoke_begin_cursor
-  assert_invoke_route "cursor" "$(sb_agent_bundle_root "$REPO_ROOT" cursor)"
-  export SB_CURSOR_SMOKE_USE_CURRENT_ENV=1
-  printf '  isolated fake-home: %s
-' "${SB_SMOKE_CURSOR_FAKE_HOME:-$HOME}"
-  printf '  CURSOR_CONFIG_DIR: %s
-' "${CURSOR_CONFIG_DIR:-}"
-  printf '  workspace: %s
-' "${SB_SMOKE_CURSOR_WORKSPACE:-}"
-  printf '  plugin-dir: %s
-' "${SB_SMOKE_CURSOR_PLUGIN_DIR:-}"
-
-  if SB_CURSOR_SMOKE_USE_CURRENT_ENV=1 bash "${REPO_ROOT}/scripts/release-live-matrix-cursor-smoke.sh"; then
-    smoke_pass "cursor: release-live-matrix-cursor-smoke.sh"
-  else
-    smoke_fail "cursor: release-live-matrix-cursor-smoke.sh"
-  fi
-
-  if bash "${REPO_ROOT}/scripts/pre-release-cursor-cli-smoke.sh"; then
-    smoke_pass "cursor: pre-release-cursor-cli-smoke.sh"
-  else
-    smoke_fail "cursor: pre-release-cursor-cli-smoke.sh"
-  fi
-}
-
 printf '=== Pre-release host smoke ===\n'
 printf 'REPO_ROOT=%s\n' "$REPO_ROOT"
 printf 'SB_PRE_RELEASE_SMOKE_ROOT=%s\n' "$SB_PRE_RELEASE_SMOKE_ROOT"
@@ -189,14 +158,12 @@ fi
 case "$HOST_FILTER" in
   all)
     smoke_codex
-    smoke_cursor
     smoke_claude
     ;;
   codex) smoke_codex ;;
-  cursor) smoke_cursor ;;
   claude) smoke_claude ;;
   *)
-    printf 'Unknown host: %s (use all|codex|cursor|claude)\n' "$HOST_FILTER" >&2
+    printf 'Unknown host: %s (use all|codex|claude)\n' "$HOST_FILTER" >&2
     exit 2
     ;;
 esac
@@ -212,7 +179,7 @@ if [[ "$FAIL" -eq 0 ]]; then
   marker_root="$(sb_smoke_host_root codex)"
   marker_file="${marker_root}/.silver-bullet/pre-release-host-smoke"
   mkdir -p "$(dirname "$marker_file")"
-  printf 'hosts=codex,cursor,claude\nstructural=validate-host-skill-surface\ncursor_auth=env-api-key-memory\ncursor_isolation=fake-home,CURSOR_CONFIG_DIR,--plugin-dir,--workspace\n' >"$marker_file"
+  printf 'hosts=codex,claude\nstructural=validate-host-skill-surface\n' >"$marker_file"
   printf 'Wrote isolated marker %s\n' "$marker_file"
 
   if [[ -n "$OPERATOR_STATE_DIR" ]]; then

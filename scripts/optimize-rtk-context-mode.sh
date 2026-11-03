@@ -14,7 +14,6 @@ RTK_GATE_LIB="${REPO_ROOT}/hooks/lib/rtk-gate.sh"
 
 HOST=""
 DRY_RUN=0
-SKIP_CLI_CONFIG=0
 SKIP_RTK_INIT=0
 SKIP_CM_DOCTOR=0
 PROJECT_ROOT=""
@@ -26,17 +25,16 @@ Usage: bash scripts/optimize-rtk-context-mode.sh [options]
 Ensures optimized RTK + Context Mode wiring for AI coding hosts (global config only).
 
 Options:
-  --host <claude|codex|cursor|opencode|pi|hermes|goose|all>
+  --host <claude|codex|opencode|pi|hermes|goose|all>
                                         Target host (required)
   --project-root <path>                 Canonical SB project root (required)
   --dry-run                             Print actions without writing files
-  --skip-cli-config                     Skip ~/.cursor/cli-config.json merge
   --skip-rtk-init                       Skip rtk init wiring
   --skip-cm-doctor                      Skip context-mode doctor
   -h, --help                            Show this help
 
 Hosts:
-  claude, codex, cursor, opencode, pi — shared/global integration
+  claude, codex, opencode, pi      — shared/global integration
   hermes                           — partial (RTK plugin + CM MCP; no CM doctor platform)
   goose                            — unsupported (documented skip; no fake wiring)
 
@@ -54,10 +52,6 @@ source "$LIB"
 [[ -f "$RTK_GATE_LIB" ]] && source "$RTK_GATE_LIB"
 
 detect_host() {
-  if [[ -n "${CURSOR_PLUGIN_ROOT:-}" ]] || [[ -d "${HOME}/.cursor" ]]; then
-    printf '%s' "cursor"
-    return 0
-  fi
   if [[ -n "${CODEX_HOME:-}" ]] || [[ -d "${HOME}/.codex" ]]; then
     printf '%s' "codex"
     return 0
@@ -74,11 +68,7 @@ detect_host() {
     printf '%s' "pi"
     return 0
   fi
-  if [[ -d "${HOME}/.claude" ]]; then
-    printf '%s' "claude"
-    return 0
-  fi
-  printf '%s' "cursor"
+  printf '%s' "claude"
 }
 
 log() { printf '%s\n' "$*"; }
@@ -141,40 +131,7 @@ run_merge_py() {
   local merge_host="${1:-}"
   local merge_args=(python3 "$MERGE_PY" --host "$merge_host" --repo-root "$REPO_ROOT")
   [[ "$DRY_RUN" -eq 1 ]] && merge_args+=(--dry-run)
-  [[ "$SKIP_CLI_CONFIG" -eq 1 ]] && merge_args+=(--skip-cli-config)
   run_cmd "${merge_args[@]}"
-}
-
-canonicalize_cursor_toolstack_hooks() {
-  local patch_py="${REPO_ROOT}/scripts/lib/global-toolstack/patch-hooks.py"
-  [[ -f "$patch_py" ]] || return 0
-  # `rtk init --agent cursor` can preserve an older LeanCTX rewrite hook.  Run
-  # the shared hook reconciler after vendor initialization so the manifest-
-  # backed RTK hook is the only shell rewrite owner.
-  run_cmd env \
-    RT_PATCH_RTK=1 \
-    RT_PATCH_CONTEXT_MODE=1 \
-    RT_PATCH_LEANCTX=1 \
-    python3 "$patch_py"
-}
-
-optimize_rtk_cursor() {
-  if [[ "$SKIP_RTK_INIT" -eq 1 ]]; then
-    log "SKIP: rtk init (cursor)"
-    return 0
-  fi
-  if ! rtk_binary_ok; then
-    log "WARN: rtk-ai/rtk not on PATH or wrong binary — skip rtk init"
-    return 0
-  fi
-  run_cmd "$(sb_rtk_cli_path)" init -g --agent cursor
-  if [[ "$DRY_RUN" -eq 0 ]]; then
-    if grep -q 'rtk hook cursor\|"rtk"' "${HOME}/.cursor/hooks.json" 2>/dev/null; then
-      log "OK: RTK Cursor hook present"
-    else
-      log "WARN: RTK hook not found after rtk init — check ~/.cursor/hooks.json"
-    fi
-  fi
 }
 
 optimize_rtk_claude() {
@@ -231,16 +188,6 @@ optimize_context_mode_claude() {
   run_merge_py claude
 }
 
-optimize_context_mode_cursor() {
-  ensure_context_mode_cli
-  run_merge_py cursor
-  canonicalize_cursor_toolstack_hooks
-  if [[ -z "${TOOLSTACK_INSTALL_IN_PROGRESS:-}" && -z "${SB_RT_APPLY_ACTIVE:-}" ]]; then
-    run_cmd bash "${SCRIPT_DIR}/install-recommended-tools-global.sh" --host cursor --global 2>/dev/null || \
-      bash "${SCRIPT_DIR}/install-recommended-tools-cursor.sh" --global 2>/dev/null || true
-  fi
-}
-
 optimize_context_mode_codex() {
   ensure_context_mode_cli
   run_merge_py codex
@@ -275,10 +222,6 @@ optimize_host() {
   log ""
   log "--- host: ${h} (status: $(rtcm_host_status "$h")) ---"
   case "$h" in
-    cursor)
-      optimize_rtk_cursor
-      optimize_context_mode_cursor
-      ;;
     claude)
       optimize_rtk_claude
       optimize_context_mode_claude
@@ -343,7 +286,6 @@ while [[ $# -gt 0 ]]; do
       shift 2
       ;;
     --dry-run) DRY_RUN=1; export RTCM_DRY_RUN=1; shift ;;
-    --skip-cli-config) SKIP_CLI_CONFIG=1; shift ;;
     --skip-rtk-init) SKIP_RTK_INIT=1; shift ;;
     --skip-cm-doctor) SKIP_CM_DOCTOR=1; shift ;;
     -h|--help) usage; exit 0 ;;

@@ -10,7 +10,6 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 INSTALL_LEANCTX="${SCRIPT_DIR}/install-leanctx-sb.sh"
 OPTIMIZE_RTCM="${SCRIPT_DIR}/optimize-rtk-context-mode.sh"
 OPTIMIZE_SYNERGY="${SCRIPT_DIR}/sb-optimize-stack.sh"
-INSTALL_CURSOR_RULES="${SCRIPT_DIR}/install-recommended-tools-cursor.sh"
 PATCH_MCP="${SCRIPT_DIR}/lib/global-toolstack/patch-mcp.py"
 LIB="${REPO_ROOT}/hooks/lib/rtk-cm-global.sh"
 
@@ -36,7 +35,7 @@ When leanctx.enabled_by_user is true, callers MUST use this script instead of
 optimize-rtk-context-mode.sh alone (conflict #9).
 
 Options:
-  --host <cursor|claude|codex|opencode|pi|all> Target host (required)
+  --host <claude|codex|opencode|pi|all> Target host (required)
   --project-root <path>                       Canonical SB project root (required)
   --dry-run                                        Print actions without writes
   --skip-rtcm                                      Skip RTK+CM optimize helper
@@ -65,10 +64,6 @@ detect_host() {
     printf '%s' "$RT_HOST"
     return 0
   fi
-  if [[ -n "${CURSOR_PLUGIN_ROOT:-}" ]] || [[ -d "${HOME}/.cursor" ]]; then
-    printf '%s' "cursor"
-    return 0
-  fi
   if [[ -n "${CODEX_HOME:-}" ]] || [[ -d "${HOME}/.codex" ]]; then
     printf '%s' "codex"
     return 0
@@ -81,11 +76,7 @@ detect_host() {
     printf '%s' "pi"
     return 0
   fi
-  if [[ -d "${HOME}/.claude" ]]; then
-    printf '%s' "claude"
-    return 0
-  fi
-  printf '%s' "cursor"
+  printf '%s' "claude"
 }
 
 config_file() {
@@ -171,14 +162,6 @@ optimize_host() {
     log "SKIP: optimize-rtk-context-mode.sh"
   fi
 
-  if [[ "$h" == "cursor" ]]; then
-    if [[ "$DRY_RUN" -eq 1 ]]; then
-      run_cmd bash "$INSTALL_CURSOR_RULES" --global
-    else
-      run_cmd bash "$INSTALL_CURSOR_RULES"
-    fi
-  fi
-
   if [[ "$SKIP_SYNERGY" -eq 0 || "$SKIP_RTCM" -eq 0 ]]; then
     local patch_args=(python3 "$PATCH_MCP")
     local patch_env=(RT_HOST="$h" TOOLSTACK_REPO_ROOT="$REPO_ROOT")
@@ -236,11 +219,11 @@ apply_profile_metadata
 
 case "$HOST" in
   all)
-    for h in cursor claude codex opencode pi; do
+    for h in claude codex opencode pi; do
       optimize_host "$h"
     done
     ;;
-  cursor|claude|codex|opencode|pi)
+  claude|codex|opencode|pi)
     optimize_host "$HOST"
     ;;
   *)

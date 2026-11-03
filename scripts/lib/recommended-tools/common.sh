@@ -15,7 +15,7 @@ RT_FIVE_TOOL_ROUTES=(
   sb_slice:context_mode sb_webfetch:context_mode sb_graph:graphify
   sb_remember:agentmemory sb_pathjail:leanctx sb_injection:leanctx
 )
-RT_VALID_HOSTS=(cursor claude codex opencode pi goose hermes)
+RT_VALID_HOSTS=(claude codex opencode pi goose hermes)
 
 _rt_repo_root() {
   local lib_dir candidate
@@ -23,10 +23,6 @@ _rt_repo_root() {
   candidate="$(cd "${lib_dir}/../../.." && pwd)"
   if [[ -f "${candidate}/scripts/reconcile-recommended-tools.sh" ]]; then
     printf '%s' "$candidate"
-    return 0
-  fi
-  if [[ -f "${HOME}/.cursor/state/toolstack/repo-root" ]]; then
-    tr -d '\n' <"${HOME}/.cursor/state/toolstack/repo-root"
     return 0
   fi
   printf '%s' "$candidate"
@@ -100,7 +96,7 @@ rt_validate_host() {
 rt_host_supported() {
   local host="${1:-}"
   case "$host" in
-    cursor|claude|codex|opencode|pi) return 0 ;;
+    claude|codex|opencode|pi) return 0 ;;
     *) return 1 ;;
   esac
 }
@@ -110,9 +106,8 @@ rt_five_tool_host_supported() {
 }
 
 rt_host_mcp_config_path() {
-  local host="${1:-${RT_HOST:-cursor}}"
+  local host="${1:-${RT_HOST:-claude}}"
   case "$host" in
-    cursor) printf '%s/.cursor/mcp.json' "${HOME}" ;;
     claude) printf '%s/.claude.json' "${HOME}" ;;
     codex)
       if declare -f sb_runtime_codex_home >/dev/null 2>&1; then
@@ -131,12 +126,12 @@ rt_host_mcp_config_path() {
 }
 
 rt_host_mcp_server_configured() {
-  local host="${1:-${RT_HOST:-cursor}}" server="${2:-}" path
+  local host="${1:-${RT_HOST:-claude}}" server="${2:-}" path
   [[ -n "$server" ]] || return 1
   path="$(rt_host_mcp_config_path "$host")" || return 1
   [[ -f "$path" && ! -L "$path" ]] || return 1
   case "$host" in
-    cursor|claude)
+    claude)
       jq -e --arg server "$server" '.mcpServers[$server] // empty' "$path" >/dev/null 2>&1
       ;;
     opencode)

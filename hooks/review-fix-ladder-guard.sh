@@ -29,7 +29,7 @@ if declare -f sb_project_gate_or_exit >/dev/null 2>&1; then
   sb_project_gate_or_exit 2>/dev/null || exit 0
 fi
 
-SB_STATE_DIR="${SB_RUNTIME_STATE_DIR:-${HOME}/.cursor/.silver-bullet}"
+SB_STATE_DIR="${SB_RUNTIME_STATE_DIR:-${HOME}/.claude/.silver-bullet}"
 mkdir -p "$SB_STATE_DIR" 2>/dev/null || true
 
 emit_deny() {

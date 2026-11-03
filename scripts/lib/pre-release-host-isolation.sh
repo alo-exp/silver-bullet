@@ -2,7 +2,7 @@
 # Pre-release host smoke isolation — shared helpers.
 #
 # Policy: never read or write the operator's regular host runtime homes
-# (~/.claude, ~/.codex, ~/.cursor). Each smoke host gets a dedicated temp root
+# (~/.claude, ~/.codex). Each smoke host gets a dedicated temp root
 # under SB_PRE_RELEASE_SMOKE_ROOT (default: mktemp under ${TMPDIR}/sb-pre-release-smoke.*).
 #
 # Smoke root ownership: entry points pin the root once in their own shell
@@ -13,16 +13,6 @@
 # root this process created is removed. Each sb_smoke_begin_* also clears the
 # variables that would point a host install at the operator's real config.
 #
-# Cursor CLI isolation (official mechanisms only):
-#   - Fake HOME blocks global hooks/MCP/rules merge from operator profile
-#   - CURSOR_CONFIG_DIR → isolated cli-config.json (permissions, approval mode)
-#   - --plugin-dir loads plugin from repo disk (no install to ~/.cursor/plugins/)
-#   - --workspace targets a throwaway checkout under the smoke root
-# Do NOT use CURSOR_DATA_DIR, --config, or undocumented full ~/.cursor redirects.
-#
-# Cursor CLI auth: env-only CURSOR_API_KEY + AGENT_CLI_CREDENTIAL_STORE=memory.
-# Never call cursor-agent login/status or macOS Keychain (cursor-user).
-
 if [[ -n "${_SB_PRE_RELEASE_ISOLATION_LOADED:-}" ]]; then
   return 0 2>/dev/null || exit 0
 fi
@@ -70,7 +60,7 @@ sb_smoke_host_root() {
 # (Kay's home, Claude's config dir, Codex's home, SB state dir/files, XDG
 # roots). The begin_* helpers then set what the smoke needs.
 sb_smoke_clear_host_env() {
-  unset KAY_HOME CLAUDE_CONFIG_DIR CODEX_HOME CURSOR_CONFIG_DIR \
+  unset KAY_HOME CLAUDE_CONFIG_DIR CODEX_HOME \
     SILVER_BULLET_STATE_FILE SILVER_BULLET_BRANCH_FILE \
     SB_RUNTIME_HOME_ROOT SB_RUNTIME_PLUGIN_CACHE_ROOT SB_RUNTIME_STATE_DIR SB_RUNTIME_PRESERVE_STATE_DIR \
     XDG_CONFIG_HOME XDG_DATA_HOME XDG_STATE_HOME XDG_CACHE_HOME
@@ -120,109 +110,6 @@ sb_smoke_begin_claude() {
     # shellcheck source=hooks/lib/runtime-paths.sh
     source "${SB_PRE_RELEASE_REPO_ROOT}/hooks/lib/runtime-paths.sh"
   fi
-}
-
-sb_smoke_cursor_plugin_dir() {
-  local repo="${SB_PRE_RELEASE_REPO_ROOT:-}"
-  if [[ -z "$repo" || ! -d "${repo}/plugins/silver-bullet" ]]; then
-    return 1
-  fi
-  printf '%s\n' "${repo}/plugins/silver-bullet"
-}
-
-sb_smoke_cursor_workspace() {
-  local root
-  root="$(sb_smoke_host_root cursor)" || return 1
-  printf '%s\n' "${root}/workspace"
-}
-
-sb_smoke_cursor_config_dir() {
-  local root
-  root="$(sb_smoke_host_root cursor)" || return 1
-  printf '%s\n' "${root}/fake-home/.cursor"
-}
-
-sb_smoke_cursor_write_cli_config() {
-  local config_dir="$1"
-  mkdir -p "$config_dir"
-  cat >"${config_dir}/cli-config.json" <<'EOF'
-{
-  "version": 1,
-  "permissions": {
-    "allow": [
-      "Shell(bash *)",
-      "Shell(echo *)",
-      "Shell(pwd)",
-      "Shell(test *)"
-    ]
-  }
-}
-EOF
-}
-
-# Cursor pre-release isolation: fake HOME + CURSOR_CONFIG_DIR (official).
-# install-cursor.sh still resolves ~/.cursor as ${HOME}/.cursor inside fake HOME.
-sb_smoke_begin_cursor() {
-  local root fake_home workspace config_dir plugin_dir
-  root="$(sb_smoke_host_root cursor)" || return 1
-  sb_smoke_track_root "$root"
-  sb_smoke_clear_host_env
-
-  fake_home="${root}/fake-home"
-  workspace="${root}/workspace"
-  config_dir="${fake_home}/.cursor"
-  mkdir -p "$fake_home/.cursor" "$workspace"
-
-  printf '%s\n' '{"version":1,"hooks":{}}' >"${config_dir}/hooks.json"
-  printf '%s\n' '{"mcpServers":{}}' >"${config_dir}/mcp.json"
-  sb_smoke_cursor_write_cli_config "$config_dir"
-
-  export HOME="$fake_home"
-  export CURSOR_CONFIG_DIR="$config_dir"
-  unset CURSOR_HOME 2>/dev/null || true
-  export SILVER_BULLET_RUNTIME=cursor
-  export SB_RUNTIME_PRESERVE_STATE_DIR=1
-  export SB_RUNTIME_STATE_DIR="${root}/.silver-bullet"
-
-  plugin_dir="$(sb_smoke_cursor_plugin_dir)" || plugin_dir=""
-  export SB_SMOKE_CURSOR_WORKSPACE="$workspace"
-  export SB_SMOKE_CURSOR_PLUGIN_DIR="$plugin_dir"
-  export SB_SMOKE_CURSOR_FAKE_HOME="$fake_home"
-
-  if [[ -f "${SB_PRE_RELEASE_REPO_ROOT:-}/hooks/lib/runtime-paths.sh" ]]; then
-    # shellcheck source=hooks/lib/runtime-paths.sh
-    source "${SB_PRE_RELEASE_REPO_ROOT}/hooks/lib/runtime-paths.sh"
-  fi
-}
-
-# Cursor CLI credential store: in-memory only — never Keychain / cursor-user.
-# Auth resolution order: CURSOR_API_KEY → HOST_API_KEY (doc alias) → smoke-root
-# file → operator file ~/.silver-bullet/cursor-api-key (gitignored, local only).
-sb_smoke_cursor_cli_auth_env() {
-  export AGENT_CLI_CREDENTIAL_STORE=memory
-
-  if [[ -n "${CURSOR_API_KEY:-}" ]]; then
-    return 0
-  fi
-
-  if [[ -n "${HOST_API_KEY:-}" ]]; then
-    CURSOR_API_KEY="$HOST_API_KEY"
-    export CURSOR_API_KEY
-    return 0
-  fi
-
-  local key_file
-  for key_file in \
-    "${SB_PRE_RELEASE_SMOKE_ROOT:+${SB_PRE_RELEASE_SMOKE_ROOT}/.cursor-api-key}" \
-    "${HOME}/.silver-bullet/cursor-api-key"; do
-    if [[ -f "$key_file" ]]; then
-      CURSOR_API_KEY="$(<"$key_file")"
-      export CURSOR_API_KEY
-      return 0
-    fi
-  done
-
-  return 1
 }
 
 # sb_smoke_cleanup: remove the smoke root when this process created it (the
@@ -304,7 +191,7 @@ sb_smoke_write_rc_marker() {
 sb_smoke_rc_markers_complete() {
   local host mode dir file
   dir="$(sb_smoke_rc_marker_dir)"
-  for host in cursor codex claude; do for mode in fresh upgrade; do
+  for host in codex claude; do for mode in fresh upgrade; do
     file="${dir}/${host}-${mode}"
     [[ -f "$file" ]] && grep -qE '^status=(pass|skip)$' "$file" || return 1
   done; done

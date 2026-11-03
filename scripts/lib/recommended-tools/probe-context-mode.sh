@@ -7,15 +7,8 @@ source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/vendor-doctor.sh"
 
 rt_probe_context_mode_mcp() {
-  local host="${RT_HOST:-cursor}"
+  local host="${RT_HOST:-claude}"
   case "$host" in
-    cursor)
-      rt_host_mcp_server_configured "$host" context-mode \
-        || {
-          [[ -f "${HOME}/.cursor/mcp.json" ]] || return 1
-          jq -e '.mcpServers["user-context-mode"]' "${HOME}/.cursor/mcp.json" >/dev/null 2>&1
-        }
-      ;;
     claude)
       sb_context_mode_platform_artifact_present "${RT_PROJECT_ROOT:-}" "$host" 2>/dev/null \
         || rt_host_mcp_server_configured "$host" context-mode
@@ -30,7 +23,7 @@ rt_probe_context_mode_mcp() {
   esac
 }
 
-# Default D10 path: CONTEXT_MODE_PLATFORM=cursor context-mode doctor (bounded).
+# Default D10 path: CONTEXT_MODE_PLATFORM=<host> context-mode doctor (bounded).
 # 0=pass 1=fail 2=skip
 rt_probe_context_mode_vendor_doctor() {
   local -a cmd
@@ -44,7 +37,7 @@ rt_probe_context_mode_vendor_doctor() {
   local context_mode_bin
   context_mode_bin="$(sb_context_mode_cli_path 2>/dev/null || true)"
   [[ -n "$context_mode_bin" ]] || return 2
-  export CONTEXT_MODE_PLATFORM="${CONTEXT_MODE_PLATFORM:-${RT_HOST:-cursor}}"
+  export CONTEXT_MODE_PLATFORM="${CONTEXT_MODE_PLATFORM:-${RT_HOST:-claude}}"
   rt_run_vendor_doctor "$context_mode_bin" doctor
 }
 
@@ -56,7 +49,7 @@ rt_probe_context_mode() {
   local vd_rc=0
 
   consent="$(rt_consent_for "$tool_id")"
-  if ! rt_host_supported "${RT_HOST:-cursor}"; then fu=1
+  if ! rt_host_supported "${RT_HOST:-claude}"; then fu=1
   else
     case "$consent" in
       disabled) fd=1 ;;
@@ -97,7 +90,7 @@ rt_repair_context_mode() {
   fi
   local opt="${RT_REPO_ROOT}/scripts/optimize-rtk-context-mode.sh"
   if [[ -f "$opt" ]]; then
-    local -a opt_args=(--host "${RT_HOST:-cursor}" --project-root "${RT_PROJECT_ROOT:-}")
+    local -a opt_args=(--host "${RT_HOST:-claude}" --project-root "${RT_PROJECT_ROOT:-}")
     rt_cross_tool_batch_active && opt_args+=(--skip-rtk-init)
     rt_cross_tool_batch_active && opt_args+=(--skip-cm-doctor)
     if rt_cross_tool_batch_active; then

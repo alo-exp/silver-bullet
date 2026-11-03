@@ -13,7 +13,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 rt_init_paths
 
 rt_current_session_id() {
-  local sid="${SILVER_BULLET_SESSION_ID:-${CURSOR_SESSION_ID:-}}"
+  local sid="${SILVER_BULLET_SESSION_ID:-}"
   if [[ -z "$sid" && -f "${SB_RUNTIME_STATE_DIR:-}/session-start-time" ]]; then
     sid="sb-$(cat "${SB_RUNTIME_STATE_DIR}/session-start-time" 2>/dev/null || true)"
   fi
@@ -40,7 +40,7 @@ rt_epoch_to_iso() {
 
 rt_heartbeat_build_json() {
   local project_root="${1:-${RT_PROJECT_ROOT:-}}"
-  local host="${2:-${RT_HOST:-cursor}}"
+  local host="${2:-${RT_HOST:-claude}}"
   local session_id
   session_id="$(rt_current_session_id)"
   local project_id worktree_id now expires
@@ -127,7 +127,7 @@ rt_heartbeat_cadence_due() {
 
 rt_heartbeat_write() {
   local project_root="${1:-${RT_PROJECT_ROOT:-}}"
-  local host="${2:-${RT_HOST:-cursor}}"
+  local host="${2:-${RT_HOST:-claude}}"
   local session_id project_id worktree_id path lock_dir payload
   session_id="$(rt_current_session_id)"
   project_id="$(rt_project_id)"

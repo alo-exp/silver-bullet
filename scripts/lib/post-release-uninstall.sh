@@ -8,13 +8,6 @@ if [[ -n "${_SB_POST_RELEASE_UNINSTALL_LOADED:-}" ]]; then
 fi
 _SB_POST_RELEASE_UNINSTALL_LOADED=1
 
-_sb_post_release_strip_cursor_hooks() {
-  local hooks_file="${1:-${HOME}/.cursor/hooks.json}"
-  local strip_py="${SB_POST_RELEASE_REPO_ROOT:?}/scripts/lib/strip-cursor-sb-hooks.py"
-  [[ -f "$strip_py" ]] || { printf 'ERROR: missing %s\n' "$strip_py" >&2; return 1; }
-  python3 "$strip_py" "$hooks_file"
-}
-
 _sb_post_release_rm_dir() {
   local path="$1"
   [[ -e "$path" ]] || return 0
@@ -53,28 +46,6 @@ if isinstance(hooks, dict):
 if changed:
     write_json(path, data)
 PY
-}
-
-sb_post_release_uninstall_cursor() {
-  local cursor_home="${CURSOR_HOME:-${HOME}/.cursor}"
-  local sb_state_dir="${cursor_home}/.silver-bullet"
-  _sb_post_release_rm_dir "${cursor_home}/plugins/cache/alo-labs/silver-bullet"
-  _sb_post_release_rm_dir "${cursor_home}/plugins/cache/alo-labs-agent-plugins/silver-bullet"
-  _sb_post_release_rm_dir "${cursor_home}/plugins/cache/alo-labs-cursor/silver-bullet"
-  # The commands-only surface and the gitPath clones install-cursor.sh materializes (R7-23).
-  _sb_post_release_rm_dir "${cursor_home}/plugins/local/silver-bullet"
-  _sb_post_release_rm_dir "${cursor_home}/plugins/marketplaces/github.com/alo-exp/silver-bullet"
-  _sb_post_release_strip_cursor_hooks "${cursor_home}/hooks.json" || return 1
-  _sb_post_release_forget "${cursor_home}/plugins/installed_plugins.json" "silver-bullet@alo-labs" || return 1
-  rm -f -- \
-    "${sb_state_dir}/site-session.json" \
-    "${sb_state_dir}/site-visual-evidence.json" \
-    "${sb_state_dir}/site-vloops.json" \
-    "${sb_state_dir}/agent-delegation-active.json" \
-    "${sb_state_dir}/subagent-spawns.jsonl" \
-    "${sb_state_dir}/live-publish-evidence.json" \
-    "${sb_state_dir}/pending-completion-audit.json" 2>/dev/null || true
-  printf 'uninstall: cursor SB cache + hooks stripped\n'
 }
 
 sb_post_release_uninstall_codex() {
@@ -116,7 +87,6 @@ sb_post_release_uninstall_claude() {
 
 sb_post_release_uninstall_host() {
   case "$1" in
-    cursor) sb_post_release_uninstall_cursor ;;
     codex) sb_post_release_uninstall_codex ;;
     claude) sb_post_release_uninstall_claude ;;
     *) printf 'ERROR: unknown host %s\n' "$1" >&2; return 2 ;;

@@ -71,7 +71,7 @@ rt_repair_graphify_mcp_config() {
 }
 
 rt_repair_graphify_platform() {
-  local host="${RT_HOST:-cursor}" cfg
+  local host="${RT_HOST:-claude}" cfg
   cfg="$(rt_project_config)" || return 1
   local cmd
   while IFS= read -r cmd; do

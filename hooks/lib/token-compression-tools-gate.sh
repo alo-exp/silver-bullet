@@ -40,7 +40,7 @@ sb_token_tool_usage_state_path() {
   state_path="$(sb_recommended_tool_config_string "$config_file" "$tool_id" "usage_state_file" "")"
   state_path="${state_path/#\~/$HOME}"
   if [[ -z "$state_path" ]]; then
-    state_path="${SB_RUNTIME_STATE_DIR:-${HOME}/.cursor/.silver-bullet}/${tool_id}-usage"
+    state_path="${SB_RUNTIME_STATE_DIR:-${HOME}/.claude/.silver-bullet}/${tool_id}-usage"
   fi
   printf '%s' "$state_path"
 }

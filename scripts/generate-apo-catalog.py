@@ -163,7 +163,6 @@ SKILL_TO_FLOW = {
     "silver-benchmark": "AF-FAST-PATH",
     "silver-incident": "AF-FAST-PATH",
     "silver-agent-codex": "AF-AGENT-DELEGATE",
-    "silver-agent-cursor": "AF-AGENT-DELEGATE",
     "silver-agent-claude": "AF-AGENT-DELEGATE",
     "silver-agent-opencode": "AF-AGENT-DELEGATE",
     "silver-agent-pi": "AF-AGENT-DELEGATE",
@@ -476,7 +475,7 @@ def build_workflows() -> list[dict]:
         workflow("WF-SILVER-TEST", "silver-test", "specialized", [n("AF-PLAN"), n("AF-EXECUTE"), n("AF-VERIFY")], owner="silver-test", triggers=["test", "test hardening"], queue=["silver-plan", "silver-validate", "silver-execute", "silver-verify"]),
         workflow("WF-SILVER-FORENSICS", "silver-forensics", "specialized", [n("AF-DEBUG"), n("AF-DOCUMENT"), n("AF-VALIDATE")], owner="silver-forensics", triggers=["forensics"], queue=["silver-debug", "silver-execute", "silver-ensure-docs", "silver-validate"]),
         workflow("WF-PROCESS-MAINTENANCE", "process-maintenance", "specialized", [n("AF-PHASE-MANAGE"), n("AF-DOCUMENT"), n("AF-VALIDATE")], triggers=["phase", "thread", "backlog", "migration"]),
-        workflow("WF-AGENT-DELEGATE-ENTRY", "agent-delegate-entry", "specialized", [n("AF-AGENT-DELEGATE")], owner="silver-agent", triggers=["agent-delegate", "agent-codex", "agent-cursor", "agent-claude"]),
+        workflow("WF-AGENT-DELEGATE-ENTRY", "agent-delegate-entry", "specialized", [n("AF-AGENT-DELEGATE")], owner="silver-agent", triggers=["agent-delegate", "agent-codex", "agent-claude"]),
     ]
     return workflows
 
@@ -640,7 +639,7 @@ def build_catalog() -> dict:
             "subagent_dispatch_records": [],
         }],
         "tool_policies": [
-            {"id": "TP-GRAPHIFY", "tool_id": "graphify", "policy_name": "once-opted-in-then-mandatory-when-relevant", "opt_in_state_source": ".cursor/rules/graphify.mdc or project config", "relevance_rules": ["codebase orientation", "architecture tracing", "catalog drift analysis"], "required_evidence": "graphify query/path/update output or catalog-backed irrelevance rationale", "failure_policy": "block"},
+            {"id": "TP-GRAPHIFY", "tool_id": "graphify", "policy_name": "once-opted-in-then-mandatory-when-relevant", "opt_in_state_source": ".silver-bullet.json recommended_tools.graphify or project config", "relevance_rules": ["codebase orientation", "architecture tracing", "catalog drift analysis"], "required_evidence": "graphify query/path/update output or catalog-backed irrelevance rationale", "failure_policy": "block"},
             {"id": "TP-AGENTMEMORY", "tool_id": "agentmemory", "policy_name": "once-opted-in-then-mandatory-when-relevant", "opt_in_state_source": ".silver-bullet.json tools.agentmemory", "relevance_rules": ["long-lived project memory lookup", "knowledge capture"], "required_evidence": "memory lookup/write result or irrelevance rationale", "failure_policy": "warn"},
             {"id": "TP-BROWSER", "tool_id": "browser", "policy_name": "once-opted-in-then-mandatory-when-relevant", "opt_in_state_source": ".silver-bullet.json tools.browser", "relevance_rules": ["UI verification", "E2E demonstration"], "required_evidence": "snapshot, screenshot, or E2E command output", "failure_policy": "repair"},
             {"id": "TP-GITHUB", "tool_id": "github", "policy_name": "once-opted-in-then-mandatory-when-relevant", "opt_in_state_source": "repository remote and gh authentication", "relevance_rules": ["PR, CI, release, issue traceability"], "required_evidence": "gh command output or auth blocker", "failure_policy": "degrade"},

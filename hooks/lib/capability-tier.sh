@@ -6,9 +6,6 @@ sb_capability_hooks_present() {
   local runtime="${SB_RUNTIME_NAME:-${SILVER_BULLET_RUNTIME:-}}"
   [[ -n "$runtime_home" ]] || return 1
   case "$runtime" in
-    cursor)
-      [[ -f "${runtime_home}/hooks.json" ]] && grep -q 'silver-bullet' "${runtime_home}/hooks.json" 2>/dev/null
-      ;;
     codex)
       [[ -f "${runtime_home}/config.toml" ]] && grep -q 'silver-bullet' "${runtime_home}/config.toml" 2>/dev/null
       ;;
@@ -31,14 +28,9 @@ sb_capability_runtime_name() {
     printf 'codex'
     return 0
   fi
-  if [[ -n "${CURSOR_PLUGIN_ROOT:-}" ]]; then
-    printf 'cursor'
-    return 0
-  fi
   if [[ -n "${CLAUDE_PLUGIN_ROOT:-}" ]]; then
     case "$CLAUDE_PLUGIN_ROOT" in
       */.codex/*) printf 'codex'; return 0 ;;
-      */.cursor/*) printf 'cursor'; return 0 ;;
     esac
   fi
   printf 'claude'

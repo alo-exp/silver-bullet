@@ -4,7 +4,7 @@
 # Pre-release gate for hero-tri-host / help-tri-host claims. NOT validation overlay.
 #
 # Per host:
-#   1. install-{claude,codex,cursor}.sh in isolated HOME
+#   1. install-{claude,codex}.sh in isolated HOME
 #   2. sb-diagnostics.sh (SB_DIAG_SMOKE=1)
 #   3. claims-audit.sh + check-apo-invariants.py site-doc-freshness (repo SB scripts)
 #
@@ -15,8 +15,8 @@
 #
 # Usage:
 #   RTK_DISABLED=1 bash scripts/run-tri-host-install-smoke.sh
-#   RTK_DISABLED=1 bash scripts/run-tri-host-install-smoke.sh --host cursor
-#   SB_TRIHOST_CMD_TIMEOUT=5 RTK_DISABLED=1 bash scripts/run-tri-host-install-smoke.sh --host cursor
+#   RTK_DISABLED=1 bash scripts/run-tri-host-install-smoke.sh --host codex
+#   SB_TRIHOST_CMD_TIMEOUT=5 RTK_DISABLED=1 bash scripts/run-tri-host-install-smoke.sh --host codex
 #
 # Claude host is skipped only when claude CLI is unavailable (first-class when present).
 set -euo pipefail
@@ -198,7 +198,7 @@ run_sb_invocations() {
 # isolate_host_env: HOME alone does not isolate a host install. Drop the
 # variables that redirect a host CLI, installer or SB state to real config.
 isolate_host_env() {
-  unset KAY_HOME CLAUDE_CONFIG_DIR CODEX_HOME CURSOR_CONFIG_DIR \
+  unset KAY_HOME CLAUDE_CONFIG_DIR CODEX_HOME \
     SILVER_BULLET_STATE_FILE SILVER_BULLET_BRANCH_FILE \
     SB_RUNTIME_HOME_ROOT SB_RUNTIME_PLUGIN_CACHE_ROOT SB_RUNTIME_STATE_DIR SB_RUNTIME_PRESERVE_STATE_DIR \
     XDG_CONFIG_HOME XDG_DATA_HOME XDG_STATE_HOME XDG_CACHE_HOME
@@ -245,41 +245,6 @@ smoke_codex() {
   run_sb_invocations "codex"
 }
 
-smoke_cursor() {
-  local tmp_home
-  tmp_home="$(mktemp -d "${TMPDIR:-/tmp}/sb-trihost-cursor.XXXXXX")"
-  isolate_host_env
-  export HOME="$tmp_home"
-  export CURSOR_HOME="${tmp_home}/.cursor"
-  export SILVER_BULLET_RUNTIME=cursor
-  trap 'rm -rf "$tmp_home"' RETURN
-
-  smoke_pass "cursor: isolated HOME ${tmp_home}"
-  if run_timed "cursor: install-cursor.sh" "$SB_TRIHOST_CMD_TIMEOUT" \
-    bash "${REPO_ROOT}/scripts/install-cursor.sh"; then
-    smoke_pass "cursor: install-cursor.sh"
-  else
-    smoke_fail "cursor: install-cursor.sh"
-    return
-  fi
-  if [[ ! -f "${CURSOR_HOME}/hooks.json" ]]; then
-    smoke_fail "cursor: hooks.json missing after install"
-    return
-  fi
-  if ! grep -q 'silver-bullet' "${CURSOR_HOME}/hooks.json"; then
-    smoke_fail "cursor: hooks.json missing silver-bullet entries"
-    return
-  fi
-  smoke_pass "cursor: hooks.json merged"
-  if run_timed "cursor: sb-diagnostics.sh" "$SB_TRIHOST_DIAG_TIMEOUT" \
-    env SB_DIAG_SMOKE=1 SILVER_BULLET_RUNTIME=cursor bash "${REPO_ROOT}/scripts/sb-diagnostics.sh"; then
-    smoke_pass "cursor: sb-diagnostics.sh"
-  else
-    smoke_fail "cursor: sb-diagnostics.sh"
-  fi
-  run_sb_invocations "cursor"
-}
-
 smoke_claude() {
   local claude_bin="${CLAUDE_BIN:-$(command -v claude 2>/dev/null || true)}"
   if [[ -z "$claude_bin" || ! -x "$claude_bin" ]]; then
@@ -321,14 +286,12 @@ echo ""
 case "$HOST_FILTER" in
   all)
     smoke_codex
-    smoke_cursor
     smoke_claude
     ;;
   codex) smoke_codex ;;
-  cursor) smoke_cursor ;;
   claude) smoke_claude ;;
   *)
-    echo "Unknown host: $HOST_FILTER (use all|codex|cursor|claude)" >&2
+    echo "Unknown host: $HOST_FILTER (use all|codex|claude)" >&2
     exit 2
     ;;
 esac

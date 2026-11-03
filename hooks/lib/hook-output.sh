@@ -2,8 +2,8 @@
 # Silver Bullet — hook output emitters.
 #
 # Every emitter prints exactly one JSON document built only from fields the host hook
-# protocol defines (Claude Code's schema; hooks/codex-hook-adapter.sh and
-# hooks/cursor-hook-bridge.sh translate it for Codex and Cursor):
+# protocol defines (Claude Code's schema; hooks/codex-hook-adapter.sh
+# translates it for Codex):
 #   systemMessage                                     user-visible notice, any event
 #   hookSpecificOutput.additionalContext              model-visible context, always with
 #                                                     hookSpecificOutput.hookEventName

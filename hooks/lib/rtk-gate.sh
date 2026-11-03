@@ -97,7 +97,6 @@ sb_rtk_platform_hook_artifact_path() {
   fi
   host="${host:-$(sb_runtime_host)}"
   case "$host" in
-    cursor) printf '%s/.cursor/hooks.json' "${HOME}" ;;
     codex) printf '%s/AGENTS.md' "${CODEX_HOME:-${HOME}/.codex}" ;;
     # rtk init -g wires Claude hooks into ${HOME}/.claude/settings.json; the codex
     # fallback pointed this check at a different host's config entirely.
@@ -116,9 +115,6 @@ sb_rtk_platform_hook_present() {
   artifact="$(sb_rtk_platform_hook_artifact_path "$project_root" "$host")"
   [[ -f "$artifact" && ! -L "$artifact" ]] || return 1
   case "$host" in
-    cursor)
-      grep -qE 'rtk hook cursor|"rtk"' "$artifact" 2>/dev/null
-      ;;
     codex)
       grep -qiE 'rtk|rust token killer' "$artifact" 2>/dev/null
       ;;
@@ -143,7 +139,7 @@ sb_rtk_edit_path_is_exempt() {
   if [[ "$file_path" == *"/.silver-bullet/"* ]]; then
     return 0
   fi
-  if [[ "$file_path" == *"/.cursor/hooks.json" ]] || [[ "$file_path" == *"/.claude/settings.json" ]]; then
+  if [[ "$file_path" == *"/.claude/settings.json" ]]; then
     return 0
   fi
   return 1

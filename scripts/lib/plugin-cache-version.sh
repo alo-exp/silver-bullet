@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Shared plugin-cache version resolution for Claude/Cursor install scripts.
+# Shared plugin-cache version resolution for the install scripts.
 # Only version-named directories (v?MAJOR.MINOR.PATCH[-pre][+build]) with a
 # plugin surface count: the stable alias (current), orphaned markers and other
 # directories (test/, dev/) never win, whatever they contain.
