@@ -316,7 +316,7 @@ jobs:
           tag="${{ github.event.release.tag_name }}"
 YAML
 expect_fail "an unhardened workflow" workflow-hardening ".github/workflows/announce.yml: no top-level permissions block"
-assert_contains "unhardened workflow: script injection named" "$TL_OUT" "announce.yml:11: \${{ }} expression inside a run script"
+assert_contains "unhardened workflow: script injection named" "$TL_OUT" "announce.yml:10: \${{ }} expression inside a run script"
 
 FIX="$TL_TMP/workflows-weak"; fixture "$FIX"
 mkdir -p "$FIX/.github/workflows"
@@ -326,8 +326,13 @@ expect_fail "ci guard that ignores git-ignored files" workflow-hardening "the ch
 FIX="$TL_TMP/workflows-writeall"; fixture "$FIX"
 mkdir -p "$FIX/.github/workflows"
 cp "$TL_REPO_ROOT"/.github/workflows/*.yml "$FIX/.github/workflows/"
-sed -i '0,/^permissions:/{s/^permissions:.*/permissions: write-all/}' "$FIX/.github/workflows/secret-scan.yml"
+sed -E -z -i '0,/\npermissions:(\n  [^\n]*)+/s//\npermissions: write-all/' "$FIX/.github/workflows/secret-scan.yml"
 expect_fail "permissions: write-all" workflow-hardening "permissions: write-all"
+
+FIX="$TL_TMP/workflows-unparsable"; fixture "$FIX"
+mkdir -p "$FIX/.github/workflows"
+printf 'jobs: [\n' >"$FIX/.github/workflows/broken.yml"
+expect_fail "an unparsable workflow is not skipped" workflow-hardening "broken.yml: not parsed as YAML, so it cannot be checked"
 
 # --- Tracked file size (R13-13) ------------------------------------------------------------------------------
 FIX="$TL_TMP/size"; fixture "$FIX"
