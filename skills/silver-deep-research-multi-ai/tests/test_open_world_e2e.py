@@ -33,13 +33,14 @@ def _payload(phase: str, model: str) -> dict:
         {"claim": "Apache Pulsar provides tiered storage and geo-replication.", "source_ref": "https://pulsar.apache.org/"},
         {"claim": "Confluent Cloud provides managed hosting, SSO and audit logs.", "source_ref": "https://confluent.io/"},
     ]
+    cased = {"claude-x": "Exactly-once semantics", "gpt-x": "exactly once  Semantics", "gemini-x": "EXACTLY-ONCE SEMANTICS"}[model]
     rows = [
-        {"vendor": "Apache Kafka", "feature": "Exactly-once semantics", "supported": True, "source_ref": "https://kafka.apache.org/"},
+        {"vendor": "Apache Kafka", "feature": cased, "supported": True, "source_ref": "https://kafka.apache.org/"},
         {"vendor": "Redpanda", "feature": "Managed hosting", "supported": True, "source_ref": "https://redpanda.com/"},
         {"vendor": "Apache Pulsar", "feature": "Tiered storage", "supported": True, "source_ref": "https://pulsar.apache.org/"},
         {"vendor": "Confluent Cloud", "feature": "SSO", "supported": model != "gpt-x", "source_ref": "https://confluent.io/"},
         {"vendor": "Apache Kafka", "feature": "Managed hosting", "supported": False, "source_ref": "https://kafka.apache.org/"},
-        {"vendor": "Redpanda", "feature": "Exactly-once semantics", "supported": True, "source_ref": "https://redpanda.com/"},
+        {"vendor": "Redpanda", "feature": cased, "supported": model != "gpt-x", "source_ref": "https://redpanda.com/"},
         {"vendor": "Redpanda", "feature": "SSO", "supported": True, "source_ref": "https://redpanda.com/"},
     ]
     if phase == "DR-RETRIEVE":
@@ -86,6 +87,12 @@ class OpenWorldEndToEndTests(unittest.TestCase):
             kafka = json.loads((out / "solutions" / "apache-kafka" / "features.json").read_text(encoding="utf-8"))
             text = json.dumps(kafka)
             self.assertIn("Exactly-once semantics", text)
+            # three models, three spellings: one rubric row, voted on together (Redpanda 2 yes / 1 no)
+            self.assertEqual(text.lower().count("exactly"), 1, text)
+            self.assertNotIn("EXACTLY", text)
+            redpanda = json.loads((out / "solutions" / "redpanda" / "features.json").read_text(encoding="utf-8"))
+            cells = {f["name"]: f["supported"] for c in redpanda["categories"] for f in c["features"]}
+            self.assertIs(cells["Exactly-once semantics"], True)
             pkg = package_solution_outputs(out, skip_xlsx=True)
             self.assertEqual(pkg.get("status"), "ok")
             report = (out / "landscape" / "landscape-report.md").read_text(encoding="utf-8")

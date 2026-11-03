@@ -582,7 +582,7 @@ class BulkClaimTests(unittest.TestCase):
         self.assertFalse(m._parse_host_runtime_substrate_claim(support, "unrelated"))
         self.assertFalse(m._parse_host_runtime_substrate_claim(support, "host runtime substrate row for zzz"))
         known = {**m.KNOWN_SOLUTIONS, "cursor": "Cursor", "claude-code": "Claude Code"}
-        self.assertTrue(m._parse_host_runtime_substrate_claim(support, "Host runtime: Cursor and Claude Code", known=known))
+        self.assertTrue(m._parse_host_runtime_substrate_claim(support, "Host runtime: Cursor IDE and Claude Code", known=known))
         self.assertEqual(support, {"cursor": {"IDE-native integration": True}, "claude-code": {"IDE-native integration": True}})
 
 
@@ -592,7 +592,7 @@ class ParseFeatureSupportTests(unittest.TestCase):
         envelopes = env(
             "Confirmed in-scope core set: devin",
             "matrix leaders are aider",
-            "Host runtime: cursor",
+            "Host runtime: Cursor IDE",
             "Matrix — CI integration: cline",
             "Hook-enforced gates ✔ for openhands",
             "Matrix entry — Continue: has hooks and CI/CD",
@@ -896,6 +896,23 @@ class OpenDiscoveryTests(unittest.TestCase):
         self.assertEqual(r("codyai", known, pack), "sourcegraph-cody")
         self.assertEqual(r("The Dev", known, pack), "devika")
         self.assertIsNone(r("Unknown vendor", known, pack))  # with a pack unknown vendors are ignored
+
+    def test_feature_spellings_are_folded_and_the_users_spelling_wins(self) -> None:
+        known = {"devika": "Devika"}
+        envs = [
+            self.rows(self.row("Devika", "Single sign-on"), model="m1"),
+            self.rows(self.row("Devika", "single SIGN ON", False), model="m2"),
+            self.rows(self.row("Devika", "Single Sign-On", False), model="m3"),
+            self.rows(self.row("Devika", "Single sign on", False), model="m4"),
+        ]
+        got = m.parse_structured_matrix_entries(envs, known=known)
+        self.assertEqual(list(got["devika"]), ["Single sign-on"])  # most common spelling; one row
+        self.assertIs(got["devika"]["Single sign-on"], False)  # 1 yes vs 3 no, all on the same cell
+        wanted = m.parse_structured_matrix_entries(envs, known=known, preferred_features=["Single Sign-on (SSO)", "Single sign-on"])
+        self.assertEqual(list(wanted["devika"]), ["Single sign-on"])
+        user = m.parse_structured_matrix_entries(envs, known=known, preferred_features=["SINGLE SIGN-ON"])
+        self.assertEqual(list(user["devika"]), ["SINGLE SIGN-ON"])  # the need profile's spelling is used
+        self.assertEqual(m._feature_key("  Exactly-once   Semantics! "), "exactly once semantics")
 
     def test_blank_vendor_rows_are_ignored_and_the_last_row_of_a_model_wins(self) -> None:
         known = {"devika": "Devika"}
