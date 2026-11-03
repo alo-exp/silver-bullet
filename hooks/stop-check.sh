@@ -457,7 +457,9 @@ run_doc_scheme_task_gate() {
 # Fail-open by design: stale cross-branch state should never block the current branch.
 sb_branch_file="${SILVER_BULLET_BRANCH_FILE:-${SB_STATE_DIR}/branch}"
 # Security: validate path stays within the host runtime state root (mirrors session-start pattern)
-if ! sb_runtime_path_is_state_scoped "$sb_branch_file"; then
+if resolved_branch_file="$(sb_runtime_state_path "$sb_branch_file" 2>/dev/null)"; then
+  sb_branch_file="$resolved_branch_file"
+else
   sb_branch_file="${SB_STATE_DIR}/branch"
   # branch-scope.sh reads SILVER_BULLET_BRANCH_FILE directly; do not let a rejected path back in.
   unset SILVER_BULLET_BRANCH_FILE
