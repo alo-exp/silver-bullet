@@ -15,8 +15,19 @@ import sys
 import time
 
 # Canonical authoring directories retain their historical ``silver-*`` names;
-# rendered host surfaces expose the public ``sb:<route>`` namespace.
-NAME_RE = re.compile(r"^(name:\s*)silver(?:-([A-Za-z0-9_-]+))?\s*$", re.MULTILINE)
+# rendered host surfaces expose the public ``sb:<route>`` namespace. The
+# lookahead keeps a CRLF line's ``\r`` out of the match so endings survive.
+NAME_RE = re.compile(r"^(name:[ \t]*)silver(?:-([A-Za-z0-9_-]+))?[ \t]*(?=\r?$)", re.MULTILINE)
+HOSTS = ("claude", "codex", "cursor")
+# Host prose is rewritten in documentation only. Skill code and data (Python,
+# JSON, shell) run or are read as-is, so a product name such as "Claude Code"
+# in a research data pack must not turn into "Cursor" in the Cursor render.
+DOC_SUFFIXES = frozenset({".md", ".mdc"})
+LAYOUTS = ("picker", "source")
+
+
+class RenderError(Exception):
+    """A render precondition failed (missing source root, route collision)."""
 CODEX_TITLE_WORD_OVERRIDES = {
     "ai": "AI",
     "api": "API",
@@ -198,7 +209,9 @@ def quote_codex_frontmatter_scalars(text: str) -> str:
         stripped = value.strip()
         if stripped in {">", "|", ">-", "|-"} or not stripped:
             continue
-        if stripped[0] in {'"', "'"}:
+        # Already quoted, or a YAML flow sequence/mapping (`aliases: ["sb:x"]`)
+        # that quoting would turn into a string.
+        if stripped[0] in {'"', "'", "[", "{"}:
             continue
         if ":" in stripped or stripped.startswith(("/", "@", "`")):
             lines[idx] = f"{prefix}{yaml_quote_scalar(stripped)}{newline}"
@@ -234,7 +247,8 @@ def ensure_codex_picker_title(text: str) -> str:
         return text
 
     title = codex_title_for_name(skill_name, current_title=current_title)
-    title_line = f"title: {yaml_quote_scalar(title)}\n"
+    newline = "\r\n" if lines[name_idx].endswith("\r\n") else "\n"
+    title_line = f"title: {yaml_quote_scalar(title)}{newline}"
     if title_idx is not None and title_idx < frontmatter_end:
         lines[title_idx] = title_line
     else:
@@ -342,10 +356,6 @@ def sanitize_text(text: str, agent: str, preserve_runtime_placeholders: bool = F
         for old, new in runtime_placeholders(agent):
             updated = updated.replace(old, new)
         updated = _unmask_protected_runtime_subs(updated, protected_masks)
-        if agent == "codex":
-            home = os.path.expanduser("~")
-            if home:
-                updated = updated.replace(f"{home}/.codex", "$HOME/.codex")
     if agent == "codex":
         updated = sanitize_codex_text(updated)
     elif agent == "cursor":
@@ -388,35 +398,47 @@ def _backoff(attempt: int, attempts: int = 3) -> None:
         time.sleep(0.05 * (attempt + 1))
 
 
-def rewrite_file(path: pathlib.Path, agent: str) -> bool:
-    if path.name == "runtime-paths.sh" and "hooks" in path.parts:
+def rewrite_file(path: pathlib.Path, agent: str, *, root: pathlib.Path, docs_only: bool = False) -> bool:
+    """Rewrite one file for ``agent``; return True when it changed.
+
+    ``root`` is the tree being sanitized: the ``hooks`` checks look only at the
+    path below it, so a checkout under a directory named ``hooks`` renders
+    like any other. Bytes are decoded and re-encoded as-is, so CRLF and LF
+    endings both survive whether or not a replacement fires. With
+    ``docs_only`` only Markdown is rewritten (skill bundles); the install-time
+    package sanitizer rewrites every text file.
+    """
+    rel_parts = path.relative_to(root).parts
+    if path.name == "runtime-paths.sh" and "hooks" in rel_parts:
+        return False
+    if docs_only and path.suffix not in DOC_SUFFIXES:
         return False
 
     for attempt in range(3):
         try:
             if not path.is_file():
                 return False
-            text = path.read_text()
+            text = path.read_bytes().decode("utf-8")
         except UnicodeDecodeError:
             return False
         except OSError:
             _backoff(attempt)
             continue
 
-        preserve_runtime_placeholders = "hooks" in path.parts
+        preserve_runtime_placeholders = "hooks" in rel_parts
         updated = sanitize_text(text, agent, preserve_runtime_placeholders=preserve_runtime_placeholders)
         if updated == text:
             return False
 
         try:
-            path.write_text(updated)
+            path.write_bytes(updated.encode("utf-8"))
             return True
         except OSError:
             _backoff(attempt)
     return False
 
 
-def sanitize_root(root: pathlib.Path, agent: str) -> None:
+def sanitize_root(root: pathlib.Path, agent: str, *, docs_only: bool = False) -> None:
     if not root.exists():
         return
 
@@ -430,20 +452,23 @@ def sanitize_root(root: pathlib.Path, agent: str) -> None:
                 stack.append(child)
             continue
         if current.is_file():
-            rewrite_file(current, agent)
+            rewrite_file(current, agent, root=root, docs_only=docs_only)
 
 
-def rename_route_skill_directories(root: pathlib.Path, *, host: str) -> None:
+def rename_route_skill_directories(root: pathlib.Path, *, host: str, layout: str = "picker") -> None:
     """Align rendered skill folders with the public sb: frontmatter routes.
 
     Hosts list skills from both directory names and SKILL.md ``name:`` fields.
     Canonical authoring names (``silver-feature``) are internal; rendered
-    Claude/Cursor routes use ``sb:feature`` and the filesystem-safe Codex
-    bundle uses ``sb-feature``.
+    Claude/Cursor picker routes use ``sb:feature`` and the filesystem-safe
+    Codex bundle uses ``sb-feature``. Hidden source trees (``layout="source"``)
+    are read by path, never listed by a picker, so they always use the
+    filesystem-safe ``sb-feature`` form.
     """
     if not root.is_dir():
         return
 
+    colon_routes = host in {"claude", "cursor"} and layout == "picker"
     for child in sorted(root.iterdir(), key=lambda path: path.name):
         if not child.is_dir() or child.is_symlink():
             continue
@@ -452,12 +477,12 @@ def rename_route_skill_directories(root: pathlib.Path, *, host: str) -> None:
             target = child.parent / "sb"
         elif dirname.startswith("silver-"):
             route = dirname.removeprefix("silver-")
-            target_name = f"sb:{route}" if host in {"claude", "cursor"} else f"sb-{route}"
+            target_name = f"sb:{route}" if colon_routes else f"sb-{route}"
             target = child.parent / target_name
         else:
             continue
         if target.exists():
-            raise SystemExit(f"{host} skill rename collision: {dirname} -> {target.name}")
+            raise RenderError(f"{host} skill rename collision: {dirname} -> {target.name}")
         child.rename(target)
 
 
@@ -480,48 +505,6 @@ def read_skill_frontmatter(path: pathlib.Path) -> dict[str, str]:
     return meta
 
 
-def set_user_invocable_false(path: pathlib.Path) -> bool:
-    try:
-        text = path.read_text(encoding="utf-8")
-    except UnicodeDecodeError:
-        text = path.read_text(errors="replace")
-    lines = text.splitlines()
-    if not lines or lines[0].strip() != "---":
-        return False
-
-    end = 1
-    while end < len(lines) and lines[end].strip() != "---":
-        end += 1
-    if end >= len(lines):
-        return False
-
-    fm_lines = lines[1:end]
-    body_lines = lines[end + 1 :]
-    found = False
-    updated_fm: list[str] = []
-    for line in fm_lines:
-        if line.startswith("user-invocable:"):
-            if line.strip() != "user-invocable: false":
-                updated_fm.append("user-invocable: false")
-            else:
-                updated_fm.append(line)
-            found = True
-        else:
-            updated_fm.append(line)
-    if not found:
-        updated_fm.append("user-invocable: false")
-
-    trailing_newline = "\n" if text.endswith("\n") else ""
-    updated = "---\n" + "\n".join(updated_fm) + "\n---"
-    if body_lines:
-        updated += "\n" + "\n".join(body_lines)
-    updated += trailing_newline
-    if updated == text:
-        return False
-    path.write_text(updated, encoding="utf-8")
-    return True
-
-
 def command_stub_routes(commands_dir: pathlib.Path) -> set[str]:
     routes: set[str] = set()
     if not commands_dir.is_dir():
@@ -534,22 +517,6 @@ def command_stub_routes(commands_dir: pathlib.Path) -> set[str]:
             name = "sb:" + name[len("sb-") :]
         routes.add(name)
     return routes
-
-
-def suppress_command_stub_skills_from_picker(root: pathlib.Path, commands_dir: pathlib.Path) -> None:
-    """Hide picker skills that already have plugin command stubs.
-
-    Codex still discovers mirrored bundle skills in some layouts; mark them
-    internal so only native slash/command surfaces stay public.
-    """
-    routes = command_stub_routes(commands_dir)
-    if not routes:
-        return
-
-    for skill_md in sorted(root.glob("*/SKILL.md")):
-        name = read_skill_frontmatter(skill_md).get("name", "").strip()
-        if name in routes:
-            set_user_invocable_false(skill_md)
 
 
 def exclude_command_stub_skills_from_cursor_subagent_surface(
@@ -574,9 +541,29 @@ def exclude_command_stub_skills_from_cursor_subagent_surface(
         _safe_rmtree(skill_dir)
 
 
-def render_bundle(source_root: pathlib.Path, dest_root: pathlib.Path, agent: str) -> None:
+def convert_to_hidden_sources(root: pathlib.Path) -> None:
+    """Rename every SKILL.md to an extensionless SILVER_SOURCE.
+
+    Hosts discover picker entries from ``*SKILL.md`` files; the hidden source
+    trees under the plugin package are read by path only.
+    """
+    for skill_md in sorted(root.rglob("SKILL.md")):
+        skill_md.replace(skill_md.with_name("SILVER_SOURCE"))
+
+
+def render_bundle(
+    source_root: pathlib.Path, dest_root: pathlib.Path, agent: str, *, layout: str = "picker"
+) -> None:
+    """Render ``source_root`` for ``agent`` into ``dest_root``.
+
+    ``layout="picker"`` is the host picker bundle (``agents/claude``,
+    ``host-bundles/<host>``); ``layout="source"`` is a hidden source tree
+    (``plugins/silver-bullet/<host>-skill-source``): filesystem-safe
+    directory names, SILVER_SOURCE files, and every route kept, including the
+    ones Cursor exposes as slash commands.
+    """
     if not source_root.is_dir():
-        raise SystemExit(f"source root missing: {source_root}")
+        raise RenderError(f"source root missing: {source_root}")
 
     dest_root.parent.mkdir(parents=True, exist_ok=True)
     with _render_lock(dest_root):
@@ -587,16 +574,21 @@ def render_bundle(source_root: pathlib.Path, dest_root: pathlib.Path, agent: str
             if agent in {"claude", "cursor"}:
                 for metadata in staging.glob("*/agents/openai.yaml"):
                     metadata.unlink()
-            sanitize_root(staging, agent)
-            if agent in {"claude", "codex", "cursor"}:
-                rename_route_skill_directories(staging, host=agent)
-            if agent == "cursor":
+                    with contextlib.suppress(OSError):
+                        metadata.parent.rmdir()  # only when it is now empty
+            sanitize_root(staging, agent, docs_only=True)
+            if agent in HOSTS:
+                rename_route_skill_directories(staging, host=agent, layout=layout)
+            if layout == "source":
+                convert_to_hidden_sources(staging)
+            elif agent == "cursor":
                 commands_dir = source_root.parent / "plugins" / "silver-bullet" / "commands"
-                suppress_command_stub_skills_from_picker(staging, commands_dir)
                 exclude_command_stub_skills_from_cursor_subagent_surface(staging, commands_dir)
             _safe_rmtree(dest_root)
             staging.rename(dest_root)
-        except Exception:
+        except BaseException:
+            # BaseException: a SystemExit or Ctrl-C must not leave the staging
+            # copy of the whole skills tree beside agents/ or host-bundles/.
             _safe_rmtree(staging)
             raise
 
@@ -604,9 +596,10 @@ def render_bundle(source_root: pathlib.Path, dest_root: pathlib.Path, agent: str
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("mode", choices=("render", "sanitize"))
-    parser.add_argument("--agent", required=True, choices=("claude", "codex", "cursor"))
+    parser.add_argument("--agent", required=True, choices=HOSTS)
     parser.add_argument("--source-root")
     parser.add_argument("--dest-root")
+    parser.add_argument("--layout", choices=LAYOUTS, default="picker")
     parser.add_argument("--root")
     args = parser.parse_args()
 
@@ -614,7 +607,9 @@ def main() -> int:
         if not args.source_root or not args.dest_root:
             parser.error("render mode requires --source-root and --dest-root")
         try:
-            render_bundle(pathlib.Path(args.source_root), pathlib.Path(args.dest_root), args.agent)
+            render_bundle(
+                pathlib.Path(args.source_root), pathlib.Path(args.dest_root), args.agent, layout=args.layout
+            )
         except Exception as exc:
             print(f"ERROR: render failed: {exc}", file=sys.stderr)
             return 1

@@ -319,7 +319,13 @@ done
 AG3="$TL_TMP/agents3/agents"; rm -rf "${TL_TMP:?}/agents3"; mkdir -p "$AG3/team" "$AG3/my-skill" "$AG3/silver-old" "$AG3/tdd-copy" "$AG3/silver-surfer"
 printf -- '---\nname: silver-surfer\n---\nMy own agent.\n' >"$AG3/silver-surfer/SKILL.md"
 printf -- '---\nname: silver-lining\n---\nMy own agent.\n' >"$AG3/silver-lining.md"
-mkdir -p "$SNAP/host-bundles/cursor/silver-old" "$SNAP/host-bundles/cursor/subagent-sb:plan"
+mkdir -p "$SNAP/host-bundles/cursor/silver-old" "$AG3/subagent-sb:init" "$AG3/silver:plan" "$AG3/sb:my-storybook" "$AG3/Silver:Notes"
+printf -- '---\nname: subagent-sb:init\n---\nmy own agent\n' >"$AG3/subagent-sb:init/SKILL.md"
+printf -- '---\nname: sb:my-storybook\n---\nmy own agent\n' >"$AG3/sb:my-storybook/SKILL.md"
+printf -- '---\nname: Silver:Notes\n---\nmy own agent\n' >"$AG3/Silver:Notes/SKILL.md"
+printf -- '---\nname: sb:team-review\n---\nmy own agent\n' >"$AG3/sb:team-review.md"
+printf -- '---\nname: sb:plan\n---\nretired SB agent\n' >"$AG3/sb:plan.md"
+printf -- '---\nname: silver:plan\n---\nretired SB agent\n' >"$AG3/silver:plan/SKILL.md"
 printf -- '---\nname: tdd\n---\nMy own TDD coach.\n' >"$AG3/tdd.md"
 printf -- '---\nname: code-reviewer\n---\nWe follow the silver-bullet workflow (Silver Bullet).\n' >"$AG3/code-reviewer.md"
 printf -- '---\nname: silverlight-porter\n---\nPorts Silverlight apps.\n' >"$AG3/silverlight-porter.md"
@@ -327,7 +333,7 @@ printf '{"name": "silver-bullet notes"}\n' >"$AG3/team/notes.json"
 printf -- '---\nname: my-skill\n---\nUses silver-bullet.\n' >"$AG3/my-skill/SKILL.md"
 printf 'helper\n' >"$AG3/my-skill/helper.md"
 printf -- '---\nname: silver-old\n---\nold SB agent\n' >"$AG3/silver-old/SKILL.md"
-printf -- '---\nname: subagent-sb:plan\n---\nold SB agent\n' >"$AG3/subagent-sb:plan.md"
+printf -- '---\nname: subagent-sb:plan\n---\nmy own agent\n' >"$AG3/subagent-sb:plan.md"
 mkdir -p "$SNAP/host-bundles/cursor/tdd" "$AG3/tdd-copy"
 printf -- '---\nname: tdd\n---\nSB shipped TDD skill.\n' >"$SNAP/host-bundles/cursor/tdd/SKILL.md"
 mkdir -p "$AG3/full-conversation"; printf 'mine\n' >"$AG3/full-conversation/SKILL.md"
@@ -345,9 +351,34 @@ assert_file_exists "silver-* user agent SB never shipped stays (file)" "$AG3/sil
 assert_contains "unshipped namespace-named agent reported, not moved" "$TL_ERR" "left $AG3/silver-lining.md in place"
 assert_eq "symlinked entry is never moved" 1 "$([[ -L "$AG3/silver-link.md" ]] && echo 1 || echo 0)"
 assert_file_absent "SB-namespace agent dir quarantined" "$AG3/silver-old"
-assert_file_absent "SB-namespace agent file quarantined" "$AG3/subagent-sb:plan.md"
+# R7-11 follow-up: a colon name moves only when it is on the exact list of names SB shipped
+# (scripts/lib/install-cursor/shipped-agent-names.txt), never because of a prefix.
+for f in subagent-sb:plan.md subagent-sb:init/SKILL.md sb:my-storybook/SKILL.md Silver:Notes/SKILL.md sb:team-review.md; do
+  assert_file_exists "user-named colon agent $f stays" "$AG3/$f"
+done
+assert_contains "unshipped colon name is reported, not moved" "$TL_ERR" "left $AG3/sb:team-review.md in place"
+assert_file_absent "colon name SB shipped (sb:plan) quarantined" "$AG3/sb:plan.md"
+assert_file_absent "retired former silver:* agent quarantined" "$AG3/silver:plan"
+assert_contains "the move is announced" "$TL_ERR" "quarantined Cursor custom agent $AG3/silver:plan"
 assert_file_absent "byte-identical copy of a shipped SB bundle quarantined" "$AG3/subagent-tdd"
 assert_contains "unverifiable legacy-named agent reported, not moved" "$TL_ERR" "left $AG3/full-conversation in place"
+# Project scope: a committed .cursor/agents file is never moved, even under a shipped name;
+# an untracked leftover with a shipped name is.
+PRJ="$TL_TMP/agents-project"; rm -rf "${PRJ:?}"; mkdir -p "$PRJ/.cursor/agents"
+git -C "$PRJ" init -q
+printf -- '---\nname: sb:review\n---\nteam copy\n' >"$PRJ/.cursor/agents/sb:review.md"
+printf -- '---\nname: sb:plan\n---\nleftover\n' >"$PRJ/.cursor/agents/sb:plan.md"
+git -C "$PRJ" add .cursor/agents/sb:review.md
+tl_run env CURSOR_HOME="$TL_TMP/agents-project-home" SB_INSTALL_CURSOR_SOURCE_ONLY=1 bash -c 'source "$1"; cleanup_cursor_custom_agents "$2"' _ "$SCRIPT" "$PRJ"
+assert_file_exists "committed project agent with a shipped name is never moved" "$PRJ/.cursor/agents/sb:review.md"
+assert_contains "committed project agent is reported" "$TL_ERR" "left $PRJ/.cursor/agents/sb:review.md in place"
+assert_file_absent "untracked project leftover with a shipped name is quarantined" "$PRJ/.cursor/agents/sb:plan.md"
+# The shipped-names manifest covers every colon-named bundle SB ships today.
+missing=""
+for d in "$TL_REPO_ROOT"/host-bundles/cursor/*:*; do
+  grep -qxF "$(basename "$d")" "$TL_REPO_ROOT/scripts/lib/install-cursor/shipped-agent-names.txt" || missing="$missing $(basename "$d")"
+done
+assert_eq "shipped-agent-names.txt lists every shipped colon bundle" "" "$missing"
 rm -rf "${SNAP:?}/host-bundles"
 
 # ---- plugin surface materialization

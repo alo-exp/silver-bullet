@@ -31,26 +31,38 @@ run_ca PreToolUse "$PR" SILVER_BULLET_EVIDENCE_SCHEMA_STRICT=0
 assert_contains "warning joins the ignored-skills note" "$(message)" "ghost-skill"
 assert_contains "warning text follows the ignored note" "$(message)" "finding tables deviate"
 
-# ── jq missing ───────────────────────────────────────────────────────────────
+# ── jq missing (R1-29) ──────────────────────────────────────────────────────
+# Delivery stays blocked in an SB project; jq installs, other commands, other tools and
+# non-SB repositories pass, so the agent can always recover.
 mkproj nojq
 NOJQ="$(tl_path_without jq)"
 run_ca PostToolUse "$PR" PATH="$NOJQ"
 assert_eq "initiated project without jq: delivery blocked (post event format)" "block" "$(decision)"
 assert_contains "jq block explains the cause" "$(message)" "jq is required"
+assert_contains "jq block says how to recover" "$(message)" "sudo apt-get install -y jq"
 run_ca PreToolUse 'git commit -m x' PATH="$NOJQ"
-assert_eq "event type cannot be read without jq: block format is used" "block" "$(decision)"
+assert_eq "event read from the payload without jq: PreToolUse deny format" "deny" "$(decision)"
+run_ca PreToolUse 'git push origin HEAD' PATH="$NOJQ"
+assert_eq "push blocked without jq" "deny" "$(decision)"
+for ok in 'sudo apt-get install -y jq' 'brew install jq' 'ls -la' 'npm test'; do
+  run_ca PreToolUse "$ok" PATH="$NOJQ"
+  assert_eq "initiated project without jq: '$ok' allowed" "none" "$(decision)"
+done
+tl_run_stdin '{"hook_event_name":"PreToolUse","tool_name":"Skill","tool_input":{"skill":"sb:plan"}}' env PATH="$NOJQ" bash -c 'cd "$1" && exec bash "$2"' _ "$PROJ" "$HOOK"
+assert_eq "initiated project without jq: Skill calls are not denied" "none" "$(decision)"
 NOJQPY="$(tl_path_without jq python3)"
 run_ca PostToolUse "$PR" PATH="$NOJQPY"
-assert_contains "no jq and no python3: static block reason" "$TL_OUT" '"enforcement blocked"'
+assert_eq "no jq and no python3: delivery still blocked" "block" "$(decision)"
+assert_contains "no jq and no python3: recovery message" "$(message)" "jq is required"
 RUN_DIR="$TL_TMP/noproj-nojq"; mkdir -p "$RUN_DIR"
 run_ca PostToolUse 'git commit -m x' PATH="$NOJQ"
-assert_eq "uninitiated dir, delivery text without jq: still blocked" "block" "$(decision)"
-run_ca PostToolUse 'ls -la' PATH="$NOJQ"
-assert_contains "uninitiated dir, other command: inactive notice" "$TL_OUT" "ENFORCEMENT INACTIVE"
+assert_eq "no SB project without jq: delivery is not blocked" "none" "$(decision)"
+run_ca PreToolUse 'echo "how to deploy"' PATH="$NOJQ"
+assert_eq "no SB project without jq: delivery-looking text is not blocked" "none" "$(decision)"
 unset RUN_DIR
 mkdir -p "$TL_TMP/gitonly/sub"; git -C "$TL_TMP/gitonly" init -q
-RUN_DIR="$TL_TMP/gitonly/sub" run_ca PostToolUse 'ls' PATH="$NOJQ"
-assert_contains "no config under a git root without jq: inactive notice" "$TL_OUT" "ENFORCEMENT INACTIVE"
+RUN_DIR="$TL_TMP/gitonly/sub" run_ca PreToolUse 'git push' PATH="$NOJQ"
+assert_eq "no config under a git root without jq: inert" "none" "$(decision)"
 mkdir -p "$PROJ/deep/er"
 RUN_DIR="$PROJ/deep/er" run_ca PostToolUse "$PR" PATH="$NOJQ"
 assert_eq "config found by walking up without jq" "block" "$(decision)"

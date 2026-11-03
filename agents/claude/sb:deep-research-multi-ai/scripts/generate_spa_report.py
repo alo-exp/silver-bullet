@@ -14,6 +14,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from generated_files import atomic_write_text
 from skill_paths import ensure_multi_ai_scripts_on_path, ensure_scripts_on_path
 
 ensure_multi_ai_scripts_on_path()
@@ -153,7 +154,7 @@ def generate_spa_report_file(
     if collect is None or render is None:
         raise ValueError(f"profile {profile!r} has no render function")
     data = collect(root)
-    out_path.write_text(render(data), encoding="utf-8")
+    atomic_write_text(out_path, render(data))
     result: dict[str, Any] = {"status": "ok", "out": str(out_path), "profile": profile}
     markers = spec.get("markers")
     if markers:

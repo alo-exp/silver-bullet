@@ -105,6 +105,31 @@ wait_log=$(
 assert_contains "waits until release commit becomes green" "Waiting for release commit" "$wait_log"
 assert_contains "wait succeeds once release CI settles" "fully green" "$wait_log"
 
+# GITHUB_REPOSITORY is derived from origin when unset (the skill and docs rely on it).
+derive_root="$(mktemp -d)"
+trap 'rm -rf "$derive_root"' EXIT
+mkdir -p "$derive_root/scripts"
+cp "$SCRIPT" "$derive_root/scripts/verify-release-commit-ci.sh"
+git init -q "$derive_root"
+derive_run() {
+  env -u GITHUB_REPOSITORY RELEASE_COMMIT_SHA_OVERRIDE="$commit_sha" RELEASE_CI_TIMEOUT_SECONDS=1 \
+    RELEASE_CI_POLL_INTERVAL_SECONDS=0.1 GH_RUN_LIST_OVERRIDE_CMD="$derive_probe" \
+    bash "$derive_root/scripts/verify-release-commit-ci.sh" 2>&1 || true
+}
+derive_probe="$derive_root/probe.sh"
+printf '#!/usr/bin/env bash\necho "[]"\n' >"$derive_probe"
+chmod +x "$derive_probe"
+git -C "$derive_root" remote add origin "git@github.com:acme/widget.git"
+assert_lacks() {
+  local desc="$1" needle="$2" haystack="$3"
+  if grep -qF "$needle" <<<"$haystack"; then echo "FAIL: $desc — found [$needle]"; (( FAIL++ )) || true; else echo "PASS: $desc"; (( PASS++ )) || true; fi
+}
+assert_lacks "ssh origin supplies the repository" "GITHUB_REPOSITORY is required" "$(derive_run)"
+git -C "$derive_root" remote set-url origin "https://github.com/acme/widget2"
+assert_lacks "https origin supplies the repository" "GITHUB_REPOSITORY is required" "$(derive_run)"
+git -C "$derive_root" remote set-url origin "https://example.com/acme/widget"
+assert_contains "non-GitHub origin still requires GITHUB_REPOSITORY" "GITHUB_REPOSITORY is required" "$(derive_run)"
+
 echo
 echo "Results: $PASS passed, $FAIL failed"
 [[ $FAIL -eq 0 ]]

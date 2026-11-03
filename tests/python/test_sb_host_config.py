@@ -102,7 +102,7 @@ class FileWriteTest(Tmp):
         path = self.tmp / "c.toml"
         path.write_text('[a."x"]\nk = 1\n[a."x"]\nk = 2\n[b]\nk = 1\n')
         doc, repaired = m.read_toml_repairing(path, lambda p: p[:1] == ("a",))
-        self.assertEqual((tomllib.loads(doc.text), repaired), ({"b": {"k": 1}}, True))
+        self.assertEqual((tomllib.loads(doc.text), repaired), ({"a": {"x": {"k": 1}}, "b": {"k": 1}}, True))
         path.write_text("[a]\nk = 1\n")
         self.assertTrue(m.read_toml_repairing(path, lambda p: True)[1] is False)
         path.write_text('[b]\nk = 1\n[b]\n')
@@ -111,6 +111,51 @@ class FileWriteTest(Tmp):
         path.write_bytes(b"\xff\xfe")
         with self.assertRaises(m.ConfigError):
             m.read_toml_repairing(path, lambda p: True)
+
+    def test_string_values_reads_strings_without_a_parser(self):
+        doc = m.TomlDocument('[a.b] # c\nsource = "x \\"q\\" \\\\ y"\nlit = \'C:\\dir\'\nn = 5\nml = """m"""\nlml = \'\'\'l\'\'\'\n[a]\nb.dotted = "d"\n[other]\nk = "ignored"\n')
+        self.assertEqual(doc.string_values(("a", "b")), {"source": 'x "q" \\ y', "lit": "C:\\dir", "dotted": "d"})
+
+    def test_string_values_decodes_with_the_toml_lexer(self):
+        doc = m.TomlDocument('[a]\nu = "e\\U0001F600d"\nt = "x\ty"\nx = "\\x41\\u00e9"\n')
+        self.assertEqual(doc.string_values(("a",)), {"u": "e\U0001F600d", "t": "x\ty", "x": "A\u00e9"})
+        with self.assertRaises(m.ConfigError):
+            m.TomlDocument('[a]\nbad = "\\q"\n').string_values(("a",))
+
+    def test_string_values_reads_an_inline_table_value(self):
+        doc = m.TomlDocument(
+            "[marketplaces]\n"
+            "alo = { source_type = \"local\", source = 'C:\\d', n = 3, ml = \"\"\"m\"\"\", dotted.k = \"z\", # c\n"
+            "  tab = \"a\\U0001F600\" }\n"
+        )
+        self.assertEqual(
+            doc.string_values(("marketplaces", "alo")),
+            {"source_type": "local", "source": "C:\\d", "tab": "a\U0001F600"},
+        )
+        self.assertEqual(m.TomlDocument("a = {}\n").string_values(("a",)), {})
+
+    def test_string_values_refuses_a_non_table_where_a_table_is_expected(self):
+        for text in ('[marketplaces]\nalo = "x"\n', "marketplaces = 3\n", 'marketplaces.alo = 1\n'):
+            with self.assertRaises(m.ConfigError, msg=text):
+                m.TomlDocument(text).string_values(("marketplaces", "alo"))
+
+    def test_rename_handles_dotted_keys_and_stale_dotted_targets(self):
+        doc = m.TomlDocument('[hooks.state]\n"k:0:1".trusted_hash = "stale"\n"k:1:0".trusted_hash = "A"\n  "k:1:1".trusted_hash = "B"\n[other]\nx = 1\n')
+        moved = {("hooks", "state", "k:1:0"): ("hooks", "state", "k:0:1"), ("hooks", "state", "k:1:1"): ("hooks", "state", "k:0:2")}
+        self.assertEqual(doc.rename_tables(moved), 2)
+        self.assertEqual(tomllib.loads(doc.text), {"hooks": {"state": {"k:0:1": {"trusted_hash": "A"}, "k:0:2": {"trusted_hash": "B"}}}, "other": {"x": 1}})
+
+    def test_duplicates_only_removal_keeps_the_first_copy(self):
+        doc = m.TomlDocument('[a.x]\nk = 1\n[a.x]\nk = 2\n[a.y]\nk = 3\n[b]\nk = 4\n[b]\nk = 5\n')
+        self.assertEqual(doc.remove(lambda p: p[:1] == ("a",), duplicates_only=True), 1)
+        self.assertEqual(doc.text.count("[a.x]"), 1)
+        self.assertIn("k = 1", doc.text)
+        self.assertEqual(doc.text.count("[b]"), 2)
+
+    def test_trust_table_predicate_covers_package_and_kay_keys(self):
+        yes = [("hooks", "state", "silver-bullet@alo-labs-codex:hooks/hooks.json:stop:0:0"), ("hooks", "state", "/h/.codex/hooks.json:stop:0:0")]
+        no = [("hooks", "state", "/h/other/hooks.json:stop:0:0"), ("hooks",), ("plugins", "x", "silver-bullet@a")]
+        self.assertEqual([m.is_sb_trust_table(p) for p in yes + no], [True, True, False, False, False])
 
     def test_symlink_is_written_through(self):
         real = self.tmp / "dotfiles" / "settings.json"

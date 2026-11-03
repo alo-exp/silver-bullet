@@ -1,0 +1,19 @@
+{
+  "schema_id": "host-matrix-v1",
+  "version": "1.0.0",
+  "hosts": {
+    "cursor": {
+      "status": "supported",
+      "error_code": null
+    },
+    "claude-code": {
+      "status": "packaged-fail-closed",
+      "error_code": "SB_MULTI_AI_UNSUPPORTED_HOST"
+    },
+    "codex": {
+      "status": "packaged-fail-closed",
+      "error_code": "SB_MULTI_AI_UNSUPPORTED_HOST"
+    }
+  },
+  "v1_execution_host": "cursor"
+}

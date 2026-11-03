@@ -15,7 +15,7 @@ If Phase 0 determined this is an update:
 3. If the project already has a project instruction file (`project instruction file` in primary host, `AGENTS.md` in Codex), strip any SB-owned sections from it (migration from pre-v0.7.0). Check for headings matching `## N. <Known SB Title>` where N is 0–9 (titles: Session Startup, Automated Enforcement, Active Workflow, NON-NEGOTIABLE, Review Loop, Session Mode, Model Routing, Legacy Lifecycle, File Safety, Third-Party, Pre-Release). If found, remove these sections (from heading to next `## ` or EOF), preserving all non-SB content. Also remove old-style reference lines that do not mention silver-bullet.md.
 4. If the project instruction file already exists, verify it contains a reference line mentioning "silver-bullet.md". If not, add at the very top of the file: `> **Always adhere strictly to this file and silver-bullet.md — they override all defaults.**`
 5. Run conflict detection (same as step 3.1c below).
-5a. Run step 3.7.5 to re-register or refresh SB hooks in `$HOME/.codex/settings.json`.
+5a. Run step 3.7.5 to remove Silver Bullet's duplicate hook copies from `$HOME/.codex/settings.json` (it never adds hooks).
 6. Output: "Silver Bullet updated. silver-bullet.md refreshed. All SB-owned lifecycle skills active."
 
 ### Template refresh (only when user explicitly requests it)
@@ -259,9 +259,9 @@ EOF
 
 If the commit fails due to a pre-commit hook, read the error, fix the issue, re-stage, and create a new commit (do NOT use `--amend`).
 
-### 3.7.5 Register SB hooks in the host settings file (manual installs only)
+### 3.7.5 Remove duplicate SB hook copies from the host settings file
 
-On Claude Code an installed plugin delivers `hooks/hooks.json` itself, so a copy in the user's settings would run every hook twice. This step therefore removes Silver Bullet's own settings copies when the plugin is installed, and registers the hooks in the user's global settings file only for manual installs (workspace clones, installs without the marketplace). On Codex and Cursor the step changes nothing. Target the active host hooks manifest path (see `docs/RUNTIME-COMPATIBILITY.md`).
+On Claude Code an installed plugin delivers `hooks/hooks.json` itself, so a copy of those hooks in the user's settings would run every hook twice. When the plugin is registered, this step removes Silver Bullet's own copies from the settings file (an earlier `/sb:init` or a manual install may have left them) and adds nothing. The step resolves the install path from the plugin registry, so on a machine without a registry entry it is skipped. A manual install (a workspace clone without the marketplace) is registered by running `python3 <checkout>/scripts/lib/install-claude/merge-hooks.py <checkout>` directly, outside `/sb:init`. On Codex and Cursor the step changes nothing. Target the active host hooks manifest path (see `docs/RUNTIME-COMPATIBILITY.md`).
 
 **Resolve the plugin install path:**
 
@@ -311,11 +311,11 @@ fi
 
 `scripts/lib/install-<runtime>/merge-hooks.py` behaves by install type:
 
-- **Plugin installed** (Claude Code registry lists silver-bullet): removes the settings copies Silver Bullet owns and adds nothing; a settings file with nothing to remove is not created, rewritten or backed up.
-- **Manual install**: removes stale Silver Bullet registrations, then registers every (event, matcher, command) of the manifest with the plugin install path substituted, each matcher in its own group.
+- **Plugin registered** (what `/sb:init` always sees here): removes the settings copies Silver Bullet owns and adds nothing. When there is nothing to remove, the settings file is not created, rewritten or backed up, and the plugin cache is not touched.
+- **Manual install** (run directly): removes stale Silver Bullet registrations, then registers every (event, matcher, command) of the manifest with the install path substituted, each matcher in its own group.
 
 Only Silver Bullet's own entries are ever touched; the user's hooks stay as they are. The file is written atomically with a `.sb-backup` of the previous content. On nonzero exit, warn but do NOT stop init:
-> ⚠️  Could not auto-register hooks in the host settings file. Run `/sb:init` again after installation completes, or add hooks manually from `hooks/hooks.json`.
+> ⚠️  Could not clean up stale Silver Bullet hook entries in the host settings file. Run `/sb:init` again after installation completes. Do not add hooks by hand: a registered plugin already supplies its own hooks, and a hand-added copy would run them twice.
 
 Idempotent — re-running `/sb:init` adds no duplicate entries.
 

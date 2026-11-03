@@ -1,39 +1,20 @@
+"""Print the paths an apply_patch payload names (Add/Update/Delete File, Move to).
+
+Usage: patch_paths.py PAYLOAD | patch_paths.py [-] < payload.json
+"""
+
 import json
-import re
+import os
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import shell_analysis  # noqa: E402
+
 try:
-    payload = json.loads(sys.argv[1] or "{}")
-except Exception:
+    payload = json.loads(shell_analysis.read_input(sys.argv, 1) or "{}")
+except ValueError:
     raise SystemExit(0)
 
-tool_input = payload.get("tool_input")
-if tool_input is None:
-    raise SystemExit(0)
-
-texts = []
-
-def collect(value):
-    if isinstance(value, str):
-        texts.append(value)
-    elif isinstance(value, dict):
-        for item in value.values():
-            collect(item)
-    elif isinstance(value, list):
-        for item in value:
-            collect(item)
-
-collect(tool_input)
-
-seen = set()
-for text in texts:
-    for line in text.splitlines():
-        match = re.match(r"^\*\*\* (?:Add|Update|Delete) File: (.+)$", line)
-        if not match:
-            match = re.match(r"^\*\*\* Move to: (.+)$", line)
-        if not match:
-            continue
-        path = match.group(1).strip()
-        if path and path not in seen:
-            seen.add(path)
-            print(path)
+if isinstance(payload, dict) and payload.get("tool_input") is not None:
+    for path in shell_analysis.patch_paths(payload["tool_input"]):
+        print(path)
