@@ -79,7 +79,7 @@ On skip request: explain → offer A/B/C → record permanent skips in `silver-b
 | Ship | 14 | PR/CI via `sb:ship` |
 | Archive + publish | 18 | Archive dir, tag, `sb:create-release` |
 
-Before tag: run `scripts/sync-release-marketplace-versions.sh` per `sb:create-release`.
+Before tag: run `scripts/sync-release-marketplace-versions.sh <version>` (in-repo manifests only). After the tag and green CI: `scripts/sync-release-marketplace-versions.sh --publish <version>`, both per `sb:create-release`.
 
 ## Workflow tracking (fallback)
 

@@ -222,6 +222,17 @@ class MergeHooksTest(unittest.TestCase):
         self.assertEqual(self.settings.read_text(), original)
         self.assertFalse(self.settings.with_name("settings.json.sb-backup").exists())
 
+    def test_plugin_install_never_touches_the_plugin_cache(self):
+        install = self.make_install("cache/alo-labs/silver-bullet/1.0.0")
+        self.register_plugin()
+        alias = install.parent / "current"
+        alias.mkdir()
+        (alias / "keep.txt").write_text("user data")
+        before = sorted(p.name for p in install.parent.iterdir())
+        self.run_script(install)
+        self.assertEqual(sorted(p.name for p in install.parent.iterdir()), before)
+        self.assertTrue((alias / "keep.txt").is_file() and not alias.is_symlink())
+
     def test_plugin_install_without_settings_creates_none(self):
         install = self.make_install()
         self.register_plugin()
