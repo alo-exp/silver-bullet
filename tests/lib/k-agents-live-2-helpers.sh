@@ -37,9 +37,8 @@ EOS
   for f in validate-host-agnostic-core validate-host-install-surface validate-host-skill-surface; do
     k2_stub_script "$d/scripts/$f.sh" "$f args=\$*" "STUB_FAIL_${f//-/_}"
   done
-  for f in test-runtime-paths; do
+  f=test-runtime-paths
     k2_stub_script "$d/tests/hooks/$f.sh" "$f" "STUB_FAIL_${f//-/_}"
-  done
   # invoke-skill adapter: prints a recognizable skill banner unless told otherwise
   cat >"$d/scripts/silver-bullet" <<'EOS'
 #!/usr/bin/env bash

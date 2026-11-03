@@ -80,14 +80,13 @@ mkdir -p "$TL_TMP/art"
 yes_t "present claude via artifact dir" present claude
 rmdir "$TL_TMP/art"
 no_t "present claude artifact not a dir" present claude
-for h in codex; do
+h=codex
   no_t "present $h missing file" present "$h"
   printf 'nothing' >"$TL_TMP/art"
   no_t "present $h without marker" present "$h"
   printf 'x context-mode y' >"$TL_TMP/art"
   yes_t "present $h" present "$h"
   rm -f "$TL_TMP/art"
-done
 ln -s "$TL_TMP/other-target" "$TL_TMP/art"; printf 'context-mode' >"$TL_TMP/other-target"
 rm -f "$TL_TMP/art"
 no_t "present opencode missing file" present opencode

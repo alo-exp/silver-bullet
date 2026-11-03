@@ -18,7 +18,6 @@ assert_eq "env override repo url" "file:///x/y.git" "$(agent_plugins_repo_url)"
 # --- legacy url per host ---
 export MARKETPLACE_REPO_URL="legacy-claude"
 export CODEX_MARKETPLACE_REPO_URL="legacy-codex"
-export="legacy-cursor"
 assert_eq "legacy claude" "legacy-claude" "$(agent_plugins_legacy_repo_url claude)"
 assert_eq "legacy codex" "legacy-codex" "$(agent_plugins_legacy_repo_url codex)"
 assert_eq "legacy unknown host is empty" "" "$(agent_plugins_legacy_repo_url bogus)"

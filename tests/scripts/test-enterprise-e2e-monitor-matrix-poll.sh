@@ -250,7 +250,7 @@ tl_run env F4_NO_LOGBYTES=1 timeout 30 bash -c "$F4_LAUNCH" _ "$MON"
 assert_contains "fallback byte count is 0 without a log" "$(cat "$STATUS")" "matrix log bytes: 0"
 
 # --- agent children are looked up per host ---
-for h in codex; do
+h=codex
   f4_mon_reset
   live_batch 7000
   roster 1:PASS
@@ -262,7 +262,6 @@ for h in codex; do
   roster 1:PASS
   f4_mon_run SB_E2E_LIVE_RUNTIME=$h
   assert_contains "$h without children tolerated" "$(cat "$STATUS")" "batch PID: 7000 — RUNNING"
-done
 
 # --- tr failing on the pid file: discovery falls back to pgrep ---
 f4_mon_reset

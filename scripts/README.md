@@ -26,6 +26,7 @@ Called by skills and hooks while Silver Bullet runs in a project.
 | Script | Purpose |
 |--------|---------|
 | `install-claude.sh`, `install-codex.sh` | Install or refresh Silver Bullet for one host (from this checkout, or `--public-release` from the marketplace) |
+| `uninstall-cursor-legacy.sh` | One-time cleanup of what an older Silver Bullet left in the Cursor config directory (Cursor is no longer a supported host); `--dry-run` previews, nothing is installed |
 | `install-recommended-tools-global.sh` | Always-on rules / instruction artifacts for the recommended tools |
 | `reconcile-recommended-tools.sh` | Canonical five-tool reconciliation engine (Graphify, agentmemory, Context Mode, LeanCTX, RTK) |
 | `install-leanctx-sb.sh` | Host-aware LeanCTX install in library mode |

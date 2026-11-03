@@ -201,13 +201,12 @@ echo 1 >"$P/pkill-status"
 f4_mon_run
 assert_contains "pkill finding nothing does not stop the hung handling" "$(cat "$POLL")" "poll 2026-01-01T00:00:00Z row=5 batch=RUNNING"
 assert_eq "all four claude-host pkill calls were attempted" "4" "$(grep -c '^pkill' "$F4_CALLS")"
-for h in codex; do
+h=codex
   hung_setup
   rm -f "$P/pgrep.codex-interactive" "$P/pgrep.claude-interactive"
   echo 1 >"$P/pkill-status"
   f4_mon_run SB_E2E_LIVE_RUNTIME=$h
   assert_contains "$h: no agent lines and no pkill match are tolerated" "$(cat "$POLL")" "HUNG: killing claude children after 6000s idle"
-done
 
 nochild_setup
 f4_mon_run F4_KILL_FAIL=1

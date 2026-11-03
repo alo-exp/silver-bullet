@@ -26,13 +26,12 @@ import os, sys
 open(os.environ["LOG"], "a").write("merge %s\n" % " ".join(sys.argv[1:]))
 sys.exit(int(os.environ.get("STUB_RC_MERGE", "0")))
 PY
-for py in install-pi; do
+py=install-pi
 cat >"$ST/scripts/lib/global-toolstack/$py.py" <<PY
 import os, sys
 env = " ".join("%s=%s" % (k, os.environ[k]) for k in sorted(os.environ) if k.startswith("RT_PATCH_"))
 open(os.environ["LOG"], "a").write("$py %s | %s\n" % (" ".join(sys.argv[1:]), env))
 PY
-done
 
 mkdir -p "$HOME/.claude"
 BASEP="$(hr_path_without npm claude rtk context-mode)"

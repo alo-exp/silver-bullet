@@ -49,13 +49,12 @@ for agent in claude codex; do
   check_tree "$(sb_agent_bundle_rel "$agent")" "$(sb_agent_bundle_root "$REPO_ROOT" "$agent")" "${TMP_BASE}/${agent}"
 done
 
-for pair in codex:skill-source; do
+pair=codex:skill-source
   agent="${pair%%:*}"
   tree="${pair#*:}"
   python3 "$RENDER" render --agent "$agent" --layout source --source-root "${REPO_ROOT}/skills" \
     --dest-root "${TMP_BASE}/${tree}" >/dev/null
   check_tree "plugins/silver-bullet/${tree}" "${REPO_ROOT}/plugins/silver-bullet/${tree}" "${TMP_BASE}/${tree}"
-done
 
 echo "Results: $PASS passed, $FAIL failed"
 [[ "$FAIL" -eq 0 ]]

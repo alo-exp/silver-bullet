@@ -177,7 +177,7 @@ jq -e '
   and .tools.agentmemory.env.AGENTMEMORY_URL == "http://localhost:3111"
 ' "$MANIFEST" >/dev/null
 
-for host_file in "$TMP_HOME/.claude.json"; do
+host_file="$TMP_HOME/.claude.json"
   jq -e --arg graphify "$TMP_BIN_REAL/graphify-mcp" \
     --arg agentmemory "$TMP_BIN_REAL/agentmemory" \
     --arg context_mode "$TMP_CONTEXT_ROOT/cli.bundle.mjs" \
@@ -192,7 +192,6 @@ for host_file in "$TMP_HOME/.claude.json"; do
     and .mcpServers.leanctx.args == ["mcp"]
     and ([.mcpServers | keys[] | select(test("context-mode"))] | length) == 1
   ' "$host_file" >/dev/null
-done
 
 CODEX_CONFIG="$TMP_HOME/.codex/config.toml"
 grep -Fq "command = \"$TMP_BIN_REAL/graphify-mcp\"" "$CODEX_CONFIG"
