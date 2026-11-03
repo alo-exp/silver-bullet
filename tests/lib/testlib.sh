@@ -55,6 +55,28 @@ tl_cleanup() {
   return 0
 }
 
+# tl_fake_plugin_root: a throw-away copy of the plugin (hooks plus the scripts the delivery gates load from
+# the plugin root, never from the project): the evidence validator and the RC predicate library are real,
+# the LAUNCH-REVIEW and SENTINEL validators are stubs that exit 0. Prints the copy's path. Tests replace a
+# stub (printf '#!/usr/bin/env bash\nexit 1\n') to exercise a failing validator.
+tl_fake_plugin_root() {
+  local dest="$TL_TMP/plugin" stub
+  if [[ ! -d "$dest/hooks" ]]; then
+    mkdir -p "$dest/scripts/lib"
+    cp -a "$TL_REPO_ROOT/hooks" "$dest/hooks"
+    for stub in skills agents templates host-bundles; do
+      [[ -d "$TL_REPO_ROOT/$stub" ]] && ln -s "$TL_REPO_ROOT/$stub" "$dest/$stub"
+    done
+    cp "$TL_REPO_ROOT/scripts/lib/pre-release-host-isolation.sh" "$TL_REPO_ROOT/scripts/lib/evidence_common.py" "$dest/scripts/lib/"
+    cp "$TL_REPO_ROOT/scripts/validate-evidence-findings.sh" "$TL_REPO_ROOT/scripts/validate-evidence-findings.py" "$dest/scripts/"
+    for stub in validate-launch-review.sh validate-sentinel-skills-manifest.sh; do
+      printf '#!/usr/bin/env bash\nexit 0\n' >"$dest/scripts/$stub"
+      chmod +x "$dest/scripts/$stub"
+    done
+  fi
+  printf '%s' "$dest"
+}
+
 tl_pass() { echo "PASS: $1"; TL_PASS=$((TL_PASS + 1)); }
 tl_fail() { echo "FAIL: $1"; TL_FAIL=$((TL_FAIL + 1)); }
 

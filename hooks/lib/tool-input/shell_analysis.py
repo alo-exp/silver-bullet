@@ -1446,6 +1446,7 @@ _MCP_ACTIONS = {
     "create_ref": ("push",),
     "update_ref": ("push",),
     "create_release": ("release_create",),
+    "actions_run_trigger": ("deploy",),
 }
 
 _DEPLOY_FIRST = {"deploy", "release", "publish", "ship"}
