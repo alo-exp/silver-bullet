@@ -163,7 +163,7 @@ sb_consent_set() {
     return $?
   fi
   lock="${dir}/.consent.lock"
-  until mkdir "$lock" 2>/dev/null; do
+  until mkdir "$lock" 2>/dev/null && printf '%s' "$$" >"${lock}/pid" 2>/dev/null; do
     pid="$(cat "${lock}/pid" 2>/dev/null || true)"
     if [[ "$pid" =~ ^[0-9]+$ ]] && ! kill -0 "$pid" 2>/dev/null; then
       rm -rf -- "$lock"
@@ -176,7 +176,6 @@ sb_consent_set() {
     fi
     sleep 0.1
   done
-  printf '%s' "$$" >"${lock}/pid" 2>/dev/null || true
   _sb_consent_set_locked "$@" || rc=$?
   rm -rf -- "$lock"
   return "$rc"

@@ -85,6 +85,8 @@ yes_t "cmd exempt empty" sb_alumnium_command_is_exempt ""
 yes_t "cmd exempt alumnium" sb_alumnium_command_is_exempt "alumnium run"
 yes_t "cmd exempt cat" sb_alumnium_command_is_exempt "cat f"
 no_t "cmd not exempt: alumnium mentioned in a pipeline" sb_alumnium_command_is_exempt "echo alumnium; rm -rf x"
+no_t "requires_browser: a read-only command is never browser work" sb_alumnium_command_requires_browser "cat e2e/login.spec.ts"
+no_t "requires_browser: Alumnium's own command is exempt" sb_alumnium_command_requires_browser "alumnium run"
 no_t "cmd not exempt: npm install" sb_alumnium_command_is_exempt "npm install -g left-pad"
 no_t "cmd not exempt" sb_alumnium_command_is_exempt "git commit -m x"
 

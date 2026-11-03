@@ -405,7 +405,7 @@ sb_opt_in_shell_needs_gate() {
   sb_opt_in_shell_is_delivery "$unwrapped" && return 0
   sb_opt_in_shell_is_install "$unwrapped" && return 0
   if declare -f sb_shell_candidate_write_paths >/dev/null 2>&1 \
-    && [[ -n "$(sb_shell_candidate_write_paths "$unwrapped" "$PWD" 2>/dev/null || true)" ]]; then
+    && [[ -n "$(sb_shell_candidate_write_paths "$unwrapped" "$PWD" 2>/dev/null)" ]]; then
     return 0
   fi
   return 1
