@@ -55,13 +55,5 @@ assert_gate_denies "custom server name not in artifact is denied" "ALUMNIUM REQU
 base_cfg '.recommended_tools.alumnium.mcp_server_name = "my-browser"'
 gh_run "$HOOK" "$(gh_edit_input "$BROWSER_EDIT")"
 assert_gate_allows "custom mcp_server_name found in artifact allows"
-# cursor host reads the cursor MCP config
-rm -f "$ART"
-mkdir -p "$HOME/.cursor"; printf '{"mcpServers":{"alumnium":{}}}' >"$HOME/.cursor/mcp.json"
-unset SB_ALUMNIUM_MCP_ARTIFACT
-base_cfg
-gh_run "$HOOK" "$(gh_edit_input "$BROWSER_EDIT")" SILVER_BULLET_RUNTIME=cursor
-assert_gate_allows "cursor host artifact path is honored"
-rm -rf "$HOME/.cursor"
 
 tl_results

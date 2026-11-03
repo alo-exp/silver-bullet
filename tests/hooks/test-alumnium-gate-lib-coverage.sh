@@ -39,9 +39,8 @@ unset NPM_RC
 
 # artifact path
 export SB_ALUMNIUM_MCP_ARTIFACT=/ovr
-assert_eq "artifact override" "/ovr" "$(sb_alumnium_platform_artifact_path "$PR" cursor)"
+assert_eq "artifact override" "/ovr" "$(sb_alumnium_platform_artifact_path "$PR" claude)"
 unset SB_ALUMNIUM_MCP_ARTIFACT
-assert_eq "artifact cursor" "$HOME/.cursor/mcp.json" "$(sb_alumnium_platform_artifact_path "$PR" cursor)"
 assert_eq "artifact codex" "/ch/config.toml" "$(CODEX_HOME=/ch sb_alumnium_platform_artifact_path "$PR" codex)"
 assert_eq "artifact codex default home" "$HOME/.codex/config.toml" "$(env -u CODEX_HOME bash -c 'source "$1"; sb_alumnium_platform_artifact_path /x codex' _ "$LIBF")"
 assert_eq "artifact claude" "$HOME/.claude.json" "$(sb_alumnium_platform_artifact_path "$PR" claude)"
@@ -65,7 +64,7 @@ rm -f "$AF"; unset SB_ALUMNIUM_MCP_ARTIFACT
 
 # edit path exemptions
 no_t "edit exempt empty" sb_alumnium_edit_path_is_exempt ""
-for p in /p/.silver-bullet.json /p/SETUP_REPORT.md /p/silver-bullet.md /p/CLAUDE.md /p/AGENTS.md /p/.silver-bullet/x /h/.cursor/mcp.json /h/.claude.json; do
+for p in /p/.silver-bullet.json /p/SETUP_REPORT.md /p/silver-bullet.md /p/CLAUDE.md /p/AGENTS.md /p/.silver-bullet/x /h/.claude.json; do
   yes_t "edit exempt $p" sb_alumnium_edit_path_is_exempt "$p"
 done
 no_t "edit not exempt" sb_alumnium_edit_path_is_exempt /p/src/a.ts

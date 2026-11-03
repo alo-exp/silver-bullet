@@ -245,8 +245,8 @@ else
   PASS=$((PASS + 1))
 fi
 export SB_AGENT_DELEGATE_DIRECT_FALLBACK=1
-if sb_orchestrator_parent_delegate_bash_allowed 'bash scripts/agent-cursor-delegate.sh --work-dir /tmp'; then
-  echo "PASS: V2=1 allows cursor delegate with DIRECT_FALLBACK"
+if sb_orchestrator_parent_delegate_bash_allowed 'bash scripts/agent-claude-delegate.sh --work-dir /tmp'; then
+  echo "PASS: V2=1 allows claude delegate with DIRECT_FALLBACK"
   PASS=$((PASS + 1))
 else
   echo "FAIL: V2=1 should allow cursor delegate with DIRECT_FALLBACK"

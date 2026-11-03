@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # End-to-end tests for hooks/agent-delegation-guard.sh, the progress surface it embeds
-# (hooks/agent-delegation-progress-surface.sh) and hooks/lib/agent-delegation-state.sh.
+# and hooks/lib/agent-delegation-state.sh.
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/b-orchestrator-helpers.sh"
@@ -114,21 +114,6 @@ for p in "$PROJ/src/../docs/x.txt" "$PROJ/src/newdir/../../docs/a.txt"; do
 done
 tl_run_hook "$HOOK" "$(edit_json Write "$PROJ/hooks/repair.sh")"
 assert_eq "harness repair path under hooks/ allowed" "0|" "$TL_STATUS|$TL_OUT"
-
-echo "=== guard: advise tier (cursor parent) ==="
-printf 'line-%s\n' 1 2 3 4 5 6 7 8 9 >"$LOG"
-printf 'token=supersecret123\n' >>"$LOG"
-rm -f "$AUDIT_LOG"
-SILVER_BULLET_RUNTIME=cursor tl_run_hook "$HOOK" "$(edit_json Edit "$PROJ/src/owned.txt")"
-ctx="$(jq -r '.hookSpecificOutput.additionalContext' <<<"$TL_OUT")"
-assert_eq "cursor parent: no deny decision" "null" "$(jq -r '.hookSpecificOutput.permissionDecision' <<<"$TL_OUT")"
-assert_contains "cursor advise names delegation" "$ctx" "Active external-agent delegation"
-assert_contains "cursor advise includes progress header" "$ctx" "[SB delegation active] host=codex task_id=T1"
-assert_contains "progress shows recent log lines" "$ctx" "line-3"
-assert_not_contains "progress keeps only the last 8 log lines" "$ctx" "line-2"
-assert_contains "progress redacts secrets" "$ctx" "token=[REDACTED]"
-assert_not_contains "secret value never surfaced" "$ctx" "supersecret123"
-assert_contains "advise decision audited" "$(cat "$AUDIT_LOG")" '"decision":"advise"'
 
 echo "=== guard: jq unavailable ==="
 nojq="$(tl_path_without jq)"

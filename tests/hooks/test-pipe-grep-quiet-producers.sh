@@ -42,11 +42,6 @@ EMPTY_REPO="$TL_TMP/norepo"; mkdir -p "$EMPTY_REPO"
 yes_t "stack-optimizer: graphify hooks detected despite long status" lib_fn hooks/lib/stack-optimizer.sh sb_stack_graphify_hooks_installed "$EMPTY_REPO"
 yes_t "graphify-am-global: graphify hooks detected despite long status" lib_fn hooks/lib/graphify-am-global.sh ga_graphify_hooks_installed
 
-# --- global-toolstack/common.sh:456 (agentmemory status | grep) ---
-tl_stub curl 'exit 1'
-tl_stub agentmemory "$(big 'Health: healthy')"
-yes_t "toolstack: agentmemory healthy despite long status" lib_fn scripts/lib/global-toolstack/common.sh ts_agentmemory_server_healthy
-
 # --- uat-gate.sh:74/81 (grep | grep -qv on a large UAT file) ---
 uat_case() { # <result> <rows>
   local proj="$TL_TMP/uat-$1"; mkdir -p "$proj/.planning"
@@ -60,12 +55,5 @@ uat_case() { # <result> <rows>
 }
 assert_contains "uat-gate blocks a large UAT with FAIL rows" "$(uat_case FAIL)" "UAT GATE"
 assert_contains "uat-gate blocks a large UAT with NOT-RUN rows" "$(uat_case NOT-RUN)" "UAT GATE"
-
-# --- context-mode-gate.sh:164 (grep -rl | grep -q . with many matching files) ---
-RULES="$TL_TMP/cm/.cursor/rules"; mkdir -p "$RULES"
-for ((i = 1; i <= 5000; i++)); do
-  printf 'context-mode\n' >"$RULES/rule-with-a-reasonably-long-descriptive-file-name-$i.mdc"
-done
-yes_t "context-mode: cursor rule found among many matching files" lib_fn hooks/lib/context-mode-gate.sh sb_context_mode_cursor_rule_present "$TL_TMP/cm"
 
 tl_results

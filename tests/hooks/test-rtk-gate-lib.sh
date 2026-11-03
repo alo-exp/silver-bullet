@@ -42,10 +42,10 @@ chmod +x "$MOCK_BIN/rtk-bad"
 sb_rtk_is_wrong_binary "$MOCK_BIN/rtk-bad" && pass "detects wrong binary help" || fail "detects wrong binary help"
 
 TEST_HOME="$(mktemp -d)"
-mkdir -p "$TEST_HOME/.cursor"
-printf '{"hooks":[{"command":"rtk hook cursor"}]}\n' >"$TEST_HOME/.cursor/hooks.json"
-export HOME="$TEST_HOME" SILVER_BULLET_RUNTIME=cursor
-sb_rtk_platform_hook_present "$REPO_ROOT" cursor && pass "cursor hook present" || fail "cursor hook present"
+mkdir -p "$TEST_HOME/.claude"
+printf '{"hooks":{"PreToolUse":[{"hooks":[{"command":"rtk hook claude"}]}]}}\n' >"$TEST_HOME/.claude/settings.json"
+export HOME="$TEST_HOME" SILVER_BULLET_RUNTIME=claude
+sb_rtk_platform_hook_present "$REPO_ROOT" claude && pass "claude hook present" || fail "claude hook present"
 
 echo "Results: ${PASS} passed, ${FAIL} failed"
 [[ "$FAIL" -eq 0 ]] || exit 1

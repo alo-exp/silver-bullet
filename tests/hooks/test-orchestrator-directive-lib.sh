@@ -327,7 +327,7 @@ sb_orchestrator_seed_delegation_directive codex T1 "" && rc=0 || rc=$?
 assert_eq "empty brief rejected" 1 "$rc"
 ( PATH="$(tl_path_without jq)"; sb_orchestrator_seed_delegation_directive codex T1 /b/brief.md ) && rc=0 || rc=$?
 assert_eq "no jq rejected" 1 "$rc"
-for host in codex cursor claude opencode pi; do
+for host in codex claude opencode pi; do
   sb_orchestrator_seed_delegation_directive "$host" "T-$host" "$TL_TMP/b/brief.md" "[\"$TL_TMP/b\"]"
   assert_eq "$host: skill" "silver-agent-$host" "$(orch_directive_get .next_skill)"
   assert_eq "$host: template" AGENT-DELEGATE "$(orch_directive_get .next_worker_template)"

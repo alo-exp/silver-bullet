@@ -131,7 +131,6 @@ yes_t "healthy via cli when curl missing" env PATH="$(tl_path_without curl)" AM_
 export SB_AGENTMEMORY_MCP_ARTIFACT=/ovr
 assert_eq "artifact override" "/ovr" "$(sb_agentmemory_platform_artifact_path "$PR" claude)"
 unset SB_AGENTMEMORY_MCP_ARTIFACT
-assert_eq "artifact cursor" "$HOME/.cursor/mcp.json" "$(sb_agentmemory_platform_artifact_path "$PR" cursor)"
 assert_eq "artifact codex" "$HOME/.codex/config.toml" "$(sb_agentmemory_platform_artifact_path "$PR" codex)"
 assert_eq "artifact opencode" "$HOME/.config/opencode/opencode.json" "$(sb_agentmemory_platform_artifact_path "$PR" opencode)"
 assert_eq "artifact goose" "$HOME/.config/goose/config.yaml" "$(sb_agentmemory_platform_artifact_path "$PR" goose)"
@@ -178,9 +177,9 @@ assert_eq "state path outside state scope rejected" "$DEFSTATE" "$(sb_agentmemor
 w '{"recommended_tools":{"agentmemory":{"usage_state_file":"~/outside-state"}}}'
 assert_eq "state path ~ outside state scope rejected" "$DEFSTATE" "$(sb_agentmemory_usage_state_path "$CFG")"
 assert_eq "state path default without runtime dirs" "$HOME/.silver-bullet/agentmemory-usage" "$(env -u SB_RUNTIME_STATE_DIR -u SB_RUNTIME_HOME_ROOT bash -c 'source "$1"; unset -f sb_runtime_path_is_state_scoped; sb_agentmemory_usage_state_path' _ "$LIBF")"
-assert_eq "state path expands placeholders with fallbacks" "$HOME/.cursor/.silver-bullet/p" "$(env -u SB_RUNTIME_STATE_DIR -u SB_RUNTIME_HOME_ROOT bash -c 'source "$1"; unset -f sb_runtime_path_is_state_scoped; sb_agentmemory_usage_state_path "$2"' _ "$LIBF" "$(w '{"recommended_tools":{"agentmemory":{"usage_state_file":"${SB_RUNTIME_STATE_DIR}/p"}}}'; echo "$CFG")")"
+assert_eq "state path expands placeholders with fallbacks" "$HOME/.claude/.silver-bullet/p" "$(env -u SB_RUNTIME_STATE_DIR -u SB_RUNTIME_HOME_ROOT bash -c 'source "$1"; unset -f sb_runtime_path_is_state_scoped; sb_agentmemory_usage_state_path "$2"' _ "$LIBF" "$(w '{"recommended_tools":{"agentmemory":{"usage_state_file":"${SB_RUNTIME_STATE_DIR}/p"}}}'; echo "$CFG")")"
 w '{"recommended_tools":{"agentmemory":{"usage_state_file":"${SB_RUNTIME_HOME_ROOT}/h"}}}'
-assert_eq "home root placeholder fallback" "$HOME/.cursor/h" "$(env -u SB_RUNTIME_STATE_DIR -u SB_RUNTIME_HOME_ROOT bash -c 'source "$1"; unset -f sb_runtime_path_is_state_scoped; sb_agentmemory_usage_state_path "$2"' _ "$LIBF" "$CFG")"
+assert_eq "home root placeholder fallback" "$HOME/.claude/h" "$(env -u SB_RUNTIME_STATE_DIR -u SB_RUNTIME_HOME_ROOT bash -c 'source "$1"; unset -f sb_runtime_path_is_state_scoped; sb_agentmemory_usage_state_path "$2"' _ "$LIBF" "$CFG")"
 
 w 'garbage'
 assert_eq "state path with unparsable config uses default" "$DEFSTATE" "$(sb_agentmemory_usage_state_path "$CFG")"

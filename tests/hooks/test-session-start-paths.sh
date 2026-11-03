@@ -260,7 +260,7 @@ assert_file_absent "uninitiated project: no heartbeat" "$SD/hb-written"
 # ---- cursor host below tier 2 gets the hooks-manifest note ----------------------
 fresh
 mkdir -p "$HOME/.cursor/plugins/cache/alo-labs/silver-bullet/test"
-env -u SILVER_BULLET_TEST_HOOK_ENFORCED SILVER_BULLET_RUNTIME=cursor bash -c 'cd "$1" && exec bash "$2" <<<"{}"' _ "$EC_PROJ" "$HOOK" >"$TL_TMP/cursor.out" 2>/dev/null || true
+env -u SILVER_BULLET_TEST_HOOK_ENFORCED SILVER_BULLET_RUNTIME=claude bash -c 'cd "$1" && exec bash "$2" <<<"{}"' _ "$EC_PROJ" "$HOOK" >"$TL_TMP/cursor.out" 2>/dev/null || true
 assert_contains "cursor below tier 2: merge-hooks note" "$(jq -r '.hookSpecificOutput.additionalContext // ""' "$TL_TMP/cursor.out")" "Task host: merge host hooks manifest"
 
 tl_results

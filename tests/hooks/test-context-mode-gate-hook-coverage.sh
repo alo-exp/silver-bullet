@@ -18,7 +18,7 @@ no_fragment() { printf '# Silver Bullet\n' >"$GH_PROJ/silver-bullet.md"; }
 
 gh_scenario_block() { base_cfg; node_none; rm -rf "$HOME/.claude"; no_fragment; }
 
-gh_prelude_suite "$HOOK" context-mode-gate context_mode "$GH_PROJ/.cursor/mcp.json" "context-mode doctor" "$GH_PROJ/src/app.js" "CONTEXT MODE"
+gh_prelude_suite "$HOOK" context-mode-gate context_mode "$GH_PROJ/SETUP_REPORT.md" "context-mode doctor" "$GH_PROJ/src/app.js" "CONTEXT MODE"
 
 EDIT="$(gh_edit_input)"
 gh_scenario_block
@@ -57,8 +57,6 @@ assert_gate_allows "fully wired allows commits"
 no_fragment
 gh_run "$HOOK" "$(gh_edit_input "$GH_PROJ/templates/context-mode-hint.md.base")"
 assert_gate_allows "hint template edit is exempt"
-gh_run "$HOOK" "$(gh_edit_input "$GH_PROJ/.cursor/hooks.json")"
-assert_gate_allows "cursor hooks.json edit is exempt"
 gh_run "$HOOK" "$(gh_bash_input "npm install -g context-mode")"
 assert_gate_allows "installing context-mode is exempt"
 gh_run "$HOOK" "$(gh_bash_input "mkdir -p x && cp a b")"

@@ -1,13 +1,12 @@
 #!/usr/bin/env bash
 # Non-SB workspace must not get orchestrator parent/directive blocks from stale cache.
-# Covers Claude, Codex, and Cursor runtime state roots plus platform shims (bridge/adapter).
+# Covers Claude and Codex runtime state roots plus the platform adapter.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 RUNTIME_PATHS="$REPO_ROOT/hooks/lib/runtime-paths.sh"
 GUARD="$REPO_ROOT/hooks/orchestrator-directive-guard.sh"
 SESSION_START="$REPO_ROOT/hooks/session-start"
-CURSOR_BRIDGE="$REPO_ROOT/hooks/cursor-hook-bridge.sh"
 CODEX_ADAPTER="$REPO_ROOT/hooks/codex-hook-adapter.sh"
 LIB_PARENT="$REPO_ROOT/hooks/lib/orchestrator-parent.sh"
 LIB_OD="$REPO_ROOT/hooks/lib/orchestrator-directive.sh"
@@ -149,15 +148,6 @@ run_runtime_suite() {
   assert_missing "[$runtime] session-start clears stale orchestrator-worker-active.json" "${sb_test_dir}/orchestrator-worker-active.json"
 
   case "$runtime" in
-    cursor)
-      local out_bridge
-      out_bridge=$(cd "$non_sb_work" && printf '{"command":"ls"}' | \
-        SB_ORCHESTRATOR_PARENT=1 SILVER_BULLET_STATE_FILE="$tmpstate" SB_RUNTIME_STATE_DIR="$sb_test_dir" \
-        SILVER_BULLET_RUNTIME=cursor HOME="$TMP_HOME" \
-        bash "$CURSOR_BRIDGE" beforeShellExecution bash "$GUARD" 2>/dev/null || true)
-      assert_not_contains "[$runtime] cursor bridge non-SB does not deny Bash" "$out_bridge" "ORCHESTRATOR PARENT"
-      assert_not_contains "[$runtime] cursor bridge non-SB permission deny" "$out_bridge" '"permission":"deny"'
-      ;;
     codex)
       local out_adapter
       out_adapter=$(cd "$non_sb_work" && printf '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"ls"}}' | \
@@ -173,7 +163,7 @@ run_runtime_suite() {
   rm -rf "${TMP_HOME}/.${runtime}/.silver-bullet/non-sb-guard-${TEST_RUN_ID}" 2>/dev/null || true
 }
 
-for runtime in claude codex cursor; do
+for runtime in claude codex; do
   run_runtime_suite "$runtime"
 done
 

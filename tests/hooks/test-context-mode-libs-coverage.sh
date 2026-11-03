@@ -63,7 +63,6 @@ nodev v23.0.0; yes_t "node default min used without config" sb_context_mode_node
 export SB_CONTEXT_MODE_MCP_ARTIFACT=/override/art
 assert_eq "artifact override" "/override/art" "$(sb_context_mode_platform_artifact_path "$PR" claude)"
 unset SB_CONTEXT_MODE_MCP_ARTIFACT
-assert_eq "artifact cursor" "$HOME/.cursor/mcp.json" "$(sb_context_mode_platform_artifact_path "$PR" cursor)"
 assert_eq "artifact codex" "/ch/config.toml" "$(CODEX_HOME=/ch sb_context_mode_platform_artifact_path "$PR" codex)"
 assert_eq "artifact opencode" "$HOME/.config/opencode/opencode.json" "$(sb_context_mode_platform_artifact_path "$PR" opencode)"
 assert_eq "artifact pi env" "/pd/extensions/silver-bullet-five-tool-stack/config.json" "$(PI_CODING_AGENT_DIR=/pd sb_context_mode_platform_artifact_path "$PR" pi)"
@@ -81,7 +80,7 @@ mkdir -p "$TL_TMP/art"
 yes_t "present claude via artifact dir" present claude
 rmdir "$TL_TMP/art"
 no_t "present claude artifact not a dir" present claude
-for h in cursor codex; do
+for h in codex; do
   no_t "present $h missing file" present "$h"
   printf 'nothing' >"$TL_TMP/art"
   no_t "present $h without marker" present "$h"
@@ -90,7 +89,6 @@ for h in cursor codex; do
   rm -f "$TL_TMP/art"
 done
 ln -s "$TL_TMP/other-target" "$TL_TMP/art"; printf 'context-mode' >"$TL_TMP/other-target"
-no_t "present cursor refuses symlink" present cursor
 rm -f "$TL_TMP/art"
 no_t "present opencode missing file" present opencode
 printf '{"plugin":["context-mode"]}' >"$TL_TMP/art"; yes_t "present opencode plugin exact" present opencode
@@ -112,10 +110,6 @@ no_t "present default host (claude, nothing wired)" sb_context_mode_platform_art
 no_t "hooks_present claude none" sb_context_mode_hooks_present claude
 mkdir -p "$HOME/.claude/plugins/context-mode"; yes_t "hooks_present claude" sb_context_mode_hooks_present claude
 rm -rf "$HOME/.claude"
-no_t "hooks_present cursor missing" sb_context_mode_hooks_present cursor
-mkdir -p "$HOME/.cursor"; printf 'nothing' >"$HOME/.cursor/hooks.json"
-no_t "hooks_present cursor no marker" sb_context_mode_hooks_present cursor
-printf 'context-mode' >"$HOME/.cursor/hooks.json"; yes_t "hooks_present cursor" sb_context_mode_hooks_present cursor
 no_t "hooks_present codex missing" env CODEX_HOME="$TL_TMP/codexhome" bash -c 'source "$1"; sb_context_mode_hooks_present codex' _ "$TL_REPO_ROOT/hooks/lib/context-mode-gate.sh"
 mkdir -p "$TL_TMP/codexhome"; printf 'context-mode' >"$TL_TMP/codexhome/hooks.json"
 yes_t "hooks_present codex" env CODEX_HOME="$TL_TMP/codexhome" bash -c 'source "$1"; sb_context_mode_hooks_present codex' _ "$TL_REPO_ROOT/hooks/lib/context-mode-gate.sh"
@@ -144,14 +138,6 @@ no_t "fragment hint without tools (AGENTS.md)" sb_context_mode_instruction_fragm
 printf 'context-mode hint\nctx_batch_execute\n' >"$FR/AGENTS.md"
 yes_t "fragment AGENTS.md" sb_context_mode_instruction_fragment_present "$FR"
 (cd "$FR" && sb_context_mode_instruction_fragment_present) && tl_pass "fragment default root is PWD" || tl_fail "fragment default root is PWD"
-# cursor rule
-no_t "cursor rule absent" sb_context_mode_cursor_rule_present "$FR"
-mkdir -p "$FR/.cursor/rules"; : >"$FR/.cursor/rules/context-mode.mdc"
-yes_t "cursor rule file" sb_context_mode_cursor_rule_present "$FR"
-rm "$FR/.cursor/rules/context-mode.mdc"; printf 'uses context-mode' >"$FR/.cursor/rules/other.mdc"
-yes_t "cursor rule via grep" sb_context_mode_cursor_rule_present "$FR/"
-rm "$FR/.cursor/rules/other.mdc"; printf 'x' >"$FR/.cursor/rules/other.mdc"
-no_t "cursor rule none matching" sb_context_mode_cursor_rule_present "$FR"
 
 # ---------- windows ----------
 for u in MINGW64_NT MSYS_NT CYGWIN_NT Windows_NT; do
@@ -166,7 +152,7 @@ rm -f "$TL_BIN/uname"; hash -r
 
 # ---------- exemptions ----------
 no_t "edit exempt empty" sb_context_mode_edit_path_is_exempt ""
-for p in /p/.silver-bullet.json /p/SETUP_REPORT.md /p/.silver-bullet/x /h/.cursor/mcp.json /h/.cursor/hooks.json /p/templates/context-mode-hint.md.base; do
+for p in /p/.silver-bullet.json /p/SETUP_REPORT.md /p/.silver-bullet/x /p/templates/context-mode-hint.md.base; do
   yes_t "edit exempt $p" sb_context_mode_edit_path_is_exempt "$p"
 done
 no_t "edit not exempt" sb_context_mode_edit_path_is_exempt /p/src/a.py

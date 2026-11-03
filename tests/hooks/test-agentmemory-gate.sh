@@ -126,7 +126,7 @@ run_edit() {
   local input
   input=$(jq -n --arg f "$TMPFILE" \
     '{hook_event_name:"PreToolUse", tool_name:"Edit", tool_input:{file_path:$f, old_string:"a", new_string:"b"}}')
-  (cd "$TMPDIR_TEST" && export PATH="${PATH:-/usr/bin:/bin}" SILVER_BULLET_RUNTIME="${SILVER_BULLET_RUNTIME:-cursor}" SILVER_BULLET_PROJECT_ROOT="${SILVER_BULLET_PROJECT_ROOT:-$TMPDIR_TEST}" HOME="${TEST_HOME:-$HOME}" SB_AGENTMEMORY_MCP_ARTIFACT="${SB_AGENTMEMORY_MCP_ARTIFACT:-}" SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="${SB_TEST_DIR}" && printf '%s' "$input" | bash "$GATE_HOOK" 2>/dev/null)
+  (cd "$TMPDIR_TEST" && export PATH="${PATH:-/usr/bin:/bin}" SILVER_BULLET_RUNTIME="${SILVER_BULLET_RUNTIME:-claude}" SILVER_BULLET_PROJECT_ROOT="${SILVER_BULLET_PROJECT_ROOT:-$TMPDIR_TEST}" HOME="${TEST_HOME:-$HOME}" SB_AGENTMEMORY_MCP_ARTIFACT="${SB_AGENTMEMORY_MCP_ARTIFACT:-}" SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="${SB_TEST_DIR}" && printf '%s' "$input" | bash "$GATE_HOOK" 2>/dev/null)
 }
 
 wire_test_mcp() {
@@ -134,7 +134,7 @@ wire_test_mcp() {
   mkdir -p "${TEST_HOME}/.cursor"
   TEST_MCP="${TEST_HOME}/.cursor/mcp.json"
   printf '{"mcpServers":{"agentmemory":{"command":"npx","args":["-y","@agentmemory/mcp"]}}}\n' >"$TEST_MCP"
-  export TEST_HOME TEST_MCP SB_AGENTMEMORY_MCP_ARTIFACT="$TEST_MCP" SILVER_BULLET_RUNTIME=cursor
+  export TEST_HOME TEST_MCP SB_AGENTMEMORY_MCP_ARTIFACT="$TEST_MCP" SILVER_BULLET_RUNTIME=claude
 }
 
 unwire_test_mcp() {

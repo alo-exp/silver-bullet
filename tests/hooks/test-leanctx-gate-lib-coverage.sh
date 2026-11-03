@@ -49,7 +49,6 @@ unset SB_GLOBAL_TOOLSTACK_MANIFEST
 export SB_LEANCTX_MCP_ARTIFACT=/ovr
 assert_eq "artifact override" "/ovr" "$(sb_leanctx_platform_artifact_path "$PR" claude)"
 unset SB_LEANCTX_MCP_ARTIFACT
-assert_eq "artifact cursor" "$HOME/.cursor/mcp.json" "$(sb_leanctx_platform_artifact_path "$PR" cursor)"
 assert_eq "artifact codex" "/ch/config.toml" "$(CODEX_HOME=/ch sb_leanctx_platform_artifact_path "$PR" codex)"
 assert_eq "artifact opencode" "$HOME/.config/opencode/opencode.json" "$(sb_leanctx_platform_artifact_path "$PR" opencode)"
 assert_eq "artifact pi env" "/pd/extensions/silver-bullet-five-tool-stack/config.json" "$(PI_CODING_AGENT_DIR=/pd sb_leanctx_platform_artifact_path "$PR" pi)"
@@ -68,10 +67,6 @@ rm -f "$AF"; unset SB_LEANCTX_MCP_ARTIFACT
 
 # ---------- hooks present ----------
 hp() { sb_leanctx_hooks_present "$@"; }
-no_t "hooks cursor missing" hp cursor
-mkdir -p "$HOME/.cursor"; printf 'nothing' >"$HOME/.cursor/hooks.json"
-no_t "hooks cursor no marker" hp cursor
-printf 'lean-ctx' >"$HOME/.cursor/hooks.json"; yes_t "hooks cursor" hp cursor
 no_t "hooks codex missing" env CODEX_HOME="$TL_TMP/ch" bash -c 'source "$1"; sb_leanctx_hooks_present codex' _ "$LIBF"
 mkdir -p "$TL_TMP/ch"; printf 'leanctx' >"$TL_TMP/ch/hooks.json"
 yes_t "hooks codex" env CODEX_HOME="$TL_TMP/ch" bash -c 'source "$1"; sb_leanctx_hooks_present codex' _ "$LIBF"
@@ -117,9 +112,9 @@ w '{"recommended_tools":{"leanctx":{"usage_state_file":"~/outside"}}}'
 assert_eq "state ~ outside scope rejected" "$DEF" "$(sb_leanctx_usage_state_path "$CFG")"
 assert_eq "state fallbacks without runtime vars" "$HOME/.silver-bullet/leanctx-usage" "$(env -u SB_RUNTIME_STATE_DIR -u SB_RUNTIME_HOME_ROOT bash -c 'source "$1"; unset -f sb_runtime_path_is_state_scoped; sb_leanctx_usage_state_path' _ "$LIBF")"
 w '{"recommended_tools":{"leanctx":{"usage_state_file":"${SB_RUNTIME_STATE_DIR}/a"}}}'
-assert_eq "state STATE_DIR placeholder fallback" "$HOME/.cursor/.silver-bullet/a" "$(env -u SB_RUNTIME_STATE_DIR -u SB_RUNTIME_HOME_ROOT bash -c 'source "$1"; unset -f sb_runtime_path_is_state_scoped; sb_leanctx_usage_state_path "$2"' _ "$LIBF" "$CFG")"
+assert_eq "state STATE_DIR placeholder fallback" "$HOME/.claude/.silver-bullet/a" "$(env -u SB_RUNTIME_STATE_DIR -u SB_RUNTIME_HOME_ROOT bash -c 'source "$1"; unset -f sb_runtime_path_is_state_scoped; sb_leanctx_usage_state_path "$2"' _ "$LIBF" "$CFG")"
 w '{"recommended_tools":{"leanctx":{"usage_state_file":"${SB_RUNTIME_HOME_ROOT}/b"}}}'
-assert_eq "state HOME_ROOT placeholder fallback" "$HOME/.cursor/b" "$(env -u SB_RUNTIME_STATE_DIR -u SB_RUNTIME_HOME_ROOT bash -c 'source "$1"; unset -f sb_runtime_path_is_state_scoped; sb_leanctx_usage_state_path "$2"' _ "$LIBF" "$CFG")"
+assert_eq "state HOME_ROOT placeholder fallback" "$HOME/.claude/b" "$(env -u SB_RUNTIME_STATE_DIR -u SB_RUNTIME_HOME_ROOT bash -c 'source "$1"; unset -f sb_runtime_path_is_state_scoped; sb_leanctx_usage_state_path "$2"' _ "$LIBF" "$CFG")"
 
 U="$DEF"
 no_t "epoch missing" sb_leanctx_usage_epoch "$U"
@@ -163,7 +158,7 @@ BADF="$TL_TMP/badfile"; printf x >"$BADF"
 
 # ---------- exemptions / usage classification ----------
 no_t "edit exempt empty" sb_leanctx_edit_path_is_exempt ""
-for p in /p/.silver-bullet.json /p/SETUP_REPORT.md /p/silver-bullet.md /p/CLAUDE.md /p/AGENTS.md /p/.silver-bullet/x /h/.cursor/mcp.json /h/.cursor/hooks.json /p/docs/LEANCTX.md; do
+for p in /p/.silver-bullet.json /p/SETUP_REPORT.md /p/silver-bullet.md /p/CLAUDE.md /p/AGENTS.md /p/.silver-bullet/x /p/docs/LEANCTX.md; do
   yes_t "edit exempt $p" sb_leanctx_edit_path_is_exempt "$p"
 done
 no_t "edit not exempt" sb_leanctx_edit_path_is_exempt /p/src/a.py "$CFG"

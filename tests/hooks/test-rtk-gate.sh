@@ -86,7 +86,7 @@ EOF
 
 isolate_home() {
   TEST_HOME="$(mktemp -d)"
-  export HOME="$TEST_HOME" SILVER_BULLET_RUNTIME=cursor
+  export HOME="$TEST_HOME" SILVER_BULLET_RUNTIME=claude
   export RTK_HOME="$TEST_HOME/.rtk"
   export XDG_CONFIG_HOME="$TEST_HOME/.config"
   export XDG_STATE_HOME="$TEST_HOME/.local/state"
@@ -94,8 +94,8 @@ isolate_home() {
 
 wire_hook() {
   isolate_home
-  mkdir -p "$TEST_HOME/.cursor"
-  printf '{"hooks":[{"command":"rtk hook cursor"}]}\n' >"$TEST_HOME/.cursor/hooks.json"
+  mkdir -p "$TEST_HOME/.claude"
+  printf '{"hooks":{"PreToolUse":[{"hooks":[{"command":"rtk hook claude"}]}]}}\n' >"$TEST_HOME/.claude/settings.json"
 }
 
 write_cfg() {

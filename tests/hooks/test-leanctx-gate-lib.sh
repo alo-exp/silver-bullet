@@ -3,7 +3,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-export SILVER_BULLET_RUNTIME=cursor
+export SILVER_BULLET_RUNTIME=claude
 if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
   # shellcheck source=hooks/lib/runtime-paths.sh
   source "$REPO_ROOT/hooks/lib/runtime-paths.sh"
@@ -44,7 +44,7 @@ TEST_HOME="$(mktemp -d)"
 TMP="$(mktemp -d)"
 mkdir -p "${TEST_HOME}/.cursor"
 printf '{"mcpServers":{"leanctx":{"command":"lean-ctx","args":["mcp"]}}}\n' >"${TEST_HOME}/.cursor/mcp.json"
-export HOME="$TEST_HOME" SILVER_BULLET_RUNTIME=cursor SB_LEANCTX_MCP_ARTIFACT="${TEST_HOME}/.cursor/mcp.json"
+export HOME="$TEST_HOME" SILVER_BULLET_RUNTIME=claude SB_LEANCTX_MCP_ARTIFACT="${TEST_HOME}/.cursor/mcp.json"
 
 USAGE_STATE="${SB_RUNTIME_STATE_DIR}/leanctx-usage-lib-test-$$"
 cat >"$TMP/.silver-bullet.json" <<EOF

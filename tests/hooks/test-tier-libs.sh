@@ -4,7 +4,7 @@ set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
 LIB="$TL_REPO_ROOT/hooks/lib"
-unset SILVER_BULLET_TEST_HOOK_ENFORCED CODEX_CI CODEX_THREAD_ID CODEX_INTERNAL_ORIGINATOR_OVERRIDE CURSOR_PLUGIN_ROOT CLAUDE_PLUGIN_ROOT
+unset SILVER_BULLET_TEST_HOOK_ENFORCED CODEX_CI CODEX_THREAD_ID CODEX_INTERNAL_ORIGINATOR_OVERRIDE CLAUDE_PLUGIN_ROOT
 
 # in <env...> -- run a capability function in a clean subshell
 cap() { # env-assignments... -- function args...
@@ -12,18 +12,16 @@ cap() { # env-assignments... -- function args...
   while [[ "$1" != "--" ]]; do envs+=("$1"); shift; done
   shift
   env -u SB_RUNTIME_NAME -u SILVER_BULLET_RUNTIME -u SILVER_BULLET_TEST_HOOK_ENFORCED -u CODEX_CI -u CODEX_THREAD_ID \
-    -u CODEX_INTERNAL_ORIGINATOR_OVERRIDE -u CURSOR_PLUGIN_ROOT -u CLAUDE_PLUGIN_ROOT "${envs[@]}" \
+    -u CODEX_INTERNAL_ORIGINATOR_OVERRIDE -u CLAUDE_PLUGIN_ROOT "${envs[@]}" \
     bash -c 'source "$1"; shift; "$@"' _ "$LIB/capability-tier.sh" "$@"
 }
 
 # ---- runtime name -----------------------------------------------------------
-assert_eq "SB_RUNTIME_NAME wins" "cursor" "$(cap SB_RUNTIME_NAME=cursor SILVER_BULLET_RUNTIME=codex -- sb_capability_runtime_name)"
+assert_eq "SB_RUNTIME_NAME wins" "claude" "$(cap SB_RUNTIME_NAME=claude SILVER_BULLET_RUNTIME=codex -- sb_capability_runtime_name)"
 assert_eq "SILVER_BULLET_RUNTIME next" "codex" "$(cap SILVER_BULLET_RUNTIME=codex -- sb_capability_runtime_name)"
 assert_eq "Codex env markers" "codex" "$(cap CODEX_THREAD_ID=t -- sb_capability_runtime_name)"
 assert_eq "Codex CI marker" "codex" "$(cap CODEX_CI=1 -- sb_capability_runtime_name)"
-assert_eq "Cursor plugin root marker" "cursor" "$(cap CURSOR_PLUGIN_ROOT=/x -- sb_capability_runtime_name)"
 assert_eq "plugin root under .codex" "codex" "$(cap CLAUDE_PLUGIN_ROOT=/h/.codex/p -- sb_capability_runtime_name)"
-assert_eq "plugin root under .cursor" "cursor" "$(cap CLAUDE_PLUGIN_ROOT=/h/.cursor/p -- sb_capability_runtime_name)"
 assert_eq "other plugin root falls through to claude" "claude" "$(cap CLAUDE_PLUGIN_ROOT=/h/.claude/p -- sb_capability_runtime_name)"
 assert_eq "nothing set: claude" "claude" "$(cap -- sb_capability_runtime_name)"
 
@@ -31,8 +29,6 @@ assert_eq "nothing set: claude" "claude" "$(cap -- sb_capability_runtime_name)"
 H="$TL_TMP/rt"
 mkdir -p "$H"
 if cap SB_RUNTIME_HOME_ROOT= -- sb_capability_hooks_present ""; then tl_fail "no runtime home: absent"; else tl_pass "no runtime home: absent"; fi
-printf 'silver-bullet' >"$H/hooks.json"
-if cap SB_RUNTIME_NAME=cursor -- sb_capability_hooks_present "$H"; then tl_pass "cursor hooks.json detected"; else tl_fail "cursor hooks.json detected"; fi
 printf 'silver-bullet' >"$H/config.toml"
 if cap SB_RUNTIME_NAME=codex -- sb_capability_hooks_present "$H"; then tl_pass "codex config.toml detected"; else tl_fail "codex config.toml detected"; fi
 if cap SB_RUNTIME_NAME=claude -- sb_capability_hooks_present "$H"; then tl_fail "claude needs settings.json"; else tl_pass "claude needs settings.json"; fi

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Tests for hooks/lib/agent-delegation-state.sh and hooks/agent-delegation-progress-surface.sh.
+# Tests for hooks/lib/agent-delegation-state.sh.
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/b-orchestrator-helpers.sh"
@@ -182,38 +182,5 @@ mkdir -p "$STATE"
 sb_agent_delegation_deactivate && rc=0 || rc=$?
 assert_eq "deactivate swallows rm failure" 0 "$rc"
 rm -rf "$STATE"
-
-echo "=== host tier ==="
-assert_eq "claude parent blocks" block "$(SILVER_BULLET_RUNTIME=claude sb_agent_delegation_parent_host_tier)"
-assert_eq "codex parent blocks" block "$(SILVER_BULLET_RUNTIME=codex sb_agent_delegation_parent_host_tier)"
-assert_eq "cursor parent advises" advise "$(SILVER_BULLET_RUNTIME=cursor sb_agent_delegation_parent_host_tier)"
-assert_eq "default blocks" block "$(unset SILVER_BULLET_RUNTIME; sb_agent_delegation_parent_host_tier)"
-
-echo "=== progress surface ==="
-SURF="$TL_REPO_ROOT/hooks/agent-delegation-progress-surface.sh"
-LOG="$ROOT/d.log"
-run_surface() { bash -c 'source "$1"; sb_agent_delegation_progress_surface' _ "$SURF"; }
-assert_eq "inactive delegation: empty surface" "" "$(run_surface)"
-sb_agent_delegation_activate codex T1 "$ROOT" '[]' "$LOG"
-assert_eq "no log file: header only" "[SB delegation active] host=codex task_id=T1" "$(run_surface)"
-printf 'a\nb\n' >"$LOG"
-assert_eq "log lines appended after header" "[SB delegation active] host=codex task_id=T1
-a
-b" "$(run_surface)"
-tl_stub tail 'exit 1'
-assert_eq "tail failure leaves just the header" "[SB delegation active] host=codex task_id=T1" "$(run_surface)"
-rm -f "$TL_BIN/tail"
-printf 'x%.0s' $(seq 1 300) >"$LOG"; printf '\n' >>"$LOG"
-for _ in 1 2 3 4 5 6 7 8; do printf 'y%.0s' $(seq 1 300) >>"$LOG"; printf '\n' >>"$LOG"; done
-out="$(run_surface)"
-assert_eq "surface truncated to 2048 chars" 2048 "${#out}"
-# Redaction failure falls back to the raw lines.
-printf 'plain\n' >"$LOG"
-out="$(bash -c 'source "$1"; agent_delegate_redact_output() { return 1; }; sb_agent_delegation_progress_surface' _ "$SURF")"
-assert_contains "redactor failure falls back to raw text" "$out" "plain"
-# Staged copy with no sibling lib directory: sourcing still works, surface reports inactive.
-staged="$(orch_stage_hook agent-delegation-progress-surface.sh)"
-out="$(bash -c 'source "$1"; sb_agent_delegation_progress_surface; echo "rc=$?"' _ "$staged" 2>&1 || true)"
-assert_contains "lib-less staged surface does not crash" "$out" "rc="
 
 tl_results

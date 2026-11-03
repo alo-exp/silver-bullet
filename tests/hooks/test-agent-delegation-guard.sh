@@ -38,23 +38,18 @@ echo "=== agent-delegation guard tests ==="
 
 WORK=$(mktemp -d)
 echo test >"$WORK/owned.txt"
-mkdir -p "$WORK/.planning/agent-cursor/task-1"
+mkdir -p "$WORK/.planning/agent-codex/task-1"
 scopes='["'"$WORK"'"]'
 
-sb_agent_delegation_activate cursor task-1 "$WORK" "$scopes" "$WORK/.planning/agent-cursor/task-1/delegate.log"
+sb_agent_delegation_activate codex task-1 "$WORK" "$scopes" "$WORK/.planning/agent-codex/task-1/delegate.log"
 sb_agent_delegation_is_active && check "activate sets active state" pass || check "activate sets active state" fail
 
 sb_agent_delegation_path_in_scope "$WORK/owned.txt" "$WORK" && check "owned path in scope" pass || check "owned path in scope" fail
-! sb_agent_delegation_path_in_scope "$WORK/.planning/agent-cursor/task-1/brief.md" "$WORK" \
+! sb_agent_delegation_path_in_scope "$WORK/.planning/agent-codex/task-1/brief.md" "$WORK" \
   && check "evidence path allowed" pass || check "evidence path allowed" fail
 
-export SILVER_BULLET_RUNTIME=codex
-[[ "$(sb_agent_delegation_parent_host_tier)" == "block" ]] && check "codex parent tier block" pass || check "codex parent tier block" fail
-export SILVER_BULLET_RUNTIME=cursor
-[[ "$(sb_agent_delegation_parent_host_tier)" == "advise" ]] && check "cursor parent tier advise" pass || check "cursor parent tier advise" fail
-
 export SB_AGENT_DELEGATE_GUARD=0
-sb_agent_delegation_activate cursor task-1 "$WORK" "$scopes" ""
+sb_agent_delegation_activate codex task-1 "$WORK" "$scopes" ""
 ! sb_agent_delegation_is_active && check "guard disabled treats as inactive" pass || check "guard disabled treats as inactive" fail
 export SB_AGENT_DELEGATE_GUARD=1
 sb_agent_delegation_deactivate
@@ -70,7 +65,6 @@ grep -q 'EV-DELEGATE-DEGRADED-FALLBACK' "$artifact_dir/degraded-fallback.jsonl" 
 
 [[ -x "$REPO_ROOT/hooks/agent-delegation-guard.sh" ]] && check "guard hook executable" pass || check "guard hook executable" fail
 grep -q 'agent-delegation-guard.sh' "$REPO_ROOT/hooks/hooks.json" && check "registered in hooks.json" pass || check "registered in hooks.json" fail
-grep -q 'agent-delegation-guard.sh' "$REPO_ROOT/hooks/cursor-hooks.json" && check "registered in cursor-hooks.json" pass || check "registered in cursor-hooks.json" fail
 
 bash -n "$REPO_ROOT/hooks/agent-delegation-guard.sh" && check "guard shell syntax" pass || check "guard shell syntax" fail
 

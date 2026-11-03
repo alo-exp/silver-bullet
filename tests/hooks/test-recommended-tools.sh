@@ -73,8 +73,6 @@ write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools
 benefits="$(sb_recommended_tool_benefits "$TMP/.silver-bullet.json" graphify)"
 [[ -n "$benefits" ]] && pass "benefits summary non-empty" || fail "benefits summary non-empty"
 
-write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools\":{\"graphify\":{\"platform_install_commands\":{\"cursor\":{\"post_index\":[\"graphify cursor install\"]},\"claude\":{\"pre_index\":[\"graphify install --project\"],\"post_index\":[\"graphify claude install --project\"]}}}}}"
-[[ "$(SILVER_BULLET_RUNTIME=cursor sb_recommended_tool_platform_post_index_commands "$TMP/.silver-bullet.json" graphify)" == "graphify cursor install" ]] && pass "cursor platform post_index from config" || fail "cursor platform post_index from config"
 claude_cmds="$(SILVER_BULLET_RUNTIME=claude sb_recommended_tool_platform_install_commands "$TMP/.silver-bullet.json" graphify)"
 grep -q 'graphify install --project' <<<"$claude_cmds" && pass "claude platform install from config" || fail "claude platform install from config"
 grep -q 'graphify claude install --project' <<<"$claude_cmds" && pass "claude always-on install from config" || fail "claude always-on install from config"
@@ -87,19 +85,14 @@ grep -q 'graphify claude install --project' <<<"$claude_cmds" && pass "claude al
 [[ "$(SILVER_BULLET_RUNTIME=hermes sb_runtime_host)" == "hermes" ]] && pass "sb_runtime_host hermes" || fail "sb_runtime_host hermes"
 [[ "$(SILVER_BULLET_RUNTIME=goose sb_graphify_upstream_platform)" == "pi" ]] && pass "goose maps to pi upstream" || fail "goose maps to pi upstream"
 host="$(
-  env -u SILVER_BULLET_RUNTIME -u CODEX_CI -u CODEX_THREAD_ID -u CODEX_INTERNAL_ORIGINATOR_OVERRIDE     CURSOR_PLUGIN_ROOT=/x/.cursor/plugins bash -c "source '$LIB'; sb_runtime_host"
-)"
-[[ "$host" == "cursor" ]] && pass "CURSOR_PLUGIN_ROOT -> cursor" || fail "CURSOR_PLUGIN_ROOT -> cursor"
-host="$(
   env -u SILVER_BULLET_RUNTIME -u CODEX_CI -u CODEX_THREAD_ID -u CODEX_INTERNAL_ORIGINATOR_OVERRIDE \
-    -u CURSOR_PLUGIN_ROOT -u CLAUDE_PLUGIN_ROOT OPENCODE=1 \
+    -u CLAUDE_PLUGIN_ROOT OPENCODE=1 \
     bash -c "source '$LIB'; sb_runtime_host"
 )"
 [[ "$host" == "opencode" ]] && pass "OPENCODE -> opencode" || fail "OPENCODE -> opencode"
 
-full="$(SILVER_BULLET_RUNTIME=cursor sb_recommended_tool_full_install_lines "$TMP/.silver-bullet.json" graphify)"
+full="$(SILVER_BULLET_RUNTIME=claude sb_recommended_tool_full_install_lines "$TMP/.silver-bullet.json" graphify)"
 grep -Eq "uv tool install ['\"]?graphifyy" <<<"$full" && pass "full install includes CLI" || fail "full install includes CLI"
-grep -q 'graphify cursor install' <<<"$full" && pass "full install includes cursor platform cmd" || fail "full install includes cursor platform cmd"
 
 write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\"}"
 fallback="$(SILVER_BULLET_RUNTIME=codex sb_recommended_tool_platform_install_commands "$TMP/.silver-bullet.json" graphify)"
@@ -121,8 +114,7 @@ write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools
 write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools\":{\"rtk\":{\"enabled_by_user\":true}}}"
 sb_recommended_tool_enforced "$TMP/.silver-bullet.json" rtk && pass "rtk enabled enforces" || fail "rtk enabled enforces"
 
-rtk_cmds="$(SILVER_BULLET_RUNTIME=cursor sb_recommended_tool_platform_pre_index_commands "$TMP/.silver-bullet.json" rtk)"
-grep -q 'rtk init -g --agent cursor' <<<"$rtk_cmds" && pass "rtk cursor platform fallback" || fail "rtk cursor platform fallback"
+rtk_cmds="$(SILVER_BULLET_RUNTIME=claude sb_recommended_tool_platform_pre_index_commands "$TMP/.silver-bullet.json" rtk)"
 
 write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools\":{\"context_mode\":{\"enabled_by_user\":true}}}"
 sb_recommended_tool_enforced "$TMP/.silver-bullet.json" context_mode && pass "context_mode enabled enforces" || fail "context_mode enabled enforces"
@@ -141,12 +133,6 @@ else
   fail "claude host resolves graphify artifact to .claude/settings.json (got: $_got)"
 fi
 # Other hosts must be unaffected by the new arm.
-_got="$(sb_graphify_platform_artifact_path "/tmp/sb-proj" cursor)"
-if [[ "$_got" == "/tmp/sb-proj/.cursor/rules/graphify.mdc" ]]; then
-  pass "cursor host graphify artifact unchanged"
-else
-  fail "cursor host graphify artifact unchanged (got: $_got)"
-fi
 _got="$(sb_graphify_platform_artifact_path "/tmp/sb-proj" codex)"
 if [[ "$_got" == "/tmp/sb-proj/.codex/hooks.json" ]]; then
   pass "codex host graphify artifact unchanged"

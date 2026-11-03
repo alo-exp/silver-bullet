@@ -237,7 +237,6 @@ These files are not registered in `hooks/hooks.json`.
 
 | File | Role |
 |------|------|
-| `agent-delegation-progress-surface.sh` | Library, not a hook: sourced by `agent-delegation-guard.sh` to render bounded, redacted delegation progress (8 lines / 2 KB). |
 | `codex-hook-adapter.sh` | Codex adapter: `scripts/install-codex.sh` rewrites installed hook commands to run through it (`codex-hook-adapter.sh <event> <hook>`); it buffers stdin/stdout and applies a subprocess timeout (`SB_CODEX_HOOK_SUBPROC_TIMEOUT`). |
 | `core-rules.md` | Core enforcement rules that `session-start` injects into context. |
 | `core-rules.sha256` | Integrity pin for `core-rules.md`, checked by `hooks/lib/core-rules-integrity.sh` before injection. |

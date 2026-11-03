@@ -14,7 +14,7 @@ FAIL=0
 TEST_RUN_ID="$$"
 export SB_RUNTIME_PRESERVE_STATE_DIR=1
 export SB_RUNTIME_STATE_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet/rfl-guard-${TEST_RUN_ID}"
-export SILVER_BULLET_RUNTIME=cursor
+export SILVER_BULLET_RUNTIME=claude
 export SB_REVIEW_FIX_LADDER_GUARD=1
 mkdir -p "$SB_RUNTIME_STATE_DIR"
 
@@ -42,7 +42,7 @@ is_denied() {
 
 run_hook() {
   local json="$3" # $1 (event) and $2 (tool) label the call site only
-  (cd "$WORK" && printf '%s' "$json" | env SILVER_BULLET_RUNTIME=cursor bash "$HOOK" 2>/dev/null)
+  (cd "$WORK" && printf '%s' "$json" | env SILVER_BULLET_RUNTIME=claude bash "$HOOK" 2>/dev/null)
 }
 
 WORK=$(mktemp -d)
@@ -146,7 +146,6 @@ run_hook PostToolUse Bash "$(jq -n '{hook_event_name:"PostToolUse",tool_name:"Ba
 
 [[ -x "$HOOK" ]] && check "guard hook executable" pass || check "guard hook executable" fail
 grep -q 'review-fix-ladder-guard.sh' "$REPO_ROOT/hooks/hooks.json" && check "registered in hooks.json" pass || check "registered in hooks.json" fail
-grep -q 'review-fix-ladder-guard.sh' "$REPO_ROOT/hooks/cursor-hooks.json" && check "registered in cursor-hooks.json" pass || check "registered in cursor-hooks.json" fail
 bash -n "$HOOK" && check "guard shell syntax" pass || check "guard shell syntax" fail
 
 sb_rfl_deactivate

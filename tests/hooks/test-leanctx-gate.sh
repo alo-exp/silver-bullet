@@ -3,7 +3,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-export SILVER_BULLET_RUNTIME=cursor
+export SILVER_BULLET_RUNTIME=claude
 if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
   # shellcheck source=hooks/lib/runtime-paths.sh
   source "$REPO_ROOT/hooks/lib/runtime-paths.sh"
@@ -64,7 +64,7 @@ EOF
 
 isolate_home() {
   TEST_HOME="$(mktemp -d)"
-  export HOME="$TEST_HOME" SILVER_BULLET_RUNTIME=cursor
+  export HOME="$TEST_HOME" SILVER_BULLET_RUNTIME=claude
   export XDG_CONFIG_HOME="$TEST_HOME/.config"
   export XDG_STATE_HOME="$TEST_HOME/.local/state"
 }
@@ -74,7 +74,7 @@ wire_mcp() {
   mkdir -p "${TEST_HOME}/.cursor"
   TEST_MCP="${TEST_HOME}/.cursor/mcp.json"
   printf '{"mcpServers":{"leanctx":{"command":"lean-ctx","args":["mcp"]}}}\n' >"$TEST_MCP"
-  export SB_LEANCTX_MCP_ARTIFACT="$TEST_MCP" SILVER_BULLET_RUNTIME=cursor
+  export SB_LEANCTX_MCP_ARTIFACT="$TEST_MCP" SILVER_BULLET_RUNTIME=claude
 }
 
 unwire_mcp() {
@@ -139,7 +139,7 @@ run_edit() {
   (cd "$TMPDIR_TEST" && export SILVER_BULLET_PROJECT_ROOT="$TMPDIR_TEST" \
     HOME="${HOME:-${TEST_HOME:-$HOME}}" \
     SB_LEANCTX_MCP_ARTIFACT="${SB_LEANCTX_MCP_ARTIFACT:-}" \
-    SILVER_BULLET_RUNTIME=cursor PATH="$PATH" && printf '%s' "$input" | bash "$GATE_HOOK" 2>/dev/null)
+    SILVER_BULLET_RUNTIME=claude PATH="$PATH" && printf '%s' "$input" | bash "$GATE_HOOK" 2>/dev/null)
 }
 
 echo "=== leanctx-gate.sh tests ==="
@@ -203,7 +203,7 @@ date +%s >"$USAGE_STATE"
 input=$(jq -n --arg f "$TMPCFG" \
   '{hook_event_name:"PreToolUse", tool_name:"Edit", tool_input:{file_path:$f, old_string:"a", new_string:"b"}}')
 out="$(cd "$TMPDIR_TEST" && export HOME="$TEST_HOME" SB_LEANCTX_MCP_ARTIFACT="$TEST_HOME/.cursor/mcp.json" \
-  SILVER_BULLET_RUNTIME=cursor PATH="$PATH" && printf '%s' "$input" | bash "$GATE_HOOK" 2>/dev/null)"
+  SILVER_BULLET_RUNTIME=claude PATH="$PATH" && printf '%s' "$input" | bash "$GATE_HOOK" 2>/dev/null)"
 assert_allow "silver-bullet.json exempt" "$out"
 
 echo "Results: ${PASS} passed, ${FAIL} failed"
