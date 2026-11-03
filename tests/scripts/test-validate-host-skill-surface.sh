@@ -101,6 +101,38 @@ assert_fail "claude hyphen directory fails" \
 assert_fail "cursor command/skill overlap fails" \
   bash "$SCRIPT" --repo-root "$overlap_root"
 
+# R8-06: N directories exposing the identical route are duplicates, too.
+dup_same_root="$tmpdir/bad-dup-same-name"
+write_skill "$dup_same_root/host-bundles/codex" "sb-feature" "sb:feature"
+write_skill "$dup_same_root/host-bundles/codex" "sb-feature-dup" "sb:feature"
+dup_out="$(bash "$SCRIPT" --repo-root "$dup_same_root" 2>&1)" && dup_rc=0 || dup_rc=$?
+if [[ "$dup_rc" -eq 1 && "$dup_out" == *"logical route 'sb:feature' exposed 2 times"* && "$dup_out" == *"codex: FAIL"* ]]; then
+  echo "PASS: two Codex dirs with the same route fail (R8-06)"; PASS=$((PASS + 1))
+else
+  echo "FAIL: two Codex dirs with the same route fail (R8-06) rc=$dup_rc: $dup_out"; FAIL=$((FAIL + 1))
+fi
+if [[ "$dup_out" != *"deduplicated"* ]]; then
+  echo "PASS: duplicate surface is not reported as deduplicated"; PASS=$((PASS + 1))
+else
+  echo "FAIL: duplicate surface is not reported as deduplicated"; FAIL=$((FAIL + 1))
+fi
+codex_dir_root="$tmpdir/bad-codex-dir"
+write_skill "$codex_dir_root/host-bundles/codex" "zz-unprefixed" "sb:feature"
+dir_out="$(bash "$SCRIPT" --repo-root "$codex_dir_root" 2>&1)" && dir_rc=0 || dir_rc=$?
+if [[ "$dir_rc" -eq 1 && "$dir_out" == *"host-bundles/codex/zz-unprefixed/SKILL.md: directory 'zz-unprefixed' does not match route 'sb-feature'"* ]]; then
+  echo "PASS: a Codex dir not named sb-<route> fails"; PASS=$((PASS + 1))
+else
+  echo "FAIL: a Codex dir not named sb-<route> fails rc=$dir_rc: $dir_out"; FAIL=$((FAIL + 1))
+fi
+hy_out="$(bash "$SCRIPT" --repo-root "$hyphen_root" 2>&1)" || true
+mkdir -p "$hyphen_root/agents/claude/sb-feature"
+hy_out="$(bash "$SCRIPT" --repo-root "$hyphen_root" 2>&1)" || true
+if [[ "$(grep -c 'redundant hyphen directory agents/claude/sb-feature' <<<"$hy_out")" -eq 1 ]]; then
+  echo "PASS: a hyphen directory is reported once, not once per host"; PASS=$((PASS + 1))
+else
+  echo "FAIL: a hyphen directory is reported once, not once per host: $hy_out"; FAIL=$((FAIL + 1))
+fi
+
 echo "--- validate-host-skill-surface.sh (live repo) ---"
 assert_pass "live repo passes" \
   bash "$SCRIPT" --repo-root "$REPO_ROOT"

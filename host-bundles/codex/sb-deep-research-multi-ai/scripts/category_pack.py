@@ -39,6 +39,31 @@ def load_category_pack(pack_id: str) -> dict[str, Any]:
     return data
 
 
+def pack_overlays_dir() -> Path:
+    return Path(__file__).resolve().parent.parent / "reference" / "category-pack-overlays"
+
+
+def load_pack_overlay(pack_id: str) -> dict[str, Any]:
+    """Synthesis data that belongs to one category pack (research brief lines, chart axis
+    profiles, vendor vocabulary, …). It lives beside this skill, keyed by pack id, and is
+    applied only when a need profile selects that pack. Missing overlay → {}."""
+    if not pack_id or not pack_id.replace("-", "").isalnum():
+        raise ValueError(f"invalid category_pack_id: {pack_id!r}")
+    path = pack_overlays_dir() / f"{pack_id}.json"
+    if not path.is_file():
+        return {}
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(data, dict) or data.get("category_id") != pack_id:
+        raise ValueError(f"overlay category_id does not match pack id {pack_id!r}")
+    return data
+
+
+def pack_overlay(pack: dict[str, Any] | None) -> dict[str, Any]:
+    """Overlay attached by resolve_pack_from_need_profile ({} without a pack)."""
+    overlay = (pack or {}).get("overlay")
+    return overlay if isinstance(overlay, dict) else {}
+
+
 def resolve_pack_from_need_profile(need_profile: dict[str, Any]) -> dict[str, Any]:
     """Merge need_profile overrides onto the base category pack."""
     pack_id = need_profile.get("category_pack_id")
@@ -46,6 +71,7 @@ def resolve_pack_from_need_profile(need_profile: dict[str, Any]) -> dict[str, An
         raise ValueError("need_profile missing category_pack_id")
     pack = load_category_pack(str(pack_id))
     merged = dict(pack)
+    merged["overlay"] = load_pack_overlay(str(pack_id))
     if need_profile.get("inclusion_criteria"):
         merged["inclusion_criteria"] = need_profile["inclusion_criteria"]
     if need_profile.get("exclusion_classes"):
@@ -320,13 +346,17 @@ def pack_prompt_block(pack: dict[str, Any]) -> str:
 **Multi-market landscape (chart + solution cards per market):**
 {chr(10).join(market_lines)}
 
-**Membership is NOT mutually exclusive:** a solution may compete as core/adjacent in one OR multiple markets when evidence supports it (e.g. Silver Bullet in both APO and sdlc-plugins). Do not force exclusive single-market placement.
+**Membership is NOT mutually exclusive:** a solution may compete as core/adjacent in one OR multiple markets when evidence supports it. Do not force exclusive single-market placement.
 """
     hard_names = ", ".join(
         e.get("name", e.get("slug", "")) for e in get_hard_exclusions(pack)
     )
     sunset_names = ", ".join(
         e.get("name", e.get("slug", "")) for e in get_sunset_registry(pack)
+    )
+    naming_rules = str(
+        pack_overlay(pack).get("naming_rules")
+        or "Use product-level names; apply parent/child dedupe from pack aliases."
     )
     return f"""## Category market contract — {pack.get("display_name", pack.get("category_id"))}
 
@@ -351,7 +381,7 @@ def pack_prompt_block(pack: dict[str, Any]) -> str:
 
 **Core count bounds:** {pack.get("min_core_count")}–{pack.get("max_core_count")} in-scope solutions total (commercial + OSS).
 
-**Naming rules:** Use product-level names (e.g. Augment Cosmos not Augment Code; Devin not Cognition+Devin). Apply parent/child dedupe from pack aliases.
+**Naming rules:** {naming_rules}
 """
 
 

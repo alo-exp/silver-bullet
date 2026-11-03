@@ -14,7 +14,9 @@ sys.path.insert(0, str(SCRIPTS))
 
 import landscape_critique_artifacts as lca  # noqa: E402
 
-CRITERIA = lca.INCLUSION_CRITERIA_ORDER
+from category_pack import load_pack_overlay  # noqa: E402
+
+CRITERIA = tuple(load_pack_overlay("agentic-sdlc-process-orchestrator")["vocabulary"]["landscape_critique_artifacts.INCLUSION_CRITERIA_ORDER"])
 
 
 def audit() -> dict:
@@ -69,12 +71,12 @@ class SmallHelperTests(unittest.TestCase):
                 self.assertEqual(lca.load_inclusion_ledger(root), {})
 
     def test_hard_exclusion_slugs(self) -> None:
-        self.assertEqual(lca._hard_exclusion_slugs(None), {"magic-dev"})
-        self.assertEqual(lca._hard_exclusion_slugs({}), {"magic-dev"})
+        self.assertEqual(lca._hard_exclusion_slugs(None), set())
+        self.assertEqual(lca._hard_exclusion_slugs({}), set())
         pack = {"hard_exclusions": [{"slug": "bad-one"}], "sunset_registry": [{"slug": "gone"}]}
-        self.assertEqual(lca._hard_exclusion_slugs(pack), {"magic-dev", "bad-one", "gone"})
+        self.assertEqual(lca._hard_exclusion_slugs(pack), {"bad-one", "gone"})
         with mock.patch("category_pack.get_hard_exclusion_slugs", side_effect=RuntimeError("x")):
-            self.assertEqual(lca._hard_exclusion_slugs(pack), {"magic-dev"})
+            self.assertEqual(lca._hard_exclusion_slugs(pack), set())
 
     def test_market_block_helpers_ignore_malformed_blocks(self) -> None:
         a = audit()
@@ -95,11 +97,12 @@ class FinalDecisionTests(unittest.TestCase):
         return lca.vendor_final_decision(slug, market, audit=a if a is not None else audit(), pack=pack)
 
     def test_all_branches(self) -> None:
-        self.assertEqual(self.decide("magic-dev", "apo"), "hard-excluded")
-        self.assertEqual(self.decide("conductor", "agentic-sdlc-saas"), "adjacent-aggregator (not APO)")
+        # no vendor is special-cased: only the pack and the audit decide
+        self.assertEqual(self.decide("magic-dev", "apo"), "not in core set")
+        self.assertEqual(self.decide("conductor", "agentic-sdlc-saas"), "adjacent")
         self.assertEqual(self.decide("bmad", "sdlc-plugins"), "included-core")
-        self.assertEqual(self.decide("agenthub", "apo"), "adjacent (APO CRM — not Leaders)")
-        self.assertEqual(self.decide("tembo", "apo"), "adjacent (unplotted)")
+        self.assertEqual(self.decide("agenthub", "apo"), "adjacent")
+        self.assertEqual(self.decide("tembo", "apo"), "adjacent")
         self.assertEqual(self.decide("misc-adj", "apo"), "adjacent")
         self.assertEqual(self.decide("bmad", "apo"), "core in sdlc-plugins only — not apo")
         self.assertEqual(self.decide("silver-bullet", "agentic-sdlc-saas"), "core in apo ∩ sdlc-plugins only — not agentic-sdlc-saas")
@@ -121,31 +124,37 @@ class ExecutiveSummaryTests(unittest.TestCase):
 
     def test_defaults_without_data(self) -> None:
         text = "\n".join(lca.executive_summary_lines(chart=None, pack=None, known={}, audit=None))
-        self.assertIn("- **APO (primary):** Silver Bullet", text)
-        self.assertIn("- **SDLC plugins & methodology packs:** Silver Bullet", text)
-        self.assertIn("- **Agentic SDLC SaaS:** Devin, Factory.ai, Augment Cosmos", text)
-        self.assertIn("- **Spec-first / lean packs:** equal-standing OSS peers — pick on spec", text)
-        self.assertIn("- **OSS APO cores:** equal-standing peers; AI-DLC", text)
-        self.assertIn("- **Managed autonomous delivery:** Devin, Factory.ai, Augment Cosmos —", text)
+        # nothing about a particular vendor or market is assumed
+        for banned in ("Silver Bullet", "Zuvo", "APO", "Devin", "Factory.ai"):
+            self.assertNotIn(banned, text)
+        self.assertIn("No market definition was available for this run", text)
+        self.assertIn("This report does not call any vendor 'most complete'.", text)
 
     def test_with_chart_and_audit(self) -> None:
         chart = {"markets": {
-            "apo": {"gmq_data": [{"q": "Leaders", "label": "ApoLead"}]},
-            "sdlc-plugins": {"gmq_data": [{"q": "Leaders", "label": "PlugLead"}]},
-            "agentic-sdlc-saas": {"gmq_data": [{"q": "Leaders", "label": "SaasLead"}]},
+            "alpha": {"gmq_data": [{"q": "Leaders", "label": "AlphaLead"}]},
+            "beta": {"gmq_data": []},
         }}
-        known = {"bmad": "BMAD", "zuvo": "Zuvo", "devin": "Devin Inc", "metagpt": "MetaGPT"}
-        a = audit()
-        a["markets"]["sdlc-plugins"]["core"] = ["silver-bullet", "bmad", "zuvo", "x1", "x2", "x3", "x4"]
-        text = "\n".join(lca.executive_summary_lines(chart=chart, pack=None, known=known, audit=a))
-        self.assertIn("**APO (primary):** ApoLead", text)
-        self.assertIn("**SDLC plugins & methodology packs:** PlugLead", text)
-        self.assertIn("**Agentic SDLC SaaS:** SaasLead", text)
-        self.assertIn("equal-standing OSS peers (BMAD, Zuvo, x1, x2, x3) —", text)  # capped at 5 and without silver-bullet
-        self.assertIn("equal-standing peers (ai-dlc, MetaGPT, deepwork);", text)
-        self.assertIn("**Managed autonomous delivery:** Devin Inc —", text)
+        pack = {"markets": [{"id": "alpha", "display_name": "Alpha Market", "role": "primary"},
+                            {"id": "beta", "display_name": "Beta Market"}, "junk", {"nid": 1}],
+                "overlay": {"market_overview": "OVERVIEW FROM OVERLAY", "key_findings": ["Finding X"]}}
+        a = {"markets": {"alpha": {"core": ["z1", "bmad"]}, "beta": {"core": []}}}
+        text = "\n".join(lca.executive_summary_lines(chart=chart, pack=pack, known={"bmad": "BMAD"}, audit=a))
+        self.assertIn("OVERVIEW FROM OVERLAY", text)
+        self.assertIn("- Finding X", text)
+        self.assertIn("- Alpha Market: 2 core vendor(s) with evidence in this run (BMAD, z1).", text)
+        self.assertIn("- Beta Market: 0 core vendor(s) with evidence in this run.", text)
+        self.assertIn("- **Alpha Market:** AlphaLead", text)
+        self.assertIn("- **Beta Market:** no vendor met the Leader criteria in this run", text)
+        # without an overlay the overview is generic and the markets come from the audit
+        plain = "\n".join(lca.executive_summary_lines(chart=None, pack=None, known={}, audit=a))
+        self.assertIn("scores 2 market(s) separately", plain)
 
 
+from apo_pack_run_fixture import with_apo_pack_run  # noqa: E402
+
+
+@with_apo_pack_run
 class LedgerEmbedTests(unittest.TestCase):
     def write_ledger(self, root: Path, vendors) -> None:
         path = root / "landscape" / "inclusion-ledger.json"
@@ -156,7 +165,7 @@ class LedgerEmbedTests(unittest.TestCase):
         vendors = [
             vendor("bmad", "sdlc-plugins", {CRITERIA[0]: "fail", CRITERIA[1]: "weird"}),
             vendor("bmad", "apo"),  # wrong-market row: bmad is core elsewhere -> skipped
-            vendor("magic-dev", "agentic-sdlc-saas"),  # hard-excluded even though not "home" elsewhere
+            vendor("pack-bad", "agentic-sdlc-saas"),  # hard-excluded by the pack
             vendor("misc-adj", "apo"),
             vendor("unlisted", "apo", final_decision="included-core"),  # claims core but is core nowhere -> recomputed
             vendor("metagpt", "apo", final_decision="in review"),  # neither core nor adjacent nor excluded -> dropped
@@ -167,23 +176,22 @@ class LedgerEmbedTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_ledger(root, vendors)
-            text = "\n".join(lca.inclusion_ledger_embed_lines(root=root, audit=audit(), pack=None, known={"bmad": "BMAD"}))
+            text = "\n".join(lca.inclusion_ledger_embed_lines(
+                root=root, audit=audit(), pack={"hard_exclusions": [{"slug": "pack-bad"}]}, known={"bmad": "BMAD"}))
         self.assertIn("### Vendor inclusion ledger", text)
         self.assertIn("| Bmad | `sdlc-plugins` | F | U | P | P | P | P | P | src-0 | included-core |", text)
         self.assertNotIn("| Bmad | `apo` |", text)
         self.assertIn("_Hard-excluded — not membership.", text)
-        self.assertIn("| Magic-Dev | `agentic-sdlc-saas` |", text)
+        self.assertIn("| Pack-Bad | `agentic-sdlc-saas` |", text)
         self.assertIn("_Adjacent (not core in that market)_", text)
         self.assertIn("| Misc-Adj | `apo` |", text)
         self.assertNotIn("| Metagpt |", text)
         self.assertIn("| Ai-Dlc | `apo` |", text)
         # "unlisted" recomputed to "not in core set" -> in none of the buckets -> not rendered
         self.assertNotIn("| Unlisted |", text)
-        # zuvo/agenthub/conductor/tembo come from stubs when absent from the ledger
-        self.assertIn("| Zuvo | `sdlc-plugins` | U | U | U | U | U | U | U | not in inclusion-ledger.json | included-core |", text)
-        self.assertIn("| Agenthub | `apo` |", text)
-        self.assertIn("adjacent (APO CRM — not Leaders)", text)
-        self.assertIn("| Tembo | `agentic-sdlc-saas` |", text)
+        # vendors absent from the ledger are not invented
+        self.assertNotIn("not in inclusion-ledger.json", text)
+        self.assertNotIn("| Zuvo |", text)
 
     def test_no_adjacent_or_excluded_section_when_nothing_qualifies(self) -> None:
         vendors = [vendor(slug, market, final_decision="weird") for slug, market in
@@ -198,26 +206,13 @@ class LedgerEmbedTests(unittest.TestCase):
         self.assertEqual(lines[-2], "|" + "---|" * 11)
         self.assertEqual(lines[-1], "")
 
-    def test_stub_rows_without_ledger_or_audit(self) -> None:
-        lines = lca.inclusion_ledger_embed_lines(root=None, audit=None, pack=None, known={"zuvo": "Zuvo!"})
+    def test_no_ledger_and_no_audit_renders_an_empty_table(self) -> None:
+        lines = lca.inclusion_ledger_embed_lines(root=None, audit=None, pack=None, known={})
         text = "\n".join(lines)
-        # With no audit nothing is core: zuvo/agenthub/tembo stubs are "not in core set" and not rendered,
-        # but conductor is always an adjacent aggregator.
-        self.assertNotIn("Zuvo!", text)
-        self.assertNotIn("| Agenthub", text)
-        self.assertIn("_Adjacent (not core in that market)_", text)
-        self.assertIn("| Conductor | `agentic-sdlc-saas` | U | U | U | U | U | U | U | not in inclusion-ledger.json | adjacent-aggregator (not APO) |", text)
-        self.assertNotIn("_Hard-excluded", text)
+        self.assertNotIn("Conductor", text)
+        self.assertNotIn("Zuvo", text)
+        self.assertEqual(lines[-2], "|" + "---|" * 11)
         self.assertEqual(lines[-1], "")
-
-    def test_seen_vendor_suppresses_its_stub(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            self.write_ledger(root, [vendor("zuvo", "sdlc-plugins")])
-            text = "\n".join(lca.inclusion_ledger_embed_lines(root=root, audit=audit(), pack=None, known={}))
-        self.assertEqual(text.count("| Zuvo |"), 1)
-        self.assertNotIn("not in inclusion-ledger.json | included-core |\n| Zuvo", text)
-        self.assertNotIn("not in inclusion-ledger.json", text.split("| Zuvo |")[1].split("\n")[0])
 
 
 class CoverageMatrixTests(unittest.TestCase):
@@ -238,49 +233,44 @@ class CoverageMatrixTests(unittest.TestCase):
     def test_matrix_rows_and_gap_texts(self) -> None:
         a = {
             "markets": {
-                "apo": {"core": ["silver-bullet", "metagpt", "deepwork", "ai-dlc", "zuvo", "dup"],
-                        "adjacent": ["agenthub", "dup", "conductor", "tembo"]},
-                "agentic-sdlc-saas": {"core": ["ateam"], "adjacent": ["conductor", "tembo"]},
+                "apo": {"core": ["silver-bullet", "metagpt", "deepwork", "dup"],
+                        "adjacent": ["agenthub", "dup", "conductor"]},
+                "agentic-sdlc-saas": {"core": ["ateam"], "adjacent": ["conductor"]},
                 "bad": "x",
             },
         }
         comparison = {"rankings": [{"solution": "silver-bullet"}, {"solution": "deepwork"}, {"nosolution": 1}, "junk"]}
+        pack = {"hard_exclusions": [{"slug": "pack-bad"}],
+                "overlay": {"vendor_gap_notes": {"agenthub": "pack note for agenthub", "metagpt": "pack note for metagpt"}}}
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             sol = root / "solutions" / "silver-bullet"
             sol.mkdir(parents=True)
             (sol / "features.json").write_text("{}", encoding="utf-8")
             (sol / "scr.md").write_text("s", encoding="utf-8")
-            lines = lca.coverage_completeness_lines(root=root, audit=a, comparison=comparison, pack=None, known={"silver-bullet": "SB"})
+            lines = lca.coverage_completeness_lines(root=root, audit=a, comparison=comparison, pack=pack, known={"silver-bullet": "SB"})
         text = "\n".join(lines)
         self.assertIn("### Coverage completeness matrix", text)
         self.assertIn("| SB | yes (features.json + scr.md) | yes | `apo` / included-core | — |", text)
-        self.assertIn("| Metagpt | missing | no | `apo` / included-core | APO OSS core without solution artifacts in this run", text)
-        self.assertIn("core without ranking row", text)
-        self.assertIn("| Deepwork | missing | yes | `apo` / included-core | thin-evidence APO commercial", text)
-        self.assertIn("no solution artifacts", text)
-        self.assertIn("| Agenthub | missing | no | `apo` / adjacent (APO CRM — not Leaders) | APO-adjacent CRM — not Leaders", text)
-        self.assertIn("SaaS-adjacent aggregator; not APO core", text)
-        self.assertIn("SaaS-adjacent / unplotted", text)
-        self.assertIn("AWS/awslabs methodology-without-gates", text)
-        self.assertIn("| Magic Dev | missing | no | `hard-excluded` / hard-excluded | quoted model error", text)
-        self.assertIn("| Ateam | missing | no | `hard-excluded` / hard-excluded | hard-excluded FDE shop", text)
+        self.assertIn("| Metagpt | missing | no | `apo` / included-core | pack note for metagpt; core without ranking row; no solution artifacts |", text)
+        self.assertIn("| Agenthub | missing | no | `apo` / adjacent | pack note for agenthub; no solution artifacts |", text)
+        self.assertIn("| Deepwork | missing | yes | `apo` / included-core | no solution artifacts |", text)
+        # hard exclusions come from the pack, not from a built-in list
+        self.assertIn("| Pack Bad | missing | no | `hard-excluded` / hard-excluded |", text)
+        self.assertNotIn("Magic Dev", text)
         self.assertEqual(text.count("| Dup |"), 1)
-        # a repeated slug within one market and a market literally named "hard-excluded" are deduplicated
-        a_dup = {"markets": {"apo": {"core": ["x", "x"], "adjacent": []},
-                             "hard-excluded": {"core": ["magic-dev"], "adjacent": []}}}
+        # a market literally named "hard-excluded" does not duplicate the pack's excluded rows
+        a_hx = {"markets": {"hard-excluded": {"core": ["pack-bad"], "adjacent": []}}}
+        text_hx = "\n".join(lca.coverage_completeness_lines(root=None, audit=a_hx, comparison={}, pack=pack, known={}))
+        self.assertEqual(text_hx.count("| Pack Bad |"), 1)
+        # a repeated slug within one market is listed once
+        a_dup = {"markets": {"apo": {"core": ["x", "x"], "adjacent": []}}}
         text_dup = "\n".join(lca.coverage_completeness_lines(root=None, audit=a_dup, comparison={}, pack=None, known={}))
         self.assertEqual(text_dup.count("| X |"), 1)
-        self.assertEqual(text_dup.count("| Magic Dev |"), 1)
-        # agenthub outside apo gets no CRM gap text
-        a2 = {"markets": {"other": {"core": [], "adjacent": ["agenthub"]}}}
-        text2 = "\n".join(lca.coverage_completeness_lines(root=None, audit=a2, comparison={}, pack=None, known={}))
-        self.assertNotIn("APO-adjacent CRM", text2)
-        self.assertIn("| Agenthub | unknown | no |", text2)
-        # no audit at all still lists the two hard-excluded rows
+        # no audit and no pack: no rows at all
         text3 = "\n".join(lca.coverage_completeness_lines(root=None, audit=None, comparison={}, pack=None, known={}))
-        self.assertIn("| Magic Dev | unknown", text3)
-        self.assertIn("| Ateam | unknown", text3)
+        self.assertNotIn("| Magic Dev", text3)
+        self.assertNotIn("| Ateam", text3)
 
     def test_zuvo_row_has_no_gap(self) -> None:
         a = {"markets": {"sdlc-plugins": {"core": ["zuvo"], "adjacent": []}}}
@@ -304,46 +294,56 @@ class ConsensusTableTests(unittest.TestCase):
         self.assertEqual(lca._sides_by_stance(item), ("`pro`; `fam`", "`con`; `con2`; `con3`"))
         self.assertEqual(lca._sides_by_stance({}), ("—", "—"))
 
-    def test_table_uses_canonical_rows_regardless_of_notable(self) -> None:
-        notable = [{"subject": "magic-dev", "sides": [{"supporting_agents": ["x"], "stance": "neg"}]}, "junk", {"nosubject": 1}]
+    def test_table_rows_come_from_the_run_divergences(self) -> None:
+        notable = [
+            {"subject": "magic-dev", "claim": "Is it in?",
+             "sides": [{"supporting_agents": ["model-a"], "stance": "pos"},
+                       {"supporting_agents": ["model-b"], "stance": "neg"}]},
+            "junk", {"nosubject": 1},
+        ]
         text = "\n".join(lca.consensus_resolution_table_lines(notable))
         self.assertIn("### Consensus Resolution Table", text)
-        self.assertEqual(text.count("| Magic.dev membership"), 1)
-        self.assertEqual(text.count("| AI-DLC is IBM"), 1)
-        self.assertIn("FINAL: one membership — hard-excluded", text)
-        plain = "\n".join(lca.consensus_resolution_table_lines(None))
-        self.assertEqual(plain, text)
+        self.assertIn("| Is it in? | `model-a` | `model-b` | Unresolved: the models disagree", text)
+        # nothing is attributed to models that were not in the run, and no canned dispute is added
+        self.assertEqual(len([ln for ln in text.splitlines() if ln.startswith("| ")]), 2)  # header + exactly one disputed row
+        self.assertNotIn("gemini-3.5-flash", text)
+        self.assertNotIn("AI-DLC is IBM", text)
+        empty = "\n".join(lca.consensus_resolution_table_lines(None))
+        self.assertNotIn("| Is it in?", empty)
+
+    def test_pack_analyst_notes_supply_the_decision_only(self) -> None:
+        pack = {"overlay": {"resolution_notes": [
+            {"subject": "magic-dev", "claim": "Magic.dev membership", "decision": "Excluded by the pack.", "evidence": "pack hard_exclusions"},
+            "junk", {"nosubject": 1}]}}
+        notable = [{"subject": "magic-dev", "sides": [{"supporting_agents": ["only-model"], "stance": "pos"}]}]
+        text = "\n".join(lca.consensus_resolution_table_lines(notable, pack))
+        self.assertIn("| Magic.dev membership | `only-model` | — | Excluded by the pack. | pack hard_exclusions |", text)
 
 
+@with_apo_pack_run
 class PatchLedgerTests(unittest.TestCase):
-    def test_patch_creates_ledger_adds_zuvo_and_writes_markdown(self) -> None:
+    def test_patch_creates_empty_ledger_without_inventing_vendors_or_run_id(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             payload = lca.patch_inclusion_ledger(root, pack=None, audit=audit())
-            self.assertEqual(payload["run_id"], "run-57f38dfa25d83cc50d224e283d4692f3")
+            self.assertNotIn("run_id", payload)
             self.assertEqual(payload["reviewer"], "act-on-critique-artifacts")
-            self.assertEqual([v["slug"] for v in payload["vendors"]], ["zuvo"])
-            zuvo = payload["vendors"][0]
-            self.assertEqual(zuvo["pass_count"], 5)
-            self.assertTrue(zuvo["threshold_met"])
-            self.assertEqual(zuvo["final_decision"], "included-core")
-            self.assertEqual({c["status"] for c in zuvo["criteria"]}, {"pass", "unknown"})
-            self.assertEqual({c["confidence"] for c in zuvo["criteria"]}, {"medium", "low"})
+            self.assertEqual(payload["vendors"], [])
             on_disk = json.loads((root / "landscape" / "inclusion-ledger.json").read_text(encoding="utf-8"))
             self.assertEqual(on_disk, payload)
             md = (root / "landscape" / "inclusion-ledger.md").read_text(encoding="utf-8")
             self.assertTrue(md.startswith("# Inclusion ledger (3-of-7)"))
-            self.assertIn("| Zuvo | `sdlc-plugins` | P | P | P | U | P | U | P |", md)
-            self.assertIn("### Zuvo (`zuvo`) — sdlc-plugins", md)
+            self.assertIn("Run: `unknown`", md)
+            self.assertNotIn("2026-08-14", md)
+            self.assertNotIn("Zuvo", md)
+            self.assertNotIn("Magic.dev", md)
             self.assertTrue(md.endswith("\n"))
 
     def test_patch_existing_vendors(self) -> None:
         vendors = [
-            vendor("magic-dev", "agentic-sdlc-saas", threshold_met=True),
             vendor("pack-bad", "apo", threshold_met=True),
             vendor("bmad", "apo"),  # wrong market -> moved to its home
             vendor("metagpt", "apo"),  # right market
-            vendor("zuvo", "sdlc-plugins"),  # already present: no extra zuvo appended
             {"slug": "norows", "market": "apo", "criteria": ["junk"]},
             "junk",
         ]
@@ -356,11 +356,8 @@ class PatchLedgerTests(unittest.TestCase):
             payload = lca.patch_inclusion_ledger(root, pack=pack, audit=audit())
             by = {v["slug"]: v for v in payload["vendors"]}
             self.assertEqual(payload["run_id"], "keep-me")
-            self.assertEqual(len(payload["vendors"]), 6)
-            self.assertEqual(by["magic-dev"]["final_decision"], "hard-excluded")
-            self.assertFalse(by["magic-dev"]["threshold_met"])
-            self.assertEqual(by["magic-dev"]["placement"], "hard-excluded")
-            self.assertIn("coding_agent", by["magic-dev"]["decision_note"])
+            self.assertEqual(len(payload["vendors"]), 4)
+            self.assertEqual(by["pack-bad"]["placement"], "hard-excluded")
             self.assertEqual(by["pack-bad"]["final_decision"], "hard-excluded")
             self.assertFalse(by["pack-bad"]["threshold_met"])
             self.assertEqual(by["bmad"]["market"], "sdlc-plugins")
@@ -370,9 +367,9 @@ class PatchLedgerTests(unittest.TestCase):
             md = (root / "landscape" / "inclusion-ledger.md").read_text(encoding="utf-8")
             self.assertIn("### norows (`norows`) — apo", md)
             self.assertNotIn("junk", md)
-            # a ledger without run_id receives the default
+            # a ledger without run_id does not get an invented one
             path.write_text(json.dumps({"vendors": []}), encoding="utf-8")
-            self.assertEqual(lca.patch_inclusion_ledger(root, pack=None, audit=None)["run_id"], "run-57f38dfa25d83cc50d224e283d4692f3")
+            self.assertNotIn("run_id", lca.patch_inclusion_ledger(root, pack=None, audit=None))
 
     def test_markdown_decision_falls_back_to_computed_value(self) -> None:
         payload = {"run_id": "r", "vendors": [vendor("bmad", "sdlc-plugins"), {"slug": "x", "market": "apo"}]}

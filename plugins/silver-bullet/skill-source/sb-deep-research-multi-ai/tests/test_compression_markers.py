@@ -82,6 +82,26 @@ class CompressionMarkerTests(unittest.TestCase):
         self.assertFalse(contains_compression_markers(md))
         self.assertIn("real consensus", md)
 
+    def test_build_report_markdown_reports_what_the_sanitiser_removed(self) -> None:
+        import io
+        from contextlib import redirect_stderr
+        from unittest import mock as _mock
+
+        def fake(markdown, removed=None):
+            if removed is not None:
+                removed.append("  stray [lean-ctx: omitted 9 lines] artifact line  ")
+            return markdown
+
+        err = io.StringIO()
+        with _mock.patch("synthesize_landscape.sanitize_compression_markers", side_effect=fake), redirect_stderr(err):
+            build_report_markdown(
+                category="Cat", platform_list="p", scope_text="Scope", need={},
+                comparison={"rows": [], "rankings": []}, consolidation={"consensus": [], "divergence": []},
+                envelopes=[], claims=[], root=Path("/tmp/unused"), report_date="July 19, 2026",
+            )
+        self.assertIn("removed 1 compression-marker line(s)", err.getvalue())
+        self.assertIn("stray [lean-ctx: omitted 9 lines] artifact line", err.getvalue())
+
     def test_collect_landscape_payload_sanitizes_marked_markdown(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

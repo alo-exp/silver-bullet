@@ -22,7 +22,7 @@ PACK = {
     "markets": [{"id": "x", "seeds": [{"slug": "zeta-tool", "name": "Zeta Tool"}, {"slug": "omega", "name": "Omega"}]}],
     "product_aliases": {"zt": "zeta-tool"},
 }
-KNOWN_WITH_PACK = {**m.KNOWN_SOLUTIONS, **cp.build_known_solutions(PACK)}
+KNOWN_WITH_PACK = {**m._known_or_run(None), **cp.build_known_solutions(PACK)}
 
 
 def support_of(func, *args, **kwargs) -> dict:
@@ -35,6 +35,10 @@ def env(*claims: str) -> list[dict]:
     return [{"payload": {"evidence": [{"claim": c} for c in claims]}}]
 
 
+from apo_pack_run_fixture import with_apo_pack_run  # noqa: E402
+
+
+@with_apo_pack_run
 class ClaimClassificationTests(unittest.TestCase):
     def test_matrix_dump_claims(self) -> None:
         for text in ("", "   ", "startup-weighted matrix stuff", "foo maps to must_have bar", "x maps to must-have",
@@ -66,13 +70,14 @@ class ClaimClassificationTests(unittest.TestCase):
         self.assertFalse(m.is_unusable_overview_claim("Aider, Cline, Continue", focus_name="aider"))
 
 
+@with_apo_pack_run
 class SlugTests(unittest.TestCase):
     def test_slugify_and_normalize(self) -> None:
         self.assertEqual(m._slugify(" Foo & Bar! "), "foo-bar")
         self.assertIsNone(m._normalize_slug(""))
         self.assertIsNone(m._normalize_slug(" `` "))
         self.assertEqual(m._normalize_slug(" `Devin` "), "devin")
-        self.assertEqual(m._normalize_slug("sb"), "silver-bullet")
+        self.assertIsNone(m._normalize_slug("sb"))  # a bare initialism is not a vendor alias
         self.assertEqual(m._normalize_slug("silver  bullet"), "silver-bullet")
         self.assertEqual(m._normalize_slug("Open-Hands"), "openhands")
         self.assertEqual(m._normalize_slug("Cline"), "cline")
@@ -89,23 +94,24 @@ class SlugTests(unittest.TestCase):
         with mock.patch.object(m, "resolve_pack_from_need", return_value=None):
             self.assertEqual(m._effective_overview_seeds(), m.OVERVIEW_SEEDS)
             self.assertIsNot(m._effective_overview_seeds(), m.OVERVIEW_SEEDS)
-            self.assertEqual(m._effective_known_solutions(), m.KNOWN_SOLUTIONS)
+            self.assertEqual(m._effective_known_solutions(), m._known_or_run(None))
         pack = {**PACK, "overview_seeds": {"zeta-tool": "Zeta overview", "devin": "Overridden"}}
         with mock.patch.object(m, "resolve_pack_from_need", return_value=pack):
             seeds = m._effective_overview_seeds({"category_pack_id": "demo"})
             known = m._effective_known_solutions({"category_pack_id": "demo"})
         self.assertEqual(seeds["zeta-tool"], "Zeta overview")
         self.assertEqual(seeds["devin"], "Overridden")
-        self.assertEqual(seeds["silver-bullet"], m.OVERVIEW_SEEDS["silver-bullet"])
+        self.assertNotIn("factory-ai", seeds)  # nothing is built in: only the pack's own seeds
+        self.assertNotIn("silver-bullet", seeds)
         self.assertEqual(known["zeta-tool"], "Zeta Tool")
-        self.assertEqual(known["devin"], m.KNOWN_SOLUTIONS["devin"])
-        self.assertEqual(m.OVERVIEW_SEEDS["devin"], m._effective_overview_seeds() ["devin"])
+        self.assertIn("devin", known)  # the run context supplies the pack names
+        self.assertEqual((m.OVERVIEW_SEEDS, m._effective_overview_seeds()), ({}, {}))
 
     def test_extract_slugs_from_text(self) -> None:
         self.assertEqual(m._extract_slugs_from_text("Silver Bullet and github copilot with cline"),
-                         ["silver-bullet", "cline", "github-copilot-workspace"])
+                         ["silver-bullet", "cline", "github-copilot", "github-copilot-workspace"])  # one product, one slug
         self.assertEqual(m._extract_slugs_from_text("nothing here"), [])
-        self.assertEqual(m._extract_slugs_from_text("zt rocks and omega", KNOWN_WITH_PACK, PACK), ["omega", "zt", "zeta-tool"])
+        self.assertEqual(m._extract_slugs_from_text("zt rocks and omega", KNOWN_WITH_PACK, PACK), ["omega", "zeta-tool"])  # "zt" is the pack alias of zeta-tool
 
     def test_resolve_features(self) -> None:
         self.assertEqual(m._resolve_features("Hook-enforced gates and ci/cd"), ["Hook-enforced gates", "CI integration"])
@@ -130,7 +136,7 @@ class SlugTests(unittest.TestCase):
         self.assertEqual(m._canonical_known_slug("devin-extra"), "devin")
         self.assertEqual(m._canonical_known_slug("dev"), "dev")
         self.assertEqual(m._canonical_known_slug("silver"), "silver-bullet")  # known slug that extends the token
-        self.assertEqual(m._canonical_known_slug("sdlc"), "sdlc-plugin")  # candidate "sdlc-plugin" starts with "sdlc-"
+        self.assertEqual(m._canonical_known_slug("claude"), "claude-code-expert")  # the longest known slug that starts with "claude-"
         self.assertEqual(m._canonical_known_slug("x", {"x": "X"}), "x")
 
     def test_resolve_solution_slug(self) -> None:
@@ -146,12 +152,13 @@ class SlugTests(unittest.TestCase):
         self.assertEqual(r("Zeta Tool", KNOWN_WITH_PACK, PACK), "zeta-tool")
         self.assertEqual(r("barkain extras"), "barkain-workflow-orchestrator")
         # a head that only extends a known display name via the alias prefix rule
-        self.assertEqual(r("cavekit v3.1 notes"), "cavekit")  # canonicalised onto the known "cavekit" slug
+        self.assertEqual(r("cavekit v3.1 notes"), "cavekit-v31")  # the pack's product alias for the versioned name
         # a lookup that finds a pack slug through the pack resolver, not the display names
         self.assertEqual(r("zt", KNOWN_WITH_PACK, PACK), "zt")
         self.assertEqual(r("Zeta unknown tool", KNOWN_WITH_PACK, PACK), "zeta-unknown-tool")
 
 
+@with_apo_pack_run
 class DiscoverTests(unittest.TestCase):
     def test_pack_branch_uses_classifier(self) -> None:
         audit = {"matrix_slugs": ["a", "b", "c"], "core": ["x"]}
@@ -171,15 +178,6 @@ class DiscoverTests(unittest.TestCase):
         self.assertEqual(slugs, ["s0", "s1", "s2", "s3", "s4"])
         self.assertTrue(all(isinstance(s, str) for s in slugs))
 
-    def test_open_discovery_without_pack(self) -> None:
-        with mock.patch.object(m, "resolve_pack_from_need", return_value=None):
-            ranked = m.discover_solutions(env("Aider and Cline are popular", "cline wins", "aider again", "Cline!"))
-            self.assertEqual(ranked[:2], ["cline", "aider"])
-            # fewer distinct hits than requested: fall back to the first known slugs alphabetically
-            fallback = m.discover_solutions(env("only devin here"), min_solutions=2)
-            self.assertEqual(fallback, sorted(m.KNOWN_SOLUTIONS)[:5])
-            self.assertEqual(m.discover_solutions(env("only devin"), min_solutions=8), sorted(m.KNOWN_SOLUTIONS)[:8])
-            self.assertEqual(m.discover_solutions([]), sorted(m.KNOWN_SOLUTIONS)[:5])
 
     def test_iter_claim_texts(self) -> None:
         envelopes = [
@@ -195,6 +193,7 @@ class DiscoverTests(unittest.TestCase):
         self.assertEqual(m._iter_claim_texts(envelopes), ["e1", "e2", "c1", "c2", "f1", "t1", "d1", "a1"])
 
 
+@with_apo_pack_run
 class ProseInferenceTests(unittest.TestCase):
     def test_explicit_criterion_flags_override_prose(self) -> None:
         body = ("lifecycle_span=yes; deterministic_gates=no; cross_session_state=partial; "
@@ -220,14 +219,110 @@ class ProseInferenceTests(unittest.TestCase):
             self.assertTrue(got.get(feature), feature)
         self.assertEqual(support_of(m._infer_features_from_solution_prose, "devin", "nothing relevant")  , {})
 
-    def test_assign_support_never_downgrades_true(self) -> None:
+    def test_assign_support_is_a_majority_vote_not_sticky(self) -> None:
         support: dict = {}
+        m._assign_support(support, "a", "F", True)
+        self.assertIs(support["a"]["F"], True)
+        # one contrary anonymous voter ties 1:1, and a tie is not a tick
         m._assign_support(support, "a", "F", False)
         self.assertIs(support["a"]["F"], False)
         m._assign_support(support, "a", "F", True)
         self.assertIs(support["a"]["F"], True)
         m._assign_support(support, "a", "F", False)
-        self.assertIs(support["a"]["F"], True)
+        m._assign_support(support, "a", "F", False)
+        self.assertIs(support["a"]["F"], False)
+
+    def test_structured_matrix_entries_decide_their_cells(self) -> None:
+        known = {"tembo": "Tembo", "devin": "Devin"}
+
+        def env(model, rows=None, claim=None):
+            payload = {}
+            if rows is not None:
+                payload["matrix_entries"] = rows
+            if claim:
+                payload["evidence"] = [{"claim": claim}]
+            return {"logical_model_id": model, "phase_id": "DR-RETRIEVE", "payload": payload}
+
+        row = lambda v, f, s: {"vendor": v, "feature": f, "supported": s, "source_ref": "u"}  # noqa: E731
+        envs = [
+            env("m1", [row("Tembo", "SSO", False)]),
+            env("m2", [row("tembo", "single sign-on", "no"), row("Tembo", "Audit log", "YES")]),
+            env("m3", [row("Tembo", "SSO", True)], claim="Tembo supports SSO and audit logs"),
+            env("m4", [row("Tembo", "SSO", "maybe"), row("Nobody", "SSO", True), row("Tembo", "Not a feature", True),
+                       row("Tembo", "RBAC", None), "junk"]),
+            env("m5", "not-a-list"),
+        ]
+        self.assertEqual(m.parse_structured_matrix_entries(["not-an-envelope"], known=known), {})
+        got = m.parse_feature_support(envs, known=known)
+        # two workers say no, one says yes: the structured votes decide, the prose claim cannot tip it
+        self.assertIs(got["tembo"]["SSO"], False)
+        self.assertIs(got["tembo"]["Audit log"], True)
+        self.assertNotIn("RBAC", got["tembo"])
+        self.assertIs(got["nobody"]["SSO"], True)  # a vendor only a worker named is still a column
+        # a cell nobody voted on still comes from prose
+        prose_only = m.parse_feature_support(
+            [env("m1", [row("Tembo", "SSO", True)]), env("m2", None, "Devin supports audit logs")], known=known)
+        self.assertIs(prose_only["devin"]["Audit log"], True)
+        self.assertIs(prose_only["tembo"]["SSO"], True)
+        self.assertEqual(m.parse_structured_matrix_entries([], known=known), {})
+
+    def test_clause_without_a_vendor_and_features_without_cues(self) -> None:
+        known = {"devin": "Devin", "cline": "Cline"}
+        # the first clause names no vendor and does not continue a previous subject: it is skipped
+        got = m.parse_feature_support(
+            [{"payload": {"evidence": [{"claim": "Devin provides CI integration, while the others do not"}]}}], known=known)
+        self.assertIs(got["devin"]["CI integration"], True)
+        self.assertEqual(set(got), {"devin"})
+        # a feature mentioned next to a vendor without any positive or negative cue earns nothing
+        got = m.parse_feature_support([{"payload": {"evidence": [{"claim": "Cline audit log"}]}}], known=known)
+        self.assertNotIn("Audit log", got.get("cline", {}))
+        # "whereas X and Y offer managed hosting" (no comma) credits both
+        support = support_of(m._parse_managed_hosting_offer, "Whereas devin and cline offer managed hosting")
+        self.assertTrue(support["devin"]["Managed hosting"])
+        self.assertTrue(support["cline"]["Managed hosting"])
+
+    def test_mentions_requires_a_name_and_whole_words(self) -> None:
+        self.assertFalse(m._mentions("anything", ""))
+        self.assertTrue(m._mentions("see devin.", "devin"))
+        self.assertFalse(m._mentions("an sbom", "sb"))
+
+    def test_one_claim_is_one_vote_and_negation_wins_inside_it(self) -> None:
+        support: dict = {}
+        try:
+            m._VOTER[0] = 7
+            m._assign_support(support, "a", "F", True)
+            m._assign_support(support, "a", "F", True)  # same claim read by two parsers
+            m._assign_support(support, "a", "F", False)
+            self.assertIs(support["a"]["F"], False)
+            m._assign_support(support, "a", "F", True)  # cannot undo the claim's own negation
+            self.assertIs(support["a"]["F"], False)
+            m._VOTER[0] = 8
+            m._assign_support(support, "a", "G", True)
+            m._VOTER[0] = 9
+            m._assign_support(support, "a", "G", True)
+            m._VOTER[0] = 10
+            m._assign_support(support, "a", "G", False)
+            self.assertIs(support["a"]["G"], True)
+        finally:
+            m._VOTER[0] = None
+
+    def test_parse_feature_support_negation_and_dissent(self) -> None:
+        def env(*texts):
+            return [{"payload": {"evidence": [{"claim": x} for x in texts]}}]
+
+        known = {"tembo": "Tembo", "devin": "Devin", "factory-ai": "Factory.ai"}
+        many = [*(["Tembo lacks SSO"] * 3), "Tembo supports SSO and audit logs"]
+        got = m.parse_feature_support(env(*many), known=known)
+        self.assertIs(got["tembo"]["SSO"], False)  # three contrary claims outvote one positive
+        self.assertIs(got["tembo"]["Audit log"], True)
+        got = m.parse_feature_support(
+            env("Devin lacks hook-enforced gates, while Factory.ai provides workflow composition"), known=known)
+        self.assertNotIn("Hook-enforced gates", {k for k, v in got.get("factory-ai", {}).items() if v})
+        self.assertIs(got["devin"]["Hook-enforced gates"], False)
+        got = m.parse_feature_support(
+            env("Unlike SB, Devin offers managed hosting and CI integration"), known=known)
+        self.assertNotIn("silver-bullet", got)
+        self.assertIs(got["devin"]["Managed hosting"], True)
 
     def test_solution_led_matrix_entry(self) -> None:
         support: dict = {}
@@ -241,11 +336,12 @@ class ProseInferenceTests(unittest.TestCase):
             self.assertFalse(m._parse_solution_led_matrix_entry(support, "???", "body"))
 
 
+@with_apo_pack_run
 class ListParsingTests(unittest.TestCase):
     def test_extract_slugs_from_list(self) -> None:
         self.assertEqual(m._extract_slugs_from_list("Devin, Aider (oss), cline only among peers"), ["devin", "aider", "cline"])
         self.assertEqual(m._extract_slugs_from_list("Director Mode, zzz, BMAD, ✔ devin, devin-agent, , a(i)-team"),
-                         ["director", "bmad-method", "devin"])
+                         ["director", "bmad", "devin"])
         self.assertEqual(m._extract_slugs_from_list(""), [])
         self.assertEqual(m._extract_slugs_from_list("a-team; ateam/ AI-team"), ["ateam"])
 
@@ -275,18 +371,17 @@ class ListParsingTests(unittest.TestCase):
         self.assertIs(support["cline"]["Hook-enforced gates"], False)
 
 
+@with_apo_pack_run
 class ClaimParserTests(unittest.TestCase):
     def test_features_in_text_and_primary_slug(self) -> None:
         self.assertEqual(m._features_in_text("Has hook gates and CI/CD plus audit logs"),
                          ["Audit log", "Hook-enforced gates", "CI integration"])
         self.assertEqual(m._features_in_text("workflow composition"), ["Workflow composition"])
         self.assertEqual(m._features_in_text("nothing"), [])
-        self.assertEqual(m._primary_slug_in_text("SB does things"), "silver-bullet")
+        self.assertIsNone(m._primary_slug_in_text("SB does things"))
         self.assertEqual(m._primary_slug_in_text("The text mentions devin first"), "devin")
         self.assertIsNone(m._primary_slug_in_text("zzz"))
         self.assertIsNone(m._primary_slug_in_text("x" * 100 + " zzz"))
-        # "sb" past the first 80 characters is still found through the alias table
-        self.assertEqual(m._primary_slug_in_text("x" * 100 + " sb late"), "silver-bullet")
 
     def test_comparative_claims(self) -> None:
         support = support_of(m._parse_comparative_claims, "Devin lacks hook gates; while aider and cline offer CI integration.")
@@ -370,19 +465,16 @@ class ClaimParserTests(unittest.TestCase):
 
     def test_managed_hosting_offer(self) -> None:
         self.assertEqual(support_of(m._parse_managed_hosting_offer, "nothing"), {})
-        support = support_of(m._parse_managed_hosting_offer, "While SB is local, devin and aider offer managed hosting paths")
+        support = support_of(m._parse_managed_hosting_offer, "While Silver Bullet is local, devin and aider offer managed hosting paths")
         self.assertNotIn("silver-bullet", support)
         self.assertTrue(support["devin"]["Managed hosting"])
         self.assertTrue(support["aider"]["Zero-infra bootstrap"])
-        support = support_of(m._parse_managed_hosting_offer, "SB and devin offer managed hosting")
-        self.assertTrue(support["silver-bullet"]["Managed hosting"])
+        support = support_of(m._parse_managed_hosting_offer, "Cline and devin offer managed hosting")
+        self.assertTrue(support["cline"]["Managed hosting"])
         self.assertNotIn("Zero-infra bootstrap", support["devin"])
 
     def test_misc_single_purpose_parsers(self) -> None:
-        self.assertEqual(support_of(m._parse_startup_must_have_badge, "nothing"), {})
-        self.assertEqual(support_of(m._parse_startup_must_have_badge, "all three startup must_haves for devin"), {})
-        badge = support_of(m._parse_startup_must_have_badge, "SB meets all three startup must_haves")
-        self.assertEqual(set(badge["silver-bullet"]), {"Workflow composition", "Parent/child agent delegation", "Hook-enforced gates"})
+        self.assertFalse(hasattr(m, "_parse_startup_must_have_badge"))  # no per-vendor badge parser
         self.assertEqual(support_of(m._parse_template_ttv, "nothing"), {})
         self.assertEqual(support_of(m._parse_template_ttv, "time-to-value through templates, zzz"), {})
         self.assertEqual(support_of(m._parse_template_ttv, "Devin has time-to-value through templates"), {"devin": {"Prebuilt SDLC templates": True}})
@@ -393,9 +485,7 @@ class ClaimParserTests(unittest.TestCase):
         self.assertEqual(support_of(m._parse_strong_composition_claim, "nothing"), {})
         self.assertEqual(support_of(m._parse_strong_composition_claim, "strong git-native composition"), {})
         self.assertEqual(support_of(m._parse_strong_composition_claim, "Aider has strong BYO composition"), {"aider": {"Workflow composition": True}})
-        self.assertEqual(support_of(m._parse_openhands_templates, "nothing"), {})
-        self.assertEqual(support_of(m._parse_openhands_templates, "automation templates exist"), {})
-        self.assertEqual(support_of(m._parse_openhands_templates, "OpenHands automation templates"), {"openhands": {"Prebuilt SDLC templates": True}})
+        self.assertFalse(hasattr(m, "_parse_openhands_templates"))  # no per-vendor parser
 
     def test_inclusion_criteria_scoped_claim(self) -> None:
         self.assertEqual(support_of(m._parse_inclusion_criteria_scoped_claim, "nothing about criteria"), {})
@@ -424,6 +514,7 @@ class ClaimParserTests(unittest.TestCase):
         self.assertIn("Hook-enforced gates", defaults)
 
 
+@with_apo_pack_run
 class SlugScopedProseTests(unittest.TestCase):
     def test_window_scan_positive_and_lack(self) -> None:
         support = support_of(m._apply_slug_scoped_prose, "Devin provides hook gates and workflow composition. Aider")
@@ -442,9 +533,10 @@ class SlugScopedProseTests(unittest.TestCase):
         # "github copilot" resolves to a slug whose own pattern ("github copilot workspace") is not in the
         # text, so the window scan skips it; the sentence-level parsers still record the claim.
         support = support_of(m._apply_slug_scoped_prose, "github copilot supports hook gates")
-        self.assertEqual(support, {"github-copilot-workspace": {"Hook-enforced gates": True}})
+        self.assertEqual(support, {"github-copilot": {"Hook-enforced gates": True}})
 
 
+@with_apo_pack_run
 class BulkClaimTests(unittest.TestCase):
     def test_extract_bulk_solution_list(self) -> None:
         f = m._extract_bulk_solution_list
@@ -489,17 +581,18 @@ class BulkClaimTests(unittest.TestCase):
         support: dict = {}
         self.assertFalse(m._parse_host_runtime_substrate_claim(support, "unrelated"))
         self.assertFalse(m._parse_host_runtime_substrate_claim(support, "host runtime substrate row for zzz"))
-        known = {**m.KNOWN_SOLUTIONS, "cursor": "Cursor", "claude-code": "Claude Code"}
-        self.assertTrue(m._parse_host_runtime_substrate_claim(support, "Host runtime: Cursor and Claude Code", known=known))
+        known = {**m._known_or_run(None), "cursor": "Cursor", "claude-code": "Claude Code"}
+        self.assertTrue(m._parse_host_runtime_substrate_claim(support, "Host runtime: Cursor IDE and Claude Code", known=known))
         self.assertEqual(support, {"cursor": {"IDE-native integration": True}, "claude-code": {"IDE-native integration": True}})
 
 
+@with_apo_pack_run
 class ParseFeatureSupportTests(unittest.TestCase):
     def test_dispatch_order(self) -> None:
         envelopes = env(
             "Confirmed in-scope core set: devin",
             "matrix leaders are aider",
-            "Host runtime: cursor",
+            "Host runtime: Cursor IDE",
             "Matrix — CI integration: cline",
             "Hook-enforced gates ✔ for openhands",
             "Matrix entry — Continue: has hooks and CI/CD",
@@ -508,7 +601,7 @@ class ParseFeatureSupportTests(unittest.TestCase):
             "Matrix entry gibberish without colon",
             "Linear offers hook gates",
         )
-        known = {**m.KNOWN_SOLUTIONS, "cursor": "Cursor"}
+        known = {**m._known_or_run(None), "cursor": "Cursor"}
         support = m.parse_feature_support(envelopes, known=known)
         self.assertTrue(support["devin"]["Hook-enforced gates"])
         self.assertTrue(support["aider"]["IDE-native integration"])
@@ -517,7 +610,7 @@ class ParseFeatureSupportTests(unittest.TestCase):
         self.assertTrue(support["openhands"]["Hook-enforced gates"])
         self.assertTrue(support["continue"]["CI integration"])
         self.assertTrue(support["crewai"]["Workflow composition"])
-        self.assertIs(support["sweep-ai"]["Workflow composition"], False)
+        self.assertIs(support["sweep"]["Workflow composition"], False)
         self.assertTrue(support["tembo"]["Managed hosting"])
 
     def test_matrix_entry_without_solution_head_is_a_feature_row(self) -> None:
@@ -530,6 +623,7 @@ class ParseFeatureSupportTests(unittest.TestCase):
         self.assertEqual(m.parse_feature_support(env("matrix entry with nothing parseable")), {})
 
 
+@with_apo_pack_run
 class RubricTests(unittest.TestCase):
     def test_group_features_into_categories(self) -> None:
         grouped = m._group_features_into_categories(["SSO", "Custom thing", "SSO", "Workflow composition", "Another custom"])
@@ -569,7 +663,7 @@ class RubricTests(unittest.TestCase):
             {"features": ["Unknown"]}, {"name": "Empty", "features": []}, {"name": "Nothing"},
         ]}
         out = m.build_features_json("devin", support, rubric=rubric)
-        self.assertEqual(out["display_name"], "Devin (Cognition)")
+        self.assertEqual(out["display_name"], "Devin")
         self.assertEqual(out["source"], "r")
         self.assertEqual(out["rubric_source"], "r")
         self.assertEqual(out["categories"], [
@@ -585,6 +679,7 @@ class RubricTests(unittest.TestCase):
         self.assertEqual(no_source["source"], "live-envelopes")
 
 
+@with_apo_pack_run
 class WriteRunFeaturesTests(unittest.TestCase):
     def test_writes_rubric_and_per_solution_files(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -600,7 +695,9 @@ class WriteRunFeaturesTests(unittest.TestCase):
             self.assertEqual(result["status"], "ok")
             self.assertEqual(result["rubric_source"], "comparison.json")
             self.assertEqual(result["rubric_path"], "landscape/features-rubric.json")
-            self.assertEqual(result["features_written"], ["solutions/devin/features.json", "solutions/extra-dir/features.json"])
+            # only ranked solutions get features.json; other folders are not touched
+            self.assertEqual(result["features_written"], ["solutions/devin/features.json"])
+            self.assertFalse((root / "solutions" / "extra-dir" / "features.json").exists())
             devin = json.loads((root / "solutions" / "devin" / "features.json").read_text(encoding="utf-8"))
             self.assertEqual(devin["categories"][0]["features"], [{"name": "SSO", "supported": True}])
             self.assertEqual(json.loads((root / "landscape" / "features-rubric.json").read_text(encoding="utf-8"))["source"], "comparison.json")
@@ -623,6 +720,7 @@ class WriteRunFeaturesTests(unittest.TestCase):
                 self.assertEqual(m.write_run_features_json(root, comparison={})["rubric_source"], "fallback-template")
 
 
+@with_apo_pack_run
 class ScrTests(unittest.TestCase):
     def test_claims_selection(self) -> None:
         texts = [f"Aider supports workflow number {i}" for i in range(15)]
@@ -639,17 +737,19 @@ class ScrTests(unittest.TestCase):
         with_seed = m.build_scr_md("silver-bullet", env("Silver Bullet is local"))
         self.assertIn("# Solution Capability Report: Silver Bullet", with_seed)
         self.assertIn("Slug: `silver-bullet`", with_seed)
-        self.assertIn(m.OVERVIEW_SEEDS["silver-bullet"], with_seed)
+        self.assertNotIn("Agentic Process Orchestrator", with_seed)
         self.assertIn("- Silver Bullet is local", with_seed)
         claims_only = m.build_scr_md("ai-dlc", env("AI-DLC is a methodology from AWS"))
         self.assertIn("## Executive summary\n\nAI-DLC is a methodology from AWS", claims_only)
-        seed_only = m.build_scr_md("devin", env("nothing relevant"))
-        self.assertIn(f"- {m.OVERVIEW_SEEDS['devin']}", seed_only)
+        seeds = m._effective_overview_seeds({"category_pack_id": "agentic-sdlc-process-orchestrator"})
+        seed_only = m.build_scr_md("devin", env("nothing relevant"), None, seeds)
+        self.assertIn(f"- {seeds['devin']}", seed_only)
         bare = m.build_scr_md("agentgpt-clone", env("nothing relevant"))
-        self.assertIn("agentgpt-clone is a solution in the agentic SDLC orchestration landscape.", bare)
+        self.assertIn("agentgpt-clone is a solution identified in this research run.", bare)
         self.assertIn("_No direct prose evidence lines matched this solution slug in live envelopes._", bare)
 
 
+@with_apo_pack_run
 class MaterializeTests(unittest.TestCase):
     def run_materialize(self, root: Path, **kw):
         with mock.patch.object(m, "resolve_pack_from_need", return_value=kw.pop("the_pack", None)):
@@ -690,7 +790,7 @@ class MaterializeTests(unittest.TestCase):
             self.assertEqual(shortlist["count"], 1)
             self.assertEqual(shortlist["solutions"][0]["rank"], 1)
 
-    def test_pack_run_prunes_stale_solution_directories(self) -> None:
+    def test_pack_run_reports_but_never_deletes_stale_solution_directories(self) -> None:
         audit = {"matrix_slugs": ["devin", "aider"], "core": ["devin", "aider", "cline"]}
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -703,7 +803,8 @@ class MaterializeTests(unittest.TestCase):
             write_audit.assert_called_once()
             self.assertEqual(result["catalog_audit"], "landscape/catalog_audit.json")
             self.assertEqual(result["core_count"], 3)
-            self.assertFalse((root / "solutions" / "stale-vendor").exists())
+            self.assertEqual((root / "solutions" / "stale-vendor" / "scr.md").read_text(encoding="utf-8"), "old")
+            self.assertEqual(result["stale_solution_dirs"], ["stale-vendor"])
             self.assertTrue((root / "solutions" / "note.txt").is_file())
             self.assertTrue((root / "solutions" / "devin" / "features.json").is_file())
 
@@ -715,6 +816,7 @@ class MaterializeTests(unittest.TestCase):
         self.assertNotIn("catalog_audit", result)
 
 
+@with_apo_pack_run
 class MainTests(unittest.TestCase):
     def run_main(self, root: Path):
         out = io.StringIO()
@@ -743,6 +845,109 @@ class MainTests(unittest.TestCase):
                     contextlib.redirect_stdout(io.StringIO()), self.assertRaises(SystemExit) as cm:
                 runpy.run_path(str(SCRIPTS / "materialize_solution_artifacts.py"), run_name="__main__")
         self.assertEqual(cm.exception.code, 1)
+
+
+class OpenDiscoveryTests(unittest.TestCase):
+    """No category pack and no built-in catalogue: vendors come from the workers' own rows."""
+
+    def test_feature_names_and_rubric_guarded_assignments(self) -> None:
+        self.assertIsNone(m._feature_name(""))
+        self.assertIsNone(m._feature_name("   "))
+        self.assertIsNone(m._feature_name("x" * 81))
+        self.assertEqual(m._feature_name("  Exactly-once   semantics "), "Exactly-once semantics")
+        # a built-in prose heuristic only credits features the active rubric declares
+        support: dict = {}
+        m._assign_rubric(support, "a", "Prebuilt SDLC templates", True)
+        self.assertEqual(support, {})  # no pack vocabulary active: nothing to credit
+        with mock.patch.object(m, "FEATURE_TEMPLATE", [{"name": "C", "features": ["Prebuilt SDLC templates"]}]):
+            m._assign_rubric(support, "a", "Prebuilt SDLC templates", True)
+        self.assertIs(support["a"]["Prebuilt SDLC templates"], True)
+
+    def rows(self, *rows, model="m1"):
+        return {"logical_model_id": model, "phase_id": "DR-RETRIEVE", "payload": {"matrix_entries": list(rows)}}
+
+    def row(self, vendor, feature="SSO", supported=True):
+        return {"vendor": vendor, "feature": feature, "supported": supported}
+
+    def test_vendors_are_discovered_from_matrix_entries_not_from_a_catalogue(self) -> None:
+        self.assertEqual((m.KNOWN_SOLUTIONS, m.SLUG_ALIASES), ({}, {}))
+        with mock.patch.object(m, "resolve_pack_from_need", return_value=None):
+            envs = [
+                self.rows(self.row("Apache Kafka"), self.row("Redpanda"), self.row("redpanda ", "Tiered storage")),
+                self.rows(self.row("Apache Kafka", "SSO", False), model="m2"),
+                *env("Aider and Cline are popular"),  # prose naming vendors no worker put in a row
+            ]
+            self.assertEqual(m.discover_solutions(envs), ["apache-kafka", "redpanda"])
+            self.assertEqual(m.discover_solutions([]), [])
+            self.assertEqual(m.discover_solutions(env("An SBOM and a USB stick, plus compliance")), [])
+            names = m.open_world_known(envs, {})
+        self.assertEqual((names["apache-kafka"], names["redpanda"]), ("Apache Kafka", "Redpanda"))
+
+    def test_structured_vendor_resolution_is_exact_never_a_prefix_or_blank(self) -> None:
+        known = {"devika": "Devika", "sourcegraph-cody": "Sourcegraph Cody"}
+        r = m.resolve_structured_vendor
+        self.assertEqual(r("DEVIKA", known, None), "devika")
+        self.assertEqual(r("sourcegraph cody", known, None), "sourcegraph-cody")
+        self.assertEqual(r("Dev", known, None), "dev")  # an unknown vendor is its own column, not Devika
+        self.assertEqual(r("S", known, None), "s")
+        for blank in ("", "   ", None, "!!!", "x" * 90):
+            self.assertIsNone(r(blank, known, None))
+        pack = {"overlay": {"slug_aliases": {"CodyAI": "sourcegraph-cody"}, "head_slug_aliases": {"the dev": "devika"}}}
+        self.assertEqual(r("cody ai", known, pack), None)  # an alias must match exactly
+        self.assertEqual(r("codyai", known, pack), "sourcegraph-cody")
+        self.assertEqual(r("The Dev", known, pack), "devika")
+        self.assertIsNone(r("Unknown vendor", known, pack))  # with a pack unknown vendors are ignored
+
+    def test_feature_spellings_are_folded_and_the_users_spelling_wins(self) -> None:
+        known = {"devika": "Devika"}
+        envs = [
+            self.rows(self.row("Devika", "Single sign-on"), model="m1"),
+            self.rows(self.row("Devika", "single SIGN ON", False), model="m2"),
+            self.rows(self.row("Devika", "Single Sign-On", False), model="m3"),
+            self.rows(self.row("Devika", "Single sign on", False), model="m4"),
+        ]
+        got = m.parse_structured_matrix_entries(envs, known=known)
+        self.assertEqual(list(got["devika"]), ["Single sign-on"])  # most common spelling; one row
+        self.assertIs(got["devika"]["Single sign-on"], False)  # 1 yes vs 3 no, all on the same cell
+        wanted = m.parse_structured_matrix_entries(envs, known=known, preferred_features=["Single Sign-on (SSO)", "Single sign-on"])
+        self.assertEqual(list(wanted["devika"]), ["Single sign-on"])
+        user = m.parse_structured_matrix_entries(envs, known=known, preferred_features=["SINGLE SIGN-ON"])
+        self.assertEqual(list(user["devika"]), ["SINGLE SIGN-ON"])  # the need profile's spelling is used
+        self.assertEqual(m._feature_key("  Exactly-once   Semantics! "), "exactly once semantics")
+
+    def test_derived_critical_features(self) -> None:
+        # X is ticked for every vendor (it tells them apart not at all): never a derived priority
+        support = {"a": {"X": True, "Y": True, "Z": True, "W": False}, "b": {"X": True, "Y": True, "Z": False, "W": None},
+                   "c": {"X": True, "Y": False, "Z": False}}
+        both = {"Y": "Critical", "Z": "Critical"}
+        self.assertEqual(m.derive_critical_features({}, support), both)
+        self.assertEqual(m.derive_critical_features({}, support, limit=1), {})  # fewer than MIN_DERIVED_PRIORITIES
+        self.assertEqual(m.derive_critical_features({"must_haves": ["y"]}, support), {})  # a must-have matches (folded)
+        self.assertEqual(m.derive_critical_features({"must_haves": ["nope"]}, support), both)
+        self.assertEqual(m.derive_critical_features({"weights_override": {"Z": "Low"}}, support), {})  # the user decided
+        # a derived override an earlier version saved into the profile is recomputed, not trusted
+        stale = {"weights_override": {"Old": "Critical"}, "weights_override_derived": "x", "must_haves": ["nope"]}
+        self.assertEqual(m.derive_critical_features(stale, support), both)
+        self.assertEqual(m.derive_critical_features({}, {"a": {"Z": False}}), {})  # nothing ticked
+        hollow = {"a": {"Site": True}, "b": {"Site": True}, "c": {"Site": True, "SSO": True}}
+        self.assertEqual(m.derive_critical_features({}, hollow), {})  # one universal feature: nothing to rank on
+
+
+        known = {"devika": "Devika"}
+        envs = [
+            self.rows(self.row(""), self.row(None), {"feature": "SSO", "supported": True}, self.row("Devika", "SSO", False)),
+            self.rows(self.row("Devika", "SSO", True), model="m1"),  # same model, later phase: wins
+            self.rows(self.row("Devika", "SSO", True), model="m2"),
+            self.rows(self.row("Devika", "SSO", False), model="m3"),
+        ]
+        got = m.parse_structured_matrix_entries(envs, known=known)
+        self.assertEqual(set(got), {"devika"})
+        self.assertIs(got["devika"]["SSO"], True)  # m1 yes (later row), m2 yes, m3 no
+        self.assertEqual(m.disputed_cells(got), [{"vendor": "devika", "feature": "SSO", "yes": 2, "no": 1}])
+        self.assertEqual(m.disputed_cells({"x": {"A": True}}), [])
+        # rows without a resolvable vendor do not create columns
+        self.assertEqual(m.structured_vendor_names([self.rows(self.row(""), self.row("Acme")), {"payload": {}}, "junk"], {}, None),
+                         {"acme": ("Acme", 1)})
 
 
 if __name__ == "__main__":

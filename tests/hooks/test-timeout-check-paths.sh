@@ -13,7 +13,7 @@ SD="${SB_RUNTIME_STATE_DIR:?}"
 run_tc() { # [hook]
   tl_run_stdin '{}' bash -c 'cd "$1" && exec bash "$2"' _ "$EC_PROJ" "${1:-$HOOK}"
 }
-msg() { jq -r '.hookSpecificOutput.message // ""' <<<"$TL_OUT"; }
+msg() { jq -r '.systemMessage // ""' <<<"$TL_OUT"; }
 reset() {
   local f
   for f in mode session-start-time timeout call-count last-progress-call last-state-mtime state stall-block timeout-warn-count; do

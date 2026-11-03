@@ -49,6 +49,10 @@ def tearDownModule() -> None:
     _OFFLINE_ENV.stop()
 
 
+from apo_pack_run_fixture import with_apo_pack_run  # noqa: E402
+
+
+@with_apo_pack_run
 class RealisticChartScoringTests(unittest.TestCase):
     def test_no_zero_infra_to_managed_hosting_equivalence(self) -> None:
         self.assertEqual(_CHART_FEAT_EQUIV, {})
@@ -545,14 +549,12 @@ class RealisticChartScoringTests(unittest.TestCase):
             "Free tier / OSS core": True,
         }
         self.assertTrue(_must_not_be_leader("sdlc-plugins", "gsd", feats, None))
-        self.assertFalse(
-            _must_not_be_leader(
-                "sdlc-plugins",
-                "silver-bullet",
-                {**feats, "Atomic flow catalog": True},
-                None,
-            )
+        # no vendor is exempt from the ledger rule: identical evidence, identical outcome
+        self.assertEqual(
+            _must_not_be_leader("sdlc-plugins", "vendor-x", feats, None),
+            _must_not_be_leader("sdlc-plugins", "gsd", feats, None),
         )
+        self.assertTrue(_must_not_be_leader("sdlc-plugins", "vendor-x", feats, None))
 
     def test_ai_dlc_methodology_without_gates_is_not_peer_complete(self) -> None:
         feats = {
@@ -627,7 +629,10 @@ class RealisticChartScoringTests(unittest.TestCase):
                 },
             },
         ]
-        patterns = build_consensus_patterns(envelopes, min_families=2)
+        from category_pack import load_pack_overlay
+
+        themes = load_pack_overlay("agentic-sdlc-process-orchestrator")["consensus_themes"]
+        patterns = build_consensus_patterns(envelopes, min_families=2, themes=themes)
         ids = {p["id"] for p in patterns}
         self.assertIn("process-first", ids)
         self.assertIn("hook-gates", ids)
