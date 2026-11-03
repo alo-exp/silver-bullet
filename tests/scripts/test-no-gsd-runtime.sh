@@ -50,16 +50,16 @@ violations="$(scan_gsd \
 
 if [[ -n "$violations" ]]; then
   # Allow denylist/migration references and the research-only competitor registry.
+  # test-shell-analysis-lib.sh drives the legacy `gsd-tools phases clear` shape that
+  # phase-archive.sh still guards.
   # The category-pack URL is discovery data; it is not a runtime dependency or route.
   # test-orchestrator-event-log-lib.sh asserts the legacy gsd-* name still resolves, and
   # test-required-skills-lib.sh asserts gsd-*/gsd:* skill names are filtered out.
   # test-prune-stale-claude-user-hooks.sh and test-misc1-migrations.sh assert that the legacy
   # hooks and tracker value are pruned / migrated, so they must name them literally.
-  # test-shell-analysis-lib.sh drives the shell analyzer's invoked-program matcher with the
-  # legacy gsd-tools program name (what `phases clear` was run through).
   # test-agent-live-libs.sh feeds legacy gsd-* hook commands to the settings sanitiser in
   # scripts/agent-claude/lib.sh (already allowlisted below) and asserts they are stripped.
-  unexpected="$(printf '%s\n' "$violations" | grep -vE 'hooks/forbidden-skill-check\.sh|tests/hooks/test-orchestrator-event-log-lib\.sh|tests/hooks/test-required-skills-lib\.sh|tests/scripts/test-no-gsd-runtime\.sh|scripts/prune-stale-claude-user-hooks\.sh|tests/scripts/test-prune-stale-claude-user-hooks\.sh|tests/scripts/test-misc1-migrations\.sh|scripts/watch-enterprise-e2e-tui\.sh|tests/scripts/test-agent-live-libs\.sh|tests/hooks/test-shell-analysis-lib\.sh|scripts/agent-claude/lib\.sh|skills/silver-deep-research/reference/landscape/category-packs/agentic-sdlc-process-orchestrator\.json' || true)"
+  unexpected="$(printf '%s\n' "$violations" | grep -vE 'hooks/forbidden-skill-check\.sh|tests/hooks/test-orchestrator-event-log-lib\.sh|tests/hooks/test-required-skills-lib\.sh|tests/scripts/test-no-gsd-runtime\.sh|tests/hooks/test-shell-analysis-lib\.sh|scripts/prune-stale-claude-user-hooks\.sh|tests/scripts/test-prune-stale-claude-user-hooks\.sh|tests/scripts/test-misc1-migrations\.sh|scripts/watch-enterprise-e2e-tui\.sh|tests/scripts/test-agent-live-libs\.sh|scripts/agent-claude/lib\.sh|skills/silver-deep-research/reference/landscape/category-packs/agentic-sdlc-process-orchestrator\.json' || true)"
   if [[ -n "$unexpected" ]]; then
     fail "unexpected gsd refs outside forbidden-skill denylist"
     printf '%s\n' "$unexpected" | sed 's/^/    /'
