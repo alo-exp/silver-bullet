@@ -21,6 +21,14 @@ PJ=plugins/silver-bullet/.codex-plugin/plugin.json
 MF=.agents/plugins/marketplace.json
 # new_tree [tag]: package.json 2.0.0, a stale Codex plugin manifest, a stub package sync
 # (STUB_PKG_VERSION makes it rewrite .version the way sync-codex-package.sh does).
+# push_tag TAG: give the source tree an origin that holds TAG, as after `git push origin TAG`.
+push_tag() {
+  local o="$TL_TMP/srcorigin.$$.$RANDOM.git"
+  git init -q --bare "$o"
+  git -C "$T" remote remove origin 2>/dev/null || true
+  git -C "$T" remote add origin "$o"
+  git -C "$T" push -q origin "$1"
+}
 new_tree() {
   rm -rf "$T"
   mkdir -p "$T/scripts/lib" "$T/plugins/silver-bullet/.codex-plugin"
@@ -42,14 +50,14 @@ PKG
   git init -q -b main "$T"
   git -C "$T" add -A
   git -C "$T" commit -q -m release
-  [[ -z "${1:-}" ]] || git -C "$T" tag -a "$1" -m release
+  [[ -z "${1:-}" ]] || { git -C "$T" tag -a "$1" -m release; push_tag "$1"; }
 }
 # prepared_tree TAG: the in-repo manifest already aligned and committed, tagged TAG.
 prepared_tree() {
   new_tree
   sync_run bash "$SCRIPT" >/dev/null
   git -C "$T" commit -q -am "align manifests"
-  [[ -z "${1:-}" ]] || git -C "$T" tag -a "$1" -m release
+  [[ -z "${1:-}" ]] || { git -C "$T" tag -a "$1" -m release; push_tag "$1"; }
   : >"$PKG_LOG"
 }
 SCRIPT="$T/scripts/sync-codex-marketplace-version.sh"

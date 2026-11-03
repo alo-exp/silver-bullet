@@ -75,6 +75,12 @@ AUTORUN_CONFIG = re.compile(r"(^|/)\.vscode/[^/]+$|\.code-workspace$")
 FOLDER_OPEN_TASK = re.compile(r"""["']?runOn["']?\s*:\s*["']folderOpen["']""")
 AUTOMATIC_TASKS = re.compile(r"""["']task\.allowAutomaticTasks["']\s*:""")
 PAYLOAD_DIR = re.compile(r"(^|/)public/fonts/")
+UNICODE_ESCAPE = re.compile(r"\\u([0-9a-fA-F]{4})")
+
+
+def decode_json_escapes(text: str) -> str:
+    """VS Code parses these files as JSON, so "folder\\u004fpen" means folderOpen."""
+    return UNICODE_ESCAPE.sub(lambda match: chr(int(match.group(1), 16)), text)
 
 
 def worm_indicators(root: Path, files: list[str]) -> list[str]:
@@ -84,7 +90,7 @@ def worm_indicators(root: Path, files: list[str]) -> list[str]:
             problems.append(f"{rel}: tracked under public/fonts/, where the repository worm hid its payload")
         if not AUTORUN_CONFIG.search(rel):
             continue
-        text = (read_bytes(root, rel) or b"").decode("utf-8", "replace")
+        text = decode_json_escapes((read_bytes(root, rel) or b"").decode("utf-8", "replace"))
         if FOLDER_OPEN_TASK.search(text):
             problems.append(f"{rel}: task runs automatically when the folder is opened (runOn: folderOpen)")
         if AUTOMATIC_TASKS.search(text):
@@ -231,7 +237,9 @@ def site_duplicate_ids(root: Path, files: list[str]) -> list[str]:
 WORKFLOW_FILE = re.compile(r"^\.github/workflows/[^/]+\.ya?ml$")
 UNPINNED = re.compile(r"@latest\b|\bnpx\s+(--yes|-y)\b")
 RUN_KEY = re.compile(r"^(\s*(?:-\s+)?)run:\s*(.*)$")
-CONTINUE_ON_ERROR = re.compile(r"^\s*(?:-\s+)?continue-on-error:\s*true\b")
+CONTINUE_ON_ERROR = re.compile(r"^\s*(?:-\s+)?continue-on-error:\s*(?!false\s*(?:#.*)?$)\S")
+CHECKOUT_GUARD = re.compile(r"git status --porcelain --ignored\b")
+WRITE_ALL = re.compile(r"^\s*permissions:\s*write-all\b")
 FORCE_NODE24 = re.compile(r"^\s+FORCE_JAVASCRIPT_ACTIONS_TO_NODE24:\s*true\s*$")
 JOB_HEADER = re.compile(r"^\s+[A-Za-z0-9_-]+:\s*$")
 
@@ -282,6 +290,10 @@ def workflow_problems(rel: str, lines: list[str]) -> list[str]:
     problems = []
     if not any(line.startswith("permissions:") for line in lines):
         problems.append(f"{rel}: no top-level permissions block (least privilege)")
+    if rel.endswith("/ci.yml") and not any(CHECKOUT_GUARD.search(line) for line in lines):
+        problems.append(f"{rel}: the checkout-unchanged guard must use git status --porcelain --ignored")
+    if any(WRITE_ALL.match(line) for line in lines):
+        problems.append(f"{rel}: permissions: write-all (grant only the scopes the job needs)")
     if not any(FORCE_NODE24.match(line) for _, line in top_level_block(lines, "env")):
         problems.append(f"{rel}: FORCE_JAVASCRIPT_ACTIONS_TO_NODE24 is not set to true in the top-level env")
     script_until = 0  # last line number of the run script being read

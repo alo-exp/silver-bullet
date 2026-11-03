@@ -80,6 +80,12 @@ class WormIndicatorsTest(TempRoot):
         write(self.root, "docs/runOn.md", 'Never use "runOn": "folderOpen" in a task.')
         self.assertEqual(ri.worm_indicators(self.root, [".vscode/tasks.json", "docs/runOn.md"]), [])
 
+    def test_unicode_escaped_keys_are_decoded_like_vscode_does(self):
+        write(self.root, ".vscode/tasks.json", '{"runOptions": {"runOn": "folder\\u004fpen"}}')
+        write(self.root, ".vscode/settings.json", '{"task.allow\\u0041utomaticTasks": "on"}')
+        problems = ri.worm_indicators(self.root, [".vscode/settings.json", ".vscode/tasks.json"])
+        self.assertEqual(len(problems), 2)
+
     def test_tracked_but_deleted_config_is_skipped(self):
         self.assertEqual(ri.worm_indicators(self.root, [".vscode/tasks.json"]), [])
 
@@ -256,6 +262,22 @@ jobs:
             f"{rel}:15: ${{{{ }}}} expression inside a run script (pass it through env)",
             f"{rel}: job build has no timeout-minutes",
         ])
+
+    def test_write_all_and_any_continue_on_error_value(self):
+        text = HARDENED.replace("permissions:\n  contents: read\n", "permissions: write-all\n")
+        self.assertIn(".github/workflows/w.yml: permissions: write-all (grant only the scopes the job needs)",
+                      self.problems(text))
+        for value in ('"true"', "${{ true }}", "yes"):
+            weak = HARDENED.replace("    timeout-minutes: 20\n", f"    timeout-minutes: 20\n    continue-on-error: {value}\n", 1)
+            self.assertTrue(any("continue-on-error hides failures" in p for p in self.problems(weak)), value)
+        ok = HARDENED.replace("    timeout-minutes: 20\n", "    timeout-minutes: 20\n    continue-on-error: false  # explicit\n", 1)
+        self.assertEqual(self.problems(ok), [])
+
+    def test_ci_guard_must_see_ignored_files(self):
+        rel = ".github/workflows/ci.yml"
+        self.assertEqual(self.problems(HARDENED + "# git status --porcelain --ignored\n", rel), [])
+        self.assertEqual(self.problems(HARDENED, rel),
+                         [f"{rel}: the checkout-unchanged guard must use git status --porcelain --ignored"])
 
     def test_step_level_timeout_does_not_count_for_the_job(self):
         text = HARDENED.replace("    timeout-minutes: 5\n", "").replace(

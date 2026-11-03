@@ -1,13 +1,26 @@
-# Paths whose changes run code automatically (CI, host configuration that editors and
-# agents load when the folder is opened, Silver Bullet's hooks and scripts) need the
-# maintainer's review. Enable "Require review from Code Owners" in the main branch
-# protection for this to block merges.
+# Paths whose changes run code or instructions automatically (CI, the site deployment,
+# host configuration that editors and agents load when the folder is opened, skills and
+# hooks that agents execute, packaging that users install) need the maintainer's review.
+# Enable "Require review from Code Owners" in the main branch protection for this to block
+# merges.
 #
-# Maintainer: confirm this handle has write access; GitHub ignores owners it cannot resolve.
-/.github/   @shafqatevo
-/.vscode/   @shafqatevo
-/.claude/   @shafqatevo
-/.codex/    @shafqatevo
-/.cursor/   @shafqatevo
-/hooks/     @shafqatevo
-/scripts/   @shafqatevo
+# Maintainer: confirm this handle has write access (prefer an organisation team such as
+# @alo-exp/maintainers); GitHub ignores owners it cannot resolve.
+/.github/          @shafqatevo
+/.vscode/          @shafqatevo
+/.claude/          @shafqatevo
+/.codex/           @shafqatevo
+/.cursor/          @shafqatevo
+/.agents/          @shafqatevo
+/.claude-plugin/   @shafqatevo
+/.cursor-plugin/   @shafqatevo
+/hooks/            @shafqatevo
+/scripts/          @shafqatevo
+/skills/           @shafqatevo
+/plugins/          @shafqatevo
+/templates/        @shafqatevo
+/site/             @shafqatevo
+/Makefile          @shafqatevo
+/package.json      @shafqatevo
+/requirements*.txt @shafqatevo
+/skills-lock.json  @shafqatevo

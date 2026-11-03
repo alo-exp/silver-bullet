@@ -19,6 +19,14 @@ T="$TL_TMP/tree"
 MF=.claude-plugin/marketplace.json
 # new_tree [tag]: the script and its library in a git repository at plugin version 2.0.0;
 # with a tag argument the release commit is tagged.
+# push_tag TAG: give the source tree an origin that holds TAG, as after `git push origin TAG`.
+push_tag() {
+  local o="$TL_TMP/srcorigin.$$.$RANDOM.git"
+  git init -q --bare "$o"
+  git -C "$T" remote remove origin 2>/dev/null || true
+  git -C "$T" remote add origin "$o"
+  git -C "$T" push -q origin "$1"
+}
 new_tree() {
   rm -rf "$T"
   mkdir -p "$T/scripts/lib" "$T/.claude-plugin"
@@ -30,14 +38,14 @@ new_tree() {
   git init -q -b main "$T"
   git -C "$T" add -A
   git -C "$T" commit -q -m release
-  [[ -z "${1:-}" ]] || git -C "$T" tag -a "$1" -m release
+  [[ -z "${1:-}" ]] || { git -C "$T" tag -a "$1" -m release; push_tag "$1"; }
 }
 # prepared_tree TAG: a tree whose in-repo manifest is already at 2.0.0, tagged TAG.
 prepared_tree() {
   new_tree
   sync_run bash "$SCRIPT" >/dev/null
   git -C "$T" commit -q -am "align manifests"
-  [[ -z "${1:-}" ]] || git -C "$T" tag -a "$1" -m release
+  [[ -z "${1:-}" ]] || { git -C "$T" tag -a "$1" -m release; push_tag "$1"; }
 }
 SCRIPT="$T/scripts/sync-marketplace-version.sh"
 sync_run() { tl_run env -u AGENT_PLUGINS_REPO_ROOT -u MARKETPLACE_REPO_ROOT -u AGENT_PLUGINS_REPO_URL -u MARKETPLACE_REPO_URL -u AGENT_PLUGINS_SKIP_PUSH timeout 60 "$@"; }
@@ -78,6 +86,13 @@ assert_eq "publish without the release tag exits 1" 1 "$TL_STATUS"
 assert_contains "missing tag explained" "$TL_ERR" "release tag v2.0.0 does not exist"
 assert_eq "nothing published without the tag" "$remote_head" "$(git -C "$J_REMOTE" rev-parse main)"
 assert_eq "checkout untouched without the tag" "" "$(git -C "$TL_TMP/work" status --porcelain)"
+
+prepared_tree
+git -C "$T" tag -a v2.0.0 -m release
+sync_run env AGENT_PLUGINS_REPO_ROOT="$TL_TMP/work" bash "$SCRIPT" --publish 2.0.0
+assert_eq "publish with the tag only local exits 1" 1 "$TL_STATUS"
+assert_contains "tag not on origin explained" "$TL_ERR" "release tag v2.0.0 is not on origin"
+assert_eq "nothing published for a local-only tag" "$remote_head" "$(git -C "$J_REMOTE" rev-parse main)"
 
 new_tree v2.0.0
 sync_run env AGENT_PLUGINS_REPO_ROOT="$TL_TMP/work" bash "$SCRIPT" --publish 2.0.0

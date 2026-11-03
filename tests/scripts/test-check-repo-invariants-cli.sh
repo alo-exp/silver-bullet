@@ -26,7 +26,7 @@ cat >"$FIX/hooks/hooks.json" <<'JSON'
 {"hooks":{"Stop":[{"hooks":[
   {"type":"command","command":"bash \"${CLAUDE_PLUGIN_ROOT}/hooks/present.sh\""},
   {"type":"command","command":"\"$CLAUDE_PLUGIN_ROOT\"/hooks/present.sh --flag"},
-  {"type":"command","command":"bash scripts/tool.sh"}
+  {"type":"command","command":"bash \"${CLAUDE_PLUGIN_ROOT}/scripts/tool.sh\""}
 ]}]}}
 JSON
 : >"$FIX/hooks/present.sh"
@@ -41,7 +41,12 @@ assert_eq "missing script fails" 1 "$TL_STATUS"
 assert_contains "missing script named" "$TL_OUT" "hooks.json references a missing script: hooks/present.sh"
 
 : >"$FIX/hooks/present.sh"
-jq '.hooks.Stop[0].hooks += [{"type":"command","command":"echo plain command"}]' "$FIX/hooks/hooks.json" >"$FIX/h.json"
+jq '.hooks.Stop[0].hooks += [{"type":"command","command":"bash scripts/tool.sh"}]' "$FIX/hooks/hooks.json" >"$FIX/h.json"
+mv "$FIX/h.json" "$FIX/hooks/hooks.json"
+tl_run bash "$SCRIPT" --root "$FIX" --check hook-references
+assert_eq "a bare relative plugin path fails" 1 "$TL_STATUS"
+assert_contains "bare path explained" "$TL_OUT" 'use ${CLAUDE_PLUGIN_ROOT}/scripts/tool.sh'
+jq '.hooks.Stop[0].hooks |= map(select(.command != "bash scripts/tool.sh")) | .hooks.Stop[0].hooks += [{"type":"command","command":"echo plain command"}]' "$FIX/hooks/hooks.json" >"$FIX/h.json"
 mv "$FIX/h.json" "$FIX/hooks/hooks.json"
 tl_run bash "$SCRIPT" --root "$FIX" --check hook-references
 assert_eq "a command naming no plugin script fails" 1 "$TL_STATUS"

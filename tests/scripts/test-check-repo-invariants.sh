@@ -96,7 +96,7 @@ expect_fail "hooks.json names a missing script" hook-references "hooks/uat-gate.
 FIX="$TL_TMP/refs-bare"; fixture "$FIX"
 jq '.hooks.Stop[0].hooks += [{"type": "command", "command": "bash hooks/missing-gate.sh"}]' \
   "$FIX/hooks/hooks.json" >"$FIX/h.json" && mv "$FIX/h.json" "$FIX/hooks/hooks.json"
-expect_fail "bare hooks/ path to a missing script" hook-references "hooks.json references a missing script: hooks/missing-gate.sh"
+expect_fail "bare hooks/ path (resolves against the user project)" hook-references "use \${CLAUDE_PLUGIN_ROOT}/hooks/missing-gate.sh"
 
 FIX="$TL_TMP/placeholders"; fixture "$FIX"
 sed -i 's/{{TECH_STACK}}/stack/g' "$FIX/scripts/lib/install-claude/templates/CLAUDE.md.base"
@@ -263,6 +263,17 @@ jobs:
 YAML
 expect_fail "an unhardened workflow" workflow-hardening ".github/workflows/announce.yml: no top-level permissions block"
 assert_contains "unhardened workflow: script injection named" "$TL_OUT" "announce.yml:11: \${{ }} expression inside a run script"
+
+FIX="$TL_TMP/workflows-weak"; fixture "$FIX"
+mkdir -p "$FIX/.github/workflows"
+cp "$TL_REPO_ROOT"/.github/workflows/*.yml "$FIX/.github/workflows/"
+sed -i 's/--porcelain --ignored/--porcelain/' "$FIX/.github/workflows/ci.yml"
+expect_fail "ci guard that ignores git-ignored files" workflow-hardening "the checkout-unchanged guard must use git status --porcelain --ignored"
+FIX="$TL_TMP/workflows-writeall"; fixture "$FIX"
+mkdir -p "$FIX/.github/workflows"
+cp "$TL_REPO_ROOT"/.github/workflows/*.yml "$FIX/.github/workflows/"
+sed -i '0,/^permissions:/{s/^permissions:.*/permissions: write-all/}' "$FIX/.github/workflows/secret-scan.yml"
+expect_fail "permissions: write-all" workflow-hardening "permissions: write-all"
 
 # --- Tracked file size (R13-13) ------------------------------------------------------------------------------
 FIX="$TL_TMP/size"; fixture "$FIX"
