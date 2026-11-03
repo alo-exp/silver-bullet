@@ -116,7 +116,7 @@ The three pillars:
 - **Stop / SubagentStop** — `stop-check.sh` (planning floor) plus `outcomes-check.sh`, `instruction-ledger-gate.sh`, site gates, `subagent-stop-enforcement.sh` and `phase-lock-release.sh`.
 - **UserPromptSubmit** — `record-requested-skill.sh`, `prompt-reminder.sh`, `outcomes-check.sh`, `instruction-ledger-gate.sh` and others.
 
-Cursor uses `hooks/cursor-hooks.json`, generated from `hooks/hooks.json` by `scripts/generate-cursor-hooks.py` and wrapped by `hooks/cursor-hook-bridge.sh`; the Codex installer routes hooks through `hooks/codex-hook-adapter.sh`.
+The Codex installer routes hooks through `hooks/codex-hook-adapter.sh`.
 
 ### Two-Tier Enforcement Model
 
@@ -151,7 +151,7 @@ The hook logs the override to `.planning/orchestrator-override-log.jsonl` and cl
 
 | Group | Files | Role |
 |-------|-------|------|
-| Runtime and plumbing | `runtime-paths.sh`, `hook-bootstrap.sh`, `hook-output.sh`, `tool-input.sh` + `tool-input/*.py`, `hook-subproc-timeout.sh` | Resolve the host runtime (`claude`, `codex`, `cursor`, `opencode`, `pi`, `goose`, `hermes`) and its state dir; shared sourcing for delivery gates; emit host-correct hook JSON; parse tool payloads across hosts |
+| Runtime and plumbing | `runtime-paths.sh`, `hook-bootstrap.sh`, `hook-output.sh`, `tool-input.sh` + `tool-input/*.py`, `hook-subproc-timeout.sh` | Resolve the host runtime (`claude`, `codex`, `opencode`, `pi`, `goose`, `hermes`) and its state dir; shared sourcing for delivery gates; emit host-correct hook JSON; parse tool payloads across hosts |
 | Activation and safety | `sb-project-gate.sh`, `project-active.sh`, `jq-gate.sh`, `trivial-bypass.sh`, `nofollow-guard.sh`, `branch-scope.sh`, `plugin-cache-guard.sh`, `core-rules-integrity.sh` | Stay inert outside SB projects; jq-missing behaviour; legacy trivial bypass; refuse writes through symlinks (SEC-02); branch/worktree scoping; plugin-cache boundary; core-rules integrity pin |
 | Skills and workflows | `required-skills.sh`, `skill-discovery.sh`, `workflow-utils.sh`, `quality-gates-mode.sh` | Default skill lists from the config template; installed-skill discovery; Flow Log row counting (single regex source); quality-gates mode |
 | Delivery gates | `completion-audit/*.sh`, `doc-scheme-gate.sh`, `evidence-schema-gate.sh`, `artifact-substance-gate.sh`, `enterprise-policy.sh`, `github-run-list.sh` | Modules of `completion-audit.sh` (classification, planning tier, deploy tier, change class) and the delivery checks it runs |
@@ -168,7 +168,7 @@ Every skill is a single `SKILL.md` file with YAML frontmatter (`name`, `descript
 - `silver-release` — cross-artifact review → deploy-checklist → ship ordering
 - `silver-devops` — infrastructure / DevOps variant
 
-Composable flow skills sequence SB-owned lifecycle skills. Legacy `gsd-*` marker names remain as compatibility aliases in hooks and config. After editing `skills/`, run `bash scripts/sync-codex-package.sh` to re-render `agents/claude/`, `host-bundles/{codex,cursor}/` and `plugins/silver-bullet/skill-source/`.
+Composable flow skills sequence SB-owned lifecycle skills. Legacy `gsd-*` marker names remain as compatibility aliases in hooks and config. After editing `skills/`, run `bash scripts/sync-codex-package.sh` to re-render `agents/claude/`, `host-bundles/codex/` and `plugins/silver-bullet/skill-source/`.
 
 ### Templates
 

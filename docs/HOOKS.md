@@ -10,7 +10,6 @@
 
 - **Claude Code** reads `hooks/hooks.json` from the plugin root; commands use `${CLAUDE_PLUGIN_ROOT}`.
 - **Codex** loads the same manifest from the plugin package. `scripts/install-codex.sh` rewrites the paths and routes each command through `hooks/codex-hook-adapter.sh`.
-- **Cursor** uses `hooks/cursor-hooks.json`, generated from `hooks/hooks.json` by `scripts/generate-cursor-hooks.py`; each command runs through `hooks/cursor-hook-bridge.sh`.
 - Matchers name tools from every host: `Bash` (Claude) and `exec_command` (Codex) are shell calls; `apply_patch` is the Codex edit tool; `CallMcpTool`/`MCP` are MCP calls; `Task|Subagent|Agent` are subagent spawns.
 - Enforcement hooks first check that the project is activated (`.silver-bullet.json` and `silver-bullet.md` at the project root, see `hooks/lib/sb-project-gate.sh`); outside an SB project they exit 0 (a missing `jq` included).
 - Unexpected errors fail open: almost every hook installs an `ERR` trap that exits 0 (some print a notice or a no-op payload first). Exceptions: `phase-archive.sh` denies the `phases clear` it guards when archiving fails, and `rfl-policy-c-gate.sh` has no `ERR` trap, so an unexpected error surfaces as a non-blocking hook error.
@@ -114,7 +113,7 @@ After a tool runs; a hook can report, record state, or ask the agent to stop.
 
 ### SubagentStart
 
-When a subagent starts (Cursor).
+When a subagent starts.
 
 | # | Matcher | Script | Timeout |
 |---|---------|--------|---------|
@@ -167,7 +166,7 @@ Before each user prompt is processed; hooks add context or record the requested 
 
 | Script | Registered on | Purpose |
 |--------|---------------|---------|
-| `agent-delegation-guard.sh` | PreToolUse `Edit\|Write\|MultiEdit\|apply_patch` | While an `/sb:agent-*` delegation is active, blocks parent-session edits on Claude and Codex and advises on Cursor. |
+| `agent-delegation-guard.sh` | PreToolUse `Edit\|Write\|MultiEdit\|apply_patch` | While an `/sb:agent-*` delegation is active, blocks parent-session edits. |
 | `agentmemory-gate.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Opt-in (`recommended_tools.agentmemory`): requires a recent agentmemory capture/retrieval before substantive work. |
 | `alumnium-gate.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Opt-in (`recommended_tools.alumnium`): checks that the Alumnium MCP server is wired before browser/visual work. |
 | `ci-status-check.sh` | PreToolUse `Bash\|exec_command`; PostToolUse `Bash\|exec_command` | Checks the latest GitHub Actions run for the branch. Pre: blocks `git push`, `gh pr create/merge` and `gh release create` while CI failed or was cancelled. Post: warns after `git commit`. CI-fix commits and the `ci-red-override` flag bypass it. |
@@ -242,9 +241,6 @@ These files are not registered in `hooks/hooks.json`.
 | `codex-hook-adapter.sh` | Codex adapter: `scripts/install-codex.sh` rewrites installed hook commands to run through it (`codex-hook-adapter.sh <event> <hook>`); it buffers stdin/stdout and applies a subprocess timeout (`SB_CODEX_HOOK_SUBPROC_TIMEOUT`). |
 | `core-rules.md` | Core enforcement rules that `session-start` injects into context. |
 | `core-rules.sha256` | Integrity pin for `core-rules.md`, checked by `hooks/lib/core-rules-integrity.sh` before injection. |
-| `cursor-hook-bridge.sh` | Cursor bridge: `cursor-hook-bridge.sh <cursorEvent> <hook>` translates a Cursor hook payload into the SB hook protocol, runs the hook with a subprocess timeout and maps the result back. |
-| `cursor-hooks.json` | Cursor hook manifest, generated from `hooks.json` by `scripts/generate-cursor-hooks.py` (Cursor event names, `${CURSOR_PLUGIN_ROOT}` paths, every hook wrapped by `cursor-hook-bridge.sh`). Do not edit by hand. |
-| `generate-cursor-hooks.py` | Compatibility shim that runs `scripts/generate-cursor-hooks.py`. |
 | `hooks.json` | The registration manifest itself (Claude Code plugin format; Codex reads the same file from the plugin package). |
 | `kay-project-hook-bridge.sh` | Project-level hook bridge for the Kay (Codex-compatible) runtime; the live-test harness registers it in `~/.kay/config.toml` (`tests/live/lib/kay-codex-isolation.sh`). |
 | `run-hook.cmd` | Windows/Unix polyglot wrapper: `run-hook.cmd <script> [args]` finds Git for Windows bash (or bash on PATH) and runs the hook. |
