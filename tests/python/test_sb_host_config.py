@@ -218,7 +218,7 @@ class OwnershipTest(Tmp):
         self.assertTrue(self.owned(f'"{cache}/hooks/anything.sh"'))
         self.assertTrue(self.owned(f'"/h/.cursor/plugins/cache/alo-labs/silver-bullet/0.1.0/hooks/cursor-hook-bridge.sh" stop "x"'))
         self.assertTrue(self.owned('"${CLAUDE_PLUGIN_ROOT}/hooks/session-start"'))
-        self.assertTrue(self.owned("${CURSOR_PLUGIN_ROOT}/hooks/completion-audit.sh"))
+        self.assertFalse(self.owned("${CURSOR_PLUGIN_ROOT}/hooks/completion-audit.sh"))
         self.assertTrue(self.owned("/repo/plugins/silver-bullet/hooks/completion-audit.sh"))
         self.assertTrue(self.owned("/home/me/silver-bullet/hooks/completion-audit.sh"))
         self.assertTrue(self.owned("/home/me/projects/silver-bullet/repo/hooks/completion-audit.sh"))

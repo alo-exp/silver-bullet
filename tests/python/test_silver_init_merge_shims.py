@@ -1,4 +1,4 @@
-"""skills/silver-init/scripts/merge-hooks.py and merge-host-hooks.py are host-neutral shims.
+"""skills/silver-init/scripts/merge-hooks.py is a host-neutral shim.
 
 They locate the installer implementation under scripts/lib/install-*/ and run it with the
 caller's arguments. The in-process tests execute the shim source with a recording stand-in
@@ -23,9 +23,7 @@ from sbtest import REPO_ROOT
 
 SCRIPTS = REPO_ROOT / "skills" / "silver-init" / "scripts"
 CLAUDE_SHIM = SCRIPTS / "merge-hooks.py"
-HOST_SHIM = SCRIPTS / "merge-host-hooks.py"
 CLAUDE_LIB = REPO_ROOT / "scripts" / "lib" / "install-claude" / "merge-hooks.py"
-CURSOR_LIB = REPO_ROOT / "scripts" / "lib" / "install-cursor" / "merge-cursor-hooks.py"
 
 
 def exec_shim(shim: Path, argv: list[str], *, glob_result: list[Path] | None = None):
@@ -53,30 +51,10 @@ class ShimDelegationTests(unittest.TestCase):
         run_path.assert_called_once_with(str(CLAUDE_LIB), run_name="__main__")
         self.assertEqual(argv, ["merge-hooks.py", "/some/install"])
 
-    def test_host_shim_runs_the_last_matching_host_lib(self) -> None:
-        run_path, argv = exec_shim(HOST_SHIM, ["/some/install", "extra"])
-        run_path.assert_called_once_with(str(CURSOR_LIB), run_name="__main__")
-        self.assertEqual(argv, ["merge-cursor-hooks.py", "/some/install", "extra"])
-
-    def test_host_shim_prefers_the_last_sorted_match(self) -> None:
-        fake = [Path("/x/install-a/merge-a-hooks.py"), Path("/x/install-z/merge-z-hooks.py")]
-        run_path, argv = exec_shim(HOST_SHIM, [], glob_result=fake)
-        run_path.assert_called_once_with("/x/install-z/merge-z-hooks.py", run_name="__main__")
-        self.assertEqual(argv, ["merge-z-hooks.py"])
-
     def test_claude_shim_takes_the_first_sorted_match(self) -> None:
         fake = [Path("/x/install-b/merge-hooks.py"), Path("/x/install-a/merge-hooks.py")]
         run_path, _ = exec_shim(CLAUDE_SHIM, [], glob_result=fake)
         run_path.assert_called_once_with("/x/install-a/merge-hooks.py", run_name="__main__")
-
-    def test_missing_installer_lib_exits_with_a_message(self) -> None:
-        with self.assertRaises(SystemExit) as claude:
-            exec_shim(CLAUDE_SHIM, ["/i"], glob_result=[])
-        self.assertEqual(claude.exception.code, "merge-hooks shim: no installer merge-hooks.py found")
-        with self.assertRaises(SystemExit) as host:
-            exec_shim(HOST_SHIM, ["/i"], glob_result=[])
-        self.assertEqual(host.exception.code, "merge-host-hooks shim: no installer hook merge script found")
-
 
 class ShimEndToEndTests(unittest.TestCase):
     def setUp(self) -> None:
@@ -220,92 +198,3 @@ class ShimEndToEndTests(unittest.TestCase):
         self.assertEqual(proc.returncode, 0, proc.stderr)
         self.assertIn("PreToolUse", json.loads(target.read_text())["hooks"])
 
-    # --- Cursor (merge-host-hooks.py) -------------------------------------------------
-    def cursor_settings(self) -> Path:
-        return self.home / ".cursor" / "hooks.json"
-
-    def write_cursor_hooks(self) -> None:
-        hooks = {"hooks": {"preToolUse": [{"command": "${CURSOR_PLUGIN_ROOT}/hooks/gate.sh", "matcher": "Shell"}]}}
-        (self.install / "hooks" / "cursor-hooks.json").write_text(json.dumps(hooks))
-
-    def test_host_fresh_install(self) -> None:
-        self.write_cursor_hooks()
-        proc = self.run_shim(HOST_SHIM, str(self.install))
-        self.assertEqual(proc.returncode, 0, proc.stderr)
-        self.assertIn("SB hooks registered in ~/.cursor/hooks.json", proc.stdout)
-        settings = json.loads(self.cursor_settings().read_text())
-        self.assertEqual(settings["version"], 1)
-        self.assertEqual(settings["hooks"]["preToolUse"], [{"command": f"{self.install}/hooks/gate.sh", "matcher": "Shell"}])
-
-    def test_host_merge_keeps_user_entries_and_drops_stale_and_malformed(self) -> None:
-        self.write_cursor_hooks()
-        user = {"command": "/home/me/my-hook.sh"}
-        self.cursor_settings().parent.mkdir()
-        self.cursor_settings().write_text(json.dumps({
-            "version": 1,
-            "custom": {"keep": 1},
-            "hooks": {
-                "preToolUse": [
-                    user,
-                    {"command": "/old/silver-bullet/1.0.0/hooks/completion-audit.sh"},
-                    {"command": "/x/codex-hook-adapter.sh"},
-                    "foreign-entry",
-                ],
-                "stop": [{"command": "/old/silver-bullet/1.0.0/hooks/stop-check.sh"}],
-                "sessionStart": "not-a-list",
-            },
-        }))
-        proc = self.run_shim(HOST_SHIM, str(self.install))
-        self.assertEqual(proc.returncode, 0, proc.stderr)
-        settings = json.loads(self.cursor_settings().read_text())
-        self.assertEqual(settings["custom"], {"keep": 1})
-        self.assertEqual(settings["hooks"]["preToolUse"], [user, "foreign-entry", {"command": f"{self.install}/hooks/gate.sh", "matcher": "Shell"}])
-        self.assertNotIn("stop", settings["hooks"])
-        self.assertEqual(settings["hooks"]["sessionStart"], "not-a-list")
-        first = self.cursor_settings().read_text()
-        self.assertEqual(self.run_shim(HOST_SHIM, str(self.install)).returncode, 0)
-        self.assertEqual(self.cursor_settings().read_text(), first)
-
-    def test_host_malformed_and_wrong_shaped_settings_are_refused(self) -> None:
-        self.write_cursor_hooks()
-        self.cursor_settings().parent.mkdir()
-        for body, message in (
-            ("{not json", "not valid JSON"),
-            ('"text"', "expected an object at the top level"),
-            ('{"hooks": "text"}', "hooks must be a JSON object"),
-        ):
-            self.cursor_settings().write_text(body)
-            proc = self.run_shim(HOST_SHIM, str(self.install))
-            self.assertNotEqual(proc.returncode, 0, body)
-            self.assertIn(message, proc.stderr)
-            self.assertEqual(self.cursor_settings().read_text(), body)
-
-    def test_host_requires_an_install_path(self) -> None:
-        proc = self.run_shim(HOST_SHIM)
-        self.assertNotEqual(proc.returncode, 0)
-        self.assertIn("usage: merge-cursor-hooks.py <sb_install_path>", proc.stderr)
-        self.assertFalse(self.cursor_settings().exists())
-
-    def test_host_missing_cursor_hooks_json_creates_no_settings(self) -> None:
-        proc = self.run_shim(HOST_SHIM, str(self.install))
-        self.assertNotEqual(proc.returncode, 0)
-        self.assertIn("hook manifest not found", proc.stderr)
-        self.assertFalse(self.cursor_settings().exists())
-
-    def test_host_symlinked_settings_are_updated_in_place(self) -> None:
-        self.write_cursor_hooks()
-        real = self.tmp / "dotfiles" / "cursor-hooks.json"
-        real.parent.mkdir()
-        real.write_text(json.dumps({"version": 1, "hooks": {"stop": [{"command": "/mine.sh"}]}}))
-        self.cursor_settings().parent.mkdir()
-        self.cursor_settings().symlink_to(real)
-        proc = self.run_shim(HOST_SHIM, str(self.install))
-        self.assertEqual(proc.returncode, 0, proc.stderr)
-        self.assertTrue(self.cursor_settings().is_symlink())
-        data = json.loads(real.read_text())
-        self.assertEqual(data["hooks"]["stop"], [{"command": "/mine.sh"}])
-        self.assertIn("preToolUse", data["hooks"])
-
-
-if __name__ == "__main__":
-    unittest.main()
