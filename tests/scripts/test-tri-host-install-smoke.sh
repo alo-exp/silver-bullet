@@ -134,7 +134,7 @@ export SB_TRIHOST_OVERALL_TIMEOUT="${SB_TRIHOST_OVERALL_TIMEOUT:-600}"
 export SB_TRIHOST_CMD_TIMEOUT="${SB_TRIHOST_CMD_TIMEOUT:-180}"
 export SB_TRIHOST_DIAG_TIMEOUT="${SB_TRIHOST_DIAG_TIMEOUT:-90}"
 
-for smoke_host in codex; do
+smoke_host=codex
   smoke_log="${TRIHOST_TMP}/${smoke_host}.log"
   if RTK_DISABLED=1 bash "$SMOKE" --host "$smoke_host" >"$smoke_log" 2>&1; then
     pass "${smoke_host} tri-host smoke executes"
@@ -145,7 +145,6 @@ for smoke_host in codex; do
     dump_log "$smoke_log"
     fail "${smoke_host} tri-host smoke failed"
   fi
-done
 
 # The Claude smoke drives the real claude CLI against GitHub: live only.
 if [[ "${SB_LIVE_CLAUDE_INSTALL_TEST:-0}" == "1" ]]; then

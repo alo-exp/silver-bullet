@@ -114,7 +114,6 @@ write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools
 write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools\":{\"rtk\":{\"enabled_by_user\":true}}}"
 sb_recommended_tool_enforced "$TMP/.silver-bullet.json" rtk && pass "rtk enabled enforces" || fail "rtk enabled enforces"
 
-rtk_cmds="$(SILVER_BULLET_RUNTIME=claude sb_recommended_tool_platform_pre_index_commands "$TMP/.silver-bullet.json" rtk)"
 
 write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools\":{\"context_mode\":{\"enabled_by_user\":true}}}"
 sb_recommended_tool_enforced "$TMP/.silver-bullet.json" context_mode && pass "context_mode enabled enforces" || fail "context_mode enabled enforces"
