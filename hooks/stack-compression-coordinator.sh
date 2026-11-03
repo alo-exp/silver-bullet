@@ -118,7 +118,7 @@ case "$tool_name" in
       [[ "$mutex_was_clean" -eq 1 ]] && sb_stack_record_routed_owner_success "$config_file" "sb_webfetch" "$owner"
     fi
     ;;
-  CallMcpTool|MCP)
+  MCP)
     if [[ -n "$mcp_tool" ]] && sb_stack_should_deny_mcp_tool "$config_file" "$mcp_server" "$mcp_tool" "$mcp_args"; then
       route="$(sb_stack_mcp_tool_route "$mcp_tool" 2>/dev/null || true)"
       owner="$(sb_stack_route_owner "$config_file" "$route" 2>/dev/null || true)"

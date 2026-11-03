@@ -10,7 +10,7 @@
 
 - **Claude Code** reads `hooks/hooks.json` from the plugin root; commands use `${CLAUDE_PLUGIN_ROOT}`.
 - **Codex** loads the same manifest from the plugin package. `scripts/install-codex.sh` rewrites the paths and routes each command through `hooks/codex-hook-adapter.sh`.
-- Matchers name tools from every host: `Bash` (Claude) and `exec_command` (Codex) are shell calls; `apply_patch` is the Codex edit tool; `CallMcpTool`/`MCP` are MCP calls; `Task|Subagent|Agent` are subagent spawns.
+- Matchers name tools from every host: `Bash` (Claude) and `exec_command` (Codex) are shell calls; `apply_patch` is the Codex edit tool; `MCP` is the generic MCP call; `Task|Subagent|Agent` are subagent spawns.
 - Enforcement hooks first check that the project is activated (`.silver-bullet.json` and `silver-bullet.md` at the project root, see `hooks/lib/sb-project-gate.sh`); outside an SB project they exit 0 (a missing `jq` included).
 - Unexpected errors fail open: almost every hook installs an `ERR` trap that exits 0 (some print a notice or a no-op payload first). Exceptions: `phase-archive.sh` denies the `phases clear` it guards when archiving fails, and `rfl-policy-c-gate.sh` has no `ERR` trap, so an unexpected error surfaces as a non-blocking hook error.
 - A missing `jq` does not fail open everywhere. `session-start` warns that enforcement is disabled and most hooks exit 0. In an SB project (`hooks/lib/jq-gate.sh`), `completion-audit.sh` still blocks the commands its classifier calls delivery (commit, push, PR, merge, release, deploy), and `dev-cycle-check.sh`, `forbidden-skill-check.sh`, `planning-file-guard.sh`, `uat-gate.sh` and `workflow-chain-guard.sh` block what they cannot evaluate, except shell commands that install or probe `jq` (a package-manager install with value-less flags only (no `--config-file=`, `--setopt=`, `-c=` and the like) and at most harmless installer env prefixes such as `DEBIAN_FRONTEND=`; `apt`/`apt-get update` is the only metadata refresh; Codex argv arrays `[bash, -lc, SCRIPT]` are unwrapped) or, when `python3` is available, are read-only, so the agent can always recover; the block message lists the install commands. Outside an SB project nothing is blocked.
@@ -67,7 +67,7 @@ Before a tool runs; a hook can deny the call.
 | 31 | `Read\|Grep` | `stack-compression-coordinator.sh` | 10 |
 | 32 | `Read\|Grep` | `context-mode-read-deny.sh` | 10 |
 | 33 | `WebFetch` | `stack-compression-coordinator.sh` | 10 |
-| 34 | `CallMcpTool\|MCP` | `stack-compression-coordinator.sh` | 10 |
+| 34 | `MCP` | `stack-compression-coordinator.sh` | 10 |
 | 35 | `Skill` | `forbidden-skill-check.sh` | 10 |
 | 36 | `Skill` | `dependency-skill-check.sh` | 10 |
 | 37 | `Skill` | `uat-gate.sh` | 10 |
@@ -107,9 +107,9 @@ After a tool runs; a hook can report, record state, or ask the agent to stop.
 | 20 | `Bash\|exec_command` | `record-leanctx-usage.sh` | 10 |
 | 21 | `Bash\|exec_command` | `record-site-visual-evidence.sh` | 10 |
 | 22 | `Bash\|exec_command` | `record-recommended-mcp.sh` | 10 |
-| 23 | `CallMcpTool\|MCP` | `record-leanctx-usage.sh` | 10 |
-| 24 | `CallMcpTool\|MCP` | `record-recommended-mcp.sh` | 10 |
-| 25 | `CallMcpTool\|MCP` | `record-agentmemory-usage.sh` | 10 |
+| 23 | `MCP` | `record-leanctx-usage.sh` | 10 |
+| 24 | `MCP` | `record-recommended-mcp.sh` | 10 |
+| 25 | `MCP` | `record-agentmemory-usage.sh` | 10 |
 
 ### SubagentStart
 
@@ -195,10 +195,10 @@ Before each user prompt is processed; hooks add context or record the requested 
 | `planning-file-guard.sh` | PreToolUse `Edit\|Write\|MultiEdit\|apply_patch` | Blocks direct edits to SB-managed planning artifacts (`.planning/ROADMAP.md`, `STATE.md`, phase `PLAN.md`/`SUMMARY.md`, ...); they change only through the owning SB skill. |
 | `pr-traceability.sh` | PostToolUse `Bash\|exec_command` | After `gh pr create`, appends the spec traceability block to the PR body and records the PR URL in `SPEC.md`. |
 | `prompt-reminder.sh` | UserPromptSubmit `.*` | Injects a compact compliance reminder (missing skills, active workflow position, opted-in tool notes) before each prompt. |
-| `record-agentmemory-usage.sh` | PostToolUse `Bash\|exec_command`; PostToolUse `CallMcpTool\|MCP` | Records successful agentmemory retrievals (CLI or MCP) for the opt-in agentmemory gate. |
+| `record-agentmemory-usage.sh` | PostToolUse `Bash\|exec_command`; PostToolUse `MCP` | Records successful agentmemory retrievals (CLI or MCP) for the opt-in agentmemory gate. |
 | `record-graphify-query.sh` | PostToolUse `Bash\|exec_command` | Records successful Graphify queries for the opt-in Graphify gate. |
-| `record-leanctx-usage.sh` | PostToolUse `Bash\|exec_command`; PostToolUse `CallMcpTool\|MCP` | Records LeanCTX CLI/MCP usage for the opt-in LeanCTX gate. |
-| `record-recommended-mcp.sh` | PostToolUse `Bash\|exec_command`; PostToolUse `CallMcpTool\|MCP` | Records agentmemory/Graphify MCP tool calls for the opt-in gates. |
+| `record-leanctx-usage.sh` | PostToolUse `Bash\|exec_command`; PostToolUse `MCP` | Records LeanCTX CLI/MCP usage for the opt-in LeanCTX gate. |
+| `record-recommended-mcp.sh` | PostToolUse `Bash\|exec_command`; PostToolUse `MCP` | Records agentmemory/Graphify MCP tool calls for the opt-in gates. |
 | `record-requested-skill.sh` | UserPromptSubmit `.*` | Records the SB route requested in the user prompt (for example `/sb:feature`) in the state file. |
 | `record-site-session.sh` | PostToolUse `Write\|Edit\|MultiEdit\|apply_patch`; UserPromptSubmit `.*` | Records `site/**` edits and site-intent prompts so the site session gates know a site session is active. |
 | `record-site-visual-evidence.sh` | PostToolUse `Bash\|exec_command` | Records browser screenshot paths as site visual evidence. |
@@ -218,7 +218,7 @@ Before each user prompt is processed; hooks add context or record the requested 
 | `site-visual-evidence-gate.sh` | Stop `.*` | At Stop, requires 1280px visual evidence for active site sessions. |
 | `spec-floor-check.sh` | PreToolUse `Bash\|exec_command` | Spec floor: blocks `sb:plan` without a minimum viable `SPEC.md`; advisory for `sb:fast`. |
 | `spec-session-record.sh` | SessionStart `startup\|clear\|compact` | Captures spec version and Jira ID from `.planning/SPEC.md` for `pr-traceability.sh`. |
-| `stack-compression-coordinator.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command`; PreToolUse `Read\|Grep`; PreToolUse `WebFetch`; PreToolUse `CallMcpTool\|MCP` | Five-tool stack coordinator: routes Read/Grep/shell/WebFetch/MCP surfaces to their owning tool and blocks double compression. |
+| `stack-compression-coordinator.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command`; PreToolUse `Read\|Grep`; PreToolUse `WebFetch`; PreToolUse `MCP` | Five-tool stack coordinator: routes Read/Grep/shell/WebFetch/MCP surfaces to their owning tool and blocks double compression. |
 | `stack-compression-lifecycle.sh` | SessionStart `startup\|clear\|compact` | On compaction, records the LeanCTX lifecycle phase after the agentmemory snapshot. |
 | `stop-check.sh` | Stop `.*`; SubagentStop `.*` | Stop/SubagentStop gate: blocks a task-complete declaration while `required_planning` skills are missing, and enforces doc-scheme finalization when `docs/doc-scheme.md` exists. |
 | `subagent-start.sh` | SubagentStart `.*` | Injects the worker banner and tool requirements into subagent sessions. |

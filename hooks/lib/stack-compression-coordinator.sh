@@ -163,7 +163,7 @@ sb_stack_tool_is_compliant_routed_owner() {
       printf '%s %s\n' "$route" "$owner"
       return 0
       ;;
-    CallMcpTool|MCP)
+    MCP)
       [[ -n "$mcp_tool" ]] || return 1
       route="$(sb_stack_mcp_tool_route "$mcp_tool" 2>/dev/null || true)"
       [[ -n "$route" ]] || return 1
@@ -389,7 +389,7 @@ sb_stack_read_deny_message_leanctx() {
 
 LeanCTX owns sb_read in the five-tool routed profile. Use AST read instead of raw Read for analysis:
 
-  CallMcpTool → lctx_read_ast (leanctx server)
+  MCP tool lctx_read_ast (leanctx server)
 
 Native Read is still correct when you will Edit the same file next (exact bytes required).
 

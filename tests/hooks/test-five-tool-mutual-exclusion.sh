@@ -129,11 +129,11 @@ bash_input=$(jq -n \
 assert_deny_hook "hook denies Bash double-wrap" "$bash_input" "double-compression"
 
 remember_input=$(jq -n \
-  '{hook_event_name:"PreToolUse", tool_name:"CallMcpTool", tool_input:{server:"leanctx", toolName:"lctx_remember", arguments:{content:"note"}}}')
+  '{hook_event_name:"PreToolUse", tool_name:"MCP", tool_input:{server:"leanctx", toolName:"lctx_remember", arguments:{content:"note"}}}')
 assert_deny_hook "hook denies lctx_remember" "$remember_input" "lctx_remember"
 
 graph_input=$(jq -n \
-  '{hook_event_name:"PreToolUse", tool_name:"CallMcpTool", tool_input:{server:"leanctx", toolName:"lctx_graph", arguments:{query:"graphify codebase symbol dependency"}}}')
+  '{hook_event_name:"PreToolUse", tool_name:"MCP", tool_input:{server:"leanctx", toolName:"lctx_graph", arguments:{query:"graphify codebase symbol dependency"}}}')
 assert_deny_hook "hook denies lctx_graph code path" "$graph_input" "lctx_graph"
 
 # Mutual-exclusion state records violation and blocks non-recoverable tools until recovery.
@@ -141,7 +141,7 @@ sb_stack_record_double_compression "$CFG" "sb_shell" "leanctx" "rtk"
 sb_stack_mutual_exclusion_is_clean "$CFG" && fail "mutex dirty after violation" || pass "mutex dirty after violation"
 
 remember_dirty=$(jq -n \
-  '{hook_event_name:"PreToolUse", tool_name:"CallMcpTool", tool_input:{server:"leanctx", toolName:"lctx_remember", arguments:{content:"note"}}}')
+  '{hook_event_name:"PreToolUse", tool_name:"MCP", tool_input:{server:"leanctx", toolName:"lctx_remember", arguments:{content:"note"}}}')
 remember_out="$(cd "$TMP" && SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="$STATE_DIR" \
   printf '%s' "$remember_dirty" | bash "$COORD_HOOK" 2>/dev/null || true)"
 if printf '%s' "$remember_out" | jq -e '.hookSpecificOutput.permissionDecision == "deny"' >/dev/null 2>&1; then
@@ -164,7 +164,7 @@ sb_stack_mutual_exclusion_is_clean "$CFG" && fail "mutex still dirty after Read 
   || pass "mutex still dirty after Read attempt"
 
 recovery_mcp=$(jq -n \
-  '{hook_event_name:"PreToolUse", tool_name:"CallMcpTool", tool_input:{server:"context-mode", toolName:"ctx_search", arguments:{queries:["recovery"]}}}')
+  '{hook_event_name:"PreToolUse", tool_name:"MCP", tool_input:{server:"context-mode", toolName:"ctx_search", arguments:{queries:["recovery"]}}}')
 recovery_out="$(cd "$TMP" && SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="$STATE_DIR" \
   printf '%s' "$recovery_mcp" | bash "$COORD_HOOK" 2>/dev/null || true)"
 if printf '%s' "$recovery_out" | jq -e '.hookSpecificOutput.permissionDecision == "deny"' >/dev/null 2>&1; then

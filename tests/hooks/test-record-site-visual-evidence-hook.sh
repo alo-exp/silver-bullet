@@ -52,14 +52,14 @@ reset; tg2_run "$EVIDENCE_HOOK" "$(shot_input browser_take_screenshot '{}')"
 assert_no_evidence "evidence: screenshot without a path records nothing"
 
 for mcp_tool in browser_take_screenshot take_screenshot screenshot; do
-  reset; tg2_run "$EVIDENCE_HOOK" "$(shot_input CallMcpTool '{"path":"/tmp/m.png"}' "{\"toolName\":\"$mcp_tool\"}")"
+  reset; tg2_run "$EVIDENCE_HOOK" "$(shot_input MCP '{"path":"/tmp/m.png"}' "{\"toolName\":\"$mcp_tool\"}")"
   assert_eq "evidence: MCP $mcp_tool records response.path" "/tmp/m.png" "$(ve_path)"
 done
 reset; tg2_run "$EVIDENCE_HOOK" "$(shot_input MCP '{"result":{"path":"/tmp/nested.png"}}' '{"name":"screenshot"}')"
 assert_eq "evidence: MCP result.path is recorded" "/tmp/nested.png" "$(ve_path)"
-reset; tg2_run "$EVIDENCE_HOOK" "$(shot_input CallMcpTool '{"path":"/tmp/m.png"}' '{"toolName":"browser_click"}')"
+reset; tg2_run "$EVIDENCE_HOOK" "$(shot_input MCP '{"path":"/tmp/m.png"}' '{"toolName":"browser_click"}')"
 assert_no_evidence "evidence: non-screenshot MCP tool is ignored"
-reset; tg2_run "$EVIDENCE_HOOK" "$(shot_input CallMcpTool '{}' '{"toolName":"screenshot"}')"
+reset; tg2_run "$EVIDENCE_HOOK" "$(shot_input MCP '{}' '{"toolName":"screenshot"}')"
 assert_no_evidence "evidence: MCP screenshot without a path records nothing"
 reset; tg2_run "$EVIDENCE_HOOK" "$(shot_input Bash '{"path":"/tmp/x.png"}')"
 assert_no_evidence "evidence: unrelated tool is ignored"
@@ -94,9 +94,9 @@ assert_no_evidence "evidence: missing lib dir fails open"
 
 reset; tg2_run "$EVIDENCE_HOOK" "$(shot_input browser_take_screenshot '{"path":"/tmp/a.png"}')" JQ_FAIL='.tool_response.filename'
 assert_no_evidence "evidence: failed screenshot-path extraction records nothing"
-reset; tg2_run "$EVIDENCE_HOOK" "$(shot_input CallMcpTool '{"path":"/tmp/a.png"}' '{"toolName":"screenshot"}')" JQ_FAIL='.tool_input.toolName'
+reset; tg2_run "$EVIDENCE_HOOK" "$(shot_input MCP '{"path":"/tmp/a.png"}' '{"toolName":"screenshot"}')" JQ_FAIL='.tool_input.toolName'
 assert_no_evidence "evidence: failed MCP tool-name extraction records nothing"
-reset; tg2_run "$EVIDENCE_HOOK" "$(shot_input CallMcpTool '{"path":"/tmp/a.png"}' '{"toolName":"screenshot"}')" JQ_FAIL='.tool_response.result.path'
+reset; tg2_run "$EVIDENCE_HOOK" "$(shot_input MCP '{"path":"/tmp/a.png"}' '{"toolName":"screenshot"}')" JQ_FAIL='.tool_response.result.path'
 assert_no_evidence "evidence: failed MCP path extraction records nothing"
 
 

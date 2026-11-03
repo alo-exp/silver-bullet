@@ -41,7 +41,7 @@ tg2_bash_input() { # command [tool] [event] [exit_code]
 }
 
 tg2_mcp_input() { # server tool [tool-name-field] [event]
-  jq -cn --arg s "$1" --arg n "$2" --arg t "${3:-CallMcpTool}" --arg e "${4:-PostToolUse}" \
+  jq -cn --arg s "$1" --arg n "$2" --arg t "${3:-MCP}" --arg e "${4:-PostToolUse}" \
     '{hook_event_name:$e, tool_name:$t, tool_input:{server:$s, toolName:$n}}'
 }
 

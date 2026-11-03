@@ -283,8 +283,8 @@ assert_eq "compliant bash (profile without explicit shell route)" "sb_shell rtk"
 ) && tl_pass "compliant/deny: unresolvable route owner fails closed" || tl_fail "compliant/deny: unresolvable route owner fails closed (exit $?)"
 no_t "compliant: mcp without tool" cro "$LEAN" MCP srv ""
 no_t "compliant: mcp unmapped tool" cro "$LEAN" MCP srv unknown_tool
-no_t "compliant: mcp denied" cro "$LEAN" CallMcpTool srv lctx_remember_x
-assert_eq "compliant mcp read" "sb_read leanctx" "$(cro "$LEAN" CallMcpTool srv lctx_read_ast)"
+no_t "compliant: mcp denied" cro "$LEAN" MCP srv lctx_remember_x
+assert_eq "compliant mcp read" "sb_read leanctx" "$(cro "$LEAN" MCP srv lctx_read_ast)"
 assert_eq "compliant mcp ctx_search" "sb_slice context_mode" "$(cro "$LEAN" MCP srv ctx_search)"
 no_t "compliant: other tool" cro "$LEAN" Read
 # shell route without an owner: leanctx profile that has no sb_shell and legacy default exists -> use failing jq to force empty owner is not possible; covered by default owner

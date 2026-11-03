@@ -108,12 +108,12 @@ else
   fail "enabled_by_user false skips recording"
 fi
 
-# #276: MCP CallMcpTool / memory_* clears the gate
+# #276: MCP MCP / memory_* clears the gate
 setup
 run_mcp_hook() {
   local input
   input=$(jq -n \
-    '{hook_event_name:"PostToolUse", tool_name:"CallMcpTool", tool_input:{server:"user-agentmemory", toolName:"memory_smart_search", arguments:{query:"test"}}}')
+    '{hook_event_name:"PostToolUse", tool_name:"MCP", tool_input:{server:"user-agentmemory", toolName:"memory_smart_search", arguments:{query:"test"}}}')
   (cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "$RECORD_HOOK" 2>/dev/null)
 }
 run_mcp_hook

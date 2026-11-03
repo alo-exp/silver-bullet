@@ -97,12 +97,12 @@ reset; tg2_run "$AMH" "$(jq -cn '{hook_event_name:"PostToolUse", tool_name:"Bash
 assert_not_recorded "agentmemory: shell tool without command is a no-op" "$AM_STATE"
 reset; tg2_run "$AMH" "$(tg2_bash_input 'curl -s localhost:3111/agentmemory/recall' exec_command PostToolUse)"
 assert_recorded "agentmemory: exec_command HTTP recall is recorded" "$AM_STATE"
-reset; tg2_run "$AMH" "$(tg2_mcp_input agentmemory memory_recall CallMcpTool)"
-assert_recorded "agentmemory: CallMcpTool on agentmemory server records" "$AM_STATE"
+reset; tg2_run "$AMH" "$(tg2_mcp_input agentmemory memory_recall MCP)"
+assert_recorded "agentmemory: MCP on agentmemory server records" "$AM_STATE"
 assert_eq "agentmemory: MCP confirmation" "✅ agentmemory usage recorded" "$(msg)"
 reset; tg2_run "$AMH" "$(tg2_mcp_input other-server smart_search MCP)"
 assert_recorded "agentmemory: MCP memory tool on any server records" "$AM_STATE"
-reset; tg2_run "$AMH" "$(tg2_mcp_input other-server list_files CallMcpTool)"
+reset; tg2_run "$AMH" "$(tg2_mcp_input other-server list_files MCP)"
 assert_not_recorded "agentmemory: unrelated MCP tool does not record" "$AM_STATE"
 reset; tg2_run "$AMH" "$(jq -cn '{hook_event_name:"PostToolUse", tool_name:"mcp__user-agentmemory__search", tool_input:{}}')"
 assert_recorded "agentmemory: mcp__*agentmemory* tool records" "$AM_STATE"
@@ -113,8 +113,8 @@ reset; mkdir -p "$SB_RUNTIME_STATE_DIR/am-dir"
 jq --arg p "$SB_RUNTIME_STATE_DIR/am-dir" '.recommended_tools.agentmemory.usage_state_file=$p' <<<"$all_cfg" >"$TG2_CFG"
 tg2_run "$AMH" "$am_cmd"
 assert_silent_ok "agentmemory: failed state write is silent (command path)"
-tg2_run "$AMH" "$(tg2_mcp_input agentmemory memory_recall CallMcpTool)"
-assert_silent_ok "agentmemory: failed state write is silent (CallMcpTool path)"
+tg2_run "$AMH" "$(tg2_mcp_input agentmemory memory_recall MCP)"
+assert_silent_ok "agentmemory: failed state write is silent (MCP path)"
 tg2_run "$AMH" "$(jq -cn '{hook_event_name:"PostToolUse", tool_name:"memory_search", tool_input:{}}')"
 assert_silent_ok "agentmemory: failed state write is silent (named tool path)"
 rmdir "$SB_RUNTIME_STATE_DIR/am-dir"
@@ -151,7 +151,7 @@ fault_suite() { # hook state bash-cmd mcp-tool-env-ok
 }
 fault_suite "$AMH" "$AM_STATE" 'agentmemory search x' "$am_cmd"
 reset; tg2_farm ti-am-mcp "$AMH" tool-input.sh; tg2_farm_stub tool-input.sh "$stub_tool_input"
-TG2_REPO="$TG2_FARM" tg2_run "$AMH" "not json" STUB_TOOL_NAME=CallMcpTool
+TG2_REPO="$TG2_FARM" tg2_run "$AMH" "not json" STUB_TOOL_NAME=MCP
 assert_not_recorded "agentmemory: unparsable MCP payload records nothing" "$AM_STATE"
 
 tl_results
