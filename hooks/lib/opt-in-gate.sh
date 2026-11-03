@@ -379,9 +379,15 @@ _sb_opt_in_classify() {
   local cmd="${1:-}"
   _SB_OPT_IN_DELIVERY=0 _SB_OPT_IN_INSTALL=0 _SB_OPT_IN_WRITES=0 _SB_OPT_IN_READ_ONLY=0
   # Without the analyzer nothing can be told apart: treat the command as possible delivery.
-  declare -f sb_shell_analysis_load >/dev/null 2>&1 || { _SB_OPT_IN_DELIVERY=1; return 0; }
-  sb_shell_analysis_load "$cmd" "$PWD"
-  [[ "$SB_TI_STATUS" == "ok" ]] || { _SB_OPT_IN_DELIVERY=1; return 0; }
+  local analysed=0
+  if declare -f sb_shell_analysis_load >/dev/null 2>&1; then
+    sb_shell_analysis_load "$cmd" "$PWD"
+    [[ "$SB_TI_STATUS" == "ok" ]] && analysed=1
+  fi
+  if [[ "$analysed" == 0 ]]; then
+    _SB_OPT_IN_DELIVERY=1
+    return 0
+  fi
   [[ "$SB_SA_READ_ONLY" == "true" ]] && _SB_OPT_IN_READ_ONLY=1
   [[ -n "$SB_SA_WRITE_PATHS" ]] && _SB_OPT_IN_WRITES=1
   # A commit, PR, release or deploy, or code that could be one (`$G commit`, eval, a download
