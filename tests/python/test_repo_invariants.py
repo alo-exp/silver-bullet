@@ -265,6 +265,16 @@ class VendoredSkillsLockTest(TempRoot):
         data = json.loads((self.root / ri.LOCK_FILE).read_text())
         self.assertEqual(list(data["toolManaged"]), [".claude/skills/graphify"])
 
+    def test_refresh_handles_non_object_lock_and_dirs_without_a_version_file(self):
+        write(self.root, ".claude/skills/plain/SKILL.md", "p")
+        write(self.root, ri.LOCK_FILE, "[1]")
+        with self.assertRaises(ValueError):
+            ri.refresh_skills_lock(self.root)
+        write(self.root, ri.LOCK_FILE, "{}")
+        self.assertEqual(ri.refresh_skills_lock(self.root), [".claude/skills/plain"])
+        entry = json.loads((self.root / ri.LOCK_FILE).read_text())["toolManaged"][".claude/skills/plain"]
+        self.assertEqual(list(entry), ["computedHash"])
+
     def test_refresh_without_a_lock_or_with_a_broken_one(self):
         self.graphify_dirs()
         self.assertEqual(ri.refresh_skills_lock(self.root), [".agents/skills/graphify", ".claude/skills/graphify"])
