@@ -27,6 +27,7 @@ import re
 import shlex
 import stat
 import tempfile
+import time
 from pathlib import Path
 
 BACKUP_SUFFIX = ".sb-backup"
@@ -70,6 +71,24 @@ def _replace_file(target: str, payload: bytes, mode: int) -> None:
         raise
 
 
+_PROCESS_START = time.time()
+
+
+def _backup_is_from_this_run(backup_path: str) -> bool:
+    """True when ``backup_path`` was written during the current install run, so it already
+    holds the user's file as it was before the run's first change. The run start comes from
+    SB_INSTALL_RUN_START (epoch seconds, exported by the installers); without it, the start
+    of this process. A 2 second margin covers coarse file-system timestamps."""
+    try:
+        start = float(os.environ.get("SB_INSTALL_RUN_START", ""))
+    except ValueError:
+        start = _PROCESS_START
+    try:
+        return os.stat(backup_path).st_mtime >= start - 2
+    except OSError:
+        return False
+
+
 def write_atomic(path, payload: bytes, *, backup: bool = True) -> bool:
     """Write ``payload`` to ``path`` atomically; return False when nothing changed.
 
@@ -85,7 +104,7 @@ def write_atomic(path, payload: bytes, *, backup: bool = True) -> bool:
         mode = _default_mode()
     else:
         mode = stat.S_IMODE(os.stat(target).st_mode)
-        if backup:
+        if backup and not _backup_is_from_this_run(target + BACKUP_SUFFIX):
             _replace_file(target + BACKUP_SUFFIX, current, mode)
     _replace_file(target, payload, mode)
     return True
@@ -260,14 +279,15 @@ def format_key(path) -> str:
 class TomlStatement:
     """One line-level statement: a table header, a key/value pair, or trivia."""
 
-    __slots__ = ("kind", "start", "end", "path", "value")
+    __slots__ = ("kind", "start", "end", "path", "value", "table")
 
-    def __init__(self, kind, start, end, path=(), value=None):
+    def __init__(self, kind, start, end, path=(), value=None, table=()):
         self.kind = kind  # "table", "array-table", "keyval" or "trivia"
         self.start = start
         self.end = end
         self.path = path  # header path, or table path + dotted key for keyval
         self.value = value  # (start, end) of a keyval's value text
+        self.table = table  # the header path a keyval sits under
 
 
 class _Lexer:
@@ -458,7 +478,7 @@ class _Lexer:
             value_start = self.skip_ws(i + 1)
             value_end = self.value(value_start)
             i = self.end_of_line(value_end)
-            found.append(TomlStatement("keyval", start, i, table + key, (value_start, value_end)))
+            found.append(TomlStatement("keyval", start, i, table + key, (value_start, value_end), table))
         return found
 
 
@@ -525,7 +545,9 @@ class TomlDocument:
                 continue
             if _within(path, statement.path):
                 raise ConfigError(f"{self.label}: {format_key(statement.path)} already holds a value; left unchanged")
-            if not allow_dotted and _within(statement.path, path):
+            # Only a key written with dots from an outer table makes `path` a dotted-key table;
+            # keys under a sub-table header such as [features.sub] do not.
+            if not allow_dotted and _within(statement.path, path) and len(statement.table) < len(path):
                 raise ConfigError(f"{self.label}: [{format_key(path)}] is defined with dotted keys; left unchanged")
 
     def set_value(self, table, key: str, literal: str) -> bool:

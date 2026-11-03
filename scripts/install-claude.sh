@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# Backups of user config made during this run keep the pre-install content (sb_host_config.py).
+export SB_INSTALL_RUN_START="${SB_INSTALL_RUN_START:-$(date +%s)}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
