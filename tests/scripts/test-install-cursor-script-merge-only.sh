@@ -28,4 +28,12 @@ run --merge-hooks-only
 assert_eq "merge-only over an existing install exits 0" 0 "$TL_STATUS"
 assert_contains "merge-only completes" "$TL_OUT" "Cursor hook merge complete"
 
+# ---- R7-24: sb-doctor --fix runs --merge-hooks-only from the installed plugin, which ships no
+# package.json; the registry must keep the installed version, not 0.0.0.
+assert_file_absent "the installed copy has no package.json" "$CACHE/$VERSION/package.json"
+tl_run bash "$CACHE/$VERSION/scripts/install-cursor.sh" --merge-hooks-only
+assert_eq "merge-only from the installed plugin exits 0" 0 "$TL_STATUS"
+assert_eq "registry keeps the installed version" "$VERSION" "$(jq -r '.plugins["silver-bullet@alo-labs"][0].version' "$CURSOR_HOME/plugins/installed_plugins.json")"
+assert_eq "SB hooks still merged once" "$(jq '[.hooks[][]] | length' "$CACHE/$VERSION/hooks/cursor-hooks.json")" "$(jq '[.hooks[][] | select(.command | contains("cursor-hook-bridge.sh"))] | length' "$CURSOR_HOME/hooks.json")"
+
 tl_results
