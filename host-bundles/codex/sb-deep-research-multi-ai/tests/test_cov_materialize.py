@@ -849,6 +849,19 @@ class MainTests(unittest.TestCase):
 class OpenDiscoveryTests(unittest.TestCase):
     """No category pack and no built-in catalogue: vendors come from the workers' own rows."""
 
+    def test_feature_names_and_rubric_guarded_assignments(self) -> None:
+        self.assertIsNone(m._feature_name(""))
+        self.assertIsNone(m._feature_name("   "))
+        self.assertIsNone(m._feature_name("x" * 81))
+        self.assertEqual(m._feature_name("  Exactly-once   semantics "), "Exactly-once semantics")
+        # a built-in prose heuristic only credits features the active rubric declares
+        support: dict = {}
+        m._assign_rubric(support, "a", "Prebuilt SDLC templates", True)
+        self.assertEqual(support, {})  # no pack vocabulary active: nothing to credit
+        with mock.patch.object(m, "FEATURE_TEMPLATE", [{"name": "C", "features": ["Prebuilt SDLC templates"]}]):
+            m._assign_rubric(support, "a", "Prebuilt SDLC templates", True)
+        self.assertIs(support["a"]["Prebuilt SDLC templates"], True)
+
     def rows(self, *rows, model="m1"):
         return {"logical_model_id": model, "phase_id": "DR-RETRIEVE", "payload": {"matrix_entries": list(rows)}}
 
@@ -897,6 +910,9 @@ class OpenDiscoveryTests(unittest.TestCase):
         self.assertIs(got["devika"]["SSO"], True)  # m1 yes (later row), m2 yes, m3 no
         self.assertEqual(m.disputed_cells(got), [{"vendor": "devika", "feature": "SSO", "yes": 2, "no": 1}])
         self.assertEqual(m.disputed_cells({"x": {"A": True}}), [])
+        # rows without a resolvable vendor do not create columns
+        self.assertEqual(m.structured_vendor_names([self.rows(self.row(""), self.row("Acme")), {"payload": {}}, "junk"], {}, None),
+                         {"acme": ("Acme", 1)})
 
 
 if __name__ == "__main__":
