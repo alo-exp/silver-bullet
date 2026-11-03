@@ -249,6 +249,7 @@ run_enforcement_tier_delivery_gate() {
     return 0
   fi
   # this hook is running, so hooks are active on this host (R1-18)
+  # shellcheck disable=SC2034  # read by sb_enforcement_tier_probe in the called library
   local SB_HOOK_EXECUTING=1
   if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
     # shellcheck source=lib/sb-project-gate.sh

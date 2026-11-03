@@ -167,6 +167,16 @@ sb_enterprise_policy_untrusted_text() {
 #     every project of this host runtime until it expires;
 #   - SB_ENTERPRISE_HUMAN_DEPLOY_APPROVAL=1 (an environment variable set by whoever starts the host) is
 #     recorded in the hook audit log whenever it waives the gate.
+# sb_enterprise_policy_approval_ttl CONFIG: minutes the approval marker stays valid (default 480).
+sb_enterprise_policy_approval_ttl() {
+  local ttl=480
+  if [[ -n "${1:-}" && -f "${1:-}" ]] && command -v jq >/dev/null 2>&1; then
+    ttl="$(jq -r '.enterprise_policy.human_approval_ttl_minutes // 480' "$1" 2>/dev/null || true)"
+  fi
+  [[ "$ttl" =~ ^[0-9]+$ ]] || ttl=480
+  printf '%s' "$ttl"
+}
+
 sb_enterprise_policy_human_deploy_approved() {
   local config_file="${1:-}" marker ttl project=""
   if [[ "${SB_ENTERPRISE_HUMAN_DEPLOY_APPROVAL:-0}" == "1" ]]; then
@@ -178,11 +188,7 @@ sb_enterprise_policy_human_deploy_approved() {
   fi
   marker="$(sb_enterprise_policy_human_deploy_marker_file)"
   [[ -f "$marker" && ! -L "$marker" ]] || return 1
-  ttl=480
-  if [[ -n "$config_file" && -f "$config_file" ]] && command -v jq >/dev/null 2>&1; then
-    ttl="$(jq -r '.enterprise_policy.human_approval_ttl_minutes // 480' "$config_file" 2>/dev/null || echo 480)"
-  fi
-  [[ "$ttl" =~ ^[0-9]+$ ]] || ttl=480
+  ttl="$(sb_enterprise_policy_approval_ttl "$config_file")"
   [[ -n "$(find "$marker" -mmin "-${ttl}" -print 2>/dev/null)" ]] || return 1
   project="$(sed -n 's/^project=//p' "$marker" 2>/dev/null | head -1)"
   if [[ -n "$project" && -n "$config_file" ]]; then
@@ -208,7 +214,7 @@ sb_enterprise_policy_delivery_blocked() {
   if [[ -n "${ca_tier:-}" ]]; then
     [[ "$ca_tier" == "completion" ]] || return 1
     # only a plain deploy (no PR, merge, release, remote write or unreadable part) may be non-production
-    all_actions="$(printf '%s\n' ${ca_actions:-} ${ca_possible_actions:-} | sort -u | tr '\n' ' ')"
+    all_actions="$(printf '%s %s\n' "${ca_actions:-}" "${ca_possible_actions:-}" | tr -s ' ' '\n' | sort -u | grep -v '^$' | tr '\n' ' ')"
     [[ "$all_actions" == "deploy " ]] && deploy_only=true
   else
     grep -qiE '\bgh pr (create|merge)\b|\bgh release create\b|\bdeploy\b' <<<"$cmd" || return 1
@@ -238,7 +244,7 @@ sb_enterprise_policy_delivery_block_message() {
     # the command could not be read: do not present it as a known production delivery
     local reasons ttl
     reasons="$(sb_enterprise_policy_untrusted_text "$(printf '%s' "$ca_unseen_reasons" | head -3 | tr '\n' ';')")"
-    ttl="$(jq -r '.enterprise_policy.human_approval_ttl_minutes // 480' "$config_file" 2>/dev/null || echo 480)"
+    ttl="$(sb_enterprise_policy_approval_ttl "$config_file")"
     cat <<EOF
 🛑 ENTERPRISE POLICY BLOCK — cannot inspect: ${reasons}
 

@@ -194,29 +194,55 @@ tl_stub date 'echo 2026-01-02T03:04:05Z'
 assert_eq "marker dir from state dir" "$TL_TMP/st/rc-validation" "$(SB_RUNTIME_STATE_DIR="$TL_TMP/st" sub 'sb_smoke_rc_marker_dir')"
 assert_eq "marker dir falls back to HOME" "$TL_TMP/hh/.silver-bullet/rc-validation" "$(env -u SB_RUNTIME_STATE_DIR HOME="$TL_TMP/hh" bash -c "source '$LIB'; sb_smoke_rc_marker_dir")"
 MD="$TL_TMP/mk"
-f="$(SB_RUNTIME_STATE_DIR="$MD" sub 'sb_smoke_write_rc_marker cursor fresh')"
+RCREPO="$TL_TMP/rcrepo"; mkdir -p "$RCREPO"; git -C "$RCREPO" init -q; printf '{"version":"4.5.6"}\n' >"$RCREPO/package.json"
+git -C "$RCREPO" add package.json; git -C "$RCREPO" -c user.email=a@b -c user.name=n commit -qm one
+RCSHA="$(git -C "$RCREPO" rev-parse HEAD)"
+f="$(SB_PRE_RELEASE_REPO_ROOT="$RCREPO" SB_RUNTIME_STATE_DIR="$MD" sub 'sb_smoke_write_rc_marker cursor fresh')"
 assert_eq "marker path returned" "$MD/rc-validation/cursor-fresh" "$f"
-assert_eq "marker defaults to pass, no artifact" "host=cursor
+assert_eq "marker defaults to pass, no artifact, carries commit and version" "host=cursor
 mode=fresh
 status=pass
-timestamp=2026-01-02T03:04:05Z" "$(cat "$f")"
-f="$(SB_RUNTIME_STATE_DIR="$MD" sub 'sb_smoke_write_rc_marker codex upgrade skip /tmp/art.log')"
+timestamp=2026-01-02T03:04:05Z
+commit=$RCSHA
+version=4.5.6" "$(cat "$f")"
+f="$(SB_PRE_RELEASE_REPO_ROOT="$RCREPO" SB_RUNTIME_STATE_DIR="$MD" sub 'sb_smoke_write_rc_marker codex upgrade skip /tmp/art.log')"
 assert_eq "marker with status+artifact" "host=codex
 mode=upgrade
 status=skip
 timestamp=2026-01-02T03:04:05Z
+commit=$RCSHA
+version=4.5.6
 artifact=/tmp/art.log" "$(cat "$f")"
-complete() { SB_RUNTIME_STATE_DIR="$MD" sub 'sb_smoke_rc_markers_complete; echo $?' || true; }
+printf 'not a repo\n' >/dev/null
+f="$(cd "$TL_TMP" && SB_RUNTIME_STATE_DIR="$TL_TMP/mk-norepo" sub 'sb_smoke_write_rc_marker claude fresh')"
+assert_contains "no repository: commit and version are empty, the marker is still written" "$(cat "$f")" "commit="
+rm -rf "$TL_TMP/mk-norepo"
+complete() { SB_RC_RELEASE_COMMIT="${1:-$RCSHA}" SB_RUNTIME_STATE_DIR="$MD" sub 'sb_smoke_rc_markers_complete; echo $?' || true; }
+write_all() { for h in cursor codex claude; do for m in fresh upgrade; do SB_PRE_RELEASE_REPO_ROOT="$RCREPO" SB_RUNTIME_STATE_DIR="$MD" sub "sb_smoke_write_rc_marker $h $m $1 >/dev/null"; done; done; }
 assert_eq "markers incomplete (2 of 6)" 1 "$(complete)"
-for h in cursor codex claude; do for m in fresh upgrade; do SB_RUNTIME_STATE_DIR="$MD" sub "sb_smoke_write_rc_marker $h $m pass >/dev/null"; done; done
-assert_eq "markers complete (all pass)" 0 "$(complete)"
-SB_RUNTIME_STATE_DIR="$MD" sub 'sb_smoke_write_rc_marker claude upgrade skip >/dev/null'
-assert_eq "markers complete (skip counts)" 0 "$(complete)"
-SB_RUNTIME_STATE_DIR="$MD" sub 'sb_smoke_write_rc_marker claude upgrade fail >/dev/null'
+write_all pass
+assert_eq "markers complete (all live passes for the commit)" 0 "$(complete)"
+assert_eq "markers for another commit are incomplete (R13-09)" 1 "$(complete 0000000000000000000000000000000000000000)"
+assert_eq "no commit to compare with: incomplete" 1 "$(cd "$TL_TMP" && SB_RC_RELEASE_COMMIT="" SB_RUNTIME_STATE_DIR="$MD" sub 'sb_smoke_rc_markers_complete; echo $?' || true)"
+assert_eq "HEAD of the working directory is the default commit" 0 "$(cd "$RCREPO" && SB_RUNTIME_STATE_DIR="$MD" sub 'sb_smoke_rc_markers_complete; echo $?' || true)"
+SB_PRE_RELEASE_REPO_ROOT="$RCREPO" SB_RUNTIME_STATE_DIR="$MD" sub 'sb_smoke_write_rc_marker claude upgrade skip >/dev/null'
+assert_eq "a skip marker is incomplete without a waiver (R8-13)" 1 "$(complete)"
+printf 'commit=%s\n' "$RCSHA" >"$MD/rc-validation/skip-waiver"
+assert_eq "a skip marker with a waiver for this commit is accepted" 0 "$(complete)"
+printf 'commit=other\n' >"$MD/rc-validation/skip-waiver"
+assert_eq "a waiver for another commit does not count" 1 "$(complete)"
+rm -f "$MD/rc-validation/skip-waiver"
+SB_PRE_RELEASE_REPO_ROOT="$RCREPO" SB_RUNTIME_STATE_DIR="$MD" sub 'sb_smoke_write_rc_marker claude upgrade dry-run dry-run >/dev/null'
+printf 'commit=%s\n' "$RCSHA" >"$MD/rc-validation/skip-waiver"
+assert_eq "a dry-run marker is never accepted, waiver or not" 1 "$(complete)"
+rm -f "$MD/rc-validation/skip-waiver"
+SB_PRE_RELEASE_REPO_ROOT="$RCREPO" SB_RUNTIME_STATE_DIR="$MD" sub 'sb_smoke_write_rc_marker claude upgrade fail >/dev/null'
 assert_eq "markers incomplete (fail)" 1 "$(complete)"
 rm "$MD/rc-validation/codex-fresh"
-SB_RUNTIME_STATE_DIR="$MD" sub 'sb_smoke_write_rc_marker claude upgrade pass >/dev/null'
+SB_PRE_RELEASE_REPO_ROOT="$RCREPO" SB_RUNTIME_STATE_DIR="$MD" sub 'sb_smoke_write_rc_marker claude upgrade pass >/dev/null'
 assert_eq "markers incomplete (missing file)" 1 "$(complete)"
+ln -s "$MD/rc-validation/codex-upgrade" "$MD/rc-validation/codex-fresh"
+assert_eq "markers incomplete (symlinked marker)" 1 "$(complete)"
 
 : "$REAL_HOME"
 tl_results

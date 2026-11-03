@@ -37,7 +37,7 @@ Before a tool runs; a hook can deny the call.
 |---|---------|--------|---------|
 | 1 | `.*` | `debug-dump.sh` | 5 |
 | 2 | `Bash\|Skill\|exec_command` | `phase-archive.sh` | 10 |
-| 3 | `Bash\|Skill\|exec_command` | `completion-audit.sh` | 15 |
+| 3 | `Bash\|exec_command\|mcp__.*` | `completion-audit.sh` | 15 |
 | 4 | `Edit\|Write\|MultiEdit\|apply_patch` | `planning-file-guard.sh` | 10 |
 | 5 | `Edit\|Write\|MultiEdit\|apply_patch` | `instruction-file-guard.sh` | 10 |
 | 6 | `Edit\|Write\|MultiEdit\|apply_patch` | `workflow-chain-guard.sh` | 10 |
@@ -171,7 +171,7 @@ Before each user prompt is processed; hooks add context or record the requested 
 | `agentmemory-gate.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Opt-in (`recommended_tools.agentmemory`): requires a recent agentmemory capture/retrieval before substantive work. |
 | `alumnium-gate.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Opt-in (`recommended_tools.alumnium`): checks that the Alumnium MCP server is wired before browser/visual work. |
 | `ci-status-check.sh` | PreToolUse `Bash\|exec_command`; PostToolUse `Bash\|exec_command` | Checks the latest GitHub Actions run for the branch. Pre: blocks `git push`, `gh pr create/merge` and `gh release create` while CI failed or was cancelled. Post: warns after `git commit`. CI-fix commits and the `ci-red-override` flag bypass it. |
-| `completion-audit.sh` | PreToolUse `Bash\|Skill\|exec_command`; PostToolUse `Bash\|exec_command` | Two-tier delivery gate. Commits, pushes and commit plumbing need `skills.required_planning`; `gh pr create/merge`, deploy commands and `gh release create` need `skills.required_deploy` plus the release gates (live matrices, quality-gate markers, RC matrix, green CI on the release commit). |
+| `completion-audit.sh` | PreToolUse `Bash\|exec_command\|mcp__.*`; PostToolUse `Bash\|exec_command` | Two-tier delivery gate. Commits, pushes and commit plumbing need `skills.required_planning`; `gh pr create/merge`, deploy commands and `gh release create` need `skills.required_deploy` plus the release gates (live matrices, quality-gate markers, RC matrix, green CI on the release commit). |
 | `compliance-status.sh` | PostToolUse `.*` | Prints workflow progress (flow N/M, or recorded-skill count) after every tool call. Informational only. |
 | `compression-marker-guard.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Blocks writes whose content contains LeanCTX compression markers (pasted `ctx_read` output). |
 | `context-mode-gate.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Opt-in (`recommended_tools.context_mode`): checks Context Mode install and MCP/hook wiring. |

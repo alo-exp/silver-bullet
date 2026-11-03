@@ -25,9 +25,9 @@ Config: `"orchestrator_mode": "parent"` (only allowed value; default in template
 | `${SB_RUNTIME_STATE_DIR}/orchestrator-directive.json` | Session/branch | **Mandatory next skill** + `next_worker_template` when `blocking: true` |
 | `${SB_RUNTIME_STATE_DIR}/orchestrator-intent.txt` | Session | Latest user intent (first line) |
 | `${SB_RUNTIME_STATE_DIR}/orchestrator-worker-active.json` | Session | Parent Task spawn handoff metadata |
-| `${SB_RUNTIME_STATE_DIR}/orchestrator-events.jsonl` | Session | Durable append-only orchestration event log (dispatch, join, advance, stop_block, saga) |
-| `${SB_RUNTIME_STATE_DIR}/orchestrator-saga.json` | Session | Active ship/deploy saga ledger + rollback hints |
-| `${SB_RUNTIME_STATE_DIR}/enterprise-human-deploy-approved` | Session | Human sign-off marker when enterprise policy blocks production delivery |
+| `${SB_RUNTIME_STATE_DIR}/orchestrator-events.jsonl` | Host runtime | Durable append-only orchestration event log (dispatch, join, advance, stop_block, saga) |
+| `${SB_RUNTIME_STATE_DIR}/orchestrator-saga.json` | Host runtime | Active ship/deploy saga ledger + rollback hints |
+| `${SB_RUNTIME_STATE_DIR}/enterprise-human-deploy-approved` | Host runtime, expires | Human sign-off marker when enterprise policy blocks production delivery. It lives in the host-wide runtime state directory (every project of that host shares it), expires after `enterprise_policy.human_approval_ttl_minutes` (default 480), and may name one project with a `project=<repo root>` line. Nothing clears it at session start: delete it after the approved delivery |
 | `.scheduler.batch_dispatch` (in `orchestrator.json`) | Session | Active parallel/sequential batch handoffs + join status |
 | `.silver-bullet/orchestrator-workers/*.md` | Project | Worker prompt templates (stamped by `sb:init`) |
 | `.planning/orchestrator-composition-log.jsonl` | Committed | Autonomous composition audit |

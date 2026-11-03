@@ -228,7 +228,9 @@ state_contents=""
 # shellcheck disable=SC2154  # is_intermediate is set by ca_classify in lib/completion-audit/classify.sh
 if [[ "$is_intermediate" == true && "$push_to_default_branch_tier" == "completion" ]] && ca_push_targets_default_branch; then
   is_intermediate=false
+  # shellcheck disable=SC2034  # read by the sourced lib/completion-audit tiers
   is_completion=true
+  # shellcheck disable=SC2034  # read by lib/enterprise-policy.sh through the deploy tier
   ca_tier="completion"
 fi
 

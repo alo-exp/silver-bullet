@@ -56,6 +56,11 @@ Before determining version, verify the working tree is releasable:
    Six cells: cursor/codex/claude × fresh/upgrade — **operator-local** with host CLIs + your API keys.
    Codex/Claude live cells do not run in GitHub CI (no first-party keys). CI `rc-validation.yml` is
    optional diagnostic only. **STOP** if any test fails — never tag or `gh release create` on red CI.
+   Under the default `supervised` enterprise profile `gh release create` is also blocked
+   (`ENTERPRISE POLICY BLOCK`) until a human creates
+   `${SB_RUNTIME_STATE_DIR}/enterprise-human-deploy-approved` from their own terminal;
+   ask the user to approve, never create the marker yourself. The release gates check CI
+   for the commit `gh release create` will release (the tag's commit, else `--target`).
 
 1. Check for uncommitted changes: `git status --porcelain`
    - If non-empty: **STOP**. "Uncommitted changes detected. Commit or stash before release."

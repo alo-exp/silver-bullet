@@ -4,6 +4,7 @@
 # ca_release_commit_sha ROOT: the commit `gh release create` will release, resolved the way gh does:
 # an existing tag wins (--target is ignored for it), else --target (the remote branch, then a local ref),
 # else the remote default branch, else HEAD. The tag and target come from the analysed command's argv.
+# Called as the condition of an `if`, so a failing helper makes the gate deny instead of tripping the ERR trap.
 # Prints the sha; status 1 when --target names nothing that resolves (R13-08, R1-19).
 ca_release_commit_sha() {
   local root="$1" parsed tag="" target="" sha="" ref
@@ -20,8 +21,8 @@ ca_release_commit_sha() {
         | if $r[$k] == "--target" then ($r[$k + 1] // "")
           elif ($r[$k] | startswith("--target=")) then ($r[$k] | ltrimstr("--target="))
           else empty end] | first // "") as $target
-    | $tag + "\u001f" + $target' 2>/dev/null || true)"
-  IFS=$'\037' read -r tag target <<<"$parsed" || true
+    | $tag + "\u001f" + $target' 2>/dev/null)"
+  IFS=$'\037' read -r tag target <<<"$parsed"
   if [[ -n "$tag" ]]; then
     sha="$(git -C "$root" rev-parse -q --verify "refs/tags/${tag}^{commit}" 2>/dev/null || true)"
   fi
@@ -42,6 +43,7 @@ ca_release_commit_sha() {
 ca_run_deploy_tier_gate() {
 project_root="$(dirname "$config_file")"
 # the plugin's own scripts (validators, RC predicate) live next to hooks/: hooks/lib/.. /..
+# shellcheck disable=SC2154  # _lib_dir is set by completion-audit.sh
 _ca_plugin_root="$(cd "${_lib_dir}/../.." && pwd)"
 # shellcheck disable=SC2154  # _lib_dir is set by completion-audit.sh
 if [[ -f "${_lib_dir}/enterprise-policy.sh" && -n "${config_file:-}" && -f "$config_file" ]]; then

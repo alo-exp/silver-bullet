@@ -184,6 +184,24 @@ setup_repo; jq '.sections["docs/CHANGELOG.md"].Added="maybe"' "$R/docs/task-doc-
 assert_contains "enforce: invalid section status" "$(cat "$EMITTED")" "Invalid section status: docs/CHANGELOG.md :: Added -> maybe"
 assert_contains "enforce: remediation command names the task" "$(cat "$EMITTED")" "--task T-1 --gaps"
 
+# R1-17: a touch is not an update when git can say otherwise
+setup_repo
+git -C "$R" init -q; git -C "$R" add -A; git -C "$R" -c user.email=a@b -c user.name=n commit -q -m base
+FUT=$(( $(date +%s) + 3600 ))
+echo "$FUT" >"$ST/session-start-time"
+touch -d "@$((FUT + 3600))" "$R/docs/CHANGELOG.md" "$R/docs/ARCH.md" "$R/docs/task-doc-checklist.json"
+run_enforce
+assert_contains "enforce: a touched doc with no git change is not an update" "$(cat "$EMITTED")" "File marked updated has no change in git since the session started: docs/CHANGELOG.md"
+rm -f "$EMITTED"; echo more >>"$R/docs/CHANGELOG.md"; touch -d "@$((FUT + 3600))" "$R/docs/CHANGELOG.md"; run_enforce
+assert_file_absent "enforce: an uncommitted change counts as an update" "$EMITTED"
+git -C "$R" add -A; git -C "$R" -c user.email=a@b -c user.name=n commit -q -m "update changelog"
+echo "$(( $(date +%s) - 60 ))" >"$ST/session-start-time"
+touch -d "@$(date +%s)" "$R/docs/CHANGELOG.md" "$R/docs/ARCH.md" "$R/docs/task-doc-checklist.json"
+run_enforce
+assert_file_absent "enforce: a commit made since the session started counts as an update" "$EMITTED"
+setup_repo; run_enforce
+assert_file_absent "enforce: outside a git work tree the modification time stands alone" "$EMITTED"
+
 # knowledge / learnings keys with the "current" month, pinned so the test cannot flake at a month boundary
 MONTH=2026-03
 real_date="$(command -v date)"
