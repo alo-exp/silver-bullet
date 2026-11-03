@@ -108,6 +108,10 @@ class OverviewQualityTests(unittest.TestCase):
         self.assertNotIn("participates in the agentic", scr)
 
 
+from legacy_catalog_fixture import with_legacy_catalogs  # noqa: E402
+
+
+@with_legacy_catalogs
 class ChartBuilderTests(unittest.TestCase):
     def test_mq_and_gmq_are_distinct(self) -> None:
         comparison = {
@@ -763,8 +767,8 @@ class TemplateContractTests(unittest.TestCase):
             )
             pdf_path = html_path.with_name("landscape-report.pdf")
 
-            def _fake_run(cmd, check, timeout=None):
-                Path(cmd[-1]).write_bytes(b"%PDF-1.4 fake")
+            def _fake_run(cmd, check, timeout=None, env=None):
+                Path(cmd[3]).write_bytes(b"%PDF-1.4 fake")
                 class _R:
                     returncode = 0
                 return _R()
@@ -775,12 +779,11 @@ class TemplateContractTests(unittest.TestCase):
             self.assertEqual(Path(info["pdf"]).resolve(), pdf_path.resolve())
             self.assertTrue(pdf_path.is_file())
             argv = mocked.call_args[0][0]
-            self.assertIn("pdf", argv)
-            self.assertEqual(Path(argv[-1]).parent.resolve(), pdf_path.parent.resolve())
-            self.assertTrue(str(argv[-2]).startswith("file:"))
-            self.assertNotIn("landscape-report.html", str(argv[-2]))
-            self.assertIn("--wait-for-selector", argv)
-            self.assertIn(f"#{PRINT_ROOT_ID}", argv)
+            self.assertNotIn("--no-sandbox", argv)
+            self.assertEqual(Path(argv[3]).parent.resolve(), pdf_path.parent.resolve())
+            self.assertTrue(str(argv[2]).startswith("file:"))
+            self.assertNotIn("landscape-report.html", str(argv[2]))
+            self.assertEqual(argv[-1], f"#{PRINT_ROOT_ID}")
             self.assertNotIn("#content", argv)
 
     def test_patch_pdf_export_rewrites_print_dialog_body(self) -> None:

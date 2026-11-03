@@ -94,6 +94,10 @@ class FilterComparisonTests(unittest.TestCase):
         self.assertEqual([r["solution"] for r in out["rankings"]], ["real-x", "other", "allowed"])
 
 
+from legacy_catalog_fixture import with_legacy_catalogs  # noqa: E402
+
+
+@with_legacy_catalogs
 class CatalogAndBucketTests(TmpCase):
     def test_resolve_catalogs_with_prepared_audit(self):
         audit = {"matrix_slugs": ["silver-bullet", "ai-dlc"], "core": ["ignored"]}

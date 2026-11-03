@@ -95,8 +95,12 @@ artifacts, worker state.
 
 **Landscape viewer:** MultAI-parity SPA (`render_landscape_outputs()` in `landscape_preview_render.py` + `assets/landscape-preview.template.html`) — sidebar TOC, Chart.js 2×2/Wave/Value Curve, COMMERCIAL/OSS nav, Copy/PDF/Compare/Matrix. Open it from `file://`; no `http.server`. The page text, table of contents, vendor cards and
 tables are static HTML and work offline. Charts use Chart.js, chartjs-plugin-datalabels and
-lucide from pinned CDN URLs (no SRI hashes yet), so offline the charts fall back to their data
-tables; Google Fonts is also fetched when online. It is therefore *not* fully self-contained. `generate_landscape_report.py` is a compatibility wrapper around that function (not the retired general SPA).
+lucide from version-pinned CDN URLs carrying SRI (`integrity=sha384-…`) hashes, so offline the
+charts fall back to their data tables; Google Fonts is also fetched when online. It is
+therefore *not* fully self-contained. The PDF is rendered by `render_landscape_pdf.cjs` in a
+sandboxed, JavaScript-free, offline Chromium; where the sandbox cannot start (root in a
+container) it fails with a clear message and `SB_LANDSCAPE_PDF_NO_SANDBOX=1` is the explicit
+opt-out. `generate_landscape_report.py` is a compatibility wrapper around that function (not the retired general SPA).
 
 **General DR:** unchanged tabbed `generate_spa_report.py:general` — no MultAI chart sections.
 
@@ -115,6 +119,10 @@ Host controller passes the consolidation guide to synthesis workers. Note that p
 run's data with `synthesize_landscape`; a file the host wrote is preserved and reported rather
 than overwritten. `consolidate.py` remains a deterministic claim merge for
 `consolidated/consolidation.json` only.
+
+**Matrix ticks.** Workers return `matrix_entries` (`{vendor, feature, supported, source_ref}`;
+optional in the envelope schema). Each row is one vote by that model and decides its cell;
+claim prose is parsed heuristically only for cells no worker voted on.
 
 **Category packs.** Category-specific prose (market overview, trends, buying guidance,
 consensus themes, vendor notes) is data in `reference/category-pack-overlays/<pack>.json` and

@@ -171,6 +171,10 @@ class ProfileTests(TmpCase):
         self.assertNotIn("**Hosting burden**", " ".join(no_hosting_burden["cons"]))
 
 
+from legacy_catalog_fixture import with_legacy_catalogs  # noqa: E402
+
+
+@with_legacy_catalogs
 class CatalogLabelTests(TmpCase):
     def test_catalog_entries_and_labels(self):
         everything = sl._catalog_entries()
@@ -204,6 +208,7 @@ class CatalogLabelTests(TmpCase):
         self.assertEqual(sl._vc_series_entry("zz", "Z", {}, known={}, oss=[])["color"], "#4f46e5")
 
 
+@with_legacy_catalogs
 class UrlTests(TmpCase):
     def test_legacy_urls(self):
         urls = sl._legacy_slug_urls()
@@ -315,6 +320,7 @@ class LinkifyTests(TmpCase):
         self.assertEqual(out, "Bad [Ok](https://ok)")
 
 
+@with_legacy_catalogs
 class BucketTests(unittest.TestCase):
     def test_buckets(self):
         mq = [{"label": "A", "q": "Leaders"}, {"label": "B", "q": "Challengers"}, {"label": "", "q": "Leaders"},

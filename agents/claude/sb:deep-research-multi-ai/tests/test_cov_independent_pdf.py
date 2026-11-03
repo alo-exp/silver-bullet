@@ -61,6 +61,48 @@ class PlaywrightArgvTests(unittest.TestCase):
                 lp._playwright_argv()
 
 
+class RenderCommandTests(unittest.TestCase):
+    def test_node_missing_is_a_clear_error_and_node_path_is_extended(self) -> None:
+        with mock.patch.object(lp.shutil, "which", side_effect=lambda n: "/x/playwright" if n == "playwright" else None):
+            with self.assertRaisesRegex(FileNotFoundError, "node not found"):
+                lp._render_command("file:///a.html", Path("/tmp/a.pdf"), 1000)
+        with mock.patch.object(lp.shutil, "which", return_value="/x/bin"), \
+                mock.patch.dict(os.environ, {"NODE_PATH": "/preset/node_modules"}):
+            cmd, env = lp._render_command("file:///a.html", Path("/tmp/a.pdf"), 1000)
+        self.assertEqual(cmd[2:], ["file:///a.html", "/tmp/a.pdf", "1000", f"#{lp.PRINT_ROOT_ID}"])
+        self.assertIn("/preset/node_modules", env["NODE_PATH"].split(os.pathsep))
+
+    def test_real_render_script_sandbox_policy(self) -> None:
+        import shutil as _sh
+        import subprocess as _sp
+        import tempfile as _tf
+
+        node = _sh.which("node")
+        cli = _sh.which("playwright")
+        if not node or not cli:
+            self.skipTest("node/playwright not installed")
+        with _tf.TemporaryDirectory() as tmp:
+            html = Path(tmp) / "t.html"
+            html.write_text('<html><body><div id="r">hi</div><script>document.title="js"</script></body></html>', encoding="utf-8")
+            pdf = Path(tmp) / "o.pdf"
+            cmd, env = lp._render_command(html.as_uri(), pdf, 30000)
+            cmd[-1] = "#r"
+            env = {k: v for k, v in env.items() if k != "SB_LANDSCAPE_PDF_NO_SANDBOX"}
+            first = _sp.run(cmd, env=env, capture_output=True, text=True, timeout=90)
+            if first.returncode == 0:
+                self.assertEqual(pdf.read_bytes()[:4], b"%PDF")  # sandboxed render worked
+            else:
+                # no usable sandbox here (e.g. root in a container): a clear failure, never a silent downgrade
+                self.assertEqual(first.returncode, 4, first.stderr)
+                self.assertIn("SB_LANDSCAPE_PDF_NO_SANDBOX=1", first.stderr)
+                self.assertFalse(pdf.exists())
+                second = _sp.run(cmd, env=dict(env, SB_LANDSCAPE_PDF_NO_SANDBOX="1"), capture_output=True, text=True, timeout=90)
+                if second.returncode != 0:
+                    self.skipTest("Chromium cannot run at all in this environment: " + second.stderr[:200])
+                self.assertIn("WARNING: rendering the landscape PDF without the Chromium sandbox", second.stderr)
+                self.assertEqual(pdf.read_bytes()[:4], b"%PDF")
+
+
 class LoaderTests(unittest.TestCase):
     def test_load_json_variants(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -670,18 +712,19 @@ class WritePdfTests(unittest.TestCase):
     def fake_run(self, content: bytes = b"%PDF-1.4 fake", write: bool = True):
         calls = []
 
-        def run(cmd, check=False, timeout=None):
+        def run(cmd, check=False, timeout=None, env=None):
             calls.append((cmd, check))
+            self.last_env = env
             self.timeouts.append(timeout)
             if write:
-                Path(cmd[-1]).write_bytes(content)
+                Path(cmd[3]).write_bytes(content)
             return mock.Mock(returncode=0)
 
         return run, calls
 
     def test_writes_pdf_through_playwright(self) -> None:
         run, calls = self.fake_run()
-        with mock.patch.object(lp.shutil, "which", side_effect=lambda n: "/x/playwright" if n == "playwright" else None), \
+        with mock.patch.object(lp.shutil, "which", side_effect=lambda n: {"playwright": "/x/playwright", "node": "/x/node"}.get(n)), \
                 mock.patch.object(lp.subprocess, "run", run):
             info = lp.write_independent_landscape_pdf(self.root, timeout_ms=555)
         pdf = (self.root / "landscape-report.pdf").resolve()
@@ -692,16 +735,18 @@ class WritePdfTests(unittest.TestCase):
         self.assertEqual(info["print_selector"], f"#{lp.PRINT_ROOT_ID}")
         cmd, check = calls[0]
         self.assertTrue(check)
-        self.assertEqual(cmd[:3], ["/x/playwright", "pdf", "--paper-format"])
-        self.assertIn("555", cmd)
+        self.assertEqual(cmd[:2], ["/x/node", str(lp.PDF_RENDER_SCRIPT)])
+        self.assertEqual(cmd[4:], ["555", f"#{lp.PRINT_ROOT_ID}"])
+        self.assertNotIn("--no-sandbox", cmd)  # R12-27: the render script enables Chromium's sandbox
+        self.assertIn(str(Path.cwd() / "node_modules"), self.last_env["NODE_PATH"].split(os.pathsep))
         # Chromium renders into a temp file in the same folder, renamed into place afterwards.
-        tmp_pdf = Path(cmd[-1])
+        tmp_pdf = Path(cmd[3])
         self.assertEqual(tmp_pdf.parent, pdf.parent)
         self.assertTrue(tmp_pdf.name.startswith(".landscape-report.") and tmp_pdf.name.endswith(".pdf"))
         self.assertEqual(pdf.read_bytes(), b"%PDF-1.4 fake")
         self.assertEqual(self.leftover_temp_pdfs(), [])
         self.assertEqual(self.timeouts, [555 / 1000 + 60])
-        self.assertTrue(cmd[-2].startswith("file://") and cmd[-2].endswith("landscape-report.print.html"))
+        self.assertTrue(cmd[2].startswith("file://") and cmd[2].endswith("landscape-report.print.html"))
         printed = (self.root / "landscape-report.print.html").read_text(encoding="utf-8")
         self.assertIn(lp.INDEPENDENT_PDF_MARKER, printed)
 

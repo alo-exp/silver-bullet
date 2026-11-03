@@ -1407,7 +1407,71 @@ def _parse_host_runtime_substrate_claim(
     return True
 
 
+def _feature_name(raw: str) -> str | None:
+    """Canonical rubric feature for a worker-supplied feature name, else None."""
+    low = " ".join(str(raw or "").lower().split())
+    for feature in _all_template_features():
+        if feature.lower() == low:
+            return feature
+    return _FEATURE_ALIASES.get(low)
+
+
+def parse_structured_matrix_entries(
+    envelopes: list[dict[str, Any]],
+    *,
+    known: dict[str, str] | None = None,
+    pack: dict[str, Any] | None = None,
+) -> dict[str, dict[str, bool | None]]:
+    """Votes from workers' ``matrix_entries`` rows: {vendor, feature, supported, source_ref}.
+
+    One row is one vote by that model; ``supported`` must be a real boolean (strings such as
+    "yes"/"no" are accepted, anything else is ignored). A row without a recognisable vendor or
+    rubric feature is skipped. This is the primary source for matrix ticks; prose parsing only
+    fills cells no worker voted on.
+    """
+    effective = known or KNOWN_SOLUTIONS
+    support: dict[str, dict[str, bool | None]] = {}
+    try:
+        for env_index, env in enumerate(envelopes):
+            payload = env.get("payload") if isinstance(env, dict) else None
+            rows = payload.get("matrix_entries") if isinstance(payload, dict) else None
+            if not isinstance(rows, list):
+                continue
+            model = str(env.get("logical_model_id") or env_index)
+            for row in rows:
+                if not isinstance(row, dict):
+                    continue
+                slug = _resolve_solution_slug(str(row.get("vendor") or ""), effective, pack)
+                feature = _feature_name(row.get("feature"))
+                verdict = row.get("supported")
+                if isinstance(verdict, str):
+                    verdict = {"yes": True, "true": True, "no": False, "false": False}.get(verdict.strip().lower())
+                if not slug or not feature or not isinstance(verdict, bool):
+                    continue
+                _VOTER[0] = ("structured", model, env_index)
+                _assign_support(support, slug, feature, verdict)
+    finally:
+        _VOTER[0] = None
+    return support
+
+
 def parse_feature_support(
+    envelopes: list[dict[str, Any]],
+    *,
+    known: dict[str, str] | None = None,
+    pack: dict[str, Any] | None = None,
+) -> dict[str, dict[str, bool | None]]:
+    """Matrix cells: structured worker votes first, prose heuristics only for unvoted cells."""
+    structured = parse_structured_matrix_entries(envelopes, known=known, pack=pack)
+    support = _parse_prose_feature_support(envelopes, known=known, pack=pack)
+    for slug, cells in structured.items():
+        merged = _VoteMap(support.get(slug) or {})
+        merged.update(cells)  # a cell any worker voted on is decided by those votes alone
+        support[slug] = merged
+    return support
+
+
+def _parse_prose_feature_support(
     envelopes: list[dict[str, Any]],
     *,
     known: dict[str, str] | None = None,

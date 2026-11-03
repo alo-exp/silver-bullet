@@ -186,5 +186,202 @@
       "title": "Tertiary SaaS as buying substitutes",
       "text": "Models agree Factory.ai, Devin, and Augment Cosmos are analyst-grade substitutes for process-orchestration buying even when they do not self-label as APO. They are scored in the SaaS market, not as APO peers."
     }
-  ]
+  ],
+  "market_chart_profiles": {
+    "apo": {
+      "mq_x_feats": [
+        "Workflow composition",
+        "Atomic flow catalog",
+        "Hook-enforced gates"
+      ],
+      "mq_y_feats": [
+        "Parent/child delegation",
+        "Managed hosting",
+        "Prebuilt SDLC templates"
+      ],
+      "gmq_x_feats": [
+        "Workflow composition",
+        "Atomic flow catalog",
+        "Prebuilt SDLC templates",
+        "Free tier / OSS core"
+      ],
+      "gmq_y_feats": [
+        "Parent/child delegation",
+        "Managed hosting",
+        "CI integration",
+        "Hook-enforced gates",
+        "IDE-native integration"
+      ],
+      "mq_base": [
+        3.0,
+        3.0
+      ],
+      "mq_feat_w": [
+        2.2,
+        2.0
+      ],
+      "mq_score_div": [
+        15.0,
+        18.0
+      ],
+      "gmq_base": [
+        2.5,
+        2.5
+      ],
+      "gmq_feat_w": [
+        1.6,
+        1.35
+      ],
+      "gmq_score_div": [
+        12.0,
+        14.0
+      ]
+    },
+    "sdlc-plugins": {
+      "mq_x_feats": [
+        "Workflow composition",
+        "Prebuilt SDLC templates",
+        "Hook-enforced gates"
+      ],
+      "mq_y_feats": [
+        "Atomic flow catalog",
+        "Parent/child delegation",
+        "Managed hosting"
+      ],
+      "gmq_x_feats": [
+        "Prebuilt SDLC templates",
+        "Atomic flow catalog",
+        "Free tier / OSS core",
+        "Skill/plugin marketplace"
+      ],
+      "gmq_y_feats": [
+        "Parent/child delegation",
+        "Atomic flow catalog",
+        "Managed hosting",
+        "Quick onboarding"
+      ],
+      "mq_base": [
+        3.4,
+        2.4
+      ],
+      "mq_feat_w": [
+        1.55,
+        1.9
+      ],
+      "mq_score_div": [
+        14.0,
+        12.0
+      ],
+      "gmq_base": [
+        2.8,
+        2.3
+      ],
+      "gmq_feat_w": [
+        1.45,
+        1.5
+      ],
+      "gmq_score_div": [
+        13.0,
+        15.0
+      ]
+    },
+    "agentic-sdlc-saas": {
+      "mq_x_feats": [
+        "Workflow composition",
+        "Managed hosting",
+        "Parent/child delegation"
+      ],
+      "mq_y_feats": [
+        "Hook-enforced gates",
+        "CI integration",
+        "IDE-native integration"
+      ],
+      "gmq_x_feats": [
+        "Managed hosting",
+        "Workflow composition",
+        "Parent/child delegation",
+        "Prebuilt SDLC templates"
+      ],
+      "gmq_y_feats": [
+        "CI integration",
+        "Hook-enforced gates",
+        "IDE-native integration",
+        "Automated review loops",
+        "Zero-infra bootstrap"
+      ],
+      "mq_base": [
+        3.3,
+        2.8
+      ],
+      "mq_feat_w": [
+        2.05,
+        2.15
+      ],
+      "mq_score_div": [
+        14.0,
+        16.5
+      ],
+      "gmq_base": [
+        2.2,
+        2.9
+      ],
+      "gmq_feat_w": [
+        1.7,
+        1.25
+      ],
+      "gmq_score_div": [
+        11.5,
+        13.5
+      ]
+    },
+    "default": {
+      "mq_x_feats": [
+        "Workflow composition",
+        "Atomic flow catalog",
+        "Hook-enforced gates"
+      ],
+      "mq_y_feats": [
+        "Parent/child delegation",
+        "Managed hosting",
+        "Prebuilt SDLC templates"
+      ],
+      "gmq_x_feats": [
+        "Workflow composition",
+        "Atomic flow catalog",
+        "Prebuilt SDLC templates",
+        "Free tier / OSS core"
+      ],
+      "gmq_y_feats": [
+        "Parent/child delegation",
+        "Managed hosting",
+        "CI integration",
+        "Hook-enforced gates",
+        "IDE-native integration"
+      ],
+      "mq_base": [
+        3.0,
+        3.0
+      ],
+      "mq_feat_w": [
+        2.2,
+        2.0
+      ],
+      "mq_score_div": [
+        15.0,
+        18.0
+      ],
+      "gmq_base": [
+        2.5,
+        2.5
+      ],
+      "gmq_feat_w": [
+        1.6,
+        1.35
+      ],
+      "gmq_score_div": [
+        12.0,
+        14.0
+      ]
+    }
+  }
 }
