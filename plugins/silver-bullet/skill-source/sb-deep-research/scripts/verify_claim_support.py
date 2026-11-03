@@ -9,9 +9,12 @@ CLI subcommands:
 Version 1 is deterministic and cheap: entity, number, date, and
 lexical-overlap checks over stored evidence. No LLM calls.
 
-Factual claims hard-fail under --strict unless their status is 'supported'.
-Synthesis/recommendation need traceability but softer thresholds; speculation and
-bibliography rows are 'not_applicable'.
+Verdicts are three-valued: 'supported' only when lexical support is unambiguous,
+'contradicted' when a quote clearly says the opposite, 'needs_review' (with the figure, entity or
+polarity at issue) for everything ambiguous; 'unsupported' means no evidence addresses the claim.
+--strict exits 1 on 'contradicted' and 'unsupported' factual claims and lists 'needs_review' ones
+for a reader to check against the source. Synthesis/recommendation need traceability but softer
+thresholds; speculation and bibliography rows are 'not_applicable'.
 """
 
 import argparse
@@ -98,10 +101,10 @@ NUMBER_WORDS_RE = re.compile(
 VERSION_RE = re.compile(r'\bv(?=\d)')
 
 
-def _words_to_number(match: 're.Match') -> str:
-    text = match.group(0)
+def _compound(text: str, force: bool = False) -> str:
+    """The value of one run of number words ("one hundred and twenty" -> "120")."""
     words = re.findall(r'[a-z]+', text.lower())
-    if words in (['one'], ['zero']):  # "one who", "zero downtime": not quantities
+    if words in (['one'], ['zero']) and not force:  # "one who", "zero downtime": not quantities
         return text
     trailing = text[len(text.rstrip()):]
     total, current = 0, 0
@@ -118,6 +121,20 @@ def _words_to_number(match: 're.Match') -> str:
             total += max(current, 1) * _MULT[word]
             current = 0
     return str(total + current) + trailing
+
+
+def _words_to_number(match: 're.Match') -> str:
+    """"and" joins number words only inside a compound ("two hundred and five", "one thousand and
+    one"); anywhere else it separates two numbers ("between two and five days" is 2 and 5, never 7)."""
+    text = match.group(0)
+    previous = ''
+    for word in re.finditer(r'[A-Za-z]+', text):
+        if word.group(0).lower() == 'and' and previous not in _MULT:
+            head, rest = text[:word.start()], text[word.start():]
+            forced = bool(re.match(r'and\s+(?:\d|(?:' + _NUM_ANY + r')\b)', rest, re.IGNORECASE))
+            return _compound(head, forced) + NUMBER_WORDS_RE.sub(_words_to_number, rest)
+        previous = word.group(0).lower()
+    return _compound(text)
 
 
 def normalize_text(text: str) -> str:
@@ -160,16 +177,47 @@ def extract_entities(text: str) -> set[str]:
 # Figures: value, unit, currency, and what each is attached to
 # ---------------------------------------------------------------------------
 
-# A figure: optional currency, digits with optional thousands separators and decimals, then an
-# optional unit/scale (%, k, M, bn, million, ...). Digits glued to letters (EC2) are not figures.
+# A figure: optional currency (a symbol, a letter-prefixed dollar such as A$ or C$, or an ISO code),
+# digits with optional thousands separators and decimals, then an optional unit/scale (%, k, M, bn,
+# million, ...). Digits glued to letters (EC2) are not figures.
 FIGURE_RE = re.compile(
-    r'(?<![\w.])([$€£])?\s?(\d{1,3}(?:,\d{3})+|\d+)(\.\d+)?'
+    r'(?<![\w.])([A-Z]{1,2}\$|[$\u20ac\u00a3\u00a5\u20b9\u20a9]|(?:JPY|CNY|RMB|INR|CHF|AUD|CAD|HKD|SGD|NZD|KRW)\s?)?'
+    r'\s?(\d{1,3}(?:,\d{3})+|\d+)(\.\d+)?'
     r'(?:\s*(%|trillion|billion|million|thousand)\b|(%|bn|mn|[kKmMbBxX])(?![A-Za-z0-9]))?'
 )
 SCALES = {'k': 1e3, 'thousand': 1e3, 'm': 1e6, 'mn': 1e6, 'million': 1e6, 'b': 1e9, 'bn': 1e9,
           'billion': 1e9, 'trillion': 1e12}
-CURRENCY_WORDS = {'dollar': '$', 'dollars': '$', 'usd': '$', 'euro': '€', 'euros': '€', 'eur': '€',
-                  'pound': '£', 'pounds': '£', 'gbp': '£'}
+# Currencies by canonical code. A bare yen sign is used for both the yen and the yuan: it is
+# compatible with either, and with nothing else. Any other letter-prefixed dollar is its own currency.
+CURRENCY_SYMBOLS = {'$': 'USD', 'US$': 'USD', '\u20ac': 'EUR', '\u00a3': 'GBP', '\u00a5': 'YEN-OR-YUAN', '\u20b9': 'INR',
+                    '\u20a9': 'KRW', 'A$': 'AUD', 'C$': 'CAD', 'HK$': 'HKD', 'S$': 'SGD', 'NZ$': 'NZD', 'RMB': 'CNY'}
+CURRENCY_WORDS = {'dollar': 'USD', 'dollars': 'USD', 'usd': 'USD', 'euro': 'EUR', 'euros': 'EUR', 'eur': 'EUR',
+                  'pound': 'GBP', 'pounds': 'GBP', 'gbp': 'GBP', 'yen': 'JPY', 'jpy': 'JPY', 'yuan': 'CNY',
+                  'renminbi': 'CNY', 'rmb': 'CNY', 'cny': 'CNY', 'rupee': 'INR', 'rupees': 'INR', 'inr': 'INR',
+                  'franc': 'CHF', 'francs': 'CHF', 'chf': 'CHF'}
+
+
+def _currency(raw: Optional[str]) -> Optional[str]:
+    """Canonical currency code of a symbol or code written before a figure."""
+    if not raw:
+        return None
+    raw = raw.strip()
+    return CURRENCY_SYMBOLS.get(raw, raw)
+
+
+def _currency_conflict(claim: Optional[str], quote: Optional[str]) -> bool:
+    """Two stated currencies that cannot be the same one. A yen sign fits the yen and the yuan."""
+    if not claim or not quote or claim == quote:
+        return False
+    return {claim, quote} not in ({'YEN-OR-YUAN', 'JPY'}, {'YEN-OR-YUAN', 'CNY'})
+
+
+# Ranges: "between 2 and 5", "3 to 4", "3 or 4", "3-5". The connector becomes "~", so the two ends stay
+# in one segment and are never confused with a single figure.
+_RANGE_NUM = r'[$\u20ac\u00a3\u00a5\u20b9\u20a9]?\d[\d,]*(?:\.\d+)?(?:\s?(?:%|bn|mn|k|m|million|billion|trillion|thousand)\b)?'
+RANGE_BETWEEN_RE = re.compile(r'\b(between\s+' + _RANGE_NUM + r')\s+and\s+(' + _RANGE_NUM + r')', re.IGNORECASE)
+RANGE_TO_RE = re.compile(
+    r'(?<![\w.\d-])(' + _RANGE_NUM + r')(?:\s+(?:to|or)\s+|-)(' + _RANGE_NUM + r')(?![\w-])', re.IGNORECASE)
 # Words that carry no binding information next to a figure (articles, prepositions, auxiliaries,
 # quantity hedges, dates and period words such as "fiscal", "year over year", months).
 FILLER_WORDS = frozenset(
@@ -179,8 +227,15 @@ FILLER_WORDS = frozenset(
     'also now only just still about almost close fiscal year years yoy quarter month months week '
     'january february march april may june july august september october november december '
     'jan feb mar apr jun jul aug sep sept oct nov dec each every any all some '
-    'reported reports said says according billion million thousand trillion percent'.split()
+    'reported reports said says according billion million thousand trillion percent between'.split()
 ) | frozenset(CURRENCY_WORDS)
+# Verbs of change say how a figure moved, not what it measures ("revenue grew 30%").
+CHANGE_WORDS = frozenset(
+    'grow grew grown growth rise rose risen fall fell fallen drop dropped cut cuts increase increased '
+    'decrease decreased reduce reduced decline declined jump jumped climb climbed gain gained lose lost '
+    'shrink shrank expand expanded double doubled triple tripled reach reached hit total totals narrow narrowed '
+    'widen widened improve improved surge surged soar soared plunge plunged slip slipped slide slid dip dipped '
+    'swell swelled ease eased worsen worsened'.split())
 ADJUNCT_PREPOSITIONS = frozenset(
     'in on at by for from with versus vs compared during since through across between among under '
     'than until before after within without'.split()
@@ -206,6 +261,8 @@ def _stem(word: str) -> str:
     return word[:-1] if len(word) > 4 and word.endswith('e') else word
 
 
+CHANGE_STEMS = frozenset(_stem(w) for w in CHANGE_WORDS)
+
 # Interchangeable head nouns for the same quantity (stemmed).
 SYNONYM_GROUPS = tuple(frozenset(_stem(w) for w in g) for g in (
     ('people', 'employees', 'staff', 'workers', 'headcount', 'personnel'),
@@ -228,23 +285,33 @@ SEGMENT_SPLIT_RE = re.compile(
 class Figure:
     """A figure with the words it is attached to."""
 
-    __slots__ = ('value', 'kind', 'currency', 'noun', 'before', 'after', 'stems')
+    __slots__ = ('value', 'kind', 'currency', 'noun', 'before', 'after', 'stems', 'rng', 'seg', 'raw')
 
-    def __init__(self, value, kind, currency, noun, before, after, stems=frozenset()):
+    def __init__(self, value, kind, currency, noun, before, after, stems=frozenset(), rng=None, seg=0, raw=''):
         self.value, self.kind, self.currency = value, kind, currency
         self.noun, self.before, self.after, self.stems = noun, before, after, stems
+        self.rng, self.seg, self.raw = rng, seg, raw
 
     def __getitem__(self, i):  # (value, kind, noun, before, after): the shape older callers use
         return (self.value, self.kind, self.noun, self.before, self.after)[i]
 
+    def describe(self) -> str:
+        """The figure as written, with the noun it is attached to ("7 days")."""
+        return (self.raw + ' ' + (self.noun or '')).strip()
 
-def _segment_figures(text: str, drop: frozenset = frozenset()) -> list[Figure]:
+
+def _mark_ranges(text: str) -> str:
+    text = RANGE_BETWEEN_RE.sub(lambda m: m.group(1) + ' ~ ' + m.group(2), text)
+    return RANGE_TO_RE.sub(lambda m: m.group(1) + ' ~ ' + m.group(2), text)
+
+
+def _segment_figures(text: str, drop: frozenset = frozenset(), seg: int = 0) -> list[Figure]:
     # Words naming the claim's entities are dropped: a shared subject ("Acme") says nothing about
     # what a figure belongs to.
     stems = frozenset(_stem(t) for t in extract_tokens(text) if t not in drop)
     out = []
     for m in FIGURE_RE.finditer(text):
-        currency, whole, frac, word_unit, abbr = m.group(1), m.group(2), m.group(3), m.group(4), m.group(5)
+        currency, whole, frac, word_unit, abbr = _currency(m.group(1)), m.group(2), m.group(3), m.group(4), m.group(5)
         value = float(whole.replace(',', '') + (frac or ''))
         unit = (word_unit or abbr or '').lower()
         if unit == '%':
@@ -271,21 +338,38 @@ def _segment_figures(text: str, drop: frozenset = frozenset()) -> list[Figure]:
                 after.append(_stem(w))
         noun = after[0] if after and kind != 'year' else None
         before = [_stem(w) for w in reversed(WORD_RE.findall(text[max(0, m.start() - 60):m.start()]))
-                  if not w.isdigit() and w.lower() not in FILLER_WORDS][:3]
-        out.append(Figure(value, kind, currency, noun, tuple(before), tuple(after[:3]), stems))
+                  if not w.isdigit() and w.lower() not in FILLER_WORDS and _stem(w) not in CHANGE_STEMS][:3]
+        rng = 'hi' if text[:m.start()].rstrip().endswith('~') else ('lo' if text[m.end():].lstrip().startswith('~') else None)
+        out.append(Figure(value, kind, currency, noun, tuple(before), tuple(after[:3]), stems, rng, seg, m.group(0).strip()))
+    for low, high in zip(out, out[1:]):
+        if low.rng == 'lo' and high.rng == 'hi':  # both ends of a range share the unit and the noun
+            low.noun, low.after = high.noun, high.after
+            low.currency, high.currency = low.currency or high.currency, high.currency or low.currency
     return out
 
 
 def extract_figures(text: str, drop_entities: bool = False) -> list[Figure]:
     """Normalised figures. $50M and 50 million dollars are both 5e7 dollars; 2,500 is 2500.0,
     not {2, 500}; kind is 'year', '%', 'x' or 'num'. Each figure knows its segment's words, the
-    first content word after it (``noun``) and the nearest content words on each side."""
-    text = normalize_text(text)
+    first content word after it (``noun``) and the nearest content words on each side, and whether
+    it is an end of a range. A segment with no content words of its own ("In 2019,") belongs to the
+    segment that follows it."""
+    text = _mark_ranges(normalize_text(text))
     drop = frozenset(w.lower() for e in extract_entities(text) for w in e.split()) if drop_entities else frozenset()
     figures: list[Figure] = []
+    carried, index = '', 0
     for segment in SEGMENT_SPLIT_RE.split(text):
-        if segment and segment.strip():
-            figures.extend(_segment_figures(segment, drop))
+        if not segment or not segment.strip():
+            continue
+        segment = carried + segment
+        if not {t for t in extract_tokens(segment) if t not in drop}:
+            carried = segment + ' '  # an opener such as "In 2019," says only when: bind it to what follows
+            continue
+        carried = ''
+        figures.extend(_segment_figures(segment, drop, index))
+        index += 1
+    if carried:
+        figures.extend(_segment_figures(carried, drop, index))
     return figures
 
 
@@ -313,7 +397,13 @@ NEGATION_RE = re.compile(
 )
 NO_LONGER_RE = re.compile(r'\bno longer\b', re.IGNORECASE)
 UN_RE = re.compile(r'\bun(available|supported|able|certified)\b', re.IGNORECASE)
-NOT_ONLY_RE = re.compile(r'\bnot only\b|\bnot even\b|\bnot just\b', re.IGNORECASE)
+NOT_ONLY_RE = re.compile(r'\bnot only\b|\bnot just\b', re.IGNORECASE)
+# Phrases that contain a negation word but assert: "no fewer than 500", "not to mention Teams".
+NEGATION_IDIOM_RE = re.compile(
+    r'\b(?:no (?:fewer|less|more) than|not to mention|none other than|nothing (?:less|short) than|second to none)\b',
+    re.IGNORECASE,
+)
+WITH_NO_RE = re.compile(r'\bwith no\b', re.IGNORECASE)
 ZERO_RE = re.compile(r'\bzero\s+([a-z]+)', re.IGNORECASE)
 WITHOUT_RE = re.compile(r'\bwithout\s+(?:an?\s+|the\s+|any\s+)?([a-z]+)(?:\s+([a-z]+))?', re.IGNORECASE)
 # A coordinated list of named things: "Kubernetes and Nomad", "Slack, Jira or Teams".
@@ -331,7 +421,10 @@ def _is_negated(clause: str, claim_side: bool = False) -> bool:
 
 
 def _normalize_negation(text: str) -> str:
-    return UN_RE.sub(r'not \1', normalize_text(text))
+    """Normalised text for polarity: "unavailable" = "not available", "with no X" = "without X"
+    (a term, not a negated clause), and assertive idioms such as "no fewer than" removed."""
+    text = NEGATION_IDIOM_RE.sub(' ', UN_RE.sub(r'not \1', normalize_text(text)))
+    return WITH_NO_RE.sub('without', text)
 
 
 def _has_cue(text: str) -> bool:
@@ -422,8 +515,13 @@ ANTONYM_PAIRS = tuple(
 )
 
 
+def _verb_stems(text: str) -> set[str]:
+    """Stems of every word of three letters or more (the opposites table has "cut", "buy", "win")."""
+    return {_stem(w) for w in re.findall(r'\b[a-z]{3,}\b', NEGATION_RE.sub(' ', text.lower()))}
+
+
 def _antonym_conflict(claim_clause: str, quote_clause: str) -> bool:
-    c, q = _stems(claim_clause), _stems(quote_clause)
+    c, q = _verb_stems(claim_clause), _verb_stems(quote_clause)
     return any((c & left and q & right and not q & left) or (c & right and q & left and not q & right)
                for left, right in ANTONYM_PAIRS)
 
@@ -438,26 +536,176 @@ def _quantifier_conflict(claim_clause: str, quote_clause: str) -> bool:
     return False
 
 
-def _negation_conflict(claim_text: str, quote: str) -> bool:
-    """True when a claim clause and an aligned quote clause disagree on polarity, or one says
-    "zero/without <thing>" about something the other asserts plainly. Any clause of the whole
-    quote can contradict."""
+# Parts of a clause that can differ in polarity. "but"-like words open a contrast (a fresh scope);
+# "and", "or" and a comma may continue a negated scope ("does not support SSO or SCIM").
+CONTRAST_SPAN_RE = re.compile(r'\s*[,;]?\s*\b(?:but|yet|while|whereas)\b\s*', re.IGNORECASE)
+SPAN_SPLIT_RE = re.compile(r'\s*[,;](?!\d)\s*(?:and\s+|or\s+)?|\s+(?:and|or)\s+', re.IGNORECASE)
+
+
+def _squash(text: str) -> str:
+    return re.sub(r'[^a-z0-9]+', ' ', text.lower()).strip()
+
+
+def _spans(text: str) -> list[tuple[str, bool, bool]]:
+    """The parts of a clause as (text, negated, certain). A part that follows a negated part
+    without a cue of its own may be inside the same negation ("does not support SSO and SCIM") or
+    outside it ("lacks SSO, offers SCIM"): its polarity is not certain."""
+    out: list[tuple[str, bool, bool]] = []
+    for block in CONTRAST_SPAN_RE.split(_normalize_negation(text)):
+        previous_negated = False
+        for i, part in enumerate(SPAN_SPLIT_RE.split(NOT_ONLY_RE.sub(' ', block))):
+            if not part.strip():
+                continue
+            negated = bool(NEGATION_RE.search(part))
+            out.append((part.strip(), negated, negated or not (i and previous_negated)))
+            previous_negated = previous_negated or negated
+    return out
+
+
+def _terms(text: str) -> set[str]:
+    return _stems(text) | {w.lower() for e in extract_entities(text) for w in e.split()}
+
+
+def _covers(span: str, claim_span: str, subject: Optional[str]) -> bool:
+    """Does a quote part state what a claim part says? It holds all of the claim part's terms; the
+    claim's subject may be left out only when the quote part does not open with a name of its own (an elided subject)."""
+    subject_words = {w.lower() for w in (subject or '').split()}
+    have = _terms(span)
+    if not (_terms(claim_span) - subject_words) <= have:
+        return False
+    return not subject_words or subject_words <= have or not re.match(r'\s*[A-Z]', span)
+
+
+def _polarity(claim_clause: str, quote_clause: str, subject: Optional[str]) -> tuple[str, str]:
+    """Compare the polarity of a claim clause with an aligned quote clause: ('agree' | 'conflict' |
+    'ambiguous', detail). The quote part that states what the claim part says decides; when no part
+    does, when the parts disagree, or when a polarity depends on how far a negation reaches, the
+    result is 'ambiguous', never 'agree'."""
+    if _squash(claim_clause) == _squash(quote_clause):
+        return ('agree', '')
+    if not _is_negated(claim_clause) and not _is_negated(quote_clause):
+        return ('agree', '')
+    quote_spans = _spans(quote_clause)
+    verdict, detail = 'agree', ''
+    for text, negated, certain in _spans(claim_clause):
+        if not _terms(text) - {w.lower() for w in (subject or '').split()}:
+            if negated:
+                return ('ambiguous', f'cannot place the negation in "{text}"')
+            continue
+        anchors = quote_spans if len(quote_spans) == 1 else [q for q in quote_spans if _covers(q[0], text, subject)]
+        if not anchors:
+            return ('ambiguous', f'no part of the source states "{text}" on its own')
+        if not certain or not all(a[2] for a in anchors) or len({a[1] for a in anchors}) > 1:
+            return ('ambiguous', f'how far a negation reaches is unclear in "{anchors[0][0]}"')
+        if anchors[0][1] != negated:
+            verdict, detail = 'conflict', anchors[0][0]
+    return (verdict, detail)
+
+
+def _entity_order(text: str, entities: set[str]) -> list[str]:
+    """The claim's entities in the order a clause mentions them."""
+    found = [(m.start(), e) for e in entities for m in re.finditer(r'\b' + re.escape(e) + r'\b', text)]
+    return [e for _, e in sorted(found)]
+
+
+DATE_WORDS = frozenset(
+    'January February March April May June July August September October November December '
+    'Monday Tuesday Wednesday Thursday Friday Saturday Sunday'.split())
+PASSIVE_RE = re.compile(r'(?i:\b(?:is|are|was|were|been|being|be)\s+\w+(?:ed|en)\s+by)\s+[A-Z]')
+
+
+def _role_swap(claim_clause: str, quote_clause: str) -> bool:
+    """The same named things with their roles possibly exchanged, which words alone cannot tell:
+    one clause passive ("Acme was acquired by Initech") and the other active, or a plain
+    subject-verb-object clause in the other order ("Samsung overtook Apple" / "Apple overtook
+    Samsung"). Dates are not roles."""
+    entities = {e for e in extract_entities(claim_clause) if e in quote_clause and e not in DATE_WORDS}
+    if len(entities) < 2:
+        return False
+    if bool(PASSIVE_RE.search(claim_clause)) != bool(PASSIVE_RE.search(quote_clause)):
+        return True
+    claim_order, quote_order = _entity_order(claim_clause, entities), _entity_order(quote_clause, entities)
+    if len(claim_order) != len(quote_order) or claim_order == quote_order:
+        return False
+    between = [t for t in (claim_clause, quote_clause) for w in [t.lower().split()] if w]
+    simple = all(
+        len(gap.split()) <= 3 and not set(gap.lower().split()) & ADJUNCT_PREPOSITIONS
+        for gap in (_gap(t, entities) for t in between)
+    )
+    return simple
+
+
+def _gap(text: str, entities: set[str]) -> str:
+    """The words between the first two mentioned entities."""
+    spots = sorted((m.start(), m.end()) for e in entities for m in re.finditer(r'\b' + re.escape(e) + r'\b', text))
+    return text[spots[0][1]:spots[1][0]]
+
+
+def _negated_fragment(claim_clause: str, quote_clause: str) -> bool:
+    """A negated part of the quote made only of words the (positive) claim uses: "liver and
+    kidney" against "in the liver but not in the kidney"."""
+    if _is_negated(claim_clause):
+        return False
+    claim_terms = _terms(claim_clause)
+    for text, negated, _ in _spans(quote_clause):
+        rest = _terms(NEGATION_RE.sub(' ', text))
+        if negated and rest and rest <= claim_terms:
+            return True
+    return False
+
+
+def _negation_findings(claim_text: str, quote: str) -> tuple[list[str], list[str]]:
+    """(conflicts, ambiguities) between a claim and a quote. A conflict is a claim clause and an
+    aligned quote clause that disagree on polarity, or "zero/without <thing>" against a plain
+    assertion, or opposite verbs. An ambiguity is a polarity that cannot be decided from the words:
+    the claim must then be checked against the source by a reader. Any clause of the whole quote
+    can contradict."""
     claim_text, quote = normalize_text(claim_text), normalize_text(quote)
     subject = _subject(claim_text)
     quote_clauses = _clauses(quote)
-    for claim_clause in _clauses(claim_text):
+    conflicts: list[str] = []
+    ambiguities: list[str] = []
+
+    def check(clause: str) -> bool:
+        """Compare one claim clause with every aligned quote clause; whether any aligned."""
         # "no longer ..." may be worded in the quote as "retired"/"discontinued": no polarity check.
-        check_polarity = not NO_LONGER_RE.search(claim_clause)
-        claim_neg = _is_negated(claim_clause)
-        for variant in _variants(claim_clause):
+        check_polarity = not NO_LONGER_RE.search(clause)
+        aligned = False
+        for variant in _variants(clause):
             for q in quote_clauses:
                 if not _aligned(variant, q, subject):
                     continue
-                if check_polarity and _is_negated(q) != claim_neg:
-                    return True
+                aligned = True
+                if check_polarity:
+                    verdict, detail = _polarity(variant, q, subject)
+                    if verdict == 'conflict':
+                        conflicts.append(f'polarity: the source says "{q[:90]}"')
+                    elif verdict == 'ambiguous':
+                        ambiguities.append(f'polarity ambiguous in "{q[:90]}": {detail}')
                 if _quantifier_conflict(variant, q) or _antonym_conflict(variant, q):
-                    return True
-    return False
+                    conflicts.append(f'the source says the opposite: "{q[:90]}"')
+                elif _role_swap(variant, q):
+                    ambiguities.append(f'roles may be swapped (the same names in another order): "{q[:90]}"')
+        if check_polarity and any(_negated_fragment(clause, q) for q in quote_clauses):
+            ambiguities.append(f'the source negates part of the claim: "{clause[:90]}"')
+        return aligned
+
+    for claim_clause in _clauses(claim_text):
+        if check(claim_clause) or NO_LONGER_RE.search(claim_clause):
+            continue
+        # No quote clause states the whole clause: try its parts one by one ("was not profitable in
+        # 2022, raised $50M in 2023" is two statements, each in its own quote sentence).
+        parts = [text for text, _, _ in _spans(claim_clause)] if len(_spans(claim_clause)) > 1 else []
+        unplaced = [part for part in parts if not check(part)] if parts else [claim_clause]
+        for part in unplaced:
+            if _is_negated(part):
+                ambiguities.append(f'polarity ambiguous: no source clause states the negated "{part[:90]}"')
+    return conflicts, ambiguities
+
+
+def _negation_conflict(claim_text: str, quote: str) -> bool:
+    """True when the claim and the quote clearly disagree on polarity (see ``_negation_findings``)."""
+    return bool(_negation_findings(claim_text, quote)[0])
 
 
 # ---------------------------------------------------------------------------
@@ -468,29 +716,32 @@ def _fraction_present(wanted: set[str], have: set[str]) -> float:
     return len(wanted & have) / len(wanted)
 
 
-def _entity_coverage(entities: set[str], quote: str) -> float:
-    """Share of claim entities named in the quote: whole words in any case, or the same word
-    stems ("Webhooks" / "webhook")."""
+def _missing_entities(entities: set[str], quote: str) -> list[str]:
+    """Claim entities the quote does not name: whole words in any case, or the same word stems
+    ("Webhooks" / "webhook")."""
     lower = quote.lower()
     quote_stems = {_stem(w) for w in WORD_RE.findall(lower)}
-    found = sum(
-        1 for e in entities
-        if re.search(r'\b' + re.escape(e.lower()) + r'\b', lower) or all(_stem(w) in quote_stems for w in e.split())
+    return sorted(
+        e for e in entities
+        if not (re.search(r'\b' + re.escape(e.lower()) + r'\b', lower) or all(_stem(w) in quote_stems for w in e.split()))
     )
-    return found / len(entities)
 
 
 def _figure_matches(claim: Figure, quote: Figure, others: list[Figure]) -> bool:
-    """Same value, kind and (when both state one) currency, in a segment about the same thing.
+    """Same value, kind, range position and (when the claim states one) currency, in a segment about
+    the same thing.
 
     Years only need the segment to share a word ("founded in 2015" must not match "acquired in
     2015"). Other figures must also be attached to the same noun: the claim's noun follows the
     quote's figure (or precedes it: "Seats cost $20"), or, without a noun, the claim's nearest
-    preceding words are the quote's. A quote figure whose nearest word is what the claim attaches
-    to a *different* figure ("latency by 10%" vs "cost by 30%") does not match."""
-    if claim.value != quote.value or claim.kind != quote.kind:
+    content word (the metric, not a verb of change) is among the quote's. A quote figure whose
+    nearest word is what the claim attaches to a *different* figure ("latency by 10%" vs "cost by
+    30%") does not match. A figure that is an end of a range matches only the same end of a range
+    ("7 days" is not "between 2 and 5 days"). A currency the claim states must be stated, and be
+    the same, in the quote."""
+    if claim.value != quote.value or claim.kind != quote.kind or claim.rng != quote.rng:
         return False
-    if claim.currency and quote.currency and claim.currency != quote.currency:
+    if claim.currency and (not quote.currency or _currency_conflict(claim.currency, quote.currency)):
         return False
     if claim.stems and quote.stems and not claim.stems & quote.stems:
         return False
@@ -502,27 +753,89 @@ def _figure_matches(claim: Figure, quote: Figure, others: list[Figure]) -> bool:
         return True
     if any(o is not claim and o.before and o.before[0] == quote.before[0] != claim.before[0] for o in others):
         return False
-    return bool(set(claim.before[:2]) & set(quote.before))
+    return any(_same_noun(claim.before[0], w) for w in quote.before[:2])
 
 
-def _figures_supported(claim_text: str, quote_text: str, kinds) -> tuple[int, int]:
-    """(matched, total) of the claim's figures of the given kinds."""
+def _bound(claim: Figure, quote: Figure, claim_figs: list[Figure], quote_figs: list[Figure]) -> bool:
+    """A year is bound to what happened in it: every other figure of the claim's segment must be
+    matched in the quote's segment of that year ("300 employees by 2021 and 100 in 2019" does not
+    say 300 employees in 2019)."""
+    return all(
+        any(h.seg == quote.seg and _figure_matches(g, h, claim_figs) for h in quote_figs)
+        for g in claim_figs if g.seg == claim.seg and g is not claim and g.kind != 'year'
+    )
+
+
+def _figures_supported(claim_text: str, quote_text: str, kinds) -> tuple[int, int, list[Figure]]:
+    """(matched, total, unmatched) of the claim's figures of the given kinds."""
     claim_figs = extract_figures(claim_text, drop_entities=True)
     quote_figs = extract_figures(quote_text)
     wanted = [f for f in claim_figs if f.kind in kinds]
-    matched = sum(1 for f in wanted if any(_figure_matches(f, q, claim_figs) for q in quote_figs))
-    return matched, len(wanted)
+    missing = [
+        f for f in wanted
+        if not any(_figure_matches(f, q, claim_figs) and (f.kind != 'year' or _bound(f, q, claim_figs, quote_figs))
+                   for q in quote_figs)
+    ]
+    return len(wanted) - len(missing), len(wanted), missing
+
+
+def _assess_quote(claim_text: str, quote: str, claim_tokens: set[str], claim_entities: set[str],
+                  claim_figs: list[Figure]) -> dict:
+    """Judge one claim against one quote. Returns the score, whether every lexical check passed
+    (``complete``), what contradicts the claim (``conflicts``) and what is ambiguous or missing
+    (``reasons``, each naming the figure, entity or polarity at issue)."""
+    quote = normalize_text(quote)
+    token_overlap = _fraction_present(claim_tokens, extract_tokens(quote)) if claim_tokens else 0.0
+    parts = [('tokens', token_overlap)]
+    reasons: list[str] = []
+    shares = False  # does the quote share a named thing or a figure with the claim?
+    # A claim with no named thing and no figure is judged on its words alone: nearly all must appear.
+    needed = MIN_TOKEN_OVERLAP if (claim_entities or claim_figs) else PROSE_TOKEN_OVERLAP
+    complete = token_overlap >= needed
+    if not complete:
+        reasons.append(f'low lexical overlap ({round(token_overlap * 100)}% of the claim\'s significant words)')
+    for name, kinds, label in (('numbers', ('num', '%', 'x'), 'figure'), ('years', ('year',), 'year')):
+        matched, total, missing = _figures_supported(claim_text, quote, kinds)
+        if total:
+            shares = shares or matched > 0
+            parts.append((name, matched / total))
+            if missing:
+                complete = False
+                reasons.append(
+                    f'{label} not matched in the source: '
+                    + ', '.join(f.describe() for f in missing))
+    if claim_entities:
+        absent = _missing_entities(claim_entities, quote)
+        shares = shares or len(absent) < len(claim_entities)
+        parts.append(('entities', 1 - len(absent) / len(claim_entities)))
+        if absent:
+            complete = False
+            reasons.append('entity not found in the source: ' + ', '.join(absent))
+    conflicts, ambiguities = _negation_findings(claim_text, quote)
+    if ambiguities:
+        complete = False
+        reasons.extend(ambiguities)
+    score = sum(WEIGHTS[name] * value for name, value in parts) / sum(WEIGHTS[name] for name, _ in parts)
+    if not reasons and score < SUPPORTED_SCORE:
+        reasons.append(f'too few of the claim\'s words appear in the source (score {round(score, 2)})')
+    return {'score': score, 'addresses': shares or score >= PARTIAL_SCORE, 'complete': complete and score >= SUPPORTED_SCORE and not conflicts,
+            'conflicts': conflicts, 'reasons': reasons}
 
 
 def compute_support_score(claim_text: str, evidence_quotes: list[str]) -> tuple[str, float, str]:
     """
-    Compute support status for a claim given its linked evidence quotes.
+    Judge a claim against its linked evidence quotes. Returns (status, score, notes).
 
-    Returns (status, score, notes). A claim is 'supported' only when the best quote scores at
-    least 0.6, shares at least 30% of the claim's significant words, contains every named entity
-    of the claim, matches every figure (same value, unit and currency, in a clause about the same
-    thing and attached to the same noun) and no aligned quote clause contradicts a claim clause's
-    polarity.
+    * ``supported`` only when lexical support is unambiguous in one quote: it scores at least 0.6,
+      shares at least 30% of the claim's significant words, names every entity of the claim,
+      matches every figure (same value, unit, currency and range position, attached to the same
+      noun, years bound to the event) and no aligned clause has a polarity that differs or is
+      ambiguous. No other quote may contradict it.
+    * ``contradicted`` when a quote clearly says the opposite (a differing polarity in an aligned
+      clause, zero/without against a plain assertion, opposite verbs) and no quote supports it.
+    * ``unsupported`` when no quote shares a named thing, a figure or enough words with the claim.
+    * ``needs_review`` otherwise, with the figure, entity or polarity that could not be settled.
+      A reader must check these against the source; they are never counted as supported.
     """
     if not evidence_quotes:
         return ('unsupported', 0.0, 'no evidence linked')
@@ -532,52 +845,24 @@ def compute_support_score(claim_text: str, evidence_quotes: list[str]) -> tuple[
     claim_tokens = extract_tokens(claim_text)
     claim_entities = extract_entities(claim_text)
     claim_figs = extract_figures(claim_text)
-    has_numbers = any(f.kind != 'year' for f in claim_figs)
-    has_years = any(f.kind == 'year' for f in claim_figs)
-    number_kinds = ('num', '%', 'x')
 
-    best: tuple[float, bool, list[str]] = (-1.0, False, [])
-    for quote in evidence_quotes:
-        quote = normalize_text(quote)
-        token_overlap = _fraction_present(claim_tokens, extract_tokens(quote)) if claim_tokens else 0.0
-        parts = [('tokens', token_overlap)]
-        notes: list[str] = []
-        # A claim with no named thing and no figure is judged on its words alone: nearly all must appear.
-        needed = MIN_TOKEN_OVERLAP if (claim_entities or claim_figs) else PROSE_TOKEN_OVERLAP
-        complete = token_overlap >= needed
-        if token_overlap < needed:
-            notes.append('low lexical overlap')
-        checks = []
-        if has_numbers:
-            checks.append(('numbers', _ratio(_figures_supported(claim_text, quote, number_kinds)), 'number mismatch'))
-        if has_years:
-            checks.append(('years', _ratio(_figures_supported(claim_text, quote, ('year',))), 'year mismatch'))
-        if claim_entities:
-            checks.append(('entities', _entity_coverage(claim_entities, quote), 'entity mismatch'))
-        for name, value, note in checks:
-            parts.append((name, value))
-            if value < 1.0:
-                complete = False
-                notes.append(note)
-        if _negation_conflict(claim_text, quote):
-            complete = False
-            notes.append('negation mismatch')
-        score = sum(WEIGHTS[name] * value for name, value in parts) / sum(WEIGHTS[name] for name, _ in parts)
-        if score > best[0]:
-            best = (score, complete, notes)
+    assessed = [_assess_quote(claim_text, q, claim_tokens, claim_entities, claim_figs) for q in evidence_quotes]
+    best = max(assessed, key=lambda a: a['score'])
+    supporting = [a for a in assessed if a['complete']]
+    contradicting = [a for a in assessed if a['conflicts']]
+    if supporting and contradicting:
+        return ('needs_review', round(best['score'], 3),
+                'conflicting evidence: one quote supports the claim, another says ' + contradicting[0]['conflicts'][0])
+    if supporting:
+        return ('supported', round(max(a['score'] for a in supporting), 3), 'adequate overlap')
+    if contradicting:
+        worst = max(contradicting, key=lambda a: a['score'])
+        return ('contradicted', round(worst['score'], 3), '; '.join(worst['conflicts']))
+    notes = '; '.join(best['reasons']) or 'lexical support is not unambiguous'
+    if not any(a['addresses'] for a in assessed):
+        return ('unsupported', round(best['score'], 3), notes)
+    return ('needs_review', round(best['score'], 3), notes)
 
-    score, complete, notes = best
-    if score >= SUPPORTED_SCORE and complete:
-        status = 'supported'
-    elif score >= PARTIAL_SCORE:
-        status = 'partial'
-    else:
-        status = 'needs_review'
-    return (status, round(score, 3), '; '.join(notes) if notes else 'adequate overlap')
-
-
-def _ratio(pair: tuple[int, int]) -> float:
-    return pair[0] / pair[1]
 
 # Kept identical to citation_manager.py so source_id matching stays stable
 # (tests/test_verify_claim_support_unit.py::TestCanonicalParity enforces it).
@@ -832,8 +1117,9 @@ def _verify_claim(claim: dict, report_md: str, display_num_to_source_id: dict[in
     elif not quotes and not cited_ids and not evidence_ids:
         claim['support_status'] = 'unsupported'
     elif not quotes:
-        # Has cited sources but no evidence captured yet
-        claim['support_status'] = 'needs_review'
+        # Has cited sources but no evidence captured yet: nothing to check the claim against.
+        claim['support_status'] = 'unsupported'
+        claim['_support_notes'] = 'cited source has no captured evidence'
     else:
         status, score, notes = compute_support_score(claim['text'], quotes)
         claim['support_status'] = status
@@ -875,10 +1161,14 @@ def cmd_verify(args: argparse.Namespace) -> None:
     status_counts = Counter(c.get('support_status') for c in claims)
     factual = [c for c in scored if c.get('claim_type') == 'factual']
     factual_unsupported = sum(1 for c in factual if c.get('support_status') == 'unsupported')
-    factual_not_supported = sum(1 for c in factual if c.get('support_status') != 'supported')
+    factual_contradicted = sum(1 for c in factual if c.get('support_status') == 'contradicted')
+    review = [c for c in factual if c.get('support_status') not in ('supported', 'unsupported', 'contradicted')]
+    factual_not_supported = factual_unsupported + factual_contradicted + len(review)
 
-    # Strict mode: every factual claim must be supported (partial and needs_review fail too).
-    passed = not (args.strict and factual_not_supported > 0)
+    # Strict mode fails on a contradicted claim and on an unsupported or uncited factual claim.
+    # needs_review claims do not fail it: they are listed for a reader to check against the source
+    # (see "Resolving needs_review claims" in reference/quality-gates.md).
+    passed = not (args.strict and (factual_unsupported or factual_contradicted))
 
     print(json.dumps({
         'status': 'pass' if passed else 'fail',
@@ -886,11 +1176,19 @@ def cmd_verify(args: argparse.Namespace) -> None:
         'verified': len(scored),
         'support_status_counts': dict(status_counts),
         'factual_unsupported': factual_unsupported,
+        'factual_contradicted': factual_contradicted,
+        'factual_needs_review': len(review),
         'factual_not_supported': factual_not_supported,
         'total_factual': len(factual),
         'unsupported_rate': round(factual_not_supported / max(len(factual), 1), 3),
+        'review_required': bool(review),
+        'needs_review': [{'claim_id': c.get('claim_id'), 'text': c.get('text', '')[:200],
+                          'reason': c.get('_support_notes', '')} for c in review],
     }, indent=2))
 
+    if review:
+        print(f'{len(review)} factual claim(s) need review: check each against its source '
+              f'(run: verify_claim_support.py report --dir DIR)', file=sys.stderr)
     if not passed:
         sys.exit(1)
 
@@ -910,23 +1208,32 @@ def cmd_report(args: argparse.Namespace) -> None:
     lines.append(f'**By status:** {dict(status_counts)}')
     lines.append('')
 
-    # Factual claims that are not fully supported (the strict-gate failures)
-    unsupported_factual = [
-        c for c in unique
-        if c.get('claim_type') == 'factual'
-        and c.get('support_status') in ('unsupported', 'needs_review', 'partial')
-    ]
-    if unsupported_factual:
-        lines.append('## Unsupported/Review-needed Factual Claims')
-        lines.append('')
-        for c in unsupported_factual:
+    factual = [c for c in unique if c.get('claim_type') == 'factual']
+    sections = (
+        ('contradicted', '## Contradicted Factual Claims (the source says the opposite: fix the claim)'),
+        ('unsupported', '## Unsupported Factual Claims (no usable evidence: add a source or remove the claim)'),
+        ('needs_review', '## Needs Review (check each against its source before relying on it)'),
+    )
+    flagged = False
+    for status, heading in sections:
+        rows = [c for c in factual if c.get('support_status') == status]
+        if status == 'needs_review':
+            rows += [c for c in factual if c.get('support_status') == 'partial']  # legacy status
+        if not rows:
+            continue
+        flagged = True
+        lines += [heading, '']
+        for c in rows:
             lines.append(f'- [{c["support_status"]}] `{c.get("section_id", "")}`: {c.get("text", "")[:100]}...')
             if c.get('_support_notes'):
                 lines.append(f'  Notes: {c["_support_notes"]}')
+        if status == 'needs_review':
+            lines += ['', 'Resolve each item: quote the exact span of the source that supports the claim '
+                          '(add it as evidence), or correct the claim to what the source says, then re-run verify.']
         lines.append('')
 
     # All clear
-    if not unsupported_factual:
+    if not flagged:
         lines.append('## All factual claims have adequate support.')
         lines.append('')
 
@@ -948,7 +1255,8 @@ def main() -> None:
     p_ver = sub.add_parser('verify', help='Verify claims against evidence')
     p_ver.add_argument('--dir', required=True, help='Run directory')
     p_ver.add_argument('--report', help=f'Report markdown (default: the manifest report or {REPORT_NAME})')
-    p_ver.add_argument('--strict', action='store_true', help='Exit 1 unless every factual claim is supported')
+    p_ver.add_argument('--strict', action='store_true',
+                       help='Exit 1 on a contradicted claim or an unsupported/uncited factual claim; needs_review claims are listed')
 
     # report
     p_rep = sub.add_parser('report', help='Generate verification report')

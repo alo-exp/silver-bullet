@@ -524,6 +524,23 @@ class InterruptTests(PopenCase):
             ld._run_cli(["x"], timeout=1, cwd=str(self.out))
         self.assertEqual(FakePopen.launches, [])
 
+    def test_an_interrupt_during_spawn_still_stops_the_new_worker(self) -> None:
+        """Ctrl-C between the cancel check and the registration must not leave a worker running."""
+        class SlowSpawn(FakePopen):
+            def __init__(self, args, **kwargs):  # noqa: ANN001
+                super().__init__(args, **kwargs)
+                ld._CANCEL.set()  # the interrupt lands while the process is being created
+
+        self.addCleanup(ld._CANCEL.clear)
+        with mock.patch.object(ld.subprocess, "Popen", SlowSpawn), \
+                mock.patch.object(ld, "_kill_process_group") as kill, \
+                mock.patch.object(SlowSpawn, "communicate") as comm:
+            with self.assertRaises(KeyboardInterrupt):
+                ld._run_cli(["x"], timeout=1, cwd=str(self.out))
+        kill.assert_called_once()
+        comm.assert_not_called()
+        self.assertEqual(ld._LIVE_PROCS, set())
+
     def test_no_fallback_or_retry_session_starts_after_an_interrupt(self) -> None:
         """A running worker killed by Ctrl-C must not fall back to another model or retry."""
         def interrupted(self_, input=None, timeout=None):  # noqa: A002, ANN001

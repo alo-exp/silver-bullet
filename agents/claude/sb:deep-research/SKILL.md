@@ -279,6 +279,17 @@ elif [ "$RT" = "solution-compare" ]; then
 fi
 ```
 
+The claim-support gate is three-valued. `--strict` exits 1 on a `contradicted` claim (a source clearly
+says the opposite) and on any `unsupported` or uncited factual claim. A claim is `supported` only when its
+words, figures and names unambiguously match a quoted source span; everything ambiguous is `needs_review`
+and is **listed, not failed**: the JSON summary has `review_required: true` and a `needs_review` list with
+the reason for each claim (the figure, entity or polarity that could not be settled), and
+`verify_claim_support.py report --dir "$SB_RESEARCH_OUT_DIR"` prints a "Needs Review" section. Before
+delivery, resolve every item: open the source, then either add the exact supporting span as evidence
+(`evidence_store.py add`, quoting the source verbatim), or correct the claim to what the source says, then
+re-run `verify`. Do not hand-edit a status, and do not report a run as verified while `review_required` is
+true. The workflow is in `reference/quality-gates.md` ("Resolving needs_review claims").
+
 Maximum repair loops: 3 inside the flow step. If still failing, write blocker
 evidence to `.planning/BLOCKERS.md` and return a blocked AF-DECIDE V-gate.
 
