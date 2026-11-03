@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# sb-doctor.sh D11 (hook smoke), D13-D22 (host surfaces, Cursor install, stack mutex,
-# Cursor agents, LeanCTX duplicates) and the --fix repair dispatch, against a staged repo
+# sb-doctor.sh D11 (hook smoke), D13-D20 (host surfaces, stack mutex) against a staged repo
 # (tests/lib/h-doctor-stage.sh). Validators and installers are logging stubs.
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
@@ -13,8 +12,6 @@ hd_stage
 hd_happy claude
 C='SILVER_BULLET_RUNTIME=claude'
 run() { hd_run "$C" "$@"; }
-CU='SILVER_BULLET_RUNTIME=cursor'
-cu() { hd_run "$CU" "$@"; }
 CX='SILVER_BULLET_RUNTIME=codex'
 cx() { hd_run "$CX" "$@"; }
 CACHE="$HOME/.claude/plugins/cache/alo-labs/silver-bullet"
@@ -41,7 +38,7 @@ assert_contains "no sandbox dir: the smoke fails, the audit goes on" "$TL_OUT" "
 # a user's runtime state survives the doctor
 mkdir -p "$HOME/.claude/.silver-bullet"
 printf 'adversarial-review-clean\n' >"$HOME/.claude/.silver-bullet/quality-gate-state"
-printf 'matrix=cursor-smoke\n' >"$HOME/.claude/.silver-bullet/release-live-matrix"
+printf 'matrix=inline-full-surface\n' >"$HOME/.claude/.silver-bullet/release-live-matrix"
 printf 'silver-quality-gates\n' >"$HOME/.claude/.silver-bullet/state"
 before="$(cd "$HOME/.claude/.silver-bullet" && find . -type f | LC_ALL=C sort | xargs cat | cksum)"
 run -- "$HD_PROJ"
@@ -109,18 +106,18 @@ assert_contains "surface validator missing: D16" "$TL_OUT" "WARN: D16 — valida
 hd_stage
 
 hd_happy codex
-echo '[plugins."silver-bullet@alo-labs-codex"] # /home/u/.cursor/plugins/x' >"$HOME/.codex/config.toml"
+echo '[plugins."silver-bullet@alo-labs-codex"] # /home/u/.claude/plugins/x' >"$HOME/.codex/config.toml"
 cx -- "$HD_PROJ"
-assert_contains "codex config with a cursor plugin path" "$TL_OUT" "FAIL: D13 — $HOME/.codex/config.toml contains foreign host plugin paths"
+assert_contains "codex config with a claude plugin path" "$TL_OUT" "FAIL: D13 — $HOME/.codex/config.toml contains foreign host plugin paths"
 echo '[plugins."silver-bullet@alo-labs-codex"]' >"$HOME/.codex/config.toml"
 cx -- "$HD_PROJ"
 assert_contains "codex config is clean" "$TL_OUT" "PASS: D13 — no cross-host plugin paths in Codex config"
 assert_contains "codex agent bundle in the cache" "$TL_OUT" "PASS: D13 — active install has skill-source/"
 assert_contains "token budget N/A on codex" "$TL_OUT" "PASS: D15 — Claude token budget N/A (host=codex)"
-hd_happy cursor
-echo '{"silver-bullet":"cursor-hook-bridge.sh","p":"/home/u/.claude/plugins/x"}' >"$HOME/.cursor/hooks.json"
-cu -- "$HD_PROJ"
-assert_contains "cursor hooks with a claude plugin path" "$TL_OUT" "FAIL: D13 — $HOME/.cursor/hooks.json contains foreign host plugin paths"
+hd_happy claude
+echo '{"hooks":"silver-bullet","p":"/home/u/.codex/plugins/x"}' >"$HOME/.claude/settings.json"
+run -- "$HD_PROJ"
+assert_contains "claude settings with a codex plugin path" "$TL_OUT" "FAIL: D13 — $HOME/.claude/settings.json contains foreign host plugin paths"
 
 # ---------- D15 / D16 / D17: validators ----------
 hd_happy claude
@@ -138,67 +135,6 @@ rm -f -- "${HD_ST:?}/scripts/validate-host-agnostic-core.sh"
 run -- "$HD_PROJ"
 assert_contains "agnostic validator missing" "$TL_OUT" "WARN: D17 — validate-host-agnostic-core.sh not found; skipped"
 hd_stage
-
-# ---------- D18 / D19: Cursor marketplace gitPath ----------
-hd_happy cursor
-CH="$HOME/.cursor"
-GP_BASE="$CH/plugins/marketplaces/github.com/alo-exp/silver-bullet"
-SRC="$TL_TMP/gitsrc"; tl_git_repo "$SRC"
-SHA="$(git -C "$SRC" rev-parse HEAD)"
-mkdir -p "$GP_BASE"; mv "$SRC" "$GP_BASE/$SHA"
-CURCACHE="$CH/plugins/cache/alo-labs/silver-bullet"
-set_sha() {
-  printf '{"plugins":{"silver-bullet@alo-labs":[{"version":"%s","installPath":"%s","gitCommitSha":"%s"}]}}\n' "$HD_VER" "$CURCACHE/$HD_VER" "$1" >"$CH/plugins/installed_plugins.json"
-}
-cu -- "$HD_PROJ"
-assert_contains "no gitCommitSha" "$TL_OUT" "WARN: D18 — no gitCommitSha in installed_plugins.json — run: bash scripts/install-cursor.sh"
-set_sha "null"
-cu -- "$HD_PROJ"
-assert_contains "null gitCommitSha" "$TL_OUT" "WARN: D18 — no gitCommitSha"
-set_sha "$SHA"
-cu -- "$HD_PROJ"
-assert_contains "no cache symlink for the gitPath" "$TL_OUT" "FAIL: D18 — missing alo-labs-cursor cache symlink for ${SHA:0:8}"
-mkdir -p "$CH/plugins/cache/alo-labs-cursor/silver-bullet"
-ln -s "$(cd "$CURCACHE/$HD_VER" && pwd -P)" "$CH/plugins/cache/alo-labs-cursor/silver-bullet/$SHA"
-cu -- "$HD_PROJ"
-assert_contains "no materialized backend cache" "$TL_OUT" "FAIL: D18 — missing alo-labs-agent-plugins materialized cache for ${SHA:0:8}"
-BC="$CH/plugins/cache/alo-labs-agent-plugins/silver-bullet/$SHA"
-mkdir -p "$BC/commands"; touch "$BC/.cache-complete" "$BC/commands/sb.md"
-cu -- "$HD_PROJ"
-assert_contains "backend cache and gitPath ready" "$TL_OUT" "PASS: D18 — Cursor backend cache + gitPath ready (${SHA:0:8})"
-assert_contains "command stubs present" "$TL_OUT" "PASS: D19 — composer /sb:* command stubs present in plugin cache"
-rm -f -- "${BC:?}/.cache-complete"
-cu -- "$HD_PROJ"
-assert_contains "incomplete backend cache" "$TL_OUT" "FAIL: D18 — missing alo-labs-agent-plugins materialized cache"
-rm -rf -- "${GP_BASE:?}/$SHA/.git"
-cu -- "$HD_PROJ"
-assert_contains "gitPath without a repository" "$TL_OUT" "FAIL: D18 — missing Cursor gitPath for ${SHA:0:8} — /sb commands fail to load — run: bash scripts/install-cursor.sh"
-# the SHA Cursor itself logged wins over the registry's
-mkdir -p "$HOME/Library/Application Support/Cursor/logs/20260101"
-printf 'x Adding enabled plugin: silver-bullet from %s y\n' "$(printf 'a%.0s' $(seq 1 40))" >"$HOME/Library/Application Support/Cursor/logs/20260101/Cursor Plugins.log"
-cu -- "$HD_PROJ"
-assert_contains "backend sha taken from the Cursor log" "$TL_OUT" "FAIL: D18 — missing Cursor gitPath for aaaaaaaa"
-rm -f -- "${CURCACHE:?}/$HD_VER/commands/sb.md"
-cu -- "$HD_PROJ"
-assert_contains "command stubs missing" "$TL_OUT" "FAIL: D19 — commands/ missing from plugin cache — slash menu will be empty"
-
-# an unresolvable cache link and cache symlink are tolerated
-rm -rf -- "${HOME:?}/Library"
-hd_happy cursor
-mkdir -p "$GP_BASE"
-SRC2="$TL_TMP/gitsrc2"; tl_git_repo "$SRC2"
-SHA2="$(git -C "$SRC2" rev-parse HEAD)"
-mv "$SRC2" "$GP_BASE/$SHA2"
-set_sha "$SHA2"
-mkdir -p "$CH/plugins/cache/alo-labs-cursor/silver-bullet"
-ln -s /nonexistent/a/b "$CH/plugins/cache/alo-labs-cursor/silver-bullet/$SHA2"
-cu -- "$HD_PROJ"
-assert_contains "unresolvable marketplace cache link" "$TL_OUT" "FAIL: D18 — missing alo-labs-cursor cache symlink for ${SHA2:0:8}"
-rm -f -- "${CURCACHE:?}/current"
-ln -s /nonexistent/a/b "$CURCACHE/current"
-cu -- "$HD_PROJ"
-assert_contains "unresolvable current link: D3" "$TL_OUT" "FAIL: D3 — broken or missing current symlink"
-assert_contains "unresolvable current link: D19" "$TL_OUT" "FAIL: D19 — commands/ missing from plugin cache"
 
 # ---------- D20: stack compression mutex ----------
 hd_happy claude
@@ -226,48 +162,13 @@ run -- "$HD_PROJ"
 assert_contains "coordinator library missing" "$TL_OUT" "WARN: D20 — stack-compression-coordinator lib missing; skipped"
 hd_stage
 
-# ---------- D21: Cursor SB subagents ----------
-hd_happy cursor
-agents_cfg() { hd_cfg "{\"sb_initiated\":true,\"config_version\":\"$HD_VER\",\"cursor_sb_agents\":$1}"; }
-cu -- "$HD_PROJ"
-assert_contains "no cursor_sb_agents config" "$TL_OUT" "PASS: D21 — cursor_sb_agents not enabled (N/A)"
-agents_cfg '{"enabled":true}'
-cu -- "$HD_PROJ"
-assert_contains "agents match (global)" "$TL_OUT" "PASS: D21 — SB custom subagents (global): managed set matches config"
-assert_contains "global agents dir probed" "$(hd_logs)" "probe-agents --agents-dir $HOME/.cursor/agents --repo-root $HD_PROJ --quiet"
-agents_cfg '{"enabled_by_user":true,"agents_install_scope":"project"}'
-cu STUB_RC_AGENTS=1 -- "$HD_PROJ"
-assert_contains "stale agents (project scope)" "$TL_OUT" "FAIL: D21 — SB custom subagents missing or stale — run: bash scripts/install-cursor-sb-agents.sh --fix"
-assert_contains "project agents dir probed" "$(hd_logs)" "probe-agents --agents-dir $HD_PROJ/.cursor/agents"
-agents_cfg '{"enabled_by_user":true,"enforcement_suspended":true}'
-cu -- "$HD_PROJ"
-assert_contains "suspended agents are N/A" "$TL_OUT" "PASS: D21 — cursor_sb_agents not enabled (N/A)"
-agents_cfg '{"enabled_by_user":false}'
-cu -- "$HD_PROJ"
-assert_contains "declined agents are N/A" "$TL_OUT" "PASS: D21 — cursor_sb_agents not enabled (N/A)"
-agents_cfg '{"enabled":false}'
-cu -- "$HD_PROJ"
-assert_contains "explicitly disabled agents are N/A" "$TL_OUT" "PASS: D21 — cursor_sb_agents not enabled (N/A)"
-agents_cfg '{"enabled":true}'
-chmod -x "$HD_ST/scripts/lib/cursor-sb-agents/probe-global-agents.sh"
-cu -- "$HD_PROJ"
-assert_contains "probe not executable" "$TL_OUT" "WARN: D21 — probe-global-agents.sh missing; skipped"
+# ---------- an unreadable project config does not stop the audit ----------
+hd_happy claude
 echo 'not json' >"$HD_PROJ/.silver-bullet.json"
-cu -- "$HD_PROJ"
-assert_contains "unreadable config: audit continues to D21" "$TL_OUT" "PASS: D21 — cursor_sb_agents not enabled (N/A)"
+run -- "$HD_PROJ"
 assert_contains "unreadable config is reported by D6" "$TL_OUT" "FAIL: D6 — project config is not valid JSON ($HD_PROJ/.silver-bullet.json)"
 assert_contains "unreadable config is reported by D5" "$TL_OUT" "FAIL: D5 — sb_initiated is not true"
+assert_contains "the audit continues to D20" "$TL_OUT" "D20"
 hd_stage
-
-# ---------- D22: duplicate LeanCTX servers ----------
-hd_happy cursor
-cu -- "$HD_PROJ"
-assert_contains "no mcp.json" "$TL_OUT" "PASS: D22 — no duplicate LeanCTX MCP servers"
-echo '{"mcpServers":{"lean-ctx":{},"leanctx":{}}}' >"$HOME/.cursor/mcp.json"
-cu -- "$HD_PROJ"
-assert_contains "duplicate LeanCTX servers" "$TL_OUT" "WARN: D22 — duplicate LeanCTX MCP servers (lean-ctx + leanctx)"
-echo '{"mcpServers":{"leanctx":{}}}' >"$HOME/.cursor/mcp.json"
-cu -- "$HD_PROJ"
-assert_contains "single LeanCTX server" "$TL_OUT" "PASS: D22 — no duplicate LeanCTX MCP servers"
 
 tl_results

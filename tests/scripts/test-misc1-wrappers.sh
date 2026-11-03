@@ -34,9 +34,8 @@ assert_contains "refresh forwards args" "$TL_OUT" "VERIFY:--x y"
 
 # --- sb-migrate-orchestrator-parent.sh --------------------------------------
 PL="$TL_TMP/plugin"
-mkdir -p "$PL/templates/orchestrator-workers" "$PL/scripts/lib/install-cursor/templates/cursor-rules"
+mkdir -p "$PL/templates/orchestrator-workers"
 echo worker >"$PL/templates/orchestrator-workers/w.md"
-echo rule >"$PL/scripts/lib/install-cursor/templates/cursor-rules/silver-orchestrator.mdc"
 
 P="$TL_TMP/proj"
 mkdir -p "$P/.git" "$P/sub/deeper"
@@ -47,9 +46,9 @@ assert_eq "migrate parent ok" 0 "$TL_STATUS"
 assert_contains "reports prior mode absent" "$TL_OUT" "Set orchestrator_mode=parent (was: absent)"
 assert_eq "config rewritten" '{"a":1,"orchestrator_mode":"parent"}' "$(jq -c . "$P/.silver-bullet.json")"
 assert_eq "worker templates copied" worker "$(cat "$P/.silver-bullet/orchestrator-workers/w.md")"
-assert_eq "cursor rule copied" rule "$(cat "$P/.cursor/rules/silver-orchestrator.mdc")"
+assert_file_absent "no Cursor rule is written (Cursor is not a host)" "$P/.cursor/rules/silver-orchestrator.mdc"
 assert_contains "mentions templates" "$TL_OUT" "Copied worker templates"
-assert_contains "mentions rule" "$TL_OUT" "Refreshed .cursor/rules/silver-orchestrator.mdc"
+assert_not_contains "no rule refresh message" "$TL_OUT" "Refreshed .cursor"
 assert_contains "completion line" "$TL_OUT" "Migration complete for $P"
 # second run reports old mode
 tl_run env PLUGIN_ROOT="$PL" bash "$R/scripts/sb-migrate-orchestrator-parent.sh" "$P"
@@ -146,7 +145,7 @@ assert_contains "dogfood test tails" "$TL_OUT" "Results: 1 passed, 0 failed"
 rmdir "$APP/.planning/workflows/.archive"
 tl_run env SB_RUNTIME_STATE_DIR="$STATE_DIR" SILVER_BULLET_STATE_FILE="$STATE_DIR/alt-state" bash "$D/scripts/dogfood-orchestrator-parent-surface.sh" "$APP"
 assert_contains "dogfood archive missing" "$TL_OUT" "FAIL: workflow archive missing"
-assert_contains "dogfood default label" "$TL_OUT" "(cursor)"
+assert_contains "dogfood default label" "$TL_OUT" "(claude)"
 assert_file_exists "dogfood honours SILVER_BULLET_STATE_FILE" "$STATE_DIR/alt-state"
 
 # default app path: with no argument it is <SB_ROOT/../..>/enterprise-grade-test-app

@@ -502,7 +502,7 @@ doctor_apply_fixes() {
       esac
     fi
     case "$check_id" in
-      D13|D14|D16|D18|D19)
+      D13|D14|D16)
         install_script="$(doctor_host_install_script "$runtime" || true)"
         if [[ -n "$install_script" && -x "$install_script" ]]; then
           printf 'sb-doctor: --fix running %s for %s\n' "$install_script" "$check_id" >&2

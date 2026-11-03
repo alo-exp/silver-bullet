@@ -21,7 +21,7 @@ source "$HR_RTLIB/probe-graphify.sh"
 source "$HR_RTLIB/repair-graphify.sh"
 # shellcheck source=/dev/null
 source "$HR_RTLIB/probe-agentmemory.sh"
-export RT_HOST=cursor
+export RT_HOST=claude
 export RT_SKIP_VENDOR_DOCTOR=1
 hr_bin sleep 'exit 0'
 
@@ -110,9 +110,9 @@ rm -rf "$HR_PROJ/graphify-out"
 
 # ================================================================ probe-graphify
 assert_eq "mcp configured: no config" "1" "$(rc_of rt_probe_graphify_mcp_configured)"
-mkdir -p "$HOME/.cursor"; printf '{"mcpServers":{"graphify":{}}}\n' >"$HOME/.cursor/mcp.json"
+mkdir -p "$HOME/.claude"; printf '{"mcpServers":{"graphify":{}}}\n' >"$HOME/.claude.json"
 assert_eq "mcp configured" "0" "$(rc_of rt_probe_graphify_mcp_configured)"
-rm -f "$HOME/.cursor/mcp.json"
+rm -f "$HOME/.claude.json"
 hr_bin graphify-mcp 'exit 0'
 assert_eq "mcp binary: none in the manifest" "1" "$(rc_of rt_probe_graphify_mcp_binary)"
 hr_manifest "graphify=$HR_BIN/graphify-mcp"
@@ -133,7 +133,7 @@ assert_eq "skew: no graphify" "1" "$(PATH="$NOGRAPHIFY" rc_of rt_probe_graphify_
 hr_bin graphify 'echo "graphify $*" >>"$HR_LOG"; if [[ "$1" == update ]]; then mkdir -p graphify-out; echo "{}" >graphify-out/graph.json; fi'
 
 pg() { hr_state "$(rt_probe_graphify)"; }
-RT_HOST=goose; assert_eq "graphify: unsupported host" "unsupported|none||false" "$(pg)"; RT_HOST=cursor
+RT_HOST=goose; assert_eq "graphify: unsupported host" "unsupported|none||false" "$(pg)"; RT_HOST=claude
 hr_consent graphify=disabled; assert_eq "graphify: disabled" "disabled|none||false" "$(pg)"
 hr_consent; assert_eq "graphify: pending (no entry)" "pending|none||false" "$(pg)"
 hr_consent graphify=pending; assert_eq "graphify: pending (null)" "pending|none||false" "$(pg)"
@@ -147,13 +147,13 @@ assert_eq "graphify: manifest points at a missing mcp binary" "repairable|none|m
   "$(hr_manifest "graphify=$HR_BIN/nonexistent-mcp"; hr_state "$(rt_probe_graphify)")"
 hr_manifest "graphify=$HR_BIN/graphify-mcp"
 assert_eq "graphify: mcp not configured" "repairable|partial|mcp_not_configured|true" "$(pg)"
-printf '{"mcpServers":{"graphify":{}}}\n' >"$HOME/.cursor/mcp.json"
+printf '{"mcpServers":{"graphify":{}}}\n' >"$HOME/.claude.json"
 assert_eq "graphify: index missing" "repairable|none|index_missing|true" "$(pg)"
 mkdir -p "$HR_PROJ/graphify-out"; echo '{}' >"$HR_PROJ/graphify-out/graph.json"
 assert_eq "graphify: index stale (no recorded build)" "repairable|none|index_stale|true" "$(pg)"
 printf '%s' "$HEAD_COMMIT" >"$HR_PROJ/graphify-out/.build-commit"
 assert_eq "graphify: platform artifact missing" "repairable|none|platform_artifact_missing|true" "$(pg)"
-mkdir -p "$HR_PROJ/.cursor/rules"; echo 'graphify rule' >"$HR_PROJ/.cursor/rules/graphify.mdc"
+mkdir -p "$HR_PROJ/.claude"; echo '{"hooks":"graphify"}' >"$HR_PROJ/.claude/settings.json"
 assert_eq "graphify: ready" "ready|full||false" "$(pg)"
 hr_bin graphify 'echo "skill is from graphify 0.1"'
 out="$(rt_probe_graphify)"
@@ -266,7 +266,7 @@ assert_eq "mcp config: patcher failure status" "4" "$(HR_PY_RC_patch_mcp=4 bash 
 
 # full repair flow
 hr_manifest "graphify=$HR_BIN/graphify-mcp"
-mkdir -p "$HR_PROJ/graphify-out" "$HR_PROJ/.cursor/rules"; echo '{}' >"$HR_PROJ/graphify-out/graph.json"; echo graphify >"$HR_PROJ/.cursor/rules/graphify.mdc"
+mkdir -p "$HR_PROJ/graphify-out" "$HR_PROJ/.claude"; echo '{}' >"$HR_PROJ/graphify-out/graph.json"; echo '{"hooks":"graphify"}' >"$HR_PROJ/.claude/settings.json"
 printf '%s' "$HEAD_COMMIT" >"$HR_PROJ/graphify-out/.build-commit"
 RT_MODE=verify
 assert_eq "repair: not authorized" '{"actions":[],"failures":["mutation_not_authorized"],"restart_required":false}' "$(rt_repair_graphify)"
@@ -307,16 +307,12 @@ hr_manifest
 unset SB_GLOBAL_TOOLSTACK_MANIFEST
 pa() { hr_state "$(rt_probe_agentmemory)"; }
 assert_eq "agentmemory mcp: not configured anywhere" "1" "$(rc_of rt_probe_agentmemory_mcp_configured)"
-printf '{"mcpServers":{"agentmemory":{}}}\n' >"$HOME/.cursor/mcp.json"
-assert_eq "agentmemory mcp: configured (cursor)" "0" "$(rc_of rt_probe_agentmemory_mcp_configured)"
-printf '{"mcpServers":{"user-agentmemory":{}}}\n' >"$HOME/.cursor/mcp.json"
-assert_eq "agentmemory mcp: user- prefixed server (cursor)" "0" "$(rc_of rt_probe_agentmemory_mcp_configured)"
-printf '{"mcpServers":{}}\n' >"$HOME/.cursor/mcp.json"
-assert_eq "agentmemory mcp: server missing (cursor)" "1" "$(rc_of rt_probe_agentmemory_mcp_configured)"
-rm -f "$HOME/.cursor/mcp.json"
-assert_eq "agentmemory mcp: no cursor config" "1" "$(rc_of rt_probe_agentmemory_mcp_configured)"
-assert_eq "agentmemory mcp: claude user- prefixed" "0" "$(printf '{"mcpServers":{"user-agentmemory":{}}}\n' >"$HOME/.claude.json"; RT_HOST=claude rc_of rt_probe_agentmemory_mcp_configured)"
-assert_eq "agentmemory mcp: no claude config" "1" "$(rm -f "$HOME/.claude.json"; RT_HOST=claude rc_of rt_probe_agentmemory_mcp_configured)"
+printf '{"mcpServers":{"agentmemory":{}}}\n' >"$HOME/.claude.json"
+assert_eq "agentmemory mcp: configured (claude)" "0" "$(rc_of rt_probe_agentmemory_mcp_configured)"
+printf '{"mcpServers":{}}\n' >"$HOME/.claude.json"
+assert_eq "agentmemory mcp: server missing (claude)" "1" "$(rc_of rt_probe_agentmemory_mcp_configured)"
+rm -f "$HOME/.claude.json"
+assert_eq "agentmemory mcp: no claude config" "1" "$(rc_of rt_probe_agentmemory_mcp_configured)"
 PI_CFG="$HOME/.pi/agent/extensions/silver-bullet-five-tool-stack/config.json"; mkdir -p "$(dirname "$PI_CFG")"
 assert_eq "agentmemory mcp: pi without config" "1" "$(RT_HOST=pi rc_of rt_probe_agentmemory_mcp_configured)"
 printf '{"servers":{"agentmemory":{"enabled":true}}}\n' >"$PI_CFG"
@@ -326,7 +322,7 @@ assert_eq "agentmemory mcp: pi disabled" "1" "$(RT_HOST=pi rc_of rt_probe_agentm
 assert_eq "agentmemory mcp: hosts without a fallback" "1" "$(RT_HOST=codex rc_of rt_probe_agentmemory_mcp_configured)"
 
 hr_bin curl 'exit "${HR_CURL_RC:-1}"'
-RT_HOST=goose; assert_eq "agentmemory: unsupported host" "unsupported|none||false" "$(pa)"; RT_HOST=cursor
+RT_HOST=goose; assert_eq "agentmemory: unsupported host" "unsupported|none||false" "$(pa)"; RT_HOST=claude
 hr_consent agentmemory=disabled; assert_eq "agentmemory: disabled" "disabled|none||false" "$(pa)"
 hr_consent; assert_eq "agentmemory: pending" "pending|none||false" "$(pa)"
 hr_consent agentmemory=suspended; assert_eq "agentmemory: suspended" "suspended|none||false" "$(pa)"
@@ -337,7 +333,7 @@ hr_bin agentmemory 'echo "status: stopped"'
 assert_eq "agentmemory: server unhealthy" "repairable|none|server_unhealthy|true" "$(pa)"
 hr_bin agentmemory 'echo "Health: healthy"'
 assert_eq "agentmemory: mcp not configured" "repairable|partial|mcp_not_configured|true" "$(pa)"
-printf '{"mcpServers":{"agentmemory":{}}}\n' >"$HOME/.cursor/mcp.json"
+printf '{"mcpServers":{"agentmemory":{}}}\n' >"$HOME/.claude.json"
 assert_eq "agentmemory: export missing" "repairable|none|export_missing|true" "$(pa)"
 mkdir -p "$HR_PROJ/.agentmemory/memory" "$HR_PROJ/.agentmemory/snapshots"
 assert_eq "agentmemory: ready" "ready|full||false" "$(pa)"
@@ -352,14 +348,14 @@ assert_eq "am config: patch helper missing" "1" "$(RT_REPO_ROOT="$TL_TMP/none" r
 : >"$HR_LOG"
 rt_repair_agentmemory_mcp_config
 assert_contains "am config: agentmemory patched when consented" "$(cat "$HR_LOG")" "RT_PATCH_AGENTMEMORY=1"
-assert_contains "am config: host passed" "$(cat "$HR_LOG")" "RT_HOST=cursor"
+assert_contains "am config: host passed" "$(cat "$HR_LOG")" "RT_HOST=claude"
 : >"$HR_LOG"; RT_MODE=verify rt_repair_agentmemory_mcp_config
 assert_contains "am config: not authorized -> patch off" "$(cat "$HR_LOG")" "RT_PATCH_AGENTMEMORY=0"
 assert_eq "am config: patcher failure status" "6" "$(export HR_PY_RC_patch_mcp=6; rc=0; rt_repair_agentmemory_mcp_config || rc=$?; unset HR_PY_RC_patch_mcp; echo $rc)"
 
 hr_bin npm 'echo "npm $*" >>"$HR_LOG"; exit "${HR_NPM_RC:-0}"'
 hr_bin agentmemory 'echo "agentmemory $*" >>"$HR_LOG"; echo "Health: healthy"'
-rm -rf "$HR_PROJ/.agentmemory" "$HOME/.agentmemory"; rm -f "$HOME/.cursor/mcp.json"
+rm -rf "$HR_PROJ/.agentmemory" "$HOME/.agentmemory"; rm -f "$HOME/.claude.json"
 : >"$HR_LOG"
 out="$(rt_repair_agentmemory)"
 assert_eq "am repair: healthy cli, export root and mcp config created" '{"actions":["export_root_created","mcp_config_merged"],"failures":[],"restart_required":true}' "$(jq -c . <<<"$out")"
@@ -368,7 +364,7 @@ out="$(RT_CROSS_TOOL_BATCH=1 rt_repair_agentmemory)"
 assert_eq "am repair: cross-tool batch owns the mcp merge" '{"actions":["export_root_created"],"failures":[],"restart_required":false}' "$(jq -c . <<<"$out")"
 out="$(HR_PY_RC_patch_mcp=1 rt_repair_agentmemory)"
 assert_eq "am repair: merge failure recorded" '{"actions":["export_root_created"],"failures":["mcp_config_merge_failed"],"restart_required":false}' "$(jq -c . <<<"$out")"
-printf '{"mcpServers":{"agentmemory":{}}}\n' >"$HOME/.cursor/mcp.json"
+printf '{"mcpServers":{"agentmemory":{}}}\n' >"$HOME/.claude.json"
 out="$(rt_repair_agentmemory)"
 assert_eq "am repair: configured host needs no merge" '{"actions":["export_root_created"],"failures":[],"restart_required":false}' "$(jq -c . <<<"$out")"
 # export root cannot be created

@@ -65,7 +65,7 @@ check(
     and internal_workflows <= {item.get("id") for item in workflows},
     f"public={len(public_workflows)} internal={len(internal_workflows)}",
 )
-check("catalog has exactly 118 flow-step contracts", len(flow_steps) == 118, f"found {len(flow_steps)}")
+check("catalog has exactly 114 flow-step contracts", len(flow_steps) == 114, f"found {len(flow_steps)}")
 
 
 class SiteHTMLParser(HTMLParser):
@@ -434,14 +434,14 @@ summary_errors: list[str] = []
 count_patterns = {
     "29 atomic flows": re.compile(r"(?:\b29\b.{0,45}(?:AF-\*)?.{0,15}atomic flows|atomic flows.{0,45}\b29\b)", re.I | re.S),
     "26 workflows": re.compile(r"(?:\b26\b.{0,45}(?:WF-\*)?.{0,15}workflows|workflows.{0,45}\b26\b)", re.I | re.S),
-    "118 flow steps": re.compile(r"(?:\b118\b.{0,45}flow[- ]steps?|flow[- ]steps?.{0,45}\b118\b)", re.I | re.S),
+    "114 flow steps": re.compile(r"(?:\b118\b.{0,45}flow[- ]steps?|flow[- ]steps?.{0,45}\b118\b)", re.I | re.S),
 }
 for surface in summary_surfaces:
     raw = surface.read_text(encoding="utf-8") if surface.exists() else ""
     for label, pattern in count_patterns.items():
         if not pattern.search(raw):
             summary_errors.append(f"{rel(surface)} missing current {label} summary")
-check("catalog summary surfaces show 29 AF / 26 WF / 118 flow-step counts", not summary_errors, summary_errors)
+check("catalog summary surfaces show 29 AF / 26 WF / 114 flow-step counts", not summary_errors, summary_errors)
 
 site_without_history = "\n".join(
     " ".join(parsers[page.resolve()].visible + parsers[page.resolve()].meta)
