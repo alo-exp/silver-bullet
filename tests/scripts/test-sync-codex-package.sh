@@ -329,12 +329,12 @@ else
   pass "Cursor command stubs carry no Codex picker title"
 fi
 assert_contains "Cursor stubs point at the Cursor source tree" 'cursor-skill-source/sb-feature/SILVER_SOURCE' "$PACKAGE_ROOT/commands/sb-feature.md"
-if find "$CURSOR_SKILL_ROOT" "$PACKAGE_SKILL_ROOT" -name 'SKILL.md' | grep -q .; then
+if [[ -n "$(find "$CURSOR_SKILL_ROOT" "$PACKAGE_SKILL_ROOT" -name 'SKILL.md')" ]]; then
   fail "Hidden source trees hold no picker-discoverable SKILL.md"
 else
   pass "Hidden source trees hold no picker-discoverable SKILL.md"
 fi
-if find "$PACKAGE_ROOT" "$REPO_ROOT/agents" "$REPO_ROOT/host-bundles" -maxdepth 1 -name '.*.staging-*' | grep -q .; then
+if [[ -n "$(find "$PACKAGE_ROOT" "$REPO_ROOT/agents" "$REPO_ROOT/host-bundles" -maxdepth 1 -name '.*.staging-*')" ]]; then
   fail "Sync leaves no render staging tree behind"
 else
   pass "Sync leaves no render staging tree behind"
