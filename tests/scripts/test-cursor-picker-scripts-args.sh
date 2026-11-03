@@ -34,7 +34,9 @@ assert_eq "enumerate without any plugin surface exits 1" 1 "$TL_STATUS"
 assert_contains "enumerate explains the missing surface" "$TL_OUT$TL_ERR" "no Cursor Silver Bullet plugin surface found"
 
 # ---- global custom agents: only genuinely installer-generated files are exempt
-SURF="$TL_TMP/surface"; mkdir -p "$SURF"
+SURF="$TL_TMP/surface"; mkdir -p "$SURF/.cursor-plugin" "$SURF/commands"
+echo '{"commands":"./commands"}' >"$SURF/.cursor-plugin/plugin.json"
+printf -- '---\nname: "sb-feature"\n---\nx\n' >"$SURF/commands/sb-feature.md"
 AGH="$TL_TMP/agents-home"; AG="$AGH/agents"; mkdir -p "$AG/sub"
 MARK='<!-- sb-managed: cursor-sb-agents -->'
 genuine() { printf -- '---\nname: %s\ndescription: SB reusable ladder agent — x effort=high.\nmodel: m\nreadonly: false\n---\nYou are a Silver Bullet reusable review/verify agent.\n%s\n' "$1" "$MARK"; }
@@ -72,6 +74,39 @@ for f in sb-evil sb-mid-high sb-other-high sb-differs-high sb-nested-high; do
   assert_contains "$f is flagged" "$TL_OUT" "$f"
 done
 assert_not_contains "genuine generated agent is not flagged" "$TL_OUT" "(sb-ok-high.md)"
+
+# ---- R8-20: kebab-case command stubs are mapped to routes
+DH="$TL_TMP/diag-home"; PLG="$TL_TMP/diag-plugin"
+mkdir -p "$DH/plugins/cache/alo-labs/silver-bullet" "$PLG/commands" "$PLG/skills/silver-feature" "$PLG/skills/silver" "$PLG/.cursor-plugin"
+ln -s "$PLG" "$DH/plugins/cache/alo-labs/silver-bullet/current"
+printf -- '---\nname: "sb-feature"\n---\nx\n' >"$PLG/commands/sb-feature.md"
+printf -- '---\nname: "sb"\n---\nx\n' >"$PLG/commands/sb.md"
+printf -- '---\nname: "silver-feature"\n---\nx\n' >"$PLG/skills/silver-feature/SKILL.md"
+printf -- '---\nname: "silver"\n---\nx\n' >"$PLG/skills/silver/SKILL.md"
+echo '{}' >"$PLG/.cursor-plugin/plugin.json"
+tl_run bash "$TL_REPO_ROOT/scripts/diagnose-cursor-picker-duplicates.sh" --cursor-home "$DH"
+assert_contains "diagnose counts the kebab-case commands" "$TL_OUT" "commands=2"
+assert_contains "diagnose catches a command that duplicates a skill" "$TL_OUT" "sb:feature"
+assert_contains "diagnose catches the router duplicate" "$TL_OUT" "silver"
+assert_eq "diagnose fails on the overlap" 1 "$TL_STATUS"
+rm -rf "$PLG/skills"
+tl_run bash "$TL_REPO_ROOT/scripts/diagnose-cursor-picker-duplicates.sh" --cursor-home "$DH"
+assert_not_contains "no overlap once the skills are gone" "$TL_OUT" "cmd_skills_overlap=['sb"
+
+# a manifest without a commands path is an empty slash menu, not a pass
+NOCMD="$TL_TMP/nocmd-surface"; mkdir -p "$NOCMD/.cursor-plugin" "$NOCMD/commands"
+echo '{"name":"silver-bullet"}' >"$NOCMD/.cursor-plugin/plugin.json"
+printf -- '---\nname: "sb-feature"\n---\nx\n' >"$NOCMD/commands/sb-feature.md"
+tl_run bash "$TL_REPO_ROOT/scripts/enumerate-cursor-slash-picker.sh" --cursor-home "$EMPTY_HOME" --surface "$NOCMD" --workspace "$EMPTY_HOME/ws"
+assert_eq "manifest without commands fails" 1 "$TL_STATUS"
+assert_contains "empty picker explained" "$TL_OUT" "NO COMMANDS"
+echo '{"name":"silver-bullet","commands":"./commands"}' >"$NOCMD/.cursor-plugin/plugin.json"
+tl_run bash "$TL_REPO_ROOT/scripts/enumerate-cursor-slash-picker.sh" --cursor-home "$EMPTY_HOME" --surface "$NOCMD" --workspace "$EMPTY_HOME/ws"
+assert_eq "manifest with its commands passes" 0 "$TL_STATUS"
+assert_contains "kebab-case wording" "$TL_OUT" "kebab-case routes"
+rm -f "$NOCMD/commands/sb-feature.md"
+tl_run bash "$TL_REPO_ROOT/scripts/enumerate-cursor-slash-picker.sh" --cursor-home "$EMPTY_HOME" --surface "$NOCMD" --workspace "$EMPTY_HOME/ws"
+assert_eq "zero commands fails" 1 "$TL_STATUS"
 
 # ---- codex-sanitize-package.sh
 SAN="$TL_REPO_ROOT/scripts/codex-sanitize-package.sh"

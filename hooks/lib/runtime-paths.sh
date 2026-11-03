@@ -46,34 +46,80 @@ else
 fi
 SB_RUNTIME_PLUGIN_CACHE_ROOT="${SB_RUNTIME_HOME_ROOT}/plugins/cache"
 
-sb_runtime_path_is_state_scoped() {
-  local candidate="$1"
-  local extra_root
-  [[ -n "$candidate" ]] || return 1
+# Canonical path resolution for the state-root containment checks below. Without the
+# library every containment check fails closed (callers fall back to their defaults).
+_sb_runtime_lib_src="${BASH_SOURCE[0]:-$0}"
+_sb_runtime_lib_dir="${_sb_runtime_lib_src%/*}"
+[[ "$_sb_runtime_lib_dir" != "$_sb_runtime_lib_src" ]] || _sb_runtime_lib_dir="."
+if [[ -f "$_sb_runtime_lib_dir/path-canonical.sh" ]]; then
+  # shellcheck source=path-canonical.sh
+  source "$_sb_runtime_lib_dir/path-canonical.sh"
+fi
+unset _sb_runtime_lib_dir _sb_runtime_lib_src
 
+# _sb_runtime_state_root_contains CANONICAL_PATH: strictly below a canonical state root.
+# Roots: $SB_RUNTIME_HOME_ROOT/.silver-bullet, plus SB_RUNTIME_EXTRA_STATE_ROOTS entries that
+# are absolute and end in /.silver-bullet (Kay live tests run Codex-compatible hooks against
+# an isolated .kay state root; never accept arbitrary .codex/.kay looking paths by name).
+_sb_runtime_state_root_contains() {
+  local path="$1" list root
+  list="${SB_RUNTIME_EXTRA_STATE_ROOTS:-}"
+  root="${SB_RUNTIME_HOME_ROOT}/.silver-bullet"
+  while :; do
+    while [[ "$root" == */ ]]; do root="${root%/}"; done
+    if [[ "$root" == /*/.silver-bullet ]] && _sb_path_phys "$root" && [[ "$_SB_PATH_OUT" != "/" && "$path" == "$_SB_PATH_OUT"/* ]]; then
+      return 0
+    fi
+    [[ -n "$list" ]] || return 1
+    root="${list%%:*}"
+    if [[ "$list" == *:* ]]; then
+      list="${list#*:}"
+    else
+      list=""
+    fi
+  done
+}
+
+# sb_runtime_state_path PATH: the single safe resolver for configured or overridden state
+# paths. Prints PATH's canonical form and returns 0 only when it lies strictly inside a
+# state root: a leading ~ is expanded, the directory part is resolved physically ('.', '..',
+# '//', symlinked parents), trailing '/' is dropped, and a leaf symlink must point inside a
+# root too (the leaf itself is kept, so deleting the result removes the link). Prints nothing
+# and returns 1 for empty, relative or control-character paths and for anything escaping.
+sb_runtime_state_path() {
+  local candidate="${1:-}" path leaf
   case "$candidate" in
-    "$SB_RUNTIME_HOME_ROOT"/.silver-bullet/*) return 0 ;;
+    '' | *$'\n'* | *$'\r'*) return 1 ;;
   esac
-
-  # Kay live tests run Codex-compatible hooks against an isolated .kay state
-  # root. Keep that exception explicit; never accept arbitrary .codex/.kay
-  # looking paths just because their names match.
-  if [[ -n "${SB_RUNTIME_EXTRA_STATE_ROOTS:-}" ]]; then
-    IFS=':' read -r -a _sb_extra_state_roots <<< "$SB_RUNTIME_EXTRA_STATE_ROOTS"
-    for extra_root in "${_sb_extra_state_roots[@]}"; do
-      [[ -n "$extra_root" ]] || continue
-      extra_root="${extra_root%/}"
-      case "$extra_root" in
-        */.silver-bullet) ;;
-        *) continue ;;
-      esac
-      case "$candidate" in
-        "$extra_root"/*) return 0 ;;
-      esac
-    done
+  declare -f _sb_path_phys >/dev/null 2>&1 || return 1
+  _sb_path_host "$candidate"
+  path="$_SB_PATH_OUT"
+  [[ "$path" == /* ]] || return 1
+  while [[ "$path" == */ && "$path" != "/" ]]; do path="${path%/}"; done
+  leaf="${path##*/}"
+  case "$leaf" in
+    . | ..)
+      _sb_path_phys "$path" || return 1
+      path="$_SB_PATH_OUT"
+      ;;
+    *)
+      _sb_path_phys "${path%/*}" || return 1
+      path="${_SB_PATH_OUT%/}/$leaf"
+      ;;
+  esac
+  _sb_runtime_state_root_contains "$path" || return 1
+  if [[ -L "$path" ]]; then
+    _sb_path_phys "$path" || return 1
+    _sb_runtime_state_root_contains "$_SB_PATH_OUT" || return 1
   fi
+  printf '%s' "$path"
+}
 
-  return 1
+# sb_runtime_path_is_state_scoped PATH: true when the literal absolute PATH (as the caller
+# will use it, so no ~ or drive-letter translation) resolves inside a state root.
+sb_runtime_path_is_state_scoped() {
+  [[ "${1:-}" == /* ]] || return 1
+  sb_runtime_state_path "$1" >/dev/null
 }
 
 # Resolve the active host's config root at the runtime boundary so shared
