@@ -522,16 +522,22 @@ class TomlDocument:
     def headers(self, path):
         return [st for st in self.statements if st.kind == "table" and st.path == tuple(path)]
 
-    def remove(self, predicate) -> int:
+    def remove(self, predicate, *, duplicates_only: bool = False) -> int:
         """Remove every table whose path satisfies ``predicate``, and every dotted key whose
-        full path does; return how many were removed. A removed table takes its body (up to
+        full path does; return how many were removed. With ``duplicates_only``, only the
+        second and later headers of a path are removed (the first copy and dotted keys stay). A removed table takes its body (up to
         its last key) and the blank lines after it; comments before the next table stay."""
         statements = self.statements
         spans = []
+        seen = set()
         index = 0
         while index < len(statements):
             statement = statements[index]
             if statement.kind in ("table", "array-table") and predicate(statement.path):
+                if duplicates_only and statement.path not in seen:
+                    seen.add(statement.path)
+                    index += 1
+                    continue
                 last = index
                 cursor = index + 1
                 while cursor < len(statements) and statements[cursor].kind not in ("table", "array-table"):
@@ -543,7 +549,7 @@ class TomlDocument:
                 spans.append((statement.start, statements[last].end))
                 index = last + 1
                 continue
-            if statement.kind == "keyval" and predicate(statement.path):
+            if statement.kind == "keyval" and not duplicates_only and predicate(statement.path):
                 spans.append((statement.start, statement.end))
             index += 1
         text = self.text
@@ -561,14 +567,22 @@ class TomlDocument:
         the header is dropped."""
         mapping = {tuple(old): tuple(new) for old, new in mapping.items() if tuple(old) != tuple(new)}
         sources = set(mapping)
-        self.remove(lambda path: path in set(mapping.values()) and path not in sources)
+        targets = set(mapping.values()) - sources
+        size = len(next(iter(mapping))) if mapping else 0
+        # a stale table at a target path, in header or dotted-key form, makes way first
+        self.remove(lambda path: tuple(path[:size]) in targets)
         edits = []
         for statement in self.statements:
+            key = tuple(statement.path[:size])
+            raw = self.text[statement.start : statement.end]
+            indent = raw[: len(raw) - len(raw.lstrip(" \t"))]
+            ending = raw[len(raw.rstrip("\r\n")) :]
             if statement.kind == "table" and statement.path in mapping:
-                raw = self.text[statement.start : statement.end]
-                indent = raw[: len(raw) - len(raw.lstrip(" \t"))]
-                ending = raw[len(raw.rstrip("\r\n")) :]
                 edits.append((statement.start, statement.end, f"{indent}[{format_key(mapping[statement.path])}]{ending}"))
+            elif statement.kind == "keyval" and key in mapping and len(statement.table) < size:
+                relative = (mapping[key] + tuple(statement.path[size:]))[len(statement.table) :]
+                tail = self.text[statement.value[0] : statement.end]
+                edits.append((statement.start, statement.end, f"{indent}{format_key(relative)} = {tail}"))
         text = self.text
         for start, end, line in reversed(edits):
             text = text[:start] + line + text[end:]
@@ -652,16 +666,27 @@ def read_toml(path, label=None) -> TomlDocument:
     return TomlDocument(text, label)
 
 
+def is_sb_trust_table(path) -> bool:
+    """True for the ``[hooks.state."<key>"]`` trust tables Silver Bullet's installers write:
+    keys of the package (``silver-bullet@...``) and, in Kay mode, of ``~/.codex/hooks.json``."""
+    return (
+        len(path) >= 3
+        and tuple(path[:2]) == ("hooks", "state")
+        and (path[2].startswith("silver-bullet@") or "/.codex/hooks.json:" in path[2])
+    )
+
+
 def read_toml_repairing(path, repairable, label=None):
-    """Like ``read_toml``, but a file that only fails because of tables ``repairable(path)``
-    selects (Silver Bullet's own duplicated trust tables) is loaded without them.
+    """Like ``read_toml``, but a file that only fails because tables ``repairable(path)``
+    selects (Silver Bullet's duplicated trust tables) are declared twice is loaded with the
+    later copies dropped.
     Return ``(document, repaired)``; any other fault raises ConfigError."""
     try:
         return read_toml(path, label), False
     except ConfigError as first:
         try:
             doc = TomlDocument((read_bytes(path) or b"").decode("utf-8"), label or str(path))
-            doc.remove(repairable)
+            doc.remove(repairable, duplicates_only=True)
             check_toml(doc.text, label or str(path))
         except (ConfigError, UnicodeDecodeError):
             raise first from None
