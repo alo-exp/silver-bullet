@@ -31,6 +31,13 @@ assert_contains "smoke HOME is a temp sandbox" "$(hd_logs)" "hook-env session-st
 assert_contains "smoke sends source=resume" "$(hd_logs)" "source=resume cfg=.git,.silver-bullet.json,silver-bullet.md,"
 assert_contains "state dir is not pinned to the user's" "$(hd_logs)" "state=unset"
 assert_eq "sandbox removed afterwards" "" "$(find "$TMPDIR" -maxdepth 1 -name 'sb-doctor-smoke.*')"
+# the sandbox is best effort: no git still smokes, no temp dir fails the check
+tl_stub git 'exit 1'
+run -- "$HD_PROJ"
+assert_contains "smoke tolerates a failing git init" "$TL_OUT" "PASS: D11 — session-start smoke exit 0"
+rm -f "$TL_BIN/git"
+run TMPDIR="$TL_TMP/no-such-tmp" -- "$HD_PROJ"
+assert_contains "no sandbox dir: the smoke fails, the audit goes on" "$TL_OUT" "FAIL: D11 — session-start smoke failed"
 # a user's runtime state survives the doctor
 mkdir -p "$HOME/.claude/.silver-bullet"
 printf 'adversarial-review-clean\n' >"$HOME/.claude/.silver-bullet/quality-gate-state"
@@ -62,7 +69,7 @@ run -- "$HD_PROJ"
 assert_contains "smoke runs the cached hooks" "$(hd_logs)" "cachehook session-start"
 rm -f -- "${CACHE:?}/current"
 run -- "$HD_PROJ"
-assert_contains "no current link: the hooks are looked up under the dangling cache path" "$TL_OUT" "FAIL: D11 — session-start not found under $CACHE/current/hooks"
+assert_contains "no current link: the checkout hooks are searched" "$TL_OUT" "FAIL: D11 — session-start not found under $HD_ST/hooks"
 rm -rf -- "${HOME:?}/.claude/plugins"
 run -- "$HD_PROJ"
 assert_contains "no cache at all: the checkout hooks are searched" "$TL_OUT" "FAIL: D11 — session-start not found under $HD_ST/hooks"

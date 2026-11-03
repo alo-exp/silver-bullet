@@ -36,6 +36,10 @@ before="$(find "$TMPDIR" -maxdepth 1 -name 'sb-pre-release-smoke.*' | wc -l | tr
 res="$(sub 'a="$(sb_smoke_host_root x 2>&1)"; echo "rc=$? out=$a"')"
 assert_contains "unpinned host root fails" "$res" "rc=1"
 assert_contains "unpinned host root explains" "$res" "smoke root not pinned"
+for helper in sb_smoke_begin_codex sb_smoke_begin_claude sb_smoke_begin_cursor; do
+  res="$(sub "$helper >/dev/null 2>&1; echo rc=\$?")"
+  assert_eq "unpinned $helper fails" "rc=1" "$res"
+done
 for helper in sb_smoke_cursor_workspace sb_smoke_cursor_config_dir; do
   res="$(sub "$helper >/dev/null 2>&1; echo rc=\$?")"
   assert_eq "unpinned $helper fails" "rc=1" "$res"
@@ -150,6 +154,9 @@ assert_file_exists "cleanup with failing rm leaves the dir" "$leftover"
 assert_eq "previous tag: env override" "v9.9.9" "$(SB_RC_PREVIOUS_TAG=v9.9.9 sub 'sb_smoke_resolve_previous_tag')"
 assert_eq "previous tag: no repo -> 1" 1 "$(sub 'sb_smoke_resolve_previous_tag >/dev/null; echo $?' || true)"
 GR="$TL_TMP/gr"; tl_git_repo "$GR"
+# a damaged .git is treated as no tags
+mkdir -p "$TL_TMP/badgit/.git"
+assert_eq "previous tag: unreadable repository -> none (status 1)" "1" "$(SB_PRE_RELEASE_REPO_ROOT="$TL_TMP/badgit" sub 'sb_smoke_resolve_previous_tag >/dev/null; echo $?' || true)"
 git -C "$GR" tag v1.0.0
 echo b >"$GR/b.txt"; git -C "$GR" add b.txt; git -C "$GR" commit -qm b
 git -C "$GR" tag v1.10.0; git -C "$GR" tag v1.2.0

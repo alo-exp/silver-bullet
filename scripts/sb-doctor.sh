@@ -182,10 +182,11 @@ resolve_registry_plugin_field() {
   ' "$reg" 2>/dev/null || true
 }
 
-# doctor_realpath: physical path of a symlink chain. `readlink -f` is missing on
-# macOS before 12.3; python3 is a runtime prerequisite everywhere.
+# doctor_realpath: physical directory a path resolves to (symlinks followed), empty
+# when it does not resolve. Every caller resolves a directory (the plugin cache
+# `current` link), and `readlink -f` is missing on macOS before 12.3.
 doctor_realpath() {
-  python3 -c 'import os, sys; p = sys.argv[1]; sys.exit(1) if not (os.path.lexists(p) or os.path.isdir(os.path.dirname(p))) else print(os.path.realpath(p))' "$1" 2>/dev/null
+  (cd -P "$1" 2>/dev/null && pwd -P) || :
 }
 
 # The expected config version comes from Silver Bullet's own template. A template
@@ -619,7 +620,7 @@ run_doctor_checks() {
 
   # D3 — plugin cache
   current_link="${cache_root}/current"
-  if [[ -L "$current_link" && -d "$(doctor_realpath "$current_link" 2>/dev/null || true)" ]]; then
+  if [[ -L "$current_link" && -d "$(doctor_realpath "$current_link")" ]]; then
     local resolved
     resolved="$(doctor_realpath "$current_link")"
     if [[ -f "${resolved}/hooks/hooks.json" ]]; then
@@ -746,7 +747,8 @@ run_doctor_checks() {
     if [[ -f "${REPO_ROOT}/hooks/session-start" ]]; then
       hook_root="${REPO_ROOT}"
     else
-      hook_root="$(doctor_realpath "${cache_root}/current" 2>/dev/null || echo "${REPO_ROOT}")"
+      hook_root="$(doctor_realpath "${cache_root}/current")"
+      hook_root="${hook_root:-${REPO_ROOT}}"
     fi
     hooks_manifest="${hook_root}/hooks"
     for hook_name in session-start outcomes-check stop-check; do
@@ -789,7 +791,7 @@ run_doctor_checks() {
   # D13 — cross-host plugin path contamination (host-scoped manifest paths)
   local skill_root hooks_manifest_path agent_cache_dir install_surface_script foreign_plugin_pattern
   install_surface_script="${REPO_ROOT}/scripts/validate-host-install-surface.sh"
-  skill_root="$(doctor_realpath "${cache_root}/current" 2>/dev/null || true)"
+  skill_root="$(doctor_realpath "${cache_root}/current")"
   foreign_plugin_pattern="$(foreign_host_plugin_path_pattern "$runtime")"
   case "$runtime" in
     cursor)
@@ -880,7 +882,7 @@ run_doctor_checks() {
   if [[ "$runtime" == "cursor" ]]; then
     local registry_sha backend_sha gitpath_root market_cache_link backend_cache_path resolved_current
     registry_sha="$(resolve_registry_plugin_field "$reg" "silver-bullet@alo-labs" "gitCommitSha")"
-    resolved_current="$(doctor_realpath "${cache_root}/current" 2>/dev/null || true)"
+    resolved_current="$(doctor_realpath "${cache_root}/current")"
     backend_sha="$(find "${HOME}/Library/Application Support/Cursor/logs" -name 'Cursor Plugins*.log' -type f -print0 2>/dev/null \
       | xargs -0 grep -h 'Adding enabled plugin: silver-bullet from ' 2>/dev/null \
       | sed -n 's/.*silver-bullet from \([0-9a-f]\{40\}\).*/\1/p' | tail -1 || true)"
@@ -892,7 +894,7 @@ run_doctor_checks() {
       if [[ -d "${gitpath_root}/.git" ]] && git -C "$gitpath_root" cat-file -e "${backend_sha}^{commit}" >/dev/null 2>&1; then
         if [[ -d "$backend_cache_path" && -f "${backend_cache_path}/.cache-complete" && -f "${backend_cache_path}/commands/sb.md" ]]; then
           record pass D18 "Cursor backend cache + gitPath ready (${backend_sha:0:8})"
-        elif [[ -L "$market_cache_link" ]] && [[ "$(doctor_realpath "$market_cache_link" 2>/dev/null || true)" == "$resolved_current" ]]; then
+        elif [[ -L "$market_cache_link" ]] && [[ "$(doctor_realpath "$market_cache_link")" == "$resolved_current" ]]; then
           record fail D18 "missing alo-labs-agent-plugins materialized cache for ${backend_sha:0:8} — run: bash scripts/install-cursor.sh"
         else
           record fail D18 "missing alo-labs-cursor cache symlink for ${backend_sha:0:8} — run: bash scripts/install-cursor.sh"

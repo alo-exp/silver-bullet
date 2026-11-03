@@ -58,5 +58,8 @@ assert_contains "argument selects project B (opted in)" "$TL_OUT" "graphify-cli 
 tl_run env SB_DIAG_PROJECT_ROOT="$TL_TMP/projA" bash "$D"
 assert_not_contains "env selects project A (opted out)" "$TL_OUT" "CLI available (opted in)"
 rm -f "$TL_BIN/graphify"
+# a project path that does not exist is audited as given (reported, not a crash)
+tl_run bash "$D" "$TL_TMP/no-such-project"
+assert_contains "nonexistent project argument still audits" "$TL_OUT" "PASS: jq"
 
 tl_results
