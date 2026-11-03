@@ -116,8 +116,8 @@ class TestScore(unittest.TestCase):
         quote = 'revenue growth markets'
         status, score, notes = vcs.compute_support_score(claim, [quote])
         # tokens 3/5 (0.24) and a missing year (0), renormalised over 0.4 + 0.15.
-        self.assertEqual((status, score), ('partial', 0.436))
-        self.assertEqual(notes, 'year mismatch')
+        self.assertEqual((status, score), ('needs_review', 0.436))
+        self.assertEqual(notes, 'year not matched in the source: 2020')
 
     def test_year_mismatch_is_detected_between_different_years(self):
         # Regression: the year regex captured only the century prefix, so
@@ -125,15 +125,15 @@ class TestScore(unittest.TestCase):
         claim = 'Tesla shipped vehicles in 2020'
         quote = 'Tesla shipped vehicles in 2019'
         status, score, notes = vcs.compute_support_score(claim, [quote])
-        self.assertIn('year mismatch', notes)
-        self.assertNotEqual(status, 'supported')
+        self.assertIn('year not matched in the source: 2020', notes)
+        self.assertEqual(status, 'needs_review')
         self.assertLess(score, 1.0)
 
     def test_zero_score_still_reports_notes(self):
         # Regression: a score of exactly 0.0 never replaced the initial best
         # score, so the notes stayed empty and read "adequate overlap".
         status, score, notes = vcs.compute_support_score('Zebra 2020 99', ['Giraffe words'])
-        self.assertEqual((status, score), ('needs_review', 0.0))
+        self.assertEqual((status, score), ('unsupported', 0.0))
         self.assertIn('low lexical overlap', notes)
         self.assertNotIn('adequate overlap', notes)
 
@@ -141,15 +141,17 @@ class TestScore(unittest.TestCase):
         claim = 'Quantum Computing broke encryption 2020 in 99 cases'
         quote = 'Unrelated words zebra giraffe'
         status, score, notes = vcs.compute_support_score(claim, [quote])
-        self.assertEqual(status, 'needs_review')
-        self.assertEqual(notes, 'low lexical overlap; number mismatch; year mismatch; entity mismatch')
+        self.assertEqual(status, 'unsupported')
+        self.assertEqual(notes, "low lexical overlap (0% of the claim's significant words); figure not matched in the "
+                                 "source: 99 case; year not matched in the source: 2020; entity not found in the source: "
+                                 "Quantum Computing")
 
     def test_absent_classes_are_neutral_not_a_free_match(self):
         # R11-02: a claim without numbers, years or entities used to score 0.6 ("supported")
         # with zero lexical overlap. Absent classes now carry no weight at all.
         status, score, _ = vcs.compute_support_score(
             'the vendor guarantees zero downtime', ['the weather was cold and windy yesterday'])
-        self.assertEqual((status, score), ('needs_review', 0.0))
+        self.assertEqual((status, score), ('unsupported', 0.0))
         # A claim with no significant words can never be supported by an entity alone.
         status, score, _ = vcs.compute_support_score('Hi', ['nothing', 'Hi there'])
         self.assertEqual((status, score), ('needs_review', 0.333))
@@ -170,7 +172,7 @@ class TestScore(unittest.TestCase):
 
 
 class TestScoreBoundaries(unittest.TestCase):
-    """Thresholds of compute_support_score: 0.6 and complete for 'supported', 0.35 for 'partial'."""
+    """Thresholds of compute_support_score: 0.6 and complete for 'supported'; under 0.35 nothing addresses the claim."""
 
     def score(self, claim, *quotes):
         return vcs.compute_support_score(claim, list(quotes))
@@ -179,22 +181,24 @@ class TestScoreBoundaries(unittest.TestCase):
 
     @mock.patch.object(vcs, 'PROSE_TOKEN_OVERLAP', 0.3)
     def test_status_thresholds(self):
-        # Tokens only: 3/5 = exactly 0.6 and complete -> supported; 2/5 = 0.4 -> partial; 1/5 -> needs_review.
+        # Tokens only: 3/5 = exactly 0.6 and complete -> supported; 2/5 = 0.4 -> needs_review (it is
+        # named what is missing); 1/5 -> unsupported (nothing in the quote addresses the claim).
         self.assertEqual(self.score(self.FIVE, 'alpha bravo charlie')[:2], ('supported', 0.6))
-        self.assertEqual(self.score(self.FIVE, 'alpha bravo')[:2], ('partial', 0.4))
-        self.assertEqual(self.score(self.FIVE, 'alpha')[:2], ('needs_review', 0.2))
-        # tokens 1/2 (0.2) and a missing year, over 0.55: 0.364 is partial.
-        self.assertEqual(self.score('alpha bravo 2020', 'alpha')[:2], ('partial', 0.364))
+        self.assertEqual(self.score(self.FIVE, 'alpha bravo')[:2], ('needs_review', 0.4))
+        self.assertIn('too few of the claim', self.score(self.FIVE, 'alpha bravo')[2])
+        self.assertEqual(self.score(self.FIVE, 'alpha')[:2], ('unsupported', 0.2))
+        # tokens 1/2 (0.2) and a missing year, over 0.55: 0.364 needs review.
+        self.assertEqual(self.score('alpha bravo 2020', 'alpha')[:2], ('needs_review', 0.364))
 
-    def test_high_score_with_a_missing_number_is_only_partial(self):
+    def test_high_score_with_a_missing_number_needs_review(self):
         status, score, notes = self.score('alpha bravo 12', 'alpha bravo 13')
-        self.assertEqual((status, score), ('partial', 0.615))
-        self.assertEqual(notes, 'number mismatch')
+        self.assertEqual((status, score), ('needs_review', 0.615))
+        self.assertEqual(notes, 'figure not matched in the source: 12')
 
-    def test_high_score_with_low_word_overlap_is_only_partial(self):
+    def test_high_score_with_low_word_overlap_needs_review(self):
         status, score, notes = self.score('alpha bravo charlie delta 12 2020 Qux', 'delta 12 2020 Qux')
-        self.assertEqual((status, score), ('partial', 0.7))
-        self.assertEqual(notes, 'low lexical overlap')
+        self.assertEqual((status, score), ('needs_review', 0.7))
+        self.assertEqual(notes, "low lexical overlap (25% of the claim's significant words)")
 
     def test_claims_without_names_or_figures_need_nearly_all_their_words(self):
         claim = 'the product supports single sign on for enterprise customers'
@@ -215,21 +219,21 @@ class TestScoreBoundaries(unittest.TestCase):
     def test_any_missing_number_is_a_mismatch(self):
         _, _, missing = self.score('alpha 10 20', 'alpha 10')
         _, _, full = self.score('alpha 10 20', 'alpha 10 20')
-        self.assertIn('number mismatch', missing)
-        self.assertNotIn('number mismatch', full)
+        self.assertIn('figure not matched in the source: 20', missing)
+        self.assertNotIn('figure not matched', full)
 
     def test_any_missing_entity_is_a_mismatch_and_case_is_ignored(self):
         status, _, notes = self.score('Alpha acquired Bravo last spring', 'gamma acquired bravo last spring')
-        self.assertEqual(status, 'partial')
-        self.assertIn('entity mismatch', notes)
+        self.assertEqual(status, 'needs_review')
+        self.assertIn('entity not found in the source: Alpha', notes)
         status, _, notes = self.score('Revenue at Acme grew strongly', 'acme revenue grew strongly')
         self.assertEqual((status, notes), ('supported', 'adequate overlap'))
 
     def test_year_note_boundary(self):
         _, _, partial = self.score('alpha 2019 2020', 'alpha 2020')
         _, _, full = self.score('alpha 2019 2020', 'alpha 2019 2020')
-        self.assertIn('year mismatch', partial)
-        self.assertNotIn('year mismatch', full)
+        self.assertIn('year not matched in the source: 2019', partial)
+        self.assertNotIn('year not matched', full)
 
 
 class TestParagraphBoundaries(unittest.TestCase):
@@ -500,16 +504,19 @@ class TestCmdVerify(unittest.TestCase):
         self.assertEqual(rows['c7']['claim_type'], 'synthesis')
         self.assertEqual(rows['c8']['claim_type'], 'factual')  # had citations: stays factual
         self.assertEqual(rows['c8']['cited_source_ids'], [])
-        self.assertEqual(rows['c9']['support_status'], 'needs_review')
+        self.assertEqual(rows['c9']['support_status'], 'unsupported')
+        self.assertEqual(rows['c9']['_support_notes'], 'cited source has no captured evidence')
         self.assertEqual(rows['c10']['support_status'], 'supported')
         self.assertIn('_support_score', rows['c10'])
         self.assertEqual(summary['status'], 'pass')
         self.assertEqual(summary['report'], 'research_report_x.md')
         self.assertEqual(summary['verified'], 8)  # not_applicable rows are not scored
-        self.assertEqual(summary['factual_unsupported'], 2)  # c4 and c8
-        self.assertEqual(summary['factual_not_supported'], 4)  # c3, c4, c8 and c9
+        self.assertEqual(summary['factual_unsupported'], 4)  # c3, c4, c8 and c9
+        self.assertEqual((summary['factual_contradicted'], summary['factual_needs_review']), (0, 0))
+        self.assertEqual(summary['factual_not_supported'], 4)
+        self.assertFalse(summary['review_required'])
         self.assertEqual(summary['total_factual'], 6)
-        self.assertEqual(summary['support_status_counts']['unsupported'], 4)
+        self.assertEqual(summary['support_status_counts']['unsupported'], 6)  # the four above, c6 and c7
 
     def test_strict_fails_exit_1(self):
         d = tmpdir()
@@ -520,16 +527,37 @@ class TestCmdVerify(unittest.TestCase):
         self.assertEqual(json.loads(out)['status'], 'fail')
         self.assertEqual(json.loads(out)['unsupported_rate'], 1.0)
 
-    def test_strict_fails_partial_and_needs_review_factual_claims(self):
+    def test_strict_lists_needs_review_claims_without_failing(self):
         d = tmpdir()
         put(d, 'research_report.md', '# R\n')
         put_jsonl(d, 'evidence.jsonl', [{'evidence_id': 'e1', 'source_id': 's', 'quote': 'alpha bravo'}])
         put_jsonl(d, 'claims.jsonl', [{'claim_id': 'a', 'section_id': 's', 'claim_type': 'factual',
                                        'text': 'alpha bravo charlie delta eeee', 'evidence_ids': ['e1']}])
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            code, out = run_cmd(vcs.cmd_verify, dir=d, strict=True, report=None)
+        self.assertIsNone(code)
+        summary = json.loads(out)
+        self.assertEqual((summary['status'], summary['factual_unsupported'], summary['factual_needs_review']), ('pass', 0, 1))
+        self.assertTrue(summary['review_required'])
+        self.assertEqual(summary['needs_review'][0]['claim_id'], 'a')
+        self.assertIn('low lexical overlap (40%', summary['needs_review'][0]['reason'])
+        self.assertIn('1 factual claim(s) need review', err.getvalue())
+
+    def test_strict_fails_on_a_contradicted_claim(self):
+        d = tmpdir()
+        put(d, 'research_report.md', '# R\n')
+        put_jsonl(d, 'evidence.jsonl', [{'evidence_id': 'e1', 'source_id': 's', 'quote': 'Acme lost 50 million in 2023'}])
+        put_jsonl(d, 'claims.jsonl', [{'claim_id': 'a', 'section_id': 's', 'claim_type': 'factual',
+                                       'text': 'Acme raised 50 million in 2023', 'evidence_ids': ['e1']}])
         code, out = run_cmd(vcs.cmd_verify, dir=d, strict=True, report=None)
         self.assertEqual(code, 1)
         summary = json.loads(out)
-        self.assertEqual((summary['factual_unsupported'], summary['factual_not_supported']), (0, 1))
+        self.assertEqual((summary['status'], summary['factual_contradicted']), ('fail', 1))
+        self.assertEqual(get_jsonl(d, 'claims.jsonl')[0]['support_status'], 'contradicted')
+        # Without --strict nothing fails, whatever the verdict.
+        code, _ = run_cmd(vcs.cmd_verify, dir=d, strict=False, report=None)
+        self.assertIsNone(code)
 
     def test_claim_without_claim_type_defaults_to_factual_and_is_persisted(self):
         # Regression: the 'factual' default was applied to a local variable
@@ -584,11 +612,16 @@ class TestCmdReport(unittest.TestCase):
             {'claim_id': 'b', 'section_id': 'sec2', 'claim_type': 'factual', 'support_status': 'needs_review', 'text': 'short'},
             {'claim_id': 'c', 'section_id': 'sec', 'claim_type': 'synthesis', 'support_status': 'unsupported', 'text': 'n/a'},
             {'claim_id': 'd', 'section_id': 'sec', 'claim_type': 'factual', 'support_status': 'partial', 'text': 'half'},
+            {'claim_id': 'e', 'section_id': 'sec3', 'claim_type': 'factual', 'support_status': 'contradicted', 'text': 'Acme raised'},
         ])
         code, out = run_cmd(vcs.cmd_report, dir=d)
         self.assertIsNone(code)
-        self.assertIn('**Total claims:** 4', out)
-        self.assertIn('## Unsupported/Review-needed Factual Claims', out)
+        self.assertIn('**Total claims:** 5', out)
+        self.assertIn('## Unsupported Factual Claims', out)
+        self.assertIn('## Needs Review (check each against its source before relying on it)', out)
+        self.assertIn('Resolve each item: quote the exact span of the source', out)
+        self.assertIn('## Contradicted Factual Claims', out)
+        self.assertIn('- [contradicted] `sec3`: Acme raised...', out)
         self.assertIn('- [unsupported] `sec`: ' + 'T' * 100 + '...', out)
         self.assertNotIn('T' * 101, out)
         self.assertIn('  Notes: low lexical overlap', out)

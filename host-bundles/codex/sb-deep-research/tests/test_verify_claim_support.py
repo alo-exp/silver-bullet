@@ -203,8 +203,8 @@ class TestVerifyPartial(unittest.TestCase):
         with open(os.path.join(self.tmpdir, 'claims.jsonl')) as f:
             for line in f:
                 claims.append(json.loads(line))
-        # Should be partial or needs_review (not fully supported due to number/detail mismatch)
-        self.assertIn(claims[0]['support_status'], ('partial', 'needs_review', 'supported'))
+        # Should be needs_review (not fully supported due to number/detail mismatch)
+        self.assertIn(claims[0]['support_status'], ('needs_review', 'supported'))
 
 
 class TestSupportScore(unittest.TestCase):

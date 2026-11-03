@@ -57,12 +57,13 @@
       "enum": [
         "unverified",
         "supported",
+        "contradicted",
         "partial",
         "unsupported",
         "needs_review",
         "not_applicable"
       ],
-      "description": "Set by verify_claim_support.py; not_applicable for speculation and bibliography rows"
+      "description": "Set by verify_claim_support.py (partial is a legacy value, no longer written); not_applicable for speculation and bibliography rows"
     },
     "extracted_at": {
       "type": "string",

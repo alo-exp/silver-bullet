@@ -199,41 +199,80 @@ Options:
    2. [Option 2]
 ```
 
-## Known limits of the claim-support gate (v1)
+## The claim-support gate: three verdicts (v2)
 
-`verify_claim_support.py` is a lexical check, not a reader. After normalising text (typographic
-quotes and dashes, `40 percent` = `40%`, `USD 50` = `$50`, number words, `v1.29`), a claim is
-`supported` only when:
+`verify_claim_support.py` is a lexical check, not a reader, so it is conservative and escalates. Each
+factual claim gets one verdict (`support_status` in `claims.jsonl`):
 
-- enough of its significant words appear in a linked quote (claims with no named thing and no figure
-  need 90% of them), and every named entity (capitalised phrases, acronyms such as AWS, camelCase
-  brands such as GitHub, identifiers such as EC2, GPT4, FY2018, Q3) appears, by word or word stem;
-- every figure matches a quote figure with the same value, unit and currency (`$50M` = `50 million
-  dollars` = `50,000,000`; `$` is not `EUR`; `2,500` is not `500`) in a segment (split at sentence ends,
-  commas and "and") that shares a word with the claim's segment, so swapped years or percentages fail;
-  non-year figures must also be attached to the same noun (after the figure, or before it as in
-  "Seats cost $20") or, without a noun, to the same preceding words;
-- no aligned quote clause contradicts a claim clause. Polarity is boolean per clause (neither/nor,
-  "No, ... does not", "not even" are each one negation; "not only ... but also" is none; "without X"
-  and "zero X" are compared as terms; "no longer" is not compared with a paraphrase). A quote clause is
-  aligned when it contains all of the claim clause's named terms and figures, whatever else the claim adds,
-  and any clause of the whole quote can contradict. Coordinated names ("Kubernetes and Nomad") are checked
-  one by one. A small table of opposites (raised/lost, increased/decreased, acquired/sold, opened/closed,
-  mandatory/optional, ...) catches verb swaps.
+| Verdict | Meaning | `verify --strict` |
+|---------|---------|-------------------|
+| `supported` | lexical support is unambiguous in one linked quote and no linked quote contradicts it | passes |
+| `contradicted` | a quote clearly says the opposite (differing polarity in an aligned clause, "zero/without X" against a plain assertion, opposite verbs such as raised/lost) and none supports the claim | **exit 1** |
+| `unsupported` | no evidence linked, a cited source with no captured evidence, or no quote shares meaningful content with the claim | **exit 1** |
+| `needs_review` | anything ambiguous; `_support_notes` names the figure, entity or polarity at issue | exit 0, listed |
 
-Corpora pinning the behaviour (`tests/fixtures/`): `claim_corpus_verbatim.json` holds every probe from the
-three reviews unshortened (55 fabrications, 50 honest claims; strict fails every fabrication and passes every
-honest claim), `claim_corpus.json` a curated 45 + 45, and `claim_corpus_heldout.json` 32 + 32 written in other
-styles (news, financial, product docs, academic) after the scorer was frozen. On the held-out set the first
-run caught 26/32 fabrications and passed 27/32 honest claims; after the generic fixes it prompted (sentence
-openers such as "Quarterly", singular/plural entities, prepositional adjuncts after a figure, a few more
-opposites) it catches 29/32 and passes 32/32.
+Never read `needs_review` as a pass: the summary sets `review_required: true`, lists each claim with its
+reason under `needs_review`, prints a count on stderr, and `report` has a "Needs Review" section.
 
-It still cannot catch: role swaps ("A acquired B" vs "B acquired A"), an antonym outside the table, a negated
-lowercase conjunct ("liver and kidney" vs "liver but not in the kidney"), and "cuts" style three-letter
-verbs; paraphrased units outside the small synonym table ("500 employees" vs "500 contractors"), idioms
-that restate a negation ("no longer offers" vs "retired") and sentences whose meaning needs world knowledge.
-Short sentences (30 characters or fewer) are claims when they carry a figure, a named thing, a compliance
-or certification term or a superlative; navigation ("See Figure 3 below.") and bare labels are not. A
-recommendation or hedge sentence without a year, percentage, currency or scaled figure is exempt from
-`--strict`.
+### Resolving needs_review claims
+
+For each listed claim, the agent (or a human) opens the cited source and does exactly one of:
+
+1. **Quote the exact supporting span.** Copy the sentence or clause that states the claim, verbatim, into
+   the evidence store (`evidence_store.py add --json -` with that `quote`) and re-run `verify`. The claim is
+   then compared with the span itself; if it is still `needs_review` the span does not say what the claim
+   says, so go to step 2.
+2. **Correct the claim** to what the source says (the figure, currency, year, name or polarity named in the
+   reason), then re-extract and re-run `verify`.
+3. **Remove the claim, or cite a source that does support it**, when the source does not address it.
+
+A `contradicted` claim is never resolved by adding a quote: fix the claim or the source selection. Do not
+edit `support_status` by hand and do not deliver a run with unresolved items; say in the report which items
+were checked and how.
+
+### What makes a claim `supported`
+
+After normalising text (typographic quotes and dashes, `40 percent` = `40%`, `USD 50` = `$50`, number
+words, `v1.29`), all of these hold in one quote:
+
+- enough of the claim's significant words appear (claims with no named thing and no figure need 90%), and
+  every named entity (capitalised phrases, acronyms such as AWS, camelCase brands such as GitHub,
+  identifiers such as EC2, GPT4, FY2018, Q3) appears, by word or word stem;
+- every figure matches a quote figure with the same value, unit and currency. Currencies are `$`, `A$`,
+  `C$`, `HK$`, `S$`, `NZ$`, `EUR`, `GBP`, yen, yuan/RMB, rupees, francs and `KRW` (symbols, ISO codes and
+  words); a currency the claim states must be stated, and be the same, in the quote (a bare yen sign fits
+  yen or yuan). A range ("between 2 and 5", "3 to 4", "3-5") is a range: "7 days" does not match "between
+  two and five days" and "and" joins number words only inside a compound ("two hundred and five");
+- years are bound to the event: the claim's year must sit in a quote segment that shares a word with its
+  own and that also holds the claim's other figures ("In 2019, ..." is bound to the clause it opens);
+  other figures must be attached to the same noun or, without one, to the same metric (the nearest content
+  word that is not a verb of change: "revenue grew 30%" is not "margins grew 30%");
+- no aligned quote clause has a polarity that differs or is ambiguous. Negation is scoped to the part it
+  belongs to ("Okta supports SCIM and OneLogin does not" says nothing against "Okta supports SCIM"); "with
+  no X" and "without X" are terms; "no fewer than" and "not to mention" are not negations; "not even"
+  negates. When no single part of the quote states what the claim says, or when it depends on how far a
+  negation reaches ("does not support SSO and SCIM"), the claim is `needs_review`.
+- the same named things are not in another order or voice ("Samsung overtook Apple" / "Apple overtook
+  Samsung", "acquired" / "was acquired by"): roles cannot be settled by words, so `needs_review`.
+
+Corpora pinning the behaviour (`tests/fixtures/`): `claim_corpus_verbatim.json` (every probe of reviews 1-3),
+`claim_corpus_r4.json` (the fourth review's probes verbatim), `claim_corpus.json` (curated) and
+`claim_corpus_heldout.json` (written in other styles after the scorer was frozen). Fabrications are never
+`supported`; honest claims are never `contradicted` or `unsupported`. Counts per verdict at the last run:
+
+| Corpus | Fabrications: contradicted / needs_review / unsupported / supported | Honest: supported / needs_review / contradicted |
+|--------|------------------------------------------------------------------|-----------------------------------------------|
+| reviews 1-3 verbatim (55 + 50) | 17 / 36 / 2 / 0 | 49 / 1 / 0 |
+| review 4 verbatim (36 + 69) | 2 / 34 / 0 / 0 | 64 / 5 / 0 |
+| curated (45 + 45) | 14 / 30 / 1 / 0 | 45 / 0 / 0 |
+| held-out (32 + 32) | 11 / 21 / 0 / 0 | 32 / 0 / 0 |
+
+It still cannot decide: an antonym outside the small table (those pairs become `needs_review` only when
+other words disagree), paraphrased units outside the synonym table ("500 employees" vs "500 contractors"),
+idioms that restate a negation ("no longer offers" vs "retired") and sentences whose meaning needs world
+knowledge; such pairs may be `supported`, which is why `supported` means "the words match", not "true".
+Short sentences (30 characters or fewer) are claims when they carry a figure or a count ("7 days"), a named
+thing, a compliance or certification term or a superlative; navigation ("See Figure 3 below.", "Next, we
+compare costs."), bare labels and evaluations that open with an everyday noun ("Pricing is simple.") are
+not. A recommendation or hedge sentence without a year, percentage, currency or scaled figure is exempt
+from `--strict`.

@@ -108,6 +108,14 @@ CHECKABLE_FIGURE_RE = re.compile(
 )
 
 
+# A count of something measurable ("7 days", "3 regions", "500 employees"): a short sentence that
+# states one is a claim, though a bare "4 vendors" in "We compared 4 vendors." is not.
+MEASURE_RE = re.compile(
+    r'\b\d+(?:\.\d+)?\s*(?:days?|hours?|weeks?|months?|minutes?|seconds?|ms|[kmgt]b|users?|seats?|regions?|'
+    r'offices?|countries|employees|staff|customers|engineers|nodes|servers)\b',
+    re.IGNORECASE,
+)
+
 COMPLIANCE_RE = re.compile(
     r'\b(?:hipaa|gdpr|ccpa|soc\s?[12]|iso\s?\d+|pci|fedramp|certified|certification|compliant|compliance|'
     r'audited|accredited|encrypts?|encrypted)\b',
@@ -121,6 +129,7 @@ SUPERLATIVE_RE = re.compile(
 # A reference to a table, figure or section is navigation, not a finding.
 NAVIGATION_RE = re.compile(
     r'^(?:see|refer to|as shown in|shown in|results are in|details are in|presented in|listed in)\b'
+    r'|^(?:next|below|above|finally|first|then|now),?\s+(?:we|let|i)\b'
     r'|\b(?:table|figure|fig\.|section|appendix|chapter|page)\s+\d+',
     re.IGNORECASE,
 )
@@ -134,13 +143,23 @@ SENTENCE_STARTERS = frozenset(
 )
 
 
+# Everyday nouns that open an evaluation ("Pricing is simple.", "Setup took minutes."): not names.
+GENERIC_OPENERS = frozenset(
+    'pricing price prices cost costs support documentation docs setup onboarding installation usability '
+    'performance design quality speed interface ui ux integration integrations reliability security '
+    'scalability stability customization flexibility maintenance training service services features '
+    'feature licensing billing migration deployment configuration analytics reporting community '
+    'overall everything nothing something'.split()
+)
+
+
 def _has_name(sentence: str) -> bool:
     """A named thing: a capitalised word that is not the sentence opener, an opener that is not a
     common starter ("Acme leads on price"), an acronym or an identifier."""
     words = re.findall(r"[A-Za-z][\w.+-]*", sentence)
     if not words:
         return False
-    if words[0].lower() not in SENTENCE_STARTERS and words[0][0].isupper():
+    if words[0].lower() not in SENTENCE_STARTERS | GENERIC_OPENERS and words[0][0].isupper():
         return True
     return any(w[0].isupper() and (len(w) > 1 or w == 'I') and w != 'I' for w in words[1:])
 
@@ -155,7 +174,7 @@ def _long_enough(sentence: str) -> bool:
     if len(sentence.split()) < 3:
         return False
     plain = CITATION_MARK_RE.sub(' ', sentence)
-    if CHECKABLE_FIGURE_RE.search(plain):
+    if CHECKABLE_FIGURE_RE.search(plain) or MEASURE_RE.search(plain):
         return True
     if NAVIGATION_RE.search(plain):
         return False

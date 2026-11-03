@@ -420,7 +420,15 @@ def _run_cli(
         start_new_session=True,
     ) as proc:
         with _LIVE_LOCK:
-            _LIVE_PROCS.add(proc)
+            # Registered and cancel-checked under one lock, the same lock the interrupt path
+            # takes to set the flag: a worker is either seen by the termination snapshot or sees
+            # the flag here, never neither (the check-then-spawn race).
+            cancelled = _CANCEL.is_set()
+            if not cancelled:
+                _LIVE_PROCS.add(proc)
+        if cancelled:
+            _kill_process_group(proc)
+            raise KeyboardInterrupt("dispatch cancelled")
         try:
             stdout, stderr = proc.communicate(input=stdin_text, timeout=timeout)
         except BaseException:
@@ -906,7 +914,8 @@ def _dispatch_in_pool(pool, cursor_items, ocg_items, results, *, phase_id, query
     except BaseException:
         # Ctrl-C/SIGTERM reach only the dispatcher (workers have their own sessions): queued
         # workers are cancelled first so none starts, then the live ones are stopped.
-        _CANCEL.set()
+        with _LIVE_LOCK:
+            _CANCEL.set()
         pool.shutdown(wait=False, cancel_futures=True)
         _terminate_live_workers()
         raise
