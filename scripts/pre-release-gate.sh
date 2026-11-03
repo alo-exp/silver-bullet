@@ -43,11 +43,7 @@ cat <<'EOF'
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 EOF
 
-# Stage 4c already ran the required live five-tool gate above.  Do not leak
-# its prerelease selector into the full runner, where the script-unit-test
-# discovery would execute the live matrix a second time.
-if ! env -u SB_FIVE_TOOL_PRERELEASE -u SB_FIVE_TOOL_PRERELEASE_REQUIRE_LIVE \
-  bash "${REPO_ROOT}/tests/run-all-tests.sh"; then
+if ! bash "${REPO_ROOT}/tests/run-all-tests.sh"; then
   cat <<'EOF' >&2
 
 🛑 PRE-RELEASE GATE FAILED — fix failing tests before bump/tag/release.

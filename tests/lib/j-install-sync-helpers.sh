@@ -38,10 +38,9 @@ j_make_remote() {
   J_SEED="$dir/seed"
   git init -q --bare -b main "$J_REMOTE"
   git init -q -b main "$J_SEED"
-  mkdir -p "$J_SEED/.claude-plugin" "$J_SEED/.agents/plugins" "$J_SEED/.cursor-plugin"
+  mkdir -p "$J_SEED/.claude-plugin" "$J_SEED/.agents/plugins"
   j_marketplace_json '{"source":"github","repo":"o/sb"}' >"$J_SEED/.claude-plugin/marketplace.json"
   j_marketplace_json '{"source":"github","repo":"o/sb","ref":"v0.0.1"}' >"$J_SEED/.agents/plugins/marketplace.json"
-  j_marketplace_json '{"source":"github","repo":"o/sb","ref":"main","sha":"0000","path":"plugins/silver-bullet"}' >"$J_SEED/.cursor-plugin/marketplace.json"
   git -C "$J_SEED" add -A
   git -C "$J_SEED" commit -q -m seed
   git -C "$J_SEED" remote add origin "$J_REMOTE"

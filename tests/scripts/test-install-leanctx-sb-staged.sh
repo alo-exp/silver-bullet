@@ -71,56 +71,56 @@ assert_contains "unknown arg message" "$TL_ERR" "Unknown arg: --bogus"
 tl_run bash "$INST" --project-root "$PROJ"
 assert_eq "missing host exits 2" "2" "$TL_STATUS"
 assert_contains "missing host message" "$TL_ERR" "ERROR: --host is required"
-tl_run bash "$INST" --host cursor
+tl_run bash "$INST" --host claude
 assert_eq "missing project root exits 2" "2" "$TL_STATUS"
 assert_contains "missing project root message" "$TL_ERR" "ERROR: --project-root is required"
 
-# ---- full cursor run against a lean-ctx without library mode
-mkdir -p "$HOME/.cursor"
-printf '{"mcpServers":{"context-mode":{}}}\n' >"$HOME/.cursor/mcp.json"
-printf 'agents\n' >"$HOME/.cursor/AGENTS.md"
+# ---- full claude run against a lean-ctx without library mode
+mkdir -p "$HOME/.claude"
+printf '{"mcpServers":{"context-mode":{}}}\n' >"$HOME/.claude.json"
+printf 'agents\n' >"$HOME/.claude/CLAUDE.md"
 LC_CONFIG='excluded_commands = []
 [setup]
-manage_hooks = true' run_inst --host cursor --skip-verify
-assert_eq "cursor run exits 0" "0" "$TL_STATUS"
-assert_contains "banner" "$TL_OUT" "=== LeanCTX SB install (host=cursor) ==="
+manage_hooks = true' run_inst --host claude --skip-verify
+assert_eq "claude run exits 0" "0" "$TL_STATUS"
+assert_contains "banner" "$TL_OUT" "=== LeanCTX SB install (host=claude) ==="
 assert_contains "context-mode overlap noted" "$TL_OUT" "Context Mode detected"
 assert_contains "binary already present" "$TL_OUT" "OK: lean-ctx already on PATH"
 assert_contains "library mode unavailable -> merge-only" "$TL_OUT" "NOTE: --library-mode not in lean-ctx init --help; using SB merge-only wiring"
 assert_not_contains "never runs init --agent" "$(calls)" "init --agent"
-assert_contains "cursor merges through patch-mcp with only leanctx enabled" "$(calls)" "patch-mcp  RT_PATCH_GRAPHIFY=0 RT_PATCH_LEANCTX=1"
+assert_contains "claude merges through the LeanCTX merge helper" "$(calls)" "merge-mcp --host claude"
 assert_file_exists "profile env written" "$PROFILE"
 assert_contains "profile disables overlapping tools" "$(cat "$PROFILE")" "LEAN_CTX_DISABLED_TOOLS=ctx_shell,shell,ctx_execute"
 assert_contains "profile keeps the lctx_ prefix" "$(cat "$PROFILE")" "LEANCTX_MCP_TOOL_PREFIX=lctx_"
 assert_contains "rtk passthrough configured" "$(calls)" "lean-ctx config set excluded_commands rtk"
 assert_contains "hook management turned off" "$(calls)" "lean-ctx config set setup.manage_hooks false"
 assert_contains "guard preserved" "$TL_OUT" "=== LeanCTX SB install complete ==="
-assert_eq "guarded AGENTS.md untouched" "agents" "$(cat "$HOME/.cursor/AGENTS.md")"
+assert_eq "guarded CLAUDE.md untouched" "agents" "$(cat "$HOME/.claude/CLAUDE.md")"
 
 # already configured lean-ctx: nothing to set; excluded list from the user: warn only
 LC_CONFIG='excluded_commands = ["rtk","git"]
 [setup]
 manage_hooks = false
 [other]
-x = 1' run_inst --host cursor --skip-verify --skip-merge
+x = 1' run_inst --host claude --skip-verify --skip-merge
 assert_contains "excluded_commands already has rtk" "$TL_OUT" "OK: lean-ctx excluded_commands already includes rtk"
 assert_contains "manage_hooks already false" "$TL_OUT" "OK: lean-ctx setup.manage_hooks already false"
 assert_contains "merge skipped" "$TL_OUT" "SKIP: MCP merge"
 assert_not_contains "no config set when already right" "$(calls)" "config set"
-LC_CONFIG='excluded_commands = ["git"]' run_inst --host cursor --skip-verify --skip-merge
+LC_CONFIG='excluded_commands = ["git"]' run_inst --host claude --skip-verify --skip-merge
 assert_eq "foreign exclusions only warn" "0" "$TL_STATUS"
 assert_contains "warns to add rtk" "$TL_ERR" 'WARN: lean-ctx excluded_commands=["git"]; add rtk to it'
 assert_not_contains "foreign exclusions untouched" "$(calls)" "excluded_commands rtk"
 
 # library mode verified upstream
-LC_LIBMODE=1 run_inst --host cursor --skip-verify --skip-merge
+LC_LIBMODE=1 run_inst --host claude --skip-verify --skip-merge
 assert_contains "library-mode init invoked" "$TL_OUT" "Running lean-ctx init --library-mode (verified upstream flag)"
 assert_contains "init --library-mode logged" "$(calls)" "lean-ctx init --library-mode"
 
 # ---- no lean-ctx binary
 NOLC="$(tl_path_without lean-ctx)"
 : >"$LOG"
-tl_run env PATH="$NOLC" bash "$INST" --host cursor --project-root "$PROJ" --skip-install --skip-verify --skip-merge
+tl_run env PATH="$NOLC" bash "$INST" --host claude --project-root "$PROJ" --skip-install --skip-verify --skip-merge
 assert_eq "skip-install without binary still succeeds" "0" "$TL_STATUS"
 assert_contains "skip-install announced" "$TL_OUT" "SKIP: lean-ctx binary install"
 assert_contains "library init skipped with warning" "$TL_ERR" "WARN: lean-ctx missing — skip library init"
@@ -129,7 +129,7 @@ assert_contains "rtk passthrough skipped" "$TL_OUT" "SKIP: lean-ctx not installe
 # upstream installer: curl stub drops a working lean-ctx into PATH
 tl_stub curl 'printf "printf \"#!/bin/sh\\\\nexit 0\\\\n\" > \"%s/lean-ctx\"; chmod +x \"%s/lean-ctx\"\n" "$LC_DEST" "$LC_DEST"'
 LC_DEST="$TL_TMP/lc-bin"; mkdir -p "$LC_DEST"; export LC_DEST
-tl_run env PATH="$LC_DEST:$NOLC" bash "$INST" --host cursor --project-root "$PROJ" --skip-verify --skip-merge
+tl_run env PATH="$LC_DEST:$NOLC" bash "$INST" --host claude --project-root "$PROJ" --skip-verify --skip-merge
 assert_eq "installer path succeeds" "0" "$TL_STATUS"
 assert_contains "installer announced" "$TL_OUT" "Installing lean-ctx via upstream installer..."
 assert_contains "install confirmed" "$TL_OUT" "OK: lean-ctx installed"
@@ -137,33 +137,33 @@ assert_file_exists "stub installer produced the binary" "$LC_DEST/lean-ctx"
 rm -f "$LC_DEST/lean-ctx"
 # the upstream installer itself fails (curl error): still no binary afterwards
 tl_stub curl 'exit 22'
-tl_run env PATH="$LC_DEST:$NOLC" bash "$INST" --host cursor --project-root "$PROJ" --skip-verify --skip-merge
+tl_run env PATH="$LC_DEST:$NOLC" bash "$INST" --host claude --project-root "$PROJ" --skip-verify --skip-merge
 assert_eq "failing upstream installer aborts" "1" "$TL_STATUS"
 assert_contains "failing upstream installer warns" "$TL_ERR" "WARN: lean-ctx not on PATH after installer"
 # installer ran but produced nothing
 tl_stub curl 'echo "true"'
-tl_run env PATH="$LC_DEST:$NOLC" bash "$INST" --host cursor --project-root "$PROJ" --skip-verify --skip-merge
+tl_run env PATH="$LC_DEST:$NOLC" bash "$INST" --host claude --project-root "$PROJ" --skip-verify --skip-merge
 assert_eq "failed install aborts" "1" "$TL_STATUS"
 assert_contains "failed install warns" "$TL_ERR" "WARN: lean-ctx not on PATH after installer — try: cargo install lean-ctx"
 # curl itself missing
 NOCURL="$(tl_path_without lean-ctx curl)"
 rm -f "$TL_BIN/curl"
-tl_run env PATH="$NOCURL" bash "$INST" --host cursor --project-root "$PROJ" --skip-verify --skip-merge
+tl_run env PATH="$NOCURL" bash "$INST" --host claude --project-root "$PROJ" --skip-verify --skip-merge
 assert_eq "no curl and no binary aborts" "1" "$TL_STATUS"
 # dry run never fetches
 : >"$LOG"
 rm -rf "$SB_RUNTIME_HOME_ROOT/leanctx-profile"
-tl_run env PATH="$NOCURL" bash "$INST" --host cursor --project-root "$PROJ" --dry-run --skip-verify
+tl_run env PATH="$NOCURL" bash "$INST" --host claude --project-root "$PROJ" --dry-run --skip-verify
 assert_eq "dry-run without binary exits 0" "0" "$TL_STATUS"
 assert_contains "dry-run shows the installer command" "$TL_OUT" "DRY-RUN: curl -fsSL https://leanctx.com/install.sh | sh"
 assert_contains "dry-run skips guard check" "$TL_OUT" "SKIP: guard unchanged check (dry-run — no writes)"
 assert_file_absent "dry-run writes no profile" "$PROFILE"
 assert_contains "dry-run profile" "$TL_OUT" "DRY-RUN: write ${PROFILE}"
-assert_contains "dry-run cursor merge" "$TL_OUT" "DRY-RUN: RT_PATCH_LEANCTX=1 RT_PATCH_GRAPHIFY=0 python3 ${STAGE}/scripts/lib/global-toolstack/patch-mcp.py"
+assert_contains "dry-run claude merge" "$TL_OUT" "DRY-RUN: python3 ${STAGE}/scripts/lib/merge-leanctx-mcp-config.py --host claude"
 assert_eq "dry-run runs no helper" "" "$(calls)"
 
 # dry-run with the binary: library init and config sets are only printed
-LC_LIBMODE=1 run_inst --host cursor --dry-run
+LC_LIBMODE=1 run_inst --host claude --dry-run
 assert_contains "dry-run library init" "$TL_OUT" "DRY-RUN: "
 assert_contains "dry-run excluded_commands" "$TL_OUT" "DRY-RUN: lean-ctx config set excluded_commands rtk"
 assert_contains "dry-run manage_hooks" "$TL_OUT" "DRY-RUN: lean-ctx config set setup.manage_hooks false"
@@ -186,15 +186,11 @@ assert_eq "unknown host skips the merge" "0" "$TL_STATUS"
 assert_contains "no merge target message" "$TL_OUT" "SKIP: MCP merge (host=hermes; no merge target implemented"
 
 # helper failures propagate
-STUB_RC=5 run_inst --host cursor --skip-verify
-assert_eq "failing patch-mcp aborts" "5" "$TL_STATUS"
-rm "$STAGE/scripts/lib/global-toolstack/patch-mcp.py"
-run_inst --host cursor --skip-verify
-assert_eq "missing patch-mcp aborts" "1" "$TL_STATUS"
-assert_contains "missing patch-mcp warns" "$TL_ERR" "patch-mcp helper missing"
-run_inst --host cursor --skip-verify --skip-merge
-assert_eq "missing patch-mcp irrelevant with --skip-merge" "0" "$TL_STATUS"
+STUB_RC=5 run_inst --host claude --skip-verify
+assert_eq "failing merge helper aborts" "5" "$TL_STATUS"
 rm "$STAGE/scripts/lib/merge-leanctx-mcp-config.py"
+run_inst --host claude --skip-verify --skip-merge
+assert_eq "missing merge helper irrelevant with --skip-merge" "0" "$TL_STATUS"
 run_inst --host claude --skip-verify
 assert_eq "missing merge helper aborts" "1" "$TL_STATUS"
 assert_contains "missing merge helper warns" "$TL_ERR" "merge-leanctx-mcp-config helper missing"
@@ -207,17 +203,17 @@ stub_py "$STAGE/scripts/lib/global-toolstack/install-pi.py" install-pi
 stub_py "$STAGE/scripts/lib/merge-leanctx-mcp-config.py" merge-mcp
 
 # ---- wire-proxy verification
-run_inst --host cursor --skip-merge
+run_inst --host claude --skip-merge
 assert_eq "verify passes" "0" "$TL_STATUS"
 assert_contains "verify ran" "$TL_OUT" "OK: wire-proxy ordering validator self-test passed"
 assert_contains "validator received the generated fixture" "$(calls)" "verify - stdin=FIXTURE"
-VERIFY_RC=1 run_inst --host cursor --skip-merge
+VERIFY_RC=1 run_inst --host claude --skip-merge
 assert_eq "verify failure aborts" "1" "$TL_STATUS"
 assert_contains "verify failure warns" "$TL_ERR" "WARN: wire-proxy ordering self-test failed"
-run_inst --host cursor --skip-merge --skip-verify
+run_inst --host claude --skip-merge --skip-verify
 assert_contains "verify skip announced" "$TL_OUT" "SKIP: wire-proxy ordering verify"
 mv "$VERIFY" "$VERIFY.off"
-run_inst --host cursor --skip-merge
+run_inst --host claude --skip-merge
 assert_eq "missing validator is only a warning" "0" "$TL_STATUS"
 assert_contains "missing validator warns" "$TL_ERR" "WARN: verify helper missing"
 mv "$VERIFY.off" "$VERIFY"
@@ -258,9 +254,6 @@ guard_for opencode "$HOME/.config/opencode/AGENTS.md"
 guard_for pi "$HOME/.pi/agent/AGENTS.md"
 guard_for pi "$TL_TMP/pi-agent/AGENTS.md" PI_CODING_AGENT_DIR="$TL_TMP/pi-agent"
 guard_for claude "$HOME/.claude/CLAUDE.md"
-guard_for cursor "$STAGE/.cursorrules"
-guard_for cursor "$STAGE/AGENTS.md"
-guard_for cursor "$HOME/.cursor/AGENTS.md"
 
 # Functions-only copy of the script (same line numbers, main flow cut off) so the
 # helpers older callers use can be exercised directly and still map to the source.

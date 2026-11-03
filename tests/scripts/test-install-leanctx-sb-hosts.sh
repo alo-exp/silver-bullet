@@ -41,15 +41,10 @@ sys.exit(int(os.environ.get("VERIFY_RC", "0")))
 EOF
 
 NOLC="$(tl_path_without lean-ctx)"
-mkdir -p "$HOME/.cursor"
-printf '{"mcpServers":{"context-mode":{}}}\n' >"$HOME/.cursor/mcp.json"
 # ---- context-mode detection per host (dry run, no binary: fast)
 detect_cm() { # <host> -> sets TL_OUT
   tl_run env PATH="$NOLC" bash "$INST" --host "$1" --project-root "$PROJ" --dry-run --skip-install --skip-verify --skip-merge
 }
-detect_cm cursor; assert_contains "cursor: mcp.json mentions context-mode" "$TL_OUT" "Context Mode detected"
-rm -f "$HOME/.cursor/mcp.json"
-detect_cm cursor; assert_not_contains "cursor: no mcp.json" "$TL_OUT" "Context Mode detected"
 rm -rf "$HOME/.claude" "$HOME/.claude.json"
 detect_cm claude; assert_not_contains "claude: nothing installed" "$TL_OUT" "Context Mode detected"
 mkdir -p "$HOME/.claude/plugins/context-mode"
@@ -88,13 +83,12 @@ detect_cm hermes; assert_not_contains "other hosts never report context-mode" "$
 
 # ---- --host auto
 detect_auto() { # [env...] -> banner
-  rm -rf "$HOME/.cursor" "$HOME/.codex" "$HOME/.claude" "$HOME/.pi" "$HOME/.config"
+  rm -rf "$HOME/.codex" "$HOME/.claude" "$HOME/.pi" "$HOME/.config"
   [[ -z "${AUTO_DIR:-}" ]] || mkdir -p "$HOME/$AUTO_DIR"
-  tl_run env -u CURSOR_PLUGIN_ROOT -u CODEX_HOME -u PI_CODING_AGENT_DIR "$@" PATH="$NOLC" bash "$INST" --host auto --project-root "$PROJ" --dry-run --skip-install --skip-verify --skip-merge
+  tl_run env -u CODEX_HOME -u PI_CODING_AGENT_DIR "$@" PATH="$NOLC" bash "$INST" --host auto --project-root "$PROJ" --dry-run --skip-install --skip-verify --skip-merge
 }
-AUTO_DIR="" detect_auto;                    assert_contains "auto: nothing -> cursor" "$TL_OUT" "(host=cursor)"
-AUTO_DIR=".cursor" detect_auto;             assert_contains "auto: ~/.cursor" "$TL_OUT" "(host=cursor)"
-AUTO_DIR="" detect_auto CURSOR_PLUGIN_ROOT=/x; assert_contains "auto: CURSOR_PLUGIN_ROOT" "$TL_OUT" "(host=cursor)"
+AUTO_DIR="" detect_auto;                    assert_contains "auto: nothing -> claude" "$TL_OUT" "(host=claude)"
+AUTO_DIR=".cursor" detect_auto;             assert_contains "auto: a leftover ~/.cursor is not a host" "$TL_OUT" "(host=claude)"
 AUTO_DIR=".codex" detect_auto;              assert_contains "auto: ~/.codex" "$TL_OUT" "(host=codex)"
 AUTO_DIR="" detect_auto CODEX_HOME=/c;      assert_contains "auto: CODEX_HOME" "$TL_OUT" "(host=codex)"
 AUTO_DIR=".config/opencode" detect_auto;    assert_contains "auto: opencode dir" "$TL_OUT" "(host=opencode)"

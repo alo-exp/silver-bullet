@@ -24,24 +24,24 @@ mkdir -p "$LOG_DIR"
 source "$SOURCE_REPO_ROOT/tests/lib/repo-snapshot.sh"
 REPO_ROOT="$(sb_repo_snapshot "$SOURCE_REPO_ROOT" "${WORK_TMP}/repo")"
 INSTALL="$REPO_ROOT/scripts/install-leanctx-sb.sh"
-PATCH_MCP_PY="$REPO_ROOT/scripts/lib/global-toolstack/patch-mcp.py"
+MERGE_PY="$REPO_ROOT/scripts/lib/merge-leanctx-mcp-config.py"
 
 pass() { echo "  PASS: $1"; PASS=$((PASS + 1)); }
 fail() { echo "  FAIL: $1"; FAIL=$((FAIL + 1)); }
 
 TEST_HOME="$(mktemp -d)"
 export HOME="$TEST_HOME"
-export SILVER_BULLET_RUNTIME=cursor
-export SB_RUNTIME_HOME_ROOT="${TEST_HOME}/.cursor"
+export SILVER_BULLET_RUNTIME=claude
+export SB_RUNTIME_HOME_ROOT="${TEST_HOME}/.claude"
 export SB_RUNTIME_STATE_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet"
-mkdir -p "${TEST_HOME}/.cursor" "${SB_RUNTIME_STATE_DIR}"
+mkdir -p "${TEST_HOME}/.claude" "${SB_RUNTIME_STATE_DIR}"
 
 # Seed CM + guard paths that must not be touched (conflict #8).
-printf '{"mcpServers":{"context-mode":{"command":"context-mode"}}}\n' >"${TEST_HOME}/.cursor/mcp.json"
-touch "${TEST_HOME}/.cursor/AGENTS.md" "${REPO_ROOT}/AGENTS.md" 2>/dev/null || true
+printf '{"mcpServers":{"context-mode":{"command":"context-mode"}}}\n' >"${TEST_HOME}/.claude.json"
+touch "${TEST_HOME}/.claude/CLAUDE.md" "${REPO_ROOT}/AGENTS.md" 2>/dev/null || true
 AGENTS_HASH_BEFORE="$(shasum -a 256 "${REPO_ROOT}/AGENTS.md" 2>/dev/null | awk '{print $1}')"
 
-if bash "$INSTALL" --host cursor --project-root "$REPO_ROOT" --dry-run --skip-install --skip-verify >"${LOG_DIR}/sb-install-leanctx-dry.log" 2>&1; then
+if bash "$INSTALL" --host claude --project-root "$REPO_ROOT" --dry-run --skip-install --skip-verify >"${LOG_DIR}/sb-install-leanctx-dry.log" 2>&1; then
   pass "dry-run install exits 0"
 else
   fail "dry-run install exits 0"
@@ -52,17 +52,17 @@ grep -q 'DRY-RUN' "${LOG_DIR}/sb-install-leanctx-dry.log" && pass "dry-run logs 
 grep -q 'five_tool_routed\|LeanCTX SB install complete' "${LOG_DIR}/sb-install-leanctx-dry.log" \
   && pass "dry-run completes install flow" || fail "dry-run completes install flow"
 
-grep -q 'patch-mcp\|RT_PATCH_LEANCTX' "${LOG_DIR}/sb-install-leanctx-dry.log" \
-  && pass "dry-run uses patch-mcp path" || fail "dry-run uses patch-mcp path"
+grep -q 'merge-leanctx-mcp-config' "${LOG_DIR}/sb-install-leanctx-dry.log" \
+  && pass "dry-run uses the merge helper" || fail "dry-run uses the merge helper"
 
-# Real merge in isolated HOME (not dry-run) — validates MCP JSON via canonical patch-mcp.
-if RT_PATCH_LEANCTX=1 RT_PATCH_GRAPHIFY=0 python3 "$PATCH_MCP_PY" >/dev/null 2>&1; then
-  pass "patch-mcp leanctx writes valid JSON"
+# Real merge in isolated HOME (not dry-run) — validates MCP JSON via the merge helper.
+if python3 "$MERGE_PY" --host claude >/dev/null 2>&1; then
+  pass "merge helper writes valid JSON for leanctx"
 else
-  fail "patch-mcp leanctx writes valid JSON"
+  fail "merge helper writes valid JSON for leanctx"
 fi
 
-if jq -e '.mcpServers.leanctx.env.LEANCTX_MCP_TOOL_PREFIX == "lctx_"' "${TEST_HOME}/.cursor/mcp.json" >/dev/null 2>&1; then
+if jq -e '.mcpServers.leanctx.env.LEANCTX_MCP_TOOL_PREFIX == "lctx_"' "${TEST_HOME}/.claude.json" >/dev/null 2>&1; then
   pass "merged MCP has lctx_ prefix"
 else
   fail "merged MCP has lctx_ prefix"
@@ -79,7 +79,7 @@ EOF
 chmod +x "$MOCK_BIN/lean-ctx"
 export PATH="$MOCK_BIN:$PATH"
 
-if bash "$INSTALL" --host cursor --project-root "$REPO_ROOT" --skip-verify 2>"${LOG_DIR}/sb-install-leanctx-real.log"; then
+if bash "$INSTALL" --host claude --project-root "$REPO_ROOT" --skip-verify 2>"${LOG_DIR}/sb-install-leanctx-real.log"; then
   pass "skip-verify install with mock CLI exits 0"
 else
   fail "skip-verify install with mock CLI exits 0"
@@ -116,7 +116,6 @@ else
   cat "${LOG_DIR}/sb-install-leanctx-claude-dry.log" >&2 || true
 fi
 
-MERGE_PY="$REPO_ROOT/scripts/lib/merge-leanctx-mcp-config.py"
 mkdir -p "${TEST_HOME}"
 printf '{"mcpServers":{}}\n' >"${TEST_HOME}/.claude.json"
 if python3 "$MERGE_PY" --host claude >/dev/null 2>&1 \
