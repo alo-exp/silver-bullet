@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# Backups of user config made during this run keep the pre-install content (sb_host_config.py).
+export SB_INSTALL_RUN_START="${SB_INSTALL_RUN_START:-$(date +%s)}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
@@ -71,6 +73,7 @@ if ! command -v "${CODEX_BIN}" >/dev/null 2>&1; then
   exit 1
 fi
 
+repair_silver_bullet_duplicate_trust_tables
 remove_marketplace_if_present "${CODEX_MARKETPLACE_LEGACY_NAME}"
 if [[ "$PUBLIC_RELEASE_ONLY" -eq 1 ]]; then
   ensure_marketplace_registered "${CODEX_MARKETPLACE_SOURCE}"
@@ -124,8 +127,10 @@ if SB_PROJECT_ROOT="$(find_silver_bullet_project_root)"; then
     merge_silver_bullet_hooks_into_user_config
   fi
 else
-  remove_plugin_enabled "silver-bullet@alo-labs-codex"
-  printf 'Skipping Silver Bullet plugin auto-enable outside a Silver Bullet project root.\n'
+  # Plugin enablement in ~/.codex/config.toml is global: running the installer from
+  # some other directory must neither enable nor disable Silver Bullet for every
+  # project (R7-10). An existing [plugins."silver-bullet@alo-labs-codex"] stays.
+  printf 'Skipping Silver Bullet plugin auto-enable outside a Silver Bullet project root (existing Codex enablement left unchanged).\n'
 fi
 
 if [[ -n "$SB_PROJECT_ROOT" ]]; then

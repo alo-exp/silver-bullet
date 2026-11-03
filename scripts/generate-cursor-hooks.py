@@ -120,10 +120,10 @@ def extract_hook_path(command: str) -> str:
 def rewrite_command(command: str, cursor_event: str) -> str:
     if "/cursor-hook-bridge.sh" in command:
         return command.replace("${CLAUDE_PLUGIN_ROOT}", PLUGIN_ROOT)
-    hook_path = normalize_hook_path(extract_hook_path(command))
-    if " " in hook_path and not (hook_path.startswith('"') and hook_path.endswith('"')):
-        hook_path = f'"{hook_path}"'
-    return f'"{PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh" {cursor_event} {hook_path}'
+    # Quote both paths: the plugin root is substituted (or expanded by Cursor) at run
+    # time, and a root with a space must stay one argument (R7-02).
+    hook_path = normalize_hook_path(extract_hook_path(command)).strip('"')
+    return f'"{PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh" {cursor_event} "{hook_path}"'
 
 
 def translate_matcher(matcher: str, cursor_event: str) -> str | None:

@@ -36,7 +36,7 @@ Called by skills and hooks while Silver Bullet runs in a project.
 | `graphify-am-global-setup.sh`, `sb-optimize-stack.sh`, `sb-verify-synergy.sh` | Graphify + agentmemory global setup, optimization and synergy audit (`--write-setup-report` writes `SETUP_REPORT.md`) |
 | `install-omniroute-launchagent.sh` | macOS LaunchAgent for the OmniRoute proxy |
 | `start-minimax-openai-proxy.sh`, `minimax-openai-proxy.mjs` | Local proxy that fixes MiniMax responses for Alumnium |
-| `prune-stale-claude-user-hooks.sh` | Remove user-level Claude hooks that point at missing scripts |
+| `prune-stale-claude-user-hooks.sh` | Remove stale Silver Bullet entries (SB hook scripts that no longer exist) from the Claude user settings; other hooks and files are never touched |
 
 ## Diagnostics and migration
 

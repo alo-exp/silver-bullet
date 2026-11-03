@@ -192,12 +192,20 @@ prune_agents_from_all_cursor_backend_caches() {
   done
 }
 
+# Quarantine (move, never delete) Cursor custom agents an older Silver Bullet left in
+# ~/.cursor/agents or the project's .cursor/agents. Only top-level entries are considered,
+# symlinks are never followed or moved, and an entry moves only with proof that Silver
+# Bullet wrote it: a name in Silver Bullet's own namespace (silver-*, sb:*, subagent-sb*,
+# subagent-silver-*), or a legacy generic name (tdd, full-conversation, ...) whose content
+# is byte-identical to the bundle Silver Bullet ships under host-bundles/cursor. Agents
+# install-cursor-sb-agents.sh generates are always kept. Anything else stays; a legacy
+# generic name that cannot be verified is reported, not moved.
 cleanup_cursor_custom_agents() {
   local project_root="${1:-${REPO_ROOT:-}}"
-  python3 - "$CURSOR_HOME" "$project_root" "$(cd "$(dirname "${BASH_SOURCE[0]}")/../cursor-sb-agents" && pwd)" <<'INNERPY'
+  python3 - "$CURSOR_HOME" "$project_root" "$(cd "$(dirname "${BASH_SOURCE[0]}")/../cursor-sb-agents" && pwd)" \
+    "${REPO_ROOT:+${REPO_ROOT}/host-bundles/cursor}" <<'INNERPY'
 from __future__ import annotations
 
-import json
 import re
 import shutil
 import sys
@@ -207,89 +215,74 @@ from pathlib import Path
 cursor_home = Path(sys.argv[1]).expanduser()
 project_root = Path(sys.argv[2]).expanduser() if sys.argv[2] else None
 sys.path.insert(0, sys.argv[3])
+bundle_root = Path(sys.argv[4]) if sys.argv[4] else None
 from sb_managed_agent import is_installer_managed_agent  # noqa: E402
+
 roots: list[tuple[str, Path]] = [("user", cursor_home / "agents")]
 if project_root:
     roots.append(("project", project_root / ".cursor" / "agents"))
 
-bad_exact = {
-    "subagent-tdd",
-    "tdd",
-    "full-conversation",
-    "ai-llm-safety",
-    "artifact-reviewer",
-    "devops-skill-router",
-}
-bad_prefixes = ("silver", "subagent-silver", "subagent-sb", "subagent-devops", "principle-sequence")
+SB_NAMESPACE = re.compile(r"^(?:silver-|sb:|subagent-(?:sb[:-]|silver-))", re.I)
+LEGACY_GENERIC = {"subagent-tdd", "tdd", "full-conversation", "ai-llm-safety", "artifact-reviewer", "devops-skill-router"}
+AGENT_SUFFIXES = {".md", ".json", ".yaml", ".yml"}
 
 
-def parse_frontmatter(path: Path) -> dict[str, str]:
-    try:
-        text = path.read_text(errors="ignore")[:4000]
-    except Exception:
-        return {}
-    match = re.match(r"^---\n(.*?)\n---", text, re.S)
-    meta: dict[str, str] = {}
-    if match:
-        for line in match.group(1).splitlines():
-            if ":" in line:
-                key, value = line.split(":", 1)
-                meta[key.strip()] = value.strip().strip('"')
-    if path.suffix == ".json":
-        try:
-            data = json.loads(path.read_text(errors="ignore"))
-            for key in ("name", "title"):
-                if isinstance(data.get(key), str):
-                    meta[key] = data[key]
-        except Exception:
-            pass
-    return meta
+def shipped_name(name: str) -> bool:
+    """True when Silver Bullet ships a bundle called ``name`` (the namespace alone proves nothing)."""
+    return bundle_root is not None and (bundle_root / name).is_dir()
 
 
-def should_quarantine(path: Path, root: Path) -> bool:
-    meta = parse_frontmatter(path)
-    name = meta.get("name") or meta.get("title") or path.stem
-    lowered = name.strip().lower()
-    if lowered in bad_exact or lowered.startswith(bad_prefixes):
-        return True
-    try:
-        text = path.read_text(errors="ignore")[:4000]
-    except Exception:
-        text = ""
-    if is_installer_managed_agent(path, root):
-        # Agents written by install-cursor-sb-agents.sh are intentional, not legacy.
+def shipped_copy(name: str, item: Path) -> bool:
+    """True when ``item`` is byte-identical to the bundle Silver Bullet ships as ``name``."""
+    if bundle_root is None:
         return False
-    return "Silver Bullet" in text or "silver-bullet" in text
-
-
-def quarantine_path(scope: str, root: Path, path: Path, bucket: Path) -> None:
+    reference = bundle_root / name / "SKILL.md"
+    candidate = item / "SKILL.md" if item.is_dir() else item
     try:
-        rel = path.relative_to(root)
-    except ValueError:
-        rel = Path(path.name)
-    target = bucket / scope / rel
+        return reference.is_file() and candidate.read_bytes() == reference.read_bytes()
+    except OSError:
+        return False
+
+
+def quarantine_path(scope: str, path: Path, bucket: Path) -> None:
+    target = bucket / scope / path.name
     target.parent.mkdir(parents=True, exist_ok=True)
     if target.exists():
         target = target.with_name(target.name + ".duplicate")
     shutil.move(str(path), str(target))
     print(f"Note: quarantined Cursor custom agent {path} -> {target}", file=sys.stderr)
 
+
 bucket = cursor_home / ".silver-bullet-quarantine" / "cursor-agents" / datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 for scope, root in roots:
     if not root.is_dir():
         continue
-    candidates: list[Path] = []
-    for item in sorted(root.glob("**/*"), key=lambda p: len(p.parts), reverse=True):
-        if item.is_file() and item.suffix.lower() in {".md", ".json", ".yaml", ".yml"} and should_quarantine(item, root):
-            candidates.append(item)
-    for item in candidates:
-        if not item.exists():
+    for item in sorted(root.iterdir()):
+        if item.is_symlink():
             continue
-        parent = item.parent
-        if item.name == "SKILL.md" and parent != root:
-            quarantine_path(scope, root, parent, bucket)
+        if item.is_dir():
+            if not (item / "SKILL.md").is_file():
+                continue
+            name = item.name
+        elif item.suffix.lower() in AGENT_SUFFIXES and not is_installer_managed_agent(item, root):
+            name = item.stem
         else:
-            quarantine_path(scope, root, item, bucket)
+            continue
+        key = name.lower()
+        if (SB_NAMESPACE.match(key) and shipped_name(name)) or (key in LEGACY_GENERIC and shipped_copy(name, item)):
+            quarantine_path(scope, item, bucket)
+        elif SB_NAMESPACE.match(key):
+            print(
+                f"Note: left {item} in place: its name is in Silver Bullet's namespace, "
+                "but Silver Bullet does not ship it. Remove it yourself if it is stale.",
+                file=sys.stderr,
+            )
+        elif key in LEGACY_GENERIC:
+            print(
+                f"Note: left {item} in place: its name matches a legacy Silver Bullet agent, "
+                "but its content is not Silver Bullet's. Remove it yourself if it is stale.",
+                file=sys.stderr,
+            )
 INNERPY
 }
 
