@@ -1,0 +1,914 @@
+[
+ {
+  "kind": "F",
+  "claim": "US firms grew 5%.",
+  "quote": "us firms grew 5%.",
+  "source": "r9 attack9.py: cap us/US"
+ },
+ {
+  "kind": "F",
+  "claim": "Us firms grew 5%.",
+  "quote": "US firms grew 5%.",
+  "source": "r9 attack9.py: cap US/Us"
+ },
+ {
+  "kind": "H",
+  "claim": "us firms grew 5%.",
+  "quote": "Us firms grew 5%.",
+  "source": "r9 attack9.py: cap Us/us (allowed) (equal by the rule)"
+ },
+ {
+  "kind": "H",
+  "claim": "Polish exports rose 5%.",
+  "quote": "polish exports rose 5%.",
+  "source": "r9 attack9.py: cap polish/Polish (allowed by rule) (equal by the rule)"
+ },
+ {
+  "kind": "H",
+  "claim": "May sales rose 5%.",
+  "quote": "may sales rose 5%.",
+  "source": "r9 attack9.py: cap may/May (allowed by rule) (equal by the rule)"
+ },
+ {
+  "kind": "F",
+  "claim": "Sales in May rose 5%.",
+  "quote": "Sales in may rose 5%.",
+  "source": "r9 attack9.py: cap mid may/May"
+ },
+ {
+  "kind": "F",
+  "claim": "Who data show a rise.",
+  "quote": "WHO data show a rise.",
+  "source": "r9 attack9.py: cap WHO/Who"
+ },
+ {
+  "kind": "H",
+  "claim": "apple sales rose.",
+  "quote": "Apple sales rose.",
+  "source": "r9 attack9.py: cap Apple/apple (allowed) (equal by the rule)"
+ },
+ {
+  "kind": "F",
+  "claim": "IPhone sales rose.",
+  "quote": "iPhone sales rose.",
+  "source": "r9 attack9.py: cap iPhone"
+ },
+ {
+  "kind": "F",
+  "claim": "The firm grew in Turkey.",
+  "quote": "The firm grew in turkey.",
+  "source": "r9 attack9.py: cap mid turkey"
+ },
+ {
+  "kind": "F",
+  "claim": "ÉLAN grew.",
+  "quote": "Élan grew.",
+  "source": "r9 attack9.py: cap allcaps accent"
+ },
+ {
+  "kind": "H",
+  "claim": "a survey found X.",
+  "quote": "A survey found X.",
+  "source": "r9 attack9.py: cap article (equal by the rule)"
+ },
+ {
+  "kind": "F",
+  "claim": "Survey a found X.",
+  "quote": "Survey A found X.",
+  "source": "r9 attack9.py: cap A late"
+ },
+ {
+  "kind": "H",
+  "claim": "polish firms grew.",
+  "quote": "[3] Polish firms grew.",
+  "source": "r9 attack9.py: cap after citation (equal by the rule)"
+ },
+ {
+  "kind": "F",
+  "claim": "polish firms grew.",
+  "quote": "\"Polish firms grew.\"",
+  "source": "r9 attack9.py: cap after quote mark"
+ },
+ {
+  "kind": "F",
+  "claim": "Delivery takes 3/5 days.",
+  "quote": "Delivery takes 3-5 days.",
+  "source": "r9 attack9.py: range -/"
+ },
+ {
+  "kind": "F",
+  "claim": "The ratio is 31.",
+  "quote": "The ratio is 3:1.",
+  "source": "r9 attack9.py: ratio colon"
+ },
+ {
+  "kind": "F",
+  "claim": "The ratio is 3 1.",
+  "quote": "The ratio is 3:1.",
+  "source": "r9 attack9.py: ratio colon vs space"
+ },
+ {
+  "kind": "F",
+  "claim": "The ratio is 1, 10.",
+  "quote": "The ratio is 1:10.",
+  "source": "r9 attack9.py: ratio colon vs comma"
+ },
+ {
+  "kind": "F",
+  "claim": "The result is 5.",
+  "quote": "The result is 5!",
+  "source": "r9 attack9.py: factorial"
+ },
+ {
+  "kind": "F",
+  "claim": "The flag x = 0 is set.",
+  "quote": "The flag x != 0 is set.",
+  "source": "r9 attack9.py: != vs ="
+ },
+ {
+  "kind": "F",
+  "claim": "Set x = 0 in config.",
+  "quote": "Set `x != 0` in config.",
+  "source": "r9 attack9.py: != backtick"
+ },
+ {
+  "kind": "F",
+  "claim": "The board is 6\" wide.",
+  "quote": "The board is 6' wide.",
+  "source": "r9 attack9.py: feet vs inch"
+ },
+ {
+  "kind": "F",
+  "claim": "The screen is 12' wide.",
+  "quote": "The screen is 12\" wide.",
+  "source": "r9 attack9.py: inch vs feet"
+ },
+ {
+  "kind": "F",
+  "claim": "The screen is 12 wide.",
+  "quote": "The screen is 12\" wide.",
+  "source": "r9 attack9.py: inch vs none"
+ },
+ {
+  "kind": "F",
+  "claim": "The angle is 5″.",
+  "quote": "The angle is 5′.",
+  "source": "r9 attack9.py: prime/double prime"
+ },
+ {
+  "kind": "F",
+  "claim": "The deviation was 5\".",
+  "quote": "The deviation was 5'.",
+  "source": "r9 attack9.py: arcmin vs arcsec ascii"
+ },
+ {
+  "kind": "F",
+  "claim": "Net income was 5.3 million.",
+  "quote": "Net income was (5.3) million.",
+  "source": "r9 attack9.py: accounting negative parens"
+ },
+ {
+  "kind": "F",
+  "claim": "Net income was $5.3 million.",
+  "quote": "Net income was $(5.3) million.",
+  "source": "r9 attack9.py: accounting negative $()"
+ },
+ {
+  "kind": "F",
+  "claim": "The player's union struck.",
+  "quote": "The players' union struck.",
+  "source": "r9 attack9.py: plural poss vs singular poss"
+ },
+ {
+  "kind": "F",
+  "claim": "The players union struck.",
+  "quote": "The players' union struck.",
+  "source": "r9 attack9.py: plural poss vs plain"
+ },
+ {
+  "kind": "F",
+  "claim": "Acmes revenue rose.",
+  "quote": "Acme's revenue rose.",
+  "source": "r9 attack9.py: 's"
+ },
+ {
+  "kind": "F",
+  "claim": "The rate is 3. 5.",
+  "quote": "The rate is 3.5.",
+  "source": "r9 attack9.py: decimal vs period"
+ },
+ {
+  "kind": "F",
+  "claim": "The rate was 3.5 firms closed.",
+  "quote": "The rate was 3. 5 firms closed.",
+  "source": "r9 attack9.py: period vs decimal"
+ },
+ {
+  "kind": "F",
+  "claim": "Version 2. 0 shipped.",
+  "quote": "Version 2.0 shipped.",
+  "source": "r9 attack9.py: 2.0 split"
+ },
+ {
+  "kind": "F",
+  "claim": "It uses eg Python.",
+  "quote": "It uses e.g. Python.",
+  "source": "r9 attack9.py: e.g."
+ },
+ {
+  "kind": "F",
+  "claim": "US firms grew.",
+  "quote": "U.S. firms grew.",
+  "source": "r9 attack9.py: U.S."
+ },
+ {
+  "kind": "F",
+  "claim": "U S firms grew.",
+  "quote": "U.S. firms grew.",
+  "source": "r9 attack9.py: U.S. spaced"
+ },
+ {
+  "kind": "F",
+  "claim": "The fee is 5, 000 euros.",
+  "quote": "The fee is 5,000 euros.",
+  "source": "r9 attack9.py: thousands comma space"
+ },
+ {
+  "kind": "F",
+  "claim": "The fee is 5,000 euros.",
+  "quote": "The fee is 5, 000 euros.",
+  "source": "r9 attack9.py: thousands comma space rev"
+ },
+ {
+  "kind": "F",
+  "claim": "Scores were 12 and 3.",
+  "quote": "Scores were 1,2 and 3.",
+  "source": "r9 attack9.py: 1,2 vs 12"
+ },
+ {
+  "kind": "F",
+  "claim": "Scores were 1,2 and 3.",
+  "quote": "Scores were 1, 2 and 3.",
+  "source": "r9 attack9.py: 1, 2 vs 1,2"
+ },
+ {
+  "kind": "F",
+  "claim": "The drug is not approved.",
+  "quote": "The drug is (not) approved.",
+  "source": "r9 attack9.py: parens not (allowed?)"
+ },
+ {
+  "kind": "F",
+  "claim": "The drug is … approved.",
+  "quote": "The drug is not approved.",
+  "source": "r9 attack9.py: ellipsis replaces not"
+ },
+ {
+  "kind": "F",
+  "claim": "The so-called cure works.",
+  "quote": "The so-called \"cure\" works.",
+  "source": "r9 attack9.py: scare quotes"
+ },
+ {
+  "kind": "F",
+  "claim": "He said no.",
+  "quote": "He said: no.",
+  "source": "r9 attack9.py: colon no"
+ },
+ {
+  "kind": "F",
+  "claim": "Delivery takes 3—5 days.",
+  "quote": "Delivery takes 3–5 days.",
+  "source": "r9 attack9.py: en vs em dash"
+ },
+ {
+  "kind": "F",
+  "claim": "Temperatures fell to –5 C.",
+  "quote": "Temperatures fell to -5 C.",
+  "source": "r9 attack9.py: hyphen-minus vs en dash sign"
+ },
+ {
+  "kind": "F",
+  "claim": "Temperatures fell to -5 C.",
+  "quote": "Temperatures fell to −5 C.",
+  "source": "r9 attack9.py: minus vs hyphen sign"
+ },
+ {
+  "kind": "F",
+  "claim": "The price is 5$.",
+  "quote": "The price is 5¢.",
+  "source": "r9 attack9.py: cent vs dollar"
+ },
+ {
+  "kind": "F",
+  "claim": "It rose 5%.",
+  "quote": "It rose 5‰.",
+  "source": "r9 attack9.py: permille"
+ },
+ {
+  "kind": "F",
+  "claim": "It is approx 5 m.",
+  "quote": "It is approx. 5 m.",
+  "source": "r9 attack9.py: approx."
+ },
+ {
+  "kind": "F",
+  "claim": "Its share is 5%",
+  "quote": "Its share is 5%;",
+  "source": "r9 attack9.py: semicolon"
+ },
+ {
+  "kind": "F",
+  "claim": "The fee is 5£.",
+  "quote": "The fee is 5€.",
+  "source": "r9 attack9.py: euro pound"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme is no. 1.",
+  "quote": "Acme is No. 1.",
+  "source": "r9 attack9.py: No./no. mid"
+ },
+ {
+  "kind": "H",
+  "claim": "The fee is ٥٠ euros.",
+  "quote": "The fee is 50 euros.",
+  "source": "r9 attack9.py: arabic-indic (allowed) (equal by the rule)"
+ },
+ {
+  "kind": "H",
+  "claim": "The fee is 5٠ euros.",
+  "quote": "The fee is 50 euros.",
+  "source": "r9 attack9.py: mixed scripts (allowed) (equal by the rule)"
+ },
+ {
+  "kind": "F",
+  "claim": "The fee is ⁵⁰ euros.",
+  "quote": "The fee is 50 euros.",
+  "source": "r9 attack9.py: superscript 50"
+ },
+ {
+  "kind": "F",
+  "claim": "The fee is 5⁰ euros.",
+  "quote": "The fee is 50 euros.",
+  "source": "r9 attack9.py: superscript 0"
+ },
+ {
+  "kind": "F",
+  "claim": "Area is 5 m².",
+  "quote": "Area is 5 m2.",
+  "source": "r9 attack9.py: m2 vs m²"
+ },
+ {
+  "kind": "H",
+  "claim": "The fee is 𝟓𝟎 euros.",
+  "quote": "The fee is 50 euros.",
+  "source": "r9 attack9.py: math bold (allowed) (equal by the rule)"
+ },
+ {
+  "kind": "F",
+  "claim": "The fee is ⑤⓪ euros.",
+  "quote": "The fee is 50 euros.",
+  "source": "r9 attack9.py: circled"
+ },
+ {
+  "kind": "F",
+  "claim": "The fee is Ⅴ50 euros.",
+  "quote": "The fee is 50 euros.",
+  "source": "r9 attack9.py: roman numeral"
+ },
+ {
+  "kind": "F",
+  "claim": "The fee is 5⃣ euros.",
+  "quote": "The fee is 5 euros.",
+  "source": "r9 attack9.py: keycap"
+ },
+ {
+  "kind": "H",
+  "claim": "The fee is ५० euros.",
+  "quote": "The fee is 50 euros.",
+  "source": "r9 attack9.py: devanagari (allowed) (equal by the rule)"
+ },
+ {
+  "kind": "F",
+  "claim": "Level ¹ is safe.",
+  "quote": "Level 1 is safe.",
+  "source": "r9 attack9.py: superscript 1"
+ },
+ {
+  "kind": "F",
+  "claim": "The fee is ½ euro.",
+  "quote": "The fee is 1/2 euro.",
+  "source": "r9 attack9.py: vulgar half"
+ },
+ {
+  "kind": "H",
+  "claim": "The café opened.",
+  "quote": "The café opened.",
+  "source": "r9 attack9.py: NFC combining (allowed) (equal by the rule)"
+ },
+ {
+  "kind": "F",
+  "claim": "The café opened.",
+  "quote": "The cafe opened.",
+  "source": "r9 attack9.py: accent added"
+ },
+ {
+  "kind": "F",
+  "claim": "The firm grew.",
+  "quote": "The ﬁrm grew.",
+  "source": "r9 attack9.py: ligature"
+ },
+ {
+  "kind": "F",
+  "claim": "The ｆirm grew.",
+  "quote": "The firm grew.",
+  "source": "r9 attack9.py: fullwidth letter"
+ },
+ {
+  "kind": "F",
+  "claim": "The drug is approved­.",
+  "quote": "The drug is approved.",
+  "source": "r9 attack9.py: soft hyphen"
+ },
+ {
+  "kind": "F",
+  "claim": "The drug is no̶t approved.",
+  "quote": "The drug is not approved.",
+  "source": "r9 attack9.py: strikethrough combining"
+ },
+ {
+  "kind": "F",
+  "claim": "The value is x = 5.",
+  "quote": "The value is x ≠ 5.",
+  "source": "r9 attack9.py: not-equal"
+ },
+ {
+  "kind": "F",
+  "claim": "The value is x = 5.",
+  "quote": "The value is x ≠ 5.",
+  "source": "r9 attack9.py: = + combining slash"
+ },
+ {
+  "kind": "H",
+  "claim": "Kelvin 5 K.",
+  "quote": "Kelvin 5 K.",
+  "source": "r9 attack9.py: Kelvin sign (equal by the rule)"
+ },
+ {
+  "kind": "F",
+  "claim": "The drug is approved‍.",
+  "quote": "The drug is approved.",
+  "source": "r9 attack9.py: ZWJ"
+ },
+ {
+  "kind": "F",
+  "claim": "The drug is approved️.",
+  "quote": "The drug is approved.",
+  "source": "r9 attack9.py: VS16"
+ },
+ {
+  "kind": "F",
+  "claim": "The fee is $5[1]0.",
+  "quote": "The fee is $50.",
+  "source": "r9 attack9.py: [1] glued in number"
+ },
+ {
+  "kind": "F",
+  "claim": "The fee is $50.",
+  "quote": "The fee is $5[1]0.",
+  "source": "r9 attack9.py: quote with [1]0"
+ },
+ {
+  "kind": "F",
+  "claim": "The fee is 5 [1]0 euros.",
+  "quote": "The fee is 50 euros.",
+  "source": "r9 attack9.py: space [1]0"
+ },
+ {
+  "kind": "F",
+  "claim": "The fee is 50 euros.",
+  "quote": "The fee is 50 euros [a].",
+  "source": "r9 attack9.py: [a] marker"
+ },
+ {
+  "kind": "F",
+  "claim": "The fee is 50 euros [a].",
+  "quote": "The fee is 50 euros.",
+  "source": "r9 attack9.py: [a] marker claim"
+ },
+ {
+  "kind": "H",
+  "claim": "Revenue rose 5% in 2023 [2024].",
+  "quote": "Revenue rose 5% in 2023.",
+  "source": "r9 attack9.py: [2024] year (equal by the rule)"
+ },
+ {
+  "kind": "H",
+  "claim": "Revenue rose 5% in.",
+  "quote": "Revenue rose 5% in [2023].",
+  "source": "r9 attack9.py: [2023] stripped from quote (equal by the rule)"
+ },
+ {
+  "kind": "H",
+  "claim": "Revenue rose 5% in [2024] 2023.",
+  "quote": "Revenue rose 5% in 2023.",
+  "source": "r9 attack9.py: [2024] inserted (equal by the rule)"
+ },
+ {
+  "kind": "H",
+  "claim": "Revenue rose 5%[1].",
+  "quote": "Revenue rose 5% [1].",
+  "source": "r9 attack9.py: glued (equal by the rule)"
+ },
+ {
+  "kind": "F",
+  "claim": "Revenue rose 5[1]%.",
+  "quote": "Revenue rose 5%.",
+  "source": "r9 attack9.py: marker inside figure"
+ },
+ {
+  "kind": "F",
+  "claim": "Revenue rose -[1]5%.",
+  "quote": "Revenue rose 5%.",
+  "source": "r9 attack9.py: marker after sign"
+ },
+ {
+  "kind": "H",
+  "claim": "Revenue rose [1]5%.",
+  "quote": "Revenue rose 5%.",
+  "source": "r9 attack9.py: marker before figure (equal by the rule)"
+ },
+ {
+  "kind": "H",
+  "claim": "Revenue fell [١]5%.",
+  "quote": "Revenue fell 5%.",
+  "source": "r9 attack9.py: arabic marker (equal by the rule)"
+ },
+ {
+  "kind": "F",
+  "claim": "Revenue rose 1[2]5%.",
+  "quote": "Revenue rose 15%.",
+  "source": "r9 attack9.py: marker glued within"
+ },
+ {
+  "kind": "F",
+  "claim": "Revenue rose 1.[2]5%.",
+  "quote": "Revenue rose 1.5%.",
+  "source": "r9 attack9.py: marker after dot"
+ },
+ {
+  "kind": "F",
+  "claim": "Revenue rose 1,[2]5%.",
+  "quote": "Revenue rose 1,5%.",
+  "source": "r9 attack9.py: marker after comma"
+ },
+ {
+  "kind": "F",
+  "claim": "Revenue rose 1,[2]5%.",
+  "quote": "Revenue rose 15%.",
+  "source": "r9 attack9.py: comma marker 15"
+ },
+ {
+  "kind": "F",
+  "claim": "The x[1]5 rose 15%.",
+  "quote": "The x rose 15%.",
+  "source": "r9 attack9.py: marker after letter"
+ },
+ {
+  "kind": "F",
+  "claim": "Model GPT[4] is fast.",
+  "quote": "Model GPT4 is fast.",
+  "source": "r9 attack9.py: GPT[4]"
+ },
+ {
+  "kind": "H",
+  "claim": "Model GPT[4] is fast.",
+  "quote": "Model GPT is fast.",
+  "source": "r9 attack9.py: GPT[4] vs GPT (equal by the rule)"
+ },
+ {
+  "kind": "F",
+  "claim": "Revenue rose 5% in 2023[1,2,3,4,5].",
+  "quote": "Revenue rose 5% in 2023.",
+  "source": "r9 attack9.py: many markers"
+ },
+ {
+  "kind": "F",
+  "claim": "[1] all users pay.",
+  "quote": "Not all users pay.",
+  "source": "r9 attack9.py: marker replaces Not"
+ },
+ {
+  "kind": "F",
+  "claim": "Not.",
+  "quote": "",
+  "source": "r9 attack9.py: empty quote single negator"
+ },
+ {
+  "kind": "F",
+  "claim": "No",
+  "quote": "",
+  "source": "r9 attack9.py: empty quote No"
+ },
+ {
+  "kind": "F",
+  "claim": "never",
+  "quote": "   ",
+  "source": "r9 attack9.py: blank quote never"
+ },
+ {
+  "kind": "F",
+  "claim": "The drug is safe.",
+  "quote": "The drug is safe?",
+  "source": "r9 attack9.py: question"
+ },
+ {
+  "kind": "F",
+  "claim": "The drug is safe.",
+  "quote": "Is the drug safe?",
+  "source": "r9 attack9.py: question reorder"
+ },
+ {
+  "kind": "F",
+  "claim": "The plan is free.",
+  "quote": "The plan is free*.",
+  "source": "r9 attack9.py: asterisk"
+ },
+ {
+  "kind": "F",
+  "claim": "The plan is free.",
+  "quote": "The plan is *free*.",
+  "source": "r9 attack9.py: emphasis asterisks"
+ },
+ {
+  "kind": "F",
+  "claim": "The plan is free.",
+  "quote": "The plan is _free_.",
+  "source": "r9 attack9.py: underscore emphasis"
+ },
+ {
+  "kind": "F",
+  "claim": "The plan is free.",
+  "quote": "The plan is **not** free.",
+  "source": "r9 attack9.py: bold not"
+ },
+ {
+  "kind": "H",
+  "claim": "The tool is not free.",
+  "quote": "No: the tool is not free.",
+  "source": "r9 honest9.py"
+ },
+ {
+  "kind": "H",
+  "claim": "The tool is not free.",
+  "quote": "No! The tool is not free.",
+  "source": "r9 honest9.py"
+ },
+ {
+  "kind": "H",
+  "claim": "The tool is not free.",
+  "quote": "No; the tool is not free.",
+  "source": "r9 honest9.py"
+ },
+ {
+  "kind": "H",
+  "claim": "The tool is not free.",
+  "quote": "No… the tool is not free.",
+  "source": "r9 honest9.py"
+ },
+ {
+  "kind": "H",
+  "claim": "The tool is not free.",
+  "quote": "\"No\", the tool is not free.",
+  "source": "r9 honest9.py"
+ },
+ {
+  "kind": "H",
+  "claim": "The tool is not free.",
+  "quote": "No — the tool is not free.",
+  "source": "r9 honest9.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Oh, the tool is not free.",
+  "quote": "Oh no, the tool is not free.",
+  "source": "r9 honest9.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme ranks 1 in Europe.",
+  "quote": "Acme ranks No 1 in Europe.",
+  "source": "r9 honest9.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme ranks 1 in Europe.",
+  "quote": "Acme ranks no. 1 in Europe.",
+  "source": "r9 honest9.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme ranks 1 in Europe.",
+  "quote": "Acme ranks No.1 in Europe.",
+  "source": "r9 honest9.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme ranks 1 in Europe.",
+  "quote": "Acme ranks #1 in Europe.",
+  "source": "r9 honest9.py"
+ },
+ {
+  "kind": "H",
+  "claim": "The CEO said Acme will sell.",
+  "quote": "Never, the CEO said, will Acme sell.",
+  "source": "r9 honest9.py"
+ },
+ {
+  "kind": "H",
+  "claim": "The vote was yes or.",
+  "quote": "The vote was yes or no.",
+  "source": "r9 honest9.py"
+ },
+ {
+  "kind": "H",
+  "claim": "The fee is 50 euros.",
+  "quote": "The fee is 50 euros [1].",
+  "source": "r9 honest9.py"
+ },
+ {
+  "kind": "H",
+  "claim": "The fee is 50 euros [1][2].",
+  "quote": "The fee is 50 euros.",
+  "source": "r9 honest9.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Revenue rose 5% in 2024.",
+  "quote": "Revenue rose 5% in 2023 and 2024.",
+  "source": "r9 honest9.py"
+ },
+ {
+  "kind": "H",
+  "claim": "The drug is not approved.",
+  "quote": "The drug isn't approved.",
+  "source": "r9 honest9.py"
+ },
+ {
+  "kind": "H",
+  "claim": "The drug isn’t approved.",
+  "quote": "The drug is not approved.",
+  "source": "r9 honest9.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme's fee is $5.",
+  "quote": "Acme’s fee is $5.",
+  "source": "r9 honest9.py"
+ },
+ {
+  "kind": "H",
+  "claim": "The fee is 50 euros.",
+  "quote": "The fee is ５０ euros.",
+  "source": "r9 honest9.py"
+ },
+ {
+  "kind": "H",
+  "claim": "The fee is 50 euros.",
+  "quote": "The fee is ٥٠ euros.",
+  "source": "r9 honest9.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Café sales rose.",
+  "quote": "Café sales rose.",
+  "source": "r9 honest9.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Delivery takes 3–5 days.",
+  "quote": "Delivery takes 3–5 days.",
+  "source": "r9 honest9.py"
+ },
+ {
+  "kind": "H",
+  "claim": "The ratio is 3:1.",
+  "quote": "The ratio is 3:1.",
+  "source": "r9 honest9.py"
+ },
+ {
+  "kind": "H",
+  "claim": "It costs US$5.",
+  "quote": "It costs US$5.",
+  "source": "r9 honest9.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Is the drug safe? Yes.",
+  "quote": "Is the drug safe? Yes.",
+  "source": "r9 honest9.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Not all users pay.",
+  "quote": "Not all users pay.",
+  "source": "r9 honest9.py"
+ },
+ {
+  "kind": "H",
+  "claim": "No users pay.",
+  "quote": "No users pay.",
+  "source": "r9 honest9.py"
+ },
+ {
+  "kind": "H",
+  "claim": "No, users pay.",
+  "quote": "No, users pay.",
+  "source": "r9 honest9.py"
+ },
+ {
+  "kind": "H",
+  "claim": "The plan is free*.",
+  "quote": "The plan is free*.",
+  "source": "r9 honest9.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Version 2.0.1 shipped.",
+  "quote": "Version 2.0.1 shipped.",
+  "source": "r9 honest9.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme, Inc. grew 5%.",
+  "quote": "Acme, Inc. grew 5%.",
+  "source": "r9 honest9.py"
+ },
+ {
+  "kind": "H",
+  "claim": "E.g. Python is fast.",
+  "quote": "E.g. Python is fast.",
+  "source": "r9 honest9.py"
+ },
+ {
+  "kind": "H",
+  "claim": "¿Es gratis? Sí.",
+  "quote": "¿Es gratis? Sí.",
+  "source": "r9 honest9.py"
+ },
+ {
+  "kind": "H",
+  "claim": "The 6' board is cheap.",
+  "quote": "The 6' board is cheap.",
+  "source": "r9 honest9.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Water is H₂O.",
+  "quote": "Water is H₂O.",
+  "source": "r9 honest9.py"
+ },
+ {
+  "kind": "H",
+  "claim": "The temperature was −5 °C.",
+  "quote": "The temperature was −5 °C.",
+  "source": "r9 honest9.py"
+ },
+ {
+  "kind": "H",
+  "claim": "iOS 17 adds SSO.",
+  "quote": "iOS 17 adds SSO.",
+  "source": "r9 honest9.py"
+ },
+ {
+  "kind": "H",
+  "claim": "eBay grew 5%.",
+  "quote": "eBay grew 5%.",
+  "source": "r9 honest9.py"
+ },
+ {
+  "kind": "H",
+  "claim": "EBay grew 5%.",
+  "quote": "eBay grew 5%.",
+  "source": "r9 honest9.py"
+ },
+ {
+  "kind": "H",
+  "claim": "50 percent of users churned.",
+  "quote": "50 percent of users churned.",
+  "source": "r9 honest9.py"
+ },
+ {
+  "kind": "H",
+  "claim": "No. 10 Downing Street is old.",
+  "quote": "No. 10 Downing Street is old.",
+  "source": "r9 honest9.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Revenue was $5m (2023).",
+  "quote": "Revenue was $5m (2023).",
+  "source": "r9 honest9.py"
+ }
+]

@@ -217,33 +217,34 @@ reason under `needs_review`, prints a count on stderr, and `report` has a "Needs
 
 ### What makes a claim `supported`
 
-The text is cut into tokens, and the claim's tokens, in order, must equal the quote's. Nothing is folded:
-everything that can change a meaning is a token and is kept. That includes letters and digits of every
-script (an accent is a different letter), **case** (`MB` is not `Mb`, `mW` is not `MW`, `US` is not `us`,
-`Hepatitis A` is not `Hepatitis`), signs and comparators (`-` `−` `+` `<` `>` `≤` `≥` `~` `≈` `±`),
-currency symbols, `%`, `°`, superscripts, `/`, hyphens, a question mark (a quoted question is not a
-statement) and an asterisk (a footnote is a caveat). A figure is one token written exactly as it stands: its
-inner `,` and `.` are never reinterpreted (`1,5` and `15` differ, so do `3` and `3.0`, `$5` and `$5.00`,
-`.95` and `0.95`, `'24` and `2024`, `90s` and `1990s`), and a `%` or currency symbol after a space belongs to
-the number (`40 %` is `40%`; `50 $` is not `50 €`). A sign counts only at the start of a word (`3-5` is not
-`3 -5`). Number words are not converted (`five` is not `5`).
+The text is cut into tokens, and the claim's tokens, in order, must equal the quote's. A token is a run of
+word characters (any script), a figure, or **every other non-space character on its own**. Nothing is
+dropped or folded: each punctuation mark is significant, so `6"` (inches) is not `6'` (feet) and not `6`,
+`x != 0` is not `x = 0`, `5!` is not `5`, `(5.3)` (accounting for -5.3) is not `5.3`, `3:1` is not `3 1`,
+`3-5` is not `3/5` and not `3–5`, `players'` is not `player's` and not `players`, `e.g.` is not `eg`, a
+quoted `"cure"` is not `cure`, `?` and `*` count, and so do case (`MB` is not `Mb`, `US` is not `us`,
+`Hepatitis A` is not `Hepatitis`), signs and comparators, currency symbols, `%`, `°`, superscripts, accents
+and the articles `a`, `an`, `the` ("the market leader" is not "a market leader"). A figure is one token
+written exactly as it stands: its inner `,` and `.` are never reinterpreted (`1,5` and `15` differ, so do
+`3` and `3.0`, `$5` and `$5.00`, `.95` and `0.95`, `'24` and `2024`, `90s` and `1990s`). A sign counts only
+at the start of a word (`3-5` is not `3 -5`). Number words are not converted (`five` is not `5`). There
+are no aliases, no filler words and no stemming (`glasses` is not `glass`; `staff` is not `employee`).
 
-Only these differences are ignored, and the code has no others:
+The ONLY differences that are ignored, and the code has no others:
 
-- the capital of the **first word** of the text (`Acme supports SSO` = `acme supports SSO`); every other
-  token is compared as written;
-- punctuation: whitespace, `. , ; : !`, the ellipsis `…`, quotation marks, brackets and the backtick
-  (`` `not` `` is `not`). A `?` and a `*` are not dropped;
-- the digit script: every Unicode decimal digit is read as `0-9` (full-width `５０` and Arabic-Indic `٥` equal
-  `50` and `5`); an accent written as one character or as base letter plus mark is one letter;
-- a contraction (`doesn't` = `does not`, `can't` and `cannot` = `can not`, `won't` = `will not`);
+- the capital letter of the **first word** of the text (`Acme supports SSO` = `acme supports SSO`); every
+  other token is compared as written. Accepted residual: a first word that is also a common word matches
+  when the quote begins in lowercase (`Polish exports rose` = `polish exports rose`);
+- one final `.` at the very end of the text, on either side or both (`5` = `5.`); a final `!` or `?` must be
+  on both sides (`5!` is not `5`, `5.` is not `5!`);
+- curly and straight quotes and apostrophes (`“5”` = `"5"`, `Acme’s` = `Acme's`); they remain tokens;
+- the digit script: every Unicode decimal digit is read as `0-9` (full-width `５０` and Arabic-Indic `٥٠` equal
+  `50`), and an accent written as one character or as base letter plus mark (NFC) is one letter;
 - an inline citation marker such as `[3]` or `[1, 2]`, only when a space or a non-digit precedes it (`3[00]`
-  keeps its `00`).
-
-There are no aliases, no filler words and no stemming. The articles `a`, `an` and `the` are words like any
-other: "the market leader" is not "a market leader", and an article added or left out is a difference. a plural is a different word (`glasses` is not
-`glass`, `news` is not `new`, `goods` is not `good`), and `this`/`that`, `its`/`their`, `all`/`only`/`no`/
-`not`/`never`, `is`/`are`, `staff`/`employee` and `client`/`customer` are all different words.
+  keeps its `[00]`);
+- a space between a currency symbol and its number (`£ 5m` = `£5m`) and between a number and `%` or a
+  currency symbol (`40 %` = `40%`; `50 $` is not `50 €`);
+- a contraction (`doesn't` = `does not`, `can't` and `cannot` = `can not`, `won't` = `will not`).
 
 Nothing else may differ. In particular a rewording, a synonym, a different verb ("grew" / "rose"), a
 reordering ("In 2022 Acme was acquired" / "Acme was acquired in 2022"), a voice change ("Acme acquired
@@ -265,8 +266,9 @@ tokenising except for **exactly one token**, which is either:
 
 - an added or removed `not`, `never` or `no` ("Acme supports SSO" against "Acme not supports SSO",
   "Acme has a free tier" against "Acme has no free tier"; `isn't`, `can't` and `cannot` count as `is not`
-  and `can not`). `No,` and `No.` are tokens of their own, not the word `no`: "No, the tool is not free"
-  (an interjection) and "Acme ranks No. 1" (an abbreviation) never negate anything and give `needs_review`; or
+  and `can not`). `not` and `never` always count. `no` counts only when a word follows it directly ("no
+  SSO"); before punctuation or a digit it is a plain token ("No: the tool...", "No, the tool...", "No… ",
+  "\"No\", ...", "Acme ranks No 1") and gives `needs_review`; or
 - one figure with a different value, written the same way (same currency, sign, `%`, separators and number
   of digits): "Acme has 500 employees" against "Acme has 200 employees", "founded in 2015" against
   "founded in 2019".
@@ -296,7 +298,7 @@ one quote.**
 1. Store as evidence exactly the one sentence or clause of the source that backs the claim, verbatim. Not a
    paragraph, not two sentences, not a sentence plus its heading.
 2. Write the report sentence to repeat that quote: same words, figures, dates and units, in the same order.
-   Only the first word's capital and punctuation may change; keep case, plurals, figures and marks as the quote has them.
+   Only the first word's capital and a final period may change; keep case, plurals, figures and marks as the quote has them.
 3. Do not reword, reorder, change voice or merge two quotes into one claim. If a sentence needs two facts,
    write two sentences, each with its own quote.
 4. A deliberate paraphrase or summary is allowed, but it is `needs_review` and a reader checks it.
@@ -321,13 +323,14 @@ edit `support_status` by hand and do not deliver a run with unresolved items.
 
 ### Corpora pinning the behaviour
 
-`tests/fixtures/` holds every probe pair of all eight reviews, run by
+`tests/fixtures/` holds every probe pair of all nine reviews, run by
 `tests/test_claim_checker_regression_corpus.py` in one table: `claim_corpus_verbatim.json` (reviews 1-3),
 `claim_corpus_r4.json`, `claim_corpus_r5.json`, `claim_corpus_r6.json` (the sixth review: 91 fabrications,
 25 honest twins and 40 held-out everyday honest claims), `claim_corpus_r7.json` (the seventh review: signs,
 comparators, accents, other scripts, decimal commas, superscripts, symbols after a space, filler words;
 same-value-different-spelling honest claims), `claim_corpus_r8.json` (the eighth review: case, capital A, plural
--s, `?` and `*`, digits in brackets, digit scripts, `No,`), `claim_corpus.json` (curated) and
+-s, `?` and `*`, digits in brackets, digit scripts, `No,`), `claim_corpus_r9.json` (the ninth review: inch and foot marks, `!=`, accounting parentheses, ratio
+colons, quotes, dashes, `No` before punctuation; honest rows are pairs equal by the rule), `claim_corpus.json` (curated) and
 `claim_corpus_heldout.json`. The invariants are: a fabrication is never `supported`; an honest claim is never
 `contradicted` or `unsupported`; a claim identical to its quote is `supported`. Counts per verdict at the
 last run:
@@ -336,10 +339,11 @@ last run:
 |--------|------------------------------------------------------------------|-----------------------------------------------|
 | reviews 1-3 verbatim (55 + 50) | 4 / 48 / 3 / 0 | 2 / 48 / 0 |
 | review 4 verbatim (36 + 69) | 0 / 36 / 0 / 0 | 0 / 69 / 0 |
-| review 5 verbatim (121 + 99) | 7 / 113 / 1 / 0 | 26 / 73 / 0 |
-| review 6 (91 + 65) | 1 / 90 / 0 / 0 | 1 / 64 / 0 |
-| review 7 (55 + 12) | 3 / 52 / 0 / 0 | 4 / 8 / 0 |
-| review 8 (84 + 19) | 9 / 75 / 0 / 0 | 16 / 3 / 0 |
+| review 5 verbatim (121 + 99) | 7 / 113 / 1 / 0 | 21 / 78 / 0 |
+| review 6 (91 + 65) | 0 / 91 / 0 / 0 | 1 / 64 / 0 |
+| review 7 (55 + 12) | 3 / 51 / 1 / 0 | 4 / 8 / 0 |
+| review 8 (84 + 19) | 9 / 75 / 0 / 0 | 14 / 5 / 0 |
+| review 9 (90 + 62) | 3 / 86 / 1 / 0 | 47 / 15 / 0 |
 | curated (45 + 45) | 14 / 30 / 1 / 0 | 1 / 44 / 0 |
 | held-out (32 + 32) | 5 / 27 / 0 / 0 | 0 / 32 / 0 |
 

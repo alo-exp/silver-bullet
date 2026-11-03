@@ -33,12 +33,13 @@ class SupportedOnlyForANearQuote(unittest.TestCase):
             self.assert_supported(sentence, sentence)
 
     def test_the_first_capital_punctuation_lowercase_articles_and_digit_script_may_differ(self):
-        self.assert_supported("acme supports SSO!", "Acme supports SSO.")
+        self.assert_supported("acme supports SSO", "Acme supports SSO.")
+        self.assert_supported("Acme supports SSO.", "Acme supports SSO")  # one final period may be missing on either side
         self.assert_supported("Acme supports SSO", "acme supports SSO")  # only the first word may change its capital
-        self.assert_supported("Acme integrates with Slack, Jira and GitHub", "Acme integrates with Slack Jira and GitHub")
+        self.assert_supported("Acme integrates with Slack, Jira and GitHub.", "Acme integrates with Slack, Jira and GitHub")
         self.assert_supported("Acme shipped [3] the product", "Acme shipped the product")  # a citation marker is no word
         self.assert_supported("Acme’s CEO resigned", "Acme's CEO resigned")
-        self.assert_supported("Acme `ships` “two” products (new)…", "Acme ships two products new")
+        self.assert_supported("Acme `ships` “two” products (new)…", "Acme `ships` \"two\" products (new)…")
         self.assertNotEqual(status("**Acme** ships", "Acme ships"), "supported")  # emphasis marks are stripped by extract_claims
         self.assert_supported("The Acme CEO", "the Acme CEO")
         self.assert_supported("A shares class", "a shares class")  # a first word may change its capital
@@ -78,11 +79,39 @@ class SupportedOnlyForANearQuote(unittest.TestCase):
             self.assertEqual(status(quote, claim), "needs_review", (claim, quote))
         self.assert_supported("The drug is approved [3]", "The drug is approved")  # a marker after a space is no word
         self.assert_supported("The drug is approved for adults [1, 2].", "The drug is approved for adults")
-        self.assertEqual(vcs._words("Acme has 3[00] employees [4]"), ["acme", "has", "3", "00", "employees"])
+        self.assertEqual(vcs._words("Acme has 3[00] employees [4]"), ["acme", "has", "3", "[", "00", "]", "employees"])
 
-    def test_no_is_a_negator_only_as_a_plain_word(self):
+    def test_every_mark_is_a_token_and_only_the_listed_differences_are_ignored(self):
+        self.assertEqual(vcs._words("Set `x != 0` (6\" or 6') 3:1 a/b “q” ‘s’ …?"),
+                         ["set", "`", "x", "!", "=", "0", "`", "(", "6", '"', "or", "6", "'", ")", "3", ":", "1", "a", "/", "b",
+                          '"', "q", '"', "'", "s", "'", "…", "?"])
+        for claim, quote in (("The board is 6\" wide", "The board is 6' wide"), ("The screen is 12 wide", "The screen is 12\" wide"),
+                             ("The deviation was 5\"", "The deviation was 5'"), ("The flag x = 0 is set", "The flag x != 0 is set"),
+                             ("The result is 5", "The result is 5!"), ("The result is 5.", "The result is 5!"),
+                             ("Net income was 5.3 million", "Net income was (5.3) million"),
+                             ("The ratio is 3 1", "The ratio is 3:1"), ("The ratio is 1, 10", "The ratio is 1:10"),
+                             ("Delivery takes 3/5 days", "Delivery takes 3-5 days"), ("Delivery takes 3—5 days", "Delivery takes 3–5 days"),
+                             ("The so-called cure works", "The so-called \"cure\" works"), ("It uses eg Python", "It uses e.g. Python"),
+                             ("U S firms grew", "U.S. firms grew"), ("The rate is 3. 5", "The rate is 3.5"),
+                             ("The players union struck", "The players' union struck"), ("Acmes revenue rose", "Acme's revenue rose")):
+            self.assertNotEqual(status(claim, quote), "supported", (claim, quote))
+            self.assertNotEqual(status(quote, claim), "supported", (claim, quote))
+
+    def test_the_listed_differences_are_still_equal(self):
+        self.assert_supported("The fee is “5”", "The fee is \"5\"")
+        self.assert_supported("Acme’s fee is £ 5m", "Acme's fee is £5m")
+        self.assert_supported("The temperature was 5.", "The temperature was 5")
+        self.assert_supported("The drug is approved!", "The drug is approved!")
+
+    def test_no_is_a_negator_only_when_a_word_follows(self):
         self.assertEqual(vcs._words("No, the tool is not free. Acme ranks No. 1"),
-                         ["No,", "the", "tool", "is", "not", "free", "Acme", "ranks", "No.", "1"])
+                         ["no", ",", "the", "tool", "is", "not", "free", ".", "Acme", "ranks", "No", ".", "1"])
+        for quote in ("No: the tool is not free", "No; the tool is not free", "No… the tool is not free",
+                      "\"No\", the tool is not free", "No! The tool is not free", "No — the tool is not free"):
+            self.assertEqual(status("The tool is not free", quote), "needs_review", quote)
+        self.assertEqual(status("Acme ranks 1 in Europe", "Acme ranks No 1 in Europe"), "needs_review")
+        self.assertEqual(status("Acme ranks 1 in Europe", "Acme ranks no. 1 in Europe"), "needs_review")
+        self.assertEqual(status("Acme supports SSO", "Acme supports SSO. No"), "needs_review")
         self.assertEqual(status("The tool is not free", "No, the tool is not free"), "needs_review")
         self.assertEqual(status("Acme ranks 1 in Europe", "Acme ranks No. 1 in Europe"), "needs_review")
         self.assertEqual(status("The study found effect", "The study found no effect"), "contradicted")
@@ -149,7 +178,7 @@ class SupportedOnlyForANearQuote(unittest.TestCase):
                          "reworded, not a near-quote: 60% of the claim's words are in the source")
 
     def test_a_claim_without_words_is_never_supported(self):
-        self.assertEqual(verdict("[1] [2, 3]", "The a"), ("needs_review", 0.0, "the claim has no words to check"))
+        self.assertEqual(verdict("[1] [2, 3] ...", "The a"), ("needs_review", 0.0, "the claim has no words to check"))
 
 
 class FiguresCompareExactlyAsWritten(unittest.TestCase):
@@ -215,14 +244,14 @@ class FiguresCompareExactlyAsWritten(unittest.TestCase):
             self.assertEqual(status(quote, claim), "needs_review", (claim, quote))
 
     def test_figure_tokens(self):
-        self.assertEqual(vcs._words("Net -12%, +5, −40°C, €1,5, 3,50, 10⁶, .95, '24, $5.00, 99.9%, A$5m, 1,000."),
-                         ["net", "-12%", "+5", "−40", "°", "C", "€1,5", "3,50", "10⁶", ".95", "'24", "$5.00", "99.9%",
-                          "A$5m", "1,000"])
+        self.assertEqual(vcs._words("Net -12%, +5, −40°C, €1,5, 10⁶, .95, '24, $5.00, 99.9%, A$5m, £ 5m, 50 %."),
+                         ["net", "-12%", ",", "+5", ",", "−40", "°", "C", ",", "€1,5", ",", "10⁶", ",", ".", "95", ",", "'", "24",
+                          ",", "$5.00", ",", "99.9%", ",", "A$5m", ",", "£5m", ",", "50%"])
         self.assertEqual(vcs._words("The price is $5/user/month, 3-5 days, x > 5 ~ y"),
-                         ["the", "price", "is", "$5", "/", "user", "/", "month", "3", "-", "5", "days", "x", ">", "5", "~", "y"])
-        for figure in ("30%", "$5", "a$5m", "ca$5", "2023", "3.5", "-12", "'24", ".95"):
+                         ["the", "price", "is", "$5", "/", "user", "/", "month", ",", "3", "-", "5", "days", ",", "x", ">", "5", "~", "y"])
+        for figure in ("30%", "$5", "a$5m", "ca$5", "2023", "3.5", "-12"):
             self.assertTrue(vcs._is_figure(figure), figure)
-        for word in ("q3", "ec2", "acme", "gpt4", "-", "$"):
+        for word in ("q3", "ec2", "acme", "gpt4", "-", "$", ".95", "'24"):
             self.assertFalse(vcs._is_figure(word), word)
 
     def test_no_stemming(self):
@@ -240,8 +269,7 @@ class ContradictedOnlyWhenClear(unittest.TestCase):
                              ("The study found effect", "The study found no effect"),
                              ("Acme has free tier", "Acme has no free tier"),
                              ("Don't use the v1 API", "Do use the v1 API"),
-                             ("Acme acquired Initech", "Acme not acquired Initech"),
-                             ("Acme supports SSO", "Acme supports SSO: No")):
+                             ("Acme acquired Initech", "Acme not acquired Initech")):
             self.assertEqual(status(claim, quote), "contradicted", (claim, quote))
             self.assertEqual(status(quote, claim), "contradicted", (claim, quote))
         self.assertEqual(verdict("Acme supports SSO", "Acme not supports SSO")[2], "the source negates what the claim says")
