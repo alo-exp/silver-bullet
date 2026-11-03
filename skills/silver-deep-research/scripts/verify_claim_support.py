@@ -8,13 +8,12 @@ CLI subcommands:
 
 Version 1 is deterministic and cheap: no LLM calls, no semantics. The rule is a strict near-quote:
 
-* ``supported``: the claim repeats the cited quote word for word. Only case, punctuation, articles and
-  other stopwords, simple inflection (plural, -s/-ed/-ing of one stem), a tiny table of exact aliases and
-  the written form of a number ("40 percent", "five thousand") may differ. The words, figures, dates and
-  units must come in the same order. Any rewording, reordering, voice change or paraphrase is
-  ``needs_review``, never ``supported``.
-* ``contradicted``: only a clear conflict, which is the same sentence with an explicit "not"/"never"
-  added or removed, or the same sentence with one exact figure replaced by another of the same kind.
+* ``supported``: the claim repeats the cited quote word for word. Only case, punctuation, the articles
+  a/an/the, and a plural or third-person -s may differ. Every other character that can change a meaning
+  (signs, comparators, currency, %, accents, other scripts) is kept, and a figure is compared exactly as
+  written ("3" is not "3.0"). Any rewording, reordering, voice change or paraphrase is ``needs_review``.
+* ``contradicted``: only a clear conflict, which is the same sentence except for exactly one token: an
+  added or removed "not"/"never"/"no", or one figure of another value written the same way.
 * ``unsupported``: no cited quote shares enough words with the claim to address it.
 * ``needs_review``: everything else. A reader checks it against the source.
 
@@ -39,178 +38,85 @@ from jsonl_store import JsonlError, locked, read_jsonl, write_jsonl_atomic  # no
 
 
 # ---------------------------------------------------------------------------
-# Text normalisation
+# Tokens: what may differ between a claim and its quote
 # ---------------------------------------------------------------------------
+#
+# A text is cut into tokens. Everything that can change a meaning is kept: letters and digits of every
+# script, signs, comparators, currency symbols, %, the degree sign, superscripts, slashes and hyphens. Only
+# whitespace, sentence punctuation, quotation marks, brackets and markdown emphasis are dropped. A figure is
+# one token, written exactly as it stands ("1,5", "-12", "10\u2076", ".95", "'24", "$5.00", "40 %" is "40%",
+# "50 $" is "50$"): it is never converted, so "3" and "3.0" are different figures.
 
-
-_QUOTE_TABLE = {
-    0x2018: "'", 0x2019: "'", 0x02BC: "'", 0x2032: "'", 0x201C: '"', 0x201D: '"',
-    0x2010: '-', 0x2011: '-', 0x2012: '-', 0x2013: '-', 0x2014: '-', 0x00A0: ' ',
-}
-PERCENT_RE = re.compile(r'(\d)\s*(?:percent|per cent|pct)\b', re.IGNORECASE)
-CURRENCY_CODE_RE = re.compile(r'\b(USD|EUR|GBP)\s*(?=\d)')
-_CODE_SYMBOL = {'USD': '$', 'EUR': '€', 'GBP': '£'}
-FREE_RE = re.compile(r'\bat no (?:extra |additional )?(?:cost|charge|fee)\b', re.IGNORECASE)
-
-
-_UNITS = {w: i for i, w in enumerate(
-    'zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen '
-    'sixteen seventeen eighteen nineteen'.split())}
-_TENS = {w: 10 * i for i, w in enumerate('_ _ twenty thirty forty fifty sixty seventy eighty ninety'.split())}
-_MULT = {'hundred': 100, 'thousand': 1000, 'million': 1_000_000, 'billion': 1_000_000_000}
-_NUM_FIRST = '|'.join(list(_UNITS) + [w for w in _TENS if w != '_'])
-_NUM_ANY = _NUM_FIRST + '|' + '|'.join(_MULT)
-# A run of number words that starts with a units/tens word (a bare "million" after a digit stays).
-NUMBER_WORDS_RE = re.compile(
-    r'\b(?:' + _NUM_FIRST + r')\b(?:[\s-]+(?:and\s+)?(?:' + _NUM_ANY + r')\b)*[ \t]*',
-    re.IGNORECASE,
-)
-VERSION_RE = re.compile(r'\bv(?=\d)')
-# A lone "one" is a quantity only when a range runs on from it ("one to three days", "one or two",
-# "between one and three"); elsewhere it is a pronoun or a name ("one who", "one-to-one").
-ONE_RANGE_RE = re.compile(
-    r'\b(?:(between\s+)one(?=\s+and\s+)|one(?=\s+(?:to|or)\s+(?:\d|(?:' + _NUM_FIRST + r')\b)))', re.IGNORECASE)
-
-
-def _compound(text: str, force: bool = False) -> str:
-    """The value of one run of number words ("one hundred and twenty" -> "120")."""
-    words = re.findall(r'[a-z]+', text.lower())
-    if words in (['one'], ['zero']) and not force:  # "one who", "zero downtime": not quantities
-        return text
-    trailing = text[len(text.rstrip()):]
-    total, current = 0, 0
-    for word in words:
-        if word == 'and':
-            continue
-        if word in _UNITS:
-            current += _UNITS[word]
-        elif word in _TENS:
-            current += _TENS[word]
-        elif word == 'hundred':
-            current = max(current, 1) * 100
-        else:
-            total += max(current, 1) * _MULT[word]
-            current = 0
-    return str(total + current) + trailing
-
-
-def _words_to_number(match: 're.Match') -> str:
-    """"and" joins number words only inside a compound ("two hundred and five", "one thousand and
-    one"); anywhere else it separates two numbers ("between two and five days" is 2 and 5, never 7)."""
-    text = match.group(0)
-    previous = ''
-    for word in re.finditer(r'[A-Za-z]+', text):
-        if word.group(0).lower() == 'and' and previous not in _MULT:
-            head, rest = text[:word.start()], text[word.start():]
-            forced = bool(re.match(r'and\s+(?:\d|(?:' + _NUM_ANY + r')\b)', rest, re.IGNORECASE))
-            return _compound(head, forced) + NUMBER_WORDS_RE.sub(_words_to_number, rest)
-        previous = word.group(0).lower()
-    return _compound(text)
-
-
-def normalize_text(text: str) -> str:
-    """NFKC, typographic quotes/dashes to ASCII, '40 percent' to '40%', 'USD 50' to '$50',
-    'five thousand' to '5000', 'v1.29' to '1.29'."""
-    import unicodedata
-    text = unicodedata.normalize('NFKC', text).translate(_QUOTE_TABLE)
-    text = ONE_RANGE_RE.sub(lambda m: (m.group(1) or '') + '1', text)
-    text = NUMBER_WORDS_RE.sub(_words_to_number, text)
-    text = VERSION_RE.sub('', text)
-    text = PERCENT_RE.sub(r'\1%', text)
-    text = CURRENCY_CODE_RE.sub(lambda m: _CODE_SYMBOL[m.group(1)], text)
-    return FREE_RE.sub('for free', text)
-
-
-# ---------------------------------------------------------------------------
-# Words: what may differ between a claim and its quote
-# ---------------------------------------------------------------------------
-
-# Articles and other function words that carry no claim of their own.
-STOPWORDS = frozenset('a an the its their this that these those also'.split())
-# A figure: optional currency (a symbol or a letter-prefixed dollar such as A$), digits with thousands
-# separators and decimals, then an optional % / k / M / bn / x / + marker. Words keep trailing digits (Q3, EC2).
-TOKEN_RE = re.compile(
-    r'(?:[a-z]{1,2}\$|[$€£¥₹₩])?\d[\d,]*(?:\.\d+)?(?:%|[kmb]n?(?![a-z0-9])|x(?![a-z0-9])|\+)?'
-    r'|[a-z]+\d*')
-FIGURE_RE = re.compile(r'(?:[a-z]{0,2}[$\u20ac\u00a3\u00a5\u20b9\u20a9]|\d)')
-NEGATORS = frozenset(['not', 'never'])
-AUXILIARIES = frozenset(['do', 'does', 'did'])
+STOPWORDS = frozenset(['a', 'an', 'the'])  # the only words that may be added or left out
+NEGATORS = frozenset(['not', 'never', 'no'])
 MIN_OVERLAP = 0.3  # share of the claim's words that must appear in a quote for it to address the claim
 
-
-def _stem(word: str) -> str:
-    """Light stemmer: plural/-ed/-ing endings and a final -e ("employees" == "employee")."""
-    for suffix in ('ing', 'ed'):
-        if len(word) > len(suffix) + 3 and word.endswith(suffix):
-            word = word[:-len(suffix)]
-            if len(word) > 3 and word[-1] == word[-2] and word[-1] in 'bdgmnprt':
-                word = word[:-1]  # shipped -> ship
-            break
-    else:
-        if len(word) > 4 and word.endswith('ies'):
-            word = word[:-3] + 'y'
-        elif len(word) > 4 and word.endswith(('ches', 'shes', 'sses', 'xes', 'zes')):
-            word = word[:-2]
-        elif len(word) > 3 and word.endswith('s') and not word.endswith('ss'):
-            word = word[:-1]
-    return word[:-1] if len(word) > 4 and word.endswith('e') else word
-
-
-# Exact aliases, by stem. Deliberately tiny: anything looser is a paraphrase and goes to a reader.
-ALIASES = {_stem(a): _stem(b) for a, b in (('staff', 'employee'), ('client', 'customer'), ('are', 'is'), ('am', 'is'))}
+CURRENCY = '$\u20ac\u00a3\u00a5'
+TOKEN_RE = re.compile(
+    # figure: sign, currency (A$, US$ too), apostrophe year or leading dot, digits with inner , or . groups, then % / a
+    # currency symbol (a space may come before it) or glued letters, digits and superscripts
+    r"(?:[-\u2212+](?=[" + CURRENCY + r"'.\d]))?(?:[^\W\d_]{0,2}[" + CURRENCY + r"]\s?)?(?:'(?=\d\d)|(?<![\w.])\.(?=\d))?"
+    r"\d(?:[\d.,]*\d)?(?:\s?%|\s?[" + CURRENCY + r"](?!\d)|\w*)"
+    r"|\w+(?:'\w+)*"  # word (any script)
+    r"|[^\s\w.,;:!?\u2026\"'\u201c\u201d\u201e\u00ab\u00bb()\[\]{}*`]")  # any other mark is a token of its own
+FIGURE_RE = re.compile(r"[-\u2212+]?(?:[^\W\d_]{0,2}[" + CURRENCY + r"])?['.]?\d")
+QUOTE_MARKS = str.maketrans({'\u2018': "'", '\u2019': "'", '\u02bc': "'"})
+CONTRACTIONS = ((re.compile(r"\bcan'?t\b|\bcannot\b"), 'can not'), (re.compile(r"\bwon't\b"), 'will not'),
+                (re.compile(r"n't\b"), ' not'))
 
 
 def _words(text: str) -> list[str]:
-    """The lowercase words and figures of a text, in order. Contractions are opened up ("doesn't" is
-    "does not") and the possessive 's is dropped."""
-    text = normalize_text(INLINE_CITATION_RE.sub(' ', text)).lower()
-    text = re.sub(r"\bcannot\b", 'can not', text)
-    text = re.sub(r"\bwon't\b", 'will not', text)
-    text = re.sub(r"n't\b", ' not', text)
-    text = re.sub(r"'s\b", '', text)
-    return [w.replace(',', '') for w in TOKEN_RE.findall(text)]
+    """The tokens of a text, in order and casefolded. "doesn't" is "does not"; an inline citation marker
+    such as [3] is not part of the text."""
+    text = INLINE_CITATION_RE.sub(' ', text).casefold().translate(QUOTE_MARKS)
+    for pattern, replacement in CONTRACTIONS:
+        text = pattern.sub(replacement, text)
+    return [re.sub(r'\s', '', token) for token in TOKEN_RE.findall(text)]
 
 
 def _is_figure(word: str) -> bool:
     return bool(FIGURE_RE.match(word))
 
 
-def _shape(word: str) -> str:
-    """A figure without its digits: "$50m" and "$20m" share a shape, "30%" and "30" do not."""
-    return re.sub(r'\d[\d.]*', '#', word)
-
-
-def _key(word: str) -> str:
-    """The form in which two words count as the same: figures exactly, other words by stem and alias."""
-    if _is_figure(word):
-        return word
-    stem = _stem(word)
-    return ALIASES.get(stem, stem)
+def _stem(word: str) -> str:
+    """Plural / third-person -s only ("employees" is "employee", "companies" is "company")."""
+    if len(word) > 4 and word.endswith('ies'):
+        return word[:-3] + 'y'
+    if len(word) > 4 and word.endswith(('ches', 'shes', 'sses', 'xes', 'zes')):
+        return word[:-2]
+    if len(word) > 3 and word.endswith('s') and not word.endswith('ss'):
+        return word[:-1]
+    return word
 
 
 def _keys(words: list[str]) -> list[str]:
-    return [_key(w) for w in words if w not in STOPWORDS]
+    """The form in which two tokens count as the same: figures and marks exactly, plain words by their
+    singular form. Articles are left out."""
+    return [_stem(w) if w.isalpha() else w for w in words if w not in STOPWORDS]
 
 
-def _without_negation(words: list[str]) -> Optional[list[str]]:
-    """The words with every "not"/"never" (and the "do/does/did" before it) removed; None if there is none."""
-    kept = []
-    for word in words:
-        if word in NEGATORS:
-            if kept and kept[-1] in AUXILIARIES:
-                kept.pop()
-        else:
-            kept.append(word)
-    return kept if len(kept) < len(words) else None
+def _digits_masked(word: str) -> str:
+    return re.sub(r'\d', '#', word)
 
 
-def _figure_conflict(claim: list[str], quote: list[str]) -> bool:
-    """The same sentence with one or more exact figures replaced by figures of the same kind."""
-    if len(claim) != len(quote):
-        return False
-    differing = [(c, q) for c, q in zip(claim, quote) if c != q]
-    return (bool(differing) and len(claim) - len(differing) >= 2
-            and all(_is_figure(c) and _is_figure(q) and _shape(c) == _shape(q) for c, q in differing))
+def _conflict(claim: list[str], source: list[str]) -> str:
+    """Why the quote clearly contradicts the claim, or ''. Only two cases count: the sentences are alike
+    except for one added or removed "not"/"never"/"no", or except for exactly one figure that has another
+    value in the same form ("$5" and "$7", not "3" and "3.0")."""
+    if len(source) == len(claim) + 1:
+        for i, word in enumerate(source):
+            if word in NEGATORS and source[:i] + source[i + 1:] == claim:
+                return 'the source negates what the claim says'
+    if len(claim) == len(source) + 1:
+        for i, word in enumerate(claim):
+            if word in NEGATORS and claim[:i] + claim[i + 1:] == source:
+                return 'the claim negates what the source says'
+    differing = [(c, q) for c, q in zip(claim, source) if c != q] if len(claim) == len(source) else []
+    if len(differing) == 1:
+        c, q = differing[0]
+        if _is_figure(c) and _is_figure(q) and _digits_masked(c) == _digits_masked(q):
+            return f'the source gives a different figure: {c} (source: {q})'
+    return ''
 
 
 def _inside(part: list[str], whole: list[str]) -> bool:
@@ -222,21 +128,15 @@ def _assess_quote(claim_words: list[str], quote: str) -> dict:
     """Judge one claim against one quote. Returns the share of the claim's words found in the quote
     (``overlap``), whether the quote is a near-verbatim match (``match``), what clearly contradicts the claim
     (``conflict``) and why a reader must look (``reason``)."""
-    quote_words = _words(quote)
-    claim, source = _keys(claim_words), _keys(quote_words)
+    claim, source = _keys(claim_words), _keys(_words(quote))
     overlap = len(set(claim) & set(source)) / len(set(claim))
     result = {'overlap': overlap, 'match': claim == source, 'conflict': '', 'reason': ''}
     if result['match']:
         return result
-    stripped_claim, stripped_quote = _without_negation(claim_words), _without_negation(quote_words)
-    if stripped_claim is not None and stripped_quote is None and _keys(stripped_claim) == source:
-        result['conflict'] = 'the claim negates what the source says'
-    elif stripped_quote is not None and stripped_claim is None and _keys(stripped_quote) == claim:
-        result['conflict'] = 'the source negates what the claim says'
-    elif _figure_conflict(claim, source):
-        wrong = [f'{c} (source: {q})' for c, q in zip(claim, source) if c != q]
-        result['conflict'] = 'the source gives a different figure: ' + ', '.join(wrong)
-    elif _inside(claim, source):
+    result['conflict'] = _conflict(claim, source)
+    if result['conflict']:
+        return result
+    if _inside(claim, source):
         result['reason'] = ('the claim repeats only part of the source text: quote just the span that supports it, '
                             'or make the claim say all of it')
     elif _inside(source, claim):
@@ -255,11 +155,11 @@ def compute_support_score(claim_text: str, evidence_quotes: list[str]) -> tuple[
 
     * ``supported`` only when the claim nearly repeats one quote word for word (see the module
       docstring) and no other quote contradicts it. The score is 1.0.
-    * ``contradicted`` when a quote is that same sentence with an explicit "not"/"never" added or removed, or
-      with one exact figure replaced, and no quote supports the claim.
+    * ``contradicted`` when a quote is the same sentence with exactly one "not"/"never"/"no" added or removed,
+      or with exactly one figure of another value in the same form, and no quote supports the claim.
     * ``unsupported`` when no quote shares at least 30% of the claim's words.
-    * ``needs_review`` otherwise, with the reason (reworded, reordered, only part of the quote). A reader must
-      check these against the source; they are never counted as supported.
+    * ``needs_review`` otherwise, with the reason (reworded, reordered, only part of the quote, a figure
+      written another way). A reader must check these against the source; they are never counted as supported.
     """
     if not evidence_quotes:
         return ('unsupported', 0.0, 'no evidence linked')

@@ -208,7 +208,7 @@ Each factual claim gets one verdict (`support_status` in `claims.jsonl`):
 | Verdict | Meaning | `verify --strict` |
 |---------|---------|-------------------|
 | `supported` | the claim repeats one linked quote word for word (the rule below) and no other linked quote contradicts it | passes |
-| `contradicted` | a quote is the same sentence with an explicit "not"/"never" added or removed, or with one exact figure replaced by another of the same kind, and no quote supports the claim | **exit 1** |
+| `contradicted` | a quote is the same sentence except for exactly one token: an added or removed "not"/"never"/"no", or one figure of another value written the same way; and no quote supports the claim | **exit 1** |
 | `unsupported` | no evidence linked, a cited source with no captured evidence, or no quote shares 30% of the claim's words | **exit 1** |
 | `needs_review` | everything else, including every reworded claim; `_support_notes` says why | exit 0, listed |
 
@@ -217,21 +217,33 @@ reason under `needs_review`, prints a count on stderr, and `report` has a "Needs
 
 ### What makes a claim `supported`
 
-The claim's words and figures, taken in order, equal the quote's, after these differences are ignored:
+The text is cut into tokens, and the claim's tokens, in order, must equal the quote's. Everything that can
+change a meaning is a token and is kept: letters and digits of every script (an accent is a different
+letter), signs and comparators (`-` `−` `+` `<` `>` `≤` `≥` `~` `≈` `±`), currency symbols, `%`, `°`,
+superscripts, `/` and hyphens. A figure is one token written exactly as it stands: its inner `,` and `.`
+are never reinterpreted (`1,5` and `15` differ, so do `3` and `3.0`, `$5` and `$5.00`, `.95` and `0.95`,
+`'24` and `2024`, `90s` and `1990s`), and a `%` or currency symbol after a space belongs to the number
+(`40 %` is `40%`; `50 $` is not `50 €`). Number words are not converted (`five` is not `5`).
 
-- case and punctuation;
-- articles and a few filler words (`a`, `an`, `the`, `its`, `their`, `this`, `that`, `these`, `those`, `also`);
-- simple inflection of one word: plural or singular, `-s`, `-ed`, `-ing` ("ships", "shipped", "shipping");
-- the written form of a number: `40 percent` = `40%`, `USD 50` = `$50`, `five thousand` = `5,000`, `v1.29` =
-  `1.29`, `at no cost` = `for free`, and a contraction ("doesn't" = "does not");
-- two exact aliases: `staff` = `employee` and `client` = `customer`.
+Only these differences are ignored, and the code has no others:
 
-Nothing else may differ. In particular a rewording, a synonym outside that list, a different verb ("grew" /
-"rose"), a reordering ("In 2022 Acme was acquired" / "Acme was acquired in 2022"), a voice change ("Acme
-acquired Initech" / "Initech was acquired by Acme"), a claim that is only part of the quote, and a claim
-that says more than the quote are all `needs_review`, however close they look. Figures, dates, periods and
-units are words too, so they match exactly and in the same place: "30% in Q3" is not "30% in Q2", "$20 per
-month" is not "$20 per year", `A$50M` is not `$50M`, `3+` is not `3`.
+- case (casefold) and punctuation: whitespace, `. , ; : ! ?`, quotation marks, brackets and markdown
+  emphasis marks;
+- the articles `a`, `an` and `the`;
+- a plural or third-person `-s` on a plain word (`employees` = `employee`, `companies` = `company`; not
+  `-ed`/`-ing`, so `opens`/`open` match and `opening`/`open` do not);
+- a contraction (`doesn't` = `does not`, `can't` and `cannot` = `can not`, `won't` = `will not`);
+- an inline citation marker such as `[3]`.
+
+There are no aliases and no filler words: `this`/`that`, `its`/`their`, `all`/`only`/`no`/`not`/`never`,
+`is`/`are`, `staff`/`employee` and `client`/`customer` are all different words.
+
+Nothing else may differ. In particular a rewording, a synonym, a different verb ("grew" / "rose"), a
+reordering ("In 2022 Acme was acquired" / "Acme was acquired in 2022"), a voice change ("Acme acquired
+Initech" / "Initech was acquired by Acme"), a claim that is only part of the quote, and a claim that says
+more than the quote are all `needs_review`, however close they look. Figures, dates, periods and units are
+tokens too, so they match exactly and in the same place: "30% in Q3" is not "30% in Q2", "$20 per month" is
+not "$20 per year", `A$50M` is not `$50M`, `3+` is not `3`.
 
 Two consequences to plan for: roughly nine in ten honest claims that were written as a paraphrase of
 their source come back `needs_review` (this is by design; the checker would rather ask than guess), and a
@@ -241,19 +253,21 @@ without rewording.
 
 ### What makes a claim `contradicted`
 
-Only a clear, high-confidence conflict, and only when the rest of the sentence matches word for word:
+Only a clear, high-confidence conflict. The quote and the claim must be identical after tokenising except
+for **exactly one token**, which is either:
 
-- the claim and a quote are the same sentence, and exactly one of them has `not` or `never` ("does not",
-  "doesn't", "cannot" and "won't" count; the `do`/`does`/`did` before `not` is ignored): "Acme supports SSO"
-  against "Acme does not support SSO";
-- the same sentence with one or more figures replaced by figures of the same kind (same currency, `%`,
-  unit marker), and at least two other words alike: "Acme has 500 employees" against "Acme has 200
-  employees", "founded in 2015" against "founded in 2019".
+- an added or removed `not`, `never` or `no` ("Acme supports SSO" against "Acme not supports SSO",
+  "Acme has a free tier" against "Acme has no free tier"; `isn't`, `can't` and `cannot` count as `is not`
+  and `can not`); or
+- one figure with a different value, written the same way (same currency, sign, `%`, separators and number
+  of digits): "Acme has 500 employees" against "Acme has 200 employees", "founded in 2015" against
+  "founded in 2019".
 
-When in doubt the checker says `needs_review`. It does not read `no`, `without`, `zero`, `nothing short of`,
-`no doubt` or `for no extra charge` as a negation, so an honest sentence that uses them is never
-`contradicted`; there is no whole-text quantifier rule either. A negated claim whose quote differs in any
-other word ("Acme lacks SCIM" against "Acme does not support SCIM") is `needs_review`.
+Two or more differing tokens are `needs_review`: "Acme supports SSO" against "Acme does not support SSO"
+(`does` and `not`), "$7m in 2024" against "$5m in 2023", "no doubt that", "nothing short of", "for no extra
+charge". The same value written another way (`3`/`3.0`, `$5`/`$5.00`, `.95`/`0.95`, `'24`/`2024`,
+`90s`/`1990s`) is `needs_review`, never `contradicted` and never `supported`. Each quote is compared with the
+claim on its own: a second quote from the same source about another year never contradicts it.
 
 ### Writing claims that can be `supported`
 
@@ -263,7 +277,7 @@ one quote.**
 1. Store as evidence exactly the one sentence or clause of the source that backs the claim, verbatim. Not a
    paragraph, not two sentences, not a sentence plus its heading.
 2. Write the report sentence to repeat that quote: same words, figures, dates and units, in the same order.
-   Only case, punctuation, articles, plural/tense and the written form of a number may change.
+   Only case, punctuation, the articles a/an/the and a plural -s may change.
 3. Do not reword, reorder, change voice or merge two quotes into one claim. If a sentence needs two facts,
    write two sentences, each with its own quote.
 4. A deliberate paraphrase or summary is allowed, but it is `needs_review` and a reader checks it.
@@ -288,22 +302,25 @@ edit `support_status` by hand and do not deliver a run with unresolved items.
 
 ### Corpora pinning the behaviour
 
-`tests/fixtures/` holds every probe pair of all six reviews, run by
+`tests/fixtures/` holds every probe pair of all seven reviews, run by
 `tests/test_claim_checker_regression_corpus.py` in one table: `claim_corpus_verbatim.json` (reviews 1-3),
 `claim_corpus_r4.json`, `claim_corpus_r5.json`, `claim_corpus_r6.json` (the sixth review: 91 fabrications,
-25 honest twins and 40 held-out everyday honest claims), `claim_corpus.json` (curated) and
+25 honest twins and 40 held-out everyday honest claims), `claim_corpus_r7.json` (the seventh review: signs,
+comparators, accents, other scripts, decimal commas, superscripts, symbols after a space, filler words;
+same-value-different-spelling honest claims), `claim_corpus.json` (curated) and
 `claim_corpus_heldout.json`. The invariants are: a fabrication is never `supported`; an honest claim is never
 `contradicted` or `unsupported`; a claim identical to its quote is `supported`. Counts per verdict at the
 last run:
 
 | Corpus | Fabrications: contradicted / needs_review / unsupported / supported | Honest: supported / needs_review / contradicted |
 |--------|------------------------------------------------------------------|-----------------------------------------------|
-| reviews 1-3 verbatim (55 + 50) | 11 / 41 / 3 / 0 | 5 / 45 / 0 |
-| review 4 verbatim (36 + 69) | 0 / 36 / 0 / 0 | 7 / 62 / 0 |
-| review 5 verbatim (121 + 99) | 4 / 117 / 0 / 0 | 26 / 73 / 0 |
-| review 6 (91 + 65) | 5 / 86 / 0 / 0 | 2 / 63 / 0 |
-| curated (45 + 45) | 19 / 25 / 1 / 0 | 2 / 43 / 0 |
-| held-out (32 + 32) | 8 / 24 / 0 / 0 | 0 / 32 / 0 |
+| reviews 1-3 verbatim (55 + 50) | 4 / 48 / 3 / 0 | 2 / 48 / 0 |
+| review 4 verbatim (36 + 69) | 0 / 36 / 0 / 0 | 0 / 69 / 0 |
+| review 5 verbatim (121 + 99) | 7 / 113 / 1 / 0 | 26 / 73 / 0 |
+| review 6 (91 + 65) | 2 / 89 / 0 / 0 | 1 / 64 / 0 |
+| review 7 (55 + 12) | 4 / 51 / 0 / 0 | 4 / 8 / 0 |
+| curated (45 + 45) | 14 / 30 / 1 / 0 | 1 / 44 / 0 |
+| held-out (32 + 32) | 6 / 26 / 0 / 0 | 0 / 32 / 0 |
 
 Of the reviewer's 60 everyday honest claims, 4 are `supported` and 56 `needs_review`; of the 40 held-out
 everyday honest claims of review 6, 0 and 40. The honest claims that pass are the ones that repeat their
