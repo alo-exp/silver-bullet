@@ -134,11 +134,12 @@ ca_classify_command() {
   ca_tier="none" ca_actions="" ca_possible_actions="" ca_could_be_delivery=false ca_opaque=false
   ca_unseen_reasons=""
 
-  if [[ -n "$payload" ]] && declare -f sb_tool_input_load >/dev/null 2>&1; then
-    sb_tool_input_load "$payload"
-    tool_name="$(printf '%s' "$payload" | jq -r '.tool_name // ""' 2>/dev/null || true)"
-  else
+  if [[ -z "$payload" ]]; then
     _ca_analyse "$cmd"
+  else
+    # an MCP call: the payload (not a command text) is analysed; the hook has already parsed it with jq
+    sb_tool_input_load "$payload"
+    tool_name="$(printf '%s' "$payload" | jq -r '.tool_name // ""')"
   fi
   ca_analysis_status="${SB_TI_STATUS:-helper_unavailable}"
   if [[ "$ca_analysis_status" == "helper_unavailable" && -n "$payload" ]]; then

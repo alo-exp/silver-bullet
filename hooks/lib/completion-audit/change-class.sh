@@ -11,7 +11,6 @@
 _ca_change_base() {
   local root="$1" ref base="" head
   head="$(git -C "$root" rev-parse HEAD 2>/dev/null || true)"
-  [[ -n "$head" ]] || return 0
   for ref in "$(git -C "$root" symbolic-ref -q --short refs/remotes/origin/HEAD 2>/dev/null || true)" \
     main master develop trunk origin/main origin/master origin/develop origin/trunk; do
     [[ -n "$ref" ]] || continue
