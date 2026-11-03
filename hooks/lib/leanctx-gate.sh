@@ -1,50 +1,45 @@
 # shellcheck shell=bash
 # LeanCTX install/wiring/usage gate — CLI, MCP, and freshness helpers.
-# Enforcement active only when recommended_tools.leanctx.enabled_by_user is true.
-# Sourced by: leanctx-gate.sh, record-leanctx-usage.sh, sb-diagnostics.sh
+# Enforcement is active only with the user's consent (see user-consent.sh) in a project
+# whose .silver-bullet.json does not turn LeanCTX off.
+# Sourced by: leanctx-gate.sh, record-leanctx-usage.sh, context-mode-read-deny.sh,
+# session-start, sb-diagnostics.sh
 
 _sb_leanctx_default_ttl_seconds=1800
 _sb_leanctx_default_cli="lean-ctx"
-_sb_leanctx_mcp_server_names='leanctx|lean-ctx|user-leanctx'
+_sb_leanctx_lib_dir="${BASH_SOURCE[0]%/*}"
 
-if [[ -f "$(dirname "${BASH_SOURCE[0]}")/recommended-tools.sh" ]]; then
-  # shellcheck source=recommended-tools.sh
-  source "$(dirname "${BASH_SOURCE[0]}")/recommended-tools.sh"
-fi
+# shellcheck source=recommended-tools.sh
+source "${_sb_leanctx_lib_dir}/recommended-tools.sh"
+# shellcheck source=opt-in-gate.sh
+source "${_sb_leanctx_lib_dir}/opt-in-gate.sh"
 
 sb_leanctx_required() {
   sb_recommended_tool_enforced "${1:-}" "leanctx"
 }
 
+# The CLI name. It used to come from the project config and was spliced into a regex, so a
+# repository could make any command count as LeanCTX usage; the user-level five-tool
+# manifest (sb_global_tool_path) is the place to point at a differently installed binary.
 sb_leanctx_cli_command() {
-  local config_file="${1:-}"
-  local cli="${_sb_leanctx_default_cli}"
-  if [[ -n "$config_file" && -f "$config_file" ]]; then
-    cli="$(sb_recommended_tool_config_string "$config_file" "leanctx" "cli_command" "$_sb_leanctx_default_cli")"
-  fi
-  printf '%s' "$cli"
+  printf '%s' "$_sb_leanctx_default_cli"
 }
 
 sb_leanctx_cli_path() {
-  local config_file="${1:-}"
-  local cli
-  cli="$(sb_leanctx_cli_command "$config_file")"
-  if [[ "$cli" == "lean-ctx" ]] && declare -f sb_global_tool_path >/dev/null 2>&1; then
-    sb_global_tool_path leanctx 2>/dev/null && return 0
-  fi
-  if command -v "$cli" >/dev/null 2>&1; then
-    command -v "$cli"
+  sb_global_tool_path leanctx 2>/dev/null && return 0
+  if command -v "$_sb_leanctx_default_cli" >/dev/null 2>&1; then
+    command -v "$_sb_leanctx_default_cli"
     return 0
   fi
-  if [[ -x "${HOME}/.local/bin/${cli}" ]]; then
-    printf '%s' "${HOME}/.local/bin/${cli}"
+  if [[ -x "${HOME}/.local/bin/${_sb_leanctx_default_cli}" ]]; then
+    printf '%s' "${HOME}/.local/bin/${_sb_leanctx_default_cli}"
     return 0
   fi
   return 1
 }
 
 sb_leanctx_cli_available() {
-  sb_leanctx_cli_path "${1:-}" >/dev/null 2>&1
+  sb_leanctx_cli_path >/dev/null 2>&1
 }
 
 sb_leanctx_platform_artifact_path() {
@@ -60,201 +55,94 @@ sb_leanctx_platform_artifact_path() {
     opencode) printf '%s/.config/opencode/opencode.json' "${HOME}" ;;
     pi) printf '%s/extensions/silver-bullet-five-tool-stack/config.json' \
       "${PI_CODING_AGENT_DIR:-${HOME}/.pi/agent}" ;;
-    claude) printf '%s/.claude/settings.json' "${HOME}" ;;
     *) printf '%s/.claude/settings.json' "${HOME}" ;;
   esac
 }
 
 sb_leanctx_platform_artifact_present() {
-  local project_root="${1:-$PWD}" host="${2:-}"
-  local artifact
+  local project_root="${1:-$PWD}" host="${2:-}" artifact
   host="${host:-$(sb_runtime_host)}"
   artifact="$(sb_leanctx_platform_artifact_path "$project_root" "$host")"
   [[ -f "$artifact" && ! -L "$artifact" ]] || return 1
   grep -qE 'leanctx|lean-ctx' "$artifact" 2>/dev/null
 }
 
-sb_leanctx_hooks_present() {
-  local host="${1:-}"
-  local hooks_file
-  host="${host:-$(sb_runtime_host)}"
-  case "$host" in
-    cursor)
-      hooks_file="${HOME}/.cursor/hooks.json"
-      [[ -f "$hooks_file" ]] && grep -qE 'leanctx|lean-ctx' "$hooks_file" 2>/dev/null
-      ;;
-    codex)
-      hooks_file="${CODEX_HOME:-${HOME}/.codex}/hooks.json"
-      [[ -f "$hooks_file" ]] && grep -qE 'leanctx|lean-ctx' "$hooks_file" 2>/dev/null
-      ;;
-    claude)
-      # Claude wires lean-ctx through settings.json (hooks + MCP server entry)
-      # rather than a standalone hooks.json.
-      hooks_file="${HOME}/.claude/settings.json"
-      [[ -f "$hooks_file" ]] && grep -qE 'leanctx|lean-ctx' "$hooks_file" 2>/dev/null
-      ;;
-    opencode|pi)
-      hooks_file="$(sb_leanctx_platform_artifact_path "${PWD}" "$host")"
-      [[ -f "$hooks_file" ]] && grep -qE 'leanctx|lean-ctx' "$hooks_file" 2>/dev/null
-      ;;
-    *)
-      # Intentionally permissive: for hosts SB has no wiring contract for we
-      # cannot distinguish "not wired" from "wired somewhere we don't know
-      # about", so we must not block on an unverifiable claim.
-      return 0
-      ;;
-  esac
-}
-
 sb_leanctx_usage_ttl_seconds() {
-  local config_file="${1:-}"
-  local ttl="${_sb_leanctx_default_ttl_seconds}"
+  local config_file="${1:-}" ttl=""
   if [[ -n "$config_file" && -f "$config_file" ]]; then
-    ttl="$(jq -r --argjson def "$_sb_leanctx_default_ttl_seconds" \
-      '.recommended_tools.leanctx.usage_ttl_seconds // $def' "$config_file" 2>/dev/null || echo "$_sb_leanctx_default_ttl_seconds")"
+    ttl="$(jq -r '.recommended_tools.leanctx.usage_ttl_seconds // "" | tostring' "$config_file" 2>/dev/null || true)"
   fi
-  if ! [[ "$ttl" =~ ^[0-9]+$ ]] || [[ "$ttl" -lt 60 ]]; then
-    ttl="${_sb_leanctx_default_ttl_seconds}"
-  fi
-  printf '%s' "$ttl"
+  sb_rt_ttl_seconds "$ttl" "$_sb_leanctx_default_ttl_seconds"
 }
 
+# The usage stamp; a configured usage_state_file is honoured only inside the state dir.
 sb_leanctx_usage_state_path() {
-  local config_file="${1:-}"
-  local state_path=""
+  local config_file="${1:-}" configured=""
   if [[ -n "$config_file" && -f "$config_file" ]]; then
-    state_path="$(jq -r '.recommended_tools.leanctx.usage_state_file // ""' "$config_file" 2>/dev/null || true)"
-    state_path="${state_path/#\~/$HOME}"
-    state_path="${state_path//\$\{SB_RUNTIME_HOME_ROOT\}/${SB_RUNTIME_HOME_ROOT:-${HOME}/.cursor}}"
-    state_path="${state_path//\$\{SB_RUNTIME_STATE_DIR\}/${SB_RUNTIME_STATE_DIR:-${HOME}/.cursor/.silver-bullet}}"
+    configured="$(jq -r '.recommended_tools.leanctx.usage_state_file // "" | strings' "$config_file" 2>/dev/null || true)"
   fi
-  if [[ -z "$state_path" ]]; then
-    state_path="${SB_RUNTIME_STATE_DIR:-${HOME}/.silver-bullet}/leanctx-usage"
-  fi
-  if declare -f sb_runtime_path_is_state_scoped >/dev/null 2>&1; then
-    if ! sb_runtime_path_is_state_scoped "$state_path"; then
-      state_path="${SB_RUNTIME_STATE_DIR:-${HOME}/.silver-bullet}/leanctx-usage"
-    fi
-  fi
-  printf '%s' "$state_path"
-}
-
-sb_leanctx_usage_epoch() {
-  local state_path="${1:-}"
-  [[ -f "$state_path" && ! -L "$state_path" ]] || return 1
-  local epoch
-  epoch="$(sed -n '1p' "$state_path" 2>/dev/null || true)"
-  [[ "$epoch" =~ ^[0-9]+$ ]] || return 1
-  printf '%s' "$epoch"
+  sb_rt_state_file "$configured" leanctx-usage
 }
 
 sb_leanctx_usage_is_fresh() {
   local config_file="${1:-}"
-  local state_path epoch now ttl age
-  state_path="$(sb_leanctx_usage_state_path "$config_file")"
-  epoch="$(sb_leanctx_usage_epoch "$state_path" 2>/dev/null || true)"
-  [[ -n "$epoch" ]] || return 1
-  now="$(date +%s)"
-  ttl="$(sb_leanctx_usage_ttl_seconds "$config_file")"
-  age=$((now - epoch))
-  [[ "$age" -ge 0 && "$age" -le "$ttl" ]]
+  sb_rt_stamp_is_fresh "$(sb_leanctx_usage_state_path "$config_file")" \
+    "$(sb_leanctx_usage_ttl_seconds "$config_file")"
 }
 
 sb_leanctx_record_usage() {
-  local config_file="${1:-}"
-  local state_path
-  state_path="$(sb_leanctx_usage_state_path "$config_file")"
-  mkdir -p "$(dirname "$state_path")" 2>/dev/null || true
-  if declare -f sb_guard_nofollow >/dev/null 2>&1; then
-    sb_guard_nofollow "$state_path"
-  fi
-  date +%s >"$state_path" 2>/dev/null || return 1
+  sb_rt_stamp_write "$(sb_leanctx_usage_state_path "${1:-}")"
 }
 
+# Cleared with the other usage stamps when the branch or worktree changes (session-start).
 sb_leanctx_clear_usage_state() {
-  local config_file="${1:-}"
-  local state_path
-  state_path="$(sb_leanctx_usage_state_path "$config_file")"
-  rm -f -- "$state_path" 2>/dev/null || true
+  rm -f -- "$(sb_leanctx_usage_state_path "${1:-}")" 2>/dev/null || true
 }
 
+# Status 0 when an edit target is SB configuration or LeanCTX's own wiring (normalized).
 sb_leanctx_edit_path_is_exempt() {
-  local file_path="${1:-}"
-  local config_file="${2:-}"
-  [[ -n "$file_path" ]] || return 1
-  case "$file_path" in
-    */.silver-bullet.json|*/SETUP_REPORT.md|*/silver-bullet.md|*/CLAUDE.md|*/AGENTS.md)
+  local normalized
+  [[ -n "${1:-}" ]] || return 1
+  normalized="$(sb_opt_in_normalize_path "$1" "$(dirname "${2:-$PWD/x}")")"
+  case "$normalized" in
+    */.silver-bullet.json | */SETUP_REPORT.md | */silver-bullet.md | */CLAUDE.md | */AGENTS.md \
+      | */.silver-bullet/* | */.cursor/mcp.json | */.cursor/hooks.json | */docs/LEANCTX.md)
       return 0
       ;;
   esac
-  if [[ "$file_path" == *"/.silver-bullet/"* ]]; then
-    return 0
-  fi
-  if [[ "$file_path" == *"/.cursor/mcp.json" ]] || [[ "$file_path" == *"/.cursor/hooks.json" ]]; then
-    return 0
-  fi
-  if [[ "$file_path" == *"/docs/LEANCTX.md" ]]; then
-    return 0
-  fi
   return 1
 }
 
 sb_leanctx_command_is_exempt() {
-  local cmd="${1:-}"
-  [[ -n "$cmd" ]] || return 0
-  if grep -qE '(^|[[:space:]/])(lean-ctx|leanctx)([[:space:]]|$)' <<<"$cmd"; then
-    return 0
-  fi
-  if grep -qE 'install-leanctx-sb|optimize-five-tool-stack' <<<"$cmd"; then
-    return 0
-  fi
-  if grep -qE '(^|[[:space:]])(brew|curl|npm install|which|command -v|grep|cat|jq|echo|printf|true|false)(\s|$)' <<<"$cmd"; then
-    return 0
-  fi
-  return 1
+  ! sb_opt_in_shell_needs_gate leanctx "${1:-}"
 }
 
+# Status 0 when CMD is one LeanCTX CLI invocation (single simple command; a word in another
+# program's arguments, or a call inside a pipe or list that could hide a failure, is not).
 sb_leanctx_command_is_usage() {
-  local cmd="${1:-}" config_file="${2:-}"
-  local cli
-  [[ -n "$cmd" ]] || return 1
-  cli="$(sb_leanctx_cli_command "$config_file")"
-  if grep -qE "(^|[[:space:]/])${cli}([[:space:]]|$)" <<<"$cmd"; then
-    return 0
-  fi
-  if grep -qE '(^|[[:space:]/])(lean-ctx|leanctx)([[:space:]]|$)' <<<"$cmd"; then
-    return 0
-  fi
-  return 1
+  local cmd program
+  cmd="$(sb_opt_in_rtk_unwrap "${1:-}")"
+  cmd="$(_sb_opt_in_squash "$cmd")"
+  [[ -n "$cmd" ]] && _sb_opt_in_simple_command "$cmd" || return 1
+  program="$(_sb_opt_in_program "$cmd" || true)"
+  [[ "$program" == "lean-ctx" || "$program" == "leanctx" ]]
 }
 
 sb_leanctx_mcp_tool_is_usage() {
-  local mcp_tool="${1:-}"
-  [[ -n "$mcp_tool" ]] || return 1
-  case "$mcp_tool" in
-    lctx_read_ast|lctx_wire|lctx_compact|lctx_*)
-      return 0
-      ;;
-  esac
-  return 1
+  [[ "${1:-}" =~ ^lctx_[A-Za-z0-9_]+$ ]]
 }
 
+# The LeanCTX MCP server: leanctx, lean-ctx, or a namespaced name ending in one of them.
 sb_leanctx_mcp_server_matches() {
-  local server="${1:-}"
-  [[ -n "$server" ]] || return 1
-  grep -qiE "$_sb_leanctx_mcp_server_names" <<<"$server"
+  [[ "${1:-}" =~ ^([A-Za-z0-9_-]+[_-])?lean-?ctx$ ]]
 }
 
 sb_leanctx_block_message_no_cli() {
-  local config_file="${1:-}"
-  local host install_lines
+  local config_file="${1:-}" host install_lines
   host="$(sb_runtime_host)"
-  install_lines="$(sb_recommended_tool_full_install_lines "$config_file" leanctx "$host" 2>/dev/null || true)"
-  if [[ -z "$install_lines" ]]; then
-    install_lines='curl -fsSL https://leanctx.com/install.sh | sh'
-  fi
+  install_lines="$(sb_recommended_tool_full_install_lines "" leanctx "$host")"
   cat <<EOF
-🚫 LEANCTX REQUIRED — CLI not installed (user opted in).
+🚫 LEANCTX REQUIRED — CLI not installed (you opted in to LeanCTX enforcement).
 
 Silver Bullet mandates LeanCTX for wire proxy, AST read, PathJail, and savings ledger when opted in (host: ${host}):
 
@@ -262,16 +150,15 @@ ${install_lines}
 
 Verify: lean-ctx --version
 
-To disable enforcement, set recommended_tools.leanctx.enabled_by_user to false in .silver-bullet.json.
+To turn LeanCTX enforcement off: bash $(sb_rt_plugin_script scripts/sb-consent.sh) decline leanctx --project $(printf '%q' "$(dirname "${config_file:-$PWD/x}")")
 See docs/LEANCTX.md.
 EOF
 }
 
 sb_leanctx_block_message_no_mcp() {
-  local config_file="${1:-}"
-  local host artifact
+  local config_file="${1:-}" host artifact
   host="$(sb_runtime_host)"
-  artifact="$(sb_leanctx_platform_artifact_path "$(dirname "$config_file")" "$host")"
+  artifact="$(sb_leanctx_platform_artifact_path "$(dirname "${config_file:-$PWD/x}")" "$host")"
   cat <<EOF
 🚫 LEANCTX NOT WIRED — MCP integration missing.
 
@@ -279,33 +166,30 @@ Expected LeanCTX MCP entry for host ${host} in:
   ${artifact}
 
 Run platform install (host: ${host}):
-$(sb_recommended_tool_platform_install_commands "$config_file" leanctx "$host" 2>/dev/null || true)
+$(sb_recommended_tool_platform_install_commands "" leanctx "$host")
 
 See docs/LEANCTX.md.
 EOF
 }
 
 sb_leanctx_block_message_stale_usage() {
-  local config_file="${1:-}"
-  local ttl cli
+  local config_file="${1:-}" ttl
   ttl="$(sb_leanctx_usage_ttl_seconds "$config_file")"
-  cli="$(sb_leanctx_cli_command "$config_file")"
   cat <<EOF
 🚫 LEANCTX USAGE REQUIRED — invoke LeanCTX before substantive work.
 
 When LeanCTX is opted in, use owned surfaces (wire proxy, lctx_read_ast, PathJail) at least once every ${ttl}s before substantive edits/commits.
 
 Examples:
-  • CallMcpTool lctx_read_ast for large-file analysis (sb_read owner)
-  • ${cli} status (CLI health check)
+  • lctx_read_ast from the LeanCTX MCP server for large-file analysis (sb_read owner)
+  • lean-ctx status (CLI health check), run on its own
 
 A fresh usage stamp is required every ${ttl}s. See docs/LEANCTX.md and silver-bullet.md §2g.
 EOF
 }
 
 sb_leanctx_prompt_reminder_line() {
-  local config_file="${1:-}"
-  local project_root host
+  local config_file="${1:-}" project_root host
   project_root="$(dirname "$config_file")"
   host="$(sb_runtime_host)"
 
