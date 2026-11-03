@@ -94,10 +94,10 @@ DEF="$SB_RUNTIME_STATE_DIR/graphify-query"
 assert_eq "state path default no config" "$DEF" "$(sb_graphify_query_state_path)"
 w '{}'
 assert_eq "state path default empty config" "$DEF" "$(sb_graphify_query_state_path "$CFG")"
-w "{\"recommended_tools\":{\"graphify\":{\"query_state_file\":\"$SB_RUNTIME_STATE_DIR/q-custom\"}}}"
-assert_eq "state path configured" "$SB_RUNTIME_STATE_DIR/q-custom" "$(sb_graphify_query_state_path "$CFG")"
-w "{\"graphify\":{\"query_state_file\":\"$SB_RUNTIME_STATE_DIR/q-legacy\"}}"
-assert_eq "state path legacy key" "$SB_RUNTIME_STATE_DIR/q-legacy" "$(sb_graphify_query_state_path "$CFG")"
+w "{\"recommended_tools\":{\"graphify\":{\"query_state_file\":\"$SB_RUNTIME_STATE_DIR/q-custom-query\"}}}"
+assert_eq "state path configured" "$SB_RUNTIME_STATE_DIR/q-custom-query" "$(sb_graphify_query_state_path "$CFG")"
+w "{\"graphify\":{\"query_state_file\":\"$SB_RUNTIME_STATE_DIR/q-legacy-query\"}}"
+assert_eq "state path legacy key" "$SB_RUNTIME_STATE_DIR/q-legacy-query" "$(sb_graphify_query_state_path "$CFG")"
 w '{"graphify":{"query_state_file":"/tmp/escape/q"}}'
 assert_eq "state path outside state scope rejected" "$DEF" "$(sb_graphify_query_state_path "$CFG")"
 w '{"graphify":{"query_state_file":"~/escape"}}'
@@ -110,11 +110,11 @@ for bad in "$SB_RUNTIME_STATE_DIR/../victim" "$SB_RUNTIME_STATE_DIR/a/../../vict
   assert_eq "state path rejected: $bad" "$DEF" "$(sb_graphify_query_state_path "$CFG")"
 done
 mkdir -p "$TL_TMP/outside-dir"; ln -s "$TL_TMP/outside-dir" "$SB_RUNTIME_STATE_DIR/linkdir"
-w "{\"graphify\":{\"query_state_file\":\"$SB_RUNTIME_STATE_DIR/linkdir/q\"}}"
+w "{\"graphify\":{\"query_state_file\":\"$SB_RUNTIME_STATE_DIR/linkdir/q-query\"}}"
 assert_eq "state path through a symlinked directory is rejected" "$DEF" "$(sb_graphify_query_state_path "$CFG")"
 rm -f "$SB_RUNTIME_STATE_DIR/linkdir"
-w "{\"graphify\":{\"query_state_file\":\"$SB_RUNTIME_STATE_DIR/newdir/q\"}}"
-assert_eq "state path in a not-yet-existing subdirectory is accepted" "$SB_RUNTIME_STATE_DIR/newdir/q" "$(sb_graphify_query_state_path "$CFG")"
+w "{\"graphify\":{\"query_state_file\":\"$SB_RUNTIME_STATE_DIR/newdir/q-query\"}}"
+assert_eq "state path in a not-yet-existing subdirectory is accepted" "$SB_RUNTIME_STATE_DIR/newdir/q-query" "$(sb_graphify_query_state_path "$CFG")"
 assert_eq "state path default without runtime dir" "$HOME/.silver-bullet/graphify-query" "$(env -u SB_RUNTIME_STATE_DIR bash -c 'source "$1"; sb_graphify_query_state_path' _ "$LIBF")"
 
 Q="$DEF"

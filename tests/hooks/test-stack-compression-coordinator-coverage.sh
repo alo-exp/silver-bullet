@@ -408,8 +408,8 @@ no_t "usage in the future is not fresh" sb_token_tool_usage_is_fresh "$TC" rtk
 rm -f "$US"
 sb_token_tool_record_usage "$TC" rtk
 assert_eq "record_usage writes epoch" "1000" "$(cat "$US")"
-mkdir -p "$SB_RUNTIME_STATE_DIR/dirstate"
-printf '{"recommended_tools":{"rtk":{"usage_state_file":"%s"}}}' "$SB_RUNTIME_STATE_DIR/dirstate" >"$TL_TMP/tc-dir.json"
+mkdir -p "$SB_RUNTIME_STATE_DIR/dirstate-usage"
+printf '{"recommended_tools":{"rtk":{"usage_state_file":"%s"}}}' "$SB_RUNTIME_STATE_DIR/dirstate-usage" >"$TL_TMP/tc-dir.json"
 no_t "record_usage fails when target is a directory" sb_token_tool_record_usage "$TL_TMP/tc-dir.json" rtk
 (
   export SB_RUNTIME_STATE_DIR="$BADDIR/state"

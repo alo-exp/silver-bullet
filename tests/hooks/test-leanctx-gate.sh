@@ -93,7 +93,7 @@ setup() {
   TMPSTATE="${SB_RUNTIME_STATE_DIR}/test-state-${TEST_RUN_ID}"
   TMPCFG="${TMPDIR_TEST}/.silver-bullet.json"
   TMPFILE="${TMPDIR_TEST}/src/app.js"
-  USAGE_STATE="${SB_RUNTIME_STATE_DIR}/leanctx-usage-test-${TEST_RUN_ID}"
+  USAGE_STATE="${SB_RUNTIME_STATE_DIR}/ttest-${TEST_RUN_ID}-leanctx-usage"
   rm -f "$USAGE_STATE" 2>/dev/null || true
   [[ -n "${MOCK_BIN:-}" ]] && rm -rf "$MOCK_BIN"
   MOCK_BIN=""

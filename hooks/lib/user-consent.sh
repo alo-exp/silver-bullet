@@ -153,10 +153,27 @@ _sb_consent_clean_source() {
 
 # sb_consent_set serializes writers with a lock directory next to the store (mkdir is atomic
 # and portable) and re-reads the store inside the lock, so concurrent grants, declines and
-# revokes cannot lose one another's update. A lock whose owner process is gone is taken over.
-# SB_CONSENT_LOCK_TRIES (default 100, 0.1 s apart) bounds the wait.
+# revokes cannot lose one another's update. A lock whose owner process is gone, or that has
+# no owner record after the wait, is taken over under a second lock directory
+# (<lock>.takeover), inside which the owner is checked again, so two waiters never remove a
+# lock a third has just taken. SB_CONSENT_LOCK_TRIES (default 100, 0.1 s apart; a value that
+# is not a positive integer means the default) bounds the wait.
+_sb_consent_lock_reclaim() { # LOCK ANYWAY: remove LOCK when its owner is gone (or ANYWAY=1 and it has none)
+  local lock="$1" anyway="$2" pid rc=1
+  mkdir "${lock}.takeover" 2>/dev/null || return 1
+  pid="$(cat "${lock}/pid" 2>/dev/null || true)"
+  if [[ "$pid" =~ ^[0-9]+$ ]]; then
+    kill -0 "$pid" 2>/dev/null || { rm -rf -- "$lock"; rc=0; }
+  elif [[ "$anyway" == 1 ]]; then
+    rm -rf -- "$lock"; rc=0
+  fi
+  rmdir "${lock}.takeover" 2>/dev/null
+  return "$rc"
+}
+
 sb_consent_set() {
-  local lock dir pid tries="${SB_CONSENT_LOCK_TRIES:-100}" rc=0
+  local lock dir tries="${SB_CONSENT_LOCK_TRIES:-100}" rc=0 ownerless=0
+  [[ "$tries" =~ ^[1-9][0-9]*$ ]] || tries=100
   dir="$(dirname "$(sb_consent_store_path)")"
   if ! (umask 077 && mkdir -p "$dir") 2>/dev/null; then
     _sb_consent_set_locked "$@"
@@ -164,13 +181,14 @@ sb_consent_set() {
   fi
   lock="${dir}/.consent.lock"
   until mkdir "$lock" 2>/dev/null && printf '%s' "$$" >"${lock}/pid" 2>/dev/null; do
-    pid="$(cat "${lock}/pid" 2>/dev/null || true)"
-    if [[ "$pid" =~ ^[0-9]+$ ]] && ! kill -0 "$pid" 2>/dev/null; then
-      rm -rf -- "$lock"
-      continue
-    fi
+    _sb_consent_lock_reclaim "$lock" "$ownerless" && continue
     tries=$((tries - 1))
     if ((tries <= 0)); then
+      if ((ownerless == 0)) && [[ ! -s "${lock}/pid" ]]; then
+        ownerless=1
+        tries=1
+        continue
+      fi
       _sb_consent_err "another sb-consent is writing ${dir}; try again (remove ${lock} if none is running)"
       return 2
     fi

@@ -90,11 +90,11 @@ reset; tg2_run "$GFH" "$(jq -cn '{hook_event_name:"PostToolUse", tool_name:"Bash
 assert_not_recorded "graphify: shell tool without command is a no-op" "$GF_STATE"
 reset; tg2_run "$GFH" "$(tg2_bash_input 'graphify explain Y' shell PostToolUse)"
 assert_recorded "graphify: shell tool name records" "$GF_STATE"
-reset; mkdir -p "$SB_RUNTIME_STATE_DIR/gf-dir"
-jq --arg p "$SB_RUNTIME_STATE_DIR/gf-dir" '.recommended_tools.graphify.query_state_file=$p' <<<"$all_cfg" >"$TG2_CFG"
+reset; mkdir -p "$SB_RUNTIME_STATE_DIR/gf-dir-usage"
+jq --arg p "$SB_RUNTIME_STATE_DIR/gf-dir-usage" '.recommended_tools.graphify.query_state_file=$p' <<<"$all_cfg" >"$TG2_CFG"
 tg2_run "$GFH" "$gf_cmd"
 assert_silent_ok "graphify: failed state write is silent"
-rmdir "$SB_RUNTIME_STATE_DIR/gf-dir"
+rmdir "$SB_RUNTIME_STATE_DIR/gf-dir-usage"
 reset; tg2_farm notoolinput-gf "$GFH" tool-input.sh
 TG2_REPO="$TG2_FARM" tg2_run "$GFH" "$gf_cmd"
 assert_recorded "graphify: jq fallbacks record without tool-input.sh" "$GF_STATE"
@@ -163,11 +163,11 @@ assert_not_recorded "recommended-mcp: missing lib dir fails open" "$AM_STATE"
 reset; tg2_farm rm-notoolinput "$RMH" tool-input.sh
 TG2_REPO="$TG2_FARM" tg2_run "$RMH" "$(tg2_mcp_input agentmemory memory_recall CallMcpTool)"
 assert_recorded "recommended-mcp: jq fallback tool-name parse records" "$AM_STATE"
-reset; mkdir -p "$SB_RUNTIME_STATE_DIR/am-dir"
-jq --arg p "$SB_RUNTIME_STATE_DIR/am-dir" '.recommended_tools.agentmemory.usage_state_file=$p' <<<"$all_cfg" >"$TG2_CFG"
+reset; mkdir -p "$SB_RUNTIME_STATE_DIR/am-dir-usage"
+jq --arg p "$SB_RUNTIME_STATE_DIR/am-dir-usage" '.recommended_tools.agentmemory.usage_state_file=$p' <<<"$all_cfg" >"$TG2_CFG"
 tg2_run "$RMH" "$(tg2_mcp_input agentmemory memory_recall CallMcpTool)"
 assert_silent_ok "recommended-mcp: failed state write is silent"
-rmdir "$SB_RUNTIME_STATE_DIR/am-dir"
+rmdir "$SB_RUNTIME_STATE_DIR/am-dir-usage"
 
 # ------------------------------------------------ injected library faults
 # A farm whose tool-input.sh answers from env (so unparsable JSON still routes to a tool)

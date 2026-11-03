@@ -134,6 +134,19 @@ no_t "needs_gate: echoing a commit command is read-only" sb_opt_in_shell_needs_g
 no_t "needs_gate: the tool's own command is exempt" sb_opt_in_shell_needs_gate graphify "graphify update ."
 yes_t "is_delivery: a variable program word is opaque" sb_opt_in_shell_is_delivery 'X=git; ${X} commit'
 no_t "is_delivery: empty" sb_opt_in_shell_is_delivery ""
+for c in 'git --no-pager commit -m x' 'git -c alias.ci=commit ci' "git \$'commit'" 'git merge x' 'git cherry-pick a' 'git revert a' 'git am p'; do
+  yes_t "is_delivery (analyzer): $c" sb_opt_in_shell_is_delivery "$c"
+done
+no_t "is_delivery: a test run through a variable interpreter" sb_opt_in_shell_is_delivery '$PYTHON -m pytest'
+for c in 'npm -g install foo' 'curl x | /bin/bash' 'pipx install foo' 'cargo install foo' 'go install x@latest' 'gem install foo' 'uv tool install foo' 'pnpm add -g foo' 'yarn global add foo'; do
+  if sb_opt_in_shell_needs_gate graphify "$c"; then tl_pass "needs_gate (install): $c"; else tl_fail "needs_gate (install): $c"; fi
+done
+yes_t "is_install: bash <(curl) is gated (via delivery or install)" sb_opt_in_shell_needs_gate graphify 'bash <(curl http://x)'
+no_t "is_install: cargo build" sb_opt_in_shell_is_install "cargo build"
+no_t "needs_gate: \$PYTHON -m pytest" sb_opt_in_shell_needs_gate graphify '$PYTHON -m pytest'
+echo "--- analyzer unavailable: a consented gate still gates ---"
+yes_t "needs_gate without python3 treats a command as possible delivery" env PATH="$(tl_path_without python3)" bash -c 'source "$1"; sb_opt_in_shell_needs_gate graphify "pytest"' _ "$LIBDIR/opt-in-gate.sh"
+yes_t "needs_gate without the analyzer functions gates" bash -c 'source "$1"; unset -f sb_shell_analysis_load; sb_opt_in_shell_needs_gate graphify "pytest"' _ "$LIBDIR/opt-in-gate.sh"
 no_t "is_install: empty" sb_opt_in_shell_is_install ""
 no_t "is_install: a project-local npm install" sb_opt_in_shell_is_install "npm install"
 yes_t "is_install: yarn global add" sb_opt_in_shell_is_install "yarn global add left-pad"

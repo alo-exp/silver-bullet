@@ -178,10 +178,10 @@ sb_rt_version_ge() {
 # CONFIGURED comes from the project config, so it is honoured only when it names a file
 # inside $SB_RUNTIME_STATE_DIR: '~/' and the ${SB_RUNTIME_HOME_ROOT} / ${SB_RUNTIME_STATE_DIR}
 # placeholders are expanded; empty, relative or placeholder-bearing values, control
-# characters, '.' or '..' components, names of SB's own control files, and paths whose existing parent resolves (physically)
+# characters, '.' or '..' components, names that are not a '<name>-usage' / '<name>-query' stamp, and paths whose existing parent resolves (physically)
 # outside the state dir all fall back to $SB_RUNTIME_STATE_DIR/DEFAULT_NAME.
 sb_rt_state_file() {
-  local configured="${1:-}" default_name="${2:-}" state_dir fallback candidate rel part probe canon_state canon_probe
+  local configured="${1:-}" default_name="${2:-}" state_dir fallback candidate rel part probe canon_state canon_probe base_lc
   local -a _sb_rt_parts
   state_dir="${SB_RUNTIME_STATE_DIR:-${HOME}/.silver-bullet}"
   state_dir="${state_dir%/}"
@@ -200,13 +200,12 @@ sb_rt_state_file() {
     "${state_dir}"/*) rel="${candidate#"${state_dir}"/}" ;;
     *) printf '%s' "$fallback"; return 0 ;;
   esac
-  # SB's own control files in the state dir (trivial marker, skill state, branch, project
-  # root, audit and session logs) are never a stamp; an empty rel (the bare state dir) falls back.
-  case "${rel##*/}" in
-    "" | trivial* | state* | branch* | project-root* | session-log* | requested-skill* | gate-audit* \
-      | consent* | .* | *.requested | *.bak | *.lock)
-      printf '%s' "$fallback"; return 0 ;;
-  esac
+  # An allowlist: only a "<name>-usage" / "<name>-query" stamp (lowercase letters, digits and
+  # dashes) is honoured, so a configured path can never name one of SB's own state files
+  # (directive, overrides, mode, trivial, skill state...), whatever its case. Anything else,
+  # including the bare state dir, falls back to the built-in stamp.
+  base_lc="$(printf '%s' "${rel##*/}" | tr '[:upper:]' '[:lower:]')"
+  [[ "$base_lc" =~ ^[a-z0-9-]+-(usage|query)$ ]] || { printf '%s' "$fallback"; return 0; }
   IFS=/ read -r -a _sb_rt_parts <<<"$rel"
   for part in ${_sb_rt_parts[@]+"${_sb_rt_parts[@]}"}; do
     case "$part" in

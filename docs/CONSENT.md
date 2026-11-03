@@ -24,7 +24,7 @@ fetches, prints as an instruction or writes outside the project:
 | `install_commands`, `platform_install_commands`, `benefits_summary`, `license_note`, `install_failure_reason`, `cli_command` | Ignored. Install and setup instructions come only from the built-in tables in `hooks/lib/recommended-tools.sh`. |
 | `health_url` | Used only when it is `http(s)` to `localhost`, `127.0.0.1` or `[::1]`; passed to `curl` after `--`. |
 | `graph_path`, `export_root` | Used only as a project-relative path of plain characters with no `.`, `..` or empty component. |
-| `usage_state_file`, `query_state_file` | Used only inside the runtime state directory and never for one of SB's control files (`trivial`, `state`, `branch`, `project-root`, session and audit logs); otherwise the default stamp path is used. |
+| `usage_state_file`, `query_state_file` | Used only inside the runtime state directory and only for a stamp named `<name>-usage` or `<name>-query` (lowercase letters, digits, dashes; matched case-insensitively), so it can never name one of SB's own state files; otherwise the default stamp path is used. |
 | `min_version`, `min_node_version` | Used only when it is 1 to 3 dotted numbers; never evaluated arithmetically before that check. |
 | `read_deny_bytes` | May raise the Context Mode read threshold or set it to 0 (off); a lower value is ignored. |
 
