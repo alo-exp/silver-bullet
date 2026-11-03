@@ -41,21 +41,34 @@
 #     NOTICE becomes systemMessage. An empty REASON on a decision gets a default text.
 #     Prints nothing (status 0) when there is nothing to say.
 
+# _sb_hook_replace_all TEXT CHAR REPLACEMENT: replace every CHAR in TEXT into _SB_HOOK_OUT.
+# A prefix/suffix loop, not "${s//"$ch"/"$rep"}": Bash <= 4.2 (macOS /bin/bash 3.2) keeps the
+# quotes of a quoted replacement string literally.
+_sb_hook_replace_all() {
+  local rest="$1" ch="$2" rep="$3"
+  _SB_HOOK_OUT=""
+  while [[ "$rest" == *"$ch"* ]]; do
+    _SB_HOOK_OUT="$_SB_HOOK_OUT${rest%%"$ch"*}$rep"
+    rest="${rest#*"$ch"}"
+  done
+  _SB_HOOK_OUT="$_SB_HOOK_OUT$rest"
+}
+
 # _sb_hook_json_bash TEXT: last-resort JSON string encoder (non-ASCII bytes pass through).
 _sb_hook_json_bash() {
   local s="$1" bs="\\" q='"' nl=$'\n' cr=$'\r' tab=$'\t' i oct ch hex
-  s="${s//"$bs"/"$bs$bs"}"
-  s="${s//"$q"/"$bs$q"}"
-  s="${s//"$nl"/"${bs}n"}"
-  s="${s//"$cr"/"${bs}r"}"
-  s="${s//"$tab"/"${bs}t"}"
+  _sb_hook_replace_all "$s" "$bs" "$bs$bs"
+  _sb_hook_replace_all "$_SB_HOOK_OUT" "$q" "$bs$q"
+  _sb_hook_replace_all "$_SB_HOOK_OUT" "$nl" "${bs}n"
+  _sb_hook_replace_all "$_SB_HOOK_OUT" "$cr" "${bs}r"
+  _sb_hook_replace_all "$_SB_HOOK_OUT" "$tab" "${bs}t"
   for i in 1 2 3 4 5 6 7 8 11 12 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31; do
     printf -v oct '%03o' "$i"
     printf -v ch '%b' "\\0$oct"
     printf -v hex '%04x' "$i"
-    s="${s//"$ch"/"${bs}u$hex"}"
+    _sb_hook_replace_all "$_SB_HOOK_OUT" "$ch" "${bs}u$hex"
   done
-  printf '"%s"' "$s"
+  printf '"%s"' "$_SB_HOOK_OUT"
 }
 
 # _sb_hook_json_str TEXT: print TEXT as a JSON string literal.

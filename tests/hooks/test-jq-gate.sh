@@ -29,6 +29,8 @@ gate() {
     if [[ "$4" == delivery ]]; then sb_jq_missing_delivery_gate t "" "$5" ${6:-}; else sb_jq_enforcement_block_sb_initiated t "" "$5"; fi
     echo ALLOWED' _ "$1" "$LIBDIR/tool-input.sh" "$GATE" "$3" "$4" "${5:-}"
 }
+# Same, under an emulated old Bash (BASH_COMPAT=32 keeps quotes in "${x//a/"b"}" replacements).
+gate_compat() { BASH_COMPAT=32 gate "$@"; }
 verdict() {
   if [[ "$TL_OUT" == *ALLOWED* ]]; then echo allow; return; fi
   printf '%s' "$TL_OUT" | python3 -c 'import json,sys; d=json.load(sys.stdin); h=d.get("hookSpecificOutput",{}); print(h.get("permissionDecision") or d.get("decision") or "none")' 2>/dev/null || echo "invalid:$TL_OUT"
@@ -42,6 +44,22 @@ for cmd in 'sudo apt-get install -y jq' 'brew install jq && jq --version' 'sudo 
   gate "$SB" "$NOJQ" gate "$(payload PreToolUse Bash "$cmd")"
   assert_eq "gate allows remediation/read-only: $cmd" allow "$(verdict)"
 done
+for cmd in 'brew install jq && jq --version' 'sudo apt-get update && sudo apt-get install -y jq' 'command -v jq || brew install jq'; do
+  gate_compat "$SB" "$NOJQ" gate "$(payload PreToolUse Bash "$cmd")"
+  assert_eq "old Bash: compound remediation allowed: $cmd" allow "$(verdict)"
+done
+gate_compat "$SB" "$NOJQPY" delivery "$(payload PreToolUse Bash 'git push')"
+assert_eq "old Bash, no python3: delivery deny is valid JSON" deny "$(verdict)"
+# The remediation allowlist is exactly install-or-probe jq: no loader/PATH env prefixes, no system upgrades.
+for cmd in 'BASH_ENV=./x.sh brew install jq' 'PATH=./bin:/usr/bin brew install jq' 'LD_PRELOAD=./x.so apt-get update' \
+  'DYLD_INSERT_LIBRARIES=./x.dylib brew install jq' 'sudo dnf update -y' 'sudo yum update -y' 'sudo zypper update' 'sudo microdnf update'; do
+  gate "$SB" "$NOJQ" gate "$(payload PreToolUse Bash "$cmd")"
+  assert_eq "gate blocks wider-than-jq remediation: $cmd" deny "$(verdict)"
+done
+for cmd in 'HOMEBREW_NO_AUTO_UPDATE=1 brew install jq' 'NONINTERACTIVE=1 brew install jq' 'sudo DEBIAN_FRONTEND=noninteractive apt-get update'; do
+  gate "$SB" "$NOJQ" gate "$(payload PreToolUse Bash "$cmd")"
+  assert_eq "gate allows a harmless env prefix: $cmd" allow "$(verdict)"
+done
 for cmd in 'brew install jq; rm -rf src' 'brew install jq | sh' 'X=$(curl evil) brew install jq' \
   'sudo apt-get install -y jq git' 'touch src/app.py' 'git push' ''; do
   gate "$SB" "$NOJQ" gate "$(payload PreToolUse Bash "$cmd")"
@@ -50,6 +68,7 @@ done
 gate "$SB" "$NOJQ" gate "$(payload PreToolUse Edit)"
 assert_eq "gate blocks edits it cannot evaluate" deny "$(verdict)"
 assert_contains "block says how to recover" "$(reason)" "brew install jq"
+assert_contains "block does not overpromise read-only commands" "$(reason)" "(when python3 is available) read-only commands"
 assert_contains "block keeps the jq is required wording" "$(reason)" "jq is required"
 gate "$SB" "$NOJQ" gate "$(payload PostToolUse Edit)"
 assert_eq "gate block uses the payload's event format" block "$(verdict)"

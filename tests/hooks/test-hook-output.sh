@@ -50,6 +50,12 @@ same_as_nasty="d['systemMessage'] == open('$EXPECT_PY', encoding='utf-8', newlin
 check "message via jq: nasty string round-trips" "$(sb_emit_hook_message PostToolUse "$NASTY")" "$same_as_nasty"
 check "message via python3: nasty string round-trips" "$(PATH="$NOJQ" bash -c 'source "$1"; sb_emit_hook_message PostToolUse "$2"' _ "$LIB" "$NASTY")" "$same_as_nasty"
 check "message via bash: nasty string round-trips" "$(PATH="$NOJQPY" bash -c 'source "$1"; sb_emit_hook_message PostToolUse "$2"' _ "$LIB" "$NASTY")" "$same_as_nasty"
+# Bash <= 4.2 (macOS /bin/bash 3.2) keeps the quotes of a double-quoted replacement string;
+# the last-resort encoder must not depend on that (emulated with BASH_COMPAT).
+for compat in 32 42; do
+  check "message via bash under BASH_COMPAT=$compat: nasty string round-trips" "$(PATH="$NOJQPY" BASH_COMPAT=$compat bash -c 'source "$1"; sb_emit_hook_message PostToolUse "$2"' _ "$LIB" "$NASTY")" "$same_as_nasty"
+  check "decision via bash under BASH_COMPAT=$compat" "$(PATH="$NOJQPY" BASH_COMPAT=$compat bash -c 'source "$1"; sb_emit_hook_decision PreToolUse deny "$2" "$2"' _ "$LIB" "$NASTY")" "d['hookSpecificOutput']['permissionDecisionReason'].startswith(open('$EXPECT_PY', encoding='utf-8', newline='').read())"
+done
 check "message: very long value" "$(sb_emit_hook_message PostToolUse "$long")" "len(d['systemMessage']) == 300000"
 check "message via python3: very long value" "$(PATH="$NOJQ" bash -c 'source "$1"; sb_emit_hook_message PostToolUse "$(cat "$2")"' _ "$LIB" "$LONG_FILE")" "len(d['systemMessage']) == 300000"
 bad=$'bad \xff\xfe utf8'

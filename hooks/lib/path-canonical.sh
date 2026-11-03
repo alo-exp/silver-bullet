@@ -30,8 +30,11 @@
 #                                       physical forms, the physical form of PATH's lexical
 #                                       form (hosts that collapse '..' before writing) and the
 #                                       lexical forms, folding case when ROOT's filesystem is
-#                                       case-insensitive. Status 1 when outside; status 2 when
-#                                       undecidable (symlink loop): guards treat 2 as inside.
+#                                       case-insensitive. Status 1 only when provably outside.
+#                                       A DENY-GUARD predicate, safe by default: a form that
+#                                       cannot be resolved (symlink loop) counts as inside, so
+#                                       'if sb_path_is_within ...; then deny' fails closed. It
+#                                       is a union of forms: never use it to grant access.
 
 _SB_PATH_OUT=""
 
@@ -221,11 +224,11 @@ sb_path_is_within() {
   t_lex="$_SB_PATH_OUT"
   _sb_path_lex "$r_abs"
   r_lex="$_SB_PATH_OUT"
-  _sb_path_phys "$t_abs" || return 2
+  _sb_path_phys "$t_abs" || return 0
   t_phys="$_SB_PATH_OUT"
-  _sb_path_phys "$t_lex" || return 2
+  _sb_path_phys "$t_lex" || return 0
   t_lexphys="$_SB_PATH_OUT"
-  _sb_path_phys "$r_abs" || return 2
+  _sb_path_phys "$r_abs" || return 0
   r_phys="$_SB_PATH_OUT"
   if sb_path_case_insensitive "$r_phys"; then
     t_lex="$(sb_path_fold "$t_lex")"

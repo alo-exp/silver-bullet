@@ -30,10 +30,11 @@ if [[ -f "$_sb_jq_gate_dir/hook-output.sh" ]]; then
   source "$_sb_jq_gate_dir/hook-output.sh"
 fi
 
-# Installing (or probing for) jq: optional sudo, VAR=value prefixes, one package manager.
+# Installing (or probing for) jq: optional sudo, a few harmless installer env prefixes (never
+# PATH, BASH_ENV, LD_PRELOAD and the like), one package manager; only apt refreshes metadata.
 _sb_jq_s='[[:space:]]+'
 _sb_jq_f='([[:space:]]+-[-A-Za-z0-9=]+)*'
-_SB_JQ_REMEDIATION_RE="^[[:space:]]*(sudo${_sb_jq_f}${_sb_jq_s})?([A-Za-z_][A-Za-z0-9_]*=[-A-Za-z0-9_./:@%+,=]*${_sb_jq_s})*((brew|port|choco|scoop|winget|conda|mamba|snap)${_sb_jq_s}install${_sb_jq_f}${_sb_jq_s}(jq|jqlang\\.jq)|(apt|apt-get|dnf|yum|zypper|microdnf)${_sb_jq_f}${_sb_jq_s}(install${_sb_jq_f}${_sb_jq_s}jq|update)|apk${_sb_jq_f}${_sb_jq_s}add${_sb_jq_f}${_sb_jq_s}jq|pacman${_sb_jq_s}-S[A-Za-z]*${_sb_jq_f}${_sb_jq_s}jq|nix-env${_sb_jq_s}-iA${_sb_jq_s}nixpkgs\\.jq|(which|type|command${_sb_jq_s}-v)${_sb_jq_s}jq|jq${_sb_jq_s}--version)${_sb_jq_f}[[:space:]]*$"
+_SB_JQ_REMEDIATION_RE="^[[:space:]]*(sudo${_sb_jq_f}${_sb_jq_s})?((DEBIAN_FRONTEND|NONINTERACTIVE|HOMEBREW_NO_AUTO_UPDATE|HOMEBREW_NO_INSTALL_CLEANUP|HOMEBREW_NO_ENV_HINTS)=[A-Za-z0-9_]*${_sb_jq_s})*((brew|port|choco|scoop|winget|conda|mamba|snap)${_sb_jq_s}install${_sb_jq_f}${_sb_jq_s}(jq|jqlang\\.jq)|(apt|apt-get)${_sb_jq_f}${_sb_jq_s}(install${_sb_jq_f}${_sb_jq_s}jq|update)|(dnf|yum|zypper|microdnf)${_sb_jq_f}${_sb_jq_s}install${_sb_jq_f}${_sb_jq_s}jq|apk${_sb_jq_f}${_sb_jq_s}add${_sb_jq_f}${_sb_jq_s}jq|pacman${_sb_jq_s}-S[A-Za-z]*${_sb_jq_f}${_sb_jq_s}jq|nix-env${_sb_jq_s}-iA${_sb_jq_s}nixpkgs\\.jq|(which|type|command${_sb_jq_s}-v)${_sb_jq_s}jq|jq${_sb_jq_s}--version)${_sb_jq_f}[[:space:]]*$"
 # Delivery verbs (fallback when the caller has no classifier of its own).
 _SB_JQ_DELIVERY_RE='(^|[^[:alnum:]_-])(git[[:space:]]+(commit|push|write-tree|commit-tree|update-ref|hash-object)|gh[[:space:]]+(pr[[:space:]]+(create|merge)|release[[:space:]]+create)|deploy)([^[:alnum:]_-]|$)'
 unset _sb_jq_s _sb_jq_f
@@ -49,7 +50,7 @@ To recover, install jq (allowed while it is missing), check it, then retry:
   check:          jq --version
 Re-run /sb:init if this project was set up while jq was missing.
 
-Until then read-only commands and jq installs are allowed; delivery (commit, push, PR, merge, deploy, release) and source edits stay blocked.'
+Until then jq installs and (when python3 is available) read-only commands are allowed; delivery (commit, push, PR, merge, deploy, release) and source edits stay blocked.'
 }
 
 sb_jq_enforcement_warn() {
@@ -134,9 +135,10 @@ _sb_jq_allowed_without_jq() {
   if declare -f sb_shell_command_looks_read_only >/dev/null 2>&1 && sb_shell_command_looks_read_only "$cmd" >/dev/null 2>&1; then
     return 0
   fi
-  segs="${cmd//"$and_op"/"$nl"}"
-  segs="${segs//"$or_op"/"$nl"}"
-  segs="${segs//"$semi"/"$nl"}"
+  # No outer quotes: Bash <= 4.2 keeps the quotes of a quoted replacement inside "${...}".
+  segs=${cmd//"$and_op"/"$nl"}
+  segs=${segs//"$or_op"/"$nl"}
+  segs=${segs//"$semi"/"$nl"}
   while IFS= read -r seg; do
     [[ "$seg" =~ ^[[:space:]]*$ ]] && continue
     [[ "$seg" =~ $_SB_JQ_REMEDIATION_RE ]] || return 1
