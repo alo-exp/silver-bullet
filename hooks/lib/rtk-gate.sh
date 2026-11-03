@@ -136,7 +136,7 @@ ${install_lines}
 
 Verify: rtk --version (>= $(sb_rtk_min_version "$config_file")) and rtk gain --help (must succeed — wrong "Rust Type Kit" binary is rejected).
 
-To turn RTK enforcement off: bash $(sb_rt_plugin_script scripts/sb-consent.sh) decline rtk --project $(printf '%q' "$(dirname "${config_file:-$PWD/x}")")
+If the user asks to turn RTK enforcement off: bash $(sb_rt_plugin_script scripts/sb-consent.sh) decline rtk --project $(printf '%q' "$(dirname "${config_file:-$PWD/x}")")
 See docs/RTK.md.
 EOF
 }

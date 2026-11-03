@@ -85,7 +85,7 @@ yes_t "hooks: default repo is PWD" bash -c 'cd "$1" && source "$2" && GFY_HOOK_S
 # ---------- gitignore ----------
 GI="$RP/.gitignore"; rm -f "$GI"
 assert_eq "gitignore dry-run new" "DRY-RUN: append agentmemory gitignore block to $GI" "$(SB_STACK_OPTIMIZER_DRY_RUN=1 sb_stack_ensure_agentmemory_gitignore "$RP")"
-assert_file_exists "gitignore touched even in dry-run" "$GI"
+assert_file_absent "dry-run does not create the gitignore" "$GI"
 assert_eq "dry-run does not append" "" "$(cat "$GI")"
 sb_stack_ensure_agentmemory_gitignore "$RP"
 assert_contains "gitignore block appended" "$(cat "$GI")" "# === agentmemory managed block ==="
@@ -104,6 +104,28 @@ printf '# === agentmemory managed block ===\n!.agentmemory/memory/\n' >"$GI"
 sb_stack_ensure_agentmemory_gitignore "$RP" && tl_pass "gitignore repair tolerates sed failures" || tl_fail "gitignore repair tolerates sed failures"
 assert_not_contains "failed repair leaves file unchanged" "$(cat "$GI")" '!.agentmemory/memory/**'
 unstub sed
+[[ -z "$(find "$RP" -maxdepth 1 -name '.gitignore.*' 2>/dev/null)" ]] && tl_pass "no temp file is left behind" || tl_fail "no temp file is left behind"
+# A committed symlink at .gitignore must never be followed (it could point at ~/.bashrc).
+VICTIM_GI="$TL_TMP/victim-bashrc"; printf 'export A=1\n' >"$VICTIM_GI"
+rm -f "$GI"; ln -s "$VICTIM_GI" "$GI"
+out="$(sb_stack_ensure_agentmemory_gitignore "$RP" 2>&1)"
+assert_contains "a symlinked gitignore is refused with a warning" "$out" "symlink"
+assert_eq "the symlink target is untouched" "export A=1" "$(cat "$VICTIM_GI")"
+[[ -L "$GI" ]] && tl_pass "the symlink itself is left in place" || tl_fail "the symlink itself is left in place"
+rm -f "$GI"; mkdir "$GI"
+out="$(sb_stack_ensure_agentmemory_gitignore "$RP" 2>&1)"
+assert_contains "a directory named .gitignore is refused too" "$out" "not a regular file"
+rmdir "$GI"
+printf 'node_modules/\n' >"$GI"; chmod 640 "$GI"
+sb_stack_ensure_agentmemory_gitignore "$RP"
+assert_contains "the user's lines survive the append" "$(cat "$GI")" "node_modules/"
+assert_contains "the block is appended" "$(cat "$GI")" "# === agentmemory managed block ==="
+assert_eq "the file mode is kept" "640" "$(stat -c %a "$GI" 2>/dev/null || stat -f %Lp "$GI")"
+tl_stub mktemp 'exit 1'; hash -r
+rm -f "$GI"
+sb_stack_ensure_agentmemory_gitignore "$RP" && tl_pass "an unwritable project does not abort the optimizer" || tl_fail "an unwritable project does not abort the optimizer"
+assert_file_absent "nothing is written when the temp file cannot be created" "$GI"
+unstub mktemp
 rm -f "$GI"
 ( cd "$RP" && sb_stack_ensure_agentmemory_gitignore ) && assert_file_exists "gitignore default repo is PWD" "$GI"
 
