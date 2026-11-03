@@ -1261,6 +1261,17 @@
     ],
     "vendor_link_labels.SLUG_LINK_LABEL_OVERRIDES": {
       "sdlc-plugin": "SDLC Plugin"
+    },
+    "materialize_solution_artifacts.PRODUCT_MAKERS": {
+      "conductor": [
+        "Melty"
+      ],
+      "cursor": [
+        "Anysphere"
+      ],
+      "scout": [
+        "Cognition"
+      ]
     }
   },
   "market_chart_notes": {

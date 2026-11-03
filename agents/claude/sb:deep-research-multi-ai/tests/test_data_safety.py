@@ -348,6 +348,21 @@ class CliOutputRootTests(_Tmp):
         (self.root / "run_manifest.json").unlink()
         self.assertFalse(cli._same_query(self.root, "q1"))
 
+    def test_the_whole_normalised_query_decides_not_its_first_line(self) -> None:
+        self.put("need_profile.json", {"category": "Event streaming\nfor banks", "auto_assumed": True})
+        self.put("scope.md", "# Research scope\n\nResearch topic: Event streaming\nfor banks\n\nA definition.\n")
+        self.assertTrue(cli._same_query(self.root, "Event streaming\nfor banks"))
+        self.assertTrue(cli._same_query(self.root, "  Event streaming\nfor banks \n"))
+        self.assertFalse(cli._same_query(self.root, "Event streaming"))
+        self.assertFalse(cli._same_query(self.root, "Event streaming\nfor banks and more"))
+
+    def test_a_recorded_manifest_query_decides_alone(self) -> None:
+        self.put("scope.md", "# Research scope\n\nResearch topic: q1\n")
+        self.put("run_manifest.json", {"workflow_id": "WF-SILVER-DEEP-RESEARCH-MULTI-AI", "query": "other"})
+        self.assertFalse(cli._same_query(self.root, "q1"))
+        self.put("run_manifest.json", {"workflow_id": "WF-SILVER-DEEP-RESEARCH-MULTI-AI", "query": "q1"})
+        self.assertTrue(cli._same_query(self.root, "q1"))
+
     def test_main_reports_carried_and_skipped_inputs(self) -> None:
         self.put("run_manifest.json", {"workflow_id": "WF-SILVER-DEEP-RESEARCH-MULTI-AI", "run_id": "run-old"})
         self.put("need_profile.json", {"category": "old", "auto_assumed": True, "must_haves": ["SSO"]})
