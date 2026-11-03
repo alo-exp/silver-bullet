@@ -1,98 +1,100 @@
 #!/usr/bin/env python3
-"""Prune stale legacy hooks from a Claude settings.json (helper of prune-stale-claude-user-hooks.sh).
+"""Remove stale Silver Bullet hook entries from a Claude settings.json.
 
 Usage: prune-claude-settings.py <settings.json>
 
-Drops hook commands that name a legacy hook script or point at a script that no longer
-exists. When something is dropped the file is rewritten as a normalised JSON document
-(2-space indent, trailing newline): numbers are re-serialised (2.50 -> 2.5, 1e3 -> 1000.0)
-and duplicate object keys collapse to the last value. A file with nothing to prune is not
-touched. The rewrite goes through a temp file renamed over the symlink-resolved path, so a
-failure never truncates the settings. Exit 1, file unchanged, on an unreadable or
-wrongly-typed settings file.
+A hook entry is removed only when both hold:
+  * Silver Bullet owns it: the program its command runs lives in a Silver Bullet hooks
+    directory (sb_host_config.is_sb_hook_command), and
+  * it is stale: that program no longer exists (an uninstalled or upgraded plugin cache), or
+    it is the unexpanded ${CLAUDE_PLUGIN_ROOT} placeholder, which never resolves in user
+    settings.
+Every other hook stays: hooks whose paths use $HOME, ${CLAUDE_PROJECT_DIR} or a relative
+path, and other tools' hooks (GSD's gsd-*.sh included), whatever their names.
+
+A changed file is written atomically (a symlink is followed, the mode kept, the previous
+content saved as settings.json.sb-backup) as a normalised JSON document: 2-space indent,
+numbers re-serialised (2.50 -> 2.5) and duplicate keys collapsed to the last value. A file
+with nothing to prune is not touched. Exit 1, file unchanged, on an unreadable or wrongly
+typed file.
 """
-import json, os, re, stat, sys, tempfile
 
-path = sys.argv[1]
+from __future__ import annotations
+
+import os
+import pathlib
+import sys
+
+LIB_DIR = pathlib.Path(__file__).resolve().parent
+sys.path.insert(0, str(LIB_DIR))
+from sb_host_config import (  # noqa: E402
+    ConfigError,
+    command_program,
+    is_sb_hook_command,
+    read_json,
+    sb_hook_names,
+    write_json,
+)
+
+HOOK_NAMES = sb_hook_names(LIB_DIR.parents[1] / "hooks")
+PLACEHOLDER = "${CLAUDE_PLUGIN_ROOT}"
 
 
-def fail(msg):
-    print(f"prune-stale-claude-user-hooks: ERROR: {msg}; {path} left unchanged", file=sys.stderr)
-    sys.exit(1)
-
-
-try:
-    with open(path, encoding="utf-8") as f:
-        doc = json.load(f)
-except (OSError, ValueError) as exc:
-    fail(f"cannot read settings ({exc})")
-if not isinstance(doc, dict):
-    fail("settings.json is not a JSON object")
-if doc.get("hooks") is not None and not isinstance(doc["hooks"], dict):
-    fail('"hooks" in settings.json is not an object')
-
-changed = False
-hook_re = re.compile(r'gsd-session-state|gsd-[a-z-]+\.sh', re.I)
-
-def hook_command_broken(cmd):
-    if not isinstance(cmd, str):
+def stale_sb_hook(hook) -> bool:
+    if not isinstance(hook, dict):
         return False
-    if hook_re.search(cmd):
+    command = hook.get("command")
+    if not is_sb_hook_command(command, hook_names=HOOK_NAMES):
+        return False
+    program = command_program(command)
+    if program.startswith(PLACEHOLDER):
         return True
-    m = re.search(r'(["\'])([^"\']+\.(?:sh|js|mjs))\1', cmd)
-    if m:
-        p = os.path.expanduser(m.group(2))
-        if not os.path.isfile(p):
-            return True
-    return False
+    expanded = os.path.expandvars(os.path.expanduser(program))
+    if "$" in expanded or not os.path.isabs(expanded):
+        return False  # cannot be judged here: keep it
+    return not os.path.isfile(expanded)
 
-def filter_hooks(hooks):
-    global changed
-    kept = []
-    for entry in hooks:
-        if not isinstance(entry, dict):
-            kept.append(entry)
-            continue
-        inner = entry.get("hooks")
-        if not isinstance(inner, list) or not inner:
-            # Not a populated hook group: foreign data, never ours to drop.
-            kept.append(entry)
-            continue
-        new_inner = []
-        for h in inner:
-            if isinstance(h, dict) and hook_command_broken(h.get("command", "")):
-                changed = True
-                continue
-            new_inner.append(h)
-        if new_inner:
-            entry = dict(entry)
-            entry["hooks"] = new_inner
-            kept.append(entry)
-    return kept
 
-for section in ("hooks",):
-    for event, groups in list((doc.get(section) or {}).items()):
+def prune(path: str) -> int:
+    doc = read_json(path)
+    if doc is None:
+        return 0
+    hooks = doc.get("hooks")
+    if hooks is not None and not isinstance(hooks, dict):
+        raise ConfigError(f'{path}: "hooks" is not an object; left unchanged')
+    removed = 0
+    for event, groups in list((hooks or {}).items()):
         if not isinstance(groups, list):
             continue
-        doc[section][event] = filter_hooks(groups)
+        kept_groups = []
+        for group in groups:
+            inner = group.get("hooks") if isinstance(group, dict) else None
+            if not isinstance(inner, list) or not inner:
+                kept_groups.append(group)  # not a populated hook group: foreign data
+                continue
+            kept = [hook for hook in inner if not stale_sb_hook(hook)]
+            removed += len(inner) - len(kept)
+            if len(kept) == len(inner):
+                kept_groups.append(group)
+            elif kept:
+                kept_groups.append({**group, "hooks": kept})
+        hooks[event] = kept_groups
+    if removed:
+        write_json(path, doc)
+    return removed
 
-if changed:
-    out = json.dumps(doc, indent=2, ensure_ascii=False) + "\n"
+
+def main(argv) -> int:
+    path = argv[1]
     try:
-        data = out.encode("utf-8")
-    except UnicodeEncodeError:
-        # A lone surrogate (e.g. "\ud800") cannot be written as UTF-8: keep it as an escape.
-        data = (json.dumps(doc, indent=2, ensure_ascii=True) + "\n").encode("utf-8")
-    # Write a temp file next to the real settings file and rename it over, so a failed
-    # write can never leave a truncated settings.json (and a symlinked one stays a symlink).
-    target = os.path.realpath(path)
-    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(target), prefix=".settings.json.")
-    try:
-        with os.fdopen(fd, "wb") as f:
-            f.write(data)
-        os.chmod(tmp, stat.S_IMODE(os.stat(target).st_mode))
-        os.replace(tmp, target)
-    except BaseException:
-        os.unlink(tmp)
-        raise
-    print("prune-stale-claude-user-hooks: cleaned settings.json SessionStart hooks", file=sys.stderr)
+        removed = prune(path)
+    except (ConfigError, OSError) as exc:
+        print(f"prune-stale-claude-user-hooks: ERROR: {exc}; {path} left unchanged", file=sys.stderr)
+        return 1
+    if removed:
+        print(f"prune-stale-claude-user-hooks: removed {removed} stale Silver Bullet hook(s) from {path}", file=sys.stderr)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv))

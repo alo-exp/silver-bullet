@@ -263,6 +263,7 @@ AG="$HOME/.cursor/agents"
 mkdir -p "$AG/silver-legacy"
 printf -- '---\nname: silver-legacy\n---\nSilver Bullet legacy agent\n' >"$AG/silver-legacy/SKILL.md"
 printf -- '---\nname: my-own\n---\nunrelated agent\n' >"$AG/my-own.md"
+mkdir -p "$SNAP/host-bundles/cursor/silver-legacy"
 BEFORE_COUNT="$(find "$AG" -maxdepth 1 -name 'sb-*.md' | wc -l | tr -d ' ')"
 tl_run env CURSOR_HOME="$HOME/.cursor" SB_INSTALL_CURSOR_SOURCE_ONLY=1 bash -c 'source "$1"; cleanup_cursor_custom_agents ""' _ "$SCRIPT"
 assert_eq "cleanup exits 0" 0 "$TL_STATUS"
@@ -270,6 +271,7 @@ assert_eq "installer-managed sb-* agents stay" "$BEFORE_COUNT" "$(find "$AG" -ma
 assert_file_absent "legacy Silver Bullet agent quarantined" "$AG/silver-legacy"
 assert_file_exists "unrelated agent untouched" "$AG/my-own.md"
 assert_file_exists "legacy agent kept in quarantine" "$(find "$HOME/.cursor/.silver-bullet-quarantine" -path '*silver-legacy*' -name SKILL.md | head -1)"
+rm -rf "${SNAP:?}/host-bundles"
 
 # marker evasion: only genuine installer output is exempt from the quarantine
 AG2="$TL_TMP/agents2/agents"; rm -rf "${TL_TMP:?}/agents2"; mkdir -p "$AG2/sub"
@@ -300,15 +302,58 @@ gen sb@evil >"$AG2/sb@evil.md"
 render_real "$AG2"
 tl_run env CURSOR_HOME="$TL_TMP/agents2" SB_INSTALL_CURSOR_SOURCE_ONLY=1 bash -c 'source "$1"; cleanup_cursor_custom_agents ""' _ "$SCRIPT"
 assert_file_exists "genuine generated agent stays" "$AG2/sb-ok-high.md"
-for f in sb-evil silver-fake sb-mid-high sb-other-high; do
-  assert_file_absent "$f quarantined" "$AG2/$f.md"
+# Without proof of Silver Bullet authorship nothing moves: copying the managed marker
+# into a file neither exempts nor condemns it (R7-11). silver-fake.md has the complete
+# generated shape (any agent_name_prefix is allowed), so it counts as installer output.
+assert_file_exists "complete generated shape stays (installer-managed)" "$AG2/silver-fake.md"
+for f in sb-evil sb-mid-high sb-other-high sb@evil; do
+  assert_file_exists "$f without SB provenance stays" "$AG2/$f.md"
 done
-assert_file_absent "marker file in a subdirectory quarantined" "$AG2/sub/sb-nested-high.md"
-assert_eq "symlinked agent quarantined" 0 "$([[ -L "$AG2/sb-ext-high.md" ]] && echo 1 || echo 0)"
-assert_file_absent "filename outside the generator character set quarantined" "$AG2/sb@evil.md"
+assert_file_exists "file in a subdirectory is never touched" "$AG2/sub/sb-nested-high.md"
+assert_eq "symlinked agent is never moved" 1 "$([[ -L "$AG2/sb-ext-high.md" ]] && echo 1 || echo 0)"
 for f in team-gpt-5-high sb-Claude-4-5-Sonnet-high 'sb-gemini 3-high'; do
   assert_file_exists "real generator output $f stays" "$AG2/$f.md"
 done
+
+# ---- R7-11: only provable Silver Bullet agents are quarantined; user agents never move
+AG3="$TL_TMP/agents3/agents"; rm -rf "${TL_TMP:?}/agents3"; mkdir -p "$AG3/team" "$AG3/my-skill" "$AG3/silver-old" "$AG3/tdd-copy" "$AG3/silver-surfer"
+printf -- '---\nname: silver-surfer\n---\nMy own agent.\n' >"$AG3/silver-surfer/SKILL.md"
+printf -- '---\nname: silver-lining\n---\nMy own agent.\n' >"$AG3/silver-lining.md"
+mkdir -p "$SNAP/host-bundles/cursor/silver-old" "$AG3/subagent-sb:init" "$AG3/silver:plan"
+printf -- '---\nname: subagent-sb:init\n---\nretired SB agent\n' >"$AG3/subagent-sb:init/SKILL.md"
+printf -- '---\nname: silver:plan\n---\nretired SB agent\n' >"$AG3/silver:plan/SKILL.md"
+printf -- '---\nname: tdd\n---\nMy own TDD coach.\n' >"$AG3/tdd.md"
+printf -- '---\nname: code-reviewer\n---\nWe follow the silver-bullet workflow (Silver Bullet).\n' >"$AG3/code-reviewer.md"
+printf -- '---\nname: silverlight-porter\n---\nPorts Silverlight apps.\n' >"$AG3/silverlight-porter.md"
+printf '{"name": "silver-bullet notes"}\n' >"$AG3/team/notes.json"
+printf -- '---\nname: my-skill\n---\nUses silver-bullet.\n' >"$AG3/my-skill/SKILL.md"
+printf 'helper\n' >"$AG3/my-skill/helper.md"
+printf -- '---\nname: silver-old\n---\nold SB agent\n' >"$AG3/silver-old/SKILL.md"
+printf -- '---\nname: subagent-sb:plan\n---\nold SB agent\n' >"$AG3/subagent-sb:plan.md"
+mkdir -p "$SNAP/host-bundles/cursor/tdd" "$AG3/tdd-copy"
+printf -- '---\nname: tdd\n---\nSB shipped TDD skill.\n' >"$SNAP/host-bundles/cursor/tdd/SKILL.md"
+mkdir -p "$AG3/full-conversation"; printf 'mine\n' >"$AG3/full-conversation/SKILL.md"
+rm -rf "$AG3/tdd-copy"; mkdir -p "$AG3/subagent-tdd"
+cp "$SNAP/host-bundles/cursor/tdd/SKILL.md" "$AG3/subagent-tdd/SKILL.md"
+mkdir -p "$SNAP/host-bundles/cursor/subagent-tdd"; cp "$SNAP/host-bundles/cursor/tdd/SKILL.md" "$SNAP/host-bundles/cursor/subagent-tdd/SKILL.md"
+ln -s "$AG3/tdd.md" "$AG3/silver-link.md"
+tl_run env CURSOR_HOME="$TL_TMP/agents3" SB_INSTALL_CURSOR_SOURCE_ONLY=1 bash -c 'source "$1"; cleanup_cursor_custom_agents ""' _ "$SCRIPT"
+assert_eq "provable cleanup exits 0" 0 "$TL_STATUS"
+for f in tdd.md code-reviewer.md silverlight-porter.md team/notes.json my-skill/SKILL.md my-skill/helper.md full-conversation/SKILL.md; do
+  assert_file_exists "user agent $f stays in place" "$AG3/$f"
+done
+assert_file_exists "silver-* user agent SB never shipped stays (dir)" "$AG3/silver-surfer/SKILL.md"
+assert_file_exists "silver-* user agent SB never shipped stays (file)" "$AG3/silver-lining.md"
+assert_contains "unshipped namespace-named agent reported, not moved" "$TL_ERR" "left $AG3/silver-lining.md in place"
+assert_eq "symlinked entry is never moved" 1 "$([[ -L "$AG3/silver-link.md" ]] && echo 1 || echo 0)"
+assert_file_absent "SB-namespace agent dir quarantined" "$AG3/silver-old"
+assert_file_absent "retired colon-named SB agent (not shipped any more) quarantined" "$AG3/subagent-sb:plan.md"
+assert_file_absent "retired subagent-sb:init quarantined" "$AG3/subagent-sb:init"
+assert_file_absent "retired former silver:* agent quarantined" "$AG3/silver:plan"
+assert_contains "the move is announced" "$TL_ERR" "quarantined Cursor custom agent $AG3/silver:plan"
+assert_file_absent "byte-identical copy of a shipped SB bundle quarantined" "$AG3/subagent-tdd"
+assert_contains "unverifiable legacy-named agent reported, not moved" "$TL_ERR" "left $AG3/full-conversation in place"
+rm -rf "${SNAP:?}/host-bundles"
 
 # ---- plugin surface materialization
 reset_home

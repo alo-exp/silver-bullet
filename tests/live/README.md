@@ -141,10 +141,11 @@ isolated temp tree. That archive is separate from the official agent session
 stores that `silver-scan` reads.
 
 The separate todo-app suite at `tests/e2e-live/run-e2e-live-tests.sh` writes a
-matching `e2e-live-matrix` marker. That suite now runs one inline full-surface
-journey against the standalone sibling `todo-app` repo and also writes an `inline-e2e-matrix` marker so the release gate can
-prove the end-user experience actually ran in this session. Both markers must
-be present before a release can proceed.
+matching `e2e-live-matrix` marker. By default it runs the hook-failure matrix;
+with `SB_E2E_LIVE_INCLUDE_LEGACY_JOURNEY=1` it also runs the inline full-surface
+journey against the standalone sibling `todo-app` repo, and only then writes the
+`inline-e2e-matrix` marker, so that marker proves the journey actually ran.
+The release gate needs both markers (or the Claude supervised enterprise matrix).
 
 The init-docs bootstrap scenario and review-fix-ladder smoke are separate
 on-demand tests and are not part of the default `run-live-tests.sh` matrix.

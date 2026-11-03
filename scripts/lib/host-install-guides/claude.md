@@ -32,6 +32,10 @@ Post-index: `agentmemory connect claude-code`
 
 `python3 scripts/lib/install-claude/merge-hooks.py "$INSTALL_PATH"`
 
+With the plugin installed, Claude Code runs `hooks/hooks.json` itself, so the merge only removes
+SB copies from `settings.json` (they would run every hook twice). It registers hooks in
+`settings.json` (`$CLAUDE_CONFIG_DIR`, default `~/.claude`) only for manual installs.
+
 ## Project instruction template
 
 `scripts/lib/install-claude/templates/CLAUDE.md.base`
