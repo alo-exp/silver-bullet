@@ -49,6 +49,10 @@ def _frozen(value: Any) -> frozenset[str]:
     return frozenset(str(v) for v in value or [])
 
 
+def _makers(value: Any) -> dict[str, frozenset[str]]:
+    return {str(k).lower(): frozenset(str(w).lower() for w in words or []) for k, words in (value or {}).items()}
+
+
 CONVERTERS: dict[str, Any] = {
     "materialize_solution_artifacts.FEATURE_TEMPLATE": list,
     "materialize_solution_artifacts._FEATURE_ALIASES": dict,
@@ -63,6 +67,7 @@ CONVERTERS: dict[str, Any] = {
     "materialize_solution_artifacts.HOST_RUNTIME_SLUGS": _frozen,
     "materialize_solution_artifacts.AMBIGUOUS_NAMES": _frozen,
     "materialize_solution_artifacts.NON_VENDOR_TERMS": _frozen,
+    "materialize_solution_artifacts.PRODUCT_MAKERS": _makers,
     "materialize_solution_artifacts.OVERVIEW_IDENTITY_FILTERS": list,
     "synthesize_landscape.KCF_NAMES": list,
     "synthesize_landscape._CHART_SUPPORT_ALIASES": dict,

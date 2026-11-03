@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import bisect
 import contextlib
 import json
 import re
@@ -23,7 +24,7 @@ from category_pack import (
 
 # Category vocabulary (feature rubric, aliases, prose signals) is pack overlay data applied by
 # pack_vocabulary.activated(); these neutral defaults match nothing.
-NEVER_MATCHES = re.compile(r"(?!x)x")
+_NEVERES = re.compile(r"(?!x)x")
 HOST_RUNTIME_SLUGS: frozenset[str] = frozenset()
 # [{"focus": "<name fragment>", "reject_if_any": [[needle, ...], ...]}]: card-identity leak filters.
 OVERVIEW_IDENTITY_FILTERS: list[dict[str, Any]] = []
@@ -209,6 +210,9 @@ def _mentions(lower_text: str, name: str) -> bool:
 # -> a plugin): a pack alias that is a plain category word never counts as a vendor mention.
 AMBIGUOUS_NAMES: frozenset[str] = frozenset()
 NON_VENDOR_TERMS: frozenset[str] = frozenset()
+# Ambiguous name -> lower-case words of the company that makes it ("conductor": {"melty"}): "Melty Conductor"
+# is the product, "Netflix Conductor" is not. Pack vocabulary; nothing is built in.
+PRODUCT_MAKERS: dict[str, frozenset[str]] = {}
 _CUE_AFTER = re.compile(
     r"\s*(?:\((?!\s*\d)|\.(?:ai|dev|com|io|app)\b|\s(?:AI|IDE|Agents?|Plugins?|Cloud|Platform|CLI|App|SaaS|Code|Copilot|Labs|Dev|OSS|Pro|Plus|Max|Enterprise|Teams?|Composer|Droids?)\b)"
 )
@@ -258,6 +262,12 @@ _FUNCTION_WORDS = frozenset(
     "since until because although though whereas rather similar similarly meanwhile additionally first second "
     "third next finally today recently".split()
 )
+# Function words that open a sentence without taking an object ("Next Continue with ..."): the name after
+# one is judged as if it opened the sentence, so it needs a verb of its own ("Notably Director enforces ...").
+_OPENER_ADVERBS = frozenset(
+    "however thus still just even plus next first second third finally today recently similarly meanwhile "
+    "additionally also now instead rather then notably".split()
+)
 _HEAD_NOUNS = frozenset(
     "pattern patterns button buttons regression settings scaling role roles view "
     "class method interface node nodes tab menu step steps function process pagination key field label".split()
@@ -265,15 +275,49 @@ _HEAD_NOUNS = frozenset(
 _ROLE_NOUN_AFTER_ARTICLE = re.compile(r"(?:the|a|an)[ \t]+$", re.IGNORECASE)
 
 
+_NEVER = re.compile(r"(?!x)x")
+_PHRASES: dict[str, Any] = {"key": None, "refs": None, "phrases": frozenset()}
+
+
+def _known_phrases() -> frozenset[str]:
+    """Every product name and alias of the run, normalised ("claude harness"); rebuilt only when the run changes."""
+    known, pack = _known_or_run(None), _RUN["pack"]
+    key = (id(known), len(known), id(pack))
+    if _PHRASES["key"] != key:
+        names = set(known) | set(known.values()) | set(_slug_aliases(pack))
+        if pack:
+            from category_pack import build_alias_map
+
+            names |= set(build_alias_map(pack))
+        phrases = frozenset(re.sub(r"[^a-z0-9]+", " ", str(n).lower()).strip() for n in names)
+        _PHRASES.update(key=key, refs=(known, pack), phrases=phrases)
+    return _PHRASES["phrases"]
+
+
+def _modifier_before(text: str, start: int, name: str) -> str | None:
+    """How the capitalised word before the name bears on it: "compound", "opener" or None.
+
+    "compound": a modifier makes a different noun of it ("Netflix Conductor", "Abstract Factory", "Mouse
+    Cursor"), unless "<word> <name>" is a known product name of the run or the word is the product's
+    maker ("Melty Conductor"). "opener": a sentence-initial adverb ("Notably Director ...", "Daily Linear
+    sync"). Anything else (an article, a preposition, a verb: "Unlike Cursor", "Install Cursor") is None.
+    """
+    prev = _PREV_WORD.search(text[max(0, start - _LOOKBEHIND):start])
+    if not prev or not prev.group(1)[0].isupper():
+        return None
+    lower = prev.group(1).lower()
+    opens_sentence = _sentence_initial(text, start - len(prev.group(0)))
+    if lower in _FUNCTION_WORDS:
+        return "opener" if lower in _OPENER_ADVERBS and opens_sentence else None
+    if lower.endswith("ly"):
+        return "opener" if opens_sentence else "compound"
+    if f"{lower} {name.lower()}" in _known_phrases() or lower in PRODUCT_MAKERS.get(name.lower(), ()):
+        return None
+    return "compound"
+
+
 def _inside_ordinary_phrase(text: str, start: int, end: int) -> bool:
-    if _SUBJECT_OF.match(text, end):
-        return False  # "Melty Conductor runs ...": the subject of a verb is the product
     window = text[max(0, start - _LOOKBEHIND):start]
-    prev = _PREV_WORD.search(window)
-    if prev:
-        word = prev.group(1)
-        if word[0].isupper() and word.lower() not in _FUNCTION_WORDS and not word.lower().endswith("ly"):
-            return True
     connector = _ROLE_BEFORE_CONNECTOR.search(window)
     if connector and connector.group(1).lower() in _ROLE_WORDS:
         return True
@@ -314,7 +358,8 @@ def mentions_vendor(text: str, lower: str, name: str) -> bool:
     A category word (NON_VENDOR_TERMS) never counts. An ambiguous common-word name counts when it
     reads as a proper noun: capitalised AND (next to a product cue, or inside a sentence and not
     "<Name> of ..." and not inside a Title-Case phrase ("AI Factory", "Linear Regression"), or opening a
-    sentence as the subject of a verb). Linear in the claim length: every look-around is bounded.
+    sentence as the subject of a verb). A qualifier before the name makes it another noun unless it is the
+    product's maker or part of a known product name. Linear in the claim length: every look-around is bounded.
     """
     if name.lower() in NON_VENDOR_TERMS or not _mentions(lower, name):
         return False
@@ -324,7 +369,16 @@ def mentions_vendor(text: str, lower: str, name: str) -> bool:
         word = match.group(0)
         if not word[:1].isupper():
             continue  # a vendor name is a proper noun: "director of engineering" is not one
-        if _CUE_AFTER.match(text, match.end()) or _CUE_BEFORE.search(text, max(0, match.start() - _LOOKBEHIND), match.start()):
+        if _CUE_BEFORE.search(text, max(0, match.start() - _LOOKBEHIND), match.start()):
+            return True
+        modifier = _modifier_before(text, match.start(), name)
+        if modifier == "compound":
+            continue  # a qualifier makes it another noun, whatever follows the name ("Abstract Factory Plus")
+        if modifier == "opener":
+            if _SUBJECT_OF.match(text, match.end()):
+                return True
+            continue
+        if _CUE_AFTER.match(text, match.end()):
             return True
         if _NOT_A_NAME_BEFORE_OF.match(text, match.end()) or _inside_ordinary_phrase(text, match.start(), match.end()):
             continue
@@ -437,8 +491,8 @@ _SLUG_NEGATION_RE = re.compile(
     r"(?P<slug>[a-z][a-z0-9-]*)\s+(?:do(?:es)?\s+not|doesn't|fails?|lacks?)\b",
     re.IGNORECASE,
 )
-_CORE_SET_CLAIM_RE = NEVER_MATCHES
-_MATRIX_LEADERS_RE = NEVER_MATCHES
+_CORE_SET_CLAIM_RE = _NEVERES
+_MATRIX_LEADERS_RE = _NEVERES
 _CRITERION_KEYWORD_TO_ID: dict[str, str] = {}
 _HEAD_SLUG_ALIASES: dict[str, str] = {}  # category data lives in the pack overlay (reference/category-pack-overlays)
 
@@ -446,9 +500,9 @@ _FEATURE_ALIASES: dict[str, str] = {}
 
 _INCLUSION_CRITERION_FEATURES: dict[str, list[str]] = {}
 
-_INCLUSION_CRITERIA_SIGNAL_RE = NEVER_MATCHES
-_ALL_SEVEN_INCLUSION_RE = NEVER_MATCHES
-_PAREN_CRITERION_SLUGS_RE = NEVER_MATCHES
+_INCLUSION_CRITERIA_SIGNAL_RE = _NEVERES
+_ALL_SEVEN_INCLUSION_RE = _NEVERES
+_PAREN_CRITERION_SLUGS_RE = _NEVERES
 
 _PROSE_POSITIVE_SIGNALS: list[tuple[re.Pattern[str], list[str]]] = []
 
@@ -545,31 +599,101 @@ def _resolve_solution_slug(
     return None
 
 
+_EVIDENCE = r"evidence\b(?!\s+(?:gaps?|files?|artifacts?|bundles?))"
 _ABSENCE_MARKER = re.compile(
-    r"\b(?:no|zero|lacks?|lacking)\s+(?:\w+\s+){0,2}(?:evidence\b(?!\s+gaps?)|claims?\b(?!\s+of\b))"
-    r"|\bunresearched\b|\bnot\s+(?:yet\s+)?researched\b|\bhard[- ]exclusions?\b",
+    rf"\b(?:no|zero|lacks?|lacking)\s+(?:[\w-]+\s+){{0,2}}(?:{_EVIDENCE}|claims?\b(?!\s+of\b))"
+    rf"|\b(?:without|missing)\s+(?:[\w-]+\s+){{0,2}}{_EVIDENCE}"
+    r"|\bunresearched\b|\bnot\s+(?:yet\s+)?researched\b",
     re.IGNORECASE,
 )
-_CLAUSE_START = re.compile(r"[;!?\n]|\.(?=\s)|,\s+and\s")
-_CLAUSE_END = re.compile(r"[;!?\n]|\.(?=\s|$)")
-_GATE_VERB = re.compile(r"\b(?:block|refus|reject|fail|prevent|den[iy]|stop|halt)\w*", re.IGNORECASE)
+_EVIDENCE_PHRASE = re.compile(r"\b(?:no|zero|without|missing)\s+(?:\w+\s+){0,2}evidence\b")
+_HARD_EXCLUSION = re.compile(r"\bhard[- ]exclusions?\b", re.IGNORECASE)
+# Two grains. A sentence-level clause (";", a sentence end, ", and") is what an absence statement without a
+# subject of its own blanks ("... as thin wrappers without per-seed evidence"). A fine clause (also a comma,
+# colon, parenthesis, dash, or ", but|while|...") is what one that names its own vendor blanks, so
+# "Silver Bullet provides X, but Deepwork has no evidence" keeps the vote of the first clause.
+_FINE_START = re.compile(r"[;!?\n,:()]|\.(?=\s)|\s[-\u2013\u2014]\s")
+_FINE_END = re.compile(r"[;!?\n()]|\.(?=\s|$)|,\s+(?:and|but|while|whereas|though|yet|although)\s")
+_SENTENCE_START = re.compile(r"[;!?\n]|\.(?=\s)|,\s+and\s")
+_SENTENCE_END = re.compile(r"[;!?\n]|\.(?=\s|$)")
+# A clause that is only the absence ("No public evidence supports it.") is about the sentence before it.
+_ANAPHORIC_LEAD = re.compile(
+    r"\s*(?:(?:and|but|though|yet|while|whereas|although|with|there\s+(?:is|are|was|were|remains?))\s+)*"
+)
+# A gate that "rejects PRs with no evidence of review" describes a feature, not a missing source. The verb
+# is a whole word and governs the marker (it stands a few words before it).
+_GATE_VERB_BEFORE = re.compile(
+    r"\b(?:blocks?|blocking|blocked|refus(?:e|es|ed|ing)|rejects?|rejecting|fails?|failing|prevents?|preventing"
+    r"|den(?:y|ies|ying)|stops?|stopping|halts?|halting)\b[^,;.:!?\n]{0,60}$",
+    re.IGNORECASE,
+)
+_NEGATION_BEFORE = re.compile(r"\b(?:not|never|unlike|except|excluding|outside|neither|nor)\b|n't\b", re.IGNORECASE)
+_VENDORS: dict[str, Any] = {"key": None, "refs": None, "inside": _NEVER, "before": _NEVER}
+
+
+def _vendor_patterns() -> tuple[re.Pattern[str], re.Pattern[str]]:
+    """(a product name anywhere, a product name ending right here) over the run's names; rebuilt when the run changes."""
+    phrases = _known_phrases()
+    key = id(phrases)
+    if _VENDORS["key"] != key:
+        names = sorted(
+            (n for n in phrases if len(n) >= 3 and n not in AMBIGUOUS_NAMES and n not in NON_VENDOR_TERMS), key=len, reverse=True
+        )
+        if names:
+            body = "|".join(re.escape(n).replace(r"\ ", r"[\s-]") for n in names)
+            inside = re.compile(rf"(?<![a-z0-9])(?:{body})(?![a-z0-9])", re.IGNORECASE)
+            before = re.compile(rf"(?<![a-z0-9])(?:{body})\s*$", re.IGNORECASE)
+        else:
+            inside = before = _NEVER
+        _VENDORS.update(key=key, refs=phrases, inside=inside, before=before)
+    return _VENDORS["inside"], _VENDORS["before"]
 
 
 def _without_absence_clauses(text: str) -> str:
     """Blank the clauses that say nothing was found ("Deepwork has no public evidence").
 
-    Only the clause that carries the marker goes; other clauses keep their votes. A gate that
-    "rejects PRs with no evidence of review" describes a feature, not a missing source.
+    A statement that names its own vendor takes only its fine clause, so a genuine positive next to it keeps its
+    vote. One that does not ("... , but there is no public evidence") takes its sentence-level clause, and when it
+    is nothing but the absence ("No public evidence supports it.") the sentence before it too. A list of hard
+    exclusions casts no votes either, unless the sentence negates it ("is not on the hard-exclusion list").
+    One pass over boundaries found once: linear in the claim length.
     """
-    for marker in list(_ABSENCE_MARKER.finditer(text)):
-        starts = [m.end() for m in _CLAUSE_START.finditer(text, 0, marker.start())]
-        begin = starts[-1] if starts else 0
-        ended = _CLAUSE_END.search(text, marker.end())
-        end = ended.start() if ended else len(text)
-        if _GATE_VERB.search(text, begin, marker.start()):
+    blank = bytearray(len(text))
+    inside, before = _vendor_patterns()
+    starts = [m.end() for m in _FINE_START.finditer(text)]
+    ends = [m.start() for m in _FINE_END.finditer(text)]
+    sentence_starts = [m.end() for m in _SENTENCE_START.finditer(text)]
+    sentence_ends = [m.start() for m in _SENTENCE_END.finditer(text)]
+
+    def clause(at: int, stop: int, opens: list[int], closes: list[int]) -> tuple[int, int, int]:
+        index = bisect.bisect_right(opens, at) - 1
+        found = bisect.bisect_left(closes, stop)
+        return index, opens[index] if index >= 0 else 0, closes[found] if found < len(closes) else len(text)
+
+    def fill(begin: int, end: int) -> None:
+        blank[begin:end] = b"\x01" * (end - begin)
+
+    for marker in _ABSENCE_MARKER.finditer(text):
+        at = marker.start()
+        if blank[at]:
             continue
-        text = text[:begin] + " " * (end - begin) + text[end:]
-    return text
+        _, begin, end = clause(at, marker.end(), starts, ends)
+        if _GATE_VERB_BEFORE.search(text, max(begin, at - 80), at):
+            continue
+        names_itself = inside.search(text, begin, end) or (begin > 0 and text[begin - 1] == ":" and before.search(text, max(0, begin - 49), begin - 1))
+        if names_itself:
+            fill(begin, end)
+            continue
+        index, begin, end = clause(at, marker.end(), sentence_starts, sentence_ends)
+        fill(begin, end)
+        if begin and _ANAPHORIC_LEAD.fullmatch(text, begin, at) and not inside.search(text, begin, end):
+            fill(sentence_starts[index - 1] if index >= 1 else 0, begin)
+    for marker in _HARD_EXCLUSION.finditer(text):
+        at = marker.start()
+        index, begin, end = clause(at, marker.end(), sentence_starts, sentence_ends)
+        if not blank[at] and not _NEGATION_BEFORE.search(text, max(begin, at - 48), at):
+            fill(begin, end)
+    return "".join(" " if flag and char != "\n" else char for flag, char in zip(blank, text))
 
 
 def _mask_feature_words_in_vendor_names(text: str) -> str:
@@ -1052,7 +1176,8 @@ def _parse_solution_lead_negative(
             _assign_rubric(support, slug, "Atomic flow catalog", False)
             _assign_rubric(support, slug, "Workflow composition", False)
         if re.search(r"hook[- ]enforced|hook enforcement|ide hook", lower):
-            if re.search(r"\bno\b|\blacks?\b|\bwithout\b", lower):
+            # "blocks PR creation without evidence of review" describes the gate; it is not a missing gate
+            if re.search(r"\bno\b|\blacks?\b|\bwithout\b", _EVIDENCE_PHRASE.sub(" ", lower)):
                 _assign_rubric(support, slug, "Hook-enforced gates", False)
         if re.search(r"\bpartial composition\b", lower):
             _assign_rubric(support, slug, "Workflow composition", True)

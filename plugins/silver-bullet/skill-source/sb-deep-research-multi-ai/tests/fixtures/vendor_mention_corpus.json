@@ -1,0 +1,609 @@
+[
+ {
+  "set": "r4_false_positive",
+  "kind": "plain_english",
+  "text": "OpenAI's Harness Engineering post describes agent-first repositories with hook-enforced gates."
+ },
+ {
+  "set": "r4_false_positive",
+  "kind": "plain_english",
+  "text": "Teams follow the Boy Scout Rule when refactoring."
+ },
+ {
+  "set": "r4_false_positive",
+  "kind": "plain_english",
+  "text": "The NVIDIA AI Factory reference design targets inference at scale."
+ },
+ {
+  "set": "r4_false_positive",
+  "kind": "plain_english",
+  "text": "Spec-driven tools follow the Abstract Factory pattern for adapters."
+ },
+ {
+  "set": "r4_false_positive",
+  "kind": "plain_english",
+  "text": "Approval comes from a VP or Director before release."
+ },
+ {
+  "set": "r4_false_positive",
+  "kind": "plain_english",
+  "text": "Netflix Conductor and Temporal are workflow engines, not SDLC orchestrators."
+ },
+ {
+  "set": "r4_false_positive",
+  "kind": "plain_english",
+  "text": "The Software Factory model treats delivery as a pipeline with audit logs."
+ },
+ {
+  "set": "r4_false_positive",
+  "kind": "plain_english",
+  "text": "Each step has a Continue button in the wizard."
+ },
+ {
+  "set": "r4_false_positive",
+  "kind": "plain_english",
+  "text": "We applied a Linear Regression baseline."
+ },
+ {
+  "set": "r4_false_positive",
+  "kind": "plain_english",
+  "text": "The tool supports Cursor Rules and AGENTS.md files."
+ },
+ {
+  "set": "r4_false_positive",
+  "kind": "plain_english",
+  "text": "In the Mission Control view, the Director agent assigns tasks to workers."
+ },
+ {
+  "set": "r4_false_positive",
+  "kind": "plain_english",
+  "text": "Agents run under a Test Harness that enforces gates."
+ },
+ {
+  "set": "r4_false_positive",
+  "kind": "plain_english",
+  "text": "## Factory Patterns and Harness Engineering"
+ },
+ {
+  "set": "r4_false_positive",
+  "kind": "plain_english",
+  "text": "Gartner calls this the Agentic Software Factory."
+ },
+ {
+  "set": "r2_false_positive",
+  "kind": "plain_english",
+  "text": "Netflix Conductor orchestrates microservices at scale."
+ },
+ {
+  "set": "r2_false_positive",
+  "kind": "plain_english",
+  "text": "Netflix Conductor supports long-running workflows."
+ },
+ {
+  "set": "r2_false_positive",
+  "kind": "plain_english",
+  "text": "The Abstract Factory provides a family of related objects."
+ },
+ {
+  "set": "r2_false_positive",
+  "kind": "plain_english",
+  "text": "The NVIDIA AI Factory delivers inference at scale."
+ },
+ {
+  "set": "r2_false_positive",
+  "kind": "plain_english",
+  "text": "Approval needs an Art Director who reviews visuals."
+ },
+ {
+  "set": "r2_false_positive",
+  "kind": "plain_english",
+  "text": "Our Technical Director has approved the release plan."
+ },
+ {
+  "set": "r2_false_positive",
+  "kind": "plain_english",
+  "text": "A VP or Director can approve the release."
+ },
+ {
+  "set": "r2_false_positive",
+  "kind": "plain_english",
+  "text": "The Executive Director will sign the contract."
+ },
+ {
+  "set": "r2_false_positive",
+  "kind": "plain_english",
+  "text": "A Test Harness runs the whole suite before merge."
+ },
+ {
+  "set": "r2_false_positive",
+  "kind": "plain_english",
+  "text": "The Software Factory model is a pipeline; the Software Factory enforces audit logs."
+ },
+ {
+  "set": "r2_false_positive",
+  "kind": "plain_english",
+  "text": "Their Boy Scout troop has a Scout Master."
+ },
+ {
+  "set": "r2_false_positive",
+  "kind": "plain_english",
+  "text": "The Mouse Cursor is hidden while typing."
+ },
+ {
+  "set": "r2_false_positive",
+  "kind": "plain_english",
+  "text": "The Text Cursor blinks in the editor."
+ },
+ {
+  "set": "r2_false_positive",
+  "kind": "plain_english",
+  "text": "Press Continue to proceed to the next step."
+ },
+ {
+  "set": "r2_false_positive",
+  "kind": "plain_english",
+  "text": "The Agentic Software Factory Enterprise tier adds SSO."
+ },
+ {
+  "set": "r2_false_positive",
+  "kind": "plain_english",
+  "text": "Boy Scout Teams meet weekly."
+ },
+ {
+  "set": "r2_false_positive",
+  "kind": "plain_english",
+  "text": "The Abstract Factory Plus pattern adds caching."
+ },
+ {
+  "set": "r2_false_positive",
+  "kind": "plain_english",
+  "text": "Daily Linear sync keeps issues current."
+ },
+ {
+  "set": "r2_false_positive",
+  "kind": "plain_english",
+  "text": "Weekly Director reviews are held on Fridays."
+ },
+ {
+  "set": "r2_false_positive",
+  "kind": "plain_english",
+  "text": "Similarly Linear Regression is a baseline."
+ },
+ {
+  "set": "r2_false_positive",
+  "kind": "plain_english",
+  "text": "Additionally Factory Patterns apply here."
+ },
+ {
+  "set": "r2_false_positive",
+  "kind": "plain_english",
+  "text": "Like Linear Regression, it is a baseline."
+ },
+ {
+  "set": "r2_false_positive",
+  "kind": "plain_english",
+  "text": "Unlike Abstract Factory, the builder pattern defers construction."
+ },
+ {
+  "set": "r2_false_positive",
+  "kind": "plain_english",
+  "text": "Today Director-level approval is required."
+ },
+ {
+  "set": "r2_false_positive",
+  "kind": "plain_english",
+  "text": "Install Harness Engineering practices across repos."
+ },
+ {
+  "set": "r2_false_positive",
+  "kind": "plain_english",
+  "text": "First Linear then quadratic scaling is observed."
+ },
+ {
+  "set": "r2_false_positive",
+  "kind": "plain_english",
+  "text": "Next Continue with the setup wizard."
+ },
+ {
+  "set": "r2_false_positive",
+  "kind": "plain_english",
+  "text": "Finally Sweep the floor of stale branches."
+ },
+ {
+  "set": "r2_false_positive",
+  "kind": "plain_english",
+  "text": "Plus Director approval is needed."
+ },
+ {
+  "set": "r2_false_positive",
+  "kind": "plain_english",
+  "text": "The Director role enforces the review gates."
+ },
+ {
+  "set": "r2_false_positive",
+  "kind": "plain_english",
+  "text": "Approval comes from the Creative Director, who ships the brand guide."
+ },
+ {
+  "set": "round1_recall",
+  "kind": "vendor",
+  "slug": "cursor",
+  "text": "Unlike Cursor, Silver Bullet enforces gates."
+ },
+ {
+  "set": "round1_recall",
+  "kind": "vendor",
+  "slug": "cursor",
+  "text": "Install Cursor and enable the plugin."
+ },
+ {
+  "set": "round1_recall",
+  "kind": "vendor",
+  "slug": "cursor",
+  "text": "Like Cursor, Windsurf ships an IDE."
+ },
+ {
+  "set": "round1_recall",
+  "kind": "vendor",
+  "slug": "director",
+  "text": "Unlike Director, cc10x has no hooks."
+ },
+ {
+  "set": "round1_recall",
+  "kind": "vendor",
+  "slug": "director",
+  "text": "Besides Director, few tools enforce gates."
+ },
+ {
+  "set": "round1_recall",
+  "kind": "vendor",
+  "slug": "director",
+  "text": "Notably Director enforces review gates."
+ },
+ {
+  "set": "round1_recall",
+  "kind": "vendor",
+  "slug": "factory-ai",
+  "text": "Factory Droids ship PRs from tickets."
+ },
+ {
+  "set": "round1_recall",
+  "kind": "vendor",
+  "slug": "cursor",
+  "text": "Cursor Composer edits many files."
+ },
+ {
+  "set": "round1_recall",
+  "kind": "vendor",
+  "slug": "cursor",
+  "text": "Teams run Cursor agents in the cloud."
+ },
+ {
+  "set": "round1_recall",
+  "kind": "vendor",
+  "slug": "director",
+  "text": "Director agents enforce review gates.",
+  "known_miss": true
+ },
+ {
+  "set": "round1_recall",
+  "kind": "vendor",
+  "slug": "cursor",
+  "text": "The Cursor model picker offers GPT and Claude."
+ },
+ {
+  "set": "round1_recall",
+  "kind": "vendor",
+  "slug": "linear",
+  "text": "Silver Bullet reads Linear Issues and GitHub PRs.",
+  "known_miss": true
+ },
+ {
+  "set": "round1_recall",
+  "kind": "vendor",
+  "slug": "director",
+  "text": "Conductor or Director can enforce the gates."
+ },
+ {
+  "set": "round1_recall",
+  "kind": "vendor",
+  "slug": "cursor",
+  "text": "Claude Code and Cursor support hooks."
+ },
+ {
+  "set": "round1_recall",
+  "kind": "vendor",
+  "slug": "director",
+  "text": "Director and Conductor enforce gates.",
+  "known_miss": true
+ },
+ {
+  "set": "round1_recall",
+  "kind": "vendor",
+  "slug": "director",
+  "text": "Anthropic engineers praised Director for gates."
+ },
+ {
+  "set": "round1_recall",
+  "kind": "vendor",
+  "slug": "conductor",
+  "text": "Melty Conductor runs parallel Claude Code agents."
+ },
+ {
+  "set": "round1_recall",
+  "kind": "vendor",
+  "slug": "conductor",
+  "text": "Conductor runs parallel Claude Code agents."
+ },
+ {
+  "set": "round1_recall",
+  "kind": "vendor",
+  "slug": "director",
+  "text": "Director ships hook-enforced gates."
+ },
+ {
+  "set": "round1_recall",
+  "kind": "vendor",
+  "slug": "director",
+  "text": "Director's hooks enforce gates."
+ },
+ {
+  "set": "round1_recall",
+  "kind": "vendor",
+  "slug": "director",
+  "text": "Using Director, teams enforce gates."
+ },
+ {
+  "set": "round1_recall",
+  "kind": "vendor",
+  "slug": "cursor",
+  "text": "Most teams pair Codex with Cursor IDE."
+ },
+ {
+  "set": "round1_recall",
+  "kind": "vendor",
+  "slug": "cursor",
+  "text": "Most teams adopt Cursor Pro."
+ },
+ {
+  "set": "round1_recall",
+  "kind": "vendor",
+  "slug": "director",
+  "text": "Tools such as Director Pro enforce gates."
+ },
+ {
+  "set": "round1_recall",
+  "kind": "vendor",
+  "slug": "director",
+  "text": "Compare Director and cc10x."
+ },
+ {
+  "set": "round1_recall",
+  "kind": "vendor",
+  "slug": "director",
+  "text": "Lead or Director roles are not products, but Director the tool enforces gates."
+ },
+ {
+  "set": "absence_keep",
+  "kind": "absence_keep",
+  "text": "Silver Bullet provides workflow composition; Deepwork has no public evidence.",
+  "slug": "silver-bullet"
+ },
+ {
+  "set": "absence_keep",
+  "kind": "absence_keep",
+  "text": "Silver Bullet provides workflow composition, and Deepwork has no public evidence.",
+  "slug": "silver-bullet"
+ },
+ {
+  "set": "absence_keep",
+  "kind": "absence_keep",
+  "text": "Silver Bullet provides workflow composition, but Deepwork has no public evidence.",
+  "slug": "silver-bullet"
+ },
+ {
+  "set": "absence_keep",
+  "kind": "absence_keep",
+  "text": "Silver Bullet provides workflow composition, while Deepwork has no public evidence.",
+  "slug": "silver-bullet"
+ },
+ {
+  "set": "absence_keep",
+  "kind": "absence_keep",
+  "text": "Silver Bullet provides workflow composition (Deepwork: no public evidence).",
+  "slug": "silver-bullet"
+ },
+ {
+  "set": "absence_keep",
+  "kind": "absence_keep",
+  "text": "Silver Bullet provides workflow composition. Deepwork has no public evidence.",
+  "slug": "silver-bullet"
+ },
+ {
+  "set": "absence_keep",
+  "kind": "absence_keep",
+  "text": "Silver Bullet provides workflow composition - Deepwork has no public evidence.",
+  "slug": "silver-bullet"
+ },
+ {
+  "set": "absence_keep",
+  "kind": "absence_keep",
+  "text": "Silver Bullet provides workflow composition: Deepwork has no public evidence.",
+  "slug": "silver-bullet"
+ },
+ {
+  "set": "absence_keep",
+  "kind": "absence_keep",
+  "text": "Director provides workflow composition, and no claims of SSO were found.",
+  "slug": "director"
+ },
+ {
+  "set": "absence_keep",
+  "kind": "absence_keep",
+  "text": "Silver Bullet provides hook-enforced gates and blocks PR creation without evidence of review.",
+  "slug": "silver-bullet"
+ },
+ {
+  "set": "absence_keep",
+  "kind": "absence_keep",
+  "text": "Silver Bullet provides hook-enforced gates that reject PRs with no evidence of review.",
+  "slug": "silver-bullet"
+ },
+ {
+  "set": "absence_keep",
+  "kind": "absence_keep",
+  "text": "Silver Bullet provides hook-enforced gates and is not on the hard-exclusion list.",
+  "slug": "silver-bullet"
+ },
+ {
+  "set": "absence_keep",
+  "kind": "absence_keep",
+  "text": "Unlike the hard exclusions, Silver Bullet provides workflow composition.",
+  "slug": "silver-bullet"
+ },
+ {
+  "set": "absence_keep",
+  "kind": "absence_keep",
+  "text": "Director, which is not a hard exclusion, provides workflow composition.",
+  "slug": "director",
+  "known_miss": true
+ },
+ {
+  "set": "absence_keep",
+  "kind": "absence_keep",
+  "text": "Hard exclusions: Sweep, Windsurf. Silver Bullet provides workflow composition.",
+  "slug": "silver-bullet"
+ },
+ {
+  "set": "absence_keep",
+  "kind": "absence_keep",
+  "text": "Silver Bullet provides workflow composition, Deepwork has no evidence.",
+  "slug": "silver-bullet"
+ },
+ {
+  "set": "absence_drop",
+  "kind": "absence_drop",
+  "text": "Deepwork claims workflow composition without public evidence.",
+  "slug": "deepwork"
+ },
+ {
+  "set": "absence_drop",
+  "kind": "absence_drop",
+  "text": "Deepwork advertises workflow composition, but there is no public evidence.",
+  "slug": "deepwork"
+ },
+ {
+  "set": "absence_drop",
+  "kind": "absence_drop",
+  "text": "Deepwork advertises workflow composition; there is no public evidence for this.",
+  "slug": "deepwork"
+ },
+ {
+  "set": "absence_drop",
+  "kind": "absence_drop",
+  "text": "Deepwork advertises workflow composition. No public evidence supports it.",
+  "slug": "deepwork"
+ },
+ {
+  "set": "absence_drop",
+  "kind": "absence_drop",
+  "text": "Deepwork markets workflow composition, missing evidence.",
+  "slug": "deepwork"
+ },
+ {
+  "set": "absence_drop",
+  "kind": "absence_drop",
+  "text": "Reviewers rejected the claim that Deepwork provides workflow composition: no evidence.",
+  "slug": "deepwork"
+ },
+ {
+  "set": "absence_drop",
+  "kind": "absence_drop",
+  "text": "Deepwork provides workflow composition (no public evidence).",
+  "slug": "deepwork"
+ },
+ {
+  "set": "absence_drop",
+  "kind": "absence_drop",
+  "text": "Hard exclusions such as Sweep provide workflow composition.",
+  "slug": "sweep"
+ },
+ {
+  "set": "absence_drop",
+  "kind": "absence_drop",
+  "text": "Deepwork provides workflow composition, and zero independent evidence exists.",
+  "slug": "deepwork"
+ },
+ {
+  "set": "absence_drop",
+  "kind": "absence_drop",
+  "text": "Deepwork provides workflow composition, though unresearched.",
+  "slug": "deepwork"
+ },
+ {
+  "set": "absence_drop",
+  "kind": "absence_drop",
+  "text": "Deepwork, built on a blockchain ledger, provides workflow composition with no evidence.",
+  "slug": "deepwork"
+ },
+ {
+  "set": "absence_keep",
+  "kind": "absence_keep",
+  "slug": "silver-bullet",
+  "text": "Silver Bullet provides hook-enforced gates that refuse delivery on missing evidence files."
+ },
+ {
+  "set": "absence_keep",
+  "kind": "absence_keep",
+  "slug": "silver-bullet",
+  "text": "Silver Bullet supports workflow composition with zero claims of regressions."
+ },
+ {
+  "set": "absence_keep",
+  "kind": "absence_keep",
+  "slug": "silver-bullet",
+  "text": "Silver Bullet provides workflow composition and rejects PRs with no evidence of review."
+ },
+ {
+  "set": "absence_keep",
+  "kind": "absence_keep",
+  "slug": "silver-bullet",
+  "text": "Silver Bullet provides workflow composition, and the gate blocks merges without evidence of review."
+ },
+ {
+  "set": "absence_keep",
+  "kind": "absence_keep",
+  "slug": "silver-bullet",
+  "text": "Silver Bullet provides workflow composition; Barkain Workflow Orchestrator does not."
+ },
+ {
+  "set": "absence_keep",
+  "kind": "absence_keep",
+  "slug": "silver-bullet",
+  "text": "Deepwork has no public evidence of workflow composition; Silver Bullet provides workflow composition."
+ },
+ {
+  "set": "absence_drop",
+  "kind": "absence_drop",
+  "slug": "deepwork",
+  "text": "Deepwork claims workflow composition, without evidence."
+ },
+ {
+  "set": "absence_drop",
+  "kind": "absence_drop",
+  "slug": "deepwork",
+  "text": "Deepwork has no evidence of workflow composition."
+ },
+ {
+  "set": "absence_drop",
+  "kind": "absence_drop",
+  "slug": "deepwork",
+  "text": "Deepwork, a blockchain startup, provides workflow composition with no evidence."
+ },
+ {
+  "set": "absence_keep",
+  "kind": "absence_keep",
+  "slug": "silver-bullet",
+  "text": "Silver Bullet provides workflow composition and, unlike Sweep, is not a hard exclusion."
+ }
+]

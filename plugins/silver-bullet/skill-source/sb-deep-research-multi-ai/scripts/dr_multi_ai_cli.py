@@ -78,6 +78,20 @@ def force_refusal(output_root: Path) -> str | None:
     return None
 
 
+_SCOPE_HEAD = "# Research scope\n\nResearch topic: "
+
+
+def _scope_is_for(scope: str, topic: str) -> bool:
+    """True when a generated scope.md was written for exactly `topic`: the whole topic, however many lines.
+
+    dr_live_runner writes the topic, a newline, and optionally a blank line plus the pack definition.
+    """
+    if not scope.startswith(_SCOPE_HEAD):
+        return False
+    rest = scope[len(_SCOPE_HEAD):]
+    return rest == f"{topic}\n" or rest.startswith(f"{topic}\n\n")
+
+
 # The keys dr_live_runner.prepare_run_inputs writes into an automatic profile. Any other key, or a
 # finished interview, means the user followed the profile's own note and refined it.
 _AUTO_PROFILE_KEYS = frozenset({"category", "research_type", "interview_complete", "auto_assumed", "note"})
@@ -96,9 +110,7 @@ def _generated_for_old_query(path: Path, query: str) -> bool:
         return False
     topic = query.strip()
     if path.name == "scope.md":
-        return text.startswith("# Research scope\n\nResearch topic: ") and not text.startswith(
-            f"# Research scope\n\nResearch topic: {topic}\n"
-        )
+        return text.startswith(_SCOPE_HEAD) and not _scope_is_for(text, topic)
     try:
         profile = json.loads(text)
         auto = bool(profile.get("auto_assumed"))  # (a non-object profile raises here: it is the user's)
@@ -115,13 +127,13 @@ def _same_query(previous: Path, query: str) -> bool:
         recorded = json.loads((previous / "run_manifest.json").read_text(encoding="utf-8")).get("query")
     except (OSError, ValueError, AttributeError):
         recorded = None
-    if isinstance(recorded, str) and recorded.strip() == topic:
-        return True
+    if isinstance(recorded, str):
+        return recorded.strip() == topic  # the manifest records the query: it decides alone
     try:
         scope = (previous / "scope.md").read_text(encoding="utf-8")
     except OSError:
         return False
-    return scope.startswith(f"# Research scope\n\nResearch topic: {topic}\n")
+    return _scope_is_for(scope, topic)
 
 
 def carry_over_user_inputs(previous: Path, output_root: Path, query: str = "") -> list[str]:
