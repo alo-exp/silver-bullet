@@ -155,7 +155,7 @@ class BuildChartTests(TmpCase):
 
     def test_chart_cap_grows_with_market(self):
         many = {f"s{i:02d}" for i in range(15)}
-        chart = self.build(market_slugs=many, support={s: dict(GATES) for s in many})
+        chart = self.build(market_slugs=many, pack=None, support={s: dict(GATES) for s in many})
         self.assertEqual(len(chart["mq_data"]), 15)
 
     def test_chart_cap_from_pack_market(self):

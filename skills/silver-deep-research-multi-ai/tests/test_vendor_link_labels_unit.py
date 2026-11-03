@@ -253,6 +253,10 @@ class SsrfGuardTests(unittest.TestCase):
         # a public name that resolves to an internal address (DNS pointing inward) is refused too
         self.assertEqual(self.reason("https://evil.example/", ["93.184.216.34", "10.1.2.3"]), "non-public-address:10.1.2.3")
         self.assertIsNone(self.reason("https://vendor.example/", ["93.184.216.34"]))
+        # shared address space (tailnets, Alibaba metadata) and IPv4-mapped IPv6 are not public
+        for url in ("http://100.64.0.1/", "http://100.100.100.200/latest/meta-data/", "http://[::ffff:10.0.0.1]/"):
+            self.assertTrue(str(self.reason(url)).startswith("non-public-address:"), url)
+        self.assertIsNone(self.reason("https://mapped.example/", ["::ffff:93.184.216.34"]))
         self.assertIsNone(self.reason("http://93.184.216.34/"))
 
     def test_scheme_credentials_and_unresolvable(self):
