@@ -31,8 +31,18 @@ source "${SCRIPT_DIR}/lib/pre-release-host-isolation.sh"
 source "${SCRIPT_DIR}/lib/agent-bundle-paths.sh"
 
 # Pin smoke root once for the whole run (subscripts must not create sibling roots).
-SB_PRE_RELEASE_SMOKE_ROOT="$(sb_smoke_root)"
-export SB_PRE_RELEASE_SMOKE_ROOT
+sb_smoke_init_root
+
+# The operator's runtime state dir, resolved before any host isolation replaces
+# HOME: the success marker is the one thing this run writes there, at the end.
+OPERATOR_STATE_DIR=""
+if [[ -f "${REPO_ROOT}/hooks/lib/runtime-paths.sh" ]]; then
+  OPERATOR_STATE_DIR="$(
+    # shellcheck source=hooks/lib/runtime-paths.sh
+    source "${REPO_ROOT}/hooks/lib/runtime-paths.sh" >/dev/null 2>&1
+    printf '%s' "${SB_RUNTIME_STATE_DIR:-}"
+  )"
+fi
 
 HOST_FILTER="${1:-all}"
 if [[ "$HOST_FILTER" == --host ]]; then
@@ -76,9 +86,8 @@ assert_invoke_route() {
 
 smoke_codex() {
   printf '\n=== Codex host smoke (isolated) ===\n'
-  assert_invoke_route "codex" "$(sb_agent_bundle_root "$REPO_ROOT" codex)"
-
   sb_smoke_begin_codex
+  assert_invoke_route "codex" "$(sb_agent_bundle_root "$REPO_ROOT" codex)"
   local root
   root="$(sb_smoke_host_root codex)"
   printf '  isolated root: %s\n' "$root"
@@ -98,6 +107,7 @@ smoke_codex() {
 
 smoke_claude() {
   printf '\n=== Claude host smoke (isolated) ===\n'
+  sb_smoke_begin_claude
   assert_invoke_route "claude" "${REPO_ROOT}/agents/claude"
 
   local claude_bin="${CLAUDE_BIN:-$(command -v claude 2>/dev/null || true)}"
@@ -106,7 +116,6 @@ smoke_claude() {
     return
   fi
 
-  sb_smoke_begin_claude
   local root
   root="$(sb_smoke_host_root claude)"
   export CLAUDE_BIN="$claude_bin"
@@ -127,9 +136,8 @@ smoke_claude() {
 
 smoke_cursor() {
   printf '\n=== Cursor host smoke (isolated) ===\n'
-  assert_invoke_route "cursor" "$(sb_agent_bundle_root "$REPO_ROOT" cursor)"
-
   sb_smoke_begin_cursor
+  assert_invoke_route "cursor" "$(sb_agent_bundle_root "$REPO_ROOT" cursor)"
   export SB_CURSOR_SMOKE_USE_CURRENT_ENV=1
   printf '  isolated fake-home: %s
 ' "${SB_SMOKE_CURSOR_FAKE_HOME:-$HOME}"
@@ -155,7 +163,7 @@ smoke_cursor() {
 
 printf '=== Pre-release host smoke ===\n'
 printf 'REPO_ROOT=%s\n' "$REPO_ROOT"
-printf 'SB_PRE_RELEASE_SMOKE_ROOT=%s\n' "$(sb_smoke_root)"
+printf 'SB_PRE_RELEASE_SMOKE_ROOT=%s\n' "$SB_PRE_RELEASE_SMOKE_ROOT"
 
 printf '\n=== Host-agnostic core (SB contract) ===\n'
 if bash "${REPO_ROOT}/scripts/validate-host-agnostic-core.sh" --repo-root "$REPO_ROOT"; then
@@ -198,23 +206,19 @@ printf '\nPre-release host smoke: %s passed, %s failed, %s skipped (%s checks)\n
   "$PASS" "$FAIL" "$SKIP" "$total"
 
 if [[ "$FAIL" -eq 0 ]]; then
+  # The marker is evidence for the release (docs/internal/pre-release-quality-gate.md):
+  # it must outlive the smoke root, so it goes to the operator's state dir resolved
+  # at startup. A run with no resolvable state dir keeps it in the (removed) root.
   marker_root="$(sb_smoke_host_root codex)"
   marker_file="${marker_root}/.silver-bullet/pre-release-host-smoke"
   mkdir -p "$(dirname "$marker_file")"
   printf 'hosts=codex,cursor,claude\nstructural=validate-host-skill-surface\ncursor_auth=env-api-key-memory\ncursor_isolation=fake-home,CURSOR_CONFIG_DIR,--plugin-dir,--workspace\n' >"$marker_file"
   printf 'Wrote isolated marker %s\n' "$marker_file"
 
-  if [[ -f "${REPO_ROOT}/hooks/lib/runtime-paths.sh" ]]; then
-    # shellcheck source=hooks/lib/runtime-paths.sh
-    source "${REPO_ROOT}/hooks/lib/runtime-paths.sh"
-    mkdir -p "$(dirname "${SB_RUNTIME_STATE_DIR}/pre-release-host-smoke")"
-    dest_marker="${SB_RUNTIME_STATE_DIR}/pre-release-host-smoke"
-    if [[ "$marker_file" -ef "$dest_marker" ]]; then
-      printf 'Marker already at %s (isolated runtime state)\n' "$dest_marker"
-    else
-      cp "$marker_file" "$dest_marker"
-      printf 'Copied marker to %s\n' "$dest_marker"
-    fi
+  if [[ -n "$OPERATOR_STATE_DIR" ]]; then
+    mkdir -p "$OPERATOR_STATE_DIR"
+    cp "$marker_file" "${OPERATOR_STATE_DIR}/pre-release-host-smoke"
+    printf 'Copied marker to %s\n' "${OPERATOR_STATE_DIR}/pre-release-host-smoke"
   fi
 fi
 

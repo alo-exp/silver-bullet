@@ -179,7 +179,20 @@ hd_happy claude
 echo '{}' >"$HOME/.claude/settings.json"
 run -- "$HD_PROJ"
 assert_contains "claude settings without hooks" "$TL_OUT" "FAIL: D4 — Claude settings.json missing SB hook entries"
+# D4 follows the host's own config redirects
+hd_happy claude
+mkdir -p "$TL_TMP/claude-cfg"; echo '{"hooks":"silver-bullet"}' >"$TL_TMP/claude-cfg/settings.json"; echo '{}' >"$HOME/.claude/settings.json"
+run CLAUDE_CONFIG_DIR="$TL_TMP/claude-cfg" -- "$HD_PROJ"
+echo '{"hooks":"silver-bullet","path":"/home/u/.codex/plugins/cache/x"}' >"$TL_TMP/claude-cfg/settings.json"
+run CLAUDE_CONFIG_DIR="$TL_TMP/claude-cfg" -- "$HD_PROJ"
+assert_contains "D13 reads the redirected settings.json too" "$TL_OUT" "FAIL: D13 — $TL_TMP/claude-cfg/settings.json contains foreign host plugin paths"
+echo '{"hooks":"silver-bullet"}' >"$TL_TMP/claude-cfg/settings.json"
+run CLAUDE_CONFIG_DIR="$TL_TMP/claude-cfg" -- "$HD_PROJ"
+assert_contains "CLAUDE_CONFIG_DIR settings.json is audited" "$TL_OUT" "PASS: D4 — Claude settings.json references silver-bullet hooks"
 hd_happy codex
+mkdir -p "$TL_TMP/codex-cfg"; echo '[plugins."silver-bullet@alo-labs-codex"]' >"$TL_TMP/codex-cfg/config.toml"; rm -f "$HOME/.codex/config.toml"
+cx CODEX_HOME="$TL_TMP/codex-cfg" -- "$HD_PROJ"
+assert_contains "CODEX_HOME config.toml is audited" "$TL_OUT" "PASS: D4 — Codex config.toml references silver-bullet hooks"
 rm -f -- "${HOME:?}/.codex/config.toml"
 cx -- "$HD_PROJ"
 assert_contains "codex config.toml missing" "$TL_OUT" "FAIL: D4 — Codex config.toml missing SB hook entries"
@@ -240,7 +253,11 @@ hd_happy claude
 mkdir -p "$HD_PROJ/templates"
 printf '{"config_version":"0.9.9"}\n' >"$HD_PROJ/templates/silver-bullet.config.json.default"
 run -- "$HD_PROJ"
-assert_contains "project template overrides the repo template" "$TL_OUT" "PASS: D6 — config_version $HD_VER (template 0.9.9)"
+assert_contains "a project-supplied template never lowers the expected version" "$TL_OUT" "PASS: D6 — config_version $HD_VER (template $HD_VER)"
+hd_cfg '{"sb_initiated":true,"config_version":"0.9.9"}'
+run -- "$HD_PROJ"
+assert_contains "a stale project config still fails against the plugin template" "$TL_OUT" "FAIL: D6 — project config_version 0.9.9 < template $HD_VER"
+assert_contains "D2 compares against the plugin template too" "$TL_OUT" "PASS: D2 — silver-bullet@alo-labs version $HD_VER"
 rm -rf -- "${HD_PROJ:?}/templates"
 rm -f -- "${HD_ST:?}/templates/silver-bullet.config.json.default"
 hd_cfg '{"sb_initiated":true,"config_version":"1.2.3"}'
@@ -252,15 +269,26 @@ assert_contains "0.0.0 when neither template nor package.json exists" "$TL_OUT" 
 hd_stage
 hd_happy claude
 
-# ---------- D7: template parity ----------
-run STUB_RC_PARITY=1 -- "$HD_PROJ"
-assert_contains "parity failure" "$TL_OUT" "FAIL: D7 — template parity test failed"
-rm -f -- "${HD_ST:?}/tests/scripts/test-silver-bullet-template-parity.sh"
+# ---------- D7: the project's silver-bullet.md against the plugin template ----------
 run -- "$HD_PROJ"
-assert_contains "parity script missing" "$TL_OUT" "WARN: D7 — parity test script not found; skipped"
-printf 'exit 0\n' >"$HD_ST/tests/scripts/test-silver-bullet-template-parity.sh"
+assert_contains "complete project silver-bullet.md" "$TL_OUT" "PASS: D7 — project silver-bullet.md has every template section"
+echo '# SB' >"$HD_PROJ/silver-bullet.md"
 run -- "$HD_PROJ"
-assert_contains "non-executable parity script still runs" "$TL_OUT" "PASS: D7 — silver-bullet.md template parity test passed"
+assert_eq "a broken project silver-bullet.md fails the audit" "1" "$TL_STATUS"
+assert_contains "broken project silver-bullet.md fails D7" "$TL_OUT" "FAIL: D7 — project silver-bullet.md is missing template sections (§0, §1, §2"
+hd_write_sb_md "$HD_PROJ/silver-bullet.md"
+grep -v '^## 3a\. ' "$HD_PROJ/silver-bullet.md" >"$TL_TMP/sb.md" && mv "$TL_TMP/sb.md" "$HD_PROJ/silver-bullet.md"
+run -- "$HD_PROJ"
+assert_contains "one missing section is named" "$TL_OUT" "missing template sections (§3a) — run /sb:init to update"
+rm -f -- "${HD_PROJ:?}/silver-bullet.md"
+run -- "$HD_PROJ"
+assert_contains "no project silver-bullet.md" "$TL_OUT" "FAIL: D7 — no silver-bullet.md to compare under $HD_PROJ"
+hd_happy claude
+rm -f -- "${HD_ST:?}/templates/silver-bullet.md.base"
+run -- "$HD_PROJ"
+assert_contains "plugin template missing" "$TL_OUT" "WARN: D7 — plugin silver-bullet.md template not found; skipped"
+hd_stage
+hd_happy claude
 
 # ---------- D8: Cursor rule ----------
 hd_happy cursor

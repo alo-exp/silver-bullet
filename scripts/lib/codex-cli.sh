@@ -1,6 +1,55 @@
 #!/usr/bin/env bash
 # Canonical Codex CLI resolution for scripts/ and tests/live/ harnesses.
 
+# _sb_codex_reports_version <path>: <path> is an executable file whose
+# `--version` first line is the Codex CLI product line (codex-cli X.Y.Z).
+_sb_codex_reports_version() {
+  local out
+  [[ -f "$1" && -x "$1" ]] || return 1
+  out="$("$1" --version 2>/dev/null)" || return 1
+  out="${out%%$'\n'*}"
+  [[ "$out" =~ ^codex(-cli)?[[:space:]]+v?[0-9] ]]
+}
+
+# _sb_codex_npm_native <realpath-of-codex.js>: the vendored native binary of an
+# npm install (@openai/codex/bin/codex.js -> @openai/codex/vendor/<triple>/codex/codex)
+# that runs on this machine.
+_sb_codex_npm_native() {
+  local pkg candidate
+  pkg="$(dirname "$(dirname "$1")")"
+  [[ "$(basename "$pkg")" == codex && "$(basename "$(dirname "$pkg")")" == "@openai" ]] || return 1
+  for candidate in "$pkg"/vendor/*/codex/codex; do
+    if _sb_codex_reports_version "$candidate"; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+
+# _sb_codex_accept <path>: print the Codex CLI that <path> stands for. A binary
+# is judged by what it is: its real name is codex, it is an npm shim whose
+# vendored native binary runs, or it reports a Codex version (versioned or
+# arch-suffixed package-manager binaries such as codex-aarch64-apple-darwin).
+_sb_codex_accept() {
+  local candidate="$1" real native
+  [[ -f "$candidate" && -x "$candidate" ]] || return 1
+  real="$(python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$candidate")"
+  if [[ "$(basename "$real")" == codex ]]; then
+    printf '%s\n' "$candidate"
+    return 0
+  fi
+  if [[ "$real" == *.js ]] && native="$(_sb_codex_npm_native "$real")"; then
+    printf '%s\n' "$native"
+    return 0
+  fi
+  if _sb_codex_reports_version "$candidate"; then
+    printf '%s\n' "$candidate"
+    return 0
+  fi
+  return 1
+}
+
 resolve_native_codex_cli_path() {
   local requested="${1:-${CODEX_BIN:-}}"
   local candidate=""
@@ -10,8 +59,7 @@ resolve_native_codex_cli_path() {
     if [[ -z "$candidate" ]]; then
       candidate="$requested"
     fi
-    if [[ -x "$candidate" && "$(basename "$candidate")" == "codex" ]]; then
-      printf '%s\n' "$candidate"
+    if _sb_codex_accept "$candidate"; then
       return 0
     fi
   fi
@@ -20,21 +68,14 @@ resolve_native_codex_cli_path() {
   local -a app_candidates=()
   IFS=: read -r -a app_candidates <<<"${SB_CODEX_APP_CANDIDATES:-/Applications/ChatGPT.app/Contents/Resources/codex:/Applications/Codex.app/Contents/Resources/codex}"
   for candidate in "${app_candidates[@]}"; do
-    if [[ -x "$candidate" && "$(basename "$candidate")" == "codex" ]]; then
+    if [[ -f "$candidate" && -x "$candidate" && "$(basename "$candidate")" == "codex" ]]; then
       printf '%s\n' "$candidate"
       return 0
     fi
   done
 
   candidate="$(command -v codex 2>/dev/null || true)"
-  if [[ -n "$candidate" && -x "$candidate" && "$(basename "$(python3 - "$candidate" <<'PY'
-import os
-import sys
-
-print(os.path.realpath(sys.argv[1]))
-PY
-)")" == "codex" ]]; then
-    printf '%s\n' "$candidate"
+  if [[ -n "$candidate" ]] && _sb_codex_accept "$candidate"; then
     return 0
   fi
 

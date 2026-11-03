@@ -213,8 +213,11 @@ fi
 # Env var override for branch file — allows tests to mock branch without
 # touching the live host runtime branch file.
 branch_file="${SILVER_BULLET_BRANCH_FILE:-$branch_file}"
-# Security: validate path stays within the host runtime state root
-if ! sb_runtime_path_is_state_scoped "$branch_file"; then
+# Security: validate path stays within the host runtime state root. Use the resolved spelling
+# (the one hooks/lib/branch-scope.sh derives) so every read and write names the same file.
+if resolved_branch_file="$(sb_runtime_state_path "$branch_file" 2>/dev/null)"; then
+  branch_file="$resolved_branch_file"
+else
   branch_file="${SB_STATE_DIR}/branch"
 fi
 
@@ -271,7 +274,7 @@ if [[ "$sb_should_mutate" == true && -n "$current_branch" && ( ! -f "$branch_fil
   # without wiping state.
   sb_guard_nofollow "$branch_file" 2>/dev/null
   if declare -f sb_branch_scope_write >/dev/null 2>&1; then
-    sb_branch_scope_write "$current_branch" "$current_git_toplevel"
+    sb_branch_scope_write "$current_branch" "$current_git_toplevel" "$branch_file"
   else
     printf '%s\n' "$current_branch" 2>/dev/null >"$branch_file" || true
   fi
@@ -313,7 +316,7 @@ elif [[ "$sb_should_mutate" == true && -n "$current_branch" && -n "$stored_branc
   fi
   sb_guard_nofollow "$branch_file" 2>/dev/null
   if declare -f sb_branch_scope_write >/dev/null 2>&1; then
-    sb_branch_scope_write "$current_branch" "$current_git_toplevel"
+    sb_branch_scope_write "$current_branch" "$current_git_toplevel" "$branch_file"
   else
     printf '%s\n' "$current_branch" 2>/dev/null >"$branch_file" || true
   fi

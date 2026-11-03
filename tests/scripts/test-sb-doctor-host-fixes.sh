@@ -11,12 +11,13 @@ cd "$TL_TMP"
 unset SB_DOCTOR_FIX SB_DOCTOR_FIX_SCOPE SB_DOCTOR_DEEP SB_DOCTOR_DRY_RUN SB_DOCTOR_FORMAT SB_DOCTOR_RECONCILER SB_DOCTOR_ASSUME_YES SB_DOCTOR_STUB_HOST_INSTALL
 hd_stage
 hd_happy claude
-C='SILVER_BULLET_RUNTIME=claude'
-run() { hd_run "$C" "$@"; }
-CU='SILVER_BULLET_RUNTIME=cursor'
-cu() { hd_run "$CU" "$@"; }
-CX='SILVER_BULLET_RUNTIME=codex'
-cx() { hd_run "$CX" "$@"; }
+# these cases exercise the repair dispatch, so the user's confirmation is given (see test-sb-doctor-reconciler.sh for the refusal)
+C='SILVER_BULLET_RUNTIME=claude SB_DOCTOR_ASSUME_YES=1'
+run() { hd_run $C "$@"; }
+CU='SILVER_BULLET_RUNTIME=cursor SB_DOCTOR_ASSUME_YES=1'
+cu() { hd_run $CU "$@"; }
+CX='SILVER_BULLET_RUNTIME=codex SB_DOCTOR_ASSUME_YES=1'
+cx() { hd_run $CX "$@"; }
 CACHE="$HOME/.claude/plugins/cache/alo-labs/silver-bullet"
 
 # The coordinator keeps its mutex state per project and session (stack-compression-mutex.d/...).
@@ -50,7 +51,7 @@ assert_not_contains "local scope skips host installs" "$(hd_logs)" "install-clau
 run STUB_RC_SURFACE_CACHE=1 STUB_RC_INSTALL=1 -- --fix "$HD_PROJ"
 assert_contains "failing install script is tolerated" "$TL_OUT" "sb-doctor: re-running checks after --fix"
 # unknown host: no installer to run
-hd_run SILVER_BULLET_RUNTIME=opencode -- --fix "$HD_PROJ"
+hd_run SB_DOCTOR_ASSUME_YES=1 SILVER_BULLET_RUNTIME=opencode -- --fix "$HD_PROJ"
 assert_not_contains "no installer for an unknown host" "$(hd_logs)" "install-"
 # installer not executable
 chmod -x "$HD_ST/scripts/install-claude.sh"
@@ -84,7 +85,7 @@ chmod -x "$HD_ST/scripts/install-claude.sh"
 run -- --fix "$HD_PROJ"
 assert_contains "D4 without an executable installer still re-runs" "$TL_OUT" "re-running checks after --fix"
 chmod +x "$HD_ST/scripts/install-claude.sh"
-hd_run SILVER_BULLET_RUNTIME=opencode -- --fix "$HD_PROJ"
+hd_run SB_DOCTOR_ASSUME_YES=1 SILVER_BULLET_RUNTIME=opencode -- --fix "$HD_PROJ"
 assert_contains "D4 on an unknown host re-runs without installing" "$TL_OUT" "re-running checks after --fix"
 
 # the test seam records instead of installing
@@ -106,7 +107,7 @@ hd_happy claude
 echo '{}' >"$HOME/.claude/settings.json"
 run STUB_RC_INSTALL=1 -- --fix "$HD_PROJ"
 assert_contains "failing D4 installer is tolerated" "$TL_OUT" "re-running checks after --fix"
-hd_run SILVER_BULLET_RUNTIME=opencode STUB_RC_SURFACE_REPO=1 -- --fix "$HD_PROJ"
+hd_run SB_DOCTOR_ASSUME_YES=1 SILVER_BULLET_RUNTIME=opencode STUB_RC_SURFACE_REPO=1 -- --fix "$HD_PROJ"
 assert_contains "D16 on an unknown host has no installer" "$TL_OUT" "FAIL: D16"
 assert_not_contains "no installer for the unknown host" "$(hd_logs)" "install-"
 

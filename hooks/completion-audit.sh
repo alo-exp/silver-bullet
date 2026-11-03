@@ -28,13 +28,8 @@ fi
 emit_block() {
   local reason="$1"
   local json_reason
-  if command -v jq >/dev/null 2>&1; then
-    json_reason=$(printf '%s' "$reason" | jq -Rs '.')
-  elif command -v python3 >/dev/null 2>&1; then
-    json_reason=$(python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))' <<<"$reason")
-  else
-    json_reason='"enforcement blocked"'
-  fi
+  # Only reached with jq present: without jq the hook exits through jq-gate.sh below.
+  json_reason=$(printf '%s' "$reason" | jq -Rs '.')
   sb_hook_audit_record "completion-audit" "$hook_event" "deny" "$reason" "${cmd:-}"
   if [[ "$hook_event" == "PreToolUse" ]]; then
     printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":%s}}' "$json_reason"
@@ -44,26 +39,10 @@ emit_block() {
 }
 
 if ! command -v jq >/dev/null 2>&1; then
-  _ca_config=""
-  _ca_search="$PWD"
-  while true; do
-    if [[ -f "$_ca_search/.silver-bullet.json" && -f "$_ca_search/silver-bullet.md" ]]; then
-      _ca_config="$_ca_search/.silver-bullet.json"
-      break
-    fi
-    if [[ -d "$_ca_search/.git" ]] || [[ "$_ca_search" == "/" ]]; then
-      break
-    fi
-    _ca_search=$(dirname "$_ca_search")
-  done
-  if [[ -n "$_ca_config" ]] && declare -f sb_project_is_initiated >/dev/null 2>&1 && sb_project_is_initiated "$_ca_config"; then
-    # Contract: sb_jq_enforcement_block never returns when jq is missing (it emits and exits 0).
-    sb_jq_enforcement_block "completion-audit" "emit_block"
-  fi
-  if grep -qE 'git commit|git push|gh pr create|gh release create|\bdeploy\b' <<<"$input"; then
-    sb_jq_enforcement_block "completion-audit" "emit_block"
-  fi
-  printf '{"hookSpecificOutput":{"message":"⚠️  ENFORCEMENT INACTIVE — jq not installed. Install: brew install jq (macOS) / apt install jq (Linux). All Silver Bullet enforcement hooks are disabled until jq is available."}}'
+  # jq-gate.sh (R1-29): in an SB project, block only commands this hook's own classifier
+  # calls delivery (it emits the deny for the payload's event and exits); jq installs,
+  # other commands, other tools and non-SB repositories pass.
+  sb_jq_missing_delivery_gate "completion-audit" "" "$input" ca_classify_command
   exit 0
 fi
 

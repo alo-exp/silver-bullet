@@ -280,7 +280,7 @@ Isolated temp homes per host; host CLI auth via `HOST_API_KEY` +
 `AGENT_CLI_CREDENTIAL_STORE=memory` (never macOS Keychain). Host isolation uses
 official mechanisms only: fake `HOME`, host config dir, `--plugin-dir`, and
 `--workspace` (no undocumented host config redirects). Writes
-`${SB_RUNTIME_STATE_DIR}/pre-release-host-smoke` on success.
+`pre-release-host-smoke` on success into the runtime state dir the operator had before isolation (the isolated state dirs are removed on exit).
 
 Structural stages inside the smoke script (mandatory):
 
