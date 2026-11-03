@@ -1,0 +1,5 @@
+# Audited exceptions for the personal-data invariant (scripts/lib/repo_invariants.py).
+# Generic accounts, CI/cloud users and placeholder domains are built in; list here only a
+# reviewed, specific exception, one per line:
+#   home <name>             a directory name that is not a person (matched case-insensitively)
+#   email <user@host.tld>   one exact address, or  email @host.tld  for every address on a host

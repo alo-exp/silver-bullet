@@ -326,46 +326,83 @@ def tracked_file_size(root: Path, files: list[str]) -> list[str]:
 # Machine-specific home directories and personal email addresses leak who built the repository
 # and where; they also ship to every plugin install. Reported by line, never by value.
 
-# Path forms: /Users/<n>, /home/<n>, /var/home/<n>, C:\\Users\\<n> (any case, any slash count).
+# Path forms: /Users/<n>, /home/<n>, /var/home/<n>, /mnt/c/Users/<n> (WSL), C:\\Users\\<n> (any case, any slash count).
 HOME_PATH = re.compile(
-    r"(?<![A-Za-z0-9])(?:/(?:var/)?(?:Users|home)/|(?<![A-Za-z0-9])[A-Za-z]:[\\/]+Users[\\/]+)([A-Za-z0-9][A-Za-z0-9._-]*)", re.I)
+    r"(?<![A-Za-z0-9])(?:/mnt/[a-z]/Users/|/(?:var/)?(?:Users|home)/|[A-Za-z]:[\\/]+Users[\\/]+)([A-Za-z0-9][A-Za-z0-9._-]*)", re.I)
 # Flattened forms that tools derive from a home path: Cursor's Users-<n>-projects-..., the lean-ctx
-# _Users_<n>_..., Claude's -home-<n>-... project directories, and normalised graph labels.
-FLAT_HOME = re.compile(
-    r"(?<![A-Za-z0-9])(?:[-_]?Users[-_]|-home-|users_(?=[A-Za-z0-9]+_(?:projects|desktop|documents|downloads|library|code|dev|work|repos|src|github)\b))"
-    r"([A-Za-z0-9]+)[-_]")
-# Generic names that stand for "some user" in examples, fixtures, system and CI accounts.
+# _Users_<n>_..., Claude's -home-<n>-... project directories, and normalised graph labels. Lower-case
+# users_/users- and underscore home need a well-known directory after the name, because users_table_
+# and _home_core_markets are ordinary identifiers.
+SUBDIR = r"(?=(?:projects|desktop|documents|downloads|library|code|dev|work|workspace|repos|src|github|git|sites)(?![A-Za-z0-9]))"
+FLAT_HOMES = (
+    re.compile(r"(?<![A-Za-z0-9])[-_]?Users[-_]([A-Za-z0-9]+)[-_]"),
+    re.compile(r"(?<![A-Za-z0-9])-home-([A-Za-z0-9]+)-"),
+    re.compile(r"(?<![A-Za-z0-9])[-_]?(?:users|home)[-_]([A-Za-z0-9]+)[-_]" + SUBDIR, re.I),
+)
+# Generic names that stand for "some user" in examples, fixtures, system, CI, VM and container accounts.
 GENERIC_HOME_NAMES = frozenset({
     "user", "users", "username", "name", "you", "me", "example", "shared", "guest", "u", "foo", "bar", "test", "x",
     "alice", "bob", "jane", "ada", "dev", "developer", "demo", "sample", "someone", "yourname", "your-name", "nobody",
-    "root", "admin", "agent", "sandbox", "claude", "docker", "build", "builder",
-    # CI, container and package-manager accounts
+    "root", "admin", "administrator", "agent", "sandbox", "claude", "docker", "build", "builder", "john", "johndoe",
+    "john.doe", "jane.doe", "janedoe", "jdoe", "jsmith", "first", "last", "first.last", "firstname", "lastname", "me",
+    # CI, VM, distro, cloud and container accounts
     "runner", "runneradmin", "ubuntu", "node", "vscode", "zed", "linuxbrew", "codespace", "gitpod", "ec2-user",
     "vagrant", "jovyan", "pi", "circleci", "coder", "jenkins", "travis", "appveyor", "github", "www-data",
+    "azureuser", "opc", "centos", "debian", "fedora", "core", "git", "postgres", "nonroot", "app", "mambauser",
+    "wdagutilityaccount", "defaultuser0", "devcontainer", "lima", "rocky", "alma", "admin1", "packer", "cloud-user",
     "public", "default", "all", "guide", "manual", "docs", "doc", "list", "table", "profile", "profiles", "data",
-    "and", "or", "of", "the", "who", "with",
+    "and", "or", "of", "the", "who", "with", "facing", "only", "can", "to", "in", "for",
 })
+GENERIC_NUMBERED = re.compile(r"(?:user|test|dev|demo|admin|ci|runner)[0-9]*\Z")
 EMAIL_DOMAIN = re.compile(r"((?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,})")
 EMAIL_LOCAL = re.compile(r"[A-Za-z0-9._%+-]+\Z")
-# The maintainer's public addresses and the placeholder domains used by tests and docs.
-EMAIL_DOMAINS = ("alolabs.dev", "alolabs.io", "sourcevo.com", "example.com", "example.org", "example.net", "test.com", "t.com", "evil.md")
-EMAIL_TEST_TLDS = frozenset({"invalid", "test", "localhost", "example"})
+# The maintainer's public addresses, placeholder domains used by tests and docs, and vendor domains.
+EMAIL_DOMAINS = (
+    "alolabs.dev", "alolabs.io", "sourcevo.com", "example.com", "example.org", "example.net", "test.com", "t.com", "evil.md",
+    "yourcompany.com", "yourdomain.com", "yourorg.com", "mycompany.com", "company.com", "acme.com", "domain.tld", "anthropic.com",
+    "python.org",
+)
+EMAIL_TEST_TLDS = frozenset({"invalid", "test", "localhost", "example", "tld"})
 # name@2x.png, pkg@1.0.js: asset and package references, not mailboxes.
 EMAIL_FILE_TLDS = frozenset({"png", "jpg", "jpeg", "gif", "svg", "webp", "avif", "ico", "bmp", "tif", "tiff", "js", "mjs", "css",
                              "json", "md", "txt", "html", "tgz", "zip", "woff", "woff2", "ttf"})
 # Plainly organisational mailboxes (vendors, support desks, bots), whatever the domain.
 EMAIL_ROLE_LOCALS = frozenset({
     "noreply", "no-reply", "support", "security", "contact", "help", "sales", "press", "abuse", "privacy", "legal", "billing",
-    "feedback", "team", "hello", "info", "admin", "postmaster", "webmaster", "bot", "dependabot", "notifications", "service",
+    "feedback", "team", "hello", "hi", "info", "admin", "postmaster", "webmaster", "bot", "dependabot", "notifications", "service",
+    "docs", "action", "actions", "github-actions", "ci", "release", "maintainers",
 })
 GITHUB_URL_USERS = frozenset({"git", "token", "x-access-token"})
+ALLOW_FILE = ".github/personal-data-allow.txt"
 
 
-def email_allowed(local: str, domain: str) -> bool:
+def generic_name(name: str) -> bool:
+    """A placeholder, system, CI or cloud account, or a run of x (a redaction mask)."""
+    name = name.lower()
+    return name in GENERIC_HOME_NAMES or bool(GENERIC_NUMBERED.match(name)) or set(name) == {"x"}
+
+
+def load_allowlist(root: Path) -> tuple[frozenset[str], frozenset[str]]:
+    """Audited exceptions from ALLOW_FILE: 'home <name>' and 'email <address|@domain>' lines, '#' comments."""
+    homes, emails = set(), set()
+    raw = read_bytes(root, ALLOW_FILE)
+    for line in (raw or b"").decode("utf-8", "replace").splitlines():
+        kind, _, value = line.split("#", 1)[0].strip().partition(" ")
+        if kind == "home" and value.strip():
+            homes.add(value.strip().lower())
+        elif kind == "email" and value.strip():
+            emails.add(value.strip().lower())
+    return frozenset(homes), frozenset(emails)
+
+
+def email_allowed(local: str, domain: str, allowed_emails: frozenset[str] = frozenset()) -> bool:
     local, domain = local.lower(), domain.lower()
     return (
         local.startswith(("noreply", "no-reply"))
         or local in EMAIL_ROLE_LOCALS
+        or generic_name(local)  # ssh user@host, you@..., jane@...
+        or f"{local}@{domain}" in allowed_emails
+        or "@" + domain in allowed_emails
         or local == "git"  # ssh remotes: git@<host>:org/repo
         or domain.endswith("noreply.github.com")
         or any(domain == allowed or domain.endswith("." + allowed) for allowed in EMAIL_DOMAINS)
@@ -374,22 +411,40 @@ def email_allowed(local: str, domain: str) -> bool:
     )
 
 
-def email_hits(text: str) -> list[int]:
+def email_hits(text: str, allowed_emails: frozenset[str] = frozenset()) -> list[int]:
     """Offsets of email addresses outside the allowlist; scans only around each '@'."""
     hits, at = [], text.find("@")
     while at != -1:
         local = EMAIL_LOCAL.search(text, max(0, at - 64), at)
         domain = EMAIL_DOMAIN.match(text, at + 1, at + 256)
-        if local and domain and not email_allowed(local.group(), domain.group(1)):
+        if local and domain and not email_allowed(local.group(), domain.group(1), allowed_emails):
             hits.append(local.start())
         at = text.find("@", at + 1)
     return hits
 
 
-def generic_name(name: str) -> bool:
-    """A placeholder, system or CI account, or a run of x (a redaction mask)."""
-    name = name.lower()
-    return name in GENERIC_HOME_NAMES or set(name) == {"x"}
+KEYWORD = re.compile(r"users|home")
+WINDOW_BEFORE, WINDOW_AFTER = 24, 120
+
+
+def home_hits(text: str, low: str) -> list[tuple[int, int]]:
+    """(start, end) of home-path matches, found by running the patterns only around the words
+    'users' and 'home' (a 55 MB graph file otherwise costs several seconds per pattern)."""
+    windows: list[list[int]] = []
+    for m in KEYWORD.finditer(low):
+        begin, end = max(0, m.start() - WINDOW_BEFORE), m.end() + WINDOW_AFTER
+        if windows and begin <= windows[-1][1]:
+            windows[-1][1] = end
+        else:
+            windows.append([begin, end])
+    hits = []
+    for begin, end in windows:
+        chunk = text[begin:end]
+        for rx in (HOME_PATH, *FLAT_HOMES):
+            for m in rx.finditer(chunk):
+                if not generic_name(m.group(1)):
+                    hits.append((begin + m.start(), begin + m.end(), m.group(1)))
+    return hits
 
 
 HOME_MESSAGE = "personal home-directory path (use a placeholder such as /Users/<user>/)"
@@ -399,21 +454,32 @@ SCANNED_BINARY = (".pdf",)  # link annotations and metadata sit in the clear
 
 def personal_data(root: Path, files: list[str]) -> list[str]:
     problems = []
+    allowed_homes, allowed_emails = load_allowlist(root)
     for rel in files:
         raw = read_bytes(root, rel)
-        if raw is None:
+        if raw is None or rel == ALLOW_FILE:
             continue
-        if b"\0" in raw[:8000] and not rel.lower().endswith(SCANNED_BINARY):
+        binary = b"\0" in raw[:8000]
+        if binary and not rel.lower().endswith(SCANNED_BINARY):
             continue
-        text = raw.decode("latin-1" if b"\0" in raw[:8000] else "utf-8", "replace")
-        if "@" in text or "sers" in text or "home" in text or "HOME" in text or "SERS" in text:
-            # JSON-escaped (\/) and URL-encoded (%2F, %5C) separators; newlines stay put, so line numbers hold.
-            text = text.replace("\\/", "/").replace("%2F", "/").replace("%2f", "/").replace("%5C", "\\").replace("%5c", "\\")
-            hits = [(m.start(), HOME_MESSAGE) for rx in (HOME_PATH, FLAT_HOME) for m in rx.finditer(text)
-                    if not generic_name(m.group(1))]
-            hits += [(offset, EMAIL_MESSAGE) for offset in email_hits(text)]
-            for offset, message in sorted(hits):
-                problems.append(f"{rel}:{text.count(chr(10), 0, offset) + 1}: {message}")
+        text = raw.decode("latin-1" if binary else "utf-8", "replace")
+        low = text.lower()  # only to decide whether the file can hold anything; offsets are taken after decoding
+        if "@" in text or "users" in low or "home" in low:
+            # JSON-escaped (\/, \\/, \u002f) and URL-encoded (%2F, %5C) separators; newlines stay put, so line numbers hold.
+            if "\\" in text:
+                text = re.sub(r"\\u00(2[fF]|5[cC])", lambda m: "/" if m.group(1) in "2f2F" else "\\", text)
+                while "\\/" in text:
+                    text = text.replace("\\/", "/")
+            if "%" in text:
+                text = text.replace("%2F", "/").replace("%2f", "/").replace("%5C", "\\").replace("%5c", "\\")
+            hits = [(start, end, HOME_MESSAGE) for start, end, name in home_hits(text, text.lower()) if name.lower() not in allowed_homes]
+            hits += [(offset, offset, EMAIL_MESSAGE) for offset in email_hits(text, allowed_emails)]
+            reported_to = -1
+            for start, end, message in sorted(hits):
+                if start < reported_to:
+                    continue  # the same text matched by two patterns
+                reported_to = max(end, start + 1)
+                problems.append(f"{rel}:{text.count(chr(10), 0, start) + 1}: {message}")
     return problems
 
 
@@ -455,14 +521,17 @@ def site_duplicate_ids(root: Path, files: list[str]) -> list[str]:
 
 WORKFLOW_FILE = re.compile(r"^\.github/workflows/[^/]+\.ya?ml$")
 UNPINNED = re.compile(r"@latest\b|\bnpx\s+(--yes|-y)\b")
-RUN_KEY = re.compile(r"^(\s*(?:-\s+)?)run:\s*(.*)$")
+# run: scripts and actions/github-script script: bodies; GitHub expands ${{ }} in both before any shell or JS runs.
+RUN_KEY = re.compile(r"^(\s*(?:-\s+)?)(?:run|script)\s*:\s*(.*)$")
 CONTINUE_ON_ERROR = re.compile(r"^\s*(?:-\s+)?continue-on-error\s*:\s*(?!false\s*(?:#.*)?$)(?:\S|$)")
-QUOTED_KEY = re.compile(r"""^\s*(?:-\s+)?["'][A-Za-z_-]+["']\s*:""")
+QUOTED_KEY = re.compile(r"""^\s*(?:-\s+)?["'][^"']+["']\s*:""")
 FLOW_STEP = re.compile(r"^\s*-\s+\{")
 FLOW_STEPS_KEY = re.compile(r"""^\s*(?:-\s+)?["']?steps["']?\s*:\s*[\[{]""")
 # group(1) is the indentation up to the key (past a list dash), the column the scalar's text must exceed.
 BLOCK_SCALAR = re.compile(r"^(\s*(?:-\s+)?)[^#\s][^#]*?:\s*[|>][+-]?[0-9]*\s*(?:#.*)?$")
-FLOW_LINE = re.compile(r"^\s*(?:[\[{]|-\s+[&*!]|jobs\s*:\s*[\[{])")
+# Anything the line-oriented reading cannot follow safely fails closed: flow collections, anchors, aliases,
+# tags and complex keys (a line opening with "? " or ": "), also as the value of a key.
+FLOW_LINE = re.compile(r"^\s*(?:[\[{]|-\s+[&*!]|jobs\s*:\s*[\[{]|[?:](?:\s|$)|(?:-\s+)?[A-Za-z0-9_.-]+\s*:\s*[&*!])")
 CHECKOUT_GUARD = re.compile(r"git status --porcelain --ignored\b")
 WRITE_ALL = re.compile(r"""^\s*permissions:\s*["']?write-all\b""")
 FORCE_NODE24 = re.compile(r"^\s+FORCE_JAVASCRIPT_ACTIONS_TO_NODE24:\s*true\s*$")
@@ -535,18 +604,21 @@ def workflow_problems(rel: str, lines: list[str]) -> list[str]:
     scalar_until = 0  # last line number of any block scalar (run script, github-script body, ...)
     for number, line in enumerate(lines, 1):
         code = line.strip()
+        if number <= script_until:
+            # Script text, comment lines included: ${{ }} is expanded before the shell sees a "#".
+            if UNPINNED.search(line) and not code.startswith("#"):
+                problems.append(f"{rel}:{number}: unpinned @latest or npx --yes")
+            if "${{" in line:
+                problems.append(f"{rel}:{number}: ${{{{ }}}} expression inside a run script (pass it through env)")
+            continue
         if code.startswith("#"):
             continue
         if UNPINNED.search(line):
             problems.append(f"{rel}:{number}: unpinned @latest or npx --yes")
-        if number <= script_until:
-            if "${{" in line:
-                problems.append(f"{rel}:{number}: ${{{{ }}}} expression inside a run script (pass it through env)")
-            continue
         if number <= scalar_until:
             continue  # literal text of a block scalar, not workflow structure
         if QUOTED_KEY.match(line) or FLOW_STEP.match(line) or FLOW_STEPS_KEY.match(line) or FLOW_LINE.match(line) or number in flow_jobs:
-            problems.append(f"{rel}:{number}: quoted keys and flow-style jobs or steps hide settings from the hardening check; use plain block YAML")
+            problems.append(f"{rel}:{number}: quoted keys, anchors, aliases, tags, complex keys and flow-style jobs or steps hide settings from the hardening check; use plain block YAML")
         scalar = BLOCK_SCALAR.match(line)
         if scalar:
             extent = block_extent(lines, number, len(scalar.group(1)))

@@ -88,6 +88,17 @@ FIX="$TL_TMP/exec-lib"; fixture "$FIX"
 chmod -x "$FIX/hooks/lib/runtime-paths.sh"
 expect_pass "a sourced library need not be executable" hook-executable
 
+# A shebang line without a trailing newline is still read (read returns non-zero but fills the
+# variable); a non-Bash extensionless script and an empty file are not entry points.
+FIX="$TL_TMP/exec-nonl"; fixture "$FIX"
+printf '#!/usr/bin/env bash' >"$FIX/scripts/nonl-tool"
+chmod -x "$FIX/scripts/nonl-tool"
+expect_fail "extensionless script without a trailing newline" hook-executable "not executable: scripts/nonl-tool"
+printf '#!/usr/bin/env python3\n' >"$FIX/scripts/nonl-tool"
+: >"$FIX/scripts/empty-tool"
+chmod -x "$FIX/scripts/empty-tool"
+expect_pass "non-Bash and empty extensionless files are ignored" hook-executable
+
 FIX="$TL_TMP/refs"; fixture "$FIX"
 rm "$FIX/hooks/uat-gate.sh"
 expect_fail "hooks.json names a missing script" hook-references "hooks/uat-gate.sh"
@@ -272,9 +283,9 @@ expect_pass "the repository files carry no personal paths or foreign emails" per
 printf 'see /Users/%s/projects/x\n' "alice-real" >"$FIX/docs/leak.md"
 expect_fail "personal home directory" personal-data "docs/leak.md:1: personal home-directory path"
 assert_eq "the path value is never printed" "0" "$(printf '%s' "$TL_OUT$TL_ERR" | grep -c 'alice-real' || true)"
-printf 'mail %s\n' "someone@""gmail.com" >"$FIX/docs/leak.md"
+printf 'mail %s\n' "dave@""gmail.com" >"$FIX/docs/leak.md"
 expect_fail "personal email address" personal-data "docs/leak.md:1: email address outside the allowlist"
-assert_eq "the address is never printed" "0" "$(printf '%s' "$TL_OUT$TL_ERR" | grep -c "someone""@" || true)"
+assert_eq "the address is never printed" "0" "$(printf '%s' "$TL_OUT$TL_ERR" | grep -c "dave""@" || true)"
 printf 'mail info@alolabs.dev, noreply@anthropic.com, /Users/<user>/x\n' >"$FIX/docs/leak.md"
 expect_pass "maintainer, noreply and placeholder values" personal-data
 
