@@ -33,7 +33,10 @@ Merge blocks into `~/.codex/config.toml` and `hooks.json` per `docs/CONTEXT-MODE
 
 ## Hook merge
 
-`python3 scripts/lib/install-claude/merge-hooks.py "$INSTALL_PATH"` (shared merge utility)
+None needed: Codex loads the plugin's own hooks, and `scripts/install-codex.sh` seeds their
+trust. `scripts/lib/install-claude/merge-hooks.py` writes Claude settings only and declines a
+Codex install path. Kay, which reads only `~/.codex/hooks.json`, gets the merge from
+`install-codex.sh` (`KAY_HOME` set, or `SB_CODEX_MERGE_USER_HOOKS=1`).
 
 ## Runtime notes
 
