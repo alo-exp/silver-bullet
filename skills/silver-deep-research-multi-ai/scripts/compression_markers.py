@@ -16,8 +16,8 @@ _MARKER_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"\.\.\.\s*\[lean-ctx:", re.I),
     re.compile(r"^\s*\S+\s*\[\d+L\]\s*$", re.M),
     re.compile(r"\[\d+ more lines\]", re.I),
-    re.compile(r"\[Archived\]", re.I),
-    re.compile(r"omitted \d+ lines", re.I),
+    # a line that is only "[Archived]" is a tool artifact; the word inside prose is not
+    re.compile(r"^\s*\[Archived\]\s*$", re.I | re.M),
 )
 
 # Whole-line artifacts dropped during sanitization
@@ -30,7 +30,7 @@ _DROP_LINE_PATTERNS: tuple[re.Pattern[str], ...] = (
 )
 
 _INLINE_STRIP = re.compile(
-    r"\.\.\.\s*\[lean-ctx:[^\]]*\]|\[lean-ctx:[^\]]*\]|\[Archived\]",
+    r"\.\.\.\s*\[lean-ctx:[^\]]*\]|\[lean-ctx:[^\]]*\]",
     re.I,
 )
 
@@ -51,15 +51,23 @@ def find_compression_marker_snippets(text: str, *, limit: int = 3) -> list[str]:
     return snippets
 
 
-def sanitize_compression_markers(text: str) -> str:
-    """Remove compression marker lines and inline marker segments."""
+def sanitize_compression_markers(text: str, *, removed: list[str] | None = None) -> str:
+    """Remove compression marker lines and inline marker segments.
+
+    Only the tool's own marker syntax is matched, never ordinary phrases. Every line that is
+    dropped or rewritten is appended to ``removed`` (when given) so nothing vanishes silently.
+    """
     if not text or not contains_compression_markers(text):
         return text
     kept: list[str] = []
     for line in text.splitlines():
         if any(pattern.match(line) for pattern in _DROP_LINE_PATTERNS):
+            if removed is not None:
+                removed.append(line)
             continue
         if contains_compression_markers(line):
+            if removed is not None:
+                removed.append(line)
             cleaned = _INLINE_STRIP.sub("", line).strip()
             if cleaned and not contains_compression_markers(cleaned):
                 kept.append(cleaned)

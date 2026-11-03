@@ -30,6 +30,10 @@ class TmpCase(unittest.TestCase):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         self.root = Path(tmp.name)
+        import vendor_link_labels
+
+        vendor_link_labels.reset_health_state()  # the probe cache is process-wide
+        self.addCleanup(vendor_link_labels.reset_health_state)
         spy = mock.patch.object(socket.socket, "connect", side_effect=AssertionError("network used"))
         spy.start()
         self.addCleanup(spy.stop)

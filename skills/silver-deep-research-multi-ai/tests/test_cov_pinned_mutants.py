@@ -77,6 +77,10 @@ class MarkdownEdgeTests(unittest.TestCase):
         self.assertIn("<td>1</td>", out2)
 
 
+from apo_pack_run_fixture import with_apo_pack_run  # noqa: E402
+
+
+@with_apo_pack_run
 class OverviewFocusTests(unittest.TestCase):
     CROWD = "Aider, Cline and Continue are alternatives"
 
@@ -93,6 +97,7 @@ class OverviewFocusTests(unittest.TestCase):
         self.assertTrue(mat.is_unusable_overview_claim(self.CROWD))
 
 
+@with_apo_pack_run
 class MatrixEntryHeadTests(unittest.TestCase):
     def test_feature_aliases_and_features_with_a_trailing_product_stay_feature_rows(self) -> None:
         for head in ("ci/cd devin", "hook gates devin", "audit log devin", "self-serve signup devin"):
@@ -102,6 +107,7 @@ class MatrixEntryHeadTests(unittest.TestCase):
         self.assertTrue(mat._matrix_entry_head_is_solution("the devin platform"))
 
 
+@with_apo_pack_run
 class ProseNegationTests(unittest.TestCase):
     def test_features_in_a_but_clause_are_negative_with_or_without_lack_words(self) -> None:
         support: dict = {}
@@ -139,7 +145,7 @@ class PreviewEnrichmentTests(unittest.TestCase):
 
 
 class PreviewPayloadTests(unittest.TestCase):
-    def test_need_profile_reaches_pack_resolution_and_scrubbing(self) -> None:
+    def test_need_profile_reaches_pack_resolution_for_license_buckets(self) -> None:
         import json
         import tempfile
 
@@ -149,31 +155,30 @@ class PreviewPayloadTests(unittest.TestCase):
             (root / "comparison").mkdir()
             (root / "landscape" / "landscape-report.md").write_text("# T\n", encoding="utf-8")
             (root / "landscape" / "chart-data.json").write_text("{}", encoding="utf-8")
-            (root / "comparison" / "comparison.json").write_text("{}", encoding="utf-8")
+            (root / "comparison" / "comparison.json").write_text(
+                json.dumps({"rankings": [{"solution": "alpha"}, {"solution": "beta"}]}), encoding="utf-8")
             (root / "need_profile.json").write_text(json.dumps({"category": "Cat"}), encoding="utf-8")
             (root / "contributions").mkdir()
             (root / "contributions" / "all-envelopes.json").write_text(
-                json.dumps([{"payload": {"notes": {"claim": "deep"}, "list": ["x"]}}]), encoding="utf-8")
+                json.dumps([{"payload": {"notes": {"claim": "deep"}, "raw_text": "worker"}}]), encoding="utf-8")
             sentinel = {"pack": "sentinel"}
-            seen_need, seen_pack = [], []
+            seen_need = []
 
             def resolve(need):
                 seen_need.append(need)
                 # only the real need profile resolves to a pack; an empty one must not
                 return sentinel if need == {"category": "Cat"} else None
 
-            def scrub(text, pack):
-                seen_pack.append(pack)
-                return text.upper()
+            def licenses(pack):
+                return {"alpha": "oss"} if pack is sentinel else {}
 
             with mock.patch("category_pack.resolve_pack_from_need", side_effect=resolve), \
-                    mock.patch("synthesize_landscape.scrub_membership_framing", side_effect=scrub):
+                    mock.patch("category_pack.build_license_by_slug", side_effect=licenses):
                 data = lpr.collect_landscape_payload(root)
         self.assertIn({"category": "Cat"}, seen_need)
-        self.assertTrue(seen_pack and all(p is sentinel for p in seen_pack))  # pack from the need profile, not {}
-        # "notes" holds a dict, not a string, so it is recursed into rather than scrubbed as a whole
-        self.assertEqual(data["envelopes"][0]["payload"]["notes"], {"claim": "DEEP"})
-        self.assertEqual(data["envelopes"][0]["payload"]["list"], ["X"])
+        self.assertEqual(data["landscape"]["oss_vendors"], ["alpha"])
+        self.assertEqual(data["landscape"]["commercial_vendors"], ["beta"])
+        self.assertNotIn("envelopes", data)  # raw worker output never reaches the shareable HTML
 
 
 if __name__ == "__main__":

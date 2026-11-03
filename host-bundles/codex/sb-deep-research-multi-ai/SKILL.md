@@ -45,6 +45,14 @@ python3 skills/silver-deep-research-multi-ai/scripts/dr_multi_ai_cli.py \
   --dry-run
 ```
 
+Without `--output-root` the run directory is `<cwd>/research/<date>-<slug>` (never inside the
+skill's install tree). An existing run is never overwritten; `--force` moves a previous run
+aside as `<name>.replaced-<UTC>` instead of deleting it, and refuses `/`, `$HOME`, the working
+directory and its parents. With `--force` your `need_profile.json` and `scope.md` carry over to the new run, except an
+auto-generated pair that names a different query. The tool writes only inside the run directory and never deletes
+user files: folders it did not generate, and `scr.md` / `features.json` / landscape files you
+or the host wrote, are left alone and listed under `preserved` / `stale_solution_dirs`.
+
 ## Parallel phases
 
 Canonical IDs: `DR-RETRIEVE`, `DR-TRIANGULATE`, `DR-CRITIQUE`.
@@ -68,11 +76,16 @@ python3 skills/silver-deep-research-multi-ai/scripts/consolidate.py \
   --envelopes contributions.json \
   --index result-index.json \
   --resolved-pool 11 \
-  --output consolidated/consensus.json
+  --output consolidated/consolidation.json
 ```
 
-Accepts **only** host-validated `DR-*` contribution envelopes + matching result index.
-Forbidden: reports, synthesis, V-loop artifacts, worker state.
+Takes `DR-*` contribution envelopes + the matching result index. The host is responsible for
+validating envelopes against the schema before this step; `consolidate.py` itself is tolerant,
+not a validator: a malformed claim item is counted in `coverage.malformed_items` and skipped.
+The consensus pool is the result index's agent count, and `--resolved-pool` is rejected when
+it disagrees. Claims are merged by wording only; a "consensus" row means that many families
+said the same claim, not that the claim is true. Forbidden inputs: reports, synthesis, V-loop
+artifacts, worker state.
 
 ## Reports (dual)
 
@@ -82,7 +95,14 @@ Forbidden: reports, synthesis, V-loop artifacts, worker state.
 | `landscape-report.html` | `--profile landscape` | `solution-landscape` / `solution-compare` only |
 | `comparison/comparison-matrix.xlsx` | — | `solution-landscape` / `solution-compare` (weighted matrix) |
 
-**Landscape viewer:** MultAI-parity SPA (`render_landscape_outputs()` in `landscape_preview_render.py` + `assets/landscape-preview.template.html`) — sidebar TOC, Chart.js 2×2/Wave/Value Curve, COMMERCIAL/OSS nav, Copy/PDF/Compare/Matrix. Self-contained (`file://`); no `http.server`. `generate_landscape_report.py` is a compatibility wrapper around that function (not the retired general SPA).
+**Landscape viewer:** MultAI-parity SPA (`render_landscape_outputs()` in `landscape_preview_render.py` + `assets/landscape-preview.template.html`) — sidebar TOC, Chart.js 2×2/Wave/Value Curve, COMMERCIAL/OSS nav, Copy/PDF/Compare/Matrix. Open it from `file://`; no `http.server`. The page text, table of contents, vendor cards and
+tables are static HTML and work offline. Charts use Chart.js, chartjs-plugin-datalabels and
+lucide from version-pinned CDN URLs carrying SRI (`integrity=sha384-…`) hashes, so offline the
+charts fall back to their data tables; Google Fonts is also fetched when online. It is
+therefore *not* fully self-contained. The PDF is rendered by `render_landscape_pdf.cjs` in a
+sandboxed, JavaScript-free, offline Chromium; where the sandbox cannot start (root in a
+container) it fails with a clear message and `SB_LANDSCAPE_PDF_NO_SANDBOX=1` is the explicit
+opt-out. `generate_landscape_report.py` is a compatibility wrapper around that function (not the retired general SPA).
 
 **General DR:** unchanged tabbed `generate_spa_report.py:general` — no MultAI chart sections.
 
@@ -96,7 +116,39 @@ For `research_type` `solution-landscape` or `solution-compare` only — **do not
 | Consolidation guide (9 sections + chart-data) | [`../silver-deep-research/reference/landscape/consolidation-guide.md`](../silver-deep-research/reference/landscape/consolidation-guide.md) | DR-TRIANGULATE → `landscape/landscape-report.md` + `landscape/chart-data.json` |
 | Comparator framework | [`../silver-deep-research/reference/comparator/capability-framework.md`](../silver-deep-research/reference/comparator/capability-framework.md) | Matrix build via `compare_solutions.py` |
 
-Host controller must pass consolidation guide to synthesis workers; `consolidate.py` remains deterministic claim merge for `consolidated/consolidation.json` only.
+Host controller passes the consolidation guide to synthesis workers. Note that packaging
+(below) regenerates `landscape/landscape-report.md` and `landscape/chart-data.json` from the
+run's data with `synthesize_landscape`; a file the host wrote is preserved and reported rather
+than overwritten. `consolidate.py` remains a deterministic claim merge for
+`consolidated/consolidation.json` only.
+
+**Matrix ticks.** Workers return `matrix_entries` (`{vendor, feature, supported, source_ref}`;
+optional in the envelope schema). A model casts one vote per (vendor, feature) (its latest row
+wins); the cell follows the majority, a tie is not a tick, and split cells are written to
+`landscape/disputed-cells.json` and listed in the report. A vendor must match a known name or
+alias exactly (a blank or partial name never matches); without a category pack an unnamed
+vendor becomes its own column, so any topic works with no built-in catalogue. Claim prose is
+parsed heuristically only for cells no worker voted on, resolving vendors from the run's own set
+(pack names plus the vendors workers named). Feature names are folded (case, spacing,
+punctuation) before voting, for worker rows and claim prose alike, and each feature is shown once: in
+the rubric spelling, the user's must-have spelling when it differs (the comparator ranks on that
+wording), else the most common one; "+" and "#" stay part of a name ("C++" is not "C#"). A run whose
+need profile names no must-have that matches the matrix gets derived priorities: the most-evidenced
+features that separate the vendors (at least two; none ticked for every vendor) are treated as
+Critical. They are recomputed on every packaging and written only to `landscape/derived-priorities.json`
+and `comparison/effective-need-profile.json`, never into the user's `need_profile.json`, and the report
+says so in its scoring methodology. A matrix with nothing to separate vendors fails the content gate
+instead. A must-have no vendor offers is still reported by the gate.
+
+**Category packs.** Category-specific prose (market overview, trends, buying guidance,
+consensus themes, vendor notes) is data in `reference/category-pack-overlays/<pack>.json` and
+applies only when the need profile selects that pack. The same holds for the feature rubric and
+aliases, Leader rules, scoring weights, key competitive factors, the inclusion ledger,
+brand-rename policies and URL rewrites: they sit under the overlay's `vocabulary` key
+(`scripts/pack_vocabulary.py`) and the code defaults are neutral. The only pack shipped is
+`agentic-sdlc-process-orchestrator` (the pack itself lives in `silver-deep-research`). For any
+other topic the report is built only from the run's own envelopes, matrix and audit; no vendor
+is built in or special-cased.
 
 ## Solution packaging (landscape / compare)
 
@@ -110,7 +162,7 @@ python3 skills/silver-deep-research-multi-ai/scripts/package_solution_outputs.py
 Runs `compare_solutions.py` (JSON + MD + XLSX), then both SPA reports.
 For `solution-landscape` / `solution-compare`, packaging **always** re-runs
 `materialize_solution_artifacts` and `synthesize_landscape` (force) before the landscape SPA
-and `validate_landscape_content` gate — engine fixes apply without manual fullpool edits.
+and `validate_landscape_content` gate. Host-written files are preserved, not replaced.
 Skip steps with `--skip-compare`, `--skip-xlsx`, or `--skip-spa`.
 
 ## GLM-5.2 routing
