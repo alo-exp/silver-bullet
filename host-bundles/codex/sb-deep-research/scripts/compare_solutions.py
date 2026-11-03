@@ -37,16 +37,19 @@ _TRUE_WORDS = frozenset({"true", "yes", "y", "1", "supported", "present"})
 def _feature_supported(feat: Any) -> bool:
     """Whether a feature entry counts as present for the solution.
 
-    A bare string lists a present feature. In a dict, ``supported`` / ``present``
-    must be an explicit true (a bool or an affirmative word: the string "false"
-    is false); an ``evidence_ids`` list that is present but empty means no
-    evidence, so no tick.
+    A bare string lists a present feature (legacy form, no evidence to check). A
+    dict is the documented form and needs an explicit ``supported`` / ``present``
+    true (a bool or an affirmative word: the string "false" is false) or a
+    non-empty ``evidence_ids`` list; an ``evidence_ids`` list that is present but
+    empty means no evidence, so no tick.
     """
     if not isinstance(feat, dict):
         return True
     if "evidence_ids" in feat and not feat["evidence_ids"]:
         return False
-    value = feat.get("supported", feat.get("present", True))
+    if "supported" not in feat and "present" not in feat:
+        return bool(feat.get("evidence_ids"))
+    value = feat.get("supported", feat.get("present"))
     if isinstance(value, str):
         return value.strip().lower() in _TRUE_WORDS
     return bool(value)

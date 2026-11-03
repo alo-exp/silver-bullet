@@ -263,7 +263,7 @@ Run validation before exit:
 ```bash
 python3 skills/silver-deep-research/scripts/validate_report.py --report "$SB_RESEARCH_OUT_DIR/research_report.md"
 python3 skills/silver-deep-research/scripts/verify_citations.py --report "$SB_RESEARCH_OUT_DIR/research_report.md"
-python3 skills/silver-deep-research/scripts/verify_claim_support.py --report "$SB_RESEARCH_OUT_DIR/research_report.md" --dir "$SB_RESEARCH_OUT_DIR"
+python3 skills/silver-deep-research/scripts/verify_claim_support.py verify --dir "$SB_RESEARCH_OUT_DIR" --report "$SB_RESEARCH_OUT_DIR/research_report.md" --strict
 python3 skills/silver-deep-research/scripts/phase_gate.py --dir "$SB_RESEARCH_OUT_DIR"
 ```
 

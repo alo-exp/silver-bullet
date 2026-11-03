@@ -40,7 +40,18 @@ NUMBER_RE = re.compile(r'\b\d+(?:\.\d+)?(?:%|[xX]\b|\b)')
 YEAR_RE = re.compile(r'\b(?:19|20)\d{2}\b')
 
 # Extract capitalized entities (naive NER)
-ENTITY_RE = re.compile(r'\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b')
+# Capitalised phrases (Acme Corp), acronyms (AWS, IBM, SAP) and camelCase brands (GitHub, OpenAI, iPhone).
+ENTITY_RE = re.compile(
+    r'\b(?:[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*|[A-Z]{2,}[a-z]*|[A-Z][a-z]+[A-Z]\w*|[a-z]+[A-Z]\w*)\b'
+)
+
+# Negation cues. A claim and the quote clause it matches must agree on negation, otherwise
+# "does not guarantee zero downtime" would count as support for "guarantees zero downtime".
+NEGATION_RE = re.compile(
+    r"\b(?:not|no|never|none|neither|nor|without|cannot|fails? to|unable to|lacks?)\b|n't\b",
+    re.IGNORECASE,
+)
+CLAUSE_SPLIT_RE = re.compile(r'[.;:!?,]|\bbut\b|\bhowever\b|\balthough\b', re.IGNORECASE)
 
 # Common stop entities to ignore
 STOP_ENTITIES = frozenset([
@@ -89,6 +100,19 @@ def _entity_coverage(entities: set[str], quote: str) -> float:
     return found / len(entities)
 
 
+def _negation_conflict(claim_text: str, quote: str) -> bool:
+    """True when the claim and the best-matching clause of the quote disagree on negation."""
+    claim_tokens = extract_tokens(claim_text)
+    best, best_overlap = '', 0
+    for clause in CLAUSE_SPLIT_RE.split(quote):
+        overlap = len(claim_tokens & extract_tokens(clause))
+        if overlap > best_overlap:
+            best, best_overlap = clause, overlap
+    if not best_overlap:
+        return False
+    return bool(NEGATION_RE.search(claim_text)) != bool(NEGATION_RE.search(best))
+
+
 def compute_support_score(claim_text: str, evidence_quotes: list[str]) -> tuple[str, float, str]:
     """
     Compute support status for a claim given its linked evidence quotes.
@@ -127,6 +151,9 @@ def compute_support_score(claim_text: str, evidence_quotes: list[str]) -> tuple[
             if value < 1.0:
                 complete = False
                 notes.append(note)
+        if _negation_conflict(claim_text, quote):
+            complete = False
+            notes.append('negation mismatch')
         score = sum(WEIGHTS[name] * value for name, value in parts) / sum(WEIGHTS[name] for name, _ in parts)
         if score > best[0]:
             best = (score, complete, notes)

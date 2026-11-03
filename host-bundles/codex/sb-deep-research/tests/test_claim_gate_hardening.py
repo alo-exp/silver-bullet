@@ -352,3 +352,136 @@ class ExtractClaimsBoundsTests(Run):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DocumentedCommandsTests(Run):
+    """R11-05 / R11-16: every command the docs tell the agent to run parses, and the claim gate works."""
+
+    DOCS = ["SKILL.md", "README.md"]
+    BAD = ("unrecognized arguments", "invalid choice", "arguments are required", "usage:")
+
+    def commands(self):
+        import re
+        import shlex
+        root = SKILL
+        files = [root / n for n in self.DOCS] + sorted((root / "reference").rglob("*.md"))
+        found = []
+        for path in files:
+            text = path.read_text(encoding="utf-8")
+            for block in re.findall(r"```(?:bash|sh)\n(.*?)```", text, re.S):
+                joined = re.sub(r"\\\n\s*", " ", block)
+                for line in joined.splitlines():
+                    line = line.strip()
+                    if not line.startswith("python3 skills/silver-deep-research/scripts/"):
+                        continue
+                    if any(t in line for t in ("<<", "|", "<run", "<dir", "...", "[")):
+                        continue
+                    found.append((path.name, shlex.split(line.replace('"', '"'))))
+        return found
+
+    def test_every_documented_script_command_parses(self):
+        cmds = self.commands()
+        self.assertGreaterEqual(len(cmds), 8)
+        seen = set()
+        env = {**os.environ, "SB_RESEARCH_OUT_DIR": str(self.dir)}
+        for doc, argv in cmds:
+            argv = [os.path.expandvars(a.replace("$SB_RESEARCH_OUT_DIR", str(self.dir))) for a in argv]
+            argv = [str(SCRIPTS / Path(a).name) if a.startswith("skills/silver-deep-research/scripts/") else a for a in argv]
+            if tuple(argv) in seen:
+                continue
+            seen.add(tuple(argv))
+            proc = subprocess.run([sys.executable, *argv[1:]], cwd=self.dir, env=env, capture_output=True,
+                                  text=True, timeout=60)
+            for bad in self.BAD:
+                self.assertNotIn(bad, proc.stderr, f"{doc}: {' '.join(argv)}\n{proc.stderr}")
+
+    def _skill_md_gate_command(self):
+        for doc, argv in self.commands():
+            if doc == "SKILL.md" and argv[1].endswith("verify_claim_support.py"):
+                return argv
+        self.fail("SKILL.md documents no verify_claim_support.py command")
+
+    def test_skill_md_claim_gate_is_strict_and_runs(self):
+        argv = self._skill_md_gate_command()
+        self.assertIn("verify", argv)
+        self.assertIn("--strict", argv)
+
+        def run(d):
+            a = [x.replace("$SB_RESEARCH_OUT_DIR", str(d)) for x in argv]
+            a[1] = str(SCRIPTS / "verify_claim_support.py")
+            return subprocess.run([sys.executable, *a[1:]], capture_output=True, text=True, timeout=60)
+
+        sb = StrictGateEndToEndTests("test_supported_report_passes_strict")
+        sb.dir = self.dir / "good"
+        sb.dir.mkdir()
+        sb.cli = self.cli
+        good = sb.build("Acme Corp revenue grew 40% in 2024 according to its annual filing [1].",
+                        "Acme Corp revenue grew 40% in 2024, its annual filing shows.")
+        claims = jsonl(good / "claims.jsonl")
+        (good / "claims.jsonl").write_text(json.dumps([c for c in claims if "Acme" in c["text"]][0]) + "\n")
+        self.assertEqual(run(good).returncode, 0)
+        sb.dir = self.dir / "bad"
+        sb.dir.mkdir()
+        bad = sb.build("The vendor guarantees zero downtime for all customers and has never had a breach.",
+                       "the weather was cold and windy yesterday")
+        self.assertEqual(run(bad).returncode, 1)
+
+
+class ReviewVariantTests(Run):
+    """Variants of R11-02 found in review: acronym/camelCase entities, hedged figures, negation."""
+
+    build = StrictGateEndToEndTests.build
+
+    def status(self, claim, quote):
+        return vcs.compute_support_score(claim, [quote])[0]
+
+    def test_acronym_and_camelcase_entities_must_appear_in_the_quote(self):
+        for claim, quote in (
+            ("AWS acquired GitHub in 2018 for 7.5 billion dollars", "Microsoft acquired GitHub in 2018 for 7.5 billion dollars"),
+            ("IBM acquired the company in 2019 for 34 billion", "Oracle acquired the company in 2019 for 34 billion"),
+            ("GitLab acquired the startup in 2021", "GitHub acquired the startup in 2021"),
+        ):
+            self.assertNotEqual(self.status(claim, quote), "supported", claim)
+
+    def test_honest_acronym_claims_still_pass(self):
+        self.assertEqual(self.status("Microsoft acquired GitHub in 2018 for 7.5 billion dollars",
+                                     "Microsoft acquired GitHub in 2018 for 7.5 billion dollars"), "supported")
+        self.assertEqual(self.status("AWS launched OpenAI integrations in 2023", "AWS launched OpenAI integrations in 2023"),
+                         "supported")
+        self.assertEqual(vcs.extract_entities("AWS and iPhone and OpenAI"), {"AWS", "iPhone", "OpenAI"})
+
+    def test_negation_mismatch_is_not_support(self):
+        quote = "The vendor guarantees zero downtime for all enterprise customers"
+        self.assertNotEqual(self.status("The vendor does not guarantee zero downtime for enterprise customers", quote), "supported")
+        negated_quote = "The vendor does not guarantee zero downtime for enterprise customers"
+        self.assertNotEqual(self.status("The vendor guarantees zero downtime for enterprise customers", negated_quote), "supported")
+        self.assertIn("negation mismatch", vcs.compute_support_score(
+            "The vendor does not guarantee zero downtime for enterprise customers", [quote])[2])
+
+    def test_matching_negation_and_unrelated_negation_do_not_fail_honest_claims(self):
+        both = "The vendor does not guarantee zero downtime for enterprise customers"
+        self.assertEqual(self.status(both, both), "supported")
+        claim = "Acme supports single sign-on for enterprise customers"
+        quote = "Acme supports single sign-on for enterprise customers, but not SCIM provisioning"
+        self.assertEqual(self.status(claim, quote), "supported")
+        self.assertFalse(vcs._negation_conflict("zzzz qqqq", "unrelated words only"))
+
+    def test_hedged_or_recommending_sentence_with_a_figure_is_factual(self):
+        for text in ("Acme raised 50 million dollars in 2023 and should be shortlisted.",
+                     "Revenue might reach 40% growth in 2024.",
+                     "We recommend Acme, which raised $50 million."):
+            self.assertEqual(extract_claims.classify_claim(text, "findings"), "factual", text)
+        self.assertEqual(extract_claims.classify_claim("Acme raised 50 million dollars in 2023 [1].", "synthesis"), "factual")
+        self.assertEqual(extract_claims.classify_claim("Overall, Acme grew 40% in 2024.", "synthesis"), "synthesis")
+
+    def test_honest_recommendations_without_figures_stay_exempt(self):
+        for text, kind in (("You should shortlist three vendors.", "recommendation"),
+                           ("We recommend Acme for small teams.", "recommendation"),
+                           ("Adoption might slow down.", "speculation")):
+            self.assertEqual(extract_claims.classify_claim(text, "findings"), kind, text)
+
+    def test_strict_gate_catches_a_wrong_company_end_to_end(self):
+        d = self.build("AWS acquired GitHub in 2018 for 7.5 billion dollars [1].",
+                       "Microsoft acquired GitHub in 2018 for 7.5 billion dollars")
+        code, out, _ = self.cli(vcs, "verify", "--dir", str(d), "--strict")
+        self.assertEqual(code, 1, out)

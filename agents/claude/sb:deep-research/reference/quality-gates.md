@@ -190,3 +190,12 @@ Options:
    1. [Option 1]
    2. [Option 2]
 ```
+
+## Known limits of the claim-support gate (v1)
+
+`verify_claim_support.py` is a lexical check: a claim is `supported` only when its words, numbers,
+years and named entities (capitalised phrases, acronyms such as AWS, camelCase brands such as
+GitHub) appear in a linked quote and the claim and the matching quote clause agree on negation.
+It cannot detect an antonym or verb swap with the same words ("acquired" vs "sold"), and a
+recommendation or hedge sentence without a year, percentage, currency or scaled figure is
+exempt from `--strict`. Review such claims by hand.

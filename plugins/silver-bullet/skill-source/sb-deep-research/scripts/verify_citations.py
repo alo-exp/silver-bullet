@@ -27,9 +27,11 @@ Does NOT require API keys - uses free DOI resolver and heuristics.
 
 import sys
 import argparse
+import http.client
 import ipaddress
 import re
 import socket
+import ssl
 from pathlib import Path
 from typing import Callable, List, Dict, Optional, Tuple
 from urllib import request, error
@@ -49,9 +51,35 @@ BIB_SECTION_RE = re.compile(r'^##[ \t]+Bibliography\b[^\n]*\n(.*?)(?=^#{1,2}(?!#
                             re.DOTALL | re.IGNORECASE | re.MULTILINE)
 
 
+_NAT64 = ipaddress.ip_network('64:ff9b::/96')
+_V4_COMPATIBLE = ipaddress.ip_network('::/96')
+
+
+def _effective_address(addr):
+    """The IPv4 address an IPv6 literal really reaches (mapped, NAT64 64:ff9b::/96, ::/96)."""
+    if addr.version == 6:
+        if addr.ipv4_mapped:
+            return addr.ipv4_mapped
+        if addr in _NAT64 or addr in _V4_COMPATIBLE:
+            return ipaddress.IPv4Address(int(addr) & 0xFFFFFFFF)
+    return addr
+
+
+def _public_addresses(host: str, port: int, resolver: Optional[Callable] = None):
+    """Resolve ``host`` and return its addresses, or raise ValueError naming a non-public one."""
+    resolver = resolver or socket.getaddrinfo
+    infos = resolver(host, port, proto=socket.IPPROTO_TCP)
+    addrs = []
+    for info in infos:
+        addr = ipaddress.ip_address(info[4][0].split('%')[0])
+        if not _effective_address(addr).is_global:
+            raise ValueError(f'non-public address {_effective_address(addr)}')
+        addrs.append(info[4][0].split('%')[0])
+    return addrs
+
+
 def unsafe_url_reason(url: str, resolver: Optional[Callable] = None) -> Optional[str]:
     """Why ``url`` must not be requested, or None when it is a public http(s) URL."""
-    resolver = resolver or socket.getaddrinfo
     parsed = urlparse(url)
     if parsed.scheme not in ('http', 'https'):
         return f"scheme {parsed.scheme or 'missing'} not allowed"
@@ -61,16 +89,64 @@ def unsafe_url_reason(url: str, resolver: Optional[Callable] = None) -> Optional
     if host in BLOCKED_HOSTS or host.endswith(('.localhost', '.internal', '.local')):
         return f'internal host name {host}'
     try:
-        infos = resolver(host, parsed.port or (443 if parsed.scheme == 'https' else 80), proto=socket.IPPROTO_TCP)
-    except (OSError, UnicodeError, ValueError):
+        _public_addresses(host, parsed.port or (443 if parsed.scheme == 'https' else 80), resolver)
+    except ValueError as exc:
+        return str(exc)
+    except (OSError, UnicodeError):
         return f'cannot resolve {host}'
-    for info in infos:
-        addr = ipaddress.ip_address(info[4][0].split('%')[0])
-        if addr.version == 6 and addr.ipv4_mapped:
-            addr = addr.ipv4_mapped
-        if not addr.is_global:
-            return f'non-public address {addr}'
     return None
+
+
+def _connect_pinned(conn, resolver: Optional[Callable]):
+    """Open ``conn``'s socket to an address vetted at connect time (no second DNS lookup).
+
+    The URL check resolves the host once and urllib would resolve it again to connect, which a
+    rebinding DNS server can answer differently. Resolving and connecting here use one answer.
+    """
+    try:
+        addrs = _public_addresses(conn.host, conn.port, resolver)
+    except (ValueError, OSError, UnicodeError) as exc:
+        raise error.URLError(f'connection blocked ({exc})')
+    return socket.create_connection((addrs[0], conn.port), conn.timeout, conn.source_address)
+
+
+class _PinnedHTTPConnection(http.client.HTTPConnection):
+    def __init__(self, *args, resolver=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._resolver = resolver
+
+    def connect(self):
+        self.sock = _connect_pinned(self, self._resolver)
+
+
+class _PinnedHTTPSConnection(http.client.HTTPSConnection):
+    def __init__(self, *args, resolver=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._resolver = resolver
+
+    def connect(self):
+        sock = _connect_pinned(self, self._resolver)
+        self.sock = self._context.wrap_socket(sock, server_hostname=self.host)
+
+
+class _PinnedHTTPHandler(request.HTTPHandler):
+    def __init__(self, resolver=None):
+        super().__init__()
+        self.resolver = resolver
+
+    def http_open(self, req):
+        return self.do_open(lambda host, **kw: _PinnedHTTPConnection(host, resolver=self.resolver, **kw), req)
+
+
+class _PinnedHTTPSHandler(request.HTTPSHandler):
+    def __init__(self, resolver=None):
+        super().__init__(context=ssl.create_default_context())
+        self.resolver = resolver
+
+    def https_open(self, req):
+        return self.do_open(
+            lambda host, **kw: _PinnedHTTPSConnection(host, resolver=self.resolver, **kw), req, context=self._context
+        )
 
 
 class _SafeRedirectHandler(request.HTTPRedirectHandler):
@@ -88,7 +164,15 @@ class _SafeRedirectHandler(request.HTTPRedirectHandler):
 
 
 def _urlopen(req: request.Request, timeout: float, resolver: Optional[Callable]):
-    return request.build_opener(_SafeRedirectHandler(resolver)).open(req, timeout=timeout)
+    opener = request.build_opener(
+        _SafeRedirectHandler(resolver), _PinnedHTTPHandler(resolver), _PinnedHTTPSHandler(resolver)
+    )
+    return opener.open(req, timeout=timeout)
+
+
+# Heuristic hits that real titles also trigger ("A Survey of Large Language Models",
+# "Pro Git Guide"). They only make an entry suspicious when no DOI or URL confirmed it.
+SOFT_ISSUE_PREFIXES = ('Suspicious title pattern', 'Very generic short title')
 
 
 class CitationVerifier:
@@ -285,7 +369,7 @@ class CitationVerifier:
             if year > current_year:
                 issues.append(f"Future year: {year} (current: {current_year})")
             # Very old with modern phrasing is suspicious
-            if year < 2000 and any(word in title.lower() for word in ['ai', 'llm', 'gpt', 'transformer']):
+            if year < 2000 and re.search(r'\b(?:ai|llm|llms|gpt|transformers?)\b', title, re.IGNORECASE):
                 issues.append(f"Anachronistic: pre-2000 ({year}) citation mentioning modern AI terms")
 
         return issues
@@ -349,8 +433,10 @@ class CitationVerifier:
 
         # STEP 1: Hallucination detection. A later DOI or URL success never clears it.
         hallucination_issues = self.detect_hallucination_patterns(entry)
-        result['issues'].extend(hallucination_issues)
-        suspicious = bool(hallucination_issues)
+        soft_issues = [i for i in hallucination_issues if i.startswith(SOFT_ISSUE_PREFIXES)]
+        hard_issues = [i for i in hallucination_issues if i not in soft_issues]
+        result['issues'].extend(hard_issues)
+        hard = bool(hard_issues)
         doi_verified = False
         url_verified = False
 
@@ -363,7 +449,7 @@ class CitationVerifier:
                 result['metadata'] = metadata
                 mismatches = self._doi_metadata_issues(entry, metadata)
                 result['issues'].extend(mismatches)
-                suspicious = suspicious or bool(mismatches)
+                hard = hard or bool(mismatches)
                 doi_verified = not mismatches
                 print("")
             else:
@@ -383,9 +469,16 @@ class CitationVerifier:
         # STEP 4: Final fallback - no verification method
         if not entry['doi'] and not entry['url']:
             result['issues'].append("No DOI or URL - cannot verify")
-            suspicious = True
+            hard = True
 
-        if suspicious:
+        # A soft heuristic hit is a warning on a confirmed entry and a flag on an unconfirmed one.
+        if soft_issues:
+            if doi_verified or url_verified:
+                result['warnings'] = soft_issues
+            else:
+                result['issues'].extend(soft_issues)
+        result['hard'] = hard
+        if hard or (soft_issues and not (doi_verified or url_verified)):
             result['status'] = 'suspicious'
         elif doi_verified:
             result['status'] = 'verified'
@@ -462,14 +555,18 @@ class CitationVerifier:
             failures.append('STRICT MODE: Unverified citations found')
         if total_verified / len(results) < 0.5:
             failures.append('Less than 50% citations verified')
+        # --lenient is for offline runs: it excuses what a network check could not confirm
+        # (unverified entries, soft title heuristics) but still fails entries that are wrong on
+        # their face (placeholder or future-year citations, no DOI/URL, DOI title/year mismatch).
+        hard_suspicious = [r for r in suspicious if r.get('hard')]
 
         if not failures:
             print('CITATION VERIFICATION PASSED')
             return True
         for failure in failures:
             print(f'WARNING: {failure}')
-        if self.lenient:
-            print('  (--lenient: reporting only, not failing)')
+        if self.lenient and not hard_suspicious:
+            print('  (--lenient: unconfirmed citations reported, not failing)')
             return True
         print('CITATION VERIFICATION FAILED (fix the citations, or use --lenient only when offline)')
         return False

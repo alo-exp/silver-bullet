@@ -103,11 +103,50 @@ class CitationGateTests(unittest.TestCase):
 
     def test_resolving_doi_does_not_clear_a_hallucination_flag(self):
         v = verifier("## Bibliography\n")
-        entry = {"num": "1", "raw": "Doe (2020). \"A Study of Things\". https://doi.org/10.1/x", "year": "2020",
-                 "title": "A Study of Things", "doi": "10.1/x", "url": "https://doi.org/10.1/x"}
-        with mock.patch.object(v, "verify_doi", return_value=(True, {"title": "A Study of Things", "year": 2020})):
+        entry = {"num": "1", "raw": "Doe (2020). \"TBD results\". https://doi.org/10.1/x", "year": "2020",
+                 "title": "TBD results", "doi": "10.1/x", "url": "https://doi.org/10.1/x"}
+        with mock.patch.object(v, "verify_doi", return_value=(True, {"title": "TBD results", "year": 2020})):
             result = quiet(v.verify_entry, entry)
         self.assertEqual(result["status"], "suspicious")
+
+    def test_real_titles_pass_when_the_url_or_doi_confirms_them(self):
+        """Honest bibliography: titles that merely look generic are warnings, not failures."""
+        titles = [
+            (2023, 'Zhao et al.', 'A Survey of Large Language Models'),
+            (1985, 'Porter', 'Competitive Advantage: Creating and Sustaining Superior Performance'),
+            (2014, 'Chacon', 'Pro Git Guide'),
+        ]
+        body = "## Bibliography\n\n" + "\n".join(
+            f'[{i}] {a} ({y}). "{t}". https://example.org/{i}' for i, (y, a, t) in enumerate(titles, 1)) + "\n"
+        v = verifier(body)
+        with mock.patch.object(v, "verify_url", return_value=(True, "URL accessible")), contextlib.redirect_stdout(io.StringIO()) as out:
+            self.assertTrue(v.verify_all())
+        self.assertIn("CITATION VERIFICATION PASSED", out.getvalue())
+
+    def test_ai_terms_need_whole_words(self):
+        v = verifier("## Bibliography\n")
+        issues = v.detect_hallucination_patterns({"title": "Creating and Sustaining Superior Performance", "year": "1985"})
+        self.assertFalse([i for i in issues if "Anachronistic" in i])
+        issues = v.detect_hallucination_patterns({"title": "AI planning with GPT", "year": "1985"})
+        self.assertTrue([i for i in issues if "Anachronistic" in i])
+
+    def test_generic_titles_without_confirmation_are_still_flagged(self):
+        v = verifier("## Bibliography\n")
+        entry = {"num": "1", "raw": "x", "year": "2020", "title": "Pro Git Guide", "doi": None, "url": "https://e.org/1"}
+        with mock.patch.object(v, "verify_url", return_value=(False, "HTTP 404")):
+            result = quiet(v.verify_entry, entry)
+        self.assertEqual(result["status"], "suspicious")
+        self.assertFalse(result["hard"])
+
+    def test_lenient_excuses_unconfirmed_entries_but_not_wrong_ones(self):
+        v = verifier("## Bibliography\n")
+        v.lenient = True
+        soft = {"num": "1", "status": "suspicious", "issues": ["generic"], "hard": False}
+        hard = {"num": "2", "status": "suspicious", "issues": ["Placeholder text in title"], "hard": True}
+        for results, expected in (([soft], True), ([hard], False)):
+            with mock.patch.object(v, "extract_bibliography", return_value=[{}] * len(results)), \
+                    mock.patch.object(v, "verify_entry", side_effect=results), contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(v.verify_all(), expected)
 
     def test_doi_must_match_the_entry_when_the_entry_has_no_quoted_title(self):
         v = verifier("## Bibliography\n")
@@ -119,8 +158,78 @@ class CitationGateTests(unittest.TestCase):
             self.assertEqual(quiet(v.verify_entry, entry)["status"], "verified")
 
 
+class FakeSock:
+    def __init__(self, reply=b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nhi"):
+        self.sent = b""
+        self._reply = reply
+
+    def sendall(self, data):
+        self.sent += data
+
+    def makefile(self, *a, **k):
+        return io.BytesIO(self._reply)
+
+    def settimeout(self, t):
+        pass
+
+    def close(self):
+        pass
+
+
+class PinnedConnectionTests(unittest.TestCase):
+    """The vetted address is the one connected to (no second DNS lookup to rebind)."""
+
+    @staticmethod
+    def resolver(addr):
+        return lambda host, port, proto=0: [(2, 1, 6, "", (addr, port))]
+
+    def test_http_connects_to_the_vetted_address_and_keeps_the_host_header(self):
+        sock = FakeSock()
+        with mock.patch.object(socket, "create_connection", return_value=sock) as cc:
+            with vc._urlopen(request.Request("http://docs.example/p"), 5, self.resolver("93.184.216.34")) as resp:
+                self.assertEqual(resp.read(), b"hi")
+        self.assertEqual(cc.call_args.args[0], ("93.184.216.34", 80))
+        self.assertIn(b"Host: docs.example", sock.sent)
+
+    def test_a_host_that_rebinds_to_a_private_address_at_connect_time_is_blocked(self):
+        answers = iter([[(2, 1, 6, "", ("93.184.216.34", 80))], [(2, 1, 6, "", ("169.254.169.254", 80))]])
+        resolver = lambda host, port, proto=0: next(answers)  # noqa: E731
+        self.assertIsNone(vc.unsafe_url_reason("http://rebind.example/", resolver))
+        with mock.patch.object(socket, "create_connection") as cc:
+            with self.assertRaises(error.URLError) as cm:
+                vc._urlopen(request.Request("http://rebind.example/"), 5, resolver)
+        cc.assert_not_called()
+        self.assertIn("connection blocked", str(cm.exception.reason))
+
+    def test_https_wraps_with_the_original_host_name(self):
+        conn = vc._PinnedHTTPSConnection("secure.example", 443, resolver=self.resolver("93.184.216.34"))
+        wrapped = []
+        conn._context = types.SimpleNamespace(wrap_socket=lambda sock, server_hostname: wrapped.append(server_hostname) or sock)
+        sock = FakeSock()
+        with mock.patch.object(socket, "create_connection", return_value=sock) as cc:
+            conn.connect()
+        self.assertEqual(cc.call_args.args[0], ("93.184.216.34", 443))
+        self.assertEqual(wrapped, ["secure.example"])
+        self.assertIs(conn.sock, sock)
+
+    def test_https_handler_builds_pinned_connections(self):
+        handler = vc._PinnedHTTPSHandler(self.resolver("93.184.216.34"))
+        sock = FakeSock()
+        with mock.patch.object(socket, "create_connection", return_value=sock), \
+                mock.patch.object(vc._PinnedHTTPSConnection, "connect", lambda self_: setattr(self_, "sock", sock)):
+            req = request.Request("https://secure.example/x")
+            req.timeout = 5
+            with handler.https_open(req) as resp:
+                self.assertEqual(resp.read(), b"hi")
+
+
 class SsrfTests(unittest.TestCase):
     """R11-22: no request goes to loopback, private, link-local or metadata addresses."""
+
+    def test_nat64_and_ipv4_compatible_encodings_of_metadata_are_blocked(self):
+        for url in ("http://[64:ff9b::a9fe:a9fe]/", "http://[::a9fe:a9fe]/", "http://[64:ff9b:1::a9fe:a9fe]/"):
+            self.assertIn("non-public", vc.unsafe_url_reason(url) or "", url)
+        self.assertIsNone(vc.unsafe_url_reason("http://[64:ff9b::5db8:d822]/"))  # NAT64 of 93.184.216.34
 
     def test_private_and_metadata_urls_are_never_requested(self):
         table = {"127.0.0.1": "127.0.0.1", "169.254.169.254": "169.254.169.254", "intranet.example": "10.1.2.3",
