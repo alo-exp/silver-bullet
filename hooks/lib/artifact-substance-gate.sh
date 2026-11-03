@@ -1,28 +1,35 @@
 # shellcheck shell=bash
 # Substantive artifact validation at delivery (P2).
 
+# The artifact of the work in progress: the most recently modified match among .planning/<name> and the
+# phase directories, not the first one in glob order (an old phase's file must not be judged, R1-34).
 _sb_substance_find_artifact() {
   local repo_root="$1"
   local pattern="$2"
-  local f
+  local f newest=""
   for f in \
     "$repo_root/.planning/$pattern" \
     "$repo_root/.planning/phases"/*/"$pattern" \
     "$repo_root/.planning/phases"/*/*-"$pattern"; do
     [[ -f "$f" && ! -L "$f" ]] || continue
-    printf '%s' "$f"
-    return 0
+    if [[ -z "$newest" || "$f" -nt "$newest" ]]; then
+      newest="$f"
+    fi
   done
-  return 1
+  [[ -n "$newest" ]] || return 1
+  printf '%s' "$newest"
 }
 
+# A stub has no content once headings, table rules and lines that are only a placeholder token
+# (TODO, TBD, <placeholder>, "coming soon"...) are removed. A line that merely mentions such a word
+# ("no TODO markers remain") is content (R1-34).
 _sb_substance_is_stub() {
   local file="$1"
   local body
-  body="$(grep -vE '^#|^$|^\s*$|^\|[-: ]+\|' "$file" 2>/dev/null | tr -d '[:space:]' || true)"
-  [[ -z "$body" ]] && return 0
-  grep -qiE '\bTODO\b|\bFIXME\b|placeholder|coming soon|not available|lorem ipsum|\bTBD\b' "$file" 2>/dev/null && return 0
-  return 1
+  body="$(grep -vE '^#|^[[:space:]]*$|^\|[-: |]+\|?[[:space:]]*$' "$file" 2>/dev/null |
+    grep -viE '^[[:space:]>*|-]*(\[[ x]\][[:space:]]*)?<?(todo|tbd|fixme|placeholder|lorem ipsum|coming soon|not available|n/a)>?[.:!]?[[:space:]|]*$' |
+    tr -d '[:space:]' || true)"
+  [[ -z "$body" ]]
 }
 
 _sb_substance_has_command_output() {

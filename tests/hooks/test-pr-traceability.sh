@@ -52,9 +52,9 @@ teardown() {
 }
 
 run_hook() {
-  local cmd="$1"
+  local cmd="$1" created="${2:-}"
   local input
-  input=$(jq -n --arg c "$cmd" '{hook_event_name: "PostToolUse", tool_name: "Bash", tool_input: {command: $c}}')
+  input=$(jq -n --arg c "$cmd" --arg o "$created" '{hook_event_name: "PostToolUse", tool_name: "Bash", tool_input: {command: $c}, tool_response: {stdout: $o}}')
   ( cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "$HOOK" 2>/dev/null )
 }
 
@@ -131,7 +131,7 @@ setup
 # The hook will find gh (hardcoded fallback paths), attempt gh pr view, fail to find a PR,
 # and output "Could not determine PR URL — traceability block skipped."
 printf 'spec-version=1.0\njira-id=TEST-123\n' > "$SPEC_SESSION_FILE"
-out=$(run_hook "gh pr create --title 'feat: my feature'" 2>/dev/null || true)
+out=$(run_hook "gh pr create --title 'feat: my feature'" "https://example.test/o/r/pull/3" 2>/dev/null || true)
 assert_passes "gh pr create with spec-session exits cleanly" "$out"
 # The hook should output some traceability-related advisory (either no-gh or no-PR-URL message)
 if grep -qE 'gh CLI not found|Could not determine PR URL|traceability' <<<"$out"; then

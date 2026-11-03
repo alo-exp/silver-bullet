@@ -240,23 +240,13 @@ run_hook_git() {
   ( cd "$TMPDIR_TEST" && printf '%s' "$input" | GH_STATUS_OVERRIDE="$gh_output" bash "$HOOK" 2>/dev/null )
 }
 
-# Option B: fix(ci): prefix allows push when CI is red
-setup_git
-out=$(run_hook_git "git push" '{"status":"completed","conclusion":"failure"}' "fix(ci): fix broken matrix test")
-assert_passes "#95 Option B: fix(ci): prefix allows git push when CI red" "$out"
-teardown
-
-# Option B: ci: prefix allows push when CI is red
-setup_git
-out=$(run_hook_git "git push" '{"status":"completed","conclusion":"failure"}' "ci: bump node version to 22")
-assert_passes "#95 Option B: ci: prefix allows git push when CI red" "$out"
-teardown
-
-# Option B: [ci-fix] in message allows push when CI is red
-setup_git
-out=$(run_hook_git "git push" '{"status":"completed","conclusion":"failure"}' "fix tests [ci-fix]")
-assert_passes "#95 Option B: [ci-fix] tag allows git push when CI red" "$out"
-teardown
+# The commit-message convention is agent-controlled text: it no longer waives a red CI (R1-21a)
+for msg in "fix(ci): fix broken matrix test" "ci: bump node version to 22" "fix tests [ci-fix]"; do
+  setup_git
+  out=$(run_hook_git "git push" '{"status":"completed","conclusion":"failure"}' "$msg")
+  assert_contains "R1-21a: commit message '$msg' does not allow git push when CI red" "$out" "CI FAILURE DETECTED"
+  teardown
+done
 
 # Guard: unrelated commit message still blocked when CI is red
 setup_git

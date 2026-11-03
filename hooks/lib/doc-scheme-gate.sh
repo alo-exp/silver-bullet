@@ -150,6 +150,18 @@ sb_doc_scheme__write_gap_report() {
   SB_DOC_SCHEME_GAP_REPORT_PATH="$gap_path"
 }
 
+# sb_doc_scheme__changed_since REPO SESSION_START MONTH DOC_KEY: the doc really changed since the session
+# started: it has uncommitted changes or a commit newer than the session marker. A modification time alone
+# is not evidence (`touch` satisfies it), so this asks git. Outside a git work tree there is nothing to ask,
+# and the modification-time check stands alone.
+sb_doc_scheme__changed_since() {
+  local repo="$1" since="$2" month="$3" key="$4" spec
+  git -C "$repo" rev-parse --is-inside-work-tree >/dev/null 2>&1 || return 0
+  spec="${key//YYYY-MM/${month}*}"
+  [[ -n "$(git -C "$repo" status --porcelain -- "$spec" 2>/dev/null)" ]] && return 0
+  [[ -n "$(git -C "$repo" log --since="$since" --pretty=format: --name-only -- "$spec" 2>/dev/null)" ]]
+}
+
 # Enforce doc-scheme contract.
 # Args:
 #   $1 mode ("task" or "delivery")
@@ -281,7 +293,7 @@ EOF
 
   if [[ -n "$task_granularity" ]]; then
     local level=""
-    for level in "${_sb_granularity_levels[@]}"; do
+    for level in ${_sb_granularity_levels[@]+"${_sb_granularity_levels[@]}"}; do
       if [[ "$task_granularity" == "$level" ]]; then
         should_enforce="true"
         break
@@ -292,7 +304,7 @@ EOF
   if [[ "$should_enforce" != "true" ]]; then
     if [[ -z "$task_granularity" ]]; then
       gate_issues+="  - Missing numeric task granularity in checklist ('task_granularity')."$'\n'
-      gate_issues+="  - Contract enforces these levels: $(printf '%s ' "${_sb_granularity_levels[@]}" | sed 's/ $//')."$'\n'
+      gate_issues+="  - Contract enforces these levels: $(printf '%s ' ${_sb_granularity_levels[@]+"${_sb_granularity_levels[@]}"} | sed 's/ $//')."$'\n'
     else
       # Explicitly out-of-scope granularity: do not gate this task.
       return 0
@@ -343,7 +355,7 @@ EOF
     local section_status=""
     local mandatory=false
 
-    for doc_key in "${_sb_required_doc_keys[@]}"; do
+    for doc_key in ${_sb_required_doc_keys[@]+"${_sb_required_doc_keys[@]}"}; do
       status=$(jq -r --arg k "$doc_key" '.docs[$k] // empty' "$checklist" 2>/dev/null || true)
       if [[ -z "$status" ]]; then
         gate_issues+="  - Missing checklist entry: ${doc_key}"$'\n'
@@ -352,7 +364,7 @@ EOF
       fi
 
       mandatory=false
-      for mandatory_key in "${_sb_mandatory_updated[@]}"; do
+      for mandatory_key in ${_sb_mandatory_updated[@]+"${_sb_mandatory_updated[@]}"}; do
         [[ "$mandatory_key" == "$doc_key" ]] || continue
         mandatory=true
         break
@@ -368,6 +380,8 @@ EOF
           gate_issues+="  - Missing file marked updated: ${SB_DOC_KEY_LABEL}"$'\n'
         elif (( SB_DOC_KEY_MTIME < session_start )); then
           gate_issues+="  - Stale file marked updated: ${SB_DOC_KEY_LABEL} (not updated this session)"$'\n'
+        elif ! sb_doc_scheme__changed_since "$repo_root" "$session_start" "$month" "$doc_key"; then
+          gate_issues+="  - File marked updated has no change in git since the session started: ${SB_DOC_KEY_LABEL} (a touch is not an update)"$'\n'
         fi
       fi
 

@@ -244,9 +244,12 @@ run_evidence_schema_delivery_gate() {
 run_enforcement_tier_delivery_gate() {
   local cfg="${config_file:-}"
   [[ -n "$cfg" && -f "$cfg" ]] || return 0
-  if [[ "${SILVER_BULLET_SKIP_ENFORCEMENT_TIER_GATE:-0}" == "1" ]]; then
+  # test switch, honoured only in a throw-away sandbox (R1-36)
+  if [[ "${SILVER_BULLET_SKIP_ENFORCEMENT_TIER_GATE:-0}" == "1" ]] && sb_github_overrides_allowed; then
     return 0
   fi
+  # this hook is running, so hooks are active on this host (R1-18)
+  local SB_HOOK_EXECUTING=1
   if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
     # shellcheck source=lib/sb-project-gate.sh
     source "$_lib_dir/sb-project-gate.sh"

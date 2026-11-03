@@ -7,7 +7,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 if [[ "${SB_SKIP_PRE_RELEASE_GATE:-0}" == "1" ]]; then
-  echo "SKIP: SB_SKIP_PRE_RELEASE_GATE=1 — pre-release gate skipped (audited bypass only)" >&2
+  # shellcheck source=scripts/lib/release-bypass-audit.sh
+  source "${SCRIPT_DIR}/lib/release-bypass-audit.sh"
+  sb_release_bypass_audit SB_SKIP_PRE_RELEASE_GATE "$REPO_ROOT"
+  echo "SKIP: SB_SKIP_PRE_RELEASE_GATE=1 — pre-release gate skipped (logged)" >&2
   exit 0
 fi
 

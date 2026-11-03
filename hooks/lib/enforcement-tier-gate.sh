@@ -21,9 +21,19 @@ sb_enforcement_tier_probe() {
   tier_name="$(sb_capability_tier_name 2>/dev/null || echo guidance-only)"
   case "$tier_name" in
     hook-enforced) printf '2' ;;
-    state-tracked) printf '1' ;;
     live-tested) printf '3' ;;
-    *) printf '0' ;;
+    *)
+      # A hook that is executing is itself proof of tier 2 for this host (R1-18): plugins enabled by
+      # project settings, --plugin-dir or CLAUDE_CONFIG_DIR never touch the user-level settings file
+      # the file probe reads. The probe still decides outside a running hook (banners, diagnostics).
+      if [[ "${SB_HOOK_EXECUTING:-0}" == "1" ]]; then
+        printf '2'
+      elif [[ "$tier_name" == "state-tracked" ]]; then
+        printf '1'
+      else
+        printf '0'
+      fi
+      ;;
   esac
 }
 
