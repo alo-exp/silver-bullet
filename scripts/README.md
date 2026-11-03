@@ -53,11 +53,11 @@ Called by skills and hooks while Silver Bullet runs in a project.
 
 | Script | Purpose |
 |--------|---------|
-| `sync-codex-package.sh` | Render `skills/` into `agents/claude/`, `host-bundles/{codex,cursor}/` and `plugins/silver-bullet/skill-source/`, refresh the package symlinks and template mirror |
+| `sync-codex-package.sh` | Render `skills/` into `agents/claude/`, `host-bundles/{codex,cursor}/` and `plugins/silver-bullet/{skill-source,cursor-skill-source}/`, refresh the package symlinks and template mirror |
 | `render-agent-bundle.py` | The per-host skill renderer used by the sync scripts |
 | `sync-cursor-package.sh` | Refresh the Cursor package surface (`cursor-hooks.json`, commands, manifest) |
-| `sync-templates.sh`, `codex-sanitize-package.sh` | Mirror `templates/` into `plugins/silver-bullet/templates/` and expand runtime placeholders |
-| `sync-runtime-mirrors.sh` | Mirror listed runtime scripts and hooks into the plugin package (`--check` for drift) |
+| `sync-templates.sh`, `codex-sanitize-package.sh` | Mirror `templates/` byte-for-byte into `plugins/silver-bullet/templates/`; `codex-sanitize-package.sh` rewrites a Codex install copy (never the checkout) |
+| `sync-runtime-mirrors.sh` | Verify and repair the `scripts` and `hooks` symlinks of the plugin package (`--check` for drift) |
 | `generate-plugin-commands.sh` | Generate `plugins/silver-bullet/commands/` stubs from composer skill frontmatter |
 | `generate-cursor-hooks.py` | Generate `hooks/cursor-hooks.json` from `hooks/hooks.json` |
 | `generate-hook-reference.py` | Generate `docs/HOOKS.md` from `hooks/hooks.json` (`--check` for freshness) |

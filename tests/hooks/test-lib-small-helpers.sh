@@ -27,13 +27,14 @@ assert_contains "block uses the emit function" "$out" "EMIT:"
 assert_not_contains "block exits after emit" "$out" "after"
 
 out="$(PATH="$NOJQ" bash -c 'source "$1"; sb_jq_enforcement_block h nosuchfn; echo after' _ "$LIB/jq-gate.sh")"
-assert_contains "python fallback emits deny" "$out" '"permissionDecision": "deny"'
-assert_contains "python fallback carries message" "$out" "jq is required"
-assert_not_contains "python fallback exits" "$out" "after"
+assert_contains "no emit function: deny from hook-output" "$out" '"permissionDecision":"deny"'
+assert_contains "no emit function: carries message" "$out" "jq is required"
+assert_not_contains "no emit function: exits" "$out" "after"
 
 NOJQPY="$(tl_path_without jq python3)"
 out="$(PATH="$NOJQPY" bash -c 'source "$1"; sb_jq_enforcement_block h; echo after' _ "$LIB/jq-gate.sh")"
-assert_eq "printf fallback" '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"jq required for Silver Bullet enforcement"}}' "$out"
+assert_contains "no jq and no python3: deny still carries the recovery text" "$out" '"permissionDecision":"deny","permissionDecisionReason":"🛑 ENFORCEMENT BLOCKED — jq is required'
+assert_not_contains "no jq and no python3: exits" "$out" "after"
 
 # sb_jq_enforcement_block_sb_initiated
 out="$(bash -c 'source "$1"; sb_jq_enforcement_block_sb_initiated h emit; echo after' _ "$LIB/jq-gate.sh")"
@@ -48,7 +49,7 @@ assert_eq "no project: fail open" "after" "$out"
 
 printf '{}' >"$proj/.silver-bullet.json"
 printf '# SB\n' >"$proj/silver-bullet.md"
-out="$(cd "$proj" && PATH="$NOJQ" SB_RUNTIME_STATE_DIR="$TL_TMP/st" bash -c 'source "$1"; emit(){ echo EMIT; }; sb_jq_enforcement_block_sb_initiated h emit; echo after' _ "$LIB/jq-gate.sh")"
+out="$(cd "$proj" && PATH="$NOJQ" SB_RUNTIME_STATE_DIR="$TL_TMP/st" bash -c 'source "$1"; emit(){ echo EMIT; }; sb_jq_enforcement_block_sb_initiated h emit; echo after' _ "$LIB/jq-gate.sh" </dev/null)"
 assert_eq "initiated project without jq blocks through emit fn" "EMIT" "$out"
 
 # Library missing: copy jq-gate alone into a temp dir.
@@ -61,16 +62,16 @@ assert_eq "gate library absent: fail open" "after" "$out"
 # shellcheck source=../../hooks/lib/hook-output.sh
 source "$LIB/hook-output.sh"
 if sb_emit_hook_message PostToolUse "" >/dev/null; then tl_fail "empty message rejected"; else tl_pass "empty message rejected"; fi
-assert_eq "emit with jq" '{"hookSpecificOutput":{"hookEventName":"PostToolUse","message":"hi \"x\""}}' "$(sb_emit_hook_message PostToolUse 'hi "x"')"
+assert_eq "emit with jq" '{"systemMessage":"hi \"x\""}' "$(sb_emit_hook_message PostToolUse 'hi "x"')"
 out="$(PATH="$NOJQ" bash -c 'source "$1"; sb_emit_hook_message PreToolUse "a\"b"' _ "$LIB/hook-output.sh")"
-assert_eq "emit without jq escapes via python" '{"hookSpecificOutput":{"hookEventName":"PreToolUse","message":"a\"b"}}' "$out"
+assert_eq "emit without jq escapes via python" '{"systemMessage":"a\"b"}' "$out"
 out="$(PATH="$NOJQPY" bash -c 'source "$1"; sb_emit_hook_message PreToolUse "plain"' _ "$LIB/hook-output.sh")"
-assert_eq "emit without jq and python quotes plainly" '{"hookSpecificOutput":{"hookEventName":"PreToolUse","message":"plain"}}' "$out"
+assert_eq "emit without jq and python encodes in Bash" '{"systemMessage":"plain"}' "$out"
 
 if sb_emit_hook_message_json PostToolUse "" >/dev/null; then tl_fail "empty json message rejected"; else tl_pass "empty json message rejected"; fi
-assert_eq "emit_json with jq" '{"hookSpecificOutput":{"hookEventName":"Stop","message":"m\n2"}}' "$(sb_emit_hook_message_json Stop '"m\n2"')"
+assert_eq "emit_json with jq" '{"systemMessage":"m\n2"}' "$(sb_emit_hook_message_json Stop '"m\n2"')"
 out="$(PATH="$NOJQ" bash -c 'source "$1"; sb_emit_hook_message_json Stop "\"raw\""' _ "$LIB/hook-output.sh")"
-assert_eq "emit_json without jq passes json through" '{"hookSpecificOutput":{"hookEventName":"Stop","message":"raw"}}' "$out"
+assert_eq "emit_json without jq passes json through" '{"systemMessage":"raw"}' "$out"
 
 # ---- cert-bypass ---------------------------------------------------------
 for v in 1 true; do
@@ -91,7 +92,7 @@ ln -s "$TL_TMP/real" "$TL_TMP/link"
 assert_eq "symlink resolved" "$TL_TMP/real" "$(sb_canonical_path "$TL_TMP/link")"
 tilde_path="~"/x
 assert_eq "home expanded" "$HOME/x" "$(sb_canonical_path "$tilde_path")"
-assert_eq "python missing: path echoed back" "$TL_TMP/link" "$(PATH="$NOJQPY" bash -c 'source "$1"; sb_canonical_path "$2"' _ "$LIB/path-canonical.sh" "$TL_TMP/link")"
+assert_eq "python missing: symlink still resolved (pure Bash)" "$TL_TMP/real" "$(PATH="$NOJQPY" bash -c 'source "$1"; sb_canonical_path "$2"' _ "$LIB/path-canonical.sh" "$TL_TMP/link")"
 
 # ---- github-run-list -----------------------------------------------------
 # shellcheck source=../../hooks/lib/github-run-list.sh

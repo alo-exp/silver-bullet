@@ -668,7 +668,7 @@ def read_toml(path, label=None) -> TomlDocument:
 
 def is_sb_trust_table(path) -> bool:
     """True for the ``[hooks.state."<key>"]`` trust tables Silver Bullet's installers write:
-    keys of the package (``silver-bullet@...``) and, in Kay mode, of ``~/.codex/hooks.json``."""
+    keys of the package (``silver-bullet@...``) and, in Kay mode, of the host's ``hooks.json``."""
     return (
         len(path) >= 3
         and tuple(path[:2]) == ("hooks", "state")

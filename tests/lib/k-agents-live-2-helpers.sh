@@ -45,7 +45,7 @@ EOS
   # invoke-skill adapter: prints a recognizable skill banner unless told otherwise
   cat >"$d/scripts/silver-bullet" <<'EOS'
 #!/usr/bin/env bash
-echo "adapter $* roots=${SILVER_BULLET_SKILL_ROOTS:-} plugin=${SB_PLUGIN_ROOT:-}" >>"${STUB_LOG:?}"
+echo "adapter $* roots=${SILVER_BULLET_SKILL_ROOTS:-} plugin=${SB_PLUGIN_ROOT:-}" >>"${STUB_LOG:?}"; echo "adapter-env home=$HOME state=${SB_RUNTIME_STATE_DIR:-}" >>"${STUB_LOG:?}"
 case "${STUB_ADAPTER_MODE:-ok}" in
   ok) echo "BEGIN SKILL silver-verify" ;;
   fail) echo "adapter failed"; exit 1 ;;

@@ -7,9 +7,10 @@ tl_init
 
 cd "$TL_REPO_ROOT"
 orphans=""
+declared="$(git config -f .gitmodules --get-regexp '^submodule\..*\.path$' 2>/dev/null | awk '{print $2}' || true)"
 while IFS= read -r path; do
   [[ -z "$path" ]] && continue
-  if ! git config -f .gitmodules --get-regexp '^submodule\..*\.path$' 2>/dev/null | awk '{print $2}' | grep -qxF -- "$path"; then
+  if ! grep -qxF -- "$path" <<<"$declared"; then
     orphans+="$path "
   fi
 done < <(git ls-files -s | awk '$1 == "160000" { sub(/^[^\t]*\t/, ""); print }')
