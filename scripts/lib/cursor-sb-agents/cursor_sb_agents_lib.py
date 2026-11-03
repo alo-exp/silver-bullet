@@ -94,8 +94,20 @@ def sanitize_model(model: str) -> str:
     return model.replace(".", "-").replace("_", "-")
 
 
+# A generated agent is <agents_dir>/<prefix>-<model>-<effort>.md. With --fix the parts come
+# from a project's .silver-bullet.json, which may be untrusted, so the name must be one plain
+# file name (no separator, no leading dot): the same rule sb_managed_agent recognizes.
+AGENT_NAME_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._ -]*")
+
+
 def agent_name(base_model: str, effort: str, prefix: str = "sb") -> str:
-    return f"{prefix}-{sanitize_model(base_model)}-{effort}"
+    name = f"{prefix}-{sanitize_model(base_model)}-{effort}"
+    if not AGENT_NAME_RE.fullmatch(name):
+        raise ValueError(
+            f"refusing Cursor agent name {name!r}: agent_name_prefix, model and effort "
+            "must be plain names (letters, digits, '.', '_', ' ', '-')"
+        )
+    return name
 
 
 def is_fast_id(model_id: str) -> bool:

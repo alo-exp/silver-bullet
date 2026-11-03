@@ -139,6 +139,28 @@ printf '#!/usr/bin/env bash\n[[ "$*" == *--list-selectable* ]] && exit 1\nexec %
 install_in $'n\nn\n\n\n' --project
 assert_eq "failing model listing tolerated" 0 "$TL_STATUS"
 assert_eq "defaults applied after a failed listing" '["composer-2.5","grok-4.5"]' "$(jq -c .selected_models "$CFGDIR/cursor-sb-agents.json")"
+# R7-20: an empty listing prints no numbered rows, so "1" is a literal id, never an empty one
+install_in $'n\nn\n1\nmedium\n' --project
+assert_eq "selection after an empty listing exits 0" 0 "$TL_STATUS"
+assert_eq "no phantom row: 1 kept as a literal id" '["1"]' "$(jq -c .selected_models "$CFGDIR/cursor-sb-agents.json")"
+assert_not_contains "no empty numbered row printed" "$TL_OUT" "$(printf ' %2d %-21s' 1 '')"
+# Bash < 4.4 aborts on "${empty[@]}" under set -u: the listing arguments must never be empty
+assert_eq "no possibly-empty array expansion in the listing" "" \
+  "$(grep -nE '"\$\{(FAST|MAX|OFFLINE)_ARGS\[@\]\}"|\$\{ROWS\[@\]' "$INSTALLER" || true)"
+printf '#!/usr/bin/env bash\necho "$*" >>"%s/py-args.log"\nexec %s "$@"\n' "$TL_TMP" "$REAL_PY" >"$TL_TMP/py-wrapper"
+
+# ---- R7-25: --fix takes its config from the project; a crafted prefix, model or effort
+# must not write outside the agents directory
+VICTIM="$HOME/victim"
+mkdir -p "$VICTIM"
+for bad in '"agent_name_prefix": "../../victim/notes"' '"effort_levels": ["../../../victim/x"]' '"selected_models": ["a/b"]'; do
+  printf '{"cursor_sb_agents": {"agents_install_scope": "global", "selected_models": ["2026"], "effort_levels": ["plan"], %s}}\n' "$bad" >"$PROJ/.silver-bullet.json"
+  install --fix
+  assert_eq "--fix refuses a path in the config ($bad)" 1 "$TL_STATUS"
+  assert_contains "--fix names the refused agent name ($bad)" "$TL_ERR" "refusing Cursor agent name"
+done
+assert_eq "nothing written outside the agents dir" "" "$(find "$VICTIM" "$HOME" -name '*-plan.md' -not -path "$HOME/.cursor/agents/*" 2>/dev/null)"
+rm -f "$PROJ/.silver-bullet.json"
 
 # only a project-level catalog exists: the global one is unreadable for jq but the install proceeds
 rm -f "$CFGDIR/cursor-models-catalog.json"

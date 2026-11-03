@@ -6,12 +6,15 @@ import io
 import json
 import os
 import runpy
+import shlex
+import stat
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
 
-from sbtest import REPO_ROOT
+from sbtest import REPO_ROOT, load_module
 
 SCRIPT = str(REPO_ROOT / "scripts/lib/install-cursor/merge-cursor-hooks.py")
 ROOT_VAR = "${CURSOR_PLUGIN_ROOT}"
@@ -42,13 +45,26 @@ class MergeCursorHooksTest(unittest.TestCase):
         (root / "hooks" / "cursor-hooks.json").write_text(json.dumps({"hooks": hooks}))
         return root
 
-    def run_script(self, *args):
+    def run_script(self, *args, cursor_home=None):
         out = io.StringIO()
-        with mock.patch.dict(os.environ, {"HOME": str(self.home)}), \
+        env = {k: v for k, v in os.environ.items() if k != "CURSOR_HOME"}
+        env["HOME"] = str(self.home)
+        if cursor_home is not None:
+            env["CURSOR_HOME"] = str(cursor_home)
+        with mock.patch.dict(os.environ, env, clear=True), \
              mock.patch("sys.argv", ["merge-cursor-hooks.py", *map(str, args)]), \
              contextlib.redirect_stdout(out):
-            runpy.run_path(SCRIPT, run_name="__main__")
+            try:
+                runpy.run_path(SCRIPT, run_name="__main__")
+            except SystemExit as exc:
+                if exc.code != 0:
+                    raise
         return out.getvalue()
+
+    def refused(self, *args):
+        with self.assertRaises(SystemExit) as cm:
+            self.run_script(*args)
+        return str(cm.exception)
 
     def seed(self, data):
         self.target.parent.mkdir(parents=True, exist_ok=True)
@@ -61,9 +77,7 @@ class MergeCursorHooksTest(unittest.TestCase):
 
     def test_missing_or_empty_argument_exits_with_usage(self):
         for args in ((), ("",)):
-            with self.assertRaises(SystemExit) as cm:
-                self.run_script(*args)
-            self.assertIn("usage: merge-cursor-hooks.py", str(cm.exception))
+            self.assertIn("usage: merge-cursor-hooks.py", self.refused(*args))
         self.assertFalse(self.target.exists())
 
     def test_creates_file_and_parent_dir(self):
@@ -98,13 +112,12 @@ class MergeCursorHooksTest(unittest.TestCase):
         self.run_script(install)
         self.assertIn("preToolUse", self.load()["hooks"])
 
-    def test_same_command_different_matcher_both_registered(self):
+    def test_sb_entry_with_an_old_matcher_is_replaced(self):
         install = self.make_install()
         self.seed({"version": 1, "hooks": {"preToolUse": [
             entry(f"{install}/hooks/a.sh", "Read")]}})
         self.run_script(install)
-        matchers = [e.get("matcher") for e in self.load()["hooks"]["preToolUse"]]
-        self.assertEqual(matchers, ["Read", "Shell"])
+        self.assertEqual(self.load()["hooks"]["preToolUse"], [entry(f"{install}/hooks/a.sh", "Shell")])
 
     def test_new_entry_without_matcher_matches_existing_without_matcher(self):
         install = self.make_install(hooks={"stop": [{"command": f"{ROOT_VAR}/hooks/s.sh"}]})
@@ -119,67 +132,35 @@ class MergeCursorHooksTest(unittest.TestCase):
         self.seed({"version": 1, "hooks": {
             "preToolUse": [
                 entry("/x/codex-hook-adapter.sh --foo"),
-                entry(f"{ROOT_VAR}/hooks/literal.sh"),
-                entry("/dev/plugins/silver-bullet/hooks/dev.sh"),
-                entry("/opt/silver-bullet/0.9.0/hooks/old.sh"),
+                entry(f"{ROOT_VAR}/hooks/completion-audit.sh"),
+                entry("/dev/plugins/silver-bullet/hooks/dev-cycle-check.sh"),
+                entry("/opt/silver-bullet/0.9.0/hooks/completion-audit.sh"),
+                entry("/h/.cursor/plugins/cache/alo-labs/silver-bullet/0.8.0/hooks/gone.sh"),
                 entry("/usr/bin/keep"),
+                entry("/home/me/scripts/codex-hook-adapter-notes.sh check"),
+                entry('node "$HOME/silver-bullet/1.0.0/hooks/lint.js"'),
                 entry(f"{install}/hooks/current.sh"),
             ],
-            "stop": [entry("/opt/silver-bullet/0.9.0/hooks/s.sh")],
+            "stop": [entry("/opt/silver-bullet/0.9.0/hooks/stop-check.sh")],
         }})
         self.run_script(install)
         hooks = self.load()["hooks"]
         self.assertNotIn("stop", hooks)
         cmds = [e["command"] for e in hooks["preToolUse"]]
-        self.assertEqual(cmds, ["/usr/bin/keep", f"{install}/hooks/current.sh",
-                                f"{install}/hooks/a.sh"])
+        self.assertEqual(cmds, ["/usr/bin/keep", "/home/me/scripts/codex-hook-adapter-notes.sh check",
+                                'node "$HOME/silver-bullet/1.0.0/hooks/lint.js"', f"{install}/hooks/a.sh"])
 
-    def test_dev_checkout_entry_inside_current_install_is_kept(self):
+    def test_entry_inside_the_install_but_not_in_the_manifest_is_dropped(self):
         install = self.make_install("dev/plugins/silver-bullet")
-        keep = f"{install}/hooks/mine.sh"
-        self.seed({"version": 1, "hooks": {"stop": [entry(keep)]}})
+        self.seed({"version": 1, "hooks": {"stop": [entry(f"{install}/hooks/mine.sh")]}})
         self.run_script(install)
-        self.assertEqual(self.load()["hooks"]["stop"], [entry(keep)])
+        self.assertNotIn("stop", self.load()["hooks"])
 
     def test_non_list_event_value_left_alone(self):
         install = self.make_install()
         self.seed({"version": 1, "hooks": {"custom": {"a": 1}}})
         self.run_script(install)
         self.assertEqual(self.load()["hooks"]["custom"], {"a": 1})
-
-    # --- duplicate collapse ----------------------------------------------
-
-    def test_duplicates_collapse_with_matcher_union_and_max_timeout(self):
-        install = self.make_install(hooks={})
-        self.seed({"version": 1, "hooks": {"preToolUse": [
-            entry("/c/one", "Read|Write", timeout=5),
-            entry("/c/two"),
-            entry("/c/one", "Write | Shell", timeout=9),
-            entry("/c/one", 5, timeout="x"),
-            "not-a-dict",
-            {"nocommand": True},
-            entry("/c/two", "Shell"),
-        ]}})
-        self.run_script(install)
-        out = self.load()["hooks"]["preToolUse"]
-        self.assertEqual(out[0], {"command": "/c/one", "matcher": "Read|Write|Shell|5", "timeout": 9})
-        self.assertEqual(out[1], {"command": "/c/two"})  # unrestricted wins; no timeouts
-        self.assertEqual(out[2:], ["not-a-dict", {"nocommand": True}])
-
-    def test_unrestricted_duplicate_drops_matcher(self):
-        install = self.make_install(hooks={})
-        self.seed({"version": 1, "hooks": {"stop": [
-            entry("/c/x", "Read"), entry("/c/x", ".*"), entry("/c/y", "A"), entry("/c/y", "A")]}})
-        self.run_script(install)
-        self.assertEqual(self.load()["hooks"]["stop"],
-                         [{"command": "/c/x"}, {"command": "/c/y", "matcher": "A"}])
-
-    def test_blank_matchers_collapse_to_unrestricted(self):
-        install = self.make_install(hooks={})
-        self.seed({"version": 1, "hooks": {"stop": [
-            entry("/c/x", "|"), entry("/c/x", " | ")]}})
-        self.run_script(install)
-        self.assertEqual(self.load()["hooks"]["stop"], [{"command": "/c/x"}])
 
     # --- bad input ----------------------------------------------------------
 
@@ -213,10 +194,16 @@ class MergeCursorHooksTest(unittest.TestCase):
                      {"hooks": {"preToolUse": "str"}}, {"hooks": {"preToolUse": {"a": 1}}}):
             self.seed(data)
             before = self.target.read_bytes()
-            with self.assertRaisesRegex(ValueError, "must be a JSON|top level"):
-                self.run_script(install)
+            self.assertRegex(self.refused(install), "must be a JSON|top level")
             self.assertEqual(self.target.read_bytes(), before)
-            self.assertEqual(list(self.target.parent.glob("*.bak")), [])
+            self.assertEqual(list(self.target.parent.glob("*.sb-backup")), [])
+
+    def test_wrong_typed_manifest_is_refused(self):
+        install = self.make_install(hooks=[1])
+        self.assertIn("hooks must be a JSON object", self.refused(install))
+        install = self.make_install("other", hooks={"stop": {"a": 1}})
+        self.assertIn("stop must be a JSON array", self.refused(install))
+        self.assertFalse(self.target.exists())
 
     def test_null_or_empty_containers_are_repaired(self):
         install = self.make_install()
@@ -226,24 +213,17 @@ class MergeCursorHooksTest(unittest.TestCase):
             self.run_script(install)
             self.assertEqual(self.load()["hooks"]["preToolUse"], [entry(f"{install}/hooks/a.sh", "Shell")])
 
-    def test_malformed_json_crashes_without_clobbering(self):
+    def test_malformed_json_is_refused_without_clobbering(self):
         install = self.make_install()
         self.seed("{broken")
-        with self.assertRaises(json.JSONDecodeError):
-            self.run_script(install)
+        self.assertIn("not valid JSON", self.refused(install))
         self.assertEqual(self.target.read_text(), "{broken")
 
-    def test_missing_source_hooks_file_raises(self):
+    def test_missing_source_hooks_file_is_refused(self):
         install = self.tmp / "none"
         install.mkdir()
-        with self.assertRaises(FileNotFoundError):
-            self.run_script(install)
+        self.assertIn("hook manifest not found", self.refused(install))
         self.assertFalse(self.target.exists())
-
-    def test_source_without_hooks_registers_nothing(self):
-        install = self.make_install(hooks={})
-        self.run_script(install)
-        self.assertEqual(self.load(), {"version": 1, "hooks": {}})
 
     def test_symlinked_target_written_through(self):
         install = self.make_install()
@@ -289,6 +269,95 @@ class MergeCursorHooksTest(unittest.TestCase):
             self.run_script(install)
         self.assertEqual(self.load()["hooks"]["preToolUse"][0]["command"],
                          f"{install}/hooks/a.sh")
+
+    # --- ownership-based replace (R7-04, R7-28, R7-02, R7-14) -------------
+
+    def bridge(self, root, event, script):
+        return f'"{root}/hooks/cursor-hook-bridge.sh" {event} "{root}/hooks/{script}"'
+
+    def test_upgrade_drops_removed_hooks_and_updates_changed_fields(self):
+        old = self.make_install("cache/silver-bullet/1.0.0", hooks={"preToolUse": [
+            entry(self.bridge(ROOT_VAR, "preToolUse", "graphify-gate.sh"), "Shell", timeout=10),
+            entry(self.bridge(ROOT_VAR, "preToolUse", "completion-audit.sh"), "Shell", timeout=15)]})
+        self.run_script(old)
+        new = self.make_install("cache/silver-bullet/2.0.0", hooks={"preToolUse": [
+            entry(self.bridge(ROOT_VAR, "preToolUse", "completion-audit.sh"), "Shell|Read", timeout=30)]})
+        self.run_script(new)
+        alias = self.tmp / "cache" / "silver-bullet" / "current"
+        self.assertEqual(self.load()["hooks"]["preToolUse"], [
+            entry(self.bridge(alias, "preToolUse", "completion-audit.sh"), "Shell|Read", timeout=30)])
+
+    def test_real_manifest_merged_twice_equals_the_manifest(self):
+        manifest = json.loads((REPO_ROOT / "hooks" / "cursor-hooks.json").read_text())
+        install = self.make_install("real", hooks=manifest["hooks"])
+        user = entry("/usr/local/bin/my-guard --strict", "Shell")
+        self.seed({"version": 1, "hooks": {"preToolUse": [user]}})
+        for _ in range(3):
+            self.run_script(install)
+        hooks = self.load()["hooks"]
+        for event, entries in manifest["hooks"].items():
+            expected = json.loads(json.dumps(entries).replace(ROOT_VAR, str(install)))
+            if event == "preToolUse":
+                expected = [user, *expected]
+            self.assertEqual(hooks[event], expected, event)
+
+    def test_install_path_with_space_or_shell_characters_stays_one_argument(self):
+        for rel in ("Jane Doe/sb", 'odd $HOME `x` "q"\\b/sb'):
+            install = self.make_install(rel, hooks={"stop": [
+                entry(self.bridge(ROOT_VAR, "stop", "stop-check.sh"))]})
+            bridge = install / "hooks" / "cursor-hook-bridge.sh"
+            bridge.write_text('#!/usr/bin/env bash\nprintf "%s\\n" "$0" "$@"\n')
+            bridge.chmod(0o755)
+            self.run_script(install)
+            command = self.load()["hooks"]["stop"][0]["command"]
+            ran = subprocess.run(["bash", "-c", command], capture_output=True, text=True, check=True)
+            self.assertEqual(ran.stdout.splitlines(), [str(bridge), "stop", f"{install}/hooks/stop-check.sh"])
+            self.assertEqual(len(shlex.split(command)), 3)
+            self.target.unlink()
+
+    def test_old_unquoted_entries_are_replaced(self):
+        install = self.make_install("cache/silver-bullet/3.0.0", hooks={"stop": [
+            entry(self.bridge(ROOT_VAR, "stop", "stop-check.sh"))]})
+        alias = self.tmp / "cache" / "silver-bullet" / "current"
+        old = f'"{alias}/hooks/cursor-hook-bridge.sh" stop {alias}/hooks/stop-check.sh'
+        self.seed({"version": 1, "hooks": {"stop": [entry(old)]}})
+        self.run_script(install)
+        self.assertEqual(self.load()["hooks"]["stop"], [entry(self.bridge(alias, "stop", "stop-check.sh"))])
+
+    def test_foreign_entries_are_never_collapsed_or_reordered(self):
+        install = self.make_install(hooks={})
+        foreign = [entry("/c/one", "Read", timeout=5), entry("/c/one", "Write", timeout=9),
+                   entry('node "$HOME/.cursor/hooks/x.js"'), entry("echo silver-bullet rocks"),
+                   entry("/x/cursor-hook-bridge.sh"), entry(f"{ROOT_VAR}/hooks/other-plugin.sh")]
+        self.seed({"version": 1, "hooks": {"stop": foreign}})
+        self.run_script(install)
+        self.assertEqual(self.load()["hooks"]["stop"], foreign)
+
+    def test_write_is_atomic_keeps_mode_and_backs_up(self):
+        install = self.make_install()
+        self.seed({"version": 1, "hooks": {"stop": [entry("/mine.sh")]}})
+        before = self.target.read_bytes()
+        self.target.chmod(0o600)
+        self.run_script(install)
+        self.assertEqual(stat.S_IMODE(self.target.stat().st_mode), 0o600)
+        self.assertEqual((self.target.parent / "hooks.json.sb-backup").read_bytes(), before)
+        self.assertEqual(sorted(p.name for p in self.target.parent.iterdir()), ["hooks.json", "hooks.json.sb-backup"])
+        mtime = self.target.stat().st_mtime_ns
+        self.run_script(install)
+        self.assertEqual(self.target.stat().st_mtime_ns, mtime)
+
+    def test_cursor_home_is_honoured(self):
+        install = self.make_install()
+        other = self.tmp / "elsewhere"
+        out = self.run_script(install, cursor_home=other)
+        self.assertEqual(out, f"SB hooks registered in {other}/hooks.json\n")
+        self.assertTrue((other / "hooks.json").is_file())
+        self.assertFalse(self.target.exists())
+
+    def test_importing_the_module_merges_nothing(self):
+        module = load_module("scripts/lib/install-cursor/merge-cursor-hooks.py")
+        self.assertEqual(module.shell_escaped('a"b$c`d\\e'), 'a\\"b\\$c\\`d\\\\e')
+        self.assertFalse(self.target.exists())
 
     def test_substitution_handles_nested_and_scalar_values(self):
         install = self.make_install(hooks={"preToolUse": [
