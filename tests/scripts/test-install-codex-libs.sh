@@ -62,6 +62,18 @@ assert_eq "registered local marketplace root" "$TL_TMP/local-mp" "$TL_OUT"
 set_marketplace_source "$TL_TMP/missing-mp"
 sub codex_marketplace_root
 assert_eq "registered root that does not exist falls back" "$MP" "$TL_OUT"
+# the reader is structural like the writer: header comment, quote and backslash in the path
+mkdir -p "$TL_TMP/we\"ird\\dir" "$TL_TMP/plain dir"
+printf '[marketplaces.alo-labs-codex] # mine\nsource_type = "local"\nsource = "%s"\n' "$TL_TMP/plain dir" >"$CFG"
+sub codex_marketplace_root
+assert_eq "root read through a header comment" "$TL_TMP/plain dir" "$TL_OUT"
+rm -f "$CFG"
+sub ensure_marketplace_registered "$TL_TMP/we\"ird\\dir"
+sub codex_marketplace_root
+assert_eq "root with a quote and backslash round-trips" "$TL_TMP/we\"ird\\dir" "$TL_OUT"
+printf 'not [valid\n' >"$CFG"
+sub codex_marketplace_root
+assert_eq "invalid config falls back to the default root" "$MP" "$TL_OUT"
 sub usage
 assert_contains "usage text" "$TL_OUT" "Usage: scripts/install-codex.sh"
 mkdir -p "$TL_TMP/proj/sub/deeper"
@@ -453,7 +465,7 @@ cat >"$MP/plugins/silver-bullet/hooks/hooks.json" <<'JSON'
 {"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"type":"command","command":"${CLAUDE_PLUGIN_ROOT}/hooks/a.sh"}]}]}}
 JSON
 mkdir -p "$CH/.codex"
-printf '{"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"type":"command","command":"/usr/bin/user-hook"},{"type":"command","command":"/old/silver-bullet/1.0.0/hooks/a.sh"}]}]}}\n' >"$CH/.codex/hooks.json"
+printf '{"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"type":"command","command":"/usr/bin/user-hook"},{"type":"command","command":"/old/silver-bullet/1.0.0/hooks/completion-audit.sh"}]}]}}\n' >"$CH/.codex/hooks.json"
 sub merge_silver_bullet_hooks_into_user_config
 assert_eq "hook merge exits 0" 0 "$TL_STATUS"
 MERGED="$(jq -r '[.hooks.PreToolUse[].hooks[].command] | sort | join(",")' "$CH/.codex/hooks.json")"
