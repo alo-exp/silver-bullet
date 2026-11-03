@@ -36,7 +36,9 @@ grep -q 'pi-zero-byte-guard.py' "${REPO_ROOT}/scripts/lib/agent-host-exec.sh" \
 bash -n "${REPO_ROOT}/scripts/lib/agent-host-exec.sh" \
   && check "agent-host-exec.sh shell syntax" pass \
   || check "agent-host-exec.sh shell syntax" fail
-python3 -m py_compile "${REPO_ROOT}/scripts/lib/pi-zero-byte-guard.py" \
+# compile() checks syntax without writing a __pycache__ .pyc into the checkout (py_compile would).
+python3 -c 'import sys; p = sys.argv[1]; compile(open(p, encoding="utf-8").read(), p, "exec")' \
+    "${REPO_ROOT}/scripts/lib/pi-zero-byte-guard.py" \
   && check "pi-zero-byte-guard.py compiles" pass \
   || check "pi-zero-byte-guard.py compiles" fail
 

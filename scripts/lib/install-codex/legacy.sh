@@ -211,7 +211,9 @@ purge_all = sys.argv[3] == "--all"
 lib_dir = pathlib.Path(sys.argv[4])
 home = pathlib.Path(sys.argv[5]).expanduser()
 sys.path.insert(0, str(lib_dir))
-from sb_host_config import ConfigError, is_sb_hook_command, read_json, read_toml, sb_hook_names, write_json, write_toml  # noqa: E402
+from sb_host_config import (  # noqa: E402
+    ConfigError, check_toml, is_sb_hook_command, read_json, read_toml, sb_hook_names, write_json, write_toml,
+)
 
 package_root = home / ".codex" / ".tmp" / "marketplaces" / "alo-labs-codex" / "plugins" / "silver-bullet"
 names = sb_hook_names(lib_dir.parents[1] / "hooks", package_root / "hooks")
@@ -233,6 +235,7 @@ def sb_trust(path) -> bool:
     return key.startswith("silver-bullet@") and (purge_all or not key.startswith("silver-bullet@alo-labs-codex:"))
 
 
+pending_hooks = False
 try:
     data = read_json(hooks_path)
     events = data.get("hooks") if data is not None else None
@@ -269,12 +272,18 @@ try:
                 events[event_name] = kept_groups
             elif groups:
                 del events[event_name]
-        if changed:
-            write_json(hooks_path, data)
+        pending_hooks = changed
+    # Transactional order: build and validate the new config.toml first, so a config that cannot
+    # be edited leaves hooks.json alone too; then hooks.json, then config.toml.
+    doc = None
     if config_path.is_file():
         doc = read_toml(config_path)
         doc.remove(sb_trust)
         doc.rename_tables({("hooks", "state", old): ("hooks", "state", new) for old, new in moved_keys.items()})
+        check_toml(doc.text, str(config_path))
+    if pending_hooks:
+        write_json(hooks_path, data)
+    if doc is not None:
         write_toml(config_path, doc)
 except ConfigError as exc:
     sys.exit(f"ERROR: {exc}")

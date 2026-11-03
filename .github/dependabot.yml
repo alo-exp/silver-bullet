@@ -1,0 +1,24 @@
+# Pins move only through reviewed pull requests: GitHub Actions in .github/workflows, the
+# Python test and coverage packages (requirements-dev.txt, tests/coverage/requirements.txt)
+# and package.json.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      github-actions:
+        patterns: ['*']
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+  - package-ecosystem: pip
+    directory: /tests/coverage
+    schedule:
+      interval: weekly
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly

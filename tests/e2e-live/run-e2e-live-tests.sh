@@ -37,6 +37,9 @@ if [[ "${SB_E2E_LIVE_INCLUDE_LEGACY_JOURNEY:-0}" == "1" ]]; then
 fi
 RUNTIMES=()
 full_matrix_requested=false
+# matrix=inline-full-surface is release evidence for the inline full-surface journey: it is
+# written only when that journey ran (and, as every scenario, passed) in this run.
+inline_journey_ran=false
 export CODEX_INTERACTIVE_TIMEOUT="${CODEX_INTERACTIVE_TIMEOUT:-300}"
 
 if [[ -n "${SB_E2E_LIVE_RUNTIMES:-}" ]]; then
@@ -281,6 +284,9 @@ for runtime in "${RUNTIMES[@]}"; do
   for scenario in "${SCENARIOS[@]}"; do
     [[ -f "$scenario" ]] || continue
     run_scenario "$runtime" "$scenario"
+    if [[ "$scenario" == "${LEGACY_SCENARIOS[0]}" ]]; then
+      inline_journey_ran=true
+    fi
   done
 
   if [[ -n "${E2E_LIVE_DEPENDENCY_PREFLIGHT_FILE:-}" ]]; then
@@ -319,9 +325,14 @@ else
     cat > "$HOST_E2E_LIVE_MATRIX_FILE" <<EOF
 matrix=${marker}
 EOF
-    cat > "$HOST_INLINE_E2E_MATRIX_FILE" <<'EOF'
+    if [[ "$inline_journey_ran" == true ]]; then
+      cat > "$HOST_INLINE_E2E_MATRIX_FILE" <<'EOF'
 matrix=inline-full-surface
 EOF
+    else
+      rm -f "$HOST_INLINE_E2E_MATRIX_FILE"
+      echo "  NOTE: inline-e2e-matrix not written: the inline full-surface journey did not run (SB_E2E_LIVE_INCLUDE_LEGACY_JOURNEY=1 runs it)."
+    fi
   else
     rm -f "$HOST_E2E_LIVE_MATRIX_FILE"
     rm -f "$HOST_INLINE_E2E_MATRIX_FILE"
