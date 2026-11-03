@@ -3,9 +3,10 @@
 #
 # Fails when a host exposes:
 #   - user-invocable skills without sb: prefix (except lone sb)
-#   - duplicate logical routes under different raw names
-#   - Claude/Cursor sb-* hyphen directories alongside sb: routes
-#   - Cursor user-invocable skills that duplicate plugin command stubs
+#   - a logical route more than once (same or different raw names)
+#   - a skill directory not named after its route (sb:<route> for Claude and
+#     Cursor, sb-<route> for Codex), or Claude/Cursor sb-* hyphen directories
+#   - Cursor bundle skills that duplicate plugin command stubs
 #
 # Usage:
 #   scripts/validate-host-skill-surface.sh [--repo-root PATH]
@@ -77,12 +78,12 @@ def logical_route(name: str) -> str | None:
     return None
 
 
-def expected_claude_dir(name: str) -> str | None:
-    if name == "sb":
-        return "sb"
-    if name.startswith("sb:"):
+def expected_dir(host: str, name: str) -> str:
+    """The picker directory for an sb route: Claude and Cursor list routes by
+    their colon names, the Codex bundle uses filesystem-safe sb-<route>."""
+    if name == "sb" or host != "codex":
         return name
-    return None
+    return "sb-" + name[len("sb:") :]
 
 
 HOST_SURFACES: dict[str, list[tuple[str, str]]] = {
@@ -108,7 +109,6 @@ def fail(host: str, message: str) -> None:
 
 
 for host, surfaces in HOST_SURFACES.items():
-    route_names: dict[str, set[str]] = defaultdict(set)
     route_entries: dict[str, list[str]] = defaultdict(list)
     command_routes: set[str] = set()
 
@@ -161,21 +161,13 @@ for host, surfaces in HOST_SURFACES.items():
                 continue
 
             logical_name = logical_route(name) or name
-            if host in {"cursor", "codex"} and logical_name in command_routes and is_user_invocable(meta):
-                rel = path.relative_to(repo_root)
-                fail(
-                    host,
-                    f"{rel}: user-invocable skill {name!r} duplicates plugin command stub "
-                    f"(set user-invocable: false on the rendered bundle skill)",
-                )
-                continue
-
-            if host == "cursor" and logical_name in command_routes:
+            # Only Cursor has a command surface (Codex and Claude have none).
+            if logical_name in command_routes:
                 rel = path.relative_to(repo_root)
                 fail(
                     host,
                     f"{rel}: command-covered route {name!r} must not ship in host-bundles/cursor "
-                    f"(slash command owns the public surface; keep instructions in skill-source/)",
+                    f"(slash command owns the public surface; keep instructions in cursor-skill-source/)",
                 )
                 continue
 
@@ -196,42 +188,41 @@ for host, surfaces in HOST_SURFACES.items():
                 fail(host, f"{rel}: unable to derive logical route for {name!r}")
                 continue
 
-            route_names[route].add(name)
             route_entries[route].append(f"{rel} ({name!r})")
 
-            if host in {"claude", "cursor"}:
-                dir_name = path.parent.name
-                expected_dir = expected_claude_dir(name)
-                if expected_dir and dir_name != expected_dir:
-                    fail(
-                        host,
-                        f"{rel}: directory {dir_name!r} does not match route {expected_dir!r} "
-                        f"(duplicate picker risk)",
-                    )
+            dir_name = path.parent.name
+            want_dir = expected_dir(host, name)
+            if dir_name != want_dir:
+                fail(
+                    host,
+                    f"{rel}: directory {dir_name!r} does not match route {want_dir!r} "
+                    f"(duplicate picker risk)",
+                )
 
-    for route, names in sorted(route_names.items()):
-        if len(names) > 1:
-            entries = ", ".join(route_entries[route])
+    # Count entries, not distinct names: two directories that both declare
+    # name: sb:feature show the route twice in the picker.
+    for route, entries in sorted(route_entries.items()):
+        if len(entries) > 1:
             fail(
                 host,
-                f"logical route {route!r} exposed under multiple names {sorted(names)!r}: {entries}",
+                f"logical route {route!r} exposed {len(entries)} times: {', '.join(entries)}",
             )
 
-    for host_name, rel_bundle in (("claude", "agents/claude"), ("cursor", "host-bundles/cursor")):
-        bundle_root = repo_root / rel_bundle
-        if bundle_root.is_dir():
-            hyphen_dirs = sorted(
-                child.name
-                for child in bundle_root.iterdir()
-                if child.is_dir() and child.name.startswith("sb-")
+for host_name, rel_bundle in (("claude", "agents/claude"), ("cursor", "host-bundles/cursor")):
+    bundle_root = repo_root / rel_bundle
+    if bundle_root.is_dir():
+        hyphen_dirs = sorted(
+            child.name
+            for child in bundle_root.iterdir()
+            if child.is_dir() and child.name.startswith("sb-")
+        )
+        for dirname in hyphen_dirs:
+            colon_name = "sb:" + dirname.removeprefix("sb-")
+            fail(
+                host_name,
+                f"redundant hyphen directory {rel_bundle}/{dirname} "
+                f"(use {rel_bundle}/{colon_name})",
             )
-            for dirname in hyphen_dirs:
-                colon_name = "sb:" + dirname.removeprefix("sb-")
-                fail(
-                    host_name,
-                    f"redundant hyphen directory {rel_bundle}/{dirname} "
-                    f"(use {rel_bundle}/{colon_name})",
-                )
 
 print("validate-host-skill-surface: per-host summary")
 for host in HOST_SURFACES:
