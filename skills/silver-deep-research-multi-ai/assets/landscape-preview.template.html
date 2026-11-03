@@ -950,11 +950,19 @@ function lucideIcon(name, className = 'lucide-icon') {
 }
 
 /** Link a text node that is exactly a known vendor label (never a word inside prose). */
-function _linkExactLabelNode(tn, urlByLabel) {
+function _linkExactLabelNode(tn, urlByLabel, firstOnly) {
   const raw = tn.textContent || '';
   const label = raw.trim();
   const url = label ? urlByLabel.get(label) : '';
   if (!url) return false;
+  // Prose links a vendor at its first mention only; table cells are structured data and always link.
+  if (firstOnly) {
+    const tag = tn.parentElement ? tn.parentElement.tagName : '';
+    if (tag !== 'TD' && tag !== 'TH') {
+      if (firstOnly.has(label)) return false;
+      firstOnly.add(label);
+    }
+  }
   const frag = document.createDocumentFragment();
   const lead = raw.slice(0, raw.indexOf(label));
   const trail = raw.slice(raw.indexOf(label) + label.length);
@@ -1935,7 +1943,8 @@ function linkify() {
   const nodes = [];
   let n;
   while ((n = walker.nextNode())) nodes.push(n);
-  for (const tn of nodes) _linkExactLabelNode(tn, urlByLabel);
+  const linkedOnce = new Set();
+  for (const tn of nodes) _linkExactLabelNode(tn, urlByLabel, linkedOnce);
 }
 
 /** Vendor label → http(s) homepage from the embedded link pairs (other schemes dropped). */
