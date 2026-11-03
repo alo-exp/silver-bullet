@@ -145,8 +145,23 @@ yes_t "is_install: bash <(curl) is gated (via delivery or install)" sb_opt_in_sh
 no_t "is_install: cargo build" sb_opt_in_shell_is_install "cargo build"
 no_t "needs_gate: \$PYTHON -m pytest" sb_opt_in_shell_needs_gate graphify '$PYTHON -m pytest'
 echo "--- analyzer unavailable: a consented gate still gates ---"
-yes_t "needs_gate without python3 treats a command as possible delivery" env PATH="$(tl_path_without python3)" bash -c 'source "$1"; sb_opt_in_shell_needs_gate graphify "pytest"' _ "$LIBDIR/opt-in-gate.sh"
-yes_t "needs_gate without the analyzer functions gates" bash -c 'source "$1"; unset -f sb_shell_analysis_load; sb_opt_in_shell_needs_gate graphify "pytest"' _ "$LIBDIR/opt-in-gate.sh"
+no_python_needs_gate() {
+  local saved="$PATH" rc=0
+  PATH="$(tl_path_without python3)"; hash -r
+  sb_opt_in_shell_needs_gate graphify "pytest" || rc=$?
+  PATH="$saved"; hash -r
+  return "$rc"
+}
+yes_t "needs_gate without python3 treats a command as possible delivery" no_python_needs_gate
+no_analyzer_needs_gate() {
+  local saved rc=0
+  saved="$(declare -f sb_shell_analysis_load)"
+  unset -f sb_shell_analysis_load
+  sb_opt_in_shell_needs_gate graphify "pytest" || rc=$?
+  eval "$saved"
+  return "$rc"
+}
+yes_t "needs_gate without the analyzer functions gates" no_analyzer_needs_gate
 no_t "is_install: empty" sb_opt_in_shell_is_install ""
 no_t "is_install: a project-local npm install" sb_opt_in_shell_is_install "npm install"
 yes_t "is_install: yarn global add" sb_opt_in_shell_is_install "yarn global add left-pad"
