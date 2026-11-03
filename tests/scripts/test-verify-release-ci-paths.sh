@@ -125,7 +125,11 @@ GH_RUN_LIST_OVERRIDE="$GREEN" tl_run bash "$TL_TMP/nogit/scripts/verify-release-
 assert_eq "commit: helper library absent exits 1" 1 "$TL_STATUS"
 assert_contains "commit: helper absent message" "$TL_OUT" "Unable to verify GitHub Actions status for release commit $SHA"
 
-GITHUB_REPOSITORY="" tl_run bash "$COMMIT" "$SHA"
+# No GITHUB_REPOSITORY and no GitHub origin: the repository cannot be derived.
+mkdir -p "$TL_TMP/noorigin/scripts"
+cp "$COMMIT" "$TL_TMP/noorigin/scripts/"
+git init -q "$TL_TMP/noorigin"
+GITHUB_REPOSITORY="" tl_run bash "$TL_TMP/noorigin/scripts/verify-release-commit-ci.sh" "$SHA"
 assert_eq "commit: repo required exits 2" 2 "$TL_STATUS"
 assert_contains "commit: repo required message" "$TL_OUT" "::error::GITHUB_REPOSITORY is required"
 
