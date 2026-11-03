@@ -255,6 +255,19 @@ When in doubt the checker says `needs_review`. It does not read `no`, `without`,
 `contradicted`; there is no whole-text quantifier rule either. A negated claim whose quote differs in any
 other word ("Acme lacks SCIM" against "Acme does not support SCIM") is `needs_review`.
 
+### Writing claims that can be `supported`
+
+Writers (chapter agents, data-collection agents, sub-agents) follow one rule: **one claim, one sentence,
+one quote.**
+
+1. Store as evidence exactly the one sentence or clause of the source that backs the claim, verbatim. Not a
+   paragraph, not two sentences, not a sentence plus its heading.
+2. Write the report sentence to repeat that quote: same words, figures, dates and units, in the same order.
+   Only case, punctuation, articles, plural/tense and the written form of a number may change.
+3. Do not reword, reorder, change voice or merge two quotes into one claim. If a sentence needs two facts,
+   write two sentences, each with its own quote.
+4. A deliberate paraphrase or summary is allowed, but it is `needs_review` and a reader checks it.
+
 ### Resolving needs_review claims
 
 For each listed claim, the agent (or a human) opens the cited source and does exactly one of:

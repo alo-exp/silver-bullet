@@ -58,6 +58,10 @@ EOF
 Titles come from retrieved pages, so the JSON goes through a quoted heredoc on stdin
 (or `--json-file PATH`), never inside a single-quoted shell argument.
 
+**Quote one sentence per claim:** each `evidence_store.py add` stores exactly the one sentence that backs one
+claim, verbatim, and the report sentence repeats it (see `reference/quality-gates.md`, "Writing claims that
+can be `supported`").
+
 **Assign display numbers after all sources registered:**
 ```bash
 python scripts/citation_manager.py assign-display-numbers --dir [folder]

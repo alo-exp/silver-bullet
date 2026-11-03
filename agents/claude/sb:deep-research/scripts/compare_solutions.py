@@ -227,7 +227,7 @@ def compare_solutions(
     # With a category_pack_id the pack's hard exclusions are binding: an
     # unresolvable pack fails the run rather than skipping the exclusions.
     if need.get("category_pack_id"):
-        from category_pack import (
+        from dr_category_pack import (
             get_hard_exclusion_slugs,
             project_pack_dirs,
             resolve_canonical_slug,
