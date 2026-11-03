@@ -78,12 +78,17 @@ def force_refusal(output_root: Path) -> str | None:
     return None
 
 
+# The keys dr_live_runner.prepare_run_inputs writes into an automatic profile. Any other key, or a
+# finished interview, means the user followed the profile's own note and refined it.
+_AUTO_PROFILE_KEYS = frozenset({"category", "research_type", "interview_complete", "auto_assumed", "note"})
+
+
 def _generated_for_old_query(path: Path, query: str) -> bool:
-    """True for a need profile / scope that dr_live_runner generated for a DIFFERENT query.
+    """True for a need profile / scope that dr_live_runner generated, untouched, for a DIFFERENT query.
 
     Those name the old topic and would brief the new run on it. The ones generated for the same
     query are carried: a regenerated file would be identical, and one the user edited since (must-haves,
-    a category pack) must not be lost.
+    a category or category pack) must not be lost, even when the category no longer names the query.
     """
     try:
         text = path.read_text(encoding="utf-8")
@@ -96,7 +101,9 @@ def _generated_for_old_query(path: Path, query: str) -> bool:
         )
     try:
         profile = json.loads(text)
-        return bool(profile.get("auto_assumed")) and profile.get("category") != (topic or "research")
+        auto = bool(profile.get("auto_assumed"))  # (a non-object profile raises here: it is the user's)
+        untouched = set(profile) <= _AUTO_PROFILE_KEYS and not profile.get("interview_complete")
+        return auto and untouched and profile.get("category") != (topic or "research")
     except (ValueError, AttributeError):
         return False
 
@@ -250,7 +257,9 @@ def main(argv: list[str] | None = None) -> int:
                               "message": refusal}, indent=2))
             return 2
         moved_aside = move_previous_run_aside(output_root)
-        carry_over_user_inputs(moved_aside, output_root, args.query)
+        carried = carry_over_user_inputs(moved_aside, output_root, args.query)
+        skipped = [name for name in ("need_profile.json", "scope.md")
+                   if (moved_aside / name).is_file() and name not in carried]
     os.environ.setdefault("SB_HOST", "cursor")
 
     from dr_live_runner import run_dr_live  # noqa: E402
@@ -272,6 +281,8 @@ def main(argv: list[str] | None = None) -> int:
 
     if moved_aside is not None:
         live_result["moved_aside"] = str(moved_aside)
+        live_result["carried_inputs"] = carried  # the user's own files, kept for this run
+        live_result["skipped_inputs"] = skipped  # generated for the old query: still in the moved-aside run
     if needs_solution_packaging(args.research_type) and live_result.get("ok"):
         from package_solution_outputs import package_solution_outputs  # noqa: E402
 
