@@ -33,6 +33,16 @@ GENERIC_LINK_BLOCKED_LABELS: frozenset[str] = frozenset(
         "orchestration",
         "workflow",
         "workflows",
+        # ordinary English words that are also product names: linking every sentence that
+        # starts with "Continue" or "Linear" sends readers to an unrelated homepage
+        "continue",
+        "linear",
+        "sweep",
+        "factory",
+        "director",
+        "conductor",
+        "scout",
+        "harness",
     }
 )
 
