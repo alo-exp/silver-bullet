@@ -640,6 +640,30 @@ printf '{"hooks":' >"$CH/.codex/hooks.json"
 sub purge_legacy_silver_bullet_hooks_from_user_config
 assert_eq "unparseable hooks.json refused by the purge" 1 "$TL_STATUS"
 
+# ---- Kay (merged user hooks): the user's own Codex approval follows their hook (positional keys)
+reset_home
+mkdir -p "$CH/.codex"
+printf '{"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"type":"command","command":"%s/.codex/plugins/cache/alo-labs-codex/silver-bullet/1.0.0/hooks/completion-audit.sh"},{"type":"command","command":"\\"$HOME/bin/guard.sh\\""}]}]}}\n' "$CH" >"$CH/.codex/hooks.json"
+cat >"$CFG" <<TOML
+[hooks.state."$CH/.codex/hooks.json:pre_tool_use:0:0"]
+trusted_hash = "sha256:sbold"
+
+[hooks.state."$CH/.codex/hooks.json:pre_tool_use:0:1"]
+trusted_hash = "sha256:userguard"
+TOML
+sub purge_legacy_silver_bullet_hooks_from_user_config
+assert_eq "user's approval re-keyed to the hook's new position" '{"'"$CH"'/.codex/hooks.json:pre_tool_use:0:0": {"trusted_hash": "sha256:userguard"}}' "$(toml_get "$CFG" 'd["hooks"]["state"]')"
+MERGE_USER_HOOKS=1 sub merge_silver_bullet_hooks_into_user_config
+MERGE_USER_HOOKS=1 sub seed_silver_bullet_hook_trust_state
+make_pkg "$MP/plugins/silver-bullet" 1.0.0
+printf '{"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"type":"command","command":"${CLAUDE_PLUGIN_ROOT}/hooks/a.sh"}]}]}}\n' >"$MP/plugins/silver-bullet/hooks/hooks.json"
+MERGE_USER_HOOKS=1 sub merge_silver_bullet_hooks_into_user_config
+MERGE_USER_HOOKS=1 sub seed_silver_bullet_hook_trust_state
+assert_eq "SB hook appended as a second group" 2 "$(jq '.hooks.PreToolUse | length' "$CH/.codex/hooks.json")"
+assert_eq "SB hook trusted at its own position" 1 "$(toml_get "$CFG" 'int("'"$CH"'/.codex/hooks.json:pre_tool_use:1:0" in d["hooks"]["state"])')"
+assert_eq "SB hooks go in a group of their own, after the user's" '"\"$HOME/bin/guard.sh\""' "$(jq -c '.hooks.PreToolUse[0].hooks[0].command' "$CH/.codex/hooks.json")"
+assert_eq "user's hook keeps its own approval after the merge and the seed" '"sha256:userguard"' "$(toml_get "$CFG" 'd["hooks"]["state"]["'"$CH"'/.codex/hooks.json:pre_tool_use:0:0"]["trusted_hash"]')"
+
 # ---- R7-06: --purge-legacy-skills removes only marked Silver Bullet copies
 reset_home
 mkdir -p "$CH/.agents/skills/security" "$CH/.agents/skills/tdd" "$CH/.agents/skills/my-own" "$CH/.codex/skills/usability" "$CH/.codex/skills/reliability" "$TL_TMP/elsewhere"

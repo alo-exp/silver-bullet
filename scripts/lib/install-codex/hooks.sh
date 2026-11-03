@@ -280,15 +280,9 @@ try:
         if not isinstance(existing, list):
             raise ConfigError(f"{hooks_path}: {event_name} must be an array; left unchanged")
         for new_group in groups:
-            matcher = new_group.get("matcher", "")
-            target = next(
-                (g for g in existing if isinstance(g, dict) and g.get("matcher", "") == matcher and isinstance(g.get("hooks"), list)),
-                None,
-            )
-            if target is None:
-                target = {"matcher": matcher, "hooks": []}
-                existing.append(target)
-            target["hooks"].extend(new_group.get("hooks", []))
+            # Always a group of its own, after the user's: a user's hook keeps its position,
+            # and with it the Codex trust keyed to that position.
+            existing.append({"matcher": new_group.get("matcher", ""), "hooks": list(new_group.get("hooks", []))})
     write_json(hooks_path, data)
 except ConfigError as exc:
     sys.exit(f"ERROR: {exc}")
