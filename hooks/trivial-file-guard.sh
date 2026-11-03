@@ -4,25 +4,25 @@ trap 'exit 0' ERR
 
 # Silver Bullet legacy trivial-file guard.
 #
-# Codex agents must not arm the old touch-file bypass by writing to the
-# configured trivial marker. Use /sb:fast for trivial changes instead.
+# Agents must not arm the old touch-file bypass by writing to the trivial marker. Use /sb:fast
+# for trivial changes instead. The marker is judged by what a call WRITES (the shell analysis
+# resolves ~, $HOME, `cd dir && touch trivial`, mv/cp/ln/tee/dd targets), never by the text of
+# the command, so every spelling of the path is covered. Interpreter one-liners (python -c,
+# node -e) write to places the analysis cannot list: one that names the marker is refused too.
 
 # Security: restrict file creation permissions (user-only)
 umask 0077
 
-# Source runtime path selector so the guard follows the host runtime.
 _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
-if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
-  # shellcheck source=lib/runtime-paths.sh
-  source "$_lib_dir/runtime-paths.sh"
-fi
-if [[ -f "$_lib_dir/tool-input.sh" ]]; then
-  # shellcheck source=lib/tool-input.sh
-  source "$_lib_dir/tool-input.sh"
-fi
+# shellcheck source=lib/planning-floor.sh
+source "$_lib_dir/planning-floor.sh"
 if [[ -f "$_lib_dir/cert-bypass.sh" ]]; then
   # shellcheck source=lib/cert-bypass.sh
   source "$_lib_dir/cert-bypass.sh"
+fi
+if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
+  # shellcheck source=lib/sb-project-gate.sh
+  source "$_lib_dir/sb-project-gate.sh"
 fi
 
 command -v jq >/dev/null 2>&1 || exit 0
@@ -34,82 +34,49 @@ fi
 hook_event=$(printf '%s' "$input" | jq -r '.hook_event_name // "PreToolUse"' 2>/dev/null || echo "PreToolUse")
 [[ "$hook_event" == "PreToolUse" ]] || exit 0
 
-if declare -f sb_tool_file_path >/dev/null 2>&1; then
-  file_path="$(sb_tool_file_path "$input")"
-else
-  file_path=$(printf '%s' "$input" | jq -r '.tool_input.file_path // ""' 2>/dev/null || true)
-fi
-if declare -f sb_tool_command_string >/dev/null 2>&1; then
-  command_str="$(sb_tool_command_string "$input")"
-else
-  command_str=$(printf '%s' "$input" | jq -r '.tool_input.command // ""' 2>/dev/null || true)
-fi
-[[ -z "$file_path" && -z "$command_str" ]] && exit 0
-
-resolve_repo_config() {
-  local dir="$PWD"
-  while true; do
-    if [[ -f "$dir/.silver-bullet.json" ]] && [[ -f "$dir/silver-bullet.md" ]]; then
-      printf '%s' "$dir/.silver-bullet.json"
-      return 0
-    fi
-    if [[ -d "$dir/.git" ]] || [[ "$dir" == "/" ]]; then
-      return 1
-    fi
-    dir=$(dirname "$dir")
-  done
-}
-
-config_file=""
-config_file=$(resolve_repo_config 2>/dev/null || true)
+config_file="$(sb_find_project_config_walk_only 2>/dev/null || true)"
 [[ -n "$config_file" ]] || exit 0
-
-if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
-  # shellcheck source=lib/sb-project-gate.sh
-  source "$_lib_dir/sb-project-gate.sh"
-fi
 if declare -f sb_project_active >/dev/null 2>&1; then
   sb_project_active "$config_file" || exit 0
-elif declare -f sb_project_is_initiated >/dev/null 2>&1; then
-  sb_project_is_initiated "$config_file" || exit 0
 fi
-
-SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
-sb_default_trivial="${SB_STATE_DIR}/trivial"
-trivial_file=$(jq -r --arg dt "$sb_default_trivial" '.state.trivial_file // $dt' "$config_file" 2>/dev/null || printf '%s' "$sb_default_trivial")
-trivial_file="${trivial_file/#\~/$HOME}"
-if ! sb_runtime_path_is_state_scoped "$trivial_file"; then
-  trivial_file="${sb_default_trivial}"
-fi
-[[ -L "$trivial_file" ]] && trivial_file="${sb_default_trivial}"
-trivial_file_tilde="${trivial_file/#$HOME/~}"
 
 emit_block() {
-  local reason="$1"
-  local json_reason
-  json_reason=$(printf '%s' "$reason" | jq -Rs '.')
-  printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":%s}}' "$json_reason"
+  sb_emit_hook_decision PreToolUse deny "$1"
 }
 
-norm_path() {
-  python3 -c 'import os,sys; print(os.path.abspath(os.path.expanduser(sys.argv[1])))' "$1" 2>/dev/null || printf '%s' "$1"
-}
-
-if [[ -n "$file_path" ]]; then
-  resolved_file_path="$(norm_path "$file_path")"
-  if [[ "$resolved_file_path" == "$trivial_file" ]]; then
-    emit_block "🚫 LEGACY TRIVIAL BYPASS BLOCKED — Codex agents must not write the trivial marker file directly. Use /sb:fast for trivial work instead."
-    exit 0
-  fi
+sb_tool_input_load "$input" "$PWD"
+if ! sb_tool_input_ok; then
+  [[ "${SB_TI_STATUS:-}" == "empty" ]] && exit 0
+  # The shell command cannot be analysed: refuse only what names the marker.
+  [[ "$(printf '%s' "$input" | tr '[:upper:]' '[:lower:]')" == *trivial* ]] || exit 0
+  cmd="$(printf '%s' "$input" | jq -r '.tool_input.command // .tool_input.cmd // ""' 2>/dev/null || true)"
+  sb_pf_plain_read_only "$cmd" && exit 0
+  emit_block "$(sb_pf_unanalysable_message)"
+  exit 0
 fi
 
-if [[ -n "$command_str" ]]; then
-  if grep -qF "$trivial_file" <<<"$command_str" || grep -qF "$trivial_file_tilde" <<<"$command_str"; then
-    if grep -qE '(^|[[:space:];|&])(touch|truncate|tee|cp|mv|install|sed|perl|python|python3|node|ruby|dd)\b|[[:space:]]>>|[[:space:]]>[^>&=]' <<<"$command_str"; then
-      emit_block "🚫 LEGACY TRIVIAL BYPASS BLOCKED — Codex agents must not arm the trivial marker file from Bash. Use /sb:fast for trivial work instead."
-      exit 0
-    fi
+# The default marker, and the one the project config names (it is not honoured by the gates,
+# but writing it is still an attempt to arm the bypass).
+default_trivial="${SB_RUNTIME_STATE_DIR}/trivial"
+cfg_trivial="$(jq -r '.state.trivial_file // ""' "$config_file" 2>/dev/null || true)"
+cfg_trivial="${cfg_trivial/#\~/$HOME}"
+guarded=$(sb_pf_canon "$default_trivial")
+if [[ -n "$cfg_trivial" ]]; then
+  guarded="$guarded"$'\n'"$(sb_pf_canon "$cfg_trivial")"
+fi
+
+while IFS=$'\t' read -r via target; do
+  [[ -n "$target" ]] || continue
+  # Removing the marker only disarms the bypass.
+  case "$via" in rm | rmdir | unlink | "git rm") continue ;; esac
+  if grep -qxF -- "$target" <<<"$guarded"; then
+    emit_block "🚫 LEGACY TRIVIAL BYPASS BLOCKED — Agents must not write or arm the trivial marker file. Use /sb:fast for trivial work instead."
+    exit 0
   fi
+done < <(sb_pf_write_records "$input")
+
+if [[ "${SB_TI_TOOL_KIND:-}" == "shell" ]] && sb_pf_opaque_mentions silver-bullet/trivial; then
+  emit_block "🚫 LEGACY TRIVIAL BYPASS BLOCKED — Agents must not write or arm the trivial marker file. Use /sb:fast for trivial work instead."
 fi
 
 exit 0

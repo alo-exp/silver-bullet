@@ -76,27 +76,72 @@ assert_eq "project reported inactive: inert" "" "$TL_OUT"
 dg_assert_ok "project reported inactive: inert: exits 0"
 dg_stub_real jq file_paths
 dg_run "$P" "$H" "$(write "$P/CLAUDE.md")"
-assert_eq "path extraction failing: nothing denied" "" "$TL_OUT"
-dg_assert_ok "path extraction failing: nothing denied: exits 0"
+assert_eq "jq failing on the extra path fields: the analysed file_path still denies" "deny" "$(dec)"
 rm -f "$TL_BIN/jq"
 
-# --- library fallbacks via a staged copy ------------------------------------------
-S1="$TL_TMP/s1"; dg_stage_hooks "$S1" sb-project-gate.sh tool-input.sh cert-bypass.sh
-dg_run "$P" "$S1/hooks/instruction-file-guard.sh" "$(write "$P/CLAUDE.md")"
-assert_eq "no gate/tool-input libs: guard still denies" "deny" "$(dec)"
-dg_run "$P" "$S1/hooks/instruction-file-guard.sh" "$(tool apply_patch '{"input":"x"}')"
-assert_eq "no tool-input lib: apply_patch falls back to file_path keys" "" "$TL_OUT"
-dg_assert_ok "no tool-input lib: apply_patch falls back to file_path keys: exits 0"
-dg_run_with_fn "$P" "$S1/hooks/instruction-file-guard.sh" "$(write "$P/CLAUDE.md")" 'sb_project_is_initiated() { return 1; }; export -f sb_project_is_initiated'
-assert_eq "initiated-check fallback can opt out" "" "$TL_OUT"
-dg_assert_ok "initiated-check fallback can opt out: exits 0"
-dg_run_with_fn "$P" "$S1/hooks/instruction-file-guard.sh" "$(tool apply_patch '{"input":"x"}')" 'sb_tool_patch_paths() { return 1; }; export -f sb_tool_patch_paths'
-assert_eq "failing patch-path helper tolerated" "" "$TL_OUT"
-dg_assert_ok "failing patch-path helper tolerated: exits 0"
-S2="$TL_TMP/s2"; dg_stage_hooks "$S2" cert-bypass.sh
-dg_run "$P" "$S2/hooks/instruction-file-guard.sh" "$(write "$P/CLAUDE.md")" SB_AGENT_CERT_RUN=1
-assert_eq "no cert-bypass lib: bypass flag has no effect" "deny" "$(dec)"
-dg_run_nolib_in "$P" "$H" "$(write "$P/CLAUDE.md")"
-assert_eq "lib dir unresolvable: guard still denies" "deny" "$(dec)"
+# --- Bash, case variants, patches, symlinks (R2-26) -------------------------------------------
+sh() { tool Bash "$(jq -cn --arg c "$1" '{command:$c}')"; }
+dg_run "$P" "$H" "$(sh "printf '# rules\\n' > CLAUDE.md")"
+assert_eq "Bash redirect creating CLAUDE.md denied" "deny" "$(dec)"
+assert_eq "the Bash deny is one JSON document" 1 "$(jq -s length <<<"$TL_OUT")"
+dg_run "$P" "$H" "$(sh "cp /dev/null AGENTS.md")"
+assert_eq "Bash cp creating AGENTS.md denied" "deny" "$(dec)"
+dg_run "$P" "$H" "$(sh "echo hi | tee '$P/CLAUDE.md'")"
+assert_eq "tee creating CLAUDE.md denied" "deny" "$(dec)"
+dg_run "$P" "$H" "$(sh "cd sub && echo hi > ../CLAUDE.md")"
+assert_eq "cd plus a relative path is resolved" "deny" "$(dec)"
+dg_run "$P" "$H" "$(sh "python3 -c \"open('CLAUDE.md','w').write('x')\"")"
+assert_eq "an opaque writer naming CLAUDE.md denied" "deny" "$(dec)"
+dg_run "$P" "$H" "$(sh "python3 -c 'print(1)'")"
+assert_eq "an opaque writer that names no instruction file is allowed" "none" "$(dec)"
+dg_run "$P" "$H" "$(sh "cat CLAUDE.md; ls")"
+assert_eq "reading an instruction file is allowed" "none" "$(dec)"
+dg_run "$P" "$H" "$(sh "echo notes > notes.md")"
+assert_eq "other Bash writes are allowed" "none" "$(dec)"
+dg_run "$P" "$H" "$(write "$P/claude.md")"
+assert_eq "case variant claude.md denied" "deny" "$(dec)"
+dg_run "$P" "$H" "$(write "$P/Agents.MD")"
+assert_eq "case variant Agents.MD denied" "deny" "$(dec)"
+echo existing >"$P/CLAUDE.md"
+dg_run "$P" "$H" "$(write "$P/claude.md")"
+assert_eq "a case variant of an existing instruction file is an update" "none" "$(dec)"
+dg_run "$P" "$H" "$(sh "echo more >> CLAUDE.md")"
+assert_eq "appending to an existing CLAUDE.md allowed" "none" "$(dec)"
+rm -f "$P/CLAUDE.md"
+dg_run "$P" "$H" "$(tool NotebookEdit "$(jq -cn --arg p "$P/CLAUDE.md" '{notebook_path:$p}')")"
+assert_eq "NotebookEdit path field checked" "deny" "$(dec)"
+dg_run "$P" "$H" "$(tool apply_patch "$(jq -cn --arg i "*** Begin Patch
+*** Update File: README.md
+@@
+-a
++b
+*** Add File: $P/AGENTS.md
++x
+*** End Patch" '{input:$i}')")"
+assert_eq "a later path of a multi-file patch is checked" "deny" "$(dec)"
+dg_run "$P" "$H" "$(tool apply_patch "$(jq -cn --arg i "*** Begin Patch
+*** Update File: README.md
+*** Move to: CLAUDE.md
+*** End Patch" '{input:$i}')")"
+assert_eq "a patch Move to target is checked" "deny" "$(dec)"
+ln -s CLAUDE.md "$P/rules.md" 2>/dev/null || true
+dg_run "$P" "$H" "$(write "$P/rules.md")"
+assert_eq "a symlink to a not-yet-created CLAUDE.md is the same target" "deny" "$(dec)"
+rm -f "$P/rules.md"
+
+# --- python3 missing: the shell analysis helper is unavailable ----------------------------
+NOPY="$(tl_path_without python3)"
+dg_run "$P" "$H" "$(sh "echo x > CLAUDE.md")" PATH="$NOPY"
+assert_contains "no python3: a command naming CLAUDE.md is refused with the fix" "$TL_OUT" "python3"
+dg_run "$P" "$H" "$(sh "ls -la")" PATH="$NOPY"
+assert_eq "no python3: a command naming no instruction file is allowed silently" "" "$TL_OUT"
+dg_run "$P" "$H" "$(sh "cat CLAUDE.md")" PATH="$NOPY"
+assert_eq "no python3: a plainly read-only command naming it gets no message" "" "$TL_OUT"
+dg_run "$P" "$H" '{"hook_event_name":"PreToolUse","tool_name":"Bash"}'
+assert_eq "an empty Bash payload is ignored" "" "$TL_OUT"
+dg_run "$P" "$H" "$(sh "echo 'unterminated > CLAUDE.md")"
+assert_contains "an unparsable command naming CLAUDE.md fails closed" "$TL_OUT" "cannot inspect"
+dg_run "$P" "$H" "$(write "$P/CLAUDE.md")" SB_AGENT_CERT_RUN=1
+assert_eq "cert run bypass still applies" "" "$TL_OUT"
 
 tl_results

@@ -11,6 +11,8 @@
 #
 # API (results on stdout, status 0/1; nothing here exits the caller):
 #   sb_pf_canon PATH [BASE]              canonical absolute form of PATH
+#   sb_pf_write_records INPUT            "via<TAB>canonical path" per write (via: redirect, tee, cp, mv,
+#                                        rm, ... or edit for the file tools)
 #   sb_pf_write_targets INPUT            canonical paths the loaded tool call writes, one per line:
 #                                        shell writes (redirects, mv sources, rm, ...), the file,
 #                                        notebook and MCP path fields, every apply_patch path
@@ -33,6 +35,9 @@
 #   sb_pf_state_has_skill SKILL...       one of the skills is recorded in this session's state
 #   sb_pf_workflow_id WF_DIR [COMMAND]   the active composed workflow id for this call
 #   sb_pf_config_files ROOT              the enforcement contract files of a project, one per line
+#   sb_pf_opaque_mentions NEEDLE...      an opaque writer (interpreter one-liner, awk system(),
+#                                        sed w) whose command text names one of the lower-case
+#                                        NEEDLEs (case-insensitive): its writes cannot be listed
 
 _sb_pf_dir="${BASH_SOURCE[0]:-$0}"
 _sb_pf_dir="${_sb_pf_dir%/*}"
@@ -54,26 +59,36 @@ sb_pf_canon() {
   printf '%s' "${out:-$1}"
 }
 
-sb_pf_write_targets() {
-  local input="${1:-}" raw
+# sb_pf_write_records INPUT: "<via><TAB><canonical path>" per write. via is the operation for
+# shell writes (redirect, tee, cp, mv, mv source, rm, ...) and "edit" for the file tools.
+sb_pf_write_records() {
+  local input="${1:-}" via raw
   {
     case "${SB_TI_TOOL_KIND:-shell}" in
       shell)
         printf '%s' "${SB_SA_JSON:-}" | jq -r '
           .writes[]? | select((.scope // "path") == "path")
-          | select((.dynamic | not) or (.path | startswith("/"))) | .path' 2>/dev/null
+          | select((.dynamic | not) or (.path | startswith("/"))) | [.via, .path] | @tsv' 2>/dev/null
         ;;
       *)
-        printf '%s\n' "${SB_TI_PATCH_PATHS:-}" "${SB_TI_FILE_PATH:-}"
-        printf '%s' "$input" | jq -r '
-          .tool_input | objects
-          | ([.file_path, .notebook_path, .path, .filePath, .destination, .source, .target] | .[] | strings),
-            ((.file_paths // .paths // []) | arrays | .[] | strings)' 2>/dev/null
+        {
+          printf '%s\n' "${SB_TI_PATCH_PATHS:-}" "${SB_TI_FILE_PATH:-}"
+          printf '%s' "$input" | jq -r '
+            .tool_input | objects
+            | ([.file_path, .notebook_path, .path, .filePath, .destination, .source, .target] | .[] | strings),
+              ((.file_paths // .paths // []) | arrays | .[] | strings)' 2>/dev/null
+        } | while IFS= read -r raw; do
+          [[ -n "$raw" ]] && printf 'edit\t%s\n' "$raw"
+        done
         ;;
     esac
-  } | while IFS= read -r raw; do
-    [[ -n "$raw" ]] && sb_pf_canon "$raw" && printf '\n'
+  } | while IFS=$'\t' read -r via raw; do
+    [[ -n "$raw" ]] && printf '%s\t%s\n' "$via" "$(sb_pf_canon "$raw")"
   done | awk 'NF && !seen[$0]++'
+}
+
+sb_pf_write_targets() {
+  sb_pf_write_records "$@" | cut -f2- | awk 'NF && !seen[$0]++'
 }
 
 sb_pf_unanalysable_message() {
@@ -163,6 +178,16 @@ sb_pf_is_non_logic() {
 sb_pf_config_files() {
   local root="${1%/}"
   printf '%s\n' "$root/.silver-bullet.json" "$root/silver-bullet.md" "$root/.silver-bullet.prompt.json"
+}
+
+sb_pf_opaque_mentions() {
+  local text needle
+  printf '%s' "${SB_SA_JSON:-}" | jq -e '(.opaque_writers // []) | length > 0' >/dev/null 2>&1 || return 1
+  text="$(printf '%s' "${SB_TI_COMMAND:-}" | tr '[:upper:]' '[:lower:]')"
+  for needle in "$@"; do
+    [[ "$text" == *"$needle"* ]] && return 0
+  done
+  return 1
 }
 
 sb_pf_invoked_skills() {
