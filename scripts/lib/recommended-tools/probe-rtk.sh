@@ -173,7 +173,8 @@ rt_repair_rtk() {
         && actions+=("optimize_rtk_context_mode") || failures+=("optimize_rtk_failed")
     fi
   fi
-  if [[ "${RT_HOST:-cursor}" == "cursor" ]] && ! rt_cross_tool_batch_active; then
+  # The machine-wide hooks.json rewrite needs the user's "wire" consent, not just "install".
+  if [[ "${RT_HOST:-cursor}" == "cursor" ]] && ! rt_cross_tool_batch_active && rt_mutation_allowed rtk wire; then
     local patch_py="${RT_REPO_ROOT}/scripts/lib/global-toolstack/patch-hooks.py"
     if [[ -f "$patch_py" ]]; then
       RT_PATCH_RTK=1 RT_PATCH_GRAPHIFY=0 RT_PATCH_AGENTMEMORY=0 RT_PATCH_CONTEXT_MODE=0 RT_PATCH_LEANCTX=0 \

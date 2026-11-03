@@ -443,6 +443,23 @@ rt_lock_is_stale() {
   [[ -n "$(find "$lock_path" -maxdepth 0 -mmin +2 2>/dev/null)" ]]
 }
 
+# rt_reclaim_stale_lock LOCK: remove a lock whose owner died. Waiters that all judged the same lock
+# stale must not each delete it (the second delete would remove the lock the first waiter just took),
+# so removal is serialized by a second mkdir lock and the staleness is checked again under it.
+rt_reclaim_stale_lock() {
+  local lock_path="${1:-}" guard="${1:-}.reclaim"
+  if mkdir "$guard" 2>/dev/null; then
+    if rt_lock_is_stale "$lock_path"; then
+      rm -rf -- "$lock_path" 2>/dev/null || { rmdir "$guard" 2>/dev/null; return 1; }
+    fi
+    rmdir "$guard" 2>/dev/null || true
+  elif [[ -n "$(find "$guard" -maxdepth 0 -mmin +2 2>/dev/null)" ]]; then
+    # a reclaimer that died holding the guard: clear it so the next pass can proceed
+    rmdir "$guard" 2>/dev/null || true
+  fi
+  return 0
+}
+
 # rt_with_lock LOCK TIMEOUT COMMAND...: run COMMAND holding the mkdir lock. The lock is released
 # when COMMAND returns (no RETURN trap: it would outlive this call and fire again when the
 # caller returns, deleting a lock somebody else holds), and a lock whose owner died is recovered.
@@ -455,8 +472,10 @@ rt_with_lock() {
   start="$(date +%s)"
   while ! mkdir "$lock_path" 2>/dev/null; do
     if rt_lock_is_stale "$lock_path"; then
-      rm -rf -- "$lock_path" 2>/dev/null || return 1
-      continue
+      rt_reclaim_stale_lock "$lock_path" || return 1
+      # Retry at once only when the stale lock is gone; otherwise another waiter is reclaiming it,
+      # so fall through to the timeout check and the sleep.
+      [[ -d "$lock_path" ]] || continue
     fi
     now="$(date +%s)"
     if (( now - start > timeout_s )); then

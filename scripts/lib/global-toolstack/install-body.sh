@@ -161,14 +161,29 @@ fi
 # --- global rules sync ---
 RULE_SRC="${REPO_ROOT}/.cursor/rules"
 [[ -d "$RULE_SRC" ]] || RULE_SRC="${SRC_DIR}"
-for rule in graphify.mdc agentmemory.mdc leanctx.mdc context-mode.mdc token-compression-enforcement.mdc; do
-  if [[ -f "${RULE_SRC}/${rule}" ]]; then
-    ts_install_file "${RULE_SRC}/${rule}" "${RULES_DIR}/${rule}"
+# A machine-wide always-on rule is host configuration for the tool it describes: it is installed only
+# for tools whose user granted "wire" (docs/CONSENT.md), never because some other tool is wired.
+ts_rule_wired() {
+  local t
+  for t in "$@"; do ts_wired "$t" && return 0; done
+  return 1
+}
+ts_global_rule() {
+  local rule="$1" src="$2"
+  shift 2
+  if ts_rule_wired "$@"; then
+    [[ -f "$src" ]] && ts_install_file "$src" "${RULES_DIR}/${rule}"
+  else
+    printf 'SKIP: global rule %s - no wire consent for %s\n' "$rule" "$*"
   fi
-done
-if [[ -f "${SRC_DIR}/global-recommended-tools.mdc" ]]; then
-  ts_install_file "${SRC_DIR}/global-recommended-tools.mdc" "${RULES_DIR}/recommended-tools.mdc"
-fi
+  return 0
+}
+ts_global_rule graphify.mdc "${RULE_SRC}/graphify.mdc" graphify
+ts_global_rule agentmemory.mdc "${RULE_SRC}/agentmemory.mdc" agentmemory
+ts_global_rule leanctx.mdc "${RULE_SRC}/leanctx.mdc" leanctx
+ts_global_rule context-mode.mdc "${RULE_SRC}/context-mode.mdc" context_mode
+ts_global_rule token-compression-enforcement.mdc "${RULE_SRC}/token-compression-enforcement.mdc" rtk context_mode
+ts_global_rule recommended-tools.mdc "${SRC_DIR}/global-recommended-tools.mdc" graphify agentmemory rtk context_mode leanctx
 
 # --- five-tool reconciler (installer entry point; batches MCP + hook writes) ---
 _installer_lib=""

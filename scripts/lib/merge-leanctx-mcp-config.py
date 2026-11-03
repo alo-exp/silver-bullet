@@ -160,6 +160,16 @@ def leanctx_cursor_server(cm_active: bool, manifest: dict) -> dict:
     return desired
 
 
+def legacy_lean_ctx_env(servers: dict) -> dict[str, str]:
+    """The string env of the upstream ``lean-ctx`` entry (API keys the user set there): it moves to
+    ``leanctx`` instead of being dropped with the duplicate."""
+    entry = servers.get("lean-ctx")
+    env = entry.get("env") if isinstance(entry, dict) else None
+    if not isinstance(env, dict):
+        return {}
+    return {k: v for k, v in env.items() if isinstance(k, str) and isinstance(v, str)}
+
+
 def remove_upstream_lean_ctx_duplicate(servers: dict) -> bool:
     """Drop upstream ``lean-ctx`` MCP entry when SB owns ``leanctx``.
 
@@ -179,6 +189,7 @@ def merge_cursor_mcp(target: pathlib.Path, dry_run: bool, manifest: dict) -> dic
     data = load_json(target, {"mcpServers": {}})
     servers = json_member(data, "mcpServers", dict, target)
     changed = False
+    legacy_env = legacy_lean_ctx_env(servers)
     if remove_upstream_lean_ctx_duplicate(servers):
         changed = True
     if not isinstance(servers.get("leanctx"), dict):
@@ -208,6 +219,11 @@ def merge_cursor_mcp(target: pathlib.Path, dry_run: bool, manifest: dict) -> dic
                     changed = True
             existing["disabledTools"] = disabled
             servers["leanctx"] = existing
+    leanctx_env = servers["leanctx"].setdefault("env", {})
+    for key, val in legacy_env.items():
+        if key not in leanctx_env:
+            leanctx_env[key] = val
+            changed = True
     if changed:
         save_json(target, data, dry_run)
     return {"host": "cursor", "mcp_merged": changed, "cm_active": cm_active}
@@ -218,9 +234,12 @@ def merge_claude_mcp(target: pathlib.Path, dry_run: bool, manifest: dict) -> dic
     data = load_json(target, {"mcpServers": {}})
     servers = json_member(data, "mcpServers", dict, target)
     changed = False
+    legacy_env = legacy_lean_ctx_env(servers)
     if remove_upstream_lean_ctx_duplicate(servers):
         changed = True
     desired = leanctx_cursor_server(cm_active, manifest)
+    for key, val in legacy_env.items():
+        desired["env"].setdefault(key, val)
     if servers.get("leanctx") != desired:
         servers["leanctx"] = desired
         changed = True
@@ -285,10 +304,13 @@ def merge_codex_toml(target: pathlib.Path, dry_run: bool, manifest: dict) -> dic
     cm_active = bool(doc.headers(("mcp_servers", "context-mode")))
     spec = mcp_server_spec(manifest, "leanctx")
     table = ("mcp_servers", "leanctx")
+    legacy_env = doc.string_values(("mcp_servers", "lean-ctx", "env"))
     changed = bool(doc.remove(lambda path: path[:2] == ("mcp_servers", "lean-ctx")))
     changed = doc.set_value(table, "args", json.dumps(spec["args"], ensure_ascii=False)) or changed
     changed = doc.set_value(table, "command", json.dumps(spec["command"], ensure_ascii=False)) or changed
     env = leanctx_server_env(cm_active)
+    for key, val in legacy_env.items():
+        env.setdefault(key, val)  # the user's own variables (API keys) move over, SB's values win
     for key in reversed(list(env)):
         changed = doc.set_value(table + ("env",), key, json.dumps(env[key], ensure_ascii=False)) or changed
     if not changed:

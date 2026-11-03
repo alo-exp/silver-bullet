@@ -178,6 +178,13 @@ assert_eq "rtk repair (batch): optimizer failure" '{"actions":[],"failures":["op
 H claude
 out="$(rt_repair_rtk 2>/dev/null)"
 assert_eq "rtk repair (claude): no cursor hook patch" '{"actions":["optimize_rtk_context_mode"],"failures":[],"restart_required":false}' "$(jq -c . <<<"$out")"
+# R6-03: an "install" grant is not "wire": the machine-wide hooks.json rewrite needs wire
+sb_test_consent_reset_mirror "$HR_PROJ/.silver-bullet.json" install
+: >"$HR_LOG"
+out="$(rt_repair_rtk 2>/dev/null)"
+assert_eq "rtk repair (install-only grant): no hooks.json patch" '{"actions":["optimize_rtk_context_mode"],"failures":[],"restart_required":false}' "$(jq -c . <<<"$out")"
+assert_not_contains "rtk repair (install-only grant): patch-hooks never ran" "$(cat "$HR_LOG")" "patch-hooks"
+sb_test_consent_reset_mirror "$HR_PROJ/.silver-bullet.json" install,wire,enforce
 H cursor
 mv "$HR_STAGE/scripts/optimize-rtk-context-mode.sh" "$HR_STAGE/scripts/opt.off"; mv "$HR_STAGE/scripts/lib/global-toolstack/patch-hooks.py" "$HR_STAGE/scripts/lib/global-toolstack/patch-hooks.off"
 assert_eq "rtk repair: nothing to run without helper scripts" '{"actions":[],"failures":[],"restart_required":false}' "$(rt_repair_rtk 2>/dev/null | jq -c .)"

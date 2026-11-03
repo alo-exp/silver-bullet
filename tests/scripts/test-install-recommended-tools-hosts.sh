@@ -8,6 +8,7 @@
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
+source "$TL_REPO_ROOT/tests/lib/consent-helpers.sh"
 
 STAGE="$TL_TMP/repo"
 CUR="$STAGE/scripts/install-recommended-tools-cursor.sh"
@@ -19,10 +20,12 @@ PI_LOG="$TL_TMP/pi.log"
 export RECON_LOG PARITY_LOG PI_LOG
 
 stage_repo() {
+  sb_test_consent_sandbox
   rm -rf "$STAGE" "$HOME/.cursor" "$HOME/.codex" "$HOME/.claude" "$HOME/.config"
   mkdir -p "$STAGE/scripts/lib/global-toolstack" "$STAGE/scripts/lib/install-cursor/templates/cursor" "$RULES" "$STAGE/hooks"
   cp "$TL_REPO_ROOT/scripts/install-recommended-tools-cursor.sh" "$TL_REPO_ROOT/scripts/install-recommended-tools-global.sh" "$STAGE/scripts/"
   ln -s "$TL_REPO_ROOT/scripts/lib/recommended-tools" "$STAGE/scripts/lib/recommended-tools"
+  cp "$TL_REPO_ROOT/scripts/lib/sb_host_config.py" "$STAGE/scripts/lib/"
   ln -s "$TL_REPO_ROOT/hooks/lib" "$STAGE/hooks/lib"
   cat >"$STAGE/scripts/reconcile-recommended-tools.sh" <<'EOF'
 #!/usr/bin/env bash
@@ -113,7 +116,28 @@ assert_contains "cursor: reconcile failure warns" "$TL_ERR" "WARN: reconciler po
 assert_contains "cursor: reload notice when restart required" "$TL_OUT" "RELOAD REQUIRED"
 
 # --global with no project: copies rules, host-scope reconcile, parity-verify hook
+# R6-12: with no consent nothing is installed machine-wide, whatever --global says
+sb_test_consent_sandbox
 rm -rf "$HOME/.cursor"
+for f in context-mode token-compression-enforcement graphify agentmemory leanctx recommended-tools; do printf '%s\n' "$f-project" >"$RULES/$f.mdc"; done
+tl_run bash -c 'cd "$1" && bash "$2" --global' _ "$WORK" "$CUR"
+assert_eq "cursor: --global without consent installs no machine-wide rule" "0" "$(find "$HOME/.cursor/rules" -type f 2>/dev/null | wc -l | tr -d ' ')"
+assert_contains "cursor: skipped rules are announced" "$TL_OUT" "SKIP: global rule graphify.mdc - no wire consent for graphify"
+# only leanctx wired: only its rule (and the shared overview) is installed, the user's own rule survives
+sb_test_consent_grant leanctx wire
+mkdir -p "$HOME/.cursor/rules"
+printf 'my own graphify rule\n' >"$HOME/.cursor/rules/graphify.mdc"
+tl_run bash -c 'cd "$1" && bash "$2" --global' _ "$WORK" "$CUR"
+assert_eq "cursor: leanctx wire installs the leanctx rule" "leanctx-project" "$(cat "$HOME/.cursor/rules/leanctx.mdc")"
+assert_eq "cursor: leanctx wire leaves the user's graphify rule alone" "my own graphify rule" "$(cat "$HOME/.cursor/rules/graphify.mdc")"
+assert_file_absent "cursor: leanctx wire installs no context-mode rule" "$HOME/.cursor/rules/context-mode.mdc"
+sb_test_consent_grant_all
+# a differing recommended-tools rule is backed up before it is replaced
+printf 'user recommended-tools\n' >"$HOME/.cursor/rules/recommended-tools.mdc"
+tl_run bash -c 'cd "$1" && bash "$2" --global' _ "$WORK" "$CUR"
+assert_eq "cursor: the recommended-tools rule is backed up" "user recommended-tools" "$(cat "$HOME/.cursor/rules/recommended-tools.mdc.sb-backup")"
+rm -f "$RULES/agentmemory.mdc"
+rm -rf "$HOME/.cursor" "$WORK/.cursor"
 for f in context-mode token-compression-enforcement graphify agentmemory leanctx recommended-tools; do printf '%s\n' "$f-project" >"$RULES/$f.mdc"; done
 rm -f "$RULES/agentmemory.mdc"
 printf 'GLOBAL-VARIANT\n' >"$STAGE/scripts/lib/global-toolstack/global-recommended-tools.mdc"
@@ -129,7 +153,7 @@ assert_eq "cursor: global context-mode rule copied" "context-mode-project" "$(ca
 assert_eq "cursor: global leanctx rule copied" "leanctx-project" "$(cat "$HOME/.cursor/rules/leanctx.mdc")"
 assert_file_absent "cursor: missing project rule not copied globally" "$HOME/.cursor/rules/agentmemory.mdc"
 assert_eq "cursor: global variant wins for recommended-tools.mdc" "GLOBAL-VARIANT" "$(cat "$HOME/.cursor/rules/recommended-tools.mdc")"
-assert_contains "cursor: global variant announced" "$TL_OUT" "OK: ${HOME}/.cursor/rules/recommended-tools.mdc (global variant)"
+assert_contains "cursor: global variant announced" "$TL_OUT" "OK: ${HOME}/.cursor/rules/recommended-tools.mdc"
 assert_contains "cursor: host-scope reconcile (no project root)" "$(cat "$RECON_LOG")" "--host cursor --mode apply --scope host --format text --entry-point installer"
 assert_not_contains "cursor: no project root passed" "$(cat "$RECON_LOG")" "--project-root"
 assert_contains "cursor: parity-verify executed" "$(cat "$PARITY_LOG")" "ran"
@@ -213,6 +237,16 @@ assert_contains "global codex: warning" "$TL_ERR" "WARN: context-mode codex AGEN
 mkdir -p "$NPMROOT/context-mode/configs/opencode" "$NPMROOT/context-mode/configs/codex"
 printf 'OPENCODE-AGENTS\n' >"$NPMROOT/context-mode/configs/opencode/AGENTS.md"
 printf 'CODEX-AGENTS\n' >"$NPMROOT/context-mode/configs/codex/AGENTS.md"
+# R6-12/13: the user's global instruction files are written only with Context Mode wire consent, with a backup
+mkdir -p "$HOME/.codex"; printf 'MY-CODEX-INSTRUCTIONS\n' >"$HOME/.codex/AGENTS.md"
+tl_run bash "$GLO" --host codex
+assert_eq "global codex: no consent leaves the user's AGENTS.md alone" "MY-CODEX-INSTRUCTIONS" "$(cat "$HOME/.codex/AGENTS.md")"
+assert_contains "global codex: and says how to allow it" "$TL_ERR" "SKIP: ${HOME}/.codex/AGENTS.md - no Context Mode wire consent"
+sb_test_consent_grant context_mode wire
+tl_run bash "$GLO" --host codex
+assert_eq "global codex: with consent AGENTS.md is replaced" "CODEX-AGENTS" "$(cat "$HOME/.codex/AGENTS.md")"
+assert_eq "global codex: the user's file is kept in AGENTS.md.sb-backup" "MY-CODEX-INSTRUCTIONS" "$(cat "$HOME/.codex/AGENTS.md.sb-backup")"
+rm -rf "$HOME/.codex"
 tl_run bash "$GLO" --host opencode
 assert_eq "global opencode: AGENTS.md copied" "OPENCODE-AGENTS" "$(cat "$HOME/.config/opencode/AGENTS.md")"
 assert_contains "global opencode: OK line" "$TL_OUT" "OK: ${HOME}/.config/opencode/AGENTS.md"
@@ -226,6 +260,7 @@ tl_run env PATH="$NONPM" bash "$GLO" --host opencode
 assert_contains "global opencode: no npm means no package" "$TL_ERR" "WARN: context-mode opencode AGENTS.md not found"
 
 # pi
+sb_test_consent_sandbox
 tl_run bash "$GLO" --host pi
 assert_eq "global pi: missing installer fails" "1" "$TL_STATUS"
 assert_contains "global pi: missing installer message" "$TL_ERR" "ERROR: Pi five-tool installer missing: ${STAGE}/scripts/lib/global-toolstack/install-pi.py"
@@ -233,7 +268,6 @@ printf 'import os, sys\nopen(os.environ["PI_LOG"], "a").write(" ".join(sys.argv[
 tl_run bash "$GLO" --host pi
 assert_eq "global pi: installer runs" "0" "$TL_STATUS"
 assert_eq "global pi: installer receives the repo root and no tool without consent" "--repo-root ${STAGE}" "$(cat "$PI_LOG")"
-source "$TL_REPO_ROOT/tests/lib/consent-helpers.sh"
 sb_test_consent_sandbox
 sb_test_consent_grant rtk wire
 sb_test_consent_grant leanctx install
@@ -242,12 +276,15 @@ tl_run bash "$GLO" --host pi
 assert_eq "global pi: only wire-consented tools are enabled" "--repo-root ${STAGE} --enable-tool rtk" "$(cat "$PI_LOG")"
 
 # cursor delegates to the cursor installer (which writes into the staged repo)
+sb_test_consent_grant_all
 tl_run bash -c 'cd "$1" && bash "$2" --host cursor' _ "$WORK" "$GLO"
 assert_eq "global cursor: delegates" "0" "$TL_STATUS"
 assert_contains "global cursor: cursor installer output" "$TL_OUT" "Cursor recommended-tool rules installed under ${WORK}/.cursor/rules"
 assert_eq "global cursor: --global rules synced" "context-mode" "$(cat "$HOME/.cursor/rules/context-mode.mdc")"
 
 # all supported hosts (goose excluded)
+sb_test_consent_sandbox
+sb_test_consent_grant rtk wire
 : >"$PI_LOG"
 tl_run bash -c 'cd "$1" && bash "$2" --host all --global' _ "$WORK" "$GLO"
 assert_eq "global all: exits 0" "0" "$TL_STATUS"

@@ -1033,6 +1033,22 @@ class CliAllowlistTest(Base):
             program = entry[len("Shell("):-1].rstrip("*").strip()
             self.assertNotIn(program, dangerous, entry)
         self.assertLess(len(shipped["read_only"]), 20)
+
+    def test_shipped_default_list_has_no_command_that_can_write_through_a_flag(self):
+        """git log/diff/show --output=FILE and tree -o FILE write arbitrary files: only exact git shapes are allowed."""
+        shipped = json.loads((REPO_ROOT / "scripts" / "lib" / "cursor-cli-allowlist.json").read_text())
+        flag_writers = ("tree", "find", "sort", "sed", "awk", "tee", "xargs", "env", "less", "man", "rg")
+        for entry in shipped["read_only"]:
+            body = entry[len("Shell("):-1]
+            words = body.split()
+            self.assertNotIn(words[0], flag_writers, entry)
+            if words[0] == "git":
+                self.assertNotIn("*", body, entry)  # exact argument shapes only
+                self.assertIn(words[1], ("status", "diff", "log"), entry)
+                self.assertNotIn("--output", body, entry)
+        self.assertNotIn("Shell(git log *)", shipped["read_only"])
+        self.assertNotIn("Shell(git show *)", shipped["read_only"])
+        self.assertNotIn("Shell(tree *)", shipped["read_only"])
         self.assertIn("Shell(bash *)", shipped["allow"])  # the full list is still available, on request
 
     def test_default_cursor_run_merges_only_the_read_only_list(self):

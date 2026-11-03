@@ -22,6 +22,7 @@ for s in install-leanctx-sb optimize-rtk-context-mode sb-optimize-stack install-
   cat >"$STAGE/scripts/$s.sh" <<EOF
 #!/usr/bin/env bash
 printf '%s %s\n' "$s" "\$*" >>"\$LOG"
+printf '%s\n' "\${SB_INSTALL_RUN_START:-unset}" >>"\$LOG.start"
 exit "\${STUB_RC_${s//-/_}:-0}"
 EOF
 done
@@ -124,7 +125,8 @@ assert_eq "existing profile has no injected routes" "null" "$(jq -r '.optimizati
 # ---- cursor: rules installer (real run vs dry-run --global), skip flags
 write_cfg '{"recommended_tools":{"leanctx":{"enabled_by_user":true}}}'
 run_opt --host cursor --project-root "$PROJ" --skip-synergy
-assert_contains "cursor: rules are installed into the project and globally" "$(calls)" "install-recommended-tools-cursor --project-root ${PROJ} --global"
+assert_contains "cursor: rules are installed into the project" "$(calls)" "install-recommended-tools-cursor --project-root ${PROJ}"
+assert_not_contains "cursor real run: never --global (machine-wide rules need per-tool consent)" "$(calls)" "--global"
 assert_contains "cursor skip-synergy: graphify and agentmemory patches off" "$(calls)" "RT_PATCH_AGENTMEMORY=0 RT_PATCH_CONTEXT_MODE=1 RT_PATCH_GRAPHIFY=0 RT_PATCH_LEANCTX=1"
 assert_not_contains "cursor skip-synergy: synergy optimizer not run" "$(calls)" "sb-optimize-stack"
 assert_contains "skip-synergy announced" "$TL_OUT" "SKIP: sb-optimize-stack.sh (Graphify + agentmemory)"
@@ -156,6 +158,18 @@ tl_run env STUB_RC_install_recommended_tools_cursor=3 bash "$OPT" --host cursor 
 assert_eq "a failing rules installer does not abort" "0" "$TL_STATUS"
 assert_contains "it is reported" "$TL_ERR" "WARN: install-recommended-tools-cursor.sh failed"
 
+# ---- one install run: every helper shares one SB_INSTALL_RUN_START, so the first backup survives (R6-26)
+write_cfg '{"recommended_tools":{"leanctx":{"enabled_by_user":true}}}'
+rm -f "$LOG.start"
+run_opt --host claude --project-root "$PROJ"
+starts="$(sort -u "$LOG.start")"
+assert_eq "all helpers of one run share a single run start" "1" "$(printf '%s\n' "$starts" | wc -l | tr -d ' ')"
+assert_contains "the run start is epoch seconds" "$starts" "1"
+case "$starts" in *[!0-9]*|"") tl_fail "run start is numeric" ;; *) tl_pass "run start is numeric" ;; esac
+rm -f "$LOG.start"
+: >"$LOG"; tl_run env SB_INSTALL_RUN_START=1234 bash "$OPT" --host claude --project-root "$PROJ"
+assert_eq "an outer run start is kept" "1234" "$(sort -u "$LOG.start")"
+
 # ---- dry run
 write_cfg '{"recommended_tools":{"leanctx":{"enabled_by_user":true}}}'
 run_opt --host cursor --project-root "$PROJ" --dry-run
@@ -164,6 +178,7 @@ assert_eq "dry-run runs no helper" "" "$(calls)"
 assert_contains "dry-run leanctx" "$TL_OUT" "DRY-RUN: bash ${STAGE}/scripts/install-leanctx-sb.sh --host cursor --project-root ${PROJ} --dry-run"
 assert_contains "dry-run rtcm" "$TL_OUT" "DRY-RUN: bash ${STAGE}/scripts/optimize-rtk-context-mode.sh --host cursor --project-root ${PROJ} --skip-cm-doctor --dry-run"
 assert_contains "dry-run cursor rules name the project and skip --global" "$TL_OUT" "DRY-RUN: bash ${STAGE}/scripts/install-recommended-tools-cursor.sh --project-root ${PROJ}"
+assert_not_contains "dry-run cursor rules never --global" "$TL_OUT" "install-recommended-tools-cursor.sh --project-root ${PROJ} --global"
 assert_contains "dry-run patch" "$TL_OUT" "DRY-RUN: env RT_HOST=cursor TOOLSTACK_REPO_ROOT=${STAGE} RT_PATCH_GRAPHIFY=1"
 assert_contains "dry-run synergy" "$TL_OUT" "DRY-RUN: bash ${STAGE}/scripts/sb-optimize-stack.sh --apply --project-root ${PROJ} --dry-run --host cursor"
 assert_contains "dry-run metadata" "$TL_OUT" "DRY-RUN: stamp optimization_profiles.five_tool_routed metadata"

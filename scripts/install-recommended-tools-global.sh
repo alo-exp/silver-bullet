@@ -5,6 +5,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 LIB="${REPO_ROOT}/hooks/lib/rtk-cm-global.sh"
+# One backup per run: the first write keeps the user's file as it was before this run.
+export SB_INSTALL_RUN_START="${SB_INSTALL_RUN_START:-$(date +%s)}"
 
 HOST=""
 INSTALL_GLOBAL=0
@@ -30,6 +32,25 @@ source "$LIB"
 # shellcheck source=../hooks/lib/user-consent.sh
 source "${REPO_ROOT}/hooks/lib/user-consent.sh"
 
+# install_agents_file SRC DEST: DEST is the user's global instruction file (~/.codex/AGENTS.md ...).
+# Written only with Context Mode "wire" consent, atomically through a symlink, mode kept, and the
+# previous content kept in DEST.sb-backup.
+install_agents_file() {
+  local src="$1" dest="$2"
+  if ! sb_consent_granted context_mode wire; then
+    printf 'SKIP: %s - no Context Mode wire consent (bash %s/sb-consent.sh grant context_mode --all-projects --capabilities wire)\n' \
+      "$dest" "$SCRIPT_DIR" >&2
+    return 0
+  fi
+  if python3 -c 'import sys; sys.path.insert(0, sys.argv[1]); import sb_host_config as c; c.write_atomic(sys.argv[2], open(sys.argv[3], "rb").read())' \
+    "${SCRIPT_DIR}/lib" "$dest" "$src"; then
+    printf 'OK: %s\n' "$dest"
+  else
+    printf 'WARN: could not write %s\n' "$dest" >&2
+    return 1
+  fi
+}
+
 install_cursor_global() {
   bash "${SCRIPT_DIR}/install-recommended-tools-cursor.sh" --global
 }
@@ -41,9 +62,7 @@ install_opencode_agents() {
     cm_pkg="$(npm root -g 2>/dev/null)/context-mode/configs/opencode/AGENTS.md"
   fi
   if [[ -f "$cm_pkg" ]]; then
-    mkdir -p "$(dirname "$dest")"
-    cp "$cm_pkg" "$dest"
-    printf 'OK: %s\n' "$dest"
+    install_agents_file "$cm_pkg" "$dest"
   else
     printf 'WARN: context-mode opencode AGENTS.md not found — run npm install -g context-mode\n' >&2
   fi
@@ -56,9 +75,7 @@ install_codex_agents() {
     cm_pkg="$(npm root -g 2>/dev/null)/context-mode/configs/codex/AGENTS.md"
   fi
   if [[ -f "$cm_pkg" ]]; then
-    mkdir -p "$(dirname "$dest")"
-    cp "$cm_pkg" "$dest"
-    printf 'OK: %s\n' "$dest"
+    install_agents_file "$cm_pkg" "$dest"
   else
     printf 'WARN: context-mode codex AGENTS.md not found\n' >&2
   fi

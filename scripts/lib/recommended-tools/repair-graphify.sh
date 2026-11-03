@@ -123,7 +123,10 @@ rt_repair_graphify() {
     if rt_graphify_worktree_build_index "${RT_PROJECT_ROOT:-}" >&2; then
       actions+=("worktree_index_built")
     fi
-    rt_repair_graphify_platform >&2 && actions+=("platform_artifacts_refreshed") || failures+=("platform_refresh_failed")
+    # 'graphify <platform> install' writes host config (~/.cursor, ~/.codex, ...): "wire" consent only.
+    if rt_mutation_allowed graphify wire; then
+      rt_repair_graphify_platform >&2 && actions+=("platform_artifacts_refreshed") || failures+=("platform_refresh_failed")
+    fi
   fi
 
   jq -n \

@@ -3,6 +3,8 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# One backup per run: sb_host_config keeps the user's file as it was before the run's first change.
+export SB_INSTALL_RUN_START="${SB_INSTALL_RUN_START:-$(date +%s)}"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 LIB="${REPO_ROOT}/hooks/lib/stack-optimizer.sh"
 # REPO_ROOT is Silver Bullet itself (its libraries and templates). The project being optimized

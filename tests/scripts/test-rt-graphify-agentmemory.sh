@@ -313,6 +313,17 @@ out="$(RT_CROSS_TOOL_BATCH=1 rt_repair_graphify 2>/dev/null)"
 assert_eq "repair: cross-tool batch owns the mcp merge" '{"actions":["worktree_index_built","platform_artifacts_refreshed"],"failures":[],"restart_required":false}' "$(jq -c . <<<"$out")"
 out="$(HR_PY_RC_patch_mcp=1 rt_repair_graphify 2>/dev/null)"
 assert_eq "repair: merge failure recorded" '{"actions":["worktree_index_built","platform_artifacts_refreshed"],"failures":["mcp_config_merge_failed"],"restart_required":false}' "$(jq -c . <<<"$out")"
+# R6-03: 'graphify <platform> install' writes host config: an install-only grant must not run it
+sb_test_consent_reset_mirror "$HR_PROJ/.silver-bullet.json" install
+rt_repair_graphify_platform() { echo "platform-refresh-ran" >>"$HR_LOG"; return 0; }
+: >"$HR_LOG"
+out="$(RT_CROSS_TOOL_BATCH=1 rt_repair_graphify 2>/dev/null)"
+assert_not_contains "repair: install-only grant never refreshes the platform (host config)" "$(jq -c . <<<"$out")" "platform_artifacts_refreshed"
+assert_not_contains "repair: install-only grant never calls the platform refresh" "$(cat "$HR_LOG")" "platform-refresh-ran"
+unset -f rt_repair_graphify_platform
+# shellcheck source=/dev/null
+source "$HR_RTLIB/repair-graphify.sh"
+sb_test_consent_reset_mirror "$HR_PROJ/.silver-bullet.json" install,wire,enforce
 # stale index gets rebuilt
 printf 'old' >"$HR_PROJ/graphify-out/.build-commit"
 out="$(RT_CROSS_TOOL_BATCH=1 rt_repair_graphify 2>/dev/null)"
