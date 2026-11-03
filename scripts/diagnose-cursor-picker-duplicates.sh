@@ -90,10 +90,17 @@ def is_cursorignored(root: Path, path: Path, patterns: list[str]) -> bool:
 
 
 def logical_route(name: str) -> str | None:
-    if name == "silver":
+    """Map a command stem or skill name to one logical route.
+
+    Command stubs are kebab-case (sb.md, sb-feature.md; render-agent-bundle.py
+    maps them the same way), skills are silver / silver-<x> / sb:<x>.
+    """
+    if name in {"silver", "sb"}:
         return "silver"
     if name.startswith("sb:"):
         return name
+    if name.startswith("sb-"):
+        return "sb:" + name.removeprefix("sb-")
     if name.startswith("silver-"):
         return "sb:" + name.removeprefix("silver-")
     return None

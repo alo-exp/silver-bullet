@@ -258,8 +258,9 @@ tl_run timeout 60 env OPENCODE_BIN="$BINS/opencode-ok/opencode" bash "$PF" --sb-
 assert_eq "opencode preflight all-green exits 0" "0" "$TL_STATUS"
 assert_contains "opencode preflight reports the CLI version" "$TL_OUT" "OK: OpenCode CLI opencode 9.9.9"
 assert_contains "opencode preflight pins the model" "$TL_OUT" "OK: model pin opencode-go/mimo-v2.5"
-assert_contains "opencode preflight validates the install surface" "$TL_OUT" "OK: SB-only OpenCode install surface"
-assert_eq "opencode preflight validator got --host opencode" "--host opencode" "$(cat "$SB/validate.argv")"
+# R8-27: validate-host-install-surface.sh has no opencode host, so the preflight no longer probes it
+assert_not_contains "opencode preflight does not run a dead surface probe" "$TL_OUT$TL_ERR" "install surface"
+assert_file_absent "opencode preflight never called the validator" "$SB/validate.argv"
 
 tl_run timeout 60 bash "$PF" --sb-root "$SB"
 assert_eq "opencode preflight without a CLI exits 1" "1" "$TL_STATUS"
@@ -275,17 +276,14 @@ tl_run timeout 60 env OPENCODE_BIN="$BINS/opencode-ok/opencode" OPENCODE_MODEL=o
 assert_eq "opencode preflight a drifted model blocks" "1" "$TL_STATUS"
 assert_contains "opencode preflight a drifted model message" "$TL_ERR" "OPENCODE_MODEL must be mimo-v2.5"
 
-# validator failure is advisory for OpenCode
-tl_run timeout 60 env OPENCODE_BIN="$BINS/opencode-ok/opencode" VALIDATE_RC=1 bash "$PF" --sb-root "$SB"
-assert_eq "opencode preflight failed validator is only a warning" "0" "$TL_STATUS"
-assert_contains "opencode preflight failed validator warns" "$TL_ERR" "validate-host-install-surface opencode not configured"
+# a failed model pin is an error and never followed by an OK line
+assert_not_contains "opencode failed pin prints no OK: model pin" "$(tl_run timeout 60 env OPENCODE_BIN="$BINS/opencode-ok/opencode" OPENCODE_MODEL=other bash "$PF" --sb-root "$SB" 2>/dev/null; printf '%s' "$TL_OUT")" "OK: model pin"
 
 rm -f "$SB/validate.argv" "$BINS/opencode-ok/opencode.argv"
 tl_run timeout 60 env OPENCODE_BIN="$BINS/opencode-ok/opencode" bash "$PF" --sb-root "$SB" --dry-run
 assert_eq "opencode preflight dry-run exits 0" "0" "$TL_STATUS"
 assert_contains "opencode preflight dry-run skips CLI" "$TL_OUT" "SKIP (dry-run): OpenCode CLI check"
 assert_contains "opencode preflight dry-run skips model pin" "$TL_OUT" "SKIP (dry-run): model pin"
-assert_contains "opencode preflight dry-run skips validator" "$TL_OUT" "SKIP (dry-run): validate-host-install-surface"
 assert_file_absent "opencode preflight dry-run did not validate" "$SB/validate.argv"
 assert_file_absent "opencode preflight dry-run did not call the CLI" "$BINS/opencode-ok/opencode.argv"
 
@@ -337,12 +335,18 @@ tl_run timeout 60 env PI_BIN="$BINS/pi-ok/pi" PI_PROVIDER=other bash "$PF" --sb-
 assert_eq "pi preflight a drifted provider blocks" "1" "$TL_STATUS"
 assert_contains "pi preflight a drifted provider message" "$TL_ERR" "PI_PROVIDER must be opencode-go"
 
+tl_run timeout 60 env PI_BIN="$BINS/pi-ok/pi" PI_PROVIDER=other bash "$PF" --sb-root "$SB"
+assert_not_contains "pi failed pin prints no OK: model pin" "$TL_OUT" "OK: model pin"
+
 rm -f "$BINS/pi-ok/pi.argv"
 tl_run timeout 60 env PI_BIN="$BINS/pi-ok/pi" bash "$PF" --sb-root "$SB" --dry-run
 assert_eq "pi preflight dry-run exits 0" "0" "$TL_STATUS"
 assert_contains "pi preflight dry-run skips CLI" "$TL_OUT" "SKIP (dry-run): Pi CLI check"
 assert_contains "pi preflight dry-run skips model pin" "$TL_OUT" "SKIP (dry-run): model pin"
 assert_file_absent "pi preflight dry-run did not call the CLI" "$BINS/pi-ok/pi.argv"
+
+# R8-27: the Claude guide names the file the runtime check looks at
+assert_contains "claude guide names .claude/settings.json as the graphify artifact" "$(<"$TL_REPO_ROOT/scripts/lib/host-install-guides/claude.md")" '`graphify claude install --project` | `.claude/settings.json` hooks'
 
 assert_file_absent "no package manager or sudo was invoked" "$TL_TMP/guarded-commands.log"
 
