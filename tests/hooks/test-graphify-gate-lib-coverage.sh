@@ -105,7 +105,7 @@ assert_eq "state path ~ outside scope rejected" "$DEF" "$(sb_graphify_query_stat
 w 'garbage'
 assert_eq "state path invalid json default" "$DEF" "$(sb_graphify_query_state_path "$CFG")"
 # R5-01: a '..' component, a symlinked directory or a relative path never leaves the state dir
-for bad in "$SB_RUNTIME_STATE_DIR/../victim" "$SB_RUNTIME_STATE_DIR/a/../../victim" "relative/q" "$SB_RUNTIME_STATE_DIR/" "$SB_RUNTIME_STATE_DIR/./q"; do
+for bad in "$SB_RUNTIME_STATE_DIR/../victim" "$SB_RUNTIME_STATE_DIR/a/../../victim" "relative/q" "$SB_RUNTIME_STATE_DIR/" "$SB_RUNTIME_STATE_DIR/./q" "$SB_RUNTIME_STATE_DIR/a/../victim-query" "$SB_RUNTIME_STATE_DIR/./q-query" "$SB_RUNTIME_STATE_DIR/a//q-query"; do
   w "$(jq -n --arg v "$bad" '{graphify:{query_state_file:$v}}')"
   assert_eq "state path rejected: $bad" "$DEF" "$(sb_graphify_query_state_path "$CFG")"
 done
