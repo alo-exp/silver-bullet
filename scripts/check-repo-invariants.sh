@@ -139,6 +139,7 @@ check_hook-references() {
   local cmd script bare rel ok=0 named
   # The only accepted shape: [bash|sh] <plugin-root script> followed by plain arguments. Anything
   # else (chained commands, substitutions, project-relative interpreters) is rejected (allowlist).
+  # shellcheck disable=SC2016  # literal regex, $ is not expanded
   local shape='^((bash|sh) +)?("\$\{CLAUDE_PLUGIN_ROOT\}/[A-Za-z0-9_./-]+"|"?\$CLAUDE_PLUGIN_ROOT"?/[A-Za-z0-9_./-]+)( +[A-Za-z0-9_./=:@-]+)*$'
   while IFS= read -r cmd; do
     named=0

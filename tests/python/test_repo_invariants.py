@@ -400,7 +400,7 @@ jobs:
       - name: Interpolated
         run: |
           tag="${{ github.event.release.tag_name }}"
-          # comment lines are skipped, even ${{ x }} and npx -y
+          # comment lines are skipped for npx -y but ${{ x }} is still expanded
           npx -y html-validate site
       - run: echo "${{ inputs.runtimes }}"
 """
@@ -413,6 +413,7 @@ jobs:
             f"{rel}:8: actions/checkout without persist-credentials: false",
             f"{rel}:9: unpinned @latest or npx --yes",
             f"{rel}:12: ${{{{ }}}} expression inside a run script (pass it through env)",
+            f"{rel}:13: ${{{{ }}}} expression inside a run script (pass it through env)",  # a commented ${{ }} is still expanded
             f"{rel}:14: unpinned @latest or npx --yes",
             f"{rel}:15: ${{{{ }}}} expression inside a run script (pass it through env)",
             f"{rel}: job build has no timeout-minutes",
@@ -459,6 +460,43 @@ jobs:
         found = self.problems(both)
         self.assertTrue(any("expression inside a run script" in p for p in found))
         self.assertTrue(any("continue-on-error" in p for p in found))
+
+    def test_commented_expressions_in_run_and_script_bodies_are_caught(self):
+        for style in ("|", ">"):
+            text = HARDENED.replace(
+                "      - run: echo inline\n",
+                f"      - run: {style}\n          echo ok\n          # echo \"${{{{ github.event.comment.body }}}}\"\n", 1)
+            found = self.problems(text)
+            self.assertEqual(len([p for p in found if "expression inside a run script" in p]), 1, style)
+        script = HARDENED.replace(
+            "      - run: echo inline\n",
+            "      - uses: actions/github-script@v7\n        with:\n          script: |\n            core.info(`${{ github.event.issue.title }}`)\n", 1)
+        self.assertTrue(any("expression inside a run script" in p for p in self.problems(script)))
+        # An unpinned install in a run script is still reported, a commented one is not.
+        pinned = HARDENED.replace("      - run: echo inline\n", "      - run: |\n          # npx --yes foo\n          npx --yes foo\n", 1)
+        self.assertEqual(len([p for p in self.problems(pinned) if "unpinned" in p]), 1)
+
+    def test_exotic_yaml_fails_closed(self):
+        variants = {
+            "anchored_flow_job": HARDENED + "  third: &j {runs-on: x, continue-on-error: true}\n",
+            "tagged_flow_job": HARDENED + "  third: !!map {runs-on: x}\n",
+            "job_alias": HARDENED + "  third: *j\n",
+            "tagged_steps": HARDENED.replace("    steps:\n      - name: checkout\n", "    steps: !!seq [{run: x}]\n    xsteps:\n      - name: checkout\n", 1),
+            "anchored_steps": HARDENED.replace("    steps:\n      - name: checkout\n", "    steps: &s [{run: x}]\n    xsteps:\n      - name: checkout\n", 1),
+            "anchored_jobs": "jobs: &j {a: {}}\n" + HARDENED.split("jobs:\n")[0],
+            "tagged_jobs": "jobs: !!map {a: {}}\n" + HARDENED.split("jobs:\n")[0],
+            "complex_key_run": HARDENED.replace("      - run: echo inline\n", "      - ? run\n        : echo ${{ github.event.issue.title }}\n", 1),
+            "complex_key_coe": HARDENED.replace("      - run: echo inline\n", "      - run: echo\n        ? continue-on-error\n        : true\n", 1),
+            "run_alias": HARDENED.replace("      - run: echo inline\n", "      - run: *t\n", 1),
+            "escaped_key": HARDENED.replace("      - run: echo inline\n", '      - "r\\u0075n": echo\n', 1),
+        }
+        for name, text in variants.items():
+            self.assertTrue(any("hide settings" in p for p in self.problems(text)), name)
+        spaced = HARDENED.replace("      - run: echo inline\n", "      - run : echo ${{ github.event.issue.title }}\n", 1)
+        self.assertTrue(any("expression inside a run script" in p for p in self.problems(spaced)))
+        # Plain flow values and tag-free strings stay fine.
+        ok = HARDENED.replace("      - run: echo inline\n", "      - run: echo 'a: *b & !c'\n", 1)
+        self.assertEqual(self.problems(ok), [])
 
     def test_remaining_flow_and_spelling_variants_are_caught(self):
         variants = {
@@ -545,7 +583,7 @@ class PersonalDataTest(TempRoot):
         self.assertEqual(self.problems(text), [])
 
     def test_email_addresses_must_be_allowlisted(self):
-        bad = self.problems("contact " + mail("someone", "gmail.com") + " or " + mail("x", "corp.io") + "\n")
+        bad = self.problems("contact " + mail("dave", "gmail.com") + " or " + mail("pat", "corp.io") + "\n")
         self.assertEqual(bad, ["docs/x.md:1: " + ri.EMAIL_MESSAGE] * 2)
         self.assertNotIn("gmail", bad[0])
 
@@ -555,7 +593,7 @@ class PersonalDataTest(TempRoot):
                 mail("a", "mail.example.org"), mail("a", "e.invalid"), mail("a", "x.test"),
                 mail("git", "github.com"), mail("token", "github.com"), mail("t", "test.com"), mail("a", "t.com")]
         self.assertEqual(self.problems("\n".join(good)), [])
-        self.assertTrue(self.problems(mail("someone", "github.com")))
+        self.assertTrue(self.problems(mail("dave", "github.com")))
         self.assertTrue(self.problems(mail("a", "notexample.com")))
 
     def test_flattened_escaped_and_encoded_home_forms_are_reported(self):
@@ -569,9 +607,20 @@ class PersonalDataTest(TempRoot):
             "\\/Users\\/" + "dave" + "\\/x",                      # JSON-escaped
             "%2FUsers%2F" + "dave" + "%2Fx",                      # URL-encoded
             "file:///Users/" + "dave" + "/.cursor/x",
+            "session-users_" + "dave" + "_projects_silver_bullet_repo",   # graph node id: \\b did not fire before _silver
+            "/mnt/c/Users/" + "dave" + "/x",                      # WSL
+            "users-" + "dave" + "-projects-x",                    # lower-case dashed
+            "_home_" + "dave" + "_projects_x",                    # lean-ctx on Linux
+            "\\\\/Users\\\\/" + "dave" + "\\\\/x",                  # double-escaped JSON
+            "\\u002fUsers\\u002f" + "dave" + "\\u002fx",              # unicode-escaped JSON
+            "C:\\\\\\\\Users\\\\\\\\" + "dave",                      # JSON-escaped Windows path
         ]
         for form in forms:
             self.assertEqual(self.problems("a\n" + form + "\n"), ["docs/x.md:2: " + ri.HOME_MESSAGE], form)
+
+    def test_line_numbers_survive_escape_decoding_and_far_apart_hits(self):
+        text = ("\\u002f" * 40 + "\n") * 3 + home_path("dave") + "\n" + "pad " * 100 + "\n" + mail("pat", "corp.io") + " " + home_path("erin") + "\n"
+        self.assertEqual([p.split(" ")[0] for p in self.problems(text)], ["docs/x.md:4:", "docs/x.md:6:", "docs/x.md:6:"])
 
     def test_personal_email_forms_are_reported(self):
         for address in (mail("dave", "host.local"), mail("dave", "mac.local"), mail("dave", "gmail.com")):
@@ -584,8 +633,21 @@ class PersonalDataTest(TempRoot):
             "C:" + "\\Users\\Public\\x", "C:" + "\\Users\\Default\\x",
             "logo@2x.png", "icon@3x.webp", "git@gitlab.com:org/repo.git", "git@bitbucket.org:org/repo.git",
             "security@anthropic.com", "support@vendor.io", "Users-and-goals", "_home_core_markets(slug)", "home-page-title",
-            "/Users/xxxxxxx/x"])
+            "/Users/xxxxxxx/x", "users_table_name", "_home_core_markets", "users-guide-intro",
+            "/home/azureuser/x", "/home/opc", "/home/centos", "/home/debian", "/home/fedora", "/var/home/core", "/home/git",
+            "/home/postgres", "/home/nonroot", "/home/app", "/home/mambauser", "/home/user1", "/home/johndoe", "/mnt/c/Users/Administrator",
+            "C:" + "\\Users\\Administrator", "C:" + "\\Users\\WDAGUtilityAccount",
+            "git config user.email action@github.com", "github-actions@github.com", "ssh ubuntu@ec2-1.compute.amazonaws.com",
+            "user@domain.tld", "you@yourcompany.com", "jane@acme.com", "first.last@company.com", "hi@anthropic.com", "docs@python.org"])
         self.assertEqual(self.problems(text), [])
+
+    def test_audited_exceptions_come_from_the_allowlist_file(self):
+        write(self.root, ri.ALLOW_FILE, "# audited\nhome " + "Dave" + "\nemail " + mail("pat", "corp.io") + "\nemail @" + "ok.org" + "\nbogus line\nhome\n")
+        text = home_path("dave") + "\n" + mail("pat", "corp.io") + "\n" + mail("any", "ok.org") + "\n"
+        write(self.root, "docs/x.md", text)
+        self.assertEqual(ri.personal_data(self.root, ["docs/x.md", ri.ALLOW_FILE]), [])
+        write(self.root, "docs/y.md", mail("other", "corp.io") + "\n" + home_path("erin") + "\n")
+        self.assertEqual(len(ri.personal_data(self.root, ["docs/y.md"])), 2)
 
     def test_pdf_links_are_scanned_and_other_binaries_skipped(self):
         link = ("/URI (file:///Users/" + "dave" + "/.cursor/x)").encode()

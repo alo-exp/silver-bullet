@@ -54,15 +54,36 @@ data/iii-config.runtime.yaml
 # (personal-data) fails when personal machine paths or foreign email addresses are tracked.
 /SETUP_REPORT.md
 *.err
-*.err.*
-*-stdout.txt
-*-stderr.txt
-stdout.txt
-stderr.txt
-*.log.*
+# Scoped to the directories where AI CLI runs write captures, so fixtures such as
+# tests/fixtures/expected-stdout.txt or x.log.sh stay committable.
+.planning/**/*.err.*
 .planning/**/*.log
 .planning/**/*.log.*
+.planning/**/*-stdout.txt
+.planning/**/*-stderr.txt
+.planning/**/stdout.txt
+.planning/**/stderr.txt
+.planning/**/*.stdout
+.planning/**/*.stdout.*
+.planning/**/*.stderr
+.planning/**/*.stderr.*
+.planning/**/stdout-*.txt
+.planning/**/stderr-*.txt
+research/**/*.err.*
 research/**/*.log
+research/**/*.log.*
+research/**/*-stdout.txt
+research/**/*-stderr.txt
+research/**/stdout.txt
+research/**/stderr.txt
+research/**/*.stdout
+research/**/*.stdout.*
+research/**/*.stderr
+research/**/*.stderr.*
+research/**/stdout-*.txt
+research/**/stderr-*.txt
+docs/**/*-stdout.txt
+docs/**/*-stderr.txt
 .planning/**/CLAUDE-QUOTA.md
 
 # Node
