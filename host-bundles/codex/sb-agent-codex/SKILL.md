@@ -1,7 +1,7 @@
 ---
 name: "sb:agent-codex"
 title: "Agent Codex"
-description: On-demand parent-supervised delegation of a single real task to Codex TUI as a subagent — briefings, checkpoints, failure escalation, and completion evidence. Use when the host agent (Cursor, Claude, or Codex parent) should supervise while Codex CLI executes in a target project CWD. Not for enterprise E2E matrix runs.
+description: On-demand parent-supervised delegation of a single real task to Codex TUI as a subagent — briefings, checkpoints, failure escalation, and completion evidence. Use when the host agent (Claude or Codex parent) should supervise while Codex CLI executes in a target project CWD. Not for enterprise E2E matrix runs.
 argument-hint: "<task brief> [--work-dir <path>] [--log <path>] [--interaction-mode auto|interactive|non-interactive] [--checkpoint <n>]"
 user-invocable: true
 version: 0.2.0
@@ -9,7 +9,7 @@ version: 0.2.0
 
 **Interaction modes:** `--interaction-mode auto|interactive|non-interactive` (default `auto`). Permission `--mode` remains `permissive|strict`. Spec: [`docs/specs/AGENT-DELEGATION-INTERACTION-MODES.md`](../../docs/specs/AGENT-DELEGATION-INTERACTION-MODES.md).
 
-**Pinned NI fast path:** `--interaction-mode non-interactive` (or `--non-interactive` / `--use-print` / `--use-exec`) writes `mode.json` `{requested, classified:null, resolved:non-interactive, reason:[pin]}` and execs the native one-shot CLI with no classifier, D3/TUI probe, D4, recommended-tools preflight, quota-retry, or tail-idle watcher. Re-enable wrappers with `--quota-retry` / `AGENT_*_QUOTA_RETRY_MAX` and existing idle env. `auto` still runs the full resolver. Interactive is one native CLI or PTY (`pi` without `-p`; `cursor-agent` without `--print` when the CLI exists).
+**Pinned NI fast path:** `--interaction-mode non-interactive` (or `--non-interactive` / `--use-print` / `--use-exec`) writes `mode.json` `{requested, classified:null, resolved:non-interactive, reason:[pin]}` and execs the native one-shot CLI with no classifier, D3/TUI probe, D4, recommended-tools preflight, quota-retry, or tail-idle watcher. Re-enable wrappers with `--quota-retry` / `AGENT_*_QUOTA_RETRY_MAX` and existing idle env. `auto` still runs the full resolver. Interactive is one native CLI or PTY (`pi` without `-p`).
 
 
 # /sb:agent-codex — Codex TUI Subagent Delegation
@@ -26,7 +26,7 @@ On-demand, **single-task** supervision model: the **host parent** plans, briefs,
 
 | Use `/sb:agent-codex` | Delegate inline or via host Task instead |
 |---------------------------|------------------------------------------|
-| Host is Cursor/Claude and Codex is the preferred executor for the target repo | Host can edit directly with lower latency |
+| Host is Claude and Codex is the preferred executor for the target repo | Host can edit directly with lower latency |
 | Task needs Codex-native SB hooks/skills in **real** project CWD | Pure SB-repo work on the host checkout |
 | Parent wants Sidekick-like supervision (brief → checkpoint → escalate) for one bounded task | Full SB composer queue (`sb:feature`, orchestrator workers) |
 | Cross-host handoff: "run this in Codex while I supervise" | Enterprise E2E matrix certification (use matrix harness) |
@@ -37,7 +37,7 @@ On-demand, **single-task** supervision model: the **host parent** plans, briefs,
 
 | Role | Agent | Responsibilities |
 |------|-------|------------------|
-| **Parent (supervisor)** | Cursor / Claude / Codex parent session | Task brief, acceptance criteria, checkpoints, failure ladder, mentor notes, graphify retrieval, agentmemory capture |
+| **Parent (supervisor)** | Claude / Codex parent session | Task brief, acceptance criteria, checkpoints, failure ladder, mentor notes, graphify retrieval, agentmemory capture |
 | **Worker (executor)** | Codex TUI in `CODEX_WORK_DIR` | Implement, test, commit per brief; report blockers in final message |
 
 Parent **must not** implement the delegated task in parallel in the same files. Parent may fix harness blockers in SB repo only.
@@ -290,7 +290,7 @@ Run `security` / SENTINEL lens on harness changes under `scripts/agent-codex/` b
 ## When parent should not delegate
 
 - Trivial host-local edit (≤3 files, no Codex advantage).
-- Task requires host-only tools (Cursor Task workers, browser MCP) without Codex equivalent.
+- Task requires host-only tools (host Task workers, browser MCP) without Codex equivalent.
 - User explicitly wants parent implementation.
 - Enterprise E2E matrix row — use matrix harness instead.
 

@@ -1,7 +1,0 @@
-sources:
-  - class: official_docs
-    patterns: [docs., developer., readthedocs.io]
-  - class: reference_impl
-    domains: [github.com, gitlab.com]
-  - class: standards
-    domains: [ietf.org, w3.org]
