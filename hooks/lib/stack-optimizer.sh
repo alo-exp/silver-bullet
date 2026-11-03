@@ -70,17 +70,39 @@ sb_stack_graphify_hooks_installed() {
   grep -qiE 'installed|active|enabled' < <(graphify hook status 2>/dev/null)
 }
 
+# Write the project's .gitignore through a temp file in the project and a rename, so a
+# repository-controlled symlink at .gitignore is never followed (a committed
+# '.gitignore -> ../../.bashrc' must not make SB append to the user's shell rc). A symlink or
+# a non-regular file is left untouched with a warning. EDIT is 'append' (stdin block) or 'fix'.
+_sb_stack_gitignore_write() {
+  local gitignore="$1" edit="$2" block="${3:-}" tmp
+  tmp="$(mktemp "${gitignore}.XXXXXX" 2>/dev/null)" || return 1
+  if [[ -f "$gitignore" ]]; then
+    cp -p -- "$gitignore" "$tmp" 2>/dev/null || { rm -f -- "$tmp"; return 1; }
+  else
+    chmod 644 "$tmp" 2>/dev/null || true
+  fi
+  case "$edit" in
+    append) printf '\n%s\n' "$block" >>"$tmp" ;;
+    fix) sed 's|!.agentmemory/memory/$|!.agentmemory/memory/**|' "$tmp" >"${tmp}.new" && mv -f -- "${tmp}.new" "$tmp" ;;
+  esac
+  rm -f -- "${tmp}.new"
+  mv -f -- "$tmp" "$gitignore" 2>/dev/null || { rm -f -- "$tmp"; return 1; }
+}
+
 sb_stack_ensure_agentmemory_gitignore() {
   local repo="${1:-$PWD}" gitignore
   gitignore="${repo}/.gitignore"
-  [[ -f "$gitignore" ]] || touch "$gitignore"
+  if [[ -L "$gitignore" || ( -e "$gitignore" && ! -f "$gitignore" ) ]]; then
+    printf 'WARN: %s is a symlink or not a regular file; the agentmemory ignore block was not written\n' "$gitignore" >&2
+    return 0
+  fi
   if grep -q '# === agentmemory managed block ===' "$gitignore" 2>/dev/null; then
     if ! grep -q '!.agentmemory/memory/\*\*' "$gitignore" 2>/dev/null; then
       if sb_stack_optimizer_dry_run; then
         printf 'DRY-RUN: fix agentmemory gitignore /** negation in %s\n' "$gitignore"
       else
-        sed -i.bak 's|!.agentmemory/memory/$|!.agentmemory/memory/**|' "$gitignore" 2>/dev/null \
-          && rm -f -- "${gitignore}.bak"
+        _sb_stack_gitignore_write "$gitignore" fix || true
       fi
     fi
     return 0
@@ -97,7 +119,7 @@ sb_stack_ensure_agentmemory_gitignore() {
   if sb_stack_optimizer_dry_run; then
     printf 'DRY-RUN: append agentmemory gitignore block to %s\n' "$gitignore"
   else
-    printf '\n%s\n' "$block" >>"$gitignore"
+    _sb_stack_gitignore_write "$gitignore" append "$block" || true
   fi
 }
 

@@ -16,9 +16,11 @@
 #       directories (and a symlinked leaf) resolved physically; the leaf need not exist
 #   sb_opt_in_path_under PATH DIR        status 0 when normalized PATH is DIR or inside it
 #   sb_opt_in_shell_needs_gate TOOL CMD  status 0 when a shell command must pass the gate:
-#       only a command the shared allowlist analyzer proves read-only, or one of TOOL's own
-#       setup/retrieval commands, is exempt. A word that merely appears in the command
-#       never exempts it; a command that cannot be parsed is gated.
+#       a command that delivers (commit, PR, release, or an opaque program word) an install, or that the
+#       shared analyzer finds writing a file. TOOL's own setup/retrieval commands and
+#       commands proven read-only are exempt; tests, builds and inspections are not gated.
+#   sb_opt_in_shell_is_delivery CMD      status 0 when CMD commits, opens a PR or a release
+#   sb_opt_in_shell_is_install CMD       status 0 for a machine-wide install or a download piped to a shell
 #   sb_opt_in_rtk_unwrap CMD             CMD without a leading RTK_DISABLED=… / rtk prefix
 
 # Hooks and scripts source libraries by absolute path; no `pwd` runs here, so a fault in the
@@ -275,7 +277,8 @@ _sb_opt_in_program() {
   local word
   local -a words
   read -r -a words <<<"${1:-}"
-  for word in "${words[@]}"; do
+  # ${arr[@]+...}: an empty array is an unbound variable under set -u on Bash < 4.4
+  for word in ${words[@]+"${words[@]}"}; do
     [[ "$word" =~ ^[A-Za-z_][A-Za-z0-9_]*= ]] && continue
     printf '%s' "${word##*/}"
     return 0
@@ -368,6 +371,26 @@ _sb_opt_in_tool_extra_lines() {
   esac
 }
 
+# Status 0 when CMD is a delivery step (commit, PR create, release create). Quotes around
+# the program words are removed first ("git" commit), and a command word that is a variable
+# or an eval is opaque, so it counts as delivery (G=git; $G commit).
+sb_opt_in_shell_is_delivery() {
+  local cmd="${1:-}" plain
+  [[ -n "$cmd" ]] || return 1
+  plain="${cmd//[\"\']/}"
+  grep -qE '(^|[^A-Za-z0-9_.-])git([[:space:]]+-[Cc][[:space:]]+[^[:space:]]+)*[[:space:]]+commit([^A-Za-z0-9_-]|$)|(^|[^A-Za-z0-9_.-])gh[[:space:]]+(pr|release)[[:space:]]+create([^A-Za-z0-9_-]|$)|(^|[;&|(])[[:space:]]*(\$[{(A-Za-z_]|eval[[:space:]])' <<<"$plain"
+}
+
+# Status 0 when CMD installs software machine-wide (a global package install, brew, sudo) or
+# pipes a download into a shell. These change the machine, not just the project.
+sb_opt_in_shell_is_install() {
+  local cmd="${1:-}"
+  [[ -n "$cmd" ]] || return 1
+  grep -qE '(^|[;&|(])[[:space:]]*sudo[[:space:]]|(^|[;&|(])[[:space:]]*(npm|pnpm|yarn|bun)[[:space:]]+(global[[:space:]]+add|(install|i|add)[[:space:]]+([^;&|]*[[:space:]])?(-g|--global)([[:space:]]|$))|(^|[;&|(])[[:space:]]*brew[[:space:]]+(install|upgrade|tap)[[:space:]]|\|[[:space:]]*(ba|z)?sh([[:space:]]|$)' <<<"$cmd"
+}
+
+# A shell command is gated when it writes files or delivers; ordinary test, build and
+# inspection commands (pytest, make test, cargo build, docker ps) are never gated.
 sb_opt_in_shell_needs_gate() {
   local tool="${1:-}" cmd="${2:-}" unwrapped
   [[ -n "$cmd" ]] || return 1
@@ -379,5 +402,11 @@ sb_opt_in_shell_needs_gate() {
     && sb_shell_command_looks_read_only "$unwrapped" >/dev/null 2>&1; then
     return 1
   fi
-  return 0
+  sb_opt_in_shell_is_delivery "$unwrapped" && return 0
+  sb_opt_in_shell_is_install "$unwrapped" && return 0
+  if declare -f sb_shell_candidate_write_paths >/dev/null 2>&1 \
+    && [[ -n "$(sb_shell_candidate_write_paths "$unwrapped" "$PWD" 2>/dev/null || true)" ]]; then
+    return 0
+  fi
+  return 1
 }

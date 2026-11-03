@@ -160,7 +160,7 @@ ${install_lines}
 
 Then run: graphify update . --no-cluster
 
-To turn Graphify enforcement off: bash $(sb_rt_plugin_script scripts/sb-consent.sh) decline graphify --project $(printf '%q' "$(dirname "${config_file:-$PWD/x}")")
+If the user asks to turn Graphify enforcement off: bash $(sb_rt_plugin_script scripts/sb-consent.sh) decline graphify --project $(printf '%q' "$(dirname "${config_file:-$PWD/x}")")
 EOF
 }
 

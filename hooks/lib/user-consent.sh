@@ -151,7 +151,38 @@ _sb_consent_clean_source() {
   printf '%s' "${source:-cli}"
 }
 
+# sb_consent_set serializes writers with a lock directory next to the store (mkdir is atomic
+# and portable) and re-reads the store inside the lock, so concurrent grants, declines and
+# revokes cannot lose one another's update. A lock whose owner process is gone is taken over.
+# SB_CONSENT_LOCK_TRIES (default 100, 0.1 s apart) bounds the wait.
 sb_consent_set() {
+  local lock dir pid tries="${SB_CONSENT_LOCK_TRIES:-100}" rc=0
+  dir="$(dirname "$(sb_consent_store_path)")"
+  if ! (umask 077 && mkdir -p "$dir") 2>/dev/null; then
+    _sb_consent_set_locked "$@"
+    return $?
+  fi
+  lock="${dir}/.consent.lock"
+  until mkdir "$lock" 2>/dev/null; do
+    pid="$(cat "${lock}/pid" 2>/dev/null || true)"
+    if [[ "$pid" =~ ^[0-9]+$ ]] && ! kill -0 "$pid" 2>/dev/null; then
+      rm -rf -- "$lock"
+      continue
+    fi
+    tries=$((tries - 1))
+    if ((tries <= 0)); then
+      _sb_consent_err "another sb-consent is writing ${dir}; try again (remove ${lock} if none is running)"
+      return 2
+    fi
+    sleep 0.1
+  done
+  printf '%s' "$$" >"${lock}/pid" 2>/dev/null || true
+  _sb_consent_set_locked "$@" || rc=$?
+  rm -rf -- "$lock"
+  return "$rc"
+}
+
+_sb_consent_set_locked() {
   local decision="${1:-}" tool="${2:-}" caps="${3:-}" scope="${4:-}" source="${5:-cli}"
   local key="" cap store dir tmp current action
   case "$decision" in
@@ -228,7 +259,11 @@ sb_consent_set() {
     rm -f -- "$tmp"
     return 0
   fi
-  [[ -f "$store" ]] && cp -p "$store" "${store}.bak" 2>/dev/null
+  # The backup is a fresh file: a symlink planted at .bak is replaced, never written through.
+  if [[ -f "$store" ]]; then
+    rm -f -- "${store}.bak" 2>/dev/null
+    cp -p "$store" "${store}.bak" 2>/dev/null
+  fi
   mv -f -- "$tmp" "$store" || { rm -f -- "$tmp"; _sb_consent_err "could not replace ${store}"; return 2; }
   return 0
 }

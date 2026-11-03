@@ -132,13 +132,13 @@ yes_t "cmd exempt empty" sb_rtk_command_is_exempt ""
 yes_t "cmd exempt rtk word" sb_rtk_command_is_exempt "rtk git status"
 yes_t "cmd exempt path rtk" sb_rtk_command_is_exempt "/usr/bin/rtk gain"
 yes_t "cmd exempt enable script (the plugin's)" sb_rtk_command_is_exempt "bash $TL_REPO_ROOT/scripts/enable-rtk-context-mode.sh"
-no_t "cmd not exempt: a project script of the same name" sb_rtk_command_is_exempt "bash enable-rtk-context-mode.sh"
+no_t "cmd not exempt: a project script of the same name" sb_rtk_command_is_exempt "bash enable-rtk-context-mode.sh > out.log"
 no_t "cmd not exempt: brew install of anything" sb_rtk_command_is_exempt "brew install foo"
 yes_t "cmd exempt: the documented install line" sb_rtk_command_is_exempt "brew tap rtk-ai/rtk && brew install rtk"
 yes_t "cmd exempt: the documented wrong-binary remedy" sb_rtk_command_is_exempt "brew uninstall rtk 2>/dev/null; brew tap rtk-ai/rtk && brew install rtk"
 yes_t "cmd exempt cat" sb_rtk_command_is_exempt "cat file"
 no_t "cmd not exempt git commit" sb_rtk_command_is_exempt "git commit -m x"
-no_t "cmd not exempt artisan (rtk substring)" sb_rtk_command_is_exempt "xrtkx do"
+no_t "cmd not exempt artisan (rtk substring)" sb_rtk_command_is_exempt "xrtkx do > out.log"
 
 # ---------- messages ----------
 w '{"recommended_tools":{"rtk":{"enabled_by_user":true}}}'

@@ -58,6 +58,13 @@ assert_gate_denies "an unreachable registry is irrelevant; the missing wiring is
 gh_run "$HOOK" "$(gh_edit_input "$BROWSER_EDIT")"
 assert_gate_denies "mcp artifact missing is denied" "ALUMNIUM REQUIRED"
 assert_contains "message names provider key" "$(gh_reason)" "OPENAI_API_KEY"
+# Codex apply_patch sends project-relative paths: a top-level e2e/ edit is a browser test too.
+REL_PATCH="$(jq -cn --arg c $'*** Begin Patch\n*** Add File: e2e/checkout.spec.ts\n+test\n*** End Patch' '{hook_event_name:"PreToolUse", tool_name:"apply_patch", tool_input:{input:$c}}')"
+gh_run "$HOOK" "$REL_PATCH"
+assert_gate_denies "a relative apply_patch path under e2e/ is gated" "ALUMNIUM REQUIRED"
+REL_SRC_PATCH="$(jq -cn --arg c $'*** Begin Patch\n*** Add File: src/util.ts\n+test\n*** End Patch' '{hook_event_name:"PreToolUse", tool_name:"apply_patch", tool_input:{input:$c}}')"
+gh_run "$HOOK" "$REL_SRC_PATCH"
+assert_gate_allows "a relative apply_patch path outside browser tests is not gated"
 # wired
 printf '{"mcpServers":{"alumnium":{}}}' >"$ART"
 gh_run "$HOOK" "$(gh_edit_input "$BROWSER_EDIT")"

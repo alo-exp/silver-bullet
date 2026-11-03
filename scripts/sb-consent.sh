@@ -33,7 +33,8 @@ CAPABILITY  install  install or upgrade the tool on this machine
             enforce  let Silver Bullet's hooks apply the tool's blocking gates
 LIST        comma-separated capabilities (default: install,wire,enforce)
 
---project DIR records enforce for DIR's project only. install and wire are machine-wide, so
+--project DIR records enforce for DIR's project only (DIR may be any directory inside the
+project; the directory holding .silver-bullet.json is recorded). install and wire are machine-wide, so
 grant and revoke record them for the machine; decline --project records enforce only.
 --all-projects records every listed capability for the machine (all projects).
 
@@ -82,6 +83,18 @@ done
 if [[ -n "$project" && ! -d "$project" ]]; then
   printf 'sb-consent: not a directory: %s\n' "$project" >&2
   exit 2
+fi
+
+# --project may name any directory inside the project: record the directory that holds
+# .silver-bullet.json (what the gates look up), else the directory itself.
+if [[ -n "$project" ]]; then
+  _sb_probe="$(cd -P -- "$project" && pwd -P)"
+  while [[ "$_sb_probe" != "/" && ! -f "$_sb_probe/.silver-bullet.json" ]]; do
+    _sb_probe="$(dirname "$_sb_probe")"
+  done
+  if [[ -f "$_sb_probe/.silver-bullet.json" ]]; then
+    project="$_sb_probe"
+  fi
 fi
 
 record() { # decision
