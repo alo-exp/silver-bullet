@@ -36,16 +36,26 @@ class SupportedOnlyForANearQuote(unittest.TestCase):
         self.assert_supported("acme supports SSO!", "Acme supports SSO.")
         self.assert_supported("Acme supports SSO", "acme supports SSO")  # only the first word may change its capital
         self.assert_supported("Acme integrates with Slack, Jira and GitHub", "Acme integrates with Slack Jira and GitHub")
-        self.assert_supported("Acme has the free tier", "Acme has a free tier")
-        self.assert_supported("Acme shipped [3] the product", "Acme shipped product")  # a citation marker is no word
+        self.assert_supported("Acme shipped [3] the product", "Acme shipped the product")  # a citation marker is no word
         self.assert_supported("Acme’s CEO resigned", "Acme's CEO resigned")
         self.assert_supported("Acme `ships` “two” products (new)…", "Acme ships two products new")
         self.assertNotEqual(status("**Acme** ships", "Acme ships"), "supported")  # emphasis marks are stripped by extract_claims
         self.assert_supported("The Acme CEO", "the Acme CEO")
-        self.assert_supported("A shares class", "shares class")  # a capitalised article that opens the text
+        self.assert_supported("A shares class", "a shares class")  # a first word may change its capital
         self.assert_supported("Acme MÜLLER", "acme MÜLLER")
         self.assert_supported("Acme ｵ５０ and ٥", "Acme ｵ50 and 5")  # every decimal digit script is 0-9
         self.assert_supported("Acme café", "Acme café")  # a composed and a decomposed accent are one letter
+
+    def test_articles_are_words_like_any_other(self):
+        for claim, quote in (("Acme is a market leader", "Acme is the market leader"),
+                             ("Acme has a free tier", "Acme has the free tier"),
+                             ("An Acme user", "The Acme user"),
+                             ("Acme is market leader", "Acme is the market leader"),
+                             ("Acme is the market leader", "Acme is market leader"),
+                             ("Acme has a free tier", "Acme has a a free tier")):
+            self.assertEqual(status(claim, quote), "needs_review", (claim, quote))
+        self.assertEqual(vcs._words("The Acme is a leader"), ["the", "Acme", "is", "a", "leader"])
+        self.assertFalse(hasattr(vcs, "STOPWORDS"))
 
     def test_case_and_capital_articles_and_plurals_are_not_ignored(self):
         for claim, quote in (("The file is 5 Mb", "The file is 5 MB"), ("The plant makes 5 mW", "The plant makes 5 MW"),
@@ -75,7 +85,7 @@ class SupportedOnlyForANearQuote(unittest.TestCase):
                          ["No,", "the", "tool", "is", "not", "free", "Acme", "ranks", "No.", "1"])
         self.assertEqual(status("The tool is not free", "No, the tool is not free"), "needs_review")
         self.assertEqual(status("Acme ranks 1 in Europe", "Acme ranks No. 1 in Europe"), "needs_review")
-        self.assertEqual(status("The study found an effect", "The study found no effect"), "contradicted")
+        self.assertEqual(status("The study found effect", "The study found no effect"), "contradicted")
 
     def test_contractions_are_opened_up(self):
         self.assert_supported("Acme doesn't support SSO", "Acme does not support SSO")
@@ -139,7 +149,7 @@ class SupportedOnlyForANearQuote(unittest.TestCase):
                          "reworded, not a near-quote: 60% of the claim's words are in the source")
 
     def test_a_claim_without_words_is_never_supported(self):
-        self.assertEqual(verdict("The [1] a", "The a"), ("needs_review", 0.0, "the claim has no words to check"))
+        self.assertEqual(verdict("[1] [2, 3]", "The a"), ("needs_review", 0.0, "the claim has no words to check"))
 
 
 class FiguresCompareExactlyAsWritten(unittest.TestCase):
@@ -215,10 +225,9 @@ class FiguresCompareExactlyAsWritten(unittest.TestCase):
         for word in ("q3", "ec2", "acme", "gpt4", "-", "$"):
             self.assertFalse(vcs._is_figure(word), word)
 
-    def test_keys_drop_only_lowercase_articles(self):
-        self.assertEqual(vcs._keys(["the", "Acme", "are", "employees", "$5", "A", "a", "an", "An"]),
-                         ["Acme", "are", "employees", "$5", "A", "An"])
+    def test_no_stemming(self):
         self.assertFalse(hasattr(vcs, "_stem"))
+        self.assertFalse(hasattr(vcs, "_keys"))
 
 
 class ContradictedOnlyWhenClear(unittest.TestCase):
@@ -228,8 +237,8 @@ class ContradictedOnlyWhenClear(unittest.TestCase):
                              ("Acme can export data", "Acme cannot export data"),
                              ("Acme is cheaper than Initech", "Acme isn't cheaper than Initech"),
                              ("The feature is available", "The feature is not available"),
-                             ("The study found an effect", "The study found no effect"),
-                             ("Acme has a free tier", "Acme has no free tier"),
+                             ("The study found effect", "The study found no effect"),
+                             ("Acme has free tier", "Acme has no free tier"),
                              ("Don't use the v1 API", "Do use the v1 API"),
                              ("Acme acquired Initech", "Acme not acquired Initech"),
                              ("Acme supports SSO", "Acme supports SSO: No")):

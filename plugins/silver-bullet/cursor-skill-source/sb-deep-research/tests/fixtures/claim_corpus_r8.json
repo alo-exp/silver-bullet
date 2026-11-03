@@ -586,5 +586,35 @@
   "claim": "Acme's revenue rose.",
   "quote": "Acme’s revenue rose.",
   "source": "r8 honest8.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme is a market leader.",
+  "quote": "Acme is the market leader.",
+  "source": "r8 follow-up: articles are significant words"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme has a free tier.",
+  "quote": "Acme has the free tier.",
+  "source": "r8 follow-up: articles are significant words"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme is market leader.",
+  "quote": "Acme is the market leader.",
+  "source": "r8 follow-up: articles are significant words"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme is the market leader.",
+  "quote": "Acme is market leader.",
+  "source": "r8 follow-up: articles are significant words"
+ },
+ {
+  "kind": "F",
+  "claim": "The Acme user logged in.",
+  "quote": "An Acme user logged in.",
+  "source": "r8 follow-up: articles are significant words"
  }
 ]

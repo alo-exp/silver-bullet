@@ -59,7 +59,7 @@ class TestVerifySupported(unittest.TestCase):
             {
                 'claim_id': 'clm_factor_001',
                 'section_id': 'finding_1',
-                'text': "Shor's algorithm can factor the large numbers exponentially faster than classical methods, threatening RSA-2048.",
+                'text': "Shor's algorithm can factor large numbers exponentially faster than classical methods, threatening RSA-2048.",
                 'claim_type': 'factual',
                 'cited_source_ids': ['src_quantum_001'],
                 'evidence_ids': ['ev_shor_001'],
