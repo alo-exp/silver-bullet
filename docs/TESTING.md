@@ -54,13 +54,13 @@ A single test file can also be run directly (`bash tests/hooks/test-uat-gate.sh`
 
 The runner is the local equivalent of CI because it isolates each test file:
 
-- **Own `HOME` and `TMPDIR`.** Every test file runs with a fresh temporary `HOME` and `TMPDIR`, so runtime state under `~/.claude`, `~/.codex` or `~/.cursor` never touches your real home. `SB_RUNTIME_*`, `SILVER_BULLET_STATE_FILE`, `SILVER_BULLET_BRANCH_FILE` and `XDG_*` are unset and the runtime paths are recomputed inside the sandbox. `PYTHONUSERBASE` is pinned first so user-installed Python packages still import.
-- **Hidden host tools.** Optional tools are removed from `PATH` so results do not depend on what is installed locally. The default hidden set is `graphify agentmemory iii context-mode rtk lean-ctx claude codex cursor-agent agent opencode pi kay gh alumnium search uv uvx pipx brew`. Set `SB_TEST_HOST_TOOLS=1` to keep them visible, or `SB_TEST_HIDE_TOOLS="a b c"` to choose the hidden set.
+- **Own `HOME` and `TMPDIR`.** Every test file runs with a fresh temporary `HOME` and `TMPDIR`, so runtime state under `~/.claude` or `~/.codex` never touches your real home. `SB_RUNTIME_*`, `SILVER_BULLET_STATE_FILE`, `SILVER_BULLET_BRANCH_FILE` and `XDG_*` are unset and the runtime paths are recomputed inside the sandbox. `PYTHONUSERBASE` is pinned first so user-installed Python packages still import.
+- **Hidden host tools.** Optional tools are removed from `PATH` so results do not depend on what is installed locally. The default hidden set is `graphify agentmemory iii context-mode rtk lean-ctx claude codex opencode pi kay gh alumnium search uv uvx pipx brew`. Set `SB_TEST_HOST_TOOLS=1` to keep them visible, or `SB_TEST_HIDE_TOOLS="a b c"` to choose the hidden set.
 - **Runtime defaults.** `SILVER_BULLET_RUNTIME` defaults to `claude`, as do `SB_LIVE_AGENT`, `SB_E2E_LIVE_AGENT`, `SB_LIVE_RUNTIMES` and `SB_E2E_LIVE_RUNTIMES`. When neither `LANG` nor `LC_ALL` is set, the runner exports `LANG=C.UTF-8`, as on CI.
 - **Closed stdin.** Each file runs with `</dev/null`, so hooks that read stdin cannot hang the run; tests that exercise stdin pipe explicit JSON.
 - **Failure accounting.** A test file that exits non-zero counts as a failure even if it never printed a `Results:` line.
 
-Opt-in additions: `SB_ENTERPRISE_E2E_LIVE=1` adds `tests/enterprise-e2e-live/`; `SB_FIVE_TOOL_LIVE=1` adds `tests/live/test-live-five-tool-stack-cursor.sh` (the pre-release gate runs `tests/scripts/test-five-tool-prerelease-cursor.sh` instead).
+Opt-in additions: `SB_ENTERPRISE_E2E_LIVE=1` adds `tests/enterprise-e2e-live/`; `SB_FIVE_TOOL_LIVE=1` is retired with the Cursor harness.
 
 ### The verify-tests gate
 
@@ -172,8 +172,7 @@ These suites use real host CLIs, credentials and model calls. They are not part 
 | Runtime wrappers | `bash scripts/run-sb-live-tests-claude.sh`, `...-codex.sh`, `...-kay.sh` | Run both suites pinned to one runtime; the Kay wrapper selects the Kay (Codex-compatible) adapter with its own model and provider defaults |
 | Release live matrix | `bash scripts/run-release-live-matrix.sh` | Requires a fresh `verify-tests` marker; see [RELEASE.md](RELEASE.md) |
 | Enterprise E2E | `SB_ENTERPRISE_E2E_LIVE=1 bash scripts/run-enterprise-e2e-live-test.sh` | Operator-only interactive Claude TUI matrix; [ENTERPRISE-E2E-LIVE-TEST.md](ENTERPRISE-E2E-LIVE-TEST.md) |
-| Five-tool stack (Cursor) | `SB_FIVE_TOOL_LIVE=1 SB_FIVE_TOOL_LIVE_EXECUTE=1 SB_FIVE_TOOL_MODE=full bash tests/run-all-tests.sh` | Needs `cursor-agent`; the pre-release gate runs the targeted check |
-| RC validation matrix | `bash scripts/run-rc-validation-matrix.sh` | Six cells (cursor, codex, claude × fresh/upgrade) on the operator machine; [testing/RC-VALIDATION-MATRIX.md](testing/RC-VALIDATION-MATRIX.md) |
+| RC validation matrix | `bash scripts/run-rc-validation-matrix.sh` | Four cells (codex, claude × fresh/upgrade) on the operator machine; [testing/RC-VALIDATION-MATRIX.md](testing/RC-VALIDATION-MATRIX.md) |
 
 Model selection belongs to the host; see [RUNTIME-COMPATIBILITY.md](RUNTIME-COMPATIBILITY.md#model-selection-boundary).
 

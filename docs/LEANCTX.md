@@ -41,11 +41,10 @@ lean-ctx --version
 
 ### SB host-aware install (library mode)
 
-SB owns host config writes. Use library-mode init only — **never** full `lean-ctx init --agent *` (would clobber `.cursorrules`, `AGENTS.md`, or host settings).
+SB owns host config writes. Use library-mode init only — **never** full `lean-ctx init --agent *` (would clobber `AGENTS.md` or host settings).
 
 | Host | Command |
 |------|---------|
-| Cursor | `bash scripts/install-leanctx-sb.sh --host cursor --project-root "$(pwd)"` |
 | Claude Code | `bash scripts/install-leanctx-sb.sh --host claude --project-root "$(pwd)"` |
 | Codex | `bash scripts/install-leanctx-sb.sh --host codex --project-root "$(pwd)"` |
 | OpenCode | `bash scripts/install-leanctx-sb.sh --host opencode --project-root "$(pwd)"` |
@@ -72,7 +71,7 @@ When LeanCTX is enabled, SB applies the `five_tool_routed` profile (extends `syn
 
 LeanCTX MCP compatibility note: `lctx_read_ast` is Silver Bullet's logical
 `sb_read` route name. Current LeanCTX releases expose the routed operation as
-`ctx_read` on the `leanctx` server (for Cursor, `leanctx-ctx_read`), so live
+`ctx_read` on the `leanctx` server (`leanctx-ctx_read` on some hosts), so live
 scenario checks must use that server-qualified native name with a read mode;
 they must not fall back to native `Read` for analysis.
 
@@ -87,7 +86,6 @@ Registry helpers (Phase 1):
 
 | Host | Wire + ledger | AST read | PathJail | Injection | RTK shell | CM sandbox | CM webfetch | Graphify | agentmemory | `lctx_graph` | `lctx_remember` | Notes |
 |------|---------------|----------|----------|-----------|-----------|------------|-------------|----------|-------------|--------------|-----------------|-------|
-| **Cursor** | ✅ LeanCTX | ✅ LeanCTX | ✅ | ✅ | ✅ RTK | ✅ CM | ✅ CM deny | ✅ Graphify | ✅ AM | ⚠️ advisory | ❌ blocked | Full five-tool routed stack |
 | **Claude Code** | ✅ LeanCTX | ✅ LeanCTX | ✅ | ✅ | ✅ RTK | ✅ CM | ✅ CM deny | ✅ Graphify | ✅ AM | ⚠️ advisory | ❌ blocked | Hook chain verified in Phase 4 tests |
 | **Codex** | ✅ LeanCTX | ❌ deny-only | ✅ | ✅ | ✅ RTK | ✅ CM | ✅ CM deny | ✅ Graphify | ✅ AM | ⚠️ advisory | ❌ blocked | AST blocked until PreToolUse rewrite; wire-proxy ordering validator mandatory |
 | **OpenCode** | ✅ LeanCTX | ✅ LeanCTX | ✅ | ✅ | ✅ RTK | ✅ CM | ✅ CM deny | ✅ Graphify | ✅ AM | ⚠️ advisory | ❌ blocked | Native MCP + plugin convergence verified |
@@ -95,11 +93,11 @@ Registry helpers (Phase 1):
 
 ### Cross-tool convergence (`cross_tool`)
 
-`cross_tool` is supported on Claude Code, Codex, Cursor, OpenCode, and Pi. The reconciler uses each host's native configuration contract—JSON/plugin settings for Claude, TOML plus prompt-layer artifacts for Codex, MCP/hooks for Cursor, native MCP plus TypeScript plugins for OpenCode, and Pi extensions plus the `pi-lean-ctx` bridge—while all five resolve the same user-global five-tool executable profile. Codex remains deny-only for PreToolUse rewriting, so its AST read path has a platform limitation; that limitation does not make `cross_tool` unsupported.
+`cross_tool` is supported on Claude Code, Codex, OpenCode, and Pi. The reconciler uses each host's native configuration contract—JSON/plugin settings for Claude, TOML plus prompt-layer artifacts for Codex, native MCP plus TypeScript plugins for OpenCode, and Pi extensions plus the `pi-lean-ctx` bridge—while all five resolve the same user-global five-tool executable profile. Codex remains deny-only for PreToolUse rewriting, so its AST read path has a platform limitation; that limitation does not make `cross_tool` unsupported.
 
 ### Shared global five-tool instances
 
-The five supported hosts must not drift onto separate package runners or binaries. SB writes one local manifest at `~/.silver-bullet/five-tool-stack/instances.json` with the resolved executable and arguments for Graphify, agentmemory, Context Mode, LeanCTX, and RTK. Cursor `mcp.json`, Claude `.claude.json`, and Codex `config.toml` preserve their native syntax but reference those same manifest-selected executables; OpenCode uses its native global `context-mode` plugin and deliberately omits the legacy `mcp.context-mode` duplicate, while its other MCP servers and RTK plugin use the same manifest; Pi's native adapter and `pi-lean-ctx` bridge read the same manifest. If an optional Claude `context-mode@context-mode` plugin is enabled, the optimizer disables it before registering the shared Context Mode MCP entry, so Claude cannot launch a second Context Mode runtime. agentmemory uses the one local service at `http://localhost:3111`.
+The five supported hosts must not drift onto separate package runners or binaries. SB writes one local manifest at `~/.silver-bullet/five-tool-stack/instances.json` with the resolved executable and arguments for Graphify, agentmemory, Context Mode, LeanCTX, and RTK. Claude `.claude.json`, and Codex `config.toml` preserve their native syntax but reference those same manifest-selected executables; OpenCode uses its native global `context-mode` plugin and deliberately omits the legacy `mcp.context-mode` duplicate, while its other MCP servers and RTK plugin use the same manifest; Pi's native adapter and `pi-lean-ctx` bridge read the same manifest. If an optional Claude `context-mode@context-mode` plugin is enabled, the optimizer disables it before registering the shared Context Mode MCP entry, so Claude cannot launch a second Context Mode runtime. agentmemory uses the one local service at `http://localhost:3111`.
 
 ### Codex Limitations
 

@@ -52,7 +52,7 @@ context-mode --version
 ```
 
 Claude Code uses the same manifest-selected `context-mode` executable through
-`~/.claude.json`, just like Cursor and Codex. If the user-global
+`~/.claude.json`, just like Codex. If the user-global
 `context-mode@context-mode` Claude plugin is enabled, the optimizer disables it
 before adding the shared MCP entry so Claude does not run a second Context Mode
 runtime. **Restart Claude Code** after installing or changing the shared entry.
@@ -62,7 +62,6 @@ runtime. **Restart Claude Code** after installing or changing the shared entry.
 | Host | Steps | Artifacts | Status |
 |------|-------|-----------|--------|
 | Claude Code | Use the shared global MCP entry; disable the native plugin if present | `~/.claude.json` | Supported |
-| Cursor | Merge MCP + hooks per [upstream Cursor docs](https://github.com/mksglu/context-mode#cursor) | `~/.cursor/mcp.json`, `~/.cursor/hooks.json`, `~/.cursor/rules/` | Supported |
 | Codex | Merge `config.toml` + `hooks.json` blocks | `~/.codex/config.toml`, `~/.codex/hooks.json` | Supported |
 | OpenCode | Native `context-mode` plugin in `opencode.json`; omit legacy `mcp.context-mode`; copy `AGENTS.md` | `~/.config/opencode/` | Supported |
 | Pi | Native SB extension plus `pi-lean-ctx` MCP bridge | `~/.pi/agent/extensions/`, `settings.json` | Supported |
@@ -83,20 +82,20 @@ Tool name placeholders vary by host (MCP server names and prefixes). Run `contex
 
 ```bash
 bash scripts/enable-rtk-context-mode.sh --tool context_mode
-bash scripts/optimize-rtk-context-mode.sh --host cursor --project-root "$(pwd)"   # idempotent re-merge
+bash scripts/optimize-rtk-context-mode.sh --host claude --project-root "$(pwd)"   # idempotent re-merge
 ```
 
 ## Optimization checklist (research-backed)
 
-Run `bash scripts/optimize-rtk-context-mode.sh --host cursor --project-root "$(pwd)"` after install:
+Run `bash scripts/optimize-rtk-context-mode.sh --host claude --project-root "$(pwd)"` after install:
 
-| Step | Cursor | Claude | Codex | OpenCode | Pi | Hermes | Goose |
-|------|--------|--------|-------|----------|----|--------|-------|
-| CLI / plugin | `npm install -g context-mode` | `npm install -g context-mode` | `npm install -g context-mode` | plugin in `opencode.json` | native SB extension + MCP bridge | MCP YAML | SKIP |
-| MCP / plugin owner | `~/.cursor/mcp.json` | `~/.claude.json` | `[mcp_servers.context-mode]` | native `context-mode` plugin; no `mcp.context-mode` | manifest-backed extension | `mcp_servers` in yaml | — |
-| Hooks | pre/post/session/stop/afterAgentResponse | Plugin manifest | 6 events in hooks.json | TS plugin events | `tool_call` + session lifecycle | none official | — |
-| Rules | `~/.cursor/rules/*.mdc` | plugin rules | `AGENTS.md` | `~/.config/opencode/AGENTS.md` | `settings.json` + extension config | — | — |
-| Doctor | `CONTEXT_MODE_PLATFORM=cursor` | `context-mode doctor` | `=codex` | `=opencode` | SKIP | SKIP | SKIP |
+| Step | Claude | Codex | OpenCode | Pi | Hermes | Goose |
+|------|--------|-------|----------|----|--------|-------|
+| CLI / plugin | `npm install -g context-mode` | `npm install -g context-mode` | plugin in `opencode.json` | native SB extension + MCP bridge | MCP YAML | SKIP |
+| MCP / plugin owner | `~/.claude.json` | `[mcp_servers.context-mode]` | native `context-mode` plugin; no `mcp.context-mode` | manifest-backed extension | `mcp_servers` in yaml | — |
+| Hooks | Plugin manifest | 6 events in hooks.json | TS plugin events | `tool_call` + session lifecycle | none official | — |
+| Rules | plugin rules | `AGENTS.md` | `~/.config/opencode/AGENTS.md` | `settings.json` + extension config | — | — |
+| Doctor | `context-mode doctor` | `=codex` | `=opencode` | SKIP | SKIP | SKIP |
 
 Verification: [docs/rtk-cm/README.md](rtk-cm/README.md) — per-host prompts at `docs/rtk-cm/verification/<host>-verify-rtk-cm.md`.
 
@@ -104,11 +103,7 @@ Verification: [docs/rtk-cm/README.md](rtk-cm/README.md) — per-host prompts at 
 
 **Read deny:** Upstream context-mode still has no global Read deny. SB adds **`hooks/context-mode-read-deny.sh`** on the plugin PreToolUse manifest (`Read|Grep`) when `context_mode` is enforced. Threshold: `read_deny_bytes` (default 5120). Global `~/.cursor/hooks.json` is unchanged — merge via `/sb:init` docs if you want the same deny outside the plugin bridge.
 
-**Cursor `additional_context` bug:** Hooks accept `additional_context` but Cursor does not surface it to the model ([#155689](https://forum.cursor.com/t/native-posttooluse-hooks-accept-and-log-additional-context-successfully-but-the-injected-context-is-not-surfaced-to-the-model/155689)). Routing must use `.mdc` rules and MCP tool descriptions, not hook-injected context.
-
 **Duplicate hooks:** If both plugin and manual `hooks.json` entries exist, `context-mode doctor` warns — remove one source.
-
-**Project `hooks.json` trap:** Do not add `.cursor/hooks.json` inside a repo unless you intend team-shared hooks. Cursor (and `context-mode doctor` when cwd is that repo) prefers the workspace file over `~/.cursor/hooks.json`, which breaks global RTK/CM verification. Use global `~/.cursor/hooks.json` for personal wiring; SB plugin hooks merge there via `/sb:init`.
 
 Manual (requires restarted agent):
 
@@ -119,7 +114,6 @@ context-mode doctor       # terminal
 
 ## Known Gaps
 
-- Cursor Context Mode wiring is partly manual (plugin path or MCP + hooks merge)
 - Codex PreToolUse lacks `updatedInput` — capture works; live rewrites limited
 - Goose: **no upstream RTK or Context Mode integration** — see [docs/rtk-cm/verification/goose-verify-rtk-cm.md](rtk-cm/verification/goose-verify-rtk-cm.md)
 - Hermes: Context Mode MCP merge only (partial) — see [docs/rtk-cm/verification/hermes-verify-rtk-cm.md](rtk-cm/verification/hermes-verify-rtk-cm.md)
@@ -136,4 +130,4 @@ See `silver-bullet.md` §2g-ii.
 
 ## MCP reload receipts
 
-Context Mode MCP tools (`ctx_execute`, `ctx_search`, …) must be registered without LeanCTX `ctx_*` overlap. After installer or `/sb:doctor --fix` host repair, expect `reload_required` until Cursor reloads MCP and a fresh attestation confirms expected tools. Read-only `verify`/`plan` consume `--host-evidence-stdin` in memory only; receipt clearing requires authorized apply with all-success evidence.
+Context Mode MCP tools (`ctx_execute`, `ctx_search`, …) must be registered without LeanCTX `ctx_*` overlap. After installer or `/sb:doctor --fix` host repair, expect `reload_required` until the host reloads MCP and a fresh attestation confirms expected tools. Read-only `verify`/`plan` consume `--host-evidence-stdin` in memory only; receipt clearing requires authorized apply with all-success evidence.

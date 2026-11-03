@@ -380,7 +380,7 @@ printf '{"recommended_tools":{"rtk":{"usage_ttl_seconds":"abc"}}}' >"$TL_TMP/tc-
 assert_eq "ttl non numeric uses default" "1800" "$(sb_token_tool_usage_ttl_seconds "$TL_TMP/tc-nan.json" rtk)"
 assert_eq "state path ~ expanded" "$HOME/custom-usage" "$(sb_token_tool_usage_state_path "$TC" rtk)"
 assert_eq "state path default" "$SB_RUNTIME_STATE_DIR/other-usage" "$(sb_token_tool_usage_state_path "$TC" other)"
-assert_eq "state path default without runtime dir" "$HOME/.cursor/.silver-bullet/other-usage" "$(env -u SB_RUNTIME_STATE_DIR bash -c 'source "$1"; sb_token_tool_usage_state_path "$2" other' _ "$TL_REPO_ROOT/hooks/lib/token-compression-tools-gate.sh" "$TC")"
+assert_eq "state path default without runtime dir" "$HOME/.claude/.silver-bullet/other-usage" "$(env -u SB_RUNTIME_STATE_DIR bash -c 'source "$1"; sb_token_tool_usage_state_path "$2" other' _ "$TL_REPO_ROOT/hooks/lib/token-compression-tools-gate.sh" "$TC")"
 yes_t "install_ready" sb_token_tool_install_ready "$TC" rtk
 no_t "install_ready false" sb_token_tool_install_ready "$TC" other
 yes_t "enforced" sb_token_tool_enforced "$TC" rtk

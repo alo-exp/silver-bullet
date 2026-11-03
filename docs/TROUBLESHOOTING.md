@@ -12,16 +12,15 @@ SB_DIAG_FORMAT=json bash scripts/sb-diagnostics.sh
 bash scripts/sb-bootstrap.sh         # onboarding probe with next steps
 ```
 
-In a host session, `/sb:doctor` runs the same audit. Neither script takes a runtime argument: the runtime is detected, or forced with `SILVER_BULLET_RUNTIME=claude|codex|cursor`.
+In a host session, `/sb:doctor` runs the same audit. Neither script takes a runtime argument: the runtime is detected, or forced with `SILVER_BULLET_RUNTIME=claude|codex`.
 
-Runtime state lives in `${SB_RUNTIME_STATE_DIR}` — `~/.claude/.silver-bullet/`, `~/.codex/.silver-bullet/` or `~/.cursor/.silver-bullet/` depending on the host ([RUNTIME-COMPATIBILITY.md](RUNTIME-COMPATIBILITY.md)). The paths below use that directory.
+Runtime state lives in `${SB_RUNTIME_STATE_DIR}` — `~/.claude/.silver-bullet/`, or `~/.codex/.silver-bullet/` depending on the host ([RUNTIME-COMPATIBILITY.md](RUNTIME-COMPATIBILITY.md)). The paths below use that directory.
 
 ## Hooks do not fire
 
 | Cause | Fix |
 |-------|-----|
 | The project is not initialized. Hooks stay inert until **both** `.silver-bullet.json` and `silver-bullet.md` exist at the project root (`hooks/lib/sb-project-gate.sh`); some gates also need `"sb_initiated": true` | Run `/sb:init` in the project root, then `bash scripts/sb-diagnostics.sh` |
-| Cursor hooks were not merged into `~/.cursor/hooks.json`, or point at an old checkout | `bash scripts/install-cursor.sh --public-release`, then re-run diagnostics; expect tier 2 (hook-enforced) |
 | The host session has no hook delivery (capability tier 0) or skills are read rather than invoked (tier 1) | Install from your host's marketplace, run `/sb:init`, and invoke skills through `/sb` or the Skill tool (on Codex: `silver-bullet invoke-skill <name>`) |
 | Hook scripts lost their executable bit (some filesystems or archive tools) | `chmod +x hooks/*.sh hooks/session-start` in the installed plugin directory |
 

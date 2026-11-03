@@ -41,7 +41,7 @@ assert_silent_ok "Read is not gated"
 run "$(jq -cn '{hook_event_name:"PreToolUse", tool_name:"Edit", tool_input:{}}')"
 assert_silent_ok "Edit without path or command is not gated"
 for exempt in "$TG2_PROJ/CLAUDE.md" "$TG2_PROJ/AGENTS.md" "$TG2_PROJ/silver-bullet.md" "$TG2_PROJ/.silver-bullet.json" \
-  "$TG2_PROJ/SETUP_REPORT.md" "$HOME/.silver-bullet/state" "$HOME/.cursor/hooks.json" "$HOME/.claude/settings.json"; do
+  "$TG2_PROJ/SETUP_REPORT.md" "$HOME/.silver-bullet/state" "$HOME/.claude/settings.json"; do
   run "$(tg2_edit_input "$exempt")"
   assert_silent_ok "exempt path: ${exempt#"$HOME"/}"
 done
