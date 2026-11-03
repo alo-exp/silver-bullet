@@ -42,6 +42,14 @@ Pack files live here: `category-packs/{category_pack_id}.json`.
 5. Set realistic `min_core_count` / `max_core_count` for the market size.
 6. Document provenance in `notes`.
 
+## Project-local packs
+
+A pack for a market other than the bundled one lives with the run, not in the plugin:
+`research/<run>/category-packs/<category_id>.json` (same schema, `category_id` equal to the filename).
+`phase_gate.py`, `compare_solutions.py` and `shortlist_candidates.py` look there first, then in this
+directory, and fail closed when `category_pack_id` is set but no pack resolves. The bundled
+Silver Bullet pack is an example for its own market; do not use it for other categories.
+
 ## Overrides from need_profile
 
 `need_profile.json` may tighten (not loosen) market scope:

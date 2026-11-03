@@ -139,6 +139,7 @@ research_types:
         add:
           - comparison/comparison.json
           - comparison/comparison-matrix.md
+          - comparison/{dir-slug}-comparison-matrix.xlsx
       package:
         add:
           - report.html
@@ -154,6 +155,7 @@ research_types:
         add:
           - comparison/comparison.json
           - comparison/comparison-matrix.md
+          - comparison/{dir-slug}-comparison-matrix.xlsx
       package:
         add:
           - report.html

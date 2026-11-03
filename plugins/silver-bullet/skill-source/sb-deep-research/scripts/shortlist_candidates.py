@@ -50,13 +50,28 @@ def _is_commercial_license(lic: str) -> bool:
     return any(marker in norm for marker in _COMMERCIAL_MARKERS)
 
 
+_OSS_WORDS = frozenset({"oss", "opensource", "foss", "floss", "apache", "mit", "gpl", "bsd", "isc",
+                        "mpl", "lgpl", "agpl", "unlicense", "zlib", "epl", "cddl", "osl", "postgresql"})
+_OSS_PREFIXES = ("apache", "mit", "bsd", "gpl", "lgpl", "agpl", "mpl", "isc", "epl", "cddl", "osl",
+                 "unlicense", "zlib", "cc0", "opensource")
+
+
+def _is_oss_license(lic: str) -> bool:
+    """SPDX ids (Apache-2.0, MIT, BSD-3-Clause, GPL-3.0-or-later, ...) and plain names."""
+    norm = _normalize_license(lic)
+    if not norm or _is_commercial_license(lic):
+        return False
+    if "source-available" in lic.lower() or "sourceavailable" in norm:
+        return False
+    return norm in _OSS_WORDS or norm.startswith(_OSS_PREFIXES)
+
+
 def license_ok(row: dict[str, Any], pref: str) -> bool:
     lic = (row.get("license") or row.get("license_type") or "").strip()
     if pref == "mixed":
         return True
     if pref == "oss":
-        lic_lower = lic.lower()
-        return lic_lower in ("oss", "open-source", "open source", "apache", "mit", "gpl")
+        return _is_oss_license(lic)
     if pref == "commercial":
         return _is_commercial_license(lic)
     return True
@@ -75,7 +90,20 @@ def shortlist(
     candidates: list[dict[str, Any]],
     need_profile: dict[str, Any],
     count: int,
+    pack_dirs: Any = (),
 ) -> list[dict[str, Any]]:
+    forbidden: set[str] = set()
+    pack = None
+    if need_profile.get("category_pack_id"):
+        from category_pack import (
+            get_hard_exclusion_slugs,
+            resolve_canonical_slug,
+            resolve_pack_from_need_profile,
+        )
+
+        # Fail closed: a category pack that cannot be resolved is an error, not a skip.
+        pack = resolve_pack_from_need_profile(need_profile, pack_dirs)
+        forbidden = {str(x) for x in get_hard_exclusion_slugs(pack, need_profile) if x}
     pref = need_profile.get("license_preference", "mixed")
     must = need_profile.get("must_haves") or []
     vetoes = {v.lower() for v in need_profile.get("hard_vetoes") or []}
@@ -87,6 +115,12 @@ def shortlist(
             continue
         if not license_ok(row, pref):
             continue
+        if pack is not None:
+            cand = _slug(str(row.get("slug") or name))
+            by_name = _slug(name)
+            if {cand, by_name, resolve_canonical_slug(cand, pack),
+                    resolve_canonical_slug(by_name, pack)} & forbidden:
+                continue
         filtered.append(row)
 
     ranked = sorted(filtered, key=lambda r: -score_row(r, must))
@@ -97,7 +131,7 @@ def shortlist(
         result.append({
             "rank": i,
             "name": name,
-            "slug": row.get("slug") or _slug(name),
+            "slug": _slug(str(row.get("slug") or name)) or _slug(name) or f"solution-{i}",
             "license": row.get("license"),
             "rationale": row.get("rationale", "Top candidate from landscape survey"),
             "score": score_row(row, must),
@@ -115,7 +149,16 @@ def main() -> None:
 
     candidates = load_jsonl(Path(args.candidates))
     need_profile = json.loads(Path(args.need_profile).read_text(encoding="utf-8"))
-    items = shortlist(candidates, need_profile, args.count)
+    from category_pack import project_pack_dirs
+
+    try:
+        items = shortlist(
+            candidates, need_profile, args.count,
+            project_pack_dirs(Path(args.need_profile).resolve().parent),
+        )
+    except (OSError, ValueError) as exc:
+        print(json.dumps({"status": "error", "reason": f"category pack: {exc}"}), file=sys.stderr)
+        sys.exit(1)
 
     if len(items) != args.count:
         print(
