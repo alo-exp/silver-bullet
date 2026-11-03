@@ -1,11 +1,13 @@
 # Enterprise E2E Host Certification Methodology
 
-> **Share this path with sibling agents (Cursor, Claude, Codex):**  
+> **Share this path with sibling agents (Claude, Codex):**  
 > `docs/testing/ENTERPRISE-E2E-HOST-CERTIFICATION-METHODOLOGY.md`  
 > Canonical on **`main`** — host tracks cherry-pick or link; do not fork per-host copies.
+>
+> **Cursor was retired as a Silver Bullet host.** Sections and appendices that describe the Cursor track (§11, §11a, Appendix D) are kept as a historical record only; the harness, installers and wrappers they name no longer exist.
 
 **Status:** Active — 2026-07-04 (Codex R1–3 REAL learnings; **single-round release candidate gate** effective)  
-**Audience:** Codex, Cursor, and Claude operator sessions certifying Silver Bullet on `enterprise-grade-test-app`  
+**Audience:** Codex and Claude operator sessions certifying Silver Bullet on `enterprise-grade-test-app`  
 **Authority:** Supersedes ad-hoc “run 22 rows first” loops; complements [ENTERPRISE-E2E-EFFECTIVENESS-PLAN.md](./ENTERPRISE-E2E-EFFECTIVENESS-PLAN.md)
 
 **Related docs:**
@@ -181,7 +183,6 @@ Pattern: **`enterprise-e2e/round-<N>-<host>`** @ baseline SHA (test app, not SB 
 |------|-------------------|-------------------------|----------------------|-----------------|
 | Claude | `enterprise-e2e/round6` | `enterprise-e2e/round-9-claude` | `09f8d1a` | `8482e60` (R8 only) |
 | Codex | `enterprise-e2e/codex` | `enterprise-e2e/round-9-codex` | `09f8d1a` | `8482e60` (R1/2 — **void**) |
-| Cursor | `enterprise-e2e/cursor` | `enterprise-e2e/round-N-cursor` (worktree) | `09f8d1a` | `8482e60` (R1/2 — **void**) |
 
 **Rules:**
 
@@ -196,7 +197,7 @@ Pattern: **`enterprise-e2e/round-<N>-<host>`** @ baseline SHA (test app, not SB 
 
 ## 5. Cherry-pick policy (no main switch for deploy)
 
-- **Harness fixes** commit on host branch (`enterprise-e2e/codex`, `enterprise-e2e/cursor`, `enterprise-e2e/round6`).
+- **Harness fixes** commit on host branch (`enterprise-e2e/codex`, `enterprise-e2e/round6`).
 - **Verified fixes** cherry-pick to `main` per [`ENTERPRISE-E2E-CHERRY-PICK.md`](./ENTERPRISE-E2E-CHERRY-PICK.md) — paths only when mixed with ledger noise.
 - **Do not** switch live matrix driver to `main` mid-round for deploy; re-run host install (`install-codex.sh`, etc.) from pinned SB SHA on host branch.
 - **Docs on `main`** (this file) are the cross-agent share surface; host prompts link here.
@@ -247,7 +248,7 @@ Every row claimed **PASS** for certification must satisfy **all** gates:
 | **Log size floor** | Row attempt log **> 2048 bytes** substantive workflow output, **or** explicit brownfield waiver in ledger with file:line pre-existence proof |
 | **Live strict-clean only** | Row invoked via live matrix driver (`SB_ENTERPRISE_E2E_LIVE=1`) at current install fingerprint — not rescore-only, not dry-run, not monitor replay |
 | **Product delta** | **Committed delta** on fixture branch (`git log` shows row-session commit) **or** documented brownfield waiver — uncommitted dirty tree alone is insufficient. Harness enforces via `enterprise_e2e_assert_row_product_commit_delta` when `SB_E2E_PRODUCT_WORK_GATE=1` (E2E-103, E2E-114) |
-| **Host-agent authorship** | Outcome checklist attests **host-agent** (`cursor-agent`, Codex TUI, Claude TUI) authored the deliverable — operator parent routing-only does not satisfy implement rows |
+| **Host-agent authorship** | Outcome checklist attests **host-agent** (Codex TUI, Claude TUI) authored the deliverable — operator parent routing-only does not satisfy implement rows |
 | **Outcome PASS** | `enterprise_e2e_outcome_row_passes` with no `partial` on blocking gates (`OUT-AUTO-01`, `OUT-CLARIFY-01`, `OUT-NOOP-01`, `OUT-WORLD-01`) |
 | **Ship-readiness match** | Row 16 verdict aligns with merge-readiness state — `NOT_MERGE_READY` → row FAIL |
 
@@ -334,7 +335,7 @@ Derived at matrix run time as:
 
 | Component | Source |
 |-----------|--------|
-| `host` | `SB_E2E_LIVE_RUNTIME` / `enterprise_e2e_matrix_host` (`claude` \| `codex` \| `cursor`) |
+| `host` | `SB_E2E_LIVE_RUNTIME` / `enterprise_e2e_matrix_host` (`claude` \| `codex`) |
 | `sb_git_sha12` | `git -C $SB_ROOT rev-parse --short=12 HEAD` |
 | `surface_hash12` | `sha256(hooks/hooks.json_digest[:16] \| package.json version)[:12]` |
 
@@ -398,15 +399,9 @@ Every live host-certification test MUST be initiated through the corresponding
 |------|------------------|----------------|
 | Codex | `/sb:agent-codex` | **GPT-5.6 Luna Low** |
 | Claude | `/sb:agent-claude` | **Haiku 4.5** |
-| Cursor | `/sb:agent-cursor` | **Composer 2.5** |
 
 Raw host CLI runs, silent model substitutions, or transcripts without the wrapper do not
 count as live certification evidence.
-
-**Current-cycle Cursor hold:** another session is fixing the Cursor five-tool stack. Do not
-launch or retry Cursor live five-tool scenarios until that session reports completion and
-the repair is available in the checkout or fixture under test; then rerun from a fresh
-isolated fixture.
 
 ---
 
@@ -422,8 +417,6 @@ isolated fixture.
 | Parent orchestrator | One **`composer-2.5`** background worker (`Task` tool); **never** `composer-2.5-fast` for subagents; resume same worker ID |
 | Poll cadence | 60–90s substantive checkpoints |
 | **ENOTFOUND / network** | Exponential backoff on poll — transient DNS failures are not auth failures |
-| **Stdout buffering** | Cursor headless logs may show **0 B for ~30 min** while agent is working — buffering is normal but **does not** satisfy §5b log floor; wait or fix E2E-086 streaming |
-| **Cursor auth** | Keychain / interactive Cursor auth — **not** `CURSOR_API_KEY` for live matrix drivers |
 | **Per-row timeouts** | Row **8** (`silver-refactor`): `SB_E2E_ROW8_TIMEOUT=3600`; row **11** (`silver-devops`): `SB_E2E_ROW11_TIMEOUT=5400` (E2E-087) |
 | **TUI monitor offset reset** | **Mandatory at round start** — `enterprise_e2e_reset_tui_monitor_offsets "$SB_ROOT"` seeks `.e2e-tui-watch-{host}-offsets.json` and `.tui-monitor-agent-offset.json` to EOF of existing attempt logs so historical rows are not replayed as new issues (E2E-086+ false-positive-replay). Called by `live-test.sh`, all `*-matrix-driver.sh`, and Cursor/Codex REAL drivers — **not** mid-batch inside `matrix.sh` |
 
@@ -433,7 +426,7 @@ Host-isolated artifacts: see [HOST-CONFIG.md](../../.planning/enterprise-e2e/HOS
 
 When resuming after crash, quota wall, or operator interrupt — **before** launching any new matrix driver:
 
-1. **Identify host** — `export SB_E2E_LIVE_RUNTIME=<claude|codex|cursor>`.
+1. **Identify host** — `export SB_E2E_LIVE_RUNTIME=<claude|codex>`.
 2. **Check batch PID file** — `${SB_ROOT}/.e2e-matrix-${host}-batch.pid` (Codex: `.e2e-matrix-codex-batch.pid`). If missing, skip to step 5.
 3. **Verify process alive** — `kill -0 "$(cat .e2e-matrix-${host}-batch.pid)" 2>/dev/null` or `enterprise_e2e_matrix_batch_running` in driver preflight.
 4. **If alive and log growing** (< 45 min since last substantive log line): **do not SIGTERM** — poll-only resume (§7).
@@ -470,17 +463,17 @@ When resuming after crash, quota wall, or operator interrupt — **before** laun
 
 ## 9. Cross-agent isolation
 
-When Claude Round 6, Codex, and Cursor run in parallel:
+When Claude Round 6 and Codex run in parallel:
 
-1. **Separate SB git branches** per host — never commit Codex harness to `enterprise-e2e/cursor` or Claude `round6`.
+1. **Separate SB git branches** per host — never commit Codex harness to Claude `round6`.
 2. **Separate fixture branches** per host — see §4.
-3. **Separate locks** — `.e2e-live-test.lock` (Claude), `.e2e-live-test-codex.lock`, `.e2e-live-test-cursor.lock`.
+3. **Separate locks** — `.e2e-live-test.lock` (Claude) and `.e2e-live-test-codex.lock`.
 4. **Never** `pkill` another host's monitor/driver PIDs.
 5. **Never** remove another host's lock unless that host's driver PID is confirmed dead.
 6. **Cursor worktree** when shared clone is dirty on another branch — `enterprise-grade-test-app-cursor` @ `enterprise-e2e/round-N-cursor` ([TEST-APP-BRANCH-POLICY.md](../../.planning/enterprise-e2e/TEST-APP-BRANCH-POLICY.md)).
 7. **Single workspace per host** for SB fixes — test app is matrix CWD only.
 8. **Branch guard:** `enterprise_e2e_assert_host_git_branch` in `matrix.sh` / `live-test.sh` — matrix aborts on SB harness branch mismatch.
-9. **Cross-host contamination** on shared clone (Codex batch on Cursor branch, wrong `test_app_git_branch`) **voids the round** — reset fixture, verify worktree isolation (E2E-090).
+9. **Cross-host contamination** on shared clone (Codex batch on another host branch, wrong `test_app_git_branch`) **voids the round** — reset fixture, verify worktree isolation (E2E-090).
 
 ---
 
@@ -489,14 +482,13 @@ When Claude Round 6, Codex, and Cursor run in parallel:
 | Host | Prompt |
 |------|--------|
 | Codex | [`.planning/enterprise-e2e/CODEX-ENTERPRISE-E2E-EXECUTION-PROMPT.md`](../../.planning/enterprise-e2e/CODEX-ENTERPRISE-E2E-EXECUTION-PROMPT.md) |
-| Cursor | [`.planning/enterprise-e2e/CURSOR-ENTERPRISE-E2E-EXECUTION-PROMPT.md`](../../.planning/enterprise-e2e/CURSOR-ENTERPRISE-E2E-EXECUTION-PROMPT.md) |
 | Claude R6 | [`.planning/enterprise-e2e/ROUND-6-OPERATIONAL-ADDENDUM.md`](../../.planning/enterprise-e2e/ROUND-6-OPERATIONAL-ADDENDUM.md) |
 
 All tracks **must read this methodology doc** at session start.
 
 ---
 
-## 11. Single-pass-at-install-version (Cursor E2E — effective 2026-07-01)
+## 11. Single-pass-at-install-version (historical, from the Cursor E2E track — effective 2026-07-01)
 
 **Policy:** Do **not** repeat any matrix row, ladder rung, or T1 criterion that already **Pass** at the current SB install version. One clean pass per row/criterion is sufficient within and across rounds (Cursor-1 + Cursor-2) when the install version key is unchanged.
 
@@ -536,7 +528,7 @@ SKIP: row N already pass @ install <version>
 
 ---
 
-## 11a. Cursor E2E harness fixes (E2E-086 – E2E-100)
+## 11a. Cursor E2E harness fixes (E2E-086 – E2E-100) — historical
 
 Operators must understand these fixes — misreading them caused false PASS claims in Cursor-1/Cursor-2 (both **void**; see Appendix D):
 
@@ -596,7 +588,6 @@ Post-v0.50.2 (`779464af`) fixes from Round Codex-3 REAL and Round 9 Claude gates
 | **Rescore ≠ strict-clean** — live rerun required for certification credit | E2E-089 |
 | **Outcome scorer harness fixes** — evidence PASS + outcome FAIL → fix scorer @ `8feda5fc`+, then **live rerun**; do not claim PASS on stale outcome files | E2E-088 |
 | **Routing-only clarify n/a** — row 1 `silver-router` without CLARIFY is not `OUT-CLARIFY-01` fail | E2E-091 |
-| **Cursor timeout ≥1800s** — export in driver/tmux; matrix enforces; never inherit 900s shell default | E2E-087, E2E-092 |
 | **Fast-path orch n/a** — row 6 `silver-fast` does not require orchestrator parent/worker chain | E2E-094 |
 | **Row 14 release evidence** — CHANGELOG + release SHIP path; not ship-readiness checklist dir | E2E-097 |
 | **Row 14 KM via graphify preamble** — matrix TUI may disable agentmemory MCP; graphify preamble satisfies `OUT-KM-01` | E2E-098 |
@@ -620,27 +611,25 @@ Post-v0.50.2 (`779464af`) fixes from Round Codex-3 REAL and Round 9 Claude gates
 | **Codex install skip** on REAL drivers after Session 0 | E2E-108 |
 | **Claude isolated state** per matrix row | E2E-105 |
 | **Row 3 api/currency §5b** — not docs-only stub | E2E-103 |
-| **Composer 2.5 only** for Cursor subagents — never `composer-2.5-fast` in matrix drivers | Cursor-3 REAL policy |
-| **Keychain Cursor auth** — `cursor-agent login`; not `CURSOR_API_KEY` for live matrix | §8 Cursor auth |
 | **Post-merge re-cert** — pull `main`, re-install host, Tier A + §5b smoke on new `install_fp` | §11b post-merge sibling |
-| **Codex branch lock** — never commit Codex harness to Cursor/Claude branches | §9 |
+| **Codex branch lock** — never commit Codex harness to the Claude branch | §9 |
 | **Claude state isolation** — fresh `${SB_RUNTIME_STATE_DIR}` per row | E2E-105 |
 
-### Codex / Claude §5a / §5b gates (mirror Cursor)
+### Codex / Claude §5a / §5b gates
 
-| Gate | Codex | Claude | Cursor |
-|------|-------|--------|--------|
-| **§5a anti-faking** | No inherited baseline PASS; no rescore-only 22/22 | Same | Same (Appendix D void Cursor-1/2) |
-| **§5b log floor** | `codex-interactive-invoke.py` transcript + attempt log | `claude-interactive-invoke.expect` + bracketed-paste | `cursor/agent.sh` stream-json |
-| **§5b product delta** | `git log` on fixture branch per row | Same | Same |
-| **Smoke rows** | Tier B: **1, 3, 6**; post-merge §5b: **1, 6, 11** + **21–22** | Gate 3: **1, 6, 11** sequential | Full 22 @ `install_fp` (Cursor-3 REAL canonical) |
-| **FORCE / install-skip** | `SB_E2E_SKIP_CODEX_INSTALL=1` after Session 0; `FORCE_ALL` for registry override | Full `install-claude.sh` after hook fix; isolated state per row | `FORCE`+`FORCE_ALL` in cursor3 driver; install-pass skip only after first strict-clean @ install_fp |
+| Gate | Codex | Claude |
+|------|-------|--------|
+| **§5a anti-faking** | No inherited baseline PASS; no rescore-only 22/22 | Same |
+| **§5b log floor** | `codex-interactive-invoke.py` transcript + attempt log | `claude-interactive-invoke.expect` + bracketed-paste |
+| **§5b product delta** | `git log` on fixture branch per row | Same |
+| **Smoke rows** | Tier B: **1, 3, 6**; post-merge §5b: **1, 6, 11** + **21–22** | Gate 3: **1, 6, 11** sequential |
+| **FORCE / install-skip** | `SB_E2E_SKIP_CODEX_INSTALL=1` after Session 0; `FORCE_ALL` for registry override | Full `install-claude.sh` after hook fix; isolated state per row |
 
 ### Post-merge sibling session — re-certification required
 
-When harness changes land on `main` from a **sibling agent session** (Cursor, Claude, or Codex track):
+When harness changes land on `main` from a **sibling agent session** (Claude or Codex track):
 
-1. **Pull `main`** and re-run host install (`install-{claude,codex,cursor}.sh`).
+1. **Pull `main`** and re-run host install (`install-{claude,codex}.sh`).
 2. **Re-run Tier A** structural suite (`test-enterprise-e2e-*.sh`, `test-outcome-assessment.sh`).
 3. **Re-certify §5b smoke** (rows **1, 6, 11** + verify internal **21–22** inherit) under the **new install fingerprint** — prior PASS @ old `install_fp` does **not** carry forward after harness fixes. *(Distinct from initial Tier B smoke **1, 3, 6** — see §6a table.)*
 4. Update ledgers with new commit SHA; cite E2E-101+ fix IDs when closing rows.
@@ -667,7 +656,7 @@ When harness changes land on `main` from a **sibling agent session** (Cursor, Cl
 
 ```bash
 export SB_ROOT=/path/to/silver-bullet   # your Silver Bullet checkout
-export SB_E2E_LIVE_RUNTIME=codex   # or cursor | claude
+export SB_E2E_LIVE_RUNTIME=codex   # or claude
 cd "$SB_ROOT"
 export RTK_DISABLED=1
 
@@ -704,7 +693,7 @@ Before marking any row PASS in a ledger:
 
 ---
 
-## Appendix D — Cursor track lessons (Rounds Cursor-1/2 — **void**; Cursor-3 REAL canonical)
+## Appendix D — Cursor track lessons (historical; Rounds Cursor-1/2 — **void**; Cursor-3 REAL canonical)
 
 **Policy (2026-07-03):** Rounds **Cursor-1** and **Cursor-2** are **void** for host certification and release sign-off. Their ledgers, rescored outcome files, install-skip rows, and inherited-evidence passes **must not** be cited as strict-clean certification. The **canonical honest Cursor certification** is **Round Cursor-3 REAL** — [`.planning/enterprise-e2e/ROUND-CURSOR-3-REAL-LEDGER.md`](../../.planning/enterprise-e2e/ROUND-CURSOR-3-REAL-LEDGER.md) — **22/22 strict-clean** under §5a/§5b anti-faking methodology with harness fixes E2E-091–E2E-100.
 

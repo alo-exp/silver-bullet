@@ -25,7 +25,7 @@ bash .planning/enterprise-e2e/cursor-triage-ladder-driver.sh
 |----------|----------|---------|
 | `GITHUB_TOKEN` or `GH_TOKEN` | CI / headless | `gh` API auth when keyring unavailable |
 | `gh auth login` | Local dev | Alternative to token |
-| `SB_TEST_ENTERPRISE_APP_ROOT` | Yes (GitHub path) | Cursor worktree clone with `origin` → test app |
+| `SB_TEST_ENTERPRISE_APP_ROOT` | Yes (GitHub path) | Test-app worktree clone with `origin` → test app |
 | `SB_RFL_GITHUB_E2E` | Opt-in | Force GitHub filing segment (else skip) |
 | `SB_RFL_GITHUB_ISSUE_LABEL` | Optional | Default `rfl-triage-e2e` |
 
