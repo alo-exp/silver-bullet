@@ -79,11 +79,12 @@ assert_gate_denies() {
   fi
 }
 
-# gh_prelude_suite <hook> <audit-name> <tool-id> <exempt-path> <exempt-cmd> <edit-path> <block-reason>
+# gh_prelude_suite <hook> <audit-name> <tool-id> <exempt-path> <exempt-cmd> <edit-path> <block-reason> [gated-cmd]
 # The caller must define gh_scenario_block: arrange state so editing <edit-path> is denied
 # with <block-reason> in the message. The suite re-invokes it between variations.
 gh_prelude_suite() {
   local hook="$1" name="$2" tool="$3" exempt_path="$4" exempt_cmd="$5" edit_path="$6" reason="$7"
+  local gated_cmd="${8:-sed -i s/a/b/ src/app.js}"
   local edit bashcmd="sed -i s/a/b/ src/app.js"
   edit="$(gh_edit_input "$edit_path")"
   : "$bashcmd"
@@ -156,7 +157,10 @@ gh_prelude_suite() {
   printf '%s' "$saved" >"$GH_CFG"
   jq --arg t "$tool" 'del(.recommended_tools[$t].enabled_by_user)' "$GH_CFG" >"$GH_CFG.n" && mv "$GH_CFG.n" "$GH_CFG"
   gh_run "$hook" "$edit"
-  assert_gate_allows "$name: consent pending allows"
+  assert_gate_denies "$name: user consent alone enforces (project file silent)" "$reason"
+  printf '%s' "$saved" >"$GH_CFG"
+  gh_run "$hook" "$edit" XDG_CONFIG_HOME="$TL_TMP/no-consent"
+  assert_gate_allows "$name: consent pending allows (a project recommendation is not consent)"
   printf '%s' "$saved" >"$GH_CFG"
   jq --arg t "$tool" '.recommended_tools[$t].enforcement_suspended = true' "$GH_CFG" >"$GH_CFG.n" && mv "$GH_CFG.n" "$GH_CFG"
   gh_run "$hook" "$edit"
@@ -184,8 +188,8 @@ gh_prelude_suite() {
   rm -f "$SB_RUNTIME_STATE_DIR/trivial"
 
   # Shell-like tools gate through the command branch
-  gh_run "$hook" "$(gh_bash_input "sed -i s/a/b/ src/app.js")"
-  assert_gate_denies "$name: in-place sed is gated" "$reason"
+  gh_run "$hook" "$(gh_bash_input "$gated_cmd")"
+  assert_gate_denies "$name: a write command in the gate's scope is gated" "$reason"
   gh_scenario_block
 }
 

@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Tests for hooks/leanctx-gate.sh — PreToolUse block when usage stale
 set -euo pipefail
+# The opt-in gates act only on the user's own consent, never on .silver-bullet.json alone.
+# shellcheck source=../lib/consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/consent-helpers.sh"
+sb_test_consent_grant_all
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 export SILVER_BULLET_RUNTIME=cursor
@@ -65,7 +69,7 @@ EOF
 isolate_home() {
   TEST_HOME="$(mktemp -d)"
   export HOME="$TEST_HOME" SILVER_BULLET_RUNTIME=cursor
-  export XDG_CONFIG_HOME="$TEST_HOME/.config"
+  # XDG_CONFIG_HOME stays on the consent sandbox: the user-consent store lives there.
   export XDG_STATE_HOME="$TEST_HOME/.local/state"
 }
 

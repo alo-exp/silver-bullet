@@ -2,6 +2,10 @@
 # Behavior tests for hooks/lib/stack-compression-coordinator.sh and
 # hooks/lib/token-compression-tools-gate.sh
 set -euo pipefail
+# The opt-in gates act only on the user's own consent, never on .silver-bullet.json alone.
+# shellcheck source=../lib/consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/consent-helpers.sh"
+sb_test_consent_grant_all
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init claude
 
@@ -19,19 +23,33 @@ cat >"$LEAN" <<'J'
 {"recommended_tools":{"leanctx":{"enabled_by_user":true},"rtk":{"enabled_by_user":true},"context_mode":{"enabled_by_user":true}},
  "optimization_profiles":{"five_tool_routed":{"routes":{"sb_read":"leanctx","sb_shell":"rtk","sb_graph":"graphify","sb_remember":"agentmemory","sb_webfetch":"context_mode","sb_slice":"context_mode","sb_grep":"context_mode"}}}}
 J
+# The user consented to every tool (machine-wide); a project file narrows the set by turning tools off.
 cat >"$TWO" <<'J'
-{"recommended_tools":{"rtk":{"enabled_by_user":true},"context_mode":{"enabled_by_user":true}}}
+{"recommended_tools":{"rtk":{"enabled_by_user":true},"context_mode":{"enabled_by_user":true},"leanctx":{"enabled_by_user":false}}}
 J
 cat >"$ONE" <<'J'
-{"recommended_tools":{"rtk":{"enabled_by_user":true}}}
+{"recommended_tools":{"rtk":{"enabled_by_user":true},"context_mode":{"enabled_by_user":false},"leanctx":{"enabled_by_user":false}}}
 J
-printf '{}' >"$NONE"
+printf '{"recommended_tools":{"rtk":{"enabled_by_user":false},"context_mode":{"enabled_by_user":false},"leanctx":{"enabled_by_user":false}}}' >"$NONE"
 
 # ---------- state paths ----------
-assert_eq "coordinator state path" "$SB_RUNTIME_STATE_DIR/stack-compression-coordinator" "$(sb_stack_coordinator_state_path)"
-assert_eq "mutex state path" "$SB_RUNTIME_STATE_DIR/stack-compression-mutex" "$(sb_stack_mutex_state_path)"
-assert_eq "lifecycle state path" "$SB_RUNTIME_STATE_DIR/stack-compression-lifecycle" "$(sb_stack_lifecycle_state_path)"
-assert_eq "state path falls back to HOME/.silver-bullet" "$HOME/.silver-bullet/stack-compression-mutex" "$(env -u SB_RUNTIME_STATE_DIR bash -c 'source "$1"; sb_stack_mutex_state_path' _ "$TL_REPO_ROOT/hooks/lib/stack-compression-coordinator.sh")"
+# Coordinator state is scoped to one project and one host session (R5-13).
+sum_of() { printf '%s' "$1" | cksum | awk '{print $1}'; }
+PSUM="$(sum_of "$(cd -P "$TL_TMP" && pwd -P)")"
+ESUM="$(sum_of "")"
+SSUM="$(sum_of "sess1")"
+assert_eq "coordinator state path (no session)" "$SB_RUNTIME_STATE_DIR/stack-compression-coordinator.d/${PSUM}-${ESUM}.json" "$(sb_stack_coordinator_state_path "$LEAN")"
+assert_eq "mutex state path (no session)" "$SB_RUNTIME_STATE_DIR/stack-compression-mutex.d/${PSUM}-${ESUM}.json" "$(sb_stack_mutex_state_path "$LEAN")"
+sb_stack_set_session '{"session_id":"sess1"}'
+assert_eq "session id scopes the mutex state" "$SB_RUNTIME_STATE_DIR/stack-compression-mutex.d/${PSUM}-${SSUM}.json" "$(sb_stack_mutex_state_path "$LEAN")"
+sb_stack_set_session '{"sessionId":"a/../b c"}'
+assert_eq "session id is sanitized" "a..bc" "$SB_STACK_SESSION"
+sb_stack_set_session '{"conversation_id":"conv-9"}'
+assert_eq "conversation id is a session id" "conv-9" "$SB_STACK_SESSION"
+sb_stack_set_session 'garbage'
+assert_eq "unparsable payload leaves no session" "" "$SB_STACK_SESSION"
+assert_eq "state path falls back to HOME/.silver-bullet" "$HOME/.silver-bullet/stack-compression-mutex.d" "$(env -u SB_RUNTIME_STATE_DIR bash -c 'source "$1"; dirname "$(sb_stack_mutex_state_path "$2")"' _ "$TL_REPO_ROOT/hooks/lib/stack-compression-coordinator.sh" "$LEAN")"
+declare -f sb_stack_lifecycle_state_path >/dev/null 2>&1 && tl_fail "the dead lifecycle helpers are gone" || tl_pass "the dead lifecycle helpers are gone"
 
 # ---------- enabled count / coordinator needed ----------
 assert_eq "count three" "3" "$(sb_stack_compression_tools_enabled_count "$LEAN")"
@@ -88,7 +106,7 @@ no_t "recorded owner none before" sb_stack_surface_recorded_owner "$LEAN" sb_she
 tl_stub date 'echo 1700000000'
 hash -r
 sb_stack_record_surface_owner "$LEAN" sb_shell rtk
-S="$(sb_stack_coordinator_state_path)"
+S="$(sb_stack_coordinator_state_path "$LEAN")"
 assert_eq "surface recorded owner" "rtk" "$(jq -r '.surfaces.sb_shell.owner' "$S")"
 assert_eq "surface recorded epoch" "1700000000" "$(jq -r '.surfaces.sb_shell.epoch' "$S")"
 sb_stack_record_surface_owner "$LEAN" sb_read leanctx
@@ -105,7 +123,7 @@ no_t "record surface fails when state path is a directory" sb_stack_record_surfa
 rmdir "$S"
 
 # ---------- double compression / mutex ----------
-M="$(sb_stack_mutex_state_path)"
+M="$(sb_stack_mutex_state_path "$LEAN")"
 yes_t "mutex clean without state" sb_stack_mutual_exclusion_is_clean "$LEAN"
 sb_stack_record_double_compression "$LEAN" sb_shell leanctx rtk
 assert_eq "violation recorded" "leanctx" "$(jq -r '.violations[0].attempted' "$M")"
@@ -152,15 +170,20 @@ assert_contains "mcp deny uses explicit route/owner" "$m" "ctx_search blocked on
 
 # ---------- bash helpers ----------
 no_t "rtk_rewritten empty cmd" sb_stack_bash_rtk_rewritten ""
-no_t "rtk_rewritten without unwrap helper" sb_stack_bash_rtk_rewritten "rtk git status"
-sb_shell_command_unwrap_rtk() { case "$1" in "rtk "*) printf '%s' "${1#rtk }" ;; *) printf '%s' "$1" ;; esac; }
-yes_t "rtk_rewritten when unwrapped differs" sb_stack_bash_rtk_rewritten "rtk git status"
+yes_t "rtk_rewritten when the command starts with rtk" sb_stack_bash_rtk_rewritten "rtk git status"
+yes_t "rtk_rewritten behind assignments and env" sb_stack_bash_rtk_rewritten "env FOO=1 BAR=2 rtk git status"
 no_t "rtk_rewritten when unchanged" sb_stack_bash_rtk_rewritten "git status"
+no_t "rtk_rewritten: a re-quoted command is not RTK" sb_stack_bash_rtk_rewritten "bash -c 'git status'"
+no_t "rtk_rewritten: rtk later in the command is not the wrapper" sb_stack_bash_rtk_rewritten "git status && rtk gain"
 no_t "marker empty" sb_stack_bash_leanctx_shell_marker ""
 yes_t "marker env" sb_stack_bash_leanctx_shell_marker "SB_LEANCTX_SHELL=1 ls"
-yes_t "marker lean-ctx shell" sb_stack_bash_leanctx_shell_marker "echo x | lean-ctx shell ls"
+no_t "marker: a lean-ctx shell later in a pipeline is not the wrapper" sb_stack_bash_leanctx_shell_marker "echo x | lean-ctx shell ls"
+yes_t "marker lean-ctx shell" sb_stack_bash_leanctx_shell_marker "lean-ctx shell ls"
 yes_t "marker leanctx shell" sb_stack_bash_leanctx_shell_marker "leanctx shell ls"
-yes_t "marker lctx_shell" sb_stack_bash_leanctx_shell_marker "run lctx_shell now"
+yes_t "marker lctx_shell" sb_stack_bash_leanctx_shell_marker "lctx_shell now"
+yes_t "marker behind env and assignments" sb_stack_bash_leanctx_shell_marker "env A=1 lctx_shell now"
+no_t "marker: a mention in another program's arguments (R5-13)" sb_stack_bash_leanctx_shell_marker "grep -rn lctx_shell docs/"
+no_t "marker: echo of the marker" sb_stack_bash_leanctx_shell_marker "echo lean-ctx shell"
 no_t "marker plain" sb_stack_bash_leanctx_shell_marker "ls -la"
 
 # ---------- mcp tool routing ----------
@@ -249,10 +272,14 @@ no_t "double-wrap: plain command" dw "$LEAN" "ls"
 no_t "double-wrap: rtk rewritten without marker" dw "$LEAN" "rtk ls"
 assert_eq "double-wrap records rtk incumbent" "rtk" "$(jq -r '.surfaces.sb_shell.owner' "$S")"
 assert_file_absent "no violation for plain rewrite" "$M"
-yes_t "double-wrap: rtk rewritten with marker" dw "$LEAN" "rtk ls SB_LEANCTX_SHELL=1"
+yes_t "double-wrap: rtk rewritten with marker" dw "$LEAN" "rtk lean-ctx shell ls"
 assert_eq "double-wrap violation logged" "leanctx" "$(jq -r '.violations[0].attempted' "$M")"
 rm -f "$M"
 yes_t "double-wrap: marker with rtk incumbent" dw "$LEAN" "lctx_shell ls"
+rm -f "$M"
+no_t "double-wrap: a mention of the marker is not a wrapper (R5-13)" dw "$LEAN" "grep -rn lctx_shell docs/"
+assert_file_absent "a mention records no violation" "$M"
+sb_stack_record_surface_owner "$LEAN" sb_shell rtk; dw "$LEAN" "lctx_shell ls" || true
 assert_eq "double-wrap marker violation logged" "rtk" "$(jq -r '.violations[0].incumbent' "$M")"
 rm -f "$M" "$S"
 no_t "double-wrap: marker without incumbent" dw "$LEAN" "lctx_shell ls"
@@ -271,7 +298,7 @@ no_t "compliant: coordinator not needed" cro "$ONE" Bash
 rm -f "$S" "$M"
 assert_eq "compliant bash" "sb_shell rtk" "$(cro "$LEAN" Bash "" "" "ls")"
 assert_eq "compliant exec_command" "sb_shell rtk" "$(cro "$LEAN" exec_command "" "" "ls")"
-no_t "compliant: bash double wrap" cro "$LEAN" Bash "" "" "rtk ls SB_LEANCTX_SHELL=1"
+no_t "compliant: bash double wrap" cro "$LEAN" Bash "" "" "rtk lean-ctx shell ls"
 rm -f "$M" "$S"
 assert_eq "compliant bash (profile without explicit shell route)" "sb_shell rtk" "$(cro "$TL_TMP/lean-partial.json" Bash "" "" "ls")"
 (
@@ -289,29 +316,6 @@ assert_eq "compliant mcp ctx_search" "sb_slice context_mode" "$(cro "$LEAN" MCP 
 no_t "compliant: other tool" cro "$LEAN" Read
 # shell route without an owner: leanctx profile that has no sb_shell and legacy default exists -> use failing jq to force empty owner is not possible; covered by default owner
 
-# ---------- lifecycle ----------
-L="$(sb_stack_lifecycle_state_path)"
-no_t "lifecycle_mark needs phase" sb_stack_lifecycle_mark ""
-sb_stack_lifecycle_mark context_mode_precompact
-assert_eq "lifecycle mark writes epoch" "1700000000" "$(cat "$L.context_mode_precompact")"
-no_t "phase epoch missing" sb_stack_lifecycle_phase_epoch agentmemory_snapshot
-assert_eq "phase epoch value" "1700000000" "$(sb_stack_lifecycle_phase_epoch context_mode_precompact)"
-assert_eq "phase epoch custom state path" "42" "$(printf '42\n' >"$TL_TMP/lc.x"; sb_stack_lifecycle_phase_epoch x "$TL_TMP/lc")"
-yes_t "order ok with missing phases" sb_stack_lifecycle_order_ok
-printf '10\n' >"$L.context_mode_precompact"; printf '20\n' >"$L.agentmemory_snapshot"; printf '30\n' >"$L.leanctx_compact"
-yes_t "order ok ascending" sb_stack_lifecycle_order_ok
-printf '20\n' >"$L.leanctx_compact"
-yes_t "order ok equal" sb_stack_lifecycle_order_ok
-printf '15\n' >"$L.leanctx_compact"
-no_t "order wrong (am after lc)" sb_stack_lifecycle_order_ok
-printf '30\n' >"$L.leanctx_compact"; printf '5\n' >"$L.agentmemory_snapshot"
-no_t "order wrong (cm after am)" sb_stack_lifecycle_order_ok
-chmod -R u+w "$SB_RUNTIME_STATE_DIR"
-rm -f "$L".*
-mkdir "$L.context_mode_precompact"
-no_t "lifecycle_mark fails when target is a directory" sb_stack_lifecycle_mark context_mode_precompact
-rmdir "$L.context_mode_precompact"
-
 # ---------- fault injection: failing helpers / unwritable state ----------
 # A state dir that is really a file makes every mkdir -p and state write fail.
 BADDIR="$TL_TMP/not-a-dir"; printf 'file' >"$BADDIR"
@@ -319,13 +323,27 @@ BADDIR="$TL_TMP/not-a-dir"; printf 'file' >"$BADDIR"
   export SB_RUNTIME_STATE_DIR="$BADDIR/state"
   sb_stack_record_surface_owner "$LEAN" sb_shell rtk && exit 1
   sb_stack_record_double_compression "$LEAN" sb_shell a b && exit 2
-  sb_stack_lifecycle_mark context_mode_precompact && exit 3
   exit 0
 ) && tl_pass "unwritable state dir makes writers fail" || tl_fail "unwritable state dir makes writers fail (exit $?)"
 rm -rf "$M"; mkdir -p "$M/sub"
 sb_stack_clear_mutex_violations "$LEAN"
 assert_eq "clear_mutex tolerates rm failure (still a directory)" "yes" "$([[ -d "$M/sub" ]] && echo yes || echo no)"
 rm -rf "$M"
+# clearing: this session only, every session of the project (no session), or everything (no config)
+SB_STACK_SESSION="s-a"; sb_stack_record_double_compression "$LEAN" sb_shell a b
+SB_STACK_SESSION="s-b"; sb_stack_record_double_compression "$LEAN" sb_shell a b
+SB_STACK_SESSION="s-a"; sb_stack_clear_mutex_violations "$LEAN"
+SB_STACK_SESSION="s-b"; no_t "clearing one session leaves the other session's violation" sb_stack_mutual_exclusion_is_clean "$LEAN"
+SB_STACK_SESSION="s-a"; yes_t "the cleared session is clean" sb_stack_mutual_exclusion_is_clean "$LEAN"
+SB_STACK_SESSION=""; no_t "with no session, any session's violation counts" sb_stack_mutual_exclusion_is_clean "$LEAN"
+sb_stack_clear_mutex_violations "$LEAN"
+yes_t "clearing without a session clears the project" sb_stack_mutual_exclusion_is_clean "$LEAN"
+SB_STACK_SESSION="s-a"; sb_stack_record_double_compression "$LEAN" sb_shell a b
+SB_STACK_SESSION=""; sb_stack_clear_mutex_violations
+yes_t "clearing without a config clears every project" sb_stack_mutual_exclusion_is_clean "$LEAN"
+printf 'garbage' >"$(sb_stack_mutex_state_path "$LEAN")"
+yes_t "a corrupt mutex file counts as clean" sb_stack_mutual_exclusion_is_clean "$LEAN"
+rm -f "$(sb_stack_mutex_state_path "$LEAN")"
 (
   sb_stack_mcp_tool_route() { return 1; }
   cro "$LEAN" MCP srv lctx_read_ast >/dev/null && exit 1
@@ -342,57 +360,38 @@ rm -rf "$M"
   exit 0
 ) && tl_pass "owner lookup failure handled" || tl_fail "owner lookup failure (exit $?)"
 (
-  sb_shell_command_unwrap_rtk() { return 1; }
-  sb_stack_bash_rtk_rewritten "rtk ls" && exit 1
-  exit 0
-) && tl_pass "unwrap failure means not rewritten" || tl_fail "unwrap failure means not rewritten"
-(
   sb_stack_surface_owner() { return 1; }
   sb_stack_read_deny_defer_to_leanctx "$LEAN" && exit 1
   exit 0
 ) && tl_pass "surface owner failure means no defer" || tl_fail "surface owner failure means no defer"
-(
-  # generic lctx_* handling for routes other than sb_read (route table arms)
-  sb_stack_mcp_tool_route() { printf '%s' "${FAKE_ROUTE:-}"; }
-  fake() { FAKE_ROUTE="$1" sb_stack_should_deny_mcp_tool "$2" srv lctx_read_ast; }
-  mk "$TL_TMP/f1.json" sb_slice context_mode;  fake sb_slice "$TL_TMP/f1.json" || exit 1
-  mk "$TL_TMP/f2.json" sb_grep context_mode;   fake sb_grep "$TL_TMP/f2.json" || exit 2
-  mk "$TL_TMP/f3.json" sb_shell rtk;           fake sb_shell "$TL_TMP/f3.json" || exit 3
-  mk "$TL_TMP/f4.json" sb_webfetch context_mode; fake sb_webfetch "$TL_TMP/f4.json" || exit 4
-  mk "$TL_TMP/f5.json" sb_graph graphify;      fake sb_graph "$TL_TMP/f5.json" || exit 5
-  mk "$TL_TMP/f6.json" sb_remember agentmemory; fake sb_remember "$TL_TMP/f6.json" || exit 6
-  mk "$TL_TMP/f7.json" sb_slice rtk;           fake sb_slice "$TL_TMP/f7.json" && exit 7
-  exit 0
-) && tl_pass "generic lctx_* tool denied on routes owned by another tool" || tl_fail "generic lctx_* route arms (exit $?)"
-rm -f "$L".*
-yes_t "lifecycle order ok with no phase files" sb_stack_lifecycle_order_ok
 
 # ================= token-compression-tools-gate =================
 TC="$TL_TMP/tc.json"
 printf '{"recommended_tools":{"rtk":{"enabled_by_user":true,"install_status":"installed","cli_command":"mycli","usage_ttl_seconds":120,"usage_state_file":"~/custom-usage"}}}' >"$TC"
-assert_eq "cli_command configured" "mycli" "$(sb_token_tool_cli_command "$TC" rtk)"
+assert_eq "cli_command: a project value is never used" "rtk" "$(sb_token_tool_cli_command "$TC" rtk)"
 assert_eq "cli_command defaults to id" "other" "$(sb_token_tool_cli_command "$TC" other)"
+assert_eq "cli_command of context_mode" "context-mode" "$(sb_token_tool_cli_command "$TC" context_mode)"
 assert_eq "ttl configured" "120" "$(sb_token_tool_usage_ttl_seconds "$TC" rtk)"
 assert_eq "ttl default" "1800" "$(sb_token_tool_usage_ttl_seconds "$TC" other)"
 printf '{"recommended_tools":{"rtk":{"usage_ttl_seconds":30}}}' >"$TL_TMP/tc-low.json"
 assert_eq "ttl below floor uses default" "1800" "$(sb_token_tool_usage_ttl_seconds "$TL_TMP/tc-low.json" rtk)"
 printf '{"recommended_tools":{"rtk":{"usage_ttl_seconds":"abc"}}}' >"$TL_TMP/tc-nan.json"
 assert_eq "ttl non numeric uses default" "1800" "$(sb_token_tool_usage_ttl_seconds "$TL_TMP/tc-nan.json" rtk)"
-assert_eq "state path ~ expanded" "$HOME/custom-usage" "$(sb_token_tool_usage_state_path "$TC" rtk)"
+assert_eq "state path outside the state dir is ignored" "$SB_RUNTIME_STATE_DIR/rtk-usage" "$(sb_token_tool_usage_state_path "$TC" rtk)"
 assert_eq "state path default" "$SB_RUNTIME_STATE_DIR/other-usage" "$(sb_token_tool_usage_state_path "$TC" other)"
-assert_eq "state path default without runtime dir" "$HOME/.cursor/.silver-bullet/other-usage" "$(env -u SB_RUNTIME_STATE_DIR bash -c 'source "$1"; sb_token_tool_usage_state_path "$2" other' _ "$TL_REPO_ROOT/hooks/lib/token-compression-tools-gate.sh" "$TC")"
+assert_eq "state path default without runtime dir" "$HOME/.silver-bullet/other-usage" "$(env -u SB_RUNTIME_STATE_DIR bash -c 'source "$1"; sb_token_tool_usage_state_path "$2" other' _ "$TL_REPO_ROOT/hooks/lib/token-compression-tools-gate.sh" "$TC")"
 yes_t "install_ready" sb_token_tool_install_ready "$TC" rtk
 no_t "install_ready false" sb_token_tool_install_ready "$TC" other
 yes_t "enforced" sb_token_tool_enforced "$TC" rtk
 printf '{"recommended_tools":{"rtk":{"enabled_by_user":true}}}' >"$TL_TMP/tc-noinst.json"
 no_t "enforced requires install_status" sb_token_tool_enforced "$TL_TMP/tc-noinst.json" rtk
 no_t "enforced requires consent" sb_token_tool_enforced "$TC" other
-tl_stub mycli 'exit 0'
+tl_stub rtk 'exit 0'
 hash -r
 yes_t "cli_available" sb_token_tool_cli_available "$TC" rtk
 no_t "cli_available missing" sb_token_tool_cli_available "$TC" other_missing_cli
 
-US="$HOME/custom-usage"
+US="$SB_RUNTIME_STATE_DIR/rtk-usage"
 no_t "usage not fresh without file" sb_token_tool_usage_is_fresh "$TC" rtk
 tl_stub date 'echo 1000'
 hash -r
@@ -409,8 +408,8 @@ no_t "usage in the future is not fresh" sb_token_tool_usage_is_fresh "$TC" rtk
 rm -f "$US"
 sb_token_tool_record_usage "$TC" rtk
 assert_eq "record_usage writes epoch" "1000" "$(cat "$US")"
-mkdir -p "$TL_TMP/dirstate"
-printf '{"recommended_tools":{"rtk":{"usage_state_file":"%s"}}}' "$TL_TMP/dirstate" >"$TL_TMP/tc-dir.json"
+mkdir -p "$SB_RUNTIME_STATE_DIR/dirstate"
+printf '{"recommended_tools":{"rtk":{"usage_state_file":"%s"}}}' "$SB_RUNTIME_STATE_DIR/dirstate" >"$TL_TMP/tc-dir.json"
 no_t "record_usage fails when target is a directory" sb_token_tool_record_usage "$TL_TMP/tc-dir.json" rtk
 (
   export SB_RUNTIME_STATE_DIR="$BADDIR/state"
@@ -418,38 +417,32 @@ no_t "record_usage fails when target is a directory" sb_token_tool_record_usage 
   sb_token_tool_record_usage "$TL_TMP/tc-plain.json" rtk && exit 1
   exit 0
 ) && tl_pass "record_usage fails when state dir cannot be created" || tl_fail "record_usage fails when state dir cannot be created"
-printf '900\n' >"$US"
-tl_stub tr 'exit 1'
-hash -r
-no_t "usage not fresh when state unreadable" sb_token_tool_usage_is_fresh "$TC" rtk
-rm -f "$TL_BIN/tr"; hash -r
 yes_t "match: cli word" sb_token_tool_command_matches "mycli run" rtk mycli
 yes_t "match: path prefix" sb_token_tool_command_matches "/usr/bin/mycli" rtk mycli
+yes_t "match: behind env and assignments" sb_token_tool_command_matches "env A=1 mycli run" rtk mycli
 no_t "match: different cli" sb_token_tool_command_matches "othercli run" rtk mycli
+no_t "match: a mention in another program's arguments" sb_token_tool_command_matches "echo mycli run" rtk mycli
+no_t "match: later in a list" sb_token_tool_command_matches "true; mycli run" rtk mycli
 no_t "match: empty command" sb_token_tool_command_matches "" rtk mycli
 no_t "match: empty cli" sb_token_tool_command_matches "mycli" rtk ""
 m="$(sb_token_tool_block_message "$TC" rtk)"
-assert_contains "block message names tool" "$m" "RTK USAGE REQUIRED — run mycli"
+assert_contains "block message names tool" "$m" "RTK USAGE REQUIRED — run rtk"
 assert_contains "block message ttl" "$m" "every 120s"
 assert_contains "mutual exclusion message uses coordinator" "$(sb_token_compression_mutual_exclusion_block_message)" "sb_stack_double_compression"
-(
-  unset -f sb_stack_mutual_exclusion_block_message
-  [[ "$(sb_token_compression_mutual_exclusion_block_message)" == *"double-compression detected."* ]]
-) && tl_pass "mutual exclusion message fallback" || tl_fail "mutual exclusion message fallback"
 
 # prompt reminder
-printf '{}' >"$TL_TMP/tc-pending.json"
-assert_contains "reminder pending" "$(sb_token_tool_prompt_reminder_line "$TL_TMP/tc-pending.json" rtk)" "consent pending"
+printf '{"recommended_tools":{"rtk":{"enabled_by_user":true}}}' >"$TL_TMP/tc-pending.json"
+assert_contains "reminder pending (a project recommendation is not consent)" "$(XDG_CONFIG_HOME="$TL_TMP/none" sb_token_tool_prompt_reminder_line "$TL_TMP/tc-pending.json" rtk)" "consent pending"
 printf '{"recommended_tools":{"rtk":{"enabled_by_user":false}}}' >"$TL_TMP/tc-off.json"
 assert_contains "reminder opted out" "$(sb_token_tool_prompt_reminder_line "$TL_TMP/tc-off.json" rtk)" "opted out"
 printf '{"recommended_tools":{"rtk":{"enabled_by_user":true,"enforcement_suspended":true}}}' >"$TL_TMP/tc-susp.json"
 assert_contains "reminder suspended" "$(sb_token_tool_prompt_reminder_line "$TL_TMP/tc-susp.json" rtk)" "enforcement suspended"
 assert_contains "reminder install pending" "$(sb_token_tool_prompt_reminder_line "$TL_TMP/tc-noinst.json" rtk)" "install_status not installed yet"
-printf '{"recommended_tools":{"rtk":{"enabled_by_user":true,"install_status":"installed","cli_command":"nonexistent-cli-xyz"}}}' >"$TL_TMP/tc-nocli.json"
-assert_contains "reminder cli missing" "$(sb_token_tool_prompt_reminder_line "$TL_TMP/tc-nocli.json" rtk)" "CLI \`nonexistent-cli-xyz\` missing"
+printf '{"recommended_tools":{"rtk":{"enabled_by_user":true,"install_status":"installed"}}}' >"$TL_TMP/tc-nocli.json"
+assert_contains "reminder cli missing" "$(PATH="$(tl_path_without rtk)" sb_token_tool_prompt_reminder_line "$TL_TMP/tc-nocli.json" rtk)" "CLI \`rtk\` missing"
 printf '900\n' >"$US"
 assert_contains "reminder fresh" "$(sb_token_tool_prompt_reminder_line "$TC" rtk)" "fresh usage recorded"
 printf '1\n' >"$US"
-assert_contains "reminder stale" "$(sb_token_tool_prompt_reminder_line "$TC" rtk)" "USAGE REQUIRED — run \`mycli\` before substantive work (TTL 120s)"
+assert_contains "reminder stale" "$(sb_token_tool_prompt_reminder_line "$TC" rtk)" "USAGE REQUIRED — run \`rtk\` before substantive work (TTL 120s)"
 
 tl_results

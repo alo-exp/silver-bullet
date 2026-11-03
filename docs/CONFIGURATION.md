@@ -79,11 +79,11 @@ Common fields:
 
 | Field | Meaning |
 |-------|---------|
-| `enabled_by_user` | `null` = consent pending (advisory), `true` = opted in (gates enforce), `false` = opted out |
+| `enabled_by_user` | `null` = no preference, `true` = the project recommends the tool, `false` = the project turns it off. Never consent: consent is per user ([CONSENT.md](CONSENT.md)) |
 | `enforcement_suspended` | `true` after a failed install, so the gate stays advisory |
 | `install_status`, `install_failure_reason` | Written by the installers and reconciler |
 | `required_when_enabled` | Whether an opted-in tool is mandatory (all but `search_cli`) |
-| `install_commands`, `platform_install_commands.<host>.pre_index` / `post_index` | Install steps per host (`claude`, `codex`, `cursor`, `opencode`, `pi`, `goose`, `hermes`) |
+| `install_commands`, `platform_install_commands` | Ignored (repository content is never run or shown as an instruction); install steps come from the built-in tables in `hooks/lib/recommended-tools.sh` |
 | `benefits_summary` | Text shown when asking for consent |
 
 Tool-specific fields:

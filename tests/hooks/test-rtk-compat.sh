@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Tests for hooks/lib/rtk-compat.sh
 set -euo pipefail
+# The opt-in gates act only on the user's own consent, never on .silver-bullet.json alone.
+# shellcheck source=../lib/consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/consent-helpers.sh"
+sb_test_consent_grant_all
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 COMPAT_LIB="$REPO_ROOT/hooks/lib/rtk-compat.sh"

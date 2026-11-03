@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Behavior tests for hooks/lib/alumnium-gate.sh (npm/npx are stubbed)
 set -euo pipefail
+# The opt-in gates act only on the user's own consent, never on .silver-bullet.json alone.
+# shellcheck source=../lib/consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/consent-helpers.sh"
+sb_test_consent_grant_all
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init claude
 unset SB_ALUMNIUM_MCP_ARTIFACT
@@ -26,16 +30,13 @@ assert_eq "mcp name default when unset" "alumnium" "$(sb_alumnium_mcp_server_nam
 w 'garbage'
 assert_eq "mcp name default on invalid json" "alumnium" "$(sb_alumnium_mcp_server_name "$CFG")"
 
-# npx availability: needs npx on PATH and a successful `npm view`
+# npx availability: npx on PATH is enough; the npm registry is never queried
 no_t "npx missing" env PATH="$(tl_path_without npx)" bash -c 'source "$1"; sb_alumnium_npx_available' _ "$LIBF"
 tl_stub npx 'exit 0'
-tl_stub npm 'echo "$@" >>"'"$TL_TMP"'/npm.log"; exit "${NPM_RC:-0}"'
+tl_stub npm 'echo "$@" >>"'"$TL_TMP"'/npm.log"; exit 1'
 hash -r
-NPM_RC=0 yes_t "npx available when npm view succeeds" sb_alumnium_npx_available
-assert_eq "npm view called for alumnium" "view alumnium version" "$(tail -1 "$TL_TMP/npm.log")"
-export NPM_RC=1
-no_t "npx unavailable when npm view fails" sb_alumnium_npx_available
-unset NPM_RC
+yes_t "npx available without any registry query" sb_alumnium_npx_available
+[[ ! -e "$TL_TMP/npm.log" ]] && tl_pass "npm is not run" || tl_fail "npm is not run"
 
 # artifact path
 export SB_ALUMNIUM_MCP_ARTIFACT=/ovr
@@ -69,22 +70,32 @@ for p in /p/.silver-bullet.json /p/SETUP_REPORT.md /p/silver-bullet.md /p/CLAUDE
   yes_t "edit exempt $p" sb_alumnium_edit_path_is_exempt "$p"
 done
 no_t "edit not exempt" sb_alumnium_edit_path_is_exempt /p/src/a.ts
+no_t "edit exempt: dotdot does not escape into an exempt name" sb_alumnium_edit_path_is_exempt /p/src/../x.ts
 
 # browser path detection
 no_t "browser empty" sb_alumnium_edit_path_requires_browser ""
-for p in /p/a.canvas.tsx /p/e2e/login.ts /p/playwright/x.js /p/__screenshots__/a.png /p/screenshots/a.png /p/visual-regression/a.ts /p/tests/login.spec.ts /p/tests/Login.SPEC.js /p/my-screenshot-helper.py /p/cypress.config.ts /p/puppeteer-run.js /p/browser-test.sh; do
+for p in /p/a.canvas.tsx /p/e2e/login.ts /p/playwright/x.js /p/__screenshots__/a.png /p/screenshots/a.png /p/visual-regression/a.ts /p/tests/login.cy.ts /p/tests/login.e2e.js /p/my-screenshot-helper.py /p/cypress.config.ts /p/puppeteer-run.js /p/browser-test.sh; do
   yes_t "browser path $p" sb_alumnium_edit_path_requires_browser "$p"
 done
 no_t "browser path unrelated" sb_alumnium_edit_path_requires_browser /p/src/util.ts
+no_t "unit spec is not a browser path" sb_alumnium_edit_path_requires_browser /p/tests/util.spec.ts
 
-# command exemptions
+# command exemptions: only provably read-only commands and alumnium's own CLI are exempt
 yes_t "cmd exempt empty" sb_alumnium_command_is_exempt ""
 yes_t "cmd exempt alumnium" sb_alumnium_command_is_exempt "alumnium run"
-yes_t "cmd exempt Alumnium case" sb_alumnium_command_is_exempt "/x/ALUMNIUM go"
-yes_t "cmd exempt npx -y" sb_alumnium_command_is_exempt "npx -y alumnium-mcp"
-yes_t "cmd exempt npm" sb_alumnium_command_is_exempt "npm test"
 yes_t "cmd exempt cat" sb_alumnium_command_is_exempt "cat f"
+no_t "cmd not exempt: alumnium mentioned in a pipeline" sb_alumnium_command_is_exempt "echo alumnium; rm -rf x"
+no_t "cmd not exempt: npm install" sb_alumnium_command_is_exempt "npm install left-pad"
 no_t "cmd not exempt" sb_alumnium_command_is_exempt "git commit -m x"
+
+# which shell commands are browser work
+no_t "requires browser: empty" sb_alumnium_command_requires_browser ""
+no_t "requires browser: read-only" sb_alumnium_command_requires_browser "cat playwright.config.ts"
+no_t "requires browser: commit" sb_alumnium_command_requires_browser "git commit -m x"
+yes_t "requires browser: playwright run" sb_alumnium_command_requires_browser "npx playwright test"
+yes_t "requires browser: cypress run" sb_alumnium_command_requires_browser "cypress run"
+yes_t "requires browser: writes a browser test" sb_alumnium_command_requires_browser "cp a.ts e2e/login.ts"
+no_t "requires browser: writes a source file" sb_alumnium_command_requires_browser "cp a.ts src/login.ts"
 
 # messages
 w '{}'
@@ -92,15 +103,14 @@ m="$(SILVER_BULLET_RUNTIME=claude sb_alumnium_block_message_no_mcp "$CFG")"
 assert_contains "no_mcp header" "$m" "ALUMNIUM REQUIRED"
 assert_contains "no_mcp host" "$m" "host: claude"
 assert_contains "no_mcp provider key hint" "$m" "OPENAI_API_KEY"
-(
-  sb_recommended_tool_full_install_lines() { return 1; }
-  [[ "$(SILVER_BULLET_RUNTIME=claude sb_alumnium_block_message_no_mcp "$CFG")" == *"ALUMNIUM REQUIRED"* ]]
-) && tl_pass "no_mcp survives install-lines failure" || tl_fail "no_mcp survives install-lines failure"
+assert_contains "no_mcp declines through the consent CLI" "$m" "sb-consent.sh"
+assert_contains "no_npx header" "$(sb_alumnium_block_message_no_npx)" "npx is not on PATH"
 
 # prompt reminder
 RC="$PR/.silver-bullet.json"
 rem() { SILVER_BULLET_RUNTIME=claude sb_alumnium_prompt_reminder_line "$RC"; }
-printf '{}' >"$RC"; assert_contains "reminder pending" "$(rem)" "consent pending"
+printf '{"recommended_tools":{"alumnium":{"enabled_by_user":true}}}' >"$RC"
+assert_contains "reminder pending (a project recommendation is not consent)" "$(XDG_CONFIG_HOME="$TL_TMP/none" rem)" "consent pending"
 printf '{"recommended_tools":{"alumnium":{"enabled_by_user":false}}}' >"$RC"; assert_contains "reminder disabled" "$(rem)" "opted out"
 printf '{"recommended_tools":{"alumnium":{"enabled_by_user":true}}}' >"$RC"
 export SB_ALUMNIUM_MCP_ARTIFACT="$AF"

@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Behavior tests for hooks/lib/leanctx-gate.sh (lean-ctx CLI is stubbed)
 set -euo pipefail
+# The opt-in gates act only on the user's own consent, never on .silver-bullet.json alone.
+# shellcheck source=../lib/consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/consent-helpers.sh"
+sb_test_consent_grant_all
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init claude
 unset SB_LEANCTX_MCP_ARTIFACT SB_GLOBAL_TOOLSTACK_MANIFEST SB_GLOBAL_TOOLSTACK_HOME
@@ -21,7 +25,7 @@ PR="$TL_TMP/proj"; mkdir -p "$PR"
 w '{"recommended_tools":{"leanctx":{"enabled_by_user":true,"cli_command":"myctx"}}}'
 yes_t "required" sb_leanctx_required "$CFG"
 no_t "not required without config" sb_leanctx_required ""
-assert_eq "cli command configured" "myctx" "$(sb_leanctx_cli_command "$CFG")"
+assert_eq "cli command: the project file cannot change it" "lean-ctx" "$(sb_leanctx_cli_command "$CFG")"
 assert_eq "cli command default" "lean-ctx" "$(sb_leanctx_cli_command)"
 w '{}'
 assert_eq "cli command default for config without key" "lean-ctx" "$(sb_leanctx_cli_command "$CFG")"
@@ -37,12 +41,12 @@ tl_stub lean-ctx 'exit 0'; tl_stub myctx 'exit 0'; hash -r
 assert_eq "cli_path from PATH" "$TL_BIN/lean-ctx" "$(sb_leanctx_cli_path)"
 yes_t "cli_available" sb_leanctx_cli_available
 w '{"recommended_tools":{"leanctx":{"cli_command":"myctx"}}}'
-assert_eq "cli_path honors configured command" "$TL_BIN/myctx" "$(sb_leanctx_cli_path "$CFG")"
+assert_eq "cli_path ignores a configured command" "$TL_BIN/lean-ctx" "$(sb_leanctx_cli_path "$CFG")"
 OTHER="$TL_TMP/manifest-lc"; printf '#!/bin/sh\n' >"$OTHER"; chmod +x "$OTHER"
 export SB_GLOBAL_TOOLSTACK_MANIFEST="$TL_TMP/manifest.json"
 jq -n --arg c "$OTHER" '{tools:{leanctx:{command:$c}}}' >"$SB_GLOBAL_TOOLSTACK_MANIFEST"
 assert_eq "cli_path from manifest for default command" "$OTHER" "$(sb_leanctx_cli_path)"
-assert_eq "cli_path ignores manifest for custom command" "$TL_BIN/myctx" "$(sb_leanctx_cli_path "$CFG")"
+assert_eq "cli_path from manifest regardless of the project file" "$OTHER" "$(sb_leanctx_cli_path "$CFG")"
 unset SB_GLOBAL_TOOLSTACK_MANIFEST
 
 # ---------- platform artifact ----------
@@ -65,30 +69,6 @@ printf '{"x":"leanctx"}' >"$AF"; yes_t "artifact present leanctx" sb_leanctx_pla
 rm -f "$AF"; ln -s "$TL_TMP/tgt" "$AF"; printf 'leanctx' >"$TL_TMP/tgt"
 no_t "artifact present refuses symlink" sb_leanctx_platform_artifact_present "$PR" claude
 rm -f "$AF"; unset SB_LEANCTX_MCP_ARTIFACT
-
-# ---------- hooks present ----------
-hp() { sb_leanctx_hooks_present "$@"; }
-no_t "hooks cursor missing" hp cursor
-mkdir -p "$HOME/.cursor"; printf 'nothing' >"$HOME/.cursor/hooks.json"
-no_t "hooks cursor no marker" hp cursor
-printf 'lean-ctx' >"$HOME/.cursor/hooks.json"; yes_t "hooks cursor" hp cursor
-no_t "hooks codex missing" env CODEX_HOME="$TL_TMP/ch" bash -c 'source "$1"; sb_leanctx_hooks_present codex' _ "$LIBF"
-mkdir -p "$TL_TMP/ch"; printf 'leanctx' >"$TL_TMP/ch/hooks.json"
-yes_t "hooks codex" env CODEX_HOME="$TL_TMP/ch" bash -c 'source "$1"; sb_leanctx_hooks_present codex' _ "$LIBF"
-yes_t "hooks codex default dir" bash -c 'source "$1"; unset CODEX_HOME; mkdir -p "$HOME/.codex"; echo leanctx >"$HOME/.codex/hooks.json"; sb_leanctx_hooks_present codex' _ "$LIBF"
-no_t "hooks claude missing" hp claude
-mkdir -p "$HOME/.claude"; printf 'nothing' >"$HOME/.claude/settings.json"
-no_t "hooks claude no marker" hp claude
-printf 'lean-ctx' >"$HOME/.claude/settings.json"; yes_t "hooks claude" hp claude
-export SB_LEANCTX_MCP_ARTIFACT="$AF"
-no_t "hooks opencode missing" hp opencode
-printf 'lean-ctx' >"$AF"
-yes_t "hooks opencode" hp opencode
-yes_t "hooks pi" hp pi
-printf 'nothing' >"$AF"; no_t "hooks pi no marker" hp pi
-unset SB_LEANCTX_MCP_ARTIFACT
-yes_t "hooks unknown host permissive" hp hermes
-yes_t "hooks default host (claude)" env SILVER_BULLET_RUNTIME=claude bash -c 'source "$1"; sb_leanctx_hooks_present' _ "$LIBF"
 
 # ---------- usage ttl / state ----------
 w '{"recommended_tools":{"leanctx":{"usage_ttl_seconds":120}}}'
@@ -115,22 +95,13 @@ w '{"recommended_tools":{"leanctx":{"usage_state_file":"/tmp/outside/x"}}}'
 assert_eq "state outside scope rejected" "$DEF" "$(sb_leanctx_usage_state_path "$CFG")"
 w '{"recommended_tools":{"leanctx":{"usage_state_file":"~/outside"}}}'
 assert_eq "state ~ outside scope rejected" "$DEF" "$(sb_leanctx_usage_state_path "$CFG")"
-assert_eq "state fallbacks without runtime vars" "$HOME/.silver-bullet/leanctx-usage" "$(env -u SB_RUNTIME_STATE_DIR -u SB_RUNTIME_HOME_ROOT bash -c 'source "$1"; unset -f sb_runtime_path_is_state_scoped; sb_leanctx_usage_state_path' _ "$LIBF")"
+assert_eq "state fallbacks without runtime vars" "$HOME/.silver-bullet/leanctx-usage" "$(env -u SB_RUNTIME_STATE_DIR -u SB_RUNTIME_HOME_ROOT bash -c 'source "$1"; sb_leanctx_usage_state_path' _ "$LIBF")"
 w '{"recommended_tools":{"leanctx":{"usage_state_file":"${SB_RUNTIME_STATE_DIR}/a"}}}'
-assert_eq "state STATE_DIR placeholder fallback" "$HOME/.cursor/.silver-bullet/a" "$(env -u SB_RUNTIME_STATE_DIR -u SB_RUNTIME_HOME_ROOT bash -c 'source "$1"; unset -f sb_runtime_path_is_state_scoped; sb_leanctx_usage_state_path "$2"' _ "$LIBF" "$CFG")"
+assert_eq "state STATE_DIR placeholder fallback" "$HOME/.silver-bullet/a" "$(env -u SB_RUNTIME_STATE_DIR -u SB_RUNTIME_HOME_ROOT bash -c 'source "$1"; sb_leanctx_usage_state_path "$2"' _ "$LIBF" "$CFG")"
 w '{"recommended_tools":{"leanctx":{"usage_state_file":"${SB_RUNTIME_HOME_ROOT}/b"}}}'
-assert_eq "state HOME_ROOT placeholder fallback" "$HOME/.cursor/b" "$(env -u SB_RUNTIME_STATE_DIR -u SB_RUNTIME_HOME_ROOT bash -c 'source "$1"; unset -f sb_runtime_path_is_state_scoped; sb_leanctx_usage_state_path "$2"' _ "$LIBF" "$CFG")"
+assert_eq "state HOME_ROOT placeholder without a runtime home is rejected" "$HOME/.silver-bullet/leanctx-usage" "$(env -u SB_RUNTIME_STATE_DIR -u SB_RUNTIME_HOME_ROOT bash -c 'source "$1"; sb_leanctx_usage_state_path "$2"' _ "$LIBF" "$CFG")"
 
 U="$DEF"
-no_t "epoch missing" sb_leanctx_usage_epoch "$U"
-printf 'x\n' >"$U"; no_t "epoch non-numeric" sb_leanctx_usage_epoch "$U"
-printf '31\nmore\n' >"$U"; assert_eq "epoch first line" "31" "$(sb_leanctx_usage_epoch "$U")"
-tl_stub sed 'exit 1'; hash -r
-no_t "epoch unreadable" sb_leanctx_usage_epoch "$U"
-rm -f "$TL_BIN/sed" "$U"; hash -r
-ln -s "$TL_TMP/tgt" "$U"; printf '5\n' >"$TL_TMP/tgt"
-no_t "epoch symlink refused" sb_leanctx_usage_epoch "$U"
-rm -f "$U"
 
 w '{}'
 no_t "not fresh without state" sb_leanctx_usage_is_fresh "$CFG"
@@ -148,11 +119,13 @@ sb_leanctx_clear_usage_state "$CFG"; tl_pass "clear idempotent"
 mkdir -p "$U/child"; sb_leanctx_clear_usage_state "$CFG"
 assert_eq "clear tolerates rm failure" "yes" "$([[ -d "$U/child" ]] && echo yes || echo no)"; rm -rf "$U"
 mkdir -p "$U"; no_t "record fails when path is a directory" sb_leanctx_record_usage "$CFG"; rmdir "$U"
-( ln -s "$TL_TMP/tgt" "$U"; sb_leanctx_record_usage "$CFG" ) 2>"$TL_TMP/err" && tl_fail "record refuses symlink" || tl_pass "record refuses symlink"
-assert_contains "symlink refusal message" "$(cat "$TL_TMP/err")" "refusing to write through symlink"
+printf 'precious\n' >"$TL_TMP/tgt"; ln -s "$TL_TMP/tgt" "$U"
+sb_leanctx_record_usage "$CFG"
+assert_eq "record never writes through a symlink" "precious" "$(cat "$TL_TMP/tgt")"
+if [[ -f "$U" && ! -L "$U" ]]; then tl_pass "record replaces the symlink with a regular file"; else tl_fail "record replaces the symlink with a regular file"; fi
+rm -f "$U"; ln -s "$TL_TMP/tgt" "$U"; printf '9999\n' >"$TL_TMP/tgt"
+no_t "a symlinked stamp is never fresh" sb_leanctx_usage_is_fresh "$CFG"
 rm -f "$U"
-( unset -f sb_guard_nofollow; sb_leanctx_record_usage "$CFG" ) && tl_pass "record without nofollow helper" || tl_fail "record without nofollow helper"
-assert_eq "record without helper wrote epoch" "10000" "$(cat "$U")"
 rm -f "$U" "$TL_BIN/date"; hash -r
 BADF="$TL_TMP/badfile"; printf x >"$BADF"
 (
@@ -170,13 +143,16 @@ no_t "edit not exempt" sb_leanctx_edit_path_is_exempt /p/src/a.py "$CFG"
 yes_t "cmd exempt empty" sb_leanctx_command_is_exempt ""
 yes_t "cmd exempt lean-ctx" sb_leanctx_command_is_exempt "lean-ctx status"
 yes_t "cmd exempt leanctx path" sb_leanctx_command_is_exempt "/x/leanctx doctor"
-yes_t "cmd exempt installer" sb_leanctx_command_is_exempt "bash scripts/install-leanctx-sb.sh"
-yes_t "cmd exempt optimizer" sb_leanctx_command_is_exempt "bash scripts/optimize-five-tool-stack.sh"
-yes_t "cmd exempt curl" sb_leanctx_command_is_exempt "curl -fsSL x"
+yes_t "cmd exempt the plugin's installer" sb_leanctx_command_is_exempt "bash $TL_REPO_ROOT/scripts/install-leanctx-sb.sh --host claude"
+no_t "cmd not exempt: a project-relative installer" sb_leanctx_command_is_exempt "bash scripts/install-leanctx-sb.sh"
+no_t "cmd not exempt: curl" sb_leanctx_command_is_exempt "curl -fsSL x"
+no_t "cmd not exempt: a mention of lean-ctx" sb_leanctx_command_is_exempt "make; echo lean-ctx status"
 no_t "cmd not exempt" sb_leanctx_command_is_exempt "git commit -m x"
 no_t "usage empty" sb_leanctx_command_is_usage ""
 w '{"recommended_tools":{"leanctx":{"cli_command":"myctx"}}}'
-yes_t "usage configured cli" sb_leanctx_command_is_usage "myctx status" "$CFG"
+no_t "usage: a configured cli_command is ignored" sb_leanctx_command_is_usage "myctx status" "$CFG"
+no_t "usage: echo of the cli is not usage" sb_leanctx_command_is_usage "echo lean-ctx status" "$CFG"
+no_t "usage: a pipe could hide a failure" sb_leanctx_command_is_usage "lean-ctx status | cat" "$CFG"
 yes_t "usage default names" sb_leanctx_command_is_usage "lean-ctx status" "$CFG"
 yes_t "usage leanctx name" sb_leanctx_command_is_usage "/bin/leanctx x" "$CFG"
 no_t "usage other command" sb_leanctx_command_is_usage "ls" "$CFG"
@@ -184,7 +160,8 @@ no_t "mcp usage empty" sb_leanctx_mcp_tool_is_usage ""
 yes_t "mcp usage read_ast" sb_leanctx_mcp_tool_is_usage lctx_read_ast
 yes_t "mcp usage any lctx_" sb_leanctx_mcp_tool_is_usage lctx_graph_q
 no_t "mcp usage other" sb_leanctx_mcp_tool_is_usage ctx_search
-yes_t "mcp server lean-ctx" sb_leanctx_mcp_server_matches "my-Lean-Ctx-server"
+yes_t "mcp server lean-ctx" sb_leanctx_mcp_server_matches "my-lean-ctx"
+no_t "mcp server: a server whose name merely contains it" sb_leanctx_mcp_server_matches "my-Lean-Ctx-server"
 yes_t "mcp server user-leanctx" sb_leanctx_mcp_server_matches "user-leanctx"
 no_t "mcp server other" sb_leanctx_mcp_server_matches "context-mode"
 no_t "mcp server empty" sb_leanctx_mcp_server_matches ""
@@ -194,27 +171,20 @@ w '{}'
 m="$(SILVER_BULLET_RUNTIME=claude sb_leanctx_block_message_no_cli "$CFG")"
 assert_contains "no_cli header" "$m" "LEANCTX REQUIRED"
 assert_contains "no_cli install" "$m" "leanctx.com/install.sh"
-(
-  sb_recommended_tool_full_install_lines() { return 1; }
-  [[ "$(sb_leanctx_block_message_no_cli "$CFG")" == *"curl -fsSL https://leanctx.com/install.sh | sh"* ]]
-) && tl_pass "no_cli falls back to default install" || tl_fail "no_cli falls back to default install"
 m="$(SILVER_BULLET_RUNTIME=claude sb_leanctx_block_message_no_mcp "$CFG")"
 assert_contains "no_mcp header" "$m" "LEANCTX NOT WIRED"
 assert_contains "no_mcp artifact" "$m" "$HOME/.claude/settings.json"
 assert_contains "no_mcp commands" "$m" "install-leanctx-sb.sh --host claude"
-(
-  sb_recommended_tool_platform_install_commands() { return 1; }
-  [[ "$(sb_leanctx_block_message_no_mcp "$CFG")" == *"LEANCTX NOT WIRED"* ]]
-) && tl_pass "no_mcp survives command failure" || tl_fail "no_mcp survives command failure"
 w '{"recommended_tools":{"leanctx":{"usage_ttl_seconds":300,"cli_command":"myctx"}}}'
 m="$(sb_leanctx_block_message_stale_usage "$CFG")"
 assert_contains "stale ttl" "$m" "every 300s"
-assert_contains "stale cli" "$m" "myctx status"
+assert_contains "stale cli is always lean-ctx" "$m" "lean-ctx status"
 
 # ---------- prompt reminder ----------
 RC="$PR/.silver-bullet.json"
 rem() { SILVER_BULLET_RUNTIME=claude sb_leanctx_prompt_reminder_line "$RC"; }
-printf '{}' >"$RC"; assert_contains "reminder pending" "$(rem)" "consent pending"
+printf '{"recommended_tools":{"leanctx":{"enabled_by_user":true}}}' >"$RC"
+assert_contains "reminder pending (a project recommendation is not consent)" "$(XDG_CONFIG_HOME="$TL_TMP/none" rem)" "consent pending"
 printf '{"recommended_tools":{"leanctx":{"enabled_by_user":false}}}' >"$RC"; assert_contains "reminder disabled" "$(rem)" "opted out"
 printf '{"recommended_tools":{"leanctx":{"enabled_by_user":true,"enforcement_suspended":true}}}' >"$RC"; assert_contains "reminder suspended" "$(rem)" "enforcement suspended"
 printf '{"recommended_tools":{"leanctx":{"enabled_by_user":true}}}' >"$RC"

@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Behavior tests for hooks/lib/context-mode-gate.sh and hooks/lib/context-mode-read-deny.sh
 set -euo pipefail
+# The opt-in gates act only on the user's own consent, never on .silver-bullet.json alone.
+# shellcheck source=../lib/consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/consent-helpers.sh"
+sb_test_consent_grant_all
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init claude
 unset SB_CONTEXT_MODE_MCP_ARTIFACT CONTEXT_MODE_READ_DENY_BYPASS SB_CONTEXT_MODE_READ_DENY_BYPASS SB_GLOBAL_TOOLSTACK_MANIFEST SB_GLOBAL_TOOLSTACK_HOME
@@ -24,6 +28,17 @@ w '{"recommended_tools":{}}'
 assert_eq "min node default when unset" "22.5" "$(sb_context_mode_min_node_version "$CFG")"
 w 'garbage'
 assert_eq "min node default on invalid json" "22.5" "$(sb_context_mode_min_node_version "$CFG")"
+# R5-02: the value is repository data and must never reach arithmetic evaluation
+for bad in 'a[$(touch /tmp/pwned-cm)]' '1;2' '$(id)' '-1' '1.2.3.4' '' ' 22 '; do
+  w "$(jq -n --arg v "$bad" '{recommended_tools:{context_mode:{min_node_version:$v}}}')"
+  assert_eq "min node rejects: [$bad]" "22.5" "$(sb_context_mode_min_node_version "$CFG")"
+done
+w '{"recommended_tools":{"context_mode":{"min_node_version":22}}}'
+assert_eq "min node accepts a bare number" "22" "$(sb_context_mode_min_node_version "$CFG")"
+w '{"recommended_tools":{"context_mode":{"min_node_version":"a[$(touch '"$TL_TMP"'/pwned-cm)]"}}}'
+tl_stub node 'echo v24.0.0'; hash -r
+sb_context_mode_node_ok "$CFG" || true
+[[ ! -e "$TL_TMP/pwned-cm" ]] && tl_pass "a hostile min_node_version is never evaluated" || tl_fail "a hostile min_node_version is never evaluated"
 
 # ---------- cli path / plugin / availability ----------
 PATH_NO_CM="$(tl_path_without context-mode)"
@@ -35,6 +50,14 @@ yes_t "plugin present (context-mode dir)" sb_context_mode_claude_plugin_present
 yes_t "cli_available via plugin" sb_context_mode_cli_available
 rm -rf "$HOME/.claude/plugins/context-mode"; mkdir -p "$HOME/.claude/plugins/mksglu-context-mode"
 yes_t "plugin present (mksglu dir)" sb_context_mode_claude_plugin_present
+rm -rf "$HOME/.claude"
+mkdir -p "$HOME/.claude/plugins"
+printf '{"plugins":{"context-mode@context-mode":[{}]}}' >"$HOME/.claude/plugins/installed_plugins.json"
+yes_t "plugin present (marketplace registry)" sb_context_mode_claude_plugin_present
+printf '{"plugins":{"other@x":[{}]}}' >"$HOME/.claude/plugins/installed_plugins.json"
+no_t "plugin absent (registry without it)" sb_context_mode_claude_plugin_present
+printf 'garbage' >"$HOME/.claude/plugins/installed_plugins.json"
+no_t "plugin absent (unparsable registry)" sb_context_mode_claude_plugin_present
 rm -rf "$HOME/.claude"
 tl_stub context-mode 'exit 0'
 hash -r
@@ -58,6 +81,16 @@ nodev v22.5.0; yes_t "node minor equal" sb_context_mode_node_ok "$CFG"
 nodev v22.10.1; yes_t "node minor greater" sb_context_mode_node_ok "$CFG"
 nodev v22.4.9; no_t "node minor lower" sb_context_mode_node_ok "$CFG"
 nodev v23.0.0; yes_t "node default min used without config" sb_context_mode_node_ok
+# the version is cached per node binary: a later change of the binary refreshes it
+nodev v22.0.0
+no_t "node cache refreshed when the binary changes" sb_context_mode_node_ok
+assert_eq "node version reported" "22.0.0" "$(sb_context_mode_node_version)"
+printf 'garbage\n' >"$SB_RUNTIME_STATE_DIR/context-mode-node"
+touch -d '+1 minute' "$SB_RUNTIME_STATE_DIR/context-mode-node" 2>/dev/null || touch "$SB_RUNTIME_STATE_DIR/context-mode-node"
+assert_eq "node version re-read when the cache is unusable" "22.0.0" "$(sb_context_mode_node_version)"
+nodev v24.1.0
+touch -d '-1 minute' "$SB_RUNTIME_STATE_DIR/context-mode-node" 2>/dev/null || true
+assert_eq "node version re-read when the binary is newer than the cache" "24.1.0" "$(sb_context_mode_node_version)"
 
 # ---------- platform artifact ----------
 export SB_CONTEXT_MODE_MCP_ARTIFACT=/override/art
@@ -68,19 +101,33 @@ assert_eq "artifact codex" "/ch/config.toml" "$(CODEX_HOME=/ch sb_context_mode_p
 assert_eq "artifact opencode" "$HOME/.config/opencode/opencode.json" "$(sb_context_mode_platform_artifact_path "$PR" opencode)"
 assert_eq "artifact pi env" "/pd/extensions/silver-bullet-five-tool-stack/config.json" "$(PI_CODING_AGENT_DIR=/pd sb_context_mode_platform_artifact_path "$PR" pi)"
 assert_eq "artifact pi home" "$HOME/.pi/agent/extensions/silver-bullet-five-tool-stack/config.json" "$(env -u PI_CODING_AGENT_DIR bash -c 'source "$1"; sb_context_mode_platform_artifact_path /x pi' _ "$TL_REPO_ROOT/hooks/lib/context-mode-gate.sh")"
-assert_eq "artifact default claude" "$HOME/.claude/plugins/context-mode" "$(sb_context_mode_platform_artifact_path "$PR" claude)"
-assert_eq "artifact default host" "$HOME/.claude/plugins/context-mode" "$(SILVER_BULLET_RUNTIME=claude sb_context_mode_platform_artifact_path "$PR")"
+assert_eq "artifact default claude" "$HOME/.claude.json" "$(sb_context_mode_platform_artifact_path "$PR" claude)"
+assert_eq "artifact default host" "$HOME/.claude.json" "$(SILVER_BULLET_RUNTIME=claude sb_context_mode_platform_artifact_path "$PR")"
 
 present() { sb_context_mode_platform_artifact_present "$PR" "$1"; }
 no_t "present claude nothing" present claude
 mkdir -p "$HOME/.claude/plugins/context-mode"
 yes_t "present claude via plugin" present claude
 rm -rf "$HOME/.claude"
+# R5-08: the documented wiring is an MCP entry in ~/.claude.json (user scope, project scope) or .mcp.json
+printf '{"mcpServers":{"context-mode":{}}}' >"$HOME/.claude.json"
+yes_t "present claude via user-scope MCP entry" present claude
+printf '{"projects":{"%s":{"mcpServers":{"plugin_context-mode_context-mode":{}}}}}' "$PR" >"$HOME/.claude.json"
+yes_t "present claude via this project's MCP entry" present claude
+printf '{"projects":{"/elsewhere":{"mcpServers":{"context-mode":{}}}}}' >"$HOME/.claude.json"
+no_t "another project's MCP entry is not wiring" present claude
+printf 'garbage' >"$HOME/.claude.json"
+no_t "unparsable ~/.claude.json is not wiring" present claude
+rm -f "$HOME/.claude.json"
+printf '{"mcpServers":{"context_mode":{}}}' >"$PR/.mcp.json"
+yes_t "present claude via the project .mcp.json" present claude
+printf '{"mcpServers":{}}' >"$PR/.mcp.json"
+no_t "empty .mcp.json is not wiring" present claude
+rm -f "$PR/.mcp.json"
 export SB_CONTEXT_MODE_MCP_ARTIFACT="$TL_TMP/art"
-mkdir -p "$TL_TMP/art"
-yes_t "present claude via artifact dir" present claude
-rmdir "$TL_TMP/art"
-no_t "present claude artifact not a dir" present claude
+printf 'x' >"$TL_TMP/art"
+no_t "present claude: an explicit artifact override is checked as a file (no marker)" present claude
+rm -f "$TL_TMP/art"
 for h in cursor codex; do
   no_t "present $h missing file" present "$h"
   printf 'nothing' >"$TL_TMP/art"
@@ -108,26 +155,6 @@ no_t "present unknown host" present hermes
 unset SB_CONTEXT_MODE_MCP_ARTIFACT
 no_t "present default host (claude, nothing wired)" sb_context_mode_platform_artifact_present "$PR"
 
-# ---------- hooks present ----------
-no_t "hooks_present claude none" sb_context_mode_hooks_present claude
-mkdir -p "$HOME/.claude/plugins/context-mode"; yes_t "hooks_present claude" sb_context_mode_hooks_present claude
-rm -rf "$HOME/.claude"
-no_t "hooks_present cursor missing" sb_context_mode_hooks_present cursor
-mkdir -p "$HOME/.cursor"; printf 'nothing' >"$HOME/.cursor/hooks.json"
-no_t "hooks_present cursor no marker" sb_context_mode_hooks_present cursor
-printf 'context-mode' >"$HOME/.cursor/hooks.json"; yes_t "hooks_present cursor" sb_context_mode_hooks_present cursor
-no_t "hooks_present codex missing" env CODEX_HOME="$TL_TMP/codexhome" bash -c 'source "$1"; sb_context_mode_hooks_present codex' _ "$TL_REPO_ROOT/hooks/lib/context-mode-gate.sh"
-mkdir -p "$TL_TMP/codexhome"; printf 'context-mode' >"$TL_TMP/codexhome/hooks.json"
-yes_t "hooks_present codex" env CODEX_HOME="$TL_TMP/codexhome" bash -c 'source "$1"; sb_context_mode_hooks_present codex' _ "$TL_REPO_ROOT/hooks/lib/context-mode-gate.sh"
-yes_t "hooks_present codex default dir" bash -c 'source "$1"; mkdir -p "$HOME/.codex"; echo context-mode >"$HOME/.codex/hooks.json"; unset CODEX_HOME; sb_context_mode_hooks_present codex' _ "$TL_REPO_ROOT/hooks/lib/context-mode-gate.sh"
-export SB_CONTEXT_MODE_MCP_ARTIFACT="$TL_TMP/art"; printf '{"plugin":["context-mode"]}' >"$TL_TMP/art"
-yes_t "hooks_present opencode delegates to artifact" sb_context_mode_hooks_present opencode
-printf '{"servers":{"context_mode":{"enabled":true}}}' >"$TL_TMP/art"
-yes_t "hooks_present pi delegates to artifact" sb_context_mode_hooks_present pi
-unset SB_CONTEXT_MODE_MCP_ARTIFACT
-no_t "hooks_present unknown" sb_context_mode_hooks_present hermes
-no_t "hooks_present default host (claude, none)" sb_context_mode_hooks_present
-
 # ---------- instruction fragment ----------
 FR="$TL_TMP/frag"; mkdir -p "$FR"
 no_t "fragment none" sb_context_mode_instruction_fragment_present "$FR"
@@ -144,25 +171,6 @@ no_t "fragment hint without tools (AGENTS.md)" sb_context_mode_instruction_fragm
 printf 'context-mode hint\nctx_batch_execute\n' >"$FR/AGENTS.md"
 yes_t "fragment AGENTS.md" sb_context_mode_instruction_fragment_present "$FR"
 (cd "$FR" && sb_context_mode_instruction_fragment_present) && tl_pass "fragment default root is PWD" || tl_fail "fragment default root is PWD"
-# cursor rule
-no_t "cursor rule absent" sb_context_mode_cursor_rule_present "$FR"
-mkdir -p "$FR/.cursor/rules"; : >"$FR/.cursor/rules/context-mode.mdc"
-yes_t "cursor rule file" sb_context_mode_cursor_rule_present "$FR"
-rm "$FR/.cursor/rules/context-mode.mdc"; printf 'uses context-mode' >"$FR/.cursor/rules/other.mdc"
-yes_t "cursor rule via grep" sb_context_mode_cursor_rule_present "$FR/"
-rm "$FR/.cursor/rules/other.mdc"; printf 'x' >"$FR/.cursor/rules/other.mdc"
-no_t "cursor rule none matching" sb_context_mode_cursor_rule_present "$FR"
-
-# ---------- windows ----------
-for u in MINGW64_NT MSYS_NT CYGWIN_NT Windows_NT; do
-  tl_stub uname "echo $u"; hash -r
-  yes_t "windows native via uname $u" sb_context_mode_is_windows_native
-done
-tl_stub uname 'echo Linux'; hash -r
-no_t "linux not windows" env -u OS bash -c 'source "$1"; sb_context_mode_is_windows_native' _ "$TL_REPO_ROOT/hooks/lib/context-mode-gate.sh"
-yes_t "windows via OS env" env OS=Windows_NT bash -c 'source "$1"; sb_context_mode_is_windows_native' _ "$TL_REPO_ROOT/hooks/lib/context-mode-gate.sh"
-no_t "non-windows OS env" env OS=linux-gnu bash -c 'source "$1"; sb_context_mode_is_windows_native' _ "$TL_REPO_ROOT/hooks/lib/context-mode-gate.sh"
-rm -f "$TL_BIN/uname"; hash -r
 
 # ---------- exemptions ----------
 no_t "edit exempt empty" sb_context_mode_edit_path_is_exempt ""
@@ -172,40 +180,34 @@ done
 no_t "edit not exempt" sb_context_mode_edit_path_is_exempt /p/src/a.py
 yes_t "cmd exempt empty" sb_context_mode_command_is_exempt ""
 yes_t "cmd exempt context-mode" sb_context_mode_command_is_exempt "context-mode doctor"
-yes_t "cmd exempt enable script" sb_context_mode_command_is_exempt "bash enable-rtk-context-mode.sh"
-yes_t "cmd exempt npm install" sb_context_mode_command_is_exempt "foo npm install -g context-mode"
-yes_t "cmd exempt node" sb_context_mode_command_is_exempt "node script.js"
-yes_t "cmd exempt mkdir" sb_context_mode_command_is_exempt "mkdir -p x"
+yes_t "cmd exempt enable script (plugin script)" sb_context_mode_command_is_exempt "bash $TL_REPO_ROOT/scripts/enable-rtk-context-mode.sh"
+no_t "cmd not exempt: a lookalike script path" sb_context_mode_command_is_exempt "bash $TL_REPO_ROOT/scripts/../x.sh"
+no_t "cmd not exempt: npm install of another package in a list" sb_context_mode_command_is_exempt "foo npm install -g context-mode"
+no_t "cmd not exempt: node" sb_context_mode_command_is_exempt "node script.js"
+no_t "cmd not exempt: mkdir" sb_context_mode_command_is_exempt "mkdir -p x"
+yes_t "cmd exempt: documented install line" sb_context_mode_command_is_exempt "npm install -g context-mode"
+yes_t "cmd exempt: read-only" sb_context_mode_command_is_exempt "ls -la"
 no_t "cmd not exempt" sb_context_mode_command_is_exempt "git commit -m x"
 
 # ---------- messages ----------
-w '{"recommended_tools":{"context_mode":{"enabled_by_user":true,"license_note":"ELv2 notice"}}}'
+w '{"recommended_tools":{"context_mode":{"enabled_by_user":true,"license_note":"ignored repo text"}}}'
 m="$(SILVER_BULLET_RUNTIME=claude sb_context_mode_block_message_no_cli "$CFG")"
 assert_contains "no_cli header" "$m" "CONTEXT MODE REQUIRED"
-assert_contains "no_cli license" "$m" "License: ELv2 notice"
+assert_contains "no_cli license is the built-in ELv2 notice" "$m" "Elastic License 2.0"
+assert_not_contains "no_cli ignores a repository license_note" "$m" "ignored repo text"
 assert_contains "no_cli install lines" "$m" "npm install -g context-mode"
-w '{"recommended_tools":{"context_mode":{"enabled_by_user":true}}}'
-assert_not_contains "no_cli without license" "$(sb_context_mode_block_message_no_cli "$CFG")" "License:"
-(
-  sb_recommended_tool_full_install_lines() { return 1; }
-  [[ "$(sb_context_mode_block_message_no_cli "$CFG")" == *"CONTEXT MODE REQUIRED"* ]]
-) && tl_pass "no_cli survives install-line failure" || tl_fail "no_cli survives install-line failure"
 w '{"recommended_tools":{"context_mode":{"min_node_version":"21.3"}}}'
 assert_contains "node message" "$(sb_context_mode_block_message_node "$CFG")" "need >= 21.3"
 m="$(SILVER_BULLET_RUNTIME=claude sb_context_mode_block_message_no_platform "$CFG")"
 assert_contains "no_platform header" "$m" "CONTEXT MODE NOT WIRED"
-assert_contains "no_platform artifact" "$m" "$HOME/.claude/plugins/context-mode"
+assert_contains "no_platform artifact" "$m" "$HOME/.claude.json"
 assert_contains "no_platform commands" "$m" "npm install -g context-mode"
-(
-  sb_recommended_tool_platform_install_commands() { return 1; }
-  [[ "$(sb_context_mode_block_message_no_platform "$CFG")" == *"CONTEXT MODE NOT WIRED"* ]]
-) && tl_pass "no_platform survives command failure" || tl_fail "no_platform survives command failure"
 assert_contains "no_fragment message" "$(sb_context_mode_block_message_no_fragment)" "INSTRUCTION FRAGMENT MISSING"
 
 # ---------- prompt reminder ----------
 PRC="$FR/.silver-bullet.json"
-printf '{}' >"$PRC"
-assert_contains "reminder pending" "$(sb_context_mode_prompt_reminder_line "$PRC")" "consent pending"
+printf '{"recommended_tools":{"context_mode":{"enabled_by_user":true}}}' >"$PRC"
+assert_contains "reminder pending (a project recommendation is not consent)" "$(XDG_CONFIG_HOME="$TL_TMP/none" sb_context_mode_prompt_reminder_line "$PRC")" "consent pending"
 printf '{"recommended_tools":{"context_mode":{"enabled_by_user":false}}}' >"$PRC"
 assert_contains "reminder opted out" "$(sb_context_mode_prompt_reminder_line "$PRC")" "opted out"
 printf '{"recommended_tools":{"context_mode":{"enabled_by_user":true,"enforcement_suspended":true}}}' >"$PRC"
@@ -231,32 +233,32 @@ for v in 1 true yes YES on ON; do assert_eq "bypass value $v" "yes" "$(yes_t_byp
 for v in 0 false no off ""; do assert_eq "bypass value '$v' off" "no" "$(yes_t_bypass "$v")"; done
 yes_t "bypass via SB_ var" env SB_CONTEXT_MODE_READ_DENY_BYPASS=1 bash -c 'source "$1"; sb_context_mode_read_deny_bypassed' _ "$TL_REPO_ROOT/hooks/lib/context-mode-read-deny.sh"
 
+# The threshold can be raised or switched off by the project file, never lowered below the default.
 assert_eq "deny bytes default" "5120" "$(sb_context_mode_read_deny_bytes)"
 w '{"recommended_tools":{"context_mode":{"read_deny_bytes":300}}}'
-assert_eq "deny bytes configured" "300" "$(sb_context_mode_read_deny_bytes "$CFG")"
+assert_eq "deny bytes below the default is ignored" "5120" "$(sb_context_mode_read_deny_bytes "$CFG")"
+w '{"recommended_tools":{"context_mode":{"read_deny_bytes":20000}}}'
+assert_eq "deny bytes raised" "20000" "$(sb_context_mode_read_deny_bytes "$CFG")"
+w '{"recommended_tools":{"context_mode":{"read_deny_bytes":0}}}'
+assert_eq "deny bytes zero switches the nudge off" "0" "$(sb_context_mode_read_deny_bytes "$CFG")"
 w '{"recommended_tools":{"context_mode":{"read_deny_bytes":"big"}}}'
 assert_eq "deny bytes non numeric" "5120" "$(sb_context_mode_read_deny_bytes "$CFG")"
+w '{"recommended_tools":{"context_mode":{"read_deny_bytes":"a[$(touch '"$TL_TMP"'/pwned-rd)]"}}}'
+assert_eq "deny bytes hostile value" "5120" "$(sb_context_mode_read_deny_bytes "$CFG")"
+[[ ! -e "$TL_TMP/pwned-rd" ]] && tl_pass "hostile read_deny_bytes is never evaluated" || tl_fail "hostile read_deny_bytes is never evaluated"
 w 'garbage'
 assert_eq "deny bytes invalid json" "5120" "$(sb_context_mode_read_deny_bytes "$CFG")"
 
-assert_eq "resolve relative to root" "$PR/a/b.txt" "$(sb_context_mode_resolve_read_path a/../a/b.txt "$PR")"
-assert_eq "resolve absolute" "/etc/hostname" "$(sb_context_mode_resolve_read_path /etc/hostname "$PR")"
-assert_eq "resolve empty is empty" "" "$(sb_context_mode_resolve_read_path "" "$PR")"
-tilde="$(printf '~')/x"
-assert_eq "resolve ~ expands" "$HOME/x" "$(sb_context_mode_resolve_read_path "$tilde" "$PR")"
-assert_eq "resolve defaults root to PWD" "$PR/zz" "$(cd "$PR" && sb_context_mode_resolve_read_path zz)"
-tl_stub python3 'exit 3'; hash -r
-[[ -z "$(sb_context_mode_resolve_read_path a "$PR")" ]] && tl_pass "resolve survives python failure" || tl_fail "resolve survives python failure"
-rm -f "$TL_BIN/python3"; hash -r
-
-BIG="$PR/big.txt"; head -c 600 /dev/zero | tr '\0' 'a' >"$BIG"
-assert_eq "file size" "600" "$(sb_context_mode_file_size_bytes "$BIG")"
+BIG="$PR/big.txt"; head -c 9000 /dev/zero | tr '\0' 'a' >"$BIG"
+assert_eq "file size" "9000" "$(sb_context_mode_file_size_bytes "$BIG")"
 no_t "file size empty arg" sb_context_mode_file_size_bytes ""
 no_t "file size missing" sb_context_mode_file_size_bytes "$PR/none"
 no_t "file size directory" sb_context_mode_file_size_bytes "$PR"
-tl_stub python3 'exit 3'; hash -r
-no_t "file size fails when python fails" sb_context_mode_file_size_bytes "$BIG"
-rm -f "$TL_BIN/python3"; hash -r
+tl_stub wc 'exit 3'; hash -r
+no_t "file size fails when wc fails" sb_context_mode_file_size_bytes "$BIG"
+tl_stub wc 'echo abc'; hash -r
+no_t "file size fails when wc prints junk" sb_context_mode_file_size_bytes "$BIG"
+rm -f "$TL_BIN/wc"; hash -r
 
 rj() { jq -cn --arg t "$1" --arg p "$2" --arg k "$3" '{tool_name:$t, tool_input:{($k):$p}}'; }
 assert_eq "read path Read" "$BIG" "$(sb_context_mode_tool_read_path "$(rj Read "$BIG" file_path)")"
@@ -264,11 +266,18 @@ assert_eq "read path Grep" "$PR" "$(sb_context_mode_tool_read_path "$(rj Grep "$
 assert_eq "read path other tool empty" "" "$(sb_context_mode_tool_read_path "$(rj Bash x command)")"
 assert_eq "read path invalid json empty" "" "$(sb_context_mode_tool_read_path 'garbage')"
 
-# exemption
+# media and instruction files are exempt
+for m in a.png B.JPG c.jpeg d.gif e.webp f.bmp g.ico h.tif i.tiff j.heic k.avif l.pdf m.ipynb; do
+  yes_t "media exempt $m" sb_context_mode_read_path_is_media "/p/$m"
+done
+no_t "text is not media" sb_context_mode_read_path_is_media /p/a.txt
 no_t "read exempt empty" sb_context_mode_read_path_is_exempt ""
 yes_t "read exempt inherits edit exemptions" sb_context_mode_read_path_is_exempt /p/.silver-bullet.json
 yes_t "read exempt graph.json" sb_context_mode_read_path_is_exempt /p/graphify-out/graph.json
 yes_t "read exempt graphify wiki" sb_context_mode_read_path_is_exempt /p/graphify-out/wiki/index.md
+yes_t "read exempt a skill file" sb_context_mode_read_path_is_exempt /p/skills/x/SKILL.md
+yes_t "read exempt the plugin's own files" sb_context_mode_read_path_is_exempt "$TL_REPO_ROOT/hooks/core-rules.md"
+yes_t "read exempt an image" sb_context_mode_read_path_is_exempt /p/shot.png
 no_t "read not exempt no config" sb_context_mode_read_path_is_exempt /p/src.py
 w '{"state":{"state_file":"~/st/state","trivial_file":"~/st/trivial"}}'
 yes_t "read exempt configured state file" sb_context_mode_read_path_is_exempt "$HOME/st/state" "$CFG"
@@ -277,76 +286,101 @@ no_t "read not exempt other file with config" sb_context_mode_read_path_is_exemp
 w '{}'
 no_t "read not exempt config without state keys" sb_context_mode_read_path_is_exempt "$HOME/st/other" "$CFG"
 no_t "read not exempt missing config file" sb_context_mode_read_path_is_exempt /p/x "$TL_TMP/none.json"
-(
-  unset -f sb_context_mode_edit_path_is_exempt
-  sb_context_mode_read_path_is_exempt /p/.silver-bullet.json && exit 1
-  exit 0
-) && tl_pass "read exempt without edit helper" || tl_fail "read exempt without edit helper"
-
 w 'garbage'
 no_t "read not exempt when config unparsable" sb_context_mode_read_path_is_exempt /p/src.py "$CFG"
-(
-  sb_tool_name() { return 1; }
-  [[ -z "$(sb_context_mode_tool_read_path "$(rj Read "$BIG" file_path)")" ]] || exit 1
-  sb_context_mode_should_deny_read "$(rj Read "$BIG" file_path)" "$CFG" "$PR" && exit 2
-  exit 0
-) && tl_pass "tool name lookup failure yields no path and no deny" || tl_fail "tool name lookup failure (exit $?)"
-(
-  sb_tool_name() { printf 'Grep'; }
-  [[ -z "$(sb_context_mode_tool_read_path 'garbage')" ]]
-) && tl_pass "Grep path extraction tolerates unparsable input" || tl_fail "Grep path extraction tolerates unparsable input"
 
-# should_deny_read
-w '{"recommended_tools":{"context_mode":{"enabled_by_user":true,"read_deny_bytes":500}}}'
+# ----- should_deny_read: only when Context Mode's tools exist (R5-07) -----
+# Consent for Context Mode only: LeanCTX consent would hand Grep to LeanCTX.
+sb_test_consent_sandbox
+sb_test_consent_grant context_mode install,wire,enforce
+w '{"recommended_tools":{"context_mode":{"enabled_by_user":true}}}'
 sd() { sb_context_mode_should_deny_read "$@"; }
-assert_eq "deny read large" "$BIG" "$(sd "$(rj Read "$BIG" file_path)" "$CFG" "$PR")"
-yes_t "deny read large rc" sd "$(rj Read "$BIG" file_path)" "$CFG" "$PR"
+READ_BIG="$(rj Read "$BIG" file_path)"
+export SB_CONTEXT_MODE_MCP_ARTIFACT="$TL_TMP/cm-art"   # an explicit artifact stands in for the host wiring
+printf 'context-mode' >"$TL_TMP/cm-art"
+rm -f "$TL_BIN/context-mode"; hash -r
+no_t "no deny when Context Mode is not installed" sd "$READ_BIG" "$CFG" "$PR"
+tl_stub context-mode 'exit 0'; hash -r
+rm -rf "$SB_RUNTIME_STATE_DIR/context-mode-read-acks"
+rm -f "$TL_TMP/cm-art"
+no_t "no deny when Context Mode is not wired" sd "$READ_BIG" "$CFG" "$PR"
+printf 'context-mode' >"$TL_TMP/cm-art"
+assert_eq "deny the first large Read" "$BIG" "$(sd "$READ_BIG" "$CFG" "$PR")"
+no_t "the repeated Read within the window is allowed (Edit needs exact bytes)" sd "$READ_BIG" "$CFG" "$PR"
+rm -rf "$SB_RUNTIME_STATE_DIR/context-mode-read-acks"
+yes_t "deny large Read (rc)" sd "$READ_BIG" "$CFG" "$PR"
+rm -rf "$SB_RUNTIME_STATE_DIR/context-mode-read-acks"
 assert_eq "deny read relative path" "$BIG" "$(sd "$(rj Read big.txt file_path)" "$CFG" "$PR")"
-yes_t "deny Grep large (no leanctx)" sd "$(rj Grep "$BIG" path)" "$CFG" "$PR"
+rm -rf "$SB_RUNTIME_STATE_DIR/context-mode-read-acks"
+assert_eq "dotdot out of an exempt directory is still big.txt" "$BIG" "$(sd "$(rj Read "$PR/graphify-out/../big.txt" file_path)" "$CFG" "$PR")"
+rm -rf "$SB_RUNTIME_STATE_DIR/context-mode-read-acks"
 head -c 100 /dev/zero | tr '\0' 'a' >"$PR/small.txt"
 no_t "allow small file" sd "$(rj Read small.txt file_path)" "$CFG" "$PR"
-head -c 500 /dev/zero | tr '\0' 'a' >"$PR/edge.txt"
+head -c 5120 /dev/zero | tr '\0' 'a' >"$PR/edge.txt"
 no_t "allow file exactly at threshold" sd "$(rj Read edge.txt file_path)" "$CFG" "$PR"
-head -c 501 /dev/zero | tr '\0' 'a' >"$PR/edge2.txt"
+head -c 5121 /dev/zero | tr '\0' 'a' >"$PR/edge2.txt"
 yes_t "deny file one byte over threshold" sd "$(rj Read edge2.txt file_path)" "$CFG" "$PR"
 no_t "allow missing file" sd "$(rj Read nope.txt file_path)" "$CFG" "$PR"
 no_t "allow empty path" sd "$(rj Read "" file_path)" "$CFG" "$PR"
 no_t "allow other tool" sd "$(rj Bash x command)" "$CFG" "$PR"
 no_t "allow garbage input" sd 'garbage' "$CFG" "$PR"
-no_t "allow exempt file" sd "$(rj Read "$PR/.silver-bullet.json" file_path)" "$CFG" "$PR"
-head -c 900 /dev/zero | tr '\0' 'a' >"$PR/.silver-bullet.json"
+no_t "allow an image" sd "$(rj Read "$PR/shot.png" file_path)" "$CFG" "$PR"
+head -c 9000 /dev/zero | tr '\0' 'a' >"$PR/shot.png"
+no_t "allow a large image (Read is the only way to see it)" sd "$(rj Read "$PR/shot.png" file_path)" "$CFG" "$PR"
+head -c 9000 /dev/zero | tr '\0' 'a' >"$PR/.silver-bullet.json"
 no_t "allow exempt large file" sd "$(rj Read "$PR/.silver-bullet.json" file_path)" "$CFG" "$PR"
-no_t "bypass env allows" env CONTEXT_MODE_READ_DENY_BYPASS=1 bash -c 'source "$1"; shift; sb_context_mode_should_deny_read "$@"' _ "$TL_REPO_ROOT/hooks/lib/context-mode-read-deny.sh" "$(rj Read "$BIG" file_path)" "$CFG" "$PR"
-w '{"recommended_tools":{"context_mode":{"enabled_by_user":true,"read_deny_bytes":0}}}'
-no_t "zero threshold disables" sd "$(rj Read "$BIG" file_path)" "$CFG" "$PR"
-(cd "$PR" && w '{"recommended_tools":{"context_mode":{"read_deny_bytes":500}}}' && sb_context_mode_should_deny_read "$(rj Read big.txt file_path)" "$CFG") && tl_pass "default project root is PWD" || tl_fail "default project root is PWD"
-# leanctx owning sb_read: Grep stays cooperative, Read still denied
-w '{"recommended_tools":{"context_mode":{"read_deny_bytes":500},"leanctx":{"enabled_by_user":true}}}'
-no_t "Grep allowed when leanctx active" sd "$(rj Grep "$BIG" path)" "$CFG" "$PR"
-yes_t "Read still denied when leanctx active" sd "$(rj Read "$BIG" file_path)" "$CFG" "$PR"
-w '{"recommended_tools":{"context_mode":{"read_deny_bytes":500}}}'
+no_t "bypass env allows" env CONTEXT_MODE_READ_DENY_BYPASS=1 bash -c 'source "$1"; shift; sb_context_mode_should_deny_read "$@"' _ "$TL_REPO_ROOT/hooks/lib/context-mode-read-deny.sh" "$READ_BIG" "$CFG" "$PR"
+rm -rf "$SB_RUNTIME_STATE_DIR/context-mode-read-acks"
+# a Read with a small limit brings in few bytes
+printf 'a\n%.0s' $(seq 1 3000) >"$PR/lines.txt"
+no_t "a Read with a small limit is allowed" sd "$(jq -cn --arg p "$PR/lines.txt" '{tool_name:"Read", tool_input:{file_path:$p, limit:50}}')" "$CFG" "$PR"
+yes_t "a Read with a limit above the threshold is denied" sd "$(jq -cn --arg p "$PR/lines.txt" '{tool_name:"Read", tool_input:{file_path:$p, limit:2900}}')" "$CFG" "$PR"
+rm -rf "$SB_RUNTIME_STATE_DIR/context-mode-read-acks"
+yes_t "a limit larger than the file reads the whole file" sd "$(jq -cn --arg p "$PR/lines.txt" '{tool_name:"Read", tool_input:{file_path:$p, limit:99999}}')" "$CFG" "$PR"
+rm -rf "$SB_RUNTIME_STATE_DIR/context-mode-read-acks"
+printf 'x' >"$PR/nolines.txt"; head -c 9000 /dev/zero | tr '\0' 'b' >"$PR/nolines.txt"
+yes_t "a file without newlines counts as one line" sd "$(jq -cn --arg p "$PR/nolines.txt" '{tool_name:"Read", tool_input:{file_path:$p, limit:3}}')" "$CFG" "$PR"
+rm -rf "$SB_RUNTIME_STATE_DIR/context-mode-read-acks"
+# Grep: only content output can pull a file in
+GREP_FILES="$(jq -cn --arg p "$BIG" '{tool_name:"Grep", tool_input:{path:$p, pattern:"a"}}')"
+GREP_CONTENT="$(jq -cn --arg p "$BIG" '{tool_name:"Grep", tool_input:{path:$p, pattern:"a", output_mode:"content"}}')"
+GREP_LIMITED="$(jq -cn --arg p "$BIG" '{tool_name:"Grep", tool_input:{path:$p, pattern:"a", output_mode:"content", head_limit:20}}')"
+no_t "Grep that lists files is allowed" sd "$GREP_FILES" "$CFG" "$PR"
+no_t "Grep with a head_limit is allowed" sd "$GREP_LIMITED" "$CFG" "$PR"
+yes_t "Grep with unlimited content output is denied" sd "$GREP_CONTENT" "$CFG" "$PR"
+rm -rf "$SB_RUNTIME_STATE_DIR/context-mode-read-acks"
+w '{"recommended_tools":{"context_mode":{"read_deny_bytes":0}}}'
+no_t "zero threshold disables" sd "$READ_BIG" "$CFG" "$PR"
+(cd "$PR" && w '{"recommended_tools":{"context_mode":{"enabled_by_user":true}}}' && sb_context_mode_should_deny_read "$(rj Read big.txt file_path)" "$CFG") && tl_pass "default project root is PWD" || tl_fail "default project root is PWD"
+rm -rf "$SB_RUNTIME_STATE_DIR/context-mode-read-acks"
+(
+  sb_tool_name() { return 1; }
+  [[ -z "$(sb_context_mode_tool_read_path "$READ_BIG")" ]] || exit 1
+  sb_context_mode_should_deny_read "$READ_BIG" "$CFG" "$PR" && exit 2
+  exit 0
+) && tl_pass "tool name lookup failure yields no path and no deny" || tl_fail "tool name lookup failure (exit $?)"
 (
   sb_context_mode_file_size_bytes() { return 1; }
-  sd "$(rj Read "$BIG" file_path)" "$CFG" "$PR" && exit 1
+  sd "$READ_BIG" "$CFG" "$PR" && exit 1
   exit 0
 ) && tl_pass "allow when size cannot be determined" || tl_fail "allow when size cannot be determined"
-(
-  unset -f sb_stack_leanctx_active
-  sd "$(rj Grep "$BIG" path)" "$CFG" "$PR" || exit 1
-  exit 0
-) && tl_pass "Grep denied when leanctx helper unavailable" || tl_fail "Grep denied when leanctx helper unavailable"
+# LeanCTX owning sb_read: Grep stays cooperative; Read needs LeanCTX's own tools
+sb_test_consent_grant leanctx install,wire,enforce
+w '{"optimization_profiles":{"five_tool_routed":{"routes":{"sb_read":"leanctx"}}}}'
+no_t "Grep allowed when leanctx active" sd "$GREP_CONTENT" "$CFG" "$PR"
+rm -f "$SB_RUNTIME_STATE_DIR/consent-test"; rm -rf "$SB_RUNTIME_STATE_DIR/context-mode-read-acks"
+no_t "Read allowed when LeanCTX owns reads but is not installed" sd "$READ_BIG" "$CFG" "$PR"
+rm -rf "$SB_RUNTIME_STATE_DIR/context-mode-read-acks"
+w '{"recommended_tools":{"context_mode":{"enabled_by_user":true}}}'
 
 # deny message
 m="$(sb_context_mode_read_deny_message /p/big 9000 5120)"
-assert_contains "deny message" "$m" "CONTEXT MODE — Read blocked (9000 bytes > 5120 byte threshold)"
+assert_contains "deny message" "$m" "large Read redirected once (9000 bytes > 5120 byte threshold)"
+assert_contains "deny message says how to get the exact bytes" "$m" "Repeat the same Read"
 assert_contains "deny message path" "$m" "Path: /p/big"
 w '{"recommended_tools":{"leanctx":{"enabled_by_user":true},"context_mode":{"enabled_by_user":true}},"optimization_profiles":{"five_tool_routed":{"routes":{"sb_read":"leanctx"}}}}'
 assert_contains "deny message defers to leanctx" "$(sb_context_mode_read_deny_message /p/big 9000 5120 "$CFG")" "LEANCTX READ ROUTING"
 w '{"recommended_tools":{"context_mode":{"enabled_by_user":true}}}'
-assert_contains "deny message with config but no leanctx" "$(sb_context_mode_read_deny_message /p/big 9000 5120 "$CFG")" "CONTEXT MODE — Read blocked"
-(
-  unset -f sb_stack_read_deny_defer_to_leanctx
-  [[ "$(sb_context_mode_read_deny_message /p/big 1 2 "$CFG")" == *"CONTEXT MODE — Read blocked"* ]]
-) && tl_pass "deny message without coordinator helper" || tl_fail "deny message without coordinator helper"
+assert_contains "deny message with config but no leanctx" "$(sb_context_mode_read_deny_message /p/big 9000 5120 "$CFG")" "large Read redirected once"
 
 tl_results

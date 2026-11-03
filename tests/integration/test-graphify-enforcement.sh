@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Integration: graphify gate + record + prompt-reminder + session-start branch reset
 set -euo pipefail
+# The opt-in tools act only on the user's own consent, never on .silver-bullet.json alone.
+# shellcheck source=../lib/consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/consent-helpers.sh"
+sb_test_consent_grant_all
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 GATE="$REPO_ROOT/hooks/graphify-gate.sh"
