@@ -127,6 +127,8 @@ for c in "sed -i s/a/b/ src/a.py" "echo x > src/a.py" "pytest > out.log" "rm -rf
   yes_t "needs_gate: writes, delivery and installs are gated: $c" sb_opt_in_shell_needs_gate graphify "$c"
 done
 no_t "needs_gate: echoing a commit command is read-only" sb_opt_in_shell_needs_gate graphify "echo 'git commit -m x'"
+# a write analysis that fails is treated as "no writes found"
+( sb_shell_candidate_write_paths() { return 1; }; sb_opt_in_shell_needs_gate graphify "make build" ) && tl_fail "needs_gate: a failing write analysis gates nothing" || tl_pass "needs_gate: a failing write analysis gates nothing"
 no_t "needs_gate: the tool's own command is exempt" sb_opt_in_shell_needs_gate graphify "graphify update ."
 yes_t "is_delivery: a variable program word is opaque" sb_opt_in_shell_is_delivery 'X=git; ${X} commit'
 no_t "is_delivery: empty" sb_opt_in_shell_is_delivery ""

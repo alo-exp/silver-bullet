@@ -40,8 +40,9 @@ else
   browser=0
   while IFS= read -r path; do
     file_path="${file_path:-$path}"
-    # Match on the absolute path: Codex apply_patch sends project-relative paths.
-    path="$(sb_opt_in_normalize_path "$path" "$project_root" 2>/dev/null || printf '%s' "$path")"
+    # Match on the absolute path: Codex apply_patch sends project-relative paths. The target paths are
+    # never empty, and the normalizer only fails on an empty path.
+    path="$(sb_opt_in_normalize_path "$path" "$project_root" 2>/dev/null)"
     if ! sb_alumnium_edit_path_is_exempt "$path" "$config_file" && sb_alumnium_edit_path_requires_browser "$path"; then
       browser=1
     fi

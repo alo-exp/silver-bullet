@@ -454,6 +454,16 @@ touch -t 202001010000 "${LK}.reclaim"
 OUT="$(rt_with_lock "$LK" 5 printf 'recovered-after-dead-guard')"
 assert_eq "a guard abandoned by a dead reclaimer is cleared and the lock recovered" "recovered-after-dead-guard" "$OUT"
 rm -rf "$LK" "${LK}.reclaim"
+# a guard that cannot be removed (something is inside it) never aborts the reclaim
+mkdir -p "$LK"
+rc=0; ( rt_lock_is_stale() { : >"${1}.reclaim/held"; return 0; }; rt_reclaim_stale_lock "$LK" ) || rc=$?
+assert_eq "an unremovable guard after a reclaim is tolerated" "0" "$rc"
+assert_file_absent "the lock is still removed" "$LK"
+rm -rf "${LK}.reclaim"; mkdir -p "${LK}.reclaim"; : >"${LK}.reclaim/held"; touch -t 202001010000 "${LK}.reclaim"
+rc=0; rt_reclaim_stale_lock "$LK" || rc=$?
+assert_eq "an abandoned guard that cannot be removed is tolerated" "0" "$rc"
+assert_file_exists "and it is left in place" "${LK}.reclaim/held"
+rm -rf "$LK" "${LK}.reclaim"
 
 # ------------------------------------------------ codex TOML detection (R6-06)
 CT="$TL_TMP/codex-detect.toml"
