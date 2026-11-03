@@ -61,6 +61,28 @@ class FileWriteTest(Tmp):
         self.assertEqual(backup.read_bytes(), b"old")
         self.assertEqual([p.name for p in self.tmp.iterdir() if p.name.endswith(".tmp")], [])
 
+    def test_first_backup_of_a_run_is_kept_and_a_stale_one_is_replaced(self):
+        target = self.tmp / "conf"
+        backup = Path(str(target) + ".sb-backup")
+        target.write_bytes(b"original")
+        with mock.patch.dict(os.environ, {"SB_INSTALL_RUN_START": str(int(__import__("time").time()))}):
+            m.write_atomic(target, b"step1")
+            m.write_atomic(target, b"step2")
+            self.assertEqual(backup.read_bytes(), b"original")  # the user's file, not step1
+        old = __import__("time").time() - 3600
+        os.utime(backup, (old, old))
+        with mock.patch.dict(os.environ, {"SB_INSTALL_RUN_START": str(int(__import__("time").time()))}):
+            m.write_atomic(target, b"step3")
+        self.assertEqual(backup.read_bytes(), b"step2")  # an older run's backup is replaced
+
+    def test_a_parent_with_only_a_sub_table_gets_its_own_header(self):
+        doc = m.TomlDocument("[features.sub]\na = 1\n")
+        self.assertTrue(doc.set_value(("features",), "plugin_hooks", "true"))
+        self.assertEqual(tomllib.loads(doc.text), {"features": {"sub": {"a": 1}, "plugin_hooks": True}})
+        self.assertTrue(m.TomlDocument('[plugins."x".y]\na = 1\n').append_tables([(("plugins", "x"), [("enabled", "true")])]))
+        with self.assertRaises(m.ConfigError):  # genuinely dotted: still refused
+            m.TomlDocument("features.a = 1\n").set_value(("features",), "b", "1")
+
     def test_symlink_is_written_through(self):
         real = self.tmp / "dotfiles" / "settings.json"
         real.parent.mkdir()
