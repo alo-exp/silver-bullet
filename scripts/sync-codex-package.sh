@@ -1,4 +1,16 @@
 #!/usr/bin/env bash
+# Regenerate every derived package surface from its source:
+#   plugins/silver-bullet/commands/            Cursor slash-command stubs (generate-plugin-commands.sh)
+#   agents/claude/, host-bundles/{codex,cursor}/  host picker bundles of skills/
+#   plugins/silver-bullet/skill-source/        Codex hidden skill sources (Codex render)
+#   plugins/silver-bullet/cursor-skill-source/ Cursor hidden skill sources (Cursor render)
+#   plugins/silver-bullet/templates/           byte-identical, host-neutral copy of templates/
+#   plugins/silver-bullet/{.cursor-plugin,cursor-hooks.json}  (sync-cursor-package.sh)
+# plugins/silver-bullet is shared by the Codex package and the Cursor plugin, so
+# nothing in it is rewritten for one host after rendering: each host reads its
+# own render, and the Codex installer applies its install-time sanitizer to
+# the copy it installs. `bash scripts/validate-plugin-mirror.sh` checks that the
+# committed surfaces equal a fresh run of this script.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -24,17 +36,49 @@ unset _req
 SYNC_LOCK_DIR="${REPO_ROOT}/.planning/sb-sync-codex-package.lock.d"
 mkdir -p "$(dirname "$SYNC_LOCK_DIR")" 2>/dev/null || SYNC_LOCK_DIR="${TMPDIR:-/tmp}/sb-sync-codex-package.lock.d"
 mkdir -p "$(dirname "$SYNC_LOCK_DIR")"
+
+# lock_is_stale: the lock dir records its owner's PID. A holder killed without
+# its EXIT trap (SIGKILL, OOM, power loss) leaves the dir behind; its PID is
+# then gone. A lock without a PID file is stale once it is a minute old (its
+# owner writes the PID right after creating it).
+lock_is_stale() {
+  local owner
+  owner="$(cat "${SYNC_LOCK_DIR}/pid" 2>/dev/null || true)"
+  if [[ "$owner" =~ ^[0-9]+$ ]]; then
+    if ps -p "$owner" >/dev/null 2>&1; then
+      return 1
+    fi
+    return 0
+  else
+    [[ -n "$(find "$SYNC_LOCK_DIR" -maxdepth 0 -mmin +1 2>/dev/null)" ]]
+  fi
+}
+
 _sync_lock_attempt=0
 while ! mkdir "$SYNC_LOCK_DIR" 2>/dev/null; do
+  if lock_is_stale; then
+    printf '[codex-sync] removing stale lock %s\n' "$SYNC_LOCK_DIR" >&2
+    rm -rf -- "$SYNC_LOCK_DIR"
+    continue
+  fi
   _sync_lock_attempt=$((_sync_lock_attempt + 1))
-  if [[ "$_sync_lock_attempt" -ge 300 ]]; then
-    printf 'ERROR: timed out waiting for sync-codex-package lock\n' >&2
+  if [[ "$_sync_lock_attempt" -ge "${SB_SYNC_LOCK_WAIT_SECONDS:-300}" ]]; then
+    printf 'ERROR: timed out waiting for sync-codex-package lock %s (held by pid %s)\n' \
+      "$SYNC_LOCK_DIR" "$(cat "${SYNC_LOCK_DIR}/pid" 2>/dev/null || echo unknown)" >&2
     exit 1
   fi
   sleep 1
 done
-skill_stage=""
-trap 'rm -rf "$skill_stage" 2>/dev/null || true; rmdir "$SYNC_LOCK_DIR" 2>/dev/null || true' EXIT
+printf '%s\n' "$$" >"${SYNC_LOCK_DIR}/pid"
+STAGES=()
+cleanup() {
+  local stage
+  for stage in "${STAGES[@]+"${STAGES[@]}"}"; do
+    rm -rf -- "$stage"
+  done
+  rm -rf -- "$SYNC_LOCK_DIR"
+}
+trap cleanup EXIT
 
 log() {
   printf '[codex-sync] %s\n' "$*"
@@ -59,10 +103,14 @@ mv "$tmp" "$DEST_DIR/.codex-plugin/plugin.json"
 # mktemp creates 0600; keep the tracked manifest readable like the rest of the package.
 chmod 644 "$DEST_DIR/.codex-plugin/plugin.json"
 
+# The Cursor picker bundle leaves out command-covered routes, so the stubs come first.
+bash "${SCRIPT_DIR}/generate-plugin-commands.sh" >/dev/null
+
 mkdir -p "${REPO_ROOT}/agents" "${REPO_ROOT}/host-bundles"
-python3 "$AGENT_RENDERER" render --agent claude --source-root "${REPO_ROOT}/skills" --dest-root "$(sb_agent_bundle_root "$REPO_ROOT" claude)"
-python3 "$AGENT_RENDERER" render --agent codex --source-root "${REPO_ROOT}/skills" --dest-root "$(sb_agent_bundle_root "$REPO_ROOT" codex)"
-python3 "$AGENT_RENDERER" render --agent cursor --source-root "${REPO_ROOT}/skills" --dest-root "$(sb_agent_bundle_root "$REPO_ROOT" cursor)"
+for host in claude codex cursor; do
+  python3 "$AGENT_RENDERER" render --agent "$host" --source-root "${REPO_ROOT}/skills" \
+    --dest-root "$(sb_agent_bundle_root "$REPO_ROOT" "$host")"
+done
 
 # Legacy render paths under agents/{codex,cursor} must not remain in the checkout.
 rm -rf "${REPO_ROOT}/agents/codex" "${REPO_ROOT}/agents/cursor"
@@ -71,7 +119,7 @@ shopt -s dotglob nullglob
 for entry in "${DEST_DIR}"/*; do
   base="$(basename "$entry")"
   case "$base" in
-    .codex-plugin|.cursor-plugin|commands|skill-source|cursor-hooks.json|templates)
+    .codex-plugin|.cursor-plugin|commands|skill-source|cursor-skill-source|cursor-hooks.json|templates)
       continue
       ;;
   esac
@@ -107,58 +155,30 @@ for entry in "${PACKAGE_ENTRIES[@]}"; do
   ln -sfn "../../${entry}" "${DEST_DIR}/${entry}"
 done
 
-if [[ -d "${REPO_ROOT}/templates" ]]; then
-  rm -rf -- "${DEST_DIR}/templates"
-  mkdir -p -- "${DEST_DIR}/templates"
-  rsync -a --delete "${REPO_ROOT}/templates/" "${DEST_DIR}/templates/"
-fi
+bash "${SCRIPT_DIR}/sync-templates.sh" >/dev/null
 
-# Codex can discover plugin-owned picker entries from cached Markdown files
-# under the plugin package. Keep SB's packaged skill sources available for the
-# installer, but store them under an extensionless filename so the only
-# user-facing picker surface is the native ~/.codex/skills mirror.
-python3 - "$DEST_DIR" <<'PY'
-import pathlib
-import shutil
-import sys
-
-dest = pathlib.Path(sys.argv[1])
-for name in ("skills", "skill-source", ".generated-skills", "agents"):
-    path = dest / name
-    if path.exists() or path.is_symlink():
-        shutil.rmtree(path)
-PY
-find "${DEST_DIR}" -maxdepth 1 -type d -name '.skill-source.staging.*' -exec rm -rf {} + 2>/dev/null || true
-skill_stage="$(mktemp -d "${TMPDIR:-/tmp}/sb-skill-source.staging.XXXXXX")"
-rsync -a "$(sb_agent_bundle_root "$REPO_ROOT" codex)/" "${skill_stage}/"
-# POSIX test only: this body runs under sh, which is dash on Debian/Ubuntu.
-find "${skill_stage}" -name SKILL.md -type f -exec sh -c '
-  for path do
-    dest="$(dirname "$path")/SILVER_SOURCE"
-    if [ -e "$dest" ]; then
-      rm -f "$path"
-    else
-      mv "$path" "$dest"
-    fi
-  done
-' sh {} +
-mv "${skill_stage}" "${DEST_DIR}/skill-source"
-skill_stage=""
-
-if [[ -x "${SCRIPT_DIR}/codex-sanitize-package.sh" ]]; then
-  "${SCRIPT_DIR}/codex-sanitize-package.sh" "$DEST_DIR"
-else
-  printf 'ERROR: codex sanitizer helper missing at %s\n' "${SCRIPT_DIR}/codex-sanitize-package.sh" >&2
-  exit 1
-fi
+# Hidden skill sources: hosts discover picker entries from *SKILL.md files, so
+# the packaged sources use an extensionless SILVER_SOURCE name and are read by
+# path only. Each host gets its own render (paths, wording). Render outside
+# the package so no render lock or staging tree is left inside it.
+render_hidden_source() {
+  local host="$1" name="$2" stage
+  stage="$(mktemp -d "${TMPDIR:-/tmp}/sb-${name}.XXXXXX")"
+  STAGES+=("$stage")
+  python3 "$AGENT_RENDERER" render --agent "$host" --layout source \
+    --source-root "${REPO_ROOT}/skills" --dest-root "${stage}/${name}"
+  rm -rf -- "${DEST_DIR:?}/${name}"
+  mv "${stage}/${name}" "${DEST_DIR}/${name}"
+}
+render_hidden_source codex skill-source
+render_hidden_source cursor cursor-skill-source
 
 cursor_package_sync_script="${SCRIPT_DIR}/sync-cursor-package.sh"
-if [[ -x "$cursor_package_sync_script" ]]; then
-  "$cursor_package_sync_script"
+if [[ -f "$cursor_package_sync_script" ]]; then
+  bash "$cursor_package_sync_script"
 else
-  printf 'ERROR: Cursor package sync script not found or not executable: %s\n' "$cursor_package_sync_script" >&2
+  printf 'ERROR: Cursor package sync script not found: %s\n' "$cursor_package_sync_script" >&2
   exit 1
 fi
 
 log "Codex package synchronized"
-
