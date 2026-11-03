@@ -88,6 +88,8 @@ research/**/*.err
 research/**/*.out
 research/**/*.out.*
 docs/**/*.err
+docs/**/*-stdout.txt
+docs/**/*-stderr.txt
 .planning/**/CLAUDE-QUOTA.md
 
 # Node

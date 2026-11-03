@@ -1,15 +1,23 @@
 # Audited exceptions for the personal-data invariant (scripts/lib/repo_invariants.py).
 # Generic accounts, CI/cloud users and placeholder domains are built in. One entry per line;
-# an unknown directive is an error, and everything else in this file is scanned like any file.
-#   home <name>             a directory name that is not a person (matched case-insensitively)
-#   email <user@host.tld>   one exact address, or  email @host.tld  for every address on a host
-#   file <path-or-glob>     a public use of the maintainer's name (author field, contributor line,
-#                           byline); only the identity-token check is skipped for the file
-file .claude-plugin/marketplace.json
-file site/brute/index.html
-file graphify-out/graph.json
-file .planning/reports/MILESTONE_SUMMARY-v0.25.0.md
-file .planning/reports/MILESTONE_SUMMARY-v0.26.0.md
-file .planning/milestones/v0.26.0-ROADMAP.md
-file .planning/enterprise-e2e/CODEX-TEST-APP-PRODUCT-AUDIT.md
-file .planning/rfl-router-subagent-surfaces-85bf9f09-final-review-2/rung-10-claude-opus-5-high/review-retry-opus-high-gate-stop.md
+# an unknown or incomplete directive is an error, and everything else in this file is scanned
+# like any file.
+#   home <name>                   a directory name that is not a person (matched case-insensitively)
+#   email <user@host.tld>         one exact address, or  email @host.tld  for every address on a host
+#   file <path-glob> <hash>       a public use of the maintainer's name (author field, contributor
+#                                 line, byline). <hash> is the first 16+ hex digits of the SHA-256 of
+#                                 the quoted string or line holding it; the failing check prints it.
+#                                 Only that exact text is exempt: any other line of the file is still
+#                                 scanned, and a name in a home-directory-shaped path never is.
+file .claude-plugin/marketplace.json 5af7aa1d2d9e53c0
+file .claude-plugin/marketplace.json da5a5b6c8e3670f1
+file .planning/enterprise-e2e/CODEX-TEST-APP-PRODUCT-AUDIT.md 6fcf21ebfa6c36a7
+file .planning/enterprise-e2e/CODEX-TEST-APP-PRODUCT-AUDIT.md cd9667cb369b6cd8
+file .planning/milestones/v0.26.0-ROADMAP.md 7d6026e90281aab6
+file .planning/reports/MILESTONE_SUMMARY-v0.25.0.md f0dfb93ee2992437
+file .planning/reports/MILESTONE_SUMMARY-v0.26.0.md 7d6026e90281aab6
+file .planning/rfl-router-subagent-surfaces-85bf9f09-final-review-2/rung-10-claude-opus-5-high/review-retry-opus-high-gate-stop.md d6e73e3a12d857ab
+file graphify-out/graph.json 25671a0016c89fd2
+file graphify-out/graph.json 5af7aa1d2d9e53c0
+file site/brute/index.html b6c6dd3faa4c074f
+file site/brute/index.html eca962c6c7f1c5be

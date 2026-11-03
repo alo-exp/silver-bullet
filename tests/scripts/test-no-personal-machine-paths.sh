@@ -24,7 +24,7 @@ assert_eq "no planning run logs are tracked" "" "$(git ls-files -- '.planning/**
 assert_eq "no rotated run logs (.log.attemptN, .err.N) are tracked" "" "$(git ls-files | grep -E '\.(err|log)\.' || true)"
 assert_eq "no AI CLI stdout/stderr captures are tracked" "" "$(git ls-files | awk -F/ '{print $NF "\t" $0}' | grep -E -i '^[^\t]*(stdout|stderr)' | cut -f2 || true)"
 assert_eq "no AI CLI .out run captures are tracked" "" "$(git ls-files | grep -E '\.out($|\.)' || true)"
-for pattern in .planning/a/rung/invoke.stdout .planning/a/rung/invoke.stderr .planning/a/rung/preflight.stdout.attempt2 .planning/a/logs/stdout-retry2.txt .planning/a/logs/stdout.txt .planning/a/logs/review-stdout.txt .planning/a/logs/review-stderr.txt SETUP_REPORT.md .planning/a/x.err .planning/a/launch.nohup.out .planning/a/launch.nohup.out.attempt2 research/a/probe.out .planning/a/x.err.attempt2 .planning/a/opencode-run.log.attempt2 .planning/a/run.log research/a/run.log .planning/a/CLAUDE-QUOTA.md; do
+for pattern in docs/a/x-stdout.txt docs/a/x-stderr.txt .planning/a/rung/invoke.stdout .planning/a/rung/invoke.stderr .planning/a/rung/preflight.stdout.attempt2 .planning/a/logs/stdout-retry2.txt .planning/a/logs/stdout.txt .planning/a/logs/review-stdout.txt .planning/a/logs/review-stderr.txt SETUP_REPORT.md .planning/a/x.err .planning/a/launch.nohup.out .planning/a/launch.nohup.out.attempt2 research/a/probe.out .planning/a/x.err.attempt2 .planning/a/opencode-run.log.attempt2 .planning/a/run.log research/a/run.log .planning/a/CLAUDE-QUOTA.md; do
   assert_eq ".gitignore covers $pattern" "0" "$(git check-ignore -q -- "$pattern" && echo 0 || echo 1)"
 done
 

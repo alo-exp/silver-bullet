@@ -499,6 +499,42 @@ jobs:
         safe = self.variant("      - uses: actions/cache@v4\n        with:\n          key: ${{ hashFiles('x') }}\n        env:\n          T: ${{ github.event.issue.title }}\n")
         self.assertEqual(self.problems(safe), [])
 
+    def test_more_code_inputs_and_container_options_are_checked(self):
+        expr = "${{ github.event.issue.title }}"
+        for key in ("inlineScript", "start", "build", "install", "arguments", "pre-command", "post_run", "install-command", "deploy_command"):
+            step = f"      - uses: some/action@v1\n        with:\n          {key}: echo {expr}\n"
+            self.assertCaught(self.variant(step), f"with: {key} input", key)
+        listed = f"      - uses: actions/github-script@v7\n        with:\n          script:\n            - core.info('ok')\n            - core.info('{expr}')\n"
+        self.assertCaught(self.variant(listed), "with: script input")
+        self.assertEqual(self.problems(self.variant("      - uses: some/action@v1\n        with:\n          script: [1, 2]\n          start: 3\n")), [])
+        container = HARDENED.replace("    runs-on: ubuntu-latest\n    timeout-minutes: 20\n", f"    runs-on: ubuntu-latest\n    timeout-minutes: 20\n    container:\n      image: x\n      options: --label {expr}\n", 1)
+        self.assertCaught(container, "container options input")
+        service = HARDENED.replace("    runs-on: ubuntu-latest\n    timeout-minutes: 20\n", f"    runs-on: ubuntu-latest\n    timeout-minutes: 20\n    services:\n      db:\n        image: x\n        options: --label {expr}\n", 1)
+        self.assertCaught(service, "container options input")
+        plain = HARDENED.replace("    runs-on: ubuntu-latest\n    timeout-minutes: 20\n", "    runs-on: ubuntu-latest\n    timeout-minutes: 20\n    container: node:22\n    services: x\n", 1)
+        self.assertEqual(self.problems(plain), [])
+
+    def test_privileged_triggers_must_not_check_out_the_pull_request_head(self):
+        checkout = lambda ref: f"      - uses: actions/checkout@v5\n        with:\n          persist-credentials: false\n          {ref}\n"
+        hardened = HARDENED.replace("on: [push]", "on:\n  pull_request_target:\n    types: [opened]")
+        bad_refs = ("ref: ${{ github.event.pull_request.head.sha }}", "ref: ${{ github.head_ref }}", "ref: refs/pull/1/merge",
+                    "ref: ${{ github.event.workflow_run.head_branch }}", "repository: ${{ github.event.pull_request.head.repo.full_name }}",
+                    "ref: ${{ github.event.pull_request.merge_commit_sha }}")
+        for trigger in ("on:\n  pull_request_target:\n    types: [opened]", "on: workflow_run", "on: [push, pull_request_target]", "on:\n  workflow_run:\n    workflows: [x]"):
+            base = HARDENED.replace("on: [push]", trigger)
+            for ref in bad_refs:
+                self.assertCaught(self.variant(checkout(ref), base), "checks out the head of the pull request", f"{trigger} {ref}")
+        self.assertEqual(self.problems(self.variant(checkout("ref: main"), hardened)), [])
+        self.assertEqual(self.problems(self.variant(checkout("fetch-depth: 0"), hardened)), [])
+        # The same checkout under an unprivileged trigger is the normal pull request build.
+        self.assertEqual(self.problems(self.variant(checkout("ref: ${{ github.event.pull_request.head.sha }}"))), [])
+
+    def test_checkout_rule_ignores_case_and_reusable_callers_need_no_timeout(self):
+        self.assertCaught(self.variant("      - uses: Actions/Checkout@v5\n"), "without persist-credentials: false")
+        caller = HARDENED + "  call:\n    uses: ./.github/workflows/other.yml\n    secrets: inherit\n"
+        self.assertEqual(self.problems(caller), [])
+        self.assertIn(f"{self.REL}: job plain has no timeout-minutes", self.problems(HARDENED + "  plain:\n    runs-on: x\n"))
+
     def test_commented_expressions_in_run_bodies_are_caught(self):
         for style in ("|", ">"):
             found = self.problems(self.variant(
@@ -638,41 +674,75 @@ class PersonalDataTest(TempRoot):
         write(self.root, ri.TOKEN_FILE, "# hashes\n" + "".join(
             f"{hashlib.sha256(n.encode()).hexdigest()} {len(n)}  # token\n" for n in names) + "bogus\nabc x\n")
 
-    def test_hashed_identity_tokens_catch_every_separator_form(self):
+    def identity_problems(self, text, rel="docs/x.md"):
+        write(self.root, rel, text)
+        return ri.personal_data(self.root, [rel])
+
+    def context_hash(self, text, rel="docs/x.md"):
+        """The hash the failing check suggests for the first identity token of TEXT."""
+        message = self.identity_problems(text, rel)[0]
+        return message.split("'file <path> ")[1].split("'")[0]
+
+    def test_hashed_identity_tokens_catch_every_separator_and_encoding_form(self):
         self.hashed("dave", "mcdonald")
         forms = ["users_" + "dave" + "_projects", "x_users_" + "dave" + "__claude_plugins", "x_home_" + "dave" + "_silver_bullet",
                  "users-" + "dave" + "-silver-bullet", "\\\\wsl$\\Ubuntu\\home\\" + "dave", "~" + "dave" + "/projects",
                  "Users." + "dave" + ".projects", "&#47;Users&#47;" + "dave", "/Users\\" + "dave" + "\\x", "McDonald, " + "Dave",
-                 "mail dave\u00e9", "dave"]
+                 "mail dave\u00e9", "dave",
+                 "wrote\\n" + "Dave" + " said", "wrote\\t" + "Dave", "github.com%2F" + "dave" + "%2Frepo", "%20" + "dave",
+                 "\\u0064" + "ave", "&#100;" + "ave", "&#x64;" + "ave", "d\u200bave", "d\u00adave", "\uff44\uff41\uff56\uff45",
+                 "\u24d3ave", "x\\u000a" + "dave"]
         for form in forms:
             found = self.problems("a\nline " + form + " and " + form + "\n")
-            self.assertEqual(found, ["docs/x.md:2: " + ri.IDENTITY_MESSAGE], form)
+            self.assertEqual(len(found), 1, form)
+            self.assertTrue(found[0].startswith("docs/x.md:2: " + ri.IDENTITY_MESSAGE.split(" (")[0]), form)
         # Only whole tokens count: a longer word that merely contains the name is a different token.
         self.assertEqual(self.problems("davenport fandave dave2 xdavex\n"), [])
-        # Without a token file the check is off; a different length is never hashed.
+        # A Windows path whose name starts with n/t/r survives the \\n decoding.
+        self.hashed("nick")
+        self.assertEqual(len(self.problems("C:\\Users\\" + "nick" + "\\x\n")), 2)
+        # Without a token file the check is off.
         (self.root / ri.TOKEN_FILE).unlink()
         self.assertEqual(self.problems("dave\n"), [])
 
-    def test_public_identity_uses_are_exempt_by_explicit_file_entries(self):
+    def test_allowlist_entries_exempt_one_context_not_the_file(self):
         self.hashed("dave")
-        write(self.root, "CODEOWNERS", "* @dave\n")
-        write(self.root, "docs/x.md", "by dave\n")
-        write(self.root, ri.ALLOW_FILE, "# public\nfile CODEOWNERS\nfile docs/*.json\n")
-        found = ri.personal_data(self.root, ["CODEOWNERS", "docs/x.md", ri.ALLOW_FILE])
-        self.assertEqual(found, ["docs/x.md:1: " + ri.IDENTITY_MESSAGE])
-        # An exempt file is still checked for paths and emails.
-        write(self.root, "CODEOWNERS", home_path("erin") + "\n")
-        self.assertEqual(ri.personal_data(self.root, ["CODEOWNERS"]), ["CODEOWNERS:1: " + ri.HOME_MESSAGE])
+        header = "# public\n"
+        legit = 'name: "' + "Dave" + ' Jones",\n'
+        digest = self.context_hash(legit)
+        write(self.root, ri.ALLOW_FILE, header + f"file docs/*.md {digest}\n")
+        write(self.root, "docs/x.md", legit + legit + "second " + "dave" + " mention\n" + "other.txt\n")
+        found = ri.personal_data(self.root, ["docs/x.md", ri.ALLOW_FILE])
+        self.assertEqual([p.split(": ")[0] for p in found], ["docs/x.md:3"])
+        self.assertIn(f"add 'file <path> ", found[0])
+        # The entry is bound to the file glob.
+        write(self.root, "other/y.md", legit)
+        self.assertEqual(len(ri.personal_data(self.root, ["other/y.md"])), 1)
+        # Path-shaped uses are reported even inside an allowed context.
+        for shaped in ("users_" + "dave" + "_x", "-users-" + "dave" + "-x", "_home_" + "dave" + "_x", "~" + "dave", "~/" + "dave", "/Users/" + "dave", "Users." + "dave"):
+            quoted = "Dave" + " " + shaped
+            line = 'by "' + quoted + '"\n'
+            write(self.root, "docs/p.md", line)
+            digest = hashlib.sha256(quoted.encode()).hexdigest()[:16]
+            write(self.root, ri.ALLOW_FILE, f"file docs/*.md {digest}\n")
+            found = ri.personal_data(self.root, ["docs/p.md"])
+            self.assertTrue(any("home-directory-shaped path" in p for p in found), shaped)
+        # A single-line file: only the exact quoted string is exempt.
+        line = '{"label":"' + "Dave" + ' Jones","other":"' + "dave" + ' again"}\n'
+        write(self.root, "docs/g.json", line)
+        digest = self.context_hash(line, "docs/g.json")
+        write(self.root, ri.ALLOW_FILE, f"file docs/g.json {digest}\n")
+        self.assertEqual(len(ri.personal_data(self.root, ["docs/g.json"])), 1)
 
     def test_the_allowlist_file_is_scanned_and_its_directives_are_validated(self):
         self.hashed("dave")
-        write(self.root, ri.ALLOW_FILE, "# written by dave\nfile CODEOWNERS\nhome\nHOME x\nemail\nfile  # nothing\n" + "email " + mail("dave", "gmail.com") + "\n# " + home_path("erin") + "\n")
+        digest = "a" * 16
+        bad = ["home", "HOME x", "email", "file", "file docs/x.md", "file docs/x.md short", "file docs/x.md " + "z" * 16, "file a b " + digest]
+        write(self.root, ri.ALLOW_FILE, "# written by dave\n" + "\n".join(bad) + f"\nfile docs/*.md {digest}\nemail " + mail("dave", "gmail.com") + "\n# " + home_path("erin") + "\n")
         found = ri.personal_data(self.root, [ri.ALLOW_FILE])
-        lines = sorted(int(p.split(":")[1]) for p in found)
-        self.assertEqual(lines, [1, 3, 4, 5, 6, 8])  # comment with the name, four bad directives, the path comment
-        self.assertEqual(len([p for p in found if "unknown or incomplete directive" in p]), 4)
+        self.assertEqual(len([p for p in found if "unknown or incomplete directive" in p]), len(bad))
         self.assertEqual(len([p for p in found if ri.HOME_MESSAGE in p]), 1)
-        self.assertEqual(len([p for p in found if ri.IDENTITY_MESSAGE in p]), 1)
+        self.assertEqual(len([p for p in found if ri.IDENTITY_MESSAGE.split(" (")[0] in p]), 1)  # only the comment: entries do not exempt the allowlist itself
 
     def test_ordinary_identifiers_are_not_flagged(self):
         text = "\n".join(["the home_page_code path", "home_screen_work", "is_home_dir_projects", "home-made-projects", "my_home_town_github",

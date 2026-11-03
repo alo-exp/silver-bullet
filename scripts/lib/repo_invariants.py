@@ -33,6 +33,7 @@ import os
 import re
 import subprocess
 import sys
+import unicodedata
 from collections import Counter
 from html.parser import HTMLParser
 from pathlib import Path
@@ -382,7 +383,6 @@ def generic_name(name: str) -> bool:
 
 TOKEN_FILE = ".github/personal-data-hashes.txt"
 TOKEN = re.compile(r"[a-z0-9]+")
-ALLOW_DIRECTIVES = ("home", "email", "file")
 
 
 def load_hashes(root: Path) -> dict[int, frozenset[str]]:
@@ -398,45 +398,99 @@ def load_hashes(root: Path) -> dict[int, frozenset[str]]:
 TOKEN_TABLE = bytes(c if (48 <= c < 58 or 97 <= c < 123) else 32 for c in range(256))
 
 
-def identity_lines(data: bytes, hashes: dict[int, frozenset[str]]) -> list[int]:
-    """Lines of DATA holding an alphanumeric token whose SHA-256 is listed: every separator form of
-    the maintainer's name (users_<n>_, ~<n>, <n>@..., &#47;<n>) without naming it."""
+ZERO_WIDTH = re.compile("[\u00ad\u061c\u180e\u200b-\u200f\u202a-\u202e\u2060-\u2064\u2066-\u206f\ufeff]")
+UNICODE_ESCAPE = re.compile(r"\\u([0-9a-fA-F]{4})")
+# Reading \\n as a newline would hide a Windows path whose name starts with n, t or r, so such files are
+# tokenised both ways.
+ESCAPED_CONTROLS = ("\\n", "\\t", "\\r")
+PERCENT_ESCAPE = re.compile(r"%([2-7][0-9a-fA-F])")
+NUMERIC_ENTITY = re.compile(r"&#(?:[xX]([0-9a-fA-F]{1,6})|([0-9]{1,7}));")
+# A listed token right after users/home plus 1-3 separators, or after ~ : a home path, never exempt.
+PATH_SHAPED = re.compile(rb"(?:(?:users|home)[^a-z0-9\n]{1,3}|~/?)\Z")
+
+
+def code_point(number: int) -> str:
+    return chr(number) if 0x20 <= number <= 0x10FFFF else " "
+
+
+def fold_for_identity(text: str, control_escapes: bool) -> str:
+    """TEXT with JSON (\\uXXXX, optionally \\n \\t \\r), URL (%XX) and numeric HTML escapes decoded,
+    zero-width characters removed and compatibility forms (fullwidth letters) folded to ASCII.
+    Line numbers are unchanged: no escape decodes to a newline."""
+    if "\\u" in text:
+        text = UNICODE_ESCAPE.sub(lambda m: code_point(int(m.group(1), 16)), text)
+    if control_escapes and "\\" in text:
+        text = text.replace("\\n", " ").replace("\\t", " ").replace("\\r", " ")
+    if "%" in text:
+        text = PERCENT_ESCAPE.sub(lambda m: chr(int(m.group(1), 16)), text)
+    if "&#" in text:
+        text = NUMERIC_ENTITY.sub(lambda m: code_point(int(m.group(1), 16) if m.group(1) else int(m.group(2))), text)
+    if not text.isascii():
+        text = ZERO_WIDTH.sub("", text if unicodedata.is_normalized("NFKC", text) else unicodedata.normalize("NFKC", text))
+    return text
+
+
+def identity_context(data: bytes, start: int) -> str:
+    """SHA-256 of the quoted string or line around START (at most 200 bytes either side): what an
+    allowlist 'file' entry names, so that only this exact text is exempt."""
+    before = max(data.rfind(b'"', 0, start), data.rfind(b"\n", 0, start), start - 201) + 1
+    stops = [i for i in (data.find(b'"', start), data.find(b"\n", start)) if i != -1]
+    return hashlib.sha256(data[before:min(stops + [start + 200, len(data)])].strip()).hexdigest()
+
+
+def identity_hits(text: str, hashes: dict[int, frozenset[str]], allowed: frozenset[str]) -> list[tuple[int, str]]:
+    """(line, message) for each alphanumeric token of TEXT whose SHA-256 is listed: every separator
+    form of the maintainer's name (users_<n>_, ~<n>, <n>@..., &#47;<n>) without naming it. A token
+    inside a context an allowlist entry names is exempt unless it is path-shaped."""
+    data = text.encode("utf-8", "replace")
     low = data.lower()
-    unique = {token for token in low.translate(TOKEN_TABLE).split() if len(token) in hashes}
+    unique = {token for token in set(low.translate(TOKEN_TABLE).split()) if len(token) in hashes}
     listed = {token for token in unique if hashlib.sha256(token).hexdigest() in hashes[len(token)]}
-    if not listed:
-        return []
-    return sorted({low.count(b"\n", 0, m.start()) + 1 for m in re.finditer(rb"[a-z0-9]+", low) if m.group() in listed})
+    found = []
+    spotter = re.compile(rb"(?<![a-z0-9])(?:" + b"|".join(sorted(listed)) + rb")(?![a-z0-9])") if listed else None
+    for m in (spotter.finditer(low) if spotter else ()):
+        context = identity_context(data, m.start())
+        line = data.count(b"\n", 0, m.start()) + 1
+        if PATH_SHAPED.search(low, max(0, m.start() - 8), m.start()):
+            found.append((line, PATH_IDENTITY_MESSAGE))
+        elif not any(context.startswith(entry) for entry in allowed):
+            found.append((line, f"{IDENTITY_MESSAGE} (a public use: add 'file <path> {context[:16]}' to {ALLOW_FILE})"))
+    return found
 
 
 class Allowlist:
     """Audited exceptions from ALLOW_FILE, one per line, '#' starts a comment:
     home <name> (a directory name that is not a person), email <address | @domain>,
-    file <glob> (a public identity use, such as CODEOWNERS or an author field)."""
+    file <glob> <context hash> (a public use of the maintainer's name, such as an author field: the
+    first 16+ hex digits of the SHA-256 of the quoted string or line holding it, printed by the
+    check; only that text is exempt, every other line of the file is still scanned)."""
 
     def __init__(self, root: Path) -> None:
         self.homes: set[str] = set()
         self.emails: set[str] = set()
-        self.files: list[str] = []
+        self.files: list[tuple[str, str]] = []
         self.errors: list[str] = []
         self.rest: list[str] = []  # the file's text without its valid entries, scanned like any other file
         for number, line in enumerate((read_bytes(root, ALLOW_FILE) or b"").decode("utf-8", "replace").splitlines(), 1):
             code = line.split("#", 1)[0].strip()
             directive, _, value = code.partition(" ")
             value = value.strip()
-            valid = directive in ALLOW_DIRECTIVES and bool(value)
+            parts = value.split()
+            valid = (directive in ("home", "email") and bool(value)) or (
+                directive == "file" and len(parts) == 2 and len(parts[1]) >= 16 and re.fullmatch("[0-9a-fA-F]+", parts[1]) is not None)
             if code and not valid:
-                self.errors.append(f"{ALLOW_FILE}:{number}: unknown or incomplete directive (expected: {', '.join(ALLOW_DIRECTIVES)} <value>)")
+                self.errors.append(f"{ALLOW_FILE}:{number}: unknown or incomplete directive (expected: home <name>, email <address>, file <path-glob> <context hash>)")
             if valid and directive == "home":
                 self.homes.add(value.lower())
             elif valid and directive == "email":
                 self.emails.add(value.lower())
             elif valid:
-                self.files.append(value)
+                self.files.append((parts[0], parts[1].lower()))
             self.rest.append("" if valid else line)
 
-    def allows_file(self, rel: str) -> bool:
-        return any(fnmatch.fnmatchcase(rel, glob) for glob in self.files)
+    def contexts(self, rel: str) -> frozenset[str]:
+        """The context-hash prefixes allowed for file REL."""
+        return frozenset(prefix for glob, prefix in self.files if fnmatch.fnmatchcase(rel, glob))
 
 
 def email_allowed(local: str, domain: str, allowed_emails: frozenset[str] = frozenset()) -> bool:
@@ -496,7 +550,8 @@ EMAIL_MESSAGE = "email address outside the allowlist (alolabs.dev, sourcevo.com,
 SCANNED_BINARY = (".pdf",)  # link annotations and metadata sit in the clear
 
 
-IDENTITY_MESSAGE = "maintainer identity token (use a placeholder; list a public use in " + ALLOW_FILE + " as 'file <path>')"
+IDENTITY_MESSAGE = "maintainer identity token (use a placeholder)"
+PATH_IDENTITY_MESSAGE = "maintainer identity token in a home-directory-shaped path (never exempt; use a placeholder)"
 
 
 def personal_data(root: Path, files: list[str]) -> list[str]:
@@ -511,7 +566,7 @@ def personal_data(root: Path, files: list[str]) -> list[str]:
             continue
         if rel == ALLOW_FILE:
             raw = "\n".join(allow.rest).encode()
-        text = raw.decode("latin-1" if binary else "utf-8", "replace")
+        text = original = raw.decode("latin-1" if binary else "utf-8", "replace")
         low = text.lower()  # only to decide whether the file can hold paths; offsets are taken after decoding
         # JSON-escaped (\/, \\/, \u002f) and URL-encoded (%2F, %5C) separators; newlines stay put, so line numbers hold.
         if "\\" in text:
@@ -525,8 +580,10 @@ def personal_data(root: Path, files: list[str]) -> list[str]:
             hits += [(start, end, HOME_MESSAGE) for start, end, name in home_hits(text, text.lower()) if name.lower() not in allow.homes]
             hits += [(offset, offset, EMAIL_MESSAGE) for offset in email_hits(text, frozenset(allow.emails))]
         found = [(text.count(chr(10), 0, start) + 1, message) for start, _, message in hits]
-        if not allow.allows_file(rel):
-            found += [(line, IDENTITY_MESSAGE) for line in identity_lines(raw, hashes)]
+        if hashes:
+            allowed = frozenset() if rel == ALLOW_FILE else allow.contexts(rel)
+            variants = [fold_for_identity(original, True)] + ([fold_for_identity(original, False)] if any(e in original for e in ESCAPED_CONTROLS) else [])
+            found += sorted({hit for variant in variants for hit in identity_hits(variant, hashes, allowed)})
         problems += [f"{rel}:{line}: {message}" for line, message in sorted(found, key=lambda item: item[0])]
     return problems
 
@@ -571,8 +628,16 @@ def site_duplicate_ids(root: Path, files: list[str]) -> list[str]:
 WORKFLOW_FILE = re.compile(r"^\.github/workflows/[^/]+\.ya?ml$")
 UNPINNED = re.compile(r"@latest\b|\bnpx\s+(--yes|-y)\b")
 CHECKOUT_GUARD = re.compile(r"git status --porcelain --ignored\b")
-# with: inputs that run as code (actions/github-script script:, container and shell runners).
-CODE_INPUTS = frozenset({"script", "run", "command", "args", "cmd", "entrypoint", "shell"})
+# with: inputs that run as code, so an expression in them is script injection. This is the one list:
+# extend it when an action's input runs a command (compared lower-case; any key ending in -command or
+# _command counts too). A list value is checked item by item.
+CODE_INPUTS = frozenset({
+    "script", "run", "command", "args", "arguments", "cmd", "entrypoint", "shell", "inlinescript",
+    "start", "build", "install", "pre-command", "post-command", "pre_run", "post_run", "pre-run", "post-run", "options",
+})
+# Checking out the head of a pull request in a privileged trigger runs its code with secrets (a "pwn request").
+PRIVILEGED_TRIGGERS = frozenset({"pull_request_target", "workflow_run"})
+HEAD_REF = re.compile(r"github\.event\.pull_request\.(head|merge_commit_sha)|github\.head_ref|github\.event\.workflow_run\.head_|refs/pull/")
 
 
 class LineMap(dict):
@@ -630,7 +695,21 @@ def write_all_lines(node, line: int):
             yield from write_all_lines(item, line)
 
 
-def step_problems(step) -> list[tuple[int, str]]:
+def is_code_input(key) -> bool:
+    key = str(key).lower()
+    return key in CODE_INPUTS or key.endswith(("-command", "_command"))
+
+
+def expression_lines(mapping: LineMap, label: str, keys=None):
+    """(line, message) for each ${{ }} in the values of MAPPING's code inputs, strings and lists of strings."""
+    for key, value in mapping.items():
+        if keys is not None and key not in keys:
+            continue
+        if is_code_input(key) and any("${{" in text for text in ([value] if isinstance(value, str) else value if isinstance(value, list) else []) if isinstance(text, str)):
+            yield mapping.key_line[key], f"${{{{ }}}} expression inside the {label}{key} input, which runs as code (pass it through env)"
+
+
+def step_problems(step, privileged: bool) -> list[tuple[int, str]]:
     if not isinstance(step, LineMap):
         return []
     found = []
@@ -639,15 +718,16 @@ def step_problems(step) -> list[tuple[int, str]]:
         found.append((step.key_line["run"], "${{ }} expression inside a run script (pass it through env)"))
     with_ = step.get("with")
     if isinstance(with_, LineMap):
-        for key, value in with_.items():
-            if str(key).lower() in CODE_INPUTS and isinstance(value, str) and "${{" in value:
-                found.append((with_.key_line[key], f"${{{{ }}}} expression inside the with: {key} input, which runs as code (pass it through env)"))
+        found.extend(expression_lines(with_, "with: "))
     if "continue-on-error" in step and step["continue-on-error"] is not False:
         found.append((step.key_line["continue-on-error"], "continue-on-error hides failures"))
     uses = step.get("uses")
-    if isinstance(uses, str) and uses.startswith("actions/checkout@"):
+    if isinstance(uses, str) and uses.lower().startswith("actions/checkout@"):
         if not (isinstance(with_, LineMap) and with_.get("persist-credentials") is False):
             found.append((step.key_line["uses"], "actions/checkout without persist-credentials: false"))
+        if privileged and isinstance(with_, LineMap):
+            found.extend((with_.key_line[key], "a pull_request_target or workflow_run workflow checks out the head of the pull request (runs untrusted code with secrets)")
+                         for key in ("ref", "repository") if HEAD_REF.search(str(with_.get(key, ""))))
     return found
 
 
@@ -675,19 +755,27 @@ def workflow_problems(rel: str, text: str) -> list[str]:
     env = data.get("env")
     if not (isinstance(env, LineMap) and env.get("FORCE_JAVASCRIPT_ACTIONS_TO_NODE24") in (True, "true")):
         problems.append(f"{rel}: FORCE_JAVASCRIPT_ACTIONS_TO_NODE24 is not set to true in the top-level env")
+    triggers = data.get("on", data.get(True))  # YAML 1.1 reads the key "on" as True
+    names = set(triggers) if isinstance(triggers, (list, dict)) else {triggers}
+    privileged = bool(names & PRIVILEGED_TRIGGERS)
     lined = [(line, "unpinned @latest or npx --yes") for string, line in strings_with_lines(data, 1) if UNPINNED.search(string)]
     missing = []
     for name, job in (jobs.items() if isinstance(jobs, LineMap) else []):
         if not isinstance(job, LineMap):
             missing.append(name)
             continue
-        if "timeout-minutes" not in job:
+        if "timeout-minutes" not in job and "uses" not in job:  # a reusable-workflow caller cannot set one
             missing.append(name)
+        services = job.get("services")
+        containers = [job.get("container")] + (list(services.values()) if isinstance(services, LineMap) else [])
+        for container in containers:
+            if isinstance(container, LineMap):
+                lined.extend(expression_lines(container, "container ", {"options"}))
         if "continue-on-error" in job and job["continue-on-error"] is not False:
             lined.append((job.key_line["continue-on-error"], "continue-on-error hides failures"))
         steps = job.get("steps")
         for step in steps if isinstance(steps, list) else []:
-            lined.extend(step_problems(step))
+            lined.extend(step_problems(step, privileged))
     problems += [f"{rel}:{line}: {message}" for line, message in sorted(lined)]
     return problems + [f"{rel}: job {name} has no timeout-minutes" for name in missing]
 
