@@ -13,6 +13,7 @@ from typing import Any
 from compression_markers import assert_no_compression_markers, sanitize_compression_markers
 from generated_files import write_generated_text
 from category_pack import (
+    pack_overlay,
     apply_parent_child_dedupe,
     build_known_solutions,
     build_license_by_slug,
@@ -263,49 +264,9 @@ def vendor_license_bucket(
     return fallback
 
 
+# Trends are category knowledge, so they live in the category pack overlay ("trend_seeds");
+# without a pack the only trend is the method note below.
 TREND_SEEDS: list[dict[str, str]] = [
-    {
-        "title": "Process-first orchestration above coding agents",
-        "what": "Buyers increasingly separate the agent host (IDE, cloud sandbox) from the SDLC process layer that composes workflows, enforces gates, and records skills.",
-        "smb": "SMBs without platform teams need opinionated process packs rather than bespoke agent graphs.",
-        "vendor": "Silver Bullet, Factory.ai, and GitHub Copilot Workspace market explicit SDLC chains; Cursor and Devin remain executor-first.",
-    },
-    {
-        "title": "Hook-enforced lifecycle gates",
-        "what": "Host hooks that fail closed on skill recording, planning ownership, and delivery gates are emerging as trust rails for autonomous work.",
-        "smb": "Reduces rework risk when junior teams delegate multi-step agent runs.",
-        "vendor": "Silver Bullet and Cursor document hook layers; most git-native agents lack cross-host gate parity.",
-    },
-    {
-        "title": "Machine-readable workflow catalogs",
-        "what": "Atomic flow catalogs (workflows, steps, V-loops) enable composition, audit, and CI freshness checks beyond ad-hoc prompts.",
-        "smb": "Lets lean teams adopt SDLC patterns without writing orchestration code.",
-        "vendor": "Silver Bullet ships `apo-catalog.json`; spec-kit and GSD offer lighter-weight spec packs.",
-    },
-    {
-        "title": "Git-native issue→PR agent loops",
-        "what": "Issue trackers and repos become control planes for multi-step agent work with human review on PRs.",
-        "smb": "Fits teams already on GitHub; lowers integration tax versus custom runtimes.",
-        "vendor": "GitHub Copilot Workspace, Sweep, and Tembo target this pattern.",
-    },
-    {
-        "title": "Autonomous software engineers (plan→ship)",
-        "what": "Managed agents that plan, implement, test, and open PRs in customer repos are maturing for enterprise pilots.",
-        "smb": "High capability but opaque process; pricing and governance remain enterprise-weighted.",
-        "vendor": "Devin and Factory.ai Droids compete here; Magic.dev is a coding-model lab, not a scored SaaS-core peer.",
-    },
-    {
-        "title": "BYO agent runtimes and graph orchestration",
-        "what": "Frameworks expose durable graphs, interrupts, and delegation primitives for custom orchestration.",
-        "smb": "Maximum flexibility at the cost of in-house agent ops expertise.",
-        "vendor": "LangGraph Platform, CrewAI, and AutoGen anchor this segment; MetaGPT is scored as APO OSS core, not a generic framework adjacent.",
-    },
-    {
-        "title": "Spec-driven and context-engineering workflows",
-        "what": "Lightweight methodology packs emphasize intent specs, critique loops, and context hygiene before code.",
-        "smb": "Low-cost entry for teams not ready for full orchestration platforms.",
-        "vendor": "GitHub spec-kit, GSD, and BMAD-METHOD are representative.",
-    },
     {
         "title": "Multi-model pools and triangulated research",
         "what": "This research pass triangulates multiple model families with explicit divergence tracking. That is a report method — not a product feature vendors were scored on.",
@@ -313,6 +274,7 @@ TREND_SEEDS: list[dict[str, str]] = [
         "vendor": "Not a scored MQ/Wave/matrix axis in this engine; see scoring methodology.",
     },
 ]
+
 
 KCF_NAMES = [
     "Workflow composition",
@@ -888,7 +850,6 @@ _DIVERGENCE_SUBJECTS: tuple[tuple[str, str], ...] = (
     ("primary apo market", "apo-maturity"),
     ("ai dlc", "ai-dlc"),
     ("aidlc", "ai-dlc"),
-    ("silver bullet", "silver-bullet"),
     ("factory.ai", "factory-ai"),
     ("factory ai", "factory-ai"),
     ("bmad method", "bmad"),
@@ -898,12 +859,10 @@ _DIVERGENCE_SUBJECTS: tuple[tuple[str, str], ...] = (
     ("devin", "devin"),
     ("metagpt", "metagpt"),
     ("bmad", "bmad"),
-    ("zuvo", "zuvo"),
 )
 
 _DIVERGENCE_SUBJECT_LABELS = {
     "ai-dlc": "AI-DLC",
-    "silver-bullet": "Silver Bullet completeness",
     "conductor": "Conductor positioning",
     "magic-dev": "Magic.dev / Cognition Scout inclusion",
     "cognition-scout": "Magic.dev / Cognition Scout inclusion",
@@ -913,7 +872,6 @@ _DIVERGENCE_SUBJECT_LABELS = {
     "apo-maturity": "Primary APO market maturity",
     "factory-ai": "Factory.ai role",
     "cc10x": "cc10x plugin vs APO",
-    "zuvo": "Zuvo classification",
     "adjacent-only": "Adjacent-only frameworks",
     "tertiary-market": "Tertiary SaaS inclusion",
     "augment-cosmos": "Augment Cosmos naming",
@@ -2517,200 +2475,7 @@ def _humanize_pack_jargon(text: str, pack: dict[str, Any] | None) -> str:
             labels[str(entry["id"])] = str(entry.get("label") or str(entry["id"]).replace("_", " "))
     for key in sorted(labels, key=len, reverse=True):
         out = re.sub(rf"\b{re.escape(key)}\b", labels[key], out)
-    return scrub_membership_framing(out, pack)
-
-
-def _non_apo_display_labels(pack: dict[str, Any]) -> set[str]:
-    """Display names that must not be framed as APO core (adjacent / other-market only)."""
-    apo_slugs: set[str] = set()
-    for market in get_markets(pack):
-        if str(market.get("id") or "") == "apo":
-            apo_slugs = {
-                str(s.get("slug"))
-                for s in (market.get("seeds") or [])
-                if isinstance(s, dict) and s.get("slug")
-            }
-            break
-    labels: set[str] = set()
-    for market in get_markets(pack):
-        mid = str(market.get("id") or "")
-        for bucket in ("adjacent_seeds", "seeds"):
-            if bucket == "seeds" and mid == "apo":
-                continue
-            for seed in market.get(bucket) or []:
-                if not isinstance(seed, dict) or not seed.get("slug"):
-                    continue
-                slug = str(seed["slug"])
-                if slug in apo_slugs:
-                    continue
-                # Adjacent anywhere, or core seeds of non-APO markets, are not APO peers.
-                name = str(seed.get("name") or slug).strip()
-                if name:
-                    labels.add(name)
-    return labels
-
-
-def scrub_membership_framing(text: str, pack: dict[str, Any] | None) -> str:
-    """Rewrite prose that mis-labels non-APO members (e.g. Conductor, Claude Harness) as APO peers.
-
-    Operates line-by-line so full markdown documents are not collapsed to a single rewrite.
-    """
-    if not text or not pack:
-        return text
-    non_apo = _non_apo_display_labels(pack)
-    if not non_apo:
-        return text
-    # Prefer longer names first so "Claude Harness" wins over "Claude".
-    non_apo_sorted = sorted(non_apo, key=len, reverse=True)
-
-    def _scrub_unit(unit: str) -> str:
-        if not unit.strip():
-            return unit
-        matched = [n for n in non_apo_sorted if re.search(rf"\b{re.escape(n)}\b", unit, flags=re.I)]
-        if not matched:
-            return unit
-        if not re.search(r"\bAPOs?\b|Agentic Process Orchestrator|primary-market APO", unit, flags=re.I):
-            return unit
-
-        out = unit
-
-        def _rewrite_apo_candidate(buf: str, name: str, mid: str) -> str:
-            """Rewrite bare or markdown-linked '<Name> is a primary-market APO candidate — '."""
-            esc = re.escape(name)
-
-            def _repl(m: re.Match[str]) -> str:
-                url = m.group(1)
-                if url:
-                    return f"[{name}]({url}) {mid}"
-                return f"{name} {mid}"
-
-            # [Name](url) or bare Name, then APO-candidate clause.
-            return re.sub(
-                rf"(?:\[{esc}\]\(([^)]+)\)|\b{esc}\b)\s+is a primary-market APO candidate\s*[—\-–]\s*",
-                _repl,
-                buf,
-                flags=re.I,
-            )
-
-        # Generic: non-APO products must not be called primary-market APO candidates.
-        # Must match markdown-linked names: [Claude Harness](url) is a primary-market APO candidate
-        for name in matched:
-            if name.lower() == "claude harness":
-                out = _rewrite_apo_candidate(
-                    out,
-                    name,
-                    "is an SDLC-plugins methodology pack (not an APO peer) — ",
-                )
-                # Fallback for non-dash APO co-mentions still mislabeled as APO peers.
-                if re.search(r"primary-market APO candidate", out, flags=re.I):
-                    out = re.sub(
-                        rf"(?:\[{re.escape(name)}\]\([^)]+\)|\b{re.escape(name)}\b)(?=[^.]*\bAPOs?\b)",
-                        f"{name} (sdlc-plugins, not APO)",
-                        out,
-                        count=1,
-                        flags=re.I,
-                    )
-            elif name.lower() == "magic.dev":
-                out = _rewrite_apo_candidate(
-                    out,
-                    name,
-                    "is a hard-excluded coding-model lab (not a SaaS core, not an APO peer) — ",
-                )
-            elif name.lower() in {
-                "cursor",
-                "claude code",
-                "codex",
-                "github copilot",
-                "cognition scout",
-            }:
-                out = _rewrite_apo_candidate(
-                    out,
-                    name,
-                    "is a host-runtime / SaaS-adjacent surface (not an APO peer) — ",
-                )
-            else:
-                out = _rewrite_apo_candidate(
-                    out,
-                    name,
-                    "is not an APO peer — ",
-                )
-
-        if re.search(r"cc10x occupies a mid-tier APO", out, flags=re.I):
-            out = re.sub(
-                r"cc10x occupies a mid-tier APO band[^.]*\.",
-                "cc10x is an SDLC-plugins Claude Code plugin (not an APO peer).",
-                out,
-                flags=re.I,
-            )
-
-        if not re.search(r"\bConductor\b", out, flags=re.I):
-            return out
-
-        if re.search(r"mid-tier APO cluster|mid-tier APO band", out, flags=re.I):
-            prefix = ""
-            stripped = out.lstrip()
-            if stripped.startswith("- "):
-                prefix = "- "
-            elif stripped.startswith("* "):
-                prefix = "* "
-            return (
-                f"{prefix}cc10x is an SDLC-plugins Claude Code plugin (not an APO peer); "
-                "Conductor is a SaaS-adjacent coding-agent aggregator (parallel Claude Code/Codex "
-                "worktrees), not an APO peer; Director is an APO seed with unverified identity "
-                "and no shipped hook gates — not a plugin and not an aggregator."
-            )
-        if re.search(r"most credible non-SB APO|non-SB APO entrants", out, flags=re.I):
-            return (
-                "AI-DLC is the most credible non-SB APO entrant in the primary market on "
-                "methodology pedigree; Conductor is SaaS-adjacent (coding-agent aggregator), not APO."
-            )
-        if re.search(r"Conductor occupies a distinct sub-position", out, flags=re.I):
-            return (
-                "Conductor occupies a SaaS-adjacent niche — parallel-worker orchestration and "
-                "workspace isolation for coding agents — and is not an APO peer to gate-enforcement "
-                "orchestrators like Silver Bullet."
-            )
-        if re.search(
-            r"leading verifiable solutions|thinly populated.*Conductor|Conductor.*leading",
-            out,
-            flags=re.I,
-        ):
-            out = re.sub(
-                r"\bConductor(?:\.build)?\b",
-                "REMOVED_NON_APO",
-                out,
-                flags=re.I,
-            )
-        # Strip Conductor (plain + markdown-linked) from APO enumerations / seed lists.
-        out = re.sub(r"\[Conductor(?:\.build)?\]\([^)]+\)", "Conductor", out, flags=re.I)
-        out = re.sub(r",\s*Conductor(?:\.build)?(?=\s*[,)])", "", out, flags=re.I)
-        out = re.sub(r"\bConductor(?:\.build)?,\s*", "", out, flags=re.I)
-        out = re.sub(r"\band\s+Conductor(?:\.build)?\b", "", out, flags=re.I)
-        out = re.sub(r"\bConductor(?:\.build)?\s+and\s+", "", out, flags=re.I)
-        out = out.replace("REMOVED_NON_APO", "")
-        # Clarify remaining Conductor+APO co-mentions.
-        if re.search(r"\bConductor\b", out, flags=re.I) and re.search(
-            r"\bAPOs?\b", out, flags=re.I
-        ):
-            if not re.search(r"not an? APO|not APO|SaaS-adjacent", out, flags=re.I):
-                out = re.sub(
-                    r"\bConductor\b",
-                    "Conductor (SaaS-adjacent coding-agent aggregator, not APO)",
-                    out,
-                    count=1,
-                    flags=re.I,
-                )
-        out = re.sub(r"\s{2,}", " ", out)
-        out = re.sub(r",\s*,", ",", out)
-        out = re.sub(r",\s+and\s+and\b", ", and", out)
-        out = re.sub(r"\(\s*,", "(", out)
-        out = re.sub(r",\s*\)", ")", out)
-        out = re.sub(r",\s+and\s+\.", ".", out)
-        out = re.sub(r"\s+\.", ".", out)
-        return out.strip(" ,")
-
-    # Preserve document structure: scrub each line independently.
-    return "\n".join(_scrub_unit(line) for line in text.splitlines())
+    return out
 
 
 def _envelope_claim_records(envelopes: list[dict[str, Any]]) -> list[dict[str, str]]:
@@ -2745,105 +2510,62 @@ def _envelope_claim_records(envelopes: list[dict[str, Any]]) -> list[dict[str, s
     return records
 
 
-_CONSENSUS_THEMES: tuple[tuple[str, tuple[str, ...], str, str], ...] = (
-    (
-        "process-first",
-        (
-            "process layer",
-            "above a host",
-            "above the host",
-            "host coding-agent",
-            "compliance/enforcement layer",
-        ),
-        "Process layer above host runtimes",
-        "Contributing models treat Agentic Process Orchestrators as a process or "
-        "enforcement layer above a host coding-agent runtime, not as a synonym for "
-        "autonomous code generation.",
-    ),
-    (
-        "hook-gates",
-        (
-            "hook",
-            "deterministic gate",
-            "machine-checkable",
-            "quality gate",
-            "pretooluse",
-        ),
-        "Hook-enforced and deterministic gates",
-        "Models agree that machine-checkable gates (host hooks, blocking quality rails) "
-        "are the main differentiator versus prompt- or persona-level methodology packs, "
-        "which an agent can skip.",
-    ),
-    (
-        "methodology-packs",
-        (
-            "methodology pack",
-            "sdlc plugin",
-            "secondary-market",
-            "secondary market",
-        ),
-        "SDLC plugin / methodology packs as substitutes",
-        "Models agree the secondary market (BMAD, GSD, Superpowers, Spec Kit, Ruflo, "
-        "Oh My Pi, and peers) covers plan-to-ship workflows as host plugins. That is a "
-        "substitute class, not automatic Leader standing on the primary APO chart.",
-    ),
-    (
-        "cross-session",
-        (
-            "cross-session",
-            "persistent memory",
-            "state machine",
-        ),
-        "Cross-session state is under-served",
-        "Models agree durable cross-session state is the weakest inclusion criterion "
-        "for most methodology packs; markdown re-read per session is not an enforced "
-        "state machine.",
-    ),
-    (
-        "tertiary-saas",
-        (
-            "tertiary",
-            "autonomous delivery",
-            "factory.ai",
-            "devin",
-        ),
-        "Tertiary SaaS as buying substitutes",
-        "Models agree Factory.ai, Devin, and Augment Cosmos are analyst-grade substitutes "
-        "for process-orchestration buying even when they do not self-label as APO. "
-        "They are scored in the SaaS market, not as APO peers.",
-    ),
+_NEGATION_RE = re.compile(
+    r"\b(?:not|no|never|without|lacks?|lacking|cannot|can't|doesn't|don't|isn't|aren't|"
+    r"fails?|neither|nor)\b",
+    re.IGNORECASE,
 )
+
+
+def _theme_stance(text: str, needles: tuple[str, ...] | list[str]) -> str | None:
+    """'for', 'against' or None for one claim: negation in the needle's own sentence is 'against'."""
+    for sentence in re.split(r"(?<=[.!?;])\s+", text):
+        low = sentence.lower()
+        if any(needle in low for needle in needles):
+            return "against" if _NEGATION_RE.search(sentence) else "for"
+    return None
 
 
 def build_consensus_patterns(
     envelopes: list[dict[str, Any]],
     *,
     min_families: int = 3,
+    themes: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
-    """Synthesize what contributing models actually agreed on (not trend stubs)."""
+    """What contributing models actually agreed on, per pack-supplied theme.
+
+    A theme is reported only when at least ``min_families`` model families state it without
+    negation and more families state it than contradict it. Themes are category data
+    (the pack overlay's ``consensus_themes``); without them there is nothing to report.
+    """
     records = [
         rec
         for rec in _envelope_claim_records(envelopes)
         if rec.get("phase") in {"DR-TRIANGULATE", "DR-CRITIQUE", "DR-RETRIEVE"}
     ]
     patterns: list[dict[str, Any]] = []
-    for theme_id, needles, title, synthesis in _CONSENSUS_THEMES:
+    for theme in themes or []:
+        needles = [str(n).lower() for n in theme.get("needles") or []]
         families: set[str] = set()
+        against: set[str] = set()
         models: set[str] = set()
         for rec in records:
-            blob = rec["text"].lower()
-            if any(needle in blob for needle in needles):
+            stance = _theme_stance(rec["text"], needles)
+            if stance == "for":
                 families.add(rec["family"])
                 models.add(rec["model"])
-        if len(families) < min_families:
+            elif stance == "against":
+                against.add(rec["family"])
+        if len(families) < min_families or len(families) <= len(against):
             continue
         patterns.append(
             {
-                "id": theme_id,
-                "title": title,
-                "text": synthesis,
+                "id": theme["id"],
+                "title": theme["title"],
+                "text": theme["text"],
                 "families": sorted(families),
                 "models": sorted(models),
+                "contradicting_families": sorted(against),
             }
         )
     return patterns
@@ -2913,11 +2635,11 @@ def _scoring_methodology_lines(
         "",
         "**Leader eligibility.** SDLC plugins need hook-enforced gates **and** "
         "inclusion-ledger cross-session pass. APO seeds without shipped hook gates cannot "
-        "occupy Leaders. Plugin MQ Leaders = Silver Bullet only in this run is that "
-        "feature-gate fact — not a 'most complete product' claim.",
+        "occupy Leaders. Leader plots are a feature-gate outcome of the evidenced "
+        "features, not a 'most complete product' claim.",
         "",
-        "**Hard-exclusion membership.** A slug on the pack hard-exclusion list (Magic.dev as "
-        "`coding_agent`; A.Team as professional services) has **one** membership — excluded. "
+        "**Hard-exclusion membership.** A slug on the pack hard-exclusion list has **one** "
+        "membership — excluded. "
         "It is not a core, not an MQ/Wave point, and not a comparison-matrix column. "
         "Contributing-model seed lists that re-include it are envelope quotes, not membership.",
         "",
@@ -3024,50 +2746,39 @@ def _buying_guidance_lines(
     known: dict[str, str],
     audit: dict[str, Any] | None,
     support: dict[str, dict[str, bool]],
+    pack: dict[str, Any] | None = None,
 ) -> list[str]:
     """Peer shortlists with equal standing — do not converge every profile on one vendor."""
-    plugin_core = []
-    apo_core = []
-    saas_core = []
-    if audit:
-        markets = audit.get("markets") or {}
-        plugin_core = list((markets.get("sdlc-plugins") or {}).get("core") or [])
-        apo_core = list((markets.get("apo") or {}).get("core") or [])
-        saas_core = list((markets.get("agentic-sdlc-saas") or {}).get("core") or [])
 
-    def _names(slugs: list[str], limit: int = 6) -> str:
-        labels = [known.get(s, s.replace("-", " ").title()) for s in slugs[:limit]]
-        return ", ".join(labels) if labels else "the scored cores in that market"
+    def _names(slugs: list[str], limit: int = 8) -> str:
+        return ", ".join(known.get(s, s.replace("-", " ").title()) for s in slugs[:limit])
 
-    plugin_peers = [s for s in plugin_core if s != "silver-bullet"]
-    if "zuvo" in plugin_core and "zuvo" not in plugin_peers[:12]:
-        plugin_peers = ["zuvo"] + [s for s in plugin_peers if s != "zuvo"]
-    apo_peers = [s for s in apo_core if s != "silver-bullet"]
-    return [
-        f"- **Lean startup / spec-first packs**: Shortlist OSS methodology packs on equal standing — "
-        f"{_names(plugin_peers or ['gsd', 'bmad', 'superpowers', 'spec-kit', 'ruflo', 'zuvo'], limit=12)}. "
-        "Include Zuvo as an sdlc-plugins **core** (public site → MIT GitHub). "
-        "Pick on spec-driven vs persona vs swarm topology. Do not treat a single orchestrator as the default.",
-        f"- **Process-first / fail-closed delivery**: Plugin MQ Leaders = "
-        f"{known.get('silver-bullet', 'Silver Bullet')} **only** in this run because only that "
-        "slug passed **both** hook-enforced gates and inclusion-ledger cross-session. That is a "
-        "**feature-gate fact**, not a claim that the product is 'most complete'. This report "
-        "does not call any vendor 'most complete'. Other APO cores remain peers below.",
-        f"- **Open-source APO cores**: {_names(apo_peers or ['ai-dlc', 'agentsys', 'metagpt', 'director'], limit=8)} "
-        "stand as peers. AI-DLC is AWS/awslabs methodology vocabulary without shipped hook gates "
-        "in features.json — Visionaries on MQ, omitted from APO Wave; not IBM. Director is an APO "
-        "seed with unverified identity and no shipped hook gates — not a plugin and not an aggregator.",
-        f"- **Host-runtime path**: Use Cursor, Claude Code, or Codex with a separate pack "
-        f"({_names((plugin_peers or ['gsd', 'bmad', 'spec-kit', 'zuvo'])[:5])}). "
-        "The host is not the orchestrator; Factory/Devin are SaaS cores, not host-runtime add-ons.",
-        f"- **Managed autonomous delivery**: Shortlist {_names(saas_core or ['factory-ai', 'devin', 'augment-cosmos'])}. "
-        "This profile does not resolve to an OSS process pack. Magic.dev is hard-excluded "
-        "(coding-model lab), not a SaaS-core substitute.",
-        "- **Triangulation**: Use contributing-model consensus and the Consensus Resolution Table "
-        "as a **reading aid**. Notable divergences are inter-model disagreements; the resolution "
-        "table is the analyst call this report follows. Triangulation is not a scored axis.",
-        "",
-    ]
+    lines: list[str] = []
+    for market in get_markets(pack) if pack else []:
+        mid = str(market.get("id") or "")
+        core = list((((audit or {}).get("markets") or {}).get(mid) or {}).get("core") or [])
+        if core:
+            name = str(market.get("display_name") or mid)
+            lines.append(
+                f"- **{name}**: shortlist the scored cores on equal standing — {_names(core)}. "
+                "Choose on the features that matter to the buying profile, not on one blended rank."
+            )
+    lines.extend(str(x) for x in pack_overlay(pack).get("buying_guidance_lines") or [])
+    if not lines:
+        core = list((audit or {}).get("core") or (audit or {}).get("matrix_slugs") or [])
+        lines.append(
+            "- **Shortlist**: "
+            + (f"the scored vendors on equal standing — {_names(core)}." if core else "no vendor was scored in this run.")
+        )
+    lines.extend(
+        [
+            "- **Triangulation**: Use contributing-model consensus and the Consensus Resolution Table "
+            "as a **reading aid**. Notable divergences are inter-model disagreements; the resolution "
+            "table records how this report treats them. Triangulation is not a scored axis.",
+            "",
+        ]
+    )
+    return lines
 
 
 def build_report_markdown(
@@ -3104,21 +2815,15 @@ def build_report_markdown(
     known = _known_for_need(need)
     overview_seeds = _overview_for_need(need)
     pack = resolve_pack_from_need(need)
-    # Scrub non-APO vendors (e.g. Conductor) mis-framed as APO in claim/consensus prose.
-    claims = [scrub_membership_framing(c, pack) for c in claims]
+    # What the models said is quoted as said: membership disagreements are reported in the
+    # Consensus Resolution Table, never by rewriting model text.
     consolidation = {
         **consolidation,
         "consensus": [
-            {**item, "text": scrub_membership_framing(str(item.get("text") or ""), pack)}
-            for item in (consolidation.get("consensus") or [])
-            if isinstance(item, dict)
+            dict(item) for item in (consolidation.get("consensus") or []) if isinstance(item, dict)
         ],
         "divergence": select_notable_divergences(
-            [
-                {**item, "text": scrub_membership_framing(str(item.get("text") or ""), pack)}
-                for item in (consolidation.get("divergence") or [])
-                if isinstance(item, dict)
-            ],
+            [dict(item) for item in (consolidation.get("divergence") or []) if isinstance(item, dict)],
             envelopes=envelopes,
             limit=8,
         ),
@@ -3168,62 +2873,40 @@ def build_report_markdown(
         executive_summary_lines(chart=chart, pack=pack, known=known, audit=audit)
     )
 
+    overlay = pack_overlay(pack)
     definition = (pack or {}).get("definition") or (
-        f"{category} covers solutions operating one level above coding agents — "
-        "orchestrating SDLC workflows, gates, and multi-agent delegation."
+        f"{category}: the scope is the research question and scope.md of this run."
     )
-    jtbd = (pack or {}).get("jobs_to_be_done") or [
-        "Compose repeatable SDLC workflows above IDE/cloud coding agents.",
-        "Delegate parent/child agent work with review and verification gates.",
-        "Record skills and enforce hook-based lifecycle chains.",
-        "Shorten time-to-value with templates and managed paths.",
-        "Integrate git, CI, and planning artifacts for agentic delivery.",
-    ]
+    jtbd = (pack or {}).get("jobs_to_be_done") or list(need.get("jobs_to_be_done") or [])
 
     lines.extend(["## 1. Problem", ""])
     lines.append(
-        "Coding agents execute work; they do not by themselves **enforce** an SDLC. "
-        "Buyers need a process layer so planning, verification, review, and release cannot "
-        "be skipped when agents run in parallel or across sessions."
+        str(overlay.get("problem_statement") or "")
+        or f"This report maps the {category} landscape for the question researched in this run."
     )
-    lines.extend(["", "**Primary jobs-to-be-done**", ""])
-    for i, job in enumerate(jtbd, 1):
-        lines.append(f"{i}. {job}")
+    if jtbd:
+        lines.extend(["", "**Primary jobs-to-be-done**", ""])
+        for i, job in enumerate(jtbd, 1):
+            lines.append(f"{i}. {job}")
     lines.append("")
 
     lines.extend(["## 2. Market", ""])
     lines.extend(["### Market Definition & Scope", ""])
     lines.append(scope_text.strip() or definition)
-    if pack:
-        lines.extend([
-            "",
-            "**Out of scope (excluded from core peer set)**",
-            "",
-            "- Generic **coding agents** and IDE copilots (Cursor Background Agents, Cline, Aider, Continue, OpenHands, SWE-agent)",
-            "- **Host runtimes** that execute code without a process catalog (Cursor, Copilot, Claude Code, Codex as hosts — listed under Adjacent). Devin is agentic-sdlc-saas core, not a host-runtime adjacent.",
-            "- **Single-step** tools (PR review bots, PM integrations such as Linear)",
-            "- **Generic agent frameworks** without SDLC process packaging (LangGraph, CrewAI as adjacent)",
-            "- **Sunset** products (GitHub Copilot Workspace, AutoGen, AgentGPT, Devika)",
-            "",
-        ])
+    if pack and overlay.get("out_of_scope"):
+        lines.extend(["", "**Out of scope (excluded from core peer set)**", ""])
+        lines.extend(f"- {item}" for item in overlay["out_of_scope"])
+        lines.append("")
     lines.extend(["### Market Overview", ""])
-    lines.append(
-        "As of July 2026, the category is **early mainstream**: buyers separate agent hosts from process layers, but few vendors combine machine-readable catalogs with hook-enforced gates."
-    )
-    lines.append(
-        "Verify latest data — market size estimates for agentic SDLC orchestration are not web-verified in this synthesis; growth is driven by multi-agent adoption and verification-gate demand."
-    )
-    lines.extend([
-        "",
-        "- **Maturity**: Early mainstream; executor-first agents are ahead of process catalogs.",
-        "- **Commercial vs OSS**: OSS frameworks dominate experimentation; commercial players lead managed execution.",
-        "- **SMB vs enterprise**: SMBs favour templates, predictable pricing, and managed hosting; enterprises prioritise audit, SSO, and residency.",
-        "- **Deployment**: SaaS agents, IDE plugins, and self-hosted OSS graphs coexist; switching costs rise with hook and catalog lock-in.",
-        "",
-        "### Key Industry Trends",
-        "",
-    ])
-    for trend in TREND_SEEDS:
+    if overlay.get("market_overview_lines"):
+        lines.extend(str(x) for x in overlay["market_overview_lines"])
+    else:
+        lines.append(
+            f"Market size, maturity and growth for {category} are not established by this "
+            "synthesis; verify them against current sources before relying on them."
+        )
+    lines.extend(["", "### Key Industry Trends", ""])
+    for trend in (overlay.get("trend_seeds") or TREND_SEEDS):
         lines.append(f"#### {trend['title']}")
         lines.append(f"- **What**: {trend['what']}")
         lines.append(f"- **SMB impact**: {trend['smb']}")
@@ -3404,12 +3087,9 @@ def build_report_markdown(
         lines.append(
             "Products below are relevant context but **not** scored as core peers on the market "
             "where they are adjacent. A vendor may be **core in one market and adjacent in another** "
-            "(multi-market is allowed). Silver Bullet is core in APO ∩ sdlc-plugins — process "
-            "catalog + hook gates (APO) and host-plugin packaging (plugins). Devin is "
-            "agentic-sdlc-saas core, not a host-runtime adjacent. AgentHub is APO-adjacent CRM, "
-            "not an APO Leader. Conductor is a SaaS-adjacent aggregator, not APO. Tembo is "
-            "SaaS-adjacent and unplotted."
+            "(multi-market is allowed)."
         )
+        lines.extend(str(x) for x in pack_overlay(pack).get("adjacent_note_lines") or [])
         lines.append("")
         for slug in audit.get("adjacent") or []:
             name = known.get(slug, slug.replace("-", " ").title())
@@ -3443,8 +3123,6 @@ def build_report_markdown(
                 canonical = str(meta.get("canonical_slug") or slug)
                 if canonical in core_slugs or str(meta.get("classification") or "") == "core":
                     continue
-                if canonical == "zuvo" or str(slug) in {"zuvo", "sdlc-plugin"}:
-                    continue
                 real_gaps.append(str(slug))
             if real_gaps:
                 lines.extend(
@@ -3460,7 +3138,9 @@ def build_report_markdown(
 
     # Consensus + resolution stay in Findings (envelope quotes only here)
     lines.extend(["### Consensus Patterns", ""])
-    patterns = build_consensus_patterns(envelopes)
+    patterns = build_consensus_patterns(
+        envelopes, themes=list(pack_overlay(pack).get("consensus_themes") or [])
+    )
     if patterns:
         lines.append(
             "What contributing models **agreed on** across retrieve / triangulate / critique "
@@ -3486,35 +3166,27 @@ def build_report_markdown(
         lines.append("")
 
     notable = consolidation.get("divergence") or []
-    lines.extend(consensus_resolution_table_lines(notable if isinstance(notable, list) else []))
+    lines.extend(consensus_resolution_table_lines(notable if isinstance(notable, list) else [], pack))
 
     # Buying guidance
     lines.extend(["## 5. Buying Guidance & Shortlist Profiles", ""])
     lines.extend(
-        _buying_guidance_lines(known=known, audit=audit, support=support)
+        _buying_guidance_lines(known=known, audit=audit, support=support, pack=pack)
     )
 
     # Future outlook
     lines.extend(["## 6. Future Outlook & Emerging Disruptors", ""])
     outlook = [
-        (
-            "Router-first catalogs and hook gates",
-            "Process routers with nested verify loops remain a differentiator for teams that need fail-closed delivery, not just prompt packs.",
-            "Threatens executor-only agents.",
-        ),
+        (o["title"], o["what"], o["smb"]) for o in pack_overlay(pack).get("outlook") or []
+    ] + [
         (
             "Multi-model triangulation as a research method",
             "This report triangulates contributing models. Vendors were **not** scored on multi-model pools — triangulation is not a matrix row or MQ/Wave axis.",
             "Use it to read claims; do not treat it as a product feature tick.",
         ),
         (
-            "Consolidation of git-native agents",
-            "Issue-to-PR agents may merge with SDLC orchestration platforms.",
-            "Threatens point tools without ecosystem depth.",
-        ),
-        (
             "Completeness claims are closed for this report",
-            "The analyst decision is that this report does not call any vendor 'most complete'. Ranking scores are feature-tick totals. Plugin MQ Leaders = Silver Bullet only is a hooks + cross-session feature-gate, not a completeness ranking.",
+            "The analyst decision is that this report does not call any vendor 'most complete'. Ranking scores are feature-tick totals.",
             "Treat Leader plots as feature-gate outcomes; keep equal-standing shortlists by buying profile.",
         ),
     ]
@@ -3534,9 +3206,7 @@ def build_report_markdown(
         by_model.setdefault(model, []).append(env)
     for model, envs in sorted(by_model.items()):
         size = sum(len(json.dumps(e.get("payload") or {})) for e in envs)
-        weight = "**Good—Secondary**"
-        if "gemini" in model.lower():
-            weight = "**Heavy—Primary**"
+        weight = "**Equal**"  # no model is weighted by its name; claims are weighed by evidence
         lines.append(
             f"| {model} | {size} chars | {weight} | Contributed DR phases with structured payloads; depth varies by phase. |"
         )
@@ -3572,14 +3242,7 @@ def build_report_markdown(
     if audit:
         for slug in list(audit.get("excluded") or []) + list(audit.get("sunset") or []):
             protected.add(known.get(str(slug), str(slug).replace("-", " ").title()))
-        protected.add("Claude Code Expert")  # invented seed — never linkify substring
     markdown = _linkify_markdown_vendors(markdown, link_pairs, protected_labels=protected)
-    # Final membership pass after linkify so SCR-sourced overviews and linked
-    # Conductor mentions cannot keep APO mid-tier / leading framing — but keep
-    # the Notable divergences block intact (inter-model quotes).
-    markdown = apply_preserving_notable_divergences(
-        markdown, lambda body: scrub_membership_framing(body, pack)
-    )
     markdown = sanitize_compression_markers(markdown)
     assert_no_compression_markers(markdown, context="landscape-report.md synthesis")
     return markdown

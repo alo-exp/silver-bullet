@@ -302,42 +302,7 @@ class BareHttpUrlLinkifyTests(unittest.TestCase):
 
 
 class MembershipFramingAndOssBucketTests(unittest.TestCase):
-    def test_scrub_conductor_mid_tier_apo_cluster(self) -> None:
-        import sys
 
-        sys.path.insert(0, str(SCRIPTS))
-        from category_pack import load_category_pack
-        from synthesize_landscape import scrub_membership_framing
-
-        pack = load_category_pack("agentic-sdlc-process-orchestrator")
-        before = (
-            "cc10x and Conductor form a mid-tier APO cluster sharing complementary strengths: "
-            "Conductor has stronger workflow orchestration UI."
-        )
-        after = scrub_membership_framing(before, pack)
-        self.assertIn("SaaS-adjacent", after)
-        self.assertTrue(re.search(r"not an? APO", after, flags=re.I), after)
-        self.assertNotIn("mid-tier APO cluster", after)
-
-    def test_scrub_preserves_multiline_markdown(self) -> None:
-        import sys
-
-        sys.path.insert(0, str(SCRIPTS))
-        from category_pack import load_category_pack
-        from synthesize_landscape import scrub_membership_framing
-
-        pack = load_category_pack("agentic-sdlc-process-orchestrator")
-        md = (
-            "# Title\n\n"
-            "Keep this line.\n"
-            "- cc10x and Conductor form a mid-tier APO cluster sharing complementary strengths.\n"
-            "Also keep this.\n"
-        )
-        out = scrub_membership_framing(md, pack)
-        self.assertIn("# Title", out)
-        self.assertIn("Keep this line.", out)
-        self.assertIn("Also keep this.", out)
-        self.assertNotIn("mid-tier APO cluster", out)
 
     def test_enrich_keeps_metagpt_in_apo_oss_without_mq_point(self) -> None:
         """SPA enrich must use audit core, not MQ-only slugs, for market OSS buckets."""
