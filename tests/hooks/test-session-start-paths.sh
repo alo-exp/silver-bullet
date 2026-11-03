@@ -174,6 +174,23 @@ run_ss
 assert_file_exists "symlink target untouched" "$TL_TMP/target"
 assert_file_absent "symlinked trivial falls back to default trivial file" "$SD/trivial"
 rm -f "${SD:?}/linked-trivial"
+# A symlink INSIDE the state root is accepted by the containment check, then reset to the default.
+ec_cfg '{"config_version":"0.40.0","sb_initiated":true,"state":{"trivial_file":"'"$SD"'/linked-trivial"}}'
+printf 'precious-inner' >"$SD/inner-target"
+ln -s "$SD/inner-target" "$SD/linked-trivial"
+printf 'x' >"$SD/trivial"
+run_ss
+assert_file_exists "in-root symlink target untouched" "$SD/inner-target"
+assert_file_absent "in-root symlinked trivial falls back to default trivial file" "$SD/trivial"
+rm -f "${SD:?}/linked-trivial" "${SD:?}/inner-target"
+# The default marker itself being a symlink: the link is reset to the default path and removed, never followed.
+ec_cfg '{"config_version":"0.40.0","sb_initiated":true}'
+printf 'precious-default' >"$TL_TMP/default-target"
+rm -f "${SD:?}/trivial"
+ln -s "$TL_TMP/default-target" "$SD/trivial"
+run_ss
+assert_file_exists "default-marker symlink target untouched" "$TL_TMP/default-target"
+assert_file_absent "default-marker symlink removed" "$SD/trivial"
 
 # ---- jq missing -------------------------------------------------------------
 fresh

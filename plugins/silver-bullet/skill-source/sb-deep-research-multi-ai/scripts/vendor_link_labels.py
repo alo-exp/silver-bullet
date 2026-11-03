@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import ipaddress
 import os
 import re
+import socket
 import ssl
+import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from typing import Any
 
@@ -33,57 +37,16 @@ GENERIC_LINK_BLOCKED_LABELS: frozenset[str] = frozenset(
 )
 
 # Intentional short product aliases (uppercase acronyms) that may link in prose.
-ALLOWED_SHORT_ACRONYM_LABELS: frozenset[str] = frozenset({"BMAD", "GSD"})
+ALLOWED_SHORT_ACRONYM_LABELS: frozenset[str] = frozenset()
+# Ordinary English words that are also product names; the pack lists them (pack vocabulary).
+EXTRA_BLOCKED_LABELS: frozenset[str] = frozenset()
 
 # Slug → canonical link/display label when pack seeds use ambiguous short names.
-SLUG_LINK_LABEL_OVERRIDES: dict[str, str] = {
-    "sdlc-plugin": "SDLC Plugin",
-}
+SLUG_LINK_LABEL_OVERRIDES: dict[str, str] = {}
 
 # Known wrong / sunset vendor URLs → corrected research-backed targets (or drop).
 # Keys normalized without trailing slash, lowercased host+path.
-VENDOR_URL_REWRITES: dict[str, str | None] = {
-    "https://agentsys.ai": "https://github.com/agent-sh/agentsys",
-    "https://agentsys.ai/": "https://github.com/agent-sh/agentsys",
-    "http://agentsys.ai": "https://github.com/agent-sh/agentsys",
-    "http://agentsys.ai/": "https://github.com/agent-sh/agentsys",
-    "https://aws.amazon.com/ai-dlc": "https://github.com/awslabs/aidlc-workflows",
-    "https://aws.amazon.com/ai-dlc/": "https://github.com/awslabs/aidlc-workflows",
-    "https://github.com/ai-dlc/ai-dlc": "https://github.com/awslabs/aidlc-workflows",
-    # Community IBM article is not the canonical AI-DLC product — AWS Labs is.
-    "https://developer.ibm.com/articles/ai-driven-development-life-cycle/": "https://github.com/awslabs/aidlc-workflows",
-    "https://developer.ibm.com/articles/ai-driven-development-life-cycle": "https://github.com/awslabs/aidlc-workflows",
-    "http://developer.ibm.com/articles/ai-driven-development-life-cycle/": "https://github.com/awslabs/aidlc-workflows",
-    "https://deepwork.ai": None,
-    "https://deepwork.ai/": None,
-    "http://deepwork.ai": None,
-    "http://deepwork.ai/": None,
-    "https://github.com/ruvnet/ruvnet-director": None,
-    "https://github.com/SuperClaude-Org/SuperClaude": "https://github.com/SuperClaude-Org/SuperClaude_Framework",
-    "https://github.com/nicobailon/oh-my-pi": None,
-    "https://github.com/oh-my-pi/oh-my-pi": None,
-    "https://github.com/director-ai/director": None,
-    "https://github.com/zuvo-ai/zuvo": "https://github.com/greglas75/zuvo",
-    "https://github.com/zuvo-labs/zuvo": "https://github.com/greglas75/zuvo",
-    "https://github.com/zuvo": "https://github.com/greglas75/zuvo",
-    # Invented/parked marketing domains — canonical repos verified 2026-08-14.
-    "https://cc10x.dev": "https://github.com/romiluz13/cc10x",
-    "https://cc10x.dev/": "https://github.com/romiluz13/cc10x",
-    "http://cc10x.dev": "https://github.com/romiluz13/cc10x",
-    "http://cc10x.dev/": "https://github.com/romiluz13/cc10x",
-    "https://cavekit.ai": "https://github.com/JuliusBrussee/cavekit",
-    "https://cavekit.ai/": "https://github.com/JuliusBrussee/cavekit",
-    "http://cavekit.ai": "https://github.com/JuliusBrussee/cavekit",
-    "http://cavekit.ai/": "https://github.com/JuliusBrussee/cavekit",
-    "https://www.cavekit.ai": "https://github.com/JuliusBrussee/cavekit",
-    "https://www.cavekit.ai/": "https://github.com/JuliusBrussee/cavekit",
-    "https://barkain.com": "https://github.com/barkain/claude-code-workflow-orchestration",
-    "https://barkain.com/": "https://github.com/barkain/claude-code-workflow-orchestration",
-    "http://barkain.com": "https://github.com/barkain/claude-code-workflow-orchestration",
-    "http://barkain.com/": "https://github.com/barkain/claude-code-workflow-orchestration",
-    "https://www.barkain.com": "https://github.com/barkain/claude-code-workflow-orchestration",
-    "https://www.barkain.com/": "https://github.com/barkain/claude-code-workflow-orchestration",
-}
+VENDOR_URL_REWRITES: dict[str, str | None] = {}
 
 
 def normalize_vendor_url_key(url: str) -> str:
@@ -101,73 +64,7 @@ def rewrite_vendor_url(url: str) -> str | None:
     for bad, good in VENDOR_URL_REWRITES.items():
         if normalize_vendor_url_key(bad) == key:
             return good
-    # Case-insensitive host match for agentsys.ai
-    lower = raw.lower()
-    if "agentsys.ai" in lower and "github.com/agent-sh/agentsys" not in lower:
-        return "https://github.com/agent-sh/agentsys"
-    if "aws.amazon.com/ai-dlc" in lower:
-        return "https://github.com/awslabs/aidlc-workflows"
-    if "developer.ibm.com" in lower and "ai-driven-development" in lower:
-        return "https://github.com/awslabs/aidlc-workflows"
-    if re.search(r"https?://(www\.)?deepwork\.ai/?$", lower):
-        return None
-    if re.search(r"github\.com/(zuvo-ai/zuvo|zuvo-labs/zuvo|zuvo)/?$", lower):
-        return "https://github.com/greglas75/zuvo"
     return raw
-
-
-def scrub_embedded_vendor_urls(obj: Any) -> Any:
-    """Recursively rewrite/drop known-wrong URLs inside envelopes / JSON payloads."""
-    if isinstance(obj, str):
-        if obj.startswith("http://") or obj.startswith("https://"):
-            rewritten = rewrite_vendor_url(obj)
-            return rewritten if rewritten is not None else ""
-        # Non-URL strings: rewrite IBM AI-DLC community attribution to AWS Labs canonical.
-        cleaned = obj
-        cleaned = re.sub(
-            r"AI-DLC\s*[—–-]\s*AI-Driven Development Lifecycle\s*\(developer\.ibm\.com\s*/\s*community\)",
-            "AI-DLC — AI-Driven Development Lifecycle (AWS Labs / awslabs/aidlc-workflows)",
-            cleaned,
-            flags=re.I,
-        )
-        cleaned = re.sub(
-            r"https?://(?:www\.)?developer\.ibm\.com/articles/ai-driven-development-life-cycle/?",
-            "https://github.com/awslabs/aidlc-workflows",
-            cleaned,
-            flags=re.I,
-        )
-        cleaned = re.sub(r"\bAI-DLC\s*\(IBM\)", "AI-DLC (AWS / awslabs)", cleaned, flags=re.I)
-        cleaned = re.sub(r"\bIBM'?s?\s+AI-DLC\b", "AWS AI-DLC", cleaned, flags=re.I)
-        return cleaned
-    if isinstance(obj, list):
-        return [x for x in (scrub_embedded_vendor_urls(i) for i in obj) if x is not None]
-    if isinstance(obj, dict):
-        out: dict[str, Any] = {}
-        title = str(obj.get("title") or obj.get("name") or "")
-        # Invented seed — drop source rows / null URLs entirely.
-        if re.search(r"claude\s*code\s*expert", title, flags=re.I):
-            return None
-        for key, val in obj.items():
-            if key in {"url", "homepage", "href", "source_ref"} and isinstance(val, str):
-                if "claude-code-expert" in val.lower():
-                    out[key] = None
-                    continue
-                rewritten = rewrite_vendor_url(val) if val.startswith("http") else scrub_embedded_vendor_urls(val)
-                out[key] = rewritten if rewritten is not None else None
-            elif key in {"claim", "text", "title", "name", "relevance"} and isinstance(val, str):
-                cleaned = re.sub(
-                    r"Claude Code Expert is a primary-market APO candidate[^.]*\.?",
-                    "Claude Code Expert is excluded (invented/sunset seed — not a product).",
-                    val,
-                    flags=re.I,
-                )
-                out[key] = scrub_embedded_vendor_urls(cleaned)
-            else:
-                scrubbed = scrub_embedded_vendor_urls(val)
-                if scrubbed is not None:
-                    out[key] = scrubbed
-        return out
-    return obj
 
 
 # Env: set SB_SKIP_VENDOR_URL_HEALTH=1 to skip network checks (offline unit tests).
@@ -176,6 +73,97 @@ _DEFAULT_HEALTH_TIMEOUT = 12.0
 _OK_STATUSES = frozenset({200, 201, 202, 203, 204, 301, 302, 303, 307, 308})
 # Rate-limit / gateway blips are not dead homepages — keep unless STRICT.
 _TRANSIENT_HTTP = frozenset({429, 502, 503, 504})
+
+
+# Process-wide: a live run calls the filter many times (phases, synthesis, packaging); each vendor
+# URL is probed once and the whole process shares one budget.
+_HEALTH_STATE: dict[str, Any] = {"reports": {}, "start": None}
+
+
+def reset_health_state() -> None:
+    """Forget cached probe results and the budget clock (tests, long-lived hosts)."""
+    _HEALTH_STATE["reports"] = {}
+    _HEALTH_STATE["start"] = None
+
+
+_MAX_REDIRECTS = 3
+_MAX_HEALTH_CHECKS = 60  # distinct URLs probed per process; the rest are kept unverified
+_HEALTH_BUDGET_SECONDS = 120.0
+
+
+def _resolve_host(host: str) -> list[str]:
+    """All addresses a host name resolves to (empty when it does not resolve)."""
+    try:
+        infos = socket.getaddrinfo(host, None, type=socket.SOCK_STREAM)
+    except (OSError, UnicodeError):
+        return []
+    return sorted({str(info[4][0]) for info in infos})
+
+
+_SITE_LOCAL = ipaddress.ip_network("fec0::/10")  # deprecated site-local space is still routable inside networks
+_NAT64_PREFIXES = (ipaddress.ip_network("64:ff9b::/96"), ipaddress.ip_network("64:ff9b:1::/48"))
+_IPV4_COMPATIBLE = ipaddress.ip_network("::/96")
+
+
+def _embedded_ipv4(ip: ipaddress.IPv6Address) -> ipaddress.IPv4Address | None:
+    """The IPv4 address an IPv6 one carries (mapped, NAT64 well-known prefixes, IPv4-compatible).
+
+    NAT64 gateways translate these to the embedded IPv4 address, so `64:ff9b::a00:1` reaches
+    10.0.0.1: the embedded address is what must be public.
+    """
+    if ip.ipv4_mapped:
+        return ip.ipv4_mapped
+    if any(ip in net for net in _NAT64_PREFIXES) or (ip in _IPV4_COMPATIBLE and int(ip) > 1):
+        return ipaddress.IPv4Address(int(ip) & 0xFFFFFFFF)
+    return None
+
+
+def unsafe_target_reason(url: str) -> str | None:
+    """Why a model-supplied URL must not be requested, or None when it may be.
+
+    Only http(s) to a globally routable address (`ip.is_global`); loopback, private, link-local
+    (cloud metadata), shared/CGNAT, multicast, reserved and unspecified targets are refused, as
+    are URLs with credentials.
+    """
+    try:
+        parts = urllib.parse.urlsplit(url)
+        host = parts.hostname
+    except ValueError:
+        return "unparseable-url"
+    if parts.scheme not in {"http", "https"} or not host:
+        return "not-http"
+    if parts.username or parts.password:
+        return "credentials-in-url"
+    try:
+        literal = [str(ipaddress.ip_address(host))]
+    except ValueError:
+        literal = []
+    addresses = literal or _resolve_host(host)
+    if not addresses:
+        return "unresolvable-host"
+    for raw in addresses:
+        ip = ipaddress.ip_address(raw)
+        if isinstance(ip, ipaddress.IPv6Address):
+            ip = _embedded_ipv4(ip) or ip
+            if isinstance(ip, ipaddress.IPv6Address) and ip in _SITE_LOCAL:
+                return f"non-public-address:{raw}"
+        # Allowlist: only globally routable addresses (this also refuses 100.64.0.0/10 shared
+        # space such as tailnets and Alibaba's 100.100.100.200 metadata endpoint).
+        if not ip.is_global or ip.is_multicast:
+            return f"non-public-address:{raw}"
+    return None
+
+
+class _CheckedRedirects(urllib.request.HTTPRedirectHandler):
+    """Follow at most _MAX_REDIRECTS hops, each to a public http(s) address."""
+
+    max_redirections = _MAX_REDIRECTS
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):  # noqa: ANN001
+        reason = unsafe_target_reason(newurl)
+        if reason:
+            raise urllib.error.URLError(f"redirect-blocked:{reason}")
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
 
 
 def normalize_vendor_link_label(label: str) -> str:
@@ -187,10 +175,10 @@ def is_generic_link_label(label: str) -> bool:
     norm = normalize_vendor_link_label(label)
     if not norm:
         return True
-    if norm.lower() in GENERIC_LINK_BLOCKED_LABELS:
+    if norm.lower() in GENERIC_LINK_BLOCKED_LABELS or norm.lower() in EXTRA_BLOCKED_LABELS:
         return True
     # Block bare short uppercase tokens unless explicitly allow-listed (BMAD, GSD).
-    if norm.isupper() and len(norm) <= 4 and norm not in ALLOWED_SHORT_ACRONYM_LABELS:
+    if norm.isupper() and len(norm) <= 3 and norm not in ALLOWED_SHORT_ACRONYM_LABELS:
         return True
     return False
 
@@ -238,12 +226,32 @@ def check_url_health(
             "transport_error": False,
         }
 
+    blocked = unsafe_target_reason(target)
+    if blocked:
+        return {
+            "ok": False,
+            "status": None,
+            "final_url": target,
+            "error": f"blocked:{blocked}",
+            "transport_error": blocked == "unresolvable-host",
+        }
+
     ctx = ssl.create_default_context()
     headers = {"User-Agent": "SB-vendor-link-health/1.0"}
+    # urlopen uses the process-wide opener; swap in the redirect-checking one for this probe.
+    opener = urllib.request.build_opener(
+        _CheckedRedirects, urllib.request.HTTPSHandler(context=ctx)
+    )
 
     def _open(method: str) -> dict[str, Any]:
         req = urllib.request.Request(target, method=method, headers=headers)
-        with urllib.request.urlopen(req, timeout=timeout, context=ctx) as resp:
+        previous = urllib.request._opener  # type: ignore[attr-defined]
+        urllib.request.install_opener(opener)
+        try:
+            response = urllib.request.urlopen(req, timeout=timeout)
+        finally:
+            urllib.request._opener = previous  # type: ignore[attr-defined]
+        with response as resp:
             status = int(getattr(resp, "status", 200) or 200)
             final = str(resp.geturl() or target)
             return {
@@ -317,7 +325,16 @@ def filter_healthy_vendor_urls(
         url_n = str(url or "").strip()
         if not label_n or not url_n.startswith("http"):
             continue
-        report = check_url_health(url_n, timeout=timeout)
+        report = _HEALTH_STATE["reports"].get(url_n)
+        if report is None:
+            now = time.monotonic()
+            if _HEALTH_STATE["start"] is None:
+                _HEALTH_STATE["start"] = now
+            if len(_HEALTH_STATE["reports"]) >= _MAX_HEALTH_CHECKS or now - _HEALTH_STATE["start"] > _HEALTH_BUDGET_SECONDS:
+                # Over the process-wide budget: keep the link unverified rather than stall the report.
+                kept[label_n] = url_n
+                continue
+            report = _HEALTH_STATE["reports"][url_n] = check_url_health(url_n, timeout=timeout)
         if report.get("ok"):
             kept[label_n] = url_n
             continue
@@ -441,34 +458,6 @@ def filter_vendor_link_pairs(pairs: list[list[str]]) -> list[list[str]]:
         out.append([label, url])
         seen.add(label)
     return drop_ambiguous_shared_homepage_urls(out)
-
-
-def scrub_vendor_markdown_links(
-    markdown: str,
-    *,
-    vendor_urls: dict[str, str],
-    known_labels: set[str] | None = None,
-) -> str:
-    """Rewrite/remove vendor markdown links to match authoritative homepages only.
-
-    Labels in known_labels/vendor_urls with no homepage become plain text (never keep
-    a stale invented URL). Authoritative URLs are rewritten to the current mapping.
-    """
-    urls = {normalize_vendor_link_label(k): str(v).strip() for k, v in (vendor_urls or {}).items()}
-    known = {normalize_vendor_link_label(x) for x in (known_labels or set())} | set(urls)
-    pattern = re.compile(r"\[([^\]]+)\]\((https?://[^)]+)\)")
-
-    def _repl(match: re.Match[str]) -> str:
-        label = normalize_vendor_link_label(match.group(1))
-        url = match.group(2).strip()
-        if label not in known:
-            return match.group(0)
-        auth = urls.get(label)
-        if auth:
-            return f"[{label}]({auth})"
-        return label
-
-    return pattern.sub(_repl, markdown or "")
 
 
 # Bare http(s) autolink — wrap existing URLs only; never invent targets.

@@ -33,7 +33,7 @@ assert_contains "bundle root unknown host message" "$err" "unknown host: nope"
 
 assert_eq "cache rel claude" "agents/claude" "$(sb_agent_cache_rel claude)"
 assert_eq "cache rel codex" "skill-source" "$(sb_agent_cache_rel codex)"
-assert_eq "cache rel cursor" "skill-source" "$(sb_agent_cache_rel cursor)"
+assert_eq "cache rel cursor is the Cursor render" "cursor-skill-source" "$(sb_agent_cache_rel cursor)"
 rc=0
 err="$(sb_agent_cache_rel nope 2>&1 >/dev/null)" || rc=$?
 assert_eq "cache rel unknown host fails" "1" "$rc"

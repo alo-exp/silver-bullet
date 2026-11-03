@@ -195,9 +195,19 @@ run_sb_invocations() {
   fi
 }
 
+# isolate_host_env: HOME alone does not isolate a host install. Drop the
+# variables that redirect a host CLI, installer or SB state to real config.
+isolate_host_env() {
+  unset KAY_HOME CLAUDE_CONFIG_DIR CODEX_HOME CURSOR_CONFIG_DIR \
+    SILVER_BULLET_STATE_FILE SILVER_BULLET_BRANCH_FILE \
+    SB_RUNTIME_HOME_ROOT SB_RUNTIME_PLUGIN_CACHE_ROOT SB_RUNTIME_STATE_DIR SB_RUNTIME_PRESERVE_STATE_DIR \
+    XDG_CONFIG_HOME XDG_DATA_HOME XDG_STATE_HOME XDG_CACHE_HOME
+}
+
 smoke_codex() {
   local tmp_home
   tmp_home="$(mktemp -d "${TMPDIR:-/tmp}/sb-trihost-codex.XXXXXX")"
+  isolate_host_env
   export HOME="$tmp_home"
   export SILVER_BULLET_RUNTIME=codex
   trap 'rm -rf "$tmp_home"' RETURN
@@ -238,6 +248,7 @@ smoke_codex() {
 smoke_cursor() {
   local tmp_home
   tmp_home="$(mktemp -d "${TMPDIR:-/tmp}/sb-trihost-cursor.XXXXXX")"
+  isolate_host_env
   export HOME="$tmp_home"
   export CURSOR_HOME="${tmp_home}/.cursor"
   export SILVER_BULLET_RUNTIME=cursor
@@ -278,6 +289,7 @@ smoke_claude() {
 
   local tmp_home
   tmp_home="$(mktemp -d "${TMPDIR:-/tmp}/sb-trihost-claude.XXXXXX")"
+  isolate_host_env
   export HOME="$tmp_home"
   export CLAUDE_BIN="$claude_bin"
   export SILVER_BULLET_RUNTIME=claude

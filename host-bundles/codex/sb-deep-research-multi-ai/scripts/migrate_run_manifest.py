@@ -4,21 +4,26 @@
 from __future__ import annotations
 
 import argparse
+import fcntl
 import hashlib
 import json
 import os
-import secrets
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from generated_files import atomic_write_text
 from skill_paths import ensure_scripts_on_path
 
 ensure_scripts_on_path("silver-multi-ai-task", marker="json_hash.py")
 
 from json_hash import canonical_json_bytes, sha256_bytes  # noqa: E402
 
-MIGRATOR_VERSION = "1.0.0"
+MIGRATOR_VERSION = "1.1.0"
 SPINE = "multi-ai-task-v2"
+# Budget caps the live runner applies; a v3 manifest without a budget gets these and the
+# migration record says so. Metering and pricing are never assumed (R12-25).
+DEFAULT_BUDGET_CAPS = {"currency_micro_usd_cap": 5_000_000, "total_tokens_cap": 2_000_000}
 
 
 def classify_v3(source: dict[str, Any]) -> str:
@@ -74,12 +79,28 @@ def build_audit_record(
     return body
 
 
+def _work_item_ref(research_root: Path, wid: str) -> dict[str, Any] | None:
+    """A ref only for a work-item manifest that exists, hashed from its bytes."""
+    rel = f"work-items/{wid}/multi-ai-work-item-manifest-v1.json"
+    path = research_root / rel
+    if not path.is_file():
+        return None
+    return {"work_item_id": wid, "manifest_path": rel, "manifest_sha256": sha256_bytes(path.read_bytes())}
+
+
 def migrate_v3_to_v4(
     source: dict[str, Any],
     *,
     research_root: Path,
     source_sha256: str,
+    source_mtime: str | None = None,
 ) -> dict[str, Any]:
+    """Map a v3 manifest to v4 without inventing provenance.
+
+    Unknown metering/pricing stay false, work-item refs exist only for manifests on disk,
+    a missing started_at falls back to the source file's mtime (recorded as such) and the
+    caps a v3 budget lacked are listed in migration.defaults_applied.
+    """
     dialect = classify_v3(source)
     run_id = source.get("run_id") or deterministic_run_id(dialect, source_sha256)
 
@@ -93,15 +114,19 @@ def migrate_v3_to_v4(
             continue
         wid = phase.get("work_item_id") or deterministic_work_item_id(run_id, phase_id, phase_config_hash)
         phases_out.append({"phase_id": phase_id, "work_item_id": wid, "parallel": bool(phase.get("parallel", True))})
-        work_item_refs.append(
-            {
-                "work_item_id": wid,
-                "manifest_path": f"work-items/{wid}/multi-ai-work-item-manifest-v1.json",
-                "manifest_sha256": "0" * 64,
-            }
-        )
+        ref = _work_item_ref(Path(research_root), wid)
+        if ref:
+            work_item_refs.append(ref)
+
+    started_at = source.get("started_at")
+    started_at_source = "source"
+    if not started_at:
+        if not source_mtime:
+            raise ValueError("source manifest has no started_at; pass source_mtime (the file's mtime)")
+        started_at, started_at_source = source_mtime, "source-file-mtime"
 
     budget = source.get("budget") or {}
+    defaults_applied = sorted(k for k in DEFAULT_BUDGET_CAPS if k not in budget)
     return {
         "schema_id": "deep-research-run-manifest-v4",
         "version": "4.0.0",
@@ -110,18 +135,18 @@ def migrate_v3_to_v4(
         "query": source.get("query") or source.get("question") or "",
         "mode": source.get("mode", "deep"),
         "research_type": source.get("research_type", "default"),
-        "started_at": source.get("started_at", "2026-01-01T00:00:00Z"),
+        "started_at": started_at,
         "finished_at": source.get("finished_at"),
         "report_dir": str(research_root),
         "workflow_id": "WF-SILVER-DEEP-RESEARCH-MULTI-AI",
         "multi_ai": {
             "budget": {
-                "currency_micro_usd_cap": budget.get("currency_micro_usd_cap", 25_000_000),
-                "total_tokens_cap": budget.get("total_tokens_cap", 2_000_000),
+                "currency_micro_usd_cap": budget.get("currency_micro_usd_cap", DEFAULT_BUDGET_CAPS["currency_micro_usd_cap"]),
+                "total_tokens_cap": budget.get("total_tokens_cap", DEFAULT_BUDGET_CAPS["total_tokens_cap"]),
                 "currency_micro_usd_actual": budget.get("currency_micro_usd_actual", 0),
                 "total_tokens_actual": budget.get("total_tokens_actual", 0),
-                "price_known": budget.get("price_known", True),
-                "usage_metered": budget.get("usage_metered", True),
+                "price_known": bool(budget.get("price_known", False)),
+                "usage_metered": bool(budget.get("usage_metered", False)),
                 "budget_stop_reason": budget.get("budget_stop_reason"),
             },
             "phases": phases_out,
@@ -138,14 +163,33 @@ def migrate_v3_to_v4(
         "migration": {
             "source_dialect": dialect,
             "source_sha256": source_sha256,
+            "started_at_source": started_at_source,
+            "defaults_applied": defaults_applied,
         },
     }
 
 
 def atomic_write(path: Path, content: str) -> None:
-    tmp = path.with_suffix(path.suffix + f".tmp-{secrets.token_hex(4)}")
-    tmp.write_text(content, encoding="utf-8")
-    os.replace(tmp, path)
+    atomic_write_text(path, content)
+
+
+def append_audit_record(audit_path: Path, make_record) -> dict[str, Any]:
+    """Append one hash-chained record under an exclusive lock (read head + append are atomic)."""
+    audit_path.parent.mkdir(parents=True, exist_ok=True)
+    with audit_path.open("a+", encoding="utf-8") as fh:
+        fcntl.flock(fh, fcntl.LOCK_EX)
+        try:
+            fh.seek(0)
+            lines = [ln for ln in fh.read().splitlines() if ln.strip()]
+            prior_head = json.loads(lines[-1]).get("record_hash") if lines else None
+            record = make_record(prior_head)
+            fh.seek(0, os.SEEK_END)
+            fh.write(json.dumps(record, sort_keys=True) + "\n")
+            fh.flush()
+            os.fsync(fh.fileno())
+        finally:
+            fcntl.flock(fh, fcntl.LOCK_UN)
+    return record
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -173,7 +217,8 @@ def main(argv: list[str] | None = None) -> int:
     if not archive_path.exists():
         archive_path.write_bytes(source_bytes)
 
-    target = migrate_v3_to_v4(source, research_root=root, source_sha256=source_sha)
+    mtime = datetime.fromtimestamp(in_path.stat().st_mtime, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    target = migrate_v3_to_v4(source, research_root=root, source_sha256=source_sha, source_mtime=mtime)
     target_path = root / "run_manifest.json"
     if target_path.exists() and not args.force:
         try:
@@ -187,26 +232,21 @@ def main(argv: list[str] | None = None) -> int:
     target_json = json.dumps(target, indent=2) + "\n"
     target_sha = sha256_bytes(target_json.encode("utf-8"))
 
-    atomic_write(target_path, target_json)
-
-    prior_head = None
+    # Audit first (locked, fsynced), then replace the manifest atomically: a failed or
+    # concurrent migration leaves a record whose target hash does not match, never a gap.
     audit_path = Path(args.audit_out) if args.audit_out else root / "migration" / "run-manifest-migration-audit-v1.jsonl"
-    if audit_path.exists():
-        lines = [ln for ln in audit_path.read_text(encoding="utf-8").splitlines() if ln.strip()]
-        if lines:
-            prior_head = json.loads(lines[-1]).get("record_hash")
-
-    record = build_audit_record(
-        source_dialect=target["migration"]["source_dialect"],
-        source_sha256=source_sha,
-        source_path=str(archive_path),
-        target_sha256=target_sha,
-        target_path=str(target_path),
-        prior_head=prior_head,
+    record = append_audit_record(
+        audit_path,
+        lambda prior_head: build_audit_record(
+            source_dialect=target["migration"]["source_dialect"],
+            source_sha256=source_sha,
+            source_path=str(archive_path),
+            target_sha256=target_sha,
+            target_path=str(target_path),
+            prior_head=prior_head,
+        ),
     )
-    audit_path.parent.mkdir(parents=True, exist_ok=True)
-    with audit_path.open("a", encoding="utf-8") as fh:
-        fh.write(json.dumps(record, sort_keys=True) + "\n")
+    atomic_write(target_path, target_json)
 
     print(
         json.dumps(
