@@ -122,8 +122,8 @@ The Codex installer routes hooks through `hooks/codex-hook-adapter.sh`.
 
 `completion-audit.sh` and `stop-check.sh` enforce two separate gates:
 
-1. **Intermediate commits** (`git commit`, `git push`, and git plumbing that creates commits: `write-tree`, `commit-tree`, `hash-object -w`, `update-ref refs/heads/*`) and **Stop** — require only the `required_planning` skills (default: `silver-quality-gates`, `silver-context`, `silver-plan`; `required_planning_devops` in the DevOps workflow). This lets execution subagents make atomic commits mid-execution.
-2. **Final delivery** (`gh pr create`, `gh pr merge`, a command whose first line contains the word `deploy`, `gh release create`) — requires the full `required_deploy` list from `.silver-bullet.json`; `gh release create` also needs `required_release` and the configured release gates.
+1. **Intermediate commits** (`git commit`, `git push`, and everything that creates commits or moves branch refs: `merge`, `cherry-pick`, `revert`, `am`, `rebase`, `write-tree`, `commit-tree`, `hash-object -w`, `update-ref refs/heads/*`) and **Stop** — require only the `required_planning` skills (default: `silver-quality-gates`, `silver-context`, `silver-plan`; `required_planning_devops` in the DevOps workflow). This lets execution subagents make atomic commits mid-execution.
+2. **Final delivery** (`gh pr create`, `gh pr merge`, `gh release create`, their aliases and `gh api` writes, and deploy commands; classified by `hooks/lib/tool-input/shell_analysis.py` over every line and chain segment, so a command that only mentions `deploy` is not gated) — requires the full `required_deploy` list from `.silver-bullet.json`; `gh release create` also needs `required_release` and the configured release gates.
 
 Default skill lists come from `templates/silver-bullet.config.json.default`. Hooks source `hooks/lib/required-skills.sh`, which reads that file with `jq` at runtime; the project's `.silver-bullet.json` lists take precedence when present.
 

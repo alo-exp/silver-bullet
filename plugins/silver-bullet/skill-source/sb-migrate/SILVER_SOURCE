@@ -201,7 +201,7 @@ Report capability tier and any WARN/FAIL lines. Point the user to `docs/RUNTIME-
 
 #### 4.2 Host hook merge (all hosts)
 
-Re-register SB hooks in the active host settings file (same contract as `/sb:init` update mode §3.7.5). Resolve `INSTALL_PATH` from `$HOME/.codex/plugins/installed_plugins.json` when possible; fall back to `PLUGIN_ROOT`.
+Remove Silver Bullet's duplicate hook copies from the active host settings file (same contract as `/sb:init` update mode §3.7.5; it never adds hooks on a registered plugin). Resolve `INSTALL_PATH` from `$HOME/.codex/plugins/installed_plugins.json` only; with no registry entry, skip the step.
 
 Per-host merge scripts live under `scripts/lib/install-<runtime>/` — see `docs/RUNTIME-COMPATIBILITY.md` (`merge-hooks.py`).
 

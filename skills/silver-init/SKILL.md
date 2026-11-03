@@ -842,7 +842,7 @@ See `references/scaffold-steps.md` → "Update mode". Ordered steps:
 4. If the project instruction file already exists, ensure it has the reference line `> **Always adhere strictly to this file and silver-bullet.md — they override all defaults.**` at top if missing. If no project instruction file exists, skip this step.
 5. Run conflict detection using `references/scaffold-steps.md` → "§3.1c Conflict detection". (Note: this is the reference-file procedure for update mode; fresh setup uses the expanded 3.1c section-inventory procedure in SKILL.md instead.)
 6. Invoke `sb:ensure-docs --bootstrap` through the active runtime's SB-recognized skill invocation channel so docs bootstrap/reconciliation is centralized in `silver-ensure-docs`.
-7. Re-register/refresh SB hooks (step 3.7.5 in the reference).
+7. Remove Silver Bullet's duplicate hook copies from the host settings file when the plugin is registered (step 3.7.5 in the reference). This step never adds hooks.
 8. Output: "Silver Bullet updated. silver-bullet.md refreshed. All SB-owned lifecycle skills active."
 
 **Template refresh** (only on explicit user request): list files, require "yes", back up workflow files to `*.backup`, overwrite `silver-bullet.md`, carry forward `.silver-bullet.json` customizations. See reference for the full flow.
@@ -912,7 +912,7 @@ it thereafter.
 - **3.5.5 Docs bootstrap/reconciliation**: invoke `sb:ensure-docs --bootstrap` through the active runtime's SB-recognized skill invocation channel. This replaces direct doc migration and direct placeholder creation in `sb:init`. `sb:ensure-docs` handles greenfield skeletons, brownfield mapping, archive moves, semantic audits, and `doc-scheme.md` + `doc-scheme.json` sync.
 - **3.6 Verify docs contract surface**: ensure `docs/doc-scheme.md`, `docs/doc-scheme.json`, and `docs/task-doc-checklist.json` exist after the `sb:ensure-docs` bootstrap run.
 - **3.7 Stage and commit**: `git add silver-bullet.md .silver-bullet.json docs/` plus any existing project instruction file that was actually updated, then a `feat: initialize Silver Bullet enforcement` commit (co-authored by the host-appropriate co-author line). On pre-commit-hook failure: read, fix, re-stage, new commit (never `--amend`).
-- **3.7.5 Register SB hooks in the host hooks manifest**: resolve install path from `installed_plugins.json` or `${SB_RUNTIME_HOME_ROOT}/plugins/cache/alo-labs/silver-bullet/current`, then run the host-appropriate merge script from `${PLUGIN_ROOT}/skills/silver-init/scripts/` (see `docs/RUNTIME-COMPATIBILITY.md`). Pass `"$INSTALL_PATH"`. Idempotent. On nonzero exit, warn but do not stop init.
+- **3.7.5 Remove duplicate SB hook copies from the host settings file**: resolve the install path from `installed_plugins.json` only (there is no `current/` fallback; with no registry entry, skip this step silently), then run the host-appropriate merge script from `${PLUGIN_ROOT}/skills/silver-init/scripts/` (see `docs/RUNTIME-COMPATIBILITY.md`). Pass `"$INSTALL_PATH"`. On a registered plugin the host delivers `hooks/hooks.json` itself, so the script only removes Silver Bullet's own copies from settings and adds nothing. Idempotent. On nonzero exit, warn but do not stop init.
 - **3.8 Optional plugin activation**: do not activate lifecycle-overlap plugins for core SB workflows. If the user explicitly requests an optional enrichment plugin later, route through that plugin's own install/activation flow at that time.
 - **3.9 Done**: run capability probe and surface enforcement tier honestly:
 

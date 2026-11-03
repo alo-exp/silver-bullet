@@ -105,6 +105,19 @@ assert_not_contains "Placeholder hook path removed" "\${CLAUDE_PLUGIN_ROOT}/hook
 assert_contains "new session-start hook registered" "$STABLE_ALIAS/hooks/spec-session-record.sh" "$SETTINGS_FILE"
 assert_contains "new prompt hook registered" "$STABLE_ALIAS/hooks/prompt-reminder.sh" "$SETTINGS_FILE"
 
+# Phase 3.7.5 documentation matches merge-hooks.py: removal only, registry only, no current/ fallback.
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+for f in skills/silver-init/SKILL.md skills/silver-init/references/scaffold-steps.md skills/silver-doctor/SKILL.md skills/silver-migrate/SKILL.md skills/silver-update/SKILL.md; do
+  for stale in 'Register SB hooks in the host hooks manifest' 'Re-register/refresh SB hooks' 're-register or refresh SB hooks' 'Re-register SB hooks' 're-register host hooks' 'or `${SB_RUNTIME_HOME_ROOT}/plugins/cache/alo-labs/silver-bullet/current`' 'update §3.7.5 |' 'Could not auto-register hooks' 'add hooks manually from'; do
+    if grep -qF -- "$stale" "$REPO/$f"; then echo "FAIL: $f still says: $stale"; (( FAIL++ )) || true; else echo "PASS: $f has no stale 3.7.5 wording: $stale"; (( PASS++ )) || true; fi
+  done
+done
+
+# The failure warning must not tell users to add hooks by hand (a registered plugin would run them twice)
+for f in skills/silver-init/references/scaffold-steps.md agents/claude/sb:init/references/scaffold-steps.md host-bundles/codex/sb-init/references/scaffold-steps.md plugins/silver-bullet/skill-source/sb-init/references/scaffold-steps.md; do
+  if grep -qF 'Do not add hooks by hand' "$REPO/$f"; then echo "PASS: $f warns against hand-added hooks"; (( PASS++ )) || true; else echo "FAIL: $f lacks the do-not-add-by-hand warning"; (( FAIL++ )) || true; fi
+done
+
 echo
 echo "Results: $PASS passed, $FAIL failed"
 [[ $FAIL -eq 0 ]]
