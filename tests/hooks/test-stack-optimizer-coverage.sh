@@ -105,6 +105,22 @@ sb_stack_ensure_agentmemory_gitignore "$RP" && tl_pass "gitignore repair tolerat
 assert_not_contains "failed repair leaves file unchanged" "$(cat "$GI")" '!.agentmemory/memory/**'
 unstub sed
 [[ -z "$(find "$RP" -maxdepth 1 -name '.gitignore.*' 2>/dev/null)" ]] && tl_pass "no temp file is left behind" || tl_fail "no temp file is left behind"
+# a failing copy, move or chmod leaves the user's file as it was and leaves no temp file behind
+printf '# === agentmemory managed block ===\n!.agentmemory/memory/\n' >"$GI"
+tl_stub cp 'exit 1'; hash -r
+sb_stack_ensure_agentmemory_gitignore "$RP" && tl_pass "a failed copy does not fail the repair" || tl_fail "a failed copy does not fail the repair"
+assert_not_contains "a failed copy leaves the file unchanged" "$(cat "$GI")" '!.agentmemory/memory/**'
+unstub cp
+rm -f "$GI"; tl_stub mv 'exit 1'; hash -r
+sb_stack_ensure_agentmemory_gitignore "$RP" || true
+assert_file_absent "a failed move writes nothing" "$GI"
+unstub mv
+tl_stub chmod 'exit 1'; hash -r
+sb_stack_ensure_agentmemory_gitignore "$RP" || true
+assert_contains "a failed chmod on a new file still writes the block" "$(cat "$GI")" "# === agentmemory managed block ==="
+unstub chmod
+[[ -z "$(find "$RP" -maxdepth 1 -name '.gitignore.*' 2>/dev/null)" ]] && tl_pass "failed writes leave no temp file" || tl_fail "failed writes leave no temp file"
+rm -f "$GI"
 # A committed symlink at .gitignore must never be followed (it could point at ~/.bashrc).
 VICTIM_GI="$TL_TMP/victim-bashrc"; printf 'export A=1\n' >"$VICTIM_GI"
 rm -f "$GI"; ln -s "$VICTIM_GI" "$GI"

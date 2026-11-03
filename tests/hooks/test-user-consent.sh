@@ -260,6 +260,13 @@ assert_eq "a live lock owner makes the writer give up with status 2" "2" "$TL_ST
 assert_contains "the message names the lock" "$TL_ERR" ".consent.lock"
 assert_eq "nothing was written while the lock was held" "unset" "$(sb_consent_decision graphify enforce)"
 rm -rf "$LOCK"
+# a lock whose pid file cannot be written is still held and released
+tl_stub mkdir 'real="$(command -v -p mkdir)"; "$real" "$@" || exit $?; for a in "$@"; do case "$a" in *.consent.lock) "$real" "$a/pid";; esac; done'; hash -r
+reset_store
+sb_consent_set granted rtk enforce machine test >/dev/null && tl_pass "a pid file that cannot be written does not stop the grant" || tl_fail "a pid file that cannot be written does not stop the grant"
+assert_eq "grant recorded without a pid file" "granted" "$(sb_consent_decision rtk enforce)"
+[[ ! -d "$LOCK" ]] && tl_pass "and the lock is released" || tl_fail "and the lock is released"
+rm -f "$TL_BIN/mkdir"; hash -r
 mkdir -p "$LOCK"
 (sleep 0.3; rm -rf "$LOCK") &
 bgpid=$!

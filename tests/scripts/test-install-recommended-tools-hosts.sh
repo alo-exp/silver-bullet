@@ -252,6 +252,11 @@ assert_eq "global opencode: AGENTS.md copied" "OPENCODE-AGENTS" "$(cat "$HOME/.c
 assert_contains "global opencode: OK line" "$TL_OUT" "OK: ${HOME}/.config/opencode/AGENTS.md"
 tl_run bash "$GLO" --host codex
 assert_eq "global codex: AGENTS.md copied" "CODEX-AGENTS" "$(cat "$HOME/.codex/AGENTS.md")"
+# a destination that cannot be written is reported, not hidden
+rm -rf "$HOME/.codex"; : >"$HOME/.codex"
+tl_run bash "$GLO" --host codex
+assert_contains "global codex: an unwritable destination warns" "$TL_ERR" "WARN: could not write ${HOME}/.codex/AGENTS.md"
+rm -f "$HOME/.codex"
 NONPM="$(tl_path_without npm)"
 rm -f "$TL_BIN/npm"
 tl_run env PATH="$NONPM" bash "$GLO" --host codex
