@@ -130,6 +130,13 @@ class ComputedProgramsTest(TierMixin, Base):
             "c=gh; ${c^} pr create", "c=GH; ${c,} pr create",
         ])
 
+    def test_arrays_inside_a_larger_word(self):
+        self.assertEqual(self.possible("a=(gh pr create); c=x${a[*]}; ${c#x} --fill"), [])  # no program: the word is gh pr create
+        self.assertEqual(self.actions("a=(gh pr create); c=${a[*]}; $c --fill"), ["pr_create"])
+        self.assertEqual(self.tier("a=(1 \"$(cat f)\"); echo x${a[*]}"), "none")
+        self.assertEqual(self.tier("a=(gh); c=x${a[*]}; ${c#x} pr create"), "completion")
+        self.assertEqual(self.tier("a=(1 \"$(cat f)\"); c=x${a[*]}; ${c#x} pr create"), "completion")  # an unknown element
+
     def test_shift_and_positional_parameters(self):
         self.assertEqual(self.actions("f(){ shift; $1 pr create; }; f x gh"), ["pr_create"])
         self.assertEqual(self.actions("set -- gh pr create; shift 0; \"$@\""), ["pr_create"])
