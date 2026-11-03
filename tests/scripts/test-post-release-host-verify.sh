@@ -4,6 +4,17 @@ set -euo pipefail
 PASS=0
 FAIL=0
 
+assert_not_contains() {
+  local desc="$1" needle="$2" haystack="$3"
+  if grep -F -- "$needle" <<<"$haystack" >/dev/null; then
+    echo "FAIL: $desc — found [$needle]"
+    (( FAIL++ )) || true
+  else
+    echo "PASS: $desc"
+    (( PASS++ )) || true
+  fi
+}
+
 assert_contains() {
   local desc="$1" needle="$2" haystack="$3"
   if grep -F -- "$needle" <<<"$haystack" >/dev/null; then
@@ -18,7 +29,6 @@ assert_contains() {
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 VERIFY_SCRIPT="$REPO_ROOT/scripts/post-release-host-verify.sh"
 UNINSTALL_LIB="$REPO_ROOT/scripts/lib/post-release-uninstall.sh"
-STRIP_PY="$REPO_ROOT/scripts/lib/strip-cursor-sb-hooks.py"
 REFRESH_SCRIPT="$REPO_ROOT/scripts/post-release-refresh.sh"
 RELEASE_SKILL="$REPO_ROOT/skills/silver-create-release/SKILL.md"
 GATE_DOC="$REPO_ROOT/docs/internal/pre-release-quality-gate.md"
@@ -44,14 +54,10 @@ assert_contains "verify supports --version" "--version" "$verify_body"
 assert_contains "verify uses RTK_DISABLED" "RTK_DISABLED=1" "$verify_body"
 
 echo "--- post-release-uninstall.sh wiring ---"
-assert_contains "uninstall lib defines cursor uninstall" "sb_post_release_uninstall_cursor" "$uninstall_body"
+assert_not_contains "uninstall lib has no cursor uninstall (Cursor is not a host)" "sb_post_release_uninstall_cursor" "$uninstall_body"
 assert_contains "uninstall lib defines codex uninstall" "sb_post_release_uninstall_codex" "$uninstall_body"
 assert_contains "uninstall lib defines claude uninstall" "sb_post_release_uninstall_claude" "$uninstall_body"
-assert_contains "cursor uninstall strips hooks" "strip-cursor-sb-hooks.py" "$uninstall_body"
 assert_contains "codex uninstall purges SB hooks" "purge_legacy_silver_bullet_hooks_from_user_config" "$uninstall_body"
-
-echo "--- strip-cursor-sb-hooks.py ---"
-[[ -f "$STRIP_PY" ]] && echo "PASS: strip-cursor-sb-hooks.py exists" && (( PASS++ )) || { echo "FAIL: strip script missing"; (( FAIL++ )) || true; }
 
 echo "--- post-release-refresh.sh delegates ---"
 assert_contains "refresh delegates to host verify" "post-release-host-verify.sh" "$refresh_body"

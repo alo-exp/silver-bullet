@@ -434,7 +434,7 @@ summary_errors: list[str] = []
 count_patterns = {
     "29 atomic flows": re.compile(r"(?:\b29\b.{0,45}(?:AF-\*)?.{0,15}atomic flows|atomic flows.{0,45}\b29\b)", re.I | re.S),
     "26 workflows": re.compile(r"(?:\b26\b.{0,45}(?:WF-\*)?.{0,15}workflows|workflows.{0,45}\b26\b)", re.I | re.S),
-    "114 flow steps": re.compile(r"(?:\b118\b.{0,45}flow[- ]steps?|flow[- ]steps?.{0,45}\b118\b)", re.I | re.S),
+    "114 flow steps": re.compile(r"(?:\b114\b.{0,45}flow[- ]steps?|flow[- ]steps?.{0,45}\b114\b)", re.I | re.S),
 }
 for surface in summary_surfaces:
     raw = surface.read_text(encoding="utf-8") if surface.exists() else ""

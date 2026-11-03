@@ -7,7 +7,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init claude
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/h-recommended-helpers.sh"
 cd "$TL_TMP"
-unset CODEX_HOME PI_CODING_AGENT_DIR CURSOR_PLUGIN_ROOT TOOLSTACK_INSTALL_IN_PROGRESS SB_RT_APPLY_ACTIVE RTCM_DRY_RUN
+unset CODEX_HOME PI_CODING_AGENT_DIR TOOLSTACK_INSTALL_IN_PROGRESS SB_RT_APPLY_ACTIVE RTCM_DRY_RUN
 
 ST="$TL_TMP/stage"
 LOG="$TL_TMP/calls.log"
@@ -20,14 +20,13 @@ S="$ST/scripts/optimize-rtk-context-mode.sh"
 # logging stubs for helpers resolved from the script directory
 mk_sh() { printf '#!/usr/bin/env bash\necho "%s $* | tsip=${TOOLSTACK_INSTALL_IN_PROGRESS:-} proj=${RT_PROJECT_ROOT:-}" >>"$LOG"\nexit "${%s:-0}"\n' "$1" "$2" >"$ST/scripts/$1.sh"; chmod +x "$ST/scripts/$1.sh"; }
 mk_sh install-recommended-tools-global STUB_RC_GLOBAL
-mk_sh install-recommended-tools-cursor STUB_RC_CURSOR
 mk_sh enable-rtk-context-mode STUB_RC_ENABLE
 cat >"$ST/scripts/lib/merge-token-compression-config.py" <<'PY'
 import os, sys
 open(os.environ["LOG"], "a").write("merge %s\n" % " ".join(sys.argv[1:]))
 sys.exit(int(os.environ.get("STUB_RC_MERGE", "0")))
 PY
-for py in patch-hooks install-pi; do
+for py in install-pi; do
 cat >"$ST/scripts/lib/global-toolstack/$py.py" <<PY
 import os, sys
 env = " ".join("%s=%s" % (k, os.environ[k]) for k in sorted(os.environ) if k.startswith("RT_PATCH_"))
@@ -35,7 +34,7 @@ open(os.environ["LOG"], "a").write("$py %s | %s\n" % (" ".join(sys.argv[1:]), en
 PY
 done
 
-mkdir -p "$HOME/.cursor" "$HOME/.claude"
+mkdir -p "$HOME/.claude"
 BASEP="$(hr_path_without npm claude rtk context-mode)"
 run_env() { : >"$LOG"; tl_run env PATH="$HR_BIN:$BASEP" "$@"; }
 run_args() { : >"$LOG"; run_env bash "$S" "$@"; }
@@ -62,19 +61,19 @@ assert_contains "unknown arg named" "$TL_ERR" "Unknown arg: --bogus"
 run_args --project-root "$PROJ"
 assert_eq "missing host exits 2" "2" "$TL_STATUS"
 assert_contains "missing host message" "$TL_ERR" "ERROR: --host is required"
-run_args --host cursor
+run_args --host claude
 assert_eq "missing project root exits 2" "2" "$TL_STATUS"
 assert_contains "missing project root message" "$TL_ERR" "ERROR: --project-root is required"
 run_args --project-root "$PROJ" --host
 assert_eq "--host without value exits 2" "2" "$TL_STATUS"
 assert_contains "--host without value explained" "$TL_ERR" "--host requires a value"
-run_args --host cursor --project-root
+run_args --host claude --project-root
 assert_eq "--project-root without value exits 2" "2" "$TL_STATUS"
 assert_contains "--project-root without value explained" "$TL_ERR" "--project-root requires a value"
 run_args --host nope --project-root "$PROJ"
 assert_eq "invalid host exits 2" "2" "$TL_STATUS"
-assert_contains "invalid host message" "$TL_ERR" "Invalid --host: nope (use: auto claude codex cursor opencode pi hermes goose all)"
-run_args --host cursor --project-root "$TL_TMP/does-not-exist" --dry-run
+assert_contains "invalid host message" "$TL_ERR" "Invalid --host: nope (use: auto claude codex opencode pi hermes goose all)"
+run_args --host claude --project-root "$TL_TMP/does-not-exist" --dry-run
 assert_eq "missing project dir fails" "1" "$TL_STATUS"
 
 # ---------- host auto-detection ----------
@@ -82,14 +81,14 @@ detect() {  # env assignments... -> prints the detected host
   run_args --host auto --project-root "$PROJ" --dry-run --skip-rtk-init --skip-cm-doctor
   sed -n 's/^=== RTK + Context Mode optimization (host=\(.*\)) ===$/\1/p' <<<"$TL_OUT"
 }
-rm -rf "$HOME/.cursor" "$HOME/.codex" "$HOME/.hermes" "$HOME/.pi" "$HOME/.config/opencode" "$HOME/.claude"
-assert_eq "auto: nothing present falls back to cursor" "cursor" "$(detect)"
+rm -rf "$HOME/.codex" "$HOME/.hermes" "$HOME/.pi" "$HOME/.config/opencode" "$HOME/.claude"
+assert_eq "auto: nothing present falls back to claude" "claude" "$(detect)"
 mkdir -p "$HOME/.claude"; assert_eq "auto: only ~/.claude gives claude" "claude" "$(detect)"
 mkdir -p "$HOME/.pi/agent"; assert_eq "auto: pi agent dir beats ~/.claude" "pi" "$(detect)"
 mkdir -p "$HOME/.hermes"; assert_eq "auto: hermes dir" "hermes" "$(detect)"
 mkdir -p "$HOME/.config/opencode"; assert_eq "auto: opencode dir" "opencode" "$(detect)"
 mkdir -p "$HOME/.codex"; assert_eq "auto: codex dir" "codex" "$(detect)"
-mkdir -p "$HOME/.cursor"; assert_eq "auto: cursor dir wins" "cursor" "$(detect)"
+mkdir -p "$HOME/.cursor"; assert_eq "auto: a leftover ~/.cursor is not a host" "codex" "$(detect)"
 rm -rf "$HOME/.cursor"
 mkdir -p "$HOME/.claude"
 : >"$LOG"
@@ -100,9 +99,6 @@ run_env CODEX_HOME="$TL_TMP/ch" bash "$S" --host auto --project-root "$PROJ" --d
 assert_contains "auto: CODEX_HOME" "$TL_OUT" "(host=codex)"
 run_env PI_CODING_AGENT_DIR="$TL_TMP/pi" bash "$S" --host auto --project-root "$PROJ" --dry-run --skip-rtk-init --skip-cm-doctor
 assert_contains "auto: PI_CODING_AGENT_DIR" "$TL_OUT" "(host=pi)"
-run_env CURSOR_PLUGIN_ROOT="$TL_TMP/cp" bash "$S" --host auto --project-root "$PROJ" --dry-run --skip-rtk-init --skip-cm-doctor
-assert_contains "auto: CURSOR_PLUGIN_ROOT" "$TL_OUT" "(host=cursor)"
-mkdir -p "$HOME/.cursor"
 
 # ---------- claude ----------
 mk_rtk; mk_cm
@@ -125,8 +121,8 @@ run_env STUB_RC_ENABLE=1 bash "$S" --host claude --project-root "$PROJ" --skip-c
 assert_eq "failing enable script tolerated" "0" "$TL_STATUS"
 
 # flags forwarded to the merge helper
-run_args --host claude --project-root "$PROJ" --dry-run --skip-cli-config --skip-cm-doctor
-assert_contains "dry-run + skip-cli-config reach the merge helper" "$TL_OUT" "DRY-RUN: python3 $ST/scripts/lib/merge-token-compression-config.py --host claude --repo-root $ST --dry-run --skip-cli-config"
+run_args --host claude --project-root "$PROJ" --dry-run --skip-cm-doctor
+assert_contains "dry-run reaches the merge helper" "$TL_OUT" "DRY-RUN: python3 $ST/scripts/lib/merge-token-compression-config.py --host claude --repo-root $ST --dry-run"
 assert_not_contains "dry-run does not run the enable script" "$(logs)" "enable-rtk-context-mode"
 assert_not_contains "dry-run does not run rtk init" "$(logs)" "rtk init"
 assert_contains "dry-run rtk init is announced" "$TL_OUT" "DRY-RUN: $HR_BIN/rtk init -g"
@@ -226,48 +222,10 @@ run_args --host goose --project-root "$PROJ" --skip-cm-doctor --dry-run
 assert_contains "goose unsupported" "$TL_OUT" "SKIP: goose — RTK and Context Mode have no upstream integration"
 assert_contains "goose status" "$TL_OUT" "--- host: goose (status: unsupported) ---"
 
-# ---------- cursor ----------
-mk_rtk
-printf '{"hooks":{"preToolUse":[{"command":"rtk hook cursor"}]}}\n' >"$HOME/.cursor/hooks.json"
-run_args --host cursor --project-root "$PROJ" --skip-cm-doctor
-assert_eq "cursor run exits 0" "0" "$TL_STATUS"
-assert_contains "cursor rtk init" "$(logs)" "rtk init -g --agent cursor"
-assert_contains "cursor hook detected" "$TL_OUT" "OK: RTK Cursor hook present"
-assert_contains "cursor merge" "$(logs)" "merge --host cursor"
-assert_contains "cursor hook reconciler flags" "$(logs)" "patch-hooks  | RT_PATCH_CONTEXT_MODE=1 RT_PATCH_LEANCTX=1 RT_PATCH_RTK=1"
-assert_contains "cursor global installer" "$(logs)" "install-recommended-tools-global --host cursor --global"
-assert_not_contains "cursor installer not needed" "$(logs)" "install-recommended-tools-cursor"
-echo '{}' >"$HOME/.cursor/hooks.json"
-run_args --host cursor --project-root "$PROJ" --skip-cm-doctor
-assert_contains "cursor hook missing" "$TL_OUT" "WARN: RTK hook not found after rtk init — check ~/.cursor/hooks.json"
-rm -f "$HOME/.cursor/hooks.json"
-run_args --host cursor --project-root "$PROJ" --skip-cm-doctor
-assert_contains "cursor without hooks.json" "$TL_OUT" "WARN: RTK hook not found after rtk init"
-run_args --host cursor --project-root "$PROJ" --skip-cm-doctor --dry-run
-assert_not_contains "dry-run skips the hook check" "$TL_OUT" "RTK Cursor hook present"
-assert_not_contains "dry-run skips the hook warning" "$TL_OUT" "RTK hook not found"
-run_args --host cursor --project-root "$PROJ" --skip-rtk-init --skip-cm-doctor --dry-run
-assert_contains "cursor rtk init skipped" "$TL_OUT" "SKIP: rtk init (cursor)"
-run_env STUB_RC_GLOBAL=1 bash "$S" --host cursor --project-root "$PROJ" --skip-cm-doctor
-assert_contains "cursor installer fallback" "$(logs)" "install-recommended-tools-cursor --global"
-run_env STUB_RC_GLOBAL=1 STUB_RC_CURSOR=1 bash "$S" --host cursor --project-root "$PROJ" --skip-cm-doctor
-assert_eq "both cursor installers failing is tolerated" "0" "$TL_STATUS"
-run_env TOOLSTACK_INSTALL_IN_PROGRESS=1 bash "$S" --host cursor --project-root "$PROJ" --skip-cm-doctor
-assert_not_contains "no nested installer while one is in progress" "$(logs)" "install-recommended-tools"
-run_env SB_RT_APPLY_ACTIVE=1 bash "$S" --host cursor --project-root "$PROJ" --skip-cm-doctor
-assert_not_contains "no nested installer during an apply" "$(logs)" "install-recommended-tools"
-mv "$ST/scripts/lib/global-toolstack/patch-hooks.py" "$ST/scripts/lib/global-toolstack/patch-hooks.off"
-run_args --host cursor --project-root "$PROJ" --skip-cm-doctor
-assert_not_contains "no hook reconciler when absent" "$(logs)" "patch-hooks"
-mv "$ST/scripts/lib/global-toolstack/patch-hooks.off" "$ST/scripts/lib/global-toolstack/patch-hooks.py"
-hr_nobin rtk
-run_args --host cursor --project-root "$PROJ" --skip-cm-doctor --dry-run
-assert_contains "cursor without rtk" "$TL_OUT" "WARN: rtk-ai/rtk not on PATH or wrong binary — skip rtk init"
-
 # ---------- all hosts ----------
 mk_rtk
 run_args --host all --project-root "$PROJ" --skip-cm-doctor --dry-run
-for h in claude codex cursor opencode pi hermes goose; do
+for h in claude codex opencode pi hermes goose; do
   assert_contains "all: $h visited" "$TL_OUT" "--- host: $h ("
 done
 
@@ -281,7 +239,7 @@ assert_contains "doctor has no adapter for hermes" "$TL_OUT" "SKIP: context-mode
 run_args --host pi --project-root "$PROJ" --dry-run
 assert_contains "doctor has no adapter for pi" "$TL_OUT" "no platform adapter for host=pi"
 run_args --host all --project-root "$PROJ" --dry-run
-assert_contains "doctor for all uses the default adapter" "$TL_OUT" "DRY-RUN: CONTEXT_MODE_PLATFORM=cursor context-mode doctor"
+assert_contains "doctor for all uses the default adapter" "$TL_OUT" "DRY-RUN: CONTEXT_MODE_PLATFORM=claude context-mode doctor"
 hr_nobin context-mode
 run_args --host claude --project-root "$PROJ" --dry-run
 assert_contains "doctor without context-mode" "$TL_OUT" "WARN: context-mode not on PATH — skip doctor"

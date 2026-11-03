@@ -29,8 +29,8 @@ mkdir -p "$LOG_DIR"
 source "$REPO_ROOT/tests/lib/repo-snapshot.sh"
 REPO_SNAPSHOT="$(sb_repo_snapshot "$REPO_ROOT" "${TEST_HOME}/repo")"
 export HOME="$TEST_HOME"
-mkdir -p "${TEST_HOME}/.cursor"
-printf '{"mcpServers":{"context-mode":{"command":"context-mode"}}}\n' >"${TEST_HOME}/.cursor/mcp.json"
+mkdir -p "${TEST_HOME}/.claude"
+printf '{"mcpServers":{"context-mode":{"command":"context-mode"}}}\n' >"${TEST_HOME}/.claude.json"
 
 # Isolated project config with leanctx opted in.
 jq '.recommended_tools.leanctx.enabled_by_user = true' "$TEMPLATE" >"$TMP/.silver-bullet.json"
@@ -47,7 +47,7 @@ chmod +x "$MOCK_BIN/lean-ctx"
 export PATH="$MOCK_BIN:/usr/bin:/bin"
 
 # Run optimize against repo using --force (leanctx may be null in repo config).
-if bash "$OPTIMIZE" --host cursor --project-root "$REPO_SNAPSHOT" --dry-run --skip-rtcm --skip-synergy --force >"${LOG_DIR}/sb-opt-five-tool-1.log" 2>&1; then
+if bash "$OPTIMIZE" --host claude --project-root "$REPO_SNAPSHOT" --dry-run --skip-rtcm --skip-synergy --force >"${LOG_DIR}/sb-opt-five-tool-1.log" 2>&1; then
   pass "dry-run --force exits 0"
 else
   fail "dry-run --force exits 0"
@@ -91,7 +91,7 @@ stack_mode="$(jq -r '.optimization_profiles.five_tool_routed.stack_mode // empty
 [[ "$stack_mode" == "parallel_routed" ]] && pass "stack_mode parallel_routed" || fail "stack_mode parallel_routed"
 
 # Idempotent second dry-run.
-if bash "$OPTIMIZE" --host cursor --project-root "$REPO_SNAPSHOT" --dry-run --skip-rtcm --skip-synergy --force >"${LOG_DIR}/sb-opt-five-tool-2.log" 2>&1; then
+if bash "$OPTIMIZE" --host claude --project-root "$REPO_SNAPSHOT" --dry-run --skip-rtcm --skip-synergy --force >"${LOG_DIR}/sb-opt-five-tool-2.log" 2>&1; then
   pass "second dry-run idempotent exit 0"
 else
   fail "second dry-run idempotent exit 0"
@@ -103,7 +103,7 @@ rm -rf "$MOCK_BIN"
 grep -q 'LEANCTX_DISABLE_SHELL_MCP=1' "$REPO_ROOT/scripts/install-leanctx-sb.sh" \
   && pass "install-leanctx-sb sets LEANCTX_DISABLE_SHELL_MCP=1" \
   || fail "install-leanctx-sb sets LEANCTX_DISABLE_SHELL_MCP=1"
-if bash "$REPO_ROOT/scripts/install-leanctx-sb.sh" --host cursor --project-root "$REPO_SNAPSHOT" --dry-run --skip-install --skip-verify \
+if bash "$REPO_ROOT/scripts/install-leanctx-sb.sh" --host claude --project-root "$REPO_SNAPSHOT" --dry-run --skip-install --skip-verify \
   >"${LOG_DIR}/sb-opt-leanctx-profile.log" 2>&1; then
   grep -q 'five-tool-routed.env\|LEANCTX_DISABLE_SHELL_MCP' "${LOG_DIR}/sb-opt-leanctx-profile.log" \
     && pass "install dry-run logs profile env with shell MCP disabled" \

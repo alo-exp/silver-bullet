@@ -8,7 +8,6 @@ tl_init claude
 LIB="$TL_REPO_ROOT/scripts/lib/post-release-uninstall.sh"
 export SB_POST_RELEASE_REPO_ROOT="$TL_REPO_ROOT"
 export REPO_ROOT="$TL_REPO_ROOT"
-export CURSOR_HOME="$HOME/.cursor"
 export CLAUDE_HOME="$HOME/.claude"
 unset CODEX_HOME_ROOT CLAUDE_BIN
 
@@ -21,73 +20,25 @@ assert_eq "unknown host exits 2" 2 "$TL_STATUS"
 assert_contains "unknown host named" "$TL_ERR" "ERROR: unknown host bogus"
 
 # ---- double sourcing is a no-op
-tl_run bash -c 'source "$1"; source "$1"; declare -F sb_post_release_uninstall_cursor >/dev/null && echo loaded' _ "$LIB"
+tl_run bash -c 'source "$1"; source "$1"; declare -F sb_post_release_uninstall_claude >/dev/null && echo loaded' _ "$LIB"
 assert_eq "second source returns cleanly" "loaded" "$TL_OUT"
 
 # ---- the already-loaded guard also holds when the file is executed
 tl_run env _SB_POST_RELEASE_UNINSTALL_LOADED=1 bash "$LIB"
 assert_eq "already-loaded guard exits 0 when executed" 0 "$TL_STATUS"
 
-# ---- cursor
-for d in alo-labs alo-labs-agent-plugins alo-labs-cursor; do mkdir -p "$CURSOR_HOME/plugins/cache/$d/silver-bullet/1.0"; done
-mkdir -p "$CURSOR_HOME/plugins/cache/alo-labs/other-plugin" "$CURSOR_HOME/.silver-bullet"
-for f in site-session.json site-visual-evidence.json site-vloops.json agent-delegation-active.json subagent-spawns.jsonl live-publish-evidence.json pending-completion-audit.json keep-me.json; do
-  echo x >"$CURSOR_HOME/.silver-bullet/$f"
-done
-cat >"$CURSOR_HOME/hooks.json" <<'JSON'
-{"version":1,"hooks":{"preToolUse":[
- {"command":"/home/u/.cursor/plugins/cache/alo-labs/silver-bullet/1.2.3/hooks/x.sh"},
- {"command":"/usr/local/bin/rtk hook"}]}}
-JSON
-SHA="$(printf 'a%.0s' $(seq 1 40))"
-mkdir -p "$CURSOR_HOME/plugins/local/silver-bullet/commands" "$CURSOR_HOME/plugins/local/other-plugin" \
-  "$CURSOR_HOME/plugins/marketplaces/github.com/alo-exp/silver-bullet/$SHA" "$CURSOR_HOME/plugins/marketplaces/github.com/alo-labs/agent-plugins/$SHA"
-printf '{"version":2,"plugins":{"silver-bullet@alo-labs":[{"enabled":true}],"sidekick@alo-labs-cursor":[{"enabled":true}]}}\n' \
-  >"$CURSOR_HOME/plugins/installed_plugins.json"
+# ---- cursor is no longer a host
 uninstall cursor
-assert_eq "cursor uninstall exits 0" 0 "$TL_STATUS"
-assert_contains "cursor uninstall reports" "$TL_OUT" "uninstall: cursor SB cache + hooks stripped"
-# R7-23: no live SB surface is left behind; other plugins' are
-assert_file_absent "local plugin surface removed" "$CURSOR_HOME/plugins/local/silver-bullet"
-assert_file_absent "gitPath clones removed" "$CURSOR_HOME/plugins/marketplaces/github.com/alo-exp/silver-bullet"
-assert_file_exists "other local plugin kept" "$CURSOR_HOME/plugins/local/other-plugin"
-assert_file_exists "the shared marketplace clone kept" "$CURSOR_HOME/plugins/marketplaces/github.com/alo-labs/agent-plugins/$SHA"
-assert_eq "registry keeps only the other plugins" '["sidekick@alo-labs-cursor"]' "$(jq -c '.plugins | keys' "$CURSOR_HOME/plugins/installed_plugins.json")"
-for d in alo-labs alo-labs-agent-plugins alo-labs-cursor; do assert_file_absent "cursor cache $d removed" "$CURSOR_HOME/plugins/cache/$d/silver-bullet"; done
-assert_file_exists "other plugin cache preserved" "$CURSOR_HOME/plugins/cache/alo-labs/other-plugin"
-assert_file_absent "site session state removed" "$CURSOR_HOME/.silver-bullet/site-session.json"
-assert_file_absent "pending completion audit removed" "$CURSOR_HOME/.silver-bullet/pending-completion-audit.json"
-for f in live-publish-evidence.json subagent-spawns.jsonl site-vloops.json agent-delegation-active.json site-visual-evidence.json; do
-  assert_file_absent "$f removed" "$CURSOR_HOME/.silver-bullet/$f"
-done
-assert_file_exists "unrelated state file preserved" "$CURSOR_HOME/.silver-bullet/keep-me.json"
-HOOKS="$(<"$CURSOR_HOME/hooks.json")"
-assert_not_contains "SB hook stripped" "$HOOKS" "silver-bullet"
-assert_contains "foreign hook preserved" "$HOOKS" "/usr/local/bin/rtk hook"
-uninstall cursor
-assert_eq "cursor uninstall is idempotent" 0 "$TL_STATUS"
-printf '{"plugins": {' >"$CURSOR_HOME/plugins/installed_plugins.json"
-uninstall cursor
-assert_eq "an unparseable Cursor registry fails the uninstall" 1 "$TL_STATUS"
-assert_contains "and is reported" "$TL_ERR" "installed_plugins.json: not valid JSON"
-assert_eq "the unparseable registry is left byte-identical" '{"plugins": {' "$(<"$CURSOR_HOME/plugins/installed_plugins.json")"
-rm -f "$CURSOR_HOME/plugins/installed_plugins.json"
+assert_eq "cursor is rejected as an unknown host" 2 "$TL_STATUS"
+assert_contains "cursor named" "$TL_ERR" "ERROR: unknown host cursor"
 
 # removal failures are tolerated (rm unavailable)
 REAL_RM="$(command -v rm)"
-mkdir -p "$CURSOR_HOME/plugins/cache/alo-labs/silver-bullet"
+mkdir -p "$CLAUDE_HOME/plugins/cache/alo-labs/silver-bullet"
 tl_stub rm 'exit 1'
-uninstall cursor
-assert_eq "cursor uninstall tolerates failing rm" 0 "$TL_STATUS"
 uninstall claude
 assert_eq "claude uninstall tolerates failing rm" 0 "$TL_STATUS"
 "$REAL_RM" -f "$TL_BIN/rm"
-
-# strip helper missing -> error and failure
-mkdir -p "$TL_TMP/norepo"
-tl_run env SB_POST_RELEASE_REPO_ROOT="$TL_TMP/norepo" bash -c 'source "$1"; sb_post_release_uninstall_cursor' _ "$LIB"
-assert_eq "missing strip helper fails" 1 "$TL_STATUS"
-assert_contains "missing strip helper reported" "$TL_ERR" "ERROR: missing $TL_TMP/norepo/scripts/lib/strip-cursor-sb-hooks.py"
 
 # ---- codex
 CX="$HOME/.codex"
