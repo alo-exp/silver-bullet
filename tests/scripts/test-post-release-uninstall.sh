@@ -148,7 +148,12 @@ printf '{"hooks":' >"$HOME/.claude/settings.json"
 uninstall claude
 assert_eq "an unparseable Claude settings file fails the uninstall" 1 "$TL_STATUS"
 assert_eq "and is left byte-identical" '{"hooks":' "$(<"$HOME/.claude/settings.json")"
-rm -f "$HOME/.claude/settings.json"
+printf '{"plugins": {' >"$HOME/.claude/plugins/installed_plugins.json"
+printf '{}\n' >"$HOME/.claude/settings.json"
+uninstall claude
+assert_eq "an unparseable Claude registry fails the uninstall" 1 "$TL_STATUS"
+assert_eq "and is left byte-identical" '{"plugins": {' "$(<"$HOME/.claude/plugins/installed_plugins.json")"
+rm -f "$HOME/.claude/settings.json" "$HOME/.claude/plugins/installed_plugins.json"
 uninstall claude
 assert_file_absent "claude cache removed" "$CL/alo-labs/silver-bullet"
 assert_file_absent "claude-alias cache removed" "$CL/alo-labs-claude/silver-bullet"
