@@ -178,15 +178,6 @@ class DiscoverTests(unittest.TestCase):
         self.assertEqual(slugs, ["s0", "s1", "s2", "s3", "s4"])
         self.assertTrue(all(isinstance(s, str) for s in slugs))
 
-    def test_open_discovery_without_pack(self) -> None:
-        with mock.patch.object(m, "resolve_pack_from_need", return_value=None):
-            ranked = m.discover_solutions(env("Aider and Cline are popular", "cline wins", "aider again", "Cline!"))
-            self.assertEqual(ranked[:2], ["cline", "aider"])
-            # fewer hits than requested: only what the models named, never padded with catalogue vendors
-            self.assertEqual(m.discover_solutions(env("only devin here"), min_solutions=2), ["devin"])
-            self.assertEqual(m.discover_solutions([]), [])
-            # whole words only: SBOM/USB are not Silver Bullet, "composition" is not a vendor
-            self.assertEqual(m.discover_solutions(env("An SBOM and a USB stick, plus compliance and composition")), [])
 
     def test_iter_claim_texts(self) -> None:
         envelopes = [
@@ -494,9 +485,7 @@ class ClaimParserTests(unittest.TestCase):
         self.assertEqual(support_of(m._parse_strong_composition_claim, "nothing"), {})
         self.assertEqual(support_of(m._parse_strong_composition_claim, "strong git-native composition"), {})
         self.assertEqual(support_of(m._parse_strong_composition_claim, "Aider has strong BYO composition"), {"aider": {"Workflow composition": True}})
-        self.assertEqual(support_of(m._parse_openhands_templates, "nothing"), {})
-        self.assertEqual(support_of(m._parse_openhands_templates, "automation templates exist"), {})
-        self.assertEqual(support_of(m._parse_openhands_templates, "OpenHands automation templates"), {"openhands": {"Prebuilt SDLC templates": True}})
+        self.assertFalse(hasattr(m, "_parse_openhands_templates"))  # no per-vendor parser
 
     def test_inclusion_criteria_scoped_claim(self) -> None:
         self.assertEqual(support_of(m._parse_inclusion_criteria_scoped_claim, "nothing about criteria"), {})
@@ -755,7 +744,7 @@ class ScrTests(unittest.TestCase):
         seed_only = m.build_scr_md("devin", env("nothing relevant"))
         self.assertIn(f"- {m.OVERVIEW_SEEDS['devin']}", seed_only)
         bare = m.build_scr_md("agentgpt-clone", env("nothing relevant"))
-        self.assertIn("agentgpt-clone is a solution in the agentic SDLC orchestration landscape.", bare)
+        self.assertIn("agentgpt-clone is a solution identified in this research run.", bare)
         self.assertIn("_No direct prose evidence lines matched this solution slug in live envelopes._", bare)
 
 
@@ -855,6 +844,59 @@ class MainTests(unittest.TestCase):
                     contextlib.redirect_stdout(io.StringIO()), self.assertRaises(SystemExit) as cm:
                 runpy.run_path(str(SCRIPTS / "materialize_solution_artifacts.py"), run_name="__main__")
         self.assertEqual(cm.exception.code, 1)
+
+
+class OpenDiscoveryTests(unittest.TestCase):
+    """No category pack and no built-in catalogue: vendors come from the workers' own rows."""
+
+    def rows(self, *rows, model="m1"):
+        return {"logical_model_id": model, "phase_id": "DR-RETRIEVE", "payload": {"matrix_entries": list(rows)}}
+
+    def row(self, vendor, feature="SSO", supported=True):
+        return {"vendor": vendor, "feature": feature, "supported": supported}
+
+    def test_vendors_are_discovered_from_matrix_entries_not_from_a_catalogue(self) -> None:
+        self.assertEqual((m.KNOWN_SOLUTIONS, m.SLUG_ALIASES), ({}, {}))
+        with mock.patch.object(m, "resolve_pack_from_need", return_value=None):
+            envs = [
+                self.rows(self.row("Apache Kafka"), self.row("Redpanda"), self.row("redpanda ", "Tiered storage")),
+                self.rows(self.row("Apache Kafka", "SSO", False), model="m2"),
+                *env("Aider and Cline are popular"),  # prose naming vendors no worker put in a row
+            ]
+            self.assertEqual(m.discover_solutions(envs), ["apache-kafka", "redpanda"])
+            self.assertEqual(m.discover_solutions([]), [])
+            self.assertEqual(m.discover_solutions(env("An SBOM and a USB stick, plus compliance")), [])
+            names = m.open_world_known(envs, {})
+        self.assertEqual((names["apache-kafka"], names["redpanda"]), ("Apache Kafka", "Redpanda"))
+
+    def test_structured_vendor_resolution_is_exact_never_a_prefix_or_blank(self) -> None:
+        known = {"devika": "Devika", "sourcegraph-cody": "Sourcegraph Cody"}
+        r = m.resolve_structured_vendor
+        self.assertEqual(r("DEVIKA", known, None), "devika")
+        self.assertEqual(r("sourcegraph cody", known, None), "sourcegraph-cody")
+        self.assertEqual(r("Dev", known, None), "dev")  # an unknown vendor is its own column, not Devika
+        self.assertEqual(r("S", known, None), "s")
+        for blank in ("", "   ", None, "!!!", "x" * 90):
+            self.assertIsNone(r(blank, known, None))
+        pack = {"overlay": {"slug_aliases": {"CodyAI": "sourcegraph-cody"}, "head_slug_aliases": {"the dev": "devika"}}}
+        self.assertEqual(r("cody ai", known, pack), None)  # an alias must match exactly
+        self.assertEqual(r("codyai", known, pack), "sourcegraph-cody")
+        self.assertEqual(r("The Dev", known, pack), "devika")
+        self.assertIsNone(r("Unknown vendor", known, pack))  # with a pack unknown vendors are ignored
+
+    def test_blank_vendor_rows_are_ignored_and_the_last_row_of_a_model_wins(self) -> None:
+        known = {"devika": "Devika"}
+        envs = [
+            self.rows(self.row(""), self.row(None), {"feature": "SSO", "supported": True}, self.row("Devika", "SSO", False)),
+            self.rows(self.row("Devika", "SSO", True), model="m1"),  # same model, later phase: wins
+            self.rows(self.row("Devika", "SSO", True), model="m2"),
+            self.rows(self.row("Devika", "SSO", False), model="m3"),
+        ]
+        got = m.parse_structured_matrix_entries(envs, known=known)
+        self.assertEqual(set(got), {"devika"})
+        self.assertIs(got["devika"]["SSO"], True)  # m1 yes (later row), m2 yes, m3 no
+        self.assertEqual(m.disputed_cells(got), [{"vendor": "devika", "feature": "SSO", "yes": 2, "no": 1}])
+        self.assertEqual(m.disputed_cells({"x": {"A": True}}), [])
 
 
 if __name__ == "__main__":

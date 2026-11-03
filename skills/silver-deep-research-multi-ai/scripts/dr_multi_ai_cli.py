@@ -7,6 +7,7 @@ import argparse
 import json
 import os
 import re
+import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -75,6 +76,22 @@ def force_refusal(output_root: Path) -> str | None:
     if not target.is_dir() or not _is_previous_run(target):
         return f"{output_root} is not a previous {WORKFLOW_ID} run (no matching run_manifest.json)"
     return None
+
+
+def carry_over_user_inputs(previous: Path, output_root: Path) -> list[str]:
+    """Copy the user's need_profile.json and scope.md from the moved-aside run into the new one.
+
+    A fresh run must keep the user's category pack and must-haves instead of silently
+    falling back to an automatic profile. Returns the names copied.
+    """
+    copied: list[str] = []
+    for name in ("need_profile.json", "scope.md"):
+        source = previous / name
+        if source.is_file() and not source.is_symlink():
+            output_root.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, output_root / name)
+            copied.append(name)
+    return copied
 
 
 def move_previous_run_aside(output_root: Path) -> Path:
@@ -208,6 +225,7 @@ def main(argv: list[str] | None = None) -> int:
                               "message": refusal}, indent=2))
             return 2
         moved_aside = move_previous_run_aside(output_root)
+        carry_over_user_inputs(moved_aside, output_root)
     os.environ.setdefault("SB_HOST", "cursor")
 
     from dr_live_runner import run_dr_live  # noqa: E402

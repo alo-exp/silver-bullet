@@ -99,6 +99,7 @@ class CollisionTests(unittest.TestCase):
         self.assertEqual(sl._market_chart_profile("apo", pack)["mq_base"], (3.0, 3.0))
 
 
+from category_pack import load_pack_overlay  # noqa: E402
 from legacy_catalog_fixture import with_legacy_catalogs  # noqa: E402
 
 
@@ -109,7 +110,7 @@ class BuildChartTests(TmpCase):
 
     def build(self, comp=None, **kw):
         args = dict(category="Cat", support=self.support(), known={"alpha": "Alpha", "beta": "Beta", "gamma": "Gamma"},
-                    commercial=[], oss=[])
+                    commercial=[], oss=[], pack={"overlay": load_pack_overlay("agentic-sdlc-process-orchestrator")})
         args.update(kw)
         return sl.build_chart_data(comp or comparison(("alpha", 25), ("beta", 12), ("gamma", 18)), **args)
 

@@ -94,7 +94,7 @@ function hostileRun(root) {
     wave_data: [{ slug: "acme", label: HOSTILE.img, offering: 3, strategy: 3, presence: 3 }],
     vc_kcfs: [HOSTILE.img],
     vc_commercial: [{ label: `Acme ${HOSTILE.svg}`, data: [5], color: `#123456"><img src=x onerror=alert(9)>` }],
-    link_pairs: [["Acme", "javascript:alert(7)"], ["Beta", `https://beta.example/${HOSTILE.quote}`], ["SSO", "https://sso.example/"]],
+    link_pairs: [["Acme", "javascript:alert(7)"], ["Beta", `https://beta.example/${HOSTILE.quote}`], ["SSO", "https://sso.example/"], [HOSTILE.img, "https://hostile.example/"]],
     vendor_urls: { Acme: "javascript:alert(7)" },
     vendor_buckets: { commercial: ["Acme", HOSTILE.img], oss: [], leaders: [`Acme ${HOSTILE.svg}`], challengers: [] },
   });
@@ -291,6 +291,23 @@ test("linkify links a vendor at its first prose mention only, but every table ce
   const inCells = added.filter((a) => a.parentElement && a.parentElement.tagName === "TD");
   assert.equal(added.length - inCells.length, 1, "one prose link");
   assert.equal(inCells.length, 2, "both table cells link " + added.map((a) => a.parentElement.tagName + ":" + a.textContent).join(","));
+});
+
+test("a hostile link-pair label that fills a text node becomes a text link, never markup (R12-18)", () => {
+  const { doc, sandbox } = exerciseViewer(HTML, { libraries: true });
+  const content = doc.getElementById("content");
+  const holder = doc.createElement("div");
+  const escaped = HOSTILE.img.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  doc._parseInto(holder, `<p>${escaped}</p><table><tbody><tr><td>${escaped}</td></tr></tbody></table>`);
+  holder.childNodes.slice().forEach((n) => content.appendChild(n));
+  sandbox.ctx.linkify();
+  const links = content.querySelectorAll("a.vname-link").filter((a) => a.textContent === HOSTILE.img);
+  assert.ok(links.length >= 2, "the hostile label was linked as text");
+  for (const a of links) {
+    assert.equal(a.getAttribute("href"), "https://hostile.example/");
+    assert.equal(a.children.length, 0, "link text is a text node, not parsed markup");
+  }
+  assertNoExecutableMarkup(allCreatedElements(doc), "linkify", doc.chrome);
 });
 
 test("viewer still shows the report body when the CDN libraries are unavailable", () => {

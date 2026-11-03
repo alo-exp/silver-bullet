@@ -500,5 +500,749 @@
     "factory ai": "factory-ai",
     "augment cosmos": "augment-cosmos",
     "silver bullet": "silver-bullet"
+  },
+  "vocabulary": {
+    "materialize_solution_artifacts.FEATURE_TEMPLATE": [
+      {
+        "name": "Process orchestration",
+        "features": [
+          "Workflow composition",
+          "Atomic flow catalog",
+          "Parent/child agent delegation",
+          "Hook-enforced gates"
+        ]
+      },
+      {
+        "name": "Developer Experience",
+        "features": [
+          "Self-serve signup",
+          "Quick onboarding",
+          "IDE-native integration",
+          "Skill/plugin marketplace"
+        ]
+      },
+      {
+        "name": "Pricing and licensing",
+        "features": [
+          "Predictable pricing",
+          "Free tier / OSS core",
+          "Per-seat transparency"
+        ]
+      },
+      {
+        "name": "Time to value",
+        "features": [
+          "Managed hosting",
+          "Prebuilt SDLC templates",
+          "Zero-infra bootstrap"
+        ]
+      },
+      {
+        "name": "Verification and quality",
+        "features": [
+          "Automated review loops",
+          "CI integration",
+          "Visual/E2E verification"
+        ]
+      },
+      {
+        "name": "Security and compliance",
+        "features": [
+          "SSO",
+          "RBAC",
+          "Audit log"
+        ]
+      }
+    ],
+    "materialize_solution_artifacts._CORE_SET_CLAIM_RE": {
+      "pattern": "(?:Confirmed in-scope core set|Startup-weighted core|startup-weighted(?:\\s+\\w+){0,4}\\s+for matrix|primary APO matrix should prioritize|in-scope commercial \\+ OSS solution count)",
+      "flags": 2
+    },
+    "materialize_solution_artifacts._MATRIX_LEADERS_RE": {
+      "pattern": "(?:matrix leaders are|APO matrix leaders|Commercial-weighted peer)",
+      "flags": 2
+    },
+    "materialize_solution_artifacts._CRITERION_KEYWORD_TO_ID": {
+      "lifecycle span": "lifecycle_span",
+      "plugin/skill/hook packaging": "plugin_skill_hook_packaging",
+      "deterministic gates": "deterministic_gates",
+      "cross-session state": "cross_session_state",
+      "cross session state": "cross_session_state",
+      "specialist agents": "specialist_agents",
+      "quality/release enforcement": "quality_release_enforcement",
+      "quality release enforcement": "quality_release_enforcement",
+      "process layer above": "process_layer_above_host"
+    },
+    "materialize_solution_artifacts._FEATURE_ALIASES": {
+      "multi-agent orchestration": "Parent/child agent delegation",
+      "verification gates": "Hook-enforced gates",
+      "verification/hook gates": "Hook-enforced gates",
+      "hook-enforced sdlc gates": "Hook-enforced gates",
+      "ide hook enforcement": "Hook-enforced gates",
+      "hook-enforced process": "Hook-enforced gates",
+      "headless ci execution": "CI integration",
+      "partial composition": "Workflow composition",
+      "multi-agent workflows": "Workflow composition",
+      "workflow composition": "Workflow composition",
+      "delegation": "Parent/child agent delegation",
+      "parent/child delegation": "Parent/child agent delegation",
+      "atomic-flow catalog": "Atomic flow catalog",
+      "atomic flow catalog": "Atomic flow catalog",
+      "atomic flows": "Atomic flow catalog",
+      "workflow catalog": "Atomic flow catalog",
+      "hook-enforced gates": "Hook-enforced gates",
+      "hook gates": "Hook-enforced gates",
+      "hook enforcement": "Hook-enforced gates",
+      "automated review loops": "Automated review loops",
+      "managed hosting": "Managed hosting",
+      "ci integration": "CI integration",
+      "ci/cd": "CI integration",
+      "plugin marketplace": "Skill/plugin marketplace",
+      "skill marketplace": "Skill/plugin marketplace",
+      "ide-native": "IDE-native integration",
+      "ide-native integration": "IDE-native integration",
+      "open-source": "Free tier / OSS core",
+      "oss core": "Free tier / OSS core",
+      "sdlc templates": "Prebuilt SDLC templates",
+      "prebuilt sdlc": "Prebuilt SDLC templates",
+      "zero-infra": "Zero-infra bootstrap",
+      "predictable pricing": "Predictable pricing",
+      "audit logs": "Audit log",
+      "visual/e2e": "Visual/E2E verification",
+      "e2e verification": "Visual/E2E verification",
+      "composing workflows": "Workflow composition",
+      "composes workflows": "Workflow composition",
+      "workflow state": "Workflow composition",
+      "enforcing gates": "Hook-enforced gates",
+      "cross-session state": "Workflow composition",
+      "cross session state": "Workflow composition",
+      "process layer above host": "Workflow composition",
+      "process layer": "Workflow composition"
+    },
+    "materialize_solution_artifacts._INCLUSION_CRITERION_FEATURES": {
+      "lifecycle_span": [
+        "Workflow composition",
+        "Atomic flow catalog"
+      ],
+      "plugin_skill_hook_packaging": [
+        "Skill/plugin marketplace",
+        "IDE-native integration"
+      ],
+      "deterministic_gates": [
+        "Hook-enforced gates"
+      ],
+      "cross_session_state": [
+        "Workflow composition"
+      ],
+      "specialist_agents": [
+        "Parent/child agent delegation"
+      ],
+      "quality_release_enforcement": [
+        "Automated review loops",
+        "Hook-enforced gates"
+      ],
+      "process_layer_above_host": [
+        "Workflow composition",
+        "IDE-native integration"
+      ]
+    },
+    "materialize_solution_artifacts._INCLUSION_CRITERIA_SIGNAL_RE": {
+      "pattern": "inclusion criteria|inclusion criterion|lifecycle_span|deterministic gate|cross[- ]session|plugin/skill|process layer|specialist agent|quality/release|passing all 7|satisfies all 7|≥\\s*3 inclusion|evidence host-integrated|orchestrat|workflow orchestrat|methodology pack",
+      "flags": 2
+    },
+    "materialize_solution_artifacts._ALL_SEVEN_INCLUSION_RE": {
+      "pattern": "(?:passing|satisf(?:y|ies)|covering|meets?)\\s+all\\s+7\\s+inclusion",
+      "flags": 2
+    },
+    "materialize_solution_artifacts._PAREN_CRITERION_SLUGS_RE": {
+      "pattern": "(?P<phrase>deterministic gate|lifecycle span|cross[- ]host|plugin[- ]ecosystem|gate determinism|workflow orchestrat|process[- ]layer)[^.;]{0,80}\\((?P<list>[^)]+)\\)",
+      "flags": 2
+    },
+    "materialize_solution_artifacts._PROSE_POSITIVE_SIGNALS": [
+      [
+        {
+          "pattern": "workflow|compos|router|lifecycle|orchestrat|repeatable workflow",
+          "flags": 2
+        },
+        [
+          "Workflow composition"
+        ]
+      ],
+      [
+        {
+          "pattern": "atomic flow|flow catalog|pre-composed|catalog of|workflow catalog",
+          "flags": 2
+        },
+        [
+          "Atomic flow catalog"
+        ]
+      ],
+      [
+        {
+          "pattern": "sequential or parallel|parallel execution|task decomposition",
+          "flags": 2
+        },
+        [
+          "Workflow composition",
+          "Parent/child agent delegation"
+        ]
+      ],
+      [
+        {
+          "pattern": "hook|gate|blocking|fail.?closed|deterministic|quality gate|return block|enforcement|stop-hook",
+          "flags": 2
+        },
+        [
+          "Hook-enforced gates"
+        ]
+      ],
+      [
+        {
+          "pattern": "open.?source|\\boss\\b",
+          "flags": 2
+        },
+        [
+          "Free tier / OSS core"
+        ]
+      ],
+      [
+        {
+          "pattern": "ci/?cd|ci integration|lint/test/build",
+          "flags": 2
+        },
+        [
+          "CI integration"
+        ]
+      ],
+      [
+        {
+          "pattern": "plugin|marketplace|skill pack",
+          "flags": 2
+        },
+        [
+          "Skill/plugin marketplace"
+        ]
+      ],
+      [
+        {
+          "pattern": "low startup burden|quick (?:setup|onboard)|two (?:marketplace )?commands|marketplace installation|automatic setup|installs as a",
+          "flags": 2
+        },
+        [
+          "Quick onboarding",
+          "Zero-infra bootstrap"
+        ]
+      ],
+      [
+        {
+          "pattern": "verification|review loop|tdd",
+          "flags": 2
+        },
+        [
+          "Automated review loops"
+        ]
+      ],
+      [
+        {
+          "pattern": "process layer|above host|ide-native|claude code|codex|cursor",
+          "flags": 2
+        },
+        [
+          "IDE-native integration"
+        ]
+      ],
+      [
+        {
+          "pattern": "persist(?:s|ent)?\\s+(?:evidence|state|progress)|cross[- ]session|state under",
+          "flags": 2
+        },
+        [
+          "Workflow composition"
+        ]
+      ],
+      [
+        {
+          "pattern": "specialist delegation|role[- ]based|multi[- ]agent",
+          "flags": 2
+        },
+        [
+          "Parent/child agent delegation"
+        ]
+      ],
+      [
+        {
+          "pattern": "schema validation|integrity[- ]gate|governance depth",
+          "flags": 2
+        },
+        [
+          "Hook-enforced gates",
+          "Automated review loops"
+        ]
+      ],
+      [
+        {
+          "pattern": "host[- ]integrated|process orchestrator|sdlc plugin",
+          "flags": 2
+        },
+        [
+          "Workflow composition",
+          "IDE-native integration"
+        ]
+      ],
+      [
+        {
+          "pattern": "(?:low|medium)[- ]startup burden|startup[- ]weighted|rapid (?:setup|onboard)|time[- ]to[- ]value",
+          "flags": 2
+        },
+        [
+          "Quick onboarding",
+          "Zero-infra bootstrap"
+        ]
+      ],
+      [
+        {
+          "pattern": "prebuilt|sdlc templates|template pack|methodology pack",
+          "flags": 2
+        },
+        [
+          "Prebuilt SDLC templates"
+        ]
+      ],
+      [
+        {
+          "pattern": "managed hosting|cloud agent|hosted runtime|autonomous delivery engine",
+          "flags": 2
+        },
+        [
+          "Managed hosting"
+        ]
+      ]
+    ],
+    "synthesize_landscape.KCF_NAMES": [
+      "Workflow composition",
+      "Atomic flow catalog",
+      "Hook-enforced gates",
+      "Parent/child delegation",
+      "Managed hosting",
+      "Prebuilt SDLC templates",
+      "CI integration",
+      "IDE-native integration",
+      "Free tier / OSS core",
+      "Predictable pricing"
+    ],
+    "synthesize_landscape._CHART_SUPPORT_ALIASES": {
+      "Parent/child agent delegation": "Parent/child delegation"
+    },
+    "synthesize_landscape._WAVE_STRATEGY_FEATURE_WEIGHTS": [
+      [
+        "Atomic flow catalog",
+        0.55
+      ],
+      [
+        "Skill/plugin marketplace",
+        0.4
+      ],
+      [
+        "Prebuilt SDLC templates",
+        0.35
+      ],
+      [
+        "Free tier / OSS core",
+        0.3
+      ],
+      [
+        "Hook-enforced gates",
+        0.3
+      ],
+      [
+        "Automated review loops",
+        0.3
+      ],
+      [
+        "Parent/child delegation",
+        0.3
+      ],
+      [
+        "Managed hosting",
+        0.25
+      ],
+      [
+        "Visual/E2E verification",
+        0.25
+      ],
+      [
+        "IDE-native integration",
+        0.2
+      ],
+      [
+        "Zero-infra bootstrap",
+        0.2
+      ],
+      [
+        "CI integration",
+        0.2
+      ],
+      [
+        "Predictable pricing",
+        0.2
+      ],
+      [
+        "Per-seat transparency",
+        0.15
+      ],
+      [
+        "Self-serve signup",
+        0.15
+      ],
+      [
+        "Workflow composition",
+        0.15
+      ],
+      [
+        "Quick onboarding",
+        0.1
+      ]
+    ],
+    "synthesize_landscape._WAVE_STRATEGY_HOST_MARKERS": [
+      "cursor",
+      "codex",
+      "claude code",
+      "claude-code",
+      "github copilot",
+      "copilot sdk"
+    ],
+    "synthesize_landscape._DOMAIN_AXIS_PROFILES": {
+      "agentic sdlc": {
+        "mq_anchor": "Process Orchestration",
+        "mq_x": "← Low process orchestration         High process orchestration →",
+        "mq_y": "← Low autonomous execution         High autonomous execution →",
+        "mq_x_label": "Process orchestration depth",
+        "mq_y_label": "Autonomous execution",
+        "section_3a": "Process Orchestration × Autonomous Execution Matrix"
+      },
+      "sdlc orchestration": {
+        "mq_anchor": "Process Orchestration",
+        "mq_x": "← Low process orchestration         High process orchestration →",
+        "mq_y": "← Low autonomous execution         High autonomous execution →",
+        "mq_x_label": "Process orchestration depth",
+        "mq_y_label": "Autonomous execution",
+        "section_3a": "Process Orchestration × Autonomous Execution Matrix"
+      },
+      "coding agent": {
+        "mq_anchor": "Process Orchestration",
+        "mq_x": "← Low process orchestration         High process orchestration →",
+        "mq_y": "← Low autonomous execution         High autonomous execution →",
+        "mq_x_label": "Process orchestration depth",
+        "mq_y_label": "Autonomous execution",
+        "section_3a": "Process Orchestration × Autonomous Execution Matrix"
+      }
+    },
+    "synthesize_landscape._DIVERGENCE_SUBJECTS": [
+      [
+        "adjacent only band",
+        "adjacent-only"
+      ],
+      [
+        "adjacent-only band",
+        "adjacent-only"
+      ],
+      [
+        "generic agent frameworks",
+        "adjacent-only"
+      ],
+      [
+        "cognition scout",
+        "cognition-scout"
+      ],
+      [
+        "magic.dev",
+        "magic-dev"
+      ],
+      [
+        "magic dev",
+        "magic-dev"
+      ],
+      [
+        "github spec kit",
+        "spec-kit"
+      ],
+      [
+        "host runtime",
+        "host-runtimes"
+      ],
+      [
+        "augment cosmos",
+        "augment-cosmos"
+      ],
+      [
+        "augment code",
+        "augment-cosmos"
+      ],
+      [
+        "cross session",
+        "cross-session"
+      ],
+      [
+        "secondary market",
+        "secondary-market"
+      ],
+      [
+        "sdlc plugin",
+        "secondary-market"
+      ],
+      [
+        "tertiary market",
+        "tertiary-market"
+      ],
+      [
+        "tertiary agentic",
+        "tertiary-market"
+      ],
+      [
+        "sunset list",
+        "sunset-list"
+      ],
+      [
+        "primary apo market",
+        "apo-maturity"
+      ],
+      [
+        "ai dlc",
+        "ai-dlc"
+      ],
+      [
+        "aidlc",
+        "ai-dlc"
+      ],
+      [
+        "factory.ai",
+        "factory-ai"
+      ],
+      [
+        "factory ai",
+        "factory-ai"
+      ],
+      [
+        "bmad method",
+        "bmad"
+      ],
+      [
+        "cc10x",
+        "cc10x"
+      ],
+      [
+        "conductor",
+        "conductor"
+      ],
+      [
+        "factory",
+        "factory-ai"
+      ],
+      [
+        "devin",
+        "devin"
+      ],
+      [
+        "metagpt",
+        "metagpt"
+      ],
+      [
+        "bmad",
+        "bmad"
+      ]
+    ],
+    "synthesize_landscape._DIVERGENCE_SUBJECT_LABELS": {
+      "ai-dlc": "AI-DLC",
+      "conductor": "Conductor positioning",
+      "magic-dev": "Magic.dev / Cognition Scout inclusion",
+      "cognition-scout": "Magic.dev / Cognition Scout inclusion",
+      "host-runtimes": "Host runtimes vs APO",
+      "secondary-market": "Secondary SDLC-plugin threat",
+      "cross-session": "Secondary-pack gates and state",
+      "apo-maturity": "Primary APO market maturity",
+      "factory-ai": "Factory.ai role",
+      "cc10x": "cc10x plugin vs APO",
+      "adjacent-only": "Adjacent-only frameworks",
+      "tertiary-market": "Tertiary SaaS inclusion",
+      "augment-cosmos": "Augment Cosmos naming",
+      "spec-kit": "GitHub Spec Kit",
+      "sunset-list": "Sunset-list handling",
+      "bmad": "BMAD / secondary packs",
+      "devin": "Devin vs tertiary SaaS"
+    },
+    "validate_landscape_content._MUST_HAVE_ALIASES": {
+      "workflow composition": [
+        "Workflow composition"
+      ],
+      "multi-agent orchestration": [
+        "Parent/child agent delegation",
+        "Workflow composition"
+      ],
+      "verification gates": [
+        "Hook-enforced gates",
+        "Automated review loops",
+        "CI integration"
+      ],
+      "cross-session state": [
+        "Workflow composition"
+      ],
+      "process layer above host runtime": [
+        "Workflow composition",
+        "IDE-native integration"
+      ]
+    },
+    "vendor_link_labels.VENDOR_URL_REWRITES": {
+      "https://agentsys.ai": "https://github.com/agent-sh/agentsys",
+      "https://agentsys.ai/": "https://github.com/agent-sh/agentsys",
+      "http://agentsys.ai": "https://github.com/agent-sh/agentsys",
+      "http://agentsys.ai/": "https://github.com/agent-sh/agentsys",
+      "https://aws.amazon.com/ai-dlc": "https://github.com/awslabs/aidlc-workflows",
+      "https://aws.amazon.com/ai-dlc/": "https://github.com/awslabs/aidlc-workflows",
+      "https://github.com/ai-dlc/ai-dlc": "https://github.com/awslabs/aidlc-workflows",
+      "https://developer.ibm.com/articles/ai-driven-development-life-cycle/": "https://github.com/awslabs/aidlc-workflows",
+      "https://developer.ibm.com/articles/ai-driven-development-life-cycle": "https://github.com/awslabs/aidlc-workflows",
+      "http://developer.ibm.com/articles/ai-driven-development-life-cycle/": "https://github.com/awslabs/aidlc-workflows",
+      "https://deepwork.ai": null,
+      "https://deepwork.ai/": null,
+      "http://deepwork.ai": null,
+      "http://deepwork.ai/": null,
+      "https://github.com/ruvnet/ruvnet-director": null,
+      "https://github.com/SuperClaude-Org/SuperClaude": "https://github.com/SuperClaude-Org/SuperClaude_Framework",
+      "https://github.com/nicobailon/oh-my-pi": null,
+      "https://github.com/oh-my-pi/oh-my-pi": null,
+      "https://github.com/director-ai/director": null,
+      "https://github.com/zuvo-ai/zuvo": "https://github.com/greglas75/zuvo",
+      "https://github.com/zuvo-labs/zuvo": "https://github.com/greglas75/zuvo",
+      "https://github.com/zuvo": "https://github.com/greglas75/zuvo",
+      "https://cc10x.dev": "https://github.com/romiluz13/cc10x",
+      "https://cc10x.dev/": "https://github.com/romiluz13/cc10x",
+      "http://cc10x.dev": "https://github.com/romiluz13/cc10x",
+      "http://cc10x.dev/": "https://github.com/romiluz13/cc10x",
+      "https://cavekit.ai": "https://github.com/JuliusBrussee/cavekit",
+      "https://cavekit.ai/": "https://github.com/JuliusBrussee/cavekit",
+      "http://cavekit.ai": "https://github.com/JuliusBrussee/cavekit",
+      "http://cavekit.ai/": "https://github.com/JuliusBrussee/cavekit",
+      "https://www.cavekit.ai": "https://github.com/JuliusBrussee/cavekit",
+      "https://www.cavekit.ai/": "https://github.com/JuliusBrussee/cavekit",
+      "https://barkain.com": "https://github.com/barkain/claude-code-workflow-orchestration",
+      "https://barkain.com/": "https://github.com/barkain/claude-code-workflow-orchestration",
+      "http://barkain.com": "https://github.com/barkain/claude-code-workflow-orchestration",
+      "http://barkain.com/": "https://github.com/barkain/claude-code-workflow-orchestration",
+      "https://www.barkain.com": "https://github.com/barkain/claude-code-workflow-orchestration",
+      "https://www.barkain.com/": "https://github.com/barkain/claude-code-workflow-orchestration"
+    },
+    "materialize_solution_artifacts.HOST_RUNTIME_SLUGS": [
+      "cursor",
+      "claude-code",
+      "codex",
+      "github-copilot"
+    ],
+    "materialize_solution_artifacts.OVERVIEW_IDENTITY_FILTERS": [
+      {
+        "focus": "director",
+        "reject_if_any": [
+          [
+            "superpowers"
+          ]
+        ]
+      },
+      {
+        "focus": "cc10x",
+        "reject_if_any": [
+          [
+            "startup-weighted comparison"
+          ],
+          [
+            "silver bullet",
+            "anchor"
+          ],
+          [
+            "methodology",
+            "score"
+          ]
+        ]
+      }
+    ],
+    "synthesize_landscape.FORBIDDEN_CHART_SLUGS": [
+      "claude-code-expert",
+      "sdlc-plugin",
+      "sdlc"
+    ],
+    "synthesize_landscape.LEADER_RULES": {
+      "markets": {
+        "sdlc-plugins": {
+          "require_features": [
+            "Hook-enforced gates"
+          ],
+          "require_cross_session_ledger": true
+        },
+        "apo": {
+          "require_features": [
+            "Hook-enforced gates"
+          ]
+        }
+      },
+      "methodology": {
+        "gate_feature": "Hook-enforced gates",
+        "execute_features": [
+          "Managed hosting",
+          "Automated review loops"
+        ]
+      },
+      "text": "SDLC plugins need hook-enforced gates **and** inclusion-ledger cross-session pass. APO seeds without shipped hook gates cannot occupy Leaders. Leader plots are a feature-gate outcome of the evidenced features, not a 'most complete product' claim.",
+      "methodology_wave_text": "Methodology-without-gates seeds (for example AI-DLC) are **omitted from Wave**."
+    },
+    "solution_classifier.RENAME_EXCLUSIONS": {
+      "augment-code": "augment-cosmos"
+    },
+    "validate_landscape_content.RENAME_POLICIES": [
+      {
+        "from": "augment-code",
+        "to": "augment-cosmos",
+        "pattern": "augment[- ]code",
+        "to_pattern": "augment[- ]cosmos"
+      }
+    ],
+    "landscape_critique_artifacts.LEDGER": {
+      "legend": "3-of-7 inclusion rule applied **per market**. Cells: **P** pass / **F** fail / **U** unknown. Legend: C1 lifecycle · C2 plugin/hook packaging · C3 deterministic gates · C4 cross-session state · C5 specialist orchestration · C6 quality/release enforcement · C7 process layer above host. Full per-criterion notes: `landscape/inclusion-ledger.md`."
+    },
+    "landscape_critique_artifacts.INCLUSION_CRITERIA_ORDER": [
+      "Multi-phase lifecycle span",
+      "Plugin / skill / hook packaging",
+      "Deterministic quality gates",
+      "Cross-session state",
+      "Specialist agent orchestration",
+      "Quality / release enforcement claim",
+      "Process layer above host runtime"
+    ],
+    "landscape_critique_artifacts.INCLUSION_CRITERIA_ABBR": [
+      "C1 Life",
+      "C2 Plug",
+      "C3 Gate",
+      "C4 State",
+      "C5 Spec",
+      "C6 Enf",
+      "C7 Proc"
+    ]
+  },
+  "market_chart_notes": {
+    "apo": [
+      "Methodology/framework seeds without shipped hook gates (for example AI-DLC) are omitted from Wave and are not peer-complete on MQ: Completeness of Vision is capped so they do not plot as shipped-orchestrator peers; Ability to Execute is capped below Leaders."
+    ],
+    "sdlc-plugins": [
+      "Leaders require hook-enforced gates plus inclusion-ledger cross-session pass. Methodology packs that fail those under-served criteria are Visionaries or lower even when workflow ticks are dense. Wave presence, offering, and strategy are capped for packs that fail Leader eligibility."
+    ],
+    "agentic-sdlc-saas": [
+      "SaaS-core MQ/Wave plots shipped autonomous-delivery products with managed hosting. Coding-model labs without orchestration evidence are hard-excluded, not tertiary core."
+    ]
+  },
+  "scope_exclusion_check": {
+    "markers": [
+      "coding agent",
+      "host runtime",
+      "out of scope",
+      "excluded from core"
+    ],
+    "message": "Market Definition lacks exclusion language for coding agents / host runtimes (APO pack)"
   }
 }

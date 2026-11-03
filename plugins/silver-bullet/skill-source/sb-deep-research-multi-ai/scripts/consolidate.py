@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -54,6 +55,24 @@ def normalize_claim(text: str) -> str:
 def index_pool_size(index: dict[str, Any]) -> int:
     """Distinct agents in the result index: the pool the consensus threshold is measured on."""
     return len({str(e.get("logical_model_id")) for e in index.get("entries", []) if e.get("logical_model_id")})
+
+
+_NEGATION_RE = re.compile(
+    r"\b(?:not|no|never|without|lacks?|lacking|cannot|can't|doesn't|don't|isn't|aren't|won't|fails? to)\b",
+    re.IGNORECASE,
+)
+
+
+_AUXILIARIES = frozenset({"does", "do", "did", "is", "are", "was", "were"})
+
+
+def _polarity(text: str) -> tuple[str, bool]:
+    """(claim with negation cues removed, whether it was negated): pairs 'X supports Y' with 'X does not support Y'."""
+    negated = bool(_NEGATION_RE.search(text))
+    words = normalize_claim(_NEGATION_RE.sub(" ", text)).split()
+    # light normalisation so "supports" / "does not support" meet: drop auxiliaries, singularise
+    stems = [w[:-1] if len(w) > 3 and w.endswith("s") else w for w in words if w not in _AUXILIARIES]
+    return " ".join(stems), negated
 
 
 def _candidate_text(candidate: Any) -> tuple[str, bool]:
@@ -113,6 +132,14 @@ def consolidate(envelopes: list[dict[str, Any]], index: dict[str, Any], resolved
                 entry["supporting_agents"].add(agent)
             entry["families"].add(family)
 
+    # Opposite claims about the same thing are a dispute, never agreement: a claim is "contested"
+    # when the same statement (negation aside) is also asserted with the opposite polarity.
+    polarities: dict[str, set[bool]] = {}
+    for key, entry in claims.items():
+        base, negated = _polarity(entry["text"])
+        entry["base"], entry["negated"] = base, negated
+        polarities.setdefault(base, set()).add(negated)
+
     consensus = []
     divergence = []
     strong_threshold = max(2, (pool + 1) // 2)
@@ -120,7 +147,10 @@ def consolidate(envelopes: list[dict[str, Any]], index: dict[str, Any], resolved
         families = entry["families"]
         support = len(entry["supporting_agents"])
         label = "divergent"
-        if support >= 2 and len(families) >= 2:
+        contested = len(polarities.get(entry["base"], ())) > 1
+        if contested:
+            label = "contested"
+        elif support >= 2 and len(families) >= 2:
             label = "consensus" if support >= strong_threshold else "weak_consensus"
         record = {
             "claim_key": key,
@@ -131,7 +161,9 @@ def consolidate(envelopes: list[dict[str, Any]], index: dict[str, Any], resolved
             "model_families": sorted(families),
             "label": label,
         }
-        if label == "divergent":
+        if label in {"divergent", "contested"}:
+            if contested:
+                record["stance"] = "negated" if entry["negated"] else "affirmed"
             divergence.append(record)
         else:
             consensus.append(record)

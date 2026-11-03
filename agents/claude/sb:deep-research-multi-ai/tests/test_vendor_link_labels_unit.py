@@ -61,6 +61,8 @@ class _NoNetwork(unittest.TestCase):
         dns = mock.patch.object(vll, "_resolve_host", return_value=["93.184.216.34"])
         dns.start()
         self.addCleanup(dns.stop)
+        vll.reset_health_state()
+        self.addCleanup(vll.reset_health_state)
         self.addCleanup(self._restore)
 
     def _restore(self):
@@ -71,6 +73,10 @@ class _NoNetwork(unittest.TestCase):
                 os.environ[k] = v
 
 
+from legacy_catalog_fixture import with_legacy_catalogs  # noqa: E402
+
+
+@with_legacy_catalogs
 class RewriteTests(unittest.TestCase):
     def test_normalize_key(self):
         self.assertEqual(vll.normalize_vendor_url_key(" https://a.b/ "), "https://a.b")
@@ -85,78 +91,15 @@ class RewriteTests(unittest.TestCase):
         # normalized key match (trailing slash form not literally present)
         self.assertEqual(
             r("https://github.com/ai-dlc/ai-dlc/"), "https://github.com/awslabs/aidlc-workflows")
-        # substring rules
-        self.assertEqual(
-            r("https://WWW.AgentSys.ai/docs"), "https://github.com/agent-sh/agentsys")
-        self.assertEqual(
-            r("https://aws.amazon.com/ai-dlc/getting-started"),
-            "https://github.com/awslabs/aidlc-workflows")
-        self.assertEqual(
-            r("https://developer.ibm.com/x/ai-driven-development-other"),
-            "https://github.com/awslabs/aidlc-workflows")
-        self.assertIsNone(r("https://www.DeepWork.ai"))
-        self.assertEqual(
-            r("https://github.com/Zuvo-AI/zuvo/"), "https://github.com/greglas75/zuvo")
+        # only the pack's exact rewrite table applies: no hard-coded substring rules
+        self.assertEqual(r("https://WWW.AgentSys.ai/docs"), "https://WWW.AgentSys.ai/docs")
+        self.assertEqual(r("https://aws.amazon.com/ai-dlc/getting-started"), "https://aws.amazon.com/ai-dlc/getting-started")
+        self.assertEqual(r("https://github.com/Zuvo-AI/zuvo/"), "https://github.com/Zuvo-AI/zuvo/")
         self.assertEqual(r("https://github.com/agent-sh/agentsys.ai"),
                          "https://github.com/agent-sh/agentsys.ai")
         self.assertEqual(r(" https://example.com/ok "), "https://example.com/ok")
         # developer.ibm.com without the article keyword is left alone
         self.assertEqual(r("https://developer.ibm.com/other"), "https://developer.ibm.com/other")
-
-
-class ScrubEmbeddedTests(unittest.TestCase):
-    def test_strings(self):
-        s = vll.scrub_embedded_vendor_urls
-        self.assertEqual(s("https://deepwork.ai"), "")
-        self.assertEqual(s("http://agentsys.ai"), "https://github.com/agent-sh/agentsys")
-        self.assertEqual(s("plain text"), "plain text")
-        out = s("AI-DLC — AI-Driven Development Lifecycle (developer.ibm.com / community)")
-        self.assertIn("AWS Labs", out)
-        out = s("see https://developer.ibm.com/articles/ai-driven-development-life-cycle/ and "
-                "AI-DLC (IBM) plus IBM's AI-DLC")
-        self.assertIn("https://github.com/awslabs/aidlc-workflows", out)
-        self.assertIn("AI-DLC (AWS / awslabs)", out)
-        self.assertIn("AWS AI-DLC", out)
-
-    def test_scalars_pass_through(self):
-        self.assertEqual(vll.scrub_embedded_vendor_urls(5), 5)
-        self.assertIsNone(vll.scrub_embedded_vendor_urls(None))
-
-    def test_list_filters_none_items(self):
-        got = vll.scrub_embedded_vendor_urls(
-            [{"title": "Claude Code Expert"}, {"name": "ok"}, 3])
-        self.assertEqual(got, [{"name": "ok"}, 3])
-
-    def test_dict_rules(self):
-        s = vll.scrub_embedded_vendor_urls
-        self.assertIsNone(s({"title": "The Claude  Code Expert"}))
-        out = s({
-            "url": "https://claude-code-expert.dev/x",
-            "homepage": "https://agentsys.ai",
-            "href": "https://deepwork.ai",
-            "source_ref": "not-http AI-DLC (IBM)",
-            "claim": "Claude Code Expert is a primary-market APO candidate for X. tail",
-            "text": "IBM's AI-DLC",
-            "relevance": "fine",
-            "nested": {"url": "https://aws.amazon.com/ai-dlc"},
-            "dropme": None,
-            "num": 1,
-            "url2": "x",
-        })
-        self.assertIsNone(out["url"])
-        self.assertEqual(out["homepage"], "https://github.com/agent-sh/agentsys")
-        self.assertIsNone(out["href"])
-        self.assertEqual(out["source_ref"], "not-http AI-DLC (AWS / awslabs)")
-        self.assertIn("is excluded (invented/sunset seed", out["claim"])
-        self.assertIn("tail", out["claim"])
-        self.assertEqual(out["text"], "AWS AI-DLC")
-        self.assertEqual(out["nested"]["url"], "https://github.com/awslabs/aidlc-workflows")
-        self.assertNotIn("dropme", out)
-        self.assertEqual(out["num"], 1)
-
-    def test_url_key_with_non_string_value_is_recursed(self):
-        out = vll.scrub_embedded_vendor_urls({"url": None, "title": "t"})
-        self.assertEqual(out, {"title": "t"})  # None scrubbed value is dropped
 
 
 class LabelTests(unittest.TestCase):
@@ -411,11 +354,26 @@ class HealthBudgetTests(_NoNetwork):
         self.assertEqual(len(kept), 140)  # unverified links stay, nothing is dropped for budget
         self.assertEqual(dropped, [])
 
+    def test_results_are_cached_across_calls_and_the_budget_is_process_wide(self):
+        calls = []
+
+        def fake(url, *, timeout):
+            calls.append(url)
+            return {"ok": True, "status": 200, "final_url": url, "error": None, "transport_error": False}
+
+        with mock.patch.object(vll, "check_url_health", side_effect=fake):
+            vll.filter_healthy_vendor_urls({"A": "https://a.example", "B": "https://b.example"})
+            vll.filter_healthy_vendor_urls({"A": "https://a.example", "C": "https://c.example"})
+            self.assertEqual(calls, ["https://a.example", "https://b.example", "https://c.example"])
+            vll.reset_health_state()
+            vll.filter_healthy_vendor_urls({"A": "https://a.example"})
+        self.assertEqual(calls[-1], "https://a.example")  # reset forgets the cache
+
     def test_wall_clock_budget_keeps_remaining_links_unverified(self):
         calls = []
         with mock.patch.object(vll, "check_url_health", side_effect=lambda u, timeout: calls.append(u) or
                                {"ok": True, "status": 200, "final_url": u, "error": None, "transport_error": False}), \
-                mock.patch("time.monotonic", side_effect=[0.0, 1.0, 10_000.0, 10_001.0]):
+                mock.patch("time.monotonic", side_effect=[0.0, 10_000.0]):
             kept, _ = vll.filter_healthy_vendor_urls({"A": "https://a.example", "B": "https://b.example"})
         self.assertEqual(calls, ["https://a.example"])
         self.assertEqual(set(kept), {"A", "B"})
@@ -484,6 +442,7 @@ class FilterTests(_NoNetwork):
         self.assertEqual([d["label"] for d in dropped], ["B"])
 
 
+@with_legacy_catalogs
 class PairTests(unittest.TestCase):
     def test_token_score(self):
         self.assertEqual(vll._url_label_token_score("Claude Plugins Pack", "https://claude.com/plugins"), 2)

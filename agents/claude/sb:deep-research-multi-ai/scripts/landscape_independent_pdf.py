@@ -10,6 +10,7 @@ import math
 import os
 import re
 import shutil
+import stat
 import subprocess
 import tempfile
 import urllib.error
@@ -230,10 +231,17 @@ def safe_href(url: Any) -> str | None:
     return raw
 
 
+# True while the print HTML (the PDF source) is built: Chromium resolves relative targets against
+# the file:// print page, which would put the author's absolute local paths into the PDF.
+_PRINT_MODE: list[bool] = [False]
+
+
 def _html_ext_anchor(url: str, inner_html: str) -> str:
     """Anchor for a markdown link; an unsafe target leaves only the (escaped) link text."""
     href = safe_href(url)
     if href is None:
+        return inner_html
+    if _PRINT_MODE[0] and not href.startswith("#") and not _URL_SCHEME_RE.match(href):
         return inner_html
     if not _URL_SCHEME_RE.match(href):
         return f'<a href="{_esc(href)}">{inner_html}</a>'
@@ -1136,6 +1144,14 @@ def _inject_after_matching_h2(body: str, predicate, injection: str) -> tuple[str
 
 def build_independent_print_html(root: Path) -> str:
     """Full markdown body + chart figures + comparison matrix. No chapter picker."""
+    _PRINT_MODE[0] = True
+    try:
+        return _build_independent_print_html(root)
+    finally:
+        _PRINT_MODE[0] = False
+
+
+def _build_independent_print_html(root: Path) -> str:
     sources = load_canonical_landscape_sources(root)
     chart = sources["chart_data"] if isinstance(sources["chart_data"], dict) else {}
     comparison = sources["comparison"] if isinstance(sources["comparison"], dict) else {}
@@ -1310,6 +1326,15 @@ def write_independent_landscape_pdf(
     fd, tmp_name = tempfile.mkstemp(prefix=f".{pdf_path.stem}.", suffix=".pdf", dir=pdf_path.parent)
     os.close(fd)
     tmp_pdf = Path(tmp_name)
+    # mkstemp creates 0600; the PDF is a shareable deliverable, so it gets the umask default
+    # (or the mode of the file it replaces).
+    try:
+        mode = stat.S_IMODE(pdf_path.stat().st_mode)
+    except OSError:
+        umask = os.umask(0)
+        os.umask(umask)
+        mode = 0o666 & ~umask
+    os.chmod(tmp_pdf, mode)
     cmd, env = _render_command(source.as_uri(), tmp_pdf, timeout_ms)
     try:
         subprocess.run(cmd, check=True, timeout=timeout_ms / 1000 + 60, env=env)

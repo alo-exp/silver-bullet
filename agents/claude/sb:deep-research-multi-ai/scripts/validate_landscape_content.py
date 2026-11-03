@@ -8,23 +8,21 @@ import re
 from pathlib import Path
 from typing import Any
 
+from pack_vocabulary import for_research_dir
 from category_pack import (
     build_known_solutions,
     get_hard_exclusion_slugs,
     get_must_research_slugs,
     get_sunset_registry,
+    pack_overlay,
     resolve_canonical_slug,
     resolve_pack_from_need,
 )
 from compression_markers import contains_compression_markers, find_compression_marker_snippets
 
-_MUST_HAVE_ALIASES: dict[str, list[str]] = {
-    "workflow composition": ["Workflow composition"],
-    "multi-agent orchestration": ["Parent/child agent delegation", "Workflow composition"],
-    "verification gates": ["Hook-enforced gates", "Automated review loops", "CI integration"],
-    "cross-session state": ["Workflow composition"],
-    "process layer above host runtime": ["Workflow composition", "IDE-native integration"],
-}
+_MUST_HAVE_ALIASES: dict[str, list[str]] = {}
+# Brand-rename policies from the pack: [{"from", "to", "pattern", "to_pattern"}]; none built in.
+RENAME_POLICIES: list[dict[str, str]] = []
 
 
 def _load_json(path: Path) -> dict[str, Any] | None:
@@ -82,13 +80,13 @@ def _winner_must_have_coverage(
     feature_rows: dict[str, dict[str, Any]] = {}
     for row in comparison.get("rows") or []:
         if isinstance(row, dict) and row.get("type") == "feature" and row.get("name"):
-            feature_rows[str(row["name"])] = row
+            feature_rows[str(row["name"]).lower().strip()] = row
 
     for must_have in must_haves:
         candidates = _resolve_must_have_features(str(must_have))
         covered = False
         for feature in candidates:
-            row = feature_rows.get(feature)
+            row = feature_rows.get(feature.lower().strip())  # worker-supplied names keep their own casing
             if not row:
                 continue
             if (row.get("solutions") or {}).get(winner):
@@ -210,17 +208,9 @@ def _check_catalog_audit_gates(
             f"must_research gaps {audit_gaps!r} without coverage_gaps.json acknowledgment"
         )
 
-    if pack.get("category_id") == "agentic-sdlc-process-orchestrator":
-        exclusion_markers = (
-            "coding agent",
-            "host runtime",
-            "out of scope",
-            "excluded from core",
-        )
-        if not any(m in md_lower for m in exclusion_markers):
-            errors.append(
-                "Market Definition lacks exclusion language for coding agents / host runtimes (APO pack)"
-            )
+    scope_rule = pack_overlay(pack).get("scope_exclusion_check") or {}
+    if scope_rule.get("markers") and not any(str(m) in md_lower for m in scope_rule["markers"]):
+        errors.append(str(scope_rule.get("message") or "Market Definition lacks the pack's exclusion language"))
 
     max_core = int(pack.get("max_core_count") or 25)
     primary_id = str(audit.get("primary_market_id") or pack.get("primary_market_id") or "apo")
@@ -229,14 +219,18 @@ def _check_catalog_audit_gates(
     if core_count > max_core:
         errors.append(f"primary market core count {core_count} exceeds pack max_core_count {max_core}")
 
-    if "augment-code" in topn and "augment-cosmos" not in topn:
-        errors.append("augment-code in Top-N without augment-cosmos rename per pack policy")
+    for policy in RENAME_POLICIES:
+        old, new = str(policy["from"]), str(policy["to"])
+        if old in topn and new not in topn:
+            errors.append(f"{old} in Top-N without {new} rename per pack policy")
+        if re.search(rf"\b{policy['pattern']}\b", md_text, re.I) and not re.search(
+            rf"\b{policy['to_pattern']}\b", md_text, re.I
+        ):
+            if old in (audit.get("core") or []):
+                errors.append(f"{old} present in core without {new} rename")
 
-    if re.search(r"\baugment[- ]code\b", md_text, re.I) and not re.search(r"\baugment[- ]cosmos\b", md_text, re.I):
-        if "augment-code" in (audit.get("core") or []):
-            errors.append("augment-code present in core without Cosmos rename")
 
-
+@for_research_dir
 def validate_landscape_content(
     research_dir: Path,
     *,
@@ -308,6 +302,9 @@ def validate_landscape_content(
             "Future Outlook",
             "Source Reliability Assessment",
         ):
+            # A run with no licence data lists its vendors in one "Solutions evaluated" section.
+            if section.startswith("Top ") and "Solutions evaluated" in md_text:
+                continue
             if section not in md_text:
                 errors.append(f"landscape-report.md missing section: {section}")
         metrics["landscape_report_bytes"] = len(md_text.encode("utf-8"))

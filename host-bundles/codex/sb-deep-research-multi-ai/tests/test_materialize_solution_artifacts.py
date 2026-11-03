@@ -258,6 +258,7 @@ if __name__ == "__main__":
     unittest.main()
 
 
+@with_legacy_catalogs
 class OverviewIdentityLeakTests(unittest.TestCase):
     def test_director_superpowers_overview_rejected(self) -> None:
         from materialize_solution_artifacts import is_unusable_overview_claim

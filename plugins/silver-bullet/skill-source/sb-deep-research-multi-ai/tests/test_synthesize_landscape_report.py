@@ -167,6 +167,14 @@ class ReportTests(TmpCase):
             envelopes=self.ENV if envelopes is None else envelopes, claims=["Silver Bullet claim", "", "[lean-ctx: x]"],
             root=self.root, report_date="July 19, 2026")
 
+    def test_disputed_cells_section_reads_the_materialized_file(self):
+        self.put("landscape/disputed-cells.json", "{not json")
+        self.assertNotIn("Disputed matrix cells", self.report())
+        self.put("landscape/disputed-cells.json", [{"vendor": "devin", "feature": "SSO", "yes": 1, "no": 2}, "junk", {"vendor": ""}])
+        md = self.report()
+        self.assertIn("### Disputed matrix cells", md)
+        self.assertRegex(md, r"- (?i:devin)[^\n]* — SSO: 1 yes / 2 no")
+
     def test_legacy_report_without_pack(self):
         md = self.report()
         self.assertIn("# Cat Market Landscape Report", md)
@@ -310,6 +318,7 @@ class ReportTests(TmpCase):
         self.assertIn("Consensus Resolution Table", md)
 
 
+@with_legacy_catalogs
 class SynthesizeTests(TmpCase):
     def seed(self, **extra):
         self.put("contributions/all-envelopes.json", ReportTests.ENV)
@@ -351,7 +360,8 @@ class SynthesizeTests(TmpCase):
         res = sl.synthesize_landscape(self.root, skip_charts=True)
         self.assertEqual((res["status"], res["charts"], res["chart_data_bytes"]), ("ok", "skipped", 0))
         md = (self.root / "landscape/landscape-report.md").read_text()
-        self.assertIn("# Agentic SDLC Orchestration Market Landscape Report", md)
+        self.assertIn("# 2026-07-19 run Market Landscape Report", md)
+        self.assertNotIn("Agentic SDLC", md)
         self.put("landscape/chart-data.json", "{}")
         res = sl.synthesize_landscape(self.root, skip_charts=True, force=True)
         self.assertEqual(res["chart_data_bytes"], 2)

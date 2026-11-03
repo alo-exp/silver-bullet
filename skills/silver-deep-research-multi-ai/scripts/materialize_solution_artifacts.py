@@ -1300,7 +1300,9 @@ def _parse_feature_support(
     support = _parse_prose_feature_support(envelopes, known=known, pack=pack)
     for slug, cells in structured.items():
         merged = _VoteMap(support.get(slug) or {})
+        merged.votes = dict(getattr(support.get(slug), "votes", {}))
         merged.update(cells)  # a cell any worker voted on is decided by those votes alone
+        merged.votes.update(getattr(cells, "votes", {}))
         support[slug] = merged
     return support
 
@@ -1609,6 +1611,8 @@ def materialize_solution_artifacts(
     support = parse_feature_support(envelopes, known=known, pack=pack)
     rubric = synthesize_feature_rubric(support=support)
     shortlist = slugs[:shortlist_count]
+    disputed = disputed_cells(support)
+    emit(research_dir / "landscape" / "disputed-cells.json", json.dumps(disputed, indent=2) + "\n")
 
     solutions_root = research_dir / "solutions"
     written: list[str] = []
@@ -1658,6 +1662,7 @@ def materialize_solution_artifacts(
     result: dict[str, Any] = {
         "status": "ok",
         "solutions_count": len(slugs),
+        "disputed_cells": len(disputed),
         "shortlist_count": len(shortlist),
         "features_written": written,
         "preserved": preserved,

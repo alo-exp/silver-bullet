@@ -293,6 +293,23 @@ class ConsolidateTests(unittest.TestCase):
         self.assertTrue(all(r["label"] == "divergent" for r in out["divergence"]))
         self.assertTrue(all(r["label"] != "divergent" for r in out["consensus"]))
 
+    def test_contradicted_claims_are_contested_never_consensus(self) -> None:
+        envs = [
+            self._env("a", "f1", [{"text": "Tembo supports SSO"}]),
+            self._env("b", "f2", [{"text": "Tembo supports SSO"}]),
+            self._env("c", "f3", [{"text": "Tembo does not support SSO"}]),
+            self._env("a", "f1", [{"text": "Redpanda is fast"}]),
+            self._env("b", "f2", [{"text": "Redpanda is fast"}]),
+        ]
+        index = {"entries": [{"work_item_id": "w1", "logical_model_id": m} for m in "abc"]}
+        out = consolidate.consolidate(envs, index, resolved_pool=3)
+        by_key = {r["claim_key"]: r for r in out["consensus"] + out["divergence"]}
+        supported, denied = by_key["tembo supports sso"], by_key["tembo does not support sso"]
+        self.assertEqual((supported["label"], supported["stance"]), ("contested", "affirmed"))
+        self.assertEqual((denied["label"], denied["stance"]), ("contested", "negated"))
+        self.assertEqual({r["claim_key"] for r in out["divergence"]}, {"tembo supports sso", "tembo does not support sso"})
+        self.assertEqual([r["claim_key"] for r in out["consensus"]], ["redpanda is fast"])
+
     def test_consolidate_weak_consensus_with_large_pool(self) -> None:
         envs = [self._env("a", "f1", [{"text": "x"}]), self._env("b", "f2", [{"text": "x"}])]
         index9 = {"entries": [{"work_item_id": "w1", "logical_model_id": m} for m in "abcdefghi"]}

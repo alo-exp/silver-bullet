@@ -1631,6 +1631,10 @@ def _round_coord(value: float, precision: int = 1) -> float:
     return round(float(value), precision)
 
 
+def _same_side(candidate: float, target: float, boundary: float | None) -> bool:
+    return boundary is None or (candidate >= boundary) == (target >= boundary)
+
+
 def _uniquify_axis(
     values: list[float],
     *,
@@ -1639,13 +1643,15 @@ def _uniquify_axis(
     step: float = 0.1,
     precision: int = 1,
     tiebreak: list[float] | None = None,
+    boundary: float | None = None,
 ) -> list[float]:
     """Make axis values unique at `precision` decimals while preserving rank.
 
     Higher true scores claim slots first. Collisions take the nearest free slot
     toward the interior of [lo, hi] — deterministic collision avoidance around
     true scores, not random offset and not a global rescale. Idempotent when
-    values are already unique.
+    values are already unique. With `boundary`, a value never moves across it (a Leader stays
+    on the Leader side of the 5.5 line), so the drawn dot agrees with its quadrant label.
     """
     n = len(values)
     if n == 0:
@@ -1676,7 +1682,7 @@ def _uniquify_axis(
                 plus = _round_coord(target + k * step, precision)
                 seq = (minus, plus) if prefer_down else (plus, minus)
                 for cand in seq:
-                    if lo - 1e-12 <= cand <= hi + 1e-12 and cand not in used:
+                    if lo - 1e-12 <= cand <= hi + 1e-12 and cand not in used and _same_side(cand, target, boundary):
                         chosen = cand
                         break
                 k += 1
@@ -1684,7 +1690,7 @@ def _uniquify_axis(
             scan = lo
             while scan <= hi + 1e-12:
                 rv = _round_coord(scan, precision)
-                if rv not in used:
+                if rv not in used and _same_side(rv, target, boundary):
                     chosen = rv
                     break
                 scan = _round_coord(scan + step, precision)
@@ -1719,8 +1725,9 @@ def avoid_chart_coord_collisions(
     items = [dict(point) for point in points]
     xs = [float(item.get(x_key) or 0.0) for item in items]
     ys = [float(item.get(y_key) or 0.0) for item in items]
-    new_x = _uniquify_axis(xs, lo=x_lo, hi=x_hi, step=step, tiebreak=ys)
-    new_y = _uniquify_axis(ys, lo=y_lo, hi=y_hi, step=step, tiebreak=xs)
+    boundary = 5.5 if update_quadrant else None
+    new_x = _uniquify_axis(xs, lo=x_lo, hi=x_hi, step=step, tiebreak=ys, boundary=boundary)
+    new_y = _uniquify_axis(ys, lo=y_lo, hi=y_hi, step=step, tiebreak=xs, boundary=boundary)
     out: list[dict[str, Any]] = []
     for item, x, y, orig_x, orig_y in zip(items, new_x, new_y, xs, ys):
         orig_q = item.get("q")
@@ -3010,6 +3017,19 @@ def _build_report_markdown(
 
     notable = consolidation.get("divergence") or []
     lines.extend(consensus_resolution_table_lines(notable if isinstance(notable, list) else [], pack))
+    disputed_path = root / "landscape" / "disputed-cells.json"
+    try:
+        disputed = json.loads(disputed_path.read_text(encoding="utf-8")) if disputed_path.is_file() else []
+    except (OSError, ValueError):
+        disputed = []
+    disputed = [d for d in disputed if isinstance(d, dict) and d.get("vendor") and d.get("feature")]
+    if disputed:
+        lines.extend(["### Disputed matrix cells", "",
+                      "Models gave opposite answers; the matrix tick follows the majority and a tie is not a tick.", ""])
+        for cell in disputed[:40]:
+            vendor = known.get(str(cell["vendor"]), str(cell["vendor"]))
+            lines.append(f"- {vendor} — {cell['feature']}: {cell.get('yes', 0)} yes / {cell.get('no', 0)} no")
+        lines.append("")
 
     # Buying guidance
     lines.extend(["## 5. Buying Guidance & Shortlist Profiles", ""])
