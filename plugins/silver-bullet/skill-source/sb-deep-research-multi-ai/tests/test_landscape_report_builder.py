@@ -15,7 +15,6 @@ ASSETS = Path(__file__).resolve().parents[1] / "assets"
 sys.path.insert(0, str(SCRIPTS))
 
 from materialize_solution_artifacts import (  # noqa: E402
-    OVERVIEW_SEEDS,
     build_scr_md,
     is_unusable_overview_claim,
 )
@@ -54,6 +53,11 @@ def tearDownModule() -> None:
     _OFFLINE_ENV.stop()
 
 
+import materialize_solution_artifacts as _mat  # noqa: E402
+from apo_pack_run_fixture import with_apo_pack_run  # noqa: E402
+
+
+@with_apo_pack_run
 class OverviewQualityTests(unittest.TestCase):
     def test_rejects_meta_research_overviews(self) -> None:
         self.assertTrue(
@@ -81,9 +85,10 @@ class OverviewQualityTests(unittest.TestCase):
         )
 
     def test_overview_seeds_cover_core_catalog(self) -> None:
-        for slug in ("silver-bullet", "factory-ai", "devin", "openhands", "langgraph-platform"):
-            self.assertIn(slug, OVERVIEW_SEEDS)
-            self.assertGreater(len(OVERVIEW_SEEDS[slug]), 20)
+        seeds = _mat._effective_overview_seeds({"category_pack_id": "agentic-sdlc-process-orchestrator"})
+        for slug in ("factory-ai", "devin", "openhands", "langgraph-platform"):
+            self.assertIn(slug, seeds)
+            self.assertGreater(len(seeds[slug]), 20)
 
     def test_build_scr_prefers_seed_over_meta_claim(self) -> None:
         envelopes = [
@@ -103,11 +108,13 @@ class OverviewQualityTests(unittest.TestCase):
                 },
             }
         ]
-        scr = build_scr_md("cline", envelopes)
-        self.assertIn(OVERVIEW_SEEDS["cline"][:40], scr)
+        seeds = _mat._effective_overview_seeds({"category_pack_id": "agentic-sdlc-process-orchestrator"})
+        scr = build_scr_md("cline", envelopes, None, seeds)
+        self.assertIn(seeds["cline"][:40], scr)
         self.assertNotIn("participates in the agentic", scr)
 
 
+@with_apo_pack_run
 class ChartBuilderTests(unittest.TestCase):
     def test_mq_and_gmq_are_distinct(self) -> None:
         comparison = {
@@ -172,7 +179,7 @@ class ChartBuilderTests(unittest.TestCase):
             comparison,
             category="Agentic SDLC orchestration",
             support=support,
-            need={},
+            need={"category_pack_id": "agentic-sdlc-process-orchestrator"},
             scope_text="agentic sdlc orchestration landscape",
         )
         self.assertNotEqual(chart["mq_data"], chart["gmq_data"])
@@ -249,7 +256,7 @@ class ChartBuilderTests(unittest.TestCase):
             comparison,
             category="Agentic SDLC orchestration",
             support=support,
-            need={},
+            need={"category_pack_id": "agentic-sdlc-process-orchestrator"},
             scope_text="agentic sdlc orchestration landscape",
             commercial=commercial,
             oss=oss,
@@ -340,7 +347,7 @@ class ChartBuilderTests(unittest.TestCase):
             comparison,
             category="Agentic SDLC orchestration",
             support=support,
-            need={},
+            need={"category_pack_id": "agentic-sdlc-process-orchestrator"},
             scope_text="agentic sdlc orchestration landscape",
             commercial=commercial,
             oss=[],
@@ -601,6 +608,7 @@ class ChartBuilderTests(unittest.TestCase):
         self.assertNotIn("cc10x", plugin_leaders)
 
 
+@with_apo_pack_run
 class TemplateContractTests(unittest.TestCase):
 
     def test_template_contains_durable_spa_contracts(self) -> None:
@@ -633,10 +641,10 @@ class TemplateContractTests(unittest.TestCase):
             "_homepageFromHeading",
             "vc-name-link",
             "ensureExternalLinksNewTab",
-            'target="_blank"',
+            "a.target = '_blank'",
             "noopener noreferrer",
             "landscape-report.pdf",
-            "landscape-report.pdf?v=",
+            "pdfBase + '?v=' + Date.now()",
             "Date.now()",
             "window.open(pdfHref, '_blank', 'noopener,noreferrer')",
             "function _marketChartSource(anchor)",
@@ -679,13 +687,17 @@ class TemplateContractTests(unittest.TestCase):
         self.assertIn("e.preventDefault()", snav)
         self.assertIn("_vendorCardDomId", snav)
         self.assertIn("Jump to ${display}", snav)
-        # Card titles keep new-tab attrs
-        self.assertIn('target="_blank" rel="noopener noreferrer"', template)
+        # Card titles and vendor links are built by externalLink(): new tab, noopener, http(s) only.
+        link_fn = template.split("function externalLink(", 1)[1].split("function lucideIcon(", 1)[0]
+        self.assertIn("a.target = '_blank';", link_fn)
+        self.assertIn("a.rel = 'noopener noreferrer';", link_fn)
+        self.assertIn("safeHttpUrl(url)", link_fn)
+        self.assertIn("externalLink(displayName, vendorUrl, 'vc-name-link')", template)
         from landscape_preview_render import _patch_chart_bootstrap
 
         boot = _patch_chart_bootstrap(template)
         self.assertIn("ensureExternalLinksNewTab", boot)
-        self.assertIn('target="_blank" rel="noopener noreferrer"', boot)
+        self.assertIn("externalLink(label, vendorUrlForLabel(label), 'vname-link')", boot)
 
     def test_pdf_export_opens_sibling_file_not_blob_or_print(self) -> None:
         """Create PDF must open sibling landscape-report.pdf — never blob:null or print()."""
@@ -696,7 +708,9 @@ class TemplateContractTests(unittest.TestCase):
             "function _inlineStylesForGDocs", 1
         )[0]
         self.assertIn("landscape-report.pdf", fn)
-        self.assertIn("landscape-report.pdf?v=", fn)
+        self.assertIn("pdfBase + '?v=' + Date.now()", fn)
+        self.assertIn("|| 'landscape-report.pdf'", fn)
+        self.assertIn("safeRelativeHref((window.__SB_REPORT__ || {}).pdf_href)", fn)
         self.assertIn("Date.now()", fn)
         self.assertIn("window.open(pdfHref, '_blank', 'noopener,noreferrer')", fn)
         self.assertNotIn("createObjectURL", fn)
@@ -706,7 +720,7 @@ class TemplateContractTests(unittest.TestCase):
         pfn = patched.split("async function exportToPDF()", 1)[1].split(
             "function _inlineStylesForGDocs", 1
         )[0]
-        self.assertIn("landscape-report.pdf?v=", pfn)
+        self.assertIn("pdfBase + '?v=' + Date.now()", pfn)
         self.assertIn("Date.now()", pfn)
         self.assertIn("window.open(pdfHref, '_blank'", pfn)
         self.assertNotIn("createObjectURL", pfn)
@@ -757,8 +771,8 @@ class TemplateContractTests(unittest.TestCase):
             )
             pdf_path = html_path.with_name("landscape-report.pdf")
 
-            def _fake_run(cmd, check):
-                pdf_path.write_bytes(b"%PDF-1.4 fake")
+            def _fake_run(cmd, check, timeout=None, env=None):
+                Path(cmd[3]).write_bytes(b"%PDF-1.4 fake")
                 class _R:
                     returncode = 0
                 return _R()
@@ -769,12 +783,11 @@ class TemplateContractTests(unittest.TestCase):
             self.assertEqual(Path(info["pdf"]).resolve(), pdf_path.resolve())
             self.assertTrue(pdf_path.is_file())
             argv = mocked.call_args[0][0]
-            self.assertIn("pdf", argv)
-            self.assertEqual(Path(argv[-1]).resolve(), pdf_path.resolve())
-            self.assertTrue(str(argv[-2]).startswith("file:"))
-            self.assertNotIn("landscape-report.html", str(argv[-2]))
-            self.assertIn("--wait-for-selector", argv)
-            self.assertIn(f"#{PRINT_ROOT_ID}", argv)
+            self.assertNotIn("--no-sandbox", argv)
+            self.assertEqual(Path(argv[3]).parent.resolve(), pdf_path.parent.resolve())
+            self.assertTrue(str(argv[2]).startswith("file:"))
+            self.assertNotIn("landscape-report.html", str(argv[2]))
+            self.assertEqual(argv[-1], f"#{PRINT_ROOT_ID}")
             self.assertNotIn("#content", argv)
 
     def test_patch_pdf_export_rewrites_print_dialog_body(self) -> None:
@@ -788,7 +801,7 @@ class TemplateContractTests(unittest.TestCase):
             "function _inlineStylesForGDocs(root) {}\n"
         )
         patched = _patch_pdf_export(stale)
-        self.assertIn("landscape-report.pdf?v=", patched)
+        self.assertIn("pdfBase + '?v=' + Date.now()", patched)
         self.assertIn("Date.now()", patched)
         self.assertIn("window.open(pdfHref, '_blank'", patched)
         self.assertNotIn("window.print(", patched)
@@ -822,8 +835,10 @@ class TemplateContractTests(unittest.TestCase):
         )[0]
         self.assertIn("HOMEPAGE_VENDOR_URLS[label] = url", apply_fn)
         self.assertIn("_homepageFromHeading(h3, displayName)", boot)
-        vendor_url_fn = boot.split("function _vendorUrl", 1)[1].split("function ", 1)[0]
+        vendor_url_fn = boot.split("function vendorUrlForLabel", 1)[1].split("function ", 1)[0]
         self.assertIn("HOMEPAGE_VENDOR_URLS[label]", vendor_url_fn)
+        self.assertIn("safeHttpUrl(", vendor_url_fn)
+        self.assertIn("return vendorUrlForLabel(label);", boot.split("function _vendorUrl", 1)[1].split("function ", 1)[0])
 
     def test_matrix_charts_use_quadrant_fills_not_wave_zones(self) -> None:
         template = (ASSETS / "landscape-preview.template.html").read_text(encoding="utf-8")
@@ -1057,7 +1072,7 @@ class FreshSynthesizeRenderContractTests(unittest.TestCase):
             self.assertIn("data-sb-landscape-viewer", html)
             self.assertIn('target="_blank"', html)
             self.assertIn("noopener noreferrer", html)
-            self.assertIn("landscape-report.pdf?v=", html)
+            self.assertIn("pdfBase + '?v=' + Date.now()", html)
             start = html.find('id="report-data"')
             self.assertGreater(start, 0)
             script_start = html.find(">", start) + 1
