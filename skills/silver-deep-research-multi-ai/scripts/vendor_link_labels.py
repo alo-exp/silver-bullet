@@ -33,26 +33,16 @@ GENERIC_LINK_BLOCKED_LABELS: frozenset[str] = frozenset(
         "orchestration",
         "workflow",
         "workflows",
-        # ordinary English words that are also product names: linking every sentence that
-        # starts with "Continue" or "Linear" sends readers to an unrelated homepage
-        "continue",
-        "linear",
-        "sweep",
-        "factory",
-        "director",
-        "conductor",
-        "scout",
-        "harness",
     }
 )
 
 # Intentional short product aliases (uppercase acronyms) that may link in prose.
-ALLOWED_SHORT_ACRONYM_LABELS: frozenset[str] = frozenset({"BMAD", "GSD"})
+ALLOWED_SHORT_ACRONYM_LABELS: frozenset[str] = frozenset()
+# Ordinary English words that are also product names; the pack lists them (pack vocabulary).
+EXTRA_BLOCKED_LABELS: frozenset[str] = frozenset()
 
 # Slug → canonical link/display label when pack seeds use ambiguous short names.
-SLUG_LINK_LABEL_OVERRIDES: dict[str, str] = {
-    "sdlc-plugin": "SDLC Plugin",
-}
+SLUG_LINK_LABEL_OVERRIDES: dict[str, str] = {}
 
 # Known wrong / sunset vendor URLs → corrected research-backed targets (or drop).
 # Keys normalized without trailing slash, lowercased host+path.
@@ -165,10 +155,10 @@ def is_generic_link_label(label: str) -> bool:
     norm = normalize_vendor_link_label(label)
     if not norm:
         return True
-    if norm.lower() in GENERIC_LINK_BLOCKED_LABELS:
+    if norm.lower() in GENERIC_LINK_BLOCKED_LABELS or norm.lower() in EXTRA_BLOCKED_LABELS:
         return True
     # Block bare short uppercase tokens unless explicitly allow-listed (BMAD, GSD).
-    if norm.isupper() and len(norm) <= 4 and norm not in ALLOWED_SHORT_ACRONYM_LABELS:
+    if norm.isupper() and len(norm) <= 3 and norm not in ALLOWED_SHORT_ACRONYM_LABELS:
         return True
     return False
 

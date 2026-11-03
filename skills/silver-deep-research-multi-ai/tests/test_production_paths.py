@@ -120,5 +120,37 @@ class AmbiguousNamesTests(unittest.TestCase):
         self.assertTrue(m.mentions_vendor("Devin is here", "devin is here", "devin"))  # unambiguous names need no cue
 
 
+class NoPackDefaultsCarryNoCategoryRulesTests(unittest.TestCase):
+    """Without a category pack no APO/SDLC rule, bonus, cap or link-label list applies (R12-22)."""
+
+    def test_defaults(self) -> None:
+        import synthesize_landscape as sl
+        import vendor_link_labels as vll
+
+        self.assertEqual((sl.SOLO_HOST_MARKER, sl.PRESENCE_REQUIRES_FEATURE, sl.KCF_FALLBACK_EXCLUDE), ("", "", ()))
+        self.assertEqual((vll.EXTRA_BLOCKED_LABELS, vll.ALLOWED_SHORT_ACRONYM_LABELS, vll.SLUG_LINK_LABEL_OVERRIDES),
+                         (frozenset(), frozenset(), {}))
+        # a lone "Claude" mention earns no host bonus, and presence is not capped for a missing feature
+        self.assertEqual(sl._scr_strategy_bonus("Works with Claude."), 0.0)
+        self.assertFalse(vll.is_generic_link_label("Factory"))
+        self.assertTrue(vll.is_generic_link_label("SDLC"))
+        text = "\n".join(sl._scoring_methodology_lines({"rows": [], "rankings": []}, None))
+        for banned in ("methodology-without-gates", "Zero-infra", "multi-host", "Managed hosting", "inclusion", "hard-exclusion"):
+            self.assertNotIn(banned, text)
+
+    def test_the_pack_turns_them_on(self) -> None:
+        import synthesize_landscape as sl
+        import vendor_link_labels as vll
+
+        pack = resolve_pack_from_need(NEED)
+        with pv.activated(pack):
+            self.assertEqual(sl._scr_strategy_bonus("Works with Claude."), 0.10)
+            self.assertTrue(vll.is_generic_link_label("Factory"))
+            self.assertFalse(vll.is_generic_link_label("BMAD"))
+            text = "\n".join(sl._scoring_methodology_lines({"rows": [], "rankings": []}, pack))
+        for needed in ("methodology-without-gates", "Zero-infra", "multi-host", "cap 3 without Managed hosting", "hard-exclusion"):
+            self.assertIn(needed, text)
+
+
 if __name__ == "__main__":
     unittest.main()
