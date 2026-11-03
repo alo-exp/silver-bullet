@@ -9,7 +9,8 @@
 - Cursor: `skills/` and `templates/workflows/` moved from `.cursorignore` to `.cursorindexingignore`.
 - Privacy invariant: also catches `Users-<n>-`, `_Users_<n>_`, `-home-<n>-`, `/var/home`, JSON-escaped and URL-encoded paths, PDFs and personal `.local` emails; allowlists CI and container accounts, `@2x.png` assets, `git@host:` remotes and role mailboxes.
 - Workflow hardening: block scalars under `- key: |` no longer hide sibling keys; more flow-style variants are rejected; `hook-references` is an allowlist.
-- Workflow hardening: a `${{ }}` in a commented line of a run or github-script body is still reported; anchors, tags, aliases and complex keys fail closed. Personal-data: more flattened/escaped forms, WSL paths, cloud/CI accounts, placeholder and bot emails, and an audited allowlist file (`.github/personal-data-allow.txt`). Run captures are removed and their ignore patterns scoped to `.planning/` and `research/`.
+- Workflow hardening: a `${{ }}` in a commented line of a run or github-script body is still reported; anchors, tags, aliases and complex keys fail closed. Personal-data: more flattened/escaped forms, WSL paths, cloud/CI accounts, placeholder and bot emails, and an audited allowlist file (`.github/personal-data-allow.txt`). Run captures (including `*.out`) are removed and their ignore patterns scoped to `.planning/`, `research/` and `docs/`.
+- Workflow hardening now parses the workflows with PyYAML (anchors, merge keys, flow style and escapes resolved; fails closed without PyYAML or on a parse error). Personal-data adds a hashed maintainer-identity token list and drops the known-directory regex.
 
 ---
 

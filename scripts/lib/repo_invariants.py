@@ -26,6 +26,7 @@ there is none, 2 on a usage error. Standard library only.
 """
 from __future__ import annotations
 
+import fnmatch
 import hashlib
 import json
 import os
@@ -330,14 +331,11 @@ def tracked_file_size(root: Path, files: list[str]) -> list[str]:
 HOME_PATH = re.compile(
     r"(?<![A-Za-z0-9])(?:/mnt/[a-z]/Users/|/(?:var/)?(?:Users|home)/|[A-Za-z]:[\\/]+Users[\\/]+)([A-Za-z0-9][A-Za-z0-9._-]*)", re.I)
 # Flattened forms that tools derive from a home path: Cursor's Users-<n>-projects-..., the lean-ctx
-# _Users_<n>_..., Claude's -home-<n>-... project directories, and normalised graph labels. Lower-case
-# users_/users- and underscore home need a well-known directory after the name, because users_table_
-# and _home_core_markets are ordinary identifiers.
-SUBDIR = r"(?=(?:projects|desktop|documents|downloads|library|code|dev|work|workspace|repos|src|github|git|sites)(?![A-Za-z0-9]))"
+# _Users_<n>_..., and Claude's -home-<n>-... project directories. Every other spelling of the
+# maintainer's own name is caught by the hashed identity tokens (TOKEN_FILE).
 FLAT_HOMES = (
     re.compile(r"(?<![A-Za-z0-9])[-_]?Users[-_]([A-Za-z0-9]+)[-_]"),
     re.compile(r"(?<![A-Za-z0-9])-home-([A-Za-z0-9]+)-"),
-    re.compile(r"(?<![A-Za-z0-9])[-_]?(?:users|home)[-_]([A-Za-z0-9]+)[-_]" + SUBDIR, re.I),
 )
 # Generic names that stand for "some user" in examples, fixtures, system, CI, VM and container accounts.
 GENERIC_HOME_NAMES = frozenset({
@@ -349,7 +347,7 @@ GENERIC_HOME_NAMES = frozenset({
     "runner", "runneradmin", "ubuntu", "node", "vscode", "zed", "linuxbrew", "codespace", "gitpod", "ec2-user",
     "vagrant", "jovyan", "pi", "circleci", "coder", "jenkins", "travis", "appveyor", "github", "www-data",
     "azureuser", "opc", "centos", "debian", "fedora", "core", "git", "postgres", "nonroot", "app", "mambauser",
-    "wdagutilityaccount", "defaultuser0", "devcontainer", "lima", "rocky", "alma", "admin1", "packer", "cloud-user",
+    "wdagutilityaccount", "api", "screen", "page", "dir", "directory", "path", "url", "made", "town", "assistant", "button", "link", "icon", "tab", "menu", "view", "folder", "steam", "ollama", "deploy", "ubuntu", "defaultuser0", "devcontainer", "lima", "rocky", "alma", "admin1", "packer", "cloud-user",
     "public", "default", "all", "guide", "manual", "docs", "doc", "list", "table", "profile", "profiles", "data",
     "and", "or", "of", "the", "who", "with", "facing", "only", "can", "to", "in", "for",
 })
@@ -362,7 +360,7 @@ EMAIL_DOMAINS = (
     "yourcompany.com", "yourdomain.com", "yourorg.com", "mycompany.com", "company.com", "acme.com", "domain.tld", "anthropic.com",
     "python.org",
 )
-EMAIL_TEST_TLDS = frozenset({"invalid", "test", "localhost", "example", "tld"})
+EMAIL_TEST_TLDS = frozenset({"invalid", "test", "localhost", "example", "tld", "internal"})
 # name@2x.png, pkg@1.0.js: asset and package references, not mailboxes.
 EMAIL_FILE_TLDS = frozenset({"png", "jpg", "jpeg", "gif", "svg", "webp", "avif", "ico", "bmp", "tif", "tiff", "js", "mjs", "css",
                              "json", "md", "txt", "html", "tgz", "zip", "woff", "woff2", "ttf"})
@@ -382,17 +380,63 @@ def generic_name(name: str) -> bool:
     return name in GENERIC_HOME_NAMES or bool(GENERIC_NUMBERED.match(name)) or set(name) == {"x"}
 
 
-def load_allowlist(root: Path) -> tuple[frozenset[str], frozenset[str]]:
-    """Audited exceptions from ALLOW_FILE: 'home <name>' and 'email <address|@domain>' lines, '#' comments."""
-    homes, emails = set(), set()
-    raw = read_bytes(root, ALLOW_FILE)
-    for line in (raw or b"").decode("utf-8", "replace").splitlines():
-        kind, _, value = line.split("#", 1)[0].strip().partition(" ")
-        if kind == "home" and value.strip():
-            homes.add(value.strip().lower())
-        elif kind == "email" and value.strip():
-            emails.add(value.strip().lower())
-    return frozenset(homes), frozenset(emails)
+TOKEN_FILE = ".github/personal-data-hashes.txt"
+TOKEN = re.compile(r"[a-z0-9]+")
+ALLOW_DIRECTIVES = ("home", "email", "file")
+
+
+def load_hashes(root: Path) -> dict[int, frozenset[str]]:
+    """Identity-token hashes from TOKEN_FILE ('<sha256 of the lower-case token> <token length>'), by length."""
+    by_length: dict[int, set[str]] = {}
+    for line in (read_bytes(root, TOKEN_FILE) or b"").decode("utf-8", "replace").splitlines():
+        parts = line.split("#", 1)[0].split()
+        if len(parts) == 2 and parts[1].isdigit():
+            by_length.setdefault(int(parts[1]), set()).add(parts[0].lower())
+    return {length: frozenset(hashes) for length, hashes in by_length.items()}
+
+
+TOKEN_TABLE = bytes(c if (48 <= c < 58 or 97 <= c < 123) else 32 for c in range(256))
+
+
+def identity_lines(data: bytes, hashes: dict[int, frozenset[str]]) -> list[int]:
+    """Lines of DATA holding an alphanumeric token whose SHA-256 is listed: every separator form of
+    the maintainer's name (users_<n>_, ~<n>, <n>@..., &#47;<n>) without naming it."""
+    low = data.lower()
+    unique = {token for token in low.translate(TOKEN_TABLE).split() if len(token) in hashes}
+    listed = {token for token in unique if hashlib.sha256(token).hexdigest() in hashes[len(token)]}
+    if not listed:
+        return []
+    return sorted({low.count(b"\n", 0, m.start()) + 1 for m in re.finditer(rb"[a-z0-9]+", low) if m.group() in listed})
+
+
+class Allowlist:
+    """Audited exceptions from ALLOW_FILE, one per line, '#' starts a comment:
+    home <name> (a directory name that is not a person), email <address | @domain>,
+    file <glob> (a public identity use, such as CODEOWNERS or an author field)."""
+
+    def __init__(self, root: Path) -> None:
+        self.homes: set[str] = set()
+        self.emails: set[str] = set()
+        self.files: list[str] = []
+        self.errors: list[str] = []
+        self.rest: list[str] = []  # the file's text without its valid entries, scanned like any other file
+        for number, line in enumerate((read_bytes(root, ALLOW_FILE) or b"").decode("utf-8", "replace").splitlines(), 1):
+            code = line.split("#", 1)[0].strip()
+            directive, _, value = code.partition(" ")
+            value = value.strip()
+            valid = directive in ALLOW_DIRECTIVES and bool(value)
+            if code and not valid:
+                self.errors.append(f"{ALLOW_FILE}:{number}: unknown or incomplete directive (expected: {', '.join(ALLOW_DIRECTIVES)} <value>)")
+            if valid and directive == "home":
+                self.homes.add(value.lower())
+            elif valid and directive == "email":
+                self.emails.add(value.lower())
+            elif valid:
+                self.files.append(value)
+            self.rest.append("" if valid else line)
+
+    def allows_file(self, rel: str) -> bool:
+        return any(fnmatch.fnmatchcase(rel, glob) for glob in self.files)
 
 
 def email_allowed(local: str, domain: str, allowed_emails: frozenset[str] = frozenset()) -> bool:
@@ -452,34 +496,44 @@ EMAIL_MESSAGE = "email address outside the allowlist (alolabs.dev, sourcevo.com,
 SCANNED_BINARY = (".pdf",)  # link annotations and metadata sit in the clear
 
 
+IDENTITY_MESSAGE = "maintainer identity token (use a placeholder; list a public use in " + ALLOW_FILE + " as 'file <path>')"
+
+
 def personal_data(root: Path, files: list[str]) -> list[str]:
-    problems = []
-    allowed_homes, allowed_emails = load_allowlist(root)
+    allow, hashes = Allowlist(root), load_hashes(root)
+    problems = list(allow.errors)
     for rel in files:
         raw = read_bytes(root, rel)
-        if raw is None or rel == ALLOW_FILE:
+        if raw is None:
             continue
         binary = b"\0" in raw[:8000]
         if binary and not rel.lower().endswith(SCANNED_BINARY):
             continue
+        if rel == ALLOW_FILE:
+            raw = "\n".join(allow.rest).encode()
         text = raw.decode("latin-1" if binary else "utf-8", "replace")
-        low = text.lower()  # only to decide whether the file can hold anything; offsets are taken after decoding
+        low = text.lower()  # only to decide whether the file can hold paths; offsets are taken after decoding
+        # JSON-escaped (\/, \\/, \u002f) and URL-encoded (%2F, %5C) separators; newlines stay put, so line numbers hold.
+        if "\\" in text:
+            text = re.sub(r"\\u00(2[fF]|5[cC])", lambda m: "/" if m.group(1) in "2f2F" else "\\", text)
+            while "\\/" in text:
+                text = text.replace("\\/", "/")
+        if "%" in text:
+            text = text.replace("%2F", "/").replace("%2f", "/").replace("%5C", "\\").replace("%5c", "\\")
+        hits: list[tuple[int, int, str]] = []
         if "@" in text or "users" in low or "home" in low:
-            # JSON-escaped (\/, \\/, \u002f) and URL-encoded (%2F, %5C) separators; newlines stay put, so line numbers hold.
-            if "\\" in text:
-                text = re.sub(r"\\u00(2[fF]|5[cC])", lambda m: "/" if m.group(1) in "2f2F" else "\\", text)
-                while "\\/" in text:
-                    text = text.replace("\\/", "/")
-            if "%" in text:
-                text = text.replace("%2F", "/").replace("%2f", "/").replace("%5C", "\\").replace("%5c", "\\")
-            hits = [(start, end, HOME_MESSAGE) for start, end, name in home_hits(text, text.lower()) if name.lower() not in allowed_homes]
-            hits += [(offset, offset, EMAIL_MESSAGE) for offset in email_hits(text, allowed_emails)]
-            reported_to = -1
-            for start, end, message in sorted(hits):
-                if start < reported_to:
-                    continue  # the same text matched by two patterns
-                reported_to = max(end, start + 1)
-                problems.append(f"{rel}:{text.count(chr(10), 0, start) + 1}: {message}")
+            hits += [(start, end, HOME_MESSAGE) for start, end, name in home_hits(text, text.lower()) if name.lower() not in allow.homes]
+            hits += [(offset, offset, EMAIL_MESSAGE) for offset in email_hits(text, frozenset(allow.emails))]
+        found: list[tuple[int, str]] = []
+        reported_to = -1
+        for start, end, message in sorted(hits):
+            if start < reported_to:
+                continue  # the same text matched by two patterns
+            reported_to = max(end, start + 1)
+            found.append((text.count(chr(10), 0, start) + 1, message))
+        if not allow.allows_file(rel):
+            found += [(line, IDENTITY_MESSAGE) for line in identity_lines(raw, hashes)]
+        problems += [f"{rel}:{line}: {message}" for line, message in sorted(found, key=lambda item: item[0])]
     return problems
 
 
@@ -516,128 +570,132 @@ def site_duplicate_ids(root: Path, files: list[str]) -> list[str]:
 
 
 # --- GitHub Actions workflows ----------------------------------------------------------------------
-# A line-oriented reading of the block-style YAML the workflows use (no YAML parser in the
-# standard library): top-level keys start in column 0, children are indented below them.
+# Parsed with PyYAML, so anchors, aliases, merge keys, flow style, tags and escapes are resolved
+# before anything is checked. A missing PyYAML or a file that does not parse fails the check: a
+# workflow that cannot be read is never skipped.
 
 WORKFLOW_FILE = re.compile(r"^\.github/workflows/[^/]+\.ya?ml$")
 UNPINNED = re.compile(r"@latest\b|\bnpx\s+(--yes|-y)\b")
-# run: scripts and actions/github-script script: bodies; GitHub expands ${{ }} in both before any shell or JS runs.
-RUN_KEY = re.compile(r"^(\s*(?:-\s+)?)(?:run|script)\s*:\s*(.*)$")
-CONTINUE_ON_ERROR = re.compile(r"^\s*(?:-\s+)?continue-on-error\s*:\s*(?!false\s*(?:#.*)?$)(?:\S|$)")
-QUOTED_KEY = re.compile(r"""^\s*(?:-\s+)?["'][^"']+["']\s*:""")
-FLOW_STEP = re.compile(r"^\s*-\s+\{")
-FLOW_STEPS_KEY = re.compile(r"""^\s*(?:-\s+)?["']?steps["']?\s*:\s*[\[{]""")
-# group(1) is the indentation up to the key (past a list dash), the column the scalar's text must exceed.
-BLOCK_SCALAR = re.compile(r"^(\s*(?:-\s+)?)[^#\s][^#]*?:\s*[|>][+-]?[0-9]*\s*(?:#.*)?$")
-# Anything the line-oriented reading cannot follow safely fails closed: flow collections, anchors, aliases,
-# tags and complex keys (a line opening with "? " or ": "), also as the value of a key.
-FLOW_LINE = re.compile(r"^\s*(?:[\[{]|-\s+[&*!]|jobs\s*:\s*[\[{]|[?:](?:\s|$)|(?:-\s+)?[A-Za-z0-9_.-]+\s*:\s*[&*!])")
 CHECKOUT_GUARD = re.compile(r"git status --porcelain --ignored\b")
-WRITE_ALL = re.compile(r"""^\s*permissions:\s*["']?write-all\b""")
-FORCE_NODE24 = re.compile(r"^\s+FORCE_JAVASCRIPT_ACTIONS_TO_NODE24:\s*true\s*$")
-JOB_HEADER = re.compile(r"^\s+[A-Za-z0-9_-]+:\s*$")
+# with: inputs that run as code (actions/github-script script:, container and shell runners).
+CODE_INPUTS = frozenset({"script", "run", "command", "args", "cmd", "entrypoint", "shell"})
 
 
-def indent_of(line: str) -> int:
-    return len(line) - len(line.lstrip(" "))
+class LineMap(dict):
+    """A YAML mapping that remembers the line of each key (1-based) and of the mapping itself."""
+
+    line = 0
+    key_line: dict
 
 
-def top_level_block(lines: list[str], key: str) -> list[tuple[int, str]]:
-    """(line number, line) of the lines nested under the top-level KEY."""
-    block, inside = [], False
-    for number, line in enumerate(lines, 1):
-        if line[:1] not in ("", " ", "#"):
-            inside = line.startswith(key + ":")
-        elif inside:
-            block.append((number, line))
-    return block
+def line_loader(yaml):
+    """A safe loader whose mappings are LineMaps; duplicate keys are an error, a later key
+    overrides a merged (<<) one."""
+
+    class Loader(yaml.SafeLoader):
+        pass
+
+    def construct(loader, node, deep=False):
+        keys = [loader.construct_object(key, deep=True) for key, _ in node.value if key.tag != "tag:yaml.org,2002:merge"]
+        if len(set(keys)) != len(keys):
+            raise yaml.constructor.ConstructorError(None, None, "duplicate key in a mapping", node.start_mark)
+        loader.flatten_mapping(node)
+        mapping = LineMap()
+        mapping.line, mapping.key_line = node.start_mark.line + 1, {}
+        for key_node, value_node in node.value:
+            key = loader.construct_object(key_node, deep=True)
+            mapping[key] = loader.construct_object(value_node, deep=True)
+            mapping.key_line[key] = key_node.start_mark.line + 1
+        return mapping
+
+    Loader.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, construct)
+    return Loader
 
 
-def block_extent(lines: list[str], start: int, parent_indent: int) -> list[tuple[int, str]]:
-    """The lines after line START (1-based) that are nested deeper than PARENT_INDENT."""
-    extent = []
-    for number in range(start + 1, len(lines) + 1):
-        line = lines[number - 1]
-        if line.strip() and indent_of(line) <= parent_indent:
-            break
-        extent.append((number, line))
-    return extent
+def strings_with_lines(node, line: int):
+    """Every string in a parsed document with the line of the key (or mapping) holding it."""
+    if isinstance(node, str):
+        yield node, line
+    elif isinstance(node, dict):
+        for key, value in node.items():
+            yield from strings_with_lines(value, node.key_line[key])
+    elif isinstance(node, list):
+        for item in node:
+            yield from strings_with_lines(item, line)
 
 
-def flow_job_lines(lines: list[str]) -> set[int]:
-    """Line numbers of job headers written as a flow mapping or sequence (build: {...})."""
-    jobs = [(n, line) for n, line in top_level_block(lines, "jobs") if line.strip() and not line.lstrip().startswith("#")]
-    if not jobs:
-        return set()
-    job_indent = min(indent_of(line) for _, line in jobs)
-    return {n for n, line in jobs if indent_of(line) == job_indent and re.match(r"^\s+[A-Za-z0-9_-]+:\s*[\[{]", line)}
+def write_all_lines(node, line: int):
+    """Lines of every 'permissions: write-all' in the document."""
+    if isinstance(node, dict):
+        for key, value in node.items():
+            if key == "permissions" and value == "write-all":
+                yield node.key_line[key]
+            yield from write_all_lines(value, node.key_line[key])
+    elif isinstance(node, list):
+        for item in node:
+            yield from write_all_lines(item, line)
 
 
-def job_timeout_problems(rel: str, lines: list[str]) -> list[str]:
-    jobs = [(n, line) for n, line in top_level_block(lines, "jobs") if line.strip() and not line.lstrip().startswith("#")]
-    if not jobs:
+def step_problems(step) -> list[tuple[int, str]]:
+    if not isinstance(step, LineMap):
         return []
-    job_indent = min(indent_of(line) for _, line in jobs)
-    problems = []
-    for number, line in jobs:
-        if indent_of(line) != job_indent or not JOB_HEADER.match(line):
-            continue
-        body = [entry for entry in block_extent(lines, number, job_indent) if entry[1].strip()]
-        child_indent = indent_of(body[0][1]) if body else job_indent + 2
-        if not any(indent_of(text) == child_indent and text.strip().startswith("timeout-minutes:") for _, text in body):
-            problems.append(f"{rel}: job {line.strip()[:-1]} has no timeout-minutes")
-    return problems
+    found = []
+    run = step.get("run")
+    if isinstance(run, str) and "${{" in run:
+        found.append((step.key_line["run"], "${{ }} expression inside a run script (pass it through env)"))
+    with_ = step.get("with")
+    if isinstance(with_, LineMap):
+        for key, value in with_.items():
+            if str(key).lower() in CODE_INPUTS and isinstance(value, str) and "${{" in value:
+                found.append((with_.key_line[key], f"${{{{ }}}} expression inside the with: {key} input, which runs as code (pass it through env)"))
+    if "continue-on-error" in step and step["continue-on-error"] is not False:
+        found.append((step.key_line["continue-on-error"], "continue-on-error hides failures"))
+    uses = step.get("uses")
+    if isinstance(uses, str) and uses.startswith("actions/checkout@"):
+        if not (isinstance(with_, LineMap) and with_.get("persist-credentials") is False):
+            found.append((step.key_line["uses"], "actions/checkout without persist-credentials: false"))
+    return found
 
 
-def workflow_problems(rel: str, lines: list[str]) -> list[str]:
+def workflow_problems(rel: str, text: str) -> list[str]:
+    try:
+        import yaml
+    except ImportError:
+        return [f"{rel}: PyYAML is required to check workflows and is not installed (python3 -m pip install -r requirements-dev.txt)"]
+    try:
+        data = yaml.load(text, line_loader(yaml))  # noqa: S506 - a safe loader subclass
+    except (yaml.YAMLError, TypeError) as error:
+        return [f"{rel}: not parsed as YAML, so it cannot be checked: {str(error).splitlines()[0]}"]
+    if not isinstance(data, LineMap):
+        return [f"{rel}: not a YAML mapping, so it cannot be checked"]
     problems = []
-    if not any(line.startswith("permissions:") for line in lines):
+    if "permissions" not in data:
         problems.append(f"{rel}: no top-level permissions block (least privilege)")
-    if rel.endswith("/ci.yml") and not any(CHECKOUT_GUARD.search(line) for line in lines if not line.lstrip().startswith("#")):
+    jobs = data.get("jobs")
+    runs = [run for job in (jobs.values() if isinstance(jobs, LineMap) else []) if isinstance(job, LineMap)
+            for step in (job.get("steps") or []) if isinstance(step, LineMap) for run in [step.get("run")] if isinstance(run, str)]
+    if rel.endswith("/ci.yml") and not any(CHECKOUT_GUARD.search(run) for run in runs):
         problems.append(f"{rel}: the checkout-unchanged guard must use git status --porcelain --ignored")
-    if any(WRITE_ALL.match(line) for line in lines):
+    if any(True for _ in write_all_lines(data, 0)):
         problems.append(f"{rel}: permissions: write-all (grant only the scopes the job needs)")
-    if not any(FORCE_NODE24.match(line) for _, line in top_level_block(lines, "env")):
+    env = data.get("env")
+    if not (isinstance(env, LineMap) and env.get("FORCE_JAVASCRIPT_ACTIONS_TO_NODE24") in (True, "true")):
         problems.append(f"{rel}: FORCE_JAVASCRIPT_ACTIONS_TO_NODE24 is not set to true in the top-level env")
-    flow_jobs = flow_job_lines(lines)
-    script_until = 0  # last line number of the run script being read
-    scalar_until = 0  # last line number of any block scalar (run script, github-script body, ...)
-    for number, line in enumerate(lines, 1):
-        code = line.strip()
-        if number <= script_until:
-            # Script text, comment lines included: ${{ }} is expanded before the shell sees a "#".
-            if UNPINNED.search(line) and not code.startswith("#"):
-                problems.append(f"{rel}:{number}: unpinned @latest or npx --yes")
-            if "${{" in line:
-                problems.append(f"{rel}:{number}: ${{{{ }}}} expression inside a run script (pass it through env)")
+    lined = [(line, "unpinned @latest or npx --yes") for string, line in strings_with_lines(data, 1) if UNPINNED.search(string)]
+    missing = []
+    for name, job in (jobs.items() if isinstance(jobs, LineMap) else []):
+        if not isinstance(job, LineMap):
+            missing.append(name)
             continue
-        if code.startswith("#"):
-            continue
-        if UNPINNED.search(line):
-            problems.append(f"{rel}:{number}: unpinned @latest or npx --yes")
-        if number <= scalar_until:
-            continue  # literal text of a block scalar, not workflow structure
-        if QUOTED_KEY.match(line) or FLOW_STEP.match(line) or FLOW_STEPS_KEY.match(line) or FLOW_LINE.match(line) or number in flow_jobs:
-            problems.append(f"{rel}:{number}: quoted keys, anchors, aliases, tags, complex keys and flow-style jobs or steps hide settings from the hardening check; use plain block YAML")
-        scalar = BLOCK_SCALAR.match(line)
-        if scalar:
-            extent = block_extent(lines, number, len(scalar.group(1)))
-            scalar_until = extent[-1][0] if extent else number
-        if CONTINUE_ON_ERROR.match(line):
-            problems.append(f"{rel}:{number}: continue-on-error hides failures")
-        run = RUN_KEY.match(line)
-        if run:
-            if "${{" in run.group(2):
-                problems.append(f"{rel}:{number}: ${{{{ }}}} expression inside a run script (pass it through env)")
-            extent = block_extent(lines, number, len(run.group(1)))
-            script_until = extent[-1][0] if extent else number
-        if code.startswith("- "):
-            item = [(number, line)] + block_extent(lines, number, indent_of(line))
-            text = "\n".join(entry for _, entry in item)
-            checkout = next((n for n, entry in item if "uses: actions/checkout@" in entry), None)
-            if checkout is not None and not re.search(r"persist-credentials:\s*false\b", text):
-                problems.append(f"{rel}:{checkout}: actions/checkout without persist-credentials: false")
-    return problems + job_timeout_problems(rel, lines)
+        if "timeout-minutes" not in job:
+            missing.append(name)
+        if "continue-on-error" in job and job["continue-on-error"] is not False:
+            lined.append((job.key_line["continue-on-error"], "continue-on-error hides failures"))
+        steps = job.get("steps")
+        for step in steps if isinstance(steps, list) else []:
+            lined.extend(step_problems(step))
+    problems += [f"{rel}:{line}: {message}" for line, message in sorted(lined)]
+    return problems + [f"{rel}: job {name} has no timeout-minutes" for name in missing]
 
 
 def workflow_hardening(root: Path, files: list[str]) -> list[str]:
@@ -647,7 +705,7 @@ def workflow_hardening(root: Path, files: list[str]) -> list[str]:
             continue
         data = read_bytes(root, rel)
         if data is not None:
-            problems.extend(workflow_problems(rel, data.decode("utf-8", "replace").splitlines()))
+            problems.extend(workflow_problems(rel, data.decode("utf-8", "replace")))
     return problems
 
 

@@ -375,9 +375,22 @@ jobs:
 
 
 class WorkflowHardeningTest(TempRoot):
-    def problems(self, text, rel=".github/workflows/w.yml"):
+    REL = ".github/workflows/w.yml"
+
+    def problems(self, text, rel=REL):
         write(self.root, rel, text)
         return ri.workflow_hardening(self.root, [rel])
+
+    def variant(self, step, base=HARDENED):
+        """HARDENED with the plain 'run: echo inline' step replaced by STEP."""
+        self.assertIn("      - run: echo inline\n", base)
+        return base.replace("      - run: echo inline\n", step, 1)
+
+    def messages(self, text):
+        return [p.split(": ", 1)[1] for p in self.problems(text)]
+
+    def assertCaught(self, text, needle, label=""):
+        self.assertTrue(any(needle in p for p in self.problems(text)), f"{label}: {self.problems(text)}")
 
     def test_hardened_workflow_passes(self):
         self.assertEqual(self.problems(HARDENED), [])
@@ -386,7 +399,7 @@ class WorkflowHardeningTest(TempRoot):
         write(self.root, ".github/dependabot.yml", "version: 2\n")
         self.assertEqual(ri.workflow_hardening(self.root, [".github/dependabot.yml", ".github/workflows/gone.yml"]), [])
 
-    def test_each_weakness_is_reported(self):
+    def test_each_weakness_is_reported_with_its_line(self):
         weak = """\
 name: Weak
 on: [push]
@@ -404,147 +417,154 @@ jobs:
           npx -y html-validate site
       - run: echo "${{ inputs.runtimes }}"
 """
-        problems = self.problems(weak)
-        rel = ".github/workflows/w.yml"
-        self.assertEqual(problems, [
+        rel = self.REL
+        self.assertEqual(self.problems(weak), [
             f"{rel}: no top-level permissions block (least privilege)",
             f"{rel}: FORCE_JAVASCRIPT_ACTIONS_TO_NODE24 is not set to true in the top-level env",
             f"{rel}:6: continue-on-error hides failures",
             f"{rel}:8: actions/checkout without persist-credentials: false",
             f"{rel}:9: unpinned @latest or npx --yes",
-            f"{rel}:12: ${{{{ }}}} expression inside a run script (pass it through env)",
-            f"{rel}:13: ${{{{ }}}} expression inside a run script (pass it through env)",  # a commented ${{ }} is still expanded
-            f"{rel}:14: unpinned @latest or npx --yes",
+            f"{rel}:11: ${{{{ }}}} expression inside a run script (pass it through env)",
+            f"{rel}:11: unpinned @latest or npx --yes",
             f"{rel}:15: ${{{{ }}}} expression inside a run script (pass it through env)",
             f"{rel}: job build has no timeout-minutes",
         ])
 
     def test_write_all_and_any_continue_on_error_value(self):
         text = HARDENED.replace("permissions:\n  contents: read\n", "permissions: write-all\n")
-        self.assertIn(".github/workflows/w.yml: permissions: write-all (grant only the scopes the job needs)",
-                      self.problems(text))
-        for value in ('"true"', "${{ true }}", "yes"):
+        self.assertIn(f"{self.REL}: permissions: write-all (grant only the scopes the job needs)", self.problems(text))
+        quoted = HARDENED.replace("permissions:\n  contents: read\n", 'permissions: "write-all"\n')
+        self.assertCaught(quoted, "write-all")
+        for value in ('"true"', "${{ true }}", "yes", '"false"', "1"):
             weak = HARDENED.replace("    timeout-minutes: 20\n", f"    timeout-minutes: 20\n    continue-on-error: {value}\n", 1)
-            self.assertTrue(any("continue-on-error hides failures" in p for p in self.problems(weak)), value)
+            self.assertCaught(weak, "continue-on-error hides failures", value)
         ok = HARDENED.replace("    timeout-minutes: 20\n", "    timeout-minutes: 20\n    continue-on-error: false  # explicit\n", 1)
         self.assertEqual(self.problems(ok), [])
 
-    def test_equivalent_yaml_spellings_are_caught(self):
-        base = "    timeout-minutes: 20\n"
-        for extra in ('    "continue-on-error": true\n', "    continue-on-error:\n      true\n"):
-            weak = HARDENED.replace(base, base + extra, 1)
-            self.assertTrue(any("continue-on-error" in p or "quoted keys" in p for p in self.problems(weak)), extra)
-        flow = HARDENED.replace("    steps:\n", "    steps:\n      - {run: echo ok, continue-on-error: true}\n", 1)
-        self.assertTrue(any("flow-style" in p for p in self.problems(flow)))
-        quoted = HARDENED.replace("permissions:\n  contents: read\n", 'permissions: "write-all"\n')
-        self.assertTrue(any("write-all" in p for p in self.problems(quoted)))
-
-    def test_honest_script_content_is_not_mistaken_for_hidden_settings(self):
-        script = HARDENED.replace(
-            '      - run: echo inline\n',
-            '      - name: Write config\n        run: |\n          cat > cfg.json <<EOF\n          {"ref": "main"}\n          - {a: b}\n          EOF\n'
-            '      - uses: actions/github-script@v7\n        with:\n          script: |\n            - {not: a step}\n            "ref": "main"\n            continue-on-error: true\n', 1)
-        self.assertEqual(self.problems(script), [])
-
     def test_list_item_block_scalars_do_not_hide_sibling_keys(self):
-        # The scalar's text must be deeper than its KEY, not deeper than the list dash (REVF H3b).
-        run_then_coe = HARDENED.replace(
-            "      - run: echo inline\n", "      - run: |\n          git status --porcelain --ignored\n        continue-on-error: true\n", 1)
-        self.assertTrue(any("continue-on-error hides failures" in p for p in self.problems(run_then_coe)))
-        name_then_injection = HARDENED.replace(
-            "      - run: echo inline\n", "      - name: >-\n          Greet\n        run: echo \"${{ github.event.issue.title }}\"\n", 1)
-        self.assertTrue(any("expression inside a run script" in p for p in self.problems(name_then_injection)))
-        both = HARDENED.replace(
-            "      - run: echo inline\n",
-            "      - run: |\n          echo one\n          echo \"${{ github.event.issue.title }}\"\n        continue-on-error: true\n", 1)
-        found = self.problems(both)
-        self.assertTrue(any("expression inside a run script" in p for p in found))
-        self.assertTrue(any("continue-on-error" in p for p in found))
+        self.assertCaught(self.variant("      - run: |\n          git status --porcelain --ignored\n        continue-on-error: true\n"),
+                          "continue-on-error hides failures")
+        self.assertCaught(self.variant('      - name: >-\n          Greet\n        run: echo "${{ github.event.issue.title }}"\n'),
+                          "expression inside a run script")
 
-    def test_commented_expressions_in_run_and_script_bodies_are_caught(self):
+    def test_every_yaml_spelling_resolves_to_the_same_findings(self):
+        injection = "echo ${{ github.event.issue.title }}"
+        spellings = {
+            "flow step": f"      - {{run: '{injection}', continue-on-error: true}}\n",
+            "anchored flow step": f"      - &s {{run: '{injection}'}}\n",
+            "tagged flow step": f"      - !!map {{run: '{injection}'}}\n",
+            "space before colon": f"      - run : {injection}\n",
+            "quoted key": f"      - 'run': {injection}\n",
+            "escaped key": f'      - "r\\u0075n": {injection}\n',
+            "complex key": f"      - ? run\n        : {injection}\n",
+            "escaped dollar": '      - run: "echo \\u0024{{ github.event.issue.title }}"\n',
+            "hex escaped dollar": '      - run: "echo \\x24{{ github.event.issue.title }}"\n',
+            "folded scalar": f"      - run: >\n          {injection}\n",
+            "run alias": f"      - &t\n        run: {injection}\n      - *t\n",
+            "scalar alias": f"      - name: x\n        env:\n          T: &t '{injection}'\n        run: *t\n",
+            "merge key": f"      - &base\n        run: {injection}\n      - <<: *base\n        name: y\n",
+            "property on its own line": f"      - name: x\n        run:\n          &t \"{injection}\"\n",
+        }
+        for label, step in spellings.items():
+            self.assertCaught(self.variant(step), "expression inside a run script", label)
+        self.assertCaught(self.variant("      - {run: echo, continue-on-error: true}\n"), "continue-on-error hides failures")
+        self.assertCaught(self.variant("      - run: echo\n        continue-on-error : true\n"), "continue-on-error hides failures")
+        self.assertCaught(self.variant("      - run: echo\n        ? continue-on-error\n        : true\n"), "continue-on-error hides failures")
+        self.assertCaught(self.variant("      - &t {run: echo, continue-on-error: true}\n      - *t\n"), "continue-on-error hides failures")
+
+    def test_flow_and_anchored_jobs_and_steps_are_resolved(self):
+        flow_job = HARDENED + "  third: {runs-on: ubuntu-latest, continue-on-error: true, steps: [{run: echo ok}]}\n"
+        self.assertCaught(flow_job, "continue-on-error hides failures")
+        self.assertIn(f"{self.REL}: job third has no timeout-minutes", self.problems(flow_job))
+        anchored = HARDENED + "  third: &j {runs-on: x, timeout-minutes: 1, continue-on-error: true}\n  fourth: *j\n"
+        self.assertEqual(len([p for p in self.problems(anchored) if "continue-on-error" in p]), 2)
+        tagged_steps = HARDENED.replace("    steps:\n      - name: checkout\n", "    steps: !!seq [{run: 'echo ${{ x }}'}]\n    xsteps:\n      - name: checkout\n", 1)
+        self.assertCaught(tagged_steps, "expression inside a run script")
+        anchored_jobs = "jobs: &j\n  a: {runs-on: x, continue-on-error: true}\n" + HARDENED.split("jobs:\n")[0]
+        self.assertCaught(anchored_jobs, "continue-on-error hides failures")
+        flow_jobs = "jobs: !!map {a: {runs-on: x}}\n" + HARDENED.split("jobs:\n")[0]
+        self.assertIn(f"{self.REL}: job a has no timeout-minutes", self.problems(flow_jobs))
+        merged = HARDENED + "  third:\n    <<: &d {runs-on: x, continue-on-error: true}\n    timeout-minutes: 3\n"
+        self.assertCaught(merged, "continue-on-error hides failures")
+        overridden = HARDENED + "  third:\n    <<: &d {runs-on: x, continue-on-error: true}\n    continue-on-error: false\n    timeout-minutes: 3\n"
+        self.assertEqual(self.problems(overridden), [])
+
+    def test_code_inputs_of_steps_are_checked(self):
+        for form in ("with: {script: \"core.info('${{ github.event.issue.title }}')\"}\n",
+                     "with:\n          script: |\n            core.info(`${{ github.event.issue.title }}`)\n",
+                     "with:\n          script: |\n            # core.info(`${{ github.event.comment.body }}`)\n",
+                     "with:\n          'script': x ${{ github.head_ref }}\n"):
+            self.assertCaught(self.variant("      - uses: actions/github-script@v7\n        " + form), "with: script input", form)
+        # Other inputs and env values carry expressions safely.
+        safe = self.variant("      - uses: actions/cache@v4\n        with:\n          key: ${{ hashFiles('x') }}\n        env:\n          T: ${{ github.event.issue.title }}\n")
+        self.assertEqual(self.problems(safe), [])
+
+    def test_commented_expressions_in_run_bodies_are_caught(self):
         for style in ("|", ">"):
-            text = HARDENED.replace(
-                "      - run: echo inline\n",
-                f"      - run: {style}\n          echo ok\n          # echo \"${{{{ github.event.comment.body }}}}\"\n", 1)
-            found = self.problems(text)
+            found = self.problems(self.variant(
+                f"      - run: {style}\n          echo ok\n          # echo \"${{{{ github.event.comment.body }}}}\"\n"))
             self.assertEqual(len([p for p in found if "expression inside a run script" in p]), 1, style)
-        script = HARDENED.replace(
-            "      - run: echo inline\n",
-            "      - uses: actions/github-script@v7\n        with:\n          script: |\n            core.info(`${{ github.event.issue.title }}`)\n", 1)
-        self.assertTrue(any("expression inside a run script" in p for p in self.problems(script)))
-        # An unpinned install in a run script is still reported, a commented one is not.
-        pinned = HARDENED.replace("      - run: echo inline\n", "      - run: |\n          # npx --yes foo\n          npx --yes foo\n", 1)
-        self.assertEqual(len([p for p in self.problems(pinned) if "unpinned" in p]), 1)
+        # A YAML comment outside any scalar is not part of the workflow.
+        self.assertEqual(self.problems(self.variant("      # run: echo ${{ x }}\n      - run: echo ok\n")), [])
 
-    def test_exotic_yaml_fails_closed(self):
-        variants = {
-            "anchored_flow_job": HARDENED + "  third: &j {runs-on: x, continue-on-error: true}\n",
-            "tagged_flow_job": HARDENED + "  third: !!map {runs-on: x}\n",
-            "job_alias": HARDENED + "  third: *j\n",
-            "tagged_steps": HARDENED.replace("    steps:\n      - name: checkout\n", "    steps: !!seq [{run: x}]\n    xsteps:\n      - name: checkout\n", 1),
-            "anchored_steps": HARDENED.replace("    steps:\n      - name: checkout\n", "    steps: &s [{run: x}]\n    xsteps:\n      - name: checkout\n", 1),
-            "anchored_jobs": "jobs: &j {a: {}}\n" + HARDENED.split("jobs:\n")[0],
-            "tagged_jobs": "jobs: !!map {a: {}}\n" + HARDENED.split("jobs:\n")[0],
-            "complex_key_run": HARDENED.replace("      - run: echo inline\n", "      - ? run\n        : echo ${{ github.event.issue.title }}\n", 1),
-            "complex_key_coe": HARDENED.replace("      - run: echo inline\n", "      - run: echo\n        ? continue-on-error\n        : true\n", 1),
-            "run_alias": HARDENED.replace("      - run: echo inline\n", "      - run: *t\n", 1),
-            "escaped_key": HARDENED.replace("      - run: echo inline\n", '      - "r\\u0075n": echo\n', 1),
-        }
-        for name, text in variants.items():
-            self.assertTrue(any("hide settings" in p for p in self.problems(text)), name)
-        spaced = HARDENED.replace("      - run: echo inline\n", "      - run : echo ${{ github.event.issue.title }}\n", 1)
-        self.assertTrue(any("expression inside a run script" in p for p in self.problems(spaced)))
-        # Plain flow values and tag-free strings stay fine.
-        ok = HARDENED.replace("      - run: echo inline\n", "      - run: echo 'a: *b & !c'\n", 1)
-        self.assertEqual(self.problems(ok), [])
-
-    def test_remaining_flow_and_spelling_variants_are_caught(self):
-        variants = {
-            "steps_flow_on_next_line": ("    steps:\n      - name: checkout\n", "    steps:\n      [ {run: echo ok, continue-on-error: true} ]\n    xsteps:\n      - name: checkout\n"),
-            "anchored_flow_step": ("    steps:\n", "    steps:\n      - &s {run: echo ok, continue-on-error: true}\n"),
-            "tagged_flow_step": ("    steps:\n", "    steps:\n      - !!map {run: echo ok, continue-on-error: true}\n"),
-            "alias_step": ("    steps:\n", "    steps:\n      - *s\n"),
-        }
-        for name, (old, new) in variants.items():
-            self.assertTrue(any("flow-style" in p for p in self.problems(HARDENED.replace(old, new, 1))), name)
-        self.assertTrue(any("flow-style" in p for p in self.problems("jobs: {a: {runs-on: x}}\n" + HARDENED.split("jobs:\n")[0])))
-        spaced = HARDENED.replace("    timeout-minutes: 20\n", "    timeout-minutes: 20\n    continue-on-error : true\n", 1)
-        self.assertTrue(any("continue-on-error hides failures" in p for p in self.problems(spaced)))
-
-    def test_flow_style_jobs_and_steps_cannot_hide_settings(self):
-        flow_job = HARDENED + """  third: {runs-on: ubuntu-latest, timeout-minutes: 5, continue-on-error: true, steps: [{run: echo ok}]}\n"""
-        self.assertTrue(any("flow-style" in p for p in self.problems(flow_job)))
-        flow_steps = HARDENED.replace(
-            "    steps:\n      - name: checkout\n", "    steps: [{run: 'echo ${{ github.event.issue.title }}', continue-on-error: true}]\n    xsteps:\n      - name: checkout\n", 1)
-        self.assertTrue(any("flow-style" in p for p in self.problems(flow_steps)))
-        flow_brace = HARDENED.replace("    steps:\n      - name: checkout\n", "    steps: {}\n    xsteps:\n      - name: checkout\n", 1)
-        self.assertTrue(any("flow-style" in p for p in self.problems(flow_brace)))
-        # Flow collections for ordinary values stay fine.
+    def test_honest_script_content_is_not_mistaken_for_settings(self):
+        script = self.variant(
+            '      - name: Write config\n        run: |\n          cat > cfg.json <<EOF\n          {"ref": "main"}\n          - {a: b}\n          continue-on-error: true\n          EOF\n'
+            "      - run: \"echo 'a: *b & !c'\"\n")
+        self.assertEqual(self.problems(script), [])
         fine = HARDENED.replace("on: [push]", "on:\n  push:\n    branches: [main]\n  workflow_dispatch: {}\n")
         self.assertEqual(self.problems(fine), [])
 
     def test_ci_guard_must_see_ignored_files(self):
         rel = ".github/workflows/ci.yml"
-        self.assertEqual(self.problems(HARDENED + "# formerly: git status --porcelain --ignored\n", rel),
-                         [f"{rel}: the checkout-unchanged guard must use git status --porcelain --ignored"])
-        self.assertEqual(self.problems(HARDENED + "      - run: git status --porcelain --ignored\n", rel), [])
-        self.assertEqual(self.problems(HARDENED, rel),
-                         [f"{rel}: the checkout-unchanged guard must use git status --porcelain --ignored"])
+        guard = f"{rel}: the checkout-unchanged guard must use git status --porcelain --ignored"
+        self.assertEqual(self.problems(HARDENED + "# formerly: git status --porcelain --ignored\n", rel), [guard])
+        self.assertEqual(self.problems(self.variant("      - run: git status --porcelain --ignored\n"), rel), [])
+        self.assertEqual(self.problems(HARDENED, rel), [guard])
 
-    def test_step_level_timeout_does_not_count_for_the_job(self):
+    def test_job_timeouts_must_be_job_level(self):
         text = HARDENED.replace("    timeout-minutes: 5\n", "").replace(
             "        uses: actions/checkout@v5\n", "        uses: actions/checkout@v5\n        timeout-minutes: 5\n")
-        self.assertEqual(self.problems(text), [".github/workflows/w.yml: job second has no timeout-minutes"])
+        self.assertEqual(self.problems(text), [f"{self.REL}: job second has no timeout-minutes"])
+        self.assertEqual(self.problems(HARDENED.replace("  second:\n", "  second: just-a-string\n  xsecond:\n", 1).split("  xsecond:")[0]),
+                         [f"{self.REL}: job second has no timeout-minutes"])
 
     def test_force_flag_only_counts_at_the_top_level(self):
         text = HARDENED.replace("env:\n  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true\n", "").replace(
             "    timeout-minutes: 20\n", "    timeout-minutes: 20\n    env:\n      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true\n")
-        self.assertEqual(self.problems(text), [
-            ".github/workflows/w.yml: FORCE_JAVASCRIPT_ACTIONS_TO_NODE24 is not set to true in the top-level env"])
+        flag = f"{self.REL}: FORCE_JAVASCRIPT_ACTIONS_TO_NODE24 is not set to true in the top-level env"
+        self.assertEqual(self.problems(text), [flag])
+        self.assertEqual(self.problems(HARDENED.replace("NODE24: true", 'NODE24: "true"')), [])
+        self.assertEqual(self.problems(HARDENED.replace("env:\n  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true\n", "env: x\n")), [flag])
 
     def test_workflow_without_jobs(self):
         text = "on: [push]\npermissions: {}\nenv:\n  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true\n"
         self.assertEqual(self.problems(text, ".github/workflows/empty.yaml"), [])
+        self.assertEqual(self.problems(text + "jobs: x\n", ".github/workflows/empty.yaml"), [])
+        self.assertEqual(self.problems(text + "jobs:\n  a:\n    steps: x\n    timeout-minutes: 1\n    runs-on: x\n", ".github/workflows/e.yaml"), [])
+        self.assertEqual(self.problems(text + "jobs:\n  a:\n    steps: [x, {run: y}]\n    timeout-minutes: 1\n", ".github/workflows/e.yaml"), [])
+
+    def test_unparsable_or_unreadable_workflows_fail_closed(self):
+        rel = self.REL
+        for label, text, needle in (
+            ("syntax", "jobs: [\n", "not parsed as YAML"),
+            ("duplicate key", HARDENED + "permissions: {}\n", "duplicate key"),
+            ("unhashable key", "? [a]\n: b\n", "not parsed as YAML"),
+            ("scalar document", "just text\n", "not a YAML mapping"),
+            ("empty", "", "not a YAML mapping"),
+        ):
+            found = self.problems(text)
+            self.assertEqual(len(found), 1, label)
+            self.assertIn(needle, found[0], label)
+            self.assertTrue(found[0].startswith(rel), label)
+
+    def test_missing_pyyaml_fails_closed(self):
+        import sys
+        from unittest import mock
+        with mock.patch.dict(sys.modules, {"yaml": None}):
+            found = self.problems(HARDENED)
+        self.assertEqual(len(found), 1)
+        self.assertIn("PyYAML is required", found[0])
 
 
 class TrackedFileSizeTest(TempRoot):
@@ -603,20 +623,62 @@ class PersonalDataTest(TempRoot):
             "/home/".replace("/home/", "-home-") + "dave" + "-proj",  # Claude project dir on Linux
             "/var/home/" + "dave" + "/x",
             "/users/" + "dave" + "/x",                            # lower case
-            "users_" + "dave" + "_projects",                      # normalised graph label
             "\\/Users\\/" + "dave" + "\\/x",                      # JSON-escaped
             "%2FUsers%2F" + "dave" + "%2Fx",                      # URL-encoded
             "file:///Users/" + "dave" + "/.cursor/x",
-            "session-users_" + "dave" + "_projects_silver_bullet_repo",   # graph node id: \\b did not fire before _silver
             "/mnt/c/Users/" + "dave" + "/x",                      # WSL
-            "users-" + "dave" + "-projects-x",                    # lower-case dashed
-            "_home_" + "dave" + "_projects_x",                    # lean-ctx on Linux
             "\\\\/Users\\\\/" + "dave" + "\\\\/x",                  # double-escaped JSON
             "\\u002fUsers\\u002f" + "dave" + "\\u002fx",              # unicode-escaped JSON
             "C:\\\\\\\\Users\\\\\\\\" + "dave",                      # JSON-escaped Windows path
         ]
         for form in forms:
             self.assertEqual(self.problems("a\n" + form + "\n"), ["docs/x.md:2: " + ri.HOME_MESSAGE], form)
+
+    def hashed(self, *names):
+        write(self.root, ri.TOKEN_FILE, "# hashes\n" + "".join(
+            f"{hashlib.sha256(n.encode()).hexdigest()} {len(n)}  # token\n" for n in names) + "bogus\nabc x\n")
+
+    def test_hashed_identity_tokens_catch_every_separator_form(self):
+        self.hashed("dave", "mcdonald")
+        forms = ["users_" + "dave" + "_projects", "x_users_" + "dave" + "__claude_plugins", "x_home_" + "dave" + "_silver_bullet",
+                 "users-" + "dave" + "-silver-bullet", "\\\\wsl$\\Ubuntu\\home\\" + "dave", "~" + "dave" + "/projects",
+                 "Users." + "dave" + ".projects", "&#47;Users&#47;" + "dave", "/Users\\" + "dave" + "\\x", "McDonald, " + "Dave",
+                 "mail dave\u00e9", "dave"]
+        for form in forms:
+            found = self.problems("a\nline " + form + " and " + form + "\n")
+            self.assertEqual(found, ["docs/x.md:2: " + ri.IDENTITY_MESSAGE], form)
+        # Only whole tokens count: a longer word that merely contains the name is a different token.
+        self.assertEqual(self.problems("davenport fandave dave2 xdavex\n"), [])
+        # Without a token file the check is off; a different length is never hashed.
+        (self.root / ri.TOKEN_FILE).unlink()
+        self.assertEqual(self.problems("dave\n"), [])
+
+    def test_public_identity_uses_are_exempt_by_explicit_file_entries(self):
+        self.hashed("dave")
+        write(self.root, "CODEOWNERS", "* @dave\n")
+        write(self.root, "docs/x.md", "by dave\n")
+        write(self.root, ri.ALLOW_FILE, "# public\nfile CODEOWNERS\nfile docs/*.json\n")
+        found = ri.personal_data(self.root, ["CODEOWNERS", "docs/x.md", ri.ALLOW_FILE])
+        self.assertEqual(found, ["docs/x.md:1: " + ri.IDENTITY_MESSAGE])
+        # An exempt file is still checked for paths and emails.
+        write(self.root, "CODEOWNERS", home_path("erin") + "\n")
+        self.assertEqual(ri.personal_data(self.root, ["CODEOWNERS"]), ["CODEOWNERS:1: " + ri.HOME_MESSAGE])
+
+    def test_the_allowlist_file_is_scanned_and_its_directives_are_validated(self):
+        self.hashed("dave")
+        write(self.root, ri.ALLOW_FILE, "# written by dave\nfile CODEOWNERS\nhome\nHOME x\nemail\nfile  # nothing\n" + "email " + mail("dave", "gmail.com") + "\n# " + home_path("erin") + "\n")
+        found = ri.personal_data(self.root, [ri.ALLOW_FILE])
+        lines = sorted(int(p.split(":")[1]) for p in found)
+        self.assertEqual(lines, [1, 3, 4, 5, 6, 8])  # comment with the name, four bad directives, the path comment
+        self.assertEqual(len([p for p in found if "unknown or incomplete directive" in p]), 4)
+        self.assertEqual(len([p for p in found if ri.HOME_MESSAGE in p]), 1)
+        self.assertEqual(len([p for p in found if ri.IDENTITY_MESSAGE in p]), 1)
+
+    def test_ordinary_identifiers_are_not_flagged(self):
+        text = "\n".join(["the home_page_code path", "home_screen_work", "is_home_dir_projects", "home-made-projects", "my_home_town_github",
+                          "users_per_github_org", "home_assistant_code", "def get_users_by_projects():", "HOME_URL_PROJECTS",
+                          "self.home_dir_src", "Users-API-v2", "-home-screen-", "/home/steam", "/home/ollama", "deploy@prod.internal"])
+        self.assertEqual(self.problems(text), [])
 
     def test_line_numbers_survive_escape_decoding_and_far_apart_hits(self):
         text = ("\\u002f" * 40 + "\n") * 3 + home_path("dave") + "\n" + "pad " * 100 + "\n" + mail("pat", "corp.io") + " " + home_path("erin") + "\n"
@@ -642,7 +704,7 @@ class PersonalDataTest(TempRoot):
         self.assertEqual(self.problems(text), [])
 
     def test_audited_exceptions_come_from_the_allowlist_file(self):
-        write(self.root, ri.ALLOW_FILE, "# audited\nhome " + "Dave" + "\nemail " + mail("pat", "corp.io") + "\nemail @" + "ok.org" + "\nbogus line\nhome\n")
+        write(self.root, ri.ALLOW_FILE, "# audited\nhome " + "Dave" + "\nemail " + mail("pat", "corp.io") + "\nemail @" + "ok.org" + "\n")
         text = home_path("dave") + "\n" + mail("pat", "corp.io") + "\n" + mail("any", "ok.org") + "\n"
         write(self.root, "docs/x.md", text)
         self.assertEqual(ri.personal_data(self.root, ["docs/x.md", ri.ALLOW_FILE]), [])
