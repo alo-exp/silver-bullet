@@ -86,10 +86,9 @@ COMMERCIAL_CATALOG: list[dict[str, str]] = [
     {"slug": "linear-agent", "name": "Linear Agent Integrations", "url": "https://linear.app/"},
 ]
 
-# OSS / emerging — not commercial SMB catalog (Silver Bullet is open-source orchestration)
-EMERGING_CATALOG: list[dict[str, str]] = [
-    {"slug": "silver-bullet", "name": "Silver Bullet", "license": "Open Source", "url": "https://sb.alolabs.dev/"},
-]
+# OSS / emerging catalog. Intentionally empty: no vendor is built in; a category pack
+# supplies the seeds (and their licences) for the market being researched.
+EMERGING_CATALOG: list[dict[str, str]] = []
 
 OSS_CATALOG: list[dict[str, str]] = [
     {"slug": "openhands", "name": "OpenHands", "license": "MIT", "url": "https://github.com/All-Hands-AI/OpenHands"},
@@ -252,7 +251,7 @@ def vendor_license_bucket(
     fallback: str = "commercial",
     license_map: dict[str, str] | None = None,
 ) -> str:
-    """Classify solution slug for landscape vendor panels (SB is permanently non-commercial)."""
+    """Classify solution slug for landscape vendor panels ."""
     if license_map and license_map.get(slug) == "oss":
         return "oss"
     if slug in NON_COMMERCIAL_SLUGS:
@@ -393,7 +392,6 @@ _METHODOLOGY_Y_CAP = 5.2
 _NON_LEADER_WAVE_PRESENCE_CAP = 2
 _NON_LEADER_WAVE_OFFERING_CAP = 2.4
 _NON_LEADER_WAVE_STRATEGY_CAP = 2.5
-_CROSS_SESSION_PASS_SLUGS = {"silver-bullet"}
 
 
 def _model_family_label(model_id: str) -> str:
@@ -449,14 +447,12 @@ def _load_inclusion_ledger_statuses(root: Path | None) -> dict[str, dict[str, st
 
 
 def _cross_session_status(slug: str, root: Path | None) -> str:
-    """Return pass|fail|unknown from the inclusion ledger, else allowlist."""
+    """Return pass|fail|unknown from the inclusion ledger; no ledger row means unknown."""
     statuses = _load_inclusion_ledger_statuses(root).get(slug) or {}
     for key, status in statuses.items():
         if "cross session" in key or key.endswith("state"):
             if status in {"pass", "fail", "unknown"}:
                 return status
-    if slug in _CROSS_SESSION_PASS_SLUGS:
-        return "pass"
     return "unknown"
 
 

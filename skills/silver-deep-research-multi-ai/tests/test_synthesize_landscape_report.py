@@ -206,7 +206,7 @@ class ReportTests(TmpCase):
         self.assertIn("### 3A. Cat Positioning Matrix", md)
         self.assertIn("### 3B. Magic Quadrant — Cat", md)
         self.assertIn("### 3C. Wave-Style Assessment", md)
-        self.assertIn("Silver Bullet](https://sb.alolabs.dev/) | Leaders | Positioned on", md)
+        self.assertNotIn("sb.alolabs.dev", md)
         self.assertIn("Devin](https://devin.ai/) (Cognition) | Emerging | Emerging | Emerging |", md)
         self.assertIn("### 3D. Blue Ocean Value Curve", md)
         self.assertIn("### Top Commercial Solutions for SMBs", md)

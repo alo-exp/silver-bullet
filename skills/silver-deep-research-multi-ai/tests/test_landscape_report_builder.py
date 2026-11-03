@@ -81,7 +81,7 @@ class OverviewQualityTests(unittest.TestCase):
         )
 
     def test_overview_seeds_cover_core_catalog(self) -> None:
-        for slug in ("silver-bullet", "factory-ai", "devin", "openhands", "langgraph-platform"):
+        for slug in ("factory-ai", "devin", "openhands", "langgraph-platform"):
             self.assertIn(slug, OVERVIEW_SEEDS)
             self.assertGreater(len(OVERVIEW_SEEDS[slug]), 20)
 

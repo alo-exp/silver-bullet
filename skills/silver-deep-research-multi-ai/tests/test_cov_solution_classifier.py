@@ -100,10 +100,11 @@ class MarketClassificationTests(unittest.TestCase):
         # a core seed wins over the hard exclusion list
         self.assertEqual(self.classify("core-a", hard_exclusions={"core-a"}, envelope_slugs={"core-a"}), ("core", "m1 market_seed"))
 
-    def test_core_requires_evidence_except_silver_bullet(self) -> None:
+    def test_core_requires_evidence_for_every_seed(self) -> None:
         self.assertEqual(self.classify("core-a", envelope_slugs={"core-a"}), ("core", "m1 market_seed"))
         self.assertEqual(self.classify("core-a"), ("excluded", "m1 seed without envelope evidence (gap)"))
-        self.assertEqual(self.classify("silver-bullet"), ("core", "m1 market_seed"))
+        self.assertEqual(self.classify("silver-bullet"), ("excluded", "m1 seed without envelope evidence (gap)"))
+        self.assertEqual(self.classify("silver-bullet", envelope_slugs={"silver-bullet"}), ("core", "m1 market_seed"))
 
     def test_adjacent_variants(self) -> None:
         cls, reason = self.classify("adj-quarantine")
@@ -187,7 +188,7 @@ class ClassifySlugTests(unittest.TestCase):
         self.assertEqual(self.go("core-a"), ("excluded", "core_seed without envelope evidence (gap)"))
         self.assertEqual(self.go("other-market-core", envelope_slugs={"other-market-core"}), ("core", "m9 market_seed"))
         self.assertEqual(self.go("other-market-core"), ("excluded", "m9 market_seed without envelope evidence (gap)"))
-        self.assertEqual(self.go("silver-bullet", all_core_seeds={"silver-bullet"}, market_core_map={}), ("core", "market market_seed"))
+        self.assertEqual(self.go("silver-bullet", all_core_seeds={"silver-bullet"}, market_core_map={}), ("excluded", "market market_seed without envelope evidence (gap)"))
         self.assertEqual(self.go("lonely", all_core_seeds={"lonely"}, market_core_map={}), ("excluded", "market market_seed without envelope evidence (gap)"))
 
     def test_adjacent_and_exclusion_class_paths(self) -> None:
@@ -224,7 +225,7 @@ class ClassifySolutionsTests(unittest.TestCase):
         audit = sc.classify_solutions(self.envs(*claims), need, pack())
         self.assertEqual(audit["pack_id"], "synthetic")
         self.assertEqual(audit["primary_market_id"], "m1")
-        self.assertEqual(audit["core"], ["core-a", "silver-bullet"])
+        self.assertEqual(audit["core"], ["core-a"])
         self.assertEqual(audit["by_slug"]["core-b"], {"classification": "excluded", "reason": "hard_veto from need_profile"})
         self.assertEqual(audit["by_slug"]["sun"]["classification"], "sunset")
         self.assertIn("sun", audit["sunset"])
@@ -236,7 +237,7 @@ class ClassifySolutionsTests(unittest.TestCase):
         m2 = audit["markets"]["m2"]
         self.assertFalse(m2["chart_eligible"])
         self.assertEqual(m2["core"], ["core-m2"])
-        self.assertEqual(audit["matrix_slugs"], ["core-a", "core-m2", "silver-bullet"])
+        self.assertEqual(audit["matrix_slugs"], ["core-a", "core-m2"])
         self.assertEqual(audit["by_slug"]["core-m2"]["reason"], "m2 market_core (matrix)")
         self.assertEqual(audit["by_slug"]["core-a"]["reason"], "pack core_seed")
         # alias mirrored into by_slug
@@ -244,8 +245,8 @@ class ClassifySolutionsTests(unittest.TestCase):
         # must_research gap list: never-seen has no evidence; core-m2b has evidence but was deduped out
         self.assertIn("never-seen", audit["gaps"])
         self.assertEqual(audit["counts"]["gaps"], len(audit["gaps"]))
-        self.assertEqual(audit["counts"]["core"], 2)
-        self.assertEqual(audit["counts"]["matrix_slugs"], 3)
+        self.assertEqual(audit["counts"]["core"], 1)
+        self.assertEqual(audit["counts"]["matrix_slugs"], 2)
         self.assertEqual(audit["markets"][""]["role"], None)
         # core slugs from a market never show up as adjacent anywhere
         for market_audit in audit["markets"].values():

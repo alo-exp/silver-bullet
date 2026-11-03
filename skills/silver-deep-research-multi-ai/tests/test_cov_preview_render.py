@@ -252,19 +252,19 @@ class DeriveVendorTests(OfflineCase):
         comparison = {"rankings": [
             {"solution": "plain"}, {"solution": "plain"}, {"solution": ""}, "junk",
             {"solution": "tagged-oss", "license": "OSS"}, {"solution": "opened", "type": "Open source"},
-            {"solution": "beta"}, {"solution": "silver-bullet"},
+            {"solution": "beta"}, {"solution": "metagpt"},
         ]}
         with mock.patch("category_pack.resolve_pack_from_need", return_value=pack()):
             commercial, oss = lpr._derive_vendors_from_comparison(comparison, need={"category_pack_id": "x"})
         self.assertEqual(commercial, ["plain"])
-        self.assertEqual(oss, ["tagged-oss", "opened", "beta", "silver-bullet"])
+        self.assertEqual(oss, ["tagged-oss", "opened", "beta", "metagpt"])
 
     def test_no_pack_and_column_fallback(self) -> None:
         with mock.patch("category_pack.resolve_pack_from_need", return_value=None):
             self.assertEqual(lpr._derive_vendors_from_comparison({}), ([], []))
-            rows = {"rows": [{"type": "feature", "name": "F", "solutions": {"zeta": "y", "silver-bullet": "y"}}]}
+            rows = {"rows": [{"type": "feature", "name": "F", "solutions": {"zeta": "y", "metagpt": "y"}}]}
             commercial, oss = lpr._derive_vendors_from_comparison(rows)
-        self.assertEqual((commercial, oss), (["zeta"], ["silver-bullet"]))
+        self.assertEqual((commercial, oss), (["zeta"], ["metagpt"]))
 
     def test_solution_columns(self) -> None:
         self.assertEqual(lpr._solution_columns({"rankings": [{"solution": "b"}, {"solution": "a"}, {"x": 1}, "junk"]}), ["b", "a"])
