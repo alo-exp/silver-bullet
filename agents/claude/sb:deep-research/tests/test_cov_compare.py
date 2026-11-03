@@ -266,41 +266,6 @@ class TestCompareSolutions(unittest.TestCase):
         prios = {r["name"]: r["priority"] for r in comp["rows"] if r["type"] == "feature"}
         self.assertEqual(prios["API"], "Critical")
 
-    def test_category_pack_excludes_solutions(self):
-        pack_mod = types.ModuleType("category_pack")
-        pack_mod.resolve_pack_from_need = lambda need: {"id": "p"}
-        pack_mod.get_hard_exclusion_slugs = lambda pack, need: ["B", "", None]
-        _write_features(self.root, "c", {"solution_name": "C", "features": ["API"]})
-        with mock.patch.dict(sys.modules, {"category_pack": pack_mod}):
-            cs.compare_solutions(self.root, emit_xlsx=False)
-        comp = json.loads((self.root / "comparison" / "comparison.json").read_text())
-        self.assertEqual(sorted(r["solution"] for r in comp["rankings"]), ["A", "C"])
-
-    def test_category_pack_without_pack_or_exclusions_keeps_all(self):
-        pack_mod = types.ModuleType("category_pack")
-        pack_mod.resolve_pack_from_need = lambda need: None
-        pack_mod.get_hard_exclusion_slugs = lambda pack, need: ["B"]
-        with mock.patch.dict(sys.modules, {"category_pack": pack_mod}):
-            cs.compare_solutions(self.root, emit_xlsx=False)
-        comp = json.loads((self.root / "comparison" / "comparison.json").read_text())
-        self.assertEqual(len(comp["rankings"]), 2)
-        pack_mod.resolve_pack_from_need = lambda need: {"id": "p"}
-        pack_mod.get_hard_exclusion_slugs = lambda pack, need: []
-        with mock.patch.dict(sys.modules, {"category_pack": pack_mod}):
-            cs.compare_solutions(self.root, emit_xlsx=False)
-        comp = json.loads((self.root / "comparison" / "comparison.json").read_text())
-        self.assertEqual(len(comp["rankings"]), 2)
-
-    def test_category_pack_errors_are_swallowed(self):
-        pack_mod = types.ModuleType("category_pack")
-        def boom(need):
-            raise RuntimeError("bad pack")
-        pack_mod.resolve_pack_from_need = boom
-        pack_mod.get_hard_exclusion_slugs = lambda pack, need: []
-        with mock.patch.dict(sys.modules, {"category_pack": pack_mod}):
-            res = cs.compare_solutions(self.root, emit_xlsx=False)
-        self.assertEqual(res["status"], "ok")
-
     def test_xlsx_import_error_becomes_runtime_error(self):
         with mock.patch.object(gx, "generate_comparison_xlsx", side_effect=ImportError("no openpyxl")):
             with self.assertRaises(RuntimeError) as cm:

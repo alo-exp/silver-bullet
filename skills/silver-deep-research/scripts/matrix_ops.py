@@ -49,7 +49,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Optional
 
-from matrix_core import TICK, TICK_CRITERION, WEIGHTS, priority_weight
+from matrix_core import TICK, TICK_CRITERION, WEIGHTS, _sanitize_cell_value, priority_weight
 
 openpyxl = None
 get_column_letter = None
@@ -369,8 +369,8 @@ def add_platform(
             if rd["row_type"] == RowType.CATEGORY:
                 # Flush pending inserts for previous category
                 for nr in pending_inserts:
-                    feat_name = nr["feature"]
-                    prio = nr.get("priority", "Medium")
+                    feat_name = _sanitize_cell_value(nr["feature"])
+                    prio = _sanitize_cell_value(nr.get("priority", "Medium"))
                     is_ticked = nr.get("ticked", True)
                     vals = [feat_name, prio] + [None] * (last_col - 2)
                     # Clone style from last row in expanded
@@ -392,8 +392,8 @@ def add_platform(
 
         # Flush remaining inserts for last category
         for nr in pending_inserts:
-            feat_name = nr["feature"]
-            prio = nr.get("priority", "Medium")
+            feat_name = _sanitize_cell_value(nr["feature"])
+            prio = _sanitize_cell_value(nr.get("priority", "Medium"))
             is_ticked = nr.get("ticked", True)
             vals = [feat_name, prio] + [None] * (last_col - 2)
             new_rd = {
@@ -413,7 +413,7 @@ def add_platform(
     # --- Add new platform column ---
     # Header
     hdr = ws.cell(L.header_row, new_col)
-    hdr.value = platform_name
+    hdr.value = _sanitize_cell_value(platform_name)
     _clone_style(ws.cell(L.header_row, last_col), hdr)
 
     # COUNTIF (total row) and score row
@@ -555,7 +555,7 @@ def create_combo_column(
 
     # Header
     hdr = ws.cell(L.header_row, new_col)
-    hdr.value = combo_name
+    hdr.value = _sanitize_cell_value(combo_name)
     _clone_style(ws.cell(L.header_row, last_col), hdr)
 
     # Formulas

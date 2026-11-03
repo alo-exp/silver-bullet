@@ -193,7 +193,10 @@ pre {{ white-space: pre-wrap; background: var(--surface); padding: 1rem; border-
   if (cmp.winner) {{
     recHtml += '<h2>Winner: ' + esc(cmp.winner) + '</h2>';
     if (cmp.runner_up) recHtml += '<p>Runner-up: ' + esc(cmp.runner_up) + '</p>';
-    recHtml += '<ol>' + rankings.map(r => '<li>' + esc(r.solution) + ' — score ' + r.score + '</li>').join('') + '</ol>';
+    recHtml += '<ol>' + rankings.map(r => '<li>' + esc(r.solution) + ' — score ' + esc(String(r.score)) + '</li>').join('') + '</ol>';
+  }}
+  if (!cmp.winner && (cmp.tie || []).length) {{
+    recHtml += '<h2>No winner: tie</h2><p>Tied: ' + esc(cmp.tie.join(', ')) + '</p>';
   }}
   if (data.decision_excerpt) recHtml += '<pre>' + esc(data.decision_excerpt) + '</pre>';
   rec.innerHTML = recHtml || '<p>Recommendation pending synthesis.</p>';

@@ -8,11 +8,11 @@ Landscape-only portal retrieval. SB-owned descriptors only.
 from __future__ import annotations
 
 import argparse
+import http.client
 import json
 import os
 import shutil
 import sys
-import urllib.error
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
@@ -37,6 +37,36 @@ def _github_branch_resolver() -> dict[str, str] | None:
     if not branch_path.exists():
         return None
     return json.loads(branch_path.read_text(encoding="utf-8"))
+
+MAX_PORTAL_BYTES = 2 * 1024 * 1024
+_GITHUB_TOKEN_VARS = ("GITHUB_TOKEN", "GH_TOKEN")
+
+
+def _github_token() -> str | None:
+    for var in _GITHUB_TOKEN_VARS:
+        if os.environ.get(var):
+            return os.environ[var]
+    return None
+
+
+def _enrich_github_results(results: Any) -> Any:
+    """Add branch-correct SKILL.md URLs to GitHub hits (a list, or code search's {"items": [...]})."""
+    is_dict = isinstance(results, dict)
+    hits = results.get("items") if is_dict else results
+    if not isinstance(hits, list):
+        return results
+    prepared = []
+    for hit in hits:
+        row = dict(hit) if isinstance(hit, dict) else {}
+        repo = row.get("repository")
+        if isinstance(repo, dict) and repo.get("full_name") and not (
+            row.get("fullName") or row.get("full_name")
+        ):
+            row["fullName"] = repo["full_name"]
+        prepared.append(row)
+    enriched = enrich_github_search_hits(prepared, _github_branch_resolver())
+    return {**results, "items": enriched} if is_dict else enriched
+
 
 LANDSCAPE_TYPES = frozenset({"landscape", "skill-comparison"})
 
@@ -84,14 +114,29 @@ def fetch_portal(portal_id: str, query: str, mock_responses: dict | None = None)
             "reason": portal.get("notes", "no search_url"),
         }
 
+    headers = {"User-Agent": "silver-deep-research/1.0"}
+    if portal_id == "github":
+        # GitHub code search needs authentication; without a token skip rather than 401.
+        token = _github_token()
+        if not token:
+            return {
+                "portal_id": portal_id,
+                "status": "skipped",
+                "reason": "GitHub code search requires GITHUB_TOKEN or GH_TOKEN; none is set",
+            }
+        headers["Authorization"] = f"Bearer {token}"
+
     url = url_tmpl.format(query=quote(query))
     try:
-        req = urllib.request.Request(url, headers={"User-Agent": "silver-deep-research/1.0"})
+        req = urllib.request.Request(url, headers=headers)
         with urllib.request.urlopen(req, timeout=10) as resp:
-            body = resp.read().decode("utf-8")
+            raw = resp.read(MAX_PORTAL_BYTES + 1)
+            if len(raw) > MAX_PORTAL_BYTES:
+                raise ValueError(f"response larger than {MAX_PORTAL_BYTES} bytes")
+            body = raw.decode("utf-8", errors="replace")
             data = json.loads(body) if body.strip().startswith(("{", "[")) else {"raw": body[:500]}
         return {"portal_id": portal_id, "status": "ok", "results": data}
-    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
+    except (OSError, http.client.HTTPException, ValueError) as exc:  # URLError/timeouts are OSError
         return {
             "portal_id": portal_id,
             "status": "error",
@@ -117,6 +162,7 @@ def orchestrate(
 
     portals_attempted: list[str] = []
     portals_succeeded: list[str] = []
+    portals_failed: dict[str, str] = {}
     portal_partials: dict[str, Any] = {}
     fallback_reason = None
 
@@ -136,17 +182,17 @@ def orchestrate(
             else:
                 result = fetch_portal(portal_id, query, mock_responses)
             if result.get("status") == "ok":
-                if portal_id == "github" and isinstance(result.get("results"), list):
+                if portal_id == "github":
                     result = dict(result)
-                    result["results"] = enrich_github_search_hits(
-                        result["results"], _github_branch_resolver(),
-                    )
+                    result["results"] = _enrich_github_results(result["results"])
                 portals_succeeded.append(portal_id)
                 partial_path = out_dir / f"portal-{portal_id}.json"
                 out_dir.mkdir(parents=True, exist_ok=True)
                 with open(partial_path, "w", encoding="utf-8") as f:
                     json.dump(result, f, indent=2)
                 portal_partials[portal_id] = str(partial_path)
+            elif result.get("status") == "error":
+                portals_failed[portal_id] = str(result.get("reason", "error"))
 
     record = {
         "orchestrated_at": datetime.now(timezone.utc).isoformat(),
@@ -159,6 +205,7 @@ def orchestrate(
             "intent_class": intent,
             "portals_attempted": portals_attempted,
             "portals_succeeded": portals_succeeded,
+            "portals_failed": portals_failed,
             "portal_partials": portal_partials,
             "fallback_reason": fallback_reason,
         },
