@@ -68,11 +68,11 @@ export CURSOR_AGENT_PLUGINS_REPO_URL="$REPO_ROOT"
 export CURSOR_GITHUB_REPO_URL="$REPO_ROOT"
 
 mkdir -p \
-  "${CURSOR_HOME}/agents/subagent-sb:init" \
+  "${CURSOR_HOME}/agents/sb:add" \
   "${CURSOR_HOME}/agents/full-conversation" \
   "${CURSOR_HOME}/plugins/cache/alo-labs-agent-plugins/silver-bullet/1111111111111111111111111111111111111111/skills/silver-ui" \
   "${CURSOR_HOME}/plugins/cache/alo-labs-agent-plugins/silver-bullet/1111111111111111111111111111111111111111/host-bundles/cursor/subagent-tdd"
-printf '%s\n' '---' 'name: subagent-sb:init' '---' > "${CURSOR_HOME}/agents/subagent-sb:init/SKILL.md"
+printf '%s\n' '---' 'name: sb:add' '---' > "${CURSOR_HOME}/agents/sb:add/SKILL.md"
 printf '%s\n' '---' 'name: full-conversation' '---' > "${CURSOR_HOME}/agents/full-conversation/SKILL.md"
 printf '%s\n' '---' 'name: silver-ui' '---' > "${CURSOR_HOME}/plugins/cache/alo-labs-agent-plugins/silver-bullet/1111111111111111111111111111111111111111/skills/silver-ui/SKILL.md"
 printf '%s\n' '---' 'name: subagent-tdd' '---' > "${CURSOR_HOME}/plugins/cache/alo-labs-agent-plugins/silver-bullet/1111111111111111111111111111111111111111/host-bundles/cursor/subagent-tdd/SKILL.md"
@@ -86,7 +86,7 @@ else
   fail "install-cursor creates current symlink"
 fi
 
-if [[ ! -e "${CURSOR_HOME}/agents/subagent-sb:init" ]] && \
+if [[ ! -e "${CURSOR_HOME}/agents/sb:add" ]] && \
    compgen -G "${CURSOR_HOME}/.silver-bullet-quarantine/cursor-agents/*/user/*" >/dev/null; then
   pass "install-cursor quarantines stale SB custom agents"
 else
