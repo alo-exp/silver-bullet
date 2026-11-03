@@ -39,69 +39,6 @@ class JargonTests(unittest.TestCase):
         self.assertEqual(h("coding_agent here", no_criteria), "Generic coding agent here")
         self.assertEqual(h("nothing special", dict(PACK, exclusion_classes=[])), "nothing special")
 
-    def test_non_apo_labels(self):
-        self.assertEqual(sl._non_apo_display_labels(PACK),
-                         {"Claude Harness", "cc10x", "Conductor", "Magic.dev", "Cursor", "Widget"})
-        no_apo = {"markets": [{"id": "x", "seeds": [{"slug": "a", "name": "A"}], "adjacent_seeds": []}]}
-        self.assertEqual(sl._non_apo_display_labels(no_apo), {"A"})
-        self.assertEqual(sl._non_apo_display_labels({"markets": [{"id": "apo", "seeds": []}]}), set())
-
-
-class ScrubTests(unittest.TestCase):
-    def s(self, text, pack=PACK):
-        return sl.scrub_membership_framing(text, pack)
-
-    def test_passthrough(self):
-        self.assertEqual(self.s("", PACK), "")
-        self.assertEqual(self.s("text", None), "text")
-        empty = {"markets": [{"id": "apo", "seeds": [{"slug": "a", "name": "A"}]}]}
-        self.assertEqual(self.s("Claude Harness APO", empty), "Claude Harness APO")
-        self.assertEqual(self.s("Nothing relevant here APO"), "Nothing relevant here APO")
-        self.assertEqual(self.s("Widget exists"), "Widget exists")  # no APO mention
-        self.assertEqual(self.s("a\n\nb\n"), "a\n\nb")
-
-    def test_apo_candidate_rewrites(self):
-        self.assertEqual(self.s("Claude Harness is a primary-market APO candidate — strong."),
-                         "Claude Harness is an SDLC-plugins methodology pack (not an APO peer) — strong.")
-        self.assertIn("[Claude Harness](https://u) is an SDLC-plugins methodology pack",
-                      self.s("[Claude Harness](https://u) is a primary-market APO candidate - ok"))
-        self.assertIn("hard-excluded coding-model lab", self.s("Magic.dev is a primary-market APO candidate — x"))
-        for host in ("Cursor",):
-            self.assertIn("host-runtime / SaaS-adjacent surface",
-                          self.s(f"{host} is a primary-market APO candidate — x"))
-        self.assertIn("Widget is not an APO peer — x", self.s("Widget is a primary-market APO candidate — x"))
-
-    def test_claude_harness_fallback(self):
-        out = self.s("Claude Harness is a primary-market APO candidate. APO peers differ.")
-        self.assertIn("Claude Harness (sdlc-plugins, not APO)", out)
-
-    def test_cc10x(self):
-        out = self.s("cc10x occupies a mid-tier APO band for many teams. More.")
-        self.assertEqual(out, "cc10x is an SDLC-plugins Claude Code plugin (not an APO peer). More.")
-
-    def test_conductor_rules(self):
-        self.assertTrue(self.s("- Conductor sits in the mid-tier APO cluster").startswith("- cc10x is an"))
-        self.assertTrue(self.s("* Conductor sits in the mid-tier APO band").startswith("* cc10x is an"))
-        self.assertTrue(self.s("Conductor sits in the mid-tier APO band").startswith("cc10x is an"))
-        self.assertTrue(self.s("Conductor and the most credible non-SB APO entrants").startswith(
-            "AI-DLC is the most credible non-SB APO entrant"))
-        self.assertTrue(self.s("Conductor occupies a distinct sub-position in the APO space").startswith(
-            "Conductor occupies a SaaS-adjacent niche"))
-        out = self.s("The leading verifiable solutions in APO are Conductor, Foo and Bar.")
-        self.assertNotIn("Conductor", out)
-        self.assertNotIn("REMOVED_NON_APO", out)
-        out = self.s("APO seeds: Alpha, Conductor, Beta, and [Conductor](https://c.example) plus Conductor.build, Gamma")
-        self.assertNotIn("Conductor,", out)
-        self.assertEqual(self.s("The APO list is Conductor and Foo."), "The APO list is Foo.")
-
-    def test_conductor_annotation(self):
-        out = self.s("Conductor is considered APO by some.")
-        self.assertIn("Conductor (SaaS-adjacent coding-agent aggregator, not APO)", out)
-        already = self.s("Conductor is not APO, though APO is broad.")
-        self.assertNotIn("SaaS-adjacent coding-agent aggregator", already)
-        no_apo_mention = self.s("Conductor, Foo (APO) and more")
-        self.assertNotIn("Conductor,", no_apo_mention)
-
 
 class ClaimRecordTests(unittest.TestCase):
     def test_records(self):
@@ -125,15 +62,42 @@ class ClaimRecordTests(unittest.TestCase):
         envs = [env("claude-a", "It is a process layer."), env("gemini-b", "Sits above the host."),
                 env("gpt-c", "A Compliance/Enforcement Layer"), env("qwen-d", "process layer", "DR-OTHER"),
                 env("claude-a", "hook gates"), env("gemini-b", "quality gate")]
-        got = sl.build_consensus_patterns(envs)
+        themes = [
+            {"id": "process-first", "needles": ["process layer", "above the host", "compliance/enforcement layer"],
+             "title": "Process layer", "text": "Pack statement."},
+            {"id": "hook-gates", "needles": ["hook", "quality gate"], "title": "Gates", "text": "Gate statement."},
+        ]
+        got = sl.build_consensus_patterns(envs, themes=themes)
         self.assertEqual([p["id"] for p in got], ["process-first"])
         self.assertEqual(got[0]["families"], ["claude", "gemini", "openai"])
         self.assertEqual(got[0]["models"], ["claude-a", "gemini-b", "gpt-c"])
-        self.assertEqual(sl.build_consensus_patterns(envs, min_families=4), [])
-        self.assertEqual(sl.build_consensus_patterns([]), [])
+        self.assertEqual(sl.build_consensus_patterns(envs, min_families=4, themes=themes), [])
+        self.assertEqual(sl.build_consensus_patterns([], themes=themes), [])
+        # no themes (no category pack) means nothing is asserted
+        self.assertEqual(sl.build_consensus_patterns(envs), [])
         both = envs + [env("gpt-c", "hook gate"), env("qwen-d", "PreToolUse hook", "DR-CRITIQUE")]
-        self.assertEqual([p["id"] for p in sl.build_consensus_patterns(both, min_families=3)],
+        self.assertEqual([p["id"] for p in sl.build_consensus_patterns(both, min_families=3, themes=themes)],
                          ["process-first", "hook-gates"])
+
+    def test_consensus_requires_agreement_not_a_keyword(self):
+        def env(model, text, phase="DR-TRIANGULATE"):
+            return {"logical_model_id": model, "phase_id": phase, "payload": {"evidence": [{"claim": text}]}}
+
+        themes = [{"id": "gates", "needles": ["hook gate"], "title": "Gates", "text": "Models agree on gates."}]
+        # three families all say the opposite: the keyword is mentioned, nothing is agreed
+        opposite = [env("claude-a", "It has no hook gates."), env("gemini-b", "Does not ship hook gates."),
+                    env("gpt-c", "Lacks hook gates entirely")]
+        self.assertEqual(sl.build_consensus_patterns(opposite, themes=themes), [])
+        # a 3:3 split is not agreement either, and a 3:1 split is, with the dissent recorded
+        support = [env("claude-a", "Ships hook gates."), env("gemini-b", "Hook gates are shipped."),
+                   env("gpt-c", "Provides hook gates")]
+        split = support + [env("qwen-d", "no hook gates"), env("kimi-e", "no hook gates"), env("deepseek-f", "no hook gates")]
+        self.assertEqual(sl.build_consensus_patterns(split, themes=themes), [])
+        dissent = sl.build_consensus_patterns(support + [env("qwen-d", "no hook gates")], themes=themes)
+        self.assertEqual([p["id"] for p in dissent], ["gates"])
+        self.assertEqual(dissent[0]["contradicting_families"], ["qwen"])
+        # a claim that never mentions the theme has no stance
+        self.assertEqual(sl._theme_stance("nothing relevant", ["hook gate"]), None)
 
 
 class MethodologyAndGuidanceTests(unittest.TestCase):
@@ -157,23 +121,23 @@ class MethodologyAndGuidanceTests(unittest.TestCase):
     def test_buying_guidance(self):
         g = lambda **kw: "\n".join(sl._buying_guidance_lines(known={}, support={}, **kw))  # noqa: E731
         base = g(audit=None)
-        self.assertIn("Lean startup / spec-first packs", base)
-        self.assertIn("Gsd, Bmad, Superpowers, Spec Kit, Ruflo, Zuvo", base)
-        peers = [f"p{i:02d}" for i in range(14)]
-        audit = {"markets": {"sdlc-plugins": {"core": ["silver-bullet", *peers, "zuvo"]},
-                             "apo": {"core": ["silver-bullet", "ai-dlc"]},
-                             "agentic-sdlc-saas": {"core": ["devin"]}}}
-        text = g(audit=audit)
-        self.assertIn("Zuvo, P00", text)  # zuvo promoted to the head of the shortlist
-        self.assertIn("Ai Dlc", text)
-        self.assertIn("Devin", text)
-        host = lambda **kw: next(l for l in sl._buying_guidance_lines(known={}, support={}, **kw)  # noqa: E731
-                                 if l.startswith("- **Host-runtime path**"))
-        self.assertIn("a separate pack (Gsd, Bmad, Spec Kit, Zuvo). ", host(audit=None))
-        many = {"markets": {"sdlc-plugins": {"core": ["silver-bullet", *[f"p{i}" for i in range(1, 8)]]}}}
-        self.assertIn("a separate pack (P1, P2, P3, P4, P5). ", host(audit=many))
-        near = {"markets": {"sdlc-plugins": {"core": ["zuvo", "a"]}}}
-        self.assertIn("Zuvo, A", g(audit=near))
+        self.assertIn("no vendor was scored in this run", base)
+        self.assertNotIn("Zuvo", base)
+        self.assertNotIn("Silver Bullet", base)
+        self.assertIn("Triangulation", base)
+        audit = {"core": ["a-tool", "b-tool"]}
+        self.assertIn("A Tool, B Tool", g(audit=audit))
+        pack = {"markets": [{"id": "m1", "display_name": "Market One"}, {"id": "m2"}, {"id": "empty"}],
+                "overlay": {"buying_guidance_lines": ["- **Host path**: pack-authored line"]}}
+        mkt = {"markets": {"m1": {"core": ["p1", "p2"]}, "m2": {"core": ["q1"]}, "empty": {"core": []}}}
+        text = g(audit=mkt, pack=pack)
+        self.assertIn("- **Market One**: shortlist the scored cores on equal standing — P1, P2.", text)
+        self.assertIn("- **m2**: shortlist", text)
+        self.assertNotIn("empty", text)
+        self.assertIn("- **Host path**: pack-authored line", text)
+        # eight names at most per market
+        many = {"markets": {"m1": {"core": [f"p{i}" for i in range(12)]}}}
+        self.assertNotIn("P8", g(audit=many, pack=pack))
 
 
 class ReportTests(TmpCase):
@@ -213,15 +177,16 @@ class ReportTests(TmpCase):
         self.assertIn("### Top Open Source Solutions", md)
         self.assertIn("No cross-family consensus claims", md)
         self.assertIn("| gemini-x |", md)
-        self.assertIn("**Heavy—Primary**", md)
+        self.assertNotIn("Heavy—Primary", md)  # no model is weighted by its name
         self.assertIn("| claude-y |", md)
-        self.assertIn("**Good—Secondary**", md)
+        self.assertEqual(md.count("**Equal**"), 2)
         self.assertNotIn("Adjacent Markets (not core peers)", md)
         self.assertNotIn("lean-ctx", md)
 
     def test_legacy_report_empty_scope_and_no_vc_labels(self):
         md = self.report(scope_text="")
-        self.assertIn("covers solutions operating one level above coding agents", md)
+        self.assertIn("the scope is the research question and scope.md of this run", md)
+        self.assertNotIn("one level above coding agents", md)
         empty_chart = {"mq_data": [], "gmq_data": [], "wave_data": [], "vc_commercial": [], "vc_oss": [],
                        "vc_kcfs": [], "link_pairs": [], "chart_notes": []}
         with mock.patch.object(sl, "build_chart_data", return_value=empty_chart):
@@ -278,8 +243,8 @@ class ReportTests(TmpCase):
         self.assertIn("- ghost (`ghost`)", md)
         self.assertNotIn("`in-core`", md)
         self.assertNotIn("`cored`", md)
-        self.assertNotIn("(`zuvo`)", md)
-        self.assertNotIn("(`sdlc-plugin`)", md)
+        self.assertIn("(`zuvo`)", md)  # no vendor is hidden from the gap list by name
+        self.assertIn("(`sdlc-plugin`)", md)
         self.assertIn("#### Process layer above host runtimes", md)
         self.assertIn("did **not** reach cross-family agreement", md)
         self.assertIn("## 4. Findings", md)
@@ -298,7 +263,7 @@ class ReportTests(TmpCase):
                     mock.patch.object(sl, "patch_inclusion_ledger"):
                 return self.report(need=APO_NEED)
 
-        md = run(self.pack_audit(gaps=["zuvo"], adjacent=[], sunset=[], excluded=[]))
+        md = run(self.pack_audit(gaps=[], adjacent=[], sunset=[], excluded=[]))
         self.assertNotIn("Coverage gaps", md)
         md = run(self.pack_audit(gaps=[], adjacent=["devin"]))
         self.assertNotIn("Coverage gaps", md)
@@ -327,32 +292,6 @@ class ReportTests(TmpCase):
         self.assertIn("| K2 | 1 |", md)
         self.assertIn("### 4.2 Weird market: m2", md)
 
-    def test_divergence_text_is_cleaned_then_scrubbed_before_selection(self):
-        cons = {"consensus": [], "divergence": [
-            {"text": "Conductor is a primary-market APO candidate — the most complete process layer",
-             "supporting_agents": ["a"], "model_families": ["f1"]},
-            {"text": "Conductor is the weakest option [lean-ctx: junk] and excluded",
-             "supporting_agents": ["b"], "model_families": ["f2"]},
-            {"text": "[lean-ctx: only a marker]", "supporting_agents": ["c"]},
-            {"text": "", "supporting_agents": ["d"]},
-        ]}
-        captured = []
-        real = sl.consensus_resolution_table_lines
-
-        def spy(notable):
-            captured.append(notable)
-            return real(notable)
-
-        with mock.patch.object(sl, "consensus_resolution_table_lines", side_effect=spy):
-            self.report(need=APO_NEED, consolidation=cons)
-        (notable,) = captured
-        self.assertEqual([n["subject"] for n in notable], ["conductor"])
-        texts = sorted(side["text"] for side in notable[0]["sides"])
-        self.assertEqual(texts, [
-            "Conductor is not an APO peer — the most complete process layer",
-            "Conductor is the weakest option  and excluded"])
-        self.assertNotIn("lean-ctx", notable[0]["text"])
-        self.assertNotIn("primary-market APO candidate", notable[0]["text"])
 
     def test_final_pass_keeps_notable_divergences(self):
         cons = {"consensus": [], "divergence": [

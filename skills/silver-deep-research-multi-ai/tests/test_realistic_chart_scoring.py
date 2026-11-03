@@ -625,7 +625,10 @@ class RealisticChartScoringTests(unittest.TestCase):
                 },
             },
         ]
-        patterns = build_consensus_patterns(envelopes, min_families=2)
+        from category_pack import load_pack_overlay
+
+        themes = load_pack_overlay("agentic-sdlc-process-orchestrator")["consensus_themes"]
+        patterns = build_consensus_patterns(envelopes, min_families=2, themes=themes)
         ids = {p["id"] for p in patterns}
         self.assertIn("process-first", ids)
         self.assertIn("hook-gates", ids)

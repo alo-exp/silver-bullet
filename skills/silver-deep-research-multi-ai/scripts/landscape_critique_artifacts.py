@@ -8,6 +8,7 @@ resolution table. Does not re-derive a research run_id.
 from __future__ import annotations
 
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -32,94 +33,6 @@ INCLUSION_CRITERIA_ABBR: tuple[str, ...] = (
 )
 
 _STATUS_CELL = {"pass": "P", "fail": "F", "unknown": "U"}
-
-_CANONICAL_RESOLUTIONS: tuple[dict[str, str], ...] = (
-    {
-        "subject": "magic-dev",
-        "claim": "Magic.dev membership (SaaS core vs hard-excluded)",
-        "supporting": "`gemini-3.5-flash` listed it as a tertiary SaaS peer in triangulation envelopes",
-        "contradicting": "`ocg-qwen3.7-plus` + category-pack `hard_exclusions` (`coding_agent`)",
-        "decision": (
-            "FINAL: one membership — hard-excluded as `coding_agent`. Not a SaaS core, "
-            "not a comparison-matrix column, not an MQ/Wave point, not a Top Commercial card. "
-            "Contributing-model seed lists that re-include it are envelope quotes / model error, "
-            "not report membership."
-        ),
-        "evidence": (
-            "Category-pack `hard_exclusions`; `solutions/magic-dev/scr.md` boilerplate "
-            "(coding-model lab, not Factory/Devin-class delivery); inclusion ledger "
-            "gates/enforcement fail; SaaS cores remain Factory.ai, Devin, Augment Cosmos."
-        ),
-    },
-    {
-        "subject": "conductor",
-        "claim": "Conductor as APO peer vs aggregator",
-        "supporting": "Some triangulation envelopes framed Conductor as a mid-tier APO / process orchestrator",
-        "contradicting": "Category-pack adjacent class + `features.json` (no shipped hook gates or specialist orchestration)",
-        "decision": (
-            "FINAL: aggregator (SaaS-adjacent coding-agent aggregator), not an Agentic Process "
-            "Orchestrator. Not plotted on the APO chart and not a comparison column. Claude Harness "
-            "is an sdlc-plugins core (host plugins), not APO; there is no 'Claude Code Expert' product "
-            "in this peer set (hard-excluded sunset)."
-        ),
-        "evidence": (
-            "Category-pack adjacent class; `solutions/conductor/features.json` has no "
-            "shipped hook gates or specialist orchestration; APO cores are process layers "
-            "above a host runtime, not multi-agent aggregators."
-        ),
-    },
-    {
-        "subject": "silver-bullet",
-        "claim": "Silver Bullet is 'most complete'",
-        "supporting": "Some retrieve/triangulate envelopes used a completeness superlative for Silver Bullet",
-        "contradicting": "Critique envelopes dispute any single OSS APO as 'most complete'",
-        "decision": (
-            "FINAL: this report does not call any vendor 'most complete'. Silver Bullet's "
-            "plugin MQ Leader plot is a feature-gate outcome (hook-enforced gates AND "
-            "inclusion-ledger cross-session pass). That is not a completeness ranking. "
-            "Buying profiles keep equal-standing peers and do not all resolve to one vendor."
-        ),
-        "evidence": (
-            "Leader eligibility in synthesize_landscape.py (`_CROSS_SESSION_PASS_SLUGS` = "
-            "silver-bullet; plugins need gates + ledger C4 pass). APO + plugin ledger 7/7 "
-            "is capability evidence, not a superlative. Ranking scores are Critical=5…Low=1 "
-            "tick totals. Critique envelopes that used 'most complete' are quoted disagreement, "
-            "not report voice."
-        ),
-    },
-    {
-        "subject": "secondary-packs",
-        "claim": "Secondary packs 'lack gates/state' therefore are empty or not worth buying",
-        "supporting": "Some critique envelopes used overbroad negatives about methodology packs",
-        "contradicting": "Matrix ticks show dense workflow/template coverage on BMAD, GSD, Spec Kit, Zuvo, and peers",
-        "decision": (
-            "FINAL: secondary packs are host-plugin substitutes for plan-to-ship workflows, "
-            "not automatic APO Leaders. Leader demotion is specifically missing hook gates "
-            "and/or cross-session state — not a blanket claim that the pack is empty or useless. "
-            "Zuvo is an sdlc-plugins CORE with public evidence, not a missing vendor."
-        ),
-        "evidence": (
-            "sdlc-plugins core membership (13) in catalog_audit / chart-data; comparison "
-            "matrix columns include zuvo; MQ plots Zuvo as Visionaries. Consensus pattern "
-            "'SDLC plugin / methodology packs as substitutes' is the bounded claim."
-        ),
-    },
-    {
-        "subject": "ai-dlc",
-        "claim": "AI-DLC is IBM enterprise APO vs AWS methodology without gates",
-        "supporting": "Some envelopes framed AI-DLC as enterprise-grade APO with lifecycle orchestration",
-        "contradicting": "Public repo is awslabs/aidlc-workflows; features.json has no shipped hook gates",
-        "decision": (
-            "FINAL: AI-DLC is AWS/awslabs, not IBM. It is an APO core methodology-without-gates "
-            "seed: Visionaries on MQ, omitted from APO Wave, not a peer-complete execute Leader."
-        ),
-        "evidence": (
-            "https://github.com/awslabs/aidlc-workflows; catalog_audit apo.core includes "
-            "ai-dlc; Wave omits methodology-without-gates; MQ justification Visionaries."
-        ),
-    },
-)
-
 
 def status_cell(status: str | None) -> str:
     return _STATUS_CELL.get(str(status or "unknown").lower(), "U")
@@ -161,7 +74,7 @@ def load_inclusion_ledger(root: Path | None) -> dict[str, Any]:
 
 
 def _hard_exclusion_slugs(pack: dict[str, Any] | None) -> set[str]:
-    slugs: set[str] = {"magic-dev"}
+    slugs: set[str] = set()
     if not pack:
         return slugs
     try:
@@ -206,15 +119,9 @@ def vendor_final_decision(
     market = str(market or "")
     if slug in _hard_exclusion_slugs(pack):
         return "hard-excluded"
-    if slug == "conductor":
-        return "adjacent-aggregator (not APO)"
     if slug in _market_core(audit, market):
         return "included-core"
     if slug in _market_adjacent(audit, market):
-        if slug == "agenthub":
-            return "adjacent (APO CRM — not Leaders)"
-        if slug == "tembo":
-            return "adjacent (unplotted)"
         return "adjacent"
     homes = _home_core_markets(slug, audit)
     if homes:
@@ -241,6 +148,21 @@ def _leader_labels(
     return [x for x in labels if x]
 
 
+def _market_blocks(
+    pack: dict[str, Any] | None,
+    audit: dict[str, Any] | None,
+) -> list[tuple[str, str, str]]:
+    """(market id, display name, role) for each market of the pack, else of the audit."""
+    out: list[tuple[str, str, str]] = []
+    for market in (pack or {}).get("markets") or []:
+        if isinstance(market, dict) and market.get("id"):
+            mid = str(market["id"])
+            out.append((mid, str(market.get("display_name") or mid), str(market.get("role") or "")))
+    if not out:
+        out = [(str(mid), str(mid), "") for mid in ((audit or {}).get("markets") or {})]
+    return out
+
+
 def executive_summary_lines(
     *,
     chart: dict[str, Any] | None,
@@ -248,77 +170,69 @@ def executive_summary_lines(
     known: dict[str, str],
     audit: dict[str, Any] | None,
 ) -> list[str]:
-    apo_leaders = _leader_labels(chart, "apo") or [known.get("silver-bullet", "Silver Bullet")]
-    plugin_leaders = _leader_labels(chart, "sdlc-plugins") or [
-        known.get("silver-bullet", "Silver Bullet")
-    ]
-    saas_leaders = _leader_labels(chart, "agentic-sdlc-saas") or [
-        known.get("devin", "Devin"),
-        known.get("factory-ai", "Factory.ai"),
-        known.get("augment-cosmos", "Augment Cosmos"),
-    ]
-    plugin_core = list(((audit or {}).get("markets") or {}).get("sdlc-plugins", {}).get("core") or [])
-    plugin_peers = [known.get(s, s) for s in plugin_core if s != "silver-bullet"][:5]
-    apo_core = list(((audit or {}).get("markets") or {}).get("apo", {}).get("core") or [])
-    apo_peers = [known.get(s, s) for s in apo_core if s != "silver-bullet"][:5]
-    saas_core = list(
-        ((audit or {}).get("markets") or {}).get("agentic-sdlc-saas", {}).get("core") or []
-    )
-    saas_names = [known.get(s, s) for s in saas_core] or saas_leaders
+    from category_pack import pack_overlay
 
-    return [
+    overlay = pack_overlay(pack)
+    markets = _market_blocks(pack, audit)
+    lines = [
         "## Executive Summary",
         "",
-        "One-page briefing for SMB buyers. Charts and vendor cards follow; this page does not "
+        "One-page briefing for buyers. Charts and vendor cards follow; this page does not "
         "restate coordinate formulas.",
         "",
         "### Market overview",
         "",
-        "Agentic SDLC orchestration sits **one level above coding agents**: process catalogs, "
-        "gates, and specialist routing rather than raw codegen. Three markets are scored "
-        "separately — **Agentic Process Orchestrators (APO)** (primary), **SDLC plugins & "
-        "methodology packs** (secondary), and **agentic SDLC SaaS / autonomous delivery** "
-        "(tertiary). The category is early mainstream: executor-first hosts are ahead of "
-        "fail-closed process layers. OSS packs dominate experimentation; commercial SaaS "
-        "leads managed execution.",
-        "",
-        "### Key findings",
-        "",
-        "- Buyers should shortlist **by market**, not from a single blended ranking.",
-        "- Hook-enforced gates plus durable cross-session state remain the scarce combination; "
-        "most methodology packs are skippable prompt/persona layers.",
-        "- Thin-evidence APO commercials (Deepwork, Turboshovel, Workflow Manager) stay on "
-        "the chart as cores but are not a procurement shortlist on ticks alone.",
-        "- Magic.dev is hard-excluded (coding-model lab). Conductor is an aggregator, not APO. "
-        "This report does not call any vendor 'most complete'.",
-        "- Zuvo is an sdlc-plugins **core** with public evidence (https://zuvo.dev/ → MIT GitHub). "
-        "It is scored and placed with the other plugin cores; it is not a coverage gap.",
-        "",
-        "### Leader shortlist (per market)",
-        "",
-        f"- **APO (primary):** {', '.join(apo_leaders) or '—'}",
-        f"- **SDLC plugins & methodology packs:** {', '.join(plugin_leaders) or '—'}",
-        f"- **Agentic SDLC SaaS:** {', '.join(saas_leaders) or '—'}",
-        "",
-        "Leader plots are MQ top-right in this run. Plugin MQ Leaders = Silver Bullet only "
-        "because only Silver Bullet passed hook-enforced gates AND inclusion-ledger "
-        "cross-session in this run — a feature-gate fact, not a 'most complete product' claim. "
-        "They are not a mandate to buy one vendor across every profile.",
-        "",
-        "### Buyer guidance",
-        "",
-        f"- **Spec-first / lean packs:** equal-standing OSS peers"
-        + (f" ({', '.join(plugin_peers)})" if plugin_peers else "")
-        + " — pick on spec vs persona vs swarm topology.",
-        f"- **OSS APO cores:** equal-standing peers"
-        + (f" ({', '.join(apo_peers)})" if apo_peers else "")
-        + "; AI-DLC is methodology vocabulary without shipped hook gates.",
-        f"- **Managed autonomous delivery:** {', '.join(saas_names) or 'Factory.ai, Devin, Augment Cosmos'} "
-        "— this profile does not resolve to an OSS process pack.",
-        "- **Host-runtime path:** Cursor / Claude Code / Codex **plus a pack**. The host is not "
-        "the orchestrator.",
-        "",
     ]
+    if overlay.get("market_overview"):
+        lines.append(str(overlay["market_overview"]))
+    elif markets:
+        names = ", ".join(f"**{name}**" for _mid, name, _role in markets)
+        lines.append(
+            f"This report scores {len(markets)} market(s) separately: {names}. Shortlist by "
+            "market rather than from a single blended ranking."
+        )
+    else:
+        lines.append("No market definition was available for this run; see the sections below.")
+    lines.extend(["", "### Key findings", ""])
+    findings = [str(x) for x in overlay.get("key_findings") or []]
+    for mid, name, _role in markets:
+        core = sorted(_market_core(audit, mid))
+        findings.append(
+            f"{name}: {len(core)} core vendor(s) with evidence in this run"
+            + (f" ({', '.join(known.get(s, s) for s in core[:8])})." if core else ".")
+        )
+    findings.append("This report does not call any vendor 'most complete'.")
+    lines.extend(f"- {item}" for item in findings)
+    lines.extend(["", "### Leader shortlist (per market)", ""])
+    for mid, name, _role in markets:
+        leaders = _leader_labels(chart, mid)
+        lines.append(
+            f"- **{name}:** {', '.join(leaders) if leaders else 'no vendor met the Leader criteria in this run'}"
+        )
+    lines.extend(
+        [
+            "",
+            "Leader plots are MQ top-right in this run and follow from the evidenced features "
+            "and the inclusion ledger, not from a 'most complete product' claim. They are not a "
+            "mandate to buy one vendor across every profile.",
+            "",
+        ]
+    )
+    return lines
+
+
+def _membership_sentence(
+    pack: dict[str, Any] | None,
+    audit: dict[str, Any] | None,
+    known: dict[str, str],
+) -> str:
+    parts: list[str] = []
+    for mid, name, _role in _market_blocks(pack, audit):
+        core = sorted(_market_core(audit, mid))
+        parts.append(
+            f"{name} core ({len(core)}): " + (", ".join(known.get(s, s) for s in core) or "none")
+        )
+    return "; ".join(parts) + ". A vendor may be core in more than one market."
 
 
 def inclusion_ledger_embed_lines(
@@ -339,12 +253,8 @@ def inclusion_ledger_embed_lines(
         "enforcement · C7 process layer above host. Full per-criterion notes: "
         "`landscape/inclusion-ledger.md`.",
         "",
-        "**Membership must match charts.** APO core (~8): AgentSys, AI-DLC, Deepwork, Director, "
-        "MetaGPT, Silver Bullet, Turboshovel, Workflow Manager. sdlc-plugins core (~13): BMAD, "
-        "GSD, Zuvo, Spec Kit, Superpowers, SuperClaude, Ruflo, Oh My Pi, Claude Harness, cc10x, "
-        "Cavekit, Barkain, Silver Bullet. SaaS core: Factory.ai, Devin, Augment Cosmos. "
-        "Multi-market is allowed: Silver Bullet is APO ∩ sdlc-plugins (process catalog + hook "
-        "gates **and** host-plugin packaging).",
+        "**Membership must match charts.** "
+        + _membership_sentence(pack, audit, known),
         "",
         "| Vendor | Market | "
         + " | ".join(INCLUSION_CRITERIA_ABBR)
@@ -364,7 +274,6 @@ def inclusion_ledger_embed_lines(
     core_rows: list[str] = []
     adjacent_rows: list[str] = []
     excluded_rows: list[str] = []
-    seen: set[tuple[str, str]] = set()
     for vendor in sorted(
         vendors,
         key=lambda v: (str(v.get("market") or ""), str(v.get("display") or v.get("slug") or "")),
@@ -380,7 +289,6 @@ def inclusion_ledger_embed_lines(
         )
         if decision == "included-core" and slug not in _market_core(audit, market):
             decision = vendor_final_decision(slug, market, audit=audit, pack=pack)
-        seen.add((slug, market))
         line = _row(vendor, str(decision))
         if str(decision) == "hard-excluded":
             excluded_rows.append(line)
@@ -388,29 +296,6 @@ def inclusion_ledger_embed_lines(
             adjacent_rows.append(line)
         elif str(decision) == "included-core":
             core_rows.append(line)
-
-    for slug, market in (
-        ("zuvo", "sdlc-plugins"),
-        ("conductor", "agentic-sdlc-saas"),
-        ("agenthub", "apo"),
-        ("tembo", "agentic-sdlc-saas"),
-    ):
-        if (slug, market) in seen:
-            continue
-        decision = vendor_final_decision(slug, market, audit=audit, pack=pack)
-        display = known.get(slug, slug.replace("-", " ").title())
-        stub = {
-            "slug": slug,
-            "market": market,
-            "display": display,
-            "criteria": [],
-            "decision_note": "not in inclusion-ledger.json",
-        }
-        line = _row(stub, decision)
-        if decision == "included-core":
-            core_rows.append(line)
-        elif str(decision).startswith("adjacent"):
-            adjacent_rows.append(line)
 
     lines.extend(core_rows)
     if adjacent_rows:
@@ -480,10 +365,12 @@ def coverage_completeness_lines(
             if key not in seen:
                 rows.append((str(slug), str(mid), "adjacent"))
                 seen.add(key)
-    extra = [
-        ("magic-dev", "hard-excluded", "hard-excluded"),
-        ("ateam", "hard-excluded", "hard-excluded"),
-    ]
+    from category_pack import pack_overlay
+
+    gap_notes = {
+        str(k): str(v) for k, v in (pack_overlay(pack).get("vendor_gap_notes") or {}).items()
+    }
+    extra = [(slug, "hard-excluded", "hard-excluded") for slug in sorted(_hard_exclusion_slugs(pack))]
     for slug, mid, place in extra:
         if (slug, mid) not in seen:
             rows.append((slug, mid, place))
@@ -507,32 +394,12 @@ def coverage_completeness_lines(
         if place == "hard-excluded":
             placement = "hard-excluded"
         gaps: list[str] = []
-        if slug == "magic-dev":
-            gaps.append(
-                "quoted model error / hard-excluded coding_agent — not SaaS core, not MQ/Wave, "
-                "not a comparison-matrix column"
-            )
-        if slug == "ateam":
-            gaps.append("hard-excluded FDE shop / professional_services — not APO membership")
-        if slug == "conductor":
-            gaps.append("SaaS-adjacent aggregator; not APO core")
-        if slug == "agenthub" and market == "apo":
-            gaps.append("APO-adjacent CRM — not Leaders")
-        if slug == "tembo":
-            gaps.append("SaaS-adjacent / unplotted")
-        if slug in {"deepwork", "turboshovel", "workflow-manager"}:
-            gaps.append("thin-evidence APO commercial — ticks are proxies, not a shortlist")
-        if slug == "metagpt" and evidence.startswith("missing"):
-            gaps.append(
-                "APO OSS core without solution artifacts in this run — U cells are honest unknowns; "
-                "new DR needed to fill critical-matrix evidence"
-            )
+        if slug in gap_notes:
+            gaps.append(gap_notes[slug])
         if slug not in ranked and placement == "included-core":
             gaps.append("core without ranking row")
-        if evidence.startswith("missing") and slug != "metagpt":
+        if evidence.startswith("missing"):
             gaps.append("no solution artifacts")
-        if slug == "ai-dlc":
-            gaps.append("AWS/awslabs methodology-without-gates — Visionaries, omitted from APO Wave")
         gap_text = "; ".join(gaps) if gaps else "—"
         lines.append(
             f"| {display} | {evidence} | {scored} | `{market}` / {placement} | {gap_text} |"
@@ -565,98 +432,47 @@ def _sides_by_stance(item: dict[str, Any]) -> tuple[str, str]:
 
 def consensus_resolution_table_lines(
     notable: list[dict[str, Any]] | None,
+    pack: dict[str, Any] | None = None,
 ) -> list[str]:
-    by_subject: dict[str, dict[str, Any]] = {}
-    for item in notable or []:
-        if isinstance(item, dict) and item.get("subject"):
-            by_subject[str(item["subject"])] = item
+    """One row per disputed claim, attributed to the models that actually said it.
 
+    Pack-authored analyst calls (overlay ``resolution_notes``, keyed by subject) supply the
+    decision text; otherwise the dispute is reported as unresolved. The supporting and
+    contradicting columns always come from this run's divergence data.
+    """
+    from category_pack import pack_overlay
+
+    notes = {
+        str(n["subject"]): n
+        for n in pack_overlay(pack).get("resolution_notes") or []
+        if isinstance(n, dict) and n.get("subject")
+    }
     lines = [
         "### Consensus Resolution Table",
         "",
-        "Disputed claims are **resolved** here. Envelope quotes of model disagreement "
-        "belong in this table only — they are not seed lists, comparison columns, or "
-        "Top Commercial membership.",
+        "Disputed claims and how this report treats them. The model columns are taken from "
+        "this run's divergence data; envelope quotes of disagreement belong in this table "
+        "only — they are not seed lists, comparison columns, or Top Commercial membership.",
         "",
         "| Claim | Supporting models | Contradicting models | Final analyst decision | Evidence |",
         "|-------|-------------------|----------------------|------------------------|----------|",
     ]
-    used: set[str] = set()
-    for row in _CANONICAL_RESOLUTIONS:
-        subject = row["subject"]
-        used.add(subject)
-        env = by_subject.get(subject) or {}
-        supporting, contradicting = _sides_by_stance(env)
-        supporting = row.get("supporting") or supporting
-        contradicting = row.get("contradicting") or contradicting
-        lines.append(
-            f"| {row['claim']} | {supporting} | {contradicting} | {row['decision']} | {row['evidence']} |"
+    for item in notable or []:
+        if not isinstance(item, dict) or not item.get("subject"):
+            continue
+        subject = str(item["subject"])
+        supporting, contradicting = _sides_by_stance(item)
+        note = notes.get(subject) or {}
+        claim = str(note.get("claim") or item.get("claim") or item.get("topic") or subject)
+        decision = str(
+            note.get("decision")
+            or "Unresolved: the models disagree and this tool does not adjudicate. "
+            "Weigh the cited evidence before relying on either side."
         )
-    # Envelope clusters that are not one of the resolved disputes stay out of this table.
-    # Notable divergences = inter-model disagreement; this table = analyst call.
+        evidence = str(note.get("evidence") or "See the divergence entry and its cited envelopes.")
+        lines.append(f"| {claim} | {supporting} | {contradicting} | {decision} | {evidence} |")
     lines.append("")
     return lines
-
-
-def _zuvo_ledger_vendor() -> dict[str, Any]:
-    """Extend the ledger with Zuvo using features.json proxies (coverage gap)."""
-    proxies = {
-        "Multi-phase lifecycle span": (
-            "pass",
-            "solutions/zuvo/features.json:Workflow composition",
-        ),
-        "Plugin / skill / hook packaging": (
-            "pass",
-            "https://zuvo.dev/ + solutions/zuvo/features.json:IDE-native / hooks",
-        ),
-        "Deterministic quality gates": (
-            "pass",
-            "solutions/zuvo/features.json:Hook-enforced gates",
-        ),
-        "Cross-session state": (
-            "unknown",
-            "solutions/zuvo/features.json|scr.md (insufficient evidence)",
-        ),
-        "Specialist agent orchestration": (
-            "pass",
-            "solutions/zuvo/features.json:Parent/child agent delegation",
-        ),
-        "Quality / release enforcement claim": (
-            "unknown",
-            "solutions/zuvo/scr.md (insufficient evidence)",
-        ),
-        "Process layer above host runtime": (
-            "pass",
-            "https://zuvo.dev/ → sdlc-plugins core, not APO",
-        ),
-    }
-    criteria = []
-    passes = 0
-    for name in INCLUSION_CRITERIA_ORDER:
-        status, source = proxies[name]
-        if status == "pass":
-            passes += 1
-        criteria.append(
-            {
-                "criterion": name,
-                "status": status,
-                "source": source,
-                "confidence": "medium" if status == "pass" else "low",
-                "date": "2026-08-14",
-                "reviewer": "act-on-critique-artifacts",
-        "note": "Zuvo is sdlc-plugins core with public evidence; not a coverage gap.",
-            }
-        )
-    return {
-        "market": "sdlc-plugins",
-        "slug": "zuvo",
-        "display": "Zuvo",
-        "pass_count": passes,
-        "threshold_met": passes >= 3,
-        "criteria": criteria,
-        "final_decision": "included-core",
-        "decision_note": "sdlc-plugins core; not APO",
-    }
 
 
 def patch_inclusion_ledger(
@@ -666,38 +482,23 @@ def patch_inclusion_ledger(
     audit: dict[str, Any] | None,
     preserved: list[str] | None = None,
 ) -> dict[str, Any]:
-    """Reuse inclusion-ledger.json; fix Magic.dev; add Zuvo coverage row. Keep run_id."""
+    """Re-derive final decisions in inclusion-ledger.json from the pack; keep its run_id."""
     path = root / "landscape" / "inclusion-ledger.json"
     payload = load_inclusion_ledger(root)
     if not payload:
-        payload = {
-            "version": 1,
-            "run_id": "run-57f38dfa25d83cc50d224e283d4692f3",
-            "rule": "3-of-7",
-            "vendors": [],
-        }
-    payload["run_id"] = payload.get("run_id") or "run-57f38dfa25d83cc50d224e283d4692f3"
+        payload = {"version": 1, "rule": "3-of-7", "vendors": []}
     payload["reviewer"] = "act-on-critique-artifacts"
     vendors = [v for v in (payload.get("vendors") or []) if isinstance(v, dict)]
-    slugs = {str(v.get("slug")) for v in vendors}
     patched: list[dict[str, Any]] = []
     for vendor in vendors:
         slug = str(vendor.get("slug") or "")
         market = str(vendor.get("market") or "")
         homes = _home_core_markets(slug, audit)
-        if slug == "magic-dev":
+        if slug in _hard_exclusion_slugs(pack):
             vendor = dict(vendor)
-            vendor["threshold_met"] = False
             vendor["final_decision"] = "hard-excluded"
-            vendor["decision_note"] = (
-                "coding_agent — one membership only; not SaaS core, not comparison column, "
-                "not Top Commercial. 3-of-7 proxy ticks do not override pack hard-exclusion."
-            )
+            vendor["threshold_met"] = False
             vendor["placement"] = "hard-excluded"
-        elif slug in _hard_exclusion_slugs(pack):
-            vendor = dict(vendor)
-            vendor["final_decision"] = "hard-excluded"
-            vendor["threshold_met"] = False
         else:
             vendor = dict(vendor)
             if homes and market not in homes:
@@ -707,8 +508,6 @@ def patch_inclusion_ledger(
                 slug, market, audit=audit, pack=pack
             )
         patched.append(vendor)
-    if "zuvo" not in slugs:
-        patched.append(_zuvo_ledger_vendor())
     payload["vendors"] = patched
     from generated_files import write_generated_text
 
@@ -728,11 +527,11 @@ def _write_inclusion_ledger_markdown(
     lines = [
         "# Inclusion ledger (3-of-7)",
         "",
-        f"Generated: 2026-08-14 · Reviewer: `act-on-critique-artifacts` · "
-        f"Run: `{payload.get('run_id')}` (not re-derived)",
+        f"Generated: {datetime.now(timezone.utc).date().isoformat()} · Reviewer: "
+        f"`act-on-critique-artifacts` · Run: `{payload.get('run_id') or 'unknown'}` (not re-derived)",
         "",
-        "Compact decision table (P/F/U). Magic.dev is **hard-excluded** even if proxy ticks "
-        "meet 3-of-7. Zuvo added as sdlc-plugins coverage close.",
+        "Compact decision table (P/F/U). Pack hard-exclusions override proxy ticks that "
+        "meet 3-of-7.",
         "",
         "| Vendor | Market | "
         + " | ".join(INCLUSION_CRITERIA_ABBR)

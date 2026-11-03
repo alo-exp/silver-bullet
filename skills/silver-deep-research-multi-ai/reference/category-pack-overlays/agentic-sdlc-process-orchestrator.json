@@ -11,5 +11,180 @@
     "APO targeting must NOT exclude secondary-market OSS/plugin substitutes from solution cards or charts.",
     "Apply the factory↔factory-ai aliases from the category pack.",
     "Few products self-label APO; map Cosmos/Factory/Devin-class vendors as landscape peers per the market definition."
+  ],
+  "market_overview": "Agentic SDLC orchestration sits **one level above coding agents**: process catalogs, gates, and specialist routing rather than raw codegen. Three markets are scored separately — **Agentic Process Orchestrators (APO)** (primary), **SDLC plugins & methodology packs** (secondary), and **agentic SDLC SaaS / autonomous delivery** (tertiary). Shortlist by market, not from a single blended ranking.",
+  "key_findings": [
+    "Hook-enforced gates plus durable cross-session state are the scarce combination; methodology packs without them are skippable prompt/persona layers, so they are not placed as Leaders on that basis alone."
+  ],
+  "vendor_gap_notes": {
+    "magic-dev": "hard-excluded coding_agent — not SaaS core, not MQ/Wave, not a comparison-matrix column",
+    "ateam": "hard-excluded professional_services — not APO membership",
+    "conductor": "SaaS-adjacent aggregator; not APO core",
+    "tembo": "SaaS-adjacent / unplotted",
+    "ai-dlc": "methodology without shipped gates — Visionaries, omitted from the APO Wave"
+  },
+  "resolution_notes": [
+    {
+      "subject": "magic-dev",
+      "claim": "Magic.dev membership (SaaS core vs hard-excluded)",
+      "decision": "One membership: hard-excluded as `coding_agent` by the category pack. Not a SaaS core, comparison column, MQ/Wave point or Top Commercial card. Model seed lists that re-include it are envelope quotes, not report membership.",
+      "evidence": "Category-pack `hard_exclusions`; inclusion ledger gates/enforcement."
+    },
+    {
+      "subject": "conductor",
+      "claim": "Conductor as APO peer vs aggregator",
+      "decision": "Aggregator (SaaS-adjacent coding-agent aggregator), not an Agentic Process Orchestrator; not plotted on the APO chart.",
+      "evidence": "Category-pack adjacent class; its features.json shows no shipped hook gates or specialist orchestration."
+    },
+    {
+      "subject": "secondary-packs",
+      "claim": "Secondary packs lack gates/state, so they are empty or not worth buying",
+      "decision": "Secondary packs are host-plugin substitutes for plan-to-ship workflows. Leader demotion is specifically about missing hook gates and/or cross-session state, not a blanket claim that the pack is useless.",
+      "evidence": "sdlc-plugins core membership in catalog_audit / chart-data and matrix ticks."
+    }
+  ],
+  "problem_statement": "Coding agents execute work; they do not by themselves **enforce** an SDLC. Buyers need a process layer so planning, verification, review, and release cannot be skipped when agents run in parallel or across sessions.",
+  "out_of_scope": [
+    "Generic **coding agents** and IDE copilots (Cursor Background Agents, Cline, Aider, Continue, OpenHands, SWE-agent)",
+    "**Host runtimes** that execute code without a process catalog (Cursor, Copilot, Claude Code, Codex as hosts — listed under Adjacent)",
+    "**Single-step** tools (PR review bots, PM integrations such as Linear)",
+    "**Generic agent frameworks** without SDLC process packaging (LangGraph, CrewAI as adjacent)",
+    "**Sunset** products named in the pack's sunset registry"
+  ],
+  "market_overview_lines": [
+    "The category is **early mainstream**: buyers separate agent hosts from process layers, but few vendors combine machine-readable catalogs with hook-enforced gates.",
+    "Verify latest data — market size estimates for agentic SDLC orchestration are not web-verified in this synthesis.",
+    "",
+    "- **Maturity**: executor-first agents are ahead of process catalogs.",
+    "- **Commercial vs OSS**: OSS frameworks dominate experimentation; commercial players lead managed execution.",
+    "- **SMB vs enterprise**: SMBs favour templates, predictable pricing, and managed hosting; enterprises prioritise audit, SSO, and residency.",
+    "- **Deployment**: SaaS agents, IDE plugins, and self-hosted OSS graphs coexist; switching costs rise with hook and catalog lock-in."
+  ],
+  "trend_seeds": [
+    {
+      "title": "Process-first orchestration above coding agents",
+      "what": "Buyers increasingly separate the agent host (IDE, cloud sandbox) from the SDLC process layer that composes workflows, enforces gates, and records skills.",
+      "smb": "SMBs without platform teams need opinionated process packs rather than bespoke agent graphs.",
+      "vendor": "Vendors that market explicit SDLC chains are listed in the per-market sections; executor-first hosts remain executor-first."
+    },
+    {
+      "title": "Hook-enforced lifecycle gates",
+      "what": "Host hooks that fail closed on skill recording, planning ownership, and delivery gates are emerging as trust rails for autonomous work.",
+      "smb": "Reduces rework risk when junior teams delegate multi-step agent runs.",
+      "vendor": "See the Hook-enforced gates row of the matrix for who ships them."
+    },
+    {
+      "title": "Machine-readable workflow catalogs",
+      "what": "Atomic flow catalogs (workflows, steps, V-loops) enable composition, audit, and CI freshness checks beyond ad-hoc prompts.",
+      "smb": "Lets lean teams adopt SDLC patterns without writing orchestration code.",
+      "vendor": "See the Atomic flow catalog row of the matrix."
+    },
+    {
+      "title": "Git-native issue→PR agent loops",
+      "what": "Issue trackers and repos become control planes for multi-step agent work with human review on PRs.",
+      "smb": "Fits teams already on GitHub; lowers integration tax versus custom runtimes.",
+      "vendor": "Vendors targeting this pattern are those with CI integration in the matrix."
+    },
+    {
+      "title": "Autonomous software engineers (plan→ship)",
+      "what": "Managed agents that plan, implement, test, and open PRs in customer repos are maturing for enterprise pilots.",
+      "smb": "High capability but opaque process; pricing and governance remain enterprise-weighted.",
+      "vendor": "See the agentic-sdlc-saas market section."
+    },
+    {
+      "title": "BYO agent runtimes and graph orchestration",
+      "what": "Frameworks expose durable graphs, interrupts, and delegation primitives for custom orchestration.",
+      "smb": "Maximum flexibility at the cost of in-house agent ops expertise.",
+      "vendor": "Generic frameworks are adjacent unless they package an SDLC process."
+    },
+    {
+      "title": "Spec-driven and context-engineering workflows",
+      "what": "Lightweight methodology packs emphasize intent specs, critique loops, and context hygiene before code.",
+      "smb": "Low-cost entry for teams not ready for full orchestration platforms.",
+      "vendor": "See the sdlc-plugins market section."
+    },
+    {
+      "title": "Multi-model pools and triangulated research",
+      "what": "This research pass triangulates multiple model families with explicit divergence tracking. That is a report method — not a product feature vendors were scored on.",
+      "smb": "Use triangulation to interrogate marketing claims; do not treat it as a matrix tick.",
+      "vendor": "Not a scored MQ/Wave/matrix axis in this engine; see scoring methodology."
+    }
+  ],
+  "adjacent_note_lines": [
+    "Pack-specific adjacency calls (host runtimes, aggregators, CRM-style tools) are listed per vendor below with the pack's reason."
+  ],
+  "buying_guidance_lines": [
+    "- **Host-runtime path**: Use a coding-agent host (Cursor, Claude Code, Codex) with a separate process pack. The host is not the orchestrator.",
+    "- **Managed autonomous delivery**: Shortlist the agentic-sdlc-saas cores. This profile does not resolve to an OSS process pack."
+  ],
+  "outlook": [
+    {
+      "title": "Router-first catalogs and hook gates",
+      "what": "Process routers with nested verify loops remain a differentiator for teams that need fail-closed delivery, not just prompt packs.",
+      "smb": "Threatens executor-only agents."
+    },
+    {
+      "title": "Consolidation of git-native agents",
+      "what": "Issue-to-PR agents may merge with SDLC orchestration platforms.",
+      "smb": "Threatens point tools without ecosystem depth."
+    }
+  ],
+  "consensus_themes": [
+    {
+      "id": "process-first",
+      "needles": [
+        "process layer",
+        "above a host",
+        "above the host",
+        "host coding-agent",
+        "compliance/enforcement layer"
+      ],
+      "title": "Process layer above host runtimes",
+      "text": "Contributing models treat Agentic Process Orchestrators as a process or enforcement layer above a host coding-agent runtime, not as a synonym for autonomous code generation."
+    },
+    {
+      "id": "hook-gates",
+      "needles": [
+        "hook",
+        "deterministic gate",
+        "machine-checkable",
+        "quality gate",
+        "pretooluse"
+      ],
+      "title": "Hook-enforced and deterministic gates",
+      "text": "Models agree that machine-checkable gates (host hooks, blocking quality rails) are the main differentiator versus prompt- or persona-level methodology packs, which an agent can skip."
+    },
+    {
+      "id": "methodology-packs",
+      "needles": [
+        "methodology pack",
+        "sdlc plugin",
+        "secondary-market",
+        "secondary market"
+      ],
+      "title": "SDLC plugin / methodology packs as substitutes",
+      "text": "Models agree the secondary market (BMAD, GSD, Superpowers, Spec Kit, Ruflo, Oh My Pi, and peers) covers plan-to-ship workflows as host plugins. That is a substitute class, not automatic Leader standing on the primary APO chart."
+    },
+    {
+      "id": "cross-session",
+      "needles": [
+        "cross-session",
+        "persistent memory",
+        "state machine"
+      ],
+      "title": "Cross-session state is under-served",
+      "text": "Models agree durable cross-session state is the weakest inclusion criterion for most methodology packs; markdown re-read per session is not an enforced state machine."
+    },
+    {
+      "id": "tertiary-saas",
+      "needles": [
+        "tertiary",
+        "autonomous delivery",
+        "factory.ai",
+        "devin"
+      ],
+      "title": "Tertiary SaaS as buying substitutes",
+      "text": "Models agree Factory.ai, Devin, and Augment Cosmos are analyst-grade substitutes for process-orchestration buying even when they do not self-label as APO. They are scored in the SaaS market, not as APO peers."
+    }
   ]
 }
