@@ -284,8 +284,9 @@ The claim-support gate is a strict near-quote rule. `--strict` exits 1 on a `con
 the same sentence except for exactly one token: an added or removed "not"/"never"/"no", or one figure of another
 value written the same way, in every cited quote) and on
 any `unsupported` or uncited factual claim. A claim is `supported` only when it repeats a quoted source span
-word for word. Only the first word's capital, punctuation, the digit script and a contraction
-may differ (the articles a/an/the are words like any other); case, plurals, signs, comparators, currency, `%`, `?`, `*`, accents and other scripts
+word for word. Only the first word's capital, one final period, curly against straight quotes, the digit script, a
+[n] citation marker and a contraction may differ; every punctuation mark is a token (`6"` is not `6'`, `x != 0` is not
+`x = 0`) and the articles a/an/the are words like any other; case, plurals, signs, comparators, currency, `%`, `?`, `*`, accents and other scripts
 are kept, and a figure is compared exactly as written ("3" is not "3.0", "five" is not "5"). Nothing else may
 differ. With several quotes, one that supports the claim is enough, and `contradicted` needs every quote to
 contradict it. Any rewording, reordering, voice change or paraphrase is `needs_review` and is
