@@ -8,8 +8,8 @@ I independently read and hashed both authorized freeze copies from disk. Disk-ob
 
 | Copy | SHA-256 actually hashed | Size |
 |---|---|---:|
-| `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `edff7c0cca55e7e6662cafbbf3f10cea71230483c4992c2a5d5149c629a63e5e` | 621101 bytes |
-| `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `edff7c0cca55e7e6662cafbbf3f10cea71230483c4992c2a5d5149c629a63e5e` | 621101 bytes |
+| `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `edff7c0cca55e7e6662cafbbf3f10cea71230483c4992c2a5d5149c629a63e5e` | 621101 bytes |
+| `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `edff7c0cca55e7e6662cafbbf3f10cea71230483c4992c2a5d5149c629a63e5e` | 621101 bytes |
 
 Byte-identical: **yes** (`cmp` exit 0). The historical `07b98609…` and prior-wave `d5343ac1…` values were not treated as current.
 

@@ -5,8 +5,8 @@ set -euo pipefail
 
 TRACK="${1:-}"
 RUN_DIR="${2:-}"
-WORK_DIR="${SB_TRI_CRITERIA_WORK_DIR:-/Users/shafqat/projects/enterprise-grade-test-app}"
-SB_ROOT="${SB_ROOT:-/Users/shafqat/projects/silver-bullet/repo}"
+WORK_DIR="${SB_TRI_CRITERIA_WORK_DIR:-/Users/<user>/projects/enterprise-grade-test-app}"
+SB_ROOT="${SB_ROOT:-/Users/<user>/projects/silver-bullet/repo}"
 
 usage() {
   cat <<'EOF'

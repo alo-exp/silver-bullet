@@ -4,8 +4,8 @@ Phase: VERIFY-ONLY pass 2/2 (`rung_03_verify_2`)
 This is `/silver:review-fix-ladder` only. Do **not** run `/silver:clarify`. Do not AskQuestion.
 
 Scope (FORBIDDEN to Edit/Write either freeze copy):
-- `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
-- `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
+- `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
+- `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
 
 Independently re-hash both copies. Disk wins.
 Locked expected SHA: `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` / 621095 bytes.
@@ -18,7 +18,7 @@ Parent Policy A already applied:
 - YAML 33 pending. KEEP REJECT / Q1–Q3 / Part A then Part B closed.
 
 You ARE required to Write ONLY this report (must exist when you finish):
-`/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-03-opencode-go-qwen3.8-max/verify-2.md`
+`/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-03-opencode-go-qwen3.8-max/verify-2.md`
 
 Tasks:
 1. Re-read scoped freeze and audit against charter (33 pending YAML; forbid-only multi-ai-task / agent-wrap; FAST not a Job / not a compose route; E→Ver→Val + thin capture; OmniRoute routing-only; KEEP REJECT / Q1–Q3 / Part A then Part B; LS-post-val-kl Executor producer; single mermaid; TOC-GFM single-hyphen not `--`).

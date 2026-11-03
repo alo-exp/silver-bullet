@@ -14,8 +14,8 @@ Both copies were re-hashed from disk this pass with a single `shasum -a 256` + `
 
 | Copy | SHA-256 actually hashed | Bytes |
 |---|---|---:|
-| `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `1e2e775aa4cf885a816a96a060e5fe50a76c07d4ec02e84ff83c5b922448957e` | 621246 |
-| `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `1e2e775aa4cf885a816a96a060e5fe50a76c07d4ec02e84ff83c5b922448957e` | 621246 |
+| `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `1e2e775aa4cf885a816a96a060e5fe50a76c07d4ec02e84ff83c5b922448957e` | 621246 |
+| `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `1e2e775aa4cf885a816a96a060e5fe50a76c07d4ec02e84ff83c5b922448957e` | 621246 |
 
 - **Byte-identical:** **YES** — `cmp` exit 0, identical size 621246, identical digest.
 - **Matches the locked freeze:** **YES** — `1e2e775a…` / **621246** (post NIT-1/NIT-2 APPLY).

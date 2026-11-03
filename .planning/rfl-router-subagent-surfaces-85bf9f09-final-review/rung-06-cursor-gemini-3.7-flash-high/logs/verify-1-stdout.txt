@@ -5,8 +5,8 @@ phase=rung_06_verify_1 attempt=1
 
 - **Phase:** VERIFY-ONLY pass 1/2
 - **Model:** `cursor/gemini-3.7-flash-high` (Gemini 3.7 Flash High)
-- **Report Written:** [`verify-1.md`](/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-06-cursor-gemini-3.7-flash-high/verify-1.md)
-- **Prior Review:** [`review.md`](/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-06-cursor-gemini-3.7-flash-high/review.md)
+- **Report Written:** [`verify-1.md`](/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-06-cursor-gemini-3.7-flash-high/verify-1.md)
+- **Prior Review:** [`review.md`](/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-06-cursor-gemini-3.7-flash-high/review.md)
 
 ---
 
@@ -14,8 +14,8 @@ phase=rung_06_verify_1 attempt=1
 
 | Copy | SHA-256 (as hashed) | Size (bytes) |
 |---|---|---|
-| [`/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md) | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | 621095 |
-| [`/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md) | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | 621095 |
+| [`/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md) | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | 621095 |
+| [`/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md) | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | 621095 |
 
 - **Byte-identical:** **YES** (`cmp` confirmed identical bytes).
 - Matches locked SHA `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` / 621095 bytes.

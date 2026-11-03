@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 SB_ROOT=/private/tmp/sb-main-row11-fp
-MAIN=/Users/shafqat/projects/silver-bullet/repo
+MAIN=/Users/<user>/projects/silver-bullet/repo
 RESUME_LOG="$SB_ROOT/.e2e-r8-claude-resume-fp-live.log"
 ORCH_LOG="$MAIN/.e2e-r8-resume-after-47290-orchestrator.log"
-TEST_APP=/Users/shafqat/projects/enterprise-grade-test-app
+TEST_APP=/Users/<user>/projects/enterprise-grade-test-app
 export SB_E2E_INSTALL_FP=claude@89e2ab8f96a1+724a435c9991
 export SB_ROOT SB_E2E_INSTALL_FP
 export SB_TEST_ENTERPRISE_APP_ROOT="$TEST_APP"

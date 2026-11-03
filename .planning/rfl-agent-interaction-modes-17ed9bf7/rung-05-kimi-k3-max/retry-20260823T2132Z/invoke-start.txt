@@ -1,6 +1,6 @@
 2026-08-23T21:48:29Z
-OPENCODE=/Users/shafqat/.opencode/bin/opencode
-HOME=/Users/shafqat
+OPENCODE=/Users/<user>/.opencode/bin/opencode
+HOME=/Users/<user>
 MODEL=opencode-go/kimi-k3
 VARIANT=max
 TIMEOUT_SEC=900

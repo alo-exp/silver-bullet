@@ -1,7 +1,7 @@
 START 2026-08-26T22:58:52Z
 PI_PROVIDER=omniroute PI_MODEL=claude/claude-opus-5-high
 phase=rung_10_review attempt=fix-retry
-work-dir=/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-10-claude-opus-5-high
+work-dir=/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-10-claude-opus-5-high
 rails=thinking-off,no-context-files,no-skills,tools=read,bash,edit,write
 INV_PID=27701
 WATCH elapsed=15s progress=0 rsize=0 inv=27701   0.0 bash report=no

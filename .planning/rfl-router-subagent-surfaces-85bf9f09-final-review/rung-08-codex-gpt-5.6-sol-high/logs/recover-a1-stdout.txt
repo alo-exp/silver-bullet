@@ -27,7 +27,7 @@ WATCH elapsed=330s progress=0 inv=42111   3.9 pi kids= report=no
 WATCH elapsed=345s progress=1 inv=42111   0.0 pi kids= report=yes
 Review completed and written only to:
 
-`/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-08-codex-gpt-5.6-sol-high/review.md`
+`/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-08-codex-gpt-5.6-sol-high/review.md`
 
 Result: **CLEAN**
 

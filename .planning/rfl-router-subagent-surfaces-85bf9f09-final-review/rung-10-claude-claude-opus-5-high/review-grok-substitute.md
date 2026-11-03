@@ -12,8 +12,8 @@
 
 | Copy | SHA-256 (as hashed) | Size (bytes) |
 |---|---|---|
-| [`/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md) | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | 621095 |
-| [`/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md) | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | 621095 |
+| [`/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md) | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | 621095 |
+| [`/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md) | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | 621095 |
 
 - Byte-identical: **YES** (identical SHA-256 and byte size).
 - Charter start SHA `07b986094e983d39fe3c7d2f1ac215ae730cbd28ccf3957655f5ec4c53d3280a` / 620985 bytes is historical. Disk SHA `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` / 621095 bytes is current.
@@ -26,7 +26,7 @@
 3. **No `sb:agent-wrap` even as alias:** PASS. 21 mentions; forbidden / KEEP REJECT / no catalog surface (e.g. L85, L142, L480, L817, L3359, L4251). No live alias.
 4. **FAST not a Job / not a legal compose route:** PASS. Zero hits for `FAST is a Job`. FAST = classified-trivial; `/sb:fast` is **not** a legal `<route>` (L64, L747). Required public command, not GST-01, not Evolution (L10, L141, L469, L481, L785).
 5. **FAST short order E→Ver→Val + thin capture:** PASS. LS-fast-short-order locks Executor → Verifier → Validator, then thin capture (`memory_save` / `kl_write_am_skipped`) (L778–L792, L841). Mermaid FastI → FastVer → FastVal → FastCap (L1441–L1444).
-6. **OmniRoute routing-only:** PASS. Optional routing-only proxy, not a second `/sb` router (L88, L157, L2825, L3627). Origin SHA `745c7f4166f70dff9181d7c8a639eb2e3519eedeb25487dda2f97e84425c2c26` present; origin file exists on disk at [`/Users/shafqat/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md`](/Users/shafqat/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md).
+6. **OmniRoute routing-only:** PASS. Optional routing-only proxy, not a second `/sb` router (L88, L157, L2825, L3627). Origin SHA `745c7f4166f70dff9181d7c8a639eb2e3519eedeb25487dda2f97e84425c2c26` present; origin file exists on disk at [`/Users/<user>/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md`](/Users/<user>/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md).
 7. **KEEP REJECT closed:** PASS. §3.3 (L904, slug `33-options-considered-and-keep-reject`) is the only canonical catalog; L4070 remains closed/do-not-reopen.
 8. **Q1–Q3 decided:** PASS. Q1 FAST redefinition **decided** (L4074); Q2 **decided (A)** (L4087); Q3 **decided** (L4093). L4072 states Q1–Q3 are decided; YAML stays pending.
 9. **Part A then Part B:** PASS. Mandatory Part A then Part B (L16, L128, L647, L3262–L3274). YAML Part B todos invoke Part A (L43–L88). Zero hits for Part B-then-A inversion.
@@ -61,4 +61,4 @@ Closed / held items not re-filed:
 
 This is a REVIEW-ONLY report. No ACCEPT/REJECT triage. No freeze edits. Ladder is not claimed PASS. Rung 11 was not started.
 
-Pi EXIT (both attempts): **143**. Substitute report path: [`review.md`](/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-10-claude-claude-opus-5-high/review.md).
+Pi EXIT (both attempts): **143**. Substitute report path: [`review.md`](/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-10-claude-claude-opus-5-high/review.md).

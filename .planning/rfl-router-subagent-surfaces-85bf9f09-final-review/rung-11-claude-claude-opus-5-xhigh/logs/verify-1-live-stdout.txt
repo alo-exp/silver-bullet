@@ -19,7 +19,7 @@ WATCH elapsed=225s progress=0 inv=33988   0.0 pi kids= events=none report=no
 WATCH elapsed=240s progress=1 inv=33988   0.0 pi kids= events=none report=yes
 **RFL rung 11/11 — VERIFY-ONLY pass 1/2 (`rung_11_verify_1`)**
 
-Report written: `/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-11-claude-claude-opus-5-xhigh/verify-1.md`
+Report written: `/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-11-claude-claude-opus-5-xhigh/verify-1.md`
 
 **Model honesty:** written by **Pi Claude Opus 5 Extra High** (`PI_PROVIDER=omniroute`, `PI_MODEL=claude/claude-opus-5-xhigh`). Not a substitute. (The rung-11 `review.md` remains the Grok 4.6 High substitute after two Pi EXIT 143 hangs — review phase only.)
 

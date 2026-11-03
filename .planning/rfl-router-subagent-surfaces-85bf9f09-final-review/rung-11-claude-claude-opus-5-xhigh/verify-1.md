@@ -14,8 +14,8 @@ Re-measured with `shasum -a 256`, `wc -c`, `cmp`, and an independent Python `has
 
 | Copy | SHA-256 (as I hashed it) | Size (bytes) |
 |---|---|---|
-| [`/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md) | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | **621095** |
-| [`/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md) | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | **621095** |
+| [`/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md) | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | **621095** |
+| [`/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md) | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | **621095** |
 
 - **Byte-identical: YES** — `cmp` returned `BYTE_IDENTICAL_YES` (exit 0); identical SHA-256 and identical 621095-byte size.
 - Current locked SHA matched: `d5343ac1…` / **621095**. ✅
@@ -101,8 +101,8 @@ Nothing was fixed. This is a verify-only pass; no findings exist to fix.
 - Leftovers: **none** (no ACCEPT to apply; F-1 REJECT and F-2 HOLD from rung 3 stand and are not leftovers)
 - SHA hashed: `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` / **621095** bytes, both copies, byte-identical
 - All 11 independent launcher re-checks: **PASS**
-- **No freeze edits during this verify** — confirmed: neither `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` nor `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` was opened for Edit or Write; identical pre/post SHA and unchanged mtimes prove it. (`git status` shows the repo copy as modified relative to `HEAD` — that is the **pre-existing** uncommitted rung-3 APPLY state, not a change made by this pass.)
+- **No freeze edits during this verify** — confirmed: neither `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` nor `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` was opened for Edit or Write; identical pre/post SHA and unchanged mtimes prove it. (`git status` shows the repo copy as modified relative to `HEAD` — that is the **pre-existing** uncommitted rung-3 APPLY state, not a change made by this pass.)
 - Scope discipline: `/silver:review-fix-ladder` only. No `/silver:clarify`, no AskQuestion, no triage, no product forks, no combined verify passes, no verify_2, no Policy D, no ladder-PASS claim.
 - EXIT: **0**
 
-Report path: [`verify-1.md`](/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-11-claude-claude-opus-5-xhigh/verify-1.md)
+Report path: [`verify-1.md`](/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-11-claude-claude-opus-5-xhigh/verify-1.md)

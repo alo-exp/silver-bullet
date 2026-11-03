@@ -115,7 +115,7 @@ Each test MUST pipe properly formatted JSON to the real hook script via stdin an
 All test files must be executable (chmod +x) and follow the exact output format: "Results: N passed, M failed" on the last line.
   </action>
   <verify>
-    <automated>cd /Users/shafqat/Documents/Projects/silver-bullet && for f in tests/hooks/test-phase-archive.sh tests/hooks/test-uat-gate.sh tests/hooks/test-spec-session-record.sh tests/hooks/test-spec-floor-check.sh tests/hooks/test-pr-traceability.sh; do echo "--- $f ---"; bash "$f" || echo "FAILED: $f"; done</automated>
+    <automated>cd /Users/<user>/Documents/Projects/silver-bullet && for f in tests/hooks/test-phase-archive.sh tests/hooks/test-uat-gate.sh tests/hooks/test-spec-session-record.sh tests/hooks/test-spec-floor-check.sh tests/hooks/test-pr-traceability.sh; do echo "--- $f ---"; bash "$f" || echo "FAILED: $f"; done</automated>
   </verify>
   <done>All 5 test files exist, are executable, and pass independently with 0 failures</done>
 </task>
@@ -133,7 +133,7 @@ If any test fails in the full suite, fix the failing test. Do NOT modify the hoo
 No changes to coverage-matrix.sh should be needed — it already dynamically discovers hooks from hooks.json and checks for test files. But if the new test filenames don't match the grep pattern, adjust the test filenames (not the matrix script).
   </action>
   <verify>
-    <automated>cd /Users/shafqat/Documents/Projects/silver-bullet && bash tests/run-all-tests.sh</automated>
+    <automated>cd /Users/<user>/Documents/Projects/silver-bullet && bash tests/run-all-tests.sh</automated>
   </verify>
   <done>run-all-tests.sh exits 0, coverage-matrix.sh reports 17/17 covered, all suites green</done>
 </task>

@@ -9,9 +9,15 @@ CHECK is one of:
                         public/fonts/ payload directory of the recurring repository worm
   binary-signatures     font and image files whose bytes are not that format (a script or
                         text saved under a font or image name)
-  vendored-skills-lock  the third-party skills under .agents/skills match skills-lock.json
+  vendored-skills-lock  the third-party skills under .agents/skills, and the tool-managed
+                        (graphify) skill directories, match skills-lock.json
+  personal-data         no tracked text file holds a personal home-directory path or an
+                        email address outside the allowlist
   tracked-file-size     no tracked file nears GitHub's 100 MB per-file limit
   site-duplicate-ids    no page of the public site (site/**/*.html) repeats an element id
+
+refresh-skills-lock [ROOT] re-locks the tool-managed skill directories in skills-lock.json
+after a tool (graphify) upgrade rewrote them.
 
 ROOT (default: the current directory) is the repository to check. The files checked are
 the ones git tracks there, or every file under ROOT when ROOT is not the top of a git work
@@ -96,7 +102,8 @@ def strip_jsonc(text: str) -> str:
             out.append(text[i:j + 1])
             i = j + 1
         elif text.startswith("//", i):
-            while i < n and text[i] != "\n":
+            # VS Code's scanner ends a line comment at CR as well as at LF.
+            while i < n and text[i] not in "\r\n":
                 i += 1
         elif text.startswith("/*", i):
             end = text.find("*/", i + 2)
@@ -139,13 +146,14 @@ def worm_indicators(root: Path, files: list[str]) -> list[str]:
         raw = read_bytes(root, rel)
         if raw is None:
             continue
-        text = raw.decode("utf-8", "replace")
+        text = raw.decode("utf-8-sig", "replace")  # VS Code reads a leading BOM as nothing
+        # The literal members count too, so a difference between this parser and VS Code's
+        # (duplicate keys, comment rules) can never hide one.
+        decoded = decode_json_escapes(text)
+        kinds = {name for name, rx in (("folder-open", FOLDER_OPEN_TASK), ("automatic", AUTOMATIC_TASKS)) if rx.search(decoded)}
         try:
-            kinds = autorun_kinds(json.loads(strip_jsonc(text)))
+            kinds |= autorun_kinds(json.loads(strip_jsonc(text)))
         except ValueError:
-            # Not parseable as JSON with comments: match the decoded text and ask for a look.
-            decoded = decode_json_escapes(text)
-            kinds = {name for name, rx in (("folder-open", FOLDER_OPEN_TASK), ("automatic", AUTOMATIC_TASKS)) if rx.search(decoded)}
             if rel.endswith((".json", ".code-workspace")):
                 problems.append(f"{rel}: cannot be parsed as JSON with comments, so it cannot be checked for auto-run tasks")
         if "folder-open" in kinds:
@@ -197,19 +205,45 @@ def binary_signatures(root: Path, files: list[str]) -> list[str]:
 # --- vendored skills -----------------------------------------------------------------------------
 
 SKILLS_DIR = ".agents/skills"
+SKILLS_DIRS = (SKILLS_DIR, ".claude/skills")
 LOCK_FILE = "skills-lock.json"
-# Skills installed and versioned by a tool rather than the skills lock: name -> version file.
-TOOL_MANAGED_SKILLS = {"graphify": ".graphify_version"}
+TOOL_MANAGED = "toolManaged"
+# Skills installed and versioned by a tool: a skill directory holding one of these files.
+TOOL_VERSION_FILES = (".graphify_version",)
+REFRESH_HINT = "refresh with: python3 scripts/lib/repo_invariants.py refresh-skills-lock"
 
 
-def skill_hash(root: Path, skill: str, rel_files: list[str]) -> str:
-    """The skills-lock.json computedHash: sha256 over each file's path inside the skill
+def dir_hash(base: Path, rel_files: list[str]) -> str:
+    """The skills-lock.json computedHash: sha256 over each file's path inside the directory
     followed by its bytes, files in case-insensitive path order."""
     digest = hashlib.sha256()
     for rel in sorted(rel_files, key=lambda p: (p.lower(), p)):
         digest.update(rel.encode("utf-8"))
-        digest.update((root / SKILLS_DIR / skill / rel).read_bytes())
+        digest.update((base / rel).read_bytes())
     return digest.hexdigest()
+
+
+def skill_hash(root: Path, skill: str, rel_files: list[str]) -> str:
+    return dir_hash(root / SKILLS_DIR / skill, rel_files)
+
+
+def dir_files(root: Path, directory: str, files: list[str]) -> list[str]:
+    """The paths inside DIRECTORY (relative to it) of the given repo-relative FILES."""
+    prefix = directory + "/"
+    return [rel[len(prefix):] for rel in files if rel.startswith(prefix)]
+
+
+def tool_managed_dirs(files: list[str]) -> list[str]:
+    """Skill directories that need a toolManaged lock entry: everything under .claude/skills,
+    and any .agents/skills directory that carries a tool version file."""
+    found: dict[str, list[str]] = {}
+    for base in SKILLS_DIRS:
+        prefix = base + "/"
+        for rel in files:
+            if rel.startswith(prefix) and "/" in rel[len(prefix):]:
+                skill, inner = rel[len(prefix):].split("/", 1)
+                found.setdefault(f"{base}/{skill}", []).append(inner)
+    return sorted(d for d, inner in found.items() if d.startswith(".claude/") or any(v in inner for v in TOOL_VERSION_FILES))
 
 
 def vendored_skills_lock(root: Path, files: list[str]) -> list[str]:
@@ -221,9 +255,13 @@ def vendored_skills_lock(root: Path, files: list[str]) -> list[str]:
             by_skill.setdefault(skill, []).append(inner)
     lock_path = root / LOCK_FILE
     try:
-        locked = json.loads(lock_path.read_text(encoding="utf-8")).get("skills", {}) if lock_path.is_file() else {}
+        lock = json.loads(lock_path.read_text(encoding="utf-8")) if lock_path.is_file() else {}
+        locked = lock.get("skills", {})
     except (ValueError, AttributeError):
         return [f"{LOCK_FILE}: not valid JSON with a \"skills\" object"]
+    managed = lock.get(TOOL_MANAGED, {})
+    if not isinstance(managed, dict):
+        return [f"{LOCK_FILE}: \"{TOOL_MANAGED}\" must be an object"]
     problems = []
     for skill, entry in sorted(locked.items()):
         inner = by_skill.get(skill)
@@ -232,10 +270,43 @@ def vendored_skills_lock(root: Path, files: list[str]) -> list[str]:
         elif skill_hash(root, skill, inner) != entry.get("computedHash"):
             problems.append(f"{skill}: content does not match {LOCK_FILE} (computedHash)")
     for skill, inner in sorted(by_skill.items()):
-        if skill in locked or TOOL_MANAGED_SKILLS.get(skill) in inner:
+        if skill in locked or any(v in inner for v in TOOL_VERSION_FILES):
             continue
         problems.append(f"{skill}: vendored skill is not in {LOCK_FILE}")
+    for directory, entry in sorted(managed.items()):
+        inner = dir_files(root, directory, files)
+        if not inner:
+            problems.append(f"{directory}: listed in {LOCK_FILE} {TOOL_MANAGED} but missing")
+        elif dir_hash(root / directory, inner) != entry.get("computedHash"):
+            problems.append(f"{directory}: content does not match {LOCK_FILE} {TOOL_MANAGED} computedHash ({REFRESH_HINT})")
+    for directory in tool_managed_dirs(files):
+        if directory not in managed:
+            problems.append(f"{directory}: tool-managed skill is not in {LOCK_FILE} {TOOL_MANAGED} ({REFRESH_HINT})")
     return problems
+
+
+def refresh_skills_lock(root: Path) -> list[str]:
+    """Re-lock the tool-managed skill directories found on disk; returns their paths.
+    Raises ValueError when the lock file is not a JSON object."""
+    lock_path = root / LOCK_FILE
+    lock = json.loads(lock_path.read_text(encoding="utf-8")) if lock_path.is_file() else {"version": 1, "skills": {}}
+    if not isinstance(lock, dict):
+        raise ValueError(f"{LOCK_FILE} is not a JSON object")
+    files = sorted(
+        path.relative_to(root).as_posix()
+        for base in SKILLS_DIRS
+        for path in (root / base).rglob("*") if path.is_file()
+    )
+    managed = {}
+    for directory in tool_managed_dirs(files):
+        entry = {"computedHash": dir_hash(root / directory, dir_files(root, directory, files))}
+        version = next(((root / directory / v).read_text(encoding="utf-8").strip() for v in TOOL_VERSION_FILES if (root / directory / v).is_file()), None)
+        if version:
+            entry = {"version": version, **entry}
+        managed[directory] = entry
+    lock[TOOL_MANAGED] = managed
+    lock_path.write_text(json.dumps(lock, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    return list(managed)
 
 
 # --- tracked file size ---------------------------------------------------------------------------
@@ -252,6 +323,53 @@ def tracked_file_size(root: Path, files: list[str]) -> list[str]:
         mib = path.stat().st_size / (1024 * 1024)
         if mib > MAX_TRACKED_MIB:
             problems.append(f"{rel}: {mib:.1f} MiB, over the {MAX_TRACKED_MIB} MiB limit (GitHub rejects files over 100 MB)")
+    return problems
+
+
+# --- personal data --------------------------------------------------------------------------------
+# Machine-specific home directories and personal email addresses leak who built the repository
+# and where; they also ship to every plugin install. Reported by line, never by value.
+
+UNIX_OR_WINDOWS_HOME = re.compile(r"(?<![A-Za-z0-9])(?:/(?:Users|home)/|[A-Za-z]:[\\/]+Users[\\/]+)([A-Za-z0-9][A-Za-z0-9._-]*)")
+DASHED_HOME = re.compile(r"(?<![A-Za-z0-9])-Users-([A-Za-z0-9]+)-")
+# Generic names that stand for "some user" in examples, fixtures and CI runners.
+GENERIC_HOME_NAMES = frozenset({
+    "user", "users", "username", "name", "you", "me", "example", "shared", "guest", "runner", "ubuntu",
+    "node", "vscode", "zed", "alice", "bob", "jane", "ada", "u", "foo", "test", "x",
+})
+EMAIL = re.compile(r"([A-Za-z0-9._%+-]+)@((?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,})")
+# The maintainer's public addresses and the placeholder domains used by tests and docs.
+EMAIL_DOMAINS = ("alolabs.dev", "alolabs.io", "sourcevo.com", "example.com", "example.org", "example.net", "test.com", "t.com", "evil.md")
+EMAIL_TEST_TLDS = frozenset({"invalid", "test", "local", "localhost", "example"})
+GITHUB_URL_USERS = frozenset({"git", "token", "x-access-token"})
+
+
+def email_allowed(local: str, domain: str) -> bool:
+    local, domain = local.lower(), domain.lower()
+    return (
+        local.startswith(("noreply", "no-reply"))
+        or domain.endswith("noreply.github.com")
+        or any(domain == allowed or domain.endswith("." + allowed) for allowed in EMAIL_DOMAINS)
+        or domain.rsplit(".", 1)[-1] in EMAIL_TEST_TLDS
+        or (domain == "github.com" and local in GITHUB_URL_USERS)
+    )
+
+
+def personal_data(root: Path, files: list[str]) -> list[str]:
+    problems = []
+    for rel in files:
+        raw = read_bytes(root, rel)
+        if raw is None or b"\0" in raw[:8000]:
+            continue
+        text = raw.decode("utf-8", "replace")
+        hits: list[tuple[int, str]] = []
+        for rx in (UNIX_OR_WINDOWS_HOME, DASHED_HOME):
+            hits += [(m.start(), "personal home-directory path (use a placeholder such as /Users/<user>/)")
+                     for m in rx.finditer(text) if m.group(1).lower() not in GENERIC_HOME_NAMES]
+        hits += [(m.start(), "email address outside the allowlist (alolabs.dev, sourcevo.com, noreply, test domains)")
+                 for m in EMAIL.finditer(text) if not email_allowed(m.group(1), m.group(2))]
+        for offset, message in sorted(hits):
+            problems.append(f"{rel}:{text.count(chr(10), 0, offset) + 1}: {message}")
     return problems
 
 
@@ -297,6 +415,8 @@ RUN_KEY = re.compile(r"^(\s*(?:-\s+)?)run:\s*(.*)$")
 CONTINUE_ON_ERROR = re.compile(r"^\s*(?:-\s+)?continue-on-error:\s*(?!false\s*(?:#.*)?$)(?:\S|$)")
 QUOTED_KEY = re.compile(r"""^\s*(?:-\s+)?["'][A-Za-z_-]+["']\s*:""")
 FLOW_STEP = re.compile(r"^\s*-\s+\{")
+FLOW_STEPS_KEY = re.compile(r"""^\s*(?:-\s+)?["']?steps["']?\s*:\s*[\[{]""")
+BLOCK_SCALAR = re.compile(r":\s*[|>][+-]?[0-9]*\s*(?:#.*)?$")
 CHECKOUT_GUARD = re.compile(r"git status --porcelain --ignored\b")
 WRITE_ALL = re.compile(r"""^\s*permissions:\s*["']?write-all\b""")
 FORCE_NODE24 = re.compile(r"^\s+FORCE_JAVASCRIPT_ACTIONS_TO_NODE24:\s*true\s*$")
@@ -329,6 +449,15 @@ def block_extent(lines: list[str], start: int, parent_indent: int) -> list[tuple
     return extent
 
 
+def flow_job_lines(lines: list[str]) -> set[int]:
+    """Line numbers of job headers written as a flow mapping or sequence (build: {...})."""
+    jobs = [(n, line) for n, line in top_level_block(lines, "jobs") if line.strip() and not line.lstrip().startswith("#")]
+    if not jobs:
+        return set()
+    job_indent = min(indent_of(line) for _, line in jobs)
+    return {n for n, line in jobs if indent_of(line) == job_indent and re.match(r"^\s+[A-Za-z0-9_-]+:\s*[\[{]", line)}
+
+
 def job_timeout_problems(rel: str, lines: list[str]) -> list[str]:
     jobs = [(n, line) for n, line in top_level_block(lines, "jobs") if line.strip() and not line.lstrip().startswith("#")]
     if not jobs:
@@ -355,19 +484,26 @@ def workflow_problems(rel: str, lines: list[str]) -> list[str]:
         problems.append(f"{rel}: permissions: write-all (grant only the scopes the job needs)")
     if not any(FORCE_NODE24.match(line) for _, line in top_level_block(lines, "env")):
         problems.append(f"{rel}: FORCE_JAVASCRIPT_ACTIONS_TO_NODE24 is not set to true in the top-level env")
+    flow_jobs = flow_job_lines(lines)
     script_until = 0  # last line number of the run script being read
+    scalar_until = 0  # last line number of any block scalar (run script, github-script body, ...)
     for number, line in enumerate(lines, 1):
         code = line.strip()
         if code.startswith("#"):
             continue
-        if QUOTED_KEY.match(line) or FLOW_STEP.match(line):
-            problems.append(f"{rel}:{number}: quoted keys and flow-style steps hide settings from the hardening check; use plain block YAML")
         if UNPINNED.search(line):
             problems.append(f"{rel}:{number}: unpinned @latest or npx --yes")
         if number <= script_until:
             if "${{" in line:
                 problems.append(f"{rel}:{number}: ${{{{ }}}} expression inside a run script (pass it through env)")
             continue
+        if number <= scalar_until:
+            continue  # literal text of a block scalar, not workflow structure
+        if QUOTED_KEY.match(line) or FLOW_STEP.match(line) or FLOW_STEPS_KEY.match(line) or number in flow_jobs:
+            problems.append(f"{rel}:{number}: quoted keys and flow-style jobs or steps hide settings from the hardening check; use plain block YAML")
+        if BLOCK_SCALAR.search(line):
+            extent = block_extent(lines, number, indent_of(line))
+            scalar_until = extent[-1][0] if extent else number
         if CONTINUE_ON_ERROR.match(line):
             problems.append(f"{rel}:{number}: continue-on-error hides failures")
         run = RUN_KEY.match(line)
@@ -400,6 +536,7 @@ CHECKS = {
     "worm-indicators": worm_indicators,
     "binary-signatures": binary_signatures,
     "vendored-skills-lock": vendored_skills_lock,
+    "personal-data": personal_data,
     "tracked-file-size": tracked_file_size,
     "site-duplicate-ids": site_duplicate_ids,
     "workflow-hardening": workflow_hardening,
@@ -407,10 +544,19 @@ CHECKS = {
 
 
 def main(argv: list[str]) -> int:
-    if len(argv) not in (1, 2) or argv[0] not in CHECKS:
-        print(f"usage: repo_invariants.py {{{','.join(CHECKS)}}} [ROOT]", file=sys.stderr)
+    if len(argv) not in (1, 2) or argv[0] not in (*CHECKS, "refresh-skills-lock"):
+        print(f"usage: repo_invariants.py {{{','.join(CHECKS)},refresh-skills-lock}} [ROOT]", file=sys.stderr)
         return 2
     root = Path(argv[1] if len(argv) == 2 else ".")
+    if argv[0] == "refresh-skills-lock":
+        try:
+            locked = refresh_skills_lock(root)
+        except ValueError as error:
+            print(f"refresh-skills-lock: {LOCK_FILE}: {error}", file=sys.stderr)
+            return 2
+        for directory in locked:
+            print(f"  locked {directory}")
+        return 0
     problems = CHECKS[argv[0]](root, tracked_files(root))
     for problem in problems:
         print(f"  {problem}")

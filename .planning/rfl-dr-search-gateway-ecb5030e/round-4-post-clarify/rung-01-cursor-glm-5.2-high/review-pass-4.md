@@ -2,7 +2,7 @@ model: glm-5.2-high
 
 # Review pass 4 — Policy F re-review (streak 1/2)
 
-- Corpus: `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`
+- Corpus: `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`
 - SHA-256 verified: `ddc71a73810355206f57fd4267358478cea6e33622b7ae7c0617444a90f8b2a9` (matches brief)
 - Scope: residual-only (Policy G). Ledger rows I-1 … I-15 are ACCEPT+applied and are NOT re-reported below.
 - Method: graphify query (`DR search gateway plan X xweb Serper consent`) + full bird's-eye (§1–§8 headings) then ant's-eye (every section, line-by-line). 779 lines / ~158 KB read in full via sandbox.

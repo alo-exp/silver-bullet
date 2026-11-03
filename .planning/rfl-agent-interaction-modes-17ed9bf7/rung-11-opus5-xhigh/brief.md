@@ -6,7 +6,7 @@ You are **Claude Opus 5 Extra High** (`claude-opus-5` `--effort xhigh`). Method:
 
 `.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md`
 
-Plan markdown link: [agent_interaction_modes_17ed9bf7.plan.md](/Users/shafqat/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
+Plan markdown link: [agent_interaction_modes_17ed9bf7.plan.md](/Users/<user>/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
 
 SHA256 at parent launch: `061467c46de70f3ed4cda326fcaca0c013b12b39c8430e9a7ec7bc99e58bc257` (413 lines). Re-hash before citing. Rung 10 hashed `4d3b3b0954f97527e5f641a401a2a1bc6582e8f599bf435b1bda904d3db0e068` (411 lines) — this copy is **post I-60–I-62 land**.
 

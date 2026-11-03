@@ -58,7 +58,7 @@
       "rows": {
         "7": {
           "passed_at": "2026-07-01T14:00:28Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-row7-cursor-attempt.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-row7-cursor-attempt.log",
           "outcome_pass": true,
           "source": "matrix"
         }
@@ -83,25 +83,25 @@
         },
         "8": {
           "passed_at": "2026-07-01T16:37:53Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-row8-cursor-attempt.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-row8-cursor-attempt.log",
           "outcome_pass": true,
           "source": "matrix"
         },
         "11": {
           "passed_at": "2026-07-01T17:13:32Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-row11-cursor-attempt.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-row11-cursor-attempt.log",
           "outcome_pass": true,
           "source": "matrix"
         },
         "15": {
           "passed_at": "2026-07-01T17:30:25Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-row15-cursor-attempt.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-row15-cursor-attempt.log",
           "outcome_pass": true,
           "source": "matrix"
         },
         "16": {
           "passed_at": "2026-07-01T17:38:40Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-row16-cursor-attempt.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-row16-cursor-attempt.log",
           "outcome_pass": true,
           "source": "matrix"
         }
@@ -133,7 +133,7 @@
       "rows": {
         "1": {
           "passed_at": "2026-07-02T12:34:05Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-row1-cursor-attempt.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-row1-cursor-attempt.log",
           "outcome_pass": true,
           "source": "matrix"
         }
@@ -146,7 +146,7 @@
       "rows": {
         "6": {
           "passed_at": "2026-07-02T13:25:25Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-row6-cursor-attempt.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-row6-cursor-attempt.log",
           "outcome_pass": true,
           "source": "matrix"
         }
@@ -159,37 +159,37 @@
       "rows": {
         "1": {
           "passed_at": "2026-07-03T08:40:02Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-r9-pilot-rows-1-6-11-sequential.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-r9-pilot-rows-1-6-11-sequential.log",
           "outcome_pass": true,
           "source": "r9-ledger-migrate"
         },
         "6": {
           "passed_at": "2026-07-03T08:40:02Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-r9-pilot-rows-6-11-sequential.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-r9-pilot-rows-6-11-sequential.log",
           "outcome_pass": true,
           "source": "r9-ledger-migrate"
         },
         "21": {
           "passed_at": "2026-07-03T08:40:02Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-r9-claude-launch.nohup",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-r9-claude-launch.nohup",
           "outcome_pass": true,
           "source": "r9-ledger-migrate"
         },
         "22": {
           "passed_at": "2026-07-03T08:40:02Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-r9-claude-launch.nohup",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-r9-claude-launch.nohup",
           "outcome_pass": true,
           "source": "r9-ledger-migrate"
         },
         "3": {
           "passed_at": "2026-07-03T09:37:06Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-r9-pilot-row3-then-11-live.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-r9-pilot-row3-then-11-live.log",
           "outcome_pass": true,
           "source": "r9-pilot-row3-then-11"
         },
         "11": {
           "passed_at": "2026-07-03T09:37:06Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-r9-pilot-row3-then-11-live.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-r9-pilot-row3-then-11-live.log",
           "outcome_pass": true,
           "source": "r9-pilot-row3-then-11"
         }
@@ -202,37 +202,37 @@
       "rows": {
         "1": {
           "passed_at": "2026-07-03T08:40:02Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-r9-pilot-rows-1-6-11-sequential.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-r9-pilot-rows-1-6-11-sequential.log",
           "outcome_pass": true,
           "source": "r9-ledger-migrate:from-claude@ba77d1b0ed19+596e99deab17"
         },
         "6": {
           "passed_at": "2026-07-03T08:40:02Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-r9-pilot-rows-6-11-sequential.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-r9-pilot-rows-6-11-sequential.log",
           "outcome_pass": true,
           "source": "r9-ledger-migrate:from-claude@ba77d1b0ed19+596e99deab17"
         },
         "21": {
           "passed_at": "2026-07-03T08:40:02Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-r9-claude-launch.nohup",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-r9-claude-launch.nohup",
           "outcome_pass": true,
           "source": "r9-ledger-migrate:from-claude@ba77d1b0ed19+596e99deab17"
         },
         "22": {
           "passed_at": "2026-07-03T08:40:02Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-r9-claude-launch.nohup",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-r9-claude-launch.nohup",
           "outcome_pass": true,
           "source": "r9-ledger-migrate:from-claude@ba77d1b0ed19+596e99deab17"
         },
         "3": {
           "passed_at": "2026-07-03T09:37:06Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-r9-pilot-row3-then-11-live.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-r9-pilot-row3-then-11-live.log",
           "outcome_pass": true,
           "source": "r9-pilot-row3-then-11:from-claude@ba77d1b0ed19+596e99deab17"
         },
         "11": {
           "passed_at": "2026-07-03T09:37:06Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-r9-pilot-row3-then-11-live.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-r9-pilot-row3-then-11-live.log",
           "outcome_pass": true,
           "source": "r9-pilot-row3-then-11:from-claude@ba77d1b0ed19+596e99deab17"
         }
@@ -246,37 +246,37 @@
       "rows": {
         "1": {
           "passed_at": "2026-07-03T08:40:02Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-r9-pilot-rows-1-6-11-sequential.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-r9-pilot-rows-1-6-11-sequential.log",
           "outcome_pass": true,
           "source": "r9-ledger-migrate:from-claude@4b305f749675+596e99deab17"
         },
         "3": {
           "passed_at": "2026-07-03T09:37:06Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-r9-pilot-row3-then-11-live.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-r9-pilot-row3-then-11-live.log",
           "outcome_pass": true,
           "source": "r9-ledger-migrate:from-claude@4b305f749675+596e99deab17"
         },
         "6": {
           "passed_at": "2026-07-03T08:40:02Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-r9-pilot-rows-6-11-sequential.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-r9-pilot-rows-6-11-sequential.log",
           "outcome_pass": true,
           "source": "r9-ledger-migrate:from-claude@4b305f749675+596e99deab17"
         },
         "11": {
           "passed_at": "2026-07-03T09:37:06Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-r9-pilot-row3-then-11-live.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-r9-pilot-row3-then-11-live.log",
           "outcome_pass": true,
           "source": "r9-ledger-migrate:from-claude@4b305f749675+596e99deab17"
         },
         "21": {
           "passed_at": "2026-07-03T08:40:02Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-r9-claude-launch.nohup",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-r9-claude-launch.nohup",
           "outcome_pass": true,
           "source": "r9-ledger-migrate:from-claude@4b305f749675+596e99deab17"
         },
         "22": {
           "passed_at": "2026-07-03T08:40:02Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-r9-claude-launch.nohup",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-r9-claude-launch.nohup",
           "outcome_pass": true,
           "source": "r9-ledger-migrate:from-claude@4b305f749675+596e99deab17"
         }
@@ -290,13 +290,13 @@
       "rows": {
         "22": {
           "passed_at": "2026-07-04T16:21:15Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-live.log",
           "outcome_pass": true,
           "source": "matrix"
         },
         "21": {
           "passed_at": "2026-07-04T16:21:19Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-live.log",
           "outcome_pass": true,
           "source": "matrix"
         }
@@ -309,13 +309,13 @@
       "rows": {
         "22": {
           "passed_at": "2026-07-04T16:59:22Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-live.log",
           "outcome_pass": true,
           "source": "matrix"
         },
         "21": {
           "passed_at": "2026-07-04T16:59:24Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-live.log",
           "outcome_pass": true,
           "source": "matrix"
         }
@@ -328,13 +328,13 @@
       "rows": {
         "22": {
           "passed_at": "2026-07-04T19:05:55Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-live.log",
           "outcome_pass": true,
           "source": "matrix"
         },
         "21": {
           "passed_at": "2026-07-04T19:05:58Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-live.log",
           "outcome_pass": true,
           "source": "matrix"
         }
@@ -347,13 +347,13 @@
       "rows": {
         "22": {
           "passed_at": "2026-07-05T05:56:27Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-live.log",
           "outcome_pass": true,
           "source": "matrix"
         },
         "21": {
           "passed_at": "2026-07-05T05:56:30Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-live.log",
           "outcome_pass": true,
           "source": "matrix"
         }
@@ -366,13 +366,13 @@
       "rows": {
         "22": {
           "passed_at": "2026-07-05T06:15:46Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-live.log",
           "outcome_pass": true,
           "source": "matrix"
         },
         "21": {
           "passed_at": "2026-07-05T06:15:50Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-live.log",
           "outcome_pass": true,
           "source": "matrix"
         }
@@ -385,13 +385,13 @@
       "rows": {
         "22": {
           "passed_at": "2026-07-05T09:12:04Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-live.log",
           "outcome_pass": true,
           "source": "matrix"
         },
         "21": {
           "passed_at": "2026-07-05T09:12:08Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-live.log",
           "outcome_pass": true,
           "source": "matrix"
         }
@@ -404,13 +404,13 @@
       "rows": {
         "22": {
           "passed_at": "2026-07-05T09:31:18Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-live.log",
           "outcome_pass": true,
           "source": "matrix"
         },
         "21": {
           "passed_at": "2026-07-05T09:31:27Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-live.log",
           "outcome_pass": true,
           "source": "matrix"
         }
@@ -423,13 +423,13 @@
       "rows": {
         "22": {
           "passed_at": "2026-07-05T09:58:56Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-live.log",
           "outcome_pass": true,
           "source": "matrix"
         },
         "21": {
           "passed_at": "2026-07-05T09:59:00Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-live.log",
           "outcome_pass": true,
           "source": "matrix"
         }
@@ -442,13 +442,13 @@
       "rows": {
         "22": {
           "passed_at": "2026-07-05T10:21:48Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-live.log",
           "outcome_pass": true,
           "source": "matrix"
         },
         "21": {
           "passed_at": "2026-07-05T10:21:51Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-live.log",
           "outcome_pass": true,
           "source": "matrix"
         }
@@ -461,13 +461,13 @@
       "rows": {
         "22": {
           "passed_at": "2026-07-05T16:41:05Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-live.log",
           "outcome_pass": true,
           "source": "matrix"
         },
         "21": {
           "passed_at": "2026-07-05T16:41:08Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-live.log",
           "outcome_pass": true,
           "source": "matrix"
         }
@@ -480,13 +480,13 @@
       "rows": {
         "22": {
           "passed_at": "2026-07-06T11:04:40Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-live.log",
           "outcome_pass": true,
           "source": "matrix"
         },
         "21": {
           "passed_at": "2026-07-06T11:04:45Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-live.log",
           "outcome_pass": true,
           "source": "matrix"
         }
@@ -499,13 +499,13 @@
       "rows": {
         "22": {
           "passed_at": "2026-07-06T11:38:36Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-live.log",
           "outcome_pass": true,
           "source": "matrix"
         },
         "21": {
           "passed_at": "2026-07-06T11:38:41Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-live.log",
           "outcome_pass": true,
           "source": "matrix"
         }
@@ -518,13 +518,13 @@
       "rows": {
         "22": {
           "passed_at": "2026-07-06T13:52:01Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-live.log",
           "outcome_pass": true,
           "source": "matrix"
         },
         "21": {
           "passed_at": "2026-07-06T13:52:04Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-live.log",
           "outcome_pass": true,
           "source": "matrix"
         }
@@ -537,13 +537,13 @@
       "rows": {
         "22": {
           "passed_at": "2026-07-06T14:18:10Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-live.log",
           "outcome_pass": true,
           "source": "matrix"
         },
         "21": {
           "passed_at": "2026-07-06T14:18:12Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-live.log",
           "outcome_pass": true,
           "source": "matrix"
         }
@@ -556,13 +556,13 @@
       "rows": {
         "22": {
           "passed_at": "2026-07-11T14:21:21Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-live.log",
           "outcome_pass": true,
           "source": "matrix"
         },
         "21": {
           "passed_at": "2026-07-11T14:21:25Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-live.log",
           "outcome_pass": true,
           "source": "matrix"
         }
@@ -575,13 +575,13 @@
       "rows": {
         "22": {
           "passed_at": "2026-07-11T16:54:24Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-live.log",
           "outcome_pass": true,
           "source": "matrix"
         },
         "21": {
           "passed_at": "2026-07-11T16:54:29Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-live.log",
           "outcome_pass": true,
           "source": "matrix"
         }
@@ -594,13 +594,13 @@
       "rows": {
         "22": {
           "passed_at": "2026-07-11T18:55:22Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-live.log",
           "outcome_pass": true,
           "source": "matrix"
         },
         "21": {
           "passed_at": "2026-07-11T18:55:23Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-live.log",
           "outcome_pass": true,
           "source": "matrix"
         }
@@ -613,13 +613,13 @@
       "rows": {
         "22": {
           "passed_at": "2026-07-11T17:37:00Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-live.log",
           "outcome_pass": true,
           "source": "matrix"
         },
         "21": {
           "passed_at": "2026-07-11T17:37:01Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-live.log",
           "outcome_pass": true,
           "source": "matrix"
         }
@@ -632,13 +632,13 @@
       "rows": {
         "22": {
           "passed_at": "2026-07-11T17:55:56Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-live.log",
           "outcome_pass": true,
           "source": "matrix"
         },
         "21": {
           "passed_at": "2026-07-11T17:55:57Z",
-          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "log_ref": "/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-live.log",
           "outcome_pass": true,
           "source": "matrix"
         }

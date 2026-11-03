@@ -1,6 +1,6 @@
 === agent-opencode-delegate 2026-08-16T03:35:06Z ===
-work_dir=/Users/shafqat/projects/silver-bullet/repo
-sb_root=/Users/shafqat/projects/silver-bullet/repo
+work_dir=/Users/<user>/projects/silver-bullet/repo
+sb_root=/Users/<user>/projects/silver-bullet/repo
 attempt=1
 model=opencode-go/mimo-v2.5 mode=default
 
@@ -179,26 +179,26 @@ git_status=
 ?? data/stream_store/stream%3Amem-live%3Ad928d091-af59-49e3-904f-b686604b5546.bin
 ?? data/stream_store/stream%3Amem-live%3Arfl-gpt-high-ladder3-20260816-plan-edits.bin
 workdir_files=
-/Users/shafqat/projects/silver-bullet/repo/.cursorignore
-/Users/shafqat/projects/silver-bullet/repo/research/STATUS.md
-/Users/shafqat/projects/silver-bullet/repo/research/README.md
-/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-monitor-poll.log
-/Users/shafqat/projects/silver-bullet/repo/.e2e-tui-watch.log
-/Users/shafqat/projects/silver-bullet/repo/CODE_OF_CONDUCT.md
-/Users/shafqat/projects/silver-bullet/repo/.silver-bullet/cursor-models-catalog.json
-/Users/shafqat/projects/silver-bullet/repo/.silver-bullet/graphify-query
-/Users/shafqat/projects/silver-bullet/repo/.silver-bullet/agentmemory-usage
-/Users/shafqat/projects/silver-bullet/repo/skills-lock.json
-/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-rows5-7-22-resume2.log
-/Users/shafqat/projects/silver-bullet/repo/.agentmemory/bridge.log
-/Users/shafqat/projects/silver-bullet/repo/.e2e-tui-watch-restart.log
-/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-rows3-22.log
-/Users/shafqat/projects/silver-bullet/repo/.e2e-round6-force-driver.log
-/Users/shafqat/projects/silver-bullet/repo/.e2e-tui-watch.pid
-/Users/shafqat/projects/silver-bullet/repo/LICENSE
-/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-monitor.pid
-/Users/shafqat/projects/silver-bullet/repo/CHANGELOG.md
-/Users/shafqat/projects/silver-bullet/repo/.cursor-plugin/marketplace.json
+/Users/<user>/projects/silver-bullet/repo/.cursorignore
+/Users/<user>/projects/silver-bullet/repo/research/STATUS.md
+/Users/<user>/projects/silver-bullet/repo/research/README.md
+/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-monitor-poll.log
+/Users/<user>/projects/silver-bullet/repo/.e2e-tui-watch.log
+/Users/<user>/projects/silver-bullet/repo/CODE_OF_CONDUCT.md
+/Users/<user>/projects/silver-bullet/repo/.silver-bullet/cursor-models-catalog.json
+/Users/<user>/projects/silver-bullet/repo/.silver-bullet/graphify-query
+/Users/<user>/projects/silver-bullet/repo/.silver-bullet/agentmemory-usage
+/Users/<user>/projects/silver-bullet/repo/skills-lock.json
+/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-rows5-7-22-resume2.log
+/Users/<user>/projects/silver-bullet/repo/.agentmemory/bridge.log
+/Users/<user>/projects/silver-bullet/repo/.e2e-tui-watch-restart.log
+/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-rows3-22.log
+/Users/<user>/projects/silver-bullet/repo/.e2e-round6-force-driver.log
+/Users/<user>/projects/silver-bullet/repo/.e2e-tui-watch.pid
+/Users/<user>/projects/silver-bullet/repo/LICENSE
+/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-monitor.pid
+/Users/<user>/projects/silver-bullet/repo/CHANGELOG.md
+/Users/<user>/projects/silver-bullet/repo/.cursor-plugin/marketplace.json
 readme_preview=
 # Silver Bullet
 

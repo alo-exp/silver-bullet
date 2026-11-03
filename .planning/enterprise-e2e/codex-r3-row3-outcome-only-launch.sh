@@ -4,7 +4,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT"
-FIXTURE="${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/shafqat/projects/enterprise-grade-test-app}"
+FIXTURE="${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/<user>/projects/enterprise-grade-test-app}"
 BRANCH="${SB_E2E_TEST_APP_BRANCH:-enterprise-e2e/round-9-codex}"
 ROW3_PRODUCT_SHA="${SB_E2E_ROW3_FROZEN_COMMIT:-345917a}"
 ROW6_FROZEN="${SB_E2E_ROW6_FROZEN_COMMIT:-5072735}"

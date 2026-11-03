@@ -219,7 +219,7 @@ record_completed_surface() {
   fi
 }
 
-LOCAL_SKILL_SOURCE_ROOT='/Users/shafqat/projects/codex-plugins/skills'
+LOCAL_SKILL_SOURCE_ROOT='/Users/example/projects/codex-plugins/skills'
 
 resolve_silver_skill_path() {
   if [[ "$E2E_RUNTIME" == "codex" || "$E2E_RUNTIME" == "kay" ]]; then
@@ -1190,11 +1190,11 @@ PATH="${update_bin_dir}:$PATH" journey_turn "sb:update" "check whether Silver Bu
 
 local_skill_source_hits="$(local_skill_source_bypass_hits "$TURN_LOG_DIR")"
 if [[ -n "$local_skill_source_hits" ]]; then
-  echo "FAIL: no turn in this run should source local /Users/shafqat/projects/codex-plugins/skills paths"
+  echo "FAIL: no turn in this run should source local /Users/example/projects/codex-plugins/skills paths"
   printf '%s\n' "$local_skill_source_hits" | sed -n '1,5p'
   FAIL=$((FAIL + 1))
 else
-  echo "PASS: no turn in this run sourced local /Users/shafqat/projects/codex-plugins/skills paths"
+  echo "PASS: no turn in this run sourced local /Users/example/projects/codex-plugins/skills paths"
   PASS=$((PASS + 1))
 fi
 

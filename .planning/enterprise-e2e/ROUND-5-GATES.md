@@ -37,9 +37,9 @@
 ### Commands (reproduce)
 
 ```bash
-export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
+export SB_ROOT=/Users/<user>/projects/silver-bullet/repo
 export SB_E2E_LEDGER_FILE="$SB_ROOT/.planning/enterprise-e2e/ROUND-5-LEDGER.md"
-export SB_TEST_ENTERPRISE_APP_ROOT=/Users/shafqat/projects/enterprise-grade-test-app
+export SB_TEST_ENTERPRISE_APP_ROOT=/Users/<user>/projects/enterprise-grade-test-app
 RTK_DISABLED=1 bash scripts/install-claude.sh
 RTK_DISABLED=1 bash scripts/run-enterprise-e2e-live-test.sh --preflight-only
 RTK_DISABLED=1 bash scripts/run-enterprise-e2e-validation-overlay.sh --dry-run

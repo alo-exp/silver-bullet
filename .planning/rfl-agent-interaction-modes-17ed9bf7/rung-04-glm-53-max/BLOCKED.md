@@ -8,7 +8,7 @@
 ## What ran
 
 1. `scripts/agent-opencode/invoke.sh` — **missing** on this sparse tree.
-2. Native: `/Users/shafqat/.opencode/bin/opencode run --pure --model opencode-go/glm-5.3 --variant max --auto --dir <repo> --file <plan> --file <CHARTER> --file <rung-03 review.md>`
+2. Native: `/Users/<user>/.opencode/bin/opencode run --pure --model opencode-go/glm-5.3 --variant max --auto --dir <repo> --file <plan> --file <CHARTER> --file <rung-03 review.md>`
 
 ## Failure
 

@@ -1,7 +1,7 @@
 # RFL — DR search gateway plan (round 4 post-clarify)
 
 **Run id:** `rfl-dr-search-gateway-ecb5030e-round-4-post-clarify`  
-**Target:** [`dr_search_gateway_prd_ecb5030e.plan.md`](/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md) **only** (reviewers do not receive clarify/research).
+**Target:** [`dr_search_gateway_prd_ecb5030e.plan.md`](/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md) **only** (reviewers do not receive clarify/research).
 
 User-named ladder (host wins). Resolver default Cursor list is **not** used. Reviewer briefs do **not** include KEEP REJECT / lock-keeping text.
 

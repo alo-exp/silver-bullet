@@ -5,8 +5,8 @@ Companion to [`ROUND-6-LEDGER.md`](ROUND-6-LEDGER.md). Score each criterion **pa
 Automated scoring (when artifacts exist):
 
 ```bash
-export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
-export SB_TEST_ENTERPRISE_APP_ROOT=/Users/shafqat/projects/enterprise-grade-test-app
+export SB_ROOT=/Users/<user>/projects/silver-bullet/repo
+export SB_TEST_ENTERPRISE_APP_ROOT=/Users/<user>/projects/enterprise-grade-test-app
 source scripts/lib/enterprise-e2e-outcome-assessment.sh
 enterprise_e2e_outcome_assess_round "$SB_ROOT/.planning/enterprise-e2e/ROUND-6-LEDGER.md"
 ```

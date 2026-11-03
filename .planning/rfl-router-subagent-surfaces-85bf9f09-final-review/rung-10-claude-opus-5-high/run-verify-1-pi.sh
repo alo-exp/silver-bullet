@@ -4,8 +4,8 @@
 # Do not export PI_NI_ZERO_BYTE_IDLE_SEC. No outer 800-byte 600s killer.
 # EXIT 124 is returned to the caller; never --continue on 124 (harness already fail-fasts).
 set -u
-RUNG="/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-10-claude-opus-5-high"
-SB_ROOT="/Users/shafqat/projects/silver-bullet/repo"
+RUNG="/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-10-claude-opus-5-high"
+SB_ROOT="/Users/<user>/projects/silver-bullet/repo"
 INVOKE="${SB_ROOT}/scripts/agent-pi/invoke.sh"
 LOGDIR="${RUNG}/logs"
 ATTEMPT="${1:-1}"

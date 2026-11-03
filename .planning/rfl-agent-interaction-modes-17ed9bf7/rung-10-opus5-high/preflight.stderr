@@ -1,2 +1,2 @@
-ERROR: expect harness missing: /Users/shafqat/projects/silver-bullet/repo/scripts/claude-interactive-invoke.expect
+ERROR: expect harness missing: /Users/<user>/projects/silver-bullet/repo/scripts/claude-interactive-invoke.expect
 WARN: plugin-cache-version helper missing — run install-claude.sh
