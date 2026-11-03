@@ -122,7 +122,8 @@ def merge(raw_install_path: str) -> str:
         hook.get("command"), hook_names=names, install_roots=roots))
 
     if delivered:
-        write_json(settings_path, settings)
+        if removed:  # nothing to remove: the user's file is not created, reformatted or backed up
+            write_json(settings_path, settings)
         return (f"SB hooks are delivered by the Claude Code plugin; removed {removed} duplicate "
                 f"settings entr{'y' if removed == 1 else 'ies'} from {settings_path}")
 
