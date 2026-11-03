@@ -7,12 +7,16 @@ set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
 
+# The first line that runs anything: a call (source, python3, ensure_*, a merge script, bash), never a
+# function definition or an assignment. A missing export must produce a FAIL line, not abort the file.
+CALL_RE='^[[:space:]]*(source |\. |python3 |ensure_[a-z_]+( |$)|"?\$\{?MERGE_HOOKS|bash |_sb_codex_edit_config|merge_|prune)'
 for installer in install-claude install-codex install-cursor; do
   file="$TL_REPO_ROOT/scripts/$installer.sh"
-  export_line="$(grep -n '^export SB_INSTALL_RUN_START="${SB_INSTALL_RUN_START:-$(date +%s)}"$' "$file" | head -1 | cut -d: -f1)"
+  export_line="$(grep -n '^export SB_INSTALL_RUN_START="${SB_INSTALL_RUN_START:-$(date +%s)}"$' "$file" | head -1 | cut -d: -f1 || true)"
   assert_eq "$installer.sh exports SB_INSTALL_RUN_START" 1 "$([[ -n "$export_line" ]] && echo 1 || echo 0)"
-  first_edit="$(grep -nE 'merge-hooks\.py|merge-cursor-hooks\.py|_sb_codex_edit_config|ensure_|prune-claude-settings|python3 ' "$file" | head -1 | cut -d: -f1)"
-  assert_eq "$installer.sh exports it before its first config edit" 1 "$(( export_line < ${first_edit:-9999} ))"
+  first_call="$(grep -nE "$CALL_RE" "$file" | head -1 | cut -d: -f1 || true)"
+  assert_eq "$installer.sh has a call line to anchor on" 1 "$([[ -n "$first_call" ]] && echo 1 || echo 0)"
+  assert_eq "$installer.sh exports it before its first call" 1 "$(( ${export_line:-9999} < ${first_call:-0} ))"
 done
 
 tl_results
