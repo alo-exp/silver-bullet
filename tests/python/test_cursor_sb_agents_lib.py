@@ -56,6 +56,16 @@ class SmallHelpersTest(unittest.TestCase):
         self.assertEqual(lib.sanitize_model("grok_4.5"), "grok-4-5")
         self.assertEqual(lib.agent_name("composer-2.5", "high"), "sb-composer-2-5-high")
         self.assertEqual(lib.agent_name("m", "low", "px"), "px-m-low")
+        self.assertEqual(lib.agent_name("gemini 3", "high"), "sb-gemini 3-high")
+
+    def test_agent_name_refuses_anything_but_a_plain_file_name(self):
+        """R7-25: config from a project's .silver-bullet.json cannot steer the write path."""
+        for model, effort, prefix in (
+            ("m", "high", "../../victim/notes"), ("a/b", "high", "sb"), ("m", "../x", "sb"),
+            ("m", "high", ".hidden"), ("m", "hi\ngh", "sb"), ("m", "high", ""),
+        ):
+            with self.assertRaisesRegex(ValueError, "refusing Cursor agent name"):
+                lib.agent_name(model, effort, prefix)
 
     def test_fast_max_low_detection(self):
         self.assertTrue(lib.is_fast_id("gpt-5.5-fast-high"))

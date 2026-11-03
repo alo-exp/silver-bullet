@@ -139,6 +139,8 @@ For local development from this checkout:
 ./scripts/install-codex.sh --purge-legacy-skills
 ```
 
+`--purge-legacy-skills` removes only skill copies Silver Bullet marked as its own; an unmarked copy under an SB name (`silver-*`, `sb-*`, `sb:*`) is moved to `~/.codex/.silver-bullet-backup/`, and your own skills (a `security` or `tdd` you wrote) are left in place.
+
 On Codex, use `silver-bullet invoke-skill <name>` when SB requires a recorded skill invocation and the runtime has no callable `Skill` tool.
 
 ### Cursor

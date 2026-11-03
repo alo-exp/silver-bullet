@@ -16,10 +16,18 @@ from sbtest import REPO_ROOT
 SCRIPT = str(REPO_ROOT / "scripts/lib/strip-cursor-sb-hooks.py")
 
 SB_COMMANDS = [
-    "bash /x/silver-bullet/1.2.3/hooks/a.sh",
-    "bash ${CURSOR_PLUGIN_ROOT}/hooks/b.sh",
-    "bash /repo/plugins/silver-bullet/hooks/c.sh",
+    "bash /x/silver-bullet/1.2.3/hooks/stop-check.sh",
+    '"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh" stop "${CURSOR_PLUGIN_ROOT}/hooks/stop-check.sh"',
+    "bash /repo/plugins/silver-bullet/hooks/completion-audit.sh",
     "bash codex-hook-adapter.sh cursor-hook-bridge.sh d",
+    '"/h/.cursor/plugins/cache/alo-labs/silver-bullet/current/hooks/cursor-hook-bridge.sh" stop "x"',
+]
+
+# Look-alikes that Silver Bullet did not add: never stripped (R7-23 uninstall removes only SB's).
+FOREIGN_LOOKALIKES = [
+    "bash ${CURSOR_PLUGIN_ROOT}/hooks/other-plugin.sh",
+    "bash /home/me/silver-bullet/notes/hooks/my-own.sh",
+    "echo silver-bullet rocks",
 ]
 
 
@@ -79,11 +87,11 @@ class StripCursorHooksTest(unittest.TestCase):
         self.assertEqual(self.target.read_bytes(), decoy)  # the default $HOME file was not touched
 
     def test_strips_every_sb_shape_and_keeps_foreign(self):
-        foreign = {"command": "echo mine"}
+        foreign = [{"command": "echo mine"}] + [{"command": c} for c in FOREIGN_LOOKALIKES]
         self.seed({
             "version": 1,
             "hooks": {
-                "preToolUse": [{"command": c} for c in SB_COMMANDS] + [foreign],
+                "preToolUse": [{"command": c} for c in SB_COMMANDS] + foreign,
                 "stop": [{"command": SB_COMMANDS[0]}],
                 "custom": {"not": "a list"},
             },
@@ -92,7 +100,7 @@ class StripCursorHooksTest(unittest.TestCase):
         self.assertIn(f"SB hooks stripped from {self.target}", out)
         data = json.loads(self.target.read_text())
         self.assertEqual(data["version"], 1)
-        self.assertEqual(data["hooks"]["preToolUse"], [foreign])
+        self.assertEqual(data["hooks"]["preToolUse"], foreign)
         self.assertNotIn("stop", data["hooks"])
         self.assertEqual(data["hooks"]["custom"], {"not": "a list"})
         self.assertEqual(sorted(p.name for p in self.target.parent.iterdir()), ["hooks.json"])

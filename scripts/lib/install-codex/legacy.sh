@@ -71,196 +71,213 @@ PY
 }
 
 
+# Remove Silver Bullet skill directories an earlier install copied into ~/.codex/skills or
+# ~/.agents/skills (--purge-legacy-skills and the post-release uninstall), by the names of
+# SB's skills. A directory carrying the ownership marker Silver Bullet writes
+# (.silver-bullet-managed whose first line is "source=Silver Bullet") is removed; a symlink
+# only when it points into Silver Bullet's own checkout or package. An unmarked directory
+# under Silver Bullet's own names (silver-*, sb-*, sb:*, using-silver-bullet; copies made
+# before the marker existed) is moved to ~/.codex/.silver-bullet-backup, never deleted.
+# Anything else, such as a user's own "security" or "tdd" skill, is reported and left alone
+# (R7-06).
 purge_legacy_silver_bullet_standalone_skills() {
-  python3 - "$CODEX_HOME_ROOT" "$REPO_ROOT" <<'PY'
+  python3 - "$CODEX_HOME_ROOT" "$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)" <<'PY'
+import os
 import pathlib
+import re
 import shutil
 import sys
+import time
 
 home = pathlib.Path(sys.argv[1]).expanduser()
-repo_root = pathlib.Path(sys.argv[2])
+repo_root = os.path.realpath(sys.argv[2])
+SB_PACKAGE_RE = re.compile(r"/plugins/(?:cache/[^/]+/)?silver-bullet(?:/|$)|/marketplaces/alo-labs-codex(?:/|$)")
+SB_NAMESPACE = re.compile(r"(?:silver|sb|(?:silver-|sb[:-]).+|using-silver-bullet)")
+backup_root = home / ".codex" / ".silver-bullet-backup" / "skills" / time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
 
-skill_names = {
-    path.name
-    for path in (repo_root / "skills").iterdir()
-    if path.is_dir()
-}
+
+def sb_managed(path: pathlib.Path) -> bool:
+    marker = path / ".silver-bullet-managed"
+    try:
+        first = marker.read_text(encoding="utf-8").splitlines()[:1]
+    except (OSError, UnicodeDecodeError):
+        return False
+    return not marker.is_symlink() and first == ["source=Silver Bullet"]
+
+
+def sb_link(path: pathlib.Path) -> bool:
+    target = os.path.realpath(path)
+    return target == repo_root or target.startswith(repo_root + os.sep) or bool(SB_PACKAGE_RE.search(target))
+
+
+skills_dir = pathlib.Path(repo_root) / "skills"
+skill_names = {path.name for path in skills_dir.iterdir() if path.is_dir()} if skills_dir.is_dir() else set()
 skill_names.add("using-silver-bullet")
 
-roots = [
-    home / ".codex" / "skills",
-    home / ".agents" / "skills",
-]
-
-for root in roots:
+for label, root in (("codex", home / ".codex" / "skills"), ("agents", home / ".agents" / "skills")):
     if not root.is_dir():
         continue
     for skill_name in sorted(skill_names):
         target = root / skill_name
-        if target.exists() or target.is_symlink():
-            if target.is_dir() and not target.is_symlink():
-                shutil.rmtree(target)
-            else:
+        if target.is_symlink():
+            if sb_link(target):
                 target.unlink()
-            print(f"Removed legacy skill: {target}")
+                print(f"Removed legacy skill: {target}")
+            else:
+                print(f"Kept {target}: it links outside Silver Bullet", file=sys.stderr)
+        elif target.is_dir():
+            if sb_managed(target):
+                shutil.rmtree(target)
+                print(f"Removed legacy skill: {target}")
+            elif SB_NAMESPACE.fullmatch(skill_name):
+                (backup_root / label).mkdir(parents=True, exist_ok=True)
+                shutil.move(str(target), str(backup_root / label / skill_name))
+                print(f"Removed legacy skill: {target} (backed up to {backup_root / label / skill_name})")
+            else:
+                print(f"Kept {target}: no Silver Bullet ownership marker", file=sys.stderr)
+        elif target.exists():
+            print(f"Kept {target}: not a Silver Bullet skill directory", file=sys.stderr)
 PY
 }
 
 
+# Drop Silver Bullet's retired plugin id (silver-bullet@alo-labs-codex-local) from Codex's
+# registry, config.toml and cache. The current id, silver-bullet@alo-labs-codex, is never
+# touched here: the directory install-codex.sh runs from must not decide whether Silver Bullet
+# is enabled in every project (R7-10). config.toml is edited structurally, keeping comments and
+# other tables (R7-09); an unparseable registry or config is refused, never rewritten.
 purge_legacy_silver_bullet_codex_alias() {
-  python3 - "${CODEX_HOME_ROOT}/.codex/plugins/installed_plugins.json" "${CODEX_HOME_ROOT}/.codex/config.toml" "$CODEX_HOME_ROOT" <<'PY'
-import json
+  python3 - "${CODEX_HOME_ROOT}/.codex/plugins/installed_plugins.json" "${CODEX_HOME_ROOT}/.codex/config.toml" \
+    "$CODEX_HOME_ROOT" "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)" <<'PY'
 import pathlib
 import shutil
 import sys
 
-registry_paths = [pathlib.Path(sys.argv[1])]
-config_paths = [pathlib.Path(sys.argv[2])]
+registry_path = pathlib.Path(sys.argv[1])
+config_path = pathlib.Path(sys.argv[2])
 home_root = pathlib.Path(sys.argv[3]).expanduser()
-legacy_plugin_ids = {
-    "silver-bullet@alo-labs-codex",
-    "silver-bullet@alo-labs-codex-local",
-}
-legacy_cache_roots = [
-    home_root / ".codex" / "plugins" / "cache" / "alo-labs-codex-local" / "silver-bullet",
-]
+sys.path.insert(0, sys.argv[4])
+from sb_host_config import ConfigError, TomlDocument, read_json, read_toml, write_json, write_toml  # noqa: E402
 
-for registry_path in registry_paths:
-    if not registry_path.is_file():
-        continue
+LEGACY_ID = "silver-bullet@alo-labs-codex-local"
 
-    data = json.loads(registry_path.read_text())
-    plugins = data.get("plugins", {})
-    changed = False
-    for plugin_id in legacy_plugin_ids:
-        if plugin_id in plugins:
-            del plugins[plugin_id]
-            changed = True
-    if changed:
-        registry_path.write_text(json.dumps(data, indent=2) + "\n")
 
-for config_path in config_paths:
-    if not config_path.is_file():
-        continue
+def legacy(path) -> bool:
+    if len(path) >= 2 and path[0] == "plugins" and path[1] == LEGACY_ID:
+        return True
+    return len(path) >= 3 and path[:2] == ("hooks", "state") and path[2].startswith(LEGACY_ID + ":")
 
-    text = config_path.read_text()
-    text = text.replace("/.Codex/", "/.codex/")
-    lines = text.splitlines()
-    output = []
-    i = 0
-    changed = False
 
-    while i < len(lines):
-        line = lines[i]
-        stripped = line.strip()
-        if any(stripped == f'[plugins."{plugin_id}"]' for plugin_id in legacy_plugin_ids):
-            changed = True
-            i += 1
-            while i < len(lines) and not lines[i].startswith('['):
-                i += 1
-            continue
-        if any(stripped.startswith(f'[hooks.state."{plugin_id}') for plugin_id in legacy_plugin_ids):
-            changed = True
-            i += 1
-            while i < len(lines) and not lines[i].startswith('['):
-                i += 1
-            continue
-        output.append(line)
-        i += 1
+try:
+    data = read_json(registry_path)
+    plugins = data.get("plugins") if data is not None else None
+    if isinstance(plugins, dict) and LEGACY_ID in plugins:
+        del plugins[LEGACY_ID]
+        write_json(registry_path, data)
+    if config_path.is_file():
+        doc = read_toml(config_path)
+        # Older installers wrote "/.Codex/" paths; fold them back before editing.
+        doc = TomlDocument(doc.text.replace("/.Codex/", "/.codex/"), str(config_path))
+        doc.remove(legacy)
+        write_toml(config_path, doc)
+except ConfigError as exc:
+    sys.exit(f"ERROR: {exc}")
 
-    if changed:
-        new_text = '\n'.join(output)
-        if text.endswith('\n'):
-            new_text += '\n'
-        config_path.write_text(new_text)
-
-for cache_root in legacy_cache_roots:
-    if cache_root.exists():
-        if cache_root.is_dir() and not cache_root.is_symlink():
-            shutil.rmtree(cache_root)
-        else:
-            cache_root.unlink()
+cache_root = home_root / ".codex" / "plugins" / "cache" / "alo-labs-codex-local" / "silver-bullet"
+if cache_root.is_symlink() or cache_root.is_file():
+    cache_root.unlink()
+elif cache_root.is_dir():
+    shutil.rmtree(cache_root)
 PY
 }
 
 
+# Remove Silver Bullet's hooks from ~/.codex/hooks.json (native Codex runs the plugin's own
+# hooks, so a merged copy runs twice) together with the trust entries that pointed at them.
+# Only entries Silver Bullet provably owns go (sb_host_config.is_sb_hook_command); the user's
+# hooks and their trust stay. Trust for the current package (silver-bullet@alo-labs-codex:...)
+# is kept, so an install never revokes what Codex already trusts (R7-10); "--all", used by the
+# post-release uninstall, drops it too. Files that do not parse are refused, never rewritten.
 purge_legacy_silver_bullet_hooks_from_user_config() {
-  python3 - "${CODEX_HOME_ROOT}/.codex/hooks.json" <<'PY'
-import json
+  python3 - "${CODEX_HOME_ROOT}/.codex/hooks.json" "${CODEX_HOME_ROOT}/.codex/config.toml" "${1:-}" \
+    "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)" "$CODEX_HOME_ROOT" <<'PY'
 import pathlib
 import re
 import sys
 
-sb_hook_re = re.compile(r'(?:^|[/.])silver-bullet(?:/|@|$)')
+hooks_path = pathlib.Path(sys.argv[1])
+config_path = pathlib.Path(sys.argv[2])
+purge_all = sys.argv[3] == "--all"
+lib_dir = pathlib.Path(sys.argv[4])
+home = pathlib.Path(sys.argv[5]).expanduser()
+sys.path.insert(0, str(lib_dir))
+from sb_host_config import ConfigError, is_sb_hook_command, read_json, read_toml, sb_hook_names, write_json, write_toml  # noqa: E402
 
-for raw_path in sys.argv[1:]:
-    hooks_path = pathlib.Path(raw_path)
-    if not hooks_path.is_file():
-        continue
+package_root = home / ".codex" / ".tmp" / "marketplaces" / "alo-labs-codex" / "plugins" / "silver-bullet"
+names = sb_hook_names(lib_dir.parents[1] / "hooks", package_root / "hooks")
+user_prefixes = {str(home / ".codex" / "hooks.json"), str(home.resolve() / ".codex" / "hooks.json")}
+removed_keys = set()
+moved_keys = {}  # trust keys of the user's own hooks whose position in hooks.json shifts
 
-    data = json.loads(hooks_path.read_text())
-    hooks_by_event = data.get("hooks", {})
-    changed = False
 
-    for event_name in list(hooks_by_event.keys()):
-        groups = hooks_by_event[event_name]
-        kept_groups = []
+def event_slug(name: str) -> str:
+    return re.sub(r"(?<!^)(?=[A-Z])", "_", name).lower()
 
-        for group in groups:
-            hooks = group.get("hooks", [])
-            kept_hooks = [hook for hook in hooks if not sb_hook_re.search(hook.get("command", ""))]
 
-            if len(kept_hooks) != len(hooks):
+def sb_trust(path) -> bool:
+    if len(path) < 3 or path[:2] != ("hooks", "state"):
+        return False
+    key = path[2]
+    if key in removed_keys:
+        return True
+    return key.startswith("silver-bullet@") and (purge_all or not key.startswith("silver-bullet@alo-labs-codex:"))
+
+
+try:
+    data = read_json(hooks_path)
+    events = data.get("hooks") if data is not None else None
+    if isinstance(events, dict):
+        changed = False
+        for event_name in list(events):
+            groups = events[event_name]
+            if not isinstance(groups, list):
+                continue
+            kept_groups = []
+            for group_index, group in enumerate(groups):
+                hooks = group.get("hooks") if isinstance(group, dict) else None
+                if not isinstance(hooks, list):
+                    kept_groups.append(group)
+                    continue
+                kept = []
+                for hook_index, hook in enumerate(hooks):
+                    if isinstance(hook, dict) and is_sb_hook_command(
+                        hook.get("command"), hook_names=names, install_roots=(str(package_root),)
+                    ):
+                        removed_keys.update(f"{prefix}:{event_slug(event_name)}:{group_index}:{hook_index}" for prefix in user_prefixes)
+                        continue
+                    for prefix in user_prefixes:  # Codex keys trust by position: follow the hook
+                        moved_keys[f"{prefix}:{event_slug(event_name)}:{group_index}:{hook_index}"] = (
+                            f"{prefix}:{event_slug(event_name)}:{len(kept_groups)}:{len(kept)}")
+                    kept.append(hook)
+                if len(kept) == len(hooks):
+                    kept_groups.append(group)
+                    continue
                 changed = True
-
-            if kept_hooks:
-                if len(kept_hooks) != len(hooks):
-                    group = dict(group)
-                    group["hooks"] = kept_hooks
-                kept_groups.append(group)
-            else:
-                changed = True
-
-        if kept_groups:
-            hooks_by_event[event_name] = kept_groups
-        else:
-            del hooks_by_event[event_name]
-
-    if changed:
-        hooks_path.write_text(json.dumps(data, indent=2) + "\n")
-PY
-
-  python3 - "${CODEX_HOME_ROOT}/.codex/config.toml" <<'PY'
-import pathlib
-import sys
-
-for raw_path in sys.argv[1:]:
-    config_path = pathlib.Path(raw_path)
-    if not config_path.is_file():
-        continue
-
-    text = config_path.read_text()
-    lines = text.splitlines()
-    output = []
-    i = 0
-    changed = False
-
-    while i < len(lines):
-        line = lines[i]
-        if line.startswith('[hooks.state."silver-bullet@'):
-            changed = True
-            i += 1
-            while i < len(lines) and not lines[i].startswith('['):
-                i += 1
-            continue
-        output.append(line)
-        i += 1
-
-    if changed:
-        new_text = '\n'.join(output)
-        if text.endswith('\n'):
-            new_text += '\n'
-        config_path.write_text(new_text)
+                if kept:
+                    kept_groups.append({**group, "hooks": kept})
+            if kept_groups:
+                events[event_name] = kept_groups
+            elif groups:
+                del events[event_name]
+        if changed:
+            write_json(hooks_path, data)
+    if config_path.is_file():
+        doc = read_toml(config_path)
+        doc.remove(sb_trust)
+        doc.rename_tables({("hooks", "state", old): ("hooks", "state", new) for old, new in moved_keys.items()})
+        write_toml(config_path, doc)
+except ConfigError as exc:
+    sys.exit(f"ERROR: {exc}")
 PY
 }
 
