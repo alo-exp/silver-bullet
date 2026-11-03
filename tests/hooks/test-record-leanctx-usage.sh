@@ -65,7 +65,7 @@ run_mcp_hook() {
   local server="$1" tool="$2"
   local input
   input=$(jq -n --arg s "$server" --arg t "$tool" \
-    '{hook_event_name:"PostToolUse", tool_name:"CallMcpTool", tool_input:{server:$s, toolName:$t}}')
+    '{hook_event_name:"PostToolUse", tool_name:"MCP", tool_input:{server:$s, toolName:$t}}')
   (cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "$RECORD_HOOK" 2>/dev/null)
 }
 

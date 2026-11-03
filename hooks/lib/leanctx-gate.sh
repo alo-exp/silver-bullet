@@ -288,7 +288,7 @@ sb_leanctx_block_message_stale_usage() {
 When LeanCTX is opted in, use owned surfaces (wire proxy, lctx_read_ast, PathJail) at least once every ${ttl}s before substantive edits/commits.
 
 Examples:
-  • CallMcpTool lctx_read_ast for large-file analysis (sb_read owner)
+  • MCP tool lctx_read_ast for large-file analysis (sb_read owner)
   • ${cli} status (CLI health check)
 
 A fresh usage stamp is required every ${ttl}s. See docs/LEANCTX.md and silver-bullet.md §2g.

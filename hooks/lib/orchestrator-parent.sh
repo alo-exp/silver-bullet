@@ -257,7 +257,7 @@ sb_orchestrator_spawn_tool_label() {
 sb_orchestrator_parent_tool_allowed() {
   local tool_name="$1"
   case "$tool_name" in
-    Task|Subagent|Agent|spawn_agent|multi_agent_v1.spawn_agent|Read|Grep|Glob|SemanticSearch|WebSearch|WebFetch|AskQuestion|SwitchMode|UpdateCurrentStep|CallMcpTool|FetchMcpResource)
+    Task|Subagent|Agent|spawn_agent|multi_agent_v1.spawn_agent|Read|Grep|Glob|WebSearch|WebFetch)
       return 0
       ;;
     Skill)

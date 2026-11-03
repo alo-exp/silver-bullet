@@ -18,7 +18,7 @@ input="$(cat 2>/dev/null || true)"
 
 tool_name="$(sb_tool_name "$input" 2>/dev/null || printf '%s' "$input" | jq -r '.tool_name // ""')"
 case "$tool_name" in
-  browser_take_screenshot|CallMcpTool|MCP) ;;
+  browser_take_screenshot|MCP) ;;
   *) exit 0 ;;
 esac
 

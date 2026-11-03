@@ -2,7 +2,7 @@
 set -euo pipefail
 trap 'exit 0' ERR
 
-# PostToolUse CallMcpTool — record agentmemory / graphify MCP usage for opt-in gates (Wave 3).
+# PostToolUse MCP — record agentmemory / graphify MCP usage for opt-in gates (Wave 3).
 umask 0077
 
 _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
@@ -20,7 +20,7 @@ input="$(cat 2>/dev/null || true)"
 
 tool_name="$(sb_tool_name "$input" 2>/dev/null || printf '%s' "$input" | jq -r '.tool_name // ""')"
 case "$tool_name" in
-  CallMcpTool|MCP) ;;
+  MCP) ;;
   *) exit 0 ;;
 esac
 

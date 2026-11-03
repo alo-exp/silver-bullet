@@ -119,7 +119,7 @@ sb_stack_should_deny_mcp_tool "$CFG" "leanctx" "lctx_graph" '{"query":"graphify 
 sb_stack_should_deny_mcp_tool "$CFG" "leanctx" "lctx_fetch" '{"url":"https://example.com"}' && pass "lctx_fetch denied (CM owns webfetch)" \
   || fail "lctx_fetch denied (CM owns webfetch)"
 
-# Hook integration: CallMcpTool lctx_remember denied via coordinator hook.
+# Hook integration: MCP lctx_remember denied via coordinator hook.
 cat >"$TMP/silver-bullet.md" <<'EOF'
 # Silver Bullet
 EOF
@@ -127,7 +127,7 @@ git -C "$TMP" init -q
 export SILVER_BULLET_PROJECT_ROOT="$TMP"
 rm -f "${SB_RUNTIME_STATE_DIR}/project-root" 2>/dev/null || true
 mcp_input=$(jq -n \
-  '{hook_event_name:"PreToolUse", tool_name:"CallMcpTool", tool_input:{server:"leanctx", toolName:"lctx_remember", arguments:{content:"test"}}}')
+  '{hook_event_name:"PreToolUse", tool_name:"MCP", tool_input:{server:"leanctx", toolName:"lctx_remember", arguments:{content:"test"}}}')
 hook_out="$(cd "$TMP" && SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="$STATE_DIR" \
   printf '%s' "$mcp_input" | bash "$COORD_HOOK" 2>/dev/null || true)"
 if printf '%s' "$hook_out" | jq -e '.hookSpecificOutput.permissionDecision == "deny"' >/dev/null 2>&1; then
@@ -150,7 +150,7 @@ sb_stack_mutual_exclusion_is_clean "$CFG" && fail "RED-1: mutex dirty after seed
   || pass "RED-1: mutex dirty after seeded violation"
 
 recovery_mcp=$(jq -n \
-  '{hook_event_name:"PreToolUse", tool_name:"CallMcpTool", tool_input:{server:"context-mode", toolName:"ctx_search", arguments:{queries:["test"]}}}')
+  '{hook_event_name:"PreToolUse", tool_name:"MCP", tool_input:{server:"context-mode", toolName:"ctx_search", arguments:{queries:["test"]}}}')
 recovery_out="$(cd "$TMP" && SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="$STATE_DIR" \
   printf '%s' "$recovery_mcp" | bash "$COORD_HOOK" 2>/dev/null || true)"
 if printf '%s' "$recovery_out" | jq -e '.hookSpecificOutput.permissionDecision == "deny"' >/dev/null 2>&1; then

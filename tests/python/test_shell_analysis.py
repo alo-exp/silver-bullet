@@ -580,7 +580,7 @@ class PayloadTest(Base):
         res = self.payload({"tool_name": "mcp__plugin_x__gh__push_files", "tool_input": {}})
         self.assertEqual((res["tool"]["mcp_server"], res["actions"], res["tier"]),
                          ("plugin_x__gh", ["commit", "push"], "intermediate"))
-        res = self.payload({"tool_name": "CallMcpTool", "tool_input": {"server": "gh", "toolName": "merge_pull_request"}})
+        res = self.payload({"tool_name": "MCP", "tool_input": {"server": "gh", "toolName": "merge_pull_request"}})
         self.assertEqual(res["actions"], ["pr_merge"])
         res = self.payload({"tool_name": "MCP", "tool_input": {"mcpServer": "gh", "name": "get_me"}})
         self.assertEqual((res["actions"], res["read_only"], res["status"]), ([], False, "ok"))

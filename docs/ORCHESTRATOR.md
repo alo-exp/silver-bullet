@@ -133,7 +133,7 @@ Silver Bullet hooks do **not** read host mode from stdin today. Operators and ag
 | Host mode | Parent may | SB enforcement |
 |-----------|------------|----------------|
 | **Agent (default)** | Spawn Task workers; read-only Bash in parent | Full PreToolUse/Stop stack |
-| **Plan** (`SwitchMode` → plan) | Read/Grep/Glob + Task PLAN worker; **no** direct Edit/Write in parent | `orchestrator-directive-guard` still blocks parent writes; route planning via workers |
+| **Plan** (host plan mode) | Read/Grep/Glob + Task PLAN worker; **no** direct Edit/Write in parent | `orchestrator-directive-guard` still blocks parent writes; route planning via workers |
 | **Debug** | Route to `sb:debug` / `sb:forensics` queue — not freestyle Bash | Stop/PreToolUse still fire; use `SB OVERRIDE:` only for audited bypass |
 | **Ask** | Read-only tools | Aligns with parent read-only subset |
 

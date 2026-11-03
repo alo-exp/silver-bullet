@@ -271,7 +271,7 @@
         ]
       },
       {
-        "matcher": "CallMcpTool|MCP",
+        "matcher": "MCP",
         "hooks": [
           {
             "type": "command",
@@ -521,7 +521,7 @@
         ]
       },
       {
-        "matcher": "CallMcpTool|MCP",
+        "matcher": "MCP",
         "hooks": [
           {
             "type": "command",

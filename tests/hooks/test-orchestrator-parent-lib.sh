@@ -266,7 +266,7 @@ assert_eq "unset runtime defaults to the Claude label" "Agent (Claude subagent)"
 assert_eq "other runtimes fall back to Task worker" "Task worker" "$(SILVER_BULLET_RUNTIME=opencode sb_orchestrator_spawn_tool_label)"
 
 echo "=== parent tool allowance ==="
-for t in Task Subagent Agent spawn_agent multi_agent_v1.spawn_agent Read Grep Glob SemanticSearch WebSearch WebFetch AskQuestion SwitchMode UpdateCurrentStep CallMcpTool FetchMcpResource Skill; do
+for t in Task Subagent Agent spawn_agent multi_agent_v1.spawn_agent Read Grep Glob WebSearch WebFetch Skill; do
   sb_orchestrator_parent_tool_allowed "$t" && rc=0 || rc=$?
   assert_eq "parent may use $t" 0 "$rc"
 done

@@ -24,7 +24,7 @@ mutex_count() { [[ -f "$MUTEX" ]] && jq -r '.violations | length' "$MUTEX" || ec
 owner_of() { [[ -f "$COORD" ]] && jq -r --arg r "$1" '.surfaces[$r].owner // ""' "$COORD" || true; }
 mcp_input() { # tool [server] [arguments-json]
   jq -cn --arg t "$1" --arg s "${2:-}" --argjson a "${3:-null}" \
-    '{hook_event_name:"PreToolUse", tool_name:"CallMcpTool", tool_input:({toolName:$t} + (if $s != "" then {server:$s} else {} end) + (if $a != null then {arguments:$a} else {} end))}'
+    '{hook_event_name:"PreToolUse", tool_name:"MCP", tool_input:({toolName:$t} + (if $s != "" then {server:$s} else {} end) + (if $a != null then {arguments:$a} else {} end))}'
 }
 tool_input() { jq -cn --arg t "$1" --arg f "${2:-}" '{hook_event_name:"PreToolUse", tool_name:$t, tool_input:{file_path:$f}}'; }
 
@@ -51,7 +51,7 @@ assert_denied "dirty mutex: wrong-owner MCP tool cannot recover" "STACK COMPRESS
 tg2_run "$HOOK" "$(mcp_input browser_click)"
 assert_denied "dirty mutex: unrouted MCP tool cannot recover" "STACK COMPRESSION CONFLICT"
 assert_eq "failed recovery keeps the violation" "1" "$(mutex_count)"
-tg2_run "$HOOK" "$(jq -cn '{hook_event_name:"PreToolUse", tool_name:"CallMcpTool", tool_input:{}}')"
+tg2_run "$HOOK" "$(jq -cn '{hook_event_name:"PreToolUse", tool_name:"MCP", tool_input:{}}')"
 assert_denied "dirty mutex: MCP call without a tool name cannot recover" "STACK COMPRESSION CONFLICT"
 
 reset; dirty_mutex

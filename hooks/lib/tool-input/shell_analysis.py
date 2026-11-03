@@ -4525,7 +4525,7 @@ def _mcp_tool(tool_name, tool_input):
     if tool_name.startswith("mcp__") and tool_name.count("__") >= 2:
         parts = tool_name.split("__")
         return "__".join(parts[1:-1]), parts[-1]
-    if tool_name in ("CallMcpTool", "MCP"):
+    if tool_name == "MCP":
         server = tool_input.get("server") or tool_input.get("mcpServer") or ""
         tool = tool_input.get("toolName") or tool_input.get("name") or tool_input.get("tool") or ""
         return str(server), str(tool)

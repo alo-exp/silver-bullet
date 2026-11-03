@@ -56,7 +56,7 @@ case "$tool_name" in
       sb_leanctx_record_usage "$config_file" && recorded=1
     fi
     ;;
-  CallMcpTool|MCP)
+  MCP)
     mcp_server="$(printf '%s' "$input" | jq -r '.tool_input.server // .tool_input.mcpServer // ""' 2>/dev/null || true)"
     mcp_tool="$(printf '%s' "$input" | jq -r '.tool_input.toolName // .tool_input.name // ""' 2>/dev/null || true)"
     if sb_leanctx_mcp_server_matches "$mcp_server" && sb_leanctx_mcp_tool_is_usage "$mcp_tool"; then

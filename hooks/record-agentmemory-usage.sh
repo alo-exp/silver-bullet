@@ -21,7 +21,7 @@ input="$(cat 2>/dev/null || true)"
 tool_name="$(sb_tool_name "$input" 2>/dev/null || printf '%s' "$input" | jq -r '.tool_name // ""')"
 case "$tool_name" in
   Bash|Shell|shell|exec_command) ;;
-  CallMcpTool|MCP) ;;
+  MCP) ;;
   # Claude may surface MCP tools as mcp__<server>__<tool>
   mcp__*agentmemory*) ;;
   memory_smart_search|memory_recall|memory_search|memory_save|smart_search) ;;
@@ -53,9 +53,9 @@ fi
 
 sb_agentmemory_required "$config_file" || exit 0
 
-# MCP path: CallMcpTool / mcp__* / named memory_* tools clear the gate (#276).
+# MCP path: MCP / mcp__* / named memory_* tools clear the gate (#276).
 case "$tool_name" in
-  CallMcpTool|MCP)
+  MCP)
     server="$(printf '%s' "$input" | jq -r '.tool_input.server // .tool_input.mcpServer // ""' 2>/dev/null || true)"
     mcp_tool="$(printf '%s' "$input" | jq -r '.tool_input.toolName // .tool_input.name // ""' 2>/dev/null || true)"
     if [[ "$server" == *agentmemory* ]] || [[ "$mcp_tool" =~ ^(memory_|smart_search|recall|search|save_memory|store) ]]; then
