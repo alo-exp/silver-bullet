@@ -265,6 +265,8 @@ class ReportTests(TmpCase):
 
         md = run(self.pack_audit(gaps=[], adjacent=[], sunset=[], excluded=[]))
         self.assertNotIn("Coverage gaps", md)
+        md = run(self.pack_audit(gaps=["in-core"], adjacent=[], sunset=[], excluded=[]))
+        self.assertNotIn("Coverage gaps", md)  # the only gap is already a core member
         md = run(self.pack_audit(gaps=[], adjacent=["devin"]))
         self.assertNotIn("Coverage gaps", md)
         md = run(self.pack_audit(by_slug="junk", gaps=["ghost"], adjacent=[], excluded=[], sunset=[]))
