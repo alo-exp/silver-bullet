@@ -113,7 +113,7 @@ class FileWriteTest(Tmp):
             m.read_toml_repairing(path, lambda p: True)
 
     def test_string_values_reads_strings_without_a_parser(self):
-        doc = m.TomlDocument('[a.b] # c\nsource = "x \\"q\\" \\\\ y"\nlit = \'C:\\dir\'\nn = 5\nml = """m"""\nlml = \'\'\'l\'\'\'\n[a]\nb.dotted = "d"\n')
+        doc = m.TomlDocument('[a.b] # c\nsource = "x \\"q\\" \\\\ y"\nlit = \'C:\\dir\'\nn = 5\nml = """m"""\nlml = \'\'\'l\'\'\'\n[a]\nb.dotted = "d"\n[other]\nk = "ignored"\n')
         self.assertEqual(doc.string_values(("a", "b")), {"source": 'x "q" \\ y', "lit": "C:\\dir", "dotted": "d"})
 
     def test_string_values_decodes_with_the_toml_lexer(self):
