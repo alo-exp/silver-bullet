@@ -112,6 +112,10 @@ class FileWriteTest(Tmp):
         with self.assertRaises(m.ConfigError):
             m.read_toml_repairing(path, lambda p: True)
 
+    def test_string_values_reads_strings_without_a_parser(self):
+        doc = m.TomlDocument('[a.b] # c\nsource = "x \\"q\\" \\\\ y"\nlit = \'C:\\dir\'\nn = 5\nml = """m"""\nlml = \'\'\'l\'\'\'\nbad = "\\e"\n[a]\nb.dotted = "d"\n')
+        self.assertEqual(doc.string_values(("a", "b")), {"source": 'x "q" \\ y', "lit": "C:\\dir", "dotted": "d"})
+
     def test_symlink_is_written_through(self):
         real = self.tmp / "dotfiles" / "settings.json"
         real.parent.mkdir()
