@@ -85,7 +85,7 @@ bash scripts/sb-doctor.sh --fix=all      # bounded dependency-ordered convergenc
 | Check | Typical fix |
 |-------|-------------|
 | D2/D3 plugin stale | `/sb:update` or `bash scripts/install-${SILVER_BULLET_RUNTIME}.sh` |
-| D4 hooks missing | `bash scripts/install-cursor.sh --merge-hooks-only` or `/sb:init` update §3.7.5 |
+| D4 hooks missing | Cursor: `bash scripts/install-cursor.sh --merge-hooks-only`; other hosts: reinstall the plugin with `bash scripts/install-${SILVER_BULLET_RUNTIME}.sh` (`/sb:init` §3.7.5 only removes duplicate hook copies and never adds hooks) |
 | D6 config stale | `bash scripts/sb-migrate-config.sh` or `/sb:migrate` |
 | D10-* five-tool | `bash scripts/sb-doctor.sh --fix=local|host|packages|all` |
 | D10-routes drift | `--fix=host` or `bash scripts/optimize-five-tool-stack.sh --host cursor --project-root "$(pwd)"` |
