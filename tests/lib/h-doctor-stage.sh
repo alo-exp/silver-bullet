@@ -27,13 +27,14 @@ hd_stage() {
   cp "$TL_REPO_ROOT/scripts/sb-doctor.sh" "$HD_ST/scripts/"
   ln -s "$TL_REPO_ROOT/scripts/lib/agent-bundle-paths.sh" "$HD_ST/scripts/lib/agent-bundle-paths.sh"
   ln -s "$TL_REPO_ROOT/hooks/lib" "$HD_ST/hooks/lib"
+  ln -s "$TL_REPO_ROOT/scripts/lib/command-timeout.sh" "$HD_ST/scripts/lib/command-timeout.sh"
+  ln -s "$TL_REPO_ROOT/templates/silver-bullet.md.base" "$HD_ST/templates/silver-bullet.md.base"
   ln -s "$TL_REPO_ROOT/templates/silver-bullet.config.json.default" "$HD_ST/templates/silver-bullet.config.json.default"
   printf '{"version":"1.2.3"}\n' >"$HD_ST/package.json"
   local h
   for h in session-start outcomes-check stop-check; do
-    hd_sh "hooks/$h" 'echo "hook '"$h"' $SB_HOOK_SMOKE $(cat | jq -r .hook_event_name)" >>"$HD_LOG"; exit "${STUB_RC_HOOK:-0}"'
+    hd_sh "hooks/$h" 'p="$(cat)"; echo "hook '"$h"' $SB_HOOK_SMOKE $(jq -r .hook_event_name <<<"$p")" >>"$HD_LOG"; echo "hook-env '"$h"' home=$HOME state=${SB_RUNTIME_STATE_DIR-unset} cwd=$PWD source=$(jq -r .source <<<"$p") cfg=$(ls -A | tr "\n" ",")" >>"$HD_LOG"; exit "${STUB_RC_HOOK:-0}"'
   done
-  hd_sh tests/scripts/test-silver-bullet-template-parity.sh 'exit "${STUB_RC_PARITY:-0}"'
   hd_sh scripts/validate-host-install-surface.sh 'echo "surface $*" >>"$HD_LOG"; if [[ "$1" == --cache-root ]]; then exit "${STUB_RC_SURFACE_CACHE:-${STUB_RC_SURFACE:-0}}"; fi; exit "${STUB_RC_SURFACE_REPO:-${STUB_RC_SURFACE:-0}}"'
   hd_sh scripts/validate-claude-agent-token-budget.sh 'echo "tokens $*" >>"$HD_LOG"; exit "${STUB_RC_TOKENS:-0}"'
   hd_sh scripts/validate-host-agnostic-core.sh 'echo "agnostic $*" >>"$HD_LOG"; exit "${STUB_RC_AGNOSTIC:-0}"'
@@ -65,6 +66,11 @@ PY
   : >"$HD_LOG"
 }
 
+# hd_write_sb_md <file>: a silver-bullet.md with every numbered section of the real template
+hd_write_sb_md() {
+  { echo '# SB'; sed -n 's/^## \([0-9][0-9]*[a-z]\{0,1\}\)\. \(.*\)/## \1. \2/p' "$TL_REPO_ROOT/templates/silver-bullet.md.base"; } >"$1"
+}
+
 hd_cfg() { mkdir -p "$HD_PROJ"; printf '%s\n' "$1" >"$HD_PROJ/.silver-bullet.json"; }
 
 # hd_happy [runtime]: a complete install for the runtime (claude by default)
@@ -84,7 +90,7 @@ hd_happy() {
     cursor) echo '{"hooks":"silver-bullet cursor-hook-bridge.sh"}' >"$root/hooks.json" ;;
   esac
   hd_cfg "{\"sb_initiated\":true,\"config_version\":\"$ver\"}"
-  echo '# SB' >"$HD_PROJ/silver-bullet.md"
+  hd_write_sb_md "$HD_PROJ/silver-bullet.md"
   mkdir -p "$HD_PROJ/scripts" "$HD_PROJ/docs/workflows"
   printf '#!/bin/sh\n' >"$HD_PROJ/scripts/workflows.sh"; chmod +x "$HD_PROJ/scripts/workflows.sh"
   if [[ "$rt" == cursor ]]; then

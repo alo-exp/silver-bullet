@@ -12,6 +12,8 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=scripts/lib/agent-bundle-paths.sh
 source "${REPO_ROOT}/scripts/lib/agent-bundle-paths.sh"
+# shellcheck source=scripts/lib/command-timeout.sh
+source "${REPO_ROOT}/scripts/lib/command-timeout.sh"
 DOCTOR_FIX="${SB_DOCTOR_FIX:-0}"
 DOCTOR_FIX_SCOPE="${SB_DOCTOR_FIX_SCOPE:-}"
 DOCTOR_DEEP="${SB_DOCTOR_DEEP:-0}"
@@ -112,6 +114,7 @@ source_runtime_paths() {
   SB_RUNTIME_HOME_ROOT="${HOME}/.${SILVER_BULLET_RUNTIME}"
   SB_RUNTIME_STATE_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet"
   SB_RUNTIME_PLUGIN_CACHE_ROOT="${SB_RUNTIME_HOME_ROOT}/plugins/cache"
+  sb_runtime_codex_home() { printf '%s' "${CODEX_HOME:-${HOME}/.codex}"; }
   return 0
 }
 
@@ -179,11 +182,16 @@ resolve_registry_plugin_field() {
   ' "$reg" 2>/dev/null || true
 }
 
+# doctor_realpath: physical path of a symlink chain. `readlink -f` is missing on
+# macOS before 12.3; python3 is a runtime prerequisite everywhere.
+doctor_realpath() {
+  python3 -c 'import os, sys; p = sys.argv[1]; sys.exit(1) if not (os.path.lexists(p) or os.path.isdir(os.path.dirname(p))) else print(os.path.realpath(p))' "$1" 2>/dev/null
+}
+
+# The expected config version comes from Silver Bullet's own template. A template
+# under the audited project is project-controlled input and must never lower it.
 resolve_template_config_version() {
   local template="${REPO_ROOT}/templates/silver-bullet.config.json.default"
-  if [[ -f "$PROJ_ROOT/templates/silver-bullet.config.json.default" ]]; then
-    template="${PROJ_ROOT}/templates/silver-bullet.config.json.default"
-  fi
   if [[ -f "$template" ]]; then
     jq -r '.config_version // .version // "0.0.0"' "$template"
   else
@@ -204,15 +212,34 @@ resolve_hook_path() {
   return 1
 }
 
+# run_hook_smoke: exercise a hook with a SessionStart/UserPromptSubmit/Stop payload
+# in a throwaway sandbox, so the doctor stays read-only (R8-09). The hooks reset
+# branch-scoped state, delete gate evidence and write orchestrator directives, so
+# they must never see the user's HOME, runtime state dir, state/branch files or
+# project: they get a temp HOME (state dir derived inside it), a throwaway project
+# holding only the project's Silver Bullet config files, and `source:"resume"`.
 run_hook_smoke() {
   local hook_path="$1" event="$2"
-  local payload
-  payload="$(jq -n --arg e "$event" '{hook_event_name:$e, prompt:"sb-doctor smoke"}')"
+  local payload sandbox rc=0 f
+  sandbox="$(mktemp -d "${TMPDIR:-/tmp}/sb-doctor-smoke.XXXXXX")" || return 1
+  mkdir -p "${sandbox}/home" "${sandbox}/project"
+  for f in .silver-bullet.json silver-bullet.md; do
+    [[ -f "${PROJ_ROOT}/${f}" ]] && cp "${PROJ_ROOT}/${f}" "${sandbox}/project/${f}"
+  done
+  git -C "${sandbox}/project" init -q >/dev/null 2>&1 || true
+  payload="$(jq -n --arg e "$event" '{hook_event_name:$e, source:"resume", prompt:"sb-doctor smoke"}')"
   # SB_HOOK_SMOKE: session-start must not persist/mutate project config during doctor smoke (#257).
-  if ( cd "$PROJ_ROOT" && printf '%s' "$payload" | env SB_HOOK_SMOKE=1 bash "$hook_path" >/dev/null 2>&1 ); then
-    return 0
-  fi
-  return 1
+  (
+    cd "${sandbox}/project" &&
+      printf '%s' "$payload" | env \
+        -u KAY_HOME -u CLAUDE_CONFIG_DIR -u CODEX_HOME -u CURSOR_CONFIG_DIR \
+        -u SILVER_BULLET_STATE_FILE -u SILVER_BULLET_BRANCH_FILE \
+        -u SB_RUNTIME_HOME_ROOT -u SB_RUNTIME_PLUGIN_CACHE_ROOT -u SB_RUNTIME_STATE_DIR -u SB_RUNTIME_PRESERVE_STATE_DIR \
+        -u XDG_CONFIG_HOME -u XDG_DATA_HOME -u XDG_STATE_HOME -u XDG_CACHE_HOME \
+        HOME="${sandbox}/home" SB_HOOK_SMOKE=1 bash "$hook_path" >/dev/null 2>&1
+  ) || rc=1
+  rm -rf -- "$sandbox"
+  return "$rc"
 }
 
 doctor_host_install_script() {
@@ -321,7 +348,9 @@ doctor_run_reconciler() {
 
 doctor_fix_needs_confirm() {
   case "${DOCTOR_FIX_SCOPE:-all}" in
-    packages|all) ;;
+    # host re-runs install-<host>.sh, which rewrites the user's global host hook/MCP config
+    host|all) return 0 ;;
+    packages) ;;
     *) return 1 ;;
   esac
   [[ -n "${RECONCILER_JSON:-}" ]] || return 0
@@ -339,7 +368,7 @@ doctor_confirm_fix_if_needed() {
   doctor_fix_needs_confirm || return 0
   [[ "${SB_DOCTOR_ASSUME_YES:-0}" == "1" ]] && return 0
   if [[ ! -t 0 ]]; then
-    printf 'sb-doctor: confirmation required for --fix=%s (set SB_DOCTOR_ASSUME_YES=1)\n' "${DOCTOR_FIX_SCOPE:-all}" >&2
+    printf 'sb-doctor: --fix=%s changes global tools or host configuration and needs the user'"'"'s own confirmation; nothing was changed. Ask the user to run it themselves in an interactive terminal.\n' "${DOCTOR_FIX_SCOPE:-all}" >&2
     return 1
   fi
   printf 'sb-doctor: apply --fix=%s? [y/N] ' "${DOCTOR_FIX_SCOPE:-all}" >&2
@@ -418,7 +447,7 @@ doctor_record_reconciler_d10() {
     # Context Mode vendor doctor runs on the default D10 probe path (FAIL when
     # opted in). --deep keeps the Graphify MCP stdio handshake as WARN only.
     if command -v graphify-mcp >/dev/null 2>&1; then
-      if timeout 5 graphify-mcp --transport stdio </dev/null >/dev/null 2>&1; then
+      if sb_run_with_timeout 5 graphify-mcp -- graphify-mcp --transport stdio </dev/null >/dev/null 2>&1; then
         record pass D10-deep-graphify "graphify-mcp stdio handshake OK"
       else
         record warn D10-deep-graphify "graphify-mcp stdio handshake failed"
@@ -590,9 +619,9 @@ run_doctor_checks() {
 
   # D3 — plugin cache
   current_link="${cache_root}/current"
-  if [[ -L "$current_link" && -d "$(readlink -f "$current_link" 2>/dev/null || true)" ]]; then
+  if [[ -L "$current_link" && -d "$(doctor_realpath "$current_link" 2>/dev/null || true)" ]]; then
     local resolved
-    resolved="$(readlink -f "$current_link")"
+    resolved="$(doctor_realpath "$current_link")"
     if [[ -f "${resolved}/hooks/hooks.json" ]]; then
       record pass D3 "current symlink → ${resolved}"
     else
@@ -602,11 +631,14 @@ run_doctor_checks() {
     record fail D3 "broken or missing current symlink at ${current_link}"
   fi
 
-  # D4 — host hooks manifest
+  # D4 — host hooks manifest (paths follow the host's own config redirects)
+  local claude_settings="${CLAUDE_CONFIG_DIR:-${SB_RUNTIME_HOME_ROOT}}/settings.json"
+  local codex_config
+  codex_config="$(sb_runtime_codex_home)/config.toml"
   case "$runtime" in
     cursor)
-      if [[ -f "${HOME}/.cursor/hooks.json" ]] && grep -q 'silver-bullet' "${HOME}/.cursor/hooks.json" 2>/dev/null; then
-        if grep -q 'cursor-hook-bridge.sh' "${HOME}/.cursor/hooks.json" 2>/dev/null; then
+      if [[ -f "${SB_RUNTIME_HOME_ROOT}/hooks.json" ]] && grep -q 'silver-bullet' "${SB_RUNTIME_HOME_ROOT}/hooks.json" 2>/dev/null; then
+        if grep -q 'cursor-hook-bridge.sh' "${SB_RUNTIME_HOME_ROOT}/hooks.json" 2>/dev/null; then
           record pass D4 "Cursor hooks.json references silver-bullet via cursor-hook-bridge.sh"
         else
           record fail D4 "Cursor hooks.json has silver-bullet entries without cursor-hook-bridge.sh"
@@ -616,8 +648,8 @@ run_doctor_checks() {
       fi
       ;;
     codex)
-      if [[ -f "${HOME}/.codex/config.toml" ]] && grep -qE \
-        '^\[(plugins|hooks\.state)\."silver-bullet@alo-labs-codex' "${HOME}/.codex/config.toml" 2>/dev/null; then
+      if [[ -f "${codex_config}" ]] && grep -qE \
+        '^\[(plugins|hooks\.state)\."silver-bullet@alo-labs-codex' "${codex_config}" 2>/dev/null; then
         record pass D4 "Codex config.toml references silver-bullet hooks"
       elif codex_skills_only_surface_present; then
         record pass D4 "Codex skills-only surface active; SB hooks intentionally absent"
@@ -626,7 +658,7 @@ run_doctor_checks() {
       fi
       ;;
     claude)
-      if [[ -f "${HOME}/.claude/settings.json" ]] && grep -q 'silver-bullet' "${HOME}/.claude/settings.json" 2>/dev/null; then
+      if [[ -f "${claude_settings}" ]] && grep -q 'silver-bullet' "${claude_settings}" 2>/dev/null; then
         record pass D4 "Claude settings.json references silver-bullet hooks"
       else
         record fail D4 "Claude settings.json missing SB hook entries"
@@ -661,16 +693,23 @@ run_doctor_checks() {
     record fail D6 "no .silver-bullet.json to compare"
   fi
 
-  # D7 — template parity
-  local parity_script="${REPO_ROOT}/tests/scripts/test-silver-bullet-template-parity.sh"
-  if [[ -x "$parity_script" ]] || [[ -f "$parity_script" ]]; then
-    if ( cd "$REPO_ROOT" && bash "$parity_script" >/dev/null 2>&1 ); then
-      record pass D7 "silver-bullet.md template parity test passed"
-    else
-      record fail D7 "template parity test failed — run: bash tests/scripts/test-silver-bullet-template-parity.sh"
-    fi
+  # D7 — the project's silver-bullet.md carries every numbered section of Silver
+  # Bullet's template (the repo's own template-parity test measures the plugin
+  # checkout, not this project).
+  local d7_template="${REPO_ROOT}/templates/silver-bullet.md.base" d7_missing="" d7_sec
+  if [[ ! -f "$d7_template" ]]; then
+    record warn D7 "plugin silver-bullet.md template not found; skipped"
+  elif [[ ! -f "${PROJ_ROOT}/silver-bullet.md" ]]; then
+    record fail D7 "no silver-bullet.md to compare under ${PROJ_ROOT} — run /sb:init"
   else
-    record warn D7 "parity test script not found; skipped"
+    while IFS= read -r d7_sec; do
+      grep -q "^## ${d7_sec}\\. " "${PROJ_ROOT}/silver-bullet.md" 2>/dev/null || d7_missing="${d7_missing:+${d7_missing}, }§${d7_sec}"
+    done < <(sed -n 's/^## \([0-9][0-9]*[a-z]\{0,1\}\)\. .*/\1/p' "$d7_template")
+    if [[ -z "$d7_missing" ]]; then
+      record pass D7 "project silver-bullet.md has every template section"
+    else
+      record fail D7 "project silver-bullet.md is missing template sections (${d7_missing}) — run /sb:init to update"
+    fi
   fi
 
   # D8 — Cursor orchestrator rule (Cursor host only; not required on Claude/Codex)
@@ -707,7 +746,7 @@ run_doctor_checks() {
     if [[ -f "${REPO_ROOT}/hooks/session-start" ]]; then
       hook_root="${REPO_ROOT}"
     else
-      hook_root="$(readlink -f "${cache_root}/current" 2>/dev/null || echo "${REPO_ROOT}")"
+      hook_root="$(doctor_realpath "${cache_root}/current" 2>/dev/null || echo "${REPO_ROOT}")"
     fi
     hooks_manifest="${hook_root}/hooks"
     for hook_name in session-start outcomes-check stop-check; do
@@ -750,7 +789,7 @@ run_doctor_checks() {
   # D13 — cross-host plugin path contamination (host-scoped manifest paths)
   local skill_root hooks_manifest_path agent_cache_dir install_surface_script foreign_plugin_pattern
   install_surface_script="${REPO_ROOT}/scripts/validate-host-install-surface.sh"
-  skill_root="$(readlink -f "${cache_root}/current" 2>/dev/null || true)"
+  skill_root="$(doctor_realpath "${cache_root}/current" 2>/dev/null || true)"
   foreign_plugin_pattern="$(foreign_host_plugin_path_pattern "$runtime")"
   case "$runtime" in
     cursor)
@@ -841,7 +880,7 @@ run_doctor_checks() {
   if [[ "$runtime" == "cursor" ]]; then
     local registry_sha backend_sha gitpath_root market_cache_link backend_cache_path resolved_current
     registry_sha="$(resolve_registry_plugin_field "$reg" "silver-bullet@alo-labs" "gitCommitSha")"
-    resolved_current="$(readlink -f "${cache_root}/current" 2>/dev/null || true)"
+    resolved_current="$(doctor_realpath "${cache_root}/current" 2>/dev/null || true)"
     backend_sha="$(find "${HOME}/Library/Application Support/Cursor/logs" -name 'Cursor Plugins*.log' -type f -print0 2>/dev/null \
       | xargs -0 grep -h 'Adding enabled plugin: silver-bullet from ' 2>/dev/null \
       | sed -n 's/.*silver-bullet from \([0-9a-f]\{40\}\).*/\1/p' | tail -1 || true)"
@@ -853,7 +892,7 @@ run_doctor_checks() {
       if [[ -d "${gitpath_root}/.git" ]] && git -C "$gitpath_root" cat-file -e "${backend_sha}^{commit}" >/dev/null 2>&1; then
         if [[ -d "$backend_cache_path" && -f "${backend_cache_path}/.cache-complete" && -f "${backend_cache_path}/commands/sb.md" ]]; then
           record pass D18 "Cursor backend cache + gitPath ready (${backend_sha:0:8})"
-        elif [[ -L "$market_cache_link" ]] && [[ "$(readlink -f "$market_cache_link" 2>/dev/null || true)" == "$resolved_current" ]]; then
+        elif [[ -L "$market_cache_link" ]] && [[ "$(doctor_realpath "$market_cache_link" 2>/dev/null || true)" == "$resolved_current" ]]; then
           record fail D18 "missing alo-labs-agent-plugins materialized cache for ${backend_sha:0:8} — run: bash scripts/install-cursor.sh"
         else
           record fail D18 "missing alo-labs-cursor cache symlink for ${backend_sha:0:8} — run: bash scripts/install-cursor.sh"
