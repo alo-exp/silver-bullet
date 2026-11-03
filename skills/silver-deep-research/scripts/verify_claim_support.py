@@ -8,8 +8,8 @@ CLI subcommands:
 
 Version 1 is deterministic and cheap: no LLM calls, no semantics. The rule is a strict near-quote:
 
-* ``supported``: the claim repeats a cited quote word for word. Only punctuation, the lowercase articles
-  a/an/the, the capital of the first word and the digit script may differ. Every other character that can
+* ``supported``: the claim repeats a cited quote word for word. Only punctuation, the capital of the first
+  word and the digit script may differ; the articles a/an/the are words like any other. Every other character that can
   change a meaning (case, signs, comparators, currency, %, "?", "*", accents, other scripts) is kept, and a
   figure is compared exactly as written ("3" is not "3.0"). Any rewording, reordering, voice change or
   paraphrase is ``needs_review``. One supporting quote among several is enough.
@@ -54,7 +54,6 @@ from jsonl_store import JsonlError, locked, read_jsonl, write_jsonl_atomic  # no
 # Case: the first word of the text may differ by its capital letter alone, every other token is compared as
 # written ("5 MB" is not "5 Mb").
 
-STOPWORDS = frozenset(['a', 'an', 'the'])  # only these, lowercase (or capitalised at the start), may be left out
 NEGATORS = frozenset(['not', 'never', 'no', 'Not', 'Never', 'No'])  # "No," and "No." are tokens of their own
 MIN_OVERLAP = 0.3  # share of the claim's words that must appear in a quote for it to address the claim
 
@@ -96,11 +95,6 @@ def _is_figure(word: str) -> bool:
     return bool(FIGURE_RE.match(word))
 
 
-def _keys(words: list[str]) -> list[str]:
-    """The tokens that are compared: all of them, as written, except the articles a, an and the."""
-    return [w for w in words if w not in STOPWORDS]
-
-
 def _digits_masked(word: str) -> str:
     return re.sub(r'\d', '#', word)
 
@@ -134,7 +128,7 @@ def _assess_quote(claim_words: list[str], quote: str) -> dict:
     """Judge one claim against one quote. Returns the share of the claim's words found in the quote
     (``overlap``), whether the quote is a near-verbatim match (``match``), what clearly contradicts the claim
     (``conflict``) and why a reader must look (``reason``)."""
-    claim, source = _keys(claim_words), _keys(_words(quote))
+    claim, source = claim_words, _words(quote)
     shared, wanted = {w.casefold() for w in source}, {w.casefold() for w in claim}  # overlap only decides unsupported
     overlap = len(wanted & shared) / len(wanted)
     result = {'overlap': overlap, 'match': claim == source, 'conflict': '', 'reason': ''}
@@ -170,7 +164,7 @@ def compute_support_score(claim_text: str, evidence_quotes: list[str]) -> tuple[
     if not evidence_quotes:
         return ('unsupported', 0.0, 'no evidence linked')
     claim_words = _words(claim_text)
-    if not _keys(claim_words):
+    if not claim_words:
         return ('needs_review', 0.0, 'the claim has no words to check')
     assessed = [_assess_quote(claim_words, q) for q in evidence_quotes]
     if any(a['match'] for a in assessed):
