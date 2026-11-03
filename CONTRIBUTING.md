@@ -24,7 +24,7 @@ Contributions are accepted on an inbound = outbound basis: by submitting a contr
 | `shellcheck` | Linting (`make lint`; CI uses the same exclusions) | Yes, before a PR |
 | `xxd`, `zip`/`unzip`, GNU `timeout` | Used by a few script tests (`test-silver-doctor.sh`, `test-export-enterprise-evidence.sh`, `test-reconcile-recommended-tools.sh`); macOS ships `xxd` and `zip`, and `timeout` comes from Homebrew `coreutils` | Yes, for the full suite |
 | `make` | The `Makefile` entry points (`make setup`, `lint`, `test`, `coverage`, `check`) | Recommended |
-| `python3 -m pip install -r requirements-dev.txt` (or `make setup`) | Coverage tooling (`coverage`, `tree-sitter`, `tree-sitter-bash`, pinned in `tests/coverage/requirements.txt`) plus `openpyxl` and `PyYAML` for the deep-research skill tests (some skip without them). Runtime hooks need only the standard library | For coverage and the full skill tests |
+| `make setup` (creates `.venv` and installs `requirements-dev.txt` into it) | Coverage tooling (`coverage`, `tree-sitter`, `tree-sitter-bash`, pinned in `tests/coverage/requirements.txt`) plus `openpyxl` and `PyYAML` for the deep-research skill tests (some skip without them). Runtime hooks need only the standard library | For coverage and the full skill tests |
 | `node` / `npx` | `tests/js/` unit tests and JavaScript coverage (skipped without Node), CI's site HTML lint (`html-validate`), and the opt-in Node tools (Context Mode, agentmemory, Alumnium) | Optional |
 | `tmux` | `scripts/agent-claude-autonomous-test.sh --tmux` and the enterprise E2E matrix drivers (operator-only) | Optional |
 | `gh` | Release scripts and live suites; `tests/run-all-tests.sh` hides it from tests | Optional |
@@ -51,7 +51,7 @@ Then:
 ```bash
 git clone https://github.com/alo-exp/silver-bullet.git
 cd silver-bullet
-make setup     # checks required tools, then python3 -m pip install -r requirements-dev.txt
+make setup     # checks required tools, then creates .venv and installs requirements-dev.txt into it (system Python is externally managed on Debian/Ubuntu and Homebrew)
 make test      # bash tests/run-all-tests.sh --jobs 4: confirm a green baseline
 ```
 
