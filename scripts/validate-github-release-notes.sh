@@ -96,14 +96,22 @@ if len(body) < 40:
     print("ERROR: release body is empty or too short", file=sys.stderr)
     sys.exit(1)
 
+# The categories CHANGELOG.md uses (conventional-commit groups plus Keep a Changelog's), so
+# notes copied from a CHANGELOG entry validate. Headings match in any letter case.
+CATEGORIES = (
+    "Breaking Changes", "Features", "Added", "Changed", "Deprecated", "Removed",
+    "Bug Fixes", "Fixes", "Fixed", "Security", "Performance", "Refactoring",
+    "Documentation", "Docs", "Tests", "Verification", "Chores", "Other",
+    "Release And Packaging",
+)
 section_re = re.compile(
-    r"(?m)^#{1,3}\s+(Breaking Changes|Features|Bug Fixes|Security|Documentation|Tests|Refactoring|Chores|Other|Release And Packaging)\s*$"
+    r"(?mi)^#{1,3}\s+(" + "|".join(re.escape(c) for c in CATEGORIES) + r")\s*$"
 )
 sections = section_re.findall(body)
 if not sections:
     print(
         "ERROR: release body must include at least one categorized section "
-        "(Features, Bug Fixes, Documentation, Tests, Security, Other, etc.)",
+        "(Features, Fixes, Bug Fixes, Docs, Documentation, Tests, Security, Other, etc.)",
         file=sys.stderr,
     )
     sys.exit(1)

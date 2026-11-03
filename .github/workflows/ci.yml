@@ -1,17 +1,25 @@
 name: CI
 on: [push, pull_request]
-# A newer commit on the same branch or pull request supersedes the runs still queued or
-# running for the older one.
+# A newer commit on the same pull request or branch supersedes the run still queued or in
+# progress for the older one. Runs for main, release-* branches and tags always complete:
+# scripts/verify-release-commit-ci.sh waits for the release commit's own run, so a quick
+# follow-up push must not cancel it.
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || (github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/heads/release-') && !startsWith(github.ref, 'refs/tags/')) }}
+# Least privilege: no job writes to the repository, and no checkout keeps the token on disk.
+permissions:
+  contents: read
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 jobs:
   validate:
     runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
 
       - name: Seed Silver Bullet runtime env
         run: |
@@ -25,27 +33,27 @@ jobs:
             echo "SB_RUNTIME_PLUGIN_CACHE_ROOT=$SB_RUNTIME_PLUGIN_CACHE_ROOT"
           } >> "$GITHUB_ENV"
 
-      - name: Repository invariants (manifests, versions, hook references, skill lists, mirrors)
+      # Also lints every site page (site/**/*.html) for duplicate element ids, and fails on the
+      # repository worm's indicators and on vendored skills that differ from skills-lock.json.
+      - name: Repository invariants (manifests, versions, hook references, skill lists, mirrors, worm indicators, site ids)
         run: bash scripts/check-repo-invariants.sh
 
       - name: Validate committed Graphify artifacts
         run: bash scripts/validate-graphify-artifacts.sh
 
-      - name: Check plugin.json version vs latest git tag
-        continue-on-error: true
+      # A pushed release tag must name the version the release commit carries.
+      - name: Release tag matches the package version
+        if: github.ref_type == 'tag' && startsWith(github.ref_name, 'v')
+        env:
+          TAG: ${{ github.ref_name }}
         run: |
-          plugin_version=$(jq -r '.version' .claude-plugin/plugin.json)
-          latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-          if [[ -z "$latest_tag" ]]; then
-            echo "No git tags found — skipping version check"
-            exit 0
-          fi
-          # Strip leading 'v' from tag for comparison (tags are v0.20.11, plugin.json is 0.20.11)
-          tag_version="${latest_tag#v}"
-          if [[ "$plugin_version" != "$tag_version" ]]; then
-            echo "::warning::plugin.json version ($plugin_version) does not match latest git tag ($latest_tag)"
+          package_version="$(jq -r '.version' package.json)"
+          plugin_version="$(jq -r '.version' .claude-plugin/plugin.json)"
+          if [[ "${TAG#v}" == "$package_version" && "${TAG#v}" == "$plugin_version" ]]; then
+            echo "tag $TAG matches package.json and .claude-plugin/plugin.json"
           else
-            echo "plugin.json version ($plugin_version) matches latest tag ($latest_tag)"
+            echo "::error::tag $TAG does not match package.json ($package_version) and .claude-plugin/plugin.json ($plugin_version)"
+            exit 1
           fi
 
       - name: Lint shell scripts
@@ -71,34 +79,30 @@ jobs:
           SILVER_BULLET_RUNTIME: cursor
           SB_RELEASE_LIVE_MATRIX_WRITE_CURSOR_MARKER: "0"
 
-      - name: Lint site HTML (duplicate IDs, structure)
-        continue-on-error: true
-        run: |
-          npx --yes html-validate@latest \
-            --rule 'no-dup-id:error' \
-            --rule 'void-style:off' \
-            --rule 'attribute-boolean-style:off' \
-            site/**/*.html
-
   test:
     # The same isolated runner as `make test`: per-test HOME/TMPDIR, optional host
     # tools hidden. Both runtimes the hooks resolve state paths for.
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
         runtime: [claude, codex]
     env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       SILVER_BULLET_RUNTIME: ${{ matrix.runtime }}
+      # Tests must not write bytecode caches into the checkout either.
+      PYTHONDONTWRITEBYTECODE: 1
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '22'
+          package-manager-cache: false
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
@@ -108,33 +112,40 @@ jobs:
           sudo apt-get install -y jq git expect
           python3 -m pip install -r requirements-dev.txt
 
+      # Tests must write only to their sandboxed HOME/TMPDIR, never into the checkout, and that
+      # includes git-ignored paths (forged .e2e-* evidence, caches): compare the full status,
+      # ignored files included, before and after the run.
+      - name: Record the checkout before the tests
+        run: git status --porcelain --ignored --untracked-files=all >"$RUNNER_TEMP/checkout-before.txt"
+
       - name: Run all test suites
         run: bash tests/run-all-tests.sh --jobs 4
 
-      # Tests must write only to their sandboxed HOME/TMPDIR, never into the checkout.
       - name: Check the tests left the checkout unchanged
         if: always()
         run: |
-          changes="$(git status --porcelain --untracked-files=all)"
-          if [[ -n "$changes" ]]; then
-            echo "::error::The test run modified the checkout:"
-            printf '%s\n' "$changes"
+          git status --porcelain --ignored --untracked-files=all >"$RUNNER_TEMP/checkout-after.txt"
+          if ! diff -u "$RUNNER_TEMP/checkout-before.txt" "$RUNNER_TEMP/checkout-after.txt" >"$RUNNER_TEMP/checkout.diff"; then
+            echo "::error::The test run modified the checkout (\"!!\" lines are git-ignored files):"
+            cat "$RUNNER_TEMP/checkout.diff"
             git diff --stat
             exit 1
           fi
 
   coverage:
     runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '22'
+          package-manager-cache: false
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
@@ -152,7 +163,7 @@ jobs:
 
       - name: Upload coverage report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: coverage-report
           path: |

@@ -71,6 +71,17 @@ rm -f "$CFG"
 sub ensure_marketplace_registered "$TL_TMP/we\"ird\\dir"
 sub codex_marketplace_root
 assert_eq "root with a quote and backslash round-trips" "$TL_TMP/we\"ird\\dir" "$TL_OUT"
+# without any TOML parser (old Python, no pip) the same root is found, never a silent default
+NOPARSER="$TL_TMP/noparser"; mkdir -p "$NOPARSER/pip"
+for mod in tomllib tomli; do printf 'raise ImportError("hidden for the test")\n' >"$NOPARSER/$mod.py"; done
+printf 'raise ImportError("hidden for the test")\n' >"$NOPARSER/pip/__init__.py"
+printf '[marketplaces.alo-labs-codex] # mine\nsource_type = "local"\nsource = "%s"\n' "$TL_TMP/plain dir" >"$CFG"
+PYTHONPATH="$NOPARSER" sub codex_marketplace_root
+assert_eq "root read without a TOML parser" "$TL_TMP/plain dir" "$TL_OUT"
+printf 'not [valid\n' >"$CFG"
+PYTHONPATH="$NOPARSER" sub codex_marketplace_root
+assert_contains "an unreadable registration is reported, not silently ignored" "$TL_ERR" "cannot read the Codex marketplace registration"
+assert_eq "and the default root is used" "$MP" "$TL_OUT"
 printf 'not [valid\n' >"$CFG"
 sub codex_marketplace_root
 assert_eq "invalid config falls back to the default root" "$MP" "$TL_OUT"
@@ -575,7 +586,11 @@ assert_eq "repair keeps other tables" 1 "$(toml_get "$CFG" 'd["other"]["keep"]')
 printf '[hooks.state."%s"]\ntrusted_hash = "sha256:a"\n[hooks.state."%s"]\ntrusted_hash = "sha256:b"\n[other]\nkeep = 1\n' "$SBKEY" "$SBKEY" >"$CFG"
 sub repair_silver_bullet_duplicate_trust_tables
 assert_contains "install-time repair reports" "$TL_ERR" "removed Silver Bullet hook-trust tables declared twice"
-assert_eq "install-time repair leaves a valid config" '{"other": {"keep": 1}}' "$(toml_get "$CFG" 'd' | sed 's/{"hooks": {"state": {}}, /{/')"
+assert_eq "install-time repair keeps one copy and the other tables" '1 1' "$(toml_get "$CFG" 'len(d["hooks"]["state"])' | tr -d '\n') $(toml_get "$CFG" 'd["other"]["keep"]')"
+UKEY="$CH/.codex/hooks.json:pre_tool_use:0:0"
+printf '[hooks.state."%s"]\ntrusted_hash = "sha256:u1"\n[hooks.state]\n[hooks.state."%s"]\ntrusted_hash = "sha256:u2"\n[other]\nkeep = 1\n' "$UKEY" "$UKEY" >"$CFG"
+sub repair_silver_bullet_duplicate_trust_tables
+assert_eq "duplicated Kay (user-prefix) trust tables are repaired, keeping the first copy" '"sha256:u1"' "$(toml_get "$CFG" 'd["hooks"]["state"]["'"$UKEY"'"]["trusted_hash"]')"
 sub repair_silver_bullet_duplicate_trust_tables
 assert_eq "a valid config is not touched by the repair" 0 "$TL_STATUS"
 printf '[other]\nkeep = 1\n[other]\n' >"$CFG"
@@ -673,6 +688,20 @@ assert_eq "SB hook appended as a second group" 2 "$(jq '.hooks.PreToolUse | leng
 assert_eq "SB hook trusted at its own position" 1 "$(toml_get "$CFG" 'int("'"$CH"'/.codex/hooks.json:pre_tool_use:1:0" in d["hooks"]["state"])')"
 assert_eq "SB hooks go in a group of their own, after the user's" '"\"$HOME/bin/guard.sh\""' "$(jq -c '.hooks.PreToolUse[0].hooks[0].command' "$CH/.codex/hooks.json")"
 assert_eq "user's hook keeps its own approval after the merge and the seed" '"sha256:userguard"' "$(toml_get "$CFG" 'd["hooks"]["state"]["'"$CH"'/.codex/hooks.json:pre_tool_use:0:0"]["trusted_hash"]')"
+
+# transactional order: a config.toml that cannot be edited leaves hooks.json untouched too
+reset_home
+mkdir -p "$CH/.codex"
+printf '{"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"type":"command","command":"%s/.codex/plugins/cache/alo-labs-codex/silver-bullet/1.0.0/hooks/completion-audit.sh"},{"type":"command","command":"/usr/bin/u1"}]}]}}\n' "$CH" >"$CH/.codex/hooks.json"
+HJ_BEFORE="$(<"$CH/.codex/hooks.json")"
+printf '[other]\nkeep = 1\n[other]\n' >"$CFG"
+sub purge_legacy_silver_bullet_hooks_from_user_config
+assert_eq "an uneditable config.toml makes the purge fail" 1 "$TL_STATUS"
+assert_eq "and hooks.json is left byte-identical" "$HJ_BEFORE" "$(<"$CH/.codex/hooks.json")"
+# a stale trust written in dotted-key form at a re-key target does not break the re-key
+printf '[hooks.state]\n"%s/.codex/hooks.json:pre_tool_use:0:0".trusted_hash = "sha256:stale"\n"%s/.codex/hooks.json:pre_tool_use:0:1".trusted_hash = "sha256:u1"\n' "$CH" "$CH" >"$CFG"
+sub purge_legacy_silver_bullet_hooks_from_user_config
+assert_eq "dotted-form trust follows the user's hook" '"sha256:u1"' "$(toml_get "$CFG" 'd["hooks"]["state"]["'"$CH"'/.codex/hooks.json:pre_tool_use:0:0"]["trusted_hash"]')"
 
 # ---- R7-06: --purge-legacy-skills removes only marked Silver Bullet copies
 reset_home

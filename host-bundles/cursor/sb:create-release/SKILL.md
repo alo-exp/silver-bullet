@@ -32,9 +32,10 @@ Shell execution is limited to:
 - `git push` (push tag or commits)
 - `git remote get-url origin` (detect GitHub repo — piped to `grep` for GitHub detection)
 - `jq` (read `.silver-bullet.json` config — verify_commands only)
-- `bash scripts/sync-release-marketplace-versions.sh` (sync host marketplace manifests manifests before tagging — Step 5b.1)
+- `bash scripts/sync-release-marketplace-versions.sh` (align the in-repo marketplace manifests before tagging — Step 5b.1; publish the upstream marketplace with `--publish` only after the tag and green CI — Step 7c)
+- `bash scripts/verify-release-commit-ci.sh` (wait for the release commit's CI before tagging — Steps 5c and 6b; derives owner/repo from `origin` when `GITHUB_REPOSITORY` is unset)
 - `bash scripts/run-release-live-matrix.sh` (run the repo-configured live matrix wrapper before tagging — Step 6)
-- `bash scripts/validate-github-release-notes.sh` (validate GitHub Release body after creation — Step 7b)
+- `bash scripts/validate-github-release-notes.sh` (validate the release notes file before `gh release create`, and the published body afterwards — Step 7b)
 - `gh release create` (create GitHub release — use full path `/opt/homebrew/bin/gh`
   if available, fall back to bare `gh`)
 - `bash scripts/post-release-host-verify.sh` (mandatory tri-host uninstall + fresh install + smoke after release — Step 7.6)
@@ -207,7 +208,7 @@ If `README.md` has no version badge, skip this step silently.
 
 ## Step 5b.1 — Sync marketplace.json Version
 
-Run the release marketplace sync wrapper so the primary host and Cursor marketplace version surfaces, the in-repo marketplace manifest, and both upstream marketplace repos all match the new plugin version before tagging the release:
+Run the release marketplace sync wrapper in its default (prepare) mode so the in-repo host marketplace manifests match the new plugin version before tagging. This publishes nothing and clones nothing; the upstream marketplace repository is updated only in Step 7c, after the tag exists and CI is green:
 
 ```bash
 bash scripts/sync-release-marketplace-versions.sh "$VERSION"
@@ -215,7 +216,7 @@ bash scripts/sync-release-marketplace-versions.sh "$VERSION"
 
 This step is required even if the marketplace version already appears to match. It makes the release process self-correcting and keeps both marketplace surfaces aligned with the tagged release.
 
-After the wrapper runs, the version in `host plugin manifest/marketplace.json` must match `host plugin manifest/plugin.json`, the version in `plugins/silver-bullet/host plugin manifest/plugin.json` must match `$VERSION`, and both upstream marketplace repos must have the same version committed and pushed.
+After the wrapper runs, the version in `host plugin manifest/marketplace.json` must match `host plugin manifest/plugin.json`, and the version in `plugins/silver-bullet/host plugin manifest/plugin.json` must match `$VERSION`. The upstream marketplace is not touched yet.
 
 ---
 
@@ -231,7 +232,7 @@ git push
 
 If none of the files changed (e.g. CHANGELOG already had this entry and no badge exists), skip the commit silently.
 
-If the release marketplace sync wrapper reports that either upstream marketplace repo was updated, those pushes are part of the release gate and must succeed before the release tag is created.
+Push the release commit and wait for green CI (`bash scripts/verify-release-commit-ci.sh`) before creating the tag. Never tag a red commit.
 
 > **Why before the tag?** All commits must be on the branch before the tag is placed. If CHANGELOG and README are committed after the tag, an immediate patch release is required. This step eliminates that need.
 
@@ -329,8 +330,11 @@ until the current `CI` and `Secret Scan` runs for `HEAD` complete successfully.
    _notes_tmp=$(mktemp)
    printf '%s' "$RELEASE_NOTES_BODY" > "$_notes_tmp"
    if [ -x /opt/homebrew/bin/gh ]; then GH=/opt/homebrew/bin/gh; else GH=gh; fi
+   # Validate the notes before anything is published or announced (a failure stops here).
+   bash scripts/validate-github-release-notes.sh --file "$_notes_tmp" || { rm -f -- "$_notes_tmp"; exit 1; }
    release_url=$("$GH" release create "$VERSION" \
      --title "$VERSION" \
+     --verify-tag \
      --notes-file "$_notes_tmp")
    rm -f -- "$_notes_tmp"
    ```
@@ -342,17 +346,25 @@ until the current `CI` and `Secret Scan` runs for `HEAD` complete successfully.
    from backtick-wrapped content in the release notes body (security: WR-04).
    `$release_url` is used in the notification sub-step below (sub-item 6 of this step).
 
-   **Step 7b — Validate published release body (#217):** Immediately after
-   `gh release create`, validate the published body. A generic fallback such as
-   `See CHANGELOG.md for details.` must fail the release gate.
+   **Step 7b — Validate release body (#217):** the notes file is validated before
+   `gh release create` (above); after publication validate the published body again.
+   A generic fallback such as `See CHANGELOG.md for details.` must fail the release gate.
 
    ```bash
    bash scripts/validate-github-release-notes.sh --tag "$VERSION"
    ```
 
-   If validation fails, delete or edit the release before announcing it. Detailed
+   If the published-body validation fails, delete or edit the release immediately; the announcement workflow starts when the release is created. Detailed
    categorized release notes must live in the GitHub Release itself; CHANGELOG.md
    is supplemental only.
+
+   **Step 7c — Publish the unified marketplace:** only now, with the tag pushed, CI green
+   for the tagged commit and the GitHub Release created, publish the upstream marketplace
+   (one verified push; it refuses a missing tag, a tag not on origin or red CI):
+
+   ```bash
+   bash scripts/sync-release-marketplace-versions.sh --publish "$VERSION"
+   ```
 
 5. **If not GitHub:** Output the release notes and suggest:
    > "Release notes generated. Publish manually to your release platform."

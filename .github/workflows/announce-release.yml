@@ -19,42 +19,55 @@ permissions:
   contents: read
   actions: read
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   announce:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       ANNOUNCE_CI_TIMEOUT_SECONDS: 1800
       ANNOUNCE_CI_POLL_INTERVAL_SECONDS: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
 
+      # Untrusted text (the tag, the release name and body) reaches the scripts only through
+      # environment variables and is never spliced into script text.
       - name: Resolve release metadata
         id: meta
         env:
           GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
         run: |
-          tag="${{ github.event.release.tag_name || github.event.inputs.tag }}"
-          [[ -z "$tag" ]] && { echo "No tag resolved"; exit 1; }
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]]; then
+            echo "::error::not a release tag: '$TAG' (expected vX.Y.Z or vX.Y.Z-suffix)"
+            exit 1
+          fi
 
-          name=$(gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json name --jq '.name // empty')
-          url=$(gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json url  --jq '.url')
+          name=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json name --jq '.name // empty')
+          url=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json url  --jq '.url')
           # First ~400 chars of release body — strip leading whitespace, collapse blank lines
-          body=$(gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json body --jq '.body // empty' \
+          body=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json body --jq '.body // empty' \
             | sed -E 's/^[[:space:]]+//' | awk 'NF{c++; print; if(c>=6) exit}')
+          # Single-line outputs must stay single lines.
+          name="${name//$'\r'/ }"; name="${name//$'\n'/ }"
+          url="${url//$'\r'/}"; url="${url//$'\n'/}"
 
           {
-            echo "tag=$tag"
-            echo "title=${name:-$tag}"
+            echo "tag=$TAG"
+            echo "title=${name:-$TAG}"
             echo "url=$url"
           } >> "$GITHUB_OUTPUT"
 
-          # Multi-line body via heredoc
+          # Multi-line body: a random delimiter, so no line of the body can end it early.
+          delimiter="EOF_$(od -An -N16 -tx1 /dev/urandom | tr -d ' \n')"
           {
-            echo "body<<__EOF__"
+            echo "body<<$delimiter"
             echo "$body"
-            echo "__EOF__"
+            echo "$delimiter"
           } >> "$GITHUB_OUTPUT"
 
       - name: Wait for release commit CI to settle

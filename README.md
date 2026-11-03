@@ -248,7 +248,7 @@ Start at [docs/README.md](docs/README.md), the index of the docs tree. The most 
 ## Testing
 
 ```bash
-make setup                             # check prerequisites, install requirements-dev.txt
+make setup                             # check prerequisites, install requirements-dev.txt into .venv
 make check                             # lint + full suite (what a pull request must pass)
 bash tests/run-all-tests.sh            # every default suite (the local equivalent of CI)
 bash tests/run-all-tests.sh --jobs 4   # in parallel
