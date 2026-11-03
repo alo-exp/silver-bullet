@@ -2,7 +2,7 @@ model: composer-2.5
 
 **Subagent:** `sb-composer-2-5-high`  
 **Phase:** VERIFY-ONLY pass 1/2 (`rung_1_verify_1`, post ACCEPT-apply of AA1 / AA2 / I-31–I-32)  
-**Artifact:** `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
+**Artifact:** `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
 **SHA-256:** `bd706ef2450092fcfe1e10aef788ffab290a8d761b6b87e0024c751155f6819c` (verified via `shasum -a 256`)  
 **Graphify:** `graphify query "dr search gateway AA1 AA2 serper x acquire cache_ttl_default_300s SB_DR_FLEET"` (300 nodes; oriented AA1/AA2 / §6.12 acquire / fleet TTL)  
 **Apply ref:** [APPLY.md](APPLY.md) pass 12 (AA1 / AA2 / I-31–I-32) · **Prior verify:** [verify_1-pass10.md](verify_1-pass10.md) (Y1 / I-30 PASS at `f08aef05…`)

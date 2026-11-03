@@ -2,7 +2,7 @@
 
 ## Scope (locked) — reviewer
 
-1. [`/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`](/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md) — **only** review target
+1. [`/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`](/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md) — **only** review target
 2. [`.planning/rfl-dr-search-gateway-ecb5030e/round-4-post-clarify/`](./) — ladder artifacts (ledger, write `review.md` here)
 
 **FORBIDDEN** for reviewers: clarify brief, agent-reach research note, SB plugin source (unless the plan cites a broken contract), implementing `alo-exp/search-cli` / Rust, git branch switch.
@@ -33,7 +33,7 @@ If an ACCEPT would unwind a prior product decision (runtime = search-cli fork; X
 After each verify pass, from repo root:
 
 ```bash
-PLAN="/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md"
+PLAN="/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md"
 test -f "$PLAN"
 grep -nE "must_search|xweb|-p x| --x |Nitter|agent-reach|twitter|opencli|bird|site:x.com|clap|--providers|SEARCH_CACHE_DIR|SEARCH_QUOTA_DIR|consent|ToS" "$PLAN" | head -80
 ```

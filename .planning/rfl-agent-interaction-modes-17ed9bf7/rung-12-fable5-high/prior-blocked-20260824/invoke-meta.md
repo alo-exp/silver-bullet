@@ -9,7 +9,7 @@
 - Lightweight: `SB_AGENT_CLAUDE_LIGHTWEIGHT=1`
 - Timeout: `CLAUDE_INTERACTIVE_TIMEOUT=180` (short: probe already returned spend-limit)
 - Quota retries: `AGENT_CLAUDE_QUOTA_RETRY_MAX=1` (spend-limit is not a 429)
-- Work dir: `/Users/shafqat/projects/silver-bullet/repo`
+- Work dir: `/Users/<user>/projects/silver-bullet/repo`
 - Branch intent: **main** (do not switch; no commit). Current HEAD is detached rebase of main at `1569b060`.
 - Plan: `.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md`
 - Plan SHA256: `56e26c7d8925a362ae6dc967e4f16be5618d84a80a75d51307b5146278e89d21` (413 lines)

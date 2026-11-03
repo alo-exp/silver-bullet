@@ -16,7 +16,7 @@ Prior Cursor-1/Cursor-2 passes that relied on inherited evidence, rescoring, or 
 | SB repo SHA | `5fa5d2fc` (E2E-093/E2E-094) |
 | Test-app branch | `enterprise-e2e/round-3-cursor` |
 | Test app SHA (baseline) | `8482e60` |
-| Test-app worktree | `/Users/shafqat/projects/enterprise-grade-test-app-cursor` |
+| Test-app worktree | `/Users/<user>/projects/enterprise-grade-test-app-cursor` |
 | Cursor model (frozen) | `composer-2.5` |
 | Operator | Live subagent session |
 | Start date | 2026-07-02 |

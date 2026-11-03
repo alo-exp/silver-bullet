@@ -1,6 +1,6 @@
 === agent-opencode-delegate 2026-08-16T09:20:05Z ===
-work_dir=/Users/shafqat/projects/silver-bullet/repo
-sb_root=/Users/shafqat/projects/silver-bullet/repo
+work_dir=/Users/<user>/projects/silver-bullet/repo
+sb_root=/Users/<user>/projects/silver-bullet/repo
 attempt=1
 model=opencode-go/mimo-v2.5 mode=default
 
@@ -8,11 +8,11 @@ model=opencode-go/mimo-v2.5 mode=default
 > build · qwen3.8-max
 [0m
 Starting ladder-4 High review. First: hash gate + file inventory.
-[0m⚙ [0mlean-ctx_ctx_shell {"command":"shasum -a 256 /Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md /Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md; echo \"---\"; wc -l /Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-20260812/SB-PRODUCT-OVERVIEW-FOR-REVIEWERS.md /Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-20260812/REVIEW-PROMPT-PREAMBLE.md /Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md /Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09-CLARIFY-260717-143757.md; echo \"---\"; ls /Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-20260812/"}
+[0m⚙ [0mlean-ctx_ctx_shell {"command":"shasum -a 256 /Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md /Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md; echo \"---\"; wc -l /Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-20260812/SB-PRODUCT-OVERVIEW-FOR-REVIEWERS.md /Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-20260812/REVIEW-PROMPT-PREAMBLE.md /Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md /Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09-CLARIFY-260717-143757.md; echo \"---\"; ls /Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-20260812/"}
 Hash gate: both copies = `9c9aa7d93a6fa7dd701e18528dd3d8f422cff0da47902aac4b8ac8c76ce21b06` — matches frozen SHA. Proceeding.
 
 Graphify first, then mandatory reads.
-[0m⚙ [0mlean-ctx_ctx_shell {"command":"cd /Users/shafqat/projects/silver-bullet/repo && ls graphify-out/graph.json 2>/dev/null && graphify query \"How do subagent launch surfaces, nested executor, launcher, and router interact in the Silver Bullet hook/skill architecture?\" 2>&1 | head -100","timeout_ms":120000}
+[0m⚙ [0mlean-ctx_ctx_shell {"command":"cd /Users/<user>/projects/silver-bullet/repo && ls graphify-out/graph.json 2>/dev/null && graphify query \"How do subagent launch surfaces, nested executor, launcher, and router interact in the Silver Bullet hook/skill architecture?\" 2>&1 | head -100","timeout_ms":120000}
 === workdir evidence ===
 prompt_bytes=5548
 git_head=06172dca36985879ff5c768effa3401510b9236d
@@ -201,26 +201,26 @@ git_status=
 ?? data/stream_store/stream%3Amem-live%3Ad928d091-af59-49e3-904f-b686604b5546.bin
 ?? data/stream_store/stream%3Amem-live%3Arfl-gpt-high-ladder3-20260816-plan-edits.bin
 workdir_files=
-/Users/shafqat/projects/silver-bullet/repo/.cursorignore
-/Users/shafqat/projects/silver-bullet/repo/research/STATUS.md
-/Users/shafqat/projects/silver-bullet/repo/research/README.md
-/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-monitor-poll.log
-/Users/shafqat/projects/silver-bullet/repo/.e2e-tui-watch.log
-/Users/shafqat/projects/silver-bullet/repo/CODE_OF_CONDUCT.md
-/Users/shafqat/projects/silver-bullet/repo/.silver-bullet/cursor-models-catalog.json
-/Users/shafqat/projects/silver-bullet/repo/.silver-bullet/graphify-query
-/Users/shafqat/projects/silver-bullet/repo/.silver-bullet/agentmemory-usage
-/Users/shafqat/projects/silver-bullet/repo/skills-lock.json
-/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-rows5-7-22-resume2.log
-/Users/shafqat/projects/silver-bullet/repo/.agentmemory/bridge.log
-/Users/shafqat/projects/silver-bullet/repo/.e2e-tui-watch-restart.log
-/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-rows3-22.log
-/Users/shafqat/projects/silver-bullet/repo/.e2e-round6-force-driver.log
-/Users/shafqat/projects/silver-bullet/repo/.e2e-tui-watch.pid
-/Users/shafqat/projects/silver-bullet/repo/LICENSE
-/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-monitor.pid
-/Users/shafqat/projects/silver-bullet/repo/CHANGELOG.md
-/Users/shafqat/projects/silver-bullet/repo/.cursor-plugin/marketplace.json
+/Users/<user>/projects/silver-bullet/repo/.cursorignore
+/Users/<user>/projects/silver-bullet/repo/research/STATUS.md
+/Users/<user>/projects/silver-bullet/repo/research/README.md
+/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-monitor-poll.log
+/Users/<user>/projects/silver-bullet/repo/.e2e-tui-watch.log
+/Users/<user>/projects/silver-bullet/repo/CODE_OF_CONDUCT.md
+/Users/<user>/projects/silver-bullet/repo/.silver-bullet/cursor-models-catalog.json
+/Users/<user>/projects/silver-bullet/repo/.silver-bullet/graphify-query
+/Users/<user>/projects/silver-bullet/repo/.silver-bullet/agentmemory-usage
+/Users/<user>/projects/silver-bullet/repo/skills-lock.json
+/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-rows5-7-22-resume2.log
+/Users/<user>/projects/silver-bullet/repo/.agentmemory/bridge.log
+/Users/<user>/projects/silver-bullet/repo/.e2e-tui-watch-restart.log
+/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-rows3-22.log
+/Users/<user>/projects/silver-bullet/repo/.e2e-round6-force-driver.log
+/Users/<user>/projects/silver-bullet/repo/.e2e-tui-watch.pid
+/Users/<user>/projects/silver-bullet/repo/LICENSE
+/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-monitor.pid
+/Users/<user>/projects/silver-bullet/repo/CHANGELOG.md
+/Users/<user>/projects/silver-bullet/repo/.cursor-plugin/marketplace.json
 readme_preview=
 # Silver Bullet
 

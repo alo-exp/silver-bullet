@@ -418,7 +418,7 @@ At 1–10 seats, LeanCTX's single-binary setup cuts onboarding friction and redu
 
 ### Secondary sources (gist and matrix)
 
-8. **LeanCTX Capability Analysis Gist.** `/Users/shafqat/projects/silver-bullet/repo/.planning/archive/research/2026-07-05/2026-07-05-context-tools-feature-matrix-ultradeep/gist-leanctx-capability-analysis.md` — 641-line analysis including per-tool replacement coverage scores, 17 hard gaps, partial overlaps, token optimization comparison, critical gap assessment, small mixed team analysis, and complete 200+ row feature matrix. Read in full 2026-07-07.
+8. **LeanCTX Capability Analysis Gist.** `/Users/<user>/projects/silver-bullet/repo/.planning/archive/research/2026-07-05/2026-07-05-context-tools-feature-matrix-ultradeep/gist-leanctx-capability-analysis.md` — 641-line analysis including per-tool replacement coverage scores, 17 hard gaps, partial overlaps, token optimization comparison, critical gap assessment, small mixed team analysis, and complete 200+ row feature matrix. Read in full 2026-07-07.
 
 9. **Context Tools Feature Coverage Matrix Audit.** Referenced in gist as `audit-report.md` — 200 feature rows × 5 columns, 1000 cells verified. Not directly accessed but referenced for methodology.
 
@@ -426,7 +426,7 @@ At 1–10 seats, LeanCTX's single-binary setup cuts onboarding friction and redu
 
 ### Methodology sources
 
-11. **Deep Research Skill.** `/Users/shafqat/.agents/skills/deep-research/SKILL.md` — 8-phase pipeline methodology (SCOPE, PLAN, RETRIEVE, TRIANGULATE, OUTLINE REFINEMENT, SYNTHESIZE, CRITIQUE, REFINE, PACKAGE).
+11. **Deep Research Skill.** `/Users/<user>/.agents/skills/deep-research/SKILL.md` — 8-phase pipeline methodology (SCOPE, PLAN, RETRIEVE, TRIANGULATE, OUTLINE REFINEMENT, SYNTHESIZE, CRITIQUE, REFINE, PACKAGE).
 
 ---
 

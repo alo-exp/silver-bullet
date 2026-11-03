@@ -8,8 +8,8 @@ All three copies of the freeze document were hashed live via SHA-256 during this
 
 | Copy | Path | SHA-256 | Bytes |
 |---|---|---|---|
-| Repo Working Tree | `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `fb94a91e5196703f56925d16f287180ad8cb67b5ade8806b35ba47575e299804` | 642228 |
-| Cursor Plans | `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `fb94a91e5196703f56925d16f287180ad8cb67b5ade8806b35ba47575e299804` | 642228 |
+| Repo Working Tree | `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `fb94a91e5196703f56925d16f287180ad8cb67b5ade8806b35ba47575e299804` | 642228 |
+| Cursor Plans | `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `fb94a91e5196703f56925d16f287180ad8cb67b5ade8806b35ba47575e299804` | 642228 |
 | Git HEAD Blob | `git show HEAD:.planning/router_subagent_surfaces_85bf9f09.plan.md` | `fb94a91e5196703f56925d16f287180ad8cb67b5ade8806b35ba47575e299804` | 642228 |
 
 **Integrity verdict: PASS-integrity.**

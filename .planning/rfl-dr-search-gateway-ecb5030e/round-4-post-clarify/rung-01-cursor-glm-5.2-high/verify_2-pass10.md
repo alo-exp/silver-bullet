@@ -2,7 +2,7 @@ model: composer-2.5
 
 **Subagent:** `sb-composer-2-5-high`  
 **Phase:** VERIFY-ONLY pass 2/2 (`verify_2`, independent of verify_1)  
-**Artifact:** `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
+**Artifact:** `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
 **SHA-256:** `f08aef058f38cd592b98f0739b414ec93a64644245ab3ab7045f6df6f2d13c71` (verified via `shasum -a 256`)  
 **Graphify:** `graphify query "SB_DR_FLEET_SLOTS fork-read I-18 dr search gateway plan"` (39 nodes; oriented fleet-slots / I-18 / gateway contract)  
 **Apply ref:** Y1 / I-30 (round-4 post-clarify rung 1 pass 10)

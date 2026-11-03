@@ -8,7 +8,7 @@
 - Print: `--use-print` → non-PTY NI
 - Lightweight: `SB_AGENT_CLAUDE_LIGHTWEIGHT=1`
 - Timeout: `CLAUDE_INTERACTIVE_TIMEOUT=900`
-- Work dir: `/Users/shafqat/projects/silver-bullet/repo`
+- Work dir: `/Users/<user>/projects/silver-bullet/repo`
 - Branch intent: **main** (do not switch; no commit). Current HEAD is detached rebase of main at `1569b060`.
 - Plan: `.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md`
 - Plan SHA256: `061467c46de70f3ed4cda326fcaca0c013b12b39c8430e9a7ec7bc99e58bc257` (413 lines)

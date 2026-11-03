@@ -5,7 +5,7 @@
 - **Ladder:** `/silver:review-fix-ladder` — rung **11 of 11** (final rung)
 - **Phase:** `rung_11_review` — **REVIEW-ONLY**
 - **Session parent:** `d5150f38-4d37-458d-9bdb-5e6f985975d3`
-- **Work dir:** `/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-11-claude-opus-5-xhigh`
+- **Work dir:** `/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-11-claude-opus-5-xhigh`
 - **Actions NOT taken (per charter):** no verify_1, no verify_2, no APPLY, no triage ACCEPT/REJECT, no Policy C / Policy D, no clarify, no clarifications.md, no AskQuestion, no git checkout/switch/commit, no Edit/Write of either freeze copy.
 
 ---
@@ -16,8 +16,8 @@ One `shasum -a 256` + `wc -c` + `cmp` invocation over both copies; audit perform
 
 | Copy | SHA-256 hashed by me | Size (bytes) |
 |---|---|---|
-| `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `3166a309baa55fb49158df4531c7bf7e8f8609f1c720b0f4d0cae5c396346321` | **621247** |
-| `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `3166a309baa55fb49158df4531c7bf7e8f8609f1c720b0f4d0cae5c396346321` | **621247** |
+| `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `3166a309baa55fb49158df4531c7bf7e8f8609f1c720b0f4d0cae5c396346321` | **621247** |
+| `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `3166a309baa55fb49158df4531c7bf7e8f8609f1c720b0f4d0cae5c396346321` | **621247** |
 
 - **Byte-identical:** **YES** (`cmp` exits 0, no differing byte)
 - **Matches locked freeze `3166a309…` / 621247:** **YES**

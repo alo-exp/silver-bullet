@@ -2,7 +2,7 @@ model: composer-2.5
 
 **Subagent:** `sb-composer-2-5-high`  
 **Phase:** VERIFY-ONLY pass 2/2 (`verify_2`, independent of verify_1)  
-**Artifact:** `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
+**Artifact:** `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
 **SHA-256:** `e8d4de532ef111fac2dd44ca7fce43e9345e970a3a6a320a09492e1944329c2e` (verified via `shasum -a 256`)  
 **Graphify:** `graphify query "AF1 I-42 clear delete-set rosters qN dr_search_gateway plan"` (227 nodes; oriented AF1 / cache-clear context)  
 **Apply ref:** AF1 / I-42 (round-4 post-clarify rung 1 pass 17)

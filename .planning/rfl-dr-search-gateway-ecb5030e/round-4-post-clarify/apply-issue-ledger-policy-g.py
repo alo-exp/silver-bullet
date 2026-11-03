@@ -3,10 +3,10 @@
 from pathlib import Path
 
 LEDGER = Path(
-    "/Users/shafqat/.cursor/worktrees/repo/ewwf/.planning/rfl-dr-search-gateway-ecb5030e/round-4-post-clarify/ISSUE-LEDGER.md"
+    "/Users/<user>/.cursor/worktrees/repo/ewwf/.planning/rfl-dr-search-gateway-ecb5030e/round-4-post-clarify/ISSUE-LEDGER.md"
 )
 STATUS = Path(
-    "/Users/shafqat/.cursor/worktrees/repo/ewwf/.planning/rfl-dr-search-gateway-ecb5030e/round-4-post-clarify/LADDER-STATUS.json"
+    "/Users/<user>/.cursor/worktrees/repo/ewwf/.planning/rfl-dr-search-gateway-ecb5030e/round-4-post-clarify/LADDER-STATUS.json"
 )
 SHA = "e8d4de532ef111fac2dd44ca7fce43e9345e970a3a6a320a09492e1944329c2e"
 

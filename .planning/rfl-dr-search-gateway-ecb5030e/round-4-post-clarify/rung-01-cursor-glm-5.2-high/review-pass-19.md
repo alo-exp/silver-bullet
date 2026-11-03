@@ -7,9 +7,9 @@
 
 ## Freeze confirmation
 
-- Plan: `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`
+- Plan: `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`
 - Pinned SHA-256: `e8d4de532ef111fac2dd44ca7fce43e9345e970a3a6a320a09492e1944329c2e`
-- `shasum -a 256` output: `e8d4de532ef111fac2dd44ca7fce43e9345e970a3a6a320a09492e1944329c2e  /Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`
+- `shasum -a 256` output: `e8d4de532ef111fac2dd44ca7fce43e9345e970a3a6a320a09492e1944329c2e  /Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`
 - SHA matches the pinned freeze. Review proceeds on this digest only.
 
 ## Encoder brief

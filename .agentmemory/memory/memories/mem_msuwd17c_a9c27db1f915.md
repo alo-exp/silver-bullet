@@ -13,7 +13,7 @@ files: []
 review.m
 
 RFL Policy C (rung 1/10 DeepSeek V4 Pro Max) — launcher fidelity check.
-review.md: /Users/shafqat/projects/silver-bullet/repo/.planning/rfl-dr-search-gateway-ecb5030e/rung-01-deepseek-v4-pro-max/review.md
+review.md: /Users/<user>/projects/silver-bullet/repo/.planning/rfl-dr-search-gateway-ecb5030e/rung-01-deepseek-v4-pro-max/review.md
 Same-reviewer OpenCode re-ask: BLOCKED (skill Policy C is launcher report not follow_brief re-ask; original opencode session torn down; MCP agentmemory memory_save not wired; new opencode run would be a different instance).
 follow_brief score: 8/10 (launcher self-score of existing review.md vs brief.md).
 review.md usable: YES.

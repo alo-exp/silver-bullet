@@ -22,8 +22,8 @@ Required read order completed in order, natively and in full:
 
 ```text
 cmp_exit:0
-ea243a96f7aeea04c48898b9c4f31b2a55b4c3e795b4099f6070c19a03bb6e92  /Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md
-ea243a96f7aeea04c48898b9c4f31b2a55b4c3e795b4099f6070c19a03bb6e92  /Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md
+ea243a96f7aeea04c48898b9c4f31b2a55b4c3e795b4099f6070c19a03bb6e92  /Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md
+ea243a96f7aeea04c48898b9c4f31b2a55b4c3e795b4099f6070c19a03bb6e92  /Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md
 ```
 
 Repo ↔ Cursor mirror **byte-identical**; identical SHA-256. Mirror-drift gate **passes** (no `NEEDS_FIXES` on parity).

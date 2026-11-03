@@ -1,9 +1,9 @@
 START 2026-08-27T02:03:20Z
 PI_PROVIDER=omniroute PI_MODEL=claude/claude-opus-5-high
 phase=rung_10_verify_1 attempt=1
-work-dir=/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-10-claude-opus-5-high
+work-dir=/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-10-claude-opus-5-high
 PI_EXPECT_FILE_MIN_BYTES=2500
-`./verify-1.md` written (12,349 bytes) at `/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-10-claude-opus-5-high/verify-1.md`.
+`./verify-1.md` written (12,349 bytes) at `/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-10-claude-opus-5-high/verify-1.md`.
 
 **rung_10_verify_1 — Pi `claude/claude-opus-5-high` via `/silver:agent-pi`**
 

@@ -2,7 +2,7 @@
 
 **Date:** 2026-07-04  
 **Branch (SB):** `feature/silver-agent-codex-skill`  
-**Branch (test app):** `round-agent-cursor-test` @ worktree `/Users/shafqat/projects/enterprise-grade-test-app-cursor`  
+**Branch (test app):** `round-agent-cursor-test` @ worktree `/Users/<user>/projects/enterprise-grade-test-app-cursor`  
 **Skill:** `/silver:agent-cursor` → [`skills/silver-agent-cursor/SKILL.md`](../skills/silver-agent-cursor/SKILL.md)  
 **Harness:** [`scripts/agent-cursor-delegate.sh`](../scripts/agent-cursor-delegate.sh)
 
@@ -22,14 +22,14 @@ Brief: [`.planning/agent-cursor/pilot-20260704/brief.md`](agent-cursor/pilot-202
 ## Invocation
 
 ```bash
-export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
+export SB_ROOT=/Users/<user>/projects/silver-bullet/repo
 export CURSOR_AGENT_TIMEOUT=600
 export SB_AGENT_CURSOR_LOG_FLOOR=512
 
 bash scripts/agent-cursor-delegate.sh \
-  --work-dir /Users/shafqat/projects/enterprise-grade-test-app-cursor \
-  --brief-file /Users/shafqat/projects/silver-bullet/repo/.planning/agent-cursor/pilot-20260704/brief.md \
-  --log /Users/shafqat/projects/silver-bullet/repo/.planning/agent-cursor/pilot-20260704/cursor-run.log
+  --work-dir /Users/<user>/projects/enterprise-grade-test-app-cursor \
+  --brief-file /Users/<user>/projects/silver-bullet/repo/.planning/agent-cursor/pilot-20260704/brief.md \
+  --log /Users/<user>/projects/silver-bullet/repo/.planning/agent-cursor/pilot-20260704/cursor-run.log
 ```
 
 ---

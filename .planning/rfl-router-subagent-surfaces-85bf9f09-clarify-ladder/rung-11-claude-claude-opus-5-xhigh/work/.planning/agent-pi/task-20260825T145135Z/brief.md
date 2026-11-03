@@ -4,7 +4,7 @@
 
 Read:
 
-`/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
+`/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
 
 Rung 11 (`claude/claude-opus-5-xhigh`). Canonical freeze SHA `32fd7415472cd463b444f75ff8e738da33db412bb2895dc8a2b5d5613f70830a` (621342 bytes). Independently re-read. Do not replay prior rungs.
 

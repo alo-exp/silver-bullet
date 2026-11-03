@@ -9,6 +9,6 @@ phase=rung_02_verify_2 attempt=1
 - **Leftovers:** none.
 - **EXIT:** VERIFY_PASS
 
-Report written to `/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-02-opencode-go-deepseek-v4-pro-max/verify-2.md`. Stopping here.
+Report written to `/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-02-opencode-go-deepseek-v4-pro-max/verify-2.md`. Stopping here.
 EXIT:0
 END 2026-08-25T23:15:09Z

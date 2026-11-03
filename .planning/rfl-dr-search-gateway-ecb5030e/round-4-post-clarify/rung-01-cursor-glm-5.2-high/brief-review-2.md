@@ -28,7 +28,7 @@ File ALL valid residuals, ALL severities. CLEAN only if nothing valid remains.
 
 ## Freeze
 
-- ONLY `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`
+- ONLY `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`
 - SHA-256: `265040b002871e9f109a710a2bdea64ab5c8ac24ae7ef5f225bec0303397490a`
 - Write `review-pass-2.md` in the rung-01 dir.
 - Graphify CLI first (not query_graph). memory_save after.

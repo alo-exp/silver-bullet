@@ -13,7 +13,7 @@ Review written. Summary:
 - 0 HIGH, 0 blocking MED, 3 LOW (prose-restatement intentionality, see rounds cell L4122), 5 NITs (TOC-lettered Appendix subsections, 1 unmatched paren in narrative, single huge round-receipts cell, historical `silver:new-workflow` path in as-is cell, mermaid renderer warning).
 - No ACCEPT/REJECT, no triage, no fixes, no issues, no git, no model remap.
 
-File: `/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-01-opencode-go-minimax-m3/review.md` (23 538 bytes).
+File: `/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-01-opencode-go-minimax-m3/review.md` (23 538 bytes).
 EXIT:0
 END 2026-08-26T15:31:16Z
 REVIEW_OK bytes=23538

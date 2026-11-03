@@ -8,7 +8,7 @@
 | sb_git_sha | `609ee0a1812c` |
 | Claude CLI | 2.1.195 |
 | Auth | OK |
-| Fixture | `/Users/shafqat/projects/enterprise-grade-test-app` |
+| Fixture | `/Users/<user>/projects/enterprise-grade-test-app` |
 | Structural tests | 16/16 PASS |
 
 ## Run attempts
@@ -48,8 +48,8 @@
 Run AUTO-C01 in an **interactive terminal** (not Cursor background shell):
 
 ```bash
-export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
-export CLAUDE_WORK_DIR=/Users/shafqat/projects/enterprise-grade-test-app
+export SB_ROOT=/Users/<user>/projects/silver-bullet/repo
+export CLAUDE_WORK_DIR=/Users/<user>/projects/enterprise-grade-test-app
 bash scripts/agent-claude-autonomous-test.sh preflight
 bash scripts/agent-claude-autonomous-test.sh start --row AUTO-C01
 # second terminal:

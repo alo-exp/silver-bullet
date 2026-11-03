@@ -15,7 +15,7 @@ WATCH elapsed=165s progress=0 inv=44595   0.0 pi kids= events=none report=no
 WATCH elapsed=180s progress=0 inv=44595   0.0 pi kids= events=none report=no
 WATCH elapsed=195s progress=0 inv=44595   0.0 pi kids= events=none report=no
 WATCH elapsed=210s progress=1 inv=44595   0.0 pi kids= events=none report=yes
-File written: `/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-10-claude-claude-opus-5-high/verify-2.md`
+File written: `/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-10-claude-claude-opus-5-high/verify-2.md`
 
 **rung_10_verify_2 — VERIFY-ONLY pass 2/2**
 

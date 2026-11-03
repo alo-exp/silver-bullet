@@ -91,6 +91,33 @@ class WormIndicatorsTest(TempRoot):
         write(self.root, ".vscode/tasks.json", '{"label": "a // b /* c */ \\" d", "list": [1, 2,\n], } /* unterminated')
         self.assertEqual(ri.worm_indicators(self.root, [".vscode/tasks.json"]), [])
 
+    def test_cr_terminated_line_comment_does_not_hide_a_member(self):
+        # VS Code's scanner ends a // comment at a bare CR as well as at LF.
+        write(self.root, "a/.vscode/tasks.json",
+              '{"tasks": [{"label": "x", "command": "echo pwn" // c\r, "runOptions": {"runOn": "folderOpen"}\n}]}')
+        write(self.root, "b/.vscode/settings.json", '{"editor.tabSize": 2 // c\r, "task.allowAutomaticTasks": "on"\n}')
+        problems = ri.worm_indicators(self.root, ["a/.vscode/tasks.json", "b/.vscode/settings.json"])
+        self.assertEqual(len(problems), 2)
+        self.assertIn("runOn: folderOpen", problems[0])
+        self.assertIn("sets task.allowAutomaticTasks", problems[1])
+
+    def test_utf8_bom_is_ignored_like_vscode_does(self):
+        bom = b"\xef\xbb\xbf"
+        write(self.root, "a/.vscode/extensions.json", bom + b'{"recommendations": ["ms-python.python"]}')
+        self.assertEqual(ri.worm_indicators(self.root, ["a/.vscode/extensions.json"]), [])
+        write(self.root, "b/.vscode/settings.json", bom + b'{"task.allowAutomaticTasks": "on"}')
+        problems = ri.worm_indicators(self.root, ["b/.vscode/settings.json"])
+        self.assertEqual(len(problems), 1)
+        self.assertIn("sets task.allowAutomaticTasks", problems[0])
+
+    def test_parsed_structure_and_text_patterns_are_combined(self):
+        # A duplicate key keeps only the last value in the parsed structure, but the literal
+        # folder-open member is still in the file, so it is reported.
+        write(self.root, ".vscode/tasks.json", '{"runOptions": {"runOn": "folderOpen", "runOn": "default"}}')
+        problems = ri.worm_indicators(self.root, [".vscode/tasks.json"])
+        self.assertEqual(len(problems), 1)
+        self.assertIn("runOn: folderOpen", problems[0])
+
     def test_unparseable_config_is_flagged_and_still_pattern_matched(self):
         write(self.root, ".vscode/settings.json", "{'task.allowAutomaticTasks': 'on'}")
         write(self.root, ".vscode/notes.txt", 'runOn: "folderOpen"')
@@ -163,13 +190,94 @@ class VendoredSkillsLockTest(TempRoot):
         got = ri.skill_hash(self.root, "s", ["SKILL.md", "adapters/B.md", "adapters/a.md"])
         self.assertEqual(got, expected.hexdigest())
 
-    def test_matching_lock_passes_and_tool_managed_skill_is_allowed(self):
+    def managed_lock(self, managed, skills=None):
+        write(self.root, ri.LOCK_FILE, json.dumps({"version": 1, "skills": skills or {}, "toolManaged": managed}))
+
+    def graphify_dirs(self, content="g"):
+        for base in (".agents/skills", ".claude/skills"):
+            write(self.root, f"{base}/graphify/SKILL.md", content)
+            write(self.root, f"{base}/graphify/.graphify_version", "1.0")
+            write(self.root, f"{base}/graphify/references/q.md", "q")
+
+    def current_managed(self):
+        return {d: {"computedHash": ri.dir_hash(self.root / d, ri.dir_files(self.root, d, self.files()))}
+                for d in (".agents/skills/graphify", ".claude/skills/graphify")}
+
+    def test_matching_lock_passes_and_tool_managed_skills_are_hash_locked(self):
         write(self.root, ".agents/skills/s/SKILL.md", "skill")
-        write(self.root, ".agents/skills/graphify/SKILL.md", "g")
-        write(self.root, ".agents/skills/graphify/.graphify_version", "1.0")
+        self.graphify_dirs()
         write(self.root, ".agents/plugins/marketplace.json", "{}")
-        self.lock({"s": {"computedHash": ri.skill_hash(self.root, "s", ["SKILL.md"])}})
+        self.managed_lock(self.current_managed(), {"s": {"computedHash": ri.skill_hash(self.root, "s", ["SKILL.md"])}})
         self.assertEqual(ri.vendored_skills_lock(self.root, self.files()), [])
+
+    def test_tool_managed_skill_edits_and_unlocked_dirs_fail_with_the_refresh_command(self):
+        self.graphify_dirs()
+        managed = self.current_managed()
+        self.managed_lock(managed)
+        write(self.root, ".claude/skills/graphify/SKILL.md", "tampered")
+        write(self.root, ".claude/skills/other/SKILL.md", "o")
+        problems = ri.vendored_skills_lock(self.root, self.files())
+        hint = "refresh with: python3 scripts/lib/repo_invariants.py refresh-skills-lock"
+        self.assertEqual(problems, [
+            f".claude/skills/graphify: content does not match skills-lock.json toolManaged computedHash ({hint})",
+            f".claude/skills/other: tool-managed skill is not in skills-lock.json toolManaged ({hint})",
+        ])
+        managed[".agents/skills/gone"] = {"computedHash": "0" * 64}
+        self.managed_lock(managed)
+        self.assertIn(".agents/skills/gone: listed in skills-lock.json toolManaged but missing",
+                      ri.vendored_skills_lock(self.root, self.files())[0])
+
+    def test_unlocked_graphify_under_agents_skills_fails(self):
+        self.graphify_dirs()
+        self.lock({})
+        self.assertEqual(ri.vendored_skills_lock(self.root, self.files()), [
+            ".agents/skills/graphify: tool-managed skill is not in skills-lock.json toolManaged "
+            "(refresh with: python3 scripts/lib/repo_invariants.py refresh-skills-lock)",
+            ".claude/skills/graphify: tool-managed skill is not in skills-lock.json toolManaged "
+            "(refresh with: python3 scripts/lib/repo_invariants.py refresh-skills-lock)",
+        ])
+
+    def test_invalid_tool_managed_section(self):
+        write(self.root, ri.LOCK_FILE, json.dumps({"skills": {}, "toolManaged": ["x"]}))
+        self.assertEqual(ri.vendored_skills_lock(self.root, []),
+                         ['skills-lock.json: "toolManaged" must be an object'])
+
+    def test_refresh_rewrites_hashes_and_adds_new_tool_dirs(self):
+        self.graphify_dirs()
+        write(self.root, ".agents/skills/s/SKILL.md", "vendored, not tool-managed")
+        self.lock({"s": {"computedHash": "keep"}})
+        self.assertEqual(ri.refresh_skills_lock(self.root), [".agents/skills/graphify", ".claude/skills/graphify"])
+        data = json.loads((self.root / ri.LOCK_FILE).read_text())
+        self.assertEqual(data["skills"], {"s": {"computedHash": "keep"}})
+        self.assertEqual(data["version"], 1)
+        entry = data["toolManaged"][".claude/skills/graphify"]
+        self.assertEqual(entry["version"], "1.0")
+        self.assertEqual(entry["computedHash"], self.current_managed()[".claude/skills/graphify"]["computedHash"])
+        self.assertEqual(ri.vendored_skills_lock(self.root, self.files()), [
+            "s: content does not match skills-lock.json (computedHash)"])
+        # An upgrade changes the files; refreshing again re-locks them and drops vanished dirs.
+        write(self.root, ".claude/skills/graphify/SKILL.md", "upgraded")
+        (self.root / ".agents/skills/graphify/SKILL.md").unlink()
+        for leftover in (self.root / ".agents/skills/graphify").rglob("*"):
+            if leftover.is_file():
+                leftover.unlink()
+        self.assertEqual(ri.refresh_skills_lock(self.root), [".claude/skills/graphify"])
+        data = json.loads((self.root / ri.LOCK_FILE).read_text())
+        self.assertEqual(list(data["toolManaged"]), [".claude/skills/graphify"])
+
+    def test_refresh_without_a_lock_or_with_a_broken_one(self):
+        self.graphify_dirs()
+        self.assertEqual(ri.refresh_skills_lock(self.root), [".agents/skills/graphify", ".claude/skills/graphify"])
+        self.assertEqual(json.loads((self.root / ri.LOCK_FILE).read_text())["skills"], {})
+        write(self.root, ri.LOCK_FILE, "{ broken")
+        with self.assertRaises(ValueError):
+            ri.refresh_skills_lock(self.root)
+
+    def test_dir_files_lists_tracked_files_of_one_directory(self):
+        write(self.root, ".claude/skills/a/SKILL.md", "a")
+        write(self.root, ".claude/skills/a/refs/x.md", "x")
+        write(self.root, ".claude/skills/ab/SKILL.md", "ab")
+        self.assertEqual(ri.dir_files(self.root, ".claude/skills/a", self.files()), ["SKILL.md", "refs/x.md"])
 
     def test_mismatch_missing_and_unlisted(self):
         write(self.root, ".agents/skills/s/SKILL.md", "changed")
@@ -308,6 +416,25 @@ jobs:
         quoted = HARDENED.replace("permissions:\n  contents: read\n", 'permissions: "write-all"\n')
         self.assertTrue(any("write-all" in p for p in self.problems(quoted)))
 
+    def test_honest_script_content_is_not_mistaken_for_hidden_settings(self):
+        script = HARDENED.replace(
+            '      - run: echo inline\n',
+            '      - name: Write config\n        run: |\n          cat > cfg.json <<EOF\n          {"ref": "main"}\n          - {a: b}\n          EOF\n'
+            '      - uses: actions/github-script@v7\n        with:\n          script: |\n            - {not: a step}\n            "ref": "main"\n            continue-on-error: true\n', 1)
+        self.assertEqual(self.problems(script), [])
+
+    def test_flow_style_jobs_and_steps_cannot_hide_settings(self):
+        flow_job = HARDENED + """  third: {runs-on: ubuntu-latest, timeout-minutes: 5, continue-on-error: true, steps: [{run: echo ok}]}\n"""
+        self.assertTrue(any("flow-style" in p for p in self.problems(flow_job)))
+        flow_steps = HARDENED.replace(
+            "    steps:\n      - name: checkout\n", "    steps: [{run: 'echo ${{ github.event.issue.title }}', continue-on-error: true}]\n    xsteps:\n      - name: checkout\n", 1)
+        self.assertTrue(any("flow-style" in p for p in self.problems(flow_steps)))
+        flow_brace = HARDENED.replace("    steps:\n      - name: checkout\n", "    steps: {}\n    xsteps:\n      - name: checkout\n", 1)
+        self.assertTrue(any("flow-style" in p for p in self.problems(flow_brace)))
+        # Flow collections for ordinary values stay fine.
+        fine = HARDENED.replace("on: [push]", "on:\n  push:\n    branches: [main]\n  workflow_dispatch: {}\n")
+        self.assertEqual(self.problems(fine), [])
+
     def test_ci_guard_must_see_ignored_files(self):
         rel = ".github/workflows/ci.yml"
         self.assertEqual(self.problems(HARDENED + "# formerly: git status --porcelain --ignored\n", rel),
@@ -341,6 +468,58 @@ class TrackedFileSizeTest(TempRoot):
         self.assertEqual(problems, ["big.bin: 91.0 MiB, over the 90 MiB limit (GitHub rejects files over 100 MB)"])
 
 
+def home_path(name, tail="proj/file.txt"):
+    return "/Users/" + name + "/" + tail
+
+
+def mail(local, domain):
+    return local + "@" + domain
+
+
+class PersonalDataTest(TempRoot):
+    def problems(self, text, rel="docs/x.md"):
+        write(self.root, rel, text)
+        return ri.personal_data(self.root, [rel])
+
+    def test_personal_machine_paths_are_reported_without_their_value(self):
+        for text in (home_path("dave"), "see /home/" + "erin" + "/x", "C:" + "\\Users\\" + "frank" + "\\x",
+                     "C:/Users/" + "frank" + "/x", "-Users-" + "gina" + "-proj"):
+            problems = self.problems("line one\n" + text + "\n")
+            self.assertEqual(problems, ["docs/x.md:2: personal home-directory path (use a placeholder such as /Users/<user>/)"], text)
+
+    def test_placeholders_and_generic_names_pass(self):
+        text = "\n".join([
+            "/Users/<user>/proj", "/Users/$USER/proj", "/Users/${USER}/p", "/home/" + "user/p", "/home/runner/work",
+            "/Users/Shared/x", "/Users/you/x", "C:" + "\\Users\\Ada\\x", home_path("example"), "/home/<name>/x", "~/projects",
+            "/usr/home/", "/var/home", "cats/Users/", "/Users", "/Users/"])
+        self.assertEqual(self.problems(text), [])
+
+    def test_email_addresses_must_be_allowlisted(self):
+        bad = self.problems("contact " + mail("someone", "gmail.com") + " or " + mail("x", "corp.io") + "\n")
+        self.assertEqual(bad, ["docs/x.md:1: email address outside the allowlist (alolabs.dev, sourcevo.com, noreply, test domains)"] * 2)
+        self.assertNotIn("gmail", bad[0])
+
+    def test_allowlisted_addresses_pass(self):
+        good = [mail("info", "alolabs.dev"), mail("hello", "alolabs.io"), mail("a", "sourcevo.com"), mail("noreply", "anthropic.com"),
+                mail("12345+x", "users.noreply.github.com"), mail("No-Reply", "other.org"), mail("a", "example.com"),
+                mail("a", "mail.example.org"), mail("a", "e.invalid"), mail("a", "x.test"), mail("a", "host.local"),
+                mail("git", "github.com"), mail("token", "github.com"), mail("t", "test.com"), mail("a", "t.com")]
+        self.assertEqual(self.problems("\n".join(good)), [])
+        self.assertTrue(self.problems(mail("someone", "github.com")))
+        self.assertTrue(self.problems(mail("a", "notexample.com")))
+
+    def test_binary_and_missing_files_are_skipped(self):
+        write(self.root, "img.bin", b"\x00\x01" + home_path("dave").encode())
+        write(self.root, "ok.md", "fine")
+        self.assertEqual(ri.personal_data(self.root, ["img.bin", "gone.md", "ok.md"]), [])
+
+    def test_problems_are_per_line_in_file_order(self):
+        write(self.root, "a.md", "x\n" + home_path("dave") + "\n")
+        write(self.root, "b.md", mail("q", "gmail.com") + "\n" + home_path("dave") + "\n")
+        self.assertEqual([p.split(" ")[0] for p in ri.personal_data(self.root, ["a.md", "b.md"])],
+                         ["a.md:2:", "b.md:1:", "b.md:2:"])
+
+
 class MainTest(TempRoot):
     def run_main(self, argv):
         out, err = io.StringIO(), io.StringIO()
@@ -372,6 +551,26 @@ class MainTest(TempRoot):
             os.chdir(cwd)
         self.assertEqual(code, 1)
         self.assertIn("x.gif", out)
+
+    def test_personal_data_check_runs_from_the_cli(self):
+        write(self.root, "ok.md", "fine")
+        code, out, _ = self.run_main(["personal-data", str(self.root)])
+        self.assertEqual((code, out), (0, ""))
+        write(self.root, "bad.md", home_path("dave"))
+        code, out, _ = self.run_main(["personal-data", str(self.root)])
+        self.assertEqual(code, 1)
+        self.assertEqual(out, "  bad.md:1: personal home-directory path (use a placeholder such as /Users/<user>/)\n")
+
+    def test_refresh_skills_lock_command(self):
+        write(self.root, ".claude/skills/graphify/SKILL.md", "g")
+        write(self.root, ".claude/skills/graphify/.graphify_version", "2.0")
+        code, out, _ = self.run_main(["refresh-skills-lock", str(self.root)])
+        self.assertEqual((code, out), (0, "  locked .claude/skills/graphify\n"))
+        self.assertEqual(json.loads((self.root / ri.LOCK_FILE).read_text())["toolManaged"][".claude/skills/graphify"]["version"], "2.0")
+        write(self.root, ri.LOCK_FILE, "{ broken")
+        code, _, err = self.run_main(["refresh-skills-lock", str(self.root)])
+        self.assertEqual(code, 2)
+        self.assertIn("skills-lock.json", err)
 
     def test_cli_entry_point(self):
         write(self.root, "ok.txt", "fine")

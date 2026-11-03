@@ -4,8 +4,8 @@ Phase: REVIEW-ONLY (`rung_11_review`). This is the **final** ladder rung. Do **n
 This is `/silver:review-fix-ladder` only. Do **not** run `/silver:clarify`. Do not write clarifications.md. Do not AskQuestion. Do not encode product forks.
 
 Scope (do not exceed — FORBIDDEN to Edit/Write either freeze copy):
-- `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
-- `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
+- `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
+- `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
 
 Independently re-hash both copies. Disk wins.
 - Charter start SHA: `07b986094e983d39fe3c7d2f1ac215ae730cbd28ccf3957655f5ec4c53d3280a` / 620985 bytes is **historical only**. Do **not** treat as current. Ignore stale briefs/SKIPPED.md that still cite it or say "no Grok substitute".
@@ -32,7 +32,7 @@ Tasks:
 2. Report raw leftovers with line references and severity (HIGH / MED / LOW / NIT), **or** CLEAN 0 findings.
 3. Empty severity groups must say **none**.
 4. Write the report ONLY to this ABSOLUTE path:
-   `/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-11-claude-claude-opus-5-xhigh/review.md`
+   `/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-11-claude-claude-opus-5-xhigh/review.md`
 5. Do NOT classify ACCEPT/REJECT, file issues, or apply fixes.
 6. MUST NOT Edit/Write either freeze copy.
 

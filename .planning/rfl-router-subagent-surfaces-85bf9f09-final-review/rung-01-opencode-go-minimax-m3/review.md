@@ -11,8 +11,8 @@
 
 | Check | Result |
 |---|---|
-| `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` SHA-256 | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` |
-| `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` SHA-256 | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` |
+| `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` SHA-256 | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` |
+| `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` SHA-256 | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` |
 | Canonical freeze SHA (charter) | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` |
 | Both copies byte-identical? | **YES** (`wc -c` = 621 095 bytes each; `sha256sum` equal) |
 | Size matches charter (621 095 bytes)? | **YES** |

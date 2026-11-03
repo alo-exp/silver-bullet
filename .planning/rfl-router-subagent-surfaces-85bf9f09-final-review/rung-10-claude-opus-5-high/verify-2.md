@@ -14,8 +14,8 @@ Single `shasum -a 256` + `wc -c` + `cmp` pass over both copies:
 
 | Copy | SHA-256 hashed by me | Bytes |
 | --- | --- | --- |
-| `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `3166a309baa55fb49158df4531c7bf7e8f8609f1c720b0f4d0cae5c396346321` | **621247** |
-| `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `3166a309baa55fb49158df4531c7bf7e8f8609f1c720b0f4d0cae5c396346321` | **621247** |
+| `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `3166a309baa55fb49158df4531c7bf7e8f8609f1c720b0f4d0cae5c396346321` | **621247** |
+| `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `3166a309baa55fb49158df4531c7bf7e8f8609f1c720b0f4d0cae5c396346321` | **621247** |
 
 **Byte-identical: YES** (`cmp -s` → `IDENTICAL_YES`; identical SHA and identical size).
 **SHA I actually hashed: `3166a309…` / 621247 bytes** — this is the **current locked freeze** (post NIT-1 leftover APPLY).

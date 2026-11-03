@@ -47,6 +47,15 @@ data/iii-config.runtime.yaml
 *.swp
 .DS_Store
 
+# Private or operational data that must not be committed (R13-11): machine setup reports, AI
+# CLI session transcripts and logs, account or quota plans. scripts/check-repo-invariants.sh
+# (personal-data) fails when personal machine paths or foreign email addresses are tracked.
+/SETUP_REPORT.md
+*.err
+.planning/**/*.log
+research/**/*.log
+.planning/**/CLAUDE-QUOTA.md
+
 # Node
 node_modules/
 

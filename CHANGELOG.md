@@ -1584,6 +1584,12 @@ Launch-hardening release. Remediates all blocker/high/medium findings from the p
 
 ## [Unreleased]
 
+- Security: the Claude, Cursor and Codex marketplace entries are pinned to the release tag (`ref`, plus `sha` once tagged); the alignment test enforces it.
+- Privacy: working-tree scrub of personal machine paths, a quota plan, a machine setup report and AI CLI transcripts (history not rewritten); the new `personal-data` invariant keeps them out.
+- Skills: the graphify-managed `.agents/skills/graphify` and `.claude/skills/graphify` are hash-locked in `skills-lock.json`.
+- Payload: `.gitattributes` export-ignores `research/`, `.planning/` transcripts, `graphify-out/graph.json`, `.agentmemory/` and `*.bak`; `scripts/build-plugin-payload.sh` builds the slim tarball.
+- Cursor: `skills/` and `templates/workflows/` moved from `.cursorignore` to `.cursorindexingignore`.
+
 ---
 
 ## [0.37.0] — 2026-05-19

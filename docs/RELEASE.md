@@ -144,6 +144,34 @@ See `docs/internal/update-command-instructions.md` for full implementation guide
 
 [CICD.md](CICD.md) describes the GitHub Actions workflows (`ci.yml`, `secret-scan.yml`, `pages.yml`, `announce-release.yml` and the optional `e2e-live.yml` and `rc-validation.yml`). `bash tests/run-all-tests.sh` is the local equivalent of the CI test jobs.
 
+## Pinned distribution
+
+Every distribution entry installs the release tag, never a branch (R13-02). `sync-marketplace-version.sh` (Claude), `sync-cursor-marketplace-version.sh` and `sync-codex-marketplace-version.sh` write `source.ref = v<version>`. Once the tag exists they also write `source.sha` (the tag's commit); `--publish` always writes both into the unified `alo-labs/agent-plugins` marketplace. Before tagging, only `ref` is written, so the in-repo manifest never carries a stale sha. `tests/scripts/test-release-version-alignment.sh` fails unless every in-repo marketplace entry and every `scripts/lib/agent-plugins-catalog.json` row pins `v<package.json version>` and any `sha` is the tag's commit.
+
+## Plugin payload
+
+Claude Code installs the repository root, so a plain clone carries development-only trees. `.gitattributes` marks them `export-ignore`: `research/`, `.planning/` (except `.planning/scripts/`, which the phase-lock hooks run), `.agentmemory/`, `graphify-out/graph.json` and `*.bak`. `bash scripts/build-plugin-payload.sh OUT.tar.gz vX.Y.Z` builds the slim runtime tarball from the tag, and GitHub's source tarball for the tag honours the same rules. Neither Claude Code's `github` source nor Cursor/Codex `git clone` installs read `export-ignore`, and the plugin manifests have no include/exclude field, so installs through the marketplace still fetch the full tree. Shrinking those installs needs a distribution change (publish the payload as a release asset or a payload-only branch/tag and point the marketplace `source` at it, or move the Claude plugin root into a subdirectory with a `git-subdir` source). That is the maintainer's decision; until then `export-ignore` plus the payload script is the supported slimming.
+
+## Private data
+
+`bash scripts/check-repo-invariants.sh --check personal-data` (part of CI) fails on a tracked text file that holds a personal home-directory path (`/Users/<name>/`, `/home/<name>/`, `C:\Users\<name>\`) or an email address outside the allowlist (`alolabs.dev`, `alolabs.io`, `sourcevo.com`, `noreply` addresses, test domains such as `example.com` and `*.invalid`). It reports file and line, never the value. Use `/Users/<user>/` style placeholders. AI CLI transcripts (`*.err`, run `*.log`), `SETUP_REPORT.md` and quota plans are git-ignored. Git history was not rewritten, so earlier commits still contain the removed data.
+
+## Third-party actions to pin
+
+Workflows reference actions by tag; pinning to full commit SHAs is deferred to the maintainer (no network was available to resolve them). Pin each to the commit its tag points at, keeping the tag as a comment (`uses: actions/checkout@<sha> # v5`):
+
+| Action | Current tag | Used in |
+|--------|-------------|---------|
+| `actions/checkout` | `v5` | ci.yml (3), e2e-live.yml, pages.yml, rc-validation.yml, secret-scan.yml, announce-release.yml |
+| `actions/setup-node` | `v5` | ci.yml (2), rc-validation.yml |
+| `actions/setup-python` | `v6` | ci.yml (2) |
+| `actions/upload-artifact` | `v5` | ci.yml |
+| `actions/configure-pages` | `v5` | pages.yml |
+| `actions/upload-pages-artifact` | `v3` | pages.yml |
+| `actions/deploy-pages` | `v4` | pages.yml |
+
+Resolve with `gh api repos/actions/<name>/commits/<tag> --jq .sha`. Also unpinned: `apt-get install` of `shellcheck`, `jq`, `git` and `expect` in ci.yml, e2e-live.yml and rc-validation.yml.
+
 ## Scalability
 
 **Fixed** — process doc rewritten when release process changes. Not append-only.

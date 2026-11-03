@@ -3,7 +3,7 @@
 **Date:** 2026-07-06  
 **Authority:** [LIVE-VALIDATION-PLAN.md](LIVE-VALIDATION-PLAN.md)  
 **SB commit:** [`69988bda`](https://github.com/alo-exp/silver-bullet/commit/69988bda2d7dffa57114889e28dc5ca04ce6b9f9) — `feat(tri-criteria): add live/cold validation harness and multi-WF scheduler`  
-**Fixture:** `/Users/shafqat/projects/enterprise-grade-test-app` (`feature/tc01-waitlist-saas`)
+**Fixture:** `/Users/<user>/projects/enterprise-grade-test-app` (`feature/tc01-waitlist-saas`)
 
 ---
 

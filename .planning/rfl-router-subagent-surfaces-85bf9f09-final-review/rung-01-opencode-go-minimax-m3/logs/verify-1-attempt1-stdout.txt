@@ -20,4 +20,4 @@ Charter signals all hold (forbid-only `/sb:multi-ai-task` + `sb:agent-wrap`; Omn
 **Verdict: CLEAN** · **Leftovers: none** · **EXIT: VERIFY_PASS**
 EXIT:0
 END 2026-08-26T15:51:38Z
-    9809 /Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-01-opencode-go-minimax-m3/verify-1.md
+    9809 /Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-01-opencode-go-minimax-m3/verify-1.md

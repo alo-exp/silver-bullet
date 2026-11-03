@@ -1,7 +1,7 @@
 START 2026-08-26T18:28:10Z
 PI_PROVIDER=omniroute PI_MODEL=cursor/gemini-3.7-flash-high
-work_dir=/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-06-cursor-gemini-3.7-flash-high expect_file=/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-06-cursor-gemini-3.7-flash-high/review.md
-The official review report for Rung 6/11 (`cursor/gemini-3.7-flash-high`) has been written to [`review.md`](/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-06-cursor-gemini-3.7-flash-high/review.md).
+work_dir=/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-06-cursor-gemini-3.7-flash-high expect_file=/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-06-cursor-gemini-3.7-flash-high/review.md
+The official review report for Rung 6/11 (`cursor/gemini-3.7-flash-high`) has been written to [`review.md`](/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-06-cursor-gemini-3.7-flash-high/review.md).
 
 ### Summary of Audit
 
@@ -9,8 +9,8 @@ The official review report for Rung 6/11 (`cursor/gemini-3.7-flash-high`) has be
 - **Phase:** REVIEW-ONLY (`rung_06_review`)
 - **Parent Session:** `d5150f38-4d37-458d-9bdb-5e6f985975d3`
 - **Hashed Artifacts:**
-  - [`/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md): SHA-256 `edff7c0cca55e7e6662cafbbf3f10cea71230483c4992c2a5d5149c629a63e5e` / **621,101** bytes
-  - [`/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md): SHA-256 `edff7c0cca55e7e6662cafbbf3f10cea71230483c4992c2a5d5149c629a63e5e` / **621,101** bytes
+  - [`/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md): SHA-256 `edff7c0cca55e7e6662cafbbf3f10cea71230483c4992c2a5d5149c629a63e5e` / **621,101** bytes
+  - [`/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md): SHA-256 `edff7c0cca55e7e6662cafbbf3f10cea71230483c4992c2a5d5149c629a63e5e` / **621,101** bytes
   - Both copies are **byte-identical**.
 
 ### Charter Integrity Checklist

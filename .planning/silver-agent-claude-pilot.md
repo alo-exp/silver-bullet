@@ -2,7 +2,7 @@
 
 **Date:** 2026-07-05  
 **Branch (SB):** `feature/silver-agent-claude-skill`  
-**Branch (test app):** `feature/agent-claude-pilot-20260705` @ `/Users/shafqat/projects/enterprise-grade-test-app`  
+**Branch (test app):** `feature/agent-claude-pilot-20260705` @ `/Users/<user>/projects/enterprise-grade-test-app`  
 **Skill:** `/silver:agent-claude` → [`skills/silver-agent-claude/SKILL.md`](../skills/silver-agent-claude/SKILL.md)  
 **Harness:** [`scripts/agent-claude/invoke.sh`](../scripts/agent-claude/invoke.sh) (`--use-print`)
 
@@ -22,8 +22,8 @@ Brief: `.planning/agent-claude-pilot-20260705/brief.md` (gitignored path pattern
 ## Invocation
 
 ```bash
-export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
-export CLAUDE_WORK_DIR=/Users/shafqat/projects/enterprise-grade-test-app
+export SB_ROOT=/Users/<user>/projects/silver-bullet/repo
+export CLAUDE_WORK_DIR=/Users/<user>/projects/enterprise-grade-test-app
 export CLAUDE_INTERACTIVE_TIMEOUT=600
 export SB_AGENT_CLAUDE_LOG_FLOOR=256
 
