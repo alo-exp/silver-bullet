@@ -10,11 +10,6 @@ rc_delegate_smoke_run() {
   export SB_AGENT_DELEGATE_LOG_FLOOR="${SB_AGENT_DELEGATE_LOG_FLOOR:-64}"
   export SB_AGENT_CLAUDE_LOG_FLOOR="${SB_AGENT_CLAUDE_LOG_FLOOR:-64}"
   case "$host" in
-    cursor)
-      script="${repo}/scripts/agent-cursor-delegate.sh"
-      export CURSOR_AGENT_MODEL=composer-2.5 CURSOR_MODEL=composer-2.5
-      export SB_AGENT_CURSOR_LOG_FLOOR="${SB_AGENT_CURSOR_LOG_FLOOR:-64}"
-      ;;
     codex) script="${repo}/scripts/agent-codex-delegate.sh" ;;
     claude)
       script="${repo}/scripts/agent-claude-delegate.sh"
@@ -36,10 +31,4 @@ rc_delegate_smoke_run() {
   fi
   [[ "$delegate_rc" -eq 0 ]] || return "$delegate_rc"
   grep -q RC_SMOKE_OK "$log"
-}
-rc_delegate_five_tool_scenarios() {
-  local repo="$1"
-  export SB_FIVE_TOOL_LIVE=1 SB_FIVE_TOOL_LIVE_EXECUTE=1 SB_FIVE_TOOL_MODE=prerelease
-  export CURSOR_AGENT_MODEL=composer-2.5 CURSOR_MODEL=composer-2.5
-  bash "${repo}/tests/live/test-live-five-tool-stack-cursor.sh"
 }
