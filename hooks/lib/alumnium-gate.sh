@@ -88,7 +88,11 @@ sb_alumnium_edit_path_requires_browser() {
 sb_alumnium_command_requires_browser() {
   local cmd="${1:-}" target
   [[ -n "$cmd" ]] || return 1
-  sb_opt_in_shell_needs_gate alumnium "$cmd" || return 1
+  sb_opt_in_tool_command alumnium "$cmd" && return 1
+  if declare -f sb_shell_command_looks_read_only >/dev/null 2>&1 \
+    && sb_shell_command_looks_read_only "$cmd" >/dev/null 2>&1; then
+    return 1
+  fi
   if grep -qiE '(^|[^A-Za-z0-9_-])(playwright|cypress|puppeteer|wdio|webdriverio)([^A-Za-z0-9_-]|$)' <<<"$cmd"; then
     return 0
   fi
@@ -123,7 +127,7 @@ ${install_lines}
 
 Provider API key required (e.g. OPENAI_API_KEY or ANTHROPIC_API_KEY in MCP env).
 
-To turn Alumnium enforcement off: bash $(sb_rt_plugin_script scripts/sb-consent.sh) decline alumnium --project $(printf '%q' "$(dirname "${config_file:-$PWD/x}")")
+If the user asks to turn Alumnium enforcement off: bash $(sb_rt_plugin_script scripts/sb-consent.sh) decline alumnium --project $(printf '%q' "$(dirname "${config_file:-$PWD/x}")")
 See docs/ALUMNIUM.md and silver-bullet.md §8.1.
 EOF
 }

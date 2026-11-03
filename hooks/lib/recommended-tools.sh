@@ -178,7 +178,7 @@ sb_rt_version_ge() {
 # CONFIGURED comes from the project config, so it is honoured only when it names a file
 # inside $SB_RUNTIME_STATE_DIR: '~/' and the ${SB_RUNTIME_HOME_ROOT} / ${SB_RUNTIME_STATE_DIR}
 # placeholders are expanded; empty, relative or placeholder-bearing values, control
-# characters, '.' or '..' components and paths whose existing parent resolves (physically)
+# characters, '.' or '..' components, names of SB's own control files, and paths whose existing parent resolves (physically)
 # outside the state dir all fall back to $SB_RUNTIME_STATE_DIR/DEFAULT_NAME.
 sb_rt_state_file() {
   local configured="${1:-}" default_name="${2:-}" state_dir fallback candidate rel part probe canon_state canon_probe
@@ -200,8 +200,15 @@ sb_rt_state_file() {
     "${state_dir}"/*) rel="${candidate#"${state_dir}"/}" ;;
     *) printf '%s' "$fallback"; return 0 ;;
   esac
+  # SB's own control files in the state dir (trivial marker, skill state, branch, project
+  # root, audit and session logs) are never a stamp; an empty rel (the bare state dir) falls back.
+  case "${rel##*/}" in
+    "" | trivial* | state* | branch* | project-root* | session-log* | requested-skill* | gate-audit* \
+      | consent* | .* | *.requested | *.bak | *.lock)
+      printf '%s' "$fallback"; return 0 ;;
+  esac
   IFS=/ read -r -a _sb_rt_parts <<<"$rel"
-  for part in "${_sb_rt_parts[@]}"; do
+  for part in ${_sb_rt_parts[@]+"${_sb_rt_parts[@]}"}; do
     case "$part" in
       "" | . | ..) printf '%s' "$fallback"; return 0 ;;
     esac
@@ -507,11 +514,18 @@ sb_recommended_tool_full_install_lines() {
 # SessionStart consent context
 # ---------------------------------------------------------------------------------------
 
-# The commands that record the user's answer, for this project.
+# The commands that record the user's answer, for this project. With a third argument
+# ("enforce") Yes records that capability only; without it Yes also allows installing and
+# wiring the tool on this machine (install and wire are machine-wide).
 _sb_rt_consent_commands() {
-  local tool_id="$1" project_root="$2" cli
+  local tool_id="$1" project_root="$2" only="${3:-}" cli
   cli="bash $(sb_rt_plugin_script scripts/sb-consent.sh)"
-  printf '  Yes: %s grant %s --project %q\n' "$cli" "$tool_id" "$project_root"
+  if [[ -n "$only" ]]; then
+    printf '  Yes: %s grant %s --project %q --capabilities %s\n' "$cli" "$tool_id" "$project_root" "$only"
+  else
+    printf '  Yes (also allows installing and wiring it on this machine): %s grant %s --project %q\n' \
+      "$cli" "$tool_id" "$project_root"
+  fi
   printf '  No:  %s decline %s --project %q\n' "$cli" "$tool_id" "$project_root"
 }
 
@@ -545,8 +559,8 @@ RECOMMENDED TOOL CONSENT NEEDED — ${display} (${tool_id})
 
 This project's .silver-bullet.json recommends ${display} (recommended_tools.${tool_id}.enabled_by_user: true). Silver Bullet no longer treats a setting in a repository file as your consent, so ${display} hooks, installs and host wiring stay off until the user confirms.
 
-Ask the user once: "Enable ${display} for this project? (Yes / No)". Record the answer (this notice is shown once):
-$(_sb_rt_consent_commands "$tool_id" "$project_root")
+Ask the user once: "Enable ${display} for this project? (Yes / No)". Record the answer (this notice is shown once; Yes turns on this project's ${display} hooks only, installs and host wiring need their own grant):
+$(_sb_rt_consent_commands "$tool_id" "$project_root" enforce)
 EOF
         return 0
       fi

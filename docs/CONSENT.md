@@ -24,7 +24,7 @@ fetches, prints as an instruction or writes outside the project:
 | `install_commands`, `platform_install_commands`, `benefits_summary`, `license_note`, `install_failure_reason`, `cli_command` | Ignored. Install and setup instructions come only from the built-in tables in `hooks/lib/recommended-tools.sh`. |
 | `health_url` | Used only when it is `http(s)` to `localhost`, `127.0.0.1` or `[::1]`; passed to `curl` after `--`. |
 | `graph_path`, `export_root` | Used only as a project-relative path of plain characters with no `.`, `..` or empty component. |
-| `usage_state_file`, `query_state_file` | Used only inside the runtime state directory; otherwise the default stamp path is used. |
+| `usage_state_file`, `query_state_file` | Used only inside the runtime state directory and never for one of SB's control files (`trivial`, `state`, `branch`, `project-root`, session and audit logs); otherwise the default stamp path is used. |
 | `min_version`, `min_node_version` | Used only when it is 1 to 3 dotted numbers; never evaluated arithmetically before that check. |
 | `read_deny_bytes` | May raise the Context Mode read threshold or set it to 0 (off); a lower value is ignored. |
 
@@ -63,7 +63,25 @@ installed or wired and no gate blocks.
 
 Writes are atomic (temp file in the same directory, then rename), keep the file's mode, back the
 previous version up to `consent.json.bak`, change nothing when the decision is already
-recorded, and refuse to write through a symlink.
+recorded, and refuse to write through a symlink (the `.bak` backup is written as a fresh file,
+so a symlink planted there is replaced, never followed). Concurrent writers are serialized with a
+lock directory (`.consent.lock`, taken over when its owner process is gone), so parallel grants
+and revokes do not lose one another's update.
+
+## What consent does and does not defend against
+
+Consent defends against **repository content**: a cloned repo cannot opt you in to installs,
+host wiring or blocking gates. It does not defend against the agent itself. The coding agent runs
+as your OS user, so it can run `sb-consent.sh` or edit the store; the `source` label in the log is
+not authenticated. Agents should record or change consent only when the user says so. The practical
+effect is limited: granting adds gates or allows installs and wiring the agent could already
+perform with its shell, and declining switches off opt-in gates, as editing the old
+`enabled_by_user` flag did.
+
+`sb-consent.sh --project DIR` accepts any directory inside the project and records the one that
+holds `.silver-bullet.json`. The one-time migration notice's **Yes** command grants `enforce`
+only; installing and wiring are machine-wide and need their own `grant ... --capabilities
+install,wire`.
 
 ## How the gates decide
 

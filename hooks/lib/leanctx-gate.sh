@@ -150,7 +150,7 @@ ${install_lines}
 
 Verify: lean-ctx --version
 
-To turn LeanCTX enforcement off: bash $(sb_rt_plugin_script scripts/sb-consent.sh) decline leanctx --project $(printf '%q' "$(dirname "${config_file:-$PWD/x}")")
+If the user asks to turn LeanCTX enforcement off: bash $(sb_rt_plugin_script scripts/sb-consent.sh) decline leanctx --project $(printf '%q' "$(dirname "${config_file:-$PWD/x}")")
 See docs/LEANCTX.md.
 EOF
 }

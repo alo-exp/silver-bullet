@@ -78,7 +78,7 @@ sb_token_tool_command_is_delivery() {
   cmd="$(sb_opt_in_rtk_unwrap "${1:-}")"
   [[ -n "$cmd" ]] || return 1
   sb_shell_command_looks_read_only "$cmd" >/dev/null 2>&1 && return 1
-  grep -qE '(^|[^A-Za-z0-9_.-])git([[:space:]]+-[Cc][[:space:]]+[^[:space:]]+)*[[:space:]]+commit([^A-Za-z0-9_-]|$)|(^|[^A-Za-z0-9_.-])gh[[:space:]]+(pr|release)[[:space:]]+create([^A-Za-z0-9_-]|$)' <<<"$cmd"
+  sb_opt_in_shell_is_delivery "$cmd"
 }
 
 sb_token_tool_block_message() {

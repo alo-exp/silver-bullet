@@ -65,8 +65,8 @@ for cmd in 'ls -la' 'git status' 'cat README.md' 'rtk git commit -m x' 'rtk init
   assert_silent_ok "read-only/exempt shell command is not gated: $cmd"
 done
 # R5-09: an allowlist, not a keyword list: a lookalike, a redirect or an arbitrary installer is gated
-for cmd in 'brew install rtk' 'curl -sSL https://example.test/install.sh' 'echo hi > out.txt' 'bash enable-rtk-context-mode.sh' \
-  'make; echo rtk' 'sed -i s/a/b/ f # rtk'; do
+for cmd in 'brew install rtk' 'curl -sSL https://example.test/install.sh | sh' 'echo hi > out.txt' 'bash enable-rtk-context-mode.sh > out.txt' \
+  'make > out.txt; echo rtk' 'sed -i s/a/b/ f # rtk'; do
   run "$(tg2_bash_input "$cmd")"
   assert_denied "not exempt merely because it mentions an RTK word: $cmd" "RTK REQUIRED"
 done

@@ -6,8 +6,10 @@
 # "repo" the libraries resolve helper scripts from is a staged copy whose helper
 # scripts only log their invocations.
 
+# The probes enable a tool only with the user's own consent (docs/CONSENT.md); hr_project records
+# consent for every tool its config recommends, as a user who answered "yes" would have.
 # shellcheck source=consent-helpers.sh
-source "$TL_REPO_ROOT/tests/lib/consent-helpers.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/consent-helpers.sh"
 
 export HR_RTLIB="$TL_REPO_ROOT/scripts/lib/recommended-tools"
 HR_STAGE="$TL_TMP/hr-repo"

@@ -226,4 +226,71 @@ rm -f "$STORE"
 tl_run env PATH="$(tl_path_without jq)" bash "$CLI" path
 assert_eq "jq required" "2" "$TL_STATUS"
 
+echo "=== concurrent writers do not lose updates (lock) ==="
+reset_store
+pids=()
+for t in graphify agentmemory alumnium rtk context_mode leanctx search_cli; do
+  bash "$CLI" grant "$t" --all-projects --capabilities enforce >/dev/null 2>&1 &
+  pids+=("$!")
+done
+for pid in "${pids[@]}"; do wait "$pid" || true; done
+assert_eq "all seven parallel grants are recorded" "7" "$(jq '[.machine[] | select(.enforce.decision == "granted")] | length' "$STORE")"
+[[ ! -d "$(dirname "$STORE")/.consent.lock" ]] && tl_pass "the lock is released" || tl_fail "the lock is released"
+reset_store
+pids=()
+for t in graphify agentmemory alumnium rtk; do
+  bash "$CLI" grant "$t" --all-projects --capabilities enforce >/dev/null 2>&1
+done
+for t in graphify agentmemory alumnium rtk; do
+  bash "$CLI" revoke "$t" --all-projects --capabilities enforce >/dev/null 2>&1 &
+  pids+=("$!")
+done
+for pid in "${pids[@]}"; do wait "$pid" || true; done
+assert_eq "all four parallel revokes are recorded" "0" "$(jq '[.machine // {} | .[] | .enforce // empty] | length' "$STORE")"
+
+echo "=== lock: stale owner taken over, live owner waited on ==="
+reset_store
+LOCK="$(dirname "$STORE")/.consent.lock"
+mkdir -p "$LOCK"; printf '999999' >"$LOCK/pid"
+sb_consent_set granted rtk enforce machine test >/dev/null && tl_pass "a lock held by a dead process is taken over" || tl_fail "a lock held by a dead process is taken over"
+assert_eq "grant after takeover recorded" "granted" "$(sb_consent_decision rtk enforce)"
+mkdir -p "$LOCK"; printf '%s' "$$" >"$LOCK/pid"
+tl_run env SB_CONSENT_LOCK_TRIES=2 bash "$CLI" grant graphify --all-projects --capabilities enforce
+assert_eq "a live lock owner makes the writer give up with status 2" "2" "$TL_STATUS"
+assert_contains "the message names the lock" "$TL_ERR" ".consent.lock"
+assert_eq "nothing was written while the lock was held" "unset" "$(sb_consent_decision graphify enforce)"
+rm -rf "$LOCK"
+mkdir -p "$LOCK"
+(sleep 0.3; rm -rf "$LOCK") &
+bgpid=$!
+tl_run env SB_CONSENT_LOCK_TRIES=50 bash "$CLI" grant graphify --all-projects --capabilities enforce
+wait "$bgpid" || true
+assert_eq "a writer waits for a lock without a pid file" "0" "$TL_STATUS"
+assert_eq "and then records" "granted" "$(sb_consent_decision graphify enforce)"
+reset_store
+printf 'file' >"$HOME/.config-blocker" 2>/dev/null || true
+tl_run env XDG_CONFIG_HOME="$HOME/.config-blocker" bash "$CLI" grant rtk --all-projects --capabilities enforce
+assert_eq "an uncreatable store directory is a clean error" "2" "$TL_STATUS"
+
+echo "=== the backup is not written through a symlink ==="
+reset_store
+sb_consent_set granted rtk enforce machine test >/dev/null
+VICTIM_BAK="$TL_TMP/victim-bak"; printf 'precious\n' >"$VICTIM_BAK"
+ln -s "$VICTIM_BAK" "${STORE}.bak"
+sb_consent_set granted graphify enforce machine test >/dev/null
+assert_eq "the symlink target is untouched" "precious" "$(cat "$VICTIM_BAK")"
+[[ -f "${STORE}.bak" && ! -L "${STORE}.bak" ]] && tl_pass "the backup is a regular file" || tl_fail "the backup is a regular file"
+assert_eq "the backup holds the previous version" "unset" "$(jq -r '.machine.graphify.enforce.decision // "unset"' "${STORE}.bak")"
+
+echo "=== CLI: --project resolves to the project root ==="
+reset_store
+SUBPROJ="$TL_TMP/sbproj"; mkdir -p "$SUBPROJ/src/deep"; printf '{}' >"$SUBPROJ/.silver-bullet.json"
+SUBKEY="$(cd -P "$SUBPROJ" && pwd -P)"
+tl_run bash "$CLI" grant rtk --project "$SUBPROJ/src/deep" --capabilities enforce
+assert_eq "grant from a subdirectory succeeds" "0" "$TL_STATUS"
+assert_eq "the decision is recorded for the project root" "granted" "$(sb_consent_decision rtk enforce "$SUBPROJ")"
+assert_eq "no key was recorded for the subdirectory" "false" "$(jq --arg k "$SUBKEY/src/deep" '.projects | has($k)' "$STORE")"
+tl_run bash "$CLI" grant graphify --project "$PROJ" --capabilities enforce
+assert_eq "a directory outside any SB project is recorded as given" "granted" "$(sb_consent_decision graphify enforce "$PROJ")"
+
 tl_results
