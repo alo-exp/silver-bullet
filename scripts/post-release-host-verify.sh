@@ -32,6 +32,7 @@ SKIP_SMOKE=0
 PUBLIC_RELEASE=0
 INSTALL_REPO=""
 INSTALL_REPO_TMP=""
+TAG_COMMIT=""
 
 usage() {
   cat <<'USAGE'
@@ -39,8 +40,8 @@ Usage: scripts/post-release-host-verify.sh [--version TAG] [--host cursor|codex|
 
 Per host on the operator machine:
   1. Uninstall SB only (preserve rtk, context-mode, and other non-SB hooks)
-  2. Fresh install from TAG checkout or repo HEAD
-  3. Install smoke (sb-diagnostics) + RC fresh cell (isolated delegate smoke)
+  2. Fresh install from a checkout of the release tag (never the working tree)
+  3. Install smoke (sb-diagnostics) + RC fresh cell (isolated delegate smoke), both from that checkout
   4. Write marker under ${SB_RUNTIME_STATE_DIR}/post-release-verify/
 USAGE
 }
@@ -65,18 +66,22 @@ if [[ -z "$VERSION" ]]; then
   VERSION="$(git -C "$REPO_ROOT" describe --tags --abbrev=0 2>/dev/null || true)"
 fi
 [[ -n "$VERSION" ]] || { printf 'ERROR: could not resolve release version\n' >&2; exit 1; }
+VERSION="v${VERSION#v}"
 
+# The release is the tag, not this checkout: package.json keeps the released version long
+# after later commits, and the working tree may hold uncommitted edits. Every host is
+# installed, diagnosed and smoke-tested from a detached clone of the tagged commit (a real
+# git checkout, so installers that record the installed commit see the tag's).
 resolve_install_repo() {
-  local pkg_ver head_tag=""
-  pkg_ver="$(jq -r '.version // empty' "$REPO_ROOT/package.json" 2>/dev/null || true)"
-  head_tag="$(git -C "$REPO_ROOT" describe --exact-match --tags HEAD 2>/dev/null || true)"
-  if [[ "$head_tag" == "$VERSION" || "v${pkg_ver}" == "$VERSION" || "$pkg_ver" == "${VERSION#v}" ]]; then
-    INSTALL_REPO="$REPO_ROOT"
-    return 0
+  TAG_COMMIT="$(git -C "$REPO_ROOT" rev-parse --verify --quiet "refs/tags/${VERSION}^{commit}" 2>/dev/null || true)"
+  if [[ -z "$TAG_COMMIT" ]]; then
+    printf 'ERROR: release tag %s not found in %s (git fetch --tags); post-release verification installs the released tag, never the working tree\n' "$VERSION" "$REPO_ROOT" >&2
+    exit 1
   fi
   INSTALL_REPO_TMP="$(mktemp -d "${TMPDIR:-/tmp}/sb-post-release-install.XXXXXX")"
-  git -C "$REPO_ROOT" archive "$VERSION" | tar -x -C "$INSTALL_REPO_TMP"
-  INSTALL_REPO="$INSTALL_REPO_TMP"
+  INSTALL_REPO="${INSTALL_REPO_TMP}/silver-bullet"
+  git clone -q --local --no-checkout "$REPO_ROOT" "$INSTALL_REPO"
+  git -C "$INSTALL_REPO" -c advice.detachedHead=false checkout -q --detach "$TAG_COMMIT"
 }
 
 cleanup_install_repo() {
@@ -85,8 +90,10 @@ cleanup_install_repo() {
   fi
 }
 
-resolve_install_repo
+# The trap is in place before the temporary directory exists, so a failing clone or
+# checkout cannot leak it.
 trap cleanup_install_repo EXIT
+resolve_install_repo
 
 marker_dir_for_host() {
   local host="$1" home_root
@@ -106,6 +113,7 @@ write_marker() {
   file="${dir}/${host}"
   {
     printf 'host=%s\nversion=%s\nstatus=%s\n' "$host" "$VERSION" "$status"
+    printf 'commit=%s\n' "$TAG_COMMIT"
     printf 'timestamp=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
     [[ -n "$detail" ]] && printf 'detail=%s\n' "$detail"
   } >"$file"
@@ -144,12 +152,14 @@ run_install_smoke() {
     codex) export SILVER_BULLET_RUNTIME=codex ;;
     claude) export SILVER_BULLET_RUNTIME=claude ;;
   esac
-  SB_DIAG_SMOKE=1 RTK_DISABLED=1 bash "${REPO_ROOT}/scripts/sb-diagnostics.sh" >/dev/null
+  SB_DIAG_SMOKE=1 RTK_DISABLED=1 bash "${INSTALL_REPO}/scripts/sb-diagnostics.sh" >/dev/null
 }
 
+# The RC cell reinstalls from the tree it runs from (scripts/lib/host-smoke-cell.sh), so it
+# runs from the tag checkout too.
 run_rc_fresh_smoke() {
   local host="$1"
-  RTK_DISABLED=1 bash "${REPO_ROOT}/scripts/run-rc-validation-matrix.sh" --host "$host" --mode fresh
+  RTK_DISABLED=1 bash "${INSTALL_REPO}/scripts/run-rc-validation-matrix.sh" --host "$host" --mode fresh
 }
 
 verify_host() {

@@ -102,7 +102,7 @@ class FileWriteTest(Tmp):
         path = self.tmp / "c.toml"
         path.write_text('[a."x"]\nk = 1\n[a."x"]\nk = 2\n[b]\nk = 1\n')
         doc, repaired = m.read_toml_repairing(path, lambda p: p[:1] == ("a",))
-        self.assertEqual((tomllib.loads(doc.text), repaired), ({"b": {"k": 1}}, True))
+        self.assertEqual((tomllib.loads(doc.text), repaired), ({"a": {"x": {"k": 1}}, "b": {"k": 1}}, True))
         path.write_text("[a]\nk = 1\n")
         self.assertTrue(m.read_toml_repairing(path, lambda p: True)[1] is False)
         path.write_text('[b]\nk = 1\n[b]\n')
@@ -111,6 +111,28 @@ class FileWriteTest(Tmp):
         path.write_bytes(b"\xff\xfe")
         with self.assertRaises(m.ConfigError):
             m.read_toml_repairing(path, lambda p: True)
+
+    def test_string_values_reads_strings_without_a_parser(self):
+        doc = m.TomlDocument('[a.b] # c\nsource = "x \\"q\\" \\\\ y"\nlit = \'C:\\dir\'\nn = 5\nml = """m"""\nlml = \'\'\'l\'\'\'\nbad = "\\e"\n[a]\nb.dotted = "d"\n')
+        self.assertEqual(doc.string_values(("a", "b")), {"source": 'x "q" \\ y', "lit": "C:\\dir", "dotted": "d"})
+
+    def test_rename_handles_dotted_keys_and_stale_dotted_targets(self):
+        doc = m.TomlDocument('[hooks.state]\n"k:0:1".trusted_hash = "stale"\n"k:1:0".trusted_hash = "A"\n  "k:1:1".trusted_hash = "B"\n[other]\nx = 1\n')
+        moved = {("hooks", "state", "k:1:0"): ("hooks", "state", "k:0:1"), ("hooks", "state", "k:1:1"): ("hooks", "state", "k:0:2")}
+        self.assertEqual(doc.rename_tables(moved), 2)
+        self.assertEqual(tomllib.loads(doc.text), {"hooks": {"state": {"k:0:1": {"trusted_hash": "A"}, "k:0:2": {"trusted_hash": "B"}}}, "other": {"x": 1}})
+
+    def test_duplicates_only_removal_keeps_the_first_copy(self):
+        doc = m.TomlDocument('[a.x]\nk = 1\n[a.x]\nk = 2\n[a.y]\nk = 3\n[b]\nk = 4\n[b]\nk = 5\n')
+        self.assertEqual(doc.remove(lambda p: p[:1] == ("a",), duplicates_only=True), 1)
+        self.assertEqual(doc.text.count("[a.x]"), 1)
+        self.assertIn("k = 1", doc.text)
+        self.assertEqual(doc.text.count("[b]"), 2)
+
+    def test_trust_table_predicate_covers_package_and_kay_keys(self):
+        yes = [("hooks", "state", "silver-bullet@alo-labs-codex:hooks/hooks.json:stop:0:0"), ("hooks", "state", "/h/.codex/hooks.json:stop:0:0")]
+        no = [("hooks", "state", "/h/other/hooks.json:stop:0:0"), ("hooks",), ("plugins", "x", "silver-bullet@a")]
+        self.assertEqual([m.is_sb_trust_table(p) for p in yes + no], [True, True, False, False, False])
 
     def test_symlink_is_written_through(self):
         real = self.tmp / "dotfiles" / "settings.json"
