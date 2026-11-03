@@ -349,5 +349,20 @@ class RendererUnitTests(unittest.TestCase):
         self.assertIn("&lt;x&gt;", out)
 
 
+
+class TemplateScriptIntegrityTests(unittest.TestCase):
+    def test_every_external_script_is_version_pinned_and_has_sri(self):
+        import re
+
+        html = (Path(__file__).resolve().parents[1] / "assets" / "landscape-preview.template.html").read_text(encoding="utf-8")
+        tags = re.findall(r"<script\b[^>]*\bsrc=\"(https?://[^\"]+)\"[^>]*>", html)
+        self.assertGreaterEqual(len(tags), 3)
+        for tag in re.findall(r"<script\b[^>]*\bsrc=\"https?://[^>]*>", html):
+            url = re.search(r'src="([^"]+)"', tag).group(1)
+            self.assertRegex(url, r"@\d+\.\d+\.\d+/", url)  # exact version, never a range or latest
+            self.assertRegex(tag, r'integrity="sha384-[A-Za-z0-9+/]{64}"', url)
+            self.assertIn('crossorigin="anonymous"', tag)
+
+
 if __name__ == "__main__":
     unittest.main()

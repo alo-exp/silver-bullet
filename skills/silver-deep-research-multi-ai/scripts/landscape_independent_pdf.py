@@ -110,6 +110,28 @@ def _playwright_argv() -> list[str]:
     )
 
 
+PDF_RENDER_SCRIPT = Path(__file__).resolve().with_name("render_landscape_pdf.cjs")
+
+
+def _render_command(source_uri: str, tmp_pdf: Path, timeout_ms: int) -> tuple[list[str], dict[str, str]]:
+    """Command and environment for the sandboxed Chromium render (R12-27).
+
+    The Playwright CLI cannot render with Chromium's sandbox, so a small Node script drives
+    the Playwright module that the located CLI belongs to. Raises FileNotFoundError when
+    Playwright or node is missing.
+    """
+    cli = _playwright_argv()
+    node = shutil.which("node")
+    if not node:
+        raise FileNotFoundError("node not found: install Node.js to write the landscape PDF")
+    module_dirs = [str(p) for p in Path(os.path.realpath(cli[0])).parents if p.name == "node_modules"]
+    module_dirs.append(str(Path.cwd() / "node_modules"))
+    if os.environ.get("NODE_PATH"):
+        module_dirs.append(os.environ["NODE_PATH"])
+    env = dict(os.environ, NODE_PATH=os.pathsep.join(module_dirs))
+    return [node, str(PDF_RENDER_SCRIPT), source_uri, str(tmp_pdf), str(timeout_ms), f"#{PRINT_ROOT_ID}"], env
+
+
 def _load_json(path: Path) -> dict[str, Any]:
     if not path.is_file():
         return {}
@@ -1288,22 +1310,9 @@ def write_independent_landscape_pdf(
     fd, tmp_name = tempfile.mkstemp(prefix=f".{pdf_path.stem}.", suffix=".pdf", dir=pdf_path.parent)
     os.close(fd)
     tmp_pdf = Path(tmp_name)
-    cmd = [
-        *_playwright_argv(),
-        "pdf",
-        "--paper-format",
-        "A4",
-        "--wait-for-selector",
-        f"#{PRINT_ROOT_ID}",
-        "--wait-for-timeout",
-        "4000",
-        "--timeout",
-        str(timeout_ms),
-        source.as_uri(),
-        str(tmp_pdf),
-    ]
+    cmd, env = _render_command(source.as_uri(), tmp_pdf, timeout_ms)
     try:
-        subprocess.run(cmd, check=True, timeout=timeout_ms / 1000 + 60)
+        subprocess.run(cmd, check=True, timeout=timeout_ms / 1000 + 60, env=env)
         raw = tmp_pdf.read_bytes()
         if len(raw) < 8:
             raise RuntimeError(f"Playwright did not write independent PDF: {pdf_path}")
