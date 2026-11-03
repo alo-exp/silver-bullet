@@ -1,0 +1,7 @@
+sources:
+  - class: preprint
+    domains: [arxiv.org, biorxiv.org]
+  - class: peer_review
+    domains: [pubmed.ncbi.nlm.nih.gov, doi.org]
+  - class: meta
+    domains: [cochranelibrary.com]
