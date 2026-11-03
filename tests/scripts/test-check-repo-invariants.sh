@@ -12,8 +12,8 @@ SCRIPT="$TL_REPO_ROOT/scripts/check-repo-invariants.sh"
 fixture() {
   local dir="$1" path
   mkdir -p "$dir"
-  for path in .claude-plugin .cursor-plugin .agents plugins/silver-bullet/.codex-plugin \
-    plugins/silver-bullet/.cursor-plugin hooks scripts templates docs/workflows \
+  for path in .claude-plugin .agents plugins/silver-bullet/.codex-plugin \
+    hooks scripts templates docs/workflows \
     .silver-bullet.json package.json CHANGELOG.md skills-lock.json; do
     mkdir -p "$dir/$(dirname "$path")"
     cp -a "$TL_REPO_ROOT/$path" "$dir/$path"
@@ -64,11 +64,6 @@ assert_eq "missing root is a usage error" 64 "$TL_STATUS"
 FIX="$TL_TMP/json"; fixture "$FIX"
 printf '{ broken' >"$FIX/package.json"
 expect_fail "invalid JSON" json-valid "package.json"
-
-FIX="$TL_TMP/versions"; fixture "$FIX"
-jq '.plugins |= map(if .name == "silver-bullet" then .version = "0.0.0-drift" else . end)' \
-  "$FIX/.cursor-plugin/marketplace.json" >"$FIX/m.json" && mv "$FIX/m.json" "$FIX/.cursor-plugin/marketplace.json"
-expect_fail "cursor marketplace drift" manifest-versions "0.0.0-drift"
 
 FIX="$TL_TMP/versions-codex"; fixture "$FIX"
 jq '.plugins |= map(if .name == "silver-bullet" then .version = "9.9.9" else . end)' \

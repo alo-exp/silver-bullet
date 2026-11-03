@@ -10,7 +10,7 @@ LIB="$TL_REPO_ROOT/scripts/lib/agent-plugins-common.sh"
 source "$LIB"
 
 # --- agent_plugins_repo_url ---
-unset AGENT_PLUGINS_REPO_URL MARKETPLACE_REPO_URL CODEX_MARKETPLACE_REPO_URL CURSOR_MARKETPLACE_REPO_URL
+unset AGENT_PLUGINS_REPO_URL MARKETPLACE_REPO_URL CODEX_MARKETPLACE_REPO_URL
 assert_eq "default repo url" "https://github.com/alo-labs/agent-plugins.git" "$(agent_plugins_repo_url)"
 export AGENT_PLUGINS_REPO_URL="file:///x/y.git"
 assert_eq "env override repo url" "file:///x/y.git" "$(agent_plugins_repo_url)"
@@ -18,10 +18,9 @@ assert_eq "env override repo url" "file:///x/y.git" "$(agent_plugins_repo_url)"
 # --- legacy url per host ---
 export MARKETPLACE_REPO_URL="legacy-claude"
 export CODEX_MARKETPLACE_REPO_URL="legacy-codex"
-export CURSOR_MARKETPLACE_REPO_URL="legacy-cursor"
+export="legacy-cursor"
 assert_eq "legacy claude" "legacy-claude" "$(agent_plugins_legacy_repo_url claude)"
 assert_eq "legacy codex" "legacy-codex" "$(agent_plugins_legacy_repo_url codex)"
-assert_eq "legacy cursor" "legacy-cursor" "$(agent_plugins_legacy_repo_url cursor)"
 assert_eq "legacy unknown host is empty" "" "$(agent_plugins_legacy_repo_url bogus)"
 
 # --- resolve: legacy wins, else unified ---

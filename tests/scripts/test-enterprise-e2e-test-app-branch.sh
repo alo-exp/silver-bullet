@@ -83,13 +83,11 @@ assert_contains "matrix calls fixture_assert_branch_lock post-invoke" "${REPO_RO
 assert_contains "methodology documents fixture branch pattern" "$METHODOLOGY" "enterprise-e2e/round-"
 assert_contains "methodology documents SB_E2E_TEST_APP_BRANCH" "$METHODOLOGY" "SB_E2E_TEST_APP_BRANCH"
 
-assert_contains "hosts.json cursor test app root worktree" \
-  "${REPO_ROOT}/scripts/enterprise-e2e/config/hosts.json" \
-  "enterprise-grade-test-app-cursor"
-
-assert_contains "hosts.json cursor test app branch" \
-  "${REPO_ROOT}/scripts/enterprise-e2e/config/hosts.json" \
-  "enterprise-e2e/round-1-cursor"
+if grep -qi cursor "${REPO_ROOT}/scripts/enterprise-e2e/config/hosts.json"; then
+  fail "hosts.json has no retired Cursor host"
+else
+  pass "hosts.json has no retired Cursor host"
+fi
 
 assert_contains "hosts.json codex honest baseline sha" \
   "${REPO_ROOT}/scripts/enterprise-e2e/config/hosts.json" \
@@ -101,7 +99,7 @@ assert_contains "hosts.json codex test app branch" \
 
 assert_contains "policy doc exists" \
   "${REPO_ROOT}/.planning/enterprise-e2e/TEST-APP-BRANCH-POLICY.md" \
-  "enterprise-e2e/round-1-cursor"
+  "enterprise-e2e/round-"
 
 export SB_E2E_LIVE_RUNTIME=codex
 export SILVER_BULLET_RUNTIME=codex
@@ -117,18 +115,18 @@ export SB_E2E_LIVE_RUNTIME=claude
 assert_eq "round from ROUND-8 ledger" "8" "$(enterprise_e2e_test_app_round_from_ledger)"
 
 unset SB_E2E_TEST_APP_BRANCH SB_E2E_LEDGER_FILE
-export SB_E2E_LIVE_RUNTIME=cursor
+export SB_E2E_LIVE_RUNTIME=codex
 enterprise_e2e_apply_test_app_branch_defaults
-assert_eq "hosts.json default cursor test app branch" \
-  "enterprise-e2e/round-1-cursor" \
+assert_eq "hosts.json default codex test app branch" \
+  "enterprise-e2e/round-9-codex" \
   "${SB_E2E_TEST_APP_BRANCH:-}"
 
 unset SB_E2E_TEST_APP_BRANCH SB_E2E_TEST_APP_ROUND SB_E2E_LEDGER_FILE
-export SB_E2E_LIVE_RUNTIME=cursor
-export SB_E2E_LEDGER_FILE="${REPO_ROOT}/.planning/enterprise-e2e/ROUND-CURSOR-3-REAL-LEDGER.md"
+export SB_E2E_LIVE_RUNTIME=codex
+export SB_E2E_LEDGER_FILE="${REPO_ROOT}/.planning/enterprise-e2e/ROUND-CODEX-2-LEDGER.md"
 enterprise_e2e_apply_test_app_branch_defaults
-assert_eq "hosts.json wins over ledger cursor round-3" \
-  "enterprise-e2e/round-1-cursor" \
+assert_eq "hosts.json wins over ledger codex round-2" \
+  "enterprise-e2e/round-9-codex" \
   "${SB_E2E_TEST_APP_BRANCH:-}"
 
 unset SB_E2E_TEST_APP_BRANCH SB_E2E_TEST_APP_ROUND SB_E2E_LEDGER_FILE
@@ -154,12 +152,13 @@ assert_eq "expected branch codex r2 derived" \
   "$(enterprise_e2e_test_app_expected_branch)"
 
 unset SB_E2E_TEST_APP_BRANCH SB_E2E_TEST_APP_ROUND SB_E2E_LEDGER_FILE
-export SB_E2E_LIVE_RUNTIME=cursor
+export SB_E2E_LIVE_RUNTIME=claude
 export SB_E2E_TEST_APP_ROUND=1
-assert_eq "expected branch cursor r1 derived" \
-  "enterprise-e2e/round-1-cursor" \
+assert_eq "expected branch claude r1 derived" \
+  "enterprise-e2e/round-1-claude" \
   "$(enterprise_e2e_test_app_expected_branch)"
 
+unset SB_E2E_TEST_APP_BASELINE_SHA
 assert_eq "default baseline sha (legacy)" "8482e60" "$(enterprise_e2e_test_app_default_baseline_sha)"
 
 unset SB_E2E_TEST_APP_BASELINE_SHA
@@ -172,12 +171,12 @@ TMP_E2E="$(mktemp -d)"
 trap 'rm -rf "$TMP_E2E"' EXIT
 export SB_ROOT="$TMP_E2E"
 mkdir -p "$TMP_E2E/.planning/enterprise-e2e"
-cat >"$TMP_E2E/.e2e-cursor-install-version.txt" <<'VER'
-SB_CURSOR_PLUGIN_VERSION=0.48.9
+cat >"$TMP_E2E/.e2e-install-version.txt" <<'VER'
+SB_PLUGIN_VERSION=0.48.9
 SB_INSTALL_SHA=abc1234
 SB_INSTALL_VERSION_KEY=0.48.9@abc1234
 VER
-cat >"$TMP_E2E/.planning/enterprise-e2e/ROUND-CURSOR-1-LEDGER.md" <<'LED'
+cat >"$TMP_E2E/.planning/enterprise-e2e/ROUND-CODEX-1-LEDGER.md" <<'LED'
 | SB repo SHA | `abc1234` |
 | # | WF slug | Pass/Fail |
 | 1 | `silver-router` | **Pass** |

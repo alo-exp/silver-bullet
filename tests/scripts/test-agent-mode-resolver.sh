@@ -46,14 +46,11 @@ assert_eq "d3: orphan keeps resume token" "conv-1" "$(jq -r .conversation_id "$T
 assert_eq "d3: orphan clears liveness" "null" "$(jq -r '.pid // "null"' "$T1/session.json")"
 # stale session (ttl) with dead pid
 mk_session "$T1" live conv-1 9999 "x" "2001-01-01T00:00:00Z"
-fresh; rc=0; agent_mode_detect_d3 "$T1" cursor "continue" || rc=$?
+fresh; rc=0; agent_mode_detect_d3 "$T1" claude "continue" || rc=$?
 assert_eq "d3: expired ttl ignores everything else" 1 "$rc"
-# cursor in-wave
 mk_session "$T1" live conv-1 9999 "x" "$(now)"
-fresh; rc=0; agent_mode_detect_d3 "$T1" cursor || rc=$?
-assert_eq "d3: cursor live conversation" "0 in-wave-cursor" "$rc $SB_AM_D3_SIGNAL"
 fresh; rc=0; agent_mode_detect_d3 "$T1" claude || rc=$?
-assert_eq "d3: non-cursor live conversation without utterance" 1 "$rc"
+assert_eq "d3: live conversation without utterance" 1 "$rc"
 for u in "please continue" "Coach me" "keep going now"; do
   fresh; rc=0; agent_mode_detect_d3 "$T1" claude "$u" || rc=$?
   assert_eq "d3: utterance '$u'" "0 continue" "$rc $SB_AM_D3_SIGNAL"
@@ -129,9 +126,6 @@ assert_eq "classify: d3 process-alive reason" "interactive d3-process-alive" "$S
 mk_session "$CT" dead c 9999 x "$(now)"; rmdir "$CT/control"
 cls "brief" "$CT" claude "continue"
 assert_eq "classify: d3 continue reason" "interactive d3-continue" "$SB_AM_CLASSIFIED ${SB_AM_REASONS[*]}"
-mk_session "$CT" live c 9999 x "$(now)"
-cls "brief" "$CT" cursor ""
-assert_eq "classify: d3 in-wave-cursor reason" "interactive d3-in-wave-cursor" "$SB_AM_CLASSIFIED ${SB_AM_REASONS[*]}"
 rm -f "$CT/session.json"
 
 # ---------------- tui availability ----------------
@@ -148,9 +142,6 @@ assert_eq "tui codex: no python3" no "$(tui codex codex)"
 assert_eq "tui codex: no codex" no "$(tui codex python3)"
 assert_eq "tui opencode: present" yes "$(tui opencode opencode)"
 assert_eq "tui opencode: absent" no "$(tui opencode)"
-assert_eq "tui cursor: cursor-agent" yes "$(tui cursor cursor-agent)"
-assert_eq "tui cursor: agent" yes "$(tui cursor agent)"
-assert_eq "tui cursor: neither" no "$(tui cursor)"
 assert_eq "tui pi: present" yes "$(tui pi pi)"
 assert_eq "tui pi: absent" no "$(tui pi)"
 assert_eq "tui unknown host" no "$(tui bogus claude codex opencode pi)"
@@ -224,9 +215,6 @@ assert_eq "resolve: d3 without TUI is fatal" "3 mode-unavailable" "$RES_RC $SB_A
 mk_session "$RM" dead c 9999 x "$(now)"; rmdir "$RM/control"
 fresh; res 1 claude "$RM" b "continue"
 assert_eq "resolve: d3 continue" "d3-continue" "${SB_AM_REASONS[*]}"
-mk_session "$RM" live c 9999 x "$(now)"
-fresh; res 1 cursor "$RM" b ""
-assert_eq "resolve: d3 in-wave-cursor" "d3-in-wave-cursor" "${SB_AM_REASONS[*]}"
 rm -f "$RM/session.json"
 
 # ---------------- post_classify_conflicts ----------------
@@ -303,7 +291,7 @@ launch() { # host resolved [extra assignments...] -> prints env lines of interes
   (fresh; SB_AM_RESOLVED="$resolved"; SB_AM_REQUESTED=auto; local a; for a in "$@"; do eval "$a"; done
    unset PI_PROVIDER PI_MODEL
    agent_mode_apply_host_launch_env "$host"
-   env | grep -E '^(SB_AGENT_RESOLVED_MODE|SB_AGENT_REQUESTED_MODE|CLAUDE_USE_INTERACTIVE|SB_LIVE_CODEX_USE_EXEC|CODEX_LAUNCH_MODE|OPENCODE_USE_INTERACTIVE|SB_LIVE_OPENCODE_USE_INTERACTIVE|PI_PROVIDER|PI_MODEL|PI_USE_INTERACTIVE|SB_AGENT_CURSOR_SESSION|SB_LIVE_CURSOR_FORCE_HEADLESS|SB_AGENT_IDLE_SEC)=' | sort | tr '\n' ' ')
+   env | grep -E '^(SB_AGENT_RESOLVED_MODE|SB_AGENT_REQUESTED_MODE|CLAUDE_USE_INTERACTIVE|SB_LIVE_CODEX_USE_EXEC|CODEX_LAUNCH_MODE|OPENCODE_USE_INTERACTIVE|SB_LIVE_OPENCODE_USE_INTERACTIVE|PI_PROVIDER|PI_MODEL|PI_USE_INTERACTIVE|SB_AGENT_IDLE_SEC)=' | sort | tr '\n' ' ')
 }
 assert_eq "launch claude NI" "CLAUDE_USE_INTERACTIVE=0 SB_AGENT_REQUESTED_MODE=auto SB_AGENT_RESOLVED_MODE=non-interactive " "$(launch claude non-interactive)"
 assert_contains "launch claude interactive" "$(launch claude interactive)" "CLAUDE_USE_INTERACTIVE=1"
@@ -313,8 +301,6 @@ for kv in OPENCODE_USE_INTERACTIVE=1 SB_LIVE_OPENCODE_USE_INTERACTIVE=1; do asse
 assert_contains "launch opencode NI" "$(launch opencode non-interactive)" "OPENCODE_USE_INTERACTIVE=0"
 assert_contains "launch pi NI pins model" "$(launch pi non-interactive)" "PI_MODEL=mimo-v2.5 PI_PROVIDER=opencode-go PI_USE_INTERACTIVE=0"
 assert_contains "launch pi interactive" "$(launch pi interactive)" "PI_USE_INTERACTIVE=1"
-for kv in SB_AGENT_CURSOR_SESSION=1 SB_LIVE_CURSOR_FORCE_HEADLESS=0; do assert_contains "launch cursor interactive $kv" "$(launch cursor interactive)" "$kv"; done
-for kv in SB_AGENT_CURSOR_SESSION=0 SB_LIVE_CURSOR_FORCE_HEADLESS=1; do assert_contains "launch cursor NI $kv" "$(launch cursor non-interactive)" "$kv"; done
 assert_contains "launch idle seconds exported" "$(launch claude non-interactive SB_AM_IDLE_SEC=45)" "SB_AGENT_IDLE_SEC=45"
 assert_not_contains "launch without idle exports none" "$(launch claude non-interactive)" "SB_AGENT_IDLE_SEC"
 assert_not_contains "launch unknown host sets no host vars" "$(launch bogus interactive)" "CLAUDE_USE_INTERACTIVE"

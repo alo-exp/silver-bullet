@@ -34,7 +34,6 @@ hung_setup() { # batch alive, log idle 6000s (hung), row 5 running with a fresh-
   live_batch 7000
   echo "1234 agent" >"$P/pgrep.claude-interactive"
   echo "1234 agent" >"$P/pgrep.codex-interactive"
-  echo "1234 agent" >"$P/pgrep.cursor-agent"
   idle_state 6000
   printf 'abc' >"$R/.e2e-row5-attempt.log"
   touch -d "@$((NOW - 7000))" "$R/.e2e-row5-attempt.log"
@@ -48,7 +47,7 @@ assert_contains "claude: TERM claude binary" "$calls" "pkill -TERM -f /claude --
 assert_contains "claude: KILL expect wrapper" "$calls" "pkill -KILL -f claude-interactive-invoke\\.expect"
 assert_contains "claude: KILL claude binary" "$calls" "pkill -KILL -f /claude --model"
 assert_contains "grace sleep between TERM and KILL" "$calls" "sleep 3"
-assert_not_contains "claude host never pkills other agents" "$calls" "cursor-agent"
+assert_not_contains "claude host never pkills the codex wrapper" "$calls" "codex-interactive-invoke"
 assert_eq "TERM precedes KILL" "TERM" "$(grep -m1 '^pkill' "$F4_CALLS" | awk '{print $2}' | sed 's/^-//')"
 assert_contains "live batch is not restarted" "$(cat "$STATE")" "LAST_GROWTH_EPOCH=$NOW"
 assert_file_absent "alive batch -> no restart" "$P/batch-ran"
@@ -59,15 +58,6 @@ calls="$(cat "$F4_CALLS")"
 assert_contains "codex: TERM wrapper" "$calls" "pkill -TERM -f codex-interactive-invoke\\.expect"
 assert_contains "codex: KILL wrapper" "$calls" "pkill -KILL -f codex-interactive-invoke\\.expect"
 assert_not_contains "codex host leaves claude alone" "$calls" "pkill -TERM -f /claude"
-
-hung_setup
-f4_mon_run SB_E2E_LIVE_RUNTIME=cursor
-calls="$(cat "$F4_CALLS")"
-assert_contains "cursor: TERM cursor-agent" "$calls" "pkill -TERM -f cursor-agent"
-assert_contains "cursor: TERM /agent -p" "$calls" "pkill -TERM -f /agent -p"
-assert_contains "cursor: KILL cursor-agent" "$calls" "pkill -KILL -f cursor-agent"
-assert_contains "cursor: KILL /agent -p" "$calls" "pkill -KILL -f /agent -p"
-assert_contains "cursor agent children listed in status" "$(cat "$STATUS")" "  1234 agent"
 
 # hung while a live-test driver runs: no restart, clock reset
 hung_setup
@@ -211,9 +201,9 @@ echo 1 >"$P/pkill-status"
 f4_mon_run
 assert_contains "pkill finding nothing does not stop the hung handling" "$(cat "$POLL")" "poll 2026-01-01T00:00:00Z row=5 batch=RUNNING"
 assert_eq "all four claude-host pkill calls were attempted" "4" "$(grep -c '^pkill' "$F4_CALLS")"
-for h in codex cursor; do
+for h in codex; do
   hung_setup
-  rm -f "$P/pgrep.codex-interactive" "$P/pgrep.cursor-agent" "$P/pgrep.claude-interactive"
+  rm -f "$P/pgrep.codex-interactive" "$P/pgrep.claude-interactive"
   echo 1 >"$P/pkill-status"
   f4_mon_run SB_E2E_LIVE_RUNTIME=$h
   assert_contains "$h: no agent lines and no pkill match are tolerated" "$(cat "$POLL")" "HUNG: killing claude children after 6000s idle"

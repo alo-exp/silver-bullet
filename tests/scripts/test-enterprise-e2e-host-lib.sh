@@ -19,11 +19,13 @@ cat >"$CFG" <<'JSON'
   "default_host": "codex",
   "hosts": {
     "claude": {"lock_file": ".lock-claude", "git_branch": "main", "test_app_root": "/abs/claude-app", "tags": ["a", "b"]},
-    "codex":  {"lock_file": ".lock-codex", "matrix_log": ".codex.log", "git_branch": "track-codex", "test_app_root": "apps/codex-app"},
-    "cursor": {"lock_file": ".lock-cursor"}
+    "codex":  {"lock_file": ".lock-codex", "matrix_log": ".codex.log", "git_branch": "track-codex", "test_app_root": "apps/codex-app"}
   }
 }
 JSON
+# A host entry with only a lock file: every optional field is absent.
+SPARSE="$TL_TMP/sparse.json"
+echo '{"default_host": "claude", "hosts": {"claude": {"lock_file": ".lock-sparse"}}}' >"$SPARSE"
 
 # --- harness root / config file --------------------------------------------
 e2e_call "$HOST_LIB" -- enterprise_e2e_harness_root
@@ -42,16 +44,16 @@ e2e_call "$HOST_LIB" "SB_E2E_HOSTS_CONFIG=$CFG" -- enterprise_e2e_host_config_ge
 assert_eq "list field is space-joined" "a b" "$TL_OUT"
 e2e_call "$HOST_LIB" "SB_E2E_HOSTS_CONFIG=$CFG" -- enterprise_e2e_host_config_get nope claude
 assert_eq "absent field returns 1" 1 "$TL_STATUS"
-e2e_call "$HOST_LIB" "SB_E2E_HOSTS_CONFIG=$CFG" "SB_E2E_LIVE_RUNTIME=cursor" -- enterprise_e2e_host_config_get lock_file
-assert_eq "host defaults to the active matrix host" ".lock-cursor" "$TL_OUT"
+e2e_call "$HOST_LIB" "SB_E2E_HOSTS_CONFIG=$SPARSE" "SB_E2E_LIVE_RUNTIME=claude" -- enterprise_e2e_host_config_get lock_file
+assert_eq "host defaults to the active matrix host" ".lock-sparse" "$TL_OUT"
 
 # --- matrix_host ------------------------------------------------------------
 e2e_call "$HOST_LIB" "${NOHOST[@]}" "SB_E2E_HOSTS_CONFIG=$CFG" -- enterprise_e2e_matrix_host
 assert_eq "no env: default_host from config" "codex" "$TL_OUT"
 e2e_call "$HOST_LIB" "${NOHOST[@]}" "SB_E2E_HOSTS_CONFIG=$TL_TMP/absent.json" -- enterprise_e2e_matrix_host
 assert_eq "no env, no config: claude" "claude" "$TL_OUT"
-e2e_call "$HOST_LIB" "SB_E2E_LIVE_RUNTIME=cursor" "SILVER_BULLET_RUNTIME=codex" -- enterprise_e2e_matrix_host
-assert_eq "SB_E2E_LIVE_RUNTIME wins" "cursor" "$TL_OUT"
+e2e_call "$HOST_LIB" "SB_E2E_LIVE_RUNTIME=claude" "SILVER_BULLET_RUNTIME=codex" -- enterprise_e2e_matrix_host
+assert_eq "SB_E2E_LIVE_RUNTIME wins" "claude" "$TL_OUT"
 e2e_call "$HOST_LIB" -u SB_E2E_LIVE_RUNTIME "SILVER_BULLET_RUNTIME=codex" -- enterprise_e2e_matrix_host
 assert_eq "SILVER_BULLET_RUNTIME is honoured" "codex" "$TL_OUT"
 e2e_call "$HOST_LIB" "SB_E2E_LIVE_RUNTIME=bogus" -- enterprise_e2e_matrix_host
@@ -83,7 +85,7 @@ fixture_default() {  # fixture_default CODE-PREFIX ENV...
 }
 fixture_default "" "SB_TEST_ENTERPRISE_APP_ROOT=/preset" "SB_E2E_LIVE_RUNTIME=codex" "SB_E2E_HOSTS_CONFIG=$CFG"
 assert_eq "preset app root is kept" "APP=/preset" "$TL_OUT"
-fixture_default "" -u SB_TEST_ENTERPRISE_APP_ROOT "SB_E2E_LIVE_RUNTIME=cursor" "SB_E2E_HOSTS_CONFIG=$CFG"
+fixture_default "" -u SB_TEST_ENTERPRISE_APP_ROOT "SB_E2E_LIVE_RUNTIME=claude" "SB_E2E_HOSTS_CONFIG=$SPARSE"
 assert_eq "host without test_app_root leaves it unset" "APP=unset" "$TL_OUT"
 fixture_default "" -u SB_TEST_ENTERPRISE_APP_ROOT "SB_E2E_LIVE_RUNTIME=claude" "SB_E2E_HOSTS_CONFIG=$CFG"
 assert_eq "absolute test_app_root is exported verbatim" "APP=/abs/claude-app" "$TL_OUT"
@@ -121,11 +123,11 @@ assert_contains "defaults export per-host lock file" "$TL_OUT" "LOCK=$SBR/.lock-
 assert_contains "defaults export per-host matrix log" "$TL_OUT" "MLOG=$SBR/.codex.log"
 assert_contains "defaults export per-host fixture" "$TL_OUT" "APP=$SBR/apps/codex-app"
 # No SB_ROOT, no sb_root(): derived from the harness root; runtime-paths helper absent in that tree is fine.
-tl_run env -u SB_ROOT -u SB_TEST_ENTERPRISE_APP_ROOT "SB_E2E_LIVE_RUNTIME=cursor" "SB_E2E_HOSTS_CONFIG=$CFG" bash "$TL_TMP/dump.sh" "$HOST_LIB"
+tl_run env -u SB_ROOT -u SB_TEST_ENTERPRISE_APP_ROOT "SB_E2E_LIVE_RUNTIME=claude" "SB_E2E_HOSTS_CONFIG=$SPARSE" bash "$TL_TMP/dump.sh" "$HOST_LIB"
 assert_contains "SB_ROOT derived from harness root" "$TL_OUT" "SB_ROOT=$TL_REPO_ROOT/scripts"
 assert_contains "no runtime-paths helper there: not sourced" "$TL_OUT" "SRC=no"
 mkdir -p "$TL_TMP/viafn"
-tl_run env -u SB_ROOT -u SB_TEST_ENTERPRISE_APP_ROOT "SB_E2E_LIVE_RUNTIME=cursor" "SB_E2E_HOSTS_CONFIG=$CFG" \
+tl_run env -u SB_ROOT -u SB_TEST_ENTERPRISE_APP_ROOT "SB_E2E_LIVE_RUNTIME=claude" "SB_E2E_HOSTS_CONFIG=$SPARSE" \
   bash -c 'source "$1"; enterprise_e2e_sb_root() { echo "'"$TL_TMP"'/viafn"; }; enterprise_e2e_apply_matrix_host_defaults 2>/dev/null; echo "SB_ROOT=$SB_ROOT"' _ "$HOST_LIB"
 assert_contains "SB_ROOT prefers enterprise_e2e_sb_root when defined" "$TL_OUT" "SB_ROOT=$TL_TMP/viafn"
 
@@ -133,7 +135,7 @@ assert_contains "SB_ROOT prefers enterprise_e2e_sb_root when defined" "$TL_OUT" 
 e2e_call "$HOST_LIB" "SB_E2E_HOST_GIT_BRANCH_ENFORCE=0" -- enterprise_e2e_assert_host_git_branch
 assert_eq "enforcement off exits 0" 0 "$TL_STATUS"
 assert_contains "enforcement off says so" "$TL_OUT" "skipped (SB_E2E_HOST_GIT_BRANCH_ENFORCE=0)"
-e2e_call "$HOST_LIB" "SB_E2E_LIVE_RUNTIME=cursor" "SB_E2E_HOSTS_CONFIG=$CFG" -- enterprise_e2e_assert_host_git_branch
+e2e_call "$HOST_LIB" "SB_E2E_LIVE_RUNTIME=claude" "SB_E2E_HOSTS_CONFIG=$SPARSE" -- enterprise_e2e_assert_host_git_branch
 assert_eq "host without git_branch: nothing to enforce" 0 "$TL_STATUS"
 assert_eq "host without git_branch: silent" "" "$TL_OUT"
 
@@ -181,12 +183,12 @@ e2e_call "$HOST_LIB" "SB_E2E_LIVE_RUNTIME=claude" "SB_ROOT=/r" -- enterprise_e2e
 assert_eq "claude attempt 3 legacy name" "/r/.e2e-row5-attempt3.log" "$TL_OUT"
 e2e_call "$HOST_LIB" "SB_E2E_LIVE_RUNTIME=codex" "SB_ROOT=/r" -- enterprise_e2e_row_attempt_log 7
 assert_eq "codex attempt 1 host name" "/r/.e2e-row7-codex-attempt.log" "$TL_OUT"
-e2e_call "$HOST_LIB" "SB_E2E_LIVE_RUNTIME=cursor" "SB_ROOT=/r" -- enterprise_e2e_row_attempt_log 7 2
-assert_eq "cursor attempt 2 host name" "/r/.e2e-row7-cursor-attempt2.log" "$TL_OUT"
+e2e_call "$HOST_LIB" "SB_E2E_LIVE_RUNTIME=codex" "SB_ROOT=/r" -- enterprise_e2e_row_attempt_log 7 2
+assert_eq "codex attempt 2 host name" "/r/.e2e-row7-codex-attempt2.log" "$TL_OUT"
 e2e_call "$HOST_LIB" "SB_E2E_LIVE_RUNTIME=claude" "SB_ROOT=/r" -- enterprise_e2e_row_attempt_log_glob
 assert_eq "claude glob" "/r/.e2e-row*-attempt.log" "$TL_OUT"
-e2e_call "$HOST_LIB" "SB_E2E_LIVE_RUNTIME=cursor" "SB_ROOT=/r" -- enterprise_e2e_row_attempt_log_glob
-assert_eq "cursor glob" "/r/.e2e-row*-cursor-attempt.log" "$TL_OUT"
+e2e_call "$HOST_LIB" "SB_E2E_LIVE_RUNTIME=codex" "SB_ROOT=/r" -- enterprise_e2e_row_attempt_log_glob
+assert_eq "codex glob" "/r/.e2e-row*-codex-attempt.log" "$TL_OUT"
 
 # --- routing state / runtime state dir -------------------------------------
 e2e_call "$HOST_LIB" -u SB_RUNTIME_STATE_DIR -u SB_ROOT -u SB_E2E_ISOLATED_CLAUDE_CONFIG "HOME=/h" -- enterprise_e2e_routing_state_file
@@ -218,12 +220,9 @@ route() { e2e_call "$HOST_LIB" "SB_E2E_LIVE_RUNTIME=$1" -- enterprise_e2e_matrix
 route claude "/sb:plan";   assert_eq "claude route unchanged" "/sb:plan" "$TL_OUT"
 route codex "/sb:plan";    assert_eq "codex route uses \$ prefix" '$sb:plan' "$TL_OUT"
 route codex "plain text";  assert_eq "codex non-/sb route unchanged" "plain text" "$TL_OUT"
-route cursor "/sb";        assert_eq "cursor bare /sb kept" "/sb" "$TL_OUT"
-route cursor "/sb:plan";   assert_eq "cursor strips /sb: prefix" "plan" "$TL_OUT"
-route cursor "/other";     assert_eq "cursor other route unchanged" "/other" "$TL_OUT"
 
 # --- adapter sourcing -------------------------------------------------------
-e2e_script "source '$HOST_LIB'; enterprise_e2e_source_host_adapter && declare -f enterprise_e2e_adapter_preflight >/dev/null && echo SOURCED" "SB_E2E_LIVE_RUNTIME=cursor"
+e2e_script "source '$HOST_LIB'; enterprise_e2e_source_host_adapter && declare -f enterprise_e2e_adapter_preflight >/dev/null && echo SOURCED" "SB_E2E_LIVE_RUNTIME=claude"
 assert_eq "existing adapter is sourced" "SOURCED" "$TL_OUT"
 e2e_call "$TL_TMP/fakeharness/lib/host.sh" "SB_E2E_LIVE_RUNTIME=codex" -- enterprise_e2e_source_host_adapter
 assert_eq "missing adapter returns 1" 1 "$TL_STATUS"
@@ -239,22 +238,6 @@ enterprise_e2e_adapter_install
 enterprise_e2e_adapter_preflight /pre
 enterprise_e2e_adapter_preflight" "SB_ROOT=/envroot"
 assert_eq "claude adapter forwards roots" $'install:/explicit\ninstall:/envroot\npreflight:/pre\npreflight:/envroot' "$TL_OUT"
-
-# cursor adapter
-mkdir -p "$TL_TMP/cur/scripts"
-cat >"$TL_TMP/cur/scripts/install-cursor.sh" <<'S'
-echo "cursor-installer ran in $(pwd) args=$*"
-S
-e2e_call "$ADAPTERS/cursor.sh" -- enterprise_e2e_adapter_install ""
-assert_eq "cursor install without a root fails" 1 "$TL_STATUS"
-e2e_call "$ADAPTERS/cursor.sh" -- enterprise_e2e_adapter_install "$TL_TMP/no-such-dir"
-assert_eq "cursor install with a missing dir fails" 1 "$TL_STATUS"
-e2e_call "$ADAPTERS/cursor.sh" -- enterprise_e2e_adapter_install "$TL_TMP/cur"
-assert_eq "cursor install ok" 0 "$TL_STATUS"
-assert_contains "cursor install announces itself" "$TL_OUT" "Plugin install (Cursor):"
-assert_contains "cursor installer ran from the SB root" "$TL_OUT" "cursor-installer ran in $TL_TMP/cur args="
-e2e_call "$ADAPTERS/cursor.sh" -- enterprise_e2e_adapter_preflight
-assert_contains "cursor preflight message" "$TL_OUT" "Cursor preflight: cursor-agent CLI or CURSOR_API_KEY required"
 
 # codex adapter
 mkdir -p "$TL_TMP/cdx/scripts"

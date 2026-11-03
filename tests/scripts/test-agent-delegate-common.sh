@@ -5,7 +5,6 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 COMMON="${REPO_ROOT}/scripts/lib/agent-delegate-common.sh"
 CODEX="${REPO_ROOT}/scripts/agent-codex-delegate.sh"
-CURSOR="${REPO_ROOT}/scripts/agent-cursor-delegate.sh"
 CLAUDE="${REPO_ROOT}/scripts/agent-claude-delegate.sh"
 
 PASS=0
@@ -82,9 +81,7 @@ rm -rf "$evidence_dir"
 
 # Wrapper sourcing
 grep -q 'agent-delegate-common.sh' "$CODEX" && check "codex sources common lib" pass || check "codex sources common lib" fail
-grep -q 'agent-delegate-common.sh' "$CURSOR" && check "cursor sources common lib" pass || check "cursor sources common lib" fail
 grep -q 'agent_delegate_clear_matrix_env' "$CODEX" && check "codex clears matrix env" pass || check "codex clears matrix env" fail
-grep -q 'agent_delegate_clear_matrix_env' "$CURSOR" && check "cursor clears matrix env" pass || check "cursor clears matrix env" fail
 grep -q 'agent-delegate-common.sh' "$CLAUDE" && check "claude sources common lib" pass || check "claude sources common lib" fail
 grep -q 'agent_delegate_clear_matrix_env' "$CLAUDE" && check "claude clears matrix env" pass || check "claude clears matrix env" fail
 grep -q 'SB_AGENT_CLAUDE_LOG_FLOOR' "$CLAUDE" && check "claude log floor env" pass || check "claude log floor env" fail
@@ -98,7 +95,6 @@ grep -q 'cert-bypass.sh' "$REPO_ROOT/hooks/graphify-gate.sh" && check "graphify 
 
 bash -n "$COMMON" && check "common lib shell syntax" pass || check "common lib shell syntax" fail
 bash -n "$CODEX" && check "codex wrapper shell syntax" pass || check "codex wrapper shell syntax" fail
-bash -n "$CURSOR" && check "cursor wrapper shell syntax" pass || check "cursor wrapper shell syntax" fail
 bash -n "$CLAUDE" && check "claude wrapper shell syntax" pass || check "claude wrapper shell syntax" fail
 
 echo "Results: $PASS passed, $FAIL failed"

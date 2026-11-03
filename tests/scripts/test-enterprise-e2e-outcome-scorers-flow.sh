@@ -145,19 +145,19 @@ score "noop: empty log arg" partial score_noop "$W" ""
 # a private HOME so the hosts present are exactly the ones created here (tl_init pre-creates the active runtime's dir)
 HOME_DIR="$TL_TMP/oa-home"
 HE="HOME=$HOME_DIR"
-mkdir -p "$HOME_DIR/.cursor/.silver-bullet" "$HOME_DIR/.claude/.silver-bullet"
+mkdir -p "$HOME_DIR/.codex/.silver-bullet" "$HOME_DIR/.claude/.silver-bullet"
 oa "$HE" -- enterprise_e2e_outcome_runtime_state_dirs ""
-assert_eq "state dirs: sibling hosts that exist, in fixed order" "$HOME_DIR/.cursor/.silver-bullet
+assert_eq "state dirs: sibling hosts that exist, in fixed order" "$HOME_DIR/.codex/.silver-bullet
 $HOME_DIR/.claude/.silver-bullet" "$TL_OUT"
 oa "$HE" -- enterprise_e2e_outcome_runtime_state_dirs "$TL_TMP/primary"
 assert_eq "state dirs: primary first, then siblings" "$TL_TMP/primary
-$HOME_DIR/.cursor/.silver-bullet
+$HOME_DIR/.codex/.silver-bullet
 $HOME_DIR/.claude/.silver-bullet" "$TL_OUT"
-oa "$HE" -- enterprise_e2e_outcome_runtime_state_dirs "$HOME_DIR/.cursor/.silver-bullet"
-assert_eq "state dirs: a sibling equal to the primary is not repeated" "$HOME_DIR/.cursor/.silver-bullet
+oa "$HE" -- enterprise_e2e_outcome_runtime_state_dirs "$HOME_DIR/.codex/.silver-bullet"
+assert_eq "state dirs: a sibling equal to the primary is not repeated" "$HOME_DIR/.codex/.silver-bullet
 $HOME_DIR/.claude/.silver-bullet" "$TL_OUT"
 oa "$HE" -- enterprise_e2e_outcome_runtime_state_dirs
-assert_eq "state dirs: no primary argument" "$HOME_DIR/.cursor/.silver-bullet
+assert_eq "state dirs: no primary argument" "$HOME_DIR/.codex/.silver-bullet
 $HOME_DIR/.claude/.silver-bullet" "$TL_OUT"
 
 echo '{}' >"$HOME_DIR/.claude/.silver-bullet/orchestrator-directive.json"
