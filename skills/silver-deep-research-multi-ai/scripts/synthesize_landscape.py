@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import sys
 from datetime import date
 from pathlib import Path
 from typing import Any
@@ -1630,7 +1631,7 @@ def _linkify_markdown_vendors(
     *,
     protected_labels: set[str] | None = None,
 ) -> str:
-    """Wrap vendor display names in markdown links for all prose occurrences."""
+    """Wrap each vendor display name in a markdown link at its first prose mention."""
     if not link_pairs:
         return linkify_bare_http_urls(markdown)
     protected = {
@@ -1665,9 +1666,23 @@ def _linkify_markdown_vendors(
         # re-match inside a link just written for a longer one ("GitHub Copilot Workspace").
         alternation = "|".join(re.escape(label) for label in sorted(url_by_label, key=len, reverse=True))
         pattern = re.compile(rf"\b({alternation})\b")
+        linked: set[str] = set()  # a vendor is linked at its first mention only
+
+        def _link_first(match: re.Match[str]) -> str:
+            label = match.group(1)
+            if label in linked:
+                return label
+            linked.add(label)
+            return f"[{label}]({url_by_label[label]})"
+
+        def _link_all(match: re.Match[str]) -> str:
+            return f"[{match.group(1)}]({url_by_label[match.group(1)]})"
+
         for idx in range(0, len(segments), 2):
-            segments[idx] = pattern.sub(
-                lambda m: f"[{m.group(1)}]({url_by_label[m.group(1)]})", segments[idx]
+            # table rows are structured data: every row links its own vendor
+            segments[idx] = "".join(
+                pattern.sub(_link_all if line.lstrip().startswith("|") else _link_first, line)
+                for line in segments[idx].splitlines(keepends=True)
             )
     out = "".join(segments)
     for token, label in placeholders:
@@ -1893,7 +1908,7 @@ def avoid_chart_coord_collisions(
     new_x = _uniquify_axis(xs, lo=x_lo, hi=x_hi, step=step, tiebreak=ys)
     new_y = _uniquify_axis(ys, lo=y_lo, hi=y_hi, step=step, tiebreak=xs)
     out: list[dict[str, Any]] = []
-    for item, x, y in zip(items, new_x, new_y):
+    for item, x, y, orig_x, orig_y in zip(items, new_x, new_y, xs, ys):
         orig_q = item.get("q")
         item[x_key] = x
         item[y_key] = y
@@ -1902,7 +1917,9 @@ def avoid_chart_coord_collisions(
         if y_key == "y":
             item["y"] = y
         if update_quadrant and x_key == "x" and y_key == "y":
-            item["q"] = _quadrant(x, y)
+            # The quadrant is a property of the true scores; slotted values only move the dot,
+            # so tied vendors stay in the same quadrant whatever the input order.
+            item["q"] = _quadrant(orig_x, orig_y)
         elif orig_q:
             item["q"] = orig_q
         out.append(item)
@@ -3243,7 +3260,14 @@ def build_report_markdown(
         for slug in list(audit.get("excluded") or []) + list(audit.get("sunset") or []):
             protected.add(known.get(str(slug), str(slug).replace("-", " ").title()))
     markdown = _linkify_markdown_vendors(markdown, link_pairs, protected_labels=protected)
-    markdown = sanitize_compression_markers(markdown)
+    stripped: list[str] = []
+    markdown = sanitize_compression_markers(markdown, removed=stripped)
+    if stripped:
+        print(
+            f"synthesize_landscape: removed {len(stripped)} compression-marker line(s), e.g. "
+            f"{stripped[0].strip()[:80]!r}",
+            file=sys.stderr,
+        )
     assert_no_compression_markers(markdown, context="landscape-report.md synthesis")
     return markdown
 

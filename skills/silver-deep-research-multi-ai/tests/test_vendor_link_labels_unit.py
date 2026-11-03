@@ -269,6 +269,24 @@ class HealthTests(_NoNetwork):
             self.assertIn(type(exc).__name__, r["error"])
 
 
+class AutoLinkTests(unittest.TestCase):
+    def test_english_word_labels_are_never_prose_links(self):
+        for word in ("Continue", "Linear", "Sweep", "Factory", "Director", "Conductor", "Scout", "Harness"):
+            self.assertTrue(vll.is_generic_link_label(word), word)
+        self.assertFalse(vll.is_generic_link_label("Linear Agent Integrations"))
+
+    def test_vendor_is_linked_at_first_prose_mention_but_every_table_row(self):
+        import synthesize_landscape as sl
+
+        pairs = [["Tembo", "https://tembo.example/"], ["Continue", "https://continue.example/"]]
+        md = ("Continue the evaluation. Tembo is one option.\nTembo again, and Tembo once more.\n"
+              "| Tembo | yes |\n| Tembo | no |\n")
+        out = sl._linkify_markdown_vendors(md, pairs)
+        self.assertEqual(out.count("[Tembo](https://tembo.example/)"), 1 + 2)  # first mention + both table rows
+        self.assertIn("Continue the evaluation.", out)  # "Continue" starts a sentence, it is not a link target
+        self.assertNotIn("[Continue]", out)
+
+
 class SsrfGuardTests(unittest.TestCase):
     """Model-supplied URLs are never requested when they point at non-public addresses."""
 

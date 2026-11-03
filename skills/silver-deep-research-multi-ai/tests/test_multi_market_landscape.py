@@ -372,6 +372,16 @@ class MultiMarketMembershipConsistencyTests(unittest.TestCase):
         self.assertEqual(len({p["x"] for p in fixed}), 3, msg=f"shared vertical: {fixed}")
         self.assertEqual(len({p["y"] for p in fixed}), 3, msg=f"shared horizontal: {fixed}")
 
+    def test_tied_vendors_keep_the_same_quadrant_in_any_order(self) -> None:
+        from synthesize_landscape import avoid_chart_coord_collisions
+
+        for order in ((0, 1), (1, 0)):
+            pts = [{"slug": "ab"[i], "x": 5.5, "y": 5.5, "q": "?"} for i in order]
+            fixed = avoid_chart_coord_collisions(pts)
+            # both sit on the Leader threshold; slotting may move a dot by 0.1 but not its quadrant
+            self.assertEqual({p["q"] for p in fixed}, {"Leaders"}, msg=fixed)
+            self.assertEqual(len({p["x"] for p in fixed}), 2)
+
 
 class AnalystGradeMembershipFixes(unittest.TestCase):
     @classmethod

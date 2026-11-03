@@ -138,15 +138,27 @@ class CompressionMarkerTests(unittest.TestCase):
         self.assertEqual(compression_markers.sanitize_compression_markers(""), "")
 
     def test_snippets_respect_limit_and_skip_clean_lines(self) -> None:
-        text = "clean\n[Archived]\nalso clean\nomitted 5 lines\n[3 more lines]\n"
+        text = "clean\n[Archived]\nalso clean\n... [lean-ctx: omitted 5 lines]\n[3 more lines]\n"
         snippets = compression_markers.find_compression_marker_snippets(text, limit=2)
-        self.assertEqual(snippets, ["[Archived]", "omitted 5 lines"])
+        self.assertEqual(snippets, ["[Archived]", "... [lean-ctx: omitted 5 lines]"])
         self.assertEqual(compression_markers.find_compression_marker_snippets("nothing here"), [])
 
     def test_sanitize_inline_marker_kept_when_text_remains_and_dropped_when_empty(self) -> None:
-        text = "keep this ... [lean-ctx: cut 4] tail\nprefix [lean-ctx:x] [Archived]\nreport.md [12L]\nplain"
-        cleaned = compression_markers.sanitize_compression_markers(text)
+        text = "keep this ... [lean-ctx: cut 4] tail\nprefix [lean-ctx:x]\nreport.md [12L]\nplain"
+        removed: list[str] = []
+        cleaned = compression_markers.sanitize_compression_markers(text, removed=removed)
         self.assertEqual(cleaned.splitlines(), ["keep this  tail", "prefix", "plain"])
+        # nothing disappears silently: every touched line is reported
+        self.assertEqual(removed, ["keep this ... [lean-ctx: cut 4] tail", "prefix [lean-ctx:x]", "report.md [12L]"])
+
+    def test_ordinary_phrases_are_not_markers(self) -> None:
+        prose = "The changelog says the old API was [Archived] and that the log omitted 12 lines of noise.\nkept"
+        self.assertFalse(compression_markers.contains_compression_markers(prose))
+        self.assertEqual(compression_markers.sanitize_compression_markers(prose), prose)
+        # only a line consisting of the marker alone is an artifact, and it is reported
+        removed: list[str] = []
+        self.assertEqual(compression_markers.sanitize_compression_markers("a\n[Archived]\nb", removed=removed), "a\nb")
+        self.assertEqual(removed, ["[Archived]"])
 
     def test_sanitize_drops_line_whose_residue_still_matches_marker(self) -> None:
         # "[3 more lines]" is not stripped by the inline regex, so the line is dropped.
@@ -171,7 +183,7 @@ class CompressionMarkerTests(unittest.TestCase):
             good = Path(tmp) / "good.md"
             good.write_text("fine\n", encoding="utf-8")
             bad = Path(tmp) / "bad.md"
-            bad.write_text("omitted 9 lines\n", encoding="utf-8")
+            bad.write_text("[lean-ctx: omitted 9 lines]\n", encoding="utf-8")
             compression_markers.assert_file_free_of_compression_markers(Path(tmp) / "missing.md")
             compression_markers.assert_file_free_of_compression_markers(good)
             with self.assertRaises(ValueError) as cm:
@@ -655,7 +667,7 @@ class PackageSolutionOutputsTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, r"landscape/landscape-report\.md"):
                 self._run(root, [])
             (root / "landscape" / "landscape-report.md").write_text("clean\n", encoding="utf-8")
-            (root / "landscape-report.html").write_text("<p>omitted 4 lines</p>", encoding="utf-8")
+            (root / "landscape-report.html").write_text("<p>[lean-ctx: omitted 4 lines]</p>", encoding="utf-8")
             with self.assertRaisesRegex(ValueError, r"landscape-report\.html"):
                 self._run(root, [])
 
