@@ -8,11 +8,12 @@ CLI subcommands:
 
 Version 1 is deterministic and cheap: no LLM calls, no semantics. The rule is a strict near-quote:
 
-* ``supported``: the claim repeats a cited quote word for word. Only punctuation, the capital of the first
-  word and the digit script may differ; the articles a/an/the are words like any other. Every other character that can
-  change a meaning (case, signs, comparators, currency, %, "?", "*", accents, other scripts) is kept, and a
-  figure is compared exactly as written ("3" is not "3.0"). Any rewording, reordering, voice change or
-  paraphrase is ``needs_review``. One supporting quote among several is enough.
+* ``supported``: the claim repeats a cited quote token for token. Words, figures and every punctuation mark
+  are tokens and must match exactly, including case and the articles a/an/the. The only differences ignored:
+  the capital of the first word, one final "." at the end of the text, curly against straight quotes, the
+  digit script and NFC accents, an inline [n] citation marker after a space or non-digit, a space between a
+  currency symbol or "%" and its number, and a contraction ("doesn't" = "does not"). Any rewording,
+  reordering, voice change or paraphrase is ``needs_review``. One supporting quote among several is enough.
 * ``contradicted``: only a clear conflict, which is the same sentence except for exactly one token: an
   added or removed "not"/"never"/"no", or one figure of another value written the same way; and every
   cited quote must say so.
@@ -44,51 +45,62 @@ from jsonl_store import JsonlError, locked, read_jsonl, write_jsonl_atomic  # no
 # Tokens: what may differ between a claim and its quote
 # ---------------------------------------------------------------------------
 #
-# A text is cut into tokens. Everything that can change a meaning is kept, and nothing is folded: letters and
-# digits of every script (an accent or a capital is a different letter), signs, comparators, currency, %, the
-# degree sign, superscripts, "?" and a footnote "*", "/" and hyphens. Only whitespace, the sentence marks
-# . , ; : ! and the ellipsis, quotation marks, brackets and the backtick are dropped. A figure is one token,
-# written exactly as it stands ("1,5", "-12", "10\u2076", ".95", "'24", "$5.00"); it is never converted, so "3"
-# and "3.0" differ. Only the digit script is unified (full-width and Arabic-Indic digits become 0-9), and "%"
-# or a currency symbol after a space belongs to its number ("40 %" is "40%"; "50 $" is not "50 \u20ac").
-# Case: the first word of the text may differ by its capital letter alone, every other token is compared as
-# written ("5 MB" is not "5 Mb").
+# A text is cut into tokens: runs of word characters, figures, and EVERY other non-space character as a token
+# of its own. Nothing is dropped or folded, so each punctuation mark, sign, quote, bracket, slash, hyphen,
+# "?", "!", "*" and "..." is part of the comparison ("6\" wide" is not "6' wide", "x != 0" is not "x = 0",
+# "(5.3)" is not "5.3", "3:1" is not "3 1"). A figure is one token written exactly as it stands ("1,5",
+# "-12", "10\u2076", "$5.00"); it is never converted, so "3" and "3.0" differ.
+#
+# The ONLY differences that are ignored:
+#   * the capital letter of the first word ("Acme supports SSO" = "acme supports SSO");
+#   * one final "." at the very end of the text, on either side or both (a final "!" or "?" must match);
+#   * curly and straight quotes and apostrophes (read as the straight ones, which stay tokens);
+#   * the digit script (every Unicode decimal digit is read as 0-9) and the NFC form of an accent;
+#   * an inline citation marker such as [3] or [1, 2] after a space or a non-digit ("3[00]" keeps its 00);
+#   * a space between a currency symbol and its number ("\u00a3 5m" = "\u00a35m"), and between a number and
+#     "%" or a currency symbol ("40 %" = "40%"; "50 $" is not "50 \u20ac");
+#   * a contraction ("doesn't" = "does not", "can't" and "cannot" = "can not", "won't" = "will not").
+# Accepted residual: a first word that is also a common word ("Polish" / "polish") matches when the quote
+# begins in lowercase.
 
-NEGATORS = frozenset(['not', 'never', 'no', 'Not', 'Never', 'No'])  # "No," and "No." are tokens of their own
+NEGATORS = frozenset(['not', 'never', 'no', 'Not', 'Never', 'No'])
 MIN_OVERLAP = 0.3  # share of the claim's words that must appear in a quote for it to address the claim
 
 CURRENCY = '$\u20ac\u00a3\u00a5'
 TOKEN_RE = re.compile(
-    # figure: sign, currency (A$, US$ too), apostrophe year or leading dot, digits with inner , or . groups, then
-    # % / a currency symbol (a space may come before it) or glued letters, digits and superscripts
-    r"(?:(?<!\w)[-\u2212+](?=[" + CURRENCY + r"'.\d]))?(?:[^\W\d_]{0,2}[" + CURRENCY + r"]\s?)?"
-    r"(?:'(?=\d\d)|(?<![\w.])\.(?=\d))?"
+    # figure: sign, currency (A$, US$ too), digits with inner , or . groups, then % / a currency symbol (a
+    # space may come before it) or glued letters, digits and superscripts
+    r"(?:(?<!\w)[-\u2212+](?=[" + CURRENCY + r"\d]))?(?:[^\W\d_]{0,2}[" + CURRENCY + r"]\s?)?"
     r"\d(?:[\d.,]*\d)?(?:\s?%|\s?[" + CURRENCY + r"](?!\d)|\w*)"
-    r"|\w+(?:'\w+)*"  # word (any script)
-    r"|[^\s\w.,;:!\u2026\"'\u201c\u201d\u201e\u00ab\u00bb()\[\]{}`]")  # any other mark is a token of its own
-FIGURE_RE = re.compile(r"[-\u2212+]?(?:[^\W\d_]{0,2}[" + CURRENCY + r"])?['.]?\d")
+    r"|\w+(?:'\w+)*"  # word (any script), with its inner apostrophes
+    r"|\S")  # any other mark is a token of its own
+FIGURE_RE = re.compile(r"[-\u2212+]?(?:[^\W\d_]{0,2}[" + CURRENCY + r"])?\d")
 CITATION_MARK_RE = re.compile(r'(?<!\d)\[\d{1,4}(?:,\s*\d{1,4})*\]')  # [3] after a space or a letter, not "3[00]"
-QUOTE_MARKS = str.maketrans({'\u2018': "'", '\u2019': "'", '\u02bc': "'"})
+QUOTE_MARKS = str.maketrans({'\u2018': "'", '\u2019': "'", '\u02bc': "'", '\u201c': '"', '\u201d': '"'})
 CONTRACTIONS = ((re.compile(r"\b([Cc])an(?:'t|not)\b"), r'\1an not'), (re.compile(r"\b([Ww])on't\b"), r'\1ill not'),
                 (re.compile(r"n't\b"), ' not'))
 
 
 def _words(text: str) -> list[str]:
-    """The tokens of a text, in order. "doesn't" is "does not"; an inline citation marker such as [3] is
-    not part of the text; "No," and "No." (an interjection, or "No. 1") are not the negator "No"."""
+    """The tokens of a text, in order (see the rules above)."""
     text = unicodedata.normalize('NFC', CITATION_MARK_RE.sub(' ', text)).translate(QUOTE_MARKS)
     text = re.sub(r'\d', lambda m: str(unicodedata.digit(m.group())), text)
     for pattern, replacement in CONTRACTIONS:
         text = pattern.sub(replacement, text)
-    words = []
-    for match in TOKEN_RE.finditer(text):
-        token = re.sub(r'\s', '', match.group())
-        if token in ('No', 'no') and text[match.end():match.end() + 1] in ('.', ','):
-            token += text[match.end()]
-        words.append(token)
+    words = [re.sub(r'\s', '', token) for token in TOKEN_RE.findall(text)]
+    if words and words[-1] == '.':
+        words.pop()
     if words and words[0].isalpha() and words[0][1:] == words[0][1:].lower():
         words[0] = words[0][0].lower() + words[0][1:]
     return words
+
+
+def _negates(words: list[str], i: int) -> bool:
+    """Is words[i] a negator? "not" and "never" are; "no" only when a word follows it directly ("no SSO"),
+    not before punctuation or a digit ("No: ...", "No, ...", "No 1")."""
+    if words[i] not in NEGATORS:
+        return False
+    return words[i].lower() != 'no' or (i + 1 < len(words) and words[i + 1][0].isalpha())
 
 
 def _is_figure(word: str) -> bool:
@@ -104,12 +116,12 @@ def _conflict(claim: list[str], source: list[str]) -> str:
     except for one added or removed "not"/"never"/"no", or except for exactly one figure that has another
     value in the same form ("$5" and "$7", not "3" and "3.0")."""
     if len(source) == len(claim) + 1:
-        for i, word in enumerate(source):
-            if word in NEGATORS and source[:i] + source[i + 1:] == claim:
+        for i in range(len(source)):
+            if _negates(source, i) and source[:i] + source[i + 1:] == claim:
                 return 'the source negates what the claim says'
     if len(claim) == len(source) + 1:
-        for i, word in enumerate(claim):
-            if word in NEGATORS and claim[:i] + claim[i + 1:] == source:
+        for i in range(len(claim)):
+            if _negates(claim, i) and claim[:i] + claim[i + 1:] == source:
                 return 'the claim negates what the source says'
     differing = [(c, q) for c, q in zip(claim, source) if c != q] if len(claim) == len(source) else []
     if len(differing) == 1:
@@ -117,6 +129,11 @@ def _conflict(claim: list[str], source: list[str]) -> str:
         if _is_figure(c) and _is_figure(q) and _digits_masked(c) == _digits_masked(q):
             return f'the source gives a different figure: {c} (source: {q})'
     return ''
+
+
+def _vocabulary(words: list[str]) -> set[str]:
+    """The words and figures (not the marks) of a token list, casefolded."""
+    return {w.casefold() for w in words if re.search(r'\w', w)}
 
 
 def _inside(part: list[str], whole: list[str]) -> bool:
@@ -129,7 +146,7 @@ def _assess_quote(claim_words: list[str], quote: str) -> dict:
     (``overlap``), whether the quote is a near-verbatim match (``match``), what clearly contradicts the claim
     (``conflict``) and why a reader must look (``reason``)."""
     claim, source = claim_words, _words(quote)
-    shared, wanted = {w.casefold() for w in source}, {w.casefold() for w in claim}  # overlap only decides unsupported
+    shared, wanted = _vocabulary(source), _vocabulary(claim)  # overlap only decides unsupported
     overlap = len(wanted & shared) / len(wanted)
     result = {'overlap': overlap, 'match': claim == source, 'conflict': '', 'reason': ''}
     if result['match']:
@@ -164,7 +181,7 @@ def compute_support_score(claim_text: str, evidence_quotes: list[str]) -> tuple[
     if not evidence_quotes:
         return ('unsupported', 0.0, 'no evidence linked')
     claim_words = _words(claim_text)
-    if not claim_words:
+    if not _vocabulary(claim_words):
         return ('needs_review', 0.0, 'the claim has no words to check')
     assessed = [_assess_quote(claim_words, q) for q in evidence_quotes]
     if any(a['match'] for a in assessed):
