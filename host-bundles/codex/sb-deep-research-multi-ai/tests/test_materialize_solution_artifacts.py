@@ -51,6 +51,10 @@ def _envelopes_from_claims(claims: list[str]) -> list[dict]:
     ]
 
 
+from legacy_catalog_fixture import with_legacy_catalogs  # noqa: E402
+
+
+@with_legacy_catalogs
 class MaterializeSolutionArtifactsTests(unittest.TestCase):
     def test_materialize_from_matrix_claim(self) -> None:
         envelopes = [

@@ -14,6 +14,7 @@ from category_pack import (
     build_overview_seeds,
     get_core_seed_slugs,
     normalize_slug,
+    pack_overlay,
     resolve_pack_from_need,
 )
 
@@ -70,120 +71,45 @@ FEATURE_TEMPLATE: list[dict[str, Any]] = [
     },
 ]
 
-KNOWN_SOLUTIONS: dict[str, str] = {
-    "silver-bullet": "Silver Bullet",
-    "ai-dlc": "AI-DLC",
-    "agentsys": "AgentSys",
-    "zuvo": "Zuvo",
-    "sdlc-plugin": "SDLC Plugin",
-    "deepwork": "Deepwork",
-    "workflow-manager": "Workflow Manager",
-    "turboshovel": "Turboshovel",
-    "cavekit": "Cavekit v3.1",
-    "factory-ai": "Factory.ai",
-    "devin": "Devin (Cognition)",
-    "github-copilot-workspace": "GitHub Copilot Workspace",
-    "cursor-agents": "Cursor Background Agents",
-    "openhands": "OpenHands",
-    "langgraph-platform": "LangGraph Platform",
-    "sweep-ai": "Sweep",
-    "crewai": "CrewAI",
-    "tembo": "Tembo",
-    "cline": "Cline",
-    "spec-kit": "GitHub spec-kit",
-    "bmad-method": "BMAD-METHOD",
-    "aider": "Aider",
-    "continue": "Continue",
-    "autogen": "Microsoft AutoGen",
-    "linear": "Linear",
-    "linear-agent": "Linear Agent Integrations",
-}
+KNOWN_SOLUTIONS: dict[str, str] = {}  # category data lives in the pack overlay (reference/category-pack-overlays)
 
 def _effective_known_solutions(need: dict[str, Any] | None = None) -> dict[str, str]:
     """Merge base KNOWN_SOLUTIONS with pack product_names when a pack is active."""
     pack = resolve_pack_from_need(need)
     if pack:
         merged = dict(KNOWN_SOLUTIONS)
+        merged.update({str(k): str(v) for k, v in (pack_overlay(pack).get("known_solutions") or {}).items()})
         merged.update(build_known_solutions(pack))
         return merged
     return dict(KNOWN_SOLUTIONS)
+
+
+def _slug_aliases(pack: dict[str, Any] | None) -> dict[str, str]:
+    """Free-text vendor alias -> slug: pack overlay data only (nothing is built in)."""
+    merged = dict(SLUG_ALIASES)
+    merged.update({str(k): str(v) for k, v in (pack_overlay(pack).get("slug_aliases") or {}).items()})
+    return merged
+
+
+def _head_aliases(pack: dict[str, Any] | None) -> dict[str, str]:
+    merged = dict(_HEAD_SLUG_ALIASES)
+    merged.update({str(k): str(v) for k, v in (pack_overlay(pack).get("head_slug_aliases") or {}).items()})
+    return merged
 
 
 def _effective_overview_seeds(need: dict[str, Any] | None = None) -> dict[str, str]:
     pack = resolve_pack_from_need(need)
     seeds = dict(OVERVIEW_SEEDS)
     if pack:
+        seeds.update({str(k): str(v) for k, v in (pack_overlay(pack).get("overview_seeds") or {}).items()})
         seeds.update(build_overview_seeds(pack))
     return seeds
 
 
 # Curated product blurbs for solution-card Overviews (not research-meta notes).
-OVERVIEW_SEEDS: dict[str, str] = {
-    "factory-ai": "Factory.ai provides managed Droids with workflow composition, parent/child delegation, review loops, and cloud hosting for agentic software delivery.",
-    "devin": "Devin is Cognition's autonomous software engineer that plans, implements, tests, and ships code via pull requests in customer repositories.",
-    "github-copilot-workspace": "GitHub Copilot Workspace is a Copilot-native environment for issue→spec→plan→implement→PR workflows on GitHub.",
-    "cursor-agents": "Cursor Background Agents run long-lived coding agents in the cloud against your repos, with IDE-native handoff into Cursor.",
-    "sweep-ai": "Sweep automates GitHub issue→PR coding workflows as an AI assistant on the git control plane.",
-    "tembo": "Tembo runs cloud agents across repos, tickets, and tools with reviewable sessions and automations for startup engineering teams.",
-    "replit-agent": "Replit Agent targets rapid idea-to-deploy prototyping with parallel agents and one-click hosting inside Replit.",
-    "windsurf": "Windsurf (Codeium) is a multi-agent IDE that coordinates local and cloud coding agents from a single editor surface.",
-    "tabnine-enterprise": "Tabnine Enterprise delivers privacy-focused AI coding assistance with enterprise controls for regulated engineering orgs.",
-    "amazon-q-developer": "Amazon Q Developer is AWS's agentic coding assistant embedded in the AWS toolchain for build, ops, and migration tasks.",
-    "sourcegraph-cody": "Sourcegraph Cody is a code-aware AI assistant grounded in large-codebase context search and chat inside the editor.",
-    "augment-code": "Augment Code positions as agentic development at org scale with workflow packs for review, tests, incidents, and ticket-to-PR.",
-    "magic-dev": "Magic.dev builds long-context coding models and agents aimed at large-repo autonomous engineering tasks.",
-    "poolside": "Poolside sells open-weight agentic coding foundation models for on-prem and private deployments rather than a full process layer.",
-    "coderabbit": "CodeRabbit is an AI code-review product focused on PR commentary and review automation rather than full SDLC orchestration.",
-    "jetbrains-ai": "JetBrains AI Assistant brings AI coding and refactor help into IntelliJ-based IDEs with JetBrains ecosystem integration.",
-    "github-copilot-enterprise": "GitHub Copilot Enterprise extends Copilot with org knowledge, preferential models, and enterprise admin controls on GitHub.",
-    "cognition-scout": "Cognition Scout is Cognition's agent surface adjacent to Devin for scoped autonomous engineering tasks.",
-    "linear-agent": "Linear Agent Integrations connect issue tracking in Linear to coding agents for ticket-driven implementation loops.",
-    "openhands": "OpenHands is an OSS autonomous coding agent (CodeAct/sandbox) for BYO runtime execution with end-of-run verification.",
-    "langgraph-platform": "LangGraph Platform hosts durable agent graphs with Cloud, Hybrid, and self-hosted control planes for custom orchestration.",
-    "crewai": "CrewAI combines role-based agent Crews with event-driven Flows for production multi-agent workflows.",
-    "metagpt": "MetaGPT maps a software-company SOP into role agents (PM/architect/engineer) that produce structured SDLC artifacts from a one-line brief.",
-    "spec-kit": "GitHub spec-kit makes specifications executable via constitution.md principles and spec-driven development workflows.",
-    "cline": "Cline is an open-source IDE agent that plans and edits in the editor with tool use and human-in-the-loop approval.",
-    "continue": "Continue is an open-source AI coding extension for IDE chat, edit, and autocomplete workflows (acquired by Cursor in 2026).",
-    "autogen": "Microsoft AutoGen is a multi-agent conversation framework for building custom agent graphs and tool-using collaborators.",
-    "gsd": "GSD (Get Shit Done) is a Claude Code meta-prompting / spec-driven system for structured agent delivery loops.",
-    "bmad-method": "BMAD-METHOD is an open methodology pack for agentic product and engineering workflows with role prompts and artifacts.",
-    "aider": "Aider is a git-native CLI coding agent that edits repos in tight commit loops with strong OSS community adoption.",
-    "swe-agent": "SWE-agent is an open research agent that solves GitHub issues end-to-end inside a controlled execution environment.",
-    "semantic-kernel": "Semantic Kernel is Microsoft's SDK for orchestrating AI plugins, plans, and agents inside .NET/Python apps.",
-    "gpt-engineer": "GPT-Engineer generates and iterates codebases from natural-language specs as a lightweight OSS coding agent.",
-    "praisonai": "PraisonAI is a low-code multi-agent framework for composing crews of specialized AI workers.",
-    "superagent": "Superagent is an open platform for building, hosting, and monitoring AI agents with tool integrations.",
-    "agentgpt": "AgentGPT is a browser-based autonomous agent UI for goal-driven task decomposition and execution.",
-    "langchain": "LangChain is a widely used framework for LLM apps and agents, with LangGraph for durable workflow orchestration.",
-    "open-interpreter": "Open Interpreter lets language models run code locally for general computer-use style agent tasks.",
-    "devika": "Devika is an open-source agentic software engineer that plans and implements coding tasks in a local stack.",
-}
+OVERVIEW_SEEDS: dict[str, str] = {}  # category data lives in the pack overlay (reference/category-pack-overlays)
 
-SLUG_ALIASES: dict[str, str] = {
-    "silver bullet": "silver-bullet",
-    "factory.ai": "factory-ai",
-    "factory ai": "factory-ai",
-    "factory": "factory-ai",
-    "github copilot workspace": "github-copilot-workspace",
-    "github copilot": "github-copilot-workspace",
-    "copilot workspace": "github-copilot-workspace",
-    "copilot": "github-copilot-workspace",
-    "cursor cloud": "cursor-agents",
-    "cursor background agents": "cursor-agents",
-    "cursor agents": "cursor-agents",
-    "cursor": "cursor-agents",
-    "devin (cognition)": "devin",
-    "cognition": "devin",
-    "langgraph": "langgraph-platform",
-    "langgraph platform": "langgraph-platform",
-    "open hands": "openhands",
-    "all-hands": "openhands",
-    "sweep": "sweep-ai",
-    "sweep.dev": "sweep-ai",
-    "spec kit": "spec-kit",
-    "github spec-kit": "spec-kit",
-}
+SLUG_ALIASES: dict[str, str] = {}  # category data lives in the pack overlay (reference/category-pack-overlays)
 
 _MATRIX_DUMP_RE = re.compile(
     r"(?:"
@@ -254,7 +180,9 @@ def is_matrix_dump_claim(text: str) -> bool:
     return False
 
 
-def is_unusable_overview_claim(text: str, *, focus_name: str = "") -> bool:
+def is_unusable_overview_claim(
+    text: str, *, focus_name: str = "", known: dict[str, str] | None = None
+) -> bool:
     """Reject meta-research / multi-vendor dumps unsuitable as a solution Overview blurb."""
     t = (text or "").strip()
     if not t or is_matrix_dump_claim(t):
@@ -276,7 +204,7 @@ def is_unusable_overview_claim(text: str, *, focus_name: str = "") -> bool:
         return True
     # Claims that list many other products are landscape notes, not overviews.
     others = 0
-    for display in KNOWN_SOLUTIONS.values():
+    for display in (known or KNOWN_SOLUTIONS).values():
         name = display.lower()
         if not name or (focus and (name == focus or name in focus or focus in name)):
             continue
@@ -298,11 +226,12 @@ def _normalize_slug(token: str, known: dict[str, str] | None = None, pack: dict[
     effective = known or KNOWN_SOLUTIONS
     if token in effective:
         return token
-    if token in SLUG_ALIASES:
-        return SLUG_ALIASES[token]
+    aliases = _slug_aliases(pack)
+    if token in aliases:
+        return aliases[token]
     compact = re.sub(r"[^a-z0-9]+", " ", token).strip()
-    if compact in SLUG_ALIASES:
-        return SLUG_ALIASES[compact]
+    if compact in aliases:
+        return aliases[compact]
     if pack:
         resolved = normalize_slug(token, pack)
         if resolved:
@@ -329,7 +258,7 @@ def _extract_slugs_from_text(
     for slug, display in effective.items():
         if any(_mentions(lower, name) for name in (slug.replace("-", " "), slug, display.lower())):
             found.append(slug)
-    for alias, slug in SLUG_ALIASES.items():
+    for alias, slug in _slug_aliases(pack).items():
         if _mentions(lower, alias) and slug not in found:
             found.append(slug)
     if pack:
@@ -441,30 +370,7 @@ _CRITERION_KEYWORD_TO_ID: dict[str, str] = {
     "quality release enforcement": "quality_release_enforcement",
     "process layer above": "process_layer_above_host",
 }
-_HEAD_SLUG_ALIASES: dict[str, str] = {
-    "director mode lite": "director",
-    "director mode": "director",
-    "ai sdlc harness": "claude-harness",
-    "claude harness": "claude-harness",
-    "a(i)-team": "ateam",
-    "a-team": "ateam",
-    "ai-team": "ateam",
-    "cavekit v3.1": "cavekit-v31",
-    "cavekit": "cavekit-v31",
-    "barkain workflow orchestrator": "barkain-workflow-orchestrator",
-    "barkain": "barkain-workflow-orchestrator",
-    "github spec kit": "spec-kit",
-    "spec kit": "spec-kit",
-    "bmad-method": "bmad",
-    "bmad": "bmad",
-    "gsd": "gsd",
-    "superpowers": "superpowers",
-    "zuvo": "zuvo",
-    "factory.ai": "factory-ai",
-    "factory ai": "factory-ai",
-    "augment cosmos": "augment-cosmos",
-    "silver bullet": "silver-bullet",
-}
+_HEAD_SLUG_ALIASES: dict[str, str] = {}  # category data lives in the pack overlay (reference/category-pack-overlays)
 
 _FEATURE_ALIASES: dict[str, str] = {
     "multi-agent orchestration": "Parent/child agent delegation",
@@ -648,9 +554,10 @@ def _resolve_solution_slug(
     effective = known or KNOWN_SOLUTIONS
     head_clean = re.sub(r"\([^)]*\)", "", head).strip()
     head_key = head_clean.lower().strip()
-    if head_key in _HEAD_SLUG_ALIASES:
-        return _canonical_known_slug(_HEAD_SLUG_ALIASES[head_key], effective)
-    for alias, slug in sorted(_HEAD_SLUG_ALIASES.items(), key=lambda item: len(item[0]), reverse=True):
+    head_aliases = _head_aliases(pack)
+    if head_key in head_aliases:
+        return _canonical_known_slug(head_aliases[head_key], effective)
+    for alias, slug in sorted(head_aliases.items(), key=lambda item: len(item[0]), reverse=True):
         if head_key == alias or head_key.startswith(f"{alias} "):
             return _canonical_known_slug(slug, effective)
     lower = head_clean.lower()
@@ -763,6 +670,7 @@ def _extract_slugs_from_list(
     pack: dict[str, Any] | None = None,
 ) -> list[str]:
     effective = known or KNOWN_SOLUTIONS
+    head_aliases = _head_aliases(pack)
     found: list[str] = []
     cleaned = re.sub(r"\([^)]*\)", " ", text)
     cleaned = re.sub(
@@ -781,8 +689,8 @@ def _extract_slugs_from_list(
         if not token:
             continue
         token_key = token.lower()
-        if token_key in _HEAD_SLUG_ALIASES:
-            slug = _HEAD_SLUG_ALIASES[token_key]
+        if token_key in head_aliases:
+            slug = head_aliases[token_key]
         else:
             slug = _normalize_slug(token, effective, pack)
         if slug and slug not in found:
@@ -1091,9 +999,10 @@ def _parse_has_checkmark_features(
 def _parse_solution_lead_negative(
     support: dict[str, dict[str, bool | None]],
     text: str,
+    known: dict[str, str] | None = None,
 ) -> None:
     lower = text.lower()
-    for slug, display in KNOWN_SOLUTIONS.items():
+    for slug, display in (known or KNOWN_SOLUTIONS).items():
         patterns = (
             rf"^{re.escape(display.lower())}\b",
             rf"^{re.escape(slug.replace('-', ' '))}\b",
@@ -1238,7 +1147,7 @@ def _apply_slug_scoped_prose(
     _parse_prose_claim(support, text)
     _parse_must_have_satisfaction(support, text)
     _parse_has_checkmark_features(support, text)
-    _parse_solution_lead_negative(support, text)
+    _parse_solution_lead_negative(support, text, known)
     _parse_managed_hosting_offer(support, text)
     _parse_template_ttv(support, text)
     _parse_autonomous_ship_claim(support, text)
@@ -1677,15 +1586,17 @@ def write_run_features_json(
     }
 
 
-def _scr_claims_for_slug(slug: str, envelopes: list[dict[str, Any]]) -> list[str]:
-    display = KNOWN_SOLUTIONS.get(slug, slug)
+def _scr_claims_for_slug(
+    slug: str, envelopes: list[dict[str, Any]], known: dict[str, str] | None = None
+) -> list[str]:
+    display = (known or KNOWN_SOLUTIONS).get(slug, slug)
     slug_pat = slug.replace("-", " ")
     claims: list[str] = []
     for text in _iter_claim_texts(envelopes):
         lower = text.lower()
         if slug not in lower and slug_pat not in lower and display.lower() not in lower:
             continue
-        if is_unusable_overview_claim(text, focus_name=display):
+        if is_unusable_overview_claim(text, focus_name=display, known=known):
             continue
         claims.append(text)
         if len(claims) >= 12:
@@ -1693,10 +1604,15 @@ def _scr_claims_for_slug(slug: str, envelopes: list[dict[str, Any]]) -> list[str
     return claims
 
 
-def build_scr_md(slug: str, envelopes: list[dict[str, Any]]) -> str:
-    display = KNOWN_SOLUTIONS.get(slug, slug)
-    clean_claims = _scr_claims_for_slug(slug, envelopes)
-    seed = OVERVIEW_SEEDS.get(slug, "").strip()
+def build_scr_md(
+    slug: str,
+    envelopes: list[dict[str, Any]],
+    known: dict[str, str] | None = None,
+    overview_seeds: dict[str, str] | None = None,
+) -> str:
+    display = (known or KNOWN_SOLUTIONS).get(slug, slug)
+    clean_claims = _scr_claims_for_slug(slug, envelopes, known)
+    seed = (overview_seeds or OVERVIEW_SEEDS).get(slug, "").strip()
     exec_summary = seed or (
         clean_claims[0]
         if clean_claims
@@ -1774,7 +1690,7 @@ def materialize_solution_artifacts(
         features_path = solutions_root / slug / "features.json"
         if emit(features_path, json.dumps(build_features_json(slug, support, known=known, rubric=rubric), indent=2) + "\n"):
             written.append(str(features_path.relative_to(research_dir)))
-        emit(solutions_root / slug / "scr.md", build_scr_md(slug, envelopes))
+        emit(solutions_root / slug / "scr.md", build_scr_md(slug, envelopes, known, _effective_overview_seeds(need)))
 
     # Folders outside this run's solution set (earlier runs, the host's own notes) are
     # reported, never deleted.
