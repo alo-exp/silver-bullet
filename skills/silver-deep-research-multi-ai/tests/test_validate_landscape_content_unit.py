@@ -88,6 +88,10 @@ class _Base(unittest.TestCase):
         return self.run_validate(**kw)["errors"]
 
 
+from legacy_catalog_fixture import with_legacy_catalogs  # noqa: E402
+
+
+@with_legacy_catalogs
 class HelperTests(_Base):
     def test_load_json(self):
         self.assertIsNone(vlc._load_json(self.root / "missing.json"))
@@ -411,6 +415,7 @@ class SpaGateTests(_Base):
         self.assertNotIn("landscape-report.html missing after landscape synthesis", self.errors())
 
 
+@with_legacy_catalogs
 class CatalogGateTests(_Base):
     def setUp(self):
         super().setUp()
@@ -549,6 +554,7 @@ class CatalogGateTests(_Base):
     def test_non_apo_pack_and_pack_defaults(self):
         pack = copy.deepcopy(category_pack.resolve_pack_from_need({"category_pack_id": PACK_ID}))
         pack["category_id"] = "something-else"
+        pack["overlay"] = {}
         pack["max_core_count"] = None
         pack["primary_market_id"] = ""
         pack["parent_child_dedupe"] = [
@@ -561,7 +567,7 @@ class CatalogGateTests(_Base):
         with mock.patch.object(vlc, "resolve_pack_from_need", return_value=pack):
             errs = self.errors()
         # non-APO: no exclusion-language gate; max_core falls back to 25; primary id to "apo"
-        self.assertFalse(any("exclusion language" in e for e in errs))
+        self.assertFalse(any("exclusion language" in e for e in errs))  # pack has no scope_exclusion_check
         self.assertFalse(any("exceeds" in e for e in errs))
         self.assertFalse(any("dual listing" in e for e in errs))
         self.audit(core=[f"s{i}" for i in range(26)])
@@ -581,10 +587,10 @@ class CatalogGateTests(_Base):
         self.put("comparison/comparison.json", comparison())
         # prose mentions Augment Code without Cosmos while audit core has it
         self.put("landscape/landscape-report.md", ALL_SECTIONS + "\nAugment-Code is mentioned.\n")
-        self.assertIn("augment-code present in core without Cosmos rename", self.errors())
+        self.assertIn("augment-code present in core without augment-cosmos rename", self.errors())
         # Cosmos also mentioned -> fine
         self.put("landscape/landscape-report.md", ALL_SECTIONS + "\nAugment Code and augment cosmos.\n")
-        self.assertFalse(any("without Cosmos rename" in e for e in self.errors()))
+        self.assertFalse(any("without augment-cosmos rename" in e for e in self.errors()))
         # mention but audit core does not hold it -> fine
         self.audit(core=["silver-bullet"])
         self.put("landscape/landscape-report.md", ALL_SECTIONS + "\nAugment-Code is mentioned.\n")

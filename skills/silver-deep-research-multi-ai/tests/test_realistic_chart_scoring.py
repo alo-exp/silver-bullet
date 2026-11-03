@@ -49,6 +49,10 @@ def tearDownModule() -> None:
     _OFFLINE_ENV.stop()
 
 
+from legacy_catalog_fixture import with_legacy_catalogs  # noqa: E402
+
+
+@with_legacy_catalogs
 class RealisticChartScoringTests(unittest.TestCase):
     def test_no_zero_infra_to_managed_hosting_equivalence(self) -> None:
         self.assertEqual(_CHART_FEAT_EQUIV, {})

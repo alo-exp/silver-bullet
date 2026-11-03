@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from generated_files import write_generated_text
+from pack_vocabulary import activated, for_research_dir
 from category_pack import (
     build_known_solutions,
     build_overview_seeds,
@@ -18,58 +19,13 @@ from category_pack import (
     resolve_pack_from_need,
 )
 
-FEATURE_TEMPLATE: list[dict[str, Any]] = [
-    {
-        "name": "Process orchestration",
-        "features": [
-            "Workflow composition",
-            "Atomic flow catalog",
-            "Parent/child agent delegation",
-            "Hook-enforced gates",
-        ],
-    },
-    {
-        "name": "Developer Experience",
-        "features": [
-            "Self-serve signup",
-            "Quick onboarding",
-            "IDE-native integration",
-            "Skill/plugin marketplace",
-        ],
-    },
-    {
-        "name": "Pricing and licensing",
-        "features": [
-            "Predictable pricing",
-            "Free tier / OSS core",
-            "Per-seat transparency",
-        ],
-    },
-    {
-        "name": "Time to value",
-        "features": [
-            "Managed hosting",
-            "Prebuilt SDLC templates",
-            "Zero-infra bootstrap",
-        ],
-    },
-    {
-        "name": "Verification and quality",
-        "features": [
-            "Automated review loops",
-            "CI integration",
-            "Visual/E2E verification",
-        ],
-    },
-    {
-        "name": "Security and compliance",
-        "features": [
-            "SSO",
-            "RBAC",
-            "Audit log",
-        ],
-    },
-]
+# Category vocabulary (feature rubric, aliases, prose signals) is pack overlay data applied by
+# pack_vocabulary.activated(); these neutral defaults match nothing.
+NEVER_MATCHES = re.compile(r"(?!x)x")
+HOST_RUNTIME_SLUGS: frozenset[str] = frozenset()
+# [{"focus": "<name fragment>", "reject_if_any": [[needle, ...], ...]}]: card-identity leak filters.
+OVERVIEW_IDENTITY_FILTERS: list[dict[str, Any]] = []
+FEATURE_TEMPLATE: list[dict[str, Any]] = []
 
 KNOWN_SOLUTIONS: dict[str, str] = {}  # category data lives in the pack overlay (reference/category-pack-overlays)
 
@@ -194,14 +150,11 @@ def is_unusable_overview_claim(
     focus = (focus_name or "").lower()
     lower = t.lower()
     # Card identity leaks: another product's install path or report methodology prose.
-    if focus and "director" in focus and "superpowers" in lower:
-        return True
-    if focus and "cc10x" in focus and (
-        "startup-weighted comparison" in lower
-        or "silver bullet" in lower and "anchor" in lower
-        or "methodology" in lower and "score" in lower
-    ):
-        return True
+    for rule in OVERVIEW_IDENTITY_FILTERS:
+        if focus and str(rule.get("focus", "")).lower() in focus and any(
+            all(str(needle).lower() in lower for needle in group) for group in rule.get("reject_if_any", [])
+        ):
+            return True
     # Claims that list many other products are landscape notes, not overviews.
     others = 0
     for display in (known or KNOWN_SOLUTIONS).values():
@@ -293,6 +246,9 @@ def discover_solutions(
     for text in _iter_claim_texts(envelopes):
         for slug in _extract_slugs_from_text(text, known, pack):
             scores[slug] = scores.get(slug, 0) + 1
+    # Open world: vendors the workers name in structured matrix rows are discovered too.
+    for slug, (_display, rows) in structured_vendor_names(envelopes, known, pack).items():
+        scores[slug] = scores.get(slug, 0) + rows
     ranked = sorted(scores, key=lambda s: (-scores[s], s))
     # Only vendors the models actually named: never pad with unrelated catalogue entries.
     return ranked
@@ -345,144 +301,20 @@ _SLUG_NEGATION_RE = re.compile(
     r"(?P<slug>[a-z][a-z0-9-]*)\s+(?:do(?:es)?\s+not|doesn't|fails?|lacks?)\b",
     re.IGNORECASE,
 )
-_CORE_SET_CLAIM_RE = re.compile(
-    r"(?:"
-    r"Confirmed in-scope core set|"
-    r"Startup-weighted core|"
-    r"startup-weighted(?:\s+\w+){0,4}\s+for matrix|"
-    r"primary APO matrix should prioritize|"
-    r"in-scope commercial \+ OSS solution count"
-    r")",
-    re.IGNORECASE,
-)
-_MATRIX_LEADERS_RE = re.compile(
-    r"(?:matrix leaders are|APO matrix leaders|Commercial-weighted peer)",
-    re.IGNORECASE,
-)
-_CRITERION_KEYWORD_TO_ID: dict[str, str] = {
-    "lifecycle span": "lifecycle_span",
-    "plugin/skill/hook packaging": "plugin_skill_hook_packaging",
-    "deterministic gates": "deterministic_gates",
-    "cross-session state": "cross_session_state",
-    "cross session state": "cross_session_state",
-    "specialist agents": "specialist_agents",
-    "quality/release enforcement": "quality_release_enforcement",
-    "quality release enforcement": "quality_release_enforcement",
-    "process layer above": "process_layer_above_host",
-}
+_CORE_SET_CLAIM_RE = NEVER_MATCHES
+_MATRIX_LEADERS_RE = NEVER_MATCHES
+_CRITERION_KEYWORD_TO_ID: dict[str, str] = {}
 _HEAD_SLUG_ALIASES: dict[str, str] = {}  # category data lives in the pack overlay (reference/category-pack-overlays)
 
-_FEATURE_ALIASES: dict[str, str] = {
-    "multi-agent orchestration": "Parent/child agent delegation",
-    "verification gates": "Hook-enforced gates",
-    "verification/hook gates": "Hook-enforced gates",
-    "hook-enforced sdlc gates": "Hook-enforced gates",
-    "ide hook enforcement": "Hook-enforced gates",
-    "hook-enforced process": "Hook-enforced gates",
-    "headless ci execution": "CI integration",
-    "partial composition": "Workflow composition",
-    "multi-agent workflows": "Workflow composition",
-    "workflow composition": "Workflow composition",
-    "delegation": "Parent/child agent delegation",
-    "parent/child delegation": "Parent/child agent delegation",
-    "atomic-flow catalog": "Atomic flow catalog",
-    "atomic flow catalog": "Atomic flow catalog",
-    "atomic flows": "Atomic flow catalog",
-    "workflow catalog": "Atomic flow catalog",
-    "hook-enforced gates": "Hook-enforced gates",
-    "hook gates": "Hook-enforced gates",
-    "hook enforcement": "Hook-enforced gates",
-    "automated review loops": "Automated review loops",
-    "managed hosting": "Managed hosting",
-    "ci integration": "CI integration",
-    "ci/cd": "CI integration",
-    "plugin marketplace": "Skill/plugin marketplace",
-    "skill marketplace": "Skill/plugin marketplace",
-    "ide-native": "IDE-native integration",
-    "ide-native integration": "IDE-native integration",
-    "open-source": "Free tier / OSS core",
-    "oss core": "Free tier / OSS core",
-    "sdlc templates": "Prebuilt SDLC templates",
-    "prebuilt sdlc": "Prebuilt SDLC templates",
-    "zero-infra": "Zero-infra bootstrap",
-    "predictable pricing": "Predictable pricing",
-    "audit logs": "Audit log",
-    "visual/e2e": "Visual/E2E verification",
-    "e2e verification": "Visual/E2E verification",
-    "composing workflows": "Workflow composition",
-    "composes workflows": "Workflow composition",
-    "workflow state": "Workflow composition",
-    "enforcing gates": "Hook-enforced gates",
-    "cross-session state": "Workflow composition",
-    "cross session state": "Workflow composition",
-    "process layer above host": "Workflow composition",
-    "process layer": "Workflow composition",
-}
+_FEATURE_ALIASES: dict[str, str] = {}
 
-_INCLUSION_CRITERION_FEATURES: dict[str, list[str]] = {
-    "lifecycle_span": ["Workflow composition", "Atomic flow catalog"],
-    "plugin_skill_hook_packaging": ["Skill/plugin marketplace", "IDE-native integration"],
-    "deterministic_gates": ["Hook-enforced gates"],
-    "cross_session_state": ["Workflow composition"],
-    "specialist_agents": ["Parent/child agent delegation"],
-    "quality_release_enforcement": ["Automated review loops", "Hook-enforced gates"],
-    "process_layer_above_host": ["Workflow composition", "IDE-native integration"],
-}
+_INCLUSION_CRITERION_FEATURES: dict[str, list[str]] = {}
 
-_INCLUSION_CRITERIA_SIGNAL_RE = re.compile(
-    r"inclusion criteria|inclusion criterion|lifecycle_span|deterministic gate|cross[- ]session|"
-    r"plugin/skill|process layer|specialist agent|quality/release|passing all 7|satisfies all 7|"
-    r"≥\s*3 inclusion|evidence host-integrated|orchestrat|workflow orchestrat|methodology pack",
-    re.IGNORECASE,
-)
-_ALL_SEVEN_INCLUSION_RE = re.compile(
-    r"(?:passing|satisf(?:y|ies)|covering|meets?)\s+all\s+7\s+inclusion",
-    re.IGNORECASE,
-)
-_PAREN_CRITERION_SLUGS_RE = re.compile(
-    r"(?P<phrase>deterministic gate|lifecycle span|cross[- ]host|plugin[- ]ecosystem|"
-    r"gate determinism|workflow orchestrat|process[- ]layer)[^.;]{0,80}\((?P<list>[^)]+)\)",
-    re.IGNORECASE,
-)
+_INCLUSION_CRITERIA_SIGNAL_RE = NEVER_MATCHES
+_ALL_SEVEN_INCLUSION_RE = NEVER_MATCHES
+_PAREN_CRITERION_SLUGS_RE = NEVER_MATCHES
 
-_PROSE_POSITIVE_SIGNALS: list[tuple[re.Pattern[str], list[str]]] = [
-    (re.compile(r"workflow|compos|router|lifecycle|orchestrat|repeatable workflow", re.I), ["Workflow composition"]),
-    (re.compile(r"atomic flow|flow catalog|pre-composed|catalog of|workflow catalog", re.I), ["Atomic flow catalog"]),
-    (re.compile(r"sequential or parallel|parallel execution|task decomposition", re.I), ["Workflow composition", "Parent/child agent delegation"]),
-    (
-        re.compile(
-            r"hook|gate|blocking|fail.?closed|deterministic|quality gate|return block|enforcement|stop-hook",
-            re.I,
-        ),
-        ["Hook-enforced gates"],
-    ),
-    (re.compile(r"open.?source|\boss\b", re.I), ["Free tier / OSS core"]),
-    (re.compile(r"ci/?cd|ci integration|lint/test/build", re.I), ["CI integration"]),
-    (re.compile(r"plugin|marketplace|skill pack", re.I), ["Skill/plugin marketplace"]),
-    (
-        re.compile(
-            r"low startup burden|quick (?:setup|onboard)|two (?:marketplace )?commands|"
-            r"marketplace installation|automatic setup|installs as a",
-            re.I,
-        ),
-        ["Quick onboarding", "Zero-infra bootstrap"],
-    ),
-    (re.compile(r"verification|review loop|tdd", re.I), ["Automated review loops"]),
-    (re.compile(r"process layer|above host|ide-native|claude code|codex|cursor", re.I), ["IDE-native integration"]),
-    (re.compile(r"persist(?:s|ent)?\s+(?:evidence|state|progress)|cross[- ]session|state under", re.I), ["Workflow composition"]),
-    (re.compile(r"specialist delegation|role[- ]based|multi[- ]agent", re.I), ["Parent/child agent delegation"]),
-    (re.compile(r"schema validation|integrity[- ]gate|governance depth", re.I), ["Hook-enforced gates", "Automated review loops"]),
-    (re.compile(r"host[- ]integrated|process orchestrator|sdlc plugin", re.I), ["Workflow composition", "IDE-native integration"]),
-    (
-        re.compile(
-            r"(?:low|medium)[- ]startup burden|startup[- ]weighted|rapid (?:setup|onboard)|time[- ]to[- ]value",
-            re.I,
-        ),
-        ["Quick onboarding", "Zero-infra bootstrap"],
-    ),
-    (re.compile(r"prebuilt|sdlc templates|template pack|methodology pack", re.I), ["Prebuilt SDLC templates"]),
-    (re.compile(r"managed hosting|cloud agent|hosted runtime|autonomous delivery engine", re.I), ["Managed hosting"]),
-]
+_PROSE_POSITIVE_SIGNALS: list[tuple[re.Pattern[str], list[str]]] = []
 
 
 def _all_template_features() -> list[str]:
@@ -642,6 +474,17 @@ class _VoteMap(dict):
 
 
 _VOTER: list[Any] = [None]
+
+
+def _assign_rubric(
+    support: dict[str, dict[str, bool | None]],
+    slug: str,
+    feature: str,
+    value: bool,
+) -> None:
+    """Assign a feature named by a built-in prose heuristic, only when the active rubric has it."""
+    if feature in _all_template_features():
+        _assign_support(support, slug, feature, value)
 
 
 def _assign_support(
@@ -962,7 +805,7 @@ def _parse_must_have_satisfaction(
     ):
         _assign_support(support, slug, feature, True)
     if re.search(r"\bci\b|ci execution|ci integration", text, re.IGNORECASE):
-        _assign_support(support, slug, "CI integration", True)
+        _assign_rubric(support, slug, "CI integration", True)
 
 
 def _parse_has_checkmark_features(
@@ -1014,29 +857,29 @@ def _parse_solution_lead_negative(
             r"\bno\s+(?:workflow\s+)?catalog\b|\bwithout\b.{0,40}\bcatalog\b",
             lower,
         ):
-            _assign_support(support, slug, "Atomic flow catalog", False)
-            _assign_support(support, slug, "Workflow composition", False)
+            _assign_rubric(support, slug, "Atomic flow catalog", False)
+            _assign_rubric(support, slug, "Workflow composition", False)
         if re.search(r"hook[- ]enforced|hook enforcement|ide hook", lower):
             if re.search(r"\bno\b|\blacks?\b|\bwithout\b", lower):
-                _assign_support(support, slug, "Hook-enforced gates", False)
+                _assign_rubric(support, slug, "Hook-enforced gates", False)
         if re.search(r"\bpartial composition\b", lower):
-            _assign_support(support, slug, "Workflow composition", True)
+            _assign_rubric(support, slug, "Workflow composition", True)
         if re.search(r"\bno catalog or\b", lower):
-            _assign_support(support, slug, "Atomic flow catalog", False)
+            _assign_rubric(support, slug, "Atomic flow catalog", False)
         if re.search(r"\bopen[- ]source\b|\boss\b", lower):
-            _assign_support(support, slug, "Free tier / OSS core", True)
+            _assign_rubric(support, slug, "Free tier / OSS core", True)
         if re.search(r"\bverification[- ]gate\b|\bverification gate\b", lower):
             if re.search(r"\bno\b|\blacks?\b|\blimited\b|\bwithout\b", lower):
-                _assign_support(support, slug, "Hook-enforced gates", False)
+                _assign_rubric(support, slug, "Hook-enforced gates", False)
         if re.search(r"\blimited multi-agent\b", lower):
-            _assign_support(support, slug, "Parent/child agent delegation", False)
+            _assign_rubric(support, slug, "Parent/child agent delegation", False)
         if re.search(r"\bci/?cd\b|\bci integration\b", lower):
-            _assign_support(support, slug, "CI integration", True)
+            _assign_rubric(support, slug, "CI integration", True)
         if re.search(r"multi-agent workflows?\b", lower) and not re.search(
             r"\bno\b.{0,20}multi-agent",
             lower,
         ):
-            _assign_support(support, slug, "Parent/child agent delegation", True)
+            _assign_rubric(support, slug, "Parent/child agent delegation", True)
         break
 
 
@@ -1056,9 +899,9 @@ def _parse_managed_hosting_offer(
         if "," in subject_text:  # "While X is local, Y and Z offer ...": X is the contrasted clause
             subject_text = subject_text.split(",", 1)[1]
     for slug in _extract_slugs_from_text(subject_text):
-        _assign_support(support, slug, "Managed hosting", True)
+        _assign_rubric(support, slug, "Managed hosting", True)
         if re.search(r"managed hosting paths?", text, re.IGNORECASE):
-            _assign_support(support, slug, "Zero-infra bootstrap", True)
+            _assign_rubric(support, slug, "Zero-infra bootstrap", True)
 
 
 def _parse_template_ttv(
@@ -1069,7 +912,7 @@ def _parse_template_ttv(
         return
     slug = _primary_slug_in_text(text)
     if slug:
-        _assign_support(support, slug, "Prebuilt SDLC templates", True)
+        _assign_rubric(support, slug, "Prebuilt SDLC templates", True)
 
 
 def _parse_autonomous_ship_claim(
@@ -1081,9 +924,9 @@ def _parse_autonomous_ship_claim(
     slug = _primary_slug_in_text(text)
     if not slug:
         return
-    _assign_support(support, slug, "Managed hosting", True)
-    _assign_support(support, slug, "CI integration", True)
-    _assign_support(support, slug, "Zero-infra bootstrap", True)
+    _assign_rubric(support, slug, "Managed hosting", True)
+    _assign_rubric(support, slug, "CI integration", True)
+    _assign_rubric(support, slug, "Zero-infra bootstrap", True)
 
 
 def _parse_strong_composition_claim(
@@ -1094,17 +937,7 @@ def _parse_strong_composition_claim(
         return
     slug = _primary_slug_in_text(text)
     if slug:
-        _assign_support(support, slug, "Workflow composition", True)
-
-
-def _parse_openhands_templates(
-    support: dict[str, dict[str, bool | None]],
-    text: str,
-) -> None:
-    if not re.search(r"automation templates", text, re.IGNORECASE):
-        return
-    if "openhands" in text.lower():
-        _assign_support(support, "openhands", "Prebuilt SDLC templates", True)
+        _assign_rubric(support, slug, "Workflow composition", True)
 
 
 def _parse_inclusion_criteria_scoped_claim(
@@ -1152,7 +985,6 @@ def _apply_slug_scoped_prose(
     _parse_template_ttv(support, text)
     _parse_autonomous_ship_claim(support, text)
     _parse_strong_composition_claim(support, text)
-    _parse_openhands_templates(support, text)
     _parse_inclusion_criteria_scoped_claim(support, text, known=known, pack=pack)
     lower = text.lower()
     for slug in _extract_slugs_from_text(text):
@@ -1307,22 +1139,75 @@ def _parse_host_runtime_substrate_claim(
     host_slugs = {
         slug
         for slug in _extract_slugs_from_text(text, effective, pack)
-        if slug in {"cursor", "claude-code", "codex", "github-copilot"}
+        if slug in HOST_RUNTIME_SLUGS
     }
     if not host_slugs:
         return False
     for slug in host_slugs:
-        _assign_support(support, slug, "IDE-native integration", True)
+        _assign_rubric(support, slug, "IDE-native integration", True)
     return True
 
 
-def _feature_name(raw: str) -> str | None:
-    """Canonical rubric feature for a worker-supplied feature name, else None."""
-    low = " ".join(str(raw or "").lower().split())
+def _feature_name(raw: Any) -> str | None:
+    """Rubric feature for a worker-supplied name: a known rubric/alias spelling, else the
+    worker's own wording (run-synthesized rubric), else None for blank/oversized names."""
+    spaced = " ".join(str(raw or "").split())
+    if not spaced or len(spaced) > 80:
+        return None
+    low = spaced.lower()
     for feature in _all_template_features():
         if feature.lower() == low:
             return feature
-    return _FEATURE_ALIASES.get(low)
+    return _FEATURE_ALIASES.get(low) or spaced
+
+
+def _vendor_key(name: Any) -> str:
+    return re.sub(r"[^a-z0-9]+", " ", str(name or "").lower()).strip()
+
+
+def resolve_structured_vendor(
+    name: Any,
+    known: dict[str, str],
+    pack: dict[str, Any] | None,
+) -> str | None:
+    """Slug for a worker-named vendor: exact (normalised) match on slug, display name or alias.
+
+    A blank name, or one that is only punctuation, never resolves; a prefix never matches.
+    Without a category pack an unknown vendor becomes its own open-world slug (it is
+    discovered, not attributed to someone else); with a pack unknown vendors are ignored.
+    """
+    key = _vendor_key(name)
+    if not key or len(key) > 80:
+        return None
+    for slug, display in known.items():
+        if key in {_vendor_key(slug), _vendor_key(display)}:
+            return slug
+    for aliases in (_slug_aliases(pack), _head_aliases(pack)):
+        for alias, slug in aliases.items():
+            if _vendor_key(alias) == key:
+                return slug
+    if pack:
+        return None
+    return _slugify(str(name)) or None
+
+
+def structured_vendor_names(
+    envelopes: list[dict[str, Any]],
+    known: dict[str, str],
+    pack: dict[str, Any] | None,
+) -> dict[str, tuple[str, int]]:
+    """slug -> (display, rows) for vendors workers named in ``matrix_entries`` (first spelling wins)."""
+    found: dict[str, tuple[str, int]] = {}
+    for env in envelopes:
+        payload = env.get("payload") if isinstance(env, dict) else None
+        rows = payload.get("matrix_entries") if isinstance(payload, dict) else None
+        for row in rows if isinstance(rows, list) else []:
+            name = row.get("vendor") if isinstance(row, dict) else None
+            slug = resolve_structured_vendor(name, known, pack)
+            if slug:
+                shown = known.get(slug) or " ".join(str(name).split())
+                found[slug] = (found[slug][0] if slug in found else shown, found.get(slug, ("", 0))[1] + 1)
+    return found
 
 
 def parse_structured_matrix_entries(
@@ -1333,35 +1218,65 @@ def parse_structured_matrix_entries(
 ) -> dict[str, dict[str, bool | None]]:
     """Votes from workers' ``matrix_entries`` rows: {vendor, feature, supported, source_ref}.
 
-    One row is one vote by that model; ``supported`` must be a real boolean (strings such as
-    "yes"/"no" are accepted, anything else is ignored). A row without a recognisable vendor or
-    rubric feature is skipped. This is the primary source for matrix ticks; prose parsing only
-    fills cells no worker voted on.
+    Each model casts one vote per (vendor, feature); when it repeats a row in a later phase the
+    later row wins. ``supported`` must be a boolean ("yes"/"no"/"true"/"false" strings are
+    accepted, anything else is ignored). A row whose vendor does not resolve (see
+    resolve_structured_vendor) or whose feature is blank is skipped. This is the primary source
+    for matrix ticks; prose parsing only fills cells no worker voted on.
     """
     effective = known or KNOWN_SOLUTIONS
+    latest: dict[str, dict[tuple[str, str], bool]] = {}
+    for env_index, env in enumerate(envelopes):
+        payload = env.get("payload") if isinstance(env, dict) else None
+        rows = payload.get("matrix_entries") if isinstance(payload, dict) else None
+        if not isinstance(rows, list):
+            continue
+        model = str(env.get("logical_model_id") or env_index)
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            slug = resolve_structured_vendor(row.get("vendor"), effective, pack)
+            feature = _feature_name(row.get("feature"))
+            verdict = row.get("supported")
+            if isinstance(verdict, str):
+                verdict = {"yes": True, "true": True, "no": False, "false": False}.get(verdict.strip().lower())
+            if slug and feature and isinstance(verdict, bool):
+                latest.setdefault(model, {})[(slug, feature)] = verdict
     support: dict[str, dict[str, bool | None]] = {}
     try:
-        for env_index, env in enumerate(envelopes):
-            payload = env.get("payload") if isinstance(env, dict) else None
-            rows = payload.get("matrix_entries") if isinstance(payload, dict) else None
-            if not isinstance(rows, list):
-                continue
-            model = str(env.get("logical_model_id") or env_index)
-            for row in rows:
-                if not isinstance(row, dict):
-                    continue
-                slug = _resolve_solution_slug(str(row.get("vendor") or ""), effective, pack)
-                feature = _feature_name(row.get("feature"))
-                verdict = row.get("supported")
-                if isinstance(verdict, str):
-                    verdict = {"yes": True, "true": True, "no": False, "false": False}.get(verdict.strip().lower())
-                if not slug or not feature or not isinstance(verdict, bool):
-                    continue
-                _VOTER[0] = ("structured", model, env_index)
+        for model, cells in latest.items():
+            _VOTER[0] = ("structured", model)
+            for (slug, feature), verdict in cells.items():
                 _assign_support(support, slug, feature, verdict)
     finally:
         _VOTER[0] = None
     return support
+
+
+def open_world_known(
+    envelopes: list[dict[str, Any]],
+    need: dict[str, Any] | None,
+) -> dict[str, str]:
+    """Display names for a run: pack names, plus (without a pack) the vendors workers named."""
+    known = _effective_known_solutions(need)
+    pack = resolve_pack_from_need(need)
+    if not pack:
+        for slug, (display, _rows) in structured_vendor_names(envelopes, known, pack).items():
+            known.setdefault(slug, display)
+    return known
+
+
+def disputed_cells(support: dict[str, dict[str, bool | None]]) -> list[dict[str, Any]]:
+    """Cells where voters disagreed: [{vendor, feature, yes, no}] sorted for stable output."""
+    out: list[dict[str, Any]] = []
+    for slug, cells in support.items():
+        votes = getattr(cells, "votes", {})
+        for feature, ballots in votes.items():
+            yes = sum(1 for v in ballots.values() if v)
+            no = len(ballots) - yes
+            if yes and no:
+                out.append({"vendor": slug, "feature": feature, "yes": yes, "no": no})
+    return sorted(out, key=lambda c: (c["vendor"], c["feature"]))
 
 
 def parse_feature_support(
@@ -1371,6 +1286,16 @@ def parse_feature_support(
     pack: dict[str, Any] | None = None,
 ) -> dict[str, dict[str, bool | None]]:
     """Matrix cells: structured worker votes first, prose heuristics only for unvoted cells."""
+    with activated(pack):
+        return _parse_feature_support(envelopes, known=known, pack=pack)
+
+
+def _parse_feature_support(
+    envelopes: list[dict[str, Any]],
+    *,
+    known: dict[str, str] | None = None,
+    pack: dict[str, Any] | None = None,
+) -> dict[str, dict[str, bool | None]]:
     structured = parse_structured_matrix_entries(envelopes, known=known, pack=pack)
     support = _parse_prose_feature_support(envelopes, known=known, pack=pack)
     for slug, cells in structured.items():
@@ -1616,7 +1541,7 @@ def build_scr_md(
     exec_summary = seed or (
         clean_claims[0]
         if clean_claims
-        else f"{display} is a solution in the agentic SDLC orchestration landscape."
+        else f"{display} is a solution identified in this research run."
     )
     lines = [
         f"# Solution Capability Report: {display}",
@@ -1641,6 +1566,7 @@ def build_scr_md(
     return "\n".join(lines)
 
 
+@for_research_dir
 def materialize_solution_artifacts(
     research_dir: Path,
     *,
@@ -1665,7 +1591,7 @@ def materialize_solution_artifacts(
     if not envelopes:
         raise ValueError("no contribution envelopes to materialize from")
 
-    known = _effective_known_solutions(need)
+    known = open_world_known(envelopes, need)
     pack = resolve_pack_from_need(need)
     preserved: list[str] = []
 
