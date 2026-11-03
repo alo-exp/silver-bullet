@@ -131,7 +131,7 @@ fi
 # reach doc gates without first writing the session mode file that triggers
 # session-log-init.sh, so ensure the marker exists from SessionStart itself.
 # Must run before rt_heartbeat_write so rt_current_session_id resolves sb-<epoch>
-# for ts_sb_defer_to_bridge heartbeat lookup.
+# for the heartbeat session lookup.
 session_start_file="${SB_STATE_DIR}/session-start-time"
 session_start_file="${SILVER_BULLET_SESSION_START_FILE:-$session_start_file}"
 if ! sb_runtime_path_is_state_scoped "$session_start_file"; then

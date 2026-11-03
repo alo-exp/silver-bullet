@@ -447,7 +447,7 @@ if bash "$DOCTOR" "$LIVE_SNAPSHOT" >"${DOCTOR_TEST_TMP}/doctor-live.txt" 2>&1; t
   echo "INFO: doctor PASS on live repo (environment-dependent, not counted)"
 else
   echo "INFO: doctor did not PASS on live repo (environment-dependent, not counted)"
-  tail -20 "${DOCTOR_TEST_TMP}/doctor-live.txt"
+  tail -20 "${DOCTOR_TEST_TMP}/doctor-live.txt" | sed "s/^FAIL:/  (doctor) FAIL:/"
 fi
 rm -rf "$LIVE_SNAPSHOT" "${DOCTOR_TEST_TMP}/doctor-live.txt"
 
@@ -812,19 +812,11 @@ else
   FAIL=$((FAIL + 1))
 fi
 
-# /sb:doctor alias
-SB_DOC_CMD="${REPO_ROOT}/plugins/silver-bullet/commands/sb-doctor.md"
-SILVER_DOC_CMD="${REPO_ROOT}/plugins/silver-bullet/commands/sb-doctor.md"
-assert_file_exists "sb-doctor command stub exists" "$SB_DOC_CMD"
-assert_file_exists "silver-doctor command stub exists" "$SILVER_DOC_CMD"
+# /sb:doctor alias (the skill is the only entry point; no command stubs ship)
 assert_contains "SKILL documents /sb:doctor" "/sb:doctor" "$SKILL"
-assert_contains "SKILL documents /sb:doctor" "/sb:doctor" "$SKILL"
-assert_contains "sb-doctor stub forwards to sb-doctor.sh" "sb-doctor\\.sh" "$SB_DOC_CMD"
-assert_contains "silver-doctor stub forwards to sb-doctor.sh" "sb-doctor\\.sh" "$SILVER_DOC_CMD"
-assert_contains "sb-doctor stub documents --fix" "--fix" "$SB_DOC_CMD"
-assert_contains "sb-doctor stub documents --dry-run" "--dry-run" "$SB_DOC_CMD"
-assert_contains "silver-doctor stub documents --fix" "--fix" "$SILVER_DOC_CMD"
-assert_contains "silver-doctor stub documents --dry-run" "--dry-run" "$SILVER_DOC_CMD"
+assert_contains "SKILL forwards to sb-doctor.sh" "sb-doctor\\.sh" "$SKILL"
+assert_contains "SKILL documents --fix" "--fix" "$SKILL"
+assert_contains "SKILL documents --dry-run" "--dry-run" "$SKILL"
 
 # Stale split deleted
 if [[ ! -f "$REPO_ROOT/scripts/lib/sb-doctor/checks.sh" ]] \

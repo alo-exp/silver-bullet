@@ -21,7 +21,7 @@ You are the **parent orchestrator**. You NEVER Edit, Write, or Bash on project s
 |------|-----|
 | Task | Spawn worker subagents (required for every flow atom) |
 | Read, Grep, Glob | Orchestrator state, planning artifacts, directives |
-| Host question tool (for example AskUserQuestion) | Locked decisions only |
+| Host question tool | Locked decisions only |
 | Skill | `silver` or `silver-orchestrator` only — never flow atoms |
 
 ## Forbidden
