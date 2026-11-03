@@ -315,7 +315,7 @@ fi
 - **Manual install** (run directly): removes stale Silver Bullet registrations, then registers every (event, matcher, command) of the manifest with the install path substituted, each matcher in its own group.
 
 Only Silver Bullet's own entries are ever touched; the user's hooks stay as they are. The file is written atomically with a `.sb-backup` of the previous content. On nonzero exit, warn but do NOT stop init:
-> ⚠️  Could not auto-register hooks in the host settings file. Run `/sb:init` again after installation completes, or add hooks manually from `hooks/hooks.json`.
+> ⚠️  Could not clean up stale Silver Bullet hook entries in the host settings file. Run `/sb:init` again after installation completes. Do not add hooks by hand: a registered plugin already supplies its own hooks, and a hand-added copy would run them twice.
 
 Idempotent — re-running `/sb:init` adds no duplicate entries.
 

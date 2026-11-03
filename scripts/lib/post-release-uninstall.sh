@@ -81,6 +81,8 @@ sb_post_release_uninstall_codex() {
   local codex_home="${CODEX_HOME_ROOT:-${HOME}}"
   local lib="${SB_POST_RELEASE_REPO_ROOT}/scripts/lib/install-codex"
   export CODEX_HOME_ROOT="$codex_home"
+  # One run start for every config.toml write below (repair, then purge), so .sb-backup keeps the pre-run original.
+  export SB_INSTALL_RUN_START="${SB_INSTALL_RUN_START:-$(date +%s)}"
   # shellcheck source=scripts/lib/install-codex/legacy.sh
   source "${lib}/legacy.sh"
   # shellcheck source=scripts/lib/install-codex/hooks.sh
