@@ -35,6 +35,10 @@ def env(*claims: str) -> list[dict]:
     return [{"payload": {"evidence": [{"claim": c} for c in claims]}}]
 
 
+from legacy_catalog_fixture import with_legacy_catalogs  # noqa: E402
+
+
+@with_legacy_catalogs
 class ClaimClassificationTests(unittest.TestCase):
     def test_matrix_dump_claims(self) -> None:
         for text in ("", "   ", "startup-weighted matrix stuff", "foo maps to must_have bar", "x maps to must-have",
@@ -66,6 +70,7 @@ class ClaimClassificationTests(unittest.TestCase):
         self.assertFalse(m.is_unusable_overview_claim("Aider, Cline, Continue", focus_name="aider"))
 
 
+@with_legacy_catalogs
 class SlugTests(unittest.TestCase):
     def test_slugify_and_normalize(self) -> None:
         self.assertEqual(m._slugify(" Foo & Bar! "), "foo-bar")
@@ -153,6 +158,7 @@ class SlugTests(unittest.TestCase):
         self.assertEqual(r("Zeta unknown tool", KNOWN_WITH_PACK, PACK), "zeta-unknown-tool")
 
 
+@with_legacy_catalogs
 class DiscoverTests(unittest.TestCase):
     def test_pack_branch_uses_classifier(self) -> None:
         audit = {"matrix_slugs": ["a", "b", "c"], "core": ["x"]}
@@ -196,6 +202,7 @@ class DiscoverTests(unittest.TestCase):
         self.assertEqual(m._iter_claim_texts(envelopes), ["e1", "e2", "c1", "c2", "f1", "t1", "d1", "a1"])
 
 
+@with_legacy_catalogs
 class ProseInferenceTests(unittest.TestCase):
     def test_explicit_criterion_flags_override_prose(self) -> None:
         body = ("lifecycle_span=yes; deterministic_gates=no; cross_session_state=partial; "
@@ -338,6 +345,7 @@ class ProseInferenceTests(unittest.TestCase):
             self.assertFalse(m._parse_solution_led_matrix_entry(support, "???", "body"))
 
 
+@with_legacy_catalogs
 class ListParsingTests(unittest.TestCase):
     def test_extract_slugs_from_list(self) -> None:
         self.assertEqual(m._extract_slugs_from_list("Devin, Aider (oss), cline only among peers"), ["devin", "aider", "cline"])
@@ -372,6 +380,7 @@ class ListParsingTests(unittest.TestCase):
         self.assertIs(support["cline"]["Hook-enforced gates"], False)
 
 
+@with_legacy_catalogs
 class ClaimParserTests(unittest.TestCase):
     def test_features_in_text_and_primary_slug(self) -> None:
         self.assertEqual(m._features_in_text("Has hook gates and CI/CD plus audit logs"),
@@ -516,6 +525,7 @@ class ClaimParserTests(unittest.TestCase):
         self.assertIn("Hook-enforced gates", defaults)
 
 
+@with_legacy_catalogs
 class SlugScopedProseTests(unittest.TestCase):
     def test_window_scan_positive_and_lack(self) -> None:
         support = support_of(m._apply_slug_scoped_prose, "Devin provides hook gates and workflow composition. Aider")
@@ -537,6 +547,7 @@ class SlugScopedProseTests(unittest.TestCase):
         self.assertEqual(support, {"github-copilot-workspace": {"Hook-enforced gates": True}})
 
 
+@with_legacy_catalogs
 class BulkClaimTests(unittest.TestCase):
     def test_extract_bulk_solution_list(self) -> None:
         f = m._extract_bulk_solution_list
@@ -586,6 +597,7 @@ class BulkClaimTests(unittest.TestCase):
         self.assertEqual(support, {"cursor": {"IDE-native integration": True}, "claude-code": {"IDE-native integration": True}})
 
 
+@with_legacy_catalogs
 class ParseFeatureSupportTests(unittest.TestCase):
     def test_dispatch_order(self) -> None:
         envelopes = env(
@@ -622,6 +634,7 @@ class ParseFeatureSupportTests(unittest.TestCase):
         self.assertEqual(m.parse_feature_support(env("matrix entry with nothing parseable")), {})
 
 
+@with_legacy_catalogs
 class RubricTests(unittest.TestCase):
     def test_group_features_into_categories(self) -> None:
         grouped = m._group_features_into_categories(["SSO", "Custom thing", "SSO", "Workflow composition", "Another custom"])
@@ -677,6 +690,7 @@ class RubricTests(unittest.TestCase):
         self.assertEqual(no_source["source"], "live-envelopes")
 
 
+@with_legacy_catalogs
 class WriteRunFeaturesTests(unittest.TestCase):
     def test_writes_rubric_and_per_solution_files(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -717,6 +731,7 @@ class WriteRunFeaturesTests(unittest.TestCase):
                 self.assertEqual(m.write_run_features_json(root, comparison={})["rubric_source"], "fallback-template")
 
 
+@with_legacy_catalogs
 class ScrTests(unittest.TestCase):
     def test_claims_selection(self) -> None:
         texts = [f"Aider supports workflow number {i}" for i in range(15)]
@@ -744,6 +759,7 @@ class ScrTests(unittest.TestCase):
         self.assertIn("_No direct prose evidence lines matched this solution slug in live envelopes._", bare)
 
 
+@with_legacy_catalogs
 class MaterializeTests(unittest.TestCase):
     def run_materialize(self, root: Path, **kw):
         with mock.patch.object(m, "resolve_pack_from_need", return_value=kw.pop("the_pack", None)):
@@ -810,6 +826,7 @@ class MaterializeTests(unittest.TestCase):
         self.assertNotIn("catalog_audit", result)
 
 
+@with_legacy_catalogs
 class MainTests(unittest.TestCase):
     def run_main(self, root: Path):
         out = io.StringIO()

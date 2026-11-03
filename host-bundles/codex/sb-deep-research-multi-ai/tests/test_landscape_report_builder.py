@@ -15,7 +15,6 @@ ASSETS = Path(__file__).resolve().parents[1] / "assets"
 sys.path.insert(0, str(SCRIPTS))
 
 from materialize_solution_artifacts import (  # noqa: E402
-    OVERVIEW_SEEDS,
     build_scr_md,
     is_unusable_overview_claim,
 )
@@ -54,6 +53,11 @@ def tearDownModule() -> None:
     _OFFLINE_ENV.stop()
 
 
+import materialize_solution_artifacts as _mat  # noqa: E402
+from legacy_catalog_fixture import with_legacy_catalogs  # noqa: E402
+
+
+@with_legacy_catalogs
 class OverviewQualityTests(unittest.TestCase):
     def test_rejects_meta_research_overviews(self) -> None:
         self.assertTrue(
@@ -82,8 +86,8 @@ class OverviewQualityTests(unittest.TestCase):
 
     def test_overview_seeds_cover_core_catalog(self) -> None:
         for slug in ("factory-ai", "devin", "openhands", "langgraph-platform"):
-            self.assertIn(slug, OVERVIEW_SEEDS)
-            self.assertGreater(len(OVERVIEW_SEEDS[slug]), 20)
+            self.assertIn(slug, _mat.OVERVIEW_SEEDS)
+            self.assertGreater(len(_mat.OVERVIEW_SEEDS[slug]), 20)
 
     def test_build_scr_prefers_seed_over_meta_claim(self) -> None:
         envelopes = [
@@ -104,11 +108,8 @@ class OverviewQualityTests(unittest.TestCase):
             }
         ]
         scr = build_scr_md("cline", envelopes)
-        self.assertIn(OVERVIEW_SEEDS["cline"][:40], scr)
+        self.assertIn(_mat.OVERVIEW_SEEDS["cline"][:40], scr)
         self.assertNotIn("participates in the agentic", scr)
-
-
-from legacy_catalog_fixture import with_legacy_catalogs  # noqa: E402
 
 
 @with_legacy_catalogs

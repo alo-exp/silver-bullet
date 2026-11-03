@@ -62,6 +62,17 @@ def with_legacy_catalogs(cls):
     # chart geometry these tests were written against: the APO pack's default axis profile
     apo = {k: tuple(v) if isinstance(v, list) else v
            for k, v in load_pack_overlay("agentic-sdlc-process-orchestrator")["market_chart_profiles"]["apo"].items()}
+    import materialize_solution_artifacts as mat
+
+    overlay = load_pack_overlay("agentic-sdlc-process-orchestrator")
+    vendor_data = {
+        "KNOWN_SOLUTIONS": dict(overlay["known_solutions"]),
+        "OVERVIEW_SEEDS": dict(overlay["overview_seeds"]),
+        "SLUG_ALIASES": dict(overlay["slug_aliases"]),
+        "_HEAD_SLUG_ALIASES": dict(overlay["head_slug_aliases"]),
+    }
+    mat_patch = mock.patch.multiple(mat, **vendor_data)
+    sl_patch = mock.patch.multiple(sl, KNOWN_SOLUTIONS=vendor_data["KNOWN_SOLUTIONS"], OVERVIEW_SEEDS=vendor_data["OVERVIEW_SEEDS"])
     patcher = mock.patch.multiple(
         sl,
         _NEUTRAL_CHART_PROFILE=apo,
@@ -73,5 +84,5 @@ def with_legacy_catalogs(cls):
     )
     for name, value in list(vars(cls).items()):
         if name.startswith("test") and callable(value):
-            setattr(cls, name, patcher(value))
+            setattr(cls, name, mat_patch(sl_patch(patcher(value))))
     return cls

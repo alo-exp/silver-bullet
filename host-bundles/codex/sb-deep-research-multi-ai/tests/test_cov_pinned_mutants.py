@@ -77,6 +77,10 @@ class MarkdownEdgeTests(unittest.TestCase):
         self.assertIn("<td>1</td>", out2)
 
 
+from legacy_catalog_fixture import with_legacy_catalogs  # noqa: E402
+
+
+@with_legacy_catalogs
 class OverviewFocusTests(unittest.TestCase):
     CROWD = "Aider, Cline and Continue are alternatives"
 
@@ -93,6 +97,7 @@ class OverviewFocusTests(unittest.TestCase):
         self.assertTrue(mat.is_unusable_overview_claim(self.CROWD))
 
 
+@with_legacy_catalogs
 class MatrixEntryHeadTests(unittest.TestCase):
     def test_feature_aliases_and_features_with_a_trailing_product_stay_feature_rows(self) -> None:
         for head in ("ci/cd devin", "hook gates devin", "audit log devin", "self-serve signup devin"):
@@ -102,6 +107,7 @@ class MatrixEntryHeadTests(unittest.TestCase):
         self.assertTrue(mat._matrix_entry_head_is_solution("the devin platform"))
 
 
+@with_legacy_catalogs
 class ProseNegationTests(unittest.TestCase):
     def test_features_in_a_but_clause_are_negative_with_or_without_lack_words(self) -> None:
         support: dict = {}
