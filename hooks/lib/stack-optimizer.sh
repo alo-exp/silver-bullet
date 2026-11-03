@@ -1,22 +1,23 @@
 # shellcheck shell=bash
 # Stack optimizer — Graphify + agentmemory synergy_max apply/verify/score.
-# Sourced by: sb-optimize-stack.sh, sb-verify-synergy.sh, sb-diagnostics.sh
+# Sourced by: sb-optimize-stack.sh, sb-verify-synergy.sh, sb-diagnostics.sh, prompt-reminder.sh
+#
+# Machine-wide changes (host hook/plugin wiring, ~/.agentmemory/.env, LaunchAgents, brew
+# installs) need the user's own consent (user-consent.sh): "wire" for configuration and
+# "install" for packages. Only built-in command tables run; nothing from the project's
+# .silver-bullet.json is evaluated, and profile knobs are validated before use.
 
-if [[ -f "$(dirname "${BASH_SOURCE[0]}")/recommended-tools.sh" ]]; then
-  # shellcheck source=recommended-tools.sh
-  source "$(dirname "${BASH_SOURCE[0]}")/recommended-tools.sh"
-fi
-if [[ -f "$(dirname "${BASH_SOURCE[0]}")/graphify-gate.sh" ]]; then
-  # shellcheck source=graphify-gate.sh
-  source "$(dirname "${BASH_SOURCE[0]}")/graphify-gate.sh"
-fi
-if [[ -f "$(dirname "${BASH_SOURCE[0]}")/agentmemory-gate.sh" ]]; then
-  # shellcheck source=agentmemory-gate.sh
-  source "$(dirname "${BASH_SOURCE[0]}")/agentmemory-gate.sh"
-fi
+_sb_stack_opt_lib_dir="${BASH_SOURCE[0]%/*}"
+# shellcheck source=recommended-tools.sh
+source "${_sb_stack_opt_lib_dir}/recommended-tools.sh"
+# shellcheck source=graphify-gate.sh
+source "${_sb_stack_opt_lib_dir}/graphify-gate.sh"
+# shellcheck source=agentmemory-gate.sh
+source "${_sb_stack_opt_lib_dir}/agentmemory-gate.sh"
 
 _sb_stack_default_profile="synergy_max"
 _sb_stack_score_threshold=70
+_sb_stack_score_cache_seconds=600
 
 sb_stack_optimizer_dry_run() {
   [[ "${SB_STACK_OPTIMIZER_DRY_RUN:-0}" == "1" ]]
@@ -31,57 +32,57 @@ sb_stack_agentmemory_home() {
 }
 
 sb_stack_optimization_profile_name() {
-  local config_file="${1:-}"
-  local profile="${_sb_stack_default_profile}"
+  local config_file="${1:-}" profile=""
   if [[ -n "$config_file" && -f "$config_file" ]]; then
-    profile="$(jq -r --arg def "$_sb_stack_default_profile" \
-      '.recommended_tools.graphify.optimization.profile
-       // .recommended_tools.agentmemory.optimization.profile
-       // $def' "$config_file" 2>/dev/null || echo "$_sb_stack_default_profile")"
+    profile="$(jq -r '.recommended_tools.graphify.optimization.profile
+       // .recommended_tools.agentmemory.optimization.profile // "" | strings' "$config_file" 2>/dev/null || true)"
   fi
-  [[ -n "$profile" && "$profile" != "null" ]] || profile="${_sb_stack_default_profile}"
+  [[ "$profile" =~ ^[A-Za-z0-9_-]{1,64}$ ]] || profile="${_sb_stack_default_profile}"
   printf '%s' "$profile"
 }
 
+# A profile knob from the project config, accepted only when it is one of ALLOWED
+# (space-separated); anything else (a newline, an extra NAME=value) yields DEFAULT.
 sb_stack_profile_knob() {
   local config_file="${1:-}" profile="${2:-}" area="${3:-}" key="${4:-}" default="${5:-}"
-  local val
-  # jq's // treats an explicit false like null, so an opt-out knob (false) would silently
-  # fall back to its default; test for null explicitly instead.
-  val="$(jq -r --arg p "$profile" --arg a "$area" --arg k "$key" --arg def "$default" \
-    '.optimization_profiles[$p][$a][$k] | if . == null then $def else . end' "$config_file" 2>/dev/null || echo "$default")"
-  [[ "$val" == "null" ]] && val="$default"
+  local allowed="${6:-true false}" val=""
+  if [[ -n "$config_file" && -f "$config_file" ]]; then
+    # jq's // would turn an explicit false into the default; test for null instead.
+    val="$(jq -r --arg p "$profile" --arg a "$area" --arg k "$key" \
+      '.optimization_profiles[$p][$a][$k] | if . == null then "" else tostring end' "$config_file" 2>/dev/null || true)"
+  fi
+  if [[ -z "$val" ]]; then
+    val="$default"
+  else
+    case " ${allowed} " in
+      *" ${val} "*) ;;
+      *) val="$default" ;;
+    esac
+  fi
   printf '%s' "$val"
 }
 
 sb_stack_graphify_hooks_installed() {
   local repo="${1:-$PWD}"
-  if [[ -d "${repo}/.git/hooks" ]]; then
-    grep -q 'graphify' "${repo}/.git/hooks/post-commit" 2>/dev/null && return 0
-    grep -q 'graphify' "${repo}/.git/hooks/post-checkout" 2>/dev/null && return 0
-  fi
+  grep -q 'graphify' "${repo}/.git/hooks/post-commit" 2>/dev/null && return 0
+  grep -q 'graphify' "${repo}/.git/hooks/post-checkout" 2>/dev/null && return 0
   command -v graphify >/dev/null 2>&1 || return 1
-  if graphify hook status >/dev/null 2>&1; then
-    grep -qiE 'installed|active|enabled' < <(graphify hook status 2>/dev/null)
-    return $?
-  fi
-  return 1
+  grep -qiE 'installed|active|enabled' < <(graphify hook status 2>/dev/null)
 }
 
 sb_stack_ensure_agentmemory_gitignore() {
-  local repo="${1:-$PWD}"
-  local gitignore="${repo}/.gitignore"
+  local repo="${1:-$PWD}" gitignore
+  gitignore="${repo}/.gitignore"
   [[ -f "$gitignore" ]] || touch "$gitignore"
   if grep -q '# === agentmemory managed block ===' "$gitignore" 2>/dev/null; then
-  if ! grep -q '!.agentmemory/memory/\*\*' "$gitignore" 2>/dev/null; then
-    if sb_stack_optimizer_dry_run; then
-      printf 'DRY-RUN: fix agentmemory gitignore /** negation in %s\n' "$gitignore"
-    else
-      sed -i.bak 's|!.agentmemory/memory/$|!.agentmemory/memory/**|' "$gitignore" 2>/dev/null \
-        || sed -i '' 's|!.agentmemory/memory/$|!.agentmemory/memory/**|' "$gitignore" 2>/dev/null \
-        || true
+    if ! grep -q '!.agentmemory/memory/\*\*' "$gitignore" 2>/dev/null; then
+      if sb_stack_optimizer_dry_run; then
+        printf 'DRY-RUN: fix agentmemory gitignore /** negation in %s\n' "$gitignore"
+      else
+        sed -i.bak 's|!.agentmemory/memory/$|!.agentmemory/memory/**|' "$gitignore" 2>/dev/null \
+          && rm -f -- "${gitignore}.bak"
+      fi
     fi
-  fi
     return 0
   fi
   local block='# === agentmemory managed block ===
@@ -100,14 +101,23 @@ sb_stack_ensure_agentmemory_gitignore() {
   fi
 }
 
+# Status 0 when VALUE can be written as one line of an env file or plist string.
+_sb_stack_plain_value() {
+  local v="${1:-}"
+  [[ -n "$v" ]] || return 1
+  case "$v" in
+    *$'\n'* | *$'\r'* | *$'\t'* | *'<'* | *'>'* | *'&'* | *'"'*) return 1 ;;
+  esac
+  return 0
+}
+
 sb_stack_merge_agentmemory_env() {
   local repo="${1:-$PWD}" config_file="${2:-}" profile="${3:-synergy_max}"
-  local am_home export_abs env_file
+  local am_home export_abs env_file inject compress obsidian bridge
   am_home="$(sb_stack_agentmemory_home)"
-  export_abs="$(sb_agentmemory_abs_export_path "$repo" "$config_file")"
+  export_abs="$(sb_agentmemory_abs_export_path "$repo" "$config_file" 2>/dev/null || true)"
+  _sb_stack_plain_value "$export_abs" || return 1
   env_file="${am_home}/.env"
-  mkdir -p "$am_home"
-  local inject compress obsidian bridge
   inject="$(sb_stack_profile_knob "$config_file" "$profile" agentmemory inject_context true)"
   compress="$(sb_stack_profile_knob "$config_file" "$profile" agentmemory auto_compress false)"
   obsidian="$(sb_stack_profile_knob "$config_file" "$profile" agentmemory obsidian_export true)"
@@ -124,33 +134,44 @@ AGENTMEMORY_EXPORT_ROOT=${export_abs}
     printf 'DRY-RUN: merge %s (backup .env.bak)\n' "$env_file"
     return 0
   fi
-  [[ -f "$env_file" ]] && cp "$env_file" "${env_file}.bak"
-  if [[ -f "$env_file" ]] && grep -q '# === SB synergy_max managed block ===' "$env_file"; then
-    local tmp
-    tmp="$(mktemp)"
+  mkdir -p "$am_home"
+  local tmp
+  tmp="$(mktemp "${env_file}.XXXXXX")" || return 1
+  if [[ -f "$env_file" ]]; then
+    cp -p "$env_file" "${env_file}.bak"
     awk '
       /^# === SB synergy_max managed block ===/ { skip=1; next }
       /^# === end SB synergy_max managed block ===/ { skip=0; next }
       skip==0 { print }
     ' "$env_file" >"$tmp"
-    mv "$tmp" "$env_file"
   fi
-  printf '\n%s\n' "$template" >>"$env_file"
-  chmod 600 "$env_file" 2>/dev/null || true
+  printf '\n%s\n' "$template" >>"$tmp"
+  chmod 600 "$tmp" 2>/dev/null || true
+  mv -f -- "$tmp" "$env_file"
+}
+
+# XML-escape a value for a plist <string>.
+_sb_stack_xml() {
+  local v="${1:-}"
+  v="${v//&/&amp;}"
+  v="${v//</&lt;}"
+  v="${v//>/&gt;}"
+  printf '%s' "$v"
 }
 
 sb_stack_launchd_server_plist() {
-  local repo="${1:-$PWD}" am_home
+  local repo="${1:-$PWD}" am_home node_path plist_dir plist_path am_bin export_abs
   am_home="$(sb_stack_agentmemory_home)"
-  local node_path plist_dir plist_path
   node_path="$(command -v node 2>/dev/null || printf '%s' /usr/local/bin/node)"
+  am_bin="$(command -v agentmemory 2>/dev/null || printf '%s' "${HOME}/.npm-global/bin/agentmemory")"
+  export_abs="$(sb_agentmemory_abs_export_path "$repo" "${2:-}" 2>/dev/null || true)"
   plist_dir="${HOME}/Library/LaunchAgents"
   plist_path="${plist_dir}/com.agentmemory.server.plist"
-  mkdir -p "$plist_dir"
   if sb_stack_optimizer_dry_run; then
     printf 'DRY-RUN: write %s\n' "$plist_path"
     return 0
   fi
+  mkdir -p "$plist_dir"
   cat >"$plist_path" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -160,42 +181,34 @@ sb_stack_launchd_server_plist() {
   <string>com.agentmemory.server</string>
   <key>ProgramArguments</key>
   <array>
-    <string>${node_path}</string>
-    <string>${HOME}/.npm-global/bin/agentmemory</string>
+    <string>$(_sb_stack_xml "$node_path")</string>
+    <string>$(_sb_stack_xml "$am_bin")</string>
   </array>
   <key>EnvironmentVariables</key>
   <dict>
     <key>AGENTMEMORY_EXPORT_ROOT</key>
-    <string>$(sb_agentmemory_abs_export_path "$repo" "${2:-}")</string>
+    <string>$(_sb_stack_xml "$export_abs")</string>
   </dict>
   <key>WorkingDirectory</key>
-  <string>${repo}</string>
+  <string>$(_sb_stack_xml "$repo")</string>
   <key>RunAtLoad</key>
   <true/>
   <key>KeepAlive</key>
   <true/>
   <key>StandardOutPath</key>
-  <string>${am_home}/server.log</string>
+  <string>$(_sb_stack_xml "${am_home}/server.log")</string>
   <key>StandardErrorPath</key>
-  <string>${am_home}/server.log</string>
+  <string>$(_sb_stack_xml "${am_home}/server.log")</string>
 </dict>
 </plist>
 EOF
-  if command -v agentmemory >/dev/null 2>&1; then
-    local am_bin
-    am_bin="$(command -v agentmemory)"
-    /usr/bin/sed -i.bak "s|${HOME}/.npm-global/bin/agentmemory|${am_bin}|g" "$plist_path" 2>/dev/null \
-      || sed -i '' "s|${HOME}/.npm-global/bin/agentmemory|${am_bin}|g" "$plist_path" 2>/dev/null || true
-    rm -f -- "${plist_path}.bak"
-  fi
   launchctl bootout "gui/$(id -u)/com.agentmemory.server" 2>/dev/null || true
   launchctl bootstrap "gui/$(id -u)" "$plist_path" 2>/dev/null \
     || launchctl load "$plist_path" 2>/dev/null || true
 }
 
 sb_stack_launchd_bridge_plist() {
-  local repo="${1:-$PWD}"
-  local python_path plist_dir plist_path bridge_script gitleaks_bin path_env
+  local repo="${1:-$PWD}" python_path plist_dir plist_path bridge_script gitleaks_bin path_env
   bridge_script="$(sb_stack_agentmemory_home)/bridge.py"
   [[ -f "$bridge_script" ]] || return 0
   python_path="$(command -v python3 2>/dev/null || printf '%s' /usr/bin/python3)"
@@ -203,11 +216,11 @@ sb_stack_launchd_bridge_plist() {
   path_env="$(sb_stack_bridge_path_env)"
   plist_dir="${HOME}/Library/LaunchAgents"
   plist_path="${plist_dir}/com.agentmemory.bridge.plist"
-  mkdir -p "$plist_dir"
   if sb_stack_optimizer_dry_run; then
     printf 'DRY-RUN: write %s\n' "$plist_path"
     return 0
   fi
+  mkdir -p "$plist_dir"
   cat >"$plist_path" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -217,26 +230,26 @@ sb_stack_launchd_bridge_plist() {
   <string>com.agentmemory.bridge</string>
   <key>ProgramArguments</key>
   <array>
-    <string>${python_path}</string>
-    <string>${bridge_script}</string>
+    <string>$(_sb_stack_xml "$python_path")</string>
+    <string>$(_sb_stack_xml "$bridge_script")</string>
   </array>
   <key>EnvironmentVariables</key>
   <dict>
     <key>AGENTMEMORY_REPO_ROOT</key>
-    <string>${repo}</string>
+    <string>$(_sb_stack_xml "$repo")</string>
     <key>GITLEAKS_PATH</key>
-    <string>${gitleaks_bin:-gitleaks}</string>
+    <string>$(_sb_stack_xml "${gitleaks_bin:-gitleaks}")</string>
     <key>PATH</key>
-    <string>${path_env}</string>
+    <string>$(_sb_stack_xml "$path_env")</string>
   </dict>
   <key>RunAtLoad</key>
   <true/>
   <key>KeepAlive</key>
   <true/>
   <key>StandardOutPath</key>
-  <string>${repo}/.agentmemory/bridge.log</string>
+  <string>$(_sb_stack_xml "${repo}/.agentmemory/bridge.log")</string>
   <key>StandardErrorPath</key>
-  <string>${repo}/.agentmemory/bridge.log</string>
+  <string>$(_sb_stack_xml "${repo}/.agentmemory/bridge.log")</string>
 </dict>
 </plist>
 EOF
@@ -260,9 +273,8 @@ sb_stack_gitleaks_path() {
 }
 
 sb_stack_gitleaks_required() {
-  local config_file="${1:-}" profile="${2:-}"
+  local config_file="${1:-}" profile="${2:-}" req rec
   profile="${profile:-$(sb_stack_optimization_profile_name "$config_file")}"
-  local req rec
   req="$(sb_stack_profile_knob "$config_file" "$profile" agentmemory gitleaks_required false)"
   rec="$(sb_stack_profile_knob "$config_file" "$profile" agentmemory gitleaks_recommended false)"
   [[ "$req" == "true" || "$rec" == "true" ]]
@@ -300,6 +312,12 @@ sb_stack_ensure_gitleaks() {
     return 0
   fi
 
+  # A package install needs the user's install consent for agentmemory (it backs the bridge).
+  if ! sb_consent_granted agentmemory install; then
+    printf 'WARN: gitleaks missing — install it yourself (brew install gitleaks), or grant consent: bash %s grant agentmemory --all-projects --capabilities install\n' \
+      "$(sb_rt_plugin_script scripts/sb-consent.sh)"
+    return 1
+  fi
   if command -v brew >/dev/null 2>&1; then
     brew install gitleaks 2>/dev/null || printf 'WARN: gitleaks brew install failed — bridge regex scan only\n'
   elif command -v apt-get >/dev/null 2>&1; then
@@ -321,137 +339,151 @@ sb_stack_server_persistence_ok() {
   sb_agentmemory_server_healthy "${1:-}" 2>/dev/null
 }
 
+# Built-in platform commands as words; @PLUGIN@ and @REPO@ are replaced after splitting, so
+# paths with spaces stay one argument. These run without a shell (no eval).
+_sb_stack_graphify_platform_words() {
+  local phase="${1:-}" host="${2:-}"
+  case "$phase:$host" in
+    pre:claude) printf '%s\n' 'graphify install --project' ;;
+    pre:codex|pre:opencode|pre:hermes) printf '%s\n' "graphify install --project --platform ${host}" ;;
+    pre:goose) printf '%s\n' 'graphify install --project --platform pi' ;;
+    pre:pi) printf '%s\n' 'python3 @PLUGIN@/scripts/lib/global-toolstack/install-pi.py --repo-root @REPO@' ;;
+    post:cursor) printf '%s\n' 'graphify cursor install' ;;
+    post:claude) printf '%s\n' 'graphify claude install --project' ;;
+    post:codex) printf '%s\n' 'graphify codex install --project' ;;
+  esac
+}
+
+_sb_stack_agentmemory_connect_words() {
+  case "${1:-}" in
+    claude) printf '%s\n' 'agentmemory connect claude-code' ;;
+    codex) printf '%s\n' 'agentmemory connect codex --with-hooks' ;;
+    goose|pi) printf '%s\n' 'agentmemory connect pi' ;;
+    hermes) printf '%s\n' 'agentmemory connect hermes' ;;
+  esac
+}
+
+# _sb_stack_run_words REPO LINE: run one built-in command (dry run prints it).
+_sb_stack_run_words() {
+  local repo="$1" line="$2" i
+  local -a words
+  read -r -a words <<<"$line"
+  for i in "${!words[@]}"; do
+    words[i]="${words[i]//@PLUGIN@/${_SB_RT_PLUGIN_ROOT}}"
+    words[i]="${words[i]//@REPO@/${repo}}"
+  done
+  if sb_stack_optimizer_dry_run; then
+    printf 'DRY-RUN: %s\n' "${words[*]}"
+    return 0
+  fi
+  (cd "$repo" && "${words[@]}") >/dev/null 2>&1 || true
+}
+
 sb_optimize_graphify() {
-  local repo="${1:-$PWD}" config_file="${2:-}" host="${3:-}"
-  local profile actions=0
+  local repo="${1:-$PWD}" config_file="${2:-}" host="${3:-}" profile install_hooks prefer_no_cluster line
   profile="$(sb_stack_optimization_profile_name "$config_file")"
   host="${host:-$(sb_runtime_host)}"
   [[ "$(sb_recommended_tool_consent "$config_file" graphify)" == "enabled" ]] || return 0
+  sb_graphify_cli_available || return 0
 
-  local install_hooks prefer_no_cluster
   install_hooks="$(sb_stack_profile_knob "$config_file" "$profile" graphify install_git_hooks true)"
   prefer_no_cluster="$(sb_stack_profile_knob "$config_file" "$profile" graphify prefer_no_cluster true)"
 
-  if [[ "$install_hooks" == "true" ]] && ! sb_stack_skip_host_hooks; then
-    if sb_graphify_cli_available; then
-      if sb_stack_optimizer_dry_run; then
-        printf 'DRY-RUN: graphify hook install\n'
-      else
-        graphify hook install 2>/dev/null || true
-      fi
-      actions=$((actions + 1))
+  # Host wiring (git template hooks, skill/plugin registration) is machine configuration.
+  if sb_consent_granted graphify wire; then
+    if [[ "$install_hooks" == "true" ]] && ! sb_stack_skip_host_hooks; then
+      _sb_stack_run_words "$repo" 'graphify hook install'
     fi
+    while IFS= read -r line; do
+      [[ -n "$line" ]] && _sb_stack_run_words "$repo" "$line"
+    done < <(_sb_stack_graphify_platform_words pre "$host"; _sb_stack_graphify_platform_words post "$host")
+  else
+    printf 'SKIP: graphify host wiring needs your consent: bash %s grant graphify --all-projects --capabilities wire\n' \
+      "$(sb_rt_plugin_script scripts/sb-consent.sh)"
   fi
 
-  if sb_graphify_cli_available; then
-    local cmd
-    while IFS= read -r cmd || [[ -n "$cmd" ]]; do
-      [[ -n "$cmd" ]] || continue
-      if sb_stack_optimizer_dry_run; then
-        printf 'DRY-RUN: %s\n' "$cmd"
-      else
-        (cd "$repo" && eval "$cmd") 2>/dev/null || true
-      fi
-      actions=$((actions + 1))
-    done < <(sb_recommended_tool_platform_pre_index_commands "$config_file" graphify "$host")
-    while IFS= read -r cmd || [[ -n "$cmd" ]]; do
-      [[ -n "$cmd" ]] || continue
-      if sb_stack_optimizer_dry_run; then
-        printf 'DRY-RUN: %s\n' "$cmd"
-      else
-        (cd "$repo" && eval "$cmd") 2>/dev/null || true
-      fi
-      actions=$((actions + 1))
-    done < <(sb_recommended_tool_platform_post_index_commands "$config_file" graphify "$host")
-
-    if ! sb_graphify_index_exists "$repo" "$config_file"; then
-      local cluster_flag=""
-      [[ "$prefer_no_cluster" == "true" ]] && cluster_flag="--no-cluster"
-      if sb_stack_optimizer_dry_run; then
-        printf 'DRY-RUN: graphify update . %s\n' "$cluster_flag"
-      else
-        (cd "$repo" && graphify update . $cluster_flag) 2>/dev/null || true
-      fi
-      actions=$((actions + 1))
+  if ! sb_graphify_index_exists "$repo" "$config_file"; then
+    if [[ "$prefer_no_cluster" == "true" ]]; then
+      _sb_stack_run_words "$repo" 'graphify update . --no-cluster'
+    else
+      _sb_stack_run_words "$repo" 'graphify update .'
     fi
   fi
   return 0
 }
 
 sb_optimize_agentmemory() {
-  local repo="${1:-$PWD}" config_file="${2:-}" host="${3:-}"
-  local profile persistence
+  local repo="${1:-$PWD}" config_file="${2:-}" host="${3:-}" profile persistence line
   profile="$(sb_stack_optimization_profile_name "$config_file")"
   host="${host:-$(sb_runtime_host)}"
   [[ "$(sb_recommended_tool_consent "$config_file" agentmemory)" == "enabled" ]] || return 0
 
-  mkdir -p "${repo}/.agentmemory/memory" "${repo}/.agentmemory/snapshots"
+  # The export root is scaffolded only when it resolves inside the project (a symlink pointing
+  # elsewhere is refused), so the apply never creates directories outside the repository.
+  sb_agentmemory_scaffold_export_root "$repo" "$config_file" || true
   sb_stack_ensure_agentmemory_gitignore "$repo"
-  sb_stack_merge_agentmemory_env "$repo" "$config_file" "$profile"
+
+  if ! sb_consent_granted agentmemory wire; then
+    printf 'SKIP: agentmemory machine setup (~/.agentmemory/.env, LaunchAgents, host connect) needs your consent: bash %s grant agentmemory --all-projects --capabilities wire\n' \
+      "$(sb_rt_plugin_script scripts/sb-consent.sh)"
+    return 0
+  fi
+  sb_stack_merge_agentmemory_env "$repo" "$config_file" "$profile" || true
 
   # A missing gitleaks only degrades the bridge to regex scanning; never abort the apply.
   sb_stack_ensure_gitleaks "$config_file" "$profile" || true
 
-  persistence="$(sb_stack_profile_knob "$config_file" "$profile" agentmemory server_persistence launchd)"
+  persistence="$(sb_stack_profile_knob "$config_file" "$profile" agentmemory server_persistence launchd 'launchd systemd none')"
   if [[ "$persistence" == "launchd" ]] && command -v launchctl >/dev/null 2>&1 && ! sb_stack_skip_host_hooks; then
     sb_stack_launchd_server_plist "$repo" "$config_file"
     sb_stack_launchd_bridge_plist "$repo"
   fi
 
-  local cmd
-  while IFS= read -r cmd || [[ -n "$cmd" ]]; do
-    [[ -n "$cmd" ]] || continue
-    [[ "$cmd" == Verify* ]] && continue
-    if sb_stack_optimizer_dry_run; then
-      printf 'DRY-RUN: %s\n' "$cmd"
-    else
-      eval "$cmd" 2>/dev/null || true
-    fi
-  done < <(sb_recommended_tool_platform_post_index_commands "$config_file" agentmemory "$host")
+  if sb_agentmemory_cli_available; then
+    while IFS= read -r line; do
+      [[ -n "$line" ]] && _sb_stack_run_words "$repo" "$line"
+    done < <(_sb_stack_agentmemory_connect_words "$host")
+  fi
   return 0
 }
 
 sb_optimize_synergy() {
-  local repo="${1:-$PWD}" config_file="${2:-}"
-  local profile post_export
+  local repo="${1:-$PWD}" config_file="${2:-}" profile post_export export_abs base
   profile="$(sb_stack_optimization_profile_name "$config_file")"
   [[ "$(sb_recommended_tool_consent "$config_file" graphify)" == "enabled" ]] || return 0
   [[ "$(sb_recommended_tool_consent "$config_file" agentmemory)" == "enabled" ]] || return 0
 
   post_export="$(sb_stack_profile_knob "$config_file" "$profile" synergy post_export_graphify_update true)"
   if sb_agentmemory_server_healthy "$config_file" 2>/dev/null; then
-    local export_abs url
-    export_abs="$(sb_agentmemory_abs_export_path "$repo" "$config_file")"
-    url="$(sb_agentmemory_health_url "$config_file")"
-  url="${url%/agentmemory/health}"
+    export_abs="$(sb_agentmemory_abs_export_path "$repo" "$config_file" 2>/dev/null || true)"
+    # The URL is validated loopback (sb_agentmemory_health_url); the body is built by jq.
+    base="$(sb_agentmemory_health_url "$config_file")"
+    base="${base%/agentmemory/health}"
     if sb_stack_optimizer_dry_run; then
       printf 'DRY-RUN: POST obsidian export to %s\n' "$export_abs"
-    elif command -v curl >/dev/null 2>&1; then
-      curl -sf -X POST "${url}/agentmemory/obsidian/export" \
+    elif [[ -n "$export_abs" ]] && command -v curl >/dev/null 2>&1; then
+      curl -sf --max-time 10 --proto '=http,https' --max-redirs 0 --noproxy '*' -X POST \
         -H 'Content-Type: application/json' \
-        -d "{\"vaultDir\":\"${export_abs}/memory\"}" >/dev/null 2>&1 || true
+        -d "$(jq -cn --arg d "${export_abs}/memory" '{vaultDir: $d}')" \
+        -- "${base}/agentmemory/obsidian/export" >/dev/null 2>&1 || true
     fi
   fi
 
   if [[ "$post_export" == "true" ]] && sb_graphify_cli_available; then
-    local prefer_no_cluster cluster_flag=""
-    prefer_no_cluster="$(sb_stack_profile_knob "$config_file" "$profile" graphify prefer_no_cluster true)"
-    [[ "$prefer_no_cluster" == "true" ]] && cluster_flag="--no-cluster"
-    if sb_stack_optimizer_dry_run; then
-      printf 'DRY-RUN: graphify update . %s (post-export)\n' "$cluster_flag"
+    if [[ "$(sb_stack_profile_knob "$config_file" "$profile" graphify prefer_no_cluster true)" == "true" ]]; then
+      _sb_stack_run_words "$repo" 'graphify update . --no-cluster'
     else
-      (cd "$repo" && graphify update . $cluster_flag) 2>/dev/null || true
+      _sb_stack_run_words "$repo" 'graphify update .'
     fi
   fi
   return 0
 }
 
 sb_stack_graph_has_agentmemory_refs() {
-  local repo="${1:-$PWD}" config_file="${2:-}" graph_path count
+  local repo="${1:-$PWD}" config_file="${2:-}" graph_path
   graph_path="$(sb_graphify_abs_graph_path "$repo" "$config_file")"
   [[ -f "$graph_path" ]] || return 1
-  count="$(grep -c '\.agentmemory' "$graph_path" 2>/dev/null || true)"
-  [[ "${count:-0}" -gt 0 ]]
+  grep -q '\.agentmemory' "$graph_path" 2>/dev/null
 }
 
 sb_optimization_score() {
@@ -556,33 +588,57 @@ sb_optimization_score() {
   printf '%s' "$score"
 }
 
+# Prompt nudge when the stack score is low. Shown only when the user has consented to wire
+# Graphify or agentmemory (the apply changes machine settings), never as an order to run it,
+# and the score is cached per project so prompts do not re-probe the machine.
 sb_stack_optimization_prompt_line() {
-  local repo="${1:-$PWD}" config_file="${2:-}" score threshold
+  local repo="${1:-$PWD}" config_file="${2:-}" score threshold cache epoch="" cached="" now
   threshold="${SB_STACK_SCORE_THRESHOLD:-$_sb_stack_score_threshold}"
+  [[ "$threshold" =~ ^[0-9]{1,3}$ ]] || threshold="$_sb_stack_score_threshold"
   [[ -f "$config_file" ]] || return 0
   [[ "$(sb_recommended_tool_consent "$config_file" graphify)" == "enabled" \
     || "$(sb_recommended_tool_consent "$config_file" agentmemory)" == "enabled" ]] || return 0
-  score="$(sb_optimization_score "$repo" "$config_file")"
-  if [[ "$score" -lt "$threshold" ]]; then
-    printf 'STACK OPTIMIZATION: score %s/%s — run bash scripts/sb-optimize-stack.sh --apply (see docs/STACK-OPTIMIZATION.md)' "$score" "100"
+  sb_consent_granted graphify wire || sb_consent_granted agentmemory wire || return 0
+  cache="${SB_RUNTIME_STATE_DIR:-${HOME}/.silver-bullet}/stack-optimization-score.d/$(printf '%s' "$repo" | cksum | awk '{print $1}')"
+  now="$(date +%s)"
+  if [[ -f "$cache" && ! -L "$cache" ]]; then
+    IFS=' ' read -r epoch cached <"$cache" || true
+  fi
+  if [[ "$epoch" =~ ^[0-9]{1,12}$ && "$cached" =~ ^[0-9]{1,3}$ ]] \
+    && ((now - 10#$epoch >= 0 && now - 10#$epoch < _sb_stack_score_cache_seconds)); then
+    score="$cached"
+  else
+    score="$(sb_optimization_score "$repo" "$config_file")"
+    local tmp
+    if mkdir -p "$(dirname "$cache")" 2>/dev/null && tmp="$(mktemp "${cache}.XXXXXX" 2>/dev/null)"; then
+      if printf '%s %s\n' "$now" "$score" 2>/dev/null >"$tmp"; then
+        mv -f -- "$tmp" "$cache" 2>/dev/null || rm -f -- "$tmp"
+      else
+        rm -f -- "$tmp"
+      fi
+    fi
+  fi
+  if ((score < threshold)); then
+    printf 'STACK OPTIMIZATION: score %s/100 — ask the user before running bash %s --apply (it changes machine-wide agentmemory/Graphify settings; see docs/STACK-OPTIMIZATION.md)' \
+      "$score" "$(sb_rt_plugin_script scripts/sb-optimize-stack.sh)"
   fi
 }
 
 sb_stack_update_config_timestamps() {
-  local config_file="${1:-}" mode="${2:-apply}" score="${3:-}"
+  local config_file="${1:-}" mode="${2:-apply}" score="${3:-}" ts
   [[ -f "$config_file" ]] || return 0
   command -v jq >/dev/null 2>&1 || return 0
-  local ts
+  [[ "$score" =~ ^[0-9]{1,3}$ ]] || score="null"
   ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   if [[ "$mode" == "apply" ]]; then
-    jq --arg ts "$ts" --argjson score "${score:-null}" \
+    jq --arg ts "$ts" --argjson score "$score" \
       '.recommended_tools.graphify.optimization.last_applied_at = $ts
        | .recommended_tools.agentmemory.optimization.last_applied_at = $ts
        | .recommended_tools.graphify.optimization.score = $score
        | .recommended_tools.agentmemory.optimization.score = $score' \
       "$config_file" >"${config_file}.tmp" && mv "${config_file}.tmp" "$config_file"
   elif [[ "$mode" == "verify" ]]; then
-    jq --arg ts "$ts" --argjson score "${score:-null}" \
+    jq --arg ts "$ts" --argjson score "$score" \
       '.recommended_tools.graphify.optimization.last_verified_at = $ts
        | .recommended_tools.agentmemory.optimization.last_verified_at = $ts
        | .recommended_tools.graphify.optimization.score = $score

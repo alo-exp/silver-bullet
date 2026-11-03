@@ -1,87 +1,68 @@
 # shellcheck shell=bash
-# Shared usage gate for RTK CLI freshness before substantive commits.
-# Active when enabled_by_user=true and install_status=installed.
+# Shared usage gate for RTK CLI freshness before delivery commands (git commit, gh pr create,
+# gh release create). Active with the user's consent to RTK and install_status=installed.
+# Sourced by: token-compression-tools-gate.sh, record-token-compression-usage.sh,
+# prompt-reminder.sh
 
 _sb_token_tool_default_ttl=1800
+_sb_token_tool_lib_dir="${BASH_SOURCE[0]%/*}"
 
-if [[ -f "$(dirname "${BASH_SOURCE[0]}")/recommended-tools.sh" ]]; then
-  # shellcheck source=recommended-tools.sh
-  source "$(dirname "${BASH_SOURCE[0]}")/recommended-tools.sh"
-fi
-if [[ -f "$(dirname "${BASH_SOURCE[0]}")/recommended-tools-registry.sh" ]]; then
-  # shellcheck source=recommended-tools-registry.sh
-  source "$(dirname "${BASH_SOURCE[0]}")/recommended-tools-registry.sh"
-fi
-if [[ -f "$(dirname "${BASH_SOURCE[0]}")/stack-compression-coordinator.sh" ]]; then
+# shellcheck source=recommended-tools.sh
+source "${_sb_token_tool_lib_dir}/recommended-tools.sh"
+# The mutual-exclusion state belongs to the coordinator; without it that check is skipped.
+if [[ -f "${_sb_token_tool_lib_dir}/stack-compression-coordinator.sh" ]]; then
   # shellcheck source=stack-compression-coordinator.sh
-  source "$(dirname "${BASH_SOURCE[0]}")/stack-compression-coordinator.sh"
+  source "${_sb_token_tool_lib_dir}/stack-compression-coordinator.sh"
 fi
 
+# The tool's CLI name: built in. A config cli_command (repository data) used to be spliced
+# into a regex, so a repository could make every command (e.g. git) count as RTK usage.
 sb_token_tool_cli_command() {
-  local config_file="${1:-}" tool_id="${2:-}"
-  local cli
-  cli="$(sb_recommended_tool_config_string "$config_file" "$tool_id" "cli_command" "$tool_id")"
-  printf '%s' "$cli"
+  case "${2:-}" in
+    context_mode) printf 'context-mode' ;;
+    *) printf '%s' "${2:-}" ;;
+  esac
 }
 
 sb_token_tool_usage_ttl_seconds() {
-  local config_file="${1:-}" tool_id="${2:-}"
-  local ttl
-  ttl="$(sb_recommended_tool_config_string "$config_file" "$tool_id" "usage_ttl_seconds" "$_sb_token_tool_default_ttl")"
-  if ! [[ "$ttl" =~ ^[0-9]+$ ]] || [[ "$ttl" -lt 60 ]]; then
-    ttl="$_sb_token_tool_default_ttl"
-  fi
-  printf '%s' "$ttl"
+  sb_rt_ttl_seconds "$(sb_recommended_tool_config_string "${1:-}" "${2:-}" "usage_ttl_seconds" "")" \
+    "$_sb_token_tool_default_ttl"
 }
 
+# The usage stamp; a configured usage_state_file is honoured only inside the state dir.
 sb_token_tool_usage_state_path() {
   local config_file="${1:-}" tool_id="${2:-}"
-  local state_path
-  state_path="$(sb_recommended_tool_config_string "$config_file" "$tool_id" "usage_state_file" "")"
-  state_path="${state_path/#\~/$HOME}"
-  if [[ -z "$state_path" ]]; then
-    state_path="${SB_RUNTIME_STATE_DIR:-${HOME}/.cursor/.silver-bullet}/${tool_id}-usage"
-  fi
-  printf '%s' "$state_path"
+  sb_rt_state_file "$(sb_recommended_tool_config_string "$config_file" "$tool_id" "usage_state_file" "")" \
+    "${tool_id}-usage"
 }
 
 sb_token_tool_install_ready() {
-  local config_file="${1:-}" tool_id="${2:-}"
-  [[ "$(sb_recommended_tool_install_status "$config_file" "$tool_id")" == "installed" ]]
+  [[ "$(sb_recommended_tool_install_status "${1:-}" "${2:-}")" == "installed" ]]
 }
 
 sb_token_tool_cli_available() {
-  local config_file="${1:-}" tool_id="${2:-}"
-  local cli
-  cli="$(sb_token_tool_cli_command "$config_file" "$tool_id")"
-  command -v "$cli" >/dev/null 2>&1
+  command -v "$(sb_token_tool_cli_command "${1:-}" "${2:-}")" >/dev/null 2>&1
 }
 
 sb_token_tool_usage_is_fresh() {
   local config_file="${1:-}" tool_id="${2:-}"
-  local state_path epoch now ttl age
-  state_path="$(sb_token_tool_usage_state_path "$config_file" "$tool_id")"
-  [[ -f "$state_path" ]] || return 1
-  epoch="$(tr -d '[:space:]' <"$state_path" 2>/dev/null || true)"
-  [[ "$epoch" =~ ^[0-9]+$ ]] || return 1
-  now="$(date +%s)"
-  ttl="$(sb_token_tool_usage_ttl_seconds "$config_file" "$tool_id")"
-  age=$((now - epoch))
-  [[ "$age" -ge 0 && "$age" -le "$ttl" ]]
+  sb_rt_stamp_is_fresh "$(sb_token_tool_usage_state_path "$config_file" "$tool_id")" \
+    "$(sb_token_tool_usage_ttl_seconds "$config_file" "$tool_id")"
 }
 
 sb_token_tool_record_usage() {
-  local config_file="${1:-}" tool_id="${2:-}"
-  local state_path
-  state_path="$(sb_token_tool_usage_state_path "$config_file" "$tool_id")"
-  mkdir -p "$(dirname "$state_path")" 2>/dev/null || true
-  date +%s >"$state_path" 2>/dev/null || return 1
+  sb_rt_stamp_write "$(sb_token_tool_usage_state_path "${1:-}" "${2:-}")"
 }
 
+# Status 0 when CMD runs the CLI: its first program (after optional env and NAME=value
+# words) is CLI. A mention in another program's arguments (echo rtk) does not count.
 sb_token_tool_command_matches() {
-  local cmd="${1:-}" tool_id="${2:-}" cli="${3:-}"
+  local cmd="${1:-}" cli="${3:-}" program
   [[ -n "$cmd" && -n "$cli" ]] || return 1
-  grep -qE "(^|[[:space:]/])${cli}([[:space:]]|$)" <<<"$cmd"
+  cmd="${cmd#"${cmd%%[![:space:]]*}"}"
+  [[ "$cmd" == "env "* ]] && cmd="${cmd#env }"
+  program="$(_sb_opt_in_program "${cmd%%[;&|<>]*}" || true)"
+  [[ "$program" == "$cli" ]]
 }
 
 sb_token_tool_enforced() {
@@ -90,35 +71,41 @@ sb_token_tool_enforced() {
   sb_token_tool_install_ready "$config_file" "$tool_id" || return 1
 }
 
+# Status 0 when a shell command is a delivery step this gate guards. A command the shared
+# analyzer proves read-only (echo "git commit", git log --grep 'gh pr create') never is.
+sb_token_tool_command_is_delivery() {
+  local cmd
+  cmd="$(sb_opt_in_rtk_unwrap "${1:-}")"
+  [[ -n "$cmd" ]] || return 1
+  sb_shell_command_looks_read_only "$cmd" >/dev/null 2>&1 && return 1
+  grep -qE '(^|[^A-Za-z0-9_.-])git([[:space:]]+-[Cc][[:space:]]+[^[:space:]]+)*[[:space:]]+commit([^A-Za-z0-9_-]|$)|(^|[^A-Za-z0-9_.-])gh[[:space:]]+(pr|release)[[:space:]]+create([^A-Za-z0-9_-]|$)' <<<"$cmd"
+}
+
 sb_token_tool_block_message() {
-  local config_file="${1:-}" tool_id="${2:-}"
-  local display cli ttl
+  local config_file="${1:-}" tool_id="${2:-}" display cli ttl
   display="$(sb_recommended_tool_display_name "$tool_id")"
   cli="$(sb_token_tool_cli_command "$config_file" "$tool_id")"
   ttl="$(sb_token_tool_usage_ttl_seconds "$config_file" "$tool_id")"
   cat <<EOF
 🚫 ${display} USAGE REQUIRED — run ${cli} before substantive compression-sensitive work.
 
-When ${display} is opted in, invoke the CLI at least once every ${ttl}s before edits/commits that expand context. See silver-bullet.md §2g-i and docs/code-intelligence-contract.md.
+When ${display} is opted in, invoke the CLI at least once every ${ttl}s before commits, PRs and releases. See silver-bullet.md §2g-i and docs/code-intelligence-contract.md.
 EOF
 }
 
 sb_token_compression_mutual_exclusion_block_message() {
-  if declare -f sb_stack_mutual_exclusion_block_message >/dev/null 2>&1; then
-    sb_stack_mutual_exclusion_block_message
-    return 0
-  fi
-  cat <<EOF
-🚫 STACK COMPRESSION CONFLICT — double-compression detected.
+  sb_stack_mutual_exclusion_block_message
+}
 
-Use routed surface owners only (RTK shell, LeanCTX AST read, Context Mode sandbox/webfetch).
-See docs/LEANCTX.md.
-EOF
+# Status 0 when the coordinator reports a double-compression violation for this project/session.
+sb_token_tool_mutex_dirty() {
+  local config_file="${1:-}"
+  declare -f sb_stack_mutual_exclusion_required >/dev/null 2>&1 || return 1
+  sb_stack_mutual_exclusion_required "$config_file" && ! sb_stack_mutual_exclusion_is_clean "$config_file"
 }
 
 sb_token_tool_prompt_reminder_line() {
-  local config_file="${1:-}" tool_id="${2:-}"
-  local display cli ttl
+  local config_file="${1:-}" tool_id="${2:-}" display cli ttl
   display="$(sb_recommended_tool_display_name "$tool_id")"
   cli="$(sb_token_tool_cli_command "$config_file" "$tool_id")"
 
