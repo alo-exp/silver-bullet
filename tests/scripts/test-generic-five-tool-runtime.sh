@@ -76,7 +76,7 @@ assert hashlib.sha256(manifest_path.read_bytes()).hexdigest() == saved_hash
 manifest = load_manifest(manifest_path)
 assert manifest["schema"] == MANIFEST_SCHEMA
 assert set(manifest["tools"]) == set(TOOL_DEFINITIONS)
-assert set(manifest["hosts"]) == {"claude", "codex", "cursor", "opencode", "pi"}
+assert set(manifest["hosts"]) == {"claude", "codex", "opencode", "pi"}
 assert manifest["coordination"]["rtk_rewrite"] == "single"
 assert launch_spec(manifest, "graphify")["transport"] == "stdio"
 assert launch_spec(manifest, "rtk")["transport"] == "shell-rewrite"
@@ -90,7 +90,7 @@ assert launch_argv(windows_launch_manifest, "rtk", platform_name="win32") == [
 ]
 assert merged_environment({"KEEP": "yes"}, windows_launch_manifest, "rtk")["RTK_MODE"] == "once"
 assert duplicate_registration_names(["graphify", "agentmemory", "graphify"]) == ("graphify",)
-for host in ("claude", "codex", "cursor", "opencode", "pi"):
+for host in ("claude", "codex", "opencode", "pi"):
     projection = project_host(manifest, host)
     assert validate_projection(projection)["valid"] is True
     assert projection["rules"]["rtkRewriteOwner"] == "rtk"
@@ -155,7 +155,7 @@ windows_manifest = {
         }
         for name, definition in TOOL_DEFINITIONS.items()
     },
-    "hosts": {name: {} for name in ("claude", "codex", "cursor", "opencode", "pi")},
+    "hosts": {name: {} for name in ("claude", "codex", "opencode", "pi")},
     "coordination": {
         "one_global_instance_per_tool": True,
         "rtk_rewrite": "single",

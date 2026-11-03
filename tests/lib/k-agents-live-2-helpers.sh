@@ -8,7 +8,7 @@
 k2_stage_smoke_tree() {
   local d="$1" f host
   mkdir -p "$d/scripts/lib" "$d/hooks/lib" "$d/tests/hooks" "$d/agents/claude" \
-    "$d/host-bundles/codex" "$d/host-bundles/cursor" "$d/plugins/silver-bullet"
+    "$d/host-bundles/codex" "$d/plugins/silver-bullet"
   cp "$TL_REPO_ROOT/scripts/lib/host-smoke-cell.sh" "$TL_REPO_ROOT/scripts/lib/pre-release-host-isolation.sh" \
     "$TL_REPO_ROOT/scripts/lib/agent-bundle-paths.sh" "$d/scripts/lib/"
   cp "$TL_REPO_ROOT/scripts/run-pre-release-host-smoke.sh" "$d/scripts/"
@@ -29,17 +29,15 @@ sb_smoke_cleanup() {
   unset SB_PRE_RELEASE_SMOKE_ROOT
 }
 EOS
-  for host in cursor codex claude; do
+  for host in codex claude; do
     k2_stub_script "$d/scripts/install-$host.sh" "install $host repo=\${SB_PRE_RELEASE_REPO_ROOT:-} home=\$HOME" "STUB_FAIL_INSTALL"
   done
   k2_stub_script "$d/scripts/sb-diagnostics.sh" 'diagnostics runtime=${SILVER_BULLET_RUNTIME:-} smoke=${SB_DIAG_SMOKE:-}' STUB_FAIL_DIAG
   k2_stub_script "$d/scripts/claims-audit.sh" 'claims rtk=${RTK_DISABLED:-}' STUB_FAIL_CLAIMS
-  k2_stub_script "$d/scripts/pre-release-cursor-cli-smoke.sh" 'cursor-cli-smoke env=${SB_CURSOR_SMOKE_USE_CURRENT_ENV:-}' STUB_FAIL_CURSOR_CLI
-  k2_stub_script "$d/scripts/release-live-matrix-cursor-smoke.sh" 'cursor-matrix-smoke' STUB_FAIL_CURSOR_MATRIX
   for f in validate-host-agnostic-core validate-host-install-surface validate-host-skill-surface; do
     k2_stub_script "$d/scripts/$f.sh" "$f args=\$*" "STUB_FAIL_${f//-/_}"
   done
-  for f in test-cursor-hook-bridge test-cursor-runtime-bootstrap test-runtime-paths; do
+  for f in test-runtime-paths; do
     k2_stub_script "$d/tests/hooks/$f.sh" "$f" "STUB_FAIL_${f//-/_}"
   done
   # invoke-skill adapter: prints a recognizable skill banner unless told otherwise

@@ -23,35 +23,26 @@ LOG="$TL_TMP/calls.log"
 mkdir -p "$TL_TMP/tmpdir"
 CLAUDE_MF=.claude-plugin/marketplace.json
 CODEX_MF=.agents/plugins/marketplace.json
-CURSOR_MF=.cursor-plugin/marketplace.json
 CODEX_PJ=plugins/silver-bullet/.codex-plugin/plugin.json
 # new_tree: a Silver Bullet repository at 2.0.0 with stale marketplace manifests, pushed to
 # its own origin, holding the real sync scripts and stub package syncs, gate and CI check.
 new_tree() {
   rm -rf "$T" "$ORIGIN"
-  mkdir -p "$T/scripts/lib" "$T/.claude-plugin" "$T/.cursor-plugin" \
-    "$T/plugins/silver-bullet/.codex-plugin" "$T/plugins/silver-bullet/.cursor-plugin"
+  mkdir -p "$T/scripts/lib" "$T/.claude-plugin" \
+    "$T/plugins/silver-bullet/.codex-plugin"
   local s
   for s in sync-release-marketplace-versions.sh sync-marketplace-version.sh \
-    sync-codex-marketplace-version.sh sync-cursor-marketplace-version.sh; do
+    sync-codex-marketplace-version.sh; do
     cp "$TL_REPO_ROOT/scripts/$s" "$T/scripts/"
   done
   cp "$TL_REPO_ROOT/scripts/lib/agent-plugins-common.sh" "$T/scripts/lib/"
   jq -n '{version: "2.0.0"}' >"$T/package.json"
   jq -n '{name: "silver-bullet", version: "2.0.0"}' >"$T/.claude-plugin/plugin.json"
-  jq -n '{name: "silver-bullet", version: "2.0.0"}' >"$T/.cursor-plugin/plugin.json"
-  jq -n '{name: "silver-bullet", version: "2.0.0"}' >"$T/plugins/silver-bullet/.cursor-plugin/plugin.json"
   jq -n '{name: "silver-bullet", version: "1.0.0", config_version: "1.0.0"}' >"$T/$CODEX_PJ"
   j_marketplace_json '{"source":"github","repo":"o/sb"}' >"$T/$CLAUDE_MF"
-  j_marketplace_json '{"source":"github","repo":"o/sb","ref":"main","sha":"0000","path":"x"}' >"$T/$CURSOR_MF"
   cat >"$T/scripts/sync-codex-package.sh" <<STUB
 #!/usr/bin/env bash
 echo "codex-package" >>"$LOG"
-STUB
-  cat >"$T/scripts/sync-cursor-package.sh" <<'STUB'
-#!/usr/bin/env bash
-root="$(cd "$(dirname "$0")/.." && pwd)"
-jq '.version' "$root/.cursor-plugin/plugin.json" >/dev/null
 STUB
   cat >"$T/scripts/pre-release-gate.sh" <<GATE
 #!/usr/bin/env bash
@@ -85,7 +76,7 @@ release_tree() {
 SCRIPT="$T/scripts/sync-release-marketplace-versions.sh"
 run_release() {
   tl_run env -u AGENT_PLUGINS_REPO_ROOT -u AGENT_PLUGINS_REPO_URL -u AGENT_PLUGINS_SKIP_PUSH \
-    -u MARKETPLACE_REPO_URL -u CODEX_MARKETPLACE_REPO_URL -u CURSOR_MARKETPLACE_REPO_URL \
+    -u MARKETPLACE_REPO_URL -u CODEX_MARKETPLACE_REPO_URL \
     TMPDIR="$TL_TMP/tmpdir" timeout 60 "$@"
 }
 remote_sb() { git -C "$J_REMOTE" show "main:$1" | jq -r --arg k "$2" '.plugins[] | select(.name=="silver-bullet") | getpath($k | split("."))'; }
@@ -122,7 +113,6 @@ assert_eq "gate ran first, then the Codex package sync" "gate
 codex-package" "$(<"$LOG")"
 assert_eq "Claude in-repo manifest aligned" "2.0.0" "$(jq -r '.plugins[] | select(.name=="silver-bullet") | .version' "$T/$CLAUDE_MF")"
 assert_eq "Codex plugin manifest aligned" "2.0.0/2.0.0" "$(jq -r '"\(.version)/\(.config_version)"' "$T/$CODEX_PJ")"
-assert_eq "Cursor in-repo manifest aligned" "2.0.0" "$(jq -r '.plugins[] | select(.name=="silver-bullet") | .version' "$T/$CURSOR_MF")"
 assert_contains "next steps name the publish step" "$TL_OUT" "bash scripts/sync-release-marketplace-versions.sh --publish 2.0.0"
 assert_contains "next steps put CI before publishing" "$TL_OUT" "verify-release-commit-ci.sh"
 assert_not_contains "prepare does not claim the marketplace was updated" "$TL_OUT" "unified agent-plugins marketplace was updated"
@@ -178,27 +168,23 @@ assert_eq "no origin: publish exits 1" 1 "$TL_STATUS"
 assert_contains "no origin explained" "$TL_ERR" "release tag v2.0.0 is not on origin"
 assert_eq "no origin: nothing published" "$remote_head" "$(git -C "$J_REMOTE" rev-parse main)"
 
-# --- publish: one clone, three commits, one push that lands (R13-01) --------------------------------
+# --- publish: one clone, two commits, one push that lands (R13-01) --------------------------------
 release_tree
 TAGC="$(git -C "$T" rev-parse 'v2.0.0^{commit}')"
 run_release env AGENT_PLUGINS_REPO_URL="$J_REMOTE" bash "$SCRIPT" --publish v2.0.0
 assert_eq "publish exits 0" 0 "$TL_STATUS"
 assert_eq "CI checked once for the tagged commit, no pre-release gate" "ci $TAGC" "$(<"$LOG")"
-assert_contains "the push is reported" "$TL_OUT" "Pushed 3 commit(s) to origin/main"
+assert_contains "the push is reported" "$TL_OUT" "Pushed 2 commit(s) to origin/main"
 assert_contains "completion banner" "$TL_OUT" "The unified agent-plugins marketplace offers silver-bullet v2.0.0"
 assert_not_contains "no per-host banner before the push lands" "$TL_OUT" "manifest now offers silver-bullet"
 assert_contains "hosts report their commit as pending the single push" "$TL_OUT" "push pending"
 assert_eq "remote Claude entry at 2.0.0" "2.0.0" "$(remote_sb "$CLAUDE_MF" version)"
 assert_eq "remote Codex entry at 2.0.0" "2.0.0" "$(remote_sb "$CODEX_MF" version)"
 assert_eq "remote Codex ref is the tag" "v2.0.0" "$(remote_sb "$CODEX_MF" source.ref)"
-assert_eq "remote Cursor entry at 2.0.0" "2.0.0" "$(remote_sb "$CURSOR_MF" version)"
-assert_eq "remote Cursor sha is the tagged commit" "$TAGC" "$(remote_sb "$CURSOR_MF" source.sha)"
-assert_eq "remote Cursor ref is the tag" "v2.0.0" "$(remote_sb "$CURSOR_MF" source.ref)"
-assert_eq "one commit per host, newest first" "Bump silver-bullet Cursor manifest to 2.0.0
-Bump silver-bullet Codex manifest to 2.0.0
-Bump silver-bullet Claude manifest to 2.0.0" "$(git -C "$J_REMOTE" log -3 --format=%s main)"
-assert_eq "each commit holds only its manifest" "$CURSOR_MF $CODEX_MF $CLAUDE_MF" \
-  "$(for c in main main~1 main~2; do git -C "$J_REMOTE" show --name-only --format= "$c"; done | tr '\n' ' ' | sed 's/ $//')"
+assert_eq "one commit per host, newest first" "Bump silver-bullet Codex manifest to 2.0.0
+Bump silver-bullet Claude manifest to 2.0.0" "$(git -C "$J_REMOTE" log -2 --format=%s main)"
+assert_eq "each commit holds only its manifest" "$CODEX_MF $CLAUDE_MF" \
+  "$(for c in main main~1; do git -C "$J_REMOTE" show --name-only --format= "$c"; done | tr '\n' ' ' | sed 's/ $//')"
 assert_eq "temporary clone removed" "" "$(ls -A "$TL_TMP/tmpdir")"
 assert_eq "publish leaves this repository untouched" "" "$(git -C "$T" status --porcelain)"
 
@@ -206,7 +192,7 @@ assert_eq "publish leaves this repository untouched" "" "$(git -C "$T" status --
 before="$(git -C "$J_REMOTE" rev-parse main)"
 run_release env AGENT_PLUGINS_REPO_URL="$J_REMOTE" bash "$SCRIPT" --publish 2.0.0
 assert_eq "re-run exits 0" 0 "$TL_STATUS"
-assert_contains "re-run reports the hosts as current" "$TL_OUT" "Cursor marketplace manifest already at silver-bullet 2.0.0"
+assert_contains "re-run reports the hosts as current" "$TL_OUT" "Codex marketplace manifest already at silver-bullet 2.0.0"
 assert_not_contains "re-run pushes nothing" "$TL_OUT" "Pushed"
 assert_eq "re-run leaves the remote alone" "$before" "$(git -C "$J_REMOTE" rev-parse main)"
 

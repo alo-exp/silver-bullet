@@ -34,10 +34,10 @@ sb_internal_skill() {
 assert_no_packaged_skill_md() {
   local desc="$1" path="$2"
   local hits
-  hits="$(find "$path" -name '*SKILL.md' ! -path '*/agents/cursor/*' -print 2>/dev/null | head -1 || true)"
+  hits="$(find "$path" -name '*SKILL.md' -print 2>/dev/null | head -1 || true)"
   if [[ -n "$hits" ]]; then
-    echo "FAIL: $desc — packaged *SKILL.md found under $path (excluding agents/cursor)"
-    find "$path" -name '*SKILL.md' ! -path '*/agents/cursor/*' -print 2>/dev/null | head -20
+    echo "FAIL: $desc — packaged *SKILL.md found under $path"
+    find "$path" -name '*SKILL.md' -print 2>/dev/null | head -20
     (( FAIL++ )) || true
   else
     echo "PASS: $desc"
@@ -1187,9 +1187,9 @@ assert_file_exists "SB Claude agent bundle synced into source bundle" "$REPO_ROO
 assert_file_exists "SB Codex agent bundle synced into source bundle" "$REPO_ROOT/host-bundles/codex/sb-scan/SKILL.md"
 assert_file_absent "Installed SB package does not expose Claude agent SKILL.md bundle" "$FAKE_SB_PACKAGE_ROOT/agents/claude"
 assert_file_absent "Installed SB package does not expose Codex agent SKILL.md bundle under agents/" "$FAKE_SB_PACKAGE_ROOT/agents/codex"
-assert_file_exists "Installed SB package exposes sb slash command stub" "$FAKE_SB_PACKAGE_ROOT/commands/sb.md"
+assert_file_absent "Installed SB package ships no command stubs (they were Cursor-only)" "$FAKE_SB_PACKAGE_ROOT/commands"
 assert_file_absent "Installed SB package does not ship agents/cursor subagent mirror" "$FAKE_SB_PACKAGE_ROOT/agents/cursor"
-assert_file_exists "Source workspace cursor bundle exposes non-command subagent skill" "$REPO_ROOT/host-bundles/cursor/sb:plan/SKILL.md"
+assert_file_absent "Source workspace has no Cursor bundle" "$REPO_ROOT/host-bundles/cursor"
 assert_file_absent "Current cache does not expose Claude agent SKILL.md bundle" "$FAKE_CACHE_ROOT/agents/claude"
 assert_file_absent "Current cache does not expose Codex agent SKILL.md bundle under agents/" "$FAKE_CACHE_ROOT/agents/codex"
 assert_file_absent "SB source bundle does not expose plugin picker skills directory" "$REPO_ROOT/plugins/silver-bullet/skills"
@@ -1344,8 +1344,6 @@ RUNTIME_CLAUDE_REPORT="$TMP/codex-runtime-claude-reference-report.txt"
 RUNTIME_CLAUDE_ALLOWED_GLOBS=(
   # Not runtime code.
   -g '!**/.git/**' -g '!**/*.md' -g '!**/*.html' -g '!**/*.txt' -g '!**/*.err'
-  # Cursor-only bundles.
-  -g '!**/agents/cursor/**' -g '!**/host-bundles/cursor/**' -g '!**/.cursor-plugin/**'
   # Shared multi-host tooling: per-host path tables or host branches with a
   # Claude entry next to the Codex one.
   -g '!**/scripts/sb-doctor.sh'
@@ -1358,9 +1356,15 @@ RUNTIME_CLAUDE_ALLOWED_GLOBS=(
   -g '!**/hooks/lib/context-mode-gate.sh'
   -g '!**/hooks/lib/graphify-am-global.sh'
   -g '!**/hooks/lib/recommended-tools.sh'
+  # Default state directory when SB_RUNTIME_STATE_DIR is unset (the default host is Claude).
+  -g '!**/hooks/lib/agentmemory-gate.sh'
+  -g '!**/hooks/lib/token-compression-tools-gate.sh'
+  -g '!**/hooks/review-fix-ladder-guard.sh'
+  -g '!**/scripts/dogfood-orchestrator-parent-surface.sh'
+  -g '!**/scripts/lib/recommended-tools/receipts.sh'
   -g '!**/scripts/lib/recommended-tools/probe-rtk.sh'
   # Host translators and validators: they name Claude paths in order to rewrite
-  # them (render-agent-bundle.py's Claude -> Codex/Cursor table) or to flag them
+  # them (render-agent-bundle.py's Claude -> Codex table) or to flag them
   # (validate-host-agnostic-core.sh's forbidden-pattern list).
   -g '!**/scripts/render-agent-bundle.py'
   -g '!**/scripts/validate-host-agnostic-core.sh'
