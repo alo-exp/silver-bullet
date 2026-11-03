@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Shared delegate wrapper behavior for agent-codex-delegate.sh, agent-cursor-delegate.sh, and agent-claude-delegate.sh.
+# Shared delegate wrapper behavior for agent-codex-delegate.sh and agent-claude-delegate.sh.
 # shellcheck shell=bash
 
 _AGENT_DELEGATE_COMMON_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -377,7 +377,7 @@ agent_delegate_write_degraded_fallback_evidence() {
     >>"${artifact_dir}/degraded-fallback.jsonl"
 }
 
-# Pre-delegation bootstrap for opted-in Graphify + agentmemory (Claude/Codex/Cursor delegates).
+# Pre-delegation bootstrap for opted-in Graphify + agentmemory (Claude/Codex delegates).
 # Ensures graphify index/query freshness and agentmemory server/export exist before substantive edits.
 agent_delegate_preflight_recommended_tools() {
   local work_dir="${1:-}" sb_root="${2:-}" host="${3:-claude}"

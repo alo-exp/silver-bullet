@@ -38,7 +38,7 @@ rt_probe_cross_tool() {
   local evidence=()
   local fu=0 fd=0 fp=0 fs=0 ff=0 frr=0 frp=0 fr=0
 
-  if ! rt_five_tool_host_supported "${RT_HOST:-cursor}"; then fu=1
+  if ! rt_five_tool_host_supported "${RT_HOST:-claude}"; then fu=1
   elif ! rt_any_five_tool_consented; then
     fr=1
     activation="none"
@@ -54,7 +54,7 @@ rt_probe_cross_tool() {
       worktree_id="$(rt_worktree_id "${RT_PROJECT_ROOT:-}")"
       session_id="$(rt_current_session_id)"
       hb_path="$(rt_heartbeat_path "$project_id" "$worktree_id" "$session_id" 2>/dev/null || true)"
-      if [[ -n "$hb_path" ]] && rt_heartbeat_is_valid "$hb_path" "${RT_HOST:-cursor}" "${RT_PROJECT_ROOT:-}" "${RT_PROJECT_ROOT:-}"; then
+      if [[ -n "$hb_path" ]] && rt_heartbeat_is_valid "$hb_path" "${RT_HOST:-claude}" "${RT_PROJECT_ROOT:-}" "${RT_PROJECT_ROOT:-}"; then
         activation="full"
         fr=1
       else
@@ -85,7 +85,7 @@ rt_repair_cross_tool() {
   done < <(printf '%s' "$conv_json" | jq -r '.failures[]? // empty')
   [[ "$(printf '%s' "$conv_json" | jq -r '.restart_required // false')" == "true" ]] && restart=1
 
-  rt_heartbeat_write "${RT_PROJECT_ROOT:-}" "${RT_HOST:-cursor}" && actions+=("heartbeat_written") \
+  rt_heartbeat_write "${RT_PROJECT_ROOT:-}" "${RT_HOST:-claude}" && actions+=("heartbeat_written") \
     || failures+=("heartbeat_write_failed")
 
   jq -n \

@@ -11,10 +11,6 @@ DELEGATE_FLOW_STEP_ORDER = [
     "FS-DELEGATE-CODEX-LAUNCH",
     "FS-DELEGATE-CODEX-ROUTE",
     "FS-SILVER_AGENT_CODEX",
-    "FS-DELEGATE-CURSOR-LAUNCH",
-    "FS-DELEGATE-CURSOR-ROUTE",
-    "FS-DELEGATE-CURSOR-SUBAGENT-POLICY",
-    "FS-SILVER_AGENT_CURSOR",
     "FS-DELEGATE-CLAUDE-LAUNCH",
     "FS-DELEGATE-CLAUDE-ROUTE",
     "FS-SILVER_AGENT_CLAUDE",
@@ -27,7 +23,7 @@ DELEGATE_FLOW_STEP_ORDER = [
 
 DELEGATE_STEP_DEFS: dict[str, dict[str, str]] = {
     "FS-DELEGATE-BRIEF": {
-        "skill": "silver-agent-codex|silver-agent-cursor|silver-agent-claude",
+        "skill": "silver-agent-codex|silver-agent-claude",
         "purpose": "Host prepares bounded brief, ownership scope, and acceptance criteria.",
         "classification": "flow-step-skill",
     },
@@ -52,11 +48,6 @@ DELEGATE_STEP_DEFS: dict[str, dict[str, str]] = {
         "purpose": "Catalog-backed silver-agent-codex step inside AF-AGENT-DELEGATE delegate spine.",
         "classification": "flow-step-skill",
     },
-    "FS-SILVER_AGENT_CURSOR": {
-        "skill": "silver-agent-cursor",
-        "purpose": "Catalog-backed silver-agent-cursor step inside AF-AGENT-DELEGATE delegate spine.",
-        "classification": "flow-step-skill",
-    },
     "FS-SILVER_AGENT_CLAUDE": {
         "skill": "silver-agent-claude",
         "purpose": "Catalog-backed silver-agent-claude step inside AF-AGENT-DELEGATE delegate spine.",
@@ -65,21 +56,6 @@ DELEGATE_STEP_DEFS: dict[str, dict[str, str]] = {
     "FS-DELEGATE-CODEX-ROUTE": {
         "skill": "silver-agent-codex",
         "purpose": "Inject $sb:* route syntax into external agent brief.",
-        "classification": "flow-step-skill",
-    },
-    "FS-DELEGATE-CURSOR-LAUNCH": {
-        "skill": "silver-agent-cursor",
-        "purpose": "Spawn agent-cursor-delegate.sh with Keychain auth and model policy.",
-        "classification": "flow-step-skill",
-    },
-    "FS-DELEGATE-CURSOR-ROUTE": {
-        "skill": "silver-agent-cursor",
-        "purpose": "Inject /sb:* route syntax into external agent brief.",
-        "classification": "flow-step-skill",
-    },
-    "FS-DELEGATE-CURSOR-SUBAGENT-POLICY": {
-        "skill": "silver-agent-cursor",
-        "purpose": "Enforce composer-2.5 only (never Fast) on nested Task spawns.",
         "classification": "flow-step-skill",
     },
     "FS-DELEGATE-CLAUDE-LAUNCH": {
@@ -108,7 +84,7 @@ DELEGATE_STEP_DEFS: dict[str, dict[str, str]] = {
         "classification": "atomic-flow-implementation",
     },
     "FS-DELEGATE-MENTOR": {
-        "skill": "silver-agent-codex|silver-agent-cursor|silver-agent-claude",
+        "skill": "silver-agent-codex|silver-agent-claude",
         "purpose": "Host mentor capture and user-facing report preparation.",
         "classification": "flow-step-skill",
     },
@@ -208,7 +184,7 @@ def merge_delegate_catalog(
     for flow in atomic_flows:
         if flow.get("id") != "AF-AGENT-DELEGATE":
             continue
-        flow["owning_skills"] = ["silver-agent-codex", "silver-agent-cursor", "silver-agent-claude"]
+        flow["owning_skills"] = ["silver-agent-codex", "silver-agent-claude"]
         flow["flow_steps"] = list(DELEGATE_FLOW_STEP_ORDER)
         # These legacy host steps remain catalog entities, but still roll up to
         # the sole canonical external-agent delegation atomic flow.

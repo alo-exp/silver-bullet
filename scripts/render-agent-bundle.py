@@ -18,11 +18,11 @@ import time
 # rendered host surfaces expose the public ``sb:<route>`` namespace. The
 # lookahead keeps a CRLF line's ``\r`` out of the match so endings survive.
 NAME_RE = re.compile(r"^(name:[ \t]*)silver(?:-([A-Za-z0-9_-]+))?[ \t]*(?=\r?$)", re.MULTILINE)
-HOSTS = ("claude", "codex", "cursor")
+HOSTS = ("claude", "codex")
 # Host prose is rewritten in documentation only. Skill code and data (Python,
 # JSON, shell) run or are read as-is, so a product name such as "Claude Code"
-# in a research data pack must not turn into "Cursor" in the Cursor render.
-DOC_SUFFIXES = frozenset({".md", ".mdc"})
+# in a research data pack must not be rewritten.
+DOC_SUFFIXES = frozenset({".md"})
 LAYOUTS = ("picker", "source")
 
 
@@ -53,17 +53,6 @@ def resolve_codex_host_agnostic_terms(text: str) -> str:
     return updated
 
 
-def resolve_cursor_host_agnostic_terms(text: str) -> str:
-    updated = text
-    for old, new in (
-        ("alo-labs-secondary host", "alo-labs"),
-        (".secondary host", ".cursor"),
-        ("secondary host", "Cursor"),
-    ):
-        updated = updated.replace(old, new)
-    return updated
-
-
 def resolve_claude_host_agnostic_terms(text: str) -> str:
     updated = text
     for old, new in (
@@ -75,17 +64,6 @@ def resolve_claude_host_agnostic_terms(text: str) -> str:
         updated = updated.replace(old, new)
     return updated
 
-
-CURSOR_REPLACEMENTS = [
-    ("${CLAUDE_PLUGIN_ROOT}", "${CURSOR_PLUGIN_ROOT}"),
-    ("Claude Code", "Cursor"),
-    ("Claude settings", "Cursor hooks.json"),
-    (".claude/settings.json", ".cursor/hooks.json"),
-    ("merge-hooks.py", "merge-cursor-hooks.py"),
-    ("PostToolUse/Skill or Codex `silver-bullet invoke-skill`", "PostToolUse/Skill (Cursor Skill tool) or `silver-bullet invoke-skill`"),
-    ("`/compact`", "context compaction"),
-    ("AskUserQuestion", "direct user interaction"),
-]
 
 CODEX_REPLACEMENTS = [
     ("`context compaction`", "context compaction"),
@@ -257,35 +235,9 @@ def ensure_codex_picker_title(text: str) -> str:
     return "".join(lines)
 
 
-PROTECTED_RUNTIME_SUBSTRINGS = (
-    "scripts/lib/install-cursor/templates/cursor-rules/",
-    "templates/cursor-rules/",
-    ".cursor/rules/",
-)
-
-
-def _mask_protected_runtime_subs(text: str) -> tuple[str, list[tuple[str, str]]]:
-    masks: list[tuple[str, str]] = []
-    updated = text
-    for index, protected in enumerate(PROTECTED_RUNTIME_SUBSTRINGS):
-        if protected not in updated:
-            continue
-        token = f"__SB_PROTECTED_RUNTIME_{index}__"
-        masks.append((token, protected))
-        updated = updated.replace(protected, token)
-    return updated, masks
-
-
-def _unmask_protected_runtime_subs(text: str, masks: list[tuple[str, str]]) -> str:
-    updated = text
-    for token, protected in masks:
-        updated = updated.replace(token, protected)
-    return updated
-
-
 def runtime_placeholders(agent: str) -> list[tuple[str, str]]:
     current_home = f"$HOME/.{agent}"
-    others = [name for name in ("claude", "codex", "cursor") if name != agent]
+    others = [name for name in ("claude", "codex") if name != agent]
 
     pairs: list[tuple[str, str]] = [
         ("${SB_RUNTIME_HOME_ROOT}", current_home),
@@ -315,26 +267,6 @@ def runtime_placeholders(agent: str) -> list[tuple[str, str]]:
     return pairs
 
 
-def sanitize_cursor_text(text: str) -> str:
-    # Preserve cross-host delegation rows — do not rewrite Claude Code host label to Cursor.
-    host_row_token = "__SB_CURSOR_HOST_ROW_CLAUDE_CODE__"
-    delegate_executor_tui = "__SB_CURSOR_DELEGATE_CLAUDE_CODE_TUI__"
-    delegate_executor_runs = "__SB_CURSOR_DELEGATE_CLAUDE_CODE_EXECUTES__"
-    updated = resolve_cursor_host_agnostic_terms(text).replace("| **Claude Code** |", f"| **{host_row_token}** |")
-    updated = updated.replace(
-        "when Claude Code TUI is the intended executor", delegate_executor_tui
-    )
-    updated = updated.replace("while Claude Code executes", delegate_executor_runs)
-    for old, new in CURSOR_REPLACEMENTS:
-        updated = updated.replace(old, new)
-    updated = updated.replace(f"| **{host_row_token}** |", "| **Claude Code** |")
-    updated = updated.replace(
-        delegate_executor_tui, "when Claude Code TUI is the intended executor"
-    )
-    updated = updated.replace(delegate_executor_runs, "while Claude Code executes")
-    return updated
-
-
 def sanitize_codex_text(text: str) -> str:
     updated = resolve_codex_host_agnostic_terms(text)
     for old, new in CODEX_REPLACEMENTS:
@@ -344,7 +276,7 @@ def sanitize_codex_text(text: str) -> str:
 
 def sanitize_text(text: str, agent: str, preserve_runtime_placeholders: bool = False) -> str:
     updated = text
-    if agent in {"claude", "codex", "cursor"}:
+    if agent in {"claude", "codex"}:
         updated = rewrite_names(updated)
     if agent == "claude":
         updated = resolve_claude_host_agnostic_terms(updated)
@@ -352,14 +284,10 @@ def sanitize_text(text: str, agent: str, preserve_runtime_placeholders: bool = F
         updated = ensure_codex_picker_title(updated)
         updated = quote_codex_frontmatter_scalars(updated)
     if not preserve_runtime_placeholders:
-        updated, protected_masks = _mask_protected_runtime_subs(updated)
         for old, new in runtime_placeholders(agent):
             updated = updated.replace(old, new)
-        updated = _unmask_protected_runtime_subs(updated, protected_masks)
     if agent == "codex":
         updated = sanitize_codex_text(updated)
-    elif agent == "cursor":
-        updated = sanitize_cursor_text(updated)
     return updated
 
 
@@ -460,7 +388,7 @@ def rename_route_skill_directories(root: pathlib.Path, *, host: str, layout: str
 
     Hosts list skills from both directory names and SKILL.md ``name:`` fields.
     Canonical authoring names (``silver-feature``) are internal; rendered
-    Claude/Cursor picker routes use ``sb:feature`` and the filesystem-safe
+    Claude picker routes use ``sb:feature`` and the filesystem-safe
     Codex bundle uses ``sb-feature``. Hidden source trees (``layout="source"``)
     are read by path, never listed by a picker, so they always use the
     filesystem-safe ``sb-feature`` form.
@@ -468,7 +396,7 @@ def rename_route_skill_directories(root: pathlib.Path, *, host: str, layout: str
     if not root.is_dir():
         return
 
-    colon_routes = host in {"claude", "cursor"} and layout == "picker"
+    colon_routes = host == "claude" and layout == "picker"
     for child in sorted(root.iterdir(), key=lambda path: path.name):
         if not child.is_dir() or child.is_symlink():
             continue
@@ -484,61 +412,6 @@ def rename_route_skill_directories(root: pathlib.Path, *, host: str, layout: str
         if target.exists():
             raise RenderError(f"{host} skill rename collision: {dirname} -> {target.name}")
         child.rename(target)
-
-
-def read_skill_frontmatter(path: pathlib.Path) -> dict[str, str]:
-    try:
-        lines = path.read_text(encoding="utf-8").splitlines()
-    except UnicodeDecodeError:
-        lines = path.read_text(errors="replace").splitlines()
-    if not lines or lines[0].strip() != "---":
-        return {}
-
-    meta: dict[str, str] = {}
-    for line in lines[1:]:
-        if line.strip() == "---":
-            break
-        match = re.match(r"^([A-Za-z0-9_-]+):\s*(.*)$", line)
-        if not match:
-            continue
-        meta[match.group(1)] = match.group(2).strip().strip('"').strip("'")
-    return meta
-
-
-def command_stub_routes(commands_dir: pathlib.Path) -> set[str]:
-    routes: set[str] = set()
-    if not commands_dir.is_dir():
-        return routes
-    for path in sorted(commands_dir.glob("*.md")):
-        name = read_skill_frontmatter(path).get("name", "").strip() or path.stem
-        if name == "sb":
-            pass
-        elif name.startswith("sb-"):
-            name = "sb:" + name[len("sb-") :]
-        routes.add(name)
-    return routes
-
-
-def exclude_command_stub_skills_from_cursor_subagent_surface(
-    root: pathlib.Path, commands_dir: pathlib.Path
-) -> None:
-    """Drop command-covered skills from the Cursor subagent surface.
-
-    Cursor registers plugin ``commands/`` as slash entries and every directory
-    under ``plugin.json`` ``skills`` as subagents, regardless of
-    ``user-invocable: false``. Routes with both surfaces duplicate in the menu;
-    keep slash commands public and retain full instructions in ``skill-source/``.
-    """
-    routes = command_stub_routes(commands_dir)
-    if not routes:
-        return
-
-    for skill_md in sorted(root.glob("*/SKILL.md")):
-        name = read_skill_frontmatter(skill_md).get("name", "").strip()
-        if name not in routes:
-            continue
-        skill_dir = skill_md.parent
-        _safe_rmtree(skill_dir)
 
 
 def convert_to_hidden_sources(root: pathlib.Path) -> None:
@@ -558,9 +431,8 @@ def render_bundle(
 
     ``layout="picker"`` is the host picker bundle (``agents/claude``,
     ``host-bundles/<host>``); ``layout="source"`` is a hidden source tree
-    (``plugins/silver-bullet/<host>-skill-source``): filesystem-safe
-    directory names, SILVER_SOURCE files, and every route kept, including the
-    ones Cursor exposes as slash commands.
+    (``plugins/silver-bullet/skill-source``): filesystem-safe
+    directory names, SILVER_SOURCE files, and every route kept.
     """
     if not source_root.is_dir():
         raise RenderError(f"source root missing: {source_root}")
@@ -571,7 +443,7 @@ def render_bundle(
         try:
             _safe_rmtree(staging)
             shutil.copytree(source_root, staging, symlinks=False)
-            if agent in {"claude", "cursor"}:
+            if agent == "claude":
                 for metadata in staging.glob("*/agents/openai.yaml"):
                     metadata.unlink()
                     with contextlib.suppress(OSError):
@@ -581,9 +453,6 @@ def render_bundle(
                 rename_route_skill_directories(staging, host=agent, layout=layout)
             if layout == "source":
                 convert_to_hidden_sources(staging)
-            elif agent == "cursor":
-                commands_dir = source_root.parent / "plugins" / "silver-bullet" / "commands"
-                exclude_command_stub_skills_from_cursor_subagent_surface(staging, commands_dir)
             _safe_rmtree(dest_root)
             staging.rename(dest_root)
         except BaseException:

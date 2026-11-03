@@ -1,13 +1,13 @@
 ---
 name: silver-agent-worker
-description: Internal external-agent implementer contract for Codex/Cursor delegation child sessions. Not user-invocable — loaded by delegate wrappers when SB_AGENT_DELEGATE_V2=1.
+description: Internal external-agent implementer contract for delegation child sessions. Not user-invocable — loaded by delegate wrappers when SB_AGENT_DELEGATE_V2=1.
 user-invocable: false
 version: 0.1.0
 ---
 
 # silver-agent-worker — External Implementer Contract
 
-You are the **external implementer** spawned by an SB `AGENT-DELEGATE` native worker via `agent-codex-delegate.sh` or `agent-cursor-delegate.sh`. The host parent supervises; you execute only the bounded brief.
+You are the **external implementer** spawned by an SB `AGENT-DELEGATE` native worker via an `agent-<host>-delegate.sh` wrapper. The host parent supervises; you execute only the bounded brief.
 
 ## Role
 
@@ -23,7 +23,6 @@ You are the **external implementer** spawned by an SB `AGENT-DELEGATE` native wo
 
 1. **Graphify first** — `graphify query` before Read/Grep exploration.
 2. **agentmemory** — save decisions, defects, and session evidence.
-3. **Subagents (Cursor only)** — `composer-2.5` only; never `composer-2.5-fast`.
 
 ## Bounded scope
 
@@ -67,4 +66,4 @@ The native worker verifies evidence before V-loop pass. Do not tell the user the
 | Host | Route prefix |
 |------|--------------|
 | Codex | `$sb:*` |
-| Cursor | `/sb:*` |
+| Claude | `/sb:*` |

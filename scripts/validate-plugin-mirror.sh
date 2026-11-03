@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # Validate that every generated package surface equals a fresh regeneration.
 #
-# Copies the generator inputs (skills/, templates/, scripts/, hooks/, the
-# manifests and the committed command stubs) into a scratch checkout, runs
+# Copies the generator inputs (skills/, templates/, scripts/, hooks/ and the
+# manifests) into a scratch checkout, runs
 # scripts/sync-codex-package.sh there, and compares each generated root with
 # the committed tree in both directions: a stale, missing or extra file is
 # drift. It also checks the package's symlinked entries, that the package root
 # holds nothing the sync would prune, and that no generated path uses a
 # character native Windows cannot check out, apart from the colon route
-# directories of agents/claude and host-bundles/cursor (see docs/ARCHITECTURE.md).
+# directories of agents/claude (see docs/ARCHITECTURE.md).
 #
 # Usage: bash scripts/validate-plugin-mirror.sh
 set -euo pipefail
@@ -19,15 +19,9 @@ PKG="plugins/silver-bullet"
 GENERATED=(
   agents/claude
   host-bundles/codex
-  host-bundles/cursor
-  "${PKG}/commands"
   "${PKG}/skill-source"
-  "${PKG}/cursor-skill-source"
   "${PKG}/templates"
-  "${PKG}/cursor-hooks.json"
   "${PKG}/.codex-plugin/plugin.json"
-  "${PKG}/.cursor-plugin/plugin.json"
-  hooks/cursor-hooks.json
 )
 LINKED=(AGENTS.md CHANGELOG.md CODE_OF_CONDUCT.md CONTRIBUTING.md LICENSE README.md SECURITY.md .silver-bullet.json docs hooks scripts)
 MAX_REPORT=50
@@ -40,8 +34,8 @@ mkdir -p "${scratch}/${PKG}"
 # Inputs. Package entries the sync only links get empty stand-ins.
 rsync -a --exclude='__pycache__/' --exclude='*.render.lock' \
   "${REPO_ROOT}/skills" "${REPO_ROOT}/templates" "${REPO_ROOT}/scripts" "${REPO_ROOT}/hooks" \
-  "${REPO_ROOT}/package.json" "${REPO_ROOT}/.cursor-plugin" "${scratch}/"
-rsync -a "${REPO_ROOT}/${PKG}/.codex-plugin" "${REPO_ROOT}/${PKG}/commands" "${scratch}/${PKG}/"
+  "${REPO_ROOT}/package.json" "${scratch}/"
+rsync -a "${REPO_ROOT}/${PKG}/.codex-plugin" "${scratch}/${PKG}/"
 for entry in AGENTS.md CHANGELOG.md CODE_OF_CONDUCT.md CONTRIBUTING.md LICENSE README.md SECURITY.md .silver-bullet.json; do
   : >"${scratch}/${entry}"
 done
@@ -118,9 +112,9 @@ for rel in sys.argv[2:]:
     for path in (sorted(base.rglob("*")) if base.is_dir() else []):
         parts = path.relative_to(root).parts
         for depth, part in enumerate(parts):
-            # Documented exception: the Claude and Cursor picker bundles name
-            # their top-level route directories sb:<route>.
-            if depth == 2 and parts[:2] in {("agents", "claude"), ("host-bundles", "cursor")} and route_dir.match(part):
+            # Documented exception: the Claude picker bundle names
+            # its top-level route directories sb:<route>.
+            if depth == 2 and parts[:2] == ("agents", "claude") and route_dir.match(part):
                 continue
             if bad.search(part):
                 print("/".join(parts))

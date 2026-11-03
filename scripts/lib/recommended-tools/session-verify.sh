@@ -10,7 +10,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/graphify-worktree.sh"
 
 rt_session_verify_block() {
   local project_root="${1:-}"
-  local host="${2:-cursor}"
+  local host="${2:-claude}"
   [[ -n "$project_root" && -f "${project_root}/.silver-bullet.json" ]] || return 0
   local repo_root reconciler out
   repo_root=""
@@ -61,7 +61,7 @@ rt_session_verify_block() {
       cross_hb_invalid=1
     fi
     if [[ -n "$cross_state" ]] && { [[ "$cross_state" != "ready" ]] || [[ "$cross_activation" != "full" ]] || [[ "$cross_hb_invalid" -eq 1 ]]; }; then
-      lines+=("TOOLSTACK routes: ${cross_state} (activation=${cross_activation:-none}) — run bash scripts/install-cursor.sh or /sb:doctor --fix=host")
+      lines+=("TOOLSTACK routes: ${cross_state} (activation=${cross_activation:-none}) — run /sb:doctor --fix=host")
       needs_action=1
     fi
     if printf '%s' "$out" | jq -e '.restart_required == true' >/dev/null 2>&1; then
@@ -74,7 +74,7 @@ rt_session_verify_block() {
   {
     echo "**Recommended tools — verification only (SessionStart does not repair)**"
     printf '%s\n' "${lines[@]}"
-    echo "Fix paths: /sb:init · /sb:update · bash scripts/install-cursor.sh · /sb:doctor --dry-run · /sb:doctor --fix"
+    echo "Fix paths: /sb:init · /sb:update · /sb:doctor --dry-run · /sb:doctor --fix"
     echo "Liveness: CONFIGURED ≠ LIVE until this session successfully invokes expected MCP tools."
   }
 }

@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
-# Validate host-target skill surfaces (Claude, Codex, Cursor).
+# Validate host-target skill surfaces (Claude, Codex).
 #
 # Fails when a host exposes:
 #   - user-invocable skills without sb: prefix (except lone sb)
 #   - a logical route more than once (same or different raw names)
-#   - a skill directory not named after its route (sb:<route> for Claude and
-#     Cursor, sb-<route> for Codex), or Claude/Cursor sb-* hyphen directories
-#   - Cursor bundle skills that duplicate plugin command stubs
+#   - a skill directory not named after its route (sb:<route> for Claude,
+#     sb-<route> for Codex), or Claude sb-* hyphen directories
 #
 # Usage:
 #   scripts/validate-host-skill-surface.sh [--repo-root PATH]
@@ -23,7 +22,7 @@ while [[ $# -gt 0 ]]; do
       shift 2
       ;;
     -h|--help)
-      sed -n '1,12p' "$0"
+      sed -n '1,11p' "$0"
       exit 0
       ;;
     *)
@@ -79,8 +78,8 @@ def logical_route(name: str) -> str | None:
 
 
 def expected_dir(host: str, name: str) -> str:
-    """The picker directory for an sb route: Claude and Cursor list routes by
-    their colon names, the Codex bundle uses filesystem-safe sb-<route>."""
+    """The picker directory for an sb route: Claude lists routes by
+    its colon names, the Codex bundle uses filesystem-safe sb-<route>."""
     if name == "sb" or host != "codex":
         return name
     return "sb-" + name[len("sb:") :]
@@ -92,10 +91,6 @@ HOST_SURFACES: dict[str, list[tuple[str, str]]] = {
     ],
     "codex": [
         ("host-bundles/codex", "skill"),
-    ],
-    "cursor": [
-        ("plugins/silver-bullet/commands", "command"),
-        ("host-bundles/cursor", "skill"),
     ],
 }
 
@@ -110,41 +105,6 @@ def fail(host: str, message: str) -> None:
 
 for host, surfaces in HOST_SURFACES.items():
     route_entries: dict[str, list[str]] = defaultdict(list)
-    command_routes: set[str] = set()
-
-    for rel_root, kind in surfaces:
-        if kind != "command":
-            continue
-        root = repo_root / rel_root
-        if not root.is_dir():
-            fail(host, f"missing surface root: {rel_root}")
-            continue
-        for path in sorted(root.glob("*.md")):
-            meta = parse_frontmatter(path)
-            name = meta.get("name", "").strip()
-            if not name:
-                fail(host, f"{path.relative_to(repo_root)}: missing name in frontmatter")
-                continue
-            if ":" in path.name:
-                fail(
-                    host,
-                    f"{path.relative_to(repo_root)}: command filename contains ':'; "
-                    f"use a filesystem-safe kebab-case filename",
-                )
-            stem = path.stem
-            if stem != name:
-                fail(
-                    host,
-                    f"{path.relative_to(repo_root)}: filename stem {stem!r} must match "
-                    f"kebab-case command name {name!r}",
-                )
-            if ":" in name:
-                fail(
-                    host,
-                    f"{path.relative_to(repo_root)}: command name {name!r} must be kebab-case",
-                )
-            command_routes.add(logical_route(name) or name)
-
     for rel_root, kind in surfaces:
         if kind != "skill":
             continue
@@ -161,16 +121,6 @@ for host, surfaces in HOST_SURFACES.items():
                 continue
 
             logical_name = logical_route(name) or name
-            # Only Cursor has a command surface (Codex and Claude have none).
-            if logical_name in command_routes:
-                rel = path.relative_to(repo_root)
-                fail(
-                    host,
-                    f"{rel}: command-covered route {name!r} must not ship in host-bundles/cursor "
-                    f"(slash command owns the public surface; keep instructions in cursor-skill-source/)",
-                )
-                continue
-
             if not is_user_invocable(meta):
                 continue
 
@@ -208,7 +158,7 @@ for host, surfaces in HOST_SURFACES.items():
                 f"logical route {route!r} exposed {len(entries)} times: {', '.join(entries)}",
             )
 
-for host_name, rel_bundle in (("claude", "agents/claude"), ("cursor", "host-bundles/cursor")):
+for host_name, rel_bundle in (("claude", "agents/claude"),):
     bundle_root = repo_root / rel_bundle
     if bundle_root.is_dir():
         hyphen_dirs = sorted(

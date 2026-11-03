@@ -8,7 +8,7 @@ AUDIT_DIR="$REPO_ROOT/.visual-audit/responsive-full"
 DATE_TAG="${VISUAL_QA_DATE:-$(date +%Y-%m-%d)}"
 BRANCH="$(git -C "$REPO_ROOT" branch --show-current 2>/dev/null || echo unknown)"
 DOC=".visual-audit/VISUAL-QA-PIPELINE.md"
-SDG_IMAGE="${SDG_TEST_IMAGE:-$HOME/.cursor/projects/Users-shafqat-projects-silver-bullet-repo/assets/image-36bc6f57-1985-4ccc-813a-62d0faf54b3c.png}"
+SDG_IMAGE="${SDG_TEST_IMAGE:-}"
 
 PROOF_ONLY=false
 SKIP_CAPTURE=false
@@ -164,13 +164,13 @@ else
 fi
 
 if [[ "$SKIP_VISION" != true ]]; then
-  # Cursor file_attachments path — documented; shell cannot invoke Task tool
+  # Subagent file_attachments path — documented; shell cannot invoke Task tool
   if [[ "$PROOF_ONLY" == true ]]; then
     append_step "vision-sdg-file_attachments" "SKIP" \
-      "requires Cursor Task file_attachments + gemini-3.5-flash; run manually per $DOC" \
+      "requires a Task subagent with file_attachments + gemini-3.5-flash; run manually per $DOC" \
       '{"delivery":"task-file_attachments-gemini-3.5-flash"}'
     append_step "vision-homepage-file_attachments" "SKIP" \
-      "requires Cursor Task file_attachments + gemini-3.5-flash; run manually per $DOC" \
+      "requires a Task subagent with file_attachments + gemini-3.5-flash; run manually per $DOC" \
       '{"delivery":"task-file_attachments-gemini-3.5-flash"}'
   fi
 
@@ -220,8 +220,8 @@ fi
 # ── Layer 4: Alumnium (optional) ─────────────────────────────────
 if [[ "$SKIP_ALUMNIUM" != true && "$PROOF_ONLY" == true ]]; then
   log "Layer 4 — Alumnium (documented; MCP not callable from shell)"
-  append_step "alumnium-start" "SKIP" "invoke user-alumnium start from Cursor MCP; MiniMax proxy via scripts/start-minimax-openai-proxy.sh"
-  append_step "alumnium-check-vision" "SKIP" "invoke user-alumnium check with vision:true from Cursor MCP (known MiniMax/LangChain compat issue per docs/ALUMNIUM.md)"
+  append_step "alumnium-start" "SKIP" "invoke user-alumnium start from the host MCP client; MiniMax proxy via scripts/start-minimax-openai-proxy.sh"
+  append_step "alumnium-check-vision" "SKIP" "invoke user-alumnium check with vision:true from the host MCP client (known MiniMax/LangChain compat issue per docs/ALUMNIUM.md)"
 elif [[ "$SKIP_ALUMNIUM" != true ]]; then
   log "Layer 4 — Alumnium check (requires MCP + proxy)"
   append_step "alumnium" "SKIP" "shell cannot call MCP; see $DOC Layer 4"
@@ -231,7 +231,7 @@ STEPS_JSON+="]"
 
 # ── Assemble results ─────────────────────────────────────────────
 IMAGE_FINDINGS='{
-  "file_attachments_gemini_3_5_flash": "WORKS — raw PNG reaches multimodal model (Cursor Task only)",
+  "file_attachments_gemini_3_5_flash": "WORKS — raw PNG reaches multimodal model (Task subagent only)",
   "vision_gate_api_base64": "READY — requires GEMINI_API_KEY",
   "read_tool_png": "FAILS — caption-only image_description; causes hallucination",
   "caption_only_to_subagent": "FAILS — same root cause as Read"

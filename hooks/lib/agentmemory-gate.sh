@@ -140,7 +140,6 @@ sb_agentmemory_platform_artifact_path() {
   fi
   host="${host:-$(sb_runtime_host)}"
   case "$host" in
-    cursor) printf '%s/.cursor/mcp.json' "${HOME}" ;;
     codex) printf '%s/.codex/config.toml' "${HOME}" ;;
     opencode) printf '%s/.config/opencode/opencode.json' "${HOME}" ;;
     goose) printf '%s/.config/goose/config.yaml' "${HOME}" ;;
@@ -182,8 +181,8 @@ sb_agentmemory_usage_state_path() {
     state_path="$(jq -r '.recommended_tools.agentmemory.usage_state_file // ""' "$config_file" 2>/dev/null || true)"
     state_path="${state_path/#\~/$HOME}"
     # Expand runtime placeholders (parity with leanctx-gate; #276).
-    state_path="${state_path//\$\{SB_RUNTIME_HOME_ROOT\}/${SB_RUNTIME_HOME_ROOT:-${HOME}/.cursor}}"
-    state_path="${state_path//\$\{SB_RUNTIME_STATE_DIR\}/${SB_RUNTIME_STATE_DIR:-${HOME}/.cursor/.silver-bullet}}"
+    state_path="${state_path//\$\{SB_RUNTIME_HOME_ROOT\}/${SB_RUNTIME_HOME_ROOT:-${HOME}/.claude}}"
+    state_path="${state_path//\$\{SB_RUNTIME_STATE_DIR\}/${SB_RUNTIME_STATE_DIR:-${HOME}/.claude/.silver-bullet}}"
   fi
   if [[ -z "$state_path" ]]; then
     state_path="${SB_RUNTIME_STATE_DIR:-${HOME}/.silver-bullet}/agentmemory-usage"
@@ -363,7 +362,7 @@ Expected MCP registration for host ${host} in:
 Run platform connect from the project root (host: ${host}):
 $(sb_recommended_tool_platform_install_commands "$config_file" agentmemory "$host" 2>/dev/null || true)
 
-See docs/AGENTMEMORY.md for Cursor MCP merge steps.
+See docs/AGENTMEMORY.md for MCP merge steps.
 Usage enforcement is skipped while MCP is unavailable.
 EOF
 }

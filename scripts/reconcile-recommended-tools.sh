@@ -14,7 +14,7 @@ fi
 RT_REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 RT_PROJECT_ROOT=""
-RT_HOST="cursor"
+RT_HOST="claude"
 RT_MODE="verify"
 RT_SCOPE="all"
 RT_FORMAT="text"
@@ -32,7 +32,7 @@ RTK, Context Mode, LeanCTX, Alumnium (opt-in), and cross-tool convergence.
 
 Options:
   --project-root <path>     Canonical SB project root (required for project scope)
-  --host <cursor|...>       Target host (default: cursor; five-tool hosts: claude|codex|cursor)
+  --host <claude|...>       Target host (default: claude; five-tool hosts: claude|codex)
   --mode verify|plan|apply  verify/plan are read-only; apply mutates (default: verify)
   --scope project|host|packages|all
   --format text|json
@@ -53,7 +53,7 @@ while [[ $# -gt 0 ]]; do
       if [[ $# -lt 2 ]]; then echo "ERROR: $1 requires a value" >&2; usage >&2; exit 2; fi
       case "$1" in
         --project-root) RT_PROJECT_ROOT="$2" ;;
-        --host) RT_HOST="${2:-cursor}" ;;
+        --host) RT_HOST="${2:-claude}" ;;
         --mode) RT_MODE="${2:-verify}" ;;
         --scope) RT_SCOPE="${2:-all}" ;;
         --format) RT_FORMAT="${2:-text}" ;;
@@ -80,7 +80,7 @@ export RT_PROJECT_ROOT RT_HOST RT_MODE RT_SCOPE RT_FORMAT RT_ENTRY_POINT RT_REPO
 # Reentrancy guard. Apply mode shells out to the optimizers and installers, and
 # those call back into this reconciler (installer post-install). Without a
 # marker the chain reconcile -> optimize-rtk-context-mode ->
-# install-recommended-tools-global -> install-recommended-tools-cursor ->
+# install-recommended-tools-global ->
 # reconcile loops forever. Descendants check this and skip the nested call.
 if [[ "$RT_MODE" == "apply" ]]; then
   export SB_RT_APPLY_ACTIVE=1
@@ -92,10 +92,10 @@ rt_init_paths
 
 if ! rt_validate_host "$RT_HOST"; then
   if [[ "$RT_FORMAT" == "json" ]]; then
-    jq -n --arg err "unknown host: ${RT_HOST} (allowed: cursor|claude|codex|opencode|pi|goose|hermes)" \
+    jq -n --arg err "unknown host: ${RT_HOST} (allowed: claude|codex|opencode|pi|goose|hermes)" \
       '{schema:"1.0.0",ok:false,error:$err,components:[]}'
   else
-    echo "ERROR: unknown host: ${RT_HOST} (allowed: cursor|claude|codex|opencode|pi|goose|hermes)" >&2
+    echo "ERROR: unknown host: ${RT_HOST} (allowed: claude|codex|opencode|pi|goose|hermes)" >&2
   fi
   exit 2
 fi
@@ -333,8 +333,8 @@ else
   echo "=== reconcile-recommended-tools (${RT_MODE}/${RT_SCOPE} host=${RT_HOST}) ==="
   printf '%s\n' "$result_json" | jq -r '.components[] | "\(.component): \(.canonical_state) (activation=\(.activation_status))"'
   if [[ "$RT_RESTART_REQUIRED" == true ]]; then
-    echo "RESTART_REQUIRED: yes — reload Cursor MCP after host config changes"
-    echo "CONFIGURED: yes | LIVE: no | ACTION: Tools & MCP → graphify off/on, then start a new chat; fallback Developer: Reload Window"
+    echo "RESTART_REQUIRED: yes — reload the host's MCP servers after config changes"
+    echo "CONFIGURED: yes | LIVE: no | ACTION: restart the host session so the MCP servers reload, then start a new chat"
   fi
   if [[ "$receipt_has" == "true" ]]; then
     echo "RELOAD_RECEIPT: active (activation=${receipt_activation}, clear_eligible=${receipt_clear})"

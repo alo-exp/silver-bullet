@@ -80,7 +80,7 @@ Flow numbers are stable identifiers — not always runtime order. For `sb:featur
 | `AF-VALIDATE` | gap_validation | `templates/orchestrator-workers/VALIDATE.md` | `silver-validate` |
 | `AF-PHASE-MANAGE` | phase_and_state_management | `templates/orchestrator-workers/PHASE.md` | `silver-add`, `silver-clear-stack-state`, `silver-doctor`, `silver-migrate` |
 | `AF-FAST-PATH` | bounded_fast_path | `templates/orchestrator-workers/FAST.md` | `silver-benchmark`, `silver-fast`, `silver-feature`, `silver-incident` |
-| `AF-AGENT-DELEGATE` | external_agent_delegation | `templates/orchestrator-workers/AGENT-DELEGATE.md` | `silver-agent-codex`, `silver-agent-cursor`, `silver-agent-claude` |
+| `AF-AGENT-DELEGATE` | external_agent_delegation | `templates/orchestrator-workers/AGENT-DELEGATE.md` | `silver-agent-codex`, `silver-agent-claude` |
 | `AF-MULTI-AI-TASK` | multi_model_orchestration | `templates/orchestrator-workers/MULTI-AI-TASK.md` | `silver-multi-ai-task` |
 
 ## Skill-Dispatched Worker Templates
@@ -457,19 +457,16 @@ Runtime resolution: `hooks/lib/orchestrator-parent.sh` → project copy under `.
 | `FS-AI_LLM_SAFETY` | `ai-llm-safety` | `AF-SECURE` | `EV-FS-AI_LLM_SAFETY` |
 | `FS-ARTIFACT_REVIEWER` | `artifact-reviewer` | `AF-REVIEW` | `EV-FS-ARTIFACT_REVIEWER` |
 | `FS-ARTIFACT_REVIEW_ASSESSOR` | `artifact-review-assessor` | `AF-REVIEW` | `EV-FS-ARTIFACT_REVIEW_ASSESSOR` |
-| `FS-DELEGATE-BRIEF` | `silver-agent-codex|silver-agent-cursor|silver-agent-claude` | `AF-AGENT-DELEGATE` | `EV-FS-DELEGATE-BRIEF` |
+| `FS-DELEGATE-BRIEF` | `silver-agent-codex|silver-agent-claude` | `AF-AGENT-DELEGATE` | `EV-FS-DELEGATE-BRIEF` |
 | `FS-DELEGATE-CHECKPOINT` | `distribution-only` | `AF-AGENT-DELEGATE` | `EV-FS-DELEGATE-CHECKPOINT` |
 | `FS-DELEGATE-CLAUDE-LAUNCH` | `silver-agent-claude` | `AF-AGENT-DELEGATE` | `EV-FS-DELEGATE-CLAUDE-LAUNCH` |
 | `FS-DELEGATE-CLAUDE-ROUTE` | `silver-agent-claude` | `AF-AGENT-DELEGATE` | `EV-FS-DELEGATE-CLAUDE-ROUTE` |
 | `FS-DELEGATE-CODEX-LAUNCH` | `silver-agent-codex` | `AF-AGENT-DELEGATE` | `EV-FS-DELEGATE-CODEX-LAUNCH` |
 | `FS-DELEGATE-CODEX-ROUTE` | `silver-agent-codex` | `AF-AGENT-DELEGATE` | `EV-FS-DELEGATE-CODEX-ROUTE` |
-| `FS-DELEGATE-CURSOR-LAUNCH` | `silver-agent-cursor` | `AF-AGENT-DELEGATE` | `EV-FS-DELEGATE-CURSOR-LAUNCH` |
-| `FS-DELEGATE-CURSOR-ROUTE` | `silver-agent-cursor` | `AF-AGENT-DELEGATE` | `EV-FS-DELEGATE-CURSOR-ROUTE` |
-| `FS-DELEGATE-CURSOR-SUBAGENT-POLICY` | `silver-agent-cursor` | `AF-AGENT-DELEGATE` | `EV-FS-DELEGATE-CURSOR-SUBAGENT-POLICY` |
 | `FS-DELEGATE-GUARD_OFF` | `distribution-only` | `AF-AGENT-DELEGATE` | `EV-FS-DELEGATE-GUARD_OFF` |
 | `FS-DELEGATE-GUARD_ON` | `distribution-only` | `AF-AGENT-DELEGATE` | `EV-FS-DELEGATE-GUARD_ON` |
 | `FS-DELEGATE-LAUNCH` | `silver-agent-worker` | `AF-AGENT-DELEGATE` | `EV-FS-DELEGATE-LAUNCH` |
-| `FS-DELEGATE-MENTOR` | `silver-agent-codex|silver-agent-cursor|silver-agent-claude` | `AF-AGENT-DELEGATE` | `EV-FS-DELEGATE-MENTOR` |
+| `FS-DELEGATE-MENTOR` | `silver-agent-codex|silver-agent-claude` | `AF-AGENT-DELEGATE` | `EV-FS-DELEGATE-MENTOR` |
 | `FS-DELEGATE-RELAUNCH` | `silver-agent-worker` | `AF-AGENT-DELEGATE` | `EV-FS-DELEGATE-RELAUNCH` |
 | `FS-DELEGATE-VERIFY` | `distribution-only` | `AF-AGENT-DELEGATE` | `EV-FS-DELEGATE-VERIFY` |
 | `FS-DEVOPS_QUALITY_GATES` | `devops-quality-gates` | `AF-QUALITY-GATE` | `EV-FS-DEVOPS_QUALITY_GATES` |
@@ -501,7 +498,6 @@ Runtime resolution: `hooks/lib/orchestrator-parent.sh` → project copy under `.
 | `FS-SILVER_ADD` | `silver-add` | `AF-PHASE-MANAGE` | `EV-FS-SILVER_ADD` |
 | `FS-SILVER_AGENT_CLAUDE` | `silver-agent-claude` | `AF-AGENT-DELEGATE` | `EV-FS-SILVER_AGENT_CLAUDE` |
 | `FS-SILVER_AGENT_CODEX` | `silver-agent-codex` | `AF-AGENT-DELEGATE` | `EV-FS-SILVER_AGENT_CODEX` |
-| `FS-SILVER_AGENT_CURSOR` | `silver-agent-cursor` | `AF-AGENT-DELEGATE` | `EV-FS-SILVER_AGENT_CURSOR` |
 | `FS-SILVER_AGENT_OPENCODE` | `silver-agent-opencode` | `AF-AGENT-DELEGATE` | `EV-FS-SILVER_AGENT_OPENCODE` |
 | `FS-SILVER_AGENT_PI` | `silver-agent-pi` | `AF-AGENT-DELEGATE` | `EV-FS-SILVER_AGENT_PI` |
 | `FS-SILVER_BENCHMARK` | `silver-benchmark` | `AF-FAST-PATH` | `EV-FS-SILVER_BENCHMARK` |
@@ -621,7 +617,6 @@ Runtime resolution: `hooks/lib/orchestrator-parent.sh` → project copy under `.
 | `silver-add` | `AF-PHASE-MANAGE` |
 | `silver-agent-claude` | `AF-AGENT-DELEGATE` |
 | `silver-agent-codex` | `AF-AGENT-DELEGATE` |
-| `silver-agent-cursor` | `AF-AGENT-DELEGATE` |
 | `silver-agent-opencode` | `AF-AGENT-DELEGATE` |
 | `silver-agent-pi` | `AF-AGENT-DELEGATE` |
 | `silver-agent-worker` | `AF-AGENT-DELEGATE` |

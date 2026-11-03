@@ -52,7 +52,7 @@ agent_mode_reset
 agent_mode_reason_ok() {
   local r="$1"
   case "$r" in
-    tui-unavailable|mode-unavailable|incomplete|result-missing|escalate-unavailable|escalated|d3-process-alive|d3-continue|d3-in-wave-cursor|classifier-interactive|classifier-ni|pin)
+    tui-unavailable|mode-unavailable|incomplete|result-missing|escalate-unavailable|escalated|d3-process-alive|d3-continue|classifier-interactive|classifier-ni|pin)
       return 0 ;;
     fallback_drop:attach|fallback_drop:control-dir|fallback_drop:max-turns|fallback_drop:auto-policy)
       return 0 ;;
@@ -513,14 +513,13 @@ agent_mode_d4_eligible_from_state() {
   return 0
 }
 
-# Sets SB_AM_D3_SIGNAL to process-alive | continue | in-wave-cursor | ""
+# Sets SB_AM_D3_SIGNAL to process-alive | continue | ""
 agent_mode_detect_d3() {
   local task_dir="$1" host="$2" utterance="${3:-}"
   SB_AM_D3_SIGNAL=""
   local session="${task_dir}/session.json"
   [[ -f "$session" ]] || return 1
-  local status conv pid started updated
-  status="$(agent_mode_read_json_field "$session" "status")"
+  local conv pid started updated
   conv="$(agent_mode_read_json_field "$session" "conversation_id")"
   pid="$(agent_mode_read_json_field "$session" "pid")"
   started="$(agent_mode_read_json_field "$session" "pid_started_at")"
@@ -544,11 +543,6 @@ agent_mode_detect_d3() {
   fi
 
   [[ "$ttl_ok" -eq 1 ]] || return 1
-
-  if [[ "$host" == "cursor" && -n "$conv" && "$status" == "live" ]]; then
-    SB_AM_D3_SIGNAL="in-wave-cursor"
-    return 0
-  fi
 
   local ut
   ut="$(printf '%s' "$utterance" | tr '[:upper:]' '[:lower:]')"
@@ -603,7 +597,6 @@ agent_mode_classify_task() {
     case "$SB_AM_D3_SIGNAL" in
       process-alive) agent_mode_reason_append "d3-process-alive" ;;
       continue) agent_mode_reason_append "d3-continue" ;;
-      in-wave-cursor) agent_mode_reason_append "d3-in-wave-cursor" ;;
     esac
     return 0
   fi
@@ -656,11 +649,6 @@ agent_mode_tui_available() {
     opencode)
       command -v opencode >/dev/null 2>&1 || return 1
       return 0
-      ;;
-    cursor)
-      command -v cursor-agent >/dev/null 2>&1 && return 0
-      command -v agent >/dev/null 2>&1 && return 0
-      return 1
       ;;
     pi)
       agent_mode_pi_tui_probe
@@ -769,7 +757,6 @@ agent_mode_resolve_mode() {
     case "$SB_AM_D3_SIGNAL" in
       process-alive) agent_mode_reason_append "d3-process-alive" ;;
       continue) agent_mode_reason_append "d3-continue" ;;
-      in-wave-cursor) agent_mode_reason_append "d3-in-wave-cursor" ;;
     esac
     agent_mode_apply_tui_gate "$host" "interactive" 1 0
     return $?
@@ -926,15 +913,6 @@ agent_mode_apply_host_launch_env() {
         export PI_USE_INTERACTIVE=1
       else
         export PI_USE_INTERACTIVE=0
-      fi
-      ;;
-    cursor)
-      if [[ "$SB_AM_RESOLVED" == "interactive" ]]; then
-        export SB_AGENT_CURSOR_SESSION=1
-        export SB_LIVE_CURSOR_FORCE_HEADLESS=0
-      else
-        export SB_AGENT_CURSOR_SESSION=0
-        export SB_LIVE_CURSOR_FORCE_HEADLESS=1
       fi
       ;;
   esac

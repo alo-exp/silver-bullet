@@ -127,7 +127,7 @@ sb_orchestrator_worker_template_for_skill() {
     silver-validate) printf 'VALIDATE' ;;
     silver-fast) printf 'FAST' ;;
     silver|silver-orchestrator) printf 'ROUTER' ;;
-    silver-agent-codex|silver-agent-cursor|silver-agent-claude|silver-agent-opencode|silver-agent-pi) printf 'AGENT-DELEGATE' ;;
+    silver-agent-codex|silver-agent-claude|silver-agent-opencode|silver-agent-pi) printf 'AGENT-DELEGATE' ;;
     *)
       if [[ "$skill" == silver-* ]]; then
         printf '%s' "$(printf '%s' "${skill#silver-}" | tr '[:lower:]' '[:upper:]')"
@@ -246,7 +246,7 @@ sb_orchestrator_worker_allows_bash() {
 
 # Host-native delegation tool label for parent context and guard messages.
 sb_orchestrator_spawn_tool_label() {
-  case "${SILVER_BULLET_RUNTIME:-cursor}" in
+  case "${SILVER_BULLET_RUNTIME:-claude}" in
     codex) printf '%s' 'spawn_agent (multi_agent_v1.spawn_agent)' ;;
     claude) printf '%s' 'Agent (Claude subagent)' ;;
     *) printf '%s' 'Task worker' ;;
@@ -337,7 +337,7 @@ sb_orchestrator_parent_delegate_bash_allowed() {
   local command_str="$1"
   [[ -n "$command_str" ]] || return 1
 
-  if ! grep -qE '(^|[[:space:]/])(\./)?scripts/agent-(codex|cursor|claude|opencode|pi)-delegate\.sh([[:space:]]|$)|(^|[[:space:]/])(\./)?scripts/agent-codex/invoke\.sh([[:space:]]|$)|(^|[[:space:]/])(\./)?scripts/agent-claude/invoke\.sh([[:space:]]|$)|(^|[[:space:]/])(\./)?scripts/agent-opencode/invoke\.sh([[:space:]]|$)|(^|[[:space:]/])(\./)?scripts/agent-pi/invoke\.sh([[:space:]]|$)' <<<"$command_str"; then
+  if ! grep -qE '(^|[[:space:]/])(\./)?scripts/agent-(codex|claude|opencode|pi)-delegate\.sh([[:space:]]|$)|(^|[[:space:]/])(\./)?scripts/agent-codex/invoke\.sh([[:space:]]|$)|(^|[[:space:]/])(\./)?scripts/agent-claude/invoke\.sh([[:space:]]|$)|(^|[[:space:]/])(\./)?scripts/agent-opencode/invoke\.sh([[:space:]]|$)|(^|[[:space:]/])(\./)?scripts/agent-pi/invoke\.sh([[:space:]]|$)' <<<"$command_str"; then
     return 1
   fi
 
@@ -407,7 +407,7 @@ sb_orchestrator_parent_skill_allowed() {
     esac
   fi
   case "$canonical" in
-    silver|silver-orchestrator|silver-agent-codex|silver-agent-cursor|silver-agent-claude|silver-agent-opencode|silver-agent-pi) return 0 ;;
+    silver|silver-orchestrator|silver-agent-codex|silver-agent-claude|silver-agent-opencode|silver-agent-pi) return 0 ;;
     *) return 1 ;;
   esac
 }

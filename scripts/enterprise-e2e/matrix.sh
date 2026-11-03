@@ -30,10 +30,6 @@ if [[ "$MATRIX_HOST" == "codex" ]]; then
   export CODEX_AUTO_TRUST_HOOKS=1
   export CODEX_BYPASS_HOOK_TRUST=1
 fi
-if [[ "$MATRIX_HOST" == "cursor" ]]; then
-  unset CURSOR_CONVERSATION_ID CURSOR_AGENT VSCODE_IPC_HOOK AGENT_CLI_CREDENTIAL_STORE 2>/dev/null || true
-  export SB_LIVE_CURSOR_FORCE_HEADLESS=1
-fi
 if [[ "$MATRIX_HOST" == "claude" ]]; then
   export CLAUDE_USE_INTERACTIVE=1
 fi
@@ -48,17 +44,7 @@ if [[ "${SB_E2E_MATRIX_CLEAN_ENV}" == "1" ]]; then
 fi
 export CLAUDE_MODEL="${CLAUDE_MODEL:-haiku}"
 export CLAUDE_PERMISSION_MODE="${CLAUDE_PERMISSION_MODE:-bypassPermissions}"
-# E2E-087/E2E-092: cursor rows exceed 15m; never inherit legacy 900s from shell/tmux.
-if [[ "$MATRIX_HOST" == "cursor" ]]; then
-  if [[ -z "${CLAUDE_INTERACTIVE_TIMEOUT:-}" || "${CLAUDE_INTERACTIVE_TIMEOUT}" -lt 1800 ]]; then
-    export CLAUDE_INTERACTIVE_TIMEOUT=1800
-  fi
-  if [[ -z "${CURSOR_AGENT_TIMEOUT:-}" || "${CURSOR_AGENT_TIMEOUT}" -lt 1800 ]]; then
-    export CURSOR_AGENT_TIMEOUT="$CLAUDE_INTERACTIVE_TIMEOUT"
-  fi
-else
-  export CLAUDE_INTERACTIVE_TIMEOUT="${CLAUDE_INTERACTIVE_TIMEOUT:-900}"
-fi
+export CLAUDE_INTERACTIVE_TIMEOUT="${CLAUDE_INTERACTIVE_TIMEOUT:-900}"
 export CLAUDE_INTERACTIVE_QUIET_TIMEOUT="${CLAUDE_INTERACTIVE_QUIET_TIMEOUT:-300}"
 export CLAUDE_INTERACTIVE_READY_DELAY_MS="${CLAUDE_INTERACTIVE_READY_DELAY_MS:-3000}"
 export CLAUDE_INTERACTIVE_READY_TIMEOUT="${CLAUDE_INTERACTIVE_READY_TIMEOUT:-60}"
@@ -139,7 +125,7 @@ Fixture: ${FIXTURE_DIR}
 Ledger:  ${LEDGER_FILE}
 
 Environment:
-  SB_E2E_LIVE_RUNTIME / SILVER_BULLET_RUNTIME   claude (default) | codex | cursor
+  SB_E2E_LIVE_RUNTIME / SILVER_BULLET_RUNTIME   claude (default) | codex
   SB_E2E_MATRIX_LOG / SB_E2E_MATRIX_BATCH_PID_FILE / SB_E2E_LIVE_TEST_LOCK_FILE  host-isolated defaults
   SB_E2E_MATRIX_DRY_RUN=1     Verify evidence only, skip Claude sessions
   SB_E2E_MATRIX_FORCE=1        Re-run rows even when evidence exists (not install-version pass)
@@ -577,7 +563,6 @@ run_matrix_row() {
     output="$(
       CLAUDE_INTERACTIVE_QUIET_TIMEOUT="$quiet_timeout" \
         CLAUDE_INTERACTIVE_TIMEOUT="$agent_timeout" \
-        CURSOR_AGENT_TIMEOUT="$agent_timeout" \
         CLAUDE_INTERACTIVE_LOG_FILE="$row_log" \
         SB_E2E_MATRIX_EVIDENCE_PATH="$evidence_path" \
         SB_E2E_ENTERPRISE_MATRIX=1 \
@@ -590,7 +575,6 @@ run_matrix_row() {
       printf '%s\n' "$output" >>"$row_log"
       printf '%s\n' "$output" | tail -20
     fi
-    enterprise_e2e_matrix_finalize_attempt_log "$row_log" "$row_num" "$WORK_DIR" "$evidence_path" "$graphify_ref"
 
     if verify_row_success "$row_num" "$evidence_path" "$output" "$row_log"; then
       if [[ "$row_num" == "1" ]] && ! verify_row_evidence "$evidence_path"; then

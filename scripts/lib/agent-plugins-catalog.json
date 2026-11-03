@@ -5,11 +5,6 @@
       "name": "silver-bullet",
       "repo": "alo-exp/silver-bullet",
       "path": "plugins/silver-bullet",
-      "cursor": {
-        "version": "0.53.0",
-        "ref": "main",
-        "license": "BUSL-1.1"
-      },
       "claude": {
         "version": "0.53.0",
         "license": "BUSL-1.1",
@@ -25,11 +20,6 @@
     {
       "name": "sidekick",
       "repo": "alo-exp/sidekick",
-      "cursor": {
-        "version": "0.8.4",
-        "ref": "main",
-        "license": "MIT"
-      },
       "claude": {
         "version": "0.8.4",
         "license": "MIT",

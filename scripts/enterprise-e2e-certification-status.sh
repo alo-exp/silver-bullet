@@ -156,7 +156,7 @@ product_audit_status() {
   printf '%s\n' "unknown"
 }
 
-# Legacy ledgers (e.g. Cursor-3 REAL) may lack graphify/agentmemory matrix columns.
+# Legacy ledgers may lack graphify/agentmemory matrix columns.
 ledger_narrative_matrix_complete() {
   local ledger="$1"
   grep -qiE 'Full matrix 22/22.*\*\*PASS\*\*|Matrix 22/22 live.*\*\*PASS\*\*|22/22 strict-clean' "$ledger" 2>/dev/null
@@ -174,7 +174,7 @@ ledger_narrative_reconcile_complete() {
 }
 
 HOST_JSON_PARTS=()
-for host in cursor codex claude; do
+for host in codex claude; do
   ledger_rel="$(jq -r --arg h "$host" '.hosts[$h].canonical_ledger // empty' "$SOURCES")"
   gates_rel="$(jq -r --arg h "$host" '.hosts[$h].canonical_gates // empty' "$SOURCES")"
   audit_rel="$(jq -r --arg h "$host" '.hosts[$h].product_audit // empty' "$SOURCES")"

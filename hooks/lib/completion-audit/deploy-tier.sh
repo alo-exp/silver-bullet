@@ -42,8 +42,6 @@ if grep -qE '\bgh release create\b' <<<"$cmd_first_line"; then
       :
     elif [[ "$release_matrix_value" == 'matrix=codex-only' && "$e2e_matrix_value" == 'matrix=codex-only' && "$inline_matrix_value" == 'matrix=inline-full-surface' ]]; then
       :
-    elif [[ "$release_matrix_value" == 'matrix=cursor-smoke' && "$e2e_matrix_value" == 'matrix=codex-only' && "$inline_matrix_value" == 'matrix=inline-full-surface' ]]; then
-      :
     else
       emit_block "$(printf '🛑 RELEASE BLOCKED — The plugin-runtime release matrix has not completed for this release session.\n\nThis gate is enabled for SB plugin releases. Run bash scripts/run-release-live-matrix.sh and tests/e2e-live/run-e2e-live-tests.sh in the standard Claude direct-OAuth configuration (or Kay/OpenCode Go/DeepSeek V4 Flash low when isolated Codex-compatible runs are required), ensure the enterprise-grade-test-app journey records matrix=inline-full-surface in the host runtime inline-e2e-matrix (or complete the Claude supervised enterprise-e2e-matrix per .planning/enterprise-e2e/CLAUDE-TUI-PROTOCOL.md), then retry. A full Claude/Codex matrix is still accepted when explicitly run, but it is no longer required for the release gate.' )"
       exit 0
@@ -98,7 +96,7 @@ if grep -qE '\bgh release create\b' <<<"$cmd_first_line"; then
       source "$_rc_iso"
     fi
     if ! declare -F sb_smoke_rc_markers_complete >/dev/null 2>&1 || ! sb_smoke_rc_markers_complete 2>/dev/null; then
-      emit_block "$(printf '🛑 RELEASE BLOCKED — RC validation matrix incomplete.\n\nRun bash scripts/run-rc-validation-matrix.sh locally on your dev machine (cursor/codex/claude × fresh/upgrade with host CLIs + your API keys). CI rc-validation.yml is diagnostic only — it does not satisfy this gate.\nEnsure six operator-local rc-validation markers exist under %s/rc-validation/.\nBypass (audited only): SB_SKIP_RC_MATRIX=1\nSee docs/testing/RC-VALIDATION-MATRIX.md.' "${SB_RUNTIME_STATE_DIR:-${HOME}/.silver-bullet}")"
+      emit_block "$(printf '🛑 RELEASE BLOCKED — RC validation matrix incomplete.\n\nRun bash scripts/run-rc-validation-matrix.sh locally on your dev machine (codex/claude × fresh/upgrade with host CLIs + your API keys). CI rc-validation.yml is diagnostic only — it does not satisfy this gate.\nEnsure four operator-local rc-validation markers exist under %s/rc-validation/.\nBypass (audited only): SB_SKIP_RC_MATRIX=1\nSee docs/testing/RC-VALIDATION-MATRIX.md.' "${SB_RUNTIME_STATE_DIR:-${HOME}/.silver-bullet}")"
       exit 0
     fi
   fi

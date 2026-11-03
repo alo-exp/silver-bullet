@@ -37,8 +37,8 @@ rt_config_hash_file() {
 
 rt_current_config_hashes() {
   local mcp hooks
-  mcp="$(rt_config_hash_file "${HOME}/.cursor/mcp.json")"
-  hooks="$(rt_config_hash_file "${HOME}/.cursor/hooks.json")"
+  mcp="$(rt_config_hash_file "${HOME}/.claude.json")"
+  hooks="$(rt_config_hash_file "${HOME}/.claude/settings.json")"
   jq -n --arg mcp "$mcp" --arg hooks "$hooks" '{mcp:$mcp,hooks:$hooks}'
 }
 
@@ -88,7 +88,7 @@ rt_receipt_expected_tools_json() {
 }
 
 rt_receipt_list_paths() {
-  local host="${1:-cursor}" project_id="${2:-}" worktree_id="${3:-}" scope="${4:-project}"
+  local host="${1:-claude}" project_id="${2:-}" worktree_id="${3:-}" scope="${4:-project}"
   local dir
   dir="$(rt_reload_receipt_scope_dir "$host" "$project_id" "$worktree_id" "$scope" 2>/dev/null)"
   [[ -d "$dir" ]] || return 0
@@ -111,7 +111,7 @@ rt_receipt_identity_matches() {
 }
 
 rt_receipt_find_active() {
-  local host="${1:-cursor}" project_id="${2:-}" worktree_id="${3:-}" scope="${4:-project}"
+  local host="${1:-claude}" project_id="${2:-}" worktree_id="${3:-}" scope="${4:-project}"
   local path receipt newest="" newest_ts=""
   while IFS= read -r path; do
     receipt="$(rt_receipt_read "$path" 2>/dev/null || true)"
@@ -156,7 +156,7 @@ rt_receipt_create() {
   [[ "$restart" == "true" || "$restart" == "1" ]] || return 0
 
   local host project_id worktree_id receipt_id nonce change_set_id pre post expected action path lock_dir payload
-  host="${RT_HOST:-cursor}"
+  host="${RT_HOST:-claude}"
   project_id="$(rt_project_id)"
   worktree_id="$(rt_worktree_id "${RT_PROJECT_ROOT:-}")"
   receipt_id="$(rt_receipt_random_id)"
@@ -385,7 +385,7 @@ rt_attestation_validate() {
 }
 
 rt_receipt_find_by_id() {
-  local host="${1:-cursor}" receipt_id="${2:-}" scope="${3:-project}"
+  local host="${1:-claude}" receipt_id="${2:-}" scope="${3:-project}"
   local project_id="${4:-}" worktree_id="${5:-}"
   [[ -n "$receipt_id" ]] || return 1
   local path receipt
@@ -413,7 +413,7 @@ rt_receipt_consume_host_evidence() {
   local rid scope host pid wid receipt attestation_eval
   rid="$(jq -r '.receipt_id // ""' <<<"$attestation")"
   scope="$(jq -r '.scope // "project"' <<<"$attestation")"
-  host="$(jq -r '.host // "cursor"' <<<"$attestation")"
+  host="$(jq -r '.host // "claude"' <<<"$attestation")"
   pid="$(jq -r '.project_id // ""' <<<"$attestation")"
   wid="$(jq -r '.worktree_id // ""' <<<"$attestation")"
   [[ -n "$rid" ]] || return 1
@@ -434,7 +434,7 @@ rt_receipt_consume_host_evidence() {
 rt_receipt_clear() {
   local receipt_json="${1:-}"
   local host project_id worktree_id scope receipt_id path lock_dir
-  host="$(jq -r '.identities.host // "cursor"' <<<"$receipt_json")"
+  host="$(jq -r '.identities.host // "claude"' <<<"$receipt_json")"
   project_id="$(jq -r '.identities.project_id // ""' <<<"$receipt_json")"
   worktree_id="$(jq -r '.identities.worktree_id // ""' <<<"$receipt_json")"
   scope="$(jq -r '.scope // "project"' <<<"$receipt_json")"
@@ -449,7 +449,7 @@ rt_receipt_clear() {
 
 rt_reconcile_receipt_state() {
   local host project_id worktree_id receipt attestation_eval activation clear_eligible
-  host="${RT_HOST:-cursor}"
+  host="${RT_HOST:-claude}"
   project_id="$(rt_project_id)"
   worktree_id="$(rt_worktree_id "${RT_PROJECT_ROOT:-}")"
 
@@ -475,7 +475,7 @@ rt_reconcile_receipt_state() {
     local rid scope att_pid att_wid att_host
     rid="$(jq -r '.receipt_id // ""' <<<"$RT_HOST_EVIDENCE_JSON")"
     scope="$(jq -r '.scope // "project"' <<<"$RT_HOST_EVIDENCE_JSON")"
-    att_host="$(jq -r '.host // "cursor"' <<<"$RT_HOST_EVIDENCE_JSON")"
+    att_host="$(jq -r '.host // "claude"' <<<"$RT_HOST_EVIDENCE_JSON")"
     att_pid="$(jq -r '.project_id // ""' <<<"$RT_HOST_EVIDENCE_JSON")"
     att_wid="$(jq -r '.worktree_id // ""' <<<"$RT_HOST_EVIDENCE_JSON")"
     if [[ -n "$rid" ]]; then
@@ -599,12 +599,10 @@ rt_apply_host_convergence_batches() {
 }
 
 rt_apply_host_hooks_batch() {
-  local repo="${RT_REPO_ROOT:-}" actions=() failures=() changed=0 patch_any=0
-  local hooks_pre hooks_post patch_out
+  local repo="${RT_REPO_ROOT:-}" actions=() failures=() changed=0
   # Claude and Codex own their hook formats and lifecycle; their installers
-  # wire RTK/Context Mode directly. Never invoke the Cursor JSON patcher for a
-  # different host, because that silently creates a foreign-host config.
-  if [[ "${RT_HOST:-cursor}" == "opencode" ]]; then
+  # wire RTK/Context Mode directly.
+  if [[ "${RT_HOST:-claude}" == "opencode" ]]; then
     local merge_py="${repo}/scripts/lib/merge-token-compression-config.py"
     local errors=() merge_err_file merge_err_line
     if [[ -f "$merge_py" ]]; then
@@ -639,7 +637,7 @@ rt_apply_host_hooks_batch() {
       '{actions:$actions,failures:$failures,changed:$changed} + (if ($errors | length) > 0 then {errors:$errors} else {} end)'
     return 0
   fi
-  if [[ "${RT_HOST:-cursor}" == "pi" ]]; then
+  if [[ "${RT_HOST:-claude}" == "pi" ]]; then
     local pi_installer="${repo}/scripts/lib/global-toolstack/install-pi.py"
     local -a pi_args=(python3 "$pi_installer" --repo-root "$repo")
     if rt_mutation_allowed rtk; then pi_args+=(--enable-tool rtk); fi
@@ -659,65 +657,6 @@ rt_apply_host_hooks_batch() {
       '{actions:$actions,failures:$failures,changed:$changed}'
     return 0
   fi
-  if [[ "${RT_HOST:-cursor}" != "cursor" ]]; then
-    jq -n \
-      --argjson actions '[]' --argjson failures '[]' --argjson changed false \
-      '{actions:$actions,failures:$failures,changed:$changed}'
-    return 0
-  fi
-  [[ -f "${repo}/scripts/lib/global-toolstack/patch-hooks.py" ]] || {
-    jq -n \
-      --argjson actions '[]' --argjson failures '[]' --argjson changed false \
-      '{actions:$actions,failures:$failures,changed:$changed}'
-    return 0
-  }
-  export TOOLSTACK_REPO_ROOT="$repo"
-  if rt_mutation_allowed graphify; then
-    export RT_PATCH_GRAPHIFY=1
-    patch_any=1
-  else
-    export RT_PATCH_GRAPHIFY=0
-  fi
-  if rt_mutation_allowed agentmemory; then
-    export RT_PATCH_AGENTMEMORY=1
-    patch_any=1
-  else
-    export RT_PATCH_AGENTMEMORY=0
-  fi
-  if rt_mutation_allowed context_mode; then
-    export RT_PATCH_CONTEXT_MODE=1
-    patch_any=1
-  else
-    export RT_PATCH_CONTEXT_MODE=0
-  fi
-  if rt_mutation_allowed rtk; then
-    export RT_PATCH_RTK=1
-    patch_any=1
-  else
-    export RT_PATCH_RTK=0
-  fi
-  if rt_mutation_allowed leanctx; then
-    export RT_PATCH_LEANCTX=1
-    patch_any=1
-  else
-    export RT_PATCH_LEANCTX=0
-  fi
-  if [[ $patch_any -eq 1 ]]; then
-    hooks_pre="$(rt_config_hash_file "${HOME}/.cursor/hooks.json")"
-    patch_out="$(python3 "${repo}/scripts/lib/global-toolstack/patch-hooks.py" 2>&1)" || {
-      failures+=("patch_hooks_failed")
-      patch_out=""
-    }
-    if [[ -n "$patch_out" ]]; then
-      hooks_post="$(rt_config_hash_file "${HOME}/.cursor/hooks.json")"
-      if ! rt_patcher_output_unchanged "$patch_out" \
-         && rt_config_hash_changed "$hooks_pre" "$hooks_post"; then
-        actions+=("patch_hooks")
-        changed=1
-      fi
-    fi
-  fi
-  unset RT_PATCH_GRAPHIFY RT_PATCH_AGENTMEMORY RT_PATCH_RTK RT_PATCH_CONTEXT_MODE RT_PATCH_LEANCTX
   jq -n \
     --argjson actions "$(rt_json_string_array ${actions[@]+"${actions[@]}"})" \
     --argjson failures "$(rt_json_string_array ${failures[@]+"${failures[@]}"})" \
@@ -757,9 +696,9 @@ rt_apply_host_mcp_batch() {
   fi
   if [[ "${RT_PATCH_GRAPHIFY:-0}" == "1" || "${RT_PATCH_LEANCTX:-0}" == "1" || "${RT_PATCH_AGENTMEMORY:-0}" == "1" || "${RT_PATCH_CONTEXT_MODE:-0}" == "1" ]]; then
     local mcp_path
-    mcp_path="$(rt_host_mcp_config_path "${RT_HOST:-cursor}")"
+    mcp_path="$(rt_host_mcp_config_path "${RT_HOST:-claude}")"
     mcp_pre="$(rt_config_hash_file "$mcp_path")"
-    patch_out="$(RT_HOST="${RT_HOST:-cursor}" python3 "${repo}/scripts/lib/global-toolstack/patch-mcp.py" 2>&1)" || {
+    patch_out="$(RT_HOST="${RT_HOST:-claude}" python3 "${repo}/scripts/lib/global-toolstack/patch-mcp.py" 2>&1)" || {
       failures+=("patch_mcp_failed")
       patch_out=""
     }

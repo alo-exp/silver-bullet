@@ -152,10 +152,3 @@ sb_agent_delegation_path_in_scope() {
   fi
   return 1
 }
-
-sb_agent_delegation_parent_host_tier() {
-  case "${SILVER_BULLET_RUNTIME:-claude}" in
-    cursor) printf 'advise' ;;
-    *) printf 'block' ;;
-  esac
-}

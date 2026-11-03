@@ -9,6 +9,5 @@ active `SILVER_BULLET_RUNTIME` via the host installer.
 |-------|-----------|
 | `claude.md` | `scripts/install-claude.sh` |
 | `codex.md` | `scripts/install-codex.sh` |
-| `cursor.md` | `scripts/install-cursor.sh` |
 
 Detect runtime: `bash scripts/sb-doctor.sh` or `SILVER_BULLET_RUNTIME` in the shell.

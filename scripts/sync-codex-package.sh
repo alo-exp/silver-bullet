@@ -1,14 +1,10 @@
 #!/usr/bin/env bash
 # Regenerate every derived package surface from its source:
-#   plugins/silver-bullet/commands/            Cursor slash-command stubs (generate-plugin-commands.sh)
-#   agents/claude/, host-bundles/{codex,cursor}/  host picker bundles of skills/
+#   agents/claude/, host-bundles/codex/        host picker bundles of skills/
 #   plugins/silver-bullet/skill-source/        Codex hidden skill sources (Codex render)
-#   plugins/silver-bullet/cursor-skill-source/ Cursor hidden skill sources (Cursor render)
 #   plugins/silver-bullet/templates/           byte-identical, host-neutral copy of templates/
-#   plugins/silver-bullet/{.cursor-plugin,cursor-hooks.json}  (sync-cursor-package.sh)
-# plugins/silver-bullet is shared by the Codex package and the Cursor plugin, so
-# nothing in it is rewritten for one host after rendering: each host reads its
-# own render, and the Codex installer applies its install-time sanitizer to
+# plugins/silver-bullet is the Codex package, so nothing in it is rewritten
+# after rendering: the Codex installer applies its install-time sanitizer to
 # the copy it installs. `bash scripts/validate-plugin-mirror.sh` checks that the
 # committed surfaces equal a fresh run of this script.
 set -euo pipefail
@@ -21,7 +17,7 @@ DEST_DIR="${REPO_ROOT}/plugins/silver-bullet"
 AGENT_RENDERER="${SCRIPT_DIR}/render-agent-bundle.py"
 
 # Preflight before anything destructive. This script prunes tracked trees
-# (agents/{codex,cursor}, plugins/silver-bullet/templates) and repopulates them
+# (agents/codex, plugins/silver-bullet/templates) and repopulates them
 # with rsync. Discovering rsync is missing at that point leaves the checkout
 # with the deletions applied and nothing copied back.
 for _req in rsync python3; do
@@ -103,23 +99,20 @@ mv "$tmp" "$DEST_DIR/.codex-plugin/plugin.json"
 # mktemp creates 0600; keep the tracked manifest readable like the rest of the package.
 chmod 644 "$DEST_DIR/.codex-plugin/plugin.json"
 
-# The Cursor picker bundle leaves out command-covered routes, so the stubs come first.
-bash "${SCRIPT_DIR}/generate-plugin-commands.sh" >/dev/null
-
 mkdir -p "${REPO_ROOT}/agents" "${REPO_ROOT}/host-bundles"
-for host in claude codex cursor; do
+for host in claude codex; do
   python3 "$AGENT_RENDERER" render --agent "$host" --source-root "${REPO_ROOT}/skills" \
     --dest-root "$(sb_agent_bundle_root "$REPO_ROOT" "$host")"
 done
 
-# Legacy render paths under agents/{codex,cursor} must not remain in the checkout.
-rm -rf "${REPO_ROOT}/agents/codex" "${REPO_ROOT}/agents/cursor"
+# The legacy render path agents/codex must not remain in the checkout.
+rm -rf "${REPO_ROOT}/agents/codex"
 
 shopt -s dotglob nullglob
 for entry in "${DEST_DIR}"/*; do
   base="$(basename "$entry")"
   case "$base" in
-    .codex-plugin|.cursor-plugin|commands|skill-source|cursor-skill-source|cursor-hooks.json|templates)
+    .codex-plugin|skill-source|templates)
       continue
       ;;
   esac
@@ -171,14 +164,5 @@ render_hidden_source() {
   mv "${stage}/${name}" "${DEST_DIR}/${name}"
 }
 render_hidden_source codex skill-source
-render_hidden_source cursor cursor-skill-source
-
-cursor_package_sync_script="${SCRIPT_DIR}/sync-cursor-package.sh"
-if [[ -f "$cursor_package_sync_script" ]]; then
-  bash "$cursor_package_sync_script"
-else
-  printf 'ERROR: Cursor package sync script not found: %s\n' "$cursor_package_sync_script" >&2
-  exit 1
-fi
 
 log "Codex package synchronized"

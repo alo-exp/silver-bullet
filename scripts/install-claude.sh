@@ -337,10 +337,8 @@ sync_silver_bullet_hook_cache() {
 prune_claude_cross_host_agent_surfaces() {
   local plugin_root="$1"
   [[ -n "$plugin_root" && -d "$plugin_root" ]] || return 0
-  rm -rf \
-    "${plugin_root}/agents/codex" \
-    "${plugin_root}/agents/cursor"
-  # host-bundles/ is canonical Codex/Cursor source in the dev repo — prune only from live plugin cache.
+  rm -rf "${plugin_root}/agents/codex"
+  # host-bundles/ is canonical Codex source in the dev repo — prune only from live plugin cache.
   if [[ "$(cd "$plugin_root" && pwd -P)" != "$(cd "$REPO_ROOT" && pwd -P)" ]]; then
     rm -rf "${plugin_root}/host-bundles"
   fi

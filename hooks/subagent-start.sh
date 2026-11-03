@@ -2,7 +2,7 @@
 set -euo pipefail
 trap 'exit 0' ERR
 
-# SubagentStart (Cursor) / SessionStart worker branch — inject worker banner + tool requirements.
+# SubagentStart / SessionStart worker branch — inject worker banner + tool requirements.
 umask 0077
 
 _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""

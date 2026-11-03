@@ -22,7 +22,7 @@ tool_name="$(sb_tool_name "$input" 2>/dev/null || printf '%s' "$input" | jq -r '
 case "$tool_name" in
   Bash|Shell|shell|exec_command) ;;
   CallMcpTool|MCP) ;;
-  # Claude/Cursor may surface MCP tools as mcp__<server>__<tool>
+  # Claude may surface MCP tools as mcp__<server>__<tool>
   mcp__*agentmemory*) ;;
   memory_smart_search|memory_recall|memory_search|memory_save|smart_search) ;;
   *) exit 0 ;;

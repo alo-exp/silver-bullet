@@ -288,7 +288,6 @@ def agent_delegation_contract(catalog: dict) -> list[tuple[str, str, str]]:
         check("WF-AGENT-DELEGATE-ENTRY references delegation AF", "WF-AGENT-DELEGATE-ENTRY" in workflows, ""),
         check("silver-agent-worker maps to AF-AGENT-DELEGATE", skill_map.get("silver-agent-worker") == "AF-AGENT-DELEGATE", ""),
         check("silver-agent-codex maps to AF-AGENT-DELEGATE", skill_map.get("silver-agent-codex") == "AF-AGENT-DELEGATE", ""),
-        check("silver-agent-cursor maps to AF-AGENT-DELEGATE", skill_map.get("silver-agent-cursor") == "AF-AGENT-DELEGATE", ""),
         check("silver-agent-claude maps to AF-AGENT-DELEGATE", skill_map.get("silver-agent-claude") == "AF-AGENT-DELEGATE", ""),
         check("ART-AGENT-DELEGATE registered", "ART-AGENT-DELEGATE" in artifacts, ""),
         check("core FS-DELEGATE steps present", {"FS-DELEGATE-BRIEF", "FS-DELEGATE-LAUNCH", "FS-DELEGATE-VERIFY"} <= steps, ""),

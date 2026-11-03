@@ -512,7 +512,7 @@ After Phase 1.1a–§1.1g consent is gathered, **delegate all install/verify/rep
 **Persist consent atomically** — write all five `enabled_by_user` values to `.silver-bullet.json` in one jq transaction before apply (fresh: Phase 3.4; update: immediate after consent).
 
 ```bash
-SB_HOST="${SILVER_BULLET_RUNTIME:-cursor}"
+SB_HOST="${SILVER_BULLET_RUNTIME:-claude}"
 RECONCILE="${PLUGIN_ROOT}/scripts/reconcile-recommended-tools.sh"
 
 # Read-only verify (orient before apply)
@@ -527,7 +527,7 @@ bash "$RECONCILE" --project-root "$PWD" --host "$SB_HOST" --mode apply --scope a
 bash scripts/optimize-five-tool-stack.sh --host "$SB_HOST" --project-root "$(pwd)"
 ```
 
-**Host hook merge (Cursor):** use `scripts/lib/install-cursor/merge-cursor-hooks.py` only — do not duplicate host-detection pseudocode.
+**Host hook merge:** use the host installer's merge script (`scripts/lib/install-<host>/`) only — do not duplicate host-detection pseudocode.
 
 **Completion reporting** — parse reconciler JSON/text and report separately:
 - **configured** — packages/MCP/hooks written
@@ -905,7 +905,6 @@ bash "${PLUGIN_ROOT}/scripts/stamp-interface-state.sh" "$PWD" 2>/dev/null || \
 This creates `.planning/interface/STATE.md` from
 `templates/interface/STATE.md.base` when absent. `sb:ui-contract` maintains
 it thereafter.
-- **3.2.3 Cursor SB custom subagents (Cursor only)**: tri-state `cursor_sb_agents.enabled_by_user` (see `references/scaffold-steps.md` §3.2.3). Probe global managed agents first; **skip** project `.cursor/agents/` when `probe-global-agents.sh` passes; else `bash scripts/install-cursor-sb-agents.sh --project`.
 - **3.2.5 CI setup**: if no `.github/workflows/*.yml`, generate `ci.yml` from `references/ci-templates.md` based on the detected stack; for unknown stacks, prompt and store `verify_commands` in `.silver-bullet.json`.
 - **3.3 Write the project instruction file** only when 3.1b found an existing project instruction file that needed reconciliation; otherwise skip this step entirely. Preserve the existing project instruction filename when writing it back out.
 - **3.4 Write `.silver-bullet.json`** from `templates/silver-bullet.config.json.default`, replace `{{PROJECT_NAME}}`, set `src_pattern` to the detected value, set **`"sb_initiated": true`** (authoritative marker that SB may enforce hooks in this workspace). For `recommended_tools.graphify`, `agentmemory`, `rtk`, `context_mode`, and `leanctx`, always write `enabled_by_user` from the user's Phase 1.1a–§1.1f choices — default **`null` (pending)** on fresh init until the user explicitly chooses; never pre-opt-in or pre-opt-out from org defaults. Include suspension fields from Phase 1.1 install outcomes when applicable.

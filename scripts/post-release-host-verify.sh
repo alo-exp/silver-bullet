@@ -5,10 +5,10 @@
 #
 # Usage:
 #   bash scripts/post-release-host-verify.sh
-#   bash scripts/post-release-host-verify.sh --version v0.51.3 --host cursor
+#   bash scripts/post-release-host-verify.sh --version v0.51.3 --host codex
 #   bash scripts/post-release-host-verify.sh --skip-smoke
 #
-# Writes per-host markers under ~/.{cursor,codex,claude}/.silver-bullet/post-release-verify/
+# Writes per-host markers under ~/.{codex,claude}/.silver-bullet/post-release-verify/
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -36,7 +36,7 @@ TAG_COMMIT=""
 
 usage() {
   cat <<'USAGE'
-Usage: scripts/post-release-host-verify.sh [--version TAG] [--host cursor|codex|claude|all] [--skip-smoke] [--public-release]
+Usage: scripts/post-release-host-verify.sh [--version TAG] [--host codex|claude|all] [--skip-smoke] [--public-release]
 
 Per host on the operator machine:
   1. Uninstall SB only (preserve rtk, context-mode, and other non-SB hooks)
@@ -58,7 +58,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 case "$HOST_FILTER" in
-  all|cursor|codex|claude) ;;
+  all|codex|claude) ;;
   *) printf 'Unknown host: %s\n' "$HOST_FILTER" >&2; usage >&2; exit 2 ;;
 esac
 
@@ -98,7 +98,6 @@ resolve_install_repo
 marker_dir_for_host() {
   local host="$1" home_root
   case "$host" in
-    cursor) home_root="${HOME}/.cursor" ;;
     codex) home_root="${HOME}/.codex" ;;
     claude) home_root="${HOME}/.claude" ;;
   esac
@@ -124,7 +123,6 @@ host_install_args() {
   case "$host" in
     claude) printf '%s\n' --purge-legacy-plugins ;;
     codex) printf '%s\n' --purge-legacy-skills ;;
-    cursor) ;;
   esac
   [[ "$PUBLIC_RELEASE" -eq 1 ]] && printf '%s\n' --public-release
 }
@@ -148,7 +146,6 @@ run_install_smoke() {
   local host="$1"
   export SILVER_BULLET_RUNTIME="$host"
   case "$host" in
-    cursor) export SILVER_BULLET_RUNTIME=cursor ;;
     codex) export SILVER_BULLET_RUNTIME=codex ;;
     claude) export SILVER_BULLET_RUNTIME=claude ;;
   esac
@@ -220,7 +217,7 @@ verify_host() {
 
 PASS=0
 FAIL=0
-for host in cursor codex claude; do
+for host in codex claude; do
   [[ "$HOST_FILTER" == all || "$HOST_FILTER" == "$host" ]] || continue
   if verify_host "$host"; then
     PASS=$((PASS + 1))

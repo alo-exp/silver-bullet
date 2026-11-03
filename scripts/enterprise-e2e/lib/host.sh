@@ -37,7 +37,7 @@ else:
 PY
 }
 
-# claude | codex | cursor — honors pre-set SB_E2E_LIVE_RUNTIME / SILVER_BULLET_RUNTIME.
+# claude | codex — honors pre-set SB_E2E_LIVE_RUNTIME / SILVER_BULLET_RUNTIME.
 enterprise_e2e_matrix_host() {
   local host="${SB_E2E_LIVE_RUNTIME:-${SILVER_BULLET_RUNTIME:-}}"
   if [[ -z "$host" ]]; then
@@ -55,7 +55,7 @@ PY
     fi
   fi
   case "$host" in
-    claude|codex|cursor) printf '%s\n' "$host" ;;
+    claude|codex) printf '%s\n' "$host" ;;
     *) printf 'claude\n' ;;
   esac
 }
@@ -221,13 +221,6 @@ enterprise_e2e_matrix_host_route() {
       else
         printf '%s\n' "$route"
       fi
-      ;;
-    cursor)
-      case "$route" in
-        /sb) printf '/sb\n' ;;
-        /sb:*) printf '%s\n' "${route#/sb:}" ;;
-        *) printf '%s\n' "$route" ;;
-      esac
       ;;
     *)
       printf '%s\n' "$route"

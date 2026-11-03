@@ -1,9 +1,9 @@
 # shellcheck shell=bash
-# search-cli probe — PATH + non-secret version. Consent/registry pattern (not Cursor-only).
+# search-cli probe — PATH + non-secret version. Consent/registry pattern (not host-specific).
 # Official pin (v0.9.0): https://github.com/paperfoot/search-cli/blob/v0.9.0/README.md@v0.9.0
 # Formula: https://github.com/paperfoot/homebrew-tap/blob/main/Formula/search-cli.rb@0.9.0
 # Health is PATH plus `search --version`. Provider-missing is WARN (ready + evidence).
-# Do not dump provider secrets or API keys. Do not copy Alumnium Cursor-only rt_host_supported.
+# Do not dump provider secrets or API keys. Do not copy Alumnium's rt_host_supported.
 
 # shellcheck source=common.sh
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
@@ -78,7 +78,7 @@ rt_probe_search_cli() {
   local installed_ver pin_ver
 
   consent="$(rt_consent_for "$tool_id")"
-  # Extra-tool: Cursor + Claude + Codex. Do not mark unsupported via rt_host_supported.
+  # Extra-tool: Claude + Codex. Do not mark unsupported via rt_host_supported.
   case "$consent" in
     disabled) fd=1 ;;
     pending|"") fp=1 ;;

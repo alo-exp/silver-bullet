@@ -5,8 +5,8 @@ set -euo pipefail
 
 SB_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 ENTERPRISE_APP="${1:-$(cd "${SB_ROOT}/../.." && pwd)/enterprise-grade-test-app}"
-HOST_LABEL="${2:-cursor}"
-STATE_DIR="${SB_RUNTIME_STATE_DIR:-${HOME}/.cursor/.silver-bullet}"
+HOST_LABEL="${2:-claude}"
+STATE_DIR="${SB_RUNTIME_STATE_DIR:-${HOME}/.claude/.silver-bullet}"
 STATE_FILE="${SILVER_BULLET_STATE_FILE:-${STATE_DIR}/state}"
 
 echo "=== Orchestrator parent surface dogfood (${HOST_LABEL}) ==="

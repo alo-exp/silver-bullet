@@ -28,7 +28,7 @@ sb_update_registry_path() {
   printf '%s' "${SILVER_BULLET_INSTALLED_PLUGINS_FILE:-${SB_RUNTIME_HOME_ROOT}/plugins/installed_plugins.json}"
 }
 
-# Claude v2 registry stores plugin entries as arrays; Cursor/Codex may use objects.
+# Claude v2 registry stores plugin entries as arrays; Codex may use objects.
 sb_update_resolve_installed_version() {
   local reg="$1" plugin_id="" plugin_ver=""
   if [[ ! -f "$reg" ]] || ! command -v jq >/dev/null 2>&1; then

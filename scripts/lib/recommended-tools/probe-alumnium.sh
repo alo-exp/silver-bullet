@@ -1,5 +1,5 @@
 # shellcheck shell=bash
-# Alumnium probe — CLI/npm reachability + Cursor MCP wiring (docs/ALUMNIUM.md).
+# Alumnium probe — CLI/npm reachability + MCP wiring (docs/ALUMNIUM.md).
 # Opt-in only: pending/disabled consent is N/A (canonical pending/disabled).
 # Do not invent provider env-key checks; enable-alumnium.sh does not require them.
 
@@ -12,18 +12,11 @@ rt_probe_alumnium_cli() {
   command -v alumnium >/dev/null 2>&1
 }
 
-# Cursor MCP: mcpServers.alumnium or user-alumnium in Cursor mcp.json
+# MCP: mcpServers.alumnium in the host MCP config
 # (same artifact the rest of D10 probes and docs/ALUMNIUM.md use).
 rt_probe_alumnium_mcp() {
-  local host="${RT_HOST:-cursor}"
+  local host="${RT_HOST:-claude}"
   case "$host" in
-    cursor)
-      rt_host_mcp_server_configured "$host" alumnium \
-        || {
-          [[ -f "${HOME}/.cursor/mcp.json" ]] || return 1
-          jq -e '.mcpServers["user-alumnium"]' "${HOME}/.cursor/mcp.json" >/dev/null 2>&1
-        }
-      ;;
     claude|codex)
       rt_host_mcp_server_configured "$host" alumnium
       ;;
@@ -64,7 +57,7 @@ rt_probe_alumnium() {
   local vd_rc=0
 
   consent="$(rt_consent_for "$tool_id")"
-  if ! rt_host_supported "${RT_HOST:-cursor}"; then fu=1
+  if ! rt_host_supported "${RT_HOST:-claude}"; then fu=1
   else
     case "$consent" in
       disabled) fd=1 ;;

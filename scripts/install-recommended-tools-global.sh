@@ -16,7 +16,7 @@ Usage: bash scripts/install-recommended-tools-global.sh --host HOST [--global]
 Syncs global instruction artifacts (rules, AGENTS.md routing) for RTK + Context Mode.
 Does NOT require Silver Bullet. RTK/Codex hooks are applied by optimize-rtk-context-mode.sh.
 
-Hosts: claude | codex | cursor | opencode | pi | hermes | goose | all
+Hosts: claude | codex | opencode | pi | hermes | goose | all
 
 Options:
   --host HOST   Target agent (required)
@@ -27,10 +27,6 @@ EOF
 
 # shellcheck source=../hooks/lib/rtk-cm-global.sh
 source "$LIB"
-
-install_cursor_global() {
-  bash "${SCRIPT_DIR}/install-recommended-tools-cursor.sh" --global
-}
 
 install_opencode_agents() {
   local dest="${HOME}/.config/opencode/AGENTS.md"
@@ -91,7 +87,6 @@ install_goose_skip() {
 install_host() {
   local h="${1:-}"
   case "$h" in
-    cursor) install_cursor_global ;;
     opencode) install_opencode_agents ;;
     pi) install_pi_global ;;
     codex) install_codex_agents ;;

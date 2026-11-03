@@ -55,7 +55,6 @@ sb_leanctx_platform_artifact_path() {
   fi
   host="${host:-$(sb_runtime_host)}"
   case "$host" in
-    cursor) printf '%s/.cursor/mcp.json' "${HOME}" ;;
     codex) printf '%s/config.toml' "${CODEX_HOME:-${HOME}/.codex}" ;;
     opencode) printf '%s/.config/opencode/opencode.json' "${HOME}" ;;
     pi) printf '%s/extensions/silver-bullet-five-tool-stack/config.json' \
@@ -79,10 +78,6 @@ sb_leanctx_hooks_present() {
   local hooks_file
   host="${host:-$(sb_runtime_host)}"
   case "$host" in
-    cursor)
-      hooks_file="${HOME}/.cursor/hooks.json"
-      [[ -f "$hooks_file" ]] && grep -qE 'leanctx|lean-ctx' "$hooks_file" 2>/dev/null
-      ;;
     codex)
       hooks_file="${CODEX_HOME:-${HOME}/.codex}/hooks.json"
       [[ -f "$hooks_file" ]] && grep -qE 'leanctx|lean-ctx' "$hooks_file" 2>/dev/null
@@ -125,8 +120,8 @@ sb_leanctx_usage_state_path() {
   if [[ -n "$config_file" && -f "$config_file" ]]; then
     state_path="$(jq -r '.recommended_tools.leanctx.usage_state_file // ""' "$config_file" 2>/dev/null || true)"
     state_path="${state_path/#\~/$HOME}"
-    state_path="${state_path//\$\{SB_RUNTIME_HOME_ROOT\}/${SB_RUNTIME_HOME_ROOT:-${HOME}/.cursor}}"
-    state_path="${state_path//\$\{SB_RUNTIME_STATE_DIR\}/${SB_RUNTIME_STATE_DIR:-${HOME}/.cursor/.silver-bullet}}"
+    state_path="${state_path//\$\{SB_RUNTIME_HOME_ROOT\}/${SB_RUNTIME_HOME_ROOT:-${HOME}/.claude}}"
+    state_path="${state_path//\$\{SB_RUNTIME_STATE_DIR\}/${SB_RUNTIME_STATE_DIR:-${HOME}/.claude/.silver-bullet}}"
   fi
   if [[ -z "$state_path" ]]; then
     state_path="${SB_RUNTIME_STATE_DIR:-${HOME}/.silver-bullet}/leanctx-usage"
@@ -188,9 +183,6 @@ sb_leanctx_edit_path_is_exempt() {
       ;;
   esac
   if [[ "$file_path" == *"/.silver-bullet/"* ]]; then
-    return 0
-  fi
-  if [[ "$file_path" == *"/.cursor/mcp.json" ]] || [[ "$file_path" == *"/.cursor/hooks.json" ]]; then
     return 0
   fi
   if [[ "$file_path" == *"/docs/LEANCTX.md" ]]; then

@@ -3,7 +3,7 @@
 #
 #   scripts/sync-release-marketplace-versions.sh <version>
 #       Before the release commit: run the local pre-release gate, then align this
-#       repository's Claude, Codex and Cursor manifests with <version>. Nothing leaves the
+#       repository's Claude and Codex manifests with <version>. Nothing leaves the
 #       machine; commit the result as part of the release commit.
 #   scripts/sync-release-marketplace-versions.sh --publish <version>
 #       After the release tag v<version> is pushed and CI is green for its commit: publish
@@ -34,7 +34,6 @@ tag="v${release_version}"
 
 claude_sync_script="${SB_SYNC_MARKETPLACE_VERSION_SCRIPT:-${SCRIPT_DIR}/sync-marketplace-version.sh}"
 codex_sync_script="${SB_SYNC_CODEX_MARKETPLACE_VERSION_SCRIPT:-${SCRIPT_DIR}/sync-codex-marketplace-version.sh}"
-cursor_sync_script="${SB_SYNC_CURSOR_MARKETPLACE_VERSION_SCRIPT:-${SCRIPT_DIR}/sync-cursor-marketplace-version.sh}"
 
 if [[ "$AGENT_PLUGINS_PUBLISH" != "1" ]]; then
   if [[ "${SB_SKIP_PRE_RELEASE_GATE:-0}" != "1" ]]; then
@@ -42,7 +41,6 @@ if [[ "$AGENT_PLUGINS_PUBLISH" != "1" ]]; then
   fi
   bash "$claude_sync_script" "$release_version"
   bash "$codex_sync_script" "$release_version"
-  bash "$cursor_sync_script" "$release_version"
   cat <<EOF
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -98,7 +96,6 @@ export AGENT_PLUGINS_REPO_ROOT="$batch_root"
 export AGENT_PLUGINS_SKIP_PUSH=1
 bash "$claude_sync_script" --publish "$release_version"
 bash "$codex_sync_script" --publish "$release_version"
-bash "$cursor_sync_script" --publish "$release_version"
 unset AGENT_PLUGINS_SKIP_PUSH
 agent_plugins_push "$batch_root"
 

@@ -32,12 +32,6 @@ agent_host_resolve_cli() {
       source "${_AGENT_HOST_EXEC_DIR}/pi-cli.sh"
       cli="$(resolve_native_pi_cli_path "${PI_BIN:-}" || true)"
       ;;
-    cursor)
-      cli="$(command -v cursor-agent 2>/dev/null || true)"
-      if [[ -z "$cli" ]]; then
-        cli="$(command -v agent 2>/dev/null || true)"
-      fi
-      ;;
     *)
       return 1
       ;;
@@ -59,7 +53,7 @@ agent_host_pi_ni_write_rails_needed() {
 }
 
 # Fill AGENT_HOST_ARGV for a host + interaction. Prompt is last when the native CLI
-# accepts a one-shot prompt (NI, and Cursor interactive first message).
+# accepts a one-shot prompt (NI).
 agent_host_build_argv() {
   local host="$1" interaction="$2" work_dir="$3" prompt="$4" permission_mode="${5:-permissive}"
   local cli perm
@@ -129,26 +123,6 @@ agent_host_build_argv() {
         fi
         AGENT_HOST_ARGV+=("$prompt")
       fi
-      ;;
-    cursor)
-      AGENT_HOST_ARGV=("$cli" --trust --force --workspace "$work_dir")
-      if [[ "$interaction" != "interactive" ]]; then
-        AGENT_HOST_ARGV+=(--print --output-format "${CURSOR_AGENT_OUTPUT_FORMAT:-text}")
-        if [[ "${SB_AGENT_CURSOR_STREAM_JSON:-}" == "1" || "${SB_E2E_ENTERPRISE_MATRIX:-}" == "1" ]]; then
-          AGENT_HOST_ARGV+=(--output-format stream-json --stream-partial-output)
-        fi
-      else
-        if [[ -n "${CURSOR_AGENT_RESUME:-}" ]]; then
-          AGENT_HOST_ARGV+=(--resume "${CURSOR_AGENT_RESUME}")
-        fi
-      fi
-      if [[ -n "${CURSOR_AGENT_MODEL:-${CURSOR_MODEL:-}}" ]]; then
-        AGENT_HOST_ARGV+=(--model "${CURSOR_AGENT_MODEL:-${CURSOR_MODEL}}")
-      fi
-      if [[ "$permission_mode" == "permissive" ]]; then
-        AGENT_HOST_ARGV+=(--yolo)
-      fi
-      AGENT_HOST_ARGV+=("$prompt")
       ;;
     *)
       return 1
@@ -434,7 +408,7 @@ agent_host_run_pi_until_file() {
   agent_host_pi_continue_for_file "$expect_file" "$continue_prompt"
 }
 
-# Pinned-NI production launch: exec native argv (Claude/Codex/Cursor/OpenCode).
+# Pinned-NI production launch: exec native argv (Claude/Codex/OpenCode).
 # Does not return on success. CLI miss or exec failure → 127/126 to the caller.
 # Pi + SB_AGENT_EXPECT_FILE / PI_EXPECT_FILE: run (not exec), zero-byte idle kill
 # (Qwen 120s from t=0; others 600s first-byte window), then --continue (default

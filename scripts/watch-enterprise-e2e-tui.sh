@@ -227,7 +227,7 @@ if not logs:
     print("0")
     sys.exit(0)
 best = max(logs, key=lambda p: (os.path.getmtime(p), os.path.getsize(p)))
-m = __import__('re').search(r'row(\d+)(?:-(?:codex|cursor))?-attempt', os.path.basename(best))
+m = __import__('re').search(r'row(\d+)(?:-codex)?-attempt', os.path.basename(best))
 print(m.group(1) if m else "0")
 PY
 }

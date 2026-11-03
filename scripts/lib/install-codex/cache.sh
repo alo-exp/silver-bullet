@@ -29,8 +29,8 @@ sanitize_codex_package_surface() {
   fi
 
   [[ -d "$package_root" ]] || return 0
-  # plugins/silver-bullet in the source checkout is shared with the Cursor
-  # plugin and committed host-neutral: never rewrite it. The cache copy made
+  # plugins/silver-bullet in the source checkout is the Codex package and is
+  # committed host-neutral: never rewrite it. The cache copy made
   # from it is sanitized in sync_codex_cache_package_surface.
   codex_package_is_repo_checkout "$package_root" && return 0
 

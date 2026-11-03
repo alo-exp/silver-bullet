@@ -137,7 +137,7 @@ validation_overlay_check_host_install_surface() {
 validation_overlay_check_tri_host_install() {
   local root="$1"
   local ok=1
-  for script in install-claude.sh install-codex.sh install-cursor.sh; do
+  for script in install-claude.sh install-codex.sh; do
     if [[ -x "${root}/scripts/${script}" || -f "${root}/scripts/${script}" ]]; then
       validation_overlay_pass "tri-host script exists: ${script}"
     else
@@ -145,12 +145,6 @@ validation_overlay_check_tri_host_install() {
       ok=0
     fi
   done
-  if [[ -f "${root}/hooks/cursor-hook-bridge.sh" ]]; then
-    validation_overlay_pass "cursor-hook-bridge.sh exists under hooks/"
-  else
-    validation_overlay_fail "cursor-hook-bridge.sh missing under hooks/"
-    ok=0
-  fi
   if [[ "$ok" -eq 1 ]]; then
     validation_overlay_pass "tri-host install surface complete"
   fi
@@ -193,15 +187,15 @@ validation_overlay_check_help_catalog_sot() {
 validation_overlay_check_help_tri_host() {
   local root="$1"
   local found=0
-  for host in Claude Codex Cursor; do
+  for host in Claude Codex; do
     if grep -q "$host" "${root}/site/help/index.html" 2>/dev/null; then
       found=$((found + 1))
     fi
   done
-  if [[ "$found" -ge 3 ]]; then
-    validation_overlay_pass "help index mentions Claude, Codex, and Cursor"
+  if [[ "$found" -ge 2 ]]; then
+    validation_overlay_pass "help index mentions Claude and Codex"
   else
-    validation_overlay_fail "help index tri-host mentions incomplete (${found}/3)"
+    validation_overlay_fail "help index host mentions incomplete (${found}/2)"
   fi
 }
 

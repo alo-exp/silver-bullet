@@ -1,11 +1,9 @@
 #!/usr/bin/env bash
 # Copy canonical templates/ into plugins/silver-bullet/templates/ (physical mirror).
 #
-# The mirror is byte-identical and host-neutral: plugins/silver-bullet is both
-# the Codex package and the Cursor plugin root, so its templates keep the
-# ${SB_RUNTIME_*} placeholders like templates/ itself (what Claude and the
-# Cursor installer ship). The Codex installer expands them for Codex in the
-# copy it installs (scripts/lib/install-codex/cache.sh).
+# The mirror is byte-identical and host-neutral: its templates keep the
+# ${SB_RUNTIME_*} placeholders like templates/ itself (what Claude ships). The
+# Codex installer expands them for Codex in the copy it installs (scripts/lib/install-codex/cache.sh).
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"

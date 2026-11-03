@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# RC validation matrix — 3 hosts × fresh/upgrade (cursor, codex, claude).
+# RC validation matrix — 2 hosts × fresh/upgrade (codex, claude).
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -33,11 +33,9 @@ done
 
 [[ -f "${REPO_ROOT}/hooks/lib/runtime-paths.sh" ]] && source "${REPO_ROOT}/hooks/lib/runtime-paths.sh"
 PASS=0 FAIL=0 SKIP=0
-LEANCTX_ON=0; five_tool_leanctx_opted_in "${REPO_ROOT}/.silver-bullet.json" && LEANCTX_ON=1
 
 host_live() {
   case "$1" in
-    cursor) five_tool_cursor_cli_path >/dev/null && five_tool_cursor_agent_authenticated ;;
     codex) command -v codex >/dev/null ;;
     claude) five_tool_claude_cli_path >/dev/null && five_tool_claude_cli_authenticated ;;
   esac
@@ -49,7 +47,7 @@ run_cell() {
     sb_smoke_write_rc_marker "$host" "$mode" pass dry-run; PASS=$((PASS+1)); return
   fi
   # CI: no first-party Anthropic/Codex API keys — structural install only for codex/claude.
-  if [[ "$RC_CI_MODE" -eq 1 && "$host" != "cursor" ]]; then
+  if [[ "$RC_CI_MODE" -eq 1 ]]; then
     RTK_DISABLED=1 bash "${REPO_ROOT}/scripts/lib/host-smoke-cell.sh" --host "$host" --mode "$mode" --scope rc \
       || { sb_smoke_write_rc_marker "$host" "$mode" fail install; FAIL=$((FAIL+1)); return; }
     sb_smoke_write_rc_marker "$host" "$mode" skip ci-no-first-party-keys; SKIP=$((SKIP+1)); return
@@ -69,15 +67,11 @@ run_cell() {
   wd="$(sb_smoke_host_root "$host")/workspace"
   log="$(sb_smoke_host_root "$host")/rc.log"
   mkdir -p "$wd"
-  if [[ "$host" == cursor && "$LEANCTX_ON" -eq 1 ]]; then
-    rc_delegate_five_tool_scenarios "$REPO_ROOT" || { sb_smoke_write_rc_marker "$host" "$mode" fail "$log"; FAIL=$((FAIL+1)); return; }
-  else
-    rc_delegate_smoke_run "$host" "$wd" "$log" "$REPO_ROOT" || { sb_smoke_write_rc_marker "$host" "$mode" fail "$log"; FAIL=$((FAIL+1)); return; }
-  fi
+  rc_delegate_smoke_run "$host" "$wd" "$log" "$REPO_ROOT" || { sb_smoke_write_rc_marker "$host" "$mode" fail "$log"; FAIL=$((FAIL+1)); return; }
   sb_smoke_write_rc_marker "$host" "$mode" pass "$log"; PASS=$((PASS+1))
 }
 
-for h in cursor codex claude; do
+for h in codex claude; do
   [[ "$HOST_FILTER" == all || "$HOST_FILTER" == "$h" ]] || continue
   for m in fresh upgrade; do
     [[ "$MODE_FILTER" == all || "$MODE_FILTER" == "$m" ]] || continue
