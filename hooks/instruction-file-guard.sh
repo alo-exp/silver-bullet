@@ -8,19 +8,25 @@ trap 'exit 0' ERR
 # but it must not synthesize a brand-new root CLAUDE.md or AGENTS.md during
 # Codex initialization. Silver Bullet's primary contract lives in
 # silver-bullet.md.
+#
+# Covers the file tools (Edit, Write, MultiEdit, NotebookEdit, every apply_patch path) and
+# shell writes (redirects, cp, mv, tee, ...: the write targets of the shell analysis). Names
+# compare case-insensitively: on APFS and NTFS claude.md is the file the host loads as CLAUDE.md.
 
 umask 0077
 
 command -v jq >/dev/null 2>&1 || exit 0
 
 _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
-if [[ -f "$_lib_dir/tool-input.sh" ]]; then
-  # shellcheck source=lib/tool-input.sh
-  source "$_lib_dir/tool-input.sh"
-fi
+# shellcheck source=lib/planning-floor.sh
+source "$_lib_dir/planning-floor.sh"
 if [[ -f "$_lib_dir/cert-bypass.sh" ]]; then
   # shellcheck source=lib/cert-bypass.sh
   source "$_lib_dir/cert-bypass.sh"
+fi
+if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
+  # shellcheck source=lib/sb-project-gate.sh
+  source "$_lib_dir/sb-project-gate.sh"
 fi
 
 input=$(cat)
@@ -32,13 +38,9 @@ hook_event=$(printf '%s' "$input" | jq -r '.hook_event_name // "PreToolUse"')
 
 tool_name=$(printf '%s' "$input" | jq -r '.tool_name // ""')
 case "$tool_name" in
-  Edit|Write|MultiEdit|apply_patch) ;;
-  *) exit 0 ;;
+  Edit | Write | MultiEdit | NotebookEdit | apply_patch) ;;
+  *) sb_tool_is_shell_like "$tool_name" || exit 0 ;;
 esac
-
-normalize_path() {
-  python3 -c 'import os,sys; print(os.path.realpath(os.path.expanduser(sys.argv[1])))' "$1" 2>/dev/null || printf '%s' "$1"
-}
 
 resolve_repo_root() {
   local dir="$PWD"
@@ -56,55 +58,53 @@ resolve_repo_root() {
 
 repo_root="$(resolve_repo_root 2>/dev/null || true)"
 [[ -n "$repo_root" ]] || exit 0
-repo_root="$(normalize_path "$repo_root")"
+repo_root="$(sb_pf_canon "$repo_root")"
 
 # Only enforce inside an SB-initiated project.
 [[ -f "$repo_root/.silver-bullet.json" ]] || exit 0
-if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
-  # shellcheck source=lib/sb-project-gate.sh
-  source "$_lib_dir/sb-project-gate.sh"
-fi
 if declare -f sb_project_active >/dev/null 2>&1; then
   sb_project_active "$repo_root/.silver-bullet.json" || exit 0
-elif declare -f sb_project_is_initiated >/dev/null 2>&1; then
-  sb_project_is_initiated "$repo_root/.silver-bullet.json" || exit 0
 fi
 
-deny_root_instruction_creation() {
-  local target_path="$1"
-  local basename_target
-  basename_target="$(basename "$target_path")"
-  case "$basename_target" in
-    CLAUDE.md|AGENTS.md) ;;
-    *) return 0 ;;
-  esac
+REASON="PROJECT INSTRUCTION FILE CREATION BLOCKED — Silver Bullet does not synthesize a new root CLAUDE.md or AGENTS.md during Codex initialization. If an instruction file already exists, update it in place; otherwise keep the project instruction surface optional and rely on silver-bullet.md as the primary contract."
 
-  if [[ "$target_path" != "$repo_root/CLAUDE.md" && "$target_path" != "$repo_root/AGENTS.md" ]]; then
-    return 0
-  fi
-
-  [[ -e "$target_path" ]] && return 0
-
-  local reason
-  reason="PROJECT INSTRUCTION FILE CREATION BLOCKED — Silver Bullet does not synthesize a new root CLAUDE.md or AGENTS.md during Codex initialization. If an instruction file already exists, update it in place; otherwise keep the project instruction surface optional and rely on silver-bullet.md as the primary contract."
-  printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":%s}}' "$(printf '%s' "$reason" | jq -Rs '.')"
+deny() {
+  sb_emit_hook_decision PreToolUse deny "$1"
   exit 0
 }
 
-tool_paths() {
-  if [[ "$tool_name" == "apply_patch" ]] && declare -f sb_tool_patch_paths >/dev/null 2>&1; then
-    sb_tool_patch_paths "$input" 2>/dev/null || true
-  else
-    printf '%s' "$input" | jq -r '
-      .tool_input.file_path? // empty,
-      (.tool_input.file_paths? // [])[]?
-    ' 2>/dev/null || true
-  fi
+sb_tool_input_load "$input" "$PWD"
+if ! sb_tool_input_ok; then
+  [[ "${SB_TI_STATUS:-}" == "empty" ]] && exit 0
+  # The shell command cannot be analysed: refuse only what names an instruction file.
+  lower="$(printf '%s' "$input" | tr '[:upper:]' '[:lower:]')"
+  [[ "$lower" == *claude.md* || "$lower" == *agents.md* ]] || exit 0
+  cmd="$(printf '%s' "$input" | jq -r '.tool_input.command // .tool_input.cmd // ""' 2>/dev/null || true)"
+  sb_pf_plain_read_only "$cmd" && exit 0
+  deny "$(sb_pf_unanalysable_message)"
+fi
+
+if [[ "${SB_TI_TOOL_KIND:-}" == "shell" ]] && sb_pf_opaque_mentions claude.md agents.md; then
+  deny "$REASON"
+fi
+
+# An instruction file already there (any case) may be updated in place.
+instruction_file_exists() {
+  local name="$1"
+  [[ -e "$repo_root/$name" ]] && return 0
+  [[ -n "$(find "$repo_root" -maxdepth 1 -iname "$name" 2>/dev/null | head -n 1)" ]]
 }
 
-while IFS= read -r raw_path; do
-  [[ -n "$raw_path" ]] || continue
-  deny_root_instruction_creation "$(normalize_path "$raw_path")"
-done < <(tool_paths)
+while IFS= read -r target; do
+  [[ -n "$target" ]] || continue
+  [[ "$(dirname "$target")" == "$repo_root" ]] || continue
+  name="$(basename "$target" | tr '[:upper:]' '[:lower:]')"
+  case "$name" in
+    claude.md | agents.md) ;;
+    *) continue ;;
+  esac
+  instruction_file_exists "$(basename "$target")" && continue
+  deny "$REASON"
+done < <(sb_pf_write_targets "$input")
 
 exit 0
