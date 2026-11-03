@@ -24,7 +24,7 @@ cd "$PROJ"
 NOJQ="$(tl_path_without jq)"
 INTENT="$SB_RUNTIME_STATE_DIR/orchestrator-intent.txt"
 skill_json() { jq -cn --arg s "$1" '{hook_event_name:"PostToolUse",tool_name:"Skill",tool_input:{skill:$s}}'; }
-msg() { jq -r '.hookSpecificOutput.message // ""' <<<"$TL_OUT" 2>/dev/null || true; }
+msg() { jq -r '.systemMessage // ""' <<<"$TL_OUT" 2>/dev/null || true; }
 
 echo "=== fail-open paths ==="
 tl_run_hook "$HOOK" ""
@@ -61,7 +61,7 @@ echo "=== composer start ==="
 rm -f "$(orch_state_file)" "$INTENT"
 tl_run_hook "$HOOK" "$(skill_json silver-feature)"
 assert_eq "composer start message" "SB orchestrator ► Workflow WF-HOOK-1 started (autonomous; no composition approval required)" "$(msg)"
-assert_eq "hook event named in the output" PostToolUse "$(jq -r .hookSpecificOutput.hookEventName <<<"$TL_OUT")"
+assert_eq "notice is a top-level systemMessage (no undocumented hookSpecificOutput.message)" "false" "$(jq -r 'has("hookSpecificOutput")' <<<"$TL_OUT")"
 assert_eq "queue seeded for the composer" silver-feature "$(orch_state_get .composer)"
 assert_eq "workflow bound to the queue" WF-HOOK-1 "$(orch_state_get .workflow_id)"
 assert_eq "state records the project root" "$PROJ" "$(orch_state_get .repo_root)"

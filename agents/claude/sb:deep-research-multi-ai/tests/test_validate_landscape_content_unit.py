@@ -88,6 +88,10 @@ class _Base(unittest.TestCase):
         return self.run_validate(**kw)["errors"]
 
 
+from apo_pack_run_fixture import with_apo_pack_run  # noqa: E402
+
+
+@with_apo_pack_run
 class HelperTests(_Base):
     def test_load_json(self):
         self.assertIsNone(vlc._load_json(self.root / "missing.json"))
@@ -167,7 +171,7 @@ class CoreValidationTests(_Base):
             return [{"type": "feature", "priority": "Critical",
                      "solutions": {f"s{i}": v for i, v in enumerate(fills)}}]
 
-        self.assertEqual(run([]), ["no Critical feature rows in comparison matrix"])
+        self.assertEqual(run([]), ["no Critical feature rows in comparison matrix (list must_haves in need_profile.json that match the matrix feature names)"])
         self.assertEqual(len(run(mk(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))), 1)  # hollow (<10%)
         hollow = run(mk(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))[0]
         self.assertIn("hollow report", hollow)
@@ -210,13 +214,10 @@ class CoreValidationTests(_Base):
                          ["winner 'silver-bullet' lacks must-have 'ghost feature'"])
         self.assertEqual(res["metrics"]["must_have_gaps"], ["winner 'silver-bullet' lacks must-have 'ghost feature'"])
 
-    def test_silver_bullet_zero_score(self):
+    def test_no_vendor_specific_zero_score_gate(self):
+        # no vendor (including the tool's own product) is special-cased by the packaging gate
         self.put("comparison/comparison.json", comparison(
             rankings=[{"solution": "silver-bullet", "score": 0}]))
-        self.assertIn("silver-bullet score is 0 despite non-trivial matrix fill (ranking inconsistency)",
-                      self.errors())
-        self.put("comparison/comparison.json", comparison(
-            rankings=[{"solution": "silver-bullet", "score": 3}]))
         self.assertFalse(any("score is 0" in e for e in self.errors()))
         self.put("comparison/comparison.json", comparison(
             rows=[{"type": "feature", "priority": "Critical", "solutions": {"a": 0, "b": 0, "c": 0, "d": 0,
@@ -350,10 +351,15 @@ class ChartGateTests(_Base):
         return fake
 
     def test_vendor_url_health(self):
+        import vendor_link_labels as _vll
+
+        _vll.reset_health_state()
+        self.addCleanup(_vll.reset_health_state)
         urls = {f"V{i}": f"https://dead{i}.example" for i in range(10)}
         urls["Fine"] = "https://fine.example"
         env = {k: v for k, v in os.environ.items() if k != "SB_SKIP_VENDOR_URL_HEALTH"}
         with mock.patch.dict(os.environ, env, clear=True), \
+                mock.patch("vendor_link_labels._resolve_host", return_value=["93.184.216.34"]), \
                 mock.patch("urllib.request.urlopen", side_effect=self._urlopen(["dead"])):
             res = self.chart_errors(chart(vendor_urls=urls))
         dropped = res["metrics"]["vendor_url_health_dropped"]
@@ -366,8 +372,13 @@ class ChartGateTests(_Base):
         self.assertNotIn("Fine", msg[0])
 
     def test_vendor_url_health_all_good_and_non_dict(self):
+        import vendor_link_labels as _vll
+
+        _vll.reset_health_state()
+        self.addCleanup(_vll.reset_health_state)
         env = {k: v for k, v in os.environ.items() if k != "SB_SKIP_VENDOR_URL_HEALTH"}
         with mock.patch.dict(os.environ, env, clear=True), \
+                mock.patch("vendor_link_labels._resolve_host", return_value=["93.184.216.34"]), \
                 mock.patch("urllib.request.urlopen", side_effect=self._urlopen([])):
             res = self.chart_errors(chart(vendor_urls={"A": "https://a.example"}))
         self.assertEqual(res["metrics"]["vendor_url_health_dropped"], [])
@@ -412,6 +423,7 @@ class SpaGateTests(_Base):
         self.assertNotIn("landscape-report.html missing after landscape synthesis", self.errors())
 
 
+@with_apo_pack_run
 class CatalogGateTests(_Base):
     def setUp(self):
         super().setUp()
@@ -550,6 +562,7 @@ class CatalogGateTests(_Base):
     def test_non_apo_pack_and_pack_defaults(self):
         pack = copy.deepcopy(category_pack.resolve_pack_from_need({"category_pack_id": PACK_ID}))
         pack["category_id"] = "something-else"
+        pack["overlay"] = {}
         pack["max_core_count"] = None
         pack["primary_market_id"] = ""
         pack["parent_child_dedupe"] = [
@@ -562,7 +575,7 @@ class CatalogGateTests(_Base):
         with mock.patch.object(vlc, "resolve_pack_from_need", return_value=pack):
             errs = self.errors()
         # non-APO: no exclusion-language gate; max_core falls back to 25; primary id to "apo"
-        self.assertFalse(any("exclusion language" in e for e in errs))
+        self.assertFalse(any("exclusion language" in e for e in errs))  # pack has no scope_exclusion_check
         self.assertFalse(any("exceeds" in e for e in errs))
         self.assertFalse(any("dual listing" in e for e in errs))
         self.audit(core=[f"s{i}" for i in range(26)])
@@ -582,10 +595,10 @@ class CatalogGateTests(_Base):
         self.put("comparison/comparison.json", comparison())
         # prose mentions Augment Code without Cosmos while audit core has it
         self.put("landscape/landscape-report.md", ALL_SECTIONS + "\nAugment-Code is mentioned.\n")
-        self.assertIn("augment-code present in core without Cosmos rename", self.errors())
+        self.assertIn("augment-code present in core without augment-cosmos rename", self.errors())
         # Cosmos also mentioned -> fine
         self.put("landscape/landscape-report.md", ALL_SECTIONS + "\nAugment Code and augment cosmos.\n")
-        self.assertFalse(any("without Cosmos rename" in e for e in self.errors()))
+        self.assertFalse(any("without augment-cosmos rename" in e for e in self.errors()))
         # mention but audit core does not hold it -> fine
         self.audit(core=["silver-bullet"])
         self.put("landscape/landscape-report.md", ALL_SECTIONS + "\nAugment-Code is mentioned.\n")

@@ -127,9 +127,9 @@ The stages behind these markers, and the order to run them in, are described in 
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `SILVER_BULLET_STATE_FILE` | `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state` | Override the state file path used by all hooks. Intended for testing — lets test suites point hooks at a temp file instead of the real state. Must resolve to a path inside `${SB_RUNTIME_HOME_ROOT}/` (security guard enforced by `hooks/session-start`). Paths outside `${SB_RUNTIME_HOME_ROOT}/` are rejected and fall back to the default. |
-| `SILVER_BULLET_QUALITY_GATE_STATE_FILE` | `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state` | Override the release-quality-gate marker file used by `completion-audit.sh` and `session-start`. Intended for testing. Must resolve to a path inside `${SB_RUNTIME_HOME_ROOT}/` (security guard enforced by `session-start`); other paths fall back to the default. |
-| `SILVER_BULLET_VERIFY_TESTS_STATE_FILE` | `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/verify-tests-state` | Override the test-execution freshness marker used by `completion-audit.sh`, `dev-cycle-check.sh`, `session-start`, and `/verify-tests`. Intended for testing. Must resolve to a path inside `${SB_RUNTIME_HOME_ROOT}/` (security guard enforced by the hooks); other paths fall back to the default. |
+| `SILVER_BULLET_STATE_FILE` | `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state` | Override the state file path used by all hooks. Intended for testing — lets test suites point hooks at a temp file instead of the real state. Must resolve, after `..` and symlinks, to a path inside `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/` (enforced by every hook that reads it); other paths fall back to the default. |
+| `SILVER_BULLET_QUALITY_GATE_STATE_FILE` | `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state` | Override the release-quality-gate marker file used by `completion-audit.sh` and `session-start`. Intended for testing. Must resolve, after `..` and symlinks, to a path inside `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/`; other paths fall back to the default. |
+| `SILVER_BULLET_VERIFY_TESTS_STATE_FILE` | `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/verify-tests-state` | Override the test-execution freshness marker used by `completion-audit.sh`, `dev-cycle-check.sh`, `session-start`, and `/verify-tests`. Intended for testing. Must resolve, after `..` and symlinks, to a path inside `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/`; other paths fall back to the default. |
 
 ## Bypass Detection
 
