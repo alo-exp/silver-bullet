@@ -12,7 +12,7 @@ Silver Bullet ships one source tree through two first-class host surfaces:
 
 Both are composed of shell hook scripts, skill markdown files, JSON configuration and workflow documentation. SB owns the lifecycle authority for default software-engineering workflows and calls optional provider, DevOps, design, research, or issue-tracker plugins only when a selected flow needs their external capability. Its enforcement layer prevents the runtime from skipping required workflow steps.
 
-`hooks/lib/runtime-paths.sh` resolves the active runtime — `claude`, `codex`, `opencode`, `pi`, `goose` or `hermes` (from `SILVER_BULLET_RUNTIME` or host environment markers) — and with it the state root (`~/.claude`, `~/.codex`, `~/.cursor`, `~/.config/opencode`, `~/.pi/agent`, `~/.config/goose`, `~/.hermes`). Claude Code, Codex and Cursor are the supported plugin hosts; the other runtimes share the state layout and the five-tool stack integration. Optional extension plugins that do not publish Codex artifacts are represented by thin wrappers in the unified `alo-labs/agent-plugins` marketplace, which fetches upstream content at install time instead of vendoring it here.
+`hooks/lib/runtime-paths.sh` resolves the active runtime — `claude`, `codex`, `opencode`, `pi`, `goose` or `hermes` (from `SILVER_BULLET_RUNTIME` or host environment markers) — and with it the state root (`~/.claude`, `~/.codex`, `~/.config/opencode`, `~/.pi/agent`, `~/.config/goose`, `~/.hermes`). Claude Code and Codex are the supported plugin hosts; the other runtimes share the state layout and the five-tool stack integration. Optional extension plugins that do not publish Codex artifacts are represented by thin wrappers in the unified `alo-labs/agent-plugins` marketplace, which fetches upstream content at install time instead of vendoring it here.
 
 No server, no database — all state lives in flat files under `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/`.
 
@@ -81,7 +81,7 @@ entry point.
 
 - `/.planning/` and `/.claude/` are project-instance artifacts, not plugin content.
 - `silver-bullet.md` is the project copy; `templates/silver-bullet.md.base` is the source template.
-- `plugins/silver-bullet/` is a curated package surface, not a mirror of the whole repository: root docs, `docs/`, `hooks/` and `scripts/` are symlinks; `skill-source/` (Codex render), `templates/` (host-neutral, byte-identical) and `cursor-hooks.json` are generated. Nothing under the package is rewritten for one host after rendering; the Codex installer sanitizes the copy it installs.
+- `plugins/silver-bullet/` is a curated package surface, not a mirror of the whole repository: root docs, `docs/`, `hooks/` and `scripts/` are symlinks; `skill-source/` (Codex render) and `templates/` (host-neutral, byte-identical) are generated. Nothing under the package is rewritten for one host after rendering; the Codex installer sanitizes the copy it installs.
 - **Windows checkout exception** — the only tracked paths containing `:` are the route directories `agents/claude/sb:*`; `scripts/validate-plugin-mirror.sh` rejects any other generated path native Windows cannot check out. The approved rename to hyphen directories will remove this exception.
 - Third-party Codex wrappers for optional extensions belong in the shared marketplace and fetch upstream content at install time.
 

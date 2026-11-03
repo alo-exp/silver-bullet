@@ -60,7 +60,7 @@ The runner is the local equivalent of CI because it isolates each test file:
 - **Closed stdin.** Each file runs with `</dev/null`, so hooks that read stdin cannot hang the run; tests that exercise stdin pipe explicit JSON.
 - **Failure accounting.** A test file that exits non-zero counts as a failure even if it never printed a `Results:` line.
 
-Opt-in additions: `SB_ENTERPRISE_E2E_LIVE=1` adds `tests/enterprise-e2e-live/`; `SB_FIVE_TOOL_LIVE=1` is retired with the Cursor harness.
+Opt-in additions: `SB_ENTERPRISE_E2E_LIVE=1` adds `tests/enterprise-e2e-live/`.
 
 ### The verify-tests gate
 

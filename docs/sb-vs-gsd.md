@@ -11,7 +11,7 @@ This page replaces three earlier notes (`sb-vs-gsd.md`, `gsd-vs-silver-bullet.md
 /sb:init
 ```
 
-Install `jq` first if you do not have it (`brew install jq` or `sudo apt install jq`). No GSD, Superpowers or knowledge-work plugin is required for SB's default lifecycle; Codex and Cursor installs are described in the [README](../README.md#install).
+Install `jq` first if you do not have it (`brew install jq` or `sudo apt install jq`). No GSD, Superpowers or knowledge-work plugin is required for SB's default lifecycle; the Codex install is described in the [README](../README.md#install).
 
 ## What SB Owns
 

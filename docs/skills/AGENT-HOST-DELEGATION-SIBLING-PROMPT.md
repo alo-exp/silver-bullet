@@ -1,15 +1,12 @@
 # Agent host delegation — sibling meta-prompt
 
-Copy-paste template for sibling host agents (Claude, Cursor, Codex, future hosts) to build their own **`/sb:agent-<host>`** on-demand delegation skills.
+Copy-paste template for sibling host agents (Claude, Codex, future hosts) to build their own **`/sb:agent-<host>`** on-demand delegation skills.
 
 **Canonical reference implementations:**
 
 | Host | Merged on `main` | Skill |
 |------|------------------|-------|
 | Codex | [`83e42c34`](https://github.com/alo-exp/silver-bullet/commit/83e42c34) | [`skills/silver-agent-codex/SKILL.md`](../../skills/silver-agent-codex/SKILL.md) |
-| Cursor | [`7a901af4`](https://github.com/alo-exp/silver-bullet/commit/7a901af4) (feature branch) | [`skills/silver-agent-cursor/SKILL.md`](../../skills/silver-agent-cursor/SKILL.md) |
-
-**Pilot evidence:** [`.planning/silver-agent-cursor-pilot.md`](../../.planning/silver-agent-cursor-pilot.md)
 
 **Source of truth in this repo:**
 
@@ -19,13 +16,8 @@ Copy-paste template for sibling host agents (Claude, Cursor, Codex, future hosts
 | Delegate wrapper (Codex) | [`scripts/agent-codex-delegate.sh`](../../scripts/agent-codex-delegate.sh) |
 | Live adapter (Codex) | [`tests/live/agents/codex/agent.sh`](../../tests/live/agents/codex/agent.sh) |
 | Structural test (Codex) | [`tests/scripts/test-agent-codex-skill.sh`](../../tests/scripts/test-agent-codex-skill.sh) |
-| Canonical skill (Cursor) | [`skills/silver-agent-cursor/SKILL.md`](../../skills/silver-agent-cursor/SKILL.md) |
-| Delegate wrapper (Cursor) | [`scripts/agent-cursor-delegate.sh`](../../scripts/agent-cursor-delegate.sh) |
-| Live adapter (Cursor) | [`tests/live/agents/cursor/agent.sh`](../../tests/live/agents/cursor/agent.sh) |
-| Structural test (Cursor) | [`tests/scripts/test-agent-cursor-skill.sh`](../../tests/scripts/test-agent-cursor-skill.sh) |
 | E2E adapters (matrix only) | [`scripts/enterprise-e2e/lib/adapters/`](../../scripts/enterprise-e2e/lib/adapters/) |
 | Host isolation policy | [`docs/testing/ENTERPRISE-E2E-HOST-CERTIFICATION-METHODOLOGY.md` §9](../../docs/testing/ENTERPRISE-E2E-HOST-CERTIFICATION-METHODOLOGY.md) |
-| Shared lib (follow-up) | `scripts/lib/agent-delegate-common.sh` — **gap:** extract quota retry, redaction, log header from cursor/codex wrappers |
 
 ---
 
@@ -59,7 +51,7 @@ Do **not** write session markers to `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/stat
 ### Original user intent (carry forward)
 
 1. **Stand-alone per-task skill** — not session-persistent like Sidekick.
-2. **Drive host TUI as subagent from any host-agent** — Claude parent → Cursor worker, Cursor parent → Codex worker, etc.
+2. **Drive host TUI as subagent from any host-agent** — Claude parent → Codex worker, Codex parent → Claude worker, etc.
 3. **Arbitrary real work** — not the E2E matrix row catalog.
 4. **Review ladder before ship** — thermo-nuclear code-quality + thermo-nuclear review + security-review + Sentinel re-audit on SB-repo harness changes.
 5. **Real-life pilot** — isolated test-app branch/worktree with committed product delta.
@@ -99,23 +91,6 @@ Replace `<host>`, `<HOST>`, and placeholders below.
 | Auth | OAuth / Keychain via `scripts/lib/claude-matrix-auth.sh` — **no** mid-delegation key rotation |
 | State isolation | Fresh `${SB_RUNTIME_STATE_DIR}` per delegation wave when matrix parity needed (E2E-105) |
 
-### `/sb:agent-cursor` — **reference (shipped)**
-
-| Item | Value |
-|------|-------|
-| Skill dir | `skills/silver-agent-cursor/` |
-| Route | `/sb:agent-cursor` |
-| Wrapper | `scripts/agent-cursor-delegate.sh` |
-| Live adapter | [`tests/live/agents/cursor/agent.sh`](../../tests/live/agents/cursor/agent.sh) |
-| Invoke | `cursor-agent` headless CLI (`SB_LIVE_CURSOR_FORCE_HEADLESS=1`); IDE in-session only for explicit bridge tests |
-| Work dir env | `CURSOR_WORK_DIR` |
-| Route syntax in child prompts | `/sb:*` (Cursor picker) |
-| Planning logs | `.planning/agent-cursor/` (gitignored) |
-| Model policy | **`composer-2.5` only** — never `composer-2.5-fast` |
-| Auth | Keychain via `cursor-agent login` — **unset** `CURSOR_API_KEY` in delegate wrapper |
-| Log capture | `SB_AGENT_CURSOR_STREAM_JSON=1`; log floor `SB_AGENT_CURSOR_LOG_FLOOR` (2048 B default) |
-| Path policy | **Absolute paths** for `--log` and `--brief-file` (relative paths resolve under `WORK_DIR`) |
-
 ### Optional fourth host stub — `<HOST4>` (e.g. `opencode`, `windsurf`, `gemini-cli`)
 
 | Item | Placeholder |
@@ -137,16 +112,12 @@ Before authoring a new `silver-agent-<host>` sibling:
 | Prerequisite | Check |
 |--------------|-------|
 | Live adapter exists | `tests/live/agents/<host>/agent.sh` with `agent_preflight` + `agent_invoke` |
-| Host CLI on PATH | `cursor-agent`, native Codex CLI, etc. |
 | Router entry | [`skills/silver/SKILL.md`](../../skills/silver/SKILL.md) intent table row for `sb:agent-<host>` |
 | Orchestrator allowlist | [`hooks/lib/orchestrator-parent.sh`](../../hooks/lib/orchestrator-parent.sh) → `sb_orchestrator_parent_skill_allowed` includes `silver-agent-<host>` |
 | Parent Bash bridge | Same file → `sb_orchestrator_parent_bash_allowed` allows `agent-<host>-delegate.sh` |
 | Integration alias | [`tests/integration/test-skill-execution-paths.sh`](../../tests/integration/test-skill-execution-paths.sh) `resolve_silver_alias` case |
 | Logs gitignored | `.gitignore` → `.planning/agent-<host>/` |
 | Methodology literacy | [ENTERPRISE-E2E-HOST-CERTIFICATION-METHODOLOGY.md](../testing/ENTERPRISE-E2E-HOST-CERTIFICATION-METHODOLOGY.md) §5a/§5b/§8 — adapt for production delegation, do not copy matrix row gates verbatim |
-| Host readiness audit | Pattern: [CURSOR-METHODOLOGY-HARNESS-READINESS-AUDIT.md](../testing/CURSOR-METHODOLOGY-HARNESS-READINESS-AUDIT.md), [CODEX-METHODOLOGY-HARNESS-READINESS-AUDIT.md](../testing/CODEX-METHODOLOGY-HARNESS-READINESS-AUDIT.md) |
-
-**Composer 2.5 policy (Cursor only, mandatory):** Subagent/delegation work uses **`composer-2.5` only**. Never `composer-2.5-fast`. Enforce in delegate wrapper (`CURSOR_AGENT_MODEL`, reject `*fast*`), skill doc, and parent brief.
 
 ---
 
@@ -207,7 +178,6 @@ version: 0.1.0
 
 | Host | Auth | Forbidden / pitfalls |
 |------|------|----------------------|
-| **Cursor** | Keychain via `cursor-agent login`; preflight `agent_preflight` | **Do not** set `CURSOR_API_KEY` — bypasses Keychain, breaks cert parity (methodology §8) |
 | **Codex** | Native CLI session + hook trust | Use `CODEX_AUTO_TRUST_HOOKS=1`, `CODEX_BYPASS_HOOK_TRUST=1` in lightweight delegate; seed via `bash scripts/install-codex.sh --hook-trust-seed-only` on trust failure |
 | **Claude** (future) | API key / OAuth per Claude Code docs | Isolate state per delegation wave; no matrix inherit-keys shortcuts (E2E-110) |
 | **Gemini** (future) | TBD when adapter lands | Document in skill before ship |
@@ -276,17 +246,6 @@ Complete **every** item before merging a new `/sb:agent-<host>` skill.
 | `SB_AGENT_<HOST>_DELEGATE` | `1` | Adapter detects delegation vs matrix |
 | `SB_ORCHESTRATOR_WORKER` | `1` | Child must not spawn parent Task workers |
 | `SB_ORCHESTRATOR_PARENT` | `0` | Paired with worker flag |
-| Host-specific lightweight | see per-host table | e.g. Codex: ephemeral `CODEX_HOME` + MCP strip; Cursor: force headless + stream-json |
-
-**Cursor-specific** (`agent-cursor-delegate.sh`):
-
-| Env | Default | Purpose |
-|-----|---------|---------|
-| `CURSOR_AGENT_TIMEOUT` | 1800 | Hard timeout (E2E-087/092) |
-| `CURSOR_AGENT_MODEL` / `CURSOR_MODEL` | `composer-2.5` | Model policy |
-| `SB_AGENT_CURSOR_STREAM_JSON` | 1 | stream-json capture (E2E-093) |
-| `SB_AGENT_CURSOR_LOG_FLOOR` | 2048 | Minimum log bytes for PASS |
-| `SB_LIVE_CURSOR_FORCE_HEADLESS` | 1 | `cursor-agent` CLI, not IDE session |
 
 **Codex-specific** (`agent-codex-delegate.sh`):
 
@@ -323,7 +282,7 @@ Fixture / live-test only: set `SB_AGENT_<HOST>_FIXTURE=1`, `SB_AGENT_<HOST>_LIGH
 
 - [ ] `tests/scripts/test-agent-<host>-skill.sh` — grep-based contract mirroring [`test-agent-codex-skill.sh`](../../tests/scripts/test-agent-codex-skill.sh)
 - [ ] Asserts: SKILL frontmatter, route, matrix exclusion docs, delegate references, wrapper sources live adapter, lightweight/orchestrator env, `bash -n` on wrapper
-- [ ] Host-specific: Cursor → `composer-2.5`, `CURSOR_API_KEY`, `stream-json`, log floor; Codex → `codex-interactive-invoke.py`, lightweight env
+- [ ] Host-specific: Codex → `codex-interactive-invoke.py`, lightweight env
 - [ ] Wire into CI if sibling tests are listed in `tests/run-all-tests.sh` or targeted pre-merge script
 - [ ] **Gap (open):** add orchestrator parent guard case to `tests/hooks/test-orchestrator-parent-guard.sh` allowing `agent-<host>-delegate.sh` Bash
 
@@ -347,23 +306,23 @@ graphify update .
 
 ## Per-host variation table
 
-| Dimension | Codex | Claude | Cursor | Fourth host |
-|-----------|-------|--------|--------|-------------|
-| **Invoke CLI** | `codex` (TUI / `codex exec`) | `claude` (expect TUI / print) | `cursor-agent` headless | `<cli>` |
-| **Harness script** | `codex-interactive-invoke.py` | `claude-interactive-invoke.expect` | inline in `agent.sh` + stream-json | TBD |
-| **Work dir env** | `CODEX_WORK_DIR` | `CLAUDE_WORK_DIR` | `CURSOR_WORK_DIR` | `<HOST>_WORK_DIR` |
-| **SB_ROOT** | SB checkout with full `tests/live/` | same | same | same |
-| **Child route syntax** | `$sb:*` | `/sb:*` or `[$silver]` | `/sb:*` | host picker |
-| **CWD policy** | `cd "$CODEX_WORK_DIR"` in harness | `cd "$CLAUDE_WORK_DIR"` | `cd "$CURSOR_WORK_DIR"` | `cd "$WORK_DIR"` |
-| **Auth** | Codex login / API in `CODEX_HOME` | OAuth; `claude-matrix-auth.sh` | Keychain `cursor-agent login`; no `CURSOR_API_KEY` | TBD |
-| **Lightweight hook** | Ephemeral `CODEX_HOME`, MCP strip | Fresh runtime state dir optional | `SB_LIVE_CURSOR_FORCE_HEADLESS=1`, stream-json | TBD |
-| **Headless fallback** | `--use-exec` | print mode when expect unavailable | default headless | TBD |
-| **Matrix lock file** | `.e2e-live-test-codex.lock` | `.e2e-live-test.lock` | `.e2e-live-test-cursor.lock` | `.e2e-live-test-<host>.lock` |
-| **Fixture branch** | `enterprise-e2e/round-N-codex` | `round6` / host branch | `enterprise-e2e/round-N-cursor` worktree | per §9 |
-| **Quota env** | `AGENT_CODEX_QUOTA_RETRY_*` | `AGENT_CLAUDE_QUOTA_RETRY_*` | `AGENT_CURSOR_QUOTA_RETRY_*` | `AGENT_<HOST>_QUOTA_RETRY_*` |
-| **Log evidence** | exit 0 + redacted log | expect log file | `SB_AGENT_CURSOR_LOG_FLOOR` (2048 B) | define floor |
-| **Model policy** | `CODEX_MODEL` optional | `CLAUDE_MODEL` default sonnet | **`composer-2.5` mandatory** | TBD |
-| **Log/brief paths** | absolute in wrapper | absolute in wrapper | absolute in wrapper (pilot fix) | absolute in wrapper |
+| Dimension | Codex | Claude | Fourth host |
+|-----------|-------|--------|-------------|
+| **Invoke CLI** | `codex` (TUI / `codex exec`) | `claude` (expect TUI / print) | `<cli>` |
+| **Harness script** | `codex-interactive-invoke.py` | `claude-interactive-invoke.expect` | TBD |
+| **Work dir env** | `CODEX_WORK_DIR` | `CLAUDE_WORK_DIR` | `<HOST>_WORK_DIR` |
+| **SB_ROOT** | SB checkout with full `tests/live/` | same | same |
+| **Child route syntax** | `$sb:*` | `/sb:*` or `[$silver]` | host picker |
+| **CWD policy** | `cd "$CODEX_WORK_DIR"` in harness | `cd "$CLAUDE_WORK_DIR"` | `cd "$WORK_DIR"` |
+| **Auth** | Codex login / API in `CODEX_HOME` | OAuth; `claude-matrix-auth.sh` | TBD |
+| **Lightweight hook** | Ephemeral `CODEX_HOME`, MCP strip | Fresh runtime state dir optional | TBD |
+| **Headless fallback** | `--use-exec` | print mode when expect unavailable | TBD |
+| **Matrix lock file** | `.e2e-live-test-codex.lock` | `.e2e-live-test.lock` | `.e2e-live-test-<host>.lock` |
+| **Fixture branch** | `enterprise-e2e/round-N-codex` | `round6` / host branch | per §9 |
+| **Quota env** | `AGENT_CODEX_QUOTA_RETRY_*` | `AGENT_CLAUDE_QUOTA_RETRY_*` | `AGENT_<HOST>_QUOTA_RETRY_*` |
+| **Log evidence** | exit 0 + redacted log | expect log file | define floor |
+| **Model policy** | `CODEX_MODEL` optional | `CLAUDE_MODEL` default sonnet | TBD |
+| **Log/brief paths** | absolute in wrapper | absolute in wrapper | absolute in wrapper |
 
 ---
 
@@ -385,10 +344,8 @@ Adapt matrix certification lessons for **production delegation** — do not copy
 | E2E-109 | Export fixture/test-app root before any mkdir in pilot setup |
 | E2E-110 | Claude: no inherit-keys shortcuts in production delegate — document auth policy |
 | E2E-112 | Rescore ≠ live rerun — harness fix requires new delegate invocation for credit |
-| Keychain Cursor auth | `"apiKeySource":"login"` in log — not API key |
 | Composer 2.5 only | Reject fast model in wrapper |
 | Stdout buffering | 0 B log growth up to ~30 min possible — do not PASS on timeout-only |
-| Absolute log paths | Canonicalize in wrapper (cursor pilot fix @ [`7a901af4`](https://github.com/alo-exp/silver-bullet/commit/7a901af4)) |
 | Inherited baseline | Pre-existing fixture artifacts disqualify authorship claims |
 | Honest baseline | `09f8d1a` — not pre-seeded `8482e60` (methodology §5a #1) |
 
@@ -398,7 +355,6 @@ Adapt matrix certification lessons for **production delegation** — do not copy
 
 | Gap | Status | Action |
 |-----|--------|--------|
-| `agent-delegate-common.sh` | Open | Extract shared quota/redaction/header from cursor + codex wrappers |
 | Bash allowlist substring | Open | `sb_orchestrator_parent_bash_allowed` matches `*agent-*-delegate.sh*` — tighten to parsed argv |
 | Parent guard test | Open | Add case to `tests/hooks/test-orchestrator-parent-guard.sh` allowing `agent-<host>-delegate.sh` Bash |
 
@@ -416,7 +372,6 @@ Adapt matrix certification lessons for **production delegation** — do not copy
 | `pkill` / removing another host's lock files | §9 cross-agent isolation |
 | Committing `.planning/agent-<host>/*.log` | May contain secrets — gitignore only |
 | Duplicating invoke logic instead of sourcing `tests/live/agents/<host>/agent.sh` | Drift from live certification harness |
-| Using `composer-2.5-fast` for Cursor delegation | Global subagent policy violation |
 | Relative `--log` / `--brief-file` paths | Resolve under `WORK_DIR`, not SB_ROOT — use absolute paths |
 
 ---
@@ -445,7 +400,6 @@ Real-life pilot before claiming production-ready for a new host.
 | Item | Value |
 |------|-------|
 | SB branch | Feature branch (e.g. `feature/silver-agent-<host>-skill`) |
-| Test app | Isolated worktree (e.g. `enterprise-grade-test-app-cursor`) |
 | Test app branch | `round-agent-<host>-test` or `feature/<pilot-slug>` |
 | Task scope | Small real delta — doc marker or single API endpoint |
 | Log path | `.planning/agent-<host>/pilot-YYYYMMDD/<host>-run.log` (gitignored) |
@@ -462,8 +416,8 @@ Single doc edit: add pilot marker line to `README.md`; commit `docs: agent-<host
 Delegation is **PASS** only when **all** hold:
 
 1. `agent-<host>-delegate.sh` exits **0** without harness `ERROR:`.
-2. **Log floor** — log size ≥ `SB_AGENT_<HOST>_LOG_FLOOR` (Cursor default 2048 B) **or** documented brownfield waiver with file:line pre-existence proof.
-3. **Live session evidence** — log shows model/session markers (e.g. Cursor `Composer 2.5`, `"apiKeySource":"login"`).
+2. **Log floor** — log size ≥ `SB_AGENT_<HOST>_LOG_FLOOR` (for example 2048 B) **or** documented brownfield waiver with file:line pre-existence proof.
+3. **Live session evidence** — log shows model/session markers (for example the model name and a session id).
 4. **Every acceptance criterion** verified with evidence (commit SHA, test output, file paths).
 5. **Committed product delta** when brief requires code change — dirty tree alone insufficient.
 6. Parent summary in `.planning/agent-<host>/<task-id>/result.md` or agentmemory.
@@ -473,34 +427,6 @@ Delegation is **PASS** only when **all** hold:
 
 Honest outcomes: do not claim PASS on timeout-only logs, inherited baseline artifacts, or parent-routing-only with zero worker delta.
 
-### Pilot invocation (Cursor reference)
-
-```bash
-export SB_ROOT=/path/to/silver-bullet/repo
-export CURSOR_AGENT_TIMEOUT=600
-export SB_AGENT_CURSOR_LOG_FLOOR=512   # lower only for smoke; production default 2048
-
-bash scripts/agent-cursor-delegate.sh \
-  --work-dir /path/to/enterprise-grade-test-app-cursor \
-  --brief-file "$SB_ROOT/.planning/agent-cursor/pilot-YYYYMMDD/brief.md" \
-  --log "$SB_ROOT/.planning/agent-cursor/pilot-YYYYMMDD/cursor-run.log"
-```
-
----
-
-## Quick reference — cursor vs codex shipped
-
-| Concern | Cursor | Codex |
-|---------|--------|-------|
-| Wrapper | `scripts/agent-cursor-delegate.sh` | `scripts/agent-codex-delegate.sh` |
-| Work dir env | `CURSOR_WORK_DIR` / `--work-dir` | `CODEX_WORK_DIR` / `--work-dir` |
-| Log floor | `SB_AGENT_CURSOR_LOG_FLOOR` (2048) | — (add if needed) |
-| Headless flag | `SB_LIVE_CURSOR_FORCE_HEADLESS=1` | `--use-exec` fallback |
-| Model policy | `composer-2.5` mandatory | `CODEX_MODEL` optional |
-| Auth | Keychain; unset `CURSOR_API_KEY` | Hook trust + native CLI |
-| Route syntax | `/sb:*` | `$sb:*` |
-| stream-json | `SB_AGENT_CURSOR_STREAM_JSON=1` | N/A |
-
 ---
 
 ## Prompt for Claude agent
@@ -508,7 +434,7 @@ bash scripts/agent-cursor-delegate.sh \
 ```markdown
 You are building `/sb:agent-claude` in the Silver Bullet repo (`/Users/shafqat/projects/silver-bullet/repo`).
 
-**Mission:** On-demand, single-task delegation from a parent host (Cursor, Codex, or Claude parent) to **Claude TUI** as executor — parent supervises (brief → checkpoint → escalate); Claude implements in `CLAUDE_WORK_DIR`. NOT Sidekick session mode. NOT enterprise E2E matrix.
+**Mission:** On-demand, single-task delegation from a parent host (Codex or Claude parent) to **Claude TUI** as executor — parent supervises (brief → checkpoint → escalate); Claude implements in `CLAUDE_WORK_DIR`. NOT Sidekick session mode. NOT enterprise E2E matrix.
 
 **Read first (graphify query before grep):**
 - `skills/silver-agent-codex/SKILL.md` — canonical pattern
@@ -535,37 +461,6 @@ Return: changed file list + smoke commit SHA + structural test output.
 
 ---
 
-## Prompt for Cursor agent
-
-```markdown
-You are extending or verifying `/sb:agent-cursor` in the Silver Bullet repo (`/Users/shafqat/projects/silver-bullet/repo`).
-
-**Mission:** On-demand, single-task delegation from a parent host (Claude, Codex, or Cursor parent) to **cursor-agent** headless CLI as executor — parent supervises (brief → checkpoint → escalate); Cursor implements in `CURSOR_WORK_DIR`. NOT Sidekick session mode. NOT enterprise E2E matrix.
-
-**Read first (graphify query before grep):**
-- `skills/silver-agent-codex/SKILL.md` — canonical pattern (merged @ 83e42c34)
-- `skills/silver-agent-cursor/SKILL.md` — Cursor sibling
-- `scripts/agent-cursor-delegate.sh`, `tests/live/agents/cursor/agent.sh`
-- `docs/skills/AGENT-HOST-DELEGATION-SIBLING-PROMPT.md` — full checklist
-
-**If skill missing, deliver:**
-1. `skills/silver-agent-cursor/SKILL.md` — headless `cursor-agent`, Keychain auth (unset `CURSOR_API_KEY`), `composer-2.5` only, stream-json log capture, `SB_AGENT_CURSOR_LOG_FLOOR`
-2. `scripts/agent-cursor-delegate.sh` — sources live adapter; `SB_LIVE_CURSOR_FORCE_HEADLESS=1`; orchestrator worker bypass; absolute log/brief paths
-3. Router: `skills/silver/SKILL.md` row, `hooks/lib/orchestrator-parent.sh`, `tests/integration/test-skill-execution-paths.sh`
-4. `tests/scripts/test-agent-cursor-skill.sh`
-5. `.gitignore` → `.planning/agent-cursor/`
-6. `bash scripts/sync-codex-package.sh`
-7. Real smoke on isolated worktree (`enterprise-grade-test-app-cursor` per TEST-APP-BRANCH-POLICY) → `.planning/agent-cursor/smoke/result.md`
-
-**Ship gates:** Thermo dual review + security-review; smoke PASS with log ≥ 2048 B and commit SHA.
-
-**Anti-patterns:** No matrix ledger, no IDE in-session mode in delegate default, no `composer-2.5-fast`, no `CURSOR_API_KEY` in delegate, no relative log paths.
-
-Return: changed file list + smoke evidence + structural test output.
-```
-
----
-
 ## Prompt for fourth host agent (`<HOST4>`)
 
 ```markdown
@@ -573,7 +468,7 @@ You are building `/sb:agent-<HOST4>` in the Silver Bullet repo.
 
 Follow `docs/skills/AGENT-HOST-DELEGATION-SIBLING-PROMPT.md` end-to-end. Use `skills/silver-agent-codex/SKILL.md` + `scripts/agent-codex-delegate.sh` as the template.
 
-**Prerequisites:** `tests/live/agents/<HOST4>/agent.sh` must implement `agent_name`, `agent_preflight`, `agent_invoke` (see codex/claude/cursor adapters).
+**Prerequisites:** `tests/live/agents/<HOST4>/agent.sh` must implement `agent_name`, `agent_preflight`, `agent_invoke` (see the codex and claude adapters).
 
 **Mission:** Per-task on-demand delegation only — not Sidekick, not E2E matrix.
 
@@ -588,5 +483,3 @@ Return: file list + smoke commit SHA.
 
 | Date | Change |
 |------|--------|
-| 2026-07-04 | Initial meta-prompt on `main` @ 6b0d14b2; codex reference @ 83e42c34; cursor/claude/HOST4 stubs |
-| 2026-07-04 | Merged cursor-session enhancements: §5b pilot gates, E2E-091–115 adaptations, stream-json/Keychain/composer-2.5, absolute log paths, reviews ladder, orchestrator gaps, agent-delegate-common follow-up |
