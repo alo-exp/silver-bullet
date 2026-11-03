@@ -132,11 +132,11 @@ EOF
 
 HOME="$HOME_DIR" bash "$SCRIPT" --purge-legacy-plugins >/dev/null
 
-if grep -qF 'git@github.com:' "$HOME_DIR/.gitconfig" && grep -qF 'ssh://git@github.com/' "$HOME_DIR/.gitconfig"; then
-  echo "PASS: git HTTPS rewrite configured"
+if ! grep -qsF 'insteadOf' "$HOME_DIR/.gitconfig"; then
+  echo "PASS: global git config left alone (no HTTPS rewrite, R7-13)"
   (( PASS++ )) || true
 else
-  echo "FAIL: git HTTPS rewrite configured"
+  echo "FAIL: global git config left alone (no HTTPS rewrite, R7-13)"
   (( FAIL++ )) || true
 fi
 
