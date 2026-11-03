@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -473,6 +474,16 @@ def build_license_by_slug(pack: dict[str, Any]) -> dict[str, str]:
 def build_overview_seeds(pack: dict[str, Any]) -> dict[str, str]:
     """Pack may carry overview_seeds dict; otherwise empty (synthesis uses SCR)."""
     return dict(pack.get("overview_seeds") or {})
+
+
+def feature_key(raw: Any) -> str:
+    """Folding key for feature names, shared by the packager and the content gate.
+
+    Case, spacing, hyphens and other punctuation vanish; "+" and "#" are part of a name
+    ("C++ support" is not "C# support" is not "C support").
+    """
+    text = str(raw or "").casefold().replace("+", " plus ").replace("#", " sharp ")
+    return re.sub(r"[^a-z0-9]+", " ", text).strip()
 
 
 def normalize_slug(token: str, pack: dict[str, Any] | None = None) -> str | None:

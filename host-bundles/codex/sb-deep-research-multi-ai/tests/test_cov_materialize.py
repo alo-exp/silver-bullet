@@ -109,7 +109,7 @@ class SlugTests(unittest.TestCase):
 
     def test_extract_slugs_from_text(self) -> None:
         self.assertEqual(m._extract_slugs_from_text("Silver Bullet and github copilot with cline"),
-                         ["silver-bullet", "cline", "github-copilot", "github-copilot-workspace"])  # one product, one slug
+                         ["silver-bullet", "cline", "github-copilot"])  # one product, one slug
         self.assertEqual(m._extract_slugs_from_text("nothing here"), [])
         self.assertEqual(m._extract_slugs_from_text("zt rocks and omega", KNOWN_WITH_PACK, PACK), ["omega", "zeta-tool"])  # "zt" is the pack alias of zeta-tool
 
