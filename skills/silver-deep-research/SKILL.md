@@ -286,8 +286,8 @@ word for word (case, punctuation, articles, plural or `-s`/`-ed`/`-ing`, and the
 differ; nothing else). Any rewording, reordering, voice change or paraphrase is `needs_review` and is
 **listed, not failed**: the JSON summary has `review_required: true` and a `needs_review` list with the
 reason for each claim, and `verify_claim_support.py report --dir "$SB_RESEARCH_OUT_DIR"` prints a "Needs
-Review" section. Expect most paraphrased claims there: quote just the supporting sentence as evidence and
-write the claim from it to get `supported`. Before delivery, resolve every item: open the source, then
+Review" section. Expect most paraphrased claims there. While writing, quote exactly the ONE sentence that backs each claim
+and phrase the claim to repeat it, so it is `supported` rather than `needs_review`. Before delivery, resolve every item: open the source, then
 either add the exact supporting span as evidence (`evidence_store.py add`, quoting the source verbatim)
 and keep the claim's wording, or correct the claim to what the source says, or check the paraphrase against
 the source yourself and say so in the report. Do not hand-edit a status, and do not report a run as verified

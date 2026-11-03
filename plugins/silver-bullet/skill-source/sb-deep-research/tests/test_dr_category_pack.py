@@ -17,7 +17,7 @@ APO_PACK_PATH = PACKS_DIR / "agentic-sdlc-process-orchestrator.json"
 
 sys.path.insert(0, str(SCRIPTS))
 
-from category_pack import (  # noqa: E402
+from dr_category_pack import (  # noqa: E402
     apply_parent_child_dedupe,
     format_inclusion_criteria_prose,
     get_core_seed_slugs,

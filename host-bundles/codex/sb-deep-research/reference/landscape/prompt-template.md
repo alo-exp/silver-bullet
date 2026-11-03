@@ -3,7 +3,7 @@
 Replace the bracketed placeholders before use:
 - `[SOLUTION_CATEGORY]` — the solution category to research (from category pack `display_name`)
 - `[TARGET_AUDIENCE]` — target audience description (default: "CTOs, Heads of Engineering/Operations/Product, and senior procurement leads at SMBs")
-- `[CATEGORY_PACK]` — full market contract block from `category_pack.pack_prompt_block()` (definition, inclusion criteria, seeds, exclusions)
+- `[CATEGORY_PACK]` — full market contract block from `dr_category_pack.pack_prompt_block()` (definition, inclusion criteria, seeds, exclusions)
 - `[SCOPE_MODIFIERS]` — additional scope constraints or focus areas (remove this line if none)
 
 ---

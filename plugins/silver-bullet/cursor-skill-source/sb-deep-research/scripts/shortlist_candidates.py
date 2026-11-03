@@ -95,7 +95,7 @@ def shortlist(
     forbidden: set[str] = set()
     pack = None
     if need_profile.get("category_pack_id"):
-        from category_pack import (
+        from dr_category_pack import (
             get_hard_exclusion_slugs,
             resolve_canonical_slug,
             resolve_pack_from_need_profile,
@@ -149,7 +149,7 @@ def main() -> None:
 
     candidates = load_jsonl(Path(args.candidates))
     need_profile = json.loads(Path(args.need_profile).read_text(encoding="utf-8"))
-    from category_pack import project_pack_dirs
+    from dr_category_pack import project_pack_dirs
 
     try:
         items = shortlist(

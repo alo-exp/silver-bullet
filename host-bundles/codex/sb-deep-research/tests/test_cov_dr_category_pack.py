@@ -12,7 +12,7 @@ from unittest import mock
 SCRIPTS = Path(__file__).resolve().parents[1] / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 
-import category_pack as cp  # noqa: E402
+import dr_category_pack as cp  # noqa: E402
 
 
 def legacy_pack() -> dict:
