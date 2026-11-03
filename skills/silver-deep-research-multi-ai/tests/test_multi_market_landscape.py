@@ -383,6 +383,10 @@ class MultiMarketMembershipConsistencyTests(unittest.TestCase):
             self.assertEqual(len({p["x"] for p in fixed}), 2)
 
 
+from legacy_catalog_fixture import with_legacy_catalogs  # noqa: E402
+
+
+@with_legacy_catalogs
 class AnalystGradeMembershipFixes(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -631,16 +635,15 @@ class AnalystGradeMembershipFixes(unittest.TestCase):
 
 
     def test_rewrite_agentsys_ai_url(self) -> None:
-        from vendor_link_labels import rewrite_vendor_url, scrub_embedded_vendor_urls
+        import vendor_link_labels as vll
+        from vendor_link_labels import rewrite_vendor_url
+
+        self.assertFalse(hasattr(vll, "scrub_embedded_vendor_urls"))  # model data is never rewritten
 
         self.assertEqual(
             rewrite_vendor_url("https://agentsys.ai"),
             "https://github.com/agent-sh/agentsys",
         )
-        payload = scrub_embedded_vendor_urls(
-            {"sources": [{"title": "AgentSys", "url": "https://agentsys.ai"}]}
-        )
-        self.assertEqual(payload["sources"][0]["url"], "https://github.com/agent-sh/agentsys")
 
     def test_multi_market_vendor_dom_ids_must_be_unique(self) -> None:
         """Silver Bullet in APO + sdlc-plugins must emit distinct market-scoped card ids."""

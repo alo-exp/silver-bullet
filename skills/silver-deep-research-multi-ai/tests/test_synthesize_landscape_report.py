@@ -310,6 +310,7 @@ class ReportTests(TmpCase):
         self.assertIn("Consensus Resolution Table", md)
 
 
+@with_legacy_catalogs
 class SynthesizeTests(TmpCase):
     def seed(self, **extra):
         self.put("contributions/all-envelopes.json", ReportTests.ENV)
@@ -351,7 +352,8 @@ class SynthesizeTests(TmpCase):
         res = sl.synthesize_landscape(self.root, skip_charts=True)
         self.assertEqual((res["status"], res["charts"], res["chart_data_bytes"]), ("ok", "skipped", 0))
         md = (self.root / "landscape/landscape-report.md").read_text()
-        self.assertIn("# Agentic SDLC Orchestration Market Landscape Report", md)
+        self.assertIn("# 2026-07-19 run Market Landscape Report", md)
+        self.assertNotIn("Agentic SDLC", md)
         self.put("landscape/chart-data.json", "{}")
         res = sl.synthesize_landscape(self.root, skip_charts=True, force=True)
         self.assertEqual(res["chart_data_bytes"], 2)

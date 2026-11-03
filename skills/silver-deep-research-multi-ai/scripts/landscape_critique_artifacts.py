@@ -12,25 +12,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-INCLUSION_CRITERIA_ORDER: tuple[str, ...] = (
-    "Multi-phase lifecycle span",
-    "Plugin / skill / hook packaging",
-    "Deterministic quality gates",
-    "Cross-session state",
-    "Specialist agent orchestration",
-    "Quality / release enforcement claim",
-    "Process layer above host runtime",
-)
-
-INCLUSION_CRITERIA_ABBR: tuple[str, ...] = (
-    "C1 Life",
-    "C2 Plug",
-    "C3 Gate",
-    "C4 State",
-    "C5 Spec",
-    "C6 Enf",
-    "C7 Proc",
-)
+# Inclusion-ledger criteria and legend are category data (pack overlay vocabulary); without a
+# pack there is no ledger.
+INCLUSION_CRITERIA_ORDER: tuple[str, ...] = ()
+INCLUSION_CRITERIA_ABBR: tuple[str, ...] = ()
+LEDGER: dict[str, str] = {}
 
 _STATUS_CELL = {"pass": "P", "fail": "F", "unknown": "U"}
 
@@ -242,15 +228,15 @@ def inclusion_ledger_embed_lines(
     pack: dict[str, Any] | None,
     known: dict[str, str],
 ) -> list[str]:
+    if not INCLUSION_CRITERIA_ORDER:
+        return []  # the inclusion ledger is a category-pack feature
     payload = load_inclusion_ledger(root)
     vendors = [v for v in (payload.get("vendors") or []) if isinstance(v, dict)]
     lines = [
         "### Vendor inclusion ledger",
         "",
-        "3-of-7 inclusion rule applied **per market**. Cells: **P** pass / **F** fail / **U** "
-        "unknown. Legend: C1 lifecycle · C2 plugin/hook packaging · C3 deterministic gates · "
-        "C4 cross-session state · C5 specialist orchestration · C6 quality/release "
-        "enforcement · C7 process layer above host. Full per-criterion notes: "
+        LEDGER.get("legend")
+        or "Cells: **P** pass / **F** fail / **U** unknown. Full per-criterion notes: "
         "`landscape/inclusion-ledger.md`.",
         "",
         "**Membership must match charts.** "
@@ -259,7 +245,7 @@ def inclusion_ledger_embed_lines(
         "| Vendor | Market | "
         + " | ".join(INCLUSION_CRITERIA_ABBR)
         + " | Evidence cite | Final decision |",
-        "|" + "---|" * 11,
+        "|" + "---|" * (len(INCLUSION_CRITERIA_ABBR) + 4),
     ]
 
     def _row(vendor: dict[str, Any], decision: str) -> str:
@@ -376,11 +362,13 @@ def coverage_completeness_lines(
             rows.append((slug, mid, place))
             seen.add((slug, mid))
 
+    if not rows:
+        return []
     lines = [
         "### Coverage completeness matrix",
         "",
         "Whether this run has **evidence files**, a **comparison-matrix score**, and a "
-        "**market placement** — separate from 3-of-7 inclusion. Gaps are why a vendor "
+        "**market placement** — separate from ledger inclusion. Gaps are why a vendor "
         "may appear in one artifact and not another.",
         "",
         "| Vendor | Evidence available | Scoring complete | Market placement | Gaps |",
@@ -536,7 +524,7 @@ def _write_inclusion_ledger_markdown(
         "| Vendor | Market | "
         + " | ".join(INCLUSION_CRITERIA_ABBR)
         + " | Evidence cite | Final decision |",
-        "|" + "---|" * 11,
+        "|" + "---|" * (len(INCLUSION_CRITERIA_ABBR) + 4),
     ]
     for vendor in sorted(
         [v for v in (payload.get("vendors") or []) if isinstance(v, dict)],
