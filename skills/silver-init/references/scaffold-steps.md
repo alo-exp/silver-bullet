@@ -259,9 +259,9 @@ EOF
 
 If the commit fails due to a pre-commit hook, read the error, fix the issue, re-stage, and create a new commit (do NOT use `--amend`).
 
-### 3.7.5 Register SB hooks in the host settings file
+### 3.7.5 Register SB hooks in the host settings file (manual installs only)
 
-Merges the SB hook entries into the user's global host settings file so hooks remain active in projects installed without the marketplace (e.g. manual installs, workspace clones). Target the active host hooks manifest path (see `docs/RUNTIME-COMPATIBILITY.md`).
+On Claude Code an installed plugin delivers `hooks/hooks.json` itself, so a copy in the user's settings would run every hook twice. This step therefore removes Silver Bullet's own settings copies when the plugin is installed, and registers the hooks in the user's global settings file only for manual installs (workspace clones, installs without the marketplace). On Codex and Cursor the step changes nothing. Target the active host hooks manifest path (see `docs/RUNTIME-COMPATIBILITY.md`).
 
 **Resolve the plugin install path:**
 
@@ -309,7 +309,12 @@ else
 fi
 ```
 
-`scripts/lib/install-<runtime>/merge-hooks.py` substitutes the plugin install path, removes stale mirrored Silver Bullet hook registrations from other app roots or placeholder entries, and appends only new hook entries — never duplicates. On nonzero exit, warn but do NOT stop init:
+`scripts/lib/install-<runtime>/merge-hooks.py` behaves by install type:
+
+- **Plugin installed** (Claude Code registry lists silver-bullet): removes the settings copies Silver Bullet owns and adds nothing; a settings file with nothing to remove is not created, rewritten or backed up.
+- **Manual install**: removes stale Silver Bullet registrations, then registers every (event, matcher, command) of the manifest with the plugin install path substituted, each matcher in its own group.
+
+Only Silver Bullet's own entries are ever touched; the user's hooks stay as they are. The file is written atomically with a `.sb-backup` of the previous content. On nonzero exit, warn but do NOT stop init:
 > ⚠️  Could not auto-register hooks in the host settings file. Run `/sb:init` again after installation completes, or add hooks manually from `hooks/hooks.json`.
 
 Idempotent — re-running `/sb:init` adds no duplicate entries.
