@@ -134,9 +134,9 @@ class MergeHooksTest(unittest.TestCase):
                     hook(f"{PLUGIN}/hooks/other-plugin.sh"),
                     hook("/usr/bin/keep"),
                 ]},
-                {"matcher": "Edit", "hooks": [hook("/opt/silver-bullet/1.0.0/hooks/z.sh")]},
+                {"matcher": "Edit", "hooks": [hook("/opt/silver-bullet/1.0.0/hooks/completion-audit.sh")]},
             ],
-            "Stop": [{"matcher": "", "hooks": [hook("/opt/silver-bullet/1.0.0/hooks/stop.sh")]}],
+            "Stop": [{"matcher": "", "hooks": [hook("/opt/silver-bullet/1.0.0/hooks/stop-check.sh")]}],
             "Empty": [],
         }}))
         self.run_script(install)

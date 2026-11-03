@@ -26,7 +26,7 @@ import sys
 
 LIB_DIR = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(LIB_DIR))
-from sb_host_config import ConfigError, is_sb_hook_command, read_json, sb_hook_names, write_json  # noqa: E402
+from sb_host_config import ConfigError, command_program, is_sb_hook_command, read_json, sb_hook_names, write_json  # noqa: E402
 
 PLACEHOLDER = "${CURSOR_PLUGIN_ROOT}"
 REPO_HOOKS = LIB_DIR.parents[1] / "hooks"
@@ -117,8 +117,10 @@ def merge(raw_install_path: str) -> str:
 
     def is_sb_entry(entry) -> bool:
         command = entry_command(entry)
-        if "codex-hook-adapter" in command:
-            return True
+        if "codex-hook-adapter" in command and "cursor-hook-bridge" in command:
+            return True  # an earlier malformed merge (same rule as strip-cursor-sb-hooks.py)
+        if os.path.basename(command_program(command)) == "codex-hook-adapter.sh":
+            return True  # SB's adapter script (never a user script that merely shares a prefix)
         return is_sb_hook_command(command, hook_names=names, install_roots=install_roots)
 
     for event, entries in list(existing.items()):

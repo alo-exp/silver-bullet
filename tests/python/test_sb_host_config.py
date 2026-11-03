@@ -172,8 +172,11 @@ class OwnershipTest(Tmp):
         self.assertTrue(self.owned("/home/me/silver-bullet/hooks/completion-audit.sh"))
         self.assertTrue(self.owned("/home/me/projects/silver-bullet/repo/hooks/completion-audit.sh"))
         self.assertTrue(self.owned("/opt/sb/hooks/mine.sh", roots=("", "/opt/sb/")))
-        self.assertTrue(self.owned("/old/silver-bullet/1.0.0/hooks/removed-long-ago.sh"))
-        self.assertTrue(self.owned("/m/silver-bullet/current/hooks/removed-long-ago.sh"))
+        self.assertTrue(self.owned("/old/silver-bullet/1.0.0/hooks/completion-audit.sh"))
+        self.assertTrue(self.owned("/m/silver-bullet/current/hooks/completion-audit.sh"))
+        # a bare versioned layout owns nothing without an SB hook name (user scripts survive)
+        self.assertFalse(self.owned("/old/silver-bullet/1.0.0/hooks/removed-long-ago.sh"))
+        self.assertFalse(self.owned('node "$HOME/silver-bullet/1.0.0/hooks/lint.js"'))
         self.assertTrue(issubclass(m.ConfigError, ValueError))
 
     def test_foreign_commands(self):
