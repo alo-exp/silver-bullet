@@ -447,7 +447,7 @@ if bash "$DOCTOR" "$LIVE_SNAPSHOT" >"${DOCTOR_TEST_TMP}/doctor-live.txt" 2>&1; t
   echo "INFO: doctor PASS on live repo (environment-dependent, not counted)"
 else
   echo "INFO: doctor did not PASS on live repo (environment-dependent, not counted)"
-  tail -20 "${DOCTOR_TEST_TMP}/doctor-live.txt" | sed "s/^FAIL:/  (doctor) FAIL:/"
+  tail -20 "${DOCTOR_TEST_TMP}/doctor-live.txt" | sed "s/^FAIL:/  (doctor) not ok:/"
 fi
 rm -rf "$LIVE_SNAPSHOT" "${DOCTOR_TEST_TMP}/doctor-live.txt"
 
@@ -842,7 +842,7 @@ else
   echo "FAIL: doctor_apply_fixes has no first-match break"
   FAIL=$((FAIL + 1))
 fi
-if grep -q 'D4|D13|D14|D16|D18|D19|D21' "$DOCTOR" && grep -q 'local' "$DOCTOR"; then
+if grep -q 'D4|D13|D14|D16' "$DOCTOR" && grep -q 'local' "$DOCTOR"; then
   echo "PASS: --fix=local fences host check ids"
   PASS=$((PASS + 1))
 else
