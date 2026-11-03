@@ -64,4 +64,22 @@ tl_run make -o prereqs setup PYTHON=nopy VENV=none-env
 assert_eq "setup fails without venv support" 2 "$TL_STATUS"
 assert_contains "failure names the package to install" "$TL_OUT$TL_ERR" "python3-venv"
 
+# A venv on PATH must stay active inside tests/run-all-tests.sh, which rebuilds PATH
+# (R13-12: a symlink to the venv python resolved to the base interpreter).
+V="$TL_TMP/venvrun"
+mkdir -p "$V/t"
+if python3 -m venv --without-pip "$V/.venv" >/dev/null 2>&1; then
+  site="$("$V/.venv/bin/python" -c 'import site;print(site.getsitepackages()[0])')"
+  echo "VALUE = 1" >"$site/sbvenvprobe.py"
+  cat >"$V/t/test-venv-probe.sh" <<'PROBE'
+#!/usr/bin/env bash
+if python3 -c 'import sbvenvprobe' 2>/dev/null; then echo "venv package importable"; echo "Results: 1 passed, 0 failed"; else echo "venv package NOT importable"; echo "Results: 0 passed, 1 failed"; exit 1; fi
+PROBE
+  tl_run env PATH="$V/.venv/bin:$PATH" bash "$TL_REPO_ROOT/tests/run-all-tests.sh" "$V/t/test-venv-probe.sh"
+  assert_eq "runner keeps the venv python active" 0 "$TL_STATUS"
+  assert_contains "venv-only module imports through the runner" "$TL_OUT" "venv package importable"
+else
+  echo "SKIP: python3 -m venv unavailable"
+fi
+
 tl_results

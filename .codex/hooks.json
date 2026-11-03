@@ -1,0 +1,33 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "graphify hook-check"
+          }
+        ]
+      },
+      {
+        "matcher": "shell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "graphify hook-check"
+          }
+        ]
+      },
+      {
+        "matcher": "exec_command",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "graphify hook-check"
+          }
+        ]
+      }
+    ]
+  }
+}

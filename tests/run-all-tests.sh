@@ -112,7 +112,14 @@ if [[ "${SB_TEST_HOST_TOOLS:-0}" != "1" && -n "$HIDE_TOOLS" ]]; then
       _name="${_entry##*/}"
       [[ -x "$_entry" && ! -e "$safe_bin/$_name" && ! -L "$safe_bin/$_name" ]] || continue
       [[ " $HIDE_TOOLS " == *" $_name "* ]] && continue
-      ln -s "$_entry" "$safe_bin/$_name"
+      if [[ -f "${_dir%/}/../pyvenv.cfg" && "$_name" == python* ]]; then
+        # A symlink to a venv's python resolves to the base interpreter, which then
+        # ignores the venv's packages; exec through the venv path keeps it active.
+        printf '#!/bin/sh\nexec "%s" "$@"\n' "$_entry" >"$safe_bin/$_name"
+        chmod +x "$safe_bin/$_name"
+      else
+        ln -s "$_entry" "$safe_bin/$_name"
+      fi
     done
   done
   TEST_PATH="$safe_bin"
