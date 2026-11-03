@@ -281,11 +281,13 @@ fi
 
 The claim-support gate is a strict near-quote rule. `--strict` exits 1 on a `contradicted` claim (a quote is
 the same sentence except for exactly one token: an added or removed "not"/"never"/"no", or one figure of another
-value written the same way) and on
+value written the same way, in every cited quote) and on
 any `unsupported` or uncited factual claim. A claim is `supported` only when it repeats a quoted source span
-word for word. Only case, punctuation, the articles a/an/the, a plural `-s` and a contraction may differ;
-signs, comparators, currency, `%`, accents and other scripts are kept, and a figure is compared exactly as
-written ("3" is not "3.0", "five" is not "5"). Nothing else may differ. Any rewording, reordering, voice change or paraphrase is `needs_review` and is
+word for word. Only the first word's capital, punctuation, lowercase a/an/the, the digit script and a
+contraction may differ; case, plurals, signs, comparators, currency, `%`, `?`, `*`, accents and other scripts
+are kept, and a figure is compared exactly as written ("3" is not "3.0", "five" is not "5"). Nothing else may
+differ. With several quotes, one that supports the claim is enough, and `contradicted` needs every quote to
+contradict it. Any rewording, reordering, voice change or paraphrase is `needs_review` and is
 **listed, not failed**: the JSON summary has `review_required: true` and a `needs_review` list with the
 reason for each claim, and `verify_claim_support.py report --dir "$SB_RESEARCH_OUT_DIR"` prints a "Needs
 Review" section. Expect most paraphrased claims there. While writing, quote exactly the ONE sentence that backs each claim
