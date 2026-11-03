@@ -15,7 +15,7 @@
 ## Checklist
 
 - [ ] `make test` (`bash tests/run-all-tests.sh`) passes locally, and the files I changed are shellcheck-clean
-- [ ] New or changed hooks are executable, registered in `hooks/hooks.json`, covered by a test, and `hooks/cursor-hooks.json` / `docs/HOOKS.md` are regenerated
+- [ ] New or changed hooks are executable, registered in `hooks/hooks.json`, covered by a test, and `docs/HOOKS.md` is regenerated
 - [ ] New or changed skills have a `tests/skill-scenarios/` fixture and the bundles are re-rendered (`bash scripts/sync-codex-package.sh`)
 - [ ] `silver-bullet.md` and `templates/silver-bullet.md.base` stay in sync; `docs/workflows/` matches `templates/workflows/`
 - [ ] Generated files were regenerated, not hand-edited

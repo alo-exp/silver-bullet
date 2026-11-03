@@ -72,13 +72,6 @@ jobs:
         run: |
           bash scripts/validate-plugin-mirror.sh
 
-      - name: Cursor runtime smoke (install, hooks, diagnostics)
-        run: |
-          bash scripts/release-live-matrix-cursor-smoke.sh
-        env:
-          SILVER_BULLET_RUNTIME: cursor
-          SB_RELEASE_LIVE_MATRIX_WRITE_CURSOR_MARKER: "0"
-
   test:
     # The same isolated runner as `make test`: per-test HOME/TMPDIR, optional host
     # tools hidden. Both runtimes the hooks resolve state paths for.

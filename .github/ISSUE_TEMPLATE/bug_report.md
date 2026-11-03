@@ -27,7 +27,7 @@ What actually happened. Include error messages or hook output if available.
 ## Environment
 
 - **Silver Bullet version**: (check `package.json` or `/plugin list`)
-- **Host runtime**: (Claude Code / Codex / Cursor)
+- **Host runtime**: (Claude Code / Codex)
 - **Host runtime version**:
 - **OS**: (macOS / Linux / Windows)
 - **Shell**: (bash / zsh)
