@@ -454,5 +454,31 @@ class SearchOrchestratorFaultTests(unittest.TestCase):
         self.assertTrue(all(v == "error" for v in rec["retrieval"]["portals_failed"].values()))
 
 
+class GeneratedArtifactsPassThePhaseGateTests(unittest.TestCase):
+    """Run the documented tools and let the gate judge their real output (R11-16)."""
+
+    def test_compare_then_spa_satisfy_the_solution_type_artifacts(self):
+        import deps_probe
+        if not deps_probe.openpyxl_importable():
+            self.skipTest("openpyxl not installed")
+        import compare_solutions as cs
+        import generate_report_spa as grs
+        root = _tree(self)
+        (root / "need_profile.json").write_text(json.dumps({"must_haves": ["SSO"]}), encoding="utf-8")
+        (root / "run_manifest.json").write_text(
+            json.dumps({"question": "q", "research_type": "solution-compare"}), encoding="utf-8")
+        _features(root, "alpha", {"features": ["SSO", "API"]})
+        _features(root, "beta", {"features": ["API"]})
+        cs.compare_solutions(root)
+        (root / "report.html").write_text(grs.render_html(grs.collect_report_data(root)), encoding="utf-8")
+        cfg = pg.load_phases_config()
+        for phase in ("synthesize", "package"):
+            added = (cfg["research_types"]["solution-compare"]["phase_artifacts"].get(phase) or {}).get("add", [])
+            self.assertTrue(added, phase)
+            for artifact in added:
+                ok, detail = pg.artifact_satisfied(root, artifact)
+                self.assertTrue(ok, f"{phase}: {artifact}: {detail}")
+
+
 if __name__ == "__main__":
     unittest.main()
