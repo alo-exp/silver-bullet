@@ -222,7 +222,11 @@ roots: list[tuple[str, Path]] = [("user", cursor_home / "agents")]
 if project_root:
     roots.append(("project", project_root / ".cursor" / "agents"))
 
-SB_NAMESPACE = re.compile(r"^(?:silver-|sb:|subagent-(?:sb[:-]|silver-))", re.I)
+SB_NAMESPACE = re.compile(r"^(?:silver[-:]|sb:|subagent-(?:sb[:-]|silver[:-]))", re.I)
+# Colon-namespaced names are Silver Bullet's own (earlier releases shipped silver:*, sb:*,
+# subagent-sb:*); hyphenated ones such as silver-surfer could be a user's, so they need a
+# bundle SB ships today.
+SB_COLON_NAMESPACE = re.compile(r"^(?:silver:|sb:|subagent-(?:sb|silver):)", re.I)
 LEGACY_GENERIC = {"subagent-tdd", "tdd", "full-conversation", "ai-llm-safety", "artifact-reviewer", "devops-skill-router"}
 AGENT_SUFFIXES = {".md", ".json", ".yaml", ".yml"}
 
@@ -269,7 +273,7 @@ for scope, root in roots:
         else:
             continue
         key = name.lower()
-        if (SB_NAMESPACE.match(key) and shipped_name(name)) or (key in LEGACY_GENERIC and shipped_copy(name, item)):
+        if (SB_COLON_NAMESPACE.match(key) or (SB_NAMESPACE.match(key) and shipped_name(name))) or (key in LEGACY_GENERIC and shipped_copy(name, item)):
             quarantine_path(scope, item, bucket)
         elif SB_NAMESPACE.match(key):
             print(
