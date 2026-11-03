@@ -57,6 +57,10 @@ class _NoNetwork(unittest.TestCase):
             socket.socket, "connect", side_effect=AssertionError("network used"))
         spy.start()
         self.addCleanup(spy.stop)
+        # fake hosts resolve to a public address; the SSRF guard is tested on its own below
+        dns = mock.patch.object(vll, "_resolve_host", return_value=["93.184.216.34"])
+        dns.start()
+        self.addCleanup(dns.stop)
         self.addCleanup(self._restore)
 
     def _restore(self):
@@ -263,6 +267,133 @@ class HealthTests(_NoNetwork):
                 r = self.probe()
             self.assertEqual((r["ok"], r["status"], r["transport_error"]), (False, None, True))
             self.assertIn(type(exc).__name__, r["error"])
+
+
+class SsrfGuardTests(unittest.TestCase):
+    """Model-supplied URLs are never requested when they point at non-public addresses."""
+
+    def reason(self, url, resolved=None):
+        with mock.patch.object(vll, "_resolve_host", return_value=resolved or []):
+            return vll.unsafe_target_reason(url)
+
+    def test_literal_and_resolved_addresses(self):
+        for url in ("http://127.0.0.1/", "http://localhost:8080/x", "http://169.254.169.254/latest/meta-data/",
+                    "http://10.0.0.5/", "http://192.168.1.1/", "http://[::1]/", "http://0.0.0.0/",
+                    "http://224.0.0.1/", "http://[fd00::1]/"):
+            resolved = ["127.0.0.1"] if url.startswith("http://localhost") else None
+            self.assertTrue(str(self.reason(url, resolved)).startswith("non-public-address:"), url)
+        # a public name that resolves to an internal address (DNS pointing inward) is refused too
+        self.assertEqual(self.reason("https://evil.example/", ["93.184.216.34", "10.1.2.3"]), "non-public-address:10.1.2.3")
+        self.assertIsNone(self.reason("https://vendor.example/", ["93.184.216.34"]))
+        self.assertIsNone(self.reason("http://93.184.216.34/"))
+
+    def test_scheme_credentials_and_unresolvable(self):
+        self.assertEqual(self.reason("file:///etc/passwd"), "not-http")
+        self.assertEqual(self.reason("ftp://x.example/"), "not-http")
+        self.assertEqual(self.reason("http:///nohost"), "not-http")
+        self.assertEqual(self.reason("https://user:pw@vendor.example/", ["93.184.216.34"]), "credentials-in-url")
+        self.assertEqual(self.reason("https://vendor.example/", []), "unresolvable-host")
+        self.assertEqual(self.reason("http://[bad/"), "unparseable-url")
+
+    def test_resolver_returns_sorted_unique_addresses_or_nothing(self):
+        infos = [(0, 0, 0, "", ("2.2.2.2", 0)), (0, 0, 0, "", ("1.1.1.1", 0)), (0, 0, 0, "", ("2.2.2.2", 0))]
+        with mock.patch("socket.getaddrinfo", return_value=infos):
+            self.assertEqual(vll._resolve_host("h"), ["1.1.1.1", "2.2.2.2"])
+        with mock.patch("socket.getaddrinfo", side_effect=OSError("no dns")):
+            self.assertEqual(vll._resolve_host("h"), [])
+
+    def test_probe_never_connects_to_a_blocked_target(self):
+        with mock.patch("urllib.request.urlopen") as uo:
+            r = vll.check_url_health("http://169.254.169.254/latest/meta-data/")
+        uo.assert_not_called()
+        self.assertEqual((r["ok"], r["status"], r["transport_error"]), (False, None, False))
+        self.assertEqual(r["error"], "blocked:non-public-address:169.254.169.254")
+        with mock.patch.object(vll, "_resolve_host", return_value=[]), mock.patch("urllib.request.urlopen") as uo:
+            r = vll.check_url_health("https://gone.example/")
+        uo.assert_not_called()
+        self.assertTrue(r["transport_error"])  # unresolvable: soft failure, link kept by the filter
+
+    def test_redirect_to_an_internal_address_is_refused(self):
+        handler = vll._CheckedRedirects()
+        req = urllib.request.Request("https://vendor.example/")
+        with self.assertRaises(urllib.error.URLError) as ctx:
+            handler.redirect_request(req, None, 302, "Found", {}, "http://169.254.169.254/latest/meta-data/")
+        self.assertIn("redirect-blocked:non-public-address:169.254.169.254", str(ctx.exception))
+        with mock.patch.object(vll, "_resolve_host", return_value=["93.184.216.34"]):
+            nxt = handler.redirect_request(req, None, 302, "Found", {}, "https://www.vendor.example/home")
+        self.assertEqual(nxt.full_url, "https://www.vendor.example/home")
+        self.assertEqual(handler.max_redirections, 3)
+
+    def test_real_opener_blocks_a_redirect_into_loopback(self):
+        # A local server answers with a redirect to a loopback metadata-style URL; the guard
+        # refuses it, so the redirect target is never requested.
+        import http.server
+        import threading
+
+        hits = []
+
+        class Handler(http.server.BaseHTTPRequestHandler):
+            def do_HEAD(self):  # noqa: N802
+                hits.append(self.path)
+                self.send_response(302)
+                self.send_header("Location", "http://127.0.0.1:1/internal")
+                self.end_headers()
+
+            def log_message(self, *a):  # noqa: D401
+                pass
+
+        server = http.server.HTTPServer(("127.0.0.1", 0), Handler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            # the first hop is allowed only because the test patches the resolver to a public IP
+            # for the name; the connection itself is made to the loopback server via the proxy-less opener
+            url = f"http://public.example:{server.server_port}/start"
+            real_open = urllib.request.OpenerDirector.open
+
+            def route(self, fullurl, *a, **kw):
+                req = fullurl if isinstance(fullurl, urllib.request.Request) else urllib.request.Request(fullurl)
+                if req.full_url.startswith("http://public.example"):
+                    req = urllib.request.Request(
+                        req.full_url.replace("public.example", "127.0.0.1"), method=req.get_method(), headers=req.headers)
+                return real_open(self, req, *a, **kw)
+
+            with mock.patch.object(vll, "_resolve_host", return_value=["93.184.216.34"]), \
+                    mock.patch.object(urllib.request.OpenerDirector, "open", route), \
+                    mock.patch.dict(os.environ, {"HTTP_PROXY": "", "HTTPS_PROXY": "", "NO_PROXY": "*"}):
+                result = vll.check_url_health(url)
+        finally:
+            server.shutdown()
+            server.server_close()
+        self.assertEqual(hits, ["/start"])
+        self.assertFalse(result["ok"])
+        self.assertIn("redirect-blocked", result["error"])
+
+
+class HealthBudgetTests(_NoNetwork):
+    def test_same_url_is_probed_once_and_the_budget_caps_the_rest(self):
+        calls = []
+
+        def fake(url, *, timeout):
+            calls.append(url)
+            return {"ok": True, "status": 200, "final_url": url, "error": None, "transport_error": False}
+
+        urls = {f"V{i}": f"https://v{i % 70}.example" for i in range(140)}
+        with mock.patch.object(vll, "check_url_health", side_effect=fake):
+            kept, dropped = vll.filter_healthy_vendor_urls(urls)
+        self.assertEqual(len(calls), 60)  # at most 60 distinct URLs probed
+        self.assertEqual(len(set(calls)), 60)
+        self.assertEqual(len(kept), 140)  # unverified links stay, nothing is dropped for budget
+        self.assertEqual(dropped, [])
+
+    def test_wall_clock_budget_keeps_remaining_links_unverified(self):
+        calls = []
+        with mock.patch.object(vll, "check_url_health", side_effect=lambda u, timeout: calls.append(u) or
+                               {"ok": True, "status": 200, "final_url": u, "error": None, "transport_error": False}), \
+                mock.patch("time.monotonic", side_effect=[0.0, 1.0, 10_000.0, 10_001.0]):
+            kept, _ = vll.filter_healthy_vendor_urls({"A": "https://a.example", "B": "https://b.example"})
+        self.assertEqual(calls, ["https://a.example"])
+        self.assertEqual(set(kept), {"A", "B"})
 
 
 class FilterTests(_NoNetwork):

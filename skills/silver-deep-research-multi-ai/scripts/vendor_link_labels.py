@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import ipaddress
 import os
 import re
+import socket
 import ssl
+import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from typing import Any
 
@@ -178,6 +182,61 @@ _OK_STATUSES = frozenset({200, 201, 202, 203, 204, 301, 302, 303, 307, 308})
 _TRANSIENT_HTTP = frozenset({429, 502, 503, 504})
 
 
+_MAX_REDIRECTS = 3
+_MAX_HEALTH_CHECKS = 60  # distinct URLs probed per call; the rest are kept unverified
+_HEALTH_BUDGET_SECONDS = 120.0
+
+
+def _resolve_host(host: str) -> list[str]:
+    """All addresses a host name resolves to (empty when it does not resolve)."""
+    try:
+        infos = socket.getaddrinfo(host, None, type=socket.SOCK_STREAM)
+    except (OSError, UnicodeError):
+        return []
+    return sorted({str(info[4][0]) for info in infos})
+
+
+def unsafe_target_reason(url: str) -> str | None:
+    """Why a model-supplied URL must not be requested, or None when it may be.
+
+    Only http(s) to a public address: loopback, private, link-local (cloud metadata),
+    multicast, reserved and unspecified targets are refused, as are URLs with credentials.
+    """
+    try:
+        parts = urllib.parse.urlsplit(url)
+        host = parts.hostname
+    except ValueError:
+        return "unparseable-url"
+    if parts.scheme not in {"http", "https"} or not host:
+        return "not-http"
+    if parts.username or parts.password:
+        return "credentials-in-url"
+    try:
+        literal = [str(ipaddress.ip_address(host))]
+    except ValueError:
+        literal = []
+    addresses = literal or _resolve_host(host)
+    if not addresses:
+        return "unresolvable-host"
+    for raw in addresses:
+        ip = ipaddress.ip_address(raw)
+        if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_multicast or ip.is_reserved or ip.is_unspecified:
+            return f"non-public-address:{raw}"
+    return None
+
+
+class _CheckedRedirects(urllib.request.HTTPRedirectHandler):
+    """Follow at most _MAX_REDIRECTS hops, each to a public http(s) address."""
+
+    max_redirections = _MAX_REDIRECTS
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):  # noqa: ANN001
+        reason = unsafe_target_reason(newurl)
+        if reason:
+            raise urllib.error.URLError(f"redirect-blocked:{reason}")
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
 def normalize_vendor_link_label(label: str) -> str:
     return str(label or "").strip()
 
@@ -238,12 +297,32 @@ def check_url_health(
             "transport_error": False,
         }
 
+    blocked = unsafe_target_reason(target)
+    if blocked:
+        return {
+            "ok": False,
+            "status": None,
+            "final_url": target,
+            "error": f"blocked:{blocked}",
+            "transport_error": blocked == "unresolvable-host",
+        }
+
     ctx = ssl.create_default_context()
     headers = {"User-Agent": "SB-vendor-link-health/1.0"}
+    # urlopen uses the process-wide opener; swap in the redirect-checking one for this probe.
+    opener = urllib.request.build_opener(
+        _CheckedRedirects, urllib.request.HTTPSHandler(context=ctx)
+    )
 
     def _open(method: str) -> dict[str, Any]:
         req = urllib.request.Request(target, method=method, headers=headers)
-        with urllib.request.urlopen(req, timeout=timeout, context=ctx) as resp:
+        previous = urllib.request._opener  # type: ignore[attr-defined]
+        urllib.request.install_opener(opener)
+        try:
+            response = urllib.request.urlopen(req, timeout=timeout)
+        finally:
+            urllib.request._opener = previous  # type: ignore[attr-defined]
+        with response as resp:
             status = int(getattr(resp, "status", 200) or 200)
             final = str(resp.geturl() or target)
             return {
@@ -312,12 +391,20 @@ def filter_healthy_vendor_urls(
     }
     kept: dict[str, str] = {}
     dropped: list[dict[str, Any]] = []
+    reports: dict[str, dict[str, Any]] = {}
+    deadline = time.monotonic() + _HEALTH_BUDGET_SECONDS
     for label, url in (urls or {}).items():
         label_n = normalize_vendor_link_label(label)
         url_n = str(url or "").strip()
         if not label_n or not url_n.startswith("http"):
             continue
-        report = check_url_health(url_n, timeout=timeout)
+        if url_n not in reports:
+            if len(reports) >= _MAX_HEALTH_CHECKS or time.monotonic() > deadline:
+                # Over budget: keep the link unverified rather than stall the report.
+                kept[label_n] = url_n
+                continue
+            reports[url_n] = check_url_health(url_n, timeout=timeout)
+        report = reports[url_n]
         if report.get("ok"):
             kept[label_n] = url_n
             continue

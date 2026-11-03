@@ -351,6 +351,7 @@ class ChartGateTests(_Base):
         urls["Fine"] = "https://fine.example"
         env = {k: v for k, v in os.environ.items() if k != "SB_SKIP_VENDOR_URL_HEALTH"}
         with mock.patch.dict(os.environ, env, clear=True), \
+                mock.patch("vendor_link_labels._resolve_host", return_value=["93.184.216.34"]), \
                 mock.patch("urllib.request.urlopen", side_effect=self._urlopen(["dead"])):
             res = self.chart_errors(chart(vendor_urls=urls))
         dropped = res["metrics"]["vendor_url_health_dropped"]
@@ -365,6 +366,7 @@ class ChartGateTests(_Base):
     def test_vendor_url_health_all_good_and_non_dict(self):
         env = {k: v for k, v in os.environ.items() if k != "SB_SKIP_VENDOR_URL_HEALTH"}
         with mock.patch.dict(os.environ, env, clear=True), \
+                mock.patch("vendor_link_labels._resolve_host", return_value=["93.184.216.34"]), \
                 mock.patch("urllib.request.urlopen", side_effect=self._urlopen([])):
             res = self.chart_errors(chart(vendor_urls={"A": "https://a.example"}))
         self.assertEqual(res["metrics"]["vendor_url_health_dropped"], [])
