@@ -115,90 +115,6 @@ class JsonFilesTest(Base):
         self.assertEqual((self.tmp / "x.txt.bak").read_text(), "hi")
 
 
-class HookEntriesTest(Base):
-
-    def test_command_and_key(self):
-        self.assertEqual(mod.hook_command({"command": 5}), "5")
-        self.assertEqual(mod.hook_command({}), "")
-        self.assertEqual(mod.hook_entry_key({"command": "c", "matcher": "m"}), ("c", "m"))
-        self.assertEqual(mod.hook_entry_key({"command": "c"}), ("c", ""))
-
-    def test_non_dict_entries_do_not_crash(self):
-        self.assertEqual(mod.hook_command("junk"), "")
-        self.assertEqual(mod.hook_command(None), "")
-        self.assertEqual(mod.hook_entry_key("junk"), ("", ""))
-        merged, added = mod.merge_hook_entries(["junk", None, {"command": "a"}], [{"command": "b"}])
-        self.assertEqual((merged, added), (["junk", None, {"command": "a"}, {"command": "b"}], 1))
-
-    def test_merge_hook_entries(self):
-        existing = [{"command": "a", "matcher": "x"}]
-        merged, added = mod.merge_hook_entries(existing, [
-            {"command": "a", "matcher": "x"},       # duplicate
-            {"command": "a", "matcher": "y"},       # same cmd, other matcher: kept
-            {"command": ""},                         # blank command skipped
-            {"matcher": "z"},                        # no command skipped
-            {"command": "b"},
-        ])
-        self.assertEqual(added, 2)
-        self.assertEqual(merged, [{"command": "a", "matcher": "x"}, {"command": "a", "matcher": "y"},
-                                  {"command": "b"}])
-        self.assertEqual(existing, [{"command": "a", "matcher": "x"}])  # not mutated
-
-    def test_reorder(self):
-        rtk, cm = {"command": "rtk hook cursor"}, {"command": "context-mode hook cursor pretooluse"}
-        other = {"command": "other"}
-        hooks = {"preToolUse": [other, cm, rtk]}
-        self.assertTrue(mod.reorder_pretooluse_rtk_before_cm(hooks))
-        self.assertEqual(hooks["preToolUse"], [other, rtk, cm])
-        self.assertFalse(mod.reorder_pretooluse_rtk_before_cm(hooks))  # already ordered
-        self.assertFalse(mod.reorder_pretooluse_rtk_before_cm({}))
-        self.assertFalse(mod.reorder_pretooluse_rtk_before_cm({"preToolUse": "x"}))
-        self.assertFalse(mod.reorder_pretooluse_rtk_before_cm({"preToolUse": [cm]}))
-        self.assertFalse(mod.reorder_pretooluse_rtk_before_cm({"preToolUse": [rtk]}))
-        hooks = {"preToolUse": ["junk", cm, None, rtk]}
-        self.assertTrue(mod.reorder_pretooluse_rtk_before_cm(hooks))
-        self.assertEqual(hooks["preToolUse"], ["junk", rtk, cm, None])
-
-
-class MergeHooksFileTest(Base):
-
-    def test_create_and_idempotent(self):
-        target = self.home / ".cursor" / "hooks.json"
-        frags = [{"hooks": {"preToolUse": [{"command": "context-mode hook cursor pretooluse"}]}},
-                 {"hooks": {"preToolUse": [{"command": "rtk hook cursor"}], "stop": [{"command": "s"}]}}]
-        added = self.quiet(mod.merge_hooks_file, target, frags, False)
-        self.assertEqual(added, 3)
-        data = self.read_json(target)
-        self.assertEqual(data["version"], 1)
-        # RTK is moved in front of Context Mode
-        self.assertEqual([e["command"] for e in data["hooks"]["preToolUse"]],
-                         ["rtk hook cursor", "context-mode hook cursor pretooluse"])
-        self.assertEqual(self.quiet(mod.merge_hooks_file, target, frags, False), 0)
-        self.assertEqual(self.read_json(target), data)
-
-    def test_existing_settings_kept(self):
-        target = self.write(self.home / "h.json", {"version": 7, "x": 1, "hooks": {
-            "stop": [{"command": "mine"}]}})
-        self.quiet(mod.merge_hooks_file, target, [{"hooks": {"stop": [{"command": "s"}]}}, {}], False)
-        data = self.read_json(target)
-        self.assertEqual((data["version"], data["x"]), (7, 1))
-        self.assertEqual([e["command"] for e in data["hooks"]["stop"]], ["mine", "s"])
-        no_version = self.write(self.home / "h2.json", {"hooks": {}})
-        self.quiet(mod.merge_hooks_file, no_version, [], False)
-        self.assertEqual(self.read_json(no_version)["version"], 1)
-
-    def test_dry_run_and_malformed(self):
-        target = self.home / "h.json"
-        added = self.quiet(mod.merge_hooks_file, target, [{"hooks": {"stop": [{"command": "s"}]}}], True)
-        self.assertEqual(added, 1)
-        self.assertFalse(target.exists())
-        self.assertIn("DRY-RUN: would write", self.out)
-        self.write(target, "{bad")
-        with self.assertRaises(json.JSONDecodeError):
-            self.quiet(mod.merge_hooks_file, target, [], False)
-        self.assertEqual(target.read_text(), "{bad")
-
-
 class MergeCodexHooksTest(Base):
     FRAG = {"hooks": {"SessionStart": [{"matcher": "", "hooks": [
         {"type": "command", "command": "context-mode hook codex sessionstart"}]}]}}
@@ -235,15 +151,6 @@ class MergeCodexHooksTest(Base):
 
 class McpMergeTest(Base):
 
-    def test_merge_mcp_server(self):
-        target = self.home / ".cursor" / "mcp.json"
-        self.assertTrue(self.quiet(mod.merge_mcp_server, target, "a", {"command": "a"}, False))
-        self.assertFalse(self.quiet(mod.merge_mcp_server, target, "a", {"command": "other"}, False))
-        self.assertTrue(self.quiet(mod.merge_mcp_server, target, "b", {"command": "b"}, False))
-        self.assertEqual(self.read_json(target), {"mcpServers": {"a": {"command": "a"}, "b": {"command": "b"}}})
-        self.assertTrue(self.quiet(mod.merge_mcp_server, target, "c", {}, True))
-        self.assertNotIn("c", self.read_json(target)["mcpServers"])
-
     def assert_untouched(self, fn, target, *args):
         before = Path(target).read_bytes()
         with self.assertRaisesRegex(ValueError, "must be a JSON"):
@@ -251,16 +158,6 @@ class McpMergeTest(Base):
         self.assertEqual(Path(target).read_bytes(), before)
         self.assertFalse(Path(str(target) + ".bak").exists())
         self.assertFalse(Path(target).with_suffix(".bak").exists())
-
-    def test_merge_mcp_server_bad_container(self):
-        for bad in ("x", [{"name": "mine", "command": "m"}], 5, 5.5):
-            target = self.write(self.home / "m.json", {"mcpServers": bad, "keep": 1})
-            self.assert_untouched(mod.merge_mcp_server, target, "a", {"command": "a"}, False)
-        for ok in (None, [], {}):
-            target = self.write(self.home / "m2.json", {"mcpServers": ok, "keep": 1})
-            self.assertTrue(self.quiet(mod.merge_mcp_server, target, "a", {"command": "a"}, False))
-            data = self.read_json(target)
-            self.assertEqual((data["keep"], data["mcpServers"]), (1, {"a": {"command": "a"}}))
 
     def test_shared_claude_context_mode(self):
         spec = {"command": "/opt/cm", "args": ["mcp"], "env": {}}
@@ -302,31 +199,6 @@ class McpMergeTest(Base):
             target = self.write(self.home / ".claude.json", {"mcpServers": ok})
             self.assertTrue(self.quiet(mod.merge_shared_claude_context_mode, target, spec, False))
             self.assertEqual(self.read_json(target)["mcpServers"]["context-mode"], spec)
-
-    def test_cli_allowlist(self):
-        target = self.home / ".cursor" / "cli-config.json"
-        self.assertEqual(self.quiet(mod.merge_cli_allowlist, target, ["a", "b", "a"], False), 2)
-        data = self.read_json(target)
-        self.assertEqual(data, {"version": 1, "permissions": {"allow": ["a", "b"], "deny": []}})
-        self.assertEqual(self.quiet(mod.merge_cli_allowlist, target, ["a", "c"], False), 1)
-        self.assertEqual(self.read_json(target)["permissions"]["allow"], ["a", "b", "c"])
-        self.write(target, {"permissions": {"deny": ["z"]}})
-        self.assertEqual(self.quiet(mod.merge_cli_allowlist, target, ["a"], False), 1)
-        data = self.read_json(target)
-        self.assertEqual((data["version"], data["permissions"]), (1, {"deny": ["z"], "allow": ["a"]}))
-        self.assertEqual(self.quiet(mod.merge_cli_allowlist, target, ["q"], True), 1)
-        self.assertEqual(self.read_json(target)["permissions"]["allow"], ["a"])
-
-    def test_cli_allowlist_bad_shapes(self):
-        for data in ({"permissions": {"allow": "Shell(ls)"}}, {"permissions": [{"a": 1}]},
-                     {"permissions": "x"}, {"permissions": {"allow": {"k": 1}}}):
-            target = self.write(self.home / "c.json", data)
-            self.assert_untouched(mod.merge_cli_allowlist, target, ["a"], False)
-        for data in ({"permissions": {"allow": None}}, {"permissions": {"allow": []}},
-                     {"permissions": []}, {"permissions": None}, {"permissions": {"allow": {}}}):
-            target = self.write(self.home / "c2.json", data)
-            self.assertEqual(self.quiet(mod.merge_cli_allowlist, target, ["a"], False), 1)
-            self.assertEqual(self.read_json(target)["permissions"]["allow"], ["a"])
 
 class FileCopyTest(Base):
 
@@ -442,23 +314,6 @@ class PackageRootTest(Base):
         self.npm.side_effect = FileNotFoundError("npm")
         self.assertIsNone(mod.context_mode_pkg_root())
 
-    def test_cursor_hooks_path(self):
-        repo = self.tmp / "repo"
-        self.assertIsNone(mod.context_mode_cursor_hooks_path(repo))
-        bundled = self.write(repo / "scripts" / "lib" / "context-mode-cursor-hooks.json", {})
-        self.assertEqual(mod.context_mode_cursor_hooks_path(repo), bundled)
-        pkg = self.make_pkg()
-        self.assertEqual(mod.context_mode_cursor_hooks_path(repo), bundled)  # pkg has no hooks.json
-        cand = self.write(pkg / "configs" / "cursor" / "hooks.json", {})
-        self.assertEqual(mod.context_mode_cursor_hooks_path(repo), cand)
-
-    def test_extended_cursor_hooks(self):
-        hooks = mod.context_mode_extended_cursor_hooks()["hooks"]
-        self.assertEqual(hooks["sessionStart"][0]["matcher"], "startup|clear|compact")
-        self.assertEqual(hooks["afterAgentResponse"][0]["command"],
-                         "context-mode hook cursor afteragentresponse")
-
-
 class CodexTomlTest(Base):
 
     def test_requires_package_and_snippet(self):
@@ -567,76 +422,6 @@ class HermesTest(Base):
         self.assertTrue(self.quiet(mod.merge_hermes_context_mode_mcp, cfg, True))
         self.assertIn("DRY-RUN: would append context-mode MCP", self.out)
         self.assertFalse(cfg.exists())
-
-
-class OptimizeCursorTest(Base):
-    def make_repo(self):
-        repo = self.tmp / "repo"
-        self.write(repo / "scripts" / "lib" / "cursor-cli-allowlist.json", {"allow": ["Shell(rtk)"]})
-        self.write(repo / "templates" / "cursor" / "token-compression-enforcement.mdc", "tce")
-        self.write(repo / ".cursor" / "rules" / "context-mode.mdc", "repo-cm")
-        return repo
-
-    def test_without_context_mode_package(self):
-        repo = self.make_repo()
-        res = self.quiet(mod.optimize_cursor, repo, False)
-        self.assertEqual(res, {"host": "cursor", "status": "supported", "hooks_added": 2,
-                               "mcp_added": False, "allow_added": 1, "rules_copied": 2})
-        hooks = self.read_json(self.home / ".cursor" / "hooks.json")
-        self.assertEqual(set(hooks["hooks"]), {"sessionStart", "afterAgentResponse"})
-        self.assertEqual(self.read_json(self.home / ".cursor" / "cli-config.json")["permissions"]["allow"],
-                         ["Shell(rtk)"])
-        rules = self.home / ".cursor" / "rules"
-        self.assertEqual((rules / "token-compression-enforcement.mdc").read_text(), "tce")
-        self.assertEqual((rules / "context-mode.mdc").read_text(), "repo-cm")
-        # project rule copied onto itself is skipped (same file)
-        self.assertEqual((repo / ".cursor" / "rules" / "context-mode.mdc").read_text(), "repo-cm")
-        self.assertFalse((self.home / ".cursor" / "mcp.json").exists())
-
-    def test_with_package_hooks_mcp_and_rules(self):
-        repo = self.make_repo()
-        pkg = self.make_pkg()
-        self.write(pkg / "configs" / "cursor" / "hooks.json", {"hooks": {"preToolUse": [
-            {"command": "context-mode hook cursor pretooluse"}]}})
-        self.write(pkg / "configs" / "cursor" / "mcp.json", {"mcpServers": {
-            "context-mode": {"command": "npx", "args": ["x"]},
-            "user-context-mode": {"command": "npx"},
-            "extra": {"command": "extra"}}})
-        self.write(pkg / "configs" / "cursor" / "context-mode.mdc", "pkg-cm")
-        res = self.quiet(mod.optimize_cursor, repo, False)
-        self.assertTrue(res["mcp_added"])
-        servers = self.read_json(self.home / ".cursor" / "mcp.json")["mcpServers"]
-        self.assertEqual(servers["context-mode"]["command"], "/opt/g/context-mode")
-        self.assertEqual(servers["user-context-mode"]["command"], "/opt/g/context-mode")
-        self.assertEqual(servers["extra"], {"command": "extra"})
-        self.assertEqual((self.home / ".cursor" / "rules" / "context-mode.mdc").read_text(), "pkg-cm")
-        self.assertEqual((repo / ".cursor" / "rules" / "context-mode.mdc").read_text(), "pkg-cm")
-        self.assertEqual(res["hooks_added"], 3)
-        again = self.quiet(mod.optimize_cursor, repo, False)
-        self.assertEqual((again["hooks_added"], again["mcp_added"], again["allow_added"]), (0, False, 0))
-
-    def test_package_without_mcp_json_or_with_bad_servers(self):
-        repo = self.make_repo()
-        pkg = self.make_pkg()
-        res = self.quiet(mod.optimize_cursor, repo, False)
-        self.assertFalse(res["mcp_added"])
-        self.write(pkg / "configs" / "cursor" / "mcp.json", {"mcpServers": ["bad"]})
-        res = self.quiet(mod.optimize_cursor, repo, False)
-        self.assertFalse(res["mcp_added"])
-        self.assertFalse((self.home / ".cursor" / "mcp.json").exists())
-
-    def test_skip_cli_config_and_dry_run(self):
-        repo = self.make_repo()
-        res = self.quiet(mod.optimize_cursor, repo, True, True)
-        self.assertEqual(res["allow_added"], 0)
-        self.assertFalse((self.home / ".cursor").exists())
-        self.assertIn("DRY-RUN", self.out)
-
-    def test_missing_allowlist_file_means_no_entries(self):
-        repo = self.tmp / "emptyrepo"
-        repo.mkdir()
-        res = self.quiet(mod.optimize_cursor, repo, False)
-        self.assertEqual((res["allow_added"], res["rules_copied"]), (0, 0))
 
 
 class OptimizeCodexClaudeTest(Base):
@@ -827,14 +612,14 @@ class OtherHostsAndMainTest(Base):
                 code = exc.code
         return code, out.getvalue(), err.getvalue()
 
-    def test_main_default_is_cursor(self):
+    def test_main_default_is_claude(self):
         repo = self.tmp / "repo"
         repo.mkdir()
-        code, out, _ = self.run_main("--repo-root", str(repo), "--skip-cli-config")
+        code, out, _ = self.run_main("--repo-root", str(repo), "--dry-run")
         self.assertEqual(code, 0)
-        data = json.loads(out)
+        data = json.loads(out[out.index('{\n  "status"'):])
         self.assertEqual(data["status"], "ok")
-        self.assertEqual([r["host"] for r in data["results"]], ["cursor"])
+        self.assertEqual([r["host"] for r in data["results"]], ["claude"])
 
     def test_main_each_host_and_all(self):
         repo = self.tmp / "repo"
@@ -846,7 +631,7 @@ class OtherHostsAndMainTest(Base):
         code, out, _ = self.run_main("--host", "all", "--repo-root", str(repo), "--dry-run",
                                      "--rtk-only")
         self.assertEqual([r["host"] for r in json.loads(out[out.index('{\n  "status"'):])["results"]],
-                         ["cursor", "codex", "claude", "opencode", "hermes", "goose"])
+                         ["codex", "claude", "opencode", "hermes", "goose"])
 
     def test_main_flags_reach_opencode(self):
         repo = self.tmp / "repo"
@@ -881,21 +666,7 @@ class Refusal(Base):
 
 
 class HooksFileRefusalTest(Refusal):
-    FRAG = [{"hooks": {"preToolUse": [{"command": "rtk hook cursor"}]}}]
     CODEX = {"hooks": {"Stop": [{"hooks": [{"command": "c"}]}]}}
-
-    def test_cursor_hooks_wrong_types_refused(self):
-        for data in ({"hooks": {"preToolUse": "str"}}, {"hooks": {"preToolUse": {"a": 1}}},
-                     {"hooks": "x"}, {"hooks": ["x"]}):
-            target = self.write(self.home / "h.json", data)
-            self.refuse(mod.merge_hooks_file, target, self.FRAG, False)
-
-    def test_cursor_hooks_null_or_empty_repaired(self):
-        for data in ({"hooks": None}, {"hooks": []}, {"hooks": {"preToolUse": None}},
-                     {"hooks": {"preToolUse": {}}}, {"hooks": {"preToolUse": []}}):
-            target = self.write(self.home / "h.json", data)
-            self.assertEqual(self.quiet(mod.merge_hooks_file, target, self.FRAG, False), 1)
-            self.assertEqual(self.read_json(target)["hooks"]["preToolUse"], [{"command": "rtk hook cursor"}])
 
     def test_codex_hooks_wrong_types_refused(self):
         for data in ({"hooks": {"Stop": "str"}}, {"hooks": {"Stop": {"a": 1}}},
