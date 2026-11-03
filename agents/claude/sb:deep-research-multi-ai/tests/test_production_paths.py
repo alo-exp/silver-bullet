@@ -89,6 +89,12 @@ class ApoPackPipelineWithoutFixtureTests(unittest.TestCase):
         "Silver Bullet composes workflows with hook-enforced gates.",
     )
 
+    def test_worker_feature_names_map_to_the_pack_rubric_and_aliases(self) -> None:
+        with pv.activated(resolve_pack_from_need(NEED)):
+            self.assertEqual(m._feature_name("hook ENFORCED gates"), "Hook-enforced gates")  # rubric spelling
+            self.assertEqual(m._feature_name("Verification Gates"), "Hook-enforced gates")  # pack alias
+            self.assertEqual(m._feature_name("Something Else"), "Something Else")  # run-synthesized
+
     def test_pack_run_directory(self) -> None:
         import json
         import tempfile
