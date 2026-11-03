@@ -9,8 +9,8 @@ needs:
   in the Silver Bullet install root or the user's project;
 * Cursor runs without ``--force``/``--yolo`` (no auto-approved shell commands or file writes),
   codex runs directly with ``--sandbox read-only`` (the delegate chain would force
-  ``danger-full-access``), the agent-claude delegate runs ``--mode strict`` with
-  ``CLAUDE_PERMISSION_MODE=default`` (inherited overrides are ignored), and the OCG cohort runs
+  ``danger-full-access``), claude directly with ``--permission-mode default`` (the delegate maps
+  strict to ``acceptEdits``; inherited ``CLAUDE_PERMISSION_MODE`` is dropped), and the OCG cohort runs
   ``opencode run`` without ``--auto``;
 * the prompt fences the query and prior context as untrusted data between per-prompt nonce
   markers, with a rule never to follow instructions found inside them;
@@ -60,12 +60,10 @@ SKILL_DIR = Path(__file__).resolve().parents[1]
 # Silver Bullet root: the repository checkout, or plugins/silver-bullet in the packaged layout.
 REPO_ROOT = SKILL_DIR.parents[1]
 AGENT_OPENCODE_DELEGATE = REPO_ROOT / "scripts" / "agent-opencode-delegate.sh"
-AGENT_CLAUDE_INVOKE = REPO_ROOT / "scripts" / "agent-claude" / "invoke.sh"
 
-# Claude runs through its delegate with --mode strict AND an explicit CLAUDE_PERMISSION_MODE=default
-# (headless default mode auto-approves nothing: no shell, no edits). Codex is launched directly
-# with --sandbox read-only because the delegate chain hard-codes --sandbox danger-full-access.
-WORKER_PERMISSION_MODE = "strict"
+# Claude and Codex are launched directly (not through scripts/agent-*): claude with
+# --permission-mode default (headless, so nothing is auto-approved: no shell, no edits) and codex
+# with --sandbox read-only. The delegate chain maps strict to acceptEdits / danger-full-access.
 CLAUDE_WORKER_PERMISSION_MODE = "default"
 CODEX_WORKER_SANDBOX = "read-only"
 # One argv element is capped at 128 KiB on Linux (MAX_ARG_STRLEN); stay well below it.
@@ -534,79 +532,44 @@ def _resolve_codex_bin() -> str:
     return explicit or "codex"
 
 
-def _delegate_env(extra: dict[str, str]) -> dict[str, str]:
+def _worker_env() -> dict[str, str]:
+    """The environment of a direct claude/codex worker: no inherited permission overrides."""
     env = os.environ.copy()
-    env.update(
-        {
-            "SB_ROOT": str(REPO_ROOT),
-            "SB_HOST": "cursor",
-            "SB_ORCHESTRATOR_WORKER": "1",
-            "SB_ORCHESTRATOR_PARENT": "0",
-            # The sandbox is throwaway: never pre-trust its hooks or record it in ~/.claude.json.
-            "CODEX_BYPASS_HOOK_TRUST": "0",
-            "CODEX_AUTO_TRUST_HOOKS": "0",
-            "SB_AGENT_CLAUDE_SEED_FOLDER_TRUST_GLOBAL": "0",
-        }
-    )
-    env.update(extra)
-    # The claude delegate honours these two and would turn a "strict" worker into bypassPermissions.
-    env.pop("SB_AGENT_CERT_RUN", None)
-    env["CLAUDE_PERMISSION_MODE"] = CLAUDE_WORKER_PERMISSION_MODE
+    for name in ("CLAUDE_PERMISSION_MODE", "SB_AGENT_CERT_RUN"):
+        env.pop(name, None)
+    env.update({"SB_ORCHESTRATOR_WORKER": "1", "SB_ORCHESTRATOR_PARENT": "0"})
     return env
 
 
-def _run_delegate_worker(
+def _run_direct_worker(
     *,
     backend: str,
-    invoke: Path,
-    launch_flag: str,
-    env: dict[str, str],
+    build_cmd,  # noqa: ANN001 — (sandbox: Path) -> list[str]
     effective: str,
     logical_model_id: str,
     prompt: str,
     output_dir: Path,
     timeout_sec: int,
 ) -> WorkerResult:
+    """Run one host CLI directly: fresh empty cwd, prompt on stdin, own process group."""
     attempt_id = new_attempt_id()
     out_file = output_dir / f"{logical_model_id.replace('.', '-')}-{attempt_id}.txt"
-    log_file = output_dir / f"{backend}-delegate-{attempt_id}.log"
-    if not invoke.is_file():
-        return _failed(logical_model_id, backend, attempt_id, f"missing scripts/agent-{backend}/invoke.sh")
     too_large = _prompt_too_large(prompt)
     if too_large:
         return _failed(logical_model_id, backend, attempt_id, too_large)
     try:
         with _worker_sandbox(backend) as sandbox:
-            # The prompt travels in a file, never as an argv element of the wrapper.
-            prompt_file = sandbox / ".sb-worker-prompt.txt"
-            prompt_file.write_text(prompt, encoding="utf-8")
-            cmd = [
-                "bash",
-                str(invoke),
-                "--skip-preflight",
-                "--work-dir",
-                str(sandbox),
-                "--prompt-file",
-                str(prompt_file),
-                launch_flag,
-                "--log",
-                str(log_file),
-                "--mode",
-                WORKER_PERMISSION_MODE,
-                "--sb-root",
-                str(REPO_ROOT),
-            ]
-            proc = _run_cli(cmd, timeout=timeout_sec, cwd=str(sandbox), env=env)
+            proc = _run_cli(build_cmd(sandbox), timeout=timeout_sec, cwd=str(sandbox), env=_worker_env(), stdin_text=prompt)
     except subprocess.TimeoutExpired as exc:
         return WorkerResult(logical_model_id, backend, attempt_id, "partial", None, _partial_text(exc), "timeout")
     except FileNotFoundError:
-        return _failed(logical_model_id, backend, attempt_id, f"agent-{backend} invoke not found")
+        return _failed(logical_model_id, backend, attempt_id, f"{backend} CLI not found")
     except OSError as exc:
-        return _failed(logical_model_id, backend, attempt_id, f"agent-{backend} launch failed: {exc}")
+        return _failed(logical_model_id, backend, attempt_id, f"{backend} launch failed: {exc}")
     raw = _merged_output(proc)
     out_file.write_text(raw, encoding="utf-8")
     if proc.returncode != 0:
-        return _failed(logical_model_id, backend, attempt_id, f"agent-{backend} exit {proc.returncode}", raw, effective_model_id=effective)
+        return _failed(logical_model_id, backend, attempt_id, f"{backend} exit {proc.returncode}", raw, effective_model_id=effective)
     return WorkerResult(logical_model_id, backend, attempt_id, "completed", None, raw, effective_model_id=effective)
 
 
@@ -617,51 +580,33 @@ def run_codex_worker(*, logical_model_id: str, prompt: str, output_dir: Path, ti
     `codex exec` never asks for approval, so it would hand a shell to web-derived prompt text.
     """
     model, effort = CODEX_DELEGATE_MODEL.get(logical_model_id, (logical_model_id, "medium"))
-    attempt_id = new_attempt_id()
-    out_file = output_dir / f"{logical_model_id.replace('.', '-')}-{attempt_id}.txt"
-    effective = f"{model}-{effort}"
-    too_large = _prompt_too_large(prompt)
-    if too_large:
-        return _failed(logical_model_id, "codex", attempt_id, too_large)
-    try:
-        with _worker_sandbox("codex") as sandbox:
-            cmd = [
-                _resolve_codex_bin(), "exec", "--cd", str(sandbox), "--sandbox", CODEX_WORKER_SANDBOX,
-                "--color", "never", "--skip-git-repo-check", "--model", model,
-                "--config", f"model_reasoning_effort={effort}", "-",
-            ]
-            proc = _run_cli(cmd, timeout=timeout_sec, cwd=str(sandbox), stdin_text=prompt)
-    except subprocess.TimeoutExpired as exc:
-        return WorkerResult(logical_model_id, "codex", attempt_id, "partial", None, _partial_text(exc), "timeout")
-    except FileNotFoundError:
-        return _failed(logical_model_id, "codex", attempt_id, "codex CLI not found")
-    except OSError as exc:
-        return _failed(logical_model_id, "codex", attempt_id, f"codex launch failed: {exc}")
-    raw = _merged_output(proc)
-    out_file.write_text(raw, encoding="utf-8")
-    if proc.returncode != 0:
-        return _failed(logical_model_id, "codex", attempt_id, f"codex exit {proc.returncode}", raw, effective_model_id=effective)
-    return WorkerResult(logical_model_id, "codex", attempt_id, "completed", None, raw, effective_model_id=effective)
+    return _run_direct_worker(
+        backend="codex",
+        build_cmd=lambda sandbox: [
+            _resolve_codex_bin(), "exec", "--cd", str(sandbox), "--sandbox", CODEX_WORKER_SANDBOX,
+            "--color", "never", "--skip-git-repo-check", "--model", model,
+            "--config", f"model_reasoning_effort={effort}", "-",
+        ],
+        effective=f"{model}-{effort}",
+        logical_model_id=logical_model_id,
+        prompt=prompt,
+        output_dir=output_dir,
+        timeout_sec=timeout_sec,
+    )
 
 
 def run_claude_worker(*, logical_model_id: str, prompt: str, output_dir: Path, timeout_sec: int = 600) -> WorkerResult:
-    """Dispatch via /sb:agent-claude → scripts/agent-claude/invoke.sh (--use-print, strict, default permission mode)."""
+    """Run `claude --print --permission-mode default` directly (nothing auto-approved), prompt on stdin.
+
+    The delegate chain maps its strict mode to acceptEdits and ignores CLAUDE_PERMISSION_MODE.
+    """
     model, effort = CLAUDE_DELEGATE_MODEL.get(logical_model_id, ("sonnet", "low"))
-    env = _delegate_env(
-        {
-            "CLAUDE_BIN": os.environ.get("CLAUDE_BIN") or shutil.which("claude") or "claude",
-            "CLAUDE_MODEL": model,
-            "CLAUDE_EFFORT": effort,
-            "CLAUDE_PRINT_VERBOSE": "0",
-            "SB_AGENT_CLAUDE_DELEGATE": "1",
-            "SB_AGENT_CLAUDE_LIGHTWEIGHT": "1",
-        }
-    )
-    return _run_delegate_worker(
+    return _run_direct_worker(
         backend="claude",
-        invoke=AGENT_CLAUDE_INVOKE,
-        launch_flag="--use-print",
-        env=env,
+        build_cmd=lambda sandbox: [
+            os.environ.get("CLAUDE_BIN") or shutil.which("claude") or "claude", "--print",
+            "--model", model, "--effort", effort, "--permission-mode", CLAUDE_WORKER_PERMISSION_MODE,
+        ],
         effective=f"{model}-{effort}",
         logical_model_id=logical_model_id,
         prompt=prompt,
@@ -938,6 +883,29 @@ def _install_sigterm_as_interrupt():
 
 def _dispatch_in_pool(pool, cursor_items, ocg_items, results, *, phase_id, query, run_id, work_item_id, phase_dir, context, ocg_pool, timeout_sec):  # noqa: ANN001
     futures: dict[Future, list[dict[str, Any]]] = {}
+    try:
+        _submit_all(pool, futures, cursor_items, ocg_items, phase_id=phase_id, query=query, run_id=run_id,
+                    work_item_id=work_item_id, phase_dir=phase_dir, context=context, ocg_pool=ocg_pool,
+                    timeout_sec=timeout_sec)
+        for fut in as_completed(futures):
+            try:
+                outcome = fut.result()
+            except Exception as exc:  # noqa: BLE001 — one worker must never lose the others' results
+                outcome = _crashed_results(futures[fut], exc)
+            if isinstance(outcome, list):
+                results.extend(outcome)
+            else:
+                results.append(outcome)
+    except BaseException:
+        # Ctrl-C/SIGTERM reach only the dispatcher (workers have their own sessions): queued
+        # workers are cancelled first so none starts, then the live ones are stopped.
+        pool.shutdown(wait=False, cancel_futures=True)
+        _terminate_live_workers()
+        raise
+    return results
+
+
+def _submit_all(pool, futures, cursor_items, ocg_items, *, phase_id, query, run_id, work_item_id, phase_dir, context, ocg_pool, timeout_sec):  # noqa: ANN001
     for item in cursor_items:
         fut = pool.submit(
             dispatch_agent,
@@ -965,21 +933,6 @@ def _dispatch_in_pool(pool, cursor_items, ocg_items, results, *, phase_id, query
             timeout_sec=timeout_sec,
         )
         futures[fut] = ocg_items
-    try:
-        for fut in as_completed(futures):
-            try:
-                outcome = fut.result()
-            except Exception as exc:  # noqa: BLE001 — one worker must never lose the others' results
-                outcome = _crashed_results(futures[fut], exc)
-            if isinstance(outcome, list):
-                results.extend(outcome)
-            else:
-                results.append(outcome)
-    except BaseException:
-        # Ctrl-C reaches only the dispatcher, never the workers (own sessions): stop them first.
-        _terminate_live_workers()
-        raise
-    return results
 
 
 def run_multi_ai_live(*, output_root: Path, selection: PoolSelection, budget: BudgetPolicy | None = None, task_prompt: str = "", phase_id: str | None = None, timeout_sec: int = 600) -> dict[str, Any]:

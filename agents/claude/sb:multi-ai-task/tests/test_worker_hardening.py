@@ -115,36 +115,19 @@ class LeastPrivilegeTests(PopenCase):
         self.assert_fresh_sandbox(launch, launch.kwargs["cwd"])
         self.assertTrue(launch.kwargs.get("start_new_session"))
 
-    def test_codex_and_claude_delegates_run_strict_in_an_empty_sandbox(self) -> None:
-        invoke = self.tmp / "invoke.sh"
-        invoke.write_text("#!/bin/sh\n")
-        for fn, attr in ((ld.run_claude_worker, "AGENT_CLAUDE_INVOKE"),):
-            FakePopen.launches = []
-            with mock.patch.object(ld, attr, invoke), mock.patch.object(ld, "_resolve_codex_bin", return_value="codex"):
-                result = fn(logical_model_id="gpt-5.6-luna-medium", prompt="THE PROMPT", output_dir=self.out)
-            self.assertEqual(result.status, "completed", fn.__name__)
-            launch = FakePopen.launches[0]
-            args = launch.args
-            self.assertEqual(args[args.index("--mode") + 1], "strict")
-            self.assertNotIn("permissive", args)
-            self.assertNotIn("THE PROMPT", args)
-            self.assertEqual(launch.prompt_file_text, "THE PROMPT")
-            work_dir = args[args.index("--work-dir") + 1]
-            self.assertEqual(work_dir, launch.kwargs["cwd"])
-            self.assert_fresh_sandbox(launch, work_dir)
-            env = launch.kwargs["env"]
-            self.assertEqual((env["CODEX_BYPASS_HOOK_TRUST"], env["CODEX_AUTO_TRUST_HOOKS"]), ("0", "0"))
-            # A throwaway sandbox must never be recorded in the user's global ~/.claude.json.
-            self.assertEqual(env["SB_AGENT_CLAUDE_SEED_FOLDER_TRUST_GLOBAL"], "0")
-
-    def test_claude_delegate_ignores_inherited_permission_overrides(self) -> None:
-        invoke = self.tmp / "invoke.sh"
-        invoke.write_text("#!/bin/sh\n")
-        inherited = {"CLAUDE_PERMISSION_MODE": "bypassPermissions", "SB_AGENT_CERT_RUN": "1"}
-        with mock.patch.dict(os.environ, inherited), mock.patch.object(ld, "AGENT_CLAUDE_INVOKE", invoke):
-            ld.run_claude_worker(logical_model_id="claude-opus-4.8-medium", prompt="P", output_dir=self.out)
-        env = FakePopen.launches[0].kwargs["env"]
-        self.assertEqual(env["CLAUDE_PERMISSION_MODE"], "default")
+    def test_claude_worker_argv_is_default_mode_in_an_empty_sandbox(self) -> None:
+        inherited = {"CLAUDE_PERMISSION_MODE": "bypassPermissions", "SB_AGENT_CERT_RUN": "1", "CLAUDE_BIN": "claude"}
+        with mock.patch.dict(os.environ, inherited):
+            result = ld.run_claude_worker(logical_model_id="claude-opus-4.8-medium", prompt="THE PROMPT", output_dir=self.out)
+        self.assertEqual(result.status, "completed")
+        launch = FakePopen.launches[0]
+        self.assertEqual(launch.args[launch.args.index("--permission-mode") + 1], "default")
+        self.assertFalse({"acceptEdits", "bypassPermissions", "--dangerously-skip-permissions"} & set(launch.args))
+        self.assertNotIn("THE PROMPT", launch.args)
+        self.assertEqual(launch.cwd_entries_at_launch, [])
+        self.assert_fresh_sandbox(launch, launch.kwargs["cwd"])
+        env = launch.kwargs["env"]
+        self.assertNotIn("CLAUDE_PERMISSION_MODE", env)
         self.assertNotIn("SB_AGENT_CERT_RUN", env)
 
     def test_codex_worker_is_read_only_and_never_bypasses_the_sandbox(self) -> None:
@@ -272,7 +255,7 @@ class LiveBudgetTests(PopenCase):
         invoke.write_text("#!/bin/sh\n")
         FakePopen.script = [(0, '{"a": 1}', "")] * 2 + [(1, "", "ActionRequiredError: quota"), (0, '{"b": 2}', "")]
         env = {"SB_CURSOR_MODEL_ALLOW_FALLBACK": "1"}
-        with mock.patch.dict(os.environ, env), mock.patch.object(ld, "AGENT_CLAUDE_INVOKE", invoke), mock.patch.object(ld, "_resolve_codex_bin", return_value="codex"):
+        with mock.patch.dict(os.environ, env), mock.patch.object(ld, "_resolve_codex_bin", return_value="codex"):
             out = ld.run_multi_ai_live(output_root=self.out, selection=selection, task_prompt="t", budget=core.BudgetPolicy(concurrency=1))
         self.assertTrue(out["ok"])
         manifest = json.loads(Path(out["manifest_path"]).read_text())
@@ -474,6 +457,62 @@ class InterruptTests(PopenCase):
             with self.assertRaises(KeyboardInterrupt):
                 ld.dispatch_phase_parallel(phase_id="p", query="q", run_id="r", work_item_id="w",
                                            resolved_pool=[item], output_dir=self.out)
+        term.assert_called_once()
+
+    def _blocking_dispatch(self, started, release):
+        def fake(item, **kwargs):  # noqa: ANN001
+            started.append(item["logical_model_id"])
+            release.wait(5)
+            return ld.WorkerResult(item["logical_model_id"], "cursor", "a", "completed", None, "{}")
+        return fake
+
+    def _items(self, n):
+        return [{"logical_model_id": f"m{i}", "backend": "cursor"} for i in range(n)]
+
+    def test_interrupt_cancels_queued_workers_so_none_starts_afterwards(self) -> None:
+        import threading
+        started, release = [], threading.Event()
+        term = mock.Mock(side_effect=release.set)
+        with mock.patch.object(ld, "dispatch_agent", self._blocking_dispatch(started, release)), \
+                mock.patch.object(ld, "_terminate_live_workers", term), \
+                mock.patch.object(ld, "as_completed", side_effect=KeyboardInterrupt):
+            with self.assertRaises(KeyboardInterrupt):
+                ld.dispatch_phase_parallel(phase_id="p", query="q", run_id="r", work_item_id="w",
+                                           resolved_pool=self._items(4), output_dir=self.out, concurrency=1)
+        term.assert_called_once()
+        self.assertLessEqual(len(started), 1, started)  # the 3 queued workers never launched
+
+    def test_sigterm_during_dispatch_runs_the_same_cleanup_and_restores_the_handler(self) -> None:
+        import signal as sg
+        import threading
+        started, release = [], threading.Event()
+        before = sg.getsignal(sg.SIGTERM)
+        seen = {}
+
+        def fake(item, **kwargs):  # noqa: ANN001
+            started.append(item["logical_model_id"])
+            seen["handler"] = sg.getsignal(sg.SIGTERM)
+            if len(started) == 1:
+                os.kill(os.getpid(), sg.SIGTERM)
+            release.wait(5)
+            return ld.WorkerResult(item["logical_model_id"], "cursor", "a", "completed", None, "{}")
+
+        term = mock.Mock(side_effect=release.set)
+        with mock.patch.object(ld, "dispatch_agent", fake), mock.patch.object(ld, "_terminate_live_workers", term):
+            with self.assertRaises(KeyboardInterrupt):
+                ld.dispatch_phase_parallel(phase_id="p", query="q", run_id="r", work_item_id="w",
+                                           resolved_pool=self._items(4), output_dir=self.out, concurrency=1)
+        self.assertNotIn(seen["handler"], (sg.SIG_DFL, sg.SIG_IGN, before))
+        self.assertEqual(sg.getsignal(sg.SIGTERM), before)
+        term.assert_called_once()
+        self.assertEqual(started, ["m0"])
+
+    def test_interrupt_while_submitting_still_cleans_up(self) -> None:
+        with mock.patch.object(ld, "_submit_all", side_effect=KeyboardInterrupt), \
+                mock.patch.object(ld, "_terminate_live_workers") as term:
+            with self.assertRaises(KeyboardInterrupt):
+                ld.dispatch_phase_parallel(phase_id="p", query="q", run_id="r", work_item_id="w",
+                                           resolved_pool=self._items(2), output_dir=self.out)
         term.assert_called_once()
 
     def test_sigterm_becomes_keyboard_interrupt_on_the_main_thread_and_is_restored(self) -> None:

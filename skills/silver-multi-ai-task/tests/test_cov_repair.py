@@ -21,42 +21,6 @@ def proc(returncode: int = 0, stdout: str = "", stderr: str = "") -> mock.Mock:
     return mock.Mock(returncode=returncode, stdout=stdout, stderr=stderr)
 
 
-class ClaudeBinFallbackTests(HermeticCase):
-    def _env_for(self, **env: str) -> dict[str, str]:
-        invoke = self.tmp / "invoke.sh"
-        invoke.write_text("#!/bin/sh\n")
-        captured: dict = {}
-
-        def fake(cmd, **kwargs):  # noqa: ANN001
-            captured.update(kwargs)
-            return proc(0, "{}")
-
-        with mock.patch.dict(os.environ, env), mock.patch.object(ld, "AGENT_CLAUDE_INVOKE", invoke), \
-                mock.patch.object(ld, "_run_cli", side_effect=fake):
-            ld.run_claude_worker(logical_model_id="claude-opus-4.8-medium", prompt="P", output_dir=self.subdir("o"))
-        return captured["env"]
-
-    def test_fallback_is_plain_claude_without_a_machine_specific_path(self) -> None:
-        with mock.patch.object(ld.shutil, "which", return_value=None):
-            env = self._env_for()
-        self.assertEqual(env["CLAUDE_BIN"], "claude")
-        self.assertNotIn("/Users/", env["CLAUDE_BIN"])
-
-    def test_empty_claude_bin_does_not_override_path_lookup(self) -> None:
-        with mock.patch.object(ld.shutil, "which", return_value="/found/claude"):
-            self.assertEqual(self._env_for(CLAUDE_BIN="")["CLAUDE_BIN"], "/found/claude")
-
-    def test_explicit_claude_bin_wins(self) -> None:
-        with mock.patch.object(ld.shutil, "which", return_value="/found/claude"):
-            self.assertEqual(self._env_for(CLAUDE_BIN="/mine/claude")["CLAUDE_BIN"], "/mine/claude")
-
-    def test_worker_environment_marks_child_as_non_parent_worker(self) -> None:
-        env = self._env_for()
-        self.assertEqual(env["SB_ORCHESTRATOR_PARENT"], "0")
-        self.assertEqual(env["SB_ORCHESTRATOR_WORKER"], "1")
-        self.assertEqual(env["SB_AGENT_CLAUDE_LIGHTWEIGHT"], "1")
-
-
 class RecursionTests(HermeticCase):
     def test_extract_json_payload_survives_deep_nesting(self) -> None:
         out = ld.extract_json_payload(DEEP)

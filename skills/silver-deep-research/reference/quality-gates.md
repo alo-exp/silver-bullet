@@ -193,9 +193,21 @@ Options:
 
 ## Known limits of the claim-support gate (v1)
 
-`verify_claim_support.py` is a lexical check: a claim is `supported` only when its words, numbers,
-years and named entities (capitalised phrases, acronyms such as AWS, camelCase brands such as
-GitHub) appear in a linked quote and the claim and the matching quote clause agree on negation.
-It cannot detect an antonym or verb swap with the same words ("acquired" vs "sold"), and a
-recommendation or hedge sentence without a year, percentage, currency or scaled figure is
-exempt from `--strict`. Review such claims by hand.
+`verify_claim_support.py` is a lexical check, not a reader. A claim is `supported` only when:
+
+- at least 30% of its significant words and every named entity (capitalised phrases, acronyms such
+  as AWS, camelCase brands such as GitHub, identifiers such as EC2, GPT4, FY2018, Q3) appear in a
+  linked quote;
+- every figure matches a quote figure of the same normalised value and unit (`$50M` = `50 million
+  dollars` = `50,000,000`; `2,500` is not `500`; `%` and `x` are distinct) and is attached to the
+  same thing: the claim's head noun follows the figure, or, with no noun, the words just before it
+  also precede the quote's figure;
+- no aligned quote clause contradicts a claim clause's negation (checked per clause, across the
+  whole quote; `not only ... but also` is ignored; "zero"/"no"/"never"/"cannot"/"un-" count).
+
+It still cannot catch: antonym or verb/role swaps with the same words ("acquired" vs "sold",
+"A acquired B" vs "B acquired A"), figures written as words ("five thousand"), pronoun-only
+subjects when the claim has no other term to align on, and paraphrased units ("500 employees" vs
+"500 people" is reported as a mismatch and needs a manual look). A recommendation or hedge sentence
+without a year, percentage, currency or scaled figure is exempt from `--strict`. The curated corpus
+in `tests/fixtures/claim_corpus.json` (45 fabrications, 45 honest claims) pins the behaviour.
