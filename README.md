@@ -139,6 +139,8 @@ For local development from this checkout:
 ./scripts/install-codex.sh --purge-legacy-skills
 ```
 
+`--purge-legacy-skills` removes only skill copies Silver Bullet marked as its own; an unmarked copy under an SB name (`silver-*`, `sb-*`, `sb:*`) is moved to `~/.codex/.silver-bullet-backup/`, and your own skills (a `security` or `tdd` you wrote) are left in place.
+
 On Codex, use `silver-bullet invoke-skill <name>` when SB requires a recorded skill invocation and the runtime has no callable `Skill` tool.
 
 ### Cursor
@@ -246,7 +248,7 @@ Start at [docs/README.md](docs/README.md), the index of the docs tree. The most 
 ## Testing
 
 ```bash
-make setup                             # check prerequisites, install requirements-dev.txt
+make setup                             # check prerequisites, install requirements-dev.txt into .venv
 make check                             # lint + full suite (what a pull request must pass)
 bash tests/run-all-tests.sh            # every default suite (the local equivalent of CI)
 bash tests/run-all-tests.sh --jobs 4   # in parallel

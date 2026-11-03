@@ -62,6 +62,29 @@ assert_eq "registered local marketplace root" "$TL_TMP/local-mp" "$TL_OUT"
 set_marketplace_source "$TL_TMP/missing-mp"
 sub codex_marketplace_root
 assert_eq "registered root that does not exist falls back" "$MP" "$TL_OUT"
+# the reader is structural like the writer: header comment, quote and backslash in the path
+mkdir -p "$TL_TMP/we\"ird\\dir" "$TL_TMP/plain dir"
+printf '[marketplaces.alo-labs-codex] # mine\nsource_type = "local"\nsource = "%s"\n' "$TL_TMP/plain dir" >"$CFG"
+sub codex_marketplace_root
+assert_eq "root read through a header comment" "$TL_TMP/plain dir" "$TL_OUT"
+rm -f "$CFG"
+sub ensure_marketplace_registered "$TL_TMP/we\"ird\\dir"
+sub codex_marketplace_root
+assert_eq "root with a quote and backslash round-trips" "$TL_TMP/we\"ird\\dir" "$TL_OUT"
+# without any TOML parser (old Python, no pip) the same root is found, never a silent default
+NOPARSER="$TL_TMP/noparser"; mkdir -p "$NOPARSER/pip"
+for mod in tomllib tomli; do printf 'raise ImportError("hidden for the test")\n' >"$NOPARSER/$mod.py"; done
+printf 'raise ImportError("hidden for the test")\n' >"$NOPARSER/pip/__init__.py"
+printf '[marketplaces.alo-labs-codex] # mine\nsource_type = "local"\nsource = "%s"\n' "$TL_TMP/plain dir" >"$CFG"
+PYTHONPATH="$NOPARSER" sub codex_marketplace_root
+assert_eq "root read without a TOML parser" "$TL_TMP/plain dir" "$TL_OUT"
+printf 'not [valid\n' >"$CFG"
+PYTHONPATH="$NOPARSER" sub codex_marketplace_root
+assert_contains "an unreadable registration is reported, not silently ignored" "$TL_ERR" "cannot read the Codex marketplace registration"
+assert_eq "and the default root is used" "$MP" "$TL_OUT"
+printf 'not [valid\n' >"$CFG"
+sub codex_marketplace_root
+assert_eq "invalid config falls back to the default root" "$MP" "$TL_OUT"
 sub usage
 assert_contains "usage text" "$TL_OUT" "Usage: scripts/install-codex.sh"
 mkdir -p "$TL_TMP/proj/sub/deeper"
@@ -453,7 +476,7 @@ cat >"$MP/plugins/silver-bullet/hooks/hooks.json" <<'JSON'
 {"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"type":"command","command":"${CLAUDE_PLUGIN_ROOT}/hooks/a.sh"}]}]}}
 JSON
 mkdir -p "$CH/.codex"
-printf '{"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"type":"command","command":"/usr/bin/user-hook"},{"type":"command","command":"/old/silver-bullet/1.0/hooks/a.sh"}]}]}}\n' >"$CH/.codex/hooks.json"
+printf '{"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"type":"command","command":"/usr/bin/user-hook"},{"type":"command","command":"/old/silver-bullet/1.0.0/hooks/completion-audit.sh"}]}]}}\n' >"$CH/.codex/hooks.json"
 sub merge_silver_bullet_hooks_into_user_config
 assert_eq "hook merge exits 0" 0 "$TL_STATUS"
 MERGED="$(jq -r '[.hooks.PreToolUse[].hooks[].command] | sort | join(",")' "$CH/.codex/hooks.json")"
@@ -467,5 +490,313 @@ printf '{broken' >"$CH/.codex/hooks.json"
 sub merge_silver_bullet_hooks_into_user_config
 assert_eq "unparseable user hooks.json makes the merge fail" 1 "$([[ $TL_STATUS -ne 0 ]] && echo 1 || echo 0)"
 assert_eq "unparseable user hooks.json left byte-identical" "{broken" "$(<"$CH/.codex/hooks.json")"
+
+# ======================= foreign data survives (R7-06, R7-07, R7-08, R7-09, R7-10, R7-14)
+toml_get() { # toml_get <file> <python expression over the parsed document d>
+  python3 - "$1" "$2" <<'PY'
+import json
+import sys
+try:
+    import tomllib
+except ImportError:  # Python < 3.11
+    from pip._vendor import tomli as tomllib
+with open(sys.argv[1], "rb") as handle:
+    d = tomllib.load(handle)
+print(json.dumps(eval(sys.argv[2]), sort_keys=True))
+PY
+}
+SBKEY='silver-bullet@alo-labs-codex:hooks/hooks.json:pre_tool_use:0:0'
+
+# ---- R7-09: config.toml edits are structural, valid TOML, and keep comments and unknown keys
+reset_home
+cat >"$CFG" <<'TOML'
+# my Codex settings
+model = "o3"   # keep me
+notes = """
+[plugins."silver-bullet@alo-labs-codex"]
+not a table
+"""
+
+[ plugins . "silver-bullet@alo-labs-codex" ]  # SB
+enabled = false
+pinned = "v1"
+
+[plugins."other@thirdparty"]
+enabled = true
+TOML
+sub ensure_plugin_enabled "silver-bullet@alo-labs-codex"
+assert_eq "plugin enable on a spaced header exits 0" 0 "$TL_STATUS"
+assert_eq "plugin enabled in place, its other keys kept" '{"enabled": true, "pinned": "v1"}' "$(toml_get "$CFG" 'd["plugins"]["silver-bullet@alo-labs-codex"]')"
+assert_contains "comments kept" "$(<"$CFG")" "# my Codex settings"
+assert_contains "multi-line string kept byte-for-byte" "$(<"$CFG")" $'notes = """\n[plugins."silver-bullet@alo-labs-codex"]\nnot a table\n"""'
+sub ensure_feature_enabled plugin_hooks
+assert_eq "feature table added" '{"plugin_hooks": true}' "$(toml_get "$CFG" 'd["features"]')"
+sub remove_plugin_enabled "other@thirdparty"
+assert_eq "only the named plugin table removed" '["silver-bullet@alo-labs-codex"]' "$(toml_get "$CFG" 'sorted(d["plugins"])')"
+assert_eq "top-level keys kept" '"o3"' "$(toml_get "$CFG" 'd["model"]')"
+printf '[a]\nx = 1\n[a]\n' >"$CFG"
+sub ensure_plugin_enabled "silver-bullet@alo-labs-codex"
+assert_eq "an invalid config is refused" 1 "$TL_STATUS"
+assert_contains "refusal explains" "$TL_ERR" "not valid TOML"
+assert_eq "invalid config left byte-identical" $'[a]\nx = 1\n[a]' "$(<"$CFG")"
+
+# ---- R7-09: marketplace registration is structural too
+reset_home
+printf '# keep\n[marketplaces.alo-labs-codex] # mine\nsource_type = "git"\nsource = "https://example.invalid/x"\nextra = 1\n\n[marketplaces.silver-bullet-local]\nsource = "/old"\n' >"$CFG"
+sub ensure_marketplace_registered '/srv/my "quoted" path'
+assert_eq "marketplace registration exits 0" 0 "$TL_STATUS"
+assert_eq "source re-pointed, escaped, other keys kept" '{"extra": 1, "source": "/srv/my \"quoted\" path", "source_type": "local"}' \
+  "$(toml_get "$CFG" 'd["marketplaces"]["alo-labs-codex"]')"
+assert_contains "the header comment survives" "$(<"$CFG")" "[marketplaces.alo-labs-codex] # mine"
+sub remove_marketplace_if_present silver-bullet-local
+assert_eq "only the named marketplace removed" '["alo-labs-codex"]' "$(toml_get "$CFG" 'sorted(d["marketplaces"])')"
+sub ensure_marketplace_registered "https://github.com/obra/superpowers"
+assert_eq "a new git marketplace gets its own table" '{"source": "https://github.com/obra/superpowers", "source_type": "git"}' \
+  "$(toml_get "$CFG" 'd["marketplaces"]["superpowers-marketplace"]')"
+rm -f "$CFG"
+sub remove_marketplace_if_present silver-bullet-local
+assert_eq "removing from a missing config is a no-op" 0 "$TL_STATUS"
+
+# ---- R7-09: trust seeding over implicit tables, commented headers and SB's own duplicates
+reset_home
+make_pkg "$MP/plugins/silver-bullet" 1.0.0
+cat >"$MP/plugins/silver-bullet/hooks/hooks.json" <<'JSON'
+{"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"type":"command","command":"${CLAUDE_PLUGIN_ROOT}/hooks/a.sh"}]}]}}
+JSON
+for seed in implicit header-comment; do
+  if [[ "$seed" == implicit ]]; then
+    printf '# user\n[hooks.state."%s"]\ntrusted_hash = "sha256:old"\nnote = "kept"\n\n[hooks.state."/home/me/.codex/hooks.json:stop:0:0"]\ntrusted_hash = "sha256:user"\n' "$SBKEY" >"$CFG"
+  else
+    printf '[hooks.state]   # trust\n[hooks.state."%s"]\ntrusted_hash = "sha256:old"\nnote = "kept"\n' "$SBKEY" >"$CFG"
+  fi
+  sub seed_silver_bullet_hook_trust_state
+  assert_eq "trust seeding over $seed tables exits 0" 0 "$TL_STATUS"
+  assert_eq "trust seeded once over $seed tables (valid TOML)" 1 "$(toml_get "$CFG" 'len([k for k in d["hooks"]["state"] if k.startswith("silver-bullet@")])')"
+  assert_contains "fresh hash recorded ($seed)" "$(toml_get "$CFG" 'd["hooks"]["state"]["'"$SBKEY"'"]["trusted_hash"]')" "sha256:"
+  assert_not_contains "stale hash replaced ($seed)" "$(<"$CFG")" "sha256:old"
+  assert_eq "unknown keys of the SB table kept ($seed)" '"kept"' "$(toml_get "$CFG" 'd["hooks"]["state"]["'"$SBKEY"'"]["note"]')"
+done
+assert_eq "user hook trust untouched" '"sha256:user"' "$(printf '# user\n[hooks.state."/home/me/.codex/hooks.json:stop:0:0"]\ntrusted_hash = "sha256:user"\n' >"$TL_TMP/u.toml"; toml_get "$TL_TMP/u.toml" 'd["hooks"]["state"]["/home/me/.codex/hooks.json:stop:0:0"]["trusted_hash"]')"
+printf '[hooks.state]\n[hooks.state."%s"]\ntrusted_hash = "sha256:a"\n[hooks.state."%s"]\ntrusted_hash = "sha256:b"\n[other]\nkeep = 1\n' "$SBKEY" "$SBKEY" >"$CFG"
+sub seed_silver_bullet_hook_trust_state
+assert_contains "SB's own duplicate tables repaired" "$TL_ERR" "removed Silver Bullet hook-trust tables declared twice"
+assert_eq "repaired config parses with one SB entry" 1 "$(toml_get "$CFG" 'len(d["hooks"]["state"])')"
+assert_eq "repair keeps other tables" 1 "$(toml_get "$CFG" 'd["other"]["keep"]')"
+# the repair also runs at the start of a full install, before any other config.toml edit
+printf '[hooks.state."%s"]\ntrusted_hash = "sha256:a"\n[hooks.state."%s"]\ntrusted_hash = "sha256:b"\n[other]\nkeep = 1\n' "$SBKEY" "$SBKEY" >"$CFG"
+sub repair_silver_bullet_duplicate_trust_tables
+assert_contains "install-time repair reports" "$TL_ERR" "removed Silver Bullet hook-trust tables declared twice"
+assert_eq "install-time repair keeps one copy and the other tables" '1 1' "$(toml_get "$CFG" 'len(d["hooks"]["state"])' | tr -d '\n') $(toml_get "$CFG" 'd["other"]["keep"]')"
+UKEY="$CH/.codex/hooks.json:pre_tool_use:0:0"
+printf '[hooks.state."%s"]\ntrusted_hash = "sha256:u1"\n[hooks.state]\n[hooks.state."%s"]\ntrusted_hash = "sha256:u2"\n[other]\nkeep = 1\n' "$UKEY" "$UKEY" >"$CFG"
+sub repair_silver_bullet_duplicate_trust_tables
+assert_eq "duplicated Kay (user-prefix) trust tables are repaired, keeping the first copy" '"sha256:u1"' "$(toml_get "$CFG" 'd["hooks"]["state"]["'"$UKEY"'"]["trusted_hash"]')"
+sub repair_silver_bullet_duplicate_trust_tables
+assert_eq "a valid config is not touched by the repair" 0 "$TL_STATUS"
+printf '[other]\nkeep = 1\n[other]\n' >"$CFG"
+sub repair_silver_bullet_duplicate_trust_tables
+assert_eq "an unrelated invalid config is left for the edit that reports it" $'[other]\nkeep = 1\n[other]' "$(<"$CFG")"
+printf '[other]\nkeep = 1\n[other]\n' >"$CFG"
+sub seed_silver_bullet_hook_trust_state
+assert_eq "an unrelated invalid config does not stop the install" 0 "$TL_STATUS"
+assert_contains "and is reported" "$TL_ERR" "hook trust not seeded"
+assert_eq "unrelated invalid config untouched" $'[other]\nkeep = 1\n[other]' "$(<"$CFG")"
+# Kay: only SB-owned entries of ~/.codex/hooks.json are trusted, never the user's own hooks
+rm -f "$CFG"
+printf '{"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"type":"command","command":"\\"$HOME/bin/guard.sh\\""},{"type":"command","command":"%s/plugins/silver-bullet/hooks/a.sh"}]}]}}\n' "$MP" >"$CH/.codex/hooks.json"
+MERGE_USER_HOOKS=1 sub seed_silver_bullet_hook_trust_state
+TRUSTED="$(toml_get "$CFG" 'sorted(d["hooks"]["state"])')"
+assert_contains "SB's merged user hook trusted" "$TRUSTED" "$CH/.codex/hooks.json:pre_tool_use:0:1"
+assert_not_contains "the user's own hook is not trusted" "$TRUSTED" "$CH/.codex/hooks.json:pre_tool_use:0:0"
+
+# ---- R7-10: the alias purge leaves the current plugin id alone
+reset_home
+mkdir -p "$(dirname "$CH/.codex/plugins/installed_plugins.json")" "$CH/.codex/plugins/cache/alo-labs-codex-local/silver-bullet/0.1.0"
+printf '{"plugins":{"silver-bullet@alo-labs-codex":[{"version":"1.0.0"}],"silver-bullet@alo-labs-codex-local":[{"version":"0.1"}],"other@m":[{"version":"2"}]}}\n' >"$CH/.codex/plugins/installed_plugins.json"
+cat >"$CFG" <<TOML
+# mine
+[plugins."silver-bullet@alo-labs-codex"]
+enabled = true
+
+[plugins."silver-bullet@alo-labs-codex-local"]
+enabled = true
+
+[hooks.state."$SBKEY"]
+trusted_hash = "sha256:x"
+
+[hooks.state."silver-bullet@alo-labs-codex-local:hooks/hooks.json:stop:0:0"]
+trusted_hash = "sha256:y"
+TOML
+sub purge_legacy_silver_bullet_codex_alias
+assert_eq "alias purge exits 0" 0 "$TL_STATUS"
+assert_eq "current plugin kept in the registry" '["other@m", "silver-bullet@alo-labs-codex"]' "$(jq -c '.plugins | keys' "$CH/.codex/plugins/installed_plugins.json" | sed 's/,/, /g')"
+assert_eq "current plugin stays enabled" '{"enabled": true}' "$(toml_get "$CFG" 'd["plugins"]["silver-bullet@alo-labs-codex"]')"
+assert_eq "current trust kept, retired id's removed" "[\"$SBKEY\"]" "$(toml_get "$CFG" 'sorted(d["hooks"]["state"])')"
+assert_eq "retired plugin table removed" '["silver-bullet@alo-labs-codex"]' "$(toml_get "$CFG" 'sorted(d["plugins"])')"
+assert_contains "comment kept" "$(<"$CFG")" "# mine"
+assert_file_absent "retired cache removed" "$CH/.codex/plugins/cache/alo-labs-codex-local/silver-bullet"
+printf '{"plugins": {"broken"' >"$CH/.codex/plugins/installed_plugins.json"
+sub purge_legacy_silver_bullet_codex_alias
+assert_eq "unparseable registry refused by the alias purge" 1 "$TL_STATUS"
+assert_eq "unparseable registry left byte-identical" '{"plugins": {"broken"' "$(<"$CH/.codex/plugins/installed_plugins.json")"
+
+# ---- the user-config purge removes only provable SB hooks and the trust that pointed at them
+reset_home
+printf '{"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"type":"command","command":"\\"$HOME/bin/fmt.sh\\""},{"type":"command","command":"%s/.codex/plugins/cache/alo-labs-codex/silver-bullet/1.0.0/hooks/a.sh"},{"type":"command","command":"echo silver-bullet rocks"}]}],"Stop":[{"hooks":[{"type":"command","command":"%s/.codex/plugins/cache/alo-labs-codex/silver-bullet/current/hooks/stop-check.sh"}]}],"Empty":[]}}\n' "$CH" "$CH" >"$CH/.codex/hooks.json"
+cat >"$CFG" <<TOML
+[hooks.state."$SBKEY"]
+trusted_hash = "sha256:pkg"
+
+[hooks.state."$CH/.codex/hooks.json:pre_tool_use:0:0"]
+trusted_hash = "sha256:userfmt"
+
+[hooks.state."$CH/.codex/hooks.json:pre_tool_use:0:1"]
+trusted_hash = "sha256:sbmerged"
+TOML
+sub purge_legacy_silver_bullet_hooks_from_user_config
+assert_eq "user-config purge exits 0" 0 "$TL_STATUS"
+assert_eq "user hooks kept, SB hooks removed" '["\"$HOME/bin/fmt.sh\"","echo silver-bullet rocks"]' "$(jq -c '[.hooks.PreToolUse[].hooks[].command]' "$CH/.codex/hooks.json")"
+assert_eq "an event left empty by SB removal is dropped; the user's empty event kept" '["Empty","PreToolUse"]' "$(jq -c '.hooks | keys' "$CH/.codex/hooks.json")"
+assert_eq "trust: package and user entries kept, the removed SB hook's dropped" \
+  "[\"$CH/.codex/hooks.json:pre_tool_use:0:0\", \"$SBKEY\"]" "$(toml_get "$CFG" 'sorted(d["hooks"]["state"])')"
+sub purge_legacy_silver_bullet_hooks_from_user_config --all
+assert_eq "--all also drops the package trust (uninstall)" "[\"$CH/.codex/hooks.json:pre_tool_use:0:0\"]" "$(toml_get "$CFG" 'sorted(d["hooks"]["state"])')"
+printf '{"hooks":' >"$CH/.codex/hooks.json"
+sub purge_legacy_silver_bullet_hooks_from_user_config
+assert_eq "unparseable hooks.json refused by the purge" 1 "$TL_STATUS"
+
+# ---- Kay (merged user hooks): the user's own Codex approval follows their hook (positional keys)
+reset_home
+mkdir -p "$CH/.codex"
+printf '{"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"type":"command","command":"%s/.codex/plugins/cache/alo-labs-codex/silver-bullet/1.0.0/hooks/completion-audit.sh"},{"type":"command","command":"\\"$HOME/bin/guard.sh\\""}]}]}}\n' "$CH" >"$CH/.codex/hooks.json"
+cat >"$CFG" <<TOML
+[hooks.state."$CH/.codex/hooks.json:pre_tool_use:0:0"]
+trusted_hash = "sha256:sbold"
+
+[hooks.state."$CH/.codex/hooks.json:pre_tool_use:0:1"]
+trusted_hash = "sha256:userguard"
+TOML
+sub purge_legacy_silver_bullet_hooks_from_user_config
+assert_eq "user's approval re-keyed to the hook's new position" '{"'"$CH"'/.codex/hooks.json:pre_tool_use:0:0": {"trusted_hash": "sha256:userguard"}}' "$(toml_get "$CFG" 'd["hooks"]["state"]')"
+MERGE_USER_HOOKS=1 sub merge_silver_bullet_hooks_into_user_config
+MERGE_USER_HOOKS=1 sub seed_silver_bullet_hook_trust_state
+make_pkg "$MP/plugins/silver-bullet" 1.0.0
+printf '{"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"type":"command","command":"${CLAUDE_PLUGIN_ROOT}/hooks/a.sh"}]}]}}\n' >"$MP/plugins/silver-bullet/hooks/hooks.json"
+MERGE_USER_HOOKS=1 sub merge_silver_bullet_hooks_into_user_config
+MERGE_USER_HOOKS=1 sub seed_silver_bullet_hook_trust_state
+assert_eq "SB hook appended as a second group" 2 "$(jq '.hooks.PreToolUse | length' "$CH/.codex/hooks.json")"
+assert_eq "SB hook trusted at its own position" 1 "$(toml_get "$CFG" 'int("'"$CH"'/.codex/hooks.json:pre_tool_use:1:0" in d["hooks"]["state"])')"
+assert_eq "SB hooks go in a group of their own, after the user's" '"\"$HOME/bin/guard.sh\""' "$(jq -c '.hooks.PreToolUse[0].hooks[0].command' "$CH/.codex/hooks.json")"
+assert_eq "user's hook keeps its own approval after the merge and the seed" '"sha256:userguard"' "$(toml_get "$CFG" 'd["hooks"]["state"]["'"$CH"'/.codex/hooks.json:pre_tool_use:0:0"]["trusted_hash"]')"
+
+# transactional order: a config.toml that cannot be edited leaves hooks.json untouched too
+reset_home
+mkdir -p "$CH/.codex"
+printf '{"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"type":"command","command":"%s/.codex/plugins/cache/alo-labs-codex/silver-bullet/1.0.0/hooks/completion-audit.sh"},{"type":"command","command":"/usr/bin/u1"}]}]}}\n' "$CH" >"$CH/.codex/hooks.json"
+HJ_BEFORE="$(<"$CH/.codex/hooks.json")"
+printf '[other]\nkeep = 1\n[other]\n' >"$CFG"
+sub purge_legacy_silver_bullet_hooks_from_user_config
+assert_eq "an uneditable config.toml makes the purge fail" 1 "$TL_STATUS"
+assert_eq "and hooks.json is left byte-identical" "$HJ_BEFORE" "$(<"$CH/.codex/hooks.json")"
+# a stale trust written in dotted-key form at a re-key target does not break the re-key
+printf '[hooks.state]\n"%s/.codex/hooks.json:pre_tool_use:0:0".trusted_hash = "sha256:stale"\n"%s/.codex/hooks.json:pre_tool_use:0:1".trusted_hash = "sha256:u1"\n' "$CH" "$CH" >"$CFG"
+sub purge_legacy_silver_bullet_hooks_from_user_config
+assert_eq "dotted-form trust follows the user's hook" '"sha256:u1"' "$(toml_get "$CFG" 'd["hooks"]["state"]["'"$CH"'/.codex/hooks.json:pre_tool_use:0:0"]["trusted_hash"]')"
+
+# ---- R7-06: --purge-legacy-skills removes only marked Silver Bullet copies
+reset_home
+mkdir -p "$CH/.agents/skills/security" "$CH/.agents/skills/tdd" "$CH/.agents/skills/my-own" "$CH/.codex/skills/usability" "$CH/.codex/skills/reliability" "$TL_TMP/elsewhere"
+printf -- '---\nname: security\n---\nteam checklist\n' >"$CH/.agents/skills/security/SKILL.md"
+printf 'notes\n' >"$CH/.agents/skills/tdd/team-notes.md"
+printf -- '---\nname: my-own\n---\n' >"$CH/.agents/skills/my-own/SKILL.md"
+printf 'source=Silver Bullet\npackage=x\n' >"$CH/.codex/skills/usability/.silver-bullet-managed"
+printf 'source=Someone Else\n' >"$CH/.codex/skills/reliability/.silver-bullet-managed"
+ln -s "$TL_REPO_ROOT/skills/tdd" "$CH/.codex/skills/tdd"
+ln -s "$TL_TMP/elsewhere" "$CH/.codex/skills/security"
+printf 'x' >"$CH/.codex/skills/verify-tests"
+sub purge_legacy_silver_bullet_standalone_skills
+assert_eq "legacy purge exits 0" 0 "$TL_STATUS"
+for kept in .agents/skills/security/SKILL.md .agents/skills/tdd/team-notes.md .agents/skills/my-own/SKILL.md .codex/skills/reliability/.silver-bullet-managed .codex/skills/verify-tests; do
+  assert_file_exists "user-owned $kept kept" "$CH/$kept"
+done
+assert_eq "foreign symlink kept" 1 "$([[ -L "$CH/.codex/skills/security" ]] && echo 1 || echo 0)"
+assert_file_absent "marked SB copy removed" "$CH/.codex/skills/usability"
+assert_eq "link into Silver Bullet removed" 0 "$([[ -L "$CH/.codex/skills/tdd" ]] && echo 1 || echo 0)"
+assert_contains "kept directories reported" "$TL_ERR" "Kept $CH/.agents/skills/security: no Silver Bullet ownership marker"
+# an unmarked copy under SB's own name (made before the marker existed) is backed up, not deleted
+mkdir -p "$CH/.agents/skills/silver-feature"
+printf 'my edits\n' >"$CH/.agents/skills/silver-feature/notes.md"
+sub purge_legacy_silver_bullet_standalone_skills
+assert_file_absent "unmarked SB-named copy leaves the skills dir" "$CH/.agents/skills/silver-feature"
+assert_eq "and is kept in the backup" "my edits" "$(cat "$CH"/.codex/.silver-bullet-backup/skills/*/agents/silver-feature/notes.md)"
+
+# ---- R7-07: the native skill mirror never overwrites the user's skill directories
+reset_home
+mkdir -p "$CACHE"
+make_pkg "$CACHE/2.0.0" 2.0.0
+ln -s "$CACHE/2.0.0" "$CACHE/current"
+mkdir -p "$CACHE/2.0.0/skill-source/security"
+printf -- '---\nname: security\nuser-invocable: false\n---\nSB security\n' >"$CACHE/2.0.0/skill-source/security/SILVER_SOURCE"
+mkdir -p "$CH/.codex/skills/security" "$CH/.codex/skills/sb:stale" "$CH/.codex/skills/sb:theirs"
+printf -- '---\nname: security\n---\nmine\n' >"$CH/.codex/skills/security/SKILL.md"
+printf 'team notes\n' >"$CH/.codex/skills/security/team-notes.md"
+printf 'source=Silver Bullet\n' >"$CH/.codex/skills/sb:stale/.silver-bullet-managed"
+printf 'source=Someone Else\n' >"$CH/.codex/skills/sb:theirs/.silver-bullet-managed"
+ln -s "$TL_TMP/elsewhere" "$CH/.codex/skills/sb"
+mkdir -p "$CH/.codex/skills/sb:feature"
+printf -- '---\nname: "sb:feature"\ntitle: "Silver Bullet: Silver: Feature"\n---\n' >"$CH/.codex/skills/sb:feature/SKILL.md"
+sub sync_silver_bullet_native_codex_skill_mirror
+assert_eq "mirror exits 0" 0 "$TL_STATUS"
+assert_file_exists "an unmarked pre-marker SB mirror is replaced" "$CH/.codex/skills/sb:feature/.silver-bullet-managed"
+assert_contains "and the old one is backed up" "$(cat "$CH"/.codex/.silver-bullet-backup/skills/*/sb:feature/SKILL.md)" "Silver Bullet: Silver: Feature"
+assert_eq "the user's security skill untouched" $'---\nname: security\n---\nmine' "$(<"$CH/.codex/skills/security/SKILL.md")"
+assert_file_exists "the user's extra files untouched" "$CH/.codex/skills/security/team-notes.md"
+assert_contains "the skipped mirror is reported" "$TL_ERR" "kept your $CH/.codex/skills/security"
+assert_eq "a foreign symlink at a mirror name is kept" 1 "$([[ -L "$CH/.codex/skills/sb" ]] && echo 1 || echo 0)"
+assert_file_exists "SB skills mirrored with the marker" "$CH/.codex/skills/sb:init/.silver-bullet-managed"
+assert_file_absent "stale SB mirror removed" "$CH/.codex/skills/sb:stale"
+assert_file_exists "a directory with someone else's marker kept" "$CH/.codex/skills/sb:theirs/.silver-bullet-managed"
+printf 'changed\n' >>"$CACHE/2.0.0/skill-source/sb-init/SILVER_SOURCE"
+sub sync_silver_bullet_native_codex_skill_mirror
+assert_contains "an SB-managed mirror is refreshed" "$(<"$CH/.codex/skills/sb:init/SKILL.md")" "changed"
+assert_eq "no staging directory left behind" "" "$(find "$CH/.codex/skills" -maxdepth 1 -name '.*sb-staging')"
+
+# ---- R7-08: the registry sync touches only Silver Bullet
+reset_home
+REG="$CH/.codex/plugins/installed_plugins.json"
+OTHER="$CH/.codex/plugins/cache/thirdparty-mkt/other"
+REALCUR="$CH/.codex/plugins/cache/mkt2/realcur/current"
+mkdir -p "$OTHER/aaaa1111" "$OTHER/ffff0000" "$REALCUR" "$(dirname "$REG")"
+printf 'new\n' >"$OTHER/aaaa1111/v"; printf 'old\n' >"$OTHER/ffff0000/v"; printf 'data\n' >"$REALCUR/data.txt"
+make_pkg "$CACHE/3.0.0" 3.0.0; make_pkg "$CACHE/3.1.0" 3.1.0
+ln -s "$CACHE/3.0.0" "$CACHE/current"
+cat >"$REG" <<JSON
+{"plugins":{"other@thirdparty-mkt":[{"installPath":"$OTHER/aaaa1111","version":"aaaa1111"}],"realcur@mkt2":[{"installPath":"$REALCUR","version":"r1"}],"silver-bullet@alo-labs-codex":[{"installPath":"/old","version":"0.1"}]}}
+JSON
+FOREIGN_BEFORE="$(jq -c '.plugins | del(.["silver-bullet@alo-labs-codex"])' "$REG")"
+sub sync_codex_installed_plugin_registry_paths
+assert_eq "registry sync exits 0" 0 "$TL_STATUS"
+assert_eq "foreign registry records byte-identical" "$FOREIGN_BEFORE" "$(jq -c '.plugins | del(.["silver-bullet@alo-labs-codex"])' "$REG")"
+assert_file_absent "no alias created in a foreign plugin cache" "$OTHER/current"
+assert_eq "a foreign real current/ directory survives" "data" "$(<"$REALCUR/data.txt")"
+assert_eq "SB follows the version just installed (current), not the newest dir" 3.0.0 "$(jq -r '.plugins["silver-bullet@alo-labs-codex"][0].version' "$REG")"
+printf '{"plugins": [' >"$REG"
+sub sync_codex_installed_plugin_registry_paths
+assert_eq "unparseable registry refused by the sync" 1 "$TL_STATUS"
+
+# ---- R7-14: the Codex registry entry refuses an unparseable registry
+printf '{"plugins":{"other@m":[{"version":"1"}],' >"$REG"
+sub ensure_silver_bullet_registry_entry
+assert_eq "truncated Codex registry refused" 1 "$TL_STATUS"
+assert_eq "truncated Codex registry left byte-identical" '{"plugins":{"other@m":[{"version":"1"}],' "$(<"$REG")"
+printf '{"plugins":{"other@m":[{"version":"1"}]}}\n' >"$REG"
+chmod 600 "$REG"
+sub ensure_silver_bullet_registry_entry
+assert_eq "registry entry added beside other plugins" '["other@m","silver-bullet@alo-labs-codex"]' "$(jq -c '.plugins | keys' "$REG")"
+assert_eq "Codex registry mode kept" 600 "$(stat -c %a "$REG" 2>/dev/null || stat -f %Lp "$REG")"
+assert_file_exists "previous Codex registry backed up" "$REG.sb-backup"
+printf '{"plugins":[]}\n' >"$REG"
+sub ensure_silver_bullet_registry_entry
+assert_eq "wrongly typed Codex registry refused" 1 "$TL_STATUS"
 
 tl_results
