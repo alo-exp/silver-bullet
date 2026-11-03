@@ -24,5 +24,11 @@ out3=$(printf '{}' | "$BRIDGE" postToolUse "$stub3")
 assert_field "systemMessage notice reaches Cursor as additional_context" "$out3" '.additional_context' 'Skill recorded'
 out4=$(printf '{}' | "$BRIDGE" preToolUse "$stub3")
 assert_field "systemMessage notice reaches Cursor preToolUse as agent_message" "$out4" '.agent_message' 'Skill recorded'
-rm -f "$stub" "$stub2" "$stub3"
+stub5=$(mktemp); printf '#!/bin/bash\nprintf '"'"'{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"REAL REASON"},"systemMessage":"just a notice"}'"'"'' >"$stub5"; chmod +x "$stub5"
+out5=$(printf '{}' | "$BRIDGE" preToolUse "$stub5")
+assert_field "deny + notice: still denies" "$out5" '.permission' 'deny'
+assert_field "deny + notice: the agent sees the deny reason, not the notice" "$out5" '.agent_message' 'REAL REASON'
+out6=$(printf '{}' | "$BRIDGE" stop "$stub3")
+assert_field "stop notice is not turned into an auto-submitted followup" "$out6" '.followup_message // "none"' 'none'
+rm -f "$stub" "$stub2" "$stub3" "$stub5"
 echo; echo "Passed: $PASS"; echo "Failed: $FAIL"; [[ "$FAIL" -eq 0 ]]

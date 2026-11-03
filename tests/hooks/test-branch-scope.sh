@@ -66,6 +66,16 @@ ln -s "$LIB" "$TL_TMP/farm/hooks/lib/branch-scope.sh"
 out="$(env -i PATH="$PATH" BASH_ENV="${BASH_ENV:-}" SB_COV_DIR="${SB_COV_DIR:-}" SB_RUNTIME_STATE_DIR="$SD" SILVER_BULLET_BRANCH_FILE="$OUTSIDE" bash -c 'source "$1"; sb_branch_scope_file' _ "$TL_TMP/farm/hooks/lib/branch-scope.sh")"
 assert_eq "no validator: override ignored" "$SD/branch" "$out"
 
+# One spelling for reads and writes: '~', a trailing '/' and 'missing/..' must not split them (R3-27).
+# session-start and stop-check resolve with the same helper the library uses.
+export SILVER_BULLET_BRANCH_FILE="$SD/nonexist/../branch-dots"
+sb_branch_scope_write "feature-d" "/repo" "$(sb_branch_scope_file)"
+if sb_branch_scope_read "$(sb_branch_scope_file)"; then tl_pass "dotted spelling: written file is read back"; else tl_fail "dotted spelling: written file is read back"; fi
+assert_eq "dotted spelling: stored branch" "feature-d" "$SB_BRANCH_SCOPE_STORED_BRANCH"
+if sb_branch_scope_mismatch "feature-e" "/repo"; then tl_pass "dotted spelling: branch change detected"; else tl_fail "dotted spelling: branch change detected"; fi
+rm -f "$SD/branch-dots"
+export SILVER_BULLET_BRANCH_FILE="$OUTSIDE"
+
 # A symlinked branch file is refused without killing the calling hook.
 printf 'precious\n' >"$TL_TMP/target"
 ln -sfn "$TL_TMP/target" "$SD/branch"
@@ -85,5 +95,16 @@ tl_run_stdin '{"hook_event_name":"SessionStart","source":"startup"}' env SILVER_
 assert_file_absent "session-start: rejected branch file is not written" "$OUTSIDE"
 assert_eq "session-start: validated branch file initialised" "feature/test" "$(sed -n 1p "$SD/branch" 2>/dev/null)"
 assert_not_contains "session-start: no write-failure warning" "$TL_ERR" "branch file write failed"
+
+# session-start with non-canonical spellings: written where it reads, no failure warning,
+# and a branch switch is detected (the stored scope is found again by the next start).
+# shellcheck disable=SC2088 # the literal tilde spelling is the point of the case
+for spelling in "$SD/nonexist/../branch-dots" "$SD/branch-slash/x/.." "~/.claude/.silver-bullet/branch-tilde"; do
+  rm -f "$SD/branch-dots" "$SD/branch-slash" "$SD/branch" "$SD/branch-tilde"
+  tl_run_stdin '{"hook_event_name":"SessionStart","source":"startup"}' env SILVER_BULLET_BRANCH_FILE="$spelling" bash -c 'cd "$1" && exec bash "$2"' _ "$EC_PROJ" "$TL_REPO_ROOT/hooks/session-start"
+  assert_not_contains "session-start: no write-failure warning for $spelling" "$TL_ERR" "branch file write failed"
+  stored="$(cat "$SD/branch-dots" "$SD/branch-slash" "$SD/branch-tilde" "$SD/branch" 2>/dev/null | sed -n 1p || true)"
+  assert_eq "session-start: branch recorded for $spelling" "feature/test" "$stored"
+done
 
 tl_results

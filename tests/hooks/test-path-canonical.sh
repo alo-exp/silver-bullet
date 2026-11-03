@@ -126,9 +126,17 @@ within "case variant on a case-sensitive filesystem" 1 "$T/cs/PROJ/x" "$T/cs/Pro
 within "everything is below /" 0 "$T/anything" "/"
 within "empty target" 1 "" "$T/proj"
 within "empty root" 1 "$T/proj" ""
-within "loop in the target is undecidable" 2 "$T/proj/loop/x" "$T/proj"
-within "loop only in the lexical form is undecidable" 2 "$T/proj/linkdir/../loop/x" "$T/proj"
+# Deny-guard semantics: status 0 = inside or not provably outside, so the natural
+# 'if sb_path_is_within ...; then deny' idiom fails closed. Only 1 means provably outside.
+within "loop in the target counts as inside (guards deny)" 0 "$T/proj/loop/x" "$T/proj"
+within "loop only in the lexical form counts as inside" 0 "$T/proj/linkdir/../loop/x" "$T/proj"
 ln -s rloop "$T/rloop"
-within "loop in the root is undecidable" 2 "$T/proj/x" "$T/rloop"
+within "loop in the root counts as inside" 0 "$T/proj/x" "$T/rloop"
+# R-review: the physical form lands in the root while the lexical spelling hits a symlink loop.
+mkdir -p "$T/proj/sub/deeper"
+ln -s sub/deeper "$T/proj/a"
+ln -s ../.planning "$T/proj/sub/L"
+ln -s L "$T/proj/L"
+within "physical form inside the root, lexical form a loop" 0 "$T/proj/a/../L/ROADMAP.md" "$T/proj/.planning"
 
 tl_results
