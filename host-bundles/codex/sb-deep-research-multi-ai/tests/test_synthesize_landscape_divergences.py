@@ -54,19 +54,19 @@ class TextHelperTests(unittest.TestCase):
         # magic.dev outranks everything that appears in the same blob
         self.assertEqual(k("silver bullet and magic dev"), "magic-dev")
         self.assertEqual(k("cognition scout then magic dev"), "cognition-scout")
-        self.assertEqual(k("zuvo is good"), "zuvo")
+        self.assertEqual(k("bmad is good"), "bmad")
         # earliest position wins; longer needle wins a tie at the same position
         self.assertEqual(k("factory ai role"), "factory-ai")
         self.assertEqual(k("bmad method guide"), "bmad")
-        self.assertEqual(k("devin then zuvo"), "devin")
+        self.assertEqual(k("devin then bmad"), "devin")
         # claim_key participates in the blob
         self.assertEqual(k("generic words here", "conductor"), "conductor")
         # needles far from the start and outside the first 16 tokens are ignored
-        far = " ".join(["filler"] * 20) + " zuvo"
+        far = " ".join(["filler"] * 20) + " bmad"
         self.assertEqual(k(far), "filler filler filler filler")
         # beyond 48 chars but still within the first 16 tokens counts
-        near = " ".join(["abcdefgh"] * 7) + " zuvo"
-        self.assertEqual(k(near), "zuvo")
+        near = " ".join(["abcdefgh"] * 7) + " bmad"
+        self.assertEqual(k(near), "bmad")
         self.assertEqual(k(""), "")
 
     def test_clip(self):
@@ -252,8 +252,8 @@ class FormatTests(unittest.TestCase):
         self.assertTrue(out.startswith("**AI-DLC:**"))
         self.assertTrue(sl._format_inter_model_divergence("some-new-topic", [side("t", ["a"])])
                         .startswith("**Some New Topic:** `a` — t"))
-        self.assertEqual(sl._format_inter_model_divergence("zuvo", [side("t", ["a"], ["f"])]),
-                         "**Zuvo classification:** `a` (f) — t")
+        self.assertEqual(sl._format_inter_model_divergence("bmad", [side("t", ["a"], ["f"])]),
+                         "**BMAD / secondary packs:** `a` (f) — t")
 
 
 class SelectTests(unittest.TestCase):

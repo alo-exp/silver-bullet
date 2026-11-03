@@ -376,7 +376,7 @@ class MultiMarketTests(TmpCase):
 
     def test_market_sections_commercial_and_oss(self):
         audit = {"markets": {"agentic-sdlc-saas": {"core": ["devin", "factory-ai"]},
-                             "apo": {"core": ["deepwork", "silver-bullet", "metagpt"]},
+                             "apo": {"core": ["deepwork", "metagpt"]},
                              "sdlc-plugins": {"core": ["gsd"]}}}
         sections, nxt = sl._market_solution_sections(self.pack, audit, start_num=7)
         self.assertEqual([(s["market_id"], s["kind"], s["num"]) for s in sections], [
@@ -385,13 +385,13 @@ class MultiMarketTests(TmpCase):
         self.assertEqual(nxt, 11)
         apo_com, apo_oss, _plug, saas = sections
         self.assertEqual([e["slug"] for e in apo_com["entries"]], ["deepwork"])
-        self.assertEqual([e["slug"] for e in apo_oss["entries"]], ["silver-bullet", "metagpt"])
+        self.assertEqual([e["slug"] for e in apo_oss["entries"]], ["metagpt"])
         self.assertEqual([e["slug"] for e in saas["entries"]], ["devin", "factory-ai"])
         self.assertEqual((saas["market_role"], apo_com["market_role"]), ("Tertiary", "Primary"))
         self.assertTrue(saas["market_display"])
 
     def test_market_sections(self):
-        audit = {"markets": {"apo": {"core": ["silver-bullet", "langchain"]}}}
+        audit = {"markets": {"apo": {"core": ["metagpt", "langchain"]}}}
         sections, nxt = sl._market_solution_sections(self.pack, audit, start_num=5)
         self.assertTrue(sections)
         self.assertEqual(nxt, 5 + len(sections))

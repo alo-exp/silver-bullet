@@ -7,14 +7,17 @@ import base64
 import html
 import json
 import math
+import os
 import re
 import shutil
 import subprocess
+import tempfile
 import urllib.error
 import urllib.request
 from pathlib import Path
 from typing import Any
 
+from generated_files import atomic_write_text
 from vendor_link_labels import BARE_HTTP_URL_RE, split_url_trailing_punct
 
 INDEPENDENT_PDF_MARKER = "sb-independent-landscape-pdf"
@@ -54,6 +57,9 @@ SPA_FONT_STACK = "'Roboto Condensed', 'Arial Narrow', Arial, sans-serif"
 GOOGLE_FONTS_HREF = (
     "https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300;400;500&display=swap"
 )
+# The print HTML is built from model output and rendered by headless Chromium: no script
+# may run and nothing may be fetched (fonts and figures are inline).
+PRINT_CSP = "default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:"
 
 # SPA Chart.js bubble radii (canvas px) — reused on the independent SVG Wave.
 _WAVE_BUBBLE_R = {4: 26.0, 3: 18.0, 2: 13.0, 1: 8.0}
@@ -85,15 +91,22 @@ _REPORT_DATA_RE = re.compile(
 _MODEL_ID_RE = re.compile(r"(?:ocg-|claude-|gemini-|gpt-)[A-Za-z0-9._-]+")
 
 
+# Version the npx fallback may run. --no-install: npx uses an already installed copy and
+# never downloads one from the registry (R12-14).
+PLAYWRIGHT_NPX_PACKAGE = "playwright@1.49.0"
+
+
 def _playwright_argv() -> list[str]:
     exe = shutil.which("playwright")
     if exe:
         return [exe]
     npx = shutil.which("npx")
     if npx:
-        return [npx, "--yes", "playwright"]
+        return [npx, "--no-install", PLAYWRIGHT_NPX_PACKAGE]
     raise FileNotFoundError(
-        "playwright CLI not found — install Playwright to write landscape-report.pdf"
+        "playwright CLI not found: install Playwright and its Chromium "
+        f"(npm install {PLAYWRIGHT_NPX_PACKAGE} && npx playwright install chromium) "
+        "to write the landscape PDF"
     )
 
 
@@ -129,25 +142,6 @@ def load_canonical_landscape_sources(root: Path) -> dict[str, Any]:
             "comparison": str(cmp_path),
         },
     }
-
-
-def load_spa_report_data(root: Path) -> dict[str, Any]:
-    """SPA payload embedded in landscape-report.html (debug/legacy only)."""
-    html_path = root / "landscape-report.html"
-    if not html_path.is_file():
-        return {}
-    try:
-        text = html_path.read_text(encoding="utf-8")
-    except OSError:
-        return {}
-    match = _REPORT_DATA_RE.search(text)
-    if not match:
-        return {}
-    try:
-        data = json.loads(match.group(1))
-    except json.JSONDecodeError:
-        return {}
-    return data if isinstance(data, dict) else {}
 
 
 def load_chart_data(root: Path) -> dict[str, Any]:
@@ -189,40 +183,39 @@ def iter_market_ids(chart: dict[str, Any]) -> list[str]:
     return [str(chart.get("primary_market_id") or "primary")]
 
 
-def quadrant_divergences(chart: dict[str, Any]) -> list[dict[str, str]]:
-    """Vendors whose MQ quadrant disagrees with GMQ (notable score divergence)."""
-    out: list[dict[str, str]] = []
-    for mid in iter_market_ids(chart):
-        block = market_chart_block(chart, mid)
-        mq = {str(p.get("slug")): p for p in block.get("mq_data") or [] if isinstance(p, dict)}
-        gmq = {str(p.get("slug")): p for p in block.get("gmq_data") or [] if isinstance(p, dict)}
-        for slug, mp in mq.items():
-            gp = gmq.get(slug)
-            if not gp:
-                continue
-            mq_q = str(mp.get("q") or "")
-            gmq_q = str(gp.get("q") or "")
-            if mq_q and gmq_q and mq_q != gmq_q:
-                out.append(
-                    {
-                        "market": mid,
-                        "slug": slug,
-                        "label": str(mp.get("label") or gp.get("label") or slug),
-                        "mq": mq_q,
-                        "gmq": gmq_q,
-                    }
-                )
-    return out
-
-
 def _esc(text: Any) -> str:
     return html.escape(str(text), quote=True)
 
 
+_URL_SCHEME_RE = re.compile(r"^([a-zA-Z][a-zA-Z0-9+.-]*):")
+
+
+def safe_href(url: Any) -> str | None:
+    """`url` when it is http(s), a #fragment or a scheme-less relative path, else None.
+
+    Link targets come from model text: javascript:, data:, file:, vbscript: and
+    protocol-relative (//host, which resolves to file://host from a local report) are
+    refused. Browsers drop ASCII whitespace/control characters inside a scheme, so the
+    check runs on the URL with those removed.
+    """
+    raw = str(url or "").strip()
+    probe = re.sub(r"[\x00-\x20\x7f]", "", raw)
+    if not probe or probe[:2] in {"//", "\\\\", "/\\", "\\/"}:
+        return None
+    scheme = _URL_SCHEME_RE.match(probe)
+    if scheme and scheme.group(1).lower() not in {"http", "https"}:
+        return None
+    return raw
+
+
 def _html_ext_anchor(url: str, inner_html: str) -> str:
-    return (
-        f'<a href="{_esc(url)}" target="_blank" rel="noopener noreferrer">{inner_html}</a>'
-    )
+    """Anchor for a markdown link; an unsafe target leaves only the (escaped) link text."""
+    href = safe_href(url)
+    if href is None:
+        return inner_html
+    if not _URL_SCHEME_RE.match(href):
+        return f'<a href="{_esc(href)}">{inner_html}</a>'
+    return f'<a href="{_esc(href)}" target="_blank" rel="noopener noreferrer">{inner_html}</a>'
 
 
 def _clip_id(chart_kind: str) -> str:
@@ -230,11 +223,19 @@ def _clip_id(chart_kind: str) -> str:
 
 
 _FONT_CSS_CACHE: str | None = None
+WEB_FONTS_ENV = "SB_LANDSCAPE_PDF_WEB_FONTS"
 
 
 def _embed_roboto_font_css() -> str:
-    """Inline Roboto Condensed woff2 so Playwright PDF does not fall back to Times."""
+    """Inline Roboto Condensed woff2 so Playwright PDF does not fall back to Times.
+
+    Off by default: a PDF build makes no network requests and uses the local font stack
+    (SPA_FONT_STACK). Set SB_LANDSCAPE_PDF_WEB_FONTS=1 to download the web font once per
+    process from Google Fonts and embed it as data: URIs.
+    """
     global _FONT_CSS_CACHE
+    if os.environ.get(WEB_FONTS_ENV, "").strip().lower() not in {"1", "true", "yes"}:
+        return ""
     if _FONT_CSS_CACHE is not None:
         return _FONT_CSS_CACHE
     req = urllib.request.Request(
@@ -823,8 +824,17 @@ def _parse_list_line(line: str) -> tuple[int, str, str] | None:
     return None
 
 
-def markdown_to_html(md: str) -> str:
-    """Small markdown subset for print (headings, nested lists, tables, paragraphs)."""
+_HR_RE = re.compile(r"\s*(?:-{3,}|\*{3,}|_{3,})\s*")
+_MAX_QUOTE_DEPTH = 8
+
+
+def markdown_to_html(md: str, *, _depth: int = 0) -> str:
+    """Markdown subset → HTML for the landscape SPA body and the print PDF.
+
+    Headings, nested lists, tables, blockquotes, fenced code, rules and paragraphs. Every
+    text run is HTML-escaped and raw HTML in the source stays text; links keep only
+    http(s), relative and #fragment targets (see safe_href).
+    """
     lines = md.replace("\r\n", "\n").split("\n")
     html_parts: list[str] = []
     i = 0
@@ -865,6 +875,34 @@ def markdown_to_html(md: str) -> str:
 
     while i < len(lines):
         line = lines[i]
+        stripped = line.strip()
+        if stripped.startswith("```"):
+            close_lists()
+            code: list[str] = []
+            i += 1
+            while i < len(lines) and not lines[i].strip().startswith("```"):
+                code.append(lines[i])
+                i += 1
+            i += 1  # closing fence (or end of input)
+            html_parts.append("<pre><code>" + html.escape("\n".join(code)) + "</code></pre>")
+            continue
+        if stripped.startswith(">"):
+            close_lists()
+            quoted: list[str] = []
+            while i < len(lines) and lines[i].strip().startswith(">"):
+                quoted.append(re.sub(r"^\s*>\s?", "", lines[i]))
+                i += 1
+            inner = "\n".join(quoted)
+            if _depth >= _MAX_QUOTE_DEPTH:
+                html_parts.append(f"<blockquote><p>{_md_inline(inner)}</p></blockquote>")
+            else:
+                html_parts.append(f"<blockquote>{markdown_to_html(inner, _depth=_depth + 1)}</blockquote>")
+            continue
+        if _HR_RE.fullmatch(line):
+            close_lists()
+            html_parts.append("<hr>")
+            i += 1
+            continue
         if line.strip().startswith("|") and i + 1 < len(lines) and re.match(r"^\s*\|?\s*:?-{3,}", lines[i + 1]):
             close_lists()
             rows = []
@@ -1053,167 +1091,11 @@ def comparison_matrix_html(
     return "\n".join(parts)
 
 
-def comparison_highlights_html(
-    comparison: dict[str, Any],
-    chart: dict[str, Any] | None = None,
-) -> str:
-    """Alias — full matrix, never a top-N summary."""
-    return comparison_matrix_html(comparison, chart)
-
-
-def section_body_needles(body: str, *, min_len: int = 48) -> list[str]:
-    """Distinctive ##-section body phrases (not the heading)."""
-    needles: list[str] = []
-    for raw in (body or "").splitlines():
-        line = raw.strip()
-        if not line or line.startswith("#") or re.fullmatch(r"[\s|:-]+", line):
-            continue
-        text = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", line)
-        text = re.sub(r"[*`_#>|-]+", " ", text)
-        text = re.sub(r"\s+", " ", text).strip()
-        if len(text) >= min_len:
-            needles.append(text[:80])
-    return needles
-
-
 def _norm_body_haystack(text: str) -> str:
     text = re.sub(r"https?://\S+", " ", text or "")
     text = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", text)
     text = re.sub(r"[^a-zA-Z0-9]+", " ", text).lower()
     return re.sub(r"\s+", " ", text).strip()
-
-
-def assert_section_bodies_in_text(markdown: str, haystack: str) -> None:
-    """Fail if a SPA ## section body is absent — headings alone are not enough."""
-    hay = f" {_norm_body_haystack(haystack)} "
-    missing: list[str] = []
-    for heading, body in _split_md_sections(markdown or ""):
-        if not heading:
-            continue
-        needles = section_body_needles(body)
-        if not needles:
-            continue
-        hits = 0
-        for needle in needles:
-            words = _norm_body_haystack(needle).split()
-            if len(words) < 4:
-                continue
-            # Tail window survives markdown links expanding to href + label in HTML/PDF.
-            window = " ".join(words[-5:])
-            if f" {window} " in hay:
-                hits += 1
-        if hits == 0:
-            missing.append(heading)
-    if missing:
-        raise AssertionError(
-            "SPA ## section bodies missing from PDF/print text: " + ", ".join(missing)
-        )
-
-
-def sync_canonical_payload_files(
-    root: Path,
-    payload: dict[str, Any] | None = None,
-) -> dict[str, str]:
-    """Write sibling md/json to the exact #report-data blobs both formats consume."""
-    data = payload if isinstance(payload, dict) and payload else load_spa_report_data(root)
-    written: dict[str, str] = {}
-    if not data:
-        return written
-    markdown = data.get("markdown")
-    if isinstance(markdown, str) and markdown.strip():
-        dest = root / "landscape" / "landscape-report.md"
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        dest.write_text(markdown if markdown.endswith("\n") else markdown + "\n", encoding="utf-8")
-        written["markdown"] = str(dest)
-    chart = data.get("chart_data")
-    if isinstance(chart, dict) and chart:
-        dest = root / "landscape" / "chart-data.json"
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        dest.write_text(json.dumps(chart, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-        written["chart_data"] = str(dest)
-    comparison = data.get("comparison")
-    if isinstance(comparison, dict) and comparison:
-        dest = root / "comparison" / "comparison.json"
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        dest.write_text(json.dumps(comparison, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-        written["comparison"] = str(dest)
-    return written
-
-
-def notable_divergence_bullets(
-    markdown: str,
-    consolidation: dict[str, Any] | None = None,
-) -> list[str]:
-    """Pull Notable divergences from SPA markdown (inter-model), else consolidation."""
-    match = re.search(r"\*\*Notable divergences\*\*[^\n]*\n+", markdown or "")
-    bullets: list[str] = []
-    if match:
-        for line in (markdown or "")[match.end() :].splitlines():
-            stripped = line.strip()
-            if stripped.startswith("## "):
-                break
-            if stripped.startswith("**") and "Notable divergences" not in stripped:
-                break
-            if line.startswith("- "):
-                bullets.append(line[2:].strip())
-                continue
-            if bullets and not stripped:
-                continue
-        if bullets:
-            return bullets
-    items = (consolidation or {}).get("divergence") or []
-    for item in items:
-        if not isinstance(item, dict):
-            continue
-        text = str(item.get("text") or item.get("claim_key") or "").strip()
-        if not text:
-            continue
-        ids: list[str] = []
-        for key in ("supporting_agents", "model_families", "agents"):
-            val = item.get(key)
-            if isinstance(val, list):
-                for raw in val:
-                    sid = str(raw).strip()
-                    if sid and sid not in ids:
-                        ids.append(sid)
-            elif isinstance(val, str) and val.strip() and val.strip() not in ids:
-                ids.append(val.strip())
-        for found in _MODEL_ID_RE.findall(text):
-            if found not in ids:
-                ids.append(found)
-        if ids:
-            joined = ", ".join(f"`{sid}`" for sid in ids[:8])
-            bullets.append(f"{joined} — {text}")
-        else:
-            bullets.append(text)
-    return bullets
-
-
-def divergences_html(
-    chart: dict[str, Any],
-    comparison: dict[str, Any],
-    markdown: str = "",
-    consolidation: dict[str, Any] | None = None,
-) -> str:
-    _ = (chart, comparison)
-    bullets = notable_divergence_bullets(markdown, consolidation)
-    parts = [
-        '<section class="divergences">',
-        "<h2>Notable divergences</h2>",
-        "<p>Disagreements among contributing models, triangulation waves, and critique SCRs "
-        "(model A said X, model B said Y) — not MQ vs GMQ chart-axis mismatches.</p>",
-    ]
-    if bullets:
-        parts.append("<ul>")
-        parts.extend(f"<li>{_md_inline(b)}</li>" for b in bullets)
-        parts.append("</ul>")
-    else:
-        parts.append(
-            "<p>No inter-model research disagreements were extracted from triangulation "
-            "or critique envelopes.</p>"
-        )
-    parts.append("</section>")
-    return "\n".join(parts)
 
 
 def _plain_html_text(fragment: str) -> str:
@@ -1314,10 +1196,8 @@ code {{ font-family: 'SF Mono', Consolas, 'Liberation Mono', monospace; font-siz
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
+<meta http-equiv="Content-Security-Policy" content="{PRINT_CSP}"/>
 <title>{_esc(title)}</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
-<link rel="stylesheet" href="{GOOGLE_FONTS_HREF}"/>
 <style>
 {font_face}
 {css}
@@ -1354,6 +1234,40 @@ def assert_print_html_independent(print_html: str) -> None:
             raise RuntimeError(f"print HTML contains SPA chrome: {needle}")
 
 
+def _visible_text(fragment: str) -> str:
+    """Text a reader sees in an HTML fragment (tags dropped, entities decoded, spaces collapsed)."""
+    text = re.sub(r"<(script|style)\b.*?</\1>", " ", fragment, flags=re.S | re.I)
+    text = re.sub(r"<!--.*?-->", " ", text, flags=re.S)
+    text = re.sub(r"<[^>]+>", " ", text)
+    return " ".join(html.unescape(text).split())
+
+
+def print_html_missing_content(root: Path, print_html: str) -> list[str]:
+    """## headings and comparison features absent from the print HTML's visible text.
+
+    Each needle is rendered the way the print HTML renders it (inline markdown, escaping)
+    and compared as visible text, so apostrophes, '&' and inline formatting match (R12-13).
+    """
+    visible = _visible_text(print_html)
+    missing: list[str] = []
+    for heading, _ in _split_md_sections(load_landscape_markdown(root)):
+        if heading.startswith("## "):
+            title = _visible_text(_md_inline(heading[3:].strip()))
+            if title and title not in visible:
+                missing.append(f"SPA heading {title!r}")
+    for feat in _comparison_features(load_comparison(root)):
+        name = " ".join(str(feat.get("name") or "").split())
+        if name and name not in visible:
+            missing.append(f"comparison feature {name!r}")
+    return missing
+
+
+def _no_follow(path: Path) -> Path:
+    """Absolute path whose parent is resolved but whose final component is not followed."""
+    path = Path(path)
+    return path.parent.resolve() / path.name
+
+
 def write_independent_landscape_pdf(
     root: Path,
     pdf_path: Path | None = None,
@@ -1361,27 +1275,26 @@ def write_independent_landscape_pdf(
     timeout_ms: int = 120000,
     print_html_path: Path | None = None,
 ) -> dict[str, Any]:
-    """Write landscape-report.pdf from landscape-report.md + chart-data.json + comparison.json."""
+    """Write the landscape PDF from landscape-report.md + chart-data.json + comparison.json.
+
+    The print HTML is written atomically beside the PDF as <pdf stem>.print.html, Chromium
+    renders into a temp file that is then renamed into place, and neither write follows a
+    symlink sitting at the target name (R12-26).
+    """
     root = root.resolve()
-    pdf_path = (pdf_path or (root / "landscape-report.pdf")).resolve()
+    pdf_path = _no_follow(pdf_path or (root / "landscape-report.pdf"))
     print_html = build_independent_print_html(root)
     assert_print_html_independent(print_html)
-    markdown = load_landscape_markdown(root)
-    for heading, _ in _split_md_sections(markdown):
-        if heading.startswith("## "):
-            title_text = heading[3:].strip()
-            escaped = html.escape(title_text, quote=False)
-            if title_text and title_text not in print_html and escaped not in print_html:
-                raise RuntimeError(f"independent print HTML dropped SPA heading: {title_text}")
-    comparison = load_comparison(root)
-    for feat in _comparison_features(comparison):
-        name = str(feat.get("name") or "")
-        if name and name not in print_html:
-            raise RuntimeError(f"independent print HTML dropped comparison feature: {name}")
+    missing = print_html_missing_content(root, print_html)
+    if missing:
+        raise RuntimeError("independent print HTML dropped " + "; ".join(missing[:5]))
     if "Comparison matrix highlights" in print_html:
         raise RuntimeError("independent print HTML still uses highlights-only comparison")
-    source = (print_html_path or pdf_path.with_name("landscape-report.print.html")).resolve()
-    source.write_text(print_html, encoding="utf-8")
+    source = _no_follow(print_html_path or pdf_path.with_name(f"{pdf_path.stem}.print.html"))
+    atomic_write_text(source, print_html)
+    fd, tmp_name = tempfile.mkstemp(prefix=f".{pdf_path.stem}.", suffix=".pdf", dir=pdf_path.parent)
+    os.close(fd)
+    tmp_pdf = Path(tmp_name)
     cmd = [
         *_playwright_argv(),
         "pdf",
@@ -1394,17 +1307,21 @@ def write_independent_landscape_pdf(
         "--timeout",
         str(timeout_ms),
         source.as_uri(),
-        str(pdf_path),
+        str(tmp_pdf),
     ]
-    subprocess.run(cmd, check=True)
-    if not pdf_path.is_file() or pdf_path.stat().st_size < 8:
-        raise RuntimeError(f"Playwright did not write independent PDF: {pdf_path}")
-    header = pdf_path.read_bytes()[:4]
-    if header != b"%PDF":
-        raise RuntimeError(f"independent PDF is not a PDF file: {pdf_path}")
-    raw = pdf_path.read_bytes()
-    if b"pdfExportBtn" in raw or b"exportBar" in raw:
-        raise RuntimeError("independent PDF contains SPA chrome bytes")
+    try:
+        subprocess.run(cmd, check=True, timeout=timeout_ms / 1000 + 60)
+        raw = tmp_pdf.read_bytes()
+        if len(raw) < 8:
+            raise RuntimeError(f"Playwright did not write independent PDF: {pdf_path}")
+        if raw[:4] != b"%PDF":
+            raise RuntimeError(f"independent PDF is not a PDF file: {pdf_path}")
+        if b"pdfExportBtn" in raw or b"exportBar" in raw:
+            raise RuntimeError("independent PDF contains SPA chrome bytes")
+        os.replace(tmp_pdf, pdf_path)
+    finally:
+        if tmp_pdf.exists():
+            tmp_pdf.unlink()
     return {
         "status": "ok",
         "pdf": str(pdf_path),

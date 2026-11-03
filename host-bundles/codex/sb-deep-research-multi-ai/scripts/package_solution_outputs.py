@@ -50,8 +50,12 @@ def package_solution_outputs(
 
     if not skip_compare:
         from compare_solutions import compare_solutions
+        from generated_files import adopt_generated
 
         results["compare"] = compare_solutions(research_dir, emit_xlsx=not skip_xlsx)
+        # Packaging produced these this run, so synthesis may refine them in place.
+        for rel in ("comparison/comparison.json", "comparison/comparison-matrix.md"):
+            adopt_generated(research_dir, research_dir / rel)
     elif not skip_xlsx:
         from generate_comparison_xlsx import generate_comparison_xlsx
 
@@ -95,6 +99,14 @@ def package_solution_outputs(
         xlsx_path = candidate
         results["comparison_matrix_xlsx"] = str(xlsx_path)
 
+    # Host- or user-authored files packaging found in the way and left untouched.
+    results["preserved"] = sorted(
+        {
+            rel
+            for step in ("materialize", "landscape_synthesis")
+            for rel in ((results.get(step) or {}).get("preserved") or [])
+        }
+    )
     results["status"] = "ok"
     return results
 

@@ -6,13 +6,13 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import shutil
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 
 
 DRM_SCRIPTS = Path(__file__).resolve().parent
-REPO_ROOT = DRM_SCRIPTS.parents[2]
+WORKFLOW_ID = "WF-SILVER-DEEP-RESEARCH-MULTI-AI"
 _BOOTSTRAPPED = False
 
 
@@ -41,9 +41,52 @@ def load_parallel_phases(research_type: str, mode: str) -> list[str]:
 
 
 def default_output_root(query: str) -> Path:
-    slug = query.strip().replace(" ", "-").lower()[:80]
+    """research/<date>-<slug> under the caller's working directory (their project), never
+    inside the installed skill. The slug is one [a-z0-9-] path segment: '/' and '..' in the
+    query cannot nest or escape."""
+    slug = re.sub(r"[^a-z0-9]+", "-", query.lower()).strip("-")[:80].strip("-") or "research"
     date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    return REPO_ROOT / "research" / f"{date}-{slug}"
+    return Path.cwd() / "research" / f"{date}-{slug}"
+
+
+def _positive_int(value: str) -> int:
+    number = int(value)
+    if number < 1:
+        raise argparse.ArgumentTypeError("must be at least 1")
+    return number
+
+
+def _is_previous_run(path: Path) -> bool:
+    try:
+        manifest = json.loads((path / "run_manifest.json").read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return False
+    return isinstance(manifest, dict) and manifest.get("workflow_id") == WORKFLOW_ID
+
+
+def force_refusal(output_root: Path) -> str | None:
+    """Why --force must not touch `output_root`, or None when it is a previous run of this tool."""
+    target = output_root.resolve()
+    cwd = Path.cwd().resolve()
+    if target == Path(target.anchor) or target == Path.home().resolve():
+        return f"{output_root} is the filesystem root or the home directory"
+    if target == cwd or target in cwd.parents:
+        return f"{output_root} is the working directory or one of its parents"
+    if not target.is_dir() or not _is_previous_run(target):
+        return f"{output_root} is not a previous {WORKFLOW_ID} run (no matching run_manifest.json)"
+    return None
+
+
+def move_previous_run_aside(output_root: Path) -> Path:
+    """Rename a previous run to <name>.replaced-<UTC time>; nothing is deleted."""
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    target = output_root.with_name(f"{output_root.name}.replaced-{stamp}")
+    counter = 1
+    while target.exists():
+        counter += 1
+        target = output_root.with_name(f"{output_root.name}.replaced-{stamp}-{counter}")
+    output_root.rename(target)
+    return target
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -61,9 +104,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--include-only", action="append", default=[], help="Restrict pool to listed agents only (do NOT use for full landscape runs)")
     parser.add_argument("--exclude", action="append", default=[])
     parser.add_argument("--dry-run", action="store_true")
-    parser.add_argument("--max-phases", type=int, help="Limit live phases (partial run)")
+    parser.add_argument("--max-phases", type=_positive_int, help="Limit live phases (partial run, at least 1)")
     parser.add_argument("--timeout-sec", type=int, default=600)
-    parser.add_argument("--force", action="store_true", help="Clear output-root before live run")
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Move a previous run at --output-root aside (renamed, never deleted) before the live run",
+    )
     parser.add_argument(
         "--package-only",
         action="store_true",
@@ -151,8 +198,16 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     output_root = Path(args.output_root) if args.output_root else default_output_root(args.query)
-    if args.force and output_root.exists():
-        shutil.rmtree(output_root)
+    moved_aside: Path | None = None
+    if output_root.exists() and (args.force or _is_previous_run(output_root)):
+        refusal = force_refusal(output_root) if args.force else (
+            f"{output_root} already holds a run; pass --force to move it aside"
+        )
+        if refusal:
+            print(json.dumps({"ok": False, "error_code": "FORCE_REFUSED" if args.force else "OUTPUT_ROOT_HAS_RUN",
+                              "message": refusal}, indent=2))
+            return 2
+        moved_aside = move_previous_run_aside(output_root)
     os.environ.setdefault("SB_HOST", "cursor")
 
     from dr_live_runner import run_dr_live  # noqa: E402
@@ -172,6 +227,8 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({"ok": False, "error_code": "DR_LIVE_RUN_FAILED", "message": str(exc)}, indent=2))
         return 1
 
+    if moved_aside is not None:
+        live_result["moved_aside"] = str(moved_aside)
     if needs_solution_packaging(args.research_type) and live_result.get("ok"):
         from package_solution_outputs import package_solution_outputs  # noqa: E402
 

@@ -285,11 +285,6 @@ def validate_landscape_content(
     metrics["winner"] = winner
     metrics["winner_score"] = winner_score
 
-    # Narrative consistency: silver-bullet should not be score 0 when matrix claims support
-    sb = next((r for r in rankings if isinstance(r, dict) and r.get("solution") == "silver-bullet"), None)
-    if sb and sb.get("score") == 0 and fill_rate > 0.1:
-        errors.append("silver-bullet score is 0 despite non-trivial matrix fill (ranking inconsistency)")
-
     landscape_md = research_dir / "landscape" / "landscape-report.md"
     chart_data_path = research_dir / "landscape" / "chart-data.json"
     chart_raw: dict[str, Any] | None = None

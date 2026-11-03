@@ -210,13 +210,10 @@ class CoreValidationTests(_Base):
                          ["winner 'silver-bullet' lacks must-have 'ghost feature'"])
         self.assertEqual(res["metrics"]["must_have_gaps"], ["winner 'silver-bullet' lacks must-have 'ghost feature'"])
 
-    def test_silver_bullet_zero_score(self):
+    def test_no_vendor_specific_zero_score_gate(self):
+        # no vendor (including the tool's own product) is special-cased by the packaging gate
         self.put("comparison/comparison.json", comparison(
             rankings=[{"solution": "silver-bullet", "score": 0}]))
-        self.assertIn("silver-bullet score is 0 despite non-trivial matrix fill (ranking inconsistency)",
-                      self.errors())
-        self.put("comparison/comparison.json", comparison(
-            rankings=[{"solution": "silver-bullet", "score": 3}]))
         self.assertFalse(any("score is 0" in e for e in self.errors()))
         self.put("comparison/comparison.json", comparison(
             rows=[{"type": "feature", "priority": "Critical", "solutions": {"a": 0, "b": 0, "c": 0, "d": 0,
@@ -354,6 +351,7 @@ class ChartGateTests(_Base):
         urls["Fine"] = "https://fine.example"
         env = {k: v for k, v in os.environ.items() if k != "SB_SKIP_VENDOR_URL_HEALTH"}
         with mock.patch.dict(os.environ, env, clear=True), \
+                mock.patch("vendor_link_labels._resolve_host", return_value=["93.184.216.34"]), \
                 mock.patch("urllib.request.urlopen", side_effect=self._urlopen(["dead"])):
             res = self.chart_errors(chart(vendor_urls=urls))
         dropped = res["metrics"]["vendor_url_health_dropped"]
@@ -368,6 +366,7 @@ class ChartGateTests(_Base):
     def test_vendor_url_health_all_good_and_non_dict(self):
         env = {k: v for k, v in os.environ.items() if k != "SB_SKIP_VENDOR_URL_HEALTH"}
         with mock.patch.dict(os.environ, env, clear=True), \
+                mock.patch("vendor_link_labels._resolve_host", return_value=["93.184.216.34"]), \
                 mock.patch("urllib.request.urlopen", side_effect=self._urlopen([])):
             res = self.chart_errors(chart(vendor_urls={"A": "https://a.example"}))
         self.assertEqual(res["metrics"]["vendor_url_health_dropped"], [])
