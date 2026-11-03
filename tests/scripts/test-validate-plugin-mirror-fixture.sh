@@ -11,8 +11,7 @@ PKG="$FX/plugins/silver-bullet"
 mkdir -p "$FX/plugins"
 rsync -a --exclude='__pycache__/' --exclude='*.render.lock' \
   "$TL_REPO_ROOT/skills" "$TL_REPO_ROOT/templates" "$TL_REPO_ROOT/scripts" "$TL_REPO_ROOT/hooks" \
-  "$TL_REPO_ROOT/agents" "$TL_REPO_ROOT/host-bundles" "$TL_REPO_ROOT/package.json" \
-  "$TL_REPO_ROOT/.cursor-plugin" "$FX/"
+  "$TL_REPO_ROOT/agents" "$TL_REPO_ROOT/host-bundles" "$TL_REPO_ROOT/package.json" "$FX/"
 rsync -a "$TL_REPO_ROOT/plugins/silver-bullet" "$FX/plugins/"
 for f in AGENTS.md CHANGELOG.md CODE_OF_CONDUCT.md CONTRIBUTING.md LICENSE README.md SECURITY.md .silver-bullet.json; do
   : >"$FX/$f"
@@ -32,29 +31,22 @@ cp "$REF" "$TL_TMP/ref.bak"
 printf '\nseeded drift\n' >>"$REF"                               # source edited, mirrors not regenerated
 mkdir -p "$FX/agents/claude/sb:stale-route"
 printf -- '---\nname: sb:stale-route\n---\n' >"$FX/agents/claude/sb:stale-route/SKILL.md"   # stray skill
-printf 'stale\n' >>"$PKG/commands/sb-feature.md"                # hand-edited stub
 printf 'stale\n' >>"$PKG/templates/silver-bullet.md.base"       # hand-edited template mirror
-printf ' ' >>"$FX/hooks/cursor-hooks.json"                       # hand-edited generated hooks
 rm "$PKG/hooks" && cp -R "$FX/hooks" "$PKG/hooks"               # link replaced by a stale copy
 mkdir -p "$PKG/skills/x"                                          # entry the sync would prune
 touch "$FX/skills/silver-feature/bad:name.md"                    # Windows-unsafe generated path
 ln -s /etc/hostname "$FX/agents/claude/sb:init/evil-link"        # symlink smuggled into a generated tree
-printf -- '---\nname: "sb-bogus"\n---\n\nx\n' >"$PKG/commands/sb-bogus.md"   # orphan stub: no composer produces it
 run
 assert_eq "drift fails" 1 "$TL_STATUS"
 for drifted in \
   "agents/claude/sb:init/references/scaffold-steps.md" \
   "host-bundles/codex/sb-init/references/scaffold-steps.md" \
   "plugins/silver-bullet/skill-source/sb-init/references/scaffold-steps.md" \
-  "plugins/silver-bullet/cursor-skill-source/sb-init/references/scaffold-steps.md" \
   "agents/claude/sb:stale-route/SKILL.md" \
-  "plugins/silver-bullet/commands/sb-feature.md" \
   "plugins/silver-bullet/templates/silver-bullet.md.base" \
-  "hooks/cursor-hooks.json" \
   "plugins/silver-bullet/hooks must be a symlink to ../../hooks" \
   "plugins/silver-bullet/skills (the sync would remove or create it)" \
   "agents/claude/sb:init/evil-link" \
-  "plugins/silver-bullet/commands/sb-bogus.md" \
   "host-bundles/codex/sb-feature/bad:name.md"; do
   assert_contains "drift named: $drifted" "$TL_OUT" "DRIFT: $drifted"
 done
@@ -65,7 +57,7 @@ assert_contains "error annotation tells how to fix" "$TL_OUT" "run: bash scripts
 
 # restore
 cp "$TL_TMP/ref.bak" "$REF"
-rm -rf "$FX/agents/claude/sb:stale-route" "$PKG/skills" "$PKG/hooks" "$FX/skills/silver-feature/bad:name.md" "$FX/agents/claude/sb:init/evil-link" "$PKG/commands/sb-bogus.md"
+rm -rf "$FX/agents/claude/sb:stale-route" "$PKG/skills" "$PKG/hooks" "$FX/skills/silver-feature/bad:name.md" "$FX/agents/claude/sb:init/evil-link"
 ln -s ../../hooks "$PKG/hooks"
 bash "$FX/scripts/sync-codex-package.sh" >/dev/null 2>&1
 run

@@ -12,18 +12,18 @@ hr_stage_repo
 # shellcheck source=/dev/null
 source "$HR_RTLIB/receipts.sh"
 rt_init_paths
-export RT_HOST=cursor
+export RT_HOST=claude
 hr_consent graphify=enabled agentmemory=enabled rtk=enabled context_mode=enabled leanctx=enabled
 hr_bin sleep 'exit 0'
-mkdir -p "$HOME/.cursor"
+mkdir -p "$HOME/.claude"
 
 export RT_MODE=apply RT_ENTRY_POINT=init RT_SCOPE=all RT_PROJECT_ROOT="$HR_PROJ"
 PID="$(rt_project_id)"; WID="$(rt_worktree_id "$HR_PROJ")"
 mk_receipt() { # <id> <change_set> [extra jq filter]
-  local path; path="$(rt_reload_receipt_path cursor "$PID" "$WID" "$1")"
+  local path; path="$(rt_reload_receipt_path claude "$PID" "$WID" "$1")"
   mkdir -p "$(dirname "$path")"
   jq -n --arg id "$1" --arg cs "$2" --arg pid "$PID" --arg wid "$WID" \
-    '{schema:"v1",scope:"project",receipt_id:$id,nonce:"n",change_set_id:$cs,identities:{host:"cursor",project_id:$pid,worktree_id:$wid},expected_tools:{},post_config_hashes:{},activation_status:"none",written_at:"2026-01-01T00:00:00Z",consumed_at:null,superseded_at:null}'"${3:-}" >"$path"
+    '{schema:"v1",scope:"project",receipt_id:$id,nonce:"n",change_set_id:$cs,identities:{host:"claude",project_id:$pid,worktree_id:$wid},expected_tools:{},post_config_hashes:{},activation_status:"none",written_at:"2026-01-01T00:00:00Z",consumed_at:null,superseded_at:null}'"${3:-}" >"$path"
   printf '%s' "$path"
 }
 # ------------------------------------------------------ host evidence stdin
@@ -44,7 +44,7 @@ assert_eq "parse time: invalid" "1" "$(rc_of rt_attestation_parse_time_epoch gar
 RP="$(mk_receipt rv cs-v ' | .nonce="nonce-1" | .expected_tools={graphify:["query_graph","get_node"]} | .post_config_hashes={mcp:"M",hooks:"H"}')"
 RECEIPT="$(jq -c . "$RP")"
 att() { # <jq filter on the good attestation>
-  jq -nc --arg now "$NOW" --arg pid "$PID" --arg wid "$WID" '{schema:"v1",receipt_id:"rv",nonce:"nonce-1",scope:"project",host:"cursor",project_id:$pid,worktree_id:$wid,session_id:"s1",observed_at:$now,config_hashes:{mcp:"M",hooks:"H"},servers:{graphify:{tools:[{id:"query_graph",status:"success"},{id:"get_node",status:"success"}]}}}' | jq -c "${1:-.}"
+  jq -nc --arg now "$NOW" --arg pid "$PID" --arg wid "$WID" '{schema:"v1",receipt_id:"rv",nonce:"nonce-1",scope:"project",host:"claude",project_id:$pid,worktree_id:$wid,session_id:"s1",observed_at:$now,config_hashes:{mcp:"M",hooks:"H"},servers:{graphify:{tools:[{id:"query_graph",status:"success"},{id:"get_node",status:"success"}]}}}' | jq -c "${1:-.}"
 }
 export RT_MODE=apply
 val() { rt_attestation_validate "$1" "${2-$RECEIPT}"; }
@@ -83,11 +83,11 @@ assert_eq "attestation: hooks-only repair with identity errors" "false|full|fals
 v="$(val "$(att '.servers.graphify.tools=[{id:"query_graph",status:"success"}]|.nonce="bad"')")"
 assert_eq "attestation: identity error plus partial activation is invalid" "false|partial" "$(jq -r '"\(.valid)|\(.activation_status)"' <<<"$v")"
 # live hash checks apply outside apply mode
-echo '{"mcp":"live"}' >"$HOME/.cursor/mcp.json"
+echo '{"mcp":"live"}' >"$HOME/.claude.json"
 v="$(RT_MODE=verify val "$(att)")"
 assert_contains "attestation (verify): live mcp hash must match" "$(jq -c .errors <<<"$v")" '"mcp_hash_mismatch"'
 assert_contains "attestation (verify): live hooks hash must match" "$(jq -c .errors <<<"$v")" '"hooks_hash_mismatch"'
-LIVE_M="$(rt_config_hash_file "$HOME/.cursor/mcp.json")"; LIVE_H="$(rt_config_hash_file "$HOME/.cursor/hooks.json")"
+LIVE_M="$(rt_config_hash_file "$HOME/.claude.json")"; LIVE_H="$(rt_config_hash_file "$HOME/.claude/settings.json")"
 LIVE_RECEIPT="$(jq -c --arg m "$LIVE_M" --arg h "$LIVE_H" '.post_config_hashes={mcp:$m,hooks:$h}' <<<"$RECEIPT")"
 v="$(RT_MODE=verify val "$(att ".config_hashes={mcp:\"$LIVE_M\",hooks:\"$LIVE_H\"}")" "$LIVE_RECEIPT")"
 assert_eq "attestation (verify): matching live hashes" "true" "$(jq -r .valid <<<"$v")"
@@ -132,8 +132,8 @@ assert_eq "reconcile: a pending receipt produces no jq errors on stderr" "" "$(r
 assert_eq "reconcile: pending receipt" '{"has_receipt":true,"canonical_state":"reload_required","activation_status":"none","clear_eligible":false,"errors":[]}' "$(st)"
 # host-global receipts are found when no project receipt exists
 rm -f "$RP"
-HG="$(rt_reload_receipt_path cursor "$PID" "$WID" rg host-global)"; mkdir -p "$(dirname "$HG")"
-jq -n --arg pid "$PID" '{schema:"v1",scope:"host-global",receipt_id:"rg",nonce:"n",identities:{host:"cursor",project_id:"x",worktree_id:"y"},activation_status:"partial",written_at:"2026-01-01T00:00:00Z",consumed_at:null,superseded_at:null}' >"$HG"
+HG="$(rt_reload_receipt_path claude "$PID" "$WID" rg host-global)"; mkdir -p "$(dirname "$HG")"
+jq -n --arg pid "$PID" '{schema:"v1",scope:"host-global",receipt_id:"rg",nonce:"n",identities:{host:"claude",project_id:"x",worktree_id:"y"},activation_status:"partial",written_at:"2026-01-01T00:00:00Z",consumed_at:null,superseded_at:null}' >"$HG"
 assert_eq "reconcile: host-global receipt" "true|partial" "$(rt_reconcile_receipt_state | jq -r '"\(.has_receipt)|\(.activation_status)"')"
 rm -f "$HG"
 # with evidence for a pending receipt (verify mode: evaluated, not cleared)

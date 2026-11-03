@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Branch tests for scripts/sb-diagnostics.sh. The script runs from a staged repo whose
 # hooks/lib helpers are stubs driven by STUB_* environment variables, so every check
-# (consent, CLI presence, health, platform wiring, scores, Cursor install identity)
+# (consent, CLI presence, health, platform wiring, scores)
 # can be forced to each outcome. Real-library behaviour is covered by
 # test-sb-diagnostics-reallibs.sh.
 set -euo pipefail
@@ -100,13 +100,6 @@ echo 'hooks = "silver-bullet"' >"$HOME/.codex/config.toml"
 run_diag SILVER_BULLET_RUNTIME=codex
 assert_contains "codex hooks referenced" "$TL_OUT" "PASS: hooks — Silver Bullet hooks referenced in $HOME/.codex/config.toml"
 assert_contains "codex hook-enforced" "$TL_OUT" "PASS: runtime-capability-tier — hook-enforced (codex"
-
-mkdir -p "$HOME/.cursor/.silver-bullet"
-run_diag SILVER_BULLET_RUNTIME=cursor
-assert_contains "cursor without hooks.json warns" "$TL_OUT" "WARN: hooks — no SB hook config in Cursor hooks.json"
-echo '{"silver-bullet":1}' >"$HOME/.cursor/hooks.json"
-run_diag SILVER_BULLET_RUNTIME=cursor
-assert_contains "cursor hooks referenced" "$TL_OUT" "PASS: hooks — Silver Bullet hooks referenced in $HOME/.cursor/hooks.json"
 
 # no state dir at all: guidance-only
 run_diag SILVER_BULLET_RUNTIME=goose
@@ -299,125 +292,6 @@ run_diag $C STUB_CONSENT_context_mode=enabled STUB_CM_AVAIL=1 STUB_UNDEF=sb_cont
 assert_contains "context-mode without node helper" "$TL_OUT" "PASS: context-mode-cli — CLI or plugin present (opted in)"
 run_diag $C STUB_UNDEF=sb_context_mode_cli_available STUB_CONSENT_context_mode=enabled
 assert_not_contains "no context-mode checks without the helper" "$TL_OUT" "context-mode"
-
-# ---------- cursor install identity ----------
-CH="$HOME/.cursor"
-V=9.9.9
-mk_cursor() {
-  rm -rf "$CH/plugins"
-  local cache="$CH/plugins/cache/alo-labs/silver-bullet" gp sha
-  mkdir -p "$cache/$V/commands" "$cache/$V/.cursor-plugin" "$CH/plugins/local/silver-bullet/.cursor-plugin" \
-    "$CH/plugins/marketplaces/alo-labs-cursor/.cursor-plugin"
-  printf -- '---\nname: sb\n---\nbody\n' >"$cache/$V/commands/sb.md"
-  printf '{"version":"%s"}\n' "$V" >"$cache/$V/.cursor-plugin/plugin.json"
-  printf '{"version":"%s"}\n' "$V" >"$CH/plugins/local/silver-bullet/.cursor-plugin/plugin.json"
-  ln -s "$cache/$V" "$cache/current"
-  SHA_DIR="$TL_TMP/shasrc"; rm -rf "$SHA_DIR"; tl_git_repo "$SHA_DIR"
-  sha="$(git -C "$SHA_DIR" rev-parse HEAD)"
-  SHA="$sha"
-  gp="$CH/plugins/marketplaces/github.com/alo-exp/silver-bullet"
-  mkdir -p "$gp"; mv "$SHA_DIR" "$gp/$sha"
-  mkdir -p "$gp/$sha/commands" "$gp/$sha/.cursor-plugin"
-  echo x >"$gp/$sha/commands/sb.md"
-  echo '{"commands":"./commands"}' >"$gp/$sha/.cursor-plugin/plugin.json"
-  mkdir -p "$CH/plugins/cache/alo-labs-cursor/silver-bullet"
-  ln -s "$(cd "$cache/current" && pwd -P)" "$CH/plugins/cache/alo-labs-cursor/silver-bullet/$sha"
-  printf '{"plugins":{"silver-bullet@alo-labs":[{"version":"%s","installPath":"%s","enabled":true,"gitCommitSha":"%s"}]}}\n' "$V" "$cache/$V" "$sha" >"$CH/plugins/installed_plugins.json"
-  printf '{"plugins":[{"name":"silver-bullet","version":"%s","source":{"sha":"%s"}}]}\n' "$V" "$sha" >"$CH/plugins/marketplaces/alo-labs-cursor/.cursor-plugin/marketplace.json"
-}
-CU='SILVER_BULLET_RUNTIME=cursor'
-run_diag $CU
-assert_contains "cursor without cache symlink warns" "$TL_OUT" "WARN: cursor-plugin — silver-bullet current symlink missing"
-
-mk_cursor
-run_diag $CU
-assert_eq "healthy cursor install exits 0" "0" "$TL_STATUS"
-assert_contains "cursor commands present" "$TL_OUT" "PASS: cursor-commands — plugin cache has composer command stubs"
-assert_contains "cursor filenames safe" "$TL_OUT" "PASS: cursor-command-filenames — all command filenames are desktop-safe"
-assert_contains "cursor identity" "$TL_OUT" "PASS: cursor-install-identity — registry/cache/current/local all match 9.9.9"
-assert_contains "cursor enablement" "$TL_OUT" "PASS: cursor-marketplace-enablement"
-assert_contains "cursor pin" "$TL_OUT" "PASS: cursor-marketplace-pin — marketplace manifest matches 9.9.9/${SHA:0:8}"
-assert_contains "cursor gitpath" "$TL_OUT" "PASS: cursor-gitpath — marketplace gitPath ready with commands (${SHA:0:8})"
-
-CACHE="$CH/plugins/cache/alo-labs/silver-bullet/$V"
-rm -f "$CACHE/commands/sb.md"
-run_diag $CU
-assert_contains "cursor commands missing" "$TL_OUT" "FAIL: cursor-commands — commands/ missing — run: bash scripts/install-cursor.sh"
-mk_cursor; printf -- '---\nname: other\n---\n' >"$CACHE/commands/sb.md"
-run_diag $CU
-assert_contains "cursor command name must be sb" "$TL_OUT" "FAIL: cursor-commands"
-mk_cursor; printf 'no front matter\n' >"$CACHE/commands/sb.md"
-run_diag $CU
-assert_contains "cursor command without front matter" "$TL_OUT" "FAIL: cursor-commands"
-mk_cursor; printf -- '---\ndescription: d\n---\n' >"$CACHE/commands/sb.md"
-run_diag $CU
-assert_contains "cursor command front matter without name" "$TL_OUT" "FAIL: cursor-commands"
-mk_cursor; echo x >"$CACHE/commands/bad:name.md"
-run_diag $CU
-assert_contains "cursor colon filenames" "$TL_OUT" "FAIL: cursor-command-filenames — 1 command filenames contain ':'"
-mk_cursor; mkdir "$CACHE/commands/dir.md"
-run_diag $CU
-assert_contains "cursor ignores non-file entries" "$TL_OUT" "PASS: cursor-command-filenames"
-mk_cursor; printf '{"version":"1.0.0"}\n' >"$CH/plugins/local/silver-bullet/.cursor-plugin/plugin.json"
-run_diag $CU
-assert_contains "cursor identity mismatch" "$TL_OUT" "FAIL: cursor-install-identity — registry/cache/current/local version mismatch"
-mk_cursor; jq '.plugins["silver-bullet@alo-labs"][0].enabled = false' "$CH/plugins/installed_plugins.json" >"$TL_TMP/r.json"; mv "$TL_TMP/r.json" "$CH/plugins/installed_plugins.json"
-run_diag $CU
-assert_contains "cursor enablement missing" "$TL_OUT" "FAIL: cursor-marketplace-enablement"
-mk_cursor; jq 'del(.plugins["silver-bullet@alo-labs"][0].gitCommitSha)' "$CH/plugins/installed_plugins.json" >"$TL_TMP/r.json"; mv "$TL_TMP/r.json" "$CH/plugins/installed_plugins.json"
-run_diag $CU
-assert_contains "cursor registry without sha" "$TL_OUT" "WARN: cursor-gitpath — installed_plugins.json missing gitCommitSha"
-mk_cursor; rm -f "$CH/plugins/installed_plugins.json"
-run_diag $CU
-assert_not_contains "cursor without registry skips sha checks" "$TL_OUT" "cursor-marketplace-pin"
-mk_cursor; printf '{"plugins":[{"name":"silver-bullet","version":"0.0.1","source":{"sha":"abc"}}]}\n' >"$CH/plugins/marketplaces/alo-labs-cursor/.cursor-plugin/marketplace.json"
-run_diag $CU
-assert_contains "cursor marketplace pin mismatch" "$TL_OUT" "FAIL: cursor-marketplace-pin — marketplace manifest version/SHA mismatch"
-mk_cursor; rm -f "$CH/plugins/marketplaces/github.com/alo-exp/silver-bullet/$SHA/commands/sb.md"
-run_diag $CU
-assert_contains "cursor gitpath without commands" "$TL_OUT" "FAIL: cursor-gitpath — gitPath exists but commands surface missing"
-mk_cursor; rm -f "$CH/plugins/cache/alo-labs-cursor/silver-bullet/$SHA"
-run_diag $CU
-assert_contains "cursor gitpath without cache symlink" "$TL_OUT" "FAIL: cursor-gitpath — gitPath exists but commands surface missing"
-mk_cursor; rm -rf "$CH/plugins/marketplaces/github.com/alo-exp/silver-bullet/$SHA/.git"
-run_diag $CU
-assert_contains "cursor gitpath missing" "$TL_OUT" "FAIL: cursor-gitpath — gitPath/cache symlink missing for ${SHA:0:8}"
-mk_cursor; echo '{"commands":"./other"}' >"$CH/plugins/marketplaces/github.com/alo-exp/silver-bullet/$SHA/.cursor-plugin/plugin.json"
-run_diag $CU
-assert_contains "cursor plugin.json commands mismatch" "$TL_OUT" "FAIL: cursor-gitpath — gitPath exists but commands surface missing"
-
-# unreadable / absent metadata files make the version probes empty, never abort
-mk_cursor; rm -f "$ST/package.json"
-run_diag $CU
-assert_contains "cursor without package.json cannot match identity" "$TL_OUT" "FAIL: cursor-install-identity"
-printf '{"version":"9.9.9"}\n' >"$ST/package.json"
-mk_cursor; rm -rf "$CH/plugins/cache/alo-labs/silver-bullet/$V"
-run_diag $CU
-assert_contains "cursor dangling current symlink" "$TL_OUT" "FAIL: cursor-commands"
-mk_cursor; echo 'garbage' >"$CACHE/.cursor-plugin/plugin.json"
-run_diag $CU
-assert_contains "cursor invalid cache plugin.json" "$TL_OUT" "FAIL: cursor-install-identity"
-mk_cursor; rm -f "$CH/plugins/local/silver-bullet/.cursor-plugin/plugin.json"
-run_diag $CU
-assert_contains "cursor missing local plugin.json" "$TL_OUT" "FAIL: cursor-install-identity"
-mk_cursor; echo 'garbage' >"$CH/plugins/installed_plugins.json"
-run_diag $CU
-assert_contains "cursor corrupt registry" "$TL_OUT" "FAIL: cursor-install-identity"
-assert_contains "cursor corrupt registry has no enablement" "$TL_OUT" "FAIL: cursor-marketplace-enablement"
-assert_contains "cursor corrupt registry has no sha" "$TL_OUT" "WARN: cursor-gitpath — installed_plugins.json missing gitCommitSha"
-mk_cursor; rm -f "$CH/plugins/marketplaces/alo-labs-cursor/.cursor-plugin/marketplace.json"
-run_diag $CU
-assert_contains "cursor missing marketplace manifest" "$TL_OUT" "FAIL: cursor-marketplace-pin"
-mk_cursor; rm -f "$CH/plugins/cache/alo-labs-cursor/silver-bullet/$SHA"; ln -s /nonexistent/a/b "$CH/plugins/cache/alo-labs-cursor/silver-bullet/$SHA"
-run_diag $CU
-assert_contains "cursor unresolvable gitpath cache link" "$TL_OUT" "FAIL: cursor-gitpath — gitPath exists but commands surface missing"
-
-# smoke mode keeps non-tool failures
-run_diag $CU SB_DIAG_SMOKE=1
-mk_cursor; rm -f "$CACHE/commands/sb.md"
-run_diag $CU SB_DIAG_SMOKE=1
-assert_contains "smoke keeps cursor failures" "$TL_OUT" "FAIL: cursor-commands"
-assert_eq "smoke cursor failure exits 1" "1" "$TL_STATUS"
 
 # ---------- package version ----------
 run_diag $C

@@ -93,7 +93,7 @@ assert_contains "pre-release gate script runs site freshness" "test-site-content
 assert_contains "Help Center documents current workflow total" "26 workflows" "$REPO_ROOT/site/help/index.html"
 assert_contains "Help Center documents task-shaped and reusable workflow split" "22 task-shaped plus 4 reusable components" "$REPO_ROOT/site/help/index.html"
 assert_contains "Help Center documents current atomic-flow total" "29 AF-\* atomic flows" "$REPO_ROOT/site/help/index.html"
-assert_contains "Help Center documents current flow-step total" "118 flow steps" "$REPO_ROOT/site/help/index.html"
+assert_contains "Help Center documents current flow-step total" "114 flow steps" "$REPO_ROOT/site/help/index.html"
 assert_contains "workflow index documents agent delegation entry" "WF-AGENT-DELEGATE-ENTRY" "$REPO_ROOT/site/help/workflows/index.html"
 assert_contains "workflow index documents multi-AI task flow" "AF-MULTI-AI-TASK" "$REPO_ROOT/site/help/workflows/index.html"
 assert_contains "search index includes agent delegation page" "silver-agent-delegate\.html" "$REPO_ROOT/site/help/search.js"

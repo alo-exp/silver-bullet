@@ -18,24 +18,22 @@ source "$HR_RTLIB/probe-context-mode.sh"
 source "$HR_RTLIB/probe-alumnium.sh"
 # shellcheck source=/dev/null
 source "$HR_RTLIB/probe-search_cli.sh"
-export RT_HOST=cursor RT_SKIP_VENDOR_DOCTOR=1 RT_MODE=verify RT_VENDOR_DOCTOR_TIMEOUT=10
+export RT_HOST=claude RT_SKIP_VENDOR_DOCTOR=1 RT_MODE=verify RT_VENDOR_DOCTOR_TIMEOUT=10
 hr_bin sleep 'exit 0'
 H() { RT_HOST="$1"; }
 vdr() { local rc=0; : >"$HR_LOG"; "$@" >/dev/null 2>&1 || rc=$?; printf '%s' "$rc"; }
 
 PI_DIR="$HOME/.pi/agent"
 CODEX_HOME_DIR="$(sb_runtime_codex_home)"
-mkdir -p "$HOME/.cursor" "$CODEX_HOME_DIR" "$HOME/.config/opencode" "$PI_DIR/extensions/silver-bullet-five-tool-stack" "$HOME/.claude"
+mkdir -p "$HOME/.claude" "$CODEX_HOME_DIR" "$HOME/.config/opencode" "$PI_DIR/extensions/silver-bullet-five-tool-stack" "$HOME/.claude"
 
 # ============================================================== context mode mcp
-rm -f "$HOME/.cursor/mcp.json"
-assert_eq "cm mcp (cursor): no config" "1" "$(rc_of rt_probe_context_mode_mcp)"
-echo '{"mcpServers":{"context-mode":{}}}' >"$HOME/.cursor/mcp.json"
-assert_eq "cm mcp (cursor): context-mode" "0" "$(rc_of rt_probe_context_mode_mcp)"
-echo '{"mcpServers":{"user-context-mode":{}}}' >"$HOME/.cursor/mcp.json"
-assert_eq "cm mcp (cursor): user-context-mode" "0" "$(rc_of rt_probe_context_mode_mcp)"
-echo '{"mcpServers":{}}' >"$HOME/.cursor/mcp.json"
-assert_eq "cm mcp (cursor): absent" "1" "$(rc_of rt_probe_context_mode_mcp)"
+rm -f "$HOME/.claude.json"
+assert_eq "cm mcp (claude): no config" "1" "$(rc_of rt_probe_context_mode_mcp)"
+echo '{"mcpServers":{"context-mode":{}}}' >"$HOME/.claude.json"
+assert_eq "cm mcp (claude): context-mode" "0" "$(rc_of rt_probe_context_mode_mcp)"
+echo '{"mcpServers":{}}' >"$HOME/.claude.json"
+assert_eq "cm mcp (claude): absent" "1" "$(rc_of rt_probe_context_mode_mcp)"
 H claude
 assert_eq "cm mcp (claude): nothing" "1" "$(rc_of rt_probe_context_mode_mcp)"
 mkdir -p "$HOME/.claude/plugins/context-mode"
@@ -50,7 +48,7 @@ assert_eq "cm mcp (opencode)" "0" "$(rc_of rt_probe_context_mode_mcp)"
 H pi; echo '{"servers":{"context_mode":{"enabled":true}}}' >"$PI_DIR/extensions/silver-bullet-five-tool-stack/config.json"
 assert_eq "cm mcp (pi)" "0" "$(rc_of rt_probe_context_mode_mcp)"
 H goose; assert_eq "cm mcp: other hosts" "1" "$(rc_of rt_probe_context_mode_mcp)"
-H cursor
+H claude
 
 # vendor doctor
 unset RT_SKIP_VENDOR_DOCTOR
@@ -58,7 +56,7 @@ hr_bin context-mode 'echo "context-mode $* platform=${CONTEXT_MODE_PLATFORM:-}" 
 assert_eq "cm doctor: explicit command" "0" "$(RT_CONTEXT_MODE_DOCTOR_CMD="true" vdr rt_probe_context_mode_vendor_doctor)"
 assert_eq "cm doctor: explicit command fails" "1" "$(RT_CONTEXT_MODE_DOCTOR_CMD="false" vdr rt_probe_context_mode_vendor_doctor)"
 assert_eq "cm doctor: real binary passes" "0" "$(vdr rt_probe_context_mode_vendor_doctor)"
-assert_contains "cm doctor: platform follows the host" "$(cat "$HR_LOG")" "context-mode doctor platform=cursor"
+assert_contains "cm doctor: platform follows the host" "$(cat "$HR_LOG")" "context-mode doctor platform=claude"
 assert_eq "cm doctor: failing" "1" "$(CM_RC=1 vdr rt_probe_context_mode_vendor_doctor)"
 assert_eq "cm doctor: no binary -> skip" "2" "$(PATH="$(hr_path_without context-mode)" vdr rt_probe_context_mode_vendor_doctor)"
 export RT_SKIP_VENDOR_DOCTOR=1
@@ -67,7 +65,7 @@ export RT_SKIP_VENDOR_DOCTOR=1
 hr_bin node 'echo "v${NODE_VER:-22.9.0}"'
 hr_bin context-mode 'exit "${CM_RC:-0}"'
 pcm() { hr_state "$(rt_probe_context_mode)"; }
-H goose; assert_eq "cm: unsupported host" "unsupported|none||false" "$(pcm)"; H cursor
+H goose; assert_eq "cm: unsupported host" "unsupported|none||false" "$(pcm)"; H claude
 hr_consent context_mode=disabled; assert_eq "cm: disabled" "disabled|none||false" "$(pcm)"
 hr_consent; assert_eq "cm: pending" "pending|none||false" "$(pcm)"
 hr_consent context_mode=suspended; assert_eq "cm: suspended" "suspended|none||false" "$(pcm)"
@@ -75,9 +73,9 @@ hr_consent context_mode=enabled
 assert_eq "cm: node too old" "failed|none|node_version,min_version|true" "$(NODE_VER=18.1.0 pcm)"
 assert_eq "cm: node missing" "failed|none|node_version,min_version|true" "$(PATH="$(hr_path_without node)" pcm)"
 assert_eq "cm: cli missing" "repairable|none|cli_missing|true" "$(PATH="$(hr_path_without context-mode)" pcm)"
-echo '{"mcpServers":{}}' >"$HOME/.cursor/mcp.json"
+echo '{"mcpServers":{}}' >"$HOME/.claude.json"
 assert_eq "cm: mcp not configured" "repairable|partial|mcp_not_configured|true" "$(pcm)"
-echo '{"mcpServers":{"context-mode":{}}}' >"$HOME/.cursor/mcp.json"
+echo '{"mcpServers":{"context-mode":{}}}' >"$HOME/.claude.json"
 assert_eq "cm: instruction fragment missing" "repairable|none|instruction_fragment_missing|true" "$(pcm)"
 printf '<!-- BEGIN context-mode hint (do not edit) -->\nuse ctx_execute\n<!-- END context-mode hint (do not edit) -->\n' >"$HR_PROJ/silver-bullet.md"
 assert_eq "cm: ready (doctor skipped by flag)" "ready|full|vendor_skip|false" "$(pcm)"
@@ -97,7 +95,7 @@ export RT_MODE=apply RT_ENTRY_POINT=init RT_SCOPE=all
 : >"$HR_LOG"
 out="$(rt_repair_context_mode 2>/dev/null)"
 assert_eq "cm repair: optimizer ran" '{"actions":["optimize_rtk_context_mode"],"failures":[],"restart_required":true}' "$(jq -c . <<<"$out")"
-assert_contains "cm repair: optimizer arguments" "$(cat "$HR_LOG")" "optimize-rtk-context-mode --host cursor --project-root $HR_PROJ | batch= progress="
+assert_contains "cm repair: optimizer arguments" "$(cat "$HR_LOG")" "optimize-rtk-context-mode --host claude --project-root $HR_PROJ | batch= progress="
 assert_not_contains "cm repair: cli present -> no npm" "$(cat "$HR_LOG")" "npm install"
 : >"$HR_LOG"
 out="$(RT_CROSS_TOOL_BATCH=1 rt_repair_context_mode 2>/dev/null)"
@@ -116,23 +114,21 @@ mv "$HR_STAGE/scripts/opt.off" "$HR_STAGE/scripts/optimize-rtk-context-mode.sh"
 RT_MODE=verify
 
 # ==================================================================== alumnium
-rm -f "$HOME/.cursor/mcp.json"
+rm -f "$HOME/.claude.json"
 assert_eq "alumnium cli: missing" "1" "$(PATH="$(hr_path_without alumnium)" rc_of rt_probe_alumnium_cli)"
 hr_bin alumnium 'exit 0'
 assert_eq "alumnium cli: present" "0" "$(rc_of rt_probe_alumnium_cli)"
-assert_eq "alumnium mcp (cursor): no config" "1" "$(rc_of rt_probe_alumnium_mcp)"
-echo '{"mcpServers":{"alumnium":{}}}' >"$HOME/.cursor/mcp.json"
-assert_eq "alumnium mcp (cursor): alumnium" "0" "$(rc_of rt_probe_alumnium_mcp)"
-echo '{"mcpServers":{"user-alumnium":{}}}' >"$HOME/.cursor/mcp.json"
-assert_eq "alumnium mcp (cursor): user-alumnium" "0" "$(rc_of rt_probe_alumnium_mcp)"
-echo '{"mcpServers":{}}' >"$HOME/.cursor/mcp.json"
-assert_eq "alumnium mcp (cursor): absent" "1" "$(rc_of rt_probe_alumnium_mcp)"
+assert_eq "alumnium mcp (claude): no config" "1" "$(rc_of rt_probe_alumnium_mcp)"
+echo '{"mcpServers":{"alumnium":{}}}' >"$HOME/.claude.json"
+assert_eq "alumnium mcp (claude): alumnium" "0" "$(rc_of rt_probe_alumnium_mcp)"
+echo '{"mcpServers":{}}' >"$HOME/.claude.json"
+assert_eq "alumnium mcp (claude): absent" "1" "$(rc_of rt_probe_alumnium_mcp)"
 H claude; echo '{"mcpServers":{"alumnium":{}}}' >"$HOME/.claude.json"
 assert_eq "alumnium mcp (claude)" "0" "$(rc_of rt_probe_alumnium_mcp)"
 H codex; printf '[mcp_servers.alumnium]\n' >"$CODEX_HOME_DIR/config.toml"
 assert_eq "alumnium mcp (codex)" "0" "$(rc_of rt_probe_alumnium_mcp)"
 H opencode; assert_eq "alumnium mcp: unsupported hosts" "1" "$(rc_of rt_probe_alumnium_mcp)"
-H cursor
+H claude
 
 unset RT_SKIP_VENDOR_DOCTOR
 hr_bin alumnium 'case "$*" in
@@ -156,15 +152,15 @@ export RT_SKIP_VENDOR_DOCTOR=1
 
 hr_bin alumnium 'exit 0'
 pal() { hr_state "$(rt_probe_alumnium)"; }
-H goose; assert_eq "alumnium: unsupported host" "unsupported|none||false" "$(pal)"; H cursor
+H goose; assert_eq "alumnium: unsupported host" "unsupported|none||false" "$(pal)"; H claude
 hr_consent alumnium=disabled; assert_eq "alumnium: disabled" "disabled|none||false" "$(pal)"
 hr_consent; assert_eq "alumnium: pending" "pending|none||false" "$(pal)"
 hr_consent alumnium=suspended; assert_eq "alumnium: suspended" "suspended|none||false" "$(pal)"
 hr_consent alumnium=enabled
 assert_eq "alumnium: cli missing" "failed|none|cli_missing|true" "$(PATH="$(hr_path_without alumnium)" pal)"
-echo '{"mcpServers":{}}' >"$HOME/.cursor/mcp.json"
+echo '{"mcpServers":{}}' >"$HOME/.claude.json"
 assert_eq "alumnium: mcp not configured" "repairable|partial|mcp_not_configured|true" "$(pal)"
-echo '{"mcpServers":{"alumnium":{}}}' >"$HOME/.cursor/mcp.json"
+echo '{"mcpServers":{"alumnium":{}}}' >"$HOME/.claude.json"
 assert_eq "alumnium: ready (doctor skipped)" "ready|full|vendor_skip|false" "$(pal)"
 unset RT_SKIP_VENDOR_DOCTOR
 hr_bin alumnium 'case "$*" in "doctor --help") echo usage;; doctor*) exit "${AL_RC:-0}";; esac'

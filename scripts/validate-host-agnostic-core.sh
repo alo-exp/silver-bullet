@@ -125,6 +125,9 @@ HOOKS_ALLOWLIST = {
 }
 
 SCRIPTS_ALLOWLIST = {
+    # The one-time ~/.cursor cleanup for users of the retired Cursor host.
+    "scripts/uninstall-cursor-legacy.sh",
+    "scripts/lib/uninstall_cursor_legacy.py",
     "scripts/lib/agent-bundle-paths.sh",
     "scripts/render-agent-bundle.py",
     "scripts/review-fix-ladder.py",

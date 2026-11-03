@@ -39,11 +39,9 @@ hd_stage() {
   hd_sh scripts/validate-host-install-surface.sh 'echo "surface $*" >>"$HD_LOG"; if [[ "$1" == --cache-root ]]; then exit "${STUB_RC_SURFACE_CACHE:-${STUB_RC_SURFACE:-0}}"; fi; exit "${STUB_RC_SURFACE_REPO:-${STUB_RC_SURFACE:-0}}"'
   hd_sh scripts/validate-claude-agent-token-budget.sh 'echo "tokens $*" >>"$HD_LOG"; exit "${STUB_RC_TOKENS:-0}"'
   hd_sh scripts/validate-host-agnostic-core.sh 'echo "agnostic $*" >>"$HD_LOG"; exit "${STUB_RC_AGNOSTIC:-0}"'
-  for h in claude codex cursor; do
+  for h in claude codex; do
     hd_sh "scripts/install-$h.sh" 'echo "install-'"$h"' $*" >>"$HD_LOG"; exit "${STUB_RC_INSTALL:-0}"'
   done
-  hd_sh scripts/install-cursor-sb-agents.sh 'echo "install-cursor-sb-agents $* repo=${CSBA_REPO_ROOT:-}" >>"$HD_LOG"; exit "${STUB_RC_CSBA:-0}"'
-  hd_sh scripts/lib/cursor-sb-agents/probe-global-agents.sh 'echo "probe-agents $*" >>"$HD_LOG"; exit "${STUB_RC_AGENTS:-0}"'
   hd_sh scripts/reconcile-recommended-tools.sh 'echo "reconcile $*" >>"$HD_LOG"; [[ -z "${STUB_RECON_ERR:-}" ]] || echo "$STUB_RECON_ERR" >&2; if [[ -v STUB_RECON_JSON ]]; then printf "%s" "$STUB_RECON_JSON"; else cat "$(dirname "$0")/../default-recon.json"; fi; exit "${STUB_RECON_RC:-0}"'
   printf '%s' "$HD_DEFAULT_RECON" >"$HD_ST/default-recon.json"
   # stand-in for the generic five-tool runtime package (the doctor validates and repairs through it)
@@ -78,25 +76,20 @@ hd_cfg() { mkdir -p "$HD_PROJ"; printf '%s\n' "$1" >"$HD_PROJ/.silver-bullet.jso
 hd_happy() {
   local rt="${1:-claude}" root="$HOME/.$1" cache ver="$HD_VER"
   [[ -n "${1:-}" ]] || { rt=claude; root="$HOME/.claude"; }
-  rm -rf "$HOME/.claude" "$HOME/.codex" "$HOME/.cursor" "$HD_PROJ"
+  rm -rf "$HOME/.claude" "$HOME/.codex" "$HD_PROJ"
   case "$rt" in codex) cache="$root/plugins/cache/alo-labs-codex/silver-bullet" ;; *) cache="$root/plugins/cache/alo-labs/silver-bullet" ;; esac
-  mkdir -p "$cache/$ver/hooks" "$cache/$ver/agents/claude" "$cache/$ver/skill-source" "$cache/$ver/cursor-skill-source" "$cache/$ver/commands" "$root/.silver-bullet"
+  mkdir -p "$cache/$ver/hooks" "$cache/$ver/agents/claude" "$cache/$ver/skill-source" "$root/.silver-bullet"
   echo '{}' >"$cache/$ver/hooks/hooks.json"
-  echo x >"$cache/$ver/commands/sb.md"
   ln -s "$cache/$ver" "$cache/current"
   printf '{"plugins":{"silver-bullet@alo-labs":[{"version":"%s","installPath":"%s","gitCommitSha":"%s"}]}}\n' "$ver" "$cache/$ver" "${HD_SHA:-}" >"$root/plugins/installed_plugins.json"
   case "$rt" in
     claude) echo '{"hooks":"silver-bullet"}' >"$root/settings.json" ;;
     codex) echo '[plugins."silver-bullet@alo-labs-codex"]' >"$root/config.toml" ;;
-    cursor) echo '{"hooks":"silver-bullet cursor-hook-bridge.sh"}' >"$root/hooks.json" ;;
   esac
   hd_cfg "{\"sb_initiated\":true,\"config_version\":\"$ver\"}"
   hd_write_sb_md "$HD_PROJ/silver-bullet.md"
   mkdir -p "$HD_PROJ/scripts" "$HD_PROJ/docs/workflows"
   printf '#!/bin/sh\n' >"$HD_PROJ/scripts/workflows.sh"; chmod +x "$HD_PROJ/scripts/workflows.sh"
-  if [[ "$rt" == cursor ]]; then
-    mkdir -p "$HD_PROJ/.cursor/rules"; echo x >"$HD_PROJ/.cursor/rules/silver-orchestrator.mdc"
-  fi
 }
 
 # hd_run VAR=val ... -- doctor args...: run the staged doctor from the project dir

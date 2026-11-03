@@ -133,7 +133,7 @@ def main() -> int:
         "atomic_flows": len(catalog["atomic_flows"]),
         "flow_steps": len(catalog["flow_steps"]),
     }
-    if expected != {"workflows": 26, "atomic_flows": 29, "flow_steps": 118}:
+    if expected != {"workflows": 26, "atomic_flows": 29, "flow_steps": 114}:
         errors.append(f"unexpected catalog totals: {expected}")
 
     if errors:

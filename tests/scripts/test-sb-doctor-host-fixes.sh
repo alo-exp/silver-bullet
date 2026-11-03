@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# sb-doctor.sh --fix repair dispatch (host installers, stack mutex, Cursor agents) against
+# sb-doctor.sh --fix repair dispatch (host installers, stack mutex) against
 # a staged repo (tests/lib/h-doctor-stage.sh). Validators and installers are logging stubs.
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
@@ -13,8 +13,6 @@ hd_happy claude
 # these cases exercise the repair dispatch, so the user's confirmation is given (see test-sb-doctor-reconciler.sh for the refusal)
 C='SILVER_BULLET_RUNTIME=claude SB_DOCTOR_ASSUME_YES=1'
 run() { hd_run $C "$@"; }
-CU='SILVER_BULLET_RUNTIME=cursor SB_DOCTOR_ASSUME_YES=1'
-cu() { hd_run $CU "$@"; }
 CX='SILVER_BULLET_RUNTIME=codex SB_DOCTOR_ASSUME_YES=1'
 cx() { hd_run $CX "$@"; }
 CACHE="$HOME/.claude/plugins/cache/alo-labs/silver-bullet"
@@ -35,7 +33,7 @@ assert_eq "a clean audit without a reconciler needs no fix" "0" "$TL_STATUS"
 assert_not_contains "no repair when everything passes" "$TL_ERR" "--fix running"
 mv "$HD_ST/scripts/reconcile-recommended-tools.off" "$HD_ST/scripts/reconcile-recommended-tools.sh"
 
-# host install scripts run for D13/D14/D16/D18/D19 failures (claude)
+# host install scripts run for D13/D14/D16 failures (claude)
 hd_happy claude
 rm -rf -- "${CACHE:?}/$HD_VER/agents"
 run STUB_RC_SURFACE_CACHE=1 STUB_RC_SURFACE_REPO=1 -- --fix "$HD_PROJ"
@@ -56,18 +54,7 @@ run STUB_RC_SURFACE_CACHE=1 -- --fix "$HD_PROJ"
 assert_not_contains "non-executable installer is skipped" "$(hd_logs)" "install-claude "
 chmod +x "$HD_ST/scripts/install-claude.sh"
 
-# a Cursor install problem outside D4 runs the full Cursor installer
-hd_happy cursor
-rm -f -- "${HOME:?}/.cursor/plugins/cache/alo-labs/silver-bullet/$HD_VER/commands/sb.md"
-cu -- --fix "$HD_PROJ"
-assert_contains "cursor installer announced for D19" "$TL_ERR" "sb-doctor: --fix running $HD_ST/scripts/install-cursor.sh for D19"
-assert_contains "cursor installer ran without arguments" "$(hd_logs)" "install-cursor "
-
-# D4: cursor merges hooks; other hosts run their installer
-hd_happy cursor
-rm -f -- "${HOME:?}/.cursor/hooks.json"
-cu -- --fix "$HD_PROJ"
-assert_contains "cursor D4 merges hooks only" "$(hd_logs)" "install-cursor --merge-hooks-only"
+# D4: hosts run their installer
 hd_happy claude
 echo '{}' >"$HOME/.claude/settings.json"
 run -- --fix "$HD_PROJ"
@@ -96,10 +83,6 @@ run SB_DOCTOR_STUB_HOST_INSTALL="$TL_TMP/host-install2.txt" -- --fix=local "$HD_
 assert_file_absent "local scope skips the seam" "$TL_TMP/host-install2.txt"
 
 # failing installers never abort the repair
-hd_happy cursor
-rm -f -- "${HOME:?}/.cursor/hooks.json"
-cu STUB_RC_INSTALL=1 -- --fix "$HD_PROJ"
-assert_contains "failing cursor hooks merge is tolerated" "$TL_OUT" "re-running checks after --fix"
 hd_happy claude
 echo '{}' >"$HOME/.claude/settings.json"
 run STUB_RC_INSTALL=1 -- --fix "$HD_PROJ"
@@ -145,21 +128,5 @@ echo '{"violations":["double"]}' >"$MUTEX"
 run -- --fix "$HD_PROJ"
 assert_contains "D20 repair without the agentmemory library" "$TL_OUT" "re-running checks after --fix"
 hd_stage
-
-# D21: the agents installer targets the doctored project
-hd_happy cursor
-hd_cfg "{\"sb_initiated\":true,\"config_version\":\"$HD_VER\",\"cursor_sb_agents\":{\"enabled\":true}}"
-cu STUB_RC_AGENTS=1 -- --fix "$HD_PROJ"
-assert_contains "agents fix announced" "$TL_ERR" "sb-doctor: --fix running install-cursor-sb-agents.sh for D21"
-assert_contains "global agents installer flags and root" "$(hd_logs)" "install-cursor-sb-agents --fix --global repo=$HD_PROJ"
-hd_cfg "{\"sb_initiated\":true,\"config_version\":\"$HD_VER\",\"cursor_sb_agents\":{\"enabled\":true,\"agents_install_scope\":\"project\"}}"
-cu STUB_RC_AGENTS=1 -- --fix "$HD_PROJ"
-assert_contains "project agents installer flags" "$(hd_logs)" "install-cursor-sb-agents --fix --project repo=$HD_PROJ"
-cu STUB_RC_AGENTS=1 STUB_RC_CSBA=1 -- --fix "$HD_PROJ"
-assert_contains "failing agents installer is tolerated" "$TL_OUT" "re-running checks after --fix"
-cu STUB_RC_AGENTS=1 -- --fix=local "$HD_PROJ"
-assert_not_contains "local scope skips the agents installer" "$(hd_logs)" "install-cursor-sb-agents"
-cu SB_DOCTOR_STUB_HOST_INSTALL="$TL_TMP/host-install3.txt" STUB_RC_AGENTS=1 -- --fix "$HD_PROJ"
-assert_contains "seam records D21" "$(cat "$TL_TMP/host-install3.txt")" "D21"
 
 tl_results

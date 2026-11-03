@@ -127,21 +127,9 @@ if plugin_display_name != "Silver Bullet":
 if "skills" in manifest:
     bad.append("Codex manifest must not expose plugin skills; SB mirrors picker skills natively under /SB to avoid duplicate /Silver Bullet listings")
 if "commands" in manifest:
-    bad.append("Codex manifest must not expose commands; Cursor owns command stubs and Codex uses the native skill-source mirror")
+    bad.append("Codex manifest must not expose commands; Codex uses the native skill-source mirror")
 
-def is_cursor_plugin_surface(path: Path) -> bool:
-    try:
-        rel = path.relative_to(package_root)
-    except ValueError:
-        return False
-    parts = rel.parts
-    return len(parts) >= 2 and parts[0] == "agents" and parts[1] == "cursor"
-
-
-codex_skill_mds = [
-    p for p in package_root.glob("**/*SKILL.md")
-    if not is_cursor_plugin_surface(p)
-]
+codex_skill_mds = list(package_root.glob("**/*SKILL.md"))
 if codex_skill_mds:
     bad.append("Codex plugin package must not contain picker-discoverable *SKILL.md files")
 if list((package_root / "skill-source").glob("**/SILVER_SOURCE.md")):
@@ -225,21 +213,16 @@ SOURCE_ASK_USER_FILES=(
 )
 
 assert_file_exists "Codex manifest present" "$PACKAGE_ROOT/.codex-plugin/plugin.json"
-assert_file_exists "Cursor manifest present after codex sync" "$PACKAGE_ROOT/.cursor-plugin/plugin.json"
-assert_file_exists "Cursor hooks manifest present after codex sync" "$PACKAGE_ROOT/cursor-hooks.json"
+assert_path_absent "No Cursor manifest after codex sync" "$PACKAGE_ROOT/.cursor-plugin"
+assert_path_absent "No Cursor hooks manifest after codex sync" "$PACKAGE_ROOT/cursor-hooks.json"
 assert_codex_skill_titles_match_picker_namespace "Codex skill titles match Codex picker namespace" "$PACKAGE_ROOT"
 assert_path_absent "Codex package does not expose plugin picker skills directory" "$PACKAGE_ROOT/skills"
 assert_path_absent "Codex package does not expose generated picker skills directory" "$PACKAGE_ROOT/.generated-skills"
 assert_path_absent "Codex package does not expose Claude agent SKILL.md bundle" "$PACKAGE_ROOT/agents/claude"
 assert_path_absent "Codex package does not expose Codex agent SKILL.md bundle under agents/" "$PACKAGE_ROOT/agents/codex"
-assert_file_exists "Cursor package exposes sb slash command stub" "$PACKAGE_ROOT/commands/sb.md"
-assert_path_absent "Cursor package does not ship agents/cursor subagent mirror" "$PACKAGE_ROOT/agents/cursor"
-assert_file_exists "Workspace cursor bundle exposes non-command subagent skill" "$REPO_ROOT/host-bundles/cursor/sb:plan/SKILL.md"
-if grep -q '^name: "sb"$' "$PACKAGE_ROOT/commands/sb.md"; then
-  pass "Cursor sb command stub has kebab-case metadata"
-else
-  fail "Cursor sb command stub has kebab-case metadata"
-fi
+assert_path_absent "Package ships no command stubs (they were Cursor-only)" "$PACKAGE_ROOT/commands"
+assert_path_absent "Package does not ship agents/cursor subagent mirror" "$PACKAGE_ROOT/agents/cursor"
+assert_path_absent "Workspace has no Cursor bundle" "$REPO_ROOT/host-bundles/cursor"
 assert_file_exists "Silver Bullet internal skill router available" "$(skill_file sb)"
 assert_file_exists "Silver Bullet internal init skill available" "$(skill_file sb-init)"
 assert_file_exists "Silver Bullet internal ensure-docs skill available" "$(skill_file sb-ensure-docs)"
@@ -306,30 +289,16 @@ assert_not_contains "Source release skill avoids unsupported gh release --json c
 assert_not_contains "Codex package release skill avoids unsupported gh release --json capture" "--json url" "$(skill_file sb-create-release)"
 assert_contains "Codex skill source uses HOME-expanded state paths" '$HOME/.codex/.silver-bullet/session-init' "$(skill_file sb-init)"
 assert_contains "Codex skill source uses HOME-expanded plugin cache paths" '$HOME/.codex/plugins/installed_plugins.json' "$(skill_file sb-init)"
-# R8-02: plugins/silver-bullet is also the Cursor plugin root. Its shared
-# templates stay host-neutral (the Codex installer expands them in the copy it
-# installs), and Cursor reads its own render, never the Codex one.
+# R8-02: the package templates stay host-neutral (the Codex installer expands them
+# in the copy it installs).
 if diff -r "$REPO_ROOT/templates" "$PACKAGE_ROOT/templates" >/dev/null; then
   pass "Package templates are a byte-identical host-neutral mirror of templates/"
 else
   fail "Package templates are a byte-identical host-neutral mirror of templates/"
 fi
 assert_contains "Package templates keep runtime placeholders" '${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state' "$PACKAGE_ROOT/templates/silver-bullet.md.base"
-CURSOR_SKILL_ROOT="$PACKAGE_ROOT/cursor-skill-source"
-assert_file_exists "Cursor hidden source tree renders the init route" "$CURSOR_SKILL_ROOT/sb-init/SILVER_SOURCE"
-assert_file_exists "Cursor hidden source keeps command-covered routes" "$CURSOR_SKILL_ROOT/sb-feature/SILVER_SOURCE"
-assert_contains "Cursor init source uses the Cursor state dir" '$HOME/.cursor/.silver-bullet/session-init' "$CURSOR_SKILL_ROOT/sb-init/SILVER_SOURCE"
-for cursor_surface in commands cursor-skill-source templates; do
-  assert_not_contains "Cursor surface $cursor_surface has no Codex home paths" '$HOME/.codex' "$PACKAGE_ROOT/$cursor_surface"
-  assert_not_contains "Cursor surface $cursor_surface has no Codex marketplace key" "alo-labs-codex" "$PACKAGE_ROOT/$cursor_surface"
-done
-if grep -l '^title:' "$PACKAGE_ROOT"/commands/*.md >/dev/null 2>&1; then
-  fail "Cursor command stubs carry no Codex picker title"
-else
-  pass "Cursor command stubs carry no Codex picker title"
-fi
-assert_contains "Cursor stubs point at the Cursor source tree" 'cursor-skill-source/sb-feature/SILVER_SOURCE' "$PACKAGE_ROOT/commands/sb-feature.md"
-if [[ -n "$(find "$CURSOR_SKILL_ROOT" "$PACKAGE_SKILL_ROOT" -name 'SKILL.md')" ]]; then
+assert_path_absent "No Cursor hidden source tree" "$PACKAGE_ROOT/cursor-skill-source"
+if [[ -n "$(find "$PACKAGE_SKILL_ROOT" -name 'SKILL.md')" ]]; then
   fail "Hidden source trees hold no picker-discoverable SKILL.md"
 else
   pass "Hidden source trees hold no picker-discoverable SKILL.md"
@@ -371,7 +340,7 @@ fi
 # Missing-rsync preflight: the sync prunes tracked trees before repopulating
 # them, so it must refuse to start rather than leave the checkout gutted.
 # Regression guard — without the preflight this wiped 52 tracked files under
-# plugins/silver-bullet/templates/ plus agents/{codex,cursor}.
+# plugins/silver-bullet/templates/ plus agents/codex.
 _preflight_stub="$(mktemp -d)"
 for _tool in bash env printf command python3 find git jq sed grep mkdir rm cp mv ln readlink dirname basename sort uniq wc tr head tail cat date chmod install; do
   _resolved="$(command -v "$_tool" 2>/dev/null || true)"

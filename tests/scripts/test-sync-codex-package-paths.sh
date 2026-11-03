@@ -27,7 +27,7 @@ snap_dirty() { git -C "$SNAP" status --porcelain --untracked-files=all; }
 # --- full run -------------------------------------------------------------
 # Leftovers the sync must prune.
 mkdir -p "$PKG/.codex-plugin/migrated-command-skills/source-command-x" "$SNAP/agents/codex/old" \
-  "$SNAP/agents/cursor/old" "$PKG/.skill-source.staging.stale" "$PKG/junk-dir" "$PKG/.cursor-skill-source.staging-1"
+  "$PKG/.skill-source.staging.stale" "$PKG/junk-dir" "$PKG/cursor-skill-source"
 printf 'x' >"$PKG/junk-file"
 jq '.version = "0.0.0-stale"' "$PKG/.codex-plugin/plugin.json" >"$TL_TMP/plugin.json" && cp "$TL_TMP/plugin.json" "$PKG/.codex-plugin/plugin.json"
 chmod 600 "$PKG/.codex-plugin/plugin.json"
@@ -40,11 +40,10 @@ assert_eq "manifest version follows package.json" "$(jq -r .version "$SNAP/packa
 assert_eq "manifest is world-readable" "644" "$(stat -c %a "$PKG/.codex-plugin/plugin.json" 2>/dev/null || stat -f %Lp "$PKG/.codex-plugin/plugin.json")"
 assert_file_absent "migrated command skills pruned" "$PKG/.codex-plugin/migrated-command-skills"
 assert_file_absent "legacy agents/codex pruned" "$SNAP/agents/codex"
-assert_file_absent "legacy agents/cursor pruned" "$SNAP/agents/cursor"
 assert_file_absent "stale staging dir pruned" "$PKG/.skill-source.staging.stale"
-assert_file_absent "stale render staging dir pruned" "$PKG/.cursor-skill-source.staging-1"
+assert_file_absent "retired cursor-skill-source dir pruned" "$PKG/cursor-skill-source"
 assert_file_absent "no render lock left inside the package" "$PKG/.skill-source.render.lock"
-assert_file_exists "Cursor hidden sources rendered" "$PKG/cursor-skill-source/sb-feature/SILVER_SOURCE"
+assert_file_exists "Codex hidden sources rendered" "$PKG/skill-source/sb-feature/SILVER_SOURCE"
 assert_file_absent "unknown package dir pruned" "$PKG/junk-dir"
 assert_file_absent "unknown package file pruned" "$PKG/junk-file"
 assert_eq "package entries are relative symlinks" "../../docs" "$(readlink "$PKG/docs")"
@@ -98,14 +97,9 @@ assert_eq "missing package source exits 1" 1 "$TL_STATUS"
 assert_contains "missing package source named" "$TL_ERR" "package source missing: SECURITY.md"
 
 restore SECURITY.md
-rm -f "$SNAP/scripts/sync-cursor-package.sh"
-sync_pkg
-assert_eq "missing cursor sync exits 1" 1 "$TL_STATUS"
-assert_contains "missing cursor sync named" "$TL_ERR" "Cursor package sync script not found: $SNAP/scripts/sync-cursor-package.sh"
 
 # --- lock -------------------------------------------------------------------
 # A held lock times out after 300 one-second waits (sleep is stubbed).
-restore scripts/sync-cursor-package.sh
 mkdir -p "$SNAP/.planning/sb-sync-codex-package.lock.d"
 SLEEP_LOG="$TL_TMP/sleep.log"
 : >"$SLEEP_LOG"

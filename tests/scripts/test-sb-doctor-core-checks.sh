@@ -20,7 +20,7 @@ hd_happy claude
 run -- "$HD_PROJ"
 assert_eq "healthy install exits 0" "0" "$TL_STATUS"
 assert_contains "overall pass" "$TL_OUT" "OVERALL: PASS"
-assert_contains "summary counts" "$TL_OUT" "Silver Bullet doctor: 26 PASS, 1 WARN, 0 FAIL"
+assert_contains "summary counts" "$TL_OUT" "Silver Bullet doctor: 21 PASS, 1 WARN, 0 FAIL"
 assert_contains "D1" "$TL_OUT" "PASS: D1 — jq on PATH (jq-"
 assert_contains "D2" "$TL_OUT" "PASS: D2 — silver-bullet@alo-labs version $HD_VER (install: $HOME/.claude/plugins/cache/alo-labs/silver-bullet/$HD_VER, registry: $REG)"
 assert_contains "D3" "$TL_OUT" "PASS: D3 — current symlink → $HOME/.claude/plugins/cache/alo-labs/silver-bullet/$HD_VER"
@@ -196,20 +196,6 @@ assert_contains "CODEX_HOME config.toml is audited" "$TL_OUT" "PASS: D4 — Code
 rm -f -- "${HOME:?}/.codex/config.toml"
 cx -- "$HD_PROJ"
 assert_contains "codex config.toml missing" "$TL_OUT" "FAIL: D4 — Codex config.toml missing SB hook entries"
-hd_happy cursor
-CU=(SILVER_BULLET_RUNTIME=cursor)
-cu() { hd_run "${CU[@]}" "$@"; }
-cu -- "$HD_PROJ"
-assert_contains "cursor hooks via the bridge" "$TL_OUT" "PASS: D4 — Cursor hooks.json references silver-bullet via cursor-hook-bridge.sh"
-echo '{"hooks":"silver-bullet"}' >"$HOME/.cursor/hooks.json"
-cu -- "$HD_PROJ"
-assert_contains "cursor hooks without the bridge" "$TL_OUT" "FAIL: D4 — Cursor hooks.json has silver-bullet entries without cursor-hook-bridge.sh"
-echo '{}' >"$HOME/.cursor/hooks.json"
-cu -- "$HD_PROJ"
-assert_contains "cursor hooks without silver-bullet" "$TL_OUT" "FAIL: D4 — Cursor hooks.json missing SB hook entries"
-rm -f -- "${HOME:?}/.cursor/hooks.json"
-cu -- "$HD_PROJ"
-assert_contains "cursor hooks.json missing" "$TL_OUT" "FAIL: D4 — Cursor hooks.json missing SB hook entries"
 hd_run SILVER_BULLET_RUNTIME=opencode -- "$HD_PROJ"
 assert_contains "unsupported host runtime" "$TL_OUT" "FAIL: D4 — unsupported host runtime: opencode"
 assert_contains "foreign-host checks are N/A" "$TL_OUT" "PASS: D13 — cross-host contamination check N/A (host=opencode)"
@@ -289,15 +275,6 @@ run -- "$HD_PROJ"
 assert_contains "plugin template missing" "$TL_OUT" "WARN: D7 — plugin silver-bullet.md template not found; skipped"
 hd_stage
 hd_happy claude
-
-# ---------- D8: Cursor rule ----------
-hd_happy cursor
-rm -f -- "${HD_PROJ:?}/.cursor/rules/silver-orchestrator.mdc"
-cu -- "$HD_PROJ"
-assert_contains "cursor orchestrator rule missing" "$TL_OUT" "FAIL: D8 — .cursor/rules/silver-orchestrator.mdc missing"
-echo x >"$HD_PROJ/.cursor/rules/silver-orchestrator.mdc"
-cu -- "$HD_PROJ"
-assert_contains "cursor orchestrator rule present" "$TL_OUT" "PASS: D8 — .cursor/rules/silver-orchestrator.mdc present"
 
 # ---------- D12: state directory ----------
 hd_happy claude

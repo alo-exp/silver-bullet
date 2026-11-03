@@ -16,23 +16,17 @@ rt_init_paths
 source "$HR_RTLIB/probe-rtk.sh"
 # shellcheck source=/dev/null
 source "$HR_RTLIB/probe-leanctx.sh"
-export RT_HOST=cursor RT_SKIP_VENDOR_DOCTOR=1
+export RT_HOST=claude RT_SKIP_VENDOR_DOCTOR=1
 hr_bin sleep 'exit 0'
 
 PI_DIR="$HOME/.pi/agent"
 CODEX_HOME_DIR="$(sb_runtime_codex_home)"
-mkdir -p "$HOME/.cursor" "$HOME/.claude" "$CODEX_HOME_DIR" "$HOME/.config/opencode/plugins" "$PI_DIR/extensions/silver-bullet-five-tool-stack" "$PI_DIR/extensions/pi-lean-ctx"
-CURSOR_HOOKS="$HOME/.cursor/hooks.json"
+mkdir -p "$HOME/.claude" "$CODEX_HOME_DIR" "$HOME/.config/opencode/plugins" "$PI_DIR/extensions/silver-bullet-five-tool-stack" "$PI_DIR/extensions/pi-lean-ctx"
+CLAUDE_HOOKS="$HOME/.claude/settings.json"
 H() { RT_HOST="$1"; }
 
 # ===================================================================== RTK
 # shell owner per host
-rm -f "$CURSOR_HOOKS"
-assert_eq "rtk owner cursor: no hooks.json" "1" "$(rc_of rt_probe_rtk_shell_owner)"
-echo '{"hooks":{"preToolUse":[{"command":"rtk hook cursor"}]}}' >"$CURSOR_HOOKS"
-assert_eq "rtk owner cursor: hook present" "0" "$(rc_of rt_probe_rtk_shell_owner)"
-echo '{}' >"$CURSOR_HOOKS"
-assert_eq "rtk owner cursor: hook absent" "1" "$(rc_of rt_probe_rtk_shell_owner)"
 H claude
 assert_eq "rtk owner claude: no settings" "1" "$(rc_of rt_probe_rtk_shell_owner)"
 echo '{"hooks":"rtk hook claude"}' >"$HOME/.claude/settings.json"
@@ -57,12 +51,8 @@ H goose
 assert_eq "rtk owner: other hosts" "1" "$(rc_of rt_probe_rtk_shell_owner)"
 
 # lean-ctx rewrite absent
-H cursor; rm -f "$CURSOR_HOOKS"
-assert_eq "rewrite absent: cursor without hooks.json" "0" "$(rc_of rt_probe_rtk_leanctx_rewrite_absent)"
-echo '{"hooks":{"preToolUse":[{"command":"lean-ctx hook rewrite"}]}}' >"$CURSOR_HOOKS"
-assert_eq "rewrite present: cursor" "1" "$(rc_of rt_probe_rtk_leanctx_rewrite_absent)"
-echo '{}' >"$CURSOR_HOOKS"
-assert_eq "rewrite absent: cursor clean" "0" "$(rc_of rt_probe_rtk_leanctx_rewrite_absent)"
+H claude; rm -f "$CLAUDE_HOOKS"
+assert_eq "rewrite absent: claude without hooks.json" "0" "$(rc_of rt_probe_rtk_leanctx_rewrite_absent)"
 H opencode; rm -f "$HOME/.config/opencode/plugins/rtk.ts"
 assert_eq "rewrite absent: opencode without artifact" "0" "$(rc_of rt_probe_rtk_leanctx_rewrite_absent)"
 echo 'rtk and lean-ctx rewrite' >"$HOME/.config/opencode/plugins/rtk.ts"
@@ -87,17 +77,6 @@ assert_eq "rtk before cm: pi without ctx_shell disabled" "1" "$(rc_of rt_probe_r
 echo '{"routeShell":false,"disableTools":["ctx_shell"]}' >"$PI_LEAN"
 assert_eq "rtk before cm: pi ok" "0" "$(rc_of rt_probe_rtk_before_cm)"
 H claude; assert_eq "rtk before cm: hosts without ordering" "0" "$(rc_of rt_probe_rtk_before_cm)"
-H cursor
-rm -f "$CURSOR_HOOKS"
-assert_eq "rtk before cm: cursor without hooks.json" "1" "$(rc_of rt_probe_rtk_before_cm)"
-echo '{"hooks":{"preToolUse":[{"command":"x rtk hook cursor"},{"command":"context-mode hook cursor pretooluse"}]}}' >"$CURSOR_HOOKS"
-assert_eq "rtk before cm: rtk first" "0" "$(rc_of rt_probe_rtk_before_cm)"
-echo '{"hooks":{"preToolUse":[{"command":"context-mode hook cursor pretooluse"},{"command":"rtk hook cursor"}]}}' >"$CURSOR_HOOKS"
-assert_eq "rtk before cm: rtk after context-mode" "1" "$(rc_of rt_probe_rtk_before_cm)"
-echo '{"hooks":{"preToolUse":[{"command":"rtk hook cursor"}]}}' >"$CURSOR_HOOKS"
-assert_eq "rtk before cm: only rtk" "0" "$(rc_of rt_probe_rtk_before_cm)"
-echo '{"hooks":{"preToolUse":[{"command":"context-mode hook cursor pretooluse"}]}}' >"$CURSOR_HOOKS"
-assert_eq "rtk before cm: only context-mode" "1" "$(rc_of rt_probe_rtk_before_cm)"
 
 # vendor doctor
 unset RT_SKIP_VENDOR_DOCTOR
@@ -134,20 +113,16 @@ export RT_SKIP_VENDOR_DOCTOR=1
 # probe table
 hr_bin rtk 'case "$*" in "gain --help") exit 0;; --version) echo "rtk ${RTK_VER:-0.42.5}";; *) exit 0;; esac'
 prtk() { hr_state "$(rt_probe_rtk)"; }
-H goose; assert_eq "rtk: unsupported host" "unsupported|none||false" "$(prtk)"; H cursor
+H goose; assert_eq "rtk: unsupported host" "unsupported|none||false" "$(prtk)"; H claude
 hr_consent rtk=disabled; assert_eq "rtk: disabled" "disabled|none||false" "$(prtk)"
 hr_consent; assert_eq "rtk: pending" "pending|none||false" "$(prtk)"
 hr_consent rtk=suspended; assert_eq "rtk: suspended" "suspended|none||false" "$(prtk)"
 hr_consent rtk=enabled
 assert_eq "rtk: cli missing" "failed|none|cli_missing|true" "$(PATH="$(hr_path_without rtk)" prtk)"
 assert_eq "rtk: version too old" "repairable|none|version_mismatch,min_version|true" "$(RTK_VER=0.30.0 prtk)"
-rm -f "$CURSOR_HOOKS"
+rm -f "$CLAUDE_HOOKS"
 assert_eq "rtk: shell hook missing" "repairable|none|shell_hook_missing|true" "$(prtk)"
-echo '{"hooks":{"preToolUse":[{"command":"rtk hook cursor"},{"command":"lean-ctx hook rewrite"}]}}' >"$CURSOR_HOOKS"
-assert_eq "rtk: lean-ctx rewrite present" "repairable|none|leanctx_rewrite_present|true" "$(prtk)"
-echo '{"hooks":{"preToolUse":[{"command":"context-mode hook cursor pretooluse"},{"command":"rtk hook cursor"}]}}' >"$CURSOR_HOOKS"
-assert_eq "rtk: hook order wrong" "repairable|none|hook_order_wrong|true" "$(prtk)"
-echo '{"hooks":{"preToolUse":[{"command":"rtk hook cursor"}]}}' >"$CURSOR_HOOKS"
+echo '{"hooks":{"preToolUse":[{"command":"rtk hook claude"}]}}' >"$CLAUDE_HOOKS"
 assert_eq "rtk: ready (vendor doctor skipped by flag)" "ready|full|vendor_skip|false" "$(prtk)"
 unset RT_SKIP_VENDOR_DOCTOR
 assert_eq "rtk: ready (doctor unavailable)" "ready|full|vendor_skip|false" "$(prtk)"
@@ -164,24 +139,20 @@ assert_eq "rtk repair: not authorized" '{"actions":[],"failures":["mutation_not_
 export RT_MODE=apply RT_ENTRY_POINT=init RT_SCOPE=all
 : >"$HR_LOG"
 out="$(rt_repair_rtk 2>/dev/null)"
-assert_eq "rtk repair (cursor): optimizer and hook patch" '{"actions":["optimize_rtk_context_mode","patch_hooks"],"failures":[],"restart_required":false}' "$(jq -c . <<<"$out")"
-assert_contains "rtk repair: optimizer arguments" "$(cat "$HR_LOG")" "optimize-rtk-context-mode --host cursor --project-root $HR_PROJ --skip-cm-doctor | batch= progress="
-assert_contains "rtk repair: only rtk patched" "$(cat "$HR_LOG")" "RT_PATCH_RTK=1"
+assert_eq "rtk repair (claude): optimizer only" '{"actions":["optimize_rtk_context_mode"],"failures":[],"restart_required":false}' "$(jq -c . <<<"$out")"
+assert_contains "rtk repair: optimizer arguments" "$(cat "$HR_LOG")" "optimize-rtk-context-mode --host claude --project-root $HR_PROJ --skip-cm-doctor | batch= progress="
 : >"$HR_LOG"
 out="$(RT_CROSS_TOOL_BATCH=1 rt_repair_rtk 2>/dev/null)"
 assert_eq "rtk repair (batch): optimizer only" '{"actions":["optimize_rtk_context_mode"],"failures":[],"restart_required":false}' "$(jq -c . <<<"$out")"
 assert_contains "rtk repair (batch): nested installer guarded and rtk init skipped" "$(cat "$HR_LOG")" "--skip-cm-doctor --skip-rtk-init | batch=1 progress=1"
-out="$(HR_SH_RC_optimize_rtk_context_mode=1 HR_PY_RC_patch_hooks=1 rt_repair_rtk 2>/dev/null)"
-assert_eq "rtk repair: failures recorded" '{"actions":[],"failures":["optimize_rtk_failed","patch_hooks_failed"],"restart_required":false}' "$(jq -c . <<<"$out")"
+out="$(HR_SH_RC_optimize_rtk_context_mode=1 rt_repair_rtk 2>/dev/null)"
+assert_eq "rtk repair: failures recorded" '{"actions":[],"failures":["optimize_rtk_failed"],"restart_required":false}' "$(jq -c . <<<"$out")"
 out="$(HR_SH_RC_optimize_rtk_context_mode=1 RT_CROSS_TOOL_BATCH=1 rt_repair_rtk 2>/dev/null)"
 assert_eq "rtk repair (batch): optimizer failure" '{"actions":[],"failures":["optimize_rtk_failed"],"restart_required":false}' "$(jq -c . <<<"$out")"
 H claude
-out="$(rt_repair_rtk 2>/dev/null)"
-assert_eq "rtk repair (claude): no cursor hook patch" '{"actions":["optimize_rtk_context_mode"],"failures":[],"restart_required":false}' "$(jq -c . <<<"$out")"
-H cursor
-mv "$HR_STAGE/scripts/optimize-rtk-context-mode.sh" "$HR_STAGE/scripts/opt.off"; mv "$HR_STAGE/scripts/lib/global-toolstack/patch-hooks.py" "$HR_STAGE/scripts/lib/global-toolstack/patch-hooks.off"
+mv "$HR_STAGE/scripts/optimize-rtk-context-mode.sh" "$HR_STAGE/scripts/opt.off"
 assert_eq "rtk repair: nothing to run without helper scripts" '{"actions":[],"failures":[],"restart_required":false}' "$(rt_repair_rtk 2>/dev/null | jq -c .)"
-mv "$HR_STAGE/scripts/opt.off" "$HR_STAGE/scripts/optimize-rtk-context-mode.sh"; mv "$HR_STAGE/scripts/lib/global-toolstack/patch-hooks.off" "$HR_STAGE/scripts/lib/global-toolstack/patch-hooks.py"
+mv "$HR_STAGE/scripts/opt.off" "$HR_STAGE/scripts/optimize-rtk-context-mode.sh"
 RT_MODE=apply
 
 # ================================================================== LeanCTX
@@ -191,8 +162,7 @@ write_leanctx() { # <host> <overlap=1|0> <prefix=1|0>
     (if $pre == "1" then {LEANCTX_MCP_TOOL_PREFIX:"lctx_"} else {} end)
     + (if $ov == "1" then {LEANCTX_DISABLE_SHELL_MCP:"1",LEANCTX_DISABLE_SANDBOX_MCP:"1",LEANCTX_DISABLE_FETCH_MCP:"1",LEANCTX_DISABLE_FTS:"1"} else {} end)')"
   case "$host" in
-    cursor) jq -n --argjson e "$env_json" '{mcpServers:{leanctx:{command:"lean-ctx",env:$e}}}' >"$HOME/.cursor/mcp.json" ;;
-    claude) jq -n --argjson e "$env_json" '{mcpServers:{"lean-ctx":{command:"lean-ctx",env:$e}}}' >"$HOME/.claude.json" ;;
+    claude) jq -n --argjson e "$env_json" '{mcpServers:{leanctx:{command:"lean-ctx",env:$e}}}' >"$HOME/.claude.json" ;;
     opencode) jq -n --argjson e "$env_json" '{mcp:{leanctx:{environment:$e}}}' >"$HOME/.config/opencode/opencode.json" ;;
     codex)
       { echo '[mcp_servers.leanctx]'; echo 'command = "lean-ctx"'
@@ -202,8 +172,8 @@ write_leanctx() { # <host> <overlap=1|0> <prefix=1|0>
       echo '{"servers":{"leanctx":{"enabled":true}}}' >"$PI_DIR/extensions/silver-bullet-five-tool-stack/config.json" ;;
   esac
 }
-rm -f "$HOME/.cursor/mcp.json" "$HOME/.claude.json" "$CODEX_HOME_DIR/config.toml" "$HOME/.config/opencode/opencode.json" "$PI_LEAN"
-for h in cursor claude codex opencode pi; do
+rm -f "$HOME/.claude.json" "$CODEX_HOME_DIR/config.toml" "$HOME/.config/opencode/opencode.json" "$PI_LEAN"
+for h in claude codex opencode pi; do
   H "$h"
   assert_eq "leanctx mcp file ($h)" "$(rt_host_mcp_config_path "$h")" "$(rt_leanctx_mcp_file)"
   assert_eq "leanctx mcp ($h): not configured" "1" "$(rc_of rt_probe_leanctx_mcp)"
@@ -219,7 +189,7 @@ for h in cursor claude codex opencode pi; do
   assert_eq "leanctx prefix ($h): missing" "1" "$(rc_of rt_probe_leanctx_lctx_prefix)"
   assert_eq "leanctx overlaps ($h): enabled" "1" "$(rc_of rt_probe_leanctx_overlaps_disabled)"
 done
-H cursor; assert_eq "leanctx env: empty key" "1" "$(rc_of rt_leanctx_mcp_env "")"
+H claude; assert_eq "leanctx env: empty key" "1" "$(rc_of rt_leanctx_mcp_env "")"
 H pi; rm -f "$PI_LEAN"; assert_eq "leanctx env (pi): no extension config" "1" "$(rc_of rt_leanctx_mcp_env LEANCTX_X)"
 H goose; assert_eq "leanctx mcp: other hosts" "1" "$(rc_of rt_probe_leanctx_mcp)"
 H pi; write_leanctx pi 1 1
@@ -229,9 +199,9 @@ rm -f "$PI_LEAN"; assert_eq "leanctx overlaps (pi): no config" "1" "$(rc_of rt_p
 
 # duplicate mcp keys
 dup() { rc_of rt_probe_leanctx_duplicate_mcp; }
-H cursor; rm -f "$HOME/.cursor/mcp.json"; assert_eq "duplicates: no file" "1" "$(dup)"
-echo '{"mcpServers":{"leanctx":{},"lean-ctx":{}}}' >"$HOME/.cursor/mcp.json"; assert_eq "duplicates (cursor): both keys" "0" "$(dup)"
-echo '{"mcpServers":{"leanctx":{}}}' >"$HOME/.cursor/mcp.json"; assert_eq "duplicates (cursor): single key" "1" "$(dup)"
+H claude; rm -f "$HOME/.claude.json"; assert_eq "duplicates: no file" "1" "$(dup)"
+echo '{"mcpServers":{"leanctx":{},"lean-ctx":{}}}' >"$HOME/.claude.json"; assert_eq "duplicates (claude): both keys" "0" "$(dup)"
+echo '{"mcpServers":{"leanctx":{}}}' >"$HOME/.claude.json"; assert_eq "duplicates (claude): single key" "1" "$(dup)"
 H codex; printf '[mcp_servers.leanctx]\n[mcp_servers.lean-ctx]\n' >"$CODEX_HOME_DIR/config.toml"; assert_eq "duplicates (codex): both tables" "0" "$(dup)"
 printf '[mcp_servers.leanctx]\n' >"$CODEX_HOME_DIR/config.toml"; assert_eq "duplicates (codex): single table" "1" "$(dup)"
 H opencode; echo '{"mcp":{"leanctx":{},"user-lean-ctx":{}}}' >"$HOME/.config/opencode/opencode.json"; assert_eq "duplicates (opencode): both keys" "0" "$(dup)"
@@ -296,23 +266,23 @@ export RT_SKIP_VENDOR_DOCTOR=1
 RT_MODE=verify
 hr_bin lean-ctx 'case "$1" in --version) echo "lean-ctx ${LC_VER:-3.12.0}";; esac; exit 0'
 plc() { hr_state "$(rt_probe_leanctx)"; }
-H goose; assert_eq "leanctx: unsupported host" "unsupported|none||false" "$(plc)"; H cursor
+H goose; assert_eq "leanctx: unsupported host" "unsupported|none||false" "$(plc)"; H claude
 hr_consent leanctx=disabled; assert_eq "leanctx: disabled" "disabled|none||false" "$(plc)"
 hr_consent; assert_eq "leanctx: pending" "pending|none||false" "$(plc)"
 hr_consent leanctx=suspended; assert_eq "leanctx: suspended" "suspended|none||false" "$(plc)"
 hr_consent leanctx=enabled
 assert_eq "leanctx: cli missing" "failed|none|cli_missing|true" "$(PATH="$(hr_path_without lean-ctx)" plc)"
-echo '{"mcpServers":{"leanctx":{},"lean-ctx":{}}}' >"$HOME/.cursor/mcp.json"
+echo '{"mcpServers":{"leanctx":{},"lean-ctx":{}}}' >"$HOME/.claude.json"
 assert_eq "leanctx: duplicate keys" "failed|none|duplicate_mcp_keys,duplicate_key|true" "$(plc)"
-write_leanctx cursor 1 1
+write_leanctx claude 1 1
 assert_eq "leanctx: version too old" "repairable|none|min_version|true" "$(LC_VER=3.1.0 plc)"
-rm -f "$HOME/.cursor/mcp.json"
+rm -f "$HOME/.claude.json"
 assert_eq "leanctx: mcp not configured" "repairable|partial|mcp_not_configured|true" "$(plc)"
-write_leanctx cursor 1 0
+write_leanctx claude 1 0
 assert_eq "leanctx: prefix missing" "repairable|none|lctx_prefix_missing|true" "$(plc)"
-write_leanctx cursor 0 1
+write_leanctx claude 0 1
 assert_eq "leanctx: overlaps enabled" "repairable|none|overlap_surfaces_enabled|true" "$(plc)"
-write_leanctx cursor 1 1
+write_leanctx claude 1 1
 assert_eq "leanctx: ready (doctor skipped by flag)" "ready|full|vendor_skip|false" "$(plc)"
 unset RT_SKIP_VENDOR_DOCTOR
 hr_bin lean-ctx 'case "$*" in --version) echo "lean-ctx 3.12.0";; "doctor --help") echo usage;; doctor*) exit "${LC_DOC_RC:-0}";; esac'
@@ -330,7 +300,7 @@ export RT_MODE=apply
 : >"$HR_LOG"
 out="$(rt_repair_leanctx 2>/dev/null)"
 assert_eq "leanctx repair: installer ran" '{"actions":["install_leanctx_sb"],"failures":[],"restart_required":true}' "$(jq -c . <<<"$out")"
-assert_contains "leanctx repair: installer arguments" "$(cat "$HR_LOG")" "install-leanctx-sb --host cursor --project-root $HR_PROJ |"
+assert_contains "leanctx repair: installer arguments" "$(cat "$HR_LOG")" "install-leanctx-sb --host claude --project-root $HR_PROJ |"
 : >"$HR_LOG"; RT_CROSS_TOOL_BATCH=1 rt_repair_leanctx >/dev/null 2>&1
 assert_contains "leanctx repair (batch): merge skipped" "$(cat "$HR_LOG")" "--skip-merge"
 out="$(HR_SH_RC_install_leanctx_sb=1 rt_repair_leanctx 2>/dev/null)"
