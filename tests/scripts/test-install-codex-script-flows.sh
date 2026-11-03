@@ -148,4 +148,26 @@ d = tomllib.load(open(sys.argv[1], "rb"))
 print(int(d["plugins"]["silver-bullet@alo-labs-codex"]["enabled"]) + 0 * len(d["profiles"]))' "$CFG")"
 done
 
+# ---- a full install repairs SB's duplicated trust tables, and keeps the user's original backup
+fresh
+SBK='silver-bullet@alo-labs-codex:hooks/hooks.json:pre_tool_use:0:0'
+printf '# ORIGINAL\n[hooks.state."%s"]\ntrusted_hash = "sha256:a"\n[hooks.state]\n[hooks.state."%s"]\ntrusted_hash = "sha256:b"\n' "$SBK" "$SBK" >"$CFG"
+cp "$CFG" "$TL_TMP/original.toml"
+# the run start is observable: with `date +%s` reporting 1000 s ago, a backup made 500 s ago belongs to
+# this run and is kept; without the installer's export the library would take its own start (now)
+printf 'STALE-BUT-THIS-RUN\n' >"$CFG.sb-backup"
+touch -d '500 seconds ago' "$CFG.sb-backup" 2>/dev/null || touch -t "$(date -v-500S +%Y%m%d%H%M.%S)" "$CFG.sb-backup"
+tl_stub date 'if [[ "${1:-}" == "+%s" ]]; then echo $(( $(/bin/date +%s) - 1000 )); else exec /bin/date "$@"; fi'
+run_install "$PROJ" HOME="$CH" -- --public-release
+assert_eq "a config with SB's duplicated trust tables installs" 0 "$TL_STATUS"
+assert_contains "the duplicated tables were repaired first" "$TL_ERR" "removed Silver Bullet hook-trust tables declared twice"
+assert_eq "the repaired config is valid TOML with one trust table" 1 "$(python3 -c 'import sys
+try:
+    import tomllib
+except ImportError:
+    from pip._vendor import tomli as tomllib
+d = tomllib.load(open(sys.argv[1], "rb"))
+print(len(d["hooks"]["state"]))' "$CFG")"
+assert_eq "the installer exports its run start: the earlier backup of this run is kept" "STALE-BUT-THIS-RUN" "$(<"$CFG.sb-backup")"
+
 tl_results
