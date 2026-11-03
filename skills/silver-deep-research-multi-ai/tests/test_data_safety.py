@@ -326,6 +326,28 @@ class CliOutputRootTests(_Tmp):
             path.write_text(json.dumps({"category": "old topic", "auto_assumed": True, **edit}), encoding="utf-8")
             self.assertFalse(cli._generated_for_old_query(path, "new topic"), edit)
 
+    def test_force_for_the_same_query_keeps_a_rename_only_or_note_only_edit(self) -> None:
+        for edit in ({"category": "Event streaming"}, {"note": "mine"}, {"research_type": "solution-compare"}):
+            self.tearDown()
+            self.setUp()
+            self.put("run_manifest.json", {"workflow_id": "WF-SILVER-DEEP-RESEARCH-MULTI-AI", "run_id": "run-old"})
+            self.put("need_profile.json", {"category": "Event streaming platforms", "auto_assumed": True, **edit})
+            self.put("scope.md", "# Research scope\n\nResearch topic: Event streaming platforms\n")
+            with mock.patch.object(cli.Path, "cwd", return_value=self.base):
+                self._main(["Event streaming platforms", "--output-root", str(self.root), "--force"])
+            profile = json.loads((self.root / "need_profile.json").read_text(encoding="utf-8"))
+            self.assertEqual({k: profile[k] for k in edit}, edit)
+
+    def test_the_recorded_manifest_query_also_identifies_the_same_query(self) -> None:
+        self.put("run_manifest.json", {"workflow_id": "WF-SILVER-DEEP-RESEARCH-MULTI-AI", "query": "q1"})
+        self.put("need_profile.json", {"category": "mine", "auto_assumed": True})
+        self.assertTrue(cli._same_query(self.root, "q1"))
+        self.assertFalse(cli._same_query(self.root, "q2"))
+        (self.root / "run_manifest.json").write_text("{nope", encoding="utf-8")
+        self.assertFalse(cli._same_query(self.root, "q1"))
+        (self.root / "run_manifest.json").unlink()
+        self.assertFalse(cli._same_query(self.root, "q1"))
+
     def test_main_reports_carried_and_skipped_inputs(self) -> None:
         self.put("run_manifest.json", {"workflow_id": "WF-SILVER-DEEP-RESEARCH-MULTI-AI", "run_id": "run-old"})
         self.put("need_profile.json", {"category": "old", "auto_assumed": True, "must_haves": ["SSO"]})
