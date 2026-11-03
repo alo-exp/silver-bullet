@@ -171,11 +171,6 @@
             "graphify codex install --project"
           ]
         },
-        "cursor": {
-          "post_index": [
-            "graphify cursor install"
-          ]
-        },
         "opencode": {
           "pre_index": [
             "graphify install --project --platform opencode"
@@ -201,7 +196,7 @@
           "post_index": []
         }
       },
-      "benefits_summary": "Scoped retrieval saves tokens; team-shared knowledge graph indexes code and docs; portable across Claude, Codex, Cursor, OpenCode, Goose (Pi), and Hermes agents.",
+      "benefits_summary": "Scoped retrieval saves tokens; team-shared knowledge graph indexes code and docs; portable across Claude, Codex, OpenCode, Goose (Pi), and Hermes agents.",
       "graph_path": "graphify-out/graph.json",
       "query_ttl_seconds": 1800,
       "query_budget": 2000,
@@ -236,12 +231,6 @@
           ],
           "post_index": [
             "agentmemory connect codex --with-hooks"
-          ]
-        },
-        "cursor": {
-          "pre_index": [],
-          "post_index": [
-            "Verify agentmemory MCP is configured in ~/.cursor/mcp.json (see docs/AGENTMEMORY.md)"
           ]
         },
         "opencode": {
@@ -298,12 +287,6 @@
           ],
           "post_index": []
         },
-        "cursor": {
-          "pre_index": [
-            "Merge alumnium MCP into ~/.cursor/mcp.json per docs/ALUMNIUM.md"
-          ],
-          "post_index": []
-        },
         "codex": {
           "pre_index": [
             "Merge [mcp_servers.alumnium] into ~/.codex/config.toml per docs/ALUMNIUM.md"
@@ -332,14 +315,6 @@
             "rtk init -g"
           ],
           "post_index": []
-        },
-        "cursor": {
-          "pre_index": [
-            "rtk init -g --agent cursor"
-          ],
-          "post_index": [
-            "bash scripts/optimize-rtk-context-mode.sh --host cursor"
-          ]
         },
         "codex": {
           "pre_index": [
@@ -385,15 +360,6 @@
           ],
           "post_index": [
             "Restart Claude Code after shared MCP configuration changes"
-          ]
-        },
-        "cursor": {
-          "pre_index": [
-            "npm install -g context-mode",
-            "bash scripts/optimize-rtk-context-mode.sh --host cursor"
-          ],
-          "post_index": [
-            "Restart Cursor after MCP/hook merge"
           ]
         },
         "codex": {
@@ -444,12 +410,6 @@
         "injection_detection": true
       },
       "platform_install_commands": {
-        "cursor": {
-          "pre_index": [
-            "bash scripts/install-leanctx-sb.sh --host cursor --project-root \"$(pwd)\""
-          ],
-          "post_index": []
-        },
         "claude": {
           "pre_index": [
             "bash scripts/install-leanctx-sb.sh --host claude --project-root \"$(pwd)\""
@@ -607,27 +567,6 @@
     ],
     "stale_lock_ttl_seconds": 1800,
     "delegation_timeout_seconds": 1200
-  },
-  "cursor_sb_agents": {
-    "enabled": true,
-    "enabled_by_user": null,
-    "selected_models": [
-      "composer-2.5",
-      "grok-4.5"
-    ],
-    "effort_levels": [
-      "medium",
-      "high",
-      "xhigh"
-    ],
-    "include_fast": false,
-    "include_max": false,
-    "agent_name_prefix": "sb",
-    "catalog_source": "agent-models+docs",
-    "catalog_fetched_at": null,
-    "agents_install_status": "pending",
-    "agents_install_scope": null,
-    "enforcement_suspended": false
   },
   "enterprise_policy": {
     "_comment": "Advisory profile scaffolding — session-start injects recommended session_mode_default; clarify_auto/deploy/evidence gates are runtime handoff TODO (site/help/concepts/enterprise-policy-profiles.html).",

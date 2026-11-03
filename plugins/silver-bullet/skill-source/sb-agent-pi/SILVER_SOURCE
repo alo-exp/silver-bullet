@@ -1,7 +1,7 @@
 ---
 name: "sb:agent-pi"
 title: "Agent Pi"
-description: On-demand parent-supervised delegation of a single real task to Pi CLI as a subagent — briefings, checkpoints, failure escalation, and completion evidence. Use when the host agent (Cursor, Codex, or Claude parent) should supervise while Pi executes via pi -p in a target project CWD. Not for enterprise E2E matrix runs.
+description: On-demand parent-supervised delegation of a single real task to Pi CLI as a subagent — briefings, checkpoints, failure escalation, and completion evidence. Use when the host agent (Codex or Claude parent) should supervise while Pi executes via pi -p in a target project CWD. Not for enterprise E2E matrix runs.
 argument-hint: "<task brief> [--work-dir <path>] [--log <path>] [--interaction-mode auto|interactive|non-interactive] [--checkpoint <n>]"
 user-invocable: true
 version: 0.1.0
@@ -9,7 +9,7 @@ version: 0.1.0
 
 **Interaction modes:** `--interaction-mode auto|interactive|non-interactive` (default `auto`). Permission `--mode` remains `permissive|strict`. Spec: [`docs/specs/AGENT-DELEGATION-INTERACTION-MODES.md`](../../docs/specs/AGENT-DELEGATION-INTERACTION-MODES.md).
 
-**Pinned NI fast path:** `--interaction-mode non-interactive` (or `--non-interactive` / `--use-print` / `--use-exec`) writes `mode.json` `{requested, classified:null, resolved:non-interactive, reason:[pin]}` and execs the native one-shot CLI with no classifier, D3/TUI probe, D4, recommended-tools preflight, quota-retry, or tail-idle watcher. Re-enable wrappers with `--quota-retry` / `AGENT_*_QUOTA_RETRY_MAX` and existing idle env. `auto` still runs the full resolver. Interactive is one native CLI or PTY (`pi` without `-p`; `cursor-agent` without `--print` when the CLI exists).
+**Pinned NI fast path:** `--interaction-mode non-interactive` (or `--non-interactive` / `--use-print` / `--use-exec`) writes `mode.json` `{requested, classified:null, resolved:non-interactive, reason:[pin]}` and execs the native one-shot CLI with no classifier, D3/TUI probe, D4, recommended-tools preflight, quota-retry, or tail-idle watcher. Re-enable wrappers with `--quota-retry` / `AGENT_*_QUOTA_RETRY_MAX` and existing idle env. `auto` still runs the full resolver. Interactive is one native CLI or PTY (`pi` without `-p`).
 
 
 # /sb:agent-pi — Pi CLI Subagent Delegation
@@ -18,7 +18,7 @@ On-demand, **single-task** supervision model: the **host parent** plans, briefs,
 
 **Contrast with Sidekick:** Sidekick is session-persistent (quality gates, cross-session advisor). This skill activates **per task** and tears down when the task completes or escalates.
 
-**Contrast with `/sb:agent-codex`, `/sb:agent-cursor`, `/sb:agent-claude`, and `/sb:agent-opencode`:** Multi-host on-demand delegation siblings. Use **agent-pi** when Pi CLI (`pi -p`) is the intended executor with MiMo V2.5 via opencode-go; use **agent-opencode** for OpenCode CLI (`opencode run`); use **agent-claude** for Claude Code TUI; use **agent-codex** for Codex CLI; use **agent-cursor** for Cursor CLI.
+**Contrast with `/sb:agent-codex`, `/sb:agent-claude`, and `/sb:agent-opencode`:** Multi-host on-demand delegation siblings. Use **agent-pi** when Pi CLI (`pi -p`) is the intended executor with MiMo V2.5 via opencode-go; use **agent-opencode** for OpenCode CLI (`opencode run`); use **agent-claude** for Claude Code TUI; use **agent-codex** for Codex CLI.
 
 **Contrast with enterprise E2E matrix:** Reuses proven Pi live adapter (`tests/live/agents/pi/agent.sh`, `pi -p` with tail-idle completion, quota retry, model pin). Does **not** load matrix ledger, §5b product gates, fixture branch locks, or row outcome writers.
 
@@ -28,7 +28,7 @@ On-demand, **single-task** supervision model: the **host parent** plans, briefs,
 
 | Use `/sb:agent-pi` | Delegate inline or via host Task instead |
 |------------------------|------------------------------------------|
-| Host is Cursor/Codex/Claude and Pi is the preferred executor for the target repo | Host can edit directly with lower latency |
+| Host is Codex/Claude and Pi is the preferred executor for the target repo | Host can edit directly with lower latency |
 | Task needs Pi-native SB hooks/skills in **real** project CWD | Pure SB-repo work on the host checkout |
 | Parent wants Sidekick-like supervision (brief → checkpoint → escalate) for one bounded task | Full SB composer queue (`sb:feature`, orchestrator workers) |
 | Cross-host handoff: "run this in Pi while I supervise" | Enterprise E2E matrix certification (use matrix harness) |
@@ -39,7 +39,7 @@ On-demand, **single-task** supervision model: the **host parent** plans, briefs,
 
 | Role | Agent | Responsibilities |
 |------|-------|------------------|
-| **Parent (supervisor)** | Cursor / Codex / Claude parent session | Task brief, acceptance criteria, checkpoints, failure ladder, mentor notes, graphify retrieval, agentmemory capture |
+| **Parent (supervisor)** | Codex / Claude parent session | Task brief, acceptance criteria, checkpoints, failure ladder, mentor notes, graphify retrieval, agentmemory capture |
 | **Worker (executor)** | Pi CLI in `PI_WORK_DIR` | Implement, test, commit per brief; report blockers in final message |
 
 Parent **must not** implement the delegated task in parallel in the same files. Parent may fix harness blockers in SB repo only.
@@ -236,7 +236,7 @@ Sidekick-inspired **single-task** lifecycle:
 | **Stuck** | Idle timeout, no post-submit output | Re-brief with narrower scope; retry once |
 | **Quota (429)** | `rate limit`, `429`, `token plan`, `5-hour usage limit` in log | short 60s retries only for unknown/transient 429; 5-hour/weekly/monthly fail-fast. RFL `--schedule-quota-retry` after classify (arms at/launchd + SessionStart wake); `--quota-retry-wake` retries the same model if the ladder is still active, else asks the user via QUOTA-RETRY-ASK.md |
 | **Auth** | `auth`, `login`, `not logged in` | Stop — user must refresh Pi credentials; do not rotate keys in prompt |
-| **OmniRoute/OpenCode 401** | `401`, `Missing API key`, `invalid_api_key` after attempt + one retry | Substitute Cursor Grok 4.6 High (`cursor-grok-4.6-high` / `sb-grok-4-6-high`). Never Fast. Never Extra High as unspecified default. Do not skip-failed. |
+| **OmniRoute/OpenCode 401** | `401`, `Missing API key`, `invalid_api_key` after attempt + one retry | Substitute another available host or model per the review-fix-ladder launcher policy. Never Fast. Never Extra High as unspecified default. Do not skip-failed. |
 | **Model policy** | `PI_PROVIDER must be opencode-go` / `PI_MODEL must be mimo-v2.5` | Fix env — harness enforces pin; do not override in brief |
 | **Harness** | `ERROR:` from adapter harness | Fix SB harness; file issue if reproducible |
 | **Product** | Pi completed but acceptance fails | New brief with gap list; do not claim PASS |
@@ -310,7 +310,6 @@ Run `security` / SENTINEL lens on harness changes under `scripts/agent-pi/` befo
 - Sibling hosts: [`docs/skills/AGENT-HOST-DELEGATION-SIBLING-PROMPT.md`](../../docs/skills/AGENT-HOST-DELEGATION-SIBLING-PROMPT.md)
 - Claude sibling: [`skills/silver-agent-claude/SKILL.md`](../silver-agent-claude/SKILL.md)
 - Codex sibling: [`skills/silver-agent-codex/SKILL.md`](../silver-agent-codex/SKILL.md)
-- Cursor sibling: [`skills/silver-agent-cursor/SKILL.md`](../silver-agent-cursor/SKILL.md)
 - OpenCode sibling: [`skills/silver-agent-opencode/SKILL.md`](../silver-agent-opencode/SKILL.md)
 - Harness: `scripts/agent-pi/` (`invoke.sh`, `preflight.sh`, `monitor.sh`, `env.sh`), `scripts/agent-pi-delegate.sh`
 - Live adapter: `tests/live/agents/pi/agent.sh`

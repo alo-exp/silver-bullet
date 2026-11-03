@@ -54,7 +54,7 @@ Before determining version, verify the working tree is releasable:
 
 0. **CI green + RC matrix (mandatory):** run `bash scripts/pre-release-gate.sh` (site freshness,
    five-tool pre-release when leanctx opted in, `run-all-tests.sh`, `run-rc-validation-matrix.sh`).
-   Six cells: cursor/codex/claude × fresh/upgrade — **operator-local** with host CLIs + your API keys.
+   Four cells: codex/claude × fresh/upgrade — **operator-local** with host CLIs + your API keys.
    Codex/Claude live cells do not run in GitHub CI (no first-party keys). CI `rc-validation.yml` is
    optional diagnostic only. **STOP** if any test fails — never tag or `gh release create` on red CI.
 
@@ -268,10 +268,9 @@ bash scripts/run-rc-validation-matrix.sh
 ```
 
 Included in `pre-release-gate.sh`. Replaces legacy live matrix when `release.require_rc_matrix`.
-**Operator-local mandatory:** all six cells (cursor/codex/claude × fresh/upgrade) with host CLIs and
+**Operator-local mandatory:** all four cells (codex/claude × fresh/upgrade) with host CLIs and
 your API keys on the release machine. Codex/Claude live TUI delegates are not CI-blockers — GitHub
-Actions has no first-party Anthropic/Codex keys (`rc-validation.yml` is optional diagnostic; cursor
-live only when `CURSOR_API_KEY` present). Claude requires `claude` CLI plus `ANTHROPIC_API_KEY` or OAuth.
+Actions has no first-party Anthropic/Codex keys (`rc-validation.yml` is optional diagnostic). Claude requires `claude` CLI plus `ANTHROPIC_API_KEY` or OAuth.
 Bypass (audited): `SB_SKIP_RC_MATRIX=1`. See `docs/testing/RC-VALIDATION-MATRIX.md`.
 
 Optional legacy diagnostics:
@@ -377,8 +376,8 @@ until the current `CI` and `Secret Scan` runs for `HEAD` complete successfully.
    the `silver-bullet-updates` Google Chat thread. If that workflow does not
    succeed, the release is not complete.
 
-   Immediately after publication, run mandatory tri-host post-release verification
-   on the operator machine (all three hosts: Cursor, Claude, Codex):
+   Immediately after publication, run mandatory post-release verification
+   on the operator machine (both hosts: Claude, Codex):
 
    ```bash
    bash scripts/post-release-host-verify.sh --version <version>
@@ -391,7 +390,7 @@ until the current `CI` and `Secret Scan` runs for `HEAD` complete successfully.
    2. **Fresh install** — from the released tag checkout (`RTK_DISABLED=1 install-*.sh`)
    3. **Smoke** — `sb-diagnostics.sh` on operator home + RC fresh cell
       (`run-rc-validation-matrix.sh --host <host> --mode fresh` with isolated delegate)
-   4. **Marker** — `~/.{cursor,codex,claude}/.silver-bullet/post-release-verify/{host}`
+   4. **Marker** — `~/.{codex,claude}/.silver-bullet/post-release-verify/{host}`
 
    Do not mark the release complete until the announcement workflow succeeds and
    all three host markers show `status=pass` (or documented audited `skip` when a

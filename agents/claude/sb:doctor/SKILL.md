@@ -58,20 +58,20 @@ When a tool is opted in (`enabled_by_user`) on a supported host, default `sb-doc
 
 | tool | class | Setup | Health | Diagnosis | `--fix` action | N/A rule | host support | docs_pin |
 |------|-------|-------|--------|-----------|----------------|----------|--------------|----------|
-| graphify | five-tool (project+host) | CLI + `graphify-mcp`; Cursor MCP `graphify`; real `graphify-out` index. No invented `graphify doctor`. | CLI+MCP+index. Skill vs package skew is WARN (`skill_package_skew`); `--fix` none (operator `graphify install`). PATH-only is not Health. | `D10-graphify`, `missing_cli`, `skill_package_skew` | `--fix=local` index; `--fix=host` MCP. Skew: none | not opted in → PASS N/A | Cursor (MCP/hooks) | docs/GRAPHIFY.md |
-| agentmemory | five-tool (project+host) | CLI; MCP `agentmemory` / `user-agentmemory`; export dir. | HTTP health of the **opted-in** instance (identity). Health URL alone without identity is WARN (`health_identity_unproven`). | `D10-agentmemory`, `missing_cli` | `--fix=host` MCP; start server; scaffold export | not opted in → PASS N/A | Cursor | docs/AGENTMEMORY.md |
-| rtk | five-tool (host) | CLI; `min_version` 0.42.0; Cursor `rtk hook cursor`; RTK before Context Mode; no LeanCTX shell rewrite. | CLI+version+hook. `min_version` below pin is FAIL. Vendor skip (`vendor_skip`) is not Health; remaining checks decide. | `D10-rtk`, `missing_cli`, `min_version`, `vendor_skip` | `--fix=host` | not opted in → PASS N/A | Cursor hooks | docs/RTK.md |
-| context_mode | five-tool (host) | Node `min_node_version` 22.5; CLI; MCP `context-mode` / `user-context-mode`; instruction fragment. No invented CLI `min_version` pin. | Node+CLI+MCP+vendor `CONTEXT_MODE_PLATFORM=cursor context-mode doctor` on default path. Node below pin → FAIL `min_version`/`node_version`. | `D10-context_mode`, `min_version`, `vendor_skip` | `--fix=host` | not opted in → PASS N/A | Cursor | docs/CONTEXT-MODE.md |
-| leanctx | five-tool (host) | CLI; MCP `leanctx` (or `lean-ctx` / `user-leanctx`); `lctx_` prefix; overlap MCP off. Never `lean-ctx init --agent *`. `min_version` 3.9.9. | CLI+version+MCP. Duplicate `leanctx` and `lean-ctx` keys → D10 FAIL `duplicate_key` (D22 WARN does not downgrade D10). | `D10-leanctx`, `missing_cli`, `min_version`, `duplicate_key`, `vendor_skip` | `--fix=host` | not opted in → PASS N/A | Cursor | docs/LEANCTX.md |
-| alumnium | extra-tool (host) | CLI `alumnium`; Cursor MCP `alumnium` / `user-alumnium` (`npx -y alumnium mcp`). | CLI+MCP. Vendor `alumnium doctor` if non-interactive. | `D10-alumnium`, `missing_cli`, `vendor_skip` | `--fix=host` | not opted in → PASS N/A | Cursor | docs/ALUMNIUM.md |
-| search_cli | extra-tool (packages) | Registry-pinned Homebrew `paperfoot/tap/search-cli` 0.9.0. Never merge project `install_commands`. `required_when_enabled: false`. | PATH **plus** non-secret `search --version`. Provider-missing is WARN (`provider_missing`) on ready Health. | `D10-search_cli`, `missing_cli`, `provider_missing`, `version_drift`, `unsupported_package_manager` | `--fix=packages` upgrades older to pin; must not downgrade newer | `enabled_by_user` null/false → PASS N/A. Never FAIL; do not scaffold the key. | Cursor + Claude + Codex (not Cursor-only `rt_host_supported`) | https://github.com/paperfoot/search-cli/blob/v0.9.0/README.md@v0.9.0 (formula https://github.com/paperfoot/homebrew-tap/blob/main/Formula/search-cli.rb@0.9.0) |
-| cross_tool / D10-routes | derived (host) | SB mutex + ten route owners + heartbeat. | `no_five_tool_consent` → **PASS** (not PASS N/A, not WARN). Unsupported host → WARN; do not recommend `--fix=host`. Other drift FAILs. | `D10-routes`, `no_five_tool_consent`, `unknown_key` | `--fix=host` only for repairable drift | no five-tool consent → PASS | Cursor only for convergence | docs/code-intelligence-contract.md@b0f961d |
+| graphify | five-tool (project+host) | CLI + `graphify-mcp`; MCP `graphify`; real `graphify-out` index. No invented `graphify doctor`. | CLI+MCP+index. Skill vs package skew is WARN (`skill_package_skew`); `--fix` none (operator `graphify install`). PATH-only is not Health. | `D10-graphify`, `missing_cli`, `skill_package_skew` | `--fix=local` index; `--fix=host` MCP. Skew: none | not opted in → PASS N/A | Claude, Codex | docs/GRAPHIFY.md |
+| agentmemory | five-tool (project+host) | CLI; MCP `agentmemory` / `user-agentmemory`; export dir. | HTTP health of the **opted-in** instance (identity). Health URL alone without identity is WARN (`health_identity_unproven`). | `D10-agentmemory`, `missing_cli` | `--fix=host` MCP; start server; scaffold export | not opted in → PASS N/A | Claude, Codex | docs/AGENTMEMORY.md |
+| rtk | five-tool (host) | CLI; `min_version` 0.42.0; `rtk hook claude`; RTK before Context Mode; no LeanCTX shell rewrite. | CLI+version+hook. `min_version` below pin is FAIL. Vendor skip (`vendor_skip`) is not Health; remaining checks decide. | `D10-rtk`, `missing_cli`, `min_version`, `vendor_skip` | `--fix=host` | not opted in → PASS N/A | Claude, Codex hooks | docs/RTK.md |
+| context_mode | five-tool (host) | Node `min_node_version` 22.5; CLI; MCP `context-mode` / `user-context-mode`; instruction fragment. No invented CLI `min_version` pin. | Node+CLI+MCP+vendor `CONTEXT_MODE_PLATFORM=<host> context-mode doctor` on default path. Node below pin → FAIL `min_version`/`node_version`. | `D10-context_mode`, `min_version`, `vendor_skip` | `--fix=host` | not opted in → PASS N/A | Claude, Codex | docs/CONTEXT-MODE.md |
+| leanctx | five-tool (host) | CLI; MCP `leanctx` (or `lean-ctx` / `user-leanctx`); `lctx_` prefix; overlap MCP off. Never `lean-ctx init --agent *`. `min_version` 3.9.9. | CLI+version+MCP. Duplicate `leanctx` and `lean-ctx` keys → D10 FAIL `duplicate_key`. | `D10-leanctx`, `missing_cli`, `min_version`, `duplicate_key`, `vendor_skip` | `--fix=host` | not opted in → PASS N/A | Claude, Codex | docs/LEANCTX.md |
+| alumnium | extra-tool (host) | CLI `alumnium`; MCP `alumnium` / `user-alumnium` (`npx -y alumnium mcp`). | CLI+MCP. Vendor `alumnium doctor` if non-interactive. | `D10-alumnium`, `missing_cli`, `vendor_skip` | `--fix=host` | not opted in → PASS N/A | Claude, Codex | docs/ALUMNIUM.md |
+| search_cli | extra-tool (packages) | Registry-pinned Homebrew `paperfoot/tap/search-cli` 0.9.0. Never merge project `install_commands`. `required_when_enabled: false`. | PATH **plus** non-secret `search --version`. Provider-missing is WARN (`provider_missing`) on ready Health. | `D10-search_cli`, `missing_cli`, `provider_missing`, `version_drift`, `unsupported_package_manager` | `--fix=packages` upgrades older to pin; must not downgrade newer | `enabled_by_user` null/false → PASS N/A. Never FAIL; do not scaffold the key. | Claude + Codex | https://github.com/paperfoot/search-cli/blob/v0.9.0/README.md@v0.9.0 (formula https://github.com/paperfoot/homebrew-tap/blob/main/Formula/search-cli.rb@0.9.0) |
+| cross_tool / D10-routes | derived (host) | SB mutex + ten route owners + heartbeat. | `no_five_tool_consent` → **PASS** (not PASS N/A, not WARN). Unsupported host → WARN; do not recommend `--fix=host`. Other drift FAILs. | `D10-routes`, `no_five_tool_consent`, `unknown_key` | `--fix=host` only for repairable drift | no five-tool consent → PASS | Claude + Codex for convergence | docs/code-intelligence-contract.md@b0f961d |
 
 Opted-in unknown JSON key → WARN `unknown_key` and doctor exit **nonzero**; other components are not FAIL-poisoned. Unknown component id → PASS N/A reason `unsupported`; no installer; no `--fix` suggestion.
 
 Omni / OmniRoute is planned WS7, not D10 Graphify — footnote only, not an F4 schema row. Future ids (`busy`, `provider_expired`) belong there, not this table.
 
-**CONFIGURED ≠ LIVE:** MCP keys in Cursor `mcp.json` and hook lines in Cursor `hooks.json` prove **configuration**, not that Cursor has loaded those MCP tools in **this chat**. `reload_required` means config was written but this session has not proven tool liveness. Do not treat bash `command -v` or a JSON key as live MCP. `--deep` Graphify stdio handshake is WARN only.
+**CONFIGURED ≠ LIVE:** MCP keys in the host MCP config and hook lines in the host hooks config prove **configuration**, not that the host has loaded those MCP tools in **this chat**. `reload_required` means config was written but this session has not proven tool liveness. Do not treat bash `command -v` or a JSON key as live MCP. `--deep` Graphify stdio handshake is WARN only.
 
 ### Step 3: Fix FAILs inline
 
@@ -84,13 +84,12 @@ bash scripts/sb-doctor.sh --fix=all      # bounded dependency-ordered convergenc
 | Check | Typical fix |
 |-------|-------------|
 | D2/D3 plugin stale | `/sb:update` or `bash scripts/install-${SILVER_BULLET_RUNTIME}.sh` |
-| D4 hooks missing | `bash scripts/install-cursor.sh --merge-hooks-only` or `/sb:init` update §3.7.5 |
+| D4 hooks missing | `bash scripts/install-claude.sh` / `bash scripts/install-codex.sh` or `/sb:init` update §3.7.5 |
 | D6 config stale | `bash scripts/sb-migrate-config.sh` or `/sb:migrate` |
 | D10-* five-tool | `bash scripts/sb-doctor.sh --fix=local|host|packages|all` |
-| D10-routes drift | `--fix=host` or `bash scripts/optimize-five-tool-stack.sh --host cursor --project-root "$(pwd)"` |
+| D10-routes drift | `--fix=host` or `bash scripts/optimize-five-tool-stack.sh --host claude --project-root "$(pwd)"` |
 | D13 manifest paths | Host install script for active runtime |
 | D20 stack mutex | `--fix` clears mutex + scaffolds agentmemory export root |
-| D22 duplicate LeanCTX MCP | WARN — `RT_PATCH_LEANCTX=1 python3 scripts/lib/global-toolstack/patch-mcp.py` |
 
 Log friction in `$HOME/.claude/.silver-bullet/sb-friction-log.md` when doctor surfaces hook or install issues.
 
@@ -100,7 +99,7 @@ Log friction in `$HOME/.claude/.silver-bullet/sb-friction-log.md` when doctor su
 bash scripts/sb-doctor.sh && echo "doctor PASS"
 ```
 
-## Check catalog (D1–D22 + D10-*)
+## Check catalog (D1–D20 + D10-*)
 
 - D1 `jq` on PATH
 - D2 plugin registry version ≥ project template `config_version`
@@ -109,7 +108,6 @@ bash scripts/sb-doctor.sh && echo "doctor PASS"
 - D5 project activation (`sb_initiated: true`)
 - D6 `config_version` freshness
 - D7 project `silver-bullet.md` carries every template section
-- D8 Cursor orchestrator rule (Cursor host only)
 - D9 workflow tracker
 - **D10-*** reconciler results (five-tool stack + Alumnium when opted in + D10-routes + optional D10-deep-*)
 - D11 hook smoke
@@ -119,10 +117,7 @@ bash scripts/sb-doctor.sh && echo "doctor PASS"
 - D15 Claude agent description token budget (Claude only)
 - D16 repo install surface
 - D17 host-agnostic SB core
-- D18–D19 Cursor marketplace gitPath + command stubs
 - D20 stack compression mutex
-- D21 Cursor SB custom subagents
-- D22 duplicate LeanCTX MCP servers
 
 ```bash
 bash scripts/validate-host-install-surface.sh
