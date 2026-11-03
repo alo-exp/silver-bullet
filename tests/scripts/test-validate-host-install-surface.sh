@@ -25,24 +25,13 @@ EOF
 
 seed_good_fixture() {
   local root="$1"
-  mkdir -p "${root}/.claude-plugin" "${root}/.cursor-plugin" "${root}/plugins/silver-bullet/.cursor-plugin" "${root}/plugins/silver-bullet/.codex-plugin"
+  mkdir -p "${root}/.claude-plugin" "${root}/plugins/silver-bullet/.codex-plugin"
   printf '{"name":"silver-bullet","skills":"./agents/claude"}\n' >"${root}/.claude-plugin/plugin.json"
-  printf '{"name":"silver-bullet","hooks":"./cursor-hooks.json"}\n' >"${root}/.cursor-plugin/plugin.json"
-  printf '{"name":"silver-bullet","commands":"./commands","hooks":"./cursor-hooks.json"}\n' >"${root}/plugins/silver-bullet/.cursor-plugin/plugin.json"
   printf '{"name":"silver-bullet","hooks":"./hooks/hooks.json"}\n' >"${root}/plugins/silver-bullet/.codex-plugin/plugin.json"
   write_skill "$root/agents/claude" "sb" "sb"
   write_skill "$root/host-bundles/codex" "sb" "sb"
-  write_skill "$root/host-bundles/cursor" "sb" "sb"
-  mkdir -p "$root/plugins/silver-bullet/skill-source/sb" "$root/plugins/silver-bullet/commands"
+  mkdir -p "$root/plugins/silver-bullet/skill-source/sb"
   printf 'mirror\n' >"$root/plugins/silver-bullet/skill-source/sb/SILVER_SOURCE"
-  cat >"$root/plugins/silver-bullet/commands/sb-feature.md" <<'EOF'
----
-name: sb-feature
-description: test command stub
-user-invocable: true
----
-# sb-feature
-EOF
 }
 
 good_root="$(mktemp -d)"
