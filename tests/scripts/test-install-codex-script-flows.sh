@@ -108,12 +108,44 @@ assert_file_exists "KAY_HOME receives the config" "$KAY/.codex/config.toml"
 assert_file_exists "KAY_HOME gets merged user hooks by default" "$KAY/.codex/hooks.json"
 assert_file_absent "HOME is not used when KAY_HOME is set" "$TL_TMP/unused-home/.codex"
 
-# ---- outside a project: the plugin is not enabled
+# ---- outside a project: nothing is enabled, and an existing enablement is left alone (R7-10)
 fresh
-printf '[plugins."silver-bullet@alo-labs-codex"]\nenabled = true\n' >"$CFG"
+run_install "$TL_TMP/outside" HOME="$CH" -- --public-release
+assert_eq "fresh install outside a project exits 0" 0 "$TL_STATUS"
+assert_contains "auto-enable skipped outside a project" "$TL_OUT" "Skipping Silver Bullet plugin auto-enable outside a Silver Bullet project root"
+assert_not_contains "a fresh install outside a project enables nothing" "$(<"$CFG")" 'silver-bullet@alo-labs-codex"]'
+# installed and trusted from a project, then refreshed from the home directory
+run_install "$PROJ" HOME="$CH" -- --public-release
+BEFORE_PLUGIN="$(grep -A1 '^\[plugins."silver-bullet@alo-labs-codex"\]' "$CFG")"
+BEFORE_TRUST="$(grep -c 'trusted_hash' "$CFG")"
 run_install "$TL_TMP/outside" HOME="$CH" -- --public-release --purge-legacy-skills
-assert_eq "install outside a project exits 0" 0 "$TL_STATUS"
-assert_contains "auto-enable skipped outside a project" "$TL_OUT" "Skipping Silver Bullet plugin auto-enable outside a Silver Bullet project root."
-assert_not_contains "stale plugin enablement removed" "$(<"$CFG")" 'silver-bullet@alo-labs-codex"]'
+assert_eq "refresh outside a project exits 0" 0 "$TL_STATUS"
+assert_eq "existing enablement kept" "$BEFORE_PLUGIN" "$(grep -A1 '^\[plugins."silver-bullet@alo-labs-codex"\]' "$CFG")"
+assert_eq "existing hook trust kept" "$BEFORE_TRUST" "$(grep -c 'trusted_hash' "$CFG")"
+assert_eq "registry entry kept" 1 "$(jq '.plugins["silver-bullet@alo-labs-codex"] | length' "$CH/.codex/plugins/installed_plugins.json")"
+
+# ---- foreign data survives install, re-install and the legacy-skill purge
+fresh
+mkdir -p "$CH/.agents/skills/security" "$CH/.codex/skills/security" "$CH/.codex/plugins/cache/thirdparty/other/abc"
+printf -- '---\nname: security\n---\nteam checklist\n' >"$CH/.agents/skills/security/SKILL.md"
+printf -- '---\nname: security\n---\nmine\n' >"$CH/.codex/skills/security/SKILL.md"
+printf '{"plugins":{"other@thirdparty":[{"installPath":"%s","version":"abc"}]}}\n' "$CH/.codex/plugins/cache/thirdparty/other/abc" >"$CH/.codex/plugins/installed_plugins.json"
+printf '# keep this comment\n[profiles.work]\nmodel = "o3"\n\n[plugins."other@thirdparty"]\nenabled = true\n' >"$CFG"
+for pass in install re-install; do
+  run_install "$PROJ" HOME="$CH" -- --public-release --purge-legacy-skills
+  assert_eq "$pass with foreign data exits 0" 0 "$TL_STATUS"
+  assert_contains "$pass keeps the user's ~/.agents skill" "$(<"$CH/.agents/skills/security/SKILL.md")" "team checklist"
+  assert_contains "$pass keeps the user's ~/.codex skill" "$(<"$CH/.codex/skills/security/SKILL.md")" "mine"
+  assert_eq "$pass keeps the foreign registry record" '[{"installPath":"'"$CH"'/.codex/plugins/cache/thirdparty/other/abc","version":"abc"}]' "$(jq -c '.plugins["other@thirdparty"]' "$CH/.codex/plugins/installed_plugins.json")"
+  assert_contains "$pass keeps config comments" "$(<"$CFG")" "# keep this comment"
+  assert_contains "$pass keeps foreign config tables" "$(<"$CFG")" '[plugins."other@thirdparty"]'
+  assert_eq "$pass leaves valid TOML with one SB plugin table" 1 "$(python3 -c 'import sys
+try:
+    import tomllib
+except ImportError:
+    from pip._vendor import tomli as tomllib
+d = tomllib.load(open(sys.argv[1], "rb"))
+print(int(d["plugins"]["silver-bullet@alo-labs-codex"]["enabled"]) + 0 * len(d["profiles"]))' "$CFG")"
+done
 
 tl_results

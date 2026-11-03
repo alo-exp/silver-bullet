@@ -21,7 +21,7 @@ Subagents (workers) **may** implement: they must invoke the assigned `next_skill
 
 ## Routing
 
-- Bare work requests → `/silver` or `silver-orchestrator` first.
+- Bare work requests → `/sb` or `silver-orchestrator` first.
 - `silver-feature`, `silver-ui`, etc. are **composition specs** (queue builders), not inline execution instructions.
 
 ## Overrides
