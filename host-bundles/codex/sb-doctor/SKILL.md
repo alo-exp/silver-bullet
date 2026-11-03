@@ -2,7 +2,7 @@
 name: "sb:doctor"
 title: "Doctor"
 description: "This skill should be used when the user runs `/sb:doctor` or `/sb:doctor` (alias) or asks to audit whether the local Silver Bullet installation and project activation are correct for the active host — run before `/sb:init` update, after `/sb:update`, and during CI diagnostics."
-aliases: "[\"sb:doctor\"]"
+aliases: ["sb:doctor"]
 version: 0.2.0
 ---
 
