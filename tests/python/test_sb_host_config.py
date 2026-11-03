@@ -83,6 +83,21 @@ class FileWriteTest(Tmp):
         with self.assertRaises(m.ConfigError):  # genuinely dotted: still refused
             m.TomlDocument("features.a = 1\n").set_value(("features",), "b", "1")
 
+    def test_rename_tables_is_simultaneous_and_drops_stale_targets(self):
+        text = ('[hooks.state."a:0:1"]\ntrusted_hash = "A"\n\n  [hooks.state."a:0:2"] # note\ntrusted_hash = "B"\n\n'
+                '[hooks.state."a:0:0"]\ntrusted_hash = "stale"\n\n[other]\nk = 1\n')
+        doc = m.TomlDocument(text)
+        moved = {("hooks", "state", "a:0:1"): ("hooks", "state", "a:0:0"),
+                 ("hooks", "state", "a:0:2"): ("hooks", "state", "a:0:1"),
+                 ("hooks", "state", "a:9:9"): ("hooks", "state", "a:9:9")}
+        self.assertEqual(doc.rename_tables(moved), 2)
+        self.assertEqual(tomllib.loads(doc.text), {"hooks": {"state": {"a:0:0": {"trusted_hash": "A"},
+                         "a:0:1": {"trusted_hash": "B"}}}, "other": {"k": 1}})
+        crlf = m.TomlDocument('[x."a"]\r\nk = 1\r\n')
+        crlf.rename_tables({("x", "a"): ("x", "b")})
+        self.assertEqual(crlf.text, '[x.b]\r\nk = 1\r\n')
+        self.assertEqual(m.TomlDocument("[a]\n").rename_tables({}), 0)
+
     def test_symlink_is_written_through(self):
         real = self.tmp / "dotfiles" / "settings.json"
         real.parent.mkdir()

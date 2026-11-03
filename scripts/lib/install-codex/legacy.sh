@@ -217,6 +217,7 @@ package_root = home / ".codex" / ".tmp" / "marketplaces" / "alo-labs-codex" / "p
 names = sb_hook_names(lib_dir.parents[1] / "hooks", package_root / "hooks")
 user_prefixes = {str(home / ".codex" / "hooks.json"), str(home.resolve() / ".codex" / "hooks.json")}
 removed_keys = set()
+moved_keys = {}  # trust keys of the user's own hooks whose position in hooks.json shifts
 
 
 def event_slug(name: str) -> str:
@@ -254,6 +255,9 @@ try:
                     ):
                         removed_keys.update(f"{prefix}:{event_slug(event_name)}:{group_index}:{hook_index}" for prefix in user_prefixes)
                         continue
+                    for prefix in user_prefixes:  # Codex keys trust by position: follow the hook
+                        moved_keys[f"{prefix}:{event_slug(event_name)}:{group_index}:{hook_index}"] = (
+                            f"{prefix}:{event_slug(event_name)}:{len(kept_groups)}:{len(kept)}")
                     kept.append(hook)
                 if len(kept) == len(hooks):
                     kept_groups.append(group)
@@ -270,6 +274,7 @@ try:
     if config_path.is_file():
         doc = read_toml(config_path)
         doc.remove(sb_trust)
+        doc.rename_tables({("hooks", "state", old): ("hooks", "state", new) for old, new in moved_keys.items()})
         write_toml(config_path, doc)
 except ConfigError as exc:
     sys.exit(f"ERROR: {exc}")

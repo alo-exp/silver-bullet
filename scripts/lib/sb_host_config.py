@@ -537,6 +537,29 @@ class TomlDocument:
             self._load(text)
         return len(spans)
 
+    def rename_tables(self, mapping) -> int:
+        """Rename ``[old]`` table headers per ``{old_path: new_path}``, all at once (so a
+        permutation of names is safe); return how many headers changed. A table already
+        sitting at a target path that is not itself being renamed is stale and is removed
+        first. The body, order and the rest of the file are untouched; a comment trailing
+        the header is dropped."""
+        mapping = {tuple(old): tuple(new) for old, new in mapping.items() if tuple(old) != tuple(new)}
+        sources = set(mapping)
+        self.remove(lambda path: path in set(mapping.values()) and path not in sources)
+        edits = []
+        for statement in self.statements:
+            if statement.kind == "table" and statement.path in mapping:
+                raw = self.text[statement.start : statement.end]
+                indent = raw[: len(raw) - len(raw.lstrip(" \t"))]
+                ending = raw[len(raw.rstrip("\r\n")) :]
+                edits.append((statement.start, statement.end, f"{indent}[{format_key(mapping[statement.path])}]{ending}"))
+        text = self.text
+        for start, end, line in reversed(edits):
+            text = text[:start] + line + text[end:]
+        if edits:
+            self._load(text)
+        return len(edits)
+
     def _require_free(self, path, *, allow_dotted: bool) -> None:
         """Raise when ``path`` cannot get a ``[table]`` header (or keys) without conflict."""
         path = tuple(path)
