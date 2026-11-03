@@ -207,8 +207,8 @@ Each factual claim gets one verdict (`support_status` in `claims.jsonl`):
 
 | Verdict | Meaning | `verify --strict` |
 |---------|---------|-------------------|
-| `supported` | the claim repeats one linked quote word for word (the rule below) and no other linked quote contradicts it | passes |
-| `contradicted` | a quote is the same sentence except for exactly one token: an added or removed "not"/"never"/"no", or one figure of another value written the same way; and no quote supports the claim | **exit 1** |
+| `supported` | the claim repeats ANY ONE linked quote word for word (the rule below); other quotes do not matter | passes |
+| `contradicted` | EVERY linked quote is the same sentence as the claim except for exactly one token: an added or removed "not"/"never"/"no", or one figure of another value written the same way | **exit 1** |
 | `unsupported` | no evidence linked, a cited source with no captured evidence, or no quote shares 30% of the claim's words | **exit 1** |
 | `needs_review` | everything else, including every reworded claim; `_support_notes` says why | exit 0, listed |
 
@@ -217,26 +217,34 @@ reason under `needs_review`, prints a count on stderr, and `report` has a "Needs
 
 ### What makes a claim `supported`
 
-The text is cut into tokens, and the claim's tokens, in order, must equal the quote's. Everything that can
-change a meaning is a token and is kept: letters and digits of every script (an accent is a different
-letter), signs and comparators (`-` `−` `+` `<` `>` `≤` `≥` `~` `≈` `±`), currency symbols, `%`, `°`,
-superscripts, `/` and hyphens. A figure is one token written exactly as it stands: its inner `,` and `.`
-are never reinterpreted (`1,5` and `15` differ, so do `3` and `3.0`, `$5` and `$5.00`, `.95` and `0.95`,
-`'24` and `2024`, `90s` and `1990s`), and a `%` or currency symbol after a space belongs to the number
-(`40 %` is `40%`; `50 $` is not `50 €`). Number words are not converted (`five` is not `5`).
+The text is cut into tokens, and the claim's tokens, in order, must equal the quote's. Nothing is folded:
+everything that can change a meaning is a token and is kept. That includes letters and digits of every
+script (an accent is a different letter), **case** (`MB` is not `Mb`, `mW` is not `MW`, `US` is not `us`,
+`Hepatitis A` is not `Hepatitis`), signs and comparators (`-` `−` `+` `<` `>` `≤` `≥` `~` `≈` `±`),
+currency symbols, `%`, `°`, superscripts, `/`, hyphens, a question mark (a quoted question is not a
+statement) and an asterisk (a footnote is a caveat). A figure is one token written exactly as it stands: its
+inner `,` and `.` are never reinterpreted (`1,5` and `15` differ, so do `3` and `3.0`, `$5` and `$5.00`,
+`.95` and `0.95`, `'24` and `2024`, `90s` and `1990s`), and a `%` or currency symbol after a space belongs to
+the number (`40 %` is `40%`; `50 $` is not `50 €`). A sign counts only at the start of a word (`3-5` is not
+`3 -5`). Number words are not converted (`five` is not `5`).
 
 Only these differences are ignored, and the code has no others:
 
-- case (casefold) and punctuation: whitespace, `. , ; : ! ?`, quotation marks, brackets and markdown
-  emphasis marks;
-- the articles `a`, `an` and `the`;
-- a plural or third-person `-s` on a plain word (`employees` = `employee`, `companies` = `company`; not
-  `-ed`/`-ing`, so `opens`/`open` match and `opening`/`open` do not);
+- the capital of the **first word** of the text (`Acme supports SSO` = `acme supports SSO`); every other
+  token is compared as written;
+- punctuation: whitespace, `. , ; : !`, the ellipsis `…`, quotation marks, brackets and the backtick
+  (`` `not` `` is `not`). A `?` and a `*` are not dropped;
+- the articles `a`, `an` and `the`, only in lowercase (or capitalised as the first word); a capital `A` in
+  the middle of a sentence is a name or a grade and is kept;
+- the digit script: every Unicode decimal digit is read as `0-9` (full-width `５０` and Arabic-Indic `٥` equal
+  `50` and `5`); an accent written as one character or as base letter plus mark is one letter;
 - a contraction (`doesn't` = `does not`, `can't` and `cannot` = `can not`, `won't` = `will not`);
-- an inline citation marker such as `[3]`.
+- an inline citation marker such as `[3]` or `[1, 2]`, only when a space or a non-digit precedes it (`3[00]`
+  keeps its `00`).
 
-There are no aliases and no filler words: `this`/`that`, `its`/`their`, `all`/`only`/`no`/`not`/`never`,
-`is`/`are`, `staff`/`employee` and `client`/`customer` are all different words.
+There are no aliases, no filler words and no stemming: a plural is a different word (`glasses` is not
+`glass`, `news` is not `new`, `goods` is not `good`), and `this`/`that`, `its`/`their`, `all`/`only`/`no`/
+`not`/`never`, `is`/`are`, `staff`/`employee` and `client`/`customer` are all different words.
 
 Nothing else may differ. In particular a rewording, a synonym, a different verb ("grew" / "rose"), a
 reordering ("In 2022 Acme was acquired" / "Acme was acquired in 2022"), a voice change ("Acme acquired
@@ -253,12 +261,13 @@ without rewording.
 
 ### What makes a claim `contradicted`
 
-Only a clear, high-confidence conflict. The quote and the claim must be identical after tokenising except
-for **exactly one token**, which is either:
+Only a clear, high-confidence conflict. A quote contradicts the claim when the two are identical after
+tokenising except for **exactly one token**, which is either:
 
 - an added or removed `not`, `never` or `no` ("Acme supports SSO" against "Acme not supports SSO",
   "Acme has a free tier" against "Acme has no free tier"; `isn't`, `can't` and `cannot` count as `is not`
-  and `can not`); or
+  and `can not`). `No,` and `No.` are tokens of their own, not the word `no`: "No, the tool is not free"
+  (an interjection) and "Acme ranks No. 1" (an abbreviation) never negate anything and give `needs_review`; or
 - one figure with a different value, written the same way (same currency, sign, `%`, separators and number
   of digits): "Acme has 500 employees" against "Acme has 200 employees", "founded in 2015" against
   "founded in 2019".
@@ -266,8 +275,19 @@ for **exactly one token**, which is either:
 Two or more differing tokens are `needs_review`: "Acme supports SSO" against "Acme does not support SSO"
 (`does` and `not`), "$7m in 2024" against "$5m in 2023", "no doubt that", "nothing short of", "for no extra
 charge". The same value written another way (`3`/`3.0`, `$5`/`$5.00`, `.95`/`0.95`, `'24`/`2024`,
-`90s`/`1990s`) is `needs_review`, never `contradicted` and never `supported`. Each quote is compared with the
-claim on its own: a second quote from the same source about another year never contradicts it.
+`90s`/`1990s`) is `needs_review`, never `contradicted` and never `supported`.
+
+### Several quotes for one claim
+
+Each quote is compared with the claim on its own, then:
+
+- the claim is `supported` if **any** cited quote supports it (the other quotes may say anything);
+- it is `contradicted` only if **every** cited quote contradicts it;
+- otherwise it is `needs_review`.
+
+So "Revenue rose 5% in 2024." with the quotes "Revenue rose 5% in 2023." (one figure differs) and "In 2024,
+revenue again rose 5%." (reworded) is `needs_review`: a sibling quote about another year cannot contradict
+the claim alone. If no quote shares 30% of the claim's words the claim is `unsupported`.
 
 ### Writing claims that can be `supported`
 
@@ -277,7 +297,7 @@ one quote.**
 1. Store as evidence exactly the one sentence or clause of the source that backs the claim, verbatim. Not a
    paragraph, not two sentences, not a sentence plus its heading.
 2. Write the report sentence to repeat that quote: same words, figures, dates and units, in the same order.
-   Only case, punctuation, the articles a/an/the and a plural -s may change.
+   Only the first word's capital, punctuation and lowercase a/an/the may change; keep case, plurals, figures and marks as the quote has them.
 3. Do not reword, reorder, change voice or merge two quotes into one claim. If a sentence needs two facts,
    write two sentences, each with its own quote.
 4. A deliberate paraphrase or summary is allowed, but it is `needs_review` and a reader checks it.
@@ -302,12 +322,13 @@ edit `support_status` by hand and do not deliver a run with unresolved items.
 
 ### Corpora pinning the behaviour
 
-`tests/fixtures/` holds every probe pair of all seven reviews, run by
+`tests/fixtures/` holds every probe pair of all eight reviews, run by
 `tests/test_claim_checker_regression_corpus.py` in one table: `claim_corpus_verbatim.json` (reviews 1-3),
 `claim_corpus_r4.json`, `claim_corpus_r5.json`, `claim_corpus_r6.json` (the sixth review: 91 fabrications,
 25 honest twins and 40 held-out everyday honest claims), `claim_corpus_r7.json` (the seventh review: signs,
 comparators, accents, other scripts, decimal commas, superscripts, symbols after a space, filler words;
-same-value-different-spelling honest claims), `claim_corpus.json` (curated) and
+same-value-different-spelling honest claims), `claim_corpus_r8.json` (the eighth review: case, capital A, plural
+-s, `?` and `*`, digits in brackets, digit scripts, `No,`), `claim_corpus.json` (curated) and
 `claim_corpus_heldout.json`. The invariants are: a fabrication is never `supported`; an honest claim is never
 `contradicted` or `unsupported`; a claim identical to its quote is `supported`. Counts per verdict at the
 last run:
@@ -317,8 +338,9 @@ last run:
 | reviews 1-3 verbatim (55 + 50) | 4 / 48 / 3 / 0 | 2 / 48 / 0 |
 | review 4 verbatim (36 + 69) | 0 / 36 / 0 / 0 | 0 / 69 / 0 |
 | review 5 verbatim (121 + 99) | 7 / 113 / 1 / 0 | 26 / 73 / 0 |
-| review 6 (91 + 65) | 2 / 89 / 0 / 0 | 1 / 64 / 0 |
+| review 6 (91 + 65) | 1 / 90 / 0 / 0 | 1 / 64 / 0 |
 | review 7 (55 + 12) | 4 / 51 / 0 / 0 | 4 / 8 / 0 |
+| review 8 (79 + 19) | 9 / 70 / 0 / 0 | 16 / 3 / 0 |
 | curated (45 + 45) | 14 / 30 / 1 / 0 | 1 / 44 / 0 |
 | held-out (32 + 32) | 6 / 26 / 0 / 0 | 0 / 32 / 0 |
 

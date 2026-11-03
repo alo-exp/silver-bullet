@@ -8,12 +8,14 @@ CLI subcommands:
 
 Version 1 is deterministic and cheap: no LLM calls, no semantics. The rule is a strict near-quote:
 
-* ``supported``: the claim repeats the cited quote word for word. Only case, punctuation, the articles
-  a/an/the, and a plural or third-person -s may differ. Every other character that can change a meaning
-  (signs, comparators, currency, %, accents, other scripts) is kept, and a figure is compared exactly as
-  written ("3" is not "3.0"). Any rewording, reordering, voice change or paraphrase is ``needs_review``.
+* ``supported``: the claim repeats a cited quote word for word. Only punctuation, the lowercase articles
+  a/an/the, the capital of the first word and the digit script may differ. Every other character that can
+  change a meaning (case, signs, comparators, currency, %, "?", "*", accents, other scripts) is kept, and a
+  figure is compared exactly as written ("3" is not "3.0"). Any rewording, reordering, voice change or
+  paraphrase is ``needs_review``. One supporting quote among several is enough.
 * ``contradicted``: only a clear conflict, which is the same sentence except for exactly one token: an
-  added or removed "not"/"never"/"no", or one figure of another value written the same way.
+  added or removed "not"/"never"/"no", or one figure of another value written the same way; and every
+  cited quote must say so.
 * ``unsupported``: no cited quote shares enough words with the claim to address it.
 * ``needs_review``: everything else. A reader checks it against the source.
 
@@ -27,6 +29,7 @@ import json
 import os
 import re
 import sys
+import unicodedata
 from collections import Counter
 from glob import glob
 from hashlib import sha256
@@ -41,58 +44,61 @@ from jsonl_store import JsonlError, locked, read_jsonl, write_jsonl_atomic  # no
 # Tokens: what may differ between a claim and its quote
 # ---------------------------------------------------------------------------
 #
-# A text is cut into tokens. Everything that can change a meaning is kept: letters and digits of every
-# script, signs, comparators, currency symbols, %, the degree sign, superscripts, slashes and hyphens. Only
-# whitespace, sentence punctuation, quotation marks, brackets and markdown emphasis are dropped. A figure is
-# one token, written exactly as it stands ("1,5", "-12", "10\u2076", ".95", "'24", "$5.00", "40 %" is "40%",
-# "50 $" is "50$"): it is never converted, so "3" and "3.0" are different figures.
+# A text is cut into tokens. Everything that can change a meaning is kept, and nothing is folded: letters and
+# digits of every script (an accent or a capital is a different letter), signs, comparators, currency, %, the
+# degree sign, superscripts, "?" and a footnote "*", "/" and hyphens. Only whitespace, the sentence marks
+# . , ; : ! and the ellipsis, quotation marks, brackets and the backtick are dropped. A figure is one token,
+# written exactly as it stands ("1,5", "-12", "10\u2076", ".95", "'24", "$5.00"); it is never converted, so "3"
+# and "3.0" differ. Only the digit script is unified (full-width and Arabic-Indic digits become 0-9), and "%"
+# or a currency symbol after a space belongs to its number ("40 %" is "40%"; "50 $" is not "50 \u20ac").
+# Case: the first word of the text may differ by its capital letter alone, every other token is compared as
+# written ("5 MB" is not "5 Mb").
 
-STOPWORDS = frozenset(['a', 'an', 'the'])  # the only words that may be added or left out
-NEGATORS = frozenset(['not', 'never', 'no'])
+STOPWORDS = frozenset(['a', 'an', 'the'])  # only these, lowercase (or capitalised at the start), may be left out
+NEGATORS = frozenset(['not', 'never', 'no', 'Not', 'Never', 'No'])  # "No," and "No." are tokens of their own
 MIN_OVERLAP = 0.3  # share of the claim's words that must appear in a quote for it to address the claim
 
 CURRENCY = '$\u20ac\u00a3\u00a5'
 TOKEN_RE = re.compile(
-    # figure: sign, currency (A$, US$ too), apostrophe year or leading dot, digits with inner , or . groups, then % / a
-    # currency symbol (a space may come before it) or glued letters, digits and superscripts
-    r"(?:[-\u2212+](?=[" + CURRENCY + r"'.\d]))?(?:[^\W\d_]{0,2}[" + CURRENCY + r"]\s?)?(?:'(?=\d\d)|(?<![\w.])\.(?=\d))?"
+    # figure: sign, currency (A$, US$ too), apostrophe year or leading dot, digits with inner , or . groups, then
+    # % / a currency symbol (a space may come before it) or glued letters, digits and superscripts
+    r"(?:(?<!\w)[-\u2212+](?=[" + CURRENCY + r"'.\d]))?(?:[^\W\d_]{0,2}[" + CURRENCY + r"]\s?)?"
+    r"(?:'(?=\d\d)|(?<![\w.])\.(?=\d))?"
     r"\d(?:[\d.,]*\d)?(?:\s?%|\s?[" + CURRENCY + r"](?!\d)|\w*)"
     r"|\w+(?:'\w+)*"  # word (any script)
-    r"|[^\s\w.,;:!?\u2026\"'\u201c\u201d\u201e\u00ab\u00bb()\[\]{}*`]")  # any other mark is a token of its own
+    r"|[^\s\w.,;:!\u2026\"'\u201c\u201d\u201e\u00ab\u00bb()\[\]{}`]")  # any other mark is a token of its own
 FIGURE_RE = re.compile(r"[-\u2212+]?(?:[^\W\d_]{0,2}[" + CURRENCY + r"])?['.]?\d")
+CITATION_MARK_RE = re.compile(r'(?<!\d)\[\d{1,4}(?:,\s*\d{1,4})*\]')  # [3] after a space or a letter, not "3[00]"
 QUOTE_MARKS = str.maketrans({'\u2018': "'", '\u2019': "'", '\u02bc': "'"})
-CONTRACTIONS = ((re.compile(r"\bcan'?t\b|\bcannot\b"), 'can not'), (re.compile(r"\bwon't\b"), 'will not'),
+CONTRACTIONS = ((re.compile(r"\b([Cc])an(?:'t|not)\b"), r'\1an not'), (re.compile(r"\b([Ww])on't\b"), r'\1ill not'),
                 (re.compile(r"n't\b"), ' not'))
 
 
 def _words(text: str) -> list[str]:
-    """The tokens of a text, in order and casefolded. "doesn't" is "does not"; an inline citation marker
-    such as [3] is not part of the text."""
-    text = INLINE_CITATION_RE.sub(' ', text).casefold().translate(QUOTE_MARKS)
+    """The tokens of a text, in order. "doesn't" is "does not"; an inline citation marker such as [3] is
+    not part of the text; "No," and "No." (an interjection, or "No. 1") are not the negator "No"."""
+    text = unicodedata.normalize('NFC', CITATION_MARK_RE.sub(' ', text)).translate(QUOTE_MARKS)
+    text = re.sub(r'\d', lambda m: str(unicodedata.digit(m.group())), text)
     for pattern, replacement in CONTRACTIONS:
         text = pattern.sub(replacement, text)
-    return [re.sub(r'\s', '', token) for token in TOKEN_RE.findall(text)]
+    words = []
+    for match in TOKEN_RE.finditer(text):
+        token = re.sub(r'\s', '', match.group())
+        if token in ('No', 'no') and text[match.end():match.end() + 1] in ('.', ','):
+            token += text[match.end()]
+        words.append(token)
+    if words and words[0].isalpha() and words[0][1:] == words[0][1:].lower():
+        words[0] = words[0][0].lower() + words[0][1:]
+    return words
 
 
 def _is_figure(word: str) -> bool:
     return bool(FIGURE_RE.match(word))
 
 
-def _stem(word: str) -> str:
-    """Plural / third-person -s only ("employees" is "employee", "companies" is "company")."""
-    if len(word) > 4 and word.endswith('ies'):
-        return word[:-3] + 'y'
-    if len(word) > 4 and word.endswith(('ches', 'shes', 'sses', 'xes', 'zes')):
-        return word[:-2]
-    if len(word) > 3 and word.endswith('s') and not word.endswith('ss'):
-        return word[:-1]
-    return word
-
-
 def _keys(words: list[str]) -> list[str]:
-    """The form in which two tokens count as the same: figures and marks exactly, plain words by their
-    singular form. Articles are left out."""
-    return [_stem(w) if w.isalpha() else w for w in words if w not in STOPWORDS]
+    """The tokens that are compared: all of them, as written, except the articles a, an and the."""
+    return [w for w in words if w not in STOPWORDS]
 
 
 def _digits_masked(word: str) -> str:
@@ -129,7 +135,8 @@ def _assess_quote(claim_words: list[str], quote: str) -> dict:
     (``overlap``), whether the quote is a near-verbatim match (``match``), what clearly contradicts the claim
     (``conflict``) and why a reader must look (``reason``)."""
     claim, source = _keys(claim_words), _keys(_words(quote))
-    overlap = len(set(claim) & set(source)) / len(set(claim))
+    shared, wanted = {w.casefold() for w in source}, {w.casefold() for w in claim}  # overlap only decides unsupported
+    overlap = len(wanted & shared) / len(wanted)
     result = {'overlap': overlap, 'match': claim == source, 'conflict': '', 'reason': ''}
     if result['match']:
         return result
@@ -153,10 +160,9 @@ def compute_support_score(claim_text: str, evidence_quotes: list[str]) -> tuple[
     """
     Judge a claim against its linked evidence quotes. Returns (status, score, notes).
 
-    * ``supported`` only when the claim nearly repeats one quote word for word (see the module
-      docstring) and no other quote contradicts it. The score is 1.0.
-    * ``contradicted`` when a quote is the same sentence with exactly one "not"/"never"/"no" added or removed,
-      or with exactly one figure of another value in the same form, and no quote supports the claim.
+    * ``supported`` when ANY quote repeats the claim word for word (see the module docstring). Score 1.0.
+    * ``contradicted`` only when EVERY quote is the same sentence with exactly one "not"/"never"/"no" added
+      or removed, or with exactly one figure of another value in the same form.
     * ``unsupported`` when no quote shares at least 30% of the claim's words.
     * ``needs_review`` otherwise, with the reason (reworded, reordered, only part of the quote, a figure
       written another way). A reader must check these against the source; they are never counted as supported.
@@ -167,16 +173,11 @@ def compute_support_score(claim_text: str, evidence_quotes: list[str]) -> tuple[
     if not _keys(claim_words):
         return ('needs_review', 0.0, 'the claim has no words to check')
     assessed = [_assess_quote(claim_words, q) for q in evidence_quotes]
-    supporting = [a for a in assessed if a['match']]
-    contradicting = [a for a in assessed if a['conflict']]
-    if supporting and contradicting:
-        return ('needs_review', 1.0, 'conflicting evidence: one quote supports the claim, another says: '
-                + contradicting[0]['conflict'])
-    if supporting:
+    if any(a['match'] for a in assessed):
         return ('supported', 1.0, 'near-verbatim match')
-    if contradicting:
-        return ('contradicted', round(max(a['overlap'] for a in contradicting), 3),
-                '; '.join(a['conflict'] for a in contradicting))
+    if all(a['conflict'] for a in assessed):
+        return ('contradicted', round(max(a['overlap'] for a in assessed), 3),
+                '; '.join(a['conflict'] for a in assessed))
     best = max(assessed, key=lambda a: a['overlap'])
     if best['overlap'] < MIN_OVERLAP:
         return ('unsupported', round(best['overlap'], 3),
