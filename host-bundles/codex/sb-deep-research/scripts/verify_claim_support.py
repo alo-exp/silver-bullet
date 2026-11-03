@@ -99,6 +99,10 @@ NUMBER_WORDS_RE = re.compile(
     re.IGNORECASE,
 )
 VERSION_RE = re.compile(r'\bv(?=\d)')
+# A lone "one" is a quantity only when a range runs on from it ("one to three days", "one or two",
+# "between one and three"); elsewhere it is a pronoun or a name ("one who", "one-to-one").
+ONE_RANGE_RE = re.compile(
+    r'\b(?:(between\s+)one(?=\s+and\s+)|one(?=\s+(?:to|or)\s+(?:\d|(?:' + _NUM_FIRST + r')\b)))', re.IGNORECASE)
 
 
 def _compound(text: str, force: bool = False) -> str:
@@ -142,6 +146,7 @@ def normalize_text(text: str) -> str:
     'five thousand' to '5000', 'v1.29' to '1.29'."""
     import unicodedata
     text = unicodedata.normalize('NFKC', text).translate(_QUOTE_TABLE)
+    text = ONE_RANGE_RE.sub(lambda m: (m.group(1) or '') + '1', text)
     text = NUMBER_WORDS_RE.sub(_words_to_number, text)
     text = VERSION_RE.sub('', text)
     text = PERCENT_RE.sub(r'\1%', text)
@@ -169,7 +174,7 @@ def extract_entities(text: str) -> set[str]:
     """Extract capitalized entity mentions and alphanumeric identifiers (EC2, GPT4, FY2018)."""
     ents = set(ENTITY_RE.findall(text)) | set(ID_RE.findall(text))
     # A sentence-opening "-ly" word ("Quarterly", "Recently") is an adverb or adjective, not a name.
-    ents = {e for e in ents if not (e.endswith('ly') and ' ' not in e and e.istitle() and len(e) > 5)}
+    ents = {e for e in ents if not _is_adverb(e)}
     return ents - STOP_ENTITIES
 
 
@@ -277,20 +282,29 @@ def _same_noun(a: str, b: str) -> bool:
 # Segments: the smallest stretch a figure is attached to. Split at sentence ends, commas (except
 # inside "13, 2023"), and coordinating words, so "founded in 2015 and acquired in 2019" has two.
 SEGMENT_SPLIT_RE = re.compile(
-    r'(?<=[.;:!?])\s+|,(?!\s*\d)|\band\b|\bbut\b|\bwhile\b|\bwhereas\b|\bhowever\b|\balthough\b|\bwhich\b',
+    r'(?<=[.;:!?])\s+|,(?!\s*\d)|[()]|\band\b|\bbut\b|\bwhile\b|\bwhereas\b|\bhowever\b|\balthough\b|\bwhich\b',
     re.IGNORECASE,
 )
+# Reporting periods are bound to a figure like years: "30% in Q3" is not "30% in Q2". "per <period>" and
+# "a <period>" stay part of the unit: "$20 per month" is not "$20 per year".
+PERIOD_RE = re.compile(r'\b(Q[1-4]|H[12]|FY\s?\d{2,4})\b')
+PER_RE = re.compile(
+    r'(?:\bper|/)\s*(month|year|annum|week|day|hour|quarter|minute|second)\b'
+    r'|\b(?:an?|each|every)\s+(month|year|annum|week|day|hour|quarter)\b', re.IGNORECASE)
 
 
 class Figure:
     """A figure with the words it is attached to."""
 
-    __slots__ = ('value', 'kind', 'currency', 'noun', 'before', 'after', 'stems', 'rng', 'seg', 'raw')
+    __slots__ = ('value', 'kind', 'currency', 'noun', 'before', 'after', 'stems', 'rng', 'seg', 'raw',
+                 'text', 'periods', 'per')
 
-    def __init__(self, value, kind, currency, noun, before, after, stems=frozenset(), rng=None, seg=0, raw=''):
+    def __init__(self, value, kind, currency, noun, before, after, stems=frozenset(), rng=None, seg=0, raw='',
+                 text='', periods=frozenset(), per=frozenset()):
         self.value, self.kind, self.currency = value, kind, currency
         self.noun, self.before, self.after, self.stems = noun, before, after, stems
         self.rng, self.seg, self.raw = rng, seg, raw
+        self.text, self.periods, self.per = text, periods, per
 
     def __getitem__(self, i):  # (value, kind, noun, before, after): the shape older callers use
         return (self.value, self.kind, self.noun, self.before, self.after)[i]
@@ -340,7 +354,10 @@ def _segment_figures(text: str, drop: frozenset = frozenset(), seg: int = 0) -> 
         before = [_stem(w) for w in reversed(WORD_RE.findall(text[max(0, m.start() - 60):m.start()]))
                   if not w.isdigit() and w.lower() not in FILLER_WORDS and _stem(w) not in CHANGE_STEMS][:3]
         rng = 'hi' if text[:m.start()].rstrip().endswith('~') else ('lo' if text[m.end():].lstrip().startswith('~') else None)
-        out.append(Figure(value, kind, currency, noun, tuple(before), tuple(after[:3]), stems, rng, seg, m.group(0).strip()))
+        per = frozenset(_stem('year' if (a or b).lower() == 'annum' else (a or b)) for a, b in PER_RE.findall(text[m.end():m.end() + 40]))
+        periods = frozenset(re.sub(r'\s', '', p) for p in PERIOD_RE.findall(text))
+        out.append(Figure(value, kind, currency, noun, tuple(before), tuple(after[:3]), stems, rng, seg, m.group(0).strip(),
+                          text, periods, per))
     for low, high in zip(out, out[1:]):
         if low.rng == 'lo' and high.rng == 'hi':  # both ends of a range share the unit and the noun
             low.noun, low.after = high.noun, high.after
@@ -392,7 +409,8 @@ AND_PREDICATE_RE = re.compile(
 # Cues that negate a clause. "without X" and "no longer" are content, not clause polarity:
 # "works offline without an account" is the same polarity as "works offline and without an account".
 NEGATION_RE = re.compile(
-    r"\b(?:not|no|never|none|neither|nor|nothing|cannot|absent|fails? to|unable to|lacks?|lacking)\b|n't\b",
+    r"\b(?:not|no|never|none|neither|nor|nothing|nobody|nowhere|cannot|absent|unable to|lacks?|lacking|hardly|barely|scarcely"
+    r"|fail(?:s|ed|ing)? to|refus(?:e|es|ed|ing) to)\b|n't\b",
     re.IGNORECASE,
 )
 NO_LONGER_RE = re.compile(r'\bno longer\b', re.IGNORECASE)
@@ -452,9 +470,14 @@ def _stems(text: str) -> set[str]:
     return {_stem(t) for t in extract_tokens(NEGATION_RE.sub(' ', text))}
 
 
+def _is_adverb(entity: str) -> bool:
+    """A sentence-opening "-ly" word ("Quarterly", "Recently") is an adverb or adjective, not a name."""
+    return entity.endswith('ly') and ' ' not in entity and entity.istitle() and len(entity) > 5
+
+
 def _subject(claim_text: str) -> Optional[str]:
     for m in ENTITY_RE.finditer(claim_text):
-        if m.group(0) not in STOP_ENTITIES:
+        if m.group(0) not in STOP_ENTITIES and not _is_adverb(m.group(0)):
             return m.group(0)
     return None
 
@@ -464,13 +487,26 @@ def _want(clause: str, subject: Optional[str]) -> set[str]:
     return {w.lower() for w in extract_entities(clause) if w.lower() not in skip}
 
 
+LIST_SEPARATOR_RE = re.compile(r'\s*,\s*(?:(?:and|or)\s+)?|\s+(?:and|or)\s+')
+# What follows a name that opens a new clause ("... and Initech does not", "... and Initech offers neither").
+PREDICATE_AFTER_NAME_RE = re.compile(
+    r"\s+(?:does|do|did|is|are|was|were|has|have|had|can|cannot|could|will|would|also|still|lacks?|offers?|supports?"
+    r"|never|neither|\w+n't)\b")
+
+
 def _variants(clause: str) -> list[str]:
     """The clause itself plus, for a coordinated list of named things, one variant per item
-    ("supports Kubernetes and Nomad" -> "supports Kubernetes", "supports Nomad")."""
+    ("supports Kubernetes and Nomad" -> "supports Kubernetes", "supports Nomad"). A name that is
+    followed by a predicate ("SCIM and Initech does not") is the subject of the next clause, not a list
+    item: it is left out of the list."""
     out = [clause]
     for m in ENTITY_LIST_RE.finditer(clause):
-        items = [i.strip() for i in re.split(r'\s*,\s*|\s+(?:and|or)\s+', m.group(1)) if i.strip()]
-        out.extend(clause[:m.start()] + item + clause[m.end():] for item in items)
+        end = m.end()
+        if PREDICATE_AFTER_NAME_RE.match(clause, end):  # the match always holds a separator
+            end = m.start(1) + list(LIST_SEPARATOR_RE.finditer(m.group(1)))[-1].start()
+        items = [i.strip() for i in LIST_SEPARATOR_RE.split(clause[m.start(1):end]) if i.strip()]
+        if len(items) > 1:
+            out.extend(clause[:m.start()] + item + clause[end:] for item in items)
     return out
 
 
@@ -527,13 +563,62 @@ def _antonym_conflict(claim_clause: str, quote_clause: str) -> bool:
 
 
 def _quantifier_conflict(claim_clause: str, quote_clause: str) -> bool:
-    """"zero <thing>" / "without <thing>" in one text but not the other, about the same thing."""
+    """"zero <thing>" / "without <thing>" ("with no <thing>" is "without") in one text but not the other,
+    about the same thing."""
+    claim_clause, quote_clause = _normalize_negation(claim_clause), _normalize_negation(quote_clause)
     for pattern in (ZERO_RE, WITHOUT_RE):
         c = {_stem(w) for m in pattern.findall(claim_clause) for w in (m if isinstance(m, tuple) else (m,)) if w}
         q = {_stem(w) for m in pattern.findall(quote_clause) for w in (m if isinstance(m, tuple) else (m,)) if w}
         if (q - c) & _stems(claim_clause) or (c - q) & _stems(quote_clause):
             return True
     return False
+
+
+# "no more than 50" is not "more than 50": the idiom says the opposite of the bare comparative.
+COMPARATIVE_IDIOM_RE = re.compile(r'\b(?:no|nothing)\s+(more|less|fewer)\s+than\b', re.IGNORECASE)
+
+
+def _comparative_idioms(text: str) -> frozenset:
+    return frozenset('most' if m == 'more' else 'least' for m in COMPARATIVE_IDIOM_RE.findall(normalize_text(text).lower()))
+
+
+# Cues that make a sentence a plan, a hedge, a condition, an exception or a replacement rather than a
+# plain statement of fact. A quote clause that carries one the claim does not is never plain support:
+# the claim must be checked against the source (needs_review), whatever else matches.
+ESCALATION_CUES = (
+    ('a plan or expectation', re.compile(
+        r"\b(?:plans?|planned|planning|aims?|intends?|expects?|expected|hopes?|seeks?|seeking|wants?|going|about|set|likely) to\b"
+        r"|\b(?:will|would|shall|soon|upcoming|roadmap|considering|pursuing|proposed)\b", re.IGNORECASE)),
+    ('a hedge', re.compile(r"\b(?:may|might|could|should|perhaps|possibly|probably|reportedly|allegedly|rumou?red)\b", re.IGNORECASE)),
+    ('a condition or exception', re.compile(
+        r"\b(?:if|unless|except|excluding|besides|other than|provided that)\b", re.IGNORECASE)),
+    ('a replacement or earlier state', re.compile(
+        r"\binstead of\b|\brather than\b|\bin place of\b|\breplac(?:e|es|ed|ing)\b|\bformerly\b|\bpreviously\b"
+        r"|\bused to\b|\bswitch(?:ed|es|ing)? (?:from|away)\b", re.IGNORECASE)),
+)
+NO_LONGER_END_RE = re.compile(
+    r'\bno longer\b|\b(?:retir(?:e|es|ed|ing)|discontinu(?:e|es|ed|ing)|end(?:s|ed|ing)?|stop(?:s|ped|ping)?'
+    r'|dropp?(?:s|ed|ing)?|remov(?:e|es|ed|ing)|deprecat(?:e|es|ed|ing)|sunset(?:s|ting)?|withdr(?:aw|aws|awn|ew|awing)'
+    r'|cancell?(?:s|ed|ing)?|phas(?:e|es|ed|ing) out)\b',
+    re.IGNORECASE)
+# A claim word that the quote writes with a negating prefix ("compliant" / "non-compliant", "encrypted" / "unencrypted").
+NEGATING_PREFIX = r'(?:non-?|un-?|in-?|im-?|ir-?|il-?|dis-?)'
+
+
+def _cues(text: str) -> set[str]:
+    return {label for label, pattern in ESCALATION_CUES if pattern.search(text)}
+
+
+def _prefixed_words(claim_clause: str, quote_clause: str) -> list[str]:
+    """Words of the claim that the quote clause only has with a negating prefix."""
+    claim_words = {w for w in re.findall(r'\b[a-z]{5,}\b', claim_clause.lower())}
+    quote_lower = quote_clause.lower()
+    claim_lower = claim_clause.lower()
+    return sorted(
+        w for w in claim_words
+        if re.search(r'\b' + NEGATING_PREFIX + re.escape(w) + r'\b', quote_lower)
+        and not re.search(r'\b' + NEGATING_PREFIX + re.escape(w) + r'\b', claim_lower)
+    )
 
 
 # Parts of a clause that can differ in polarity. "but"-like words open a contrast (a fresh scope);
@@ -615,30 +700,38 @@ PASSIVE_RE = re.compile(r'(?i:\b(?:is|are|was|were|been|being|be)\s+\w+(?:ed|en)
 
 
 def _role_swap(claim_clause: str, quote_clause: str) -> bool:
-    """The same named things with their roles possibly exchanged, which words alone cannot tell:
-    one clause passive ("Acme was acquired by Initech") and the other active, or a plain
-    subject-verb-object clause in the other order ("Samsung overtook Apple" / "Apple overtook
-    Samsung"). Dates are not roles."""
-    entities = {e for e in extract_entities(claim_clause) if e in quote_clause and e not in DATE_WORDS}
+    """The same named things with their roles possibly exchanged, which words alone cannot tell: two or
+    more of the claim's names occur in the quote clause in another order (whatever stands between them:
+    "Samsung overtook Apple", "owned by", "cheaper than", "migrated from X to Y", "invested in"), or one
+    clause is passive ("Acme was acquired by Initech") and the other active. Dates are not roles."""
+    entities = {e for e in extract_entities(claim_clause)
+                if e in quote_clause and e not in DATE_WORDS and not re.search(r'\d\s*' + re.escape(e) + r'\b', claim_clause)}
     if len(entities) < 2:
         return False
     if bool(PASSIVE_RE.search(claim_clause)) != bool(PASSIVE_RE.search(quote_clause)):
         return True
-    claim_order, quote_order = _entity_order(claim_clause, entities), _entity_order(quote_clause, entities)
-    if len(claim_order) != len(quote_order) or claim_order == quote_order:
-        return False
-    between = [t for t in (claim_clause, quote_clause) for w in [t.lower().split()] if w]
-    simple = all(
-        len(gap.split()) <= 3 and not set(gap.lower().split()) & ADJUNCT_PREPOSITIONS
-        for gap in (_gap(t, entities) for t in between)
-    )
-    return simple
+    return _first_mentions(claim_clause, entities) != _first_mentions(quote_clause, entities)
 
 
-def _gap(text: str, entities: set[str]) -> str:
-    """The words between the first two mentioned entities."""
-    spots = sorted((m.start(), m.end()) for e in entities for m in re.finditer(r'\b' + re.escape(e) + r'\b', text))
-    return text[spots[0][1]:spots[1][0]]
+def _first_mentions(text: str, entities: set[str]) -> list[str]:
+    """The entities in the order of their first mention."""
+    order = _entity_order(text, entities)
+    return [e for i, e in enumerate(order) if e not in order[:i]]
+
+
+def _names_subject(clause: str, quote_clause: str, subject: Optional[str]) -> bool:
+    """Does the quote clause name the claim's subject, when the claim clause names it? A clause that
+    does not name the subject ("It employs 400.") has nothing to check."""
+    words = [w.lower() for w in (subject or '').split()]
+    lower = clause.lower()
+    if not words or not any(re.search(r'\b' + re.escape(w) + r'\b', lower) for w in words):
+        return True
+    opener = re.match(r'\s*([A-Z][\w.+-]*)', quote_clause)
+    if not opener or opener.group(1) in STOP_ENTITIES:  # an elided subject ("Acme hashes and does not store ...")
+        return True
+    quote_lower = quote_clause.lower()
+    quote_stems = {_stem(w) for w in WORD_RE.findall(quote_lower)}
+    return all(re.search(r'\b' + re.escape(w) + r'\b', quote_lower) or _stem(w) in quote_stems for w in words)
 
 
 def _negated_fragment(claim_clause: str, quote_clause: str) -> bool:
@@ -654,6 +747,9 @@ def _negated_fragment(claim_clause: str, quote_clause: str) -> bool:
     return False
 
 
+NOT_TOGETHER = 'no single source clause holds'
+
+
 def _negation_findings(claim_text: str, quote: str) -> tuple[list[str], list[str]]:
     """(conflicts, ambiguities) between a claim and a quote. A conflict is a claim clause and an
     aligned quote clause that disagree on polarity, or "zero/without <thing>" against a plain
@@ -663,19 +759,24 @@ def _negation_findings(claim_text: str, quote: str) -> tuple[list[str], list[str
     claim_text, quote = normalize_text(claim_text), normalize_text(quote)
     subject = _subject(claim_text)
     quote_clauses = _clauses(quote)
+    quote_squashed = {_squash(q) for q in quote_clauses}
     conflicts: list[str] = []
     ambiguities: list[str] = []
 
     def check(clause: str) -> bool:
-        """Compare one claim clause with every aligned quote clause; whether any aligned."""
+        """Compare one claim clause with every aligned quote clause; whether a quote clause holds the whole
+        clause (its names, figures and subject together) and so places it."""
+        if _squash(clause) in quote_squashed:  # the clause as written: it cannot contradict itself
+            return True
         # "no longer ..." may be worded in the quote as "retired"/"discontinued": no polarity check.
         check_polarity = not NO_LONGER_RE.search(clause)
-        aligned = False
+        placed = False
         for variant in _variants(clause):
+            claim_cues = _cues(variant)
             for q in quote_clauses:
                 if not _aligned(variant, q, subject):
                     continue
-                aligned = True
+                placed = placed or _names_subject(variant, q, subject)
                 if check_polarity:
                     verdict, detail = _polarity(variant, q, subject)
                     if verdict == 'conflict':
@@ -686,12 +787,22 @@ def _negation_findings(claim_text: str, quote: str) -> tuple[list[str], list[str
                     conflicts.append(f'the source says the opposite: "{q[:90]}"')
                 elif _role_swap(variant, q):
                     ambiguities.append(f'roles may be swapped (the same names in another order): "{q[:90]}"')
+                if _comparative_idioms(variant) != _comparative_idioms(q):
+                    ambiguities.append(f'"no more/less than" is not "more/less than": "{q[:90]}"')
+                for label in sorted(_cues(q) - claim_cues):
+                    ambiguities.append(f'the source states {label}, the claim does not: "{q[:90]}"')
+                if re.search(re.escape(q) + r'\s*\?', quote):
+                    ambiguities.append(f'the source only asks: "{q[:90]}?"')
+                for word in _prefixed_words(variant, q):
+                    ambiguities.append(f'the source has "{word}" with a negating prefix: "{q[:90]}"')
         if check_polarity and any(_negated_fragment(clause, q) for q in quote_clauses):
             ambiguities.append(f'the source negates part of the claim: "{clause[:90]}"')
-        return aligned
+        return placed
 
     for claim_clause in _clauses(claim_text):
-        if check(claim_clause) or NO_LONGER_RE.search(claim_clause):
+        if NO_LONGER_RE.search(claim_clause) and not NO_LONGER_END_RE.search(quote):
+            ambiguities.append(f'the claim says "no longer" and the source does not: "{claim_clause[:90]}"')
+        if check(claim_clause):
             continue
         # No quote clause states the whole clause: try its parts one by one ("was not profitable in
         # 2022, raised $50M in 2023" is two statements, each in its own quote sentence).
@@ -700,6 +811,10 @@ def _negation_findings(claim_text: str, quote: str) -> tuple[list[str], list[str
         for part in unplaced:
             if _is_negated(part):
                 ambiguities.append(f'polarity ambiguous: no source clause states the negated "{part[:90]}"')
+            elif _want(part, subject) or extract_figures(part) or len(_stems(part)) > 1:
+                ambiguities.append(f'{NOT_TOGETHER} the names, figures and subject of "{part[:90]}"')
+    if _quantifier_conflict(claim_text, quote):
+        conflicts.append('the source says the opposite: "zero" or "without" against a plain statement')
     return conflicts, ambiguities
 
 
@@ -745,6 +860,8 @@ def _figure_matches(claim: Figure, quote: Figure, others: list[Figure]) -> bool:
         return False
     if claim.stems and quote.stems and not claim.stems & quote.stems:
         return False
+    if not claim.periods <= quote.periods or not claim.per <= quote.per:  # Q3 is not Q2, per month is not per year
+        return False
     if claim.kind == 'year':
         return True
     if claim.noun is not None:
@@ -766,14 +883,28 @@ def _bound(claim: Figure, quote: Figure, claim_figs: list[Figure], quote_figs: l
     )
 
 
+def _belongs_elsewhere(figure: Figure, claim_text: str, quote_text: str, subject: Optional[str]) -> bool:
+    """Is a quote figure attached to another name? Its segment ("Initech has 500 employees") names
+    something the claim does not mention and not the claim's subject. A subject the quote never names is
+    reported as a missing entity instead."""
+    words = {w.lower() for w in (subject or '').split()}
+    if not words or words <= set(WORD_RE.findall(figure.text.lower())) or not words <= set(WORD_RE.findall(quote_text.lower())):
+        return False
+    claim_words = set(WORD_RE.findall(claim_text.lower()))
+    return bool({w.lower() for e in extract_entities(figure.text) for w in e.split()} - claim_words)
+
+
 def _figures_supported(claim_text: str, quote_text: str, kinds) -> tuple[int, int, list[Figure]]:
-    """(matched, total, unmatched) of the claim's figures of the given kinds."""
+    """(matched, total, unmatched) of the claim's figures of the given kinds. A quote figure that sits in
+    another name's segment does not count."""
     claim_figs = extract_figures(claim_text, drop_entities=True)
     quote_figs = extract_figures(quote_text)
+    subject = _subject(claim_text)
     wanted = [f for f in claim_figs if f.kind in kinds]
     missing = [
         f for f in wanted
         if not any(_figure_matches(f, q, claim_figs) and (f.kind != 'year' or _bound(f, q, claim_figs, quote_figs))
+                   and not _belongs_elsewhere(q, claim_text, quote_text, subject)
                    for q in quote_figs)
     ]
     return len(wanted) - len(missing), len(wanted), missing
@@ -812,12 +943,19 @@ def _assess_quote(claim_text: str, quote: str, claim_tokens: set[str], claim_ent
             complete = False
             reasons.append('entity not found in the source: ' + ', '.join(absent))
     conflicts, ambiguities = _negation_findings(claim_text, quote)
+    # Words, figures and names that are not together in one source clause matter only when nothing else
+    # is already missing: the other reasons say more.
+    apart = [a for a in ambiguities if a.startswith(NOT_TOGETHER)]
+    ambiguities = [a for a in ambiguities if a not in apart]
     if ambiguities:
         complete = False
         reasons.extend(ambiguities)
     score = sum(WEIGHTS[name] * value for name, value in parts) / sum(WEIGHTS[name] for name, _ in parts)
     if not reasons and score < SUPPORTED_SCORE:
         reasons.append(f'too few of the claim\'s words appear in the source (score {round(score, 2)})')
+    if apart and not reasons:
+        complete = False
+        reasons.extend(apart)
     return {'score': score, 'addresses': shares or score >= PARTIAL_SCORE, 'complete': complete and score >= SUPPORTED_SCORE and not conflicts,
             'conflicts': conflicts, 'reasons': reasons}
 

@@ -233,7 +233,8 @@ were checked and how.
 ### What makes a claim `supported`
 
 After normalising text (typographic quotes and dashes, `40 percent` = `40%`, `USD 50` = `$50`, number
-words, `v1.29`), all of these hold in one quote:
+words, `v1.29`), all of these hold in one quote. Whatever cannot be settled by the words escalates to
+`needs_review`; the checker never guesses `supported`.
 
 - enough of the claim's significant words appear (claims with no named thing and no figure need 90%), and
   every named entity (capitalised phrases, acronyms such as AWS, camelCase brands such as GitHub,
@@ -241,38 +242,76 @@ words, `v1.29`), all of these hold in one quote:
 - every figure matches a quote figure with the same value, unit and currency. Currencies are `$`, `A$`,
   `C$`, `HK$`, `S$`, `NZ$`, `EUR`, `GBP`, yen, yuan/RMB, rupees, francs and `KRW` (symbols, ISO codes and
   words); a currency the claim states must be stated, and be the same, in the quote (a bare yen sign fits
-  yen or yuan). A range ("between 2 and 5", "3 to 4", "3-5") is a range: "7 days" does not match "between
-  two and five days" and "and" joins number words only inside a compound ("two hundred and five");
-- years are bound to the event: the claim's year must sit in a quote segment that shares a word with its
-  own and that also holds the claim's other figures ("In 2019, ..." is bound to the clause it opens);
-  other figures must be attached to the same noun or, without one, to the same metric (the nearest content
-  word that is not a verb of change: "revenue grew 30%" is not "margins grew 30%");
-- no aligned quote clause has a polarity that differs or is ambiguous. Negation is scoped to the part it
+  yen or yuan). A range ("between 2 and 5", "3 to 4", "3 or 4", "3-5", and the same with a lone "one":
+  "one to three days", "one or two") is a range: "7 days" does not match "between two and five days" and
+  "and" joins number words only inside a compound ("two hundred and five");
+- years, quarters and half-years are bound to the event: the claim's year or period (`Q1`-`Q4`, `H1`, `H2`,
+  `FY2024`) must sit in a quote segment that shares a word with its own and that also holds the claim's
+  other figures ("In 2019, ..." is bound to the clause it opens; "30% in Q3" is not "30% in Q2 and 10% in
+  Q3"). `per <period>` stays part of the unit ("$20 per month" is not "$20 per year", "a week" is
+  "per week"); other figures must be attached to the same noun or, without one, to the same metric (the
+  nearest content word that is not a verb of change: "revenue grew 30%" is not "margins grew 30%");
+- a matched figure or year does not sit in a quote segment that names something the claim does not mention
+  and not the claim's subject ("Initech has 500 employees and Acme has 200" does not support "Acme has 500
+  employees"). Segments end at sentence ends, commas, semicolons, parentheses and coordinating words
+  (`and`, `but`, `while`, `which`);
+- the claim's subject, key terms and figures co-occur in ONE quote clause. A claim clause that names its
+  subject needs a quote clause that names it too (a quote clause that opens with no name of its own counts
+  as an elided subject: "Acme hashes and does not store passwords"). Names or predicates taken from
+  different clauses or sentences ("Globex acquired Initech. Acme acquired Hooli." for "Acme acquired
+  Initech") are `needs_review`;
+- no aligned quote clause has a polarity that differs or is ambiguous. Negation cues are `not`, `no`, `never`,
+  `none`, `neither`/`nor`, `nothing`, `nobody`, `nowhere`, `cannot`, `n't`, `absent`, `lack(s)`, `unable to`,
+  `hardly`/`barely`/`scarcely`, `fail(s/ed) to` and `refuse(s/d) to`. Negation is scoped to the part it
   belongs to ("Okta supports SCIM and OneLogin does not" says nothing against "Okta supports SCIM"); "with
-  no X" and "without X" are terms; "no fewer than" and "not to mention" are not negations; "not even"
-  negates. When no single part of the quote states what the claim says, or when it depends on how far a
-  negation reaches ("does not support SSO and SCIM"), the claim is `needs_review`.
-- the same named things are not in another order or voice ("Samsung overtook Apple" / "Apple overtook
-  Samsung", "acquired" / "was acquired by"): roles cannot be settled by words, so `needs_review`.
+  no X" is read as "without X", and "without X" or "zero X" against a plain assertion about X is
+  `contradicted`; "no more/less/fewer than N" is not "more/less/fewer than N" (`needs_review` either way);
+  "not to mention" is not a negation; "not even" negates. When no single part of the quote states what
+  the claim says, or when it depends on how far a negation reaches ("does not support SSO and SCIM"), the
+  claim is `needs_review`. A claim clause identical to a quote clause after normalising is never
+  contradicted, and a name followed by a predicate ("... and Initech does not") opens a new clause rather
+  than extending a list;
+- the same named things are not in another order or voice: two or more of the claim's names in a different
+  order in the quote clause, whatever stands between them ("Samsung overtook Apple", "owned by", "cheaper
+  than", "migrated from X to Y", "invested in"), or "acquired" against "was acquired by", is `needs_review`.
+  Units after a figure ("100 MB") and dates are not names. Honest paraphrases that invert the sentence
+  ("SSO is included on every Acme plan" for "Acme includes SSO") therefore also need a reader;
+- the quote clause carries no cue the claim lacks that turns a statement into something else, each
+  `needs_review`: a plan or expectation (`plans/aims/expects/intends to`, `will`, `would`, `soon`,
+  `considering`, `pursuing`), a hedge (`may`, `might`, `could`, `should`, `reportedly`), a condition or
+  exception (`if`, `unless`, `except`, `other than`), a replacement or earlier state (`instead of`,
+  `rather than`, `replaced`, `formerly`, `previously`, `used to`), a question (the clause ends in `?`), or the
+  claim's own word with a negating prefix (`compliant` / `non-compliant`, `encrypted` / `unencrypted`).
+  A claim that says "no longer" needs a source that says so or names the end (retired, discontinued,
+  removed, ...), else `needs_review`.
 
-Corpora pinning the behaviour (`tests/fixtures/`): `claim_corpus_verbatim.json` (every probe of reviews 1-3),
-`claim_corpus_r4.json` (the fourth review's probes verbatim), `claim_corpus.json` (curated) and
+Corpora pinning the behaviour (`tests/fixtures/`, run by `tests/test_claim_checker_regression_corpus.py`,
+which holds every probe pair of all five reviews in one table): `claim_corpus_verbatim.json` (reviews 1-3),
+`claim_corpus_r4.json`, `claim_corpus_r5.json` (the fifth review's probes), `claim_corpus.json` (curated) and
 `claim_corpus_heldout.json` (written in other styles after the scorer was frozen). Fabrications are never
-`supported`; honest claims are never `contradicted` or `unsupported`. Counts per verdict at the last run:
+`supported`; honest claims are never `contradicted` or `unsupported`; a claim identical to its quote is
+`supported`. Counts per verdict at the last run:
 
 | Corpus | Fabrications: contradicted / needs_review / unsupported / supported | Honest: supported / needs_review / contradicted |
 |--------|------------------------------------------------------------------|-----------------------------------------------|
-| reviews 1-3 verbatim (55 + 50) | 17 / 36 / 2 / 0 | 49 / 1 / 0 |
-| review 4 verbatim (36 + 69) | 2 / 34 / 0 / 0 | 64 / 5 / 0 |
+| reviews 1-3 verbatim (55 + 50) | 17 / 36 / 2 / 0 | 48 / 2 / 0 |
+| review 4 verbatim (36 + 69) | 2 / 34 / 0 / 0 | 60 / 9 / 0 |
+| review 5 verbatim (121 + 99) | 26 / 95 / 0 / 0 | 87 / 12 / 0 |
 | curated (45 + 45) | 14 / 30 / 1 / 0 | 45 / 0 / 0 |
 | held-out (32 + 32) | 11 / 21 / 0 / 0 | 32 / 0 / 0 |
 
+Of the reviewer's 60 everyday honest claims, 52 are `supported` and 8 `needs_review` (a quote that does not
+name the entity, an inverted sentence, a paraphrased unit); none is contradicted.
+
 It still cannot decide: an antonym outside the small table (those pairs become `needs_review` only when
 other words disagree), paraphrased units outside the synonym table ("500 employees" vs "500 contractors"),
-idioms that restate a negation ("no longer offers" vs "retired") and sentences whose meaning needs world
+a negation worded without any cue above ("fell short of"), and sentences whose meaning needs world
 knowledge; such pairs may be `supported`, which is why `supported` means "the words match", not "true".
 Short sentences (30 characters or fewer) are claims when they carry a figure or a count ("7 days"), a named
 thing, a compliance or certification term or a superlative; navigation ("See Figure 3 below.", "Next, we
-compare costs."), bare labels and evaluations that open with an everyday noun ("Pricing is simple.") are
-not. A recommendation or hedge sentence without a year, percentage, currency or scaled figure is exempt
-from `--strict`.
+compare costs."), bare labels and evaluations that open with one of a fixed list of everyday nouns
+(`pricing`, `support`, `setup`, `onboarding`, `documentation`, `performance`, `security`, `features`, ... see
+`GENERIC_OPENERS` in `extract_claims.py`: "Pricing is simple.") are not. Any other opener ("Latency is
+low.", "Usage grew quickly.") may be a name, so the sentence stays a claim. A sentence ends at a blank line,
+and after a citation marker before a digit or lower-case brand ("... [1]. 62% of ..."). A recommendation or
+hedge sentence without a year, percentage, currency or scaled figure is exempt from `--strict`.
