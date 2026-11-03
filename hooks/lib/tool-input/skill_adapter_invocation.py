@@ -1,34 +1,16 @@
-import pathlib
-import re
-import shlex
+"""Exit 0 (printing "adapter") when a command is one literal SB skill-adapter call.
+
+Usage: skill_adapter_invocation.py COMMAND | skill_adapter_invocation.py [-] < command.txt
+Only ``[env] [NAME=value...] .../scripts/silver-bullet invoke-skill ...`` with literal
+words qualifies: no second command, pipe, redirection or substitution ($(...), `...`).
+"""
+
+import os
 import sys
 
-payload = sys.argv[1]
-assignment_re = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=.*$")
-try:
-    lexer = shlex.shlex(payload, posix=True, punctuation_chars=True)
-    lexer.whitespace_split = True
-    tokens = list(lexer)
-except Exception:
-    raise SystemExit(1)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import shell_analysis  # noqa: E402
 
-if not tokens:
+if not shell_analysis.is_skill_adapter_invocation(shell_analysis.read_input(sys.argv, 1)):
     raise SystemExit(1)
-if any(token in {";", "|", "||", "&", "&&", ">", ">>", "<", "<<"} for token in tokens):
-    raise SystemExit(1)
-
-idx = 0
-if tokens[idx] == "env":
-    idx += 1
-while idx < len(tokens) and assignment_re.match(tokens[idx]):
-    idx += 1
-if idx + 1 >= len(tokens):
-    raise SystemExit(1)
-
-command = tokens[idx]
-if not (command == "scripts/silver-bullet" or command.endswith("/scripts/silver-bullet")):
-    raise SystemExit(1)
-if tokens[idx + 1] != "invoke-skill":
-    raise SystemExit(1)
-
 print("adapter")

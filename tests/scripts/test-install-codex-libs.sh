@@ -71,6 +71,35 @@ rm -f "$CFG"
 sub ensure_marketplace_registered "$TL_TMP/we\"ird\\dir"
 sub codex_marketplace_root
 assert_eq "root with a quote and backslash round-trips" "$TL_TMP/we\"ird\\dir" "$TL_OUT"
+# without any TOML parser (old Python, no pip) the same root is found, never a silent default
+NOPARSER="$TL_TMP/noparser"; mkdir -p "$NOPARSER/pip"
+for mod in tomllib tomli; do printf 'raise ImportError("hidden for the test")\n' >"$NOPARSER/$mod.py"; done
+printf 'raise ImportError("hidden for the test")\n' >"$NOPARSER/pip/__init__.py"
+printf '[marketplaces.alo-labs-codex] # mine\nsource_type = "local"\nsource = "%s"\n' "$TL_TMP/plain dir" >"$CFG"
+PYTHONPATH="$NOPARSER" sub codex_marketplace_root
+assert_eq "root read without a TOML parser" "$TL_TMP/plain dir" "$TL_OUT"
+# the same shapes resolve with and without a parser: inline table, \U escape, literal tab
+mkdir -p "$TL_TMP/emoji😀dir" "$TL_TMP/tab	dir"
+for mode in parser noparser; do
+  runroot() { if [[ $mode == noparser ]]; then PYTHONPATH="$NOPARSER" sub codex_marketplace_root; else sub codex_marketplace_root; fi; }
+  printf 'marketplaces.alo-labs-codex = { source_type = "local", source = "%s" }\n' "$TL_TMP/plain dir" >"$CFG"
+  runroot; assert_eq "inline-table registration read ($mode)" "$TL_TMP/plain dir" "$TL_OUT"
+  printf '[marketplaces.alo-labs-codex]\nsource_type = "local"\nsource = "%s/emoji\\U0001F600dir"\n' "$TL_TMP" >"$CFG"
+  runroot; assert_eq "\\U escape in the path read ($mode)" "$TL_TMP/emoji😀dir" "$TL_OUT"
+  printf '[marketplaces.alo-labs-codex]\nsource_type = "local"\nsource = "%s/tab	dir"\n' "$TL_TMP" >"$CFG"
+  runroot; assert_eq "literal tab in the path read ($mode)" "$TL_TMP/tab	dir" "$TL_OUT"
+  for bad in '[marketplaces]\nalo-labs-codex = "x"\n' 'marketplaces = 3\n'; do
+    printf "$bad" >"$CFG"
+    runroot
+    assert_contains "non-table registration warns ($mode)" "$TL_ERR" "cannot read the Codex marketplace registration"
+    assert_not_contains "no traceback ($mode)" "$TL_ERR" "Traceback"
+    assert_eq "non-table registration uses the default root ($mode)" "$MP" "$TL_OUT"
+  done
+done
+printf 'not [valid\n' >"$CFG"
+PYTHONPATH="$NOPARSER" sub codex_marketplace_root
+assert_contains "an unreadable registration is reported, not silently ignored" "$TL_ERR" "cannot read the Codex marketplace registration"
+assert_eq "and the default root is used" "$MP" "$TL_OUT"
 printf 'not [valid\n' >"$CFG"
 sub codex_marketplace_root
 assert_eq "invalid config falls back to the default root" "$MP" "$TL_OUT"
@@ -109,6 +138,16 @@ sub sanitize_codex_package_surface
 assert_eq "fat marketplace sanitized" 0 "$TL_STATUS"
 assert_contains "package text rewritten for Codex" "$(<"$MP/plugins/silver-bullet/hooks/core-rules.md")" "active runtime delegation mechanism"
 assert_eq "pin refreshed after sanitizing" "$(sha256sum "$MP/plugins/silver-bullet/hooks/core-rules.md" | awk '{print $1}')" "$(<"$MP/plugins/silver-bullet/hooks/core-rules.sha256")"
+# R8-02: the checkout's own package is host-neutral and shared with Cursor; a
+# local-source marketplace pointing at the checkout must not rewrite it.
+reset_home
+set_marketplace_source "$FAKE_REPO"
+make_pkg "$FAKE_REPO/plugins/silver-bullet"
+printf 'Use the Agent tool\n' >"$FAKE_REPO/plugins/silver-bullet/hooks/core-rules.md"
+sub sanitize_codex_package_surface
+assert_eq "checkout package: sanitizing is a no-op" 0 "$TL_STATUS"
+assert_eq "checkout package text is never rewritten" "Use the Agent tool" "$(<"$FAKE_REPO/plugins/silver-bullet/hooks/core-rules.md")"
+rm -rf "$FAKE_REPO/plugins"
 # thin marketplace: manifest names the version, the package lives in the cache
 reset_home
 mkdir -p "$MP/.agents/plugins"
@@ -157,6 +196,7 @@ assert_file_absent "nothing cached without a version" "$CACHE"
 reset_home
 make_pkg "$MP/plugins/silver-bullet" 2.10.0
 printf "pin\n" >"$MP/plugins/silver-bullet/hooks/core-rules.sha256"
+printf 'Use the Agent tool\n' >"$MP/plugins/silver-bullet/hooks/core-rules.md"
 make_pkg "$CACHE/1.0.0" 1.0.0
 mkdir -p "$CACHE/current"
 printf 'stray' >"$CACHE/not-a-dir"
@@ -167,6 +207,11 @@ assert_file_exists "pin present in the new version" "$CACHE/2.10.0/hooks/core-ru
 assert_eq "older versions are refreshed from the marketplace package" 2.10.0 "$(jq -r .version "$CACHE/1.0.0/.codex-plugin/plugin.json")"
 assert_eq "stray files in the cache root left alone" stray "$(<"$CACHE/not-a-dir")"
 assert_file_absent "'current' directory not overwritten" "$CACHE/current/.codex-plugin"
+assert_eq "cached copy is sanitized for Codex" "Use the active runtime delegation mechanism" "$(<"$CACHE/2.10.0/hooks/core-rules.md")"
+assert_eq "refreshed older version is sanitized too" "Use the active runtime delegation mechanism" "$(<"$CACHE/1.0.0/hooks/core-rules.md")"
+for v in 2.10.0 1.0.0; do
+  assert_eq "cache pin matches the sanitized rules ($v)" "$(sha256sum "$CACHE/$v/hooks/core-rules.md" | awk '{print $1}')" "$(<"$CACHE/$v/hooks/core-rules.sha256")"
+done
 
 # ------------------------------------------------------- cache.sh: pruning helpers
 reset_home
@@ -575,7 +620,11 @@ assert_eq "repair keeps other tables" 1 "$(toml_get "$CFG" 'd["other"]["keep"]')
 printf '[hooks.state."%s"]\ntrusted_hash = "sha256:a"\n[hooks.state."%s"]\ntrusted_hash = "sha256:b"\n[other]\nkeep = 1\n' "$SBKEY" "$SBKEY" >"$CFG"
 sub repair_silver_bullet_duplicate_trust_tables
 assert_contains "install-time repair reports" "$TL_ERR" "removed Silver Bullet hook-trust tables declared twice"
-assert_eq "install-time repair leaves a valid config" '{"other": {"keep": 1}}' "$(toml_get "$CFG" 'd' | sed 's/{"hooks": {"state": {}}, /{/')"
+assert_eq "install-time repair keeps one copy and the other tables" '1 1' "$(toml_get "$CFG" 'len(d["hooks"]["state"])' | tr -d '\n') $(toml_get "$CFG" 'd["other"]["keep"]')"
+UKEY="$CH/.codex/hooks.json:pre_tool_use:0:0"
+printf '[hooks.state."%s"]\ntrusted_hash = "sha256:u1"\n[hooks.state]\n[hooks.state."%s"]\ntrusted_hash = "sha256:u2"\n[other]\nkeep = 1\n' "$UKEY" "$UKEY" >"$CFG"
+sub repair_silver_bullet_duplicate_trust_tables
+assert_eq "duplicated Kay (user-prefix) trust tables are repaired, keeping the first copy" '"sha256:u1"' "$(toml_get "$CFG" 'd["hooks"]["state"]["'"$UKEY"'"]["trusted_hash"]')"
 sub repair_silver_bullet_duplicate_trust_tables
 assert_eq "a valid config is not touched by the repair" 0 "$TL_STATUS"
 printf '[other]\nkeep = 1\n[other]\n' >"$CFG"
@@ -673,6 +722,20 @@ assert_eq "SB hook appended as a second group" 2 "$(jq '.hooks.PreToolUse | leng
 assert_eq "SB hook trusted at its own position" 1 "$(toml_get "$CFG" 'int("'"$CH"'/.codex/hooks.json:pre_tool_use:1:0" in d["hooks"]["state"])')"
 assert_eq "SB hooks go in a group of their own, after the user's" '"\"$HOME/bin/guard.sh\""' "$(jq -c '.hooks.PreToolUse[0].hooks[0].command' "$CH/.codex/hooks.json")"
 assert_eq "user's hook keeps its own approval after the merge and the seed" '"sha256:userguard"' "$(toml_get "$CFG" 'd["hooks"]["state"]["'"$CH"'/.codex/hooks.json:pre_tool_use:0:0"]["trusted_hash"]')"
+
+# transactional order: a config.toml that cannot be edited leaves hooks.json untouched too
+reset_home
+mkdir -p "$CH/.codex"
+printf '{"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"type":"command","command":"%s/.codex/plugins/cache/alo-labs-codex/silver-bullet/1.0.0/hooks/completion-audit.sh"},{"type":"command","command":"/usr/bin/u1"}]}]}}\n' "$CH" >"$CH/.codex/hooks.json"
+HJ_BEFORE="$(<"$CH/.codex/hooks.json")"
+printf '[other]\nkeep = 1\n[other]\n' >"$CFG"
+sub purge_legacy_silver_bullet_hooks_from_user_config
+assert_eq "an uneditable config.toml makes the purge fail" 1 "$TL_STATUS"
+assert_eq "and hooks.json is left byte-identical" "$HJ_BEFORE" "$(<"$CH/.codex/hooks.json")"
+# a stale trust written in dotted-key form at a re-key target does not break the re-key
+printf '[hooks.state]\n"%s/.codex/hooks.json:pre_tool_use:0:0".trusted_hash = "sha256:stale"\n"%s/.codex/hooks.json:pre_tool_use:0:1".trusted_hash = "sha256:u1"\n' "$CH" "$CH" >"$CFG"
+sub purge_legacy_silver_bullet_hooks_from_user_config
+assert_eq "dotted-form trust follows the user's hook" '"sha256:u1"' "$(toml_get "$CFG" 'd["hooks"]["state"]["'"$CH"'/.codex/hooks.json:pre_tool_use:0:0"]["trusted_hash"]')"
 
 # ---- R7-06: --purge-legacy-skills removes only marked Silver Bullet copies
 reset_home

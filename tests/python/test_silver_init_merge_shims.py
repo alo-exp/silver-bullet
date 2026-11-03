@@ -89,7 +89,14 @@ class ShimEndToEndTests(unittest.TestCase):
         (self.install / "hooks").mkdir(parents=True)
 
     def run_shim(self, shim: Path, *args: str) -> subprocess.CompletedProcess[str]:
-        env = {"PATH": os.environ.get("PATH", ""), "HOME": str(self.home), "TMPDIR": str(self.tmp)}
+        # PYTHONDONTWRITEBYTECODE: the shims import scripts/lib modules; a cleared env would
+        # otherwise write __pycache__ into the checkout (CI fails a run that changes it).
+        env = {
+            "PATH": os.environ.get("PATH", ""),
+            "HOME": str(self.home),
+            "TMPDIR": str(self.tmp),
+            "PYTHONDONTWRITEBYTECODE": "1",
+        }
         return subprocess.run(
             [sys.executable, str(shim), *args], capture_output=True, text=True, env=env, check=False, timeout=60
         )

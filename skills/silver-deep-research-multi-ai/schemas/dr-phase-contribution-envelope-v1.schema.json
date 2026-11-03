@@ -41,7 +41,35 @@
       "type": "string"
     },
     "payload": {
-      "type": "object"
+      "type": "object",
+      "properties": {
+        "matrix_entries": {
+          "type": "array",
+          "description": "Optional structured capability votes: one row per vendor and feature.",
+          "items": {
+            "type": "object",
+            "required": [
+              "vendor",
+              "feature",
+              "supported"
+            ],
+            "properties": {
+              "vendor": {
+                "type": "string"
+              },
+              "feature": {
+                "type": "string"
+              },
+              "supported": {
+                "type": "boolean"
+              },
+              "source_ref": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
     },
     "model_family_id": {
       "type": "string"

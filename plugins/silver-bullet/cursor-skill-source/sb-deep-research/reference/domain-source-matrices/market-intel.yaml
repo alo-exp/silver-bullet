@@ -1,0 +1,7 @@
+sources:
+  - class: news_wire
+    domains: [reuters.com, bloomberg.com, ft.com]
+  - class: filings
+    domains: [sec.gov, companieshouse.gov.uk]
+  - class: analyst
+    note: Industry reports — verify primary data

@@ -1,24 +1,36 @@
 name: E2E Live (optional)
 
-# Non-blocking live agent matrix — manual / pre-release only.
-# Merge gate remains `.github/workflows/ci.yml` (unit + integration + harness sanity).
+# Manual live run of tests/e2e-live/run-e2e-live-tests.sh; the merge and release gate is
+# ci.yml. The live suite needs a host CLI (claude, codex or kay) with credentials on the
+# runner. This workflow installs none and passes no credentials, so on a GitHub-hosted runner
+# it stops at the preflight and FAILS, with the reason in the job summary, instead of
+# reporting a green run in which nothing ran. It runs the suite only on a runner that
+# provides the CLIs (a self-hosted runner). scripts/run-release-live-matrix.sh is not run
+# here: it is an operator-local release gate that needs that machine's verify-tests marker
+# (docs/RELEASE.md, step 4).
 
 on:
   workflow_dispatch:
     inputs:
       runtimes:
-        description: 'Comma-separated runtimes (e.g. codex,kay)'
+        description: 'Runtimes, comma- or space-separated: claude, codex, kay'
         required: false
-        default: 'codex'
+        default: 'claude'
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   e2e-live:
     runs-on: ubuntu-latest
-    continue-on-error: true
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    timeout-minutes: 120
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
 
       - name: Seed Silver Bullet runtime env
         run: |
@@ -34,12 +46,38 @@ jobs:
       - name: Install jq
         run: sudo apt-get install -y jq git
 
-      - name: Run live E2E suite
+      - name: Preflight (requested runtimes and their host CLIs)
+        env:
+          RUNTIMES_INPUT: ${{ inputs.runtimes }}
         run: |
-          export SB_E2E_LIVE_RUNTIMES="${{ github.event.inputs.runtimes }}"
-          bash tests/e2e-live/run-e2e-live-tests.sh
-        continue-on-error: true
+          set -f
+          runtimes=()
+          for rt in ${RUNTIMES_INPUT//,/ }; do
+            case "$rt" in
+              claude | codex | kay) runtimes+=("$rt") ;;
+              *) echo "::error::unsupported runtime '$rt' (use claude, codex or kay)"; exit 1 ;;
+            esac
+          done
+          ((${#runtimes[@]})) || runtimes=(claude)
+          missing=()
+          for rt in "${runtimes[@]}"; do
+            # The suite honours CLAUDE_BIN and CODEX_BIN (codex and kay) as it does locally.
+            case "$rt" in
+              claude) bin="${CLAUDE_BIN:-claude}" ;;
+              *) bin="${CODEX_BIN:-$rt}" ;;
+            esac
+            command -v "$bin" >/dev/null 2>&1 || missing+=("$rt")
+          done
+          if ((${#missing[@]})); then
+            {
+              echo "### E2E Live did not run"
+              echo
+              echo "No host CLI on this runner for: ${missing[*]}. This workflow installs no agent CLI and passes no credentials, so the live suite cannot run on a GitHub-hosted runner. Run \`tests/e2e-live/run-e2e-live-tests.sh\` on an operator machine (docs/RELEASE.md, step 4), or dispatch this workflow on a runner that provides the CLIs."
+            } >>"$GITHUB_STEP_SUMMARY"
+            echo "::error::E2E Live cannot run here: no host CLI for ${missing[*]} (see the job summary)"
+            exit 1
+          fi
+          echo "SB_E2E_LIVE_RUNTIMES=${runtimes[*]}" >>"$GITHUB_ENV"
 
-      - name: Run release live matrix
-        run: bash scripts/run-release-live-matrix.sh
-        continue-on-error: true
+      - name: Run live E2E suite
+        run: bash tests/e2e-live/run-e2e-live-tests.sh

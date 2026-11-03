@@ -94,10 +94,13 @@ run_validate --repo-root "$REPO" --host claude
 assert_eq "failing token budget validator fails the audit" 1 "$TL_STATUS"
 assert_not_contains "no OK verdict after a budget failure" "$TL_OUT" "OK — no cross-host"
 
-# Sibling validators that are missing or not executable are skipped.
+# Missing sibling validators fail the audit (R8-06): a skipped check must not print OK.
 rm -f "$T/scripts/validate-host-skill-surface.sh" "$T/scripts/validate-claude-agent-token-budget.sh"
 run_validate --repo-root "$REPO" --host claude
-assert_eq "missing sibling validators are skipped" 0 "$TL_STATUS"
+assert_eq "missing sibling validators fail the audit" 1 "$TL_STATUS"
+assert_contains "missing skill-surface validator named" "$TL_ERR" "missing sub-validator $T/scripts/validate-host-skill-surface.sh"
+assert_contains "missing token-budget validator named" "$TL_ERR" "missing sub-validator $T/scripts/validate-claude-agent-token-budget.sh"
+assert_not_contains "no OK verdict when a check is missing" "$TL_OUT" "OK — no cross-host"
 
 # --- host / cache-root validation ----------------------------------------------------------------------
 stub_validators

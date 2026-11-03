@@ -29,6 +29,7 @@ S
   cat >"$T/scripts/install-cursor.sh" <<'S'
 #!/usr/bin/env bash
 echo "install-cursor HOME=$HOME CURSOR_HOME=$CURSOR_HOME RUNTIME=$SILVER_BULLET_RUNTIME" >>"$LOG"
+echo "install-cursor-env kay=${KAY_HOME-unset} claude=${CLAUDE_CONFIG_DIR-unset} state=${SB_RUNTIME_STATE_DIR-unset} statefile=${SILVER_BULLET_STATE_FILE-unset}" >>"$LOG"
 [[ -n "${CURSOR_IGNORE_TERM:-}" ]] && trap '' TERM
 if [[ -n "${CURSOR_CHAIN_FILE:-}" ]]; then
   # Own pid and the three ancestors above it: installer, timeout wrapper, smoke, supervisor.
@@ -82,7 +83,7 @@ NOCLAUDE="$(tl_path_without claude)"
 # --- cursor, all green --------------------------------------------------
 build_tree
 SMOKE_ARGS=(--host cursor)
-smoke PATH="$NOCLAUDE"
+smoke PATH="$NOCLAUDE" KAY_HOME=/real/kay CLAUDE_CONFIG_DIR=/real/claude SB_RUNTIME_STATE_DIR=/real/state SILVER_BULLET_STATE_FILE=/real/sf
 assert_eq "cursor host passes" 0 "$TL_STATUS"
 assert_contains "banner shows the repo root" "$TL_OUT" "REPO_ROOT=$T"
 assert_contains "banner shows the timeouts" "$TL_OUT" "timeouts: overall=60s cmd=30s diag=30s"
@@ -92,6 +93,7 @@ for step in "cursor: install-cursor.sh" "cursor: hooks.json merged" "cursor: sb-
 done
 assert_contains "summary counts checks" "$TL_OUT" "Tri-host smoke: 6 passed, 0 failed, 0 skipped (6 checks)"
 assert_contains "installer ran in an isolated cursor HOME" "$(<"$LOG")" "install-cursor HOME=$TL_TMP/tmp/sb-trihost-cursor."
+assert_contains "installer saw no host-config redirect" "$(<"$LOG")" "install-cursor-env kay=unset claude=unset state=unset statefile=unset"
 assert_contains "installer ran as the cursor runtime" "$(<"$LOG")" "RUNTIME=cursor"
 assert_contains "diagnostics in smoke mode" "$(<"$LOG")" "diag runtime=cursor smoke=1"
 assert_contains "claims audit runs with RTK disabled" "$(<"$LOG")" "claims-audit RTK=1"

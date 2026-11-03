@@ -3,8 +3,14 @@
 #
 # Runs in an isolated fake HOME + CURSOR_CONFIG_DIR (never touches operator ~/.cursor).
 # Validates install-cursor.sh, hook merge, diagnostics, and cursor hook unit tests
-# without requiring a live Cursor agent session. Writes matrix=cursor-smoke when
-# SB_RELEASE_LIVE_MATRIX_WRITE_CURSOR_MARKER=1 (default for this script).
+# without requiring a live Cursor agent session.
+#
+# Nothing here touches the operator's runtime state unless asked: every hook and
+# helper run under the fake HOME uses a state dir inside it. The release-gate
+# marker (matrix=cursor-smoke) is written only when
+# SB_RELEASE_LIVE_MATRIX_WRITE_CURSOR_MARKER=1 is set explicitly, and then to the
+# state dir the caller had before isolation (or SB_RELEASE_LIVE_MATRIX_MARKER_DIR
+# when given); a caller-isolated run writes it into its own isolated state dir.
 #
 # Usage: bash scripts/release-live-matrix-cursor-smoke.sh
 
@@ -17,6 +23,9 @@ if [[ -f "${REPO_ROOT}/hooks/lib/runtime-paths.sh" ]]; then
   # shellcheck source=hooks/lib/runtime-paths.sh
   source "${REPO_ROOT}/hooks/lib/runtime-paths.sh"
 fi
+
+# Where an explicitly requested marker goes: captured before HOME is replaced.
+MARKER_STATE_DIR="${SB_RELEASE_LIVE_MATRIX_MARKER_DIR:-${SB_RUNTIME_STATE_DIR:-}}"
 
 cursor_home_dir() {
   printf '%s\n' "${HOME}/.cursor"
@@ -35,6 +44,17 @@ else
   printf '%s\n' '{"version":1,"hooks":{}}' >"${CURSOR_CONFIG_DIR}/hooks.json"
   printf '%s\n' '{"mcpServers":{}}' >"${CURSOR_CONFIG_DIR}/mcp.json"
   export SILVER_BULLET_RUNTIME=cursor
+  # Isolation is more than HOME: drop every variable that points the hooks, the
+  # installer or the host at real config or state, and pin the state dir inside
+  # the fake HOME.
+  unset KAY_HOME CLAUDE_CONFIG_DIR CODEX_HOME SILVER_BULLET_STATE_FILE SILVER_BULLET_BRANCH_FILE \
+    SB_RUNTIME_HOME_ROOT SB_RUNTIME_PLUGIN_CACHE_ROOT XDG_CONFIG_HOME XDG_DATA_HOME XDG_STATE_HOME XDG_CACHE_HOME
+  export SB_RUNTIME_PRESERVE_STATE_DIR=1
+  export SB_RUNTIME_STATE_DIR="${TMP_ROOT}/.silver-bullet"
+  if [[ -f "${REPO_ROOT}/hooks/lib/runtime-paths.sh" ]]; then
+    # shellcheck source=hooks/lib/runtime-paths.sh
+    source "${REPO_ROOT}/hooks/lib/runtime-paths.sh"
+  fi
 fi
 
 cursor_home="$(cursor_home_dir)"
@@ -62,8 +82,8 @@ for test_script in \
   HOME="$HOME" bash "$test_script"
 done
 
-if [[ "${SB_RELEASE_LIVE_MATRIX_WRITE_CURSOR_MARKER:-1}" == "1" ]]; then
-  marker_file="${SB_RUNTIME_STATE_DIR}/release-live-matrix"
+if [[ "${SB_RELEASE_LIVE_MATRIX_WRITE_CURSOR_MARKER:-0}" == "1" ]]; then
+  marker_file="${MARKER_STATE_DIR:-${SB_RUNTIME_STATE_DIR}}/release-live-matrix"
   mkdir -p "$(dirname "$marker_file")"
   cat >"$marker_file" <<'EOF'
 matrix=cursor-smoke

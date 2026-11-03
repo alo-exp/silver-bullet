@@ -3,188 +3,71 @@
 
 from __future__ import annotations
 
+import contextlib
 import json
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 
+from generated_files import write_generated_text
+from pack_vocabulary import activated, for_research_dir
 from category_pack import (
     build_known_solutions,
     build_overview_seeds,
     get_core_seed_slugs,
     normalize_slug,
+    pack_overlay,
     resolve_pack_from_need,
 )
 
-FEATURE_TEMPLATE: list[dict[str, Any]] = [
-    {
-        "name": "Process orchestration",
-        "features": [
-            "Workflow composition",
-            "Atomic flow catalog",
-            "Parent/child agent delegation",
-            "Hook-enforced gates",
-        ],
-    },
-    {
-        "name": "Developer Experience",
-        "features": [
-            "Self-serve signup",
-            "Quick onboarding",
-            "IDE-native integration",
-            "Skill/plugin marketplace",
-        ],
-    },
-    {
-        "name": "Pricing and licensing",
-        "features": [
-            "Predictable pricing",
-            "Free tier / OSS core",
-            "Per-seat transparency",
-        ],
-    },
-    {
-        "name": "Time to value",
-        "features": [
-            "Managed hosting",
-            "Prebuilt SDLC templates",
-            "Zero-infra bootstrap",
-        ],
-    },
-    {
-        "name": "Verification and quality",
-        "features": [
-            "Automated review loops",
-            "CI integration",
-            "Visual/E2E verification",
-        ],
-    },
-    {
-        "name": "Security and compliance",
-        "features": [
-            "SSO",
-            "RBAC",
-            "Audit log",
-        ],
-    },
-]
+# Category vocabulary (feature rubric, aliases, prose signals) is pack overlay data applied by
+# pack_vocabulary.activated(); these neutral defaults match nothing.
+NEVER_MATCHES = re.compile(r"(?!x)x")
+HOST_RUNTIME_SLUGS: frozenset[str] = frozenset()
+# [{"focus": "<name fragment>", "reject_if_any": [[needle, ...], ...]}]: card-identity leak filters.
+OVERVIEW_IDENTITY_FILTERS: list[dict[str, Any]] = []
+FEATURE_TEMPLATE: list[dict[str, Any]] = []
 
-KNOWN_SOLUTIONS: dict[str, str] = {
-    "silver-bullet": "Silver Bullet",
-    "ai-dlc": "AI-DLC",
-    "agentsys": "AgentSys",
-    "zuvo": "Zuvo",
-    "sdlc-plugin": "SDLC Plugin",
-    "deepwork": "Deepwork",
-    "workflow-manager": "Workflow Manager",
-    "turboshovel": "Turboshovel",
-    "cavekit": "Cavekit v3.1",
-    "factory-ai": "Factory.ai",
-    "devin": "Devin (Cognition)",
-    "github-copilot-workspace": "GitHub Copilot Workspace",
-    "cursor-agents": "Cursor Background Agents",
-    "openhands": "OpenHands",
-    "langgraph-platform": "LangGraph Platform",
-    "sweep-ai": "Sweep",
-    "crewai": "CrewAI",
-    "tembo": "Tembo",
-    "cline": "Cline",
-    "spec-kit": "GitHub spec-kit",
-    "bmad-method": "BMAD-METHOD",
-    "aider": "Aider",
-    "continue": "Continue",
-    "autogen": "Microsoft AutoGen",
-    "linear": "Linear",
-    "linear-agent": "Linear Agent Integrations",
-}
+KNOWN_SOLUTIONS: dict[str, str] = {}  # category data lives in the pack overlay (reference/category-pack-overlays)
 
 def _effective_known_solutions(need: dict[str, Any] | None = None) -> dict[str, str]:
     """Merge base KNOWN_SOLUTIONS with pack product_names when a pack is active."""
     pack = resolve_pack_from_need(need)
+    base = dict(KNOWN_SOLUTIONS) or dict(_RUN["known"] or {})
     if pack:
-        merged = dict(KNOWN_SOLUTIONS)
+        merged = dict(base)
+        merged.update({str(k): str(v) for k, v in (pack_overlay(pack).get("known_solutions") or {}).items()})
         merged.update(build_known_solutions(pack))
         return merged
-    return dict(KNOWN_SOLUTIONS)
+    return base
+
+
+def _slug_aliases(pack: dict[str, Any] | None) -> dict[str, str]:
+    """Free-text vendor alias -> slug: pack overlay data only (nothing is built in)."""
+    merged = dict(SLUG_ALIASES)
+    merged.update({str(k): str(v) for k, v in (pack_overlay(pack or _RUN["pack"]).get("slug_aliases") or {}).items()})
+    return merged
+
+
+def _head_aliases(pack: dict[str, Any] | None) -> dict[str, str]:
+    merged = dict(_HEAD_SLUG_ALIASES)
+    merged.update({str(k): str(v) for k, v in (pack_overlay(pack or _RUN["pack"]).get("head_slug_aliases") or {}).items()})
+    return merged
 
 
 def _effective_overview_seeds(need: dict[str, Any] | None = None) -> dict[str, str]:
     pack = resolve_pack_from_need(need)
     seeds = dict(OVERVIEW_SEEDS)
     if pack:
+        seeds.update({str(k): str(v) for k, v in (pack_overlay(pack).get("overview_seeds") or {}).items()})
         seeds.update(build_overview_seeds(pack))
     return seeds
 
 
 # Curated product blurbs for solution-card Overviews (not research-meta notes).
-OVERVIEW_SEEDS: dict[str, str] = {
-    "silver-bullet": "Silver Bullet is an open-source Agentic Process Orchestrator — a process layer inside Cursor, Codex, and Claude Code that composes workflows, enforces hook gates, and records skills.",
-    "factory-ai": "Factory.ai provides managed Droids with workflow composition, parent/child delegation, review loops, and cloud hosting for agentic software delivery.",
-    "devin": "Devin is Cognition's autonomous software engineer that plans, implements, tests, and ships code via pull requests in customer repositories.",
-    "github-copilot-workspace": "GitHub Copilot Workspace is a Copilot-native environment for issue→spec→plan→implement→PR workflows on GitHub.",
-    "cursor-agents": "Cursor Background Agents run long-lived coding agents in the cloud against your repos, with IDE-native handoff into Cursor.",
-    "sweep-ai": "Sweep automates GitHub issue→PR coding workflows as an AI assistant on the git control plane.",
-    "tembo": "Tembo runs cloud agents across repos, tickets, and tools with reviewable sessions and automations for startup engineering teams.",
-    "replit-agent": "Replit Agent targets rapid idea-to-deploy prototyping with parallel agents and one-click hosting inside Replit.",
-    "windsurf": "Windsurf (Codeium) is a multi-agent IDE that coordinates local and cloud coding agents from a single editor surface.",
-    "tabnine-enterprise": "Tabnine Enterprise delivers privacy-focused AI coding assistance with enterprise controls for regulated engineering orgs.",
-    "amazon-q-developer": "Amazon Q Developer is AWS's agentic coding assistant embedded in the AWS toolchain for build, ops, and migration tasks.",
-    "sourcegraph-cody": "Sourcegraph Cody is a code-aware AI assistant grounded in large-codebase context search and chat inside the editor.",
-    "augment-code": "Augment Code positions as agentic development at org scale with workflow packs for review, tests, incidents, and ticket-to-PR.",
-    "magic-dev": "Magic.dev builds long-context coding models and agents aimed at large-repo autonomous engineering tasks.",
-    "poolside": "Poolside sells open-weight agentic coding foundation models for on-prem and private deployments rather than a full process layer.",
-    "coderabbit": "CodeRabbit is an AI code-review product focused on PR commentary and review automation rather than full SDLC orchestration.",
-    "jetbrains-ai": "JetBrains AI Assistant brings AI coding and refactor help into IntelliJ-based IDEs with JetBrains ecosystem integration.",
-    "github-copilot-enterprise": "GitHub Copilot Enterprise extends Copilot with org knowledge, preferential models, and enterprise admin controls on GitHub.",
-    "cognition-scout": "Cognition Scout is Cognition's agent surface adjacent to Devin for scoped autonomous engineering tasks.",
-    "linear-agent": "Linear Agent Integrations connect issue tracking in Linear to coding agents for ticket-driven implementation loops.",
-    "openhands": "OpenHands is an OSS autonomous coding agent (CodeAct/sandbox) for BYO runtime execution with end-of-run verification.",
-    "langgraph-platform": "LangGraph Platform hosts durable agent graphs with Cloud, Hybrid, and self-hosted control planes for custom orchestration.",
-    "crewai": "CrewAI combines role-based agent Crews with event-driven Flows for production multi-agent workflows.",
-    "metagpt": "MetaGPT maps a software-company SOP into role agents (PM/architect/engineer) that produce structured SDLC artifacts from a one-line brief.",
-    "spec-kit": "GitHub spec-kit makes specifications executable via constitution.md principles and spec-driven development workflows.",
-    "cline": "Cline is an open-source IDE agent that plans and edits in the editor with tool use and human-in-the-loop approval.",
-    "continue": "Continue is an open-source AI coding extension for IDE chat, edit, and autocomplete workflows (acquired by Cursor in 2026).",
-    "autogen": "Microsoft AutoGen is a multi-agent conversation framework for building custom agent graphs and tool-using collaborators.",
-    "gsd": "GSD (Get Shit Done) is a Claude Code meta-prompting / spec-driven system for structured agent delivery loops.",
-    "bmad-method": "BMAD-METHOD is an open methodology pack for agentic product and engineering workflows with role prompts and artifacts.",
-    "aider": "Aider is a git-native CLI coding agent that edits repos in tight commit loops with strong OSS community adoption.",
-    "swe-agent": "SWE-agent is an open research agent that solves GitHub issues end-to-end inside a controlled execution environment.",
-    "semantic-kernel": "Semantic Kernel is Microsoft's SDK for orchestrating AI plugins, plans, and agents inside .NET/Python apps.",
-    "gpt-engineer": "GPT-Engineer generates and iterates codebases from natural-language specs as a lightweight OSS coding agent.",
-    "praisonai": "PraisonAI is a low-code multi-agent framework for composing crews of specialized AI workers.",
-    "superagent": "Superagent is an open platform for building, hosting, and monitoring AI agents with tool integrations.",
-    "agentgpt": "AgentGPT is a browser-based autonomous agent UI for goal-driven task decomposition and execution.",
-    "langchain": "LangChain is a widely used framework for LLM apps and agents, with LangGraph for durable workflow orchestration.",
-    "open-interpreter": "Open Interpreter lets language models run code locally for general computer-use style agent tasks.",
-    "devika": "Devika is an open-source agentic software engineer that plans and implements coding tasks in a local stack.",
-}
+OVERVIEW_SEEDS: dict[str, str] = {}  # category data lives in the pack overlay (reference/category-pack-overlays)
 
-SLUG_ALIASES: dict[str, str] = {
-    "sb": "silver-bullet",
-    "silver bullet": "silver-bullet",
-    "factory.ai": "factory-ai",
-    "factory ai": "factory-ai",
-    "factory": "factory-ai",
-    "github copilot workspace": "github-copilot-workspace",
-    "github copilot": "github-copilot-workspace",
-    "copilot workspace": "github-copilot-workspace",
-    "copilot": "github-copilot-workspace",
-    "cursor cloud": "cursor-agents",
-    "cursor background agents": "cursor-agents",
-    "cursor agents": "cursor-agents",
-    "cursor": "cursor-agents",
-    "devin (cognition)": "devin",
-    "cognition": "devin",
-    "langgraph": "langgraph-platform",
-    "langgraph platform": "langgraph-platform",
-    "open hands": "openhands",
-    "all-hands": "openhands",
-    "sweep": "sweep-ai",
-    "sweep.dev": "sweep-ai",
-    "spec kit": "spec-kit",
-    "github spec-kit": "spec-kit",
-}
+SLUG_ALIASES: dict[str, str] = {}  # category data lives in the pack overlay (reference/category-pack-overlays)
 
 _MATRIX_DUMP_RE = re.compile(
     r"(?:"
@@ -255,7 +138,9 @@ def is_matrix_dump_claim(text: str) -> bool:
     return False
 
 
-def is_unusable_overview_claim(text: str, *, focus_name: str = "") -> bool:
+def is_unusable_overview_claim(
+    text: str, *, focus_name: str = "", known: dict[str, str] | None = None
+) -> bool:
     """Reject meta-research / multi-vendor dumps unsuitable as a solution Overview blurb."""
     t = (text or "").strip()
     if not t or is_matrix_dump_claim(t):
@@ -267,17 +152,14 @@ def is_unusable_overview_claim(text: str, *, focus_name: str = "") -> bool:
     focus = (focus_name or "").lower()
     lower = t.lower()
     # Card identity leaks: another product's install path or report methodology prose.
-    if focus and "director" in focus and "superpowers" in lower:
-        return True
-    if focus and "cc10x" in focus and (
-        "startup-weighted comparison" in lower
-        or "silver bullet" in lower and "anchor" in lower
-        or "methodology" in lower and "score" in lower
-    ):
-        return True
+    for rule in OVERVIEW_IDENTITY_FILTERS:
+        if focus and str(rule.get("focus", "")).lower() in focus and any(
+            all(str(needle).lower() in lower for needle in group) for group in rule.get("reject_if_any", [])
+        ):
+            return True
     # Claims that list many other products are landscape notes, not overviews.
     others = 0
-    for display in KNOWN_SOLUTIONS.values():
+    for display in _known_or_run(known).values():
         name = display.lower()
         if not name or (focus and (name == focus or name in focus or focus in name)):
             continue
@@ -296,14 +178,15 @@ def _normalize_slug(token: str, known: dict[str, str] | None = None, pack: dict[
     token = token.strip().lower().strip("`\"'")
     if not token:
         return None
-    effective = known or KNOWN_SOLUTIONS
+    effective = _known_or_run(known)
     if token in effective:
         return token
-    if token in SLUG_ALIASES:
-        return SLUG_ALIASES[token]
+    aliases = _slug_aliases(pack)
+    if token in aliases:
+        return aliases[token]
     compact = re.sub(r"[^a-z0-9]+", " ", token).strip()
-    if compact in SLUG_ALIASES:
-        return SLUG_ALIASES[compact]
+    if compact in aliases:
+        return aliases[compact]
     if pack:
         resolved = normalize_slug(token, pack)
         if resolved:
@@ -312,27 +195,110 @@ def _normalize_slug(token: str, known: dict[str, str] | None = None, pack: dict[
     return slug if slug in effective else None
 
 
+def _mentions(lower_text: str, name: str) -> bool:
+    """Whole-word match, so 'sbom' is not 'sb' and 'compliance' is not 'pi'."""
+    if not name:
+        return False
+    return re.search(rf"(?<![a-z0-9]){re.escape(name)}(?![a-z0-9])", lower_text) is not None
+
+
+# Product names that are also ordinary English words ("director", "factory", "cursor", ...). Pack
+# vocabulary; a capitalised mention counts as a vendor only where it reads as a proper noun (see
+# mentions_vendor). NON_VENDOR_TERMS are category words that a pack alias maps to a product ("sdlc"
+# -> a plugin): a pack alias that is a plain category word never counts as a vendor mention.
+AMBIGUOUS_NAMES: frozenset[str] = frozenset()
+NON_VENDOR_TERMS: frozenset[str] = frozenset()
+_CUE_AFTER = re.compile(
+    r"\s*(?:\((?!\s*\d)|\.(?:ai|dev|com|io|app)\b|\s(?:AI|IDE|Agents?|Plugins?|Cloud|Platform|CLI|App|SaaS|Code|Copilot|Labs)\b)"
+)
+_CUE_BEFORE = re.compile(r"\b(?:by|from|using|via|with|vs\.?|versus)\s+$", re.IGNORECASE)
+_SENTENCE_OPENERS = "\"'“‘([*_#>•- \t\r\n"
+# A sentence-initial capital proves nothing ("Linear scaling is expected"), so there the name must be
+# the subject of a finite verb or a possessive ("Director is ...", "Factory provides ...", "Director's README").
+_SUBJECT_OF = re.compile(
+    r"[*_\"']*(?:['’]s\b|\s+(?:is|are|was|were|has|have|had|does|did|can|could|will|would|should|may|"
+    r"(?:support|provide|offer|ship|add|use|run|enforce|orchestrate|install|integrate|include|require|lack|enable|"
+    r"deliver|automate|claim|position|target|wrap|extend|expose|implement|ensure|bundle|cover|handle|package)s?)\b)"
+)
+_NOT_A_NAME_BEFORE_OF = re.compile(r"\s+of\b")
+
+
+def _sentence_initial(text: str, start: int) -> bool:
+    before = text[:start].rstrip(_SENTENCE_OPENERS) if text[:start].strip(_SENTENCE_OPENERS) else ""
+    if not before:
+        return True
+    gap = text[len(before):start]
+    return before[-1] in ".!?:;" or "\n" in gap
+
+
+# The vendor set of the run being parsed (known names incl. discovered vendors, and its pack):
+# prose parsers that take no explicit `known` resolve vendors from it.
+_RUN: dict[str, Any] = {"known": None, "pack": None}
+
+
+@contextlib.contextmanager
+def run_context(known: dict[str, str] | None, pack: dict[str, Any] | None) -> Iterator[None]:
+    """Install the run's vendor set and pack for the prose parsers; restored on exit."""
+    previous = dict(_RUN)
+    _RUN["known"], _RUN["pack"] = known or previous["known"], pack or previous["pack"]
+    try:
+        yield
+    finally:
+        _RUN.update(previous)
+
+
+def _known_or_run(known: dict[str, str] | None) -> dict[str, str]:
+    return known or _RUN["known"] or KNOWN_SOLUTIONS
+
+
+def mentions_vendor(text: str, lower: str, name: str) -> bool:
+    """Whole-word vendor mention.
+
+    A category word (NON_VENDOR_TERMS) never counts. An ambiguous common-word name counts when it
+    reads as a proper noun: capitalised AND (next to a product cue, or inside a sentence and not
+    "<Name> of ...", or opening a sentence as the subject of a verb).
+    """
+    if name.lower() in NON_VENDOR_TERMS or not _mentions(lower, name):
+        return False
+    if name.lower() not in AMBIGUOUS_NAMES:
+        return True
+    for match in re.finditer(rf"(?<![A-Za-z0-9]){re.escape(name)}(?![A-Za-z0-9])", text, re.IGNORECASE):
+        word = match.group(0)
+        if not word[:1].isupper():
+            continue  # a vendor name is a proper noun: "director of engineering" is not one
+        if _CUE_AFTER.match(text, match.end()) or _CUE_BEFORE.search(text[: match.start()]):
+            return True
+        if _NOT_A_NAME_BEFORE_OF.match(text, match.end()):
+            continue
+        if not _sentence_initial(text, match.start()) or _SUBJECT_OF.match(text, match.end()):
+            return True
+    return False
+
+
 def _extract_slugs_from_text(
     text: str,
     known: dict[str, str] | None = None,
     pack: dict[str, Any] | None = None,
 ) -> list[str]:
-    effective = known or KNOWN_SOLUTIONS
+    effective = _known_or_run(known)
+    pack = pack or _RUN["pack"]
     found: list[str] = []
     lower = text.lower()
     for slug, display in effective.items():
-        if slug.replace("-", " ") in lower or slug in lower or display.lower() in lower:
+        if any(mentions_vendor(text, lower, name) for name in (slug.replace("-", " "), slug, display.lower())):
             found.append(slug)
-    for alias, slug in SLUG_ALIASES.items():
-        if alias in lower and slug not in found:
+    for alias, slug in _slug_aliases(pack).items():
+        if mentions_vendor(text, lower, alias) and slug not in found:
             found.append(slug)
     if pack:
         from category_pack import build_alias_map
 
         aliases = build_alias_map(pack)
         for alias, canonical in aliases.items():
-            if len(alias) >= 2 and alias in lower and canonical not in found:
+            if len(alias) >= 2 and mentions_vendor(text, lower, alias) and canonical not in found:
                 found.append(canonical)
+        # one product is one vendor: "copilot" and "github-copilot" are the pack's names for the same slug
+        found = list(dict.fromkeys(aliases.get(slug, slug) for slug in found))
     return found
 
 
@@ -358,10 +324,12 @@ def discover_solutions(
     for text in _iter_claim_texts(envelopes):
         for slug in _extract_slugs_from_text(text, known, pack):
             scores[slug] = scores.get(slug, 0) + 1
+    # Open world: vendors the workers name in structured matrix rows are discovered too.
+    for slug, (_display, rows) in structured_vendor_names(envelopes, known, pack).items():
+        scores[slug] = scores.get(slug, 0) + rows
     ranked = sorted(scores, key=lambda s: (-scores[s], s))
-    if len(ranked) >= min_solutions:
-        return ranked
-    return sorted(known)[: max(min_solutions, 5)]
+    # Only vendors the models actually named: never pad with unrelated catalogue entries.
+    return ranked
 
 
 def _iter_claim_texts(envelopes: list[dict[str, Any]]) -> list[str]:
@@ -411,167 +379,20 @@ _SLUG_NEGATION_RE = re.compile(
     r"(?P<slug>[a-z][a-z0-9-]*)\s+(?:do(?:es)?\s+not|doesn't|fails?|lacks?)\b",
     re.IGNORECASE,
 )
-_CORE_SET_CLAIM_RE = re.compile(
-    r"(?:"
-    r"Confirmed in-scope core set|"
-    r"Startup-weighted core|"
-    r"startup-weighted(?:\s+\w+){0,4}\s+for matrix|"
-    r"primary APO matrix should prioritize|"
-    r"in-scope commercial \+ OSS solution count"
-    r")",
-    re.IGNORECASE,
-)
-_MATRIX_LEADERS_RE = re.compile(
-    r"(?:matrix leaders are|APO matrix leaders|Commercial-weighted peer)",
-    re.IGNORECASE,
-)
-_CRITERION_KEYWORD_TO_ID: dict[str, str] = {
-    "lifecycle span": "lifecycle_span",
-    "plugin/skill/hook packaging": "plugin_skill_hook_packaging",
-    "deterministic gates": "deterministic_gates",
-    "cross-session state": "cross_session_state",
-    "cross session state": "cross_session_state",
-    "specialist agents": "specialist_agents",
-    "quality/release enforcement": "quality_release_enforcement",
-    "quality release enforcement": "quality_release_enforcement",
-    "process layer above": "process_layer_above_host",
-}
-_HEAD_SLUG_ALIASES: dict[str, str] = {
-    "director mode lite": "director",
-    "director mode": "director",
-    "ai sdlc harness": "claude-harness",
-    "claude harness": "claude-harness",
-    "a(i)-team": "ateam",
-    "a-team": "ateam",
-    "ai-team": "ateam",
-    "cavekit v3.1": "cavekit-v31",
-    "cavekit": "cavekit-v31",
-    "barkain workflow orchestrator": "barkain-workflow-orchestrator",
-    "barkain": "barkain-workflow-orchestrator",
-    "github spec kit": "spec-kit",
-    "spec kit": "spec-kit",
-    "bmad-method": "bmad",
-    "bmad": "bmad",
-    "gsd": "gsd",
-    "superpowers": "superpowers",
-    "zuvo": "zuvo",
-    "factory.ai": "factory-ai",
-    "factory ai": "factory-ai",
-    "augment cosmos": "augment-cosmos",
-    "silver bullet": "silver-bullet",
-}
+_CORE_SET_CLAIM_RE = NEVER_MATCHES
+_MATRIX_LEADERS_RE = NEVER_MATCHES
+_CRITERION_KEYWORD_TO_ID: dict[str, str] = {}
+_HEAD_SLUG_ALIASES: dict[str, str] = {}  # category data lives in the pack overlay (reference/category-pack-overlays)
 
-_FEATURE_ALIASES: dict[str, str] = {
-    "multi-agent orchestration": "Parent/child agent delegation",
-    "verification gates": "Hook-enforced gates",
-    "verification/hook gates": "Hook-enforced gates",
-    "hook-enforced sdlc gates": "Hook-enforced gates",
-    "ide hook enforcement": "Hook-enforced gates",
-    "hook-enforced process": "Hook-enforced gates",
-    "headless ci execution": "CI integration",
-    "partial composition": "Workflow composition",
-    "multi-agent workflows": "Workflow composition",
-    "workflow composition": "Workflow composition",
-    "delegation": "Parent/child agent delegation",
-    "parent/child delegation": "Parent/child agent delegation",
-    "atomic-flow catalog": "Atomic flow catalog",
-    "atomic flow catalog": "Atomic flow catalog",
-    "atomic flows": "Atomic flow catalog",
-    "workflow catalog": "Atomic flow catalog",
-    "hook-enforced gates": "Hook-enforced gates",
-    "hook gates": "Hook-enforced gates",
-    "hook enforcement": "Hook-enforced gates",
-    "automated review loops": "Automated review loops",
-    "managed hosting": "Managed hosting",
-    "ci integration": "CI integration",
-    "ci/cd": "CI integration",
-    "plugin marketplace": "Skill/plugin marketplace",
-    "skill marketplace": "Skill/plugin marketplace",
-    "ide-native": "IDE-native integration",
-    "ide-native integration": "IDE-native integration",
-    "open-source": "Free tier / OSS core",
-    "oss core": "Free tier / OSS core",
-    "sdlc templates": "Prebuilt SDLC templates",
-    "prebuilt sdlc": "Prebuilt SDLC templates",
-    "zero-infra": "Zero-infra bootstrap",
-    "predictable pricing": "Predictable pricing",
-    "audit logs": "Audit log",
-    "visual/e2e": "Visual/E2E verification",
-    "e2e verification": "Visual/E2E verification",
-    "composing workflows": "Workflow composition",
-    "composes workflows": "Workflow composition",
-    "workflow state": "Workflow composition",
-    "enforcing gates": "Hook-enforced gates",
-    "cross-session state": "Workflow composition",
-    "cross session state": "Workflow composition",
-    "process layer above host": "Workflow composition",
-    "process layer": "Workflow composition",
-}
+_FEATURE_ALIASES: dict[str, str] = {}
 
-_INCLUSION_CRITERION_FEATURES: dict[str, list[str]] = {
-    "lifecycle_span": ["Workflow composition", "Atomic flow catalog"],
-    "plugin_skill_hook_packaging": ["Skill/plugin marketplace", "IDE-native integration"],
-    "deterministic_gates": ["Hook-enforced gates"],
-    "cross_session_state": ["Workflow composition"],
-    "specialist_agents": ["Parent/child agent delegation"],
-    "quality_release_enforcement": ["Automated review loops", "Hook-enforced gates"],
-    "process_layer_above_host": ["Workflow composition", "IDE-native integration"],
-}
+_INCLUSION_CRITERION_FEATURES: dict[str, list[str]] = {}
 
-_INCLUSION_CRITERIA_SIGNAL_RE = re.compile(
-    r"inclusion criteria|inclusion criterion|lifecycle_span|deterministic gate|cross[- ]session|"
-    r"plugin/skill|process layer|specialist agent|quality/release|passing all 7|satisfies all 7|"
-    r"≥\s*3 inclusion|evidence host-integrated|orchestrat|workflow orchestrat|methodology pack",
-    re.IGNORECASE,
-)
-_ALL_SEVEN_INCLUSION_RE = re.compile(
-    r"(?:passing|satisf(?:y|ies)|covering|meets?)\s+all\s+7\s+inclusion",
-    re.IGNORECASE,
-)
-_PAREN_CRITERION_SLUGS_RE = re.compile(
-    r"(?P<phrase>deterministic gate|lifecycle span|cross[- ]host|plugin[- ]ecosystem|"
-    r"gate determinism|workflow orchestrat|process[- ]layer)[^.;]{0,80}\((?P<list>[^)]+)\)",
-    re.IGNORECASE,
-)
+_INCLUSION_CRITERIA_SIGNAL_RE = NEVER_MATCHES
+_ALL_SEVEN_INCLUSION_RE = NEVER_MATCHES
+_PAREN_CRITERION_SLUGS_RE = NEVER_MATCHES
 
-_PROSE_POSITIVE_SIGNALS: list[tuple[re.Pattern[str], list[str]]] = [
-    (re.compile(r"workflow|compos|router|lifecycle|orchestrat|repeatable workflow", re.I), ["Workflow composition"]),
-    (re.compile(r"atomic flow|flow catalog|pre-composed|catalog of|workflow catalog", re.I), ["Atomic flow catalog"]),
-    (re.compile(r"sequential or parallel|parallel execution|task decomposition", re.I), ["Workflow composition", "Parent/child agent delegation"]),
-    (
-        re.compile(
-            r"hook|gate|blocking|fail.?closed|deterministic|quality gate|return block|enforcement|stop-hook",
-            re.I,
-        ),
-        ["Hook-enforced gates"],
-    ),
-    (re.compile(r"open.?source|\boss\b", re.I), ["Free tier / OSS core"]),
-    (re.compile(r"ci/?cd|ci integration|lint/test/build", re.I), ["CI integration"]),
-    (re.compile(r"plugin|marketplace|skill pack", re.I), ["Skill/plugin marketplace"]),
-    (
-        re.compile(
-            r"low startup burden|quick (?:setup|onboard)|two (?:marketplace )?commands|"
-            r"marketplace installation|automatic setup|installs as a",
-            re.I,
-        ),
-        ["Quick onboarding", "Zero-infra bootstrap"],
-    ),
-    (re.compile(r"verification|review loop|tdd", re.I), ["Automated review loops"]),
-    (re.compile(r"process layer|above host|ide-native|claude code|codex|cursor", re.I), ["IDE-native integration"]),
-    (re.compile(r"persist(?:s|ent)?\s+(?:evidence|state|progress)|cross[- ]session|state under", re.I), ["Workflow composition"]),
-    (re.compile(r"specialist delegation|role[- ]based|multi[- ]agent", re.I), ["Parent/child agent delegation"]),
-    (re.compile(r"schema validation|integrity[- ]gate|governance depth", re.I), ["Hook-enforced gates", "Automated review loops"]),
-    (re.compile(r"host[- ]integrated|process orchestrator|sdlc plugin", re.I), ["Workflow composition", "IDE-native integration"]),
-    (
-        re.compile(
-            r"(?:low|medium)[- ]startup burden|startup[- ]weighted|rapid (?:setup|onboard)|time[- ]to[- ]value",
-            re.I,
-        ),
-        ["Quick onboarding", "Zero-infra bootstrap"],
-    ),
-    (re.compile(r"prebuilt|sdlc templates|template pack|methodology pack", re.I), ["Prebuilt SDLC templates"]),
-    (re.compile(r"managed hosting|cloud agent|hosted runtime|autonomous delivery engine", re.I), ["Managed hosting"]),
-]
+_PROSE_POSITIVE_SIGNALS: list[tuple[re.Pattern[str], list[str]]] = []
 
 
 def _all_template_features() -> list[str]:
@@ -600,7 +421,7 @@ def _matrix_entry_head_is_solution(
     pack: dict[str, Any] | None = None,
 ) -> bool:
     """True when 'Matrix entry — {head}:' names a product, not a matrix feature row."""
-    effective = known or KNOWN_SOLUTIONS
+    effective = _known_or_run(known)
     head_clean = re.sub(r"\([^)]*\)", "", head).strip()
     if not head_clean:
         return False
@@ -626,7 +447,7 @@ def _canonical_known_slug(
     slug: str,
     known: dict[str, str] | None = None,
 ) -> str:
-    effective = known or KNOWN_SOLUTIONS
+    effective = _known_or_run(known)
     if slug in effective:
         return slug
     for candidate in sorted(effective, key=len, reverse=True):
@@ -640,12 +461,13 @@ def _resolve_solution_slug(
     known: dict[str, str] | None = None,
     pack: dict[str, Any] | None = None,
 ) -> str | None:
-    effective = known or KNOWN_SOLUTIONS
+    effective = _known_or_run(known)
     head_clean = re.sub(r"\([^)]*\)", "", head).strip()
     head_key = head_clean.lower().strip()
-    if head_key in _HEAD_SLUG_ALIASES:
-        return _canonical_known_slug(_HEAD_SLUG_ALIASES[head_key], effective)
-    for alias, slug in sorted(_HEAD_SLUG_ALIASES.items(), key=lambda item: len(item[0]), reverse=True):
+    head_aliases = _head_aliases(pack)
+    if head_key in head_aliases:
+        return _canonical_known_slug(head_aliases[head_key], effective)
+    for alias, slug in sorted(head_aliases.items(), key=lambda item: len(item[0]), reverse=True):
         if head_key == alias or head_key.startswith(f"{alias} "):
             return _canonical_known_slug(slug, effective)
     lower = head_clean.lower()
@@ -715,17 +537,51 @@ def _parse_solution_led_matrix_entry(
     return True
 
 
+class _VoteMap(dict):
+    """Per-vendor feature cells that remember who said yes and who said no.
+
+    One claim is one voter (however many parsers read it); inside a single claim a
+    negation beats a positive. The cell value is the majority outcome over voters and a
+    tie is not a tick, so a single positive mention can neither silence contrary claims
+    nor depend on the order the claims arrive in.
+    """
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.votes: dict[str, dict[Any, bool]] = {}
+
+
+_VOTER: list[Any] = [None]
+
+
+def _assign_rubric(
+    support: dict[str, dict[str, bool | None]],
+    slug: str,
+    feature: str,
+    value: bool,
+) -> None:
+    """Assign a feature named by a built-in prose heuristic, only when the active rubric has it."""
+    if feature in _all_template_features():
+        _assign_support(support, slug, feature, value)
+
+
 def _assign_support(
     support: dict[str, dict[str, bool | None]],
     slug: str,
     feature: str,
     value: bool,
 ) -> None:
-    current = support.setdefault(slug, {}).get(feature)
-    if value:
-        support[slug][feature] = True
-    elif current is not True:
-        support[slug][feature] = False
+    cell = support.get(slug)
+    if not isinstance(cell, _VoteMap):
+        cell = _VoteMap(cell or {})
+        support[slug] = cell
+    voter = _VOTER[0]
+    if voter is None:
+        voter = ("anonymous", len(cell.votes.get(feature, {})))
+    ballots = cell.votes.setdefault(feature, {})
+    ballots[voter] = ballots.get(voter, True) and value if voter in ballots else value
+    yes = sum(1 for v in ballots.values() if v)
+    cell[feature] = yes > len(ballots) - yes
 
 
 def _extract_slugs_from_list(
@@ -734,7 +590,8 @@ def _extract_slugs_from_list(
     known: dict[str, str] | None = None,
     pack: dict[str, Any] | None = None,
 ) -> list[str]:
-    effective = known or KNOWN_SOLUTIONS
+    effective = _known_or_run(known)
+    head_aliases = _head_aliases(pack)
     found: list[str] = []
     cleaned = re.sub(r"\([^)]*\)", " ", text)
     cleaned = re.sub(
@@ -753,8 +610,8 @@ def _extract_slugs_from_list(
         if not token:
             continue
         token_key = token.lower()
-        if token_key in _HEAD_SLUG_ALIASES:
-            slug = _HEAD_SLUG_ALIASES[token_key]
+        if token_key in head_aliases:
+            slug = head_aliases[token_key]
         else:
             slug = _normalize_slug(token, effective, pack)
         if slug and slug not in found:
@@ -802,7 +659,7 @@ def _split_solution_lists(
     known: dict[str, str] | None = None,
     pack: dict[str, Any] | None = None,
 ) -> tuple[list[str], list[str]]:
-    effective = known or KNOWN_SOLUTIONS
+    effective = _known_or_run(known)
     positive: list[str] = []
     negative: list[str] = []
     if re.search(r"[✔✓✖✗]", body):
@@ -869,9 +726,6 @@ def _features_in_text(text: str) -> list[str]:
 
 
 def _primary_slug_in_text(text: str) -> str | None:
-    lower = text.lower()
-    if re.search(r"\bsb\b", lower[:80]):
-        return "silver-bullet"
     slugs = _extract_slugs_from_text(text)
     return slugs[0] if slugs else None
 
@@ -898,6 +752,46 @@ def _parse_comparative_claims(
                 _assign_support(support, slug, feature, True)
 
 
+_NEGATION_CUE_RE = re.compile(
+    r"\b(?:lacks?|lacking|without|does\s+not|doesn['’]t|do\s+not|don['’]t|has\s+no|have\s+no|"
+    r"no|not|never|cannot|can['’]t|fails?\s+to|scores?\s+poorly|trail(?:s)?)\b",
+    re.IGNORECASE,
+)
+_POSITIVE_CUE_RE = re.compile(r"\b(?:offers?|provides?|supports?|includes?|covers?)\b", re.IGNORECASE)
+_CLAUSE_SPLIT_RE = re.compile(
+    r"(?P<hard>[.;]\s+|\s*,?\s*\b(?:while|whereas|unlike)\b)|(?P<soft>\s*,?\s*\bbut\b\s*)",
+    re.IGNORECASE,
+)
+
+
+_OTHER_SUBJECT_RE = re.compile(
+    r"\b(?:that|which|because|since|others?|competitors?|alternatives?|vendors?|they)\b",
+    re.IGNORECASE,
+)
+
+
+def _negation_is_own(prefix: str) -> bool:
+    """False when the words before a negation cue introduce a different subject."""
+    return not _OTHER_SUBJECT_RE.search(prefix)
+
+
+def _split_clauses(text: str) -> list[tuple[str, bool]]:
+    """Split a sentence into clauses; the flag says the clause continues the previous subject.
+
+    "A offers X but lacks Y" continues the subject ("but"); "A lacks X, while B provides Y"
+    starts a new subject, so B is never judged by what was said about A.
+    """
+    out: list[tuple[str, bool]] = []
+    pos = 0
+    inherit = False
+    for match in _CLAUSE_SPLIT_RE.finditer(text):
+        out.append((text[pos: match.start()], inherit))
+        inherit = bool(match.group("soft"))
+        pos = match.end()
+    out.append((text[pos:], inherit))
+    return [(c, i) for c, i in out if c.strip()]
+
+
 def _parse_prose_claim(
     support: dict[str, dict[str, bool | None]],
     text: str,
@@ -915,25 +809,22 @@ def _parse_prose_claim(
         for feature in _features_in_text(check_match.group(1)):
             _assign_support(support, slug, feature, True)
 
-    parts = re.split(
-        r"\b(?:,\s*)?but\s+(?:lacks?|no|does not|without|not|scores? poorly|trail)\b",
-        text,
-        maxsplit=1,
-        flags=re.IGNORECASE,
-    )
-    pos = parts[0]
-    neg = parts[1] if len(parts) > 1 else ""
-
-    if re.search(
-        r"\b(offers?|provides?|supports?|includes?|covers?)\b",
-        pos,
-        re.IGNORECASE,
-    ):
-        for feature in _features_in_text(pos):
-            _assign_support(support, slug, feature, True)
-
-    for feature in _features_in_text(neg):
-        _assign_support(support, slug, feature, False)
+    previous: str | None = None
+    for clause, inherit in _split_clauses(text):
+        clause_slug = _primary_slug_in_text(clause) or (previous if inherit else None)
+        previous = clause_slug
+        if not clause_slug:
+            continue
+        negation = _NEGATION_CUE_RE.search(clause)
+        positive_part = clause[: negation.start()] if negation else clause
+        negative_part = clause[negation.end():] if negation else ""
+        if _POSITIVE_CUE_RE.search(positive_part):
+            for feature in _features_in_text(positive_part):
+                _assign_support(support, clause_slug, feature, True)
+        if negation and not _negation_is_own(clause[: negation.start()]):
+            continue
+        for feature in _features_in_text(negative_part):
+            _assign_support(support, clause_slug, feature, False)
 
 
 def _parse_checkmark_for_claims(
@@ -990,9 +881,9 @@ def _parse_must_have_satisfaction(
         "Parent/child agent delegation",
         "Hook-enforced gates",
     ):
-        _assign_support(support, slug, feature, True)
+        _assign_rubric(support, slug, feature, True)  # only where the run's rubric has the feature
     if re.search(r"\bci\b|ci execution|ci integration", text, re.IGNORECASE):
-        _assign_support(support, slug, "CI integration", True)
+        _assign_rubric(support, slug, "CI integration", True)
 
 
 def _parse_has_checkmark_features(
@@ -1029,9 +920,10 @@ def _parse_has_checkmark_features(
 def _parse_solution_lead_negative(
     support: dict[str, dict[str, bool | None]],
     text: str,
+    known: dict[str, str] | None = None,
 ) -> None:
     lower = text.lower()
-    for slug, display in KNOWN_SOLUTIONS.items():
+    for slug, display in _known_or_run(known).items():
         patterns = (
             rf"^{re.escape(display.lower())}\b",
             rf"^{re.escape(slug.replace('-', ' '))}\b",
@@ -1043,29 +935,29 @@ def _parse_solution_lead_negative(
             r"\bno\s+(?:workflow\s+)?catalog\b|\bwithout\b.{0,40}\bcatalog\b",
             lower,
         ):
-            _assign_support(support, slug, "Atomic flow catalog", False)
-            _assign_support(support, slug, "Workflow composition", False)
+            _assign_rubric(support, slug, "Atomic flow catalog", False)
+            _assign_rubric(support, slug, "Workflow composition", False)
         if re.search(r"hook[- ]enforced|hook enforcement|ide hook", lower):
             if re.search(r"\bno\b|\blacks?\b|\bwithout\b", lower):
-                _assign_support(support, slug, "Hook-enforced gates", False)
+                _assign_rubric(support, slug, "Hook-enforced gates", False)
         if re.search(r"\bpartial composition\b", lower):
-            _assign_support(support, slug, "Workflow composition", True)
+            _assign_rubric(support, slug, "Workflow composition", True)
         if re.search(r"\bno catalog or\b", lower):
-            _assign_support(support, slug, "Atomic flow catalog", False)
+            _assign_rubric(support, slug, "Atomic flow catalog", False)
         if re.search(r"\bopen[- ]source\b|\boss\b", lower):
-            _assign_support(support, slug, "Free tier / OSS core", True)
+            _assign_rubric(support, slug, "Free tier / OSS core", True)
         if re.search(r"\bverification[- ]gate\b|\bverification gate\b", lower):
             if re.search(r"\bno\b|\blacks?\b|\blimited\b|\bwithout\b", lower):
-                _assign_support(support, slug, "Hook-enforced gates", False)
+                _assign_rubric(support, slug, "Hook-enforced gates", False)
         if re.search(r"\blimited multi-agent\b", lower):
-            _assign_support(support, slug, "Parent/child agent delegation", False)
+            _assign_rubric(support, slug, "Parent/child agent delegation", False)
         if re.search(r"\bci/?cd\b|\bci integration\b", lower):
-            _assign_support(support, slug, "CI integration", True)
+            _assign_rubric(support, slug, "CI integration", True)
         if re.search(r"multi-agent workflows?\b", lower) and not re.search(
             r"\bno\b.{0,20}multi-agent",
             lower,
         ):
-            _assign_support(support, slug, "Parent/child agent delegation", True)
+            _assign_rubric(support, slug, "Parent/child agent delegation", True)
         break
 
 
@@ -1075,35 +967,19 @@ def _parse_managed_hosting_offer(
 ) -> None:
     if not re.search(r"offer managed hosting", text, re.IGNORECASE):
         return
-    exclude: set[str] = set()
-    if re.search(r"\bSB\b|silver[- ]bullet", text, re.IGNORECASE) and re.search(
-        r"\bwhile\b",
-        text,
-        re.IGNORECASE,
-    ):
-        exclude.add("silver-bullet")
-    for slug in _extract_slugs_from_text(text):
-        if slug in exclude:
-            continue
-        _assign_support(support, slug, "Managed hosting", True)
+    # Only the clause that follows "offer managed hosting" credits vendors; a vendor named
+    # in a contrasting "while ..." clause before it is not credited.
+    offer = re.search(r"offer managed hosting", text, re.IGNORECASE)
+    subject_text = text[: offer.start()]
+    contrast = list(re.finditer(r"\b(?:while|whereas|unlike)\b", subject_text, re.IGNORECASE))
+    if contrast:
+        subject_text = subject_text[contrast[-1].end():]
+        if "," in subject_text:  # "While X is local, Y and Z offer ...": X is the contrasted clause
+            subject_text = subject_text.split(",", 1)[1]
+    for slug in _extract_slugs_from_text(subject_text):
+        _assign_rubric(support, slug, "Managed hosting", True)
         if re.search(r"managed hosting paths?", text, re.IGNORECASE):
-            _assign_support(support, slug, "Zero-infra bootstrap", True)
-
-
-def _parse_startup_must_have_badge(
-    support: dict[str, dict[str, bool | None]],
-    text: str,
-) -> None:
-    if not re.search(r"all three startup must_haves", text, re.IGNORECASE):
-        return
-    if not re.search(r"\bSB\b|silver[- ]bullet", text, re.IGNORECASE):
-        return
-    for feature in (
-        "Workflow composition",
-        "Parent/child agent delegation",
-        "Hook-enforced gates",
-    ):
-        _assign_support(support, "silver-bullet", feature, True)
+            _assign_rubric(support, slug, "Zero-infra bootstrap", True)
 
 
 def _parse_template_ttv(
@@ -1114,7 +990,7 @@ def _parse_template_ttv(
         return
     slug = _primary_slug_in_text(text)
     if slug:
-        _assign_support(support, slug, "Prebuilt SDLC templates", True)
+        _assign_rubric(support, slug, "Prebuilt SDLC templates", True)
 
 
 def _parse_autonomous_ship_claim(
@@ -1126,9 +1002,9 @@ def _parse_autonomous_ship_claim(
     slug = _primary_slug_in_text(text)
     if not slug:
         return
-    _assign_support(support, slug, "Managed hosting", True)
-    _assign_support(support, slug, "CI integration", True)
-    _assign_support(support, slug, "Zero-infra bootstrap", True)
+    _assign_rubric(support, slug, "Managed hosting", True)
+    _assign_rubric(support, slug, "CI integration", True)
+    _assign_rubric(support, slug, "Zero-infra bootstrap", True)
 
 
 def _parse_strong_composition_claim(
@@ -1139,17 +1015,7 @@ def _parse_strong_composition_claim(
         return
     slug = _primary_slug_in_text(text)
     if slug:
-        _assign_support(support, slug, "Workflow composition", True)
-
-
-def _parse_openhands_templates(
-    support: dict[str, dict[str, bool | None]],
-    text: str,
-) -> None:
-    if not re.search(r"automation templates", text, re.IGNORECASE):
-        return
-    if "openhands" in text.lower():
-        _assign_support(support, "openhands", "Prebuilt SDLC templates", True)
+        _assign_rubric(support, slug, "Workflow composition", True)
 
 
 def _parse_inclusion_criteria_scoped_claim(
@@ -1161,7 +1027,7 @@ def _parse_inclusion_criteria_scoped_claim(
 ) -> None:
     if not _INCLUSION_CRITERIA_SIGNAL_RE.search(text):
         return
-    effective = known or KNOWN_SOLUTIONS
+    effective = _known_or_run(known)
     if _ALL_SEVEN_INCLUSION_RE.search(text):
         for slug in _extract_slugs_from_text(text, effective, pack):
             for feature in _default_inclusion_features():
@@ -1192,13 +1058,11 @@ def _apply_slug_scoped_prose(
     _parse_prose_claim(support, text)
     _parse_must_have_satisfaction(support, text)
     _parse_has_checkmark_features(support, text)
-    _parse_solution_lead_negative(support, text)
+    _parse_solution_lead_negative(support, text, known)
     _parse_managed_hosting_offer(support, text)
-    _parse_startup_must_have_badge(support, text)
     _parse_template_ttv(support, text)
     _parse_autonomous_ship_claim(support, text)
     _parse_strong_composition_claim(support, text)
-    _parse_openhands_templates(support, text)
     _parse_inclusion_criteria_scoped_claim(support, text, known=known, pack=pack)
     lower = text.lower()
     for slug in _extract_slugs_from_text(text):
@@ -1207,22 +1071,29 @@ def _apply_slug_scoped_prose(
         if not slug_region:
             continue
         start = slug_region.end()
-        end = min(len(lower), slug_region.end() + 160)
-        window = lower[start:end]
-        slug_pat_text = slug.replace("-", " ")
+        window = lower[start: min(len(lower), start + 160)]
+        # the window ends where the clause does or where another vendor takes over
+        boundary = _CLAUSE_SPLIT_RE.search(window)
+        cut = boundary.start() if boundary else len(window)
+        for other in _extract_slugs_from_text(text):
+            if other == slug:
+                continue
+            other_pat = re.escape(other.replace("-", "[ -]"))
+            hit = re.search(rf"\b{other_pat}\b", window)
+            if hit:
+                cut = min(cut, hit.start())
+        window = window[:cut]
+        negation = _NEGATION_CUE_RE.search(window)
         for feature in _features_in_text(window):
-            lack = re.search(
-                rf"(?P<subj>[^.;:,]+?)\s+(?:lacks?|without|fails?)\s+[^.;]*{re.escape(feature.lower())}",
-                window,
-            )
-            if lack:
-                subj = lack.group("subj").strip()
-                if slug in subj or slug_pat_text in subj:
+            position = window.find(feature.lower())
+            if negation and position >= negation.start():
+                # the cue must belong to this vendor, not to another subject introduced between
+                if _negation_is_own(window[: negation.start()]):
                     _assign_support(support, slug, feature, False)
                 continue
             if re.search(
                 r"(?:\bsupports?\b|\bprovides?\b|\boffers?\b|\bpass\b|✔|✓|\byes\b|\bstrong\b|\bincludes?\b|\bcovers?\b|\bsatisfying\b|\bcompos)",
-                window,
+                window[: negation.start()] if negation else window,
             ):
                 _assign_support(support, slug, feature, True)
 
@@ -1342,17 +1213,204 @@ def _parse_host_runtime_substrate_claim(
 ) -> bool:
     if not re.search(r"host runtime|substrate row|exclusion class host_runtime", text, re.IGNORECASE):
         return False
-    effective = known or KNOWN_SOLUTIONS
+    effective = _known_or_run(known)
     host_slugs = {
         slug
         for slug in _extract_slugs_from_text(text, effective, pack)
-        if slug in {"cursor", "claude-code", "codex", "github-copilot"}
+        if slug in HOST_RUNTIME_SLUGS
     }
     if not host_slugs:
         return False
     for slug in host_slugs:
-        _assign_support(support, slug, "IDE-native integration", True)
+        _assign_rubric(support, slug, "IDE-native integration", True)
     return True
+
+
+def _feature_key(raw: Any) -> str:
+    """Folding key for feature names: case, spacing, hyphens and other punctuation vanish.
+
+    "+" and "#" are part of a name ("C++ support" is not "C# support" is not "C support").
+    """
+    text = str(raw or "").casefold().replace("+", " plus ").replace("#", " sharp ")
+    return re.sub(r"[^a-z0-9]+", " ", text).strip()
+
+
+def _feature_name(raw: Any) -> str | None:
+    """Rubric feature for a worker-supplied name (rubric/alias spelling if known, else the
+    worker's wording with spacing normalised); None for blank/oversized names."""
+    spaced = " ".join(str(raw or "").split())
+    if not _feature_key(spaced) or len(spaced) > 80:
+        return None
+    key = _feature_key(spaced)
+    for feature in _all_template_features():
+        if _feature_key(feature) == key:
+            return feature
+    for alias, feature in _FEATURE_ALIASES.items():
+        if _feature_key(alias) == key:
+            return feature
+    return spaced
+
+
+def _vendor_key(name: Any) -> str:
+    return re.sub(r"[^a-z0-9]+", " ", str(name or "").lower()).strip()
+
+
+def resolve_structured_vendor(
+    name: Any,
+    known: dict[str, str],
+    pack: dict[str, Any] | None,
+) -> str | None:
+    """Slug for a worker-named vendor: exact (normalised) match on slug, display name or alias.
+
+    A blank name, or one that is only punctuation, never resolves; a prefix never matches.
+    Without a category pack an unknown vendor becomes its own open-world slug (it is
+    discovered, not attributed to someone else); with a pack unknown vendors are ignored.
+    """
+    key = _vendor_key(name)
+    if not key or len(key) > 80:
+        return None
+    for slug, display in known.items():
+        if key in {_vendor_key(slug), _vendor_key(display)}:
+            return slug
+    for aliases in (_slug_aliases(pack), _head_aliases(pack)):
+        for alias, slug in aliases.items():
+            if _vendor_key(alias) == key:
+                return slug
+    if pack:
+        return None
+    return _slugify(str(name)) or None
+
+
+def structured_vendor_names(
+    envelopes: list[dict[str, Any]],
+    known: dict[str, str],
+    pack: dict[str, Any] | None,
+) -> dict[str, tuple[str, int]]:
+    """slug -> (display, rows) for vendors workers named in ``matrix_entries`` (first spelling wins)."""
+    found: dict[str, tuple[str, int]] = {}
+    for env in envelopes:
+        payload = env.get("payload") if isinstance(env, dict) else None
+        rows = payload.get("matrix_entries") if isinstance(payload, dict) else None
+        for row in rows if isinstance(rows, list) else []:
+            name = row.get("vendor") if isinstance(row, dict) else None
+            slug = resolve_structured_vendor(name, known, pack)
+            if slug:
+                shown = known.get(slug) or " ".join(str(name).split())
+                found[slug] = (found[slug][0] if slug in found else shown, found.get(slug, ("", 0))[1] + 1)
+    return found
+
+
+def parse_structured_matrix_entries(
+    envelopes: list[dict[str, Any]],
+    *,
+    known: dict[str, str] | None = None,
+    pack: dict[str, Any] | None = None,
+    preferred_features: list[str] | None = None,
+) -> dict[str, dict[str, bool | None]]:
+    """Votes from workers' ``matrix_entries`` rows: {vendor, feature, supported, source_ref}.
+
+    Each model casts one vote per (vendor, feature); when it repeats a row in a later phase the
+    later row wins. ``supported`` must be a boolean ("yes"/"no"/"true"/"false" strings are
+    accepted, anything else is ignored). A row whose vendor does not resolve (see
+    resolve_structured_vendor) or whose feature is blank is skipped. This is the primary source
+    for matrix ticks; prose parsing only fills cells no worker voted on.
+    """
+    effective = _known_or_run(known)
+    latest: dict[str, dict[tuple[str, str], bool]] = {}
+    spellings: dict[str, dict[str, int]] = {}  # folding key -> spelling -> count
+    for env_index, env in enumerate(envelopes):
+        payload = env.get("payload") if isinstance(env, dict) else None
+        rows = payload.get("matrix_entries") if isinstance(payload, dict) else None
+        if not isinstance(rows, list):
+            continue
+        model = str(env.get("logical_model_id") or env_index)
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            slug = resolve_structured_vendor(row.get("vendor"), effective, pack)
+            feature = _feature_name(row.get("feature"))
+            verdict = row.get("supported")
+            if isinstance(verdict, str):
+                verdict = {"yes": True, "true": True, "no": False, "false": False}.get(verdict.strip().lower())
+            if slug and feature and isinstance(verdict, bool):
+                key = _feature_key(feature)
+                spellings.setdefault(key, {})
+                spellings[key][feature] = spellings[key].get(feature, 0) + 1
+                latest.setdefault(model, {})[(slug, key)] = verdict
+    # One rubric row per folded key, shown with its most common spelling (first seen on a tie),
+    # so models that differ only in casing/punctuation vote on the same cell.
+    shown = {key: max(counts, key=lambda s: (counts[s], -list(counts).index(s))) for key, counts in spellings.items()}
+    for wanted in preferred_features or []:
+        if _feature_key(wanted) in shown:
+            shown[_feature_key(wanted)] = str(wanted).strip()
+    support: dict[str, dict[str, bool | None]] = {}
+    try:
+        for model, cells in latest.items():
+            _VOTER[0] = ("structured", model)
+            for (slug, key), verdict in cells.items():
+                _assign_support(support, slug, shown[key], verdict)
+    finally:
+        _VOTER[0] = None
+    return support
+
+
+def open_world_known(
+    envelopes: list[dict[str, Any]],
+    need: dict[str, Any] | None,
+) -> dict[str, str]:
+    """Display names for a run: pack names, plus (without a pack) the vendors workers named."""
+    known = _effective_known_solutions(need)
+    pack = resolve_pack_from_need(need)
+    if not pack:
+        for slug, (display, _rows) in structured_vendor_names(envelopes, known, pack).items():
+            known.setdefault(slug, display)
+    return known
+
+
+MIN_DERIVED_PRIORITIES = 2
+DERIVED_REASON = "no must-have matched the matrix, so the most-evidenced features that separate vendors were treated as Critical"
+
+
+def derive_critical_features(
+    need: dict[str, Any],
+    support: dict[str, dict[str, bool | None]],
+    limit: int = 5,
+) -> dict[str, str]:
+    """{feature: "Critical"} for the most-evidenced features when the need names no usable must-have.
+
+    The comparator ranks by priority and the content gate needs Critical rows; a run whose
+    profile has no must-haves (an auto profile, or wording that matches no matrix feature) would
+    otherwise fail after every model call was spent. Only features that tell vendors apart count
+    (ticked for some but not all), and at least MIN_DERIVED_PRIORITIES of them are needed: a
+    matrix with nothing to discriminate on gets no invented priorities and fails the gate.
+    Returns {} when must-haves match or the user set a weights_override of their own. The result
+    is recomputed on every packaging and never written into the user's need profile.
+    """
+    if need.get("weights_override") and not need.get("weights_override_derived"):
+        return {}  # (a flagged override is a derived one an earlier version saved into the profile)
+    declared = {_feature_key(x) for x in need.get("must_haves") or []}
+    ticks: dict[str, int] = {}
+    for cells in support.values():
+        for feature, ok in cells.items():
+            ticks[feature] = ticks.get(feature, 0) + (1 if ok else 0)
+    if declared & {_feature_key(f) for f in ticks}:
+        return {}
+    ranked = sorted((f for f, n in ticks.items() if 0 < n < len(support)), key=lambda f: (-ticks[f], f))
+    derived = {feature: "Critical" for feature in ranked[:limit]}
+    return derived if len(derived) >= MIN_DERIVED_PRIORITIES else {}
+
+
+def disputed_cells(support: dict[str, dict[str, bool | None]]) -> list[dict[str, Any]]:
+    """Cells where voters disagreed: [{vendor, feature, yes, no}] sorted for stable output."""
+    out: list[dict[str, Any]] = []
+    for slug, cells in support.items():
+        votes = getattr(cells, "votes", {})
+        for feature, ballots in votes.items():
+            yes = sum(1 for v in ballots.values() if v)
+            no = len(ballots) - yes
+            if yes and no:
+                out.append({"vendor": slug, "feature": feature, "yes": yes, "no": no})
+    return sorted(out, key=lambda c: (c["vendor"], c["feature"]))
 
 
 def parse_feature_support(
@@ -1360,10 +1418,101 @@ def parse_feature_support(
     *,
     known: dict[str, str] | None = None,
     pack: dict[str, Any] | None = None,
+    preferred_features: list[str] | None = None,
 ) -> dict[str, dict[str, bool | None]]:
-    effective = known or KNOWN_SOLUTIONS
+    """Matrix cells: structured worker votes first, prose heuristics only for unvoted cells.
+
+    `preferred_features` (the user's must-haves / nice-to-haves) fixes the spelling of a folded
+    feature name, so the comparator's priority matching finds the row.
+    """
+    with activated(pack):
+        return _parse_feature_support(envelopes, known=known, pack=pack, preferred_features=preferred_features)
+
+
+def _parse_feature_support(
+    envelopes: list[dict[str, Any]],
+    *,
+    known: dict[str, str] | None = None,
+    pack: dict[str, Any] | None = None,
+    preferred_features: list[str] | None = None,
+) -> dict[str, dict[str, bool | None]]:
+    structured = parse_structured_matrix_entries(
+        envelopes, known=known, pack=pack, preferred_features=preferred_features
+    )
+    prose = _parse_prose_feature_support(envelopes, known=known, pack=pack)
+    return _merge_folded(structured, prose, preferred_features)
+
+
+def _merge_folded(
+    structured: dict[str, dict[str, bool | None]],
+    prose: dict[str, dict[str, bool | None]],
+    preferred_features: list[str] | None,
+) -> dict[str, dict[str, bool | None]]:
+    """One cell per (vendor, folded feature): a cell any worker voted on is decided by those
+    structured votes alone, otherwise by the prose votes.
+
+    Every spelling of a feature (rubric, claim prose, worker rows, the user's must-have) folds to
+    one key and is shown once: the rubric spelling, unless the user wrote the must-have differently
+    (the comparator matches priorities on that wording), else the most common spelling.
+    """
+    template = {_feature_key(f): f for f in _all_template_features()}
+    wanted = {_feature_key(f): str(f).strip() for f in preferred_features or []}
+    spellings: dict[str, dict[str, int]] = {}
+    for source in (prose, structured):
+        for cells in source.values():
+            for feature in cells:
+                counts = spellings.setdefault(_feature_key(feature) or feature, {})
+                counts[feature] = counts.get(feature, 0) + max(1, len(getattr(cells, "votes", {}).get(feature, {})))
+
+    def shown(key: str) -> str:
+        rubric, user = template.get(key), wanted.get(key)
+        if rubric and (not user or rubric.lower().strip() == user.lower().strip()):
+            return rubric
+        counts = spellings[key]
+        return user or rubric or max(counts, key=lambda spelling: (counts[spelling], -list(counts).index(spelling)))
+
+    merged: dict[str, dict[str, bool | None]] = {}
+    for slug in dict.fromkeys([*prose, *structured]):
+        ballots: dict[str, dict[str, dict[Any, bool]]] = {}  # folded key -> source -> voter -> verdict
+        for label, source in (("prose", prose), ("structured", structured)):
+            cells = source.get(slug) or {}
+            for feature in cells:
+                key = _feature_key(feature) or feature
+                by_voter = ballots.setdefault(key, {}).setdefault(label, {})
+                for voter, verdict in getattr(cells, "votes", {}).get(feature, {}).items():
+                    by_voter[voter] = by_voter[voter] and verdict if voter in by_voter else verdict
+        cell = _VoteMap()
+        for key, by_source in ballots.items():
+            chosen = by_source.get("structured") or by_source["prose"]
+            name = shown(key)
+            cell.votes[name] = chosen
+            yes = sum(1 for verdict in chosen.values() if verdict)
+            cell[name] = yes > len(chosen) - yes
+        merged[slug] = cell
+    return merged
+
+
+def _parse_prose_feature_support(
+    envelopes: list[dict[str, Any]],
+    *,
+    known: dict[str, str] | None = None,
+    pack: dict[str, Any] | None = None,
+) -> dict[str, dict[str, bool | None]]:
+    """Prose heuristics, resolving vendors from this run's `known` set and pack."""
+    with run_context(known, pack):
+        return _parse_prose_unscoped(envelopes, known=known, pack=pack)
+
+
+def _parse_prose_unscoped(
+    envelopes: list[dict[str, Any]],
+    *,
+    known: dict[str, str] | None = None,
+    pack: dict[str, Any] | None = None,
+) -> dict[str, dict[str, bool | None]]:
+    effective = _known_or_run(known)
     support: dict[str, dict[str, bool | None]] = {}
-    for text in _iter_claim_texts(envelopes):
+    for voter, text in enumerate(_iter_claim_texts(envelopes)):
+        _VOTER[0] = voter
         if _parse_core_set_bulk_claim(support, text, known=effective, pack=pack):
             continue
         if _parse_matrix_leaders_claim(support, text, known=effective, pack=pack):
@@ -1398,6 +1547,7 @@ def parse_feature_support(
         if "matrix entry" in text.lower():
             continue
         _apply_slug_scoped_prose(support, text, known=effective, pack=pack)
+    _VOTER[0] = None
     return support
 
 
@@ -1483,7 +1633,7 @@ def build_features_json(
     comparison: dict[str, Any] | None = None,
     rubric: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    effective = known or KNOWN_SOLUTIONS
+    effective = _known_or_run(known)
     per_solution = support.get(slug, {})
     spec = rubric or synthesize_feature_rubric(comparison=comparison, support=support)
     categories: list[dict[str, Any]] = []
@@ -1513,9 +1663,15 @@ def write_run_features_json(
     comparison: dict[str, Any] | None = None,
     support: dict[str, dict[str, bool | None]] | None = None,
     known: dict[str, str] | None = None,
+    preserved: list[str] | None = None,
 ) -> dict[str, Any]:
-    """Write landscape/features-rubric.json and per-solution features.json from the run rubric."""
+    """Write landscape/features-rubric.json and per-solution features.json from the run rubric.
+
+    Only ranked solutions are written, and a features.json the host or user wrote is kept
+    as is (see generated_files); folders that are not ranked solutions are never touched.
+    """
     research_dir = Path(research_dir)
+    preserved = preserved if preserved is not None else []
     comparison = comparison if isinstance(comparison, dict) else {}
     if not comparison:
         cmp_path = research_dir / "comparison" / "comparison.json"
@@ -1527,47 +1683,43 @@ def write_run_features_json(
             if isinstance(loaded, dict):
                 comparison = loaded
     rubric = synthesize_feature_rubric(comparison=comparison, support=support)
-    landscape_dir = research_dir / "landscape"
-    landscape_dir.mkdir(parents=True, exist_ok=True)
-    (landscape_dir / "features-rubric.json").write_text(
+    write_generated_text(
+        research_dir,
+        research_dir / "landscape" / "features-rubric.json",
         json.dumps(rubric, indent=2) + "\n",
-        encoding="utf-8",
+        preserved=preserved,
     )
-    effective = known or KNOWN_SOLUTIONS
+    effective = _known_or_run(known)
     slugs: list[str] = []
     for item in comparison.get("rankings") or []:
-        if isinstance(item, dict) and item.get("solution"):
+        if isinstance(item, dict) and item.get("solution") and str(item["solution"]) not in slugs:
             slugs.append(str(item["solution"]))
-    solutions_root = research_dir / "solutions"
-    if solutions_root.is_dir():
-        for sol_dir in sorted(solutions_root.iterdir()):
-            if sol_dir.is_dir() and sol_dir.name not in slugs:
-                slugs.append(sol_dir.name)
     written: list[str] = []
     for slug in slugs:
-        sol_dir = solutions_root / slug
-        sol_dir.mkdir(parents=True, exist_ok=True)
         payload = build_features_json(slug, support or {}, known=effective, rubric=rubric)
-        path = sol_dir / "features.json"
-        path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-        written.append(str(path.relative_to(research_dir)))
+        path = research_dir / "solutions" / slug / "features.json"
+        if write_generated_text(research_dir, path, json.dumps(payload, indent=2) + "\n", preserved=preserved):
+            written.append(str(path.relative_to(research_dir)))
     return {
         "status": "ok",
         "rubric_source": rubric.get("source"),
         "features_written": written,
+        "preserved": preserved,
         "rubric_path": "landscape/features-rubric.json",
     }
 
 
-def _scr_claims_for_slug(slug: str, envelopes: list[dict[str, Any]]) -> list[str]:
-    display = KNOWN_SOLUTIONS.get(slug, slug)
+def _scr_claims_for_slug(
+    slug: str, envelopes: list[dict[str, Any]], known: dict[str, str] | None = None
+) -> list[str]:
+    display = _known_or_run(known).get(slug, slug)
     slug_pat = slug.replace("-", " ")
     claims: list[str] = []
     for text in _iter_claim_texts(envelopes):
         lower = text.lower()
         if slug not in lower and slug_pat not in lower and display.lower() not in lower:
             continue
-        if is_unusable_overview_claim(text, focus_name=display):
+        if is_unusable_overview_claim(text, focus_name=display, known=known):
             continue
         claims.append(text)
         if len(claims) >= 12:
@@ -1575,14 +1727,19 @@ def _scr_claims_for_slug(slug: str, envelopes: list[dict[str, Any]]) -> list[str
     return claims
 
 
-def build_scr_md(slug: str, envelopes: list[dict[str, Any]]) -> str:
-    display = KNOWN_SOLUTIONS.get(slug, slug)
-    clean_claims = _scr_claims_for_slug(slug, envelopes)
-    seed = OVERVIEW_SEEDS.get(slug, "").strip()
+def build_scr_md(
+    slug: str,
+    envelopes: list[dict[str, Any]],
+    known: dict[str, str] | None = None,
+    overview_seeds: dict[str, str] | None = None,
+) -> str:
+    display = _known_or_run(known).get(slug, slug)
+    clean_claims = _scr_claims_for_slug(slug, envelopes, known)
+    seed = (overview_seeds or OVERVIEW_SEEDS).get(slug, "").strip()
     exec_summary = seed or (
         clean_claims[0]
         if clean_claims
-        else f"{display} is a solution in the agentic SDLC orchestration landscape."
+        else f"{display} is a solution identified in this research run."
     )
     lines = [
         f"# Solution Capability Report: {display}",
@@ -1607,6 +1764,7 @@ def build_scr_md(slug: str, envelopes: list[dict[str, Any]]) -> str:
     return "\n".join(lines)
 
 
+@for_research_dir
 def materialize_solution_artifacts(
     research_dir: Path,
     *,
@@ -1631,45 +1789,48 @@ def materialize_solution_artifacts(
     if not envelopes:
         raise ValueError("no contribution envelopes to materialize from")
 
-    known = _effective_known_solutions(need)
+    known = open_world_known(envelopes, need)
     pack = resolve_pack_from_need(need)
+    preserved: list[str] = []
+
+    def emit(path: Path, text: str) -> bool:
+        return write_generated_text(research_dir, path, text, preserved=preserved)
+
     audit: dict[str, Any] | None = None
     if pack:
         from solution_classifier import classify_solutions, write_catalog_audit
 
         audit = classify_solutions(envelopes, need, pack)
-        write_catalog_audit(research_dir, audit)
+        write_catalog_audit(research_dir, audit, preserved=preserved)
 
     slugs = discover_solutions(envelopes, need=need)
-    support = parse_feature_support(envelopes, known=known, pack=pack)
+    wanted = [str(x) for x in (need.get("must_haves") or []) + (need.get("nice_to_haves") or [])]
+    support = parse_feature_support(envelopes, known=known, pack=pack, preferred_features=wanted)
     rubric = synthesize_feature_rubric(support=support)
     shortlist = slugs[:shortlist_count]
+    derived = derive_critical_features(need, support)
+    # The user's need_profile.json is never rewritten: derived priorities are a per-run file that
+    # packaging hands to the comparator and the report discloses (recomputed every run).
+    emit(research_dir / "landscape" / "derived-priorities.json",
+         json.dumps({"weights_override": derived, "reason": DERIVED_REASON if derived else ""}, indent=2) + "\n")
+    disputed = disputed_cells(support)
+    emit(research_dir / "landscape" / "disputed-cells.json", json.dumps(disputed, indent=2) + "\n")
 
     solutions_root = research_dir / "solutions"
-    solutions_root.mkdir(parents=True, exist_ok=True)
-
     written: list[str] = []
-    slug_set = set(slugs)
     for slug in slugs:
-        sol_dir = solutions_root / slug
-        sol_dir.mkdir(parents=True, exist_ok=True)
-        features_path = sol_dir / "features.json"
-        features_path.write_text(
-            json.dumps(build_features_json(slug, support, known=known, rubric=rubric), indent=2) + "\n",
-            encoding="utf-8",
-        )
-        (sol_dir / "scr.md").write_text(build_scr_md(slug, envelopes), encoding="utf-8")
-        written.append(str(features_path.relative_to(research_dir)))
+        features_path = solutions_root / slug / "features.json"
+        if emit(features_path, json.dumps(build_features_json(slug, support, known=known, rubric=rubric), indent=2) + "\n"):
+            written.append(str(features_path.relative_to(research_dir)))
+        emit(solutions_root / slug / "scr.md", build_scr_md(slug, envelopes, known, _effective_overview_seeds(need)))
 
-    if pack and solutions_root.is_dir():
-        import shutil
+    # Folders outside this run's solution set (earlier runs, the host's own notes) are
+    # reported, never deleted.
+    slug_set = set(slugs)
+    stale = sorted(
+        d.name for d in (solutions_root.iterdir() if solutions_root.is_dir() else []) if d.is_dir() and d.name not in slug_set
+    )
 
-        for sol_dir in solutions_root.iterdir():
-            if sol_dir.is_dir() and sol_dir.name not in slug_set:
-                shutil.rmtree(sol_dir)
-
-    shortlist_dir = research_dir / "shortlist"
-    shortlist_dir.mkdir(parents=True, exist_ok=True)
     shortlist_payload = {
         "count": len(shortlist),
         "solutions": [
@@ -1682,10 +1843,7 @@ def materialize_solution_artifacts(
             for i, slug in enumerate(shortlist, start=1)
         ],
     }
-    (shortlist_dir / "shortlist.json").write_text(
-        json.dumps(shortlist_payload, indent=2) + "\n",
-        encoding="utf-8",
-    )
+    emit(research_dir / "shortlist" / "shortlist.json", json.dumps(shortlist_payload, indent=2) + "\n")
 
     solutions_index = {
         "count": len(slugs),
@@ -1700,22 +1858,19 @@ def materialize_solution_artifacts(
             for slug in slugs
         ],
     }
-    (research_dir / "solutions.json").write_text(
-        json.dumps(solutions_index, indent=2) + "\n",
-        encoding="utf-8",
-    )
-    landscape_dir = research_dir / "landscape"
-    landscape_dir.mkdir(parents=True, exist_ok=True)
-    (landscape_dir / "features-rubric.json").write_text(
-        json.dumps(rubric, indent=2) + "\n",
-        encoding="utf-8",
-    )
+    emit(research_dir / "solutions.json", json.dumps(solutions_index, indent=2) + "\n")
+    emit(research_dir / "landscape" / "features-rubric.json", json.dumps(rubric, indent=2) + "\n")
 
     result: dict[str, Any] = {
         "status": "ok",
         "solutions_count": len(slugs),
+        "disputed_cells": len(disputed),
+        "derived_critical_features": sorted(derived),
+        "derived_priorities": derived,
         "shortlist_count": len(shortlist),
         "features_written": written,
+        "preserved": preserved,
+        "stale_solution_dirs": stale,
         "solutions_index": "solutions.json",
         "shortlist": "shortlist/shortlist.json",
     }
