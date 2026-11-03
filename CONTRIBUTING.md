@@ -73,7 +73,7 @@ To dogfood enforcement while you work, install the plugin into your host from th
 | `research/` | Dated research reports (historical; not live guidance). |
 | `design-system/` | Site design tokens and themes (`DESIGN.md`). |
 | `agents/`, `host-bundles/` | **Generated** skill bundles: `agents/claude/` for Claude Code, `host-bundles/codex/` and `host-bundles/cursor/` for the other hosts. Rendered from `skills/` by `scripts/sync-codex-package.sh`; never edit by hand. |
-| `plugins/silver-bullet/` | Codex/Cursor package surface. `hooks`, `scripts`, `docs` and the root docs are symlinks; `skill-source/`, `templates/` and `cursor-hooks.json` are generated; `commands/` holds the command stubs. |
+| `plugins/silver-bullet/` | Codex/Cursor package surface. `hooks`, `scripts`, `docs` and the root docs are symlinks; `skill-source/` (Codex), `cursor-skill-source/` (Cursor), `templates/` and `cursor-hooks.json` are generated; `commands/` holds the command stubs. |
 | `.claude-plugin/`, `.cursor-plugin/`, `.agents/plugins/` | Plugin and marketplace manifests for Claude Code, Cursor and Codex. |
 | `.claude/`, `.codex/`, `.cursor/`, `.opencode/`, `.pi/`, `.hermes/`, `.agents/skills/` | Host configuration used when dogfooding Silver Bullet in this repo (project hooks, rules, skills); machine-generated variants (`.claude/launch.json`, `.github/hooks/`) are git-ignored. `skills-lock.json` pins the third-party skills under `.agents/skills/`. |
 | `.planning/`, `.agentmemory/`, `.silver-bullet/`, `.silver-bullet.json`, `silver-bullet.md` | This repo's own Silver Bullet project state. `.planning/` is edited only through SB skills; `silver-bullet.md` is the live copy of `templates/silver-bullet.md.base`. |
@@ -110,7 +110,7 @@ Every target wraps a script you can also run directly. `make lint` fails on any 
 3. If enforcement should track the skill, add it to `skills.all_tracked` in `templates/silver-bullet.config.json.default` **and** in `.silver-bullet.json` (CI requires the two to match).
 4. If it is a top-level route that needs a command stub, add it to `COMPOSERS` in `scripts/generate-plugin-commands.sh` and run that script.
 5. If it owns a workflow or atomic flow, update `docs/apo-catalog.json` and run `python3 scripts/generate-apo-artifacts.py`.
-6. Render the host bundles: `bash scripts/sync-codex-package.sh` (updates `agents/claude/`, `host-bundles/`, `plugins/silver-bullet/skill-source/`), then `bash scripts/validate-plugin-mirror.sh`.
+6. Render the host bundles: `bash scripts/sync-codex-package.sh` (updates `agents/claude/`, `host-bundles/`, `plugins/silver-bullet/{skill-source,cursor-skill-source}/`), then `bash scripts/validate-plugin-mirror.sh`.
 7. For a user-facing skill, add a help-center entry and a `site/help/search.js` record.
 8. Run `bash tests/run-all-tests.sh`.
 

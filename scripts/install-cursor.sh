@@ -150,13 +150,17 @@ sync_plugin_tree_from_checkout() {
   if [[ -d "${source_root}/skills/silver-init/scripts" ]]; then
     rsync -a --delete "${source_root}/skills/silver-init/scripts/" "${dest}/skills/silver-init/scripts/"
   fi
-  local skill_source_src="${source_root}/plugins/silver-bullet/skill-source"
-  if [[ -d "$skill_source_src" ]]; then
-    mkdir -p "${dest}/skill-source"
-    rsync -a --delete "${skill_source_src}/" "${dest}/skill-source/"
-  else
-    rm -rf "${dest}/skill-source"
-  fi
+  # Hidden skill sources: cursor-skill-source/ is the Cursor render the command
+  # stubs read; skill-source/ (the Codex render) stays for older stubs.
+  local hidden_source
+  for hidden_source in skill-source cursor-skill-source; do
+    if [[ -d "${source_root}/plugins/silver-bullet/${hidden_source}" ]]; then
+      mkdir -p "${dest}/${hidden_source}"
+      rsync -a --delete "${source_root}/plugins/silver-bullet/${hidden_source}/" "${dest}/${hidden_source}/"
+    else
+      rm -rf "${dest:?}/${hidden_source}"
+    fi
+  done
   rsync -a --delete "${source_root}/scripts/" "${dest}/scripts/"
   rsync -a --delete "${source_root}/templates/" "${dest}/templates/"
   # agents/cursor must not ship in the Cursor install cache — cursor-agent TUI
@@ -385,6 +389,7 @@ prune_cursor_gitpath_extra_picker_surfaces() {
     "${gitpath_root}/plugins/silver-bullet/commands" \
     "${gitpath_root}/plugins/silver-bullet/agents" \
     "${gitpath_root}/plugins/silver-bullet/skill-source" \
+    "${gitpath_root}/plugins/silver-bullet/cursor-skill-source" \
     "${gitpath_root}/plugins/silver-bullet/templates" \
     "${gitpath_root}/plugins/silver-bullet/.cursor-plugin" \
     "${gitpath_root}/plugins/silver-bullet/cursor-hooks.json" \

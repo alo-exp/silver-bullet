@@ -81,22 +81,37 @@ class CollisionTests(unittest.TestCase):
         self.assertIn("adjacent competitor", d["unplotted"][0]["reason"])
         self.assertEqual(sl.chart_listed_membership(core=[])["unplotted"], [])
 
+    def test_no_vendor_catalogue_or_market_profile_is_built_in(self):
+        for name in ("COMMERCIAL_CATALOG", "OSS_CATALOG", "EMERGING_CATALOG", "COMMERCIAL_SLUGS", "NON_COMMERCIAL_SLUGS"):
+            self.assertFalse(hasattr(sl, name), name)  # the module-level catalogues were never populated
+        self.assertEqual(sl._market_chart_profile("apo"), sl._NEUTRAL_CHART_PROFILE)
+
     def test_market_profile(self):
-        self.assertEqual(sl._market_chart_profile("sdlc-plugins")["mq_base"], (3.4, 2.4))
-        self.assertEqual(sl._market_chart_profile("unknown")["mq_base"], (3.0, 3.0))
-        self.assertEqual(sl._market_chart_profile(None)["mq_base"], (3.0, 3.0))
-        p = sl._market_chart_profile("apo")
+        neutral = sl._market_chart_profile("sdlc-plugins")  # no pack: neutral axes, no feature terms
+        self.assertEqual((neutral["mq_base"], neutral["mq_x_feats"]), ((3.0, 3.0), ()))
+        from category_pack import load_pack_overlay
+
+        pack = {"overlay": load_pack_overlay("agentic-sdlc-process-orchestrator")}
+        self.assertEqual(sl._market_chart_profile("sdlc-plugins", pack)["mq_base"], (3.4, 2.4))
+        self.assertEqual(sl._market_chart_profile("unknown", pack)["mq_base"], (3.0, 3.0))  # overlay default
+        self.assertEqual(sl._market_chart_profile(None, pack)["mq_base"], (3.0, 3.0))
+        p = sl._market_chart_profile("apo", pack)
         p["mq_base"] = None
-        self.assertEqual(sl._market_chart_profile("apo")["mq_base"], (3.0, 3.0))
+        self.assertEqual(sl._market_chart_profile("apo", pack)["mq_base"], (3.0, 3.0))
 
 
+from category_pack import load_pack_overlay  # noqa: E402
+from apo_pack_run_fixture import with_apo_pack_run  # noqa: E402
+
+
+@with_apo_pack_run
 class BuildChartTests(TmpCase):
     def support(self):
         return {"alpha": dict(GATES), "beta": {"Workflow composition": True}, "gamma": dict(GATES)}
 
     def build(self, comp=None, **kw):
         args = dict(category="Cat", support=self.support(), known={"alpha": "Alpha", "beta": "Beta", "gamma": "Gamma"},
-                    commercial=[], oss=[])
+                    commercial=[], oss=[], pack={"overlay": load_pack_overlay("agentic-sdlc-process-orchestrator")})
         args.update(kw)
         return sl.build_chart_data(comp or comparison(("alpha", 25), ("beta", 12), ("gamma", 18)), **args)
 
@@ -141,7 +156,7 @@ class BuildChartTests(TmpCase):
 
     def test_chart_cap_grows_with_market(self):
         many = {f"s{i:02d}" for i in range(15)}
-        chart = self.build(market_slugs=many, support={s: dict(GATES) for s in many})
+        chart = self.build(market_slugs=many, pack=None, support={s: dict(GATES) for s in many})
         self.assertEqual(len(chart["mq_data"]), 15)
 
     def test_chart_cap_from_pack_market(self):
@@ -376,7 +391,7 @@ class MultiMarketTests(TmpCase):
 
     def test_market_sections_commercial_and_oss(self):
         audit = {"markets": {"agentic-sdlc-saas": {"core": ["devin", "factory-ai"]},
-                             "apo": {"core": ["deepwork", "silver-bullet", "metagpt"]},
+                             "apo": {"core": ["deepwork", "metagpt"]},
                              "sdlc-plugins": {"core": ["gsd"]}}}
         sections, nxt = sl._market_solution_sections(self.pack, audit, start_num=7)
         self.assertEqual([(s["market_id"], s["kind"], s["num"]) for s in sections], [
@@ -385,13 +400,13 @@ class MultiMarketTests(TmpCase):
         self.assertEqual(nxt, 11)
         apo_com, apo_oss, _plug, saas = sections
         self.assertEqual([e["slug"] for e in apo_com["entries"]], ["deepwork"])
-        self.assertEqual([e["slug"] for e in apo_oss["entries"]], ["silver-bullet", "metagpt"])
+        self.assertEqual([e["slug"] for e in apo_oss["entries"]], ["metagpt"])
         self.assertEqual([e["slug"] for e in saas["entries"]], ["devin", "factory-ai"])
         self.assertEqual((saas["market_role"], apo_com["market_role"]), ("Tertiary", "Primary"))
         self.assertTrue(saas["market_display"])
 
     def test_market_sections(self):
-        audit = {"markets": {"apo": {"core": ["silver-bullet", "langchain"]}}}
+        audit = {"markets": {"apo": {"core": ["metagpt", "langchain"]}}}
         sections, nxt = sl._market_solution_sections(self.pack, audit, start_num=5)
         self.assertTrue(sections)
         self.assertEqual(nxt, 5 + len(sections))

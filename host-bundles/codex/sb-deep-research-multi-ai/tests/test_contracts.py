@@ -104,5 +104,54 @@ class DrMultiAiContractTests(unittest.TestCase):
         self.assertNotEqual(proc.returncode, 0)
 
 
+class NoBuiltInVendorDataTests(unittest.TestCase):
+    """Vendor names, blurbs and aliases are pack overlay data, never code (R12-02)."""
+
+    def test_code_defaults_are_empty_and_overlay_supplies_them(self) -> None:
+        sys.path.insert(0, str(SCRIPTS))
+        import materialize_solution_artifacts as mat
+        from category_pack import load_pack_overlay
+
+        self.assertEqual((mat.KNOWN_SOLUTIONS, mat.OVERVIEW_SEEDS, mat.SLUG_ALIASES, mat._HEAD_SLUG_ALIASES), ({}, {}, {}, {}))
+        overlay = load_pack_overlay("agentic-sdlc-process-orchestrator")
+        for key in ("known_solutions", "overview_seeds", "slug_aliases", "head_slug_aliases"):
+            self.assertTrue(overlay[key], key)
+        pack = {"overlay": overlay}
+        self.assertEqual(mat._slug_aliases(pack)["factory.ai"], "factory-ai")
+        self.assertEqual(mat._head_aliases(pack)["claude harness"], "claude-harness")
+        self.assertEqual(mat._slug_aliases(None), {})
+        self.assertEqual(mat._head_aliases(None), {})
+        need = {"category_pack_id": "agentic-sdlc-process-orchestrator"}
+        self.assertIn("Devin", mat._effective_known_solutions(need)["devin"])
+        self.assertIn("devin", mat._effective_overview_seeds(need))
+        self.assertEqual(mat._effective_known_solutions({}), {})
+
+
+class SkillDocContractTests(unittest.TestCase):
+    """SKILL.md must describe what the code does (R12-22)."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.doc = (Path(__file__).resolve().parents[1] / "SKILL.md").read_text(encoding="utf-8")
+
+    def test_consolidate_example_writes_the_file_consumers_read(self) -> None:
+        self.assertIn("--output consolidated/consolidation.json", self.doc)
+        self.assertNotIn("consensus.json", self.doc)
+
+    def test_no_overclaims(self) -> None:
+        self.assertNotIn("Accepts **only** host-validated", self.doc)
+        self.assertNotIn("Self-contained (`file://`)", self.doc)
+        self.assertNotIn("fullpool", self.doc)
+        self.assertIn("not* fully self-contained", self.doc)
+        self.assertIn("never deletes", self.doc)
+
+    def test_every_documented_script_exists(self) -> None:
+        import re
+
+        scripts = Path(__file__).resolve().parents[1] / "scripts"
+        for name in set(re.findall(r"scripts/([a-z_]+\.py)", self.doc)):
+            self.assertTrue((scripts / name).is_file() or (scripts.parents[1] / "silver-deep-research" / "scripts" / name).is_file(), name)
+
+
 if __name__ == "__main__":
     unittest.main()
