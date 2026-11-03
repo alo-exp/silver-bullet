@@ -75,12 +75,11 @@ show "$CLASSIFY" '$G commit -m x'
 assert_contains "obfuscated commit fails closed at its possible tier" "$TL_OUT" \
   "rc=0 inter=true comp=false tier=intermediate status=ok actions= possible=commit could=true opaque=true"
 show "$CLASSIFY" $'echo ok\ngit commit -m \'unterminated'
-assert_contains "unparseable text: the regex fallback still sees the verb" "$TL_OUT" \
-  "rc=0 inter=true comp=false tier=intermediate status=parse_failed"
-assert_contains "fallback gives the regex consumers the whole command" "$TL_OUT" \
-  "first=echo ok ; git commit -m 'unterminated"
+assert_contains "unparseable text is held at the strictest tier (bash may accept it)" "$TL_OUT" \
+  "rc=0 inter=false comp=true tier=completion status=parse_failed"
+assert_contains "the unseen code is named for the regex consumers" "$TL_OUT" "first=deploy [unseen: parse error"
 show "$CLASSIFY" $'git push\ngh pr create --title \'x'
-assert_contains "fallback raises a parsed intermediate to completion" "$TL_OUT" "tier=completion status=parse_failed"
+assert_contains "a parsed intermediate is raised to completion" "$TL_OUT" "tier=completion status=parse_failed"
 show "$CLASSIFY" 'scripts/silver-bullet invoke-skill silver-plan'
 assert_contains "skill adapter is not gated" "$TL_OUT" "rc=1 inter=false comp=false"
 tl_run bash -c 'source "$1"; shell_payload_is_sb_skill_adapter_invocation "$2" && echo yes || echo no
@@ -99,6 +98,12 @@ show "$NOLIB/classify.sh" 'git -C . -c a=b commit -m x'
 assert_contains "no analyzer: git global options before the verb" "$TL_OUT" "rc=0 inter=true comp=false tier=intermediate"
 show "$NOLIB/classify.sh" 'npm run deploy:prod'
 assert_contains "no analyzer: deploy script" "$TL_OUT" "tier=completion"
+show "$NOLIB/classify.sh" '$G commit -m x'
+assert_contains "no analyzer: a variable program naming a verb gets the planning floor" "$TL_OUT" "rc=0 inter=true comp=false tier=intermediate"
+show "$NOLIB/classify.sh" 'X=1; $X gh pr create'
+assert_contains "no analyzer: a variable program naming a PR verb is final delivery" "$TL_OUT" "tier=completion"
+show "$NOLIB/classify.sh" 'echo $HOME'
+assert_contains "no analyzer: a variable that is not a program is not gated" "$TL_OUT" "rc=1 inter=false comp=false tier=none"
 show "$NOLIB/classify.sh" 'git log --grep commit'
 assert_contains "no analyzer: a verb after another subcommand is not gated" "$TL_OUT" "rc=1 inter=false comp=false tier=none"
 tl_run bash -c 'source "$1"; shell_payload_is_sb_skill_adapter_invocation "scripts/silver-bullet invoke-skill x" && echo yes || echo no' \

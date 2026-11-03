@@ -63,6 +63,15 @@ _ca_regex_tier() {
     printf 'completion'
   elif grep -qE "${git_prefix}(commit|push|merge|rebase|cherry-pick|revert|am|commit-tree|write-tree|send-pack|fast-import)\\b|${git_prefix}hash-object\\b.*[[:space:]]-w\\b|${git_prefix}update-ref\\b.*(refs/heads/|HEAD)" <<<"$text"; then
     printf 'intermediate'
+  elif grep -qE '(^|[;&|(`]|\$\()[[:space:]]*\$\{?[A-Za-z_@*]|\beval\b|\|[[:space:]]*(ba|z|da|k)?sh\b|\b(ba|z|da|k)?sh[[:space:]]+(-[a-z]*s\b|/dev/stdin)|(^|[[:space:]])\.[[:space:]]+/dev/' <<<"$text" &&
+    grep -qiE '\b(commit|push|merge|rebase|cherry-pick|revert|am|pr|release|deploy|publish)\b|\\x[0-9a-f]{2}' <<<"$text"; then
+    # a command that is built at run time (variable program, eval, shell fed by a pipe) and names a
+    # delivery verb: without the analyzer this cannot be judged, so apply the planning floor
+    if grep -qiE '\b(pr|release|deploy|publish)\b' <<<"$text"; then
+      printf 'completion'
+    else
+      printf 'intermediate'
+    fi
   else
     printf 'none'
   fi

@@ -15,13 +15,19 @@ limited by argv; importing this module lets Python reuse its cached bytecode):
 print NUL-terminated ``key``/``value`` pairs for hooks/lib/shell-analysis.sh, ending
 with the key ``__end__``. A missing ``__end__`` means the helper failed.
 
+Bounded work: input over MAX_INPUT_CHARS is not parsed; the parser stops after
+MAX_PARSE_SECONDS, the walker after MAX_STEPS commands or MAX_SECONDS, brace sequences and
+GIT_CONFIG_COUNT are capped, and an unexpected exception becomes status "parse_failed". Each of
+these reports ``unseen`` (strictest tier); none can raise or hang a hook.
+
 Analysis schema (version 1):
 
   schema            1
   base_dir          the directory relative paths were resolved against
   status            "ok" | "empty" (no input) | "parse_failed" (invalid JSON payload,
-                    or shell syntax the parser rejects; complete commands before the
-                    error are still analyzed)
+                    shell syntax the parser rejects, or an analyzer fault; complete
+                    commands before the error are still analyzed, and the rest counts
+                    as unseen code, see ``unseen`` below)
   error             reason when status != "ok", else ""
   tool              payload mode: {"name", "kind": shell|mcp|patch|edit|other,
                     "mcp_server", "mcp_tool"}
@@ -35,10 +41,18 @@ Analysis schema (version 1):
   tier              highest tier of ``actions``: none | intermediate | completion
                     (commit/push are intermediate; everything else is completion)
   possible_actions  actions inferred for opaque parts from their visible arguments,
-                    e.g. ``$X commit -m m`` -> commit; ``$PYTHON -m pytest`` -> none
+                    e.g. ``$X commit -m m`` -> commit; ``$PYTHON -m pytest`` -> none.
+                    The pseudo action ``unseen`` (tier completion, canonical "deploy
+                    [unseen: why]") stands for code that runs but cannot be read:
+                    eval of computed text, a shell or interpreter fed by a pipe, bash -s,
+                    <(...), "$@"/arrays/substitutions as the program, awk system(var),
+                    sed e, arithmetic or subscripts that evaluate a variable holding $(...),
+                    IFS changes, parse errors, and any exceeded budget. It makes
+                    possible_tier "completion" and could_be_delivery true.
   possible_tier     highest tier of ``possible_actions``
   could_be_delivery true when ``possible_actions`` is not empty
-  opaque            true when some part cannot be resolved statically
+  opaque            true when some part cannot be resolved statically (including every
+                    script file, sourced file and interpreter program that is run)
   opaque_reasons    why: dynamic command words, non-literal eval/sh -c, parse errors...
   read_only         strict allowlist verdict: every command is a known read-only
                     program with read-only arguments and nothing is written
@@ -74,11 +88,20 @@ import os
 import re
 import shlex
 import sys
+import time
 
 SCHEMA_VERSION = 1
 MAX_DEPTH = 24
 MAX_EXPANSIONS = 64
 MAX_LOOP_VALUES = 16
+# Analysis budget: exceeding any limit ends the walk and reports unseen code (strictest tier),
+# so a crafted command can neither stall a hook until its timeout nor crash the analyzer.
+MAX_INPUT_CHARS = 2 * 1024 * 1024
+MAX_STEPS = 20000
+MAX_SECONDS = 4.0
+MAX_PARSE_SECONDS = 3.0
+MAX_SEQUENCE = 4096
+MAX_GIT_CONFIG = 64
 
 ACTION_TIER = {
     "commit": "intermediate",
@@ -88,6 +111,7 @@ ACTION_TIER = {
     "release_create": "completion",
     "deploy": "completion",
     "remote_write": "completion",
+    "unseen": "completion",
 }
 TIER_RANK = {"none": 0, "intermediate": 1, "completion": 2}
 # Verb phrase the legacy regex consumers (deploy tier, change class, enterprise policy)
@@ -101,6 +125,7 @@ CANONICAL_PREFIX = {
     "release_create": "gh release create",
     "deploy": "deploy",
     "remote_write": "gh pr merge",
+    "unseen": "deploy",
 }
 
 
@@ -211,6 +236,13 @@ class _Parser:
         self.n = len(src)
         self.i = 0
         self.heredocs = []
+        self.ticks = 0
+        self.deadline = time.monotonic() + MAX_PARSE_SECONDS
+
+    def tick(self):
+        self.ticks += 1
+        if self.ticks % 128 == 0 and time.monotonic() > self.deadline:
+            raise ParseError("analysis time budget exceeded")
 
     # -- characters ---------------------------------------------------------
     def peek(self, k=0):
@@ -337,6 +369,7 @@ class _Parser:
 
     # -- commands -----------------------------------------------------------
     def parse_command(self):
+        self.tick()
         self.skip_blanks()
         c = self.peek()
         if c == "":
@@ -481,6 +514,14 @@ class _Parser:
             words.append(self.parse_word())
 
     def kw_coproc(self):
+        self.skip_blanks()
+        m = _NAME.match(self.s, self.i)
+        if m is not None:  # coproc NAME { ...; } / coproc NAME ( ... ): NAME is not the program
+            j = m.end()
+            while j < self.n and self.s[j] in " \t":
+                j += 1
+            if j < self.n and self.s[j] in "{(":
+                self.i = j
         return Compound("group", [Script([([[self.parse_command()]], False)])])
 
     def parse_arith_command(self):
@@ -515,6 +556,7 @@ class _Parser:
     def parse_simple(self):
         assigns, words, redirs = [], [], []
         while True:
+            self.tick()
             self.skip_blanks()
             c = self.peek()
             if c in ("", "\n", ";", "|", ")") or (c == "&" and not self.at("&>")):
@@ -562,6 +604,8 @@ class _Parser:
         self.i = m.end()
         name = m.group(1)
         array = bool(m.group(2))
+        if array:
+            name += m.group(2)  # keep the subscript: a[i]=x sets one element, a[$(cmd)]=x runs cmd
         if self.peek() == "(":
             self.i += 1
             elements = []
@@ -935,6 +979,7 @@ class Env:
         self.functions = {}
         self.git_aliases = {}
         self.positional = None
+        self.arrays = {}
 
     def copy(self):
         new = Env(self.cwd, self.home)
@@ -944,6 +989,7 @@ class Env:
         new.aliases = dict(self.aliases)
         new.functions = dict(self.functions)
         new.git_aliases = dict(self.git_aliases)
+        new.arrays = dict(self.arrays)
         new.positional = None if self.positional is None else list(self.positional)
         return new
 
@@ -971,6 +1017,54 @@ class Env:
         self.cwd_text = self.cwd
 
 
+# `eval "$(tool init)"` setup lines that print shell code from a well-known environment tool
+_ENV_GENERATOR = re.compile(
+    r"^\$\(\s*(?:ssh-agent|direnv\s+(?:export|hook)|pyenv\s+init|rbenv\s+init|nodenv\s+init|fnm\s+env|"
+    r"mise\s+(?:activate|env)|asdf\s+exec|brew\s+shellenv|starship\s+init|zoxide\s+init|opam\s+env|"
+    r"luarocks\s+path|dircolors|conda\s+shell|register-python-argcomplete|gpg-agent|keychain|"
+    r"minikube\s+docker-env|docker-machine\s+env|aws\s+configure\s+export-credentials|"
+    r"(?:/\S+)?/(?:ssh-agent|brew)\b)\b")
+_GIT_VALUE_OPTS = {"-m", "--message", "-F", "--file", "-C", "-c", "-t", "--template", "--author", "--date",
+                   "--cleanup", "--fixup", "--squash", "--trailer", "--pathspec-from-file", "--reuse-message",
+                   "--reedit-message", "-o", "--push-option", "--repo", "--exec", "--receive-pack", "-s",
+                   "--strategy", "-X", "--strategy-option", "--onto", "-b", "-B", "--origin", "--branch",
+                   "--upload-pack", "-u", "--format", "--pretty", "--grep", "-e", "--source"}
+_GH_VALUE_OPTS = {"-t", "--title", "-b", "--body", "-F", "--body-file", "-R", "--repo", "-B", "--base", "-H",
+                  "--head", "-a", "--assignee", "-l", "--label", "-m", "--milestone", "-p", "--project", "-r",
+                  "--reviewer", "-n", "--notes", "--notes-file", "-N", "--notes-start-tag", "--target",
+                  "--discussion-category", "-f", "--field", "--raw-field", "-X", "--method", "-q", "--jq",
+                  "--template", "--hostname", "--subject", "--author", "--match-head-commit", "--input", "-H"}
+
+
+def _help_requested(args, value_opts):
+    """True when -h/--help is an option of the command, not the value of another option or after --."""
+    skip = False
+    for item in args:
+        token = _lit(item)
+        if skip:
+            skip = False
+            continue
+        if token == "--":
+            return False
+        if token in ("-h", "--help"):
+            return True
+        if token in value_opts:
+            skip = True
+    return False
+
+
+# variables that change which git configuration files (and so which aliases) apply
+_GIT_CONFIG_SOURCES = ("GIT_CONFIG_GLOBAL", "GIT_CONFIG_SYSTEM", "GIT_CONFIG", "GIT_CONFIG_NOSYSTEM", "HOME",
+                       "XDG_CONFIG_HOME", "GIT_DIR")
+_GIT_CONFIG_FILE = re.compile(r"(^|/)(\.git/config|\.gitconfig|\.config/git/config|gitconfig)$")
+_GITHUB_API_URL = re.compile(r"^(?:https?://)?(?:api|uploads)\.github\.com(?:/|$)|^https?://[^/]+/api/v3/", re.I)
+_STDIN_NAMES = ("-", "/dev/stdin", "/dev/fd/0", "/proc/self/fd/0")
+_GIT_HELPER = re.compile(r"^git-([a-z][a-z-]*)$")
+_ARRAY_ALL = re.compile(r"^\$\{([A-Za-z_][A-Za-z0-9_]*)\[[@*]\]\}$")
+_ARRAY_OR_ARGS = re.compile(r"^\$(\{[A-Za-z_][A-Za-z0-9_]*\[[@*]\]\}|[@*]|\{[@*]\})$")
+_SUBSCRIPT_EXEC = re.compile(r"\[[^\]]*(\$\(|`)")
+_EXEC_TEXT = re.compile(r"\$\(|`")
+_ARITH_NAMES = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 _GLOB_CHARS = re.compile(r"[*?]|\[.*\]")
 _SEQUENCE = re.compile(r"(-?\d+)\.\.(-?\d+)(?:\.\.(-?\d+))?$|([A-Za-z])\.\.([A-Za-z])$")
 
@@ -1019,7 +1113,9 @@ def _brace_alternatives(inner):
         return None
     if m.group(1) is not None:
         start, end, step = int(m.group(1)), int(m.group(2)), abs(int(m.group(3) or 1)) or 1
-        values = [str(v) for v in range(start, end + (1 if end >= start else -1), step if end >= start else -step)]
+        span = range(start, end + (1 if end >= start else -1), step if end >= start else -step)
+        # never build more than the expansion limit allows: the caller treats the excess as dynamic
+        values = [str(v) for v in span[:MAX_EXPANSIONS + 1]]
     else:
         start, end = ord(m.group(4)), ord(m.group(5))
         values = [chr(v) for v in range(start, end + (1 if end >= start else -1), 1 if end >= start else -1)]
@@ -1061,7 +1157,11 @@ def _echo_output(args):
         escapes = "e" in args[0] or (escapes and "E" not in args[0])
         args = args[1:]
     text = " ".join(args)
+    if "\\" in text and not escapes:
+        return None  # sh/dash echo interprets backslash escapes that bash prints literally
     if escapes:
+        if re.search(r"\\(?!([nrtabefvE\\'\"?]))", text):
+            return None  # \xHH, \0NNN, \uHHHH, \c...: the output is not modelled
         text = re.sub(r"\\(.)", lambda m: _ANSI_SIMPLE.get(m.group(1), "\\" + m.group(1)), text)
     return text + ("\n" if newline else "")
 
@@ -1077,12 +1177,17 @@ def _printf_output(fmt, args):
             if token == "%%":
                 out.append("%")
             elif token in ("%s", "%d", "%b"):
-                out.append(args[index] if index < len(args) else "")
+                value = args[index] if index < len(args) else ""
+                if token == "%b" and "\\" in value:
+                    return None
+                out.append(value)
                 index += 1
             elif token == "%":
                 return None
-            elif token[0] == "\\" and len(token) == 2:
-                out.append(_ANSI_SIMPLE.get(token[1], token))
+            elif token[0] == "\\" and len(token) == 2 and token[1] in _ANSI_SIMPLE:
+                out.append(_ANSI_SIMPLE[token[1]])
+            elif token[0] == "\\":
+                return None  # \xHH, \NNN, \u...: the output is not modelled
             else:
                 out.append(token)
         if index == 0 or index >= len(args):
@@ -1121,7 +1226,8 @@ _GIT_SUBCOMMANDS = _GIT_COMMIT | _GIT_PUSH | _GIT_READ_ONLY | {
     "receive-pack", "reflog", "remote", "repack", "replace", "request-pull", "rerere", "reset", "restore",
     "rm", "send-email", "show-index", "sparse-checkout", "stage", "stash", "stripspace", "submodule",
     "switch", "symbolic-ref", "tag", "unpack-file", "unpack-objects", "update-index", "update-ref",
-    "update-server-info", "upload-archive", "upload-pack", "verify-pack", "worktree", "lfs",
+    "update-server-info", "upload-archive", "upload-pack", "verify-pack", "worktree", "lfs", "subtree",
+    "http-push",
 }
 _GIT_GLOBAL_VALUE = {"-C", "-c", "--git-dir", "--work-tree", "--namespace", "--super-prefix", "--config-env",
                      "--attr-source", "--list-cmds"}
@@ -1150,9 +1256,12 @@ _GH_API_WRITES = (
     (re.compile(r"(^|/)merges/?$"), ("POST",), "pr_merge"),
     (re.compile(r"(^|/)releases/?$"), ("POST",), "release_create"),
     (re.compile(r"(^|/)releases/\d+/?$"), ("PATCH",), "release_create"),
+    (re.compile(r"(^|/)releases/\d+/assets"), ("POST",), "release_create"),
     (re.compile(r"(^|/)git/refs(/|$)"), ("POST", "PATCH", "DELETE"), "remote_write"),
     (re.compile(r"(^|/)contents/"), ("PUT", "DELETE"), "remote_write"),
     (re.compile(r"(^|/)deployments/?$"), ("POST",), "deploy"),
+    (re.compile(r"(^|/)merge-upstream/?$"), ("POST",), "remote_write"),
+    (re.compile(r"^repos/[^/]+/[^/]+/dispatches/?$"), ("POST",), "remote_write"),
 )
 _GH_DISPATCH = re.compile(r"(^|/)actions/workflows/([^/]+)/dispatches/?$")
 _GRAPHQL_MUTATIONS = (
@@ -1281,7 +1390,14 @@ _CODE_DELIVERY = (
     (re.compile(r"""\bgh\b[\s'",]+pr[\s'",]+(create|new)\b"""), "pr_create"),
     (re.compile(r"""\bgh\b[\s'",]+pr[\s'",]+merge\b"""), "pr_merge"),
     (re.compile(r"""\bgh\b[\s'",]+release[\s'",]+(create|new)\b"""), "release_create"),
+    (re.compile(r"""api\.github\.com/repos/[^'"\s]*/(pulls|merges|releases|git/refs|contents)\b"""), "remote_write"),
 )
+_CODE_RUNS_COMMANDS = re.compile(
+    r"os\.system|os\.popen|\bsubprocess\b|\bPopen\b|\bexec\(|\beval\(|__import__|child_process|execSync|"
+    r"spawnSync|\bsystem\(|\bpassthru\(|\bshell_exec\(|`")
+_CODE_BUILDS_STRINGS = re.compile(
+    r"""["']\s*\+\s*["']|\.join\(|\bchr\(|b64decode|\bbase64\b|\\x[0-9a-fA-F]{2}|fromCharCode|\batob\(|"""
+    r"""\bformat\(|%s""")
 _INLINE_WRITES = {
     "python": (
         re.compile(r"""(?:pathlib\.)?Path\(\s*(['"])((?:(?!\1).)+)\1\s*\)\.(?:write_text|write_bytes|touch|mkdir|unlink|rename|replace)\s*\("""),
@@ -1333,6 +1449,22 @@ def _deploy_name(name):
     if not tokens or set(tokens) & _DEPLOY_NEVER:
         return False
     return tokens[0] in _DEPLOY_FIRST or bool(set(tokens) & _DEPLOY_ANY)
+
+
+_DEPLOY_VERBS = {"apply", "rollout", "upgrade", "destroy", "deploy", "publish", "upload", "rollback", "redeploy",
+                 "uninstall"}
+_DEPLOY_DIRS = {"deploy", "deploys", "deployment", "deployments", "release", "releases", "publish", "ship"}
+_DEPLOY_USER = re.compile(r"^(?:deploy|deployer|deployment|release|publish|ship)@", re.I)
+_REMOTE_READ_ONLY = {"ls", "cat", "tail", "head", "grep", "journalctl", "uptime", "df", "du", "ps", "whoami", "id",
+                     "hostname", "date", "uname", "free", "top", "less", "more", "wc", "stat", "file", "which"}
+
+
+def _deploy_path(path):
+    """A script path that deploys: a deploy-like file name, or a script inside a deploy/ directory."""
+    if _deploy_name(path):
+        return True
+    parts = [p.lower() for p in path.split("/")[:-1]]
+    return bool(set(parts) & _DEPLOY_DIRS) and not set(_name_tokens(path)) & _DEPLOY_NEVER
 
 
 def _dry_run(args):
@@ -1625,10 +1757,20 @@ _UNKNOWN_FEED = _Feed("unknown")
 # =============================================================================
 
 
+class _Budget(Exception):
+    """The analysis used up its step or time budget."""
+
+
 class _Analysis:
     def __init__(self, base_dir, lookups=True):
         self.base = base_dir
         self.lookups = lookups
+        self.steps = 0
+        self.deadline = time.monotonic() + MAX_SECONDS
+        self.unseen_reasons = []
+        self.defining = 0
+        self.failed = ""
+        self.config_unknown = False
         self.actions = set()
         self.possible = set()
         self.delivery = []
@@ -1649,8 +1791,23 @@ class _Analysis:
         self.repo_aliases = {}
 
     # -- recording ------------------------------------------------------------
+    def tick(self):
+        self.steps += 1
+        if self.steps > MAX_STEPS or (self.steps % 64 == 0 and time.monotonic() > self.deadline):
+            raise _Budget()
+
+    def unseen(self, text):
+        """Code runs that cannot be read statically: report the strictest possible tier."""
+        self.mark("no")
+        if self.defining:  # a function body is judged where it is called
+            return
+        self.reason(text)
+        if text not in self.unseen_reasons:
+            self.unseen_reasons.append(text)
+            self.action("unseen", ["unseen:", text], possible=True)
+
     def reason(self, text):
-        if text not in self.reasons:
+        if text not in self.reasons and not self.defining:
             self.reasons.append(text)
 
     def mark(self, status):
@@ -1676,6 +1833,8 @@ class _Analysis:
             for root in item.roots:
                 self.write(root, env, via, scope)
             return
+        if _GIT_CONFIG_FILE.search(text):
+            self.config_unknown = True  # git aliases may have been added to the configuration
         path = os.path.expanduser(text)
         dynamic = isinstance(item, Dyn) or (env.cwd is None and not os.path.isabs(path))
         full = os.path.join(env.cwd_text, path) if dynamic else os.path.realpath(os.path.join(env.cwd or "/", path))
@@ -1687,6 +1846,10 @@ class _Analysis:
 
     # -- expansion --------------------------------------------------------------
     def expand(self, word, env):
+        if len(word.atoms) == 1:
+            fields = self.expand_all(word.atoms[0], env)
+            if fields is not None:
+                return fields
         alternatives = [word.atoms]
         if any(atom[0] == "lit" and not atom[2] and "{" in atom[1] for atom in word.atoms):
             expanded = _brace_expand(_units(word.atoms))
@@ -1697,6 +1860,16 @@ class _Analysis:
         for atoms in alternatives:
             items.extend(self.expand_atoms(atoms, env))
         return items
+
+    def expand_all(self, atom, env):
+        """Fields of a word that is exactly "$@" or ${name[@]}; None for any other word."""
+        if atom[0] == "var" and atom[1] == "@" and env.positional is not None:
+            return [Dyn("$@") if item is None else item for item in env.positional]
+        if atom[0] == "dyn":
+            m = _ARRAY_ALL.match(atom[1])
+            if m is not None and env.arrays.get(m.group(1)) is not None:
+                return list(env.arrays[m.group(1)])
+        return None
 
     def expand_atoms(self, atoms, env):
         pieces = []
@@ -1715,6 +1888,8 @@ class _Analysis:
                 value = None if value is None else value.rstrip("\n")
             else:
                 value, raw = None, atom[1]
+            if value is not None and not quoted and "IFS" in env.vars:
+                value = None  # unquoted expansions split at the changed IFS, not at blanks
             pieces.append((Dyn(raw),) if value is None else (value, quoted, not quoted))
         fields, parts, flags = [], [], {"dyn": False, "glob": False, "started": False}
 
@@ -1783,17 +1958,15 @@ class _Analysis:
     def run_code(self, text, env, stdin=None):
         """Parse and walk code that a shell, eval, trap or alias will run."""
         if self.depth >= MAX_DEPTH:
-            self.reason("nesting too deep")
-            self.mark("no")
+            self.unseen("nesting too deep")
             return
         self.depth += 1
         self.walk_script(parse(text), env, stdin)
         self.depth -= 1
 
     def walk_script(self, script, env, stdin=None):
-        if script.error:
-            self.reason("parse error: " + script.error)
-            self.mark("no")
+        if script.error:  # bash may accept what the parser rejects: judge it by the strictest tier
+            self.unseen("parse error: " + script.error)
         for andor, background in script.items:
             scope = env.copy() if background else env
             for pipeline in andor:
@@ -1803,12 +1976,60 @@ class _Analysis:
                 feed = stdin
                 for node in pipeline:
                     feed = self.walk_command(node, scope.copy(), feed)
+                    if feed is None:  # a pipe carries output this analysis cannot see
+                        feed = _UNKNOWN_FEED
+
+    def scan_word(self, word, env):
+        """Expansions that evaluate or execute a variable's value (arithmetic, ${!n}, ${x@P})."""
+        for atom in word.atoms:
+            if atom[0] != "dyn":
+                continue
+            raw = atom[1]
+            if raw.startswith(("$((", "$[")):
+                self.arith_check(raw, env)
+            elif raw.startswith("${!") or raw.endswith("@P}"):
+                self.mark("no")
+                name = raw[3:-1] if raw.startswith("${!") else raw[2:-3]
+                value = env.vars.get(name)
+                if isinstance(value, str) and _EXEC_TEXT.search(value):
+                    self.unseen("indirect expansion of a variable that holds a command substitution")
+
+    def arith_check(self, text, env):
+        """Arithmetic evaluates variable values (a[$(cmd)] runs cmd): a variable that holds a
+        command substitution makes the command unseen, and any variable use is not read-only."""
+        names = _ARITH_NAMES.findall(text)
+        if names:
+            self.mark("no")
+        for name in names:
+            value = env.vars.get(name)
+            if isinstance(value, str) and _EXEC_TEXT.search(value):
+                self.unseen("arithmetic evaluates a variable that holds a command substitution")
+        if _SUBSCRIPT_EXEC.search(text):
+            self.unseen("arithmetic subscript runs a command substitution")
+
+    def scan_conditional(self, node, env):
+        words = node.extra or []
+        if len(words) == 1 and words[0].text.startswith("(("):
+            self.arith_check(words[0].text, env)
+            return
+        texts = [w.literal() for w in words]
+        for text in texts:
+            if text is not None and _SUBSCRIPT_EXEC.search(text):
+                self.unseen("test operand with a subscript that runs a command substitution")
+        if any(text in ("-eq", "-ne", "-lt", "-gt", "-le", "-ge") for text in texts):
+            names = []
+            for w in words:
+                names.extend(a[1] for a in w.atoms if a[0] == "var")
+                names.extend(_ARITH_NAMES.findall(w.literal() or ""))
+            self.arith_check(" ".join(names), env)
 
     def walk_nested(self, word, env):
+        self.scan_word(word, env)
         for script in word.nested:
             self.walk_script(script, env.copy())
 
     def walk_command(self, node, env, stdin):
+        self.tick()
         if isinstance(node, Simple):
             return self.walk_simple(node, env, stdin)
         stdin = self.redirections(node.redirs, env) or stdin
@@ -1819,8 +2040,14 @@ class _Analysis:
         elif node.kind == "function":
             if node.extra:
                 env.functions[node.extra] = node.parts[0]
-            self.walk_script(node.parts[0], env.copy())
+            self.defining += 1
+            try:
+                self.walk_script(node.parts[0], env.copy())
+            finally:
+                self.defining -= 1
         else:
+            if node.kind == "words":
+                self.scan_conditional(node, env)
             for word in node.extra or ():
                 self.walk_nested(word, env)
             for part in node.parts:
@@ -1857,7 +2084,13 @@ class _Analysis:
                 self.walk_nested(redir.body_word, env)
         values = {}
         for assign in cmd.assigns:
-            value = None if assign.array else self.literal_text(assign.value[0], env)
+            if assign.array:
+                items = []
+                for item_word in assign.value:
+                    items.extend(self.expand(item_word, env))
+                self.assign_array(assign, items, env)
+                continue
+            value = self.literal_text(assign.value[0], env)
             if assign.append and value is not None:
                 prior = env.get(assign.name)
                 value = None if prior is None else prior + value
@@ -1870,6 +2103,21 @@ class _Analysis:
             env.vars.update(values)
             return None
         return self.execute(argv, env, values, stdin, cmd.words[0])
+
+    def assign_array(self, assign, items, env):
+        """Remember a literal array so "${a[@]}" can be read; a subscript that runs code is unseen."""
+        if _SUBSCRIPT_EXEC.search(assign.name):
+            self.unseen("array subscript runs a command substitution")
+            return
+        if "[" in assign.name:  # a[3]=x sets one element of an array of unknown shape
+            env.arrays.pop(assign.name.split("[", 1)[0], None)
+            return
+        if assign.append and assign.name in env.arrays:
+            env.arrays[assign.name] = env.arrays[assign.name] + items
+        elif assign.append:
+            env.arrays.pop(assign.name, None)
+        else:
+            env.arrays[assign.name] = items
 
     def redirections(self, redirs, env):
         stdin = None
@@ -1892,16 +2140,17 @@ class _Analysis:
 
     # -- running a command --------------------------------------------------------
     def execute(self, argv, env, prefix, stdin, first_word=None):
+        self.tick()
         program = argv[0]
         self.commands.append({"program": _text(program), "argv": [_text(a) for a in argv], "cwd": env.cwd})
         self.check_env(prefix)
         argv = self.quoted_operators(argv, env)
         if _lit(program) is None:
-            self.reason("dynamic command word: " + _text(program))
-            self.mark("no")
-            self.guess(argv, env)
-            return None
+            return self.execute_dynamic(argv, env, prefix, stdin, first_word)
         name = os.path.basename(program)
+        helper = _GIT_HELPER.match(name)
+        if helper is not None and helper.group(1) in _GIT_SUBCOMMANDS and name not in env.functions:
+            return self.h_git(["git", helper.group(1)] + list(argv[1:]), env, prefix, stdin)
         if first_word is not None and first_word.unquoted_literal() == program and program in env.aliases:
             self.run_code(env.aliases[program] + "".join(" " + shlex.quote(_text(a)) for a in argv[1:]), env)
         if name in env.functions and name not in self.active:
@@ -1912,6 +2161,26 @@ class _Analysis:
             self.active.discard(name)
         handler = _HANDLERS.get(name) or ("interpreter" if _INTERPRETER.match(name) else "unknown")
         return getattr(self, "h_" + handler)(argv, env, prefix, stdin)
+
+    def execute_dynamic(self, argv, env, prefix, stdin, first_word):
+        """A command whose program is not known statically."""
+        program = argv[0]
+        text = _text(program)
+        self.reason("dynamic command word: " + text)
+        self.mark("no")
+        if "IFS" in env.vars:
+            self.unseen("IFS is changed, so unquoted expansions split at unknown places")
+        tail = os.path.basename(text)
+        helper = _GIT_HELPER.match(tail)
+        if helper is not None and helper.group(1) in _GIT_SUBCOMMANDS:
+            return self.h_git(["git", helper.group(1)] + list(argv[1:]), env, prefix, stdin)
+        if tail in ("git", "gh", "hub") and "$" not in tail and "`" not in tail:
+            return getattr(self, "h_" + tail)([tail] + list(argv[1:]), env, prefix, stdin)
+        self.guess(argv, env)
+        from_substitution = first_word is not None and any(atom[0] == "cmd" for atom in first_word.atoms)
+        if _ARRAY_OR_ARGS.match(text) or (len(argv) == 1 and (from_substitution or _ARRAY_ALL.match(text))):
+            self.unseen("the program is the result of an expansion that cannot be resolved: " + text)
+        return None
 
     def check_env(self, prefix):
         for name, value in prefix.items():
@@ -1947,7 +2216,23 @@ class _Analysis:
         """Actions ``argv`` would perform, from a throw-away analysis without lookups."""
         probe = _Analysis(self.base, lookups=False)
         probe.gh_aliases = {}
-        probe.execute(argv, env.copy(), {}, None)
+        probe.steps, probe.deadline, probe.depth = self.steps, self.deadline, self.depth
+        probe.config_unknown = self.config_unknown
+        try:
+            probe.execute(argv, env.copy(), {}, None)
+        finally:
+            self.steps = probe.steps
+        return probe.actions | probe.possible
+
+    def probe_code(self, text, env):
+        """Actions that running ``text`` as shell code would perform, from a throw-away analysis."""
+        probe = _Analysis(self.base, lookups=False)
+        probe.gh_aliases = {}
+        probe.steps, probe.deadline, probe.depth = self.steps, self.deadline, self.depth
+        try:
+            probe.run_code(text, env.copy())
+        finally:
+            self.steps = probe.steps
         return probe.actions | probe.possible
 
     def guess(self, argv, env):
@@ -1955,8 +2240,13 @@ class _Analysis:
         args = list(argv[1:])
         found = self.probe(["git"] + args, env) | self.probe(["gh"] + args, env)
         positionals = _positionals(args)
-        if positionals and _lit(positionals[0]) is not None and positionals[0].lower() in ("deploy", "publish"):
+        first = _lit(positionals[0]) if positionals else None
+        if first is not None and first.lower() in ("deploy", "publish"):
             found.add("deploy")
+        if first in _DEPLOY_VERBS:  # `$(which kubectl) apply ...`: the tool is hidden, the verb is not
+            for tool, subs in _DEPLOY_SUBCOMMANDS.items():
+                if first in subs:
+                    found |= self.probe([tool] + args, env)
         for name in sorted(found):
             self.action(name, argv, possible=True)
 
@@ -1974,13 +2264,20 @@ class _Analysis:
             self.action("deploy", argv)
         return None
 
-    def run_script(self, script, argv, env, reason, shell=True):
+    def run_script(self, script, argv, env, reason, shell=True, stdin=None, kind=None):
         """A script file runs: judge its name and note that its writes are unknown.
 
         Shell scripts that exist are remembered (``invoked_script``) so a gate can read them.
         """
         self.opaque_writer(script, reason)
+        self.reason(reason + " (contents not analysed)")
         target = _lit(script)
+        if _text(script).startswith("<(") or target in _STDIN_NAMES:
+            if shell:
+                self.shell_input(script, stdin, env)
+            else:
+                self.interpreter_input(kind, script, stdin, argv, env)
+            return
         if target is None:
             self.reason("script path is dynamic: " + _text(script))
             return
@@ -1988,7 +2285,7 @@ class _Analysis:
             path = os.path.realpath(os.path.join(env.cwd, os.path.expanduser(target)))
             if os.path.isfile(path):
                 self.scripts.append(path)
-        if _deploy_name(target):
+        if _deploy_path(target):
             self.action("deploy", argv)
 
     # -- read-only programs ---------------------------------------------------------
@@ -1998,19 +2295,30 @@ class _Analysis:
 
     def h_echo(self, argv, env, prefix, stdin):
         if all(_lit(a) is not None for a in argv[1:]):
-            return _Feed("text", _echo_output(list(argv[1:])))
+            text = _echo_output(list(argv[1:]))
+            return _Feed("text", text) if text is not None else _UNKNOWN_FEED
         return _UNKNOWN_FEED
 
     def ro_printf(self, args, env, stdin):
         names = _option_values(args, "v")
         for name in names:
             env.vars[_text(name)] = None
+            if _SUBSCRIPT_EXEC.search(_text(name)):
+                self.unseen("printf -v names an array element whose subscript runs a command")
         rest = _positionals(args, "v")
         if not names and rest and all(_lit(a) is not None for a in rest):
             text = _printf_output(rest[0], rest[1:])
             if text is not None:
                 return _Feed("text", text)
         return _UNKNOWN_FEED
+
+    def ro_hash(self, args, env, stdin):
+        if _has_flag(args, "p"):
+            self.mark("no")  # hash -p binds a name to any program
+
+    def ro_file(self, args, env, stdin):
+        if _has_flag(args, "C", ("--compile",)):
+            self.mark("no")  # file -C writes a compiled magic file
 
     def ro_cat(self, args, env, stdin):
         return stdin if not _positionals(args) and stdin is not None else _UNKNOWN_FEED
@@ -2084,6 +2392,8 @@ class _Analysis:
                 self.write(target, env, "sed w")
             if executes or not parsed:
                 self.opaque_writer("sed", "sed e command" if executes else "unrecognised sed script")
+            if executes:
+                self.unseen("sed e command runs code that is not analysed")
         if any(_is_in_place_flag("sed", _text(a)) for a in args):
             for target in positionals:
                 self.write(target, env, "sed -i")
@@ -2111,6 +2421,16 @@ class _Analysis:
                 self.write(target, env, "awk print >")
             if dynamic or executes:
                 self.opaque_writer("awk", "awk system(), command pipe or computed output file")
+            if executes:
+                self.awk_commands(_text(program), env)
+
+    def awk_commands(self, program, env):
+        """Commands an awk program runs: literal strings are analysed, anything else is unseen."""
+        if re.search(r"system\s*\(\s*[^\"\s]", program):
+            self.unseen("awk runs a command that is not a string literal")
+        for text in re.findall(r'"((?:[^"\\]|\\.)*)"', program):
+            for name in sorted(self.probe_code(text.replace('\\"', '"'), env)):
+                self.action(name, ["awk", text], possible=False)
 
     ro_gawk = ro_mawk = ro_nawk = ro_awk
 
@@ -2148,6 +2468,12 @@ class _Analysis:
     def h_shell_state(self, argv, env, prefix, stdin):
         name = os.path.basename(argv[0])
         args = argv[1:]
+        for item in args:  # a[$(cmd)] subscripts are evaluated by read, unset, declare, export...
+            if _lit(item) is not None and _SUBSCRIPT_EXEC.search(item):
+                self.unseen("%s names an array element whose subscript runs a command" % name)
+            elif name in _DECLARATIONS and _lit(item) is not None and _EXEC_TEXT.search(item) and \
+                    _has_flag(args, "aAi"):
+                self.unseen("%s evaluates text that holds a command substitution" % name)
         if name in ("cd", "pushd"):
             positionals = _positionals(args)
             target = positionals[0] if positionals else (env.home or Dyn("~"))
@@ -2161,11 +2487,22 @@ class _Analysis:
                 key, eq, value = _text(item).partition("=")
                 if eq and _NAME.fullmatch(key):
                     env.vars[key] = value if _lit(item) is not None else None
+        elif name == "history":
+            if _has_flag(args, "awrnscd"):
+                self.mark("no")
+        elif name == "let":
+            self.arith_check(" ".join(_text(a) for a in args), env)
         elif name == "unset":
             for item in _positionals(args):
                 env.vars[_text(item)] = ""
                 env.functions.pop(_text(item), None)
         elif name in ("read", "mapfile", "readarray"):
+            for callback in _option_values(args, "C", ("--callback",), "adnNptuiCcOs", ()) if name != "read" else ():
+                if _lit(callback) is None:
+                    self.unseen("mapfile callback is not known statically")
+                else:
+                    self.run_code(callback, env.copy())
+                self.mark("no")
             for item in _positionals(args, "adnNptuiCcOs"):
                 env.vars[_text(item)] = None
         elif name == "alias":
@@ -2187,6 +2524,8 @@ class _Analysis:
             return None
         self.reason("eval with a non-literal argument")
         self.mark("no")
+        if not all(_ENV_GENERATOR.match(_text(a)) for a in argv[1:]):
+            self.unseen("eval of text that is not known statically")
         words = _split_words(" ".join(_text(a) for a in argv[1:]))
         if words and _lit(words[0]) is not None:
             for name in sorted(self.probe(words, env)):
@@ -2197,7 +2536,7 @@ class _Analysis:
 
     def h_source(self, argv, env, prefix, stdin):
         if len(argv) > 1:
-            self.run_script(argv[1], argv, env, "sources a script")
+            self.run_script(argv[1], argv, env, "sources a script", stdin=stdin)
         return None
 
     def h_trap(self, argv, env, prefix, stdin):
@@ -2248,6 +2587,18 @@ class _Analysis:
         if rest:
             return self.execute(rest, env, prefix, stdin)
         self.mark("no")
+        return None
+
+    def h_runner(self, argv, env, prefix, stdin):
+        """script -c, su -c, runuser -c: the -c value runs as shell code."""
+        name = os.path.basename(argv[0])
+        value_short, value_long = _RUNNERS[name]
+        self.mark("no")
+        for code in _option_values(argv[1:], "c", ("--command",), value_short, value_long):
+            if _lit(code) is None:
+                self.unseen("%s -c with a non-literal command" % name)
+            else:
+                self.run_code(code, env.copy())
         return None
 
     def h_env(self, argv, env, prefix, stdin):
@@ -2325,7 +2676,7 @@ class _Analysis:
 
     def h_shell(self, argv, env, prefix, stdin):
         args = argv[1:]
-        i, command_mode = 0, False
+        i, command_mode, stdin_mode = 0, False, False
         while i < len(args):
             token = _lit(args[i])
             if token is None or len(token) < 2 or token[0] not in "-+":
@@ -2337,6 +2688,7 @@ class _Analysis:
                 i += 1
             elif not token.startswith("--"):
                 command_mode = command_mode or "c" in token[1:]
+                stdin_mode = stdin_mode or "s" in token[1:]
                 i += 1 if token[-1] in "oO" else 0
         if i < len(args) and _lit(args[i]) == "-":
             i += 1
@@ -2347,17 +2699,34 @@ class _Analysis:
                 scope.positional = [_lit(a) for a in rest[2:]]
                 self.run_code(rest[0], scope)
                 return None
-            self.reason("shell -c with a missing or non-literal script")
-            self.mark("no")
+            self.unseen("shell -c with a missing or non-literal script")
             return None
-        if rest:
-            self.run_script(rest[0], argv, env, "runs a shell script")
+        if rest and not stdin_mode:
+            self.run_script(rest[0], argv, env, "runs a shell script", stdin=stdin)
+        else:
+            self.shell_input(None, stdin, env)
+        return None
+
+    def shell_input(self, item, stdin, env):
+        """Code a shell reads from stdin (bash -s, a here-document or pipe) or from <(...)."""
+        if item is not None and _text(item).startswith("<("):
+            self.unseen("shell runs the output of a process substitution")
         elif stdin is not None and stdin.kind == "text":
             self.run_code(stdin.value, env.copy())
+        elif stdin is not None:
+            self.unseen("shell reads commands from a pipe or file that cannot be read")
         else:
             self.reason("shell reads commands from stdin")
             self.mark("no")
-        return None
+
+    def interpreter_input(self, kind, item, stdin, argv, env):
+        """Program text an interpreter reads from stdin or <(...)."""
+        if item is not None and _text(item).startswith("<("):
+            self.unseen("%s runs the output of a process substitution" % kind)
+        elif stdin is not None and stdin.kind == "text":
+            self.inline_code(kind, stdin.value, argv, env)
+        elif stdin is not None:
+            self.unseen("%s reads its program from a pipe or file that cannot be read" % kind)
 
     # -- interpreters -------------------------------------------------------------------
     def h_interpreter(self, argv, env, prefix, stdin):
@@ -2406,14 +2775,16 @@ class _Analysis:
                 self.inline_code(kind, code, argv, env)
         elif module is not None:
             self.opaque_writer(argv[0], "runs %s module %s" % (kind, _text(module)))
-            if _deploy_name(_text(module)):
+            self.reason("runs %s module %s (contents not analysed)" % (kind, _text(module)))
+            module_args = [_lit(a) for a in operands]
+            if _deploy_name(_text(module)) or module_args[:1] and module_args[0] in _DEPLOY_SUBCOMMANDS.get(
+                    _text(module).split(".")[0], ()):
                 self.action("deploy", argv)
         elif operands and _lit(operands[0]) != "-":
-            self.run_script(operands[0], argv, env, "runs a %s script" % kind, shell=False)
+            self.run_script(operands[0], argv, env, "runs a %s script" % kind, shell=False, stdin=stdin, kind=kind)
         else:
             self.opaque_writer(argv[0], "%s reads its program from stdin" % kind)
-            if stdin is not None and stdin.kind == "text":
-                self.inline_code(kind, stdin.value, argv, env)
+            self.interpreter_input(kind, None, stdin, argv, env)
         return None
 
     def inline_code(self, kind, code, argv, env):
@@ -2424,9 +2795,13 @@ class _Analysis:
         for pattern in _INLINE_WRITES.get(kind, ()):
             for m in pattern.finditer(code):
                 self.write(m.groups()[-1], env, "inline " + kind)
+        found = False
         for pattern, name in _CODE_DELIVERY:
             if pattern.search(code):
                 self.action(name, argv, possible=True)
+                found = True
+        if not found and _CODE_RUNS_COMMANDS.search(code) and _CODE_BUILDS_STRINGS.search(code):
+            self.unseen("inline %s code builds the command it runs" % kind)
 
     # -- writers ----------------------------------------------------------------------
     def h_copy(self, argv, env, prefix, stdin):
@@ -2467,8 +2842,23 @@ class _Analysis:
                 self.write(_text(item)[3:] if _lit(item) is not None else Dyn(_text(item)[3:]), env, "dd of=")
         return None
 
+    def h_ssh(self, argv, env, prefix, stdin):
+        """ssh/sftp as a deploy user, unless the remote command only reads."""
+        self.mark("no")
+        positionals = _positionals(argv[1:], "bcDEeFIiJLlmOopQRSWw")
+        if not positionals or not _DEPLOY_USER.match(_text(positionals[0])):
+            return None
+        remote = [_lit(t) for t in positionals[1:2]]
+        words = (remote[0] or "x").split() if remote else []
+        if os.path.basename(argv[0]) == "ssh" and words and words[0] in _REMOTE_READ_ONLY:
+            return None
+        self.action("deploy", argv)
+        return None
+
     def h_sync_copy(self, argv, env, prefix, stdin):
         self.mark("no")
+        if any(_DEPLOY_USER.match(_text(a)) for a in _positionals(argv[1:], "eBfTMiFPoS", _RSYNC_VALUE_LONG)):
+            self.action("deploy", argv)
         positionals = _positionals(argv[1:], "eBfTMiFPoS", _RSYNC_VALUE_LONG)
         if len(positionals) > 1 and not re.match(r"^[^/]*:", _text(positionals[-1])):
             self.write(positionals[-1], env, os.path.basename(argv[0]))
@@ -2488,6 +2878,13 @@ class _Analysis:
                 name = _text(url).split("?", 1)[0].rstrip("/").rsplit("/", 1)[-1]
                 target = os.path.join(_text(directories[-1]), name) if directories else name
                 self.write(target if isinstance(url, str) else Dyn(target), env, "curl -O")
+        methods = _option_values(args, "X", ("--request",), value_short, _CURL_VALUE_LONG)
+        posts = _has_flag(args, "dFT", ("--data", "--data-raw", "--data-binary", "--data-urlencode", "--json",
+                                         "--form", "--upload-file"))
+        method = _text(methods[-1]).upper() if methods else "POST" if posts else "GET"
+        urls = _positionals(args, value_short, _CURL_VALUE_LONG) + \
+            _option_values(args, "", ("--url",), value_short, _CURL_VALUE_LONG)
+        self.github_http(urls, method, argv)
         return None
 
     def h_wget(self, argv, env, prefix, stdin):
@@ -2504,6 +2901,22 @@ class _Analysis:
             for url in _positionals(args, value_short, value_long):
                 name = _text(url).split("?", 1)[0].rsplit("/", 1)[-1] or "index.html"
                 self.write(os.path.join(_text(prefixes[-1]), name) if prefixes else name, env, "wget")
+        methods = _option_values(args, "", ("--method",), value_short, value_long)
+        posts = _has_flag(args, "", ("--post-data", "--post-file", "--body-data", "--body-file"))
+        method = _text(methods[-1]).upper() if methods else "POST" if posts else "GET"
+        self.github_http(_positionals(args, value_short, value_long), method, argv)
+        return None
+
+    def h_httpie(self, argv, env, prefix, stdin):
+        """http / https / xh: [METHOD] URL [items]."""
+        self.mark("no")
+        positionals = _positionals(argv[1:], "", ("--auth", "-a", "--session", "--timeout", "--pretty", "--style"))
+        method = "GET"
+        if positionals and _lit(positionals[0]) is not None and positionals[0].isalpha() and positionals[0].isupper():
+            method, positionals = positionals[0], positionals[1:]
+        elif len(positionals) > 1:
+            method = "POST"  # request items imply a body
+        self.github_http(positionals[:1], method, argv)
         return None
 
     def h_tar(self, argv, env, prefix, stdin):
@@ -2616,8 +3029,14 @@ class _Analysis:
                 elif token == "-c":
                     key, eq, setting = _text(value).partition("=")
                     config[key.lower()] = setting if _lit(value) is not None and eq else None
+                    if key.lower().startswith("include"):
+                        self.config_unknown = True
+                elif token == "--config-env":
+                    self.config_unknown = True
                 i += 2
                 continue
+            if token.startswith("--config-env="):
+                self.config_unknown = True
             info = info or token in _GIT_INFO_FLAGS
             i += 1
         if not all(_git_config_safe(key, value) for key, value in config.items()):
@@ -2632,7 +3051,7 @@ class _Analysis:
             self.mark("no")
             self.guess_git(argv, rest)
             return None
-        if any(_lit(a) in ("--help", "-h") for a in rest):
+        if _help_requested(rest, _GIT_VALUE_OPTS):
             return None
         if sub not in _GIT_SUBCOMMANDS:
             return self.git_alias(argv[:i + 1], sub, rest, scope, prefix, stdin, config, depth)
@@ -2644,10 +3063,21 @@ class _Analysis:
 
         config = {}
         count = lookup("GIT_CONFIG_COUNT")
-        for n in range(int(count) if count is not None and count.isdigit() else 0):
+        if count is not None and not re.fullmatch(r"[0-9]{1,3}", count):
+            count = None
+            self.config_unknown = True
+        for n in range(min(int(count), MAX_GIT_CONFIG) if count is not None else 0):
             key = lookup("GIT_CONFIG_KEY_%d" % n)
             if key is not None:
                 config[key.lower()] = lookup("GIT_CONFIG_VALUE_%d" % n)
+            if key is not None and key.lower().startswith("include"):
+                self.config_unknown = True
+        if count is not None and int(count) > MAX_GIT_CONFIG:
+            self.config_unknown = True
+        if any(name in prefix or name in env.vars for name in _GIT_CONFIG_SOURCES) or \
+                lookup("GIT_CONFIG_PARAMETERS") is None and ("GIT_CONFIG_PARAMETERS" in prefix or
+                                                             "GIT_CONFIG_PARAMETERS" in env.vars):
+            self.config_unknown = True
         for key, value in re.findall(r"'([^']+)'='([^']*)'", lookup("GIT_CONFIG_PARAMETERS") or ""):
             config[key.lower()] = value
         return config
@@ -2666,6 +3096,12 @@ class _Analysis:
                 if env.cwd not in self.repo_aliases:
                     self.repo_aliases[env.cwd] = _repo_git_aliases(env.cwd)
                 expansion = self.repo_aliases[env.cwd].get(sub.lower())
+        if expansion is None and self.config_unknown or expansion is None and key in config:
+            # the aliases in effect cannot be read (config files redirected, included or written in this
+            # command): the subcommand may be an alias of anything
+            self.reason("git aliases cannot be resolved: " + sub)
+            if not self.guess_git(list(head) + [sub], rest):
+                self.action("commit", list(head) + [sub] + list(rest), possible=True)
         if expansion is None or depth >= 8:
             return None
         if expansion.startswith("!"):
@@ -2688,24 +3124,33 @@ class _Analysis:
             found.add("push")
         for name in sorted(found):
             self.action(name, argv, possible=True)
+        return found
 
     def git_subcommand(self, sub, rest, argv, env, stdin):
         literal = [_lit(a) for a in rest]
         control = bool(set(literal) & _GIT_CONTROL)
-        no_commit = sub in ("merge", "cherry-pick", "revert") and bool({"--no-commit", "-n"} & set(literal))
-        if sub in _GIT_COMMIT and not control and not no_commit:
+        # -n is --no-commit for cherry-pick and revert, but --no-stat for merge
+        no_commit = sub in ("merge", "cherry-pick", "revert") and (
+            "--no-commit" in literal or sub != "merge" and "-n" in literal)
+        kind = self.git_action_kind(sub, rest, literal)
+        if kind == "update-ref-branch":
+            self.action("commit", argv)
+        elif kind in _GIT_COMMIT and not control and not no_commit:
             self.action("commit", argv)
             if sub == "commit":
                 self.commits.append(self.git_commit_info(rest))
-        elif sub == "hash-object" and "-w" in literal or sub == "update-ref" and (
+        elif kind == "hash-object" and _has_flag(rest, "w") or kind == "update-ref" and (
                 "--stdin" in literal or any(_lit(t) is None or t in ("HEAD", "@") or t.startswith("refs/heads/")
                                             for t in _positionals(rest, "m"))):
             self.action("commit", argv)
-        elif sub in _GIT_PUSH:
+        elif kind in _GIT_PUSH:
             info, dry = self.git_push_info(rest)
             if not dry:
                 self.action("push", argv)
                 self.push.append(info)
+        if sub == "reset" and ("--soft" in literal or "--mixed" in literal) and any(
+                isinstance(t, Dyn) or _EXEC_TEXT.search(_text(t)) for t in _positionals(rest)):
+            self.action("commit", argv, possible=True)
         if sub in ("add", "stage"):
             self.staged.extend(_text(a) for a in _positionals(rest, "", ("--chmod", "--pathspec-from-file")))
         if sub == "config":
@@ -2716,6 +3161,23 @@ class _Analysis:
         if sub == "ls-files":
             return _Feed("roots", _positionals(rest, "xX", ("--exclude", "--exclude-from")) or ["."])
         return None
+
+    @staticmethod
+    def git_action_kind(sub, rest, literal):
+        """The git command ``sub`` acts as: subtree and a local `pull .` commit, http-push pushes,
+        a forced branch move rewrites refs/heads/* like update-ref."""
+        if sub == "subtree":
+            verb = literal[0] if literal else None
+            return "push" if verb == "push" else "commit" if verb in ("add", "merge", "pull") else sub
+        if sub == "http-push":
+            return "push"
+        if sub == "pull" and _positionals(rest, "o", ("--repo",))[:1] == ["."]:
+            return "merge"  # `git pull . other` merges a local branch
+        if sub == "branch" and _positionals(rest) and any(
+                t and (t in ("--force", "--move", "--copy") or re.fullmatch(r"-[a-zA-Z]*[fMC][a-zA-Z]*", t))
+                for t in literal):
+            return "update-ref-branch"
+        return sub
 
     def git_commit_info(self, rest):
         value_long = ("--message", "--file", "--author", "--date", "--template", "--fixup", "--squash", "--cleanup",
@@ -2764,8 +3226,14 @@ class _Analysis:
             env.git_aliases[positionals[0][len("alias."):].lower()] = _lit(positionals[1])
         reads = {"--get", "--get-all", "--get-regexp", "--get-urlmatch", "--list", "-l", "--get-color",
                  "--get-colorbool"}
-        if not (literal & reads) and len(positionals) != 1:
+        writes = {"--unset", "--unset-all", "--remove-section", "--rename-section", "--edit", "-e", "--add",
+                  "--replace-all"}
+        if literal & writes or not (literal & reads) and len(positionals) != 1:
             self.mark("no")
+        key = _text(positionals[0]).lower() if positionals else ""
+        if not literal & reads and (key.startswith("include") or key.startswith("alias.") and (
+                len(positionals) < 2 or _lit(positionals[1]) is None)):
+            self.config_unknown = True
 
     def git_writes(self, sub, rest, literal, env, control, stdin):
         if sub == "checkout":
@@ -2802,7 +3270,8 @@ class _Analysis:
     def read_only_git(self, sub, rest, literal):
         if sub in _GIT_READ_ONLY:
             if any(t and (t.startswith(("--output", "--open-files-in-pager")) or sub == "grep" and
-                          t.startswith("-O")) for t in literal):
+                          t.startswith("-O") or sub == "ls-remote" and t.startswith(("--upload-pack", "--exec", "-u")))
+                   for t in literal):
                 self.mark("no")
             return
         positionals = _positionals(rest)
@@ -2833,12 +3302,15 @@ class _Analysis:
                                (visible & {"merge"} and {"pr_merge"} or set())):
                 self.action(name, argv, possible=True)
             return None
-        if any(_lit(a) in ("--help", "-h") for a in rest):
+        if _help_requested(rest, _GH_VALUE_OPTS):
             return None
         if group not in _GH_BUILTINS:
             if self.gh_aliases is None:
                 self.gh_aliases = _gh_config_aliases(env.home)
             expansion = self.gh_aliases.get(group)
+            if expansion is None and self.config_unknown:
+                self.reason("gh aliases cannot be resolved: " + group)
+                self.action("pr_create", argv, possible=True)
             if expansion is None or depth >= 8:
                 return None
             if expansion.startswith("!"):
@@ -2853,10 +3325,17 @@ class _Analysis:
                 self.action(name, argv, possible=True)
         elif group == "pr" and (sub in ("create", "new") or sub == "merge" and "--disable-auto" not in tail):
             self.action("pr_create" if sub != "merge" else "pr_merge", argv)
-        elif group == "release" and (sub in ("create", "new") or sub == "edit" and "--draft=false" in tail):
+        elif group == "release" and sub in ("create", "new", "edit", "upload"):
             self.action("release_create", argv)
         elif group == "api":
             self.gh_api(rest, argv)
+        elif group == "alias" and sub in ("set", "import", "delete"):
+            self.config_unknown = True  # gh aliases changed in this command
+        elif group == "auth" and sub == "token":
+            self.reason("gh auth token hands out the credential")
+            self.action("remote_write", argv, possible=True)
+        elif group == "repo" and sub == "sync":
+            self.action("remote_write", argv)
         elif group == "workflow" and sub == "run":
             names = _positionals(rest[1:], "fFr", ("--field", "--raw-field", "--ref", "--repo"))
             if names and _deploy_name(_text(names[0])):
@@ -2899,11 +3378,18 @@ class _Analysis:
         if path == "graphql":
             if query is None:
                 self.reason("graphql query is not visible")
+                for name in ("pr_create", "pr_merge", "remote_write"):
+                    self.action(name, argv, possible=True)
             for mutation, action in _GRAPHQL_MUTATIONS if query is not None else ():
                 if re.search(r"\b%s\b" % mutation, query):
                     self.action(action, argv)
             return
+        self.api_write(method, path, argv)
+
+    def api_write(self, method, path, argv):
+        """Record the delivery action of a GitHub REST call ``method`` on ``path``."""
         path = re.sub(r"^https?://[^/]+/", "", path).split("?", 1)[0].lstrip("/")
+        path = re.sub(r"^api/v3/", "", path)
         dispatch = _GH_DISPATCH.search(path)
         if dispatch is not None and method == "POST" and _deploy_name(dispatch.group(2)):
             self.action("deploy", argv)
@@ -2911,6 +3397,39 @@ class _Analysis:
             if method in methods and pattern.search(path):
                 self.action(action, argv)
                 return
+
+    def github_http(self, urls, method, argv):
+        """curl/wget/httpie calls to the GitHub API: the same writes as `gh api`."""
+        for url in urls:
+            text = _text(url)
+            m = _GITHUB_API_URL.match(text)
+            if m is None:
+                continue
+            self.reason("raw HTTP request to the GitHub API")
+            if _lit(url) is None or "$" in text:
+                if method != "GET":
+                    self.action("remote_write", argv, possible=True)
+                continue
+            self.api_write(method, text, argv)
+
+    def h_forge(self, argv, env, prefix, stdin):
+        """glab / tea / az repos / lab / jj / sl: the same delivery verbs as gh and git."""
+        self.mark("no")
+        name = os.path.basename(argv[0])
+        words = [_lit(p) for p in _positionals(argv[1:])]
+        if name in ("jj", "sl"):  # jj git push / sl push
+            if words[:2] == ["git", "push"] or words[:1] == ["push"]:
+                self.action("push", argv)
+            return None
+        group = words
+        pr_words = ("mr", "pr", "merge-request", "pull-request", "pulls")
+        if group[:1] and group[0] in pr_words and group[1:2] in (["create"], ["new"]):
+            self.action("pr_create", argv)
+        elif group[:1] and group[0] in pr_words and group[1:2] in (["merge"], ["accept"]):
+            self.action("pr_merge", argv)
+        elif group[:1] == ["release"] and group[1:2] in (["create"], ["new"]):
+            self.action("release_create", argv)
+        return None
 
     def h_hub(self, argv, env, prefix, stdin):
         args = argv[1:]
@@ -2948,6 +3467,9 @@ class _Analysis:
                 deploys = any(_text(a) == "--push" or "type=registry" in _text(a) for a in args)
         elif tool == "gcloud":
             deploys = "deploy" in positionals[:4]
+        elif tool == "az" and first == "repos" and positionals[1:3] == ["pr", "create"]:
+            self.action("pr_create", argv)
+            deploys = False
         elif tool == "az":
             deploys = "deploy" in positionals[:4] or positionals[:2] == ["webapp", "up"] or \
                 "deployment" in positionals[:3] and "create" in positionals[:4]
@@ -2989,7 +3511,7 @@ class _Analysis:
         rest = args[i + 1:]
         if sub in ("test", "t") or sub == "run" and rest and _lit(rest[0]) is not None and \
                 (rest[0] == "test" or rest[0].startswith("test:")) or name == "yarn" and sub in ("jest", "vitest"):
-            self.mark("no" if _snapshot_update(rest) else "test")
+            self.mark("no")  # a package script runs arbitrary project code
             return None
         if sub in ("exec", "x", "dlx"):
             for code in _option_values(rest, "c", ("--call",), "p", ("--package",)):
@@ -3088,10 +3610,16 @@ for _names, _handler in (
         (("tee", "sponge"), "tee")):
     for _name in _names:
         _HANDLERS[_name] = _handler
+_RUNNERS = {"script": ("cIOBETm", ("--command", "--log-in", "--log-out", "--log-io", "--log-timing", "--timing",
+                                  "--logging-format", "--output-limit")),
+            "su": ("cgGsw", ("--command", "--group", "--supp-group", "--shell", "--whitelist-environment")),
+            "runuser": ("cgGsuw", ("--command", "--group", "--supp-group", "--shell", "--user",
+                                   "--whitelist-environment"))}
 _HANDLERS.update({
     "echo": "echo", "eval": "eval", "source": "source", ".": "source", "trap": "trap", "command": "command",
     "env": "env", "rtk": "rtk", "xargs": "xargs", "dd": "dd", "curl": "curl", "wget": "wget", "tar": "tar",
-    "unzip": "unzip", "patch": "patch", "split": "split", "git": "git", "gh": "gh", "hub": "hub",
+    "glab": "forge", "tea": "forge", "lab": "forge", "jj": "forge", "sl": "forge",
+    "ssh": "ssh", "sftp": "ssh", "http": "httpie", "https": "httpie", "xh": "httpie", "xhs": "httpie", "script": "runner", "su": "runner", "runuser": "runner", "unzip": "unzip", "patch": "patch", "split": "split", "git": "git", "gh": "gh", "hub": "hub",
 })
 
 
@@ -3197,8 +3725,8 @@ def _result(analysis, script, text):
     return {
         "schema": SCHEMA_VERSION,
         "base_dir": analysis.base,
-        "status": "parse_failed" if script.error else "ok" if text.strip() else "empty",
-        "error": script.error,
+        "status": "parse_failed" if script.error or analysis.failed else "ok" if text.strip() else "empty",
+        "error": script.error or analysis.failed,
         "actions": actions,
         "tier": tier,
         "possible_actions": possible,
@@ -3227,13 +3755,29 @@ def _home():
     return os.environ.get("HOME") or None
 
 
+def _guarded(analysis, walk):
+    """Run ``walk``; a budget overrun or an analyzer fault reports unseen code instead of failing."""
+    try:
+        walk()
+    except _Budget:
+        analysis.unseen("analysis budget exceeded")
+    except RecursionError:
+        analysis.unseen("nesting too deep")
+    except Exception as exc:  # the analyzer must never crash a hook: report the strictest tier
+        analysis.failed = "analyzer error: %s" % type(exc).__name__
+        analysis.unseen(analysis.failed)
+
+
 def analyze_command(command, base_dir=None, lookups=True):
     """Analyze one shell command string (see the module docstring for the result)."""
     text = (command or "").replace("\x00", "")
     base = os.path.realpath(base_dir or os.getcwd())
     analysis = _Analysis(base, lookups)
+    if len(text) > MAX_INPUT_CHARS:
+        analysis.unseen("command too large to analyze")
+        return _result(analysis, Script([], ""), text[:4096])
     script = parse(text)
-    analysis.walk_script(script, Env(base, _home()))
+    _guarded(analysis, lambda: analysis.walk_script(script, Env(base, _home())))
     return _result(analysis, script, text)
 
 
@@ -3243,8 +3787,11 @@ def analyze_argv(argv, base_dir=None, lookups=True):
     text = " ".join(shlex.quote(part) for part in argv)
     base = os.path.realpath(base_dir or os.getcwd())
     analysis = _Analysis(base, lookups)
+    if len(text) > MAX_INPUT_CHARS:
+        analysis.unseen("command too large to analyze")
+        return _result(analysis, Script([], ""), text[:4096])
     if argv:
-        analysis.execute(argv, Env(base, _home()), {}, None)
+        _guarded(analysis, lambda: analysis.execute(argv, Env(base, _home()), {}, None))
     return _result(analysis, parse(text), text)
 
 

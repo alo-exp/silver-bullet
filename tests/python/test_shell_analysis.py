@@ -232,9 +232,9 @@ class WalkerTest(Base):
 
     def test_eval_source_and_trap(self):
         self.assertEqual(self.actions("eval git push"), ["push"])
-        self.assertEqual(self.possible('eval "git $X -m y"'), ["commit"])
-        self.assertEqual(self.possible('eval "$X commit"'), ["commit"])
-        self.assertEqual(self.run_('eval "# $X"')["possible_actions"], [])
+        self.assertEqual(self.possible('eval "git $X -m y"'), ["commit", "unseen"])
+        self.assertEqual(self.possible('eval "$X commit"'), ["commit", "unseen"])
+        self.assertEqual(self.run_('eval "# $X"')["possible_actions"], ["unseen"])  # $X may hold a newline
         self.assertEqual(self.run_("source")["opaque_writers"], [])
         self.assertEqual(self.run_(". ./x.sh")["opaque_writers"][0]["reason"], "sources a script")
         self.assertEqual(self.actions("trap 'git push' EXIT"), ["push"])
@@ -284,7 +284,7 @@ class WalkerTest(Base):
         self.assertEqual(self.actions("bash -- x.sh"), [])
         self.assertIn("shell -c with a missing or non-literal script", self.run_("bash -c")["opaque_reasons"])
         self.assertIn("shell -c with a missing or non-literal script", self.run_('sh -c "$S"')["opaque_reasons"])
-        self.assertIn("shell reads commands from stdin", self.run_("cat f | sh")["opaque_reasons"])
+        self.assertIn("shell reads commands from a pipe or file that cannot be read", self.run_("cat f | sh")["opaque_reasons"])
         self.assertEqual(self.actions("echo 'git push' | bash -"), ["push"])
         self.assertIn("script path is dynamic: $S", self.run_('bash "$S"')["opaque_reasons"])
 

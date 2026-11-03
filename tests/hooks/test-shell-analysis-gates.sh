@@ -72,9 +72,34 @@ expect "gh api pulls POST (R1-03)" deny "COMPLETION BLOCKED" 'gh api repos/o/r/p
 expect "npm publish (R1-03)" deny "COMPLETION BLOCKED" 'npm publish'
 expect "git revert creates a commit (R1-03)" deny "COMMIT BLOCKED" 'git revert --no-edit HEAD'
 
+# ── code the analysis cannot see is held at the strictest tier (R1-01, R1-03) ─────
+for cmd in 'f(){ "$@"; }; f gh pr create --fill' 'a=(gh pr create --fill); "${a[@]}"' \
+  "echo 'gh pr create --fill' | bash -s foo" "bash /dev/stdin <<< 'gh pr create --fill'" \
+  "awk 'BEGIN{system(\"gh pr create --fill\")}'" "script -qc 'gh pr create --fill' /dev/null" \
+  'coproc NAME { gh pr create --fill; }' 'eval "$(echo Z2l0IHB1c2g= | base64 -d)"' \
+  '$((true); G=gh; $G pr create --fill)' 'gh alias set pc "pr create" && gh pc --fill' \
+  'gh api graphql --input /tmp/q.json' 'curl -X POST https://api.github.com/repos/o/r/pulls -d @b'; do
+  expect "unseen delivery is gated: $cmd" deny "COMPLETION BLOCKED" "$cmd"
+done
+for cmd in "\$(printf '\\x67it') commit -m x" '/usr/lib/git-core/git-push origin HEAD' 'git merge -n other' \
+  'git commit --allow-empty -m --help' 'HOME=/tmp/h git ci -m x' 'git pull --no-rebase . other'; do
+  expect "reshaped commit is gated: $cmd" deny "COMMIT BLOCKED" "$cmd"
+done
+# bounded analysis: nested loops, call chains and absurd config counts cannot stall or crash the hook
+nested='git push'
+for n in 1 2 3 4 5; do nested="for v$n in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16; do $nested; done"; done
+SECONDS=0
+expect "nested loops still gated" deny "COMPLETION BLOCKED" "$nested; gh pr create --fill"
+expect "huge GIT_CONFIG_COUNT still gated" deny "COMPLETION BLOCKED" 'GIT_CONFIG_COUNT=99999999 git status; G=gh; $G pr create --fill'
+expect "non-ASCII GIT_CONFIG_COUNT still gated" deny "COMPLETION BLOCKED" $'GIT_CONFIG_COUNT=\xc2\xb2 git status; G=gh; $G pr create --fill'
+expect "huge brace sequence still gated" deny "COMPLETION BLOCKED" 'echo {1..30000000}; G=gh; $G pr create --fill'
+[[ "$SECONDS" -lt 30 ]] && tl_pass "bounded shapes finished in ${SECONDS}s" || tl_fail "bounded shapes took ${SECONDS}s"
+
 # ── honest commands are not gated ─────────────────────────────────────────────────
 for cmd in 'cat docs/deploy.md' 'grep -rn deploy src/' 'kubectl get deploy -n prod' 'git log --oneline --grep=deploy' \
-  'echo "next: gh pr create"' 'git commit --help' '$PYTHON -m pytest' 'npm test' 'git status && ls'; do
+  'echo "next: gh pr create"' 'git commit --help' '$PYTHON -m pytest' 'npm test' 'git status && ls' \
+  'run() { "$@"; }; run make test' 'cmd=(python3 -m pytest -q); "${cmd[@]}"' 'git pull' 'git stash' \
+  'eval "$(ssh-agent -s)"' 'ssh dev@host ls' 'curl -s https://api.github.com/repos/o/r/pulls' 'gh pr ready 1'; do
   expect "not delivery (R1-12): $cmd" allow "" "$cmd"
 done
 
