@@ -76,7 +76,6 @@ Warnings (non-blocking): missing git hooks, bridge, gitleaks (when required), la
 
 | Host | Graphify | agentmemory | Artifact paths |
 |------|----------|-------------|----------------|
-| Cursor | `graphify cursor install` → `.cursor/rules/graphify.mdc` | MCP in `~/.cursor/mcp.json` | Full `connect` support |
 | Claude | `graphify install --project` + `graphify claude install --project` | `agentmemory connect claude-code` | `~/.claude.json` |
 | Codex | `graphify install --project --platform codex` + `graphify codex install --project` | `agentmemory connect codex --with-hooks` | `~/.codex/config.toml` |
 | OpenCode | `graphify install --project --platform opencode` | **Manual MCP** in `~/.config/opencode/opencode.json` | No `connect opencode` subcommand |
@@ -115,13 +114,13 @@ Every optimization step traces to `docs/research/graphify-agentmemory-optimizati
 When LeanCTX is opted in, use the orchestrator script instead of `optimize-rtk-context-mode.sh` alone:
 
 ```bash
-bash scripts/optimize-five-tool-stack.sh --host cursor --project-root "$(pwd)"
+bash scripts/optimize-five-tool-stack.sh --host claude --project-root "$(pwd)"
 ```
 
 For RTK + Context Mode only (no LeanCTX):
 
 ```bash
-bash scripts/optimize-rtk-context-mode.sh --host cursor --project-root "$(pwd)"
+bash scripts/optimize-rtk-context-mode.sh --host claude --project-root "$(pwd)"
 ```
 
 Both scripts require explicit `--host` and `--project-root` (canonical SB project root).

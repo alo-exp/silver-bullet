@@ -44,7 +44,7 @@ Legend: `P` pass · `F` fail
 
 | # | Check | Script / command | Status | Evidence |
 |---|-------|------------------|--------|----------|
-| 16 | Every skill maps to one catalog entity via `migration_map.skill_to_entity` | `test-canonical-alias-mapping.sh` | P | `silver-agent-codex`, `silver-agent-cursor` → `AF-AGENT-DELEGATE`; `silver-agent-worker` → `AF-AGENT-DELEGATE` |
+| 16 | Every skill maps to one catalog entity via `migration_map.skill_to_entity` | `test-canonical-alias-mapping.sh` | P | `silver-agent-codex`, `silver-agent-claude` → `AF-AGENT-DELEGATE`; `silver-agent-worker` → `AF-AGENT-DELEGATE` |
 | 17 | Composer queue tokens, workflow-chain guard, orchestrator state | `test-triple-alignment.sh` | P | Queue tokens resolve to catalog entities |
 | 18 | Flow steps have valid hierarchy classifications | `test-skill-hierarchy-classification.sh` | P | Step classification complete |
 | 19 | Intent ledgers cover material claims | `test-user-intent-coverage.sh` | P | Completion/release consume ledger |
@@ -108,7 +108,7 @@ bash tests/scripts/test-canonical-alias-mapping.sh
 1. Read the skill's `SKILL.md` to classify intent (route, execute, verify, etc.).
 2. Confirm the target entity exists in `docs/apo-catalog.json` → `atomic_flows` or `workflows`.
 3. Add `"<skill-name>": "<AF-…>"` under `migration_map.skill_to_entity`.
-4. Cross-host delegation skills (`silver-agent-codex`, `silver-agent-cursor`) map to **`AF-AGENT-DELEGATE`** — canonical external-agent delegation AF (Phase 4 flip). `SB_AGENT_DELEGATE_V2` defaults on (stage 5); set `0` to rollback worker path. See [`docs/skills/AGENT-HOST-DELEGATION-SIBLING-PROMPT.md`](skills/AGENT-HOST-DELEGATION-SIBLING-PROMPT.md).
+4. Cross-host delegation skills (`silver-agent-codex`, `silver-agent-claude`) map to **`AF-AGENT-DELEGATE`** — canonical external-agent delegation AF (Phase 4 flip). `SB_AGENT_DELEGATE_V2` defaults on (stage 5); set `0` to rollback worker path. See [`docs/skills/AGENT-HOST-DELEGATION-SIBLING-PROMPT.md`](skills/AGENT-HOST-DELEGATION-SIBLING-PROMPT.md).
 5. Regenerate derived views: `python3 scripts/generate-apo-artifacts.py`
 6. Re-run: `bash scripts/run-apo-authoring-compliance.sh`
 
@@ -153,13 +153,13 @@ Commit both `docs/apo-catalog.json` and regenerated files under `docs/composable
 
 ### 2026-07-05 — Phase 4 delegation map flip
 
-- **Changed:** `migration_map.skill_to_entity` — `silver-agent-codex`, `silver-agent-cursor` → `AF-AGENT-DELEGATE` (was `AF-EXECUTE`).
+- **Changed:** `migration_map.skill_to_entity` — `silver-agent-codex`, `silver-agent-claude` → `AF-AGENT-DELEGATE` (was `AF-EXECUTE`).
 - **Added:** delegation contract rows (#24–26) to compliance suite.
 - **Regenerated:** catalog + derived views via `generate-apo-catalog.py` + `generate-apo-artifacts.py`.
 
 ### 2026-07-04 — initial runbook + skill_to_entity fix
 
-- **FAIL resolved:** `silver-agent-codex`, `silver-agent-cursor` missing from `migration_map.skill_to_entity` → added as `AF-EXECUTE`.
+- **FAIL resolved:** `silver-agent-codex`, `silver-agent-claude` missing from `migration_map.skill_to_entity` → added as `AF-EXECUTE`.
 - **Regenerated:** `docs/composable-flows-contracts.md` (and related derived views) after catalog edit.
 - **Created:** this runbook + `scripts/run-apo-authoring-compliance.sh`.
 - **Verdict:** CLEAN PASS — 23/23 checks green.

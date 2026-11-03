@@ -85,7 +85,7 @@ Common fields:
 | `enforcement_suspended` | `true` after a failed install, so the gate stays advisory |
 | `install_status`, `install_failure_reason` | Written by the installers and reconciler |
 | `required_when_enabled` | Whether an opted-in tool is mandatory (all but `search_cli`) |
-| `install_commands`, `platform_install_commands.<host>.pre_index` / `post_index` | Install steps per host (`claude`, `codex`, `cursor`, `opencode`, `pi`, `goose`, `hermes`) |
+| `install_commands`, `platform_install_commands.<host>.pre_index` / `post_index` | Install steps per host (`claude`, `codex`, `opencode`, `pi`, `goose`, `hermes`) |
 | `benefits_summary` | Text shown when asking for consent |
 
 Tool-specific fields:
@@ -117,7 +117,6 @@ Named settings bundles for the five-tool stack, read by `hooks/lib/stack-optimiz
 | `semantic_compression.enabled`, `.context_budget_kb`, `.min_file_size_bytes`, `.chunk_size_bytes`, `.top_chunks_per_file`, `.debug` | Context assembly after phase skills (budget, files considered, chunking, ranking) | `scripts/semantic-compress.sh` |
 | `multi_agent.identity_tags`, `.stale_lock_ttl_seconds` | Runtime identities allowed to hold phase locks, and when a lock is stale | `.planning/scripts/phase-lock.sh` (phase-lock hooks) |
 | `multi_agent.delegation_timeout_seconds` | Child delegation timeout described in [multi-agent-coordination.md](multi-agent-coordination.md); no script reads it at present | — |
-| `cursor_sb_agents.*` | Which SB-managed Cursor subagents to install (models, effort levels, name prefix, install status) | `scripts/install-cursor-sb-agents.sh`, `sb-doctor.sh` |
 
 ### `enterprise_policy`
 

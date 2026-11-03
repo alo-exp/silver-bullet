@@ -40,7 +40,7 @@ All five hosts consume one manifest-selected instance per tool. RTK is the
 single shell-output rewrite owner. Context Mode and LeanCTX may both be
 available, but their overlapping routes are mutually excluded by the host
 projection: OpenCode uses its native Context Mode plugin when available,
-whereas Claude, Codex, and Cursor use the shared MCP projection. Pi keeps its
+whereas Claude and Codex use the shared MCP projection. Pi keeps its
 native additive extension and does not enable a second RTK shell owner.
 
 ## Silver Bullet adapter and migration

@@ -126,10 +126,6 @@ When `enterprise_policy.active_profile` is set in `.silver-bullet.json`:
 | `prompt-reminder.sh` | Injects directive + parent mode banner | Injects directive |
 | `session-start` | Parent mode context | Worker when `SB_ORCHESTRATOR_WORKER=1` |
 
-### Cursor / tier 0–1
-
-Guidance only — `templates/cursor-rules/silver-orchestrator.mdc` + directive injection. Tier 2+ required for mechanical parent blocks.
-
 ## Host modes — Plan & Debug (E2E-013)
 
 Silver Bullet hooks do **not** read host mode from stdin today. Operators and agents should treat modes as follows:
@@ -162,10 +158,10 @@ Existing projects:
 bash scripts/sb-migrate-orchestrator-parent.sh [project-root]
 ```
 
-Sets `orchestrator_mode: parent`, copies worker templates and Cursor rule.
+Sets `orchestrator_mode: parent`, copies worker templates.
 
 ## Related docs
 
-- `docs/RUNTIME-COMPATIBILITY.md` — capability tiers; Cursor tier 2 requires Task/subagent support
+- `docs/RUNTIME-COMPATIBILITY.md` — capability tiers
 - `docs/composable-flows-contracts.md` — atomic flow catalog
 - `skills/silver-orchestrator/SKILL.md` — parent skill contract
