@@ -27,7 +27,7 @@ TRIVIAL_FILE="${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
 OVERRIDE_FILE="${SB_TEST_DIR}/planning-edit-override"
 
 cleanup_all() {
-  rm -f "$TRIVIAL_FILE" "$OVERRIDE_FILE" "${SB_TEST_DIR}/roadmap-edit-override" 2>/dev/null || true
+  rm -f "$TRIVIAL_FILE" "$OVERRIDE_FILE" "${SB_TEST_DIR}/roadmap-edit-override" "${SB_TEST_DIR}/state" "${SB_TEST_DIR}/trivial" 2>/dev/null || true
   [[ -n "${TMPDIR_TEST:-}" ]] && rm -rf "$TMPDIR_TEST" || true
 }
 trap cleanup_all EXIT
@@ -171,10 +171,18 @@ teardown
 echo "--- Group 3: Bypasses ---"
 
 # Trivial bypass: trivial file present → allow edit
+# The default marker is honoured (a user creates it from a terminal); the configured path is not.
+setup
+touch "${SB_TEST_DIR}/trivial"
+out=$(run_hook_edit "${TMPDIR_TEST}/.planning/ROADMAP.md")
+assert_passes "trivial bypass allows protected file edit" "$out"
+rm -f "${SB_TEST_DIR}/trivial"
+teardown
+
 setup
 touch "$TRIVIAL_FILE"
 out=$(run_hook_edit "${TMPDIR_TEST}/.planning/ROADMAP.md")
-assert_passes "trivial bypass allows protected file edit" "$out"
+assert_blocks "a configured trivial file is not honoured (R2-04)" "$out"
 teardown
 
 # File-based override — uses $OVERRIDE_FILE so EXIT trap covers crash-safe cleanup
@@ -196,13 +204,23 @@ teardown
 
 # roadmap-edit-override allows ROADMAP.md and STATE.md for sb:phase / sb:undo
 ROADMAP_OVERRIDE_FILE="${SB_TEST_DIR}/roadmap-edit-override"
+# ... but only while the owning skill is recorded: the sentinel alone is agent-reachable (R2-08).
 setup
 touch "$ROADMAP_OVERRIDE_FILE"
 out=$(run_hook_edit "${TMPDIR_TEST}/.planning/ROADMAP.md")
-assert_passes "roadmap-edit-override allows ROADMAP.md edit" "$out"
+assert_blocks "roadmap-edit-override alone does not allow ROADMAP.md edit" "$out"
+printf 'silver-phase\n' >"${SB_TEST_DIR}/state"
+out=$(run_hook_edit "${TMPDIR_TEST}/.planning/ROADMAP.md")
+assert_passes "roadmap-edit-override with sb:phase recorded allows ROADMAP.md edit" "$out"
 out=$(run_hook_edit "${TMPDIR_TEST}/.planning/STATE.md")
-assert_passes "roadmap-edit-override allows STATE.md edit" "$out"
-rm -f "$ROADMAP_OVERRIDE_FILE"
+assert_passes "roadmap-edit-override with sb:phase recorded allows STATE.md edit" "$out"
+printf 'silver-undo\n' >"${SB_TEST_DIR}/state"
+out=$(run_hook_edit "${TMPDIR_TEST}/.planning/STATE.md")
+assert_passes "roadmap-edit-override with sb:undo recorded allows STATE.md edit" "$out"
+printf 'silver-plan\n' >"${SB_TEST_DIR}/state"
+out=$(run_hook_edit "${TMPDIR_TEST}/.planning/ROADMAP.md")
+assert_blocks "an unrelated recorded skill does not unlock the roadmap" "$out"
+rm -f "$ROADMAP_OVERRIDE_FILE" "${SB_TEST_DIR}/state"
 teardown
 
 # Env-var bypass: SB_ALLOW_PLANNING_EDITS=1 → allow edit
