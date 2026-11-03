@@ -26,12 +26,12 @@ EDIT="$(gh_edit_input)"
 gh_scenario_block
 assert_contains "no-cli message lists install" "$( gh_run "$HOOK" "$EDIT"; gh_reason)" "uv tool install"
 
-# only commands the allowlist analyzer proves read-only (or Graphify's own CLI) are exempt:
-# an arbitrary build command is substantive work and is gated
-gh_run "$HOOK" "$(gh_bash_input "make build")"
+# commands that write, deliver or install are gated; builds and tests are not (see the
+# honest-variant cases in test-opt-in-gates-hostile-config.sh)
+gh_run "$HOOK" "$(gh_bash_input "make build > build.log")"
 assert_gate_denies "an arbitrary command is gated" "GRAPHIFY REQUIRED"
 # a word that merely appears in the command never exempts it
-gh_run "$HOOK" "$(gh_bash_input "make build; echo graphify query")"
+gh_run "$HOOK" "$(gh_bash_input "make build > build.log; echo graphify query")"
 assert_gate_denies "a mentioned retrieval does not exempt a compound command" "GRAPHIFY REQUIRED"
 gh_run "$HOOK" "$(gh_bash_input "sed -i s/a/b/ src/app.js # graphify query")"
 assert_gate_denies "a comment mentioning graphify does not exempt a write" "GRAPHIFY REQUIRED"

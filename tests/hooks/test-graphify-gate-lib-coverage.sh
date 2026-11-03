@@ -167,7 +167,7 @@ yes_t "exempt empty" sb_graphify_command_is_exempt ""
 yes_t "exempt retrieval" sb_graphify_command_is_exempt "graphify query a"
 yes_t "exempt index build" sb_graphify_command_is_exempt "graphify update ."
 no_t "not exempt: index build with a redirect" sb_graphify_command_is_exempt "graphify update . > log"
-no_t "not exempt: a lookalike program" sb_graphify_command_is_exempt "graphify-evil update ."
+no_t "not exempt: a lookalike program" sb_graphify_command_is_exempt "graphify-evil update . > out.log"
 yes_t "exempt bare graphify" sb_graphify_command_is_exempt "graphify --help"
 for c in "cat f" "ls -la" "git status" "git diff HEAD" "echo hi" "jq . f" "pwd"; do yes_t "exempt read-only: $c" sb_graphify_command_is_exempt "$c"; done
 no_t "not exempt commit" sb_graphify_command_is_exempt "git commit -m x"

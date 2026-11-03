@@ -278,7 +278,7 @@ ${install_lines}
 
 Start the server: nohup agentmemory > ~/.agentmemory/server.log 2>&1 &
 
-To turn agentmemory enforcement off: bash $(sb_rt_plugin_script scripts/sb-consent.sh) decline agentmemory --project $(printf '%q' "$(dirname "${config_file:-$PWD/x}")")
+If the user asks to turn agentmemory enforcement off: bash $(sb_rt_plugin_script scripts/sb-consent.sh) decline agentmemory --project $(printf '%q' "$(dirname "${config_file:-$PWD/x}")")
 EOF
 }
 
