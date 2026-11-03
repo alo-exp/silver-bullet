@@ -39,9 +39,20 @@ cat >"$CURSOR_HOME/hooks.json" <<'JSON'
  {"command":"/home/u/.cursor/plugins/cache/alo-labs/silver-bullet/1.2.3/hooks/x.sh"},
  {"command":"/usr/local/bin/rtk hook"}]}}
 JSON
+SHA="$(printf 'a%.0s' $(seq 1 40))"
+mkdir -p "$CURSOR_HOME/plugins/local/silver-bullet/commands" "$CURSOR_HOME/plugins/local/other-plugin" \
+  "$CURSOR_HOME/plugins/marketplaces/github.com/alo-exp/silver-bullet/$SHA" "$CURSOR_HOME/plugins/marketplaces/github.com/alo-labs/agent-plugins/$SHA"
+printf '{"version":2,"plugins":{"silver-bullet@alo-labs":[{"enabled":true}],"sidekick@alo-labs-cursor":[{"enabled":true}]}}\n' \
+  >"$CURSOR_HOME/plugins/installed_plugins.json"
 uninstall cursor
 assert_eq "cursor uninstall exits 0" 0 "$TL_STATUS"
 assert_contains "cursor uninstall reports" "$TL_OUT" "uninstall: cursor SB cache + hooks stripped"
+# R7-23: no live SB surface is left behind; other plugins' are
+assert_file_absent "local plugin surface removed" "$CURSOR_HOME/plugins/local/silver-bullet"
+assert_file_absent "gitPath clones removed" "$CURSOR_HOME/plugins/marketplaces/github.com/alo-exp/silver-bullet"
+assert_file_exists "other local plugin kept" "$CURSOR_HOME/plugins/local/other-plugin"
+assert_file_exists "the shared marketplace clone kept" "$CURSOR_HOME/plugins/marketplaces/github.com/alo-labs/agent-plugins/$SHA"
+assert_eq "registry keeps only the other plugins" '["sidekick@alo-labs-cursor"]' "$(jq -c '.plugins | keys' "$CURSOR_HOME/plugins/installed_plugins.json")"
 for d in alo-labs alo-labs-agent-plugins alo-labs-cursor; do assert_file_absent "cursor cache $d removed" "$CURSOR_HOME/plugins/cache/$d/silver-bullet"; done
 assert_file_exists "other plugin cache preserved" "$CURSOR_HOME/plugins/cache/alo-labs/other-plugin"
 assert_file_absent "site session state removed" "$CURSOR_HOME/.silver-bullet/site-session.json"
@@ -55,6 +66,12 @@ assert_not_contains "SB hook stripped" "$HOOKS" "silver-bullet"
 assert_contains "foreign hook preserved" "$HOOKS" "/usr/local/bin/rtk hook"
 uninstall cursor
 assert_eq "cursor uninstall is idempotent" 0 "$TL_STATUS"
+printf '{"plugins": {' >"$CURSOR_HOME/plugins/installed_plugins.json"
+uninstall cursor
+assert_eq "an unparseable Cursor registry fails the uninstall" 1 "$TL_STATUS"
+assert_contains "and is reported" "$TL_ERR" "installed_plugins.json: not valid JSON"
+assert_eq "the unparseable registry is left byte-identical" '{"plugins": {' "$(<"$CURSOR_HOME/plugins/installed_plugins.json")"
+rm -f "$CURSOR_HOME/plugins/installed_plugins.json"
 
 # removal failures are tolerated (rm unavailable)
 REAL_RM="$(command -v rm)"
@@ -76,8 +93,8 @@ assert_contains "missing strip helper reported" "$TL_ERR" "ERROR: missing $TL_TM
 CX="$HOME/.codex"
 mkdir -p "$CX/skills/silver-quality-gates" "$CX/skills/unrelated-skill" "$HOME/.agents/skills/silver-plan" \
   "$CX/plugins/cache/alo-labs-codex/silver-bullet/1.0" "$CX/plugins/cache/silver-bullet-local/silver-bullet/1.0" "$CX/plugins/cache/alo-labs-codex/other"
-cat >"$CX/hooks.json" <<'JSON'
-{"hooks":{"PreToolUse":[{"hooks":[{"command":"/x/silver-bullet/1.0/hooks/a.sh"},{"command":"/usr/bin/keep"}]}],"Stop":[{"hooks":[{"command":"/y/silver-bullet/hooks/b.sh"}]}]}}
+cat >"$CX/hooks.json" <<JSON
+{"hooks":{"PreToolUse":[{"hooks":[{"command":"$CX/plugins/cache/alo-labs-codex/silver-bullet/1.0/hooks/a.sh"},{"command":"/usr/bin/keep"}]}],"Stop":[{"hooks":[{"command":"$CX/.tmp/marketplaces/alo-labs-codex/plugins/silver-bullet/hooks/b.sh"}]}]}}
 JSON
 printf '[model]\nname = "x"\n\n[hooks.state."silver-bullet@alo-labs-codex:a"]\ntrusted = true\n\n[other]\nk = 1\n' >"$CX/config.toml"
 uninstall codex
@@ -113,9 +130,31 @@ rm -f "$TL_BIN/codex"
 # ---- claude
 CL="$HOME/.claude/plugins/cache"
 mkdir -p "$CL/alo-labs/silver-bullet/1.0" "$CL/alo-labs-claude/silver-bullet" "$CL/alo-labs/other"
+jq -n --arg sb "\"$CL/alo-labs/silver-bullet/current/hooks/stop-check.sh\"" --arg user 'node "$HOME/.claude/hooks/mine.js"' \
+  '{theme: "dark", enabledPlugins: {"silver-bullet@alo-labs": true, "other@m": true},
+    hooks: {Stop: [{hooks: [{type: "command", command: $sb}]}], PreToolUse: [{matcher: "Bash", hooks: [{type: "command", command: $sb}, {type: "command", command: $user}]}]}}' \
+  >"$HOME/.claude/settings.json"
+printf '{"plugins":{"silver-bullet@alo-labs":[{}],"other@m":[{}]}}\n' >"$HOME/.claude/plugins/installed_plugins.json"
 uninstall claude
 assert_eq "claude uninstall exits 0 without a CLI" 0 "$TL_STATUS"
 assert_contains "claude uninstall reports" "$TL_OUT" "uninstall: claude SB plugin + cache removed"
+# R7-23: hooks an earlier /sb:init merged, and SB's own records, do not outlive the plugin
+assert_eq "SB settings hooks removed, the user's kept" '{"PreToolUse":[{"matcher":"Bash","hooks":[{"type":"command","command":"node \"$HOME/.claude/hooks/mine.js\""}]}]}' \
+  "$(jq -c .hooks "$HOME/.claude/settings.json")"
+assert_eq "only SB's enablement removed" '{"other@m":true}' "$(jq -c .enabledPlugins "$HOME/.claude/settings.json")"
+assert_eq "other settings kept" '"dark"' "$(jq -c .theme "$HOME/.claude/settings.json")"
+assert_eq "only SB's registry record removed" '["other@m"]' "$(jq -c '.plugins | keys' "$HOME/.claude/plugins/installed_plugins.json")"
+printf '{"hooks":' >"$HOME/.claude/settings.json"
+uninstall claude
+assert_eq "an unparseable Claude settings file fails the uninstall" 1 "$TL_STATUS"
+assert_eq "and is left byte-identical" '{"hooks":' "$(<"$HOME/.claude/settings.json")"
+printf '{"plugins": {' >"$HOME/.claude/plugins/installed_plugins.json"
+printf '{}\n' >"$HOME/.claude/settings.json"
+uninstall claude
+assert_eq "an unparseable Claude registry fails the uninstall" 1 "$TL_STATUS"
+assert_eq "and is left byte-identical" '{"plugins": {' "$(<"$HOME/.claude/plugins/installed_plugins.json")"
+rm -f "$HOME/.claude/settings.json" "$HOME/.claude/plugins/installed_plugins.json"
+uninstall claude
 assert_file_absent "claude cache removed" "$CL/alo-labs/silver-bullet"
 assert_file_absent "claude-alias cache removed" "$CL/alo-labs-claude/silver-bullet"
 assert_file_exists "foreign claude plugin preserved" "$CL/alo-labs/other"

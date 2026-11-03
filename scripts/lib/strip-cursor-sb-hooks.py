@@ -7,7 +7,6 @@ import contextlib
 import json
 import os
 import pathlib
-import re
 import stat
 import sys
 import tempfile
@@ -16,11 +15,18 @@ settings_path = pathlib.Path(
     sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.expanduser("~"), ".cursor", "hooks.json")
 )
 
-SB_HOOK_RE = re.compile(r"/silver-bullet/[^/]+/hooks/")
-DEV_CHECKOUT_RE = re.compile(r"/plugins/silver-bullet/hooks/")
+LIB_DIR = pathlib.Path(__file__).resolve().parent
+sys.path.insert(0, str(LIB_DIR))
+from sb_host_config import is_sb_hook_command, sb_hook_names  # noqa: E402
+
+HOOK_NAMES = sb_hook_names(LIB_DIR.parents[1] / "hooks")
 
 
 def is_sb_hook(entry: object) -> bool:
+    """An entry Silver Bullet added: its program lives in a Silver Bullet hooks directory
+    (sb_host_config.is_sb_hook_command), or it is an earlier malformed merge that routed the
+    Cursor bridge through codex-hook-adapter. A user's hook is never stripped for merely
+    mentioning silver-bullet or ${CURSOR_PLUGIN_ROOT}."""
     if not isinstance(entry, dict):
         return False
     command = entry.get("command", "")
@@ -28,11 +34,7 @@ def is_sb_hook(entry: object) -> bool:
         return False
     if "codex-hook-adapter" in command and "cursor-hook-bridge" in command:
         return True
-    if "${CURSOR_PLUGIN_ROOT}/hooks/" in command:
-        return True
-    if DEV_CHECKOUT_RE.search(command):
-        return True
-    return bool(SB_HOOK_RE.search(command))
+    return is_sb_hook_command(command, hook_names=HOOK_NAMES)
 
 
 if not settings_path.is_file():

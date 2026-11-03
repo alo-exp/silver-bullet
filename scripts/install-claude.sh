@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# Backups of user config made during this run keep the pre-install content (sb_host_config.py).
+export SB_INSTALL_RUN_START="${SB_INSTALL_RUN_START:-$(date +%s)}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
@@ -16,7 +18,7 @@ CLAUDE_HOME="${CLAUDE_HOME:-${HOME}/.claude}"
 CLAUDE_SETTINGS_HOME="${CLAUDE_SETTINGS_HOME:-${HOME}/.claude}"
 CLAUDE_SB_PLUGIN_CACHE="${CLAUDE_SB_PLUGIN_CACHE:-${CLAUDE_HOME}/plugins/cache/alo-labs/silver-bullet}"
 CLAUDE_BIN="${CLAUDE_BIN:-$(command -v claude 2>/dev/null || echo "${HOME}/.local/bin/claude")}"
-CLAUDE_GIT_HTTPS_REWRITE="${CLAUDE_GIT_HTTPS_REWRITE:-1}"
+CLAUDE_GIT_HTTPS_REWRITE="${CLAUDE_GIT_HTTPS_REWRITE:-0}"
 SB_MARKETPLACE_NAME="${SB_MARKETPLACE_NAME:-alo-labs}"
 CLAUDE_SB_MARKETPLACE_SOURCE="${CLAUDE_SB_MARKETPLACE_SOURCE:-$REPO_ROOT}"
 CLAUDE_SB_PUBLIC_MARKETPLACE_SOURCE="${CLAUDE_SB_PUBLIC_MARKETPLACE_SOURCE:-https://github.com/alo-labs/agent-plugins.git}"
@@ -33,7 +35,7 @@ AGENT_RENDERER="${REPO_ROOT}/scripts/render-agent-bundle.py"
 
 usage() {
   cat <<'USAGE'
-Usage: scripts/install-claude.sh [--purge-legacy-plugins] [--public-release]
+Usage: scripts/install-claude.sh [--purge-legacy-plugins] [--public-release] [--git-https-rewrite]
 
 Registers the Silver Bullet Claude marketplace, refreshes the Silver Bullet
 plugin set, and optionally removes legacy alias installs previously used for
@@ -42,6 +44,9 @@ Claude.
 Options:
   --purge-legacy-plugins  Remove old alias plugin installs from Claude before reinstalling
   --public-release        Refresh from the published marketplace instead of the local checkout
+  --git-https-rewrite     Fetch GitHub over HTTPS instead of SSH for this run only (for
+                          machines without a GitHub SSH key); your git config is not changed.
+                          Same as CLAUDE_GIT_HTTPS_REWRITE=1.
 USAGE
 }
 
@@ -251,87 +256,39 @@ purge_plugin_cache() {
   rm -rf "$cache_dir" || true
 }
 
+# After `claude plugin install`, Claude Code delivers Silver Bullet's hooks from the plugin;
+# copies that an earlier /sb:init merged into settings.json would run every hook twice
+# (R7-21). Remove those copies, and only those: an entry goes when the program it runs lives
+# in a Silver Bullet hooks directory (sb_host_config.is_sb_hook_command); every other hook
+# and setting is kept as it is. The rewrite is atomic with a backup; an unparseable file is
+# left alone.
 sync_silver_bullet_settings_paths() {
-  local settings_file plugin_cache_root stable_install_path current_version_dir
-
-  plugin_cache_root="${CLAUDE_SB_PLUGIN_CACHE}"
-  stable_install_path="${plugin_cache_root}/current"
-  [[ -d "$plugin_cache_root" ]] || return 0
-  current_version_dir="$(sb_plugin_cache_latest_version_dir "$plugin_cache_root" 2>/dev/null || true)"
-  [[ -n "$current_version_dir" ]] || return 0
+  local settings_file
 
   for settings_file in "${CLAUDE_SETTINGS_HOME}/settings.json" "${CLAUDE_HOME}/settings.json"; do
     [[ -f "$settings_file" ]] || continue
 
-  python3 - "$settings_file" "$plugin_cache_root" "$stable_install_path" <<'PY'
-import json
-import os
-import pathlib
-import re
-import shutil
+    python3 - "$settings_file" "$CLAUDE_SB_PLUGIN_CACHE" "${REPO_ROOT}/scripts/lib" "${REPO_ROOT}/hooks" <<'PY'
 import sys
-import tempfile
 
-def write_json_atomically(path, data):
-    # Serialize before touching the file (a lone surrogate cannot be encoded as UTF-8:
-    # fall back to ASCII escapes), then replace it atomically, through a symlink if any.
-    try:
-        payload = (json.dumps(data, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
-    except UnicodeEncodeError:
-        payload = (json.dumps(data, indent=2) + "\n").encode("utf-8")
-    target = os.path.realpath(path)
-    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(target), prefix=".tmp-")
-    try:
-        with os.fdopen(fd, "wb") as fh:
-            fh.write(payload)
-        if os.path.exists(target):
-            shutil.copymode(target, tmp)
-        os.replace(tmp, target)
-    except BaseException:
-        if os.path.exists(tmp):
-            os.unlink(tmp)
-        raise
+settings_path, cache_root = sys.argv[1], sys.argv[2].rstrip("/")
+sys.path.insert(0, sys.argv[3])
+from sb_host_config import ConfigError, is_sb_hook_command, read_json, remove_hooks, sb_hook_names, write_json  # noqa: E402
 
-settings_path = pathlib.Path(sys.argv[1])
-cache_root = sys.argv[2].rstrip("/")
-stable_install_path = sys.argv[3].rstrip("/")
-
+names = sb_hook_names(sys.argv[4])
 try:
-    data = json.loads(settings_path.read_text(encoding="utf-8"))
-except Exception:
+    data = read_json(settings_path)
+except ConfigError as exc:
+    print(f"install-claude: {exc}", file=sys.stderr)
     sys.exit(0)
-
-path_pattern = re.compile(re.escape(cache_root) + r"/[^/\"]+")
-sb_hook_pattern = re.compile(r"/silver-bullet/[^/]+/hooks/")
-
-def rewrite(value):
-    if isinstance(value, str):
-        return path_pattern.sub(stable_install_path, value)
-    if isinstance(value, list):
-        return [rewrite(item) for item in value]
-    if isinstance(value, dict):
-        rewritten = {}
-        for key, item in value.items():
-            new_item = rewrite(item)
-            if key == "hooks" and isinstance(new_item, list):
-                filtered_hooks = []
-                for hook in new_item:
-                    if isinstance(hook, dict):
-                        command = hook.get("command", "")
-                        if "${CLAUDE_PLUGIN_ROOT}/hooks/" in command:
-                            continue
-                        if sb_hook_pattern.search(command) and stable_install_path not in command:
-                            continue
-                    filtered_hooks.append(hook)
-                new_item = filtered_hooks
-                if not new_item:
-                    continue
-            rewritten[key] = new_item
-        return rewritten
-    return value
-
-updated = rewrite(data)
-write_json_atomically(settings_path, updated)
+hooks = data.get("hooks")
+if isinstance(hooks, dict):
+    removed = remove_hooks(hooks, lambda hook: is_sb_hook_command(
+        hook.get("command"), hook_names=names, install_roots=(cache_root + "/current",)))
+    if removed:
+        write_json(settings_path, data)
+        print(f"install-claude: removed {removed} Silver Bullet hook copies from {settings_path} "
+              "(the plugin delivers them)", file=sys.stderr)
 PY
   done
 }
@@ -420,25 +377,26 @@ sync_silver_bullet_skill_cache() {
   fi
 }
 
-ensure_github_https_rewrite() {
+# Opt-in (--git-https-rewrite or CLAUDE_GIT_HTTPS_REWRITE=1): the git processes this
+# installer starts (the claude CLI's marketplace clone) reach GitHub over HTTPS instead of
+# SSH. The rewrite lives in GIT_CONFIG_* variables of this process only; the user's global
+# git config, and with it every other repository's remotes, is never changed (R7-13).
+enable_scoped_github_https_rewrite() {
   [[ "$CLAUDE_GIT_HTTPS_REWRITE" == "1" ]] || return 0
 
-  local rewrite_value
-  rewrite_value='https://github.com/'
-
-  if ! grep -qx 'git@github.com:' < <(git config --global --get-all url."${rewrite_value}".insteadOf); then
-    git config --global --add url."${rewrite_value}".insteadOf 'git@github.com:'
-  fi
-
-  if ! grep -qx 'ssh://git@github.com/' < <(git config --global --get-all url."${rewrite_value}".insteadOf); then
-    git config --global --add url."${rewrite_value}".insteadOf 'ssh://git@github.com/'
-  fi
+  local count="${GIT_CONFIG_COUNT:-0}"
+  [[ "$count" =~ ^[0-9]+$ ]] || count=0
+  export "GIT_CONFIG_KEY_${count}=url.https://github.com/.insteadOf" "GIT_CONFIG_VALUE_${count}=git@github.com:"
+  count=$((count + 1))
+  export "GIT_CONFIG_KEY_${count}=url.https://github.com/.insteadOf" "GIT_CONFIG_VALUE_${count}=ssh://git@github.com/"
+  export GIT_CONFIG_COUNT=$((count + 1))
 }
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --purge-legacy-plugins) PURGE_LEGACY_PLUGINS=1; shift ;;
     --public-release) PUBLIC_RELEASE_ONLY=1; shift ;;
+    --git-https-rewrite) CLAUDE_GIT_HTTPS_REWRITE=1; shift ;;
     -h|--help) usage; exit 0 ;;
     *)
       printf 'Unknown argument: %s\n' "$1" >&2
@@ -457,7 +415,7 @@ if [[ "$PUBLIC_RELEASE_ONLY" -eq 1 ]]; then
   CLAUDE_SB_MARKETPLACE_SOURCE="$CLAUDE_SB_PUBLIC_MARKETPLACE_SOURCE"
 fi
 
-ensure_github_https_rewrite
+enable_scoped_github_https_rewrite
 ensure_marketplace_ready "$SB_MARKETPLACE_NAME" "$CLAUDE_SB_MARKETPLACE_SOURCE" "$CLAUDE_SB_MARKETPLACE_PLUGIN"
 if [[ "$PUBLIC_RELEASE_ONLY" -eq 0 ]]; then
   render_agent_bundle "claude"

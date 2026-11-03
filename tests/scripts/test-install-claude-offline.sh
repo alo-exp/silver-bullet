@@ -34,6 +34,8 @@ mkdir -p "$TL_TMP/stubcfg"
 tl_stub claude '
 cfg="'"$TL_TMP"'/stubcfg"
 printf "%s\n" "$*" >>"'"$LOG"'"
+git config --get-all url.https://github.com/.insteadOf >>"'"$TL_TMP"'/git-seen.log" 2>/dev/null || true
+git config --get-all url.https://example.invalid/.insteadOf >>"'"$TL_TMP"'/git-seen.log" 2>/dev/null || true
 case "$1 $2" in
   "plugin list") [[ -f "$cfg/list-fails" ]] && exit 1; [[ -f "$cfg/list.json" ]] && cat "$cfg/list.json" || echo "[]" ;;
   "plugin uninstall") [[ -f "$cfg/uninstall-fails" ]] && exit 1; exit 0 ;;
@@ -77,8 +79,9 @@ mkdir -p "$CLAUDE_DIR/plugins" "$CACHE/0.0.1/hooks"
 cat >"$CLAUDE_DIR/settings.json" <<JSON
 {"hooks":{"PreToolUse":[{"hooks":[
  {"type":"command","command":"$CACHE/0.0.1/hooks/a.sh"},
- {"type":"command","command":"\${CLAUDE_PLUGIN_ROOT}/hooks/b.sh"},
- {"type":"command","command":"/x/silver-bullet/1.2.3/hooks/c.sh"},
+ {"type":"command","command":"\${CLAUDE_PLUGIN_ROOT}/hooks/stop-check.sh"},
+ {"type":"command","command":"\${CLAUDE_PLUGIN_ROOT}/hooks/other-plugin.sh"},
+ {"type":"command","command":"/x/silver-bullet/1.2.3/hooks/stop-check.sh"},
  {"type":"command","command":"/usr/bin/user-hook"}]}],
  "Stop":[]},"keep":"yes","theme":null,"env":{"A":null,"B":"x"},"list":[1,null,2],"only":[null],"zeta":"é日本😀","alpha":{"ключ":"значение"}}
 JSON
@@ -100,8 +103,12 @@ assert_eq "registry records version" "9.9.9" "$(jq -r '.plugins["silver-bullet@a
 assert_eq "registry install path is the stable alias" "$CACHE/current" \
   "$(jq -r '.plugins["silver-bullet@alo-labs"][0].installPath' "$CLAUDE_DIR/plugins/installed_plugins.json")"
 SETTINGS_CMDS="$(jq -r '.. | .command? // empty' "$CLAUDE_DIR/settings.json")"
-assert_contains "cache path rewritten to stable alias" "$SETTINGS_CMDS" "$CACHE/current/hooks/a.sh"
-assert_not_contains "plugin-root variable hook dropped" "$SETTINGS_CMDS" 'CLAUDE_PLUGIN_ROOT'
+# R7-21: the plugin delivers SB's hooks, so the settings copies an earlier /sb:init merged go
+assert_not_contains "SB hook copy under the plugin cache removed" "$SETTINGS_CMDS" "$CACHE/"
+assert_not_contains "SB placeholder hook removed" "$SETTINGS_CMDS" 'hooks/stop-check.sh'
+assert_contains "another plugin's placeholder hook kept" "$SETTINGS_CMDS" 'hooks/other-plugin.sh'
+assert_contains "the removal is reported" "$TL_ERR" "removed 3 Silver Bullet hook copies"
+assert_file_exists "the previous settings are backed up" "$CLAUDE_DIR/settings.json.sb-backup"
 assert_not_contains "stale versioned hook dropped" "$SETTINGS_CMDS" '/x/silver-bullet/1.2.3'
 assert_contains "user hook preserved" "$SETTINGS_CMDS" "/usr/bin/user-hook"
 assert_eq "unrelated settings key preserved" "yes" "$(jq -r .keep "$CLAUDE_DIR/settings.json")"
@@ -261,13 +268,32 @@ assert_eq "install survives a stubborn cache dir" 0 "$TL_STATUS"
 assert_eq "five delayed retries" 5 "$(wc -l <"$TL_TMP/sleeps" | tr -d ' ')"
 "$REAL_RM" -f "$TL_BIN/rm" "$TL_BIN/sleep"
 
-# ---- github https rewrite is applied once and idempotently
-REWRITE=1 install_claude
+# ---- R7-13: the user's global git config is never changed
+git config --global user.name "Keep Me"
+cp "$HOME/.gitconfig" "$TL_TMP/gitconfig.before"
+: >"$TL_TMP/git-seen.log"
+# GIT_CONFIG_COUNT=0 hides any GIT_CONFIG_* the test runner itself inherited (CI proxies).
+run_install env GIT_CONFIG_COUNT=0 bash "$ROOT/scripts/install-claude.sh"
+assert_eq "default install exits 0" 0 "$TL_STATUS"
+assert_eq "default install leaves ~/.gitconfig byte-identical" "$(<"$TL_TMP/gitconfig.before")" "$(<"$HOME/.gitconfig")"
+assert_eq "default install: no rewrite reaches git" "" "$(<"$TL_TMP/git-seen.log")"
+# the opt-in rewrite reaches the git processes the claude CLI starts, and nothing else
+REWRITE=1 run_install env GIT_CONFIG_COUNT=0 bash "$ROOT/scripts/install-claude.sh"
 assert_eq "rewrite run exits 0" 0 "$TL_STATUS"
-REWRITE=1 install_claude
-GC="$(git config --global --get-all 'url.https://github.com/.insteadOf')"
-assert_eq "ssh rewrites recorded exactly once" "git@github.com:
-ssh://git@github.com/" "$GC"
+assert_eq "opt-in rewrite leaves ~/.gitconfig byte-identical" "$(<"$TL_TMP/gitconfig.before")" "$(<"$HOME/.gitconfig")"
+assert_contains "the claude CLI's git sees the ssh rewrites" "$(<"$TL_TMP/git-seen.log")" $'git@github.com:\nssh://git@github.com/'
+: >"$TL_TMP/git-seen.log"
+run_install env GIT_CONFIG_COUNT=0 bash "$ROOT/scripts/install-claude.sh" --git-https-rewrite
+assert_eq "--git-https-rewrite exits 0" 0 "$TL_STATUS"
+assert_contains "--git-https-rewrite scopes the rewrite to the run" "$(<"$TL_TMP/git-seen.log")" "ssh://git@github.com/"
+# an existing GIT_CONFIG_* list is extended, not overwritten; a junk count restarts at 0
+: >"$TL_TMP/git-seen.log"
+REWRITE=1 run_install env GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=url.https://example.invalid/.insteadOf GIT_CONFIG_VALUE_0=mine: \
+  bash "$ROOT/scripts/install-claude.sh"
+assert_contains "the caller's GIT_CONFIG entry is kept" "$(<"$TL_TMP/git-seen.log")" "mine:"
+assert_contains "and the rewrite is appended after it" "$(<"$TL_TMP/git-seen.log")" "git@github.com:"
+REWRITE=1 run_install env GIT_CONFIG_COUNT=junk bash "$ROOT/scripts/install-claude.sh"
+assert_eq "a non-numeric GIT_CONFIG_COUNT is tolerated" 0 "$TL_STATUS"
 
 # ---- a separate settings home without settings.json is skipped
 mkdir -p "$TL_TMP/other-settings"
@@ -329,7 +355,7 @@ assert_contains "vanished registry means re-add" "$(<"$LOG")" "plugin marketplac
 tl_stub python3 '
 src="$(cat)"
 if [[ "$src" == *"version_dirs[-1]"* ]]; then echo "'"$TL_TMP"'/ghost-version"; exit 0; fi
-printf "%s" "$src" | exec '"$REAL_PY"' - "$@"'
+printf "%s" "$src" | exec '"$REAL_PY"' "$@"'
 touch "$TL_TMP/stubcfg/install-empty-cache"
 printf '{"alo-labs":{"source":{"source":"git","url":"%s"}}}\n' "$PUB" >"$MP"
 install_claude --public-release

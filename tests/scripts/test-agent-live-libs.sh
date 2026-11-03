@@ -230,6 +230,8 @@ cat >"$HOME/.claude/settings.json" <<EOF
     "PreToolUse": [
       {"matcher": "x", "hooks": [
         {"command": "bash /home/me/gsd-session-state.sh"},
+        {"command": "bash \"\$HOME/bin/guard.sh\""},
+        {"command": "bash /home/me/.claude/plugins/cache/alo-labs/silver-bullet/0.1.0/hooks/stop-check.sh"},
         {"command": "bash \"/nonexistent/dir/hook.sh\""},
         {"command": "bash '$REALHOOK'"},
         {"command": "echo plain"},
@@ -249,12 +251,12 @@ assert_eq "settings seeding exits 0" "rc=0" "$TL_OUT"
 OUT_JSON="$SETTINGS_DEST/settings.json"
 assert_eq "settings keep unrelated keys" "dark" "$(jq -r .theme "$OUT_JSON")"
 assert_eq "settings keep env" '{"A":"1"}' "$(jq -c .env "$OUT_JSON")"
-assert_eq "settings drop gsd and missing-script hooks, keep the rest" \
-  '["bash '"'$REALHOOK'"'","echo plain",5,null]' \
+assert_eq "settings keep the user's own hooks (gsd-*, \$HOME paths, missing scripts), drop only the stale SB hook (R8-16)" \
+  '["bash /home/me/gsd-session-state.sh","bash \"$HOME/bin/guard.sh\"","bash \"/nonexistent/dir/hook.sh\"","bash '"'$REALHOOK'"'","echo plain",5,null]' \
   "$(jq -c '[.hooks.PreToolUse[0].hooks[] | if type == "object" then .command else . end]' "$OUT_JSON")"
-assert_eq "settings drop entries whose hooks are all broken but keep non-dict entries" "2" "$(jq '.hooks.PreToolUse | length' "$OUT_JSON")"
-assert_eq "settings keep a bare string entry" '"bare-string-entry"' "$(jq -c '.hooks.PreToolUse[1]' "$OUT_JSON")"
-assert_eq "settings drop entries with no hooks list" "[]" "$(jq -c '.hooks.Stop' "$OUT_JSON")"
+assert_eq "settings keep every group and the foreign entries" "3" "$(jq '.hooks.PreToolUse | length' "$OUT_JSON")"
+assert_eq "settings keep a bare string entry" '"bare-string-entry"' "$(jq -c '.hooks.PreToolUse[2]' "$OUT_JSON")"
+assert_eq "settings leave a group with no hooks list alone" 'null' "$(jq -c '.hooks.Stop[0].hooks' "$OUT_JSON")"
 assert_eq "settings leave a non-list event alone" '"not-a-list"' "$(jq -c '.hooks.Odd' "$OUT_JSON")"
 assert_not_contains "settings do not carry cert env without a cert run" "$(jq -c .env "$OUT_JSON")" "SB_AGENT_CERT_RUN"
 
