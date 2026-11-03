@@ -112,7 +112,7 @@ def merge(raw_install_path: str) -> str:
     delivered = plugin_delivered(config_dir)
     install_path = raw_install_path if delivered else stable_install_path(raw_install_path)
     names = sb_hook_names(pathlib.Path(raw_install_path) / "hooks", LIB_DIR.parents[1] / "hooks")
-    roots = (install_path, raw_install_path, os.path.realpath(raw_install_path))
+    roots = (install_path, stable_install_path(raw_install_path), raw_install_path, os.path.realpath(raw_install_path))
 
     settings = read_json(settings_path, default={})
     existing = json_member(settings, "hooks", dict, str(settings_path))

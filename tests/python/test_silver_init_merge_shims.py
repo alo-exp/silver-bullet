@@ -116,7 +116,7 @@ class ShimEndToEndTests(unittest.TestCase):
     def test_claude_merge_keeps_user_entries_purges_stale_and_is_idempotent(self) -> None:
         self.write_claude_hooks()
         user_hook = {"type": "command", "command": "/home/me/bin/my-hook.sh"}
-        stale = {"type": "command", "command": "/old/silver-bullet/1.0.0/hooks/gate.sh"}
+        stale = {"type": "command", "command": "/old/silver-bullet/1.0.0/hooks/completion-audit.sh"}
         self.claude_settings().parent.mkdir()
         self.claude_settings().write_text(json.dumps({
             "theme": "dark",
@@ -240,11 +240,11 @@ class ShimEndToEndTests(unittest.TestCase):
             "hooks": {
                 "preToolUse": [
                     user,
-                    {"command": "/old/silver-bullet/1.0.0/hooks/gate.sh"},
+                    {"command": "/old/silver-bullet/1.0.0/hooks/completion-audit.sh"},
                     {"command": "/x/codex-hook-adapter.sh"},
                     "foreign-entry",
                 ],
-                "stop": [{"command": "/old/silver-bullet/1.0.0/hooks/stop.sh"}],
+                "stop": [{"command": "/old/silver-bullet/1.0.0/hooks/stop-check.sh"}],
                 "sessionStart": "not-a-list",
             },
         }))

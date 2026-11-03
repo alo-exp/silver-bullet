@@ -16,7 +16,7 @@ from sbtest import REPO_ROOT
 SCRIPT = str(REPO_ROOT / "scripts/lib/strip-cursor-sb-hooks.py")
 
 SB_COMMANDS = [
-    "bash /x/silver-bullet/1.2.3/hooks/a.sh",
+    "bash /x/silver-bullet/1.2.3/hooks/stop-check.sh",
     '"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh" stop "${CURSOR_PLUGIN_ROOT}/hooks/stop-check.sh"',
     "bash /repo/plugins/silver-bullet/hooks/completion-audit.sh",
     "bash codex-hook-adapter.sh cursor-hook-bridge.sh d",

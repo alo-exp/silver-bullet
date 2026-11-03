@@ -134,18 +134,21 @@ class MergeCursorHooksTest(unittest.TestCase):
                 entry("/x/codex-hook-adapter.sh --foo"),
                 entry(f"{ROOT_VAR}/hooks/completion-audit.sh"),
                 entry("/dev/plugins/silver-bullet/hooks/dev-cycle-check.sh"),
-                entry("/opt/silver-bullet/0.9.0/hooks/old.sh"),
+                entry("/opt/silver-bullet/0.9.0/hooks/completion-audit.sh"),
                 entry("/h/.cursor/plugins/cache/alo-labs/silver-bullet/0.8.0/hooks/gone.sh"),
                 entry("/usr/bin/keep"),
+                entry("/home/me/scripts/codex-hook-adapter-notes.sh check"),
+                entry('node "$HOME/silver-bullet/1.0.0/hooks/lint.js"'),
                 entry(f"{install}/hooks/current.sh"),
             ],
-            "stop": [entry("/opt/silver-bullet/0.9.0/hooks/s.sh")],
+            "stop": [entry("/opt/silver-bullet/0.9.0/hooks/stop-check.sh")],
         }})
         self.run_script(install)
         hooks = self.load()["hooks"]
         self.assertNotIn("stop", hooks)
         cmds = [e["command"] for e in hooks["preToolUse"]]
-        self.assertEqual(cmds, ["/usr/bin/keep", f"{install}/hooks/a.sh"])
+        self.assertEqual(cmds, ["/usr/bin/keep", "/home/me/scripts/codex-hook-adapter-notes.sh check",
+                                'node "$HOME/silver-bullet/1.0.0/hooks/lint.js"', f"{install}/hooks/a.sh"])
 
     def test_entry_inside_the_install_but_not_in_the_manifest_is_dropped(self):
         install = self.make_install("dev/plugins/silver-bullet")
