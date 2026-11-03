@@ -27,7 +27,8 @@ from category_pack import (
     resolve_pack_from_need,
     slugify,
 )
-from materialize_solution_artifacts import _iter_claim_texts
+from materialize_solution_artifacts import _iter_claim_texts, mentions_vendor, structured_vendor_names
+from pack_vocabulary import activated
 
 Classification = str  # core | adjacent | excluded | sunset
 
@@ -98,7 +99,7 @@ def _classify_slug_for_market(
     if slug in hard_exclusions and slug not in core_seeds:
         return "excluded", "pack hard_exclusion"
     if slug in core_seeds:
-        if slug in envelope_slugs or slug == "silver-bullet":
+        if slug in envelope_slugs:
             return "core", f"{market_id} market_seed"
         return "excluded", f"{market_id} seed without envelope evidence (gap)"
     if slug in adjacent_seeds:
@@ -127,11 +128,11 @@ def _extract_candidates_from_text(
     for alias, canonical in sorted(aliases.items(), key=lambda x: -len(x[0])):
         if len(alias) < 2:
             continue
-        if alias in lower or alias.replace("-", " ") in lower:
+        if mentions_vendor(text, lower, alias) or mentions_vendor(text, lower, alias.replace("-", " ")):
             if canonical not in found:
                 found.append(canonical)
     for slug, display in known.items():
-        if slug.replace("-", " ") in lower or slug in lower or display.lower() in lower:
+        if any(mentions_vendor(text, lower, name) for name in (slug.replace("-", " "), slug, display.lower())):
             if slug not in found:
                 found.append(slug)
     return found
@@ -141,10 +142,13 @@ def _envelope_evidence_slugs(
     envelopes: list[dict[str, Any]],
     pack: dict[str, Any],
 ) -> set[str]:
-    """Slugs found in envelope text only (not pack seed injection)."""
+    """Slugs found in envelope text only (not pack seed injection).
+
+    Vendors that workers named in structured ``matrix_entries`` rows count too (exact match).
+    """
     aliases = build_alias_map(pack)
     known = build_known_solutions(pack)
-    found: set[str] = set()
+    found: set[str] = {resolve_canonical_slug(slug, pack) for slug in structured_vendor_names(envelopes, known, pack)}
     for text in _iter_claim_texts(envelopes):
         for slug in _extract_candidates_from_text(text, aliases, known):
             found.add(resolve_canonical_slug(slug, pack))
@@ -203,12 +207,12 @@ def _classify_slug(
     if slug in hard_exclusions and slug not in all_core_seeds:
         exc = exclusion_map.get(slug, "hard_exclusion")
         return "excluded", f"pack hard_exclusion ({exc})"
-    if slug == "augment-code":
-        return "excluded", "augment-code brand excluded; use augment-cosmos if in scope"
+    if slug in RENAME_EXCLUSIONS:
+        return "excluded", f"{slug} brand excluded; use {RENAME_EXCLUSIONS[slug]} if in scope"
     if slug in all_core_seeds:
         markets = market_core_map.get(slug, [])
         market_label = markets[0] if markets else "market"
-        if slug in envelope_slugs or slug == "silver-bullet":
+        if slug in envelope_slugs:
             if slug in core_seeds:
                 return "core", "pack core_seed"
             return "core", f"{market_label} market_seed"
@@ -225,7 +229,19 @@ def _classify_slug(
     return "excluded", "not in pack seeds and no inclusion evidence"
 
 
-def classify_solutions(
+# Brand renames the pack enforces ({"old-slug": "new-slug"}); pack vocabulary data, none built in.
+RENAME_EXCLUSIONS: dict[str, str] = {}
+
+
+def classify_solutions(*args: Any, **kwargs: Any) -> dict[str, Any]:
+    """Classify solutions; the pack's vocabulary (rename rules) is active meanwhile."""
+    need = kwargs.get("need") if "need" in kwargs else (args[1] if len(args) > 1 else None)
+    pack = kwargs.get("pack") or (args[2] if len(args) > 2 else None) or resolve_pack_from_need(need)
+    with activated(pack):
+        return _classify_solutions(*args, **kwargs)
+
+
+def _classify_solutions(
     envelopes: list[dict[str, Any]],
     need: dict[str, Any] | None = None,
     pack: dict[str, Any] | None = None,
@@ -397,31 +413,17 @@ def classify_solutions(
     }
 
 
-def write_catalog_audit(research_dir: Path, audit: dict[str, Any]) -> Path:
+def write_catalog_audit(
+    research_dir: Path,
+    audit: dict[str, Any],
+    *,
+    preserved: list[str] | None = None,
+) -> Path:
+    from generated_files import write_generated_text
+
     research_dir = Path(research_dir)
-    landscape_dir = research_dir / "landscape"
-    landscape_dir.mkdir(parents=True, exist_ok=True)
-    out = landscape_dir / "catalog_audit.json"
-    out.write_text(json.dumps(audit, indent=2) + "\n", encoding="utf-8")
+    out = research_dir / "landscape" / "catalog_audit.json"
+    write_generated_text(research_dir, out, json.dumps(audit, indent=2) + "\n", preserved=preserved)
     return out
 
 
-def classify_and_audit(
-    research_dir: Path,
-    envelopes: list[dict[str, Any]] | None = None,
-    need: dict[str, Any] | None = None,
-) -> dict[str, Any]:
-    research_dir = Path(research_dir)
-    if need is None:
-        need_path = research_dir / "need_profile.json"
-        need = json.loads(need_path.read_text(encoding="utf-8")) if need_path.is_file() else {}
-    if envelopes is None:
-        env_path = research_dir / "contributions" / "all-envelopes.json"
-        if env_path.is_file():
-            raw = json.loads(env_path.read_text(encoding="utf-8"))
-            envelopes = [e for e in raw if isinstance(e, dict)] if isinstance(raw, list) else []
-        else:
-            envelopes = []
-    audit = classify_solutions(envelopes, need)
-    write_catalog_audit(research_dir, audit)
-    return audit

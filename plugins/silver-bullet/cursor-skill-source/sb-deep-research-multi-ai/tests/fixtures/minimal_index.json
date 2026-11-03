@@ -1,0 +1,16 @@
+{
+  "schema_id": "multi-ai-result-index-v1",
+  "version": "1.0.0",
+  "spine": "multi-ai-task-v2",
+  "run_id": "run-00000000000000000000000000000001",
+  "ledger_generation": 0,
+  "ledger_head_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "entries": [
+    {
+      "work_item_id": "work-00000000000000000000000000000001",
+      "logical_model_id": "composer-2.5",
+      "status": "completed",
+      "authoritative_attempt_id": "attempt-1"
+    }
+  ]
+}

@@ -167,12 +167,14 @@ prune_cursor_picker_surfaces_from_cache_dir() {
     agents \
     skills \
     skill-source \
+    cursor-skill-source \
     host-bundles \
     .agents \
     .cursor/agents \
     plugins/silver-bullet/agents \
     plugins/silver-bullet/skills \
     plugins/silver-bullet/skill-source \
+    plugins/silver-bullet/cursor-skill-source \
     plugins/silver-bullet/templates
   do
     if [[ -e "${entry}/${surface}" ]]; then

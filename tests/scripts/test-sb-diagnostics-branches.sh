@@ -18,6 +18,8 @@ cp "$TL_REPO_ROOT/hooks/lib/runtime-paths.sh" "$ST/hooks/lib/"
 printf '{"version":"9.9.9"}\n' >"$ST/package.json"
 printf '{}\n' >"$ST/.silver-bullet.json"
 D="$ST/scripts/sb-diagnostics.sh"
+# project-scoped checks read the audited project (R8-21); here the staged tree doubles as the project
+export SB_DIAG_PROJECT_ROOT="$ST"
 
 # ---- stub libraries ----
 defn() { printf '[[ " ${STUB_UNDEF:-} " == *" %s "* ]] || %s() { %s; }\n' "$1" "$1" "$2"; }

@@ -17,12 +17,17 @@ build_tree() {
   mkdir -p "$T/scripts" "$T/hooks/lib" "$T/tests/hooks"
   cp "$TL_REPO_ROOT/scripts/release-live-matrix-cursor-smoke.sh" "$T/scripts/"
   # Fixed runtime paths: the real helper derives them from HOME at source time.
+  # (It honours a pinned state dir like the real one, and records the environment it saw.)
   cat >"$T/hooks/lib/runtime-paths.sh" <<RP
-SB_RUNTIME_STATE_DIR="$STATE"
+if [[ "\${SB_RUNTIME_PRESERVE_STATE_DIR:-}" != "1" || -z "\${SB_RUNTIME_STATE_DIR:-}" ]]; then
+  SB_RUNTIME_STATE_DIR="$STATE"
+fi
+export SB_RUNTIME_STATE_DIR
 RP
   cat >"$T/scripts/install-cursor.sh" <<'INST'
 #!/usr/bin/env bash
 echo "install HOME=$HOME CONFIG=${CURSOR_CONFIG_DIR-} RUNTIME=${SILVER_BULLET_RUNTIME-}" >>"$SMOKE_LOG"
+echo "env KAY=${KAY_HOME-unset} CLAUDE=${CLAUDE_CONFIG_DIR-unset} STATEFILE=${SILVER_BULLET_STATE_FILE-unset} STATE=${SB_RUNTIME_STATE_DIR-unset}" >>"$SMOKE_LOG"
 if [[ -z "${STUB_NO_HOOKS:-}" ]]; then
   mkdir -p "$HOME/.cursor"
   echo "${STUB_HOOKS_BODY:-{\"hooks\":{\"x\":\"silver-bullet/hook.sh\"}}}" >"$HOME/.cursor/hooks.json"
@@ -54,7 +59,8 @@ run_smoke() {
 
 # --- default: isolated fake HOME ----------------------------------------
 build_tree
-run_smoke
+run_smoke KAY_HOME=/real/kay CLAUDE_CONFIG_DIR=/real/claude SILVER_BULLET_STATE_FILE=/real/state \
+  SB_RUNTIME_STATE_DIR="$STATE" SB_RELEASE_LIVE_MATRIX_WRITE_CURSOR_MARKER=1
 assert_eq "smoke passes" 0 "$TL_STATUS"
 assert_contains "installer step announced" "$TL_OUT" "[cursor-smoke] Running install-cursor.sh in isolated HOME"
 assert_contains "diagnostics step announced" "$TL_OUT" "[cursor-smoke] Running sb-diagnostics (cursor path)"
@@ -67,9 +73,22 @@ for t in test-cursor-hook-bridge test-cursor-runtime-bootstrap test-runtime-path
   assert_contains "$t ran with the fake HOME" "$calls" "unit $t HOME=$FAKE_TMP/sb-cursor-smoke."
 done
 assert_eq "temp root removed on exit" "" "$(ls -A "$FAKE_TMP")"
-assert_eq "matrix marker written" "matrix=cursor-smoke" "$(<"$STATE/release-live-matrix")"
+# R8-12: config-redirecting variables are cleared and the hooks' state dir is inside the fake HOME.
+assert_contains "redirect variables cleared for the installer" "$calls" "env KAY=unset CLAUDE=unset STATEFILE=unset STATE=$FAKE_TMP/sb-cursor-smoke."
+assert_eq "explicitly requested marker goes to the caller's state dir" "matrix=cursor-smoke" "$(<"$STATE/release-live-matrix")"
 assert_contains "marker path reported" "$TL_OUT" "[cursor-smoke] Wrote $STATE/release-live-matrix"
 assert_file_absent "real HOME untouched by the smoke" "$HOME/.cursor"
+
+# R8-12: no marker (release-gate input) unless explicitly requested, whatever the real state dir.
+build_tree
+run_smoke SB_RUNTIME_STATE_DIR="$STATE"
+assert_eq "default run passes" 0 "$TL_STATUS"
+assert_file_absent "no release marker by default" "$STATE/release-live-matrix"
+assert_file_absent "real state dir untouched" "$STATE"
+build_tree
+run_smoke SB_RELEASE_LIVE_MATRIX_WRITE_CURSOR_MARKER=1 SB_RELEASE_LIVE_MATRIX_MARKER_DIR="$TL_TMP/explicit"
+assert_eq "explicit marker dir: marker written there" "matrix=cursor-smoke" "$(<"$TL_TMP/explicit/release-live-matrix")"
+assert_file_absent "explicit marker dir: nothing in the default state dir" "$STATE/release-live-matrix"
 
 # Marker can be disabled.
 build_tree
