@@ -258,6 +258,12 @@ assert_eq "search repair: missing pin argv" '{"actions":[],"failures":["install_
 : >"$HR_LOG"
 assert_eq "search repair: pinned install" '{"actions":["brew_install_search_cli_pin"],"failures":[],"restart_required":false}' "$(rt_repair_search_cli 2>/dev/null | jq -c .)"
 assert_eq "search repair: pin run as two plain brew commands, no shell" "brew tap paperfoot/tap|brew install paperfoot/tap/search-cli" "$(paste -sd'|' "$HR_LOG")"
+# R6-03: a package install needs "install" consent; "wire" (host config) does not cover it
+sb_test_consent_reset_mirror "$HR_PROJ/.silver-bullet.json" wire
+: >"$HR_LOG"
+assert_eq "search repair: wire-only grant cannot install a package" '{"actions":[],"failures":["mutation_not_authorized"],"restart_required":false}' "$(rt_repair_search_cli 2>/dev/null | jq -c .)"
+assert_eq "search repair: wire-only grant ran no brew" "" "$(cat "$HR_LOG")"
+sb_test_consent_reset_mirror "$HR_PROJ/.silver-bullet.json" install,wire,enforce
 assert_eq "search repair: install failure" '{"actions":[],"failures":["brew_install_failed"],"restart_required":false}' "$(BREW_RC=1 rt_repair_search_cli 2>/dev/null | jq -c .)"
 : >"$HR_LOG"
 BREW_RC=1 rt_repair_search_cli >/dev/null 2>&1 || true

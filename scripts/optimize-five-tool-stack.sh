@@ -8,6 +8,8 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# One backup per run: sb_host_config keeps the user's file as it was before the run's first change.
+export SB_INSTALL_RUN_START="${SB_INSTALL_RUN_START:-$(date +%s)}"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 INSTALL_LEANCTX="${SCRIPT_DIR}/install-leanctx-sb.sh"
 OPTIMIZE_RTCM="${SCRIPT_DIR}/optimize-rtk-context-mode.sh"
@@ -182,8 +184,9 @@ optimize_host() {
   fi
 
   if [[ "$h" == "cursor" ]]; then
+    # Project rules only: machine-wide (~/.cursor/rules) rules are the user's call, made per tool
+    # through install-recommended-tools-cursor.sh --global, which honours each tool's wire consent.
     local rules_args=(bash "$INSTALL_CURSOR_RULES" --project-root "$PROJECT_ROOT")
-    [[ "$DRY_RUN" -eq 1 ]] || rules_args+=(--global)
     run_cmd "${rules_args[@]}" || warn "install-recommended-tools-cursor.sh failed (exit $?); continuing"
   fi
 

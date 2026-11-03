@@ -122,16 +122,18 @@ class PureHelpersTest(unittest.TestCase):
 
     def test_is_legacy_routing_hook(self):
         for cmd in (
-            "lean-ctx hook deny",
-            "lean-ctx hook redirect x",
-            "lean-ctx hook rewrite",
             "bash ~/.cursor/hooks/toolstack/shell-compression.sh",
             "bash /p/cursor-hook-bridge.sh graphify-gate.sh",
             "bash /p/cursor-hook-bridge.sh rtk-gate.sh",
-            "lean-ctx\\\\ hook rewrite",
         ):
             with self.subTest(cmd=cmd):
                 self.assertTrue(ph.is_legacy_routing_hook(cmd))
+        # LeanCTX's own hooks are the user's: legacy only with LeanCTX consent (and a working RTK hook)
+        for cmd in ("lean-ctx hook deny", "lean-ctx hook redirect x", "lean-ctx hook rewrite", "lean-ctx\\\\ hook rewrite"):
+            with self.subTest(cmd=cmd):
+                self.assertFalse(ph.is_legacy_routing_hook(cmd))
+                self.assertFalse(ph.is_legacy_routing_hook(cmd, leanctx_owned=True, rtk_replaces=False))
+                self.assertTrue(ph.is_legacy_routing_hook(cmd, leanctx_owned=True))
         for cmd in ("bash /p/cursor-hook-bridge.sh other.sh", "bash graphify-gate.sh", "rtk hook cursor", ""):
             with self.subTest(cmd=cmd):
                 self.assertFalse(ph.is_legacy_routing_hook(cmd))
@@ -486,6 +488,23 @@ class MainTest(HooksCase):
         code, out = self.run_main()
         self.assertEqual(self.read()["hooks"]["preToolUse"][:2], before["hooks"]["preToolUse"])
         self.assertNotIn("/bin/rtk hook cursor", json.dumps(self.read()))
+
+    def test_leanctx_hooks_survive_an_rtk_only_patch_run(self):
+        # R6-25: RTK consent alone never deletes hooks LeanCTX registered; LeanCTX consent does.
+        self.all_scripts()
+        ph.command_resolves.return_value = True
+        self.enable("RTK")
+        mine = {"command": "/usr/local/bin/my-own-hook.sh"}
+        self.write({"hooks": {"preToolUse": [{"command": "lean-ctx hook redirect", "matcher": "Shell"}, mine]}})
+        self.run_main()
+        cmds = [h["command"] for h in self.read()["hooks"]["preToolUse"]]
+        self.assertIn("lean-ctx hook redirect", cmds)
+        self.assertIn(mine["command"], cmds)
+        self.enable("RTK", "LEANCTX")
+        self.run_main()
+        cmds = [h["command"] for h in self.read()["hooks"]["preToolUse"]]
+        self.assertNotIn("lean-ctx hook redirect", cmds)
+        self.assertIn(mine["command"], cmds)
 
     def test_leanctx_hooks_survive_a_patch_run_that_did_not_consent_to_rtk(self):
         self.all_scripts()

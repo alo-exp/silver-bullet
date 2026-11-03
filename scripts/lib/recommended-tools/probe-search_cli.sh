@@ -135,7 +135,7 @@ rt_repair_search_cli() {
   local actions=() failures=()
   local project_cmd pin_argv
 
-  if ! rt_mutation_allowed search_cli; then
+  if ! rt_mutation_allowed search_cli install; then
     echo '{"actions":[],"failures":["mutation_not_authorized"],"restart_required":false}'
     return 0
   fi

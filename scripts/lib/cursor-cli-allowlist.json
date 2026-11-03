@@ -101,17 +101,17 @@
   ],
   "read_only": [
     "Shell(cat *)",
-    "Shell(git diff *)",
-    "Shell(git log *)",
-    "Shell(git show *)",
-    "Shell(git status *)",
+    "Shell(git diff)",
+    "Shell(git diff --stat)",
+    "Shell(git log --oneline)",
+    "Shell(git status)",
+    "Shell(git status --short)",
     "Shell(grep *)",
     "Shell(head *)",
     "Shell(ls)",
     "Shell(ls *)",
     "Shell(pwd)",
     "Shell(tail *)",
-    "Shell(tree *)",
     "Shell(wc *)",
     "Shell(which *)"
   ]

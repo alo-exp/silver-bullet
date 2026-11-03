@@ -161,6 +161,13 @@ class EnvTest(Base):
         self.assertFalse(mod.remove_upstream_lean_ctx_duplicate(servers))
 
 
+class LegacyEnvTest(Base):
+    def test_legacy_env_reads_only_string_pairs(self):
+        self.assertEqual(mod.legacy_lean_ctx_env({"lean-ctx": {"env": {"KEY": "sk-1", "N": 5}}}), {"KEY": "sk-1"})
+        for servers in ({}, {"lean-ctx": "x"}, {"lean-ctx": {}}, {"lean-ctx": {"env": ["a"]}}):
+            self.assertEqual(mod.legacy_lean_ctx_env(servers), {})
+
+
 class CursorMergeTest(Base):
     def target(self):
         return self.home / ".cursor" / "mcp.json"
@@ -310,6 +317,24 @@ class CursorMergeTest(Base):
         self.assertIn("leanctx", data["mcpServers"])
 
 
+    # R6-07: the env (API keys) of the upstream lean-ctx entry moves to leanctx, never dropped.
+    def test_legacy_env_moves_to_a_new_leanctx_entry(self):
+        self.write(self.target(), {"mcpServers": {"lean-ctx": {"command": "x", "env": {"LEANCTX_API_KEY": "sk-secret"}}}})
+        self.assertTrue(self.merge()["mcp_merged"])
+        servers = self.read_json(self.target())["mcpServers"]
+        self.assertNotIn("lean-ctx", servers)
+        self.assertEqual(servers["leanctx"]["env"]["LEANCTX_API_KEY"], "sk-secret")
+        self.assertEqual(servers["leanctx"]["env"]["LEANCTX_MCP_TOOL_PREFIX"], "lctx_")
+
+    def test_legacy_env_does_not_override_existing_leanctx_values(self):
+        self.write(self.target(), {"mcpServers": {
+            "lean-ctx": {"env": {"LEANCTX_API_KEY": "old", "LEANCTX_MCP_TOOL_PREFIX": "legacy_", "NEW": "n"}},
+            "leanctx": {"command": "/opt/g/lean-ctx", "args": ["mcp"], "env": {"LEANCTX_API_KEY": "mine"}}}})
+        self.merge()
+        env = self.read_json(self.target())["mcpServers"]["leanctx"]["env"]
+        self.assertEqual((env["LEANCTX_API_KEY"], env["NEW"], env["LEANCTX_MCP_TOOL_PREFIX"]), ("mine", "n", "lctx_"))
+
+
 class ClaudeMergeTest(Base):
     def target(self):
         return self.home / ".claude.json"
@@ -336,6 +361,13 @@ class ClaudeMergeTest(Base):
         lean = data["mcpServers"]["leanctx"]
         self.assertEqual(lean, mod.leanctx_cursor_server(True, MANIFEST))  # replaced wholesale
         self.assertTrue(Path(str(self.target()) + ".sb-backup").is_file())
+
+    def test_legacy_env_moves_to_leanctx(self):
+        self.write(self.target(), {"mcpServers": {"lean-ctx": {"env": {"LEANCTX_API_KEY": "sk-secret"}}}})
+        self.merge()
+        servers = self.read_json(self.target())["mcpServers"]
+        self.assertNotIn("lean-ctx", servers)
+        self.assertEqual(servers["leanctx"]["env"]["LEANCTX_API_KEY"], "sk-secret")
 
     def test_bad_container(self):
         for bad in ("oops", [{"name": "mine"}]):
@@ -556,6 +588,18 @@ class CodexTomlTest(Base):
         self.assertIn("[other]", text)
         if tomllib:
             self.assertEqual(self.parsed()["mcp_servers"]["lean-ctx-standalone"]["command"], "keep")
+
+    def test_legacy_env_moves_to_leanctx_env_without_overriding(self):
+        self.write(self.target(), (
+            '[mcp_servers.lean-ctx.env]\nLEANCTX_API_KEY = "sk-secret"\nLEANCTX_MCP_TOOL_PREFIX = "legacy_"\n'))
+        self.merge()
+        text = self.target().read_text()
+        self.assertIn('LEANCTX_API_KEY = "sk-secret"', text)
+        self.assertNotIn("legacy_", text)
+        self.assertNotIn("[mcp_servers.lean-ctx", text.replace("leanctx", ""))
+        if tomllib:
+            env = self.parsed()["mcp_servers"]["leanctx"]["env"]
+            self.assertEqual((env["LEANCTX_API_KEY"], env["LEANCTX_MCP_TOOL_PREFIX"]), ("sk-secret", "lctx_"))
 
     def test_removal_only_is_still_a_change_when_block_exists(self):
         self.merge()

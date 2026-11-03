@@ -163,6 +163,27 @@ assert_eq "a symlinked rule stays a symlink" "yes" "$([[ -L "$CUR/rules/graphify
 assert_eq "the link target got the Silver Bullet rule" "rule graphify" "$(cat "$TL_TMP/dotfiles/graphify.mdc")"
 assert_eq "and its previous content is backed up beside the link" "dotfile graphify rule" "$(cat "$CUR/rules/graphify.mdc.sb-backup")"
 
+# R6-12: a global rule is installed only for a tool the user granted wire for
+sb_test_consent_revoke_all
+sb_test_consent_grant leanctx wire
+rm -rf "$CUR/rules"; mkdir -p "$CUR/rules"
+printf 'dotfile graphify rule\n' >"$TL_TMP/dotfiles/graphify.mdc"
+ln -s "$TL_TMP/dotfiles/graphify.mdc" "$CUR/rules/graphify.mdc"
+tl_run bash "$ENTRY"
+assert_eq "leanctx-only wire: its own rule is installed" "rule leanctx" "$(cat "$CUR/rules/leanctx.mdc")"
+assert_eq "leanctx-only wire: the user's graphify rule is untouched" "dotfile graphify rule" "$(cat "$TL_TMP/dotfiles/graphify.mdc")"
+assert_file_absent "leanctx-only wire: no graphify backup was needed" "$CUR/rules/graphify.mdc.sb-backup"
+assert_file_absent "leanctx-only wire: agentmemory rule not installed" "$CUR/rules/agentmemory.mdc"
+assert_file_absent "leanctx-only wire: context-mode rule not installed" "$CUR/rules/context-mode.mdc"
+assert_file_absent "leanctx-only wire: token-compression rule not installed" "$CUR/rules/token-compression-enforcement.mdc"
+assert_contains "the skipped rules are announced" "$TL_OUT" "SKIP: global rule graphify.mdc - no wire consent for graphify"
+sb_test_consent_revoke_all
+sb_test_consent_grant rtk install
+rm -rf "$CUR/rules"; mkdir -p "$CUR/rules"
+tl_run bash "$ENTRY"
+assert_eq "install-only grant: no global rule at all" "0" "$(find "$CUR/rules" -type f | wc -l | tr -d ' ')"
+sb_test_consent_grant_all
+
 # without a recorded or given repository root there is no consent library: nothing is wired or required
 rm -f "$CUR/toolstack.json" "$CUR/state/toolstack/repo-root"
 tl_run env -u TOOLSTACK_REPO_ROOT bash "$TSD/install.sh"

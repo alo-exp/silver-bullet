@@ -27,12 +27,14 @@ from five_tool_instances import ensure_global_instances, tool_command  # noqa: E
 TS = Path.home() / ".cursor" / "hooks" / "toolstack"
 HOOKS = Path.home() / ".cursor" / "hooks.json"
 SB_BRIDGE = "cursor-hook-bridge.sh"
-LEGACY_ROUTING_HOOK_MARKERS = (
+# Hooks that LeanCTX itself registered: they are the user's, and removable only with LeanCTX consent.
+LEANCTX_HOOK_MARKERS = (
     "lean-ctx hook deny",
     "lean-ctx hook redirect",
     "lean-ctx hook rewrite",
-    "toolstack/shell-compression.sh",
 )
+# Silver Bullet's own legacy shell-compression hook.
+LEGACY_ROUTING_HOOK_MARKERS = ("toolstack/shell-compression.sh",)
 GLOBAL_GATE_NAMES = (
     "stack-compression-coordinator.sh",
     "graphify-gate.sh",
@@ -88,13 +90,17 @@ def hook_cmd(h: Any) -> str:
     return str(h.get("command", "")) if isinstance(h, dict) else ""
 
 
-def is_legacy_routing_hook(command: str, *, rtk_replaces: bool = True) -> bool:
-    """Identify old plugin-owned routing hooks superseded by the global stack.
+def is_legacy_routing_hook(command: str, *, rtk_replaces: bool = True, leanctx_owned: bool = False) -> bool:
+    """Identify old routing hooks superseded by the global stack.
 
-    The LeanCTX / shell-compression rewrite hooks are superseded only by a working RTK hook, so
-    they count as legacy only when RTK_REPLACES (RTK consented and its command resolves)."""
+    The shell-compression rewrite hooks are superseded only by a working RTK hook, so they count
+    as legacy only when RTK_REPLACES (RTK consented and its command resolves). LeanCTX's own
+    deny/redirect/rewrite hooks were registered by LeanCTX, not Silver Bullet: they are removed
+    only when LEANCTX_OWNED (the user consented to LeanCTX wiring) and RTK replaces them."""
     normalized = command.replace("\\\\", "")
     if rtk_replaces and any(marker in normalized for marker in LEGACY_ROUTING_HOOK_MARKERS):
+        return True
+    if rtk_replaces and leanctx_owned and any(marker in normalized for marker in LEANCTX_HOOK_MARKERS):
         return True
     return SB_BRIDGE in normalized and any(name in normalized for name in GLOBAL_GATE_NAMES)
 
@@ -310,7 +316,7 @@ def _main() -> int:
         kept = []
         removed = 0
         for item in event_hooks:
-            if isinstance(item, dict) and is_legacy_routing_hook(hook_cmd(item), rtk_replaces=rtk_usable):
+            if isinstance(item, dict) and is_legacy_routing_hook(hook_cmd(item), rtk_replaces=rtk_usable, leanctx_owned=patch_leanctx):
                 removed += 1
             else:
                 kept.append(item)

@@ -436,6 +436,24 @@ touch -t 202001010000 "$LK"
 assert_eq "an old lock with an unreadable pid is stale" "0" "$(rc_of rt_lock_is_stale "$LK")"
 rm -rf "$LK"
 assert_eq "a missing lock is not stale" "1" "$(rc_of rt_lock_is_stale "$LK")"
+# stale recovery is serialized: a waiter that judged the lock stale earlier must not delete a lock
+# another waiter has since taken (it re-checks under the reclaim guard)
+mkdir -p "$LK"; printf '%s\n' "$$" >"$LK/pid"
+rt_reclaim_stale_lock "$LK"
+assert_file_exists "a lock that is no longer stale survives a late reclaim" "$LK"
+assert_file_absent "the reclaim guard is released" "${LK}.reclaim"
+rm -rf "$LK"; mkdir -p "$LK"; printf '%s\n' 999999 >"$LK/pid"
+rt_reclaim_stale_lock "$LK"
+assert_file_absent "a stale lock is removed by the reclaim" "$LK"
+assert_file_absent "and the guard is released after it" "${LK}.reclaim"
+mkdir -p "$LK" "${LK}.reclaim"; printf '%s\n' 999999 >"$LK/pid"
+rc=0; rt_with_lock "$LK" 1 true || rc=$?
+assert_eq "while another waiter holds the reclaim guard this one does not delete the lock" "1" "$rc"
+assert_file_exists "the stale lock is left to the guard holder" "$LK"
+touch -t 202001010000 "${LK}.reclaim"
+OUT="$(rt_with_lock "$LK" 5 printf 'recovered-after-dead-guard')"
+assert_eq "a guard abandoned by a dead reclaimer is cleared and the lock recovered" "recovered-after-dead-guard" "$OUT"
+rm -rf "$LK" "${LK}.reclaim"
 
 # ------------------------------------------------ codex TOML detection (R6-06)
 CT="$TL_TMP/codex-detect.toml"

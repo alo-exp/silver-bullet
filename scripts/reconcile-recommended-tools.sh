@@ -4,6 +4,8 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# One backup per run: sb_host_config keeps the user's file as it was before the run's first change.
+export SB_INSTALL_RUN_START="${SB_INSTALL_RUN_START:-$(date +%s)}"
 if [[ -d "${SCRIPT_DIR}/lib/recommended-tools" ]]; then
   RT_LIB="${SCRIPT_DIR}/lib/recommended-tools"
 elif [[ -d "${SCRIPT_DIR}/recommended-tools" ]]; then
