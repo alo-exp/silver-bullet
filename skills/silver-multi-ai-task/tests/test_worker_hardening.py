@@ -411,6 +411,16 @@ def _kill_if_alive(pid: int) -> None:
     if _alive(pid):
         os.kill(pid, signal.SIGKILL)
 
+class PhaseInstructionTests(PopenCase):
+    def test_triangulate_lists_the_optional_matrix_entries_key(self) -> None:
+        text = ld.PHASE_INSTRUCTIONS["DR-TRIANGULATE"]
+        self.assertIn("matrix_entries", text)
+        self.assertIn("{vendor, feature, supported (boolean), source_ref}", text)
+        self.assertIn("Optional key", text)
+        prompt = ld.build_worker_prompt(phase_id="DR-TRIANGULATE", query="q", logical_model_id="m")
+        self.assertIn("matrix_entries", prompt)
+
+
 class InterruptTests(PopenCase):
     """Workers run in their own sessions, so Ctrl-C/SIGTERM must be forwarded explicitly."""
 

@@ -136,7 +136,8 @@ PHASE_INSTRUCTIONS: dict[str, str] = {
     "DR-TRIANGULATE": (
         "DR-TRIANGULATE phase: cross-check prior evidence and produce claim candidates. "
         "Return JSON only with keys: claim_candidates (array of {text, confidence, supporting_sources}), "
-        "cross_checks (array of {claim, status, notes})."
+        "cross_checks (array of {claim, status, notes}). "
+        "Optional key: matrix_entries (array of {vendor, feature, supported (boolean), source_ref})."
     ),
     "DR-CRITIQUE": (
         "DR-CRITIQUE phase: critique the landscape analysis for gaps, bias, and missing competitors. "
