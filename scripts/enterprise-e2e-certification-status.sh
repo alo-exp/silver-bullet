@@ -330,7 +330,7 @@ DOC="$(jq -n \
     conservative_summary: {
       tri_host_live_e2e_proven: ([$hosts[] | select(.proof_level == "live_e2e_proven")] | length),
       tri_host_live_e2e_partial: ([$hosts[] | select(.proof_level == "live_e2e_partial")] | length),
-      public_autonomous_enterprise_claim_ready: (([$hosts[] | select(.proof_level == "live_e2e_proven")] | length) == 3)
+      public_autonomous_enterprise_claim_ready: (([$hosts[] | select(.proof_level == "live_e2e_proven")] | length) == ($hosts | length))
     }
   }')"
 
@@ -363,7 +363,7 @@ echo "Enterprise E2E certification status @ ${generated_at} (${sb_sha})"
 echo ""
 jq -r '.hosts[] | "\(.host): proof=\(.proof_level) ledger=\(.ledger_pass) reconcile=\(.ledger_reconcile) strict_clean=\(.strict_clean_eligible) gaps=\(.evidence_gaps | join(","))"' <<<"$DOC"
 echo ""
-echo "Tri-host live_e2e_proven: $(jq -r '.conservative_summary.tri_host_live_e2e_proven' <<<"$DOC")/3"
+echo "Hosts live_e2e_proven: $(jq -r '.conservative_summary.tri_host_live_e2e_proven' <<<"$DOC")/$(jq -r '.hosts | length' <<<"$DOC")"
 echo "Public autonomous enterprise claim ready: $(jq -r '.conservative_summary.public_autonomous_enterprise_claim_ready' <<<"$DOC")"
 if [[ "$WRITE_ARTIFACT" -eq 0 ]]; then
   echo ""
