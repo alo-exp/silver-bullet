@@ -10,7 +10,7 @@
 #   installer       : https://leanctx.com/install.sh (never piped to a shell: see install_leanctx_binary)
 #
 # Fallback install path (safest when --library-mode absent):
-#   1. Ensure lean-ctx binary on PATH (curl installer or cargo install lean-ctx).
+#   1. Ensure lean-ctx binary on PATH (checksum-verified installer or the pinned cargo install).
 #   2. Skip lean-ctx init entirely; wire MCP via scripts/lib/global-toolstack/patch-mcp.py.
 #   3. Apply SB five-tool profile env via merge script (lctx_ prefix, CM overlap off).
 set -euo pipefail
@@ -240,6 +240,15 @@ context_mode_configured() {
   esac
 }
 
+# The cargo command that installs the LeanCTX release Silver Bullet's template pins (min_version):
+# an unpinned `cargo install lean-ctx` would take whatever is newest.
+leanctx_cargo_install_command() {
+  local pin=""
+  pin="$(jq -r '.recommended_tools.leanctx.min_version // empty' "${REPO_ROOT}/templates/silver-bullet.config.json.default" 2>/dev/null || true)"
+  [[ "$pin" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || pin="3.9.9"
+  printf 'cargo install lean-ctx --version %s --locked' "$pin"
+}
+
 install_leanctx_binary() {
   if [[ "$SKIP_INSTALL" -eq 1 ]]; then
     log "SKIP: lean-ctx binary install"
@@ -254,13 +263,13 @@ install_leanctx_binary() {
   if ! leanctx_consented install; then
     warn "lean-ctx is not installed and you have not allowed installing it."
     warn "  allow: bash ${SCRIPT_DIR}/sb-consent.sh grant leanctx --all-projects --capabilities install"
-    warn "  or install it yourself: cargo install lean-ctx"
+    warn "  or install it yourself: $(leanctx_cargo_install_command)"
     return 1
   fi
   if [[ -z "$INSTALLER_SHA256" ]]; then
     warn "lean-ctx is not installed. Silver Bullet will not run an unverified installer."
     warn "  Download https://leanctx.com/install.sh, read it, then re-run with --installer-sha256 <sha256 of that file>"
-    warn "  or: cargo install lean-ctx"
+    warn "  or: $(leanctx_cargo_install_command)"
     return 1
   fi
   if [[ ! "$INSTALLER_SHA256" =~ ^[0-9a-fA-F]{64}$ ]]; then
@@ -288,7 +297,7 @@ install_leanctx_binary() {
   sh "$installer" || warn "lean-ctx installer exited non-zero"
   rm -f -- "$installer"
   if ! leanctx_binary_ok; then
-    warn "lean-ctx not on PATH after installer — try: cargo install lean-ctx"
+    warn "lean-ctx not on PATH after installer — try: $(leanctx_cargo_install_command)"
     return 1
   fi
   log "OK: lean-ctx installed"

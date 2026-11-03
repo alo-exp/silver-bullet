@@ -44,7 +44,7 @@ check_rtk() {
   elif sb_rtk_cli_path >/dev/null 2>&1; then
     err "wrong rtk binary on PATH" "install rtk-ai/rtk; rtk gain --help must succeed"
   else
-    err "rtk not on PATH" "brew tap rtk-ai/rtk && brew install rtk"
+    err "rtk not on PATH" "brew tap rtk-ai/rtk && brew install rtk (Silver Bullet needs rtk >= $(jq -r '.recommended_tools.rtk.min_version // "0.42.0"' "${REPO_ROOT}/templates/silver-bullet.config.json.default" 2>/dev/null || echo 0.42.0))"
   fi
 
   if sb_rtk_version_ok "${REPO_ROOT}/.silver-bullet.json" 2>/dev/null; then

@@ -70,6 +70,12 @@ PROJECT_ROOT="$(cd -- "$_requested_root" 2>/dev/null && pwd -P)" || {
   echo "Not a directory: ${_requested_root}" >&2
   exit 2
 }
+# Silver Bullet's own directory is not a project: refuse it rather than rewrite the bundled config
+# (or append SETUP_REPORT.md there). Developing Silver Bullet itself sets SB_ALLOW_PLUGIN_ROOT=1.
+if [[ "$PROJECT_ROOT" == "$(cd "$REPO_ROOT" && pwd -P)" && "${SB_ALLOW_PLUGIN_ROOT:-0}" != "1" ]]; then
+  echo "Refusing to run against the Silver Bullet plugin directory (${PROJECT_ROOT}): run it from your project or pass --project-root DIR." >&2
+  exit 2
+fi
 # The project's own file is the only config that is ever written; without one the bundled
 # template is read-only defaults.
 PROJECT_CONFIG="${PROJECT_ROOT}/.silver-bullet.json"

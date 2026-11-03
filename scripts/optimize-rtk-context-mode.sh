@@ -167,7 +167,8 @@ run_merge_py() {
   local merge_host="${1:-}"
   local merge_args=(python3 "$MERGE_PY" --host "$merge_host" --repo-root "$REPO_ROOT")
   [[ "$DRY_RUN" -eq 1 ]] && merge_args+=(--dry-run)
-  [[ "$SKIP_CLI_CONFIG" -eq 1 ]] && merge_args+=(--skip-cli-config)
+  # The Cursor shell allow-list is RTK's coupling: merged only for a user who consented to RTK.
+  { [[ "$SKIP_CLI_CONFIG" -eq 1 ]] || [[ "$WIRE_RTK" -eq 0 ]]; } && merge_args+=(--skip-cli-config)
   merge_args+=(--cli-allowlist "$CLI_ALLOWLIST")
   [[ "$WIRE_RTK" -eq 1 && "$WIRE_CM" -eq 0 ]] && merge_args+=(--rtk-only)
   [[ "$WIRE_RTK" -eq 0 && "$WIRE_CM" -eq 1 ]] && merge_args+=(--context-mode-only)
@@ -205,6 +206,14 @@ optimize_rtk_cursor() {
       log "WARN: RTK hook not found after rtk init — check ~/.cursor/hooks.json"
     fi
   fi
+}
+
+# `rtk hook cursor` rewrites only allow-listed commands, and an older LeanCTX hook may linger: with
+# Context Mode also consented optimize_context_mode_cursor does both, otherwise do them here.
+optimize_rtk_cursor_coupling() {
+  [[ "$WIRE_RTK" -eq 1 && "$WIRE_CM" -eq 0 ]] || return 0
+  run_merge_py cursor
+  canonicalize_cursor_toolstack_hooks
 }
 
 optimize_rtk_claude() {
@@ -320,6 +329,7 @@ optimize_host() {
   case "$h" in
     cursor)
       optimize_rtk_cursor
+      optimize_rtk_cursor_coupling
       optimize_context_mode_cursor
       ;;
     claude)

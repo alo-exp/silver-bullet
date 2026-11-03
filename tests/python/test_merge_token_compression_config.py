@@ -586,6 +586,18 @@ class OptimizeCursorTest(Base):
         self.assertEqual((repo / ".cursor" / "rules" / "context-mode.mdc").read_text(), "repo-cm")
         self.assertFalse((self.home / ".cursor" / "mcp.json").exists())
 
+    def test_rtk_only_merges_the_allow_list_and_nothing_of_context_mode(self):
+        """RTK consented, Context Mode not: only the shell allow-list that `rtk hook cursor` reads."""
+        repo = self.make_repo()
+        pkg = self.make_pkg()
+        self.write(pkg / "configs" / "cursor" / "mcp.json", {"mcpServers": {"context-mode": {"command": "npx"}}})
+        res = self.quiet(mod.optimize_cursor, repo, False, cli_allowlist="full", rtk_only=True)
+        self.assertEqual(res, {"host": "cursor", "status": "supported", "hooks_added": 0,
+                               "mcp_added": False, "allow_added": 1, "rules_copied": 0})
+        self.assertFalse((self.home / ".cursor" / "hooks.json").exists())
+        self.assertFalse((self.home / ".cursor" / "mcp.json").exists())
+        self.assertFalse((self.home / ".cursor" / "rules").exists())
+
     def test_with_package_hooks_mcp_and_rules(self):
         repo = self.make_repo()
         pkg = self.make_pkg()
@@ -1033,6 +1045,7 @@ class CliAllowlistTest(Base):
             program = entry[len("Shell("):-1].rstrip("*").strip()
             self.assertNotIn(program, dangerous, entry)
         self.assertLess(len(shipped["read_only"]), 20)
+        self.assertIn("Shell(bash *)", shipped["allow"])  # the full list is still available, on request
 
     def test_shipped_default_list_has_no_command_that_can_write_through_a_flag(self):
         """git log/diff/show --output=FILE and tree -o FILE write arbitrary files: only exact git shapes are allowed."""
@@ -1049,7 +1062,6 @@ class CliAllowlistTest(Base):
         self.assertNotIn("Shell(git log *)", shipped["read_only"])
         self.assertNotIn("Shell(git show *)", shipped["read_only"])
         self.assertNotIn("Shell(tree *)", shipped["read_only"])
-        self.assertIn("Shell(bash *)", shipped["allow"])  # the full list is still available, on request
 
     def test_default_cursor_run_merges_only_the_read_only_list(self):
         repo = self.tmp / "repo"

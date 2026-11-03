@@ -39,7 +39,7 @@ dry_apply_ok() {
   [[ "$out" == *"Optimization score:"* ]] || return 1
   if [[ "$out" == *"fails=0 "* ]]; then [[ "$rc" -eq 0 ]]; else [[ "$rc" -eq 1 ]]; fi
 }
-if SB_STACK_SKIP_HOST_HOOKS=1 dry_apply_ok bash "$SCRIPT" --apply --dry-run; then
+if SB_STACK_SKIP_HOST_HOOKS=1 dry_apply_ok bash "$SCRIPT" --apply --dry-run --project-root "$TMP"; then
   pass "dry-run --apply exit status matches the score"
 else
   fail "dry-run --apply exit status matches the score"
@@ -88,7 +88,7 @@ grep -q "AGENTMEMORY_EXPORT_ROOT=.*/.agentmemory" "$TMP/amhome/.env" && pass "en
 grep -q 'sb-optimize-stack' "$REPO_ROOT/docs/STACK-OPTIMIZATION.md" && pass "STACK-OPTIMIZATION.md exists" || fail "STACK-OPTIMIZATION.md"
 
 grep -q '\-\-host HOST' "$SCRIPT" && pass "script supports --host" || fail "script supports --host"
-SILVER_BULLET_RUNTIME=hermes dry_apply_ok bash "$SCRIPT" --apply --dry-run --host hermes \
+SILVER_BULLET_RUNTIME=hermes dry_apply_ok bash "$SCRIPT" --apply --dry-run --host hermes --project-root "$TMP" \
   && pass "dry-run --host hermes" || fail "dry-run --host hermes"
 
 echo "Results: ${PASS} passed, ${FAIL} failed"
