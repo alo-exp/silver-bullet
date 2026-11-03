@@ -18,7 +18,7 @@ trap 'exit 0' ERR
 # Security: restrict file creation permissions (user-only)
 umask 0077
 
-_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)"
 if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
   # shellcheck source=lib/sb-project-gate.sh
   source "$_lib_dir/sb-project-gate.sh"
@@ -66,11 +66,11 @@ if printf '%s' "${SB_SA_JSON:-}" | jq -e '
      | length > 0' >/dev/null 2>&1; then add_all=true; fi
 while IFS= read -r p; do
   [[ -n "$p" ]] && extra_paths+=("$p")
-done < <(printf '%s' "${SB_SA_JSON:-}" | jq -r '[.commits[]? | (.staged_paths + .pathspecs)[]] | unique | .[]' 2>/dev/null || true)
+done < <(printf '%s' "${SB_SA_JSON:-}" | jq -r '[.commits[]? | (.staged_paths + .pathspecs)[]] | unique | .[]' 2>/dev/null)
 
 # `git status --porcelain` lines "XY path" (or "R  old -> new") -> paths
 status_paths() {
-  git -C "$PWD" status --porcelain -uall "$@" 2>/dev/null | sed -e 's/^...//' -e 's/^.* -> //' || true
+  git -C "$PWD" status --porcelain -uall "$@" 2>/dev/null | sed -e 's/^...//' -e 's/^.* -> //'
 }
 if [[ "$commit_all" == true ]]; then
   changed_files="$changed_files"$'\n'"$(git -C "$project_root" diff --name-only HEAD 2>/dev/null || true)"

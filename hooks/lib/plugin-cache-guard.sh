@@ -3,6 +3,7 @@
 # registry no longer references the target path (GitHub issue #222).
 
 _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd 2>/dev/null)" || _lib_dir=""
+_sb_pcg_root="$(cd "$_lib_dir/../.." 2>/dev/null && pwd)" || _sb_pcg_root=""
 if [[ -f "$_lib_dir/path-canonical.sh" ]]; then
   # shellcheck source=path-canonical.sh
   source "$_lib_dir/path-canonical.sh"
@@ -28,13 +29,23 @@ sb_plugin_cache_path_is_uninstalled() {
   local target="$1"
   local cache_root="${2:-${SB_RUNTIME_PLUGIN_CACHE_ROOT}}"
   local install_path normalized_install
-  local target_canon cache_canon install_canon
+  local target_canon cache_canon install_canon running_canon
 
   [[ -n "$target" && -n "$cache_root" ]] || return 1
   [[ -f "$(sb_plugin_cache_registry_file)" ]] || return 1
   cache_root="${cache_root%/}"
   target_canon="$(sb_canonical_path "$target")"
   cache_canon="$(sb_canonical_path "$cache_root")"
+
+  # The install that is running these hooks is never "uninstalled", whatever the host registry
+  # says: the registry is a file the agent could have rewritten (R2-31).
+  running_canon="$(sb_canonical_path "${SB_PLUGIN_ROOT:-$_sb_pcg_root}")"
+  case "$target_canon" in
+    "$running_canon" | "$running_canon"/*) return 1 ;;
+  esac
+  case "$running_canon" in
+    "$target_canon" | "$target_canon"/*) return 1 ;;
+  esac
 
   case "$target_canon" in
     "$cache_canon"|"$cache_canon"/*) ;;

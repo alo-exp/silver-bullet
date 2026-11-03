@@ -18,7 +18,7 @@ trap 'exit 0' ERR
 umask 0077
 
 # jq is required for JSON parsing
-_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)"
 if [[ -f "$_lib_dir/jq-gate.sh" ]]; then
   # shellcheck source=lib/jq-gate.sh
   source "$_lib_dir/jq-gate.sh"
@@ -53,7 +53,7 @@ if ! sb_tool_input_ok; then
   [[ "${SB_TI_STATUS:-}" == "empty" ]] && exit 0
   lower="$(printf '%s' "$input" | tr '[:upper:]' '[:lower:]')"
   [[ "$lower" == *phases* && "$lower" == *clear* ]] || exit 0
-  cmd="$(printf '%s' "$input" | jq -r '.tool_input.command // .tool_input.cmd // ""' 2>/dev/null || true)"
+  cmd="$(printf '%s' "$input" | jq -r '.tool_input.command // .tool_input.cmd // ""' 2>/dev/null)"
   sb_pf_plain_read_only "$cmd" && exit 0
   config_file="$(sb_find_project_config_walk_only 2>/dev/null || true)"
   [[ -n "$config_file" ]] || exit 0
@@ -75,7 +75,6 @@ runs_phases_clear() {
 deletes_phases_dir() {
   local via target
   while IFS=$'\t' read -r via target; do
-    [[ -n "$target" ]] || continue
     case "$via" in rm | rmdir | unlink | "git rm" | "find -delete") ;; *) continue ;; esac
     case "$phases_dir/" in
       "$target"/*) return 0 ;;
@@ -95,9 +94,6 @@ if ! runs_phases_clear; then
   [[ -n "$phases_dir" ]] && deletes_phases_dir || exit 0
 fi
 [[ -n "$config_file" ]] || exit 0
-if declare -f sb_project_active >/dev/null 2>&1; then
-  sb_project_active "$config_file" || exit 0
-fi
 
 # From here on a failure denies: the clear must not run without a copy.
 trap 'printf "{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"phase-archive: archive failed — blocking clear to prevent data loss\"}}" ; exit 0' ERR

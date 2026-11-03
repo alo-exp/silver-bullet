@@ -17,7 +17,7 @@ umask 0077
 
 command -v jq >/dev/null 2>&1 || exit 0
 
-_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)"
 # shellcheck source=lib/planning-floor.sh
 source "$_lib_dir/planning-floor.sh"
 if [[ -f "$_lib_dir/cert-bypass.sh" ]]; then
@@ -79,7 +79,7 @@ if ! sb_tool_input_ok; then
   # The shell command cannot be analysed: refuse only what names an instruction file.
   lower="$(printf '%s' "$input" | tr '[:upper:]' '[:lower:]')"
   [[ "$lower" == *claude.md* || "$lower" == *agents.md* ]] || exit 0
-  cmd="$(printf '%s' "$input" | jq -r '.tool_input.command // .tool_input.cmd // ""' 2>/dev/null || true)"
+  cmd="$(printf '%s' "$input" | jq -r '.tool_input.command // .tool_input.cmd // ""' 2>/dev/null)"
   sb_pf_plain_read_only "$cmd" && exit 0
   deny "$(sb_pf_unanalysable_message)"
 fi
@@ -96,7 +96,6 @@ instruction_file_exists() {
 }
 
 while IFS= read -r target; do
-  [[ -n "$target" ]] || continue
   [[ "$(dirname "$target")" == "$repo_root" ]] || continue
   name="$(basename "$target" | tr '[:upper:]' '[:lower:]')"
   case "$name" in

@@ -35,7 +35,7 @@ mkproj() {
       skills:{required_planning:[\"inst-a\"], required_deploy:[\"inst-a\",\"inst-b\"]}} | ${2:-.}" >"$PROJ/.silver-bullet.json"
   : >"$STATE"
   printf 'feature/test\n' >"$BRANCHF"
-  rm -f "$SILVER_BULLET_VERIFY_TESTS_STATE_FILE"
+  rm -f "$SILVER_BULLET_VERIFY_TESTS_STATE_FILE" "$SB_RUNTIME_STATE_DIR/small-edit-budget"
 }
 state() { printf '%s\n' "$@" >"$STATE"; }
 
@@ -48,14 +48,15 @@ run_dc() {
 edit_json() { jq -cn --arg e "${3:-PreToolUse}" --arg f "$1" --arg t "${2:-Edit}" --arg o "${4:-}" --arg n "${5:-}" \
   '{hook_event_name:$e,tool_name:$t,tool_input:({file_path:$f}+(if $o!="" then {old_string:$o,new_string:$n} else {} end))}'; }
 bash_json() { jq -cn --arg e "${2:-PreToolUse}" --arg c "$1" '{hook_event_name:$e,tool_name:"Bash",tool_input:{command:$c}}'; }
-# The hook can print several JSON objects (advisories, then a verdict): judge by the last one
-# and search all messages.
+# The hook prints at most ONE JSON document (R2-01/R2-33): a host cannot parse two concatenated
+# objects, so a second one makes the verdict "invalid" instead of being skipped over.
 decision() {
   if [[ -z "$TL_OUT" ]]; then echo none; return; fi
-  jq -rs 'last | if .hookSpecificOutput.permissionDecision then .hookSpecificOutput.permissionDecision
+  [[ "$(jq -s length <<<"$TL_OUT" 2>/dev/null || echo 0)" == 1 ]] || { echo invalid; return; }
+  jq -r 'if .hookSpecificOutput.permissionDecision then .hookSpecificOutput.permissionDecision
          elif .decision then .decision else "allow" end' <<<"$TL_OUT" 2>/dev/null || echo invalid
 }
-message() { jq -rs 'map(.reason // .hookSpecificOutput.permissionDecisionReason // .hookSpecificOutput.message // "") | join("\n")' <<<"$TL_OUT"; }
+message() { jq -rs 'map([.reason, .hookSpecificOutput.permissionDecisionReason, .systemMessage, .hookSpecificOutput.additionalContext, .hookSpecificOutput.message] | map(select(. != null)) | join("\n")) | join("\n")' <<<"$TL_OUT"; }
 BIG_OLD="$(printf 'x%.0s' {1..80})"
 BIG_NEW="$(printf 'y%.0s' {1..80})"
 

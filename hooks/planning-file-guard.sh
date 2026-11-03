@@ -27,7 +27,7 @@ trap 'exit 0' ERR
 umask 0077
 
 # Source runtime path selector so the override/trivial files follow the host.
-_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)"
 if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
   # shellcheck source=lib/runtime-paths.sh
   source "$_lib_dir/runtime-paths.sh"
@@ -75,11 +75,7 @@ PY
   printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"jq required for Silver Bullet enforcement"}}'
 }
 
-if declare -f sb_jq_enforcement_block_sb_initiated >/dev/null 2>&1; then
-  sb_jq_enforcement_block_sb_initiated "planning-file-guard" "emit_block_jq_missing"
-elif ! command -v jq >/dev/null 2>&1; then
-  exit 0
-fi
+sb_jq_enforcement_block_sb_initiated "planning-file-guard" "emit_block_jq_missing"
 
 input=$(cat)
 if declare -f sb_hook_exit_on_cert_run >/dev/null 2>&1; then
@@ -107,7 +103,7 @@ if ! sb_tool_input_ok; then
   [[ "${SB_TI_STATUS:-}" == "empty" ]] && exit 0
   # The call cannot be analysed: refuse only what names the planning directory.
   [[ "$(printf '%s' "$input" | tr '[:upper:]' '[:lower:]')" == *.planning* ]] || exit 0
-  cmd="$(printf '%s' "$input" | jq -r '.tool_input.command // .tool_input.cmd // ""' 2>/dev/null || true)"
+  cmd="$(printf '%s' "$input" | jq -r '.tool_input.command // .tool_input.cmd // ""' 2>/dev/null)"
   sb_pf_plain_read_only "$cmd" && exit 0
   deny "$(sb_pf_unanalysable_message)"
 fi
@@ -135,8 +131,9 @@ is_protected() {
 }
 
 notices=""
+nl=$'\n'
 note() {
-  if [[ -n "$notices" ]]; then notices="$notices"$'\n'"$1"; else notices="$1"; fi
+  notices="${notices:+$notices$nl}$1"
 }
 
 _override="${SB_RUNTIME_STATE_DIR}/planning-edit-override"
@@ -144,7 +141,6 @@ _roadmap_override="${SB_RUNTIME_STATE_DIR}/roadmap-edit-override"
 _trivial_file="${SB_RUNTIME_STATE_DIR}/trivial"
 
 while IFS=$'\t' read -r via target; do
-  [[ -n "$target" ]] || continue
   planning_rel=""
   is_protected "$target" || continue
   basename_path="$(basename "$target")"

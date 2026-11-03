@@ -35,6 +35,10 @@
 #   sb_pf_state_has_skill SKILL...       one of the skills is recorded in this session's state
 #   sb_pf_workflow_id WF_DIR [COMMAND]   the active composed workflow id for this call
 #   sb_pf_config_files ROOT              the enforcement contract files of a project, one per line
+#   sb_pf_opaque_targets [all]           canonical path-like words of the command when it holds an
+#                                        opaque writer (python -c, awk system(), ...), else nothing;
+#                                        with `all` for any command (a command that did not parse)
+#   sb_pf_opaque_records [all]           the same as "opaque<TAB>path" records (like sb_pf_write_records)
 #   sb_pf_opaque_mentions NEEDLE...      an opaque writer (interpreter one-liner, awk system(),
 #                                        sed w) whose command text names one of the lower-case
 #                                        NEEDLEs (case-insensitive): its writes cannot be listed
@@ -158,7 +162,8 @@ sb_pf_src_in_scope() {
     *) return 1 ;;
   esac
   if sb_path_case_insensitive "$root" >/dev/null 2>&1; then flags="-iE"; fi
-  grep -q $flags "$SB_PF_SRC_PATTERN" <<<"$rel" || return 1
+  # A directory target (cp -t src/, tar -C src, find src -exec sed -i) is source when it is, or sits in, a source directory.
+  grep -q $flags "$SB_PF_SRC_PATTERN" <<<"$rel/" || return 1
   grep -q $flags "$SB_PF_SRC_EXCLUDE" <<<"$rel" && return 1
   grep -q $flags "$SB_PF_TEST_LAYOUT" <<<"$rel" && return 1
   return 0
@@ -180,6 +185,26 @@ sb_pf_config_files() {
   printf '%s\n' "$root/.silver-bullet.json" "$root/silver-bullet.md" "$root/.silver-bullet.prompt.json"
 }
 
+sb_pf_opaque_targets() {
+  local tok
+  if [[ "${1:-}" != all ]]; then
+    printf '%s' "${SB_SA_JSON:-}" | jq -e '(.opaque_writers // []) | length > 0' >/dev/null 2>&1 || return 0
+  fi
+  printf '%s' "${SB_TI_COMMAND:-}" | { grep -oE '[A-Za-z0-9_.~-]*[A-Za-z0-9_./~-]*/[A-Za-z0-9_./-]*' || true; } | awk '!seen[$0]++' | head -50 \
+    | while IFS= read -r tok; do
+      sb_pf_canon "$tok"
+      printf '\n'
+    done
+}
+
+# sb_pf_opaque_records [all]: sb_pf_opaque_targets as "opaque<TAB>path" records.
+sb_pf_opaque_records() {
+  local p
+  while IFS= read -r p; do
+    printf 'opaque\t%s\n' "$p"
+  done < <(sb_pf_opaque_targets "$@")
+}
+
 sb_pf_opaque_mentions() {
   local text needle
   printf '%s' "${SB_SA_JSON:-}" | jq -e '(.opaque_writers // []) | length > 0' >/dev/null 2>&1 || return 1
@@ -192,10 +217,9 @@ sb_pf_opaque_mentions() {
 
 sb_pf_invoked_skills() {
   local skill input="${1:-}" mode="${2:-}" tool
-  tool="$(printf '%s' "$input" | jq -r '.tool_name // empty' 2>/dev/null || true)"
+  tool="$(printf '%s' "$input" | jq -r '.tool_name // empty' 2>/dev/null)"
   if [[ "$tool" == "Skill" || "$tool" == "skill" ]]; then
-    skill="$(printf '%s' "$input" | jq -r '.tool_input | objects | (.skill // .skillName // empty) | strings' 2>/dev/null || true)"
-    [[ -n "$skill" ]] && printf '%s\n' "$skill"
+    printf '%s' "$input" | jq -r '.tool_input | objects | (.skill // .skillName // empty) | strings' 2>/dev/null
   else
     printf '%s' "${SB_SA_JSON:-}" | jq -r '
       .commands[]? | .argv as $a
@@ -203,11 +227,10 @@ sb_pf_invoked_skills() {
          elif ($a[0] | split("/") | last | test("^(bash|sh|zsh|dash|node|nodejs|python[0-9.]*)$"))
               and ($a | length) > 1 and (($a[1] | split("/") | last) == "silver-bullet") then $a[2:]
          else empty end)
-      | select(length > 1 and .[0] == "invoke-skill") | .[1]' 2>/dev/null || true
+      | select(length > 1 and .[0] == "invoke-skill") | .[1]' 2>/dev/null
   fi | while IFS= read -r skill; do
-    [[ -n "$skill" ]] || continue
-    if [[ "$mode" != raw ]] && declare -F sb_skill_canonical_name >/dev/null 2>&1; then
-      sb_skill_canonical_name "$skill" || printf '%s' "$skill"
+    if [[ "$mode" != raw ]]; then
+      sb_skill_canonical_name "$skill"
     else
       printf '%s' "$skill"
     fi
@@ -218,7 +241,7 @@ sb_pf_invoked_skills() {
 sb_pf_skill_calls() {
   local input="${1:-}" mode="${2:-}" tool
   SB_PF_SKILLS=""
-  tool="$(printf '%s' "$input" | jq -r '.tool_name // ""' 2>/dev/null || true)"
+  tool="$(printf '%s' "$input" | jq -r '.tool_name // ""' 2>/dev/null)"
   case "$tool" in
     Skill | skill) ;; # the skill name is read with jq: no analysis needed
     *)
@@ -252,7 +275,7 @@ sb_pf_state_has_skill() {
   state_file="${SILVER_BULLET_STATE_FILE:-${SB_RUNTIME_STATE_DIR}/state}"
   sb_runtime_path_is_state_scoped "$state_file" || state_file="${SB_RUNTIME_STATE_DIR}/state"
   [[ -f "$state_file" ]] || return 1
-  contents="$(cat "$state_file" 2>/dev/null || true)"
+  contents="$(cat "$state_file" 2>/dev/null)"
   for skill in "$@"; do
     sb_required_skill_is_recorded "$contents" "$skill" && return 0
   done

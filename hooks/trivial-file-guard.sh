@@ -13,7 +13,7 @@ trap 'exit 0' ERR
 # Security: restrict file creation permissions (user-only)
 umask 0077
 
-_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)"
 # shellcheck source=lib/planning-floor.sh
 source "$_lib_dir/planning-floor.sh"
 if [[ -f "$_lib_dir/cert-bypass.sh" ]]; then
@@ -49,7 +49,7 @@ if ! sb_tool_input_ok; then
   [[ "${SB_TI_STATUS:-}" == "empty" ]] && exit 0
   # The shell command cannot be analysed: refuse only what names the marker.
   [[ "$(printf '%s' "$input" | tr '[:upper:]' '[:lower:]')" == *trivial* ]] || exit 0
-  cmd="$(printf '%s' "$input" | jq -r '.tool_input.command // .tool_input.cmd // ""' 2>/dev/null || true)"
+  cmd="$(printf '%s' "$input" | jq -r '.tool_input.command // .tool_input.cmd // ""' 2>/dev/null)"
   sb_pf_plain_read_only "$cmd" && exit 0
   emit_block "$(sb_pf_unanalysable_message)"
   exit 0
@@ -66,7 +66,6 @@ if [[ -n "$cfg_trivial" ]]; then
 fi
 
 while IFS=$'\t' read -r via target; do
-  [[ -n "$target" ]] || continue
   # Removing the marker only disarms the bypass.
   case "$via" in rm | rmdir | unlink | "git rm") continue ;; esac
   if grep -qxF -- "$target" <<<"$guarded"; then

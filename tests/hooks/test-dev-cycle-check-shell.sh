@@ -31,6 +31,7 @@ assert_eq "unreadable config falls back to defaults without crashing" "0" "$TL_S
 rm -f "$SB_RUNTIME_STATE_DIR/project-root"
 RUN_DIR="$NOCFG" run_dc "$(edit_json "$NOCFG/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")"
 assert_eq "no project config: hook still exits cleanly" "0" "$TL_STATUS"
+assert_eq "no project config: no decision either (R2-06, R2-33)" "none" "$(decision)"
 unset RUN_DIR
 
 # ── shell commands ───────────────────────────────────────────────────────────
@@ -47,11 +48,11 @@ assert_contains "write into src passes the planning gate with an advisory" "$(me
 assert_contains "logic write with no composed workflow gets the F-06 advisory" "$(message)" "WORKFLOW ADVISORY"
 dc_cmd 'echo x > src/data.json'
 assert_contains "non-logic shell write is skipped" "$(message)" "Non-logic file"
-dc_cmd 'cp $SRC /src/$DEST'
+dc_cmd 'cp $SRC src/$DEST'
 assert_contains "opaque write mentioning src falls back to scope matching" "$(message)" "Planning verified"
-dc_cmd 'cp $SRC /lib/$DEST'
+dc_cmd 'cp $SRC lib/$DEST'
 assert_eq "opaque write outside src is ignored" "none" "$(decision)"
-dc_cmd 'cp $SRC /src/a.test.js$DEST'
+dc_cmd 'cp $SRC src/a.test.js$DEST'
 assert_eq "opaque write to an excluded path is ignored" "none" "$(decision)"
 dc_cmd 'ls /src/$DIR'
 assert_eq "opaque read-only listing is ignored" "none" "$(decision)"
@@ -73,7 +74,7 @@ printf '#!/usr/bin/env bash\ncp "$1" "$2"\n' >"$PROJ/opaque.sh"
 dc_cmd 'bash opaque.sh /src/a'
 # Characterisation: write intent is judged from the command text, not from the script body.
 assert_eq "opaque script body without write intent in the command is ignored" "none" "$(decision)"
-dc_cmd 'bash opaque.sh /src/a > /dev/null && cp x /src/$Y'
+dc_cmd 'bash opaque.sh /src/a > /dev/null && cp x src/$Y'
 assert_contains "command text with opaque write intent is gated" "$(message)" "Planning verified"
 
 # PostToolUse invalidates the fresh-test marker only for real source writes
@@ -89,10 +90,10 @@ assert_file_exists "Read PostToolUse keeps the test marker" "$VT"
 dc_cmd 'echo x > src/app.js' PostToolUse
 assert_file_absent "shell write into src invalidates the marker" "$VT"
 printf 'v\n' >"$VT"
-dc_cmd 'cp $A /src/$B' PostToolUse
+dc_cmd 'cp $A src/$B' PostToolUse
 assert_file_absent "opaque cp into src invalidates the marker" "$VT"
 printf 'v\n' >"$VT"
-dc_cmd 'sed -i s/a/b/ $F /src/' PostToolUse
+dc_cmd 'sed -i s/a/b/ $F src/x.js' PostToolUse
 assert_file_absent "opaque sed -i on src invalidates the marker" "$VT"
 printf 'v\n' >"$VT"
 dc_cmd 'echo x > notes/out.txt' PostToolUse
@@ -106,25 +107,35 @@ assert_contains "devops: markdown shell write is non-logic" "$(message)" "Non-lo
 dc_cmd 'echo x > src/stack.yaml'
 assert_contains "devops: yaml shell write is logic" "$(message)" "Planning verified"
 
-# ── composed workflow admission ──────────────────────────────────────────────
+# ── composed workflow admission (R2-14) ──────────────────────────────────────
 WF=20260101T000000Z-abc123-silver-feature
+WF2=20260101T000000Z-def456-silver-bugfix
 mkproj adm
 state inst-a
 mkdir -p "$PROJ/.planning/workflows"
 printf '## Flow Log\n| 1 | a | pending |\n' >"$PROJ/.planning/workflows/$WF.md"
-run_dc "$(edit_json "$PROJ/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")"
-assert_contains "active workflow without SB_WORKFLOW_ID blocks" "$(message)" "SB_WORKFLOW_ID is unset"
-assert_contains "block lists the workflow" "$(message)" "• $WF"
-printf '## Flow Log\n| 1 | a | pending |\n' >"$PROJ/.planning/workflows/20260101T000000Z-def456-silver-bugfix.md"
-run_dc "$(edit_json "$PROJ/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")"
-assert_contains "block lists every active workflow" "$(message)" "• 20260101T000000Z-def456-silver-bugfix"
-rm -f "$PROJ/.planning/workflows/20260101T000000Z-def456-silver-bugfix.md"
-run_dc "$(edit_json "$PROJ/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")" SB_WORKFLOW_ID=BAD
-assert_contains "malformed id blocks" "$(message)" "invalid format: BAD"
-run_dc "$(edit_json "$PROJ/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")" SB_WORKFLOW_ID=20260101T000000Z-zzz999-silver-feature
-assert_contains "unknown id blocks" "$(message)" "no active workflow file matches"
-run_dc "$(edit_json "$PROJ/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")" SB_WORKFLOW_ID="$WF"
-assert_contains "matching id admits the edit" "$(message)" "Planning verified"
+EDIT_SRC="$(edit_json "$PROJ/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")"
+run_dc "$EDIT_SRC"
+assert_contains "a sole active workflow admits the edit without any variable the agent cannot set" "$(message)" "Planning verified"
+run_dc "$(edit_json "$PROJ/src/app.js" Write PreToolUse)"
+assert_contains "Write is admitted the same way" "$(message)" "Planning verified"
+dc_cmd "echo x > src/app.js"
+assert_contains "a shell write is admitted too" "$(message)" "Planning verified"
+printf '%s\n' "$WF" >"$SB_RUNTIME_STATE_DIR/active-workflow"
+run_dc "$EDIT_SRC"
+assert_contains "the persisted active workflow id admits the edit" "$(message)" "Planning verified"
+rm -f "$SB_RUNTIME_STATE_DIR/active-workflow"
+printf '## Flow Log\n| 1 | a | pending |\n' >"$PROJ/.planning/workflows/$WF2.md"
+run_dc "$EDIT_SRC"
+assert_contains "several workflows and none selected blocks" "$(message)" "none is selected"
+assert_contains "block lists every active workflow" "$(message)" "• $WF2"
+assert_contains "block lists the first workflow too" "$(message)" "• $WF"
+printf '%s\n' "$WF2" >"$SB_RUNTIME_STATE_DIR/active-workflow"
+run_dc "$EDIT_SRC"
+assert_contains "the persisted id selects among several workflows" "$(message)" "Planning verified"
+rm -f "$SB_RUNTIME_STATE_DIR/active-workflow"
+run_dc "$EDIT_SRC" SB_WORKFLOW_ID="$WF"
+assert_contains "the env override selects among several workflows" "$(message)" "Planning verified"
 dc_cmd "export SB_WORKFLOW_ID=$WF; echo x > src/app.js"
 assert_contains "id taken from an export assignment" "$(message)" "Planning verified"
 dc_cmd "env SB_WORKFLOW_ID=$WF echo x > src/app.js"
@@ -132,12 +143,20 @@ assert_contains "id taken from an env prefix" "$(message)" "Planning verified"
 dc_cmd "SB_WORKFLOW_ID=BAD-ID echo x > src/app.js"
 assert_contains "malformed id in the command blocks" "$(message)" "invalid format"
 dc_cmd 'FOO=1 echo x > src/app.js'
-assert_contains "no id anywhere in the command blocks" "$(message)" "SB_WORKFLOW_ID is unset"
+assert_contains "no id anywhere in the command with several workflows blocks" "$(message)" "none is selected"
+rm -f "$PROJ/.planning/workflows/$WF2.md"
+run_dc "$EDIT_SRC" SB_WORKFLOW_ID=BAD
+assert_contains "malformed id blocks" "$(message)" "invalid format: BAD"
+run_dc "$EDIT_SRC" SB_WORKFLOW_ID=20260101T000000Z-zzz999-silver-feature
+assert_contains "unknown id blocks" "$(message)" "no active workflow file matches"
 dc_cmd "echo x > src/app.js" PostToolUse
 assert_not_contains "admission is a PreToolUse check" "$(message)" "WORKFLOW ADMISSION"
-ln -s "$PROJ/.planning/workflows/$WF.md" "$PROJ/.planning/workflows/20260101T000000Z-lnk123-silver-feature.md"
-run_dc "$(edit_json "$PROJ/src/app.js" Edit PreToolUse "$BIG_OLD" "$BIG_NEW")" SB_WORKFLOW_ID=20260101T000000Z-lnk123-silver-feature
-assert_contains "symlinked workflow file is not accepted" "$(message)" "no active workflow file matches"
-
+rm -f "$PROJ/.planning/workflows/$WF.md"
+ln -s "$PROJ/.planning/workflows/$WF.md" "$PROJ/.planning/workflows/20260101T000000Z-lnk123-silver-feature.md" 2>/dev/null || true
+printf '## Flow Log\n' >"$TL_TMP/real-wf.md"
+rm -f "$PROJ/.planning/workflows/20260101T000000Z-lnk123-silver-feature.md"
+ln -s "$TL_TMP/real-wf.md" "$PROJ/.planning/workflows/20260101T000000Z-lnk123-silver-feature.md"
+run_dc "$EDIT_SRC" SB_WORKFLOW_ID=20260101T000000Z-lnk123-silver-feature
+assert_eq "a symlinked workflow file is ignored: no workflow is active" "allow" "$(decision)"
 
 tl_results

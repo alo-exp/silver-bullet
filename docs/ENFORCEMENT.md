@@ -25,7 +25,7 @@ Beside the twelve layers run further gates: the spec floor (`spec-floor-check.sh
 
 ## Planning-Floor Gate
 
-`dev-cycle-check.sh` enforces pre-execution readiness. When an active `.planning/workflows/<id>.md` exists, the gate requires `SB_WORKFLOW_ID` admission before non-trivial source edits. The skill-based check is the legacy fallback for projects without a composed workflow.
+`dev-cycle-check.sh` enforces pre-execution readiness. When an active `.planning/workflows/<id>.md` exists, the gate admits non-trivial source edits for that workflow: the active workflow is the only workflow file, the id persisted in `${SB_RUNTIME_STATE_DIR}/active-workflow`, or `SB_WORKFLOW_ID` (an override that only a hook-visible environment can set; a first-line `export SB_WORKFLOW_ID=…` in a Bash command also selects among several workflows). The skill-based check is the legacy fallback for projects without a composed workflow. The gate enforces nothing outside a Silver Bullet project, judges every write target (file tools, `NotebookEdit`, MCP file writes, apply_patch paths and shell writes) in canonical form, treats `lib/` symlinked to `src/` as source, and does not gate `tools/src-gen.py` or test layouts (`src/test/`, `*_test.go`, `test_*.py`). A cumulative budget of 300 characters per session covers tiny typo edits. It also refuses to let the agent write the state directory, run `record-*.sh`, rewrite `.silver-bullet.json` or `silver-bullet.md` (outside `/sb:init` and `/sb:update`), or edit the host plugin registry.
 
 | Stage | Requires | Blocks until |
 |-------|----------|--------------|
@@ -87,7 +87,7 @@ All hooks check active `.planning/workflows/<id>.md` files first, falling back t
 
 | Hook | Composed-workflow mode | Legacy fallback |
 |------|------------------------|-----------------|
-| `dev-cycle-check.sh` | Active workflow exists and `SB_WORKFLOW_ID` matches before non-trivial source edits | 4-stage skill marker check |
+| `dev-cycle-check.sh` | Active workflow exists (the only one, the persisted id, or `SB_WORKFLOW_ID`) before non-trivial source edits | 4-stage skill marker check |
 | `completion-audit.sh` | `SB_WORKFLOW_ID`-matched workflow file shows all required flow rows complete | `required_deploy` skill list check |
 | `compliance-status.sh` | Shows path progress (FLOW N/M) | Shows skill count only |
 | `prompt-reminder.sh` | Includes active composed workflow IDs and current position | Omits composition context |

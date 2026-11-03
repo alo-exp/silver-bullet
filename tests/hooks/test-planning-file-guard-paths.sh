@@ -240,6 +240,19 @@ dg_run "$P" "$H" "$(patch "*** Begin Patch
 assert_eq "an override covering only one file of a patch still denies" "deny" "$(dec)"
 rm -f "$ST/planning-edit-override" "$ST/planning-edit-override-audit.log"
 
+dg_run "$P" "$H" "$(patch "*** Begin Patch
+*** Update File: $P/.planning/ROADMAP.md
+@@
+-c
++d
+*** Update File: $P/.planning/STATE.md
+@@
+-e
++f
+*** End Patch")" SB_ALLOW_PLANNING_EDITS=1
+assert_eq "several overridden files: still one JSON document" 1 "$(jq -s length <<<"$TL_OUT")"
+assert_contains "and it names both notices" "$(jq -r .systemMessage <<<"$TL_OUT")" "ROADMAP.md"
+
 # --- python3 missing: the analysis helper is unavailable ----------------------------------------
 NOPY="$(tl_path_without python3)"
 dg_run "$P" "$H" "$(sh "sed -i s/a/b/ .planning/ROADMAP.md")" PATH="$NOPY"

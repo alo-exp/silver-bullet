@@ -84,8 +84,12 @@ echo "--- Scenario 5: Trivial file bypass across hooks ---"
 integration_setup
 write_default_config
 
-# Create trivial file
+# Create trivial file (the configured one for the delivery gates; the planning floor honours only
+# the default marker, which a user creates from a terminal — a configured path never arms it)
 touch "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
+out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")
+assert_blocked "S5.0: a configured trivial file does not bypass the planning floor" "$out"
+touch "${SB_TEST_DIR}/trivial"
 
 # dev-cycle-check: should bypass
 out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")
@@ -99,6 +103,7 @@ assert_allowed "S5.2: trivial bypass on completion-audit" "$out"
 out=$(run_stop_check "Stop")
 assert_allowed "S5.3: trivial bypass on stop-check" "$out"
 
+rm -f "${SB_TEST_DIR}/trivial"
 integration_teardown
 
 # Scenario 6: session-log-init fires on .silver-bullet/mode command

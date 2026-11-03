@@ -19,8 +19,8 @@ This page lists every key in the template, which code reads it, and the keys the
 | Key | Template value | Meaning |
 |-----|----------------|---------|
 | `project.name` | `{{PROJECT_NAME}}` (filled by `/sb:init`) | Project display name, used by skills such as `sb:rem` |
-| `project.src_pattern` | `/src/` | Path pattern for files that count as source and trigger the planning-floor gate. Must look like a path segment pattern (`^/[a-zA-Z0-9/_.\|()-]*/?$`); unsafe or match-everything values fall back to `/src/` |
-| `project.src_exclude_pattern` | `__tests__\|\.test\.` | Regex for source-like files to exempt (tests). Limited to 200 safe characters, otherwise the default is used |
+| `project.src_pattern` | `/src/` | Path-segment pattern for files that count as source and trigger the planning-floor gate; it is matched against the project-relative path, so `tools/src-gen.py` does not match `/src/`. Must look like a path segment pattern (`^/[a-zA-Z0-9/_.\|()-]*/?$`); unsafe or match-everything values fall back to `/src/` |
+| `project.src_exclude_pattern` | `__tests__\|\.test\.` | Regex for source-like files to exempt (tests), matched against the project-relative path. Limited to 200 safe characters, otherwise the default is used. Built-in test layouts (`tests/`, `test/`, `__tests__/`, `*_test.*`, `test_*.py`, `*Test.java`) are always exempt |
 | `project.active_workflow` | `full-dev-cycle` | `full-dev-cycle` or `devops-cycle`; selects the workflow doc and the `_devops` skill lists. In `devops-cycle`, `.yml`, `.yaml`, `.json` and `.toml` files count as infrastructure code |
 
 `dev-cycle-check.sh` reads the patterns; `completion-audit.sh` uses them to classify a change set.
@@ -44,7 +44,7 @@ Project lists replace the template defaults (`hooks/lib/required-skills.sh` supp
 | Key | Default | Meaning |
 |-----|---------|---------|
 | `state.state_file` | `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state` | Skill-marker state file. Paths that do not resolve inside the state root are rejected and the default is used |
-| `state.trivial_file` | `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial` | Legacy trivial-session marker; `session-start` deletes it and agents cannot create it |
+| `state.trivial_file` | `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial` | Not honoured by the gates (a config value could point it at any file under the state root and arm the legacy bypass); the guards still refuse an agent writing it. The default marker is the user's to create from a terminal; `session-start` deletes it |
 
 Configured and overridden state paths are checked after resolving `.`, `..`, `//` and symlinked directories (`sb_runtime_state_path` in `hooks/lib/runtime-paths.sh`): they must lie strictly inside `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/`, and a symlinked file must point inside it too, so a repository's config cannot make the hooks delete or write files elsewhere.
 

@@ -14,7 +14,7 @@ trap 'exit 0' ERR
 # Security: restrict file creation permissions (user-only)
 umask 0077
 
-_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)"
 # jq is required for JSON parsing
 if [[ -f "$_lib_dir/jq-gate.sh" ]]; then
   # shellcheck source=lib/jq-gate.sh
@@ -64,12 +64,12 @@ done <<<"$SB_PF_SKILLS"
 
 if [[ "${SB_TI_TOOL_KIND:-}" == "shell" && "$is_plan_phase" == false && "$is_fast" == false ]]; then
   # Legacy spelling: the first command word is itself the route (silver-plan, /sb:plan).
-  legacy_word="$(printf '%s' "${SB_SA_JSON:-}" | jq -r '.commands[0]?.argv[0]? // empty' 2>/dev/null || true)"
+  legacy_word="$(printf '%s' "${SB_SA_JSON:-}" | jq -r '.commands[0]?.argv[0]? // empty' 2>/dev/null)"
   legacy_word="${legacy_word#/}"
   if [[ -n "$legacy_word" ]]; then
     note_skill "$legacy_word"
     if declare -F sb_skill_canonical_name >/dev/null 2>&1; then
-      note_skill "$(sb_skill_canonical_name "$legacy_word" || true)"
+      note_skill "$(sb_skill_canonical_name "$legacy_word")"
     fi
   fi
 fi
