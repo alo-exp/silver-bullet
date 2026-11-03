@@ -145,7 +145,7 @@ Path: `~/.cursor/.silver-bullet/sb-friction-log.md` (Cursor host `SB_RUNTIME_STA
 
 ```
 === E8: Friction log ===
--rw-r--r--@ 1 shafqat  staff  1890 Jun 28 19:01 /Users/<user>/.cursor/.silver-bullet/sb-friction-log.md
+-rw-r--r--@ 1 <user>  staff  1890 Jun 28 19:01 /Users/<user>/.cursor/.silver-bullet/sb-friction-log.md
 ```
 
 ---

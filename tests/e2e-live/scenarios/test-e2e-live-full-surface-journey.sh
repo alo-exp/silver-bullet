@@ -219,7 +219,7 @@ record_completed_surface() {
   fi
 }
 
-LOCAL_SKILL_SOURCE_ROOT='/Users/example/projects/codex-plugins/skills'
+LOCAL_SKILL_SOURCE_ROOT="${SB_E2E_LOCAL_SKILL_SOURCE_ROOT:-$HOME/projects/codex-plugins/skills}"
 
 resolve_silver_skill_path() {
   if [[ "$E2E_RUNTIME" == "codex" || "$E2E_RUNTIME" == "kay" ]]; then

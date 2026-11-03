@@ -22,7 +22,7 @@ Code-intel preflight OK.
 [0m⚙ [0mlean-ctx_ctx_read {"mode":"full","path":"/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md"}
 [0m⚙ [0mlean-ctx_ctx_shell {"command":"cd /Users/<user>/projects/silver-bullet/repo && awk 'NR>1 && /^#/ {print NR\": \"$0}' .planning/router_subagent_surfaces_85bf9f09.plan.md"}
 [0m⚙ [0mlean-ctx_ctx_shell {"command":"cd /Users/<user>/projects/silver-bullet/repo && awk 'NR>1 && /^#/ {print NR\": \"$0}' .planning/router_subagent_surfaces_85bf9f09-CLARIFY-260717-143757.md"}
-[0m⚙ [0mlean-ctx_ctx_expand {"id":"/Users/<user>/.local/state/lean-ctx/tee/cd__Users_shafqat_projects_silver-bullet_1303cfc8.log","action":"retrieve"}
+[0m⚙ [0mlean-ctx_ctx_expand {"id":"/Users/<user>/.local/state/lean-ctx/tee/cd__Users_user_projects_silver-bullet_1303cfc8.log","action":"retrieve"}
 [0m⚙ [0mlean-ctx_ctx_read {"mode":"lines:86-400","path":"/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md"}
 [0m⚙ [0mlean-ctx_ctx_read {"mode":"lines:208-400","path":"/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md"}
 [0m⚙ [0mlean-ctx_ctx_shell {"command":"cd /Users/<user>/projects/silver-bullet/repo && awk 'NR>=296 && NR<=795 && /^#{1,3} / {print NR\": \"$0}' .planning/router_subagent_surfaces_85bf9f09.plan.md"}
