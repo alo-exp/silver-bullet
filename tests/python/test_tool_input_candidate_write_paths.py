@@ -6,6 +6,7 @@ destinations, rm/chmod/touch/mkdir operands, sed/perl -i targets and inline
 interpreter writes).
 """
 
+import io
 import os
 import tempfile
 import unittest
@@ -77,10 +78,14 @@ class CandidateWritePathsTest(unittest.TestCase):
         self.assertEqual(self.targets("echo x | tee $LOG"), [])
 
     def test_copy_style_commands_write_the_last_positional(self):
-        for cmd in ("cp -r a b/dest", "mv a b/dest", "install -m 0644 a b/dest", "ln -s a b/dest"):
+        for cmd in ("cp -r a b/dest", "install -m 0644 a b/dest", "ln -s a b/dest"):
             with self.subTest(cmd=cmd):
                 self.assertEqual(self.targets(cmd), [self.p("b/dest")])
         self.assertEqual(self.targets("cp a $DEST"), [])
+
+    def test_mv_also_writes_its_sources(self):
+        # mv removes the source, so moving a file out of a protected tree is a write there.
+        self.assertEqual(self.targets("mv a b/dest"), [self.p("a"), self.p("b/dest")])
 
     def test_copy_without_operands_reports_nothing(self):
         self.assertEqual(self.targets("cp --help"), [])
@@ -154,7 +159,10 @@ class CandidateWritePathsTest(unittest.TestCase):
     def test_python_attached_flag_and_variable_target(self):
         res = self.targets("python -c\"open('d.txt','w')\"")
         self.assertEqual(res, [self.p("d.txt")])
-        self.assertEqual(self.targets("python3 -c \"Path('$HOME/x').touch()\""), [])
+        # bash expands $HOME inside double quotes before python runs, so the target is known.
+        with mock.patch.dict(os.environ, {"HOME": str(self.base)}):
+            self.assertEqual(self.targets("python3 -c \"Path('$HOME/x').touch()\""), [self.p("x")])
+        self.assertEqual(self.targets("python3 -c 'Path(\"$HOME/x\").touch()'"), [self.p("$HOME/x")])
         self.assertEqual(self.targets("python3 script.py"), [])
 
     def test_node_ruby_and_perl_inline_writes(self):
@@ -171,12 +179,18 @@ class CandidateWritePathsTest(unittest.TestCase):
     def test_unknown_interpreter_has_no_inline_targets(self):
         self.assertEqual(self.targets("awk -e 'open(\"x\", \"w\")'"), [])
 
-    # --- helper functions -------------------------------------------------
-    def test_normalize_candidate_falls_back_when_resolve_fails(self):
-        res = run_tool_input_script("candidate_write_paths.py", str(self.base), "true")
-        normalize = res.globals["normalize_candidate"]
-        self.assertEqual(normalize("bad\x00name"), str(self.base / "bad\x00name"))
-        self.assertIsNone(normalize("  ;"))
+    # --- input handling ---------------------------------------------------
+    def test_nul_bytes_are_dropped_before_parsing(self):
+        # A path cannot contain NUL; the command string is cleaned before analysis.
+        self.assertEqual(self.targets("touch bad\x00name"), [self.p("badname")])
+
+    def test_command_can_come_from_stdin(self):
+        with mock.patch("sys.stdin", io.StringIO("echo x > from-stdin.txt")):
+            res = run_tool_input_script("candidate_write_paths.py", str(self.base))
+        self.assertEqual(res.lines, [self.p("from-stdin.txt")])
+        with mock.patch("sys.stdin", io.StringIO("touch dash.txt")):
+            res = run_tool_input_script("candidate_write_paths.py", str(self.base), "-")
+        self.assertEqual(res.lines, [self.p("dash.txt")])
 
 
 if __name__ == "__main__":
