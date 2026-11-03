@@ -310,6 +310,18 @@ class ConsolidateTests(unittest.TestCase):
         self.assertEqual({r["claim_key"] for r in out["divergence"]}, {"tembo supports sso", "tembo does not support sso"})
         self.assertEqual([r["claim_key"] for r in out["consensus"]], ["redpanda is fast"])
 
+    def test_has_lacks_and_can_cannot_are_contested_pairs(self) -> None:
+        index = {"entries": [{"work_item_id": "w1", "logical_model_id": m} for m in "abcd"]}
+        for yes, no in (("Pulsar has tiered storage", "Pulsar lacks tiered storage"),
+                        ("Kafka can scale out", "Kafka cannot scale out"),
+                        ("Kafka will scale out", "Kafka won't scale out")):
+            envs = [self._env("a", "f1", [{"text": yes}]), self._env("b", "f2", [{"text": yes}]),
+                    self._env("c", "f3", [{"text": no}])]
+            out = consolidate.consolidate(envs, index, resolved_pool=4)
+            self.assertEqual(out["consensus"], [], (yes, no))
+            self.assertEqual({r["label"] for r in out["divergence"]}, {"contested"}, (yes, no))
+            self.assertEqual(sorted(r["stance"] for r in out["divergence"]), ["affirmed", "negated"])
+
     def test_consolidate_weak_consensus_with_large_pool(self) -> None:
         envs = [self._env("a", "f1", [{"text": "x"}]), self._env("b", "f2", [{"text": "x"}])]
         index9 = {"entries": [{"work_item_id": "w1", "logical_model_id": m} for m in "abcdefghi"]}

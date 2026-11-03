@@ -126,7 +126,12 @@ wins); the cell follows the majority, a tie is not a tick, and split cells are w
 `landscape/disputed-cells.json` and listed in the report. A vendor must match a known name or
 alias exactly (a blank or partial name never matches); without a category pack an unnamed
 vendor becomes its own column, so any topic works with no built-in catalogue. Claim prose is
-parsed heuristically only for cells no worker voted on.
+parsed heuristically only for cells no worker voted on, resolving vendors from the run's own set
+(pack names plus the vendors workers named). Feature names are folded (case, spacing,
+punctuation) before voting and shown in the user's must-have spelling, else the most common one.
+A run whose need profile names no must-have that matches the matrix gets a derived
+`weights_override` (the most-ticked features as Critical, flagged `weights_override_derived`) so
+the content gate has Critical rows; a must-have no vendor offers is still reported by the gate.
 
 **Category packs.** Category-specific prose (market overview, trends, buying guidance,
 consensus themes, vendor notes) is data in `reference/category-pack-overlays/<pack>.json` and

@@ -78,6 +78,20 @@ def force_refusal(output_root: Path) -> str | None:
     return None
 
 
+def _generated_for_old_query(path: Path) -> bool:
+    """True for the need profile / scope that dr_live_runner generated (they name the old query)."""
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError:
+        return False
+    if path.name == "scope.md":
+        return text.startswith("# Research scope\n\nResearch topic: ")
+    try:
+        return bool(json.loads(text).get("auto_assumed"))
+    except (ValueError, AttributeError):
+        return False
+
+
 def carry_over_user_inputs(previous: Path, output_root: Path) -> list[str]:
     """Copy the user's need_profile.json and scope.md from the moved-aside run into the new one.
 
@@ -88,6 +102,8 @@ def carry_over_user_inputs(previous: Path, output_root: Path) -> list[str]:
     for name in ("need_profile.json", "scope.md"):
         source = previous / name
         if source.is_file() and not source.is_symlink():
+            if _generated_for_old_query(source):
+                continue  # auto-written for the previous query: it would brief the new run on the old topic
             output_root.mkdir(parents=True, exist_ok=True)
             shutil.copy2(source, output_root / name)
             copied.append(name)

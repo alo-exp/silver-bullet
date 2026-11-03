@@ -198,8 +198,9 @@ def executive_summary_lines(
     lines.extend(
         [
             "",
-            "Leader plots are MQ top-right in this run and follow from the evidenced features "
-            "and the inclusion ledger, not from a 'most complete product' claim. They are not a "
+            "Leader plots are MQ top-right in this run and follow from the evidenced features"
+            + (" and the inclusion ledger" if INCLUSION_CRITERIA_ORDER else "")
+            + ", not from a 'most complete product' claim. They are not a "
             "mandate to buy one vendor across every profile.",
             "",
         ]

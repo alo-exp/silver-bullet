@@ -79,6 +79,35 @@ class ProseParsersUseTheRunsVendorsTests(unittest.TestCase):
         self.assertEqual(m._RUN, {"known": None, "pack": None})
 
 
+class ApoPackPipelineWithoutFixtureTests(unittest.TestCase):
+    """materialize_solution_artifacts on an APO run directory: the real activation path."""
+
+    CLAIMS = (
+        "Matrix entry \u2014 Workflow composition (Critical): \u2714 silver-bullet, factory-ai; \u2716 devin, openhands.",
+        "Matrix entry \u2014 Hook-enforced gates: \u2714 silver-bullet only among evaluated set.",
+        "Devin provides SSO. Factory.ai lacks hook-enforced gates, while Devin offers managed hosting.",
+        "Silver Bullet composes workflows with hook-enforced gates.",
+    )
+
+    def test_pack_run_directory(self) -> None:
+        import json
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "contributions").mkdir()
+            (root / "contributions" / "all-envelopes.json").write_text(json.dumps(envs(*self.CLAIMS)), encoding="utf-8")
+            (root / "need_profile.json").write_text(json.dumps({"category": "APO", "category_pack_id": PACK_ID}), encoding="utf-8")
+            result = m.materialize_solution_artifacts(root)
+            self.assertGreaterEqual(result["solutions_count"], 2)
+            self.assertEqual((m.KNOWN_SOLUTIONS, m.FEATURE_TEMPLATE), ({}, []))  # restored after the run
+            devin = json.loads((root / "solutions" / "devin" / "features.json").read_text(encoding="utf-8"))
+            cells = {f["name"]: f["supported"] for c in devin["categories"] for f in c["features"]}
+            self.assertIs(cells["SSO"], True)
+            self.assertIs(cells["Managed hosting"], True)
+            self.assertIsNot(cells.get("Workflow composition"), True)
+
+
 class AmbiguousNamesTests(unittest.TestCase):
     """Ordinary phrases that contain a product name are not vendor evidence (R12-08)."""
 

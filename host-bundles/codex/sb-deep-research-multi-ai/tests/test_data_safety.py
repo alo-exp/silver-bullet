@@ -274,6 +274,23 @@ class CliOutputRootTests(_Tmp):
         moved = next(p for p in self.base.iterdir() if p.name.startswith("run.replaced-"))
         self.assertTrue((moved / "need_profile.json").is_file())  # the original stays with the old run
 
+    def test_force_does_not_carry_auto_generated_inputs_of_another_query(self) -> None:
+        self.put("run_manifest.json", {"workflow_id": "WF-SILVER-DEEP-RESEARCH-MULTI-AI", "run_id": "run-old"})
+        self.put("need_profile.json", {"category": "old topic", "auto_assumed": True})
+        self.put("scope.md", "# Research scope\n\nResearch topic: old topic\n")
+        with mock.patch.object(cli.Path, "cwd", return_value=self.base):
+            self._main(["new topic", "--output-root", str(self.root), "--force"])
+        self.assertFalse((self.root / "need_profile.json").exists())
+        self.assertFalse((self.root / "scope.md").exists())
+        # unreadable or non-object profiles are not "generated" either, so they are carried as the user's
+        self.assertFalse(cli._generated_for_old_query(self.base / "missing.json"))
+        broken = self.base / "bad.json"
+        broken.write_text("{nope", encoding="utf-8")
+        self.assertFalse(cli._generated_for_old_query(broken))
+        listy = self.base / "list.json"
+        listy.write_text("[]", encoding="utf-8")
+        self.assertFalse(cli._generated_for_old_query(listy))
+
     def test_carry_over_skips_missing_and_symlinked_inputs(self) -> None:
         old = self.base / "old"
         old.mkdir()

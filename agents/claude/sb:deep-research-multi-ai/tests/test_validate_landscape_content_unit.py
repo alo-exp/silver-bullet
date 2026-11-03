@@ -171,7 +171,7 @@ class CoreValidationTests(_Base):
             return [{"type": "feature", "priority": "Critical",
                      "solutions": {f"s{i}": v for i, v in enumerate(fills)}}]
 
-        self.assertEqual(run([]), ["no Critical feature rows in comparison matrix"])
+        self.assertEqual(run([]), ["no Critical feature rows in comparison matrix (list must_haves in need_profile.json that match the matrix feature names)"])
         self.assertEqual(len(run(mk(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))), 1)  # hollow (<10%)
         hollow = run(mk(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))[0]
         self.assertIn("hollow report", hollow)

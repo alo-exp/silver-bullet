@@ -32,6 +32,10 @@ def _load_json(path: Path) -> dict[str, Any] | None:
     return data if isinstance(data, dict) else None
 
 
+def _fold(name: str) -> str:
+    return re.sub(r"[^a-z0-9]+", " ", name.casefold()).strip()
+
+
 def _resolve_must_have_features(must_have: str) -> list[str]:
     key = must_have.lower().strip()
     if key in _MUST_HAVE_ALIASES:
@@ -80,13 +84,13 @@ def _winner_must_have_coverage(
     feature_rows: dict[str, dict[str, Any]] = {}
     for row in comparison.get("rows") or []:
         if isinstance(row, dict) and row.get("type") == "feature" and row.get("name"):
-            feature_rows[str(row["name"]).lower().strip()] = row
+            feature_rows[_fold(str(row["name"]))] = row
 
     for must_have in must_haves:
         candidates = _resolve_must_have_features(str(must_have))
         covered = False
         for feature in candidates:
-            row = feature_rows.get(feature.lower().strip())  # worker-supplied names keep their own casing
+            row = feature_rows.get(_fold(feature))  # case/punctuation differences do not hide a feature
             if not row:
                 continue
             if (row.get("solutions") or {}).get(winner):
@@ -256,7 +260,7 @@ def validate_landscape_content(
     metrics["critical_filled_cells"] = filled
     metrics["critical_total_cells"] = total
     if total == 0:
-        errors.append("no Critical feature rows in comparison matrix")
+        errors.append("no Critical feature rows in comparison matrix (list must_haves in need_profile.json that match the matrix feature names)")
     elif fill_rate < 0.10:
         errors.append(f"Critical matrix fill rate {fill_rate:.1%} indicates hollow report (<10%)")
     elif active_mean < min_critical_fill_rate and fill_rate < min_critical_fill_rate:

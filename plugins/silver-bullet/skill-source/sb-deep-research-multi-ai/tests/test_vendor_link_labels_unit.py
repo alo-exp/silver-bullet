@@ -102,15 +102,19 @@ class RewriteTests(unittest.TestCase):
         self.assertEqual(r("https://developer.ibm.com/other"), "https://developer.ibm.com/other")
 
 
+@with_legacy_catalogs
 class LabelTests(unittest.TestCase):
     def test_generic_labels(self):
         g = vll.is_generic_link_label
         self.assertTrue(g(""))
         self.assertTrue(g(None))
         self.assertTrue(g("SDLC"))
-        self.assertTrue(g("ABCD"))
+        self.assertTrue(g("ABC"))  # bare short uppercase tokens (AWS, API) are not auto-linked...
+        self.assertFalse(g("NATS"))  # ...but a 4-letter product name is (it was 'Nats' before)
         self.assertFalse(g("BMAD"))
         self.assertFalse(g("ABCDE"))
+        with mock.patch.object(vll, "ALLOWED_SHORT_ACRONYM_LABELS", frozenset({"AWS"})):
+            self.assertFalse(g("AWS"))
         self.assertFalse(g("Cursor"))
 
     def test_resolve(self):
@@ -212,6 +216,7 @@ class HealthTests(_NoNetwork):
             self.assertIn(type(exc).__name__, r["error"])
 
 
+@with_legacy_catalogs
 class AutoLinkTests(unittest.TestCase):
     def test_english_word_labels_are_never_prose_links(self):
         for word in ("Continue", "Linear", "Sweep", "Factory", "Director", "Conductor", "Scout", "Harness"):
@@ -257,6 +262,11 @@ class SsrfGuardTests(unittest.TestCase):
         for url in ("http://100.64.0.1/", "http://100.100.100.200/latest/meta-data/", "http://[::ffff:10.0.0.1]/"):
             self.assertTrue(str(self.reason(url)).startswith("non-public-address:"), url)
         self.assertIsNone(self.reason("https://mapped.example/", ["::ffff:93.184.216.34"]))
+        # NAT64 / IPv4-compatible / site-local IPv6 forms reach private IPv4 or internal networks
+        for url in ("http://[64:ff9b::a00:1]/", "http://[64:ff9b::a9fe:a9fe]/", "http://[64:ff9b:1::c0a8:101]/",
+                    "http://[::a00:1]/", "http://[fec0::1]/"):
+            self.assertTrue(str(self.reason(url)).startswith("non-public-address:"), url)
+        self.assertIsNone(self.reason("https://nat64.example/", ["64:ff9b::5db8:d822"]))  # embeds 93.184.216.34
         self.assertIsNone(self.reason("http://93.184.216.34/"))
 
     def test_scheme_credentials_and_unresolvable(self):

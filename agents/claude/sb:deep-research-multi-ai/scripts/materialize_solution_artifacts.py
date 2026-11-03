@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from generated_files import write_generated_text
+from generated_files import atomic_write_text, write_generated_text
 from pack_vocabulary import activated, for_research_dir
 from category_pack import (
     build_known_solutions,
@@ -32,24 +32,25 @@ KNOWN_SOLUTIONS: dict[str, str] = {}  # category data lives in the pack overlay 
 def _effective_known_solutions(need: dict[str, Any] | None = None) -> dict[str, str]:
     """Merge base KNOWN_SOLUTIONS with pack product_names when a pack is active."""
     pack = resolve_pack_from_need(need)
+    base = dict(KNOWN_SOLUTIONS) or dict(_RUN["known"] or {})
     if pack:
-        merged = dict(KNOWN_SOLUTIONS)
+        merged = dict(base)
         merged.update({str(k): str(v) for k, v in (pack_overlay(pack).get("known_solutions") or {}).items()})
         merged.update(build_known_solutions(pack))
         return merged
-    return dict(KNOWN_SOLUTIONS)
+    return base
 
 
 def _slug_aliases(pack: dict[str, Any] | None) -> dict[str, str]:
     """Free-text vendor alias -> slug: pack overlay data only (nothing is built in)."""
     merged = dict(SLUG_ALIASES)
-    merged.update({str(k): str(v) for k, v in (pack_overlay(pack).get("slug_aliases") or {}).items()})
+    merged.update({str(k): str(v) for k, v in (pack_overlay(pack or _RUN["pack"]).get("slug_aliases") or {}).items()})
     return merged
 
 
 def _head_aliases(pack: dict[str, Any] | None) -> dict[str, str]:
     merged = dict(_HEAD_SLUG_ALIASES)
-    merged.update({str(k): str(v) for k, v in (pack_overlay(pack).get("head_slug_aliases") or {}).items()})
+    merged.update({str(k): str(v) for k, v in (pack_overlay(pack or _RUN["pack"]).get("head_slug_aliases") or {}).items()})
     return merged
 
 
@@ -157,7 +158,7 @@ def is_unusable_overview_claim(
             return True
     # Claims that list many other products are landscape notes, not overviews.
     others = 0
-    for display in (known or KNOWN_SOLUTIONS).values():
+    for display in _known_or_run(known).values():
         name = display.lower()
         if not name or (focus and (name == focus or name in focus or focus in name)):
             continue
@@ -176,7 +177,7 @@ def _normalize_slug(token: str, known: dict[str, str] | None = None, pack: dict[
     token = token.strip().lower().strip("`\"'")
     if not token:
         return None
-    effective = known or KNOWN_SOLUTIONS
+    effective = _known_or_run(known)
     if token in effective:
         return token
     aliases = _slug_aliases(pack)
@@ -200,26 +201,59 @@ def _mentions(lower_text: str, name: str) -> bool:
     return re.search(rf"(?<![a-z0-9]){re.escape(name)}(?![a-z0-9])", lower_text) is not None
 
 
+# Product names that are also ordinary English words ("director", "factory", "cursor", ...). Pack
+# vocabulary; they count as a vendor mention only next to a product cue (see mentions_vendor).
+AMBIGUOUS_NAMES: frozenset[str] = frozenset()
+_CUE_AFTER = re.compile(
+    r"\s*(?:\((?!\s*\d)|\.(?:ai|dev|com|io|app)\b|\s(?:AI|IDE|Agents?|Plugins?|Cloud|Platform|CLI|App|SaaS|Code|Copilot|Labs)\b)"
+)
+_CUE_BEFORE = re.compile(r"\b(?:by|from|using|via|with|vs\.?|versus)\s+$", re.IGNORECASE)
+
+# The vendor set of the run being parsed (known names incl. discovered vendors, and its pack):
+# prose parsers that take no explicit `known` resolve vendors from it.
+_RUN: dict[str, Any] = {"known": None, "pack": None}
+
+
+def _known_or_run(known: dict[str, str] | None) -> dict[str, str]:
+    return known or _RUN["known"] or KNOWN_SOLUTIONS
+
+
+def mentions_vendor(text: str, lower: str, name: str) -> bool:
+    """Whole-word vendor mention; an ambiguous common-word name needs a product cue beside it."""
+    if not _mentions(lower, name):
+        return False
+    if name.lower() not in AMBIGUOUS_NAMES:
+        return True
+    for match in re.finditer(rf"(?<![A-Za-z0-9]){re.escape(name)}(?![A-Za-z0-9])", text, re.IGNORECASE):
+        word = match.group(0)
+        if not word[:1].isupper():
+            continue  # a vendor name is a proper noun: "director of engineering" is not one
+        if _CUE_AFTER.match(text, match.end()) or _CUE_BEFORE.search(text[: match.start()]):
+            return True
+    return False
+
+
 def _extract_slugs_from_text(
     text: str,
     known: dict[str, str] | None = None,
     pack: dict[str, Any] | None = None,
 ) -> list[str]:
-    effective = known or KNOWN_SOLUTIONS
+    effective = _known_or_run(known)
+    pack = pack or _RUN["pack"]
     found: list[str] = []
     lower = text.lower()
     for slug, display in effective.items():
-        if any(_mentions(lower, name) for name in (slug.replace("-", " "), slug, display.lower())):
+        if any(mentions_vendor(text, lower, name) for name in (slug.replace("-", " "), slug, display.lower())):
             found.append(slug)
     for alias, slug in _slug_aliases(pack).items():
-        if _mentions(lower, alias) and slug not in found:
+        if mentions_vendor(text, lower, alias) and slug not in found:
             found.append(slug)
     if pack:
         from category_pack import build_alias_map
 
         aliases = build_alias_map(pack)
         for alias, canonical in aliases.items():
-            if len(alias) >= 2 and _mentions(lower, alias) and canonical not in found:
+            if len(alias) >= 2 and mentions_vendor(text, lower, alias) and canonical not in found:
                 found.append(canonical)
     return found
 
@@ -343,7 +377,7 @@ def _matrix_entry_head_is_solution(
     pack: dict[str, Any] | None = None,
 ) -> bool:
     """True when 'Matrix entry — {head}:' names a product, not a matrix feature row."""
-    effective = known or KNOWN_SOLUTIONS
+    effective = _known_or_run(known)
     head_clean = re.sub(r"\([^)]*\)", "", head).strip()
     if not head_clean:
         return False
@@ -369,7 +403,7 @@ def _canonical_known_slug(
     slug: str,
     known: dict[str, str] | None = None,
 ) -> str:
-    effective = known or KNOWN_SOLUTIONS
+    effective = _known_or_run(known)
     if slug in effective:
         return slug
     for candidate in sorted(effective, key=len, reverse=True):
@@ -383,7 +417,7 @@ def _resolve_solution_slug(
     known: dict[str, str] | None = None,
     pack: dict[str, Any] | None = None,
 ) -> str | None:
-    effective = known or KNOWN_SOLUTIONS
+    effective = _known_or_run(known)
     head_clean = re.sub(r"\([^)]*\)", "", head).strip()
     head_key = head_clean.lower().strip()
     head_aliases = _head_aliases(pack)
@@ -512,7 +546,7 @@ def _extract_slugs_from_list(
     known: dict[str, str] | None = None,
     pack: dict[str, Any] | None = None,
 ) -> list[str]:
-    effective = known or KNOWN_SOLUTIONS
+    effective = _known_or_run(known)
     head_aliases = _head_aliases(pack)
     found: list[str] = []
     cleaned = re.sub(r"\([^)]*\)", " ", text)
@@ -581,7 +615,7 @@ def _split_solution_lists(
     known: dict[str, str] | None = None,
     pack: dict[str, Any] | None = None,
 ) -> tuple[list[str], list[str]]:
-    effective = known or KNOWN_SOLUTIONS
+    effective = _known_or_run(known)
     positive: list[str] = []
     negative: list[str] = []
     if re.search(r"[✔✓✖✗]", body):
@@ -845,7 +879,7 @@ def _parse_solution_lead_negative(
     known: dict[str, str] | None = None,
 ) -> None:
     lower = text.lower()
-    for slug, display in (known or KNOWN_SOLUTIONS).items():
+    for slug, display in _known_or_run(known).items():
         patterns = (
             rf"^{re.escape(display.lower())}\b",
             rf"^{re.escape(slug.replace('-', ' '))}\b",
@@ -949,7 +983,7 @@ def _parse_inclusion_criteria_scoped_claim(
 ) -> None:
     if not _INCLUSION_CRITERIA_SIGNAL_RE.search(text):
         return
-    effective = known or KNOWN_SOLUTIONS
+    effective = _known_or_run(known)
     if _ALL_SEVEN_INCLUSION_RE.search(text):
         for slug in _extract_slugs_from_text(text, effective, pack):
             for feature in _default_inclusion_features():
@@ -1135,7 +1169,7 @@ def _parse_host_runtime_substrate_claim(
 ) -> bool:
     if not re.search(r"host runtime|substrate row|exclusion class host_runtime", text, re.IGNORECASE):
         return False
-    effective = known or KNOWN_SOLUTIONS
+    effective = _known_or_run(known)
     host_slugs = {
         slug
         for slug in _extract_slugs_from_text(text, effective, pack)
@@ -1148,17 +1182,25 @@ def _parse_host_runtime_substrate_claim(
     return True
 
 
+def _feature_key(raw: Any) -> str:
+    """Folding key for feature names: case, spacing and punctuation/hyphen differences vanish."""
+    return re.sub(r"[^a-z0-9]+", " ", str(raw or "").casefold()).strip()
+
+
 def _feature_name(raw: Any) -> str | None:
-    """Rubric feature for a worker-supplied name: a known rubric/alias spelling, else the
-    worker's own wording (run-synthesized rubric), else None for blank/oversized names."""
+    """Rubric feature for a worker-supplied name (rubric/alias spelling if known, else the
+    worker's wording with spacing normalised); None for blank/oversized names."""
     spaced = " ".join(str(raw or "").split())
-    if not spaced or len(spaced) > 80:
+    if not _feature_key(spaced) or len(spaced) > 80:
         return None
-    low = spaced.lower()
+    key = _feature_key(spaced)
     for feature in _all_template_features():
-        if feature.lower() == low:
+        if _feature_key(feature) == key:
             return feature
-    return _FEATURE_ALIASES.get(low) or spaced
+    for alias, feature in _FEATURE_ALIASES.items():
+        if _feature_key(alias) == key:
+            return feature
+    return spaced
 
 
 def _vendor_key(name: Any) -> str:
@@ -1215,6 +1257,7 @@ def parse_structured_matrix_entries(
     *,
     known: dict[str, str] | None = None,
     pack: dict[str, Any] | None = None,
+    preferred_features: list[str] | None = None,
 ) -> dict[str, dict[str, bool | None]]:
     """Votes from workers' ``matrix_entries`` rows: {vendor, feature, supported, source_ref}.
 
@@ -1224,8 +1267,9 @@ def parse_structured_matrix_entries(
     resolve_structured_vendor) or whose feature is blank is skipped. This is the primary source
     for matrix ticks; prose parsing only fills cells no worker voted on.
     """
-    effective = known or KNOWN_SOLUTIONS
+    effective = _known_or_run(known)
     latest: dict[str, dict[tuple[str, str], bool]] = {}
+    spellings: dict[str, dict[str, int]] = {}  # folding key -> spelling -> count
     for env_index, env in enumerate(envelopes):
         payload = env.get("payload") if isinstance(env, dict) else None
         rows = payload.get("matrix_entries") if isinstance(payload, dict) else None
@@ -1241,13 +1285,22 @@ def parse_structured_matrix_entries(
             if isinstance(verdict, str):
                 verdict = {"yes": True, "true": True, "no": False, "false": False}.get(verdict.strip().lower())
             if slug and feature and isinstance(verdict, bool):
-                latest.setdefault(model, {})[(slug, feature)] = verdict
+                key = _feature_key(feature)
+                spellings.setdefault(key, {})
+                spellings[key][feature] = spellings[key].get(feature, 0) + 1
+                latest.setdefault(model, {})[(slug, key)] = verdict
+    # One rubric row per folded key, shown with its most common spelling (first seen on a tie),
+    # so models that differ only in casing/punctuation vote on the same cell.
+    shown = {key: max(counts, key=lambda s: (counts[s], -list(counts).index(s))) for key, counts in spellings.items()}
+    for wanted in preferred_features or []:
+        if _feature_key(wanted) in shown:
+            shown[_feature_key(wanted)] = str(wanted).strip()
     support: dict[str, dict[str, bool | None]] = {}
     try:
         for model, cells in latest.items():
             _VOTER[0] = ("structured", model)
-            for (slug, feature), verdict in cells.items():
-                _assign_support(support, slug, feature, verdict)
+            for (slug, key), verdict in cells.items():
+                _assign_support(support, slug, shown[key], verdict)
     finally:
         _VOTER[0] = None
     return support
@@ -1264,6 +1317,31 @@ def open_world_known(
         for slug, (display, _rows) in structured_vendor_names(envelopes, known, pack).items():
             known.setdefault(slug, display)
     return known
+
+
+def derive_critical_features(
+    need: dict[str, Any],
+    support: dict[str, dict[str, bool | None]],
+    limit: int = 5,
+) -> dict[str, str]:
+    """{feature: "Critical"} for the most-ticked features when the need names no usable must-have.
+
+    The comparator ranks by priority and the content gate needs Critical rows; a run whose
+    profile has no must-haves (an auto profile, or wording that matches no matrix feature) would
+    otherwise fail after every model call was spent. Returns {} when must-haves match, when the
+    user already set weights_override, or when nothing is ticked.
+    """
+    if need.get("weights_override"):
+        return {}
+    declared = {_feature_key(x) for x in need.get("must_haves") or []}
+    ticks: dict[str, int] = {}
+    for cells in support.values():
+        for feature, ok in cells.items():
+            ticks[feature] = ticks.get(feature, 0) + (1 if ok else 0)
+    if declared & {_feature_key(f) for f in ticks}:
+        return {}
+    ranked = sorted((f for f, n in ticks.items() if n), key=lambda f: (-ticks[f], f))
+    return {feature: "Critical" for feature in ranked[:limit]}
 
 
 def disputed_cells(support: dict[str, dict[str, bool | None]]) -> list[dict[str, Any]]:
@@ -1284,10 +1362,15 @@ def parse_feature_support(
     *,
     known: dict[str, str] | None = None,
     pack: dict[str, Any] | None = None,
+    preferred_features: list[str] | None = None,
 ) -> dict[str, dict[str, bool | None]]:
-    """Matrix cells: structured worker votes first, prose heuristics only for unvoted cells."""
+    """Matrix cells: structured worker votes first, prose heuristics only for unvoted cells.
+
+    `preferred_features` (the user's must-haves / nice-to-haves) fixes the spelling of a folded
+    feature name, so the comparator's priority matching finds the row.
+    """
     with activated(pack):
-        return _parse_feature_support(envelopes, known=known, pack=pack)
+        return _parse_feature_support(envelopes, known=known, pack=pack, preferred_features=preferred_features)
 
 
 def _parse_feature_support(
@@ -1295,8 +1378,11 @@ def _parse_feature_support(
     *,
     known: dict[str, str] | None = None,
     pack: dict[str, Any] | None = None,
+    preferred_features: list[str] | None = None,
 ) -> dict[str, dict[str, bool | None]]:
-    structured = parse_structured_matrix_entries(envelopes, known=known, pack=pack)
+    structured = parse_structured_matrix_entries(
+        envelopes, known=known, pack=pack, preferred_features=preferred_features
+    )
     support = _parse_prose_feature_support(envelopes, known=known, pack=pack)
     for slug, cells in structured.items():
         merged = _VoteMap(support.get(slug) or {})
@@ -1313,7 +1399,22 @@ def _parse_prose_feature_support(
     known: dict[str, str] | None = None,
     pack: dict[str, Any] | None = None,
 ) -> dict[str, dict[str, bool | None]]:
-    effective = known or KNOWN_SOLUTIONS
+    """Prose heuristics, resolving vendors from this run's `known` set and pack."""
+    previous = dict(_RUN)
+    _RUN["known"], _RUN["pack"] = known or previous["known"], pack or previous["pack"]
+    try:
+        return _parse_prose_unscoped(envelopes, known=known, pack=pack)
+    finally:
+        _RUN.update(previous)
+
+
+def _parse_prose_unscoped(
+    envelopes: list[dict[str, Any]],
+    *,
+    known: dict[str, str] | None = None,
+    pack: dict[str, Any] | None = None,
+) -> dict[str, dict[str, bool | None]]:
+    effective = _known_or_run(known)
     support: dict[str, dict[str, bool | None]] = {}
     for voter, text in enumerate(_iter_claim_texts(envelopes)):
         _VOTER[0] = voter
@@ -1437,7 +1538,7 @@ def build_features_json(
     comparison: dict[str, Any] | None = None,
     rubric: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    effective = known or KNOWN_SOLUTIONS
+    effective = _known_or_run(known)
     per_solution = support.get(slug, {})
     spec = rubric or synthesize_feature_rubric(comparison=comparison, support=support)
     categories: list[dict[str, Any]] = []
@@ -1493,7 +1594,7 @@ def write_run_features_json(
         json.dumps(rubric, indent=2) + "\n",
         preserved=preserved,
     )
-    effective = known or KNOWN_SOLUTIONS
+    effective = _known_or_run(known)
     slugs: list[str] = []
     for item in comparison.get("rankings") or []:
         if isinstance(item, dict) and item.get("solution") and str(item["solution"]) not in slugs:
@@ -1516,7 +1617,7 @@ def write_run_features_json(
 def _scr_claims_for_slug(
     slug: str, envelopes: list[dict[str, Any]], known: dict[str, str] | None = None
 ) -> list[str]:
-    display = (known or KNOWN_SOLUTIONS).get(slug, slug)
+    display = _known_or_run(known).get(slug, slug)
     slug_pat = slug.replace("-", " ")
     claims: list[str] = []
     for text in _iter_claim_texts(envelopes):
@@ -1537,7 +1638,7 @@ def build_scr_md(
     known: dict[str, str] | None = None,
     overview_seeds: dict[str, str] | None = None,
 ) -> str:
-    display = (known or KNOWN_SOLUTIONS).get(slug, slug)
+    display = _known_or_run(known).get(slug, slug)
     clean_claims = _scr_claims_for_slug(slug, envelopes, known)
     seed = (overview_seeds or OVERVIEW_SEEDS).get(slug, "").strip()
     exec_summary = seed or (
@@ -1608,9 +1709,18 @@ def materialize_solution_artifacts(
         write_catalog_audit(research_dir, audit, preserved=preserved)
 
     slugs = discover_solutions(envelopes, need=need)
-    support = parse_feature_support(envelopes, known=known, pack=pack)
+    wanted = [str(x) for x in (need.get("must_haves") or []) + (need.get("nice_to_haves") or [])]
+    support = parse_feature_support(envelopes, known=known, pack=pack, preferred_features=wanted)
     rubric = synthesize_feature_rubric(support=support)
     shortlist = slugs[:shortlist_count]
+    derived = derive_critical_features(need, support)
+    need_path = research_dir / "need_profile.json"
+    if derived and need_path.is_file():
+        # The profile only gains a derived weights_override (flagged); nothing the user wrote changes.
+        profile = json.loads(need_path.read_text(encoding="utf-8"))
+        profile["weights_override"] = derived
+        profile["weights_override_derived"] = "most-ticked features, because no must-have matched the matrix"
+        atomic_write_text(need_path, json.dumps(profile, indent=2) + "\n")
     disputed = disputed_cells(support)
     emit(research_dir / "landscape" / "disputed-cells.json", json.dumps(disputed, indent=2) + "\n")
 
@@ -1663,6 +1773,7 @@ def materialize_solution_artifacts(
         "status": "ok",
         "solutions_count": len(slugs),
         "disputed_cells": len(disputed),
+        "derived_critical_features": sorted(derived),
         "shortlist_count": len(shortlist),
         "features_written": written,
         "preserved": preserved,

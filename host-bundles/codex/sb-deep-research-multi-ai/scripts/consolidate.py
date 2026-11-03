@@ -63,14 +63,27 @@ _NEGATION_RE = re.compile(
 )
 
 
-_AUXILIARIES = frozenset({"does", "do", "did", "is", "are", "was", "were"})
+_AUXILIARIES = frozenset(
+    {"does", "do", "did", "is", "are", "was", "were", "has", "have", "can", "will", "should", "would"}
+)
+
+
+_LACK_RE = re.compile(r"\black(?:s|ing)?\b", re.IGNORECASE)
+_MODAL_NEGATIONS = ((re.compile(r"\b(?:cannot|can't)\b", re.IGNORECASE), "can"), (re.compile(r"\bwon't\b", re.IGNORECASE), "will"))
 
 
 def _polarity(text: str) -> tuple[str, bool]:
-    """(claim with negation cues removed, whether it was negated): pairs 'X supports Y' with 'X does not support Y'."""
+    """(claim with polarity removed, whether it was negated).
+
+    Pairs "X supports Y" with "X does not support Y", "X has Y" with "X lacks Y" and
+    "X can Y" with "X cannot Y".
+    """
     negated = bool(_NEGATION_RE.search(text))
-    words = normalize_claim(_NEGATION_RE.sub(" ", text)).split()
-    # light normalisation so "supports" / "does not support" meet: drop auxiliaries, singularise
+    plain = _LACK_RE.sub("has", text)
+    for pattern, positive in _MODAL_NEGATIONS:
+        plain = pattern.sub(positive, plain)
+    words = normalize_claim(_NEGATION_RE.sub(" ", plain)).split()
+    # light normalisation: drop auxiliaries, singularise
     stems = [w[:-1] if len(w) > 3 and w.endswith("s") else w for w in words if w not in _AUXILIARIES]
     return " ".join(stems), negated
 

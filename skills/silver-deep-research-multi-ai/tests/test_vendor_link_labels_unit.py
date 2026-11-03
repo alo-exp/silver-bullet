@@ -262,6 +262,11 @@ class SsrfGuardTests(unittest.TestCase):
         for url in ("http://100.64.0.1/", "http://100.100.100.200/latest/meta-data/", "http://[::ffff:10.0.0.1]/"):
             self.assertTrue(str(self.reason(url)).startswith("non-public-address:"), url)
         self.assertIsNone(self.reason("https://mapped.example/", ["::ffff:93.184.216.34"]))
+        # NAT64 / IPv4-compatible / site-local IPv6 forms reach private IPv4 or internal networks
+        for url in ("http://[64:ff9b::a00:1]/", "http://[64:ff9b::a9fe:a9fe]/", "http://[64:ff9b:1::c0a8:101]/",
+                    "http://[::a00:1]/", "http://[fec0::1]/"):
+            self.assertTrue(str(self.reason(url)).startswith("non-public-address:"), url)
+        self.assertIsNone(self.reason("https://nat64.example/", ["64:ff9b::5db8:d822"]))  # embeds 93.184.216.34
         self.assertIsNone(self.reason("http://93.184.216.34/"))
 
     def test_scheme_credentials_and_unresolvable(self):
