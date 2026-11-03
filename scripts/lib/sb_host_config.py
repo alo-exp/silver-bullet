@@ -503,6 +503,22 @@ class TomlDocument:
     def newline(self) -> str:
         return "\r\n" if "\r\n" in self.text else "\n"
 
+    def string_values(self, table) -> dict:
+        """The string values of the keys directly in ``table`` (header or dotted form), read
+        without a TOML parser; values of any other type are left out."""
+        table = tuple(table)
+        found = {}
+        for st in self.statements:
+            if st.kind != "keyval" or st.path[:-1] != table:
+                continue
+            raw = self.text[st.value[0] : st.value[1]]
+            if raw.startswith('"') and not raw.startswith('"""'):
+                with contextlib.suppress(ValueError):
+                    found[st.path[-1]] = json.loads(raw)  # basic-string escapes match JSON's
+            elif raw.startswith("'") and not raw.startswith("'''"):
+                found[st.path[-1]] = raw[1:-1]
+        return found
+
     def headers(self, path):
         return [st for st in self.statements if st.kind == "table" and st.path == tuple(path)]
 

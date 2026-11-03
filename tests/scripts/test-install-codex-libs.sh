@@ -71,6 +71,17 @@ rm -f "$CFG"
 sub ensure_marketplace_registered "$TL_TMP/we\"ird\\dir"
 sub codex_marketplace_root
 assert_eq "root with a quote and backslash round-trips" "$TL_TMP/we\"ird\\dir" "$TL_OUT"
+# without any TOML parser (old Python, no pip) the same root is found, never a silent default
+NOPARSER="$TL_TMP/noparser"; mkdir -p "$NOPARSER/pip"
+for mod in tomllib tomli; do printf 'raise ImportError("hidden for the test")\n' >"$NOPARSER/$mod.py"; done
+printf 'raise ImportError("hidden for the test")\n' >"$NOPARSER/pip/__init__.py"
+printf '[marketplaces.alo-labs-codex] # mine\nsource_type = "local"\nsource = "%s"\n' "$TL_TMP/plain dir" >"$CFG"
+PYTHONPATH="$NOPARSER" sub codex_marketplace_root
+assert_eq "root read without a TOML parser" "$TL_TMP/plain dir" "$TL_OUT"
+printf 'not [valid\n' >"$CFG"
+PYTHONPATH="$NOPARSER" sub codex_marketplace_root
+assert_contains "an unreadable registration is reported, not silently ignored" "$TL_ERR" "cannot read the Codex marketplace registration"
+assert_eq "and the default root is used" "$MP" "$TL_OUT"
 printf 'not [valid\n' >"$CFG"
 sub codex_marketplace_root
 assert_eq "invalid config falls back to the default root" "$MP" "$TL_OUT"
