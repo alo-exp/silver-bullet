@@ -98,7 +98,7 @@ def _classify_slug_for_market(
     if slug in hard_exclusions and slug not in core_seeds:
         return "excluded", "pack hard_exclusion"
     if slug in core_seeds:
-        if slug in envelope_slugs or slug == "silver-bullet":
+        if slug in envelope_slugs:
             return "core", f"{market_id} market_seed"
         return "excluded", f"{market_id} seed without envelope evidence (gap)"
     if slug in adjacent_seeds:
@@ -208,7 +208,7 @@ def _classify_slug(
     if slug in all_core_seeds:
         markets = market_core_map.get(slug, [])
         market_label = markets[0] if markets else "market"
-        if slug in envelope_slugs or slug == "silver-bullet":
+        if slug in envelope_slugs:
             if slug in core_seeds:
                 return "core", "pack core_seed"
             return "core", f"{market_label} market_seed"

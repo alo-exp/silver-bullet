@@ -389,7 +389,8 @@ class MembershipFramingAndOssBucketTests(unittest.TestCase):
             )
         apo_oss = enriched["markets"]["apo"]["vendor_buckets"]["oss"]
         self.assertIn("MetaGPT", apo_oss)
-        self.assertIn("Silver Bullet", apo_oss)
+        # the pack records Silver Bullet as source-available (BUSL-1.1), so it is not listed as OSS
+        self.assertNotIn("Silver Bullet", apo_oss)
 
 
 

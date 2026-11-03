@@ -545,14 +545,12 @@ class RealisticChartScoringTests(unittest.TestCase):
             "Free tier / OSS core": True,
         }
         self.assertTrue(_must_not_be_leader("sdlc-plugins", "gsd", feats, None))
-        self.assertFalse(
-            _must_not_be_leader(
-                "sdlc-plugins",
-                "silver-bullet",
-                {**feats, "Atomic flow catalog": True},
-                None,
-            )
+        # no vendor is exempt from the ledger rule: identical evidence, identical outcome
+        self.assertEqual(
+            _must_not_be_leader("sdlc-plugins", "vendor-x", feats, None),
+            _must_not_be_leader("sdlc-plugins", "gsd", feats, None),
         )
+        self.assertTrue(_must_not_be_leader("sdlc-plugins", "vendor-x", feats, None))
 
     def test_ai_dlc_methodology_without_gates_is_not_peer_complete(self) -> None:
         feats = {
