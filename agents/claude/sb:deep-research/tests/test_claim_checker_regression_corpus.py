@@ -1,19 +1,18 @@
-"""Anti-oscillation regression corpus for the claim-support checker (H8a, review rounds 1-5).
+"""Anti-oscillation regression corpus for the claim-support checker (H8a, review rounds 1-6).
 
-The checker is "conservative + escalate": it returns supported / contradicted / needs_review, and a pair it
-cannot settle by its words is needs_review, never supported. Each earlier round added a lexical rule that
-fixed the last probes and broke an older pair. This file pins every probe pair of all five rounds in one
-table so that a change which trades one class for another fails here:
+Round 6 ended the word-pattern approach: ``supported`` now means the claim nearly repeats its quote word for
+word, and everything else is ``needs_review`` (or ``contradicted`` for a clear, explicit conflict). The corpus
+pins every probe pair of all six rounds, so a change that trades one class for another fails here:
 
 * a fabrication is never `supported`;
 * an honest claim is never `contradicted` or `unsupported`;
-* the reviewer's 60 everyday honest claims stay mostly `supported` (needs_review is not routine);
-* the named issue classes of round 5 (negation, comparison, role swap, co-occurrence, periods and units,
-  ranges, modal cues) each have their own table.
+* a claim identical to its quote is `supported`;
+* a reworded honest claim is `needs_review`: the reviewer's everyday and held-out honest sets are pinned at
+  the supported / needs_review split the strict rule gives.
 
 Fixtures (tests/fixtures): claim_corpus_verbatim.json (rounds 1-3), claim_corpus_r4.json (round 4),
-claim_corpus_r5.json (round 5, from the probe scripts and TSVs), claim_corpus.json (curated) and
-claim_corpus_heldout.json (written after the scorer was frozen).
+claim_corpus_r5.json (round 5), claim_corpus_r6.json (round 6: 91 fresh fabrications, 25 honest twins and the
+40 held-out everyday honest claims), claim_corpus.json (curated) and claim_corpus_heldout.json.
 """
 
 import json
@@ -35,7 +34,7 @@ def load(name):
 def pairs():
     """Every probe pair as (corpus, kind, claim, quote); kind is 'F' (fabrication) or 'H' (honest)."""
     out = []
-    for name in ("claim_corpus_verbatim", "claim_corpus_r4", "claim_corpus_r5"):
+    for name in ("claim_corpus_verbatim", "claim_corpus_r4", "claim_corpus_r5", "claim_corpus_r6"):
         out += [(name, c["kind"], c["claim"], c["quote"]) for c in load(name)]
     for name in ("claim_corpus", "claim_corpus_heldout"):
         data = load(name)
@@ -77,181 +76,97 @@ class EveryProbeOfEveryRound(unittest.TestCase):
                          "Acme has no more than 50 customers", "Acme offers SSO with no SCIM"):
             self.assertEqual(status(sentence, sentence), "supported", sentence)
 
-    def test_the_everyday_honest_claims_stay_mostly_supported(self):
+    def test_the_everyday_honest_claims_are_supported_only_when_they_repeat_the_quote(self):
         everyday = [c for c in load("claim_corpus_r5") if c["kind"] == "H" and c["source"].startswith("r5 score5.py")]
         self.assertEqual(len(everyday), 60)
-        counts = {}
-        for c in everyday:
-            got = status(c["claim"], c["quote"])
-            counts[got] = counts.get(got, 0) + 1
+        counts = tally(everyday)
         self.assertEqual(counts.get("contradicted", 0) + counts.get("unsupported", 0), 0, counts)
-        # needs_review is the escalation path, not the routine one: at most one claim in five.
-        self.assertGreaterEqual(counts.get("supported", 0), 48, counts)
-        self.assertLessEqual(counts.get("needs_review", 0), 12, counts)
+        self.assertEqual(counts, {"supported": 4, "needs_review": 56})
+
+    def test_the_round_six_held_out_honest_claims_are_reworded_and_need_review(self):
+        held = [c for c in load("claim_corpus_r6") if c["source"].startswith("r6 honest6.py")]
+        self.assertEqual(len(held), 40)
+        self.assertEqual(tally(held), {"needs_review": 40})
+
+    def test_the_round_six_fabrications_and_twins(self):
+        fabrications = [c for c in load("claim_corpus_r6") if c["kind"] == "F"]
+        self.assertEqual(len(fabrications), 91)
+        counts = tally(fabrications)
+        self.assertEqual(counts.get("supported", 0), 0, counts)
+        self.assertEqual(counts, {"needs_review": 86, "contradicted": 5})
+        twins = [c for c in load("claim_corpus_r6") if c["kind"] == "H" and c["source"].startswith("r6 score6.py")]
+        self.assertEqual(len(twins), 25)
+        self.assertEqual(tally(twins).get("contradicted", 0) + tally(twins).get("unsupported", 0), 0)
 
 
-class RoundFiveIssueTables(unittest.TestCase):
-    """The round-5 issue classes, each with the fabrications that must escalate and the honest twins that
-    must not be contradicted. Entries: (claim, quote)."""
+def tally(items):
+    counts = {}
+    for c in items:
+        got = status(c["claim"], c["quote"])
+        counts[got] = counts.get(got, 0) + 1
+    return counts
+
+
+class StrictRuleTables(unittest.TestCase):
+    """The classes the earlier rounds fixed one by one are now decided by one rule: a fabrication that is not
+    the quote's own sentence is `needs_review` (or `contradicted`), and the identical sentence is `supported`."""
 
     def assert_escalates(self, table):
         for claim, quote in table:
             self.assertIn(status(claim, quote), ("needs_review", "contradicted"), (claim, quote))
 
-    def assert_supported(self, table):
-        for claim, quote in table:
-            self.assertEqual(status(claim, quote), "supported", (claim, quote))
-
-    def test_with_no_x_is_without_x(self):
+    def test_negation_comparison_and_with_no_x(self):
         self.assert_escalates([
             ("Acme offers SCIM", "Acme offers SSO with no SCIM"),
-            ("Acme charges a setup fee", "Acme supports SSO on all plans with no setup fee"),
-            ("Acme has an offline mode", "Acme ships with no offline mode"),
-            ("Acme's migration caused downtime", "Acme migrated its customers with no downtime"),
             ("Acme offers SCIM", "Acme offers SSO without SCIM"),
-        ])
-        self.assert_supported([
-            ("Acme offers a free tier", "Acme offers a free tier with no time limit"),
-            ("Acme deploys updates weekly", "Acme deploys updates weekly with no downtime"),
-            ("Acme offers SSO with no setup fee", "Acme offers SSO with no setup fee"),
-        ])
-
-    def test_no_more_than_is_not_more_than(self):
-        self.assert_escalates([
             ("Acme has more than 50 customers", "Acme has no more than 50 customers"),
-            ("Acme raised less than $50M in 2023", "Acme raised no less than $50M in 2023"),
             ("Acme has fewer than 500 customers", "Acme has no fewer than 500 customers"),
-            ("Acme's uptime is less than 99%", "Acme's uptime is nothing less than 99%"),
-            ("Acme has no more than 50 customers", "Acme has more than 50 customers"),
-            ("Acme has 500 customers", "Acme has no fewer than 500 customers"),
+            ("Acme no longer offers a free tier", "Acme offers a free tier for up to 5 users"),
+            ("Acme supports SSO", "Acme hardly supports SSO"),
+            ("Acme is HIPAA compliant", "Acme is HIPAA non-compliant"),
+            ("Acme is profitable", "Acme is not just unprofitable; it is insolvent"),
         ])
-        self.assert_supported([("Acme has no more than 50 customers", "Acme has no more than 50 customers")])
 
-    def test_honest_comparison_claims_are_never_contradicted(self):
-        for claim, quote in (
-            ("Acme supports SCIM and Initech does not", "Acme supports SCIM; Initech does not"),
-            ("Acme supports SCIM and Initech does not", "Acme supports SCIM and Initech does not"),
-            ("Acme offers SSO and Initech lacks it", "Acme offers SSO, while Initech lacks it"),
-            ("Okta supports SAML and OneLogin does not", "Okta supports SAML. OneLogin does not."),
-            ("Slack integrates with Jira and Asana does not", "Slack integrates with Jira; Asana does not"),
-            ("Acme offers SSO and SCIM, and Initech offers neither", "Acme offers SSO and SCIM, and Initech offers neither"),
-            ("Acme supports Kubernetes and Initech does not", "Acme supports Kubernetes, and Initech does not"),
-            ("Acme supports SCIM and Initech does not", "Acme supports SCIM, whereas Initech does not"),
-        ):
-            self.assertNotIn(status(claim, quote), ("contradicted", "unsupported"), (claim, quote))
-        for sentence in ("Acme offers SSO and SCIM, and Initech offers neither", "Acme supports SCIM and Initech does not"):
-            self.assertEqual(status(sentence, sentence), "supported")
-
-    def test_a_list_does_not_swallow_the_subject_of_the_next_clause(self):
-        clause = "Acme supports SCIM and Initech does not"
-        self.assertEqual(vcs._variants(clause), [clause])
-        self.assertEqual(vcs._variants("Acme offers SSO and SCIM, and Initech offers neither"),
-                         ["Acme offers SSO and SCIM, and Initech offers neither",
-                          "Acme offers SSO, and Initech offers neither", "Acme offers SCIM, and Initech offers neither"])
-        # A genuine list keeps one variant per item.
-        self.assertEqual(vcs._variants("Acme supports Kubernetes and Nomad for workloads"),
-                         ["Acme supports Kubernetes and Nomad for workloads",
-                          "Acme supports Kubernetes for workloads", "Acme supports Nomad for workloads"])
-
-    def test_role_swaps_escalate_whatever_the_gap(self):
+    def test_role_swaps_and_voice_changes_escalate(self):
         self.assert_escalates([
             ("Initech was acquired by Acme", "Acme was acquired by Initech"),
-            ("Acme is a subsidiary of Initech", "Initech is a subsidiary of Acme"),
-            ("Acme is owned by Initech", "Initech is owned by Acme"),
             ("Acme is cheaper than Initech", "Initech is cheaper than Acme"),
-            ("Acme is faster than Initech on the TPC-H benchmark", "Initech is faster than Acme on the TPC-H benchmark"),
             ("Microsoft invested $10 billion in OpenAI", "OpenAI invested $10 billion in Microsoft"),
-            ("Acme licenses its technology to Initech", "Initech licenses its technology to Acme"),
-            ("Acme sold its stake in Initech in 2022", "Initech sold its stake in Acme in 2022"),
-            ("Acme spun off from Initech in 2019", "Initech spun off from Acme in 2019"),
             ("Acme migrated from Postgres to MySQL", "Acme migrated from MySQL to Postgres"),
             ("Acme replaced Jenkins with GitHub Actions", "Acme replaced GitHub Actions with Jenkins"),
-            ("Acme outperformed Initech on every benchmark", "Initech outperformed Acme on every benchmark"),
-        ])
-        self.assert_supported([
             ("Acme was acquired by Initech in 2022", "In 2022 Acme was acquired by Initech"),
-            ("Initech acquired Acme in 2022", "Initech acquired Acme in 2022 for an undisclosed sum"),
             ("Both Acme and Initech support SAML", "Acme and Initech both support SAML"),
         ])
 
-    def test_figures_and_names_must_co_occur_with_the_subject(self):
+    def test_figures_must_attach_to_the_same_entity_period_and_unit(self):
         self.assert_escalates([
             ("Acme has 500 employees", "Initech has 500 employees and Acme has 200"),
-            ("Acme has 500 employees", "Initech has 500 employees. Acme has 200 employees."),
             ("Acme's market share is 30%", "Initech's market share is 30%, while Acme's is 10%"),
-            ("Acme raised $50M in 2023", "Initech raised $50M in 2023, and Acme raised $10M in 2023"),
-            ("Acme was founded in 2015", "Initech was founded in 2015 and Acme was founded in 2019"),
-            ("62% of respondents use Acme", "62% of respondents use Initech and 12% use Acme"),
-            ("Acme acquired Initech", "Globex acquired Initech. Acme acquired Hooli."),
-            ("Acme supports SCIM", "Okta supports SCIM. Acme supports SAML."),
-            ("Acme is SOC 2 certified", "Initech is SOC 2 certified. Acme is ISO 27001 certified."),
             ("Acme was founded in 2019", "Acme (founded 2015) was acquired by Globex in 2019"),
-        ])
-        self.assert_supported([
-            ("Acme was founded in 2015", "Founded in 2015, Acme now employs 400 people"),
-            ("Acme's revenue grew 40% year over year", "Revenue grew 40% year over year, Acme said"),
-            ("Acme holds a 30% market share", "Acme holds a 30% share of the market, according to IDC"),
-        ])
-
-    def test_periods_and_units_are_bound_like_years(self):
-        self.assert_escalates([
-            ("Acme revenue grew 30% in Q3", "Acme revenue grew 30% in Q2 and 10% in Q3"),
             ("Acme revenue grew 30% in Q3", "Acme revenue grew 30% in Q2"),
             ("Acme costs $20 per month", "Acme costs $20 per year"),
             ("Acme costs $20 per user", "Acme costs $20 per team"),
             ("Acme booked $5M in H1", "Acme booked $5M in H2"),
+            ("Setup takes 3 days", "Setup takes one to three days"),
         ])
-        self.assert_supported([
-            ("Acme revenue grew 30% in Q3", "Acme revenue grew 30% in Q3"),
-            ("Acme costs $20 per user per month", "Acme's Pro plan costs $20 per user per month, billed annually"),
-            ("Acme is downloaded 5 million times per week on npm", "Acme is downloaded about 5 million times a week from npm"),
-        ])
+        self.assertEqual(status("Acme revenue grew 30% in Q3", "Acme revenue grew 30% in Q3"), "supported")
+        self.assertEqual(status("Setup takes one to three days", "Setup takes 1 to 3 days"), "supported")
 
-    def test_a_lone_one_starts_a_range(self):
-        n = vcs.normalize_text
-        self.assertEqual(n("one or two"), "1 or 2")
-        self.assertEqual(n("one to three days"), "1 to 3 days")
-        self.assertEqual(n("between one and three days"), "between 1 and 3 days")
-        self.assertEqual(n("one who knows"), "one who knows")
-        self.assertEqual(n("zero downtime"), "zero downtime")
-        self.assertEqual(n("one-to-one"), "one-to-one")
-        self.assertEqual(n("one to many"), "one to many")
-        self.assert_escalates([("Setup takes 3 days", "Setup takes one to three days"),
-                               ("Setup takes 3 days", "Setup takes 1 to 3 days")])
-        self.assert_supported([("Setup takes one to three days", "Setup takes 1 to 3 days")])
-
-    def test_future_and_modal_cues_escalate_and_failure_cues_negate(self):
+    def test_future_modal_and_conditional_quotes_escalate(self):
         self.assert_escalates([
             ("Acme supports SSO", "Acme plans to support SSO in 2025"),
-            ("Acme supports SCIM provisioning", "Acme will support SCIM provisioning next year"),
             ("Acme raised $50M in 2023", "Acme is expected to raise $50M in 2023"),
-            ("Acme supports SSO", "Acme aims to support SSO"),
             ("Initech acquired Acme", "Initech is considering acquiring Acme"),
             ("Acme supports SSO", "Acme supports SSO only if customers buy the enterprise add-on"),
-            ("Acme supports SSO", "Does Acme support SSO? The documentation does not say."),
             ("Acme Cloud is SOC 2 Type II certified", "Acme Cloud is pursuing SOC 2 Type II certification"),
-        ])
-        for claim, quote in (("Acme passed the SOC 2 audit", "Acme failed to pass the SOC 2 audit"),
-                             ("Acme supports SSO", "Acme refused to support SSO"),
-                             ("Acme met its 2023 revenue target", "Acme failed to meet its 2023 revenue target")):
-            self.assertIn(status(claim, quote), ("contradicted", "needs_review"), claim)
-            self.assertTrue(vcs._is_negated(quote), quote)
-        # The claim states the plan itself: an honest match.
-        self.assert_supported([("Acme plans to support SSO in 2025", "Acme plans to support SSO in 2025")])
-
-    def test_remaining_probe_idioms_escalate(self):
-        self.assert_escalates([
-            ("Acme supports SSO", "Acme hardly supports SSO"),
-            ("Acme is HIPAA compliant", "Acme is HIPAA non-compliant"),
-            ("Acme stores backups encrypted", "Acme stores backups unencrypted"),
-            ("Acme supports SSO on the free plan", "Acme supports SSO on every plan except the free plan"),
-            ("Acme offers phone support", "Nobody at Acme offers phone support"),
             ("Acme uses Postgres", "Acme uses MySQL instead of Postgres"),
-            ("Acme uses Postgres", "Acme uses MySQL rather than Postgres"),
-            ("Acme uses Postgres", "Acme replaced Postgres with MySQL in 2022"),
-            ("Acme no longer offers a free tier", "Acme offers a free tier for up to 5 users"),
-            ("Acme is profitable", "Acme is not just unprofitable; it is insolvent"),
         ])
+        self.assertEqual(status("Acme plans to support SSO in 2025", "Acme plans to support SSO in 2025"), "supported")
+
+    def test_a_pasted_fragment_of_the_quote_is_not_enough(self):
+        self.assertEqual(status("Acme supports SAML single sign-on for enterprise customers",
+                                "Acme supports SAML single sign-on for enterprise customers and lacks SCIM provisioning"),
+                         "needs_review")
 
 
 class SentenceSplittingAndOpeners(unittest.TestCase):

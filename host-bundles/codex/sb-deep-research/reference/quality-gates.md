@@ -199,114 +199,108 @@ Options:
    2. [Option 2]
 ```
 
-## The claim-support gate: three verdicts (v2)
+## The claim-support gate: a strict near-quote rule (v3)
 
-`verify_claim_support.py` is a lexical check, not a reader, so it is conservative and escalates. Each
-factual claim gets one verdict (`support_status` in `claims.jsonl`):
+`verify_claim_support.py` is a word comparison, not a reader. It does not try to understand a paraphrase:
+a claim is `supported` only when it nearly repeats the cited quote, and every other wording goes to a human.
+Each factual claim gets one verdict (`support_status` in `claims.jsonl`):
 
 | Verdict | Meaning | `verify --strict` |
 |---------|---------|-------------------|
-| `supported` | lexical support is unambiguous in one linked quote and no linked quote contradicts it | passes |
-| `contradicted` | a quote clearly says the opposite (differing polarity in an aligned clause, "zero/without X" against a plain assertion, opposite verbs such as raised/lost) and none supports the claim | **exit 1** |
-| `unsupported` | no evidence linked, a cited source with no captured evidence, or no quote shares meaningful content with the claim | **exit 1** |
-| `needs_review` | anything ambiguous; `_support_notes` names the figure, entity or polarity at issue | exit 0, listed |
+| `supported` | the claim repeats one linked quote word for word (the rule below) and no other linked quote contradicts it | passes |
+| `contradicted` | a quote is the same sentence with an explicit "not"/"never" added or removed, or with one exact figure replaced by another of the same kind, and no quote supports the claim | **exit 1** |
+| `unsupported` | no evidence linked, a cited source with no captured evidence, or no quote shares 30% of the claim's words | **exit 1** |
+| `needs_review` | everything else, including every reworded claim; `_support_notes` says why | exit 0, listed |
 
 Never read `needs_review` as a pass: the summary sets `review_required: true`, lists each claim with its
 reason under `needs_review`, prints a count on stderr, and `report` has a "Needs Review" section.
+
+### What makes a claim `supported`
+
+The claim's words and figures, taken in order, equal the quote's, after these differences are ignored:
+
+- case and punctuation;
+- articles and a few filler words (`a`, `an`, `the`, `its`, `their`, `this`, `that`, `these`, `those`, `also`);
+- simple inflection of one word: plural or singular, `-s`, `-ed`, `-ing` ("ships", "shipped", "shipping");
+- the written form of a number: `40 percent` = `40%`, `USD 50` = `$50`, `five thousand` = `5,000`, `v1.29` =
+  `1.29`, `at no cost` = `for free`, and a contraction ("doesn't" = "does not");
+- two exact aliases: `staff` = `employee` and `client` = `customer`.
+
+Nothing else may differ. In particular a rewording, a synonym outside that list, a different verb ("grew" /
+"rose"), a reordering ("In 2022 Acme was acquired" / "Acme was acquired in 2022"), a voice change ("Acme
+acquired Initech" / "Initech was acquired by Acme"), a claim that is only part of the quote, and a claim
+that says more than the quote are all `needs_review`, however close they look. Figures, dates, periods and
+units are words too, so they match exactly and in the same place: "30% in Q3" is not "30% in Q2", "$20 per
+month" is not "$20 per year", `A$50M` is not `$50M`, `3+` is not `3`.
+
+Two consequences to plan for: roughly nine in ten honest claims that were written as a paraphrase of
+their source come back `needs_review` (this is by design; the checker would rather ask than guess), and a
+quote that holds more than the claim says (a long passage) does not support a short claim. To get
+`supported`, quote **only the sentence or clause that states the claim**, and write the claim from it
+without rewording.
+
+### What makes a claim `contradicted`
+
+Only a clear, high-confidence conflict, and only when the rest of the sentence matches word for word:
+
+- the claim and a quote are the same sentence, and exactly one of them has `not` or `never` ("does not",
+  "doesn't", "cannot" and "won't" count; the `do`/`does`/`did` before `not` is ignored): "Acme supports SSO"
+  against "Acme does not support SSO";
+- the same sentence with one or more figures replaced by figures of the same kind (same currency, `%`,
+  unit marker), and at least two other words alike: "Acme has 500 employees" against "Acme has 200
+  employees", "founded in 2015" against "founded in 2019".
+
+When in doubt the checker says `needs_review`. It does not read `no`, `without`, `zero`, `nothing short of`,
+`no doubt` or `for no extra charge` as a negation, so an honest sentence that uses them is never
+`contradicted`; there is no whole-text quantifier rule either. A negated claim whose quote differs in any
+other word ("Acme lacks SCIM" against "Acme does not support SCIM") is `needs_review`.
 
 ### Resolving needs_review claims
 
 For each listed claim, the agent (or a human) opens the cited source and does exactly one of:
 
 1. **Quote the exact supporting span.** Copy the sentence or clause that states the claim, verbatim, into
-   the evidence store (`evidence_store.py add --json -` with that `quote`) and re-run `verify`. The claim is
-   then compared with the span itself; if it is still `needs_review` the span does not say what the claim
-   says, so go to step 2.
+   the evidence store (`evidence_store.py add --json -` with that `quote`), then make the claim sentence say
+   what the span says, in the same words, and re-run `verify`. The claim is then compared with the span
+   itself; if it is still `needs_review` the claim is worded differently from the source, so go to step 2.
 2. **Correct the claim** to what the source says (the figure, currency, year, name or polarity named in the
    reason), then re-extract and re-run `verify`.
-3. **Remove the claim, or cite a source that does support it**, when the source does not address it.
+3. **Check it yourself and record it**, when the claim is a faithful paraphrase: read the source, confirm
+   the claim, and say in the report which items you checked and how. A paraphrase stays `needs_review` in
+   the ledger; that is the honest state.
+4. **Remove the claim, or cite a source that does support it**, when the source does not address it.
 
 A `contradicted` claim is never resolved by adding a quote: fix the claim or the source selection. Do not
-edit `support_status` by hand and do not deliver a run with unresolved items; say in the report which items
-were checked and how.
+edit `support_status` by hand and do not deliver a run with unresolved items.
 
-### What makes a claim `supported`
+### Corpora pinning the behaviour
 
-After normalising text (typographic quotes and dashes, `40 percent` = `40%`, `USD 50` = `$50`, number
-words, `v1.29`), all of these hold in one quote. Whatever cannot be settled by the words escalates to
-`needs_review`; the checker never guesses `supported`.
-
-- enough of the claim's significant words appear (claims with no named thing and no figure need 90%), and
-  every named entity (capitalised phrases, acronyms such as AWS, camelCase brands such as GitHub,
-  identifiers such as EC2, GPT4, FY2018, Q3) appears, by word or word stem;
-- every figure matches a quote figure with the same value, unit and currency. Currencies are `$`, `A$`,
-  `C$`, `HK$`, `S$`, `NZ$`, `EUR`, `GBP`, yen, yuan/RMB, rupees, francs and `KRW` (symbols, ISO codes and
-  words); a currency the claim states must be stated, and be the same, in the quote (a bare yen sign fits
-  yen or yuan). A range ("between 2 and 5", "3 to 4", "3 or 4", "3-5", and the same with a lone "one":
-  "one to three days", "one or two") is a range: "7 days" does not match "between two and five days" and
-  "and" joins number words only inside a compound ("two hundred and five");
-- years, quarters and half-years are bound to the event: the claim's year or period (`Q1`-`Q4`, `H1`, `H2`,
-  `FY2024`) must sit in a quote segment that shares a word with its own and that also holds the claim's
-  other figures ("In 2019, ..." is bound to the clause it opens; "30% in Q3" is not "30% in Q2 and 10% in
-  Q3"). `per <period>` stays part of the unit ("$20 per month" is not "$20 per year", "a week" is
-  "per week"); other figures must be attached to the same noun or, without one, to the same metric (the
-  nearest content word that is not a verb of change: "revenue grew 30%" is not "margins grew 30%");
-- a matched figure or year does not sit in a quote segment that names something the claim does not mention
-  and not the claim's subject ("Initech has 500 employees and Acme has 200" does not support "Acme has 500
-  employees"). Segments end at sentence ends, commas, semicolons, parentheses and coordinating words
-  (`and`, `but`, `while`, `which`);
-- the claim's subject, key terms and figures co-occur in ONE quote clause. A claim clause that names its
-  subject needs a quote clause that names it too (a quote clause that opens with no name of its own counts
-  as an elided subject: "Acme hashes and does not store passwords"). Names or predicates taken from
-  different clauses or sentences ("Globex acquired Initech. Acme acquired Hooli." for "Acme acquired
-  Initech") are `needs_review`;
-- no aligned quote clause has a polarity that differs or is ambiguous. Negation cues are `not`, `no`, `never`,
-  `none`, `neither`/`nor`, `nothing`, `nobody`, `nowhere`, `cannot`, `n't`, `absent`, `lack(s)`, `unable to`,
-  `hardly`/`barely`/`scarcely`, `fail(s/ed) to` and `refuse(s/d) to`. Negation is scoped to the part it
-  belongs to ("Okta supports SCIM and OneLogin does not" says nothing against "Okta supports SCIM"); "with
-  no X" is read as "without X", and "without X" or "zero X" against a plain assertion about X is
-  `contradicted`; "no more/less/fewer than N" is not "more/less/fewer than N" (`needs_review` either way);
-  "not to mention" is not a negation; "not even" negates. When no single part of the quote states what
-  the claim says, or when it depends on how far a negation reaches ("does not support SSO and SCIM"), the
-  claim is `needs_review`. A claim clause identical to a quote clause after normalising is never
-  contradicted, and a name followed by a predicate ("... and Initech does not") opens a new clause rather
-  than extending a list;
-- the same named things are not in another order or voice: two or more of the claim's names in a different
-  order in the quote clause, whatever stands between them ("Samsung overtook Apple", "owned by", "cheaper
-  than", "migrated from X to Y", "invested in"), or "acquired" against "was acquired by", is `needs_review`.
-  Units after a figure ("100 MB") and dates are not names. Honest paraphrases that invert the sentence
-  ("SSO is included on every Acme plan" for "Acme includes SSO") therefore also need a reader;
-- the quote clause carries no cue the claim lacks that turns a statement into something else, each
-  `needs_review`: a plan or expectation (`plans/aims/expects/intends to`, `will`, `would`, `soon`,
-  `considering`, `pursuing`), a hedge (`may`, `might`, `could`, `should`, `reportedly`), a condition or
-  exception (`if`, `unless`, `except`, `other than`), a replacement or earlier state (`instead of`,
-  `rather than`, `replaced`, `formerly`, `previously`, `used to`), a question (the clause ends in `?`), or the
-  claim's own word with a negating prefix (`compliant` / `non-compliant`, `encrypted` / `unencrypted`).
-  A claim that says "no longer" needs a source that says so or names the end (retired, discontinued,
-  removed, ...), else `needs_review`.
-
-Corpora pinning the behaviour (`tests/fixtures/`, run by `tests/test_claim_checker_regression_corpus.py`,
-which holds every probe pair of all five reviews in one table): `claim_corpus_verbatim.json` (reviews 1-3),
-`claim_corpus_r4.json`, `claim_corpus_r5.json` (the fifth review's probes), `claim_corpus.json` (curated) and
-`claim_corpus_heldout.json` (written in other styles after the scorer was frozen). Fabrications are never
-`supported`; honest claims are never `contradicted` or `unsupported`; a claim identical to its quote is
-`supported`. Counts per verdict at the last run:
+`tests/fixtures/` holds every probe pair of all six reviews, run by
+`tests/test_claim_checker_regression_corpus.py` in one table: `claim_corpus_verbatim.json` (reviews 1-3),
+`claim_corpus_r4.json`, `claim_corpus_r5.json`, `claim_corpus_r6.json` (the sixth review: 91 fabrications,
+25 honest twins and 40 held-out everyday honest claims), `claim_corpus.json` (curated) and
+`claim_corpus_heldout.json`. The invariants are: a fabrication is never `supported`; an honest claim is never
+`contradicted` or `unsupported`; a claim identical to its quote is `supported`. Counts per verdict at the
+last run:
 
 | Corpus | Fabrications: contradicted / needs_review / unsupported / supported | Honest: supported / needs_review / contradicted |
 |--------|------------------------------------------------------------------|-----------------------------------------------|
-| reviews 1-3 verbatim (55 + 50) | 17 / 36 / 2 / 0 | 48 / 2 / 0 |
-| review 4 verbatim (36 + 69) | 2 / 34 / 0 / 0 | 60 / 9 / 0 |
-| review 5 verbatim (121 + 99) | 26 / 95 / 0 / 0 | 87 / 12 / 0 |
-| curated (45 + 45) | 14 / 30 / 1 / 0 | 45 / 0 / 0 |
-| held-out (32 + 32) | 11 / 21 / 0 / 0 | 32 / 0 / 0 |
+| reviews 1-3 verbatim (55 + 50) | 11 / 41 / 3 / 0 | 5 / 45 / 0 |
+| review 4 verbatim (36 + 69) | 0 / 36 / 0 / 0 | 7 / 62 / 0 |
+| review 5 verbatim (121 + 99) | 4 / 117 / 0 / 0 | 26 / 73 / 0 |
+| review 6 (91 + 65) | 5 / 86 / 0 / 0 | 2 / 63 / 0 |
+| curated (45 + 45) | 19 / 25 / 1 / 0 | 2 / 43 / 0 |
+| held-out (32 + 32) | 8 / 24 / 0 / 0 | 0 / 32 / 0 |
 
-Of the reviewer's 60 everyday honest claims, 52 are `supported` and 8 `needs_review` (a quote that does not
-name the entity, an inverted sentence, a paraphrased unit); none is contradicted.
+Of the reviewer's 60 everyday honest claims, 4 are `supported` and 56 `needs_review`; of the 40 held-out
+everyday honest claims of review 6, 0 and 40. The honest claims that pass are the ones that repeat their
+source; the rest are paraphrases a reader must check. None is contradicted.
 
-It still cannot decide: an antonym outside the small table (those pairs become `needs_review` only when
-other words disagree), paraphrased units outside the synonym table ("500 employees" vs "500 contractors"),
-a negation worded without any cue above ("fell short of"), and sentences whose meaning needs world
-knowledge; such pairs may be `supported`, which is why `supported` means "the words match", not "true".
+What it cannot decide is, by design, left to the reader: a paraphrase, a synonym, a changed voice, a
+negation worded another way ("fell short of"), and any sentence whose truth needs world knowledge. Because
+`supported` means "the claim repeats the quote", not "the quote is true", check the quote against the source
+page when it matters.
+
 Short sentences (30 characters or fewer) are claims when they carry a figure or a count ("7 days"), a named
 thing, a compliance or certification term or a superlative; navigation ("See Figure 3 below.", "Next, we
 compare costs."), bare labels and evaluations that open with one of a fixed list of everyday nouns

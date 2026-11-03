@@ -280,16 +280,20 @@ elif [ "$RT" = "solution-compare" ]; then
 fi
 ```
 
-The claim-support gate is three-valued. `--strict` exits 1 on a `contradicted` claim (a source clearly
-says the opposite) and on any `unsupported` or uncited factual claim. A claim is `supported` only when its
-words, figures and names unambiguously match a quoted source span; everything ambiguous is `needs_review`
-and is **listed, not failed**: the JSON summary has `review_required: true` and a `needs_review` list with
-the reason for each claim (the figure, entity or polarity that could not be settled), and
-`verify_claim_support.py report --dir "$SB_RESEARCH_OUT_DIR"` prints a "Needs Review" section. Before
-delivery, resolve every item: open the source, then either add the exact supporting span as evidence
-(`evidence_store.py add`, quoting the source verbatim), or correct the claim to what the source says, then
-re-run `verify`. Do not hand-edit a status, and do not report a run as verified while `review_required` is
-true. The workflow is in `reference/quality-gates.md` ("Resolving needs_review claims").
+The claim-support gate is a strict near-quote rule. `--strict` exits 1 on a `contradicted` claim (a quote is
+the same sentence with an explicit "not"/"never" added or removed, or with one exact figure replaced) and on
+any `unsupported` or uncited factual claim. A claim is `supported` only when it repeats a quoted source span
+word for word (case, punctuation, articles, plural or `-s`/`-ed`/`-ing`, and the written form of a number may
+differ; nothing else). Any rewording, reordering, voice change or paraphrase is `needs_review` and is
+**listed, not failed**: the JSON summary has `review_required: true` and a `needs_review` list with the
+reason for each claim, and `verify_claim_support.py report --dir "$SB_RESEARCH_OUT_DIR"` prints a "Needs
+Review" section. Expect most paraphrased claims there: quote just the supporting sentence as evidence and
+write the claim from it to get `supported`. Before delivery, resolve every item: open the source, then
+either add the exact supporting span as evidence (`evidence_store.py add`, quoting the source verbatim)
+and keep the claim's wording, or correct the claim to what the source says, or check the paraphrase against
+the source yourself and say so in the report. Do not hand-edit a status, and do not report a run as verified
+while `review_required` is true. The workflow is in `reference/quality-gates.md` ("Resolving needs_review
+claims").
 
 Maximum repair loops: 3 inside the flow step. If still failing, write blocker
 evidence to `.planning/BLOCKERS.md` and return a blocked AF-DECIDE V-gate.
