@@ -22,6 +22,9 @@ new_tree() {
   mkdir -p "$T/scripts/lib" "$T/.cursor-plugin" "$T/plugins/silver-bullet/.cursor-plugin"
   cp "$TL_REPO_ROOT/scripts/sync-cursor-marketplace-version.sh" "$T/scripts/"
   cp "$TL_REPO_ROOT/scripts/lib/agent-plugins-common.sh" "$T/scripts/lib/"
+  # CI gate stub: exits CI_RC (default 0) and records that it ran for the tag commit.
+  printf '#!/usr/bin/env bash\necho "ci $*" >>"${CI_LOG:-/dev/null}"\nexit "${CI_RC:-0}"\n' >"$T/scripts/verify-release-commit-ci.sh"
+  chmod +x "$T/scripts/verify-release-commit-ci.sh"
   jq -n '{name: "silver-bullet", version: "2.0.0"}' >"$T/.cursor-plugin/plugin.json"
   j_marketplace_json '{"source":"github","repo":"o/sb","ref":"main","sha":"0000","path":"x"}' >"$T/$MF"
   chmod 644 "$T/$MF"

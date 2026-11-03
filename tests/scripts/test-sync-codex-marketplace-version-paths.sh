@@ -34,6 +34,9 @@ new_tree() {
   mkdir -p "$T/scripts/lib" "$T/plugins/silver-bullet/.codex-plugin"
   cp "$TL_REPO_ROOT/scripts/sync-codex-marketplace-version.sh" "$T/scripts/"
   cp "$TL_REPO_ROOT/scripts/lib/agent-plugins-common.sh" "$T/scripts/lib/"
+  # CI gate stub: exits CI_RC (default 0) and records that it ran for the tag commit.
+  printf '#!/usr/bin/env bash\necho "ci $*" >>"${CI_LOG:-/dev/null}"\nexit "${CI_RC:-0}"\n' >"$T/scripts/verify-release-commit-ci.sh"
+  chmod +x "$T/scripts/verify-release-commit-ci.sh"
   jq -n '{version: "2.0.0"}' >"$T/package.json"
   jq -n '{name: "silver-bullet", version: "1.0.0", config_version: "1.0.0", keep: {x: null}}' >"$T/$PJ"
   chmod 644 "$T/$PJ"

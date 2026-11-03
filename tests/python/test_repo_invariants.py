@@ -69,11 +69,36 @@ class TrackedFilesTest(TempRoot):
 class WormIndicatorsTest(TempRoot):
     def test_folder_open_task_and_automatic_tasks(self):
         write(self.root, ".vscode/tasks.json", '{"tasks": [{"runOptions": {"runOn": "folderOpen"}}]}')
-        write(self.root, ".vscode/settings.json", "{'task.allowAutomaticTasks': 'on'}")
+        write(self.root, ".vscode/settings.json", '{"task.allowAutomaticTasks": "on"}')
         problems = ri.worm_indicators(self.root, [".vscode/settings.json", ".vscode/tasks.json"])
         self.assertEqual(len(problems), 2)
         self.assertIn("sets task.allowAutomaticTasks", problems[0])
         self.assertIn("runOn: folderOpen", problems[1])
+
+    def test_comments_nesting_and_trailing_commas_do_not_hide_the_payload(self):
+        cases = {
+            "a/.vscode/tasks.json": '{"tasks": [{"runOptions": {"runOn" /* c */ : "folderOpen",},},],}',
+            "b/.vscode/tasks.json": '{"runOptions": {"runOn": // c\n "folderOpen"}}',
+            "c/.vscode/settings.json": '{"task": {"allowAutomaticTasks": "on"}}',
+            "d/x.code-workspace": '{"settings": {"task.allowAutomaticTasks": "on"}, "tasks": {"tasks": [{"runOptions": {"runOn": "folderOpen"}}]}}',
+        }
+        for rel, text in cases.items():
+            write(self.root, rel, text)
+            self.assertTrue(ri.worm_indicators(self.root, [rel]), rel)
+        self.assertEqual(len(ri.worm_indicators(self.root, ["d/x.code-workspace"])), 2)
+
+    def test_comment_markers_inside_strings_and_unterminated_comments(self):
+        write(self.root, ".vscode/tasks.json", '{"label": "a // b /* c */ \\" d", "list": [1, 2,\n], } /* unterminated')
+        self.assertEqual(ri.worm_indicators(self.root, [".vscode/tasks.json"]), [])
+
+    def test_unparseable_config_is_flagged_and_still_pattern_matched(self):
+        write(self.root, ".vscode/settings.json", "{'task.allowAutomaticTasks': 'on'}")
+        write(self.root, ".vscode/notes.txt", 'runOn: "folderOpen"')
+        problems = ri.worm_indicators(self.root, [".vscode/settings.json", ".vscode/notes.txt"])
+        self.assertEqual(len(problems), 3)
+        self.assertIn("cannot be parsed as JSON with comments", problems[0])
+        self.assertIn("sets task.allowAutomaticTasks", problems[1])
+        self.assertIn("runOn: folderOpen", problems[2])
 
     def test_ordinary_config_and_unrelated_files_pass(self):
         write(self.root, ".vscode/tasks.json", '{"tasks": [{"label": "build", "command": "make"}]}')
@@ -273,9 +298,21 @@ jobs:
         ok = HARDENED.replace("    timeout-minutes: 20\n", "    timeout-minutes: 20\n    continue-on-error: false  # explicit\n", 1)
         self.assertEqual(self.problems(ok), [])
 
+    def test_equivalent_yaml_spellings_are_caught(self):
+        base = "    timeout-minutes: 20\n"
+        for extra in ('    "continue-on-error": true\n', "    continue-on-error:\n      true\n"):
+            weak = HARDENED.replace(base, base + extra, 1)
+            self.assertTrue(any("continue-on-error" in p or "quoted keys" in p for p in self.problems(weak)), extra)
+        flow = HARDENED.replace("    steps:\n", "    steps:\n      - {run: echo ok, continue-on-error: true}\n", 1)
+        self.assertTrue(any("flow-style" in p for p in self.problems(flow)))
+        quoted = HARDENED.replace("permissions:\n  contents: read\n", 'permissions: "write-all"\n')
+        self.assertTrue(any("write-all" in p for p in self.problems(quoted)))
+
     def test_ci_guard_must_see_ignored_files(self):
         rel = ".github/workflows/ci.yml"
-        self.assertEqual(self.problems(HARDENED + "# git status --porcelain --ignored\n", rel), [])
+        self.assertEqual(self.problems(HARDENED + "# formerly: git status --porcelain --ignored\n", rel),
+                         [f"{rel}: the checkout-unchanged guard must use git status --porcelain --ignored"])
+        self.assertEqual(self.problems(HARDENED + "      - run: git status --porcelain --ignored\n", rel), [])
         self.assertEqual(self.problems(HARDENED, rel),
                          [f"{rel}: the checkout-unchanged guard must use git status --porcelain --ignored"])
 

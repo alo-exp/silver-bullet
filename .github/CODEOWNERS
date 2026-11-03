@@ -1,25 +1,33 @@
 # Paths whose changes run code or instructions automatically (CI, the site deployment,
-# host configuration that editors and agents load when the folder is opened, skills and
-# hooks that agents execute, packaging that users install) need the maintainer's review.
-# Enable "Require review from Code Owners" in the main branch protection for this to block
-# merges.
+# host configuration that editors and agents load when the folder is opened, skills,
+# generated skill bundles and instruction files that agents execute or obey, hooks and
+# packaging that users install) need the maintainer's review. Enable "Require review from
+# Code Owners" in the main branch protection for this to block merges.
 #
-# Maintainer: confirm this handle has write access (prefer an organisation team such as
-# @alo-exp/maintainers); GitHub ignores owners it cannot resolve.
+# Maintainer: confirm this handle has write access (an organisation team such as
+# @alo-exp/maintainers also works); GitHub ignores owners it cannot resolve.
 /.github/          @shafqatevo
 /.vscode/          @shafqatevo
 /.claude/          @shafqatevo
 /.codex/           @shafqatevo
 /.cursor/          @shafqatevo
+/.opencode/        @shafqatevo
+/.pi/              @shafqatevo
+/.hermes/          @shafqatevo
 /.agents/          @shafqatevo
 /.claude-plugin/   @shafqatevo
 /.cursor-plugin/   @shafqatevo
+/agents/           @shafqatevo
+/host-bundles/     @shafqatevo
 /hooks/            @shafqatevo
 /scripts/          @shafqatevo
 /skills/           @shafqatevo
 /plugins/          @shafqatevo
 /templates/        @shafqatevo
 /site/             @shafqatevo
+/CLAUDE.md         @shafqatevo
+/AGENTS.md         @shafqatevo
+/silver-bullet.md  @shafqatevo
 /Makefile          @shafqatevo
 /package.json      @shafqatevo
 /requirements*.txt @shafqatevo

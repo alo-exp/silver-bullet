@@ -34,6 +34,7 @@ Shell execution is limited to:
 - `git remote get-url origin` (detect GitHub repo — piped to `grep` for GitHub detection)
 - `jq` (read `.silver-bullet.json` config — verify_commands only)
 - `bash scripts/sync-release-marketplace-versions.sh` (align the in-repo marketplace manifests before tagging — Step 5b.1; publish the upstream marketplace with `--publish` only after the tag and green CI — Step 7c)
+- `bash scripts/verify-release-commit-ci.sh` (wait for the release commit's CI before tagging — Steps 5c and 6b; derives owner/repo from `origin` when `GITHUB_REPOSITORY` is unset)
 - `bash scripts/run-release-live-matrix.sh` (run the repo-configured live matrix wrapper before tagging — Step 6)
 - `bash scripts/validate-github-release-notes.sh` (validate the release notes file before `gh release create`, and the published body afterwards — Step 7b)
 - `gh release create` (create GitHub release — use full path `/opt/homebrew/bin/gh`

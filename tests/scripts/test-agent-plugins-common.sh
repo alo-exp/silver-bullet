@@ -140,6 +140,30 @@ git -C "$TAGSRC" push -q origin v3.0.0
 rc=0; agent_plugins_require_tag_on_origin "$TAGSRC" 3.0.0 || rc=$?
 assert_eq "tag on origin: accepted" "0" "$rc"
 
+# A checkout behind its remote is fast-forwarded; a diverged one is refused (nothing is
+# committed on top of a stale base that the push would then reject).
+git -C "$WORK" push -q origin main
+BEHIND="$TL_TMP/behind"; git clone -q "$BARE" "$BEHIND"
+ADV="$TL_TMP/adv"; git clone -q "$BARE" "$ADV"
+git -C "$ADV" -c user.name=t -c user.email=t@e.invalid commit -q --allow-empty -m advance
+git -C "$ADV" push -q origin main
+rc=0; agent_plugins_check_publishable "$BEHIND" || rc=$?
+assert_eq "behind checkout is publishable after a fast-forward" "0" "$rc"
+assert_eq "behind checkout now at the remote head" "$(git -C "$ADV" rev-parse HEAD)" "$(git -C "$BEHIND" rev-parse HEAD)"
+git -C "$ADV" -c user.name=t -c user.email=t@e.invalid commit -q --allow-empty -m advance2
+git -C "$ADV" push -q origin main
+git -C "$BEHIND" -c user.name=t -c user.email=t@e.invalid commit -q --allow-empty -m local-only
+rc=0; out="$(agent_plugins_check_publishable "$BEHIND" 2>&1)" || rc=$?
+assert_eq "diverged checkout refused" "1" "$rc"
+assert_contains "diverged checkout explained" "$out" "is behind origin/main and cannot be fast-forwarded"
+
+# CI gate: green lets the publish through, red names the version and refuses.
+CIREPO="$TL_TMP/cirepo"; tl_git_repo "$CIREPO"; git -C "$CIREPO" tag -a v4.0.0 -m r
+rc=0; AGENT_PLUGINS_SKIP_PUSH=1 agent_plugins_require_green_ci "$CIREPO" 4.0.0 || rc=$?
+assert_eq "batch mode leaves CI to the wrapper" "0" "$rc"
+rc=0; out="$(agent_plugins_require_green_ci "$CIREPO" 9.9.9 2>&1)" || rc=$?
+assert_eq "no tag: CI check refused" "1" "$rc"
+
 NOUP="$TL_TMP/noup"
 tl_git_repo "$NOUP"
 rc=0; out="$(agent_plugins_check_publishable "$NOUP" 2>&1)" || rc=$?

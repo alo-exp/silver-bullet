@@ -134,22 +134,26 @@ check_hook-executable() {
 # $CLAUDE_PLUGIN_ROOT/..., and that script must exist. A bare hooks/... or scripts/... path
 # would resolve against the user's project at runtime and run project-controlled code.
 check_hook-references() {
-  local cmd script ok=0
-  local -r root_re='\$\{?CLAUDE_PLUGIN_ROOT\}?"?/([^"'"'"'[:space:]]+)'
-  local -r bare_re='(^|[[:space:]"'"'"'])((hooks|scripts)/[^"'"'"'[:space:]]+)'
+  local cmd script bare ok=0 named
   while IFS= read -r cmd; do
-    if [[ "$cmd" =~ $root_re ]]; then
-      script="${BASH_REMATCH[1]}"
-    elif [[ "$cmd" =~ $bare_re ]]; then
-      echo "  hooks.json runs ${BASH_REMATCH[2]} relative to the working directory (the user's project); use \${CLAUDE_PLUGIN_ROOT}/${BASH_REMATCH[2]}"
+    named=0
+    # Every ${CLAUDE_PLUGIN_ROOT}/ path in the command must exist, not only the first.
+    while IFS= read -r script; do
+      [[ -n "$script" ]] || continue
+      named=1
+      [[ -f "$script" ]] || { echo "  hooks.json references a missing script: $script"; ok=1; }
+    done < <(printf '%s\n' "$cmd" | grep -oE '\$\{?CLAUDE_PLUGIN_ROOT\}?"?/[^"'"'"'[:space:]&|;]+' | sed -E 's|^.*CLAUDE_PLUGIN_ROOT\}?"?/||')
+    # A bare hooks/ or scripts/ path anywhere in the command resolves against the user's project.
+    while IFS= read -r bare; do
+      [[ -n "$bare" ]] || continue
+      named=1
+      echo "  hooks.json runs $bare relative to the working directory (the user's project); use \${CLAUDE_PLUGIN_ROOT}/$bare"
       ok=1
-      continue
-    else
+    done < <(printf '%s\n' "$cmd" | sed -E 's|\$\{?CLAUDE_PLUGIN_ROOT\}?"?/[^"'"'"'[:space:]&|;]+||g' | grep -oE '(^|[[:space:]"'"'"'])(hooks|scripts)/[^"'"'"'[:space:]&|;]+' | sed -E 's|^[[:space:]"'"'"']+||')
+    if [[ "$named" == 0 ]]; then
       echo "  hooks.json command names no hooks/ or scripts/ file: $cmd"
       ok=1
-      continue
     fi
-    [[ -f "$script" ]] || { echo "  hooks.json references a missing script: $script"; ok=1; }
   done < <(jq -r '.. | .command? // empty' hooks/hooks.json)
   return "$ok"
 }

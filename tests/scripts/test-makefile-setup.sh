@@ -66,7 +66,7 @@ assert_contains "failure names the package to install" "$TL_OUT$TL_ERR" "python3
 
 # A venv on PATH must stay active inside tests/run-all-tests.sh, which rebuilds PATH
 # (R13-12: a symlink to the venv python resolved to the base interpreter).
-V="$TL_TMP/venvrun"
+V="$TL_TMP/venv run \$(touch $TL_TMP/PWNED)'q\"b"
 mkdir -p "$V/t"
 if python3 -m venv --without-pip "$V/.venv" >/dev/null 2>&1; then
   site="$("$V/.venv/bin/python" -c 'import site;print(site.getsitepackages()[0])')"
@@ -78,6 +78,7 @@ PROBE
   tl_run env PATH="$V/.venv/bin:$PATH" bash "$TL_REPO_ROOT/tests/run-all-tests.sh" "$V/t/test-venv-probe.sh"
   assert_eq "runner keeps the venv python active" 0 "$TL_STATUS"
   assert_contains "venv-only module imports through the runner" "$TL_OUT" "venv package importable"
+  assert_file_absent "a venv path with shell metacharacters is never evaluated" "$TL_TMP/PWNED"
 else
   echo "SKIP: python3 -m venv unavailable"
 fi

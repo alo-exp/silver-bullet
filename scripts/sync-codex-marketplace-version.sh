@@ -134,6 +134,7 @@ if [[ "$(manifest_versions)" != "$plugin_v (config_version $plugin_v)" ]]; then
 fi
 agent_plugins_release_tag_commit "$repo_root" "$plugin_v" >/dev/null
 agent_plugins_require_tag_on_origin "$repo_root" "$plugin_v"
+agent_plugins_require_green_ci "$repo_root" "$plugin_v"
 
 if [[ -n "$marketplace_repo_root" ]]; then
   publish_codex_marketplace_manifest "$marketplace_repo_root" "$plugin_v"
@@ -144,6 +145,9 @@ else
   publish_codex_marketplace_manifest "$tmp_repo_root" "$plugin_v"
 fi
 
+if [[ "${AGENT_PLUGINS_SKIP_PUSH:-0}" == "1" ]]; then
+  echo "Codex marketplace manifest committed in the shared checkout (push pending: the release wrapper pushes every host once)."
+else
 cat <<EOF
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -152,3 +156,4 @@ cat <<EOF
 The agent-plugins Codex manifest now offers silver-bullet v$plugin_v.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 EOF
+fi

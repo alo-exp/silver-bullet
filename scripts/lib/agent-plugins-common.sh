@@ -81,6 +81,19 @@ agent_plugins_require_tag_on_origin() {
   fi
 }
 
+# agent_plugins_require_green_ci REPO_ROOT VERSION: CI must be green for the release tag's
+# commit before anything is published. Batch runs are checked by the wrapper.
+agent_plugins_require_green_ci() {
+  local repo_root="$1" version="$2" commit ci_script
+  [[ "${AGENT_PLUGINS_SKIP_PUSH:-0}" != "1" ]] || return 0
+  commit="$(agent_plugins_release_tag_commit "$repo_root" "$version")" || return 1
+  ci_script="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/verify-release-commit-ci.sh"
+  if ! bash "$ci_script" "$commit"; then
+    echo "ERROR: CI is not green for v${version} (${commit}); nothing was published" >&2
+    return 1
+  fi
+}
+
 # agent_plugins_json_rewrite FILE JQ_ARG...: replace FILE with `jq JQ_ARG... FILE`. The output
 # goes to a temporary file in FILE's directory that already carries FILE's mode (mktemp
 # alone creates 0600) and is then renamed over FILE, so the rewrite is atomic and keeps the
@@ -118,6 +131,13 @@ agent_plugins_check_publishable() {
     echo "ERROR: could not fetch ${upstream} for $root; check the network and the remote before publishing" >&2
     return 1
   }
+  # A checkout behind its remote is fast-forwarded before anything is committed on top of it.
+  if [[ "$(git -C "$root" rev-list --count "HEAD..${upstream}")" != "0" ]]; then
+    git -C "$root" merge -q --ff-only "$upstream" >/dev/null 2>&1 || {
+      echo "ERROR: $root is behind $upstream and cannot be fast-forwarded (diverged or local changes in the way); update it first" >&2
+      return 1
+    }
+  fi
   ahead="$(git -C "$root" rev-list --count "${upstream}..HEAD")"
   if [[ "$ahead" != "0" ]]; then
     echo "ERROR: $root has $ahead unpushed commit(s) on top of $upstream; push or drop them first, or the marketplace sync would publish them" >&2

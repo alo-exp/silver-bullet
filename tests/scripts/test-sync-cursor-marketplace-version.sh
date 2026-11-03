@@ -10,6 +10,8 @@ tl_init
 source "$TL_REPO_ROOT/tests/lib/repo-snapshot.sh"
 SNAP="$(sb_repo_snapshot --git "$TL_REPO_ROOT" "$TL_TMP/repo")"
 SCRIPT="$SNAP/scripts/sync-cursor-marketplace-version.sh"
+# CI is green for the tagged commit (the real gate queries GitHub).
+printf '#!/usr/bin/env bash\nexit 0\n' >"$SNAP/scripts/verify-release-commit-ci.sh"
 cd "$TL_TMP"
 
 sb_version() { jq -r '.plugins[] | select(.name=="silver-bullet") | .version' "$1"; }
@@ -52,6 +54,16 @@ assert_eq "in-repo sync publishes nothing" "$remote_seed" "$(git -C "$REMOTE" re
 snap_git add -A
 snap_git commit -q --allow-empty -m "chore(release): $plugin_v"
 snap_git tag -a "v$plugin_v" -m "Release $plugin_v"
+
+# The release tag must exist on origin too: a local-only tag is refused, then pushed to a fake origin.
+FAKE_ORIGIN="$TL_TMP/release-origin.git"
+git init -q --bare "$FAKE_ORIGIN"
+snap_git remote remove origin 2>/dev/null || true
+snap_git remote add origin "$FAKE_ORIGIN"
+tl_run env AGENT_PLUGINS_REPO_ROOT="$MARKETPLACE" timeout 120 bash "$SCRIPT" --publish "$plugin_v"
+assert_eq "publish with a local-only tag exits 1" 1 "$TL_STATUS"
+assert_contains "local-only tag explained" "$TL_ERR" "is not on origin"
+snap_git push -q origin "v$plugin_v"
 tl_run env AGENT_PLUGINS_REPO_ROOT="$MARKETPLACE" timeout 120 bash "$SCRIPT" --publish "$plugin_v"
 assert_eq "publish exits 0" 0 "$TL_STATUS"
 assert_eq "remote marketplace version bumped" "$plugin_v" "$(sb_version "$MARKETPLACE/.cursor-plugin/marketplace.json")"
