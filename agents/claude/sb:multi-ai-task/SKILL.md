@@ -79,11 +79,12 @@ with the least privilege a research task needs:
 - Each worker starts in a fresh, empty temporary directory that is deleted afterwards —
   never in the Silver Bullet install root or your project.
 - Cursor runs without `--force`/`--yolo`; OpenCode runs without `--auto`. Codex runs directly
-  as `codex exec --sandbox read-only` (the prompt on stdin), because the agent-codex delegate
-  always requests `--sandbox danger-full-access`. Claude runs through the agent-claude delegate
-  with `--mode strict` and `CLAUDE_PERMISSION_MODE=default` (nothing auto-approved; an inherited
-  `CLAUDE_PERMISSION_MODE` or `SB_AGENT_CERT_RUN` is ignored).
-- Ctrl-C or SIGTERM sent to the dispatcher terminates every live worker group.
+  as `codex exec --sandbox read-only` and Claude as `claude --print --permission-mode default`,
+  both with the prompt on stdin, because the agent-codex / agent-claude delegates map their
+  strict mode to `--sandbox danger-full-access` and `acceptEdits`. An inherited
+  `CLAUDE_PERMISSION_MODE` or `SB_AGENT_CERT_RUN` is dropped from the worker environment.
+- Ctrl-C or SIGTERM sent to the dispatcher cancels queued workers (none starts afterwards) and
+  terminates every live worker group.
 - A read-only or non-approving worker cannot browse by shell; web access depends on the host
   CLI's own built-in tools and is the one capability a research worker keeps.
 - The prompt fences the task and any prior context between nonce-tagged

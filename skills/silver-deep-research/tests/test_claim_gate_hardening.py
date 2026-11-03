@@ -485,3 +485,68 @@ class ReviewVariantTests(Run):
                        "Microsoft acquired GitHub in 2018 for 7.5 billion dollars")
         code, out, _ = self.cli(vcs, "verify", "--dir", str(d), "--strict")
         self.assertEqual(code, 1, out)
+
+
+class ClaimCorpusTests(Run):
+    """R11-02: a curated corpus of fabrications and honest claims, judged by the real strict gate."""
+
+    CORPUS = json.loads((SKILL / "tests" / "fixtures" / "claim_corpus.json").read_text(encoding="utf-8"))
+
+    def test_corpus_is_large_enough(self):
+        self.assertGreaterEqual(len(self.CORPUS["fabrications"]), 40)
+        self.assertGreaterEqual(len(self.CORPUS["honest"]), 40)
+
+    def test_scorer_rejects_every_fabrication_and_accepts_every_honest_claim(self):
+        bad = [p for p in self.CORPUS["fabrications"] if vcs.compute_support_score(p[0], [p[1]])[0] == "supported"]
+        self.assertEqual(bad, [], "fabrications scored as supported")
+        missed = [p for p in self.CORPUS["honest"] if vcs.compute_support_score(p[0], [p[1]])[0] != "supported"]
+        self.assertEqual(missed, [], "honest claims not supported")
+
+    def _strict(self, claim, quote, n):
+        d = self.dir / f"run{n}"
+        d.mkdir()
+        self.cli(citation_manager, "init-run", "--out-dir", str(d))
+        sid = json.loads(self.cli(citation_manager, "register-source", "--dir", str(d), "--json", "-",
+                                  stdin=json.dumps({"raw_url": "https://src.example/p", "title": "Src"}))[1])["source_id"]
+        self.cli(evidence_store, "add", "--dir", str(d), "--json", "-", stdin=json.dumps({"source_id": sid, "quote": quote}))
+        (d / "research_report.md").write_text(
+            f"# Report\n\n## Finding\n\n{claim.rstrip('.')} [1].\n\n## Bibliography\n\n[1] Src. https://src.example/p\n",
+            encoding="utf-8")
+        self.cli(extract_claims, "extract", "--report", str(d / "research_report.md"), "--dir", str(d))
+        return self.cli(vcs, "verify", "--dir", str(d), "--strict")[0]
+
+    def test_strict_gate_end_to_end_on_the_whole_corpus(self):
+        n = 0
+        for claim, quote in self.CORPUS["fabrications"]:
+            n += 1
+            self.assertEqual(self._strict(claim, quote, n), 1, f"fabrication passed strict: {claim!r} / {quote!r}")
+        for claim, quote in self.CORPUS["honest"]:
+            n += 1
+            self.assertEqual(self._strict(claim, quote, n), 0, f"honest claim failed strict: {claim!r} / {quote!r}")
+
+    def test_figure_normalisation(self):
+        fig = lambda t: [(f[0], f[1]) for f in vcs.extract_figures(t)]  # noqa: E731
+        self.assertEqual(fig("$50M"), fig("50 million dollars"))
+        self.assertEqual(fig("$7.5B"), [(7.5e9, "num")])
+        self.assertEqual(fig("10k users"), [(10000.0, "num")])
+        self.assertEqual(fig("2,500 customers"), [(2500.0, "num")])
+        self.assertEqual(fig("grew 40% in 2024"), [(40.0, "%"), (2024.0, "year")])
+        self.assertEqual(fig("3x faster"), [(3.0, "x")])
+        self.assertEqual(fig("EC2, S3, GPT4, Q3 and FY2018"), [])
+        self.assertEqual(vcs.extract_entities("runs on EC2 and GPT4 in FY2018"), {"EC2", "GPT4", "FY2018"})
+
+    def test_negation_helpers(self):
+        self.assertTrue(vcs._is_negated("it is not available"))
+        self.assertFalse(vcs._is_negated("it does not guarantee zero downtime"))  # two cues: positive
+        self.assertFalse(vcs._is_negated("supports not only SSO but also SCIM"))
+        self.assertTrue(vcs._is_negated("the service is unavailable"))
+        self.assertEqual(vcs._stem("disclosed"), vcs._stem("disclose"))
+
+
+class ShortFactualSentenceTests(Run):
+    def test_short_sentences_with_a_figure_are_claims_but_short_labels_are_not(self):
+        text = "Acme raised $50M in 2023. See Figure 3. Overall good. Acme has 500 users here."
+        found = extract_claims.extract_sentences(text)
+        self.assertIn("Acme raised $50M in 2023.", found)
+        self.assertNotIn("Overall good.", found)
+        self.assertNotIn("See Figure 3.", found)

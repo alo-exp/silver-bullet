@@ -108,6 +108,12 @@ CHECKABLE_FIGURE_RE = re.compile(
 )
 
 
+def _long_enough(sentence: str) -> bool:
+    """A sentence over 30 characters, or a shorter one of 4+ words that states a figure
+    ("Acme raised $50M in 2023."): short factual sentences must not slip past the gate."""
+    return len(sentence) > 30 or (len(sentence.split()) >= 4 and bool(re.search(r'\d', sentence)))
+
+
 def classify_claim(text: str, section_id: str) -> str:
     """Heuristic claim type classification (whole-word cues only)."""
     stripped = text.strip()
@@ -167,7 +173,7 @@ def extract_sentences(text: str) -> list[str]:
     for s in sentences:
         s = s.strip()
         # Filter out very short fragments, headings, empty lines
-        if len(s) > 30 and not s.startswith('#') and not s.startswith('|'):
+        if _long_enough(s) and not s.startswith('#') and not s.startswith('|'):
             result.append(s)
     return result
 

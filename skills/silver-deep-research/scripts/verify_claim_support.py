@@ -45,13 +45,23 @@ ENTITY_RE = re.compile(
     r'\b(?:[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*|[A-Z]{2,}[a-z]*|[A-Z][a-z]+[A-Z]\w*|[a-z]+[A-Z]\w*)\b'
 )
 
-# Negation cues. A claim and the quote clause it matches must agree on negation, otherwise
-# "does not guarantee zero downtime" would count as support for "guarantees zero downtime".
+# Alphanumeric identifiers (EC2, S3, GPT4, H100, FY2018, Q3) are names, not quantities.
+ID_RE = re.compile(r'\b[A-Za-z]+\d+[A-Za-z0-9]*\b')
+
+# Negation cues. Every claim clause is compared with every quote clause about the same thing:
+# "does not guarantee zero downtime" must not count as support for "guarantees zero downtime".
 NEGATION_RE = re.compile(
-    r"\b(?:not|no|never|none|neither|nor|without|cannot|fails? to|unable to|lacks?)\b|n't\b",
+    r"\b(?:not|no|never|none|neither|nor|without|cannot|zero|absent|"
+    r"fails? to|unable to|lacks?|lacking)\b|n't\b",
     re.IGNORECASE,
 )
-CLAUSE_SPLIT_RE = re.compile(r'[.;:!?,]|\bbut\b|\bhowever\b|\balthough\b', re.IGNORECASE)
+UN_RE = re.compile(r'\bun(available|supported|able|certified)\b', re.IGNORECASE)
+NOT_ONLY_RE = re.compile(r'\bnot only\b', re.IGNORECASE)
+CLAUSE_SPLIT_RE = re.compile(
+    r'[.;:!?]\s|[.;:!?]$|,\s*(?:which|who|whose|but|while|whereas)\b|\bbut\b|\bhowever\b|\balthough\b'
+    r'|\bwhereas\b|\bwhile\b|\band\b',
+    re.IGNORECASE,
+)
 
 # Common stop entities to ignore
 STOP_ENTITIES = frozenset([
@@ -84,9 +94,150 @@ def extract_years(text: str) -> set[str]:
 
 
 def extract_entities(text: str) -> set[str]:
-    """Extract capitalized entity mentions."""
-    ents = set(ENTITY_RE.findall(text))
+    """Extract capitalized entity mentions and alphanumeric identifiers (EC2, GPT4, FY2018)."""
+    ents = set(ENTITY_RE.findall(text)) | set(ID_RE.findall(text))
     return ents - STOP_ENTITIES
+
+
+# A figure: optional currency, digits with optional thousands separators and decimals, then an
+# optional unit/scale (%, k, M, bn, million, ...). Digits glued to letters (EC2) are not figures.
+FIGURE_RE = re.compile(
+    r'(?<![\w.])([$\u20ac\u00a3])?\s?(\d{1,3}(?:,\d{3})+|\d+)(\.\d+)?'
+    r'(?:\s*(%|trillion|billion|million|thousand)\b|(%|bn|mn|[kKmMbBxX])(?![A-Za-z0-9]))?'
+)
+SCALES = {'k': 1e3, 'thousand': 1e3, 'm': 1e6, 'mn': 1e6, 'million': 1e6, 'b': 1e9, 'bn': 1e9,
+          'billion': 1e9, 'trillion': 1e12}
+FILLER_WORDS = frozenset(
+    'a an the of in on at to by for from with and or as per than over under about around nearly '
+    'roughly approximately more less up down into across during since until while after before '
+    'dollars dollar usd eur euros euro pounds gbp'.split()
+)
+CONJUNCTIONS = frozenset(['and', 'or', 'but', 'while', 'whereas', 'although', 'however'])
+WORD_RE = re.compile(r"[A-Za-z]+|\d+")
+
+
+def _stem(word: str) -> str:
+    word = word.lower()
+    for suffix in ('ing', 'ed', 'es', 's'):
+        if len(word) > len(suffix) + 3 and word.endswith(suffix):
+            word = word[:-len(suffix)]
+            break
+    return word[:-1] if len(word) > 4 and word.endswith('e') else word
+
+
+def extract_figures(text: str) -> list[tuple[float, str, Optional[str], tuple, frozenset]]:
+    """Normalised figures as (value, kind, head noun, words before, words after).
+
+    $50M and 50 million dollars are both 5e7; 2,500 is 2500.0, not {2, 500}; kind is 'year',
+    '%', 'x' or 'num'. The head noun is the first content word after the figure (None when a
+    conjunction or another number comes first); before/after hold the stems of up to three
+    content words on each side.
+    """
+    out = []
+    for m in FIGURE_RE.finditer(text):
+        currency, whole, frac, word_unit, abbr = m.group(1), m.group(2), m.group(3), m.group(4), m.group(5)
+        value = float(whole.replace(',', '') + (frac or ''))
+        unit = (word_unit or abbr or '').lower()
+        if unit == '%':
+            kind = '%'
+        elif unit == 'x' and not currency:
+            kind = 'x'
+        else:
+            value *= SCALES.get(unit, 1)
+            kind = 'num'
+            if not currency and not unit and not frac and len(whole) == 4 and 1900 <= value <= 2099:
+                kind = 'year'
+        after: list[str] = []
+        noun = None
+        stopped = False
+        for w in WORD_RE.findall(text[m.end():m.end() + 80]):
+            if w.isdigit() or w.lower() in CONJUNCTIONS:
+                stopped = True
+            if stopped:
+                break
+            if w.lower() not in FILLER_WORDS:
+                after.append(_stem(w))
+        if kind != 'year' and after:
+            noun = after[0]
+        before = [_stem(w) for w in reversed(WORD_RE.findall(text[max(0, m.start() - 60):m.start()]))
+                  if not w.isdigit() and w.lower() not in FILLER_WORDS and w.lower() not in CONJUNCTIONS][:3]
+        out.append((value, kind, noun, tuple(before), frozenset(after[:3])))
+    return out
+
+
+def _clauses(text: str) -> list[str]:
+    return [c.strip() for c in CLAUSE_SPLIT_RE.split(text) if c and c.strip()]
+
+
+def _figures_supported(claim_figs, quote_clauses) -> tuple[int, int]:
+    """(matched, total) claim figures. A figure matches a quote figure of the same value and kind
+    attached to the same thing: the claim's head noun follows it, or, with no noun, the claim's
+    words just before it also precede the quote's figure."""
+    matched = 0
+    quote_figs = [f for clause in quote_clauses for f in extract_figures(clause)]
+    for value, kind, noun, before, _after in claim_figs:
+        for qv, qk, _qn, qbefore, qafter in quote_figs:
+            if qv != value or qk != kind:
+                continue
+            if kind == 'year':
+                ok = True
+            elif noun is not None:
+                ok = noun in qafter
+            else:
+                ok = not before or bool(set(before[:2]) & set(qbefore))
+            if ok:
+                matched += 1
+                break
+    return matched, len(claim_figs)
+
+
+def _normalize_negation(text: str) -> str:
+    return UN_RE.sub(r'not \1', text)
+
+
+def _is_negated(clause: str) -> bool:
+    """Odd number of negation cues ("does not guarantee zero downtime" is two: a positive)."""
+    return len(NEGATION_RE.findall(NOT_ONLY_RE.sub(' ', _normalize_negation(clause)))) % 2 == 1
+
+
+def _negation_conflict(claim_text: str, quote: str) -> bool:
+    """True when a claim clause and an aligned quote clause disagree on negation.
+
+    A quote clause is aligned with a claim clause when it contains all of that clause's figures
+    and capitalised terms (except the subject, which a quote may replace with a pronoun) and
+    shares at least 60% of its significant words. Any aligned clause that disagrees counts,
+    wherever it sits in the quote.
+    """
+    claim_text, quote = _normalize_negation(claim_text), _normalize_negation(quote)
+    quote_clauses = _clauses(quote)
+    subject = None
+    first = ENTITY_RE.search(claim_text)
+    if first:
+        subject = first.group(0)
+    for claim_clause in _clauses(claim_text):
+        want = {w.lower() for w in extract_entities(claim_clause) if w != subject and w.lower() not in
+                {x.lower() for x in (subject or '').split()}}
+        figures = {(f[0], f[1]) for f in extract_figures(claim_clause)}
+        tokens = {_stem(t) for t in extract_tokens(NEGATION_RE.sub(' ', claim_clause))}
+        if subject:
+            tokens -= {_stem(t.lower()) for t in subject.split() if len(t) > 3}
+        if not tokens and not want and not figures:
+            continue
+        negated = _is_negated(claim_clause)
+        for q in quote_clauses:
+            q_lower = q.lower()
+            q_figures = {(f[0], f[1]) for f in extract_figures(q)}
+            hits = [w for w in want if re.search(r'\b' + re.escape(w) + r'\b', q_lower)]
+            if (want or figures) and not hits and not (figures & q_figures):
+                continue
+            if figures and not figures <= q_figures:
+                continue
+            q_tokens = {_stem(t) for t in extract_tokens(NEGATION_RE.sub(' ', q))}
+            if tokens and len(tokens & q_tokens) / len(tokens) < 0.6:
+                continue
+            if _is_negated(q) != negated:
+                return True
+    return False
 
 
 def _fraction_present(wanted: set[str], have: set[str]) -> float:
@@ -100,26 +251,14 @@ def _entity_coverage(entities: set[str], quote: str) -> float:
     return found / len(entities)
 
 
-def _negation_conflict(claim_text: str, quote: str) -> bool:
-    """True when the claim and the best-matching clause of the quote disagree on negation."""
-    claim_tokens = extract_tokens(claim_text)
-    best, best_overlap = '', 0
-    for clause in CLAUSE_SPLIT_RE.split(quote):
-        overlap = len(claim_tokens & extract_tokens(clause))
-        if overlap > best_overlap:
-            best, best_overlap = clause, overlap
-    if not best_overlap:
-        return False
-    return bool(NEGATION_RE.search(claim_text)) != bool(NEGATION_RE.search(best))
-
-
 def compute_support_score(claim_text: str, evidence_quotes: list[str]) -> tuple[str, float, str]:
     """
     Compute support status for a claim given its linked evidence quotes.
 
     Returns (status, score, notes). A claim is 'supported' only when the best quote scores at
-    least 0.6, shares at least 30% of the claim's significant words, and contains every number,
-    year and named entity of the claim: a missing one counts as non-support.
+    least 0.6, shares at least 30% of the claim's significant words, contains every named entity
+    and every figure of the claim (same normalised value and unit, next to the same head noun
+    in one clause), and no aligned quote clause contradicts a claim clause's negation.
     """
     if not evidence_quotes:
         return ('unsupported', 0.0, 'no evidence linked')
@@ -127,8 +266,9 @@ def compute_support_score(claim_text: str, evidence_quotes: list[str]) -> tuple[
     # Inline citation markers such as [1] or [2, 3] are references, not claimed numbers.
     claim_text = INLINE_CITATION_RE.sub(' ', claim_text)
     claim_tokens = extract_tokens(claim_text)
-    claim_numbers = extract_numbers(claim_text)
-    claim_years = extract_years(claim_text)
+    claim_figs = extract_figures(claim_text)
+    claim_numbers = [f for f in claim_figs if f[1] != 'year']
+    claim_years = [f for f in claim_figs if f[1] == 'year']
     claim_entities = extract_entities(claim_text)
 
     best: tuple[float, bool, list[str]] = (-1.0, False, [])
@@ -139,9 +279,10 @@ def compute_support_score(claim_text: str, evidence_quotes: list[str]) -> tuple[
         complete = token_overlap >= MIN_TOKEN_OVERLAP
         if token_overlap < MIN_TOKEN_OVERLAP:
             notes.append('low lexical overlap')
+        quote_clauses = _clauses(quote) or [quote]
         for name, wanted, measure, note in (
-            ('numbers', claim_numbers, lambda w: _fraction_present(w, extract_numbers(quote)), 'number mismatch'),
-            ('years', claim_years, lambda w: _fraction_present(w, extract_years(quote)), 'year mismatch'),
+            ('numbers', claim_numbers, lambda w: _ratio(_figures_supported(w, quote_clauses)), 'number mismatch'),
+            ('years', claim_years, lambda w: _ratio(_figures_supported(w, quote_clauses)), 'year mismatch'),
             ('entities', claim_entities, lambda w: _entity_coverage(w, quote), 'entity mismatch'),
         ):
             if not wanted:
@@ -166,6 +307,10 @@ def compute_support_score(claim_text: str, evidence_quotes: list[str]) -> tuple[
     else:
         status = 'needs_review'
     return (status, round(score, 3), '; '.join(notes) if notes else 'adequate overlap')
+
+
+def _ratio(pair: tuple[int, int]) -> float:
+    return pair[0] / pair[1]
 
 # Kept identical to citation_manager.py so source_id matching stays stable
 # (tests/test_verify_claim_support_unit.py::TestCanonicalParity enforces it).

@@ -191,7 +191,7 @@ class TestScoreBoundaries(unittest.TestCase):
         self.assertEqual(notes, 'number mismatch')
 
     def test_high_score_with_low_word_overlap_is_only_partial(self):
-        status, score, notes = self.score('alpha bravo charlie delta 12 2020 Qux', 'alpha 12 2020 Qux')
+        status, score, notes = self.score('alpha bravo charlie delta 12 2020 Qux', 'delta 12 2020 Qux')
         self.assertEqual((status, score), ('partial', 0.7))
         self.assertEqual(notes, 'low lexical overlap')
 

@@ -103,12 +103,13 @@ class CitationGateTests(unittest.TestCase):
 
     def test_resolving_doi_does_not_clear_a_hallucination_flag(self):
         v = verifier("## Bibliography\n")
-        entry = {"num": "1", "raw": "Doe (2020). \"TBD results\". https://doi.org/10.1/x", "year": "2020",
-                 "title": "TBD results", "doi": "10.1/x", "url": "https://doi.org/10.1/x"}
-        with mock.patch.object(v, "verify_doi", return_value=(True, {"title": "TBD results", "year": 2020})):
+        entry = {"num": "1", "raw": "Doe (2999). \"Future results\". https://doi.org/10.1/x", "year": "2999",
+                 "title": "Future results", "doi": "10.1/x", "url": "https://doi.org/10.1/x"}
+        with mock.patch.object(v, "verify_doi", return_value=(True, {"title": "Future results", "year": 2999})):
             result = quiet(v.verify_entry, entry)
         self.assertEqual(result["status"], "suspicious")
 
+    @mock.patch.object(vc.time, "sleep", lambda *_: None)
     def test_real_titles_pass_when_the_url_or_doi_confirms_them(self):
         """Honest bibliography: titles that merely look generic are warnings, not failures."""
         titles = [
@@ -123,12 +124,58 @@ class CitationGateTests(unittest.TestCase):
             self.assertTrue(v.verify_all())
         self.assertIn("CITATION VERIFICATION PASSED", out.getvalue())
 
-    def test_ai_terms_need_whole_words(self):
+    def test_anachronism_only_for_terms_that_did_not_exist(self):
         v = verifier("## Bibliography\n")
-        issues = v.detect_hallucination_patterns({"title": "Creating and Sustaining Superior Performance", "year": "1985"})
-        self.assertFalse([i for i in issues if "Anachronistic" in i])
-        issues = v.detect_hallucination_patterns({"title": "AI planning with GPT", "year": "1985"})
-        self.assertTrue([i for i in issues if "Anachronistic" in i])
+        for title in ("Creating and Sustaining Superior Performance", "Foundations of AI: The Big Issues",
+                      "What Is AI, Anyway?", "Oil Filled Transformer Winding"):
+            self.assertFalse([i for i in v.detect_hallucination_patterns({"title": title, "year": "1985"})
+                              if "Anachronistic" in i], title)
+        for title in ("ChatGPT for tax law", "Scaling LLMs", "GPT-4 in 1990"):
+            self.assertTrue([i for i in v.detect_hallucination_patterns({"title": title, "year": "1985"})
+                             if "Anachronistic" in i], title)
+
+    def test_placeholder_cues_are_whole_word_and_case_aware(self):
+        v = verifier("## Bibliography\n")
+        for title in ("Explaining and Harnessing Adversarial Examples", "Counterexamples in Topology",
+                      "Todo lists and memory", "A tbd-free design"):
+            self.assertFalse([i for i in v.detect_hallucination_patterns({"title": title})
+                              if "Placeholder" in i], title)
+        for title in ("TBD", "Results TODO", "Lorem ipsum dolor", "[placeholder] study", "Placeholder title here"):
+            self.assertTrue([i for i in v.detect_hallucination_patterns({"title": title})
+                             if "Placeholder" in i], title)
+
+    @mock.patch.object(vc.time, "sleep", lambda *_: None)
+    def test_a_real_bibliography_fully_confirmed_always_passes_even_lenient(self):
+        """R11-06: 16 real citations, every DOI/URL resolves to the entry's own title and year."""
+        real = [
+            (2015, "Goodfellow et al.", "Explaining and Harnessing Adversarial Examples", "10.48550/arXiv.1412.6572"),
+            (1991, "Kirsh", "Foundations of AI: The Big Issues", "10.1016/0004-3702(91)90017-W"),
+            (1987, "Schank", "What Is AI, Anyway?", "10.1609/aimag.v8i4.623"),
+            (1978, "Steen and Seebach", "Counterexamples in Topology", "10.1007/978-1-4612-6290-9"),
+            (1992, "Pierce", "Design of an Oil Filled Transformer Winding", "10.1109/61.153501"),
+            (2017, "Vaswani et al.", "Attention Is All You Need", "10.48550/arXiv.1706.03762"),
+            (1986, "Rumelhart et al.", "Learning Representations by Back-Propagating Errors", "10.1038/323533a0"),
+            (2020, "Raffel et al.", "Exploring the Limits of Transfer Learning", "10.48550/arXiv.1910.10683"),
+            (1985, "Porter", "Competitive Advantage: Creating and Sustaining Superior Performance", "10.1000/porter"),
+            (2023, "Zhao et al.", "A Survey of Large Language Models", "10.48550/arXiv.2303.18223"),
+            (2014, "Chacon and Straub", "Pro Git Guide", "10.1000/progit"),
+            (1999, "Gamma et al.", "An Introduction to Design Patterns", "10.1000/gof"),
+            (2021, "Bommasani et al.", "On the Opportunities and Risks of Foundation Models", "10.48550/arXiv.2108.07258"),
+            (2019, "Devlin et al.", "A Study of Pre-training for Language Understanding", "10.48550/arXiv.1810.04805"),
+            (1994, "Hinton", "Overview of Boltzmann Machines", "10.1000/hinton"),
+            (2022, "Wei et al.", "Chain-of-Thought Prompting Elicits Reasoning in Large Language Models", "10.48550/arXiv.2201.11903"),
+        ]
+        self.assertGreaterEqual(len(real), 15)
+        body = "## Bibliography\n\n" + "\n".join(
+            f'[{i}] {a} ({y}). "{t}". https://doi.org/{doi}' for i, (y, a, t, doi) in enumerate(real, 1)) + "\n"
+        meta = {doi: {"title": t, "year": y} for (y, a, t, doi) in real}
+        for lenient in (False, True):
+            v = verifier(body)
+            v.lenient = lenient
+            with mock.patch.object(v, "verify_doi", side_effect=lambda doi: (True, meta[doi])), \
+                    contextlib.redirect_stdout(io.StringIO()) as out:
+                self.assertTrue(v.verify_all(), out.getvalue())
+            self.assertIn("Suspicious: 0/16", out.getvalue())
 
     def test_generic_titles_without_confirmation_are_still_flagged(self):
         v = verifier("## Bibliography\n")
@@ -138,6 +185,7 @@ class CitationGateTests(unittest.TestCase):
         self.assertEqual(result["status"], "suspicious")
         self.assertFalse(result["hard"])
 
+    @mock.patch.object(vc.time, "sleep", lambda *_: None)
     def test_lenient_excuses_unconfirmed_entries_but_not_wrong_ones(self):
         v = verifier("## Bibliography\n")
         v.lenient = True
@@ -179,9 +227,72 @@ class FakeSock:
 class PinnedConnectionTests(unittest.TestCase):
     """The vetted address is the one connected to (no second DNS lookup to rebind)."""
 
+    def setUp(self):
+        env = {k: v for k, v in __import__("os").environ.items() if "proxy" not in k.lower()}
+        p = mock.patch.dict("os.environ", env, clear=True)
+        p.start()
+        self.addCleanup(p.stop)
+
     @staticmethod
     def resolver(addr):
         return lambda host, port, proto=0: [(2, 1, 6, "", (addr, port))]
+
+    @staticmethod
+    def fake_proxy(reply):
+        """A real local TCP 'proxy' on 127.0.0.1 that records the first request and replies."""
+        import threading
+        srv = socket.socket()
+        srv.bind(("127.0.0.1", 0))
+        srv.listen(1)
+        seen = {}
+
+        def serve():
+            conn, _ = srv.accept()
+            data = b""
+            while b"\r\n\r\n" not in data:
+                chunk = conn.recv(4096)
+                if not chunk:
+                    break
+                data += chunk
+            seen["request"] = data
+            conn.sendall(reply)
+            conn.close()
+            srv.close()
+
+        t = threading.Thread(target=serve, daemon=True)
+        t.start()
+        return srv.getsockname()[1], seen, t
+
+    def test_https_through_a_proxy_sends_connect_to_the_target_even_for_a_loopback_proxy(self):
+        port, seen, t = self.fake_proxy(b"HTTP/1.1 403 Forbidden\r\nContent-Length: 0\r\n\r\n")
+        with mock.patch.dict("os.environ", {"HTTPS_PROXY": f"http://127.0.0.1:{port}"}):
+            with self.assertRaises(OSError):
+                vc._urlopen(request.Request("https://doi.example/10.1/x"), 5, self.resolver("93.184.216.34"))
+        t.join(5)
+        self.assertTrue(seen["request"].startswith(b"CONNECT doi.example:443 HTTP/1.1"), seen)
+
+    def test_https_tunnel_does_tls_with_the_target_name_not_the_proxy(self):
+        conn = vc._PinnedHTTPSConnection("proxy.corp.example", 3128, resolver=self.resolver("10.20.30.40"))
+        conn.set_tunnel("doi.example", 443)
+        wrapped = []
+        conn._context = types.SimpleNamespace(wrap_socket=lambda sock, server_hostname: wrapped.append(server_hostname) or sock)
+        sock = FakeSock(b"HTTP/1.1 200 Connection established\r\n\r\n")
+        with mock.patch.object(socket, "create_connection", return_value=sock) as cc:
+            conn.connect()
+        self.assertEqual(cc.call_args.args[0], ("proxy.corp.example", 3128))  # the user's proxy, not vetted
+        self.assertTrue(sock.sent.startswith(b"CONNECT doi.example:443"))
+        self.assertEqual(wrapped, ["doi.example"])
+
+    def test_http_through_a_proxy_connects_to_the_proxy_with_an_absolute_uri(self):
+        port, seen, t = self.fake_proxy(b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nhi")
+        with mock.patch.dict("os.environ", {"HTTP_PROXY": f"http://127.0.0.1:{port}"}):
+            with vc._urlopen(request.Request("http://docs.example/p"), 5, self.resolver("93.184.216.34")) as resp:
+                self.assertEqual(resp.read(), b"hi")
+        t.join(5)
+        self.assertTrue(seen["request"].startswith(b"GET http://docs.example/p HTTP/1.1"), seen)
+
+    def test_without_a_proxy_the_target_is_still_vetted(self):
+        self.assertFalse(vc._is_proxied(request.Request("http://docs.example/p")))
 
     def test_http_connects_to_the_vetted_address_and_keeps_the_host_header(self):
         sock = FakeSock()

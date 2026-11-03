@@ -226,7 +226,7 @@ class TestHallucination(unittest.TestCase):
     def test_generic_short_and_placeholder(self):
         i = self.v.detect_hallucination_patterns(entry(title='Quick guide'))
         self.assertEqual(i, ['Very generic short title'])
-        i = self.v.detect_hallucination_patterns(entry(title='Unrelated example'))
+        i = self.v.detect_hallucination_patterns(entry(title='Unrelated TBD'))
         self.assertEqual(i, ['Placeholder text in title'])
         # generic word but long title: not flagged
         i = self.v.detect_hallucination_patterns(entry(title='An introduction to databases for working engineers'))
@@ -381,9 +381,17 @@ class TestVerifyEntry(unittest.TestCase):
         self.assertEqual(r['warnings'], ['Suspicious title pattern: Generic academic title pattern'])
 
     def test_url_ok_does_not_clear_a_hard_flag(self):
-        r, _ = self.run_entry(entry(url='http://e.com', title='TBD findings'), url=(True, 'ok'))
+        r, _ = self.run_entry(entry(url='http://e.com', title='Findings', year='2999'), url=(True, 'ok'))
         self.assertEqual(r['status'], 'suspicious')
         self.assertTrue(r['hard'])
+
+    def test_placeholder_and_anachronism_are_warnings_when_confirmed_and_flags_when_not(self):
+        r, _ = self.run_entry(entry(url='http://e.com', title='TBD findings'), url=(True, 'ok'))
+        self.assertEqual(r['status'], 'url_verified')
+        self.assertIn('Placeholder text in title', r['warnings'])
+        r, _ = self.run_entry(entry(url='http://e.com', title='TBD findings'), url=(False, 'HTTP 404'))
+        self.assertEqual(r['status'], 'suspicious')
+        self.assertFalse(r['hard'])
 
     def test_url_fail(self):
         r, _ = self.run_entry(entry(url='http://e.com'), url=(False, 'HTTP 404'))

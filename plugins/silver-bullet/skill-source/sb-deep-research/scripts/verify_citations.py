@@ -97,12 +97,16 @@ def unsafe_url_reason(url: str, resolver: Optional[Callable] = None) -> Optional
     return None
 
 
-def _connect_pinned(conn, resolver: Optional[Callable]):
+def _connect_pinned(conn, resolver: Optional[Callable], proxied: bool = False):
     """Open ``conn``'s socket to an address vetted at connect time (no second DNS lookup).
 
     The URL check resolves the host once and urllib would resolve it again to connect, which a
     rebinding DNS server can answer differently. Resolving and connecting here use one answer.
+    A configured proxy (HTTP(S)_PROXY) is the user's own choice and is connected to as is; the
+    target host was vetted by ``unsafe_url_reason`` before the request and on every redirect.
     """
+    if proxied:
+        return socket.create_connection((conn.host, conn.port), conn.timeout, conn.source_address)
     try:
         addrs = _public_addresses(conn.host, conn.port, resolver)
     except (ValueError, OSError, UnicodeError) as exc:
@@ -111,12 +115,13 @@ def _connect_pinned(conn, resolver: Optional[Callable]):
 
 
 class _PinnedHTTPConnection(http.client.HTTPConnection):
-    def __init__(self, *args, resolver=None, **kwargs):
+    def __init__(self, *args, resolver=None, proxied=False, **kwargs):
         super().__init__(*args, **kwargs)
         self._resolver = resolver
+        self._proxied = proxied
 
     def connect(self):
-        self.sock = _connect_pinned(self, self._resolver)
+        self.sock = _connect_pinned(self, self._resolver, self._proxied)
 
 
 class _PinnedHTTPSConnection(http.client.HTTPSConnection):
@@ -125,8 +130,21 @@ class _PinnedHTTPSConnection(http.client.HTTPSConnection):
         self._resolver = resolver
 
     def connect(self):
-        sock = _connect_pinned(self, self._resolver)
-        self.sock = self._context.wrap_socket(sock, server_hostname=self.host)
+        if self._tunnel_host:
+            # Through a proxy: connect to it, open a CONNECT tunnel to the target, and do TLS
+            # with the target's name (not the proxy's).
+            self.sock = _connect_pinned(self, self._resolver, proxied=True)
+            self._tunnel()
+            server_hostname = self._tunnel_host
+        else:
+            self.sock = _connect_pinned(self, self._resolver)
+            server_hostname = self.host
+        self.sock = self._context.wrap_socket(self.sock, server_hostname=server_hostname)
+
+
+def _is_proxied(req) -> bool:
+    """urllib points ``req.host`` at the proxy and keeps the real URL in ``full_url``."""
+    return (urlparse(req.full_url).hostname or '').lower() != (urlparse('//' + req.host).hostname or '').lower()
 
 
 class _PinnedHTTPHandler(request.HTTPHandler):
@@ -135,7 +153,10 @@ class _PinnedHTTPHandler(request.HTTPHandler):
         self.resolver = resolver
 
     def http_open(self, req):
-        return self.do_open(lambda host, **kw: _PinnedHTTPConnection(host, resolver=self.resolver, **kw), req)
+        proxied = _is_proxied(req)
+        return self.do_open(
+            lambda host, **kw: _PinnedHTTPConnection(host, resolver=self.resolver, proxied=proxied, **kw), req
+        )
 
 
 class _PinnedHTTPSHandler(request.HTTPSHandler):
@@ -172,7 +193,9 @@ def _urlopen(req: request.Request, timeout: float, resolver: Optional[Callable])
 
 # Heuristic hits that real titles also trigger ("A Survey of Large Language Models",
 # "Pro Git Guide"). They only make an entry suspicious when no DOI or URL confirmed it.
-SOFT_ISSUE_PREFIXES = ('Suspicious title pattern', 'Very generic short title')
+SOFT_ISSUE_PREFIXES = ('Suspicious title pattern', 'Very generic short title', 'Placeholder text', 'Anachronistic')
+PLACEHOLDER_RE = re.compile(r'(?-i:\b(?:TBD|TODO|XXX)\b)|\blorem ipsum\b|\[placeholder\]|\bplaceholder (?:title|text|citation)\b',
+                            re.IGNORECASE)
 
 
 class CitationVerifier:
@@ -355,7 +378,8 @@ class CitationVerifier:
             issues.append("Very generic short title")
 
         # Check for placeholder-like titles
-        if any(x in title.lower() for x in ['tbd', 'todo', 'placeholder', 'example']):
+        # Whole-word, case-aware: "Adversarial Examples" and "Counterexamples" are real titles.
+        if PLACEHOLDER_RE.search(title):
             issues.append("Placeholder text in title")
 
         # Check for inconsistent metadata
@@ -368,8 +392,8 @@ class CitationVerifier:
             # Future year is definitely wrong
             if year > current_year:
                 issues.append(f"Future year: {year} (current: {current_year})")
-            # Very old with modern phrasing is suspicious
-            if year < 2000 and re.search(r'\b(?:ai|llm|llms|gpt|transformers?)\b', title, re.IGNORECASE):
+            # Terms that did not exist yet ("AI" and "transformer" did: only these cannot be pre-2000).
+            if year < 2000 and re.search(r'\b(?:llms?|gpt-?\d*|chatgpt)\b', title, re.IGNORECASE):
                 issues.append(f"Anachronistic: pre-2000 ({year}) citation mentioning modern AI terms")
 
         return issues

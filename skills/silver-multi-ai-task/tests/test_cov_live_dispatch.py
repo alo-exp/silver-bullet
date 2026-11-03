@@ -400,63 +400,63 @@ class DelegateWorkerTests(HermeticCase):
         self.assertEqual(result.status, "failed")
         self.assertIn("prompt too large", result.error)
 
-    def test_delegate_refuses_an_oversized_prompt_without_spawning(self) -> None:
-        invoke = self.tmp / "invoke.sh"
-        invoke.write_text("#!/bin/sh\n")
-        with mock.patch.object(ld, "AGENT_CLAUDE_INVOKE", invoke), mock.patch.object(ld, "_run_cli") as run:
+    def _run_claude(self, outcome, logical="claude-opus-4.8-medium", prompt="PR"):
+        def fake(cmd, **kwargs):  # noqa: ANN001
+            self.captured = (cmd, kwargs)
+            if isinstance(outcome, BaseException):
+                raise outcome
+            return outcome
+
+        with mock.patch.object(ld, "_run_cli", side_effect=fake):
+            return ld.run_claude_worker(logical_model_id=logical, prompt=prompt, output_dir=self.out, timeout_sec=9)
+
+    def test_claude_refuses_an_oversized_prompt_without_spawning(self) -> None:
+        with mock.patch.object(ld, "_run_cli") as run:
             result = ld.run_claude_worker(logical_model_id="claude-opus-4.8-medium", prompt="y" * (ld.MAX_PROMPT_BYTES + 1), output_dir=self.out)
         run.assert_not_called()
         self.assertEqual(result.status, "failed")
         self.assertIn("prompt too large", result.error)
 
-    def test_claude_worker_success_and_environment(self) -> None:
-        with mock.patch.dict(os.environ, {"CLAUDE_BIN": "/x/claude"}):
-            result = self._run(ld.run_claude_worker, "claude-opus-4.8-medium", proc(0, "out"), "AGENT_CLAUDE_INVOKE")
+    def test_claude_worker_runs_in_default_permission_mode_with_the_prompt_on_stdin(self) -> None:
+        with mock.patch.dict(os.environ, {"CLAUDE_BIN": "/x/claude", "CLAUDE_PERMISSION_MODE": "bypassPermissions",
+                                          "SB_AGENT_CERT_RUN": "1"}):
+            result = self._run_claude(proc(0, "out"))
         self.assertEqual((result.status, result.backend, result.error), ("completed", "claude", None))
         self.assertEqual(result.effective_model_id, "claude-opus-4-8-medium")
         cmd, kwargs = self.captured
-        self.assertEqual(cmd[1], str(self.invoke))
-        self.assertIn("--use-print", cmd)
+        self.assertEqual(cmd, ["/x/claude", "--print", "--model", "claude-opus-4-8", "--effort", "medium",
+                               "--permission-mode", "default"])
+        self.assertEqual(kwargs["stdin_text"], "PR")
         env = kwargs["env"]
-        self.assertEqual(env["CLAUDE_BIN"], "/x/claude")
-        self.assertEqual(env["CLAUDE_MODEL"], "claude-opus-4-8")
-        self.assertEqual(env["CLAUDE_EFFORT"], "medium")
-        self.assertEqual(env["SB_AGENT_CLAUDE_DELEGATE"], "1")
+        self.assertNotIn("CLAUDE_PERMISSION_MODE", env)
+        self.assertNotIn("SB_AGENT_CERT_RUN", env)
+        self.assertEqual((env["SB_ORCHESTRATOR_WORKER"], env["SB_ORCHESTRATOR_PARENT"]), ("1", "0"))
+        self.assertNotEqual(kwargs["cwd"], str(ld.REPO_ROOT))
         self.assertEqual(len(list(self.out.glob("claude-opus-4-8-medium-*.txt"))), 1)
 
     def test_claude_worker_binary_falls_back_to_path_lookup(self) -> None:
-        with mock.patch.object(ld.shutil, "which", return_value="/found/claude"):
-            self._run(ld.run_claude_worker, "claude-opus-4.8-medium", proc(0, "o"), "AGENT_CLAUDE_INVOKE")
-        self.assertEqual(self.captured[1]["env"]["CLAUDE_BIN"], "/found/claude")
+        with mock.patch.dict(os.environ, {"CLAUDE_BIN": ""}), mock.patch.object(ld.shutil, "which", return_value="/found/claude"):
+            self._run_claude(proc(0, "o"))
+        self.assertEqual(self.captured[0][0], "/found/claude")
+        with mock.patch.dict(os.environ, {"CLAUDE_BIN": ""}), mock.patch.object(ld.shutil, "which", return_value=None):
+            self._run_claude(proc(0, "o"))
+        self.assertEqual(self.captured[0][0], "claude")
 
     def test_claude_worker_unknown_model_defaults_to_sonnet_low(self) -> None:
-        result = self._run(ld.run_claude_worker, "mystery", proc(0, "o"), "AGENT_CLAUDE_INVOKE")
-        self.assertEqual(result.effective_model_id, "sonnet-low")
+        self.assertEqual(self._run_claude(proc(0, "o"), logical="mystery").effective_model_id, "sonnet-low")
 
     def test_claude_worker_failure_timeout_and_missing(self) -> None:
-        failed = self._run(ld.run_claude_worker, "claude-opus-4.8-medium", proc(2, "o", "e"), "AGENT_CLAUDE_INVOKE")
-        self.assertEqual((failed.status, failed.error), ("failed", "agent-claude exit 2"))
+        failed = self._run_claude(proc(2, "o", "e"))
+        self.assertEqual((failed.status, failed.error), ("failed", "claude exit 2"))
         self.assertEqual(failed.effective_model_id, "claude-opus-4-8-medium")
-        timeout = self._run(
-            ld.run_claude_worker, "claude-opus-4.8-medium", subprocess.TimeoutExpired("x", 1, output=b"half"), "AGENT_CLAUDE_INVOKE"
-        )
+        timeout = self._run_claude(subprocess.TimeoutExpired("x", 1, output=b"half"))
         self.assertEqual((timeout.status, timeout.error, timeout.raw_output), ("partial", "timeout", "half"))
-        timeout_empty = self._run(
-            ld.run_claude_worker, "claude-opus-4.8-medium", subprocess.TimeoutExpired("x", 1), "AGENT_CLAUDE_INVOKE"
-        )
-        self.assertEqual(timeout_empty.raw_output, "")
-        gone = self._run(ld.run_claude_worker, "claude-opus-4.8-medium", FileNotFoundError("bash"), "AGENT_CLAUDE_INVOKE")
-        self.assertEqual((gone.status, gone.error), ("failed", "agent-claude invoke not found"))
-        denied = self._run(ld.run_claude_worker, "claude-opus-4.8-medium", PermissionError(13, "denied"), "AGENT_CLAUDE_INVOKE")
+        self.assertEqual(self._run_claude(subprocess.TimeoutExpired("x", 1)).raw_output, "")
+        gone = self._run_claude(FileNotFoundError("claude"))
+        self.assertEqual((gone.status, gone.error), ("failed", "claude CLI not found"))
+        denied = self._run_claude(PermissionError(13, "denied"))
         self.assertEqual(denied.status, "failed")
-        self.assertIn("agent-claude launch failed", denied.error)
-
-    def test_claude_worker_missing_invoke_script_does_not_spawn(self) -> None:
-        missing = self.tmp / "nope" / "invoke.sh"
-        with mock.patch.object(ld, "AGENT_CLAUDE_INVOKE", missing), mock.patch.object(ld, "_run_cli") as run:
-            result = ld.run_claude_worker(logical_model_id="claude-opus-4.8-medium", prompt="P", output_dir=self.out)
-        run.assert_not_called()
-        self.assertEqual((result.status, result.error), ("failed", "missing scripts/agent-claude/invoke.sh"))
+        self.assertIn("claude launch failed", denied.error)
 
 
 class ProcessPlumbingTests(HermeticCase):
