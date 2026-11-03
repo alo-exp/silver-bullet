@@ -1,42 +1,67 @@
 name: RC Validation (optional)
 
-# Non-blocking RC matrix diagnostic — manual / pre-release signal only.
-# Merge gate remains `.github/workflows/ci.yml` (unit + integration + harness sanity).
+# Manual diagnostic; the merge and release gate is ci.yml, and the markers this run writes stay
+# on the runner, so it never satisfies the release gate's operator-local RC matrix.
 #
-# CI policy: cursor live cells when CURSOR_API_KEY is available; codex/claude get
-# structural install smoke only (no live TUI delegate). GitHub Actions has no
-# first-party Anthropic or Codex API keys — operator-local pre-release must run
-# all six cells (cursor/codex/claude × fresh/upgrade) before release.
+# What it runs: scripts/run-rc-validation-matrix.sh in CI mode, i.e. the structural install
+# smoke (install + diagnostics) for cursor, codex and claude, fresh and upgrade. No host CLI
+# (cursor-agent, codex, claude) is installed and no credentials are passed, so no live cell
+# runs: each cell ends as "skip" after its structural smoke, the job fails when a structural
+# smoke fails, and the job summary lists every cell. require_live=true demands live cells, so
+# it fails here (the cursor cells report "unavailable") until this workflow installs and
+# authenticates a host CLI.
 
 on:
   workflow_dispatch:
     inputs:
       require_live:
-        description: Fail if cursor live delegate unavailable
+        description: Fail unless live cells run (they cannot on a GitHub-hosted runner; see above)
         default: 'false'
         type: choice
         options: ['false', 'true']
 
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   rc-matrix:
     runs-on: ubuntu-latest
-    continue-on-error: true
+    timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v5
         with:
           node-version: '22'
+          package-manager-cache: false
       - name: Install deps
         run: sudo apt-get update -qq && sudo apt-get install -y -qq jq
       - name: Seed runtime env
         run: |
           source hooks/lib/runtime-paths.sh
           echo "SB_RUNTIME_STATE_DIR=$SB_RUNTIME_STATE_DIR" >> "$GITHUB_ENV"
-      - name: Run RC matrix (CI mode — cursor live; codex/claude structural only)
+      - name: Run RC matrix (CI mode, structural install smoke only)
+        env:
+          REQUIRE_LIVE: ${{ inputs.require_live }}
         run: |
           export SB_RC_CI_MODE=1
-          [[ "${{ inputs.require_live }}" == "true" ]] && export SB_RC_MATRIX_REQUIRE_LIVE=1
+          if [[ "$REQUIRE_LIVE" == "true" ]]; then
+            export SB_RC_MATRIX_REQUIRE_LIVE=1
+          fi
           bash scripts/run-rc-validation-matrix.sh
-        env:
-          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+      - name: Cell results
+        if: always()
+        run: |
+          {
+            echo "### RC matrix cells (structural install smoke; no live cell runs on this runner)"
+            echo
+            for marker in "$SB_RUNTIME_STATE_DIR"/rc-validation/*; do
+              [[ -f "$marker" ]] || continue
+              echo "- $(basename "$marker"): $(grep -E '^(status|artifact)=' "$marker" | tr '\n' ' ')"
+            done
+          } >>"$GITHUB_STEP_SUMMARY"

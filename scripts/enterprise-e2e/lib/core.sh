@@ -555,6 +555,10 @@ enterprise_e2e_install_version_file() {
 }
 
 enterprise_e2e_pass_at_version_registry() {
+  if [[ -n "${SB_E2E_PASS_AT_VERSION_REGISTRY:-}" ]]; then
+    printf '%s\n' "$SB_E2E_PASS_AT_VERSION_REGISTRY"
+    return 0
+  fi
   local root="${SB_ROOT:-}"
   [[ -n "$root" ]] || root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
   printf '%s\n' "${root}/.e2e-matrix-pass-at-version.tsv"
