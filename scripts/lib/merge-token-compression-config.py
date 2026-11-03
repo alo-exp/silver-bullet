@@ -484,7 +484,11 @@ def optimize_cursor(
     dry_run: bool,
     skip_cli_config: bool = False,
     cli_allowlist: str = "read-only",
+    rtk_only: bool = False,
 ) -> dict:
+    """RTK_ONLY: the user consented to RTK but not Context Mode, so only RTK's coupling (the
+    shell allow-list `rtk hook cursor` reads) is merged; Context Mode's hooks, MCP server and
+    rules are left alone."""
     cursor_home = pathlib.Path.home() / ".cursor"
     hooks_path = cursor_home / "hooks.json"
     mcp_path = cursor_home / "mcp.json"
@@ -492,13 +496,14 @@ def optimize_cursor(
     global_rules = cursor_home / "rules"
     project_rules = repo_root / ".cursor" / "rules"
 
-    cm_pkg = context_mode_pkg_root()
+    cm_pkg = None if rtk_only else context_mode_pkg_root()
     manifest = ensure_global_instances(dry_run=dry_run)
     fragments: list[dict] = []
-    cm_hooks = context_mode_cursor_hooks_path(repo_root)
+    cm_hooks = None if rtk_only else context_mode_cursor_hooks_path(repo_root)
     if cm_hooks:
         fragments.append(load_json(cm_hooks))
-    fragments.append(context_mode_extended_cursor_hooks())
+    if not rtk_only:
+        fragments.append(context_mode_extended_cursor_hooks())
 
     hooks_added = merge_hooks_file(hooks_path, fragments, dry_run) if fragments else 0
 
@@ -524,7 +529,7 @@ def optimize_cursor(
         )
 
     rules_copied = 0
-    rule_sources = [
+    rule_sources = [] if rtk_only else [
         (repo_root / "templates" / "cursor" / "token-compression-enforcement.mdc", global_rules / "token-compression-enforcement.mdc"),
         (repo_root / ".cursor" / "rules" / "context-mode.mdc", global_rules / "context-mode.mdc"),
     ]
@@ -738,7 +743,7 @@ def main() -> int:
         default="read-only",
         help="Cursor CLI shell allow-list to merge (full pre-approves interpreters, rm, curl, docker)",
     )
-    parser.add_argument("--rtk-only", action="store_true", help="Only materialize OpenCode's RTK plugin")
+    parser.add_argument("--rtk-only", action="store_true", help="Only RTK's own configuration (OpenCode's RTK plugin, Cursor's shell allow-list)")
     parser.add_argument("--context-mode-only", action="store_true", help="Only materialize OpenCode Context Mode")
     args = parser.parse_args()
     if args.rtk_only and args.context_mode_only:
@@ -753,7 +758,9 @@ def main() -> int:
     )
 
     optimizers = {
-        "cursor": lambda: optimize_cursor(repo_root, args.dry_run, args.skip_cli_config, args.cli_allowlist),
+        "cursor": lambda: optimize_cursor(
+            repo_root, args.dry_run, args.skip_cli_config, args.cli_allowlist, rtk_only=args.rtk_only
+        ),
         "codex": lambda: optimize_codex(args.dry_run),
         "claude": lambda: optimize_claude(args.dry_run),
         "opencode": lambda: optimize_opencode(

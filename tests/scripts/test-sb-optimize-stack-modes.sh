@@ -17,8 +17,9 @@ cp "$TL_REPO_ROOT/scripts/sb-optimize-stack.sh" "$ST/scripts/"
 ln -s "$TL_REPO_ROOT/hooks/lib" "$ST/hooks/lib"
 ln -s "$TL_REPO_ROOT/templates/silver-bullet.config.json.default" "$ST/templates/silver-bullet.config.json.default"
 S="$ST/scripts/sb-optimize-stack.sh"
-cd "$ST"   # the optimized project is the working directory (not the Silver Bullet checkout the script lives in)
-CFG="$ST/.silver-bullet.json"
+PRJ="$TL_TMP/project"; mkdir -p "$PRJ"
+cd "$PRJ"   # the optimized project is the working directory (not the Silver Bullet checkout the script lives in)
+CFG="$PRJ/.silver-bullet.json"
 OPTED='{"recommended_tools":{"graphify":{"enabled_by_user":true},"agentmemory":{"enabled_by_user":true}}}'
 
 # ---------- option parsing ----------
@@ -31,6 +32,14 @@ tl_run bash "$S" --bogus
 assert_eq "unknown option exits 2" "2" "$TL_STATUS"
 assert_contains "unknown option named" "$TL_ERR" "Unknown option: --bogus"
 assert_contains "usage printed to stderr" "$TL_ERR" "Usage: bash scripts/sb-optimize-stack.sh"
+
+# ---------- R6-23: the plugin directory is not a project ----------
+cd "$ST"; tl_run bash "$S" --verify; cd "$PRJ"
+assert_eq "run from the plugin directory is refused" "2" "$TL_STATUS"
+assert_contains "the refusal says what to do" "$TL_ERR" "run it from your project or pass --project-root DIR"
+assert_file_absent "nothing was written into the plugin directory" "$ST/.silver-bullet.json"
+tl_run bash "$S" --verify --project-root "$ST"
+assert_eq "an explicit plugin root is refused too" "2" "$TL_STATUS"
 
 # ---------- verify ----------
 printf '{}\n' >"$CFG"

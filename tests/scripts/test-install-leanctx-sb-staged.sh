@@ -144,7 +144,7 @@ tl_run env PATH="$LC_DEST:$NOLC" bash "$INST" --host cursor --project-root "$PRO
 assert_eq "no lean-ctx and no pinned checksum: refused" "1" "$TL_STATUS"
 assert_contains "refusal explains the checksum" "$TL_ERR" "will not run an unverified installer"
 assert_contains "refusal shows the pin option" "$TL_ERR" "--installer-sha256"
-assert_contains "refusal offers cargo" "$TL_ERR" "cargo install lean-ctx"
+assert_contains "refusal offers cargo" "$TL_ERR" "cargo install lean-ctx --version 3.9.9 --locked"
 assert_not_contains "nothing was downloaded" "$(calls)" "curl"
 tl_run env PATH="$LC_DEST:$NOLC" bash "$INST" --host cursor --project-root "$PROJ" --skip-verify --skip-merge --installer-sha256 not-hex
 assert_eq "a malformed checksum is refused" "1" "$TL_STATUS"
@@ -189,7 +189,7 @@ tl_stub curl 'out=""; while [[ $# -gt 0 ]]; do [[ "$1" == "-o" ]] && out="$2"; s
 EMPTY_SHA="$(printf '#!/bin/sh\nexit 0\n' | { shasum -a 256 2>/dev/null || sha256sum; } | awk '{print $1}')"
 tl_run env PATH="$LC_DEST:$NOLC" bash "$INST" --host cursor --project-root "$PROJ" --skip-verify --skip-merge --installer-sha256 "$EMPTY_SHA"
 assert_eq "an installer that installs nothing aborts" "1" "$TL_STATUS"
-assert_contains "and warns" "$TL_ERR" "WARN: lean-ctx not on PATH after installer — try: cargo install lean-ctx"
+assert_contains "and warns" "$TL_ERR" "WARN: lean-ctx not on PATH after installer — try: cargo install lean-ctx --version 3.9.9 --locked"
 # curl itself missing
 NOCURL="$(tl_path_without lean-ctx curl)"
 rm -f "$TL_BIN/curl"
