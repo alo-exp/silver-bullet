@@ -8,7 +8,7 @@ var IDX = [
     "url": "/help/getting-started/",
     "anchor": "what-is-sb",
     "title": "What Silver Bullet does",
-    "text": "Silver Bullet is an Agentic Process Orchestrator for AI-native software engineering and DevOps. docs/apo-catalog.json is the source of truth for 29 AF-* atomic flows, 26 WF-* workflows (22 task-shaped plus 4 reusable components), and 118 flow steps. SB owns routing, planning, execution, verification, review, ship, release, hooks, traceability, and recovery."
+    "text": "Silver Bullet is an Agentic Process Orchestrator for AI-native software engineering and DevOps. docs/apo-catalog.json is the source of truth for 29 AF-* atomic flows, 26 WF-* workflows (22 task-shaped plus 4 reusable components), and 114 flow steps. SB owns routing, planning, execution, verification, review, ship, release, hooks, traceability, and recovery."
   },
   {
     "page": "Getting Started",
@@ -29,7 +29,7 @@ var IDX = [
     "url": "/help/",
     "anchor": "",
     "title": "Silver Bullet Help Center",
-    "text": "Silver Bullet v0.53.0 Help Center — APO catalog docs/apo-catalog.json, Process Workflow Atomic Flow Flow Step hierarchy, 29 AF-* atomic flows, 26 workflows (22 task-shaped plus 4 reusable components), 118 flow steps, three-host install, dev and DevOps workflow guides, command reference, troubleshooting, and search."
+    "text": "Silver Bullet v0.53.0 Help Center — APO catalog docs/apo-catalog.json, Process Workflow Atomic Flow Flow Step hierarchy, 29 AF-* atomic flows, 26 workflows (22 task-shaped plus 4 reusable components), 114 flow steps, three-host install, dev and DevOps workflow guides, command reference, troubleshooting, and search."
   },
   {
     "page": "Release History",
@@ -204,14 +204,14 @@ var IDX = [
     "url": "/help/workflows/",
     "anchor": "overview",
     "title": "Orchestration workflows",
-    "text": "Workflow catalog from docs/apo-catalog.json: 29 AF-* atomic flows, 26 WF-* workflows (22 task-shaped plus 4 reusable components), 118 flow steps, V-loop contracts, composer routes /sb:feature /sb:bugfix /sb:ui /sb:devops /sb:deep-research /sb:release /sb:fast plus /sb:spec /sb:ingest /sb:validate. WF-POST-EXEC-GATES chains AF-REVIEW AF-VERIFY AF-SECURE AF-VALIDATE AF-QUALITY-GATE AF-BRANCH-FINISH AF-COMPLETION-AUDIT AF-SHIP."
+    "text": "Workflow catalog from docs/apo-catalog.json: 29 AF-* atomic flows, 26 WF-* workflows (22 task-shaped plus 4 reusable components), 114 flow steps, V-loop contracts, composer routes /sb:feature /sb:bugfix /sb:ui /sb:devops /sb:deep-research /sb:release /sb:fast plus /sb:spec /sb:ingest /sb:validate. WF-POST-EXEC-GATES chains AF-REVIEW AF-VERIFY AF-SECURE AF-VALIDATE AF-QUALITY-GATE AF-BRANCH-FINISH AF-COMPLETION-AUDIT AF-SHIP."
   },
   {
     "page": "Workflows",
     "url": "/help/workflows/",
     "anchor": "atomic-flows",
     "title": "APO atomic flow catalog",
-    "text": "docs/apo-catalog.json defines 29 AF-* atomic flows, 26 WF-* workflows (22 task-shaped plus 4 reusable components), and 118 flow steps. Process Workflow Atomic Flow Flow Step hierarchy with V-loop contracts, composition trees, WF-POST-EXEC-GATES, and legacy FLOW 1-18 migration aliases only."
+    "text": "docs/apo-catalog.json defines 29 AF-* atomic flows, 26 WF-* workflows (22 task-shaped plus 4 reusable components), and 114 flow steps. Process Workflow Atomic Flow Flow Step hierarchy with V-loop contracts, composition trees, WF-POST-EXEC-GATES, and legacy FLOW 1-18 migration aliases only."
   },
   {
     "page": "Getting Started",
