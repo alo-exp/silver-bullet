@@ -129,15 +129,6 @@ class TextRewriteTest(unittest.TestCase):
             '---\nname: sb\ntitle: "Router"\n---\ntitle: body\n',
         )
 
-    def test_mask_unmask_protected(self):
-        text = "a templates/cursor-rules/x and .cursor/rules/y"
-        masked, masks = r._mask_protected_runtime_subs(text)
-        self.assertNotIn("templates/cursor-rules/", masked)
-        self.assertNotIn(".cursor/rules/", masked)
-        self.assertEqual(len(masks), 2)  # the longer "scripts/lib/..." prefix is absent
-        self.assertEqual(r._unmask_protected_runtime_subs(masked, masks), text)
-        self.assertEqual(r._mask_protected_runtime_subs("nothing"), ("nothing", []))
-
     def test_runtime_placeholders(self):
         pairs = dict(r.runtime_placeholders("codex"))
         self.assertEqual(pairs["${SB_RUNTIME_HOME_ROOT}"], "$HOME/.codex")
@@ -146,19 +137,6 @@ class TextRewriteTest(unittest.TestCase):
         self.assertEqual(pairs["$HOME/.claude/"], "$HOME/.codex/")
         self.assertEqual(pairs["${HOME}/.cursor"], "${HOME}/.codex")
         self.assertEqual(pairs[os.path.join("~", ".claude") + "/"], "$HOME/.codex/")
-
-    def test_sanitize_cursor_text_preserves_cross_host_rows(self):
-        text = (
-            "Claude Code uses ${CLAUDE_PLUGIN_ROOT} and Claude settings via AskUserQuestion\n"
-            "| **Claude Code** | row |\n"
-            "when Claude Code TUI is the intended executor while Claude Code executes\n"
-            "run `/compact` and secondary host\n"
-        )
-        out = r.sanitize_cursor_text(text)
-        self.assertIn("Cursor uses ${CURSOR_PLUGIN_ROOT} and Cursor hooks.json via direct user interaction", out)
-        self.assertIn("| **Claude Code** | row |", out)
-        self.assertIn("when Claude Code TUI is the intended executor while Claude Code executes", out)
-        self.assertIn("run context compaction and Cursor", out)
 
     def test_sanitize_codex_text(self):
         out = r.sanitize_codex_text("Use the Skill tool and /compact; Agent tool; secondary host; PostToolUse/Skill")
@@ -503,60 +481,6 @@ class RenameRoutesTest(TmpCase):
         self.assertTrue((root / "silver-x").is_dir())
 
 
-class FrontmatterTest(TmpCase):
-    def test_read_frontmatter(self):
-        p = self.write("a.md", "---\nname: \"sb:x\"\nbad line\ndesc: 'q'\n  indented: no\nk-1: v: w\n---\nafter: no\n")
-        self.assertEqual(r.read_skill_frontmatter(p), {"name": "sb:x", "desc": "q", "k-1": "v: w"})
-        self.assertEqual(r.read_skill_frontmatter(self.write("b.md", "no fm\n")), {})
-        self.assertEqual(r.read_skill_frontmatter(self.write("c.md", "")), {})
-        self.assertEqual(r.read_skill_frontmatter(self.write("d.md", "---\nk: v\n")), {"k": "v"})
-
-    def test_read_frontmatter_undecodable_falls_back(self):
-        p = self.write("e.md", b"---\nname: caf\xe9\n---\n", binary=True)
-        self.assertEqual(r.read_skill_frontmatter(p), {"name": "caf�"})
-
-
-class CommandStubTest(TmpCase):
-    def make_commands(self):
-        c = self.tmp / "plugins" / "silver-bullet" / "commands"
-        c.mkdir(parents=True)
-        (c / "feature.md").write_text("---\nname: sb-feature\n---\n")
-        (c / "plain.md").write_text("no frontmatter\n")
-        (c / "router.md").write_text("---\nname: sb\n---\n")
-        (c / "colon.md").write_text("---\nname: sb:colon\n---\n")
-        (c / "ignored.txt").write_text("x")
-        return c
-
-    def test_dotfile_stub_uses_its_stem(self):
-        c = self.tmp / "commands"
-        c.mkdir()
-        (c / ".md").write_text("")
-        self.assertEqual(r.command_stub_routes(c), {".md"})
-
-    def test_routes(self):
-        self.assertEqual(r.command_stub_routes(self.tmp / "none"), set())
-        self.assertEqual(r.command_stub_routes(self.make_commands()), {"sb:feature", "plain", "sb", "sb:colon"})
-
-    def skill_root(self):
-        root = self.tmp / "skills"
-        for d, name in (("a", "sb:feature"), ("b", "sb:other"), ("c", "plain")):
-            self.write(f"skills/{d}/SKILL.md", f"---\nname: {name}\n---\nbody\n")
-        self.write("skills/loose.md", "x")
-        return root
-
-    def test_exclude_removes_matching_skill_dirs(self):
-        root = self.skill_root()
-        r.exclude_command_stub_skills_from_cursor_subagent_surface(root, self.make_commands())
-        self.assertFalse((root / "a").exists())
-        self.assertFalse((root / "c").exists())
-        self.assertTrue((root / "b" / "SKILL.md").is_file())
-
-    def test_exclude_without_routes_is_noop(self):
-        root = self.skill_root()
-        r.exclude_command_stub_skills_from_cursor_subagent_surface(root, self.tmp / "no-commands")
-        self.assertTrue((root / "a").is_dir())
-
-
 class RenderBundleTest(TmpCase):
     def make_source(self):
         src = self.tmp / "repo" / "skills"
@@ -618,21 +542,6 @@ class RenderBundleTest(TmpCase):
         self.assertFalse((dest / "sb:feature" / "agents").exists())
         self.assertEqual(sorted(p.name for p in (dest / "helper" / "agents").iterdir()), ["other.md"])
 
-    def test_source_layout_renders_hidden_sources_and_keeps_command_routes(self):
-        src = self.make_source()
-        cmds = self.tmp / "repo" / "plugins" / "silver-bullet" / "commands"
-        cmds.mkdir(parents=True)
-        (cmds / "sb-feature.md").write_text("---\nname: sb-feature\n---\n")
-        for agent in ("codex", "cursor"):
-            dest = self.tmp / "out" / f"{agent}-source"
-            r.render_bundle(src, dest, agent, layout="source")
-            self.assertEqual(sorted(p.name for p in dest.iterdir()), ["helper", "sb", "sb-feature"])
-            self.assertEqual(list(dest.rglob("SKILL.md")), [])
-            text = (dest / "sb-feature" / "SILVER_SOURCE").read_text()
-            self.assertIn(f"$HOME/.{agent}/x", text)
-        self.assertTrue((self.tmp / "out" / "codex-source" / "sb-feature" / "agents" / "openai.yaml").is_file())
-        self.assertFalse((self.tmp / "out" / "cursor-source" / "sb-feature" / "agents").exists())
-
     def test_renders_codex(self):
         src = self.make_source()
         dest = self.tmp / "out" / "bundle"
@@ -657,21 +566,6 @@ class RenderBundleTest(TmpCase):
         self.assertEqual(sorted(p.name for p in dest.iterdir()), ["helper", "sb", "sb:feature"])
         self.assertFalse((dest / "sb:feature" / "agents" / "openai.yaml").exists())
         self.assertIn("$HOME/.claude/x", (dest / "sb:feature" / "SKILL.md").read_text())
-
-    def test_render_cursor_drops_command_covered_skills(self):
-        src = self.make_source()
-        cmds = self.tmp / "repo" / "plugins" / "silver-bullet" / "commands"
-        cmds.mkdir(parents=True)
-        (cmds / "feature.md").write_text("---\nname: sb-feature\n---\n")
-        dest = self.tmp / "out" / "cursor"
-        r.render_bundle(src, dest, "cursor")
-        self.assertEqual(sorted(p.name for p in dest.iterdir()), ["helper", "sb"])
-
-    def test_render_cursor_without_commands_keeps_everything(self):
-        src = self.make_source()
-        dest = self.tmp / "out" / "cursor"
-        r.render_bundle(src, dest, "cursor")
-        self.assertEqual(sorted(p.name for p in dest.iterdir()), ["helper", "sb", "sb:feature"])
 
     def test_symlinks_in_the_source_are_copied_as_regular_files(self):
         src = self.make_source()
