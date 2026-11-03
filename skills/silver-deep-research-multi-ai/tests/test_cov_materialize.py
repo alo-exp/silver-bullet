@@ -238,8 +238,9 @@ class ProseInferenceTests(unittest.TestCase):
         known = {"devin": "Devin", "cline": "Cline"}
         # the first clause names no vendor and does not continue a previous subject: it is skipped
         got = m.parse_feature_support(
-            [{"payload": {"evidence": [{"claim": "Unlike the market leaders, Devin provides CI integration"}]}}], known=known)
+            [{"payload": {"evidence": [{"claim": "Devin provides CI integration, while the others do not"}]}}], known=known)
         self.assertIs(got["devin"]["CI integration"], True)
+        self.assertEqual(set(got), {"devin"})
         # a feature mentioned next to a vendor without any positive or negative cue earns nothing
         got = m.parse_feature_support([{"payload": {"evidence": [{"claim": "Cline audit log"}]}}], known=known)
         self.assertNotIn("Audit log", got.get("cline", {}))
