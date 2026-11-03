@@ -1,35 +1,15 @@
-import re
-import shlex
+"""Print a shell command without a leading env / NAME=value / rtk prefix.
+
+Usage: shell_unwrap_rtk.py COMMAND | shell_unwrap_rtk.py [-] < command.txt
+The rest of the command is printed verbatim; a command without such a prefix is printed
+unchanged, and a command that is only the prefix prints nothing. A '#' inside a word is
+not a comment (bash semantics), so nothing after it is lost.
+"""
+
+import os
 import sys
 
-payload = sys.argv[1]
-if not payload:
-    raise SystemExit(0)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import shell_analysis  # noqa: E402
 
-assignment_re = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=.*$")
-try:
-    lexer = shlex.shlex(payload, posix=True, punctuation_chars=True)
-    lexer.whitespace_split = True
-    tokens = list(lexer)
-except Exception:
-    sys.stdout.write(payload)
-    raise SystemExit(0)
-
-if not tokens:
-    raise SystemExit(0)
-
-idx = 0
-if tokens[idx] == "env":
-    idx += 1
-while idx < len(tokens) and assignment_re.match(tokens[idx]):
-    if tokens[idx] == "RTK_DISABLED=1" or tokens[idx].startswith("RTK_DISABLED="):
-        idx += 1
-        continue
-    idx += 1
-if idx < len(tokens) and tokens[idx] == "rtk":
-    idx += 1
-
-if idx >= len(tokens):
-    raise SystemExit(0)
-
-sys.stdout.write(" ".join(shlex.quote(t) for t in tokens[idx:]))
+sys.stdout.write(shell_analysis.rtk_unwrap(shell_analysis.read_input(sys.argv, 1)))
