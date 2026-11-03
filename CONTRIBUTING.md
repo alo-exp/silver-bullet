@@ -108,11 +108,10 @@ Every target wraps a script you can also run directly. `make lint` fails on any 
 1. Create `skills/<skill-name>/SKILL.md` with YAML frontmatter: `name`, `description`, and optionally `argument-hint`.
 2. Add a scenario fixture `tests/skill-scenarios/<skill-name>.md` (trigger phrase and workflow); `tests/scripts/test-sb-skill-scenario-coverage.sh` fails without it.
 3. If enforcement should track the skill, add it to `skills.all_tracked` in `templates/silver-bullet.config.json.default` **and** in `.silver-bullet.json` (CI requires the two to match).
-4. If it is a top-level route that needs a command stub, add it to `COMPOSERS` in `scripts/generate-plugin-commands.sh` and run that script.
-5. If it owns a workflow or atomic flow, update `docs/apo-catalog.json` and run `python3 scripts/generate-apo-artifacts.py`.
-6. Render the host bundles: `bash scripts/sync-codex-package.sh` (updates `agents/claude/`, `host-bundles/`, `plugins/silver-bullet/skill-source/`), then `bash scripts/validate-plugin-mirror.sh`.
-7. For a user-facing skill, add a help-center entry and a `site/help/search.js` record.
-8. Run `bash tests/run-all-tests.sh`.
+4. If it owns a workflow or atomic flow, update `docs/apo-catalog.json` and run `python3 scripts/generate-apo-artifacts.py`.
+5. Render the host bundles: `bash scripts/sync-codex-package.sh` (updates `agents/claude/`, `host-bundles/`, `plugins/silver-bullet/skill-source/`), then `bash scripts/validate-plugin-mirror.sh`.
+6. For a user-facing skill, add a help-center entry and a `site/help/search.js` record.
+7. Run `bash tests/run-all-tests.sh`.
 
 ### Adding a hook
 
