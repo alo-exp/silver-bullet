@@ -300,6 +300,8 @@ class ProperReferencesToCommonWordVendorsTests(unittest.TestCase):
         for slug, text in keep:
             support = m.parse_feature_support(envs(text), known=self.known, pack=self.pack)
             self.assertTrue(any(support.get(slug, {}).values()), (text, support))
+        bare = m.parse_feature_support(envs("Deepwork has no public evidence"), known=self.known, pack=self.pack)
+        self.assertEqual(dict(bare), {})
         gone = m.parse_feature_support(
             envs("Silver Bullet provides workflow composition; Deepwork has no public evidence."),
             known=self.known, pack=self.pack)

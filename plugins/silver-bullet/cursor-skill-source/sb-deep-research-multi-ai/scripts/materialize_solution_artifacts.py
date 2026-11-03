@@ -1169,8 +1169,6 @@ def _apply_slug_scoped_prose(
     pack: dict[str, Any] | None = None,
 ) -> None:
     text = _without_absence_clauses(text)  # a clause that says nothing was found casts no vote
-    if not text.strip():
-        return
     _parse_comparative_claims(support, text)
     _parse_prose_claim(support, text)
     _parse_must_have_satisfaction(support, text)
