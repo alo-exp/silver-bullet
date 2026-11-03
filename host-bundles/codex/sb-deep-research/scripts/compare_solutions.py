@@ -163,9 +163,10 @@ def build_comparison_json(
 
     tie = [r["solution"] for r in ranking if r["score"] == ranking[0]["score"]] if ranking else []
     tie = tie if len(tie) > 1 else []
-    # No winner is named on a tie: the caller must break it explicitly.
-    winner = ranking[0]["solution"] if ranking and not tie else None
-    runner = ranking[1]["solution"] if len(ranking) > 1 and not tie else None
+    # On a tie the first-listed solution is only a placeholder: "tie" names every
+    # tied solution so reports state that the matrix does not separate them.
+    winner = ranking[0]["solution"] if ranking else None
+    runner = ranking[1]["solution"] if len(ranking) > 1 else None
 
     return {
         "research_type": need.get("research_type"),
@@ -197,6 +198,12 @@ def matrix_markdown(comparison: dict[str, Any]) -> str:
     lines.append("## Rankings")
     for r in comparison.get("rankings", []):
         lines.append(f"- #{r['rank']} **{r['solution']}** — score {r['score']}")
+    if comparison.get("tie"):
+        lines.append("")
+        lines.append(
+            "**Tie:** " + ", ".join(comparison["tie"])
+            + " have the same score; the matrix does not separate them."
+        )
     return "\n".join(lines) + "\n"
 
 

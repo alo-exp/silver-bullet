@@ -143,11 +143,11 @@ class CompareScoringTests(unittest.TestCase):
         self.assertEqual(names.count("SSO"), 1)
         self.assertEqual(comp["categories"], ["Security", "Identity"])
 
-    def test_tie_names_no_winner(self):
+    def test_tie_is_flagged_in_json_and_markdown(self):
         _, comp = self._rows({"features": ["SSO"]}, {"features": ["SSO"]})
-        self.assertIsNone(comp["winner"])
-        self.assertIsNone(comp["runner_up"])
         self.assertEqual(sorted(comp["tie"]), ["A", "B"])
+        self.assertIn("**Tie:** ", self.cs.matrix_markdown(comp))
+        self.assertNotIn("Tie", self.cs.matrix_markdown({**comp, "tie": []}))
 
     def test_clear_leader_is_the_winner(self):
         _, comp = self._rows({"features": ["SSO", "API"]}, {"features": ["SSO"]})
@@ -280,7 +280,7 @@ class SpaTests(unittest.TestCase):
         html = grs.render_html({"title": "t", "comparison": {}})
         self.assertIn("esc(String(r.score))", html)
         self.assertNotIn("' + r.score +", html)
-        self.assertIn("No winner: tie", html)
+        self.assertIn("<strong>Tie:</strong>", html)
         self.assertIn("esc(cmp.tie.join(", html)
 
     def test_malicious_score_stays_inside_the_json_block(self):
