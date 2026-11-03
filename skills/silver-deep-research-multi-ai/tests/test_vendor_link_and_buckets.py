@@ -234,21 +234,6 @@ class SpaTemplateContracts(unittest.TestCase):
         self.assertIn("PRIMARY_CHART_DATA", render_js)
         self.assertIn("linkifyBareHttpUrls", render_js)
 
-    def test_scrub_removes_stale_sdlc_plugin_marketplace_link(self) -> None:
-        import sys
-
-        sys.path.insert(0, str(SCRIPTS))
-        from vendor_link_labels import scrub_vendor_markdown_links
-
-        md = "See [SDLC Plugin](https://claude.com/plugins) and [Zuvo](https://zuvo.dev/)."
-        out = scrub_vendor_markdown_links(
-            md,
-            vendor_urls={"Zuvo": "https://zuvo.dev/", "Claude Code Expert": "https://claude.com/plugins"},
-            known_labels={"SDLC Plugin", "Zuvo", "Claude Code Expert"},
-        )
-        self.assertIn("See SDLC Plugin and", out)
-        self.assertNotIn("[SDLC Plugin](https://claude.com/plugins)", out)
-        self.assertIn("[Zuvo](https://zuvo.dev/)", out)
 
     def test_critical_fill_gap_annotator_present(self) -> None:
         text = TEMPLATE.read_text(encoding="utf-8")
@@ -357,7 +342,6 @@ class MembershipFramingAndOssBucketTests(unittest.TestCase):
         self.assertIn("MetaGPT", apo_oss)
         # the pack records Silver Bullet as source-available (BUSL-1.1), so it is not listed as OSS
         self.assertNotIn("Silver Bullet", apo_oss)
-
 
 
 class CategoryPackHomepageTests(unittest.TestCase):

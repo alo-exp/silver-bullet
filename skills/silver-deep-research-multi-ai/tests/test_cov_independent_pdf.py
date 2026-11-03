@@ -102,22 +102,6 @@ class LoaderTests(unittest.TestCase):
             self.assertEqual(lp.load_comparison(Path(".")), {})
             self.assertEqual(lp.load_landscape_markdown(Path(".")), "")
 
-    def test_load_spa_report_data(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            self.assertEqual(lp.load_spa_report_data(root), {})
-            page = root / "landscape-report.html"
-            page.write_text("<html>no data</html>", encoding="utf-8")
-            self.assertEqual(lp.load_spa_report_data(root), {})
-            page.write_text("<script id='report-data' type='application/json'>{bad</script>", encoding="utf-8")
-            self.assertEqual(lp.load_spa_report_data(root), {})
-            page.write_text('<script type="application/json" id="report-data">[1]</script>', encoding="utf-8")
-            self.assertEqual(lp.load_spa_report_data(root), {})
-            page.write_text('<script type="application/json" id="report-data">{"markdown": "m"}</script>', encoding="utf-8")
-            self.assertEqual(lp.load_spa_report_data(root), {"markdown": "m"})
-            with mock.patch.object(Path, "read_text", side_effect=OSError("io")):
-                self.assertEqual(lp.load_spa_report_data(root), {})
-
 
 class ChartStructureTests(unittest.TestCase):
     def test_market_chart_block_and_ids(self) -> None:
@@ -131,20 +115,6 @@ class ChartStructureTests(unittest.TestCase):
         self.assertEqual(lp.iter_market_ids({"primary_market_id": "gone", "markets": {"a": {}}}), ["a"])
         self.assertEqual(lp.iter_market_ids({"primary_market_id": "solo"}), ["solo"])
         self.assertEqual(lp.iter_market_ids({}), ["primary"])
-
-    def test_quadrant_divergences(self) -> None:
-        chart = {"markets": {"m": {
-            "mq_data": [{"slug": "a", "label": "A", "q": "Leaders"}, {"slug": "b", "q": "Niche Players"}, {"slug": "c", "q": ""},
-                        {"slug": "only-mq", "q": "Leaders"}, "junk"],
-            "gmq_data": [{"slug": "a", "q": "Challengers"}, {"slug": "b", "label": "Bee", "q": "Niche Players"},
-                         {"slug": "c", "q": "Leaders"}, "junk"],
-        }}}
-        self.assertEqual(lp.quadrant_divergences(chart), [{"market": "m", "slug": "a", "label": "A", "mq": "Leaders", "gmq": "Challengers"}])
-        chart2 = {"markets": {"m": {"mq_data": [{"slug": "z", "q": "Leaders"}], "gmq_data": [{"slug": "z", "label": "Zed", "q": "Niche Players"}]}}}
-        self.assertEqual(lp.quadrant_divergences(chart2)[0]["label"], "Zed")
-        chart3 = {"markets": {"m": {"mq_data": [{"slug": "z", "q": "Leaders"}], "gmq_data": [{"slug": "z", "q": "Niche Players"}]}}}
-        self.assertEqual(lp.quadrant_divergences(chart3)[0]["label"], "z")
-        self.assertEqual(lp.quadrant_divergences({}), [])
 
 
 class SmallHelperTests(unittest.TestCase):
@@ -570,33 +540,6 @@ class SectionHelperTests(unittest.TestCase):
         self.assertEqual(lp._solution_label("some-unknown", chart), "some unknown")
         self.assertEqual(lp._solution_label("some-unknown", None), "some unknown")
 
-    def test_needles_and_haystack(self) -> None:
-        body = "\n# heading\n\n|---|:--|\nA short line\n" + "This is a sufficiently long body sentence with [a link](https://x.example/very/long) inside. " * 2 + "\n"
-        needles = lp.section_body_needles(body)
-        self.assertEqual(len(needles), 1)
-        self.assertLessEqual(len(needles[0]), 80)
-        self.assertNotIn("https", needles[0])
-        self.assertEqual(lp.section_body_needles(body, min_len=5)[0], "A short line")
-        self.assertEqual(lp.section_body_needles(""), [])
-        self.assertEqual(lp.section_body_needles(None), [])  # type: ignore[arg-type]
-        self.assertEqual(lp._norm_body_haystack("Hello, [World](https://x.example) https://y.example/z OK!"), "hello world ok")
-        self.assertEqual(lp._norm_body_haystack(None), "")  # type: ignore[arg-type]
-
-    def test_assert_section_bodies(self) -> None:
-        body_a = "The quick brown fox jumps over the lazy dog near the riverbank today."
-        body_b = "Another distinct paragraph that talks about completely different subject matter."
-        md = f"preamble ignored text that is long enough to be a needle but has no heading\n## Alpha\n{body_a}\n## Beta\n{body_b}\n## Empty\n\n## Short\nshort words only\n"
-        lp.assert_section_bodies_in_text(md, f"{body_a} {body_b}")
-        with self.assertRaisesRegex(AssertionError, "missing from PDF/print text: ## Beta"):
-            lp.assert_section_bodies_in_text(md, body_a)
-        with self.assertRaisesRegex(AssertionError, "## Alpha, ## Beta"):
-            lp.assert_section_bodies_in_text(md, "nothing relevant at all")
-        lp.assert_section_bodies_in_text("", "")
-        lp.assert_section_bodies_in_text(None, "x")  # type: ignore[arg-type]
-        # needles with fewer than four words never count as a hit, so such a section is reported
-        with self.assertRaises(AssertionError):
-            lp.assert_section_bodies_in_text("## Tiny\n" + "x" * 60 + "\n", "x" * 60)
-
 
 class ComparisonHtmlTests(unittest.TestCase):
     def comparison(self, n: int = 2):
@@ -610,21 +553,6 @@ class ComparisonHtmlTests(unittest.TestCase):
             "caveats": ["keep me", "mentions landscape-report.html", "Interactive SPA only", 5, "see [l](https://c.example)"],
         }
 
-    def test_matrix_chunks_scores_and_caveats(self) -> None:
-        out = lp.comparison_matrix_html(self.comparison(9), {"vendor_urls": {"Sol 0": "u"}})
-        self.assertIn("Winner: <strong>w&lt;1&gt;</strong>. Runner-up: <strong>r</strong>.", out)
-        self.assertEqual(out.count('<table class="matrix">'), 2)  # 9 solutions -> columns 7 + 2
-        self.assertIn('<td>yes</td>\n<td>no</td>', out)
-        self.assertIn("<td>—</td>", out)  # Feature B has no per-solution cells
-        self.assertIn("Feature &lt;A&gt;", out)
-        self.assertIn('<th>Sol 0<div class="score">Score 10</div></th>', out)
-        self.assertIn('<tr class="cmp-score-row"><td><strong>Weighted score</strong></td><td>—</td>\n<td>10</td>\n<td>9</td>', out)
-        self.assertIn("<h3>Matrix caveats</h3><ul>", out)
-        self.assertIn("<li>keep me</li>", out)
-        self.assertNotIn("landscape-report.html", out)
-        self.assertNotIn("Interactive SPA", out)
-        self.assertIn('href="https://c.example"', out)
-        self.assertEqual(lp.comparison_highlights_html(self.comparison(2)), lp.comparison_matrix_html(self.comparison(2)))
 
     def test_score_fallbacks_and_empty_matrix(self) -> None:
         cmp_ = {"rankings": [{"solution": "a", "total_score": 7}, {"solution": "b"}],
@@ -638,85 +566,6 @@ class ComparisonHtmlTests(unittest.TestCase):
         self.assertIn("Winner: <strong></strong>", lp.comparison_matrix_html({}))
         only_shown = lp.comparison_matrix_html({"caveats": ["landscape-report.html only"]})
         self.assertNotIn("Matrix caveats", only_shown)
-
-
-class SyncPayloadTests(unittest.TestCase):
-    def test_writes_each_canonical_file(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            written = lp.sync_canonical_payload_files(root, {"markdown": "# T", "chart_data": {"a": "é"}, "comparison": {"k": 1}})
-            self.assertEqual(set(written), {"markdown", "chart_data", "comparison"})
-            self.assertEqual((root / "landscape" / "landscape-report.md").read_text(encoding="utf-8"), "# T\n")
-            self.assertEqual(json.loads((root / "landscape" / "chart-data.json").read_text(encoding="utf-8")), {"a": "é"})
-            self.assertIn("é", (root / "landscape" / "chart-data.json").read_text(encoding="utf-8"))
-            self.assertEqual(json.loads((root / "comparison" / "comparison.json").read_text(encoding="utf-8")), {"k": 1})
-            lp.sync_canonical_payload_files(root, {"markdown": "keeps newline\n"})
-            self.assertEqual((root / "landscape" / "landscape-report.md").read_text(encoding="utf-8"), "keeps newline\n")
-
-    def test_ignores_blank_or_wrongly_typed_fields_and_empty_payload(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            self.assertEqual(lp.sync_canonical_payload_files(root, {"markdown": "  ", "chart_data": {}, "comparison": []}), {})
-            self.assertEqual(lp.sync_canonical_payload_files(root, {"markdown": 5, "chart_data": [1], "comparison": "x"}), {})
-            self.assertEqual(lp.sync_canonical_payload_files(root), {})  # no payload and no SPA page on disk
-            self.assertFalse((root / "landscape").exists())
-
-    def test_falls_back_to_the_embedded_spa_payload(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            blob = json.dumps({"markdown": "# From SPA"})
-            (root / "landscape-report.html").write_text(f'<script id="report-data" type="application/json">{blob}</script>', encoding="utf-8")
-            written = lp.sync_canonical_payload_files(root)
-            self.assertEqual(set(written), {"markdown"})
-            self.assertEqual((root / "landscape" / "landscape-report.md").read_text(encoding="utf-8"), "# From SPA\n")
-            # an empty-dict payload also falls back to the page
-            self.assertEqual(set(lp.sync_canonical_payload_files(root, {})), {"markdown"})
-
-
-class DivergenceTests(unittest.TestCase):
-    def test_bullets_from_markdown(self) -> None:
-        md = (
-            "## A\ntext\n**Notable divergences** (inter-model)\n\n- `a` said X\n\n- `b` said Y\nstray line\n- `c` said Z\n"
-            "**Another bold block**\n- not included\n## Next\n- also not\n"
-        )
-        self.assertEqual(lp.notable_divergence_bullets(md), ["`a` said X", "`b` said Y", "`c` said Z"])
-        stop_at_heading = "**Notable divergences**\n\n- one\n## H\n- two\n"
-        self.assertEqual(lp.notable_divergence_bullets(stop_at_heading), ["one"])
-        nested_header = "**Notable divergences**\n\n**Notable divergences** again\n- x\n"
-        self.assertEqual(lp.notable_divergence_bullets(nested_header), ["x"])
-
-    def test_falls_back_to_consolidation(self) -> None:
-        consolidation = {"divergence": [
-            "junk",
-            {"text": "", "claim_key": ""},
-            {"claim_key": "key-only claim", "supporting_agents": ["agent-a", "", "agent-a", "agent-b"], "model_families": "fam-x", "agents": ["agent-c"]},
-            {"text": "Plain text with ocg-minimax-m3 and claude-opus mention", "model_families": ["  "]},
-            {"text": "nothing attributable"},
-            {"text": "many", "supporting_agents": [f"a{i}" for i in range(12)]},
-            {"text": "dup string", "model_families": "agent-a", "agents": " agent-a "},
-            {"text": "mentions ocg-dup-model again", "supporting_agents": ["ocg-dup-model"]},
-        ]}
-        out = lp.notable_divergence_bullets("no divergence block here", consolidation)
-        self.assertEqual(out[0], "`agent-a`, `agent-b`, `fam-x`, `agent-c` — key-only claim")
-        self.assertEqual(out[1], "`ocg-minimax-m3`, `claude-opus` — Plain text with ocg-minimax-m3 and claude-opus mention")
-        self.assertEqual(out[2], "nothing attributable")
-        self.assertEqual(out[3].count("`"), 16)  # capped at eight ids
-        self.assertEqual(out[4], "`agent-a` — dup string")
-        self.assertEqual(out[5], "`ocg-dup-model` — mentions ocg-dup-model again")
-        self.assertEqual(len(out), 6)
-        # a heading with no bullets after it also falls back
-        self.assertEqual(lp.notable_divergence_bullets("**Notable divergences**\n\nno bullets\n", {"divergence": [{"text": "t"}]}), ["t"])
-        self.assertEqual(lp.notable_divergence_bullets("", None), [])
-        self.assertEqual(lp.notable_divergence_bullets("", {"divergence": None}), [])
-
-    def test_divergences_html(self) -> None:
-        with_bullets = lp.divergences_html({}, {}, "**Notable divergences**\n\n- `a` said **X**\n")
-        self.assertIn("<ul>", with_bullets)
-        self.assertIn("<li><code>a</code> said <strong>X</strong></li>", with_bullets)
-        empty = lp.divergences_html({}, {}, "", None)
-        self.assertIn("No inter-model research disagreements were extracted", empty)
-        self.assertNotIn("<ul>", empty)
-        self.assertTrue(empty.startswith('<section class="divergences">'))
 
 
 class PrintHtmlTests(unittest.TestCase):

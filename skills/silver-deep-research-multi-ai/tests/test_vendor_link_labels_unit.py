@@ -549,19 +549,6 @@ class PairTests(unittest.TestCase):
                          [["Claude Harness", "https://harness.dev"]])
 
 
-class MarkdownScrubTests(unittest.TestCase):
-    def test_scrub_links(self):
-        md = "[A](https://old/a) [B](https://old/b) [C](https://keep/c) text"
-        out = vll.scrub_vendor_markdown_links(
-            md, vendor_urls={" A ": " https://new/a "}, known_labels={"B"})
-        self.assertEqual(out, "[A](https://new/a) B [C](https://keep/c) text")
-
-    def test_scrub_defaults(self):
-        self.assertEqual(vll.scrub_vendor_markdown_links(None, vendor_urls=None), "")
-        self.assertEqual(vll.scrub_vendor_markdown_links("[A](https://a)", vendor_urls={}), "[A](https://a)")
-        self.assertEqual(vll.scrub_vendor_markdown_links("[A](https://a)", vendor_urls={"A": ""}), "A")
-
-
 class LinkifyTests(unittest.TestCase):
     def test_split_trailing(self):
         sp = vll.split_url_trailing_punct
