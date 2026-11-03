@@ -83,9 +83,13 @@ class InPlaceFlagTest(unittest.TestCase):
                 self.assertEqual(self.writes(cmd), [])
 
     def test_sed_with_attached_arguments_stays_read_only(self):
-        for cmd in ("sed -es/i/x/ f", "sed -fi.sed f", "sed -n -es/i/x/p f"):
+        for cmd in ("sed -es/i/x/ f", "sed -n -es/i/x/p f"):
             with self.subTest(cmd=cmd):
                 self.assertTrue(self.read_only(cmd))
+        # -fi.sed is "-f i.sed", not -i: no in-place target, but the script file cannot be
+        # inspected (it may hold w/e commands), so the command is not provably read-only.
+        self.assertEqual(self.writes("sed -fi.sed f"), [])
+        self.assertFalse(self.read_only("sed -fi.sed f"))
 
     def test_in_place_flag_after_an_attached_argument_is_unreachable_in_bundle(self):
         # `-es/i/x/` consumes the rest; a later separate -i still counts.

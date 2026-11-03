@@ -69,9 +69,15 @@ class CommandLooksReadOnlyTest(unittest.TestCase):
                 self.assertMayWrite(cmd)
 
     def test_discarding_redirects_stay_read_only(self):
-        for cmd in ("ls > /dev/null", "ls 2>/dev/null", "ls >> /dev/null", "ls > /x/dev/null", "ls > NUL", "ls > nul"):
+        for cmd in ("ls > /dev/null", "ls 2>/dev/null", "ls >> /dev/null", "ls 2>&1 >/dev/stderr", "ls >&2"):
             with self.subTest(cmd=cmd):
                 self.assertReadOnly(cmd)
+
+    def test_lookalike_discard_targets_are_real_files(self):
+        # On macOS and Linux these create files; only the /dev special files discard.
+        for cmd in ("ls > /x/dev/null", "ls > NUL", "ls > nul"):
+            with self.subTest(cmd=cmd):
+                self.assertMayWrite(cmd)
 
     def test_quoted_redirect_like_arguments(self):
         # Embedded redirect inside a single token (quotes hid it from the regex).
@@ -110,14 +116,15 @@ class CommandLooksReadOnlyTest(unittest.TestCase):
     # --- git ---------------------------------------------------------------
     def test_git_read_only_subcommands(self):
         for cmd in (
-            "git status", "git log --oneline", "git diff HEAD", "git -C repo show", "git -c a=b branch",
+            "git status", "git log --oneline", "git diff HEAD", "git -C repo show", "git -c color.ui=always branch",
             "git --no-pager log", "git ls-files", "git rev-parse HEAD",
         ):
             with self.subTest(cmd=cmd):
                 self.assertReadOnly(cmd)
 
     def test_git_writing_or_bare_commands(self):
-        for cmd in ("git commit -m x", "git push", "git", "git -C", "git --no-pager"):
+        # -c with an arbitrary key can make git run programs (core.pager, diff.external...).
+        for cmd in ("git commit -m x", "git push", "git", "git -C", "git --no-pager", "git -c a=b branch"):
             with self.subTest(cmd=cmd):
                 self.assertMayWrite(cmd)
 
