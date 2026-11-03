@@ -35,7 +35,7 @@ def load(name):
 def pairs():
     """Every probe pair as (corpus, kind, claim, quote); kind is 'F' (fabrication) or 'H' (honest)."""
     out = []
-    for name in ("claim_corpus_verbatim", "claim_corpus_r4", "claim_corpus_r5", "claim_corpus_r6", "claim_corpus_r7"):
+    for name in ("claim_corpus_verbatim", "claim_corpus_r4", "claim_corpus_r5", "claim_corpus_r6", "claim_corpus_r7", "claim_corpus_r8"):
         out += [(name, c["kind"], c["claim"], c["quote"]) for c in load(name)]
     for name in ("claim_corpus", "claim_corpus_heldout"):
         data = load(name)
@@ -101,12 +101,25 @@ class EveryProbeOfEveryRound(unittest.TestCase):
             if c["kind"] == "H":
                 self.assertNotIn(status(c["claim"], c["quote"]), ("contradicted", "unsupported"), c)
 
+    def test_the_round_eight_probes(self):
+        """Case, capital A, plural -s, "?" and "*", digits in brackets, digit scripts and "No,": every
+        fabrication is non-supported; the pairs that are equal by the rule are supported; no honest claim is
+        contradicted or unsupported."""
+        items = load("claim_corpus_r8")
+        fabrications = [c for c in items if c["kind"] == "F"]
+        self.assertEqual(len(fabrications), 79)
+        self.assertEqual(tally(fabrications).get("supported", 0), 0)
+        honest = [c for c in items if c["kind"] == "H"]
+        self.assertEqual(len(honest), 19)
+        for c in honest:
+            self.assertNotIn(status(c["claim"], c["quote"]), ("contradicted", "unsupported"), c)
+
     def test_the_round_six_fabrications_and_twins(self):
         fabrications = [c for c in load("claim_corpus_r6") if c["kind"] == "F"]
         self.assertEqual(len(fabrications), 91)
         counts = tally(fabrications)
         self.assertEqual(counts.get("supported", 0), 0, counts)
-        self.assertEqual(counts, {"needs_review": 89, "contradicted": 2})
+        self.assertEqual(counts, {"needs_review": 90, "contradicted": 1})
         twins = [c for c in load("claim_corpus_r6") if c["kind"] == "H" and c["source"].startswith("r6 score6.py")]
         self.assertEqual(len(twins), 25)
         self.assertEqual(tally(twins).get("contradicted", 0) + tally(twins).get("unsupported", 0), 0)

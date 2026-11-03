@@ -32,17 +32,50 @@ class SupportedOnlyForANearQuote(unittest.TestCase):
                          "The fee is €1,5 million", "Müller was appointed CEO", "营收下降40%", "10⁶ requests", "Throughput is ≥ 10 Gbps"):
             self.assert_supported(sentence, sentence)
 
-    def test_case_punctuation_articles_and_plurals_may_differ(self):
-        self.assert_supported("acme SUPPORTS sso!", "Acme supports SSO.")
+    def test_the_first_capital_punctuation_lowercase_articles_and_digit_script_may_differ(self):
+        self.assert_supported("acme supports SSO!", "Acme supports SSO.")
+        self.assert_supported("Acme supports SSO", "acme supports SSO")  # only the first word may change its capital
         self.assert_supported("Acme integrates with Slack, Jira and GitHub", "Acme integrates with Slack Jira and GitHub")
         self.assert_supported("Acme has the free tier", "Acme has a free tier")
         self.assert_supported("Acme shipped [3] the product", "Acme shipped product")  # a citation marker is no word
         self.assert_supported("Acme’s CEO resigned", "Acme's CEO resigned")
-        self.assert_supported("**Acme** `ships` “two” products (new)", "Acme ships two product new")
-        self.assert_supported("Acme lists companies", "Acme list company")
-        self.assert_supported("Acme runs on switches", "Acme run on switch")
-        self.assert_supported("Acme hires employees", "Acme hire employee")
-        self.assert_supported("Acme MÜLLER", "acme müller")
+        self.assert_supported("Acme `ships` “two” products (new)…", "Acme ships two products new")
+        self.assertNotEqual(status("**Acme** ships", "Acme ships"), "supported")  # emphasis marks are stripped by extract_claims
+        self.assert_supported("The Acme CEO", "the Acme CEO")
+        self.assert_supported("A shares class", "shares class")  # a capitalised article that opens the text
+        self.assert_supported("Acme MÜLLER", "acme MÜLLER")
+        self.assert_supported("Acme ｵ５０ and ٥", "Acme ｵ50 and 5")  # every decimal digit script is 0-9
+        self.assert_supported("Acme café", "Acme café")  # a composed and a decomposed accent are one letter
+
+    def test_case_and_capital_articles_and_plurals_are_not_ignored(self):
+        for claim, quote in (("The file is 5 Mb", "The file is 5 MB"), ("The plant makes 5 mW", "The plant makes 5 MW"),
+                             ("The link is 5 GBps", "The link is 5 Gbps"), ("The dose is 500 Mg", "The dose is 500 mg"),
+                             ("Acme has 5K users", "Acme has 5k users"), ("Sales to us firms rose", "Sales to US firms rose"),
+                             ("Hepatitis cases rose", "Hepatitis A cases rose"),
+                             ("Vitamin A deficiency", "Vitamin deficiency"), ("Class shares rose", "Class A shares rose"),
+                             ("The new release", "The news release"), ("Acme sells glass", "Acme sells glasses"),
+                             ("Acme sells security", "Acme sells securities"), ("Acme makes good", "Acme makes goods"),
+                             ("The drug work", "The drug works"), ("Acme doe sell X", "Acme does sell X"),
+                             ("The can not index rose", "The CANT index rose")):
+            self.assertNotEqual(status(claim, quote), "supported", (claim, quote))
+            self.assertNotEqual(status(quote, claim), "supported", (claim, quote))
+
+    def test_a_question_a_footnote_and_a_citation_in_a_number_change_the_claim(self):
+        for claim, quote in (("The vaccine is safe", "The vaccine is safe?"), ("Is the vaccine safe", "Is the vaccine safe?"),
+                             ("The plan is free", "The plan is free*"), ("Acme has 3 employees", "Acme has 3[00] employees"),
+                             ("Revenue was $5", "Revenue was $5[000]"), ("Revenue grew 5% in 2023", "Revenue grew 5[0]% in 2023")):
+            self.assertEqual(status(claim, quote), "needs_review", (claim, quote))
+            self.assertEqual(status(quote, claim), "needs_review", (claim, quote))
+        self.assert_supported("The drug is approved [3]", "The drug is approved")  # a marker after a space is no word
+        self.assert_supported("The drug is approved for adults [1, 2].", "The drug is approved for adults")
+        self.assertEqual(vcs._words("Acme has 3[00] employees [4]"), ["acme", "has", "3", "00", "employees"])
+
+    def test_no_is_a_negator_only_as_a_plain_word(self):
+        self.assertEqual(vcs._words("No, the tool is not free. Acme ranks No. 1"),
+                         ["No,", "the", "tool", "is", "not", "free", "Acme", "ranks", "No.", "1"])
+        self.assertEqual(status("The tool is not free", "No, the tool is not free"), "needs_review")
+        self.assertEqual(status("Acme ranks 1 in Europe", "Acme ranks No. 1 in Europe"), "needs_review")
+        self.assertEqual(status("The study found an effect", "The study found no effect"), "contradicted")
 
     def test_contractions_are_opened_up(self):
         self.assert_supported("Acme doesn't support SSO", "Acme does not support SSO")
@@ -100,7 +133,7 @@ class SupportedOnlyForANearQuote(unittest.TestCase):
                          "or make the claim say all of it")
         self.assertEqual(verdict("Acme offers SSO on all plans", "Acme offers SSO")[2],
                          "the claim says more than the source text: the extra words are not in the quote")
-        self.assertEqual(verdict("Acme acquired Initech", "Initech acquired Acme")[2],
+        self.assertEqual(verdict("We bought Acme and Initech", "We bought Initech and Acme")[2],
                          "the source has the same words in a different order (reordered or changed voice)")
         self.assertEqual(verdict("Acme employs about 400 people", "Acme employs roughly 400 staff")[2],
                          "reworded, not a near-quote: 60% of the claim's words are in the source")
@@ -173,23 +206,19 @@ class FiguresCompareExactlyAsWritten(unittest.TestCase):
 
     def test_figure_tokens(self):
         self.assertEqual(vcs._words("Net -12%, +5, −40°C, €1,5, 3,50, 10⁶, .95, '24, $5.00, 99.9%, A$5m, 1,000."),
-                         ["net", "-12%", "+5", "−40", "°", "c", "€1,5", "3,50", "10⁶", ".95", "'24", "$5.00", "99.9%",
-                          "a$5m", "1,000"])
+                         ["net", "-12%", "+5", "−40", "°", "C", "€1,5", "3,50", "10⁶", ".95", "'24", "$5.00", "99.9%",
+                          "A$5m", "1,000"])
         self.assertEqual(vcs._words("The price is $5/user/month, 3-5 days, x > 5 ~ y"),
-                         ["the", "price", "is", "$5", "/", "user", "/", "month", "3", "-5", "days", "x", ">", "5", "~", "y"])
+                         ["the", "price", "is", "$5", "/", "user", "/", "month", "3", "-", "5", "days", "x", ">", "5", "~", "y"])
         for figure in ("30%", "$5", "a$5m", "ca$5", "2023", "3.5", "-12", "'24", ".95"):
             self.assertTrue(vcs._is_figure(figure), figure)
         for word in ("q3", "ec2", "acme", "gpt4", "-", "$"):
             self.assertFalse(vcs._is_figure(word), word)
 
-    def test_stem_and_keys(self):
-        for a, b in (("employees", "employee"), ("companies", "company"), ("watches", "watch"),
-                     ("classes", "class"), ("uses", "use")):
-            self.assertEqual(vcs._stem(a), vcs._stem(b), (a, b))
-        for word in ("pass", "bus", "shipped", "shipping", "opening", "staff"):
-            self.assertEqual(vcs._stem(word), word, word)
-        self.assertEqual(vcs._keys(["the", "acme", "are", "employees", "$5", "müller", "q3"]),
-                         ["acme", "are", "employee", "$5", "müller", "q3"])
+    def test_keys_drop_only_lowercase_articles(self):
+        self.assertEqual(vcs._keys(["the", "Acme", "are", "employees", "$5", "A", "a", "an", "An"]),
+                         ["Acme", "are", "employees", "$5", "A", "An"])
+        self.assertFalse(hasattr(vcs, "_stem"))
 
 
 class ContradictedOnlyWhenClear(unittest.TestCase):
@@ -263,15 +292,20 @@ class SeveralQuotesAndNoOverlap(unittest.TestCase):
         self.assertEqual(status(claim, "alpha bravo"), "unsupported")          # 20%
         self.assertEqual(status(claim, "alpha bravo charlie"), "needs_review")  # exactly 30%
 
-    def test_one_supporting_quote_is_enough_unless_another_contradicts(self):
+    def test_any_supporting_quote_is_enough_and_every_quote_must_contradict(self):
         self.assertEqual(status("Acme supports SSO", "Acme supports SSO", "Bananas"), "supported")
         self.assertEqual(status("Acme supports SSO", "Bananas", "Acme supports SSO"), "supported")
-        got = verdict("Acme supports SSO", "Acme supports SSO", "Acme not supports SSO")
-        self.assertEqual(got[0], "needs_review")
-        self.assertIn("conflicting evidence", got[2])
-        self.assertIn("the source negates what the claim says", got[2])
+        self.assertEqual(status("Acme supports SSO", "Acme supports SSO", "Acme not supports SSO"), "supported")
+        self.assertEqual(status("Acme supports SSO", "Acme not supports SSO", "Acme not supports SSO"), "contradicted")
+        self.assertEqual(status("Acme supports SSO", "Acme not supports SSO", "Bananas"), "unsupported" if False else "needs_review")
+        self.assertEqual(status("Acme has 500 employees", "Acme has 200 employees", "Acme has 500 staff"), "needs_review")
 
     def test_a_sibling_quote_about_another_year_never_contradicts(self):
+        # The quote of 2023 differs from the claim in one figure, and the real source is worded differently.
+        self.assertEqual(status("Revenue rose 5% in 2024.", "Revenue rose 5% in 2023.", "In 2024, revenue again rose 5%."),
+                         "needs_review")
+        self.assertEqual(status("The pro plan costs $9 per month.", "The basic plan costs $5 per month.",
+                                "The pro plan, at $9 per month, adds SSO."), "needs_review")
         self.assertEqual(status("Revenue was $7m in 2024.", "Revenue was $5m in 2023.", "Revenue rose to $7m in 2024."),
                          "needs_review")
         self.assertEqual(status("Acme had 150 staff in 2023.", "Acme had 100 staff in 2022.",
