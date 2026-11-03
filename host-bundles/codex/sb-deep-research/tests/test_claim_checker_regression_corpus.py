@@ -1,6 +1,7 @@
 """Anti-oscillation regression corpus for the claim-support checker (H8a, review rounds 1-6).
 
-Round 6 ended the word-pattern approach: ``supported`` now means the claim nearly repeats its quote word for
+Round 7 made the tokenizer conservative (every character that can change a meaning is kept, figures compare
+as written). Round 6 ended the word-pattern approach: ``supported`` now means the claim nearly repeats its quote word for
 word, and everything else is ``needs_review`` (or ``contradicted`` for a clear, explicit conflict). The corpus
 pins every probe pair of all six rounds, so a change that trades one class for another fails here:
 
@@ -34,7 +35,7 @@ def load(name):
 def pairs():
     """Every probe pair as (corpus, kind, claim, quote); kind is 'F' (fabrication) or 'H' (honest)."""
     out = []
-    for name in ("claim_corpus_verbatim", "claim_corpus_r4", "claim_corpus_r5", "claim_corpus_r6"):
+    for name in ("claim_corpus_verbatim", "claim_corpus_r4", "claim_corpus_r5", "claim_corpus_r6", "claim_corpus_r7"):
         out += [(name, c["kind"], c["claim"], c["quote"]) for c in load(name)]
     for name in ("claim_corpus", "claim_corpus_heldout"):
         data = load(name)
@@ -88,12 +89,24 @@ class EveryProbeOfEveryRound(unittest.TestCase):
         self.assertEqual(len(held), 40)
         self.assertEqual(tally(held), {"needs_review": 40})
 
+    def test_the_round_seven_probes(self):
+        """Signs, comparators, accents, other scripts, decimal commas, superscripts, symbols after a space,
+        filler words and aliases: every fabrication is non-supported, the identical control is supported, and
+        a figure written another way is a review, never a contradiction."""
+        items = load("claim_corpus_r7")
+        fabrications = [c for c in items if c["kind"] == "F"]
+        self.assertEqual(len(fabrications), 55)
+        self.assertEqual(tally(fabrications).get("supported", 0), 0)
+        for c in items:
+            if c["kind"] == "H":
+                self.assertNotIn(status(c["claim"], c["quote"]), ("contradicted", "unsupported"), c)
+
     def test_the_round_six_fabrications_and_twins(self):
         fabrications = [c for c in load("claim_corpus_r6") if c["kind"] == "F"]
         self.assertEqual(len(fabrications), 91)
         counts = tally(fabrications)
         self.assertEqual(counts.get("supported", 0), 0, counts)
-        self.assertEqual(counts, {"needs_review": 86, "contradicted": 5})
+        self.assertEqual(counts, {"needs_review": 89, "contradicted": 2})
         twins = [c for c in load("claim_corpus_r6") if c["kind"] == "H" and c["source"].startswith("r6 score6.py")]
         self.assertEqual(len(twins), 25)
         self.assertEqual(tally(twins).get("contradicted", 0) + tally(twins).get("unsupported", 0), 0)
@@ -150,7 +163,7 @@ class StrictRuleTables(unittest.TestCase):
             ("Setup takes 3 days", "Setup takes one to three days"),
         ])
         self.assertEqual(status("Acme revenue grew 30% in Q3", "Acme revenue grew 30% in Q3"), "supported")
-        self.assertEqual(status("Setup takes one to three days", "Setup takes 1 to 3 days"), "supported")
+        self.assertEqual(status("Setup takes one to three days", "Setup takes 1 to 3 days"), "needs_review")
 
     def test_future_modal_and_conditional_quotes_escalate(self):
         self.assert_escalates([
