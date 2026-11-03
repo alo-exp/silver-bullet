@@ -30,6 +30,19 @@ assert_eq "root dir created" yes "$([[ -d "$r" ]] && echo yes || echo no)"
 # the first call must run in the current shell (not a command substitution) to export the root
 assert_eq "root is memoised and exported" "same" "$(sub 'sb_smoke_root >/dev/null; first="$SB_PRE_RELEASE_SMOKE_ROOT"; [[ "$(sb_smoke_root)" == "$first" && -d "$first" ]] && echo same || echo differ')"
 assert_eq "preset root honoured" "$TL_TMP/preset" "$(SB_PRE_RELEASE_SMOKE_ROOT="$TL_TMP/preset" sub 'sb_smoke_root')"
+# R8-11: helpers called in $(...) cannot pin a root for their caller, so an
+# unpinned root is an error instead of a fresh temp dir per call.
+before="$(find "$TMPDIR" -maxdepth 1 -name 'sb-pre-release-smoke.*' | wc -l | tr -d ' ')"
+res="$(sub 'a="$(sb_smoke_host_root x 2>&1)"; echo "rc=$? out=$a"')"
+assert_contains "unpinned host root fails" "$res" "rc=1"
+assert_contains "unpinned host root explains" "$res" "smoke root not pinned"
+for helper in sb_smoke_cursor_workspace sb_smoke_cursor_config_dir; do
+  res="$(sub "$helper >/dev/null 2>&1; echo rc=\$?")"
+  assert_eq "unpinned $helper fails" "rc=1" "$res"
+done
+assert_eq "no stray roots created by unpinned helpers" "$before" "$(find "$TMPDIR" -maxdepth 1 -name 'sb-pre-release-smoke.*' | wc -l | tr -d ' ')"
+res="$(sub 'sb_smoke_init_root; a="$(sb_smoke_host_root x)"; b="$(sb_smoke_host_root y)"; c="$(sb_smoke_cursor_workspace)"; [[ "${a%/x}" == "$SB_PRE_RELEASE_SMOKE_ROOT" && "${b%/y}" == "$SB_PRE_RELEASE_SMOKE_ROOT" && "$c" == "$SB_PRE_RELEASE_SMOKE_ROOT/cursor/workspace" ]] && echo one-root || echo "split: $a $b $c"')"
+assert_eq "after init every helper shares one root" "one-root" "$res"
 SM="$TL_TMP/sm"
 assert_eq "host root created" "$SM/h1" "$(SB_PRE_RELEASE_SMOKE_ROOT="$SM" sub 'sb_smoke_host_root h1')"
 assert_file_exists "host root dir exists" "$SM/h1"
@@ -39,6 +52,16 @@ assert_eq "track dedupes" "/a /b" "$(sub 'sb_smoke_track_root /a; sb_smoke_track
 
 # --- per-host begin ------------------------------------------------------------------------------------------
 env_dump='echo "HOME=$HOME"; echo "RT=$SILVER_BULLET_RUNTIME"; echo "PRESERVE=$SB_RUNTIME_PRESERVE_STATE_DIR"; echo "STATE=$SB_RUNTIME_STATE_DIR"'
+# R8-12: variables that redirect a host's real config or SB state are cleared.
+redirects='KAY_HOME CLAUDE_CONFIG_DIR CODEX_HOME SILVER_BULLET_STATE_FILE SILVER_BULLET_BRANCH_FILE SB_RUNTIME_HOME_ROOT SB_RUNTIME_PLUGIN_CACHE_ROOT XDG_CONFIG_HOME XDG_DATA_HOME XDG_STATE_HOME XDG_CACHE_HOME'
+for host in codex claude cursor; do
+  out="$(env KAY_HOME=/real/kay CLAUDE_CONFIG_DIR=/real/claude CODEX_HOME=/real/codex SILVER_BULLET_STATE_FILE=/real/state \
+    SILVER_BULLET_BRANCH_FILE=/real/branch SB_RUNTIME_HOME_ROOT=/real/rt SB_RUNTIME_PLUGIN_CACHE_ROOT=/real/cache \
+    XDG_CONFIG_HOME=/real/xdg XDG_DATA_HOME=/real/xd XDG_STATE_HOME=/real/xs XDG_CACHE_HOME=/real/xc \
+    SB_PRE_RELEASE_SMOKE_ROOT="$SM" bash -c "source '$LIB'; sb_smoke_begin_$host; for v in $redirects; do echo \"\$v=\${!v-unset}\"; done")"
+  leaked="$(grep -v '=unset$' <<<"$out" || true)"
+  assert_eq "$host: redirect variables cleared" "" "$leaked"
+done
 for host in codex claude; do
   out="$(SB_PRE_RELEASE_SMOKE_ROOT="$SM" sub "sb_smoke_begin_$host; $env_dump; echo \"TRACKED=\${sb_smoke_roots[*]}\"")"
   assert_contains "$host: HOME isolated" "$out" "HOME=$SM/$host"
@@ -100,32 +123,57 @@ assert_eq "auth: smoke-root key file wins over operator file" "0|rootfilekey|mem
 assert_eq "auth: env beats files" "0|envkey|memory" "$(auth HOME="$KH" SB_PRE_RELEASE_SMOKE_ROOT="$SM" CURSOR_API_KEY=envkey)"
 
 # --- cleanup --------------------------------------------------------------------------------------------------------------------------------
-CL="$TL_TMP/cl"; mkdir -p "$CL/a" "$CL/b" "$TL_TMP/extra-root"
-res="$(SB_PRE_RELEASE_SMOKE_ROOT="$CL" sub 'sb_smoke_roots=("$CL/a" "$CL/b"); sb_smoke_cleanup; echo "root=${SB_PRE_RELEASE_SMOKE_ROOT:-unset}"')"
-assert_contains "cleanup: unsets the root var" "$res" "root=unset"
-assert_file_absent "cleanup: root removed" "$CL"
-res="$(SB_PRE_RELEASE_SMOKE_ROOT="$TL_TMP/missing-root" sub 'sb_smoke_cleanup; echo done-no-roots')"
-assert_contains "cleanup: no tracked roots, missing root dir" "$res" "done-no-roots"
-mkdir -p "$TL_TMP/tracked-only"
-sub 'sb_smoke_roots=("$TL_TMP/tracked-only"); sb_smoke_cleanup'
-assert_file_absent "cleanup: tracked root removed without root var" "$TL_TMP/tracked-only"
+# R8-11: a root given in the environment (an operator directory or a parent
+# smoke run) is never removed; a root this process created is.
+CL="$TL_TMP/cl"; mkdir -p "$CL/a" "$CL/important"; echo keep >"$CL/important/notes.txt"
+res="$(SB_PRE_RELEASE_SMOKE_ROOT="$CL" sub 'sb_smoke_begin_codex; sb_smoke_cleanup; echo "root=${SB_PRE_RELEASE_SMOKE_ROOT:-unset}"')"
+assert_contains "cleanup: an inherited root stays pinned" "$res" "root=$CL"
+assert_eq "cleanup: operator directory and its files kept" keep "$(cat "$CL/important/notes.txt")"
+assert_file_exists "cleanup: nothing under an inherited root is removed" "$CL/codex"
+res="$(sub 'sb_smoke_init_root; own="$SB_PRE_RELEASE_SMOKE_ROOT"; sb_smoke_begin_claude; sb_smoke_cleanup; [[ -e "$own" ]] && echo "kept $own" || echo "removed root=${SB_PRE_RELEASE_SMOKE_ROOT:-unset}"')"
+assert_eq "cleanup: a root this process created is removed and unset" "removed root=unset" "$res"
+res="$(sub 'own="$(sb_smoke_root)"; SB_PRE_RELEASE_SMOKE_ROOT="$own"; sb_smoke_cleanup; [[ -e "$own" ]] && echo kept || echo removed')"
+assert_eq "cleanup: a root pinned by capture is owned too" removed "$res"
+res="$(sub 'sb_smoke_cleanup; echo done-no-root')"
+assert_contains "cleanup: nothing pinned is a no-op" "$res" "done-no-root"
 
 # rm failing (stubbed): cleanup is best-effort and still unsets the root variable
-mkdir -p "$TL_TMP/rmfail/a"
 tl_stub rm 'exit 1'; hash -r
-res="$(SB_PRE_RELEASE_SMOKE_ROOT="$TL_TMP/rmfail" sub 'sb_smoke_roots=("$TL_TMP/rmfail/a"); sb_smoke_cleanup; echo "root=${SB_PRE_RELEASE_SMOKE_ROOT:-unset}"')"
+res="$(sub 'sb_smoke_init_root; own="$SB_PRE_RELEASE_SMOKE_ROOT"; sb_smoke_cleanup; echo "root=${SB_PRE_RELEASE_SMOKE_ROOT:-unset} own=$own"')"
 rm_stub="$TL_BIN/rm"; /bin/rm -f "$rm_stub"; hash -r
 assert_contains "cleanup tolerates rm failures" "$res" "root=unset"
-assert_file_exists "cleanup with failing rm leaves the dirs" "$TL_TMP/rmfail/a"
+leftover="${res##* own=}"
+assert_file_exists "cleanup with failing rm leaves the dir" "$leftover"
+/bin/rm -rf "$leftover"
 
 # --- previous tag / checkout ---------------------------------------------------------------------------------------------------------------------
 assert_eq "previous tag: env override" "v9.9.9" "$(SB_RC_PREVIOUS_TAG=v9.9.9 sub 'sb_smoke_resolve_previous_tag')"
 assert_eq "previous tag: no repo -> 1" 1 "$(sub 'sb_smoke_resolve_previous_tag >/dev/null; echo $?' || true)"
 GR="$TL_TMP/gr"; tl_git_repo "$GR"
-git -C "$GR" tag v1.0.0; git -C "$GR" tag v1.10.0; git -C "$GR" tag v1.2.0
-assert_eq "previous tag: second newest by version sort" "v1.2.0" "$(SB_PRE_RELEASE_REPO_ROOT="$GR" sub 'sb_smoke_resolve_previous_tag')"
-git -C "$GR" tag -d v1.2.0 v1.10.0 >/dev/null
-assert_eq "previous tag: single tag -> none (status 1)" "1" "$(SB_PRE_RELEASE_REPO_ROOT="$GR" sub 'sb_smoke_resolve_previous_tag >/dev/null; echo $?' || true)"
+git -C "$GR" tag v1.0.0
+echo b >"$GR/b.txt"; git -C "$GR" add b.txt; git -C "$GR" commit -qm b
+git -C "$GR" tag v1.10.0; git -C "$GR" tag v1.2.0
+echo c >"$GR/c.txt"; git -C "$GR" add c.txt; git -C "$GR" commit -qm c   # the release candidate (HEAD)
+# R8-28: the RC matrix runs before the new version is tagged, so the previous
+# release is the newest release tag older than package.json's version.
+prev() { SB_PRE_RELEASE_REPO_ROOT="$GR" sub 'sb_smoke_resolve_previous_tag'; }
+printf '{"version":"1.11.0"}\n' >"$GR/package.json"
+assert_eq "previous tag: newest release older than package.json (N-1, not N-2)" "v1.10.0" "$(prev)"
+git -C "$GR" tag v1.11.0-rc.1; git -C "$GR" tag test-tag; git -C "$GR" tag v1.9.0-beta
+assert_eq "previous tag: pre-release and non-release tags ignored" "v1.10.0" "$(prev)"
+git -C "$GR" tag v1.11.0
+assert_eq "previous tag: HEAD already tagged with the new version still gives N-1" "v1.10.0" "$(prev)"
+printf '{"version":"1.11.0-rc.2"}\n' >"$GR/package.json"
+assert_eq "previous tag: an rc package version ranks below its release tag" "v1.10.0" "$(prev)"
+printf 'not json' >"$GR/package.json"
+assert_eq "previous tag: unreadable package.json -> newest release not at HEAD" "v1.10.0" "$(prev)"
+git -C "$GR" tag -d v1.11.0 >/dev/null
+rm -f "$GR/package.json"
+assert_eq "previous tag: no package.json -> newest release tag not at HEAD" "v1.10.0" "$(prev)"
+git -C "$GR" tag -d v1.2.0 v1.10.0 v1.11.0-rc.1 test-tag v1.9.0-beta >/dev/null
+printf '{"version":"1.0.0"}\n' >"$GR/package.json"
+assert_eq "previous tag: nothing older -> none (status 1)" "1" "$(SB_PRE_RELEASE_REPO_ROOT="$GR" sub 'sb_smoke_resolve_previous_tag >/dev/null; echo $?' || true)"
+rm -f "$GR/package.json"
 echo hello >"$GR/file.txt"; git -C "$GR" add file.txt; git -C "$GR" commit -qm add; git -C "$GR" tag v2.0.0
 assert_eq "checkout: no repo -> 1" 1 "$(sub 'sb_smoke_checkout_at_tag v1 "$TL_TMP/co0" >/dev/null; echo $?' || true)"
 SB_PRE_RELEASE_REPO_ROOT="$GR" sub 'sb_smoke_checkout_at_tag v2.0.0 "$TL_TMP/co1"'

@@ -46,15 +46,22 @@ MARK="$TL_TMP/keep/codex/.silver-bullet/pre-release-host-smoke"
 assert_file_exists "isolated marker kept" "$MARK"
 assert_contains "marker lists hosts" "$(cat "$MARK")" "hosts=codex,cursor,claude"
 assert_contains "marker lists isolation" "$(cat "$MARK")" "cursor_isolation=fake-home,CURSOR_CONFIG_DIR,--plugin-dir,--workspace"
-assert_file_exists "marker copied beside the claude runtime state" "$TL_TMP/keep/claude/.silver-bullet/pre-release-host-smoke"
-# the operator's real homes are never touched
-assert_file_absent "sandbox runtime state untouched by the smoke" "$SB_RUNTIME_STATE_DIR/pre-release-host-smoke"
+# R8-29: the evidence outlives the removed smoke root, at the state dir resolved before isolation
+assert_file_exists "marker persisted to the operator's runtime state dir" "$SB_RUNTIME_STATE_DIR/pre-release-host-smoke"
+assert_eq "persisted marker is the isolated marker" "$(cat "$MARK")" "$(cat "$SB_RUNTIME_STATE_DIR/pre-release-host-smoke")"
+assert_file_absent "smoke root removed on exit" "$(sed -n 's/^SB_PRE_RELEASE_SMOKE_ROOT=//p' <<<"$TL_OUT")"
+# R8-12: every invoke-skill receipt is written under isolation, never to the operator's HOME/state
+for host in codex cursor claude; do
+  assert_match "$host route check ran in the isolated HOME" "adapter-env home=[^ ]*/sb-pre-release-smoke\\.[A-Za-z0-9]+/$host(/fake-home)? " "$LOG"
+done
+assert_not_contains "no route check ran with the operator HOME" "$LOG" "adapter-env home=$HOME "
+assert_not_contains "no route check used the operator state dir" "$LOG" "state=$SB_RUNTIME_STATE_DIR"
 
 # ---- single host runs: marker is already at the destination ----
 smoke X=1 -- --host codex
 assert_eq "codex only exits 0" 0 "$TL_STATUS"
 assert_contains "codex only: summary" "$TL_OUT" "6 passed, 0 failed, 0 skipped"
-assert_contains "codex only: marker already in place" "$TL_OUT" "already at "
+assert_contains "codex only: marker persisted" "$TL_OUT" "Copied marker to $SB_RUNTIME_STATE_DIR/pre-release-host-smoke"
 assert_not_contains "codex only: no cursor smoke" "$TL_OUT" "Cursor host smoke"
 smoke X=1 -- cursor
 assert_eq "positional cursor exits 0" 0 "$TL_STATUS"
@@ -122,6 +129,7 @@ rm "$T/hooks/lib/runtime-paths.sh"
 smoke X=1 -- codex
 assert_eq "no runtime-paths exits 0" 0 "$TL_STATUS"
 assert_not_contains "no copy step without runtime-paths" "$TL_OUT" "Copied marker"
+rm -f "$SB_RUNTIME_STATE_DIR/pre-release-host-smoke"
 assert_file_exists "marker still written" "$TL_TMP/keep/codex/.silver-bullet/pre-release-host-smoke"
 
 tl_results
