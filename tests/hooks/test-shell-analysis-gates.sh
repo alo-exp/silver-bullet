@@ -78,10 +78,11 @@ for cmd in 'f(){ "$@"; }; f gh pr create --fill' 'a=(gh pr create --fill); "${a[
   "awk 'BEGIN{system(\"gh pr create --fill\")}'" "script -qc 'gh pr create --fill' /dev/null" \
   'coproc NAME { gh pr create --fill; }' 'eval "$(echo Z2l0IHB1c2g= | base64 -d)"' \
   '$((true); G=gh; $G pr create --fill)' 'gh alias set pc "pr create" && gh pc --fill' \
-  'gh api graphql --input /tmp/q.json' 'curl -X POST https://api.github.com/repos/o/r/pulls -d @b'; do
+  'gh api graphql --input /tmp/q.json' 'curl -X POST https://api.github.com/repos/o/r/pulls -d @b' \
+  "\$(printf '\\x67it') commit -m x"; do
   expect "unseen delivery is gated: $cmd" deny "COMPLETION BLOCKED" "$cmd"
 done
-for cmd in "\$(printf '\\x67it') commit -m x" '/usr/lib/git-core/git-push origin HEAD' 'git merge -n other' \
+for cmd in '/usr/lib/git-core/git-push origin HEAD' 'git merge -n other' \
   'git commit --allow-empty -m --help' 'HOME=/tmp/h git ci -m x' 'git pull --no-rebase . other'; do
   expect "reshaped commit is gated: $cmd" deny "COMMIT BLOCKED" "$cmd"
 done
@@ -101,6 +102,37 @@ for cmd in 'cat docs/deploy.md' 'grep -rn deploy src/' 'kubectl get deploy -n pr
   'run() { "$@"; }; run make test' 'cmd=(python3 -m pytest -q); "${cmd[@]}"' 'git pull' 'git stash' \
   'eval "$(ssh-agent -s)"' 'ssh dev@host ls' 'curl -s https://api.github.com/repos/o/r/pulls' 'gh pr ready 1'; do
   expect "not delivery (R1-12): $cmd" allow "" "$cmd"
+done
+
+# ── round 2: commands that hide behind a program the analyzer does not model ──────
+state
+for cmd in 'taskset -c 0 git commit --allow-empty -qm t1' 'env -i PATH=$PATH HOME=$HOME git commit --allow-empty -qm t1' \
+  "git -c diff.external='git commit --allow-empty -qm gx; true' diff" 'poetry run git commit -m x' \
+  "git difftool -y -x 'git commit --allow-empty -qm gx; true' HEAD" "tmux new-session -d 'git commit -m x'" \
+  "vim -c '!git push' -c q" 'runuser -u me -- git push' "git stash && git checkout -B feature/x 'stash@{0}'" \
+  "x='a[\$(git commit --allow-empty -qm ar1)]'; echo \${a[x]}"; do
+  expect "hidden behind a wrapper is gated: $cmd" deny "" "$cmd"
+done
+for cmd in 'c=$(cat cmd.txt); $c' "read -r c <<< 'git commit --allow-empty -qm t7'; \$c" '${UNSET:-git commit --allow-empty -qm t7}' \
+  "printf 'commit\n--allow-empty\n-qm\nt8\n' > args.txt; xargs -a args.txt git" \
+  'eval "$(ssh-agent -k 2>/dev/null; printf '"'"'git commit --allow-empty -m ea'"'"')"' \
+  'f(){ local p=$1; shift; $p "$@"; }; f git commit --allow-empty -qm t9'; do
+  expect "computed program word is gated: $cmd" deny "" "$cmd"
+done
+expect "a parser fault is a parse error, not the plain-verb regex (hd2)" deny "COMPLETION BLOCKED" \
+  $'cat <<EOF &\n`\nEOF\ngit -c alias.ci=commit ci --allow-empty -m hd2'
+for cmd in 'tldr git commit' 'man git-commit' 'uv run pytest -k "git commit"' 'kubectl exec pod -- ls /app' \
+  'git checkout -B feat origin/main' 'git switch -C feat' 'git stash && git stash pop' \
+  'bash < setup.sh' 'cat setup.sh | bash' 'eval $(poetry env activate)' 'eval "$(/opt/homebrew/bin/brew shellenv)"' \
+  '"$(git rev-parse --show-toplevel)/scripts/check.sh"' '$(npm bin)/jest' 'GH_TOKEN=$(gh auth token) npm run e2e' \
+  'scp deploy@prod:/var/log/app.log .' 'rsync -av deploy@prod:/var/log/app/ ./logs/' 'ssh deploy@prod docker ps' \
+  'OLDIFS=$IFS; IFS=:; for p in $PATH; do ls "$p" >/dev/null; done; IFS=$OLDIFS; $PYTHON -m pytest' \
+  "git ls-files '*.py' | xargs -I{} sh -c 'python3 -m py_compile {}'" \
+  "ruby -e 'puts \`ls\`.split.join(\",\")'" \
+  "node -e 'const {execSync}=require(\"child_process\"); console.log(execSync(\"git status --short\").toString())'" \
+  $'python3 - <<\'EOF\'\nimport subprocess\nout = subprocess.run(["git", "log", "--oneline"], capture_output=True).stdout\nprint(out)\nEOF' \
+  "python3 -c 'import os; print(\",\".join(os.popen(\"git ls-files\").read().split()))'"; do
+  expect "honest everyday command stays clean: $cmd" allow "" "$cmd"
 done
 
 # ── planning recorded: a chain is judged at its highest tier (R1-02) ─────────────
@@ -136,8 +168,12 @@ NOPY="$(tl_path_without python3)"
 expect "no python3: commit denied" deny "COMMIT BLOCKED" 'git commit -m x' PATH="$NOPY"
 expect "no python3: PR on line 2 denied" deny "COMPLETION BLOCKED" $'true\ngh pr create --fill' PATH="$NOPY"
 expect "no python3: read-only command allowed" allow "" 'ls -la' PATH="$NOPY"
+# python3 is installed but the helper dies: the command cannot be inspected, and the plain-verb regex
+# would miss aliases and escapes, so everything is held at the strictest floor
 tl_stub python3 'exit 7'
-expect "broken python3: commit denied" deny "COMMIT BLOCKED" 'git -C . commit -m x'
+expect "broken python3: commit denied at the strictest floor" deny "COMPLETION BLOCKED" 'git -C . commit -m x'
+expect "broken python3: an alias the regex cannot see is denied" deny "COMPLETION BLOCKED" 'git -c alias.ci=commit ci -m x'
+expect "broken python3: even a harmless command is held" deny "COMPLETION BLOCKED" 'ls -la'
 rm -f "$TL_BIN/python3"
 
 tl_results

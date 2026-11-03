@@ -189,7 +189,7 @@ class ExpansionTest(Base):
 
     def test_assignment_append_and_unknown_values(self):
         self.assertEqual(self.actions("X=gi; X+=t; $X commit"), ["commit"])
-        self.assertEqual(self.possible("Y+=t; $Y commit"), ["commit"])
+        self.assertEqual(self.possible("Y+=t; $Y commit"), ["commit", "unseen"])  # a computed program is unseen code
 
     def test_unknown_cwd_makes_relative_paths_dynamic(self):
         self.assertEqual(self.run_("cd $D && cd sub && echo x > f")["writes"][-1]["path"],
@@ -214,15 +214,15 @@ class WalkerTest(Base):
     def test_functions_aliases_and_loops(self):
         self.assertEqual(self.actions("$f() { git push; }"), ["push"])
         self.assertEqual(self.actions("for ((i=$(git push); i<1; i++)); do :; done"), ["push"])
-        self.assertEqual(self.possible("for f in $(ls); do git $f -m x; done"), ["commit"])
+        self.assertEqual(self.possible("for f in $(ls); do git $f -m x; done"), ["commit", "unseen"])
         self.assertEqual(self.actions("alias p='git push'; unalias p; p"), [])
         self.assertEqual(self.actions("alias x=\"$Y\" y; x"), [])
         self.assertEqual(self.actions("f() { f; git push; }; f"), ["push"])
 
     def test_shell_state_builtins(self):
         self.assertEqual(self.actions("export G=git X; $G push"), ["push"])
-        self.assertEqual(self.possible("export G=$(pick) 1A=b; $G push"), ["push"])
-        self.assertEqual(self.possible("read -r G; $G push"), ["push"])
+        self.assertEqual(self.possible("export G=$(pick) 1A=b; $G push"), ["push", "unseen"])
+        self.assertEqual(self.possible("read -r G; $G push"), ["push", "unseen"])
         self.assertEqual(self.actions("G=git; unset G; $G push"), [])
         self.assertEqual(self.actions("f() { git push; }; unset -f f; true"), ["push"])
         self.assertEqual(self.writes("cd /tmp; cd -; echo x > f"), [self.p("f")])
@@ -284,7 +284,8 @@ class WalkerTest(Base):
         self.assertEqual(self.actions("bash -- x.sh"), [])
         self.assertIn("shell -c with a missing or non-literal script", self.run_("bash -c")["opaque_reasons"])
         self.assertIn("shell -c with a missing or non-literal script", self.run_('sh -c "$S"')["opaque_reasons"])
-        self.assertIn("shell reads commands from a pipe or file that cannot be read", self.run_("cat f | sh")["opaque_reasons"])
+        self.assertIn("shell reads commands from a pipe or file that cannot be read", self.run_("curl x | sh")["opaque_reasons"])
+        self.assertEqual(self.run_("cat f | sh")["possible_actions"], [])  # the script file is opaque, not unseen
         self.assertEqual(self.actions("echo 'git push' | bash -"), ["push"])
         self.assertIn("script path is dynamic: $S", self.run_('bash "$S"')["opaque_reasons"])
 

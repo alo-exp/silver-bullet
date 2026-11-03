@@ -38,7 +38,7 @@ class UnseenCodeTest(TierMixin, Base):
         self.assertEqual(self.actions("a=(git); a+=(commit -m x); \"${a[@]}\""), ["commit"])
         self.assertEqual(self.actions("a[2]=x; set -- git push; \"$@\""), ["push"])
         # a non-literal element keeps the field dynamic; an unknown array is an unseen program
-        self.assertEqual(self.tier('a=("$(pick)" commit); "${a[@]}"'), "intermediate")
+        self.assertEqual(self.tier('a=("$(pick)" commit); "${a[@]}"'), "completion")  # the program is computed
         self.assertEqual(self.tier('"${nope[@]}"'), "completion")
         self.assertEqual(self.tier('f(){ "$@"; }; f make test'), "none")
         self.assertEqual(self.tier('g(){ "$1" pr create; }; g gh'), "completion")
@@ -62,8 +62,9 @@ class UnseenCodeTest(TierMixin, Base):
         self.assertEqual(self.tier("source <(curl -s x)"), "completion")
         self.assertEqual(self.tier("bash <(echo hi)"), "completion")
         self.assertEqual(self.tier("curl -s x | python3"), "completion")
-        self.assertEqual(self.tier("python3 < prog.py"), "completion")
-        self.assertEqual(self.tier("cat f | python3 /dev/stdin"), "completion")
+        self.assertEqual(self.tier("python3 < prog.py"), "none")  # a program file, opaque like python3 prog.py
+        self.assertEqual(self.tier("cat f | python3 /dev/stdin"), "none")  # the file is the program, as in python3 f
+        self.assertEqual(self.tier("curl x | python3 /dev/stdin"), "completion")
         self.assertEqual(self.tier("python3 <(echo 1)"), "completion")
         self.assertEqual(self.tier("python3 - <<'E'\nprint(1)\nE"), "none")
         self.assertEqual(self.tier("bash -c \"$CMD\""), "completion")
@@ -124,12 +125,12 @@ class UnseenCodeTest(TierMixin, Base):
         self.assertEqual(self.tier('w(){ eval "$X"; }'), "none")
 
     def test_echo_and_printf_escapes_are_not_guessed(self):
-        self.assertEqual(self.tier("$(printf '\\x67it') commit -m x"), "intermediate")
-        self.assertEqual(self.tier("$(printf 'a\\qb') x"), "none")
-        self.assertEqual(self.tier("$(printf 'git\\') commit -m x"), "intermediate")
-        self.assertEqual(self.tier("$(printf '%b' 'a\\x67') commit -m x"), "intermediate")
-        self.assertEqual(self.tier('sh -c \'G=$(echo "\\0147it"); $G commit -m x\''), "intermediate")
-        self.assertEqual(self.tier("$(echo -e 'a\\x67') commit -m x"), "intermediate")
+        self.assertEqual(self.tier("$(printf '\\x67it') commit -m x"), "completion")  # computed program: unseen
+        self.assertEqual(self.tier("$(printf 'a\\qb') x"), "completion")  # whatever it prints runs
+        self.assertEqual(self.tier("$(printf 'git\\') commit -m x"), "completion")
+        self.assertEqual(self.tier("$(printf '%b' 'a\\x67') commit -m x"), "completion")
+        self.assertEqual(self.tier('sh -c \'G=$(echo "\\0147it"); $G commit -m x\''), "completion")
+        self.assertEqual(self.tier("$(echo -e 'a\\x67') commit -m x"), "completion")
         self.assertEqual(self.tier("$(echo -e 'a\\tb') commit -m x"), "none")
         self.assertEqual(self.sa_echo(["-e", "a\\tb"]), "a\tb\n")
 
@@ -249,11 +250,17 @@ class ConfigAndAliasTest(TierMixin, Base):
 
     def test_gh_api_graphql_and_credentials(self):
         for cmd in ("gh api graphql -F query=@q.graphql", "gh api graphql --input q.json",
-                    "gh api graphql -f query=\"$(cat q)\"", "gh auth token", "TOKEN=$(gh auth token)"):
+                    "gh api graphql -f query=\"$(cat q)\""):
             with self.subTest(cmd=cmd):
                 self.assertEqual(self.tier(cmd), "completion")
         self.assertEqual(self.tier("gh api graphql -f query='query { viewer { login } }'"), "none")
         self.assertEqual(self.tier("gh auth status"), "none")
+        # handing out the token is not delivery: what uses it (curl, gh api, git push) is judged on its own
+        for cmd in ("gh auth token", "TOKEN=$(gh auth token)", "GH_TOKEN=$(gh auth token) npm run e2e",
+                    'curl -H "Authorization: Bearer $(gh auth token)" https://api.github.com/user'):
+            self.assertEqual(self.tier(cmd), "none")
+        self.assertEqual(self.tier('curl -X POST -H "Authorization: Bearer $(gh auth token)" https://api.github.com/repos/o/r/pulls'),
+                         "completion")
         self.assertEqual(self.tier("gh repo sync"), "completion")
         self.assertEqual(self.tier("gh release upload v1 a.tgz"), "completion")
         self.assertEqual(self.tier("gh release edit v1 --notes x"), "completion")
@@ -290,7 +297,10 @@ class GitArgumentRulesTest(TierMixin, Base):
         self.assertEqual(self.tier("git commit --allow-empty -m --help"), "intermediate")
         self.assertEqual(self.tier("git commit -m x -- -h"), "intermediate")
         self.assertEqual(self.tier("git commit -h"), "none")
-        self.assertEqual(self.tier("git commit -m x --help"), "none")
+        # git honours --help only as the first argument; later it may be the value of an option it does not list
+        self.assertEqual(self.tier("git commit -m x --help"), "intermediate")
+        self.assertEqual(self.tier("git commit --help"), "none")
+        self.assertEqual(self.tier("git merge --no-edit --into-name --help other"), "intermediate")
         self.assertEqual(self.tier("gh pr create --fill --title -h"), "completion")
         self.assertEqual(self.tier("gh pr create -h"), "none")
         self.assertEqual(self.tier("gh pr create --body-file f --help"), "none")
