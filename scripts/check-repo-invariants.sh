@@ -139,17 +139,15 @@ check_hook-references() {
     named=0
     # Every ${CLAUDE_PLUGIN_ROOT}/ path in the command must exist, not only the first.
     while IFS= read -r script; do
-      [[ -n "$script" ]] || continue
       named=1
       [[ -f "$script" ]] || { echo "  hooks.json references a missing script: $script"; ok=1; }
     done < <(printf '%s\n' "$cmd" | grep -oE '\$\{?CLAUDE_PLUGIN_ROOT\}?"?/[^"'"'"'[:space:]&|;]+' | sed -E 's|^.*CLAUDE_PLUGIN_ROOT\}?"?/||')
     # A bare hooks/ or scripts/ path anywhere in the command resolves against the user's project.
     while IFS= read -r bare; do
-      [[ -n "$bare" ]] || continue
       named=1
       echo "  hooks.json runs $bare relative to the working directory (the user's project); use \${CLAUDE_PLUGIN_ROOT}/$bare"
       ok=1
-    done < <(printf '%s\n' "$cmd" | sed -E 's|\$\{?CLAUDE_PLUGIN_ROOT\}?"?/[^"'"'"'[:space:]&|;]+||g' | grep -oE '(^|[[:space:]"'"'"'])(hooks|scripts)/[^"'"'"'[:space:]&|;]+' | sed -E 's|^[[:space:]"'"'"']+||')
+    done < <(printf '%s\n' "$cmd" | sed -E 's|\$\{?CLAUDE_PLUGIN_ROOT\}?"?/[^"'"'"'[:space:]&|;]+||g' | tr -s '[:space:]"'"'"'&|;' '\n' | grep -E '^(hooks|scripts)/' || true)
     if [[ "$named" == 0 ]]; then
       echo "  hooks.json command names no hooks/ or scripts/ file: $cmd"
       ok=1
