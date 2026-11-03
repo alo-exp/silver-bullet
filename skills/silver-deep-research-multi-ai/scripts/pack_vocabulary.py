@@ -59,6 +59,7 @@ CONVERTERS: dict[str, Any] = {
     "materialize_solution_artifacts._PAREN_CRITERION_SLUGS_RE": _regex,
     "materialize_solution_artifacts._ALL_SEVEN_INCLUSION_RE": _regex,
     "materialize_solution_artifacts.HOST_RUNTIME_SLUGS": _frozen,
+    "materialize_solution_artifacts.AMBIGUOUS_NAMES": _frozen,
     "materialize_solution_artifacts.OVERVIEW_IDENTITY_FILTERS": list,
     "synthesize_landscape.KCF_NAMES": list,
     "synthesize_landscape._CHART_SUPPORT_ALIASES": dict,

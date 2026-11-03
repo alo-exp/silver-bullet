@@ -1223,6 +1223,17 @@
       "C5 Spec",
       "C6 Enf",
       "C7 Proc"
+    ],
+    "materialize_solution_artifacts.AMBIGUOUS_NAMES": [
+      "director",
+      "factory",
+      "cursor",
+      "continue",
+      "linear",
+      "conductor",
+      "scout",
+      "harness",
+      "sweep"
     ]
   },
   "market_chart_notes": {
