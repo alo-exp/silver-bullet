@@ -14,15 +14,16 @@ big_bash_json() { printf '%s' "$1" | jq -Rsc '{hook_event_name:"PreToolUse",tool
 
 mkproj writes
 STATE_PATH="${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state"
+# the same file spelled through $HOME and ${HOME}, for whichever runtime is under test
+STATE_REL="${STATE_PATH#"$HOME"/}"
 
 # ── state tamper through $HOME (R1-28) ────────────────────────────────────────────
-dc_cmd "printf 'silver-verify\\n' >> \$HOME/.claude/.silver-bullet/state"
+dc_cmd "printf 'silver-verify\\n' >> \$HOME/$STATE_REL"
 assert_eq "\$HOME state write: deny" "deny" "$(decision)"
 assert_contains "\$HOME state write: tamper message" "$(message)" "STATE TAMPER BLOCKED"
-dc_cmd "echo x >> \"\${HOME}/.claude/.silver-bullet/state\""
+dc_cmd "echo x >> \"\${HOME}/$STATE_REL\""
 assert_eq "\${HOME} state write: deny" "deny" "$(decision)"
-[[ "$STATE_PATH" == "$HOME/.claude/.silver-bullet/state" ]] && tl_pass "runtime state lives under \$HOME" ||
-  tl_pass "runtime state path differs for this runtime ($STATE_PATH)"
+[[ "$STATE_PATH" == "$HOME/"* ]] && tl_pass "runtime state lives under \$HOME" || tl_fail "state path outside \$HOME: $STATE_PATH"
 
 # ── writers that used to pass with no planning (R2-02, R1-28) ─────────────────────
 for cmd in 'dd if=/tmp/x of=src/app.js' 'rsync /tmp/x src/app.js' 'git checkout other -- src/app.js' \
