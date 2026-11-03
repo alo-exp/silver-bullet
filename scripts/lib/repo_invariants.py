@@ -83,6 +83,52 @@ def decode_json_escapes(text: str) -> str:
     return UNICODE_ESCAPE.sub(lambda match: chr(int(match.group(1), 16)), text)
 
 
+def strip_jsonc(text: str) -> str:
+    """Remove // and /* */ comments and trailing commas outside strings (what VS Code ignores)."""
+    out: list[str] = []
+    i, n = 0, len(text)
+    while i < n:
+        char = text[i]
+        if char == '"':
+            j = i + 1
+            while j < n and text[j] != '"':
+                j += 2 if text[j] == "\\" else 1
+            out.append(text[i:j + 1])
+            i = j + 1
+        elif text.startswith("//", i):
+            while i < n and text[i] != "\n":
+                i += 1
+        elif text.startswith("/*", i):
+            end = text.find("*/", i + 2)
+            i = n if end < 0 else end + 2
+            out.append(" ")
+        else:
+            if char in "}]":
+                while out and not out[-1].strip():
+                    out.pop()
+                if out and out[-1] == ",":
+                    out.pop()
+            out.append(char)
+            i += 1
+    return "".join(out)
+
+
+def autorun_kinds(value: object) -> set[str]:
+    """Walk parsed config for folder-open tasks and the automatic-task switch at any depth."""
+    kinds: set[str] = set()
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if key == "runOn" and item == "folderOpen":
+                kinds.add("folder-open")
+            if key == "task.allowAutomaticTasks" or (key == "task" and isinstance(item, dict) and "allowAutomaticTasks" in item):
+                kinds.add("automatic")
+            kinds |= autorun_kinds(item)
+    elif isinstance(value, list):
+        for item in value:
+            kinds |= autorun_kinds(item)
+    return kinds
+
+
 def worm_indicators(root: Path, files: list[str]) -> list[str]:
     problems = []
     for rel in files:
@@ -90,10 +136,21 @@ def worm_indicators(root: Path, files: list[str]) -> list[str]:
             problems.append(f"{rel}: tracked under public/fonts/, where the repository worm hid its payload")
         if not AUTORUN_CONFIG.search(rel):
             continue
-        text = decode_json_escapes((read_bytes(root, rel) or b"").decode("utf-8", "replace"))
-        if FOLDER_OPEN_TASK.search(text):
+        raw = read_bytes(root, rel)
+        if raw is None:
+            continue
+        text = raw.decode("utf-8", "replace")
+        try:
+            kinds = autorun_kinds(json.loads(strip_jsonc(text)))
+        except ValueError:
+            # Not parseable as JSON with comments: match the decoded text and ask for a look.
+            decoded = decode_json_escapes(text)
+            kinds = {name for name, rx in (("folder-open", FOLDER_OPEN_TASK), ("automatic", AUTOMATIC_TASKS)) if rx.search(decoded)}
+            if rel.endswith((".json", ".code-workspace")):
+                problems.append(f"{rel}: cannot be parsed as JSON with comments, so it cannot be checked for auto-run tasks")
+        if "folder-open" in kinds:
             problems.append(f"{rel}: task runs automatically when the folder is opened (runOn: folderOpen)")
-        if AUTOMATIC_TASKS.search(text):
+        if "automatic" in kinds:
             problems.append(f"{rel}: sets task.allowAutomaticTasks, which lets such tasks run unprompted")
     return problems
 
@@ -237,9 +294,11 @@ def site_duplicate_ids(root: Path, files: list[str]) -> list[str]:
 WORKFLOW_FILE = re.compile(r"^\.github/workflows/[^/]+\.ya?ml$")
 UNPINNED = re.compile(r"@latest\b|\bnpx\s+(--yes|-y)\b")
 RUN_KEY = re.compile(r"^(\s*(?:-\s+)?)run:\s*(.*)$")
-CONTINUE_ON_ERROR = re.compile(r"^\s*(?:-\s+)?continue-on-error:\s*(?!false\s*(?:#.*)?$)\S")
+CONTINUE_ON_ERROR = re.compile(r"^\s*(?:-\s+)?continue-on-error:\s*(?!false\s*(?:#.*)?$)(?:\S|$)")
+QUOTED_KEY = re.compile(r"""^\s*(?:-\s+)?["'][A-Za-z_-]+["']\s*:""")
+FLOW_STEP = re.compile(r"^\s*-\s+\{")
 CHECKOUT_GUARD = re.compile(r"git status --porcelain --ignored\b")
-WRITE_ALL = re.compile(r"^\s*permissions:\s*write-all\b")
+WRITE_ALL = re.compile(r"""^\s*permissions:\s*["']?write-all\b""")
 FORCE_NODE24 = re.compile(r"^\s+FORCE_JAVASCRIPT_ACTIONS_TO_NODE24:\s*true\s*$")
 JOB_HEADER = re.compile(r"^\s+[A-Za-z0-9_-]+:\s*$")
 
@@ -290,7 +349,7 @@ def workflow_problems(rel: str, lines: list[str]) -> list[str]:
     problems = []
     if not any(line.startswith("permissions:") for line in lines):
         problems.append(f"{rel}: no top-level permissions block (least privilege)")
-    if rel.endswith("/ci.yml") and not any(CHECKOUT_GUARD.search(line) for line in lines):
+    if rel.endswith("/ci.yml") and not any(CHECKOUT_GUARD.search(line) for line in lines if not line.lstrip().startswith("#")):
         problems.append(f"{rel}: the checkout-unchanged guard must use git status --porcelain --ignored")
     if any(WRITE_ALL.match(line) for line in lines):
         problems.append(f"{rel}: permissions: write-all (grant only the scopes the job needs)")
@@ -301,6 +360,8 @@ def workflow_problems(rel: str, lines: list[str]) -> list[str]:
         code = line.strip()
         if code.startswith("#"):
             continue
+        if QUOTED_KEY.match(line) or FLOW_STEP.match(line):
+            problems.append(f"{rel}:{number}: quoted keys and flow-style steps hide settings from the hardening check; use plain block YAML")
         if UNPINNED.search(line):
             problems.append(f"{rel}:{number}: unpinned @latest or npx --yes")
         if number <= script_until:

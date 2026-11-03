@@ -32,6 +32,9 @@ new_tree() {
   mkdir -p "$T/scripts/lib" "$T/.claude-plugin"
   cp "$TL_REPO_ROOT/scripts/sync-marketplace-version.sh" "$T/scripts/"
   cp "$TL_REPO_ROOT/scripts/lib/agent-plugins-common.sh" "$T/scripts/lib/"
+  # CI gate stub: exits CI_RC (default 0) and records that it ran for the tag commit.
+  printf '#!/usr/bin/env bash\necho "ci $*" >>"${CI_LOG:-/dev/null}"\nexit "${CI_RC:-0}"\n' >"$T/scripts/verify-release-commit-ci.sh"
+  chmod +x "$T/scripts/verify-release-commit-ci.sh"
   jq -n '{name: "silver-bullet", version: "2.0.0"}' >"$T/.claude-plugin/plugin.json"
   j_marketplace_json '{"source":"github","repo":"o/sb"}' >"$T/$MF"
   chmod 644 "$T/$MF"
@@ -93,6 +96,13 @@ sync_run env AGENT_PLUGINS_REPO_ROOT="$TL_TMP/work" bash "$SCRIPT" --publish 2.0
 assert_eq "publish with the tag only local exits 1" 1 "$TL_STATUS"
 assert_contains "tag not on origin explained" "$TL_ERR" "release tag v2.0.0 is not on origin"
 assert_eq "nothing published for a local-only tag" "$remote_head" "$(git -C "$J_REMOTE" rev-parse main)"
+
+prepared_tree v2.0.0
+sync_run env AGENT_PLUGINS_REPO_ROOT="$TL_TMP/work" CI_RC=1 CI_LOG="$TL_TMP/ci.log" bash "$SCRIPT" --publish 2.0.0
+assert_eq "publish on red CI exits 1" 1 "$TL_STATUS"
+assert_contains "red CI explained" "$TL_ERR" "CI is not green for v2.0.0"
+assert_eq "nothing published on red CI" "$remote_head" "$(git -C "$J_REMOTE" rev-parse main)"
+assert_contains "CI consulted for the tag commit" "$(cat "$TL_TMP/ci.log")" "ci $(git -C "$T" rev-parse 'v2.0.0^{commit}')"
 
 new_tree v2.0.0
 sync_run env AGENT_PLUGINS_REPO_ROOT="$TL_TMP/work" bash "$SCRIPT" --publish 2.0.0

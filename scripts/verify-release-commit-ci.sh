@@ -25,7 +25,14 @@ fi
 
 REPO="${GITHUB_REPOSITORY:-}"
 if [[ -z "$REPO" ]]; then
-  echo "::error::GITHUB_REPOSITORY is required"
+  # Derive owner/repo from origin (https://github.com/o/r[.git] or git@github.com:o/r[.git]).
+  origin_url="$(git -C "$ROOT" remote get-url origin 2>/dev/null || true)"
+  if [[ "$origin_url" =~ github\.com[:/]([^/]+)/([^/]+)$ ]]; then
+    REPO="${BASH_REMATCH[1]}/${BASH_REMATCH[2]%.git}"
+  fi
+fi
+if [[ -z "$REPO" ]]; then
+  echo "::error::GITHUB_REPOSITORY is required (set it to owner/repo; origin is not a GitHub remote)"
   exit 2
 fi
 

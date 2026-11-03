@@ -46,6 +46,8 @@ trap 'rm -rf "$TMP"' EXIT
 source "$SOURCE_REPO_ROOT/tests/lib/repo-snapshot.sh"
 REPO_ROOT="$(sb_repo_snapshot --git "$SOURCE_REPO_ROOT" "$TMP/repo")"
 SCRIPT="$REPO_ROOT/scripts/sync-codex-marketplace-version.sh"
+# CI is green for the tagged commit (the real gate queries GitHub).
+printf '#!/usr/bin/env bash\nexit 0\n' >"$REPO_ROOT/scripts/verify-release-commit-ci.sh"
 
 MARKETPLACE="$TMP/marketplace"
 REMOTE="$TMP/remote.git"
@@ -78,6 +80,16 @@ assert_equal "in-repo sync publishes nothing" "0.0.1" \
 snap_git add -A
 snap_git commit -q --allow-empty -m "chore(release): $plugin_v"
 snap_git tag -a "v$plugin_v" -m "Release $plugin_v"
+
+# The release tag must exist on origin too: a local-only tag is refused, then pushed to a fake origin.
+FAKE_ORIGIN="$TMP/release-origin.git"
+git init -q --bare "$FAKE_ORIGIN"
+snap_git remote remove origin 2>/dev/null || true
+snap_git remote add origin "$FAKE_ORIGIN"
+local_only_rc=0
+AGENT_PLUGINS_REPO_ROOT="$MARKETPLACE" bash "$SCRIPT" --publish >/dev/null 2>&1 || local_only_rc=$?
+assert_equal "publish with a local-only tag is refused" "1" "$local_only_rc"
+snap_git push -q origin "v$plugin_v"
 AGENT_PLUGINS_REPO_ROOT="$MARKETPLACE" bash "$SCRIPT" --publish >/dev/null
 
 manifest_v="$(jq -r '.plugins[] | select(.name=="silver-bullet") | .version' "$MARKETPLACE/.agents/plugins/marketplace.json")"

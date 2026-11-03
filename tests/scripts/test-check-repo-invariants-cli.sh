@@ -46,7 +46,17 @@ mv "$FIX/h.json" "$FIX/hooks/hooks.json"
 tl_run bash "$SCRIPT" --root "$FIX" --check hook-references
 assert_eq "a bare relative plugin path fails" 1 "$TL_STATUS"
 assert_contains "bare path explained" "$TL_OUT" 'use ${CLAUDE_PLUGIN_ROOT}/scripts/tool.sh'
-jq '.hooks.Stop[0].hooks |= map(select(.command != "bash scripts/tool.sh")) | .hooks.Stop[0].hooks += [{"type":"command","command":"echo plain command"}]' "$FIX/hooks/hooks.json" >"$FIX/h.json"
+jq '.hooks.Stop[0].hooks |= map(select(.command != "bash scripts/tool.sh")) | .hooks.Stop[0].hooks += [{"type":"command","command":"bash \"${CLAUDE_PLUGIN_ROOT}/hooks/present.sh\" && bash hooks/evil.sh"}]' "$FIX/hooks/hooks.json" >"$FIX/h.json"
+mv "$FIX/h.json" "$FIX/hooks/hooks.json"
+tl_run bash "$SCRIPT" --root "$FIX" --check hook-references
+assert_eq "a bare path chained after a plugin-root path fails" 1 "$TL_STATUS"
+assert_contains "chained bare path named" "$TL_OUT" 'use ${CLAUDE_PLUGIN_ROOT}/hooks/evil.sh'
+jq '.hooks.Stop[0].hooks |= map(select(.command | contains("evil") | not)) | .hooks.Stop[0].hooks += [{"type":"command","command":"bash \"${CLAUDE_PLUGIN_ROOT}/hooks/present.sh\" && bash \"${CLAUDE_PLUGIN_ROOT}/hooks/gone.sh\""}]' "$FIX/hooks/hooks.json" >"$FIX/h.json"
+mv "$FIX/h.json" "$FIX/hooks/hooks.json"
+tl_run bash "$SCRIPT" --root "$FIX" --check hook-references
+assert_eq "a second plugin-root path is checked too" 1 "$TL_STATUS"
+assert_contains "second missing script named" "$TL_OUT" "hooks.json references a missing script: hooks/gone.sh"
+jq '.hooks.Stop[0].hooks |= map(select(.command | contains("gone") | not)) | .hooks.Stop[0].hooks += [{"type":"command","command":"echo plain command"}]' "$FIX/hooks/hooks.json" >"$FIX/h.json"
 mv "$FIX/h.json" "$FIX/hooks/hooks.json"
 tl_run bash "$SCRIPT" --root "$FIX" --check hook-references
 assert_eq "a command naming no plugin script fails" 1 "$TL_STATUS"
