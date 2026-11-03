@@ -213,12 +213,20 @@ class MergeHooksTest(unittest.TestCase):
         self.assertEqual(self.load()["hooks"], {"PreToolUse": [user]})
         self.assertIn("removed 0 duplicate settings entries", self.run_script(install))
 
-    def test_plugin_install_on_clean_settings_writes_nothing_new(self):
+    def test_plugin_install_on_clean_settings_leaves_the_file_byte_identical(self):
         install = self.make_install()
         self.register_plugin()
-        self.settings.write_text(json.dumps({"theme": "dark"}))
+        original = '{"theme":   "dark"}\n'
+        self.settings.write_text(original)
         self.assertIn("removed 0 duplicate settings entries", self.run_script(install))
-        self.assertEqual(self.load(), {"theme": "dark", "hooks": {}})
+        self.assertEqual(self.settings.read_text(), original)
+        self.assertFalse(self.settings.with_name("settings.json.sb-backup").exists())
+
+    def test_plugin_install_without_settings_creates_none(self):
+        install = self.make_install()
+        self.register_plugin()
+        self.assertIn("removed 0 duplicate settings entries", self.run_script(install))
+        self.assertFalse(self.settings.exists())
 
     def test_one_removed_entry_is_reported_in_the_singular(self):
         install = self.make_install(hooks={"Stop": [{"hooks": [hook(f"{PLUGIN}/hooks/s.sh")]}]})
