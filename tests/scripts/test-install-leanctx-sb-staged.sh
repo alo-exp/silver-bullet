@@ -6,6 +6,8 @@
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
+source "$TL_REPO_ROOT/tests/lib/consent-helpers.sh"
+sb_test_consent_grant_all   # the user said yes to every tool (docs/CONSENT.md)
 
 STAGE="$TL_TMP/repo"
 INST="$STAGE/scripts/install-leanctx-sb.sh"
@@ -16,6 +18,7 @@ export LOG
 
 mkdir -p "$STAGE/scripts/lib/global-toolstack" "$STAGE/hooks" "$PROJ"
 cp "$TL_REPO_ROOT/scripts/install-leanctx-sb.sh" "$INST"
+cp "$TL_REPO_ROOT/scripts/sb-consent.sh" "$STAGE/scripts/" 2>/dev/null || true
 ln -s "$TL_REPO_ROOT/hooks/lib" "$STAGE/hooks/lib"
 stub_py() { # <path> <label>
   mkdir -p "$(dirname "$1")"
@@ -126,41 +129,128 @@ assert_contains "skip-install announced" "$TL_OUT" "SKIP: lean-ctx binary instal
 assert_contains "library init skipped with warning" "$TL_ERR" "WARN: lean-ctx missing — skip library init"
 assert_contains "rtk passthrough skipped" "$TL_OUT" "SKIP: lean-ctx not installed; RTK passthrough not configured"
 
-# upstream installer: curl stub drops a working lean-ctx into PATH
-tl_stub curl 'printf "printf \"#!/bin/sh\\\\nexit 0\\\\n\" > \"%s/lean-ctx\"; chmod +x \"%s/lean-ctx\"\n" "$LC_DEST" "$LC_DEST"'
-LC_DEST="$TL_TMP/lc-bin"; mkdir -p "$LC_DEST"; export LC_DEST
+# ---- the upstream installer is never piped into a shell (R6-17)
+sb_test_consent_grant_all
+GOOD_INSTALLER='#!/bin/sh
+printf "#!/bin/sh\nexit 0\n" > "$LC_DEST/lean-ctx"; chmod +x "$LC_DEST/lean-ctx"'
+LC_DEST="$TL_TMP/lc-bin"; mkdir -p "$LC_DEST"
+GOOD_SHA="$(printf '%s\n' "$GOOD_INSTALLER" | { shasum -a 256 2>/dev/null || sha256sum; } | awk '{print $1}')"
+tl_stub curl 'printf "curl %s\n" "$*" >>"'"$LOG"'"
+out=""; while [[ $# -gt 0 ]]; do [[ "$1" == "-o" ]] && out="$2"; shift; done
+printf "%s\n" "$STUB_INSTALLER" >"$out"'
+export LC_DEST STUB_INSTALLER="$GOOD_INSTALLER"
+: >"$LOG"
 tl_run env PATH="$LC_DEST:$NOLC" bash "$INST" --host cursor --project-root "$PROJ" --skip-verify --skip-merge
-assert_eq "installer path succeeds" "0" "$TL_STATUS"
-assert_contains "installer announced" "$TL_OUT" "Installing lean-ctx via upstream installer..."
-assert_contains "install confirmed" "$TL_OUT" "OK: lean-ctx installed"
-assert_file_exists "stub installer produced the binary" "$LC_DEST/lean-ctx"
+assert_eq "no lean-ctx and no pinned checksum: refused" "1" "$TL_STATUS"
+assert_contains "refusal explains the checksum" "$TL_ERR" "will not run an unverified installer"
+assert_contains "refusal shows the pin option" "$TL_ERR" "--installer-sha256"
+assert_contains "refusal offers cargo" "$TL_ERR" "cargo install lean-ctx"
+assert_not_contains "nothing was downloaded" "$(calls)" "curl"
+tl_run env PATH="$LC_DEST:$NOLC" bash "$INST" --host cursor --project-root "$PROJ" --skip-verify --skip-merge --installer-sha256 not-hex
+assert_eq "a malformed checksum is refused" "1" "$TL_STATUS"
+assert_contains "malformed checksum explained" "$TL_ERR" "--installer-sha256 must be 64 hexadecimal characters"
+: >"$LOG"
+tl_run env PATH="$LC_DEST:$NOLC" bash "$INST" --host cursor --project-root "$PROJ" --skip-verify --skip-merge --installer-sha256 "$GOOD_SHA"
+assert_eq "a verified installer runs" "0" "$TL_STATUS"
+assert_file_exists "the verified installer produced the binary" "$LC_DEST/lean-ctx"
+assert_contains "the download is https-only and bounded" "$(calls)" "curl -fsSL --proto =https --max-time 60 -o"
+assert_contains "the install is confirmed" "$TL_OUT" "OK: lean-ctx installed"
 rm -f "$LC_DEST/lean-ctx"
-# the upstream installer itself fails (curl error): still no binary afterwards
+# the checksum is computed with sha256sum when shasum is missing
+NOSHASUM="$(tl_path_without lean-ctx shasum)"
+tl_run env PATH="$LC_DEST:$NOSHASUM" bash "$INST" --host cursor --project-root "$PROJ" --skip-verify --skip-merge --installer-sha256 "$GOOD_SHA"
+assert_eq "a verified installer runs without shasum" "0" "$TL_STATUS"
+rm -f "$LC_DEST/lean-ctx"
+# an uppercase checksum is accepted
+tl_run env PATH="$LC_DEST:$NOLC" bash "$INST" --host cursor --project-root "$PROJ" --skip-verify --skip-merge --installer-sha256 "$(printf '%s' "$GOOD_SHA" | tr 'a-f' 'A-F')"
+assert_eq "an uppercase checksum matches" "0" "$TL_STATUS"
+rm -f "$LC_DEST/lean-ctx"
+# a different installer (tampered) does not run
+: >"$LOG"
+tl_run env PATH="$LC_DEST:$NOLC" STUB_INSTALLER='#!/bin/sh
+touch "$LC_DEST/tampered-ran"' bash "$INST" --host cursor --project-root "$PROJ" --skip-verify --skip-merge --installer-sha256 "$GOOD_SHA"
+assert_eq "a checksum mismatch aborts" "1" "$TL_STATUS"
+assert_contains "the mismatch is reported" "$TL_ERR" "checksum mismatch"
+assert_file_absent "the tampered installer never ran" "$LC_DEST/tampered-ran"
+# an installer that exits non-zero is reported, and the missing binary still aborts
+FAIL_INSTALLER='#!/bin/sh
+exit 3'
+FAIL_SHA="$(printf '%s\n' "$FAIL_INSTALLER" | { shasum -a 256 2>/dev/null || sha256sum; } | awk '{print $1}')"
+tl_run env PATH="$LC_DEST:$NOLC" STUB_INSTALLER="$FAIL_INSTALLER" bash "$INST" --host cursor --project-root "$PROJ" --skip-verify --skip-merge --installer-sha256 "$FAIL_SHA"
+assert_eq "an installer that fails aborts" "1" "$TL_STATUS"
+assert_contains "its non-zero exit is reported" "$TL_ERR" "WARN: lean-ctx installer exited non-zero"
+# the download itself fails
 tl_stub curl 'exit 22'
-tl_run env PATH="$LC_DEST:$NOLC" bash "$INST" --host cursor --project-root "$PROJ" --skip-verify --skip-merge
-assert_eq "failing upstream installer aborts" "1" "$TL_STATUS"
-assert_contains "failing upstream installer warns" "$TL_ERR" "WARN: lean-ctx not on PATH after installer"
-# installer ran but produced nothing
-tl_stub curl 'echo "true"'
-tl_run env PATH="$LC_DEST:$NOLC" bash "$INST" --host cursor --project-root "$PROJ" --skip-verify --skip-merge
-assert_eq "failed install aborts" "1" "$TL_STATUS"
-assert_contains "failed install warns" "$TL_ERR" "WARN: lean-ctx not on PATH after installer — try: cargo install lean-ctx"
+tl_run env PATH="$LC_DEST:$NOLC" bash "$INST" --host cursor --project-root "$PROJ" --skip-verify --skip-merge --installer-sha256 "$GOOD_SHA"
+assert_eq "a failed download aborts" "1" "$TL_STATUS"
+assert_contains "a failed download is reported" "$TL_ERR" "could not download the lean-ctx installer"
+# the installer ran but produced nothing
+tl_stub curl 'out=""; while [[ $# -gt 0 ]]; do [[ "$1" == "-o" ]] && out="$2"; shift; done; printf "#!/bin/sh\nexit 0\n" >"$out"'
+EMPTY_SHA="$(printf '#!/bin/sh\nexit 0\n' | { shasum -a 256 2>/dev/null || sha256sum; } | awk '{print $1}')"
+tl_run env PATH="$LC_DEST:$NOLC" bash "$INST" --host cursor --project-root "$PROJ" --skip-verify --skip-merge --installer-sha256 "$EMPTY_SHA"
+assert_eq "an installer that installs nothing aborts" "1" "$TL_STATUS"
+assert_contains "and warns" "$TL_ERR" "WARN: lean-ctx not on PATH after installer — try: cargo install lean-ctx"
 # curl itself missing
 NOCURL="$(tl_path_without lean-ctx curl)"
 rm -f "$TL_BIN/curl"
-tl_run env PATH="$NOCURL" bash "$INST" --host cursor --project-root "$PROJ" --skip-verify --skip-merge
+tl_run env PATH="$NOCURL" bash "$INST" --host cursor --project-root "$PROJ" --skip-verify --skip-merge --installer-sha256 "$GOOD_SHA"
 assert_eq "no curl and no binary aborts" "1" "$TL_STATUS"
+assert_contains "no curl is explained" "$TL_ERR" "curl is required to download the lean-ctx installer"
+# installing needs the separate install consent
+sb_test_consent_revoke_all
+sb_test_consent_grant leanctx wire
+tl_run env PATH="$LC_DEST:$NOLC" bash "$INST" --host cursor --project-root "$PROJ" --skip-verify --skip-merge --installer-sha256 "$GOOD_SHA"
+assert_eq "wire consent alone does not allow an install" "1" "$TL_STATUS"
+assert_contains "the install consent is requested" "$TL_ERR" "grant leanctx --all-projects --capabilities install"
+sb_test_consent_grant_all
 # dry run never fetches
 : >"$LOG"
 rm -rf "$SB_RUNTIME_HOME_ROOT/leanctx-profile"
-tl_run env PATH="$NOCURL" bash "$INST" --host cursor --project-root "$PROJ" --dry-run --skip-verify
+tl_run env PATH="$NOLC" bash "$INST" --host cursor --project-root "$PROJ" --dry-run --skip-verify --installer-sha256 "$GOOD_SHA"
 assert_eq "dry-run without binary exits 0" "0" "$TL_STATUS"
-assert_contains "dry-run shows the installer command" "$TL_OUT" "DRY-RUN: curl -fsSL https://leanctx.com/install.sh | sh"
+assert_contains "dry-run shows the verified download" "$TL_OUT" "DRY-RUN: download https://leanctx.com/install.sh, verify sha256 ${GOOD_SHA}, run it"
 assert_contains "dry-run skips guard check" "$TL_OUT" "SKIP: guard unchanged check (dry-run — no writes)"
 assert_file_absent "dry-run writes no profile" "$PROFILE"
 assert_contains "dry-run profile" "$TL_OUT" "DRY-RUN: write ${PROFILE}"
 assert_contains "dry-run cursor merge" "$TL_OUT" "DRY-RUN: RT_PATCH_LEANCTX=1 RT_PATCH_GRAPHIFY=0 python3 ${STAGE}/scripts/lib/global-toolstack/patch-mcp.py"
 assert_eq "dry-run runs no helper" "" "$(calls)"
+
+# ---- no consent: nothing is changed (R6-03)
+sb_test_consent_revoke_all
+: >"$LOG"
+run_inst --host cursor --skip-verify
+assert_eq "without consent the run exits 0" "0" "$TL_STATUS"
+assert_contains "without consent: skipped" "$TL_OUT" "SKIP: LeanCTX install - no consent"
+assert_contains "without consent: the grant command" "$TL_OUT" "sb-consent.sh grant leanctx --all-projects --capabilities wire,install"
+assert_eq "without consent nothing ran" "" "$(calls)"
+assert_file_absent "without consent no profile is written" "$PROFILE"
+sb_test_consent_grant_all
+
+# the AGENTS.md guard protects the project's files, not the plugin checkout's
+printf 'project agents\n' >"$PROJ/AGENTS.md"
+printf 'cursor rules\n' >"$PROJ/.cursorrules"
+run_inst --host cursor --skip-verify --skip-merge
+assert_eq "a run that leaves the project files alone passes the guard" "0" "$TL_STATUS"
+assert_eq "project AGENTS.md untouched" "project agents" "$(cat "$PROJ/AGENTS.md")"
+tl_run env STUB_HOOK='echo clobbered > "'"$PROJ"'/AGENTS.md"' bash "$INST" --host cursor --project-root "$PROJ" --skip-verify
+assert_eq "clobbering the project's AGENTS.md fails the guard" "1" "$TL_STATUS"
+assert_contains "the guard names the project file" "$TL_ERR" "install modified guarded path: $PROJ/AGENTS.md"
+rm -f "$PROJ/AGENTS.md" "$PROJ/.cursorrules"
+
+# ---- wire-proxy evidence (R6-30)
+run_inst --host codex --skip-merge
+assert_contains "the self-test is labeled as proving the validator only" "$TL_OUT" "this proves the validator, not the proxy"
+printf '{"schema":"x"}' >"$TL_TMP/evidence.json"
+run_inst --host codex --skip-merge --wire-proxy-evidence "$TL_TMP/evidence.json"
+assert_contains "real evidence is validated" "$TL_OUT" "Validating the captured wire-proxy evidence $TL_TMP/evidence.json"
+assert_contains "the validator received the file" "$(calls)" "verify $TL_TMP/evidence.json"
+assert_contains "valid evidence is confirmed" "$TL_OUT" "OK: wire-proxy evidence preserves message ordering"
+tl_run env VERIFY_RC=1 bash "$INST" --host codex --project-root "$PROJ" --skip-merge --wire-proxy-evidence "$TL_TMP/evidence.json"
+assert_eq "invalid evidence fails the install" "1" "$TL_STATUS"
+assert_contains "invalid evidence is reported" "$TL_ERR" "wire-proxy evidence is not valid message ordering"
+tl_run env VERIFY_RC=1 bash "$INST" --host codex --project-root "$PROJ" --skip-merge
+assert_eq "a failing validator self-test fails the install" "1" "$TL_STATUS"
+assert_contains "and says so" "$TL_ERR" "wire-proxy ordering validator self-test failed"
 
 # dry-run with the binary: library init and config sets are only printed
 LC_LIBMODE=1 run_inst --host cursor --dry-run
@@ -209,11 +299,11 @@ stub_py "$STAGE/scripts/lib/merge-leanctx-mcp-config.py" merge-mcp
 # ---- wire-proxy verification
 run_inst --host cursor --skip-merge
 assert_eq "verify passes" "0" "$TL_STATUS"
-assert_contains "verify ran" "$TL_OUT" "OK: wire-proxy ordering validator self-test passed"
+assert_contains "verify ran" "$TL_OUT" "OK: validator self-test passed"
 assert_contains "validator received the generated fixture" "$(calls)" "verify - stdin=FIXTURE"
 VERIFY_RC=1 run_inst --host cursor --skip-merge
 assert_eq "verify failure aborts" "1" "$TL_STATUS"
-assert_contains "verify failure warns" "$TL_ERR" "WARN: wire-proxy ordering self-test failed"
+assert_contains "verify failure warns" "$TL_ERR" "WARN: wire-proxy ordering validator self-test failed"
 run_inst --host cursor --skip-merge --skip-verify
 assert_contains "verify skip announced" "$TL_OUT" "SKIP: wire-proxy ordering verify"
 mv "$VERIFY" "$VERIFY.off"
@@ -258,8 +348,9 @@ guard_for opencode "$HOME/.config/opencode/AGENTS.md"
 guard_for pi "$HOME/.pi/agent/AGENTS.md"
 guard_for pi "$TL_TMP/pi-agent/AGENTS.md" PI_CODING_AGENT_DIR="$TL_TMP/pi-agent"
 guard_for claude "$HOME/.claude/CLAUDE.md"
-guard_for cursor "$STAGE/.cursorrules"
-guard_for cursor "$STAGE/AGENTS.md"
+guard_for cursor "$PROJ/.cursorrules"
+guard_for cursor "$PROJ/AGENTS.md"
+guard_for codex "$PROJ/AGENTS.md"
 guard_for cursor "$HOME/.cursor/AGENTS.md"
 
 # Functions-only copy of the script (same line numbers, main flow cut off) so the

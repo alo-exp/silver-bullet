@@ -6,6 +6,7 @@ set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init claude
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/h-recommended-helpers.sh"
+sb_test_consent_grant_all   # the user said yes to every tool (docs/CONSENT.md)
 cd "$TL_TMP"
 unset CODEX_HOME PI_CODING_AGENT_DIR CURSOR_PLUGIN_ROOT TOOLSTACK_INSTALL_IN_PROGRESS SB_RT_APPLY_ACTIVE RTCM_DRY_RUN
 
@@ -323,5 +324,80 @@ hr_nobin context-mode
 tl_run env PATH="$HR_BIN:$BASEP" bash "$S2" --host codex --project-root "$PROJ" --skip-cm-doctor
 assert_contains "context-mode absent is installed" "$(logs)" "npm install -g context-mode"
 hr_nobin npm
+
+# ---------- consent: only the tools the user granted are wired (R6-04) ----------
+sb_test_consent_revoke_all
+mk_rtk; mk_cm
+run_args --host claude --project-root "$PROJ" --skip-cm-doctor
+assert_eq "without consent the run exits 0" "0" "$TL_STATUS"
+assert_contains "without consent: says what to do" "$TL_OUT" "SKIP: RTK and Context Mode optimization"
+assert_contains "without consent: grant command" "$TL_OUT" "sb-consent.sh grant rtk|context_mode --all-projects --capabilities wire"
+assert_eq "without consent nothing ran" "" "$(logs)"
+
+# RTK alone: rtk init runs, Context Mode is neither installed, wired nor disabled in Claude
+sb_test_consent_grant rtk wire
+hr_bin npm 'echo "npm $*" >>"$LOG"'
+hr_nobin context-mode
+run_args --host claude --project-root "$PROJ" --skip-cm-doctor
+assert_eq "rtk-only run exits 0" "0" "$TL_STATUS"
+assert_contains "rtk-only: rtk init ran" "$(logs)" "rtk init -g"
+assert_not_contains "rtk-only: no Context Mode merge" "$(logs)" "merge --host claude"
+assert_not_contains "rtk-only: Context Mode was not installed" "$(logs)" "npm install"
+assert_contains "rtk-only: Context Mode skipped with its grant command" "$TL_OUT" "SKIP: Context Mode wiring (claude)"
+run_args --host opencode --project-root "$PROJ" --skip-cm-doctor
+assert_contains "rtk-only opencode: the plugin merge is rtk-only" "$(logs)" "merge --host opencode"
+assert_contains "rtk-only opencode: --rtk-only reaches the merger" "$(logs)" "--rtk-only"
+
+# Context Mode alone: no rtk init; installing the package needs the separate install consent
+sb_test_consent_revoke_all
+sb_test_consent_grant context_mode wire
+run_args --host claude --project-root "$PROJ" --skip-cm-doctor
+assert_not_contains "cm-only: no rtk init" "$(logs)" "rtk init"
+assert_contains "cm-only: merge ran for Context Mode" "$(logs)" "merge --host claude"
+assert_not_contains "cm-only: no npm install without install consent" "$(logs)" "npm install"
+assert_contains "cm-only: the missing install consent is explained" "$TL_OUT" "SKIP: npm install -g context-mode"
+assert_contains "cm-only: and how to grant it" "$TL_OUT" "grant context_mode --all-projects --capabilities install"
+sb_test_consent_grant context_mode install
+run_args --host claude --project-root "$PROJ" --skip-cm-doctor
+assert_contains "cm-only with install consent: npm install ran" "$(logs)" "npm install -g context-mode"
+run_args --host opencode --project-root "$PROJ" --skip-cm-doctor
+assert_contains "cm-only opencode: --context-mode-only reaches the merger" "$(logs)" "--context-mode-only"
+mk_cm
+run_args --host cursor --project-root "$PROJ" --skip-cm-doctor
+assert_contains "cm-only cursor: hooks are reconciled for Context Mode alone" "$(logs)" "RT_PATCH_CONTEXT_MODE=1"
+assert_contains "cm-only cursor: rtk hooks are not touched" "$(logs)" "RT_PATCH_RTK=0"
+assert_contains "cm-only cursor: leanctx hooks are not touched" "$(logs)" "RT_PATCH_LEANCTX=0"
+
+# every host's RTK and Context Mode step is skipped, with the grant command, when only the other tool is consented
+sb_test_consent_revoke_all
+sb_test_consent_grant context_mode wire
+for h in cursor claude codex opencode pi hermes; do
+  run_args --host "$h" --project-root "$PROJ" --skip-cm-doctor
+  assert_eq "cm-only $h: exits 0" "0" "$TL_STATUS"
+  assert_contains "cm-only $h: RTK is skipped with its grant command" "$TL_OUT" "sb-consent.sh grant rtk --all-projects --capabilities wire"
+  assert_not_contains "cm-only $h: rtk init never runs" "$(logs)" "rtk init"
+done
+sb_test_consent_revoke_all
+sb_test_consent_grant rtk wire
+for h in cursor claude codex opencode pi hermes; do
+  run_args --host "$h" --project-root "$PROJ" --skip-cm-doctor
+  assert_eq "rtk-only $h: exits 0" "0" "$TL_STATUS"
+  assert_contains "rtk-only $h: Context Mode is skipped with its grant command" "$TL_OUT" "sb-consent.sh grant context_mode --all-projects --capabilities wire"
+done
+
+# the Cursor allow-list level is passed through and validated
+sb_test_consent_grant_all
+for level in none read-only full; do
+  run_args --host claude --project-root "$PROJ" --skip-cm-doctor --cli-allowlist "$level"
+  assert_contains "--cli-allowlist $level reaches the merger" "$(logs)" "--cli-allowlist $level"
+done
+run_args --host claude --project-root "$PROJ" --skip-cm-doctor
+assert_contains "the default allow-list is read-only" "$(logs)" "--cli-allowlist read-only"
+run_args --host claude --project-root "$PROJ" --cli-allowlist everything
+assert_eq "an unknown allow-list level is refused" "2" "$TL_STATUS"
+assert_contains "the allowed levels are named" "$TL_ERR" "--cli-allowlist takes none, read-only or full"
+run_args --host claude --project-root "$PROJ" --cli-allowlist
+assert_eq "--cli-allowlist needs a value" "2" "$TL_STATUS"
+assert_contains "--cli-allowlist without a value is explained" "$TL_ERR" "--cli-allowlist requires a value"
 
 tl_results

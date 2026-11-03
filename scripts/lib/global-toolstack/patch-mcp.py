@@ -3,20 +3,27 @@
 
 Preserves unrelated MCP servers. Requires the global Graphify MCP stdio handshake
 before adding a missing Graphify server entry.
+
+Every write goes through sb_host_config: atomic, symlink-preserving, mode-preserving, the
+previous content kept in <file>.sb-backup, and nothing written when nothing changed. A config
+that does not parse is reported and left alone. Codex config.toml is edited structurally
+(sb_host_config.TomlDocument), never with regular expressions.
 """
 from __future__ import annotations
 
 import json
 import os
-import re
 import shutil
 import subprocess
 import sys
-import tempfile
 from pathlib import Path
 from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+# sb_host_config.py sits in scripts/lib (the repository) or beside this file (the deployed copy).
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+
+import sb_host_config as sbc  # noqa: E402
 
 from five_tool_instances import (  # noqa: E402
     disable_claude_native_context_mode,
@@ -64,10 +71,8 @@ LEANCTX_ENV_BASE = {
 
 
 def load_json(path: Path) -> dict[str, Any]:
-    if path.is_file():
-        with path.open(encoding="utf-8") as handle:
-            return json.load(handle)
-    return {}
+    """The JSON object in PATH ({} when absent); sbc.ConfigError when it cannot be parsed."""
+    return sbc.read_json(path, default={})
 
 
 def normalize_mcp_config(data: dict[str, Any]) -> dict[str, Any]:
@@ -248,18 +253,7 @@ def ensure_context_mode(
 
 
 def atomic_write_json(path: Path, data: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    payload = json.dumps(data, indent=2) + "\n"
-    with tempfile.NamedTemporaryFile(
-        mode="w",
-        encoding="utf-8",
-        dir=path.parent,
-        delete=False,
-        prefix=".mcp-merge.",
-    ) as tmp:
-        tmp.write(payload)
-        tmp_path = Path(tmp.name)
-    tmp_path.replace(path)
+    sbc.write_json(path, data)
 
 
 def merge_opencode_mcp(
@@ -374,165 +368,62 @@ def install_pi_adapter(
     return True, "OK: Pi five-tool adapter installed (" + ",".join(sorted(enabled_tools)) + ")"
 
 
-def codex_mcp_block(
-    server: str, *, cm_active: bool, manifest: dict[str, Any]
-) -> str:
-    spec = mcp_server_spec(manifest, server if server != "context-mode" else "context_mode")
-    if server == "graphify":
-        return (
-            "[mcp_servers.graphify]\n"
-            f"command = {json.dumps(spec['command'])}\n"
-            f"args = {json.dumps(spec['args'])}\n"
-        )
-    if server == "agentmemory":
-        return (
-            '[mcp_servers.agentmemory]\n'
-            f"command = {json.dumps(spec['command'])}\n"
-            f"args = {json.dumps(spec['args'])}\n\n"
-            '[mcp_servers.agentmemory.env]\n'
-            f"AGENTMEMORY_URL = {json.dumps(spec['env']['AGENTMEMORY_URL'])}\n"
-        )
-    if server == "context-mode":
-        return (
-            '[mcp_servers.context-mode]\n'
-            f"command = {json.dumps(spec['command'])}\n"
-            f"args = {json.dumps(spec['args'])}\n"
-        )
-    env = LEANCTX_ENV_CM_ACTIVE if cm_active else LEANCTX_ENV_BASE
-    env_lines = "\n".join(f'{key} = "{value}"' for key, value in env.items())
-    return (
-        '[mcp_servers.leanctx]\n'
-        f"command = {json.dumps(spec['command'])}\n"
-        f"args = {json.dumps(spec['args'])}\n\n"
-        '[mcp_servers.leanctx.env]\n'
-        f'{env_lines}\n'
-    )
-
-
-def _toml_section_bounds(text: str, header: str) -> tuple[int, int] | None:
-    match = re.search(rf"(?m)^{re.escape(header)}\s*$", text)
-    if not match:
-        return None
-    next_header = re.search(r"(?m)^\[", text[match.end() :])
-    end = match.end() + (next_header.start() if next_header else len(text[match.end() :]))
-    return match.start(), end
-
-
-def _toml_set_root_keys(body: str, command: str, args: list[str]) -> str:
-    values = {
-        "command": f"command = {json.dumps(command)}",
-        "args": f"args = {json.dumps(args)}",
-    }
-    for key, line in values.items():
-        pattern = rf"(?m)^{re.escape(key)}\s*=.*$"
-        if re.search(pattern, body):
-            body = re.sub(pattern, line, body, count=1)
-        else:
-            body = f"{line}\n" + body
-    return body
-
-
-def _toml_set_env(text: str, server: str, env: dict[str, str]) -> str:
-    header = f"[mcp_servers.{server}.env]"
-    bounds = _toml_section_bounds(text, header)
-    if bounds is None:
-        if text and not text.endswith("\n"):
-            text += "\n"
-        if text:
-            text += "\n"
-        text += header + "\n"
-        text += "\n".join(f"{key} = {json.dumps(value)}" for key, value in env.items())
-        text += "\n"
-        return text
-    start, end = bounds
-    header_end = text.find("\n", start, end)
-    if header_end < 0:
-        header_end = end
-    body = text[header_end + 1 : end]
-    for key, value in env.items():
-        line = f"{key} = {json.dumps(value)}"
-        pattern = rf"(?m)^{re.escape(key)}\s*=.*$"
-        if re.search(pattern, body):
-            body = re.sub(pattern, line, body, count=1)
-        else:
-            body = f"{line}\n" + body
-    return text[: header_end + 1] + body + text[end:]
+def _toml_literal(value: Any) -> str:
+    return json.dumps(value, ensure_ascii=False)
 
 
 def _toml_normalize_server(
-    text: str, server: str, *, manifest: dict[str, Any], cm_active: bool
-) -> str:
+    doc: Any, server: str, *, manifest: dict[str, Any], cm_active: bool
+) -> bool:
+    """Make [mcp_servers.<server>] hold the desired command, args and env; True when changed."""
     spec_name = server if server != "context-mode" else "context_mode"
     spec = mcp_server_spec(manifest, spec_name)
-    header = f"[mcp_servers.{server}]"
-    bounds = _toml_section_bounds(text, header)
-    if bounds is None:
-        if text and not text.endswith("\n"):
-            text += "\n"
-        if text:
-            text += "\n"
-        text += codex_mcp_block(server, cm_active=cm_active, manifest=manifest)
+    table = ("mcp_servers", server)
+    changed = doc.set_value(table, "args", _toml_literal(spec["args"]))
+    changed = doc.set_value(table, "command", _toml_literal(spec["command"])) or changed
+    if server == "leanctx":
+        env = LEANCTX_ENV_CM_ACTIVE if cm_active else LEANCTX_ENV_BASE
     else:
-        start, end = bounds
-        header_end = text.find("\n", start, end)
-        if header_end < 0:
-            header_end = end
-        body = text[header_end + 1 : end]
-        body = _toml_set_root_keys(body, spec["command"], spec["args"])
-        text = text[: header_end + 1] + body + text[end:]
-    if spec.get("env"):
-        text = _toml_set_env(text, server, spec["env"])
-    return text
+        env = spec.get("env") or {}
+    for key in reversed(list(env)):
+        changed = doc.set_value(table + ("env",), key, _toml_literal(env[key])) or changed
+    return changed
 
 
 def merge_codex_mcp(path: Path, *, patch_graphify: bool, patch_leanctx: bool,
                     patch_agentmemory: bool, patch_context_mode: bool,
                     manifest: dict[str, Any]) -> tuple[bool, str]:
-    original = path.read_text(encoding="utf-8") if path.is_file() else ""
-    cm_active = patch_context_mode or "[mcp_servers.context-mode]" in original
-    text = original
+    doc = sbc.read_toml(path)
+    cm_active = patch_context_mode or bool(doc.headers(("mcp_servers", "context-mode")))
     changed = False
-    text = re.sub(
-        r"(?ms)^\[mcp_servers\.lean-ctx(?:\.env)?\]\n.*?(?=^\[|\Z)",
-        "",
-        text,
-    )
-    changed = text != original
+    if patch_leanctx:
+        # The legacy lean-ctx entry is replaced by leanctx only when the user agreed to wire
+        # LeanCTX; otherwise a table (and any secret in its env) is the user's and stays.
+        changed = bool(doc.remove(lambda p: p[:2] == ("mcp_servers", "lean-ctx")))
     for server, enabled in (
         ("graphify", patch_graphify),
         ("leanctx", patch_leanctx),
         ("agentmemory", patch_agentmemory),
     ):
-        if not enabled:
-            continue
-        updated = _toml_normalize_server(
-            text, server, manifest=manifest, cm_active=cm_active
-        )
-        changed = changed or updated != text
-        text = updated
-    if patch_context_mode or "[mcp_servers.context-mode]" in text:
-        updated = _toml_normalize_server(
-            text, "context-mode", manifest=manifest, cm_active=cm_active
-        )
-        changed = changed or updated != text
-        text = updated
+        if enabled:
+            changed = _toml_normalize_server(doc, server, manifest=manifest, cm_active=cm_active) or changed
+    if patch_context_mode or doc.headers(("mcp_servers", "context-mode")):
+        changed = _toml_normalize_server(doc, "context-mode", manifest=manifest, cm_active=cm_active) or changed
     if not changed:
         return False, "OK: config.toml unchanged (idempotent)"
-    atomic_write_text(path, text)
+    sbc.write_toml(path, doc)
     return True, "OK: config.toml merged atomically"
 
 
-def atomic_write_text(path: Path, payload: str) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile(
-        mode="w", encoding="utf-8", dir=path.parent, delete=False, prefix=".mcp-merge."
-    ) as tmp:
-        tmp.write(payload)
-        tmp_path = Path(tmp.name)
-    tmp_path.replace(path)
-
-
 def main() -> int:
+    try:
+        return _main()
+    except sbc.ConfigError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 2
+
+
+def _main() -> int:
     patch_graphify = os.environ.get("RT_PATCH_GRAPHIFY", "0") == "1"
     patch_leanctx = os.environ.get("RT_PATCH_LEANCTX", "0") == "1"
     patch_agentmemory = os.environ.get("RT_PATCH_AGENTMEMORY", "0") == "1"

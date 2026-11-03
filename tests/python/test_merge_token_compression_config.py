@@ -86,11 +86,11 @@ class JsonFilesTest(Base):
         self.assertEqual(mod.load_json(self.tmp / "none.json"), {})
         self.assertEqual(mod.load_json(self.tmp / "none.json", {"d": 1}), {"d": 1})
         self.assertEqual(mod.load_json(self.write(self.tmp / "a.json", {"k": 1})), {"k": 1})
-        with self.assertRaises(json.JSONDecodeError):
+        with self.assertRaises(mod.sbc.ConfigError):
             mod.load_json(self.write(self.tmp / "bad.json", "{x"))
 
     def test_load_json_non_object_raises_value_error(self):
-        with self.assertRaisesRegex(ValueError, "expected a JSON object"):
+        with self.assertRaisesRegex(ValueError, "expected an object"):
             mod.load_json(self.write(self.tmp / "list.json", "[1]"))
 
     def test_save_json_and_backup(self):
@@ -100,19 +100,12 @@ class JsonFilesTest(Base):
         target = self.tmp / "a" / "b.json"
         self.quiet(mod.save_json, target, {"a": 1}, False)
         self.assertEqual(target.read_text(), '{\n  "a": 1\n}\n')
-        self.assertFalse(target.with_suffix(".json.bak").exists())
+        self.assertFalse(Path(str(target) + ".sb-backup").exists())
         self.quiet(mod.save_json, target, {"a": 2}, False)
-        self.assertEqual(self.read_json(target.with_suffix(".json.bak")), {"a": 1})
+        self.assertEqual(self.read_json(Path(str(target) + ".sb-backup")), {"a": 1})
         self.quiet(mod.save_json, target, {"a": 3}, True)
         self.assertEqual(self.out, f"DRY-RUN: would write {target}\n")
         self.assertEqual(self.read_json(target), {"a": 2})
-
-    def test_backup_file_ignores_missing(self):
-        mod.backup_file(self.tmp / "none")
-        self.assertEqual(list(self.tmp.glob("*.bak")), [])
-        f = self.write(self.tmp / "x.txt", "hi")
-        mod.backup_file(f)
-        self.assertEqual((self.tmp / "x.txt.bak").read_text(), "hi")
 
 
 class HookEntriesTest(Base):
@@ -194,7 +187,7 @@ class MergeHooksFileTest(Base):
         self.assertFalse(target.exists())
         self.assertIn("DRY-RUN: would write", self.out)
         self.write(target, "{bad")
-        with self.assertRaises(json.JSONDecodeError):
+        with self.assertRaises(mod.sbc.ConfigError):
             self.quiet(mod.merge_hooks_file, target, [], False)
         self.assertEqual(target.read_text(), "{bad")
 
@@ -341,7 +334,7 @@ class FileCopyTest(Base):
         self.assertEqual(dest.read_text(), "one")
         src.write_text("two")
         self.assertTrue(mod.copy_file(src, dest, False))
-        self.assertEqual((dest.read_text(), dest.with_suffix(".txt.bak").read_text()), ("two", "one"))
+        self.assertEqual((dest.read_text(), Path(str(dest) + ".sb-backup").read_text()), ("two", "one"))
 
     def test_same_file_is_not_copied(self):
         src = self.write(self.tmp / "src.txt", "one")
@@ -349,7 +342,7 @@ class FileCopyTest(Base):
         link = self.tmp / "link.txt"
         link.symlink_to(src)
         self.assertFalse(mod.copy_file(src, link, False))
-        self.assertFalse(link.with_suffix(".txt.bak").exists())
+        self.assertFalse(Path(str(link) + ".sb-backup").exists())
 
     def test_resolve_oserror_falls_through_to_copy(self):
         src = self.write(self.tmp / "src.txt", "one")
@@ -397,7 +390,7 @@ class FileCopyTest(Base):
         self.assertFalse(f(src, target, "/x/rtk", False))
         self.assertTrue(f(src, target, "/y/rtk", False))
         self.assertEqual(target.read_text(), 'const c = "/y/rtk";\n')
-        self.assertEqual(target.with_suffix(".ts.bak").read_text(), 'const c = "/x/rtk";\n')
+        self.assertEqual(Path(str(target) + ".sb-backup").read_text(), 'const c = "/x/rtk";\n')
 
 
 class PackageRootTest(Base):
@@ -471,7 +464,7 @@ class CodexTomlTest(Base):
         self.assertTrue(mod.merge_codex_config_toml(target, False))
         self.assertEqual(target.read_text(), (
             '[mcp_servers.context-mode]\ncommand = "/opt/g/context-mode"\nargs = ["mcp"]\n'))
-        self.assertFalse(target.with_suffix(".toml.bak").exists())
+        self.assertFalse(Path(str(target) + ".sb-backup").exists())
 
     def test_existing_marker_and_append(self):
         pkg = self.make_pkg()
@@ -481,8 +474,8 @@ class CodexTomlTest(Base):
         target.write_text('model = "x"')
         self.assertTrue(mod.merge_codex_config_toml(target, False))
         text = target.read_text()
-        self.assertTrue(text.startswith('model = "x"\n[mcp_servers.context-mode]\n'))
-        self.assertEqual(target.with_suffix(".toml.bak").read_text(), 'model = "x"')
+        self.assertTrue(text.startswith('model = "x"\n\n[mcp_servers.context-mode]\n'))
+        self.assertEqual(Path(str(target) + ".sb-backup").read_text(), 'model = "x"')
         target.write_text("")
         self.assertTrue(mod.merge_codex_config_toml(target, False))
         self.assertTrue(target.read_text().startswith("[mcp_servers.context-mode]"))
@@ -507,7 +500,7 @@ class HermesTest(Base):
         cfg.write_text("model: x\n")
         self.assertTrue(mod.merge_hermes_context_mode_mcp(cfg, False))
         self.assertTrue(cfg.read_text().startswith("model: x\n\n# === rtk-cm"))
-        self.assertEqual(cfg.with_suffix(".yaml.bak").read_text(), "model: x\n")
+        self.assertEqual(Path(str(cfg) + ".sb-backup").read_text(), "model: x\n")
 
     def test_skip_when_marker_or_server_present(self):
         cfg = self.home / "c.yaml"
@@ -529,7 +522,7 @@ class HermesTest(Base):
         self.assertLess(lines.index("mcp_servers:  # servers"), lines.index("  context-mode:"))
         self.assertLess(lines.index("  context-mode:"), lines.index("  github:"))
         self.assertIn("other: 1", lines)
-        self.assertEqual(cfg.with_suffix(".yaml.bak").read_text().count("mcp_servers"), 1)
+        self.assertEqual(Path(str(cfg) + ".sb-backup").read_text().count("mcp_servers"), 1)
         first = cfg.read_bytes()
         self.assertFalse(mod.merge_hermes_context_mode_mcp(cfg, False))
         self.assertEqual(cfg.read_bytes(), first)
@@ -548,7 +541,7 @@ class HermesTest(Base):
             cfg.write_text(text)
             self.assertFalse(mod.merge_hermes_context_mode_mcp(cfg, False))
             self.assertEqual(cfg.read_text(), text)
-            self.assertFalse(cfg.with_suffix(".yaml.bak").exists())
+            self.assertFalse(Path(str(cfg) + ".sb-backup").exists())
 
     def test_comment_mentioning_context_mode_does_not_block(self):
         cfg = self.home / "c.yaml"
@@ -579,7 +572,7 @@ class OptimizeCursorTest(Base):
 
     def test_without_context_mode_package(self):
         repo = self.make_repo()
-        res = self.quiet(mod.optimize_cursor, repo, False)
+        res = self.quiet(mod.optimize_cursor, repo, False, cli_allowlist="full")
         self.assertEqual(res, {"host": "cursor", "status": "supported", "hooks_added": 2,
                                "mcp_added": False, "allow_added": 1, "rules_copied": 2})
         hooks = self.read_json(self.home / ".cursor" / "hooks.json")
@@ -772,7 +765,7 @@ class OptimizeOpenCodeTest(Base):
             with self.assertRaisesRegex(ValueError, "must be a JSON"):
                 self.quiet(mod.optimize_opencode, False, repo)
             self.assertEqual(self.cfg().read_bytes(), before)
-            self.assertFalse(self.cfg().with_suffix(".json.bak").exists())
+            self.assertFalse(Path(str(self.cfg()) + ".sb-backup").exists())
         self.write(self.cfg(), {"plugin": None, "mcp": []})
         res = self.quiet(mod.optimize_opencode, False, repo)
         data = self.read_json(self.cfg())
@@ -979,7 +972,7 @@ class HermesIndentTest(Base):
             cfg, ok = self.merge(text)
             self.assertFalse(ok, repr(text))
             self.assertEqual(cfg.read_text(), text)
-            self.assertFalse(cfg.with_suffix(".yaml.bak").exists())
+            self.assertFalse(Path(str(cfg) + ".sb-backup").exists())
 
     def test_quoted_key_is_refused(self):
         for text in ('"mcp_servers":\n  github: {}\n', "'mcp_servers' :\n  github: {}\n"):
@@ -1000,7 +993,7 @@ class HermesIndentTest(Base):
         cfg2, ok = self.merge("model: x\r\n", "d.yaml")
         self.assertTrue(ok)
         self.assertNotIn(b"\n", cfg2.read_bytes().replace(b"\r\n", b""))
-        self.assertEqual(cfg2.with_suffix(".yaml.bak").read_bytes(), b"model: x\r\n")
+        self.assertEqual(Path(str(cfg2) + ".sb-backup").read_bytes(), b"model: x\r\n")
 
     def test_nested_missing_parent_directories_are_created(self):
         cfg = self.home / "a" / "b" / "c" / "config.yaml"
@@ -1013,6 +1006,125 @@ class HermesIndentTest(Base):
         target = self.home / "x" / "y" / "z" / "config.toml"
         self.assertTrue(mod.merge_codex_config_toml(target, False))
         self.assertTrue(target.is_file())
+
+
+class CliAllowlistTest(Base):
+    """R6-05: the Cursor CLI allow-list is read-only by default; the full list is an explicit choice."""
+
+    def allowlist(self, **extra):
+        data = {"allow": ["Shell(rtk)", "Shell(bash*)", "Shell(rm*)", "Shell(curl*)"], "read_only": ["Shell(ls)", "Shell(cat*)"]}
+        data.update(extra)
+        return self.write(self.tmp / "allow.json", data)
+
+    def test_levels(self):
+        path = self.allowlist()
+        self.assertEqual(mod.cli_allowlist_entries(path, "none"), [])
+        self.assertEqual(mod.cli_allowlist_entries(path, "read-only"), ["Shell(ls)", "Shell(cat*)"])
+        self.assertEqual(mod.cli_allowlist_entries(path, "full")[:2], ["Shell(rtk)", "Shell(bash*)"])
+        self.assertEqual(mod.cli_allowlist_entries(self.tmp / "missing.json", "read-only"), [])
+        self.assertEqual(mod.cli_allowlist_entries(self.allowlist(read_only=["Shell(ls)", 5, None]), "read-only"), ["Shell(ls)"])
+
+    def test_shipped_default_list_pre_approves_no_interpreter_writer_or_network_command(self):
+        shipped = json.loads((REPO_ROOT / "scripts" / "lib" / "cursor-cli-allowlist.json").read_text())
+        dangerous = ("bash", "zsh", "sh", "rm", "mv", "cp", "chmod", "curl", "wget", "nc", "python", "node", "npx",
+                     "npm", "pip", "docker", "kubectl", "terraform", "aws", "gcloud", "az", "sed", "awk", "find",
+                     "make", "git*", "echo", "rg", "openssl", "sqlite3", "psql")
+        for entry in shipped["read_only"]:
+            program = entry[len("Shell("):-1].rstrip("*").strip()
+            self.assertNotIn(program, dangerous, entry)
+        self.assertLess(len(shipped["read_only"]), 20)
+        self.assertIn("Shell(bash *)", shipped["allow"])  # the full list is still available, on request
+
+    def test_default_cursor_run_merges_only_the_read_only_list(self):
+        repo = self.tmp / "repo"
+        self.write(repo / "scripts" / "lib" / "cursor-cli-allowlist.json", {"allow": ["Shell(bash*)"], "read_only": ["Shell(ls)"]})
+        res = self.quiet(mod.optimize_cursor, repo, False)
+        self.assertEqual(res["allow_added"], 1)
+        cfg = self.read_json(self.home / ".cursor" / "cli-config.json")
+        self.assertEqual(cfg["permissions"]["allow"], ["Shell(ls)"])
+
+    def test_none_and_skip_leave_cli_config_alone(self):
+        repo = self.tmp / "repo"
+        self.write(repo / "scripts" / "lib" / "cursor-cli-allowlist.json", {"allow": ["Shell(bash*)"], "read_only": ["Shell(ls)"]})
+        self.assertEqual(self.quiet(mod.optimize_cursor, repo, False, cli_allowlist="none")["allow_added"], 0)
+        self.assertEqual(self.quiet(mod.optimize_cursor, repo, False, skip_cli_config=True)["allow_added"], 0)
+        self.assertFalse((self.home / ".cursor" / "cli-config.json").exists())
+
+    def test_main_takes_the_level(self):
+        repo = self.tmp / "repo"
+        self.write(repo / "scripts" / "lib" / "cursor-cli-allowlist.json", {"allow": ["Shell(bash*)"], "read_only": ["Shell(ls)"]})
+        for level, expected in (("full", ["Shell(bash*)"]), ("read-only", ["Shell(ls)"])):
+            (self.home / ".cursor" / "cli-config.json").unlink(missing_ok=True)
+            with mock.patch.object(sys, "argv", ["x", "--host", "cursor", "--repo-root", str(repo), "--cli-allowlist", level]), \
+                 contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(mod.main(), 0)
+            self.assertEqual(self.read_json(self.home / ".cursor" / "cli-config.json")["permissions"]["allow"], expected)
+
+
+class SafeWritesTest(Base):
+    """R6-26: unchanged files are not rewritten; symlinks, modes and backups are kept; bad input is refused."""
+
+    def test_unchanged_allowlist_and_hooks_are_not_rewritten(self):
+        cfg = self.home / "cli.json"
+        self.assertEqual(self.quiet(mod.merge_cli_allowlist, cfg, ["Shell(ls)"], False), 1)
+        before = cfg.stat().st_mtime_ns
+        self.assertEqual(self.quiet(mod.merge_cli_allowlist, cfg, ["Shell(ls)"], False), 0)
+        self.assertEqual(cfg.stat().st_mtime_ns, before)
+        hooks = self.home / "hooks.json"
+        fragment = {"hooks": {"stop": [{"command": "s"}]}}
+        self.assertEqual(self.quiet(mod.merge_hooks_file, hooks, [fragment], False), 1)
+        before = hooks.stat().st_mtime_ns
+        self.assertEqual(self.quiet(mod.merge_hooks_file, hooks, [fragment], False), 0)
+        self.assertEqual(hooks.stat().st_mtime_ns, before)
+        codex = self.home / "codex-hooks.json"
+        frag = {"hooks": {"SessionStart": [{"hooks": [{"command": "c"}]}]}}
+        self.assertEqual(self.quiet(mod.merge_codex_hooks_file, codex, frag, False), 1)
+        before = codex.stat().st_mtime_ns
+        self.assertEqual(self.quiet(mod.merge_codex_hooks_file, codex, frag, False), 0)
+        self.assertEqual(codex.stat().st_mtime_ns, before)
+
+    def test_symlinked_config_is_written_through_and_keeps_mode_and_backup(self):
+        real = self.write(self.tmp / "dotfiles" / "cli.json", {"version": 1, "permissions": {"allow": ["Shell(a)"], "deny": []}})
+        real.chmod(0o640)
+        link = self.home / ".cursor" / "cli-config.json"
+        link.parent.mkdir()
+        link.symlink_to(real)
+        self.quiet(mod.merge_cli_allowlist, link, ["Shell(b)"], False)
+        self.assertTrue(link.is_symlink())
+        self.assertEqual(real.stat().st_mode & 0o777, 0o640)
+        self.assertEqual(self.read_json(real)["permissions"]["allow"], ["Shell(a)", "Shell(b)"])
+        self.assertEqual(self.read_json(Path(str(real) + ".sb-backup"))["permissions"]["allow"], ["Shell(a)"])
+
+    def test_unparseable_config_is_refused_and_left_alone(self):
+        cfg = self.write(self.home / "cli.json", "{ // comment\n}")
+        with self.assertRaises(mod.sbc.ConfigError):
+            self.quiet(mod.merge_cli_allowlist, cfg, ["Shell(b)"], False)
+        self.assertEqual(cfg.read_text(), "{ // comment\n}")
+
+    def test_codex_config_toml_is_edited_structurally(self):
+        pkg = self.make_pkg()
+        self.write(pkg / "configs" / "codex" / "config.toml", "# s")
+        target = self.write(self.home / "config.toml", 'notes = """\n[mcp_servers.context-mode]\n"""\n[mcp_servers.other]\ncommand = "o"\n')
+        self.assertTrue(self.quiet(mod.merge_codex_config_toml, target, False))
+        import tomllib
+
+        servers = tomllib.loads(target.read_text())["mcp_servers"]
+        self.assertEqual(sorted(servers), ["context-mode", "other"])  # the header inside a string did not count
+        self.assertFalse(self.quiet(mod.merge_codex_config_toml, target, False))
+        self.assertTrue(self.quiet(mod.merge_codex_config_toml, self.home / "dry.toml", True))
+        self.assertIn("DRY-RUN: would append context-mode block", self.out)
+        self.assertFalse((self.home / "dry.toml").exists())
+        bad = self.write(self.home / "bad.toml", "= nope\n")
+        with self.assertRaises(mod.sbc.ConfigError):
+            self.quiet(mod.merge_codex_config_toml, bad, False)
+        self.assertEqual(bad.read_text(), "= nope\n")
+
+    def test_copy_file_reports_whether_it_changed_anything(self):
+        src = self.write(self.tmp / "src.txt", "one")
+        dest = self.home / "d" / "dest.txt"
+        self.assertTrue(self.quiet(mod.copy_file, src, dest, False))
+        self.assertFalse(self.quiet(mod.copy_file, src, dest, False))
+        self.assertEqual(dest.read_text(), "one")
 
 
 if __name__ == "__main__":

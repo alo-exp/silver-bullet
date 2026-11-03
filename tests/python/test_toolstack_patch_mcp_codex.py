@@ -1,5 +1,5 @@
 """Unit tests for scripts/lib/global-toolstack/patch-mcp.py: Codex config.toml
-merging (text-level TOML edits) and the codex host entry in main()."""
+merging (structural TOML edits) and the codex host entry in main()."""
 
 import contextlib
 import copy
@@ -51,96 +51,60 @@ class CodexCase(unittest.TestCase):
         return self.path.read_text(encoding="utf-8")
 
 
-class BlockTest(CodexCase):
-    def test_graphify_block(self):
+def parse_toml(text):
+    import tomllib
+
+    return tomllib.loads(text)
+
+
+class NormalizeServerTest(CodexCase):
+    def doc(self, text):
+        return pm.sbc.TomlDocument(text)
+
+    def test_graphify_table_is_created(self):
+        doc = self.doc("")
+        self.assertTrue(pm._toml_normalize_server(doc, "graphify", manifest=MANIFEST, cm_active=False))
         self.assertEqual(
-            pm.codex_mcp_block("graphify", cm_active=False, manifest=MANIFEST),
-            '[mcp_servers.graphify]\ncommand = "/opt/five/graphify-mcp"\nargs = ["--stdio"]\n',
+            parse_toml(doc.text), {"mcp_servers": {"graphify": {"command": "/opt/five/graphify-mcp", "args": ["--stdio"]}}}
         )
 
-    def test_agentmemory_block_has_env_table(self):
-        block = pm.codex_mcp_block("agentmemory", cm_active=False, manifest=MANIFEST)
-        self.assertIn("[mcp_servers.agentmemory]\ncommand = \"/opt/five/agentmemory\"", block)
-        self.assertIn('[mcp_servers.agentmemory.env]\nAGENTMEMORY_URL = "http://localhost:3111"\n', block)
+    def test_agentmemory_gets_env_table(self):
+        doc = self.doc("")
+        pm._toml_normalize_server(doc, "agentmemory", manifest=MANIFEST, cm_active=False)
+        server = parse_toml(doc.text)["mcp_servers"]["agentmemory"]
+        self.assertEqual(server["command"], "/opt/five/agentmemory")
+        self.assertEqual(server["env"], {"AGENTMEMORY_URL": "http://localhost:3111"})
 
-    def test_context_mode_block_uses_underscore_spec(self):
-        self.assertEqual(
-            pm.codex_mcp_block("context-mode", cm_active=False, manifest=MANIFEST),
-            '[mcp_servers.context-mode]\ncommand = "/opt/five/context-mode"\nargs = []\n',
-        )
+    def test_context_mode_uses_the_underscore_spec(self):
+        doc = self.doc("")
+        pm._toml_normalize_server(doc, "context-mode", manifest=MANIFEST, cm_active=False)
+        self.assertEqual(parse_toml(doc.text)["mcp_servers"]["context-mode"], {"command": "/opt/five/context-mode", "args": []})
 
-    def test_leanctx_block_env_depends_on_context_mode(self):
-        base = pm.codex_mcp_block("leanctx", cm_active=False, manifest=MANIFEST)
-        active = pm.codex_mcp_block("leanctx", cm_active=True, manifest=MANIFEST)
-        self.assertIn('LEANCTX_MCP_TOOL_PREFIX = "lctx_"', base)
-        self.assertNotIn("LEANCTX_DISABLE_SHELL_MCP", base)
-        self.assertIn('LEANCTX_DISABLE_SHELL_MCP = "1"', active)
-        self.assertIn("[mcp_servers.leanctx.env]", active)
+    def test_leanctx_env_depends_on_context_mode(self):
+        base, active = self.doc(""), self.doc("")
+        pm._toml_normalize_server(base, "leanctx", manifest=MANIFEST, cm_active=False)
+        pm._toml_normalize_server(active, "leanctx", manifest=MANIFEST, cm_active=True)
+        self.assertEqual(parse_toml(base.text)["mcp_servers"]["leanctx"]["env"], pm.LEANCTX_ENV_BASE)
+        self.assertEqual(parse_toml(active.text)["mcp_servers"]["leanctx"]["env"], pm.LEANCTX_ENV_CM_ACTIVE)
 
+    def test_existing_table_is_repaired_in_place(self):
+        doc = self.doc('[mcp_servers.graphify]\ncommand = "old"\nargs = []\ncustom = true\n\n[tail]\nk = 1\n')
+        self.assertTrue(pm._toml_normalize_server(doc, "graphify", manifest=MANIFEST, cm_active=False))
+        parsed = parse_toml(doc.text)
+        self.assertEqual(parsed["mcp_servers"]["graphify"], {"command": "/opt/five/graphify-mcp", "args": ["--stdio"], "custom": True})
+        self.assertEqual(parsed["tail"], {"k": 1})
+        self.assertFalse(pm._toml_normalize_server(doc, "graphify", manifest=MANIFEST, cm_active=False))
 
-class TomlHelperTest(CodexCase):
-    def test_section_bounds(self):
-        text = "a = 1\n[mcp_servers.x]\ncommand = \"c\"\n\n[other]\nk = 1\n"
-        start, end = pm._toml_section_bounds(text, "[mcp_servers.x]")
-        self.assertEqual(text[start:end], '[mcp_servers.x]\ncommand = "c"\n\n')
-        start, end = pm._toml_section_bounds(text, "[other]")
-        self.assertEqual(text[start:end], "[other]\nk = 1\n")
-        self.assertIsNone(pm._toml_section_bounds(text, "[missing]"))
+    def test_header_at_end_of_file_without_newline(self):
+        doc = self.doc("[mcp_servers.graphify]")
+        pm._toml_normalize_server(doc, "graphify", manifest=MANIFEST, cm_active=False)
+        self.assertEqual(parse_toml(doc.text)["mcp_servers"]["graphify"]["command"], "/opt/five/graphify-mcp")
 
-    def test_section_bounds_does_not_match_prefix(self):
-        text = "[mcp_servers.x.env]\nK = 1\n"
-        self.assertIsNone(pm._toml_section_bounds(text, "[mcp_servers.x]"))
-
-    def test_set_root_keys_replaces_and_adds(self):
-        body = 'command = "old"\nextra = 1\n'
-        out = pm._toml_set_root_keys(body, "/new", ["a"])
-        self.assertIn('command = "/new"', out)
-        self.assertIn('args = ["a"]', out)
-        self.assertIn("extra = 1", out)
-        self.assertEqual(out.count("command"), 1)
-        self.assertEqual(pm._toml_set_root_keys(out, "/new", ["a"]), out)
-
-    def test_set_env_creates_section(self):
-        out = pm._toml_set_env("x = 1", "s", {"A": "1", "B": "2"})
-        self.assertEqual(out, 'x = 1\n\n[mcp_servers.s.env]\nA = "1"\nB = "2"\n')
-        self.assertEqual(pm._toml_set_env("", "s", {"A": "1"}), '[mcp_servers.s.env]\nA = "1"\n')
-        self.assertTrue(pm._toml_set_env("x = 1\n", "s", {"A": "1"}).startswith("x = 1\n\n[mcp"))
-
-    def test_set_env_updates_existing_section(self):
-        text = '[mcp_servers.s.env]\nA = "old"\nKEEP = "k"\n\n[next]\nz = 1\n'
-        out = pm._toml_set_env(text, "s", {"A": "new", "B": "2"})
-        self.assertIn('A = "new"', out)
-        self.assertIn('B = "2"', out)
-        self.assertIn('KEEP = "k"', out)
-        self.assertTrue(out.endswith("[next]\nz = 1\n"))
-        self.assertEqual(pm._toml_set_env(out, "s", {"A": "new", "B": "2"}), out)
-
-    def test_set_env_header_without_trailing_newline(self):
-        out = pm._toml_set_env("[mcp_servers.s.env]", "s", {"A": "1"})
-        self.assertIn('A = "1"', out)
-        self.assertTrue(out.startswith("[mcp_servers.s.env]"))
-
-    def test_normalize_server_appends_block(self):
-        out = pm._toml_normalize_server("x = 1", "graphify", manifest=MANIFEST, cm_active=False)
-        self.assertTrue(out.startswith("x = 1\n\n[mcp_servers.graphify]\n"))
-        self.assertEqual(pm._toml_normalize_server("", "graphify", manifest=MANIFEST, cm_active=False).count("[mcp_servers.graphify]"), 1)
-
-    def test_normalize_server_repairs_existing_section(self):
-        text = '[mcp_servers.graphify]\ncommand = "old"\nargs = []\ncustom = true\n\n[tail]\nk = 1\n'
-        out = pm._toml_normalize_server(text, "graphify", manifest=MANIFEST, cm_active=False)
-        self.assertIn('command = "/opt/five/graphify-mcp"', out)
-        self.assertIn('args = ["--stdio"]', out)
-        self.assertIn("custom = true", out)
-        self.assertTrue(out.endswith("[tail]\nk = 1\n"))
-
-    def test_normalize_server_existing_header_at_eof_without_newline(self):
-        out = pm._toml_normalize_server("[mcp_servers.graphify]", "graphify", manifest=MANIFEST, cm_active=False)
-        self.assertIn('command = "/opt/five/graphify-mcp"', out)
-
-    def test_normalize_server_with_env_adds_env_section(self):
-        text = '[mcp_servers.agentmemory]\ncommand = "old"\nargs = []\n'
-        out = pm._toml_normalize_server(text, "agentmemory", manifest=MANIFEST, cm_active=False)
-        self.assertIn('[mcp_servers.agentmemory.env]\nAGENTMEMORY_URL = "http://localhost:3111"', out)
+    def test_existing_env_keys_are_updated_and_kept(self):
+        doc = self.doc('[mcp_servers.agentmemory.env]\nAGENTMEMORY_URL = "http://old"\nKEEP = "k"\n')
+        pm._toml_normalize_server(doc, "agentmemory", manifest=MANIFEST, cm_active=False)
+        env = parse_toml(doc.text)["mcp_servers"]["agentmemory"]["env"]
+        self.assertEqual(env, {"AGENTMEMORY_URL": "http://localhost:3111", "KEEP": "k"})
 
 
 class MergeCodexTest(CodexCase):
@@ -149,13 +113,13 @@ class MergeCodexTest(CodexCase):
         self.assertEqual((changed, msg), (False, "OK: config.toml unchanged (idempotent)"))
         self.assertFalse(self.path.exists())
 
-    def test_creates_all_servers(self):
+    def test_creates_all_servers_as_valid_toml(self):
         changed, msg = self.merge(patch_graphify=True, patch_leanctx=True, patch_agentmemory=True, patch_context_mode=True)
         self.assertEqual((changed, msg), (True, "OK: config.toml merged atomically"))
+        servers = parse_toml(self.text())["mcp_servers"]
+        self.assertEqual(sorted(servers), ["agentmemory", "context-mode", "graphify", "leanctx"])
+        self.assertEqual(servers["leanctx"]["env"]["LEANCTX_DISABLE_SHELL_MCP"], "1")  # context-mode consent => overlap env
         text = self.text()
-        for header in ("[mcp_servers.graphify]", "[mcp_servers.leanctx]", "[mcp_servers.leanctx.env]", "[mcp_servers.agentmemory]", "[mcp_servers.agentmemory.env]", "[mcp_servers.context-mode]"):
-            self.assertEqual(text.count(header), 1, header)
-        self.assertIn('LEANCTX_DISABLE_SHELL_MCP = "1"', text)  # context-mode consent => overlap env
         self.assertEqual(self.merge(patch_graphify=True, patch_leanctx=True, patch_agentmemory=True, patch_context_mode=True), (False, "OK: config.toml unchanged (idempotent)"))
         self.assertEqual(self.text(), text)
 
@@ -163,43 +127,64 @@ class MergeCodexTest(CodexCase):
         self.merge(patch_leanctx=True)
         self.assertNotIn("LEANCTX_DISABLE_SHELL_MCP", self.text())
 
-    def test_existing_context_mode_section_activates_overlap_env_and_is_normalised(self):
+    def test_existing_context_mode_table_activates_overlap_env_and_is_normalised(self):
         self.path.parent.mkdir(parents=True)
         self.path.write_text('[mcp_servers.context-mode]\ncommand = "old"\nargs = ["x"]\n')
         changed, _ = self.merge(patch_leanctx=True)
         self.assertTrue(changed)
-        text = self.text()
-        self.assertIn('LEANCTX_DISABLE_SHELL_MCP = "1"', text)
-        self.assertIn('command = "/opt/five/context-mode"', text)
-        self.assertIn("args = []", text)
-        self.assertEqual(text.count("[mcp_servers.context-mode]"), 1)
+        servers = parse_toml(self.text())["mcp_servers"]
+        self.assertEqual(servers["leanctx"]["env"]["LEANCTX_DISABLE_SHELL_MCP"], "1")
+        self.assertEqual(servers["context-mode"], {"command": "/opt/five/context-mode", "args": []})
 
-    def test_legacy_lean_ctx_sections_removed_and_user_sections_kept(self):
+    def test_legacy_lean_ctx_is_replaced_only_when_leanctx_is_consented(self):
         self.path.parent.mkdir(parents=True)
-        self.path.write_text(
-            'model = "x"\n\n[mcp_servers.lean-ctx]\ncommand = "old"\n\n[mcp_servers.lean-ctx.env]\nA = "1"\n\n[mcp_servers.mine]\ncommand = "m"\n'
-        )
-        changed, _ = self.merge()
-        self.assertTrue(changed)
+        original = 'model = "x"\n\n[mcp_servers.lean-ctx]\ncommand = "old"\n\n[mcp_servers.lean-ctx.env]\nSECRET = "1"\n\n[mcp_servers.mine]\ncommand = "m"\n'
+        self.path.write_text(original)
+        self.assertEqual(self.merge(patch_graphify=True)[0], True)
         text = self.text()
-        self.assertNotIn("lean-ctx", text)
-        self.assertIn("[mcp_servers.mine]", text)
-        self.assertIn('model = "x"', text)
+        self.assertEqual(parse_toml(text)["mcp_servers"]["lean-ctx"]["env"], {"SECRET": "1"})  # R6-07
+        self.merge(patch_leanctx=True)
+        parsed = parse_toml(self.text())
+        self.assertNotIn("lean-ctx", parsed["mcp_servers"])
+        self.assertEqual(parsed["mcp_servers"]["mine"], {"command": "m"})
+        self.assertEqual(parsed["model"], "x")
+        self.assertIn("SECRET", self.path.with_name("config.toml.sb-backup").read_text())
 
-    def test_existing_graphify_section_is_repaired_in_place(self):
+    def test_valid_toml_stays_valid_whatever_shape_it_has(self):
+        # R6-06: regex editing broke these; each is a legal Codex config.
+        shapes = [
+            '[mcp_servers.graphify]\n# comment\ncommand = "old"\nargs = [\n  "a",\n  "b",\n]\n',
+            "[ mcp_servers . graphify ]\ncommand = 'old'\n",
+            'notes = """\n[mcp_servers.graphify]\nnot a table\n"""\n',
+            '[mcp_servers.graphify]\r\ncommand = "old"\r\n',
+            'mcp_servers.graphify.command = "dotted"\n',
+            '[mcp_servers]\ngraphify = { command = "inline" }\n',
+        ]
+        for text in shapes:
+            with self.subTest(text=text):
+                self.path.parent.mkdir(parents=True, exist_ok=True)
+                self.path.write_bytes(text.encode())
+                try:
+                    self.merge(patch_graphify=True)
+                except pm.sbc.ConfigError:
+                    # A shape that cannot be merged safely is refused and left byte-identical.
+                    self.assertEqual(self.path.read_bytes(), text.encode())
+                    continue
+                parse_toml(self.text())
+
+    def test_existing_graphify_table_is_repaired_in_place(self):
         self.path.parent.mkdir(parents=True)
         self.path.write_text('[mcp_servers.graphify]\ncommand = "old"\nargs = ["z"]\n\n[mcp_servers.mine]\ncommand = "m"\n')
         changed, _ = self.merge(patch_graphify=True)
         self.assertTrue(changed)
-        text = self.text()
-        self.assertIn('command = "/opt/five/graphify-mcp"', text)
-        self.assertNotIn('"z"', text)
-        self.assertIn("[mcp_servers.mine]", text)
+        servers = parse_toml(self.text())["mcp_servers"]
+        self.assertEqual(servers["graphify"]["command"], "/opt/five/graphify-mcp")
+        self.assertEqual(servers["graphify"]["args"], ["--stdio"])
+        self.assertEqual(servers["mine"], {"command": "m"})
 
     def test_disabled_servers_are_left_alone(self):
         self.path.parent.mkdir(parents=True)
-        original = '[mcp_servers.graphify]\ncommand = "keep-me"\n'
-        self.path.write_text(original)
+        self.path.write_text('[mcp_servers.graphify]\ncommand = "keep-me"\n')
         changed, _ = self.merge(patch_agentmemory=True)
         self.assertTrue(changed)
         self.assertIn('command = "keep-me"', self.text())
@@ -207,10 +192,30 @@ class MergeCodexTest(CodexCase):
     def test_unchanged_existing_file_is_not_rewritten(self):
         self.merge(patch_graphify=True)
         mtime = self.path.stat().st_mtime_ns
-        with mock.patch.object(pm, "atomic_write_text") as writer:
+        with mock.patch.object(pm.sbc, "write_toml") as writer:
             self.assertEqual(self.merge(patch_graphify=True)[0], False)
         writer.assert_not_called()
         self.assertEqual(self.path.stat().st_mtime_ns, mtime)
+
+    def test_write_keeps_symlink_mode_and_backup(self):
+        real = self.root / "dotfiles" / "codex.toml"
+        real.parent.mkdir(parents=True)
+        real.write_text('model = "x"\n')
+        real.chmod(0o640)
+        self.path.parent.mkdir(parents=True)
+        self.path.symlink_to(real)
+        self.merge(patch_graphify=True)
+        self.assertTrue(self.path.is_symlink())
+        self.assertEqual(real.stat().st_mode & 0o777, 0o640)
+        self.assertEqual(real.with_name("codex.toml.sb-backup").read_text(), 'model = "x"\n')
+        self.assertIn("graphify", real.read_text())
+
+    def test_unparseable_config_is_refused_and_left_alone(self):
+        self.path.parent.mkdir(parents=True)
+        self.path.write_text("this is = = not toml\n")
+        with self.assertRaises(pm.sbc.ConfigError):
+            self.merge(patch_graphify=True)
+        self.assertEqual(self.text(), "this is = = not toml\n")
 
 
 class MainCodexHostTest(CodexCase):
@@ -245,6 +250,15 @@ class MainCodexHostTest(CodexCase):
         os.environ["RT_PATCH_LEANCTX"] = "1"
         self.run_main()
         self.assertEqual(self.run_main(), (0, "OK: config.toml unchanged (idempotent)"))
+
+    def test_unparseable_config_exits_2_and_is_untouched(self):
+        os.environ["CODEX_HOME"] = str(self.root / "codex")
+        os.environ["RT_PATCH_GRAPHIFY"] = "1"
+        self.path.parent.mkdir(parents=True)
+        self.path.write_text("= broken\n")
+        code, _ = self.run_main()
+        self.assertEqual(code, 2)
+        self.assertEqual(self.text(), "= broken\n")
 
 
 class ScriptEntryPointTest(unittest.TestCase):

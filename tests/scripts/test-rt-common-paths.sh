@@ -6,6 +6,7 @@
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
+source "$TL_REPO_ROOT/tests/lib/consent-helpers.sh"
 
 RTLIB="$TL_REPO_ROOT/scripts/lib/recommended-tools"
 export RT_REPO_ROOT="$TL_REPO_ROOT"
@@ -19,7 +20,7 @@ rc_of() { local rc=0; "$@" >/dev/null 2>&1 || rc=1; printf '%s' "$rc"; }
 
 PROJ="$TL_TMP/proj"
 tl_git_repo "$PROJ"
-cfg() { printf '%s\n' "$1" >"$PROJ/.silver-bullet.json"; }
+cfg() { printf '%s\n' "$1" >"$PROJ/.silver-bullet.json"; sb_test_consent_reset_mirror "$PROJ/.silver-bullet.json" install,wire,enforce; }
 
 # ------------------------------------------------------------ _rt_repo_root
 STAGED="$TL_TMP/staged"
@@ -329,13 +330,118 @@ assert_eq "receipt lock dir (host-global)" "$RR/cursor/_host-global/_host-global
 rm -rf "$TL_TMP/res"; mkdir -p "$TL_TMP/res/proj/scripts/lib" "$TL_TMP/res/plug/scripts/lib" "$TL_TMP/res/rtrepo/scripts/lib" "$TL_TMP/res/repo/scripts/lib" "$TL_TMP/res/up/a/b" "$TL_TMP/res/up/scripts/lib"
 for d in proj plug rtrepo repo up; do printf '%s\n' "$d" >"$TL_TMP/res/$d/scripts/lib/x.py"; done
 res() { env -u RT_PROJECT_ROOT -u CLAUDE_PLUGIN_ROOT -u RT_REPO_ROOT -u REPO_ROOT "$@" bash -c 'source "$1/paths.sh"; shift; rt_resolve_lib_script x.py "$@"' _ "$RTLIB" "${RES_PROJECT:-}"; }
-assert_eq "resolve: project root wins" "$TL_TMP/res/proj/scripts/lib/x.py" "$(RES_PROJECT="$TL_TMP/res/proj" res CLAUDE_PLUGIN_ROOT="$TL_TMP/res/plug" RT_REPO_ROOT="$TL_TMP/res/rtrepo" REPO_ROOT="$TL_TMP/res/repo")"
-assert_eq "resolve: plugin root next" "$TL_TMP/res/plug/scripts/lib/x.py" "$(RES_PROJECT="" res CLAUDE_PLUGIN_ROOT="$TL_TMP/res/plug" RT_REPO_ROOT="$TL_TMP/res/rtrepo" REPO_ROOT="$TL_TMP/res/repo")"
+# R6-02: a lib script comes from Silver Bullet (plugin root, RT_REPO_ROOT, this checkout), never from the project
+assert_eq "resolve: the project's copy is ignored, the plugin root wins" "$TL_TMP/res/plug/scripts/lib/x.py" "$(RES_PROJECT="$TL_TMP/res/proj" res CLAUDE_PLUGIN_ROOT="$TL_TMP/res/plug" RT_REPO_ROOT="$TL_TMP/res/rtrepo" REPO_ROOT="$TL_TMP/res/repo")"
 assert_eq "resolve: RT_REPO_ROOT next" "$TL_TMP/res/rtrepo/scripts/lib/x.py" "$(RES_PROJECT="" res RT_REPO_ROOT="$TL_TMP/res/rtrepo" REPO_ROOT="$TL_TMP/res/repo")"
-assert_eq "resolve: REPO_ROOT next" "$TL_TMP/res/repo/scripts/lib/x.py" "$(RES_PROJECT="" res REPO_ROOT="$TL_TMP/res/repo")"
-assert_eq "resolve: walks up from the project root" "$TL_TMP/res/up/scripts/lib/x.py" "$(RES_PROJECT="$TL_TMP/res/up/a/b" res)"
-assert_eq "resolve: nothing found fails" "1" "$(RES_PROJECT="$TL_TMP/res/up/a/b" rc_of bash -c 'cd /; source "$1/paths.sh"; rt_resolve_lib_script nope.py "$2"' _ "$RTLIB" "$TL_TMP/res/up/a/b")"
+assert_eq "resolve: REPO_ROOT (caller global) is not consulted" "1" "$(RES_PROJECT="" rc_of env REPO_ROOT="$TL_TMP/res/repo" bash -c 'source "$1/paths.sh"; rt_resolve_lib_script x.py' _ "$RTLIB")"
+assert_eq "resolve: a project-only script is not found" "1" "$(RES_PROJECT="$TL_TMP/res/proj" rc_of bash -c 'source "$1/paths.sh"; rt_resolve_lib_script x.py "$2"' _ "$RTLIB" "$TL_TMP/res/proj")"
+assert_eq "resolve: no walk up from the project or the working directory" "1" "$(rc_of bash -c 'cd "$2"; source "$1/paths.sh"; rt_resolve_lib_script x.py "$2"' _ "$RTLIB" "$TL_TMP/res/up/a/b")"
+assert_eq "resolve: this checkout's own script is found" "$TL_REPO_ROOT/scripts/lib/sb_host_config.py" "$(env -u CLAUDE_PLUGIN_ROOT -u RT_REPO_ROOT bash -c 'source "$1/paths.sh"; rt_resolve_lib_script sb_host_config.py "/nonexistent"' _ "$RTLIB")"
 assert_eq "resolve: relative path required" "1" "$(rc_of bash -c 'source "$1/paths.sh"; rt_resolve_lib_script ""' _ "$RTLIB")"
-assert_eq "resolve: project root via RT_PROJECT_ROOT" "$TL_TMP/res/proj/scripts/lib/x.py" "$(env -u CLAUDE_PLUGIN_ROOT RT_PROJECT_ROOT="$TL_TMP/res/proj" bash -c 'source "$1/paths.sh"; rt_resolve_lib_script x.py' _ "$RTLIB")"
+
+# ------------------------------------------------ consent (R5-04 consumers, R6-03)
+unset RT_MODE RT_ENTRY_POINT RT_SCOPE
+export RT_PROJECT_ROOT="$PROJ"
+cfg '{"sb_initiated":true,"recommended_tools":{"rtk":{"enabled_by_user":true},"graphify":{"enabled_by_user":true}}}'
+sb_test_consent_revoke_all
+assert_eq "a project recommendation alone is pending" "pending" "$(rt_consent_for rtk)"
+export RT_MODE=apply RT_ENTRY_POINT=update RT_SCOPE=all
+assert_eq "a project recommendation alone never allows a mutation" "1" "$(rc_of rt_mutation_allowed rtk)"
+sb_test_consent_grant rtk install
+assert_eq "an install grant makes the tool enabled" "enabled" "$(rt_consent_for rtk)"
+assert_eq "install consent allows the default mutation" "0" "$(rc_of rt_mutation_allowed rtk)"
+assert_eq "install consent allows an install" "0" "$(rc_of rt_mutation_allowed rtk install)"
+assert_eq "install consent does not allow a host-config write" "1" "$(rc_of rt_mutation_allowed rtk wire)"
+sb_test_consent_grant rtk wire
+assert_eq "wire consent allows a host-config write" "0" "$(rc_of rt_mutation_allowed rtk wire)"
+sb_test_consent_revoke_all
+sb_test_consent_grant rtk enforce
+assert_eq "an enforce-only grant makes the tool enabled" "enabled" "$(rt_consent_for rtk)"
+assert_eq "but enforcing is not permission to install or wire" "1" "$(rc_of rt_mutation_allowed rtk)"
+sb_consent_set declined rtk install,wire,enforce machine test >/dev/null
+assert_eq "a user decline is disabled" "disabled" "$(rt_consent_for rtk)"
+assert_eq "a user decline blocks every mutation" "1" "$(rc_of rt_mutation_allowed rtk)"
+sb_test_consent_revoke_all
+sb_test_consent_grant graphify install,wire
+cfg '{"sb_initiated":true,"recommended_tools":{"graphify":{"enabled_by_user":false}}}'
+sb_test_consent_grant graphify install,wire
+assert_eq "the project can still turn a consented tool off" "disabled" "$(rt_consent_for graphify)"
+rm -f "$PROJ/.silver-bullet.json"
+assert_eq "machine consent works without a project file" "enabled" "$(rt_consent_for graphify)"
+unset RT_MODE RT_ENTRY_POINT RT_SCOPE
+
+# ------------------------------------------ rt_run_registry_command: no shell, no eval (R6-01)
+PWNED="$TL_TMP/pwned"
+tl_stub graphify 'echo "graphify $*" >>"'"$TL_TMP"'/graphify.calls"'
+tl_stub notallowed 'echo ran >>"'"$TL_TMP"'/notallowed.calls"'
+rm -f "$TL_TMP/graphify.calls"
+rt_run_registry_command "graphify claude install --project" graphify
+assert_eq "a registry command runs with its arguments" "graphify claude install --project" "$(cat "$TL_TMP/graphify.calls")"
+assert_eq "shell syntax is refused" "2" "$(rt_run_registry_command "graphify x; touch $PWNED" graphify || echo $?)"
+assert_eq "command substitution is refused" "2" "$(rt_run_registry_command 'graphify $(touch '"$PWNED"')' graphify || echo $?)"
+assert_eq "backticks are refused" "2" "$(rt_run_registry_command 'graphify `touch '"$PWNED"'`' graphify || echo $?)"
+assert_eq "prose lines are refused" "2" "$(rt_run_registry_command "Merge the agentmemory MCP server into ~/.config/opencode/opencode.json (manual)" graphify || echo $?)"
+assert_eq "another program is refused" "2" "$(rt_run_registry_command "notallowed now" graphify || echo $?)"
+assert_eq "an empty line is refused" "2" "$(rt_run_registry_command "" graphify || echo $?)"
+assert_eq "a missing program is reported" "3" "$(rt_run_registry_command "graphify-missing-xyz a" graphify-missing-xyz || echo $?)"
+assert_file_absent "nothing was evaluated" "$PWNED"
+assert_file_absent "a refused program never ran" "$TL_TMP/notallowed.calls"
+rm -f "$TL_BIN/graphify" "$TL_BIN/notallowed"
+tl_stub brew 'echo "brew $*" >>"'"$TL_TMP"'/brew.calls"; [[ "$1" != fail ]]'
+rt_run_registry_chain "brew tap a/b && brew install a/b/c" brew
+assert_eq "a chain runs each part in order" "brew tap a/b|brew install a/b/c" "$(paste -sd'|' "$TL_TMP/brew.calls")"
+assert_eq "a chain stops at the first failure" "1" "$(rt_run_registry_chain "brew fail x && brew install y" brew || echo $?)"
+assert_eq "an empty chain is refused" "2" "$(rt_run_registry_chain "" brew || echo $?)"
+assert_eq "a chain with a foreign program is refused" "2" "$(rt_run_registry_chain "brew tap a && rm -rf x" brew || echo $?)"
+rm -f "$TL_BIN/brew"
+
+# ------------------------------------------------ rt_with_lock (R6-11)
+LK="$TL_TMP/locks2/inner.lock"
+outer() { rt_with_lock "$LK" 5 true; return 0; }
+mkdir -p "$TL_TMP/locks2"
+outer
+assert_file_absent "the lock is released when the command returns" "$LK"
+# A RETURN trap left behind by rt_with_lock deleted a lock somebody else holds when the CALLER returned.
+mkdir -p "$LK"
+caller() { rt_with_lock "$TL_TMP/locks2/other.lock" 5 true; return 0; }
+caller
+assert_file_exists "returning from the caller does not delete another lock" "$LK"
+rmdir "$LK"
+assert_eq "no RETURN trap is left behind" "" "$(trap -p RETURN)"
+# stale locks
+mkdir -p "$LK"
+: >"$LK/pid"
+touch -t 202001010000 "$LK"
+assert_eq "an old lock with an empty pid file is stale" "0" "$(rc_of rt_lock_is_stale "$LK")"
+rm -rf "$LK"
+mkdir -p "$LK"
+printf '%s\n' 999999 >"$LK/pid"
+tl_stub rm 'exit 1'; hash -r
+rc=0; rt_with_lock "$LK" 5 true || rc=$?
+assert_eq "a stale lock that cannot be removed fails at once instead of spinning" "1" "$rc"
+/bin/rm -f "$TL_BIN/rm"; hash -r
+rm -rf "$LK"
+mkdir -p "$LK"
+printf '%s\n' 999999 >"$LK/pid"
+assert_eq "a lock whose owner is gone is stale" "0" "$(rc_of rt_lock_is_stale "$LK")"
+OUT="$(rt_with_lock "$LK" 5 printf 'recovered')"
+assert_eq "a stale lock is recovered" "recovered" "$OUT"
+assert_file_absent "a recovered lock is released" "$LK"
+mkdir -p "$LK"
+printf '%s\n' "$$" >"$LK/pid"
+assert_eq "a lock held by a live process is not stale" "1" "$(rc_of rt_lock_is_stale "$LK")"
+printf 'garbage\n' >"$LK/pid"
+assert_eq "a fresh lock with an unreadable pid is not stale" "1" "$(rc_of rt_lock_is_stale "$LK")"
+touch -t 202001010000 "$LK"
+assert_eq "an old lock with an unreadable pid is stale" "0" "$(rc_of rt_lock_is_stale "$LK")"
+rm -rf "$LK"
+assert_eq "a missing lock is not stale" "1" "$(rc_of rt_lock_is_stale "$LK")"
+
+# ------------------------------------------------ codex TOML detection (R6-06)
+CT="$TL_TMP/codex-detect.toml"
+printf '[ mcp_servers . graphify ]  # c\nx=1\n[mcp_servers."a-b"]\n[mcp_servers.lean\\x]\n' >"$CT"
+assert_eq "spaced header with a comment" "0" "$(rc_of rt_codex_toml_has_server "$CT" graphify)"
+assert_eq "quoted header" "0" "$(rc_of rt_codex_toml_has_server "$CT" a-b)"
+assert_eq "a different server" "1" "$(rc_of rt_codex_toml_has_server "$CT" other)"
 
 tl_results

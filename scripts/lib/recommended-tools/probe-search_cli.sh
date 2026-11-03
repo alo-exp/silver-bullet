@@ -166,9 +166,9 @@ rt_repair_search_cli() {
     return 0
   fi
 
-  # Registry pin only — never execute project-local install_commands.
-  # shellcheck disable=SC2086
-  if bash -lc "$pin_argv" >&2; then
+  # Registry pin only — never execute project-local install_commands. The pin is run as plain
+  # commands (no shell, no login profile).
+  if rt_run_registry_chain "$pin_argv" brew >&2; then
     actions+=("brew_install_search_cli_pin")
   else
     failures+=("brew_install_failed")

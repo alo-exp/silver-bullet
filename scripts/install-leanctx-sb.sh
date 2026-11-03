@@ -7,7 +7,7 @@
 # Upstream CLI flag verification (2026-07-07):
 #   --library-mode  : NOT present in lean-ctx README/compatibility docs — use fallback chain.
 #   lean-ctx mcp    : documented MCP entrypoint.
-#   curl installer  : https://leanctx.com/install.sh
+#   installer       : https://leanctx.com/install.sh (never piped to a shell: see install_leanctx_binary)
 #
 # Fallback install path (safest when --library-mode absent):
 #   1. Ensure lean-ctx binary on PATH (curl installer or cargo install lean-ctx).
@@ -39,6 +39,8 @@ SKIP_INSTALL=0
 SKIP_VERIFY=0
 SKIP_MERGE=0
 PROJECT_ROOT=""
+INSTALLER_SHA256=""
+WIRE_EVIDENCE=""
 
 # Host paths lean-ctx init would clobber — we guard these (conflict #8).
 declare -a GUARD_PATHS=()
@@ -57,13 +59,27 @@ Options:
   --skip-install                                Skip binary install step
   --skip-merge                                  Skip MCP merge helper
   --skip-verify                                 Skip wire-proxy ordering validator
+  --installer-sha256 <hex>                      Download https://leanctx.com/install.sh and run it
+                                                only if its SHA-256 equals <hex> (needs "install" consent)
+  --wire-proxy-evidence <file>                  Validate this captured Codex wire-proxy evidence
   -h, --help                                    Show help
 
-Never writes AGENTS.md, .cursorrules, or host skill directories.
+Needs your consent for LeanCTX (bash scripts/sb-consent.sh grant leanctx --all-projects
+--capabilities wire,install). Never writes AGENTS.md, .cursorrules, or host skill directories.
 EOF
 }
 
 log() { printf '%s\n' "$*"; }
+leanctx_consented() {
+  declare -f sb_consent_granted >/dev/null 2>&1 && sb_consent_granted leanctx "$1"
+}
+sha256_of() {
+  if command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 "$1" | awk '{print $1}'
+  else
+    sha256sum "$1" | awk '{print $1}'
+  fi
+}
 warn() { printf 'WARN: %s\n' "$*" >&2; }
 
 run_cmd() {
@@ -104,12 +120,12 @@ init_guard_paths() {
     cursor)
       GUARD_PATHS+=(
         "${HOME}/.cursor/AGENTS.md"
-        "${REPO_ROOT}/.cursorrules"
-        "${REPO_ROOT}/AGENTS.md"
+        "${PROJECT_ROOT}/.cursorrules"
+        "${PROJECT_ROOT}/AGENTS.md"
       )
       ;;
     codex)
-      GUARD_PATHS+=("${HOME}/.codex/AGENTS.md")
+      GUARD_PATHS+=("${HOME}/.codex/AGENTS.md" "${PROJECT_ROOT}/AGENTS.md")
       ;;
     opencode)
       GUARD_PATHS+=("${HOME}/.config/opencode/AGENTS.md")
@@ -231,14 +247,44 @@ install_leanctx_binary() {
     log "OK: lean-ctx already on PATH"
     return 0
   fi
-  log "Installing lean-ctx via upstream installer..."
+  # An installer fetched from the network runs only with the user's "install" consent AND a SHA-256
+  # the user pinned for exactly that file; it is never piped from curl into a shell.
+  if ! leanctx_consented install; then
+    warn "lean-ctx is not installed and you have not allowed installing it."
+    warn "  allow: bash ${SCRIPT_DIR}/sb-consent.sh grant leanctx --all-projects --capabilities install"
+    warn "  or install it yourself: cargo install lean-ctx"
+    return 1
+  fi
+  if [[ -z "$INSTALLER_SHA256" ]]; then
+    warn "lean-ctx is not installed. Silver Bullet will not run an unverified installer."
+    warn "  Download https://leanctx.com/install.sh, read it, then re-run with --installer-sha256 <sha256 of that file>"
+    warn "  or: cargo install lean-ctx"
+    return 1
+  fi
+  if [[ ! "$INSTALLER_SHA256" =~ ^[0-9a-fA-F]{64}$ ]]; then
+    warn "--installer-sha256 must be 64 hexadecimal characters"
+    return 1
+  fi
   if [[ "$DRY_RUN" -eq 1 ]]; then
-    log "DRY-RUN: curl -fsSL https://leanctx.com/install.sh | sh"
+    log "DRY-RUN: download https://leanctx.com/install.sh, verify sha256 ${INSTALLER_SHA256}, run it"
     return 0
   fi
-  if command -v curl >/dev/null 2>&1; then
-    curl -fsSL https://leanctx.com/install.sh | sh || true
+  command -v curl >/dev/null 2>&1 || { warn "curl is required to download the lean-ctx installer"; return 1; }
+  local installer actual
+  installer="$(mktemp "${TMPDIR:-/tmp}/leanctx-install.XXXXXX")"
+  if ! curl -fsSL --proto '=https' --max-time 60 -o "$installer" -- https://leanctx.com/install.sh; then
+    rm -f -- "$installer"
+    warn "could not download the lean-ctx installer"
+    return 1
   fi
+  actual="$(sha256_of "$installer")"
+  if [[ "$(printf '%s' "$actual" | tr 'A-F' 'a-f')" != "$(printf '%s' "$INSTALLER_SHA256" | tr 'A-F' 'a-f')" ]]; then
+    rm -f -- "$installer"
+    warn "lean-ctx installer checksum mismatch (got ${actual}); not running it"
+    return 1
+  fi
+  sh "$installer" || warn "lean-ctx installer exited non-zero"
+  rm -f -- "$installer"
   if ! leanctx_binary_ok; then
     warn "lean-ctx not on PATH after installer — try: cargo install lean-ctx"
     return 1
@@ -304,9 +350,9 @@ merge_mcp_config() {
         return 1
       }
       if [[ "$DRY_RUN" -eq 1 ]]; then
-        log "DRY-RUN: python3 $pi_installer --repo-root $REPO_ROOT"
+        log "DRY-RUN: python3 $pi_installer --repo-root $REPO_ROOT --enable-tool leanctx"
       else
-        run_cmd python3 "$pi_installer" --repo-root "$REPO_ROOT"
+        run_cmd python3 "$pi_installer" --repo-root "$REPO_ROOT" --enable-tool leanctx
       fi
       ;;
     *)
@@ -390,14 +436,23 @@ verify_wire_proxy_ordering() {
     warn "verify helper missing: $VERIFY_PY"
     return 0
   fi
-  log "Verifying wire-proxy ordering schema (Codex conflict #13)..."
-  local fixture
-  fixture="$(python3 "$VERIFY_PY" --generate-fixture)"
-  if ! printf '%s' "$fixture" | python3 "$VERIFY_PY" -; then
-    warn "wire-proxy ordering self-test failed"
-    return 1
+  if [[ -n "$WIRE_EVIDENCE" ]]; then
+    log "Validating the captured wire-proxy evidence ${WIRE_EVIDENCE} (Codex conflict #13)..."
+    if ! python3 "$VERIFY_PY" "$WIRE_EVIDENCE"; then
+      warn "wire-proxy evidence is not valid message ordering"
+      return 1
+    fi
+    log "OK: wire-proxy evidence preserves message ordering"
+  else
+    log "Checking the wire-proxy ordering validator itself (Codex conflict #13)..."
+    local fixture
+    fixture="$(python3 "$VERIFY_PY" --generate-fixture)"
+    if ! printf '%s' "$fixture" | python3 "$VERIFY_PY" -; then
+      warn "wire-proxy ordering validator self-test failed"
+      return 1
+    fi
+    log "OK: validator self-test passed (this proves the validator, not the proxy: pass --wire-proxy-evidence <file> to check real captured traffic)"
   fi
-  log "OK: wire-proxy ordering validator self-test passed"
   if [[ "$HOST" == "codex" ]] && leanctx_binary_ok; then
     local bin
     bin="$(leanctx_cli_path || true)"
@@ -417,6 +472,8 @@ while [[ $# -gt 0 ]]; do
     --skip-install) SKIP_INSTALL=1; shift ;;
     --skip-merge) SKIP_MERGE=1; shift ;;
     --skip-verify) SKIP_VERIFY=1; shift ;;
+    --installer-sha256) INSTALLER_SHA256="${2:-}"; shift $(( $# > 1 ? 2 : 1 )) ;;
+    --wire-proxy-evidence) WIRE_EVIDENCE="${2:-}"; shift $(( $# > 1 ? 2 : 1 )) ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown arg: $1" >&2; usage >&2; exit 2 ;;
   esac
@@ -436,6 +493,13 @@ PROJECT_ROOT="$(cd "$PROJECT_ROOT" && pwd -P)"
 export RT_PROJECT_ROOT="$PROJECT_ROOT"
 
 [[ "$HOST" == "auto" ]] && HOST="$(detect_host)"
+
+# LeanCTX changes host configuration for every project: only with the user's own consent.
+if ! leanctx_consented wire; then
+  log "SKIP: LeanCTX install - no consent. To allow it:"
+  log "  bash ${SCRIPT_DIR}/sb-consent.sh grant leanctx --all-projects --capabilities wire,install"
+  exit 0
+fi
 
 log "=== LeanCTX SB install (host=${HOST}) ==="
 

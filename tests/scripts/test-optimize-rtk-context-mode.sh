@@ -15,6 +15,9 @@ GLOBAL_BIN_REAL="$(cd "$GLOBAL_BIN" && pwd -P)"
 trap 'rm -rf "$TEST_HOME" "$GLOBAL_BIN"' EXIT
 
 export HOME="$TEST_HOME"
+# The user's consent (docs/CONSENT.md): the optimizer only wires the tools the user granted.
+source "$REPO_ROOT/tests/lib/consent-helpers.sh"
+sb_test_consent_grant_all
 mkdir -p "$TEST_HOME/.cursor" "$TEST_HOME/.codex" "$TEST_HOME/.config/opencode" "$TEST_HOME/.hermes" "$TEST_HOME/.pi/agent"
 printf '#!/usr/bin/env bash\nexit 0\n' >"$GLOBAL_BIN/context-mode"
 chmod +x "$GLOBAL_BIN/context-mode"
@@ -136,7 +139,13 @@ fi
 # 8. Allow-list merge
 if [[ -f "$TEST_HOME/.cursor/cli-config.json" ]]; then
   allow_count="$(jq '.permissions.allow | length' "$TEST_HOME/.cursor/cli-config.json")"
-  [[ "$allow_count" -ge 50 ]] && pass "cli-config allow-list merged ($allow_count entries)" || fail "cli-config allow-list merged"
+  # R6-05: the default is the read-only list (inspection commands), not the 96 broad shell patterns
+  [[ "$allow_count" -ge 10 && "$allow_count" -le 30 ]] && pass "cli-config allow-list merged ($allow_count entries)" || fail "cli-config allow-list merged"
+  if jq -e '.permissions.allow | any(test("^Shell\\((bash|zsh|rm|curl|wget|python|node|docker) "))' "$TEST_HOME/.cursor/cli-config.json" >/dev/null; then
+    fail "default allow-list pre-approves interpreters or destructive commands"
+  else
+    pass "default allow-list pre-approves no interpreters or destructive commands"
+  fi
 else
   fail "cli-config created"
 fi
@@ -162,7 +171,7 @@ else
   fail "pi dry-run exits 0"
 fi
 if PI_CODING_AGENT_DIR="$TEST_HOME/.pi/agent" python3 "$REPO_ROOT/scripts/lib/global-toolstack/install-pi.py" \
-  --repo-root "$REPO_ROOT" >/dev/null 2>&1 \
+  --repo-root "$REPO_ROOT" --enable-tool graphify --enable-tool context_mode --enable-tool rtk --enable-tool leanctx >/dev/null 2>&1 \
   && jq -e '.profile == "five_tool_routed" and .servers.graphify.enabled and .servers.context_mode.enabled and .servers.rtk.enabled' \
     "$TEST_HOME/.pi/agent/extensions/silver-bullet-five-tool-stack/config.json" >/dev/null \
   && jq -e '.routeShell == false and .enableMcp == true and (.disableTools | index("ctx_shell")) != null' \

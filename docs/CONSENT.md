@@ -125,3 +125,18 @@ A project that already has `enabled_by_user: true` was treated as consented befo
 a one-time notice per tool and project (marker under the runtime state dir) telling the user
 what changed and giving the exact `grant` and `decline` commands. Until the user answers, the
 tool's gates are inactive.
+
+## Scripts that honor consent
+
+These scripts run only for tools the user granted, and say how to grant the rest:
+
+| Script | Needs | Without it |
+|---|---|---|
+| `reconcile-recommended-tools.sh` (apply) and the repairs it runs | `install` for package installs, `wire` for host-config writes | `mutation_not_authorized` / `install_not_consented` failures, nothing changed |
+| `optimize-rtk-context-mode.sh` | `wire` per tool (`rtk`, `context_mode`); `install` for `npm install -g context-mode` | the tool is skipped with the grant command |
+| `optimize-five-tool-stack.sh`, `install-leanctx-sb.sh` | `wire` (and `install`, plus `--installer-sha256`, for the lean-ctx installer) for `leanctx` | exits 0 with the grant command; the installer is never piped from the network into a shell |
+| `install-global-toolstack.sh` | `wire` for at least one tool, and Cursor installed (`--force` skips the check) | skipped; an existing `~/.cursor/toolstack.json` is never overwritten |
+| `graphify-am-global-setup.sh --apply` | `wire` for `graphify` and `agentmemory` | exits 3 with the grant command (`--verify` and `--dry-run` need nothing) |
+| `install-pi.py`, `patch-mcp.py`, `patch-hooks.py` | the caller passes only consented tools (`--enable-tool`, `RT_PATCH_<TOOL>=1`) | nothing is switched on |
+
+Host configuration files they edit (`~/.cursor/mcp.json`, `hooks.json`, `~/.claude.json`, Codex `config.toml`, Pi `settings.json`) are written atomically through any symlink, keep their mode, and leave the previous content in `<file>.sb-backup`; a file that does not parse is reported and left alone.

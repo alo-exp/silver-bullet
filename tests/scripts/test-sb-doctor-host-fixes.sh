@@ -4,6 +4,7 @@
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init claude
+source "$TL_REPO_ROOT/tests/lib/consent-helpers.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/h-recommended-helpers.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/h-doctor-stage.sh"
 cd "$TL_TMP"
@@ -18,7 +19,9 @@ CX='SILVER_BULLET_RUNTIME=codex'
 cx() { hd_run "$CX" "$@"; }
 CACHE="$HOME/.claude/plugins/cache/alo-labs/silver-bullet"
 
-MUTEX="$SB_RUNTIME_STATE_DIR/stack-compression-mutex"
+# The coordinator keeps its mutex state per project and session (stack-compression-mutex.d/...).
+MUTEX="$(bash -c 'source "$1/hooks/lib/stack-compression-coordinator.sh"; sb_stack_mutex_state_path "$2"' _ "$TL_REPO_ROOT" "$HD_PROJ/.silver-bullet.json")"
+mkdir -p "$(dirname "$MUTEX")"
 
 # ---------- --fix dispatch ----------
 fixlog() { hd_logs; }
@@ -115,7 +118,7 @@ assert_contains "D15 cannot be auto-fixed" "$TL_ERR" "sb-doctor: --fix D15 requi
 # D20: clears the mutex and scaffolds the agentmemory export root
 hd_happy claude
 hd_cfg "{\"sb_initiated\":true,\"config_version\":\"$HD_VER\",\"recommended_tools\":{\"rtk\":{\"enabled_by_user\":true},\"context_mode\":{\"enabled_by_user\":true},\"agentmemory\":{\"enabled_by_user\":true}}}"
-echo '{"violations":["double"]}' >"$MUTEX"
+mkdir -p "$(dirname "$MUTEX")"; echo '{"violations":["double"]}' >"$MUTEX"
 run -- --fix "$HD_PROJ"
 assert_file_absent "mutex violations cleared" "$MUTEX"
 assert_contains "mutex clean after the fix" "$TL_OUT" "PASS: D20 — stack compression mutex clean"
@@ -124,23 +127,23 @@ assert_eq "agentmemory export root scaffolded" "yes" "$([[ -d "$HD_PROJ/.agentme
 hd_cfg "{\"sb_initiated\":true,\"config_version\":\"$HD_VER\",\"recommended_tools\":{\"rtk\":{\"enabled_by_user\":true},\"context_mode\":{\"enabled_by_user\":true},\"agentmemory\":{\"enabled_by_user\":true}}}"
 rm -rf -- "${HD_PROJ:?}/.agentmemory"
 : >"$HD_PROJ/.agentmemory"
-echo '{"violations":["double"]}' >"$MUTEX"
+mkdir -p "$(dirname "$MUTEX")"; echo '{"violations":["double"]}' >"$MUTEX"
 run -- --fix "$HD_PROJ"
 assert_contains "unusable export root does not abort the repair" "$TL_OUT" "re-running checks after --fix"
 rm -f -- "${HD_PROJ:?}/.agentmemory"
 hd_cfg "{\"sb_initiated\":true,\"config_version\":\"$HD_VER\",\"recommended_tools\":{\"rtk\":{\"enabled_by_user\":true},\"context_mode\":{\"enabled_by_user\":true}}}"
-echo '{"violations":["double"]}' >"$MUTEX"
+mkdir -p "$(dirname "$MUTEX")"; echo '{"violations":["double"]}' >"$MUTEX"
 run -- --fix "$HD_PROJ"
 assert_eq "no scaffold without agentmemory" "no" "$([[ -d "$HD_PROJ/.agentmemory" ]] && echo yes || echo no)"
 rm -f -- "${HD_PROJ:?}/.silver-bullet.json"
-echo '{"violations":["double"]}' >"$MUTEX"
+mkdir -p "$(dirname "$MUTEX")"; echo '{"violations":["double"]}' >"$MUTEX"
 rm -f -- "${HD_ST:?}/hooks/lib"
 mkdir -p "$HD_ST/hooks/lib"
 for f in "$TL_REPO_ROOT"/hooks/lib/*; do
   [[ "${f##*/}" == agentmemory-gate.sh ]] || ln -s "$f" "$HD_ST/hooks/lib/${f##*/}"
 done
 hd_cfg "{\"sb_initiated\":true,\"config_version\":\"$HD_VER\",\"recommended_tools\":{\"rtk\":{\"enabled_by_user\":true},\"context_mode\":{\"enabled_by_user\":true}}}"
-echo '{"violations":["double"]}' >"$MUTEX"
+mkdir -p "$(dirname "$MUTEX")"; echo '{"violations":["double"]}' >"$MUTEX"
 run -- --fix "$HD_PROJ"
 assert_contains "D20 repair without the agentmemory library" "$TL_OUT" "re-running checks after --fix"
 hd_stage

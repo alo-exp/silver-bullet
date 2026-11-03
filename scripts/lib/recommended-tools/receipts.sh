@@ -443,7 +443,10 @@ rt_receipt_clear() {
   lock_dir="$(rt_reload_receipt_lock_dir "$host" "$project_id" "$worktree_id" "$scope")"
   [[ -f "$path" ]] || return 1
   local updated
-  updated="$(jq -c --arg now "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '.consumed_at = $now | .activation_status = "full"' <<<"$receipt_json")"
+  # The attestation comes from whoever ran the reconciler with --host-evidence-stdin: record that it
+  # is self-reported, so a cleared receipt is never mistaken for independent proof of liveness.
+  updated="$(jq -c --arg now "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+    '.consumed_at = $now | .activation_status = "full" | .cleared_by = "host_evidence_stdin" | .evidence_assurance = "self_reported"' <<<"$receipt_json")"
   rt_with_lock "$lock_dir" 15 rt_atomic_write_json "$path" "$updated"
 }
 

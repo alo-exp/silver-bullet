@@ -7,6 +7,9 @@ set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/toolstack-helpers.sh"
 tl_init
+source "$TL_REPO_ROOT/tests/lib/consent-helpers.sh"
+sb_test_consent_grant_all   # the user said yes to every tool (docs/CONSENT.md)
+tl_stub cursor 'exit 0'     # Cursor is installed
 
 CUR="$HOME/.cursor"
 TSD="$CUR/hooks/toolstack"
@@ -17,6 +20,9 @@ make_fake_repo() { # <dir> [with-installer=1] [with-rules=1]
   rm -rf "$f"
   mkdir -p "$f/scripts/lib"
   cp "$TL_REPO_ROOT/scripts/install-global-toolstack.sh" "$f/scripts/"
+  cp "$TL_REPO_ROOT/scripts/lib/sb_host_config.py" "$f/scripts/lib/"
+  mkdir -p "$f/hooks"
+  ln -s "$TL_REPO_ROOT/hooks/lib" "$f/hooks/lib"
   cp -R "$TS_SRC" "$f/scripts/lib/global-toolstack"
   cp -R "$TL_REPO_ROOT/scripts/lib/five_tool_runtime" "$f/scripts/lib/five_tool_runtime"
   if [[ "${2:-1}" == 1 ]]; then
@@ -43,7 +49,7 @@ ENTRY="$FAKE/scripts/install-global-toolstack.sh"
 
 tl_run bash "$ENTRY" --help
 assert_eq "--help exits 0" 0 "$TL_STATUS"
-assert_contains "--help usage" "$TL_OUT" "Usage: bash scripts/install-global-toolstack.sh [--project-root PATH]"
+assert_contains "--help usage" "$TL_OUT" "Usage: bash scripts/install-global-toolstack.sh [--project-root PATH] [--force]"
 assert_file_absent "--help does not touch HOME" "$CUR"
 tl_run bash "$ENTRY" -h
 assert_eq "-h exits 0" 0 "$TL_STATUS"
@@ -77,6 +83,8 @@ assert_eq "toolstack.json enforcement" always "$(jq -r .enforcement "$CUR/toolst
 assert_eq "toolstack.json sb_wire route" leanctx "$(jq -r .routes.sb_wire "$CUR/toolstack.json")"
 assert_eq "toolstack.json graphify required" true "$(jq -r .tools.graphify.required "$CUR/toolstack.json")"
 
+assert_file_exists "the config writers' helper module is staged beside them" "$TSD/sb_host_config.py"
+
 # rules
 assert_eq "repo rule copied" "rule graphify" "$(cat "$CUR/rules/graphify.mdc")"
 assert_file_exists "all five rules copied" "$CUR/rules/token-compression-enforcement.mdc"
@@ -98,6 +106,69 @@ assert_eq "mcp.json backed up" '{"m":1}' "$(cat "$CUR/mcp.json.bak.20260101T0000
 rm -f "$HOME/post-install.log"
 SB_RECONCILE_PROJECT_ROOT="$proj" tl_run bash "$ENTRY"
 assert_eq "env project root forwarded" "$FAKE|$proj|$FAKE|$proj" "$(cat "$HOME/post-install.log")"
+
+# ===== consent, host check, and a user's own toolstack.json (R6-12) =====
+rm -rf "$CUR"
+sb_test_consent_revoke_all
+tl_run bash "$ENTRY"
+assert_eq "no consent: exits 0" 0 "$TL_STATUS"
+assert_contains "no consent: says why and how to grant" "$TL_OUT" "no tool has your 'wire' consent"
+assert_contains "no consent: grant command" "$TL_OUT" "sb-consent.sh grant <tool> --all-projects --capabilities wire"
+assert_file_absent "no consent: nothing written under ~/.cursor" "$CUR"
+
+sb_test_consent_grant rtk wire
+rm -f "$TL_BIN/cursor"
+tl_run bash "$ENTRY"
+assert_eq "no Cursor: exits 0" 0 "$TL_STATUS"
+assert_contains "no Cursor: skipped" "$TL_OUT" "Cursor is not installed"
+assert_file_absent "no Cursor: nothing written" "$CUR"
+tl_run bash "$ENTRY" --force
+assert_contains "--force installs without Cursor" "$TL_OUT" "Global toolstack install complete"
+assert_eq "enforcement is on when a tool is wired" always "$(jq -r .enforcement "$CUR/toolstack.json")"
+assert_eq "wired rtk is required" true "$(jq -r .tools.rtk.required "$CUR/toolstack.json")"
+assert_eq "a tool without consent is not required" false "$(jq -r .tools.graphify.required "$CUR/toolstack.json")"
+
+# the user's toolstack.json is theirs: a re-install keeps it
+jq '.enforcement = "off" | .tools.rtk.usage_ttl_seconds = 77' "$CUR/toolstack.json" >"$CUR/t.new" && mv "$CUR/t.new" "$CUR/toolstack.json"
+tl_run bash "$ENTRY" --force
+assert_contains "existing toolstack.json is kept" "$TL_OUT" "KEEP: $CUR/toolstack.json exists"
+assert_eq "user enforcement kept" off "$(jq -r .enforcement "$CUR/toolstack.json")"
+assert_eq "user ttl kept" 77 "$(jq -r .tools.rtk.usage_ttl_seconds "$CUR/toolstack.json")"
+
+# no tool consented at install time of body: enforcement off
+rm -f "$CUR/toolstack.json"
+sb_test_consent_revoke_all
+sb_test_consent_grant rtk install
+tl_run env TOOLSTACK_REPO_ROOT="$FAKE" bash "$TSD/install.sh"
+assert_eq "no wire consent: enforcement off" off "$(jq -r .enforcement "$CUR/toolstack.json")"
+assert_eq "no wire consent: nothing required" false "$(jq -r '[.tools[].required] | any' "$CUR/toolstack.json")"
+
+# rules the installer overwrites keep the previous content once
+sb_test_consent_grant_all
+tl_stub cursor 'exit 0'
+printf 'my own graphify rule\n' >"$CUR/rules/graphify.mdc"
+tl_run bash "$ENTRY"
+assert_eq "the user's differing rule is backed up" "my own graphify rule" "$(cat "$CUR/rules/graphify.mdc.sb-backup")"
+assert_eq "the Silver Bullet rule is installed" "rule graphify" "$(cat "$CUR/rules/graphify.mdc")"
+
+# a rule that is a symlink into the user's dotfiles is updated through the link, with a backup
+sb_test_consent_grant_all
+tl_stub cursor 'exit 0'
+mkdir -p "$TL_TMP/dotfiles"
+printf 'dotfile graphify rule\n' >"$TL_TMP/dotfiles/graphify.mdc"
+rm -f "$CUR/rules/graphify.mdc" "$CUR/rules/graphify.mdc.sb-backup"
+ln -s "$TL_TMP/dotfiles/graphify.mdc" "$CUR/rules/graphify.mdc"
+tl_run bash "$ENTRY"
+assert_eq "a symlinked rule stays a symlink" "yes" "$([[ -L "$CUR/rules/graphify.mdc" ]] && echo yes || echo no)"
+assert_eq "the link target got the Silver Bullet rule" "rule graphify" "$(cat "$TL_TMP/dotfiles/graphify.mdc")"
+assert_eq "and its previous content is backed up beside the link" "dotfile graphify rule" "$(cat "$CUR/rules/graphify.mdc.sb-backup")"
+
+# without a recorded or given repository root there is no consent library: nothing is wired or required
+rm -f "$CUR/toolstack.json" "$CUR/state/toolstack/repo-root"
+tl_run env -u TOOLSTACK_REPO_ROOT bash "$TSD/install.sh"
+assert_eq "an install without a repository root still completes" 0 "$TL_STATUS"
+assert_eq "without the consent library nothing is required" false "$(jq -r '[.tools[].required] | any' "$CUR/toolstack.json")"
+assert_eq "and enforcement is off" off "$(jq -r .enforcement "$CUR/toolstack.json")"
 
 # ===== entry script: copy failures are tolerated =====
 rm -rf "$CUR"

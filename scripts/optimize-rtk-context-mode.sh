@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # optimize-rtk-context-mode.sh — research-backed RTK + Context Mode global host optimization.
 # Idempotently wires hooks, MCP, cli-config allow-list, and global rules per host.
-# SB-independent: works without .silver-bullet.json or /sb:init.
+# Works without .silver-bullet.json or /sb:init, but never without the user's consent: it wires
+# only the tools the user granted "wire" for (docs/CONSENT.md), installs Context Mode only with
+# "install", and never touches a tool that was not granted.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -17,7 +19,12 @@ DRY_RUN=0
 SKIP_CLI_CONFIG=0
 SKIP_RTK_INIT=0
 SKIP_CM_DOCTOR=0
+CLI_ALLOWLIST="read-only"
 PROJECT_ROOT=""
+# Per-tool consent (filled in after the arguments are parsed).
+WIRE_RTK=0
+WIRE_CM=0
+WIRE_LEANCTX=0
 
 usage() {
   cat <<'EOF'
@@ -31,6 +38,8 @@ Options:
   --project-root <path>                 Canonical SB project root (required)
   --dry-run                             Print actions without writing files
   --skip-cli-config                     Skip ~/.cursor/cli-config.json merge
+  --cli-allowlist <none|read-only|full> Cursor CLI shell allow-list to merge (default: read-only;
+                                        full pre-approves interpreters, rm, curl, docker, ...)
   --skip-rtk-init                       Skip rtk init wiring
   --skip-cm-doctor                      Skip context-mode doctor
   -h, --help                            Show this help
@@ -40,7 +49,9 @@ Hosts:
   hermes                           — partial (RTK plugin + CM MCP; no CM doctor platform)
   goose                            — unsupported (documented skip; no fake wiring)
 
-No Silver Bullet opt-in required. See docs/rtk-cm/README.md.
+Needs the user's consent per tool (bash scripts/sb-consent.sh grant TOOL --all-projects
+--capabilities wire[,install]); tools without it are left alone. See docs/CONSENT.md and
+docs/rtk-cm/README.md.
 EOF
 }
 
@@ -98,6 +109,15 @@ rtk_binary_ok() {
   ! grep -qiE 'rust type kit|rtk-check' < <("$bin" --help 2>&1 | head -5)
 }
 
+# tool_consented TOOL CAPABILITY: the user granted CAPABILITY for TOOL. A project file never does.
+tool_consented() {
+  declare -f sb_consent_granted >/dev/null 2>&1 && sb_consent_granted "$1" "$2"
+}
+
+consent_hint() {
+  log "SKIP: ${1} — no consent. To allow it: bash ${SCRIPT_DIR}/sb-consent.sh grant ${2} --all-projects --capabilities ${3}"
+}
+
 ensure_context_mode_cli() {
   if declare -f sb_context_mode_cli_path >/dev/null 2>&1 && sb_context_mode_cli_path >/dev/null 2>&1; then
     return 0
@@ -105,8 +125,12 @@ ensure_context_mode_cli() {
   if command -v context-mode >/dev/null 2>&1; then
     return 0
   fi
+  if ! tool_consented context_mode install; then
+    consent_hint "npm install -g context-mode" context_mode install
+    return 0
+  fi
   if command -v npm >/dev/null 2>&1; then
-    run_cmd npm install -g context-mode 2>/dev/null || true
+    run_cmd npm install -g context-mode || log "WARN: npm install -g context-mode failed"
   fi
 }
 
@@ -142,6 +166,9 @@ run_merge_py() {
   local merge_args=(python3 "$MERGE_PY" --host "$merge_host" --repo-root "$REPO_ROOT")
   [[ "$DRY_RUN" -eq 1 ]] && merge_args+=(--dry-run)
   [[ "$SKIP_CLI_CONFIG" -eq 1 ]] && merge_args+=(--skip-cli-config)
+  merge_args+=(--cli-allowlist "$CLI_ALLOWLIST")
+  [[ "$WIRE_RTK" -eq 1 && "$WIRE_CM" -eq 0 ]] && merge_args+=(--rtk-only)
+  [[ "$WIRE_RTK" -eq 0 && "$WIRE_CM" -eq 1 ]] && merge_args+=(--context-mode-only)
   run_cmd "${merge_args[@]}"
 }
 
@@ -152,13 +179,14 @@ canonicalize_cursor_toolstack_hooks() {
   # the shared hook reconciler after vendor initialization so the manifest-
   # backed RTK hook is the only shell rewrite owner.
   run_cmd env \
-    RT_PATCH_RTK=1 \
-    RT_PATCH_CONTEXT_MODE=1 \
-    RT_PATCH_LEANCTX=1 \
+    RT_PATCH_RTK="$WIRE_RTK" \
+    RT_PATCH_CONTEXT_MODE="$WIRE_CM" \
+    RT_PATCH_LEANCTX="$WIRE_LEANCTX" \
     python3 "$patch_py"
 }
 
 optimize_rtk_cursor() {
+  [[ "$WIRE_RTK" -eq 1 ]] || { consent_hint "rtk init (cursor)" rtk wire; return 0; }
   if [[ "$SKIP_RTK_INIT" -eq 1 ]]; then
     log "SKIP: rtk init (cursor)"
     return 0
@@ -178,6 +206,7 @@ optimize_rtk_cursor() {
 }
 
 optimize_rtk_claude() {
+  [[ "$WIRE_RTK" -eq 1 ]] || { consent_hint "rtk init (claude)" rtk wire; return 0; }
   if [[ "$SKIP_RTK_INIT" -eq 1 ]]; then
     log "SKIP: rtk init (claude)"
     return 0
@@ -190,6 +219,7 @@ optimize_rtk_claude() {
 }
 
 optimize_rtk_codex() {
+  [[ "$WIRE_RTK" -eq 1 ]] || { consent_hint "rtk init (codex)" rtk wire; return 0; }
   if [[ "$SKIP_RTK_INIT" -eq 1 ]]; then
     log "SKIP: rtk init (codex)"
     return 0
@@ -202,14 +232,19 @@ optimize_rtk_codex() {
 }
 
 optimize_rtk_opencode() {
+  [[ "$WIRE_RTK" -eq 1 ]] || { consent_hint "RTK wiring (opencode)" rtk wire; return 0; }
   log "OK: OpenCode RTK is wired by the shared manifest-backed plugin"
+  # With Context Mode also consented the one merge in optimize_context_mode_opencode writes both.
+  [[ "$WIRE_CM" -eq 1 ]] || run_merge_py opencode
 }
 
 optimize_rtk_pi() {
+  [[ "$WIRE_RTK" -eq 1 ]] || { consent_hint "RTK wiring (pi)" rtk wire; return 0; }
   log "OK: Pi RTK is wired by the shared native tool_call adapter"
 }
 
 optimize_rtk_hermes() {
+  [[ "$WIRE_RTK" -eq 1 ]] || { consent_hint "rtk init (hermes)" rtk wire; return 0; }
   if [[ "$SKIP_RTK_INIT" -eq 1 ]]; then
     log "SKIP: rtk init (hermes)"
     return 0
@@ -226,12 +261,14 @@ optimize_rtk_goose() {
 }
 
 optimize_context_mode_claude() {
+  [[ "$WIRE_CM" -eq 1 ]] || { consent_hint "Context Mode wiring (claude)" context_mode wire; return 0; }
   disable_claude_native_context_mode
   ensure_context_mode_cli
   run_merge_py claude
 }
 
 optimize_context_mode_cursor() {
+  [[ "$WIRE_CM" -eq 1 ]] || { consent_hint "Context Mode wiring (cursor)" context_mode wire; return 0; }
   ensure_context_mode_cli
   run_merge_py cursor
   canonicalize_cursor_toolstack_hooks
@@ -242,16 +279,19 @@ optimize_context_mode_cursor() {
 }
 
 optimize_context_mode_codex() {
+  [[ "$WIRE_CM" -eq 1 ]] || { consent_hint "Context Mode wiring (codex)" context_mode wire; return 0; }
   ensure_context_mode_cli
   run_merge_py codex
 }
 
 optimize_context_mode_opencode() {
+  [[ "$WIRE_CM" -eq 1 ]] || { consent_hint "Context Mode wiring (opencode)" context_mode wire; return 0; }
   ensure_context_mode_cli
   run_merge_py opencode
 }
 
 optimize_context_mode_pi() {
+  [[ "$WIRE_CM" -eq 1 ]] || { consent_hint "Context Mode wiring (pi)" context_mode wire; return 0; }
   local installer="${REPO_ROOT}/scripts/lib/global-toolstack/install-pi.py"
   [[ -f "$installer" ]] || {
     log "ERROR: Pi adapter installer missing: $installer" >&2
@@ -261,6 +301,7 @@ optimize_context_mode_pi() {
 }
 
 optimize_context_mode_hermes() {
+  [[ "$WIRE_CM" -eq 1 ]] || { consent_hint "Context Mode wiring (hermes)" context_mode wire; return 0; }
   ensure_context_mode_cli
   run_merge_py hermes
   log "NOTE: Hermes has no context-mode doctor platform — verify MCP in ~/.hermes/config.yaml"
@@ -346,6 +387,11 @@ while [[ $# -gt 0 ]]; do
     --skip-cli-config) SKIP_CLI_CONFIG=1; shift ;;
     --skip-rtk-init) SKIP_RTK_INIT=1; shift ;;
     --skip-cm-doctor) SKIP_CM_DOCTOR=1; shift ;;
+    --cli-allowlist)
+      if [[ $# -lt 2 ]]; then echo "ERROR: --cli-allowlist requires a value" >&2; usage >&2; exit 2; fi
+      case "$2" in none|read-only|full) CLI_ALLOWLIST="$2" ;; *) echo "ERROR: --cli-allowlist takes none, read-only or full" >&2; exit 2 ;; esac
+      shift 2
+      ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown arg: $1" >&2; usage >&2; exit 2 ;;
   esac
@@ -366,6 +412,14 @@ export RT_PROJECT_ROOT="$PROJECT_ROOT"
 
 [[ "$HOST" == "auto" ]] && HOST="$(detect_host)"
 
+tool_consented rtk wire && WIRE_RTK=1
+tool_consented context_mode wire && WIRE_CM=1
+tool_consented leanctx wire && WIRE_LEANCTX=1
+if [[ "$WIRE_RTK" -eq 0 && "$WIRE_CM" -eq 0 ]]; then
+  consent_hint "RTK and Context Mode optimization" "rtk|context_mode" wire
+  exit 0
+fi
+
 log "=== RTK + Context Mode optimization (host=${HOST}) ==="
 
 case "$HOST" in
@@ -383,7 +437,9 @@ case "$HOST" in
     ;;
 esac
 
-run_cm_doctor
+if [[ "$WIRE_CM" -eq 1 ]]; then
+  run_cm_doctor
+fi
 if [[ "$DRY_RUN" -eq 0 ]]; then
   run_cmd bash "${SCRIPT_DIR}/enable-rtk-context-mode.sh" --tool all 2>/dev/null || true
 fi

@@ -5,6 +5,7 @@
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init claude
+source "$TL_REPO_ROOT/tests/lib/consent-helpers.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/h-recommended-helpers.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/h-doctor-stage.sh"
 cd "$TL_TMP"
@@ -173,8 +174,10 @@ hd_happy claude
 hd_cfg "{\"sb_initiated\":true,\"config_version\":\"$HD_VER\",\"recommended_tools\":{\"rtk\":{\"enabled_by_user\":true},\"context_mode\":{\"enabled_by_user\":true}}}"
 run -- "$HD_PROJ"
 assert_contains "clean mutex" "$TL_OUT" "PASS: D20 — stack compression mutex clean"
-MUTEX="$SB_RUNTIME_STATE_DIR/stack-compression-mutex"
-echo '{"violations":["double"]}' >"$MUTEX"
+# The coordinator keeps its mutex state per project and session (stack-compression-mutex.d/...).
+MUTEX="$(bash -c 'source "$1/hooks/lib/stack-compression-coordinator.sh"; sb_stack_mutex_state_path "$2"' _ "$TL_REPO_ROOT" "$HD_PROJ/.silver-bullet.json")"
+mkdir -p "$(dirname "$MUTEX")"
+mkdir -p "$(dirname "$MUTEX")"; echo '{"violations":["double"]}' >"$MUTEX"
 run -- "$HD_PROJ"
 assert_contains "dirty mutex" "$TL_OUT" "FAIL: D20 — stack compression mutex dirty — run: bash scripts/sb-doctor.sh --fix"
 rm -f -- "${MUTEX:?}"
@@ -221,6 +224,7 @@ chmod -x "$HD_ST/scripts/lib/cursor-sb-agents/probe-global-agents.sh"
 cu -- "$HD_PROJ"
 assert_contains "probe not executable" "$TL_OUT" "WARN: D21 — probe-global-agents.sh missing; skipped"
 echo 'not json' >"$HD_PROJ/.silver-bullet.json"
+sb_test_consent_reset_mirror "$HD_PROJ/.silver-bullet.json" install,wire,enforce
 cu -- "$HD_PROJ"
 assert_contains "unreadable config: audit continues to D21" "$TL_OUT" "PASS: D21 — cursor_sb_agents not enabled (N/A)"
 assert_contains "unreadable config is reported by D6" "$TL_OUT" "FAIL: D6 — project config is not valid JSON ($HD_PROJ/.silver-bullet.json)"
