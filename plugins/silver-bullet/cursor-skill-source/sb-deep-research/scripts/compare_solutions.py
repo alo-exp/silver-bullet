@@ -31,6 +31,30 @@ def _feature_name(feat: Any) -> str | None:
     return None
 
 
+_TRUE_WORDS = frozenset({"true", "yes", "y", "1", "supported", "present"})
+
+
+def _feature_supported(feat: Any) -> bool:
+    """Whether a feature entry counts as present for the solution.
+
+    A bare string lists a present feature (legacy form, no evidence to check). A
+    dict is the documented form and needs an explicit ``supported`` / ``present``
+    true (a bool or an affirmative word: the string "false" is false) or a
+    non-empty ``evidence_ids`` list; an ``evidence_ids`` list that is present but
+    empty means no evidence, so no tick.
+    """
+    if not isinstance(feat, dict):
+        return True
+    if "evidence_ids" in feat and not feat["evidence_ids"]:
+        return False
+    if "supported" not in feat and "present" not in feat:
+        return bool(feat.get("evidence_ids"))
+    value = feat.get("supported", feat.get("present"))
+    if isinstance(value, str):
+        return value.strip().lower() in _TRUE_WORDS
+    return bool(value)
+
+
 def load_features(solutions_dir: Path) -> dict[str, dict[str, Any]]:
     out: dict[str, dict[str, Any]] = {}
     if not solutions_dir.is_dir():
@@ -81,9 +105,12 @@ def build_comparison_json(
                 fname = _feature_name(feat)
                 if not fname:
                     continue
+                # A feature listed under several categories is one row (first wins),
+                # so it is weighted once.
+                if fname in all_features:
+                    continue
                 all_features[fname] = cname
-                if fname not in categories[cname]:
-                    categories[cname].append(fname)
+                categories[cname].append(fname)
 
     for _name, data in features_by_solution.items():
         for feat in data.get("features") or []:
@@ -115,22 +142,14 @@ def build_comparison_json(
                     for feat in cat.get("features") or []:
                         if _feature_name(feat) == fname:
                             found_in_categories = True
-                            has = (
-                                bool(feat.get("supported", feat.get("present", True)))
-                                if isinstance(feat, dict)
-                                else True
-                            )
+                            has = _feature_supported(feat)
                             break
                     if found_in_categories:
                         break
                 if not found_in_categories:
                     for feat in data.get("features") or []:
                         if _feature_name(feat) == fname:
-                            has = (
-                                bool(feat.get("supported", feat.get("present", True)))
-                                if isinstance(feat, dict)
-                                else True
-                            )
+                            has = _feature_supported(feat)
                             break
                 row["solutions"][sol] = TICK if has else ""
             rows.append(row)
@@ -145,6 +164,10 @@ def build_comparison_json(
     for i, r in enumerate(ranking, start=1):
         r["rank"] = i
 
+    tie = [r["solution"] for r in ranking if r["score"] == ranking[0]["score"]] if ranking else []
+    tie = tie if len(tie) > 1 else []
+    # On a tie the first-listed solution is only a placeholder: "tie" names every
+    # tied solution so reports state that the matrix does not separate them.
     winner = ranking[0]["solution"] if ranking else None
     runner = ranking[1]["solution"] if len(ranking) > 1 else None
 
@@ -156,6 +179,7 @@ def build_comparison_json(
         "rankings": ranking,
         "winner": winner,
         "runner_up": runner,
+        "tie": tie,
         "caveats": need.get("constraints") or [],
     }
 
@@ -177,6 +201,12 @@ def matrix_markdown(comparison: dict[str, Any]) -> str:
     lines.append("## Rankings")
     for r in comparison.get("rankings", []):
         lines.append(f"- #{r['rank']} **{r['solution']}** — score {r['score']}")
+    if comparison.get("tie"):
+        lines.append("")
+        lines.append(
+            "**Tie:** " + ", ".join(comparison["tie"])
+            + " have the same score; the matrix does not separate them."
+        )
     return "\n".join(lines) + "\n"
 
 
@@ -194,16 +224,29 @@ def compare_solutions(
     if len(features) < 2:
         raise ValueError("Need at least 2 solutions with features.json")
 
-    try:
-        from category_pack import get_hard_exclusion_slugs, resolve_pack_from_need
+    # With a category_pack_id the pack's hard exclusions are binding: an
+    # unresolvable pack fails the run rather than skipping the exclusions.
+    if need.get("category_pack_id"):
+        from category_pack import (
+            get_hard_exclusion_slugs,
+            project_pack_dirs,
+            resolve_canonical_slug,
+            resolve_pack_from_need_profile,
+        )
 
-        pack = resolve_pack_from_need(need)
-        if pack:
-            forbidden = {str(s) for s in get_hard_exclusion_slugs(pack, need) if s}
-            if forbidden:
-                features = {k: v for k, v in features.items() if k not in forbidden}
-    except Exception:
-        pack = None
+        try:
+            pack = resolve_pack_from_need_profile(need, project_pack_dirs(out_dir))
+        except (OSError, ValueError) as exc:
+            raise ValueError(f"category pack could not be resolved: {exc}") from exc
+        forbidden = {str(s) for s in get_hard_exclusion_slugs(pack, need) if s}
+        features = {
+            k: v
+            for k, v in features.items()
+            if _slug(k) not in forbidden
+            and resolve_canonical_slug(_slug(k), pack) not in forbidden
+        }
+        if len(features) < 2:
+            raise ValueError("Fewer than 2 solutions remain after category-pack exclusions")
 
     comparison = build_comparison_json(features, need)
     comp_dir = out_dir / "comparison"
