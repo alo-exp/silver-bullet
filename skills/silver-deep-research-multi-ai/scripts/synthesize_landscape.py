@@ -67,53 +67,12 @@ SECTION_TITLES = [
 ]
 
 # Legacy catalogs retained for fallback when no category pack is active.
-COMMERCIAL_CATALOG: list[dict[str, str]] = [
-    {"slug": "factory-ai", "name": "Factory.ai", "url": "https://www.factory.ai/"},
-    {"slug": "devin", "name": "Devin (Cognition)", "url": "https://devin.ai/"},
-    {"slug": "github-copilot-workspace", "name": "GitHub Copilot Workspace", "url": "https://githubnext.com/projects/copilot-workspace"},
-    {"slug": "cursor-agents", "name": "Cursor Background Agents", "url": "https://cursor.com/docs/background-agent"},
-    {"slug": "sweep-ai", "name": "Sweep", "url": "https://sweep.dev/"},
-    {"slug": "tembo", "name": "Tembo", "url": "https://tembo.io/"},
-    {"slug": "replit-agent", "name": "Replit Agent", "url": "https://replit.com/"},
-    {"slug": "windsurf", "name": "Windsurf (Codeium)", "url": "https://codeium.com/windsurf"},
-    {"slug": "tabnine-enterprise", "name": "Tabnine Enterprise", "url": "https://www.tabnine.com/"},
-    {"slug": "amazon-q-developer", "name": "Amazon Q Developer", "url": "https://aws.amazon.com/q/developer/"},
-    {"slug": "sourcegraph-cody", "name": "Sourcegraph Cody", "url": "https://sourcegraph.com/cody"},
-    {"slug": "augment-code", "name": "Augment Code", "url": "https://www.augmentcode.com/"},
-    {"slug": "poolside", "name": "Poolside", "url": "https://poolside.ai/"},
-    {"slug": "coderabbit", "name": "CodeRabbit", "url": "https://coderabbit.ai/"},
-    {"slug": "jetbrains-ai", "name": "JetBrains AI Assistant", "url": "https://www.jetbrains.com/ai/"},
-    {"slug": "github-copilot-enterprise", "name": "GitHub Copilot Enterprise", "url": "https://github.com/features/copilot"},
-    {"slug": "cognition-scout", "name": "Cognition Scout", "url": "https://cognition.ai/"},
-    {"slug": "linear-agent", "name": "Linear Agent Integrations", "url": "https://linear.app/"},
-]
-
-# OSS / emerging catalog. Intentionally empty: no vendor is built in; a category pack
-# supplies the seeds (and their licences) for the market being researched.
+# No vendor catalogue is built in: the vendors of a run come from the category pack seeds
+# (commercial/open-source split by seed licence) or from what the models named. Chart axis
+# profiles live in the pack overlay ("market_chart_profiles").
+COMMERCIAL_CATALOG: list[dict[str, str]] = []
 EMERGING_CATALOG: list[dict[str, str]] = []
-
-OSS_CATALOG: list[dict[str, str]] = [
-    {"slug": "openhands", "name": "OpenHands", "license": "MIT", "url": "https://github.com/All-Hands-AI/OpenHands"},
-    {"slug": "langgraph-platform", "name": "LangGraph Platform", "license": "Open Core", "url": "https://www.langchain.com/langgraph"},
-    {"slug": "crewai", "name": "CrewAI", "license": "MIT", "url": "https://github.com/crewAIInc/crewAI"},
-    {"slug": "metagpt", "name": "MetaGPT", "license": "MIT", "url": "https://github.com/FoundationAgents/MetaGPT"},
-    {"slug": "spec-kit", "name": "GitHub spec-kit", "license": "MIT", "url": "https://github.com/github/spec-kit"},
-    {"slug": "cline", "name": "Cline", "license": "Apache 2.0", "url": "https://github.com/cline/cline"},
-    {"slug": "continue", "name": "Continue", "license": "Apache 2.0", "url": "https://github.com/continuedev/continue"},
-    {"slug": "autogen", "name": "Microsoft AutoGen", "license": "MIT", "url": "https://github.com/microsoft/autogen"},
-    {"slug": "gsd", "name": "GSD (Get Shit Done)", "license": "MIT", "url": "https://github.com/gsd-build/get-shit-done"},
-    {"slug": "bmad-method", "name": "BMAD-METHOD", "license": "MIT", "url": "https://github.com/bmad-code-org/BMAD-METHOD"},
-    {"slug": "aider", "name": "Aider", "license": "Apache 2.0", "url": "https://github.com/paul-gauthier/aider"},
-    {"slug": "swe-agent", "name": "SWE-agent", "license": "MIT", "url": "https://github.com/SWE-agent/SWE-agent"},
-    {"slug": "semantic-kernel", "name": "Semantic Kernel", "license": "MIT", "url": "https://github.com/microsoft/semantic-kernel"},
-    {"slug": "gpt-engineer", "name": "GPT-Engineer", "license": "MIT", "url": "https://github.com/gpt-engineer-org/gpt-engineer"},
-    {"slug": "praisonai", "name": "PraisonAI", "license": "MIT", "url": "https://github.com/MervinPraison/PraisonAI"},
-    {"slug": "superagent", "name": "Superagent", "license": "MIT", "url": "https://github.com/homanp/superagent"},
-    {"slug": "agentgpt", "name": "AgentGPT", "license": "GPL-3.0", "url": "https://github.com/reworkd/AgentGPT"},
-    {"slug": "langchain", "name": "LangChain", "license": "MIT", "url": "https://github.com/langchain-ai/langchain"},
-    {"slug": "open-interpreter", "name": "Open Interpreter", "license": "AGPL-3.0", "url": "https://github.com/OpenInterpreter/open-interpreter"},
-    {"slug": "devika", "name": "Devika", "license": "MIT", "url": "https://github.com/stitionai/devika"},
-]
+OSS_CATALOG: list[dict[str, str]] = []
 
 
 def _comparison_rankings_markdown(comparison: dict[str, Any]) -> str:
@@ -1727,86 +1686,29 @@ def build_vendor_buckets(
     }
 
 
-# Per-market chart axis profiles — markets must not reuse identical score geometry.
-_MARKET_CHART_PROFILES: dict[str, dict[str, Any]] = {
-    "apo": {
-        "mq_x_feats": ("Workflow composition", "Atomic flow catalog", "Hook-enforced gates"),
-        "mq_y_feats": ("Parent/child delegation", "Managed hosting", "Prebuilt SDLC templates"),
-        "gmq_x_feats": (
-            "Workflow composition",
-            "Atomic flow catalog",
-            "Prebuilt SDLC templates",
-            "Free tier / OSS core",
-        ),
-        "gmq_y_feats": (
-            "Parent/child delegation",
-            "Managed hosting",
-            "CI integration",
-            "Hook-enforced gates",
-            "IDE-native integration",
-        ),
-        "mq_base": (3.0, 3.0),
-        "mq_feat_w": (2.2, 2.0),
-        "mq_score_div": (15.0, 18.0),
-        "gmq_base": (2.5, 2.5),
-        "gmq_feat_w": (1.6, 1.35),
-        "gmq_score_div": (12.0, 14.0),
-    },
-    "sdlc-plugins": {
-        # Y must differentiate OSS packs — do NOT use universal OSS/IDE/hooks axes
-        # (those clamp every plugin to Leaders y=9.5). Prefer rare capabilities.
-        "mq_x_feats": ("Workflow composition", "Prebuilt SDLC templates", "Hook-enforced gates"),
-        "mq_y_feats": ("Atomic flow catalog", "Parent/child delegation", "Managed hosting"),
-        "gmq_x_feats": (
-            "Prebuilt SDLC templates",
-            "Atomic flow catalog",
-            "Free tier / OSS core",
-            "Skill/plugin marketplace",
-        ),
-        "gmq_y_feats": (
-            "Parent/child delegation",
-            "Atomic flow catalog",
-            "Managed hosting",
-            "Quick onboarding",
-        ),
-        "mq_base": (3.4, 2.4),
-        "mq_feat_w": (1.55, 1.9),
-        "mq_score_div": (14.0, 12.0),
-        "gmq_base": (2.8, 2.3),
-        "gmq_feat_w": (1.45, 1.5),
-        "gmq_score_div": (13.0, 15.0),
-    },
-    "agentic-sdlc-saas": {
-        "mq_x_feats": ("Workflow composition", "Managed hosting", "Parent/child delegation"),
-        "mq_y_feats": ("Hook-enforced gates", "CI integration", "IDE-native integration"),
-        "gmq_x_feats": (
-            "Managed hosting",
-            "Workflow composition",
-            "Parent/child delegation",
-            "Prebuilt SDLC templates",
-        ),
-        "gmq_y_feats": (
-            "CI integration",
-            "Hook-enforced gates",
-            "IDE-native integration",
-            "Automated review loops",
-            "Zero-infra bootstrap",
-        ),
-        "mq_base": (3.3, 2.8),
-        "mq_feat_w": (2.05, 2.15),
-        "mq_score_div": (14.0, 16.5),
-        "gmq_base": (2.2, 2.9),
-        "gmq_feat_w": (1.7, 1.25),
-        "gmq_score_div": (11.5, 13.5),
-    },
+# Chart axis profile used when the category pack supplies none: no feature axes, so a vendor's
+# position follows its ranking score only.
+_NEUTRAL_CHART_PROFILE: dict[str, Any] = {
+    "mq_x_feats": (),
+    "mq_y_feats": (),
+    "gmq_x_feats": (),
+    "gmq_y_feats": (),
+    "mq_base": (3.0, 3.0),
+    "mq_feat_w": (2.2, 2.0),
+    "mq_score_div": (15.0, 18.0),
+    "gmq_base": (2.5, 2.5),
+    "gmq_feat_w": (1.6, 1.35),
+    "gmq_score_div": (12.0, 14.0),
 }
 
 
-def _market_chart_profile(market_id: str | None) -> dict[str, Any]:
-    mid = str(market_id or "apo")
-    if mid in _MARKET_CHART_PROFILES:
-        return dict(_MARKET_CHART_PROFILES[mid])
-    return dict(_MARKET_CHART_PROFILES["apo"])
+def _market_chart_profile(market_id: str | None, pack: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Per-market chart axes from the pack overlay ("market_chart_profiles"), else neutral."""
+    profiles = pack_overlay(pack).get("market_chart_profiles") or {}
+    raw = profiles.get(str(market_id or "")) or profiles.get("default")
+    if not isinstance(raw, dict):
+        return dict(_NEUTRAL_CHART_PROFILE)
+    return {key: tuple(value) if isinstance(value, list) else value for key, value in raw.items()}
 
 
 def _clamp_chart_xy(x: float, y: float) -> tuple[float, float]:
@@ -2021,7 +1923,7 @@ def build_chart_data(
     mq_data = []
     gmq_data = []
     wave_data = []
-    profile = _market_chart_profile(market_id)
+    profile = _market_chart_profile(market_id, pack or resolve_pack_from_need(need))
     mq_x_feats = tuple(profile["mq_x_feats"])
     mq_y_feats = tuple(profile["mq_y_feats"])
     gmq_x_feats = tuple(profile["gmq_x_feats"])
@@ -2697,7 +2599,7 @@ def _scoring_methodology_lines(
         )
         for market in get_markets(pack):
             mid = str(market.get("id") or "")
-            profile = _market_chart_profile(mid)
+            profile = _market_chart_profile(mid, pack)
             display = str(market.get("display_name") or mid)
             bx, by = profile["mq_base"]
             wx, wy = profile["mq_feat_w"]

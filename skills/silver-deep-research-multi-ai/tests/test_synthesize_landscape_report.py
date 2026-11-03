@@ -140,6 +140,10 @@ class MethodologyAndGuidanceTests(unittest.TestCase):
         self.assertNotIn("P8", g(audit=many, pack=pack))
 
 
+from legacy_catalog_fixture import with_legacy_catalogs  # noqa: E402
+
+
+@with_legacy_catalogs
 class ReportTests(TmpCase):
     ENV = [{"phase_id": "DR-RETRIEVE", "logical_model_id": "gemini-x", "payload": {"evidence": [
         {"claim": "Silver Bullet provides process orchestration above coding agents."}]}},

@@ -108,6 +108,10 @@ class OverviewQualityTests(unittest.TestCase):
         self.assertNotIn("participates in the agentic", scr)
 
 
+from legacy_catalog_fixture import with_legacy_catalogs  # noqa: E402
+
+
+@with_legacy_catalogs
 class ChartBuilderTests(unittest.TestCase):
     def test_mq_and_gmq_are_distinct(self) -> None:
         comparison = {
