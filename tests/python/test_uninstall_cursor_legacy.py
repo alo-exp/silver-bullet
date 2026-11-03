@@ -125,6 +125,15 @@ class McpTest(Base):
         self.assertIn("'graphify' does not point into", err)
         self.assertTrue(Path(str(path) + ".sb-backup").is_file())
 
+    def test_nothing_owned_leaves_the_file_untouched(self):
+        path = self.write_json("mcp.json", {"mcpServers": {"graphify": {"command": "graphify"}, "mine": {"command": "x"}}})
+        before = path.read_text()
+        code, _, err = self.clean()
+        self.assertEqual(code, 0)
+        self.assertEqual(path.read_text(), before)
+        self.assertFalse(Path(str(path) + ".sb-backup").exists())
+        self.assertIn("'graphify' does not point into", err)
+
     def test_other_shapes_are_ignored(self):
         self.write_json("mcp.json", {"mcpServers": []})
         self.assertEqual(self.clean()[0], 0)
