@@ -133,7 +133,7 @@ try:
         doc.set_value(tuple(args[:-2]), args[-2], literal)
     write_toml(config_path, doc)
 except ConfigError as exc:
-    sys.exit(f"ERROR: {exc}")
+    sys.exit(f"ERROR: {exc}. Fix or move that file aside (a table declared twice: delete one copy), then run install-codex.sh again.")
 PY
 }
 

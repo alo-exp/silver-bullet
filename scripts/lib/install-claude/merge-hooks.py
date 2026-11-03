@@ -46,13 +46,18 @@ PLACEHOLDER = "${CLAUDE_PLUGIN_ROOT}"
 OTHER_HOST_RE = re.compile(r"/\.(?:codex|cursor)(?:/|$)")
 
 
-def stable_install_path(raw_install_path: str) -> str:
-    """Normalize versioned plugin cache paths to a stable alias."""
+def alias_path_of(raw_install_path: str) -> str:
+    """The stable ``.../silver-bullet/current`` alias of a versioned cache path (a string only)."""
     match = re.match(r"^(.*?/silver-bullet)/(\d+\.\d+\.\d+)$", raw_install_path)
-    if not match:
+    return match.group(1) + "/current" if match else raw_install_path
+
+
+def stable_install_path(raw_install_path: str) -> str:
+    """Normalize versioned plugin cache paths to a stable alias (creates the symlink)."""
+    if alias_path_of(raw_install_path) == raw_install_path:
         return raw_install_path
     versioned_path = pathlib.Path(raw_install_path)
-    alias_path = pathlib.Path(match.group(1)) / "current"
+    alias_path = pathlib.Path(alias_path_of(raw_install_path))
     try:
         alias_path.parent.mkdir(parents=True, exist_ok=True)
         if alias_path.exists() or alias_path.is_symlink():
@@ -110,9 +115,10 @@ def merge(raw_install_path: str) -> str:
             raise ConfigError(f"{manifest_path}: {event} must be a JSON array; nothing merged")
 
     delivered = plugin_delivered(config_dir)
+    # A plugin install is never touched: its alias is only a string for ownership matching.
     install_path = raw_install_path if delivered else stable_install_path(raw_install_path)
     names = sb_hook_names(pathlib.Path(raw_install_path) / "hooks", LIB_DIR.parents[1] / "hooks")
-    roots = (install_path, stable_install_path(raw_install_path), raw_install_path, os.path.realpath(raw_install_path))
+    roots = (install_path, alias_path_of(raw_install_path), raw_install_path, os.path.realpath(raw_install_path))
 
     settings = read_json(settings_path, default={})
     existing = json_member(settings, "hooks", dict, str(settings_path))

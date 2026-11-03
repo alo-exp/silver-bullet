@@ -64,3 +64,6 @@ node_modules/
 graphify-out/.graphify_*
 graphify-out/graph.html
 graphify-out/.graph.html.stale
+
+# agentmemory snapshot store (was an orphan gitlink with no .gitmodules entry)
+/.agentmemory/snapshots/

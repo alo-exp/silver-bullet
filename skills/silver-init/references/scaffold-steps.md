@@ -259,9 +259,9 @@ EOF
 
 If the commit fails due to a pre-commit hook, read the error, fix the issue, re-stage, and create a new commit (do NOT use `--amend`).
 
-### 3.7.5 Register SB hooks in the host settings file (manual installs only)
+### 3.7.5 Remove duplicate SB hook copies from the host settings file
 
-On Claude Code an installed plugin delivers `hooks/hooks.json` itself, so a copy in the user's settings would run every hook twice. This step therefore removes Silver Bullet's own settings copies when the plugin is installed, and registers the hooks in the user's global settings file only for manual installs (workspace clones, installs without the marketplace). On Codex and Cursor the step changes nothing. Target the active host hooks manifest path (see `docs/RUNTIME-COMPATIBILITY.md`).
+On Claude Code an installed plugin delivers `hooks/hooks.json` itself, so a copy of those hooks in the user's settings would run every hook twice. When the plugin is registered, this step removes Silver Bullet's own copies from the settings file (an earlier `/sb:init` or a manual install may have left them) and adds nothing. The step resolves the install path from the plugin registry, so on a machine without a registry entry it is skipped. A manual install (a workspace clone without the marketplace) is registered by running `python3 <checkout>/scripts/lib/install-claude/merge-hooks.py <checkout>` directly, outside `/sb:init`. On Codex and Cursor the step changes nothing. Target the active host hooks manifest path (see `docs/RUNTIME-COMPATIBILITY.md`).
 
 **Resolve the plugin install path:**
 
@@ -311,8 +311,8 @@ fi
 
 `scripts/lib/install-<runtime>/merge-hooks.py` behaves by install type:
 
-- **Plugin installed** (Claude Code registry lists silver-bullet): removes the settings copies Silver Bullet owns and adds nothing; a settings file with nothing to remove is not created, rewritten or backed up.
-- **Manual install**: removes stale Silver Bullet registrations, then registers every (event, matcher, command) of the manifest with the plugin install path substituted, each matcher in its own group.
+- **Plugin registered** (what `/sb:init` always sees here): removes the settings copies Silver Bullet owns and adds nothing. When there is nothing to remove, the settings file is not created, rewritten or backed up, and the plugin cache is not touched.
+- **Manual install** (run directly): removes stale Silver Bullet registrations, then registers every (event, matcher, command) of the manifest with the install path substituted, each matcher in its own group.
 
 Only Silver Bullet's own entries are ever touched; the user's hooks stay as they are. The file is written atomically with a `.sb-backup` of the previous content. On nonzero exit, warn but do NOT stop init:
 > ⚠️  Could not auto-register hooks in the host settings file. Run `/sb:init` again after installation completes, or add hooks manually from `hooks/hooks.json`.
