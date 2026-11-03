@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Tests for hooks/graphify-gate.sh and hooks/lib/graphify-gate.sh
 set -euo pipefail
+# The opt-in gates act only on the user's own consent, never on .silver-bullet.json alone.
+# shellcheck source=../lib/consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/consent-helpers.sh"
+sb_test_consent_grant_all
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
@@ -169,11 +173,11 @@ out="$(run_edit)"
 assert_allow "enabled_by_user false bypasses gate" "$out"
 
 setup
-write_cfg null true
+write_cfg true true
 install_mock_graphify
 touch "${TMPDIR_TEST}/graphify-out/graph.json"
-out="$(run_edit)"
-assert_allow "consent pending bypasses gate" "$out"
+out="$(XDG_CONFIG_HOME="${TMPDIR_TEST}/no-consent" run_edit)"
+assert_allow "project recommendation without user consent bypasses gate (consent pending)" "$out"
 
 setup
 write_cfg true true true
@@ -274,11 +278,11 @@ fi
 assert_contains "core-rules layer 13" "$(cat "$REPO_ROOT/hooks/core-rules.md")" "Graphify retrieval gate"
 assert_contains "core-rules opt-in" "$(cat "$REPO_ROOT/hooks/core-rules.md")" "enabled_by_user"
 
-if grep -q 'command -v jq' "$GATE_HOOK"; then
-  echo "  PASS: jq guard present in graphify-gate.sh"
+if grep -q 'command -v jq' "$REPO_ROOT/hooks/lib/opt-in-gate.sh"; then
+  echo "  PASS: jq guard present in the shared opt-in prelude"
   PASS=$((PASS + 1))
 else
-  echo "  FAIL: jq guard missing in graphify-gate.sh"
+  echo "  FAIL: jq guard missing in the shared opt-in prelude"
   FAIL=$((FAIL + 1))
 fi
 

@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Tests for hooks/record-agentmemory-usage.sh
 set -euo pipefail
+# The opt-in gates act only on the user's own consent, never on .silver-bullet.json alone.
+# shellcheck source=../lib/consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/consent-helpers.sh"
+sb_test_consent_grant_all
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
@@ -108,7 +112,8 @@ else
   fail "enabled_by_user false skips recording"
 fi
 
-# #276: MCP CallMcpTool / memory_* clears the gate
+# #276: an MCP retrieval clears the gate (recorded by record-recommended-mcp.sh)
+RECORD_HOOK="$REPO_ROOT/hooks/record-recommended-mcp.sh"
 setup
 run_mcp_hook() {
   local input

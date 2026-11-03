@@ -5,7 +5,7 @@ Silver Bullet uses Graphify as the **mandatory** local retrieval layer before pl
 ## Opt-In Policy
 
 Graphify is a **recommended tool**, not a hard prerequisite like `jq`. SB asks for explicit
-permission at `/sb:init` and session start. Consent is stored in `.silver-bullet.json`:
+permission at `/sb:init` and session start. Your consent is recorded per user, outside the repository (`scripts/sb-consent.sh`; see [CONSENT.md](CONSENT.md)). `.silver-bullet.json` can only recommend the tool or turn it off:
 
 ```json
 "recommended_tools": {
@@ -21,9 +21,9 @@ permission at `/sb:init` and session start. Consent is stored in `.silver-bullet
 
 | `enabled_by_user` | Behavior |
 |-----------------|----------|
-| `null` | Consent pending — SB prompts at init, update, and session start; no hook enforcement |
-| `true` | Mandatory — hooks block substantive edits until index + fresh query |
-| `false` | Opted out — advisory/docs fallback only |
+| `null` | No project preference — you are asked at init, update and session start; no hook enforcement until you grant consent |
+| `true` | The project recommends the tool — a one-time notice is shown; hooks enforce only after you grant consent (`sb-consent.sh grant <tool> --project .`) |
+| `false` | The project turns the tool off — no enforcement, whatever you granted |
 
 **Install failure after opt-in:** when the user opts in but CLI install or index build fails,
 SB sets `enforcement_suspended: true` and `install_status: "failed"` (with `install_failure_reason`).

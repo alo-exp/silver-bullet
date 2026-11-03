@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Behavior tests for hooks/alumnium-gate.sh (PreToolUse). npx/npm are stubs.
 set -euo pipefail
+# The opt-in gates act only on the user's own consent, never on .silver-bullet.json alone.
+# shellcheck source=../lib/consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/consent-helpers.sh"
+sb_test_consent_grant_all
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init claude
 unset SB_ALUMNIUM_MCP_ARTIFACT SB_AGENT_CERT_RUN SB_KAY_HOOK_BRIDGE_INVOKED
@@ -17,27 +21,39 @@ npx_none() { rm -f "$TL_BIN/npx" "$TL_BIN/npm"; hash -r; }
 
 gh_scenario_block() { base_cfg; npx_none; rm -f "$ART"; }
 
-gh_prelude_suite "$HOOK" alumnium-gate alumnium "$GH_PROJ/.silver-bullet/state" "npm test" "$BROWSER_EDIT" "ALUMNIUM REQUIRED"
+gh_prelude_suite "$HOOK" alumnium-gate alumnium "$GH_PROJ/.silver-bullet/state" "npm test" "$BROWSER_EDIT" "ALUMNIUM REQUIRED" "sed -i s/a/b/ e2e/login.spec.ts"
 
 gh_scenario_block
 # edits that are not browser/visual-testing artifacts are never gated
 gh_run "$HOOK" "$(gh_edit_input "$GH_PROJ/src/app.js")"
 assert_gate_allows "non-browser edit allows"
 # browser/visual artifacts are gated
-for p in "$GH_PROJ/e2e/a.ts" "$GH_PROJ/playwright/a.js" "$GH_PROJ/src/Panel.canvas.tsx" "$GH_PROJ/tests/login.spec.js" "$GH_PROJ/docs/screenshots/a.png"; do
+for p in "$GH_PROJ/e2e/a.ts" "$GH_PROJ/playwright/a.js" "$GH_PROJ/src/Panel.canvas.tsx" "$GH_PROJ/tests/login.cy.js" "$GH_PROJ/docs/screenshots/a.png"; do
   gh_run "$HOOK" "$(gh_edit_input "$p")"
   assert_gate_denies "browser artifact is gated: ${p#"$GH_PROJ"/}" "ALUMNIUM REQUIRED"
 done
+# generic unit tests named *.spec.* are not browser tests
+gh_run "$HOOK" "$(gh_edit_input "$GH_PROJ/tests/unit.spec.js")"
+assert_gate_allows "unit spec edit is not browser work"
+# shell: commits and ordinary writes are out of scope; browser tooling and browser-test writes are gated
+gh_run "$HOOK" "$(gh_bash_input "git commit -m x")"
+assert_gate_allows "commit is not browser work"
+gh_run "$HOOK" "$(gh_bash_input "sed -i s/a/b/ src/app.js")"
+assert_gate_allows "ordinary in-place sed is not browser work"
+gh_run "$HOOK" "$(gh_bash_input "npx playwright test")"
+assert_gate_denies "playwright run is gated" "ALUMNIUM REQUIRED"
+gh_run "$HOOK" "$(gh_bash_input "git status")"
+assert_gate_allows "read-only command is never gated"
 # exempt paths are allowed even when they look like browser artifacts
 gh_run "$HOOK" "$(gh_edit_input "$GH_PROJ/e2e/silver-bullet.md")"
 assert_gate_allows "silver-bullet.md under e2e is exempt"
 gh_run "$HOOK" "$(gh_edit_input "$GH_PROJ/e2e/.silver-bullet/x.spec.ts")"
 assert_gate_allows "state dir under e2e is exempt"
 
-# npx reachable but the npm registry lookup fails -> still not wired
+# npx reachable: the npm registry is never queried (offline work must not be blocked or slowed)
 npx_ok
 gh_run "$HOOK" "$(gh_edit_input "$BROWSER_EDIT")" NPM_RC=1
-assert_gate_denies "npm view failure counts as unavailable" "ALUMNIUM REQUIRED"
+assert_gate_denies "an unreachable registry is irrelevant; the missing wiring is reported" "MCP server not wired"
 # npx available, MCP artifact missing
 gh_run "$HOOK" "$(gh_edit_input "$BROWSER_EDIT")"
 assert_gate_denies "mcp artifact missing is denied" "ALUMNIUM REQUIRED"

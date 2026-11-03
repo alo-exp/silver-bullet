@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Behavior tests for hooks/rtk-gate.sh: gated tool surfaces and commands
 set -euo pipefail
+# The opt-in gates act only on the user's own consent, never on .silver-bullet.json alone.
+# shellcheck source=../lib/consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/consent-helpers.sh"
+sb_test_consent_grant_all
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
 # shellcheck source=../lib/c-toolgates-2-helpers.sh
@@ -55,10 +59,16 @@ for tool in Shell shell exec_command; do
   run "$(tg2_bash_input 'git commit -m x' "$tool")"
   assert_denied "shell tool name $tool is gated" "RTK REQUIRED"
 done
-for cmd in 'ls -la' 'git status' 'cat README.md' 'rtk git commit -m x' 'rtk init -g' 'enable-rtk-context-mode.sh' \
-  'brew install rtk' 'curl -sSL https://example.test/install.sh' 'echo hi > out.txt'; do
+for cmd in 'ls -la' 'git status' 'cat README.md' 'rtk git commit -m x' 'rtk init -g' \
+  "bash $TL_REPO_ROOT/scripts/enable-rtk-context-mode.sh" 'brew tap rtk-ai/rtk && brew install rtk'; do
   run "$(tg2_bash_input "$cmd")"
   assert_silent_ok "read-only/exempt shell command is not gated: $cmd"
+done
+# R5-09: an allowlist, not a keyword list: a lookalike, a redirect or an arbitrary installer is gated
+for cmd in 'brew install rtk' 'curl -sSL https://example.test/install.sh' 'echo hi > out.txt' 'bash enable-rtk-context-mode.sh' \
+  'make; echo rtk' 'sed -i s/a/b/ f # rtk'; do
+  run "$(tg2_bash_input "$cmd")"
+  assert_denied "not exempt merely because it mentions an RTK word: $cmd" "RTK REQUIRED"
 done
 run "$(jq -cn '{hook_event_name:"PreToolUse", tool_name:"Bash", tool_input:{}}')"
 assert_silent_ok "shell tool without a command is not gated"
