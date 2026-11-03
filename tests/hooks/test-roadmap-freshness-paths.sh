@@ -85,6 +85,13 @@ rm -f "$EC_PROJ/.planning/ROADMAP.md"
 run_rf "$EC_PROJ" "$HOOK" "$(cmd "git commit -m x")"
 assert_eq "no ROADMAP.md: nothing to check" "" "$TL_OUT"
 
+# a repository without any commit: `commit -a` has no HEAD to diff against
+EMPTY="$TL_TMP/emptyrepo"; mkdir -p "$EMPTY"; git -C "$EMPTY" init -q -b main
+printf '{"sb_initiated":true}\n' >"$EMPTY/.silver-bullet.json"; printf '# SB\n' >"$EMPTY/silver-bullet.md"
+mkdir -p "$EMPTY/.planning"; printf -- '- [ ] **Phase 1: A**\n' >"$EMPTY/.planning/ROADMAP.md"
+run_rf "$EMPTY" "$HOOK" "$(cmd "git commit -a -m x")"
+assert_eq "commit -a in a repository without commits: nothing to diff, nothing flagged" "" "$TL_OUT"
+
 # python3 missing / unparsable command: completion-audit's commit gate owns those
 run_rf "$EC_PROJ" "$HOOK" "$(cmd "git commit -m 'unterminated")"
 assert_eq "an unparsable command is left to the commit gate" "" "$TL_OUT"

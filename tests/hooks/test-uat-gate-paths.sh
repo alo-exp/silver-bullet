@@ -105,7 +105,11 @@ dg_run "$P" "$H" "$(cmd "$AD invoke-skill sb:release")" PATH="$(tl_path_without 
 assert_contains "no python3: invoke-skill fails closed with the fix" "$TL_OUT" "python3"
 dg_run "$P" "$H" "$(cmd "git status")" PATH="$(tl_path_without python3)"
 assert_eq "no python3: a read-only command gets no message" "" "$TL_OUT"
-mkdir -p "$P/sub"
+mkdir -p "$P/sub" "$TL_TMP/elsewhere"
+printf '%s\n' "$P" >"$SB_RUNTIME_STATE_DIR/project-root"
+dg_run "$TL_TMP/elsewhere" "$H" "$(skill sb:release)"
+assert_contains "no project on the walk (root cache only): UAT.md is expected under the cwd" "$TL_OUT" "UAT.md not found"
+rm -f "$SB_RUNTIME_STATE_DIR/project-root"
 dg_run "$P/sub" "$H" "$(skill sb:release)"
 assert_contains "UAT.md is looked up at the project root, not the cwd" "$TL_OUT" "UAT.md not found"
 

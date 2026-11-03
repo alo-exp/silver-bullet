@@ -141,6 +141,27 @@ dg_run "$P" "$H" "$(bash_json 'rm -rf build')"
 assert_eq "deleting something else is not a clear" "" "$TL_OUT"
 dg_run "$P" "$H" "$(bash_json 'ls .planning/phases')"
 assert_eq "listing the phases is not a clear" "" "$TL_OUT"
+# a write that is not a delete is not a clear
+fresh
+dg_run "$P" "$H" "$(bash_json 'echo x > notes.txt')"
+assert_eq "an ordinary write is not a clear" "" "$TL_OUT"
+assert_file_absent "an ordinary write archives nothing" "$P/.planning/archive"
+# an earlier snapshot already holds an identical phase
+fresh
+dg_run "$P" "$H" "$(bash_json "$CLEAR")"
+echo changed >"$P/.planning/phases/001-a/PLAN.md"
+dg_run "$P" "$H" "$(bash_json "$CLEAR")"
+assert_contains "the changed phase went to a snapshot" "$TL_OUT" "snapshot-"
+dg_run "$P" "$H" "$(bash_json "$CLEAR")"
+assert_contains "identical phases are found in the snapshot too" "$TL_OUT" "already preserved"
+# files only under phases/, with an archive already present
+fresh
+dg_run "$P" "$H" "$(bash_json "$CLEAR")"
+rm -rf "$P/.planning/phases"; mkdir -p "$P/.planning/phases"; echo f >"$P/.planning/phases/notes.txt"
+dg_run "$P" "$H" "$(bash_json "$CLEAR")"
+assert_contains "files only plus an archive: nothing new to copy" "$TL_OUT" "already preserved"
+fresh
+
 # python3 missing / unparsable command
 dg_run "$P" "$H" "$(bash_json "$CLEAR")" PATH="$(tl_path_without python3)"
 assert_eq "no python3: deny" deny "$(jq -r .hookSpecificOutput.permissionDecision <<<"$TL_OUT")"

@@ -116,6 +116,15 @@ dg_run "$P/sub/dir" "$H" "$(skill_json PreToolUse sb:plan)"
 assert_eq "a root SPEC satisfies the floor from a subdirectory" "" "$TL_OUT"
 rm -f "$P/.planning/SPEC.md"
 
+dg_run "$P" "$H" 'not json {'
+assert_eq "an invalid payload is ignored" "" "$TL_OUT"
+# cwd outside the project, project known through the root cache: the SPEC is looked up in the cwd
+mkdir -p "$TL_TMP/elsewhere"
+printf '%s\n' "$P" >"$SB_RUNTIME_STATE_DIR/project-root"
+dg_run "$TL_TMP/elsewhere" "$H" "$(skill_json PreToolUse sb:plan)"
+assert_contains "no project on the walk: the SPEC is expected under the cwd" "$TL_OUT" "SPEC FLOOR VIOLATION"
+rm -f "$SB_RUNTIME_STATE_DIR/project-root"
+
 # --- hooks.json contract: every skill-invocation channel reaches the skill gates ------------
 for h in spec-floor-check forbidden-skill-check uat-gate; do
   for tool in Skill Bash exec_command; do
