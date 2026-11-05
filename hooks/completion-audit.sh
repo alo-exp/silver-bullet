@@ -3,11 +3,19 @@ set -euo pipefail
 trap 'exit 0' ERR
 
 # Read-only MCP tools (Gmail, Context7, file reads, searches...) cannot deliver: leave before sourcing the
-# libraries, which dominate the cost of a call. Payload is read here so the libraries see it later.
+# libraries, which dominate the cost of a call. The tool name is the top-level JSON field (never a text search of the
+# payload: a nested "tool_name" key in tool_input must not decide), and only a read-style suffix skips the gate.
 input=$(cat)
-_ca_prefilter_tool="$(printf '%s' "$input" | sed -n 's/.*"tool_name"[[:space:]]*:[[:space:]]*"\(mcp__[^"]*\)".*/\1/p' | head -1)"
-case "${_ca_prefilter_tool##*__}" in
-  get_* | list_* | search_* | read_* | query* | resolve* | fetch* | find* | describe* | whoami) exit 0 ;;
+_ca_prefilter_tool=""
+if command -v jq >/dev/null 2>&1; then
+  _ca_prefilter_tool="$(printf '%s' "$input" | jq -r '.tool_name // "" | if type == "string" then . else "" end' 2>/dev/null || true)"
+fi
+case "$_ca_prefilter_tool" in
+  mcp__*)
+    case "${_ca_prefilter_tool##*__}" in
+      get_* | list_* | search_* | read_* | query* | resolve* | fetch* | find* | describe* | whoami) exit 0 ;;
+    esac
+    ;;
 esac
 
 _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)"

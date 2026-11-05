@@ -197,32 +197,119 @@ ca_classify_command() {
   return 0
 }
 
-# ca_push_targets_default_branch: an analysed push updates the default branch (main, master, init.defaultBranch,
-# the remote's default), any tag, or mirrors/pushes everything. Each destination is resolved through git
-# before matching: HEAD and @ are the current branch, refs/heads/x is x, and a bare name that is a tag (and
-# not a branch) is a tag push (an explicit refs/tags/x already carries the analysis' `tags` flag). A bare `git push` counts when the current branch is a default branch.
-# Needs the analysis of the command (SB_SA_JSON).
-ca_push_targets_default_branch() {
-  local names="main master" ref cur dst
-  ref="$(git symbolic-ref -q --short refs/remotes/origin/HEAD 2>/dev/null || true)"
+# ca_default_branch_names DIR: the default-branch names of the repository at DIR (one line, space separated).
+ca_default_branch_names() {
+  local dir="$1" names="main master" ref
+  ref="$(git -C "$dir" symbolic-ref -q --short refs/remotes/origin/HEAD 2>/dev/null || true)"
   [[ -z "$ref" ]] || names="$names ${ref#origin/}"
-  names="$names $(git config --get init.defaultBranch 2>/dev/null || true)"
-  cur="$(git symbolic-ref -q --short HEAD 2>/dev/null || true)"
-  if printf '%s' "${SB_SA_JSON:-}" | jq -e '(.push // []) | any(.[]; (.tags // false) or (.mirror // false) or (.all // false))' >/dev/null 2>&1; then
-    return 0
+  names="$names $(git -C "$dir" config --get init.defaultBranch 2>/dev/null || true)"
+  printf '%s' "$names"
+}
+
+# _ca_branch_is_feature DIR NAME NAMES: NAME is an explicit, named, non-default branch (no glob, no
+# variable, not a tag name, not a ref outside refs/heads).
+_ca_branch_is_feature() {
+  local dir="$1" name="$2" names="$3"
+  name="${name#refs/heads/}"
+  case "$name" in
+    "" | *[\*\$\?\[\`\(\)\;\&\|\<\>]* | refs/* | HEAD | @ | -*) return 1 ;;
+  esac
+  [[ " $names " != *" $name "* ]]
+}
+
+# ca_push_is_feature_only: ALLOWLIST. True only when the analysed command pushes, every push resolves every
+# destination to an explicit, named, non-default branch of ONE repository we can read, and nothing else about
+# the push is open (no tags, --all, --mirror, deletions, globs, variables, aliases, GIT_DIR, directories we
+# cannot resolve). Anything else is final delivery (R1-22). Uses SB_SA_JSON (the shell analysis) and git:
+# `git -C DIR` and `cd DIR` targets are resolved to the repository they name.
+ca_push_is_feature_only() {
+  local json="${SB_SA_JSON:-}" sub bad cwd dirs d dir="" npush nsub entry names cur ref src dst
+  [[ "${SB_TI_STATUS:-}" == "ok" && "${SB_SA_OPAQUE:-false}" != "true" && -z "${SB_SA_POSSIBLE_ACTIONS:-}" ]] || return 1
+  # environment that redirects git is not visible in argv: refuse the literal assignments
+  case "${cmd:-}${SB_TI_COMMAND:-}" in
+    *GIT_DIR* | *GIT_WORK_TREE* | *GIT_COMMON_DIR* | *GIT_NAMESPACE*) return 1 ;;
+  esac
+  npush="$(printf '%s' "$json" | jq -r '(.push // []) | length')"
+  [[ "$npush" -ge 1 ]] || return 1
+  printf '%s' "$json" | jq -e '(.push // []) | all(.[]; ((.tags // false) or (.all // false) or (.mirror // false) or (.delete // false)) | not)' >/dev/null || return 1
+  nsub=0
+  while IFS=$'\t' read -r sub bad cwd dirs; do
+    [[ "$sub" == "push" ]] || continue
+    [[ "$bad" == "false" ]] || return 1
+    nsub=$((nsub + 1))
+    d="$cwd"
+    while IFS= read -r entry; do
+      [[ -n "$entry" ]] || continue
+      case "$entry" in
+        /*) d="$entry" ;;
+        *) d="$d/$entry" ;;
+      esac
+    done < <(printf '%s\n' "$dirs" | tr '\037' '\n')
+    d="$(cd "$d" 2>/dev/null && pwd -P)" || return 1
+    git -C "$d" rev-parse --git-dir >/dev/null 2>&1 || return 1
+    [[ -z "$dir" || "$dir" == "$d" ]] || return 1
+    dir="$d"
+  done < <(printf '%s' "$json" | jq -r '
+    def parse($a): reduce range(1; ($a | length)) as $i ({skip: false, sub: "", dirs: [], bad: false};
+      if .sub != "" then .
+      elif .skip then .skip = false
+      elif $a[$i] == "-C" then .skip = true | .dirs += [$a[$i + 1] // ""]
+      elif $a[$i] == "-c" then .skip = true
+      elif ($a[$i] | test("^--(git-dir|work-tree|namespace|exec-path|super-prefix)")) then .bad = true
+      elif ($a[$i] | startswith("-")) then .
+      else .sub = $a[$i] end);
+    (.commands // [])[] | select((.program | split("/") | last) == "git") | . as $c | parse($c.argv)
+    | [.sub, (.bad | tostring), $c.cwd, (.dirs | join("\u001f"))] | @tsv')
+  # a push through an alias (or one we could not place) shows up as fewer `git push` commands than push entries
+  [[ "$nsub" -eq "$npush" ]] || return 1
+  names="$(ca_default_branch_names "$dir")"
+  cur="$(git -C "$dir" symbolic-ref -q --short HEAD 2>/dev/null || true)"
+  if printf '%s' "$json" | jq -e '(.push // []) | any(.[]; .default // false)' >/dev/null; then
+    _ca_branch_is_feature "$dir" "$cur" "$names" || return 1
   fi
-  if printf '%s' "${SB_SA_JSON:-}" | jq -e '(.push // []) | any(.[]; .default // false)' >/dev/null 2>&1; then
-    [[ " $names " == *" $cur "* ]] && return 0
-  fi
-  while IFS= read -r dst; do
+  while IFS= read -r ref; do
+    ref="${ref#+}"
+    case "$ref" in
+      *[\*\$\`\(\)]*) return 1 ;;
+    esac
+    src="${ref%%:*}"
+    dst="${ref##*:}"
+    [[ "$ref" == *:* ]] || src="$ref"
     case "$dst" in
       HEAD | @) dst="$cur" ;;
     esac
-    dst="${dst#refs/heads/}"
-    [[ -n "$dst" && " $names " == *" $dst "* ]] && return 0
-    if git show-ref --verify -q "refs/tags/$dst" 2>/dev/null && ! git show-ref --verify -q "refs/heads/$dst" 2>/dev/null; then
-      return 0
+    [[ -n "$src" && -n "$dst" ]] || return 1
+    # a bare destination must be an existing local branch (not a tag, not a new ref of unknown kind)
+    if [[ "$dst" != refs/heads/* ]]; then
+      git -C "$dir" show-ref --verify -q "refs/heads/$dst" 2>/dev/null || return 1
     fi
-  done < <(printf '%s' "${SB_SA_JSON:-}" | jq -r '(.push // [])[] | (.refspecs // [])[] | (sub("^\\+"; "") | split(":") | last)' 2>/dev/null)
-  return 1
+    _ca_branch_is_feature "$dir" "$dst" "$names" || return 1
+  done < <(printf '%s' "$json" | jq -r '(.push // [])[] | (.refspecs // [])[]')
+  return 0
+}
+
+# ca_mcp_write_is_feature_only PAYLOAD: an MCP write (push_files, create_or_update_file, delete_file, create_branch...)
+# is intermediate only when tool_input.branch names an explicit non-default branch; a missing branch means the
+# repository default, and tag/ref tools are never feature-only.
+ca_mcp_write_is_feature_only() {
+  local payload="$1" tool branch names
+  tool="$(printf '%s' "$payload" | jq -r '.tool_name // ""')"
+  case "${tool##*__}" in
+    create_tag | create_ref | update_ref | update_pull_request_branch) return 1 ;;
+  esac
+  branch="$(printf '%s' "$payload" | jq -r '(.tool_input // {}) | (.branch // "") | if type == "string" then . else "" end')"
+  names="$(ca_default_branch_names "$PWD")"
+  _ca_branch_is_feature "$PWD" "$branch" "$names"
+}
+
+# ca_push_targets_default_branch: the intermediate-tier command must be treated as final delivery (R1-22):
+# a shell push that is not provably a feature-branch push, or an MCP write that is not provably to a feature branch.
+ca_push_targets_default_branch() {
+  if [[ -n "${mcp_payload:-}" ]]; then
+    ! ca_mcp_write_is_feature_only "$mcp_payload"
+  elif sb_shell_analysis_has_action push; then
+    ! ca_push_is_feature_only
+  else
+    return 1
+  fi
 }

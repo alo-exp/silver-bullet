@@ -91,13 +91,27 @@ if [[ "$SB_TI_STATUS" == "ok" ]]; then
 else
   # the helper could not read the payload (python3 or the library is missing): fall back to the plain
   # verbs so unrelated commands are not held, while the common spellings stay covered
-  _ci_cmd=""
-  ! declare -f sb_tool_command_string >/dev/null 2>&1 || _ci_cmd="$(sb_tool_command_string "$input")"
+  case "$tool_name" in
+    mcp__* | CallMcpTool | MCP)
+      # no command text to read: only delivery-style MCP tools are held
+      case "${tool_name##*__}" in
+        create_pull_request* | merge_pull_request | create_release | enable_pr_auto_merge | actions_run_trigger | \
+          create_merge_request | accept_merge_request | push_files | create_or_update_file | delete_file | create_commit | \
+          update_pull_request_branch | create_branch | create_tag | create_ref | update_ref) ;;
+        *) exit 0 ;;
+      esac
+      _ci_cmd="git push"
+      ;;
+    *)
+      _ci_cmd=""
+      ;;
+  esac
+  [[ -n "$_ci_cmd" ]] || ! declare -f sb_tool_command_string >/dev/null 2>&1 || _ci_cmd="$(sb_tool_command_string "$input")"
   [[ -n "$_ci_cmd" ]] || _ci_cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // ""') || true
   if [[ "$hook_event" == "PreToolUse" ]]; then
-    grep -qE '\bgit push\b|\bgh pr (create|merge)\b|\bgh release create\b' <<<"$_ci_cmd" || exit 0
+    grep -qE '\bgit push\b|\bgh pr (create|new|merge)\b|\bgh release (create|new)\b' <<<"$_ci_cmd" || exit 0
   else
-    grep -qE '\bgit (commit|push)\b|\bgh pr (create|merge)\b|\bgh release create\b' <<<"$_ci_cmd" || exit 0
+    grep -qE '\bgit (commit|push)\b|\bgh pr (create|new|merge)\b|\bgh release (create|new)\b' <<<"$_ci_cmd" || exit 0
   fi
 fi
 

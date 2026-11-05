@@ -469,6 +469,7 @@ tl_stub python3 'exit 1'
 unapprove
 run_ca PreToolUse "npm test"
 assert_contains "helper failure: enterprise message blames the helper" "$(message)" "shell analysis helper failed"
+assert_not_contains "helper failure: the reason is not wrapped twice" "$(message)" "failed (the shell analysis helper failed"
 assert_not_contains "helper failure: no advice to rewrite a plain command" "$(message)" "Rewrite it as plain"
 approve
 run_ca PreToolUse "git diff HEAD~1"
@@ -499,5 +500,96 @@ assert_contains "a failure inside a tier function denies instead of exiting 1" "
 cp "$TL_TMP/gates.sh.bak" "$PLUGIN/hooks/lib/completion-audit/gates.sh"
 unapprove
 
+
+# ── review repair r3: pushes are an ALLOWLIST (explicit, named, existing, non-default branch) ──
+approve
+mkproj pushallow
+state inst-a
+git -C "$PROJ" checkout -q -b feat
+mkdir -p "$PROJ/sub"
+OTHER="$TL_TMP/otherrepo"; tl_git_repo "$OTHER"
+allow_push() { run_ca PreToolUse "$1"; assert_eq "feature push stays intermediate: $1" "allow" "$(decision)"; }
+deny_push() { run_ca PreToolUse "$1"; assert_eq "not provably a feature push, so final delivery: $1" "deny" "$(decision)"; }
+allow_push 'git push origin feat'
+allow_push 'git push -u origin HEAD'
+allow_push 'git push origin HEAD:refs/heads/feature/x'
+allow_push 'git push origin refs/heads/feat:refs/heads/feat'
+allow_push 'git push --force-with-lease origin feat'
+allow_push "cd $PROJ/sub && git push origin feat"
+allow_push "git -C $PROJ/sub push origin feat"
+deny_push 'git push origin :'
+deny_push 'git push origin :feat'
+deny_push 'git push origin refs/heads/*:refs/heads/*'
+deny_push 'git push origin *'
+deny_push 'git push --all'
+deny_push 'git push origin $B'
+deny_push 'git push origin $(git rev-parse --abbrev-ref HEAD)'
+deny_push 'git push origin newbranch'
+deny_push 'git push origin refs/tags/v1'
+deny_push 'git push origin HEAD:refs/for/main'
+deny_push 'git push --force-with-lease=main:abc origin main'
+deny_push "git -C $OTHER push origin feat"
+deny_push "cd $OTHER && git push origin feat"
+deny_push "cd $TL_TMP/no-such-dir && git push origin feat"
+deny_push "GIT_DIR=$OTHER/.git git push origin feat"
+deny_push "git --git-dir=$OTHER/.git push origin feat"
+deny_push 'git config alias.p push && git p origin feat'
+deny_push 'git push origin feat && git push origin main'
+deny_push 'git commit -m x && git push origin HEAD:main'
+git -C "$PROJ" checkout -q main
+deny_push 'git push -u origin HEAD'
+deny_push 'git push'
+git -C "$PROJ" checkout -q --detach
+deny_push 'git push origin HEAD'
+git -C "$PROJ" checkout -q feat
+# MCP writes: only an explicit non-default branch is intermediate
+state inst-a
+run_tool PreToolUse mcp__github__push_files '{"branch":"feat","files":[]}'
+assert_eq "MCP push_files to a feature branch: planning floor only" "allow" "$(decision)"
+run_tool PreToolUse mcp__github__create_or_update_file '{"branch":"feat","path":"a"}'
+assert_eq "MCP create_or_update_file to a feature branch: planning floor only" "allow" "$(decision)"
+run_tool PreToolUse mcp__github__create_branch '{"branch":"feat2"}'
+assert_eq "MCP create_branch of a feature branch: planning floor only" "allow" "$(decision)"
+for c in 'mcp__github__push_files|{"branch":"main","files":[]}' 'mcp__github__create_or_update_file|{"branch":"master"}' 'mcp__github__delete_file|{"branch":"main"}' 'mcp__github__push_files|{"files":[]}' 'mcp__github__push_files|{"branch":""}' 'mcp__github__push_files|{"branch":"refs/heads/*"}' 'mcp__github__push_files|{"branch":7}' 'mcp__github__create_tag|{"tag":"v1","branch":"feat"}' 'mcp__github__update_pull_request_branch|{"pullNumber":1}'; do
+  run_tool PreToolUse "${c%%|*}" "${c#*|}"
+  assert_eq "MCP write is final delivery: $c" "deny" "$(decision)"
+  assert_contains "MCP write reports the deploy gate: $c" "$(message)" "COMPLETION BLOCKED"
+done
+# the MCP prefilter reads the TOP-LEVEL tool_name only
+run_tool PreToolUse mcp__github__actions_run_trigger '{"method":"run_workflow","inputs":{"tool_name":"mcp__x__get_y"}}'
+assert_eq "a nested tool_name key cannot turn a deploy into a read" "deny" "$(decision)"
+tl_run_stdin '{ not json' bash -c 'cd "$1" && exec bash "$2"' _ "$PROJ" "$HOOK"
+assert_eq "an unparseable payload does not crash the prefilter" "0" "$TL_STATUS"
+unapprove
+
+# ── review repair r3: the cert switch needs HOME and the runtime home under a fixed temp root too ──
+for envs in "HOME=/home/u SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR=/tmp/x/.claude/.silver-bullet" "HOME= SB_RUNTIME_STATE_DIR=/tmp/x/.claude/.silver-bullet" "HOME=/tmp/h SB_RUNTIME_HOME_ROOT=/home/u/.claude SB_RUNTIME_STATE_DIR=/tmp/h/.claude/.silver-bullet"; do
+  tl_run env $envs SB_AGENT_CERT_RUN=1 bash -c 'source "$1"; sb_cert_run_bypass_active && echo yes || echo no' _ "$TL_REPO_ROOT/hooks/lib/cert-bypass.sh"
+  assert_eq "cert switch stays off: $envs" "no" "$TL_OUT"
+done
+tl_run env HOME=/tmp/h SB_RUNTIME_HOME_ROOT=/tmp/h/.claude SB_RUNTIME_STATE_DIR=/tmp/h/.claude/.silver-bullet SB_AGENT_CERT_RUN=1 bash -c 'source "$1"; sb_cert_run_bypass_active && echo yes || echo no' _ "$TL_REPO_ROOT/hooks/lib/cert-bypass.sh"
+assert_eq "cert switch on when HOME, runtime home and state dir are all under /tmp" "yes" "$TL_OUT"
+tl_run bash -c 'source "$1"; a="$(_sb_passwd_home)"; PATH="$2" ; b="$(_sb_passwd_home)"; [[ "$a" == "$b" && -n "$a" ]] && echo same || echo "differ:$a:$b"' _ "$TL_REPO_ROOT/hooks/lib/cert-bypass.sh" "$(tl_path_without getent)"
+assert_eq "the passwd home is found with and without getent" "same" "$TL_OUT"
+tl_run bash -c 'source "$1"; PATH=/nonexistent; _sb_passwd_home; echo "[$?]"' _ "$TL_REPO_ROOT/hooks/lib/cert-bypass.sh"
+assert_eq "no getent and no python3: unknown home, no failure" "[0]" "$TL_OUT"
+
+# ── review repair r3: release target in every gh api spelling; unreadable targets deny ──
+mkproj relapi2 '.release={}'
+state inst-a inst-b verify-tests silver-create-release
+approve
+SHA="$(git -C "$PROJ" rev-parse HEAD)"
+echo three >"$PROJ/three.txt"; git -C "$PROJ" add three.txt; git -C "$PROJ" commit -q -m three
+git -C "$PROJ" update-ref refs/remotes/origin/main "$(git -C "$PROJ" rev-parse HEAD)"
+GREEN_OLD="$(jq -cn --arg s "$SHA" '[{workflowName:"CI",status:"completed",conclusion:"success",headSha:$s,createdAt:"1"}]')"
+for sp in "-f tag_name=v9 --field=target_commitish=$SHA" "-f tag_name=v9 -ftarget_commitish=$SHA" "-f tag_name=v9 -Ftarget_commitish=$SHA" "--raw-field=target_commitish=$SHA -f tag_name=v9" "-X POST -f tag_name=v9 --field target_commitish=$SHA"; do
+  run_ca PreToolUse "gh api $sp repos/o/r/releases" GH_RUN_LIST_OVERRIDE="$GREEN_OLD"
+  assert_eq "gh api spelling resolves the target: $sp" "allow" "$(decision)"
+done
+for sp in 'repos/o/r/releases --input body.json' 'repos/o/r/releases --input=body.json' 'repos/o/r/releases -f tag_name=v9 -f target_commitish=$T' 'repos/o/r/releases -f target_commitish=abc && gh api repos/o/r/releases -f target_commitish=def'; do
+  run_ca PreToolUse "gh api $sp" GH_RUN_LIST_OVERRIDE="$GREEN_OLD"
+  assert_contains "unreadable release target denies: $sp" "$(message)" "cannot determine release commit"
+done
+unapprove
 
 tl_results

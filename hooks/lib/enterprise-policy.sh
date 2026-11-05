@@ -166,6 +166,10 @@ sb_enterprise_policy_unseen_note() {
   local reasons
   reasons="$(sb_enterprise_policy_untrusted_text "$(printf '%s' "$ca_unseen_reasons" | head -3 | tr '\n' ';')" 240)"
   if [[ "${ca_analysis_status:-}" == "helper_unavailable" ]]; then
+    # the reason already starts "the shell analysis helper failed (...)": print only the cause
+    reasons="${reasons#the shell analysis helper failed }"
+    reasons="${reasons#(}"
+    reasons="${reasons%)}"
     printf "cannot inspect: Silver Bullet's shell analysis helper failed (%s).\nThe command itself is not the problem: check that python3 is installed and on the PATH the host gives hooks, or reinstall Silver Bullet, then retry." "$reasons"
   else
     printf 'cannot inspect: %s\nThis command runs code Silver Bullet cannot read, so it is held like a delivery. Rewrite it as plain, separate commands (no eval, variable-built command names, pipes into a shell, generated scripts) so it can be inspected.' "$reasons"
