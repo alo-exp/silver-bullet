@@ -294,14 +294,14 @@ sb_orchestrator_sha256() {
   printf '%s' "${out%% *}"
 }
 
-# sb_orchestrator_log_override REPO_ROOT REASON [SKILL] [PROVENANCE_JSON]
+# sb_orchestrator_log_override REPO_ROOT REASON [SKILL] [PROVENANCE_JSON] [KIND]
 # Append one audited override record. Fail closed (status 1, nothing cleared by the caller) when
 # the record cannot be written: no project root, no jq, a symlinked .planning/ or log (R4-14), an
 # unwritable log, or no sha256 tool. Each line carries the caller's provenance (session_id, host,
 # hook event, transcript path, prompt hash) and `prev`, the sha256 of the previous line, so a line
 # removed or edited afterwards breaks the chain. The record is mirrored into the runtime state dir.
 sb_orchestrator_log_override() {
-  local repo_root="${1:-}" reason="${2:-}" skill="${3:-}" prov="${4:-}"
+  local repo_root="${1:-}" reason="${2:-}" skill="${3:-}" prov="${4:-}" kind="${5:-directive-override}"
   [[ -n "$prov" ]] || prov='{}'
   [[ -n "$repo_root" && -d "$repo_root" ]] || return 1
   command -v jq >/dev/null 2>&1 || return 1
@@ -319,8 +319,9 @@ sb_orchestrator_log_override() {
     --arg reason "$reason" \
     --arg skill "$skill" \
     --arg prev "$prev" \
+    --arg kind "$kind" \
     --argjson prov "$prov" \
-    '{at:$at, kind:"directive-override", reason:$reason, expected_skill:$skill, prev:$prev} + $prov' 2>/dev/null)" || return 1
+    '{at:$at, kind:$kind, reason:$reason, expected_skill:$skill, prev:$prev} + $prov' 2>/dev/null)" || return 1
   printf '%s\n' "$line" >>"$logfile" 2>/dev/null || return 1
   sb_orchestrator_mirror_override "$line"
 }
@@ -333,8 +334,8 @@ sb_orchestrator_mirror_override() {
 }
 
 # SB OVERRIDE is the user's own words (R4-12): the FIRST non-blank line of the message must be
-# `SB OVERRIDE: <reason>`, upper case, with a real reason on that line (8+ characters, not a
-# `<placeholder>`). A mention later in the text, inside a quoted/pasted block, in lower case or
+# `SB OVERRIDE: <reason>`, upper case, with a real reason on that line (12+ characters, two words,
+# not a `<placeholder>`). A mention later in the text, inside a quoted/pasted block, in lower case or
 # with no reason (the guard's own denial text says `SB OVERRIDE: <reason>`) is not an override.
 sb_orchestrator_extract_override_reason() {
   local prompt="${1:-}" first reason
@@ -343,8 +344,14 @@ sb_orchestrator_extract_override_reason() {
   [[ "$first" =~ $marker_re ]] || return 0
   reason="${BASH_REMATCH[1]}"
   reason="${reason%"${reason##*[![:space:]]}"}"
-  [[ ${#reason} -ge 8 ]] || return 0
-  [[ "$reason" == "<"*">" ]] && return 0
+  # A real reason (R4-12): 12+ characters, no <placeholder>, and at least two words of 3+ letters.
+  [[ ${#reason} -ge 12 ]] || return 0
+  [[ "$reason" == *"<"*">"* ]] && return 0
+  local word words=0
+  for word in $reason; do
+    [[ "$word" =~ [A-Za-z]{3,} ]] && words=$((words + 1))
+  done
+  [[ $words -ge 2 ]] || return 0
   printf '%s' "$reason"
 }
 
@@ -352,35 +359,69 @@ sb_orchestrator_prompt_has_override() {
   [[ -n "$(sb_orchestrator_extract_override_reason "${1:-}")" ]]
 }
 
+# sb_orchestrator_prompt_provenance_ok INPUT_JSON
+# A prompt event is only acted on (override, queue clear) when it looks like the host's own
+# UserPromptSubmit for a PARENT session (R4-07, R4-08):
+#   - not a worker/delegate session (SB_ORCHESTRATOR_WORKER, the worker marker, or an agent_id);
+#   - the host's session_id is present;
+#   - a transcript_path, when given, is a regular file (not a symlink) under the host's runtime
+#     root, with no `..` (so /etc/hostname does not count).
+# Status 0 ok; 1 refused (SB_PROVENANCE_REFUSAL says why).
+sb_orchestrator_prompt_provenance_ok() {
+  local input="${1:-}" sid transcript agent
+  SB_PROVENANCE_REFUSAL=""
+  if [[ "${SB_ORCHESTRATOR_WORKER:-}" == "1" ]] || sb_orchestrator_is_worker_session 2>/dev/null; then
+    SB_PROVENANCE_REFUSAL="this is a worker or delegate session; only the parent session's own user prompts count"
+    return 1
+  fi
+  agent="$(printf '%s' "$input" | jq -r '.agent_id // ""' 2>/dev/null)"
+  if [[ -n "$agent" ]]; then
+    SB_PROVENANCE_REFUSAL="the payload comes from a worker agent (agent_id), not from the user"
+    return 1
+  fi
+  sid="$(printf '%s' "$input" | jq -r '.session_id // ""' 2>/dev/null)"
+  if [[ -z "$sid" ]]; then
+    SB_PROVENANCE_REFUSAL="the prompt payload has no host session_id, so it cannot be verified as your own message"
+    return 1
+  fi
+  transcript="$(printf '%s' "$input" | jq -r '.transcript_path // ""' 2>/dev/null)"
+  if [[ -n "$transcript" ]] && { [[ "$transcript" != "${SB_RUNTIME_HOME_ROOT:-/nonexistent}/"* || "$transcript" == *".."* || -L "$transcript" || ! -f "$transcript" ]]; }; then
+    SB_PROVENANCE_REFUSAL="the payload's transcript_path is not a regular file under ${SB_RUNTIME_HOME_ROOT:-the host runtime root}"
+    return 1
+  fi
+  return 0
+}
+
+# sb_orchestrator_provenance_json INPUT_JSON PROMPT: the audit provenance object.
+sb_orchestrator_provenance_json() {
+  local input="${1:-}" prompt="${2:-}" sid transcript host phash
+  sid="$(printf '%s' "$input" | jq -r '.session_id // ""' 2>/dev/null)"
+  transcript="$(printf '%s' "$input" | jq -r '.transcript_path // ""' 2>/dev/null)"
+  host="${SB_RUNTIME_NAME:-${SILVER_BULLET_RUNTIME:-unknown}}"
+  phash="$(printf '%s' "$prompt" | sb_orchestrator_sha256)" || phash=""
+  jq -nc --arg sid "$sid" --arg host "$host" --arg tp "$transcript" --arg ph "$phash" \
+    '{session_id:$sid, host:$host, hook_event:"UserPromptSubmit", transcript_path:$tp, prompt_sha256:$ph}' 2>/dev/null || printf '{}'
+}
+
 # sb_orchestrator_override_apply INPUT_JSON PROMPT REPO_ROOT
 # Honour an SB OVERRIDE found in a real UserPromptSubmit payload (R4-07/R4-13/R4-14):
-#   - the payload must carry the host's session_id, and a transcript_path that is a regular file
-#     when given (a bare synthetic {"prompt": ...} piped in by the agent is refused);
+#   - the payload must pass sb_orchestrator_prompt_provenance_ok (parent session, host session_id,
+#     transcript under the host root);
 #   - the audit record (with provenance) must be written before anything is cleared;
 #   - it then clears the pending directive AND abandons the flow queue, so the parent Stop gate
 #     no longer holds the session. It does NOT lift parent-mode tool restrictions or other
 #     PreToolUse gates (docs/ORCHESTRATOR.md).
 # Status 0 honoured; 1 not an override; 2 override refused (SB_OVERRIDE_REFUSAL says why).
-# shellcheck disable=SC2034  # SB_OVERRIDE_REFUSAL is an output read by the caller
 sb_orchestrator_override_apply() {
-  local input="${1:-}" prompt="${2:-}" repo_root="${3:-}" reason sid transcript host prov phash
+  local input="${1:-}" prompt="${2:-}" repo_root="${3:-}" reason prov
   SB_OVERRIDE_REFUSAL=""
   reason="$(sb_orchestrator_extract_override_reason "$prompt")"
   [[ -n "$reason" ]] || return 1
-  sid="$(printf '%s' "$input" | jq -r '.session_id // ""' 2>/dev/null)"
-  transcript="$(printf '%s' "$input" | jq -r '.transcript_path // ""' 2>/dev/null)"
-  if [[ -z "$sid" ]]; then
-    SB_OVERRIDE_REFUSAL="the prompt payload has no host session_id, so it cannot be verified as your own message"
+  if ! sb_orchestrator_prompt_provenance_ok "$input"; then
+    SB_OVERRIDE_REFUSAL="$SB_PROVENANCE_REFUSAL"
     return 2
   fi
-  if [[ -n "$transcript" && ! -f "$transcript" ]]; then
-    SB_OVERRIDE_REFUSAL="the payload's transcript_path is not a readable file"
-    return 2
-  fi
-  host="${SB_RUNTIME_NAME:-${SILVER_BULLET_RUNTIME:-unknown}}"
-  phash="$(printf '%s' "$prompt" | sb_orchestrator_sha256)" || phash=""
-  prov="$(jq -nc --arg sid "$sid" --arg host "$host" --arg tp "$transcript" --arg ph "$phash" \
-    '{session_id:$sid, host:$host, hook_event:"UserPromptSubmit", transcript_path:$tp, prompt_sha256:$ph}' 2>/dev/null)" || prov='{}'
+  prov="$(sb_orchestrator_provenance_json "$input" "$prompt")"
   if ! sb_orchestrator_log_override "$repo_root" "$reason" "$(sb_orchestrator_directive_next_skill 2>/dev/null || true)" "$prov"; then
     SB_OVERRIDE_REFUSAL="the audit record could not be written to .planning/orchestrator-override-log.jsonl"
     return 2

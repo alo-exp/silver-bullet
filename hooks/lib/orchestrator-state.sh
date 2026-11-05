@@ -370,25 +370,26 @@ sb_orchestrator_clear_queue() {
   fi
 }
 
-# Clear a stale flow queue when the user abandons it for a new goal (a bare work request).
-# A status or informational question mid-flow must NOT wipe an active queue (R4-08); the
-# clear is recorded in queue-clear.log so it is traceable.
+# sb_orchestrator_clear_queue_on_interrupt PROMPT REPO_ROOT INPUT_JSON
+# Clear a stale flow queue when the user abandons it for a new goal (a bare work request). A status
+# or informational question mid-flow must NOT wipe an active queue, and (R4-08) neither may a payload
+# that is not the host's own prompt event for the parent session: the clear needs the same provenance
+# as an override and is written to the project audit log first. Without REPO_ROOT and INPUT_JSON it
+# never clears.
 sb_orchestrator_clear_queue_on_interrupt() {
-  local prompt="${1:-}"
-  [[ -n "$prompt" ]] || return 1
+  local prompt="${1:-}" repo_root="${2:-}" input="${3:-}"
+  [[ -n "$prompt" && -n "$repo_root" && -n "$input" ]] || return 1
   sb_orchestrator_parent_queue_pending || return 1
   if declare -f sb_prompt_is_orchestrator_followup >/dev/null 2>&1 \
     && sb_prompt_is_orchestrator_followup "$prompt"; then
     return 1
   fi
-  if declare -f sb_prompt_is_bare_work_request >/dev/null 2>&1 \
-    && sb_prompt_is_bare_work_request "$prompt"; then
-    printf '%s\tcleared stale flow queue for new goal: %.80s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-      "$(printf '%s' "$prompt" | tr '\n\t' '  ')" >>"${SB_RUNTIME_STATE_DIR}/queue-clear.log" 2>/dev/null || true
-    sb_orchestrator_clear_queue
-    return 0
-  fi
-  return 1
+  declare -f sb_prompt_is_bare_work_request >/dev/null 2>&1 || return 1
+  sb_prompt_is_bare_work_request "$prompt" || return 1
+  sb_orchestrator_prompt_provenance_ok "$input" || return 1
+  sb_orchestrator_log_override "$repo_root" "stale flow queue cleared for a new goal: $(printf '%.80s' "$(printf '%s' "$prompt" | tr '\n\t' '  ')")" "" \
+    "$(sb_orchestrator_provenance_json "$input" "$prompt")" queue-clear || return 1
+  sb_orchestrator_clear_queue
 }
 
 # Advance to the next catalog composer when the current flow_queue is drained (multi-WF chain).

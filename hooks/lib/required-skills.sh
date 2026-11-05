@@ -38,19 +38,45 @@ __sb_rs_find_default_config() {
   return 1
 }
 
-__sb_rs_load() {
-  local field="$1"
-  local cfg
+# One jq call reads every default list (R2-23: the prompt hook runs on every prompt, so it must not
+# spawn a jq per list). The result is cached per template path for the life of the process.
+__SB_RS_CACHE_CFG=""
+__sb_rs_cache() {
+  local cfg out
   cfg="$(__sb_rs_find_default_config)" || return 1
+  [[ "$cfg" == "$__SB_RS_CACHE_CFG" ]] && return 0
   command -v jq >/dev/null 2>&1 || return 1
-  jq -r ".skills.${field} | .[]" "${cfg}" 2>/dev/null | tr '\n' ' ' | sed 's/ $//'
+  out="$(jq -r '[.skills.required_planning, .skills.required_planning_devops, .skills.required_deploy,
+    .skills.required_deploy_devops, .skills.required_release, .skills.required_release_devops,
+    .skills.all_tracked] | map((. // []) | join(" ")) | .[]' "${cfg}" 2>/dev/null)" || return 1
+  {
+    IFS= read -r __SB_RS_C_required_planning
+    IFS= read -r __SB_RS_C_required_planning_devops
+    IFS= read -r __SB_RS_C_required_deploy
+    IFS= read -r __SB_RS_C_required_deploy_devops
+    IFS= read -r __SB_RS_C_required_release
+    IFS= read -r __SB_RS_C_required_release_devops
+    IFS= read -r __SB_RS_C_all_tracked
+  } <<<"$out" || true
+  __SB_RS_CACHE_CFG="$cfg"
+}
+
+__sb_rs_load() {
+  __sb_rs_cache || return 1
+  case "$1" in
+    required_planning) printf '%s' "$__SB_RS_C_required_planning" ;;
+    required_planning_devops) printf '%s' "$__SB_RS_C_required_planning_devops" ;;
+    required_deploy) printf '%s' "$__SB_RS_C_required_deploy" ;;
+    required_deploy_devops) printf '%s' "$__SB_RS_C_required_deploy_devops" ;;
+    required_release) printf '%s' "$__SB_RS_C_required_release" ;;
+    required_release_devops) printf '%s' "$__SB_RS_C_required_release_devops" ;;
+    *) return 1 ;;
+  esac
 }
 
 __sb_rs_load_all_tracked() {
-  local cfg
-  cfg="$(__sb_rs_find_default_config)" || return 1
-  command -v jq >/dev/null 2>&1 || return 1
-  jq -r '(.skills.all_tracked // []) | join(" ")' "${cfg}" 2>/dev/null | sed 's/ $//'
+  __sb_rs_cache || return 1
+  printf '%s' "$__SB_RS_C_all_tracked"
 }
 
 __sb_rs_default_version() {
@@ -234,6 +260,8 @@ __SB_RS_ALL_TRACKED_FALLBACK="silver-quality-gates silver-quality-gates-design s
 
 __sb_rs_populate() {
   local value
+  # Prime the cache in THIS shell: the `$(...)` loads below run in subshells and would each re-read it.
+  __sb_rs_cache || true
   value="$(__sb_rs_load required_planning || true)"
   if [ -z "${value}" ]; then
     DEFAULT_PLANNING="${__SB_RS_PLANNING_FALLBACK}"

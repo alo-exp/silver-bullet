@@ -106,6 +106,30 @@ sb_subagent_bash_invokes_audit() {
   return 1
 }
 
+# The audit invocation is the ONLY command of the call (a chained write is not covered).
+sb_subagent_audit_command_alone() {
+  printf '%s' "${SB_SA_JSON:-}" | jq -e '[.commands[]?] | length == 1' >/dev/null 2>&1
+}
+
+# The adapter ran and succeeded (R2-24): the tool response did not report a failing exit code, and the
+# adapter wrote a fresh `loaded` receipt for the audit that is newer than the pending marker.
+# Command text alone (`false && silver-bullet invoke-skill ...`) proves nothing.
+sb_subagent_audit_succeeded() {
+  local code receipt pend cwd_real
+  code="$(printf '%s' "$input" | jq -r '(.tool_response.exit_code // .tool_response.exitCode // .tool_response.metadata.exit_code // 0) | tostring' 2>/dev/null)"
+  [[ "$code" == "0" ]] || return 1
+  pend="$(sb_site_session_pending_audit_file)"
+  cwd_real="$(pwd -P)"
+  for receipt in "${SB_RUNTIME_STATE_DIR}"/skill-invocations/*.json; do
+    [[ -f "$receipt" && ! -L "$receipt" && "$receipt" -nt "$pend" ]] || continue
+    if jq -e --arg cwd "$cwd_real" '.channel == "silver-bullet.invoke-skill" and .status == "loaded"
+      and .canonical_skill == "silver-completion-audit" and .cwd == $cwd' "$receipt" >/dev/null 2>&1; then
+      return 0
+    fi
+  done
+  return 1
+}
+
 sb_subagent_clear_audit_pending() {
   sb_site_session_clear_subagent_log 2>/dev/null || true
   sb_site_session_clear_pending_completion_audit 2>/dev/null || true
@@ -136,7 +160,7 @@ if [[ "$hook_event" == "PreToolUse" ]]; then
       # The audit itself must stay reachable: invoking it through the Codex adapter is not
       # blocked by the very gate it satisfies.
       if [[ "$tool_name" == "Bash" || "$tool_name" == "exec_command" || "$tool_name" == "Shell" ]] \
-        && sb_subagent_bash_invokes_audit; then
+        && sb_subagent_bash_invokes_audit && sb_subagent_audit_command_alone; then
         exit 0
       fi
       sb_subagent_block_pending_audit
@@ -157,7 +181,7 @@ if [[ "$hook_event" == "PostToolUse" ]]; then
       exit 0
       ;;
     Bash|exec_command|Shell)
-      if sb_subagent_bash_invokes_audit; then
+      if sb_subagent_bash_invokes_audit && sb_subagent_audit_succeeded; then
         sb_subagent_clear_audit_pending
       fi
       exit 0

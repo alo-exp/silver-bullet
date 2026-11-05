@@ -39,6 +39,10 @@ else
   prompt=""
 fi
 
+# R2-22: this session's own checklist file (the host session_id keys it; works without jq too).
+[[ -f "$_lib_dir/session-key.sh" ]] && source "$_lib_dir/session-key.sh"
+declare -f sb_session_key_set >/dev/null 2>&1 && sb_session_key_set "$input"
+
 # Resolve SB project
 config_file=""
 search_dir="$PWD"
@@ -97,7 +101,7 @@ if [[ "$hook_event" == "UserPromptSubmit" ]]; then
     fi
   fi
   if declare -f sb_orchestrator_clear_queue_on_interrupt >/dev/null 2>&1 && [[ "$override_rc" -ne 0 ]]; then
-    sb_orchestrator_clear_queue_on_interrupt "$prompt" 2>/dev/null || true
+    sb_orchestrator_clear_queue_on_interrupt "$prompt" "$(dirname "$config_file")" "$input" 2>/dev/null || true
   fi
   sb_outcomes_seed_for_prompt "$prompt"
   if [[ "$override_rc" -ne 0 ]] && declare -f sb_orchestrator_directive_from_pending_outcome >/dev/null 2>&1 \

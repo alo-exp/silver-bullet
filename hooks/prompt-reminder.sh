@@ -18,7 +18,10 @@ trap 'finish_noop' ERR
 # Fires before every user prompt is processed.
 # Injects a compact Silver Bullet compliance reminder into additionalContext.
 #
-# Must be FAST (< 200ms) — no git operations and no blocking stdin reads.
+# Must be FAST — no git operations and no blocking stdin reads. R2-23 measurement (sandbox, CPU time
+# per prompt): ~540 ms before, ~390 ms after one jq per config source, no dirname forks in the walks,
+# sha256sum before the Perl shasum, and one consent query per tool; tests/hooks/test-g3-repair.sh pins the
+# jq-call budget. The remainder is bash start-up and library sourcing; the 200 ms goal is not met yet.
 
 # Security: restrict file creation permissions (user-only)
 umask 0077
@@ -70,10 +73,15 @@ if declare -f sb_jq_enforcement_warn >/dev/null 2>&1; then
 fi
 
 prompt=""
+SB_SESSION_KEY=""
 if [[ ! -t 0 ]]; then
   input="$(cat 2>/dev/null || true)"
   if [[ -n "$input" ]]; then
-    prompt="$(printf '%s' "$input" | jq -r '.prompt // ""' 2>/dev/null || true)"
+    # One jq call: the session id (line 1, keys the per-session gate files, R2-22) and the prompt.
+    _in_out="$(printf '%s' "$input" | jq -r '(.session_id // ""), (.prompt // "")' 2>/dev/null || true)"
+    _in_sid="${_in_out%%$'\n'*}"
+    prompt="${_in_out#*$'\n'}"
+    [[ "$_in_sid" =~ ^[A-Za-z0-9_-]{1,64}$ ]] && SB_SESSION_KEY="$_in_sid"
   fi
 fi
 
@@ -88,7 +96,8 @@ while true; do
   if [[ -d "$search_dir/.git" ]] || [[ "$search_dir" == "/" ]]; then
     break
   fi
-  search_dir=$(dirname "$search_dir")
+  search_dir="${search_dir%/*}"
+  [[ -n "$search_dir" ]] || search_dir="/"
 done
 
 if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
@@ -119,14 +128,17 @@ config_vals=$(jq -r --arg ds "$sb_default_state" --arg dt "$sb_default_trivial" 
   ((.skills.required_planning_devops // []) | join(" "))
 ] | join("\n")' "$config_file")
 
-state_file=$(printf '%s' "$config_vals" | sed -n '1p')
+# R2-23: one read per value instead of six `sed` forks (the hot path must stay cheap).
+{
+  IFS= read -r state_file
+  IFS= read -r trivial_file
+  IFS= read -r required_deploy_cfg
+  IFS= read -r required_planning_cfg
+  IFS= read -r active_workflow
+  IFS= read -r required_planning_devops_cfg
+} <<<"$config_vals" || true
 state_file="${state_file/#\~/$HOME}"
-trivial_file=$(printf '%s' "$config_vals" | sed -n '2p')
 trivial_file="${trivial_file/#\~/$HOME}"
-required_deploy_cfg=$(printf '%s' "$config_vals" | sed -n '3p')
-required_planning_cfg=$(printf '%s' "$config_vals" | sed -n '4p')
-active_workflow=$(printf '%s' "$config_vals" | sed -n '5p')
-required_planning_devops_cfg=$(printf '%s' "$config_vals" | sed -n '6p')
 
 # Env var override for state file
 state_file="${SILVER_BULLET_STATE_FILE:-$state_file}"
@@ -162,6 +174,7 @@ fi
 # ── Build required skills list ────────────────────────────────────────────────
 # Source canonical required-skills list (single source of truth — TD-01 fix)
 # shellcheck source=lib/required-skills.sh
+# A missing lib directory makes this fail (ERR trap -> no-op payload): keep the explicit lookup.
 _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)"
 if [[ -f "$_lib_dir/required-skills.sh" ]]; then
   # shellcheck disable=SC1090
@@ -387,7 +400,9 @@ if [[ "$_sb_skip_directive" != true && -f "$_od_lib" ]]; then
     fi
   fi
   if declare -f sb_orchestrator_directive_from_pending_outcome >/dev/null 2>&1; then
-    if [[ -f "${SB_STATE_DIR}/outcomes-session.json" ]]; then
+    # shellcheck source=lib/outcomes-gate.sh
+    source "$_lib_dir/outcomes-gate.sh"
+    if [[ -f "${SB_STATE_DIR}/outcomes-session${SB_SESSION_KEY:+-$SB_SESSION_KEY}.json" ]]; then
       sb_orchestrator_directive_from_pending_outcome 2>/dev/null || true
     fi
   fi

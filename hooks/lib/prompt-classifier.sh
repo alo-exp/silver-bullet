@@ -16,7 +16,7 @@ _SB_PROMPT_WORK_VERBS='add|build|change|create|cut|debug|deploy|document|fix|imp
 # later lines, no `... and <work verb>` clause, and (for a question with a work verb in it) a
 # trailing question mark. Everything else is work, so the outcome and ledger gates stay on.
 sb_prompt_is_informational_query() {
-  local prompt lower first rest
+  local prompt lower first rest sentences
   prompt="$(sb_prompt_trim "${1:-}")"
   [[ -n "$prompt" ]] || return 1
   lower="$(printf '%s' "$prompt" | tr '[:upper:]' '[:lower:]')"
@@ -33,6 +33,11 @@ sb_prompt_is_informational_query() {
     return 1
   fi
   if grep -Eq "(and|then|also|but|plus|[,;])[[:space:]]+(please[[:space:]]+)?(${_SB_PROMPT_WORK_VERBS})([^[:alnum:]_]|\$)" <<<"$first"; then
+    return 1
+  fi
+  # A later sentence on the same line ("What is going on with CI? Fix it.") is judged like a later line.
+  sentences="$(printf '%s' "$first" | sed -E 's/^[^.?!]*[.?!][[:space:]]+//')"
+  if [[ "$sentences" != "$first" ]] && grep -Eq "(^|[^[:alnum:]_])(${_SB_PROMPT_WORK_VERBS})([^[:alnum:]_]|\$)" <<<"$sentences"; then
     return 1
   fi
   if grep -Eq "(^|[^[:alnum:]_])(${_SB_PROMPT_WORK_VERBS})([^[:alnum:]_]|\$)" <<<"$first" \

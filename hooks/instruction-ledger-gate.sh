@@ -17,6 +17,9 @@ command -v jq >/dev/null 2>&1 || exit 0
 input="$(cat 2>/dev/null || true)"
 hook_event="$(printf '%s' "$input" | jq -r '.hook_event_name // "UserPromptSubmit"' 2>/dev/null || echo UserPromptSubmit)"
 prompt="$(printf '%s' "$input" | jq -r '.prompt // ""' 2>/dev/null || true)"
+# R2-22: this session's own ledger file (the host session_id keys it).
+[[ -f "$_lib_dir/session-key.sh" ]] && source "$_lib_dir/session-key.sh"
+declare -f sb_session_key_set >/dev/null 2>&1 && sb_session_key_set "$input"
 
 config_file=""
 search_dir="$PWD"

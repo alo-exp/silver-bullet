@@ -10,33 +10,20 @@ sb_recommended_tool_consent() {
     return 0
   }
 
-  if jq -e --arg id "$tool_id" '.recommended_tools[$id].enabled_by_user == true' "$config_file" >/dev/null 2>&1; then
-    printf 'enabled'
-    return 0
-  fi
-  if jq -e --arg id "$tool_id" '.recommended_tools[$id].enabled_by_user == false' "$config_file" >/dev/null 2>&1; then
-    printf 'disabled'
-    return 0
-  fi
-  if jq -e --arg id "$tool_id" '(.recommended_tools[$id].enabled_by_user | type) == "null"' "$config_file" >/dev/null 2>&1; then
-    :
-  elif jq -e --arg id "$tool_id" 'has("recommended_tools") and (.recommended_tools[$id] | has("enabled_by_user"))' "$config_file" >/dev/null 2>&1; then
-    printf 'pending'
-    return 0
-  fi
-
-  # Legacy graphify.required migration (feat/mandatory-graphify compat)
-  if [[ "$tool_id" == "graphify" ]]; then
-    if jq -e '.graphify.required == false' "$config_file" >/dev/null 2>&1; then
-      printf 'disabled'
-      return 0
-    fi
-    if jq -e '.graphify.required == true' "$config_file" >/dev/null 2>&1; then
-      printf 'enabled'
-      return 0
-    fi
-  fi
-  printf 'pending'
+  # One jq call decides (R2-23: the prompt hook asks for every tool on every prompt, and the old
+  # cascade spawned up to six jq per tool). Same verdicts: true -> enabled, false -> disabled,
+  # unset/null -> the legacy graphify.required migration, any other value -> pending.
+  local verdict
+  verdict="$(jq -r --arg id "$tool_id" '
+    (.recommended_tools[$id].enabled_by_user) as $e
+    | if $e == true then "enabled"
+      elif $e == false then "disabled"
+      elif ($e | type) == "null" then
+        (if $id == "graphify" and .graphify.required == false then "disabled"
+         elif $id == "graphify" and .graphify.required == true then "enabled"
+         else "pending" end)
+      else "pending" end' "$config_file" 2>/dev/null)" || verdict=""
+  printf '%s' "${verdict:-pending}"
 }
 
 sb_recommended_tool_enforcement_suspended() {

@@ -38,7 +38,7 @@ assert_eq "jq_update: applies" 4 "$(jq .a "$TL_TMP/u.json")"
 
 # --- prompt id ---------------------------------------------------------------------
 assert_match "prompt id: 12 hex" '^[0-9a-f]{12}$' "$(sb_outcomes_prompt_id "x")"
-assert_match "prompt id: cksum fallback" '^[0-9]+$' "$(PATH="$(tl_path_without shasum)" sb_outcomes_prompt_id "x")"
+assert_match "prompt id: cksum fallback" '^[0-9]+$' "$(PATH="$(tl_path_without shasum sha256sum)" sb_outcomes_prompt_id "x")"
 
 # --- seeding --------------------------------------------------------------------------
 rm -f "$OF"
@@ -65,10 +65,10 @@ unset -f sb_prompt_is_informational_query
 rm -f "$OF"
 PATH="$NOJQ" sb_outcomes_seed_for_prompt "fix"
 assert_file_absent "seed: no jq writes nothing" "$OF"
-tl_stub shasum 'exit 0'; hash -r
+tl_stub sha256sum 'exit 0'; hash -r
 sb_outcomes_seed_for_prompt "fix"
 assert_file_absent "seed: empty prompt id aborts" "$OF"
-rm -f "$TL_BIN/shasum"; hash -r
+rm -f "$TL_BIN/sha256sum"; hash -r
 SB_RUNTIME_STATE_DIR="$TL_TMP/no-such" sb_outcomes_seed_for_prompt "fix"
 assert_file_absent "seed: unwritable location tolerated" "$TL_TMP/no-such/outcomes-session.json"
 sb_prompt_is_informational_query() { return 0; }

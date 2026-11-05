@@ -510,14 +510,16 @@ run_doc_scheme_task_gate() {
 # same condition is released with a visible message and an audit line instead of looping.
 sb_stop_block_unclearable() {
   local reason="$1" json_reason
-  json_reason=$(printf '%s' "$reason" | jq -Rs '.')
   if [[ "$stop_hook_active" == "true" ]]; then
     printf '%s\t%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$reason" >>"${SB_STATE_DIR}/stop-loop-release.log" 2>/dev/null || true
-    printf '{"systemMessage":%s}' "$json_reason"
-    return 0
+    # Released, but not waved through: the planning floor below still applies (R2-10).
+    stop_release_note="$reason"
+    return 1
   fi
+  json_reason=$(printf '%s' "$reason" | jq -Rs '.')
   printf '{"decision":"block","reason":%s}' "$json_reason"
 }
+stop_release_note=""
 
 # ── Branch-scope validation: skip if state is from a different branch ─────────
 # State is branch-scoped by session-start. If the branch file and current branch
@@ -551,15 +553,17 @@ fi
 # M-04: branch / worktree mismatch — warn visibly instead of silent fail-open.
 if declare -f sb_branch_scope_mismatch >/dev/null 2>&1; then
   if sb_branch_scope_mismatch "$current_branch" "$current_git_toplevel"; then
-    warn_msg="⚠️ Silver Bullet: skill state is from branch '${stored_state_branch}' (worktree ${stored_state_toplevel:-unknown}) but current scope is '${current_branch}' (${current_git_toplevel:-unknown}). Start a fresh session (session-start re-scopes the state) or, after switching branches on purpose, invoke the required planning skills again on this branch before declaring done."
-    sb_stop_block_unclearable "$warn_msg"
-    exit 0
+    warn_msg="⚠️ Silver Bullet: skill state is from branch '${stored_state_branch}' (worktree ${stored_state_toplevel:-unknown}) but current scope is '${current_branch}' (${current_git_toplevel:-unknown}). To start clean run /clear (or start a new session): session-start re-scopes the state. To continue, stop again: the planning floor is then checked against the skills recorded so far."
+    if sb_stop_block_unclearable "$warn_msg"; then
+      exit 0
+    fi
   fi
 elif [[ -n "$stored_state_branch" && -n "$current_branch" && \
       "$stored_state_branch" != "$current_branch" ]]; then
-  warn_msg="⚠️ Silver Bullet: skill state is from branch '${stored_state_branch}' but current branch is '${current_branch}'. Start a fresh session (session-start re-scopes the state) or invoke the required planning skills again on this branch before declaring done."
-  sb_stop_block_unclearable "$warn_msg"
-  exit 0
+  warn_msg="⚠️ Silver Bullet: skill state is from branch '${stored_state_branch}' but current branch is '${current_branch}'. To start clean run /clear (or start a new session): session-start re-scopes the state. To continue, stop again: the planning floor is then checked against the skills recorded so far."
+  if sb_stop_block_unclearable "$warn_msg"; then
+    exit 0
+  fi
 fi
 
 # v0.30.0 fix (#85): the Stop hook is the conversation-end gate, NOT the
@@ -639,6 +643,9 @@ if [[ -n "$missing" ]]; then
     missing_lines="${missing_lines}  - ${skill}"$'\n'
   done
   reason=$(printf 'Cannot complete -- missing required skills:\n%s\nRun these skills before declaring task complete.' "$missing_lines")
+  if [[ -n "$stop_release_note" ]]; then
+    reason="${stop_release_note}"$'\n\n'"${reason}"
+  fi
   if [[ -n "$uninstalled" ]]; then
     unavailable_lines=""
     for skill in $uninstalled; do
@@ -662,6 +669,9 @@ elif [[ -n "$uninstalled" ]]; then
   printf '{"hookSpecificOutput":{"message":%s}}' "$json_reason"
 else
   run_doc_scheme_task_gate "$search_dir"
+  if [[ -n "$stop_release_note" ]]; then
+    printf '{"systemMessage":%s}' "$(printf '%s' "$stop_release_note" | jq -Rs '.')"
+  fi
 fi
 
 exit 0

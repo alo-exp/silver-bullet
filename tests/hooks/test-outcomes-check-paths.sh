@@ -10,10 +10,10 @@ P="$TL_TMP/proj"
 dg_project "$P"
 mkdir -p "$P/sub" "$P/.planning" "$TL_TMP/outside"
 ST="$SB_RUNTIME_STATE_DIR"
-OF="$ST/outcomes-session.json"
+OF="$ST/outcomes-session-sess-1.json"
 STATE="$ST/state"
 ups() { jq -cn --arg p "$1" '{hook_event_name:"UserPromptSubmit",session_id:"sess-1",prompt:$p}'; }
-ev() { jq -cn --arg e "$1" '{hook_event_name:$e}'; }
+ev() { jq -cn --arg e "$1" '{hook_event_name:$e,session_id:"sess-1"}'; }
 ctx() { jq -r '.hookSpecificOutput.additionalContext // ""' <<<"$TL_OUT"; }
 dec() { [[ -n "$TL_OUT" ]] && jq -r '.decision // "none"' <<<"$TL_OUT" 2>/dev/null || echo none; }
 clean() { rm -f "$OF" "$STATE" "$ST/trivial" "$ST"/ups-coalesce-* "$ST/stop-coalesce-block" "$ST/orchestrator-intent.txt" "$P/.planning/orchestrator-override-log.jsonl"; rm -rf "$P/.planning/workflows" "$P/.planning/phases"; }
@@ -144,18 +144,18 @@ dg_run_nojq "$P" "$H" "$(ups "build the thing")" SILVER_BULLET_STATE_FILE="$STAT
 assert_eq "no jq: UserPromptSubmit cannot seed => exit 0 silently" "" "$TL_OUT"
 dg_assert_ok "no jq: UserPromptSubmit cannot seed => exit 0 silently: exits 0"
 rm -f "$ST/stop-coalesce-block"
-dg_run_nojq "$P" "$H" '{"hook_event_name":"Stop"}' SILVER_BULLET_STATE_FILE="$STATE"
+dg_run_nojq "$P" "$H" '{"hook_event_name":"Stop","session_id":"sess-1"}' SILVER_BULLET_STATE_FILE="$STATE"
 assert_eq "no jq: Stop with pending outcomes still blocks" "block" "$(jq -r .decision <<<"$TL_OUT")"
 assert_contains "no jq: block carries the fallback summary" "$TL_OUT" "jq unavailable"
 rm -f "$ST/stop-coalesce-block"
-dg_run_nojq "$P" "$S1/hooks/outcomes-check.sh" '{"hook_event_name":"Stop"}' SILVER_BULLET_STATE_FILE="$STATE"
+dg_run_nojq "$P" "$S1/hooks/outcomes-check.sh" '{"hook_event_name":"Stop","session_id":"sess-1"}' SILVER_BULLET_STATE_FILE="$STATE"
 assert_eq "no jq, no coalesce lib: Stop blocks" "block" "$(jq -r .decision <<<"$TL_OUT")"
 tl_stub jq 'exit 1'; hash -r
-dg_run "$P" "$H" '{"hook_event_name":"Stop"}' SILVER_BULLET_STATE_FILE="$STATE"
+dg_run "$P" "$H" '{"hook_event_name":"Stop","session_id":"sess-1"}' SILVER_BULLET_STATE_FILE="$STATE"
 rm -f "$TL_BIN/jq"; hash -r
 assert_eq "broken jq behaves like missing jq" "block" "$(jq -r .decision <<<"$TL_OUT")"
 jq '.outcomes |= map(.status="done")' "$OF" >"$OF.t" && mv "$OF.t" "$OF"
-dg_run_nojq "$P" "$H" '{"hook_event_name":"Stop"}' SILVER_BULLET_STATE_FILE="$STATE"
+dg_run_nojq "$P" "$H" '{"hook_event_name":"Stop","session_id":"sess-1"}' SILVER_BULLET_STATE_FILE="$STATE"
 assert_eq "no jq, nothing pending: Stop allowed" "" "$TL_OUT"
 dg_assert_ok "no jq, nothing pending: Stop allowed: exits 0"
 

@@ -15,9 +15,9 @@ run() { # hook json
   tl_run_stdin "$2" bash -c 'cd "$1" && exec bash "$2"' _ "$EC_PROJ" "$1"
 }
 ups() { jq -cn --arg p "$1" '{hook_event_name:"UserPromptSubmit",session_id:"s1",prompt:$p}'; }
-ev() { jq -cn --arg e "$1" '{hook_event_name:$e}'; }
+ev() { jq -cn --arg e "$1" '{hook_event_name:$e,session_id:"s1"}'; }
 reason() { jq -r '.reason // ""' <<<"$TL_OUT"; }
-reset() { rm -f "$SD"/outcomes-session.json* "$SD"/instruction-ledger.json "$SD"/stop-coalesce-block "$SD"/ups-coalesce-* "$SD/outcomes-tamper.log" "$SD/state"; }
+reset() { rm -f "$SD"/outcomes-session*.json* "$SD"/instruction-ledger*.json "$SD"/stop-coalesce-block "$SD"/ups-coalesce-* "$SD/outcomes-tamper.log" "$SD/state"; }
 
 # ---- R2-19: classifier table -------------------------------------------------------------
 info() { if sb_prompt_is_informational_query "$1"; then tl_pass "informational: ${1//$'\n'/ / }"; else tl_fail "expected informational: $1"; fi; }
@@ -48,9 +48,9 @@ fu 'yes'; fu 'No, use option 2'; fu '2) the second'; fu '2.'; fu '3'; fu 'stop';
 # ---- R2-19: work prompts are seeded as work, not pre-completed ------------------------------
 reset
 run "$OC" "$(ups $'Implement these:\n- add login form\n- add logout button\n- add session tests\nWhen finished, open a PR.')"
-assert_eq "bullet prompt: outcomes seeded pending" 3 "$(jq '[.outcomes[] | select(.status == "pending")] | length' "$SD/outcomes-session.json")"
+assert_eq "bullet prompt: outcomes seeded pending" 3 "$(jq '[.outcomes[] | select(.status == "pending")] | length' "$SD/outcomes-session-s1.json")"
 run "$LG" "$(ups $'Implement these:\n- add login form\n- add logout button\n- add session tests\nWhen finished, open a PR.')"
-assert_file_exists "bullet prompt: ledger seeded" "$SD/instruction-ledger.json"
+assert_file_exists "bullet prompt: ledger seeded" "$SD/instruction-ledger-s1.json"
 
 # ---- R2-19: the checklist cannot be self-certified --------------------------------------------
 reset
@@ -60,13 +60,13 @@ run "$OC" "$(ev Stop)"
 assert_contains "pending outcomes block Stop" "$(reason)" "outcome checklist incomplete"
 assert_not_contains "remedy no longer tells the agent to edit the JSON" "$(reason)" "mark outcomes done"
 rm -f "$SD/stop-coalesce-block"
-jq '.outcomes[].status = "done"' "$SD/outcomes-session.json" >"$SD/o.tmp" && mv "$SD/o.tmp" "$SD/outcomes-session.json"
+jq '.outcomes[].status = "done"' "$SD/outcomes-session-s1.json" >"$SD/o.tmp" && mv "$SD/o.tmp" "$SD/outcomes-session-s1.json"
 run "$OC" "$(ev Stop)"
 assert_contains "agent-written done statuses do not satisfy the gate" "$(reason)" "outcome checklist incomplete"
 assert_file_exists "the tamper is logged" "$SD/outcomes-tamper.log"
 rm -f "$SD/stop-coalesce-block"
-rm -f "$SD/outcomes-session.json.sha256"
-jq '.outcomes[].status = "done"' "$SD/outcomes-session.json" >"$SD/o.tmp" && mv "$SD/o.tmp" "$SD/outcomes-session.json"
+rm -f "$SD/outcomes-session-s1.json.sha256"
+jq '.outcomes[].status = "done"' "$SD/outcomes-session-s1.json" >"$SD/o.tmp" && mv "$SD/o.tmp" "$SD/outcomes-session-s1.json"
 run "$OC" "$(ev Stop)"
 assert_contains "deleting the seal does not help either" "$(reason)" "outcome checklist incomplete"
 rm -f "$SD/stop-coalesce-block"
@@ -95,7 +95,7 @@ assert_eq "ledger: SubagentStop of a research subagent" "0:" "$TL_STATUS:$TL_OUT
 # ---- R2-11: ledger remedy path, branch switch, distinct ids ---------------------------------------
 reset
 run "$LG" "$(ups $'Do these:\n- add login form\n- add logout button\n- add session tests')"
-assert_eq "ledger ids are distinct for labels sharing a prefix" 3 "$(jq '[.intents[0].children[].id] | unique | length' "$SD/instruction-ledger.json")"
+assert_eq "ledger ids are distinct for labels sharing a prefix" 3 "$(jq '[.intents[0].children[].id] | unique | length' "$SD/instruction-ledger-s1.json")"
 run "$LG" "$(ev Stop)"
 resolver="$(grep -o '/[^ ]*resolve-instruction-ledger.sh' <<<"$(reason)" | head -1)"
 assert_eq "Stop block names the resolver by an existing absolute path" "$TL_REPO_ROOT/scripts/resolve-instruction-ledger.sh" "$resolver"
@@ -104,8 +104,8 @@ rm -f "$SD/stop-coalesce-block"
 git -C "$EC_PROJ" checkout -q -b scratch
 run "$LG" "$(ev Stop)"
 assert_contains "a branch switch inside the worktree does not discard the user's items" "$(reason)" "unresolved items"
-assert_file_exists "ledger kept" "$SD/instruction-ledger.json"
-assert_eq "ledger re-stamped to the new branch" scratch "$(jq -r .scope.branch "$SD/instruction-ledger.json")"
+assert_file_exists "ledger kept" "$SD/instruction-ledger-s1.json"
+assert_eq "ledger re-stamped to the new branch" scratch "$(jq -r .scope.branch "$SD/instruction-ledger-s1.json")"
 git -C "$EC_PROJ" checkout -q feature/test
 
 tl_results

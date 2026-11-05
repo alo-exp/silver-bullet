@@ -36,8 +36,8 @@ assert_file_exists "R4-07: a transcript_path that is not a file is refused" "$DI
 
 # ---- the honest variant: a real prompt payload is honoured and audited ---------------------
 seed; mkdir -p "$EC_PROJ/.planning"
-printf 'x\n' >"$TL_TMP/transcript.jsonl"
-run_ups "SB OVERRIDE: prod outage hotfix" "{\"session_id\":\"sess-1\",\"transcript_path\":\"$TL_TMP/transcript.jsonl\"}"
+mkdir -p "$SB_RUNTIME_HOME_ROOT/projects"; printf 'x\n' >"$SB_RUNTIME_HOME_ROOT/projects/transcript.jsonl"
+run_ups "SB OVERRIDE: prod outage hotfix" "{\"session_id\":\"sess-1\",\"transcript_path\":\"$SB_RUNTIME_HOME_ROOT/projects/transcript.jsonl\"}"
 assert_file_absent "override clears the directive" "$DIRF"
 assert_file_absent "R4-13: override also abandons the flow queue" "$ORCH"
 assert_eq "audit reason" "prod outage hotfix" "$(jq -r .reason "$LOG")"
@@ -78,7 +78,7 @@ seed
 mkdir -p "$EC_PROJ/.planning/workflows"
 run_ups "add a remember-me checkbox to the login form" "$SID"
 assert_file_absent "R4-08: a new work request abandons the stale queue" "$ORCH"
-assert_contains "R4-08: and is traceable" "$(cat "$SD/queue-clear.log")" "remember-me"
+assert_contains "R4-08: and is traceable in the project audit log" "$(jq -r .reason "$LOG")" "remember-me"
 seed
 run_ups "what's next?" "$SID"
 assert_file_exists "R4-08: a status question keeps the queue" "$ORCH"

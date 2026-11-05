@@ -10,8 +10,17 @@
 # direct Edit/Write of the ledger file remains blocked by state tamper guards.
 
 sb_instruction_ledger_file() {
+  local newest
   [[ -n "${SB_RUNTIME_STATE_DIR:-}" ]] || return 1
-  printf '%s/instruction-ledger.json' "$SB_RUNTIME_STATE_DIR"
+  if [[ -z "${SB_SESSION_KEY:-}" && ! -f "$SB_RUNTIME_STATE_DIR/instruction-ledger.json" ]]; then
+    # No session key (the resolver CLI): the most recent per-session ledger.
+    newest="$(ls -t "$SB_RUNTIME_STATE_DIR"/instruction-ledger-*.json 2>/dev/null | head -1)"
+    if [[ -n "$newest" ]]; then
+      printf '%s' "$newest"
+      return 0
+    fi
+  fi
+  printf '%s/instruction-ledger%s.json' "$SB_RUNTIME_STATE_DIR" "${SB_SESSION_KEY:+-$SB_SESSION_KEY}"
 }
 
 sb_instruction_ledger_clear() {
@@ -93,7 +102,9 @@ sb_instruction_ledger_resolver_path() {
 
 sb_instruction_ledger_prompt_id() {
   local prompt="$1"
-  if command -v shasum >/dev/null 2>&1; then
+  if command -v sha256sum >/dev/null 2>&1; then
+    printf '%s' "$prompt" | sha256sum 2>/dev/null | awk '{print substr($1,1,12)}'
+  elif command -v shasum >/dev/null 2>&1; then
     printf '%s' "$prompt" | shasum -a 256 2>/dev/null | awk '{print substr($1,1,12)}'
   else
     printf '%s' "$prompt" | cksum 2>/dev/null | awk '{print $1}'
