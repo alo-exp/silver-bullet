@@ -12,7 +12,9 @@ phase_file=""
 while IFS= read -r f; do
   phase_file="$f"
   break
-done < <(ls -t "$planning_dir"/*-CONTEXT.md "$planning_dir"/*-RESEARCH.md "$planning_dir"/*-PLAN.md 2>/dev/null || true)
+# Both layouts: .planning/*-X.md and the standard .planning/phases/<NNN>/*-X.md (R3-20).
+done < <(ls -t "$planning_dir"/*-CONTEXT.md "$planning_dir"/*-RESEARCH.md "$planning_dir"/*-PLAN.md \
+  "$planning_dir"/phases/*/*-CONTEXT.md "$planning_dir"/phases/*/*-RESEARCH.md "$planning_dir"/phases/*/*-PLAN.md 2>/dev/null || true)
 
 [[ -z "${phase_file:-}" ]] && exit 0
 
