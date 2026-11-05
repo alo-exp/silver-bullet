@@ -144,6 +144,16 @@ sb_consent_granted() {
   [[ "$(sb_consent_decision "$@")" == "granted" ]]
 }
 
+# sb_consent_pi_enable_words: " --enable-tool TOOL" for every tool the user consented to wire,
+# for scripts/lib/global-toolstack/install-pi.py (no --enable-tool there means "enable nothing").
+sb_consent_pi_enable_words() {
+  local tool
+  for tool in graphify agentmemory context_mode leanctx rtk; do
+    if sb_consent_granted "$tool" wire; then printf ' --enable-tool %s' "$tool"; fi
+  done
+  return 0
+}
+
 # Keep a short, printable provenance label (it is shown back to users).
 _sb_consent_clean_source() {
   local source="${1:-}"

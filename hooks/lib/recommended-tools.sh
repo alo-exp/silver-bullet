@@ -418,7 +418,7 @@ sb_recommended_tool_platform_pre_index_commands() {
       ;;
     graphify:goose) printf '%s\n' 'graphify install --project --platform pi' ;;
     graphify:pi|rtk:pi|context_mode:pi)
-      printf '%s\n' "python3 $(sb_rt_plugin_script scripts/lib/global-toolstack/install-pi.py) --repo-root ${root}"
+      printf '%s%s\n' "python3 $(sb_rt_plugin_script scripts/lib/global-toolstack/install-pi.py) --repo-root ${root}" "$(sb_consent_pi_enable_words)"
       ;;
     agentmemory:codex)
       printf '%s\n' 'codex plugin marketplace add rohitg00/agentmemory' 'codex plugin add agentmemory@agentmemory'

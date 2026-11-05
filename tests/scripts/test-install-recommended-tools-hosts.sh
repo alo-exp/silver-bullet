@@ -272,7 +272,8 @@ assert_contains "global pi: missing installer message" "$TL_ERR" "ERROR: Pi five
 printf 'import os, sys\nopen(os.environ["PI_LOG"], "a").write(" ".join(sys.argv[1:]) + "\\n")\n' >"$STAGE/scripts/lib/global-toolstack/install-pi.py"
 tl_run bash "$GLO" --host pi
 assert_eq "global pi: installer runs" "0" "$TL_STATUS"
-assert_eq "global pi: installer receives the repo root and no tool without consent" "--repo-root ${STAGE}" "$(cat "$PI_LOG")"
+assert_eq "global pi: no wire consent at all: the installer does not run" "" "$(cat "$PI_LOG")"
+assert_contains "global pi: no wire consent says how to consent" "$TL_ERR" "SKIP: Pi adapter - no wire consent for any tool"
 sb_test_consent_sandbox
 sb_test_consent_grant rtk wire
 sb_test_consent_grant leanctx install

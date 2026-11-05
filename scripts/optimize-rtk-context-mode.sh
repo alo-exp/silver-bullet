@@ -249,8 +249,24 @@ optimize_rtk_opencode() {
   [[ "$WIRE_CM" -eq 1 ]] || run_merge_py opencode
 }
 
+# run_pi_installer: install the Pi adapter with exactly the tools consented to wire switched on
+# (install-pi.py enables nothing without --enable-tool). Idempotent: a second call keeps what is on.
+run_pi_installer() {
+  local installer="${REPO_ROOT}/scripts/lib/global-toolstack/install-pi.py"
+  [[ -f "$installer" ]] || {
+    log "ERROR: Pi adapter installer missing: $installer" >&2
+    return 1
+  }
+  local -a args=(--repo-root "$REPO_ROOT")
+  [[ "$WIRE_RTK" -eq 1 ]] && args+=(--enable-tool rtk)
+  [[ "$WIRE_CM" -eq 1 ]] && args+=(--enable-tool context_mode)
+  run_cmd python3 "$installer" "${args[@]}"
+}
+
 optimize_rtk_pi() {
   [[ "$WIRE_RTK" -eq 1 ]] || { consent_hint "RTK wiring (pi)" rtk wire; return 0; }
+  # With Context Mode also consented the one install in optimize_context_mode_pi enables both.
+  [[ "$WIRE_CM" -eq 1 ]] || run_pi_installer || return 1
   log "OK: Pi RTK is wired by the shared native tool_call adapter"
 }
 
@@ -303,12 +319,7 @@ optimize_context_mode_opencode() {
 
 optimize_context_mode_pi() {
   [[ "$WIRE_CM" -eq 1 ]] || { consent_hint "Context Mode wiring (pi)" context_mode wire; return 0; }
-  local installer="${REPO_ROOT}/scripts/lib/global-toolstack/install-pi.py"
-  [[ -f "$installer" ]] || {
-    log "ERROR: Pi adapter installer missing: $installer" >&2
-    return 1
-  }
-  run_cmd python3 "$installer" --repo-root "$REPO_ROOT"
+  run_pi_installer
 }
 
 optimize_context_mode_hermes() {

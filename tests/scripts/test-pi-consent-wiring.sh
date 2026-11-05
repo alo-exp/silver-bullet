@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+# End-to-end: the Pi adapter switches on exactly the tools the user consented to wire, whichever
+# entry point runs it. scripts/lib/global-toolstack/install-pi.py runs for real (sandboxed HOME);
+# only the project is a throwaway git repo. No consent enables nothing.
+set -euo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
+tl_init claude
+source "$TL_REPO_ROOT/tests/lib/consent-helpers.sh"
+unset PI_CODING_AGENT_DIR CODEX_HOME TOOLSTACK_INSTALL_IN_PROGRESS SB_RT_APPLY_ACTIVE RTCM_DRY_RUN
+cd "$TL_TMP"
+PROJ="$TL_TMP/proj"; mkdir -p "$PROJ"; git -C "$PROJ" init -q
+CFG="$HOME/.pi/agent/extensions/silver-bullet-five-tool-stack/config.json"
+
+enabled() {  # sorted, comma-joined list of enabled servers in the Pi adapter config
+  jq -r '[.servers | to_entries[] | select(.value.enabled == true) | .key] | sort | join(",")' "$CFG"
+}
+fresh() { rm -rf "$HOME/.pi" "$HOME/.local/state/five-tool-stack"; sb_test_consent_sandbox; }
+
+# ---- scripts/optimize-rtk-context-mode.sh --host pi
+fresh
+tl_run bash "$TL_REPO_ROOT/scripts/optimize-rtk-context-mode.sh" --host pi --project-root "$PROJ" --skip-cm-doctor
+assert_eq "optimize: no consent exits 0" "0" "$TL_STATUS"
+assert_file_absent "optimize: no consent writes no Pi adapter" "$CFG"
+
+fresh; sb_test_consent_grant rtk install,wire,enforce; sb_test_consent_grant context_mode install,wire,enforce
+tl_run bash "$TL_REPO_ROOT/scripts/optimize-rtk-context-mode.sh" --host pi --project-root "$PROJ" --skip-cm-doctor
+assert_eq "optimize: consented rtk and context_mode exits 0" "0" "$TL_STATUS"
+assert_eq "optimize: consented rtk and context_mode are enabled, nothing else" "context_mode,rtk" "$(enabled)"
+
+fresh; sb_test_consent_grant rtk install,wire,enforce
+tl_run bash "$TL_REPO_ROOT/scripts/optimize-rtk-context-mode.sh" --host pi --project-root "$PROJ" --skip-cm-doctor
+assert_eq "optimize: rtk-only consent enables rtk only" "rtk" "$(enabled)"
+
+fresh; sb_test_consent_grant context_mode install,wire,enforce
+tl_run bash "$TL_REPO_ROOT/scripts/optimize-rtk-context-mode.sh" --host pi --project-root "$PROJ" --skip-cm-doctor
+assert_eq "optimize: context_mode-only consent enables context_mode only" "context_mode" "$(enabled)"
+
+fresh; sb_test_consent_grant rtk install,enforce; sb_test_consent_grant context_mode install
+tl_run bash "$TL_REPO_ROOT/scripts/optimize-rtk-context-mode.sh" --host pi --project-root "$PROJ" --skip-cm-doctor
+assert_file_absent "optimize: install/enforce without wire writes no Pi adapter" "$CFG"
+
+# ---- the stack optimizer's graphify platform command (run without a shell, as in production)
+# shellcheck source=../../hooks/lib/stack-optimizer.sh
+source "$TL_REPO_ROOT/hooks/lib/stack-optimizer.sh"
+fresh; sb_test_consent_grant graphify install,wire,enforce; sb_test_consent_grant agentmemory install,wire
+line="$(_sb_stack_graphify_platform_words pre pi)"
+_sb_stack_run_words "$PROJ" "$line"
+assert_eq "stack optimizer: consented graphify and agentmemory are enabled, nothing else" "agentmemory,graphify" "$(enabled)"
+fresh
+assert_eq "stack optimizer: no consent adds no --enable-tool" "0" "$(_sb_stack_graphify_platform_words pre pi | grep -c -e '--enable-tool' || true)"
+
+# ---- the recommended-tools registry command (text shown to the agent)
+# shellcheck source=../../hooks/lib/recommended-tools.sh
+source "$TL_REPO_ROOT/hooks/lib/recommended-tools.sh"
+fresh; sb_test_consent_grant rtk install,wire,enforce; sb_test_consent_grant leanctx install,wire
+pre="$(sb_recommended_tool_platform_pre_index_commands "" rtk pi)"
+assert_contains "registry: consented rtk is enabled" "$pre" "--enable-tool rtk"
+assert_contains "registry: consented leanctx is enabled" "$pre" "--enable-tool leanctx"
+assert_not_contains "registry: unconsented context_mode is not enabled" "$pre" "--enable-tool context_mode"
+fresh
+pre="$(sb_recommended_tool_platform_pre_index_commands "" graphify pi)"
+assert_not_contains "registry: no consent adds no --enable-tool" "$pre" "--enable-tool"
+
+# ---- scripts/install-recommended-tools-global.sh --host pi
+fresh
+tl_run bash "$TL_REPO_ROOT/scripts/install-recommended-tools-global.sh" --host pi
+assert_eq "global pi: no consent exits 0" "0" "$TL_STATUS"
+assert_file_absent "global pi: no consent leaves settings.json alone" "$HOME/.pi/agent/settings.json"
+assert_file_absent "global pi: no consent installs no extension" "$CFG"
+assert_contains "global pi: no consent says how to consent" "$TL_ERR" "SKIP: Pi adapter"
+fresh; sb_test_consent_grant rtk install,wire,enforce
+tl_run bash "$TL_REPO_ROOT/scripts/install-recommended-tools-global.sh" --host pi
+assert_eq "global pi: consented rtk exits 0" "0" "$TL_STATUS"
+assert_eq "global pi: consented rtk is enabled" "rtk" "$(enabled)"
+assert_file_exists "global pi: consented run registers the extension" "$HOME/.pi/agent/settings.json"
+
+tl_results

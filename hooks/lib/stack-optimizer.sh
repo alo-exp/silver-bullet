@@ -369,7 +369,7 @@ _sb_stack_graphify_platform_words() {
     pre:claude) printf '%s\n' 'graphify install --project' ;;
     pre:codex|pre:opencode|pre:hermes) printf '%s\n' "graphify install --project --platform ${host}" ;;
     pre:goose) printf '%s\n' 'graphify install --project --platform pi' ;;
-    pre:pi) printf '%s\n' 'python3 @PLUGIN@/scripts/lib/global-toolstack/install-pi.py --repo-root @REPO@' ;;
+    pre:pi) printf '%s%s\n' 'python3 @PLUGIN@/scripts/lib/global-toolstack/install-pi.py --repo-root @REPO@' "$(sb_consent_pi_enable_words)" ;;
     post:cursor) printf '%s\n' 'graphify cursor install' ;;
     post:claude) printf '%s\n' 'graphify claude install --project' ;;
     post:codex) printf '%s\n' 'graphify codex install --project' ;;
