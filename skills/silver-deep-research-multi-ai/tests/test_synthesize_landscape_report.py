@@ -140,10 +140,10 @@ class MethodologyAndGuidanceTests(unittest.TestCase):
         self.assertNotIn("P8", g(audit=many, pack=pack))
 
 
-from apo_pack_run_fixture import with_apo_pack_run  # noqa: E402
+from apo_pack_run_fixture import with_apo_pack_run, with_apo_pack_run_plain_names# noqa: E402
 
 
-@with_apo_pack_run
+@with_apo_pack_run_plain_names
 class ReportTests(TmpCase):
     ENV = [{"phase_id": "DR-RETRIEVE", "logical_model_id": "gemini-x", "payload": {"evidence": [
         {"claim": "Silver Bullet provides process orchestration above coding agents."}]}},
