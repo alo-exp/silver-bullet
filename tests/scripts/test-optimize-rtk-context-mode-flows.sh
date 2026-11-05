@@ -210,6 +210,11 @@ mv "$ST/scripts/lib/global-toolstack/install-pi.py" "$ST/scripts/lib/global-tool
 run_args --host pi --project-root "$PROJ" --skip-cm-doctor
 assert_eq "missing pi installer fails" "1" "$TL_STATUS"
 assert_contains "pi installer error" "$TL_ERR" "ERROR: Pi adapter installer missing: $ST/scripts/lib/global-toolstack/install-pi.py"
+# rtk-only consent takes the rtk branch of the installer: a missing installer fails there too
+sb_test_consent_revoke_all; sb_test_consent_grant rtk install,wire,enforce
+run_args --host pi --project-root "$PROJ" --skip-cm-doctor
+assert_eq "rtk-only consent: missing pi installer fails" "1" "$TL_STATUS"
+sb_test_consent_grant_all
 mv "$ST/scripts/lib/global-toolstack/install-pi.off" "$ST/scripts/lib/global-toolstack/install-pi.py"
 
 mk_rtk

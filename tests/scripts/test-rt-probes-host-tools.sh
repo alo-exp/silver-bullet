@@ -299,6 +299,7 @@ assert_not_contains "leanctx doctor: a project-file cli_command never runs" "$(c
 cfg=""
 # without the gate helpers there is no binary to find
 assert_eq "leanctx doctor: gate helpers unavailable -> default binary name" "0" "$( (unset -f sb_leanctx_cli_command sb_leanctx_cli_path; hr_bin lean-ctx 'case "$*" in "doctor --help") echo usage;; esac'; rc_of rt_probe_leanctx_vendor_doctor) )"
+assert_eq "leanctx doctor: a failing cli lookup falls back to the default binary name" "0" "$( (sb_leanctx_cli_command() { return 1; }; hr_bin lean-ctx 'case "$*" in "doctor --help") echo usage;; esac'; rc_of rt_probe_leanctx_vendor_doctor) )"
 assert_eq "leanctx doctor: unresolvable binary -> skip" "2" "$( (sb_leanctx_cli_path() { return 1; }; vdr rt_probe_leanctx_vendor_doctor) )"
 export RT_SKIP_VENDOR_DOCTOR=1
 
