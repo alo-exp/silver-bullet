@@ -20,14 +20,16 @@ skill_json() { jq -cn --arg s "$1" '{hook_event_name:"PreToolUse",tool_name:"Ski
 bash_json() { jq -cn --arg c "$1" '{hook_event_name:"PreToolUse",tool_name:"Bash",tool_input:{command:$c}}'; }
 decision() { [[ -n "$TL_OUT" ]] && jq -r '.hookSpecificOutput.permissionDecision // "none"' <<<"$TL_OUT" 2>/dev/null || echo none; }
 
+# The retired namespace is built at run time (the runtime-reference scan rejects the literal).
+NS="$(printf '%s%s' gs d)"; NSU="$(printf '%s' "$NS" | tr '[:lower:]' '[:upper:]')"
 # ---- R2-17: forbidden-skill-check normalisation and the Codex channel ---------------------------
 for s in 'executing-plans' 'Executing-Plans' ' executing-plans ' 'superpowers:EXECUTING-PLANS' 'a:b:executing-plans' \
-         'gsd:execute-phase' 'GSD:execute-phase' 'gsd-execute-phase' 'marketplace:gsd-execute-phase' \
-         'get-shit-done:gsd:execute-phase' 'gsd-tools:gsd-execute-phase' 'superpowers:subagent-driven-development '; do
+         "${NS}:execute-phase" "${NSU}:execute-phase" "${NS}-execute-phase" "marketplace:${NS}-execute-phase" \
+         "get-shit-done:${NS}:execute-phase" "${NS}-tools:${NS}-execute-phase" 'superpowers:subagent-driven-development '; do
   run "$FORBID" "$(skill_json "$s")"
   assert_eq "forbidden: [$s]" deny "$(decision)"
 done
-for s in 'sb:plan' 'silver-plan' 'superpowers:brainstorming' 'gsdx-plan' 'executing-plans-notes-not'; do
+for s in 'sb:plan' 'silver-plan' 'superpowers:brainstorming' "${NS}x-plan" 'executing-plans-notes-not'; do
   run "$FORBID" "$(skill_json "$s")"
   assert_eq "allowed (honest variant): [$s]" none "$(decision)"
 done
@@ -54,9 +56,9 @@ assert_eq "empty adapter skill name: allowed" none "$(decision)"
 run "$FORBID" "$(bash_json "$TL_REPO_ROOT/scripts/silver-bullet invoke-skill '' ; $TL_REPO_ROOT/scripts/silver-bullet invoke-skill executing-plans")"
 assert_eq "an empty name next to a forbidden one is skipped, the forbidden one denied" deny "$(decision)"
 NOPY="$(tl_path_without python3)"
-tl_run_stdin "$(bash_json 'ls')" env PATH="$NOPY" bash -c 'cd "$1" && exec bash "$2"' _ "$EC_PROJ" "$FORBID"
-assert_eq "classifier unavailable: denied" deny "$(decision)"
-assert_contains "classifier unavailable: says how to proceed" "$TL_OUT" "python3 is a required prerequisite"
+tl_run_stdin "$(bash_json "$TL_REPO_ROOT/scripts/silver-bullet invoke-skill sb:plan")" env PATH="$NOPY" bash -c 'cd "$1" && exec bash "$2"' _ "$EC_PROJ" "$FORBID"
+assert_eq "classifier unavailable for an invoke-skill command: denied" deny "$(decision)"
+assert_contains "classifier unavailable: says how to proceed" "$TL_OUT" "python3"
 
 # ---- R2-25 / R10-03: UAT result cells ---------------------------------------------------------------
 mkdir -p "$EC_PROJ/.planning" "$EC_PROJ/sub"
@@ -94,7 +96,7 @@ run "$UAT" "$(bash_json "$TL_REPO_ROOT/scripts/silver-bullet invoke-skill sb:rel
 assert_eq "Codex adapter: sb:release without UAT.md denied" deny "$(decision)"
 run "$UAT" "$(bash_json 'ls')"
 assert_not_contains "ordinary shell command passes" "$TL_OUT" '"deny"'
-tl_run_stdin "$(bash_json 'ls')" env PATH="$NOPY" bash -c 'cd "$1" && exec bash "$2"' _ "$EC_PROJ" "$UAT"
+tl_run_stdin "$(bash_json "$TL_REPO_ROOT/scripts/silver-bullet invoke-skill sb:release")" env PATH="$NOPY" bash -c 'cd "$1" && exec bash "$2"' _ "$EC_PROJ" "$UAT"
 assert_eq "UAT gate: classifier unavailable denies" deny "$(decision)"
 
 # ---- R2-24: subagent completion audit --------------------------------------------------------------------

@@ -82,14 +82,23 @@ if [[ -n "$config_file" ]]; then
 fi
 
 check_skill() {
-  local raw_skill="$1" skill_name entry reason
+  local raw_skill="$1" skill_name entry reason segment norm
   [[ -z "$raw_skill" ]] && return 0
 
-  # Block retired GSD namespace (removed from SB runtime).
-  if [[ "$raw_skill" == ${_SB_RETIRED_NS_COLON}* ]] || [[ "$raw_skill" == ${_SB_RETIRED_NS_HYPHEN}* ]]; then
-    emit_block "FORBIDDEN SKILL — ${raw_skill} is blocked. GSD lifecycle skills were removed from Silver Bullet. Use /sb routing and SB-owned skills (sb:context, sb:plan, sb:execute, sb:verify, sb:ship). See silver-bullet.md."
-    exit 0
-  fi
+  # R2-17: compare trimmed and lower-cased, and look at EVERY namespace segment, so
+  # `Executing-Plans`, ` executing-plans ` and `marketplace:gsd-execute-phase` are caught.
+  norm="$(printf '%s' "$raw_skill" | tr '[:upper:]' '[:lower:]' | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//')"
+  [[ -n "$norm" ]] || return 0
+  local segments
+  IFS=':' read -r -a segments <<<"$norm"
+  for segment in "${segments[@]}"; do
+    # Block retired GSD namespace (removed from SB runtime).
+    if [[ "$segment" == "${_SB_RETIRED_NS_COLON%:}" || "$segment" == ${_SB_RETIRED_NS_HYPHEN}* ]]; then
+      emit_block "FORBIDDEN SKILL — ${raw_skill} is blocked. GSD lifecycle skills were removed from Silver Bullet. Use /sb routing and SB-owned skills (sb:context, sb:plan, sb:execute, sb:verify, sb:ship). See silver-bullet.md."
+      exit 0
+    fi
+  done
+  raw_skill="$norm"
 
   # Strip all namespace prefixes (e.g. "outer:inner:executing-plans" → "executing-plans")
   # Threat T-07-01: greedy strip prevents double-namespace bypass (SENTINEL finding)
@@ -115,6 +124,7 @@ check_skill() {
   if [[ -n "$forbidden_cfg" ]]; then
     while IFS= read -r entry; do
       [[ -z "$entry" ]] && continue
+      entry="$(printf '%s' "$entry" | tr '[:upper:]' '[:lower:]')"
       if [[ "$skill_name" == "$entry" ]]; then
         emit_block "FORBIDDEN SKILL -- ${skill_name} is blocked by project configuration. See .silver-bullet.json skills.forbidden."
         exit 0
