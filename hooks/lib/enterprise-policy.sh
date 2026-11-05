@@ -160,11 +160,10 @@ sb_enterprise_policy_untrusted_text() {
 }
 
 # sb_enterprise_policy_unseen_note: the "cannot inspect: <reason>" paragraph for a command the analysis
-# could not read (empty when the verdict has no unseen reasons). A failed helper is Silver Bullet's problem,
+# could not read (callers check that ca_unseen_reasons is set). A failed helper is Silver Bullet's problem,
 # not the command's, so it gets repair advice instead of "rewrite the command".
 sb_enterprise_policy_unseen_note() {
   local reasons
-  [[ -n "${ca_unseen_reasons:-}" ]] || return 0
   reasons="$(sb_enterprise_policy_untrusted_text "$(printf '%s' "$ca_unseen_reasons" | head -3 | tr '\n' ';')" 240)"
   if [[ "${ca_analysis_status:-}" == "helper_unavailable" ]]; then
     printf "cannot inspect: Silver Bullet's shell analysis helper failed (%s).\nThe command itself is not the problem: check that python3 is installed and on the PATH the host gives hooks, or reinstall Silver Bullet, then retry." "$reasons"

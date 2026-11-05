@@ -200,7 +200,7 @@ ca_classify_command() {
 # ca_push_targets_default_branch: an analysed push updates the default branch (main, master, init.defaultBranch,
 # the remote's default), any tag, or mirrors/pushes everything. Each destination is resolved through git
 # before matching: HEAD and @ are the current branch, refs/heads/x is x, and a bare name that is a tag (and
-# not a branch) is a tag push. A bare `git push` counts when the current branch is a default branch.
+# not a branch) is a tag push (an explicit refs/tags/x already carries the analysis' `tags` flag). A bare `git push` counts when the current branch is a default branch.
 # Needs the analysis of the command (SB_SA_JSON).
 ca_push_targets_default_branch() {
   local names="main master" ref cur dst
@@ -217,7 +217,6 @@ ca_push_targets_default_branch() {
   while IFS= read -r dst; do
     case "$dst" in
       HEAD | @) dst="$cur" ;;
-      refs/tags/*) return 0 ;;
     esac
     dst="${dst#refs/heads/}"
     [[ -n "$dst" && " $names " == *" $dst "* ]] && return 0
