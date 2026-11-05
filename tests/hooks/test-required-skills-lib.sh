@@ -67,9 +67,13 @@ if SB_DEFAULT_CONFIG="$TL_TMP/empty.json" bash -c 'source "$1"; sb_required_skil
 assert_eq "plain skill is its own alias" "silver-verify" "$(sb_required_skill_aliases silver-verify | tr '\n' ' ' | sed 's/ $//')"
 assert_eq "tdd aliases" "silver-tdd tdd test-driven-development" "$(sb_required_skill_aliases silver-tdd | tr '\n' ' ' | sed 's/ $//')"
 assert_eq "plan alias" "silver-plan writing-plans" "$(sb_required_skill_aliases silver-plan | tr '\n' ' ' | sed 's/ $//')"
-for pair in "silver-review:code-review" "silver-secure:security" "silver-debug:systematic-debugging" "silver-review-request:requesting-code-review" "silver-review-triage:receiving-code-review" "silver-branch-finish:finishing-a-development-branch" "silver-completion-audit:verification-before-completion"; do
+for pair in "silver-review:code-review" "silver-debug:systematic-debugging" "silver-review-request:requesting-code-review" "silver-review-triage:receiving-code-review" "silver-branch-finish:finishing-a-development-branch" "silver-completion-audit:verification-before-completion"; do
   assert_contains "alias of ${pair%%:*}" "$(sb_required_skill_aliases "${pair%%:*}")" "${pair#*:}"
 done
+# R1-23: `security` and `silver-secure` are two required steps; one must not satisfy the other
+assert_eq "silver-secure has no alias" "silver-secure" "$(sb_required_skill_aliases silver-secure | tr '\n' ' ' | sed 's/ $//')"
+if sb_required_skill_is_recorded $'security\n' silver-secure; then tl_fail "security does not satisfy silver-secure"; else tl_pass "security does not satisfy silver-secure"; fi
+if sb_required_skill_is_recorded $'silver-secure\n' silver-secure; then tl_pass "silver-secure satisfies itself"; else tl_fail "silver-secure satisfies itself"; fi
 if sb_required_skill_is_virtual_marker silver-plan; then tl_pass "virtual marker"; else tl_fail "virtual marker"; fi
 if sb_required_skill_is_virtual_marker random-skill; then tl_fail "not a virtual marker"; else tl_pass "not a virtual marker"; fi
 STATE=$'code-review\nother\n'

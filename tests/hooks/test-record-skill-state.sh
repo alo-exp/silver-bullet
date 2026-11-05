@@ -20,8 +20,10 @@ assert_eq "re-recording does not duplicate the state line" "1" "$(grep -Fxc silv
 reset; rs "$(skill_input some-untracked-skill)"
 assert_eq "untracked skill is reported as nothing recorded" "$NOTHING" "$(msg)"
 assert_file_absent "untracked skill creates no state file" "$STATE"
+reset; rs "$(skill_input silver-bullet:superpowers:silver-plan)"
+assert_in "trusted namespace prefixes are stripped" "$STATE" silver-plan
 reset; rs "$(skill_input plugin:ns:silver-plan)"
-assert_in "namespace prefixes are stripped" "$STATE" silver-plan
+assert_not_in "foreign namespace prefixes mint no marker" "$STATE" silver-plan
 reset; rs "$(skill_input sb:feature)"
 assert_in "sb:feature is canonicalised to silver-feature" "$STATE" silver-feature
 reset; rs "$(skill_input silver-tdd)"

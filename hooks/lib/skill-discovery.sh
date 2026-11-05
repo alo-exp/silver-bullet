@@ -175,8 +175,36 @@ sb_skill_is_installed() {
   return 1
 }
 
+# Plugin namespaces whose skills may satisfy Silver Bullet markers besides Silver Bullet's own
+# (`silver-bullet:`): the dependency plugins that supply the retired required names (code-review,
+# testing-strategy, writing-plans, tdd, ...) and that dependency-skill-check.sh already lists.
+# Override with SILVER_BULLET_SKILL_NAMESPACES (space-separated). Any other
+# `<plugin>:<skill>` keeps its namespace, so an unrelated plugin cannot mint a Silver Bullet marker
+# by shipping a skill called `security` or `tdd` (R1-23).
+sb_skill_namespace_is_trusted() {
+  local ns="${1:-}" trusted
+  [[ -n "$ns" ]] || return 1
+  [[ "$ns" == "silver-bullet" ]] && return 0
+  for trusted in ${SILVER_BULLET_SKILL_NAMESPACES:-superpowers engineering design product-management multai}; do
+    [[ "$ns" == "$trusted" ]] && return 0
+  done
+  return 1
+}
+
 sb_skill_canonical_name() {
-  local skill="${1:-}"
+  local skill="${1:-}" namespace=""
+  [[ -n "$skill" ]] || return 1
+
+  # Peel trusted plugin namespaces first, repeatedly, so `silver-bullet:sb:plan` reaches the `sb:`
+  # mapping below (R10b-03). A foreign namespace stops the peel and is kept verbatim.
+  while [[ "$skill" == *:* ]]; do
+    namespace="${skill%%:*}"
+    if [[ "$namespace" != "sb" ]] && sb_skill_namespace_is_trusted "$namespace"; then
+      skill="${skill#*:}"
+    else
+      break
+    fi
+  done
   [[ -n "$skill" ]] || return 1
 
   # Public host routes use `sb:<route>`; compliance state and the canonical
@@ -206,16 +234,7 @@ sb_skill_canonical_name() {
     return 0
   fi
 
-  # Preserve the retired Silver Bullet namespace instead of silently treating
-  # it as an unnamespaced route. Other host namespaces may still be unwrapped.
-  local namespace="${skill%%:*}"
-  if [[ "$skill" == *:* && "$namespace" == "silver" ]]; then
-    printf '%s' "$skill"
-    return 0
-  fi
-  while [[ "$skill" == *:* ]]; do
-    skill="${skill#*:}"
-  done
-
+  # Everything else (the retired `silver:` namespace, a foreign `<plugin>:<skill>`) keeps its
+  # namespace and so matches no tracked marker.
   printf '%s' "$skill"
 }
