@@ -78,15 +78,15 @@ else
   cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // ""')
 fi
 
-extract_invoke_skill_adapter_skill() {
-  local command_str="$1"
-  python3 - "$command_str" <<'PY' 2>/dev/null || true
+# The command arrives on stdin, never argv (no size limit, nothing visible in `ps`).
+# (read -d '' rather than $(cat <<...): Bash 3.2 mis-parses quotes inside a heredoc in $(...).)
+IFS= read -r -d '' _SB_ADAPTER_PARSER_PY <<'PY' || true
 import pathlib
 import re
 import shlex
 import sys
 
-command = sys.argv[1]
+command = sys.stdin.read()
 assignment_re = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=.*$")
 shell_names = {"bash", "sh", "zsh"}
 
@@ -137,6 +137,33 @@ skill = inspect_tokens(parse(command))
 if skill:
     print(skill)
 PY
+
+extract_invoke_skill_adapter_skill() {
+  # Cheap guard (R3-19): most Bash calls are not adapter calls, so skip starting python for them.
+  [[ "$1" == *invoke-skill* ]] || return 0
+  printf '%s' "$1" | python3 -c "$_SB_ADAPTER_PARSER_PY" 2>/dev/null || true
+}
+
+# R3-08: an adapter-invoked skill (`silver-bullet invoke-skill`) bypasses the Skill-matcher
+# PreToolUse gates, because the host sees a Bash call. Run the same gates here with a synthetic
+# Skill payload and refuse to record when any denies. Prints the first denial reason.
+adapter_skill_gate_denial() {
+  local skill="$1" gate payload out hooks_dir
+  hooks_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  payload="$(jq -cn --arg s "$skill" '{hook_event_name:"PreToolUse", tool_name:"Skill", tool_input:{skill:$s}, cwd:env.PWD}')"
+  for gate in review-fix-ladder-guard.sh rfl-policy-c-gate.sh forbidden-skill-check.sh dependency-skill-check.sh uat-gate.sh; do
+    [[ -x "$hooks_dir/$gate" ]] || continue
+    if ! out="$(printf '%s' "$payload" | "$hooks_dir/$gate" 2>/dev/null)"; then
+      # A gate that cannot answer is not an allow.
+      printf 'the %s gate failed' "$gate"
+      return 0
+    fi
+    if [[ "$(printf '%s' "$out" | jq -r '.hookSpecificOutput.permissionDecision // ""' 2>/dev/null || true)" == "deny" ]]; then
+      printf '%s' "$out" | jq -r '.hookSpecificOutput.permissionDecisionReason // "denied"' 2>/dev/null || printf 'denied'
+      return 0
+    fi
+  done
+  return 1
 }
 
 invoke_skill_adapter_receipt_is_valid() {
@@ -194,6 +221,10 @@ elif { [[ "$tool_name" == "Bash" ]] || { declare -f sb_tool_is_shell_like >/dev/
   adapter_skill="$(extract_invoke_skill_adapter_skill "$cmd")"
   adapter_exit_code="$(printf '%s' "$input" | jq -r '.tool_response.exit_code // .tool_response.exitCode // 0' 2>/dev/null || printf '0')"
   if [[ -n "$adapter_skill" && "$adapter_exit_code" == "0" ]] && invoke_skill_adapter_receipt_is_valid "$adapter_skill"; then
+    if adapter_denial="$(adapter_skill_gate_denial "$adapter_skill")"; then
+      sb_emit_hook_message "PostToolUse" "⚠️ Skill not recorded: the Skill gates deny ${adapter_skill} — ${adapter_denial}"
+      exit 0
+    fi
     skills_to_record+=("$adapter_skill")
   elif [[ "$cmd" == *"SKILL.md"* ]]; then
     # Extract any SKILL.md paths embedded in the command string.

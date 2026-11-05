@@ -48,4 +48,28 @@ rm -f "$RECEIPTS"
 reset; write_receipt silver-plan; rs "$(bash_input "$ADAPTER")" PY_NO_C=1
 assert_in "cwd falls back to \$PWD when python cannot resolve it" "$STATE" silver-plan
 
+# R3-08: the Skill-matcher gates run on an adapter-invoked skill, which the host sees as Bash
+reset; tg2_cfg '{"sb_initiated":true,"skills":{"forbidden":["plan"]}}'; write_receipt silver-plan; rs "$(bash_input "$ADAPTER")"
+assert_not_in "an adapter skill that the Skill gates deny is not recorded" "$STATE" silver-plan
+assert_contains "the denial is reported with the gate's reason" "$(msg)" "Skill gates deny sb:plan"
+assert_contains "the gate's own reason is shown" "$(msg)" "FORBIDDEN SKILL"
+reset; write_receipt silver-plan; rs "$(bash_input "$ADAPTER")"
+assert_in "an honest adapter skill still records when the gates allow" "$STATE" silver-plan
+# a Skill gate that fails outright is a denial, not an allow; absent gates are skipped
+reset; write_receipt silver-plan; tg2_farm gatefail "$HOOK"
+printf '#!/usr/bin/env bash\nexit 2\n' >"$TL_TMP/farm-gatefail/hooks/uat-gate.sh"; chmod +x "$TL_TMP/farm-gatefail/hooks/uat-gate.sh"
+TG2_REPO="$TG2_FARM" rs "$(bash_input "$ADAPTER")"
+assert_not_in "a failing Skill gate blocks the adapter record" "$STATE" silver-plan
+assert_contains "the failing gate is named" "$(msg)" "uat-gate.sh gate failed"
+rm -f "$TL_TMP/farm-gatefail/hooks/uat-gate.sh"
+reset; write_receipt silver-plan
+TG2_REPO="$TG2_FARM" rs "$(bash_input "$ADAPTER")"
+assert_in "no Skill gates installed: the adapter skill records" "$STATE" silver-plan
+# A command far beyond any argv limit is handled (payload travels on stdin, never argv)
+reset; write_receipt silver-plan
+BIGCMD="echo $(head -c 400000 /dev/zero | tr '\0' 'x') invoke-skill; $ADAPTER"
+rs "$(bash_input "$BIGCMD")"
+assert_eq "oversized command: hook still succeeds" 0 "$TL_STATUS"
+assert_not_in "oversized compound command is not trusted as an adapter call" "$STATE" silver-plan
+
 tl_results

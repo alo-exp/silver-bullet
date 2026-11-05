@@ -111,7 +111,6 @@ sb_required_skill_aliases() {
   case "$skill" in
     silver-plan) printf '%s\n' writing-plans ;;
     silver-review) printf '%s\n' code-review ;;
-    silver-secure) printf '%s\n' security ;;
     silver-debug) printf '%s\n' systematic-debugging ;;
     silver-review-request) printf '%s\n' requesting-code-review ;;
     silver-review-triage) printf '%s\n' receiving-code-review ;;

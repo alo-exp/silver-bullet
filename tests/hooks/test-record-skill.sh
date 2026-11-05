@@ -383,18 +383,30 @@ else
 fi
 teardown
 
-# Test 14: Double-namespace stripping (outer:inner:silver-quality-gates → silver-quality-gates)
-echo "--- Group 6: Double-namespace stripping (SENTINEL S6-001) ---"
+# Test 14: namespaces (SENTINEL S6-001, R1-23, R10b-03). Silver Bullet's own and trusted plugin
+# prefixes are peeled repeatedly; a foreign plugin keeps its namespace and mints no marker.
+echo "--- Group 6: namespace handling ---"
 setup
-run_hook "outer:inner:silver-quality-gates" >/dev/null
-assert_in_state "double-namespaced skill recorded (outer:inner:silver-quality-gates → silver-quality-gates)" "silver-quality-gates"
-assert_not_in_state "double-namespaced form not recorded verbatim" "outer:inner:silver-quality-gates"
-assert_not_in_state "single-stripped form not recorded" "inner:silver-quality-gates"
+run_hook "silver-bullet:superpowers:silver-quality-gates" >/dev/null
+assert_in_state "stacked trusted namespaces peeled (silver-bullet:superpowers:silver-quality-gates)" "silver-quality-gates"
+assert_not_in_state "namespaced form not recorded verbatim" "silver-bullet:superpowers:silver-quality-gates"
 teardown
 
 setup
-run_hook "a:b:c:code-review" >/dev/null
-assert_in_state "triple-namespaced skill recorded (a:b:c:code-review → code-review)" "code-review"
+run_hook "outer:inner:silver-quality-gates" >/dev/null
+assert_not_in_state "foreign double-namespaced skill mints no marker" "silver-quality-gates"
+assert_not_in_state "foreign double-namespaced form not recorded verbatim" "outer:inner:silver-quality-gates"
+teardown
+
+setup
+run_hook "silver-bullet:sb:plan" >/dev/null
+assert_in_state "plugin-qualified silver-bullet:sb:plan records silver-plan (R10b-03)" "silver-plan"
+assert_not_in_state "plugin-qualified name does not record bare 'plan'" "plan"
+teardown
+
+setup
+run_hook "evil-plugin:security" >/dev/null
+assert_not_in_state "a foreign plugin's security skill mints no marker (R1-23)" "security"
 teardown
 
 # Test 15: Arbitrary Kay-looking state roots are rejected unless explicitly allowed.
