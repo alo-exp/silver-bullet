@@ -2,7 +2,7 @@ model: composer-2.5
 
 **Subagent:** `sb-composer-2-5-high`  
 **Phase:** VERIFY-ONLY pass 1/2 (`rung_1_verify_1`, post CLEAN GLM review pass 3)  
-**Artifact:** `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
+**Artifact:** `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
 **SHA-256:** `ddc71a73810355206f57fd4267358478cea6e33622b7ae7c0617444a90f8b2a9` (verified via `shasum -a 256`)  
 **Graphify:** `graphify query "dr-search-gateway round-4-post-clarify verify F1 F13 R1 R2 APPLY leftovers plan SHA"` (360 nodes; plan is PRD not indexed as source — oriented via direct read)  
 **Review ref:** [review-pass-3.md](review-pass-3.md) (CLEAN, streak 0/2 → 1/2) · **Prior verify:** [verify_1-pass2.md](verify_1-pass2.md)

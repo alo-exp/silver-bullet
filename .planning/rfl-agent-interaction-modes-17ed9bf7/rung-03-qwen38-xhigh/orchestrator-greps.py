@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import re
 from pathlib import Path
-plan = Path("/Users/shafqat/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md").read_text()
+plan = Path("/Users/<user>/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md").read_text()
 for name, pat in [
     ("I-25 pin-only fallback", r"Not valid on D4|pin-only"),
     ("I-26 clarify/zero_tokens", r"clarify|zero_tokens"),

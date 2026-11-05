@@ -6,7 +6,7 @@
   "mode": "ultradeep",
   "workflow": "AF-DECIDE / FS-SILVER_DEEP_RESEARCH",
   "topic": "Canonical SDLC Process Architecture — Multi-Agent Research Brief",
-  "output_directory": "/Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/",
+  "output_directory": "/Users/<user>/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/",
   "required_artifacts": [
     "research_report.md",
     "scope.md",

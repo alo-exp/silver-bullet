@@ -2,7 +2,7 @@ model: composer-2.5
 
 **Subagent:** `sb-composer-2-5-high`  
 **Phase:** VERIFY-ONLY pass 1/2 (`rung_1_verify_1`, post ACCEPT-apply of W1–W7 / I-20–I-26)  
-**Artifact:** `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
+**Artifact:** `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
 **SHA-256:** `c0bd99f901238743caa04d7f6f169b9ab9d722acb94d0391c4efadc3c05098fc` (verified via `shasum -a 256`)  
 **Graphify:** `graphify query "quota-dir allow-private augment_query reddit TTL clap values" --budget 2000` (204 nodes; oriented quota/fingerprint/reddit/clap contract)  
 **Apply ref:** [APPLY.md](APPLY.md) pass 8 (W1–W7 / I-20–I-26) · **Prior verify:** [verify_1-pass7.md](verify_1-pass7.md)

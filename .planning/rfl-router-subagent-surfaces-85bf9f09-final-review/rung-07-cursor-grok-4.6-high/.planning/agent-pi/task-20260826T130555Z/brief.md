@@ -4,8 +4,8 @@ Phase: REVIEW-ONLY (rung_07_review)
 This is `/silver:review-fix-ladder` only. Do **not** run `/silver:clarify`. Do not write clarifications.md. Do not AskQuestion. Do not encode product forks.
 
 Scope (do not exceed — FORBIDDEN to touch any other path):
-- `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
-- `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
+- `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
+- `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
 
 Independently re-hash both copies. Disk wins.
 - Charter start SHA: `07b986094e983d39fe3c7d2f1ac215ae730cbd28ccf3957655f5ec4c53d3280a` / 620985 bytes (historical; do not treat as current)
@@ -26,7 +26,7 @@ Tasks:
 2. Report raw findings with line references and severity (HIGH / MED / LOW / NIT).
 3. Write the report with the **write** tool (not stdout) to **both** of:
    - `./review.md` (current working directory — the rung folder)
-   - `/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-07-cursor-grok-4.6-high/review.md`
+   - `/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-07-cursor-grok-4.6-high/review.md`
    Header line MUST include: `Pi cursor/grok-4.6-high via /silver:agent-pi`.
 4. Do NOT classify ACCEPT/REJECT, file issues, or apply fixes.
 5. MUST NOT Edit/Write either freeze copy.

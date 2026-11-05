@@ -57,6 +57,14 @@ class MultiAiCliTests(HermeticCase):
         self.assertEqual((parsed.include_only, parsed.exclude, parsed.phase_id), (["a", "b"], ["c"], "DR-CRITIQUE"))
         with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
             multi_ai_cli.parse_args(["--phase-id", "NOPE"])
+        self.assertEqual(multi_ai_cli.parse_args([]).concurrency, 6)
+
+    def test_numeric_limits_must_be_positive(self) -> None:
+        for flag in ("--max-agents", "--concurrency", "--timeout-sec"):
+            with contextlib.redirect_stderr(io.StringIO()) as err, self.assertRaises(SystemExit) as ctx:
+                multi_ai_cli.parse_args([flag, "0"])
+            self.assertEqual(ctx.exception.code, 2, flag)
+            self.assertIn("must be a positive integer", err.getvalue())
 
     def test_live_dispatch_requires_output_root(self) -> None:
         rc, out, _ = run_main(multi_ai_cli.main, [])
@@ -98,6 +106,7 @@ class MultiAiCliTests(HermeticCase):
             "--output-root", str(self.tmp / "o"), "--task-prompt", "TP", "--phase-id", "DR-TRIANGULATE",
             "--ocg-pool", "regular", "--cursor-pool", "none", "--include-only", "ocg-minimax-m3",
             "--exclude", "x", "--cursor-subscription", "subscribed", "--timeout-sec", "33",
+            "--max-agents", "4", "--concurrency", "2",
         ]
         with mock.patch.dict(os.environ, {"SB_HOST": "cursor"}):
             with mock.patch.object(multi_ai_cli, "run_multi_ai_live", return_value={"ok": True, "run_id": "r"}) as live:
@@ -105,6 +114,7 @@ class MultiAiCliTests(HermeticCase):
             kwargs = live.call_args.kwargs
             self.assertEqual((rc, json.loads(out)), (0, {"ok": True, "run_id": "r"}))
             self.assertEqual(kwargs["output_root"], self.tmp / "o")
+            self.assertEqual((kwargs["budget"].max_agents, kwargs["budget"].concurrency), (4, 2))
             self.assertEqual((kwargs["task_prompt"], kwargs["phase_id"], kwargs["timeout_sec"]), ("TP", "DR-TRIANGULATE", 33))
             selection = kwargs["selection"]
             self.assertEqual(
@@ -221,7 +231,7 @@ class CursorHostAdapterTests(HermeticCase):
         )
         out, worker, out_dir = self._live_launch(result, task_prompt="CUSTOM", phase_id="DR-CRITIQUE", hard_token_ceiling=50_000)
         kwargs = worker.call_args.kwargs
-        self.assertEqual((kwargs["prompt"], kwargs["timeout_sec"], kwargs["output_dir"]), ("CUSTOM", 500, out_dir))
+        self.assertEqual((kwargs["prompt"], kwargs["timeout_sec"], kwargs["output_dir"]), ("CUSTOM", 900, out_dir))
         self.assertTrue(out_dir.is_dir())
         self.assertTrue(out["ok"])
         self.assertEqual(out["live_status"], "live")
@@ -260,12 +270,24 @@ class CursorHostAdapterTests(HermeticCase):
             self._live_launch(result)
             self.assertEqual(trimmed[0], script_dir)
 
+    def test_invalid_and_naive_deadlines(self) -> None:
+        with mock.patch.object(live_dispatch, "run_cursor_worker") as worker:
+            bad = cha.launch(launch_request(output_root=str(self.tmp / "o"), deadline="next tuesday"))
+        worker.assert_not_called()
+        self.assertEqual((bad["ok"], bad["error_code"], bad["live_status"]), (False, "INVALID_DEADLINE", "live"))
+        self.assertIsNone(cha.seconds_until("not-a-date"))
+        # A deadline without an offset is read as UTC.
+        naive = cha.seconds_until("2999-01-01T00:00:00")
+        aware = cha.seconds_until("2999-01-01T00:00:00Z")
+        self.assertAlmostEqual(naive, aware, delta=5)
+
     def test_cancel_and_cas(self) -> None:
         live = cha.cancel("a", "k")
-        self.assertEqual((live["ok"], live["live_status"], live["child_liveness_verified"]), (True, "live", True))
+        self.assertEqual((live["ok"], live["live_status"], live["child_liveness_verified"]), (False, "live", False))
+        self.assertEqual((live["error_code"], live["cancellation_acknowledged"]), ("CANCEL_NOT_SUPPORTED", False))
         with mock.patch.dict(os.environ, {"SB_MULTI_AI_STUB": "1"}):
             stub = cha.cancel("a", "k")
-        self.assertEqual((stub["live_status"], stub["child_liveness_verified"], stub["cancellation_acknowledged"]), ("not-live", False, True))
+        self.assertEqual((stub["live_status"], stub["child_liveness_verified"], stub["cancellation_acknowledged"]), ("not-live", False, False))
         conflict = cha.cas_select_authoritative_attempt(3, 2, "x")
         self.assertEqual((conflict["ok"], conflict["error_code"], conflict["current_generation"], conflict["expected_generation"]),
                          (False, "CAS_GENERATION_CONFLICT", 3, 2))
@@ -274,7 +296,7 @@ class CursorHostAdapterTests(HermeticCase):
 
     def test_cli_subcommands(self) -> None:
         rc, out, _ = run_main(cha.main, ["cancel", "--attempt-id", "a1", "--idempotency-key", "k1"])
-        self.assertEqual((rc, json.loads(out)["cancellation_acknowledged"]), (0, True))
+        self.assertEqual((rc, json.loads(out)["cancellation_acknowledged"]), (0, False))
         rc, out, _ = run_main(cha.main, ["cas", "--current-generation", "1", "--expected-generation", "1", "--authoritative-attempt-id", "a9"])
         self.assertEqual((rc, json.loads(out)["authoritative_attempt_id"], json.loads(out)["generation"]), (0, "a9", 2))
         rc, out, _ = run_main(cha.main, ["cas", "--current-generation", "1", "--expected-generation", "0"])
@@ -317,7 +339,7 @@ class OcgPoolCohortTests(HermeticCase):
                 raise outcome
             return outcome
 
-        with mock.patch.object(oc.subprocess, "run", side_effect=fake), contextlib.redirect_stderr(io.StringIO()) as err:
+        with mock.patch.object(oc, "_run_cli", side_effect=fake), contextlib.redirect_stderr(io.StringIO()) as err:
             result = oc.run_profile(logical_model_id=logical, prompt="P", work_dir=self.work, timeout_sec=4, progress_path=progress)
         self.stderr = err.getvalue()
         return result
@@ -351,8 +373,11 @@ class OcgPoolCohortTests(HermeticCase):
         self.assertEqual(out["raw_output_path"], "ocg-kimi-k2.6-opencode-go-kimi-k2.6.raw.txt")
         self.assertEqual((self.work / out["raw_output_path"]).read_text(), '{"a": 1}\nwarn')
         cmd, kwargs = self.captured
-        self.assertEqual(cmd, ["/oc/opencode", "run", "--dir", str(self.work), "-m", "opencode-go/kimi-k2.6", "--auto", "P"])
-        self.assertEqual((kwargs["timeout"], kwargs["cwd"]), (4, str(self.work)))
+        # No --auto, and the CLI runs in its own empty sandbox rather than the shared phase dir.
+        sandbox = kwargs["cwd"]
+        self.assertEqual(cmd, ["/oc/opencode", "run", "--dir", sandbox, "-m", "opencode-go/kimi-k2.6", "P"])
+        self.assertNotEqual(sandbox, str(self.work))
+        self.assertEqual(kwargs["timeout"], 4)
         log = progress.read_text()
         self.assertIn("START ocg-kimi-k2.6", log)
         self.assertIn("DONE ocg-kimi-k2.6 status=completed", log)
@@ -380,6 +405,18 @@ class OcgPoolCohortTests(HermeticCase):
         out = self.profile(FileNotFoundError("opencode"))
         self.assertEqual((out["status"], out["error"], out["elapsed_sec"]), ("failed", "opencode CLI not found", 0))
         self.assertIn("opencode CLI not found", self.stderr)
+        other = self.profile(OSError(7, "Argument list too long"))
+        self.assertEqual(other["status"], "failed")
+        self.assertIn("opencode launch failed", other["error"])
+
+    def test_relative_request_work_dir_resolves_against_the_request_file(self) -> None:
+        phase = self.subdir("phase")
+        req = phase / "ocg-cohort-request-x.json"
+        req.write_text(json.dumps({"phase_id": "p", "query": "q", "logical_model_ids": ["ocg-minimax-m3"], "work_dir": "."}))
+        with mock.patch.object(oc, "_run_cli", return_value=proc_ok('{"a": 1}')), contextlib.redirect_stderr(io.StringIO()):
+            rc, _, _ = run_main(oc.main, ["--request", str(req)])
+        self.assertEqual(rc, 0)
+        self.assertTrue((phase / "ocg-minimax-m3-opencode-go-minimax-m3.raw.txt").is_file())
 
     def test_run_profile_unknown_model_raises(self) -> None:
         with self.assertRaises(ValueError):
@@ -402,7 +439,7 @@ class OcgPoolCohortTests(HermeticCase):
             "logical_model_ids": ["ocg-minimax-m3", "ocg-mimo-v2.5"], "work_dir": str(work), "timeout_sec": 9999,
             "attempt_id": "att7", "pool": "regular",
         }
-        with mock.patch.object(oc.subprocess, "run", side_effect=fake) as run, contextlib.redirect_stderr(io.StringIO()):
+        with mock.patch.object(oc, "_run_cli", side_effect=fake) as run, contextlib.redirect_stderr(io.StringIO()):
             result = oc.run_cohort(request)
         self.assertFalse(result["ok"])
         self.assertEqual(result["schema_id"], "ocg-pool-cohort-result-v1")
@@ -419,7 +456,7 @@ class OcgPoolCohortTests(HermeticCase):
 
     def test_run_cohort_defaults_and_all_ok(self) -> None:
         request = {"phase_id": "DR-CRITIQUE", "query": "Q", "logical_model_ids": ["ocg-minimax-m3"], "work_dir": str(self.tmp / "w2")}
-        with mock.patch.object(oc.subprocess, "run", return_value=proc_ok('{"a": 1}')) as run, contextlib.redirect_stderr(io.StringIO()):
+        with mock.patch.object(oc, "_run_cli", return_value=proc_ok('{"a": 1}')) as run, contextlib.redirect_stderr(io.StringIO()):
             result = oc.run_cohort(request)
         self.assertTrue(result["ok"])
         self.assertEqual(result["pool"], "lite")
@@ -438,7 +475,7 @@ class OcgPoolCohortTests(HermeticCase):
     def test_main_stdout_and_output_file(self) -> None:
         req = self.tmp / "req.json"
         req.write_text(json.dumps({"phase_id": "p", "query": "q", "logical_model_ids": ["ocg-minimax-m3"], "work_dir": str(self.tmp / "w4")}))
-        with mock.patch.object(oc.subprocess, "run", return_value=proc_ok('{"a": 1}')), contextlib.redirect_stderr(io.StringIO()):
+        with mock.patch.object(oc, "_run_cli", return_value=proc_ok('{"a": 1}')), contextlib.redirect_stderr(io.StringIO()):
             rc, out, _ = run_main(oc.main, ["--request", str(req)])
             self.assertEqual(rc, 0)
             self.assertTrue(json.loads(out)["ok"])
@@ -446,7 +483,7 @@ class OcgPoolCohortTests(HermeticCase):
             rc, out, _ = run_main(oc.main, ["--request", str(req), "--output", str(target)])
             self.assertEqual((rc, out), (0, ""))
             self.assertTrue(json.loads(target.read_text())["ok"])
-        with mock.patch.object(oc.subprocess, "run", return_value=proc_ok("", "", 1)), contextlib.redirect_stderr(io.StringIO()):
+        with mock.patch.object(oc, "_run_cli", return_value=proc_ok("", "", 1)), contextlib.redirect_stderr(io.StringIO()):
             rc, out, _ = run_main(oc.main, ["--request", str(req)])
         self.assertEqual(rc, 1)
         self.assertFalse(json.loads(out)["ok"])

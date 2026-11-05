@@ -11,7 +11,7 @@ overview: >
   short quality order Executor → Verifier → Validator. Non-trivial Jobs follow Process
   resolve → Advisor compose → nested I/A/Verification → Process-final Validation.
   Same ship: OmniRoute / `/sb:agent-*` opt-in is **absorbed** into this freeze (WS6 + LS-agent-pin).
-  Origin (provenance only): [`/Users/shafqat/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md`](/Users/shafqat/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md)
+  Origin (provenance only): [`/Users/<user>/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md`](/Users/<user>/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md)
   SHA-256 `745c7f4166f70dff9181d7c8a639eb2e3519eedeb25487dda2f97e84425c2c26` — implementers do not need that file.
   Inside WS1–WS7, YAML order is **Part A** (quality-order core runtime) then **Part B** (capabilities that invoke it).
 todos:
@@ -131,7 +131,7 @@ Planning freeze only — do not execute WS0 or any product implementation from t
 
 Live-spec MUST text lives only in [§2.7](#27-canonical-live-spec-must-catalog). KEEP REJECT lock text lives only in [§3.3](#33-options-considered-and-keep-reject). Pointers elsewhere are navigation, not deletions.
 
-**OmniRoute / `/sb:agent-*` opt-in is absorbed in this freeze** (WS6 named slice + [LS-agent-pin](#ls-agent-pin); not before WS0/WS0b). Origin (provenance only — implementers do **not** need the second file): [`/Users/shafqat/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md`](/Users/shafqat/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md) SHA-256 `745c7f4166f70dff9181d7c8a639eb2e3519eedeb25487dda2f97e84425c2c26`. Public prefix is `/sb` (omni draft `/silver:` composed). Omni is routing-only infra, not a second public `/sb` router. Quality-order **Part A** lands before Part B consumers ([§5.2](#52-ship-sequence-ws0-ws0b-ws17-ws8-docs-release)).
+**OmniRoute / `/sb:agent-*` opt-in is absorbed in this freeze** (WS6 named slice + [LS-agent-pin](#ls-agent-pin); not before WS0/WS0b). Origin (provenance only — implementers do **not** need the second file): [`/Users/<user>/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md`](/Users/<user>/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md) SHA-256 `745c7f4166f70dff9181d7c8a639eb2e3519eedeb25487dda2f97e84425c2c26`. Public prefix is `/sb` (omni draft `/silver:` composed). Omni is routing-only infra, not a second public `/sb` router. Quality-order **Part A** lands before Part B consumers ([§5.2](#52-ship-sequence-ws0-ws0b-ws17-ws8-docs-release)).
 
 ## Glossary
 
@@ -345,7 +345,7 @@ Live-spec MUST text lives only in [§2.7](#27-canonical-live-spec-must-catalog).
 |---|---|
 | Title | Router Subagent Surfaces — Architecture and Design Change |
 | Date | 2026-08-17 |
-| Revised | 2026-08-25 — Part A/B execution order inside WS1–WS7 so quality-order core (`nested-quality-loops` + `fast-short-quality-order`) lands before consumers. Same day: absorb companion OmniRoute / `/sb:agent-*` opt-in into this freeze (origin [`omni_agent_opt-in_67f2f73a.plan.md`](/Users/shafqat/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md) SHA-256 `745c7f4166f70dff9181d7c8a639eb2e3519eedeb25487dda2f97e84425c2c26`; implementers do not need that file). Named WS6 slice + WS2/WS7; not before WS0/WS0b. YAML todos remain pending. No KEEP REJECT reopen; no new §6 A/B/C. Prior Revised (clarify Q1–Q3 on freeze `eb9c7bb0…`): [Appendix A](#a-sha-lineage-and-round-receipts). |
+| Revised | 2026-08-25 — Part A/B execution order inside WS1–WS7 so quality-order core (`nested-quality-loops` + `fast-short-quality-order`) lands before consumers. Same day: absorb companion OmniRoute / `/sb:agent-*` opt-in into this freeze (origin [`omni_agent_opt-in_67f2f73a.plan.md`](/Users/<user>/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md) SHA-256 `745c7f4166f70dff9181d7c8a639eb2e3519eedeb25487dda2f97e84425c2c26`; implementers do not need that file). Named WS6 slice + WS2/WS7; not before WS0/WS0b. YAML todos remain pending. No KEEP REJECT reopen; no new §6 A/B/C. Prior Revised (clarify Q1–Q3 on freeze `eb9c7bb0…`): [Appendix A](#a-sha-lineage-and-round-receipts). |
 | Replaces | Parent-spawn-only orchestrator (`silver:*` parent mode; parent never implements; hooks cannot invoke Cursor `Task`) |
 | Audience | Human reviewer and executing agent. The body is the spec. |
 | Copies | `.planning/router_subagent_surfaces_85bf9f09.plan.md` and `~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` MUST stay byte-identical. |
@@ -645,7 +645,7 @@ The following entries are the **only canonical live-spec MUST text**. Elsewhere,
 - **KEEP REJECT:** WS0 must not delete freeze evidence, KEEP REJECT locks, catalog/generator SOT, or tests that still gate current SB; WS0/WS0b must not implement product hooks/skills; do not start WS1 until WS0 and WS0b are done; Job post-Val Executor K/L+key-doc hop is runtime behavior, not a substitute for WS0b/WS8. **Ship sequence (live-spec MUST).** Do **not** start WS1–WS7 (or any product implementation of this freeze) until **WS0** and **WS0b** are done.
 - After WS1–WS7 product implementation, **WS8** then **docs-release** MUST run.
 - Numbered WS1–WS7 citations that predate this MUST still refer to those product workstreams; coverage maps use WS0–WS8.
-- OmniRoute / `/sb:agent-*` Graphify-style opt-in (companion [`omni_agent_opt-in_67f2f73a.plan.md`](/Users/shafqat/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md) SHA-256 `745c7f4166f70dff9181d7c8a639eb2e3519eedeb25487dda2f97e84425c2c26`) is **this ship**, implemented as named slice **WS6 OmniRoute / agent-host opt-in** (after LeanCTX in `/sb:init`) plus WS2 host-surfaces / LS-agent-pin callouts and WS7 doctor/docs. It is **not** before WS0/WS0b and does **not** add a numbered workstream that breaks WS0 → WS0b → WS1–7 → WS8 → docs-release.
+- OmniRoute / `/sb:agent-*` Graphify-style opt-in (companion [`omni_agent_opt-in_67f2f73a.plan.md`](/Users/<user>/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md) SHA-256 `745c7f4166f70dff9181d7c8a639eb2e3519eedeb25487dda2f97e84425c2c26`) is **this ship**, implemented as named slice **WS6 OmniRoute / agent-host opt-in** (after LeanCTX in `/sb:init`) plus WS2 host-surfaces / LS-agent-pin callouts and WS7 doctor/docs. It is **not** before WS0/WS0b and does **not** add a numbered workstream that breaks WS0 → WS0b → WS1–7 → WS8 → docs-release.
 - **Inside WS1–WS7 (execution, not a new numbered WS):** **Part A** (quality-order core runtime) MUST land before **Part B**. Part A runs Job order **Executor → (Authorizer where required) → Verifier → Validator** and FAST short order **Executor → Verifier → Validator** (FAST is not a Job). Prerequisites: WS1 catalog/route emit and WS3 Authorizer/launch/WBS. Part B MUST **invoke** Part A — do not reimplement the role loop. Numbered WS identities stay (WS1 catalog, WS2 surfaces, WS3 Authorizer, WS4 quality-loop WS, WS5 migrate, WS6 prefs/OmniRoute routing-only, WS7 docs/Doctor/site). YAML todo order is the execution sequence. See [§5.2](#52-ship-sequence-ws0-ws0b-ws17-ws8-docs-release).
 
 ### LS-workflow-evolution
@@ -901,7 +901,7 @@ There is no Authorizer/Verifier privilege split, no Advisor-owned plan handoff, 
 
 ### 3.2 Gaps this freeze closes
 
-The current spawn-only parent, dual `silver:*` surfaces, missing Authorizer/Verifier split, missing Advisor-owned plan handoff, missing Process-final Validator, and missing live WBS are the gaps named in Current system. This freeze closes them with the architecture below. This freeze also closes the gap that `/sb:agent-*` hosts and optional OmniRoute lack Graphify-style `recommended_tools` consent, transport-first slugs, init after LeanCTX, and doctor `--fix` (companion [`omni_agent_opt-in_67f2f73a.plan.md`](/Users/shafqat/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md) SHA-256 `745c7f4166f70dff9181d7c8a639eb2e3519eedeb25487dda2f97e84425c2c26`; composed under existing `/sb:agent-*` / five-tool / init — not a second control plane). Rejected alternatives are **only** in §3.3 — do not reopen them in §6.
+The current spawn-only parent, dual `silver:*` surfaces, missing Authorizer/Verifier split, missing Advisor-owned plan handoff, missing Process-final Validator, and missing live WBS are the gaps named in Current system. This freeze closes them with the architecture below. This freeze also closes the gap that `/sb:agent-*` hosts and optional OmniRoute lack Graphify-style `recommended_tools` consent, transport-first slugs, init after LeanCTX, and doctor `--fix` (companion [`omni_agent_opt-in_67f2f73a.plan.md`](/Users/<user>/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md) SHA-256 `745c7f4166f70dff9181d7c8a639eb2e3519eedeb25487dda2f97e84425c2c26`; composed under existing `/sb:agent-*` / five-tool / init — not a second control plane). Rejected alternatives are **only** in §3.3 — do not reopen them in §6.
 
 ### 3.3 Options considered and KEEP REJECT
 
@@ -2901,7 +2901,7 @@ Five-tool (Graphify, agentmemory, Context Mode, LeanCTX, RTK) is opt-in.
 
 #### OmniRoute and `/sb:agent-*` opt-in (absorbed, same ship)
 
-Absorbed from origin [`/Users/shafqat/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md`](/Users/shafqat/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md) SHA-256 `745c7f4166f70dff9181d7c8a639eb2e3519eedeb25487dda2f97e84425c2c26`. Implementers use **this freeze** (this subsection + WS6 + [LS-agent-pin](#ls-agent-pin)); they do not need the origin file. Public names are `/sb` (omni draft `/silver:` composed; [KR-no-dual-silver](#kr-no-dual-silver)).
+Absorbed from origin [`/Users/<user>/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md`](/Users/<user>/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md) SHA-256 `745c7f4166f70dff9181d7c8a639eb2e3519eedeb25487dda2f97e84425c2c26`. Implementers use **this freeze** (this subsection + WS6 + [LS-agent-pin](#ls-agent-pin)); they do not need the origin file. Public names are `/sb` (omni draft `/silver:` composed; [KR-no-dual-silver](#kr-no-dual-silver)).
 
 - Omni is an **optional routing-only** proxy (`recommended_tools.omniroute`). It is **not** a second public `/sb` router ([KR-no-dual-silver](#kr-no-dual-silver)).
 - Never enable Omni compression/memory/context — five-tool already owns those surfaces.
@@ -3701,7 +3701,7 @@ Add red resolver/install tests in `tests/scripts/test-model-preferences.sh` and 
 
 #### WS6 OmniRoute / agent-host opt-in (absorbed; not before WS0/WS0b)
 
-Origin (provenance only): [`/Users/shafqat/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md`](/Users/shafqat/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md) SHA-256 `745c7f4166f70dff9181d7c8a639eb2e3519eedeb25487dda2f97e84425c2c26`. YAML `omni-agent-*`; **not** a new numbered WS. Public `/sb` only.
+Origin (provenance only): [`/Users/<user>/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md`](/Users/<user>/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md) SHA-256 `745c7f4166f70dff9181d7c8a639eb2e3519eedeb25487dda2f97e84425c2c26`. YAML `omni-agent-*`; **not** a new numbered WS. Public `/sb` only.
 
 **Consent (Graphify-style).** New `recommended_tools` keys in `.silver-bullet.json`, templates, and `hooks/lib/recommended-tools.sh`: `omniroute` (routing-only Omni proxy — never enable Omni compression/memory/context); `agent_claude` / `agent_codex` / `agent_cursor` / `agent_opencode` / `agent_pi` (each `/sb:agent-*` + host CLI). `enabled_by_user` is `null` (ask) / `true` / `false`. Fresh init starts all six at `null`. Do not pre-opt-in. Install failure sets `enforcement_suspended` + `install_status`. These keys are **not** role preference keys and **not** Authorizer.
 
@@ -4184,7 +4184,7 @@ FAST **skips:** Job GST; Advisor-first planning; Board; composition-Val; plan-ti
 
 #### Companion omni-agent opt-in — composed (no new clarify)
 
-The omni plan [`/Users/shafqat/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md`](/Users/shafqat/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md) SHA-256 `745c7f4166f70dff9181d7c8a639eb2e3519eedeb25487dda2f97e84425c2c26` is **this ship, absorbed** into WS6 / LS-agent-pin (implementers do not need the origin file). Composed under existing `/sb:agent-*` / five-tool / `/sb:init` probe. **No new A/B/C.** KEEP REJECT un-reopened: no dual `/silver`; Authorizer not a pref key; no `sb:agent-wrap`; exclusive projector; catalog generated; Cursor MVP first (`/sb:agent-*` leaves remain as specified; Omni is not an Orchestrator-as-parent adapter). Omni out-of-scope items (Omni compression/memory; tagging/release; forcing a 14-model Pi allowlist) stay out of scope.
+The omni plan [`/Users/<user>/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md`](/Users/<user>/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md) SHA-256 `745c7f4166f70dff9181d7c8a639eb2e3519eedeb25487dda2f97e84425c2c26` is **this ship, absorbed** into WS6 / LS-agent-pin (implementers do not need the origin file). Composed under existing `/sb:agent-*` / five-tool / `/sb:init` probe. **No new A/B/C.** KEEP REJECT un-reopened: no dual `/silver`; Authorizer not a pref key; no `sb:agent-wrap`; exclusive projector; catalog generated; Cursor MVP first (`/sb:agent-*` leaves remain as specified; Omni is not an Orchestrator-as-parent adapter). Omni out-of-scope items (Omni compression/memory; tagging/release; forcing a 14-model Pi allowlist) stay out of scope.
 
 ### Deferred post-MVP (non-blocking)
 

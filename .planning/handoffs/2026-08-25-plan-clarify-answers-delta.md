@@ -7,7 +7,7 @@ Planning-only. No product code. Git stayed on `main`. Both plan copies stayed by
 | Path | SHA-256 | Bytes |
 |------|---------|-------|
 | [`.planning/router_subagent_surfaces_85bf9f09.plan.md`](../router_subagent_surfaces_85bf9f09.plan.md) | `cd7db06bc17f72df16a95800dbff90c9d9f22e084a377f3f6d2c96c703889f87` | 592212 |
-| [`~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md) | same | same |
+| [`~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md) | same | same |
 
 Start pair (confirmed before edits): `eb9c7bb0d9f584c199cd4a2e157129c21cb7b609d28ecd5d63eec8647944caba` / 583052 bytes.
 

@@ -5,7 +5,7 @@
 | Phase | `rung_01_verify_1` (VERIFY-ONLY) — `/silver:review-fix-ladder` only |
 | Original launch | `opencode-go/minimax-m3` via Pi — 401 ×2; this pass is **Grok 4.6 High substitute**. Not Pi. Not Extra High. Not Fast. |
 | Reviewer artifact | [`review.md`](review.md) |
-| Freeze | [`.planning/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md) and [`~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md) |
+| Freeze | [`.planning/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md) and [`~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md) |
 | SHA-256 seen (disk wins) | `70d44b7dfca21fd74617b40a848a1fcace0c638dd2d3ace6a982e6c7da1a3ef5` |
 | Size | 620076 bytes (both copies) |
 | Line count | 4297 |

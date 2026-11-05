@@ -1,6 +1,6 @@
 # Critical Self-Review: `multi-ai-task` skill
 
-**Skill:** `/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/`
+**Skill:** `/Users/<user>/projects/silver-bullet/repo/skills/multi-ai-task/`
 **Version reviewed:** 2.1.0 (frontmatter at `SKILL.md:6`)
 **Files reviewed:** 8 (SKILL.md + 4 rules + 3 examples)
 **Review date:** 2026-06-27

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from pathlib import Path
 
-PLAN = Path("/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md")
+PLAN = Path("/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md")
 text = PLAN.read_text(encoding="utf-8")
 orig = text
 

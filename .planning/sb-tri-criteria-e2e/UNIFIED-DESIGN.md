@@ -63,7 +63,7 @@
 ## Cold reproduction
 
 ```bash
-cd /Users/shafqat/projects/silver-bullet/repo
+cd /Users/<user>/projects/silver-bullet/repo
 export SB_ROOT="$PWD"
 export SB_RUNTIME_PRESERVE_STATE_DIR=1
 

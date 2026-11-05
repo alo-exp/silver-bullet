@@ -2,11 +2,34 @@
 """
 Markdown to HTML converter for research reports
 Properly converts markdown sections to HTML while preserving structure and formatting
+
+Report text quotes untrusted web content, so every piece of it is HTML-escaped before the
+markdown transforms add the converter's own tags, and bibliography links are emitted only for
+http(s) URLs, with the href attribute escaped and rel="noopener noreferrer".
 """
 
+import html as html_lib
 import re
-from typing import Tuple
+from typing import Optional, Tuple
 from pathlib import Path
+from urllib.parse import urlparse
+
+BIB_HEADING_RE = re.compile(r'^##[ \t]+Bibliography[ \t]*$', re.IGNORECASE | re.MULTILINE)
+NEXT_SECTION_RE = re.compile(r'^#{1,2}(?!#)[ \t]', re.MULTILINE)
+BIB_ENTRY_RE = re.compile(r'^\[(\d{1,4})\]\s*(.+?)\s+-\s+(\S+)\s*$')
+
+
+def split_bibliography(markdown_text: str) -> Tuple[str, str]:
+    """Return (content, bibliography): the bibliography runs to the next level-1/2 heading,
+    and any section after it stays in the content."""
+    heading = BIB_HEADING_RE.search(markdown_text)
+    if not heading:
+        return markdown_text, ""
+    rest = markdown_text[heading.end():]
+    following = NEXT_SECTION_RE.search(rest)
+    if not following:
+        return markdown_text[:heading.start()], rest
+    return markdown_text[:heading.start()] + rest[following.start():], rest[:following.start()]
 
 
 def convert_markdown_to_html(markdown_text: str) -> Tuple[str, str]:
@@ -19,10 +42,7 @@ def convert_markdown_to_html(markdown_text: str) -> Tuple[str, str]:
     Returns:
         Tuple of (content_html, bibliography_html)
     """
-    # Split content and bibliography
-    parts = markdown_text.split('## Bibliography')
-    content_md = parts[0]
-    bibliography_md = parts[1] if len(parts) > 1 else ""
+    content_md, bibliography_md = split_bibliography(markdown_text)
 
     # Convert content (everything except bibliography)
     content_html = _convert_content_section(content_md)
@@ -34,8 +54,8 @@ def convert_markdown_to_html(markdown_text: str) -> Tuple[str, str]:
 
 
 def _convert_content_section(markdown: str) -> str:
-    """Convert main content sections to HTML"""
-    html = markdown
+    """Convert main content sections to HTML (the text is escaped first)"""
+    html = html_lib.escape(markdown, quote=False)
 
     # Remove title and front matter (first ## heading is handled separately)
     lines = html.split('\n')
@@ -108,28 +128,37 @@ def _convert_content_section(markdown: str) -> str:
     return html
 
 
+def _bib_entry_html(num: str, title: str, url: str) -> Optional[str]:
+    """A linked entry for an http(s) URL; None for any other scheme (left as plain text)."""
+    parsed = urlparse(url)
+    if parsed.scheme not in ('http', 'https') or not parsed.netloc:
+        return None
+    label = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', html_lib.escape(title, quote=False))
+    return (
+        f'<div class="bib-entry"><span class="bib-number">[{num}]</span> '
+        f'<a href="{html_lib.escape(url, quote=True)}" target="_blank" rel="noopener noreferrer">'
+        f'{label}</a></div>'
+    )
+
+
 def _convert_bibliography_section(markdown: str) -> str:
     """Convert bibliography section to HTML"""
     if not markdown.strip():
         return ""
 
-    html = markdown
+    lines = []
+    for line in markdown.split('\n'):
+        # [N] Title - URL becomes a linked entry; everything else is escaped text.
+        match = BIB_ENTRY_RE.match(line.strip())
+        entry = _bib_entry_html(*match.groups()) if match else None
+        if entry:
+            lines.append(entry)
+            continue
+        text = html_lib.escape(line, quote=False)
+        lines.append(re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', text))
 
-    # Convert each [N] citation to a proper bibliography entry
-    # Look for patterns like [1] Title - URL
-    html = re.sub(
-        r'\[(\d+)\]\s*(.+?)\s*-\s*(https?://[^\s\)]+)',
-        r'<div class="bib-entry"><span class="bib-number">[\1]</span> <a href="\3" target="_blank">\2</a></div>',
-        html
-    )
-
-    # Convert any remaining **bold** sections
-    html = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', html)
-
-    # Wrap in bibliography content div
-    html = f'<div class="bibliography-content">{html}</div>'
-
-    return html
+    joined = '\n'.join(lines)
+    return f'<div class="bibliography-content">{joined}</div>'
 
 
 def _convert_lists(html: str) -> str:

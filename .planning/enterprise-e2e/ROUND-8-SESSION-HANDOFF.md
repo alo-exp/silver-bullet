@@ -10,7 +10,7 @@
 
 **Cursor session SB:** `264fefbb` on `enterprise-e2e/cursor` (TEST-APP-BRANCH-POLICY + matrix wiring).
 
-**Test app HEAD:** `565e825` @ `/Users/shafqat/projects/enterprise-grade-test-app`
+**Test app HEAD:** `565e825` @ `/Users/<user>/projects/enterprise-grade-test-app`
 
 ## Round 8 launched?
 
@@ -53,9 +53,9 @@ RTK_DISABLED=1 bash tests/scripts/test-claude-agent-surface-isolation.sh
 ## Env (when unblocked)
 
 ```bash
-export SB_E2E_LEDGER_FILE=/Users/shafqat/projects/silver-bullet/repo/.planning/enterprise-e2e/ROUND-8-LEDGER.md
-export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
-export SB_TEST_ENTERPRISE_APP_ROOT=/Users/shafqat/projects/enterprise-grade-test-app
+export SB_E2E_LEDGER_FILE=/Users/<user>/projects/silver-bullet/repo/.planning/enterprise-e2e/ROUND-8-LEDGER.md
+export SB_ROOT=/Users/<user>/projects/silver-bullet/repo
+export SB_TEST_ENTERPRISE_APP_ROOT=/Users/<user>/projects/enterprise-grade-test-app
 export SB_E2E_SURFACE_SKIP=0
 export SB_E2E_MONITOR_AUTO_RESTART=0
 export SB_E2E_MATRIX_LOG="$SB_ROOT/.e2e-matrix-round8-live.log"
@@ -105,7 +105,7 @@ SB_E2E_SURFACE_SKIP=0 SB_E2E_MATRIX_FORCE=1 \
 
 **Test app branch (Cursor row):** `enterprise-e2e/round-1-cursor` per [`config/hosts.json`](../../config/hosts.json) (`hosts.cursor.test_app_git_branch`). Harness preflight must checkout/create that branch — **never** reset `main` or reuse another host’s round branch (e.g. do not stomp `enterprise-e2e/round-codex-1` / codex track).
 
-**Test app observed @ handoff:** `/Users/shafqat/projects/enterprise-grade-test-app` on `enterprise-e2e/round-codex-1` @ `565e825` (codex track) — Cursor matrix rows must still target `enterprise-e2e/round-1-cursor` only.
+**Test app observed @ handoff:** `/Users/<user>/projects/enterprise-grade-test-app` on `enterprise-e2e/round-codex-1` @ `565e825` (codex track) — Cursor matrix rows must still target `enterprise-e2e/round-1-cursor` only.
 
 ## Multi-host operator — cherry-pick (other session)
 

@@ -4,18 +4,18 @@
 - **Model:** `cursor/grok-4.6-high` (Grok 4.6 High via `/silver:agent-pi` / OmniRoute). Never Extra High / XHigh. Never Fast.
 - **Phase:** VERIFY-ONLY pass 1/2 (`rung_07_verify_1`) — no triage, no fix, no freeze edits, no verify_2, no ladder advancement
 - **Date:** 2026-08-26
-- **Prior review:** [`review.md`](/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-07-cursor-grok-4.6-high/review.md) — **CLEAN**, HIGH 0 / MED 0 / LOW 0 / NIT 0. Pi `cursor/grok-4.6-high` EXIT 0 twice with **no `review.md`** (empty one-liner); official review is the in-session Grok 4.6 High substitute. Hashed current SHA `d5343ac1…`.
+- **Prior review:** [`review.md`](/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-07-cursor-grok-4.6-high/review.md) — **CLEAN**, HIGH 0 / MED 0 / LOW 0 / NIT 0. Pi `cursor/grok-4.6-high` EXIT 0 twice with **no `review.md`** (empty one-liner); official review is the in-session Grok 4.6 High substitute. Hashed current SHA `d5343ac1…`.
 - **Parent Policy A:** **no ACCEPT to apply** this rung
 - **Scope (independently re-hashed; disk wins):**
-  - [`/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md)
-  - [`/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md)
+  - [`/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md)
+  - [`/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md)
 
 ## SHA-256 verification (independent re-hash)
 
 | Copy | SHA-256 (as hashed) | Size (bytes) |
 |---|---|---|
-| [`/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md) | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | 621095 |
-| [`/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md) | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | 621095 |
+| [`/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md) | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | 621095 |
+| [`/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md) | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | 621095 |
 
 - Byte-identical: **YES** (`cmp` confirmed identical bytes).
 - Locked launcher SHA `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` / 621095 bytes verified on disk.
@@ -51,7 +51,7 @@ Review ACCEPT set for this rung: **empty** (review was CLEAN with 0 findings). N
 | TOC-GFM single-hyphen | All 277 internal `](#…)` links resolve under strip-punct then collapse whitespace to a **single** hyphen. `ws0--ws0b` = **0**. F-1 REJECT not reopened | **PASS** |
 | Headings and structure | 317 headings outside fences; none truncated; no heading-level skips. F-2 HOLD L3246 remains in place | **PASS** |
 
-Companion refs: origin Omni plan file exists; [`docs/NEW-WORKFLOW.md`](/Users/shafqat/projects/silver-bullet/repo/docs/NEW-WORKFLOW.md) and [`templates/orchestrator-workers/NEW-WORKFLOW.md`](/Users/shafqat/projects/silver-bullet/repo/templates/orchestrator-workers/NEW-WORKFLOW.md) exist. L3475 `site/help/workflows/sb-new-workflow.html` is a pending WS2 deliverable path, not a claim the file exists on disk today — not filed.
+Companion refs: origin Omni plan file exists; [`docs/NEW-WORKFLOW.md`](/Users/<user>/projects/silver-bullet/repo/docs/NEW-WORKFLOW.md) and [`templates/orchestrator-workers/NEW-WORKFLOW.md`](/Users/<user>/projects/silver-bullet/repo/templates/orchestrator-workers/NEW-WORKFLOW.md) exist. L3475 `site/help/workflows/sb-new-workflow.html` is a pending WS2 deliverable path, not a claim the file exists on disk today — not filed.
 
 ## Remaining findings
 

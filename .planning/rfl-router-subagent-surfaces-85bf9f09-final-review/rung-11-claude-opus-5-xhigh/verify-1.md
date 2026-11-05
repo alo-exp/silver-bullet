@@ -4,7 +4,7 @@
 
 - **Ladder:** `/silver:review-fix-ladder` — rung **11/11**, phase **VERIFY-ONLY pass 1/2**
 - **Parent session:** `d5150f38-4d37-458d-9bdb-5e6f985975d3`
-- **Work dir:** `/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-11-claude-opus-5-xhigh`
+- **Work dir:** `/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-11-claude-opus-5-xhigh`
 - **Mode:** VERIFY-ONLY. No Edit/Write to either freeze copy. No triage, no APPLY, no Policy C/D, no verify_2, ladder **not** marked completed.
 - **Sibling folder `rung-11-claude-claude-opus-5-xhigh` (prior-wave naming) was ignored.** Nothing copied from it. No prior `verify-1.md` existed in this work directory to archive; this file is a fresh, independent Pi `claude/claude-opus-5-xhigh` verify.
 
@@ -16,8 +16,8 @@ Both copies hashed in one `shasum -a 256` invocation from disk bytes; audit perf
 
 | Copy | SHA-256 actually hashed | Size (bytes) |
 |---|---|---|
-| `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `3166a309baa55fb49158df4531c7bf7e8f8609f1c720b0f4d0cae5c396346321` | **621247** |
-| `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `3166a309baa55fb49158df4531c7bf7e8f8609f1c720b0f4d0cae5c396346321` | **621247** |
+| `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `3166a309baa55fb49158df4531c7bf7e8f8609f1c720b0f4d0cae5c396346321` | **621247** |
+| `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `3166a309baa55fb49158df4531c7bf7e8f8609f1c720b0f4d0cae5c396346321` | **621247** |
 
 - **Byte-identical: YES** (`cmp` exit 0 → `IDENTICAL_YES`; identical SHA and identical size).
 - **Matches locked freeze:** ✅ `3166a309…` / **621247**.

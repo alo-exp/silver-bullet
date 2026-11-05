@@ -10,10 +10,10 @@
 ## Independent SHA-256 + size re-hash
 
 ```
-shasum -a 256 /Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md \
-              /Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md
-d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0  /Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md
-d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0  /Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md
+shasum -a 256 /Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md \
+              /Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md
+d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0  /Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md
+d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0  /Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md
 
 wc -c ... → 621095 / 621095
 cmp -l ... → BYTE-IDENTICAL: yes
@@ -23,7 +23,7 @@ md5 ...     → 20944fb005aac475c5e1d77280edfcef (both copies)
 | Copy | SHA-256 | Size (bytes) | Byte-identical |
 |------|---------|--------------|----------------|
 | `…/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | **621095** | yes |
-| `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | **621095** | yes |
+| `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | **621095** | yes |
 
 Locked SHA + size match. **Disk wins:** SHA I actually hashed = `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0`, size **621095**, byte-identical **yes**.
 

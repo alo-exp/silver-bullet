@@ -10,7 +10,7 @@
     "ocg-mimo-v2.5"
   ],
   "pool": "lite",
-  "work_dir": "/Users/shafqat/.cursor/worktrees/repo/r41j/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-RETRIEVE",
+  "work_dir": "/Users/<user>/.cursor/worktrees/repo/r41j/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-RETRIEVE",
   "timeout_sec": 240,
   "attempt_id": "attempt-8d31852f-0dc0-4ccf-bf27-8d41005ee6f4",
   "run_id": "run-57f38dfa25d83cc50d224e283d4692f3",

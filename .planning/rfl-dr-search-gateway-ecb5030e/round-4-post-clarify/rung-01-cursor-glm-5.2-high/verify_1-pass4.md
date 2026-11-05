@@ -2,7 +2,7 @@ model: composer-2.5
 
 **Subagent:** `sb-composer-2-5-high`  
 **Phase:** VERIFY-ONLY pass 1/2 (`rung_1_verify_1`, post ACCEPT-apply of S1 / I-16)  
-**Artifact:** `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
+**Artifact:** `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
 **SHA-256:** `1412d8c9d18e1e2204c8b5011906fc341fb19b1b7a77df9b708e51e47b175db4` (verified via `shasum -a 256`)  
 **Graphify:** `graphify query "allow-private stable_hash fingerprint q3" --budget 2000` (128 nodes; oriented S1/M-4 fingerprint contract)  
 **Apply ref:** S1 / I-16 (`--allow-private` in `stable_hash`) · **Prior verify:** [verify_1-pass3.md](verify_1-pass3.md)

@@ -639,7 +639,7 @@ The 5-stack pipeline is the 4-stack pipeline with LeanCTX wrapping the *boundari
 - "What NOT to do" list to prevent naive deployment failures.
 
 ### Phase 8 — Package
-- Output written to `/Users/shafqat/projects/silver-bullet/repo/.planning/archive/research/2026-07-05/2026-07-05-context-tools-feature-matrix-ultradeep/multi-ai-deep-research-out/followup-glm-5.2.md`.
+- Output written to `/Users/<user>/projects/silver-bullet/repo/.planning/archive/research/2026-07-05/2026-07-05-context-tools-feature-matrix-ultradeep/multi-ai-deep-research-out/followup-glm-5.2.md`.
 - Format: Executive Summary → Benefit Assessment → Conflict Identification (9 categories) → Resolution Strategies (9 categories) → Per-Environment Analysis (4 environments) → 5-Stack Synergy Assessment → Recommendation (phased) → Limitations → Bibliography → Methodology.
 - Primary inputs: prior glm-5.2 report + consolidated report + SB website + SB repo (hooks.json, code-intelligence-contract.md, AGENTS.md, .silver-bullet.json, scripts/, .opencode/).
 - No curl/wget/WebFetch used per AGENTS.md routing rules; all web content via `ctx_fetch_and_index` + `ctx_search`; all repo content via `ctx_batch_execute` + `ctx_search`.

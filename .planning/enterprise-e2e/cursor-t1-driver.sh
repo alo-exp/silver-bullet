@@ -2,7 +2,7 @@
 # T1 row 1 silver-router FORCE — single pass @ install version (legacy Cursor-1 driver).
 set -euo pipefail
 
-SB_ROOT="/Users/shafqat/projects/silver-bullet/repo"
+SB_ROOT="/Users/<user>/projects/silver-bullet/repo"
 export SB_ROOT
 export SB_E2E_BRANCH=enterprise-e2e/cursor
 export SILVER_BULLET_RUNTIME=cursor SB_E2E_LIVE_RUNTIME=cursor
