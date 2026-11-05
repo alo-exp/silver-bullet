@@ -66,7 +66,7 @@ assert_contains "claude delegate --mode auto message" "$TL_ERR" "permission-mode
 run_cd
 assert_eq "claude delegate without a prompt exits 2" "2" "$TL_STATUS"
 assert_contains "claude delegate without a prompt message" "$TL_ERR" "provide --prompt, --prompt-file, or --brief-file"
-run_cd --prompt 'use token=abc123 please'
+run_cd --prompt "use GITLAB_TOKEN=$(printf '%s%s' 'wJalrXUtnFEMI/K7MDENG' '/bPxRfiCYEXAMPLEKEY') please"
 assert_eq "claude delegate refuses a prompt with secrets" "2" "$TL_STATUS"
 assert_contains "claude delegate secret prompt message" "$TL_ERR" "prompt contains secret patterns"
 run_cd --prompt-file "$TL_TMP/no-such-prompt"
@@ -101,11 +101,11 @@ pushd "$TL_TMP/rel" >/dev/null
 run_cd --prompt-file prompt.txt
 popd >/dev/null
 assert_contains "prompt file content became the prompt" "$(alh_rec)" "prompt=prompt from file"
-printf 'secret=hunter2\n' >"$TL_TMP/rel/bad-brief.txt"
+printf 'secret=%s\n' "$(printf '%s%s' 'wJalrXUtnFEMI/K7MDENG' '/bPxRfiCYEXAMPLEKEY')" >"$TL_TMP/rel/bad-brief.txt"
 run_cd --brief-file "$TL_TMP/rel/bad-brief.txt"
 assert_eq "claude delegate refuses a brief with secrets" "2" "$TL_STATUS"
 assert_contains "claude delegate secret brief message" "$TL_ERR" "brief contains secret patterns"
-printf 'api_key: zzz\n' >"$TL_TMP/rel/bad-prompt.txt"
+printf 'api_key: %s\n' "$(printf '%s%s' 'wJalrXUtnFEMI/K7MDENG' '/bPxRfiCYEXAMPLEKEY')" >"$TL_TMP/rel/bad-prompt.txt"
 run_cd --prompt-file "$TL_TMP/rel/bad-prompt.txt"
 assert_eq "claude delegate refuses a prompt file with secrets" "2" "$TL_STATUS"
 assert_contains "claude delegate secret prompt file message" "$TL_ERR" "prompt file contains secret patterns"

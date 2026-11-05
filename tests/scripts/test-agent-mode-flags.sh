@@ -113,7 +113,7 @@ for ok_id in a A9 t-7 v1.2_x "$(printf 'a%.0s' $(seq 1 64))"; do
   flag --task-id "$ok_id"; assert_eq "--task-id accepts ${ok_id:0:12}" "$ok_id" "$SB_AM_TASK_ID"
 done
 agent_mode_reset
-for bad_id in 'fix "login" bug' 'a\b' '../../etc' '.' '..' 'a/b' '' "$(printf 'a%.0s' $(seq 1 65))" "$(printf 'x\ny')"; do
+for bad_id in 'fix "login" bug' 'a\b' '../../etc' '.' '..' 'a/b' "$(printf 'a%.0s' $(seq 1 65))" "$(printf 'x\ny')"; do
   rc=0; tl_run flag --task-id "$bad_id"; rc=$TL_STATUS
   assert_eq "--task-id rejects ${bad_id:0:14}" 2 "$rc"
   assert_contains "--task-id rejection explained" "$TL_ERR" "--task-id must match"

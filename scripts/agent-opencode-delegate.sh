@@ -146,6 +146,7 @@ quota_retry_interval="${AGENT_OPENCODE_QUOTA_RETRY_INTERVAL:-60}"
 quota_retry_max="$(agent_delegate_quota_retry_max AGENT_OPENCODE_QUOTA_RETRY_MAX 5)"
 log_floor="${SB_AGENT_OPENCODE_LOG_FLOOR:-512}"
 attempt=0
+fp_before="unknown"
 
 agent_opencode_apply_delegation_mode() {
   if [[ "$DELEGATION_MODE" == "multi-ai-worker-v1" ]]; then
