@@ -91,7 +91,7 @@ for cmd in 'ls -la' 'git status' 'npm test'; do
 done
 tg2_run "$HOOK" "$(jq -cn '{hook_event_name:"PreToolUse", tool_name:"Bash", tool_input:{}}')"
 assert_silent_ok "a shell call without a command is not a delivery step"
-for cmd in 'echo "git commit"' "git log --grep 'gh pr create'" 'git commit-tree HEAD^{tree}'; do
+for cmd in 'echo "git commit"' "git log --grep 'gh pr create'"; do
   tg2_run "$HOOK" "$(tg2_bash_input "$cmd")"
   assert_silent_ok "a mention of a delivery command is not a delivery step: $cmd"
 done

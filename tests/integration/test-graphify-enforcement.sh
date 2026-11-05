@@ -33,7 +33,7 @@ mkdir -p "$PLUGIN_CACHE_STUB"
 
 cleanup() {
   rm -rf "$TMP" "$MOCK_BIN" "$PLUGIN_CACHE_STUB" \
-    "${SB_TEST_DIR}/graphify-query-${TEST_RUN_ID}" \
+    "${SB_TEST_DIR}/t${TEST_RUN_ID}-graphify-query" \
     "${SB_TEST_DIR}/branch-${TEST_RUN_ID}"
 }
 trap cleanup EXIT
@@ -42,7 +42,7 @@ pass() { echo "  PASS: $1"; PASS=$((PASS + 1)); }
 fail() { echo "  FAIL: $1"; FAIL=$((FAIL + 1)); }
 
 TMP="$(mktemp -d)"
-GRAPHIFY_STATE="${SB_TEST_DIR}/graphify-query-${TEST_RUN_ID}"
+GRAPHIFY_STATE="${SB_TEST_DIR}/t${TEST_RUN_ID}-graphify-query"
 BRANCH_FILE="${SB_TEST_DIR}/branch-${TEST_RUN_ID}"
 MOCK_BIN="$(mktemp -d)"
 cat >"$MOCK_BIN/graphify" <<'EOF'

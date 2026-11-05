@@ -35,7 +35,7 @@ RTK_STATE=""
 
 cleanup_all() {
   [[ -n "${TMPDIR_TEST:-}" ]] && rm -rf "$TMPDIR_TEST"
-  [[ -n "${TEST_RUN_ID:-}" ]] && rm -rf "${SB_TEST_DIR}/rtk-usage-${TEST_RUN_ID}"
+  [[ -n "${TEST_RUN_ID:-}" ]] && rm -rf "${SB_TEST_DIR}/t${TEST_RUN_ID}-rtk-usage"
   rm -rf "$SB_TEST_HOME_ROOT"
   if [[ -n "$ORIG_HOME" ]]; then export HOME="$ORIG_HOME"; else unset HOME; fi
   if [[ -n "$ORIG_RTK_HOME" ]]; then export RTK_HOME="$ORIG_RTK_HOME"; else unset RTK_HOME; fi
@@ -54,7 +54,7 @@ setup() {
   export HOME="$SB_TEST_HOME_ROOT"
   export RTK_HOME="$SB_TEST_HOME_ROOT/.rtk"
   export XDG_STATE_HOME="$SB_TEST_HOME_ROOT/.local/state"
-  RTK_STATE="${SB_TEST_DIR}/rtk-usage-${TEST_RUN_ID}"
+  RTK_STATE="${SB_TEST_DIR}/t${TEST_RUN_ID}-rtk-usage"
   rm -f "$RTK_STATE"
   cat >"$TMPDIR_TEST/silver-bullet.md" <<'EOF'
 # Silver Bullet
