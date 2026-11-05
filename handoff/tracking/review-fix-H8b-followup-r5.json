@@ -1,0 +1,81 @@
+{
+ "package": "H8b-followup",
+ "round": 5,
+ "head_reviewed": "d75d18e",
+ "verdict": "CHANGES_REQUIRED",
+ "per_finding": [
+  {
+   "id": "r4-1 default-credit for capitalised ambiguous names",
+   "verdict": "fixed",
+   "notes": "Default inverted to a cue allowlist. All r4 fp5 sentences 0/52, fp6 0/30. But the cue rules themselves credit common words (issue 1)."
+  },
+  {
+   "id": "r4-2 English-word names not ambiguous",
+   "verdict": "incomplete",
+   "notes": "windsurf/codex/cline/augment code/open interpreter/silver bullet + deepwork/tembo/magic dev/spec kit/open hands/omp added. The multi-word ones were put in PROPER_PHRASES, which need only Title Case and no cue, against the r4 directive (issue 2). Other generic phrases still match lower-case (issue 3)."
+  },
+  {
+   "id": "r4-3 'Teams that use Cursor' recall",
+   "verdict": "ok",
+   "notes": "Now a pinned known miss; recall loss accepted by the orchestrator decision."
+  },
+  {
+   "id": "r4-4 absence lexicon",
+   "verdict": "fixed",
+   "notes": "absence4 0/24 leaks (was 6/24); absence2 all drops ok; absence3 1 'LEAK' is a keep case now missed (recall), not a false tick."
+  },
+  {
+   "id": "r4-5 discover_candidate_slugs run_context",
+   "verdict": "fixed",
+   "notes": "solution_classifier.py:171 wraps the loop in run_context(known, pack); disc.py probes give empty discover-extra/evidence."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "major",
+   "location": "skills/silver-deep-research-multi-ai/scripts/materialize_solution_artifacts.py:_CUE_AFTER/_VERSION/_LIST_LEAD/_in_vendor_list/_list_with_a_product/_has_product_cue",
+   "problem": "The allowlist cues are too loose, so ordinary uses of ambiguous names are credited and can tick matrix features. (a) Version: any bare decimal after the name ('Continue 2.5 miles', 'Factory 4.0'). (b) Head noun: any following IDE/app/tool/editor/assistant/Code/Platform/Cloud/AI word counts, whatever comes before ('the Director app', 'Director Assistant', 'the Cursor tool in Photoshop', 'Linear Code', 'Factory Code'). (c) Vendor list: a generic lead word anywhere earlier in the sentence (solutions, candidates, players, rivals, alternatives, products, competitors) plus a join counts ('Common solutions include Linear Regression ...'). (d) List with a product: any non-ambiguous product in a comma/and/or list counts, even when the member is a phrase ('Open Claude Code or Continue reading', 'Learn GSD and Linear algebra', 'We use BMAD, Sweep the floors'). 24 sentences that 75f40b0 rejected are now credited.",
+   "evidence": "python3 -I /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-r5-probe/tools/fp7.py <head scripts>: 68/82 sentences credit a slug; scored per slug (tools/score7.py, genuine non-ambiguous products and the Devin residual excluded) 65/81 false credits at head vs 44/81 at 75f40b0. New at head, among others: 'Continue 2.5 miles to the next exit.' -> continue; 'Factory 4.0 initiatives automate assembly lines.' -> factory-ai; 'Linear v2 algebra is taught in the second year.' -> linear; 'Ask the Director app on your smart TV for showtimes.' -> director; 'She works as Director Assistant to the CEO.' -> director; 'Pick the Cursor tool in Photoshop to select layers.' -> cursor, cursor-agents; 'The Sweep tool cleaned the chimney.' -> sweep-ai; 'Common solutions include Linear Regression and Decision Trees.' -> linear; 'Players: Copilot, Captain, Navigator.' -> github-copilot; 'The candidates are Smith, Jones and Cline.' -> cline. Older and still credited: 'Open Claude Code or Continue reading the manual.' -> continue; 'Learn GSD and Linear algebra in one weekend.' -> linear; 'A Linear Code is a subspace of a vector space.' -> linear. Matrix ticks (tools/ticks.py, none at 75f40b0): 'The Director app supports SSO for staff accounts.' -> director SSO; 'Factory 4.0 lines provide audit log trails.' -> factory-ai Audit log; 'Common solutions include Linear Regression, which provides workflow composition for analysts.' -> linear Workflow composition.",
+   "suggested_fix": "Version: only 'v<digits>' or a dotted version directly after the name and not followed by a unit word (miles, km, lines) or a lower-case noun. Head noun: credit only when the name is not preceded by a determiner or a capitalised role word, and drop the generic heads Code/Platform/Cloud/AI/Teams for names that are English words (keep IDE/CLI/extension/plugin). Vendor list: only the pack's vendor-list regexes (_MATRIX_LEADERS_RE, _CORE_SET_CLAIM_RE) or leaders/competitors/vendors/APOs in a lead clause that ends in ':' or 'are/include', and the member must be the name alone (optionally with a cue), so 'Linear Regression' and 'Linear equations' fail. List with a product: the same whole-item requirement. Pin all fp7 sentences in the corpus."
+  },
+  {
+   "severity": "major",
+   "location": "materialize_solution_artifacts.py:_proper_phrase / PROPER_PHRASES (overlay vocabulary)",
+   "problem": "The r4 directive was that silver bullet, augment code, open interpreter and the other ambiguous names count only with an explicit product cue. The repair instead exempts PROPER_PHRASES from cues: Title Case alone is enough when the phrase is not after a capitalised word or a determiner and not followed by one. Sentence-initial or after a lower-case preposition, the stock phrases are credited. silver-bullet is a real matrix slug.",
+   "evidence": "fp7.py: 'Silver Bullet thinking rarely survives contact with legacy code.' -> silver-bullet; 'Silver Bullet solutions do not exist in software.' -> silver-bullet; 'Open Interpreter mode lets the Python shell evaluate lines.' -> open-interpreter; 'Augment Code reviews with a checklist, the guide says.' -> augment-cosmos; 'Spec Kit cars race at the county fair.' -> spec-kit; 'Magic Dev tricks amazed the crowd.' -> magic-dev; 'We welcomed them with Open Hands.' and 'Open Hands make friends, said the poster.' -> openhands.",
+   "suggested_fix": "Treat PROPER_PHRASES like the other ambiguous names: require a cue (a product verb right after it, a head noun, a version or domain, or a vendor list), or at least require a finite product verb directly after the phrase ('Silver Bullet enforces/ships/provides')."
+  },
+  {
+   "severity": "major",
+   "location": "skills/silver-deep-research-multi-ai/reference/category-pack-overlays/agentic-sdlc-process-orchestrator.json (AMBIGUOUS_NAMES, NON_VENDOR_TERMS) and the base pack alias sdlc-plugin -> zuvo",
+   "problem": "The pack-wide audit is incomplete. Several known phrases that are generic English or category terms are neither ambiguous nor non-vendor, so they match in any case with no cue. The worst is 'sdlc plugin', the name of the pack's own secondary market, which credits Zuvo (a real matrix slug) and ticks its features. Devika (a common first name) is kept unambiguous, but DECISIONS.md accepts only Devin as the residual. All pre-existing.",
+   "evidence": "tools/audit.py and ticks.py at head: 'An SDLC plugin typically provides workflow composition.' -> zuvo Workflow composition; 'Pick an sdlc plugin that fits your host.' -> zuvo; 'Many plants pilot factory ai for predictive maintenance.' -> factory-ai; 'Every swe agent benchmark needs a sandbox.' -> swe-agent; 'We model each bidder as a linear agent.' -> linear-agent; 'Two cursor agents moved across the shared document.' and 'A cursor cloud of points appeared on the plot.' -> cursor-agents; 'The pilot opened the copilot workspace in the cockpit.' -> copilot-workspace; 'Oh my pi day was fun.' -> oh-my-pi; 'Devika from accounting approved the invoice.' -> devika. No such claim is in the real APO run (zuvo ticks there all come from claims naming Zuvo).",
+   "suggested_fix": "Add 'sdlc plugin' to NON_VENDOR_TERMS (or drop the sdlc-plugin alias). Make factory ai, swe agent, linear agent, cursor agents, cursor cloud, copilot workspace and oh my pi case-sensitive or ambiguous phrases (Title Case or a hyphenated/camel form such as SWE-agent). Either get the user's decision for Devika as a residual like Devin, or make it ambiguous."
+  },
+  {
+   "severity": "minor",
+   "location": "materialize_solution_artifacts.py:_has_product_cue (_in_vendor_list 300-char prefix, _list_with_a_product 160-char split per match)",
+   "problem": "Still linear, but the per-match cost of uncued ambiguous names grew about 9x on list-dense input.",
+   "evidence": "perf5.py: 'Linear, ' x 200 KB parse_feature_support 19.25 s (r4 head 2.14 s), 'Director and ' 15.46 s (1.78 s); 26 KB 2.63 s and 1.35 s. Mixed text 26 KB 0.36 s, 200 KB 2.53 s. Ratio 26->200 KB about 7.3x for 7.7x size.",
+   "suggested_fix": "Compute the sentence prefix and list tokens once per sentence (or cache by sentence span) instead of once per match."
+  },
+  {
+   "severity": "minor",
+   "location": "fix-H8b-followup.json review_repair_r4.real_apo_run",
+   "problem": "The report lists 6 lost ticks; there are 7. 'agenthub: Hook-enforced gates' also drops (correctly: its only claim says the gates are 'unverified').",
+   "evidence": "real3.py head vs r4 real.head.json (= e14d934 output): matrix 23 slugs identical, Director core; cells lost: agenthub Hook-enforced gates, cognition-scout IDE-native integration + Workflow composition, deepwork Workflow composition, director Hook-enforced gates, workflow-manager Hook-enforced gates + Workflow composition; none gained.",
+   "suggested_fix": "Correct the report."
+  }
+ ],
+ "precision": "Earlier sets at head: r4-1 amb_fp 0/14; r2 fp2 0/31; r3 fp3 3/52 (all Devin-as-a-name residual); r3 fp4 0/25; r4 fp5 0/52; r4 fp6 0/30 (with lower-case cases); lists/lists2/copilot/prefix_probe no common-word credits. Fresh r5 set (fp7.py, 82 sentences over Cursor, Director, Conductor, Factory, Linear, Continue, Copilot, Cognition, Aider, Poolside, Superpowers, Windsurf, Codex, Cline, Devin, Sweep, Augment, Silver Bullet, Tembo, Deepwork, Spec Kit, Open Hands, Magic Dev): 65 false-credit sentences beyond the residual (44 at 75f40b0), plus 9 audit misses in audit.py.",
+ "recall": "Corpus: 26/81 credited (55 pinned known misses), as reported. Fresh cued mentions (recall5.py): 29/30 (miss: 'Continue is an open-source IDE extension for custom assistants.'). Uncued r3/r4 recall sets: 6/24 and 6/25 (accepted loss).",
+ "absence": "absence4 0/24 leaks (was 6/24); absence2 drops all ok; noevidence/name_keyword ok.",
+ "real_apo_run": "23 matrix slugs identical to e14d934/r4, Director core, classification identical. 7 ticks lost, 0 gained. Lost Director/Workflow Manager/Deepwork ticks come from genuine claims ('Director is a primary-market APO candidate — ... deterministic gates') with no product cue: an accepted recall loss under precision-first. The agenthub and cognition-scout losses remove ticks that were wrong (an 'unverified' claim, a list of peers whose features belong to Devin/Factory). Acceptable.",
+ "merge": "git merge-tree --write-tree d75d18e c591ebb: clean (e034e56); also clean with the current tip 7130467 (a02dc48), which contains c591ebb. H8a adds skills/silver-deep-research/scripts/dr_category_pack.py; the multi-ai skill keeps its own scripts/category_pack.py and imports nothing named dr_category_pack. On the merged tree fp5 0/52, fp7 unchanged at 68/82, and test_vendor_mention_corpus 17 tests OK.",
+ "validation": {
+  "tests": "bash tests/run-all-tests.sh tests/scripts/test-multi-ai-deep-research-contract.sh tests/scripts/test-solution-research-python.sh: 670 passed, 0 failed under SILVER_BULLET_RUNTIME=claude and =codex.",
+  "coverage": "run-coverage.sh --cov-dir /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-r5-probe/cov --only materialize_solution_artifacts.py --only solution_classifier.py --only pack_vocabulary.py (the two research test files): Python data collected for 3 files, 1562/1562 statements and 828/828 branches, 100.00%.",
+  "lint": "bash scripts/lint-shell.sh --all --jobs 2: exit 0.",
+  "invariants": "check-repo-invariants 0; generate-hook-reference --check 0; generate-apo-artifacts --check 0; validate-plugin-mirror OK; sync-codex-package.sh on a git-archive copy of d75d18e left no diff (copy deleted). Trailers on 3d4845f/d75d18e: Co-Authored-By Claude Sonnet 5.5 plus the correct Claude-Session (accepted); no other model names. Worktree git status clean."
+ }
+}

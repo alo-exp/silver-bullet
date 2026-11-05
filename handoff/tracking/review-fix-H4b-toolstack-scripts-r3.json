@@ -1,0 +1,97 @@
+{
+ "package": "H4b-toolstack-scripts",
+ "head_reviewed": "7691c4d",
+ "verdict": "CHANGES_REQUIRED",
+ "per_finding": [
+  {
+   "id": "r2-major Pi regression",
+   "verdict": "fixed",
+   "notes": "Fresh HOME probes (REVF-H4b-r3-probe). optimize-rtk-context-mode --host pi: none->no config; rtk->{rtk}; cm->{context_mode}; rtk+cm->{rtk,context_mode}; rtk install-only->no config. sb-optimize-stack --apply --host pi: graphify->{graphify}; graphify+agentmemory->{graphify,agentmemory}; graphify+leanctx->{graphify,leanctx}; all->all five; none->nothing. install-recommended-tools-global --host pi: agentmemory->{agentmemory}; rtk+leanctx->{rtk,leanctx}. --dry-run prints '--enable-tool rtk' and writes nothing. The registry command (recommended-tools.sh) appends exactly the consented tools. Mutants N1 (pi enable words), N2 (rtk-only installer) killed by test-pi-consent-wiring.sh."
+  },
+  {
+   "id": "r2-minor install_pi_global consent",
+   "verdict": "fixed",
+   "notes": "No consent and install/enforce-only consent: rc 0, 'SKIP: Pi adapter - no wire consent', no files written under HOME. Mutant N3 killed."
+  },
+  {
+   "id": "r2-minor --host all Cursor writes",
+   "verdict": "fixed",
+   "notes": "optimize-five-tool-stack --host all --force, no consent: 0 files in HOME. Full consent: honest run rc 0, nothing under .cursor. Mutant N6 killed. Residual: --host auto still falls back to cursor (see issues; moot)."
+  },
+  {
+   "id": "r2-minor alumnium-gate merge",
+   "verdict": "fixed",
+   "notes": "hooks/alumnium-gate.sh identical to fix/H4a-toolgates-consent 1799a7c (uses \"${path:-.}\"); H4a tip is merged into H4b (9a2aabd), merge-tree with H4a clean (f637702)."
+  },
+  {
+   "id": "r2-minor stale base",
+   "verdict": "incomplete",
+   "notes": "Branch contains c591ebb and 5e4c864 but NOT the current base tip 5acae75 (H3b merge). merge-tree with 5acae75 is clean; on the merged tree (archive, deleted afterwards) check-repo-invariants passes all 17 checks incl. personal-data and workflow-hardening, and test-no-pipe-into-grep-quiet passes 4/0."
+  },
+  {
+   "id": "r2-minor reconciler false success",
+   "verdict": "fixed",
+   "notes": "Install-only grant, reconcile --mode apply --scope all on claude/codex/pi: rtk/context_mode/leanctx actions [] failures [wire_not_consented], top-level restart_required false, stderr 'skipped: no consent (capability wire) for <tool>'. Mutant N5 killed."
+  },
+  {
+   "id": "r2-minor agentmemory .env idempotent",
+   "verdict": "fixed",
+   "notes": "3 apply runs each for .env plain / trailing blanks / no final newline / empty: byte-identical after runs 1,2,3, .env.bak == original. Mutant N4 killed."
+  },
+  {
+   "id": "earlier H4b fixes",
+   "verdict": "ok",
+   "notes": "Coverage-run suites (9069 passed) and codex runs (1271 passed, 0 failed) of the H4b tests pass, apart from the test-user-consent.sh failure below; r2 mutants M1-M6 tests still present."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "major",
+   "location": "tests/hooks/test-user-consent.sh:263-269 vs hooks/lib/user-consent.sh:192-210 (after merge 9a2aabd)",
+   "problem": "Semantic merge break: the r2 test added in 3927e1a ('a pid file that cannot be written does not stop the grant') was written for H4b's old lock loop. Merging H4a 1799a7c replaced the loop (mkdir && write pid; ownerless check uses [[ ! -s lock/pid ]], which is true-ish for a directory), so the test now fails deterministically and the suite is red. CI test(claude)/test(codex) would fail.",
+   "evidence": "bash tests/run-all-tests.sh tests/hooks/test-user-consent.sh under SILVER_BULLET_RUNTIME=claude and codex: 'FAIL: a pid file that cannot be written does not stop the grant', 'FAIL: grant recorded without a pid file (expected granted, got unset)', 'FAIL: and the lock is released'; stderr: 'user-consent.sh: line 193: .../.consent.lock/pid: Is a directory' then 'sb-consent: another sb-consent is writing ...'. Same 3 failures in the coverage run.",
+   "suggested_fix": "Coordinate with H4a (owner of the lock code): either drop/rewrite this H4b test to H4a's semantics (an unwritable pid gives up with status 2 and leaves no lock), or have H4a treat a lock it just created as owned even if the pid write fails. Re-run test-user-consent.sh under both runtimes."
+  },
+  {
+   "severity": "minor",
+   "location": "branch fix/H4b-toolstack-scripts",
+   "problem": "Branch does not contain the current base 5acae75. Also it now carries the unreviewed H4a tip (1799a7c), so H4b must not land before H4a's approved head, and further H4a repairs will need another merge.",
+   "evidence": "git merge-base --is-ancestor 5acae75 HEAD -> 1; merge-tree clean; merged-tree invariants PASS (17/17).",
+   "suggested_fix": "Merge 5acae75 (or later) and land H4a first; re-merge H4a's final head."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/lib/user-consent.sh:147-155 (sb_consent_pi_enable_words); scripts/install-recommended-tools-global.sh:100-106",
+   "problem": "leanctx with only wire consent is enabled in Pi, and install-pi.py then adds 'npm:pi-lean-ctx' to ~/.pi/agent/settings.json packages, i.e. asks Pi to install an npm package without install consent. Now also reached from the graphify stack-optimizer pre:pi command.",
+   "evidence": "Grant graphify+leanctx (all caps) -> sb-optimize-stack --apply --host pi -> settings.json packages ['npm:pi-lean-ctx']; the same path needs only leanctx wire.",
+   "suggested_fix": "Pass --enable-tool leanctx only when leanctx has both wire and install consent (or have install-pi.py take a separate --install-package flag)."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/optimize-five-tool-stack.sh:75-100 (detect_host)",
+   "problem": "--host auto on a HOME with no host dirs falls back to cursor, so --host auto --force with no consent still writes ~/.cursor (45 files). Moot under Cursor removal; make sure HC deletes the fallback too.",
+   "evidence": "Fresh HOME, no consent: optimize-five-tool-stack.sh --host auto --project-root <proj> --force -> rc 0, 45 files under HOME.",
+   "suggested_fix": "HC: drop the cursor fallback (default to claude or error)."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/lib/global-toolstack/install-pi.py:107-117; docs/CONSENT.md",
+   "problem": "Revoking wire consent never switches a Pi tool off: install-pi keeps previously enabled servers. Undocumented.",
+   "evidence": "grant rtk -> optimize (rtk on); revoke rtk, grant context_mode -> optimize -> servers rtk:true, context_mode:true.",
+   "suggested_fix": "Document that revoke does not unwire, or disable non-consented tools that SB enabled."
+  },
+  {
+   "severity": "minor",
+   "location": "tests/coverage/sbcov.py:702,723 (harness, not H4b)",
+   "problem": "The single scoped coverage run produced a corrupt bash-hits.json ('Extra data' at char 46612624 of 47101169), so the Bash report lost hits (sb-optimize-stack.sh 0%, verify.sh 0% etc., clearly data loss). The coverage invariant is therefore NOT proven by this review. The non-atomic write_text of the merged hits is the likely cause.",
+   "evidence": "cov.log: JSONDecodeError Extra data in collect(); after truncating to the first JSON object the report shows Python 1906/1906 + 834/834 branches, JS 220/220, and these Bash files at 100%: alumnium-gate.sh, stack-optimizer.sh, user-consent.sh, optimize-rtk-context-mode.sh, optimize-five-tool-stack.sh, install-recommended-tools-global.sh, reconcile-recommended-tools.sh, install-leanctx-sb.sh; other Bash files partially lost.",
+   "suggested_fix": "Orchestrator: confirm 100% in CI coverage; separately make sbcov merge/collect write atomically (temp + rename)."
+  }
+ ],
+ "validation": {
+  "tests": "Coverage-run suites: 9069 passed, 3 failed (test-user-consent.sh only). Codex: 12 relevant files, 1271 passed 0 failed. test-user-consent.sh fails under claude and codex. Mutants N1-N6 all killed.",
+  "coverage": "INCONCLUSIVE: one scoped run (43 files, 96 test files) completed but bash-hits.json was corrupted by the harness; Python/JS 100%, r3-changed Bash files at 100% in the surviving data; others lost.",
+  "lint": "bash scripts/lint-shell.sh --all --jobs 2: exit 0 (application and test Bash clean).",
+  "invariants": "HEAD: check-repo-invariants 16/16 PASS (no personal-data check at this base); merged with 5acae75: 17/17 PASS incl. personal-data and workflow-hardening. generate-hook-reference --check, generate-apo-artifacts --check, validate-plugin-mirror, validate-host-agnostic-core: OK; docs/workflows == templates/workflows. Trailers: all 5 r3 commits and both merges carry Co-Authored-By Claude Sonnet 5.5 + Claude-Session; no stray model names."
+ }
+}

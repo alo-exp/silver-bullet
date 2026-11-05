@@ -1,0 +1,90 @@
+{
+ "package": "H8b-followup",
+ "round": 4,
+ "head_reviewed": "75f40b0",
+ "verdict": "CHANGES_REQUIRED",
+ "per_finding": [
+  {
+   "id": "r3-1 common nouns",
+   "verdict": "fixed",
+   "notes": "r3 fp3 at head: 3/52, all Devin-as-a-first-name (accepted residual); fp4 0/25. Every r3 sentence is in the corpus (fp3 52, fp4 25, absence3 28: 0 missing). But see issue 1: the enumerated contexts leave the same class open in neighbouring positions."
+  },
+  {
+   "id": "r3-2 ambiguous aliases",
+   "verdict": "incomplete",
+   "notes": "copilot/cognition/aider/poolside/superpowers are now ambiguous; lower-case 'an AI copilot', 'ask your copilot', 'from cognition to action' pass. Other English-word names are still not ambiguous and match lower-case: windsurf, codex, silver bullet, augment code, open interpreter, Cline (surname). Issue 2."
+  },
+  {
+   "id": "r3-3 maker",
+   "verdict": "fixed",
+   "notes": "'Melty Conductor orchestrates parallel agents' credited; generic Melty sentences in r3 fp3 now ok."
+  },
+  {
+   "id": "r3-4 hard exclusion negation",
+   "verdict": "fixed",
+   "notes": "absence3 D sweep cases all ok; absence4: 'Sweep isn't a target; Sweep is a hard exclusion ...', 'Sweep, a hard exclusion not on our list ...' ok."
+  },
+  {
+   "id": "r3-5 gate verb / anaphoric lead",
+   "verdict": "fixed",
+   "notes": "r3 cases fixed. Residual leaks: 'Deepwork provides workflow composition and blocks nothing with no evidence at all.' and '... but halts short with zero evidence.' still tick (gate verb + <=4 words); 'Unfortunately, no evidence was found.', 'Nothing backs this up.', 'We could not verify this.', '(unverified)' do not reach the claim. Lexicon limits (minor, issue 4)."
+  },
+  {
+   "id": "r3-6 corpus",
+   "verdict": "fixed",
+   "notes": "257 entries incl. r1_absence and Copilot sets; test_vendor_mention_corpus 21 tests OK on a head copy."
+  },
+  {
+   "id": "r3-7 perf",
+   "verdict": "fixed",
+   "notes": "parse_feature_support 26 KB 0.26-0.83 s, 200 KB 1.8-5.5 s across 10 adversarial repeat units (roughly linear: x7.7 size -> x7 time); mentions_vendor x8 names <=1.04 s at 200 KB ('is Linear in ' repeat). perf5.head.txt."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "major",
+   "location": "skills/silver-deep-research-multi-ai/scripts/materialize_solution_artifacts.py:mentions_vendor (_DET_BEFORE, _COPULA_BEFORE/_ADJECTIVE_COMPLEMENT, _in_list_of_common_nouns)",
+   "problem": "A capitalised ambiguous name inside a sentence still counts as a vendor by default; the fix only enumerates common-noun contexts (det + at most one lower-case adjective; copula + in/to/over/across; lists of capitalised non-products). Adjacent contexts leak: numerals, two adjectives, copula + other preposition/'and'/sentence end, verb/preposition objects, noun-noun compounds, colon lists. All pre-existing (fc61567 gives 39/52, head 29/52; 0 new FPs vs fc61567), but it is the class r3 flagged major and the orchestrator rule is FP=0.",
+   "evidence": "python3 -I /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-r4-probe/tools/fp5.py <head scripts>: 29/52 FP. Ambiguous-name ones: 'Press any key to Continue.' (continue); \"Director's notes are attached to the call sheet.\" (director); 'Ground the rig with Conductor tape.'; 'The router was reset to Factory defaults.'; 'Two Factory workers were injured on Monday.' (factory-ai); 'Install Linear actuators on the valves.'; 'This course requires Linear algebra.'; 'Growth is Linear for small inputs.'; 'The relationship is Linear and predictable.'; 'Runtime is Linear.'; 'Lots of Linear algebra is involved.' (linear); 'The old blinking Cursor annoyed users.'; 'Use Cursor keys to navigate the menu.'; 'Move the mouse until Cursor changes shape.' (cursor + cursor-agents); 'From Cognition to action, the brain is fast.' (devin); 'We relaxed Poolside all afternoon.'; 'Lunch is served Poolside on weekends.'; 'Drinks are available Poolside daily.' (poolside); 'Kids with Superpowers need training in the comic.'; 'She dreamed of having Superpowers.' (superpowers). fp6.py: 'Button labels: Back, Next, Continue.' (continue). Credit appears in both _envelope_evidence_slugs and _extract_slugs_from_text. Lower-case forms of all of these are correctly rejected.",
+   "suggested_fix": "Invert the default for AMBIGUOUS_NAMES: credit a capitalised mid-sentence name only on a positive product signal (_CUE_AFTER/_CUE_BEFORE, subject of a product verb, list with a known product, known multi-word product name), instead of crediting unless a common-noun context is recognised. Re-measure recall on the pinned corpus; add these sentences."
+  },
+  {
+   "severity": "major",
+   "location": "skills/silver-deep-research-multi-ai/reference/category-pack-overlays/agentic-sdlc-process-orchestrator.json (materialize_solution_artifacts.AMBIGUOUS_NAMES)",
+   "problem": "Several pack names/aliases that are ordinary English words or a famous surname are not in AMBIGUOUS_NAMES, so they match case-insensitively with no proper-noun check. 'No silver bullet' is a stock phrase in software writing and silver-bullet is a matrix slug of the real APO run. Pre-existing.",
+   "evidence": "fp6.py at head: 'Learning to windsurf takes patience.' -> windsurf; 'There is no silver bullet for software complexity.' -> silver-bullet; 'The codex was copied by monks.' -> codex; 'We augment code reviews with pair programming.' -> augment-cosmos; 'An open interpreter session lets you test snippets.' -> open-interpreter; 'Patsy Cline sang Crazy in 1961.' -> cline; headings 'Silver Bullet Thinking Is a Myth', 'Windsurf Lessons for Beginners', 'Codex Leicester by Leonardo da Vinci' also credited.",
+   "suggested_fix": "Add windsurf, codex, silver bullet, augment code, open interpreter, cline (and audit the rest: deepwork, tembo, magic dev, spec kit) to AMBIGUOUS_NAMES. Either pin 'Cline' as a surname next to the Devin residual, or apply the same proper-noun-with-product-context check."
+  },
+  {
+   "severity": "minor",
+   "location": "materialize_solution_artifacts.py:_DET_BEFORE (optional '[a-z][a-z-]*' slot)",
+   "problem": "The one-adjective slot after a determiner accepts any lower-case word, verbs included, so a relative clause hides a genuine mention. Recall regression vs fc61567.",
+   "evidence": "recall4.py: 'Teams that use Cursor report faster refactors.' MISS at head, HIT at fc61567 (head 24/25, fc61567 25/25).",
+   "suggested_fix": "Exclude 'that/this/these/those' followed by a verb, or restrict the slot to adjectives/participles (-ing/-ed) and a small adjective list."
+  },
+  {
+   "severity": "minor",
+   "location": "materialize_solution_artifacts.py:_GATE_VERB_BEFORE / _ANAPHORIC_LEAD / _ABSENCE_MARKER",
+   "problem": "Absence phrasing outside the lexicon does not remove the tick.",
+   "evidence": "absence4.py at head 6/24 leaks (fc61567: 11): 'Deepwork provides workflow composition and blocks nothing with no evidence at all.'; '... but halts short with zero evidence.'; '... . Unfortunately, no evidence was found.'; '... . Nothing backs this up.'; '... . We could not verify this.'; '... (unverified).'",
+   "suggested_fix": "Exempt the gate verb only when the marker is its object (no 'nothing/no X' between); add Unfortunately/Sadly to the lead; add unverified/could not verify/nothing backs to the markers."
+  },
+  {
+   "severity": "minor",
+   "location": "skills/silver-deep-research-multi-ai/scripts/solution_classifier.py:discover_candidate_slugs",
+   "problem": "_envelope_evidence_slugs now runs inside run_context(known, pack); discover_candidate_slugs calls the same _extract_candidates_from_text without it, so the two paths can judge a name against different product sets. No observed effect (evidence governs classification; probes gave the same answers), but it is inconsistent.",
+   "evidence": "disc.py: same results on 3 probes; code reading of solution_classifier.py:159-184.",
+   "suggested_fix": "Wrap discover_candidate_slugs' loop in the same run_context."
+  }
+ ],
+ "recall": "fresh 25 genuine mentions: 24/25 at head (miss: 'Teams that use Cursor report faster refactors.'); 25/25 at fc61567.",
+ "precision": "fresh 82 sentences (fp5 52 + fp6 30): head 39 FP (29+10), fc61567 56 FP (39+17). No new FP vs fc61567; all are pre-existing, and none is Devin-as-a-name.",
+ "solution_classifier": "Lives at skills/silver-deep-research-multi-ai/scripts/solution_classifier.py, the multi-AI skill owned by H8b (PKG-NOTES: H8b owns skills/silver-deep-research-multi-ai/**), not H8a (skills/silver-deep-research/**). Change: run_context(known, pack) around the evidence extraction; run_context restores the previous _RUN state on exit, so it is correct. git merge-tree --write-tree 75f40b0 fix/H8a-deep-research (4cb94aa): clean (0ff7b1f).",
+ "real_apo_run": "real3.py on research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final: 23 matrix slugs identical, parse_feature_support cells 0 diffs vs fc61567 and identical to r3 e14d934 output.",
+ "validation": {
+  "tests": "bash tests/run-all-tests.sh tests/scripts/test-solution-research-python.sh tests/scripts/test-multi-ai-deep-research-contract.sh: TOTAL 670 passed, 0 failed. Corpus unittest on a head copy: 21 tests OK.",
+  "coverage": "run-coverage.sh --cov-dir /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-r4-probe/cov --only materialize_solution_artifacts.py --only solution_classifier.py tests/scripts/test-multi-ai-deep-research-contract.sh: 29 passed; materialize 1291/1291 stmts 724/724 branches, solution_classifier 237/237 stmts 128/128 branches, 100.00% (Python data collected: 1528 statements, 852 branches). known-limits.json valid JSON.",
+  "lint": "bash scripts/lint-shell.sh --all --jobs 2: exit 0 (application and test Bash clean)",
+  "invariants": "check-repo-invariants 0; generate-hook-reference --check 0; generate-apo-artifacts --check 0; validate-plugin-mirror OK; the 5 copies of materialize/solution_classifier/corpus are byte-identical. Trailers on fc04960/3b6de36/75f40b0: Co-Authored-By Claude Sonnet 5.5 + correct Claude-Session (as accepted in r3); no other model names. merge-tree 75f40b0 with claude/optimistic-ramanujan-tccfud (94800f8): clean (f443ced), and 94800f8 is an ancestor of head. Worktree git status clean."
+ }
+}

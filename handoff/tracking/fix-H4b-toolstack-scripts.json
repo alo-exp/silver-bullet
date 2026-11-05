@@ -1,0 +1,631 @@
+{
+  "package": "H4b-toolstack-scripts",
+  "branch": "fix/H4b-toolstack-scripts",
+  "head": "05922a6",
+  "worktree": "/home/user/silver-bullet/.claude/worktrees/agent-ac0d871c7fe524e2a",
+  "dispositions": [
+    {
+      "id": "R6-01",
+      "status": "fixed",
+      "commits": [
+        "H4b-fix"
+      ],
+      "tests": [
+        "tests/scripts/test-rt-common-paths.sh: registry command runner refuses shell syntax / prose / foreign programs",
+        "tests/scripts/test-rt-graphify-agentmemory.sh: platform: only graphify commands from the table run, without a shell; the last line is not dropped"
+      ],
+      "evidence": "Red: repair-graphify.sh eval'd every post_index line (a shell string); graphify-worktree.sh spliced the path into bash -c. Green: rt_run_registry_command/chain run argv with no shell, only for named programs; the update runs as a function with ROOT as an argument.",
+      "notes": "hooks/lib/graphify-am-global.sh:373 (ga_run_cmd eval) and hooks/lib/stack-optimizer.sh eval sites are H4a-owned; skills still tell the agent to run commands read from the project config (skills are not in this package)."
+    },
+    {
+      "id": "R6-02",
+      "status": "fixed",
+      "commits": [
+        "H4b-fix"
+      ],
+      "tests": [
+        "tests/scripts/test-toolstack-gate-compression.sh: the project's heartbeat.sh did not run",
+        "tests/scripts/test-toolstack-common-config.sh: ts_sb_root cases",
+        "tests/scripts/test-rt-heartbeat-session-vendor.sh: the project's / an ancestor's reconciler is never run",
+        "tests/scripts/test-rt-common-paths.sh: resolve: the project's copy is ignored"
+      ],
+      "evidence": "Red: a project heartbeat.sh touching a marker was sourced by the global gates; session-verify ran the project's reconcile-recommended-tools.sh; rt_resolve_lib_script walked up from $PWD. Green: heartbeat comes from the repo-root the installer recorded (absolute, regular file, must hold the library); session-verify uses RT_REPO_ROOT/CLAUDE_PLUGIN_ROOT only; lib scripts resolve from plugin root / RT_REPO_ROOT / own checkout.",
+      "notes": ""
+    },
+    {
+      "id": "R6-03",
+      "status": "fixed",
+      "commits": [
+        "H4b-fix"
+      ],
+      "tests": [
+        "tests/scripts/test-rt-common-paths.sh: consent section (pending / install / wire / decline / project veto)",
+        "tests/scripts/test-install-global-toolstack.sh, test-optimize-*.sh, test-install-leanctx-sb-staged.sh: no consent -> nothing changes"
+      ],
+      "evidence": "Red: rt_consent_for read enabled_by_user from the committed file, so a clone inherited consent for npm/uv installs and host-config edits. Green: rt_consent_for/rt_mutation_allowed use hooks/lib/user-consent.sh (install for packages, wire for host config); the project file can only veto.",
+      "notes": "R5-04 consumer side complete for scripts; 14 known-failing tests now pass."
+    },
+    {
+      "id": "R6-04",
+      "status": "fixed",
+      "commits": [
+        "H4b-fix"
+      ],
+      "tests": [
+        "tests/scripts/test-optimize-rtk-context-mode-flows.sh: consent section (rtk-only, cm-only, every host)",
+        "tests/scripts/test-optimize-five-tool-stack-staged.sh: patch switches follow consent"
+      ],
+      "evidence": "Red: optimizers forced RT_PATCH_* =1, installed Context Mode globally and disabled the user's Claude plugin whatever was consented. Green: per-tool wire/install consent gates every step; patch-hooks/patch-mcp/install-pi only touch consented tools.",
+      "notes": ""
+    },
+    {
+      "id": "R6-05",
+      "status": "fixed",
+      "commits": [
+        "H4b-fix"
+      ],
+      "tests": [
+        "tests/python/test_merge_token_compression_config.py: CliAllowlistTest",
+        "tests/scripts/test-optimize-rtk-context-mode.sh: default allow-list pre-approves no interpreters"
+      ],
+      "evidence": "Red: 96 broad Shell(...) patterns (bash, rm, curl, docker...) merged into ~/.cursor/cli-config.json. Green: default --cli-allowlist read-only (14 inspection commands); full needs the explicit flag; none/--skip-cli-config skip.",
+      "notes": ""
+    },
+    {
+      "id": "R6-06",
+      "status": "fixed",
+      "commits": [
+        "H4b-fix"
+      ],
+      "tests": [
+        "tests/python/test_toolstack_patch_mcp_codex.py: valid TOML stays valid for 6 shapes, symlink/mode/backup, refusal of unparseable",
+        "tests/python/test_merge_leanctx_mcp_config.py: header inside a string, spaced headers",
+        "tests/python/test_merge_token_compression_config.py: codex config edited structurally",
+        "tests/scripts/test-rt-common-paths.sh: rt_codex_toml_has_server"
+      ],
+      "evidence": "Red: regex editors broke multi-line strings/spaced headers; Green: all three mergers use sb_host_config.TomlDocument (byte-identical copy of H2's module), detection accepts any valid header spelling.",
+      "notes": "scripts/lib/sb_host_config.py + tests/python/test_sb_host_config.py are copied byte-for-byte from fix/H2-installers; they merge cleanly if H2 lands first."
+    },
+    {
+      "id": "R6-07",
+      "status": "fixed",
+      "commits": [
+        "H4b-fix"
+      ],
+      "tests": [
+        "tests/python/test_toolstack_patch_mcp_codex.py: legacy lean-ctx replaced only when leanctx consented"
+      ],
+      "evidence": "Red: [mcp_servers.lean-ctx] (with env secrets) deleted on every Codex run. Green: removed only when patch_leanctx is on, and the previous file is kept in config.toml.sb-backup.",
+      "notes": ""
+    },
+    {
+      "id": "R6-08",
+      "status": "fixed",
+      "commits": [
+        "H4b-fix"
+      ],
+      "tests": [
+        "tests/scripts/test-toolstack-gate-compression.sh: rtk gate records usage; commit gate allows after it",
+        "tests/scripts/test-toolstack-common-faults.sh: ts_token_usage_record failure paths"
+      ],
+      "evidence": "Red: token-compression gate required rtk-usage that nothing wrote, denying every commit. Green: rtk-gate.sh records the usage atomically when a shell command passes the wired RTK hook.",
+      "notes": ""
+    },
+    {
+      "id": "R6-09",
+      "status": "fixed",
+      "commits": [
+        "H4b-fix"
+      ],
+      "tests": [
+        "tests/python/test_toolstack_install_pi.py: unparseable settings left alone, symlink/mode/backup"
+      ],
+      "evidence": "Red: settings.json with comments was replaced by {} . Green: sbc.read_json raises ConfigError, main exits 2, file untouched.",
+      "notes": ""
+    },
+    {
+      "id": "R6-10",
+      "status": "fixed",
+      "commits": [
+        "H4b-fix"
+      ],
+      "tests": [
+        "tests/python/test_toolstack_install_pi.py: pi-lean-ctx registered only with leanctx; no --enable-tool enables nothing"
+      ],
+      "evidence": "Red: npm:pi-lean-ctx always added. Green: only with --enable-tool leanctx; callers pass only consented tools.",
+      "notes": ""
+    },
+    {
+      "id": "R6-11",
+      "status": "fixed",
+      "commits": [
+        "H4b-fix"
+      ],
+      "tests": [
+        "tests/scripts/test-rt-common-paths.sh: rt_with_lock section (no RETURN trap, stale recovery)"
+      ],
+      "evidence": "Red: RETURN trap outlived the call and deleted another lock. Green: no trap; pid recorded; stale locks recovered.",
+      "notes": ""
+    },
+    {
+      "id": "R6-12",
+      "status": "fixed",
+      "commits": [
+        "H4b-fix"
+      ],
+      "tests": [
+        "tests/scripts/test-install-global-toolstack.sh: consent, host check, toolstack.json kept, rules backed up"
+      ],
+      "evidence": "Red: toolstack.json reset to enforcement always / all required. Green: written only when absent, required follows wire consent; rules keep a .sb-backup; installer skips without consent or Cursor.",
+      "notes": "skills/silver-update Step 8g still calls the installer unconditionally; the script now self-limits."
+    },
+    {
+      "id": "R6-13",
+      "status": "fixed",
+      "commits": [
+        "H4b-fix"
+      ],
+      "tests": [
+        "tests/scripts/test-install-recommended-tools-hosts.sh: project rules from the bundle; missing bundle does not abort"
+      ],
+      "evidence": "Red: rules dir was the plugin root; cp aborted under set -e. Green: project rules go to PROJECT_ROOT/.cursor/rules; missing bundle warns.",
+      "notes": ""
+    },
+    {
+      "id": "R6-14",
+      "status": "fixed",
+      "commits": [
+        "H4b-fix"
+      ],
+      "tests": [
+        "tests/scripts/test-rt-graphify-agentmemory.sh: the last line is not dropped"
+      ],
+      "evidence": "Red: last post_index command skipped; Green: read loop handles unterminated last line.",
+      "notes": ""
+    },
+    {
+      "id": "R6-16",
+      "status": "fixed",
+      "commits": [
+        "H4b-fix"
+      ],
+      "tests": [
+        "tests/scripts/test-toolstack-session-bootstrap.sh: empty args, no mapfile",
+        "tests/scripts/test-graphify-am-global-setup-cli.sh"
+      ],
+      "evidence": "mapfile replaced by while-read loops in session-bootstrap.sh and graphify-am-global-setup.sh.",
+      "notes": ""
+    },
+    {
+      "id": "R6-17",
+      "status": "partial",
+      "commits": [
+        "H4b-fix"
+      ],
+      "tests": [
+        "tests/scripts/test-install-leanctx-sb-staged.sh: installer never piped; checksum pin; install consent",
+        "tests/scripts/test-rt-graphify-agentmemory.sh / test-rt-probes-cm-alumnium-search.sh: install_not_consented"
+      ],
+      "evidence": "curl|sh removed (download to a temp file, SHA-256 pin required, install consent, https only). npm/uv/pipx/brew installs now need the install consent and no longer hide errors; search-cli runs as plain brew commands.",
+      "notes": "needs-user: version pins for npm/uv/brew packages (no network here, no versions invented). Q: which versions should registry pin (context-mode, @agentmemory/agentmemory, graphifyy, rtk, search-cli)? Recommendation: pin to the min_version already in templates/silver-bullet.config.json.default once verified published. Also outside this package: `npx -y @agentmemory/mcp` in hooks/lib/graphify-am-global.sh (H4a) and the codex marketplace pre_index entries."
+    },
+    {
+      "id": "R6-18",
+      "status": "fixed",
+      "commits": [
+        "H4b-fix"
+      ],
+      "tests": [
+        "tests/js/minimax-openai-proxy.test.mjs: gzipped JSON decoded, chunked/hop-by-hop headers dropped"
+      ],
+      "evidence": "accept-encoding identity, gzip/deflate/br decoded, hop-by-hop headers stripped.",
+      "notes": ""
+    },
+    {
+      "id": "R6-19",
+      "status": "fixed",
+      "commits": [
+        "H4b-fix"
+      ],
+      "tests": [
+        "tests/js/minimax-openai-proxy.test.mjs: isMainModule through symlinks and spaces"
+      ],
+      "evidence": "realpath/fileURLToPath comparison.",
+      "notes": ""
+    },
+    {
+      "id": "R6-20",
+      "status": "fixed",
+      "commits": [
+        "H4b-fix"
+      ],
+      "tests": [
+        "tests/scripts/test-start-minimax-openai-proxy.sh: unrelated live pid, symlinked log refused, private run dir"
+      ],
+      "evidence": "pid/log in a private per-user dir (0700, umask 077), symlinks refused, a pid counts only if it is our node proxy.",
+      "notes": ""
+    },
+    {
+      "id": "R6-21",
+      "status": "partial",
+      "commits": [
+        "H4b-fix"
+      ],
+      "tests": [
+        "tests/js/minimax-openai-proxy.test.mjs: 413 on oversized request, oversized upstream aborted, upstream timeout"
+      ],
+      "evidence": "Request/response size limits (16 MiB) and a 120 s upstream timeout.",
+      "notes": "Not done: incremental SSE normalization (the proxy still buffers a whole response). Low severity; would need a streaming rewrite of the handler."
+    },
+    {
+      "id": "R6-22",
+      "status": "fixed",
+      "commits": [
+        "H4b-fix"
+      ],
+      "tests": [
+        "tests/scripts/test-install-omniroute-launchagent.sh: listener-only stop, XML escaping, port validation, uninstall, unload on failed health"
+      ],
+      "evidence": "pkill -f replaced by a listener-on-our-port check; plist values escaped; --uninstall added; failed health unloads the agent.",
+      "notes": ""
+    },
+    {
+      "id": "R6-23",
+      "status": "fixed",
+      "commits": [
+        "H4b-fix"
+      ],
+      "tests": [
+        "tests/scripts/test-sb-optimize-stack-modes.sh and test-sb-small-scripts.sh: project root section"
+      ],
+      "evidence": "--project-root (default git top level / cwd); SB checkout is only the library root.",
+      "notes": "skills/silver-init, silver-update and recommended-tools-opt-in.md still call `bash scripts/sb-optimize-stack.sh` by a relative path: they must call it from the plugin root with --project-root (skills are not in this package)."
+    },
+    {
+      "id": "R6-24",
+      "status": "fixed",
+      "commits": [
+        "H4b-fix"
+      ],
+      "tests": [
+        "tests/scripts/test-optimize-five-tool-stack-staged.sh: bundled configs never used or rewritten"
+      ],
+      "evidence": "config_file is the project's file only; profile stamping is atomic with backup.",
+      "notes": ""
+    },
+    {
+      "id": "R6-25",
+      "status": "fixed",
+      "commits": [
+        "H4b-fix"
+      ],
+      "tests": [
+        "tests/python/test_toolstack_patch_hooks.py: uninstalled tools never replace working hooks; LeanCTX/CM hooks untouched without consent"
+      ],
+      "evidence": "Legacy LeanCTX hooks are removed only with RTK consent and a resolvable rtk; CM hooks rewritten only with CM consent and a resolvable command.",
+      "notes": ""
+    },
+    {
+      "id": "R6-26",
+      "status": "fixed",
+      "commits": [
+        "H4b-fix"
+      ],
+      "tests": [
+        "tests/python/test_toolstack_patch_mcp_json.py, test_toolstack_patch_hooks.py, test_toolstack_install_pi.py, test_merge_*.py: symlink/mode/backup/unchanged-not-rewritten"
+      ],
+      "evidence": "All Python writers use sb_host_config.write_atomic (symlink-preserving, mode-preserving, <file>.sb-backup, no write when unchanged).",
+      "notes": ""
+    },
+    {
+      "id": "R6-27",
+      "status": "fixed",
+      "commits": [
+        "H4b-fix"
+      ],
+      "tests": [
+        "tests/scripts/test-install-leanctx-sb-staged.sh: guard protects the project's AGENTS.md/.cursorrules"
+      ],
+      "evidence": "GUARD_PATHS use PROJECT_ROOT.",
+      "notes": ""
+    },
+    {
+      "id": "R6-28",
+      "status": "partial",
+      "commits": [
+        "H4b-fix"
+      ],
+      "tests": [
+        "tests/scripts/test-rt-receipts-attestation.sh: cleared receipts are marked self_reported"
+      ],
+      "evidence": "A receipt cleared by --host-evidence-stdin now records cleared_by=host_evidence_stdin and evidence_assurance=self_reported.",
+      "notes": "Inherent limit: the agent runs as the same user and can read the nonce; not made unforgeable."
+    },
+    {
+      "id": "R6-29",
+      "status": "needs-user",
+      "commits": [
+        "H4b-fix"
+      ],
+      "tests": [],
+      "evidence": "Not changed: the divergent definition is hooks/lib/graphify-am-global.sh:180-201 (H4a-owned).",
+      "notes": "Recommendation: H4a (or a follow-up) should build the OpenCode agentmemory entry from the shared manifest (scripts/lib/global-toolstack/opencode.py opencode_server_config) instead of npx -y @agentmemory/mcp."
+    },
+    {
+      "id": "R6-30",
+      "status": "fixed",
+      "commits": [
+        "H4b-fix"
+      ],
+      "tests": [
+        "tests/scripts/test-install-leanctx-sb-staged.sh: wire-proxy evidence section"
+      ],
+      "evidence": "The self-test is labeled as proving only the validator; --wire-proxy-evidence FILE validates captured traffic; docs/LEANCTX.md corrected.",
+      "notes": ""
+    },
+    {
+      "id": "R6-31",
+      "status": "fixed",
+      "commits": [
+        "H4b-fix"
+      ],
+      "tests": [
+        "tests/scripts/test-toolstack-parity-verify.sh, test-toolstack-verify.sh"
+      ],
+      "evidence": "Hard-coded r41j worktree removed (recorded SB root / TEST_REPO only); opted-out tools are warnings.",
+      "notes": ""
+    },
+    {
+      "id": "R6-32",
+      "status": "fixed",
+      "commits": [
+        "H4b-fix"
+      ],
+      "tests": [
+        "updated: test_toolstack_patch_mcp_codex.py, test_toolstack_install_pi.py, test-install-global-toolstack.sh, test-toolstack-gate-compression.sh, minimax-openai-proxy.test.mjs, test-start-minimax-openai-proxy.sh, test-install-omniroute-launchagent.sh, test_merge_token_compression_config.py, test-rt-common-paths.sh"
+      ],
+      "evidence": "Tests that pinned unsafe behaviour now assert the safe behaviour and the failure modes.",
+      "notes": ""
+    },
+    {
+      "id": "R5-04",
+      "status": "fixed",
+      "commits": [
+        "H4b-fix"
+      ],
+      "tests": [
+        "the 14 known_failing_until_h4b test files pass (consent mirror helpers)"
+      ],
+      "evidence": "Consumer side adopted: reconcile engine, probes, heartbeat, session-verify, doctor/diagnostics tests.",
+      "notes": ""
+    }
+  ],
+  "files_changed_outside_ownership": [
+    "scripts/lib/sb_host_config.py, tests/python/test_sb_host_config.py: byte-identical copy from fix/H2-installers (R6-06 structural TOML/JSON writer)",
+    "tests/lib/consent-helpers.sh, h-recommended-helpers.sh, h-doctor-stage.sh, toolstack-helpers.sh: test helpers (consent mirror, SB bridge root, health-cache reset)",
+    "docs/CONSENT.md, docs/RTK.md, docs/LEANCTX.md: documentation of the new behaviour",
+    "tests under tests/scripts, tests/python, tests/js: updated for the new semantics"
+  ],
+  "validation": {
+    "tests": "all tool-stack test files green under claude and codex (coverage run 3979 passed/0 failed; codex sweeps 3350 and 3136 passed/0 failed; docs suite 199 passed)",
+    "coverage": "scoped bash coverage 100% (4741/4741 statements, 28 files)",
+    "lint": "lint-shell --all clean",
+    "invariants": "check-repo-invariants all PASS"
+  },
+  "notes": "scripts/sb-doctor.sh and scripts/sb-diagnostics.sh were NOT edited (reverted a probe edit; their tests only needed consent fixtures).",
+  "review_repair_r1": {
+    "review_file": "review-fix-H4b-toolstack-scripts.json",
+    "dispositions": [
+      {
+        "issue": 1,
+        "status": "fixed",
+        "notes": "read-only Cursor allow-list reduced to exact commands (53ce0e6). Cursor-only; moot once Cursor support is removed."
+      },
+      {
+        "issue": 2,
+        "status": "fixed",
+        "notes": "every reconciler host-config write needs wire consent and installs need install consent (53ce0e6, df507e3)."
+      },
+      {
+        "issue": 3,
+        "status": "fixed",
+        "notes": "global Cursor rules written only with per-tool wire consent (53ce0e6). Cursor-only; moot once Cursor support is removed."
+      },
+      {
+        "issue": 4,
+        "status": "fixed",
+        "notes": "LeanCTX hooks removed only with LeanCTX consent; test 602aae2 covers an RTK-only patch run."
+      },
+      {
+        "issue": 5,
+        "status": "fixed",
+        "notes": "SB_INSTALL_RUN_START exported in all entry scripts; tests/scripts/test-entry-scripts-install-run-start.sh."
+      },
+      {
+        "issue": 6,
+        "status": "fixed",
+        "notes": "stale-lock reclaim serialized by a guard; the last two untested guard branches now have tests (3927e1a, test-rt-common-paths.sh)."
+      },
+      {
+        "issue": 7,
+        "status": "partial",
+        "notes": "R6-17: LeanCTX cargo hint pinned (df507e3); pins for tools without a template min_version are not applied. No version exists to pin to."
+      },
+      {
+        "issue": 8,
+        "status": "fixed",
+        "notes": "plugin-root refusal in sb-optimize-stack.sh and sb-verify-synergy.sh, override SB_ALLOW_PLUGIN_ROOT (df507e3)."
+      },
+      {
+        "issue": 9,
+        "status": "fixed",
+        "notes": "global AGENTS.md written only with Context Mode wire consent, atomically, with .sb-backup; an unwritable destination now has a test (3927e1a)."
+      },
+      {
+        "issue": 10,
+        "status": "fixed",
+        "notes": "RTK allow-list and hook canonicalization independent of Context Mode (df507e3). Cursor-only, moot once Cursor support is removed."
+      },
+      {
+        "issue": 11,
+        "status": "fixed",
+        "notes": "merged base 9b5db30 as 62dc496 (only conflict tests/lib/h-doctor-stage.sh); mirrors regenerated, no diff."
+      }
+    ],
+    "merge": {
+      "base": "claude/optimistic-ramanujan-tccfud @ 9b5db30",
+      "commit": "62dc496"
+    },
+    "new_head": "3927e1a",
+    "validation": {
+      "coverage": "scoped run over the 70 changed hooks/scripts files with the changed and covering tests: Bash, Python (1372 stmts, 614 branches) and JS (220 lines) at 100%. Gaps found: 14 statements in 8 files; tests added in 3927e1a, one unreachable fallback in hooks/alumnium-gate.sh removed. The last combined run was spread over several keep-runs; alumnium-gate.sh was 44/44 after the removal.",
+      "lint": "lint-shell --all --jobs 2 clean",
+      "checks": "check-repo-invariants, generate-hook-reference --check, generate-apo-artifacts --check, validate-plugin-mirror OK; validate-host-agnostic-core initially failed on a ~/.cursor/~/.codex comment in repair-graphify.sh, reworded, now OK; sync-codex-package leaves no diff",
+      "tests": "123 files after the merge: 9833 passed, 0 failed under claude and under codex",
+      "extra_files_outside_ownership": [
+        "scripts/lib/recommended-tools/repair-graphify.sh: comment reworded"
+      ]
+    }
+  },
+  "review_repair_r2": {
+    "reviews": [
+      "r2 (1 major, 6 minor)",
+      "r3 (1 major, 5 minor; items 1-6 of the coordinator message)"
+    ],
+    "head": "e7772ba",
+    "dispositions": [
+      {
+        "id": "r2-major Pi regression",
+        "status": "fixed",
+        "tests": [
+          "tests/scripts/test-pi-consent-wiring.sh (red 9/20 -> 27/27)",
+          "test-optimize-rtk-context-mode-flows.sh"
+        ],
+        "notes": "sb_consent_pi_enable_words feeds every caller; no consent enables nothing"
+      },
+      {
+        "id": "r2 install_pi_global consent",
+        "status": "fixed",
+        "tests": [
+          "test-pi-consent-wiring.sh",
+          "test-install-recommended-tools-hosts.sh"
+        ]
+      },
+      {
+        "id": "r2 Cursor path",
+        "status": "moot: Cursor removed",
+        "notes": "--host all no longer includes cursor; --host auto with no host writes nothing (r3)"
+      },
+      {
+        "id": "r2 alumnium-gate merge",
+        "status": "fixed",
+        "notes": "H4a version taken; 100% coverage"
+      },
+      {
+        "id": "r2/r3 stale base",
+        "status": "fixed",
+        "notes": "merged c591ebb, then 2a65018"
+      },
+      {
+        "id": "r2 misleading reports",
+        "status": "fixed",
+        "tests": [
+          "test-rt-probes-host-tools.sh",
+          "test-rt-probes-cm-alumnium-search.sh"
+        ],
+        "notes": "failure wire_not_consented, notice 'skipped: no consent (capability wire)', no restart flag"
+      },
+      {
+        "id": "r2 agentmemory .env",
+        "status": "fixed (outside ownership: H4a file)",
+        "tests": [
+          "test-stack-optimizer-coverage.sh"
+        ]
+      },
+      {
+        "id": "r3 npm:pi-lean-ctx without install consent",
+        "status": "fixed",
+        "tests": [
+          "test-pi-consent-wiring.sh",
+          "test-install-leanctx-sb-staged.sh",
+          "test-user-consent.sh"
+        ]
+      },
+      {
+        "id": "r3 revoke does not turn tools off in Pi",
+        "status": "documented",
+        "notes": "docs/CONSENT.md 'What revoking does not undo'; removal not implemented"
+      },
+      {
+        "id": "r3 --host auto Cursor fallback",
+        "status": "fixed",
+        "tests": [
+          "test-optimize-five-tool-stack-staged.sh"
+        ]
+      },
+      {
+        "id": "r3 coverage tooling corrupted bash-hits.json",
+        "status": "worked around",
+        "notes": "own runs, --jobs 1, two groups"
+      },
+      {
+        "id": "r3 test-user-consent pid-file assertions",
+        "status": "fixed by H4a 25d18df merge",
+        "notes": "158/158 under claude and codex"
+      },
+      {
+        "id": "r3 base 2a65018",
+        "status": "fixed",
+        "notes": "merged"
+      }
+    ],
+    "coverage": {
+      "group1_hooks_jobs1": "alumnium-gate.sh 100, stack-optimizer.sh 100, user-consent.sh 100, recommended-tools.sh 99.08 before the last test (lines 459/461 are the Cursor-only rtk:cursor branch, removed by HC; line 226 then covered by a new test, verified absent from the missing list)",
+      "group2_scripts_jobs1": "install-leanctx-sb.sh, install-recommended-tools-global.sh, common.sh, probe-context-mode.sh, probe-leanctx.sh, probe-rtk.sh, optimize-five-tool-stack.sh, optimize-rtk-context-mode.sh all 100"
+    },
+    "validation": {
+      "lint-shell --all --jobs 2": "rc 0",
+      "check-repo-invariants": "0",
+      "generate-hook-reference --check": "up to date",
+      "generate-apo-artifacts --check": "0",
+      "validate-plugin-mirror": "OK",
+      "validate-host-agnostic-core": "OK",
+      "sync-codex-package": "no diff",
+      "test-user-consent claude/codex": "158/158 each"
+    },
+    "process_note": "used git stash in the shared repo once; popped G3's stash by mistake, restored it with git stash store"
+  },
+  "review_repair_r3": {
+    "head": "05922a6",
+    "dispositions": [
+      {
+        "id": "r4 major: optimizer Pi path enables LeanCTX package on wire alone",
+        "status": "fixed at the source",
+        "tests": [
+          "tests/python/test_toolstack_install_pi.py (allow_package_install, --allow-install)",
+          "tests/python/test_toolstack_patch_mcp_json.py (RT_LEANCTX_ALLOW_INSTALL)",
+          "tests/scripts/test-pi-consent-wiring.sh (optimizer --host pi/all, install-leanctx-sb --host pi, stack-optimizer pre:pi: wire-only vs install+wire)",
+          "tests/scripts/test-optimize-five-tool-stack-staged.sh"
+        ],
+        "notes": "install-pi.py lists npm:pi-lean-ctx only with --allow-install; patch-mcp.py only with RT_LEANCTX_ALLOW_INSTALL=1; callers (optimize-five-tool-stack, receipts.sh, install-leanctx-sb, sb_consent_pi_enable_words) pass it only with leanctx install consent"
+      },
+      {
+        "id": "r4 minor: HC merge conflicts",
+        "status": "info",
+        "notes": "Cursor-only files changed by H4b (keep HC's deletion): scripts/install-recommended-tools-cursor.sh, scripts/lib/cursor-cli-allowlist.json. Mixed files (patch-hooks.py, merge-token-compression-config.py, install-global-toolstack.sh, recommended-tools.sh, optimize-five-tool-stack.sh, install-leanctx-sb.sh, optimize-rtk-context-mode.sh, receipts.sh) need a hand merge keeping H4b consent logic and detect_host 'none'; re-run test-pi-consent-wiring.sh and test-optimize-five-tool-stack-staged.sh afterwards"
+      }
+    ],
+    "coverage": "install-pi.py 100 (107/107, 24/24 branches), patch-mcp.py 100 (292/292, 134/134), user-consent.sh 100, install-leanctx-sb.sh 100, receipts.sh 100, optimize-five-tool-stack.sh 100; recommended-tools.sh Cursor-only lines 459/461 noted (removed by HC)",
+    "tests": "changed files plus test-sb-small-scripts, test-silver-doctor and the stack-optimizer tests pass under claude and codex",
+    "validation": {
+      "lint-shell --all --jobs 2": "rc 0",
+      "check-repo-invariants": 0,
+      "generate-hook-reference --check": 0,
+      "generate-apo-artifacts --check": 0,
+      "validate-plugin-mirror": 0,
+      "validate-host-agnostic-core": 0,
+      "sync-codex-package": "no diff"
+    },
+    "merged_base": "54f285f"
+  }
+}

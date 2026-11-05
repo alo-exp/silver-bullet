@@ -1,0 +1,550 @@
+{
+  "package": "G4-session-state",
+  "branch": "fix/G4-session-state",
+  "head": "f2e99ed",
+  "worktree": "/home/user/silver-bullet/.claude/worktrees/G4",
+  "dispositions": [
+    {
+      "id": "R2-12",
+      "status": "fixed",
+      "commits": [
+        "302707b"
+      ],
+      "tests": [
+        "tests/hooks/test-g4-session-start.sh: project repair script never run; project libs never sourced",
+        "tests/scripts/test-sb-small-scripts.sh: repair is report-only (no brew/apt/sudo run, no project hooks copied)",
+        "tests/hooks/test-prerequisite-probe-lib.sh: repair lookup is plugin-only"
+      ],
+      "evidence": "red: a planted scripts/sb-prerequisite-repair.sh in the project was found first by sb_prereq_find_repair_script and run by SessionStart; the repair ran sudo apt-get/brew and rsynced the project hooks/ over the installed plugin. green: the lookup is plugin-only, the repair script only prunes/refreshes the cache alias and prints the install command, and sb_claude_ensure_plugin_cache_ready copies hooks only from a checkout whose .claude-plugin/plugin.json names silver-bullet.",
+      "notes": "install-claude.sh still uses sb_claude_ensure_plugin_cache_ready as an explicit developer command."
+    },
+    {
+      "id": "R3-03",
+      "status": "fixed",
+      "commits": [
+        "302707b",
+        "c8ef052",
+        "ba7875f"
+      ],
+      "tests": [
+        "tests/hooks/test-g4-session-start.sh: hostile scripts/lib/recommended-tools/{paths,heartbeat,session-verify}.sh never run",
+        "tests/scripts/test-semantic-compress-paths.sh: plugin libraries sourced, project copies never",
+        "tests/hooks/test-rfl-quota-retry-due-paths.sh: project review-fix-ladder.py never run"
+      ],
+      "evidence": "red: session-start sourced <project>/scripts/lib/recommended-tools/*.sh, semantic-compress sourced <project>/hooks/lib/*.sh, rfl-quota-retry-due ran <project>/scripts/review-fix-ladder.py, the prerequisite probe ran the project repair script. green: all resolve from the plugin root only.",
+      "notes": "Phase-lock hooks and the phase-path peek trap now run the plugin copy; a planted project helper runs nothing (probe pD). Still preferring project scripts in other packages: rfl-policy-c-assert.sh (G6), completion-audit/deploy-tier.sh + evidence-schema-gate.sh (G1), orchestrator-state.sh (G5)."
+    },
+    {
+      "id": "R3-04",
+      "status": "fixed",
+      "commits": [
+        "c8ef052"
+      ],
+      "tests": [
+        "tests/scripts/test-g4-scripts.sh: hostile numeric config in four keys never evaluated; absurd and zero-padded values"
+      ],
+      "evidence": "red: context_budget_kb='a[$(touch X)]' created X when sb:plan ran; green: cfg_uint validates every number (^[0-9]{1,9}$, bounded, decimal) and tfidf-rank validates SB_CHUNK_BYTES.",
+      "notes": "No repo-wide lint for config-fed arithmetic was added."
+    },
+    {
+      "id": "R8-08",
+      "status": "fixed",
+      "commits": [
+        "302707b"
+      ],
+      "tests": [
+        "tests/hooks/test-g4-session-start.sh: hostile project libs never sourced"
+      ],
+      "evidence": "see R3-03; session-start resolves paths.sh, heartbeat.sh and session-verify.sh from the plugin root.",
+      "notes": ""
+    },
+    {
+      "id": "R10b-03",
+      "status": "fixed",
+      "commits": [
+        "b49ef2c"
+      ],
+      "tests": [
+        "tests/hooks/test-skill-discovery.sh: silver-bullet:sb:plan, stacked prefixes",
+        "tests/hooks/test-record-skill.sh: plugin-qualified silver-bullet:sb:plan records silver-plan, not 'plan'"
+      ],
+      "evidence": "red: silver-bullet:sb:plan canonicalised to 'plan' and was never recorded; green: trusted plugin prefixes are peeled repeatedly before the sb: mapping.",
+      "notes": ""
+    },
+    {
+      "id": "R3-06",
+      "status": "fixed",
+      "commits": [
+        "c8ef052"
+      ],
+      "tests": [
+        "tests/scripts/test-g4-scripts.sh: '..' pattern, symlinked source dir, symlinked file, credential-like names, repo under a 'secrets' dir, cache .gitignore"
+      ],
+      "evidence": "red: src_pattern '/../outside/' injected files from outside the repo; green: pattern with '..' or resolving outside the repo physical root selects nothing, find -P skips symlinks, the exclusion widened (id_*, .npmrc, .pypirc, .git-credentials, .envrc, kubeconfig, credentials, secret) and applied to the repo-relative path, and the cache dir ignores itself.",
+      "notes": "The cache stays under .planning/.context-cache (self-ignoring) rather than the runtime state dir."
+    },
+    {
+      "id": "R3-07",
+      "status": "fixed",
+      "commits": [
+        "302707b"
+      ],
+      "tests": [
+        "tests/hooks/test-g4-session-start.sh: unusual ref names (+ @ # unicode), deleted branch file, symlinked branch file, resume on another branch, compact untouched, detached HEAD, rebase"
+      ],
+      "evidence": "red: branch names outside [a-zA-Z0-9/_.-] disabled the reset, a deleted branch file kept satisfied state, resume never ran, a symlinked branch file aborted session-start. green: any valid ref is a scope, missing branch record with recorded state resets, SessionStart now also fires for resume (new 'resume' matcher entry running session-start only), a symlink skips only the write.",
+      "notes": "Not done: the scope key stored inside the state file. completion-audit.sh/stop-check.sh still compute the branch with rev-parse --abbrev-ref (G1/G3)."
+    },
+    {
+      "id": "R3-08",
+      "status": "fixed",
+      "commits": [
+        "b49ef2c"
+      ],
+      "tests": [
+        "tests/hooks/test-record-skill-adapter.sh: gate denial blocks recording; honest adapter still records; oversized command"
+      ],
+      "evidence": "red: an adapter skill recorded without ever passing forbidden-skill-check/uat-gate/dependency/RFL gates; green: record-skill runs the five Skill-matcher gates with a synthetic Skill payload and records nothing when one denies. Payload now travels on stdin (F2 hand-off).",
+      "notes": "The adapter script path itself is still not restricted to the plugin's skills."
+    },
+    {
+      "id": "R3-11",
+      "status": "fixed",
+      "commits": [
+        "302707b"
+      ],
+      "tests": [
+        "tests/hooks/test-g4-session-start.sh: config bytes and mode unchanged across startup/clear/compact/resume; planted .tmp symlink",
+        "tests/hooks/test-g4-state-libs.sh: sb_atomic_write_file, tier persist",
+        "tests/hooks/test-flow-advance-hook.sh: mode kept, symlink refused"
+      ],
+      "evidence": "red: session-start rewrote .silver-bullet.json through ${config}.tmp every start; green: session-start no longer persists the tier; sb_enforcement_tier_persist (explicit callers) and flow-advance use sb_atomic_write_file (mktemp in the same dir, mode kept, symlink refused, skipped when unchanged).",
+      "notes": ""
+    },
+    {
+      "id": "R3-12",
+      "status": "fixed",
+      "commits": [
+        "118a1c1"
+      ],
+      "tests": [
+        "tests/hooks/test-session-ledger.sh: no project -> no log path, dot-dot and symlink escape, redaction"
+      ],
+      "evidence": "red: a prompt typed outside any SB project was appended to the last SB project's session log, tokens verbatim; green: sb_session_ledger_log_path requires the enclosing SB project and a physical-path containment, and prompts are redacted (ghp_, sk-, AKIA, xox, password/token=...).",
+      "notes": "hooks/record-requested-skill.sh (G3) still writes the .requested marker file; the leak is closed in the ledger library."
+    },
+    {
+      "id": "R8-07",
+      "status": "fixed",
+      "commits": [
+        "302707b"
+      ],
+      "tests": [
+        "see R2-12"
+      ],
+      "evidence": "same fix as R2-12.",
+      "notes": ""
+    },
+    {
+      "id": "R1-23",
+      "status": "fixed",
+      "commits": [
+        "b49ef2c"
+      ],
+      "tests": [
+        "tests/hooks/test-required-skills-lib.sh: security does not satisfy silver-secure",
+        "tests/hooks/test-skill-discovery.sh and test-record-skill.sh: foreign plugin 'security'/'tdd' mint nothing"
+      ],
+      "evidence": "red: 'security' satisfied silver-secure and any plugin's ':security' recorded the marker; green: alias removed, only silver-bullet and the dependency namespaces (superpowers engineering design product-management multai; override SILVER_BULLET_SKILL_NAMESPACES) are unwrapped.",
+      "notes": ""
+    },
+    {
+      "id": "R16-01",
+      "status": "fixed",
+      "commits": [
+        "302707b"
+      ],
+      "tests": [
+        "tests/hooks/test-g4-session-start.sh: out-of-scope state override is announced"
+      ],
+      "evidence": "CLAUDE.md (x3) now say the override must be inside ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/; docs/ENFORCEMENT.md and docs/CONFIGURATION.md were already corrected by F1. session-start prints a one-line warning when it discards the override.",
+      "notes": "record-skill.sh and completion-audit.sh still discard silently."
+    },
+    {
+      "id": "R3-14",
+      "status": "deferred",
+      "commits": [
+        "302707b"
+      ],
+      "tests": [
+        "tests/hooks/test-g4-session-start.sh: compact/resume outside an SB project keeps the markers; startup clears them"
+      ],
+      "evidence": "mitigation: a non-SB session only clears the orchestrator markers and project-root cache on startup/clear, not compact/resume.",
+      "notes": "Open follow-up (user decision: one dedicated change after G1-G5 merge). Design: key every per-user state file by scope = sha256(git toplevel) under SB_RUNTIME_STATE_DIR/scopes/<scope>/ (state, branch, markers, matrices, orchestrator files), keep the branch inside it; one resolver function (sb_state_scope_dir) used by all gates and recorders; the project-root cache becomes per session_id; a non-SB session never deletes another scope; migrate on first read from the flat layout."
+    },
+    {
+      "id": "R3-15",
+      "status": "fixed",
+      "commits": [
+        "302707b"
+      ],
+      "tests": [
+        "tests/hooks/test-g4-state-libs.sh: sb_branch_scope_current_ref (symbolic ref, unborn, detached, rebase-merge/apply)",
+        "tests/hooks/test-g4-session-start.sh: detached HEAD leaves state"
+      ],
+      "evidence": "red: a detached HEAD was scoped as 'HEAD' and shared one scope; green: symbolic-ref scope, the branch being rebased during a rebase, and a plain detached HEAD never mutates state.",
+      "notes": ""
+    },
+    {
+      "id": "R3-16",
+      "status": "fixed",
+      "commits": [
+        "ba7875f"
+      ],
+      "tests": [],
+      "evidence": "User answered yes: scripts/phase-lock.sh ships with the plugin (empty lock file = {}, corrupt = status 1 and untouched, update guard, session-bound owner id, identity_tags gain pi/goose/hermes) and the hooks load it from the plugin root. Hook side: the claim hook verifies ownership with a heartbeat before skipping its manifest, the release hook skips a SubagentStop carrying an agent_id, the session id is the owner. tests/scripts/test-phase-lock-plugin.sh, tests/hooks/test-phase-lock-hooks-paths.sh.",
+      "notes": "The dogfood .planning/scripts/phase-lock.sh is untouched; known-limits.json is unchanged."
+    },
+    {
+      "id": "R3-17",
+      "status": "fixed",
+      "commits": [
+        "ba7875f"
+      ],
+      "tests": [],
+      "evidence": "User answered yes: scripts/phase-lock.sh ships with the plugin (empty lock file = {}, corrupt = status 1 and untouched, update guard, session-bound owner id, identity_tags gain pi/goose/hermes) and the hooks load it from the plugin root. Hook side: the claim hook verifies ownership with a heartbeat before skipping its manifest, the release hook skips a SubagentStop carrying an agent_id, the session id is the owner. tests/scripts/test-phase-lock-plugin.sh, tests/hooks/test-phase-lock-hooks-paths.sh.",
+      "notes": "The dogfood .planning/scripts/phase-lock.sh is untouched; known-limits.json is unchanged."
+    },
+    {
+      "id": "R3-18",
+      "status": "fixed",
+      "commits": [
+        "118a1c1"
+      ],
+      "tests": [
+        "tests/hooks/test-session-log-init-sentinel-cleanup.sh: stopped and timed-out sentinels remove their lock; a stale pid record is never signalled"
+      ],
+      "evidence": "red: the lock file outlived the sentinel, so a recycled pid with a stale lock was SIGTERMed; green: the lock is created before the sentinel starts and removed by the sentinel on exit, so a recycled pid has no lock.",
+      "notes": ""
+    },
+    {
+      "id": "R3-19",
+      "status": "partial",
+      "commits": [
+        "b49ef2c",
+        "c8ef052",
+        "118a1c1"
+      ],
+      "tests": [
+        "tests/hooks/test-lib-faults.sh: update-check cache",
+        "tests/scripts/test-g4-scripts.sh: batched text detection",
+        "tests/hooks/test-record-skill-adapter.sh"
+      ],
+      "evidence": "done: record-skill starts python only for commands containing invoke-skill; semantic-compress lists text files in one find/grep -I pass (no per-file file(1)), caps file size and count; the GitHub release lookup is cached 24 h.",
+      "notes": "Not done: merging the per-event hooks into one dispatcher and narrowing compliance-status's '.*' matcher (hooks.json-wide change)."
+    },
+    {
+      "id": "R3-20",
+      "status": "fixed",
+      "commits": [
+        "c8ef052"
+      ],
+      "tests": [
+        "tests/scripts/test-g4-scripts.sh: phases/<NNN> layout drives the goal; hookEventName present; newest file wins"
+      ],
+      "evidence": "red: only .planning/*-PLAN.md was globbed, so the standard layout produced no goal and no output; green: both layouts, hookEventName added.",
+      "notes": "The older tests that accepted 'no output' remain; the new tests require output."
+    },
+    {
+      "id": "R3-22",
+      "status": "fixed",
+      "commits": [
+        "c8ef052"
+      ],
+      "tests": [
+        "tests/scripts/test-g4-scripts.sh: unknown keys, consent, ci, extra skills.* kept; list order; backup; idempotent; symlink refused"
+      ],
+      "evidence": "red: migration rebuilt the config from the template and dropped user keys; green: deep merge with the existing file winning, order-preserving unions, backup, no-op when current.",
+      "notes": ""
+    },
+    {
+      "id": "R3-23",
+      "status": "fixed",
+      "commits": [
+        "118a1c1"
+      ],
+      "tests": [
+        "tests/hooks/test-g4-state-libs.sh: Next follows configured required_deploy/required_release, devops variant, no-library fallback"
+      ],
+      "evidence": "red: with a configured extra required skill missing, compliance-status showed no Next; green: Next falls through to the configured delivery and release lists.",
+      "notes": "The fixed display groups (REVIEW/FINALIZATION/LIFECYCLE) are unchanged."
+    },
+    {
+      "id": "R3-25",
+      "status": "fixed",
+      "commits": [
+        "302707b"
+      ],
+      "tests": [
+        "tests/hooks/test-g4-session-start.sh: compact keeps trivial and the live matrices; startup clears them"
+      ],
+      "evidence": "the three rm calls moved under the startup/clear branch.",
+      "notes": ""
+    },
+    {
+      "id": "R3-26",
+      "status": "fixed",
+      "commits": [
+        "118a1c1"
+      ],
+      "tests": [
+        "tests/hooks/test-g4-state-libs.sh: hostile project path yields valid JSON with hookEventName"
+      ],
+      "evidence": "message built with jq --arg.",
+      "notes": ""
+    },
+    {
+      "id": "R3-28",
+      "status": "fixed",
+      "commits": [
+        "c8ef052"
+      ],
+      "tests": [
+        "tests/scripts/test-g4-scripts.sh: mode kept, symlink refused, no .cursor created, up-front validation, existing workflows.sh kept"
+      ],
+      "evidence": "migrations write through sb_atomic_write_file, back up before replacing, refuse symlinks, create .cursor only when it already exists, validate before mutating, test -e for workflows.sh.",
+      "notes": ""
+    },
+    {
+      "id": "R3-29",
+      "status": "fixed",
+      "commits": [
+        "118a1c1"
+      ],
+      "tests": [
+        "tests/hooks/test-lib-faults.sh: hostile installed version not evaluated"
+      ],
+      "evidence": "the installed version is validated before arithmetic and version_to_int rejects non-numeric input.",
+      "notes": ""
+    },
+    {
+      "id": "R3-30",
+      "status": "fixed",
+      "commits": [
+        "302707b"
+      ],
+      "tests": [
+        "tests/hooks/test-g4-session-start.sh: tampered core-rules.md not injected"
+      ],
+      "evidence": "the tautological path check was removed; the integrity pin (sb_core_rules_read_verified_digest) is the guard, as the finding's first option.",
+      "notes": ""
+    },
+    {
+      "id": "R3-32",
+      "status": "partial",
+      "commits": [
+        "118a1c1"
+      ],
+      "tests": [],
+      "evidence": "documented that sb_project_is_initiated only means 'config present' and pointed gates at sb_config_marked_initiated and sb-project-gate.sh.",
+      "notes": "Renaming the 48-file alias and routing record-skill/semantic-compress/session-start walks through one function was not done (risk of deactivating hooks in projects without sb_initiated)."
+    },
+    {
+      "id": "R3-33",
+      "status": "fixed",
+      "commits": [
+        "118a1c1"
+      ],
+      "tests": [
+        "tests/hooks/test-g4-state-libs.sh: redaction, 5 MB rotation, TTL expiry, symlink refusal",
+        "tests/hooks/test-g4-session-start.sh: session-start warns while the flag exists"
+      ],
+      "evidence": "red: every PreToolUse payload was appended forever, unredacted; green: 4 h flag TTL, 5 MB rotation, token redaction (BSD sed safe), session-start warning.",
+      "notes": ""
+    }
+  ],
+  "files_changed_outside_ownership": [
+    "scripts/semantic-compress.sh, scripts/tfidf-rank.sh, scripts/extract-phase-goal.sh: R3-03/R3-04/R3-06/R3-20 live there",
+    "scripts/sb-migrate-config.sh, sb-migrate-initiated.sh, sb-migrate-orchestrator-parent.sh, sb-migrate-project.sh: R3-22/R3-28",
+    "scripts/sb-prerequisite-repair.sh, scripts/lib/plugin-cache-version.sh: R2-12/R8-07",
+    "hooks/debug-dump.sh, hooks/compliance-status.sh, hooks/phase-lock-claim.sh: R3-33/R3-23/R3-26",
+    "hooks/lib/skill-discovery.sh, hooks/lib/required-skills.sh, hooks/lib/check-sb-update.sh, hooks/lib/session-ledger.sh, hooks/lib/prerequisite-probe.sh, hooks/lib/enforcement-tier-gate.sh: R10b-03/R1-23/R3-29/R3-12/R2-12/R3-11",
+    "hooks/hooks.json (+ regenerated docs/HOOKS.md, hooks/cursor-hooks.json, plugins/silver-bullet/cursor-hooks.json): new SessionStart 'resume' entry for session-start only (R3-07); the cursor files drift without regeneration and disappear with HC",
+    "CLAUDE.md, docs/CONFIGURATION.md, docs/TROUBLESHOOTING.md: R16-01 and behaviour docs",
+    "tests/lib/c-toolgates-2-record-skill.sh: python3 -c fault stub narrowed to the cwd resolution"
+  ],
+  "validation": {
+    "tests": "76 test files (hooks, scripts, three integration scenarios; list in scratchpad g4-files2.txt): claude 2805 passed 0 failed, codex 2805 passed 0 failed; docs suite 198 passed",
+    "coverage": "one scoped run (claude, --jobs 2, 26 changed hook/script files, 76 test files): Bash statements 3012/3012, lines 2093/2093, functions 95/95 = 100%",
+    "lint": "scripts/lint-shell.sh --all --jobs 2: application and test Bash clean",
+    "invariants": "check-repo-invariants all PASS; generate-hook-reference --check, generate-apo-artifacts --check, validate-plugin-mirror OK; sync-codex-package no diff"
+  },
+  "notes": "Re-verified every finding at c591ebb: none was already fixed by F1/F2 (F1's docs already corrected ENFORCEMENT.md/CONFIGURATION.md for R16-01). Follow-ups done: leanctx usage cleared on scope reset; enterprise-human-deploy-approved and ci-red-override cleared at startup/clear and on scope reset; record-skill adapter parsing moved to stdin.",
+  "review_repair_r1": {
+    "head": "c1dbf85",
+    "commits": [
+      "ba7875f (all), plus follow-up commits to c1dbf85"
+    ],
+    "items": {
+      "major R3-03 phase-lock hooks": "fixed - scripts/phase-lock.sh from the plugin root in claim/heartbeat/release and hooks/lib/phase-path.sh; probe pD runs nothing; test planted helper for all three hooks and the peek trap",
+      "minor record-skill tool_input.skill": "fixed - honoured only for tool_name Skill; Bash/exec_command/Edit payloads record nothing (adapter path unchanged)",
+      "minor semantic-compress cache symlinks": "fixed - symlinked .planning, cache dir, .gitignore or cache file turns caching off; nothing is written through",
+      "minor trusted namespaces reaching SB names": "fixed - a dependency namespace anywhere in the chain returns the name verbatim when the remainder is silver*, sb, sb:* or sb-*; only silver-bullet yields SB markers",
+      "minor semantic-compress qualified names": "fixed - hooks/semantic-compress.sh canonicalises first",
+      "minor adapter refused only at recording": "fixed - scripts/silver-bullet runs the Skill gates (new hooks/lib/skill-gates.sh, shared with record-skill) before printing the skill or writing a receipt; skill-root restriction to the plugin remains a follow-up",
+      "minor sb_enforcement_tier_persist": "fixed - deleted with its tests",
+      "minor merge conflicts with G3": "base 2a65018 merged (no conflict at this base); CLAUDE.md count is 97 here and HOOKS.md is regenerated by the tool; whoever merges G3 second must recount (100 expected) and rerun scripts/generate-hook-reference.py"
+    },
+    "files_changed_outside_ownership_added": [
+      "scripts/phase-lock.sh (new), scripts/silver-bullet, scripts/README.md",
+      "hooks/lib/skill-gates.sh (new), hooks/lib/phase-path.sh, hooks/phase-lock-*.sh",
+      "templates/silver-bullet.config.json.default, .silver-bullet.json and the plugin mirror (identity_tags +pi goose hermes)",
+      "docs/hooks-purpose.json, docs/CONFIGURATION.md, docs/multi-agent-coordination.md",
+      "tests/scripts/test-phase-lock.sh and -edges.sh (PL_SCRIPT override), tests/integration/test-multi-agent-coexistence.sh"
+    ],
+    "validation": {
+      "tests": "84 files: claude 3068 passed 0 failed, codex 3068 passed 0 failed; docs suite 198 passed",
+      "coverage": "one scoped run, 33 changed files, 84 test files, exit 0: Bash statements 3740/3740, lines 2616/2616, functions 125/125",
+      "lint": "lint-shell --all --jobs 2 clean",
+      "invariants": "check-repo-invariants all PASS; hook-reference/apo checks and plugin mirror OK; sync-codex-package no diff"
+    }
+  },
+  "review_repair_r2": {
+    "head": "f2e99ed",
+    "items": {
+      "major ttl code execution": "fixed - scripts/phase-lock.sh accepts only ^[0-9]{1,9}$ (decimal) for stale_lock_ttl_seconds, else plugin template, else 1800; the project templates/ is no longer a config source; lock-entry values only reach jq --arg, string compares and date -d. Tests: 9 hostile ttl values x claim/heartbeat/release/peek, hostile lock-entry values, the stop-check peek trap and the claim hook end to end (probe p1 runs nothing).",
+      "major destructive symlink": "fixed - exit 1 on a symlink at the planning dir, lock file, sidecar or mkdir mutex; sidecar opened with >> (no truncation); temp file via mktemp in the verified dir + mv; tests per file written plus the claim hook (probe p5 leaves the victim intact); containment is by construction (<git toplevel>/.planning, symlink refused).",
+      "major coverage": "fixed - SB_PHASE_LOCK_PLUGIN_ROOT test seam lets the real script run template-less; mktemp-failure and dogfood heartbeat-by-another-runtime tests added. One scoped run with --only over 34 files incl. .planning/scripts/phase-lock.sh (known-limits unchanged) exits 0: statements 4092/4092, lines 2867/2867, functions 146/146.",
+      "minor release hook description": "fixed (docs/hooks-purpose.json, HOOKS.md regenerated)",
+      "minor adapter skill-root order": "fixed - plugin skills/ and skill-source/ first",
+      "minor merges": "base 2a65018 already merged. Conflicts with G3/G1 are in CLAUDE.md, docs/HOOKS.md, docs/hooks-purpose.json only; whoever merges second resolves hooks-purpose.json by hand, sets CLAUDE.md to 99 hook commands / 64 scripts and reruns scripts/generate-hook-reference.py (and generate-cursor-hooks.py while Cursor files exist)."
+    },
+    "coverage_test_files": [
+      "tests/hooks/test-branch-scope.sh",
+      "tests/hooks/test-completion-audit-paths.sh",
+      "tests/hooks/test-compliance-status-paths.sh",
+      "tests/hooks/test-compliance-status.sh",
+      "tests/hooks/test-config-walk-vanishes.sh",
+      "tests/hooks/test-debug-dump.sh",
+      "tests/hooks/test-dgates-staged-fallbacks.sh",
+      "tests/hooks/test-enforcement-tier.sh",
+      "tests/hooks/test-enterprise-policy.sh",
+      "tests/hooks/test-flow-advance-hook.sh",
+      "tests/hooks/test-flow-advance.sh",
+      "tests/hooks/test-g4-session-start.sh",
+      "tests/hooks/test-g4-state-libs.sh",
+      "tests/hooks/test-hook-faults-gates.sh",
+      "tests/hooks/test-hook-faults-sessions.sh",
+      "tests/hooks/test-instruction-ledger-lib.sh",
+      "tests/hooks/test-lib-faults.sh",
+      "tests/hooks/test-orchestrator-non-sb-workspace-guard.sh",
+      "tests/hooks/test-phase-lock-claim.sh",
+      "tests/hooks/test-phase-lock-heartbeat.sh",
+      "tests/hooks/test-phase-lock-hooks-paths.sh",
+      "tests/hooks/test-phase-lock-release.sh",
+      "tests/hooks/test-prerequisite-probe-lib.sh",
+      "tests/hooks/test-project-active-guard.sh",
+      "tests/hooks/test-project-libs.sh",
+      "tests/hooks/test-record-requested-skill-coverage.sh",
+      "tests/hooks/test-record-skill-adapter-forms.sh",
+      "tests/hooks/test-record-skill-adapter.sh",
+      "tests/hooks/test-record-skill-faults.sh",
+      "tests/hooks/test-record-skill-ledger.sh",
+      "tests/hooks/test-record-skill-state.sh",
+      "tests/hooks/test-record-skill-wiring.sh",
+      "tests/hooks/test-record-skill.sh",
+      "tests/hooks/test-required-skills-consistency.sh",
+      "tests/hooks/test-required-skills-lib.sh",
+      "tests/hooks/test-rfl-quota-retry-due-paths.sh",
+      "tests/hooks/test-rm-safety.sh",
+      "tests/hooks/test-semantic-compress-hook.sh",
+      "tests/hooks/test-session-ledger.sh",
+      "tests/hooks/test-session-log-init-paths.sh",
+      "tests/hooks/test-session-log-init-sentinel-cleanup.sh",
+      "tests/hooks/test-session-log-init.sh",
+      "tests/hooks/test-session-start-faults.sh",
+      "tests/hooks/test-session-start-path-validation.sh",
+      "tests/hooks/test-session-start-paths.sh",
+      "tests/hooks/test-session-start-recommended-tools.sh",
+      "tests/hooks/test-session-start-update-check.sh",
+      "tests/hooks/test-session-start.sh",
+      "tests/hooks/test-skill-discovery.sh",
+      "tests/hooks/test-state-path-containment.sh",
+      "tests/hooks/test-stop-check-paths.sh",
+      "tests/hooks/test-symlink-guard.sh",
+      "tests/hooks/test-tier-libs.sh",
+      "tests/hooks/test-timeout-check-paths.sh",
+      "tests/hooks/test-timeout-check.sh",
+      "tests/integration/test-compliance-status-scenarios.sh",
+      "tests/integration/test-multi-agent-coexistence.sh",
+      "tests/integration/test-semantic-compress-scenarios.sh",
+      "tests/integration/test-session-scenarios.sh",
+      "tests/integration/test-session-start-scenarios.sh",
+      "tests/scripts/test-agent-live-libs.sh",
+      "tests/scripts/test-agent-live-preflights.sh",
+      "tests/scripts/test-extract-phase-goal.sh",
+      "tests/scripts/test-g4-scripts.sh",
+      "tests/scripts/test-install-claude.sh",
+      "tests/scripts/test-misc1-migrations.sh",
+      "tests/scripts/test-misc1-wrappers.sh",
+      "tests/scripts/test-phase-lock-edges.sh",
+      "tests/scripts/test-phase-lock-plugin.sh",
+      "tests/scripts/test-phase-lock.sh",
+      "tests/scripts/test-plugin-cache-version-guards.sh",
+      "tests/scripts/test-plugin-cache-version.sh",
+      "tests/scripts/test-rfl-quota-retry.sh",
+      "tests/scripts/test-sb-migrate-config.sh",
+      "tests/scripts/test-sb-migrate-initiated.sh",
+      "tests/scripts/test-sb-migrate-project.sh",
+      "tests/scripts/test-sb-small-scripts.sh",
+      "tests/scripts/test-semantic-compress-paths.sh",
+      "tests/scripts/test-semantic-compress.sh",
+      "tests/scripts/test-silver-bullet-invoke-skill.sh",
+      "tests/scripts/test-silver-migrate.sh",
+      "tests/scripts/test-tfidf-rank-chunking.sh",
+      "tests/scripts/test-tfidf-rank.sh"
+    ],
+    "coverage_only": [
+      " hooks/compliance-status.sh ",
+      " hooks/debug-dump.sh ",
+      " hooks/flow-advance.sh ",
+      " hooks/lib/branch-scope.sh ",
+      " hooks/lib/check-sb-update.sh ",
+      " hooks/lib/enforcement-tier-gate.sh ",
+      " hooks/lib/nofollow-guard.sh ",
+      " hooks/lib/prerequisite-probe.sh ",
+      " hooks/lib/project-active.sh ",
+      " hooks/lib/required-skills.sh ",
+      " hooks/lib/session-ledger.sh ",
+      " hooks/lib/skill-discovery.sh ",
+      " hooks/phase-lock-claim.sh ",
+      " hooks/record-skill.sh ",
+      " hooks/rfl-quota-retry-due.sh ",
+      " hooks/session-log-init.sh ",
+      " hooks/session-start ",
+      " scripts/extract-phase-goal.sh ",
+      " scripts/lib/plugin-cache-version.sh ",
+      " scripts/sb-migrate-config.sh ",
+      " scripts/sb-migrate-initiated.sh ",
+      " scripts/sb-migrate-orchestrator-parent.sh ",
+      " scripts/sb-migrate-project.sh ",
+      " scripts/sb-prerequisite-repair.sh ",
+      " scripts/semantic-compress.sh ",
+      " scripts/tfidf-rank.sh ",
+      " hooks/phase-lock-claim.sh ",
+      " hooks/phase-lock-heartbeat.sh ",
+      " hooks/phase-lock-release.sh ",
+      " hooks/lib/phase-path.sh ",
+      " hooks/lib/skill-gates.sh ",
+      " hooks/semantic-compress.sh ",
+      " scripts/phase-lock.sh ",
+      " scripts/silver-bullet ",
+      " .planning/scripts/phase-lock.sh\n"
+    ],
+    "validation": {
+      "tests": "claude 3162 passed 0 failed (coverage run); codex 3161 passed, 1 load-dependent failure in test-record-skill-adapter.sh that passes twice standalone under codex; docs suite 198 passed",
+      "lint": "lint-shell --all --jobs 2 clean",
+      "invariants": "check-repo-invariants all PASS; hook-reference/apo checks, plugin mirror OK; sync-codex-package no diff"
+    }
+  }
+}

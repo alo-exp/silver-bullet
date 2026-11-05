@@ -1,0 +1,112 @@
+{
+ "package": "G4-session-state",
+ "head_reviewed": "c1dbf85",
+ "verdict": "CHANGES_REQUIRED",
+ "per_finding": [
+  {
+   "id": "R3-03 (r1 major)",
+   "verdict": "incomplete",
+   "notes": "The literal hole is closed: pD (helper planted at $PWD/.planning/scripts/phase-lock.sh) runs nothing for claim/heartbeat/release or the stop-check peek trap; the plugin helper runs instead (p2-honest.sh: lock written, manifest kept, conflict exit 2). Plugin-root resolution uses dirname BASH_SOURCE; hooks.json and the Codex adapter invoke hooks by absolute path, so CLAUDE_PLUGIN_ROOT/PATH/cwd cannot redirect it; quoted, safe with spaces; a project scripts/phase-lock.sh is never reached. Reverting claim to $PWD makes 10+ assertions in test-phase-lock-hooks-paths.sh fail. BUT the plugin helper now runs on repository-controlled data and has two new hook-reachable holes (issues 1 and 2): arithmetic-injection RCE through multi_agent.stale_lock_ttl_seconds, and truncation of an arbitrary file through a committed .phase-locks.json.lock symlink."
+  },
+  {
+   "id": "R3-16 (helper)",
+   "verdict": "fixed",
+   "notes": "Empty lock reads as {}; 'not json' and '[1,2]' make claim/heartbeat/release/peek exit 1 and the file is left untouched (test-phase-lock-plugin.sh, p2-honest.sh: claim on 'garbage{' -> helper exit 1, file unchanged); a failing jq update is refused, not written."
+  },
+  {
+   "id": "R3-17 (helper + hooks)",
+   "verdict": "fixed",
+   "notes": "Owner id is runtime-host-SESSION (SB_PHASE_LOCK_SESSION); B cannot heartbeat/release A's lock; a stale-stolen lock is not touched by its old owner. Claim hook re-verifies a manifest hit with heartbeat before skipping (falls through to a real claim / conflict). SubagentStop carrying agent_id exits before touching the manifest (probe: lock and manifest kept; the parent's Stop releases). identity_tags extended to pi/goose/hermes in template, mirror, .silver-bullet.json, docs. Minor docs drift: hooks-purpose.json still says release runs at 'Stop/SubagentStop' without the agent_id exception."
+  },
+  {
+   "id": "minor record-skill tool_input.skill",
+   "verdict": "fixed",
+   "notes": "pB: exec_command and Bash payloads carrying tool_input.skill record nothing; Skill tool unchanged."
+  },
+  {
+   "id": "minor semantic-compress cache symlinks",
+   "verdict": "fixed",
+   "notes": "pC: dangling .gitignore symlink no longer creates the victim; symlinked cache dir gets nothing written; .planning symlink and cache-file symlink also refused in code."
+  },
+  {
+   "id": "minor dependency namespace -> SB names",
+   "verdict": "fixed",
+   "notes": "pB: superpowers:silver-plan, multai:silver-quality-gates, engineering:silver-secure record nothing; silver-bullet:sb:plan / silver-bullet:silver-bullet:sb:plan -> silver-plan."
+  },
+  {
+   "id": "minor semantic-compress qualified names",
+   "verdict": "fixed",
+   "notes": "pC: silver-bullet:sb:plan now produces 16678 bytes, same as bare sb:plan."
+  },
+  {
+   "id": "minor adapter prints gated skill",
+   "verdict": "fixed",
+   "notes": "p3-adapter.sh: invoke-skill sb:release / silver-bullet:sb:release / silver-release in a project without UAT.md -> 'ERROR: skill refused by the Silver Bullet Skill gates: UAT GATE ...', nothing printed, no receipt; sb:plan prints and writes one receipt (~1.8 s). Remaining skill-root breadth judged MINOR, not major (issue 4)."
+  },
+  {
+   "id": "minor sb_enforcement_tier_persist",
+   "verdict": "fixed",
+   "notes": "Deleted; only a negative test (test-tier-libs.sh) and an unrelated .planning handoff copy mention it."
+  },
+  {
+   "id": "R3-14",
+   "verdict": "ok",
+   "notes": "Deferred by user decision; the design note (sb_state_scope_dir, scope=sha256(toplevel) under SB_RUNTIME_STATE_DIR/scopes/) is recorded in fix-G4-session-state.json; session-start comment references R3-14. Not demanded."
+  },
+  {
+   "id": "earlier G4 fixes",
+   "verdict": "ok",
+   "notes": "pA re-run: removed/symlinked/directory branch file -> state reset with warning, symlink target untouched; resume onto another branch resets; resume/compact same branch keep state, trivial and approvals; startup clears enterprise-human-deploy-approved and ci-red-override; detached HEAD keeps state; worktree switch resets; symlinked state file not written through. pC: hostile numeric semantic_compression config and src_pattern escapes/symlinks leak nothing, hostile project hooks/lib not sourced."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "major",
+   "location": "scripts/phase-lock.sh:144-160, 346-349, 446-448 (_pl_config_get_ttl, cmd_claim, cmd_peek)",
+   "problem": "Repository-controlled code execution, the R3-03 class again: stale_lock_ttl_seconds is read raw from the project's .silver-bullet.json (or the repo's templates/ default) and used in (( age > ttl )). Bash arithmetic evaluates the value recursively, and an array subscript runs command substitution. A repository that commits a hostile ttl plus a .planning/.phase-locks.json entry for a phase gets code run by the PreToolUse claim hook on the first Edit of a phase file, and by stop-check's peek trap at Stop. Before G4 the helper was absent downstream; G4 now ships it and runs it on every phase edit, so this is new exposure. Other G4 gates already validate numeric config (^[0-9]+$).",
+   "evidence": "REVF-G4-r2-probe/p1-ttl.sh: .silver-bullet.json multi_agent.stale_lock_ttl_seconds='BASH_VERSINFO[$(touch $TL_TMP/PWNED-ttl)]' + committed .planning/.phase-locks.json {\"001\":{...last_heartbeat_at 2026-01-01...}}; Edit payload for .planning/phases/001-x/001-PLAN.md | hooks/phase-lock-claim.sh -> rc=0, PWNED-ttl created; after rm, Stop payload | hooks/stop-check.sh with cwd .planning/phases/001-x -> PWNED-ttl created again. (A bare 'a[...]' aborts on set -u; any set variable name works.)",
+   "suggested_fix": "In _pl_config_get_ttl accept only ^[0-9]+$ (otherwise fall back to 1800), and drop the ${REPO_ROOT}/templates/... lookup so only the plugin's own template is used. Also validate hb_e/now_e as integers. Add a test with the hostile ttl for claim and peek (and the stop-check trap)."
+  },
+  {
+   "severity": "major",
+   "location": "scripts/phase-lock.sh:292-300 (_pl_with_flock), 238-240 (_pl_write_json)",
+   "problem": "The helper follows a repository-committed symlink and destroys the target: ': > \"$LOCK_SIDECAR\"' and 'exec 9>\"$LOCK_SIDECAR\"' truncate whatever .planning/.phase-locks.json.lock points at (SEC-02 class, destructive write on the user's machine from untrusted content). Reached from the claim hook on the first Edit of a phase file in any downstream project, now that the plugin ships and runs the helper. The .tmp.$$ temp file is opened the same way (pid-dependent).",
+   "evidence": "REVF-G4-r2-probe/p5-symlink.sh: printf 'precious user data' > $TL_TMP/victim-rc; ln -s $TL_TMP/victim-rc .planning/.phase-locks.json.lock; commit; Edit payload | hooks/phase-lock-claim.sh -> rc=0, 'victim size: 0'. (A symlinked .phase-locks.json itself is handled: corrupt -> exit 1, then mv replaces the link.)",
+   "suggested_fix": "Refuse (exit 1, fail-open in the hook) when LOCK_FILE, LOCK_SIDECAR, the .tmp file or PLANNING_DIR is a symlink; create the sidecar with set -o noclobber or open it without truncation (exec 9>>), or keep the sidecar under SB_RUNTIME_STATE_DIR keyed by repo; create the temp file with mktemp in the same directory. Add a test that a symlinked sidecar's target is untouched."
+  },
+  {
+   "severity": "major",
+   "location": "scripts/phase-lock.sh:113,138,157; .planning/scripts/phase-lock.sh:382-385",
+   "problem": "Not 100% coverage. The new plugin helper misses its config fallbacks (no template found -> return 1; the hard-coded tag list; the 1800 s ttl). The dogfood helper, which CI still measures (known-limits entries keep it in scope), lost coverage of its heartbeat-not-owned branch: test-phase-lock-claim/heartbeat/release.sh no longer copy it into the project. CI's --fail-under 100 would fail. The author's report says 100%.",
+   "evidence": "Scoped run with the author's own 83 test files (REVF-G4-r2-probe/cov.log + cov2.log): 'scripts/phase-lock.sh 366/369 missing: 113(return), 138(=), 157(=)'; '.planning/scripts/phase-lock.sh 341/347 missing: 382(local) 383 384(echo) 385(return)'.",
+   "suggested_fix": "In test-phase-lock-plugin.sh, run the plugin helper with SB_DEFAULT_CONFIG unset, outside a repo with templates/, and with no project config. Add a direct heartbeat-by-another-runtime case to test-phase-lock.sh (it runs against the dogfood copy by default). Then re-run the scoped coverage."
+  },
+  {
+   "severity": "minor",
+   "location": "docs/hooks-purpose.json (phase-lock-release.sh), docs/HOOKS.md",
+   "problem": "Says release happens at Stop/SubagentStop; a SubagentStop with an agent_id now releases nothing (R3-17).",
+   "evidence": "hooks/phase-lock-release.sh:58-62 vs hooks-purpose.json entry.",
+   "suggested_fix": "Mention that a subagent's SubagentStop does not release its parent session's locks; regenerate HOOKS.md."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/silver-bullet:69-93 (append_skill_roots)",
+   "problem": "Still open: the adapter's skill roots include ~/.codex/skills, ~/.agents/skills and every plugin cache, and the user-level roots come BEFORE ${PLUGIN_ROOT}/skills, so a same-named SKILL.md there shadows SB's and still gets an SB receipt. Judged minor, not major: a repository cannot write these home paths, the gates key on the skill name (so forbidden/UAT still apply), and an agent that can write its home gains nothing beyond loading the real skill and ignoring it (a receipt only proves 'loaded').",
+   "evidence": "Static: append_skill_roots order; find_skill_file returns the first match.",
+   "suggested_fix": "Follow-up: search ${PLUGIN_ROOT}/skills (and skill-source) first for silver-*/sb names, and accept other roots only for non-SB dependency skills."
+  },
+  {
+   "severity": "minor",
+   "location": "CLAUDE.md:111, docs/HOOKS.md, docs/hooks-purpose.json",
+   "problem": "Merge conflicts. vs fix/G3-stop-prompt-override: CLAUDE.md, docs/HOOKS.md, docs/hooks-purpose.json (adjacent purpose lines, now also conflicting). vs fix/G1-delivery-gates: docs/HOOKS.md (new since r1). Clean vs claude/optimistic-ramanujan-tccfud. The author's '100 expected' is wrong: base 96, G4 +1 (resume session-start), G3 +2, G1 +0, so the merged hooks.json has 99 hook commands and 64 scripts (checked on the merge-tree result). Note G3's own CLAUDE.md says 99 while its hooks.json/HOOKS.md say 98.",
+   "evidence": "git merge-tree --write-tree fix/G4-session-state fix/G3-stop-prompt-override -> CONFLICT CLAUDE.md, docs/HOOKS.md, docs/hooks-purpose.json; the merged tree's hooks.json has 99 registrations / 64 distinct scripts. vs fix/G1-delivery-gates -> CONFLICT docs/HOOKS.md (G1's PreToolUse table rows); merged hooks.json has 97.",
+   "suggested_fix": "Whoever merges second: resolve hooks-purpose.json by hand (keep both edits), set CLAUDE.md to 99 commands / 64 scripts after G1+G3+G4, then rerun python3 scripts/generate-hook-reference.py (and generate-cursor-hooks.py while Cursor files exist)."
+  }
+ ],
+ "validation": {
+  "tests": "Inside the coverage run, all 83 of the author's test files passed (claude runtime; 0 FAIL lines; the last 7 files: 287 passed, 0 failed). Under codex: test-phase-lock-hooks-paths.sh + test-silver-bullet-template-parity.sh, 103 passed, 0 failed. Reverse-change check in a git-archive copy: putting helper=$PWD/.planning/scripts/phase-lock.sh back in phase-lock-claim.sh makes 10+ assertions fail. Probes in REVF-G4-r2-probe/: pD, pA, pB, pC, pE, pF, p1-ttl, p2-honest, p3-adapter, p4-lat, p5-symlink. Latency: phase-lock-claim takes 0.41-0.56 s on a phase file (one extra helper heartbeat) and 0.22 s otherwise; the adapter invoke-skill takes 1.8 s; on this loaded machine session-start took ~6.8 s and record-skill on Bash ~1 s.",
+  "coverage": "One scoped run: the author's 83 test files with --only over 34 changed files plus .planning/scripts/phase-lock.sh, --jobs 2. The first invocation hit its 1 h tool limit after 76 files; the traces were kept and the remaining 7 files were run with --keep (exit 0). Bash 4078/4087 statements (99.78%), functions 146/146. NOT 100%: scripts/phase-lock.sh 366/369 (missing 113, 138, 157) and .planning/scripts/phase-lock.sh 341/347 (missing 382-385, newly uncovered because the hook tests no longer copy the dogfood helper). Every other changed file is at 100%. known-limits.json is valid: lines 478/490 are still excluded and the run did not exit 3.",
+  "lint": "bash scripts/lint-shell.sh --all --jobs 2: exit 0 (application and test Bash clean). No Bash-4 constructs or GNU-only flags added in hooks/.",
+  "invariants": "check-repo-invariants exit 0, all PASS including personal-data and workflow-hardening; generate-hook-reference --check OK; generate-apo-artifacts --check exit 0; validate-plugin-mirror exit 0; skills, silver-bullet.md and templates/silver-bullet.md.base unchanged (parity test passes); docs/workflows == templates/workflows. Trailers: every delta commit (ba7875f, 321909f, c1dbf85, merge add2f63) ends with Co-Authored-By: Claude Sonnet 5.5 + Claude-Session; no other model names. Merge-tree: clean against claude/optimistic-ramanujan-tccfud. Against fix/G3 it conflicts in CLAUDE.md, docs/HOOKS.md and docs/hooks-purpose.json; against fix/G1 it conflicts in docs/HOOKS.md. Expected final count: 99 hook commands / 64 scripts."
+ }
+}

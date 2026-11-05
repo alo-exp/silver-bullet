@@ -1,0 +1,258 @@
+{
+ "package": "H8b-multi-ai-research",
+ "head_reviewed": "3f1429e956be6b86669bd5221da9329b2783bbb3",
+ "previous_head": "915d724e7272f51c50d9efe860a605db8a471f9d",
+ "verdict": "CHANGES_REQUIRED",
+ "round1_issues": {
+  "1 open-world discovery": "resolved (stream/pwm: 4 solutions, package ok). The r1 e2e_stub topic now fails only the 35% Critical fill-rate gate because its stub matrix is genuinely sparse (one tick per vendor) - legitimate gating.",
+  "2 APO wording": "resolved except issue 8 (newly live APO parser) and issue 9 ('startup-weighted')",
+  "3 classifier substring": "resolved; ambiguity handling -> issue 1",
+  "4 blank/prefix vendor": "resolved (probe_ticks3 all {})",
+  "5 SSRF CGNAT": "resolved",
+  "6 per-model votes": "resolved",
+  "7 link-check cache": "resolved (APO stub: 19 checks live, 0 packaging, max 1 per URL)",
+  "8 dead scrub helper": "resolved",
+  "9 hostile linkify test": "resolved",
+  "10 PDF mode": "resolved",
+  "11 file:// in PDF": "resolved",
+  "12 --force drops need profile": "resolved; over-correction issue 7",
+  "13 consolidate contested": "resolved",
+  "14 tie slotting": "resolved"
+ },
+ "round2_issues": {
+  "1 dead prose parsers": "resolved in production (probe_deadprose: production == fixture); test configuration gap -> issue 4",
+  "2 case variants bypass the vote": "resolved for structured rows; new split between prose and structured cells -> issue 2; symbol collisions -> issue 5",
+  "3 common-word vendor names": "false positives resolved; false negatives on real data + 'sdlc' alias -> issue 1",
+  "4 __main__ vocabulary": "resolved (CLI synthesize keeps Leader rules/weights; CLI materialize keeps APO categories; validate CLI runs)",
+  "5 APO rules in no-pack defaults": "resolved for Claude bonus, presence cap, KCF exclusion, link-label lists, NATS label; residual -> issue 9 (3-letter acronyms such as AWS still get a title-cased, unlinked label - cosmetic)",
+  "6 packaging without must-haves": "resolved (packages); derived override is persisted/sticky (issue 3) and can package hollow runs undisclosed (issue 6)",
+  "7 --force over-carry": "resolved; over-correction -> issue 7",
+  "8 NAT64 SSRF": "resolved",
+  "9 has/lacks contested": "resolved"
+ },
+ "fixture_only_judgement": "Reachable in production (all call sites live; 43 lines run on the real APO run), so nothing should be deleted; but they are tested only under a configuration production does not have (issue 4).",
+ "per_finding": [
+  {
+   "id": "R10b-01",
+   "verdict": "fixed",
+   "notes": "Round-1 hostile fixture re-rendered at HEAD (/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b3-probe/runs/hostile) and a new open-world run whose workers return hostile vendor/feature names and query (/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b3-probe/runs/xss via /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b3-probe/tools/r3/e2e_open3.py 'xss'), plus both non-APO e2e reports (stream, pwm): /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b3-probe/tools/r1/chromium_probe.cjs real and tamper -> pwn [], bad [], no dialogs/errors; tampered CDN blocked by SRI. node --test tests/js/landscape-report-xss.test.mjs 6/6."
+  },
+  {
+   "id": "R12-01",
+   "verdict": "fixed",
+   "notes": "Same evidence as R10b-01."
+  },
+  {
+   "id": "R12-02",
+   "verdict": "incomplete",
+   "notes": "Two non-APO topics end to end with stub workers (stream = event streaming, pwm = password managers; /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b3-probe/tools/r2/e2e_open.py): 4 solutions each, packaging ok, no SDLC/APO/hook/ledger wording; no cross-run vocabulary leak (/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b3-probe/tools/r2/probe_leak.py: identical report). CLI-as-__main__ carries pack wording. Open: hard-coded APO features now live in open-world runs (issue 8) and 'startup-weighted' wording (issue 9)."
+  },
+  {
+   "id": "R12-03",
+   "verdict": "fixed",
+   "notes": "--force no longer carries another query's auto profile (/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b3-probe/tools/r2/probe_force.py -> 'Password managers for a law firm'); new over-correction drops user-edited auto profiles (issue 7, minor)."
+  },
+  {
+   "id": "R12-04",
+   "verdict": "ok",
+   "notes": "Not touched in 915d724..3f1429e."
+  },
+  {
+   "id": "R12-05",
+   "verdict": "ok",
+   "notes": "Not touched."
+  },
+  {
+   "id": "R12-06",
+   "verdict": "incomplete",
+   "notes": "Round-1/2 probes resolved: probe_ticks (struct_one_model_three_phases -> False, negation/majority cases correct), probe_ticks3 (blank/prefix vendors -> {}), probe_vendor (case variants one row), e2e_case 6 rows, probe_deadprose production == fixture. New defects in the folding: prose and structured cells split when the must-have spelling differs (issue 2, regression), symbol-only differences collide (issue 5)."
+  },
+  {
+   "id": "R12-07",
+   "verdict": "ok",
+   "notes": "Not regressed."
+  },
+  {
+   "id": "R12-08",
+   "verdict": "incomplete",
+   "notes": "R2's false positives fixed in production (classify core empty for the five sentences); false negatives on real data and the 'sdlc' -> zuvo alias remain (issue 1)."
+  },
+  {
+   "id": "R12-09",
+   "verdict": "fixed",
+   "notes": "/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b3-probe/tools/r2/probe_consolidate.py: does-not / lacks / cannot pairs all 'contested' with stances; 'no-code' vs 'code' not paired (correct). Note: the new _LACK_RE/_MODAL_NEGATIONS rewrites and the new auxiliaries are mutually redundant (removing either one alone leaves the tests green), not a defect."
+  },
+  {
+   "id": "R12-10",
+   "verdict": "ok",
+   "notes": "Not touched."
+  },
+  {
+   "id": "R12-11",
+   "verdict": "ok",
+   "notes": "Not touched."
+  },
+  {
+   "id": "R12-12",
+   "verdict": "fixed",
+   "notes": "Round-1 rmtree probe at HEAD (/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b3-probe/tools/r3/probe_rmtree.py -> /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b3-probe/runs/rm3): kafka-notes and host bmad/scr.md + notes.md kept. Note issue 3: materialize now rewrites need_profile.json."
+  },
+  {
+   "id": "R12-13",
+   "verdict": "fixed",
+   "notes": "Hostile PDF (/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b3-probe/runs/hostile/landscape-report.pdf, SB_LANDSCAPE_PDF_NO_SANDBOX=1): URIs only https, no file:/javascript:."
+  },
+  {
+   "id": "R12-14",
+   "verdict": "ok",
+   "notes": "Not touched; SRI verified in Chromium tamper mode."
+  },
+  {
+   "id": "R12-15",
+   "verdict": "fixed",
+   "notes": "/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b3-probe/tools/r1/probe_ssrf.py and r2/probe_ssrf2.py at HEAD: 64:ff9b::/96 embedding private IPv4, ::a00:1, fec0::1, 64:ff9b:1::/48, 6to4 and Teredo all refused; 64:ff9b::5db8:d822 (public) allowed. Residual note only: SIIT ::ffff:0:a.b.c.d (reserved ::/8) is is_global=True in Python 3.13 and passes; exotic, could also refuse ip.is_reserved. DNS rebinding residual as documented."
+  },
+  {
+   "id": "R12-16",
+   "verdict": "ok",
+   "notes": "Not touched."
+  },
+  {
+   "id": "R12-17",
+   "verdict": "fixed",
+   "notes": "No change."
+  },
+  {
+   "id": "R12-18",
+   "verdict": "fixed",
+   "notes": "Node test 6/6; hostile labels inert in Chromium."
+  },
+  {
+   "id": "R12-19",
+   "verdict": "fixed",
+   "notes": "avoid_chart_coord_collisions tie -> b at (5.6, 5.9) 'Leaders'."
+  },
+  {
+   "id": "R12-20",
+   "verdict": "ok",
+   "notes": "Not touched."
+  },
+  {
+   "id": "R12-21",
+   "verdict": "incomplete",
+   "notes": "Prose parsers are live now (no longer dead); but 23% of materialize is covered only through a fixture configuration that differs from production (issue 4)."
+  },
+  {
+   "id": "R12-22",
+   "verdict": "incomplete",
+   "notes": "SKILL.md describes folding/must-have spelling/derived weights_override; contradicted by issue 2 (prose cells not folded) and issue 3 (derived block persisted and sticky)."
+  },
+  {
+   "id": "R12-23",
+   "verdict": "incomplete",
+   "notes": "New tests are behavioural (mutations in /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b3-probe/mut: disabling the ambiguity cue, folding, __main__ target, NAT64 unwrap, run context, --force skip, derived priorities each fail tests). Gaps: fixture divergence (issue 4); no test for prose+structured folding with a differently spelled must-have, symbol collisions, or derived-override staleness."
+  },
+  {
+   "id": "R12-24",
+   "verdict": "ok",
+   "notes": "Not touched."
+  },
+  {
+   "id": "R12-25",
+   "verdict": "ok",
+   "notes": "Not touched."
+  },
+  {
+   "id": "R12-26",
+   "verdict": "fixed",
+   "notes": "PDF -rw-r--r-- under umask 022 (/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b3-probe/runs/hostile/landscape-report.pdf)."
+  },
+  {
+   "id": "R12-27",
+   "verdict": "ok",
+   "notes": "Unchanged."
+  },
+  {
+   "id": "R12-28",
+   "verdict": "ok",
+   "notes": "Not touched."
+  },
+  {
+   "id": "R10b-02",
+   "verdict": "ok",
+   "notes": "SRI verified: tampered chart.js/datalabels blocked in Chromium."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "major",
+   "location": "skills/silver-deep-research-multi-ai/scripts/materialize_solution_artifacts.py:206-235 (AMBIGUOUS_NAMES, _CUE_AFTER/_CUE_BEFORE, mentions_vendor); skills/silver-deep-research-multi-ai/scripts/solution_classifier.py:121-152 (_extract_candidates_from_text, _envelope_evidence_slugs); skills/silver-deep-research-multi-ai/reference/category-pack-overlays/agentic-sdlc-process-orchestrator.json:1229; skills/silver-deep-research/reference/landscape/category-packs/agentic-sdlc-process-orchestrator.json:359 ('sdlc': 'zuvo')",
+   "problem": "R12-08 / r2 issue 3 fix overshoots and is still incomplete. An ambiguous name now counts only when capitalised AND next to a cue word ('AI', 'IDE', '(', '.ai', 'by'/'using' ...), so ordinary proper references ('Director is ...', lists '..., cc10x, Director, Claude Harness ...', 'Claude Code and Cursor', 'Factory provides ...', possessives) are no longer vendor evidence. Class evidence comes only from claim prose (matrix_entries vendor names are ignored), so on the repo's own real APO run the Director core seed becomes a 'gap' and drops out of the matrix and Cursor becomes a must_research gap. Separately the APO pack alias 'sdlc' -> zuvo (a category word, not in AMBIGUOUS_NAMES) still makes Zuvo sdlc-plugins core in any APO run whose claims say 'SDLC', and prose parsing now credits a phantom vendor 'sdlc'.",
+   "evidence": "Real data, production configuration: python3 /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b3-probe/tools/r3/real_apo_classify.py <scripts> research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final -> HEAD: director {'classification': 'excluded', 'reason': 'core_seed without envelope evidence (gap)'}, matrix_slugs 22; 915d724: director {'classification': 'core', 'reason': 'pack core_seed'}, matrix_slugs 23 (/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b3-probe/real_head.txt, real_prev.txt). The run's claims include 'Director is a primary-market APO candidate — agent orchestration, workflow composition, …' plus 13 list mentions, and 48 capitalised 'Cursor' mentions ('BMAD installs into Claude Code and Cursor via a single command'). Packaging a copy (/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b3-probe/tools/r3/apo_real_e2e.py): HEAD content gate 'must_research gaps ['director', 'sdlc-plugin', 'cursor']' vs 915d724 \"['sdlc-plugin']\"; materialised columns lose director (5 ticks). /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b3-probe/tools/r3/ambiguous_fn.py: 7 properly referenced sentences ('Director orchestrates parallel Claude Code agents…', \"Director's README…\", 'Factory provides SSO and audit logs.', …) -> no evidence, class excluded; only 'Director AI orchestrates agents.' counts. /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b3-probe/tools/r3/sdlc_alias.py (no claim names Zuvo): 'Devin automates the SDLC end to end and provides SSO.' + 'Agentic SDLC tools need audit logs…' -> zuvo {'classification': 'core', 'reason': 'sdlc-plugins market_core (matrix)'} (also at 915d724) and HEAD prose support {'devin': {'SSO': True}, 'sdlc': {'SSO': True}}. R2's false-positive sentences are fixed (classify core {} for all five).",
+   "suggested_fix": "Count a capitalised ambiguous name that is not sentence-initial, or that sits in a comma/'and' list with other known vendor names, as a mention (keep 'director of', lowercase and sentence-initial-plus-common-word cases out); count structured matrix_entries vendor names (exact resolution) as envelope evidence in _envelope_evidence_slugs; add 'sdlc' (and any alias that is a category word) to the pack's AMBIGUOUS_NAMES or drop the 'sdlc' alias. Add the real-run sentences above as classifier tests (Director core, Cursor evidenced) next to the existing negative phrases."
+  },
+  {
+   "severity": "major",
+   "location": "skills/silver-deep-research-multi-ai/scripts/materialize_solution_artifacts.py:1255-1312 (fold + preferred spelling only in parse_structured_matrix_entries), 1376-1394 (_parse_feature_support merge), 361 (_resolve_features keeps prose spelling); skills/silver-deep-research-multi-ai/scripts/validate_landscape_content.py:87; skills/silver-deep-research/scripts/compare_solutions.py:48",
+   "problem": "Folding and the user's preferred spelling are applied to structured votes only. Prose cells keep the rubric spelling (pack runs) or the claim's own spelling (open-world 'Matrix — x:' rows), so the same feature becomes two rows whenever the must-have's casing differs from the rubric - exactly the repo's real APO profile ('workflow composition'). Result: duplicate Critical rows (must-have double-weighted), contradictory cells on the same feature never voted together, and the gate's folded lookup keeps whichever row comes last, producing a false 'winner lacks must-have'. Regression in this round (915d724 produced one row).",
+   "evidence": "python3 /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b3-probe/tools/r3/pref_split.py <scripts> (APO pack, must_haves ['workflow composition'], 2 models 'Devin lacks workflow composition.', 1 model row Devin 'Workflow composition' true) -> preferred ['workflow composition']: {\"Workflow composition\": false, \"workflow composition\": true}, disputed []. Round-1 probe /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b3-probe/tools/r1/e2e_apo.py at HEAD: comparison rows [('Workflow composition','Critical', gsd '✔'), ('workflow composition','Critical', gsd '')] and gate 'winner 'gsd' lacks must-have 'workflow composition''; same probe at 915d724: one row. Real APO run + one matrix_entries envelope (/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b3-probe/tools/r3/apo_real_e2e.py --rows): rows [('Workflow composition','Critical'), ('workflow composition','Critical')], silver-bullet 38 -> 43, devin 29 -> 34. Open world (/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b3-probe/tools/r3/prose_fold.py): rows Redpanda/Pulsar 'Tiered storage' + claim 'Matrix — tiered storage: Apache Pulsar, Redpanda but Apache Kafka does not' -> {'apache-pulsar': {'tiered storage': True, 'Tiered storage': True}, …}.",
+   "suggested_fix": "Fold once, after merging: key every cell (prose and structured) by _feature_key, vote per key, then pick one display spelling (rubric spelling when the key is a rubric feature, else the user's must-have spelling, else the most common). Make compare_solutions.priority_for_feature and validate's lookup use the same folded key. Test: APO pack with a lower-case must-have plus prose and structured votes -> one row, one vote set; open-world prose 'Matrix —' row merges with structured rows."
+  },
+  {
+   "severity": "major",
+   "location": "skills/silver-deep-research-multi-ai/scripts/materialize_solution_artifacts.py:1322-1344 (derive_critical_features), 1713-1723 (writes need_profile.json); skills/silver-deep-research-multi-ai/scripts/dr_live_runner.py:125 ('never modified'); skills/silver-deep-research/scripts/compare_solutions.py:48-53",
+   "problem": "The derived priorities are written into the user's need_profile.json (also an interview_complete profile) as an ordinary weights_override. derive_critical_features returns {} whenever any weights_override exists and nothing reads weights_override_derived, so the machine-chosen Critical set is sticky: after the user fixes must_haves (as the gate message tells them) every later packaging still ranks on the old derived features, and the report presents them as the buyer's Critical rows. This also breaks dr_live_runner's contract that an existing need profile is never modified.",
+   "evidence": "NEED='{\"category\":\"Event streaming\",\"interview_complete\":true,\"must_haves\":[\"single sign-on\",\"exactly-once delivery\"]}' python3 /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b3-probe/tools/r2/e2e_open.py <scripts> /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b3-probe/runs/sticky stream -> gate fails (winner lacks 'single sign-on'), and need_profile.json now holds weights_override {Tiered storage, Exactly-once semantics, Managed hosting, SSO, Audit log: Critical} + weights_override_derived. User sets must_haves ['Exactly-once semantics'] and re-packages (/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b3-probe/tools/r3/repackage.py) -> 'PKG ok derived now: []', Critical rows ['Exactly-once semantics','Tiered storage','Managed hosting','SSO','Audit log'], scores confluent 20/kafka 15/redpanda 12/pulsar 7; same run without the stale keys (/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b3-probe/runs/fresh) -> Critical rows ['Exactly-once semantics'], scores 11/9/6/4. Report line 82 lists the five as 'Critical (5 pts per ✔)' with no mention of derivation.",
+   "suggested_fix": "Do not persist derived priorities into need_profile.json: compute them per run and pass them to the comparator (or write a generated file such as comparison/derived-priorities.json that is recomputed every packaging and ignored once must-haves match). If a derived block must live in the profile, recompute/drop it whenever weights_override_derived is set. Test: derived run, then matching must_haves -> only the must-haves are Critical."
+  },
+  {
+   "severity": "major",
+   "location": "skills/silver-deep-research-multi-ai/tests/legacy_catalog_fixture.py:73-74; skills/silver-deep-research-multi-ai/tests/test_cov_materialize.py (14 decorated classes), test_materialize_solution_artifacts.py",
+   "problem": "Fixture-only code is reachable in production but tested only in a non-production vendor configuration. 314 of 1384 covered materialize lines (23%) are executed only by @with_legacy_catalogs tests: the APO prose parsers (_split_solution_lists, _resolve_solution_slug, bulk core-set / matrix-leader / inclusion-criteria / host-runtime / checkmark / managed-hosting / must-have parsers, main). All are called from live code (_parse_prose_unscoped, synthesize_landscape:3193 for write_run_features_json), and 43 of them run when the repo's real APO run is materialised - so none should be deleted. But the fixture's run context is the overlay's legacy known_solutions plus a stub pack {'overlay': overlay}, not production's _effective_known_solutions(need) and resolved pack, and it also patches synthesize_landscape.KNOWN_SOLUTIONS. Installing the production values makes 7 of these tests fail, i.e. they pin behaviour production does not have.",
+   "evidence": "Per-test coverage contexts over the skill suite (/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b3-probe/fixcov, /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b3-probe/tools/r3/fixture_only2.py): 'covered lines 1384; fixture-only 314 (23%)'. Real-run coverage (/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b3-probe/realcov, /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b3-probe/tools/r3/real_materialize.py): 43 fixture-only lines executed (_parse_inclusion_criteria_scoped_claim 10, _parse_host_runtime_substrate_claim 10, _features_for_inclusion_mentions 6, …). Sandbox copy /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b3-probe/mut1 with run_context = {known: mat._effective_known_solutions(APO need), pack: resolve_pack_from_need(APO need)}: test_cov_materialize + test_materialize_solution_artifacts 'FAILED (failures=6, errors=1)': _resolve_solution_slug('cavekit v3.1 notes') production 'cavekit-v31' vs asserted 'cavekit'; _extract_slugs_from_text('Silver Bullet and github copilot with cline') production ['silver-bullet','cline','github-copilot','copilot','github-copilot-workspace'] (one mention -> three vendors) vs asserted 3 slugs; test_dispatch_order KeyError 'sweep-ai'; display_name 'Devin' vs 'Devin (Cognition)'; _canonical_known_slug('sdlc') 'sdlc' vs 'sdlc-plugin'.",
+   "suggested_fix": "Make with_legacy_catalogs install exactly what a pack run installs (known = _effective_known_solutions(need), pack = resolve_pack_from_need(need), no module KNOWN_SOLUTIONS patch) or replace it with undecorated tests that call materialize_solution_artifacts / parse_feature_support on an APO run directory; update the 7 assertions to production behaviour and decide whether one 'github copilot' mention crediting three slugs is intended."
+  },
+  {
+   "severity": "minor",
+   "location": "skills/silver-deep-research-multi-ai/scripts/materialize_solution_artifacts.py:1185-1187 (_feature_key), 1286-1288 (latest per model per key)",
+   "problem": "_feature_key strips every non-alphanumeric character, so 'C++ support', 'C# support' and 'C support' fold to one key; within a model the later row overwrites the earlier, so cells flip. Typical for developer-tool topics (language support). Regression in this round.",
+   "evidence": "python3 /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b3-probe/tools/r3/fold_collision.py <scripts> (3 models: Coverity C++ true, C# false; PVS-Studio C# true, C++ true) -> HEAD {'coverity': {'C++ support': False}, 'pvs-studio': {'C++ support': True}} (unanimous 'Coverity supports C++' shown as no; C# row gone); 915d724 kept both rows correctly. keys: 'c support' | 'c support' | 'c support'.",
+   "suggested_fix": "Keep '+' and '#' (map to 'plus'/'sharp') and other meaningful symbols in the key; fold only case, whitespace, hyphen/underscore and trailing punctuation. Add C/C++/C# to the folding test."
+  },
+  {
+   "severity": "minor",
+   "location": "skills/silver-deep-research-multi-ai/scripts/materialize_solution_artifacts.py:1322-1344; skills/silver-deep-research-multi-ai/scripts/synthesize_landscape.py (scoring methodology 'Matrix rows in this run')",
+   "problem": "With derived priorities the content gate can no longer catch a hollow matrix (Critical rows are chosen because they are ticked), and the report never says the priorities were machine-derived. A matrix with one universal feature packages as an 'Analyst-grade landscape analysis' whose ranking rests on that feature plus one disputed vote.",
+   "evidence": "python3 /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b3-probe/tools/r3/e2e_open3.py <scripts> /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b3-probe/runs/hollow hollow (4 vendors, only 'Has a website' true for each, plus the probe's one disputed SSO row) -> 'PKG status ok', Critical rows [('Has a website','Critical'), ('SSO','Critical')], ranking netlify 10, others 5; 915d724 failed this run ('no Critical feature rows'). grep -ci 'derived' /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b3-probe/runs/stream/landscape/landscape-report.md -> 0.",
+   "suggested_fix": "Exclude features ticked for every vendor (non-discriminating) and require a minimum number of derived rows before deriving; print a visible note in the report/methodology ('No buyer must-haves were given; the N most-evidenced features were treated as Critical')."
+  },
+  {
+   "severity": "minor",
+   "location": "skills/silver-deep-research-multi-ai/scripts/dr_multi_ai_cli.py:81-92 (_generated_for_old_query), 95-109",
+   "problem": "--force now drops every need_profile.json that has auto_assumed, without comparing the query. A user who followed the auto profile's note or the gate message and added must_haves/category_pack_id to it loses them on a --force re-run of the same query (they stay only in the moved-aside run).",
+   "evidence": "python3 /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b3-probe/tools/r3/force_edited.py <scripts> /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b3-probe/forcework2 (auto profile for 'Event streaming platforms' + user-added must_haves ['Exactly-once semantics','SSO'], then main([same query, --force])) -> 'must_haves in the new run: None | auto_assumed: True'.",
+   "suggested_fix": "Skip the auto profile/scope only when they name a different query (compare category / 'Research topic:' line with the new query), or when the profile is byte-identical to what prepare_run_inputs would write; otherwise carry it."
+  },
+  {
+   "severity": "minor",
+   "location": "skills/silver-deep-research-multi-ai/scripts/materialize_solution_artifacts.py:826-844 (_parse_must_have_satisfaction)",
+   "problem": "This parser assigns three hard-coded APO features with _assign_support (not _assign_rubric) and is not gated by pack vocabulary. Now that prose parsers resolve the run's vendors, it is live in open-world runs: a claim with 'satisfying all three matrix must-haves' adds 'Workflow composition', 'Parent/child agent delegation', 'Hook-enforced gates' rows to a non-APO matrix (R12-02/R12-22 class). Dead at 915d724, live now.",
+   "evidence": "python3 /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b3-probe/tools/r3/nopack_leak.py <scripts> (no pack; row Redpanda 'Tiered storage'; claim 'Redpanda is the pick satisfying all three matrix must-haves for the startup.') -> HEAD {'redpanda': {'Workflow composition': True, 'Parent/child agent delegation': True, 'Hook-enforced gates': True, 'Tiered storage': True}}; 915d724 {'redpanda': {'Tiered storage': True}}.",
+   "suggested_fix": "Use _assign_rubric for these features (or move the phrase and feature list into the pack vocabulary); add a no-pack test."
+  },
+  {
+   "severity": "minor",
+   "location": "skills/silver-deep-research-multi-ai/scripts/synthesize_landscape.py:1243, 2813, 2862, 2438; skills/silver-deep-research-multi-ai/scripts/landscape_independent_pdf.py:1076",
+   "problem": "Residual of r2 minor 5: every report says 'startup-weighted score' / 'Supported in startup-weighted comparison matrix' / 'Same startup-weighted feature matrix' although no persona weighting applies without persona_id; no-pack methodology still says 'Leader eligibility (below) can lower an axis' though no rule lowers one.",
+   "evidence": "/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b3-probe/runs/stream/landscape/landscape-report.md lines 95-98 and 128-130, /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b3-probe/runs/pwm/landscape/landscape-report.md (auto profiles, no persona_id; need_profile_personas.apply_persona_priority returns the base priority without persona_id); line 67 'Caps — Leader eligibility (below) can lower an axis'.",
+   "suggested_fix": "Say 'priority-weighted' (or name the persona only when persona_id is set); emit the caps sentence only when LEADER_RULES has markets."
+  }
+ ],
+ "validation": {
+  "tests": "tests/scripts/test-multi-ai-deep-research-contract.sh via run-all-tests.sh from the worktree: SILVER_BULLET_RUNTIME=claude 29/29 and codex 29/29 (skill suite 'Ran 817 tests' OK, multi-ai 163 OK); worktree clean afterwards. node --test tests/js/landscape-report-xss.test.mjs 6/6 in a git-archive copy. Mutations of 9 fixes in sandbox copies: 8 detected by tests; consolidate rewrites redundant (see R12-09).",
+  "coverage": "One scoped run in a git-archive copy of 3f1429e (/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b3-probe/cov, /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b3-probe/cov-report.log): --only skills/silver-deep-research-multi-ai/scripts/*.py (21 files) with the contract test, --fail-under 100 -> statements 6550/6550, branches 2958/2958, exit 0. Caveat issue 4 (23% of materialize only via the legacy fixture).",
+  "lint": "bash scripts/lint-shell.sh --all --jobs 2 in the copy: application and test Bash clean, exit 0 (no shell changes in this range).",
+  "invariants": "In the copy (git-initialised): check-repo-invariants exit 0 (9 PASS); generate-hook-reference --check up to date; generate-apo-artifacts --check 0; validate-plugin-mirror OK; sync-codex-package.sh -> 0 changed files; known-limits.json valid. New commits touch only the skill and its three generated mirrors; merge-tree with claude/optimistic-ramanujan-tccfud clean. Trailers exact on 5907c3b, 193300e, 93956e3, 3f1429e; the merge commit 9f421f3 has none (same as the earlier 42c1da8 package merge; not raised)."
+ },
+ "notes": "Probe dir /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b3-probe (tools in tools/r3, re-run round-1/2 tools in tools/r1, tools/r2; runs/). Real production data used: research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final (need profile + 24 envelopes) copied into runs/. No edits, commits or checkouts in the worktree; tests run there left git status clean. Pre-existing, not raised: Blue Ocean column order depends on PYTHONHASHSEED (also at 915d724); SIIT ::ffff:0:0/96 passes the SSRF allowlist."
+}

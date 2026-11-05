@@ -1,0 +1,223 @@
+{
+  "package": "H8a-deep-research",
+  "head_reviewed": "3c517f0",
+  "verdict": "CHANGES_REQUIRED",
+  "per_finding": [
+    {
+      "id": "R11-01",
+      "verdict": "fixed",
+      "notes": "Re-ran the r2 chain probe (bin/chain.py, CLAUDE_BIN/CODEX_BIN recording stubs, inherited CLAUDE_PERMISSION_MODE=bypassPermissions and SB_AGENT_CERT_RUN=1): claude argv '--print --model claude-opus-4-8 --effort medium --permission-mode default', prompt on stdin (1265 bytes), cwd a fresh empty sb-multi-ai-claude-* dir (0 entries), CLAUDE_PERMISSION_MODE/SB_AGENT_CERT_RUN absent from the worker env; codex 'exec --cd <sandbox> --sandbox read-only --color never --skip-git-repo-check --model gpt-5.6-luna --config model_reasoning_effort=medium -'. r2 minor issue 6 resolved. Residual (not an issue): headless default mode still honours the user's own ~/.claude permission allow rules, so 'nothing auto-approved' holds only for users without broad allow rules."
+    },
+    {
+      "id": "R12-04",
+      "verdict": "fixed",
+      "notes": "Unchanged since previous rounds; multi-ai unit tests pass (204 tests)."
+    },
+    {
+      "id": "R11-02",
+      "verdict": "incomplete",
+      "notes": "All r2 unit probes except two now fail closed (bin/score2.py: $50M/$90M, $7.5B/$7.9B, 10k/90k, 2,500 vs 500/2, FY/Q/EC2/GPT ids, 1.5x/15x, 'zero incidents', 'unsupported', 'absent', short SOC 2 sentence -> partial) and r2 honest multi-clause claims pass. But r2's own end-to-end probes still pass the SKILL.md strict gate verbatim (runs/fab4 SOC 2 claim, fab3 SSO claim: 'supported'); the 90-claim corpus contains trimmed copies of exactly these two probes, so it is overfitted. Fresh fabrications pass the gate end to end with exit 0, five of them caught at 197a8d6 (issue 1), and honest claims that passed at 197a8d6 now fail (issue 2)."
+    },
+    {
+      "id": "R10b-16",
+      "verdict": "ok",
+      "notes": "Partial disposition unchanged and still justified."
+    },
+    {
+      "id": "R11-03",
+      "verdict": "fixed",
+      "notes": "Unchanged; '--json -' used by every end-to-end probe (bin/e2e.sh)."
+    },
+    {
+      "id": "R11-04",
+      "verdict": "fixed",
+      "notes": "Unchanged; deep-research suite green (808)."
+    },
+    {
+      "id": "R11-05",
+      "verdict": "fixed",
+      "notes": "Unchanged; the SKILL.md command 'verify_claim_support.py verify --dir ... --report ... --strict' is what bin/e2e.sh runs (exit 1 on caught fabrications)."
+    },
+    {
+      "id": "R11-06",
+      "verdict": "fixed",
+      "notes": "r2 probe bin/vc_honest.py on REVF-H8a2-probe/runs/vc2 (11 real citations incl. Adversarial Examples, Counterexamples, pre-2000 AI/transformer titles): 'Suspicious: 0/11', verify_all True, lenient True. r1 bin/vc_fp.py: 0/3, PASSED. Real bibliographies with a mocked online network (bin/vc_real.py): the repo's research/2026-06-24-prior-art-and-extensibility/license/research_report.md (23 entries) and a 30-entry academic list (Vaswani, BERT, LSTM 1997, Turing 1950, Weizenbaum 1966, GPT-4 report, Sparks of AGI...) both PASS with 0 suspicious; offline they fail by default (<50% verified) and pass with --lenient. Placeholder titles are now soft by design (r2 suggestion); the verify_all comment still says lenient fails them (issue 6). Multi-line entries (URL on a continuation line) are hard 'No DOI or URL' even online - pre-existing and outside the single-line template format, so noted only."
+    },
+    {
+      "id": "R11-07",
+      "verdict": "fixed",
+      "notes": "Unchanged."
+    },
+    {
+      "id": "R11-08",
+      "verdict": "fixed",
+      "notes": "Unchanged."
+    },
+    {
+      "id": "R11-09",
+      "verdict": "fixed",
+      "notes": "Unchanged."
+    },
+    {
+      "id": "R11-10",
+      "verdict": "fixed",
+      "notes": "Unchanged."
+    },
+    {
+      "id": "R11-11",
+      "verdict": "fixed",
+      "notes": "Timeout group kill unchanged. r2 minor issue 5 resolved for queued workers: r2 bin/sigdrive.py (3 items, concurrency 1 and 2, SIGINT/SIGTERM at +2.0 s) -> only the live workers started, all TERMed at +2.0 s, dispatcher exits at 1.9 s. A worker that is already running can still relaunch itself after the interrupt (model fallback / transient retry), see issue 3."
+    },
+    {
+      "id": "R11-12",
+      "verdict": "fixed",
+      "notes": "Unchanged."
+    },
+    {
+      "id": "R11-13",
+      "verdict": "fixed",
+      "notes": "Unchanged."
+    },
+    {
+      "id": "R11-14",
+      "verdict": "fixed",
+      "notes": "Unchanged."
+    },
+    {
+      "id": "R11-15",
+      "verdict": "fixed",
+      "notes": "CLI table unchanged; Worker safety section now accurate for claude/codex argv. Its 'none starts afterwards' sentence is overstated (issue 3)."
+    },
+    {
+      "id": "R11-16",
+      "verdict": "fixed",
+      "notes": "New tests assert behaviour: in a sandbox copy, reverting the CONNECT branch fails 2 PinnedConnectionTests, forcing _is_proxied False fails 1, restoring the 197a8d6 best-clause negation check or dropping figure attachment fails ClaimCorpusTests (scorer + end-to-end), removing cancel_futures fails test_interrupt_cancels_queued_workers_so_none_starts_afterwards, restoring len>30 fails ShortFactualSentenceTests. The corpus test is real but overfitted (issue 1); no test covers a running worker's fallback/retry after an interrupt (issue 3)."
+    },
+    {
+      "id": "R11-17",
+      "verdict": "ok",
+      "notes": "Unchanged since r2 (justified partial)."
+    },
+    {
+      "id": "R11-18",
+      "verdict": "fixed",
+      "notes": "Unchanged."
+    },
+    {
+      "id": "R11-19",
+      "verdict": "fixed",
+      "notes": "Unchanged."
+    },
+    {
+      "id": "R11-20",
+      "verdict": "fixed",
+      "notes": "Unchanged."
+    },
+    {
+      "id": "R11-21",
+      "verdict": "fixed",
+      "notes": "Unchanged."
+    },
+    {
+      "id": "R11-22",
+      "verdict": "fixed",
+      "notes": "r2 major issue 4 resolved. bin/proxy3.py with a local fake proxy: target vetted first ('doi.org' resolved), proxy receives 'CONNECT doi.org:443 HTTP/1.1', ClientHello SNI = doi.org, and a MITM proxy presenting a self-signed doi.org certificate is rejected (CERTIFICATE_VERIFY_FAILED). r2 bin/proxy_probe.py: corp proxy -> connect to proxy.corp.example:3128 with CONNECT; r2 bin/proxy2.py: 10.20.30.40 and 127.0.0.1 proxies are no longer rejected as 'non-public'. bin/proxy4.py: HTTP proxy gets an absolute-URI HEAD; 169.254.169.254 / 127.0.0.1 targets are skipped before reaching the proxy; NO_PROXY target resolving to 10.0.0.5 is blocked on the pinned path. r2 bin/rebind.py (proxy env cleared): http and https 'connection blocked', no socket connect. r1 bin/ssrf.py: only multicast 224.0.0.1 unblocked (as before). Residuals: the proxied-path decision is a parser comparison that a crafted http URL can trip without any proxy (issue 4); with a proxy configured, DNS rebinding of the target through the proxy is not prevented (documented in _connect_pinned's docstring, not reported)."
+    },
+    {
+      "id": "R11-23",
+      "verdict": "fixed",
+      "notes": "Unchanged."
+    },
+    {
+      "id": "R11-24",
+      "verdict": "fixed",
+      "notes": "Unchanged."
+    },
+    {
+      "id": "R11-25",
+      "verdict": "fixed",
+      "notes": "Unchanged."
+    },
+    {
+      "id": "R11-26",
+      "verdict": "fixed",
+      "notes": "Unchanged."
+    },
+    {
+      "id": "R11-27",
+      "verdict": "fixed",
+      "notes": "r2 bin/authredir.py: Authorization only in unredirected_hdrs; absent after a cross-host redirect."
+    },
+    {
+      "id": "R11-28",
+      "verdict": "fixed",
+      "notes": "Unchanged."
+    },
+    {
+      "id": "R11-29",
+      "verdict": "fixed",
+      "notes": "Unchanged."
+    },
+    {
+      "id": "R11-30",
+      "verdict": "fixed",
+      "notes": "Unchanged."
+    },
+    {
+      "id": "R11-31",
+      "verdict": "fixed",
+      "notes": "Unchanged."
+    }
+  ],
+  "issues": [
+    {
+      "severity": "major",
+      "location": "skills/silver-deep-research/scripts/verify_claim_support.py:53-64,128-170,172-195,198-240; skills/silver-deep-research/tests/fixtures/claim_corpus.json; skills/silver-deep-research/reference/quality-gates.md:194-213",
+      "problem": "R11-02 is still incomplete, and part of this round is a regression. Fabricated claims pass the exact SKILL.md gate (verify --strict) with exit 0. (a) The previous round's own end-to-end probes still pass verbatim: the corpus holds trimmed copies of them ('Acme supports SSO' instead of '... for enterprise customers'; 'Acme Cloud is SOC 2 Type II certified' instead of '... for its enterprise platform'), and adding claim words that sit in another quote clause drops the aligned-clause overlap below the 60% threshold in _negation_conflict, so the contradiction is never compared. The corpus is overfitted to the reviewer's literal examples. (b) Regression vs 197a8d6: counting cue parity makes 'Neither Acme nor Initech supports SSO', 'No, Acme does not support SSO' and 'does not support SSO, not even on enterprise plans' read as positive, and splitting quote clauses on 'and' detaches the negation from the second conjunct ('Acme does not support SSO and SCIM' supports 'Acme supports SCIM'; 'never encrypts logs and backups' supports 'encrypts backups'). (c) Classes the documented limits do not cover: typographic apostrophes are not negation (NEGATION_RE has only ASCII n't, so a quote saying 'doesn’t'/'isn’t' supports the positive claim); the currency is parsed but never compared ($50M vs €50M, '50 million dollars' vs '50 million euros'); years are exempt from attachment (ok = True), so swapped or re-attached years pass ('founded in 2015 and acquired in 2019' vs 'founded in 2019 and acquired in 2015'); the head noun only has to be among the quote's first three content words after the figure ('500 enterprise customers' vs '500 staff serving enterprise customers'). quality-gates.md says every figure must match 'the same normalised value and unit' and be 'attached to the same thing', which is not what the code does for currency and years.",
+      "evidence": "End to end, REVF-H8a3-probe/bin/e2e.sh (citation_manager init-run/register-source --json -, evidence_store add --json -, extract_claims extract, then 'verify_claim_support.py verify --dir \"$SB_RESEARCH_OUT_DIR\" --report \"$SB_RESEARCH_OUT_DIR/research_report.md\" --strict') on runs/fab5.tsv (9 pairs: neither/nor; 'No, ... does not'; 'does not support SSO and SCIM provisioning'; 'never encrypts customer logs and backups'; 'doesn’t support SAML'; r2 SOC 2 pair verbatim; $50M vs €50M; swapped founding/acquisition years; 500 staff serving enterprise customers) -> HEAD 3c517f0: status pass, factual_not_supported 0, all 9 'supported', exit=0. Same TSV on 197a8d6 (REVF-H8a3-probe/old): the first four are 'partial', exit=1. r2 TSVs re-run: runs/fab4 line 1 (r2 SOC 2 probe) 'supported'; runs/fab3 line 4 (r2 SSO probe) 'supported'. Unit probe bin/score3.py: 13 fabrications 'supported' at HEAD (r2 SOC2+extra words 1.000, r2 SSO+extra words 0.833, curly doesn't 0.833, curly isn't 1.000, neither/nor 1.000, 'No, ... not' 0.667, 'not ..., not even' 0.833, 'not X and Y' 0.778, 'never A and B' 1.000, $ vs € 1.000, dollars vs euros 0.900, noun within 3 1.000, year swap 1.000, year reattach 0.822); at 197a8d6 neither/nor, 'No, not', 'not even', 'not X and Y', 'never A and B' were 'partial' (negation mismatch).",
+      "suggested_fix": "Negation: do not use cue parity across a whole clause (treat 'neither/nor', 'no, not', ', not even' as one negation), do not split on 'and'/'or' inside a negated clause (or distribute the negation over the conjuncts), add U+2019/U+02BC apostrophes to NEGATION_RE (normalise them first), and align a claim clause with any quote clause that contains its entities/figures even when the claim adds words found elsewhere in the quote (lower or drop the 60% token requirement when entities or figures align). Figures: compare the currency symbol/word (dollars/euros/USD/EUR) as part of the unit; give years the same attachment rule as other figures (or document the exemption). Build the corpus from new adversarial pairs, not trimmed copies of reviewer probes, and add the r2 probes verbatim plus the fab5 pairs. If some classes stay out of scope for v1, list each one in quality-gates.md and mark R11-02 partial."
+    },
+    {
+      "severity": "major",
+      "location": "skills/silver-deep-research/scripts/verify_claim_support.py:150-161,172-195,60-64,198-201",
+      "problem": "False-positive regression in a9a8968: honest claims that passed the strict gate at 197a8d6 now fail it. The 'head noun' is the first content word after the figure, so any reordering puts a date or qualifier there ('cut prices by 20% in March 2024' -> noun 'march'; '$2.67 billion for fiscal 2024' -> 'fiscal'), and figures without a noun need the two preceding words to precede the quote's figure too ('increased 12% year over year to $5.2 billion' vs 'revenue of $5.2 billion, up 12%'). The new 'and' clause split and cue parity reject honest negations ('works offline without an account' vs 'works offline and without an account'; 'does not support SSO and SCIM' vs 'does not support SSO or SCIM'; 'has no SSO and no audit logs' vs 'offers neither SSO nor audit logs'). Pre-existing but unaddressed by the normalisation: '40 percent' is not '40%', and an ASCII 'doesn't' claim fails against a typographic 'doesn’t' quote. The documented limits mention only paraphrased units ('500 employees' vs '500 people'). FIX-BRIEF: a false positive is a bug and every new block needs honest-variant tests; the honest corpus pairs are all near-verbatim extensions of the claim.",
+      "evidence": "bin/e2e.sh on runs/hon6.tsv ('Acme cut prices by 20% in March 2024' / 'In March 2024 Acme cut its prices by 20%'; 'Snowflake reported product revenue of $2.67 billion for fiscal 2024' / 'Product revenue for fiscal 2024 was $2.67 billion, Snowflake reported'; 'Revenue increased 12% year over year to $5.2 billion' / 'Acme reported revenue of $5.2 billion, up 12% year over year'; 'Acme works offline without an account on mobile' / 'The Acme mobile app works offline and without an account'): HEAD status fail, factual_not_supported 4, exit=1 (three 'number mismatch', one 'negation mismatch'); 197a8d6: all 4 'supported', exit=0. Unit probes: 'Acme does not support SSO and SCIM' vs '... SSO or SCIM' -> HEAD ('partial', 1.0, 'negation mismatch'), 197a8d6 supported; 'Acme has no SSO and no audit logs' vs 'Acme offers neither SSO nor audit logs' -> HEAD partial negation mismatch, 197a8d6 supported. bin/honest4.py: 6/15 realistic paraphrases rejected at HEAD vs 4/15 at 197a8d6. runs/hon5.tsv: '40% ... according to its filing' vs '40 percent ... annual filing' -> partial (number mismatch); ASCII vs curly 'doesn't' -> partial (negation mismatch).",
+      "suggested_fix": "Attach a figure to its noun phrase rather than the first word after it: skip prepositional/date phrases ('in March 2024', 'for fiscal 2024', 'year over year') or accept a match when the claim's noun appears anywhere in the same quote clause as the figure; for noun-less figures, accept a shared content word anywhere in the clause. Fix negation as in issue 1 (no 'and' split inside negated scope, 'neither/nor' as one negation). Normalise 'percent'/'per cent' to '%' and typographic apostrophes before matching. Add these honest pairs (and reordered/paraphrased ones) to the honest corpus."
+    },
+    {
+      "severity": "minor",
+      "location": "skills/silver-multi-ai-task/scripts/live_dispatch.py:491-505,885-906; skills/silver-multi-ai-task/SKILL.md:86-87",
+      "problem": "Ctrl-C/SIGTERM still lets new worker sessions start. _terminate_live_workers kills the live process group, but inside run_cursor_worker the killed attempt is just an unsuccessful attempt: with SB_CURSOR_MODEL_ALLOW_FALLBACK set, the loop immediately launches the next fallback model; without it, if the killed worker's partial output contains a transient marker ('network', 'reconnecting', 'Connection lost', ...), it sleeps 3 s and relaunches. The dispatcher then waits in ThreadPoolExecutor.__exit__ until that new session ends or times out (600 s by default). SKILL.md says queued workers are cancelled and 'none starts afterwards'.",
+      "evidence": "REVF-H8a3-probe/bin/sigdrive3.py (dispatcher in its own session, fake cursor fakebin/cursor_rec logging START/TERM, timeout 8 s, concurrency 1): (A) SB_CURSOR_MODEL_ALLOW_FALLBACK=1, SIGTERM at +2.00 s -> '+2.01s TERM pid=2749', '+2.02s START pid=4664 model=claude-opus-4-8-medium-fast AFTER-SIGNAL', TERM only at +10.02 s (its own timeout); dispatcher 'KeyboardInterrupt after 9.9'. (B) default settings, worker printed 'Searching the web: network effects in developer tools', SIGINT at +2.01 s -> '+2.02s TERM', '+5.03s START pid=27233 model=claude-opus-4-8-medium AFTER-SIGNAL', TERM at +13.04 s; dispatcher exits after 12.9 s. The queued-worker case from r2 is fixed (r2 bin/sigdrive.py: no START after the signal, exit at 1.9 s). InterruptTests mock dispatch_agent, so no test covers a running worker's retry/fallback.",
+      "suggested_fix": "Set a module-level stop Event in the interrupt path (before shutdown/terminate) and check it in _run_cli before Popen (raise KeyboardInterrupt or return a cancelled result) and in run_cursor_worker's fallback/retry loop; add a test with fallback enabled and a transient marker asserting no second launch after the interrupt."
+    },
+    {
+      "severity": "minor",
+      "location": "skills/silver-deep-research/scripts/verify_citations.py:100-109,145-159",
+      "problem": "Whether a connection is 'proxied' (connected to as is, no vetting) is decided by comparing urlparse(full_url).hostname with urlparse('//' + req.host).hostname. urllib percent-decodes req.host and keeps the userinfo, so a bibliography URL such as http://169.254.169.254%23@public.example/ makes the two differ with no proxy configured: unsafe_url_reason vets 'public.example', and the connection is then made unpinned to '169.254.169.254#@public.example' through the system resolver. glibc 2.39 refuses to resolve such names, so this is not exploitable on Linux; resolvers that accept '#', '@' or '/' in names (macOS untested) would turn it into a rebinding-style SSRF bypass of the target check.",
+      "evidence": "REVF-H8a3-probe/bin/differential.py (all proxy env vars removed, resolver returns a public address, socket.create_connection recorded): 'http://169.254.169.254%23@public.example/latest/meta-data/' -> unsafe_url_reason None, req.host '169.254.169.254#@public.example', _is_proxied True, names vetted ['public.example'], create_connection asked for ('169.254.169.254#@public.example', 80); same for 'http://127.0.0.1%23@public.example/x' and 'http://a%2f@public.example/x'; plain 'http://public.example/x' connects to the vetted 93.184.216.34. https URLs stay pinned. unshare -n strace of getaddrinfo('169.254.169.254#@public.example'): no DNS socket opened, EAI_NONAME (a valid name opens UDP sockets to the nameservers).",
+      "suggested_fix": "Use urllib's own state: proxied = req.has_proxy() (selector == full_url after set_proxy), or record the proxy decision in a ProxyHandler subclass; and reject URLs with userinfo or '%' in the netloc in unsafe_url_reason (urllib cannot fetch them correctly anyway)."
+    },
+    {
+      "severity": "minor",
+      "location": "skills/silver-deep-research/scripts/extract_claims.py:111-114",
+      "problem": "The new short-sentence rule counts any digit, including citation markers, table/figure numbers and list numbers, so honest navigational sentences in a findings section ('Results are in Table 2.', 'See Figure 3 below.', 'We compared 4 vendors.') become uncited factual claims and fail --strict; a report that passed at 197a8d6 now fails. Short digit-free factual claims still escape the gate entirely ('Acme is HIPAA compliant.', 'Acme never had a breach.', 'Microsoft owns Acme outright.' are never extracted). The docstring says short factual sentences must not slip past the gate; the limit is not documented.",
+      "evidence": "REVF-H8a3-probe/runs/short/research_report.md (Findings: one cited figure claim, three uncited short fabrications without digits, 'Results are in Table 2. See Figure 3 below. We compared 4 vendors.' and a numbered list): HEAD extract -> 5 claims ('Results are in Table 2.', 'See Figure 3 below.', 'We compared 4 vendors.\\n\\n1.', 'Acme leads on price.\\n2.' all factual unsupported), verify --strict status fail, factual_unsupported 4; the three fabrications are not extracted (_long_enough False, 24-29 chars). Same report at 197a8d6 (runs/short-old): 1 claim, status pass. The test asserts only that the 3-word 'See Figure 3.' is excluded.",
+      "suggested_fix": "Use CHECKABLE_FIGURE_RE (year, %, currency, scaled figure) on the sentence without citation markers instead of any digit, and also keep short sentences that name an entity and a verb (or drop the 30-character filter for sentences with a capitalised entity); document whatever remains exempt in quality-gates.md."
+    },
+    {
+      "severity": "minor",
+      "location": "skills/silver-deep-research/scripts/verify_citations.py:581-584; skills/silver-deep-research/reference/quality-gates.md:29",
+      "problem": "The verify_all comment says --lenient 'still fails entries that are wrong on their face (placeholder or future-year citations, ...)', but placeholder titles are now soft: a 'TODO' citation passes under --lenient offline and passes the default mode when its URL answers. quality-gates.md still lists 'No placeholder text (TBD, TODO)' as a gate criterion.",
+      "evidence": "REVF-H8a3-probe/runs/bib/placeholder.md ('[1] Acme (2024). \"TODO\". https://acme.example/docs', '[2] Initech (2023). \"Placeholder title for vendor docs\". ...'): bin/vc_offline.py -> default False, lenient True ('Suspicious: 2/2'); bin/vc_real.py (URLs answer 200) -> 'Suspicious: 0/2', CITATION VERIFICATION PASSED.",
+      "suggested_fix": "Either keep placeholder titles hard (they are wrong on their face, unlike generic-looking real titles) or correct the comment and quality-gates.md to say placeholders are warnings once a DOI/URL confirms the entry."
+    }
+  ],
+  "validation": {
+    "tests": "In the worktree via tests/run-all-tests.sh, two at a time: tests/scripts/test-solution-research-python.sh 808 passed (unittest 808 OK, 1 skipped) and tests/scripts/test-multi-ai-deep-research-contract.sh 29 passed (multi-ai-task unit tests: 204 OK), under SILVER_BULLET_RUNTIME=claude and codex. Worktree untouched afterwards (git status empty, HEAD 3c517f0, branch fix/H8a-deep-research). Revert checks in a sandbox copy (REVF-H8a3-probe/rev): CONNECT branch, _is_proxied, negation rewrite, figure attachment, cancel_futures and the short-sentence rule each make a new test fail.",
+    "coverage": "One scoped run in a git sandbox clone at 3c517f0 (REVF-H8a3-probe/gitsb, --cov-dir REVF-H8a3-probe/cov, --fail-under 100, --only on extract_claims.py, verify_citations.py, verify_claim_support.py, live_dispatch.py; both test wrappers, 837 passed): 100% statements and branches for all four (1485/1485 statements, 524/524 branches), exit 0. tests/coverage/known-limits.json valid and unaffected.",
+    "lint": "bash scripts/lint-shell.sh --all --jobs 2 in the sandbox clone: application Bash 354 files clean, test Bash 725 files clean, exit 0 (this round changes no shell files).",
+    "invariants": "In the sandbox clone: check-repo-invariants exit 0; generate-hook-reference --check up to date; generate-apo-artifacts --check exit 0; validate-plugin-mirror OK; sync-codex-package.sh exit 0 with no diff; docs/workflows identical to templates/workflows; no enforcement/template files touched (parity unaffected). claude/optimistic-ramanujan-tccfud (02eff38) is an ancestor of HEAD. a9a8968 and 3c517f0 end with exactly 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' and the Claude-Session line; no model attribution elsewhere (GPT4/gpt/Claude appear only as product names in the change description). Changes stay within the package's skills and their generated mirrors. DR-TRIANGULATE matrix_entries: H8b (fix/H8b-multi-ai-research, worktree agent-a43f9d089d0241c7f, read only) collects envelopes from every phase into contributions/all-envelopes.json and materialize_solution_artifacts.parse_structured_matrix_entries reads payload.matrix_entries from any phase (later phase wins per model); solution-landscape/compare deep and ultradeep runs include DR-TRIANGULATE, and extract_json_payload keeps the key (probe: payload keys claim_candidates, cross_checks, matrix_entries). So the instruction lands in a phase H8b parses; it is also the trusted place for it, since H8b's own 'Also return matrix_entries' line travels inside the fenced untrusted query block."
+  },
+  "notes": "Probe directory: /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8a3-probe (src = archive of 3c517f0, old = 197a8d6, gitsb = sandbox clone, rev = revert copies). Not reported as issues (documented or accepted limits): DNS rebinding of a target through a configured proxy (the proxy resolves it; documented in _connect_pinned); spelled-out numbers; verb/role swaps; sentence-initial capitalised words ('About 70% ...') counted as entities (pre-existing); 'Kubernetes 1.29' vs 'v1.29' (pre-existing); multi-line bibliography entries (template mandates one line); claude default mode honouring the user's own allow rules; the dequeue-to-Popen race at dispatch start (a timing sweep of SIGTERM at +0.10..0.16 s never produced a launch after the signal)."
+}

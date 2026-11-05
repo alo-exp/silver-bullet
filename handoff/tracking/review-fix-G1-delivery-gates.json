@@ -1,0 +1,320 @@
+{
+ "package": "G1-delivery-gates",
+ "head_reviewed": "763042a",
+ "verdict": "CHANGES_REQUIRED",
+ "per_finding": [
+  {
+   "id": "R1-04",
+   "verdict": "fixed",
+   "notes": "Probe pmcp.sh: mcp__github__create_pull_request / merge_pull_request / enable_pr_auto_merge / actions_run_trigger -> DENY COMPLETION BLOCKED; push_files / create_or_update_file / delete_file / create_branch / update_pull_request_branch -> DENY COMMIT BLOCKED; mcp__plugin_github_github__create_pull_request and mcp__gitlab__create_merge_request also gated; list_issues / get_file_contents silent. Gaps (minor): create_pull_request_with_copilot silent; actions_run_trigger is a deploy whatever its method."
+  },
+  {
+   "id": "R3-02",
+   "verdict": "incomplete",
+   "notes": "completion-audit, ci-status-check and deploy-gate-snippet validate trivial_file (probe: ../trivial, x/../../trivial, HOME_ROOT/trivial rejected). But stop-check.sh, one of the three hooks the finding names, still honours any trivial_file; G1 hands it to G2/G4 while G2's report (R1-07, R2-04) hands it back to 'G1/G3'. Nobody owns it, so this is partial, not fixed."
+  },
+  {
+   "id": "R4-01",
+   "verdict": "incomplete",
+   "notes": "sb_runtime_in_test_sandbox trusts TMPDIR. Probe: SB_RUNTIME_STATE_DIR=/home/fake/.claude/.silver-bullet with TMPDIR=/ or /home/fake or /home and SB_AGENT_CERT_RUN=1 -> 'BYPASS ACTIVE'; empty TMPDIR -> gates on. A nested host started with TMPDIR=$HOME keeps the real home (auth, plugin) and drops every gate."
+  },
+  {
+   "id": "R1-08",
+   "verdict": "ok",
+   "notes": "Partial, and the remainder is described correctly (no state-dir write guard, no session-start clearing). Expiry and project binding work in the tests. Minor: a verify-tests marker with no repo_root line is accepted (deploy-tier.sh:436-442), although the comment says such a marker does not vouch."
+  },
+  {
+   "id": "R1-09",
+   "verdict": "fixed",
+   "notes": "p09.sh: state dir as a file -> DENY 'not a real directory' for commit and PR; as a symlink -> DENY; malformed config -> DENY 'COMPLETION AUDIT ERROR' (line 156); git status still silent. Minor: the ERR trap is not inherited into the tier functions (no set -E), and the error text always blames the state directory."
+  },
+  {
+   "id": "R1-10",
+   "verdict": "fixed",
+   "notes": "Covered by test-completion-audit-libs.sh (develop default, unpushed on main, unknown base -> full floor); all pass."
+  },
+  {
+   "id": "R1-11",
+   "verdict": "fixed",
+   "notes": "src_pattern is checked against '/'+path first; site and docs count only for non-code files. CHANGELOG.md drops out of the docs regex but was already classified as release earlier (dead code)."
+  },
+  {
+   "id": "R1-13",
+   "verdict": "fixed",
+   "notes": "pent.sh (internal_dogfood): 'make Deploy' -> ENTERPRISE BLOCK; 'gh pr merge 1 --body staging' -> ENTERPRISE BLOCK; comment keywords ignored. Residual (minor): a keyword in any deploy argument still exempts the command ('vercel deploy --prod --token internal', 'fly deploy -a prod-app --strategy=preview' skip the human gate)."
+  },
+  {
+   "id": "R1-14",
+   "verdict": "fixed",
+   "notes": "Judged not a weakening: these gates check SB's own multi-host plugin release (cursor/codex/claude RC cells, 85-row SENTINEL manifest), which downstream projects cannot satisfy. CI-green, required_deploy and required_release still apply. This repo's .silver-bullet.json keeps them true; CONFIGURATION/RELEASE docs updated."
+  },
+  {
+   "id": "R1-15",
+   "verdict": "fixed",
+   "notes": "Validators and the RC predicate now come from the plugin root (hooks/lib/../..); a missing or non-executable validator blocks. Tests pass; reverting the RC commit check fails 'markers for another commit are incomplete'."
+  },
+  {
+   "id": "R1-16",
+   "verdict": "fixed",
+   "notes": "The project-tree validator is no longer used; a missing plugin validator warns. Behaviour as described."
+  },
+  {
+   "id": "R1-17",
+   "verdict": "ok",
+   "notes": "Partial is correct: a touch no longer counts as an update; enforcement.enabled and granularity_levels remain the project's documented opt-out."
+  },
+  {
+   "id": "R1-18",
+   "verdict": "fixed",
+   "notes": "sb_enforcement_tier_probe returns 2 when SB_HOOK_EXECUTING=1, set locally in run_enforcement_tier_delivery_gate."
+  },
+  {
+   "id": "R1-19",
+   "verdict": "incomplete",
+   "notes": "gh release create --target is resolved (probe: target red sha -> red sha). The 'gh api repos/o/r/releases -f tag_name=v9 -f target_commitish=<red>' form, which F2 classifies as release, resolves to origin/HEAD instead (probe output d6f3ae9 = origin/main, not 572797f red). The MCP create_release target_commitish has the same gap."
+  },
+  {
+   "id": "R13-08",
+   "verdict": "incomplete",
+   "notes": "Same gap as R1-19 (gh api / MCP release target). The remainder for tag pushes is described correctly as partial."
+  },
+  {
+   "id": "R1-20",
+   "verdict": "ok",
+   "notes": "Partial is correct: gh is bounded by SB_GH_TIMEOUT_SECONDS and failures are reported. The Codex adapter remainder has no named owner package; the orchestrator should assign it."
+  },
+  {
+   "id": "R1-21",
+   "verdict": "fixed",
+   "notes": "Commit-message waiver removed; mixed diffs blocked; override expires; per-workflow latest run used. The trigger itself is not hardened, see the major ci-status-check issue."
+  },
+  {
+   "id": "R1-22",
+   "verdict": "incomplete",
+   "notes": "MAJOR. The user decided 'strict everywhere', but the code default is still 'intermediate' (completion-audit.sh:155) and the template has no key. p22.sh: default 'git push origin main' -> 'Intermediate commit allowed'. Even with the opt-in, 'git push origin HEAD' and 'git push origin @' from main, and 'git push origin v1.0.0' (short tag name), stay intermediate."
+  },
+  {
+   "id": "R1-24",
+   "verdict": "fixed",
+   "notes": "Template-stamped paths resolve (test-deploy-gate-snippet passes). See the major regression for the copied snippet."
+  },
+  {
+   "id": "R1-25",
+   "verdict": "fixed",
+   "notes": "State and trivial paths are validated in the in-plugin snippet."
+  },
+  {
+   "id": "R1-26",
+   "verdict": "fixed",
+   "notes": "mktemp in .planning; a symlinked SPEC.md or .planning is skipped. Minor: mv of the mktemp file leaves SPEC.md mode 0600."
+  },
+  {
+   "id": "R1-27",
+   "verdict": "fixed",
+   "notes": "The analyser must see pr_create and the output must carry a /pull/N URL. However, the old suite test-hook-faults-gates.sh was not updated and now fails (4 cases)."
+  },
+  {
+   "id": "R1-30",
+   "verdict": "ok",
+   "notes": "Partial is correct (Skill removed from the matcher). New cost: every mcp__* call now runs the full analysis (mcp read tool 343 ms -> 636 ms per call under load)."
+  },
+  {
+   "id": "R1-31",
+   "verdict": "fixed",
+   "notes": "Empty-array expansions are guarded with ${a[@]+...}. No Bash-4 constructs were found in the added lines."
+  },
+  {
+   "id": "R1-32",
+   "verdict": "ok",
+   "notes": "Partial; the remaining items are listed."
+  },
+  {
+   "id": "R1-33",
+   "verdict": "fixed",
+   "notes": "Workflow names, evidence text and profile labels are cleaned, capped and labelled as data."
+  },
+  {
+   "id": "R1-34",
+   "verdict": "fixed",
+   "notes": "Placeholder-only lines count as stubs and the newest artifact wins (tests pass)."
+  },
+  {
+   "id": "R1-35",
+   "verdict": "fixed",
+   "notes": "The marker is written only when scripts.test is set."
+  },
+  {
+   "id": "R1-36",
+   "verdict": "incomplete",
+   "notes": "Same TMPDIR trust as R4-01: GH_RUN_LIST_OVERRIDE_CMD (the hook runs it via bash -lc), GH_STATUS_OVERRIDE, SILVER_BULLET_SKIP_ENFORCEMENT_TIER_GATE and SILVER_BULLET_TEST_HOOK_ENFORCED are all honoured once TMPDIR covers the real state dir."
+  },
+  {
+   "id": "R1-37",
+   "verdict": "fixed",
+   "notes": "Table tests were added. Mutation check on a copy: dropping the cert sandbox check fails 5 asserts in test-delivery-gates-g1; dropping the trivial trust fails the R3-02 asserts; dropping the RC commit check fails the R13-09 assert."
+  },
+  {
+   "id": "R13-09",
+   "verdict": "fixed",
+   "notes": "A dry-run writes status=dry-run; the predicate needs pass plus commit=<release sha>; skips need a waiver. The test catches the reverted check."
+  },
+  {
+   "id": "R8-13",
+   "verdict": "fixed",
+   "notes": "Same root cause as R13-09."
+  },
+  {
+   "id": "R13-10",
+   "verdict": "fixed",
+   "notes": "The predicate is sourced from the plugin root, and a non-executable validator blocks."
+  },
+  {
+   "id": "R16-06",
+   "verdict": "fixed",
+   "notes": "Docs describe the marker as host-wide and expiring, and the code expires it after the TTL."
+  },
+  {
+   "id": "R10-29",
+   "verdict": "fixed",
+   "notes": "The silver-ship / silver-deploy / silver-create-release skills and the workflow say how the human signs off; sync-codex-package on a clean copy produced no diff."
+  },
+  {
+   "id": "R13-20",
+   "verdict": "ok",
+   "notes": "Partial; the release bypasses are logged. The live-matrix existence-only check is disclosed."
+  },
+  {
+   "id": "R3-09",
+   "verdict": "ok",
+   "notes": "Partial; the remainder (NotebookEdit and MCP write tools in the edit matchers) is done by G2 (its hooks.json adds them to the dev-cycle-check matcher)."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "blocker",
+   "location": "tests/hooks/test-hook-faults-gates.sh, tests/hooks/test-shell-analysis-gates.sh:176, tests/scripts/test-rc-validation-matrix.sh:71",
+   "problem": "Three default-suite test files fail at 763042a. The author's 33-suite run did not include them, so CI goes red.",
+   "evidence": "bash tests/run-all-tests.sh tests/hooks/test-hook-faults-gates.sh tests/scripts/test-rc-validation-matrix.sh -> 'FAIL: pr: failing git add does not stop the update', 'pr: SPEC.md still updated', 'pr: VALIDATION.md without WARN findings...', 'pr: a grep that fails on VALIDATION.md is tolerated' (the fixtures carry no PR URL in tool_response), 'FAIL: deploy-tier mentions operator-local RC' (text removed from deploy-tier.sh). test-shell-analysis-gates.sh -> 'FAIL: broken python3: even a harmless command is held: deny (expected deny, got allow)' for 'ls -la', which _ca_plain_readonly_command now allows.",
+   "suggested_fix": "Update the pr-traceability fault fixtures to include tool_response.stdout with https://x/pull/1. Change F2's 'ls -la' expectation to allow, keeping a non-allowlisted harmless command (for example 'npm test') as deny. Assert the new RC message text. Re-run every suite that references the changed files (grep tests for each changed path), not only the edited ones."
+  },
+  {
+   "severity": "major",
+   "location": "hooks/completion-audit.sh:155,229; templates/silver-bullet.config.json.default; docs/ENFORCEMENT.md:59; docs/CONFIGURATION.md; silver-bullet.md + templates/silver-bullet.md.base; hooks/core-rules.md; hooks/lib/hook-bootstrap.sh:82",
+   "problem": "R1-22: the user decided 'strict everywhere' (a push to the default branch needs the full delivery tier in every project), but only an opt-in setting was added. The default is still 'intermediate'.",
+   "evidence": "p22.sh, planning-only state, on main: 'git push origin main' -> 'Planning verified. Intermediate commit allowed.'",
+   "suggested_fix": "(1) Code: in completion-audit.sh, change `.project.push_to_default_branch_tier // \"intermediate\"` to `// \"completion\"` (keep 'intermediate' as an explicit opt-out). (2) Template: add \"push_to_default_branch_tier\": \"completion\" under project in templates/silver-bullet.config.json.default, and decide on this repo's .silver-bullet.json. (3) Docs: ENFORCEMENT.md (two-tier section), CONFIGURATION.md (new key, default completion, opt-out), CLAUDE.md two-tier text, hooks/core-rules.md, and the hook-bootstrap.sh comment. (4) Parity: state in silver-bullet.md AND templates/silver-bullet.md.base that a push to the default branch, a release tag, --tags, --mirror or --all is final delivery; test-silver-bullet-template-parity must pass. (5) Tests: flip the 'unchanged default' case in test-delivery-gates-g1.sh, add the opt-out case, and check that no existing suite pushes to main expecting the intermediate tier. Add a CHANGELOG note for trunk-based users."
+  },
+  {
+   "severity": "major",
+   "location": "hooks/lib/completion-audit/classify.sh:203-212 (ca_push_targets_default_branch)",
+   "problem": "Even with the completion tier, the default-branch check compares only literal destination names. 'git push origin HEAD' and 'git push origin @' made on main push main, and 'git push origin v1.0.0' pushes a release tag, yet all three stay intermediate.",
+   "evidence": "p22.sh with push_to_default_branch_tier=completion, on main: 'git push origin HEAD' -> 'Intermediate commit allowed'; 'git push origin @' -> same; 'git push origin v1.0.0' -> same. SB_SA_JSON push = {refspecs:['HEAD'], dsts:['HEAD'], default:false}.",
+   "suggested_fix": "Resolve each destination before matching: HEAD and @ (and a source without ':') map to the current branch (git symbolic-ref --short HEAD); a short name that resolves with git rev-parse --verify refs/tags/<name> counts as a tag push. Add test rows for each form."
+  },
+  {
+   "severity": "major",
+   "location": "hooks/lib/cert-bypass.sh:12-28 (sb_runtime_in_test_sandbox); used by sb_cert_run_bypass_active, sb_github_overrides_allowed, capability-tier.sh",
+   "problem": "The sandbox test trusts $TMPDIR, which the agent controls when it starts a nested host CLI (the R4-01 scenario). TMPDIR=/ becomes an empty root, so every absolute path counts as a sandbox. TMPDIR=$HOME covers the real state dir. Either one restores SB_AGENT_CERT_RUN, GH_RUN_LIST_OVERRIDE_CMD (run by the hook through bash -lc, which also fakes green CI), GH_STATUS_OVERRIDE, SILVER_BULLET_SKIP_ENFORCEMENT_TIER_GATE and SILVER_BULLET_TEST_HOOK_ENFORCED against the real home.",
+   "evidence": "SB_RUNTIME_STATE_DIR=/home/fake/.claude/.silver-bullet SB_AGENT_CERT_RUN=1 TMPDIR=<x> bash -c 'source hooks/lib/cert-bypass.sh; sb_cert_run_bypass_active' -> x='' gates on; x='/' BYPASS ACTIVE; x='/home/fake' BYPASS ACTIVE; x='/home' BYPASS ACTIVE.",
+   "suggested_fix": "Drop TMPDIR from the roots and use fixed system roots only (/tmp, /var/tmp, /private/tmp, /var/folders, /private/var/folders). Reject an empty or '/' root. Also refuse when the state dir is under the passwd home of the current user (python3 -c 'import pwd,os;print(pwd.getpwuid(os.getuid()).pw_dir)' or ~$(id -un)). Add tests for TMPDIR=/ and TMPDIR=$HOME."
+  },
+  {
+   "severity": "major",
+   "location": "hooks/ci-status-check.sh:72-76 (trigger), 203 (git push check)",
+   "problem": "The CI-red gate still decides with a raw regex over the command text, not the F2 classifier the package must use. Common spellings, and MCP, skip the CI-red block.",
+   "evidence": "pci.sh, fake gh reporting conclusion=failure, PreToolUse: 'git push origin feature/x' -> DENY; 'git -C . push origin feature/x' -> SILENT; 'git -c x.y=1 push' -> SILENT; 'gh pr new --fill' -> SILENT; 'gh -R o/r pr create --fill' -> SILENT; mcp__github__create_pull_request -> SILENT (ci-status-check is not on the mcp matcher).",
+   "suggested_fix": "Classify with sb_shell_analysis_load / sb_shell_analysis_has_action (push, pr_create, pr_merge, release_create, possible actions) as completion-audit does, and treat helper_unavailable as gated. Optionally add the mcp__.* matcher. Use the analysed push (not a 'git push' grep) for the CI-fix exemption."
+  },
+  {
+   "severity": "major",
+   "location": "hooks/lib/completion-audit/deploy-tier.sh:4-41 (ca_release_commit_sha)",
+   "problem": "The release commit is parsed only from a 'gh release create' argv. The 'gh api .../releases -f target_commitish=<sha>' spelling, which the classifier already rates as release, and MCP create_release fall back to origin/HEAD. So CI is checked for the wrong commit: the R1-19/R13-08 bypass in a different spelling.",
+   "evidence": "proj22: main=03c9517 (local), origin/main=d6f3ae9, red=572797f. ca_release_commit_sha after sb_shell_analysis_load: 'gh release create v9 --target 572797f\u2026' -> 572797f; 'gh api repos/o/r/releases -f tag_name=v9 -f target_commitish=572797f\u2026' -> d6f3ae9; '--raw-field target_commitish=\u2026' -> d6f3ae9.",
+   "suggested_fix": "Also read tag_name / target_commitish from gh api -f/-F/--raw-field/--field and from the MCP payload (tool_input.target_commitish / tag_name). If a release target is present but cannot be resolved, deny."
+  },
+  {
+   "severity": "major",
+   "location": "scripts/deploy-gate-snippet.sh:61-88",
+   "problem": "Regression: the snippet's documented use is to be copied into a deploy or CI script. A copy without hooks/lib now calls the undefined sb_expand_state_config_path; the ERR trap exits 0, so the deploy gate passes. Before this change the same copy blocked (rc 1).",
+   "evidence": "Copied snippet to snip/scripts/, template project, empty state: new copy 'bash deploy-gate-snippet.sh' -> 'line 80: sb_expand_state_config_path: command not found', rc=0. Old copy (94800f8) -> rc=1. In-plugin -> rc=1.",
+   "suggested_fix": "Define fallbacks inline when the library is missing (expand ~ and ${SB_RUNTIME_HOME_ROOT}; with no validator, ignore the config paths and keep the defaults), or fail closed (return 1 with a message) when the helpers are absent. Add a test that runs a copied snippet."
+  },
+  {
+   "severity": "major",
+   "location": "hooks/hooks.json (merge with fix/G2-planning-floor eb32cff)",
+   "problem": "Semantic merge hazard. G1 moves completion-audit into a new 'Bash|exec_command|mcp__.*' group, and G2 appends spec-floor-check, forbidden-skill-check and uat-gate after completion-audit in the 'Bash|Skill|exec_command' group. git merge-tree resolves this cleanly but puts those three hooks into G1's group, so they lose the Skill matcher (forbidden-skill-check stops blocking forbidden Skill calls) and gain mcp__.*. docs/HOOKS.md conflicts outright.",
+   "evidence": "git merge-tree --write-tree HEAD eb32cff -> CONFLICT docs/HOOKS.md; merged hooks.json PreToolUse: {m:'Bash|Skill|exec_command',h:[phase-archive]}, {m:'Bash|exec_command|mcp__.*',h:[completion-audit,spec-floor-check,forbidden-skill-check,uat-gate]}. Merge with c591ebb: clean.",
+   "suggested_fix": "When merging G1 and G2, put spec-floor-check, forbidden-skill-check and uat-gate back under 'Bash|Skill|exec_command' by hand, regenerate docs/HOOKS.md and the cursor hooks, and add an invariant or test asserting forbidden-skill-check's matcher includes Skill."
+  },
+  {
+   "severity": "major",
+   "location": "hooks/stop-check.sh:103-129 (R3-02 remainder)",
+   "problem": "R3-02 (critical) is reported as fixed, but stop-check still honours any state.trivial_file, and the hand-off has no owner: G1 names G2/G4, and G2 names G1/G3.",
+   "evidence": "fix-G1 R3-02 notes: 'stop-check.sh:103-129 still reads state.trivial_file unvalidated'. fix-G2 R1-07: 'completion-audit/ci-status-check/stop-check/deploy-gate-snippet ... validate state.trivial_file (G1/G3)'.",
+   "suggested_fix": "Mark R3-02 partial and assign stop-check's sb_trivial_path_trusted call to one package (it is a two-line change; G1 can make it, since the helper is G1's)."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/lib/completion-audit/deploy-tier.sh:453; hooks/lib/enterprise-policy.sh:243-257",
+   "problem": "Messages for code that cannot be inspected. When the enterprise gate does not fire (approved, or another profile), the deploy tier tells the agent 'You are attempting to create a PR/deploy' for 'npm test' (helper failed) or 'eval \"$X\"'. For a failed helper, the enterprise message cuts the reason mid-path at 80 characters and advises 'rewrite the command as plain, separate commands', which is wrong for an already-plain command.",
+   "evidence": "phelp.sh (python3 stubbed to fail): 'npm test' + approval -> 'COMPLETION BLOCKED ... You are attempting to create a PR/deploy'; without approval -> 'cannot inspect: the shell analysis helper failed (the python3 helper failed: /home/user/silver-b' + 'rewrite the command as plain...'. git status / git log stay silent (good).",
+   "suggested_fix": "In the deploy tier, when ca_unseen_reasons is set, say 'cannot inspect: <reason>'. For helper_unavailable, say that Silver Bullet's analysis helper failed and how to fix it (check python3, reinstall), and do not suggest rewriting the command."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/lib/completion-audit/classify.sh:86",
+   "problem": "The read-only fallback rejects '~' and '^', so under a helper failure 'git diff HEAD~1' and 'git show HEAD^' are held as deliveries.",
+   "evidence": "phelp.sh: 'git diff HEAD~1' -> ENTERPRISE POLICY BLOCK cannot inspect.",
+   "suggested_fix": "Allow ~ and ^ in the character class; neither is a shell metacharacter when it is not at the start of a word."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/lib/completion-audit/deploy-tier.sh:436-442",
+   "problem": "A verify-tests marker with no repo_root line is accepted, although the comment says such a marker does not vouch for the project (the tests write such markers).",
+   "evidence": "Code: [[ -n \"$marker_repo_root\" && ... ]]; test-delivery-gates-g1.sh:20 uses printf 'verified\\n'.",
+   "suggested_fix": "Require repo_root (verify-tests.sh writes it), or correct the comment."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/completion-audit.sh:2,94",
+   "problem": "The fail-closed ERR trap is not inherited into the functions (no set -E). A failure inside ca_run_deploy_tier_gate or the planning tier exits 1, which is non-blocking, instead of a deny. The error text always blames the state directory, even for a malformed config.",
+   "evidence": "bash -c 'set -euo pipefail; trap \"echo TRAP; exit 0\" ERR; f(){ false; }; f' -> rc=1, no TRAP. p09.sh: malformed .silver-bullet.json -> '...Check that <state dir> is a real directory'.",
+   "suggested_fix": "set -E after classification, plus a generic message that names the line and the config/state checks. No agent-reachable trigger was found inside the tiers."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/lib/tool-input/shell_analysis.py _MCP_ACTIONS; hooks/hooks.json mcp__.*",
+   "problem": "MCP coverage and cost: create_pull_request_with_copilot is not gated; actions_run_trigger counts as a deploy even for cancel_workflow_run (a false positive); and every MCP call (Gmail, Context7...) now runs the full analysis.",
+   "evidence": "pmcp.sh: create_pull_request_with_copilot -> SILENT. Timing: mcp__context7__query-docs completion-audit 343 ms (base) -> 636 ms (head), 5-run average under load.",
+   "suggested_fix": "Add the copilot PR tool; classify actions_run_trigger by method; pre-filter MCP tool names against the _MCP_ACTIONS suffixes before sourcing the libraries."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/pr-traceability.sh:131-134",
+   "problem": "Replacing SPEC.md with the mktemp file leaves it mode 0600.",
+   "evidence": "mktemp creates 0600, then mv -f over SPEC.md.",
+   "suggested_fix": "chmod --reference is not portable; copy the mode with stat -f/-c, or write with cat > over a validated regular file."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/lib/enterprise-policy.sh:201-204",
+   "problem": "R1-13 residual: under internal_dogfood, a non-production keyword in any deploy argument exempts a production deploy.",
+   "evidence": "pent.sh: 'vercel deploy --prod --token internal' and 'fly deploy -a prod-app --strategy=preview' -> no ENTERPRISE block.",
+   "suggested_fix": "Match the keyword only in the target-naming arguments (an environment flag, a target name), or document the residual."
+  },
+  {
+   "severity": "minor",
+   "location": "silver-bullet.md:61, templates/silver-bullet.md.base:61",
+   "problem": "Both still describe the completion audit as '(Pre+PostToolUse/Bash)'; it now also gates mcp__* tools. Update both copies in parity, together with the R1-22 wording.",
+   "evidence": "grep.",
+   "suggested_fix": "Update both files."
+  }
+ ],
+ "validation": {
+  "tests": "Run separately: test-delivery-gates-g1 + test-completion-audit-release (claude) 156/0; ci-status-check-paths + pr-traceability-paths (codex) 88/0. Within the scoped coverage run (44 files): 1905 passed, 7 failed in test-hook-faults-gates.sh, test-shell-analysis-gates.sh and test-rc-validation-matrix.sh; the failures reproduce outside coverage. Mutation checks on a copy: the cert, trivial and RC-commit reverts are each caught.",
+  "coverage": "One scoped run over the 23 changed Bash files and 44 related test files. 15 files at 100%. Misses: completion-audit.sh 47-48, classify.sh 19,20,73, deploy-tier.sh 204,235-239,332-346,367,374,386-420,452,466-495, pr-traceability.sh 78. None of these is an added or changed line (checked against the diff hunks). They plausibly belong to suites outside the scope (test-completion-audit-delivery.sh for the ARTIFACT/ORDERING/ignored-skills messages, test-jq-gate.sh for lines 47-48, the quality-gates-mode tests for pre_ship_marker), but I could not prove that with the one permitted run. The 7 failing assertions also lose their coverage in CI until they are fixed.",
+  "lint": "scripts/lint-shell.sh --all --jobs 2: application and test Bash clean.",
+  "invariants": "check-repo-invariants all PASS; generate-hook-reference --check up to date; generate-apo-artifacts --check rc 0; validate-plugin-mirror OK; sync-codex-package on a clean archive copy: no diff; docs/workflows == templates/workflows; silver-bullet.md parity unchanged (but see the R1-22 docs); trailers Co-Authored-By Claude Sonnet 5.5 + Claude-Session on all 4 commits (accepted); no Bash-4 or GNU-only constructs in the added lines. merge-tree: clean with c591ebb; with fix/G2-planning-floor, a conflict in docs/HOOKS.md plus the hooks.json semantic hazard above."
+ },
+ "notes": "The template change release.require_*=false is not a weakening (see R1-14). Hand-offs: stop-check trivial (no owner; see issue), session-start clearing of the approval and CI-override markers (G4), codex-hook-adapter timeout deny (no named owner), and the agent-claude delegate scripts that still export SB_AGENT_CERT_RUN (no owner named)."
+}

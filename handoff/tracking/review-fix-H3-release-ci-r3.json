@@ -1,0 +1,245 @@
+{
+ "package": "H3-release-ci",
+ "head_reviewed": "6c57daa",
+ "previous_head": "647e27b",
+ "verdict": "APPROVE",
+ "per_finding": [
+  {
+   "id": "R13-01",
+   "verdict": "fixed",
+   "notes": "Unchanged since r2; tests green at 6c57daa. Re-ran the publish probe in /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H3b-probe/mkt (fixed scripts, bare origin + agent-plugins remote): '--publish 0.99.0' with an up-to-date AGENT_PLUGINS_REPO_ROOT -> rc=0, 'Pushed 3 commit(s) to origin/main', remote main holds the Claude/Codex/Cursor bump commits, Codex entry ref v0.99.0. test-sync-release"
+  },
+  {
+   "id": "R13-07",
+   "verdict": "fixed",
+   "notes": "r2 blocker resolved. The three non-paths tests (test-sync-marketplace-version.sh 9/0, -codex 6/0, -cursor 11/0) now push the tag to a fake bare origin and assert a local-only tag is refused; green under claude and codex. r2 residuals closed, probes in REVF-H3c-probe/mkt on the fixed scripts: (a) stale checkout behind its remote -> fast-forwarded, rc=0, 'Pushed 3 commit(s)' on top of the other clone's commit, checkout '## main...origin/main'; (b) batch hosts print '... committed in the shared checkout (push pending ...)' instead of 'publish complete'; (c) STUB_CI_RC=1 standalone --publish for each of the three per-host scripts -> rc=1 'ERROR: CI is not green for v0.99.0 (...); nothing was published', remote unchanged. Inverse checks in a mutated copy: dropping require_tag_on_origin fails 'publish with a local-only tag exits 1'; dropping require_green_ci fails 'publish on red CI exits 1' and 'CI consulted for the tag commit'; replacing the ff-merge with false fails 'behind checkout is publishable after a fast-forward'."
+  },
+  {
+   "id": "R13-19",
+   "verdict": "fixed",
+   "notes": "Unchanged since r2; tests green at 6c57daa. Unchanged since r1; tests green."
+  },
+  {
+   "id": "R8-18",
+   "verdict": "fixed",
+   "notes": "Unchanged since r2; tests green at 6c57daa. Unchanged since r1; codex-paths test green (push_tag helper added for the new origin check)."
+  },
+  {
+   "id": "R8-19",
+   "verdict": "fixed",
+   "notes": "Unchanged since r2; tests green at 6c57daa. Unchanged since r1; agent-plugins-common test green."
+  },
+  {
+   "id": "R13-28",
+   "verdict": "fixed",
+   "notes": "Unchanged since r2; tests green at 6c57daa. Unchanged since r1."
+  },
+  {
+   "id": "R13-18",
+   "verdict": "fixed",
+   "notes": "Skill now lists 'bash scripts/verify-release-commit-ci.sh' in Allowed Commands (mirrors regenerated, sync-codex-package.sh in a copy -> no diff); verify-release-commit-ci.sh derives owner/repo from origin (ssh/https GitHub URLs; non-GitHub origin still fails with an actionable message). Contract test now asserts every ordered command is present before comparing line numbers."
+  },
+  {
+   "id": "R13-06",
+   "verdict": "fixed",
+   "notes": "Unchanged since r2; tests green at 6c57daa. Unchanged since r1."
+  },
+  {
+   "id": "R13-29",
+   "verdict": "fixed",
+   "notes": "Unchanged since r2; tests green at 6c57daa. Unchanged since r1."
+  },
+  {
+   "id": "R13-03",
+   "verdict": "fixed",
+   "notes": "r2 fixture REVF-H3b-probe/wormvar2 now reports all six (comment between tokens, // comment before the value, nested task.allowAutomaticTasks, unicode escapes). New minor issues: a CR-terminated // comment hides a payload that 647e27b still flagged, and a UTF-8 BOM makes an innocuous .vscode/*.json unparseable (false positive)."
+  },
+  {
+   "id": "R13-25",
+   "verdict": "fixed",
+   "notes": "Unchanged since r2; tests green at 6c57daa. Unchanged. The graphify-managed skill residual is a user decision (DECISIONS.md: add to hash lock) scheduled for H3b."
+  },
+  {
+   "id": "R13-23",
+   "verdict": "fixed",
+   "notes": "Unchanged since r2; tests green at 6c57daa. release-identity PASS."
+  },
+  {
+   "id": "R9-22",
+   "verdict": "fixed",
+   "notes": "r2 chained probe 'bash \"${CLAUDE_PLUGIN_ROOT}/hooks/a.sh\" && bash hooks/evil.sh' now fails; a second missing plugin-root script is reported. Residual (minor issue): './hooks/evil.sh', '\"$PWD/hooks/evil.sh\"' and '${CLAUDE_PROJECT_DIR}/scripts/evil.sh' chained after a plugin-root path still PASS."
+  },
+  {
+   "id": "R13-13",
+   "verdict": "ok",
+   "notes": "Unchanged since r2; tests green at 6c57daa. Partial disposition still justified; payload slimming is a user decision for H3b."
+  },
+  {
+   "id": "R13-04",
+   "verdict": "fixed",
+   "notes": "Listed r2 spellings now caught (quoted key, bare continue-on-error, '- {' flow step, quoted write-all, commented guard). Residual and a new false positive in one minor issue (quoted-key/flow check runs inside run scripts; flow mappings at job level and 'steps: [{...}]' evade)."
+  },
+  {
+   "id": "R13-05",
+   "verdict": "fixed",
+   "notes": "r2 major resolved: with an operator registry pre-created in a git-archive copy the test passes 6/0 and the file's cksum is unchanged; removing the SB_E2E_PASS_AT_VERSION_REGISTRY branch from core.sh in a copy fails both 'registry in the checkout is unchanged' and 'rows were recorded in the fixture registry' (4/2)."
+  },
+  {
+   "id": "R13-14",
+   "verdict": "fixed",
+   "notes": "Unchanged since r2; tests green at 6c57daa. Unchanged since r1."
+  },
+  {
+   "id": "R13-15",
+   "verdict": "ok",
+   "notes": "Unchanged since r2; tests green at 6c57daa. Now reported as partial with the deferred items (action SHA pins, shellcheck apt pin, --require-hashes); DECISIONS.md keeps tags."
+  },
+  {
+   "id": "R13-16",
+   "verdict": "ok",
+   "notes": "Unchanged since r2; tests green at 6c57daa. Now reported as partial."
+  },
+  {
+   "id": "R13-17",
+   "verdict": "fixed",
+   "notes": "Unchanged since r2; tests green at 6c57daa. Unchanged; site-duplicate-ids PASS."
+  },
+  {
+   "id": "R13-22",
+   "verdict": "fixed",
+   "notes": "Unchanged since r2; tests green at 6c57daa. Unchanged; note flow-style 'run:' values escape the ${{ }} scan (minor issue)."
+  },
+  {
+   "id": "R13-24",
+   "verdict": "fixed",
+   "notes": "Unchanged since r2; tests green at 6c57daa. Full-history gitleaks run still never executed (needs-user residual, recorded in the report)."
+  },
+  {
+   "id": "R13-12",
+   "verdict": "fixed",
+   "notes": "r2 quoting issue resolved on supported Bash (>= 4.3): wrapper is exec '<path with '\\'' escapes>' \"$@\"; hostile path test passes; reverting to the old printf in a copy fails 'runner keeps the venv python active' and 'venv-only module imports'. Note only: the new PWNED assertion is vacuous for its own path (the '\"' makes the old wrapper a syntax error before $(...) can run), but the revert is still caught by the other two assertions. Under BASH_COMPAT=42 (bash 4.0-4.2 semantics) the replacement keeps backslashes and a path with a single quote breaks the wrapper; the runner already requires Bash 4+ and 4.0-4.2 are obsolete, so not raised."
+  },
+  {
+   "id": "R13-21",
+   "verdict": "fixed",
+   "notes": "Unchanged since r2; tests green at 6c57daa. .codex/hooks.json restored byte-identical to fix/H2-installers (git diff empty); git merge-tree fix/H2-installers fix/H3-release-ci -> no conflict. Hygiene test asserts it stays tracked."
+  },
+  {
+   "id": "R13-27",
+   "verdict": "ok",
+   "notes": "Unchanged since r2; tests green at 6c57daa. Partial disposition unchanged; downstream /sb:init block is a follow-up."
+  },
+  {
+   "id": "R13-26",
+   "verdict": "ok",
+   "notes": "Unchanged since r2; tests green at 6c57daa. needs-user; user decided (move to .cursorindexingignore) for H3b."
+  },
+  {
+   "id": "R13-02",
+   "verdict": "ok",
+   "notes": "Unchanged since r2; tests green at 6c57daa. needs-user; user decided (pin to release tags) for H3b."
+  },
+  {
+   "id": "R7-30",
+   "verdict": "ok",
+   "notes": "Unchanged since r2; tests green at 6c57daa. Same decision as R13-02, H3b."
+  },
+  {
+   "id": "R13-11",
+   "verdict": "ok",
+   "notes": "Unchanged since r2; tests green at 6c57daa. needs-user; user decided (scrub tree, no history rewrite) for H3b."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "minor",
+   "location": ".codex/hooks.json (branch not merged with the current base)",
+   "problem": "The base claude/optimistic-ramanujan-tccfud merged fix/H2-installers (06bef6f, 10:31) including cc101bd (R7-19), which rewrote .codex/hooks.json after r2. H3's last commit (11:29) did not merge it (FIX-BRIEF requires merging the latest base; the report says 'Base already merged'). H3 now conflicts with the base and with F1, F2, H2, H4a, H8a and H8b on .codex/hooks.json; H3 intends no change to that file.",
+   "evidence": "git merge-tree --write-tree claude/optimistic-ramanujan-tccfud 6c57daa -> 'CONFLICT (content): Merge conflict in .codex/hooks.json' (H3 has \"graphify hook-check\", base \"command -v graphify >/dev/null 2>&1 || exit 0; graphify hook-check\"). Trial merge in REVF-H3c-probe/merged taking the base's file: check-repo-invariants all 16 PASS; test-dogfood-host-config-portable, test-host-config-hygiene, test-check-repo-invariants, test-makefile-setup, test-sync-release-marketplace-versions-paths, test-sync-marketplace-version all green (338/0).",
+   "suggested_fix": "Merge the base into fix/H3-release-ci and resolve .codex/hooks.json to the base's version (git checkout claude/optimistic-ramanujan-tccfud -- .codex/hooks.json). Never keep H3's side, which would revert R7-19. The .gitignore conflict with H5 is unchanged (keep both blocks)."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/lib/repo_invariants.py:86-115,137-151 (strip_jsonc / worm_indicators)",
+   "problem": "When the file parses, only the parsed structure is used. strip_jsonc ends a // comment only at \\n, but VS Code's JSONC scanner (jsonc-parser isLineBreak) also ends it at \\r. A CR after a // comment therefore makes the checker drop a runOptions/allowAutomaticTasks member that VS Code applies. 647e27b (regex on decoded text) still flagged this payload, so the new parser is weaker for it.",
+   "evidence": "REVF-H3c-probe/wormcr: a/.vscode/tasks.json = '{\"version\": \"2.0.0\", \"tasks\": [{\"label\": \"x\", \"type\": \"shell\", \"command\": \"echo pwn\" // c\\r, \"runOptions\": {\"runOn\": \"folderOpen\"}\\n}]}' and b/.vscode/settings.json = '{\"editor.tabSize\": 2 // c\\r, \"task.allowAutomaticTasks\": \"on\"\\n}'. check-repo-invariants.sh --check worm-indicators: 6c57daa -> 'PASS worm-indicators' rc=0; 647e27b -> FAIL, both files reported.",
+   "suggested_fix": "End // comments at \\r as well as \\n. Also report the union of the parsed walk and the decoded-text regexes, so a divergence between strip_jsonc and VS Code can never hide a literal \"runOn\": \"folderOpen\". Add the CR case to WormIndicatorsTest."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/lib/repo_invariants.py:142",
+   "problem": "A tracked .vscode/*.json saved with a UTF-8 BOM (Windows editors do this; VS Code reads it fine) is now reported as 'cannot be parsed as JSON with comments' and fails the invariant. Before this commit it passed.",
+   "evidence": "REVF-H3c-probe/wormbom: printf '\\xef\\xbb\\xbf{\"recommendations\": [\"ms-python.python\"]}' > a/.vscode/extensions.json -> 'FAIL worm-indicators  a/.vscode/extensions.json: cannot be parsed as JSON with comments ...' (json.loads: Unexpected UTF-8 BOM).",
+   "suggested_fix": "Decode with 'utf-8-sig'. Add a BOM case to test_ordinary_config_and_unrelated_files_pass."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/lib/repo_invariants.py:297-298,363-364 (QUOTED_KEY / FLOW_STEP in workflow_problems)",
+   "problem": "(a) False positive. The quoted-key and flow-step test runs before the run-script skip, so honest script content is rejected: a JSON heredoc in a 'run: |' block (\"ref\": \"main\") or a '- {' line in a with: literal block. No test covers the honest variant. (b) Bypass. Flow-mapping jobs and steps still evade: 'build: {runs-on: ..., continue-on-error: true, steps: [{run: echo ok}]}' and 'steps: [{run: ''echo ${{ github.event.issue.title }}'', continue-on-error: true}]' return no problems. For a flow job, the timeout-minutes check is skipped too.",
+   "evidence": "python3 -I REVF-H3c-probe/wf/probe_wf.py (output in wf/out.txt): json-heredoc-in-run -> ['...:15: quoted keys and flow-style steps hide settings ...']; yaml-list-in-with-body -> same; job-level flow mapping continue-on-error -> []; steps flow sequence -> [].",
+   "suggested_fix": "Apply QUOTED_KEY/FLOW_STEP only outside run scripts and block scalars (after the script_until skip), and add an honest-heredoc test. Reject any flow mapping or sequence ('{' or '[') as the value of a key under jobs:, or simply any line whose value starts with '{' or '[' outside scripts."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/check-repo-invariants.sh:136-157 (check_hook-references)",
+   "problem": "Bare paths are matched only as tokens that start with hooks/ or scripts/. A project-relative script chained after a valid plugin-root script still passes when written as ./hooks/..., $PWD/hooks/... or ${CLAUDE_PROJECT_DIR}/scripts/.... All 96 real commands have exactly the form \"${CLAUDE_PLUGIN_ROOT}/hooks/<file>\".",
+   "evidence": "REVF-H3c-probe/hookref fixture, --check hook-references: 'bash \"${CLAUDE_PLUGIN_ROOT}/hooks/a.sh\" && bash ./hooks/evil.sh' -> PASS rc=0; '... && bash \"$PWD/hooks/evil.sh\"' -> PASS; '... && bash ${CLAUDE_PROJECT_DIR}/scripts/evil.sh' -> PASS (the r2 form '... && bash hooks/evil.sh' now fails correctly).",
+   "suggested_fix": "Use an allowlist: every command must match ^\"\\$\\{CLAUDE_PLUGIN_ROOT\\}/[A-Za-z0-9._/-]+\"( [A-Za-z0-9._=-]+)*$ with an existing file, and fail on anything else. Test the three forms above."
+  },
+  {
+   "severity": "minor",
+   "location": "tests/scripts/test-verify-release-commit-ci.sh:110",
+   "problem": "The new 'trap ... EXIT' replaces the one at line 53, so $TMP is no longer removed. The leak is contained under run-all-tests.sh's sandboxed TMPDIR, but a direct run leaves a directory behind each time.",
+   "evidence": "grep -n trap tests/scripts/test-verify-release-commit-ci.sh -> 53: trap 'rm -rf \"$TMP\"' EXIT; 110: trap 'rm -rf \"$derive_root\"' EXIT.",
+   "suggested_fix": "trap 'rm -rf \"$TMP\" \"$derive_root\"' EXIT, or create derive_root under $TMP."
+  }
+ ],
+ "previous_review_issues": [
+  {
+   "r2": "blocker: three non-paths sync tests red",
+   "status": "resolved (claude and codex green; inverse check fails the new assertions)"
+  },
+  {
+   "r2": "major: e2e registry assertion false positive on checkouts holding the file",
+   "status": "resolved (before/after cksum; pre-existing file passes; removing override fails)"
+  },
+  {
+   "r2": "minor: venv wrapper quoting",
+   "status": "resolved on Bash >= 4.3"
+  },
+  {
+   "r2": "minor: worm JSONC comments/nested",
+   "status": "resolved; new CR and BOM minors"
+  },
+  {
+   "r2": "minor: stale checkout / batch banner / standalone CI",
+   "status": "resolved (probes)"
+  },
+  {
+   "r2": "minor: skill GITHUB_REPOSITORY / allowed list",
+   "status": "resolved"
+  },
+  {
+   "r2": "minor: workflow spellings",
+   "status": "listed forms resolved; new false positive in run scripts; flow mappings at job/steps level remain"
+  },
+  {
+   "r2": "minor: chained bare hook path",
+   "status": "literal form resolved; ./, $PWD, CLAUDE_PROJECT_DIR forms remain"
+  },
+  {
+   "r2": "minor: vacuous ordering checks in release-skill-contract",
+   "status": "resolved"
+  },
+  {
+   "r2": "minor: CODEOWNERS coverage",
+   "status": "resolved (handle confirmation remains a maintainer action)"
+  }
+ ],
+ "validation": {
+  "tests": "From the worktree, tests/run-all-tests.sh --jobs 2. The 44 test files that reference a script changed in the package (tests/scripts/test-run-sb-live-tests-*.sh excluded per FIX-BRIEF) plus the 3 changed tests not caught by that grep (matrix-internal-gates, host-config-hygiene, rc-validation-matrix). Claude: 3151+44 passed, 0 failed. Codex: 3151+44 passed, 0 failed. tests/python/test_repo_invariants.py via unittest: 37 OK under both runtimes. Inverse checks in a mutated git copy (REVF-H3c-probe/mut): each revert (tag-on-origin, green-CI, ff-merge, venv quoting, registry override) fails the matching new assertions. Trial merge with the current base (REVF-H3c-probe/merged): 6 key tests 338/0.",
+  "coverage": "One scoped run (REVF-H3c-probe/copy2, --fail-under 100, 14 test files incl. test-python-unit.sh), 2371 passed, 0 failed, rc=0. 100% for check-repo-invariants.sh 187/187, agent-plugins-common.sh 135/135, the three per-host sync scripts, sync-release-marketplace-versions.sh, verify-release-commit-ci.sh 78/78, repo_invariants.py 280/280 statements and 146/146 branches. known-limits.json valid; core.sh unchanged since r2.",
+  "lint": "bash scripts/lint-shell.sh --all --jobs 2: application Bash (354) clean, test Bash (729) clean, rc=0.",
+  "invariants": "check-repo-invariants.sh: all 16 PASS (worktree and trial merge). generate-hook-reference --check up to date; generate-apo-artifacts --check rc=0; validate-plugin-mirror OK; sync-codex-package.sh in a git copy -> no diff; docs/workflows == templates/workflows; silver-bullet.md and template untouched. Trailers on b298687, ab6c126, 6c57daa exact (Opus 5.5 + session); no model names elsewhere. merge-tree: conflicts in .codex/hooks.json with the base and 6 siblings (minor issue 1), and in .gitignore with H5 (known). The worktree's status --ignored was unchanged by this review."
+ }
+}

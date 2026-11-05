@@ -1,0 +1,100 @@
+{
+ "package": "H3b-decisions",
+ "head_reviewed": "de4cf19",
+ "verdict": "CHANGES_REQUIRED",
+ "per_finding": [
+  {
+   "id": "r3-major github-script flow mapping",
+   "verdict": "fixed",
+   "notes": "with_flow_script and with_flow_script_ml are now caught (wf4.py)."
+  },
+  {
+   "id": "r3-minor anchors/aliases/tags/merge keys",
+   "verdict": "fixed",
+   "notes": "alias_own_line, anchor_own_line_alias_run, tag_own_line_coe, merge_key_def are caught. Undefined aliases, tab after a colon and multi-document files fail closed as parse errors."
+  },
+  {
+   "id": "r3-minor lowercase known-dir rule FN/FP",
+   "verdict": "partial",
+   "notes": "The rule was removed, so the 12 identifier false positives are gone. Lowercase users_<n>_ / -users-<n>- / _home_<n>_ / ~<n> forms are now caught only by the identity-token check, and that check is off in allowlisted files (see the major issue)."
+  },
+  {
+   "id": "r3-minor allowlist file not scanned",
+   "verdict": "fixed",
+   "notes": "The rest of the file is scanned and an unknown directive is an error (test_the_allowlist_file_is_scanned...)."
+  },
+  {
+   "id": "r3-minor .out captures",
+   "verdict": "fixed",
+   "notes": "38 .out files deleted; .gitignore and tests cover them. 75 run-bookkeeping files remain (see question 3)."
+  },
+  {
+   "id": "r3-minor RELEASE.md unverified Claude path claim",
+   "verdict": "fixed",
+   "notes": "The claim was removed from docs/RELEASE.md:153."
+  },
+  {
+   "id": "all r2/r3 workflow probes (49)",
+   "verdict": "fixed",
+   "notes": "All 34 r2/r3 attack probes are caught (two were benign placeholders). All 11 known-good samples pass. The repo workflows pass: workflow-hardening rc=0 in 0.3 s."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "major",
+   "location": ".github/personal-data-allow.txt:10; scripts/lib/repo_invariants.py:337, :528",
+   "problem": "A 'file' entry exempts the whole file from the identity-token check for good. graphify-out/graph.json (55 MB, regenerated after every code change) has exactly 1 legitimate identity line. The 7 other allowlisted files have 1 or 2 each, with 0 path-shaped uses. The only remaining detector of lowercase flattened home forms is the identity check, because FLAT_HOMES[0] is case-sensitive. So in graph.json a real users_<n>_..., -users-<n>-..., _home_<n>_..., ~<n>/ or a plain name mention is never reported. Lowercase flattened ids are the form graphify writes.",
+   "evidence": "pd4b.py: a temp repo with the real hash and allow files and an allowlisted graphify-out/graph.json. users_lower, dash_users_lower, home_lower_flat, tilde, tilde_slash and plain_name are MISSED in graph.json and CAUGHT in plain.txt. pd4c.py: the allowlisted files have 1-2 identity lines each and 0 path-shaped ones.",
+   "suggested_fix": "Report path-shaped identity tokens even in allowlisted files: (users|home)[-_/\\\\]+TOKEN or ~/?TOKEN, where TOKEN hashes to a listed token. This has no false positives, because only the maintainer's tokens match. Better still, make 'file' entries line-scoped, for example 'file <path> <sha256 of the allowed line>' or a maximum count, so that a new identity line in an allowlisted file fails."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/lib/repo_invariants.py:575 (CODE_INPUTS)",
+   "problem": "The code-input key list misses common inputs that run as code, so untrusted ${{ }} passes in: azure/cli and azure/powershell inlineScript; cypress-io start, build and install-command; uraimo/run-on-arch install; gradle arguments; pre-command and post_run; a list-valued script:. Separately, container.options at job level is not checked.",
+   "evidence": "wf4new.py: azure_cli_inlineScript, azure_powershell_inlineScript, cypress_start, cypress_install_command, run_on_arch_install, gradle_arguments, pre_post_command, script_list_value and container_options are all MISSED. command, args, entrypoint, Script (any case) and the docker:// args are caught.",
+   "suggested_fix": "Flag untrusted contexts (github.event.*, github.head_ref, inputs.*, matrix values from fromJSON(event)) in any with: value, with an allowlist of known data inputs; or at least add inlinescript, start, build, install, install-command, arguments, pre-command, post-command and *-command / *_command patterns, and recurse into list values."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/lib/repo_invariants.py:654-692",
+   "problem": "Not checked: pull_request_target or workflow_run combined with an actions/checkout of the head ref (the pwn-request pattern), and job permissions that grant write scopes other than write-all. 'uses: Actions/Checkout@v5' escapes the persist-credentials rule, because owner and repo in uses are case-insensitive. A reusable-workflow caller job (jobs.<id>.uses) is required to have timeout-minutes, a key GitHub does not allow on such jobs (false positive). None of the repo's workflows use these patterns today.",
+   "evidence": "wf4new.py: prt_checkout_head, workflow_run_artifact, perm_write_contents_job and checkout_upper are MISSED; reusable_call_with reports 'job a has no timeout-minutes'.",
+   "suggested_fix": "Fail on pull_request_target or workflow_run when a checkout has a ref: expression from github.event; match uses case-insensitively; skip the timeout-minutes rule for jobs with uses:."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/lib/repo_invariants.py:398-411 (identity_lines)",
+   "problem": "Tokenizing raw bytes on non-alphanumerics misses a token glued to an escape or affix: a JSON-escaped newline or tab before a name ('\\\\n<Name> wrote', common in .json and .jsonl transcripts); %2F<n> and %20<n> outside a Users/ path (for example github.com%2F<n>%2Frepo, also missed by the home rule); \\\\u-escaped letters; &#NNN; letter entities; zero-width or soft-hyphen splits; NFKC or fullwidth forms and homoglyphs; concatenations such as <Name>Smith, <n>2 and 9<n>; base64 and hex. Case, every plain separator, &#47;, &#x2F;, &sol; and markdown emphasis are caught.",
+   "evidence": "pd4.py, for both hashed tokens: json_newline, json_tab, json_u002f, json_u_letters, url_pct2F, url_pct20, html_letter_ent, zero_width, soft_hyphen, homoglyph, fullwidth, camel_concat, suffix_digit, prefix_digit, base64 and hex are all MISSED. pd4b.py: pct_users_only is MISSED even in non-allowlisted files.",
+   "suggested_fix": "Before tokenizing, decode JSON escapes (\\\\n, \\\\t, \\\\uXXXX), %XX and HTML numeric entities, apply NFKC and strip Cf characters, as the home rule already does for separators. Then also test each token's length-L prefix and suffix (L in the hash lengths), which is cheap and catches affixes and concatenations. Base64 and homoglyphs can stay a documented residual."
+  },
+  {
+   "severity": "minor",
+   "location": ".github/personal-data-hashes.txt:3-4; docs/RELEASE.md (Private data)",
+   "problem": "The hashes do not hide the identity. The 5-character token is recovered by plain [a-z] brute force in 14 s in pure Python. Both tokens are recovered in 8 ms by hashing the tokens of the allowlisted public file .claude-plugin/marketplace.json. The 7-character token is about 8e9 candidates, seconds on a GPU. This is acceptable only because the name is already public in the author fields; the hashes keep the literal out of the file, nothing more.",
+   "evidence": "pd4.py: 'dictionary attack from allowlisted public files recovered lengths [5, 7] in 0.008s'; 'brute force length-5 [a-z]: recovered=True after 9340300 candidates in 13.9s' (plaintext not printed).",
+   "suggested_fix": "State in the file header and in RELEASE.md that the hashes are obfuscation, not secrecy, and must never list a token that is not already public (for example a private second name or a private handle)."
+  },
+  {
+   "severity": "minor",
+   "location": ".gitignore:84-90; docs/RELEASE.md:157",
+   "problem": "The delta removed docs/**/*-stdout.txt and docs/**/*-stderr.txt from .gitignore and added only docs/**/*.err. RELEASE.md still says that *-stdout.txt captures under docs/ are git-ignored. The tracked-file test still rejects committing them.",
+   "evidence": "git check-ignore: docs/a/review-stdout.txt and docs/a/b-stderr.txt are NOT-IGNORED.",
+   "suggested_fix": "Restore the two docs/** patterns, or fix the RELEASE.md sentence, and add docs/a/x-stdout.txt to the check-ignore loop in tests/scripts/test-no-personal-machine-paths.sh."
+  },
+  {
+   "severity": "minor",
+   "location": ".github/workflows/ci.yml:37-38",
+   "problem": "The validate job installs PyYAML into the runner's system python3 with no actions/setup-python, unlike the other jobs (ci.yml:109, :152). On ubuntu-latest (24.04) the system interpreter may be PEP 668 externally-managed, in which case pip fails. That would be loud, not silent, but it is unverified offline. The install is also unhashed.",
+   "evidence": "ci.yml validate steps: checkout, seed env, 'python3 -m pip install PyYAML==6.0.2', invariants. No setup-python step.",
+   "suggested_fix": "Add actions/setup-python@v6 (python 3.12) before the install, as the test jobs do, and confirm on a CI run."
+  }
+ ],
+ "leftover_files": "75 tracked files remain under .planning/rfl-router-subagent-surfaces-85bf9f09-20260812/{deepseek-v4-pro-high,minimax-m3-high,qwen-high}-ladder4/ and one under ...-final-review-2/rung-11.../logs/: invoke-start/end.txt(.attemptN/.killed-/.timeout-/.china-...), launch.pid.*, and review.md.attempt5-stub.txt. They total 3959 bytes. Content is run bookkeeping only: ISO timestamps, PREFLIGHT_EXIT/INVOKE_EXIT/REVIEW_OK codes, PIDs, MODEL/VARIANT/TIMEOUT_SEC/RETRY, and OPENCODE= and HOME= paths already masked as /Users/<user>. The stub holds a SHA-256 table of a plan file. There is no personal data and no AI-generated text, so keeping them is acceptable. They are not git-ignored (.planning/a/invoke-start.txt and launch.pid.attempt2 are not ignored), so new ones can be committed.",
+ "validation": {
+  "tests": "From a clone of de4cf19 under REVF-H3b-r4-probe/src with a temporary HOME. Under SILVER_BULLET_RUNTIME=claude and =codex, test-check-repo-invariants.sh (199), -cli.sh (36), test-no-personal-machine-paths.sh (38), test-no-gsd-runtime.sh (4) and test-site-hooks-gates.sh (167) all passed with 0 failures, rc=0. Docs suite: 198/0. Mutations of test_repo_invariants (74 tests): removing the code-input check, the identity check, the allows_file exemption, duplicate-key detection, or the missing-PyYAML failure each fails the tests. Accepting persist-credentials 'false' as a string is not pinned (harmless).",
+  "coverage": "One scoped run with --only scripts/lib/repo_invariants.py and scripts/check-repo-invariants.sh: Python 473/473 statements and 236/236 branches; Bash 197/197 statements and 19/19 functions (100%).",
+  "lint": "bash scripts/lint-shell.sh --all --jobs 2: exit code 0.",
+  "invariants": "check-repo-invariants.sh rc=0 (17 PASS). personal-data takes 7.8 s and workflow-hardening 0.3 s. With PyYAML blocked, the check fails closed for each of the 6 workflows with 'PyYAML is required ... (python3 -m pip install -r requirements-dev.txt)', rc=1. Hook-reference, apo and plugin mirror are OK. The commit trailers in c69921d..de4cf19 are correct (Sonnet 5.5 attribution, which the brief accepts). git merge-tree with claude/optimistic-ramanujan-tccfud (94800f8, which is the merge-base) is clean."
+ }
+}

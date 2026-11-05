@@ -1,0 +1,74 @@
+{
+ "package": "H8b-followup",
+ "head_reviewed": "90adbad",
+ "verdict": "CHANGES_REQUIRED",
+ "per_finding": [
+  {
+   "id": "r6-major-1 matrix formats",
+   "verdict": "incomplete",
+   "notes": "The literal r6 probes no longer reproduce: fp8 and s4 give 0 new credits ('Escrow/Growth/narrow', 'Critical/Very high', 'The Matrix -' and a bare '✔ for' do not match). But 47 of 60 new r7 sentences still credit an ambiguous vendor (fp9.txt; bbd43be 54/60, d75d18e 33/60). The anchoring is fine; the slot rules are the problem: (a) the head slot of 'Matrix entry/Matrix -/Row '<x>'' lines counts with no known feature; (b) items in a list may be non-vendor leftovers of 1-2 words ('Editor', 'Admin', 'Viewer roles'); (c) leader/core-set lists need no feature at all."
+  },
+  {
+   "id": "r6-major-2 qualified displays",
+   "verdict": "incomplete",
+   "notes": "Fixed as specified: GSD/OMP expansions and reverse forms are gone. Only 'Devin (Cognition)' and 'Augment Cosmos (Augment Code)' remain. But 'Devin (Cognition)' still credits devin in ordinary roster prose ('Alice (Memory), Devin (Cognition), Sam (Perception)'). The user says Devin is no longer an accepted residual, yet SKILL.md lists this as an accepted trust residual."
+  },
+  {
+   "id": "r6-minor vendors cap/exact slugs",
+   "verdict": "fixed",
+   "notes": "13th tag ignored; 'sdlc', 'SDLC Plugin', 'copilot', 'factory', 'devin.ai', 'Devin (Cognition)' and >80-char tags credit nothing; 'Director' normalises to director (minors.py)."
+  },
+  {
+   "id": "r6-minor barkain",
+   "verdict": "fixed",
+   "notes": "barkain removed from COINED_NAMES; Barkain Workflow Orchestrator is ambiguous; audit fixture regenerated and matched by the test; rec6 now misses barkain by design."
+  },
+  {
+   "id": "r6-minor SKILL.md residuals",
+   "verdict": "fixed",
+   "notes": "Residuals documented; 'no lexical residual' removed. However, the S4 text says 'with a known feature and every item a known vendor', which the code does not enforce (see the major issue)."
+  },
+  {
+   "id": "r6-minor 200 KB speed",
+   "verdict": "fixed",
+   "notes": "perf5: 0.41-0.81 s; perf7: 0.46-0.60 s; new perf8 (matrix-line units, 200 KB): 0.24-1.41 s."
+  },
+  {
+   "id": "r6-minor source_ref capitalised",
+   "verdict": "fixed",
+   "notes": "'Windsurf moves the cursor.' + cursor.com credits nothing; 'the Cursor' credits (documented residual). 'Talk to the director.' + 'Director — Official Site' credits nothing."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "major",
+   "location": "skills/silver-deep-research-multi-ai/scripts/materialize_solution_artifacts.py:315-341 (_slot_vendors), :562-576 (_MATRIX_*_RE), pack _MATRIX_LEADERS_RE/_CORE_SET_CLAIM_RE",
+   "problem": "S4 matrix-slot credit still reaches ambiguous vendors from ordinary prose, and still ticks fabricated cells. (1) The head slot of 'Matrix entry - X:', 'Matrix - X:' and 'Row/Matrix ... \"X\" ...:' counts with no known feature and whatever body follows. (2) A list counts when one item is a vendor and the others are any 1-2 word leftovers, so role lists pass. (3) Leader and core-set lists need no feature. SKILL.md claims 'a known feature and every item a known vendor'.",
+   "evidence": "/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-r7-probe/tools/fp9.py -> /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-r7-probe/fp9.txt: 47/60 false credits. Examples: 'Row \"Continue\": press Enter to continue the installer.' -> continue; \"Row 'Cursor' of the keyboard shortcuts table: arrow keys.\" -> cursor; 'Matrix \"Linear\" maps: rotation and scaling.' -> linear; \"| Row 'Director' | approves budget: yes |\" -> director; 'Matrix - Director: Lana and Lilly Wachowski.' -> director; 'RBAC ✔ for Director, Editor and Viewer roles.' -> director plus the cell Director|RBAC; 'Audit log ✔ for Director' -> director|Audit log; 'Matrix — RBAC: Director, Editor, Viewer.' -> director|RBAC; multi-line 'Notes from the call:\\n- RBAC ✔ for Director, Manager' -> director|RBAC; 'Confirmed in-scope core set: Director, Editor, Writer.' -> director with 7 cells; 'Commercial-weighted peer: Director, Editor.' -> 3 cells; 'Managed hosting ✔ for Tembo, Elephant' -> tembo|Managed hosting. What-if (/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-r7-probe/tools/real_nos4.py): dropping S4 slot credit for ambiguous vendors changes nothing on the real APO run (23 slugs, the same classification and core, the same 104 cells), and fp9 falls to 3/60 (those 3 come from a cursor path in solution_classifier that the monkeypatch does not cover).",
+   "suggested_fix": "Precision first: S4 is unused on the real run, so stop crediting AMBIGUOUS vendors through matrix slots (head or list), and keep S4 only for distinctive vendors, or for rows that also declare the vendor (vendors/matrix_entries). If S4 must stay, require every list item to resolve to a vendor (no leftovers), require a known feature for head-led lines too, and drop the leader/core-set lists for ambiguous vendors. Add fp9.py as a corpus set (r7_matrix_prose) with 0 credits expected, and add a generative test that combines matrix markers with role lists and UI/math prose. Fix the SKILL.md wording to match."
+  },
+  {
+   "severity": "major",
+   "location": "skills/silver-deep-research-multi-ai/scripts/vendor_identity.py:80-95 (qualified displays); SKILL.md 'Trust residuals'",
+   "problem": "'Devin (Cognition)' is a signal wherever it appears, so ordinary roster or label prose credits Devin. The user has stated that Devin is no longer an accepted residual, but SKILL.md lists it as an accepted residual.",
+   "evidence": "/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-r7-probe/fp9.txt: 'Students were split by track: Alice (Memory), Devin (Cognition), Sam (Perception).' -> ev/ex=[devin]; 'Team leads: Devin (Cognition), Maria (Language).' -> devin; '| Devin (Cognition) | 3.9 GPA |' -> devin; also with an unrelated source_ref. The real run does not depend on it: the what-if that drops the devin/augment-cosmos qualified signal gives the same 23 slugs, classification and 104 cells.",
+   "suggested_fix": "Drop qualified-display signals (or at least those of person-name vendors). Devin is then credited only by a tag, devin.ai or matrix_entries, as the user now requires. Remove the residual from SKILL.md and add the roster sentences to the corpus."
+  },
+  {
+   "severity": "minor",
+   "location": "materialize_solution_artifacts.py:_source_segments (split on ' — ')",
+   "problem": "Not a false identity, but worth noting: the new em-dash split lets 'Silver Bullet — Official Site' declare silver-bullet. That regains 2 cells (Quick onboarding, Zero-infra bootstrap) from a group 'Startup-weighted comparison' claim that states neither feature (group smearing, which the design leaves out of scope). These cells were present at d75d18e and lost at bbd43be. The fix JSON does not mention the change relative to the r6 head.",
+   "evidence": "/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-r7-probe/tools/why.py output: evidence row 'Startup-weighted comparison: Silver Bullet leads in plugin/skill/hook packaging depth ...' source_ref 'Silver Bullet — Official Site; ...' -> silver-bullet | Quick onboarding, Zero-infra bootstrap.",
+   "suggested_fix": "Report it in the cell diff; track group-claim smearing as a follow-up."
+  }
+ ],
+ "fp_reruns": "r2 fp2 0/31, lists2 (matrix lines, expected credits); r3 fp3 0/52, fp4 0/25; r4 fp5 0/52, fp6 0/30; r5 fp7 2/82 (both distinctive true mentions, LangChain/CrewAI, the same as in r6), audit 0/14; r6 fp8 1/97 (the documented 'Devin (Cognition)' quote), s4 0/10. Author corpus + generative: 37 tests OK in skills/, agents/claude and host-bundles/codex mirrors.",
+ "recall": "Tagged corpus 81/81 (test). Untagged 7/81 pinned. Distinctive spot-check rec6 34/35 (the miss is Barkain, ambiguous by design). r5 cued recall5 4/30.",
+ "real_run": "23 slugs, Director core, classification and core identical to d75d18e. Cells 126->104: -27/+5, matching the report. Versus bbd43be: -10 (gsd 5, oh-my-pi 4, barkain 1) / +2 (silver-bullet). The gsd and oh-my-pi losses include genuine single-vendor rows ('GSD (Get Shit Done) ships as a Claude Code skill/command pack ...'), a real recall loss that is acceptable under precision-first because the expansion form also appears in ordinary prose; GSD and OMP stay in the matrix.",
+ "validation": {
+  "tests": "run-all-tests.sh test-multi-ai-deep-research-contract.sh + test-solution-research-python.sh: 871 passed, 0 failed under claude and under codex.",
+  "coverage": "One scoped run-coverage.sh --only over the 6 skill scripts: Python 2280/2280 statements, 1150/1150 branches, 100%.",
+  "lint": "lint-shell.sh --all --jobs 2 on a git-archive copy: rc 0 (copy deleted).",
+  "invariants": "check-repo-invariants rc 0; generate-apo-artifacts --check rc 0; hook reference up to date; validate-plugin-mirror OK; sync-codex-package.sh leaves no diff. Trailers on 94a84d6/377fcea/ca456e5/90adbad/a763a48: Co-Authored-By Claude Sonnet 5.5 + Claude-Session (accepted). merge-tree with claude/optimistic-ramanujan-tccfud 2a65018: clean (already included). Worktree clean."
+ }
+}

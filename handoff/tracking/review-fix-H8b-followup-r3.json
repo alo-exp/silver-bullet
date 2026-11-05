@@ -1,0 +1,109 @@
+{
+ "package": "H8b-followup",
+ "head_reviewed": "fc61567",
+ "verdict": "CHANGES_REQUIRED",
+ "per_finding": [
+  {
+   "id": "r2-major _inside_ordinary_phrase",
+   "verdict": "fixed",
+   "notes": "REVF-H8bfu-r2-probe/tools/fp2.py /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-r3-probe/head/skills/silver-deep-research-multi-ai/scripts: 0/31 (r2 head 18/31). Corpus r4+r2 plain-English sets 0/45. Sandbox mutant (/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-r3-probe/mut2: _modifier_before returns None and the gate-verb check removed) fails 5 of 11 corpus tests ('26 false vendor mentions'), so the tests are not vacuous."
+  },
+  {
+   "id": "r2-minor clause boundaries",
+   "verdict": "fixed",
+   "notes": "absence2.py: all 16 R cases keep silver-bullet/director, except the accepted known miss 'Director, which is not a hard exclusion, ...'. Fresh: ', whereas', em dash, absence-first-then-positive and positive-after-absence-sentence all keep the tick (absence3.py)."
+  },
+  {
+   "id": "r2-minor negation / gate verbs",
+   "verdict": "incomplete",
+   "notes": "All 11 r2 P cases now give {} (absence2.py). New leaks remain (issue 5): the 60-character gate-verb window lets an unrelated verb exempt the marker, and a 'However,' lead or 'This is unresearched.' misses the anaphoric rule."
+  },
+  {
+   "id": "r2-minor hard-exclusion",
+   "verdict": "incomplete",
+   "notes": "Both r2 keep sentences are fixed. The negation scan is too broad and causes 2 regressions against e14d934 (issue 4)."
+  },
+  {
+   "id": "r2-minor sentence openers / cue bypass",
+   "verdict": "fixed",
+   "notes": "fp2.py: 'Next Continue', 'Finally Sweep', 'First Linear', 'Plus Director', 'Today Director-level', 'Abstract Factory Plus' and 'Agentic Software Factory Enterprise' all give []. Fresh: 'Truly Linear' and 'Deeply Linear' inside a sentence and 'Previously Factory staff' give [] (they were FPs at e14d934)."
+  },
+  {
+   "id": "r2-minor perf (absence pass)",
+   "verdict": "fixed",
+   "notes": "/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-r3-probe/tools/perf4.py: _without_absence_clauses is 0.02-0.08 s at 200 KB for 15 marker-dense units (r2: 18-23 s). mentions_vendor over 5 ambiguous names is at most 0.34 s at 200 KB ('Director. ' units). parse_feature_support is still quadratic, but it was already quadratic before this change (issue 7)."
+  },
+  {
+   "id": "r2-minor --force _same_query",
+   "verdict": "fixed",
+   "notes": "force2.py: ('Event streaming\\nfor banks' -> 'Event streaming') -> (False, []). A recorded manifest query decides alone ('...', 'Something else' -> False)."
+  },
+  {
+   "id": "corpus completeness / recall",
+   "verdict": "ok",
+   "notes": "Fixture has 108 sentences with the counts as reported. Every fp2, absence2 and recall sentence is included. Recall is 23/26, and the 3 listed misses are pinned. Not included: 7 r1 absence.py sentences and 'Copilot coding agent opens PRs.' (issue 6)."
+  },
+  {
+   "id": "real APO run",
+   "verdict": "ok",
+   "notes": "/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-r3-probe/tools/real3.py at e14d934 and at head, on research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final: 23 matrix slugs (identical), director core (pack core_seed), and full parse_feature_support cells identical (0 diffs)."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "major",
+   "location": "skills/silver-deep-research-multi-ai/scripts/materialize_solution_artifacts.py:355-387 (mentions_vendor, last branch)",
+   "problem": "A capitalised ambiguous name inside a sentence still counts as a vendor when an article, determiner or possessive stands before it, when it is a predicate adjective, or when it is a member of a list of capitalised common nouns. This fabricates vendor evidence and extract_slugs hits. Most of it is pre-existing: at e14d934 the same set gives 24/52, and at 21606d0 it gives 35/52.",
+   "evidence": "python3 /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-r3-probe/tools/fp3.py /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-r3-probe/head/skills/silver-deep-research-multi-ai/scripts: 23/52 fresh plain-English sentences credit a vendor. The ambiguous-name ones: 'Cursor position is restored when the editor reopens.', 'Move the Cursor to the end of the line ...', 'The blinking Cursor shows ...', 'Keyboard, Mouse, Cursor and Touch events ...' and 'Hover the Cursor over the chart ...' -> cursor+cursor-agents; 'Ask the Director, the Manager or the Lead ...', 'Each Director owns one region ...' and 'Netflix Conductor and Director approval ...' -> director; 'The Conductor raised the baton ...' and 'Melty Cheese pairs well with the Conductor's favourite bread.' -> conductor; 'Their Factory, warehouse and office moved to Ohio.' -> factory-ai; 'The model is Linear in its parameters.' and 'Use Linear, Quadratic or Cubic interpolation.' -> linear. fp4.py: \"Our Factory's output doubled.\" -> factory-ai and \"The Director's cut is longer.\" -> director (6/25 overall). Headings, '-ly' words, hyphen compounds and list items are clean.",
+   "suggested_fix": "Treat a determiner or possessive directly before the name (the|a|an|each|every|this|that|our|their|my|your|his|her|its, optionally followed by one adjective) as a common noun unless a product cue follows or '<det-phrase> <name>' is a known product phrase. Sandbox mutant (/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-r3-probe/mut, _DET_BEFORE rule): fp4 goes to 0/25 and the determiner cases in fp3 disappear. The only cost is 'The Cursor model picker offers GPT and Claude.' (recall 23/26 -> 22/26; that sentence would move to known_miss, since precision comes first). Add the sentences to the corpus."
+  },
+  {
+   "severity": "major",
+   "location": "skills/silver-deep-research-multi-ai/reference/category-pack-overlays/agentic-sdlc-process-orchestrator.json (AMBIGUOUS_NAMES; aliases 'copilot'->github-copilot, 'cognition'->devin, 'aider')",
+   "problem": "Common English words that are pack aliases or names are not in AMBIGUOUS_NAMES, so they match case-insensitively as vendors with no proper-noun check. 'copilot' is everyday prose in exactly this domain ('an AI copilot'). Devin as a person's first name cannot be told apart lexically. The issue is pre-existing, but it is the same false-tick class the package exists to close.",
+   "evidence": "fp3.py/fp4.py /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-r3-probe/head/skills/silver-deep-research-multi-ai/scripts: 'An AI copilot for spreadsheets drafts formulas.', 'The copilot took control of the aircraft ...', 'Copilot seats are billed monthly by the airline.' and 'Enable copilot mode in the car settings.' -> github-copilot; 'Research on human cognition shows memory limits.' and 'Embodied Cognition theories explain gesture.' -> devin; 'The aider of the robbery was arrested.' and 'A good aider makes the job easier.' -> aider; 'Social Cognition Scout volunteers met at noon.' -> cognition-scout+devin; 'Devin from accounting approved the invoice.', 'Ask Devin to review the slides ...' and 'My colleague Devin Smith runs the meetup.' -> devin.",
+   "suggested_fix": "Add 'copilot', 'cognition' and 'aider' to AMBIGUOUS_NAMES. Sandbox mutant /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-r3-probe/mut: every lowercase case clears. Recall on recall.py stays 23/26, and copilot.py keeps 'GitHub Copilot Enterprise', 'Copilot Workspace' and 'github-copilot'. It loses 'Copilot coding agent opens PRs.' (add 'coding agent' as a cue, or accept it). Ask the user to accept a capitalised Devin as a person name as a residual risk."
+  },
+  {
+   "severity": "minor",
+   "location": "materialize_solution_artifacts.py:_modifier_before (PRODUCT_MAKERS)",
+   "problem": "A maker word exempts the compound check unconditionally, so 'Melty' used generically still yields the product. This is a new false positive compared with e14d934.",
+   "evidence": "fp3.py: 'Melty Conductor tracks distort when the vinyl gets warm.' -> conductor (e14d934: []). The case is contrived.",
+   "suggested_fix": "Also require a product cue or a subject verb from the agentic lexicon after '<Maker> <Name>', or accept this as a known residual and pin it in the corpus."
+  },
+  {
+   "severity": "minor",
+   "location": "materialize_solution_artifacts.py:_without_absence_clauses (hard-exclusion loop, _NEGATION_BEFORE 48-char window)",
+   "problem": "Any negation word in the 48 characters before 'hard exclusion' disables the blanking, even when the negation is about something else. Two regressions against e14d934 tick hard-excluded vendors.",
+   "evidence": "python3 /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-r3-probe/tools/absence3.py / hx.py /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-r3-probe/head/skills/silver-deep-research-multi-ai/scripts: 'Unlike Director, Sweep and Windsurf are hard exclusions that provide workflow composition.' -> sweep-ai and windsurf WC; 'Not every tool qualifies: Sweep is a hard exclusion and provides workflow composition.' and 'Unlike Director, Sweep is a hard exclusion that provides ...' -> sweep WC. All three gave {} at e14d934. The impact is low because these vendors are excluded from the matrix.",
+   "suggested_fix": "Accept only a negation that governs the marker: r'\\b(?:not|never|unlike)\\s+(?:on\\s+)?(?:a|an|the)?\\s*hard[- ]exclusion' (or 'isn't'), not any negation word anywhere in the window."
+  },
+  {
+   "severity": "minor",
+   "location": "materialize_solution_artifacts.py:_GATE_VERB_BEFORE ({0,60}) and _ANAPHORIC_LEAD",
+   "problem": "Absence leaks toward false ticks. A gate verb up to 60 characters before the marker exempts it even when the verb does not govern the marker. An absence sentence that opens with 'However,', or one written as 'This is unresearched.', does not reach the claim before it.",
+   "evidence": "absence3.py: 'Deepwork blocks nothing and provides workflow composition with no evidence.', 'Deepwork stops at marketing copy and provides workflow composition with no evidence.', 'Deepwork provides workflow composition; however, no independent evidence was found.', 'Deepwork provides workflow composition. However, there are no claims backing this.' and 'Deepwork provides workflow composition. This is unresearched.' -> deepwork WC. The same holds at e14d934. Overall 10/28 leaks (e14d934: 14/28).",
+   "suggested_fix": "Accept the gate verb only when it is followed by an object and then with|without|on (for example '<gate verb> <noun phrase of up to 4 words> (?:with|without|on) (?:no|missing)'). Add however|this is|this was|it is to _ANAPHORIC_LEAD. Pin the new cases."
+  },
+  {
+   "severity": "minor",
+   "location": "skills/silver-deep-research-multi-ai/tests/fixtures/vendor_mention_corpus.json",
+   "problem": "The corpus is complete for r2/fp2, absence2 and recall, but leaves out the r1 absence.py sentences. That includes a standing false tick and a recall loss. The known_miss reason for 'Director, which is not a hard exclusion, ...' is wrong.",
+   "evidence": "Missing: 'Silver Bullet provides workflow composition; Barkain Workflow Orchestrator does not.' (ticks barkain WC, a false tick, at every version), 'Silver Bullet enforces hook-enforced gates that refuse delivery on missing evidence files.' ({}), 'Copilot coding agent opens PRs.' and 5 more. hx.py: 'Silver Bullet, which is not a hard exclusion, provides ...' and 'Director, which is in scope, provides ...' also give {} with nothing blanked. So the cause is the appositive '<Vendor>, which ..., provides' in the feature parser, not 'a sentence-initial name without a verb'.",
+   "suggested_fix": "Add the r1 absence.py and copilot.py sentences (pinning known misses or false ticks explicitly), and correct the known_miss note."
+  },
+  {
+   "severity": "minor",
+   "location": "materialize_solution_artifacts.py:parse_feature_support (pre-existing)",
+   "problem": "parse_feature_support is quadratic in the claim length. The absence pass is no longer the bottleneck.",
+   "evidence": "python3 /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-r3-probe/tools/perf5.py: 3 KB 0.9 s, 6 KB 2.6 s, 13 KB 8.5 s, 26 KB 29.8 s at head; e14d934 takes the same time. A 200 KB claim did not finish in more than 8 minutes. Realistic claims are a few KB.",
+   "suggested_fix": "Out of scope for this package. Track it as a follow-up: profile the per-sentence loop (likely repeated mentions_vendor/_extract_slugs work per vendor per sentence over the whole text)."
+  }
+ ],
+ "validation": {
+  "tests": "bash tests/run-all-tests.sh tests/scripts/test-solution-research-python.sh tests/scripts/test-multi-ai-deep-research-contract.sh: 670 passed, 0 failed (unittest discovery includes test_vendor_mention_corpus). Mutation (mut2) fails 5/11 corpus tests.",
+  "coverage": "run-coverage.sh --cov-dir /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-r3-probe/cov --only the 3 changed scripts tests/scripts/test-multi-ai-deep-research-contract.sh: 100.00% (materialize 1219/1219, 690/690; dr_multi_ai_cli 206/206, 52/52; pack_vocabulary 66/66, 12/12). A first attempt through test-solution-research-python.sh collected no Python data (0%, a tooling artefact: the unittest subprocess is not traced). known-limits.json valid.",
+  "lint": "bash scripts/lint-shell.sh --all --jobs 2: exit 0",
+  "invariants": "check-repo-invariants 0; generate-hook-reference --check 0; generate-apo-artifacts --check 0; validate-plugin-mirror OK. The 5 copies of each of the 3 scripts are identical. Trailers on b2ffb64/fda31eb/fc61567 are 'Co-Authored-By: Claude Sonnet 5.5' plus the correct Claude-Session (accepted by FIX-BRIEF); no other model names. git merge-tree --write-tree 94800f8 (current claude/optimistic-ramanujan-tccfud) fc61567: clean (73737e4), and the target has not touched these skills since 127e2f9. Worktree untouched (git status clean)."
+ }
+}

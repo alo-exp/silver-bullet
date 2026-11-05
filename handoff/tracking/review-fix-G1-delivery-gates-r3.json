@@ -1,0 +1,131 @@
+{
+ "package": "G1-delivery-gates",
+ "head_reviewed": "52cbef5",
+ "verdict": "CHANGES_REQUIRED",
+ "per_finding": [
+  {
+   "id": "r2-major MCP prefilter (completion-audit.sh:7-19)",
+   "verdict": "fixed",
+   "notes": "Top-level .tool_name via jq. p9.sh: actions_run_trigger with inputs.tool_name=mcp__x__get_y -> DENY; tool_input-before-tool_name order -> DENY; unicode-escaped name (\\u006derge_pull_request) -> DENY; NUL-embedded name -> DENY; trailing-space name -> DENY; array-valued tool_name -> DENY; 2.6/3/8 MB merge_pull_request payloads on stdin -> DENY; get_file_contents / context7 resolve-library-id -> allow. Duplicate top-level key (last wins = get_y) -> allow and unparseable JSON -> allow: host-generated payloads, not agent-controllable (no issue). Mutation (restore greedy sed) fails 1 test row."
+  },
+  {
+   "id": "r2-major push to default branch (R1-22, ca_push_is_feature_only)",
+   "verdict": "incomplete",
+   "notes": "Allowlist closes the r2 rows and the listed catalog (p1.sh, 62 commands): main/HEAD:main/+main/refs/heads/main/:main/feat:main/@:main/HEAD~0:main, tags, --tags/--all/--mirror/--follow-tags, ':' and glob refspecs, -d/--delete, extra refspec, unknown branch, $B / B=main / $(echo main), GIT_DIR=, env GIT_DIR, --git-dir, --exec-path, -c alias.p=push, \\git/g\\it/'git' main, xargs/sh -c/eval/base64 main, /usr/lib/git-core/git-push, -C/cd into a main worktree (incl. pushd, subshell, '|| true', if/for bodies, CDPATH, cd $(echo ..), backticks), -C nonexistent -> all COMPLETION. Honest feature pushes (16 variants incl. -u origin HEAD, bare push, --force-with-lease, pipelines, chained commit, subdir cwd, other repo's feature branch) stay intermediate. But six new bypass classes remain under-gated, four verified to move the real remote main or a tag (issues 1-4)."
+  },
+  {
+   "id": "r2-major MCP writes to the default branch",
+   "verdict": "incomplete",
+   "notes": "push_files/create_or_update_file/delete_file/create_commit/create_branch with branch main, master, refs/heads/main, HEAD, missing, non-string -> COMPLETION; create_tag/create_ref/update_ref/update_pull_request_branch -> COMPLETION; feat/x -> intermediate. Default names come only from the local checkout, so a write to another owner/repo's default branch passes (issue 5). Mutation (always feature) fails 14 rows."
+  },
+  {
+   "id": "r2-major cert bypass (R4-01/R1-36)",
+   "verdict": "fixed",
+   "notes": "cert probes (27): real HOME + PRESERVE + /tmp state (existing or not) -> gated; HOME=/tmp/x -> BYPASS (intended); HOME symlink to /root, HOME/.claude symlink to /root/.claude, /tmp/../root, /tmp/x/.., /tmp/./../root, /root/../tmp/x, //tmp/x, relative, /tmp itself, /tmpfoo, sandbox HOME + state under /root -> gated; TMPDIR=/root -> gated; pi PI_CODING_AGENT_DIR=/root/.pi/agent and codex KAY_HOME=/root -> gated; SB_AGENT_CERT_RUN=0/TRUE -> gated. No getent: python3 fallback returns /root. Neither available: passwd home empty, then only the fixed temp-root rule applies (acceptable). Residual (a child with HOME in /tmp has no SB plugin anyway) is sound."
+  },
+  {
+   "id": "r2-major gh api release target (R1-19/R13-08)",
+   "verdict": "incomplete",
+   "notes": "prel.sh: -f/-F/--field/--raw-field/--field=/--raw-field=/-fk=v/-Fk=v, full URL, {owner}/{repo} placeholders, gh api user && releases call -> RED (correct); two releases api calls, --input file/=file/-, $T, -F @file, nonexistent target -> deny 'cannot determine release commit'; MCP create_release target/tag -> correct or deny. Still wrong commit (origin/HEAD instead of RED): '-p corsair'/'--preview corsair' before the endpoint, a second release created by 'gh release create ... && gh api .../releases -f target_commitish=RED' or a second 'gh release create --target RED', and duplicate fields '-f target_commitish=main -f target_commitish=RED' (gh uses the last). Issue 6."
+  },
+  {
+   "id": "r2-major dead line deploy-tier.sh:217",
+   "verdict": "fixed",
+   "notes": "Removed; deploy-tier.sh 417/417 in the scoped run."
+  },
+  {
+   "id": "r2-minor ci-status helper fallback",
+   "verdict": "fixed",
+   "notes": "python3 stub: MCP create_pull_request/merge/create_release/push_files/enable_pr_auto_merge/create_pull_request_with_copilot, gh pr new, gh release new, gh pr merge, git push spellings -> DENY; list_branches/get_file_contents, git status, npm test -> allow. 'gh api repos/o/r/pulls -X POST' still passes the CI check when the helper is down (completion-audit denies it anyway; noted, no issue)."
+  },
+  {
+   "id": "r2-minor helper-failure wording",
+   "verdict": "fixed",
+   "notes": "pfp.sh: 'cannot inspect: Silver Bullet's shell analysis helper failed (the python3 helper failed: ...' (no nesting)."
+  },
+  {
+   "id": "r2-minor core-rules.md / CLAUDE.md",
+   "verdict": "fixed",
+   "notes": "core-rules.md item 5 states the strict push rule; hooks/core-rules.sha256 = sha256(core-rules.md) = 7422e2c3...; test-core-rules-integrity passes; CLAUDE.md two-tier section updated. Both still claim 'anything unresolvable counts as final delivery', which issues 1-4 contradict until fixed."
+  },
+  {
+   "id": "r2-minor getent on macOS",
+   "verdict": "fixed",
+   "notes": "python3 pwd fallback verified with a PATH lacking getent."
+  },
+  {
+   "id": "r2-minor merge trailers / adapter hand-off",
+   "verdict": "ok",
+   "notes": "Left to the orchestrator (F2 precedent). Non-merge commits all carry Co-Authored-By Claude Sonnet 5.5 + Claude-Session; merges 72a1df2 and af3bfbd have none (added at merge time)."
+  },
+  {
+   "id": "author note: git-core helper push is completion",
+   "verdict": "ok",
+   "notes": "tests/hooks/test-shell-analysis-gates.sh:85-86 now expects COMPLETION BLOCKED for '/usr/lib/git-core/git-push origin HEAD'; the test passes (claude, in the coverage run). Right behaviour: the allowlist only parses argv of a program named git, a direct helper call is rare and not provably a feature push, and DECISIONS F2 says the strictest tier for unseen code."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "major",
+   "location": "hooks/lib/completion-audit/classify.sh:265-279 (ca_push_is_feature_only: HEAD/@/bare push resolution)",
+   "problem": "HEAD, @ and a bare push are resolved against the branch checked out when the hook runs, not after the earlier segments of the same command. A command that switches to the default branch first and then pushes HEAD is classified as a feature push.",
+   "evidence": "p8.sh on feat/x with planning floor: 'git checkout main && git push origin HEAD', 'git switch main && git push', 'git checkout -q main; git push origin @', 'git stash; git checkout main; git push -u origin HEAD', 'git symbolic-ref HEAD refs/heads/main && git push origin HEAD' -> 'Intermediate commit allowed' (claude and codex exec_command). Real run of 'git checkout -q main && git push origin HEAD': remote main 33d9a74..47ea660.",
+   "suggested_fix": "If any earlier command in the analysis can change HEAD (git checkout/switch/symbolic-ref/update-ref HEAD/stash/rebase/worktree, or any opaque segment), treat HEAD/@/bare pushes as completion; only resolve HEAD from the hook's checkout when nothing before the push can move it. Add test rows."
+  },
+  {
+   "severity": "major",
+   "location": "hooks/lib/completion-audit/classify.sh:247-256 (directory resolution)",
+   "problem": "A push whose working directory the analysis could not resolve (cwd null) is placed in the hook's own cwd: '$c.cwd' null becomes '' in @tsv, and 'cd \"\"' then pwd -P returns the hook cwd. A cd inside a function body is not tracked either. The documented rule ('unresolved directories are completion') does not hold.",
+   "evidence": "p5/p6.sh: 'cd \"$(cat dirfile)\" && git push origin HEAD', 'cd \"$(head -1 dirfile)\" && git push', 'read D < dirfile; cd \"$D\" && git push origin HEAD', 'D=$(cat dirfile); cd $D; git push', 'cd \"$OLDPWD\" && git push', 'cd \"$D\" && git push', 'f(){ cd <main worktree>; }; f; git push origin HEAD' -> intermediate (dirfile holds the main worktree path). Real run of the function form: remote main 174071b..33d9a74.",
+   "suggested_fix": "Return 1 when a push command's cwd is null/empty (emit a sentinel instead of an empty TSV field), and have the analyzer mark cwd unknown after calling a shell function that runs cd (or after any function call). Add rows for each form."
+  },
+  {
+   "severity": "major",
+   "location": "hooks/lib/completion-audit/classify.sh:226-246 / 268-286 (git configuration not consulted)",
+   "problem": "The destination is read from argv only. Git config changes what a push sends: remote.<name>.push maps an explicit 'git push origin feat/x' (and bare pushes) to another ref, push.default=upstream/matching pushes the upstream or every matching branch, push.followTags pushes tags, remote.<name>.mirror mirrors. Both stored config (set by an earlier, ungated 'git config') and inline 'git -c' are accepted ('-c' is skipped without being judged).",
+   "evidence": "p2/p10.sh: stored remote.origin.push=refs/heads/feat/x:refs/heads/main then 'git push origin feat/x' -> intermediate, real push 'feat/x -> main' (359430d..330bebe); push.default=upstream with upstream origin/main, 'git push' -> intermediate, real 'feat/x -> main'; push.default=matching, 'git push' -> intermediate, real 'main -> main'; 'git -c push.followTags=true push origin feat/x' -> intermediate, real '* [new tag] v7.0'; stored push.followTags=true -> intermediate; 'git -c remote.origin.push=...:refs/heads/main push origin feat/x', 'git -c push.default=matching push', 'git -c remote.origin.mirror=true push origin feat/x' -> intermediate.",
+   "suggested_fix": "Treat any 'git -c' on a push as completion (or allow only a short list of harmless keys), and before allowing, read the target repo's config: remote.<remote>.push, remote.<remote>.mirror, push.default (allow only unset/simple/current) and push.followTags must be unset/false, else completion. Add tests with stored and inline config."
+  },
+  {
+   "severity": "major",
+   "location": "hooks/lib/completion-audit/classify.sh:274-283 (destination kind) and ca_default_branch_names",
+   "problem": "Destinations are checked against LOCAL refs and origin's default only. Git resolves an unqualified destination against the REMOTE's refs, so a local branch named 'heads/main' or named like a remote tag passes; and the default of any remote other than origin (or a URL remote) is never consulted.",
+   "evidence": "p3.sh: with local branch heads/main, 'git push origin feat/x:heads/main' -> intermediate, real push 'feat/x -> main' (remote main 4e42840..28a3c6e); with a local branch rtag and remote tag rtag, 'git push origin +feat/x:rtag' -> intermediate, real '+ feat/x -> rtag (forced update)' moves the remote TAG; second remote up with HEAD -> develop: 'git push up develop', 'git push up feat/x:develop', 'git push <url>/up.git develop' -> intermediate.",
+   "suggested_fix": "Require every destination to be written as, or resolve to, refs/heads/<name> where <name> contains no 'heads/' / 'tags/' / 'remotes/' prefix component; reject (completion) unqualified destinations that match a remote-tracking tag or that the remote may resolve differently (or simply require refs/heads/ qualification for anything ambiguous). Compute default names for the remote actually pushed to (refs/remotes/<remote>/HEAD, and completion for URL remotes or remotes without a known HEAD)."
+  },
+  {
+   "severity": "major",
+   "location": "hooks/lib/completion-audit/classify.sh:291-302 (ca_mcp_write_is_feature_only)",
+   "problem": "The default-branch names come from the local checkout ($PWD), but the MCP write targets tool_input.owner/repo, which may be any repository. A write to another repository's default branch (e.g. 'develop') passes as a feature write.",
+   "evidence": "p9.sh: push_files / create_or_update_file / delete_file / create_commit with owner o, repo r, branch 'feat/nonexist' (stand-in for another repo's default 'develop') -> 'Intermediate commit allowed'; code reads only ca_default_branch_names \"$PWD\".",
+   "suggested_fix": "Allow intermediate only when owner/repo match the local origin remote (parse remote.origin.url) and the branch is non-default there; otherwise completion. Add a test row."
+  },
+  {
+   "severity": "major",
+   "location": "hooks/lib/completion-audit/deploy-tier.sh:16-44 (ca_release_commit_sha)",
+   "problem": "The release commit is still taken from the wrong place for valid gh spellings: (a) '-p/--preview NAME' is missing from apivals, so the endpoint is misread and the releases call is not found; (b) a command that creates two releases (gh release create + gh api releases, or two gh release create) checks only the first; (c) repeated target_commitish fields take the first while gh sends the last.",
+   "evidence": "prel.sh (origin/main=OM green, RED=597e2ad): 'gh api -p corsair repos/o/r/releases -f target_commitish=RED' -> OM; '--preview corsair' -> OM; 'gh release create v9 --target main && gh api repos/o/r/releases -f tag_name=v10 -f target_commitish=RED' -> OM; 'gh release create v9 --target main && gh release create v10 --target RED' -> OM; 'gh api repos/o/r/releases -f target_commitish=main -f target_commitish=RED' -> OM. Also 'repos/o/r/releases/' (trailing slash) -> OM (if GitHub accepts it).",
+   "suggested_fix": "Add -p/--preview to apivals; count ALL release creations (gh release create commands + releases API calls + MCP) and deny 'cannot determine release commit' when there is more than one; deny when target_commitish/tag_name appears more than once; accept an optional trailing slash in the endpoint regex."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/lib/completion-audit/classify.sh:280-282",
+   "problem": "Over-gating of an honest flow: a branch created in the same command does not exist when the hook runs, so the new-branch push is final delivery.",
+   "evidence": "p8.sh: 'git checkout -b feat/n && git push -u origin feat/n' -> COMPLETION BLOCKED (planning floor met). 'git switch -c feat/n && git push -u origin HEAD' -> intermediate (but only because HEAD is resolved to the pre-command branch, see issue 1).",
+   "suggested_fix": "Accept a destination created by an earlier 'git checkout -b/switch -c/branch NAME' in the same analysis (and resolve HEAD to it), once issue 1 is fixed."
+  },
+  {
+   "severity": "minor",
+   "location": "coverage of the changed files (author's test list)",
+   "problem": "One scoped run over the author's 40 test files does not show 100% on all changed files: capability-tier.sh 50%, enforcement-tier-gate.sh 79.71%, hook-bootstrap.sh 77.36%, enterprise-policy.sh 96.77%, classify.sh 98.58% (19, 20, 73), stop-check.sh 99.75% (326). Every one of these misses is a pre-existing line outside G1's diff hunks (intersection checked), covered by other test files (test-tier-libs.sh, test-hook-bootstrap-lib.sh, test-lib-faults.sh ...) that the list omits; every G1-changed line is covered.",
+   "evidence": "REVF-G1-r3-probe/coverage-report.txt (3943 passed, 0 failed). Changed hunks: capability-tier 4-9,63-65; enforcement-tier-gate 25-36; hook-bootstrap 82; enterprise-policy 154-283; classify 80-111,130,137-159,199-314; stop-check 200-201; none in the missing lists.",
+   "suggested_fix": "Add the owning test files of these libs to the coverage list so a single run shows 100% (no code change needed)."
+  }
+ ],
+ "validation": {
+  "tests": "Claude: the author's 40 coverage test files in one traced run: 3943 passed, 0 failed (includes test-shell-analysis-gates.sh with the git-core expectation, test-python-unit.sh). Codex (SILVER_BULLET_RUNTIME=codex): delivery-gates-g1, ci-status-check-paths, shell-analysis-gates, hook-faults-gates, completion-audit-release, cert-bypass, stop-check, deploy-gate-snippet, ci-status-check, core-rules-integrity, template-parity: 777 passed, 0 failed. Mutations on a small archive copy of test-delivery-gates-g1.sh (230/0 baseline): refspec default check removed -> 10 fail; MCP branch rule always-feature -> 14 fail; greedy sed prefilter restored -> 1 fail. About 300 attack commands in probes p1-p10, cert, prel, pci, pfp (REVF-G1-r3-probe/).",
+  "coverage": "ONE scoped run (--only the 27 changed .sh/.py files, the author's 40 test files): every G1-changed line covered; shell_analysis.py 3494/3494 stmts, 1880/1880 branches (100%); 20 of 26 Bash files 100% (ci-status-check, completion-audit, deploy-tier, cert-bypass, change-class, gates, planning-tier, doc-scheme-gate, stop-check 405/406 ...). Not 100% in this run: capability-tier 50%, enforcement-tier-gate 79.71%, hook-bootstrap 77.36%, enterprise-policy 96.77%, classify 98.58% (19,20,73), stop-check 326; all pre-existing lines outside G1 hunks whose owning tests are not in the author's list, so 100% in one run needs those test files added (second coverage run not allowed by the brief). Report: REVF-G1-r3-probe/coverage-report.txt; traces deleted.",
+  "lint": "lint-shell --all --jobs 2: rc 0 (application 358 files clean, tests 745 files clean). Bash 3.2: no Bash 4 constructs in the new classify.sh code (read -a, ${a[@]+...}, process substitution are 3.2-safe).",
+  "invariants": "check-repo-invariants rc 0 (no FAIL); generate-hook-reference --check up to date; generate-apo-artifacts --check rc 0; validate-plugin-mirror OK; sync-codex-package.sh on a git-archive copy: rc 0, no diff; docs/workflows == templates/workflows; hooks.json valid; core-rules.sha256 matches core-rules.md. Trailers: all 11 non-merge commits carry Co-Authored-By Claude Sonnet 5.5 + Claude-Session, no model names elsewhere; merges 72a1df2/af3bfbd have none (added at merge time). merge-tree vs b654bc1: clean, tree f30f571 == HEAD tree (b654bc1 is an ancestor). merge-tree vs fix/G2-planning-floor (1543ad5): conflicts in docs/HOOKS.md, hooks/hooks.json, hooks/cursor-hooks.json, plugins/silver-bullet/cursor-hooks.json, scripts/deploy-gate-snippet.sh, tests/integration/test-session-scenarios.sh (deploy-gate-snippet.sh is new since r2; hooks.json/HOOKS.md/cursor files are the expected hand-off)."
+ }
+}

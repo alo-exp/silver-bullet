@@ -1,0 +1,87 @@
+{
+  "package": "F1-output-paths",
+  "head_reviewed": "eadf8bd907038c32d8b05cb756b384d20860d95d",
+  "verdict": "CHANGES_REQUIRED",
+  "per_finding": [
+    {
+      "id": "R2-28",
+      "verdict": "fixed",
+      "notes": "Original probe (state.trivial_file=$SR/../../victim, SessionStart startup) deletes ~/victim on base 02eff38 and leaves it intact on eadf8bd. Attacked 13 variants through session-start (rm) and record-skill (append): symlinked parent dir, leaf symlink out, sub/../outlink, '..', './..', '//..//', nonexist/../../.., loop/../../.., ~/.claude/./.silver-bullet/../.., '~/...' forms, trailing slash: all SAFE (REVF-F1b-probe/scripts/p2-variants.sh). Unit matrix of ~55 inputs (u1-state.sh): '..', root itself, '$SR/.', '$SR/..', symlink loops (self, 2-cycle), dangling-out link, relative/absolute/chained links, nonexistent components, spaces/unicode/tab, CR/LF rejected, relative rejected, symlinked state root (accepted canonically, escape rejected), root->/ rejected, extra roots validated: all correct. Honest in-root paths (custom state file, ~ state file, sub/../x) still work. Residual (by design, R3-02/G1): a configured in-root trivial_file is still deleted by session-start."
+    },
+    {
+      "id": "R3-05",
+      "verdict": "fixed",
+      "notes": "Original probe (state_file ~/.claude/.silver-bullet/../../profile-victim) appends 'silver-plan' on base, untouched on fix; skill lands in the default state file. Fixed in the shared predicate, so all 20+ callers benefit; env override SILVER_BULLET_STATE_FILE=$SR/outlink/v also rejected. Mutation check: restoring the string-prefix accept makes test-state-path-containment 4 passed/14 failed and test-runtime-paths 90/14."
+    },
+    {
+      "id": "R5-01",
+      "verdict": "ok",
+      "notes": "Partial by design and correctly scoped: session-start graphify/agentmemory clears and record-graphify-query no longer touch ~/.bashrc_victim/.gitconfig_victim/.profile_victim (base: deleted/overwritten). The unscoped token-compression usage_state_file path (the RTK overwrite in R5-01) and the 'declare -f'-conditional checks in graphify/agentmemory/leanctx libs remain; they belong to H4a per PKG-NOTES (which already says to use sb_runtime_state_path). Severity of the remainder is still critical until H4a lands."
+    },
+    {
+      "id": "R3-21",
+      "verdict": "incomplete",
+      "notes": "Partial disposition is sound (shared emitters now emit only documented fields, one JSON document, hookEventName whenever hookSpecificOutput is present, never permissionDecision allow - verified with hostile strings for jq/python3 paths and a 'decision allow/approve/ALLOW/Allow' matrix; mutation emitting allow fails test-hook-output). But the new Bash encoder is broken on Bash <= 4.2 (issue 1), and the Cursor bridge change overrides deny reasons with notices (issue 4). Note also: timeout-check's STALL BLOCK / stall warnings are model-directed but now go to systemMessage, which Claude shows only to the user; R3-21's proposed fix asked for additionalContext where the model must see the text (no regression vs base, which used the undocumented message field)."
+    },
+    {
+      "id": "R1-29",
+      "verdict": "incomplete",
+      "notes": "Fixed on Bash >= 4.3: in an SB project without jq, 'sudo apt-get install -y jq', 'brew install jq', read-only commands pass; completion-audit no longer denies Skill calls; non-SB repos are inert (git commit / echo deploy allowed). Bypass attempts all still blocked by at least one PreToolUse hook (p6-nojq-bypass.sh: 'brew install jq; git commit', newline, '&', '|', $(...), backticks, '|| git push', '&& git commit', echo $(git commit), find -exec, awk system(), git -c alias, env/\\git, codex cmd arrays). 'Outside SB' is decided by walking from the hook's $PWD for .silver-bullet.json + silver-bullet.md (no root cache), which the agent cannot change without a write the gates deny. Incomplete: on macOS Bash 3.2 compound remediation ('brew install jq && jq --version', 'sudo apt-get update; ...', 'command -v jq || brew install jq') is denied, and with python3 also missing completion-audit's deny is invalid JSON (issue 1); the allowlist is wider than 'install or probe jq' (issue 3); the block message says read-only commands are allowed although they are denied without python3 (issue 6). Skill calls stay denied by forbidden-skill-check/uat-gate (reasoned fail-closed; acceptable)."
+    },
+    {
+      "id": "R3-27",
+      "verdict": "incomplete",
+      "notes": "The literal case (env path outside the root, /tmp fallback, symlinked branch file) is fixed. But session-start still calls sb_branch_scope_write without the validated path (hooks/session-start:274,316), and sb_branch_scope_file re-derives the path with a different validator/spelling (sb_runtime_state_path: expands '~', strips trailing '/', canonicalises) than session-start's literal sb_runtime_path_is_state_scoped path. For SILVER_BULLET_BRANCH_FILE='~/.claude/.silver-bullet/branch-tilde', '$SR/branch2/' or '$SR/nonexist/../branch3' the exact R3-27 failure reproduces: write goes to one file, read to another, 'branch file write failed' on every start, and a branch switch is NOT detected (recorded skills survive into the new branch). Issue 2."
+    }
+  ],
+  "issues": [
+    {
+      "severity": "major",
+      "location": "hooks/lib/hook-output.sh:47-56, hooks/lib/jq-gate.sh:137-139",
+      "problem": "New code relies on Bash >= 4.3 quote removal of the replacement string in double-quoted pattern substitution (\"${s//\"$bs\"/\"$bs$bs\"}\", \"${cmd//\"$and_op\"/\"$nl\"}\"). In Bash <= 4.2 (macOS /bin/bash 3.2, RHEL/CentOS 7 bash 4.2) the quotes are kept literally (documented as compat42). Effects: (a) _sb_hook_json_bash produces invalid JSON for any text containing \\ \" newline CR tab or control chars, so every emitter's last-resort path (no jq, no python3) emits invalid JSON; completion-audit's jq-missing delivery deny, which on base fell back to a valid static deny, is now invalid (regression; dev-cycle-check's own static deny still blocks); (b) _sb_jq_allowed_without_jq inserts literal quotes when splitting on && || ;, so compound jq installs are denied on macOS without jq - the recovery path R1-29 promises. These are the only quoted-replacement constructs in hooks/; there is no macOS CI and the tests assert the opposite behaviour.",
+      "evidence": "BASH_COMPAT=32 (and 42) emulation. REVF-F1b-probe/scripts/p4-output.sh mode bash32: all 7 emitter calls -> 'INVALID Expecting , delimiter' (default bash: OK, round-trips). p5-compat.sh: COMPAT=32 NOBOTH completion-audit 'git push' -> 'INVALID JSON => {\"hookSpecificOutput\":{...\"permissionDecision\":\"deny\",...' ; COMPAT=32 NOJQ dev-cycle-check 'brew install jq && jq --version' -> deny, 'sudo apt-get update && sudo apt-get install -y jq' -> deny (default bash: allowed). Test files under BASH_COMPAT=32: test-jq-gate.sh 48 passed/6 failed (4 compound remediation cases, 'no python3: escaped command is not trusted' -> invalid JSON, 'delivery without python3: still blocked' -> invalid JSON); test-hook-output.sh 41/4 ('message via bash: nasty string round-trips', 'failing python3 falls back to the Bash encoder', 'message_json without jq or python3', 'decision via bash encoder'). Unit: BASH_COMPAT=32 _sb_hook_json_bash 'a\\b\"c<nl>d' -> \"a\"\\\"\"\\\"\\\"\"b... ",
+      "suggested_fix": "Avoid double-quoted replacement strings in hooks/. For the split, drop the outer quotes: segs=${cmd//\"$and_op\"/\"$nl\"} (verified identical under BASH_COMPAT=32/42 and 5.2). For the encoder, escape with a prefix/suffix loop instead of pattern replacement, e.g. while [[ $s == *\"$ch\"* ]]; do out=$out${s%%\"$ch\"*}$rep; s=${s#*\"$ch\"}; done (verified round-trip under BASH_COMPAT=32 and default). Add a BASH_COMPAT=32 pass of test-hook-output.sh and test-jq-gate.sh (or a lint rule banning //\"...\"/\"...\" in hooks/), and make test-lib-small-helpers' no-jq/no-python3 deny assertion validate JSON instead of assert_contains."
+    },
+    {
+      "severity": "minor",
+      "location": "hooks/lib/branch-scope.sh:28-38 vs hooks/session-start:217-219,251,274,316 (and stop-check.sh:458-473)",
+      "problem": "R3-27 variant: read and write still use different paths whenever the two validators disagree on spelling. session-start reads/checks the literal path accepted by sb_runtime_path_is_state_scoped (or the default when the literal is not absolute), but sb_branch_scope_write (called without the new FILE argument) writes to sb_branch_scope_file = sb_runtime_state_path(SILVER_BULLET_BRANCH_FILE), which expands '~', strips trailing '/' and resolves 'missing/..'.",
+      "evidence": "REVF-F1b-probe/scripts/p3-branch.sh: SILVER_BULLET_BRANCH_FILE='~/.claude/.silver-bullet/branch-tilde' -> session-start warns 'branch file write failed at .../.silver-bullet/branch', branch-tilde=[feature/test|...]; after git checkout -b <new> with state 'silver-plan' -> 'branch change NOT detected; state=[silver-plan ]'. Same for \"$SR/branch2/\" and \"$SR/nonexist/../branch3\"; \"$SR/./branch4\" behaves correctly.",
+      "suggested_fix": "Have one validator and one spelling: sb_branch_scope_file should return the literal SILVER_BULLET_BRANCH_FILE when sb_runtime_path_is_state_scoped accepts it (else $SB_RUNTIME_STATE_DIR/branch), and/or session-start should pass \"$branch_file\" as the new third argument at both sb_branch_scope_write calls. Add the tilde and trailing-slash cases to test-branch-scope.sh."
+    },
+    {
+      "severity": "minor",
+      "location": "hooks/lib/jq-gate.sh:33-36",
+      "problem": "The jq-missing allowlist is wider than 'install or probe jq': any VAR=value prefix with [-A-Za-z0-9_./:@%+,=] values is accepted (PATH=, BASH_ENV=, LD_PRELOAD=, DYLD_INSERT_LIBRARIES=, so brew - a bash script - or apt-get can be made to run repository code), and dnf/yum/zypper 'update' is a full system upgrade, not a metadata refresh. Not a new bypass class (with jq present, running a script that commits is not delivery-inspected either), but it contradicts the stated 'strict jq installs' policy and lets the agent run unvetted code while the gates are degraded.",
+      "evidence": "_sb_jq_allowed_without_jq: ALLOWED 'sudo dnf update -y', 'sudo yum update -y', 'sudo zypper update', 'BASH_ENV=./x.sh brew install jq', 'DYLD_INSERT_LIBRARIES=./x.dylib brew install jq'; through the hooks (p6): 'BASH_ENV=./evil.sh brew install jq', 'PATH=./bin:/usr/bin brew install jq', 'LD_PRELOAD=./x.so apt-get update' -> completion-audit allow, dev-cycle-check allow.",
+      "suggested_fix": "Allow no env prefixes, or only an allowlist (DEBIAN_FRONTEND, HOMEBREW_NO_AUTO_UPDATE, HOMEBREW_NO_INSTALL_CLEANUP, NONINTERACTIVE); keep 'update' only for apt/apt-get. Add negative tests."
+    },
+    {
+      "severity": "minor",
+      "location": "hooks/cursor-hook-bridge.sh:147-151 (with hooks/lib/hook-output.sh sb_emit_hook_decision NOTICE / sb_emit_hook_context Stop)",
+      "problem": "The bridge now copies a top-level systemMessage into hookSpecificOutput.message even when a permissionDecision deny is present; the later 'elif message' branch then overwrites agent_message, so in Cursor the agent sees the notice instead of the deny reason. sb_emit_hook_decision deliberately emits deny + systemMessage when NOTICE is given (advertised as the emitter for R2-01). Also a Stop notice (sb_emit_hook_context Stop -> systemMessage) becomes followup_message, which Cursor auto-submits as a new user turn. Latent: no current caller uses either shape.",
+      "evidence": "Stub hook printing sb_emit_hook_decision PreToolUse deny 'REAL REASON' '' 'just a notice' -> {\"hookSpecificOutput\":{...\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"REAL REASON\"},\"systemMessage\":\"just a notice\"}. Base bridge: {\"permission\":\"deny\",\"agent_message\":\"REAL REASON\",...}; fixed bridge: {\"permission\":\"deny\",\"agent_message\":\"just a notice\",\"user_message\":\"REAL REASON\"}. sb_emit_hook_context Stop 'fyi context' -> bridge stop -> {\"followup_message\":\"fyi context\"}.",
+      "suggested_fix": "Map systemMessage only when there is no permissionDecision (or never let message overwrite agent_message on a deny; append instead), and do not turn plain notices into followup_message on stop. Add a deny+notice bridge test."
+    },
+    {
+      "severity": "minor",
+      "location": "hooks/lib/path-canonical.sh:213-237",
+      "problem": "sb_path_is_within (the API offered to G2 for R2-18/R2-35) returns 2 'undecidable' as soon as the lexical spelling hits a symlink loop, even when the physical/kernel answer is 'inside' was already computed; a deny guard written with the natural 'if sb_path_is_within ...; then deny' idiom then allows a write that lands in the protected root. The union-of-forms semantics is also only safe for deny-if-inside guards and must never grant access; the header does not say so.",
+      "evidence": "proj/a -> proj/sub/deeper, proj/sub/L -> proj/.planning, proj/L -> L (self loop); target proj/a/../L/ROADMAP.md: sb_path_is_within rc=2, sb_canonical_path -> proj/.planning/ROADMAP.md, python realpath -> proj/.planning/ROADMAP.md, 'echo hacked > target' overwrote .planning/ROADMAP.md.",
+      "suggested_fix": "Return 0 when the physical form is inside regardless of lexical-form failures (return 2 only when the physical resolution itself fails), or make the predicate deny-oriented (any loop -> 0). Document that it is a deny-guard predicate and must not be used to allow. Optionally resolve the deepest existing ancestor with cd -P/pwd -P so non-ASCII case/normalisation variants on APFS match."
+    },
+    {
+      "severity": "minor",
+      "location": "hooks/lib/jq-gate.sh:41-53; docs/HOOKS.md:15 (docs/hooks-purpose.json)",
+      "problem": "Message/doc accuracy: the block text says 'read-only commands and jq installs are allowed', but without python3 read-only commands are denied (the classifier needs python3). HOOKS.md still says hooks are inert outside SB 'apart from the missing-jq case below', while the new jq line says nothing is blocked outside an SB project.",
+      "evidence": "p5-compat.sh: NOBOTH dev-cycle-check 'ls -la' -> deny with the message claiming read-only commands are allowed.",
+      "suggested_fix": "Say 'read-only commands (when python3 is available)'; drop the 'apart from the missing-jq case' clause in hooks-purpose.json and regenerate HOOKS.md."
+    }
+  ],
+  "validation": {
+    "tests": "Changed files (13) under claude: 644 passed/0 failed; key 8 under codex: 352/0; 23 consumer regression suites (session-start*, stop-check-paths, completion-audit-faults/paths, dev-cycle-check-faults, codex-hook-contract, symlink-guard, hook-audit, record-skill-*, gate libs incl. plugin-cache-guard and agentmemory sb_canonical_path users, *-paths): 1202/0; docs suite 198/0. Under BASH_COMPAT=32: test-jq-gate 48/6, test-hook-output 41/4 (issue 1). Mutation checks in a sandbox copy: containment revert -> test-state-path-containment 4/14, test-runtime-paths 90/14; raw branch env -> test-branch-scope 18/11; jq-gate always-in-project -> test-jq-gate 50/4; emitter allowing 'allow' -> test-hook-output 44/1; bridge mapping removed -> test-cursor-hook-bridge fails. test-project-libs replacement is correct (old assertion pinned the R3-27 bug: '/x/b' returned). Latency: completion-audit 742->725 ms, record-skill 478->504 ms per call (noise, under load).",
+    "coverage": "One scoped run (--only the 7 changed hook files, 17 test files): path-canonical.sh, hook-output.sh, jq-gate.sh, completion-audit.sh 100%; runtime-paths.sh 99.08% (missing 136, pre-existing receipt-dir code outside the diff); branch-scope.sh 93.85% (52,53,63,65 '|| true' arms, pre-existing lines covered by other suites); cursor-hook-bridge.sh 85.71% (pre-existing lines; the changed lines are in the Python heredoc and exercised by test-cursor-hook-bridge). Every changed Bash line is covered. known-limits.json valid and untouched.",
+    "lint": "bash scripts/lint-shell.sh --all --jobs 2: application Bash (354) and test Bash (728) clean.",
+    "invariants": "check-repo-invariants.sh PASS; generate-hook-reference.py --check, generate-apo-artifacts.py --check, validate-plugin-mirror.sh pass; docs/workflows == templates/workflows; silver-bullet.md/template untouched; no skills changed; 5 commits with exact trailers and no other model names; base 02eff38 is the current integration tip. Out-of-ownership edits are minimal and justified (completion-audit jq branch -> sb_jq_missing_delivery_gate, dead emit_block fallbacks removed; bridge mapping; tests/docs), but the bridge edit introduces issue 4 and completion-audit.sh may conflict with G1 edits near the top of the file."
+  }
+}

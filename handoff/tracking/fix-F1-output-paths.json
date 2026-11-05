@@ -1,0 +1,174 @@
+{
+ "package": "F1-output-paths",
+ "branch": "fix/F1-output-paths",
+ "head": "5b899b5fc4ef2d8bfc3e18d75772073eaa8f965f",
+ "worktree": "/home/user/silver-bullet/.claude/worktrees/agent-a16de97166714d115",
+ "dispositions": [
+  {
+   "id": "R2-28",
+   "status": "fixed",
+   "commits": [
+    "6726c0f"
+   ],
+   "tests": [
+    "tests/hooks/test-runtime-paths.sh: escape rejected: $SR/../../victim | $SR/../.silver-bullet-evil/state | $SR/escape/state | $SR/leaflink | $SR/ | $SR/sub/..; honest path accepted: $SR//state | $SR/sub/../state | $SR/inlink/state; state path: * (sb_runtime_state_path)",
+    "tests/hooks/test-state-path-containment.sh: session-start: '..' trivial_file outside the root is not deleted; session-start: trivial_file through a symlinked directory is not deleted; session-start: in-root trivial_file with an inner '..' is still cleared"
+   ],
+   "evidence": "Red: sb_runtime_path_is_state_scoped accepted $ROOT/.silver-bullet/../../victim, $ROOT/.silver-bullet/ and $ROOT/.silver-bullet/a/../../../x; test-runtime-paths.sh 75 passed/25 failed; session-start deleted ~/trivial-victim (\"MISSING\"). Green: test-runtime-paths.sh 104/0, test-state-path-containment.sh 18/0.",
+   "notes": "Containment is now canonical (physical '..', symlinked parents, a leaf symlink must point inside too, '//', trailing '/', root itself rejected). Residual by design of other packages: an in-root always-present file can still be named as trivial_file (R3-02), and session-start still honours a configured in-root trivial_file (R2-28 also suggests deleting only the default marker: a session-start change)."
+  },
+  {
+   "id": "R3-05",
+   "status": "fixed",
+   "commits": [
+    "6726c0f"
+   ],
+   "tests": [
+    "tests/hooks/test-state-path-containment.sh: record-skill: '..' state_file outside the root is not appended to; record-skill: skill recorded in the default state file; record-requested-skill: no <state>.requested outside the root; record-skill: in-root custom state file honoured",
+    "tests/hooks/test-runtime-paths.sh: state path: symlinked parent escaping rejected; state path: leaf symlink escaping rejected; state path: dangling parent symlink rejected"
+   ],
+   "evidence": "Red: record-skill appended 'silver-plan' to ~/profile-victim and record-requested-skill created ~/profile-victim.requested (state_file ~/.claude/.silver-bullet/../../profile-victim). Green: victim unchanged, skill recorded in $SB_RUNTIME_STATE_DIR/state.",
+   "notes": "Fixed in the shared validator, so every caller of sb_runtime_path_is_state_scoped (session-start, dev-cycle-check, stop-check, completion-audit, compliance-status, record-*, prompt-reminder, workflow-chain-guard, orchestrator-directive-guard, hook-audit, graphify/agentmemory/leanctx gate libs) is fixed without edits."
+  },
+  {
+   "id": "R5-01",
+   "status": "partial",
+   "commits": [
+    "6726c0f"
+   ],
+   "tests": [
+    "tests/hooks/test-state-path-containment.sh: session-start: graphify query_state_file with '..' is not deleted; session-start: agentmemory usage_state_file with '..' is not deleted; graphify/agentmemory/leanctx: escaping ... falls back"
+   ],
+   "evidence": "Red: on a branch change session-start deleted ~/graphify-victim and ~/agentmemory-victim; sb_graphify_query_state_path returned $ROOT/.silver-bullet/../../g. Green: victims intact, defaults cleared, libs return the default path.",
+   "notes": "The '..' escape is closed for every path that goes through the predicate. Not closed here (consumer files): hooks/lib/token-compression-tools-gate.sh sb_token_tool_usage_state_path applies no scope check at all (and reads cli_command from config); graphify/agentmemory/leanctx gate libs accept any path when runtime-paths.sh is not loaded (if declare -f). Both should call sb_runtime_state_path and fail closed. Opt-in being repo-controlled is R5-04."
+  },
+  {
+   "id": "R3-21",
+   "status": "partial",
+   "commits": [
+    "ca84d19",
+    "18b224a"
+   ],
+   "tests": [
+    "tests/hooks/test-hook-output.sh: message: systemMessage only; message via jq/python3/bash: nasty string round-trips; message: very long value; invalid UTF-8 replaced; context: *; decision: * (python schema check: one document, documented fields only, hookEventName whenever hookSpecificOutput is present, never permissionDecision allow)",
+    "tests/hooks/test-cursor-hook-bridge.sh: systemMessage notice reaches Cursor as additional_context / agent_message",
+    "tests/hooks/test-flow-advance-hook.sh: notice is a top-level systemMessage",
+    "tests/hooks/test-jq-gate.sh: warn is a systemMessage naming the hook"
+   ],
+   "evidence": "Red: test-hook-output.sh 4 passed/40 failed (undocumented hookSpecificOutput field 'message'; Bash fallback broke JSON; 'jq: Argument list too long' on 300 KB; python3 emitted \\udcff surrogates). Green: 45/0.",
+   "notes": "Shared emitters fixed, so compliance-status, record-skill, flow-advance and timeout-check now emit systemMessage; jq-gate warn fixed. Not verifiable live (no Claude CLI per brief); checked against the documented schema. Inline emitters still using hookSpecificOutput.message or omitting hookEventName, for their packages: session-log-init.sh:214-215,332; phase-lock-claim.sh:52,88,107,153; scripts/semantic-compress.sh:297; session-start jq-missing and prerequisite messages; dev-cycle-check emit_advisory and jq/err warnings; completion-audit emit_block PostToolUse branch and ERR trap; ci-status-check deprecation notice; forbidden-skill-check/uat-gate jq warnings."
+  },
+  {
+   "id": "R1-29",
+   "status": "fixed",
+   "commits": [
+    "18b224a",
+    "eadf8bd"
+   ],
+   "tests": [
+    "tests/hooks/test-jq-gate.sh: gate allows remediation/read-only: *; gate blocks: *; gate never blocks outside an SB project; a stale project-root cache does not make a repo an SB project; delivery: *; dev-cycle-check: jq install not denied; dev-cycle-check: writes still denied",
+    "tests/hooks/test-completion-audit-evidence-nojq.sh: initiated project without jq: 'sudo apt-get install -y jq' allowed; Skill calls are not denied; push blocked without jq; no SB project without jq: delivery is not blocked; no SB project without jq: delivery-looking text is not blocked; jq block says how to recover"
+   ],
+   "evidence": "Red: test-jq-gate.sh 26/26 failed (jq install, ls, Skill denied; non-SB repo blocked), test-completion-audit-evidence-nojq.sh 10 passed/12 failed. Green: 54/0 and 22/0.",
+   "notes": "completion-audit (delivery gate) blocks exactly what ca_classify_command calls delivery, in the payload's event format; the planning/protected-file gates allow strict jq installs/probes and read-only commands, and fail closed otherwise, so Skill calls stay denied by forbidden-skill-check/uat-gate until jq is installed (they cannot evaluate skills). Read-only detection reuses sb_shell_command_looks_read_only and delivery reuses ca_classify_command, so hardening by R1-12 applies to both paths."
+  },
+  {
+   "id": "R3-27",
+   "status": "fixed",
+   "commits": [
+    "bdf5bb8"
+   ],
+   "tests": [
+    "tests/hooks/test-branch-scope.sh: env path outside the root falls back to the state dir; nothing written outside the state root; read uses the same validated path as write; no state dir: no fallback path; symlinked branch file: write refused, caller keeps running; session-start: rejected branch file is not written; session-start: validated branch file initialised; session-start: no write-failure warning",
+    "tests/hooks/test-project-libs.sh: scope file override outside the state root is ignored (R3-27)"
+   ],
+   "evidence": "Red: test-branch-scope.sh 13/13 failed (session-start wrote the branch to the rejected path and warned 'branch file write failed'; fallback /tmp/branch; wrote through a symlinked branch file). Green: 29/0.",
+   "notes": "stop-check's unset SILVER_BULLET_BRANCH_FILE workaround is no longer needed (harmless)."
+  }
+ ],
+ "files_changed_outside_ownership": [
+  "hooks/completion-audit.sh: R1-29 - inline jq-missing branch replaced by sb_jq_missing_delivery_gate; emit_block's python/static fallbacks became unreachable and were removed",
+  "hooks/cursor-hook-bridge.sh: map a top-level systemMessage like hookSpecificOutput.message so Cursor keeps showing notices after R3-21",
+  "tests/hooks/test-completion-audit-evidence-nojq.sh: jq-missing expectations (R1-29)",
+  "tests/hooks/test-cursor-hook-bridge.sh: systemMessage mapping test",
+  "tests/hooks/test-flow-advance-hook.sh, tests/hooks/test-compliance-status-paths.sh, tests/hooks/test-timeout-check-paths.sh, tests/lib/c-toolgates-2-record-skill.sh: read .systemMessage (R3-21)",
+  "tests/hooks/test-project-libs.sh: replaced an assertion that pinned the R3-27 bug",
+  "tests/hooks/test-lib-small-helpers.sh: assertions for the changed jq-gate, hook-output and path-canonical behaviour",
+  "docs/hooks-purpose.json (+ regenerated docs/HOOKS.md), docs/CONFIGURATION.md, docs/ENFORCEMENT.md: jq-missing policy and state-path containment",
+  "hooks/session-start, hooks/stop-check.sh: branch file resolved with sb_runtime_state_path (R3-27 repair)"
+ ],
+ "validation": {
+  "tests": "16 F1 hook tests 861/0 under claude and codex after merging claude/optimistic-ramanujan-tccfud",
+  "coverage": "scoped run over 10 changed files, 1692 tests pass, exit 0; all 100% except hooks/session-start lines 495/503 (untouched pre-existing multi-line string continuation lines of the enterprise banner, an analyzer artifact; not in F1 diff)",
+  "lint": "lint-shell --all clean",
+  "invariants": "check-repo-invariants and generate-hook-reference --check pass"
+ },
+ "notes": "New/changed API: see the final message. Enablers for other packages: sb_path_is_within / sb_path_compare_key / sb_canonical_path for R2-18 and R2-35 guards; sb_emit_hook_decision for R2-01. Callers that build state paths without sb_runtime_state_path: hooks/lib/token-compression-tools-gate.sh (no check), hooks/lib/{graphify,agentmemory,leanctx}-gate.sh (check only if declared), hooks/ci-status-check.sh and the graphify/token-compression/rtk/alumnium/context-mode/agentmemory/leanctx/context-mode-read-deny gate hooks (.state.trivial_file unvalidated), hooks/lib/context-mode-read-deny.sh, scripts/deploy-gate-snippet.sh (rm -f of config-chosen STATE_FILE/TRIVIAL_FILE: already R1-25), hooks/session-start (predicate is fixed; could adopt the helper). graphify-out was not regenerated, to avoid conflicts on tracked generated files; refresh after merging. CLAUDE.md was not edited (its jq invariant remains accurate). nofollow-guard.sh unchanged: sb_guard_nofollow still exits the hook (R3-07, not in this package). Commit trailers use the model named by the session attribution reminder (Sonnet 5.5), not the Opus line in FIX-BRIEF.",
+ "repair_round": {
+  "id": "REPAIR-F1",
+  "commit": "db79336a37e44d8ce4d20a47bc081e4062508aa3",
+  "issues": [
+   {
+    "issue": "major: Bash<4.3 quoted replacement (hook-output.sh, jq-gate.sh)",
+    "status": "fixed",
+    "tests": "test-hook-output: bash encoder under BASH_COMPAT=32/42; test-jq-gate: compound remediation + no-python3 delivery deny valid JSON under BASH_COMPAT=32",
+    "evidence": "red: invalid JSON / compound installs denied; green: both suites also pass fully under BASH_COMPAT=32 (141/0)"
+   },
+   {
+    "issue": "R3-27 branch-file read/write mismatch",
+    "status": "fixed",
+    "tests": "test-branch-scope: session-start with x/../y, trailing-slash and ~ spellings",
+    "evidence": "red: 'branch file write failed' x3; green: recorded, no warning. session-start/stop-check now resolve with sb_runtime_state_path; write gets the file"
+   },
+   {
+    "issue": "jq-missing allowlist too wide",
+    "status": "fixed",
+    "tests": "test-jq-gate: PATH=/BASH_ENV=/LD_PRELOAD=/DYLD_*, dnf/yum/zypper/microdnf update denied; HOMEBREW_NO_AUTO_UPDATE/NONINTERACTIVE/DEBIAN_FRONTEND allowed",
+    "evidence": "8 red denies -> green"
+   },
+   {
+    "issue": "Cursor bridge notice overwrote deny reason / Stop notice auto-submitted",
+    "status": "fixed",
+    "tests": "test-cursor-hook-bridge: deny+notice keeps reason; stop notice has no followup",
+    "evidence": "2 red -> green"
+   },
+   {
+    "issue": "sb_path_is_within returned 2 for writes landing in protected root",
+    "status": "fixed",
+    "tests": "test-path-canonical: physical-inside/lexical-loop case and loop cases now 0",
+    "evidence": "4 red (rc 2) -> green; API is now deny-safe: 0 inside-or-undecidable, 1 only provably outside; header documents never to use for granting"
+   },
+   {
+    "issue": "wording/HOOKS.md",
+    "status": "fixed",
+    "tests": "test-jq-gate message assertion; docs suite 198/0",
+    "evidence": "hooks-purpose.json updated, HOOKS.md regenerated"
+   }
+  ],
+  "validation": "claude and codex: 647/0 on session-start*, stop-check*, codex contract, branch-scope, jq-gate, hook-output, path-canonical, bridge; plus 559/0 on 10 lib suites; BASH_COMPAT=32 141/0; docs 198/0; scoped coverage hook-output/jq-gate/path-canonical 100%; lint clean; invariants pass"
+ },
+ "repair_round_2": {
+  "commit": "118ed0c105c8dcde15e7575674a26abbfd5af7c7",
+  "fixed": [
+   "major coverage of session-start:377 / trivial-file-guard.sh:84",
+   "argv-array jq install payloads",
+   "option flags loading external config, pacman -Syu",
+   "encoder linear time + 64 KB timing test",
+   "branch-scope session-start loop strengthened",
+   "sb_path_is_within edge cases documented"
+  ],
+  "noted_not_changed": "hooks/dev-cycle-check.sh F-09 branch read (R3-13, owner G2): should use sb_branch_scope_read \"$(sb_branch_scope_file)\"",
+  "coverage": "one scoped run over all 10 changed hooks (+ trivial-file-guard.sh) with 2013-test and 324-test suites: 100% on each file",
+  "validation": "lint clean, invariants pass, docs 198/0, codex+claude branch-scope/jq-gate/hook-output green, BASH_COMPAT=32 green"
+ },
+ "repair_round_3": {
+  "commit": "see git log (fix(F1): repair round 3)",
+  "merge": "5b899b5fc4ef2d8bfc3e18d75772073eaa8f965f",
+  "fixed": [
+   "r3 major: wall-clock assertion removed, exact 64 KB round-trip instead",
+   "r3 minor: printf -v into array element replaced by scalar printf + assignment; test greps hooks/ for the pattern",
+   "r3 minor: _sb_hook_json_bash pins local LC_ALL=C; lead-byte+backslash regression test under C.UTF-8"
+  ],
+  "red": "lead-byte case garbled and printf-v grep failed: 50 passed/2 failed; green 52/0"
+ }
+}

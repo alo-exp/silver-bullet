@@ -1,0 +1,48 @@
+{
+ "package": "H8b-followup",
+ "head_reviewed": "9d13f14",
+ "verdict": "CHANGES_REQUIRED",
+ "per_finding": [
+  {
+   "id": "r7-major-1 matrix-slot credit",
+   "verdict": "fixed",
+   "notes": "_slot_vendors and the S4 path for ambiguous vendors are gone; _assign_support drops votes for blocked ambiguous vendors. r7 fp9 now 0/60 (was 47/60). New generative cell test (/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-r8-probe/tools/cells.py): 32 ambiguous vendors x 18 matrix/group/leader/core-set templates x 6 features x 4 row variants (untagged, tagged with other vendors, distinctive source_ref) = 13824 rows, 0 ambiguous-vendor cells. Distinctive matrix lines still tick (cc10x). Tagged ambiguous vendors still get cells (28/32 checkmark/entry lines, 31/32 prose)."
+  },
+  {
+   "id": "r7-major-2 Devin (Cognition) display",
+   "verdict": "fixed",
+   "notes": "Qualified-display machinery deleted; roster sentences credit nothing (fp9 group D 0/7); SKILL.md residual removed. But Devin is still reachable through the URL signal (see the major issue)."
+  },
+  {
+   "id": "r7-minor em-dash split",
+   "verdict": "fixed",
+   "notes": "Split deleted; 'Silver Bullet - Official Site' credits nothing; the 2 silver-bullet cells and 1 gsd cell are reported in review_repair_r7."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "major",
+   "location": "skills/silver-deep-research-multi-ai/scripts/vendor_identity.py:21 (_URL) and :121-129 (_url_vendors), used by signals() and url_slug()",
+   "problem": "The pack-URL signal, now the only text signal that credits an ambiguous vendor, matches any domain-shaped substring. It has no left boundary (underscore, '?', '#', '=' and '@' are all allowed before it), no right boundary (an '@' or '(' may follow), it runs on lower-cased text, and it needs no scheme, www. or path. So file names, method calls, email local parts and query or fragment values credit ambiguous vendors, Devin among them, and they tick feature cells.",
+   "evidence": "python3 /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-r8-probe/tools/fp10.py <worktree scripts> -> /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-r8-probe/out/fp10.txt: 10/76 false credits (url 8/18, src 2/38, tag 0/15, shared-spelling 0/5). Ambiguous credits: 'Export the logo as devin.ai and send it to print.' -> devin; 'Email devin.ai@school.edu for the roster.' -> devin; 'Add third_party/conductor.BUILD so Bazel can fetch Netflix Conductor.' -> conductor; 'WorkflowDef def = conductor.build(); registers the Netflix Conductor workflow.' -> conductor; 'The DOS program CURSOR.COM changes the caret shape.' -> cursor, cursor-agents; 'See user_cursor.com in the fixture list.' -> cursor; 'Redirect via https://example.org?next=cursor.com after login.' -> cursor; 'Redirect via https://example.org#tembo.io after login.' -> tembo; source_ref 'https://example.org?ref=cursor.com' or 'https://example.org#cursor.com' plus 'Cursor shapes differ per OS.' -> cursor. Cells (cells.py): 'Atomic flow catalog ✔ for Conductor, cc10x (see conductor.build() in the Netflix client)' -> conductor|Atomic flow catalog; the ?next=cursor.com line -> cursor|Atomic flow catalog. The generative test never puts pack-domain-shaped non-URLs in its templates, so it misses this. What-if (/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-r8-probe/tools/strict_url.py: boundary on both sides, host lower-case in the original text, and a scheme, www. or path required): fp10 0/76, and the real APO run is identical (23 slugs, the same classification, core and 101 cells).",
+   "suggested_fix": "In _url_vendors, match the original text, not a lower-cased copy, with a left lookbehind (?<![\\w@.?#=&%+/-]) and a right lookahead (?![\\w@(-]|\\.[A-Za-z0-9]). Credit a bare host only when it has a scheme, www. or a path, or when it is a whole source_ref segment. Add these r8 url/src sentences as a corpus set that expects 0 credits, and add pack-domain-shaped non-URL templates (file.ext, obj.method(), user@host local part, ?q=host, #host, _host) to the generative test."
+  },
+  {
+   "severity": "minor",
+   "location": "vendor_identity.distinctive_tokens rule (c), audit fixture entry autogen",
+   "problem": "The inner-capital rule makes 'autogen' distinctive, so the common build-tool word credits Microsoft AutoGen: 'Run ./autogen.sh before ./configure.', 'GNU AutoGen generates the option parser.' and 'The autogen files are checked in.' all credit autogen. The rule is mechanical and this is not an ordinary English word. AutoGen is sunset and not in the real matrix, so there is no impact today. A sample of the other 31 distinctive entries found no ordinary English words: agentgpt, agenthub, agentsys, ai-dlc, ateam, bmad-method, cavekit, cc10x, coderabbit, crewai, factory.ai, github (only inside the 'github copilot/spec kit' spellings), jetbrains, langchain, langgraph, magic.dev, metagpt, openhands, replit, ruflo, sourcegraph, superclaude, swe-agent, turboshovel, zuvo.",
+   "evidence": "python3 /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-r8-probe/tools/autogen.py",
+   "suggested_fix": "Document it as a residual, or make autogen ambiguous (an overlay entry that overrides distinctiveness) if AutoGen ever enters a matrix."
+  }
+ ],
+ "fp_reruns": "At 9d13f14: fp2 0/31, fp3 0/52, fp4 0/25, fp5 0/52, fp6 0/30, fp7 2/82 (the same 2 true distinctive mentions as before: LangChain, CrewAI), fp8 0/97, fp9 (r7) 0/60, s4 0/10, audit 0/14, lists2 (no ambiguous list credits; distinctive cc10x/cavekit still credited). Author corpus (451 plain-English sentences) and generative test pass inside the suite runs.",
+ "new_sentences": "fp10.py: 76 new cases (38 source_ref, 18 URL-in-text, 15 vendors-tag validation, 5 shared-spelling cross-credit), 10 false credits, all through the URL scanner. The vendors tag holds: a 13th tag, 'director-2', 'the director', a string, a dict, a nested list, 'director (film)', an 81+ char tag, 'directors', 'dir', 'cursor.com', a URL, 'openai', 'copilot', and None/int/'sdlc'/'apo' all credit nothing. Plain source_ref titles ('Director's Cut — Blu-ray review', 'Cursor (user interface) - Wikipedia', 'No Silver Bullet (Brooks, 1986)', 'Director-General report', 'Producer; Directorate', lower-case text, look-alike hosts such as cursor.com.evil.example, precursor.com, github.com/obra/superpowers-fanfic, github.com/) credit nothing. Accepted by design (not counted): a source_ref that is exactly the vendor plus a capitalised word in the text.",
+ "recall": "Tagged 81/81 and untagged 7/81 are pinned by the corpus test (passes). Distinctive prose spot-check rec6: 34/35 (the one miss is Barkain, ambiguous by design). Distinctive matrix lines still tick. r5 cued recall5: 4/30, the same as r7.",
+ "real_run": "23 matrix slugs, Director core, by_slug classification, matrix and core identical to d75d18e. Cells 126->101 (-30/+5), as the report says. Versus the r7 head: lost gsd|Free tier / OSS core and silver-bullet|Quick onboarding and |Zero-infra bootstrap, gained none. The two silver-bullet cells came from group smearing (the claim states neither feature), so losing them is correct. The gsd cell is a genuine single-vendor row lost because the em-dash title split is gone: an accepted precision-first recall loss. The report lists all three honestly.",
+ "validation": {
+  "tests": "run-all-tests.sh test-multi-ai-deep-research-contract.sh + test-solution-research-python.sh: 871 passed, 0 failed with SILVER_BULLET_RUNTIME=claude and again with codex.",
+  "coverage": "One scoped run-coverage.sh run (the 2 test files, --only on the 8 changed deep-research scripts): Python 2724/2724 statements, 1334/1334 branches, 100%; Python data was collected.",
+  "lint": "lint-shell.sh --all --jobs 2 on a git-archive copy: rc 0. The copy was deleted.",
+  "invariants": "check-repo-invariants rc 0; generate-apo-artifacts --check rc 0; generate-hook-reference --check rc 0; validate-plugin-mirror OK; sync-codex-package.sh leaves no diff. Trailers on 65c0e27 and 9d13f14: Co-Authored-By Claude Sonnet 5.5 + Claude-Session (accepted), with no other model names. merge-tree with claude/optimistic-ramanujan-tccfud (2a65018, already an ancestor): clean. The worktree is clean and unmodified."
+ }
+}

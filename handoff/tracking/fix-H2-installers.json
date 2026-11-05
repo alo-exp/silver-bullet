@@ -1,0 +1,400 @@
+{
+ "package": "H2-installers",
+ "branch": "fix/H2-installers",
+ "head": "04f3e687753999df9c95e38167d430615fd6e7bb",
+ "worktree": "/home/user/silver-bullet/.claude/worktrees/agent-a838f5a9aaeb484d9",
+ "dispositions": [
+  {
+   "id": "R7-02",
+   "status": "fixed",
+   "commits": [
+    "382dd5a"
+   ],
+   "tests": [
+    "tests/python/test_generate_cursor_hooks.py: QuotingTest.test_every_command_survives_a_plugin_root_with_spaces"
+   ],
+   "evidence": "red->green recorded in the commit message",
+   "notes": ""
+  },
+  {
+   "id": "R7-04",
+   "status": "fixed",
+   "commits": [
+    "3253376"
+   ],
+   "tests": [
+    "tests/python/test_merge_cursor_hooks.py: dropped-hook and changed-timeout upgrade tests; test_purges_stale_and_malformed_entries (now keeps codex-hook-adapter-notes.sh and $HOME/silver-bullet/1.0.0/hooks/lint.js)"
+   ],
+   "evidence": "red->green recorded in the commit message",
+   "notes": ""
+  },
+  {
+   "id": "R7-28",
+   "status": "fixed",
+   "commits": [
+    "3253376"
+   ],
+   "tests": [
+    "tests/python/test_merge_cursor_hooks.py: idempotent multi-matcher merge tests"
+   ],
+   "evidence": "red->green recorded in the commit message",
+   "notes": ""
+  },
+  {
+   "id": "R7-06",
+   "status": "fixed",
+   "commits": [
+    "bb6b5bf"
+   ],
+   "tests": [
+    "tests/scripts/test-install-codex-libs.sh: --purge-legacy-skills keeps unmarked/foreign skills, backs up SB-named unmarked copies"
+   ],
+   "evidence": "red->green recorded in the commit message",
+   "notes": ""
+  },
+  {
+   "id": "R7-07",
+   "status": "fixed",
+   "commits": [
+    "bb6b5bf"
+   ],
+   "tests": [
+    "tests/scripts/test-install-codex-libs.sh: 'the user's security skill untouched', 'an unmarked pre-marker SB mirror is replaced', 'a foreign symlink at a mirror name is kept'"
+   ],
+   "evidence": "red->green recorded in the commit message",
+   "notes": ""
+  },
+  {
+   "id": "R7-08",
+   "status": "fixed",
+   "commits": [
+    "bb6b5bf"
+   ],
+   "tests": [
+    "tests/scripts/test-install-codex-libs.sh: 'foreign registry records byte-identical', 'a foreign real current/ directory survives', 'no alias created in a foreign plugin cache'"
+   ],
+   "evidence": "red->green recorded in the commit message",
+   "notes": ""
+  },
+  {
+   "id": "R7-09",
+   "status": "fixed",
+   "commits": [
+    "bb6b5bf",
+    "ae12e03"
+   ],
+   "tests": [
+    "tests/scripts/test-install-codex-libs.sh: trust seeded once over implicit/header-comment tables, 'SB's own duplicate tables repaired', 'install-time repair reports', Kay re-key tests; tests/python/test_sb_host_config.py: sub-table-only parent, rename_tables, read_toml_repairing, first-backup tests; codex_marketplace_root header-comment and quote/backslash tests"
+   ],
+   "evidence": "red->green recorded in the commit message",
+   "notes": ""
+  },
+  {
+   "id": "R7-10",
+   "status": "fixed",
+   "commits": [
+    "bb6b5bf"
+   ],
+   "tests": [
+    "tests/scripts/test-install-codex-libs.sh: 'current plugin kept in the registry', 'current trust kept, retired id's removed'"
+   ],
+   "evidence": "red->green recorded in the commit message",
+   "notes": ""
+  },
+  {
+   "id": "R7-11",
+   "status": "fixed",
+   "commits": [
+    "31078b5"
+   ],
+   "tests": [
+    "tests/scripts/test-install-cursor-backend-cache.sh: user agent ... stays in place, 'silver-* user agent SB never shipped stays (dir/file)', 'unshipped namespace-named agent reported, not moved', 'SB-namespace agent dir quarantined' (shipped names only)"
+   ],
+   "evidence": "red->green recorded in the commit message",
+   "notes": ""
+  },
+  {
+   "id": "R7-12",
+   "status": "fixed",
+   "commits": [
+    "3cb4dd4"
+   ],
+   "tests": [
+    "tests/scripts/test-prune-stale-claude-user-hooks.sh: 'every user PreToolUse hook kept ($HOME, ${CLAUDE_PROJECT_DIR}, relative, missing user script)'"
+   ],
+   "evidence": "red->green recorded in the commit message",
+   "notes": ""
+  },
+  {
+   "id": "R8-16",
+   "status": "fixed",
+   "commits": [
+    "3cb4dd4"
+   ],
+   "tests": [
+    "tests/scripts/test-prune-stale-claude-user-hooks.sh (pruner half)",
+    "tests/scripts/test-agent-live-libs.sh: \"settings keep the user's own hooks (gsd-*, $HOME paths, missing scripts), drop only the stale SB hook (R8-16)\", 'settings keep every group and the foreign entries' (worker half, scripts/agent-claude/lib.sh)"
+   ],
+   "evidence": "red->green recorded in the commit message",
+   "notes": "Both halves fixed: pruner (3cb4dd4) and delegated-worker settings seeding in scripts/agent-claude/lib.sh (repair round)."
+  },
+  {
+   "id": "R7-13",
+   "status": "fixed",
+   "commits": [
+    "3cb4dd4"
+   ],
+   "tests": [
+    "tests/scripts/test-install-claude-offline.sh: ~/.gitconfig byte-identical in default and opt-in runs"
+   ],
+   "evidence": "red->green recorded in the commit message",
+   "notes": ""
+  },
+  {
+   "id": "R7-14",
+   "status": "fixed",
+   "commits": [
+    "bb6b5bf",
+    "31078b5"
+   ],
+   "tests": [
+    "tests/scripts/test-install-codex-libs.sh: 'truncated Codex registry refused/left byte-identical'; tests/scripts/test-install-cursor-functions.sh: 'truncated registry refused'; tests/scripts/test-post-release-uninstall.sh: 'an unparseable Claude registry fails the uninstall'"
+   ],
+   "evidence": "red->green recorded in the commit message",
+   "notes": ""
+  },
+  {
+   "id": "R7-15",
+   "status": "fixed",
+   "commits": [
+    "31078b5"
+   ],
+   "tests": [
+    "tests/scripts/test-install-cursor-functions.sh: pinned sha / tag / fail-closed release paths"
+   ],
+   "evidence": "red->green recorded in the commit message",
+   "notes": ""
+  },
+  {
+   "id": "R7-19",
+   "status": "fixed",
+   "commits": [
+    "a644630"
+   ],
+   "tests": [
+    "tests/scripts/test-dogfood-host-config-portable.sh: no home paths, bare command guard registered, 'no graphify installed: silent success', 'graphify installed: it runs', 'and receives the hook payload', Cursor rule equals template"
+   ],
+   "evidence": "red->green recorded in the commit message",
+   "notes": ""
+  },
+  {
+   "id": "R7-20",
+   "status": "fixed",
+   "commits": [
+    "69cc6ea"
+   ],
+   "tests": [
+    "tests/scripts/test-install-cursor-sb-agents-flows.sh: empty-listing behaviour and static check"
+   ],
+   "evidence": "red->green recorded in the commit message",
+   "notes": ""
+  },
+  {
+   "id": "R7-21",
+   "status": "fixed",
+   "commits": [
+    "3cb4dd4"
+   ],
+   "tests": [
+    "tests/python/test_merge_hooks_claude.py: test_plugin_install_adds_nothing_and_removes_old_copies, test_plugin_install_on_clean_settings_leaves_the_file_byte_identical, test_plugin_install_without_settings_creates_none"
+   ],
+   "evidence": "red->green recorded in the commit message",
+   "notes": ""
+  },
+  {
+   "id": "R7-29",
+   "status": "fixed",
+   "commits": [
+    "3cb4dd4"
+   ],
+   "tests": [
+    "tests/python/test_merge_hooks_claude.py: 96-triple registration and idempotency tests"
+   ],
+   "evidence": "red->green recorded in the commit message",
+   "notes": ""
+  },
+  {
+   "id": "R7-23",
+   "status": "fixed",
+   "commits": [
+    "2338813"
+   ],
+   "tests": [
+    "tests/scripts/test-post-release-uninstall.sh: Cursor/Claude/Codex surface removal and foreign-data survival"
+   ],
+   "evidence": "red->green recorded in the commit message",
+   "notes": ""
+  },
+  {
+   "id": "R7-24",
+   "status": "fixed",
+   "commits": [
+    "31078b5",
+    "ae12e03"
+   ],
+   "tests": [
+    "tests/scripts/test-install-cursor-script-merge-only.sh; test-install-cursor-functions.sh no-manifest fallback"
+   ],
+   "evidence": "red->green recorded in the commit message",
+   "notes": ""
+  },
+  {
+   "id": "R7-25",
+   "status": "fixed",
+   "commits": [
+    "69cc6ea"
+   ],
+   "tests": [
+    "tests/scripts/test-install-cursor-sb-agents-flows.sh: '--fix refuses a path in the config'; tests/python/test_cursor_sb_agents_lib.py"
+   ],
+   "evidence": "red->green recorded in the commit message",
+   "notes": ""
+  },
+  {
+   "id": "R7-26",
+   "status": "fixed",
+   "commits": [
+    "31078b5"
+   ],
+   "tests": [
+    "tests/scripts/test-install-cursor-functions.sh: root manifest hooks empty"
+   ],
+   "evidence": "red->green recorded in the commit message",
+   "notes": ""
+  },
+  {
+   "id": "R7-27",
+   "status": "fixed",
+   "commits": [
+    "all"
+   ],
+   "tests": [
+    "all installer tests above seed foreign data and assert it survives install/reinstall/uninstall"
+   ],
+   "evidence": "red->green recorded in the commit message",
+   "notes": ""
+  }
+ ],
+ "files_changed_outside_ownership": [
+  "scripts/lib/sb_host_config.py (new shared lib), scripts/lib/install-codex/*, merge-hooks.py: installer-adjacent",
+  "tests/scripts/test-dogfood-host-config-portable.sh (new)",
+  ".cursor/rules/silver-orchestrator.mdc: R7-19",
+  "docs README/RUNTIME-COMPATIBILITY/host-install-guides: docs",
+  "scripts/agent-claude/lib.sh: R8-16 worker settings seeding (G6 owns the rest)",
+  "skills/silver-init/references/scaffold-steps.md + regenerated mirrors (agents/claude, host-bundles/codex, plugins/silver-bullet/skill-source)"
+ ],
+ "validation": {
+  "tests": "run-all-tests with the 26 installer/uninstall/prune/merge/dogfood/agent-live-libs shell files + python unit suite: all pass under claude and codex runtimes (see notes)",
+  "coverage": "scoped run over 44 changed files: Bash 2038/2038 statements, 1521/1521 lines, 136/136 functions; Python 1283/1283 statements, 578/578 branches (100%); every changed file 100%",
+  "lint": "lint-shell --all clean",
+  "invariants": "check-repo-invariants rc=0, hook reference up to date, plugin mirror OK, docs suite 198/0"
+ },
+ "notes": "Merged claude/optimistic-ramanujan-tccfud (unchanged, no-op). Residual: Kay re-keying drops a header trailing comment; legacy-named SB agents SB no longer ships are reported, not quarantined; bare versioned SB hook layouts for hook names SB no longer ships are no longer auto-removed outside plugins/cache.",
+ "repair_round": {
+  "major-1 R8-16 worker settings": "lib.sh now runs prune-claude-settings.py on the worker copy",
+  "major-2 coverage": "post-release-uninstall.sh 70/70 (test for unparseable Claude registry)",
+  "minor trust repair": "repair_silver_bullet_duplicate_trust_tables runs first in install-codex.sh",
+  "minor features.sub": "TomlStatement.table; dotted-key conflict only for outer-table dotted keys",
+  "minor Kay trust": "purge re-keys the user's trust tables (rename_tables); merge appends SB hooks as own groups",
+  "minor backup": "write_atomic keeps the run's first .sb-backup (SB_INSTALL_RUN_START exported by the three installers)",
+  "minor ownership": "adapter basename or adapter+bridge; bare versioned layout owns only SB hook names; Cursor namespace agents quarantined only when SB ships that bundle",
+  "minor marketplace root": "codex_marketplace_root parses with tomllib/tomli",
+  "minor merge-hooks delivered": "no write unless something was removed",
+  "minor docs": "scaffold-steps.md Phase 3.7.5 + regenerated mirrors",
+  "dogfood": ".codex/hooks.json command is a no-op when graphify is missing"
+ },
+ "repair_round_3": {
+  "run_id": "REPAIR-H2-r3",
+  "issues": [
+   {
+    "n": 1,
+    "status": "fixed",
+    "summary": "Cursor agent cleanup uses the exact list scripts/lib/install-cursor/shipped-agent-names.txt (82 colon names from git history of host-bundles/cursor); prefixes dropped (subagent-sb:* never shipped); committed project files never moved. Tests: user sb:my-storybook, Silver:Notes, sb:team-review, subagent-sb:* stay; committed project sb:review stays; manifest covers every shipped colon bundle."
+   },
+   {
+    "n": 2,
+    "status": "fixed",
+    "summary": "silver-init SKILL.md 3.7.5 + update step 7, scaffold-steps 5a, silver-doctor D4, silver-migrate 4.2, silver-update now describe removal-only/registry-only; mirrors regenerated; stale-wording pins in test-silver-init-merge-hooks."
+   },
+   {
+    "n": 3,
+    "status": "fixed",
+    "summary": "sb_post_release_uninstall_codex sources hooks.sh and runs repair_silver_bullet_duplicate_trust_tables before the purge; test over duplicated trust tables (red: rc=1)."
+   },
+   {
+    "n": 4,
+    "status": "fixed",
+    "summary": "sb_host_config.string_values decodes via the lexer (\\U, literal tab), reads inline-table values, raises ConfigError for non-table values; config.sh isinstance-guards the parser path (WARN, no traceback). Tests in test_sb_host_config.py and test-install-codex-libs.sh (parser and no-parser)."
+   },
+   {
+    "n": 5,
+    "status": "fixed",
+    "summary": "test-installers-run-start-export.sh: || true on greps (named FAIL lines), anchored on first real call line; mutations delete/move both fail."
+   }
+  ],
+  "validation": {
+   "tests": "13-file set under SILVER_BULLET_RUNTIME=claude and codex: 3027 passed, 0 failed each (before final merge); post-merge spot re-run green",
+   "coverage": "scoped: backend-cache.sh 333/333, post-release-uninstall.sh 72/72, sb_host_config.py 534/534 stmts 220/220 branches; config.sh 34/38 only in render_agent_bundle lines covered by other suites (38/38 in the earlier wider run)",
+   "lint": "lint-shell --all clean",
+   "invariants": "check-repo-invariants rc=0; hook reference, apo, plugin mirror OK; sync-codex-package leaves no diff"
+  }
+ },
+ "repair_round_4": {
+  "head": "96a0ea6",
+  "dispositions": [
+   {
+    "id": "r4-major-1 (Cursor case-insensitive quarantine)",
+    "status": "moot",
+    "notes": "moot: Cursor support removed"
+   },
+   {
+    "id": "r4-minor-1 (committed() in Cursor cleanup)",
+    "status": "moot",
+    "notes": "moot: Cursor support removed"
+   },
+   {
+    "id": "r4-minor-2 (post-release uninstall run start)",
+    "status": "fixed",
+    "commits": [
+     "5c8a3bf"
+    ],
+    "tests": [
+     "tests/scripts/test-post-release-uninstall.sh: .sb-backup keeps the pre-run original after two writes"
+    ],
+    "evidence": "red: 75 passed 1 failed (backup held the intermediate file with a slow second writer); green: 76/0 under claude and codex. SB_INSTALL_RUN_START exported once at sb_post_release_uninstall_codex entry."
+   },
+   {
+    "id": "r4-minor-3 (scaffold-steps auto-register wording)",
+    "status": "fixed",
+    "commits": [
+     "5c8a3bf"
+    ],
+    "tests": [
+     "tests/scripts/test-silver-init-merge-hooks.sh: stale phrases 'Could not auto-register hooks', 'add hooks manually from'; 'Do not add hooks by hand' in source + 3 mirrors"
+    ],
+    "evidence": "red: 3 FAIL on mirrors; green 57/0 after text change + sync-codex-package.sh"
+   },
+   {
+    "id": "r4-minor-4 (merge trailers)",
+    "status": "fixed",
+    "notes": "merge commit and the resync commit carry the standard trailers"
+   }
+  ],
+  "validation": {
+   "tests": "both test files 76/0 and 57/0 under claude and codex",
+   "coverage": "scripts/lib/post-release-uninstall.sh 100% (74/74 stmts, 58/58 lines, 7/7 funcs)",
+   "lint": "lint-shell --all clean",
+   "invariants": "check-repo-invariants, hook-reference, apo, plugin mirror OK; docs suite 198/0"
+  }
+ }
+}

@@ -1,0 +1,118 @@
+{
+ "package": "G5-orchestrator",
+ "head_reviewed": "dc0ee05",
+ "verdict": "APPROVE",
+ "per_finding": [
+  {
+   "id": "r1-blocker Stop release (R4-05)",
+   "verdict": "fixed",
+   "notes": "p1-stop.sh (claude, pending FLOW-PLAN queue, state=silver-feature only, dirty tree): Stops 1-5 'Orchestrator parent: flow queue pending (FLOW-PLAN)'; Stops 6-8 'Cannot complete -- missing required skills: silver-quality-gates, silver-context, silver-plan'. Event log: exactly one {type:stop_release,payload:{blocks_without_progress:6}}. The release is now a negated condition on only the two orchestrator blocks (stop-check.sh:236-238, 256-259); the stall block and floor run afterwards (tests assert both). The release cannot skip any other block. The new test asserts the floor after release, so the r1 code (which printed nothing) fails it."
+  },
+  {
+   "id": "r1-major Codex workers",
+   "verdict": "fixed",
+   "notes": "p3-codex.sh: with SILVER_BULLET_RUNTIME=codex, parent-mode project and blocking directive, apply_patch/Edit/exec_command/Skill with no agent id are not denied as the parent (only the ordinary directive/P6 paths apply, as for Claude workers). With SB_ORCHESTRATOR_PARENT=1 all four are denied. SB_ORCHESTRATOR_PARENT=yes or 0 does not force it on. On Claude, SB_ORCHESTRATOR_PARENT=1/yes changes nothing (still denied). SB_ORCHESTRATOR_PARENT=0 makes the session a worker, which is pre-existing (base 2a65018 has it at orchestrator-parent.sh:22) and documented in ORCHESTRATOR.md:112. Hooks read the host process env, not the agent's shell, so the agent can only reach it, or SILVER_BULLET_RUNTIME=<non-claude>, through settings-file env plus a restart; recorded as residual, not new. Runtime detection without the variable (CODEX_THREAD_ID) resolves to codex. Every hook that calls sb_orchestrator_is_parent_session sources runtime-paths.sh. Honest Claude worker flows (Edit/Bash with agent_id after the skill is recorded; Task/Agent spawn) pass."
+  },
+  {
+   "id": "r1-major R10-02 part B",
+   "verdict": "fixed",
+   "notes": "p4-queue.sh: feature/ui/bugfix/refactor/devops queues now name every required_deploy[_devops] skill (feature: ...,tdd,silver-execute,...,silver-review-triage,silver-triage,silver-verify,verify-tests,...). p5-pr.sh: a sandbox project from the templates on feat/x, with the human-approval marker and the state holding exactly the flow_to_skill of each queue. gh pr create now gets past the workflow-skill list for feature and bugfix (the next gate is the verify-tests freshness marker, which a real run writes). templates/workflows and docs/workflows are byte-identical (diff -r, invariants workflows-mirror PASS); the new tests/docs/test-workflow-required-deploy.sh passes 36/36. Residual: see the minor about devops in full-dev-cycle projects and about deploy/canary."
+  },
+  {
+   "id": "r1-minor env/assignment prefixes",
+   "verdict": "fixed",
+   "notes": "p2-bash.sh: BASH_ENV=/PATH=/env -S/env PATH= inside time or timeout, nested sh -c/bash -c prefixes, and export PATH=...; silver-bullet are all DENY. bash <foreign silver-bullet>, bash -x <foreign>, bash --rcfile <evil> <plugin script>, and bash -c 'bash <foreign>' are DENY. Honest forms are ALLOW (silver-bullet invoke-skill silver, bash -c '...', bash <plugin>/scripts/silver-bullet). The direct-path variant is still open (see issues)."
+  },
+  {
+   "id": "r1-minor delegation tree-scope",
+   "verdict": "fixed",
+   "notes": "p6-deleg.sh with ownership_scope=[src]: git reset --hard, git stash/stash pop, git clean -fdx, git apply, git -C src reset --hard, git checkout HEAD -- src, git merge and git pull are DENY. Honest git status, git diff, git checkout -- docs/free.md and echo > docs/free.md are ALLOW. Gaps remain for git restore . and git checkout . (see issues)."
+  },
+  {
+   "id": "r1-minor stale comments/docs",
+   "verdict": "fixed",
+   "notes": "session-start comment, ENFORCEMENT.md SubagentStop statement and the site-visual-evidence-gate comment are updated. The runtime-extensibility row was reworded, but it now claims a Codex ✅ for agent_id worker identity (see issues)."
+  },
+  {
+   "id": "r1-minor SC2034 scope",
+   "verdict": "fixed",
+   "notes": "The file-wide disables are removed; per-assignment disables are at orchestrator-parent.sh:432 and orchestrator-scheduler.sh:853. lint-shell --all --jobs 2 rc 0."
+  },
+  {
+   "id": "r1-minor event-log lock",
+   "verdict": "fixed",
+   "notes": "p7-stress.sh, 6 parallel writers x 40 appends, MAX_BYTES=500 so every append trims, KEEP_LINES=100000: dc0ee05 gives lines=240 valid=240 expected=240. The same stress on the r1 lib (482229d hooks/lib) gives lines=200, losing 40 events. Append and trim now share sb_orchestrator_with_lock, which is reentrant through _SB_ORCH_LOCK_HELD."
+  },
+  {
+   "id": "r1-minor G3 merge",
+   "verdict": "ok",
+   "notes": "Prediction confirmed; see issues for hooks.json."
+  },
+  {
+   "id": "R4-02",
+   "verdict": "fixed",
+   "notes": "agent_id makes a worker only on SubagentStop/PreToolUse. Stop with agent_id is still the parent (test-stop-check-paths). A claude Edit with agent_id is classified as a worker (it is denied only by the directive until /silver-plan is recorded, then allowed)."
+  },
+  {
+   "id": "R4-03",
+   "verdict": "fixed",
+   "notes": "p8-bypass.sh: of 54 parent Bash variants (escapes, quoting, env/command/builtin/eval, sh -c/bash -lc, xargs, find -exec, git -c alias, GIT_DIR, ; && || | & subshells, $(), backticks, heredoc, python/node/cp/mv/ln/dd/sed -i/perl/truncate, git stash/checkout ./reset/apply, gh pr create, npm, make, curl -o, process substitution, awk system, git log --output, rg --pre, editors), 52 are denied. The only two allowed are 'git status # ; rm x' (a comment) and a lone 'git status \\\\' (harmless)."
+  },
+  {
+   "id": "R4-06/R4-17/R4-18/R4-19/R4-26/R4-27/R4-28/R9-05/R9-31",
+   "verdict": "fixed",
+   "notes": "Covered by the owning test files, all green under codex in this review: scheduler-lib 290, state-advance 92, shipped-flow 110, directive-guard-hook 102, delegation-guard 71, hooks-json-no-duplicate 15, orchestrator-doc 20, event-log 66+7. Probes for R4-28 (no PreToolUse override) were not repeated beyond the guard source reading (guard lines 184-186)."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "minor",
+   "location": "hooks/lib/orchestrator-parent.sh:_sb_orch_parent_script_form_ok / sb_orchestrator_extract_invoke_skill_adapter; sb_orchestrator_parent_resolve_ledger_bash_allowed",
+   "problem": "The r1 fix only checks the 'bash <script>' form. A foreign file named silver-bullet run directly by path, or by path inside bash -c, is still accepted as the sanctioned adapter. So is any file whose path ends in /scripts/resolve-instruction-ledger.sh, directly or through bash. The parent can then run arbitrary code that a worker (or anything earlier) placed under one of those names.",
+   "evidence": "p2-bash.sh (claude parent, directive guard), with $P/evil/silver-bullet and $P/evil/scripts/resolve-instruction-ledger.sh as '#!/bin/bash echo PWNED' scripts and ./silver-bullet in the project: ALLOW '$P/evil/silver-bullet invoke-skill silver'; ALLOW './silver-bullet invoke-skill silver'; ALLOW \"bash -c '$P/evil/silver-bullet invoke-skill silver'\"; ALLOW '$P/evil/scripts/resolve-instruction-ledger.sh list'; ALLOW 'bash $P/evil/scripts/resolve-instruction-ledger.sh list'. By contrast 'bash $P/evil/silver-bullet invoke-skill silver' is DENY.",
+   "suggested_fix": "Apply one rule to the program path in every form. A bare name (resolved on PATH) or a path that resolves to the plugin's own scripts/silver-bullet or scripts/resolve-instruction-ledger.sh is accepted; any other path containing '/' is refused, both directly and inside sh -c."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/agent-delegation-guard.sh:76-87 (and F2 shell_analysis for git checkout)",
+   "problem": "The tree-scope check covers only writes with scope 'tree'. 'git restore .' is reported with scope 'path' and path = the repo root (a directory containing the owned dir), so it is not matched. 'git checkout .' and 'git checkout <branch>' get no writes at all from F2 (read_only:false, writes:[]), so the guard allows them even though they overwrite owned files during an active delegation.",
+   "evidence": "p6-deleg.sh, ownership_scope=[<proj>/src]: ALLOW 'git checkout .', ALLOW 'git checkout -- .', ALLOW 'git restore .', ALLOW 'cd docs && git checkout .' (ok), ALLOW 'git checkout other-branch'. F2 JSON: 'git restore .' => writes:[{path:<repo root>,via:'git restore',scope:'path'}]; 'git checkout .' => writes:[].",
+   "suggested_fix": "Treat any write whose path is an ancestor directory of an owned path as in scope, whatever its scope. Ask F2 to model git checkout <pathspec>/<branch> as path or tree writes. Until then, deny non-read-only commands with no writes while a delegation is active, or document the gap."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/lib/orchestrator-state.sh:_sb_orch_floor_csv (composer-keyed) vs hooks/lib/completion-audit/deploy-tier.sh:165-186",
+   "problem": "The queue picks required_deploy_devops (which has no tdd) for the silver-devops composer in any project. completion-audit recognises the devops composer only from active_workflow=devops-cycle or a workflow id it can recover (SB_WORKFLOW_ID in the hook env, or an assignment in the command). In a full-dev-cycle project the honest silver-devops queue therefore ends with gh pr create blocked for /tdd. Separately, the silver-deploy and silver-canary queues reach silver-ship without the review triad, so the delivery floor never applies to them and they miss about 10 required_deploy skills.",
+   "evidence": "p5-pr.sh: template project (full-dev-cycle), feat/x, approval marker, state = every flow_to_skill of the silver-devops queue -> '🛑 COMPLETION BLOCKED — Workflow incomplete ... ❌ /tdd'. p4-queue.sh: silver-deploy is missing silver-quality-gates, silver-review, silver-validate, silver-review-request, silver-review-triage, silver-triage, silver-branch-finish, silver-completion-audit, tdd and verify-tests; silver-canary is similar.",
+   "suggested_fix": "Key the queue's deploy list the same way deploy-tier.sh does: the devops list only for an active devops-cycle workflow, otherwise required_deploy. Alternatively, have completion-audit read the composer from orchestrator.json. Decide and document whether deploy/canary composers are expected to reach gh pr create or deploy on their own."
+  },
+  {
+   "severity": "minor",
+   "location": "templates/workflows/full-dev-cycle.md:77-80 vs skills/tdd/SKILL.md; docs/runtime-extensibility-comparison.md:48",
+   "problem": "Two docs contradict the code. (1) The workflow doc now says tdd 'runs before every implementation, including docs-only, config-only and pure layout tasks (for those it records the \"no behavior change\" decision and stops there)', but the tdd skill has no such branch ('NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST ... No exceptions'). Agents on docs-only tasks get contradictory instructions. (2) The comparison row 'SubagentStop worker handoff (workers identified by the payload's agent_id)' marks Codex ✅ (and Cursor, which is being removed), contradicting ORCHESTRATOR.md:114 ('Codex pending').",
+   "evidence": "Static: the cited lines.",
+   "suggested_fix": "Add a short no-behaviour-change path to skills/tdd/SKILL.md (and sync the mirrors), or reword the workflow doc. Mark Codex ⚠️ (no agent_id; parent mode inactive) in the comparison row."
+  },
+  {
+   "severity": "minor",
+   "location": "merge with fix/G3-stop-prompt-override: hooks/hooks.json",
+   "problem": "The author's advice treats every conflict as mechanical. orchestrator-state.sh (keep both functions; G3's hunk is only the clear_queue_on_interrupt doc comment) and orchestrator-directive-guard.sh (comment only; both branches removed the PreToolUse override code, so keeping one comment is safe) really are mechanical. hooks.json is not: G3 restructures the PreToolUse matchers, and G3's Edit|Write|MultiEdit|apply_patch group re-lists orchestrator-directive-guard.sh and agent-delegation-guard.sh, which G5 removed from that group (G5 keeps the directive guard only on the broad matcher and moves the delegation guard there so that Bash is covered). Taking G3's side reintroduces the duplicate directive-guard registration (R9-31) and loses Bash coverage of the delegation guard.",
+   "evidence": "git merge-tree --write-tree fix/G5-orchestrator fix/G3-stop-prompt-override (7bb8dbf) -> rc 1: CLAUDE.md, docs/HOOKS.md, docs/ORCHESTRATOR.md, hooks/hooks.json, hooks/lib/orchestrator-state.sh, hooks/orchestrator-directive-guard.sh, tests/hooks/test-orchestrator-directive-guard-hook.sh. With fix/G4-session-state: CLAUDE.md and docs/HOOKS.md only. With claude/optimistic-ramanujan-tccfud (2a65018): clean (rc 0). jq summary of the PreToolUse groups per branch is in this review's notes.",
+   "suggested_fix": "When merging, take G3's matcher layout, then remove orchestrator-directive-guard.sh and agent-delegation-guard.sh from the Edit|Write|MultiEdit|apply_patch group, keep both on the Edit|Write|MultiEdit|Bash|apply_patch|exec_command group, regenerate docs/HOOKS.md and the CLAUDE.md count, and run test-hooks-json-no-duplicate-registration.sh and test-agent-delegation-guard-hook.sh."
+  },
+  {
+   "severity": "minor",
+   "location": "F2 read-only verdict (hooks/lib/tool-input/shell_analysis.py), consumed by sb_orchestrator_parent_bash_allowed",
+   "problem": "Cross-package (F2). A PATH= assignment on a read-only command is still read-only, so the parent may run 'PATH=<dir> git status', which executes <dir>/git. F2 already refuses BASH_ENV=, GIT_PAGER= and GIT_EXTERNAL_DIFF= on the same path.",
+   "evidence": "p2-bash.sh: ALLOW 'PATH=$P/evil git status'; DENY 'BASH_ENV=... git status', 'GIT_PAGER=... git log', 'GIT_EXTERNAL_DIFF=... git diff'.",
+   "suggested_fix": "F2: treat PATH= (and other lookup-changing variables) as non-read-only, or allow only a short list of assignments."
+  }
+ ],
+ "validation": {
+  "tests": "Under SILVER_BULLET_RUNTIME=codex through run-all-tests, two at a time: 30 files, 3155 passed, 0 failed (parent-guard 34, parent-lib 288, stop-check-paths 88, stop-check 56, prompt-reminder-paths 47, site-hooks-gates 167, directive-guard-hook 102, directive-guard-failure 28, queue-order 66, state-lib 113, delegation-guard 71, event-log-lib 66, session-start 58, subagent-start 53, site-session-gates 38, v-loop 33, skill-execution-paths 303, shipped-flow 110, scheduler-lib 290, state-advance 92, directive-lib 184, io-lib 32, failure-paths 40/44/49, scripts event-log 7, composition-triple-alignment 36, docs workflow-required-deploy 36, orchestrator-doc 20, hooks-json-no-dup 15). Template parity 2/2. Pinning: in r2 the author pinned parent-lib and stop-check-paths (tl_init claude) and parent-guard (export claude). In the codex CI job these now run with the Claude state root instead of the Codex one. Explicit codex cases cover the behavioural difference (parent-lib host_parent, parent-guard WORK5 block, stop-check-paths 'SILVER_BULLET_RUNTIME=codex run_stop'), and prompt-reminder/site-hooks/stop-check use SB_ORCHESTRATOR_PARENT=1 and still run as codex. The coverage loss is small: only the runtime-path variation of those three files. Using SB_ORCHESTRATOR_PARENT=1 instead of pinning would have kept it.",
+  "coverage": "One scoped run (--jobs 2, the 16 r1+site-visual files, 39 test files): EXIT=0, so the known limit hooks/lib/orchestrator-scheduler.sh:773 ('|| true' word) is valid and known-limits.json parses. Bash statements 3690/3691, lines 2399/2399, functions 182/182. 15 of 16 files are at 100%. The only miss, hooks/stop-check.sh:330 (break), is unchanged code from 6e59eaa4 that test-config-walk-vanishes.sh covers, which was outside my selection. Every line G5 changed is covered. scripts/generate-apo-catalog.py (df helper) was not in the scope. generate-apo-artifacts --check passes.",
+  "lint": "bash scripts/lint-shell.sh --all --jobs 2: rc 0 (application 356 files clean, test 745 files clean).",
+  "invariants": "check-repo-invariants rc 0, 17 PASS including personal-data, workflow-hardening and workflows-mirror. generate-hook-reference --check up to date, generate-apo-artifacts --check rc 0, validate-plugin-mirror rc 0. docs/workflows is byte-identical to templates/workflows and to plugins/silver-bullet/templates/workflows. All 11 commits since 2a65018 carry 'Co-Authored-By: Claude Sonnet 5.5' and the Claude-Session trailer (accepted); the only other 'Claude' is the host name in a subject. The worktree is clean. No Bash-4-only constructs in the delta (local -a and read -ra are fine on 3.2). sync-codex-package was not re-run: the delta has no skills/ changes, and running it would write into the worktree."
+ },
+ "notes": "Probes and logs are in REVF-G5-r2-probe/: p1-stop, p2-bash, p3-codex, p4-queue, p5-pr, p6-deleg, p7-stress, p8-bypass, codex-logs/, cov.log, coverage-summary.json. Raw coverage data was deleted (84 MB). PreToolUse matcher summary: base and G5 differ in that the Edit|Write group loses orchestrator-directive-guard and agent-delegation-guard, and the broad group gains agent-delegation-guard. G3 adds spec-floor/forbidden/uat on Bash|Skill|exec_command, an mcp write matcher for the planning guards, and keeps the directive-guard and delegation-guard on Edit|Write|MultiEdit|apply_patch. Residual: env overrides (SB_ORCHESTRATOR_PARENT=0, SILVER_BULLET_RUNTIME) disable parent mode on Claude only via host-process env such as settings.json env, which needs a restart. They are documented and not agent-reachable per call."
+}

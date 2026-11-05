@@ -1,0 +1,96 @@
+{
+ "package": "H8b-followup",
+ "round": 2,
+ "head_reviewed": "e14d934",
+ "delta": "e578732..e14d934 (package changes 109cdc1..e14d934)",
+ "verdict": "CHANGES_REQUIRED",
+ "per_finding": [
+  {
+   "id": "r1-1 absence veto clause scope",
+   "verdict": "incomplete",
+   "notes": "/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-r2-probe/tools/absence2.py (orig 21606d0 / prev e578732 / head): the predecessor's 4 sentences are fixed: ';', ', and', '. ', 'claims of', and the gate clause 'rejects PRs with no evidence of review' keep their votes. Clause boundaries ', but', ', while', '(...)', ' - ', ':' and a bare comma still blank the genuine positive in the first clause (minor 2). Scoping also lets same-vendor negation in another clause tick again, and the gate-verb exemption over-matches (minor 3). Real run: noevid_real.py at head gives 0 ticks backed only by no-evidence claims (130 ticked cells, same as prev)."
+  },
+  {
+   "id": "r1-2 recall (openers, qualifiers, verb subject)",
+   "verdict": "regressed",
+   "notes": "recall.py: head counts 23/26 (prev 7/26, orig 22/26). Still missed: 'Director agents ...', 'Director and Conductor ...' (both pre-existing) and 'Linear Issues' (lost since prev). The r4 FP set amb_fp.py is still 0/14. But the fresh compound set /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-r2-probe/tools/fp2.py goes from 0/31 at prev to 18/31 at head (major 1). The r4-2 fix therefore no longer holds for compounds in subject position."
+  },
+  {
+   "id": "r1-3 Background cue",
+   "verdict": "fixed",
+   "notes": "The 'Background' cue is gone from _CUE_AFTER. Real run amb_diff.py prev->head: cursor mentions drop 35->26, every lost one in a 'Cursor Background Agents' context (or a list that only matched through it). test_cursor_background_agents_is_one_product_with_one_slug asserts it. The harness/scout gains inside 'Claude Harness is' / 'Cognition Scout is' come from the subject override and change no classification or cell."
+  },
+  {
+   "id": "r1-4 decorated list items / and-split",
+   "verdict": "fixed",
+   "notes": "lists.py: 'Conductor (Melty Labs)', '**Director**', 'Director.', 'Director 2.0', '`director`' and 'Factory' now resolve. /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-r2-probe/tools/lists2.py: synthetic 'Salt and Pepper' / 'Research And Ship' products survive the 'and' split. 'Director and cc10x' gives both. Prefix guessing has not come back: 'Claude', 'Claude 2', 'Silver', 'Directors', 'Cursorless' and 'Factory Floor' give []."
+  },
+  {
+   "id": "r1-5 --force same query",
+   "verdict": "fixed",
+   "notes": "/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-r2-probe/tools/force2.py: the same query (also with surrounding spaces) carries a rename-only or note-only profile. A different query, prefix or suffix, or a case change is not taken as the same. One way to mistake a different query for the same one: a multi-line previous query whose first line equals the new query (scope prefix check), nit 6. A manifest that records a different query still falls through to the scope check (only reachable in hand-made state)."
+  },
+  {
+   "id": "r1-6 merge / mirrors",
+   "verdict": "fixed",
+   "notes": "109cdc1's tree equals git merge-tree e578732 8c161a5 exactly (amend changed only the message). All 5 branch-only commits carry 'Co-Authored-By: Claude Sonnet 5.5' + correct Claude-Session (accepted); no other model names. The target has moved to 127e2f9 (F2 merged): merge-tree is clean (tree a0b9326); on that archived tree validate-plugin-mirror OK and check-repo-invariants exit 0."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "major",
+   "location": "skills/silver-deep-research-multi-ai/scripts/materialize_solution_artifacts.py:268-270 (_inside_ordinary_phrase early return on _SUBJECT_OF) and :273-274 ('-ly' exemption)",
+   "problem": "The r1 recall repair returns False for any ambiguous name followed by a subject verb, before the Title-Case-compound and role-connector checks run. It also exempts every capitalised '-ly' word. That reopens the r4-2 false-positive class for the commonest sentence shape, a compound noun as subject. The r4 set stays 0/14 only because none of its sentences has a verb right after the name. Example: 'Netflix Conductor and Temporal are ...' passes, but 'Netflix Conductor orchestrates ...' fails. The false credits reach classifier evidence and prose-vote targets for any run whose sources discuss workflow engines, design patterns or job titles. They do not reach the real APO run (classification and cells unchanged).",
+   "evidence": "python3 /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-r2-probe/tools/fp2.py <scripts>: prev e578732 0/31, head 18/31. At head these become vendor evidence and extract_slugs: 'Netflix Conductor orchestrates microservices at scale.' and 'Netflix Conductor supports long-running workflows.' -> conductor; 'The Abstract Factory provides a family of related objects.', 'The NVIDIA AI Factory delivers inference at scale.' and 'the Software Factory enforces audit logs' -> factory-ai; 'Our Technical Director has approved ...', 'A VP or Director can approve the release.', 'The Executive Director will sign ...' and 'Weekly Director reviews ...' -> director; 'The Mouse Cursor is hidden ...' -> cursor; 'Daily Linear sync ...' -> linear. Sandbox mutation (/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-r2-probe/mut: early return and '-ly' exemption removed): fp2 drops to 7/31, amb_fp stays 0/14, and only 'Melty Conductor runs ...' is lost from recall (test_capitalised_vendor_names_..._still_count fails on it alone).",
+   "suggested_fix": "Do not let the subject-verb test override the compound or role checks. Accept a capitalised previous word only when '<Prev> <Name>' is itself a known display name or alias, or the previous word is a known maker of that product (e.g. derived from pack parentheticals such as 'Conductor (Melty Labs)'). Restrict the '-ly' exemption to a previous word that is itself sentence-initial ('Notably Director ...'). Add the fp2 sentences above to STILL_PLAIN_ENGLISH."
+  },
+  {
+   "severity": "minor",
+   "location": "skills/silver-deep-research-multi-ai/scripts/materialize_solution_artifacts.py:553 (_CLAUSE_START)",
+   "problem": "Clause starts are only ';!?\\n', '. ' and ', and '. With ', but', ', while', a parenthesis, ' - ', ':' or a bare comma, the absence clause about another vendor still blanks the genuine positive before it.",
+   "evidence": "python3 /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-r2-probe/tools/absence2.py <head>: {} for 'Silver Bullet provides workflow composition, but Deepwork has no public evidence.', the same with ', while', '(Deepwork: no public evidence)', ' - Deepwork has ...', ': Deepwork has ...' and ', Deepwork has no evidence.' All tick silver-bullet at orig 21606d0.",
+   "suggested_fix": "Also start a clause at ', but|, while|, whereas|, though|, yet', '(', ' - ', ' \u2014 ' and ':'. Alternatively, blank only the span from the nearest vendor mention before the marker, so the clause is bounded by the vendor the marker is about."
+  },
+  {
+   "severity": "minor",
+   "location": "skills/silver-deep-research-multi-ai/scripts/materialize_solution_artifacts.py:548-572 (_ABSENCE_MARKER, _GATE_VERB, _without_absence_clauses)",
+   "problem": "These are precision losses against prev, back to orig behaviour. Negation of a vendor's own claim in a following clause or sentence no longer vetoes it, and neither does 'without' or 'missing evidence', which were dropped from the marker. _GATE_VERB has no word end ('block\\w*'), so 'blockchain' counts as a gate verb. A gate verb anywhere earlier in the clause also exempts it ('Reviewers rejected the claim that ...: no evidence'). No such cell on the real run.",
+   "evidence": "absence2.py prev {} -> head deepwork WC for: 'Deepwork claims workflow composition without public evidence.', 'Deepwork advertises workflow composition; there is no public evidence for this.', '... . No public evidence supports it.', 'Deepwork markets workflow composition, missing evidence.', 'Deepwork provides workflow composition, and zero independent evidence exists.', 'Reviewers rejected the claim that Deepwork provides workflow composition: no evidence.' and 'Deepwork, built on a blockchain ledger, provides workflow composition with no evidence.'",
+   "suggested_fix": "Bound _GATE_VERB with \\b and an explicit suffix list (block(s|ed|ing)?, refus(e|es|ed|ing), ...). Require the gate verb to govern the marker (within a few words before it). When the absence clause has no vendor of its own ('there is no public evidence for this', 'No public evidence supports it'), apply it to the vendor of the previous clause. Restore 'without|missing (public|independent)? evidence' except after a gate verb."
+  },
+  {
+   "severity": "minor",
+   "location": "skills/silver-deep-research-multi-ai/scripts/materialize_solution_artifacts.py:550 (hard[- ]exclusions? marker)",
+   "problem": "The 'hard exclusion' marker blanks its whole clause, including a genuine positive about an in-scope vendor that merely mentions the hard-exclusion list.",
+   "evidence": "absence2.py: 'Silver Bullet provides hook-enforced gates and is not on the hard-exclusion list.' and 'Unlike the hard exclusions, Silver Bullet provides workflow composition.' tick at orig and prev, but give {} at head. 'Director, which is not a hard exclusion, provides workflow composition.' gives {} at every version. 'Hard exclusions: Sweep, Windsurf. Silver Bullet provides ...' is fine.",
+   "suggested_fix": "Only drop the votes of the vendors listed after the hard-exclusion marker (up to the clause end), or skip when the marker is negated ('not (on )?(a|the) hard-exclusion'). Add the two sentences as keep cases."
+  },
+  {
+   "severity": "minor",
+   "location": "skills/silver-deep-research-multi-ai/scripts/materialize_solution_artifacts.py:213 (_CUE_AFTER Plus/Enterprise) and :255-259 (new function words)",
+   "problem": "Opener words that are now function words (Next, First, Finally, Plus, Today) make the following name non-sentence-initial, so it counts with no further check. A cue word after the name bypasses the compound check entirely. Mostly contrived.",
+   "evidence": "fp2.py head (and the mutant): 'Next Continue with the setup wizard.' -> continue, 'Finally Sweep the floor ...' -> sweep, 'First Linear then quadratic ...' -> linear, 'Plus Director approval is needed.' and 'Today Director-level approval ...' -> director, 'The Abstract Factory Plus pattern ...' and 'The Agentic Software Factory Enterprise tier ...' -> factory-ai.",
+   "suggested_fix": "Treat a name whose previous word is a sentence-initial function word as sentence-initial (subject or possessive required). Check the prev-word compound before accepting a cue."
+  },
+  {
+   "severity": "minor",
+   "location": "skills/silver-deep-research-multi-ai/scripts/materialize_solution_artifacts.py:557-572 (_without_absence_clauses)",
+   "problem": "For each marker the clause-start regex rescans the text from 0, and the text is rebuilt. The cost is quadratic in the number of markers, the class r4-6 fixed for mentions_vendor.",
+   "evidence": "python3 /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-r2-probe/tools/perf3.py <head>: 'Deepwork has no evidence. '*4000 (101 KB) 5.4 s, *8000 (203 KB) 18.0 s; 'hard exclusion '*8000 (117 KB) 23.4 s; 12-25 KB inputs 0.3 s. Realistic claims are a few KB.",
+   "suggested_fix": "Compute the clause starts and ends once (lists plus bisect), and build the result from kept spans in a single pass."
+  },
+  {
+   "severity": "minor",
+   "location": "skills/silver-deep-research-multi-ai/scripts/dr_multi_ai_cli.py:111-124 (_same_query)",
+   "problem": "Nit. The scope check is a prefix test on the first line, so a multi-line previous query whose first line equals the new query is taken as the same query, and its auto profile (category = old multi-line topic) is carried. A recorded manifest query that differs does not stop the scope fallback.",
+   "evidence": "python3 -I /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-r2-probe/tools/force2.py <head> <tmp>: ('Event streaming\\nfor banks' -> 'Event streaming') -> (True, ['need_profile.json', 'scope.md']).",
+   "suggested_fix": "When the manifest records a query, decide on it alone. Otherwise compare the full topic line through the next 'Research type:' line, or the whole generated header."
+  }
+ ],
+ "validation": {
+  "tests": "bash tests/run-all-tests.sh tests/scripts/test-solution-research-python.sh tests/scripts/test-multi-ai-deep-research-contract.sh: 670 passed, 0 failed. Sandbox mutation (subject override and -ly exemption removed) fails exactly 1 test (the Melty Conductor case), so the new tests are not vacuous. No test pins the fp2 false positives.",
+  "coverage": "One scoped run (run-coverage.sh --cov-dir /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-r2-probe/cov --only <4 scripts> tests/scripts/test-multi-ai-deep-research-contract.sh): 100.00% on category_pack 377/377 212/212, dr_multi_ai_cli 200/200 50/50, materialize 1144/1144 662/662, validate_landscape_content 286/286 156/156. known-limits.json valid.",
+  "lint": "bash scripts/lint-shell.sh --all --jobs 2: exit 0. No shell changes.",
+  "invariants": "check-repo-invariants exit 0; generate-hook-reference --check 0; generate-apo-artifacts --check 0; validate-plugin-mirror OK. The 5 mirrors of each of the 4 scripts are byte-identical. Merge-tree with claude/optimistic-ramanujan-tccfud 127e2f9: clean (a0b9326); validate-plugin-mirror and invariants pass on that tree. Real APO run (research/2026-07-20-...-multimarket-final): 23 matrix slugs, Director core, classification identical prev vs head. Support has no new vendors; the only cell change is github-copilot 'Workflow composition' True->None, from a hard-exclusion contradiction critique (a false tick removed). Worktree untouched (git status clean), no __pycache__ written."
+ }
+}

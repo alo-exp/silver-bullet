@@ -1,0 +1,72 @@
+{
+ "package": "H3b-decisions",
+ "head_reviewed": "01c0af5",
+ "verdict": "APPROVE",
+ "per_finding": [
+  {
+   "id": "r4-major allowlist whole-file",
+   "verdict": "fixed",
+   "notes": "'file <glob> <context-hash>' entries now exempt only the exact quoted string or line (identity_context). In REVF-H3b-r5-probe/pd5.py, graph.json is allowlisted with the real allow and hash files. Lowercase users_<n>_, -users-<n>-, _home_<n>_, ~<n>, ~/<n>, /Users/<n>, /Volumes/<n>, a plain name, and every decoded form are CAUGHT. Only the exact allowed text is exempt. Abuse attempts are all CAUGHT: appending text inside the allowed quoted string, adding a prefix word, placing a name right after the closing quote, and adding a users_<n>_ path in the same line. The 64-bit context prefix makes collisions infeasible. Mutating the check back to whole-file, or removing PATH_SHAPED, fails test_repo_invariants."
+  },
+  {
+   "id": "r4-minor CODE_INPUTS",
+   "verdict": "fixed",
+   "notes": "inlineScript (any case, block scalar), cypress start/build/install-command, install (also in a flow map), arguments (also via an anchor or alias), pre-command/post_run, *-command and *_command suffixes, list and flow-list values, !!str tags, container.options and services.<x>.options are CAUGHT (wf4new.py, wf5.py). Residuals: 'commands' (plural) and nested-dict values."
+  },
+  {
+   "id": "r4-minor workflow rules",
+   "verdict": "fixed",
+   "notes": "pull_request_target and workflow_run (string, list or dict form) with a checkout ref or repository of head.sha, head.ref, head.repo.full_name, github.head_ref, refs/pull/, merge_commit_sha or workflow_run.head_* are CAUGHT. Base-sha and plain pull_request checkouts pass. ACTIONS/CHECKOUT and Actions/Checkout are matched. A reusable-workflow caller job no longer needs timeout-minutes. Repo workflows: workflow-hardening PASS. Earlier probes: all 35 attacks CAUGHT; the 2 benign placeholders and 11 good samples pass. Bypasses are in the minor issue below."
+  },
+  {
+   "id": "r4-minor identity decoding",
+   "verdict": "fixed",
+   "notes": "\\n, \\t, \\uXXXX, %2F/%20, &#NNN;, zero-width, soft-hyphen, word-joiner, fullwidth and math-bold (NFKC) forms are CAUGHT in both plain and allowlisted files. Plain, upper-case and **md** tokens are still caught. Cyrillic homoglyphs, base64 and glued tokens are MISSED, which are documented residuals. Malformed escapes (lone surrogates, &#0;, out-of-range values, %00) do not crash and give 0 false positives. Messages hold no token value (checked)."
+  },
+  {
+   "id": "r4-minor hash secrecy wording",
+   "verdict": "fixed",
+   "notes": "The hash file header and RELEASE.md now say obfuscation, not secrecy, and that only already-public tokens may be listed. This matches the accepted decision."
+  },
+  {
+   "id": "r4-minor .gitignore docs captures",
+   "verdict": "fixed",
+   "notes": "git check-ignore matches docs/a/x-stdout.txt, docs/a/b/review-stderr.txt and docs/x-stdout.txt. Both patterns are in the test loop."
+  },
+  {
+   "id": "r4-minor validate setup-python",
+   "verdict": "fixed",
+   "notes": "ci.yml:37 has actions/setup-python@v6 with python 3.12 before the PyYAML install, the same as :113 and :156. Not verified on a real runner (no network)."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "minor",
+   "location": "scripts/lib/repo_invariants.py HEAD_REF / step_problems",
+   "problem": "The pwn-request rule only matches literal, case-sensitive head expressions in checkout ref/repository. GitHub expressions are case-insensitive. Missed: upper-case GITHUB.EVENT.PULL_REQUEST.HEAD.SHA; index syntax github.event['pull_request']['head']['sha']; a ref taken through env (top-level env R=head.sha, then ref: ${{ env.R }}) or through needs.*.outputs; workflow_run.pull_requests[0].head.sha; and the common 'gh pr checkout \"$N\"' or 'git fetch origin pull/$N/head' run steps with N set through env. No repo workflow uses privileged triggers, so there is no current exposure.",
+   "evidence": "REVF-H3b-r5-probe/wf5.py and wf5b.py: prt_UPPER_expr, prt_index_syntax, prt_via_env, prt_via_job_output, prt_gh_pr_checkout_env, prt_git_fetch_env and wr_pull_requests_idx are MISSED.",
+   "suggested_fix": "Fail closed: reject any pull_request_target or workflow_run workflow unless it is explicitly allowlisted, or at least make HEAD_REF re.I, also match pull_requests[ and the ['head'] index syntax, and flag gh pr checkout / pull/*/head in run steps of privileged workflows."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/lib/repo_invariants.py personal_data",
+   "problem": "personal-data now takes 14.7 s wall time (load ~3), up from 7.8 s in r4. graphify-out/graph.json alone takes 11.6 s at load ~10, because the 55 MB file is folded and tokenised twice (it contains \\n escapes). This is acceptable for CI but noticeable locally.",
+   "evidence": "time check-repo-invariants.sh --check personal-data: real 14.7 s. Per-file profile: graph.json 11.6 s, the other 7613 files 7.6 s.",
+   "suggested_fix": "Optional: run the second (no control-escape) pass only on lines that contain '\\n', '\\t' or '\\r' followed by a letter."
+  }
+ ],
+ "notes": [
+  "Not addressed and not required in r5: job permissions that grant write scopes other than write-all (perm_write_contents_job MISSED); an expression in a step's shell: or working-directory:. A job with runs-on, steps and a dummy 'uses:' skips the timeout rule, but GitHub would reject that workflow anyway.",
+  "The 75 run-bookkeeping files under .planning (from r4) are still not git-ignored. They were not in r5 scope."
+ ],
+ "merge": {
+  "base": "claude/optimistic-ramanujan-tccfud is now 7130467, which descends from c591ebb. git merge-tree of 01c0af5 with c591ebb and with 7130467 is clean (rc 0). fix/F2-input-analysis is already in both base and H3b.",
+  "HC_trial": "Trial merge of base(7130467) + H3b + fix/HC-remove-cursor. Base vs HC alone has 66 conflicts (cursor-skill-source). H3b adds 13 more. Modify/delete conflicts (HC deletes, H3b modified): .cursor-plugin/marketplace.json, .cursorignore, plugins/silver-bullet/commands/sb-multi-ai-task.md, scripts/diagnose-cursor-picker-duplicates.sh, scripts/enumerate-cursor-slash-picker.sh, scripts/sync-cursor-marketplace-version.sh, tests/scripts/test-install-cursor.sh, tests/scripts/test-sync-cursor-marketplace-version-paths.sh. Content conflicts: CHANGELOG.md, docs/CICD.md, docs/skills/AGENT-HOST-DELEGATION-SIBLING-PROMPT.md, scripts/lib/agent-plugins-catalog.json (drop the cursor block), scripts/run-visual-qa-pipeline.sh (keep H3b), tests/scripts/test-check-repo-invariants.sh (HC's list plus H3b's .claude/skills). Taking HC's side of AGENT-HOST-DELEGATION-SIBLING-PROMPT.md brings back a personal home path at :435, and personal-data FAILS on it (the check works). With a sensible resolution (deletions accepted, H3b's scrubbed hunk kept, CHANGELOG union), check-repo-invariants.sh is all PASS, including personal-data and workflow-hardening."
+ },
+ "validation": {
+  "tests": "From a clone of 01c0af5 with a temporary HOME. test_repo_invariants.py: 77 passed. Under SILVER_BULLET_RUNTIME=claude and codex (2 jobs each), test-check-repo-invariants.sh 199, -cli.sh 36, test-no-personal-machine-paths.sh 40 and test-no-gsd-runtime.sh 4 all passed, 0 failed, rc 0. Docs suite 198/0. Twelve mutations each fail the tests: whole-file allow, no PATH_SHAPED, case-sensitive checkout, timeout on reusable callers, no pwn-request rule, no \\u / % / zero-width+NFKC / \\n decoding, no *-command suffix, no list values, no container options.",
+  "coverage": "One scoped run (--only repo_invariants.py and check-repo-invariants.sh, 4 test files, 2223 passed): Python 528/528 statements and 258/258 branches; Bash 197/197 statements and 19/19 functions (100%).",
+  "lint": "bash scripts/lint-shell.sh --all --jobs 2: exit code 0.",
+  "invariants": "check-repo-invariants.sh rc 0, 17 PASS. Trailers on 01c0af5: Co-Authored-By Claude Sonnet 5.5 (accepted by FIX-BRIEF) and Claude-Session. No other model names in the commit message. The worktree is untouched and clean. Probe repo copies were deleted (probe dir 7.6 MB)."
+ }
+}

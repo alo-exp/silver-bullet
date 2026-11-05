@@ -1,0 +1,172 @@
+{
+ "package": "G2-planning-floor",
+ "branch": "fix/G2-planning-floor",
+ "head_reviewed": "191cc9d9c3eba17ece893abbeb8aa64fcb344493",
+ "previous_head": "eb32cff",
+ "verdict": "CHANGES_REQUIRED",
+ "per_finding": [
+  {
+   "id": "r1-blocker-1 (unseen/opaque/parse-failed shell)",
+   "verdict": "fixed",
+   "notes": "Payload >512 KiB: dev-cycle-check, planning-file-guard, instruction-file-guard, trivial-file-guard deny 'cannot inspect this command: command too large to analyze' with how to proceed (workflow-chain-guard is inert without workflows; its test covers it). Process substitution, bash < <(), source <(), bash -c \"$(..base64..)\", eval of computed text, $(cat f) as program, nesting 300 deep (parse error: nesting too deep) all deny. Heredoc with __E_O_F__ | bash, . /dev/stdin <<<, python3 - <<PY, printf|sh are analysed and denied by the floor. Honest: git status/diff/log, ls, cat, grep, npm test, pytest, make, cargo/go test, git add+commit, commit -F - heredoc, eval \"$(ssh-agent -s)\", pyenv init, venv activate, sh -c 'npm ci && npm test' -> pass. curl|bash is refused (intended). Mutation check in a sandbox copy: see validation."
+  },
+  {
+   "id": "r1-blocker-2 (ancestor writes)",
+   "verdict": "fixed",
+   "notes": "All listed forms deny in dev-cycle-check and trivial-file-guard (probe b3). Gaps remain for unmodelled extractors (cpio/7z/pax/bsdtar; minor) and globs (blocker, separate issue)."
+  },
+  {
+   "id": "r1-major-3 / R3-01 (recorder forgery, seal)",
+   "verdict": "incomplete",
+   "notes": "PostToolUse requirement and recorder-naming rule work for the r1 probes, but copy-plugin-root + find-rename forges sealed state in one command (major). Seal: appends and same-length edits detected; shorter rewrite, deleted seal, recomputed seal, copied pair, rollback not detected (minor). Residuals: 'other readers ignore the seal' acceptable as hand-off to G1/G3 (minor, tracked); 'crafted PostToolUse payload' not acceptable while the recorder can still be copied and run; 'ever recorded on branch' acceptable with docs (minor)."
+  },
+  {
+   "id": "r1-major-4 (contract basenames as needles)",
+   "verdict": "incomplete",
+   "notes": "os.rename/os.replace/shutil.move/perl unlink/rename, ruby File.rename, node renameSync, find -exec/-delete, script with literal names deny. String-built names in -c or script files pass (major); shell globs pass (blocker)."
+  },
+  {
+   "id": "r1-major-5 (.silver-bullet.json unlock)",
+   "verdict": "fixed",
+   "notes": "silver-init/update/add/devops/migrate recorded via PostToolUse Skill unlock; silver-add jq>tmp&&mv and silver-devops active_workflow edits pass; naming (invoke-skill without receipt, cat SKILL.md, PreToolUse payload, echo) does not unlock; drift test scans skills/. Branch-long scope is a minor."
+  },
+  {
+   "id": "r1-major-6 (MCP/NotebookEdit registration)",
+   "verdict": "fixed",
+   "notes": "planning-file-guard/instruction-file-guard/workflow-chain-guard group and dev-cycle-check group carry NotebookEdit and the mcp write matcher; write_file to .planning/ROADMAP.md, new CLAUDE.md, state dir deny; read tools pass. Verb/key coverage gaps are a minor. G1 trial merge: see issue."
+  },
+  {
+   "id": "r1-major-7 (stop-check trivial)",
+   "verdict": "ok",
+   "notes": "Closed by G1: fix/G1-delivery-gates hooks/stop-check.sh:201 calls sb_trivial_path_trusted."
+  },
+  {
+   "id": "r1-minor find-exec/ln/script",
+   "verdict": "fixed",
+   "notes": "find -exec sh -c on state dir, ln -s state dir + write, ln -s ~/.claude + write, python3 w.py naming the state path -> deny. String-built script paths pass (covered by the major)."
+  },
+  {
+   "id": "r1-minor jq || true",
+   "verdict": "fixed",
+   "notes": "Truncated JSON naming .planning / CLAUDE.md / trivial -> deny 'cannot inspect this tool call' in planning-file-guard, instruction-file-guard, trivial-file-guard and dev-cycle-check."
+  },
+  {
+   "id": "r1-minor messages/FPs",
+   "verdict": "incomplete",
+   "notes": "State-tamper message now says how to read (cat/grep/jq) and plain reads pass; node/python read of state still denied (acceptable with the hint). New misleading texts reported as a minor."
+  },
+  {
+   "id": "r1-minor latency",
+   "verdict": "incomplete",
+   "notes": "PostToolUse early exit works; Edit PreToolUse still pays python3 (minor)."
+  },
+  {
+   "id": "r1-minor MCP path keys",
+   "verdict": "fixed",
+   "notes": "mcp__fs__fs_mv {from: silver-bullet.md} -> deny. relative_path missing (minor)."
+  },
+  {
+   "id": "r1-minor HOOKS.md conflict",
+   "verdict": "ok",
+   "notes": "Still conflicts with G1 (expected, generated); regeneration resolves it \u2014 see merge issue."
+  },
+  {
+   "id": "r1-minor phase-archive mv",
+   "verdict": "fixed",
+   "notes": "mv .planning/phases /tmp/x and mv .planning /tmp/x archive phases first (allow with 'Phase archive: copied phases...')."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "blocker",
+   "location": "hooks/lib/planning-floor.sh:84-90 (sb_pf_write_records), hooks/dev-cycle-check.sh contract/state checks, hooks/planning-file-guard.sh, hooks/instruction-file-guard.sh, hooks/trivial-file-guard.sh",
+   "problem": "Glob metacharacters in a write target bypass every protected-file guard. F2 reports the literal pattern as the path (e.g. /proj/.silver-bullet.j?on, scope path, dynamic false); G2 compares it by string equality with the protected paths, so it never matches, while bash expands the glob (also in a redirect word) to the protected file.",
+   "evidence": "probes b10/b11/b17 (REVF-G2-r2-probe), all 'none': dev-cycle-check: `cp /tmp/x .silver-bullet.j?on`, `mv /tmp/x .silver-bullet.js[o]n`, `rm silver-bullet.m?`, `for f in .silver-bullet.j*; do cp /tmp/x \"$f\"; done`, `bash s4.sh` (script body `cp /tmp/x .silver-bullet.j?on`), `echo inst-a >> ~/.claude/.silver-bulle?/state-test`; planning-file-guard: `echo x >> .planning/ROADMA?.md`, `cp /tmp/x .planning/R*.md`; instruction-file-guard: `cp /tmp/x CLAUDE.m?`, `cp /tmp/x AGENTS.m?`; trivial-file-guard: `cp /tmp/x ~/.claude/.silver-bullet/trivia[l]`. The literal forms all deny. Real bash check: `bash -c 'echo hacked >> .planning/ROADMA?.md; cp ../gl.x .silver-bullet.j?on'` appended to ROADMAP.md and replaced .silver-bullet.json. (The planning floor itself still denies src/ap?.js because /src/ stays in the pattern.)",
+   "suggested_fix": "Treat a write target whose unquoted last components contain * ? [ as a pattern: fnmatch it (per component) against every protected path (state dir and its files, contract files, .planning protected set, CLAUDE.md/AGENTS.md, trivial marker) and deny on a match; or have F2 mark glob targets (a 'glob': true flag) and deny any glob write whose directory part is or contains a protected directory. Add tests for ?, *, [..] in cp/mv/rm/redirect/for-loops and in invoked scripts."
+  },
+  {
+   "severity": "blocker",
+   "location": "hooks/lib/planning-floor.sh:84-87 (select scope == path or via in tar -x/unzip)",
+   "problem": "R2-02 adoption gap: F2 reports `patch` and `git apply` as tree-scope writes (path = cwd or -d dir), but sb_pf_write_records keeps tree scope only for tar -x and unzip, so patch/git apply are dropped. With no planning skills, `git apply /tmp/p.diff` or `patch -p1 < /tmp/p.diff` rewrites src/ freely; `patch -d ~/.claude -p1 < p.diff` writes the state dir. F2's report says dev-cycle-check adoption of these tree writes is the owner's (G2).",
+   "evidence": "analyze.py command for `patch -p1 < /tmp/p.diff` -> writes:[{path:/proj, via:patch, scope:tree}]; `git apply /tmp/p.diff` -> via 'git apply', scope tree. dev-cycle-check, empty state: `patch -p1 < /tmp/p.diff` -> none, `git apply /tmp/p.diff` -> none, `patch -d $HOME/.claude -p1 < /tmp/p.diff` -> none (dc and trivial-file-guard). R2-02 failure scenario lists both commands.",
+   "suggested_fix": "Accept every tree-scope write in sb_pf_write_records (or at least patch/git apply/git am) and treat it as covering its directory: planning floor applies when the tree is, contains or sits in the source scope; state/contract/.planning/instruction guards via sb_pf_expand_ancestors. Better: when the diff file is readable, have F2 list the paths it touches. Tests: git apply/patch with empty state deny; patch -d <state root> deny; honest `git apply` after planning allowed."
+  },
+  {
+   "severity": "major",
+   "location": "hooks/lib/planning-floor.sh:272-292 (sb_pf_names_sb_recorder / sb_pf_text_names_recorder), hooks/dev-cycle-check.sh:290-296",
+   "problem": "R3-01 still forgeable in one command in an installed copy: copying the plugin ROOT (the parent of hooks/) is not seen as copying the recorder, and renaming by glob avoids naming record-*.sh. The renamed copy writes the real state file AND a valid seal, after which Edit src passes.",
+   "evidence": "probe b6: installed copy at $HOME/.claude/plugins/cache/alo-labs/silver-bullet/9.9.9, state empty, all_tracked=[inst-a]. Command `mkdir -p T/w2 && cp -r <cache>/9.9.9 T/w2/c && find T/w2/c -name 'record-s*' -exec mv {} T/w2/c/hooks/x.sh \\; && bash T/w2/c/hooks/x.sh < T/pl.json` (pl.json = PostToolUse Skill inst-a payload) -> dev-cycle-check none; after running it state=[inst-a], seal='2 31437430 8', then Edit src/app.js -> allow. Other variants (python glob, perl glob, bash rec*-skill.sh, ${f}cord-skill.sh, node readdirSync) are denied, but by the plugin-boundary rule with the message 'Silver Bullet NEVER modifies its own enforcement hooks', not as STATE TAMPER.",
+   "suggested_fix": "In an installed copy, treat any cp/rsync/tar/ln/install/ditto whose source is the plugin root or an ancestor of its hooks/ dir as a recorder copy (extend the $hooks check to 'hooks dir is at or below the source'). Longer term (G4): record-skill should accept only a host-originated event, e.g. require the Skill tool payload plus a hook-side check that the recorder is the registered plugin path (BASH_SOURCE under SB_PLUGIN_ROOT / CLAUDE_PLUGIN_ROOT) so a copy elsewhere refuses to write state."
+  },
+  {
+   "severity": "major",
+   "location": "hooks/dev-cycle-check.sh:165-170 (opaque_contract via sb_pf_opaque_mentions/sb_pf_script_mentions), docs/ENFORCEMENT.md:28, fix-G2 report residual 'string-built code is refused as unseen'",
+   "problem": "Interpreter code that builds a contract or state path by concatenation is neither refused as unseen nor matched by the needles: F2 reports it as an opaque writer (no unseen reason) and G2 only denies opaque writers whose text contains a needle. The author's residual statement that string-built code 'is refused as unseen' is inaccurate: only decoders (bytes.fromhex, base64) yield unseen. One line replaces .silver-bullet.json (e.g. with required_planning=[]) and disables the planning floor; there is no digest of the contract pair to detect it afterwards (R1-07 partial).",
+   "evidence": "probe b10/b13: `python3 -c \"import os;os.replace('/tmp/x','.silver-'+'bullet.json')\"` -> none; `python3 -c \"import os,glob;os.replace('/tmp/x',glob.glob('.silver-bullet.j*')[0])\"` -> none; `python3 T/w.py` with os.replace('/tmp/x', '.silver-bullet' + '.json') -> none; `python3 T/w3.py` (path '~/.cl'+'aude/.silver-bullet/state-test') -> none. analyze.py: writes [], opaque_writers [{python3,'inline python code'}], unseen_reasons []. Literal forms (os.rename/os.replace/shutil.move/perl unlink/ruby/node renameSync) now deny.",
+   "suggested_fix": "Either (a) keep a hook-maintained digest of the contract pair (written by session-start and the unlocking skills' recorder) and have the gates fail closed on a mismatch \u2014 this catches every spelling; or (b) inside an SB project deny opaque interpreter code that calls a rename/replace/move/remove/unlink/open-for-write API with a non-literal path argument. Correct the residual wording in the report and docs."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/lib/state-seal.sh:479-495 (reset/none branches), tests/hooks/test-state-seal.sh:29, tests/hooks/test-dev-cycle-check-review.sh:171",
+   "problem": "The seal detects appends and same-length in-place edits only. An overwrite with fewer lines than sealed is treated as a 'reset' and trusted in full; a deleted seal ('none') trusts the whole file; the cksum is unkeyed and recomputable (wc -l + cksum); a sealed state+seal pair copied from another branch/session, or an older pair rolled back, is accepted. The tests pin the reset weakness. docs/ENFORCEMENT.md says 'an in-place edit of the sealed lines yields no records' without saying a shorter rewrite is fully trusted. Acceptable as defence in depth (the shell guards are the barrier and writing the state dir is denied), but the seal adds little once a write escapes the guards.",
+   "evidence": "probe b7/b8 (direct writes simulating an escaped guard): append via printf or python -> ignored (detected); same-count rewrite -> empty (detected); sealed [inst-a, inst-c] N=2 then `printf 'inst-b\\n' > state` -> Edit allow (not detected); rm seal + write -> allow; recomputed seal -> allow; copied sealed pair from another run -> allow; rollback -> allow. Honest recording works (inst-a then inst-b -> allow), session-start removes the seal on branch reset.",
+   "suggested_fix": "Make every reset path remove the seal (session-start already does; scripts/deploy-gate-snippet.sh:89,126 removes the state but not the seal) and then treat lines<N as tampered; bind the seal to the branch-scope file contents (include branch + toplevel in the digested text) so a pair from another branch fails; reword the docs to say what is and is not detected."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/lib/planning-floor.sh (SB_PF_CONTRACT_WRITER_SKILLS / sb_pf_contract_unlocked), docs/ENFORCEMENT.md:28",
+   "problem": "The contract unlock is 'any writer skill ever recorded on this branch'. silver-add (filing an issue) and silver-devops are routine skills; once either ran, the agent may rewrite .silver-bullet.json and silver-bullet.md (e.g. required_planning=[]) for the rest of the branch. Naming a skill does not unlock (verified), so this needs a real skill invocation that leaves a trace; the docs do not state the branch-long scope.",
+   "evidence": "probe b9: state [inst-a] -> jq>tmp&&mv, devops jq, Write .silver-bullet.json all deny; `silver-bullet invoke-skill silver-init` without receipt, `cat .../silver-init/SKILL.md`, PreToolUse Skill payload, `echo silver-init; ...` -> no unlock; after a PostToolUse Skill silver-add record: Write .silver-bullet.json and Write silver-bullet.md -> none. State lines silver-init-x/xsilver-init/sb:init/gsd-init do not unlock.",
+   "suggested_fix": "Scope the unlock to the most recently recorded skill (or a time window), and for silver-add/silver-devops unlock .silver-bullet.json only (not silver-bullet.md). Document the scope."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/hooks.json (mcp__.*__(write|edit|...)[A-Za-z0-9_]* matcher), hooks/lib/planning-floor.sh:92-97 path keys, sb_pf_mcp_write_tool",
+   "problem": "MCP coverage is verb-first and key-limited. The matcher misses common write tools (serena insert_after_symbol/insert_at_line, *_copy*/copy_file, fs_mv, str_replace_editor, file_write, put_file) and does not match the guard's own sb_pf_mcp_write_tool list (which has *_mv* and *copy*). The path-key list lacks relative_path, so mcp__serena__create_text_file {relative_path:'.planning/ROADMAP.md'} or {relative_path:'.silver-bullet.json'} passes even when the hook runs.",
+   "evidence": "probe b12: matcher test -> insert_after_symbol NO, str_replace_editor NO, fs_mv NO, copy_file NO, file_write NO, put_file NO; planning-file-guard and dev-cycle-check with mcp__serena__create_text_file relative_path payloads -> none. write_file/move_file/edit_file payloads deny as intended; read tools pass.",
+   "suggested_fix": "Use one shared verb list (add insert|copy|mv|put|upload|apply|str_replace) for the matcher and sb_pf_mcp_write_tool, test the matcher text against it, and take relative_path (resolved against the project root) plus any string field that looks like a path."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/dev-cycle-check.sh:290-300 (messages)",
+   "problem": "Misleading deny messages: an opaque interpreter write to .silver-bullet.json is reported as 'silver-bullet.md defines which gates run' (opaque_contract always names silver-bullet.md); a read-only `python3 -c \"print(open('.silver-bullet.json').read())\"` is denied as ENFORCEMENT CONTRACT PROTECTED; recorder launches by glob/variable are denied with the plugin-boundary text 'Silver Bullet NEVER modifies its own enforcement hooks' instead of STATE TAMPER.",
+   "evidence": "probe b10 rows 2,5-7 and last row; probe b6 rows 2-5.",
+   "suggested_fix": "Name the matched needle in the message (or 'an enforcement contract file'), and check the recorder rule before the plugin-boundary rule."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/dev-cycle-check.sh, hooks/instruction-file-guard.sh (PreToolUse file tools)",
+   "problem": "Latency: PostToolUse is now cheap (early exit without a verify-tests marker), Bash Pre improved, but Edit/Write PreToolUse still starts python3 and roughly doubled under load; instruction-file-guard on Edit went up too.",
+   "evidence": "probe b14, 5-run means, load avg ~20 (noisy): base vs G2 \u2014 dc Edit Pre 1169 -> 2250 ms, dc Edit Post 1113 -> 928, dc Bash Pre 2728 -> 1485, dc Bash Post 2950 -> 774, ifg Edit Pre 331 -> 848, pfg Bash 569 -> 764, tfg Bash 698 -> 837.",
+   "suggested_fix": "For Edit/Write/MultiEdit with a plain file_path, canonicalise in Bash and skip sb_tool_input_load."
+  },
+  {
+   "severity": "minor",
+   "location": "cpio/7z/pax/bsdtar extractors (F2 + sb_pf_expand_ancestors)",
+   "problem": "Ancestor writes through extractors F2 does not model (cpio -D or cd+cpio, 7z x -o, pax -r -s, bsdtar -C) are not seen, so a prepared archive can still replace the state dir or the trivial marker. Unusual tools; F2-side gap, listed for completeness.",
+   "evidence": "probe b3: `cpio -idm -D ~/.claude < a.cpio`, `cd ~/.claude && cpio -idm < a.cpio`, `bsdtar -xf s.tar -C $HOME`, `7z x a.7z -o$HOME`, `pax -r -s ',^,~/.claude/,' < a.pax` -> dc none, tfg none. All r1 forms (cp -r/-a/-R, -t, rsync, tar incl. --directory and cd, unzip -d and cd, mv, mv -t, ln -s, install -D, dd of=, tee, redirect, cd ancestor && cp -r ., cd src && cp -r . dest, cp -l, rm -rf/mv/find -delete of an ancestor, busybox tar, git -C/--work-tree checkout) deny.",
+   "suggested_fix": "Hand to F2: model cpio/pax/7z/bsdtar extract targets (or treat unknown extractors run in or pointed at an ancestor of a protected dir as tree writes)."
+  },
+  {
+   "severity": "minor",
+   "location": "commit 4317adc",
+   "problem": "'wip(G2): review repair r1' has no Co-Authored-By/Claude-Session trailers and no red/green evidence (FIX-BRIEF commit rules). Not blocking per the F2 precedent; it can be reworded only by rewriting unpublished package history.",
+   "evidence": "git log --format=%B 4317adc -1 -> subject only.",
+   "suggested_fix": "Reword before merge if the orchestrator rewrites package history; otherwise record it."
+  },
+  {
+   "severity": "minor",
+   "location": "merge with fix/G1-delivery-gates (hooks/hooks.json, docs/HOOKS.md, hooks/cursor-hooks.json, plugins/silver-bullet/cursor-hooks.json, tests/integration/test-session-scenarios.sh)",
+   "problem": "Trial merge of G1 (90a70e9) into G2 conflicts in 5 files. It resolves cleanly but needs a deliberate choice for PreToolUse group 2: G1 widened 'Bash|Skill|exec_command' to '...|mcp__.*' and added ci-status-check there; G2 put spec-floor-check, forbidden-skill-check and uat-gate into the same group. Merging them into the mcp__.* group would run three extra hooks on every MCP call.",
+   "evidence": "git merge-tree: CONFLICT in docs/HOOKS.md, hooks/cursor-hooks.json, hooks/hooks.json, plugins/silver-bullet/cursor-hooks.json, tests/integration/test-session-scenarios.sh. Resolved in a throwaway worktree (deleted): group 'Bash|Skill|exec_command|mcp__.*' = phase-archive, completion-audit, ci-status-check; new group 'Bash|Skill|exec_command' = spec-floor-check, forbidden-skill-check, uat-gate; ci-status-check removed from the last Bash|exec_command group; test-session-scenarios takes G2's S5.0 block plus G1's rm line. Then generate-cursor-hooks + generate-hook-reference: 96 hook commands / 64 scripts (matches CLAUDE.md), --check OK, plugin mirror OK, check-repo-invariants exit 0, test-session-scenarios 11/0, test-hook-reference 3/0, test-planning-floor-lib 203/0. Merge-tree with claude/optimistic-ramanujan-tccfud and fix/G3-stop-prompt-override: clean.",
+   "suggested_fix": "Use the split-group resolution above when G2 merges after G1, then regenerate."
+  }
+ ],
+ "validation": {
+  "tests": "Scoped coverage run over the author's 47-file list: 2380 passed, 0 failed. Trial merge with G1: test-session-scenarios 11/0, test-hook-reference 3/0, test-planning-floor-lib 203/0. Mutation checks in a sandbox copy (deleted): with the unseen check disabled in dev-cycle-check, test-dev-cycle-check-review.sh fails 5 assertions (over-budget src/state/contract writes); with sb_pf_expand_ancestors disabled it fails every ancestor-write assertion (cp -r/-a, rsync, tar -C, unzip -d). Unmutated: 105/0. tests/hooks/test-state-seal.sh and the review test pin the seal's 'reset = trusted' behaviour (see minor).",
+  "coverage": "One scoped run (--only the 16 changed hook/lib files, the 47 tests in g2-r1-covfiles2.txt), exit 0: dev-cycle-check.sh 514/514, planning-floor.sh 285/285, state-seal.sh 57/57, record-skill.sh 284/284, and every other changed file 100%, except hooks/session-start 438/444 (missing 153, 239, 240, 368, 495, 503). Those lines are untouched by G2 (G2 changed only line 295, which is covered); other session-start tests outside the list cover them, and the base CI full run had session-start at 100%. The CI gap of 4 statements in dev-cycle-check.sh is closed in this scoped run.",
+  "lint": "bash scripts/lint-shell.sh --all --jobs 2: exit 0 (application Bash clean; test Bash clean, 743 files).",
+  "invariants": "check-repo-invariants exit 0 (personal-data PASS, workflow-hardening PASS); generate-hook-reference --check up to date; generate-apo-artifacts --check exit 0; validate-plugin-mirror OK; docs/workflows identical to templates/workflows; skills/, silver-bullet.md, templates/silver-bullet.md.base and hooks/core-rules.md unchanged vs base (no sync, parity or core-rules pin change needed). No Bash 4 or GNU-only constructs in the added hook lines (cksum, head -c, sed -n, wc -l | tr are POSIX/BSD-safe). merge-tree: clean with claude/optimistic-ramanujan-tccfud (2a65018) and fix/G3-stop-prompt-override (fb9a190); 5-file conflict with fix/G1-delivery-gates (90a70e9), resolved in a throwaway worktree (see issue): 96 hook commands / 64 scripts. Commit 4317adc lacks trailers (minor). Latency: see minor."
+ },
+ "probes": "/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-G2-r2-probe/b1.sh .. b17.sh (h.sh harness)"
+}

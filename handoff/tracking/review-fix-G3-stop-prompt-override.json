@@ -1,0 +1,208 @@
+{
+ "package": "G3-stop-prompt-override",
+ "head_reviewed": "44ef934",
+ "verdict": "CHANGES_REQUIRED",
+ "per_finding": [
+  {
+   "id": "R10-03",
+   "verdict": "fixed",
+   "notes": "uat-gate result cells parsed case-insensitively per column; lowercase fail / |FAIL| / not run rows deny (test-g3-skill-gates). Residual (minor issue): any row with a cell exactly 'pass' is treated as a legend row and skipped."
+  },
+  {
+   "id": "R2-09",
+   "verdict": "fixed",
+   "notes": "p7.sh: stall-block newer than state blocks; after touching state the block lifts, stall-block removed, planning floor still evaluated. timeout-check removes the flag on progress."
+  },
+  {
+   "id": "R2-10",
+   "verdict": "incomplete",
+   "notes": "Loop break works (p7.sh) but the release on stop_hook_active exits 0 without the planning floor: git checkout -b other + two Stops releases a session that never ran silver-quality-gates/silver-plan (same-branch case keeps blocking). Remedy text 'invoke the required planning skills again on this branch' does not clear the mismatch (only session-start re-stamps the branch file). Per-session branch keying hand-off to G4 is legitimate. SubagentStop exemptions for outcomes/ledger OK."
+  },
+  {
+   "id": "R2-11",
+   "verdict": "fixed",
+   "notes": "Absolute resolver path from plugin root, ids i<n>-<b64>, path-targeted resolve requiring exactly one leaf, same-worktree branch switch re-stamps (branch validated to [a-zA-Z0-9/_.-] before the jq filter interpolation)."
+  },
+  {
+   "id": "R2-17",
+   "verdict": "fixed",
+   "notes": "p4.sh: 22 variants (env/command/bash -lc/sh -c/eval/$(...)/pipes/;/&&/xargs/quoted names/namespaces/case) all denied by uat-gate/forbidden-skill-check via the F2 classifier; echo-only mention allowed. Conflicts with G2's parallel implementation (issue)."
+  },
+  {
+   "id": "R2-19",
+   "verdict": "incomplete",
+   "notes": "Classifier: all finding prompts now work (p8.sh). Seal: plain jq edit is detected and reset (p9.sh). But `rm outcomes-session.json` (sidecar kept) makes Stop pass with no tamper log line, and a 'Q? Fix it.' single-line prompt stays informational."
+  },
+  {
+   "id": "R2-22",
+   "verdict": "incomplete",
+   "notes": "SubagentStop coalesce reset and /tmp fallbacks removed: verified. Per-session keying of outcomes/ledger (G3's own libs, session_id is in every UPS/Stop payload) left undone; only the branch file is G4's."
+  },
+  {
+   "id": "R2-23",
+   "verdict": "incomplete",
+   "notes": "Workflow-id filter verified in diff/tests. Latency not addressed (prompt-reminder ~620 ms in sandbox vs documented <200 ms target in prompt-reminder.sh:21); this is G3's own file, not a hand-off. Coalesce sub-claim rejection plausible (record-requested-skill resets at end of its run)."
+  },
+  {
+   "id": "R2-24",
+   "verdict": "incomplete",
+   "notes": "apply_patch/exec_command gated, per-return audit required (p6.sh: Edit DENY after Task). But the PostToolUse Bash clear ignores exit code/receipt: `false && silver-bullet invoke-skill sb:completion-audit` (exit 1) and a nonexistent path (exit 127) both clear the pending marker; the PreToolUse audit exemption also allows a chained write in the same command."
+  },
+  {
+   "id": "R2-25",
+   "verdict": "fixed",
+   "notes": "Flexible spacing/case, project-root paths, exact canonical silver-release match."
+  },
+  {
+   "id": "R2-30",
+   "verdict": "fixed",
+   "notes": "p7.sh: docs/CODE-REVIEW.md blocks, root REVIEW.md transient; ENVIRON avoids awk warnings."
+  },
+  {
+   "id": "R2-32",
+   "verdict": "ok",
+   "notes": "Partial acceptable: the finding's own fix allows 'document it as inert'; removal deferred with reason."
+  },
+  {
+   "id": "R2-36",
+   "verdict": "incomplete",
+   "notes": "Works for Write/Edit/apply_patch writes (files-written marker). The finding's own scenario (source written through a path the PreToolUse gate misses, e.g. Bash) still passes: p10.sh empty state + `echo evil > src/app.js` -> Stop rc 0, no output."
+  },
+  {
+   "id": "R4-07",
+   "verdict": "incomplete",
+   "notes": "Synthetic payload without session_id refused (p1.sh). But (a) any session_id plus transcript_path=/etc/hostname is honoured, (b) a delegate/worker session (SB_ORCHESTRATOR_WORKER=1, which scripts/agent-claude/lib.sh:40 exports) honours an SB OVERRIDE first line in the parent's brief and clears the parent's directive and queue (p10.sh) - refusable inside G3's override_apply, so not a legitimate G6 hand-off, and (c) see issue 1: the bare-work queue clear needs no session_id at all."
+  },
+  {
+   "id": "R4-08",
+   "verdict": "regressed",
+   "notes": "Wiring fixed and status questions keep the queue, but the now-live clear runs on an unauthenticated UPS payload: a worker pipes {hook_event_name:UserPromptSubmit,prompt:'add a small readme note now'} into outcomes-check.sh and the parent's queue+directive are wiped; Stop that blocked ('flow queue pending') then passes (p2.sh). No project audit line."
+  },
+  {
+   "id": "R4-12",
+   "verdict": "fixed",
+   "notes": "First non-blank line, upper case, 8+ chars, non-<placeholder>; quoted '>' line, lower case, unicode space and zero-width prefix all rejected (p1.sh). Minor: 'SB OVERRIDE: ........' and '<reason> and more' accepted."
+  },
+  {
+   "id": "R4-13",
+   "verdict": "fixed",
+   "notes": "Contract decided and documented consistently (silver-bullet.md 2h, template, ENFORCEMENT, ORCHESTRATOR); uat-gate no longer advertises it."
+  },
+  {
+   "id": "R4-14",
+   "verdict": "fixed",
+   "notes": "Audit before clear, symlink refusal, mkdir .planning, provenance + prev-hash chain, runtime mirror (tests + p1.sh projlog counts)."
+  },
+  {
+   "id": "R5-06",
+   "verdict": "fixed",
+   "notes": "p7.sh: future-epoch marker without SB_E2E_ENTERPRISE_MATRIX=1 -> planning floor blocks; with env -> exempt; no /tmp fallback."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "major",
+   "location": "tests/hooks/test-g3-skill-gates.sh:25-26",
+   "problem": "G3's new test file breaks an existing repository test: tests/scripts/test-no-gsd-runtime.sh rejects the gsd skill names written literally in the test. CI would go red.",
+   "evidence": "From the scoped coverage run log: 'FAIL: unexpected gsd refs outside forbidden-skill denylist ... tests/hooks/test-g3-skill-gates.sh:25: 'gsd:execute-phase' 'GSD:execute-phase' 'gsd-execute-phase' ...' Results: 3 passed, 1 failed.",
+   "suggested_fix": "Build the names the way forbidden-skill-check.sh does (printf '%s%s' gs d), or add the test file to the scanner's allowlist with justification. Then rerun test-no-gsd-runtime.sh."
+  },
+  {
+   "severity": "major",
+   "location": "hooks/outcomes-check.sh:99-101, hooks/lib/orchestrator-state.sh:376-391",
+   "problem": "R4-08 fix wires the stale-queue clear to an unauthenticated UserPromptSubmit payload. Any session with Bash (orchestrator workers, Codex, non-parent mode) can pipe a bare work request into outcomes-check.sh and wipe the parent's flow queue, directive and worker marker, releasing the parent Stop hold. It needs no session_id, so the R4-07 provenance check on SB OVERRIDE is moot, and it writes only a runtime-dir log, not the project audit. Before G3 this path was dead code.",
+   "evidence": "REVF-G3-probe/p2.sh: parent mode, orchestrator.json with repo_root -> stop-check {\"decision\":\"block\",\"reason\":\"Orchestrator parent: flow queue pending (silver-feature)...\"}; printf '{\"hook_event_name\":\"UserPromptSubmit\",\"prompt\":\"add a small readme note now\"}' | bash hooks/outcomes-check.sh -> orchestrator.json gone, next Stop rc 0 with no output; queue-clear.log 'cleared stale flow queue for new goal'. p3.sh: orchestrator-directive-guard allows that Bash for SB_ORCHESTRATOR_WORKER=1.",
+   "suggested_fix": "Apply the same provenance requirement as the override (host session_id, and the transcript_path check) before clearing on interrupt. Refuse it in worker/delegate sessions. Write the clear to the project audit log (or require an explicit user phrase) and add a test that a payload without a session_id keeps the queue."
+  },
+  {
+   "severity": "major",
+   "location": "hooks/lib/orchestrator-directive.sh:sb_orchestrator_override_apply",
+   "problem": "SB OVERRIDE is honoured in delegate/worker sessions. scripts/agent-claude/lib.sh exports SB_ORCHESTRATOR_WORKER=1, and the delegate's first user prompt is the parent agent's brief, so a brief starting 'SB OVERRIDE: ...' clears the parent's directive and queue (shared state dir) with a real session_id. The fix fits in G3's own function (refuse when sb_orchestrator_is_worker_session / SB_AGENT_*_DELEGATE), so the G6 hand-off covers only the state-dir isolation, not this. Also, transcript_path is only checked to be some regular file (/etc/hostname passes).",
+   "evidence": "REVF-G3-probe/p10.sh: SB_ORCHESTRATOR_WORKER=1 SB_AGENT_CLAUDE_DELEGATE=1, UPS {session_id:'child-1', prompt:'SB OVERRIDE: parent says planning is done\\nThen implement X'} -> directive=CLEARED queue=CLEARED, audit {reason:'parent says planning is done',session_id:'child-1'}. p1.sh: session_id 'forged' + transcript_path '/etc/hostname' -> honoured.",
+   "suggested_fix": "In override_apply, return 2 with a refusal when the session is a worker or delegate. Optionally require transcript_path under the host's transcript root, with a basename matching session_id. Add tests."
+  },
+  {
+   "severity": "major",
+   "location": "hooks/stop-check.sh:509-522,553-565",
+   "problem": "R2-10 loop break releases the branch-mismatch block with exit 0 and skips the planning floor entirely. An agent that never planned can end its turn by switching branches (git checkout -b x) and stopping twice. The same-branch missing-skill block still holds, so the release creates a bypass. The remedy text says 'invoke the required planning skills again on this branch', but recording skills never re-stamps the branch file, so that does not clear the block.",
+   "evidence": "REVF-G3-probe/p7.sh: state 'silver-context', dirty src, same branch -> block twice (also with stop_hook_active). After git checkout -b other: Stop -> mismatch block; Stop {stop_hook_active:true} -> {\"systemMessage\":...} rc 0 (released without the planning floor).",
+   "suggested_fix": "With stop_hook_active on a mismatch, emit the systemMessage, then fall through to the planning floor (treat the foreign state as empty plus the R2-36 agent-wrote-source rule), or re-stamp the branch scope so the floor becomes clearable in-session. Fix the remedy text and add a test: branch switch with missing skills is still blocked after the release."
+  },
+  {
+   "severity": "major",
+   "location": "hooks/stop-check.sh:446-480 (sb_stop_agent_wrote_source), hooks/trivial-file-clear.sh",
+   "problem": "R2-36 is marked fixed, but the finding's own scenario (source written through a path the PreToolUse gate misses, typically Bash) still ends the turn with an empty state: the files-written marker comes only from Write/Edit/MultiEdit/apply_patch PostToolUse.",
+   "evidence": "REVF-G3-probe/p10.sh: empty state, session-start 60 s ago, `echo evil > src/app.js` (no marker) -> stop-check rc 0, no output.",
+   "suggested_fix": "Also treat a dirty src_pattern path whose mtime is at or after session start as agent-written (the user's pre-session WIP stays exempt). Or set the marker from PostToolUse Bash when the porcelain changed. Add the Bash-written test."
+  },
+  {
+   "severity": "major",
+   "location": "hooks/lib/outcomes-gate.sh:sb_outcomes_reject_tampered, sb_outcomes_all_done",
+   "problem": "R2-19 tamper seal catches an edit but not a delete. Removing outcomes-session.json (sidecar left behind) makes sb_outcomes_all_done return 0, so Stop passes and nothing is logged. A plain rm in the state dir is not blocked by dev-cycle-check.",
+   "evidence": "REVF-G3-probe/p9.sh: seeded prompt -> Stop block; jq edit -> still block (seal works); rm -f outcomes-session.json -> Stop prints nothing; dev-cycle-check on `rm -f .../outcomes-session.json` -> no deny.",
+   "suggested_fix": "Treat a missing outcomes file whose .sha256 sidecar exists (or one seeded for the current prompt) as tampered: reseed pending and log to outcomes-tamper.log. Add a test."
+  },
+  {
+   "severity": "major",
+   "location": "hooks/forbidden-skill-check.sh, hooks/uat-gate.sh, hooks/hooks.json (vs fix/G2-planning-floor)",
+   "problem": "G2 and G3 each rewrote forbidden-skill-check.sh and uat-gate.sh for the Codex invoke-skill channel (G2: sb_pf_skill_calls in planning-floor.sh; G3: skill-channel.sh). merge-tree reports content conflicts in both scripts and in docs/HOOKS.md and hooks-purpose.json. hooks.json auto-merges into duplicate registrations, so each hook runs twice on every Bash call.",
+   "evidence": "git merge-tree --write-tree fix/G3-stop-prompt-override fix/G2-planning-floor -> CONFLICT in hooks/forbidden-skill-check.sh, hooks/uat-gate.sh, docs/HOOKS.md, docs/hooks-purpose.json; the merged hooks.json has PreToolUse 'Bash|Skill|exec_command' AND 'Bash|exec_command' entries for both hooks.",
+   "suggested_fix": "The orchestrator picks one implementation (one helper, one registration), regenerates HOOKS.md/cursor hooks, and reruns both packages' skill-gate tests on the merge."
+  },
+  {
+   "severity": "major",
+   "location": "hooks/prompt-reminder.sh:21, hooks/lib/outcomes-gate.sh, hooks/lib/instruction-ledger.sh",
+   "problem": "Two 'partial' items are unfinished work in G3's own files rather than legitimate hand-offs. The R2-23 latency budget (prompt-reminder ~0.6 s against the documented <200 ms) is untouched. The R2-22 per-session keying of the outcomes and ledger files (G3's own libraries; session_id is in every UPS/Stop payload) is not done; only the branch file belongs to session-start (G4).",
+   "evidence": "REVF-G3-probe/p5.sh: prompt-reminder avg 622 ms, outcomes-check 286 ms (base 742/261 ms, so no regression but no fix either).",
+   "suggested_fix": "Key outcomes/ledger/coalesce files by session_id under the state dir, falling back to the global file when the payload has none. Profile prompt-reminder (cache the config/branch per session, drop hot-path forks), or record an explicit orchestrator decision deferring both."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/subagent-stop-enforcement.sh:96-107,160-165",
+   "problem": "The Codex audit channel clears the pending marker from command text alone: no exit-code or receipt check, unlike record-skill. The PreToolUse exemption allows any command that also invokes the audit, including a chained write.",
+   "evidence": "REVF-G3-probe/p6.sh: PostToolUse Bash 'false && /x/silver-bullet invoke-skill sb:completion-audit' exit 1 -> cleared; '/nonexistent/silver-bullet invoke-skill sb:completion-audit' exit 127 -> cleared; PreToolUse '... invoke-skill sb:completion-audit; echo hacked > src/a.js' -> allow.",
+   "suggested_fix": "Clear only when tool_response exit code is 0 and a fresh adapter receipt exists (reuse record-skill's receipt check). Exempt PreToolUse only when the audit invocation is the sole command."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/hooks.json (new PreToolUse Bash|exec_command group)",
+   "problem": "forbidden-skill-check and uat-gate now run the Python shell classifier on every Bash call with no cheap pre-filter, adding ~90 ms each (~180 ms per Bash call) plus ~190 ms for the new PostToolUse subagent-stop-enforcement Bash run. subagent-stop-enforcement already uses an 'invoke-skill' substring pre-filter.",
+   "evidence": "REVF-G3-probe/p5.sh: forbidden-skill-check 88 ms, uat-gate 92 ms on 'git status --short' (not registered for Bash on base).",
+   "suggested_fix": "Add a conservative pre-filter: skip when the raw command has no 'invoke' and no character that can hide it (quotes, backslash, $, backtick). Or share one classifier result across the gates."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/lib/prompt-classifier.sh:sb_prompt_is_informational_query",
+   "problem": "A question followed by an imperative on the same line stays informational, so the outcome and ledger gates are skipped for real work.",
+   "evidence": "REVF-G3-probe/p8.sh: 'What is going on with CI? Fix it.' -> INFO (also 'Why is X broken? Fix it' shapes via the what/why exception).",
+   "suggested_fix": "Split the first line on sentence terminators and apply the work-verb test to every sentence after the first."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/uat-gate.sh:100-112",
+   "problem": "A row is treated as a legend when any cell is exactly pass/passed/status/result/#/total, so a data row with an 'expected: pass' column and a fail result is skipped.",
+   "evidence": "Static: awk sets legend=1 when any cell == 'pass', for example '| AC-1 | login | pass | fail |'.",
+   "suggested_fix": "Identify the result column from the header row and evaluate only that column."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/lib/orchestrator-directive.sh:sb_orchestrator_extract_override_reason",
+   "problem": "An 8-character reason with no letters ('........') counts as a real reason.",
+   "evidence": "REVF-G3-probe/p1.sh: 'SB OVERRIDE: ........' -> honoured and logged.",
+   "suggested_fix": "Require at least one word of 3 or more letters."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/cursor-hook-bridge.sh:66-67",
+   "problem": "The Cursor bridge drops session_id, so every honest SB OVERRIDE on Cursor is now refused. Moot if HC (Cursor removal) merges first; otherwise note it in the release notes.",
+   "evidence": "Static: beforeSubmitPrompt maps only prompt into the SB payload.",
+   "suggested_fix": "None if HC lands; otherwise pass conversation_id/session_id through."
+  }
+ ],
+ "validation": {
+  "tests": "Through the coverage run: 148 result blocks, 2 failing files. (1) tests/scripts/test-no-gsd-runtime.sh fails on G3's own new tests/hooks/test-g3-skill-gates.sh:25-26 ('unexpected gsd refs outside forbidden-skill denylist'): a G3 regression. (2) tests/scripts/test-install-codex.sh 'Runtime Claude path references': the known H3b issue the author reported. Mutation check in a sandbox copy: replacing the first-line-only override parse with the old anywhere-match fails test-g3-override (2 asserts); removing sb_stop_agent_wrote_source fails test-g3-stop-check (3 asserts), so those tests have teeth.",
+  "coverage": "One scoped run (--only over the 22 changed .sh files, 116 covering test files, --jobs 2): Bash statements 3368/3368, lines 2262/2262, functions 116/116, every file at 100.00%. The run exits 1 only because of the two test failures noted under tests.",
+  "lint": "scripts/lint-shell.sh --all --jobs 2: application and test Bash clean (rc 0).",
+  "invariants": "check-repo-invariants rc 0 (workflow-hardening, personal-data, workflows-mirror PASS); generate-hook-reference --check OK; generate-apo-artifacts --check OK; validate-plugin-mirror OK; generate-cursor-hooks.py rewrote identical files (git status clean); docs/workflows == templates/workflows; core-rules.md unchanged; skills unchanged; all 7 commits carry Co-Authored-By Claude Sonnet 5.5 + Claude-Session trailers, no other model names. merge-tree: clean vs claude/optimistic-ramanujan-tccfud (5acae75 is the merge base) and fix/G1-delivery-gates (identical sb_trivial_path_trusted merges clean); conflicts with fix/G2-planning-floor (code, see issue), fix/G4-session-state (CLAUDE.md/HOOKS.md hook count only) and fix/G5-orchestrator (comment-only hunks in orchestrator-state.sh and orchestrator-directive-guard.sh, plus CLAUDE.md/HOOKS.md)."
+ }
+}

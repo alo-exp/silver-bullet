@@ -1,0 +1,672 @@
+{
+ "package": "H8b-followup",
+ "branch": "fix/H8b-followup",
+ "head": "b4c18ec60e567b3111931e0958281610360919ee",
+ "worktree": "/home/user/silver-bullet/.claude/worktrees/fix-H8b-followup",
+ "dispositions": [
+  {
+   "id": "1 gate _fold",
+   "status": "fixed",
+   "commits": [
+    "b094b31",
+    "e578732"
+   ],
+   "tests": [
+    "test_validate_landscape_content_unit: test_symbol_distinct_features_stay_distinct_in_either_row_order, test_the_gate_folds_exactly_like_the_packager"
+   ],
+   "evidence": "red: 2 failures (C++ gap in one order, none in the other); green after sharing category_pack.feature_key (materialize._feature_key delegates)",
+   "notes": ""
+  },
+  {
+   "id": "2 capitalised compounds",
+   "status": "fixed",
+   "commits": [
+    "b094b31",
+    "e578732"
+   ],
+   "tests": [
+    "test_production_paths: STILL_PLAIN_ENGLISH (+13 sentences), STILL_COUNTS, test_compound_and_role_prose_gives_no_vendor_votes"
+   ],
+   "evidence": "red: amb_fp 10/14 sentences with evidence; green 0/14. Real APO run: classify_solutions identical to 21606d0 (23 matrix slugs, director core); parse_feature_support differs only by removed false ticks",
+   "notes": "Rule: skip when previous/next token is a Title-Case non-function word, before a head noun, or after a role noun. Added Dev/OSS/Background to the product cues. Not reproduced: the exact 'gate gaps [sdlc-plugin]' number (needs the r3 harness); comparison.json packaged from the real run is identical before and after."
+  },
+  {
+   "id": "3 one product one slug",
+   "status": "fixed",
+   "commits": [
+    "b094b31",
+    "e578732"
+   ],
+   "tests": [
+    "test_production_paths: test_one_product_is_one_slug, test_copilot_workspace_is_the_sunset_product_not_copilot; test_cov_materialize.test_extract_slugs_from_text"
+   ],
+   "evidence": "red: 4 slugs for 'github copilot' mention; green: 1. Overlay slug_aliases github copilot/copilot -> github-copilot, copilot workspace -> copilot-workspace; known_solutions/overview_seeds key renamed to copilot-workspace",
+   "notes": "'Copilot Workspace' still also credits github-copilot through the pack alias 'copilot' (two products named in one phrase); a longest-match-wins pass was tried and dropped because it regressed the host-runtime claim parser on the real run. Dedupe through _slug_aliases not added: it would fold cursor into cursor-agents."
+  },
+  {
+   "id": "4 --force edited profile",
+   "status": "fixed",
+   "commits": [
+    "b094b31",
+    "e578732"
+   ],
+   "tests": [
+    "test_data_safety: test_force_keeps_an_edited_auto_profile_whose_category_was_renamed_too, test_an_unedited_auto_profile_of_another_query_is_still_left_behind, test_main_reports_carried_and_skipped_inputs"
+   ],
+   "evidence": "red: profile missing after --force; green: carried. Only an untouched auto profile (keys within the generated set, interview not complete) of another category is skipped; the answer now lists carried_inputs and skipped_inputs",
+   "notes": ""
+  },
+  {
+   "id": "5 feature words in vendor names",
+   "status": "fixed",
+   "commits": [
+    "b094b31",
+    "e578732"
+   ],
+   "tests": [
+    "test_production_paths: test_a_vendor_name_is_not_a_feature_word_for_every_vendor_in_the_claim, test_a_claim_that_reports_no_evidence_votes_for_nothing, test_masking_vendor_names_needs_a_name_with_a_feature_word"
+   ],
+   "evidence": "red: deepwork/director/barkain ticked Workflow composition; green: none. Real run removes 14 false cells (Director IDE-native, Deepwork/Turboshovel gates and marketplace, claude-harness composition)",
+   "notes": ""
+  },
+  {
+   "id": "6 quadratic mentions_vendor",
+   "status": "fixed",
+   "commits": [
+    "b094b31",
+    "e578732"
+   ],
+   "tests": [
+    "test_production_paths: test_the_vendor_mention_check_is_linear_in_the_claim_length"
+   ],
+   "evidence": "red: 80 KB 22.7 s; green: under 3 s (bounded 48-char look-behind, backwards opener scan)",
+   "notes": ""
+  },
+  {
+   "id": "7 prefix match of bare prose",
+   "status": "fixed",
+   "commits": [
+    "b094b31",
+    "e578732"
+   ],
+   "tests": [
+    "test_production_paths: test_bare_prose_never_prefix_matches_a_known_vendor"
+   ],
+   "evidence": "red: Claude -> claude-code-expert, claude--devin; green: only devin. List parsers keep a slug only if it is exactly known",
+   "notes": "Heading resolution (_resolve_solution_slug/_canonical_known_slug) still prefix-matches and its cov test is unchanged; that is a different path (section headings), left alone for a product decision if wanted."
+  }
+ ],
+ "files_changed_outside_ownership": [
+  "skills/silver-deep-research-multi-ai/scripts/category_pack.py: new shared feature_key (same skill)",
+  "regenerated mirrors under agents/, host-bundles/, plugins/ by sync-codex-package"
+ ],
+ "validation": {
+  "tests": "test-multi-ai-deep-research-contract.sh + test-solution-research-python.sh: 670 passed, 0 failed under SILVER_BULLET_RUNTIME=claude and codex; skill unit suite 855 tests OK",
+  "coverage": "scoped run over materialize/category_pack/dr_multi_ai_cli/validate: 100% except one new line (empty-name early return) which test_masking_vendor_names_needs_a_name_with_a_feature_word now covers; not re-run after that last test",
+  "lint": "lint-shell --all clean",
+  "invariants": "check-repo-invariants, generate-apo-artifacts --check, validate-plugin-mirror OK; sync-codex-package leaves a clean tree; no __pycache__; merge of claude/optimistic-ramanujan-tccfud: already up to date"
+ },
+ "notes": "No needs-user items. verify_claim_support.py and extract_claims.py untouched.",
+ "review_repair_r1": {
+  "commits": [
+   "109cdc1 (merge of 8c161a5, with trailers)",
+   "dc471c3",
+   "e14d934"
+  ],
+  "fixed": {
+   "1 absence veto": "scoped to the clause carrying the marker; 'without/missing' dropped, gate clauses (block/refuse/reject ... no evidence) kept, 'claims of X' kept, hard-exclusion lists cast no votes. Tests: test_the_absence_veto_is_scoped_to_its_clause, test_a_hard_exclusion_list_casts_no_feature_votes",
+   "2 recall": "capitalised openers added to the function words (-ly words too), verb-subject names count ('Melty Conductor runs'), product qualifiers Pro/Plus/Max/Enterprise/Teams/Composer/Droids are cues, 'agents'/'model' no longer head nouns ('agent' only after the/a/an). STILL_COUNTS gained 14 sentences; r4 false-positive set still 0/14",
+   "3 Background": "cue removed; Cursor Background Agents yields cursor-background-agents only (test_cursor_background_agents_is_one_product_with_one_slug)",
+   "4 list items": "items cleaned (emphasis, ticks, parenthetical, version, trailing dot) and split on 'and' before the exact match; Claude / Claude 2 still map to nothing (test_decorated_list_items_resolve_exactly)",
+   "5 --force": "previous run identified as the same query via manifest query or generated scope header; then the profile is always carried (rename-only, note-only, research_type edits). Tests: test_force_for_the_same_query_keeps_a_rename_only_or_note_only_edit, test_the_recorded_manifest_query_also_identifies_the_same_query",
+   "6 merge": "merged 8c161a5 (merge commit amended to carry trailers), ran sync-codex-package, validate-plugin-mirror OK"
+  },
+  "red_green": "with the scripts stashed: 5 failures in test_production_paths, 2 errors in test_data_safety; green: 861 skill tests OK",
+  "validation": {
+   "tests": "both files 670 passed, 0 failed under claude then codex (sequential)",
+   "coverage": "scoped run: 100% statements and branches on all four changed scripts",
+   "lint": "lint-shell --all clean",
+   "invariants": "check-repo-invariants PASS, generate-apo-artifacts --check 0, validate-plugin-mirror OK after final sync; no __pycache__"
+  },
+  "real_run": "classifier unchanged (23 matrix slugs, Director core); support map has no new vendors and only false ticks removed",
+  "notes": "With a different query and a note-only/rename-only edit the profile is still skipped (indistinguishable from an untouched one). 'Director agents ...' and 'Director and Conductor ...' at sentence start were already missed at base."
+ },
+ "review_repair_r2": {
+  "commits": [
+   "b2ffb64",
+   "fda31eb (merge of claude/optimistic-ramanujan-tccfud 127e2f9, with trailers)",
+   "fc61567 (sync-codex-package mirrors)"
+  ],
+  "corpus": {
+   "test": "skills/silver-deep-research-multi-ai/tests/test_vendor_mention_corpus.py",
+   "fixture": "skills/silver-deep-research-multi-ai/tests/fixtures/vendor_mention_corpus.json",
+   "counts": {
+    "r4_false_positive": 14,
+    "r2_false_positive": 31,
+    "round1_recall": 26,
+    "absence_keep": 23,
+    "absence_drop": 14,
+    "total": 108
+   },
+   "bars": {
+    "false_positive_hits": "0/45",
+    "recall": "23/26",
+    "recall_known_misses": [
+     "Director agents enforce review gates.",
+     "Director and Conductor enforce gates.",
+     "Silver Bullet reads Linear Issues and GitHub PRs."
+    ],
+    "absence_keep_known_miss": [
+     "Director, which is not a hard exclusion, provides workflow composition. (sentence-initial name without a verb: recall, not absence)"
+    ]
+   }
+  },
+  "fixed": {
+   "major _inside_ordinary_phrase": "subject-verb early return and blanket -ly exemption removed; a capitalised qualifier makes a compound unless '<word> <name>' is a known product name/alias of the run or the word is the product's maker (new overlay vocabulary PRODUCT_MAKERS: Melty/Anysphere/Cognition); -ly words and opener adverbs only at sentence start, then the name needs a verb; qualifier check runs before Plus/Enterprise cues",
+   "minor clause boundaries": "two-grain clauses: statements naming their own vendor blank the fine clause (', but', ', while', '(', ' - ', ':', bare comma); vendorless ones blank the sentence-level clause and, if only the absence, the sentence before",
+   "minor negation": "'without/missing evidence' restored; gate verbs whole words and must govern the marker; 'blocks X without evidence' no longer reads as a missing gate",
+   "minor hard-exclusion": "skipped when negated (not/unlike/except...)",
+   "minor sentence openers": "Next/First/Plus/Finally/Today/Notably etc. need a verb",
+   "minor perf": "_without_absence_clauses is one linear pass (bisect); 200 KB marker-dense claims < 2 s in test",
+   "minor --force": "_same_query/_scope_is_for compare the whole normalised query; a recorded manifest query decides alone"
+  },
+  "tdd": {
+   "red": "e14d934: 7/9 new corpus tests fail (18 false vendor mentions), test_data_safety 2 new fail",
+   "green": "11 corpus tests + test_data_safety 42 OK"
+  },
+  "real_apo_run": "23 matrix slugs, Director core, classification and all matrix cells identical to e14d934; no new vendors. Per-claim diff: only magic-dev/cognition-scout/devin lose a WC tick from 'lacks public process-orchestration claims' (precision gain), not visible in full-run cells",
+  "validation": {
+   "tests": "test-multi-ai-deep-research-contract.sh + test-solution-research-python.sh: 670 passed, 0 failed under claude and under codex",
+   "coverage": "scoped run 100% on materialize_solution_artifacts (1219/1219, 690/690), dr_multi_ai_cli (206/206, 52/52), pack_vocabulary (66/66, 12/12)",
+   "lint": "lint-shell --all exit 0",
+   "invariants": "check-repo-invariants 0; validate-plugin-mirror OK; hook-reference and apo --check 0"
+  },
+  "files_outside_ownership": []
+ },
+ "review_repair_r3": {
+  "commits": [
+   "fc04960",
+   "3b6de36 (merge of claude/optimistic-ramanujan-tccfud 94800f8, with trailers)",
+   "75f40b0 (sync-codex-package mirrors)"
+  ],
+  "corpus": {
+   "counts": {
+    "r4_false_positive": 14,
+    "r2_false_positive": 31,
+    "r3_false_positive": 52,
+    "r3b_false_positive": 25,
+    "round1_recall": 26,
+    "r3_recall": 24,
+    "copilot": 7,
+    "absence_keep(r2)": 23,
+    "absence_drop(r2)": 14,
+    "r3_absence": 34,
+    "r1_absence": 7
+   },
+   "false_positive_hits": "3/122, all the documented Devin first-name residual (pinned in the fixture); every other false-positive sentence is 0",
+   "recall": "51/56 credited; known misses with notes: Director agents..., Linear Issues, Linear tickets..., Copilot reviews..., The Cursor model picker (accepted)",
+   "absence_known_misses": "appositives ('<Vendor>, which ..., provides'), 'enforces ... gates that refuse', 'is a ... plugin', 'integrates natively' are not read as positives by the feature parser (recall, pre-existing); note corrected in the fixture"
+  },
+  "fixed": {
+   "1 common nouns": "article/determiner/possessive (+1 adjective), list of capitalised non-products, copula + in/to/over/across make an ambiguous name a common noun unless a product cue follows",
+   "2 ambiguous aliases": "copilot, cognition, aider, all hands, poolside, superpowers, workflow manager, cognition scout added; Devin as a first name is a documented residual (SKILL.md section Vendor mentions in prose)",
+   "3 maker": "Melty Conductor needs a cue or subject verb",
+   "4 hard exclusion": "negation must govern the marker",
+   "5 gate/lead": "gate verb + up to 4 words; However/This is/none was found/short of evidence",
+   "6 corpus": "7 r1 absence + Copilot sentences added, wrong note corrected",
+   "7 perf": "26 KB parse_feature_support 30 s -> 0.4 s (alias map + extract cache; check-mark regex guarded)",
+   "extra": "'Barkain Workflow Orchestrator does not.' false tick fixed (negated vendor earns no inferred features); classifier and extract_slugs install the run's product names; noun-verbs (position, target, package...) dropped from the subject-verb list"
+  },
+  "real_apo_run": "23 matrix slugs, Director core, classification and every parse_feature_support cell identical to e14d934 (0 diffs); per-claim only: devin and a few WC ticks lost in claims that say 'do not' / 'lacks ... claims'",
+  "validation": {
+   "tests": "test-multi-ai-deep-research-contract.sh + test-solution-research-python.sh 670 passed under claude and codex",
+   "coverage": "scoped 100%: materialize 1291/1291 + 724/724, dr_multi_ai_cli, pack_vocabulary, solution_classifier (Python 1800/1800 statements, 916/916 branches collected)",
+   "lint": "0",
+   "invariants": "0, mirror OK, hook-reference/apo --check 0"
+  },
+  "files_outside_ownership": [
+   "skills/silver-deep-research-multi-ai/scripts/solution_classifier.py (run_context around evidence extraction)"
+  ]
+ },
+ "review_repair_r4": {
+  "commits": [
+   "3d4845f",
+   "d75d18e (sync-codex-package mirrors; merge of claude/optimistic-ramanujan-tccfud was already up to date at 94800f8)"
+  ],
+  "design": "allowlist: an AMBIGUOUS_NAMES name is credited only if capitalised AND an explicit cue is beside it (head noun/domain/version after it, maker + product verb, maker in parens or 'by', full known product name via the word before, vendor-list lead, list holding a non-ambiguous known product). PROPER_PHRASES (silver bullet, augment code, open interpreter, open hands, spec kit, magic dev) need only Title Case. Removed: determiner/copula/list-of-nouns/opener/role/head-noun/subject-verb crediting rules (~150 lines fewer).",
+  "ambiguous_names_audit": {
+   "added_r4": [
+    "windsurf",
+    "codex",
+    "silver bullet",
+    "augment code",
+    "open interpreter",
+    "cline",
+    "deepwork",
+    "tembo",
+    "magic dev",
+    "spec kit",
+    "open hands",
+    "omp"
+   ],
+   "added_r3": [
+    "copilot",
+    "cognition",
+    "aider",
+    "all hands",
+    "poolside",
+    "superpowers",
+    "workflow manager",
+    "cognition scout"
+   ],
+   "kept_unambiguous": "invented or compound names (agentgpt, agenthub, agentsys, ateam, autogen, axonflow, barkain, bmad, cavekit, cc10x, claude flow, claude harness, coderabbit, crewai, devika, gsd, langchain, langgraph, metagpt, oh my pi, ruflo, superclaude, swe agent, turboshovel, zuvo), multi-word product phrases (amazon q developer, jetbrains ai assistant, sourcegraph cody, github copilot*, cursor agents/cloud/background agents, replit agent, ai dlc, augment cosmos, copilot workspace), and sdlc (non-vendor term)",
+   "residual": "devin (first name) and devika stay unambiguous: documented in SKILL.md; 3 pinned Devin sentences"
+  },
+  "corpus": {
+   "new": {
+    "r4b_false_positive": 52,
+    "r4c_false_positive": 30,
+    "r4_recall": 25,
+    "r4_absence": 24,
+    "r4_absence_plain": 17
+   },
+   "total_false_positive_sentences": 204,
+   "false_positive_hits": "3/204 (documented Devin first-name residual)",
+   "recall": "26/81 credited; 55 known misses pinned with a note (e.g. 'Teams that use Cursor report faster refactors.', 'Director enforces ...', 'Cursor Pro')"
+  },
+  "minors": {
+   "absence": "plain-vendor absence leaks 6/24 -> 0/24 (markers unverified/could not verify/nothing backs; leads Unfortunately/We; gate verb exempt only when the marker is its object)",
+   "discover": "discover_candidate_slugs runs inside run_context"
+  },
+  "real_apo_run": {
+   "unchanged": "23 matrix slugs, Director core, classification identical",
+   "cell_differences": [
+    "cognition-scout: IDE-native integration, Workflow composition (vendor drops out of support)",
+    "deepwork: Workflow composition",
+    "director: Hook-enforced gates",
+    "workflow-manager: Hook-enforced gates, Workflow composition"
+   ],
+   "note": "6 ticks lost where the real claims name the vendor with no product cue; no ticks gained; silver-bullet cells intact"
+  },
+  "validation": {
+   "tests": "test-multi-ai-deep-research-contract.sh + test-solution-research-python.sh 670 passed under claude and codex; 881 python unit tests OK",
+   "coverage": "scoped 100%: Python 1768/1768 statements, 880/880 branches (4 files)",
+   "lint": "0",
+   "invariants": "0, mirror OK, hook-reference/apo --check 0"
+  },
+  "files_outside_ownership": []
+ },
+ "design_implementation": {
+  "commits": [
+   "edc5ad6",
+   "bbd43be (sync-codex-package mirrors); base 5acae75 merged first (5693284) and again at the end (already up to date)"
+  ],
+  "decisions_applied": {
+   "1 acronyms": "GSD/OMP/SB ambiguous (mechanical rule)",
+   "2 devin": "ambiguous; credited only by tag, devin.ai or 'Devin (Cognition)'; Devin residual removed from corpus and docs",
+   "3 source field": "source_ref naming a vendor (name or pack URL) counts when the text also names it",
+   "4 contract": "one cross-package line in silver-multi-ai-task/scripts/live_dispatch.py PHASE_INSTRUCTIONS (vendors on evidence/claim_candidates/critiques/gaps; H8a, merged in base) plus a test in silver-multi-ai-task/tests/test_cov_live_dispatch.py"
+  },
+  "work_breakdown": {
+   "tests_first": "tests/test_vendor_identity_generative.py (7 tests: 40 templates x every ambiguous spelling x 3 cases + 200 seeded compositions on evidence / extract_slugs / feature parser; signalled recall; qualified display; source_ref; matrix slot), corpus r5_false_positive 82 + r5_audit 14 (301 plain-English sentences, residual dropped), tagged-recall test, vendor_spelling_audit.json + audit test, COINED_NAMES test, 'context rules are gone' test, real-run regression test, tagging contract tests",
+   "red": "at d75d18e the new tests error on the missing registry; r5 sets leak 71/96 under the old rule",
+   "new_module": "scripts/vendor_identity.py (171 lines): GENERIC_TOKENS, distinctive_tokens, Registry (spellings, distinctive, ambiguous_vendors, audit, URLs, qualified displays), build_registry",
+   "wired": "materialize: _claim_items/_iter_claim_texts wrapper, _declared_for_row (tags + source fields), _scoped_claim_texts, tagged_vendor_slugs, claim_scope, vendor_registry (memoised across the classifier/materialise copies of the vendor set), mentions_vendor (declared | prose spelling | explicit signal), _slot_vendors (S4); classifier: tags credited like matrix_entries, discover loop uses scoped rows",
+   "deleted": "AMBIGUOUS_NAMES, PROPER_PHRASES, PRODUCT_MAKERS, NON_VENDOR_TERMS, _CUE_AFTER, _VERSION, _PRODUCT_VERB, _DETERMINERS, _PREV_WORD, _NEXT_WORD, _LIST_*, _plain_products, _in_vendor_list, _product_in, _list_with_a_product, _maker_cue, _known_pair, _proper_phrase, _has_product_cue, _normal; the four overlay vocabulary keys and converters (COINED_NAMES added); discover_candidate_slugs bare-token loop; prefix-guess branch for ambiguous heads limited to non-ambiguous vendors. materialize_solution_artifacts.py 2195 -> 2192 lines; vendor_identity.py +171 (the design estimated ~120)",
+   "prompts_schema_docs": "research_brief asks for vendors tags (solution types; names the [CATEGORY_PACK] slugs only when a pack is selected); pack_prompt_block renders 'Name (`slug`)'; schema: bounded optional vendors array on evidence/claim_candidates/critiques/gaps items; SKILL.md section rewritten (identity is declared; audit file; no lexical residual)"
+  },
+  "deviation": "discover_candidate_slugs now scores the pack's own hard exclusions and sunset products (score 0) so their classification does not depend on an ambiguous name being 'evidence'; this keeps every classification of the real run identical (without it 11 excluded/sunset entries drop out of by_slug)",
+  "results": {
+   "false_credits": "0 of 301 plain-English corpus sentences; generative 0 credits on all three paths",
+   "signalled_recall": "81/81 with a vendors tag; every explicit signal (tag, source_ref display and URL, URL in text and as link target, qualified display) credits the canonical vendor",
+   "untagged_recall": "7/81 (74 known misses pinned in the fixture): the recorded cost",
+   "parse_feature_support": "unchanged cost profile; memoised registry (multi-entry cache)"
+  },
+  "real_apo_run": {
+   "matrix_slugs": 23,
+   "director": "core (pack core_seed)",
+   "classification": "identical for every slug",
+   "matrix_cells": "-19 / +5 (design prototype: -19 / +5)",
+   "lost_with_cause": {
+    "augment-cosmos | Free tier / OSS core": [
+     "Startup-weighted matrix: Silver Bullet scores highest on plugin_packaging and deterministic quality gates; Factory.ai/Devin/Augment Cosmos s"
+    ],
+    "augment-cosmos | Parent/child agent delegation": [
+     "Factory.ai, Devin, and Augment Cosmos are the three leading tertiary-market agentic SDLC SaaS vendors. None self-label APO but all meet \u22654 o"
+    ],
+    "augment-cosmos | Quick onboarding": [
+     "Startup-weighted matrix: Silver Bullet scores highest on plugin_packaging and deterministic quality gates; Factory.ai/Devin/Augment Cosmos s"
+    ],
+    "augment-cosmos | Zero-infra bootstrap": [
+     "Startup-weighted matrix: Silver Bullet scores highest on plugin_packaging and deterministic quality gates; Factory.ai/Devin/Augment Cosmos s"
+    ],
+    "claude-harness | Free tier / OSS core": [
+     "AgentSys, SDLC, Deepwork, Workflow Manager, Turboshovel, Cavekit v3.1, Barkain Workflow Orchestrator, Conductor, cc10x, Director, Claude Har",
+     "The primary APO market is structurally immature: most named seeds (Turboshovel, Cavekit v3.1, Barkain Workflow Orchestrator, cc10x, Director"
+    ],
+    "deepwork | Free tier / OSS core": [
+     "AgentSys, SDLC, Deepwork, Workflow Manager, Turboshovel, Cavekit v3.1, Barkain Workflow Orchestrator, Conductor, cc10x, Director, Claude Har"
+    ],
+    "devin | Free tier / OSS core": [
+     "Startup-weighted matrix: Silver Bullet scores highest on plugin_packaging and deterministic quality gates; Factory.ai/Devin/Augment Cosmos s"
+    ],
+    "devin | Parent/child agent delegation": [
+     "Factory.ai, Devin, and Augment Cosmos are the three leading tertiary-market agentic SDLC SaaS vendors. None self-label APO but all meet \u22654 o"
+    ],
+    "director | Free tier / OSS core": [
+     "AgentSys, SDLC, Deepwork, Workflow Manager, Turboshovel, Cavekit v3.1, Barkain Workflow Orchestrator, Conductor, cc10x, Director, Claude Har",
+     "The primary APO market is structurally immature: most named seeds (Turboshovel, Cavekit v3.1, Barkain Workflow Orchestrator, cc10x, Director"
+    ],
+    "director | Skill/plugin marketplace": [
+     "No APO competitor matches Silver Bullet's plugin-host triad (Claude Code + Codex + Cursor). Most APOs (Conductor, cc10x, Director, AgentHub,"
+    ],
+    "gsd | Prebuilt SDLC templates": [
+     "SDLC Plugins & Methodology Packs (BMAD, GSD, Superpowers, GitHub Spec Kit, SuperClaude, Ruflo, Oh My Pi) represent formidable substitutes in",
+     "SDLC-plugin secondary market (Zuvo, GSD, Superpowers, BMAD-METHOD, GitHub Spec Kit, SuperClaude, Ruflo/Claude Flow, Oh My Pi) is the formida"
+    ],
+    "gsd | Quick onboarding": [
+     "Startup-weighted comparison: Silver Bullet and AI-DLC lead primary APO market with full 7/7 criterion coverage. BMAD and GSD lead secondary "
+    ],
+    "gsd | Zero-infra bootstrap": [
+     "Startup-weighted comparison: Silver Bullet and AI-DLC lead primary APO market with full 7/7 criterion coverage. BMAD and GSD lead secondary "
+    ],
+    "oh-my-pi | Prebuilt SDLC templates": [
+     "SDLC Plugins & Methodology Packs (BMAD, GSD, Superpowers, GitHub Spec Kit, SuperClaude, Ruflo, Oh My Pi) represent formidable substitutes in",
+     "SDLC-plugin secondary market (Zuvo, GSD, Superpowers, BMAD-METHOD, GitHub Spec Kit, SuperClaude, Ruflo/Claude Flow, Oh My Pi) is the formida"
+    ],
+    "silver-bullet | Quick onboarding": [
+     "Startup-weighted comparison: Silver Bullet and AI-DLC lead primary APO market with full 7/7 criterion coverage. BMAD and GSD lead secondary ",
+     "Startup-weighted comparison: Silver Bullet leads in plugin/skill/hook packaging depth (85 skills, 3 host plugins), deterministic quality gat"
+    ],
+    "silver-bullet | Zero-infra bootstrap": [
+     "Startup-weighted comparison: Silver Bullet and AI-DLC lead primary APO market with full 7/7 criterion coverage. BMAD and GSD lead secondary ",
+     "Startup-weighted comparison: Silver Bullet leads in plugin/skill/hook packaging depth (85 skills, 3 host plugins), deterministic quality gat"
+    ],
+    "superpowers | Free tier / OSS core": [
+     "No assessment of whether secondary-market OSS packs (BMAD, GSD, Superpowers) could evolve deterministic gates and cross-session state to bec",
+     "SDLC Plugins & Methodology Packs (BMAD, GSD, Superpowers, GitHub Spec Kit, SuperClaude, Ruflo, Oh My Pi) represent formidable substitutes in"
+    ],
+    "superpowers | Prebuilt SDLC templates": [
+     "SDLC Plugins & Methodology Packs (BMAD, GSD, Superpowers, GitHub Spec Kit, SuperClaude, Ruflo, Oh My Pi) represent formidable substitutes in",
+     "SDLC-plugin secondary market (Zuvo, GSD, Superpowers, BMAD-METHOD, GitHub Spec Kit, SuperClaude, Ruflo/Claude Flow, Oh My Pi) is the formida"
+    ],
+    "workflow-manager | Free tier / OSS core": [
+     "AgentSys, SDLC, Deepwork, Workflow Manager, Turboshovel, Cavekit v3.1, Barkain Workflow Orchestrator, Conductor, cc10x, Director, Claude Har"
+    ]
+   },
+   "gained_with_cause": {
+    "deepwork | Workflow composition": [
+     "Deepwork is a primary-market APO candidate \u2014 focused agent sessions, cross-session memory, workflow persistence, specialist agent routing."
+    ],
+    "director | Hook-enforced gates": [
+     "Director is a primary-market APO candidate \u2014 agent orchestration, workflow composition, deterministic gates, specialist agent routing."
+    ],
+    "superpowers | Automated review loops": [
+     "Superpowers (obra) is a skill pack layered above Claude Code with TDD/verification specialists; satisfies process layer above host runtime +"
+    ],
+    "workflow-manager | Hook-enforced gates": [
+     "Workflow Manager is a primary-market APO candidate \u2014 multi-phase workflow orchestration, state persistence, gate enforcement, deterministic "
+    ],
+    "workflow-manager | Workflow composition": [
+     "Workflow Manager is a primary-market APO candidate \u2014 multi-phase workflow orchestration, state persistence, gate enforcement, deterministic "
+    ]
+   },
+   "non_matrix_note": "host runtimes and excluded vendors (claude-code, codex, cursor, cursor-agents, windsurf, tembo, sdlc, ...) also lose prose-derived cells; they are not on the matrix"
+  },
+  "validation": {
+   "tests": "test-multi-ai-deep-research-contract.sh + test-solution-research-python.sh: 871 passed, 0 failed under claude and under codex",
+   "coverage": "ONE scoped run, 100%: Python 2448/2448 statements, 1188/1188 branches over 7 files (materialize, vendor_identity, solution_classifier, category_pack, dr_live_runner, dr_multi_ai_cli, pack_vocabulary)",
+   "lint": "lint-shell --all --jobs 2: 0",
+   "invariants": "check-repo-invariants 0; generate-apo-artifacts --check 0; generate-hook-reference --check 0; validate-plugin-mirror OK"
+  },
+  "files_outside_ownership": [
+   "skills/silver-multi-ai-task/scripts/live_dispatch.py (one contract sentence, H8a file)",
+   "skills/silver-multi-ai-task/tests/test_cov_live_dispatch.py (its test)"
+  ]
+ },
+ "review_repair_r6": {
+  "commits": [
+   "94a84d6",
+   "377fcea",
+   "ca456e5 / 90adbad (sync-codex-package mirrors); base 2a65018 merged (a763a48), still the latest at the end"
+  ],
+  "red": "at bbd43be 6 of 29 corpus tests failed on the new r6 sets (15 of the 97 reviewer sentences credited evidence through the matrix formats; GSD/Cognition (Devin) credited; sdlc tag -> zuvo; 12-tag cap; barkain coined; 200 KB 2.2-4 s)",
+  "fixed": {
+   "1 matrix formats (major)": "_MATRIX_ENTRY/_DASH/_ROW/_CHECKMARK_FOR_RE start a line (optional bullet) with the literal marker; row/critical/very high inside prose no longer match; a slot list counts only for a whole known feature name and when every item is a known vendor or a bare name; pack leader lists only at a line start; _assign_support drops the votes of an ambiguous vendor the claim does not credit, so no parser can tick it. 97 reviewer sentences (80 fp8 + 10 s4 + qualified cases) are corpus sets r6_*: 0 credits",
+   "2 qualified displays (major)": "canonical order only (product name, then another declared name of the same product: 'Devin (Cognition)', 'Augment Cosmos (Augment Code)'); acronym expansions (GSD (Get Shit Done), Oh My Pi (OMP)) are not signals; reverse forms dropped. A source_ref '<Name> - <description>' resolves on its first part and, for an ambiguous vendor, needs a capitalised spelling in the text",
+   "3a trust residuals": "SKILL.md lists them (source_ref + capitalised use, a wrong tag credits, the quoted canonical form, a coined word used as a person's name); 'no lexical residual' removed",
+   "3b vendors enforcement": "at most 12 tags per row, each an exact vendor slug (a name that slug-normalises to one); non-strings, sentences, unknown slugs and category aliases ('sdlc' no longer -> zuvo) ignored",
+   "3c barkain": "removed from COINED_NAMES; Barkain Workflow Orchestrator is ambiguous; vendor_spelling_audit.json regenerated",
+   "3d performance": "200 KB: 0.35-0.7 s for every adversarial unit (was 2.2-4.2 s): _mentions tests a substring before the regex, _declared_for_row memoised, source segments capped at 12; test budget 2 s (x8 under coverage)"
+  },
+  "corpus": {
+   "plain_english_sentences": 392,
+   "false_credits": 0,
+   "signalled_recall": "81/81 with a vendors tag; untagged 7/81 (74 pinned)",
+   "note": "'He typed \"Devin (Cognition)\"...' is the canonical qualified form, so it credits by design and was removed from the plain set"
+  },
+  "real_apo_run": {
+   "matrix_slugs": 23,
+   "director": "core (pack core_seed)",
+   "classification": "identical for every slug",
+   "matrix_cells_vs_d75d18e": "-27 / +5 (r5 head: -19 / +5)",
+   "new_losses_vs_r5": "gsd (6 cells) and oh-my-pi (4) from 'GSD (Get Shit Done) ships ...' / 'Oh My Pi (OMP) is ...' rows whose only identity was the acronym expansion, plus barkain 'Free tier / OSS core' from the seed-list claim (Barkain is now ambiguous); one gsd row is kept by its source_ref 'GSD (Get Shit Done) - Claude Plugin'",
+   "causes": {
+    "lost": {
+     "augment-cosmos | Free tier / OSS core": [
+      "Startup-weighted matrix: Silver Bullet scores highest on plugin_packaging and deterministic quality gates; Factory.ai/Devin/Augmen"
+     ],
+     "augment-cosmos | Parent/child agent delegation": [
+      "Factory.ai, Devin, and Augment Cosmos are the three leading tertiary-market agentic SDLC SaaS vendors. None self-label APO but all"
+     ],
+     "augment-cosmos | Quick onboarding": [
+      "Startup-weighted matrix: Silver Bullet scores highest on plugin_packaging and deterministic quality gates; Factory.ai/Devin/Augmen"
+     ],
+     "augment-cosmos | Zero-infra bootstrap": [
+      "Startup-weighted matrix: Silver Bullet scores highest on plugin_packaging and deterministic quality gates; Factory.ai/Devin/Augmen"
+     ],
+     "barkain-workflow-orchestrator | Free tier / OSS core": [
+      "AgentSys, SDLC, Deepwork, Workflow Manager, Turboshovel, Cavekit v3.1, Barkain Workflow Orchestrator, Conductor, cc10x, Director, "
+     ],
+     "claude-harness | Free tier / OSS core": [
+      "AgentSys, SDLC, Deepwork, Workflow Manager, Turboshovel, Cavekit v3.1, Barkain Workflow Orchestrator, Conductor, cc10x, Director, "
+     ],
+     "deepwork | Free tier / OSS core": [
+      "AgentSys, SDLC, Deepwork, Workflow Manager, Turboshovel, Cavekit v3.1, Barkain Workflow Orchestrator, Conductor, cc10x, Director, "
+     ],
+     "devin | Free tier / OSS core": [
+      "Startup-weighted matrix: Silver Bullet scores highest on plugin_packaging and deterministic quality gates; Factory.ai/Devin/Augmen"
+     ],
+     "devin | Parent/child agent delegation": [
+      "Factory.ai, Devin, and Augment Cosmos are the three leading tertiary-market agentic SDLC SaaS vendors. None self-label APO but all"
+     ],
+     "director | Free tier / OSS core": [
+      "AgentSys, SDLC, Deepwork, Workflow Manager, Turboshovel, Cavekit v3.1, Barkain Workflow Orchestrator, Conductor, cc10x, Director, "
+     ],
+     "director | Skill/plugin marketplace": [
+      "No APO competitor matches Silver Bullet's plugin-host triad (Claude Code + Codex + Cursor). Most APOs (Conductor, cc10x, Director,"
+     ],
+     "gsd | Automated review loops": [
+      "GSD (Get Shit Done) ships as a Claude Code skill/command pack with phase-based execution and verification; satisfies plugin/skill/"
+     ],
+     "gsd | Hook-enforced gates": [
+      "GSD (Get Shit Done) ships as a Claude Code skill/command pack with phase-based execution and verification; satisfies plugin/skill/"
+     ],
+     "gsd | IDE-native integration": [
+      "GSD (Get Shit Done), Superpowers, GitHub Spec Kit, SuperClaude, Ruflo/Claude Flow, and Oh My Pi each evidence host-integrated pack"
+     ],
+     "gsd | Prebuilt SDLC templates": [
+      "SDLC Plugins & Methodology Packs (BMAD, GSD, Superpowers, GitHub Spec Kit, SuperClaude, Ruflo, Oh My Pi) represent formidable subs"
+     ],
+     "gsd | Quick onboarding": [
+      "Startup-weighted comparison: Silver Bullet and AI-DLC lead primary APO market with full 7/7 criterion coverage. BMAD and GSD lead "
+     ],
+     "gsd | Skill/plugin marketplace": [
+      "GSD (Get Shit Done) ships as a Claude Code skill/command pack with phase-based execution and verification; satisfies plugin/skill/"
+     ],
+     "gsd | Workflow composition": [
+      "GSD (Get Shit Done) ships as a Claude Code skill/command pack with phase-based execution and verification; satisfies plugin/skill/"
+     ],
+     "gsd | Zero-infra bootstrap": [
+      "Startup-weighted comparison: Silver Bullet and AI-DLC lead primary APO market with full 7/7 criterion coverage. BMAD and GSD lead "
+     ],
+     "oh-my-pi | Hook-enforced gates": [
+      "GSD (Get Shit Done), Superpowers, GitHub Spec Kit, SuperClaude, Ruflo/Claude Flow, and Oh My Pi each evidence host-integrated pack"
+     ],
+     "oh-my-pi | IDE-native integration": [
+      "GSD (Get Shit Done), Superpowers, GitHub Spec Kit, SuperClaude, Ruflo/Claude Flow, and Oh My Pi each evidence host-integrated pack"
+     ],
+     "oh-my-pi | Prebuilt SDLC templates": [
+      "SDLC Plugins & Methodology Packs (BMAD, GSD, Superpowers, GitHub Spec Kit, SuperClaude, Ruflo, Oh My Pi) represent formidable subs"
+     ],
+     "oh-my-pi | Skill/plugin marketplace": [
+      "Oh My Pi (OMP) is a host-integrated plugin pack; satisfies plugin/skill/hook packaging + process layer above host runtime. Lifecyc"
+     ],
+     "oh-my-pi | Workflow composition": [
+      "GSD (Get Shit Done), Superpowers, GitHub Spec Kit, SuperClaude, Ruflo/Claude Flow, and Oh My Pi each evidence host-integrated pack"
+     ],
+     "superpowers | Free tier / OSS core": [
+      "No assessment of whether secondary-market OSS packs (BMAD, GSD, Superpowers) could evolve deterministic gates and cross-session st"
+     ],
+     "superpowers | Prebuilt SDLC templates": [
+      "SDLC Plugins & Methodology Packs (BMAD, GSD, Superpowers, GitHub Spec Kit, SuperClaude, Ruflo, Oh My Pi) represent formidable subs"
+     ],
+     "workflow-manager | Free tier / OSS core": [
+      "AgentSys, SDLC, Deepwork, Workflow Manager, Turboshovel, Cavekit v3.1, Barkain Workflow Orchestrator, Conductor, cc10x, Director, "
+     ]
+    },
+    "gained": {
+     "deepwork | Workflow composition": [
+      "Deepwork is a primary-market APO candidate \u2014 focused agent sessions, cross-session memory, workflow persistence, specialist agent "
+     ],
+     "director | Hook-enforced gates": [
+      "Director is a primary-market APO candidate \u2014 agent orchestration, workflow composition, deterministic gates, specialist agent rout"
+     ],
+     "superpowers | Automated review loops": [
+      "Superpowers (obra) is a skill pack layered above Claude Code with TDD/verification specialists; satisfies process layer above host"
+     ],
+     "workflow-manager | Hook-enforced gates": [
+      "Workflow Manager is a primary-market APO candidate \u2014 multi-phase workflow orchestration, state persistence, gate enforcement, dete"
+     ],
+     "workflow-manager | Workflow composition": [
+      "Workflow Manager is a primary-market APO candidate \u2014 multi-phase workflow orchestration, state persistence, gate enforcement, dete"
+     ]
+    }
+   }
+  },
+  "validation": {
+   "tests": "test-multi-ai-deep-research-contract.sh + test-solution-research-python.sh: 871 passed, 0 failed under claude and under codex; 898 python unit tests",
+   "coverage": "ONE scoped run, 100%: Python 2486/2486 statements, 1202/1202 branches over 7 files",
+   "lint": "lint-shell --all --jobs 2: 0",
+   "invariants": "check-repo-invariants 0; generate-apo-artifacts --check 0; validate-plugin-mirror OK; sync-codex-package run and committed"
+  }
+ },
+ "review_repair_r7": {
+  "approach": "deleted code instead of tightening it: for ambiguous vendors there is no slot-based and no display-based credit",
+  "deleted": [
+   "_slot_vendors, _is_feature_name, _line_start, _SLOT_CLEAN, _SLOT_SPLIT (materialize)",
+   "qualified-display machinery in vendor_identity (qualified table and regex, _is_expansion, generated 'Name (Other)' forms, _PARENTHETICAL)",
+   "the ' - ' split of source_ref segments"
+  ],
+  "rule": "an ambiguous vendor is credited only by a vendors tag, a source_ref that names it with a capitalised spelling in the text, or its pack URL. Distinctive vendors keep prose and matrix-line behaviour; _assign_support drops cell votes for an ambiguous vendor the claim does not credit, so no slot parser can tick one from free text",
+  "devin": "'Devin (Cognition)' in prose credits nothing (quoted form moved to the plain-English corpus); Devin is not a residual; SKILL.md rewritten (no qualified display, no matrix-slot credit, no Devin residual)",
+  "minor_em_dash": "fixed by deleting the split: a page title 'Silver Bullet - Official Site' can no longer declare silver-bullet, so the group 'Startup-weighted comparison' claim does not re-credit Quick onboarding / Zero-infra bootstrap (-2 cells vs r6 head, intended); a row 'GSD (Get Shit Done) - Claude Plugin' also stops declaring gsd (-1 cell)",
+  "corpus": {
+   "new": "58 reviewer sentences (r7_false_positive) + the quoted Devin (Cognition) sentence",
+   "plain_english_sentences": 451,
+   "false_credits": "0 (r2-r7 sets and the generative test)",
+   "untagged_recall": "7/81 hits (74 pinned), 81/81 with a vendors tag"
+  },
+  "red": "at 90adbad 4 of 30 corpus tests failed on the r7 sets and the new display/matrix/em-dash tests",
+  "real_apo_run": {
+   "matrix_slugs": 23,
+   "director": "core (pack core_seed)",
+   "classification": "identical for every slug",
+   "matrix_cells_vs_d75d18e": "-30 / +5 (r6 head: -27 / +5)",
+   "new_losses_vs_r6": {
+    "gsd | Free tier / OSS core": [
+     "GSD (Get Shit Done) provides plan/execute/review workflow as OSS Claude Code skills \u2014 multi-phase lifecycle span, host-integrated "
+    ],
+    "silver-bullet | Quick onboarding": [
+     "Startup-weighted comparison: Silver Bullet leads in plugin/skill/hook packaging depth (85 skills, 3 host plugins), deterministic q"
+    ],
+    "silver-bullet | Zero-infra bootstrap": [
+     "Startup-weighted comparison: Silver Bullet leads in plugin/skill/hook packaging depth (85 skills, 3 host plugins), deterministic q"
+    ]
+   }
+  },
+  "validation": {
+   "tests": "test-multi-ai-deep-research-contract.sh + test-solution-research-python.sh: 871 passed under claude and under codex; 896 python unit tests",
+   "coverage": "ONE scoped run, 100%: Python 2438/2438 statements, 1178/1178 branches over 7 files",
+   "lint": "0",
+   "invariants": "check-repo-invariants 0; apo check 0; hook-reference check 0; mirror OK; sync-codex-package run and committed",
+   "base": "2a65018 (already merged)"
+  }
+ },
+ "review_repair_r8": {
+  "1 pack URL (major)": "vendor_identity._URL is strict: lower-case host in the original text, boundary on both sides (not after a word char . @ ? # = & % + / -, not before a word char @ ( - or .alnum), and a scheme, www. or a path. File names, email domains, CURSOR.COM, user_cursor.com, conductor.build(), ?next=cursor.com and #tembo.io no longer credit; https://www.cursor.com/pricing and https://devin.ai/ still do",
+  "2 autogen (minor)": "autogen added to GENERIC_TOKENS (build-tool name): AutoGen is ambiguous; audit table regenerated; ./autogen.sh credits nothing",
+  "tests": "tests/fixtures/vendor_row_cases.json holds the 76 reviewer cases (0 wrong credits required), plus URL and autogen tests; red: 3 of 33 corpus tests failed (8 url + 2 source cases leaked); fp2..fp10 sets and the generative test stay at 0",
+  "real_apo_run": {
+   "matrix_slugs": 23,
+   "director": "core",
+   "classification": "identical",
+   "matrix_cells": "unchanged",
+   "other_cells": "one non-matrix change: conductor loses Skill/plugin marketplace from a claim that wrote the capitalised, scheme-less 'Conductor.build ships ...' (no longer a URL)"
+  },
+  "validation": {
+   "tests": "871 passed under claude and codex (contract + python tests); 899 python unit tests",
+   "coverage": "ONE scoped run 100%: 2440/2440 statements, 1180/1180 branches, 7 files",
+   "lint": 0,
+   "invariants": "0 (an email-shaped test string moved to example.com)",
+   "apo_check": 0,
+   "mirrors": "OK, sync-codex-package run and committed",
+   "base": "2a65018 (already merged)"
+  }
+ },
+ "review_repair_r9": {
+  "fix": "vendor_identity parses URLs: a candidate token must start with http:// / https:// (any case) or www. after a real boundary (start, whitespace, or an opening delimiter not inside a word), is cut at whitespace/closers/trailing punctuation, and is read with urlsplit. Rejected: userinfo (@), %, backslash, non-ASCII, bad port, a host that is not a lower-case ASCII hostname as written. The host must equal a pack domain or be a subdomain of it. Markdown link text is skipped (only the target counts). No scheme-less matching (cursor.com/x, devin.ai/2 credit nothing: accepted recall cost, in SKILL.md). source_ref uses the same parser",
+  "tests": "tests/fixtures/vendor_url_cases.json: all 70 fp11 texts x 2 row variants (140 rows, text and source_ref) must credit no ambiguous vendor; fp10 (76 rows) and fp2..fp9 sets and the generative test stay at 0; genuine https://www.cursor.com/pricing, https://devin.ai/, https://docs.cursor.com/x, <https://cursor.com>, [Cursor](https://cursor.com/pricing) still credit. red: 2 of 35 corpus tests failed (56 of 140 rows leaked)",
+  "real_apo_run": {
+   "matrix_slugs": 23,
+   "director": "core",
+   "classification": "identical",
+   "cells": "no change vs r8"
+  },
+  "validation": {
+   "tests": "871 passed under claude and codex; 901 python unit tests",
+   "coverage": "ONE scoped run 100%: 2472/2472 statements, 1194/1194 branches, 7 files",
+   "lint": 0,
+   "invariants": 0,
+   "apo_check": 0,
+   "mirrors": "OK, sync-codex-package run and committed",
+   "base": "2a65018 (already merged)"
+  }
+ },
+ "review_repair_r10": {
+  "decision": "stop extracting URLs from prose: the pack-URL signal applies only to structured source fields, parsed as one whole URL",
+  "deleted": [
+   "_candidates, _host_path_of, _SCHEME, _CLOSERS (vendor_identity)",
+   "Registry._url_vendors and Registry.signals",
+   "_text_signals and _SIGNALS (materialize)"
+  ],
+  "rule": "a pack URL credits only as the whole trimmed value of source_ref, source_url, url, source or one supporting_sources item: starts with http(s):// (any case) or www., no whitespace/other text, no other scheme, lower-case ASCII host as written equal to a pack domain or a subdomain, no userinfo, %, backslash, bad port, or empty/./.. path segments; the text must still spell the vendor (capitalised for an ambiguous one). URLs in prose (text, claim, links, autolinks, HTML, code spans) credit nothing",
+  "brief_and_docs": "research_brief: 'Put the source URL alone in source_ref'; SKILL.md rewritten (URL only as a whole source field; scheme-less and prose URLs credit nothing)",
+  "tests": "fp12: 112 texts x 3 row variants = 336 rows, 0 credits; fp11 (140 rows), fp10 (76) and earlier sets and the generative test stay at 0; whole-field https://www.cursor.com/pricing, https://devin.ai/, https://docs.cursor.com/x credit via source_ref (and source_url, supporting_sources). red: 3 of 36 corpus tests failed",
+  "real_apo_run": {
+   "matrix_slugs": 23,
+   "director": "core",
+   "classification": "identical",
+   "cells": "no change vs r9 (no cell relied on a prose URL)"
+  },
+  "validation": {
+   "tests": "871 passed under claude and codex; 902 python unit tests",
+   "coverage": "ONE scoped run 100%: 2444/2444 statements, 1182/1182 branches, 7 files",
+   "lint": 0,
+   "invariants": 0,
+   "apo_check": 0,
+   "mirrors": "OK; sync-codex-package run and committed",
+   "base": "54f285f merged"
+  }
+ }
+}

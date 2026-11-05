@@ -1,0 +1,94 @@
+{
+ "package": "F1-output-paths",
+ "head_reviewed": "db79336a37e44d8ce4d20a47bc081e4062508aa3",
+ "verdict": "CHANGES_REQUIRED",
+ "per_finding": [
+  {
+   "id": "R2-28",
+   "verdict": "fixed",
+   "notes": "Re-ran REVF-F1b p1/p2/u1 against db79336 (copies in REVF-F1c-probe/scripts): original probe (trivial_file=$SR/../../victim) SAFE; all 13 variants through session-start and record-skill SAFE (symlinked parent, leaf link out, sub/../outlink, '//..//', nonexist/../../.., loop/../../.., '~' forms, trailing '/'); in-root custom/tilde state files and in-root trivial still work; u1 unit matrix identical to round 1 (root itself, '..', loops, dangling-out, CR/LF, relative all rejected). Residual by design (R3-02): a configured in-root trivial_file is still deleted."
+  },
+  {
+   "id": "R3-05",
+   "verdict": "fixed",
+   "notes": "p1: record-skill state_file ~/.claude/.silver-bullet/../../profile-victim -> victim untouched, skill lands in default state; no ~/profile-victim.requested; env SILVER_BULLET_STATE_FILE=$SR/outlink/v rejected. Shared predicate unchanged since round 1 (runtime-paths.sh not touched by db79336)."
+  },
+  {
+   "id": "R5-01",
+   "verdict": "ok",
+   "notes": "Partial disposition still sound: graphify/agentmemory clears and record-graphify-query no longer touch ~/.bashrc_victim/.gitconfig_victim/.profile_victim (p1 SAFE). Unscoped token-compression usage_state_file and 'declare -f'-conditional lib checks remain for H4a."
+  },
+  {
+   "id": "R3-21",
+   "verdict": "fixed",
+   "notes": "Round-1 blockers on this finding are closed: Bash encoder now round-trips every byte 1..127 plus UTF-8 under default, BASH_COMPAT=32/42/43 and LC_ALL=C/C.UTF-8 (enc-roundtrip.sh); p4 bash32 mode: all 7 emitter calls OK and schema-clean; never 'allow'. Cursor bridge: deny+notice keeps REAL REASON as agent_message, stop/subagentStop notices no longer become followup_message (56-case event x shape matrix in REVF-F1c-probe/bridge). Partial by design: inline emitters in other packages' hooks still use hookSpecificOutput.message (e.g. dev-cycle-check advisory, record-graphify-query). New perf cost of the encoder: issue 4."
+  },
+  {
+   "id": "R1-29",
+   "verdict": "incomplete",
+   "notes": "Fixed for Claude and Codex string payloads: p5 under default and BASH_COMPAT=32: compound installs ('brew install jq && jq --version', 'sudo apt-get update && sudo apt-get install -y jq') allowed, no-jq-no-python3 completion-audit deny is now valid JSON; p6: every bypass row still denied by completion-audit or dev-cycle-check; BASH_ENV=/PATH=/LD_PRELOAD= prefixes and dnf/yum/zypper update now denied; non-SB repos inert; message now says read-only needs python3. Remaining minor gaps: Codex/Kay array payloads (issue 2) and option-flag config injection (issue 3)."
+  },
+  {
+   "id": "R3-27",
+   "verdict": "fixed",
+   "notes": "The round-1 R3-27 fix in hooks/lib/branch-scope.sh is still present (02eff38..db79336 diff: validated sb_branch_scope_file via sb_runtime_state_path, no /tmp fallback, FILE argument, symlink refusal); db79336 does not touch branch-scope.sh. p3: '~/...branch-tilde', '$SR/branch2/', '$SR/nonexist/../branch3', '$SR/./branch4' -> no write-failure warning, file written where read, branch switch detected. p9 (~/.claude symlinked to a dotfiles dir) all spellings detected. p10: stop-check now reads the same file for '~', 'x/..' and trailing '/' spellings (base missed all three) and still ignores an outside path. Mutation: restoring eadf8bd session-start -> test-branch-scope 35 passed/3 failed. Out-of-package reader with the old spelling: issue 7."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "major",
+   "location": "hooks/session-start:377 and hooks/trivial-file-guard.sh:84 (caused by hooks/lib/runtime-paths.sh canonical containment, commit 6726c0f)",
+   "problem": "Coverage regression outside the new code. The only tests that exercised the symlink reset statements '[[ -L \"$trivial_file\" ]] && trivial_file=<default>' configure a trivial_file that is a symlink pointing OUTSIDE the state root (tests/hooks/test-session-start-paths.sh:169-175, tests/hooks/test-trivial-file-guard-paths.sh:62-66). With the old string-prefix predicate that path was accepted and then reset by the -L line; with canonical containment it is rejected one line earlier, so the -L reset never executes in any test. The reset is still reachable (default marker symlinked, or a configured in-root link), but no test covers it, so the CI full coverage run (--fail-under 100) will fail for both files. The round-1 coverage runs did not include session-start or trivial-file-guard.sh.",
+   "evidence": "Scoped coverage (REVF-F1c-probe/cov, 25 test files incl. every test-session-start*.sh, test-symlink-guard, test-state-path-containment, test-branch-scope): hooks/session-start 437/444, missing 377(=) (other missing lines 153, 239, 240, 368, 495, 503 are pre-existing and belong to suites outside the run: recommended-tools, non-git runs, config-walk-vanishes, enterprise-policy). xtrace probe scripts/p11d.sh: scenario of test-session-start-paths (cfg trivial -> link to outside) -> BASE reset executed=1, FIXED=0; default-marker-link and in-root-link scenarios -> FIXED=1 (reachable). scripts/p12-tfg.sh with the test-trivial-file-guard-paths scenario: 'BASE symlink-reset(line 84) executed=1', 'FIXED executed=0'. grep: no other test creates a symlinked trivial marker and runs session-start or trivial-file-guard.sh (c-toolgates helpers run the tool-gate hooks only).",
+   "suggested_fix": "Point the two existing symlink tests at an in-root target (ln -s \"$SD/inner\" \"$SD/linked-trivial\" / \"$SD/linked-marker\") and/or add a case where the default marker \"$SD/trivial\" is a symlink to an outside file (assert the target is untouched and the link is removed / the marker write still blocked); keep the outside-target case as well. Then run one scoped coverage run with --only hooks/session-start --only hooks/trivial-file-guard.sh over their suites. Consider grepping for other '-L ... && reset' or symlink-only branches after sb_runtime_path_is_state_scoped (none other found in hooks/)."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/lib/jq-gate.sh:97-122 (_sb_jq_payload_field) with :132-148",
+   "problem": "R1-29 recovery path is still closed for array-shaped shell payloads (tool_input.command = [\"bash\",\"-lc\",CMD], the Codex/Kay shape the repo's own tests use: tests/hooks/test-dev-cycle-check.sh:142, test-completion-audit.sh:340, test-kay-project-hook-bridge.sh:115). The field reader shlex-joins the list to \"bash -lc 'brew install jq'\", which never matches the remediation regex; read-only commands still pass only because sb_shell_command_looks_read_only unwraps bash -lc. Not a regression (base blocked everything), but the 'install jq is always allowed' promise does not hold on that host shape.",
+   "evidence": "scripts/p8-codex-nojq.sh (PATH without jq, SILVER_BULLET_RUNTIME=codex): arr 'brew install jq' -> dev-cycle-check DENY, planning-file-guard DENY, workflow-chain-guard DENY; arr 'sudo apt-get install -y jq' -> same 3 DENY; str forms allowed; arr 'ls -la', 'git status', 'jq --version' allowed.",
+   "suggested_fix": "In _sb_jq_payload_field, when the command is a list of the form [sh|bash|zsh, -c|-lc|-lic, SCRIPT] return SCRIPT (or unwrap the same way command_looks_read_only.py does) before matching; add array-shape cases to test-jq-gate.sh."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/lib/jq-gate.sh:36-37 (_sb_jq_f flag pattern)",
+   "problem": "The env-prefix part of round-1 issue 3 is fixed, but the generic flag pattern ([-A-Za-z0-9=]+) still admits package-manager options that load configuration, plugins or hooks from a file in the project, and one full system upgrade, so repo-controlled code can still run while the gates are degraded (needs a pre-existing dot-free file/dir in the project and usually sudo/root).",
+   "evidence": "scripts/regex.sh (default and BASH_COMPAT=32): ALLOWED 'sudo apt-get --config-file=evil install -y jq', 'sudo apt-get -c=evil install jq', 'sudo dnf --setopt=pluginpath=evil --setopt=pluginconfpath=evil install -y jq', 'sudo yum --config=evil install jq', 'sudo pacman -S --hookdir=evil jq', 'sudo pacman -S --config=evil jq', 'apk add --repositories-file=evil jq', 'nix-env -iA nixpkgs.jq --file=evil', 'sudo zypper --root=evil install jq', 'conda install -c=evil jq', and 'sudo pacman -Syu jq' (full upgrade, the reason dnf update was dropped). Minor false positive: 'DEBIAN_FRONTEND=noninteractive sudo apt-get install -y jq' denied.",
+   "suggested_fix": "Replace the free-form flag pattern with an allowlist of value-less flags (-y, --yes, --assume-yes, -q, --quiet, --noconfirm, --needed, --no-install-recommends, -E, --) and reject any '=' flag; restrict pacman to -S/-Sy (no -u). Add negative tests for the cases above."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/lib/hook-output.sh:47-55 (_sb_hook_replace_all), :58-72",
+   "problem": "The new prefix/suffix loop is correct (round-trips under every compat level) but O(n x occurrences): each replacement rescans the remaining string, 33 passes per string. Today only short static jq-missing messages reach the Bash encoder (callers with dynamic text exit earlier without jq), so there is no practical impact, but a long message with many newlines/quotes would exceed hook timeouts on a jq-less, python3-less machine.",
+   "evidence": "scripts/enc-perf.sh, same inputs, old (eadf8bd) vs new encoder: mix 2 KB 8 -> 186 ms, 10 KB 74 -> 1072 ms, 40 KB 128 -> 20202 ms; nl 40 KB 42 -> 2098 ms; plain text stays linear. Note the round-1 suggested unquoted form (s=${s//\"$bs\"/$r}) is NOT a valid alternative on Bash 5.2: patsub_replacement eats the backslashes (scripts/enc-linear.sh: 'Invalid \\escape' under default and BASH_COMPAT=32); with 'shopt -u patsub_replacement 2>/dev/null' it round-trips under default/32/42 and encodes 40 KB mixed in 64-100 ms.",
+   "suggested_fix": "Either document the quadratic bound next to the function (inputs are short static messages) or use single-pass replacement with patsub_replacement disabled (and restored) inside the function; keep the BASH_COMPAT=32/42 round-trip tests."
+  },
+  {
+   "severity": "minor",
+   "location": "tests/hooks/test-branch-scope.sh:99-108",
+   "problem": "The new session-start spelling loop is weaker than its comment: it says a branch switch is detected but never starts a second session on another branch; the case labelled trailing-slash in the report is actually '$SD/branch-slash/x/..' (no trailing '/' case); and 'stored' cats $SD/branch too, so a session-start that ignored a valid override and wrote the default would still pass the 'branch recorded' assertion (only the warning assertion catches today's mutation).",
+   "evidence": "Mutation M1 (eadf8bd session-start) is caught only by the three 'no write-failure warning' assertions (35 passed/3 failed); the 'branch recorded for ...' assertions pass on the mutant.",
+   "suggested_fix": "Assert the exact resolved file per spelling (not the default), add a '$SD/branch-trailing/' case, and add a checkout + second start asserting 'git scope changed'."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/lib/path-canonical.sh:29-37, 216-218",
+   "problem": "Contract text says status 1 only when provably outside, but an empty target returns 1 (a deny guard fed an unparsed/empty path allows), and a loop anywhere in ROOT makes every path 'inside'. No callers exist yet (only tests), so this only affects the API offered to G2.",
+   "evidence": "tests/hooks/test-path-canonical.sh pins within 'empty target' 1 and 'loop in the root counts as inside' 0; grep finds no non-test caller of sb_path_is_within.",
+   "suggested_fix": "Document both edge cases in the header (callers must treat an empty or unparsable target as deny themselves)."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/dev-cycle-check.sh:539-546 (not owned by F1; R3-13 owner)",
+   "problem": "The one-spelling property R3-27 asked for holds for session-start, stop-check and branch-scope.sh but not for dev-cycle-check's F-09 branch read, which still uses the literal validator and reads the file with cat (the latter is R3-13: a spurious 'Branch mismatch' advisory on every call, reproduced on base and fix).",
+   "evidence": "scripts/p13-dcc-branch.sh: SILVER_BULLET_BRANCH_FILE='~/.claude/.silver-bullet/branch-t' -> session-start writes branch-t, dev-cycle-check reads the default; default path: advisory 'state recorded for [feature/test\\n<proj>] but current branch is [feature/test]' on the same branch (base and fix).",
+   "suggested_fix": "For the R3-13 package: read through sb_branch_scope_read \"$(sb_branch_scope_file)\" (or sb_branch_scope_mismatch) instead of cat + literal validation."
+  }
+ ],
+ "validation": {
+  "tests": "Scoped coverage run in the worktree (claude runtime): 25 files, 1159 passed/0 failed (all package tests plus test-lib-faults, test-project-libs, cursor bridge suites, every test-session-start*, test-stop-check*, test-completion-audit{,-faults,-paths}, test-symlink-guard). Codex runtime: 10 key files 412/0. BASH_COMPAT=32: test-hook-output + test-jq-gate 119/0. Docs suite 198/0. Mutations in a sandbox copy (REVF-F1c-probe/mut-*; control copy 38/0): eadf8bd session-start -> test-branch-scope 35/3; eadf8bd hook-output -> test-hook-output 45/4 (all four BASH_COMPAT cases); eadf8bd jq-gate -> test-jq-gate 58/12; eadf8bd bridge -> test-cursor-hook-bridge 5/2; eadf8bd path-canonical -> test-path-canonical 77/4. Round-1 probes p1-p6 and u1 re-run: all previous failures resolved. Per-call latency unchanged (round 2 adds one resolution per SessionStart/Stop only).",
+  "coverage": "One scoped run, --only all 9 files changed by 02eff38..db79336: completion-audit.sh, cursor-hook-bridge.sh, branch-scope.sh (65/65 once test-lib-faults.sh and test-project-libs.sh are included: the author's 89% omitted them), hook-output.sh, jq-gate.sh, path-canonical.sh, runtime-paths.sh all 100%; session-start 98.42% (377 is a package-caused loss, issue 1; 153, 239, 240, 368, 495, 503 pre-existing lines covered by suites outside the run); stop-check.sh 99.75% (324, covered by test-config-walk-vanishes). trivial-file-guard.sh:84 (unchanged file) also loses its only covering path (issue 1). known-limits.json valid and untouched.",
+  "lint": "bash scripts/lint-shell.sh --all --jobs 2: application Bash (354) and test Bash (728) clean; bash -n on hooks clean.",
+  "invariants": "check-repo-invariants.sh PASS; generate-hook-reference.py --check (HOOKS.md up to date), generate-apo-artifacts.py --check, validate-plugin-mirror.sh pass; docs/workflows == templates/workflows; silver-bullet.md/template and skills untouched; 6 commits, trailers: five 'Claude Opus 5.5', db79336 'Claude Sonnet 5.5', each with the Claude-Session line, no other model names; base 02eff38 is still the integration tip; worktree clean."
+ }
+}

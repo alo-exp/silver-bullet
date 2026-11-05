@@ -1,0 +1,93 @@
+{
+ "package": "H2-installers",
+ "head_reviewed": "ce04f38c7c7c58692988c7264a9708ff96ff1e11",
+ "previous_review_head": "7ac8b955fd887291fe45e62f4fc699de970b917b",
+ "base": "06bef6f (merge of fix/H2-installers into claude/optimistic-ramanujan-tccfud; branch is base + 6 commits)",
+ "verdict": "APPROVE",
+ "per_finding": [
+  {
+   "id": "r2-issue-1 (merge-hooks.py delivered mode touches plugin cache)",
+   "verdict": "fixed",
+   "notes": "Probe /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H2fu-probe/mh: registry lists silver-bullet@alo-labs (0.53.0), real current/ dir with keep.txt, settings holding SB copies via current/ and 0.53.0 plus $HOME/bin/guard.sh -> 'removed 2 duplicate settings entries', cache `find` listing byte-identical before/after, current/ still a real dir with keep.txt, user hook kept, .sb-backup written; second run 'removed 0', settings byte-identical. Manual branch (no registry) still creates current -> 0.53.0 and registers. Mutation M1 (roots back to stable_install_path) -> test_plugin_install_never_touches_the_plugin_cache FAIL."
+  },
+  {
+   "id": "r2-issue-2 (marketplace root without a TOML parser)",
+   "verdict": "fixed",
+   "notes": "Probe /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H2fu-probe/noparser (tomllib/tomli/pip shadowed): header form with comment, dotted form and literal strings resolve to '<dir>/plain dir' exactly as with a parser; invalid config prints 'WARN: cannot read the Codex marketplace registration ...' with and without a parser. Mutations M2 (no-parser branch -> {}) and M3 (silent except) each fail test-install-codex-libs. Residual gaps: new issue 1."
+  },
+  {
+   "id": "r2-issue-3 (duplicated Kay user-prefix trust tables)",
+   "verdict": "fixed",
+   "notes": "Probe /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H2fu-probe/rep: [hooks.state.\"<home>/.codex/hooks.json:pre_tool_use:0:0\"] and the silver-bullet@ table each declared twice (second copies after a bare [hooks.state]) -> repair 'Repaired ...', then remove_marketplace_if_present silver-bullet-local rc=0; result valid TOML keeping the FIRST copies (userfirst/sbfirst), model/projects kept, .sb-backup == original. Mutations M4 (predicate without Kay keys) and M7 (drop all copies) fail test_sb_host_config. Not repaired (by design, now with guidance): a duplicated bare [hooks.state] the old seeder wrote after a commented '[hooks.state] # mine' header -> 'ERROR: ... Cannot declare ('hooks','state') twice ...; left unchanged. Fix or move that file aside (a table declared twice: delete one copy), then run install-codex.sh again.' (probe /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H2fu-probe/rep3). Residual: new issue 3 (post-release uninstall has no repair)."
+  },
+  {
+   "id": "r2-issue-4 (transactional purge, dotted-key trust)",
+   "verdict": "fixed",
+   "notes": "Probe /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H2fu-probe/kay2: r2's exact case (stale dotted \"<hj>:pre_tool_use:0:1\".trusted_hash under [hooks.state], tables at :1:0/:1:1) -> rc=0, hooks.json [[u1,u2]], trust u1@0:0, u2@0:1, stale gone. Variants: dotted under [hooks] (incl. an inline-table value with trailing comment) and root-level hooks.state.\"...\" dotted keys with a stale 'enabled = false' target -> re-keyed correctly, stale removed. Uneditable config ([a] declared twice) -> rc=1 and hooks.json byte-identical. Only a whole `state = {...}` inline table is not re-keyed (trust is hash-checked, so only a re-review prompt; not reported). Mutations M5 (write hooks.json before validation), M6a (old stale-target predicate), M6b (no dotted-source rename) all caught."
+  },
+  {
+   "id": "r2-issue-5 (retired SB Cursor agents never cleaned)",
+   "verdict": "fixed",
+   "notes": "Probe /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H2fu-probe/r711: subagent-sb:init, silver:plan, sb:add quarantined (with Note lines); silver-surfer/ and silver-lining.md left with a Note. Mutation M8 (drop SB_COLON_NAMESPACE) -> 4 failures in test-install-cursor-backend-cache. But the rule is a namespace prefix, not proof of authorship: new issue 2."
+  },
+  {
+   "id": "r2-issue-6 (repair call and SB_INSTALL_RUN_START exports untested)",
+   "verdict": "fixed",
+   "notes": "Mutation M9 (repair call removed from install-codex.sh) -> 3 failures in test-install-codex-script-flows; M10 (export removed from install-codex.sh) -> 'the installer exports its run start: the earlier backup of this run is kept' FAIL; M11 (export removed from install-claude.sh) -> test-installers-run-start-export.sh exits 1. Weaknesses of the static Claude/Cursor pin: new issue 5."
+  },
+  {
+   "id": "r2-issue-7 (Phase 3.7.5 docs + mirrors)",
+   "verdict": "incomplete",
+   "notes": "scaffold-steps.md 3.7.5 now matches merge-hooks.py (registry-only resolution, removal-only on registry installs, manual installs run merge-hooks.py directly, cache untouched); sync-codex-package.sh produces no diff (3 mirrors current). But SKILL.md's own 3.7.5 summary, update-mode step 7 and silver-doctor D4 still describe 3.7.5 as (re-)registering hooks: new issue 4."
+  },
+  {
+   "id": "r2-issue-8 (merge note, .codex/hooks.json vs fix/H3-release-ci)",
+   "verdict": "ok",
+   "notes": "Ignored per task. Follow-up commits touch no file that conflicts with siblings: merge-tree vs every fix/* branch shows only the pre-existing conflicts (H3 .codex/hooks.json; H4b hooks/cursor-hooks.json + plugins/silver-bullet/cursor-hooks.json, both already present against 06bef6f)."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "minor",
+   "location": "scripts/lib/install-codex/config.sh:52-62; scripts/lib/sb_host_config.py:506-520 (string_values)",
+   "problem": "The 'warning instead of a silent default' is not complete. (a) Without a TOML parser, string_values decodes basic strings with json.loads instead of the module's own TOML lexer (_Lexer.basic_string): a \\UXXXXXXXX escape or a literal tab (both valid TOML 1.0) is dropped silently, and the inline-table form alo-labs-codex = { source_type = ..., source = ... } (read fine with a parser) is not read; all three fall back to ~/.codex/.tmp/marketplaces/alo-labs-codex with no warning. (b) With a parser, the narrowed except no longer covers a non-table value: [marketplaces] alo-labs-codex = \"x\" or marketplaces = 3 now prints a Python traceback (AttributeError) instead of the WARN (the old code fell back silently).",
+   "evidence": "/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H2fu-probe/noparser/run.sh harness (shadowed tomllib/tomli/pip): [inline/noparser] out=alo-labs-codex (parser: 'plain dir'); [Uescape/noparser] source=\"<D>/emoji\\U0001F600dir\" -> default root (parser: emoji😀dir); [literaltab/noparser] -> default root (parser: 'tab<TAB>dir'); all with empty stderr. [nondict/parser] -> 'Traceback ... AttributeError: 'str' object has no attribute 'get'' then default root.",
+   "suggested_fix": "Decode with the lexer (e.g. _Lexer(text, label).basic_string(i) for basic strings), read an inline-table value through the lexer too (or warn when the alo-labs-codex key exists but yields no source), and treat a non-dict table as 'cannot read' (isinstance checks, or catch AttributeError/TypeError) so it prints the WARN."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/lib/install-cursor/backend-cache.sh:225-229, 276",
+   "problem": "SB_COLON_NAMESPACE quarantines any top-level agent whose name starts with sb:, silver:, subagent-sb: or subagent-silver: (case-insensitive) without any proof that Silver Bullet wrote it, in the user scope and in the project's committed .cursor/agents. That contradicts the function's own contract ('an entry moves only with proof that Silver Bullet wrote it'; shipped_name: 'the namespace alone proves nothing'), R7-11's proposed fix ('exact legacy file names it shipped') and FIX-BRIEF rule 6. The comment overstates the evidence: the only retired names under host-bundles/cursor are 26 silver:* bundles, and no subagent-sb:*/subagent-silver:* file was ever committed (they appear only as test fixtures and in older cleanup prefix lists). Moves are reversible and announced, so minor.",
+   "evidence": "Probe /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H2fu-probe/r711: user agents sb:my-storybook/SKILL.md, Silver:Notes/SKILL.md, sb:team-review.md and a committed project file proj/.cursor/agents/sb:pr.md -> all 'Note: quarantined Cursor custom agent ...' (project one moved to ~/.cursor/.silver-bullet-quarantine/.../project/sb:pr.md; `git status` in the project shows ' D .cursor/agents/sb:pr.md').",
+   "suggested_fix": "Quarantine a colon name only when it is in an explicit list of names SB has shipped (the current host-bundles/cursor list plus a fixed RETIRED list from `git log --diff-filter=D -- host-bundles/cursor`: silver:agent-claude ... silver:verify), or when its content is byte-identical to a bundle; report other colon names like silver-*. Leave project-scope files alone unless they match exactly. Add a test with a user-named sb:my-agent that stays."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/lib/post-release-uninstall.sh:80-88; scripts/lib/install-codex/legacy.sh:276",
+   "problem": "The duplicated-trust repair runs only in install-codex.sh. The post-release Codex uninstall calls purge_legacy_silver_bullet_hooks_from_user_config --all directly; its read_toml refuses SB's own duplicated trust tables, so the uninstall stops with an error that offers no way forward, although --all is about to delete exactly those tables.",
+   "evidence": "Probe /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H2fu-probe/uninst: config with [hooks.state.\"silver-bullet@alo-labs-codex:...:0:0\"] declared twice (second after a bare [hooks.state]); `set -euo pipefail; source post-release-uninstall.sh; sb_post_release_uninstall_codex` -> 'ERROR: <D>/.codex/config.toml: not valid TOML (Cannot declare (... 'silver-bullet@alo-labs-codex:hooks/hooks.json:pre_tool_use:0:0') twice ...); left unchanged', rc=1.",
+   "suggested_fix": "Load the config in the purge with read_toml_repairing(config_path, is_sb_trust_table) (or call repair_silver_bullet_duplicate_trust_tables first in sb_post_release_uninstall_codex), and add a test case to test-post-release-uninstall.sh."
+  },
+  {
+   "severity": "minor",
+   "location": "skills/silver-init/SKILL.md:845, 916; skills/silver-doctor/SKILL.md:87 (and their rendered mirrors)",
+   "problem": "The 3.7.5 rewrite stopped at the reference file. silver-init's SKILL.md still names the step 'Register SB hooks in the host hooks manifest', resolves the install path 'from installed_plugins.json or ${SB_RUNTIME_HOME_ROOT}/plugins/cache/alo-labs/silver-bullet/current' (the reference dropped that fallback and skips the step instead; with the fallback and no registry entry, merge-hooks.py would take the manual branch and register every hook under current/), and update-mode step 7 says 'Re-register/refresh SB hooks (step 3.7.5)'. silver-doctor maps 'D4 hooks missing' to '/sb:init update §3.7.5', which now never adds hooks on any host.",
+   "evidence": "sed -n 916p skills/silver-init/SKILL.md -> '- **3.7.5 Register SB hooks in the host hooks manifest**: resolve install path from `installed_plugins.json` or `${SB_RUNTIME_HOME_ROOT}/plugins/cache/alo-labs/silver-bullet/current`, then run ...'; scaffold-steps.md 3.7.5: 'If INSTALL_PATH is empty, skip this step silently'; merge-hooks.py: registry present -> removal only.",
+   "suggested_fix": "Align SKILL.md 3.7.5 and update step 7 with the reference (remove SB's settings copies on registry installs; no current/ fallback), point silver-doctor D4 at the host installer only (install-cursor.sh --merge-hooks-only / reinstall the plugin), then run scripts/sync-codex-package.sh."
+  },
+  {
+   "severity": "minor",
+   "location": "tests/scripts/test-installers-run-start-export.sh:11-15",
+   "problem": "The static pin for install-claude.sh and install-cursor.sh is brittle. (a) When the export line is missing, `grep ... | head | cut` fails under set -euo pipefail and the file exits 1 before any assertion, with no FAIL line naming the installer. (b) The 'before its first config edit' anchor matches the function definition `ensure_marketplace_ready() {` (install-claude.sh:105) and the assignment `MERGE_HOOKS=...` (install-cursor.sh:22), not a call that edits config, so moving the export below a real edit goes unnoticed while moving it below line 22 fails for no reason.",
+   "evidence": "Mutation copy /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H2fu-probe/mC2 (export line deleted from install-claude.sh and install-codex.sh): `bash tests/scripts/test-installers-run-start-export.sh` -> no output, rc=1; run-all-tests: 'SUITE FAILED (exit 1)', 0 passed. Baseline: 6 passed. grep -nE 'merge-hooks\\.py|...|python3 ' scripts/install-claude.sh | head -1 -> '105:ensure_marketplace_ready() {'.",
+   "suggested_fix": "Use `|| true` on the grep pipelines so assert_eq reports the missing export, and anchor the order check on the first call line (or drop it: the export must be on line 4, before any `source`)."
+  }
+ ],
+ "validation": {
+  "tests": "Claude runtime (default) via the scoped coverage run in an archive copy of ce04f38, 13 files: 3036 passed, 0 failed (test-python-unit 1707, install-codex-libs 238, install-codex-script-flows 58, install-codex 307, install-cursor-backend-cache 181, installers-run-start-export 6, silver-init-merge-hooks 8, codex-hook-transplant 29, install-cursor 66, install-cursor-functions 172, install-claude-offline 106, agent-live-preflights 138, post-release-host-verify 20). Codex runtime (SILVER_BULLET_RUNTIME=codex, same 13 files, --jobs 2): SILVER_BULLET_RUNTIME=codex, same 13 files, --jobs 2: 3036 passed, 0 failed (rc=0). Docs suite (--suite docs): 198 passed, 0 failed.. Python mutation checks (M1, M4, M6a, M6b, M7, string_values literal) each fail the targeted test; bash mutation copies: mA (M2+M3+M5) -> 4 failures in install-codex-libs, mB (M8) -> 4 failures in backend-cache, mC1 (M9) -> 3 failures in script-flows, mC2 (M10+M11) -> 1 failure in script-flows and the export test exits 1.",
+  "coverage": "One scoped run (--jobs 2, --show-missing, cov dir /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H2fu-probe/cov) over the 7 changed application files: config.sh 38/38 (5/5 funcs), hooks.sh 27/27 (4/4), legacy.sh 23/23 (5/5), plugin.sh 41/41 (6/6), backend-cache.sh 330/330 (23/23), merge-hooks.py 94/94 stmts 38/38 branches, sb_host_config.py 508/508 stmts 206/206 branches: all 100%. tests/coverage/known-limits.json untouched and valid JSON.",
+  "lint": "bash scripts/lint-shell.sh --all --jobs 2 (archive copy of ce04f38): application Bash clean (354 files), test Bash clean (727 files); rc=0. shellcheck of the changed shell files clean.",
+  "invariants": "check-repo-invariants.sh rc=0 (9 PASS, 0 other). generate-hook-reference.py --check up to date; generate-apo-artifacts.py --check rc=0; validate-plugin-mirror.sh OK; generate-cursor-hooks.py and sync-codex-package.sh leave the copy clean (git status empty); docs/workflows == templates/workflows; silver-bullet.md / templates untouched. All 6 commits end with exactly 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' + 'Claude-Session: https://claude.ai/code/session_013z3F7YTZ5T5DAJxAcCmeVV'; no other model names in messages or diff. Worktree untouched (still clean at ce04f38); all runs used archive copies under /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H2fu-probe."
+ },
+ "notes": "The fix author's report was not refreshed after the session restart; every item was verified from the diff, probes and mutations. Probes, mutation copies and logs are in /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H2fu-probe."
+}

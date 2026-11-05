@@ -1,0 +1,203 @@
+{
+ "package": "H4a-toolgates-consent",
+ "head_reviewed": "6c5eab455ceec717ea0dc251601aa1a1219920f0",
+ "verdict": "CHANGES_REQUIRED",
+ "per_finding": [
+  {
+   "id": "R5-01",
+   "verdict": "fixed",
+   "notes": "Original probes re-run (scripts/r501.sh): session-start with '~/.claude/.silver-bullet/../../.bashrc_victim' / '${SB_RUNTIME_HOME_ROOT}/.silver-bullet/../../.gitconfig_victim' leaves both victims (with and without consent); record-token-compression-usage with usage_state_file '~/victim_authorized_keys' + cli_command git leaves it 'ORIGINAL-AUTHORIZED-KEYS'; record-graphify/agentmemory/leanctx through '..' leave victims 'ORIG'. Variant through a symlinked dir inside the state dir (state/sub -> $HOME) also falls back. Residual (minor issue below): any *name* inside the state dir is accepted, including SB's own control files (trivial marker) - confirmed graphify stamp -> trivial disables stop-check."
+  },
+  {
+   "id": "R5-02",
+   "verdict": "fixed",
+   "notes": "scripts/r502.sh: min_version 'HOME[$(id>PWNED_RTK)]', min_node_version, read_deny_bytes, usage/query TTLs and a health_url containing a[$(id>...)] across all 9 gates + read-deny Read + prompt-reminder + session-start: no PWNED_* file. Mutation M4 (old-style [[ -ge ]] on the unvalidated config value) is caught by tests/hooks/test-opt-in-gates-hostile-config.sh (see validation)."
+  },
+  {
+   "id": "R5-03",
+   "verdict": "fixed",
+   "notes": "scripts/r503.sh with a logging curl stub: '-K.sb/evil.cfg', 'http://localhost:3111/x -K...', 'http://evil.example', file://, 'http://localhost@evil.example/', a newline-embedded '-K', 'http://127.0.0.1.nip.io', 'HTTP://LOCALHOST' -> only '-sf --max-time 2 --proto =http,https --max-redirs 0 --noproxy * -o /dev/null -- http://localhost:3111/agentmemory/health' (plus '[::1]:99999/x' and 'localhost:3111/%0a-K', both loopback, after --). No PWNED_CURL. Note: any loopback port/path is still repo-selectable (accepted by the package brief)."
+  },
+  {
+   "id": "R5-04",
+   "verdict": "incomplete",
+   "notes": "Hook side fixed and verified: committed enabled_by_user:true for all tools -> all gates/recorders/read-deny inert without a consent record (r502/r521/r515), one-time notice appears once per tool+project (scripts/ss.sh: 6 notices first session, 0 second), user decline wins, project false wins. Remaining (author marked partial): silver-bullet.md section 2g, templates/silver-bullet.md.base, hooks/core-rules.md (injected into every session) and skills/silver-init references still describe/record enabled_by_user as the user's consent, and no package owns them (see major issue). The 13+ H4b consumer tests are accepted."
+  },
+  {
+   "id": "R5-07",
+   "verdict": "fixed",
+   "notes": "scripts/r507.sh: no deny when Context Mode CLI present but not wired; wired via ~/.claude.json: first full Read of a 13 KB file denied once, repeat allowed, PNG/PDF allowed, limit:20 allowed, limit:150 denied once, silver-bullet.md allowed, Grep files_with_matches and content-on-directory allowed."
+  },
+  {
+   "id": "R5-08",
+   "verdict": "fixed",
+   "notes": "context-mode-gate Write: user-scope ~/.claude.json mcpServers.context-mode -> allow; project-scoped projects[<root>].mcpServers -> allow; absent -> 'CONTEXT MODE NOT WIRED'."
+  },
+  {
+   "id": "R5-09",
+   "verdict": "incomplete",
+   "notes": "Literal cases fixed (word-anywhere exemption, python -c writer, graphify-out/../src, apply_patch mixing exempt+source paths all gated: scripts/r509.sh, r509e.sh). On this branch alone the shared base analyzer still lets echo $(touch ..), backticks, find -delete/-exec, awk system(), git config/branch -D/tag, sed w, git diff --output, sort -o, rg --pre through all five gates; with F2's analyzer overlaid (merged/ tree) every one of those is gated, so this closes only when F2 merges. New regression (major issue): every command that is not provably read-only is now gated, so pytest, make test, cargo build, go test, gradlew, docker ps, kubectl get, terraform plan are denied by graphify/agentmemory/context-mode/leanctx/rtk gates where base allowed them."
+  },
+  {
+   "id": "R5-10",
+   "verdict": "fixed",
+   "notes": "scripts/r510.sh: echo graphify query, grep|grep, failed query without exit code, exit 1, '|| true', mcp__evilgraphify__, MCP isError, echo agentmemory search, curl || true, curl exit 7, save/searchx endpoints, 'agentmemory save', github search/search_code, agentmemory memory_save, mcp__notagentmemoryx__, echo lean-ctx, cli_command=git, foreign lctx_* -> none recorded; legit CLI/MCP retrievals recorded. Minor residual: 'graphify --help query' and 'graphify query' (no question) are credited (help output, exit 0); an agent-made ./graphify script is credited (expected, same-user agent)."
+  },
+  {
+   "id": "R5-11",
+   "verdict": "fixed",
+   "notes": "Matcher simulation over hooks/hooks.json: mcp__agentmemory__memory_smart_search, mcp__plugin_agentmemory_agentmemory__memory_recall, mcp__lean-ctx__lctx_read_ast, mcp__graphify__query_graph route to record-leanctx-usage.sh + record-recommended-mcp.sh; mcp__lean-ctx__*, mcp__context-mode__*, mcp__plugin_context-mode_context-mode__* route to the PreToolUse coordinator. Recorder accepts namespaced server names."
+  },
+  {
+   "id": "R5-12",
+   "verdict": "fixed",
+   "notes": "scripts/r512.sh with failing npm/npx stubs: no npm/npx call made; offline 'git commit' allowed; unit math.spec.ts allowed; npx playwright test denied when MCP unwired. Minor residual: browser-path patterns are matched on the raw (unnormalized) path, so a relative top-level path (Codex apply_patch 'e2e/login.spec.ts') is not gated while the absolute path is."
+  },
+  {
+   "id": "R5-13",
+   "verdict": "fixed",
+   "notes": "scripts/r513.sh: 'grep -rn lctx_shell docs/' allowed; 'lean-ctx shell git status' denied; Write after that allowed; other project/session Read allowed; same session Read denied until a compliant call (by design)."
+  },
+  {
+   "id": "R5-14",
+   "verdict": "incomplete",
+   "notes": "Literal probe fixed (scripts/r514.sh): hostile pre_index/post_index/export_root/knobs never executed or written; without consent nothing runs; enforce-only prints SKIP for wiring; .env knobs from closed sets. New variant (major issue): sb_stack_ensure_agentmemory_gitignore writes through a repo-committed .gitignore symlink with only enforce consent - confirmed append to a file outside the project and, via the appended '.agentmemory/*' line, execution of a repo script from ~/.bashrc. Residual minor: the global ~/.agentmemory/.env and LaunchAgent still point AGENTMEMORY_EXPORT_ROOT at whichever project ran apply last (now wire-consent gated)."
+  },
+  {
+   "id": "R5-15",
+   "verdict": "fixed",
+   "notes": "scripts/r515.sh: cache project-root pointing at an opted-in SB project; in a plain git repo all 8 PreToolUse gates, read-deny and 5 recorders silent; uninitiated project (no silver-bullet.md) silent."
+  },
+  {
+   "id": "R5-16",
+   "verdict": "fixed",
+   "notes": "scripts/r516.sh: Write/Edit with stale RTK usage allowed; git commit, git -c .. commit, gh pr create denied; echo \"git commit\" allowed. Minor residual: delivery detection is a regex, so '\"git\" commit' and 'G=git; $G commit' are not gated (opt-in gate only)."
+  },
+  {
+   "id": "R5-17",
+   "verdict": "fixed",
+   "notes": "scripts/perf.sh (60 hook runs = 8 PreToolUse + 4 PostToolUse x5, loaded 4-CPU box): base 177 ms/hook, fix 32 ms/hook with no consent store, 30 ms/hook with a store naming only an unrelated tool. Active (all consented, repo config): base 307 vs fix 270 ms/hook. Claim holds."
+  },
+  {
+   "id": "R5-18",
+   "verdict": "fixed",
+   "notes": "rtk stub: 0.39.9/0.40.0/0.41.9 -> 'RTK TOO OLD', 0.42.0/0.50.1/1.0 allowed, 'abc' -> TOO OLD (unknown)."
+  },
+  {
+   "id": "R5-19",
+   "verdict": "ok",
+   "notes": "Partial disposition accepted: dead lifecycle hook/helpers removed; sb_leanctx_clear_usage_state still has no caller because session-start is not owned (one-line follow-up for the session-start owner). CLAUDE.md line 113 still names the deleted stack-compression-lifecycle.sh under SessionStart (minor)."
+  },
+  {
+   "id": "R5-20",
+   "verdict": "fixed",
+   "notes": "New hostile-config, consent and prelude suites assert behaviour: mutations M1, M3, M5, M6 are caught by them; M2 and M4 are caught only by unit-level tests (hostile-config's R5-02 and R5-04 blocks are vacuous for those - minor issue). Gaps: no honest-variant test for test/build/infra commands under the new allowlist gating, no test for a symlinked .gitignore, no concurrency test for the consent store, 3 unlisted failing scripts tests."
+  },
+  {
+   "id": "R5-21",
+   "verdict": "fixed",
+   "notes": "scripts/r521.sh: EVILMARK in install_commands, benefits_summary, license_note, platform_install_commands, graph_path, export_root, cli_command, mcp_server_name, health_url, display_name for 7 tools -> absent from session-start context (first session with notices), prompt-reminder and all 8 gates' deny reasons for Write and Bash."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "major",
+   "location": "tests/scripts/test-agent-delegate-common.sh:97, tests/scripts/test-enable-verify-scripts.sh:32-45, tests/scripts/test-rt-probes-host-tools.sh (rtk cases) (vs fix-H4a-toolgates-consent.json known_failing_until_h4b)",
+   "problem": "Three scripts test files fail because of this branch but are not in known_failing_until_h4b, so H4b will not fix them and CI stays red after H4b lands. test-agent-delegate-common.sh greps 'cert-bypass.sh' in hooks/graphify-gate.sh (now sourced via hooks/lib/opt-in-gate.sh). test-enable-verify-scripts.sh expects sb_alumnium_npx_available to query npm (scripts/enable-alumnium.sh, H4b-owned, still prints 'npm package reachable (alumnium@$(npm view ...))' after the lib now only checks command -v npx). test-rt-probes-host-tools.sh: every rtk probe case now reports 'pending|none||false' (consent moved out of the config, same class as the listed test-rt-probes-cm-alumnium-search.sh). Also the report says 13 tests but lists 14 (17 actually fail).",
+   "evidence": "bash tests/run-all-tests.sh --jobs 2 <51 candidate scripts/integration tests> (SILVER_BULLET_RUNTIME=claude, log REVF-H4a-probe/tmp/run-scripts2.log): '[ test-agent-delegate-common.sh ] FAIL: graphify gate sources cert-bypass'; '[ test-enable-verify-scripts.sh ] FAIL: alumnium: version falls back to unknown / unreachable npm reported / failing summary'; '[ test-rt-probes-host-tools.sh ] FAIL: rtk: suspended (expected suspended|none||false, got pending|none||false)' and 9 more rtk cases. The same 3 files on a 02eff38 snapshot: 32 passed/0, 58/0, 180/0 (tmp/base-unlisted.log). git show 02eff38:hooks/graphify-gate.sh:14 sources cert-bypass.sh; HEAD does not.",
+   "suggested_fix": "Point the delegate-common assertion at hooks/lib/opt-in-gate.sh (or assert behaviour: SB_AGENT_CERT_RUN=1 makes graphify-gate exit 0) in this package; add test-enable-verify-scripts.sh and test-rt-probes-host-tools.sh to the H4b hand-off list with the reason (or fix them here with tests/lib/consent-helpers.sh). Correct the count."
+  },
+  {
+   "severity": "major",
+   "location": "hooks/lib/stack-optimizer.sh:73-101 (sb_stack_ensure_agentmemory_gitignore), called from sb_optimize_agentmemory before the wire-consent check",
+   "problem": "Write outside the project through a repository-controlled symlink. The optimizer touches/greps/appends to \"$repo/.gitignore\" without checking that it is a regular file inside the project. A cloned repo can commit .gitignore as a symlink (git checks it out with only a warning) to e.g. ../../.bashrc; with nothing more than agentmemory 'enforce' consent the apply appends SB's managed block there. The appended '.agentmemory/*' line is a glob command: in an interactive shell started in the repo it executes the repo's .agentmemory/<first file>. Latent today only because sb-optimize-stack.sh still targets the plugin root (R6-23); H4b is about to point it at the user's project.",
+   "evidence": "scripts/gitignore-symlink.sh: repo commits '.gitignore -> ../../home-gi/.bashrc_victim' (git ls-files -s: 120000), consent grant agentmemory --project <repo> --capabilities enforce, sb_optimize_agentmemory <repo> -> victim now ends with '# === agentmemory managed block === ... .agentmemory/* ...'. Then with .agentmemory/a.sh in the repo: (cd repo && bash --rcfile victim -i -c true) created PWNED_BASHRC ('PWNED-by-bashrc').",
+   "suggested_fix": "In sb_stack_ensure_agentmemory_gitignore refuse (print a SKIP/WARN) when .gitignore is a symlink or its physical parent is not the project root (reuse sb_opt_in_path_under / [[ -L ]]), and write by temp file in the project + rename instead of touch/>>/sed -i on the path. Add a hostile-config test with a symlinked .gitignore. Apply the same rule to any other repo path the optimizer writes."
+  },
+  {
+   "severity": "major",
+   "location": "hooks/lib/opt-in-gate.sh:371-383 (sb_opt_in_shell_needs_gate), used by graphify-gate.sh:42, agentmemory-gate.sh:40, context-mode-gate.sh, leanctx-gate.sh, rtk-gate.sh",
+   "problem": "False-positive regression: any shell command that the read-only analyzer cannot prove read-only is now gated, so ordinary test/build/inspection commands are denied by every consented gate whose tool is not ready or whose usage is stale. Base gated only writes/commits. 'npm test' is allowed but 'pytest', 'make test', 'cargo build', 'go test', './gradlew test', 'docker ps', 'kubectl get pods', 'terraform plan' are blocked (also with F2's analyzer overlaid). No honest-variant test covers this class (FIX-BRIEF: every new block needs a test that the honest variant still passes).",
+   "evidence": "scripts/r509base.sh (same project, tools in the same state; base reads config consent, fix has enforce consent): base graphify/agentmemory/context-mode/leanctx/rtk -> 'a a a a a a a a a a' for pytest make cargo go manage.py gradlew docker kubectl terraform ls, while base still denies 'sed -i s/a/b/ src/a.py' in 4 gates; fix -> 'D D D D D D D D D a' in all five. graphify-gate reason for 'pytest -q': 'GRAPHIFY QUERY REQUIRED - run retrieval before substantive work.' Same result on the H4a+F2 overlay (scripts/r509basem.sh).",
+   "suggested_fix": "Gate a shell command only when the analyzer reports a write path, a delivery/commit action or an opaque construct (F2's SB_SA_WRITE_PATHS / SB_SA_ACTIONS / SB_SA_OPAQUE), or extend the exemption with test runners and build/inspection programs; keep the install gates at base semantics (writes and delivery). Add honest-variant tests (pytest, make test, cargo test, go test, docker ps, kubectl get) for each gate. If the owner deliberately wants test/build commands gated, document it in docs/HOOKS.md and the tool docs and pin it with tests."
+  },
+  {
+   "severity": "major",
+   "location": "silver-bullet.md:323-360 (section 2g), templates/silver-bullet.md.base (same), hooks/core-rules.md:32-35,43, skills/silver-init/references/recommended-tools-opt-in.md:10-50, skills/silver-init/references/scaffold-steps.md:186",
+   "problem": "Enforcement behaviour changed (consent moved out of .silver-bullet.json) but the agent-facing contract was not updated: core-rules.md (injected every session) and silver-bullet.md/template still say gates enforce 'when the user opted in via recommended_tools.<tool>.enabled_by_user: true', and the /sb:init skill still records the user's answer as enabled_by_user in the committed file. After merge, a user who opts in through /sb:init gets no enforcement (fail-safe, but the user and agent are told they are opted in), and agents are taught the wrong mechanism. CLAUDE.md's critical invariant and FIX-BRIEF require enforcement changes to be reflected in silver-bullet.md and the template; no package in PKG-NOTES owns this follow-up.",
+   "evidence": "grep -n enabled_by_user hooks/core-rules.md silver-bullet.md templates/silver-bullet.md.base skills/silver-init/references/*.md (worktree HEAD) - lines quoted in location; prompt-reminder output in probe (tmp/pr2.out) injects '13. Graphify retrieval gate ... when the user opted in via recommended_tools.graphify.enabled_by_user: true'. Author's report: 'core-rules.md (integrity-pinned) and silver-bullet.md/templates still describe enabled_by_user as consent ... left for the owner of those files.'",
+   "suggested_fix": "Update silver-bullet.md + templates/silver-bullet.md.base (parity), hooks/core-rules.md with its integrity pin, and the silver-init/silver-update references to record consent with scripts/sb-consent.sh (then regenerate mirrors with scripts/sync-codex-package.sh) - in this package, or have the orchestrator explicitly assign it to H4b before this branch merges."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/lib/recommended-tools.sh:183-222 (sb_rt_state_file)",
+   "problem": "A config query_state_file/usage_state_file may still name any file directly in the runtime state dir, including SB's control files. '${SB_RUNTIME_STATE_DIR}/trivial' makes a graphify query arm the legacy trivial marker, which disables stop-check, ci-status-check, planning-file-guard and subagent-stop for the session; 'state' would be overwritten by an epoch. A repo can already reach the same Stop bypass via state.trivial_file (core-gate issue, other package), so this is not a new capability, but the containment helper should not allow it.",
+   "evidence": "scripts/r501b.sh + r501c.sh: query_state_file '${SB_RUNTIME_STATE_DIR}/trivial', graphify enforce consent, record-graphify-query 'graphify query x' -> state/trivial created (mode 600); stop-check before: 'Cannot complete -- missing required skills', after: no output (allowed).",
+   "suggested_fix": "Ignore configured stamp paths (always use the built-in names), or accept only a basename matching ^[a-z0-9-]+-(usage|query)$ inside a dedicated subdirectory (e.g. $SB_RUNTIME_STATE_DIR/opt-in/)."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/lib/user-consent.sh:154-233 (sb_consent_set)",
+   "problem": "Read-modify-write without a lock: concurrent grants/declines/revokes lose updates. A lost revoke leaves consent granted after the user (or a script) believed it was removed.",
+   "evidence": "scripts/conc.sh: 7 parallel 'sb-consent.sh grant <tool> --all-projects --capabilities enforce' -> only 1-2 of 7 recorded in each of 5 rounds.",
+   "suggested_fix": "Serialize sb_consent_set with a lock in the store directory (mkdir lock with stale recovery, or flock when available), re-reading the store inside the lock."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/lib/user-consent.sh:231",
+   "problem": "The backup 'cp -p store store.bak' follows a symlink at consent.json.bak and overwrites its target, contradicting 'refuses to write through a symlink' in docs/CONSENT.md. Needs write access to the config dir (same-user), so low impact.",
+   "evidence": "scripts/store.sh: ln -s victim consent.json.bak; sb-consent.sh grant alumnium ... -> victim now contains the consent JSON.",
+   "suggested_fix": "rm -f the .bak first or write the backup via mktemp + mv in the same directory."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/lib/recommended-tools.sh:510-516, scripts/sb-consent.sh:98-114, docs/CONSENT.md",
+   "problem": "The migration notice asks 'Enable <tool> for this project?' and the Yes command ('grant <tool> --project DIR' with default capabilities) also records install and wire for the whole machine. Docs do not say that the store is writable by the governed agent (same OS user) and that consent defends against repository content, not against the agent; deny messages hand the agent a one-line 'decline' command without 'only when the user asks'. 'sb-consent.sh --project' does not resolve a subdirectory to the SB project root, so 'grant --project .' from src/ silently records a key no gate reads.",
+   "evidence": "scripts/ss.sh notice text; consent grant graphify --project <proj> prints 'install=granted, wire=granted, enforce=granted' and the store has machine.graphify.install/wire; key.sh: key for <proj>/src is <proj>/src.",
+   "suggested_fix": "Make the notice's Yes command grant enforce only (or say 'and allow installing/wiring on this machine'), resolve --project to the directory holding .silver-bullet.json, and state the agent-forgery limit in docs/CONSENT.md; prefix the decline hint with 'If the user asks to turn it off:'."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/lib/alumnium-gate.sh:74-84 and hooks/alumnium-gate.sh:52-59",
+   "problem": "Browser-test path patterns (*/e2e/*, */playwright/*, */cypress/*) are matched on the raw payload path; Codex apply_patch sends relative paths, so a top-level e2e/ edit is not gated.",
+   "evidence": "Codex apply_patch '*** Add File: e2e/login.spec.ts' with MCP unwired -> allowed; Write with absolute <proj>/e2e/login.spec.ts and Bash 'echo test > e2e/login.spec.ts' -> denied.",
+   "suggested_fix": "Normalize with sb_opt_in_normalize_path against the project root before matching, as the other gates do."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/lib/token-compression-tools-gate.sh:76-82",
+   "problem": "Delivery detection is a regex: '\"git\" commit -m x' and 'G=git; $G commit -m x' are not treated as delivery (opt-in gate only).",
+   "evidence": "scripts/r516.sh: 'G=git; $G commit -m y' -> allow (git commit, git -c .. commit, gh pr create -> deny).",
+   "suggested_fix": "Use F2's analyzer actions (commit, pr_create, release_create) once merged."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/lib/recommended-tools.sh:203-204, hooks/lib/token-compression-tools-gate.sh:64 (_sb_opt_in_program)",
+   "problem": "macOS Bash 3.2 with set -u: '\"${arr[@]}\"' on an empty array is an unbound-variable error. sb_rt_state_file reaches it when the configured path is exactly '${SB_RUNTIME_STATE_DIR}/' (rel empty), so the stamp path becomes empty (the subshell dies) and the gate can never be satisfied; _sb_opt_in_program reaches it for a command starting with an operator. Not reproducible here (only Bash 5.2 installed); static reasoning.",
+   "evidence": "Static: IFS=/ read -r -a _sb_rt_parts <<<\"\" yields an empty array; Bash < 4.4 errors on \"${_sb_rt_parts[@]}\" under nounset; hooks run with set -euo pipefail.",
+   "suggested_fix": "Guard with [[ -n \"$rel\" ]] / ${arr[@]+\"${arr[@]}\"} and add a Bash-3.2-safe test (empty rel falls back)."
+  },
+  {
+   "severity": "minor",
+   "location": "tests/hooks/test-opt-in-gates-hostile-config.sh:48-60 (R5-02 block)",
+   "problem": "The end-to-end 'a version string is never evaluated' assertions use HOSTILE='a[$(touch ...)]'. Under set -u an unset name 'a' aborts before its subscript is evaluated, so the original vulnerable comparison ([[ have -ge $min ]]) would not run the command either: the assertions cannot fail. (Value-level validation tests in test-rtk-gate-coverage.sh / test-context-mode-libs-coverage.sh do catch removal of the validators.) Similarly the R5-04 'recommendation without consent never blocks' loop is short-circuited by the prelude's no-store check, so it does not exercise sb_recommended_tool_enforced.",
+   "evidence": "Sandbox mutation M4 (sb_rt_version_ge -> [[ \"${have%%.*}\" -ge \"$min\" ]], validators removed): hostile-config 31/0. Same mutation with HOSTILE changed to 'HOME[$(touch ...)]': 29/2 ('hostile min_version / min_node_version ran a command', 'the diagnostics entry points evaluated it'); unmutated code with HOME[...] 31/0. Mutation M2 (consent from config) leaves hostile-config 31/0; only test-recommended-tools-coverage.sh 'not enforced without user consent' fails.",
+   "suggested_fix": "Use a set variable (HOME[$(touch ...)]) as the original probe did, and add a hostile-config case where the store records consent for a different project/tool so the gate reaches sb_recommended_tool_enforced."
+  },
+  {
+   "severity": "minor",
+   "location": "CLAUDE.md:113",
+   "problem": "SessionStart outline still lists the deleted stack-compression-lifecycle.sh (the hook-script count was updated).",
+   "evidence": "git show HEAD:CLAUDE.md | sed -n 113p",
+   "suggested_fix": "Drop the name from the SessionStart bullet."
+  }
+ ],
+ "validation": {
+  "tests": "Worktree, SILVER_BULLET_RUNTIME=claude, --jobs 2: 51 scripts/integration candidate files (every tests/scripts|integration file that references a changed hook/lib, consent or recommended_tools) -> 17 failing files = the 14 in known_failing_until_h4b PLUS 3 unlisted (test-agent-delegate-common.sh, test-enable-verify-scripts.sh, test-rt-probes-host-tools.sh); those 3 pass on a 02eff38 snapshot (32/0, 58/0, 180/0). 25 hook/doc files incl. the 13 unchanged hook tests that touch these libs, the 3 new suites, session-start/prompt-reminder/fault-injection/read-deny: all green (user-consent 112/0, opt-in-gate-lib 184/0, hostile-config 31/0, session-start-faults 118/0, hook-faults-sessions 51/0, doc-facts 22/0, hook-reference 3/0). Codex runtime: user-consent, opt-in-gate-lib, hostile-config, recommended-tools, read-deny-hook-coverage, graphify-gate-hook-coverage all green. tests/python (patch_hooks, generate_cursor_hooks, cursor_sb_agents_lib, review_fix_ladder_impl): 208 OK. Mutations (sandbox copy): M1 drop state-path containment -> hostile-config 1 fail; M3 no health_url validation -> 4 fails; M5 write through symlinked store -> user-consent 1 fail; M6 word exemption -> 2 fails; M2 consent read from config -> hostile-config still 31/0 (masked by the prelude pre-check) but test-recommended-tools-coverage.sh 'not enforced without user consent' fails; M4 original [[ -ge ]] on unvalidated versions -> hostile-config still 31/0 (vacuous, see minor issue) but the value-level validation tests in test-rtk-gate-coverage/test-context-mode-libs-coverage fail (14).",
+  "coverage": "One scoped run in a pristine sandbox copy: --only hooks/lib/user-consent.sh scripts/sb-consent.sh hooks/lib/opt-in-gate.sh over test-user-consent, test-opt-in-gate-lib, test-opt-in-gates-hostile-config: user-consent.sh 151/151 100%, sb-consent.sh 108/108 100%, opt-in-gate.sh 239/266 (89.85%) - the remaining lines (prelude fail-open exits, CallMcpTool parsing, agentmemory curl/plugin-script exemptions) are exercised by gate/recorder suites outside this 3-file selection; the author's 29-file 100% claim was not re-run in full (one-run limit). known-limits.json valid JSON, none of its files touched.",
+  "lint": "bash scripts/lint-shell.sh --all --jobs 2 (sandbox copy of HEAD): application Bash 356 files clean, test Bash 728 files clean. bash -n clean on every changed hook/script; no Bash-4-only constructs found (static grep), but see the empty-array/nounset minor issue for Bash 3.2.",
+  "invariants": "check-repo-invariants.sh all PASS; generate-hook-reference --check up to date; generate-apo-artifacts --check rc 0; validate-plugin-mirror rc 0; hooks.json valid; silver-bullet.md/template and docs/workflows untouched and identical (but see the major contract-drift issue). Commit trailers exactly 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' + session line on all 3 commits; no other model names. Note: while checking generator usage I ran 'python3 scripts/generate-cursor-hooks.py --help', which regenerated hooks/cursor-hooks.json and plugins/silver-bullet/cursor-hooks.json in the worktree; output was byte-identical (git status --porcelain empty afterwards), which also confirms those generated files are fresh."
+ },
+ "probe_dir": "/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H4a-probe",
+ "notes": "Consent store integrity otherwise good: new store 0600 in a 0700 dir; existing mode kept; idempotent (no log entry); malformed JSON, wrong types, array, directory, unknown decision -> 'unset' (fail safe) and writes refuse with a clear message; project decline beats machine grant; symlinked store read but not written; symlinked parent dir allowed (dotfile managers). Project key: worktree -> main checkout, symlinked root -> physical path, bare-repo worktree keeps its own key; a hand-made .git file (tarball) can borrow another project's enforce consent, which only enables blocking gates (low). Consent forgery by the governed agent is possible (sb-consent.sh / editing the store) and leaves a log entry with a forgeable source; granting only adds gates or allows installs/wiring the agent could already perform with its shell, declining switches off opt-in gates exactly as editing enabled_by_user:false did before - acceptable, but should be documented. opt-in-gate.sh prelude fail-open on missing libs/jq is acceptable for opt-in gates (not core gates). Gates verified inactive in non-SB and uninitiated projects, under Claude, Codex (exec_command argv, apply_patch) and Cursor (Shell) payload shapes. Commit trailers correct (Opus 5.5 + session), no other model names."
+}

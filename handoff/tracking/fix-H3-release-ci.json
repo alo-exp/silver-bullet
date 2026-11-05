@@ -1,0 +1,390 @@
+{
+ "package": "H3-release-ci",
+ "branch": "fix/H3-release-ci",
+ "head": "6c57daa",
+ "worktree": "/home/user/silver-bullet/.claude/worktrees/agent-ae526514fdf6d40fa",
+ "dispositions": [
+  {
+   "id": "R13-01",
+   "status": "fixed",
+   "commits": [
+    "44bf461",
+    "b298687"
+   ],
+   "tests": [
+    "test-sync-release-marketplace-versions-paths.sh",
+    "test-agent-plugins-common.sh"
+   ],
+   "evidence": "red: remote unchanged after final call -> green: verified push",
+   "notes": ""
+  },
+  {
+   "id": "R13-07",
+   "status": "fixed",
+   "commits": [
+    "44bf461",
+    "647e27b",
+    "b298687",
+    "f321ec8"
+   ],
+   "tests": [
+    "test-sync-release-marketplace-versions-paths.sh"
+   ],
+   "evidence": "publish refused until tag + green CI exist",
+   "notes": "r2: stale checkout fast-forwarded or refused before any commit; batch hosts print 'push pending'; standalone --publish also requires tag on origin and green CI; verify-release-commit-ci.sh derives owner/repo from origin; skills' Allowed Commands list it"
+  },
+  {
+   "id": "R13-19",
+   "status": "fixed",
+   "commits": [
+    "44bf461"
+   ],
+   "tests": [
+    "test-sync-release-marketplace-versions-paths.sh"
+   ],
+   "evidence": "clone failure publishes and changes nothing",
+   "notes": ""
+  },
+  {
+   "id": "R8-18",
+   "status": "fixed",
+   "commits": [
+    "44bf461"
+   ],
+   "tests": [
+    "test-sync-codex-marketplace-version-paths.sh"
+   ],
+   "evidence": "Codex refuses version != package.json",
+   "notes": ""
+  },
+  {
+   "id": "R8-19",
+   "status": "fixed",
+   "commits": [
+    "44bf461"
+   ],
+   "tests": [
+    "test-agent-plugins-common.sh"
+   ],
+   "evidence": "only the named manifest is committed",
+   "notes": ""
+  },
+  {
+   "id": "R13-28",
+   "status": "fixed",
+   "commits": [
+    "44bf461"
+   ],
+   "tests": [
+    "test-sync-marketplace-version-paths.sh"
+   ],
+   "evidence": "mode 644 kept",
+   "notes": ""
+  },
+  {
+   "id": "R13-18",
+   "status": "fixed",
+   "commits": [
+    "a542d0e",
+    "b298687",
+    "f321ec8"
+   ],
+   "tests": [
+    "test-validate-github-release-notes.sh"
+   ],
+   "evidence": "4 failed -> 8 passed",
+   "notes": "repair: sb:create-release validates --file before gh release create"
+  },
+  {
+   "id": "R13-06",
+   "status": "fixed",
+   "commits": [
+    "acaf81b"
+   ],
+   "tests": [
+    "test-post-release-host-verify-flow.sh"
+   ],
+   "evidence": "72/20 failed -> 92/0",
+   "notes": ""
+  },
+  {
+   "id": "R13-29",
+   "status": "fixed",
+   "commits": [
+    "a93db71"
+   ],
+   "tests": [
+    "test-e2e-live-runner-markers.sh"
+   ],
+   "evidence": "3 failed -> 12/0",
+   "notes": ""
+  },
+  {
+   "id": "R13-03",
+   "status": "fixed",
+   "commits": [
+    "232c53c",
+    "647e27b",
+    "b298687"
+   ],
+   "tests": [
+    "test-check-repo-invariants.sh: worm-indicators, CODEOWNERS"
+   ],
+   "evidence": "red unknown check -> green",
+   "notes": "JSONC-aware parse (comments, trailing commas, nested task.allowAutomaticTasks, unicode escapes); unparseable tracked configs flagged; CODEOWNERS widened (agents, host-bundles, instruction files, host dirs; handle @<user>evo to be confirmed). Residual: 'wOF2' magic payload outside public/fonts"
+  },
+  {
+   "id": "R13-25",
+   "status": "fixed",
+   "commits": [
+    "232c53c"
+   ],
+   "tests": [
+    "test-check-repo-invariants.sh: vendored-skills-lock"
+   ],
+   "evidence": "verified against 7 entries",
+   "notes": ""
+  },
+  {
+   "id": "R13-23",
+   "status": "fixed",
+   "commits": [
+    "232c53c"
+   ],
+   "tests": [
+    "test-check-repo-invariants.sh: release-identity"
+   ],
+   "evidence": "dogfood config_version bumped 0.52.0->0.53.0",
+   "notes": ""
+  },
+  {
+   "id": "R9-22",
+   "status": "fixed",
+   "commits": [
+    "232c53c",
+    "647e27b",
+    "b298687"
+   ],
+   "tests": [
+    "test-check-repo-invariants.sh"
+   ],
+   "evidence": "four blind spots closed",
+   "notes": "repair: bare hooks/ commands now fail"
+  },
+  {
+   "id": "R13-13",
+   "status": "partial",
+   "commits": [
+    "232c53c"
+   ],
+   "tests": [
+    "tracked-file-size invariant (90 MiB)"
+   ],
+   "evidence": "guard added; payload slimming and the 5 tracked .planning/*.bak need a distribution decision",
+   "notes": "needs-user part: ship runtime-only payload / move graph.json out; .bak untrack touches .planning/ (not editable)"
+  },
+  {
+   "id": "R13-04",
+   "status": "fixed",
+   "commits": [
+    "647e27b",
+    "a7cc5e8",
+    "b298687"
+   ],
+   "tests": [
+    "workflow-hardening invariant"
+   ],
+   "evidence": "35 problems -> 0",
+   "notes": "repair: write-all, any continue-on-error value and the --ignored guard are asserted"
+  },
+  {
+   "id": "R13-05",
+   "status": "fixed",
+   "commits": [
+    "4cd8504",
+    "a7cc5e8",
+    "b298687"
+   ],
+   "tests": [
+    "ci guard probe"
+   ],
+   "evidence": "guard compares porcelain --ignored",
+   "notes": "test-enterprise-e2e-matrix-internal-gates.sh no longer writes the registry into the checkout (SB_E2E_PASS_AT_VERSION_REGISTRY override in scripts/enterprise-e2e/lib/core.sh); guard now stays green; r2: assertion compares the checkout registry before/after (operators' own registry allowed)"
+  },
+  {
+   "id": "R13-14",
+   "status": "fixed",
+   "commits": [
+    "a7cc5e8"
+   ],
+   "tests": [
+    "workflow-hardening"
+   ],
+   "evidence": "preflight, no continue-on-error",
+   "notes": ""
+  },
+  {
+   "id": "R13-15",
+   "status": "partial",
+   "commits": [
+    "a7cc5e8"
+   ],
+   "tests": [
+    "workflow-hardening, site-duplicate-ids"
+   ],
+   "evidence": "pins, checksum, dependabot",
+   "notes": "deferred: action SHA pinning (no network), shellcheck apt version pin, pip --require-hashes"
+  },
+  {
+   "id": "R13-16",
+   "status": "partial",
+   "commits": [
+    "a7cc5e8"
+   ],
+   "tests": [
+    "workflow-hardening"
+   ],
+   "evidence": "Node 24 majors, timeouts",
+   "notes": "deferred: action SHA pinning (no network), shellcheck apt version pin, pip --require-hashes"
+  },
+  {
+   "id": "R13-17",
+   "status": "fixed",
+   "commits": [
+    "a7cc5e8"
+   ],
+   "tests": [
+    "site-duplicate-ids"
+   ],
+   "evidence": "tag check runs on tags; 58 pages",
+   "notes": ""
+  },
+  {
+   "id": "R13-22",
+   "status": "fixed",
+   "commits": [
+    "a7cc5e8"
+   ],
+   "tests": [
+    "workflow-hardening"
+   ],
+   "evidence": "env-only interpolation",
+   "notes": ""
+  },
+  {
+   "id": "R13-24",
+   "status": "fixed",
+   "commits": [
+    "a7cc5e8"
+   ],
+   "tests": [
+    "workflow-hardening"
+   ],
+   "evidence": "scan on every push/PR",
+   "notes": ""
+  },
+  {
+   "id": "R13-12",
+   "status": "fixed",
+   "commits": [
+    "4cd8504",
+    "9b6a713",
+    "b298687"
+   ],
+   "tests": [
+    "tests/scripts/test-makefile-setup.sh: 12 assertions"
+   ],
+   "evidence": "red 9 failed (rc 2, system pip run) -> green 12/0",
+   "notes": "venv .venv; PATH prefixed; docs in CONTRIBUTING/README/TESTING updated; repair: tests/run-all-tests.sh keeps a venv python active (exec wrapper), test imports a venv-only module through the runner; prereqs warn on bash<4/timeout; r2: venv path single-quoted in the wrapper, hostile-path test"
+  },
+  {
+   "id": "R13-21",
+   "status": "fixed",
+   "commits": [
+    "9b6a713",
+    "56e528f"
+   ],
+   "tests": [
+    "tests/scripts/test-host-config-hygiene.sh"
+   ],
+   "evidence": "four host configs untracked + ignored; red tracked -> green 16/0",
+   "notes": "three files untracked (the untracking of .github/hooks, .claude/launch.json, data/iii-config.yaml landed in 9b6a713); .codex/hooks.json kept tracked with H2's exact content (repair 4cd8504); guard for missing graphify is an H2 follow-up"
+  },
+  {
+   "id": "R13-27",
+   "status": "partial",
+   "commits": [
+    "56e528f"
+   ],
+   "tests": [
+    "tests/scripts/test-host-config-hygiene.sh"
+   ],
+   "evidence": "this repo's .gitignore covers runtime files, override audit log deliberately not ignored",
+   "notes": "downstream /sb:init .gitignore block lives in skills/silver-init (not H3-owned): follow-up; repo-level only"
+  },
+  {
+   "id": "R13-26",
+   "status": "needs-user",
+   "commits": [],
+   "tests": [],
+   "evidence": "unverifiable offline (Cursor semantics); .cursorignore is read by scripts/diagnose-cursor-picker-duplicates.sh, enumerate-cursor-slash-picker.sh (H5) and tests/scripts/test-install-cursor.sh",
+   "notes": "Question: do you want skills/ and templates/workflows/ moved from .cursorignore to .cursorindexingignore? Recommend yes after confirming in Cursor, with picker scripts + test updated together."
+  },
+  {
+   "id": "R13-02",
+   "status": "needs-user",
+   "commits": [],
+   "tests": [],
+   "evidence": "changes how releases are distributed",
+   "notes": "Question: pin the Claude marketplace entry to the release tag/sha (as Codex/Cursor)? Recommend yes."
+  },
+  {
+   "id": "R7-30",
+   "status": "needs-user",
+   "commits": [],
+   "tests": [],
+   "evidence": "same decision as R13-02",
+   "notes": "Recommend pinning to the tag."
+  },
+  {
+   "id": "R13-11",
+   "status": "needs-user",
+   "commits": [],
+   "tests": [],
+   "evidence": "private data in public repo; deleting .planning/, research/, .agentmemory/, SETUP_REPORT.md is a user decision",
+   "notes": "Question: scrub/remove and rewrite history? Recommend removing SETUP_REPORT.md and the quota file, rotating anything exposed."
+  },
+  {
+   "id": "R13-25-residual",
+   "status": "needs-user",
+   "commits": [],
+   "tests": [],
+   "evidence": "graphify skill dirs (.agents/skills/graphify, .claude/skills/graphify) are tool-managed and outside the lock",
+   "notes": "Decide whether to hash-lock the graphify-managed skill"
+  },
+  {
+   "id": "R13-24-residual",
+   "status": "needs-user",
+   "commits": [],
+   "tests": [],
+   "evidence": "full-history gitleaks never run (no gitleaks offline)",
+   "notes": "Run gitleaks detect --redact over history once before merging; add a baseline for audited hits"
+  }
+ ],
+ "files_changed_outside_ownership": [
+  "tests/run-all-tests.sh: venv python exec wrapper instead of symlink (R13-12)",
+  "scripts/enterprise-e2e/lib/core.sh + tests/scripts/test-enterprise-e2e-matrix-internal-gates.sh + test-enterprise-e2e-core-matrix-ledger.sh: SB_E2E_PASS_AT_VERSION_REGISTRY override (R13-05; H10 area)",
+  "skills/silver-create-release/SKILL.md, skills/silver-release/SKILL.md + regenerated mirrors (agents/, host-bundles/, plugins/silver-bullet/skill-source/)",
+  "CONTRIBUTING.md, README.md, docs/TESTING.md, docs/CICD.md, docs/RUNTIME-COMPATIBILITY.md, tests/live/README.md, tests/e2e-live/run-e2e-live-tests.sh, .silver-bullet.json (config_version 0.53.0), scripts/lib/repo_invariants.py + tests/python/test_repo_invariants.py",
+  "new tests: test-makefile-setup.sh, test-host-config-hygiene.sh, test-release-skill-contract.sh, test-e2e-live-runner-markers.sh",
+  "untracked .github/hooks/context-mode.json, .claude/launch.json, data/iii-config.yaml; .codex/hooks.json untouched vs H2 (same content); .gitignore may conflict textually with H5 (keep both blocks)",
+  "tests/scripts/test-verify-release-ci-paths.sh, test-sync-*-marketplace-version.sh (non-paths): fixtures stage the tag on a fake origin / CI stub"
+ ],
+ "validation": {
+  "tests": "48 test files touching any changed script or the skill content (run-all-tests.sh itself excluded, it is the runner): codex 4670 passed/0 failed; claude 47 files green plus the one needing a fixture update (verify-release-ci-paths) 71/0 after the fix; plus marketplace sync tests 432/0 under both runtimes, invariants 175/0 under both",
+  "coverage": "scoped 100%: agent-plugins-common.sh, verify-release-commit-ci.sh, check-repo-invariants.sh, repo_invariants.py (statements and branches)",
+  "lint": "lint-shell --all clean; plugin mirror OK",
+  "invariants": "check-repo-invariants all PASS"
+ },
+ "notes": "No CHANGELOG [Unreleased] entry added (section absent; release-identity reads newest release heading). Base already merged (nothing to merge)."
+}

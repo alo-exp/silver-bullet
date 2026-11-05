@@ -1,0 +1,173 @@
+{
+ "package": "H3b-decisions",
+ "head_reviewed": "8667a4832177beba2c085c9404babe027618fb60",
+ "verdict": "CHANGES_REQUIRED",
+ "per_finding": [
+  {
+   "id": "R13-02/R7-30",
+   "verdict": "fixed",
+   "notes": "In-repo Claude and Cursor entries pin ref v0.53.0; catalog cursor/claude/codex rows pin v0.53.0; in-repo sync writes ref plus sha when the tag exists (no stale sha pre-tag); Claude and Cursor --publish write ref and the tag commit sha (test asserts remote sha == tag commit). Inverse probe in a probe copy: reverting set_silver_bullet_version to version-only -> test-sync-marketplace-version-paths 88/7 failed; dropping the ref -> test-release-version-alignment 21/1 failed. Residuals (minor issues): pre-tag window on the default branch is undocumented; docs/CHANGELOG claim Codex writes sha, it never does."
+  },
+  {
+   "id": "R13-26",
+   "verdict": "fixed",
+   "notes": ".cursorindexingignore holds skills/ and templates/workflows/; .cursorignore keeps only generated mirrors; enumerate-cursor-slash-picker.sh and diagnose-cursor-picker-duplicates.sh read both files; test-install-cursor 69/0 (codex runtime) including the 'cursorignore alone leaves skills unignored' negative. Not verifiable offline: whether Cursor's real '/' picker honours .cursorindexingignore."
+  },
+  {
+   "id": "R13-11",
+   "verdict": "incomplete",
+   "notes": "Quota plan, SETUP_REPORT.md, gist URLs, LADDER-STATUS account fields and 101 .err/.log files are gone; JSON/JSONL/TOML of all 53 changed structured files still parse; graphify artifacts validate. But personal home-directory paths remain in forms the new invariant cannot see (including a shipped script), the e2e-live detector was neutered by the scrub, and account/transcript residue remains. See issues 2, 3, 4, 5."
+  },
+  {
+   "id": "R13-13",
+   "verdict": "ok",
+   "notes": "partial/needs-user disposition is sound: export-ignore only affects git archive / GitHub tarballs, and Claude github sources and Cursor/Codex git-clone installs ignore it. git archive 8667a48: 4108 of 7651 entries, 35.9 MB tar; keeps .planning/scripts/phase-lock.sh, drops research/, the rest of .planning/, .agentmemory/, graph.json and *.bak. Nothing a runtime needs is excluded: hooks use the project's $PWD/.planning/scripts, plugin-root .planning references are only enterprise-e2e maintainer tools, no tracked symlink points into an excluded tree. The 5 tracked .bak files under .planning remain tracked (export-ignored only)."
+  },
+  {
+   "id": "graphify-lock",
+   "verdict": "fixed",
+   "notes": "skills-lock.json toolManaged locks .agents/skills/graphify and .claude/skills/graphify; edits, new .claude/skills dirs and .graphify_version dirs fail with the refresh hint. Minor: refresh-skills-lock hashes untracked/ignored files (issue 9)."
+  },
+  {
+   "id": "actions-pin-list",
+   "verdict": "ok",
+   "notes": "docs/RELEASE.md table matches every uses: line in .github/workflows (13 uses across 6 workflows) and the apt-get installs."
+  },
+  {
+   "id": "H3-r3 worm CR",
+   "verdict": "fixed",
+   "notes": "strip_jsonc ends // at CR; union with decoded-text regexes. Probes (CR tasks/settings, comments around colon, \\u escapes, duplicate key) all FAIL as expected; honest trailing-comma JSONC passes."
+  },
+  {
+   "id": "H3-r3 worm BOM",
+   "verdict": "fixed",
+   "notes": "utf-8-sig: BOM extensions.json passes, BOM + folderOpen fails."
+  },
+  {
+   "id": "H3-r3 workflow block scalars / flow style",
+   "verdict": "regressed",
+   "notes": "Honest heredoc/github-script content now passes and two flow forms are caught, but the new block-scalar skip swallows sibling keys of a '- key: |' list item, so continue-on-error and ${{ }} run injection are no longer detected in the most common step shape (issue 1, major). Other flow variants still evade (issue 7)."
+  },
+  {
+   "id": "H3-r3 hook-reference chained paths",
+   "verdict": "incomplete",
+   "notes": "The three literal forms (./hooks, $PWD/hooks, ${CLAUDE_PROJECT_DIR}/scripts) now fail; project paths outside hooks/ or scripts/ still pass (issue 8)."
+  },
+  {
+   "id": "H3-r3 EXIT trap leak",
+   "verdict": "fixed",
+   "notes": "tests/scripts/test-verify-release-commit-ci.sh:110 trap removes both $TMP and $derive_root; 8/0."
+  },
+  {
+   "id": "H3-r3 .codex/hooks.json base merge",
+   "verdict": "ok",
+   "notes": "H3 is merged into the base; git merge-tree --write-tree 21606d0 8667a48 is clean (tree e1c7b0dc); all 17 invariants PASS on the materialised merge tree."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "major",
+   "location": "scripts/lib/repo_invariants.py:504-506 (BLOCK_SCALAR extent in workflow_problems)",
+   "problem": "Regression introduced by this package. The block-scalar skip computes the extent with indent_of(line), which for a list-item line ('      - run: |', '      - name: >-') is the dash column. Every sibling key of that step (indent 8 > 6) is treated as scalar text and skipped, so continue-on-error and ${{ }} in a run line are no longer reported. RUN_KEY already used len(run.group(1)) (the key column) correctly; BLOCK_SCALAR does not. 6dcbc84 reported both; 8667a48 reports nothing.",
+   "evidence": "REVF-H3b-probe/dec/wf-fixture/.github/workflows/ci.yml: steps '- run: |\\n    git status --porcelain --ignored\\n  continue-on-error: true' and '- name: >-\\n    Greet\\n  run: echo \"${{ github.event.issue.title }}\"'. base repo_invariants.py workflow-hardening -> ':14: continue-on-error hides failures', ':17: ${{ }} expression inside a run script' rc=1; head -> rc=0; head check-repo-invariants.sh --check workflow-hardening -> 'PASS workflow-hardening'. Module probe REVF-H3b-probe/dec/scan/wfprobe.py: run_block_then_coe base=[coe] head=[]; name_block_then_coe_and_injection base=[coe, injection] head=[].",
+   "suggested_fix": "Use the key column as the parent indent, as RUN_KEY does: match r'^(\\s*(?:-\\s+)?)[^:]+:\\s*[|>]' and pass len(group(1)) to block_extent. Add tests: '- run: |' followed by sibling continue-on-error: true, and '- name: >-' followed by a run with ${{ }}, both must fail."
+  },
+  {
+   "severity": "major",
+   "location": "scripts/lib/repo_invariants.py:333-334,362 (personal-data patterns); scripts/run-visual-qa-pipeline.sh:11; graphify-out/graph.json:1; .planning/VERIFIER-FAIL-ANALYTICS.md:58",
+   "problem": "R13-11 is claimed fixed, but the maintainer's home path survives in forms the scrub and the new CI invariant both miss: Cursor's project-dir form 'Users-<name>-projects-...' (no leading dash, so DASHED_HOME misses it) in a shipped runtime script and a planning doc; the lean-ctx form '_Users_<name>_' in 2 run logs; lowercase '/users/<name>/...' and 'users_<name>_projects' in graph.json (normalised labels/ids, 6+ hits); 'file:///Users/<name>/.cursor/...' link URIs inside 2 research PDFs (binary files are skipped). The guard also misses /var/home/<name>, -home-<name>- (Linux Claude project dirs), JSON-escaped \\/Users\\/<name>, url-encoded %2FUsers%2F<name>, and <user>@<host>.local git default emails ('local' is an allowlisted TLD). Since this repo's own tooling emits the Cursor and lean-ctx forms, future leaks will pass CI.",
+   "evidence": "python3 -I REVF-H3b-probe/dec/scan/scan.py <worktree>: cursor_dash_users -> .planning/VERIFIER-FAIL-ANALYTICS.md:58, scripts/run-visual-qa-pipeline.sh:11; underscore_users -> .planning/rfl-router-subagent-surfaces-85bf9f09-20260812/deepseek-v4-pro-high-ladder4/launch.nohup.out.attempt2:25, .../opencode-run.log.attempt2:17, graphify-out/graph.json:1; lower_users_home -> graphify-out/graph.json:1. git grep -a: research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/landscape-report.pdf and .../landscape/landscape-report.pdf. Fixture REVF-H3b-probe/dec/pd/docs/fn.md with 10 such forms (placeholder name) -> personal-data rc=0, no line reported. Real tree: check-repo-invariants 'PASS personal-data'.",
+   "suggested_fix": "Scrub the listed files (run-visual-qa-pipeline.sh should default to a $HOME-relative or env-provided path; regenerate graph.json with graphify update after the source scrub). Make the home pattern case-insensitive, accept [-_/] separators around Users/home (Users-<n>-, _Users_<n>_, -home-<n>-), cover /var/home, decode \\/ and %2F before matching, drop 'local' from the allowlisted TLDs, and scan text-bearing binaries (PDF) or list them explicitly. Add a regression test per form."
+  },
+  {
+   "severity": "major",
+   "location": "scripts/lib/repo_invariants.py:336-353 (GENERIC_HOME_NAMES, EMAIL, email_allowed); sibling fix/F2-input-analysis hooks/lib/tool-input/shell_analysis.py:1083",
+   "problem": "False positives that fail CI (check-repo-invariants.sh in the validate job, and test-no-personal-machine-paths.sh) on legitimate content: the Homebrew-on-Linux prefix /home/linuxbrew/, CI/container accounts (/home/codespace, /home/gitpod, /home/ec2-user, /home/vagrant, /home/jovyan, /home/pi, /home/circleci, /home/coder, C:\\Users\\runneradmin on GitHub Windows runners, C:\\Users\\Public, C:\\Users\\Default), retina asset names (logo@2x.png, icon@3x.webp parse as emails), ssh remotes git@gitlab.com: / git@bitbucket.org:, and vendor contacts such as security@anthropic.com. This is not hypothetical: the pending sibling package F2 adds '/home/linuxbrew/\\.linuxbrew/bin/' to a hook regex, merges cleanly with H3b (git merge-tree rc=0), and then fails personal-data.",
+   "evidence": "REVF-H3b-probe/dec/pd/docs/fp.md (10 lines of legitimate content) -> 18 problems rc=1. git show fix/F2-input-analysis:hooks/lib/tool-input/shell_analysis.py > REVF-H3b-probe/dec/f2fix/... ; repo_invariants.py personal-data REVF-H3b-probe/dec/f2fix -> 'hooks/lib/tool-input/shell_analysis.py:1083: personal home-directory path' rc=1.",
+   "suggested_fix": "Add the well-known system/CI/container accounts (linuxbrew, runneradmin, public, default, codespace, gitpod, ec2-user, vagrant, jovyan, pi, circleci, coder, ...) to GENERIC_HOME_NAMES; exclude image extensions as email TLDs (png, jpg, jpeg, gif, svg, webp); treat git@<any host>: as an ssh remote; consider a reviewed allowlist file for vendor contact addresses. Add honest-variant tests for each, and run the check over the F2 branch before merging."
+  },
+  {
+   "severity": "minor",
+   "location": "tests/e2e-live/scenarios/test-e2e-live-full-surface-journey.sh:222",
+   "problem": "The scrub replaced LOCAL_SKILL_SOURCE_ROOT with '/Users/example/projects/codex-plugins/skills'. local_skill_source_bypass_hits greps turn logs for that literal path, so the three assert_no_local_skill_source_bypass checks (lines 581, 735, 745) can no longer fire on the maintainer's machine, the only place the bypass happens: the test now passes vacuously.",
+   "evidence": "git diff 6dcbc84..8667a48 -- tests/e2e-live/scenarios/test-e2e-live-full-surface-journey.sh; function body at lines 291-370 matches 'if root not in line: continue'.",
+   "suggested_fix": "LOCAL_SKILL_SOURCE_ROOT=\"${SB_E2E_LOCAL_SKILL_SOURCE_ROOT:-$HOME/projects/codex-plugins/skills}\" (no personal literal, still meaningful)."
+  },
+  {
+   "severity": "minor",
+   "location": ".planning/rfl-agent-interaction-modes-17ed9bf7/rung-10-opus5-high/invoke-meta.md:14 (+ rung-11 :17, rung-12 :18), research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/RUN.md:75, .agentmemory/memory/memories/mem_mssm4ef5_8837d94198e9.md:14, docs/instruction-following/PHASE0-PREFLIGHT-EVIDENCE.md:148, .planning/phases/070-phase-lock-schema-and-shared-helper/070-02-PLAN.md:82,86,364, .gitignore:55",
+   "problem": "Residual private operational data the decision covered: Claude account auth status (account email plus plan tier) in 5 files, the macOS username as file owner in 2 'ls -l' captures, the machine hostname in 3 phase-070 docs, and run transcripts that escaped the delete: 25 opencode-run.log.attemptN/.killed-*/.china-* plus 25 wrapper-argv.log.* files (the .gitignore pattern '.planning/**/*.log' does not match rotated names) and about 286 AI CLI *-stdout.txt/*-stderr.txt captures under .planning/research/docs.",
+   "evidence": "git grep -n -I -i -E 'Auth \\(pre\\)|loggedIn: true|subscriptionType' 8667a48; git ls-tree -r --name-only 8667a48 | grep -E '\\.(err|log)\\.' -> 58 (25 opencode-run.log, 25 wrapper-argv.log, 8 slug-probe .log.out).",
+   "suggested_fix": "Delete the rotated run logs and add '*.log.*' / '*.err.*' to .gitignore; redact the auth-status lines and ls owner/hostname; ask the user whether the stdout/stderr captures count as transcripts."
+  },
+  {
+   "severity": "minor",
+   "location": "skills/silver-create-release/SKILL.md:223-315 (Step 5c pushes before Step 7 tags); docs/RELEASE.md:147-149",
+   "problem": "Pre-tag state: Step 5c pushes the release commit, whose .claude-plugin/marketplace.json now says ref vX, and the tag is pushed only after release CI and the RC matrix. Throughout that window (indefinitely if CI is red) the default branch advertises a ref that does not exist, so new installs or updates through the in-repo marketplace (README's primary '/plugin install alo-exp/silver-bullet' route) fail. Codex and Cursor already had this window; it now covers the primary Claude route and is not documented.",
+   "evidence": "Static: sync-marketplace-version.sh prepare mode writes ref v<version> without a tag (test 'no tag yet: no sha pinned' confirms); release skill order is 5b.1 sync -> 5c commit+push -> 6/6b CI -> 7 tag+push.",
+   "suggested_fix": "Document the window in docs/RELEASE.md and the release skill, or change the order: push the release commit to a release branch, wait for green CI, tag and push the tag, then fast-forward the default branch."
+  },
+  {
+   "severity": "minor",
+   "location": "docs/RELEASE.md:149; CHANGELOG.md:1587; scripts/sync-codex-marketplace-version.sh:112-115",
+   "problem": "The docs say sync-codex-marketplace-version.sh writes source.sha once tagged and that --publish always writes both ref and sha, and the CHANGELOG says the Codex entry is pinned 'plus sha once tagged'. The Codex script writes only version and ref, in both modes.",
+   "evidence": "grep -n sha scripts/sync-codex-marketplace-version.sh -> no write of .source.sha; the publish jq program sets .version and .source.ref only.",
+   "suggested_fix": "Either write the tag commit sha in the Codex publish path (if Codex url sources accept it) or scope the docs and CHANGELOG to Claude and Cursor."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/check-repo-invariants.sh:152",
+   "problem": "Incomplete r3 fix: only paths with a hooks/ or scripts/ component are rejected. A project-relative command chained after a valid plugin script still passes: '&& bash ./tools/evil.sh', '&& bash \"$CLAUDE_PROJECT_DIR/.githooks/x\"', '; python3 evil.py', '&& source .envrc', '&& make -f Makefile', '$(cat x)'.",
+   "evidence": "REVF-H3b-probe/dec/hookref fixture, --check hook-references: those 6 commands -> PASS; './hooks/evil.sh', '$PWD/hooks/evil.sh', '${CLAUDE_PROJECT_DIR}/scripts/evil.sh' -> FAIL.",
+   "suggested_fix": "Allowlist as r3 suggested: each command must be exactly bash/sh \"${CLAUDE_PLUGIN_ROOT}/<existing file>\" plus plain arguments, matching all 96 real commands."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/lib/repo_invariants.py:416-418,452-458 (QUOTED_KEY, FLOW_STEP, FLOW_STEPS_KEY, flow_job_lines); 415 (CONTINUE_ON_ERROR)",
+   "problem": "Flow-style variants still evade the hardening check, base and head alike: 'steps:' with the flow sequence on the next line ('[ {run: \"echo ${{ ... }}\", continue-on-error: true} ]'), a flow-mapping top-level 'jobs: {...}', an anchored or tagged flow step ('- &s {...}', '- !!map {...}'), and 'continue-on-error : true' (space before the colon).",
+   "evidence": "python3 -I REVF-H3b-probe/dec/scan/wfprobe.py: steps_flow_on_next_line, jobs_flow_toplevel, anchor_flow_step, tagged_flow_step, space_before_colon -> head [] (base [] too).",
+   "suggested_fix": "Outside run scripts and block scalars, reject any line whose first non-space character is '[' or '{', any '- ' item followed by '&', '*' or '!', and any key:value whose value starts with '[' or '{' under jobs:; allow optional spaces before ':' in CONTINUE_ON_ERROR."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/lib/repo_invariants.py:294-299 (refresh_skills_lock)",
+   "problem": "refresh-skills-lock hashes every file on disk (rglob), but vendored-skills-lock hashes only tracked files. An ignored or untracked file in a skill directory (.DS_Store from Finder, a local gitignored .claude/skills/<mine>/) gives a lock that the check rejects, and the error hint sends the maintainer back to the same refresh.",
+   "evidence": "REVF-H3b-probe/dec/lock (git repo with .gitignore '.DS_Store' and '.claude/skills/mine/'): refresh then check rc=0; after a .DS_Store in .claude/skills/graphify: refresh rc=0 then check '...content does not match ... (refresh with: ...)' rc=1; with an ignored .claude/skills/mine: refresh 'locked .claude/skills/mine' then check '.claude/skills/mine: listed in skills-lock.json toolManaged but missing' rc=1.",
+   "suggested_fix": "Have refresh use tracked_files(root) (falling back to the disk walk only for a non-git fixture), the same source as the check."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/lib/repo_invariants.py:340,358-375 (personal_data EMAIL scan)",
+   "problem": "Performance: the EMAIL regex takes 20.5 s on graphify-out/graph.json alone; the full personal-data check takes 42-47 s wall (22-24 s CPU) and runs in CI's 'fast' validate job, in test-no-personal-machine-paths.sh and in test-check-repo-invariants.sh.",
+   "evidence": "python3 -I REVF-H3b-probe/dec/scan/perf.py: UNIX_OR_WINDOWS_HOME 2.33 s, DASHED_HOME 1.75 s, EMAIL 20.5 s on graph.json; 'time repo_invariants.py personal-data .' -> real 46.9 s.",
+   "suggested_fix": "Only run EMAIL around '@' (iterate over text.find('@') and match a bounded window), or anchor the pattern at '@' with a bounded lookbehind."
+  },
+  {
+   "severity": "minor",
+   "location": "CHANGELOG.md:1585-1591",
+   "problem": "The new entries were appended to a stale, empty '[Unreleased]' section that sits between the 0.37.1 and 0.37.0 entries, about 1,580 lines below the newest release, so readers and the release step (which adds the next version at the top) will not see them.",
+   "evidence": "grep -n '^## \\[' CHANGELOG.md -> 3: [0.53.0] ... 1585: [Unreleased] ... [0.37.0].",
+   "suggested_fix": "Move the [Unreleased] section to the top (check the release-identity invariant tolerates it)."
+  },
+  {
+   "severity": "minor",
+   "location": "docs/STACK-OPTIMIZATION.md:104; docs/AGENTMEMORY.md:70; docs/research/graphify-agentmemory-optimization.md:5,15,18,33,34,44,70; CONTRIBUTING.md:83",
+   "problem": "These docs still cite SETUP_REPORT.md as dogfood evidence, but the file is now deleted and gitignored.",
+   "evidence": "git grep -n SETUP_REPORT 8667a48 -- docs CONTRIBUTING.md.",
+   "suggested_fix": "Reword them to say the report is generated locally by sb-verify-synergy.sh --write-setup-report and is not committed."
+  },
+  {
+   "severity": "minor",
+   "location": "commit 4cec7aa",
+   "problem": "The merge commit has only the default merge subject, without the Co-Authored-By and Claude-Session trailers that FIX-BRIEF requires (the same was flagged on earlier packages). The other 4 commits carry the 'Claude Sonnet 5.5' trailer (accepted) and the session line, and name no other models.",
+   "evidence": "git log -1 --format=%B 4cec7aa -> \"Merge branch 'claude/optimistic-ramanujan-tccfud' into fix/H3b-decisions\".",
+   "suggested_fix": "Re-do the merge with the two trailer lines, or have the orchestrator accept trailer-less merges explicitly."
+  }
+ ],
+ "validation": {
+  "tests": "Via tests/run-all-tests.sh, two files at a time, all green: test-release-version-alignment 22/0 (claude and codex), test-sync-marketplace-version-paths 95/0, test-sync-cursor-marketplace-version-paths 87/0, test-plugin-payload 32/0, test-check-repo-invariants 191/0 and test-no-personal-machine-paths 15/0 (codex), test-agent-plugins-common 82/0, test-verify-release-commit-ci 8/0, test-install-cursor 69/0 (codex); tests/python/test_repo_invariants.py 57/0; docs suite 198/0. Inverse changes in a probe copy are caught (sync pin: 7 failures; ref removal: 1; honest-script skip: 1). No test covers issue 1.",
+  "coverage": "One scoped run (cov-dir REVF-H3b-probe/dec/cov, 9 test files incl. test-python-unit.sh), rc=0, 2373/0: repo_invariants.py 374/374 statements, 188/188 branches; check-repo-invariants.sh, build-plugin-payload.sh, agent-plugins-common.sh, diagnose/enumerate cursor picker scripts 100%. sync-marketplace-version.sh:150 and sync-cursor-marketplace-version.sh:166 not hit: pre-existing H3 'push pending' echoes (b298687), covered by test-sync-release-marketplace-versions-paths.sh, which was not in this one run. Every line H3b changed is covered.",
+  "lint": "bash scripts/lint-shell.sh --all --jobs 2 rc=0 (355 application, 733 test files clean).",
+  "invariants": "check-repo-invariants.sh: 17/17 PASS on 8667a48, and 17/17 PASS on the materialised trial merge with 21606d0 (git merge-tree clean, tree e1c7b0dc). generate-hook-reference.py --check up to date; generate-apo-artifacts.py --check rc=0; validate-plugin-mirror.sh OK; validate-graphify-artifacts.sh valid; docs/workflows == templates/workflows; no skills/ change (no sync-codex-package needed). Scope: 1171 modified, 103 deleted and 3 added files; 1225 of the changed files are the user-approved scrub under .planning/, research/, .agentmemory/, docs/ and graph.json. No sibling branch touches those trees, but F2 conflicts semantically with personal-data (issue 3). The worktree and branch were not modified (status identical before and after, HEAD 8667a48)."
+ }
+}

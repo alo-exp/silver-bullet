@@ -1,0 +1,251 @@
+{
+ "package": "H3-release-ci",
+ "head_reviewed": "56e528f",
+ "verdict": "CHANGES_REQUIRED",
+ "per_finding": [
+  {
+   "id": "R13-01",
+   "verdict": "fixed",
+   "notes": "Re-ran the R13-01 probe against the fixed scripts (/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H3-probe/bin/mkt-setup.sh, sandbox mkt1): '--publish 0.99.0' -> 'Pushed 3 commit(s) to origin/main', remote main now has the Claude/Codex/Cursor bump commits, all three entries at 0.99.0 (Cursor sha = tag commit, Codex ref v0.99.0). Variants: pre-receive rejection -> rc=1; stale AGENT_PLUGINS_REPO_ROOT (non-fast-forward) -> rc=1. Inverse (old 'return unless dirty' in agent_plugins_push) makes test-sync-release-marketplace-versions-paths fail 11 assertions."
+  },
+  {
+   "id": "R13-07",
+   "verdict": "fixed",
+   "notes": "Wrapper --publish refuses with no tag (rc=1), with a tag only local ('not on origin', rc=1) and with red CI (rc=1); prepare mode publishes nothing. Residual (minor issue): a per-host script run standalone with --publish checks only the local tag, not origin or CI."
+  },
+  {
+   "id": "R13-19",
+   "verdict": "fixed",
+   "notes": "Clone failure now exits 1 with 'nothing was published' before any host runs; prepare mode never clones."
+  },
+  {
+   "id": "R8-18",
+   "verdict": "fixed",
+   "notes": "sync-codex-marketplace-version.sh refuses a version != package.json and re-checks the manifest after sync-codex-package.sh; covered in codex-paths test."
+  },
+  {
+   "id": "R8-19",
+   "verdict": "fixed",
+   "notes": "Probe: AGENT_PLUGINS_REPO_ROOT checkout with untracked scratch.json and .bak -> pushed commits contain only the manifests; dirty manifest refused by agent_plugins_require_clean_path; 'git commit -- paths' ignores other staged files."
+  },
+  {
+   "id": "R13-28",
+   "verdict": "fixed",
+   "notes": "Probe: after prepare, .claude-plugin/marketplace.json, .cursor-plugin/marketplace.json and the Codex plugin.json are 644 (umask 022); rewrite is same-dir temp + rename."
+  },
+  {
+   "id": "R13-18",
+   "verdict": "fixed",
+   "notes": "Every CHANGELOG entry from 0.44 on validates (0.51.7 '### Fixes' -> OK); 19 old pre-convention entries still fail, acceptable. Docs now validate before 'gh release create', but the sb:create-release skill still validates after (see contract-drift issue)."
+  },
+  {
+   "id": "R13-06",
+   "verdict": "fixed",
+   "notes": "Install, sb-diagnostics and the RC fresh cell all run from a detached clone of the tag; run-rc-validation-matrix.sh/host-smoke-cell.sh re-export SB_PRE_RELEASE_REPO_ROOT to their own (tag) tree; untagged version refused; trap set before mktemp. Test 92/0."
+  },
+  {
+   "id": "R13-29",
+   "verdict": "fixed",
+   "notes": "Marker written only when the legacy journey ran and all scenarios passed; stale marker removed. Inverse (always write) fails 3 assertions of test-e2e-live-runner-markers.sh."
+  },
+  {
+   "id": "R13-03",
+   "verdict": "incomplete",
+   "notes": "The real 93ab69b payload (extracted as data to /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H3-probe/worm-data) is caught: tasks.json/settings.json folderOpen + allowAutomaticTasks, all 21 public/fonts files, fa-solid-500.woff2 signature. Not caught: JSON unicode-escaped keys/values that VS Code decodes ('\"runOn\":\"folder\\u004fpen\"', '\"task.allow\\u0041utomaticTasks\"') and a payload prefixed with the 4-byte 'wOF2' magic outside public/fonts. Inverse (drop the folderOpen check) fails 6 shell + 1 Python assertions. CODEOWNERS added (handle unconfirmed)."
+  },
+  {
+   "id": "R13-25",
+   "verdict": "fixed",
+   "notes": "7 lock entries verified, tamper and unlisted skill detected. Residual: the agent-loaded graphify skill (.agents/skills/graphify, 10 files, and .claude/skills/graphify) is exempt from any integrity check."
+  },
+  {
+   "id": "R13-23",
+   "verdict": "fixed",
+   "notes": "release-identity checks Codex ref, newest CHANGELOG release and config_version; dogfood config bumped to 0.53.0."
+  },
+  {
+   "id": "R9-22",
+   "verdict": "fixed",
+   "notes": "All four blind spots closed with seeded-breakage tests. Residual: hook-references now accepts bare 'hooks/x.sh' registrations, which at runtime would resolve against the user's project, not the plugin."
+  },
+  {
+   "id": "R13-13",
+   "verdict": "ok",
+   "notes": "Partial disposition justified: 90 MiB guard added; slimming the payload and untracking .planning/*.bak need a distribution decision and .planning/ is not editable."
+  },
+  {
+   "id": "R13-04",
+   "verdict": "fixed",
+   "notes": "permissions: contents: read in every workflow (pages keeps pages/id-token write; announce adds actions: read), persist-credentials: false on every checkout, html-validate@latest gone, Python deps pinned."
+  },
+  {
+   "id": "R13-05",
+   "verdict": "fixed",
+   "notes": "Guard now diffs 'git status --porcelain --ignored --untracked-files=all' before/after with PYTHONDONTWRITEBYTECODE=1. Verified in a git-archive copy: test-enterprise-e2e-matrix-internal-gates.sh still adds '!! .e2e-matrix-pass-at-version.tsv', so CI's test job goes red when H3 lands before H10's fix (see issue). No test protects the guard's --ignored flag."
+  },
+  {
+   "id": "R13-14",
+   "verdict": "fixed",
+   "notes": "e2e-live fails at a preflight with a job-summary reason when no CLI exists, comma/space runtimes validated via env; rc-validation has no continue-on-error, no unused CURSOR_API_KEY and lists cells as structural/skip."
+  },
+  {
+   "id": "R13-15",
+   "verdict": "incomplete",
+   "notes": "Done: pinned Python deps, playwright removed, gitleaks checksum (from the same release, so it detects corruption, not a replaced release), Dependabot. Not done: shellcheck still 'apt-get install' without update or version pin (part of the finding's fix); no hashes (--require-hashes). Minor."
+  },
+  {
+   "id": "R13-16",
+   "verdict": "ok",
+   "notes": "Node 24 majors where they exist, FORCE flag everywhere, timeouts on every job, main/release/tag runs not cancelled. SHA pinning correctly left to the user (no network); report should say partial, not fixed."
+  },
+  {
+   "id": "R13-17",
+   "verdict": "fixed",
+   "notes": "Tag/version step runs (and fails) on v* tag pushes; site-duplicate-ids covers all tracked site pages at every depth (replaces the non-blocking html-validate run)."
+  },
+  {
+   "id": "R13-22",
+   "verdict": "fixed",
+   "notes": "All event text reaches run scripts via env (grep confirms no ${{ }} in any run:); tag validated against ^v<semver>; random heredoc delimiter; title/url single-line."
+  },
+  {
+   "id": "R13-24",
+   "verdict": "fixed",
+   "notes": "Runs on every push/PR/v* tag and scans the added commit range; full history on main/release-*/tags. Full-history scan never executed (no gitleaks offline) - see minor issue."
+  },
+  {
+   "id": "R13-12",
+   "verdict": "incomplete",
+   "notes": "make setup now builds .venv, but 'make test' and 'make coverage' do not use it: tests/run-all-tests.sh rebuilds PATH as symlinks (safe_bin/python3 -> .venv/bin/python3 -> /usr/bin/python3) and Python only detects a venv from the unresolved executable's directory. Probe (/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H3-probe/venvtest): with .venv/bin first on PATH a probe test importing a venv-only module passes when run directly and FAILS through run-all-tests.sh ('venv package NOT importable'). test-makefile-setup.sh only checks PATH inside make, so it misses this."
+  },
+  {
+   "id": "R13-21",
+   "verdict": "fixed",
+   "notes": "Four files untracked (in commit 9b6a713, not 56e528f) and ignored; no test, installer, script or hook reads the repository copies (only CONTRIBUTING.md:79/81 describe them). Conflicts with H2: modify/delete on .codex/hooks.json (git merge-tree confirms) and opposite test assertions - see issue and recommendation."
+  },
+  {
+   "id": "R13-27",
+   "verdict": "ok",
+   "notes": "Partial disposition justified: repo .gitignore covers the runtime files and keeps the override audit log visible; the downstream /sb:init block is in skills/silver-init (not owned) and needs a follow-up task."
+  },
+  {
+   "id": "R13-26",
+   "verdict": "ok",
+   "notes": "needs-user justified: Cursor semantics can't be verified offline and .cursorignore is read by H5-owned picker scripts and test-install-cursor.sh."
+  },
+  {
+   "id": "R13-02",
+   "verdict": "ok",
+   "notes": "needs-user as PKG-NOTES requires (release distribution decision); recommendation sound."
+  },
+  {
+   "id": "R7-30",
+   "verdict": "ok",
+   "notes": "Same decision as R13-02."
+  },
+  {
+   "id": "R13-11",
+   "verdict": "ok",
+   "notes": "needs-user as PKG-NOTES requires (deleting maintainer data / history rewrite)."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "major",
+   "location": "Makefile:16-22; tests/run-all-tests.sh:102-118",
+   "problem": "R13-12 incomplete: the venv that make setup creates is invisible to make test and make coverage. run-all-tests.sh rebuilds PATH as a directory of symlinks, so tests run python3 through safe_bin/python3 -> .venv/bin/python3 -> /usr/bin/python3, and Python then does not detect the venv. Under make coverage the preflight passes (it runs in the parent with the venv python), but child processes cannot import coverage (the sitecustomize bootstrap swallows the ImportError), so Python coverage is not collected; openpyxl/PyYAML tests skip or fail. The Makefile's 'make test and make coverage use them automatically' message is false.",
+   "evidence": "/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H3-probe/venvtest: python3 -m venv --without-pip .venv; module sbvenvprobe in its site-packages. 'PATH=.venv/bin:$PATH bash t/test-venv-probe.sh' -> 'venv package importable'. 'PATH=.venv/bin:$PATH bash tests/run-all-tests.sh t/test-venv-probe.sh' (from the worktree) -> 'venv package NOT importable', TOTAL 0 passed, 1 failed. Also: 'ln -s .venv/bin/python3 sb/python3; sb/python3 -c \"import sys;print(sys.prefix!=sys.base_prefix)\"' -> '/usr False'.",
+   "suggested_fix": "Have the Makefile export VIRTUAL_ENV=$(abspath $(VENV)) when the venv exists, and have run-all-tests.sh put \"$VIRTUAL_ENV/bin\" before safe_bin in TEST_PATH (or write 'exec \"$_entry\" \"$@\"' wrapper scripts instead of symlinks for python* found in a directory whose parent has pyvenv.cfg). run-all-tests.sh is outside H3's ownership: coordinate with its owner. Add a test that runs a probe test through run-all-tests.sh with a venv on PATH and asserts a venv-only module imports."
+  },
+  {
+   "severity": "major",
+   "location": "skills/silver-create-release/SKILL.md:35,37,207-232,346-353; skills/silver-release/SKILL.md:82; docs/RELEASE.md:25",
+   "problem": "Contract drift that the report does not mention. The release skills still run sync-release-marketplace-versions.sh before tagging and require that 'both upstream marketplace repos must have the same version committed and pushed', never run '--publish', and validate release notes after 'gh release create'. docs/RELEASE.md now says the skill 'walks through steps 6-9' and that notes are validated before publishing. A release driven by sb:create-release (the documented path) therefore never publishes the unified marketplace, and its stated gate condition is false.",
+   "evidence": "grep in the worktree: SKILL.md:213 'bash scripts/sync-release-marketplace-versions.sh \"$VERSION\"' under 'Step 5b.1' (before tagging); SKILL.md:220 'both upstream marketplace repos must have the same version committed and pushed'; SKILL.md:350 'validate-github-release-notes.sh --tag' after gh release create; no occurrence of '--publish' in skills/. The wrapper without --publish now prints 'Nothing was published'.",
+   "suggested_fix": "Update skills/silver-create-release/SKILL.md (add a post-tag Step 'sync-release-marketplace-versions.sh --publish', validate --file before gh release create, use --verify-tag) and skills/silver-release/SKILL.md:82, then run scripts/sync-codex-package.sh. Or, if the skill owner must do it, record it in files_changed_outside_ownership/notes as a required follow-up and land both together."
+  },
+  {
+   "severity": "major",
+   "location": ".codex/hooks.json; .gitignore:26; tests/scripts/test-host-config-hygiene.sh:11",
+   "problem": "Direct conflict with sibling package H2, which owns .codex/hooks.json and made it portable ('graphify hook-check', no absolute paths), with tests/scripts/test-dogfood-host-config-portable.sh asserting 'the dogfooding Codex hooks are tracked'. H3 deletes the file and asserts it is untracked. Merged as-is, git reports a modify/delete conflict and one of the two tests must fail. Separately, .gitignore conflicts textually with H5.",
+   "evidence": "git merge-tree --write-tree --name-only fix/H2-installers fix/H3-release-ci -> 'CONFLICT (modify/delete): .codex/hooks.json deleted in fix/H3-release-ci and modified in fix/H2-installers'. git merge-tree fix/H5-packaging-doctor fix/H3-release-ci -> 'CONFLICT (content): Merge conflict in .gitignore'.",
+   "suggested_fix": "Recommend keeping H2's portable, tracked .codex/hooks.json, with the command guarded ('command -v graphify >/dev/null 2>&1 && graphify hook-check || true'), because the tracked .claude/settings.json gives Claude contributors the same graphify dogfood hook, CONTRIBUTING documents .codex/ as dogfood config, and the CLAUDE.md graphify rule applies on every host. Drop /.codex/hooks.json from H3's .gitignore and from the list in test-host-config-hygiene.sh (its absolute-home-path check still covers .codex/). Keep untracking .github/hooks/context-mode.json (unguarded binary), .claude/launch.json and data/iii-config.yaml (absolute personal paths). Resolve the .gitignore hunk with H5 by keeping both blocks."
+  },
+  {
+   "severity": "major",
+   "location": ".github/workflows/ci.yml:118-133; tests/scripts/test-enterprise-e2e-matrix-internal-gates.sh (H10)",
+   "problem": "Merge order: the new ignored-files guard is correct, but the default suite still writes .e2e-matrix-pass-at-version.tsv into the checkout. Landing H3 before H10's fix turns CI's test job red on the integration branch, which then blocks verify-release-commit-ci.sh and the new --publish step.",
+   "evidence": "/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H3-probe/e2ecopy: git archive HEAD of the worktree, git init, status --ignored recorded; 'bash tests/run-all-tests.sh tests/scripts/test-enterprise-e2e-matrix-internal-gates.sh' -> 4 passed; the status diff then shows '> !! .e2e-matrix-pass-at-version.tsv'.",
+   "suggested_fix": "Merge H3 only together with or after the H10 fix (SB_ROOT/registry isolation in that test). Re-run that test against the merged tree with the before/after --ignored diff to confirm."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/lib/repo_invariants.py:74-92,98-131",
+   "problem": "The worm-indicator regexes match raw text, but VS Code parses JSON(C) and decodes \\u escapes, so 'runOn: \"folder\\u004fpen\"' or '\"task.allow\\u0041utomaticTasks\"' slip through. A payload whose first 4 bytes are 'wOF2' outside public/fonts also passes the signature check. The real recurring payload is caught.",
+   "evidence": "/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H3-probe/wormvar (git fixture): worm-indicators reports only a.code-workspace and x/.vscode/tasks.json; .vscode/tasks.json with folder\\u004fpen and .vscode/settings.json with task.allow\\u0041utomaticTasks are not reported; static/fonts/x.woff2 = 'wOF2' + script passes binary-signatures.",
+   "suggested_fix": "Decode JSONC (strip // and /* */ comments and trailing commas, then json.loads) and walk the decoded keys/values for runOptions.runOn == 'folderOpen' and the task.allowAutomaticTasks key; fall back to failing on any tracked .vscode/tasks.json that does not parse. This repository tracks no .vscode files, so flagging any tracked .vscode/tasks.json is also acceptable."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/sync-marketplace-version.sh:113-126; scripts/sync-codex-marketplace-version.sh:131-144; scripts/sync-cursor-marketplace-version.sh:174-188; scripts/sync-release-marketplace-versions.sh:96",
+   "problem": "A per-host script run standalone with --publish checks only that the tag exists locally, not that it is on origin or that CI is green (only the wrapper checks those). A stale AGENT_PLUGINS_REPO_ROOT is never fetched: check_publishable compares against an outdated tracking ref, the push is rejected (rc=1, loud), but three local commits are left in the caller's checkout. In batch mode each host prints 'publish complete ... now offers' before anything is pushed.",
+   "evidence": "/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H3-probe/mkt2 stale-checkout case: rc=1 with a non-fast-forward hint; 'git -C apco log' shows the 3 bump commits on top of the stale main.",
+   "suggested_fix": "Move the origin-tag and CI checks into a shared helper that every --publish path calls, 'git fetch' the upstream before check_publishable, and print 'committed (push pending)' in batch mode."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/lib/repo_invariants.py:139,172 (TOOL_MANAGED_SKILLS); .claude/skills/graphify/",
+   "problem": "The agent-loaded graphify skill (10 files under .agents/skills/graphify and another copy under .claude/skills/graphify) has no integrity check, so a prompt-injection edit to either passes CI. That is the R13-25 threat for the one skill excluded from the lock.",
+   "evidence": "git ls-files .agents/skills/graphify .claude/skills/graphify -> 10 files each; the vendored-skills-lock check skips any skill that contains .graphify_version and never scans .claude/skills.",
+   "suggested_fix": "Record the graphify skill's hash in a lock entry (or compare both copies with each other and with the installed graphify version's bundled skill) and fail on drift."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/lib/repo_invariants.py:281-312",
+   "problem": "The workflow-hardening invariant accepts 'permissions: write-all', 'continue-on-error: ${{ true }}' or 'continue-on-error: \"true\"', and ${{ }} in actions/github-script 'script:' inputs. Nothing asserts that the CI checkout guard keeps --ignored, so the R13-05 fix can regress silently.",
+   "evidence": "Static reading: the permissions check is 'any(line.startswith(\"permissions:\"))'; CONTINUE_ON_ERROR requires the literal true; only 'run:' blocks are scanned for ${{.",
+   "suggested_fix": "Reject write-all and any continue-on-error value, scan github-script 'script:' blocks, and add an assertion that ci.yml's guard uses 'status --porcelain --ignored'."
+  },
+  {
+   "severity": "minor",
+   "location": ".github/workflows/secret-scan.yml:58-70",
+   "problem": "The full-history gitleaks scan on main, release-* and tags has never been run; history includes the worm commits and thousands of since-deleted files. If it flags anything, Secret Scan on main goes red and blocks verify-release-commit-ci.sh and --publish.",
+   "evidence": "gitleaks is not installed here (command -v gitleaks -> nothing); the author's validation simulates scan ranges only.",
+   "suggested_fix": "Run 'gitleaks detect --redact' over the full history once before merging and commit a .gitleaksignore/baseline for audited historical hits. Optionally pin the tarball's SHA-256 in the workflow, since a checksum from the same release only detects corruption."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/check-repo-invariants.sh:136-150",
+   "problem": "hook-references now treats bare 'hooks/x.sh' or 'scripts/x.sh' registrations as valid when the file exists in this repo. At runtime such a relative command resolves against the user's project directory and would run project-controlled code, so it should fail rather than pass.",
+   "evidence": "tests/scripts/test-check-repo-invariants-cli.sh asserts '{\"command\":\"bash scripts/tool.sh\"}' -> 'every command form resolves' (exit 0).",
+   "suggested_fix": "Require ${CLAUDE_PLUGIN_ROOT}/ (or $CLAUDE_PLUGIN_ROOT) and fail bare relative plugin paths with an explanation."
+  },
+  {
+   "severity": "minor",
+   "location": ".github/CODEOWNERS:7-13",
+   "problem": "The owner handle @<user>evo was inferred from a personal gist URL that R13-11 flags as private data, and is unconfirmed. Coverage omits paths that run code or instructions automatically: /skills/, /.agents/, /plugins/ (hook mirror installed by Codex/Cursor), /.claude-plugin/, /.cursor-plugin/, /templates/, /site/ (pages.yml deploys without CI), Makefile, package.json and requirements*.txt.",
+   "evidence": "git grep <user>evo -> only .agentmemory gist URLs and CODEOWNERS.",
+   "suggested_fix": "Keep this as a maintainer confirmation (prefer an org team such as @alo-exp/<team>) and widen the path list."
+  },
+  {
+   "severity": "minor",
+   "location": "CONTRIBUTING.md:28,79,81; Makefile:29-35",
+   "problem": "Docs drift. CONTRIBUTING still says CI runs html-validate (that step was removed) and describes .codex/ and data/ (iii-config.yaml) as tracked dogfood config, although both are now untracked. make prereqs still does not check Bash >= 4 or timeout, which R13-12 asked for.",
+   "evidence": "sed -n 28p;79p;81p CONTRIBUTING.md; git ls-files data -> empty.",
+   "suggested_fix": "Update those rows and add the bash-version and timeout checks to prereqs as warnings."
+  },
+  {
+   "severity": "minor",
+   "location": "scratchpad/review/fix-H3-release-ci.json",
+   "problem": "Report accuracy. The R13-21 untracking is in 9b6a713 (the Makefile commit, whose message does not mention it), not 56e528f, so 56e528f's 'red tracked -> green' claim does not hold at its parent. files_changed_outside_ownership omits .silver-bullet.json, docs/CICD.md, docs/RUNTIME-COMPATIBILITY.md, tests/e2e-live/run-e2e-live-tests.sh, tests/live/README.md, scripts/lib/repo_invariants.py and tests/python/test_repo_invariants.py. R13-15 and R13-16 are marked fixed although parts were deferred.",
+   "evidence": "git log --stat 02eff38..HEAD -- .codex/hooks.json -> 9b6a713 only.",
+   "suggested_fix": "Correct the report: mark R13-15/R13-16 partial with the deferred parts, list every out-of-ownership file and the skills follow-up."
+  }
+ ],
+ "validation": {
+  "tests": "Run through tests/run-all-tests.sh from the worktree under SILVER_BULLET_RUNTIME=claude and codex: 9 marketplace sync files 404/0 each; invariants (+cli), release-notes (+cli), post-release-verify-flow, e2e-live-runner-markers, host-config-hygiene, makefile-setup, rc-validation-matrix, announce-release-threading, verify-release-announcement-ci, no-personal-machine-paths, release-version-alignment: 400/0 each; tests/python/test_repo_invariants.py 30 OK. Inverse checks in a git-archive copy: R13-01 inverse -> release-paths 11 failed; R13-29 inverse -> markers 3 failed; worm folderOpen inverse -> invariants 6 failed + python 1 failed. The worktree was unchanged afterwards apart from graphify's ignored cache stamp, written by the mandated graphify query.",
+  "coverage": "One scoped run (--only on the 9 changed scripts, 15 test files): 100% for all of them; Bash 866/866 statements, 54/54 functions; repo_invariants.py 218/218 statements and 106/106 branches; rc=0 (known-limits valid).",
+  "lint": "bash scripts/lint-shell.sh --all --jobs 2: application and test Bash clean; bash -n clean on hooks/, hooks/lib and scripts/.",
+  "invariants": "check-repo-invariants.sh all 16 PASS; generate-hook-reference --check, generate-apo-artifacts --check and validate-plugin-mirror OK; docs/workflows == templates/workflows; no silver-bullet.md/template changes; commit trailers exact, no model names. Merge-tree: modify/delete conflict with H2 (.codex/hooks.json), content conflict with H5 (.gitignore)."
+ }
+}

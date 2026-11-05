@@ -1,0 +1,115 @@
+{
+ "package": "H8a-deep-research",
+ "round": 8,
+ "head_reviewed": "6ae3709",
+ "verdict": "CHANGES_REQUIRED",
+ "per_finding": [
+  {
+   "id": "r7-B1 signs/comparators",
+   "verdict": "fixed",
+   "notes": "attack.py: 0 leaks besides the identical control row; -12% / <5 / ≥ / ≈ / ~ go to needs_review or contradicted."
+  },
+  {
+   "id": "r7-B2 accents/other scripts",
+   "verdict": "fixed",
+   "notes": "Möller/Müller, Cyrillic and CJK pairs needs_review; Cyrillic а confusable, combining-accent forms, ZWSP, RLM all needs_review."
+  },
+  {
+   "id": "r7-B3 decimal comma",
+   "verdict": "fixed",
+   "notes": "€1,5 vs €15, €3,50 vs €350 needs_review."
+  },
+  {
+   "id": "r7-M1 number-form tricks",
+   "verdict": "fixed",
+   "notes": "10⁶/106, 1.2.3/123, 1½/12, H₂O/H₃O, 3-5/35/3–5, 03/04 vs 04/03 never supported."
+  },
+  {
+   "id": "r7-M2 honest contradicted",
+   "verdict": "incomplete",
+   "notes": "honest.py: no BAD rows (3/3.0, $5/$5.00, .95, '24, 90s now needs_review). But sibling-quote and other honest contradictions remain (issues M1-M3)."
+  },
+  {
+   "id": "r7-m1 docs",
+   "verdict": "incomplete",
+   "notes": "aliases gone and the one-figure rule is consistent, but quality-gates.md says a sibling quote about another year 'never contradicts' (false, M1) and omits … and backtick from the dropped list."
+  },
+  {
+   "id": "r7-m2 this/that, its/their",
+   "verdict": "fixed",
+   "notes": "filler list removed; that/this and its/their needs_review."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "blocker",
+   "location": "skills/silver-deep-research/scripts/verify_claim_support.py:_words (casefold)",
+   "problem": "Case-folding applies to unit tokens and figure suffixes, so a unit with another magnitude reaches 'supported'.",
+   "evidence": "REVF-H8a8-probe/attack8.py: 'The file is 5 Mb.' <= 'The file is 5 MB.' supported; '5 mW' <= '5 MW' supported; '5mW' <= '5MW' supported; '5 GBps' <= '5 Gbps' supported; '500 Mg' <= '500 mg' supported. End to end (run-b): verify --strict status pass, exit 0, supported.",
+   "suggested_fix": "Keep figure tokens and the word right after a figure case-exact. Casefold other words only when they are lowercase or capitalised (one leading capital). Keep ALL-CAPS and mixed-case tokens exact."
+  },
+  {
+   "severity": "blocker",
+   "location": "verify_claim_support.py:STOPWORDS / _keys",
+   "problem": "A capital 'A' that is a name or qualifier and not an article is dropped, so a claim that adds or removes the qualifier is 'supported'.",
+   "evidence": "'Hepatitis cases rose 20% in 2023.' <= 'Hepatitis A cases rose 20% in 2023.' supported; 'Vitamin A deficiency is common in Europe.' <= 'Vitamin deficiency is common in Europe.' supported; 'Class shares rose 5%.' <= 'Class A shares rose 5%.' supported.",
+   "suggested_fix": "Drop a/an/the only when written in lowercase, or when it is the capitalised first word of the text. Any other 'A' is a content token."
+  },
+  {
+   "severity": "major",
+   "location": "verify_claim_support.py:compute_support_score (contradicting over a reworded support); quality-gates.md 'Each quote is compared ... never contradicts it'",
+   "problem": "A sibling quote from the same cited source still contradicts an honest claim when it differs only in the year and the real supporting quote is reworded. The docs claim this never happens.",
+   "evidence": "REVF-H8a8-probe/honest8.py: claim 'Revenue rose 5% in 2024.' with quotes ['Revenue rose 5% in 2023.', 'In 2024, revenue again rose 5%.'] gives contradicted ('2024 (source: 2023)'), so --strict exits 1. The existing test (test_claim_strict_rule.py:274) covers only the two-token case.",
+   "suggested_fix": "Return needs_review instead of contradicted when another quote contains the claim's differing figure, or reaches MIN_OVERLAP without conflicting. Add this pair to the corpus."
+  },
+  {
+   "severity": "major",
+   "location": "verify_claim_support.py:_conflict (NEGATORS)",
+   "problem": "An interjection or abbreviation 'No' counts as an added negator, so honest claims are contradicted.",
+   "evidence": "'The tool is not free.' <= 'No, the tool is not free.' gives contradicted. End to end (run-a): --strict status fail, exit 1. Also 'Acme ranks 1 in Europe.' <= 'Acme ranks No. 1 in Europe.' gives contradicted.",
+   "suggested_fix": "Count 'no' as a negator only when it is not followed by ',' or '.' in the original text, or ignore a sentence-initial 'No,'. Tokenise from the raw text to keep this information."
+  },
+  {
+   "severity": "major",
+   "location": "verify_claim_support.py:_digits_masked",
+   "problem": "The same value written in another digit script counts as 'a different figure', so an honest claim is contradicted.",
+   "evidence": "'The fee is ５０ euros.' <= 'The fee is 50 euros.' gives contradicted ('５０ (source: 50)'). Arabic-Indic '٥' against '5' is also contradicted.",
+   "suggested_fix": "Mask only ASCII [0-9] (other scripts then differ in form and go to needs_review), or compare unicodedata.digit values and send equal values to needs_review."
+  },
+  {
+   "severity": "minor",
+   "location": "verify_claim_support.py:TOKEN_RE (dropped ? and *)",
+   "problem": "A question or a footnote asterisk in the quote becomes a plain statement in the claim, and the claim is 'supported'.",
+   "evidence": "'The vaccine is safe.' <= 'The vaccine is safe?' supported; 'The plan is free.' <= 'The plan is free*.' supported.",
+   "suggested_fix": "Keep '?' and a word-final '*' as tokens."
+  },
+  {
+   "severity": "minor",
+   "location": "verify_claim_support.py:_stem",
+   "problem": "The -s stem joins different words. The rule allows plural -s, but meaning shifts get through.",
+   "evidence": "'new release' <= 'news release', 'glass' <= 'glasses', 'security' <= 'securities', 'good' <= 'goods': all supported.",
+   "suggested_fix": "Accept as documented residual risk, or add a small list of words the stem must not touch (news, goods, glasses, securities, means, arms, damages, customs)."
+  },
+  {
+   "severity": "minor",
+   "location": "verify_claim_support.py:INLINE_CITATION_RE in _words",
+   "problem": "Stripping citation markers lets digits in brackets disappear from a claim.",
+   "evidence": "'Acme has 3[00] employees.' <= 'Acme has 3 employees.' supported; '$5[000]' <= '$5' supported.",
+   "suggested_fix": "Strip [N] only when a space or the end of a word comes before it, not when it is glued to a digit."
+  },
+  {
+   "severity": "minor",
+   "location": "reference/quality-gates.md 'What makes a claim supported'",
+   "problem": "The list of dropped marks omits the ellipsis (…) and the backtick, which the code drops. The chapter-agent prompt omits contractions and citation markers.",
+   "evidence": "TOKEN_RE also excludes U+2026 and the backtick.",
+   "suggested_fix": "List them."
+  }
+ ],
+ "validation": {
+  "tests": "via the scoped coverage run: test-solution-research-python.sh + test-multi-ai-deep-research-contract.sh, 863 passed, 0 failed. r7 attack.py: 0 leaks (one identical control row); honest.py: 0 contradicted/unsupported.",
+  "coverage": "one scoped run: verify_claim_support.py 354/354 statements and 166/166 branches, extract_claims.py 203/203 and 72/72, 100%.",
+  "lint": "lint-shell.sh --all --jobs 2 clean",
+  "invariants": "check-repo-invariants exit 0, no FAIL; validate-plugin-mirror OK; generate-hook-reference and generate-apo-artifacts --check pass; exit codes and JSON output of verify unchanged (no print/exit lines in the diff); scope limited to deep-research and its mirrors; trailers Co-Authored-By Claude Sonnet 5.5 + Claude-Session; claude/optimistic-ramanujan-tccfud 127e2f9 is an ancestor and merge-tree is clean; no network; worktree untouched.",
+  "probes": "/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8a8-probe/attack8.py, honest8.py, run-a, run-b, attack8.out, honest8.out"
+ }
+}

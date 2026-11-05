@@ -1,0 +1,60 @@
+{
+ "package": "H8b-followup",
+ "head_reviewed": "b4c18ec",
+ "verdict": "APPROVE",
+ "per_finding": [
+  {
+   "id": "r10-major pack URL (prose URL tokenisation leaks)",
+   "verdict": "fixed",
+   "notes": "Prose URL extraction is gone: _candidates, _host_path_of, _SCHEME, _CLOSERS, Registry._url_vendors/signals, _text_signals/_SIGNALS deleted. The only URL->vendor path left is Registry.url_slug(value) -> parse_whole_url, called from materialize._declared_for_row with each whole source value (source_ref, source_url, url, source, string items of a list field). Grep of vendor_identity.py, materialize_solution_artifacts.py, solution_classifier.py, category_pack.py, dr_multi_ai_cli.py, dr_live_runner.py and validate_landscape_content.py finds no other URL extraction or substring domain match (category_pack only reads pack homepage/github data; landscape_*/vendor_link_labels only render). The subdomain test is label-bounded (host.endswith('.'+known_host), only for path-less pack hosts). fp12 (r10 tool) 0/336 by class Q 0/42, J 0/33, L 0/36, C 0/60, H 0/75, W 0/30, P 0/36, K 0/24 (/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-r11-probe/out/fp12.txt); fp12b rows credit no ambiguous vendor; fp11 0/140; fp10 0/76; fp9 0/60; fp8 0/97; fp6 0/30; fp5 0/52; fp4 0/25; fp3 0/52; fp2 0/31; s4 0/10; fp7 2/82 (LangChain, CrewAI: distinctive and correct, unchanged). Prose-URL POS rows in fp12/fp11 now miss by decision."
+  },
+  {
+   "id": "r11 structured-field attack set (new)",
+   "verdict": "ok",
+   "notes": "/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-r11-probe/tools/fp13.py: 87 new attack values x 8 placements (source_ref, source_url, url, source, supporting_sources item, supporting_sources as a string, source_ref as a list, nested meta.url) + 9 non-string values x 5 fields + 90 evidence/critiques/gaps rows = 831 rows, 0 false credits (/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-r11-probe/out/fp13.txt, 7 s). Covered: leading/trailing whitespace, two URLs joined by space/tab/LF/CR/comma/semicolon/'; '/' + '/'|'/NBSP/U+2028/\\x1f in both orders, query/fragment/path naming a vendor (?next=, #devin.ai, /https://devin.ai/, web.archive.org, google redirect), free text ('see https://devin.ai/ for details', 'Source: ...', '(..)', '<..>', Markdown link, quotes, backticks, url=, javascript:, view-source:, hxxps, ftp, //, https:, https:/, https:///), IDN/homoglyph/punycode/ideographic and fullwidth dots, trailing dot(s), upper-case hosts, look-alike hosts, userinfo, backslash, bad ports, [host], %2f, NUL/ZWSP/DEL in host, path-prefix traversal (../, .., ./, //, %2f, -evil, x suffix, parent path, other owner, gist subdomain, openai.com/codexx, docs.anthropic.com traversal), 50 KB values; non-strings None/0/42/3.5/True/dict/nested list/list of dicts/bytes. Genuine whole-field URLs credit: POS 16/16 in source_ref and as a supporting_sources item next to another URL (incl. padded whitespace, www., HTTPS:// scheme, :443, #fragment, ?query, path-prefix packs, 40 KB path). A whole-field URL with no capitalised spelling of the vendor in the text credits nothing."
+  },
+  {
+   "id": "trust residual docs (task item 3)",
+   "verdict": "ok",
+   "notes": "Fields are read only from the claim row's own top-level keys; nested objects and non-strings are ignored. Whatever an agent writes into source_ref is declared identity: SKILL.md 'Trust residuals (accepted)' documents that a source_ref naming a vendor plus a capitalised use credits it, and the brief tells agents to put the URL alone in source_ref. Legacy name channel still credits a whole source segment that is exactly a vendor name (source_ref 'Devin', 'Cursor; https://a.com/', 'https://a.com/ + Devin') when the text spells it capitalised; this is the orchestrator-accepted 'legacy source_ref signal with text condition', not a URL leak. 'devin.ai', 'cursor.com', 'Devin AI' as a value credit nothing."
+  },
+  {
+   "id": "real APO run / recall (task item 4)",
+   "verdict": "ok",
+   "notes": "real6.py on REVF-H8b3-probe/runs/apo-real-prev: by_slug (74), matrix (23 slugs), core (8, Director core) and the 101 cells are identical to the r10 head output (/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-r11-probe/out/real.r11.json vs REVF-H8bfu-r10-probe/out/real.head.json). test_untagged_recall_is_pinned_and_a_vendors_tag_recovers_all_of_it passes (81 cases, 74 known misses = 7/81 untagged, 81/81 tagged). Distinctive-name prose crediting is unchanged (mentions_vendor keeps is_prose_spelling)."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "minor",
+   "location": "skills/silver-deep-research-multi-ai/SKILL.md:179,192",
+   "problem": "The doc says the name channel is 'a source_ref that names it', but _declared_for_row resolves names from every source field (source_ref, source_url, url, source, supporting_sources); source_url is newly added in r10, so a bare 'Devin' in source_url/source/url also credits. Same text condition, so not a precision regression, but the documented surface is narrower than the code.",
+   "evidence": "fp13 NAME rows: source_ref 'Devin' -> devin; the same code path iterates all five fields (materialize_solution_artifacts.py:462-468).",
+   "suggested_fix": "Say 'a source field (source_ref, source_url, url, source, supporting_sources) whose whole value or ';'/' + ' segment names it' in SKILL.md and the trust-residual bullet."
+  },
+  {
+   "severity": "minor",
+   "location": "skills/silver-deep-research-multi-ai/tests/test_vendor_mention_corpus.py",
+   "problem": "Mutation tests in a sandbox copy: taking the first whitespace token (A), dropping the dot-segment check (B) and re.search instead of re.match (D) are each caught by the corpus tests; allowing an upper-case host (C) is not caught. Allowing it would not create a false credit (DEVIN.AI is devin.ai), so this is only an unpinned conservative choice.",
+   "evidence": "mutation C: 41 tests, only the sandbox-only TaggingContract error, no failure.",
+   "suggested_fix": "Optional: add 'https://DEVIN.AI/' to the whole-field negative list if the lower-case rule is meant to be pinned."
+  },
+  {
+   "severity": "minor",
+   "location": "commit 30f2162",
+   "problem": "The base merge commit carries no Co-Authored-By/Claude-Session trailers (earlier merges a763a48 etc. did). It carries no code of its own, as with the F2 merge decision.",
+   "evidence": "git log -1 --format=%B 30f2162",
+   "suggested_fix": "None needed (no history rewrite); keep trailers on future merges."
+  }
+ ],
+ "validation": {
+  "fp_sets": "fp2 0/31, fp3 0/52, fp4 0/25, fp5 0/52, fp6 0/30, fp7 2/82 (accepted distinctive), fp8 0/97, fp9 0/60, fp10 0/76, s4 0/10, fp11 0/140, fp12 0/336, new fp13 0/831 (POS 16/16).",
+  "tests": "test-multi-ai-deep-research-contract.sh + test-solution-research-python.sh through run-all-tests: 871 passed, 0 failed under SILVER_BULLET_RUNTIME=claude and =codex. test_vendor_mention_corpus + test_vendor_identity_generative: 41 ok (incl. whole-field, prose-URL, r9/r10 attack and recall tests).",
+  "coverage": "One scoped run (--only vendor_identity.py, materialize_solution_artifacts.py, dr_live_runner.py; the two research test files): Python 1562/1562 statements, 784/784 branches, 100%, data collected; coverage dir deleted.",
+  "lint": "lint-shell.sh --all --jobs 2 rc 0",
+  "invariants": "check-repo-invariants 0, generate-apo-artifacts --check 0, generate-hook-reference --check 0, validate-plugin-mirror 0; sync-codex-package in a git-archive copy: no diff (copy deleted).",
+  "trailers": "628ae47 and b4c18ec carry the Sonnet Co-Authored-By and Claude-Session trailers, no other model names; merge 30f2162 has none (minor).",
+  "merge": "54f285f is an ancestor of HEAD; git merge-tree --write-tree claude/optimistic-ramanujan-tccfud (54f285f) HEAD is clean.",
+  "worktree": "untouched (git status empty before and after)."
+ }
+}

@@ -1,0 +1,80 @@
+{
+ "package": "F2-input-analysis",
+ "head_reviewed": "b2ab0bd",
+ "verdict": "APPROVE",
+ "per_finding": [
+  {
+   "id": "r2-i0 (unknown wrappers / git command settings)",
+   "verdict": "fixed",
+   "notes": "wrap.py 190 cases: only documented residuals stay none (make --eval/SHELL=/-f file, rg --pre, parallel gh ::: args, cargo/go run). e2e1+e2e2 lists through completion-audit: all 30 delivery shapes DENY, honest 'echo hi' allow (/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-F2-r3-probe/logs/e2e12.txt)."
+  },
+  {
+   "id": "r2-i1 (computed program words, eval allowlist, xargs)",
+   "verdict": "fixed",
+   "notes": "new1.py/evalab.py/adv1-2.py: the remaining none cases are inherited env vars ($SOME_CMD, accepted design), script files (opaque by design), eval of two allowlisted generators, and non-delivery or pre-existing gaps (xargs with no program runs echo; bash -c $c runs only 'git')."
+  },
+  {
+   "id": "r2-i2 (budgets)",
+   "verdict": "fixed",
+   "notes": "r2 doubling/bracket/1-2 MB probes: completion-audit DENY in 0.8-3.6 s, dev-cycle-check DENY in 1.5-5.6 s under timeout 15. 31 new cost attacks (array doubling, ${x//a/aaaaaaaa} growth, printf padding, brace cross products, 5000-deep nesting, function/alias fan-out, 20000 heredocs, 300 KB quoting) all finish in <=1.3 s with tier completion (/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-F2-r3-probe/logs/budget3.txt). Worst near-cap input through dev-cycle-check: 6.1 s, DENY."
+  },
+  {
+   "id": "r2-i3 (parser crash)",
+   "verdict": "fixed",
+   "notes": "hd2 -> parse_failed + unseen. 120000 random-token fuzz inputs: 0 exceptions, 0 hangs, 0 over 2.5 s."
+  },
+  {
+   "id": "r2-i4 (false positives)",
+   "verdict": "ok",
+   "notes": "Partial disposition accepted (consumer message is a follow-up). honest 174/0, honest2m 291/2 (curl|bash), honest3 106/2 (eval of a config command, gh api graphql @file); honest2 flags are line-split fragments of heredocs. 53 new everyday git/npm/pytest/make/docker/kubectl/helm/terraform/gh/cargo/go commands: only 'git rebase -i HEAD~3' gated (intermediate, rewrites commits; acceptable)."
+  },
+  {
+   "id": "r2-i5 (arithmetic)",
+   "verdict": "fixed",
+   "notes": "${a[x]}, ${x:x}, declare -i, [[ -v $x ]] with x='a[$(cmd)]' -> unseen; adv3 16/16 gated."
+  },
+  {
+   "id": "r2-i6 (stash / local pull)",
+   "verdict": "fixed",
+   "notes": "checkout -B/switch -C/reset --soft onto stash@{0} or refs/stash, pull ./ $PWD .git file:// -> intermediate; honest stash pop and checkout -B origin/main stay none."
+  },
+  {
+   "id": "r2-i7 (--help as value)",
+   "verdict": "fixed",
+   "notes": "git merge --into-name --help other -> intermediate."
+  },
+  {
+   "id": "r2-i8 (docs)",
+   "verdict": "fixed",
+   "notes": "Docstring and ENFORCEMENT.md now match the measured budgets and list residuals."
+  },
+  {
+   "id": "r2-i9 (b9e03fe trailer)",
+   "verdict": "ok",
+   "notes": "Accepted decision: no history rewrite."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "minor",
+   "location": "hooks/lib/completion-audit/classify.sh:108-118 (consumer: completion-audit enterprise gate)",
+   "problem": "When python3 exists but the helper fails, every Bash command, even 'git status', is held at completion tier, and the deny text is the enterprise 'production delivery needs human approval' message. This fails closed as intended, but the message is misleading.",
+   "evidence": "fake python3 that exits 1 first on PATH: 'git status' -> DENY ENTERPRISE POLICY BLOCK. Without python3: 'git status' allow, 'gh pr create' DENY, 'git -c alias.ci=commit ci' allow (regex tier, documented partial-install residual).",
+   "suggested_fix": "Part of the accepted consumer follow-up: print ca_unseen_reasons ('the shell analysis helper failed') instead of the production-approval text."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/lib/tool-input/shell_analysis.py (gh/release tool tables)",
+   "problem": "Pre-existing gaps, not regressions, still classify as none: gh workflow run <numeric id>, goreleaser/semantic-release/release-it, git town propose. Documented residuals also stay none: make recipes, rg --pre, core.hooksPath, GIT_ASKPASS.",
+   "evidence": "adv2.py/prev.py rows (logs/adv2.txt, logs/prev.txt).",
+   "suggested_fix": "Follow-up only."
+  }
+ ],
+ "validation": {
+  "tests": "Scoped coverage run over 7 files (test-python-unit.sh, test-shell-analysis-gates/lib/budgets/corpus, test-compression-marker-guard, test-completion-audit-libs): 3359 passed, 0 failed. Mutation/revert checks were not repeated this round; r2 verified them and the r2 commits record red at b9e03fe.",
+  "coverage": "rc=0. shell_analysis.py 3490/3490 statements, 1878/1878 branches; classify.sh 83/83; shell-analysis.sh 73/73; compression-marker-guard.sh 37/46 (uncovered lines are the unchanged fail-open preamble, as in r2; r2 commits do not touch it). known-limits.json untouched.",
+  "lint": "lint-shell.sh --all --jobs 2 rc=0. No Bash 4 or GNU-only constructs in the changed hook Bash.",
+  "invariants": "check-repo-invariants rc=0; hook reference and APO up to date; plugin mirror OK; docs/workflows == templates/workflows; worktree clean. Trailers on 14dc9bb, f02b77f, 0b74b0a and b2ab0bd correct (Sonnet attribution accepted); no other model names. merge-tree with claude/optimistic-ramanujan-tccfud at 8c161a5: clean (tree b65b534). With fix/H3b-decisions (2f7a418): clean, and the personal-data invariant passes on the merged tree. Per-call latency on honest commands matches base (completion-audit about 0.65-0.87 s vs 0.72-0.76 s; dev-cycle-check about 1.36-1.43 s vs 1.33-1.34 s at load 14).",
+  "scope_note": "This round's new obfuscation-catalog attack set was cut short. Catalog coverage comes from re-running every r1/r2 probe file (wrappers, git -c alias/env config, computed words, eval/source, heredocs, xargs/find, functions, arithmetic, process substitution, newlines, unicode), plus new budget attacks and random fuzzing."
+ }
+}

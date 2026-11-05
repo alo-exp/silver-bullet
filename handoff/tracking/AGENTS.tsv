@@ -1,0 +1,260 @@
+# area	agent_id	status	launched_utc
+R1	a40c264ab910e451c	done	2026-11-01
+R2	aea519049338708d2	done	2026-11-01
+R3	a7ffa1af52d588ed7	done	2026-11-01
+R4	afb5b9c3c4c86ff95	done	2026-11-01
+R7	a2ac6dd0838648f84	done	2026-11-01
+R13	aafbb3656fe42a38b	done	2026-11-01
+R5	a378c12d0948075c5	done	2026-11-01
+R6	a2de6b637c599ac85	done	2026-11-01
+R8	a1996818e41d8cd41	done	2026-11-01
+R9	aedb944dfdc28dd2d	done	2026-11-01
+R10	ad433eab18c5fda46	done	2026-11-01
+R11	ad5fbd444d5e433a6	done	2026-11-01
+R12	a505de7aa0850a2f2	done	2026-11-01
+R16	a7278cde0a64b06a5	done	2026-11-01
+R10b	a9e9816f1886a157c	done	2026-11-01
+# queue empty
+F2	a62cbb43907dc8bcc	paused	fix/F2-input-analysis
+F1	a16de97166714d115	authored-review-paused	fix/F1-output-paths
+R14	a5245e683edca6198	done	2026-11-01
+R15	a892a1755f789888c	done	2026-11-01
+H2	a838f5a9aaeb484d9	paused	fix/H2-installers
+H3	ae526514fdf6d40fa	paused	fix/H3-release-ci
+H5	a611e411d4f203ae3	paused	fix/H5-packaging-doctor
+H8a	a279a828b36127c91	paused	fix/H8a-deep-research
+H8b	a43f9d089d0241c7f	paused	fix/H8b-multi-ai-research
+H4a	ab7451508ad51cf4c	paused	fix/H4a-toolgates-consent
+REVF-F1	a879a6beeea187ac3	paused	review fix/F1-output-paths
+# resumed 2026-11-03: reviews opus/xhigh, fixes sonnet/medium
+REVF-F1b	acdba183fb761c338	running	opus-xhigh review F1
+F2r	a6cc637d7ff68c092	running	sonnet-medium fix/F2-input-analysis
+H2r	aaf1d8d3828206dbd	done	sonnet-medium fix/H2-installers
+H3r	a06a68f4fea90c941	repair	sonnet-medium fix/H3-release-ci
+H4ar	a7f720c4d8337f7e4	running	sonnet-medium fix/H4a-toolgates-consent
+H5r	ac6c4891d1c45e7b3	running	sonnet-medium fix/H5-packaging-doctor
+H8ar	a96d3a5758dd283bc	done	sonnet-medium fix/H8a-deep-research
+H8br	a35ebcc7ecd32370d	running	sonnet-medium fix/H8b-multi-ai-research
+REVF-H2	a0303cb55cbfcdc06	running	opus-xhigh review H2
+REVF-H3	a2e847bd6fc932b60	done-changes	opus-xhigh review H3
+REVF-H8a	a8292b166b53009ab	running	opus-xhigh review H8a
+REVF-F2	a0a767015888e3c49	running	opus-xhigh review F2
+REVF-H5	a8388613c3a20c246	running	opus-xhigh review H5
+REVF-H3b	ae79fb188b579bddd	running	opus-xhigh re-review H3
+REPAIR-F1	a2ecb60ccba46d6a7	running	sonnet-medium repair F1
+H2r-repair	aaf1d8d3828206dbd	running	sonnet repair H2
+H8ar-repair	a96d3a5758dd283bc	done	sonnet repair H8a
+H8br-finish	a35ebcc7ecd32370d	running	sonnet finish H8b
+# still running: H4ar a7f720c4d8337f7e4
+REVF-H8b	ad25698d684668cda	running	opus-xhigh review H8b
+REVF-H8a-r2	ae43856bfb6eadfba	running	opus-xhigh re-review H8a
+H4b	ac0d871c7fe524e2a	running	sonnet fix/H4b-toolstack-scripts (on H4a)
+REVF-H4a	a3f8e0f8bf7ba9719	running	opus-xhigh review H4a
+# post-restart round (2026-11-0x): repairs sonnet/medium, reviews opus/xhigh
+REPAIR-F1-r3	a38151ffe1399fe26	running
+REPAIR-F2-r2	a314453fbac6743b7	running
+REPAIR-H4a	a24c10a6c185c7e25	running
+REPAIR-H8a-r4	a4338cbb6525eeb4e	running	conservative+escalate
+REPAIR-H8b-r3	a538a54977d753923	running
+REVF-H3-r3	a880c56878e6c3128	running
+REVF-H5-r2	a3ba4b95cd2925f1f	running
+REVF-H2-fu	a0e8ffe8da9d95171	running
+REVF-H4b	a49b534a14ce430af	running
+REVF-H8b-r4	ae4e097151b0d9596	opus-xhigh	review e0938c0	running
+REVF-H8a-r5	a59adebb892fc2fcd	opus-xhigh	CHANGES_REQUIRED 4maj/2min	done
+REPAIR-H8a-r5	a942da958919a6080	sonnet-medium	repair r5 + anti-oscillation corpus	running
+REVF-H8b-r4	ae4e097151b0d9596	opus-xhigh	APPROVE 0/0/7 -> merged 21606d0	done
+REPAIR-H8a-r5	a942da958919a6080	sonnet-medium	done 1e77c4e	done
+REPAIR-H2-r3	a04e3c6763037e36f	sonnet-medium	done 04f3e68	done
+REVF-H2-r4	aeb1a2e3d87d2196a	opus-xhigh	review 04f3e68	running
+REVF-H8a-r6	abdad467da249fc52	opus-xhigh	review 1e77c4e	running
+FIX-H8b-fu	a87305e8cecf83266	sonnet-medium	minors 1-7	running
+REVF-F1-r4	ae4a2a2076cc4ed8e	opus-xhigh	review 5b899b5	running
+REVF-F1-r4	ae4a2a2076cc4ed8e	opus-xhigh	APPROVE 0/2min -> merged 8479c79	done
+REVF-H5-r2	a3ba4b95cd2925f1f	opus-xhigh	APPROVE 0/3min -> merged 9b5db30	done
+REVF-H3b	ada56a31aafade1f9	opus-xhigh	CHANGES 3maj/11min	done
+REVF-H2-r4	aeb1a2e3d87d2196a	opus-xhigh	CHANGES 1maj(cursor,moot)/4min	done
+REVF-H8a-r6	abdad467da249fc52	opus-xhigh	CHANGES 7maj/4min	done
+FIX-H8b-fu	a87305e8cecf83266	sonnet-medium	done e578732	done
+FIX-HC-cursor	a3f0e0e784c3020a8	sonnet-medium	remove cursor	running
+REPAIR-H8a-r6	a30f3889d4ce2afcc	sonnet-medium	strict near-quote	running
+REPAIR-H3b	a2674481136432170	sonnet-medium	3maj/11min	running
+REPAIR-H2-r4	a62f8a42dc63c1e25	sonnet-medium	minors 2,3	running
+REVF-H8b-fu	a77ab1c77699a145a	opus-medium	review e578732	running
+REPAIR-H4b(val)	a9382fd4f9276774d	sonnet-medium	finish validation	running
+FINISH-H4b	a82d28fb5ca803338	sonnet-medium	coverage/lint/merge/report	running
+REVF-H2-r5	a74e47d684d0683df	opus-medium	APPROVE -> merged 8c161a5	done
+REVF-H8b-fu	a77ab1c77699a145a	opus-medium	APPROVE 6min (recall regressions) -> sent back	done
+REPAIR-F2-r2	a314453fbac6743b7	sonnet-medium	done b2ab0bd	done
+REPAIR-H4a	a24c10a6c185c7e25	sonnet-medium	done 5c6014f	done
+REVF-F2-r3	a4f2001d6fc209de4	opus-medium	review b2ab0bd	running
+REVF-H4a-r2	a1f73eae4e212bd3d	opus-medium	review 5c6014f	running
+REPAIR-H3b(captures)	a2674481136432170	sonnet-medium	delete captures	running
+REPAIR-H8b-fu-r1	a87305e8cecf83266	sonnet-medium	recall fixes	running
+REPAIR-H8a-r6b	a30f3889d4ce2afcc	sonnet-medium	instructions+rename	running
+REPAIR-H3b(captures)	a2674481136432170	sonnet-medium	done 2f7a418 (240 captures deleted)	done
+REVF-H3b-r2	aa917e280522f3754	opus-medium	review 2f7a418	running
+REPAIR-H8a-r6b	a30f3889d4ce2afcc	sonnet-medium	done 44ff41d	done
+REVF-H8a-r7	a4bcfbedd89c147b6	opus-medium	review 44ff41d	running
+REVF-F2-r3	a4f2001d6fc209de4	opus-medium	APPROVE -> merged 127e2f9	done
+REVF-H4a-r2	a1f73eae4e212bd3d	opus-medium	CHANGES 1maj/2min	done
+REVF-H3b-r2	aa917e280522f3754	opus-medium	CHANGES 3maj/5min	done
+REVF-H8a-r7	a4bcfbedd89c147b6	opus-medium	CHANGES 3blk/2maj/2min	done
+REPAIR-H4a-r2	a24c10a6c185c7e25	sonnet-medium	stamps allowlist, lock, F2 classifier	running
+REPAIR-H3b-r2	a2674481136432170	sonnet-medium	3maj/5min	running
+REPAIR-H8a-r7	a30f3889d4ce2afcc	sonnet-medium	tokenizer	running
+FIX-G1	a5c382940ca7080e6	sonnet-medium	delivery gates	running
+FIX-G2	a87db72d5350bdda7	sonnet-medium	planning floor	running
+REVF-H8b-fu-r2	a00c20823e6b150ce	opus-medium	CHANGES 1maj/6min (precision regression)	done
+REPAIR-H8b-fu-r2	a0b96286b199e6353	sonnet-medium	precision-first corpus	running
+FIX-HC	a3f0e0e784c3020a8	sonnet-medium	partial 3532c96	done
+REPAIR-H8a-r7	a30f3889d4ce2afcc	sonnet-medium	done 6ae3709	done
+REPAIR-H3b-r2	a2674481136432170	sonnet-medium	done c69921d	done
+FINISH-HC	af01cafd6847b44b6	sonnet-medium	finish cursor removal	running
+REVF-H8a-r8	acaa31f49ee5fd3ec	opus-medium	review 6ae3709	running
+REVF-H3b-r3	ac85bdfb22ce0baf1	opus-medium	review c69921d	running
+REPAIR-H8b-fu-r2	a0b96286b199e6353	sonnet-medium	done fc61567	done
+REVF-H8b-fu-r3	af7bfb9cb40b44ede	opus-medium	review fc61567	running
+REVF-H8a-r8	acaa31f49ee5fd3ec	opus-medium	CHANGES 2blk/3maj/4min	done
+REPAIR-H8a-r8	a30f3889d4ce2afcc	sonnet-medium	case/article/stem/multi-quote	running
+REVF-H3b-r3	ac85bdfb22ce0baf1	opus-medium	CHANGES 1maj/6min	done
+REPAIR-H3b-r3	a2674481136432170	sonnet-medium	PyYAML parse, hashed identity	running
+REVF-H8b-fu-r3	af7bfb9cb40b44ede	opus-medium	CHANGES 2maj(mostly pre-existing)/5min	done
+REPAIR-H8b-fu-r3	a0b96286b199e6353	sonnet-medium	determiner rule etc	running
+REPAIR-H8a-r8	a30f3889d4ce2afcc	sonnet-medium	done 42fa840	done
+REVF-H8a-r9	a5e493067ee41712e	opus-medium	review 42fa840	running
+REVF-H8a-r9	a5e493067ee41712e	opus-medium	CHANGES 2blk/2maj/3min (punctuation)	done
+REPAIR-H8a-r9	a30f3889d4ce2afcc	sonnet-medium	all punctuation tokens	running
+REPAIR-H3b-r3	a2674481136432170	sonnet-medium	done de4cf19	done
+REVF-H3b-r4	a2019a87f08861e0b	opus-medium	review de4cf19	running
+REPAIR-H8b-fu-r3	a0b96286b199e6353	sonnet-medium	done 75f40b0	done
+REVF-H8b-fu-r4	ac88380e015aed85f	opus-medium	review 75f40b0	running
+REPAIR-H8a-r9	a30f3889d4ce2afcc	sonnet-medium	done 15b4701	done
+REVF-H8a-r10	a1cac0107c242dab8	opus-medium	review 15b4701	running
+FINISH-H4b	a82d28fb5ca803338	sonnet-medium	done 3927e1a	done
+REVF-H4b-r2	abaf2e3983e9e5bff	opus-medium	review 3927e1a	running
+REVF-H3b-r4	a2019a87f08861e0b	opus-medium	CHANGES 1maj/6min	done
+REPAIR-H3b-r4	a2674481136432170	sonnet-medium	line-scoped allowlist	running
+REVF-H8b-fu-r4	ac88380e015aed85f	opus-medium	CHANGES 2maj(pre-existing)/3min	done
+REPAIR-H8b-fu-r4	a0b96286b199e6353	sonnet-medium	ambiguous names need product cue	running
+REVF-H8a-r10	a1cac0107c242dab8	opus-medium	APPROVE 0/3min -> merged c591ebb	done
+REVF-H4b-r2	abaf2e3983e9e5bff	opus-medium	CHANGES 1maj/6min	done
+REVF-G1	a73137d3a4bbfd3dd	opus-medium	review 763042a	running
+REVF-G2	a2ad112c6358dadaf	opus-medium	review eb32cff	running
+REVF-HC	a3bbe3a7f431c9675	opus-medium	review 7d62aa3	running
+REVF-H4a-r3	ab8cd82ef24101a15	opus-medium	review 1799a7c	running
+REVF-H3b-r5	a27ff7c2716325406	opus-medium	review 01c0af5	running
+REVF-H8b-fu-r5	a0f85098917f3e889	opus-medium	review d75d18e	running
+REPAIR-H4b-r2	ae2730b1ab868d1df	sonnet-medium	Pi regression etc	running
+FIX-G3	a684de2103d4ed9ba	sonnet-medium	stop/prompt/override	running
+FIX-G4	a84b48be7b47b16c8	sonnet-medium	session/state/recording	running
+FIX-G5	a80ccaf4366a573d9	sonnet-medium	orchestrator	running
+DESIGN-G6	ab1410d1e07c5c71d	opus-high	RFL native subagent design	running
+REVF-H8b-fu-r5	a0f85098917f3e889	opus-medium	CHANGES 3maj/2min (cues too loose)	done
+DESIGN-H8b	ae84e4c7307675add	opus-high	vendor detection design	running
+REVF-H3b-r5	a27ff7c2716325406	opus-medium	APPROVE 0/2min -> merged 5acae75 (local)	done
+REVF-G1	a73137d3a4bbfd3dd	opus-medium	CHANGES 1blk/8maj/8min	done
+REVF-G2	a2ad112c6358dadaf	opus-medium	CHANGES 2blk/5maj/7min	done
+REVF-HC	a3bbe3a7f431c9675	opus-medium	CHANGES 4maj/4min	done
+REVF-H4a-r3	ab8cd82ef24101a15	opus-medium	CHANGES 2maj/1min	done
+DESIGN-G6	ab1410d1e07c5c71d	opus-high	done: DESIGN-G6-rfl-native.md (G6a/G6b)	done
+DESIGN-H8b	ae84e4c7307675add	opus-high	done: DESIGN-H8b-vendor-detection.md	done
+REPAIR-G1-r1	a5c382940ca7080e6	sonnet-medium	blocker+majors	running
+REPAIR-G2-r1	a87db72d5350bdda7	sonnet-medium	blockers+majors	running
+REPAIR-HC-r1	af01cafd6847b44b6	sonnet-medium	majors	running
+REPAIR-H4a-r3	a24c10a6c185c7e25	sonnet-medium	stamp path + lint test	running
+IMPL-H8b-design	a0b96286b199e6353	sonnet-medium	vendor detection design	running
+REVF-H4b-r3	acb3bbfe27ec0be2d	opus-medium	review 7691c4d	running
+REVF-G3	a80651938e78f26aa	opus-medium	review 44ef934	running
+REVF-G4	abb5690f9cd7d2e51	opus-medium	review a18ccca	running
+REVF-G5	afda1c2bb4001dd95	opus-medium	review 482229d	running
+FIX-G6b	afa04313a552d32d1	sonnet-medium	delegation scripts hardening	running
+NOTE	-	-	G6a (native RFL ladder) waits for HC to merge; then launch with DESIGN-G6 + addendum	pending
+REVF-G5	afda1c2bb4001dd95	opus-medium	CHANGES 1blk/2maj/6min	done
+REPAIR-G5-r1	a80ccaf4366a573d9	sonnet-medium	stop release, codex worker, R10-02B	running
+BASE	-	-	pushed 2a65018 (test fixes: codex path audit, hook-audit coverage)	done
+IMPL-H8b-design	a0b96286b199e6353	sonnet-medium	done bbd43be (0 false credits; untagged recall 7/81)	done
+REVF-H8b-fu-r6	a9995a498d614a270	opus-medium	review bbd43be	running
+REVF-G4	abb5690f9cd7d2e51	opus-medium	CHANGES 1maj/7min	done
+REPAIR-G4-r1	a84b48be7b47b16c8	sonnet-medium	phase-lock helper from plugin root etc	running
+REVF-H8b-fu-r6	a9995a498d614a270	opus-medium	CHANGES 2maj/4min (matrix patterns, GSD display)	done
+REPAIR-H8b-fu-r6	a0b96286b199e6353	sonnet-medium	anchor matrix patterns etc	running
+REVF-G3	a80651938e78f26aa	opus-medium	CHANGES 8maj/6min	done
+REPAIR-G3-r1	a684de2103d4ed9ba	sonnet-medium	bypasses, G2 conflict, latency	running
+REVF-H4b-r3	acb3bbfe27ec0be2d	opus-medium	CHANGES 1maj/5min (test fails after H4a merge)	done
+REPAIR-H4b-r3	ae2730b1ab868d1df	sonnet-medium	indep items now; wait H4a tip for rest	running
+REPAIR-H8b-fu-r6	a0b96286b199e6353	sonnet-medium	done 90adbad (matrix -27/+5)	done
+REVF-H8b-fu-r7	a75b4bd63d15bf2e8	opus-medium	review 90adbad	running
+FIX-G6b	afa04313a552d32d1	sonnet-medium	done (11 fixed, 2 partial)	done
+REVF-G6b	a80d91efc0d0a46d8	opus-medium	review G6b	running
+REVF-H8b-fu-r7	a75b4bd63d15bf2e8	opus-medium	CHANGES 2maj/1min (slot rules)	done
+REPAIR-H8b-fu-r7	a0b96286b199e6353	sonnet-medium	delete slot/display rules for ambiguous	running
+REPAIR-H4a-r3	a24c10a6c185c7e25	sonnet-medium	done 25d18df	done
+REVF-H4a-r4	a10a4e13f5c02a9fd	opus-medium	review 25d18df	running
+REPAIR-H4b-r3b	ae2730b1ab868d1df	sonnet-medium	merge H4a tip + base	running
+REPAIR-H8b-fu-r7	a0b96286b199e6353	sonnet-medium	done 9d13f14 (451 sentences 0 credits)	done
+REVF-H8b-fu-r8	a1d2be6f3587a18bf	opus-medium	review 9d13f14	running
+REVF-G6b	a80d91efc0d0a46d8	opus-medium	CHANGES 4maj/9min (coverage exclusion rejected)	done
+REPAIR-G6b-r1	afa04313a552d32d1	sonnet-medium	opencode strict, exclusion, transcripts, scanner	running
+REPAIR-G1-r1	a5c382940ca7080e6	sonnet-medium	done 90a70e9	done
+REVF-G1-r2	a4f0f7934dc52f841	opus-medium	review 90a70e9	running
+REVF-H8b-fu-r8	a1d2be6f3587a18bf	opus-medium	CHANGES 1maj/1min (URL matcher) - closest yet	done
+REPAIR-H8b-fu-r8	a0b96286b199e6353	sonnet-medium	strict URL matcher + autogen	running
+REPAIR-H4b-r3	ae2730b1ab868d1df	sonnet-medium	done e7772ba	done
+REVF-H4b-r4	a7ddc89134381714a	opus-medium	review e7772ba	running
+REPAIR-HC-r1	af01cafd6847b44b6	sonnet-medium	done 7a330e3	done
+REVF-HC-r2	ad5386d8b23f95223	opus-medium	review 7a330e3	running
+REPAIR-G4-r1	a84b48be7b47b16c8	sonnet-medium	done c1dbf85	done
+REVF-G4-r2	ae4604a6c8d461935	opus-medium	review c1dbf85	running
+REPAIR-H8b-fu-r8	a0b96286b199e6353	sonnet-medium	done (strict URL matcher)	done
+REVF-H8b-fu-r9	a4083e3d3aac78d4f	opus-medium	review r8 repair	running
+REPAIR-G2-r1	a87db72d5350bdda7	sonnet-medium	done 191cc9d (dev-cycle-check 514/514)	done
+REVF-G2-r2	a56dcd663898a4df9	opus-medium	review 191cc9d	running
+REPAIR-G5-r1	a80ccaf4366a573d9	sonnet-medium	done dc0ee05	done
+REVF-G5-r2	a45f3545081257fd5	opus-medium	review dc0ee05	running
+REVF-H8b-fu-r9	a4083e3d3aac78d4f	opus-medium	CHANGES 1maj (URL still leaks: 56/140 fp11)	done
+REPAIR-H8b-fu-r9	a0b96286b199e6353	sonnet-medium	parse URL tokens, scheme/www only	running
+REVF-G4-r2	ae4604a6c8d461935	opus-medium	CHANGES 3maj/3min (phase-lock helper exec/symlink/coverage)	done
+REPAIR-G4-r2	a84b48be7b47b16c8	sonnet-medium	validate config ints, no symlink writes, coverage	running
+REVF-G5-r2	a45f3545081257fd5	opus-medium	APPROVE 0/0/6min (head dc0ee05)	done
+REPAIR-H8b-fu-r9	a0b96286b199e6353	sonnet-medium	done (URL parser)	done
+REVF-H8b-fu-r10	a41531b491ab4144e	opus-medium	review URL parser	running
+REVF-H4a-r4	a10a4e13f5c02a9fd	opus-medium	APPROVE 0/0/3min -> merged 54f285f (local)	done
+REPAIR-G6b-r1	afa04313a552d32d1	sonnet-medium	done 68322a5	done
+REVF-G6b-r2	a1c432e2b4e055f0c	opus-medium	review 68322a5	running
+REPAIR-G3-r1	a684de2103d4ed9ba	sonnet-medium	done ac28384 (G1/G2 merged in; latency 390ms)	done
+REVF-G3-r2	ae17292d8e2bbb4f8	opus-medium	review ac28384	running
+REVF-G2-r2	a56dcd663898a4df9	opus-medium	CHANGES 2blk/2maj/8min (globs, git apply/patch)	done
+REPAIR-G2-r2	a87db72d5350bdda7	sonnet-medium	globs, tree-scope, keyed seal, inline interp	running
+REVF-H4b-r4	a7ddc89134381714a	opus-medium	CHANGES 1maj/1min (optimizer pi wire-only leanctx)	done
+REPAIR-H4b-r4	ae2730b1ab868d1df	sonnet-medium	install consent at source	running
+REVF-H8b-fu-r10	a41531b491ab4144e	opus-medium	CHANGES 1maj (prose URL extraction leaks, 131/336)	done
+REPAIR-H8b-fu-r10	a0b96286b199e6353	sonnet-medium	URL signal only from source_ref whole field	running
+REPAIR-G1-r2	a5c382940ca7080e6	sonnet-medium	done cc54cd7 (base merged, ci-status hardened)	done
+REPAIR-H4b-r4	ae2730b1ab868d1df	sonnet-medium	finishing checks (84aad0b)	running
+REVF-G1-r2	a4f0f7934dc52f841	opus-medium	CHANGES 6maj/6min (push allowlist, mcp, cert bypass)	done
+REPAIR-G1-r3	a5c382940ca7080e6	sonnet-medium	allowlist for pushes, mcp prefilter, cert bypass	running
+REVF-G6b-r2	a1c432e2b4e055f0c	opus-medium	CHANGES 2maj/5min (codex transcript dir, scanner regress)	done
+REVF-G3-r2	ae17292d8e2bbb4f8	opus-medium	CHANGES 2maj/6min (stale G1/G2 merge, H4a consent conflict) - repair HELD until G1,G2 merge	done
+REPAIR-G6b-r2	afa04313a552d32d1	sonnet-medium	transcript dir, scanner, minors	running
+REVF-HC-r2	ad5386d8b23f95223	opus-medium	CHANGES 1maj/7min (always-on rule variant not removed)	done
+REPAIR-HC-r2	af01cafd6847b44b6	sonnet-medium	mdc variant, symlinks, minors	running
+REVF-H8bfu-r11	af4310bc0eccdb554	opus-medium	APPROVE b4c18ec (3 minors)	done
+MERGE-H8b-followup	-	-	merged b654bc1 locally (not pushed)	done
+REPAIR-HC-r2	af01cafd6847b44b6	sonnet-medium	done bf9e3a3	done
+REVF-HC-r3	-	opus-medium	review bf9e3a3	running
+REPAIR-G6b-r2	afa04313a552d32d1	sonnet-medium	done 66f9c70	done
+REVF-G6b-r3	-	opus-medium	review 66f9c70	running
+REPAIR-H4b-r4	ae2730b1ab868d1df	sonnet-medium	done 05922a6	done
+REVF-H4b-r5	-	opus-medium	review 05922a6 (critical path)	running
+REPAIR-G4-r2	a84b48be7b47b16c8	sonnet-medium	done f2e99ed	done
+REVF-G4-r3	-	opus-medium	review f2e99ed	running
+REPAIR-G1-r3	a5c382940ca7080e6	sonnet-medium	done 52cbef5	done
+REVF-G1-r3	-	opus-medium	review 52cbef5	running
+REVF-G6b-r3	a0ca5bd6d5c496649	opus-medium	CHANGES 1maj/3min (scanner: Authorization Basic/token, --token flags, uuid keys, admin:admin@, PGP) - repair NOT launched (user paused)	done
+REVF-G1-r3	a6d46a73ed86dba50	opus-medium	CHANGES 6maj/2min (push after checkout, unresolved cd, git config, remote refs, MCP owner/repo, gh api release) - repair NOT launched (user paused)	done
+REVF-G4-r3	adf61e080a1c2c7a5	opus-medium	APPROVE f2e99ed (2 minors) - not merged (user paused; merge order H4b,G1,G2,G3,G4)	done
+REVF-H4b-r5	aacb827ca89ab81cb	opus-medium	CHANGES 1maj/1min (test-global-five-tool-instances.sh not updated for RT_LEANCTX_ALLOW_INSTALL) - repair NOT launched (user paused)	done
+REVF-HC-r3	a7438f5465a984953	opus-medium	CHANGES 1maj/2min (24 SB toolstack files left under ~/.cursor/hooks/toolstack; graphify.mdc/context-mode.mdc unreported) - repair NOT launched (user paused)	done
+REPAIR-G2-r2	a87db72d5350bdda7	sonnet-medium	done f0141ac	done
+NOTE	-	-	ALL agents idle at handoff time; user asked for commit+push of branches and handoff	-

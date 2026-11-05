@@ -1,0 +1,66 @@
+{
+  "package": "F1-output-paths",
+  "head_reviewed": "118ed0c105c8dcde15e7575674a26abbfd5af7c7",
+  "verdict": "CHANGES_REQUIRED",
+  "per_finding": [
+    {
+      "id": "R2-28",
+      "verdict": "fixed",
+      "notes": "Round-2 probes re-run against 118ed0c (REVF-F1d-probe/scripts, sandbox HOME): p1-orig: trivial_file=$SR/../../victim not deleted; p2-variants: all 27 escape variants SAFE through session-start (rm) and record-skill (append); honest in-root custom/tilde state files and an in-root trivial_file still work; u1-state unit matrix unchanged. runtime-paths.sh is untouched since round 1. Residual by design (R3-02): a configured in-root trivial_file is still deleted."
+    },
+    {
+      "id": "R3-05",
+      "verdict": "fixed",
+      "notes": "p1: state_file ~/.claude/.silver-bullet/../../profile-victim -> victim untouched, skill recorded in the default state file, no ~/profile-victim.requested. Shared predicate unchanged since round 1."
+    },
+    {
+      "id": "R5-01",
+      "verdict": "ok",
+      "notes": "Partial disposition still sound: p1 shows graphify/agentmemory clears and record-graphify-query no longer touch files outside the state root. The unscoped token-compression usage_state_file path and the 'declare -f'-conditional lib checks remain for H4a."
+    },
+    {
+      "id": "R3-21",
+      "verdict": "incomplete",
+      "notes": "The emitter contract (documented fields only, one document, never 'allow') and the Cursor bridge fixes are intact: test-hook-output 51/0 and test-cursor-hook-bridge pass, BASH_COMPAT=32 runs of test-hook-output and test-jq-gate are 147/0, and the round-2 encoder perf issue is fixed (64 KB mixed: 2 s without instrumentation, versus 20 s+ before). The new chunked Bash encoder still has three defects. (1) Its wall-clock test fails under the coverage runner (issue 1). (2) printf -v into an array element breaks control-character escaping on macOS Bash 3.2 (issue 2). (3) A Bash 5.2 multibyte bug in the replace loop corrupts output for invalid UTF-8; chunking adds a trigger point at every 256-character boundary (issue 3). Partial by design: inline emitters in other packages' hooks still use hookSpecificOutput.message."
+    },
+    {
+      "id": "R1-29",
+      "verdict": "fixed",
+      "notes": "Round-2 gaps closed. p8 (Codex, no jq): argv arrays [bash,-lc,'brew install jq'] and [bash,-lc,'sudo apt-get install -y jq'] are now allowed by dev-cycle-check, completion-audit, planning-file-guard and workflow-chain-guard. regex.sh: all 14 config-loading flag forms (--config-file=, -c=, -o=, --setopt=, --hookdir=, --repositories-file=, --file=, --root=, conda -c=) and 'pacman -Syu' are denied, under default Bash and BASH_COMPAT=32. Attacks on this round's changes (p14-arr-attack.sh, 27 array shapes x NOJQ/NOBOTH; regex2.sh, 27 sudo/env/separator forms; p6, 34 string bypasses) found no delivery bypass: every array that carries git commit/push or gh pr create is denied by completion-audit and/or dev-cycle-check; arrays that do not unwrap (len != 3, --login, -x, env bash ...) fail closed; \\v, \\f and \\r tricks yield only nonexistent or install commands; sudo -u/-i/-s/--preserve-env and value flags are denied. Unwrapping keys on the basename of argv[0] (['./bash','-lc',...] is treated as a shell). That is the same semantics the existing read-only classifier applies to strings (command_looks_read_only.py next_command uses pathlib.Path(...).name), so it is not a new class: running a repo script is already uninspected with jq present. Without python3, completion-audit cannot read array payloads, but dev-cycle-check denies them (fail closed). Accepted false positives (they fail closed and alternatives exist): 'conda install -c conda-forge jq', 'zypper --non-interactive', 'winget install --id jqlang.jq', [bash,--login,-c,...]."
+    },
+    {
+      "id": "R3-27",
+      "verdict": "fixed",
+      "notes": "p3: '~/...branch-tilde', '$SR/branch2/', '$SR/nonexist/../branch3', '$SR/./branch4' -> written where read, branch switch detected. The strengthened test-branch-scope.sh now asserts the exact resolved file, the trailing-'/' case, and 'git scope changed' on a second start. Mutation (eadf8bd session-start in a sandbox copy): 49 passed, 8 failed, so the round-2 weakness is resolved. Note only (owned by G2, R3-13): dev-cycle-check.sh F-09 still reads the branch file with cat and the literal validator."
+    }
+  ],
+  "issues": [
+    {
+      "severity": "major",
+      "location": "tests/hooks/test-hook-output.sh:59-64",
+      "problem": "The new 'linear-time' assertion is an absolute wall-clock bound (<= 8 s for 64 KB through the Bash encoder) and fails under the coverage runner. CI's coverage job and the orchestrator's full run (run-coverage.sh --fail-under 100) execute it under BASH_ENV xtrace instrumentation, in the C.UTF-8 locale that tests/run-all-tests.sh:45-46 forces, and usually in parallel. The mandated scoped coverage run therefore exits 1 and the CI coverage gate is red by chance. The bound separates the old encoder only by a thin, load-dependent margin: old encoder 22 s, new encoder 6-10 s under coverage.",
+      "evidence": "Scoped coverage run (REVF-F1d-probe/cov.log, 32 test files, --jobs 2, load average 17-21 on 4 CPUs): 'FAIL: message via bash: 64 KB mixed string took 10s' -> 'TOTAL: 1474 passed, 1 failed', exit=1. An earlier interrupted run on the same host: 'is linear-time (66399 chars in 6s)'. The same test without coverage at load 9: 2 s. Encoder alone (scripts/enc-perf-loc.sh, same 64 KB string): LC_ALL=C.UTF-8 1045 ms, LC_ALL=C 401 ms. Mutation with the db79336 encoder (mut-m3): 'took 22s'.",
+      "suggested_fix": "Drop the absolute bound, or make it scale-relative: time 16 KB and 64 KB and require ratio < 8, or count replace iterations. If a bound is kept, make it generous (e.g. 60 s) or skip it when SB_COV_DIR is set. Also run the encoder in the C locale (issue 3), which roughly halves its time in the runner's locale. Assert full equality (json.loads(...) == text) rather than only the length."
+    },
+    {
+      "severity": "minor",
+      "location": "hooks/lib/hook-output.sh:66",
+      "problem": "printf -v 'ctl_ch[i]' assigns to an array element, which Bash added only in 4.1 (bash-4.1 NEWS: 'printf -v can now assign values to array indices'; bash-3.2 printf.def accepts only legal_identifier()). The review brief explicitly bans 'printf -v arrays' in hooks/. On macOS /bin/bash 3.2 each of the 28 assignments fails with 'not a valid identifier', ctl_ch stays empty, and no C0 control character other than \\n \\r \\t is escaped. Any text containing one (an ANSI ESC, \\x01, \\x07, ...) then becomes an invalid JSON document from the last-resort encoder, contradicting the header's 'control characters always yield one valid document'. Each encoded string also writes 28 error lines to stderr. Today's callers on that path (no jq and no python3) pass static jq-missing text without control characters, so the current impact is the stderr noise. BASH_COMPAT=32 does not emulate this restriction, so the new BASH_COMPAT tests cannot catch it. db79336 used a scalar printf -v and was fine.",
+      "evidence": "No Bash 3.2 binary is available, so scripts/bash32-printf-shim.sh emulates 3.2's printf -v (rejects non-identifiers with status 2, as printf.def does). scripts/enc-b32.sh with BASH_COMPAT=32: 118ed0c + shim -> 'INVALID JSON: Invalid control character at: line 1 column 2', 'stderr lines: 28', the jq-missing message stays valid, and an ANSI-coloured reason is 'INVALID'. db79336 + shim -> 'roundtrip True', 0 stderr lines. 118ed0c without shim -> roundtrip True. grep shows this is the only printf -v array assignment in hooks/.",
+      "suggested_fix": "printf -v ch '%b' \"\\\\0$oct\"; ctl_ch[i]=\"$ch\" (verified in REVF-F1d-probe/fixcand: shim run -> roundtrip True, 0 stderr lines). Optionally add a lint rule that rejects 'printf -v [^ ]*\\[' in hooks/."
+    },
+    {
+      "severity": "minor",
+      "location": "hooks/lib/hook-output.sh:47-55 (_sb_hook_replace_all), :69-80 (chunk loop)",
+      "problem": "In a UTF-8 locale (the runner's default, and the usual user locale), Bash 5.2's \"${rest%%\"$bs\"*}\" returns 6 bytes of uninitialised heap memory (they change between runs and end in 0x55/0x56, a heap-pointer fragment) when the remaining string begins with a lone UTF-8 lead byte immediately followed by a backslash. The encoder then emits that garbage, drops the text that follows, and can produce invalid JSON. The bug is already present in db79336's replace loop (any text with '\\\\', a lone lead byte and then '\\\\'). Chunking adds a fresh trigger wherever a 256-character boundary falls just before such a byte. Reaching it needs no jq, no python3 and invalid UTF-8 next to a backslash, and today's callers pass static text, hence minor.",
+      "evidence": "scripts/enc-min.sh (LC_ALL=C.utf8): s=$'\\xc3\\\\rest'; ${s%%\"\\\\\"*} -> '87 e0 7b 74 d6 55' (run 1), '2a e7 16 0e a7 55' (run 2); C locale -> 'c3'. scripts/enc-lead.sh: db79336 encoder on $'a\\\\\\xc3\\\\b' -> '\" a \\\\ \\\\ 361 326 $ 250 g U \"' (garbage, trailing b lost); 118ed0c the same. Corpus of 2071 cases (scripts/enc-gen.py: multibyte, invalid and control bytes straddling 256-character boundaries, plus random soup), checked byte-for-byte with scripts/enc-check.py: LC_ALL=C 0 mismatches; C.utf8 4 mismatches (also under BASH_COMPAT=32/42), e.g. c01394 has 6 garbage bytes at offset 257, the first character of chunk 2. Plain substring concatenation of the same files is byte-exact (enc-substr.sh), so slicing is fine; the corruption is in %% pattern removal.",
+      "suggested_fix": "Add 'local LC_ALL=C' as the first line of _sb_hook_json_bash. The function only runs inside $(...), so nothing leaks, and the encoder is byte-oriented anyway. Verified in REVF-F1d-probe/fixcand/hook-output.sh: corpus 0/2071 mismatches under C.utf8, lead-byte cases exact, 3.2 shim round-trips, 64 KB multibyte 9.6 s -> 2.7 s and 64 KB mixed in C.UTF-8 1045 -> 499 ms. Add a regression case such as $'a\\\\\\xc3\\\\b' under LC_ALL=C.UTF-8 to test-hook-output.sh."
+    }
+  ],
+  "validation": {
+    "tests": "Scoped coverage run (claude runtime, 32 files): 1474 passed, 1 failed (the timing test, issue 1). Outside coverage at load 9, test-hook-output passes 51/0 (64 KB in 2 s). Codex runtime: test-jq-gate 96/0, test-branch-scope 57/0, test-hook-output 51/0, test-session-start-paths 57/0, test-trivial-file-guard-paths 28/0. BASH_COMPAT=32: test-jq-gate 96/0 and test-hook-output 51/0 (but see issue 2: compat mode does not emulate the printf restriction). Mutations in sandbox copies (mut-*), all caught: m1 no argv unwrapping -> test-jq-gate 90/6; m2 free-form flags -> 86/10; m3 db79336 encoder -> timing FAIL (22 s); m5 no session-start:377 reset -> test-session-start-paths 56/1; m6 no trivial-file-guard:84 reset -> test-trivial-file-guard-paths 26/2; m7 eadf8bd session-start -> test-branch-scope 49/8. Re-run round-2 probes: p1, p2 (27 SAFE), p3, p5 (COMPAT=32 compound installs allowed, all denies valid JSON), p6, p8 (array installs allowed), regex.sh (all 14 config-flag forms and -Syu denied), u1. New probes: p14-arr-attack, regex2, enc-* corpus.",
+    "coverage": "One scoped run over every code file changed by 02eff38..118ed0c, plus trivial-file-guard.sh: completion-audit.sh 157/157, cursor-hook-bridge.sh 42/42, branch-scope.sh 65/65, hook-output.sh 109/109, jq-gate.sh 104/104, path-canonical.sh 162/162, runtime-paths.sh 109/109, session-start 444/444, stop-check.sh 404/404: all 100%. trivial-file-guard.sh (unchanged file) 95/100: line 84 is covered again; lines 14, 34, 40, 45 and 72 are pre-existing fault arms covered by tests/hooks/test-hook-faults-gates.sh, which was outside the run. The run exits 1 only because of the issue-1 test failure. known-limits.json is valid and untouched.",
+    "lint": "bash scripts/lint-shell.sh --all --jobs 2: application Bash (354) and test Bash (728) clean.",
+    "invariants": "check-repo-invariants.sh exit 0 (9 PASS). generate-hook-reference.py --check, generate-apo-artifacts.py --check and validate-plugin-mirror.sh all exit 0. docs/workflows == templates/workflows. silver-bullet.md, the template and skills are untouched. Commit trailers: 6726c0f..eadf8bd 'Claude Opus 5.5', db79336 and 118ed0c 'Claude Sonnet 5.5' (accurate attribution, accepted), each with the Claude-Session line and no other model names. The worktree is clean. The branch is still based on 02eff38, while the integration tip is now 06bef6f (the H2 merge). There is no file overlap (H2 touches docs/RUNTIME-COMPATIBILITY.md and hooks/cursor-hooks.json, neither a generator input F1 changed), so the merge should be clean, but the FIX-BRIEF 'merge latest before finishing' step has not been done. Out of scope, noted for F2: without jq, 'git config core.hooksPath /tmp' and 'git tag -a v1 -m x' pass dev-cycle-check as read-only (classifier behaviour, not jq-gate)."
+  }
+}

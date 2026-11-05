@@ -1,0 +1,135 @@
+{
+ "package": "G6b",
+ "head_reviewed": "68322a5",
+ "verdict": "CHANGES_REQUIRED",
+ "per_finding": [
+  {
+   "id": "r1-major-1 (R4-23 OpenCode strict --auto / Pi strict)",
+   "verdict": "fixed",
+   "notes": "agent-host-exec.sh:104-111 and adapters/opencode.sh:64-77 add --auto only for permissive (NI and TUI). Pi delegate refuses strict, explicit or defaulted, with a clear message (probe: --mode strict rc=2; default outside the project prints the default-mode line then the refusal, rc=2; STRICT/read-only -> invalid-permission-mode). Mutation: --auto put back unconditionally in a sandbox copy -> test-agent-adapters-stubs.sh fails 2 assertions (NI and TUI). Skill rows match. Residual: agent_host_build_argv/exec_native/run_pty still default permission_mode to permissive when the argument is omitted (all current callers pass it)."
+  },
+  {
+   "id": "r1-major-2 (coverage exclusion)",
+   "verdict": "fixed",
+   "notes": "scope.json exclusion removed. The single scoped run below shows all four adapters at 100%. The fast-exit reader bug is real: with the r1 opencode.sh, a stub that prints and exits at once lost its output 6/30 times; with the fix, 0/30. The known-limit at codex.sh:380 is valid (run exit 0, not 3), but see the minor about its justification."
+  },
+  {
+   "id": "r1-major-3 (Codex transcripts under SB_ROOT)",
+   "verdict": "incomplete",
+   "notes": "Nothing is written under SB_ROOT any more (the test fails if the old default is put back: 2 assertions). But the replacement directory name is predictable and the directory is reused when it already exists, so it can be attacked in a shared TMPDIR. See major issue 1."
+  },
+  {
+   "id": "r1-major-4 (brief scanner FPs / override)",
+   "verdict": "incomplete",
+   "notes": "References (settings.X, process.env.X, calls, identifier chains, ${VAR}, <placeholder>) now pass, and a refusal names the rule and line. The override is read only from the delegate's environment and is announced on stderr. But the identifier exemption is too broad: it now lets through underscore-bearing literal secrets that the r1 scanner caught. See major issue 2. The agent setting the override inline is acceptable under the threat model (the scan is a best-effort guard against accidental leaks, and an agent can leak through other means anyway), but the new false positives push agents toward using the override routinely (minor)."
+  },
+  {
+   "id": "r1-minor default mode",
+   "verdict": "fixed",
+   "notes": "Probes: project root and subdir -> permissive; nested clone, sibling worktree, outside, non-git child -> strict; exact non-git project dir -> permissive; a symlinked path into the project -> permissive. The chosen mode is announced on stderr."
+  },
+  {
+   "id": "r1-minor Claude trust seeding in strict",
+   "verdict": "fixed",
+   "notes": "lib.sh:68-73 skips seeding when SB_AM_PERMISSION_MODE=strict; covered by the folder-trust test."
+  },
+  {
+   "id": "r1-minor quota gating",
+   "verdict": "fixed",
+   "notes": "Only error lines are classified. 'expected status 429', 'quota exceeded test passed' and '✓ returns 429' are no longer quota errors; real API/HTTP/JSON errors still are. Remaining false positive: 'Error: Request failed with status code 429' from code under test, which the fingerprint gate still covers. The fingerprint includes untracked file contents, but follows symlinks (minor issue)."
+  },
+  {
+   "id": "r1-minor Codex home sweep",
+   "verdict": "fixed",
+   "notes": "The sweep is keyed on the owner PID file (-O, no symlinks); a home without a PID file is swept only after 120 minutes."
+  },
+  {
+   "id": "r1-minor ~/.claude.json symlink/flock",
+   "verdict": "fixed",
+   "notes": "realpath plus a sidecar flock. The lock only serialises SB writers, not Claude Code itself (acceptable, since the global write is opt-in)."
+  },
+  {
+   "id": "r1-minor redaction gaps",
+   "verdict": "fixed",
+   "notes": "URL userinfo, --password/--token/--secret/--api-key flags, npm_ and hf_ are handled, and the delegates' final stdout goes through agent_delegate_redact_output. -pX (mysql) is still not covered."
+  },
+  {
+   "id": "r1-minor package test",
+   "verdict": "fixed",
+   "notes": "Asserts the exit status and that the stub was launched."
+  },
+  {
+   "id": "r1-minor Pi quota row",
+   "verdict": "fixed",
+   "notes": "Aligned with the other three skills."
+  },
+  {
+   "id": "r1-minor fresh-rewrite absolute path / ctl timeout",
+   "verdict": "fixed",
+   "notes": "The fresh-rewrite prompt uses the absolute path. A non-numeric SB_AGENT_CTL_TIMEOUT falls back to 8 s; inf/nan still pass float() and mean an unbounded wait (operator-set value, nit)."
+  },
+  {
+   "id": "r1-minor merge with HC",
+   "verdict": "ok",
+   "notes": "git merge-tree against claude/optimistic-ramanujan-tccfud (54f285f) is clean. Against fix/HC-remove-cursor, the conflicts G6b adds over the base's own conflicts with HC (base vs HC alone: 34 files) are exactly the 9 the author lists: AGENT-HOST-DELEGATION-SIBLING-PROMPT.md plus 8 generated Cursor mirrors (modify/delete)."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "major",
+   "location": "scripts/lib/agent-adapters/codex.sh:31,82-125",
+   "problem": "The default Codex transcript directory is the predictable ${TMPDIR:-/tmp}/sb-codex-transcripts.<uid>.<pid>. It is created with `mkdir -p` (an existing directory is accepted, whoever owns it), a failing `chmod 700` is ignored (the call runs inside `$(... 2>/dev/null || true)`), and the files are then written with `open('w')` / `cp -f` / `>`, which follow symlinks. With TMPDIR unset (the Linux default) /tmp is shared: another local user can pre-create the directory and plant latest.jsonl as a symlink, which makes the victim overwrite any file they own with the raw prompt and transcript. Planting a world-writable regular file instead lets the attacker read the raw transcript. fs.protected_symlinks does not help, because the planted directory is not sticky. Redaction refuses the symlink, so the clobbered content stays unredacted. The directory is never removed after the run either, so each delegation leaves a new transcript directory in /tmp (undocumented).",
+   "evidence": "Probe REVF-G6b-r2-probe/victim.sh: victim uid 65534 (setpriv), TMPDIR=<shared 1777 dir>. The attacker (root standing in for another user) pre-creates sb-codex-transcripts.65534.<victim pid> 0777 with latest.jsonl -> victim's ~/.bashrc and a 0666 latest.meta.json, then the victim runs codex_capture_transcript. Output: 'chmod: changing permissions of .../sb-codex-transcripts.65534.26017: Operation not permitted', 'ERROR: refusing to redact through a symlink', and the victim's .bashrc now holds '{\"type\": \"prompt.submitted\", \"prompt\": \"my private prompt\\n\"}' plus the transcript line. The attacker-owned meta file (still 0666) holds work_dir and source paths. fs.protected_symlinks=0 here, but the attack does not depend on it.",
+   "suggested_fix": "Create the per-run directory with `mktemp -d \"${TMPDIR:-/tmp}/sb-codex-transcripts.XXXXXX\"` (0700, unpredictable). If CODEX_TRANSCRIPT_DIR is given, refuse a directory that is a symlink, is not owned by the user or is group/world-writable. Write files with O_CREAT|O_EXCL|O_NOFOLLOW (or to a temp file plus rename) and fail closed, writing no transcript, if any of this fails. Document that the directory persists (or remove it at the end and drop the archived-path line). Add a test that a pre-existing foreign or symlinked directory is refused."
+  },
+  {
+   "severity": "major",
+   "location": "scripts/lib/agent_redact.py:69-87 (_looks_random: `_UNDERSCORE_IDENT.match(value) and \"_\" in value`, _IDENT_CHAIN, _PLAIN_WORD)",
+   "problem": "The new 'not a code reference' exemptions classify any [A-Za-z0-9_] value that contains an underscore as an identifier, whatever its digits or entropy. Dotted runs of random segments count as attribute chains, and letters-only values need 24+ characters and entropy ≥ 4.3. As a result the brief scanner (the gate before a brief reaches a third-party CLI) no longer catches literal secrets it caught at the r1 head. The r1 suggested fix limited this to identifiers WITHOUT digits.",
+   "evidence": "python3 -I REVF-G6b-r2-probe/scan_battery.py (68322a5 vs fbf2842 agent_redact.py). Now missed (each caught at r1): 'stripe_api_key: sk_test_<REDACTED-example-key>', 'API_KEY=Xk9_aP2mQ7vR4tL8nB3cW5', 'Authorization: Bearer abc_def_ghi_jkl_mno_pqr', 'API_KEY=Ab3.Xy9.Qw7.Er5.Ty1.Ui3', 'client_secret=hJkLqWeRtYuIoPaSdFgZ'. Also missed before and now: 'STRIPE_SECRET_KEY=sk_live_51H8…', 'rk_live_…' (the name ends in secret_key, which _NAME does not list; there is no sk_live_/rk_ prefix rule) and Slack webhook URLs. Still caught: AWS AKID and secret, ghp_/gho_/github_pat_, PEM (RSA/EC/OPENSSH), JWT, xoxb-, Google, sk-/sk-proj-/sk-ant-, npm_, hf_, SendGrid, Twilio hex, URL userinfo, JSON-quoted password.",
+   "suggested_fix": "Exempt underscore identifiers only when they contain no digits (or when every underscore-separated segment reads as a word: letters only, low entropy). Treat dotted chains as references only when each segment is a word-like identifier. Add prefix rules for Stripe (sk_live_/sk_test_/rk_live_/rk_test_), Slack webhooks (hooks.slack.com/services/) and names ending in secret_key/secretkey. Pin each regressed sample in tests/python/test_agent_redact.py."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/lib/agent-delegate-common.sh:117-121 (agent_delegate_workdir_fingerprint), called before every attempt (agent-*-delegate.sh, e.g. codex:208)",
+   "problem": "`git hash-object -- \"$f\"` runs on every untracked path and follows symlinks. An untracked symlink to /dev/zero, a FIFO or /dev/stdin hangs the delegation before launch with no bound. A large non-ignored untracked file is hashed on every delegation, even though the fingerprint matters only for a quota retry. It also hashes files outside the work dir through symlinks.",
+   "evidence": "Probe: git repo with `ln -s /dev/zero zero-link`; `timeout 10 bash fp.sh` (source agent-delegate-common.sh; agent_delegate_workdir_fingerprint) -> rc=124 after 10.0 s; without the link, 0.1 s.",
+   "suggested_fix": "Hash only regular, non-symlink files (`[[ -f $f && ! -L $f ]]`); for symlinks, hash the readlink target string. Skip or size-cap huge files, or put a timeout on the whole fingerprint."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/lib/agent_redact.py:44,66 (url-userinfo, PEM header), scan()",
+   "problem": "The scanner still rejects ordinary briefs: URL userinfo is flagged even when the password is an env reference or a local default credential, a prose mention of a PEM header is flagged, and a csrf_token set to a UUID is flagged. The refusal text tells the agent how to set SB_AGENT_ALLOW_SECRET_LIKE_BRIEF=1, so these false positives train routine use of the override, which nothing records except stderr.",
+   "evidence": "scan_battery.py false positives: 'DATABASE_URL=postgres://postgres:postgres@localhost:5432/test' -> url-userinfo; 'git clone https://x-access-token:${GH_TOKEN}@github.com/org/repo' -> url-userinfo; 'Never commit files that start with <PEM-header-redacted> markers.' -> pem; 'csrf_token = 123e4567-e89b-12d3-a456-426614174000' -> assignment.",
+   "suggested_fix": "Apply the reference checks (_ENV_REF, placeholders) to the userinfo password. Require a PEM body line after the header. Exempt UUID-shaped values. Record override use in the delegation log or state, so it leaves an audited trace."
+  },
+  {
+   "severity": "minor",
+   "location": "tests/coverage/known-limits.json (codex.sh:380); scripts/lib/agent-adapters/codex.sh:379-381",
+   "problem": "The known-limit holds (the scoped run exits 0 and the effect is asserted), but its reason is not substantiated. 'drops the record for the first command of this particular substitution' does not say why, and the r1 code used the same `cd \"$SB_ROOT\" && \\` form as opencode.sh, which the entry itself says is attributed. The line can be made measurable instead of excluded, for example by moving the launcher into a function (`codex_run_tui_launcher() { cd \"$SB_ROOT\" || return 1; ...; }`, output=\"$(codex_run_tui_launcher)\") or by giving python a cwd. As written, the `cd` also has no failure handling (the launcher would run from the caller's directory).",
+   "evidence": "Scoped coverage report: 'Known limits (1 audited statements excluded…) scripts/lib/agent-adapters/codex.sh:380 (cd) [unmeasurable]'; git diff fbf2842..27518a6 shows the `cd … && \\` form was replaced to produce this line.",
+   "suggested_fix": "Restructure into a function with `cd … || return 1`, cover it, and drop the known-limits entry; or explain the tracer mechanism precisely in the entry."
+  },
+  {
+   "severity": "minor",
+   "location": "CHANGELOG.md:18; skills/silver-agent-{claude,codex,opencode}/SKILL.md Permission-mode and Quota rows",
+   "problem": "The accepted residuals are not all documented, and some docs no longer match the behaviour. (1) The CHANGELOG says 'delegate stdout is redacted' without qualification, but the pinned-NI exec path (agent_delegate_exec_pinned_ni -> exec) bypasses it, and that residual appears nowhere in the CHANGELOG, skills or the sibling prompt. (2) The fingerprint residual (ignored files and writes outside the work dir are not seen) is undocumented. (3) The claude/codex/opencode Permission-mode rows still say permissive whenever the work dir is 'inside the current project'; the code now requires the same git toplevel (a nested clone or a worktree under .claude/worktrees is strict). Only the Pi row was updated. The setsid residual and the briefs-on-argv residual are documented.",
+   "evidence": "grep -rn -i 'pinned' over skills/silver-agent-*/SKILL.md, CHANGELOG.md and docs/skills finds no stdout-redaction note; the skill rows were checked by reading them.",
+   "suggested_fix": "Add the pinned-NI redaction bypass and the fingerprint limits to the CHANGELOG line and the Secrets/Quota rows, reword the Permission-mode rows to 'the same git toplevel as the current project (nested clones and other worktrees are strict)', then re-run sync-codex-package.sh."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/lib/agent-adapters/opencode.sh:221-222; scripts/lib/agent-adapters/pi.sh (same reader)",
+   "problem": "The reader fix leaves a small window: if select() times out, the CLI writes its last chunk and exits, and then `elif proc.poll() is not None: break` runs, the loop ends without draining, and that chunk is lost. The window is much smaller than the original bug, but it is the same class.",
+   "evidence": "Static (lines 211-222). The old reader lost output 6/30 times; this window was not hit in 30 runs.",
+   "suggested_fix": "When poll() reports an exit, drain the pipe non-blocking until EOF (or EAGAIN) before breaking."
+  }
+ ],
+ "validation": {
+  "tests": "In the single coverage run, 40 files (all tests/scripts/test-agent-*.sh except autonomous-test, the three tests/hooks agent-delegation tests and tests/scripts/test-python-unit.sh): 5252 passed, 0 failed. test-silver-bullet-template-parity.sh plus test-render-agent-bundle-freshness.sh: 1486 passed, 0 failed. Mutation (sandbox copy): --auto put back unconditionally plus the old SB_ROOT transcript default -> test-agent-adapters-stubs.sh 97 passed, 4 failed (the two strict --auto assertions and the two not-under-SB_ROOT assertions). Honest stub delegations work through each adapter (stub test: OpenCode NI/TUI, Pi NI/TUI, Codex exec/TUI, Claude print/expect). The docs suite was not re-run (the author reports 198 green). Process note: my first coverage attempt ran only test-agent-adapters-stubs.sh under coverage because my generated script was split across lines; the other test files then ran directly and without coverage, read-only, with no worktree changes (git status clean). That attempt was discarded, and the corrected run below is the coverage evidence.",
+  "coverage": "Scoped run with --only on the 21 changed Bash files plus agent_fifo.py and agent_redact.py, with all covering tests in the one run: Bash statements 3188/3188, lines 2489/2489, functions 174/174; Python statements 148/148, branches 62/62 (100%). Exit 0 with the codex.sh:380 known-limit, so the limit is valid (not exit 3).",
+  "lint": "bash scripts/lint-shell.sh --all --jobs 2 -> exit 0 (application Bash clean; 746 test files clean).",
+  "invariants": "check-repo-invariants.sh exit 0 (personal-data PASS, workflow-hardening PASS). generate-hook-reference --check OK, generate-apo-artifacts --check OK, validate-plugin-mirror OK, docs/workflows == templates/workflows. Trailers: all 19 commits in 54f285f..68322a5 end with 'Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>' plus the session line (accepted). Merge-tree: clean with claude/optimistic-ramanujan-tccfud; with fix/HC-remove-cursor, G6b adds exactly the 9 listed conflicts.",
+  "probe_dir": "REVF-G6b-r2-probe (scan_battery.py, victim.sh/victim.out, fp.sh, q.sh, cov.log, cov-summary.md)"
+ }
+}

@@ -1,0 +1,289 @@
+{
+ "package": "H3-release-ci",
+ "head_reviewed": "647e27b",
+ "previous_head": "56e528f",
+ "verdict": "CHANGES_REQUIRED",
+ "per_finding": [
+  {
+   "id": "R13-01",
+   "verdict": "fixed",
+   "notes": "Re-ran the publish probe in /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H3b-probe/mkt (fixed scripts, bare origin + agent-plugins remote): '--publish 0.99.0' with an up-to-date AGENT_PLUGINS_REPO_ROOT -> rc=0, 'Pushed 3 commit(s) to origin/main', remote main holds the Claude/Codex/Cursor bump commits, Codex entry ref v0.99.0. test-sync-release-marketplace-versions-paths.sh green."
+  },
+  {
+   "id": "R13-07",
+   "verdict": "regressed",
+   "notes": "Behaviour is right, but the repair (agent_plugins_require_tag_on_origin) broke three default-suite tests (blocker issue). Wrapper still refuses no tag / local-only tag / red CI. New: per-host --publish run standalone now requires the tag on origin (agent_plugins_require_tag_on_origin; sync-marketplace-version-paths 'tag only local exits 1'). Residual (minor issue below): standalone per-host --publish still never checks CI: probe STUB_CI_RC=1 bash scripts/sync-marketplace-version.sh --publish 0.99.0 -> rc=0, 'Pushed 1 commit(s)'."
+  },
+  {
+   "id": "R13-19",
+   "verdict": "fixed",
+   "notes": "Unchanged since r1; tests green."
+  },
+  {
+   "id": "R8-18",
+   "verdict": "fixed",
+   "notes": "Unchanged since r1; codex-paths test green (push_tag helper added for the new origin check)."
+  },
+  {
+   "id": "R8-19",
+   "verdict": "fixed",
+   "notes": "Unchanged since r1; agent-plugins-common test green."
+  },
+  {
+   "id": "R13-28",
+   "verdict": "fixed",
+   "notes": "Unchanged since r1."
+  },
+  {
+   "id": "R13-18",
+   "verdict": "fixed",
+   "notes": "The r1 contract-drift issue is resolved: sb:create-release now validates --file before 'gh release create --verify-tag' and re-checks the published body; docs/RELEASE.md and the skill agree on the order (tag -> release -> marketplace)."
+  },
+  {
+   "id": "R13-06",
+   "verdict": "fixed",
+   "notes": "Unchanged since r1."
+  },
+  {
+   "id": "R13-29",
+   "verdict": "fixed",
+   "notes": "Unchanged since r1."
+  },
+  {
+   "id": "R13-03",
+   "verdict": "incomplete",
+   "notes": "r1 probe variants (\\u004f in runOn value and key, \\u0041 in task.allowAutomaticTasks) are now reported. Still missed (fixture /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H3b-probe/wormvar2, check-repo-invariants.sh --check worm-indicators): a JSONC comment between tokens ('\"runOn\" /* c */ : \"folderOpen\"' and '\"runOn\": // c<newline> \"folderOpen\"'), and the nested settings form '{\"task\": {\"allowAutomaticTasks\": \"on\"}}'. The real 93ab69b payload stays caught; the 'wOF2' magic residual is acknowledged. Minor."
+  },
+  {
+   "id": "R13-25",
+   "verdict": "fixed",
+   "notes": "Unchanged. The graphify-managed skill residual is a user decision (DECISIONS.md: add to hash lock) scheduled for H3b."
+  },
+  {
+   "id": "R13-23",
+   "verdict": "fixed",
+   "notes": "release-identity PASS."
+  },
+  {
+   "id": "R9-22",
+   "verdict": "fixed",
+   "notes": "Bare hooks/ and scripts/ commands now fail with an actionable message (CLI and fixture tests). Residual (minor): a command that also names a ${CLAUDE_PLUGIN_ROOT} script hides a bare path: probe hookref fixture 'bash \"${CLAUDE_PLUGIN_ROOT}/hooks/a.sh\" && bash hooks/evil.sh' -> PASS hook-references."
+  },
+  {
+   "id": "R13-13",
+   "verdict": "ok",
+   "notes": "Partial disposition still justified; payload slimming is a user decision for H3b."
+  },
+  {
+   "id": "R13-04",
+   "verdict": "fixed",
+   "notes": "write-all and any non-false continue-on-error value now fail; ci.yml guard string asserted. Residual line-based gaps listed as a minor issue."
+  },
+  {
+   "id": "R13-05",
+   "verdict": "fixed",
+   "notes": "r1 merge-order blocker resolved: in a git-archive copy the before/after 'git status --porcelain --ignored --untracked-files=all' diff is empty after test-enterprise-e2e-matrix-internal-gates.sh; removing the SB_E2E_PASS_AT_VERSION_REGISTRY branch from core.sh makes the new assertion fail. But that assertion fails on any checkout that already holds the file (major issue below)."
+  },
+  {
+   "id": "R13-14",
+   "verdict": "fixed",
+   "notes": "Unchanged since r1."
+  },
+  {
+   "id": "R13-15",
+   "verdict": "ok",
+   "notes": "Now reported as partial with the deferred items (action SHA pins, shellcheck apt pin, --require-hashes); DECISIONS.md keeps tags."
+  },
+  {
+   "id": "R13-16",
+   "verdict": "ok",
+   "notes": "Now reported as partial."
+  },
+  {
+   "id": "R13-17",
+   "verdict": "fixed",
+   "notes": "Unchanged; site-duplicate-ids PASS."
+  },
+  {
+   "id": "R13-22",
+   "verdict": "fixed",
+   "notes": "Unchanged; note flow-style 'run:' values escape the ${{ }} scan (minor issue)."
+  },
+  {
+   "id": "R13-24",
+   "verdict": "fixed",
+   "notes": "Full-history gitleaks run still never executed (needs-user residual, recorded in the report)."
+  },
+  {
+   "id": "R13-12",
+   "verdict": "fixed",
+   "notes": "r1 probe re-run (/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H3b-probe/../REVF-H3-probe/venvtest through the fixed runner): 'venv package importable', 1/0. The new test in test-makefile-setup.sh is meaningful: reverting the wrapper to 'ln -s' in a copy makes 'runner keeps the venv python active' and 'venv-only module imports through the runner' fail (12 passed, 2 failed). Makefile uses abspath for the venv; prereqs warn on bash<4 and missing timeout. Residual quoting bug (minor issue)."
+  },
+  {
+   "id": "R13-21",
+   "verdict": "fixed",
+   "notes": ".codex/hooks.json restored byte-identical to fix/H2-installers (git diff empty); git merge-tree fix/H2-installers fix/H3-release-ci -> no conflict. Hygiene test asserts it stays tracked."
+  },
+  {
+   "id": "R13-27",
+   "verdict": "ok",
+   "notes": "Partial disposition unchanged; downstream /sb:init block is a follow-up."
+  },
+  {
+   "id": "R13-26",
+   "verdict": "ok",
+   "notes": "needs-user; user decided (move to .cursorindexingignore) for H3b."
+  },
+  {
+   "id": "R13-02",
+   "verdict": "ok",
+   "notes": "needs-user; user decided (pin to release tags) for H3b."
+  },
+  {
+   "id": "R7-30",
+   "verdict": "ok",
+   "notes": "Same decision as R13-02, H3b."
+  },
+  {
+   "id": "R13-11",
+   "verdict": "ok",
+   "notes": "needs-user; user decided (scrub tree, no history rewrite) for H3b."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "blocker",
+   "location": "scripts/sync-marketplace-version.sh:118; scripts/sync-codex-marketplace-version.sh:136; scripts/sync-cursor-marketplace-version.sh:180; tests/scripts/test-sync-marketplace-version.sh, test-sync-codex-marketplace-version.sh, test-sync-cursor-marketplace-version.sh",
+   "problem": "Commit 647e27b added agent_plugins_require_tag_on_origin to every per-host --publish, but did not update the three non-paths sync tests in the default suite. They tag the release in a repo snapshot that has no origin holding the tag, so --publish now exits 1 and the suite is red at 647e27b (CI test job red, which in turn blocks verify-release-commit-ci.sh and the --publish step). The author's validation ran only the *-paths variants.",
+   "evidence": "From the worktree: bash tests/run-all-tests.sh --jobs 2 tests/scripts/test-sync-marketplace-version.sh tests/scripts/test-sync-codex-marketplace-version.sh -> 'FAIL: publish exits 0 (expected 0, got 1)', 'FAIL: remote Claude marketplace version bumped (expected 0.53.0, got 0.0.1)', 'FAIL: bump pushed to the remote', and for Codex 'ERROR: release tag v0.53.0 is not on origin ...' (suite aborted); TOTAL 4 passed, 4 failed. test-sync-cursor-marketplace-version.sh -> 4 FAIL incl. 'remote pinned to the tagged commit'. Same under SILVER_BULLET_RUNTIME=codex (4 passed, 3 failed). Also seen in the scoped coverage run (TOTAL 2400 passed, 8 failed; failed files: those three). Causation: deleting the agent_plugins_require_tag_on_origin line from sync-marketplace-version.sh in a git-archive copy -> test-sync-marketplace-version.sh 7/0.",
+   "suggested_fix": "In each of the three tests give the snapshot a bare origin and push the tag before --publish (the push_tag helper the -paths tests already use: git init --bare; git -C $SNAP remote add origin ...; snap_git push -q origin v$plugin_v), and add one assertion there that a local-only tag is refused. Re-run all marketplace sync tests (paths and non-paths) under claude and codex."
+  },
+  {
+   "severity": "major",
+   "location": "tests/scripts/test-enterprise-e2e-matrix-internal-gates.sh:53-54",
+   "problem": "The new assertion 'pass-at-version registry stays out of the checkout' checks that ${REPO_ROOT}/.e2e-matrix-pass-at-version.tsv does not exist, not that this test did not create or change it. The old version of this very test wrote that file into every contributor's checkout (it is git-ignored, /.e2e-*), and operators' matrix runs write it there by design (docs/testing/ENTERPRISE-E2E-HOST-CERTIFICATION-METHODOLOGY.md:514). So the test now fails on every such checkout, including the main checkout /home/user/silver-bullet (the file is present there, dated Oct 17), where the orchestrator will run the merged suite: 'make check' goes red with a message that does not say what to do. A false positive is a bug (FIX-BRIEF).",
+   "evidence": "ls -la /home/user/silver-bullet/.e2e-matrix-pass-at-version.tsv -> present (642 bytes, Oct 17); its rows are row 22 then row 21 written one second apart, three times, exactly what the old test's two dry runs record. In a git-archive copy of 647e27b (/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H3b-probe/copy): printf '4\\t0.52.0@abc\\t/x/ledger.md\\t...' > .e2e-matrix-pass-at-version.tsv; bash tests/run-all-tests.sh tests/scripts/test-enterprise-e2e-matrix-internal-gates.sh -> 'FAIL: pass-at-version registry stays out of the checkout', TOTAL 4 passed, 1 failed. Without the pre-existing file: 5/0.",
+   "suggested_fix": "Record the file's state before the runs and compare after (e.g. before=\"$(cksum < \"$REG\" 2>/dev/null || echo absent)\" ... assert_eq \"registry in the checkout unchanged\" \"$before\" \"$(cksum < \"$REG\" 2>/dev/null || echo absent)\"), and additionally assert the row landed in \"$FIXTURE/.e2e-matrix-pass-at-version.tsv\" if the dry run records one. Keep the inverse check: removing the override from core.sh must still fail the test on a clean checkout."
+  },
+  {
+   "severity": "minor",
+   "location": "tests/run-all-tests.sh:115-119",
+   "problem": "The venv wrapper embeds the interpreter path unescaped inside a double-quoted /bin/sh string (printf '#!/bin/sh\\nexec \"%s\" \"$@\"\\n'). A venv path containing $, a backtick, \" or \\ is re-evaluated by sh on every python3 call: $(...) runs, the exec fails with 127, every Python-using test breaks. The symlink it replaced was immune.",
+   "evidence": "/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H3b-probe/venvq: venv under a directory named 'a$(touch .../PWNED)b'; PATH=<that>/.venv/bin:$PATH bash tests/run-all-tests.sh t/test-q.sh -> wrapper 'exec \".../a$(touch .../PWNED)b/.venv/bin/python3\" \"$@\"', 'exec: .../ab/.venv/bin/python3: not found', exit 127, and PWNED was created.",
+   "suggested_fix": "Single-quote the path: q=${_entry//\\'/\\'\\\\\\'\\'}; printf '#!/bin/sh\\nexec %s \"$@\"\\n' \"'$q'\" > \"$safe_bin/$_name\" (or skip the wrapper and fall back to the symlink when the path contains a quote, $, backtick or backslash). Add a case with a space and a $ in the venv path to test-makefile-setup.sh."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/lib/repo_invariants.py:74-98 (worm_indicators)",
+   "problem": "R13-03 residual: the check still matches raw text after decoding \\u escapes. VS Code parses tasks.json/settings.json as JSONC, so a comment between tokens or the nested settings form evades it.",
+   "evidence": "/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H3b-probe/wormvar2 (git fixture), bash scripts/check-repo-invariants.sh --root <fixture> --check worm-indicators: reports d/ e/ f/ (unicode escapes) but not a/.vscode/tasks.json '\"runOn\" /* c */ : \"folderOpen\"', b/.vscode/tasks.json '\"runOn\": // c<NL> \"folderOpen\"', or c/.vscode/settings.json '{\"task\": {\"allowAutomaticTasks\": \"on\"}}'.",
+   "suggested_fix": "Strip JSONC comments with a string-aware scanner, drop trailing commas, json.loads, walk keys/values (runOptions.runOn == 'folderOpen' at any depth; a 'task.allowAutomaticTasks' key or a 'task' object holding 'allowAutomaticTasks'); flag an unparseable tracked .vscode/*.json or *.code-workspace. Since this repo tracks no .vscode files, flagging any tracked .vscode/tasks.json is an acceptable simpler rule."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/lib/agent-plugins-common.sh:113-126; scripts/sync-marketplace-version.sh:91-108,113-136; sync-codex-/sync-cursor-marketplace-version.sh (publish paths)",
+   "problem": "r1 minor issue only partly closed. (a) The new fetch does not help a stale checkout: check_publishable counts only commits ahead of the upstream, not behind, so a checkout behind its remote still gets three local bump commits and a rejected push (commit 647e27b's message says a diverged remote is no longer hidden). (b) In batch mode each host still prints '... publish complete / now offers silver-bullet vX' before anything is pushed. (c) A per-host script run standalone with --publish still never checks CI.",
+   "evidence": "/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H3b-probe/mkt: apco cloned, remote advanced by another clone; AGENT_PLUGINS_REPO_ROOT=apco sync-release-marketplace-versions.sh --publish 0.99.0 -> rc=1, three 'publish complete' banners, then '! [rejected] HEAD -> main (non-fast-forward)'; 'git -C apco status -sb' -> '## main...origin/main [ahead 3, behind 1]'. Standalone: STUB_CI_RC=1 AGENT_PLUGINS_REPO_ROOT=apco3 bash scripts/sync-marketplace-version.sh --publish 0.99.0 -> rc=0, 'Pushed 1 commit(s) to origin/main' (CI never consulted).",
+   "suggested_fix": "After the fetch also require 'git rev-list --count HEAD..$upstream' == 0 (or 'git merge --ff-only $upstream' when the checkout is clean) and test the behind case; print 'committed (push pending)' when AGENT_PLUGINS_SKIP_PUSH=1; either move the CI check into a shared helper every --publish path calls, or make the per-host --publish refuse unless invoked by the wrapper."
+  },
+  {
+   "severity": "minor",
+   "location": "skills/silver-create-release/SKILL.md:234,286,365 (and mirrors); scripts/verify-release-commit-ci.sh:26-29",
+   "problem": "The skill's commands for the CI wait and the publish step omit GITHUB_REPOSITORY, which verify-release-commit-ci.sh requires (docs/RELEASE.md prefixes GITHUB_REPOSITORY=alo-exp/silver-bullet). Following Step 7c verbatim fails closed with a misleading 'CI is not green ... nothing was published'. verify-release-commit-ci.sh is also missing from the skill's 'Allowed Commands' list although Steps 5c and 6b require it.",
+   "evidence": "/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H3b-probe/mkt with the real verify-release-commit-ci.sh and GITHUB_REPOSITORY unset: bash scripts/sync-release-marketplace-versions.sh --publish 0.99.0 -> '::error::GITHUB_REPOSITORY is required' then 'ERROR: CI is not green for v0.99.0 (...); nothing was published'.",
+   "suggested_fix": "Have verify-release-commit-ci.sh (H3-owned) derive owner/repo from 'git remote get-url origin' when GITHUB_REPOSITORY is unset, or add the prefix in the skill; add the script to the skill's allowed-command list; regenerate mirrors."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/lib/repo_invariants.py:237-299 (workflow_problems)",
+   "problem": "The line-based workflow-hardening reading still accepts several equivalent YAML spellings, and the ci.yml guard requirement is satisfied by a comment (the new unit test passes HARDENED + '# git status --porcelain --ignored'). github-script 'script:' inputs are still not scanned (no workflow uses github-script today).",
+   "evidence": "python3 -I, ri.workflow_problems on HARDENED variants -> [] for: '\"continue-on-error\": true' (quoted key), 'continue-on-error:' with 'true' on the next line, flow step '- {run: echo ok, continue-on-error: true}', flow step \"- {run: 'echo ${{ github.event.issue.title }}'}\", 'permissions: \"write-all\"', and ci.yml whose only guard text is '# formerly: git status --porcelain --ignored'.",
+   "suggested_fix": "Reject flow-style mappings and quoted keys in workflow steps (cheap and keeps the line model valid), treat a bare 'continue-on-error:' with an indented value as a problem, strip quotes before the write-all match, and require the guard string on a non-comment 'run:' line in ci.yml."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/check-repo-invariants.sh:136-153",
+   "problem": "hook-references checks only the first script a command names: if a ${CLAUDE_PLUGIN_ROOT} script appears, a bare relative hooks/ or scripts/ path later in the same command is never examined, so the new R9-22 rule can be sidestepped by chaining.",
+   "evidence": "/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H3b-probe/hookref: hooks.json command 'bash \"${CLAUDE_PLUGIN_ROOT}/hooks/a.sh\" && bash hooks/evil.sh' -> 'PASS hook-references', rc=0.",
+   "suggested_fix": "Fail when the bare regex matches anywhere in the command (independently of the root match), and check every ${CLAUDE_PLUGIN_ROOT}/ path in the command for existence, not only the first."
+  },
+  {
+   "severity": "minor",
+   "location": "tests/scripts/test-release-skill-contract.sh:9-20",
+   "problem": "The ordering checks compare grep line numbers with [[ -lt ]]; an empty result evaluates as 0, so 'prepare mode precedes the tag' passes vacuously if the prepare command disappears from the skill.",
+   "evidence": "bash -c '[[ \"\" -lt 5 ]] && echo TRUE' -> TRUE; the test asserts a numeric value only for the validate line.",
+   "suggested_fix": "assert_match '^[0-9]+$' for prepare, tag, create and publish before comparing."
+  },
+  {
+   "severity": "minor",
+   "location": ".github/CODEOWNERS:7-26",
+   "problem": "Widened as asked, but still omits /agents/ (Claude Code loads its skills from ./agents/claude per .claude-plugin/plugin.json), /host-bundles/, the auto-loaded instruction files CLAUDE.md, AGENTS.md and silver-bullet.md, and the tracked host dirs /.opencode/, /.pi/, /.hermes/ (graphify skill copies). The owner handle remains unconfirmed (maintainer action). Mitigated for agents/ by the CI mirror check.",
+   "evidence": "jq .skills .claude-plugin/plugin.json -> './agents/claude'; git ls-files .hermes -> .hermes/skills/graphify/...; none of these paths appear in CODEOWNERS.",
+   "suggested_fix": "Add /agents/, /host-bundles/, /CLAUDE.md, /AGENTS.md, /silver-bullet.md, /.opencode/, /.pi/, /.hermes/; keep the handle as a maintainer confirmation."
+  }
+ ],
+ "previous_review_issues": [
+  {
+   "r1": "major: venv invisible to make test/coverage (R13-12)",
+   "status": "resolved (new minor quoting issue)"
+  },
+  {
+   "r1": "major: release skill contract drift",
+   "status": "resolved (minor GITHUB_REPOSITORY/allowed-list gap)"
+  },
+  {
+   "r1": "major: .codex/hooks.json modify/delete conflict with H2",
+   "status": "resolved (byte-identical, merge-tree clean); .gitignore textual conflict with H5 remains (keep both blocks)"
+  },
+  {
+   "r1": "major: e2e test writes .e2e-matrix-pass-at-version.tsv (H10 merge order)",
+   "status": "resolved for clean checkouts; new major false positive on checkouts that already hold the file"
+  },
+  {
+   "r1": "minor: worm regex vs JSON escapes / wOF2",
+   "status": "partly resolved (escapes); comments, nested settings and wOF2 remain"
+  },
+  {
+   "r1": "minor: standalone --publish / stale checkout / batch banner",
+   "status": "partly resolved (tag on origin, fetch); behind-check, banner and standalone CI check remain"
+  },
+  {
+   "r1": "minor: graphify skill outside the lock",
+   "status": "deferred to H3b by user decision"
+  },
+  {
+   "r1": "minor: workflow-hardening write-all / continue-on-error / --ignored guard",
+   "status": "resolved for the listed forms; residual spellings remain"
+  },
+  {
+   "r1": "minor: gitleaks full history never run",
+   "status": "open as needs-user residual"
+  },
+  {
+   "r1": "minor: bare hook paths accepted",
+   "status": "resolved; chained-command residual"
+  },
+  {
+   "r1": "minor: CODEOWNERS handle/coverage",
+   "status": "partly resolved (wider); handle unconfirmed, some paths missing"
+  },
+  {
+   "r1": "minor: CONTRIBUTING drift, prereqs bash/timeout",
+   "status": "resolved"
+  },
+  {
+   "r1": "minor: report accuracy",
+   "status": "resolved (R13-15/16 partial, out-of-ownership files listed, R13-21 commit attribution corrected)"
+  }
+ ],
+ "abuse_analysis": {
+  "SB_E2E_PASS_AT_VERSION_REGISTRY": "Not a new forgery path. The TSV is only a skip cache read by the operator-run scripts/enterprise-e2e/matrix.sh (enterprise_e2e_matrix_should_skip_row_at_version); no hook or release gate reads it (deploy-tier.sh reads ${SB_RUNTIME_STATE_DIR}/inline-e2e-matrix). Whoever controls the matrix's environment could already set SB_ROOT, SB_E2E_INSTALL_VERSION_KEY or SB_E2E_ROW_PASS_REGISTRY, or write the unguarded, git-ignored default file in the checkout. When the row-pass-registry lib is loaded the JSON registry decides and the TSV is not consulted for skipping. Hook env is not inherited from an agent's Bash call.",
+  "runner venv wrapper": "Isolation kept: hidden tools are filtered before the wrapper branch; the wrapper only re-execs the venv interpreter by absolute path; non-venv PATH entries still get symlinks (no pyvenv.cfg next to /usr/bin etc.); the Makefile exports an absolute venv path. Only defect found: the quoting bug above."
+ },
+ "validation": {
+  "tests": "BLOCKER: tests/scripts/test-sync-marketplace-version.sh (4/3), test-sync-codex-marketplace-version.sh (aborts after ERROR tag not on origin) and test-sync-cursor-marketplace-version.sh (5/4) fail at 647e27b under claude and codex. Green otherwise, from the worktree via tests/run-all-tests.sh --jobs 2, two files at a time (claude): makefile-setup + e2e-matrix-internal-gates 19/0; e2e-core-matrix-ledger + release-skill-contract 152/0; check-repo-invariants + cli 171/0; agent-plugins-common + sync-marketplace-version-paths 150/0; sync-codex + sync-cursor paths 160/0; sync-release-marketplace-versions-paths + host-config-hygiene 92/0; integration/test-skill-execution-paths + sync-release-marketplace-versions 310/0. Codex runtime: agent-plugins-common + release-skill-contract 79/0. tests/python/test_repo_invariants.py: 33 OK. Inverse checks in a git-archive copy: runner wrapper -> symlink makes test-makefile-setup fail 2 assertions; dropping the registry override in core.sh makes the e2e internal-gates assertion fail. Pre-existing registry file -> false failure (major issue).",
+  "coverage": "One scoped run from a git-archive copy of 647e27b (--jobs 2, --only the 8 changed scripts, 14 test files incl. test-python-unit.sh): 100% for check-repo-invariants.sh 180/180, agent-plugins-common.sh 117/117, the three per-host sync scripts, sync-release-marketplace-versions.sh, repo_invariants.py 227/227 statements and 110/110 branches. core.sh is partial by design of the scoped run (only the ledger test), but its changed lines 557-561 are not in missing_statements; known-limits entry core.sh:26 validated. rc=1 only because of the three failing sync tests (blocker).",
+  "lint": "bash scripts/lint-shell.sh --all --jobs 2: application Bash (354 files) clean, test Bash (729 files) clean, rc=0.",
+  "invariants": "check-repo-invariants.sh: all 16 PASS. generate-hook-reference --check up to date; generate-apo-artifacts --check rc=0; validate-plugin-mirror OK; sync-codex-package.sh in the copy -> no diff; docs/workflows == templates/workflows; silver-bullet.md/template untouched. Commit trailers on 4cd8504, f321ec8, 647e27b exact; no model names elsewhere. merge-tree vs F1, F2, H2, H4a, H8a, H8b: clean; vs H5: .gitignore content conflict (trivial). Merged hooks.json of each sibling has no bare relative command. Worktree status unchanged by this review."
+ }
+}

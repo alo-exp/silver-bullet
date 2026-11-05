@@ -1,0 +1,149 @@
+{
+ "package": "G1-delivery-gates",
+ "head_reviewed": "90a70e9",
+ "verdict": "CHANGES_REQUIRED",
+ "per_finding": [
+  {
+   "id": "r1-blocker (3 default-suite files)",
+   "verdict": "fixed",
+   "notes": "test-hook-faults-gates.sh, test-shell-analysis-gates.sh and test-rc-validation-matrix.sh pass in the scoped run (claude) and under codex. Base commits 248fda5 and 2a65018 are in the branch (merge-base with claude/optimistic-ramanujan-tccfud = 2a65018 = base head; af3bfbd merged it). A trial merge with the base gives tree 8bf1fed = HEAD^{tree}, so the worktree is the merge result: test-install-codex.sh 307/0 (claude, traced) and green under codex."
+  },
+  {
+   "id": "R1-22",
+   "verdict": "incomplete",
+   "notes": "Default flipped in code (// \"completion\") and in templates/silver-bullet.config.json.default; .silver-bullet.json sets completion. p22.sh: on main, template config / key removed: 'git push origin main|HEAD|@', bare 'git push', 'git push origin', HEAD:refs/heads/main, existing tag, refs/tags/v2, v2:refs/tags/v2, --tags, --all, --mirror -> DENY COMPLETION; init.defaultBranch=trunk -> DENY; opt-out 'intermediate' -> 'Intermediate commit allowed'; feature branch 'git push origin feature/x', 'git push -u origin HEAD', bare 'git push' -> intermediate (honest path unaffected); inside a main worktree 'git push origin HEAD' -> DENY. Still intermediate: 'git push origin :', 'git push origin refs/heads/*:refs/heads/*' (both verified to update remote main from feat2), 'git tag v9 && git push origin v9', 'git -C <main worktree> push origin HEAD', 'cd <main worktree> && git push', and MCP push_files/create_or_update_file/delete_file with branch=main. See issues."
+  },
+  {
+   "id": "R4-01 / R1-36",
+   "verdict": "incomplete",
+   "notes": "TMPDIR is no longer a root: with HOME=/root, TMPDIR=/, /root, /root/.claude or empty -> gated; symlinked temp root (/tmp/.../rootlink -> /root) -> gated; passwd-home check works. But SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR=/tmp/x with the REAL HOME (auth, plugins kept) -> BYPASS ACTIVE (see issue)."
+  },
+  {
+   "id": "r1-major ci-status-check classifier",
+   "verdict": "fixed",
+   "notes": "pci.sh with a red-CI gh stub: git push, git -C . push, git -c x=y push, env/\\\\git/command git push, gh pr new, gh -R o/r pr create, gh api .../pulls, gh release create, MCP create/merge PR and push_files -> DENY; git status/diff/log, gh pr view/list, npm test, pytest, make, docker build, MCP get_file_contents / Context7 -> allow; PostToolUse git commit -> warn only; codex exec_command same. helper_unavailable (python3 stub): plain-verb fallback still blocks git push spellings; MCP create_pull_request and 'gh pr new' are allowed (minor issue)."
+  },
+  {
+   "id": "R1-19 / R13-08",
+   "verdict": "incomplete",
+   "notes": "prel.sh (origin/main=416419a, red=79e57ab): gh release create --target red -> red; gh api -f target_commitish=red -> red; MCP create_release target_commitish=red -> red; unresolvable target (gh api or MCP) -> status 1 (deny). Still origin/HEAD instead of red: '--field=target_commitish=red', '-ftarget_commitish=red', 'gh api user && gh api .../releases -f target_commitish=red' (first gh api picked), and '--input body.json'."
+  },
+  {
+   "id": "r1-major snippet fail-closed",
+   "verdict": "fixed",
+   "notes": "Copied snippet (snip/deploy.sh) without SB_RUNTIME_STATE_DIR: run and sourced -> rc 1 with an actionable message; with it set: missing skills -> rc 1, full state -> rc 0; in-plugin with empty state -> rc 1."
+  },
+  {
+   "id": "R3-02 (stop-check)",
+   "verdict": "fixed",
+   "notes": "Staged work, state 'code-review': trivial_file = project file, home file, state-dir 'other' -> BLOCK; state-scoped files named trivial -> allow (by design); a state-scoped 'trivial' symlink to a project file -> BLOCK."
+  },
+  {
+   "id": "r1-major hooks.json",
+   "verdict": "fixed",
+   "notes": "PreToolUse group 'Bash|Skill|exec_command|mcp__.*' holds phase-archive, completion-audit, ci-status-check in that order; ci-status-check removed from the Bash|exec_command group; 96 hook commands, 64 scripts; generate-hook-reference --check up to date; cursor hooks regenerate byte-identically. merge-tree with fix/G2-planning-floor (97406ce) conflicts textually in hooks/hooks.json, docs/HOOKS.md, both cursor-hooks.json and tests/integration/test-session-scenarios.sh; the hooks.json conflict is exactly the hand-off (G2's three hooks after ci-status-check in the same group). Legitimate; G2 must resolve by hand and regenerate."
+  },
+  {
+   "id": "r1 minors (8)",
+   "verdict": "fixed",
+   "notes": "read-only fallback allows ~ and ^ (git diff HEAD~1, git show HEAD^ silent with python3 broken); verify-tests comment corrected; tiers run in a subshell so a tier failure trips the ERR trap; MCP copilot tool gated, actions_run_trigger cancel allowed, read-only prefilter added (but injectable, see issue); SPEC.md written with cat > (mode kept); R1-13 residual documented; silver-bullet.md/template parity updated; unseen/helper wording split (but doubled text, minor)."
+  },
+  {
+   "id": "hand-offs",
+   "verdict": "ok",
+   "notes": "G4 branch clears enterprise-human-deploy-approved and ci-red-override in session-start (hooks/session-start:290-291,407). G2 report covers the state-dir write guard. Delegate scripts (G6b) only re-export SB_AGENT_CERT_RUN when the caller set it. The codex-hook-adapter timeout hand-off has no named owner package in any fix report (orchestrator should assign)."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "major",
+   "location": "hooks/completion-audit.sh:7-11 (MCP read-only prefilter)",
+   "problem": "The prefilter takes the tool name with a greedy sed over the raw payload: 's/.*\"tool_name\"[[:space:]]*:[[:space:]]*\"\\(mcp__[^\"]*\\)\".*/\\1/p'. The greedy .* matches the LAST \"tool_name\":\"mcp__...\" in the line. Host payloads put tool_input after tool_name, and MCP tools that take a free-form object (GitHub actions_run_trigger 'inputs', and others) let the agent add a nested key, so a delivery call exits 0 before any gate runs.",
+   "evidence": "pmcp.sh: mcp__github__actions_run_trigger {method:run_workflow, workflow_id:deploy.yml, ref:main} -> DENY COMPLETION BLOCKED; the same with \"inputs\":{\"tool_name\":\"mcp__x__get_y\"} -> SILENT(allow). Escaped strings (a PR body containing the text) are not affected (still DENY).",
+   "suggested_fix": "Read the real top-level tool_name (jq -r .tool_name, or anchor the sed on the first occurrence / the key before tool_input), and only skip for names whose suffix is in a read-only allowlist. Add a test with a nested tool_name key."
+  },
+  {
+   "severity": "major",
+   "location": "hooks/lib/completion-audit/classify.sh:205-227 (ca_push_targets_default_branch)",
+   "problem": "R1-22 strict-everywhere still misses pushes that update the default branch or push a tag: the matching refspec ':' and glob refspecs (dst '' and 'refs/heads/*' are skipped), a tag created earlier in the same command (show-ref runs before the tag exists), and pushes run in another worktree via 'git -C <dir>' or 'cd <dir> &&' (HEAD/bare push are resolved against the hook's cwd).",
+   "evidence": "p22.sh on branch feat2 with main checked out in worktree wtmain: 'git push origin :' -> 'Intermediate commit allowed' and the real command moved remote main 880242a..6776412; \"git push origin 'refs/heads/*:refs/heads/*'\" -> intermediate, remote main 6776412..cb664e0; 'git tag v9 && git push origin v9' -> intermediate; 'git -C <wtmain> push origin HEAD', 'cd <wtmain> && git push origin HEAD', 'cd <wtmain> && git push', 'git -C <wtmain> push' -> intermediate (same commands with the hook cwd inside wtmain -> DENY).",
+   "suggested_fix": "Treat an empty destination (':' matching) and any destination containing '*' as default-branch pushes; treat a short destination that is not an existing branch as a possible tag when the same command creates a tag (or any 'git tag' in the analysis), or simply treat every non-branch bare name as a tag push; resolve HEAD/@/bare pushes against the analysed command's -C / cd directory (the analysis already tracks cwd for other checks) and fall back to delivery when the directory cannot be determined. Add test rows."
+  },
+  {
+   "severity": "major",
+   "location": "hooks/lib/completion-audit/classify.sh:146-154 (MCP tier) / ca_push_targets_default_branch",
+   "problem": "Under strict-everywhere, GitHub MCP writes that commit straight to the default branch stay intermediate: push_files, create_or_update_file and delete_file with branch=main need only the planning floor. The default-branch check reads only shell push refspecs.",
+   "evidence": "pmcp.sh (planning floor recorded, feature branch checkout): mcp__github__push_files {branch:\"main\"} -> 'Intermediate commit allowed'; create_or_update_file {branch:\"main\"} -> intermediate; delete_file {branch:\"main\"} -> intermediate.",
+   "suggested_fix": "For MCP write tools, compare tool_input.branch (missing branch = the repository default, so also delivery) with the default-branch names and promote to the completion tier; add tests."
+  },
+  {
+   "severity": "major",
+   "location": "hooks/lib/cert-bypass.sh:15-34 (sb_runtime_in_test_sandbox), hooks/lib/runtime-paths.sh:41-46",
+   "problem": "The sandbox test checks SB_RUNTIME_STATE_DIR, which an agent can set for a nested host CLI together with SB_RUNTIME_PRESERVE_STATE_DIR=1 while keeping its real HOME. The child then has the user's auth, plugins and git credentials, but every gate honouring SB_AGENT_CERT_RUN is off. The doc comment's residual ('that child has none of the user's auth, plugins or state') is wrong for this spelling.",
+   "evidence": "env -i HOME=/root TMPDIR=/tmp SB_AGENT_CERT_RUN=1 SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR=$P/tmpstate bash -c 'source runtime-paths.sh; source cert-bypass.sh; sb_cert_run_bypass_active' -> BYPASS (also with SB_RUNTIME_STATE_DIR=/tmp/x-nonexist). Same with HOME=/root and no override -> gated.",
+   "suggested_fix": "Also require SB_RUNTIME_HOME_ROOT (derived from HOME) and HOME itself to be under a fixed temp root and not the passwd home; or ignore SB_RUNTIME_PRESERVE_STATE_DIR for the sandbox decision. Add a test with the preserve variables and a non-temp HOME."
+  },
+  {
+   "severity": "major",
+   "location": "hooks/lib/completion-audit/deploy-tier.sh:22-33 (ca_release_commit_sha, gh api parsing)",
+   "problem": "The gh api release target is parsed only from separate '-f/-F/--field/--raw-field k=v' tokens of the FIRST gh api command. Other valid spellings fall back to origin/HEAD, so CI is checked for the wrong commit (the R1-19/R13-08 class).",
+   "evidence": "prel.sh (origin/main=416419a, red=79e57ab): '--field=target_commitish=<red>' -> 416419a; '-ftarget_commitish=<red>' -> 416419a; 'gh api user && gh api repos/o/r/releases -f tag_name=v9 -f target_commitish=<red>' -> 416419a; 'gh api -X POST repos/o/r/releases --input body.json' -> 416419a. Control: '-f target_commitish=<red>' -> 79e57ab.",
+   "suggested_fix": "Select the gh api command whose endpoint is .../releases, parse --field=/--raw-field=/-fKEY=/-FKEY= forms, and deny (cannot determine the release target) when the body comes from --input or when no target can be read from a releases POST."
+  },
+  {
+   "severity": "major",
+   "location": "hooks/lib/completion-audit/deploy-tier.sh:217",
+   "problem": "Coverage: '[[ -z \"$wf\" ]] && continue' is now unreachable, because G1 (ea2125c) maps every empty field to '-' in the jq 'clean' def (line 197/210). It was reachable at base (an empty workflowName), so the full CI coverage run will report it uncovered (CI measures once at 100%).",
+   "evidence": "Scoped run over the 27 changed files with 101 test files (99 + test-completion-audit-delivery.sh and test-completion-audit-evidence-nojq.sh via --keep): Bash 3482/3483; only miss deploy-tier.sh 217(continue). All other changed Bash files 100% (completion-audit.sh 188/188, classify.sh 145/145 incl. the init.defaultBranch '|| true', cert-bypass 30/30, ci-status-check 186/186, stop-check 406/406, deploy-gate-snippet 107/107).",
+   "suggested_fix": "Delete the dead line (wf can no longer be empty), or keep it and add a test that reaches it if it can be reached."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/ci-status-check.sh:94-100 (fallback when SB_TI_STATUS != ok)",
+   "problem": "On helper_unavailable/parse_failed the fallback greps only the shell command text, so MCP delivery tools (no command) and alias spellings ('gh pr new') pass the CI-red check. completion-audit still denies these on helper failure, so the impact is limited to a fully completed workflow.",
+   "evidence": "pci.sh with a failing python3 stub first on PATH: mcp__github__create_pull_request -> SILENT(allow); 'gh pr new --fill' -> SILENT(allow); 'git push origin feature/x' -> DENY.",
+   "suggested_fix": "In the fallback, gate any mcp__* tool whose suffix is a delivery tool, and add 'gh pr new'; or deny (with the helper repair message) for MCP when the helper is unavailable."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/lib/enterprise-policy.sh:165-173 (sb_enterprise_policy_unseen_note)",
+   "problem": "The helper-failure message nests the same phrase: \"Silver Bullet's shell analysis helper failed (the shell analysis helper failed (the python3 helper failed: /home/...\".",
+   "evidence": "pfp.sh, python3 stub: 'npm test' -> 'ENTERPRISE POLICY BLOCK — cannot inspect: Silver Bullet's shell analysis helper failed (the shell analysis helper failed (the python3 helper failed: ...'.",
+   "suggested_fix": "Print the reason without the wrapper phrase, or strip the leading 'the shell analysis helper failed' from ca_unseen_reasons."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/core-rules.md:24, CLAUDE.md:125, docs/ENFORCEMENT.md:59",
+   "problem": "core-rules.md (injected into every session) still says the completion audit 'blocks commits until planning done' without the strict default-branch/tag rule, and the repo CLAUDE.md two-tier section still lists git push as intermediate. ENFORCEMENT.md claims core-rules.md describes the same split.",
+   "evidence": "grep -n push hooks/core-rules.md -> only the CI status line; git diff 2a65018..HEAD --stat -- hooks/core-rules.md CLAUDE.md -> no changes.",
+   "suggested_fix": "Update core-rules.md (and its sha256 pin) and CLAUDE.md, or drop the claim from ENFORCEMENT.md."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/lib/cert-bypass.sh:24",
+   "problem": "The passwd-home exclusion uses getent, which macOS does not ship; there the check silently does nothing (harmless today because macOS homes are under /Users, but the documented guarantee does not hold).",
+   "evidence": "static: getent passwd ... 2>/dev/null | cut -> empty on macOS -> the case arm is skipped.",
+   "suggested_fix": "Fall back to python3 -c 'import pwd,os;print(pwd.getpwuid(os.getuid()).pw_dir)' or eval echo ~$(id -un)."
+  },
+  {
+   "severity": "minor",
+   "location": "af3bfbd (merge commit)",
+   "problem": "The merge of the base branch has no Co-Authored-By / Claude-Session trailers (all non-merge commits have them, Sonnet 5.5 accepted).",
+   "evidence": "git log -1 --format=%B af3bfbd -> only 'Merge branch ...'.",
+   "suggested_fix": "Orchestrator decision (F2 precedent: skip rewriting merge commits)."
+  },
+  {
+   "severity": "minor",
+   "location": "hand-off: hooks/codex-hook-adapter.sh timeout",
+   "problem": "The R1-20 remainder (adapter timeout should deny) is handed to an 'adapter owner', but no package report claims it.",
+   "evidence": "grep codex-hook-adapter over fix-*.json: only G1, H2 (unrelated test note) and HC.",
+   "suggested_fix": "Orchestrator assigns it (H2 or a follow-up)."
+  }
+ ],
+ "validation": {
+  "tests": "Scoped coverage run (claude): 99 test files referencing changed hooks/scripts, 6520 passed, 2 failed — both in tests/hooks/test-shell-analysis-budgets.sh (dev-cycle-check near-cap timeout under tracing); re-run untraced: 12/0. test-install-codex.sh 307/0 on the merge-equivalent tree. Extension (--keep): test-completion-audit-delivery.sh + test-completion-audit-evidence-nojq.sh 73/0. template parity 2/0. Codex runtime: 14 key files with SILVER_BULLET_RUNTIME=codex (delivery-gates-g1, ci-status-check-paths, hook-faults-gates, shell-analysis-gates, rc-validation-matrix, stop-check, session-scenarios, deploy-gate-snippet, completion-audit, completion-audit-release, completion-audit-delivery, pr-traceability-paths, ci-status-check, install-codex): 1117 passed, 1 failed — test-hook-faults-gates.sh hit 'syntax error near unexpected token' because the branch head moved (25237b9 merge + 4456b67, 16:02-16:07 UTC) while the run was reading the file; re-run on a git archive of 90a70e9: 54/0 under codex and claude. Coverage and claude results predate the head move (cov.log 16:00, report 16:03). NOTE: head is now 4456b67 (ci-status-check.sh +3/-1 and an H4a base merge); this review covers 90a70e9 only.. Note: the first coverage start was killed after ~30 s (its list wrongly contained tests/run-all-tests.sh); it was restarted clean.",
+  "coverage": "27 changed files: Bash 3482/3483 statements, lines 2537/2537, functions 126/126; only miss hooks/lib/completion-audit/deploy-tier.sh:217 (dead after G1's clean def). shell_analysis.py: Python unit tests were outside the run; the new lines (copilot entry, non-delivery methods, the cancel branch at 4589-4591) are exercised by tests/python/test_shell_analysis.py:589-594. Report saved in REVF-G1-r2-probe/coverage-report.txt; traces deleted.",
+  "lint": "lint-shell --all --jobs 2: rc 0 (application 358 files clean, tests 745 files clean; run on the worktree at 4456b67); shellcheck of the 26 changed .sh files from a 90a70e9 archive: 0 findings.",
+  "invariants": "check-repo-invariants: rc 0, all PASS (incl. workflow-hardening, personal-data). generate-hook-reference --check up to date; generate-apo-artifacts --check rc 0; validate-plugin-mirror OK; generate-cursor-hooks.py (no --check flag; it rewrote plugins/silver-bullet/cursor-hooks.json byte-identically, git status clean); docs/workflows == templates/workflows; template parity green. Trailers: all 6 non-merge package commits end with Co-Authored-By Claude Sonnet 5.5 + Claude-Session; merge af3bfbd has none. merge-tree with claude/optimistic-ramanujan-tccfud (2a65018): clean, tree == HEAD tree. merge-tree with fix/G2-planning-floor (97406ce): textual conflicts in hooks/hooks.json, docs/HOOKS.md, hooks/cursor-hooks.json, plugins/silver-bullet/cursor-hooks.json, tests/integration/test-session-scenarios.sh (expected; resolution per hand-off). False positives: git status/diff/log/show, gh pr view/list, npm test, pytest, make, docker build, git fetch silent in completion-audit (claude + codex) and ci-status-check on feature and main, default and internal_dogfood profiles."
+ }
+}

@@ -1,0 +1,109 @@
+{
+ "package": "H3b-decisions",
+ "head_reviewed": "c69921d",
+ "verdict": "CHANGES_REQUIRED",
+ "per_finding": [
+  {
+   "id": "r2-major-1 lint SC2016",
+   "verdict": "fixed",
+   "notes": "bash scripts/lint-shell.sh --all --jobs 2 in the worktree: rc=0 (application Bash clean, 355 files; test Bash clean, 740 files). Log: REVF-H3b-r3-probe/lint.log"
+  },
+  {
+   "id": "r2-major-2 commented ${{ }} in run/script bodies",
+   "verdict": "fixed",
+   "notes": "The r2 wf_probe.py cases comment_line_in_literal_run, comment_line_in_folded_run, github_script_inj and script >- with '# ${{ }}' are all CAUGHT. Mutation that restores the comment skip before the script check makes 2 tests in test_repo_invariants fail; the mutation removing 'script' from RUN_KEY makes 1 fail. The single-line flow form with: {script: ...} still passes (issue 1)."
+  },
+  {
+   "id": "r2-major-3 graph.json flattened name + missed forms",
+   "verdict": "fixed",
+   "notes": "graph.json has 0 (users|home)[-_]<name> occurrences, 0 duplicate node ids and 0 dangling links (55618 nodes, 80336 links). Every r2 pd_probe form is now CAUGHT: graph_id, mnt_users, users-<n>-projects, double-escaped JSON, \\u002f. A broad encoding sweep over all tracked files (plain/any case, separated letters, base64 at 3 offsets, hex, UTF-16LE/BE, %XX, &#NN;, \\uXXXX, reversed, rot13) for both non-generic name tokens finds only public-identity uses of the first name: author fields, CODEOWNERS handle, contributor lines, the site byline. No path or flattened forms. The new rule still misses forms with an unknown or dot directory after the name (issue 3)."
+  },
+  {
+   "id": "r2-minor workflow flow/anchor/tag/complex-key bypasses",
+   "verdict": "fixed",
+   "notes": "All 35 r2 wf_probe cases are CAUGHT, including multidoc, job/steps/jobs anchor and tag flows, job alias, 'run :', complex keys, the escaped quoted key and the run alias. Real workflows pass. 11 ordinary styles raise no false positive: block sequences, quoted & and *, '#' in strings, flow lists, if: ${{ !cancelled() }}, env expressions, globs with '!'. New variants are in issues 1 and 2."
+  },
+  {
+   "id": "r2-minor personal-data false positives / no allowlist",
+   "verdict": "fixed",
+   "notes": "The r2 fp_probe now reports 9 of 49 strings, down from 34. .github/personal-data-allow.txt works: an empty or missing file is fine, CRLF is handled, 'home <n>' and 'email @domain' clear hits. The new lowercase-flat rule creates its own false positives (issue 4), and the allowlist file is not scanned (issue 5)."
+  },
+  {
+   "id": "r2-minor remaining AI CLI captures",
+   "verdict": "incomplete",
+   "notes": "0 tracked files match *stdout*/*stderr*, but 38 *.out captures remain, 28 of them launch.nohup.out(.attemptN). These are opencode run event streams with tool calls. Nothing ignores them (issue 6)."
+  },
+  {
+   "id": "r2-minor unscoped .gitignore",
+   "verdict": "fixed",
+   "notes": "check-ignore --no-index: tests/fixtures/expected-stdout.txt, tests/golden/cmd-stderr.txt, tests/fixtures/stdout.txt, scripts/x.log.sh, docs/guide.log.md and tests/fixtures/run.stdout are not ignored. Residual: '*.err' is still repository-wide (tests/fixtures/x.err is ignored), and docs/**/*-stdout.txt ignores docs/examples/cli-stdout.txt (issue 6)."
+  },
+  {
+   "id": "r2-minor docs/RELEASE.md payload wording",
+   "verdict": "incomplete",
+   "notes": "The size-reduction claim is gone and the symlink explanation is accurate. 'The subtree path selects the plugin manifests' is unverified for Claude (issue 7)."
+  },
+  {
+   "id": "r2 coverage gap check-repo-invariants.sh:127",
+   "verdict": "fixed",
+   "notes": "Scoped coverage: check-repo-invariants.sh 197/197 statements, 143/143 lines, 19/19 functions; repo_invariants.py 440/440 statements, 222/222 branches."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "major",
+   "location": "scripts/lib/repo_invariants.py:525 (RUN_KEY), :534 (FLOW_LINE)",
+   "problem": "The github-script injection check, which this round claims to add, misses the ordinary single-line flow mapping of with:. FLOW_LINE fails closed only on a line that starts with a flow collection or on a key whose value starts with &, * or !. RUN_KEY matches only a run:/script: key at the start of a line. So 'with: {script: \"core.info('${{ github.event.issue.title }}')\"}' gets no report. PyYAML resolves it to with.script containing the expression, and GitHub expands it before JS runs. This is the 'step uses: with with: script:' variant the review was asked to test. The same line split over two lines is CAUGHT, which shows the gap is only the one-line form.",
+   "evidence": "REVF-H3b-r3-probe/wf3.py against a c69921d copy: with_flow_script valid MISSED []; with_flow_script_ml CAUGHT. yaml.safe_load gives {'with': {'script': \"core.info('${{ github.event.issue.title }}')\"}}. Output: REVF-H3b-r3-probe/wf3.out",
+   "suggested_fix": "Flag any line outside script and scalar text where '${{' appears after a run or script key at any position, for example r'(?:^|[{,\\s])[\"\\']?(?:run|script)[\"\\']?\\s*:' anywhere on the line. Or fail closed on flow mappings and sequences as the value of with: or a step key, allowing only on:/branches/paths-style lists. Add a test for the one-line with: {script: ...} form."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/lib/repo_invariants.py:534 (FLOW_LINE), :604-612 (run checks)",
+   "problem": "The fail-closed rule for anchors, aliases and tags still misses three valid forms. (a) A node property on a line of its own: 'T:' then '&t \"echo ${{ github.event.issue.title }}\"', and later 'run:' then '*t'. PyYAML resolves run to the expression string. (b) A merge key, '- <<: *base', where the anchor sits on its own line. The '<<' key is outside FLOW_LINE's key character set. (c) A double-quoted escape in a run value: 'run: \"echo \\u0024{{ github.event.issue.title }}\"' decodes to '${{ ... }}' (\\x24 too). All three pass the check. They take deliberate obfuscation rather than an accident, so this is minor.",
+   "evidence": "REVF-H3b-r3-probe/wf3.out: alias_own_line valid MISSED; anchor_own_line_alias_run valid MISSED; merge_key_def valid MISSED; run_dq_escape_expr valid MISSED. yaml.safe_load('e:\\n  T:\\n    &t \"echo ${{ x }}\"\\nr:\\n  *t') -> r == 'echo ${{ x }}'; '\"\\u0024{{ x }}\"' -> '${{ x }}'.",
+   "suggested_fix": "Outside script and scalar text, reject lines whose stripped text starts with &, * or !, and any '<<' key. In run and script values and extents, also reject \\u0024, \\U00000024 and \\x24 followed by '{{'."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/lib/repo_invariants.py:336-342 (SUBDIR, FLAT_HOMES[2]), :330 (HOME_PATH)",
+   "problem": "The lowercase flattened rule (users_/users-/_home_) fires only when a known directory follows the name, so an unknown or dot directory evades it. 'x_users_<n>_silver_bullet_hooks' (a repository directly under home), 'x_users_<n>__claude_plugins_cache' (a ~/.claude path as graphify would flatten it), 'x_home_<n>_silver_bullet', 'x_home_<n>__config_x' and 'users-<n>-silver-bullet' all pass, tested with both real name tokens. Also missed: '\\\\wsl$\\Ubuntu\\home\\<n>', '~<n>/projects', 'Users.<n>.projects', '&#47;Users&#47;<n>', '/Users\\<n>\\x' (mixed separators), and 'C:' followed by more than 24 backslashes (the 24-character window before 'users'). No such form is tracked today.",
+   "evidence": "REVF-H3b-r3-probe/pd3.py (names read from REVF-H3b-r2-probe/names.txt, never printed): graph_users_unknown_dir, graph_users_dotdir, graph_home_unknown, graph_home_dotdir, dash_users_lower_unknown, home_backslash_wsl, tilde_user, users_dot, html_entity, long_backslash_win, mixed_sep MISSED for name0 and name2. Users_upper_any, -Users-<n>--claude, -home-<n>-, %2fhome%2f, /Users/<n> CAUGHT.",
+   "suggested_fix": "A lexical rule cannot get both recall and precision here. Add a hashed denylist: commit SHA-256 hashes of the maintainer's lower-cased username tokens, then split each file into [a-z0-9]+ tokens and compare their hashes. That catches every flattened form, discloses no value and creates no false positives. Keep the slash-path regexes for unknown users, and accept [\\\\/] after Users|home in HOME_PATH."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/lib/repo_invariants.py:336-342 (SUBDIR rule)",
+   "problem": "The _home_<n>_/users_<n>_ known-directory rule reports ordinary identifiers. 12 of 19 tested identifiers fail CI: 'the home_page_code path', 'home_screen_work', 'is_home_dir_projects', 'home-made-projects', 'my_home_town_github', 'users_per_github_org', 'home_assistant_code', 'def get_users_by_projects():', 'HOME_URL_PROJECTS', 'self.home_dir_src', 'Users-API-v2', '-home-screen-'. The r2 fp_probe still reports /home/steam, /home/ollama, deploy@prod.internal, a@b.shape and --home-dir-path. The allowlist can clear them, but only by globally allowing words such as 'page', 'dir' and 'by'.",
+   "evidence": "REVF-H3b-r3-probe/pd3.py HONEST rows (FP x12); REVF-H3b-r3-probe/fp_r2.out (9 FP).",
+   "suggested_fix": "The hash denylist from the previous issue makes the lowercase-flat rule unnecessary; drop it, or keep it only for the leading '_users_'/'-users-' form. Otherwise, require the name token to be outside a small English stop-word and identifier list (page, screen, dir, url, by, per, made, town, assistant, api, service)."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/lib/repo_invariants.py:460 ('rel == ALLOW_FILE: continue'), :398-407 (load_allowlist)",
+   "problem": "The allowlist file is excluded from the scan entirely. Any personal path or email written there, for example in a comment, is never reported. 'HOME x' or a mistyped directive is ignored silently. Each 'home <name>' entry also applies to every file in the repository.",
+   "evidence": "REVF-H3b-r3-probe/pd3.py: personal_data over an allow file containing '# note /Users/<n>x/secret and someone@gmail.com' -> []; allow 'HOME <n>x' -> still reported (silently ignored).",
+   "suggested_fix": "Scan the allowlist file but skip only the value of valid 'home'/'email' lines. Report unknown directives. Optionally allow a 'home <name> <path-glob>' scope."
+  },
+  {
+   "severity": "minor",
+   "location": ".planning/rfl-router-subagent-surfaces-85bf9f09-20260812/*/launch.nohup.out*, .planning/rfl-router-subagent-surfaces-85bf9f09/rung-*-cycle*.out, .planning/rfl-agent-interaction-modes-17ed9bf7/**/{probe,daemon}.out; .gitignore:56,85; tests/scripts/test-no-personal-machine-paths.sh:25; CHANGELOG.md:12",
+   "problem": "AI CLI run captures are still tracked under the .out name. There are 38 files, 28 of them launch.nohup.out(.attemptN); the largest is 46 KB. They hold opencode JSON event streams ('prompt.submitted', model, tool calls) with home paths already masked. Siblings remain too: invoke-start/end.txt.attemptN and launch.pid.attemptN, 114 files and 133 KB in all. No ignore pattern or test covers *.out, so new ones can be committed. The CHANGELOG line 'Run captures are removed' is therefore inaccurate. Separately, '*.err' is still repository-wide (tests/fixtures/x.err is ignored), and docs/**/*-stdout.txt ignores legitimate doc examples (docs/examples/cli-stdout.txt).",
+   "evidence": "git ls-tree -r --name-only c69921d | grep -E '\\.out(\\.|$)' | wc -l -> 38; git check-ignore --no-index .planning/a/launch.nohup.out -> not ignored; tests/fixtures/x.err -> .gitignore:56:*.err; docs/examples/cli-stdout.txt -> .gitignore:85.",
+   "suggested_fix": "git rm the .out and .attemptN capture files. Add .planning/**/*.out, .planning/**/*.out.* and .planning/**/*.attempt* (and the research/ equivalents) to .gitignore. Scope '*.err' to .planning/** and research/**. Drop docs/**/*-stdout.txt unless docs runs write captures. Extend the tracked-captures assertion to *.out and *.attempt*."
+  },
+  {
+   "severity": "minor",
+   "location": "docs/RELEASE.md:153, :157",
+   "problem": "'The subtree path selects the plugin manifests' is unverified for Claude. plugins/silver-bullet holds only .codex-plugin/ and .cursor-plugin/, with no .claude-plugin/plugin.json. The catalog's Claude block is 'strict: true' and has no path of its own, so either the Claude entry does not install from the subtree (the doc is wrong) or a strict install finds no manifest. Neither can be checked offline. The Private data section (line 157) also predates this round: it does not mention .github/personal-data-allow.txt or the ignored stdout/stderr captures, and its allowlist summary leaves out the placeholder and bot domains.",
+   "evidence": "ls -la plugins/silver-bullet: .codex-plugin, .cursor-plugin, symlinks; no .claude-plugin. scripts/lib/agent-plugins-catalog.json silver-bullet.claude = {version, license, strict: true, ref}.",
+   "suggested_fix": "Say that the Codex entry uses the subtree path and the Claude entry uses <whatever agent-plugins really sets>, or add plugins/silver-bullet/.claude-plugin/plugin.json. Document the allowlist file and the capture patterns in the Private data section."
+  }
+ ],
+ "validation": {
+  "tests": "Run from a clone of c69921d under REVF-H3b-r3-probe/repo with a temporary HOME. Under SILVER_BULLET_RUNTIME=claude and =codex, test-check-repo-invariants.sh, -cli.sh and test-no-personal-machine-paths.sh gave 264/0 each. Docs suite: 198/0. Python test_repo_invariants: 69 OK. Mutations (comment skip restored, 'script' dropped from RUN_KEY, allowlist ignored, key-value property rule removed) each make test_repo_invariants fail.",
+  "coverage": "One scoped run (--only scripts/lib/repo_invariants.py --only scripts/check-repo-invariants.sh; 4 test files, 333/0): repo_invariants.py 440/440 statements and 222/222 branches; check-repo-invariants.sh 197/197 statements, 143/143 lines, 19/19 functions. Both 100%. Log: REVF-H3b-r3-probe/cov.log",
+  "lint": "bash scripts/lint-shell.sh --all --jobs 2 in the worktree: exit code 0 (application and test Bash clean).",
+  "invariants": "check-repo-invariants.sh: 17 PASS, rc=0, 10.7 s wall. personal-data takes 5.9-6.2 s wall and about 3.0 s user on the shared host, close to the claimed ~4 s; workflow-hardening 0.1 s. generate-hook-reference --check, generate-apo-artifacts --check, validate-plugin-mirror and sync-codex-package give no diff; docs/workflows == templates/workflows. Trailers on f06beda and c69921d: Co-Authored-By Sonnet 5.5 plus Claude-Session, and no other model names. fix/F2-input-analysis (b2ab0bd) is an ancestor, merge-tree rc=0. The current claude/optimistic-ramanujan-tccfud (94800f8, one commit ahead) gives merge-tree rc=0, and a trial merge in the clone passes check-repo-invariants (rc=0). Worktree untouched (git status empty)."
+ }
+}

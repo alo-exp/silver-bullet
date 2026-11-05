@@ -1,0 +1,224 @@
+{
+ "package": "H8a-deep-research",
+ "head_reviewed": "197a8d6",
+ "previous_head_reviewed": "29714af",
+ "verdict": "CHANGES_REQUIRED",
+ "per_finding": [
+  {
+   "id": "R11-01",
+   "verdict": "fixed",
+   "notes": "Codex now least-privileged through the real call chain: dispatch_phase_parallel with CODEX_BIN/CLAUDE_BIN recording stubs (REVF-H8a2-probe/bin/chain.py, runs/chain/fake.log) records 'exec --cd <fresh sb-multi-ai-codex-* dir> --sandbox read-only --color never --skip-git-repo-check --model gpt-5.6-luna --config model_reasoning_effort=medium -' with the 1170-byte prompt on stdin, cwd = the fresh empty sandbox, even with CLAUDE_PERMISSION_MODE=bypassPermissions and SB_AGENT_CERT_RUN=1 inherited. Cursor (no --force) and OCG (no --auto) unchanged from the previous round. Residual (minor issue 6): the claude worker still gets '--permission-mode acceptEdits', not 'default' as SKILL.md and the docstring now claim; confined to the throwaway sandbox cwd, so no longer a shell-with-no-approval exposure. Reverting CODEX_WORKER_SANDBOX to danger-full-access in a sandbox copy fails test_codex_worker_is_read_only_and_never_bypasses_the_sandbox."
+  },
+  {
+   "id": "R12-04",
+   "verdict": "fixed",
+   "notes": "Unchanged since the previous round (fencing with nonce markers); multi-ai unit tests pass."
+  },
+  {
+   "id": "R11-02",
+   "verdict": "incomplete",
+   "notes": "Every probe from the previous round is now caught (AWS vs Microsoft -> partial 0.9 'entity mismatch'; IBM vs Oracle partial; GitLab vs GitHub partial; 'does not guarantee' -> partial 'negation mismatch'; uncited 'raised 50 million ... should be shortlisted' -> factual). But new variants of the same class pass the exact SKILL.md gate end to end with exit 0 (major issue 1), and the new negation check rejects honest multi-clause claims that passed at 29714af (major issue 2)."
+  },
+  {
+   "id": "R10b-16",
+   "verdict": "ok",
+   "notes": "Partial disposition unchanged and still justified (see previous review)."
+  },
+  {
+   "id": "R11-03",
+   "verdict": "fixed",
+   "notes": "Unchanged; '--json -' used by my end-to-end probes (bin/e2e.sh) without issue."
+  },
+  {
+   "id": "R11-04",
+   "verdict": "fixed",
+   "notes": "Unchanged since previous round; deep-research suite green."
+  },
+  {
+   "id": "R11-05",
+   "verdict": "fixed",
+   "notes": "SKILL.md:265 is now 'verify_claim_support.py verify --dir \"$SB_RESEARCH_OUT_DIR\" --report \"$SB_RESEARCH_OUT_DIR/research_report.md\" --strict'. Original probe re-run on copies of the previous runs/skillmd and runs/fab2: exit 1, status fail (factual_not_supported 1 and 2) instead of argparse 'invalid choice' exit 2. DocumentedCommandsTests parse every documented python3 command; restoring the old SKILL.md line in a sandbox copy fails test_every_documented_script_command_parses and test_skill_md_claim_gate_is_strict_and_runs."
+  },
+  {
+   "id": "R11-06",
+   "verdict": "incomplete",
+   "notes": "The three titles from the previous probe now pass (bin/vc_fp.py: 'Suspicious: 0/3', PASSED). But an honest, fully confirmed bibliography still fails, now also under --lenient (major issue 3)."
+  },
+  {
+   "id": "R11-07",
+   "verdict": "fixed",
+   "notes": "Unchanged since previous round."
+  },
+  {
+   "id": "R11-08",
+   "verdict": "fixed",
+   "notes": "Unchanged; _run_cli still decodes with replacement and isolates futures."
+  },
+  {
+   "id": "R11-09",
+   "verdict": "fixed",
+   "notes": "Unchanged."
+  },
+  {
+   "id": "R11-10",
+   "verdict": "fixed",
+   "notes": "Unchanged."
+  },
+  {
+   "id": "R11-11",
+   "verdict": "fixed",
+   "notes": "Prior pgkill probe re-run: timeout -> partial after 2.0 s, TERM-ignoring grandchild dead (Z), setsid escapee alive (expected). The Ctrl-C side effect from the previous review is only partly fixed: live groups are now killed (3/3 TERMed at +2.0 s), but queued workers still start after the interrupt (minor issue 5)."
+  },
+  {
+   "id": "R11-12",
+   "verdict": "fixed",
+   "notes": "Unchanged."
+  },
+  {
+   "id": "R11-13",
+   "verdict": "fixed",
+   "notes": "Unchanged."
+  },
+  {
+   "id": "R11-14",
+   "verdict": "fixed",
+   "notes": "Unchanged."
+  },
+  {
+   "id": "R11-15",
+   "verdict": "fixed",
+   "notes": "CLI table unchanged; the 'Worker safety' section was rewritten and is accurate for codex/cursor, inaccurate for claude (minor issue 6)."
+  },
+  {
+   "id": "R11-16",
+   "verdict": "fixed",
+   "notes": "SKILL.md commands are now parsed and the claim gate run end to end. Sandbox revert checks: codex sandbox, interrupt cleanup, claude env pin, negation check, ENTITY_RE, hedge-with-figure rule, SKILL.md line, pinned opener, soft-issue split, NAT64 unwrapping and unredirected auth header each make a new test fail. Gaps: removing the SIGTERM handler install from dispatch_phase_parallel fails no test; the claude test asserts only the wrapper env, which the real chain ignores; no test covers HTTPS proxies (issues 4-6)."
+  },
+  {
+   "id": "R11-17",
+   "verdict": "ok",
+   "notes": "Dict features now need supported/present true or non-empty evidence_ids (probe: {'name':'SSO'} no longer ticks; winner 'b', tie []); bare strings remain ticks and that residual is now disclosed in the disposition; SPA shows 'Top-ranked (tie): ' on a tie. Partial is justified."
+  },
+  {
+   "id": "R11-18",
+   "verdict": "fixed",
+   "notes": "Unchanged."
+  },
+  {
+   "id": "R11-19",
+   "verdict": "fixed",
+   "notes": "Unchanged."
+  },
+  {
+   "id": "R11-20",
+   "verdict": "fixed",
+   "notes": "Unchanged."
+  },
+  {
+   "id": "R11-21",
+   "verdict": "fixed",
+   "notes": "Unchanged."
+  },
+  {
+   "id": "R11-22",
+   "verdict": "regressed",
+   "notes": "SSRF itself fixed: prior bin/ssrf.py re-run, everything blocked except multicast 224.0.0.1 (TCP cannot reach it); NAT64 64:ff9b::a9fe:a9fe and ::a9fe:a9fe now blocked; DNS-rebinding probe (bin/rebind.py: first lookup public, second 169.254.169.254 or 64:ff9b::7f00:1) -> 'connection blocked', no socket connect attempted, for http and https. But the pinned HTTPS connection drops the proxy CONNECT tunnel, so citation checks fail through any HTTPS proxy (major issue 4)."
+  },
+  {
+   "id": "R11-23",
+   "verdict": "fixed",
+   "notes": "Unchanged."
+  },
+  {
+   "id": "R11-24",
+   "verdict": "fixed",
+   "notes": "Unchanged."
+  },
+  {
+   "id": "R11-25",
+   "verdict": "fixed",
+   "notes": "Unchanged."
+  },
+  {
+   "id": "R11-26",
+   "verdict": "fixed",
+   "notes": "Unchanged."
+  },
+  {
+   "id": "R11-27",
+   "verdict": "fixed",
+   "notes": "GitHub token now an unredirected header: probe bin/authredir.py -> 'Authorization in headers (redirected): False', 'in unredirected_hdrs: True', after a cross-host 302 via HTTPRedirectHandler.redirect_request: Authorization absent. Reverting to add_header fails test_authorization_is_unredirected_so_redirects_cannot_forward_it."
+  },
+  {
+   "id": "R11-28",
+   "verdict": "fixed",
+   "notes": "Unchanged."
+  },
+  {
+   "id": "R11-29",
+   "verdict": "fixed",
+   "notes": "Unchanged."
+  },
+  {
+   "id": "R11-30",
+   "verdict": "fixed",
+   "notes": "Unchanged."
+  },
+  {
+   "id": "R11-31",
+   "verdict": "fixed",
+   "notes": "Unchanged."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "major",
+   "location": "skills/silver-deep-research/scripts/verify_claim_support.py:37,44,103-113,154; skills/silver-deep-research/reference/quality-gates.md:194-201",
+   "problem": "R11-02 is still incomplete: new variants of the same class pass the exact SKILL.md gate (verify --strict) with exit 0. (a) NUMBER_RE needs a word boundary after the digits, so compact figures are invisible: '$50M', '$7.5B' (reduced to '7'), '10k', 'FY2018', 'Q3', and product names with digits (EC2/S3, GPT4/GPT5); a thousands separator splits '2,500' into {'2','500'}, which '500 customers in 2 regions' satisfies. (b) _negation_conflict compares the claim with one quote clause chosen by raw token overlap, ties going to the first clause, so a quote that contradicts the claim in another clause or sentence still supports it ('Acme is SOC 2 certified' vs '... pursuing certification. It is not SOC 2 certified yet.'). (c) Only 30% of the claim's words must appear, so a figure re-attached to a different noun passes ('Acme had 500 employees in 2023' vs '... 12 offices and 500 customers'). Negation by prefix/word ('unsupported', 'absent', 'zero incidents') also passes. The documented limits (antonym/verb swaps, figure-free recommendations) cover none of (a)-(c), and the compute_support_score docstring says a supported claim 'contains every number'.",
+   "evidence": "REVF-H8a2-probe/bin/e2e.sh (citation_manager init-run/register-source --json -, evidence_store add --json -, extract_claims extract, then the SKILL.md command 'verify_claim_support.py verify --dir \"$SB_RESEARCH_OUT_DIR\" --report \"$SB_RESEARCH_OUT_DIR/research_report.md\" --strict') on runs/fab3.tsv: claim/quote pairs '$50M'/'$90M', '$7.5B'/'$7.9B', 'supports SSO'/'does not support SSO; enterprise customers can use SAML', 'reported security incidents in 2023'/'reported zero security incidents in 2023', 'FY2018'/'FY2021' -> status pass, supported 5, factual_not_supported 0, exit=0. runs/fab4: 'Acme Cloud is SOC 2 Type II certified ...' vs '... It is not SOC 2 Type II certified yet.' -> supported. Unit probe bin/score2.py: 10k vs 90k, 2,500 vs 500/2, EC2 vs S3, GPT5 vs GPT4, 'five thousand' vs 'fifty' all ('supported', >=0.73). Prior bin/score.py: 'noun swap short claim' -> ('supported', 0.8), 'number moved' (30%/10% swapped between nouns) -> ('supported', 1.0).",
+   "suggested_fix": "Extract numbers with their unit and scale and normalise them before comparing (e.g. r'(?<![\\w.])[$€£]?\\d{1,3}(?:,\\d{3})+(?:\\.\\d+)?|\\d+(?:\\.\\d+)?\\s*(?:%|x|k|m|mn|bn|b|million|billion|thousand)?\\b' -> 50e6, 7.5e9, 2500; treat FY/Q tokens and alphanumeric product ids such as EC2/GPT5 as entities). For negation, examine every quote clause that shares the claim's key terms (entities, numbers, rarest tokens) and flag a conflict if any of them disagrees, rather than one best clause with first-wins ties. Require each number to co-occur with the claim's nearest noun in the same quote clause, or raise MIN_TOKEN_OVERLAP for figure-bearing claims. Add these pairs as tests. If some of this is out of scope for v1, list each remaining class in quality-gates.md and mark R11-02 partial."
+  },
+  {
+   "severity": "major",
+   "location": "skills/silver-deep-research/scripts/verify_claim_support.py:103-113,154",
+   "problem": "Regression in 197a8d6: the new negation check compares negation anywhere in the claim with only the best-matching quote clause, so honest multi-clause claims now fail --strict although they passed at 29714af: 'X, which was not profitable in 2022, raised ... in 2023' against a quote stating both facts in two sentences; 'supports not only SSO but also SCIM'; 'supports Kubernetes but not Nomad' against 'supports Kubernetes. Nomad support is not available.' Comparison claims of the 'A but not B' form are everyday research prose. FIX-BRIEF requires honest-variant tests for each new block, and the honest cases tested are single-clause only.",
+   "evidence": "REVF-H8a2-probe/bin/e2e.sh on runs/hon3.tsv at 197a8d6: 'Acme, which was not profitable in 2022, raised 50 million dollars in 2023' vs 'Acme raised 50 million dollars in 2023. The company was not profitable in 2022.' -> partial 'negation mismatch'; 'Acme supports not only SSO but also SCIM provisioning' vs 'Acme supports SSO and SCIM provisioning for every plan' -> partial; status fail, factual_not_supported 4 of 5, exit=1. The same TSV against a 29714af copy (REVF-H8a2-probe/old): the first two (and 'no longer offers a free tier') are 'supported'. bin/score2.py: 'honest no-extra-cost' -> partial 'negation mismatch'.",
+   "suggested_fix": "Split the claim into clauses as well, and compare each claim clause's negation only with the quote clauses that share that clause's key terms; ignore 'not only ... but also'. Add tests for these honest multi-clause claims next to the negation-mismatch test."
+  },
+  {
+   "severity": "major",
+   "location": "skills/silver-deep-research/scripts/verify_citations.py:358,372,561-568",
+   "problem": "R11-06 remains incomplete: honest, fully confirmed bibliographies still fail, and now even --lenient cannot pass them. Only the three titles from the last probe were fixed. The 'Placeholder text in title' check is a substring match ('example' in 'Adversarial Examples', 'Counterexamples'). The 'Anachronistic' check fires on any pre-2000 title containing the whole word AI or transformer, although 'AI' has been in titles since the 1970s and 'transformer' is ordinary electrical engineering. Both are classed as hard, so they fail even when the DOI resolves to the same title and year, and under --lenient. At 29714af, --lenient still passed this bibliography.",
+   "evidence": "REVF-H8a2-probe/runs/vc2/report.md: 11 real citations (Goodfellow 2015 'Explaining and Harnessing Adversarial Examples' arXiv; Kirsh 1991 'Foundations of AI: The Big Issues' DOI; Schank 1987 'What Is AI, Anyway?' DOI; Steen & Seebach 1978 'Counterexamples in Topology' DOI; Pierce 1992 '... Oil Filled Transformer Winding' DOI; Vaswani, Rumelhart, Raffel, Porter, Zhao, Kubernetes docs). bin/vc_honest.py makes every DOI resolve to the entry's own title/year and every URL return 200: 'Suspicious: 5/11' (Placeholder x2, Anachronistic x3), 'CITATION VERIFICATION FAILED', verify_all -> False, and with lenient=True also False. Same script at 29714af: default False, lenient True.",
+   "suggested_fix": "Use whole words for placeholder cues (r'\\b(?:tbd|todo|placeholder|lorem ipsum)\\b'; drop 'example', or only flag titles that are just 'Example ...'). Drop 'ai' and 'transformer(s)' from the pre-2000 anachronism list (keep llm/gpt/chatgpt, which are true anachronisms) or make anachronism a soft issue that a matching DOI/URL clears. Keep only definitional failures (future year, no locator, DOI title/year mismatch) as hard. Extend test_real_titles_pass_when_the_url_or_doi_confirms_them with the titles above."
+  },
+  {
+   "severity": "major",
+   "location": "skills/silver-deep-research/scripts/verify_citations.py:100-130,166-171",
+   "problem": "Regression in 197a8d6: _PinnedHTTPSConnection.connect replaces http.client's connect but never runs self._tunnel(), and it wraps TLS with server_hostname=self.host, the proxy host when a proxy is set. urllib's default ProxyHandler stays in the opener, so with HTTPS_PROXY set (common in corporate networks, and set in this environment) the verifier connects to the proxy and starts TLS directly instead of sending CONNECT. And when the proxy has a private or loopback address, _public_addresses rejects the proxy itself. Every DOI and https URL check then fails, so '<50% verified' fails the documented verify_citations command for every report behind a proxy unless --lenient is used. At 29714af the same calls used the CONNECT tunnel. No test covers proxies.",
+   "evidence": "REVF-H8a2-probe/bin/proxy_probe.py records what the client sends (socket.create_connection redirected to a local listener, every name resolving to a public address): 197a8d6 with HTTPS_PROXY=http://proxy.corp.example:3128 -> connect_to=[('93.184.216.34', 3128)], first bytes = TLS ClientHello (no CONNECT); 29714af -> connect_to=[('proxy.corp.example', 3128)], first bytes 'CONNECT'. bin/proxy2.py with the real resolver for IP-literal proxies: HTTPS_PROXY=http://10.20.30.40:3128 -> verify_doi (False, 'connection blocked (non-public address 10.20.30.40)'); http://127.0.0.1:9 -> same for 127.0.0.1.",
+   "suggested_fix": "In _PinnedHTTPSConnection/_PinnedHTTPConnection.connect, when self._tunnel_host is set: connect to the configured proxy without vetting it (the user's own proxy), call self._tunnel(), and wrap TLS with server_hostname=self._tunnel_host; vet the target through unsafe_url_reason as now. Alternatively, skip pinning when a proxy applies to the URL (urllib.request.getproxies / proxy_bypass). Add a test with HTTPS_PROXY set that asserts a CONNECT to the target host and SNI = target host."
+  },
+  {
+   "severity": "minor",
+   "location": "skills/silver-multi-ai-task/scripts/live_dispatch.py:908-925,979-981",
+   "problem": "Ctrl-C/SIGTERM handling is only half done. Live worker groups are killed, but the exception then leaves 'with ThreadPoolExecutor', whose __exit__ is shutdown(wait=True) without cancel_futures, so every queued worker still starts after the interrupt and runs to its timeout while the dispatcher hangs. With the defaults (max_agents 11, concurrency 6, timeout 600 s) one Ctrl-C can launch up to five new paid AI sessions and block for 10 minutes. An interrupt during the submit loop, outside the try, skips the cleanup entirely. Also no test checks that dispatch_phase_parallel installs the SIGTERM handler: replacing it with a no-op passes all 30 tests.",
+   "evidence": "REVF-H8a2-probe/bin/sigdrive.py (dispatcher under its own session, fake cursor recording START/TERM, timeout 25 s, concurrency 1, 3 items): SIGINT at +2.0 s -> first worker TERMed at +2.0 s, then 'START pid=14835' at +2.0 s and 'START pid=31651' at +27.1 s, each killed only by its own timeout; dispatcher exits after 51.9 s. Concurrency 2: third worker starts at +2.0 s after SIGTERM, dispatcher exits at 16.9 s. With concurrency 3 and 3 items all three are TERMed at +2.0 s and the dispatcher exits at 1.9 s. Sandbox revert 'restore = lambda: None' in dispatch_phase_parallel: test_worker_hardening 30 tests OK.",
+   "suggested_fix": "On BaseException in the dispatcher call pool.shutdown(wait=False, cancel_futures=True) (and/or set a module stop Event that _run_cli checks before Popen) before _terminate_live_workers(), and put the submit loop inside the try. Add a test with more items than concurrency asserting no launch after the interrupt, and a test that dispatch_phase_parallel turns SIGTERM into cleanup."
+  },
+  {
+   "severity": "minor",
+   "location": "skills/silver-multi-ai-task/scripts/live_dispatch.py:10-14,65-69,552-554; skills/silver-multi-ai-task/SKILL.md:83-85; scripts/lib/agent-host-exec.sh:69 (G6); scripts/agent-claude-delegate.sh:80",
+   "problem": "The claude worker does not run in permission mode 'default' as the docstring, the WORKER_PERMISSION_MODE comment and SKILL.md ('nothing auto-approved') claim. --use-print makes the delegate a pinned non-interactive launch (agent_delegate_exec_pinned_ni), and agent_host_build_argv maps --mode strict to '--permission-mode acceptEdits' and never reads CLAUDE_PERMISSION_MODE. The new _delegate_env pin therefore has no effect, and its test asserts only the wrapper's env, so it cannot see this, the same pattern as the previous round. Practical exposure is small (auto-accepted edits are confined to the empty throwaway cwd), but the stated guarantee is false.",
+   "evidence": "REVF-H8a2-probe/bin/chain.py through the real chain (bash scripts/agent-claude/invoke.sh -> agent-claude-delegate.sh -> pinned NI exec) with CLAUDE_BIN as a recording stub: 'ARG:--print ARG:--model ARG:claude-opus-4-8 ARG:--effort ARG:medium ARG:--permission-mode ARG:acceptEdits ARG:<prompt>', env CLAUDE_PERMISSION_MODE=default (ignored).",
+   "suggested_fix": "Either launch claude directly like codex ('claude --print --permission-mode default --model ... --effort ...' with the prompt on stdin, cwd = sandbox), or document acceptEdits-in-an-empty-sandbox accurately and record the G6 need (agent-host-exec.sh:69 has no default/plan mapping for strict). Assert the final argv through a recording stub, not the wrapper env."
+  }
+ ],
+ "validation": {
+  "tests": "In the worktree via tests/run-all-tests.sh, two at a time: test-solution-research-python.sh 795 passed and test-multi-ai-deep-research-contract.sh 29 passed (multi-ai unit tests inside), under SILVER_BULLET_RUNTIME=claude and codex. Worktree untouched (git status empty, HEAD 197a8d6 on fix/H8a-deep-research). Sandbox revert checks (REVF-H8a2-probe/rev): 11 of 12 inverse changes make a new test fail; the SIGTERM handler install does not.",
+  "coverage": "One scoped run in a git sandbox clone at 197a8d6 (--only on the 7 changed .py files; both test wrappers, 824 passed): 100% statements and branches for compare_solutions, extract_claims, generate_report_spa, search_orchestrator, verify_citations, verify_claim_support, live_dispatch (1790/1790 stmts, 636/636 branches). Coverage exit 0; known-limits.json not affected.",
+  "lint": "bash scripts/lint-shell.sh --all --jobs 2 on a sandbox copy of 197a8d6 finished: 'application Bash clean' (354 files) and 'test Bash clean' (725 files), exit 0. This round changes no shell files.",
+  "invariants": "In a git sandbox clone at 197a8d6: check-repo-invariants exit 0; generate-hook-reference --check up to date; generate-apo-artifacts --check exit 0; validate-plugin-mirror OK; sync-codex-package.sh produced no diff; docs/workflows == templates/workflows. Template parity unaffected (no enforcement or template files touched). Commit 197a8d6 ends with exactly the two required trailers; no model names elsewhere in the message. claude/optimistic-ramanujan-tccfud is an ancestor of 197a8d6. Scope: only skills/silver-deep-research, skills/silver-multi-ai-task and their regenerated mirrors changed in 29714af..197a8d6."
+ },
+ "notes": "Probe dir REVF-H8a2-probe (all probes sandboxed; HOME/TMPDIR under the probe dir). A recording stub in runs/chain briefly logged inherited host env; the log was scrubbed immediately and no values are reproduced here. Unverified offline (not raised as issues): (1) the OCG cohort runs 'opencode run --dir <sandbox> -m <model> <prompt>' with no permission config; if OpenCode's default permission for bash/edit is 'allow', dropping --auto does not reduce privilege, so an explicit deny-all permission config (OPENCODE_CONFIG_CONTENT) is worth confirming. (2) SKILL.md says web access 'is the one capability a research worker keeps'; codex exec without --search and claude --print without WebFetch/WebSearch allow rules likely have none, so DR-RETRIEVE would answer from model memory. Other residuals (low): multicast 224.0.0.1 counts as public; SIIT ::ffff:0:a9fe:a9fe and 5f00::/16 are not unwrapped; _connect_pinned tries only addrs[0]. Known follow-up (not a blocker here): H8b needs live_dispatch PHASE_INSTRUCTIONS to allow a matrix_entries key."
+}

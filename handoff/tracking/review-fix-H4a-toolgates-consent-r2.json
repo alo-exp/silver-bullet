@@ -1,0 +1,106 @@
+{
+ "package": "H4a-toolgates-consent",
+ "head_reviewed": "5c6014f",
+ "verdict": "CHANGES_REQUIRED",
+ "per_finding": [
+  {
+   "id": "r1-issue-1 (unlisted failing scripts tests)",
+   "verdict": "fixed",
+   "notes": "test-agent-delegate-common.sh now greps hooks/lib/opt-in-gate.sh; test-rt-probes-host-tools.sh records consent via hr_project/sb_test_consent_mirror and no longer pins cli_command; test-enable-verify-scripts.sh handed to H4b (scripts/enable-alumnium.sh). Both re-run green under codex (see validation)."
+  },
+  {
+   "id": "r1-issue-2 (.gitignore symlink write)",
+   "verdict": "fixed",
+   "notes": "sb_stack_ensure_agentmemory_gitignore refuses a symlink or non-regular .gitignore with a WARN, writes via mktemp in the project + cp -p + mv (mode kept), dry-run no longer creates the file. Tests cover symlink target untouched, dir refused, mode 640 kept, mktemp/cp/chmod/mv failures and no temp left. test-stack-optimizer-coverage.sh 256/0 under codex."
+  },
+  {
+   "id": "r1-issue-3 (over-gating of tests/builds)",
+   "verdict": "fixed",
+   "notes": "scripts/fp.sh over 5 gates with enforce consent and tools not ready: pytest, make, cargo build/test, go test, gradlew, gradle, docker ps/build/compose, kubectl get/apply, terraform plan/apply, npm test/ci/install/run build, pip install -r, uv run, mvn test, git status/push/diff -> allowed in all five; writes (echo >, sed -i) denied. Same under Codex exec_command (scripts/codex-cmds.txt). Remaining false positives are limited to variable program words ($PYTHON -m pytest) - see minor issue. The ~15 rewritten tests only add '> out.log' / '| sh' so the 'lookalike is not exempt' intent still has a gated command; none pins the old over-gating. Honest-variant loops added in test-opt-in-gate-lib.sh and test-opt-in-gates-hostile-config.sh."
+  },
+  {
+   "id": "r1-issue-4 (agent-facing contract)",
+   "verdict": "fixed",
+   "notes": "core-rules.md 13-16 and section 2, silver-bullet.md + template section 2g, silver-init references now describe per-user consent via sb-consent.sh; core-rules.sha256 updated; mirrors regenerated."
+  },
+  {
+   "id": "r1-issue-5 (stamp path names SB control files)",
+   "verdict": "incomplete",
+   "notes": "Denylist covers trivial*/state*/branch*/project-root*/session-log*/requested-skill*/gate-audit*/consent*/dotfiles/.requested/.bak/.lock only. scripts/stamp.sh: query_state_file '${SB_RUNTIME_STATE_DIR}/orchestrator-directive.json' + graphify enforce consent + record-graphify-query -> blocking directive file overwritten with an epoch (jq '.blocking==true' false -> NOT-blocking); planning-edit-override, roadmap-edit-override, mode, skill-invocations, outcomes-session.json also written. Case variants Trivial/TRIVIAL/STATE accepted (on default case-insensitive macOS APFS 'Trivial' is the trivial marker: the original exploit reproduces). Traversal ./, sub/.., trailing / fall back correctly. See major issue 1."
+  },
+  {
+   "id": "r1-issue-6 (consent lost updates)",
+   "verdict": "fixed",
+   "notes": "scripts/lock.sh: 3 rounds x 7 parallel grants then 7 parallel revokes -> 7/0 each round, lock released; dead-pid lock taken over (0.3s); live owner -> status 2 with an actionable message. Residual: the stale-lock takeover races (scripts/lock2.sh: stale lock + 7 parallel grants -> 6/7 and 4/7 recorded in 2 of 8 rounds) and a pid-less lock is never taken over - minor issue."
+  },
+  {
+   "id": "r1-issue-7 (.bak through symlink)",
+   "verdict": "fixed",
+   "notes": "Symlinked consent.json.bak -> victim stays 'precious', .bak becomes a regular 0600 file holding the previous version."
+  },
+  {
+   "id": "r1-issue-8 (migration notice, --project, docs honesty)",
+   "verdict": "fixed",
+   "notes": "Notice Yes = 'grant <tool> --project DIR --capabilities enforce' and says installs/wiring need their own grant; pending block Yes says it also allows install and wiring; --project from <proj>/src/x and from a linked-worktree subdir record the main project key; docs/CONSENT.md has a 'What consent does and does not defend against' section stating the agent can run sb-consent.sh/edit the store; deny hints prefixed 'If the user asks'."
+  },
+  {
+   "id": "r1-issue-9 (alumnium relative apply_patch)",
+   "verdict": "fixed",
+   "notes": "scripts/al.sh claude+codex: apply_patch Add File e2e/login.spec.ts, ./e2e/..., src/../e2e/..., tests/e2e/... -> DENY; src/a.py, pytest, unrelated write -> allow; npx playwright test -> DENY."
+  },
+  {
+   "id": "r1-issue-10 (quoted/variable delivery)",
+   "verdict": "fixed",
+   "notes": "\"git\" commit, g'i't commit, \\git, command/env git, /usr/bin/git, GIT_DIR=.git git commit, G=git; $G commit, eval, bash -c/sh -c, find -exec git commit -> denied in all 5 gates. Other regex gaps remain (minor issue 3)."
+  },
+  {
+   "id": "r1-issue-11 (empty-array set -u)",
+   "verdict": "fixed",
+   "notes": "${arr[@]+...} guards in _sb_opt_in_program and sb_rt_state_file; empty rel falls back; bash -u test added. Bash 3.2 not available here; static check of changed hooks files found no Bash-4-only constructs."
+  },
+  {
+   "id": "r1-issue-12 (vacuous HOSTILE tests)",
+   "verdict": "fixed",
+   "notes": "HOSTILE now HOME[$(touch ...)]; store with consent for another tool/project makes every gate reach sb_recommended_tool_enforced and assert allow."
+  },
+  {
+   "id": "r1-issue-13 (CLAUDE.md SessionStart bullet)",
+   "verdict": "fixed",
+   "notes": "stack-compression-lifecycle.sh removed from the bullet."
+  },
+  {
+   "id": "R6-29 (opencode agentmemory MCP from shared manifest)",
+   "verdict": "fixed",
+   "notes": "scripts/oc.sh: fresh HOME -> opencode.json gets the manifest entry {type:local, command:[agentmemory,mcp], enabled, environment.AGENTMEMORY_URL}; second run rc 0, unchanged; existing keys (theme, mcp.other) preserved. Only works when the lib is sourced by an absolute path (relative source + cd -> rc 1); the only caller uses an absolute path."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "major",
+   "location": "hooks/lib/recommended-tools.sh:205-209 (sb_rt_state_file denylist); docs/CONSENT.md:27",
+   "problem": "The fix for the control-file stamp issue is a short, case-sensitive denylist. A repo-controlled query_state_file/usage_state_file can still name other SB control files in the state dir, and case variants pass. (1) orchestrator-directive.json: a graphify query overwrites the blocking orchestrator directive with an epoch; sb_orchestrator_directive_is_blocking (jq '.blocking == true') is then false, so orchestrator-directive-guard.sh no longer blocks, without the audited SB OVERRIDE. (2) 'Trivial' / 'TRIVIAL': on macOS's default case-insensitive APFS this is the legacy trivial marker, so the original exploit (stop-check, ci-status-check, planning-file-guard and subagent-stop disabled) still works with a one-letter change. (3) planning-edit-override, roadmap-edit-override, mode, skill-invocations, outcomes-session.json, edit-without-workflow.count, e2e/release live-matrix files are also accepted. docs/CONSENT.md claims stamps are 'never for one of SB's control files'.",
+   "evidence": "bash REVF-H4a-r2-probe/scripts/stamp.sh (graphify enforce consent; record-graphify-query.sh on 'graphify query x'): orchestrator-directive.json -> contents '1793728622', 'NOT-blocking' (it was {\"next_skill\":\"silver-plan\",\"blocking\":true}); planning-edit-override, roadmap-edit-override, mode, skill-invocations, outcomes-session.json, Trivial, TRIVIAL, STATE are each created under that name; only sub/../trivial, ./trivial, trivial/ and x/../state fall back to graphify-query. The case-insensitive macOS effect is static reasoning (this host is case-sensitive).",
+   "suggested_fix": "Stop honouring arbitrary names. Either ignore query_state_file/usage_state_file and always use the built-in <tool>-usage / graphify-query names, or accept only a basename matching ^[a-z0-9-]+-(usage|query)$ compared after lowercasing (or inside a dedicated $SB_RUNTIME_STATE_DIR/opt-in/ subdirectory). Tests that use custom stamp names can switch to names that match the pattern. Add tests for orchestrator-directive.json, planning-edit-override and a case variant, and correct the docs/CONSENT.md row."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/lib/user-consent.sh:166-178 (sb_consent_set lock)",
+   "problem": "(a) Stale-lock takeover is racy. Two waiters that both see a dead owner can both 'rm -rf' the lock; the second removes the lock the first has just taken, both enter the critical section, and an update is lost. (b) A lock dir without a pid file, left by a process killed between mkdir and the pid write, is never taken over, so every later write fails after 10 s until the user removes it. The message does say how. (c) A non-numeric SB_CONSENT_LOCK_TRIES aborts with 'unbound variable', exit 1.",
+   "evidence": "bash REVF-H4a-r2-probe/scripts/lock2.sh (lock dir containing a dead pid, then 7 parallel 'grant <tool> --all-projects --capabilities enforce'): rounds granted=6, 7, 4, 7, 7, 7, 7, 7 (lost updates in 2 of 8). lock.sh: a pid-less lock with SB_CONSENT_LOCK_TRIES=5 -> rc 2; SB_CONSENT_LOCK_TRIES=abc -> 'line 172: abc: unbound variable', rc 1.",
+   "suggested_fix": "Take over a stale lock atomically: mv the stale lock to a unique name, then rm it, and retry mkdir. Only the waiter whose mv succeeds proceeds; recheck the pid after the mv. Treat a pid-less lock older than N seconds as stale. Validate SB_CONSENT_LOCK_TRIES as an integer."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/lib/opt-in-gate.sh:377-390 (sb_opt_in_shell_is_delivery / sb_opt_in_shell_is_install)",
+   "problem": "Delivery and install detection are still regexes on the raw string. Commits slip past through git global options other than -c/-C, aliases, ANSI-C quoting, backslash-escaped subcommands and commit-creating porcelain. Machine-wide installs slip past through other pipe targets and package managers. The quote stripping and the leading-'$' rule also cause small false positives. All of this is limited to the opt-in gates; completion-audit still gates commits.",
+   "evidence": "bash REVF-H4a-r2-probe/scripts/fp.sh REVF-H4a-r2-probe/scripts/byp-cmds.txt (all 5 gates, enforce consent, tools not ready). Allowed: git --no-pager commit, git --git-dir=.git commit, git -c alias.ci=commit ci, git com\\mit, git $'commit', git commit-tree/merge/am/cherry-pick/revert; npm -g install, npm install --location=global, brew reinstall, pipx/cargo/go/gem install, pip install --user; curl ... | /bin/bash, | env bash, | python3, bash <(curl ...), sh -c \"$(curl ...)\". Also allowed: writes the heuristic analyzer misses (dd of=, F=x; echo > $F, truncate, rsync, patch, git apply, git checkout --). Denied (false positives): '$PYTHON -m pytest', '\"$PY\" -m pytest tests', 'cd src && $EDITOR a.py'.",
+   "suggested_fix": "After F2 merges, take delivery, install and write classification from F2's tokenizing analyzer (actions and opaque flags) or from completion-audit's command classifier, not from regexes. At least allow any git global option before the subcommand, and treat a pipe into any shell or interpreter path as an install. Do not treat a variable program word that is only an interpreter path as delivery."
+  }
+ ],
+ "validation": {
+  "tests": "SILVER_BULLET_RUNTIME=codex, two files at a time through tests/run-all-tests.sh: test-opt-in-gate-lib 219/0, opt-in-gates-hostile-config 104/0, user-consent 130/0, stack-optimizer-coverage 256/0, alumnium-gate-hook-coverage 58/0, graphify-am-global-coverage 213/0, recommended-tools-coverage 227/0, scripts/test-rt-probes-host-tools 180/0, scripts/test-agent-delegate-common 32/0, graphify-gate-hook-coverage 56/0, rtk-gate-hook-surfaces + leanctx-gate-hook-coverage 92 total/0, alumnium-gate-lib 74/0, agentmemory-gate-lib 184/0, context-mode-libs 213/0, rtk-gate-coverage 151/0 (16 files, 0 failures; log REVF-H4a-r2-probe/codex-tests.log). Probes also ran with Claude Bash and Codex exec_command/apply_patch payload shapes.",
+  "coverage": "One scoped run (cov.log), 19 test files (2269/0), 13 --only files, rc 0. 100%: user-consent.sh, sb-consent.sh, lib/alumnium-gate.sh, graphify-am-global.sh, graphify-gate.sh, leanctx-gate.sh, rtk-gate.sh. Every line changed in this round is covered, including opt-in-gate.sh 277-282/374-410, recommended-tools.sh 205-215/514-530, the stack-optimizer gitignore writer and the lock. Not 100% in this run: opt-in-gate.sh 97.53% (missing 34, 54, 73, 76-77, 84 and the sb_tool_is_shell_like fallback, which are the missing-library and empty-stdin prelude paths); token-compression-tools-gate.sh 70%; agentmemory-gate.sh 98.38%; recommended-tools.sh 99.09%; stack-optimizer.sh 99.40%; hooks/alumnium-gate.sh 97.73%. All of these are older lines, which tests outside my set exercise: test-gate-hooks-fault-injection.sh (the gh_farm without tool-input.sh), the token-compression hook-gate suites and agentmemory-gate-hook-coverage. So whether opt-in-gate.sh reaches 100% in a single run (including test-gate-hooks-fault-injection.sh) is NOT confirmed by this run. CI's single full run includes those files, so it plausibly does; the orchestrator's full coverage run should confirm it.",
+  "lint": "bash scripts/lint-shell.sh --all --jobs 2: clean (rc 0)",
+  "invariants": "check-repo-invariants rc 0 (no FAIL); generate-hook-reference --check, generate-apo-artifacts --check and validate-plugin-mirror rc 0; sync-codex-package.sh in a git-archive copy of 5c6014f leaves no diff; template parity 2/0; docs/workflows identical to templates/workflows; core-rules.md sha256 matches core-rules.sha256 (af94635a...); trailers on all 5 branch commits and the merge are Co-Authored-By (Opus or Sonnet 5.5) + Claude-Session, with no model names elsewhere; git merge-tree --write-tree HEAD claude/optimistic-ramanujan-tccfud (8c161a5) is clean (tree 08f2dd45). Worktree left unmodified (git status clean). Gate latency is about 0.4-0.55 s per gate call under shared load."
+ }
+}

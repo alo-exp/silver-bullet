@@ -1,0 +1,85 @@
+{
+ "package": "H8b-followup",
+ "head_reviewed": "bbd43be",
+ "verdict": "CHANGES_REQUIRED",
+ "per_finding": [
+  {
+   "id": "r5-major-1 (cue allowlist too loose)",
+   "verdict": "fixed",
+   "notes": "Cue rules deleted. r5 fp7 set: 0 ambiguous credits out of 82 (the 2 hits are LangChain and CrewAI, both named in the sentence, so they are correct). r5 audit set: 0/14. r3 fp3 0/52, fp4 0/25, r4 fp5 0/52, fp6 0/30, r2 fp2 0/31. Author tests pass: corpus with 301 sentences and the generative test with 40 templates."
+  },
+  {
+   "id": "r5-major-2 (PROPER_PHRASES title-case exemption)",
+   "verdict": "fixed",
+   "notes": "PROPER_PHRASES is removed. 'Silver Bullet thinking', 'Open Interpreter services', 'Claude Harness: a horse harness' credit nothing (fp8)."
+  },
+  {
+   "id": "r5-major-3 (sdlc plugin / swe agent / factory ai in prose)",
+   "verdict": "fixed",
+   "notes": "'Our sdlc plugin wishlist', 'Every swe agent benchmark', 'factory ai is a vague term' and 'Devika from HR' credit nothing (at d75d18e each of them credited). A `vendors: ['sdlc']` tag still resolves to zuvo through the pack alias (minor issue below)."
+  },
+  {
+   "id": "r5-minor-1 (per-match cost)",
+   "verdict": "fixed",
+   "notes": "200 KB 'Linear, ': parse_feature_support 3.1 s (d75d18e, same machine: 38.3 s); mixed 3.35 s vs 7.27 s. Linear. Still above the design's 2 s budget on this shared machine (minor)."
+  },
+  {
+   "id": "r5-minor-2 (lost-tick count)",
+   "verdict": "ok",
+   "notes": "The report now lists -19/+5 cell by cell. Reproduced exactly."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "major",
+   "location": "skills/silver-deep-research-multi-ai/scripts/materialize_solution_artifacts.py:502-515 (_MATRIX_ROW_RE, _MATRIX_DASH_RE, _CHECKMARK_FOR_RE) and :304 (_slot_vendors), used by mentions_vendor at :352",
+   "problem": "Matrix-slot credit (S4) needs a 'recognised matrix line format', and the design's closure argument (§2.4) depends on that. But the formats are unanchored and match ordinary English. _MATRIX_ROW_RE matches 'row' inside any word ('Growth', 'arrow', 'Throw', 'Tomorrow', 'narrow', 'Escrow'), or 'critical' / 'very high', followed by any quoted term and a colon. _MATRIX_DASH_RE matches 'The Matrix - cast:'. _CHECKMARK_FOR_RE matches any '✔ for'. The pack's _MATRIX_LEADERS_RE is case-insensitive and unanchored. A whole slot equal to an ambiguous name then credits the vendor. New at this head: S4 now feeds mentions_vendor, so these sentences also credit evidence and extraction, not only feature cells. They also tick real matrix features for ambiguous vendors (fabricated cells). The generative test excludes these formats by design, so nothing catches this.",
+   "evidence": "/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-r6-probe/tools/fp8.py and s4.py, outputs fp8.txt and s4.txt. 'Escrow \"Free tier\" terms: Linear, monthly.' -> ev=[linear], sup={linear:[Free tier]}. 'Very high \"Hook-enforced gates\" adoption among: Linear, Jira users.' -> linear | Hook-enforced gates. 'The narrow \"Free tier\" offer: Continue, then upgrade.' -> continue | Free tier. 'Critical \"Parent/child agent delegation\" caveat: Conductor, the orchestra term, is unrelated.' -> conductor credited plus the cell. 'Critical \"gap\": Cursor and keyboard navigation are untested.' -> ev=[cursor]. 'The Matrix - cast: Director, Producer, Editor.' -> ev=[director]. 'Quality ✔ for Director, Producer and Editor.' -> ev=[director]. 15 of the 97 fp8 cases fail on this path. At d75d18e the same sentences already ticked the cells but did not credit evidence.",
+   "suggested_fix": "Anchor the S4 formats to machine syntax: line start, word boundaries ('\\bmatrix\\s+row\\b', not 'row' inside a word), require the literal 'Matrix entry —' / 'Matrix —' prefix at line start, and accept ✔-for only inside such a line. Better still, credit S4 slots only on rows that have no prose (or drop S4 for ambiguous names and rely on matrix_entries and tags). Add a generative test that composes ordinary sentences containing 'critical', 'very high', words containing 'row', 'Matrix -' and '✔ for' together with each ambiguous name, and asserts zero credits and zero cells."
+  },
+  {
+   "severity": "major",
+   "location": "skills/silver-deep-research-multi-ai/scripts/vendor_identity.py:73-88 (qualified displays)",
+   "problem": "A qualified display is treated as an explicit identity, but 'GSD (Get Shit Done)' is the ordinary expansion of a common acronym. Productivity prose credits gsd in evidence and extraction. The auto-generated reverse permutations ('Cognition (Devin)', 'Augment Cosmos (Augment Code)') widen the table with forms nobody declared. A quoted 'Devin (Cognition)' in a sentence that is not about the product also credits Devin, which is borderline.",
+   "evidence": "/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-r6-probe/fp8.txt: 'Our culture is GSD (Get Shit Done): ship fast.' -> ev=[gsd] ex=[gsd]. 'The GSD (Get Shit Done) mindset is a productivity meme.' -> gsd. 'Cognition (Devin) is a heading in my psych notes.' -> devin. 'Oh My Pi (OMP) is the name of our bakery.' -> oh-my-pi (contrived).",
+   "suggested_fix": "Count a qualified display only when the qualifier names a different identity (maker or product), not when it expands the acronym's letters. A mechanical test: the initials of the qualifier equal the head, as in GSD = Get Shit Done or OMP = Oh My Pi, so it is not a signal. Do not generate reverse permutations. Add these sentences to the corpus as plain_english sets."
+  },
+  {
+   "severity": "minor",
+   "location": "skills/silver-deep-research-multi-ai/scripts/materialize_solution_artifacts.py:466-478 (_declared_for_row); SKILL.md 'Vendor mentions in prose'",
+   "problem": "The trust residuals are not documented, and SKILL.md claims 'There is no lexical residual'. (a) A source_ref that names vendor V, combined with a case-insensitive common-word use of V in the text, credits V, e.g. a cursor.com blog cited for a Windsurf claim. (b) A wrong `vendors` tag credits silently: an agent's tag is trusted like matrix_entries. (c) S4 and the qualified-display findings above. (a) and (b) are design-accepted (Q3) and acceptable, but they should be stated.",
+   "evidence": "{'text':'Windsurf lets the cursor jump between edits.','source_ref':'https://cursor.com/blog/compare'} -> ev=[cursor]. {'text':'GitHub Copilot lacks background agents, unlike what the director said.','source_ref':'Director'} -> ev=[director, github-copilot]. supporting_sources ['Conductor'] with 'the conductor of the release' -> conductor.",
+   "suggested_fix": "Document the residual in SKILL.md (declared identity is trusted; source_ref plus a text mention; a wrong tag credits). For ambiguous vendors on the source_ref channel, consider requiring the text spelling in canonical display case."
+  },
+  {
+   "severity": "minor",
+   "location": "materialize_solution_artifacts.py:459-463 (_tagged_vendors); schemas/dr-phase-contribution-envelope-v1.schema.json",
+   "problem": "Nothing validates `vendors` at runtime; the schema is documentation plus a test. The consumer tolerates bad values (a non-list, a dict item, an unknown slug under a pack, or an item over 80 characters is ignored), which is safe. But maxItems 12 is not enforced, so a row tagging every vendor credits all of them. In a packless run any string becomes an open-world vendor slug, the same as matrix_entries. A category tag 'sdlc' resolves to zuvo through the pack alias. Backward compatibility is fine: rows without `vendors` behave as untagged, and the real run predates the field.",
+   "evidence": "vendors=['sdlc'] on 'Many agents copy the SDLC category.' -> ev=[zuvo]. vendors='cursor' (a string), [{'slug':'cursor'}] and ['Director of Engineering'] -> nothing credited.",
+   "suggested_fix": "Cap the tags at 12 per row in the consumer and slug-normalise them. Consider dropping the bare 'sdlc' alias for zuvo, or excluding category terms from tag resolution."
+  },
+  {
+   "severity": "minor",
+   "location": "reference/category-pack-overlays/agentic-sdlc-process-orchestrator.json COINED_NAMES.barkain",
+   "problem": "Design §2.2(d) says a coined name is not an English word, given name or surname. The justification for 'barkain' admits it is a surname. 'Mr Barkain from accounting' would credit Barkain Workflow Orchestrator. Low risk.",
+   "evidence": "overlay: barkain = 'rare surname used as a brand, not a common word'",
+   "suggested_fix": "Drop barkain from COINED_NAMES. 'Barkain Workflow Orchestrator' still needs a tag or a URL, or accept the risk and document it."
+  },
+  {
+   "severity": "minor",
+   "location": "materialize_solution_artifacts.py (parse_feature_support)",
+   "problem": "Cost is linear but above the design's 2 s budget at 200 KB. A row with 200 source_ref segments roughly doubles the cost, because _declared_for_row runs again on every path.",
+   "evidence": "/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-r6-probe/perf6.txt and perf7 output. 200 KB: 2.4-4.2 s at head vs 7-38 s at d75d18e on the same machine; src200 row 8 s; 26 KB: 0.3-0.65 s.",
+   "suggested_fix": "Memoise _declared_for_row per item, and cap the number of source segments."
+  }
+ ],
+ "real_apo_run": "23 matrix slugs, identical to d75d18e. Director core. by_slug: 74 classifications, all identical. Cells 126 -> 112: 19 lost, 5 gained, exactly as reported. Every lost cell comes from a group or matrix-dump claim; director | Skill/plugin marketplace was a wrong tick, so losing it is a gain in precision. Gains come from single-vendor rows declared by source_ref ('Director is a primary-market APO candidate - ... deterministic gates', 'Workflow Manager ... gate enforcement', Superpowers via github.com/obra/superpowers 'built-in code review', Deepwork 'workflow persistence' -> Workflow composition, a loose feature mapping but correct identity). Acceptable.",
+ "deviation": "discover_candidate_slugs now scores the pack's hard exclusions and sunset entries at 0. They can only classify as excluded or sunset (a hard exclusion that is also a core seed still needs envelope evidence), the same unconditional treatment the seeds already get. Classification is unchanged on the real run. Correct.",
+ "recall": "35/35 new distinctive-name prose sentences credited (AgentSys, ai-dlc, CrewAI, GitHub Copilot, Factory.ai, cc10x, Cavekit v3.1, SWE-agent, Replit Agent, Sourcegraph Cody, ... in bold, code and parentheses too). Bare 'GitHub', 'Replit' and 'Sourcegraph' are correctly not prose spellings. The tagged 81/81 and untagged 7/81 pins pass. r5 cued recall set: 4/30 (the recorded cost).",
+ "validation": {
+  "tests": "tests/run-all-tests.sh test-multi-ai-deep-research-contract.sh + test-solution-research-python.sh: 871 passed, 0 failed under SILVER_BULLET_RUNTIME=claude and =codex. test_vendor_identity_generative (7) and test_vendor_mention_corpus (23 + 1 skip) pass in the agents/claude and host-bundles/codex mirrors.",
+  "coverage": "one scoped run-coverage.sh --only vendor_identity, materialize_solution_artifacts, solution_classifier, pack_vocabulary, category_pack, dr_live_runner: Python data for 6 files, 2242/2242 statements, 1136/1136 branches, 100.00%.",
+  "lint": "lint-shell.sh --all --jobs 2 on a git-archive copy: exit 0.",
+  "invariants": "check-repo-invariants rc 0; generate-apo-artifacts --check rc 0; generate-hook-reference --check up to date; validate-plugin-mirror OK; sync-codex-package.sh on a bbd43be archive copy: no diff (copy deleted). Trailers on edc5ad6, bbd43be and 5693284: Co-Authored-By Claude Sonnet 5.5 plus the correct Claude-Session (accepted); no other model names. merge-tree with claude/optimistic-ramanujan-tccfud (2a65018): clean. Worktree status clean."
+ }
+}

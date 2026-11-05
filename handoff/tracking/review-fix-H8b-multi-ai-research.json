@@ -1,0 +1,263 @@
+{
+  "package": "H8b-multi-ai-research",
+  "head_reviewed": "340d13e78d72b0d9cd329dd11bfc41cf960fe7b7",
+  "verdict": "CHANGES_REQUIRED",
+  "per_finding": [
+    {
+      "id": "R10b-01",
+      "verdict": "fixed",
+      "notes": "Hostile run (/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b-probe/tools/make_hostile.py: <img onerror>, svg onload, </script>, attribute breakouts, srcdoc iframe, <base>, meta refresh, <style>, javascript:/JaVaScRiPt:/java\\tscript:/data:/file:/vbscript:/protocol-relative links, hostile chart titles/labels/colours/KCFs/link-pair labels/market names/comparison keys/title) rendered by the real renderer and opened in headless Chromium 1194 with the REAL Chart.js 4.4.0, datalabels 2.2.0 and lucide 0.469.0 served from the CDN bytes (/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b-probe/tools/chromium_probe.cjs real): window.__PWN=[], no on* attributes, no IMG/IFRAME/BASE/FORM, no non-http(s) href, no CSP violations, 4 live charts, 30 TOC entries, 3 cards, compare table, matrix panel and gap banner built after selecting compare boxes and clicking every filter. Body is static escaped HTML; CSP pins inline-script hashes + the 3 CDN URLs. Offline mode: report reads, no errors."
+    },
+    {
+      "id": "R12-01",
+      "verdict": "fixed",
+      "notes": "Same evidence as R10b-01. Original R12 xss1 fixture no longer packages (see issue 1) so the probe was rebuilt directly on landscape files. _resolve_features still promotes unmatched text to a feature name, but every sink treats it as text."
+    },
+    {
+      "id": "R12-02",
+      "verdict": "incomplete",
+      "notes": "Literal executive summary/run_id/Zuvo row/canonical resolutions/SB fallback are gone, but a non-APO end-to-end run with stub workers still emits APO/SDLC market literals (scoring methodology, leader eligibility, 3-of-7 SDLC ledger, SDLC KCFs/feature rubric, inclusion criteria) and cannot discover any vendor without the APO pack. See issues 1 and 2."
+    },
+    {
+      "id": "R12-03",
+      "verdict": "fixed",
+      "notes": "e2e stub run ('Event streaming platforms'): brief = query/research type/must-haves only, no APO lines, no [CATEGORY_PACK]; need_profile.json/scope.md written only when absent (prepare_run_inputs). Residual: --force moves the user's need_profile aside (issue 12)."
+    },
+    {
+      "id": "R12-04",
+      "verdict": "fixed",
+      "notes": "Context for DR-TRIANGULATE observed in the stub run: strict JSON with an 'Untrusted data' note, structured claim/source/confidence per model, no raw_text. Worker least-privilege remains R11's."
+    },
+    {
+      "id": "R12-05",
+      "verdict": "fixed",
+      "notes": "build_phase_context lists every model sorted, budgeted, valid JSON (observed in stub run)."
+    },
+    {
+      "id": "R12-06",
+      "verdict": "incomplete",
+      "notes": "Sticky-true, negation and SB-misattribution scenarios fixed (/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b-probe/tools/probe_ticks.py: 'Devin lacks hook gates, while Factory.ai provides…' -> devin false only; 10 'lacks' vs 1 'supports' -> no tick; 'Unlike SB…' -> nothing). New structured path misattributes rows with an empty/partial vendor (issue 4); votes are per envelope not per model and dissent is not surfaced (issue 6)."
+    },
+    {
+      "id": "R12-07",
+      "verdict": "fixed",
+      "notes": "APO stub run: silver-bullet 'core_seed without envelope evidence (gap)'; no cross-session allow-list, no score-0 gate; pack licence 'mixed'. Other vendor special cases remain (augment-code, cc10x/director/superpowers filters) - folded into issue 2."
+    },
+    {
+      "id": "R12-08",
+      "verdict": "incomplete",
+      "notes": "materialize uses whole-word matching, but solution_classifier._extract_candidates_from_text (explicitly listed in R12-08) still substring-matches; it decides membership whenever a pack is active (issue 3)."
+    },
+    {
+      "id": "R12-09",
+      "verdict": "incomplete",
+      "notes": "Landscape consensus patterns now need non-negated agreement (fixed). consolidate() still labels 2-vs-1 contradicted claims 'consensus' and the negation as an unrelated 'divergent' row; only documented in SKILL.md (issue 13, minor)."
+    },
+    {
+      "id": "R12-10",
+      "verdict": "fixed",
+      "notes": "Non-dict candidates/non-string text counted in malformed_items; pool from index; CLI rejects a disagreeing --resolved-pool."
+    },
+    {
+      "id": "R12-11",
+      "verdict": "fixed",
+      "notes": "Loop breaks after the first incomplete phase; envelopes, index and a POOL_INCOMPLETE manifest are written; --max-phases >= 1."
+    },
+    {
+      "id": "R12-12",
+      "verdict": "fixed",
+      "notes": "Original probe re-run (/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b-probe/tools/probe_rmtree.py): kafka-notes/ kept, bmad/scr.md keeps host text, notes.md kept; no rmtree anywhere in scripts."
+    },
+    {
+      "id": "R12-13",
+      "verdict": "fixed",
+      "notes": "Apostrophe/bold/'&'/'<x>' headings and features no longer reported missing; javascript:/file:/data: links rendered as text. Residual: relative links become file:///<abs path> URIs in the PDF (issue 11)."
+    },
+    {
+      "id": "R12-14",
+      "verdict": "fixed",
+      "notes": "No npx --yes; SRI on all 3 CDN scripts; fonts opt-in for PDF; offline SPA readable."
+    },
+    {
+      "id": "R12-15",
+      "verdict": "incomplete",
+      "notes": "Loopback/private/link-local/redirects blocked; but 100.64.0.0/10 (Tailscale, Alibaba metadata 100.100.100.200) passes (issue 5) and there is no run-wide cache (issue 7)."
+    },
+    {
+      "id": "R12-16",
+      "verdict": "fixed",
+      "notes": "Default root <cwd>/research/<date>-<slug>; --force refuses /, $HOME, cwd/parents, non-runs; renames instead of deleting."
+    },
+    {
+      "id": "R12-17",
+      "verdict": "fixed",
+      "notes": "scrub_membership_framing deleted; scrub_embedded_vendor_urls is no longer called in production (but left as dead code, issue 8)."
+    },
+    {
+      "id": "R12-18",
+      "verdict": "fixed",
+      "notes": "_linkify_markdown_vendors('Continue to monitor Linear … Sweep …; Aider … Aider again') links only the first Aider."
+    },
+    {
+      "id": "R12-19",
+      "verdict": "fixed",
+      "notes": "Tied 5.5/6.0 vendors both stay 'Leaders' in either order; slotted dot drawn at (5.4,5.9) inside the Challengers area (issue 14, minor)."
+    },
+    {
+      "id": "R12-20",
+      "verdict": "fixed",
+      "notes": "'omitted 3 lines' prose and '[Archived]' preserved (original probe)."
+    },
+    {
+      "id": "R12-21",
+      "verdict": "incomplete",
+      "notes": "Listed helpers deleted, but scrub_embedded_vendor_urls is now imported-but-unused in synthesize_landscape and exercised only by tests (issue 8, minor)."
+    },
+    {
+      "id": "R12-22",
+      "verdict": "incomplete",
+      "notes": "SKILL.md now states 'For any other topic the report is built only from the run's own envelopes… no vendor is built in' and 'Each row is one vote by that model' - both contradicted by the code (issues 1, 2, 6)."
+    },
+    {
+      "id": "R12-23",
+      "verdict": "incomplete",
+      "notes": "Many defect-pinning tests replaced, but test_open_discovery_without_pack passes only because the class is decorated @with_legacy_catalogs, test_cov_materialize.py:758 pins 'is a solution in the agentic SDLC orchestration landscape.', and no hostile-label linkify test (issue 9)."
+    },
+    {
+      "id": "R12-24",
+      "verdict": "fixed",
+      "notes": "Embedded payload: no envelopes, relative canonical_paths."
+    },
+    {
+      "id": "R12-25",
+      "verdict": "fixed",
+      "notes": "price_known/usage_metered false, no placeholder refs, schema rejects all-zero hash."
+    },
+    {
+      "id": "R12-26",
+      "verdict": "fixed",
+      "notes": "Atomic writes, stem-based siblings, symlink at target replaced. PDF now lands with mode 0600 (issue 10, minor)."
+    },
+    {
+      "id": "R12-27",
+      "verdict": "fixed",
+      "notes": "render_landscape_pdf.cjs: chromiumSandbox true, javaScriptEnabled false, offline + non-file aborted; print HTML carries a CSP. As root: exit 4 with clear message and packaging continues (pdf: failed); SB_LANDSCAPE_PDF_NO_SANDBOX=1 renders a %PDF. Sandboxed success path not verifiable here (root, 0700 scratch parents)."
+    },
+    {
+      "id": "R12-28",
+      "verdict": "fixed",
+      "notes": "json_safe at the dispatch boundary and strict_json_dumps for all artifacts."
+    },
+    {
+      "id": "R10b-02",
+      "verdict": "fixed",
+      "notes": "Recomputed through the proxy: chart.js@4.4.0 sha384-e6nUZLBk…, datalabels@2.2.0 sha384-y49Zu59j…, lucide@0.469.0 sha384-hJnF5Awi… all match the template exactly; crossorigin=anonymous + referrerpolicy=no-referrer; jsdelivr/unpkg send ACAO:*; tampered bytes blocked by Chromium ('Failed to find a valid digest… blocked') and the page still reads."
+    }
+  ],
+  "issues": [
+    {
+      "severity": "major",
+      "location": "skills/silver-deep-research-multi-ai/scripts/materialize_solution_artifacts.py:74,274-298,1328-1365; SKILL.md 'Category packs' paragraph; tests/test_cov_materialize.py:160-189",
+      "problem": "Without a category pack no vendor can ever be discovered: KNOWN_SOLUTIONS is now {} and discover_solutions() only counts known vendors; it ignores the vendors workers name in matrix_entries, and parse_structured_matrix_entries drops any feature outside the SDLC FEATURE_TEMPLATE. Every non-APO solution-landscape/solution-compare run (the only shipped pack is APO) materializes 0 solutions and packaging fails, contradicting SKILL.md ('For any other topic the report is built only from the run's own envelopes'). test_open_discovery_without_pack passes only because its class installs the test-only legacy catalogue.",
+      "evidence": "python3 /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b-probe/tools/e2e_stub.py <scripts> runs/e2e1 'Event streaming platforms for a fintech startup' (dispatch stubbed; 3 models; claims + matrix_entries naming Apache Kafka, Redpanda, Apache Pulsar, Confluent Cloud) -> 'LIVE ok= True materialize= {\"solutions_count\": 0 …}' and 'PKG ERROR ValueError Need at least 2 solutions with features.json'.",
+      "suggested_fix": "Discover open-world vendors from structured matrix_entries vendor names (and/or evidence source hosts), accept run-synthesized feature names from matrix_entries/need must_haves instead of only FEATURE_TEMPLATE, and drop @with_legacy_catalogs from the open-discovery test so it asserts production behaviour."
+    },
+    {
+      "severity": "major",
+      "location": "skills/silver-deep-research-multi-ai/scripts/synthesize_landscape.py:239-281,400-406,1273,1322-1350,2547-2556,2843,3206-3208; skills/silver-deep-research-multi-ai/scripts/landscape_critique_artifacts.py:251; skills/silver-deep-research-multi-ai/scripts/materialize_solution_artifacts.py:21-72,156,197-203,1310,1619; skills/silver-deep-research-multi-ai/scripts/solution_classifier.py:206; skills/silver-deep-research-multi-ai/scripts/synthesize_landscape.py:127; tests/test_cov_materialize.py:758",
+      "problem": "Hard-coded APO/agentic-SDLC market content is still in code paths and in every report: inclusion criteria ('production-oriented orchestration (not raw LLM APIs or single-shot copilots)'), Leader eligibility ('SDLC plugins need hook-enforced gates… APO seeds…'), the 3-of-7 SDLC ledger legend, SDLC wave weights, KCF_NAMES and FEATURE_TEMPLATE as the Blue Ocean factors/rubric, fabricated vendor-card text ('X is a … option for agentic SDLC orchestration', 'Weak hook gates: Lacks explicit fail-closed lifecycle hooks' asserted when evidence is merely absent, 'Ecosystem momentum… agentic SDLC orchestration category'), default category 'Agentic SDLC Orchestration', and vendor special cases (augment-code, claude-code-expert, director/superpowers/cc10x/'silver bullet … anchor' overview filters, host-runtime slug set). A test pins the 'agentic SDLC orchestration landscape' fallback.",
+      "evidence": "Same e2e run (runs/e2e1/landscape/landscape-report.md, topic 'Event streaming platforms'): line 51 'production-oriented orchestration (not raw LLM APIs or single-shot copilots)', 74 'Strategy feature weights … Atomic flow catalog +0.55; Skill/plugin marketplace +0.40; Prebuilt SDLC templates +0.35 … Hook-enforced gates +0.30', 78 'SDLC plugins need hook-enforced gates and inclusion-ledger cross-session pass. APO seeds without shipped hook gates cannot occupy Leaders', 86 'C2 plugin/hook packaging · C3 deterministic gates · … C7 process layer above host', Value Curve KCFs 'Workflow composition, Atomic flow catalog, Hook-enforced gates, … Prebuilt SDLC templates'.",
+      "suggested_fix": "Move methodology prose, KCFs, feature template, wave weights, leader rules, ledger criteria and vendor filters into the APO pack overlay (applied only with that pack); without a pack derive them from need must_haves / run data or omit the sections; replace the pinning test with a non-APO assertion that none of these strings appear."
+    },
+    {
+      "severity": "major",
+      "location": "skills/silver-deep-research-multi-ai/scripts/solution_classifier.py:120-137 (_extract_candidates_from_text), 140-180",
+      "problem": "R12-08 was fixed only in materialize. The classifier, which decides envelope evidence/core membership whenever a pack is active (the only path that yields solutions), still uses substring tests ('alias in lower', 'slug in lower', 'display in lower'). 'composition'/'compliance' (alias 'omp') make Oh My Pi an sdlc-plugins core, 'director of engineering' -> director, 'software factory' -> factory-ai, 'cursor-based' -> cursor.",
+      "evidence": "python3 /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b-probe/tools/probe_classifier.py <scripts>: \"'The API provides a ruleset for compliance.' -> ['oh-my-pi']\", \"'Workflow composition matters.' -> ['oh-my-pi']\", \"'We rely on the director of engineering.' -> ['director']\", \"'A software factory pattern.' -> ['factory-ai']\", \"'Use cursor-based pagination.' -> ['cursor']\"; classify_solutions on 'Workflow composition and compliance are key.' -> sdlc-plugins core ['oh-my-pi']. APO e2e (/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b-probe/tools/e2e_apo.py) and the original rmtree probe both materialize solutions/oh-my-pi although no envelope names it.",
+      "suggested_fix": "Reuse materialize._mentions (whole-word, hyphen/space-insensitive) in _extract_candidates_from_text and drop ambiguous short aliases; add classifier tests with the R12-08 sentences."
+    },
+    {
+      "severity": "major",
+      "location": "skills/silver-deep-research-multi-ai/scripts/materialize_solution_artifacts.py:549-577 (_resolve_solution_slug), 1328-1365 (parse_structured_matrix_entries)",
+      "problem": "The new primary source for matrix ticks credits rows to the wrong vendor. A row with an empty or missing vendor (str(None or '') == '') matches 'disp.startswith(\"\")' and is credited to the vendor with the longest display name; prefixes resolve to whichever vendor's display starts with them ('Dev' -> devika, 'S' -> sourcegraph-cody). The docstring says rows without a recognisable vendor are skipped; the schema allows vendor \"\".",
+      "evidence": "python3 /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b-probe/tools/probe_ticks3.py <scripts> (APO pack, one matrix_entries row {vendor:V, feature:'SSO', supported:true}): '' -> {'barkain-workflow-orchestrator': {'SSO': True}}, ' ' -> barkain-workflow-orchestrator, 'S' -> sourcegraph-cody, 'Dev' -> devika, 'Gi' -> github-copilot-enterprise, 'Cl' -> claude-code-expert.",
+      "suggested_fix": "In the structured path require an exact (case/space-normalised) match on slug, display name or alias, skip blank vendors, never prefix-match; add minLength:1 to the schema; test blank/null/prefix vendors."
+    },
+    {
+      "severity": "major",
+      "location": "skills/silver-deep-research-multi-ai/scripts/vendor_link_labels.py:209-234 (unsafe_target_reason)",
+      "problem": "The SSRF guard is a denylist of is_private/is_loopback/is_link_local/is_multicast/is_reserved/is_unspecified, which misses 100.64.0.0/10 (shared/CGNAT: Tailscale tailnet hosts on developer machines, Alibaba Cloud ECS metadata 100.100.100.200). Model-supplied URLs there are still requested (HEAD then GET) from the user's machine.",
+      "evidence": "python3 /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b-probe/tools/probe_ssrf.py <scripts>: 'http://100.100.100.200/latest/meta-data/ -> None', 'http://100.101.102.103:8080/admin?purge=1 -> None' (127.0.0.1, ::ffff:127.0.0.1, 0x7f000001, 169.254.169.254, fd00:ec2::254 are refused). Python 3.13: ip_address('100.100.100.200').is_private == False, is_global == False.",
+      "suggested_fix": "Refuse any address where not ip.is_global (allowlist), keep the redirect re-check; add a test for 100.64.0.0/10 and 100.100.100.200."
+    },
+    {
+      "severity": "minor",
+      "location": "skills/silver-deep-research-multi-ai/scripts/materialize_solution_artifacts.py:647-663, 1352-1359; SKILL.md 'Matrix ticks'",
+      "problem": "Structured votes are keyed per envelope ((model, env_index)), not per model, so a model that repeats a row in three phases outvotes two models that state the opposite once; SKILL.md says 'Each row is one vote by that model'. Split cells are not surfaced as disputed/divergence.",
+      "evidence": "python3 /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b-probe/tools/probe_ticks.py: struct_one_model_three_phases (a: true in RETRIEVE/TRIANGULATE/CRITIQUE; b, c: false) -> {'devin': {'SSO': True}}.",
+      "suggested_fix": "Key structured ballots by logical_model_id (last phase wins), and record split votes (e.g. a 'disputed' flag carried into comparison/divergences)."
+    },
+    {
+      "severity": "minor",
+      "location": "skills/silver-deep-research-multi-ai/scripts/vendor_link_labels.py:388-415",
+      "problem": "Health-check limits are per call only (60 URLs/120 s); there is no cache across the ~10 calls of one live run + packaging, so each vendor site is still probed repeatedly and the worst case is several 120 s budgets.",
+      "evidence": "python3 /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8b-probe/tools/e2e_apo.py (check_url_health counted): 'checks during live 69 distinct 19', 'checks during packaging 88 distinct 19', 'max per url [(\"https://github.com/FoundationAgents/MetaGPT\", 11), …]'.",
+      "suggested_fix": "Module/run-level cache keyed by URL plus one shared deadline per process."
+    },
+    {
+      "severity": "minor",
+      "location": "skills/silver-deep-research-multi-ai/scripts/vendor_link_labels.py:45-188; skills/silver-deep-research-multi-ai/scripts/synthesize_landscape.py:54-55",
+      "problem": "scrub_embedded_vendor_urls (rewrites model claims and source_ref, e.g. \"IBM's AI-DLC\" -> 'AWS AI-DLC', replaces 'Claude Code Expert is a primary-market APO candidate…' with analyst text) is now imported but never called - dead code kept alive only by tests (R12-17/R12-21 class). VENDOR_URL_REWRITES (zuvo, cc10x, barkain, cavekit…) is APO vendor data hard-coded in a path every run uses (rewrite_vendor_url in link-pair filtering).",
+      "evidence": "grep: only references to scrub_embedded_vendor_urls are its definition, the import in synthesize_landscape.py:55 and tests/test_multi_market_landscape.py:634-640.",
+      "suggested_fix": "Delete scrub_embedded_vendor_urls and its tests; move VENDOR_URL_REWRITES into the APO pack overlay."
+    },
+    {
+      "severity": "minor",
+      "location": "tests/js/landscape-report-xss.test.mjs:96-99,307-319",
+      "problem": "No hostile link-pair label reaches linkify: reverting _linkExactLabelNode to an innerHTML re-parse is not detected by any XSS assertion (only the functional 'one prose link' count fails, incidentally).",
+      "evidence": "Mutation in a sandbox copy: replaced 'tn.parentNode.replaceChild(frag, tn)' with 'const sp=document.createElement(\"span\"); sp.innerHTML=raw; …' -> 'viewer renders hostile report text…' still passes; only 'linkify links a vendor at its first prose mention only' fails ('one prose link'). Matrix-panel innerHTML mutation IS caught (3 tests fail).",
+      "suggested_fix": "Add a link pair whose label is a hostile string and a table cell whose text is exactly that label; assert no executable markup."
+    },
+    {
+      "severity": "minor",
+      "location": "skills/silver-deep-research-multi-ai/scripts/landscape_independent_pdf.py:1310-1322",
+      "problem": "The PDF is written via tempfile.mkstemp + os.replace, so the shareable deliverable gets mode 0600 instead of the umask default (previously 0644).",
+      "evidence": "SB_LANDSCAPE_PDF_NO_SANDBOX=1 render of runs/h1: '-rw------- landscape-report.pdf' next to '-rw-r--r-- landscape-report.html'.",
+      "suggested_fix": "chmod the temp PDF to the existing file's mode or 0o666 & ~umask before os.replace (as atomic_write_text does)."
+    },
+    {
+      "severity": "minor",
+      "location": "skills/silver-deep-research-multi-ai/scripts/landscape_independent_pdf.py:215-240 (safe_href/_html_ext_anchor)",
+      "problem": "Relative markdown link targets are kept; Chromium resolves them against the file:// print HTML, so the distributed PDF carries file:///<absolute local path>/… link URIs (user name/directory layout).",
+      "evidence": "PDF of runs/h1: /URI (file:///tmp/claude-0/…/REVF-H8b-probe/runs/h1/&#106;avascript:window.__PWN.push\\('ent').",
+      "suggested_fix": "In the print HTML render non-#fragment relative links as text (or rewrite to a placeholder) - keep them only in the SPA."
+    },
+    {
+      "severity": "minor",
+      "location": "skills/silver-deep-research-multi-ai/scripts/dr_multi_ai_cli.py:224-232; skills/silver-deep-research-multi-ai/scripts/dr_live_runner.py:124-151",
+      "problem": "--force moves the whole previous run aside, including the user's need_profile.json/scope.md; the new run then writes an auto profile without category_pack_id, silently dropping the user's pack and must-haves.",
+      "evidence": "Static: move_previous_run_aside renames output_root, then prepare_run_inputs sees no need_profile.json and writes {'category': query, 'auto_assumed': true} (no pack).",
+      "suggested_fix": "Copy need_profile.json and scope.md from the moved-aside run into the fresh output root before prepare_run_inputs."
+    },
+    {
+      "severity": "minor",
+      "location": "skills/silver-deep-research-multi-ai/scripts/consolidate.py:96-136",
+      "problem": "R12-09 consolidate half unchanged: two families saying 'X supports Y' are 'consensus' while 'X does not support Y' is an unrelated singleton 'divergent' row; only documented.",
+      "evidence": "Static: claims keyed by normalize_claim(text) only; no negation linking.",
+      "suggested_fix": "Normalise negation tokens to pair contradicting claims and label the cluster 'contested'."
+    },
+    {
+      "severity": "minor",
+      "location": "skills/silver-deep-research-multi-ai/scripts/synthesize_landscape.py:1786-",
+      "problem": "Tie slotting keeps q='Leaders' but draws the second dot at (5.4, 5.9), inside the Challengers region, so the chart contradicts its own label.",
+      "evidence": "avoid_chart_coord_collisions([a(5.5,6.0),b(5.5,6.0)]) -> [('a',5.5,6.0,'Leaders'),('b',5.4,5.9,'Leaders')].",
+      "suggested_fix": "Slot away from the 5.5 boundary (never move a point across it)."
+    }
+  ],
+  "validation": {
+    "tests": "tests/scripts/test-multi-ai-deep-research-contract.sh (runs the 790-test skill suite) green under SILVER_BULLET_RUNTIME=claude (via coverage run) and codex (29/29); node --test tests/js/landscape-report-xss.test.mjs 5/5 (Chromium tests ran); worktree clean afterwards.",
+    "coverage": "run-coverage.sh --only skills/silver-deep-research-multi-ai/scripts/*.py with the contract test: 20 files, statements 6268/6268, branches 2868/2868, --fail-under 100 exit 0. render_landscape_pdf.cjs and the template's inline JS are outside the JS coverage include globs (unmeasured).",
+    "lint": "bash scripts/lint-shell.sh --all --jobs 2 (in a git-archive copy of HEAD): application and test Bash clean, exit 0 (no shell files changed by this package).",
+    "invariants": "In a copy of HEAD: sync-codex-package.sh -> 0 changed files (mirrors fresh); validate-plugin-mirror OK; generate-hook-reference --check up to date; generate-apo-artifacts --check exit 0; check-repo-invariants exit 0 (9 PASS). Commit trailers exact on all 18 commits. SRI hashes recomputed via proxy: exact match."
+  }
+}

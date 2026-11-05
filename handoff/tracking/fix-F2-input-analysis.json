@@ -1,0 +1,434 @@
+{
+ "package": "F2-input-analysis",
+ "branch": "fix/F2-input-analysis",
+ "head": "b2ab0bd",
+ "worktree": "/home/user/silver-bullet/.claude/worktrees/agent-a62cbb43907dc8bcc",
+ "dispositions": [
+  {
+   "id": "R1-01",
+   "status": "fixed",
+   "commits": [
+    "362f40e",
+    "b75299a",
+    "d1d0184"
+   ],
+   "tests": [
+    "tests/fixtures/shell-analysis/corpus.json (515 tier cases, 77 red at the previous head)",
+    "tests/hooks/test-shell-analysis-corpus.sh (corpus.json: ~135 bypass cases red at base, equal-sized honest set)",
+    "tests/hooks/test-shell-analysis-gates.sh",
+    "tests/python/test_shell_analysis.py",
+    "tests/python/test_shell_analysis_corpus.py",
+    "tests/python/test_shell_analysis_hardening.py"
+   ],
+   "evidence": "base: corpus 135 FAIL (newline/-C/-c/$'git'/G=git/alias/#/exec_command bash -lc); now all classified",
+   "notes": "unseen code (functions/arrays/\"$@\", eval of computed text, pipes into shells/interpreters, bash -s, /dev/stdin, <(...), awk system(var), sed e, script/su -c, coproc, arithmetic/subscript evaluation, printf/echo escapes, git-core helper paths, parse errors, IFS) reports possible_tier completion; budgets bound the walk; GIT_CONFIG_COUNT crash fixed"
+  },
+  {
+   "id": "R1-02",
+   "status": "fixed",
+   "commits": [
+    "362f40e",
+    "b75299a"
+   ],
+   "tests": [
+    "tests/hooks/test-shell-analysis-corpus.sh (corpus.json: ~135 bypass cases red at base, equal-sized honest set)",
+    "tests/python/test_shell_analysis.py",
+    "tests/python/test_shell_analysis_corpus.py"
+   ],
+   "evidence": "git push && gh pr create etc -> completion (highest tier across segments)",
+   "notes": ""
+  },
+  {
+   "id": "R1-03",
+   "status": "fixed",
+   "commits": [
+    "362f40e",
+    "b75299a",
+    "d1d0184"
+   ],
+   "tests": [
+    "tests/fixtures/shell-analysis/corpus.json (515 tier cases, 77 red at the previous head)",
+    "tests/hooks/test-shell-analysis-corpus.sh (corpus.json: ~135 bypass cases red at base, equal-sized honest set)",
+    "tests/hooks/test-shell-analysis-gates.sh",
+    "tests/python/test_shell_analysis.py",
+    "tests/python/test_shell_analysis_corpus.py",
+    "tests/python/test_shell_analysis_hardening.py"
+   ],
+   "evidence": "gh pr new, gh release new, gh api writes, hub, git am/revert/merge/cherry-pick/rebase, npm publish, docker push, MCP github tools classified",
+   "notes": "git pull ., branch -f/-M, subtree, http-push, reset --soft $(..) are commits; plain git pull, git stash, checkout -B and switch -C are REJECTED as delivery (no commit authored by the agent; pinned honest with a note); gh api graphql unreadable, gh repo sync, gh release upload/edit, raw curl/wget/httpie to api.github.com, glab/tea/az/jj/sl classified; gh pr ready and gh run rerun rejected (state change, no delivery)"
+  },
+  {
+   "id": "R2-02",
+   "status": "partial",
+   "commits": [
+    "362f40e",
+    "b75299a",
+    "d1d0184"
+   ],
+   "tests": [
+    "tests/fixtures/shell-analysis/corpus.json (515 tier cases, 77 red at the previous head)",
+    "tests/hooks/test-shell-analysis-gates.sh",
+    "tests/hooks/test-shell-analysis-writes.sh",
+    "tests/python/test_shell_analysis_hardening.py"
+   ],
+   "evidence": "dd/rsync/git apply/patch/checkout --/curl -o/tar/unzip/find -exec/python script reported as writes or opaque writers",
+   "notes": "analyzer side closed (subscript/arith execution, process substitution walking, git apply/patch tree scope kept in writes); dev-cycle-check.sh adoption stays with its owner"
+  },
+  {
+   "id": "R5-05",
+   "status": "fixed",
+   "commits": [
+    "362f40e",
+    "b75299a",
+    "d1d0184"
+   ],
+   "tests": [
+    "tests/fixtures/shell-analysis/corpus.json (515 tier cases, 77 red at the previous head)",
+    "tests/hooks/test-shell-analysis-corpus.sh (corpus.json: ~135 bypass cases red at base, equal-sized honest set)",
+    "tests/hooks/test-shell-analysis-gates.sh",
+    "tests/python/test_shell_analysis.py",
+    "tests/python/test_shell_analysis_corpus.py",
+    "tests/python/test_shell_analysis_hardening.py"
+   ],
+   "evidence": "echo a#b; git commit and true#x; git commit classified; '#' only starts a comment at word start",
+   "notes": ""
+  },
+  {
+   "id": "R1-05",
+   "status": "fixed",
+   "commits": [
+    "362f40e",
+    "b75299a",
+    "d1d0184"
+   ],
+   "tests": [
+    "tests/fixtures/shell-analysis/corpus.json (515 tier cases, 77 red at the previous head)",
+    "tests/hooks/test-shell-analysis-gates.sh",
+    "tests/hooks/test-shell-analysis-lib.sh",
+    "tests/python/test_shell_analysis_hardening.py"
+   ],
+   "evidence": "300 KiB payload: commit/PR still denied via completion-audit (stdin transport)",
+   "notes": ""
+  },
+  {
+   "id": "R1-12",
+   "status": "fixed",
+   "commits": [
+    "362f40e",
+    "b75299a",
+    "d1d0184"
+   ],
+   "tests": [
+    "tests/fixtures/shell-analysis/corpus.json (515 tier cases, 77 red at the previous head)",
+    "tests/hooks/test-shell-analysis-corpus.sh (corpus.json: ~135 bypass cases red at base, equal-sized honest set)",
+    "tests/hooks/test-shell-analysis-gates.sh",
+    "tests/python/test_shell_analysis.py",
+    "tests/python/test_shell_analysis_corpus.py",
+    "tests/python/test_shell_analysis_hardening.py"
+   ],
+   "evidence": "ls deploy-notes.md, cat docs/deploy.md, grep -rn deploy, kubectl get deploy, git log --grep=deploy, echo deploy -> none",
+   "notes": "also ssh/scp/rsync as a deploy user, scripts under deploy/ dirs, python -m twine upload, $(which kubectl) apply; reads still not deploy"
+  },
+  {
+   "id": "R1-28",
+   "status": "fixed",
+   "commits": [
+    "362f40e",
+    "b75299a",
+    "d1d0184"
+   ],
+   "tests": [
+    "tests/fixtures/shell-analysis/corpus.json (515 tier cases, 77 red at the previous head)",
+    "tests/hooks/test-shell-analysis-gates.sh",
+    "tests/hooks/test-shell-analysis-writes.sh",
+    "tests/python/test_shell_analysis_hardening.py"
+   ],
+   "evidence": "$HOME/${HOME} state writes deny (claude and codex); find -exec sed -i writes; read-only verdict is an allowlist",
+   "notes": ""
+  },
+  {
+   "id": "R2-03",
+   "status": "partial",
+   "commits": [
+    "362f40e",
+    "b75299a",
+    "d1d0184"
+   ],
+   "tests": [
+    "tests/fixtures/shell-analysis/corpus.json (515 tier cases, 77 red at the previous head)",
+    "tests/hooks/test-shell-analysis-gates.sh",
+    "tests/hooks/test-shell-analysis-lib.sh",
+    "tests/python/test_shell_analysis_hardening.py"
+   ],
+   "evidence": "all accessors use stdin; 300 KiB analysed",
+   "notes": "tool-input.sh helpers and compression-marker-guard.sh (edited here, stdin transport, 200 KB test red->green) fixed; dev-cycle-check.sh:447 and record-skill.sh:83 still pass the payload on argv: follow-up for their owners"
+  },
+  {
+   "id": "R3-10",
+   "status": "fixed",
+   "commits": [
+    "362f40e",
+    "b75299a",
+    "d1d0184"
+   ],
+   "tests": [
+    "tests/fixtures/shell-analysis/corpus.json (515 tier cases, 77 red at the previous head)",
+    "tests/hooks/test-shell-analysis-gates.sh",
+    "tests/hooks/test-shell-analysis-lib.sh",
+    "tests/python/test_shell_analysis_hardening.py"
+   ],
+   "evidence": "same as R1-05",
+   "notes": ""
+  },
+  {
+   "id": "R4-04",
+   "status": "fixed",
+   "commits": [
+    "362f40e",
+    "b75299a",
+    "d1d0184"
+   ],
+   "tests": [
+    "tests/fixtures/shell-analysis/corpus.json (515 tier cases, 77 red at the previous head)",
+    "tests/hooks/test-shell-analysis-gates.sh",
+    "tests/python/test_shell_analysis.py",
+    "tests/python/test_shell_analysis_hardening.py",
+    "tests/python/test_tool_input_command_looks_read_only.py"
+   ],
+   "evidence": "awk system(), sed e/w, find -delete/-exec, git branch -D/config/remote set-url not read-only; allowlist",
+   "notes": "ls-remote --upload-pack/--exec, mapfile -C, hash -p, history -w, file -C, git config --unset*/--add/--edit, arithmetic, ${!n}, ${x@P}, printf -v/read subscripts not read-only; npm/yarn/pnpm test no longer read-only (read_only_legacy). Parent mode should still adopt the strict read_only verdict (consumer change)"
+  },
+  {
+   "id": "R1-06",
+   "status": "partial",
+   "commits": [
+    "362f40e",
+    "b75299a",
+    "d1d0184"
+   ],
+   "tests": [
+    "tests/fixtures/shell-analysis/corpus.json (515 tier cases, 77 red at the previous head)",
+    "tests/hooks/test-shell-analysis-gates.sh",
+    "tests/hooks/test-shell-analysis-lib.sh",
+    "tests/python/test_shell_analysis_hardening.py"
+   ],
+   "evidence": "python3 missing/broken -> SB_TI_STATUS=helper_unavailable, jq command fallback, regex tier over every line in classify.sh; denial message via sb_shell_analysis_helper_message",
+   "notes": "helper_unavailable: jq command fallback, regex tier over every line plus variable-built commands naming a delivery verb; GIT_CONFIG_COUNT crash fixed; consumers must still deny on SB_TI_STATUS=helper_unavailable (sb_shell_analysis_helper_message) and session-start should warn"
+  },
+  {
+   "id": "R1-13",
+   "status": "partial",
+   "commits": [
+    "362f40e",
+    "b75299a"
+   ],
+   "tests": [
+    "tests/hooks/test-shell-analysis-corpus.sh (corpus.json: ~135 bypass cases red at base, equal-sized honest set)",
+    "tests/python/test_shell_analysis.py",
+    "tests/python/test_shell_analysis_corpus.py"
+   ],
+   "evidence": "classifier part: keyword rule is case-insensitive via argv-based deploy detection; analyzer exposes delivery[].canonical for the enterprise gate",
+   "notes": "enterprise-policy.sh non-production substring matching is a consumer (not edited); consumer should use ca_actions/ca_tier"
+  },
+  {
+   "id": "R1-27",
+   "status": "partial",
+   "commits": [
+    "362f40e",
+    "b75299a"
+   ],
+   "tests": [
+    "tests/hooks/test-shell-analysis-corpus.sh (corpus.json: ~135 bypass cases red at base, equal-sized honest set)",
+    "tests/python/test_shell_analysis.py",
+    "tests/python/test_shell_analysis_corpus.py"
+   ],
+   "evidence": "analysis gives pr_create actions only for real invocations (grep/echo not)",
+   "notes": "pr-traceability.sh success check and idempotent edit are consumer work"
+  },
+  {
+   "id": "R2-20",
+   "status": "partial",
+   "commits": [
+    "362f40e",
+    "b75299a"
+   ],
+   "tests": [
+    "tests/hooks/test-shell-analysis-corpus.sh (corpus.json: ~135 bypass cases red at base, equal-sized honest set)",
+    "tests/python/test_shell_analysis.py",
+    "tests/python/test_shell_analysis_corpus.py"
+   ],
+   "evidence": "commits[].staged_paths/pathspecs/all/amend exposed; -C/-c forms classified",
+   "notes": "roadmap-freshness.sh must adopt them"
+  },
+  {
+   "id": "R2-21",
+   "status": "partial",
+   "commits": [
+    "362f40e",
+    "b75299a"
+   ],
+   "tests": [
+    "tests/hooks/test-shell-analysis-corpus.sh (corpus.json: ~135 bypass cases red at base, equal-sized honest set)",
+    "tests/python/test_shell_analysis.py",
+    "tests/python/test_shell_analysis_corpus.py"
+   ],
+   "evidence": "commands[] argv exposes `gsd-tools phases clear` as a real invocation vs. a mention",
+   "notes": "phase-archive.sh must adopt it"
+  }
+ ],
+ "files_changed_outside_ownership": [
+  "CLAUDE.md: two-tier text",
+  "docs/ENFORCEMENT.md, docs/hooks-purpose.json, docs/HOOKS.md (generated): describe the analyzer",
+  "hooks/compression-marker-guard.sh: payload on stdin (R2-03)",
+  "tests/hooks/test-compression-marker-guard.sh: 200 KB case",
+  "tests/hooks/test-tool-input-lib.sh, tests/python/test_tool_input_*.py: updated for the new contracts"
+ ],
+ "validation": {
+  "tests": "41 consumer-gate/new test files (completion-audit*, dev-cycle-check*, ci-status-check*, pr-traceability*, roadmap-freshness*, phase-archive*, orchestrator-parent*, enterprise-policy*, shell-analysis-*, tool-input-lib, compression-marker-guard*, planning-file-guard*, instruction-file-guard*, test-python-unit.sh) on the merged head: claude 4651 passed 0 failed, codex 4651 passed 0 failed; docs suite 198 passed",
+  "coverage": "scoped run (python unit + shell-analysis hook tests + completion-audit-libs), exit 0: 100% statements/branches of shell_analysis.py (3490/3490, 1878/1878), 100% lines/functions of shell-analysis.sh, tool-input.sh, classify.sh",
+  "lint": "scripts/lint-shell.sh --all clean (application and test Bash)",
+  "invariants": "check-repo-invariants.sh OK, generate-hook-reference --check, generate-apo-artifacts --check, validate-plugin-mirror OK"
+ },
+ "schema_doc": "hooks/lib/tool-input/shell_analysis.py module docstring (schema v1) and hooks/lib/shell-analysis.sh header (Bash API)",
+ "notes": "Previous author's WIP verified, then committed. Merge of base not needed (base unchanged at 02eff38). Raw curl to GitHub API and consumer adoption of SB_TI_STATUS fail-closed are follow-ups for gate packages. Repair round: head d1d0184. Schema additions: possible action `unseen`, `opaque` true for every run script, budgets MAX_INPUT_CHARS/MAX_PARSE_SECONDS/MAX_STEPS/MAX_SECONDS. Residual: unknown wrapper programs that run their arguments (parallel, pwsh, osascript, vim -c) are not modelled; python/node string-built commands are caught only when they use obvious string construction; parse-once is used by completion-audit only, other gates adopt sb_tool_input_load. Merged the 24 new commits of claude/optimistic-ramanujan-tccfud (installer changes, no overlap); re-ran shell-analysis, completion-audit, dev-cycle-check and python suites: 2798 passed.\nRepair round 2 (REPAIR-F2-r2): see repair_round_2. Process note: one pkill -f by test-file name was issued by mistake while cleaning up (it may have stopped other agents' runs of tests/hooks/test-shell-analysis-corpus.sh; nothing else).\nRepair round 2 (REPAIR-F2-r2): see repair_round_2. Process note: one pkill -f by test-file name was issued by mistake while cleaning up (it may have stopped other agents' runs of tests/hooks/test-shell-analysis-corpus.sh; nothing else).",
+ "repair_round_2": {
+  "run_id": "REPAIR-F2-r2",
+  "review": "review-fix-F2-input-analysis-r2.json",
+  "head": "b2ab0bd",
+  "dispositions": [
+   {
+    "id": "r2-i0",
+    "severity": "blocker",
+    "status": "fixed",
+    "commits": [
+     "14dc9bb"
+    ],
+    "tests": [
+     "tests/python/test_shell_analysis_review2.py: HiddenCommandsTest",
+     "corpus.json r2-wrap-*, r2-bypass-git-*",
+     "tests/hooks/test-shell-analysis-gates.sh: round 2"
+    ],
+    "evidence": "74 wrapper/settings shapes denied at b9e03fe base (silent allow) -> all gated; HiddenCommandsTest 53 failing assertions at b9e03fe, green now",
+    "notes": "Residual (documented in ENFORCEMENT.md): script/makefile contents, parallel with ::: arguments, make SHELL=, rg --pre, core.hooksPath, GIT_ASKPASS script paths."
+   },
+   {
+    "id": "r2-i1",
+    "severity": "blocker",
+    "status": "fixed",
+    "commits": [
+     "14dc9bb"
+    ],
+    "tests": [
+     "tests/python/test_shell_analysis_review2.py: ComputedProgramsTest, WrittenScriptsTest",
+     "corpus.json r2-bypass-*"
+    ],
+    "evidence": "ComputedProgramsTest 60 failing assertions at b9e03fe, green now; reviewer new1/evalab/wrap probes all gated except inherited variables",
+    "notes": "Inherited variables ($PYTHON, $G) stay judged by arguments by design. Added beyond the report: scripts written and run in one command are read from their text."
+   },
+   {
+    "id": "r2-i2",
+    "severity": "blocker",
+    "status": "fixed",
+    "commits": [
+     "14dc9bb"
+    ],
+    "tests": [
+     "tests/python/test_shell_analysis_review2.py: BudgetTest",
+     "tests/hooks/test-shell-analysis-budgets.sh"
+    ],
+    "evidence": "doubling x25 15.5 s / bracket run 6.6 s / 1 MB timeouts at b9e03fe -> 0.01 s, 0.01 s, bounded; completion-audit and dev-cycle-check deny under timeout 15",
+    "notes": "Per-analysis worst case is MAX_PARSE_SECONDS + MAX_SECONDS = 2 s. The hook scripts' own handling of a very large payload (jq, bash) is outside this package; a 1 MB command still costs the consumer gates several seconds on a loaded host (not asserted)."
+   },
+   {
+    "id": "r2-i3",
+    "severity": "blocker",
+    "status": "fixed",
+    "commits": [
+     "14dc9bb"
+    ],
+    "tests": [
+     "tests/python/test_shell_analysis_review2.py: ParserFaultTest",
+     "tests/hooks/test-shell-analysis-gates.sh: hd2, broken python3"
+    ],
+    "evidence": "hd2 sample: helper exit 1 -> parse_failed + unseen; fuzz hang 'for\\nin)...' infinite loop -> parse error; 210000 random token inputs: 0 escapes",
+    "notes": "classify.sh keeps the regex tier for a partial install without shell-analysis.sh or without python3; with both present and a helper that dies it holds the strictest tier."
+   },
+   {
+    "id": "r2-i4",
+    "severity": "major",
+    "status": "partial",
+    "commits": [
+     "14dc9bb"
+    ],
+    "tests": [
+     "tests/python/test_shell_analysis_review2.py: InlineCodeTest, StdinScriptsTest, DeployUsersTest",
+     "corpus.json r2-honest*"
+    ],
+    "evidence": "reviewer honest sets (honest2m, honest3, 874 commands): 15 flagged, all intended (curl|bash, eval of a config command, gh api graphql @file, parse-error fragments)",
+    "notes": "needs-follow-up in a consumer file (not owned): completion-audit/enterprise-policy still prints the production-approval text for unseen code. hooks/lib/completion-audit/classify.sh now exports ca_unseen_reasons (and SB_SA_UNSEEN_REASONS) so the consumer can say 'cannot inspect this command: <reason>; rewrite it or run the script by path'."
+   },
+   {
+    "id": "r2-i5",
+    "severity": "major",
+    "status": "fixed",
+    "commits": [
+     "14dc9bb"
+    ],
+    "tests": [
+     "tests/python/test_shell_analysis_review2.py: ArithmeticTest"
+    ],
+    "evidence": "5 shapes: executed/none at b9e03fe -> completion; honest twins none/read-only",
+    "notes": ""
+   },
+   {
+    "id": "r2-i6",
+    "severity": "major",
+    "status": "fixed",
+    "commits": [
+     "14dc9bb"
+    ],
+    "tests": [
+     "tests/python/test_shell_analysis_review2.py: BranchMovesTest"
+    ],
+    "evidence": "stash checkout -B / switch -C / reset --soft and pull ./ $PWD .git: none at b9e03fe -> intermediate; honest checkout -B origin/main, switch -C, stash pop stay none",
+    "notes": ""
+   },
+   {
+    "id": "r2-i7",
+    "severity": "minor",
+    "status": "fixed",
+    "commits": [
+     "14dc9bb"
+    ],
+    "tests": [
+     "tests/python/test_shell_analysis_review2.py: HelpOptionTest"
+    ],
+    "evidence": "git merge --no-edit --into-name --help other: none -> intermediate",
+    "notes": "gh keeps the value-option aware help rule (cobra reads --help anywhere)."
+   },
+   {
+    "id": "r2-i8",
+    "severity": "minor",
+    "status": "fixed",
+    "commits": [
+     "f02b77f"
+    ],
+    "tests": [
+     "docs/ENFORCEMENT.md",
+     "module docstring"
+    ],
+    "evidence": "statements now match behaviour; residuals listed",
+    "notes": ""
+   },
+   {
+    "id": "r2-i9",
+    "severity": "minor",
+    "status": "needs-user",
+    "commits": [],
+    "tests": [],
+    "evidence": "git commit --amend of merge b9e03fe was refused by the permission layer (destructive history rewrite); the merge commits bcd6eed and the latest one carry both trailers",
+    "notes": "Question: may the old merge b9e03fe be reworded (rebase -r) before the package is merged? Recommendation: skip it - the trailers are present on every new commit and the merge carries no code."
+   }
+  ]
+ }
+}

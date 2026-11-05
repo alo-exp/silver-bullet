@@ -1,0 +1,96 @@
+{
+ "package": "H8a-deep-research",
+ "round": 10,
+ "head_reviewed": "15b4701",
+ "verdict": "APPROVE",
+ "per_finding": [
+  {
+   "id": "r9-B1 inch/foot marks dropped",
+   "verdict": "fixed",
+   "notes": "attack9.py rows feet/inch, inch/feet, inch/none, arcmin/arcsec all needs_review. Curly 6’/6” are read as 6'/6\" (allowed by the rule) and stay distinct from each other and from ″. e2e REVF-H8a10-probe/runs/e-inch: needs_review, exit 0."
+  },
+  {
+   "id": "r9-B2 '!' dropped (!=, 5!)",
+   "verdict": "fixed",
+   "notes": "'x = 0' <= 'x != 0', backtick variant and '5' <= '5!' needs_review; '!=' vs '≠' needs_review. e2e runs/e-neq: needs_review."
+  },
+  {
+   "id": "r9-M1 'No' before punctuation/digit",
+   "verdict": "fixed",
+   "notes": "_negates: 'no' negates only before a word. 'No:', 'No;', 'No…', '\"No\",', 'No 1' honest claims -> needs_review (honest9.py bad 0; honest10.py; e2e runs/e-nocolon honest row needs_review, the fabricated row contradicted). 'no SSO'/'no data' fabrications still contradicted (misc5)."
+  },
+  {
+   "id": "r9-M2 accounting parentheses",
+   "verdict": "fixed",
+   "notes": "'5.3' <= '(5.3)' needs_review (attack9, attack10, e2e runs/e-paren)."
+  },
+  {
+   "id": "r9-m1 ratio colon",
+   "verdict": "fixed",
+   "notes": "'3 1' and '1, 10' vs '3:1'/'1:10' needs_review."
+  },
+  {
+   "id": "r9-m2 docs omissions",
+   "verdict": "fixed",
+   "notes": "quality-gates.md and the docstring/comment now list currency-symbol space, curly quotes (incl. U+02BC), contractions and the [n] marker; lowercase sentence start fixed."
+  },
+  {
+   "id": "r9-m3 first-word capital",
+   "verdict": "ok",
+   "notes": "Accepted, documented residual (Polish/polish)."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "minor",
+   "location": "skills/silver-deep-research/scripts/verify_claim_support.py:CITATION_MARK_RE; reference/quality-gates.md",
+   "problem": "Rule-sanctioned residual, not documented as one: bracketed numbers that are content are stripped like citation markers, so a changed index/value reaches supported.",
+   "evidence": "attack10.py: 'Use arr[1] for the header.' <= 'Use arr[0] for the header.' supported; 'The interval is [6].' <= '[5]' supported; 'The range is [2, 9].' <= '[1, 5]' supported; attack9 'Revenue rose 5% in.' <= 'Revenue rose 5% in [2023].' supported. Inherent to the binding rule '[n] after a space or non-digit is ignored'.",
+   "suggested_fix": "Name it in quality-gates.md as an accepted residual (bracketed numbers are read as citations), next to Polish/polish."
+  },
+  {
+   "severity": "minor",
+   "location": "verify_claim_support.py:CONTRACTIONS; quality-gates.md 'a contraction'",
+   "problem": "Only negative contractions (n't, cannot) are expanded; the docs say 'a contraction'. it's/we're/I'll are not expanded (stricter: honest 'It is free.' <= \"It's free.\" is needs_review). The n't rule also fires inside odd words (\"ain't\"->'ai not', \"shan't\"->'sha not', \"pecan't\"->'peca not') and 'can not only' = 'cannot only'; only gibberish or rule-allowed claims reach supported. No expansion creates or hides a negation: won't/wont, can't/cant, it's/its, I'll/ill, we're/were, doesn't/does, isn't/is, can't not/can all needs_review or contradicted.",
+   "evidence": "REVF-H8a10-probe/attack10.out, honest10.out",
+   "suggested_fix": "Say 'a negative contraction (n't, cannot)' in the docs and docstring."
+  },
+  {
+   "severity": "minor",
+   "location": "skills/silver-deep-research/scripts/extract_claims.py:_long_enough (pre-existing, outside this delta)",
+   "problem": "Short sentences (<=30 chars) without a checkable figure or a name are not extracted, so they are never checked at all.",
+   "evidence": "Report lines 'The board is 6\" wide [1].', 'The tool is not free [1].', 'x != 0 is required [1].' -> claims.jsonl has 0 rows (REVF-H8a10-probe/runs/x1, e-inch first attempt); a longer version of each is extracted and checked.",
+   "suggested_fix": "Out of scope for this round; consider extracting every cited sentence."
+  }
+ ],
+ "fresh_attacks": {
+  "file": "/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8a10-probe/attack10.py",
+  "rows": 186,
+  "leaks_flagged_by_script": 9,
+  "real_fabrications_supported": 0,
+  "notes": "The 9 flagged rows are all equal by the rule or gibberish: 'pecan't'/'n't mid' (nonsense claims), '5 %of'/'5 %2023'/'20 %23'/'50  = 50' (whitespace between tokens only), '5.[3]' (marker then final period), titlecase digraph Ǆ/ǅ/ǆ (first-word capital). Currency/% spacing: '10 5%' vs '105%', ' 5' vs '5', '50 ' vs '50$ 5', '5 $' vs '', two spaces before %, US  vs US, A$/C$/S$ all needs_review. Final '.': U.S./US, Inc dropped, 2.0/2., '..', '...', '!' and '?', .5/5 needs_review. Quotes: 6’/6”, possessives, scare quotes, „“ « » ‛ ʻ needs_review; zero-width, soft hyphen, combining overlay, ideographic/full-width stops all needs_review."
+ },
+ "honest": {
+  "file": "/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8a10-probe/honest10.py",
+  "identical_copies": 55,
+  "identical_not_supported": "only '...' and '?' (no words: needs_review, by design)",
+  "contradicted_or_unsupported": "0 (the one row the script flagged, 'Acme supports SSO, extra cost.' <= '..., no extra cost.', is a real negation drop, rightly contradicted)"
+ },
+ "earlier_probes": {
+  "r9 attack9": "21 supported, all allowed by the rule (capital, digit scripts, NFC/Kelvin, [n] markers, identical quote in aggregation)",
+  "r9 honest9": "bad 0",
+  "r8 attack8": "0 SUPP rows; 10 LEAK-labelled rows are rule-equal pairs (digit script, % / currency space, [n], identical); down from 36 at r8",
+  "r8 honest8": "6 BAD rows are real fabrications (2->3, no debt->debt, not only, not uncommon) rightly contradicted",
+  "r7 attack/honest": "1 LEAK = identical copy; honest none contradicted",
+  "r5 score1-5/5b/honest5/honest_neg4/misc5/roles5/variants": "fabrications supported 0; no honest claim contradicted/unsupported; score5 FAB 64 nr/4 contr, HON 4 supp/56 nr",
+  "r6 score6/honest6": "bad 0; honest6 40 needs_review",
+  "vc_fp/vc_honest": "need a run dir argument (CitationVerifier, not the scorer); not relevant to this delta"
+ },
+ "e2e": "REVF-H8a10-probe/runs: e-inch, e-neq, e-paren needs_review exit 0; e-nocolon honest needs_review, fabricated row contradicted exit 1; e-ident/e-ident2 identical copies (won't, cannot, $ 5, 6”, x != 0, (5.3), No 1) supported exit 0; e-contr/e-contr2 can't->can contradicted exit 1.",
+ "validation": {
+  "tests": "871 passed, 0 failed (test-solution-research-python.sh 842 + test-multi-ai-deep-research-contract.sh, via the coverage run in an exported copy of 15b4701). Mutation: 42fa840 verify_claim_support.py under the head tests -> 7 of 50 fail; head -> OK.",
+  "coverage": "one scoped run: verify_claim_support.py 354/354 statements, 164/164 branches; extract_claims.py 203/203, 72/72; 100%.",
+  "lint": "lint-shell.sh --all --jobs 2 exit 0",
+  "invariants": "check-repo-invariants exit 0; generate-hook-reference/generate-apo-artifacts --check pass; validate-plugin-mirror OK; sync-codex-package.sh: no diff; all 5 copies of verify_claim_support.py byte-identical; quality-gates.md count table recomputed and matches exactly; docs/docstring/chapter_agent prompt list exactly the ignored set the code implements; no print/exit/JSON changes in the delta (exit codes and output unchanged); trailers Co-Authored-By (Sonnet 5.5, accepted by FIX-BRIEF) + Claude-Session on both commits, no other model names; claude/optimistic-ramanujan-tccfud (94800f8) is an ancestor, merge-tree clean; worktree untouched; no network."
+ }
+}

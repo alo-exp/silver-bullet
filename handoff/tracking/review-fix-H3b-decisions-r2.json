@@ -1,0 +1,146 @@
+{
+ "package": "H3b-decisions",
+ "head_reviewed": "2f7a418",
+ "verdict": "CHANGES_REQUIRED",
+ "per_finding": [
+  {
+   "id": "r1-major-1 block-scalar extent",
+   "verdict": "fixed",
+   "notes": "REVF-H3b-r2-probe/wf_probe.py: '- run: |' + sibling continue-on-error and '- name: >-' + run ${{ }} both CAUGHT; mutation (indent_of(line)) makes test_repo_invariants fail. New bypasses in the same check are reported as separate issues."
+  },
+  {
+   "id": "r1-major-2 personal-data residue/forms",
+   "verdict": "incomplete",
+   "notes": "graphify-out/graph.json still holds the flattened users_<name>_projects_silver_bullet... form (4 occurrences, 2 node ids); the invariant misses it (FLAT_HOME lookahead \\b fails before '_'). PDFs clean: all 3 PDFs had their streams decompressed with zlib (1005/1072 + 42/42 decoded; the rest are image streams), and pdftotext was run: 0 name hits, the single file:// URI is masked. Emails and hostnames: all 21 non-allowlisted pre-scrub addresses are gone or are package@version strings."
+  },
+  {
+   "id": "r1-major-3 false positives",
+   "verdict": "fixed",
+   "notes": "The listed examples pass. Trial merge with fix/F2-input-analysis (merge-tree rc=0, tree 5774bfb) passes personal-data and the other content checks. personal-data takes 10.7 s on the worktree. The false-positive class remains (minor issue below)."
+  },
+  {
+   "id": "r1-minor e2e-live vacuous",
+   "verdict": "fixed",
+   "notes": "line 222 uses ${SB_E2E_LOCAL_SKILL_SOURCE_ROOT:-$HOME/projects/codex-plugins/skills}"
+  },
+  {
+   "id": "r1-minor auth/rotated logs/captures",
+   "verdict": "incomplete",
+   "notes": "0 tracked .log.*/.err.*; auth/host lines redacted; but 94 AI CLI captures named *.stdout/*.stderr/*.stdout.attemptN/stdout-retry.txt remain (issue below)"
+  },
+  {
+   "id": "r1-minor pre-tag window",
+   "verdict": "fixed",
+   "notes": "documented in docs/RELEASE.md:149"
+  },
+  {
+   "id": "r1-minor codex sha docs",
+   "verdict": "fixed",
+   "notes": "docs/RELEASE.md and CHANGELOG scoped; scripts match"
+  },
+  {
+   "id": "r1-minor hook-references allowlist",
+   "verdict": "fixed",
+   "notes": "all 96 real hooks.json commands pass; 7 chained forms fail in the CLI test. However the new line breaks lint-shell (major issue below)."
+  },
+  {
+   "id": "r1-minor flow bypasses",
+   "verdict": "incomplete",
+   "notes": "'- &s {..}', '- !!map {..}', next-line '[', 'jobs: {', 'continue-on-error :' now caught; anchored/tagged flow values on job, steps and jobs keys still pass (issue below)"
+  },
+  {
+   "id": "r1-minor refresh-skills-lock",
+   "verdict": "fixed",
+   "notes": "uses tracked_files"
+  },
+  {
+   "id": "r1-minor EMAIL performance",
+   "verdict": "fixed",
+   "notes": "personal-data takes 10.7 s wall (7.6 s user) on HEAD; check-repo-invariants.sh takes 15.4 s in total"
+  },
+  {
+   "id": "r1-minor CHANGELOG position",
+   "verdict": "fixed",
+   "notes": "[Unreleased] at top; release-identity PASS"
+  },
+  {
+   "id": "r1-minor SETUP_REPORT docs",
+   "verdict": "fixed",
+   "notes": "only CONTRIBUTING.md:83 mentions it, correctly"
+  },
+  {
+   "id": "r1-minor merge trailers",
+   "verdict": "fixed",
+   "notes": "7685b04 and 2f7a418 carry both trailers; all commits Sonnet 5.5 + Claude-Session, no other model names"
+  },
+  {
+   "id": "R13-13 build-plugin-payload removal",
+   "verdict": "ok",
+   "notes": "no references to build-plugin-payload / test-plugin-payload outside .planning"
+  }
+ ],
+ "issues": [
+  {
+   "severity": "major",
+   "location": "scripts/check-repo-invariants.sh:142",
+   "problem": "The new hook-references allowlist line fails ShellCheck, so make lint and the CI lint job fail. The author's 'lint-shell --all clean' claim is wrong. Application Bash is linted at every severity, and SC2016 (info) fires on the single-quoted regex containing \\$.",
+   "evidence": "bash scripts/lint-shell.sh --all --jobs 2 in the worktree: rc=1, 'In scripts/check-repo-invariants.sh line 142: local shape=... SC2016 (info): Expressions don't expand in single quotes', 'application Bash \u2014 1 file(s) with findings'. ShellCheck 0.9.0 is the same version that CI installs with apt on ubuntu-latest. Log: REVF-H3b-r2-probe/lint.log",
+   "suggested_fix": "Add '# shellcheck disable=SC2016  # literal regex, $ is not expanded' above line 142, as sync-marketplace-version.sh does. Re-run lint-shell --all."
+  },
+  {
+   "severity": "major",
+   "location": "scripts/lib/repo_invariants.py:535-543 (workflow_problems: the '#' skip runs before the run-script check)",
+   "problem": "Comment-looking lines inside a run: block scalar are skipped before the ${{ }} check. But the '#' line is script text, and GitHub interpolates ${{ }} before the shell runs. So '# echo \"${{ github.event.comment.body }}\"' (a commented-out line, the classic accidental form) is a live injection, because a body containing a newline escapes the shell comment. The check passes it silently, for both | and > scalars.",
+   "evidence": "REVF-H3b-r2-probe/wf_probe.py on HARDENED with '      - run: |\\n          echo hi\\n          # ${{ github.event.comment.body }}': MISSED []; same with '>' and '#${{ github.event.issue.body }}': MISSED. PyYAML: {'run': 'echo hi\\n# ${{ github.event.comment.body }}\\n'} (REVF-H3b-r2-probe/wf_yaml.py). The real workflows have no such line today (grep), so the change can land without churn.",
+   "suggested_fix": "Move the 'number <= script_until' check above the comment skip, or skip '#' lines only outside script and scalar extents. Add a test for a commented ${{ github.event.* }} line inside both | and > run scripts."
+  },
+  {
+   "severity": "major",
+   "location": "graphify-out/graph.json:1; scripts/lib/repo_invariants.py:335-337 (FLAT_HOME lookahead)",
+   "problem": "R13-11 is still not complete. graph.json keeps the maintainer's username in the flattened form 'users_<name>_projects_silver_bullet...' (4 occurrences, 2 node ids: the session-*-users_<name>_projects_silver_bullet_repo node and the sb_product_overview..._users_<name>_projects_silver_bulle node). The previous review listed this form explicitly. The invariant cannot catch it, because FLAT_HOME's lookahead ends in \\b and there is no word boundary between 'projects' and '_silver'. Other forms the guard also misses: /mnt/c/Users/<n> (WSL; the lookbehind fails after 'c'), lowercase users-<n>-projects (FLAT_HOME is not re.I), _home_<n>_ (the lean-ctx Linux form), \\\\/Users\\\\/<n> (double-escaped JSON), \\u002fUsers\\u002f<n>, ~<n>/, and Users.<n>.",
+   "evidence": "git show 2f7a418:graphify-out/graph.json | grep -oiE 'users_<name>_' | wc -l -> 4 (value not printed; name read from names.txt). The personal-data check on the worktree returns rc=0 in 10.7 s. REVF-H3b-r2-probe/pd_probe.py: graph_id MISSED, mnt_users MISSED, Users_lower_dash MISSED, home_under MISSED, double_json_esc MISSED, unicode_esc MISSED, tilde MISSED; users_dash, lean, home_dash, var_home, json_esc, url, lower, upper, file_uri CAUGHT.",
+   "suggested_fix": "Replace \\b with (?![A-Za-z0-9]) or [-_./] in the FLAT_HOME lookahead and compile FLAT_HOME with re.I. Allow any non-alnum (or a drive letter) before /Users in HOME_PATH (for /mnt/c/Users), and add _home_. Decode \\u002f and repeated backslash-escapes before matching. Scrub the 2 node ids in graph.json (regenerate or rename). Add a test per form."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/lib/repo_invariants.py:459-466,498-503,535-560 (FLOW_LINE, FLOW_STEPS_KEY, flow_job_lines, RUN_KEY, QUOTED_KEY)",
+   "problem": "Workflow-hardening variants that still pass, all valid YAML: an anchored or tagged flow value on a job, steps or jobs key ('third: &j {.. continue-on-error: true}', 'third: !!map {..}', 'steps: &s [..]', 'steps: !!seq [..]', 'jobs: &j {..}', 'jobs: !!map {..}'); a job alias 'third: *j'; 'run : echo ${{ github.event.issue.title }}' (space before the colon, fixed only for continue-on-error); a complex key ('- ? run' then ': echo ${{..}}', and '? continue-on-error' then ': true'); a quoted key with an escape ('\"r\\u0075n\": ..'); and a scalar alias 'run: *t' whose anchor holds ${{ github.event.issue.title }} (GitHub Actions supports anchors). Not a run script, but the same class: actions/github-script 'script: |' bodies with ${{ github.event.* }} are skipped entirely.",
+   "evidence": "REVF-H3b-r2-probe/wf_probe.py: job_anchor_flow, job_tag_flow, steps_anchor_flow, steps_tag_flow, job_alias, jobs_anchor_flow, jobs_tag_flow, run_space_colon(_block), complex_key_run, complex_key_coe, step_quoted_run_esc, alias_run_scalar, github_script_inj all MISSED. PyYAML confirms the resolved structure (wf_yaml.py).",
+   "suggested_fix": "Outside script and scalar text, reject any line whose key's value starts with &, * or ! or with an alias, any line starting with '? ' or ': ' after the indent, and any key that is not a plain [A-Za-z0-9_-]+ followed by optional spaces and ':'. Allow \\s* before ':' in RUN_KEY. Better still, parse with yaml.safe_load when PyYAML is available and walk jobs.*.steps.*.run and continue-on-error on the parsed tree."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/lib/repo_invariants.py:339-350 (GENERIC_HOME_NAMES), 355-360 (EMAIL_ROLE_LOCALS)",
+   "problem": "The false-positive class remains, and there is no allowlist file or inline pragma to clear it. A contributor has to edit the frozensets in the module. Common honest content fails CI: git config user.email action@github.com and github-actions@github.com (the usual bot identity in workflows), ssh ubuntu@ec2-...amazonaws.com, user@domain.tld, you@yourcompany.com, jane@acme.com, first.last@company.com, hi@anthropic.com, docs@python.org, /home/azureuser, /home/opc, /home/centos, /home/debian, /home/fedora, /var/home/core (Fedora CoreOS), /home/git, /home/postgres, /home/nonroot (distroless), /home/app, /home/mambauser, /home/user1, C:\\Users\\Administrator, C:\\Users\\WDAGUtilityAccount, /home/johndoe, /Users/jdoe. Flat-form false positives: --home-dir-path, Users-API-v2, Users_Service_impl, nav -home-screen-.",
+   "evidence": "REVF-H3b-r2-probe/fp_probe.py: 34 of 49 honest strings are reported. The F2 trial merge passes, so nothing fails today.",
+   "suggested_fix": "Add a reviewed allowlist file (for example .github/personal-data-allow.txt, with exact strings or regexes) or an inline 'personal-data: allow' marker. Add the cloud, distro and container accounts and the GitHub bot addresses (action@github.com, github-actions@github.com). Treat domains such as domain.tld, yourcompany.com, acme.com and company.com as placeholders."
+  },
+  {
+   "severity": "minor",
+   "location": ".planning/rfl-router-subagent-surfaces-85bf9f09-20260812/**, .planning/rfl-agent-interaction-modes-17ed9bf7/**, .planning/rfl-router-subagent-surfaces-85bf9f09-clarify-ladder/**, .planning/rfl-dr-search-gateway-ecb5030e/**; tests/scripts/test-no-personal-machine-paths.sh",
+   "problem": "The capture deletion is incomplete. 94 tracked AI CLI captures remain because they use other names: *.stdout / *.stderr (19+19, for example rung-05-kimi-k3-max/invoke-kimi.stdout and rung-10-opus5-high/invoke.stderr), preflight.stdout.attempt1-5 / preflight.stderr.attemptN, and stdout-retry.txt / stderr-retry.txt. The user decision was to delete the AI CLI captures. The test and .gitignore cover only the *-stdout.txt, stdout.txt and .log.* shapes, so these remain, and new captures with the same names can be committed.",
+   "evidence": "git ls-tree -r --name-only 2f7a418 | grep -iE '(stdout|stderr)' -> 94 entries, all under .planning/rfl-* (counts by directory: 40, 32, 18, 4).",
+   "suggested_fix": "Delete them (git rm). Add .planning/**/*.stdout*, .planning/**/*.stderr* and .planning/**/*-retry.txt to .gitignore, and extend the 'no AI CLI captures tracked' assertion to cover these names."
+  },
+  {
+   "severity": "minor",
+   "location": ".gitignore:57-62",
+   "problem": "The new ignore patterns are not anchored, so they apply to the whole repository: *-stdout.txt, *-stderr.txt, stdout.txt, stderr.txt, *.log.* and *.err.*. Legitimate future files would be silently left out of commits ('git add' needs -f), for example test golden files (tests/fixtures/expected-stdout.txt, tests/golden/cmd-stderr.txt) and source files named x.log.sh or x.log.md. No tracked file is affected today.",
+   "evidence": "git check-ignore -v --no-index: tests/fixtures/expected-stdout.txt -> .gitignore:58, hooks/lib/audit.log.sh -> :62, docs/x.log.md -> :62, tests/golden/cmd-stderr.txt -> :59. git ls-files -ci --exclude-standard lists only 5 pre-existing *.bak files.",
+   "suggested_fix": "Scope them to .planning/** and research/** (for example .planning/**/*-stdout.txt and research/**/*.log.*)."
+  },
+  {
+   "severity": "minor",
+   "location": "docs/RELEASE.md:153",
+   "problem": "The doc says the agent-plugins entries 'install ... with path: plugins/silver-bullet ... so published installs consume only that subtree'. But plugins/silver-bullet is mostly symlinks that leave the subtree (hooks -> ../../hooks, scripts -> ../../scripts, docs -> ../../docs, AGENTS.md, CHANGELOG.md, ...). It also has no .claude-plugin/ manifest, only .codex-plugin and .cursor-plugin. So either the install fetches the full tree (no shrink), or, under Codex --sparse, the links dangle. Unconfirmed: the agent-plugins repo and host loaders cannot be checked offline.",
+   "evidence": "ls -la plugins/silver-bullet in the worktree shows the symlinks to ../../hooks, ../../scripts and ../../docs, and no .claude-plugin directory.",
+   "suggested_fix": "Reword: the subtree path selects the manifest, while hooks and scripts come from the repository root through symlinks, so on-disk size is not reduced. Or verify a sparse Codex install resolves the links, and record that."
+  }
+ ],
+ "validation": {
+  "tests": "In a sandbox copy of 2f7a418, with the Python runner scoped to test_repo_invariants.py: test-python-unit (65 OK), test-check-repo-invariants.sh, test-check-repo-invariants-cli.sh and test-no-personal-machine-paths.sh: 314 passed, 0 failed. Docs suite in the worktree: 198/0. Mutations (key-column revert, FLOW_LINE removal, linuxbrew removal, JSON-unescape removal, 'continue-on-error :' revert, 'security' role removal) each make test_repo_invariants fail.",
+  "coverage": "One scoped run (--only scripts/lib/repo_invariants.py --only scripts/check-repo-invariants.sh): repo_invariants.py 396/396 statements and 194/194 branches (100%); check-repo-invariants.sh 196/197 statements (99.49%), 143/143 lines, 19/19 functions. Missing: 127 '|| true'. git blame puts that line in 9e35c79 (fix(ci) on the integration branch, present in 8c161a5), so it is not H3b code and is not in known-limits.json. The orchestrator should confirm the full CI coverage run covers it, or add a known limit. known-limits.json is valid JSON.",
+  "lint": "FAIL: lint-shell --all --jobs 2 rc=1, SC2016 at scripts/check-repo-invariants.sh:142 (application Bash). Test Bash is clean.",
+  "invariants": "check-repo-invariants.sh: all 17 PASS (15.4 s; personal-data 10.7 s alone). generate-hook-reference --check, generate-apo-artifacts --check and validate-plugin-mirror: OK. docs/workflows is identical to templates/workflows. Trailers are correct on dd467e3, 820e02e, a1c9241, 7685b04 and 2f7a418. Merge-tree with claude/optimistic-ramanujan-tccfud (8c161a5, already an ancestor) and with fix/F2-input-analysis (b2ab0bd): rc=0, and the content invariants pass on the F2 merged tree. The worktree was left unmodified (git status clean)."
+ }
+}

@@ -1,0 +1,224 @@
+{
+ "package": "H8a-deep-research",
+ "head_reviewed": "86504f4",
+ "verdict": "CHANGES_REQUIRED",
+ "per_finding": [
+  {
+   "id": "R11-01",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r4 (dd40805..86504f4 touches only verify_claim_support.py, extract_claims.py, live_dispatch.py, claim.schema.json, SKILL.md/quality-gates.md and tests); suites green at 86504f4 (deep-research 843, multi-ai-task 209 + multi-ai 747, contract 29) under claude and codex. Interrupt follow-up: see R11-11."
+  },
+  {
+   "id": "R12-04",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r4 (dd40805..86504f4 touches only verify_claim_support.py, extract_claims.py, live_dispatch.py, claim.schema.json, SKILL.md/quality-gates.md and tests); suites green at 86504f4 (deep-research 843, multi-ai-task 209 + multi-ai 747, contract 29) under claude and codex."
+  },
+  {
+   "id": "R11-02",
+   "verdict": "regressed",
+   "notes": "User decision 'Conservative + escalate' checked against criteria (a)-(c). Earlier probe sets hold: r1 score1, r2 score2 (22 F: 7 contradicted, 14 needs_review, 1 unsupported; 12 H supported), r3 score3 (16 F non-supported, 19 H supported), r4 score4 (13 F non-supported; 37 H supported, 3 H needs_review: paraphrased verbs), r4 variants.py (every r4 range/currency/year-opener/metric/'Not even' fabrication now needs_review or contradicted; honest digit/word ranges supported) and r4 honest_neg4 (17/18 supported, 1 needs_review). (c) holds: --strict exits 1 on contradicted/unsupported and 0 with review_required + needs_review[] + stderr count; 'report' prints Contradicted/Unsupported/Needs Review sections with the resolve instruction; SKILL.md and quality-gates.md document it (mutations in rev/: dropping contradicted from the exit test or failing on needs_review each break 4 tests). But (a) and (b) fail on new attempts: this round regressed 'with no X' and 'no more/less/fewer than' fabrications to supported (issue 1) and honest comparison claims to contradicted, including a claim identical to its quote (issue 2); passive and preposition-gap role swaps are supported although the docs now promise needs_review (issue 3); and figures/names taken from another entity or clause, ranges opening with 'one', period swaps and modality pass end to end (issue 4). Everyday honest set (score5.py, 60 pairs): 51 supported, 8 needs_review (3 quotes that do not name the entity, 3 role-swap alarms on 'X's CEO, Y' / 'named a Leader', 2 paraphrases), 1 contradicted; needs_review is not routine, the contradicted honest claims are the defect."
+  },
+  {
+   "id": "R10b-16",
+   "verdict": "ok",
+   "notes": "Partial disposition unchanged and still justified."
+  },
+  {
+   "id": "R11-03",
+   "verdict": "fixed",
+   "notes": "Unchanged; '--json -' used by every end-to-end probe (bin/e2e.sh)."
+  },
+  {
+   "id": "R11-04",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r4 (dd40805..86504f4 touches only verify_claim_support.py, extract_claims.py, live_dispatch.py, claim.schema.json, SKILL.md/quality-gates.md and tests); suites green at 86504f4 (deep-research 843, multi-ai-task 209 + multi-ai 747, contract 29) under claude and codex."
+  },
+  {
+   "id": "R11-05",
+   "verdict": "fixed",
+   "notes": "bin/e2e.sh runs the documented 'verify --dir ... --report ... --strict'; exit 1 on contradicted/unsupported (runs/e-hon9.out), exit 0 with review_required when only needs_review/supported remain (runs/e-fab7.out, e-fab8.out)."
+  },
+  {
+   "id": "R11-06",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r4 (dd40805..86504f4 touches only verify_claim_support.py, extract_claims.py, live_dispatch.py, claim.schema.json, SKILL.md/quality-gates.md and tests); suites green at 86504f4 (deep-research 843, multi-ai-task 209 + multi-ai 747, contract 29) under claude and codex. verify_citations.py not touched this round."
+  },
+  {
+   "id": "R11-07",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r4 (dd40805..86504f4 touches only verify_claim_support.py, extract_claims.py, live_dispatch.py, claim.schema.json, SKILL.md/quality-gates.md and tests); suites green at 86504f4 (deep-research 843, multi-ai-task 209 + multi-ai 747, contract 29) under claude and codex."
+  },
+  {
+   "id": "R11-08",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r4 (dd40805..86504f4 touches only verify_claim_support.py, extract_claims.py, live_dispatch.py, claim.schema.json, SKILL.md/quality-gates.md and tests); suites green at 86504f4 (deep-research 843, multi-ai-task 209 + multi-ai 747, contract 29) under claude and codex."
+  },
+  {
+   "id": "R11-09",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r4 (dd40805..86504f4 touches only verify_claim_support.py, extract_claims.py, live_dispatch.py, claim.schema.json, SKILL.md/quality-gates.md and tests); suites green at 86504f4 (deep-research 843, multi-ai-task 209 + multi-ai 747, contract 29) under claude and codex."
+  },
+  {
+   "id": "R11-10",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r4 (dd40805..86504f4 touches only verify_claim_support.py, extract_claims.py, live_dispatch.py, claim.schema.json, SKILL.md/quality-gates.md and tests); suites green at 86504f4 (deep-research 843, multi-ai-task 209 + multi-ai 747, contract 29) under claude and codex."
+  },
+  {
+   "id": "R11-11",
+   "verdict": "fixed",
+   "notes": "r4 minor issue 3 (check-then-spawn race) resolved. bin/race5.py (r4 race4.py plus spawned-pid tracking) with a Popen wrapper sleeping 0.5 s / 1.0 s before spawning and SIGTERM at +0.2 s: dispatcher 'KeyboardInterrupt after 0.5' / 'after 1.0' (r4: 12.5 s), each spawned pid 'gone' 0.5 s later, no fake-cursor START logged, no leftover process (runs/race/race5.log). Mutation in rev/mat (registration without the in-lock _CANCEL check) makes test_an_interrupt_during_spawn_still_stops_the_new_worker error."
+  },
+  {
+   "id": "R11-12",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r4 (dd40805..86504f4 touches only verify_claim_support.py, extract_claims.py, live_dispatch.py, claim.schema.json, SKILL.md/quality-gates.md and tests); suites green at 86504f4 (deep-research 843, multi-ai-task 209 + multi-ai 747, contract 29) under claude and codex."
+  },
+  {
+   "id": "R11-13",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r4 (dd40805..86504f4 touches only verify_claim_support.py, extract_claims.py, live_dispatch.py, claim.schema.json, SKILL.md/quality-gates.md and tests); suites green at 86504f4 (deep-research 843, multi-ai-task 209 + multi-ai 747, contract 29) under claude and codex."
+  },
+  {
+   "id": "R11-14",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r4 (dd40805..86504f4 touches only verify_claim_support.py, extract_claims.py, live_dispatch.py, claim.schema.json, SKILL.md/quality-gates.md and tests); suites green at 86504f4 (deep-research 843, multi-ai-task 209 + multi-ai 747, contract 29) under claude and codex."
+  },
+  {
+   "id": "R11-15",
+   "verdict": "fixed",
+   "notes": "Worker-safety text matches behaviour; the spawn race is closed (R11-11)."
+  },
+  {
+   "id": "R11-16",
+   "verdict": "fixed",
+   "notes": "New tests assert behaviour: sandbox mutations (rev/) - strict ignoring contradicted -> 4 failures; strict failing on needs_review -> 4 failures; _role_swap disabled -> 2 failures; 'with no' normalisation removed -> 3 failures; spawn-race check removed -> 1 error. Gaps: no fabrication pair has 'with no X' against a claim asserting X, or a claim-side 'A does X and B does not' comparison, which is how issues 1 and 2 slipped through; and test_ranges_are_ranges pins n('one or two') == 'one or 2' (test_claim_gate_hardening.py:820), the quirk behind issue 4(c)."
+  },
+  {
+   "id": "R11-17",
+   "verdict": "ok",
+   "notes": "Justified partial, unchanged."
+  },
+  {
+   "id": "R11-18",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r4 (dd40805..86504f4 touches only verify_claim_support.py, extract_claims.py, live_dispatch.py, claim.schema.json, SKILL.md/quality-gates.md and tests); suites green at 86504f4 (deep-research 843, multi-ai-task 209 + multi-ai 747, contract 29) under claude and codex."
+  },
+  {
+   "id": "R11-19",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r4 (dd40805..86504f4 touches only verify_claim_support.py, extract_claims.py, live_dispatch.py, claim.schema.json, SKILL.md/quality-gates.md and tests); suites green at 86504f4 (deep-research 843, multi-ai-task 209 + multi-ai 747, contract 29) under claude and codex."
+  },
+  {
+   "id": "R11-20",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r4 (dd40805..86504f4 touches only verify_claim_support.py, extract_claims.py, live_dispatch.py, claim.schema.json, SKILL.md/quality-gates.md and tests); suites green at 86504f4 (deep-research 843, multi-ai-task 209 + multi-ai 747, contract 29) under claude and codex."
+  },
+  {
+   "id": "R11-21",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r4 (dd40805..86504f4 touches only verify_claim_support.py, extract_claims.py, live_dispatch.py, claim.schema.json, SKILL.md/quality-gates.md and tests); suites green at 86504f4 (deep-research 843, multi-ai-task 209 + multi-ai 747, contract 29) under claude and codex."
+  },
+  {
+   "id": "R11-22",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r4 (dd40805..86504f4 touches only verify_claim_support.py, extract_claims.py, live_dispatch.py, claim.schema.json, SKILL.md/quality-gates.md and tests); suites green at 86504f4 (deep-research 843, multi-ai-task 209 + multi-ai 747, contract 29) under claude and codex. verify_citations.py/SSRF code not touched this round."
+  },
+  {
+   "id": "R11-23",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r4 (dd40805..86504f4 touches only verify_claim_support.py, extract_claims.py, live_dispatch.py, claim.schema.json, SKILL.md/quality-gates.md and tests); suites green at 86504f4 (deep-research 843, multi-ai-task 209 + multi-ai 747, contract 29) under claude and codex."
+  },
+  {
+   "id": "R11-24",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r4 (dd40805..86504f4 touches only verify_claim_support.py, extract_claims.py, live_dispatch.py, claim.schema.json, SKILL.md/quality-gates.md and tests); suites green at 86504f4 (deep-research 843, multi-ai-task 209 + multi-ai 747, contract 29) under claude and codex."
+  },
+  {
+   "id": "R11-25",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r4 (dd40805..86504f4 touches only verify_claim_support.py, extract_claims.py, live_dispatch.py, claim.schema.json, SKILL.md/quality-gates.md and tests); suites green at 86504f4 (deep-research 843, multi-ai-task 209 + multi-ai 747, contract 29) under claude and codex."
+  },
+  {
+   "id": "R11-26",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r4 (dd40805..86504f4 touches only verify_claim_support.py, extract_claims.py, live_dispatch.py, claim.schema.json, SKILL.md/quality-gates.md and tests); suites green at 86504f4 (deep-research 843, multi-ai-task 209 + multi-ai 747, contract 29) under claude and codex."
+  },
+  {
+   "id": "R11-27",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r4 (dd40805..86504f4 touches only verify_claim_support.py, extract_claims.py, live_dispatch.py, claim.schema.json, SKILL.md/quality-gates.md and tests); suites green at 86504f4 (deep-research 843, multi-ai-task 209 + multi-ai 747, contract 29) under claude and codex. (Authorization dropped on cross-host redirect, verified r4.)"
+  },
+  {
+   "id": "R11-28",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r4 (dd40805..86504f4 touches only verify_claim_support.py, extract_claims.py, live_dispatch.py, claim.schema.json, SKILL.md/quality-gates.md and tests); suites green at 86504f4 (deep-research 843, multi-ai-task 209 + multi-ai 747, contract 29) under claude and codex."
+  },
+  {
+   "id": "R11-29",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r4 (dd40805..86504f4 touches only verify_claim_support.py, extract_claims.py, live_dispatch.py, claim.schema.json, SKILL.md/quality-gates.md and tests); suites green at 86504f4 (deep-research 843, multi-ai-task 209 + multi-ai 747, contract 29) under claude and codex."
+  },
+  {
+   "id": "R11-30",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r4 (dd40805..86504f4 touches only verify_claim_support.py, extract_claims.py, live_dispatch.py, claim.schema.json, SKILL.md/quality-gates.md and tests); suites green at 86504f4 (deep-research 843, multi-ai-task 209 + multi-ai 747, contract 29) under claude and codex."
+  },
+  {
+   "id": "R11-31",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r4 (dd40805..86504f4 touches only verify_claim_support.py, extract_claims.py, live_dispatch.py, claim.schema.json, SKILL.md/quality-gates.md and tests); suites green at 86504f4 (deep-research 843, multi-ai-task 209 + multi-ai 747, contract 29) under claude and codex."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "major",
+   "location": "skills/silver-deep-research/scripts/verify_claim_support.py:402-406 (NEGATION_IDIOM_RE, WITH_NO_RE), 423-427 (_normalize_negation), 529-536 (_quantifier_conflict)",
+   "problem": "Regression in 86504f4: fabrications that were caught at dd40805 are now 'supported'. (1) 'with no X' is rewritten to 'without X' only for the polarity test, while _quantifier_conflict runs WITHOUT_RE on the un-normalised clause, so 'with no X' is neither a negation nor a term and a claim asserting X matches. (2) NEGATION_IDIOM_RE deletes 'no more than' / 'no less than' / 'no fewer than' / 'nothing less than', so the quote reads as the bare comparative and 'more than 50' is supported by 'no more than 50'. quality-gates.md says 'with no X' and 'without X' are compared as terms (zero/without against a plain assertion is 'contradicted').",
+   "evidence": "REVF-H8a5-probe/bin/score5b.py at HEAD: 'Acme offers SCIM' vs 'Acme offers SSO with no SCIM' supported; 'Acme charges a setup fee' vs '... on all plans with no setup fee' supported; 'Acme has an offline mode' vs 'Acme ships with no offline mode' supported; 'Acme's migration caused downtime' vs '... with no downtime' supported; 'Acme has more than 50 customers' vs 'Acme has no more than 50 customers' supported; 'less than 99%' vs 'nothing less than 99%' supported; control 'without SCIM' -> contradicted. All 'partial' at dd40805. End to end (bin/e2e.sh, SKILL.md command, --strict), runs/fab7.tsv rows 1-3: HEAD supported (run exit 0), dd40805 partial (exit 1).",
+   "suggested_fix": "Run the quantifier check on _normalize_negation(clause) (or include 'with no' in WITHOUT_RE), and treat 'no X' after a verb the same way. Strip a comparative idiom only when the claim does not carry the bare comparative; when the claim says 'more/less/fewer than N' and the quote 'no more/less/fewer than N', return contradicted (or needs_review). Add these pairs to the fabrication corpus."
+  },
+  {
+   "severity": "major",
+   "location": "skills/silver-deep-research/scripts/verify_claim_support.py:410-413 (ENTITY_LIST_RE), 467-474 (_variants), 674-688 (check)",
+   "problem": "Honest comparison claims are 'contradicted' (criterion b), one of them against an identical quote. ENTITY_LIST_RE reads 'SCIM and Initech' / 'SSO and SCIM, and Initech' as a coordinated list although 'Initech' opens a new clause, so _variants builds nonsense clauses ('Acme supports SCIM does not', 'Acme offers SSO offers neither') whose polarity conflicts with the quote. The note is misleading ('polarity: the source says \"Acme supports SCIM\"', i.e. the source agrees). These are the 'A supports X and B does not' sentences solution-landscape reports are made of; the r4 fix covered the shape only on the quote side.",
+   "evidence": "End to end, REVF-H8a5-probe/runs/hon9.tsv through bin/e2e.sh: HEAD status fail, exit 1, 3 contradicted + 1 needs_review: 'Acme supports SCIM and Initech does not' vs 'Acme supports SCIM; Initech does not' (contradicted); 'Acme offers SSO and Initech lacks it' vs '..., while Initech lacks it' (contradicted); 'Okta supports SAML and OneLogin does not' vs 'Okta supports SAML. OneLogin does not.' (contradicted); the identical pair 'Acme supports SCIM and Initech does not' (needs_review). dd40805: 3 partial + 1 supported. bin/honest5.py: 'Acme offers SSO and SCIM, and Initech offers neither' vs the identical sentence -> contradicted (supported at dd40805; also e2e runs/fab9.tsv row 7); 'Slack integrates with Jira and Asana does not' vs '...; Asana does not' contradicted; 'Acme supports Kubernetes and Initech does not' vs '..., and Initech does not' needs_review (supported at dd40805). With 'SCIM provisioning' (lowercase word before 'and') the same pairs are supported (runs/e-hon8.out), which isolates the list regex.",
+   "suggested_fix": "Do not build list variants when the last item is followed by a predicate (an auxiliary, a verb, 'does not', 'lacks', 'offers neither'): split the clause at 'and <Name> <verb>' first. Skip variants when the squashed claim clause equals a quote clause. Add these comparison claims, verbatim and with ';' / '.' / ', while' quotes, to the honest corpus."
+  },
+  {
+   "severity": "major",
+   "location": "skills/silver-deep-research/scripts/verify_claim_support.py:614-641 (PASSIVE_RE, _role_swap, _gap); skills/silver-deep-research/reference/quality-gates.md:255-256",
+   "problem": "Role swaps are still 'supported' unless the voices differ or both gaps are at most three words without a preposition. quality-gates.md now promises 'the same named things ... in another order or voice ... roles cannot be settled by words, so needs_review' and removed role swaps from the limits, and the fix report lists 'role swap/voice ambiguity' as fixed. A passive-passive swap has 'by' in the gap, and copula/preposition relations (owned by, subsidiary of, cheaper than, invested in, licenses to, spun off from, migrated from X to Y) all have prepositions.",
+   "evidence": "REVF-H8a5-probe/bin/roles5.py at HEAD, 10/14 supported: 'Acme was acquired by Initech' vs 'Initech was acquired by Acme'; 'Acme is a subsidiary of Initech' vs the reverse; 'Acme is owned by Initech'; 'Acme is cheaper than Initech'; 'Acme is faster than Initech on the TPC-H benchmark'; 'Microsoft invested $10 billion in OpenAI' vs 'OpenAI invested $10 billion in Microsoft'; 'Acme licenses its technology to Initech'; 'Acme sold its stake in Initech in 2022'; 'Acme spun off from Initech in 2019'; 'Acme migrated from Postgres to MySQL' vs 'from MySQL to Postgres'. End to end runs/fab9.tsv rows 4-6 supported. Only short active gaps (sued, pays, beat, replaced X with Y) give needs_review.",
+   "suggested_fix": "Conservative rule: when two or more claim entities occur in one aligned quote clause in a different order, return needs_review whatever the gap (or treat by/of/than/to/in/from gaps as role-bearing). Add the roles5 pairs to the fabrication corpus; keep the honest active/passive paraphrases as needs_review."
+  },
+  {
+   "severity": "major",
+   "location": "skills/silver-deep-research/scripts/verify_claim_support.py:308-373 (_segment_figures/extract_figures: entity names dropped from figure stems, no split at parentheses), 104-137 (_compound keeps a lone 'one'), 223-231 (FILLER_WORDS: per/month/year), 477-494 (_aligned), 782-822 (_assess_quote checks entities anywhere in the quote), 395 (NEGATION_RE); skills/silver-deep-research/tests/test_claim_gate_hardening.py:820; reference/quality-gates.md:270-273",
+   "problem": "Fabrication classes outside the documented limits (antonyms outside the table, unit synonyms, idioms restating a negation, world knowledge) still pass the strict gate as 'supported', contrary to 'supported only when its words, figures and names unambiguously match a quoted source span': (a) a figure or year that the quote attaches to another entity (entities are dropped from the figure's stems and checked anywhere in the quote); (b) names and predicates taken from different clauses or sentences of one quote; (c) ranges that open with 'one' ('one to three days', 'one or two') are not ranges, so the upper end alone matches - the r4 range bug class, and test_ranges_are_ranges pins n('one or two') == 'one or 2'; (d) period swaps: a quarter (Q2/Q3 are entities, not bound to the figure), 'per month' vs 'per year' (filler), a year in parentheses; (e) modality and a missed cue: 'plans to', 'will', 'is expected to', 'is considering', 'only if', a question, and 'failed to' (NEGATION_RE has 'fails? to' only).",
+   "evidence": "REVF-H8a5-probe/bin/score5.py at HEAD (36 of 68 new fabrications supported, 9 of them documented-limit antonyms/idioms): 'Acme has 500 employees' vs 'Initech has 500 employees and Acme has 200'; 'Acme's market share is 30%' vs 'Initech's market share is 30%, while Acme's is 10%'; 'Acme raised $50M in 2023' vs 'Initech raised $50M in 2023, and Acme raised $10M in 2023'; 'Acme was founded in 2015' vs 'Initech was founded in 2015 and Acme was founded in 2019'; '62% of respondents use Acme' vs '62% ... use Initech and 12% use Acme'; 'Acme acquired Initech' vs 'Globex acquired Initech. Acme acquired Hooli.'; 'Acme supports SCIM' vs 'Okta supports SCIM. Acme supports SAML.'; 'Acme revenue grew 30% in Q3' vs '30% in Q2 and 10% in Q3'; 'Acme costs $20 per month' vs '$20 per year'; 'Acme was founded in 2019' vs 'Acme (founded 2015) was acquired by Globex in 2019'; 'Acme supports SSO' vs 'Acme plans to support SSO in 2025' / 'Acme will support ...' / 'Does Acme support SSO? ...'; 'Acme passed the SOC 2 audit' vs 'Acme failed to pass the SOC 2 audit' (control 'fails to' -> contradicted). runs/one-range.out: 'Setup takes 3 days' vs 'one to three days' supported ('1 to 3 days' -> needs_review). End to end (bin/e2e.sh, --strict): runs/fab8.tsv exit 0, both supported; runs/fab7.tsv rows 5-10 and runs/fab9.tsv rows 1-3 supported. All of these were also supported at dd40805 (pre-existing), and none is in the documented limits.",
+   "suggested_fix": "Under 'conservative + escalate', escalate instead of supporting: (a) when the quote segment holding a matched figure or year names a different entity and not the claim's subject, needs_review; (b) require the claim's entities and its key terms to co-occur in one quote clause (or sentence) for 'supported'; (c) let a lone 'one' start a range when 'to'/'or'/'-' and a number follow, and fix the pinned test; (d) bind Q1-Q4/H1/FY periods like years, keep 'per <period>' as part of the unit, split segments at parentheses; (e) add 'failed to', 'refused to' and modal/future cues (plans to, will, expected to, aims to, considering, '?', 'only if') as needs_review triggers. Anything left out must be listed in quality-gates.md's limits."
+  },
+  {
+   "severity": "minor",
+   "location": "skills/silver-deep-research/scripts/extract_claims.py:81 (SENTENCE_RE), 231-245 (extract_sentences)",
+   "problem": "A sentence that starts with a digit (or a lowercase brand) is never split from the one before it, even across a paragraph break, because SENTENCE_RE requires an upper-case letter next. An uncited '62% of ...' paragraph is merged into the previous cited sentence and inherits its citation. With the three-valued gate it is then 'needs_review' (strict passes) instead of 'unsupported' (strict fails), which contradicts SKILL.md ('--strict exits 1 ... on any unsupported or uncited factual claim'). Pre-existing splitter; this round turned the outcome from a failure into a listed review item.",
+   "evidence": "REVF-H8a5-probe/runs/e-merge: report 'Acme has 500 employees in Berlin [1].\\n\\n62% of Fortune 500 companies use Acme in production.' -> 1 claim (both paragraphs), needs_review, status pass, exit 0. Same report with 'Sixty-two percent of ...' (runs/e-merge2) -> 2 claims, the second unsupported, status fail.",
+   "suggested_fix": "Split at a blank line unconditionally and let SENTENCE_RE also split before a digit or a lower-case letter after '. ' when a paragraph break or a citation marker precedes it."
+  },
+  {
+   "severity": "minor",
+   "location": "skills/silver-deep-research/scripts/extract_claims.py:147-163 (GENERIC_OPENERS, _has_name); reference/quality-gates.md:274-277",
+   "problem": "r4 minor issue 4 only partly fixed: the opener is still a 'name' unless it is on a fixed word list, so short evaluations that open with other everyday nouns remain factual claims, while quality-gates.md says 'evaluations that open with an everyday noun (\"Pricing is simple.\") are not'.",
+   "evidence": "extract_claims._long_enough at HEAD: True for 'Latency is low.', 'Usage grew quickly.', 'Adoption is growing.', 'Reviews are mixed.', 'Customers love it.'; False for 'Pricing is simple.', 'Onboarding is slow.', 'Next, we compare costs.' (all as documented). Short fabrications ('Acme is HIPAA compliant.', 'Microsoft owns Acme outright.') are still extracted.",
+   "suggested_fix": "Count the opener as a name only when it is an acronym, camelCase, an identifier or followed by another capitalised word; or document that only the listed nouns are excluded."
+  }
+ ],
+ "validation": [
+  {
+   "tests": "Sandbox clone of the worktree at 86504f4 (REVF-H8a5-probe/gitsb), via tests/run-all-tests.sh, two at a time: tests/scripts/test-solution-research-python.sh 843 passed (unittest 843 OK, 1 skipped) and tests/scripts/test-multi-ai-deep-research-contract.sh 29 passed (multi-ai-task 209 OK, multi-ai 747 OK) under both SILVER_BULLET_RUNTIME=claude and codex. Docs suite (--suite docs --jobs 2): 198 passed, 0 failed. Mutation checks in REVF-H8a5-probe/rev (see R11-11, R11-16). Worktree untouched: HEAD 86504f4, branch fix/H8a-deep-research, git status empty.",
+   "coverage": "One scoped run in the sandbox clone (--cov-dir REVF-H8a5-probe/cov, --jobs 2, --fail-under 100, --only verify_claim_support.py, extract_claims.py, live_dispatch.py; both test wrappers): 100% statements and branches (verify_claim_support 719/719, 308/308; extract_claims 203/203, 72/72; live_dispatch 518/518, 150/150), exit 0. tests/coverage/known-limits.json valid and untouched.",
+   "lint": "bash scripts/lint-shell.sh --all --jobs 2 in the sandbox clone: application Bash clean, test Bash (726 files) clean, exit 0.",
+   "invariants": "Sandbox clone: check-repo-invariants exit 0; generate-hook-reference --check up to date; generate-apo-artifacts --check exit 0; validate-plugin-mirror OK; sync-codex-package.sh exit 0 with no diff; docs/workflows identical to templates/workflows; silver-bullet.md / template untouched. Commits: 86504f4 ends with 'Co-Authored-By: Claude Sonnet 5.5' + Claude-Session (accurate, accepted per brief), no model names elsewhere ('claude and codex' are runtimes); merge d599335 without trailers accepted as historical. All changes are inside skills/ and its mirrors. Latency (bin/perf4.py, run beside coverage): 195-char quote 18 ms, 15.6k-char quote 1.3 s (dd40805 0.4 s); pathological 18k-char claims ~15 s as before."
+  }
+ ]
+}

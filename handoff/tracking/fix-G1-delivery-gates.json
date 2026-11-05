@@ -1,0 +1,605 @@
+{
+ "package": "G1-delivery-gates",
+ "branch": "fix/G1-delivery-gates",
+ "head": "90a70e9",
+ "worktree": "/home/user/silver-bullet/.claude/worktrees/G1-delivery-gates",
+ "dispositions": [
+  {
+   "id": "R1-04",
+   "status": "fixed",
+   "commits": [
+    "ea2125c",
+    "5b458fd"
+   ],
+   "tests": [
+    "tests/hooks/test-delivery-gates-g1.sh: MCP create_pull_request/merge/push_files/actions_run_trigger denied, reads silent, helper-unavailable by-name path, hooks.json matcher covers mcp__.*"
+   ],
+   "evidence": "base: mcp__github__create_pull_request produced no hook output; now denied (deploy floor) and push_files needs the planning floor",
+   "notes": "completion-audit.sh routes mcp__*/CallMcpTool/MCP payloads to ca_classify_command(cmd, payload) (shell_analysis payload mode); hooks.json: completion-audit moved to matcher Bash|exec_command|mcp__.*; shell_analysis.py _MCP_ACTIONS gains actions_run_trigger"
+  },
+  {
+   "id": "R3-02",
+   "status": "fixed",
+   "commits": [
+    "ea2125c",
+    "5b458fd"
+   ],
+   "tests": [
+    "tests/hooks/test-completion-audit.sh: R3-02 trivial_file naming another file / outside the state dir",
+    "tests/hooks/test-ci-status-check-paths.sh: session-rules-injected and /etc/hostname",
+    "tests/scripts/test-deploy-gate-snippet.sh: R1-25 cases"
+   ],
+   "evidence": "base: config trivial_file=<any existing file> disabled the gates; now only the state dir's own 'trivial' file counts",
+   "notes": "stop-check.sh now validates state.trivial_file with sb_trivial_path_trusted (tests in test-stop-check.sh and the integration scenario 5)."
+  },
+  {
+   "id": "R3-09",
+   "status": "fixed",
+   "commits": [
+    "ea2125c",
+    "5b458fd"
+   ],
+   "tests": [
+    "tests/hooks/test-delivery-gates-g1.sh: hook registration matches mcp__* tool names"
+   ],
+   "evidence": "completion-audit now reaches MCP delivery tools; NotebookEdit and MCP file-write tools are not added to the edit-guard matchers",
+   "notes": "MCP half in G1; the NotebookEdit/MCP write matchers are in G2's hooks.json (reviewer confirmed)."
+  },
+  {
+   "id": "R4-01",
+   "status": "fixed",
+   "commits": [
+    "ea2125c",
+    "5b458fd"
+   ],
+   "tests": [
+    "tests/hooks/test-delivery-gates-g1.sh: cert switch honoured only under a temp root (unit + end-to-end), ignored with a real-home state dir"
+   ],
+   "evidence": "base: SB_AGENT_CERT_RUN=1 disabled the gates anywhere; now only when SB_RUNTIME_STATE_DIR is under TMPDIR,/tmp,/var/tmp,/var/folders",
+   "notes": "TMPDIR no longer trusted: only fixed system temp roots, never the passwd home. Residual hand-off: scripts/agent-claude-delegate.sh and scripts/agent-claude/lib.sh still export/persist SB_AGENT_CERT_RUN (inert against a real home)."
+  },
+  {
+   "id": "R1-08",
+   "status": "partial",
+   "commits": [
+    "ea2125c",
+    "5b458fd"
+   ],
+   "tests": [
+    "tests/hooks/test-delivery-gates-g1.sh: approval marker expiry, project binding, symlink; verify-tests marker repo binding",
+    "tests/hooks/test-ci-status-check-paths.sh: expiring ci-red-override"
+   ],
+   "evidence": "approval marker expires (enterprise_policy.human_approval_ttl_minutes, default 480) and may name a project; ci-red-override expires after 30 minutes and is removed; verify-tests marker must name the project",
+   "notes": "Not done: denying agent Bash/Write to the state dir and clearing markers at session start (dev-cycle-check = G2, session-start = G4); HMAC-style binding rejected as theatre because the agent can read any secret the hooks can"
+  },
+  {
+   "id": "R1-09",
+   "status": "fixed",
+   "commits": [
+    "ea2125c",
+    "5b458fd"
+   ],
+   "tests": [
+    "tests/hooks/test-delivery-gates-g1.sh: state dir replaced by file/symlink denies; malformed config denies on Pre, warns on Post"
+   ],
+   "evidence": "base: state dir replaced by a file -> ERR trap exit 0 -> commit/PR/release allowed; now deny with a way forward",
+   "notes": "_ca_internal_error trap after classification; explicit real-directory check before mkdir"
+  },
+  {
+   "id": "R1-10",
+   "status": "fixed",
+   "commits": [
+    "ea2125c",
+    "5b458fd"
+   ],
+   "tests": [
+    "tests/hooks/test-completion-audit-libs.sh: develop default branch, unpushed commits on main, unmeasurable base keeps full floor, empty repo"
+   ],
+   "evidence": "base: committed code + one tracked docs edit classified docs (light floor); now mixed",
+   "notes": "_ca_change_base: origin/HEAD, main/master/develop/trunk (local and origin), then @{upstream}; ca_change_base_unknown keeps the full floor"
+  },
+  {
+   "id": "R1-11",
+   "status": "fixed",
+   "commits": [
+    "ea2125c",
+    "5b458fd"
+   ],
+   "tests": [
+    "tests/hooks/test-completion-audit-libs.sh: packages/site/src/api/payments.ts and apps/docs/server/index.js are src, docs/tool.py and site/build.js are other"
+   ],
+   "evidence": "base: site/docs segment won before src_pattern; now src_pattern (against '/'+path) first and site/docs only for non-code extensions",
+   "notes": "dead dcc_matches_src_scope hook removed"
+  },
+  {
+   "id": "R1-13",
+   "status": "fixed",
+   "commits": [
+    "ea2125c",
+    "5b458fd"
+   ],
+   "tests": [
+    "tests/hooks/test-delivery-gates-g1.sh: case-insensitive deploy, non-prod only for a plain deploy, gh pr merge/release never exempt, text fallback"
+   ],
+   "evidence": "base: 'make Deploy' skipped the human gate; now gated; 'staging' in a merge body no longer exempts",
+   "notes": "enterprise policy uses the classifier verdict (ca_tier/ca_actions/ca_possible_actions); text fallback is case-insensitive and word-bounded"
+  },
+  {
+   "id": "R1-14",
+   "status": "fixed",
+   "commits": [
+    "ea2125c",
+    "5b458fd"
+   ],
+   "tests": [
+    "tests/scripts/test-rc-validation-matrix.sh (template flag check), tests/hooks/test-delivery-gates-g1.sh"
+   ],
+   "evidence": "template release.require_* are now false (this repo's .silver-bullet.json keeps true)",
+   "notes": "docs/CONFIGURATION.md, ENFORCEMENT.md, RELEASE.md updated"
+  },
+  {
+   "id": "R1-15",
+   "status": "fixed",
+   "commits": [
+    "ea2125c",
+    "5b458fd"
+   ],
+   "tests": [
+    "tests/hooks/test-completion-audit-release.sh: project-tree validator/predicate cannot stand in; non-executable plugin validator blocks"
+   ],
+   "evidence": "base: project scripts/lib/pre-release-host-isolation.sh with 'return 0' satisfied the RC gate; now ignored",
+   "notes": "deploy-tier loads validators and the RC predicate from the plugin root (_ca_plugin_root); evidence validator likewise"
+  },
+  {
+   "id": "R1-16",
+   "status": "fixed",
+   "commits": [
+    "ea2125c",
+    "5b458fd"
+   ],
+   "tests": [
+    "tests/hooks/test-delivery-evidence-libs.sh: planted project validator not executed, missing plugin validator warns (also strict)"
+   ],
+   "evidence": "base: downstream projects had no validator so the strict gate silently passed; now the plugin's validator runs; a missing one warns",
+   "notes": "validator output remains self-attested over agent-written artifacts (inherent); a partial install warns rather than blocks to avoid blocking every delivery"
+  },
+  {
+   "id": "R1-17",
+   "status": "partial",
+   "commits": [
+    "ea2125c",
+    "5b458fd"
+   ],
+   "tests": [
+    "tests/hooks/test-doc-scheme-gate-lib.sh: touched doc without a git change, uncommitted change, commit since session start, non-git tree"
+   ],
+   "evidence": "'updated' now needs a git change since the session start (touch no longer satisfies it)",
+   "notes": "Rejected part: enforcement.enabled=false / granularity_levels in docs/doc-scheme.json are the project's documented opt-out, not a bug; taking granularity from SB-owned state needs a workflow-record design (needs-user)"
+  },
+  {
+   "id": "R1-18",
+   "status": "fixed",
+   "commits": [
+    "ea2125c",
+    "5b458fd"
+   ],
+   "tests": [
+    "tests/hooks/test-delivery-gates-g1.sh: configured tier 1 still blocks; no settings.json probe needed inside a running hook; real-home state dir ignores the skip switch"
+   ],
+   "evidence": "base: plugin enabled via project settings -> 'enforcement inactive' from inside the hook; now sb_enforcement_tier_probe returns 2 when SB_HOOK_EXECUTING=1",
+   "notes": "probe still used outside hooks (banners)"
+  },
+  {
+   "id": "R1-19",
+   "status": "fixed",
+   "commits": [
+    "ea2125c",
+    "5b458fd"
+   ],
+   "tests": [
+    "tests/hooks/test-delivery-gates-g1.sh: --target oldgreen/--target=ref/--target <sha>/tag/default branch/unresolvable target"
+   ],
+   "evidence": "base: CI checked for local HEAD; now for the commit gh will release",
+   "notes": "gh api .../releases (-f/-F/--field/--raw-field tag_name, target_commitish) and MCP create_release tool_input fields are resolved like gh release create; an unresolvable target denies."
+  },
+  {
+   "id": "R13-08",
+   "status": "fixed",
+   "commits": [
+    "ea2125c",
+    "5b458fd"
+   ],
+   "tests": [
+    "tests/hooks/test-delivery-gates-g1.sh: release commit resolution tests"
+   ],
+   "evidence": "gh release create --target <red sha> from a green HEAD is now checked against the target",
+   "notes": "As R1-19; tag pushes (any tag, refs/tags/*, --tags) are final delivery by default. Forced tag moves are gated at the full tier, not refused."
+  },
+  {
+   "id": "R1-20",
+   "status": "partial",
+   "commits": [
+    "ea2125c",
+    "5b458fd"
+   ],
+   "tests": [
+    "tests/hooks/test-delivery-gates-g1.sh: hung gh times out, bad timeout setting, failing gh",
+    "tests/hooks/test-ci-status-check-paths.sh: gh failure/timeout is said out loud"
+   ],
+   "evidence": "gh run list runs under sb_run_hooked_command (SB_GH_TIMEOUT_SECONDS default 8); timeout/failure -> release gate denies, ci-status prints that CI was not checked",
+   "notes": "Codex adapter (hooks/codex-hook-adapter.sh) still returns a systemMessage with rc 0 when a gate times out: outside ownership"
+  },
+  {
+   "id": "R1-21",
+   "status": "fixed",
+   "commits": [
+    "ea2125c",
+    "5b458fd"
+   ],
+   "tests": [
+    "tests/hooks/test-ci-status-check.sh and -paths.sh: commit-message convention no longer waives; mixed diffs blocked; expired override removed; per-workflow latest run; gh missing/failing/timeout said out loud; trivial path scoping"
+   ],
+   "evidence": "base: 'fix(ci):' commit or any push touching tests/ waived a red CI; now only a push whose every file is CI/test",
+   "notes": "session-start clearing of ci-red-override left to G4; TTL makes it expire on its own"
+  },
+  {
+   "id": "R1-22",
+   "status": "fixed",
+   "commits": [
+    "ea2125c",
+    "5b458fd"
+   ],
+   "tests": [
+    "tests/hooks/test-delivery-gates-g1.sh: push_to_default_branch_tier=completion cases and the unchanged default"
+   ],
+   "evidence": "opt-in knob project.push_to_default_branch_tier (default 'intermediate'); with 'completion' a push to main/master/the remote default branch, a bare push from main, tags, --mirror and --all need the deploy floor",
+   "notes": "User decision 'strict everywhere' implemented: default tier is completion in code and template; opt-out project.push_to_default_branch_tier=intermediate; destinations resolved through git (HEAD, @, refs/heads, tags, --all/--mirror)."
+  },
+  {
+   "id": "R1-24",
+   "status": "fixed",
+   "commits": [
+    "ea2125c",
+    "5b458fd"
+   ],
+   "tests": [
+    "tests/scripts/test-deploy-gate-snippet.sh: template-stamped config passes with a full state file; on main branch-finish not required; no required-skills lib"
+   ],
+   "evidence": "base: template placeholder paths made every deploy fail; now expanded like the hooks",
+   "notes": "aliases via sb_required_skill_is_recorded"
+  },
+  {
+   "id": "R1-25",
+   "status": "fixed",
+   "commits": [
+    "ea2125c",
+    "5b458fd"
+   ],
+   "tests": [
+    "tests/scripts/test-deploy-gate-snippet.sh: outside state/trivial paths ignored and untouched, state-scoped paths honoured"
+   ],
+   "evidence": "base: config trivial_file=<any file> skipped the gate and deleted two arbitrary files; now validated",
+   "notes": "paths validated with sb_runtime_path_is_state_scoped / sb_trivial_path_trusted"
+  },
+  {
+   "id": "R1-26",
+   "status": "fixed",
+   "commits": [
+    "ea2125c",
+    "5b458fd"
+   ],
+   "tests": [
+    "tests/hooks/test-pr-traceability-paths.sh: planted SPEC.md.tmp symlink, symlinked SPEC.md, no leftover temp files"
+   ],
+   "evidence": "base: predictable .planning/SPEC.md.tmp overwrote the symlink target; now mktemp in .planning, symlinked SPEC.md/.planning refused",
+   "notes": "spec-session-record.sh only reads SPEC.md: no change needed"
+  },
+  {
+   "id": "R1-27",
+   "status": "fixed",
+   "commits": [
+    "ea2125c",
+    "5b458fd"
+   ],
+   "tests": [
+    "tests/hooks/test-pr-traceability*.sh: grep/echo mentions ignored, failed create ignored, idempotent, URL taken from the command output"
+   ],
+   "evidence": "base: any command mentioning 'gh pr create' appended a block; now the analyser must see pr_create and the output must carry the PR URL",
+   "notes": "falls silent when the tool-input library is missing (cannot classify)"
+  },
+  {
+   "id": "R1-30",
+   "status": "partial",
+   "commits": [
+    "ea2125c",
+    "5b458fd"
+   ],
+   "tests": [
+    "tests/hooks/test-delivery-gates-g1.sh: completion-audit matcher no longer includes Skill"
+   ],
+   "evidence": "Skill removed from the completion-audit matcher (it always exited there)",
+   "notes": "Skill kept in the shared matcher group (merge safety); read-only MCP tools leave before sourcing libraries; no Bash prefilter."
+  },
+  {
+   "id": "R1-31",
+   "status": "fixed",
+   "commits": [
+    "ea2125c",
+    "5b458fd"
+   ],
+   "tests": [
+    "tests/hooks/test-doc-scheme-gate-lib.sh (all paths exercised on this bash)"
+   ],
+   "evidence": "empty-array expansions guarded with ${arr[@]+...}",
+   "notes": "cannot run bash 3.2 here; guarded by idiom"
+  },
+  {
+   "id": "R1-32",
+   "status": "partial",
+   "commits": [
+    "ea2125c",
+    "5b458fd"
+   ],
+   "tests": [
+    "tests/hooks/test-delivery-gates-g1.sh: template-stamped paths resolve"
+   ],
+   "evidence": "fixed: (c) ${SB_RUNTIME_HOME_ROOT} expansion, (i) SB_SKIP_RC_MATRIX hint removed and bypasses logged",
+   "notes": "Not done: plan-seal freshness, sb_initiated, jq-gate wording, devops fallback, enterprise comment"
+  },
+  {
+   "id": "R1-33",
+   "status": "fixed",
+   "commits": [
+    "ea2125c",
+    "5b458fd"
+   ],
+   "tests": [
+    "tests/hooks/test-delivery-gates-g1.sh: workflow names sanitised, empty TSV fields shown as '-', profile labels neutralised",
+    "tests/hooks/test-delivery-evidence-libs.sh: artifact text capped and marked as data"
+   ],
+   "evidence": "workflow names, evidence messages, profile labels and unseen reasons are stripped of control characters, capped, and labelled as data",
+   "notes": ""
+  },
+  {
+   "id": "R1-34",
+   "status": "fixed",
+   "commits": [
+    "ea2125c",
+    "5b458fd"
+   ],
+   "tests": [
+    "tests/hooks/test-delivery-evidence-libs.sh: 'no TODO markers remain' is content, placeholder-only lines are stubs, newest artifact wins"
+   ],
+   "evidence": "base: any TODO/TBD anywhere = stub, first glob match judged; now structural and newest-by-mtime",
+   "notes": ""
+  },
+  {
+   "id": "R1-35",
+   "status": "fixed",
+   "commits": [
+    "ea2125c",
+    "5b458fd"
+   ],
+   "tests": [
+    "tests/scripts/test-verify-tests-defaults.sh: package.json without/with empty test script writes no marker; falls through to the next stack"
+   ],
+   "evidence": "base: 'npm test --if-present' exited 0 and wrote the marker; now needs scripts.test and runs 'npm test'",
+   "notes": ""
+  },
+  {
+   "id": "R1-36",
+   "status": "fixed",
+   "commits": [
+    "ea2125c",
+    "5b458fd"
+   ],
+   "tests": [
+    "tests/hooks/test-delivery-gates-g1.sh: GH_RUN_LIST_OVERRIDE(_CMD), tier switches ignored with a real home"
+   ],
+   "evidence": "GH_RUN_LIST_OVERRIDE(_CMD), GH_STATUS_OVERRIDE, SILVER_BULLET_SKIP_ENFORCEMENT_TIER_GATE, SILVER_BULLET_TEST_HOOK_ENFORCED honoured only in the sandbox; SB_ENTERPRISE_HUMAN_DEPLOY_APPROVAL stays (a human sign-off) and is audit-logged",
+   "notes": "Same sandbox rule as R4-01 (fixed roots only)."
+  },
+  {
+   "id": "R1-37",
+   "status": "fixed",
+   "commits": [
+    "ea2125c",
+    "5b458fd"
+   ],
+   "tests": [
+    "tests/hooks/test-delivery-gates-g1.sh plus the updated suites"
+   ],
+   "evidence": "table-style cases for MCP, helper-unavailable, aliases via the classifier corpus (F2), change class, snippet, ci-status, pr-traceability",
+   "notes": "a full run without the two env switches against a template-stamped config is covered by the snippet and enterprise cases; the older suites still export the switches (sandbox-only now)"
+  },
+  {
+   "id": "R13-09",
+   "status": "fixed",
+   "commits": [
+    "ea2125c",
+    "5b458fd"
+   ],
+   "tests": [
+    "tests/hooks/test-completion-audit-release.sh: dry-run, all-skip, other-commit markers; tests/scripts/test-pre-release-host-isolation-lib.sh; tests/scripts/test-run-rc-validation-matrix-cells.sh"
+   ],
+   "evidence": "base: --dry-run wrote six status=pass markers that satisfied the gate; now status=dry-run, predicate needs status=pass with commit=<released commit>",
+   "notes": "skips accepted for one commit only with a human-written rc-validation/skip-waiver; cursor is still in the host list (Cursor removal package owns that)"
+  },
+  {
+   "id": "R8-13",
+   "status": "fixed",
+   "commits": [
+    "ea2125c",
+    "5b458fd"
+   ],
+   "tests": [
+    "same as R13-09"
+   ],
+   "evidence": "same root cause as R13-09",
+   "notes": ""
+  },
+  {
+   "id": "R13-10",
+   "status": "fixed",
+   "commits": [
+    "ea2125c",
+    "5b458fd"
+   ],
+   "tests": [
+    "tests/hooks/test-completion-audit-release.sh"
+   ],
+   "evidence": "validators/predicate from the plugin root; missing or non-executable validator blocks",
+   "notes": "validators run with explicit --file/--manifest paths into the project"
+  },
+  {
+   "id": "R16-06",
+   "status": "fixed",
+   "commits": [
+    "ea2125c",
+    "5b458fd"
+   ],
+   "tests": [
+    "tests/hooks/test-delivery-gates-g1.sh: expiry, project binding, symlink"
+   ],
+   "evidence": "docs now say host-wide, expiring marker (ORCHESTRATOR.md scope column, TROUBLESHOOTING.md, ENFORCEMENT.md, CONFIGURATION.md) and the code expires/binds it",
+   "notes": "session-start does not clear it (G4); delete it after the approved delivery"
+  },
+  {
+   "id": "R10-29",
+   "status": "fixed",
+   "commits": [
+    "ea2125c",
+    "5b458fd"
+   ],
+   "tests": [
+    "tests/docs suite (see validation)"
+   ],
+   "evidence": "silver-ship, silver-deploy, silver-create-release and the full-dev-cycle workflow (templates + docs mirror) now tell the agent to ask the human for the approval marker; sync-codex-package re-rendered the mirrors",
+   "notes": "did not change the default profile"
+  },
+  {
+   "id": "R13-20",
+   "status": "partial",
+   "commits": [
+    "ea2125c",
+    "5b458fd"
+   ],
+   "tests": [
+    "tests/scripts/test-release-bypass-audit.sh",
+    "tests/scripts/test-pre-release-gate-stages.sh",
+    "tests/scripts/test-sync-release-marketplace-versions-paths.sh",
+    "tests/scripts/test-run-rc-validation-matrix-cells.sh"
+   ],
+   "evidence": "SB_SKIP_PRE_RELEASE_GATE and SB_SKIP_RC_MATRIX now print an AUDIT line and append to release-bypass-log.jsonl; the RC block message no longer advertises SB_SKIP_RC_MATRIX; RELEASE.md says the live-matrix script only checks that the marker exists",
+   "notes": "run-release-live-matrix.sh still does an existence check only"
+  }
+ ],
+ "files_changed_outside_ownership": [
+  "hooks/hooks.json: completion-audit moved to its own PreToolUse matcher Bash|exec_command|mcp__.* (phase-archive keeps Bash|Skill|exec_command); docs/HOOKS.md regenerated",
+  "hooks/lib/tool-input/shell_analysis.py: _MCP_ACTIONS gains actions_run_trigger (data only)",
+  "hooks/lib/cert-bypass.sh, capability-tier.sh, enforcement-tier-gate.sh, trivial-bypass.sh, pr-traceability.sh: named by findings",
+  "scripts/lib/pre-release-host-isolation.sh, scripts/run-rc-validation-matrix.sh, scripts/pre-release-gate.sh, scripts/sync-release-marketplace-versions.sh, scripts/verify-tests.sh, scripts/lib/release-bypass-audit.sh (new): R13-09/R8-13/R13-20/R1-35; cursor host list left alone for the Cursor removal package",
+  "templates/silver-bullet.config.json.default: release.require_* false",
+  "skills/silver-ship, silver-deploy, silver-create-release SKILL.md, templates/workflows/full-dev-cycle.md and docs/workflows copy; regenerated mirrors via sync-codex-package.sh",
+  "tests/lib/testlib.sh: tl_fake_plugin_root; tests/lib/cov-a-ca.sh uses it",
+  "docs: ENFORCEMENT, CONFIGURATION, RELEASE, ORCHESTRATOR, TROUBLESHOOTING, testing/RC-VALIDATION-MATRIX"
+ ],
+ "validation": {
+  "tests": "claude runtime: 1325+ assertions across 33 suites green after fixes (scoped coverage run, 0 failures); codex runtime: 1452 passed, 0 failed (same 33 suites); docs suite 198 passed",
+  "coverage": "scoped bash coverage over the 23 changed files: every added/changed line executed (script check intersecting git diff with the missing-line report returned none); remaining misses are pre-existing lines covered by suites outside the scope",
+  "lint": "scripts/lint-shell.sh --all --jobs 2: application and test Bash clean",
+  "invariants": "check-repo-invariants.sh all PASS; generate-hook-reference --check up to date; validate-plugin-mirror OK; sync-codex-package produced no further diff"
+ },
+ "notes": "Re-verified every finding at the F1/F2 head: none was already fixed by F1 or F2 beyond the classifier (used for every command-shape decision here). Unseen-code and helper-unavailable follow-ups done: enterprise-policy.sh prints 'cannot inspect: <reason>' with how to proceed when ca_unseen_reasons is set; a failed helper holds mutating commands at the strictest floor but lets plain read-only git/ls commands through. Cross-package hand-offs: stop-check.sh should call sb_trivial_path_trusted (G2/G4); NotebookEdit/MCP write matchers (G2); session-start should clear enterprise-human-deploy-approved/ci-red-override (G4); codex-hook-adapter timeout should deny (adapter owner); agent-claude delegate scripts should stop exporting/persisting SB_AGENT_CERT_RUN; hook-bootstrap.sh header comment on intermediate pushes.",
+ "review_repair_r1": {
+  "head": "90a70e9",
+  "blocker": "three default-suite tests fixed (pr-traceability fault fixtures carry the PR URL, read-only fallback expectation, RC message wording); then every test file referencing a changed hook/script (93 files plus the python unit suite) was run under claude and codex",
+  "majors": {
+   "r1-22-strict": "done",
+   "default-branch-detection": "done (git-resolved, tests for HEAD/@/refs/tags/tag names/--all/--mirror/init.defaultBranch/origin HEAD)",
+   "tmpdir-trust": "fixed roots only, passwd home excluded, documented in docs/ENFORCEMENT.md",
+   "ci-status-classifier": "shell analysis helper incl. MCP; plain-verb fallback only when the helper is unavailable",
+   "release-target-api-mcp": "done",
+   "snippet-fail-closed": "done (returns 1 with a message; config paths ignored without helpers)",
+   "hooks-json-merge": "completion-audit stays in the original first PreToolUse group, whose matcher only gains |mcp__.*; ci-status-check moved into that group (after completion-audit); no new group, hook count stays 96",
+   "stop-check-trivial": "done"
+  },
+  "g2_must_keep": "In hooks/hooks.json PreToolUse keep ONE group with matcher 'Bash|Skill|exec_command|mcp__.*' holding phase-archive, completion-audit, ci-status-check in that order, and append G2's spec-floor-check/forbidden-skill-check/uat-gate to it (forbidden-skill-check needs Skill; the others exit for MCP calls). Do not re-create a separate completion-audit group. ci-status-check was removed from the 'Bash|exec_command' group (site-regression-gate ... rfl-policy-c-gate). Regenerate docs/HOOKS.md and hooks/cursor-hooks.json after merging.",
+  "g3_note": "G1 edited hooks/stop-check.sh: 3 lines before sb_trivial_bypass (sb_trivial_path_trusted with the default as fallback). Keep them when merging; tests added in tests/hooks/test-stop-check.sh.",
+  "minors": "all 8 done: unseen/helper wording (deploy tier + enterprise), ~ and ^ in the read-only fallback, verify-tests comment, MCP prefilter + copilot + actions_run_trigger method, SPEC.md mode, parity text in silver-bullet.md/template, CHANGELOG; the internal-error trap now covers the tiers by running them in a subshell (set -E was rejected: it fires inside command substitutions)",
+  "residuals": [
+   "R1-17 enabled/granularity opt-out stays a documented project opt-out",
+   "R1-15 non-prod keyword residual documented in CONFIGURATION.md",
+   "pre-existing at base: tests/scripts/test-install-codex.sh failed on scripts/lib/repo_invariants.py '.claude' references (not G1 code); base later fixed it"
+  ],
+  "handoffs": "G4: session-start clears enterprise-human-deploy-approved and ci-red-override; G2: write guard for the state dir; adapter owner: codex-hook-adapter timeout should deny; G6/delegate owner: stop exporting SB_AGENT_CERT_RUN",
+  "validation": {
+   "tests": "93 test files referencing changed hooks/scripts plus the python unit suite: claude runtime green except pre-existing test-install-codex.sh (repo_invariants.py .claude refs, not G1; later base commit adds a fix); codex runtime: 8368 passed, 1 failed (the same test); fixes after those runs re-verified in targeted runs (334 and 405 assertions green)",
+   "coverage": "one scoped run over the 25 changed files (3818 assertions, 0 failed) plus two top-ups: every added line executed except the init.defaultBranch fallback token in classify.sh, which executes in the full run and not in the reduced one; scripts/deploy-gate-snippet.sh 107/107, shell_analysis.py 100% statements and branches",
+   "lint": "lint-shell --all --jobs 2: rc 0",
+   "invariants": "check-repo-invariants: all PASS (incl. workflow-hardening, personal-data); generate-hook-reference/apo --check up to date; plugin mirror OK; sync-codex-package no diff"
+  }
+ },
+ "review_repair_r2": {
+  "merge": "base 54f285f merged; docs/HOOKS.md conflict regenerated",
+  "personal-data": "passes after the merge (check-repo-invariants all PASS); no invariant weakened",
+  "hook-faults-gates": "G1+G2 (191cc9d, throwaway worktree, hooks.json resolved per g2_must_keep) did not reproduce on G1's side; root cause hardened: ci-status-check treated an empty tool_name as non-shell when a tool-input lib is present, so the arm now analyses it with the helper (and the plain-verb fallback); test updated only by adding two assertions, intent unchanged",
+  "validation": "claude + codex: 300 passed each (hook-faults-gates, ci-status x2, g1); scoped coverage ci-status-check.sh: all lines covered after the extra test; lint/invariants/generators/mirror clean"
+ },
+ "review_repair_r3": {
+  "head": "see git",
+  "majors": {
+   "mcp-prefilter": "top-level tool_name via jq; only read-style suffixes skip; nested tool_name test",
+   "push-allowlist": "ca_push_is_feature_only: explicit existing non-default branch of one readable repo; -C/cd resolved with git; deletions, globs, tags, --all/--mirror, variables, aliases, GIT_DIR/--git-dir, opaque scripts, git-core helper paths, unresolved dirs are completion",
+   "mcp-writes": "tool_input.branch must be explicit non-default; missing/default/tag/ref tools completion",
+   "cert-bypass": "HOME, runtime home and state dir must all be under a fixed temp root and not the passwd home; PRESERVE/STATE_DIR alone cannot enable it; passwd home via getent or python3; documented",
+   "release-target": "every gh api field spelling, one releases call, no --input, literal values; otherwise deny 'cannot determine release commit'",
+   "dead-line": "deploy-tier wf continue removed"
+  },
+  "minors": "ci-status fallback gates MCP delivery tools and gh pr/release new; helper wording de-nested; core-rules.md + sha256 pin + CLAUDE.md updated; getent fallback; merge-trailer and adapter hand-off left to the orchestrator (F2 precedent: base merges not rewritten)",
+  "tests": "new rows in tests/hooks/test-delivery-gates-g1.sh, test-ci-status-check-paths.sh, test-shell-analysis-gates.sh (git-core helper push is now COMPLETION)",
+  "coverage_test_files": [
+   "tests/hooks/test-artifact-substance-gate.sh",
+   "tests/hooks/test-cert-bypass.sh",
+   "tests/hooks/test-ci-status-check-paths.sh",
+   "tests/hooks/test-ci-status-check.sh",
+   "tests/hooks/test-completion-audit-delivery.sh",
+   "tests/hooks/test-completion-audit-evidence-nojq.sh",
+   "tests/hooks/test-completion-audit-faults.sh",
+   "tests/hooks/test-completion-audit-libs.sh",
+   "tests/hooks/test-completion-audit-paths.sh",
+   "tests/hooks/test-completion-audit-release.sh",
+   "tests/hooks/test-completion-audit.sh",
+   "tests/hooks/test-core-rules-integrity.sh",
+   "tests/hooks/test-delivery-evidence-libs.sh",
+   "tests/hooks/test-delivery-evidence-strict-false.sh",
+   "tests/hooks/test-delivery-gates-g1.sh",
+   "tests/hooks/test-doc-scheme-gate-lib.sh",
+   "tests/hooks/test-enforcement-tier.sh",
+   "tests/hooks/test-enterprise-policy-booleans.sh",
+   "tests/hooks/test-enterprise-policy-paths.sh",
+   "tests/hooks/test-enterprise-policy-runtime.sh",
+   "tests/hooks/test-enterprise-policy.sh",
+   "tests/hooks/test-hook-faults-gates.sh",
+   "tests/hooks/test-pr-traceability-gh-view-fails.sh",
+   "tests/hooks/test-pr-traceability-jq.sh",
+   "tests/hooks/test-pr-traceability-paths.sh",
+   "tests/hooks/test-pr-traceability.sh",
+   "tests/hooks/test-shell-analysis-gates.sh",
+   "tests/hooks/test-stop-check-faults.sh",
+   "tests/hooks/test-stop-check-paths.sh",
+   "tests/hooks/test-stop-check.sh",
+   "tests/scripts/test-deploy-gate-snippet.sh",
+   "tests/scripts/test-pre-release-gate-stages.sh",
+   "tests/scripts/test-pre-release-gate.sh",
+   "tests/scripts/test-pre-release-host-isolation-lib.sh",
+   "tests/scripts/test-python-unit.sh",
+   "tests/scripts/test-release-bypass-audit.sh",
+   "tests/scripts/test-run-rc-validation-matrix-cells.sh",
+   "tests/scripts/test-sync-release-marketplace-versions-paths.sh",
+   "tests/scripts/test-sync-release-marketplace-versions.sh",
+   "tests/scripts/test-verify-tests-defaults.sh"
+  ],
+  "validation": "lint-shell --all rc 0; check-repo-invariants all PASS; generator/mirror checks current; scoped coverage over 25 changed files: 3937 assertions, one failure (git-core helper expectation) fixed and re-verified (557/0 on classify.sh runs); every added line covered; shell_analysis.py 100%; the full single run was followed by a classify.sh top-up run because of the fix"
+ }
+}

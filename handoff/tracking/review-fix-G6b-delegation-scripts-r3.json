@@ -1,0 +1,79 @@
+{
+ "package": "G6b",
+ "head_reviewed": "66f9c70",
+ "verdict": "CHANGES_REQUIRED",
+ "per_finding": [
+  {
+   "id": "r2-major-1 (Codex transcript directory)",
+   "verdict": "fixed",
+   "notes": "Two-user probe (victim uid 65534 via setpriv, root as attacker, shared 1777 TMPDIR, fs.protected_symlinks=0): 50 planted sb-codex-transcripts.* symlinks to the victim's ~/.bashrc plus a 0777 attacker dir -> the victim used a fresh mktemp dir (drwx------ nobody), .bashrc untouched, transcript redacted (password=[REDACTED], Bearer [REDACTED]). CODEX_TRANSCRIPT_DIR = attacker-owned 0777 dir -> 'refusing transcript directory', rc=1, nothing written. Symlinked named dir and planted latest.jsonl link: refused (tests). TMPDIR unset -> /tmp/sb-codex-transcripts.XXXXXX 0700. Sweep: victim's own old dir removed but its inner symlinks to ~/important not followed (target intact); attacker-owned old dir, attacker symlink and victim symlink named sb-codex-transcripts.* (aged 3 days) all left alone (-type d, -user, no -L). TMPDIR given as a symlink without trailing slash makes the sweep a no-op (harmless). Residual: see minor 2 (named dir that is the user's own but was world-writable)."
+  },
+  {
+   "id": "r2-major-2 (brief scanner regressions)",
+   "verdict": "fixed",
+   "notes": "All r2 regressions are caught again (sk_test_/sk_live_/rk_live_, API_KEY=Xk9_aP2..., Bearer abc_def_..., dotted random, client_secret letter run, Slack webhook). Corpus probe (REVF-G6b-r3-probe/corpus.py): 68 real-shaped secrets covering every category in the task (Stripe sk/rk/whsec, Slack webhook + xoxb/xoxp/xoxa, API_KEY random, Bearer, dotted, 20-char letter runs, AWS AKID/ASIA/secret, ghp/gho/ghs/github_pat, glpat, npm_, hf_, JWT, PEM RSA/PKCS8/OPENSSH/EC with body, URL userinfo with real passwords, sk-proj/sk-ant, AIza, SendGrid, Twilio, Django) -> 2 false negatives (Authorization: Basic ..., Authorization: token ...). 70 honest strings (UUIDs, postgres:postgres@localhost, root:root, ${GH_TOKEN}@, $CI_JOB_TOKEN@, SCREAMING_SNAKE names, get_user_by_id_and_name, settings./process.env./os.getenv refs, long paths, sha1/sha256 in prose, base64 fixture, PEM header in prose, Foo::Bar, a->b chains, placeholders) -> 0 false positives. Further gaps found outside the requested list: see major 1."
+  },
+  {
+   "id": "r2-minor fingerprint",
+   "verdict": "fixed",
+   "notes": "Probe fp.sh: untracked /dev/zero link 0.06 s, FIFO 0.09 s, nested FIFO + /dev/stdin link 0.13 s, tracked file replaced by a FIFO or a /dev/zero link 0.07-0.10 s (all rc=0, previously a 10 s timeout). strace -e openat shows no open of the link targets (/etc/hostname, /dev/zero, /dev/stdin). Cap: a change after byte 4 MiB in a same-size untracked file leaves the fingerprint unchanged (by design; undocumented, nit)."
+  },
+  {
+   "id": "r2-minor scanner false positives",
+   "verdict": "fixed",
+   "notes": "postgres://postgres:postgres@localhost, ${GH_TOKEN}@, prose PEM header, csrf_token UUID all pass. Override still leaves only a stderr trace (not addressed; accepted as before). The UUID and trivial-password exemptions now open new false negatives (major 1)."
+  },
+  {
+   "id": "r2-minor known-limit codex.sh:380",
+   "verdict": "fixed",
+   "notes": "Entry removed from tests/coverage/known-limits.json; launcher is codex_run_tui_launcher with `cd \"$SB_ROOT\" || return 1`; the scoped run shows codex.sh 203/203 with no known-limit exclusions reported."
+  },
+  {
+   "id": "r2-minor docs",
+   "verdict": "fixed",
+   "notes": "CHANGELOG line names both residuals (pinned NI stdout not redacted; fingerprint misses ignored files/outside writes); Secrets and Quota rows in all four skills carry them; Permission-mode rows for claude/codex/opencode now say same git toplevel (nested clone/other worktree strict), matching the code verified in r2. Mirrors regenerated (sync-codex-package in a sandbox copy: no diff)."
+  },
+  {
+   "id": "r2-minor reader exit race",
+   "verdict": "fixed",
+   "notes": "My stress: 36 runs per adapter with the CLI sleeping 0, 0.17-0.21 (straddling the 0.2 s select timeout), 0.39-0.41 and 0.6 s then printing and exiting: OpenCode 0/36 lost, Pi 0/36 lost. The drain loop has no deadline check (nit, below)."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "major",
+   "location": "scripts/lib/agent_redact.py:73-147 (scan(), _looks_random, _UUID, _UPPER_SNAKE, _TRIVIAL_PASSWORDS)",
+   "problem": "The brief scanner still lets real-shaped literal secrets through. (a) scan() never applies the _AUTH_HEADER and _PASSWORD_FLAG patterns that redact() already treats as secrets, so 'Authorization: Basic <base64 user:pass>', 'Authorization: token <40-char token>', 'Proxy-Authorization: Basic ...', '--token <value>' and '--password <value>' (space form) pass the gate. (b) The new UUID exemption applies whatever the name, so UUID-shaped API keys (Heroku API keys are UUIDs) pass: 'HEROKU_API_KEY=3f2a9c1e-7b4d-4e8a-9c2f-1a6b8d0e5f3c', 'client_secret=<uuid>'. (c) The SCREAMING_SNAKE exemption applies to digit-bearing values, so 'TOKEN=AB12_CD34_EF56_GH78_IJ90' and 'API_KEY=XK9A_P2MQ_7VR4_TL8N_B3CW' pass (caught at r1 fbf2842, missed at r2 and r3: same identifier-exemption class as the r2 major). (d) Trivial passwords are exempt on any host: 'https://admin:admin@prod-db.company.com'. (e) Pre-existing gaps: names ending in a generic *_KEY (AZURE_STORAGE_KEY=<88-char base64>, signing_key=<random>) and '-----BEGIN PGP PRIVATE KEY BLOCK-----' with a body are neither scanned nor redacted.",
+   "evidence": "PYTHONDONTWRITEBYTECODE=1 python3 -I REVF-G6b-r3-probe/c3.py and c4.py and corpus2.py against the worktree agent_redact.py: scan() returns None for each string above, while redact() rewrites the Authorization and --token/--password ones to [REDACTED]. Same probe against fbf2842 (r1) catches 'TOKEN=AB12_CD34_EF56_GH78_IJ90' (assignment).",
+   "suggested_fix": "In scan(), run _AUTH_HEADER (any scheme) and _PASSWORD_FLAG and test the value with _looks_random(..., bearer=True) / _is_reference. Exempt UUIDs only when the assignment name is not a strong secret name (api_key, secret, client_secret, password, private_key) or only for id-like names (csrf/session/request/trace/correlation). Restrict the SCREAMING_SNAKE exemption to digitless segments or segments that read as words (e.g. at most a trailing numeric suffix: GOOGLE_CLIENT_SECRET_2). Limit trivial-password exemption to localhost/127.0.0.1/::1/*.local/docker service names. Add PGP PRIVATE KEY BLOCK to the PEM pattern and consider [_-]key names with long base64/random values. Pin every sample in tests/python/test_agent_redact.py."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/lib/agent-adapters/codex.sh:87-101,111-149",
+   "problem": "A named CODEX_TRANSCRIPT_DIR that the user owns but that is group/world-writable is accepted and then chmod'ed 700; files already planted in it by another user (regular files, not links) are written into, not replaced. The attacker who planted a 0666 latest.jsonl keeps an fd open and reads the raw, unredacted prompt and transcript (redaction replaces the inode afterwards); the attacker-owned latest.meta.json stays 0666 because chmod 600 fails. A named directory under an attacker-writable non-sticky parent can also be swapped after the check. CODEX_TRANSCRIPT_DIR is set only by live-test isolation, so exposure is low.",
+   "evidence": "Probe: victim (uid 65534) owns $S/tmp/vnamed 0777; attacker (root) plants latest.jsonl/latest.meta.json 0666 and holds them open; victim runs codex_capture_transcript with CODEX_TRANSCRIPT_DIR=$S/tmp/vnamed -> 'chmod: changing permissions of .../latest.meta.json: Operation not permitted'; the attacker's fd reads '{\"type\": \"prompt.submitted\", \"prompt\": \"my private prompt password=hunter2hunter2X9\\n\"}' and 'Bearer abcdefgh12345678XYZ' (unredacted).",
+   "suggested_fix": "Refuse a named directory that is group/world-writable (or any existing entry not owned by the user), and create latest.jsonl/meta/archive with O_CREAT|O_EXCL|O_NOFOLLOW (write to mkstemp in the dir, then rename)."
+  },
+  {
+   "severity": "minor",
+   "location": "tests/python/test_agent_redact.py (userinfo corpus)",
+   "problem": "The trivial-password exemption is not pinned: emptying _TRIVIAL_PASSWORDS leaves the unit tests green (the only honest sample is postgres:postgres, which passes through the user==password rule).",
+   "evidence": "Sandbox mutation REVF-G6b-r3-probe/mut: `_TRIVIAL_PASSWORDS = set()` -> python3 -m unittest test_agent_redact: OK. Other mutations fail as expected (no Stripe/webhook rules: 2 failures; no UUID exemption: 2; PEM header-only: 2).",
+   "suggested_fix": "Add an honest sample such as postgres://user:password@localhost/db."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/lib/agent-adapters/opencode.sh:222-233, pi.sh:137-148 (drain loop); agent-delegate-common.sh:127-135 (fingerprint cap)",
+   "problem": "Nits: the new non-blocking drain has no hard-deadline or size check, so a background grandchild that floods stdout from the instant of the drain would keep it reading (the main loop already accumulates unbounded output, so this is the same pre-existing memory class). The 4 MiB fingerprint cap means a change past 4 MiB in a same-size untracked file is invisible to the quota-retry check; not documented next to the other fingerprint residuals. The sweep uses `-mtime +1` (effectively 2 days) while the comment says 'older than a day'.",
+   "evidence": "Static reading; the 4 MiB case reproduced (fingerprint 2186461316 before and after changing byte 4,500,000 of a 5 MB file).",
+   "suggested_fix": "Check hard_deadline inside the drain loop; mention the 4 MiB cap in the Quota row; align the sweep comment."
+  }
+ ],
+ "validation": {
+  "tests": "Scoped coverage run (40 test files, claude runtime): 5222 passed, 0 failed. test-agent-adapters-stubs.sh + test-agent-delegate-common-behavior.sh under codex and claude: 358 passed, 0 failed each. Template parity + bundle freshness (codex runtime): 1486 passed, 0 failed. Remaining 38 coverage-set files under codex runtime: 36 files completed, 4864 passed, 0 failed; the run hit my 1150 s timeout on a loaded machine (other reviewers' suites running) before the last 2 files finished; those passed under claude in the coverage run.",
+  "coverage": "One scoped run with --only on the 21 changed Bash files plus agent_fifo.py and agent_redact.py: Bash statements 3217/3217, lines 2503/2503, functions 177/177; Python statements 167/167, branches 68/68 (100%). codex.sh 203/203 with no known-limit exclusions; exit 0.",
+  "lint": "bash scripts/lint-shell.sh --all --jobs 2 -> exit 0 (application Bash clean, 746 test files clean).",
+  "invariants": "check-repo-invariants.sh exit 0; generate-hook-reference --check and generate-apo-artifacts --check OK; validate-plugin-mirror OK; docs/workflows == templates/workflows; sync-codex-package.sh in a git-archive sandbox copy: no diff (copy deleted). Trailers: both new commits end with 'Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>' + session line (accepted); no other model names. git merge-tree --write-tree HEAD claude/optimistic-ramanujan-tccfud (b654bc1): clean, conflicting files: none. Worktree git status clean.",
+  "probe_dir": "REVF-G6b-r3-probe (victim3.sh, corpus.py, corpus2.py, c3.py, c4.py, fp.sh, race/, mut/)"
+ }
+}

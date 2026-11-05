@@ -1,0 +1,232 @@
+{
+ "package": "G6b-delegation-scripts",
+ "branch": "fix/G6b-delegation-scripts",
+ "head": "66f9c701612c8ed967ab6eba4d2ace8454a508f8",
+ "worktree": "/home/user/silver-bullet/.claude/worktrees/G6b",
+ "dispositions": [
+  {
+   "id": "R4-11",
+   "status": "fixed",
+   "commits": [
+    "d49cc10"
+   ],
+   "tests": [
+    "tests/scripts/test-agent-claude-folder-trust-seed.sh: global untouched by default, corrupt/array/non-object ~/.claude.json byte-identical, backup, mode kept",
+    "tests/scripts/test-agent-live-libs.sh"
+   ],
+   "evidence": "Red: 4 checks failed on base (global touched by default, corrupt file overwritten) -> green 14/14.",
+   "notes": "Global seeding is opt-in (SB_AGENT_CLAUDE_SEED_FOLDER_TRUST_GLOBAL=1): aborts on parse error, one-time .sb-backup, temp file + os.replace, mode preserved. No consent prompt (opt-in env is the consent)."
+  },
+  {
+   "id": "R8-15",
+   "status": "fixed",
+   "commits": [
+    "d49cc10",
+    "9312059"
+   ],
+   "tests": [
+    "test-agent-claude-folder-trust-seed.sh",
+    "test-agent-live-libs.sh: codex delegate env defaults 0|0",
+    "test-agent-host-exec-lib.sh",
+    "test-agent-codex-adapter-trust.sh"
+   ],
+   "evidence": "Claude half deduped with R4-11; Codex CODEX_BYPASS_HOOK_TRUST/CODEX_AUTO_TRUST_HOOKS default 0 in agent-codex/lib.sh, agent-codex-delegate.sh and the shipped adapter.",
+   "notes": "codex-interactive-invoke.expect/.py already default 0 and gate the auto-answers on the env, so no edit was needed there."
+  },
+  {
+   "id": "R4-23",
+   "status": "fixed",
+   "commits": [
+    "9312059"
+   ],
+   "tests": [
+    "test-agent-host-exec-lib.sh: strict argv has no bypass flags, workspace-write",
+    "test-agent-codex-adapter-trust.sh (12)",
+    "test-agent-delegate-common-behavior.sh: default mode table (9)",
+    "delegate tests: default mode=strict outside the project"
+   ],
+   "evidence": "Strict never adds bypass flags (Codex workspace-write sandbox); hook-trust bypass only with explicit opt-in in permissive; --mode defaults to strict when work dir is outside the current project (CLAUDE_PROJECT_DIR / git toplevel of cwd); SB_AGENT_DELEGATE_DEFAULT_MODE overrides.",
+   "notes": "Cursor --trust/--force/--yolo: moot, Cursor removed (agent-host-exec cursor branch untouched, HC deletes it)."
+  },
+  {
+   "id": "R4-20",
+   "status": "fixed",
+   "commits": [
+    "9312059"
+   ],
+   "tests": [
+    "test-agent-delegate-common-behavior.sh: quota_yes/no table, retry decision, fingerprint",
+    "test-agent-codex-delegate-run.sh: 'line 429' runs once, rate_limit_error retried only for unchanged git tree or --quota-retry",
+    "live claude/opencode/pi delegate tests"
+   ],
+   "evidence": "Red: 'AssertionError at line 429' output re-ran up to 6x. Green: runs once.",
+   "notes": "Delegate half only. The five-copy loop decision is now one function agent_delegate_quota_retry_decision (cursor delegate copy left for HC deletion). The RFL QUOTA_EXHAUSTION_RE half belongs to G6a. Uses --classify-quota-window unchanged."
+  },
+  {
+   "id": "R4-21",
+   "status": "fixed",
+   "commits": [
+    "a0452ea"
+   ],
+   "tests": [
+    "tests/scripts/test-agent-host-exec-lib.sh: TERM-ignoring CLI returns 124 in ~6s, descendant gone, EOF-then-linger bounded"
+   ],
+   "evidence": "Red: unbounded waitpid. Green: killpg TERM, WNOHANG poll, killpg KILL, master fd closed.",
+   "notes": ""
+  },
+  {
+   "id": "R4-22",
+   "status": "fixed",
+   "commits": [
+    "9670504"
+   ],
+   "tests": [
+    "tests/python/test_agent_fifo.py (8)",
+    "test-agent-live-small-scripts.sh: reader-less FIFO exits 2 within deadline, late reader served",
+    "test-agent-mode-resolver.sh"
+   ],
+   "evidence": "Red: ctl.sh abort hung on a reader-less cmd.fifo. Green: exits 2 in ~1s (SB_AGENT_CTL_TIMEOUT, default 8).",
+   "notes": "New scripts/lib/agent_fifo.py used by ctl.sh and agent_mode_ctl_write. mock-interactive.py not changed (it is the reader side of the test mock; writers now retry)."
+  },
+  {
+   "id": "R4-24",
+   "status": "partial",
+   "commits": [
+    "a0452ea"
+   ],
+   "tests": [
+    "test-agent-host-exec-lib.sh: continue hops go through the guard, rewrite dir under TMPDIR and removed"
+   ],
+   "evidence": "Non-quota half fixed: --continue hops run under the zero-byte guard (subshell), .pi-fresh-rewrite.* now TMPDIR/pi-fresh-rewrite.* removed after use.",
+   "notes": "Quota scheduling in the install root and the duplicate agent_host_pi_should_continue are G6a (agent-pi-quota-retry.sh)."
+  },
+  {
+   "id": "R4-31",
+   "status": "partial",
+   "commits": [
+    "ce4d47c"
+   ],
+   "tests": [
+    "tests/python/test_agent_redact.py (18)",
+    "test-agent-delegate-common-behavior.sh: redaction table, interrupted delegate leaves a redacted 0600 log, symlink refused"
+   ],
+   "evidence": "Redaction covers Bearer/Authorization, github_pat_, gh*_, glpat-, xox*, AKIA/ASIA, sk-, JWT, PEM, KEY=value; logs created 0600 and redacted on EXIT/INT/TERM/HUP; stale lightweight CODEX_HOME (auth.json copy) swept on start.",
+   "notes": "Residuals: raw log exists on disk (0600) until the run ends, SIGKILL skips redaction; brief is still a CLI argv (visible to ps) because the host one-shot CLIs are not verified to take stdin. Skills now say so."
+  },
+  {
+   "id": "R4-32",
+   "status": "fixed",
+   "commits": [
+    "6a103a7"
+   ],
+   "tests": [
+    "test-agent-delegation-state.sh (+14)",
+    "test-agent-delegate-common-behavior.sh: awkward values round-trip",
+    "test-agent-mode-flags.sh: task-id table"
+   ],
+   "evidence": "state.json / degraded-fallback.jsonl / cohort start event built with jq; --task-id validated ^[A-Za-z0-9._-]{1,64}$ (blocks ../ traversal); hook state sanitises ids, writes atomically (temp+rename), refuses symlinked file/dir, no no-jq writer.",
+   "notes": "Orchestrator-directive caller passes ids from paths; they are sanitised, not rejected."
+  },
+  {
+   "id": "R8-14",
+   "status": "fixed",
+   "commits": [
+    "916e53a"
+   ],
+   "tests": [
+    "tests/scripts/test-agent-live-pi-invoke.sh: flag=1 still runs the delegate, ./1 never executed, relative override refused"
+   ],
+   "evidence": "Override renamed SB_AGENT_PI_DELEGATE_SCRIPT, absolute path required.",
+   "notes": ""
+  },
+  {
+   "id": "R8-26",
+   "status": "fixed",
+   "commits": [
+    "ca7bdde"
+   ],
+   "tests": [
+    "tests/scripts/test-agent-live-monitors.sh: benign AUTHORS/OAuth/author/line 429 silent on all hosts; real failures extracted"
+   ],
+   "evidence": "One scripts/lib/agent-monitor.sh with per-host tables; the four monitor.sh are 3-line shims; no bare 'auth'.",
+   "notes": ""
+  },
+  {
+   "id": "R10b-05",
+   "status": "fixed",
+   "commits": [
+    "3dea972"
+   ],
+   "tests": [
+    "tests/scripts/test-agent-delegate-package.sh (17): scripts-only copy runs all four delegates past the adapter check"
+   ],
+   "evidence": "Adapters moved to scripts/lib/agent-adapters/<host>.sh; tests/live/agents/<host>/agent.sh are shims.",
+   "notes": "Whole adapters moved (not a production/test split). Consequence: they enter the Bash coverage scope, so tests/coverage/scope.json excludes scripts/lib/agent-adapters/* (needs-user confirm). Cursor half moot."
+  },
+  {
+   "id": "R10b-06",
+   "status": "fixed",
+   "commits": [
+    "ce4d47c",
+    "9312059",
+    "1f6c00a"
+   ],
+   "tests": [
+    "test-agent-delegate-common-behavior.sh: samples rejected / honest briefs accepted / scanner failure fails closed",
+    "test-agent-codex-adapter-trust.sh"
+   ],
+   "evidence": "Case-insensitive value-shaped scan (prefix tokens, JWT, PEM, Bearer, high-entropy KEY=value); no bare-keyword rejection; skills' Security tables corrected (best effort, trust defaults, permission mode, folder trust).",
+   "notes": ""
+  }
+ ],
+ "files_changed_outside_ownership": [
+  "CHANGELOG.md: Unreleased entries",
+  "docs/skills/AGENT-HOST-DELEGATION-SIBLING-PROMPT.md and skills/silver-agent-*/SKILL.md (+ regenerated agents/, host-bundles/, plugins/ mirrors)",
+  "tests/lib/agent-live-helpers.sh, tests/lib/k-agents-live-2-helpers.sh, tests/e2e-live/test-e2e-live-suite.sh, tests/scripts/test-run-sb-live-tests-codex.sh: adapter paths / staged files",
+  "tests/live/agents/{claude,codex,opencode,pi}/agent.sh: now shims (git sees the originals as moved)"
+ ],
+ "validation": {
+  "tests": "~45 delegate/mode/host-exec/monitor/state/skill test files green under SILVER_BULLET_RUNTIME=claude and codex (two at a time); docs suite 198 passed; multi-ai live_dispatch unittests 74 OK",
+  "coverage": "one scoped run: 17 Bash files 100% statements/lines/functions, 2 Python files 100% statements+branches (scripts/lib/agent_fifo.py, agent_redact.py)",
+  "lint": "lint-shell --all --jobs 2 clean",
+  "invariants": "check-repo-invariants all PASS; generate-hook-reference/apo --check and validate-plugin-mirror OK; sync-codex-package no diff after final commit; base merged (2a65018)"
+ },
+ "notes": "Cursor-only delegate (agent-cursor-delegate.sh, cursor branch of agent-host-exec.sh) untouched; its quota loop copy still has the old logic until HC removes it. Open for orchestrator: (1) confirm scope.json exclusion for shipped adapters, or choose to ship tests/live/agents in the Codex package instead; (2) briefs still reach host CLIs as argv; (3) default mode flip to strict outside the current project is a behaviour change to announce; (4) the codex adapter transcript default dir still points under SB_ROOT/tests/live (unchanged).",
+ "review_repair_r1": {
+  "majors": {
+   "opencode_strict_auto": "fixed: --auto only in permissive (host-exec NI+TUI, shipped adapter); Pi strict refused with a clear message (explicit or default-outside-project); tests assert argv and refusal",
+   "coverage_exclusion": "fixed: scope.json exclusion removed; adapters covered by tests/scripts/test-agent-adapters-stubs.sh (fake CLIs/expect/launcher) + codex-adapter-trust; one audited known-limit (codex.sh:380 cd, unattributable by xtrace, effect asserted); also fixed a real race where a fast-exiting CLI lost its output in the OpenCode/Pi NI readers (now read to EOF)",
+   "codex_transcripts": "fixed: per-run 0700 TMPDIR dir, 0600 files, redacted via agent_redact.py, never under SB_ROOT (test asserts nothing written under SB_ROOT)",
+   "brief_scanner": "fixed: references/calls/env lookups/identifier chains are not literals; refusal names rule and line; SB_AGENT_ALLOW_SECRET_LIKE_BRIEF=1 (user's shell env, announced, never from the brief; an agent that sets it inline for its own call still can: documented limit)"
+  },
+  "minors": [
+   "default mode: same git toplevel or exact non-git dir; nested clone and $HOME children strict; choice announced",
+   "strict skips Claude ephemeral folder-trust seeding",
+   "quota: error lines only; fingerprint includes untracked file content (ignored files and outside-dir writes documented residual)",
+   "codex stale-home sweep by owner PID",
+   "global ~/.claude.json: symlink resolved, flock sidecar",
+   "redaction: URL userinfo, --password/--token flags, npm_/hf_; delegate stdout redacted (pinned-NI exec path still bypasses stdout redaction)",
+   "package test asserts exit status and stub launch (copies scripts+hooks)",
+   "Pi skill quota row aligned",
+   "CTL timeout non-numeric safe; Pi fresh-rewrite prompt uses the absolute path; setsid grandchild residual documented"
+  ],
+  "merge_conflicts_with_fix_HC_remove_cursor": [
+   "docs/skills/AGENT-HOST-DELEGATION-SIBLING-PROMPT.md (content, 3 hunks)",
+   "host-bundles/cursor/sb:agent-{claude,codex,opencode,pi}/SKILL.md (modify/delete)",
+   "plugins/silver-bullet/cursor-skill-source/sb-agent-{claude,codex,opencode,pi}/SILVER_SOURCE (modify/delete)"
+  ],
+  "validation": "ONE scoped coverage run: 21 Bash files 100% statements/lines/functions (1 audited known limit), agent_fifo.py + agent_redact.py 100% statements+branches in the same run, all included tests pass; codex-runtime batch green; docs suite 198; lint-shell clean; invariants/generators/mirror clean; base 54f285f merged cleanly"
+ },
+ "review_repair_r2": {
+  "major_1_transcript_dir": "fixed: fresh mktemp -d (0700); named CODEX_TRANSCRIPT_DIR must be a real dir owned by us; planted latest/meta links refused; all failures return 1 (fail closed); old private dirs swept after a day. Tests: planted look-alike links in a shared TMPDIR, symlinked named dir, planted file link, uncreatable dir, mktemp failure, sweep. Mutation (predictable name, no checks): 5 stub-test failures.",
+  "major_2_scanner": "fixed: underscore exemption removed for digit-bearing values (only digitless snake/dotted identifiers and SCREAMING_SNAKE are exempt); Bearer values exempt only if references; Stripe sk_/rk_/whsec_ and Slack webhook prefixes; secret_key name; case-flip rate catches random letter runs. False positives fixed: UUIDs, trivial/ref URL userinfo, PEM needs a body line. Corpus of 12 secrets / 12 honest briefs in test_agent_redact.py. Mutation (underscore rule back): 2 corpus failures.",
+  "minors": {
+   "a_fingerprint": "symlinks recorded by target, only regular files hashed, 4 MiB cap; tests with /dev/zero link, FIFO, outside link (no hang, no outside read)",
+   "b_scanner_fp": "see major 2",
+   "c_known_limit": "codex.sh launcher moved into codex_run_tui_launcher with cd||return 1, measured, known-limits entry removed; failing cd covered",
+   "d_docs": "CHANGELOG + skills: pinned-NI stdout not redacted, fingerprint misses ignored files/outside writes; Permission-mode rows say same git toplevel",
+   "e_reader": "after select timeout + exit the pipe is drained non-blocking to EOF; 12-run exit-race stress for OpenCode and Pi (sleep 0.19 then print) loses nothing"
+  },
+  "validation": "one scoped coverage run: 21 Bash files 100%/100%/100%, no known-limit entries added, Python files 100% statements and branches in the same run; lint-shell clean; invariants/generators/mirror clean; sync no diff; bundle freshness + template parity 1486 pass; base 54f285f (unchanged)"
+ }
+}

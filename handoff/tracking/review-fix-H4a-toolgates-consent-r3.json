@@ -1,0 +1,61 @@
+{
+ "package": "H4a-toolgates-consent",
+ "head_reviewed": "1799a7c",
+ "verdict": "CHANGES_REQUIRED",
+ "per_finding": [
+  {
+   "id": "r2-major-1 (stamp paths)",
+   "verdict": "incomplete",
+   "notes": "Basename allowlist works. REVF-H4a-r3-probe/scripts/stamp.sh: orchestrator-directive.json, Orchestrator-Directive.json, planning-edit-override, roadmap-edit-override, mode, skill-invocations, trivial/Trivial/TRIVIAL, STATE/state, branch, 'trivial ', 'trivial.', 'x-usage.', 'x-usage ', trailing '/', './', 'sub/..', '..', trivial/../x-usage, unicode look-alikes (x-us\u00e1ge, fullwidth x, zero-width space), '-usage', absolute /etc and outside-dir paths, and a symlinked dir all fall back to graphify-query. The directive stays {\"next_skill\":\"silver-plan\",\"blocking\":true}. Names that match the pattern are honoured, as designed: skill-invocations-usage, trivial-usage, TRIVIAL-USAGE, agentmemory-usage (no SB control file ends in -usage or -query). But the PARENT components are never checked against SB control names, and sb_rt_stamp_write runs mkdir -p on the parent, so a stamp can turn a control path into a directory. See major issue 1."
+  },
+  {
+   "id": "r2-minor-2 (consent lock)",
+   "verdict": "fixed",
+   "notes": "REVF-H4a-r3-probe/scripts/lock.sh: 8 rounds, each with a stale (dead-pid) lock, then 7 parallel grants and 7 parallel revokes. Every round: granted=7, after_revoke=0, and no lock, takeover or tmp files left. A pid-less lock is reclaimed after the wait: rc 0, grant recorded, about 1.5 s with TRIES=5. A live owner gives rc 2 and keeps the lock. Non-numeric, zero, negative and empty SB_CONSENT_LOCK_TRIES fall back to 100. Residuals are in minor issue 3."
+  },
+  {
+   "id": "r2-minor-3 (classifier)",
+   "verdict": "fixed",
+   "notes": "REVF-H4a-r3-probe/scripts/fp.sh, 152 commands x 5 gates, Claude Bash; 28 commands under Codex exec_command. Denied in all 5 gates: git --no-pager commit, git -c alias.ci=commit ci, git $'commit', merge/cherry-pick/revert/am/commit-tree/rebase, git --work-tree/-C/-c commit, xargs/find -exec/eval/bash -c, npm -g install, pnpm/bun add -g, yarn global add, | /bin/bash, | env bash, | python3, | sudo bash, bash <(curl), python3 <(curl), sh -c \"$(curl)\", pipx/cargo/go/gem/uv tool install, brew install, writes. Allowed in all 5: $PYTHON -m pytest, \"$PY\" -m pytest, pytest, make, make -j4, cargo build/test, go test/build/vet, gradle/gradlew, docker ps/build/compose, kubectl get, terraform plan, npm test/ci/install/run, pip install -r, uv run, uvx, npx, mvn, git status/log/diff/push. kubectl apply and terraform apply are now gated: F2 classifies them as deploys, which is consistent with the delivery tier. Remaining allows are outside the r2 examples: a repo-config alias (git ci), npm --location=global, brew reinstall, pip install --user, and analyzer-missed writes (patch, git apply, python3 script.py)."
+  },
+  {
+   "id": "r2-coverage (single run)",
+   "verdict": "fixed",
+   "notes": "One scoped run: 127 test files, including test-gate-hooks-fault-injection.sh and every test that references a changed gate or lib, with --only over all 30 changed hooks/ and scripts/ files. Bash statements 3870/3870, lines 2721/2721, functions 314/314; every file 100%, opt-in-gate.sh 292/292. The run exits 1 because of test failures; see issue 2 and validation."
+  },
+  {
+   "id": "api-compat",
+   "verdict": "ok",
+   "notes": "No public function was removed or renamed in user-consent.sh, opt-in-gate.sh, recommended-tools.sh or sb-consent.sh (the only additions are the private _sb_consent_lock_reclaim and _sb_opt_in_classify). fix/H4b-toolstack-scripts (f295ec5) already contains 1799a7c."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "major",
+   "location": "hooks/lib/recommended-tools.sh:207-213 (sb_rt_state_file) with :236 (sb_rt_stamp_write mkdir -p); tests/hooks/test-graphify-gate-lib-coverage.sh 'state path in a not-yet-existing subdirectory is accepted'; docs/CONSENT.md:27",
+   "problem": "The allowlist checks only the basename. A configured stamp ${SB_RUNTIME_STATE_DIR}/<control-name>/x-usage is honoured, and the stamp writer's mkdir -p creates a DIRECTORY named after an SB control file. With orchestrator-directive.json made a directory, sb_orchestrator_directive_write returns 0 but writes orchestrator-directive.json/orchestrator-directive.json.tmp inside it, and sb_orchestrator_directive_is_blocking stays false for good. This is the same blocking-directive bypass as the r2 major, reached by one more path component, and it persists. state/x-usage makes the skill state file a directory: commits stay denied (fail closed), but honest skill recording breaks. docs/CONSENT.md says such a stamp 'can never name one of SB's own state files'.",
+   "evidence": "REVF-H4a-r3-probe/scripts/stamp.sh (graphify enforce consent, record-graphify-query.sh on 'graphify query x'): '${SB_RUNTIME_STATE_DIR}/orchestrator-directive.json/x-usage' -> ./orchestrator-directive.json ./orchestrator-directive.json/x-usage; the same for state/, trivial/, planning-edit-override/, roadmap-edit-override/, mode/, branch/. Then, with SB_RUNTIME_STATE_DIR holding a directory orchestrator-directive.json: source hooks/lib/orchestrator-directive.sh; sb_orchestrator_directive_write silver-plan '' r true -> write_rc=0, then is_blocking -> not-blocking; the file lands at orchestrator-directive.json/orchestrator-directive.json.tmp. Separately, dev-cycle-check.sh does not deny 'echo 1 > ~/.claude/.silver-bullet/orchestrator-directive.json', which is pre-existing and outside this package.",
+   "suggested_fix": "Require rel to be a single component (reject any '/' in rel), or put custom stamps under a dedicated $SB_RUNTIME_STATE_DIR/opt-in/ subdirectory. Replace the 'subdirectory is accepted' test with a rejection test for orchestrator-directive.json/x-usage and state/x-usage, and assert that no directory is created."
+  },
+  {
+   "severity": "major",
+   "location": "tests/hooks/test-agentmemory-gate.sh:53 (added in 6c5eab4)",
+   "problem": "A default-suite lint test fails on the branch: tests/scripts/test-no-pipe-into-grep-quiet.sh flags 'printf ... | jq -r ... | grep -qF -- \"$needle\"'. CI's test job would go red. fix/H4b-toolstack-scripts keeps the same line, so merging H4b does not fix it. The r2 review missed this.",
+   "evidence": "bash tests/run-all-tests.sh tests/scripts/test-no-pipe-into-grep-quiet.sh -> 'FAIL: producer piped into grep -q/-m ... tests/hooks/test-agentmemory-gate.sh:53', Results: 3 passed, 1 failed. The base's version of that helper has no such pipe.",
+   "suggested_fix": "grep -qF -- \"$needle\" <<<\"$(printf '%s' \"$output\" | jq -r '...')\""
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/lib/user-consent.sh:161-200; tests/hooks/test-user-consent.sh 'SB_CONSENT_LOCK_TRIES=... falls back to the default'",
+   "problem": "(a) The bad-TRIES tests are vacuous: no lock is held, so the loop body never runs. With the validation line removed (mutation in a copy), test-user-consent.sh still passes 141/0. (b) A leftover <lock>.takeover directory (process killed inside _sb_consent_lock_reclaim) disables every future stale-lock takeover, and the error message names only <lock>; one test pins the status-2 behaviour. (c) A huge TRIES value such as 99999999999999999999 matches the regex, so a held lock is waited on practically forever (the probe hung and was killed).",
+   "evidence": "mutation: sed '176s/.*/  :/' hooks/lib/user-consent.sh in REVF-H4a-r3-probe/mut -> test-user-consent.sh Results: 141 passed, 0 failed. lock.sh: stale lock plus stale .takeover -> rc 2 after 10.6 s.",
+   "suggested_fix": "Test bad TRIES with an ownerless lock held, and assert rc 0 within the default wait. Treat a .takeover directory older than a few seconds as stale, or name it in the message. Cap TRIES at, for example, 1000."
+  }
+ ],
+ "validation": {
+  "tests": "Under codex (SILVER_BULLET_RUNTIME=codex, --jobs 2), 16 files, 2001 passed and 0 failed: opt-in-gate-lib 241, hostile-config 156, user-consent 141, graphify-gate-lib-coverage 134, gate-hooks-fault-injection 76, recommended-tools-coverage 227, stack-optimizer-coverage 256, alumnium-gate-hook-coverage 58, graphify-am-global-coverage 213, graphify-gate-hook-coverage 56, rtk-gate-hook-surfaces 43, leanctx-gate-hook-coverage 49, agentmemory-gate-lib-coverage 184, rtk-gate-coverage 151, record-graphify-query 4, agentmemory-gate 12. Under claude, inside the coverage run, 7951 passed and 91 failed over 127 files. The failures are in 12 files: 11 are the documented H4b-class scripts tests (enable-verify-scripts, reconcile-recommended-tools(-engine), rt-common-paths, rt-graphify-agentmemory, rt-heartbeat-session-vendor, sb-doctor-host-checks/fixes, sb-optimize-stack-modes, sb-small-scripts, silver-doctor), so H4a must not merge without H4b. The 12th is test-no-pipe-into-grep-quiet (issue 2). Mutations: removing the allowlist makes hostile-config fail many assertions (good); removing the TRIES validation fails nothing (issue 3). Probes ran with both Claude Bash and Codex exec_command payloads.",
+  "coverage": "One scoped run, 127 test files, 30 --only files: 100% statements, lines and functions for every changed file, opt-in-gate.sh 292/292. Exit 1 only because of the test failures above.",
+  "lint": "bash scripts/lint-shell.sh --all --jobs 2: clean (rc 0)",
+  "invariants": "check-repo-invariants rc 0, 0 FAIL. generate-hook-reference --check, generate-apo-artifacts --check and validate-plugin-mirror: rc 0. docs/workflows is identical to templates/workflows. Template parity: 2/0. core-rules.md sha256 af94635a... matches the pin. Trailers on 2148d3e, 63e3a92, 3e250ef, 579a386 and 1799a7c: Co-Authored-By Claude Sonnet 5.5 + Claude-Session; no stray model names. 579a386, 1799a7c and 3e250ef carry no red/green evidence (nit). git merge-tree --write-tree is clean against c591ebb, the current tip 7130467, and fix/H4b-toolstack-scripts. jq IN() in _sb_opt_in_classify needs jq 1.6 or later (nit). No Bash-4-only constructs in the changed hooks. Gate latency is about 0.37 s per call under load. The worktree was left unmodified, and the probe repo copy was deleted."
+ }
+}

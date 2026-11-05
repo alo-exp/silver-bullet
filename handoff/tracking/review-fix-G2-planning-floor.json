@@ -1,0 +1,228 @@
+{
+ "package": "G2 planning-floor",
+ "head_reviewed": "eb32cff43e0eb4ef5fb8c361b95ea8e944b92a32",
+ "verdict": "CHANGES_REQUIRED",
+ "per_finding": [
+  {
+   "id": "R1-07",
+   "verdict": "incomplete",
+   "notes": "Literal shapes fixed (mv/rm/sed -i/jq>tmp&&mv/git checkout/ln/Write/Edit/MCP write_file+move_file/apply_patch delete+Move to all deny). Still allowed: python3 -c \"import os;os.rename('silver-bullet.md','/tmp/x')\", os.replace('/tmp/x','.silver-bullet.json'), shutil.move(...), perl -e 'unlink \"silver-bullet.md\"' (opaque targets only take words containing '/'); directory-level writes over the project root (cp -r /tmp/fake/. ., rsync -a /tmp/fake/ ./, tar -xf a.tar, unzip -o a.zip); mv/rm -rf of the project directory itself. Also a false positive: silver-add and silver-devops write the config and are now blocked (issue 5)."
+  },
+  {
+   "id": "R2-01",
+   "verdict": "fixed",
+   "notes": "rm src/app.js; echo x > src/b.py with branch mismatch printed ONE document: deny + systemMessage carrying branch, destructive and workflow advisories (jq -s length = 1). PostToolUse prints nothing."
+  },
+  {
+   "id": "R2-04",
+   "verdict": "incomplete",
+   "notes": "Same contract gaps as R1-07. The configured trivial_file is ignored by dev-cycle-check and planning-file-guard, but stop-check.sh still honours it (lines 106-129, 200). The G1 hand-off (sb_trivial_path_trusted) was not done, and the config can still be swapped via os.replace (issue 4)."
+  },
+  {
+   "id": "R2-15",
+   "verdict": "incomplete",
+   "notes": "Most spellings deny ($HOME, ${HOME}, ~, cd+relative, //, /./, symlinked dir, tee/dd/sponge/rsync/truncate/ln/git -C checkout, sh -c, env -i, xargs sh -c, git alias). Still allowed: cp -r /tmp/fake/.silver-bullet ~/.claude/, rsync -a /tmp/fake/ ~/.claude/, tar -xf s.tar -C ~ (a write into an ANCESTOR of the state dir; confirmed end to end: this copy armed the trivial marker and the next src Edit returned none); find <SD> -name state -exec sh -c 'echo x >> {}' \\; ; ln -s <SD> /tmp/sdl; echo x >> /tmp/sdl/state in one command; python3 /tmp/w.py (script file); string-built python paths (acknowledged); any command over ~512 KiB (issue 1)."
+  },
+  {
+   "id": "R3-01",
+   "verdict": "incomplete",
+   "notes": "bash/sh/./env/command/exec/nohup/xargs/$(echo) forms of record-*.sh deny. Confirmed to forge state AND pass the planning floor (state became inst-a, then Edit src allowed): python3 -c 'subprocess.run([\"bash\",\"<cache>/hooks/record-skill.sh\"])', perl -e 'system(\"bash\",\"<RS>\")', printf payload | find <cache>/hooks -name 'record-sk*' -exec bash {} \\;, and cp -r <cache>/hooks /tmp/hh && mv /tmp/hh/record-skill.sh /tmp/hh/x.sh && bash /tmp/hh/x.sh. record-skill still trusts any stdin payload (G4 follow-up)."
+  },
+  {
+   "id": "R2-05",
+   "verdict": "incomplete",
+   "notes": "The listed spellings (~, $HOME, ${HOME}, cd+touch, : >, cp/mv/ln/tee) deny, and rm stays allowed. But cp -r /tmp/fake/.silver-bullet ~/.claude/ creates the marker and neither trivial-file-guard nor dev-cycle-check sees it (confirmed: marker created, then the src Edit returned none)."
+  },
+  {
+   "id": "R2-06",
+   "verdict": "fixed",
+   "notes": "Plain repo: echo > src/main.go and Write src/main.go -> none. State-tamper deny stays global from a non-SB cwd."
+  },
+  {
+   "id": "R2-07",
+   "verdict": "incomplete",
+   "notes": "sed -i, >>, python -c open, git checkout -- <file>, cd+relative, ln, Write/MultiEdit/apply_patch paths deny. Still allowed: cp -r /tmp/fake/.planning ., cp -a /tmp/fake/. .planning/, rsync -a /tmp/fake/ .planning/, tar -xf p.tar -C .planning, mv .planning /tmp/pl then mv /tmp/pl .planning, git checkout HEAD -- .planning, find .planning -name ROADMAP.md -exec sed -i ... {} +. MCP write tools are not routed to planning-file-guard (mcp__filesystem__write_file .planning/ROADMAP.md -> none from dev-cycle-check, and the guard is not registered for mcp__*). Rejection of item (4), unprefixed SB-native artifacts, is reasoned and accepted."
+  },
+  {
+   "id": "R2-08",
+   "verdict": "fixed",
+   "notes": "The agent cannot touch planning-edit-override, write the audit logs or truncate them. roadmap-edit-override needs silver-phase/silver-undo recorded. The deny text no longer gives the touch hint."
+  },
+  {
+   "id": "R2-13",
+   "verdict": "fixed",
+   "notes": "Covered by test-workflow-chain-guard-paths.sh (in the coverage run). The catalog comes from the plugin root. Not separately attacked beyond reading the code."
+  },
+  {
+   "id": "R2-14",
+   "verdict": "fixed",
+   "notes": "sb_pf_workflow_id reads the active-workflow file, a first-line export, or the only workflow. Residual: scripts/workflows.sh never writes active-workflow, so with 2+ workflows every Edit/Write is denied until stale ones are completed."
+  },
+  {
+   "id": "R2-16",
+   "verdict": "fixed",
+   "notes": "invoke-skill sb:plan / silver-plan in plain, env, bash, quoted and sh -c forms -> SPEC FLOOR deny. forbidden-skill-check denies invoke-skill executing-plans in env, bash, cd+./, quoted, xargs, $S var, sh -c, &&, and namespaced forms. Comment and prose mentions pass."
+  },
+  {
+   "id": "R2-18",
+   "verdict": "fixed",
+   "notes": "Symlinked dir, //, /./, NotebookEdit and MCP write tools are gated in dev-cycle-check. Relative and newline/tab paths deny."
+  },
+  {
+   "id": "R2-20",
+   "verdict": "fixed",
+   "notes": "Trusted to tests in the coverage run, which use F2 commits/staged_paths. Not separately attacked."
+  },
+  {
+   "id": "R2-21",
+   "verdict": "fixed",
+   "notes": "Prose no longer triggers, and a new snapshot dir is made per run. Minor: mv .planning/phases /tmp/x is not treated as a clear (deletes_phases_dir ignores 'mv source')."
+  },
+  {
+   "id": "R2-29",
+   "verdict": "fixed",
+   "notes": "Path-segment scope plus test layouts, per tests."
+  },
+  {
+   "id": "R2-31",
+   "verdict": "fixed",
+   "notes": "The registry write is denied and the running install is never treated as uninstalled."
+  },
+  {
+   "id": "R2-33",
+   "verdict": "ok",
+   "notes": "Partial disposition is accurate. decision() now returns 'invalid' for a 2-document output."
+  },
+  {
+   "id": "R2-34",
+   "verdict": "ok",
+   "notes": "Partial. Bash calls go from 5 python3 starts to 1, but Edit/Write calls go from 0 to 1 (Pre and Post). Under load Edit Pre went 458->833 ms and Post 471->716 ms vs base 127e2f9 (5-run means, load avg ~11, so noisy). PostToolUse runs the full analysis only to delete one marker."
+  },
+  {
+   "id": "R2-35",
+   "verdict": "ok",
+   "notes": "Partial as stated. There is no Windows CI."
+  },
+  {
+   "id": "R3-13",
+   "verdict": "fixed",
+   "notes": "The production two-line branch file on the same branch gives no warning; another branch warns (folded into the single document)."
+  },
+  {
+   "id": "R2-26",
+   "verdict": "fixed",
+   "notes": "Bash creation and case variants deny, and an existing file can be updated. Not registered for MCP write tools (mcp write_file new CLAUDE.md -> none)."
+  },
+  {
+   "id": "R2-27",
+   "verdict": "fixed",
+   "notes": "A sentence that mentions the marker is allowed, and the artifact line is denied. Bash heredoc content is not checked, but the base did not check it either (not a regression)."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "blocker",
+   "location": "hooks/lib/planning-floor.sh:66-96,188-216; hooks/dev-cycle-check.sh:124-179 (and every G2 guard that calls sb_pf_write_records)",
+   "problem": "G2 ignores F2's unseen tier. When a command exceeds the analyser budget (~512 KiB), F2 returns status ok with writes:[], opaque:true, unseen_reasons:['command too large to analyze'] and no opaque_writers. Every G2 guard then sees no writes and allows the call silently, so the planning floor, state-tamper, contract, planning-file, instruction-file, trivial and workflow-chain guards are all bypassed by padding with a comment.",
+   "evidence": "python3 builds {tool_name:Bash, command:'<cmd>; # '+'a'*600000}, piped to each hook from the SB project, empty state. Commands: 'echo x > src/app.py', 'echo inst-a >> <SD>/state-test', 'echo x >> .planning/ROADMAP.md', 'echo hi > CLAUDE.md'. Result: dev-cycle-check, planning-file-guard, instruction-file-guard, trivial-file-guard and workflow-chain-guard all printed nothing (allow). Threshold: n=520000 -> HARD STOP, n=530000 -> none. sb_tool_input_load at 530000 gives status=ok, unseen_reasons=['command too large to analyze'].",
+   "suggested_fix": "In the shared loader path (planning-floor.sh), treat non-empty SB_SA unseen_reasons (or possible_actions containing 'unseen') as unanalysable. Core gates (dev-cycle-check PreToolUse, planning-file-guard, instruction/trivial guards in an SB project) deny with sb_pf_unanalysable_message, except for plain read-only commands, as G1 does with ca_unseen_reasons. Add a test per guard with a >budget payload."
+  },
+  {
+   "severity": "blocker",
+   "location": "hooks/dev-cycle-check.sh:238-244; hooks/trivial-file-guard.sh:68-75",
+   "problem": "A write whose destination is an ANCESTOR directory of the state dir (cp -r, cp -a, rsync -a, tar -x -C, unzip -d) is not treated as a write into it. Ancestry is checked only for rm/rmdir/unlink/'mv source'. One ordinary command can therefore replace the state file, arm the trivial marker or clear block records.",
+   "evidence": "mkdir -p $T/fake/.silver-bullet; : > $T/fake/.silver-bullet/trivial; dc_cmd \"cp -r $T/fake/.silver-bullet $HOME/.claude/\" -> none (trivial-file-guard -> none). After running it, ls <SD> shows 'trivial', and Edit src/app.js with empty state -> none (planning floor off). rsync -a /tmp/fake/ ~/.claude/ -> none. tar -xf s.tar -C $HOME -> none.",
+   "suggested_fix": "For every write record whose via is a directory-capable writer (cp -r/-a/-R, rsync, tar -x/-C, unzip -d, mv <dir>, git checkout/restore of a directory), treat the target as covering everything below it. Deny when a protected path (state dir, contract files, .planning protected set) is the target or lies under it. Prefer having F2 mark such writes 'recursive' so all guards share one rule."
+  },
+  {
+   "severity": "major",
+   "location": "hooks/dev-cycle-check.sh:265-273; hooks/lib/planning-floor.sh:262-271",
+   "problem": "R3-01 is closed only for shell-visible launches of a file named record-*.sh. Interpreter launches, find -exec and renamed copies still run the real recorder, forge planning state, and the forged state satisfies the planning floor.",
+   "evidence": "<cache>=$HOME/.claude/plugins/cache/alo-labs/silver-bullet/9.9.9 (copied hooks+templates), project all_tracked=[inst-a]. Each of these got verdict none from dev-cycle-check, and running it left state=[inst-a], after which Edit src/app.js was allowed: printf '<Skill payload>' | python3 -c 'import subprocess;subprocess.run([\"bash\",\"<cache>/hooks/record-skill.sh\"])' ; ... | perl -e 'system(\"bash\",\"<RS>\")' ; ... | find <cache>/hooks -name 'record-sk*' -exec bash {} \\; ; cp -r <cache>/hooks /tmp/hh && mv /tmp/hh/record-skill.sh /tmp/hh/x.sh && ... | bash /tmp/hh/x.sh.",
+   "suggested_fix": "(a) Extend the opaque_mentions rule to the recorder: deny an opaque writer or find -exec whose text names record-*.sh or the plugin hooks dir. (b) Treat an invoked script whose body matches a recorder (or that sources hooks/lib/hook-bootstrap.sh) as the recorder. (c) The real fix is G4's: record-skill must require the Skill tool channel or an adapter receipt. Mark R3-01 partial until G4 lands and track it."
+  },
+  {
+   "severity": "major",
+   "location": "hooks/lib/planning-floor.sh:188-198; hooks/dev-cycle-check.sh:156-159,321-324",
+   "problem": "Contract files can be renamed, replaced or deleted by interpreter one-liners. sb_pf_opaque_targets takes only words containing '/', and the contract basenames are not among the opaque_mentions needles (only .silver-bullet/ is). F2 catches open()/remove()/Path.write_text but not os.rename/os.replace/shutil.move or perl unlink.",
+   "evidence": "dc_cmd outputs, all 'none': python3 -c \"import os;os.rename('silver-bullet.md','/tmp/x')\" ; python3 -c \"import os;os.replace('/tmp/x','.silver-bullet.json')\" ; python3 -c \"import shutil;shutil.move('silver-bullet.md','/tmp/x')\" ; perl -e 'unlink \"silver-bullet.md\"'. os.replace with a prepared config (state.trivial_file=<SD>/branch or required_planning=[]) defeats R1-07/R2-04, because stop-check still honours trivial_file.",
+   "suggested_fix": "Add sb_pf_opaque_mentions silver-bullet.md .silver-bullet.json .silver-bullet.prompt.json (with silver-init/update recorded as the exception), and the .planning protected names for planning-file-guard. Add tests for os.rename/os.replace/shutil.move/perl unlink."
+  },
+  {
+   "severity": "major",
+   "location": "hooks/dev-cycle-check.sh:340-349",
+   "problem": "False positive: SB's own skills that legitimately write .silver-bullet.json through the agent are now hard-blocked. Only silver-init and silver-update unlock the file. skills/silver-add/SKILL.md:293-302 (GitHub project cache: jq ... .silver-bullet.json > $TMP && mv $TMP .silver-bullet.json) and skills/silver-devops/SKILL.md:57 (set project.active_workflow=devops-cycle) both fail.",
+   "evidence": "state inst-a silver-add silver-devops; dc_cmd 'TMP=$(mktemp)\\njq ... .silver-bullet.json > \"$TMP\" && mv \"$TMP\" .silver-bullet.json' -> deny ENFORCEMENT CONTRACT PROTECTED. jq '.project.active_workflow=\"devops-cycle\"' ... && mv /tmp/c .silver-bullet.json -> deny. Edit .silver-bullet.json full-dev-cycle->devops-cycle -> deny.",
+   "suggested_fix": "Either allow the specific skills (silver-add, silver-devops, any other config writer found by grep) the same way init/update are, or move those writes behind an SB-owned script that the guard recognises. Add honest-variant tests. Consider scoping the unlock to the most recently recorded skill rather than 'ever recorded on this branch', and note that the agent can invoke Skill silver-update just to unlock."
+  },
+  {
+   "severity": "major",
+   "location": "hooks/hooks.json (planning-file-guard, instruction-file-guard groups)",
+   "problem": "MCP file-write tools reach dev-cycle-check only. planning-file-guard and instruction-file-guard are not registered for mcp__*__write..., and dev-cycle-check does not protect .planning or CLAUDE.md, so an MCP filesystem server can write ROADMAP.md/STATE.md/milestone files or create CLAUDE.md freely. The G1 hand-off asked G2 for the MCP write matchers.",
+   "evidence": "dev-cycle-check with {tool_name:'mcp__filesystem__write_file', tool_input:{path:'<P>/.planning/ROADMAP.md'}} -> none. The same for a new <P>/CLAUDE.md -> none. planning-file-guard denies that payload when invoked directly, but hooks.json never routes MCP tools to it.",
+   "suggested_fix": "Add the dev-cycle-check MCP write regex to the planning-file-guard and instruction-file-guard matcher groups. Filter by tool name inside the guard (as dev-cycle-check does) so read tools are not judged as writes: planning-file-guard currently denies a Read payload when handed one."
+  },
+  {
+   "severity": "major",
+   "location": "hooks/stop-check.sh:106-129,200 (not touched by G2)",
+   "problem": "Required G1 hand-off not done: stop-check should call sb_trivial_path_trusted. It still honours a configured state.trivial_file pointing at any state-root file. Config protection mitigates this but is bypassable (issues 2 and 4).",
+   "evidence": "grep -rn sb_trivial_path_trusted hooks/ in G2 -> no matches. stop-check.sh:106 still reads .state.trivial_file.",
+   "suggested_fix": "Apply the hand-off (ignore a configured trivial_file in stop-check, or call G1's helper once both packages merge), or record an explicit cross-package dependency in the report."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/dev-cycle-check.sh:238-262",
+   "problem": "Other state-tamper gaps of the same class: find <SD> -exec sh -c 'echo x >> {}' \\; ; creating a symlink to the state dir and writing through it in the SAME command; python3 /tmp/w.py where the script file names the state path (invoked_script analysis covers shell scripts only).",
+   "evidence": "dc_cmd outputs, all none: find $SD -name state-test -exec sh -c 'echo inst-a >> {}' \\; ; ln -s $SD /tmp/sdl; echo inst-a >> /tmp/sdl/state-test ; python3 $T/w.py (w.py appends to $HOME/.claude/.silver-bullet/state-test).",
+   "suggested_fix": "Treat ln -s whose source is (or contains) a protected dir as a protected write. Read an interpreter script argument (python/node/perl file) with the same opaque_mentions needles. Treat find -exec with a protected root as a write to it."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/planning-file-guard.sh:106; hooks/trivial-file-guard.sh:52; hooks/instruction-file-guard.sh:80",
+   "problem": "The 'cannot analyse' branch is meant to fail closed but fails open. cmd=\"$(printf ... | jq -r ...)\" fails under pipefail for invalid JSON, and the ERR trap exits 0. A host normally cannot send such input, so the intent is simply dead.",
+   "evidence": "planning-file-guard with stdin '{\"hook_event_name\":\"PreToolUse\",\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"echo x >> .planning/ROADMAP.md' (truncated) -> no output (allow).",
+   "suggested_fix": "Append '|| true' to the jq extraction, as dev-cycle-check does, and add a test."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/dev-cycle-check.sh:159,270",
+   "problem": "False positives and misleading messages. Read-only interpreter use of the state dir is denied as tamper ('runs inline code'), even for a script-file argument. Piping a plugin hook into bash is reported as a THIRD-PARTY PLUGIN BOUNDARY VIOLATION because the script body's relative writes resolve into the cache.",
+   "evidence": "node -e \"console.log(require('fs').readFileSync(process.env.HOME+'/.claude/.silver-bullet/state','utf8'))\" -> deny STATE TAMPER. python3 scripts/check.py ~/.claude/.silver-bullet/state -> deny 'inline code'. cat <cache>/hooks/record-skill.sh | bash -> deny 'THIRD-PARTY PLUGIN BOUNDARY VIOLATION via Bash command'.",
+   "suggested_fix": "Word the opaque deny accurately and suggest cat/jq for reading. Give recorder-by-stdin its own STATE TAMPER message."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/dev-cycle-check.sh:93,150 (Edit/Write path); PostToolUse path",
+   "problem": "Latency regression on file tools: every Edit/Write now starts python3 once in PreToolUse AND PostToolUse. Post only deletes the verify-tests marker but runs the full analysis first.",
+   "evidence": "python3 shim count, Edit Pre/Post: base 0/0, head 1/1. Wall time under load: Edit Pre 458->833 ms, Post 471->716 ms.",
+   "suggested_fix": "In PostToolUse for file tools, take file_path with jq and skip sb_tool_input_load (canonicalise in Bash). Short-circuit PostToolUse when no verify-tests marker exists."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/lib/planning-floor.sh:82",
+   "problem": "The MCP path-field list omits from/to/old_path/new_path/oldPath/newPath, so an MCP move tool using those names escapes the contract and state checks.",
+   "evidence": "{tool_name:'mcp__fs__fs_mv', tool_input:{from:'<P>/silver-bullet.md', to:'/tmp/x'}} -> none (the move_file source/destination form denies).",
+   "suggested_fix": "Add those keys, or take every string field that looks like an absolute or ./ path."
+  },
+  {
+   "severity": "minor",
+   "location": "docs/HOOKS.md",
+   "problem": "Merge conflict with fix/G1-delivery-gates in the generated docs/HOOKS.md. The merge with c591ebb is clean.",
+   "evidence": "git merge-tree --write-tree --name-only HEAD fix/G1-delivery-gates -> CONFLICT (content): Merge conflict in docs/HOOKS.md (hooks.json auto-merges).",
+   "suggested_fix": "Regenerate with python3 scripts/generate-hook-reference.py after merging."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/phase-archive.sh deletes_phases_dir",
+   "problem": "mv .planning/phases /tmp/x (via 'mv source') is not treated as a clear, so the phases leave without an archive.",
+   "evidence": "Static: the case only matches rm|rmdir|unlink|git rm|find -delete.",
+   "suggested_fix": "Include 'mv source' (and an ancestor mv)."
+  }
+ ],
+ "validation": {
+  "tests": "Scoped coverage run over 29 test files (all G2 hook tests plus test-hook-faults-gates and integration/test-session-scenarios): 1432 passed, 0 failed (claude runtime). Inverse check in a sandbox copy: disabling the state-tamper block made 8+ assertions in test-dev-cycle-check-protect.sh fail, and disabling the trivial-file-guard deny failed test-trivial-file-guard-paths.sh, so the tests are meaningful. The codex runtime was not re-run.",
+  "coverage": "One scoped run with --only on the 13 changed hooks/libs, exit 0. 100% for dev-cycle-check, planning-floor, plugin-cache-guard, planning-file-guard, instruction-file-guard, trivial-file-guard, forbidden-skill-check, spec-floor-check, roadmap-freshness and phase-archive. Below 100%: compression-marker-guard 93.48% (lines 14, 19, 24), uat-gate 97.87% (85, 92), workflow-chain-guard 99.09% (76-77). These lines are unchanged pre-existing fault paths, presumably covered by fault-injection suites outside this scoped set (not verified). No new G2 line is uncovered.",
+  "lint": "scripts/lint-shell.sh --all: application and test Bash clean.",
+  "invariants": "check-repo-invariants all PASS. generate-hook-reference --check, generate-apo-artifacts --check (rc 0) and validate-plugin-mirror are OK. docs/workflows == templates/workflows. silver-bullet.md and template untouched. Trailers: Co-Authored-By: Claude Sonnet 5.5 plus Claude-Session on all 9 commits (accepted). Merge-tree: clean with c591ebb, and one conflict with fix/G1-delivery-gates in the generated docs/HOOKS.md. Bash 3.2: no bash-4 constructs found in the changed hooks."
+ }
+}

@@ -1,0 +1,61 @@
+{
+ "package": "H4a-toolgates-consent",
+ "head_reviewed": "25d18dfed2026098d84e33d0e3a5d852d4914613",
+ "verdict": "APPROVE",
+ "per_finding": [
+  {
+   "id": "r3-major-1 stamp paths",
+   "verdict": "fixed",
+   "notes": "REVF-H4a-r4-probe/scripts/stamp.sh (record-graphify-query.sh with hostile query_state_file, graphify enforce consent): r3 reproduction ${SB_RUNTIME_STATE_DIR}/orchestrator-directive.json/x-usage now falls back to graphify-query, no directory created. Same for state, trivial, branch, mode, planning-/roadmap-edit-override, skill-invocations, STATE/x-usage, ./ctl/x-usage, //x-usage, x-usage//, x-usage/y-usage, ../, sub/../, unicode lookalikes (fullwidth x, a-acute, ZWSP), trailing dot/space, /etc and outside paths, symlinked subdir. Symlink at x-usage to a control file / outside dir / dangling target: replaced by rename, target untouched (directive content intact). Existing directory at the stamp path: write refused. Symlinked state dir: only graphify-query written. Control files ending in -usage/-query do not exist; only cross-tool stamps (agentmemory-usage etc.) are nameable, which grants nothing because project config can already disable enforcement (enabled_by_user:false). sb_rt_stamp_write: state dir mkdir -p, one marker level plain mkdir, deeper or outside paths need an existing dir; the other callers (consent-notices/<x>, context-mode-read-acks/<sum>) are fixed one-level paths. Mutations in a 15 MB git-archive copy: dropping the */* fallback -> hostile-config 20 failures, graphify-gate-lib-coverage 5; restoring mkdir -p in stamp_write -> opt-in-gate-lib 5 failures."
+  },
+  {
+   "id": "r3-major-2 lint test",
+   "verdict": "fixed",
+   "notes": "tests/scripts/test-no-pipe-into-grep-quiet.sh: 4 passed, 0 failed on the branch (claude and codex)."
+  },
+  {
+   "id": "r3-minor lock",
+   "verdict": "fixed",
+   "notes": "REVF-H4a-r4-probe/scripts/tries.sh: ownerless lock held, SB_CONSENT_LOCK_TRIES in abc,0,-3,'1;id','',1e20,1001,0100 -> rc 0 after ~14 s (default wait); 1000 -> 137 s (cap); live owner with 1e20 -> rc 2 after 13.7 s. Takeover dir 61 s old -> cleared, grant rc 0; fresh takeover -> rc 2 with message naming .consent.lock.takeover. Mutations: removing takeover cleanup -> 1 failure; reverting the cap -> test hangs (killed at 200 s); putting the owner write back in the until condition -> test hangs (600 s). Stress REVF-H4a-r4-probe/scripts/lock.sh: 8 rounds x 7 parallel grants then revokes with a stale dead-pid lock (even rounds also a 5-min-old takeover dir): 7/0 every round, no leftovers, ~4 s per round; same with _sb_consent_write_owner forced to fail (sandbox copy REVF-H4a-r4-probe/sbx): 7/0 every round, no deadlock."
+  },
+  {
+   "id": "coordinator item: unwritable pid file",
+   "verdict": "fixed",
+   "notes": "Grant no longer fails; but see minor issue on the pidless steal window."
+  },
+  {
+   "id": "API compatibility (H4b)",
+   "verdict": "ok",
+   "notes": "Public functions identical to r3 head 1799a7c (sb_consent_capability_valid, decision, granted, project_key, set, status_lines, store_mentions, store_path, tool_valid); only private _sb_consent_write_owner added. CLI flags unchanged (--all-projects --capabilities --help --project --source). fix/H4b-toolstack-scripts (c03fdc2) already contains 25d18df."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "minor",
+   "location": "hooks/lib/user-consent.sh:186-207 (sb_consent_set ownerless reclaim)",
+   "problem": "Mutual-exclusion hole when the pid file is missing: the ownerless takeover is triggered by the waiter's own wait budget, not by the lock's age, so a waiter whose budget runs out removes a LIVE pidless lock and both processes write. With the pid write failing (now tolerated) and a small SB_CONSENT_LOCK_TRIES, a revoke returns 0 but is lost, so the tool stays granted. With the default budget it needs a holder stalled >10 s, so it is unlikely in practice; with a writable pid file no silent loss was observed.",
+   "evidence": "REVF-H4a-r4-probe/scripts/revoke-lost.sh with CLI=REVF-H4a-r4-probe/sbx/scripts/sb-consent.sh (_sb_consent_write_owner returns 1), CTRIES=1, 7 parallel revokes x 8 rounds: 'silent lost revokes: 7' (e.g. 'round 4: revoke alumnium rc=0 but still granted'). mutex.sh grants: TRIES=1 lost 39 vs failed 35; TRIES=3 lost 29 vs failed 21. Real CLI same settings: lost == failed (0 silent), default TRIES: 0 lost.",
+   "suggested_fix": "Reclaim a pidless lock only when the lock directory itself is older than a fixed age (e.g. find \"$lock\" -maxdepth 0 -mmin +1, or a 15 s mtime check), independent of SB_CONSENT_LOCK_TRIES; add a test with a fresh pidless lock and TRIES=1 that expects rc 2, not a takeover."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/lib/user-consent.sh:163-166",
+   "problem": "Stale-takeover cleanup is check-then-act: two waiters that both saw an old .takeover can each rmdir/mkdir it, so both enter the takeover section; one may then read a stale pid and remove a lock a third process has just taken. Needs a takeover dir left over by a killed process plus a three-way race; theoretical.",
+   "evidence": "code reading; not reproduced.",
+   "suggested_fix": "Rename the stale takeover dir to a unique name (mv to .takeover.stale.$$) before rmdir, so only one waiter wins, or accept and document."
+  },
+  {
+   "severity": "minor",
+   "location": "tests/hooks/test-opt-in-gates-hostile-config.sh:79-84",
+   "problem": "'nothing was written through the symlink' is vacuous: the loop over linkd/../ ./ values only checks the resolved path and never records a query, so no write is attempted through linkd.",
+   "evidence": "code reading; the preceding loop calls sb_graphify_record_query but this one does not.",
+   "suggested_fix": "Call sb_graphify_record_query \"$GH_CFG\" inside the second loop before the assertion."
+  }
+ ],
+ "validation": {
+  "tests": "16 most relevant files + test-install-codex.sh, two at a time, under claude and codex: all 0 failures except test-install-codex.sh 1 failure ('Runtime Claude path references' in scripts/lib/repo_invariants.py), a base issue fixed by 248fda5, which is in claude/optimistic-ramanujan-tccfud but not yet merged into this branch. Changed tests (user-consent 152/0, hostile-config 177/0, opt-in-gate-lib 248/0, graphify-gate-lib-coverage 135/0, agentmemory-gate 12/0, no-pipe-into-grep-quiet 4/0).",
+  "coverage": "ONE scoped run (88 test files incl. test-gate-hooks-fault-injection.sh, --only the package's 30 Bash files, 94 min): every file 100% (3868/3868 statements, 315/315 functions; recommended-tools.sh 434/434, user-consent.sh 201/201, sb-consent.sh 117/117). Test failures inside the run were only in the accepted known_failing_until_h4b scripts tests, test-enable-verify-scripts.sh (handed to H4b) and the base test-install-codex.sh issue.",
+  "lint": "bash scripts/lint-shell.sh --all --jobs 2: exit 0 (application 357 files clean, tests 743 files clean); bash -n of hooks/scripts clean.",
+  "invariants": "check-repo-invariants.sh rc 0 (personal-data PASS, workflow-hardening PASS); generate-hook-reference --check OK; generate-apo-artifacts --check rc 0; validate-plugin-mirror rc 0; core-rules-integrity 42/0; template parity 2/0; docs/workflows == templates/workflows; hooks.json valid. Trailers: all 13 non-merge and 4 merge commits since 5acae75 carry Co-Authored-By Claude Sonnet/Opus 5.5 + the Claude-Session line, no other model names. git merge-tree --write-tree clean with claude/optimistic-ramanujan-tccfud (2a65018) and with fix/H4b-toolstack-scripts (c03fdc2)."
+ }
+}

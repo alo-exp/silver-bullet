@@ -1,0 +1,258 @@
+{
+ "package": "H8a-deep-research",
+ "head_reviewed": "1e77c4e",
+ "verdict": "CHANGES_REQUIRED",
+ "per_finding": [
+  {
+   "id": "R11-01",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r5: 86504f4..1e77c4e touches only verify_claim_support.py, extract_claims.py, quality-gates.md and claim tests in the deep-research skill (x4 mirrors); the merge 1ca37b6..1e77c4e brings 86 base-branch files, none in this package. Suites green at 1e77c4e under claude and codex (deep-research 860, multi-ai contract 29)."
+  },
+  {
+   "id": "R12-04",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r5: 86504f4..1e77c4e touches only verify_claim_support.py, extract_claims.py, quality-gates.md and claim tests in the deep-research skill (x4 mirrors); the merge 1ca37b6..1e77c4e brings 86 base-branch files, none in this package. Suites green at 1e77c4e under claude and codex (deep-research 860, multi-ai contract 29)."
+  },
+  {
+   "id": "R11-02",
+   "verdict": "regressed",
+   "notes": "Literal r1-r5 probes now hold: corpus completeness re-derived independently (bin/completeness.py walks every probe script and TSV of REVF-H8a..H8a5 by AST: 813 recovered rows incl. cross-round duplicates, 0 missing from the five fixtures, kinds consistent; the one fab9.tsv row stored as H is the honest identical-sentence pair). r5 scripts at HEAD: score5 68 F -> 60 needs_review / 8 contradicted / 0 supported; score5b, roles5, misc5, score4, variants: 0 fabrications supported; honest5, honest_neg4: 0 honest failed. Everyday 60 re-measured: 52 supported / 8 needs_review / 0 contradicted (matches the author). Strict semantics hold end to end (--strict exit 1 on contradicted/unsupported, exit 0 + review_required on needs_review). BUT (a) this round regresses 5 honest claims from supported to contradicted (issue 1), (b) assertive negation idioms keep honest claims contradicted (issue 2), and (c) fresh variants of every round-5 class still reach supported outside the documented limits (issues 3-7): bin/score6.py 91 fresh fabrications -> 65 supported (47 outside the documented limits, 18 inside them), 21 needs_review, 5 contradicted; 25 honest twins -> 11 contradicted. Fresh held-out everyday honest set (bin/honest6.py, 40): 27 supported / 12 needs_review / 1 unsupported / 0 contradicted."
+  },
+  {
+   "id": "R10b-16",
+   "verdict": "ok",
+   "notes": "Partial disposition unchanged and still justified."
+  },
+  {
+   "id": "R11-03",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r5: 86504f4..1e77c4e touches only verify_claim_support.py, extract_claims.py, quality-gates.md and claim tests in the deep-research skill (x4 mirrors); the merge 1ca37b6..1e77c4e brings 86 base-branch files, none in this package. Suites green at 1e77c4e under claude and codex (deep-research 860, multi-ai contract 29)."
+  },
+  {
+   "id": "R11-04",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r5: 86504f4..1e77c4e touches only verify_claim_support.py, extract_claims.py, quality-gates.md and claim tests in the deep-research skill (x4 mirrors); the merge 1ca37b6..1e77c4e brings 86 base-branch files, none in this package. Suites green at 1e77c4e under claude and codex (deep-research 860, multi-ai contract 29)."
+  },
+  {
+   "id": "R11-05",
+   "verdict": "fixed",
+   "notes": "bin/e2e.sh (documented extract + verify --strict) at HEAD: runs/e-nr10.out needs_review only -> status pass, review_required true, exit 0; runs/e-hon10.out 3 contradicted -> fail, exit 1; runs/e-merge (r5 minor 5) -> '62% of ...' now its own claim, unsupported, exit 1. Note runs/e-fab10.out: 7 fabrications all supported, exit 0 (issues 3-7)."
+  },
+  {
+   "id": "R11-06",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r5: 86504f4..1e77c4e touches only verify_claim_support.py, extract_claims.py, quality-gates.md and claim tests in the deep-research skill (x4 mirrors); the merge 1ca37b6..1e77c4e brings 86 base-branch files, none in this package. Suites green at 1e77c4e under claude and codex (deep-research 860, multi-ai contract 29)."
+  },
+  {
+   "id": "R11-07",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r5: 86504f4..1e77c4e touches only verify_claim_support.py, extract_claims.py, quality-gates.md and claim tests in the deep-research skill (x4 mirrors); the merge 1ca37b6..1e77c4e brings 86 base-branch files, none in this package. Suites green at 1e77c4e under claude and codex (deep-research 860, multi-ai contract 29)."
+  },
+  {
+   "id": "R11-08",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r5: 86504f4..1e77c4e touches only verify_claim_support.py, extract_claims.py, quality-gates.md and claim tests in the deep-research skill (x4 mirrors); the merge 1ca37b6..1e77c4e brings 86 base-branch files, none in this package. Suites green at 1e77c4e under claude and codex (deep-research 860, multi-ai contract 29)."
+  },
+  {
+   "id": "R11-09",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r5: 86504f4..1e77c4e touches only verify_claim_support.py, extract_claims.py, quality-gates.md and claim tests in the deep-research skill (x4 mirrors); the merge 1ca37b6..1e77c4e brings 86 base-branch files, none in this package. Suites green at 1e77c4e under claude and codex (deep-research 860, multi-ai contract 29)."
+  },
+  {
+   "id": "R11-10",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r5: 86504f4..1e77c4e touches only verify_claim_support.py, extract_claims.py, quality-gates.md and claim tests in the deep-research skill (x4 mirrors); the merge 1ca37b6..1e77c4e brings 86 base-branch files, none in this package. Suites green at 1e77c4e under claude and codex (deep-research 860, multi-ai contract 29)."
+  },
+  {
+   "id": "R11-11",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r5: 86504f4..1e77c4e touches only verify_claim_support.py, extract_claims.py, quality-gates.md and claim tests in the deep-research skill (x4 mirrors); the merge 1ca37b6..1e77c4e brings 86 base-branch files, none in this package. Suites green at 1e77c4e under claude and codex (deep-research 860, multi-ai contract 29)."
+  },
+  {
+   "id": "R11-12",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r5: 86504f4..1e77c4e touches only verify_claim_support.py, extract_claims.py, quality-gates.md and claim tests in the deep-research skill (x4 mirrors); the merge 1ca37b6..1e77c4e brings 86 base-branch files, none in this package. Suites green at 1e77c4e under claude and codex (deep-research 860, multi-ai contract 29)."
+  },
+  {
+   "id": "R11-13",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r5: 86504f4..1e77c4e touches only verify_claim_support.py, extract_claims.py, quality-gates.md and claim tests in the deep-research skill (x4 mirrors); the merge 1ca37b6..1e77c4e brings 86 base-branch files, none in this package. Suites green at 1e77c4e under claude and codex (deep-research 860, multi-ai contract 29)."
+  },
+  {
+   "id": "R11-14",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r5: 86504f4..1e77c4e touches only verify_claim_support.py, extract_claims.py, quality-gates.md and claim tests in the deep-research skill (x4 mirrors); the merge 1ca37b6..1e77c4e brings 86 base-branch files, none in this package. Suites green at 1e77c4e under claude and codex (deep-research 860, multi-ai contract 29)."
+  },
+  {
+   "id": "R11-15",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r5: 86504f4..1e77c4e touches only verify_claim_support.py, extract_claims.py, quality-gates.md and claim tests in the deep-research skill (x4 mirrors); the merge 1ca37b6..1e77c4e brings 86 base-branch files, none in this package. Suites green at 1e77c4e under claude and codex (deep-research 860, multi-ai contract 29)."
+  },
+  {
+   "id": "R11-16",
+   "verdict": "fixed",
+   "notes": "Mutation checks in a sandbox copy (bin/mutate.py, runs/mutate.out): 13 of 14 inverse changes break test_claim_checker_regression_corpus (role order, with-no quantifier, comparative idiom, identical-clause shortcut, cues, periods, belongs-elsewhere, not-together, predicate-after-name, one-range, question, no-longer end, negating prefix). The surviving mutation is the whole-text _quantifier_conflict fallback (verify_claim_support.py:816-817): removing it fails no test in either file and fixes the five honest regressions of issue 1, so it is untested, unneeded code. Pinned-expectation edits in test_claim_gate_hardening.py (r4 honest floor 63 -> 60, inverted sentences now needs_review, 'no fewer than 500' removed from the supported list) follow the binding decision and do not pin a defect."
+  },
+  {
+   "id": "R11-17",
+   "verdict": "ok",
+   "notes": "Justified partial, unchanged."
+  },
+  {
+   "id": "R11-18",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r5: 86504f4..1e77c4e touches only verify_claim_support.py, extract_claims.py, quality-gates.md and claim tests in the deep-research skill (x4 mirrors); the merge 1ca37b6..1e77c4e brings 86 base-branch files, none in this package. Suites green at 1e77c4e under claude and codex (deep-research 860, multi-ai contract 29)."
+  },
+  {
+   "id": "R11-19",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r5: 86504f4..1e77c4e touches only verify_claim_support.py, extract_claims.py, quality-gates.md and claim tests in the deep-research skill (x4 mirrors); the merge 1ca37b6..1e77c4e brings 86 base-branch files, none in this package. Suites green at 1e77c4e under claude and codex (deep-research 860, multi-ai contract 29)."
+  },
+  {
+   "id": "R11-20",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r5: 86504f4..1e77c4e touches only verify_claim_support.py, extract_claims.py, quality-gates.md and claim tests in the deep-research skill (x4 mirrors); the merge 1ca37b6..1e77c4e brings 86 base-branch files, none in this package. Suites green at 1e77c4e under claude and codex (deep-research 860, multi-ai contract 29)."
+  },
+  {
+   "id": "R11-21",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r5: 86504f4..1e77c4e touches only verify_claim_support.py, extract_claims.py, quality-gates.md and claim tests in the deep-research skill (x4 mirrors); the merge 1ca37b6..1e77c4e brings 86 base-branch files, none in this package. Suites green at 1e77c4e under claude and codex (deep-research 860, multi-ai contract 29)."
+  },
+  {
+   "id": "R11-22",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r5: 86504f4..1e77c4e touches only verify_claim_support.py, extract_claims.py, quality-gates.md and claim tests in the deep-research skill (x4 mirrors); the merge 1ca37b6..1e77c4e brings 86 base-branch files, none in this package. Suites green at 1e77c4e under claude and codex (deep-research 860, multi-ai contract 29)."
+  },
+  {
+   "id": "R11-23",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r5: 86504f4..1e77c4e touches only verify_claim_support.py, extract_claims.py, quality-gates.md and claim tests in the deep-research skill (x4 mirrors); the merge 1ca37b6..1e77c4e brings 86 base-branch files, none in this package. Suites green at 1e77c4e under claude and codex (deep-research 860, multi-ai contract 29)."
+  },
+  {
+   "id": "R11-24",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r5: 86504f4..1e77c4e touches only verify_claim_support.py, extract_claims.py, quality-gates.md and claim tests in the deep-research skill (x4 mirrors); the merge 1ca37b6..1e77c4e brings 86 base-branch files, none in this package. Suites green at 1e77c4e under claude and codex (deep-research 860, multi-ai contract 29)."
+  },
+  {
+   "id": "R11-25",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r5: 86504f4..1e77c4e touches only verify_claim_support.py, extract_claims.py, quality-gates.md and claim tests in the deep-research skill (x4 mirrors); the merge 1ca37b6..1e77c4e brings 86 base-branch files, none in this package. Suites green at 1e77c4e under claude and codex (deep-research 860, multi-ai contract 29)."
+  },
+  {
+   "id": "R11-26",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r5: 86504f4..1e77c4e touches only verify_claim_support.py, extract_claims.py, quality-gates.md and claim tests in the deep-research skill (x4 mirrors); the merge 1ca37b6..1e77c4e brings 86 base-branch files, none in this package. Suites green at 1e77c4e under claude and codex (deep-research 860, multi-ai contract 29)."
+  },
+  {
+   "id": "R11-27",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r5: 86504f4..1e77c4e touches only verify_claim_support.py, extract_claims.py, quality-gates.md and claim tests in the deep-research skill (x4 mirrors); the merge 1ca37b6..1e77c4e brings 86 base-branch files, none in this package. Suites green at 1e77c4e under claude and codex (deep-research 860, multi-ai contract 29)."
+  },
+  {
+   "id": "R11-28",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r5: 86504f4..1e77c4e touches only verify_claim_support.py, extract_claims.py, quality-gates.md and claim tests in the deep-research skill (x4 mirrors); the merge 1ca37b6..1e77c4e brings 86 base-branch files, none in this package. Suites green at 1e77c4e under claude and codex (deep-research 860, multi-ai contract 29)."
+  },
+  {
+   "id": "R11-29",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r5: 86504f4..1e77c4e touches only verify_claim_support.py, extract_claims.py, quality-gates.md and claim tests in the deep-research skill (x4 mirrors); the merge 1ca37b6..1e77c4e brings 86 base-branch files, none in this package. Suites green at 1e77c4e under claude and codex (deep-research 860, multi-ai contract 29)."
+  },
+  {
+   "id": "R11-30",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r5: 86504f4..1e77c4e touches only verify_claim_support.py, extract_claims.py, quality-gates.md and claim tests in the deep-research skill (x4 mirrors); the merge 1ca37b6..1e77c4e brings 86 base-branch files, none in this package. Suites green at 1e77c4e under claude and codex (deep-research 860, multi-ai contract 29)."
+  },
+  {
+   "id": "R11-31",
+   "verdict": "fixed",
+   "notes": "Code unchanged since r5: 86504f4..1e77c4e touches only verify_claim_support.py, extract_claims.py, quality-gates.md and claim tests in the deep-research skill (x4 mirrors); the merge 1ca37b6..1e77c4e brings 86 base-branch files, none in this package. Suites green at 1e77c4e under claude and codex (deep-research 860, multi-ai contract 29)."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "major",
+   "location": "skills/silver-deep-research/scripts/verify_claim_support.py:816-817 (whole-text _quantifier_conflict fallback); 565-574; reference/quality-gates.md:267-268",
+   "problem": "Regression (criterion b): the new whole-text fallback runs _quantifier_conflict over the entire claim and quote with no clause, entity or period scope, so any other clause, entity or year of the quote that says 'zero X', 'without X' or 'with no X' contradicts an honest claim about X. These are the comparison and time-series sentences research reports quote. The doc says 'without X or zero X against a plain assertion about X' - about the claim's X, not a rival's or another year's. Pre-existing same-clause variant: '5 security incidents in 2022 and zero incidents in 2023' is contradicted per clause.",
+   "evidence": "bin/score6.py (runs/score6.out vs runs/score6-old.out at 86504f4): supported -> contradicted for 'Acme reported 3 outages in 2023' vs 'Acme reported 3 outages in 2023, while Initech reported zero outages'; 'Acme offers SCIM provisioning' vs '..., while Initech ships without provisioning'; 'Acme offers audit logs on every plan' vs '...; Initech ships with no audit logs'; 'Acme had 12 outages in 2022' vs 'Acme had 12 outages in 2022. In 2023 it had zero outages.'; 'Acme's free trial required a credit card in 2022' vs '..., but since 2023 it works without a credit card' (note: 'the source says the opposite: \"zero\" or \"without\" against a plain statement'). End to end runs/e-hon10.out: status fail, exit 1. Mutation mut/nofallback (fallback removed): all five supported again, no fabrication outcome in score6 changes, and both claim test files stay green.",
+   "suggested_fix": "Delete the whole-text fallback (nothing needs it). Keep the per-clause check on aligned clauses, and scope it like figures: a 'zero/without X' in a quote segment bound to another name, year or period than the claim's is not about the claim's X. Add the five pairs and the same-clause 'and zero incidents in 2023' pair to the honest corpus."
+  },
+  {
+   "severity": "major",
+   "location": "skills/silver-deep-research/scripts/verify_claim_support.py:420-423 (NEGATION_IDIOM_RE), 411-415 (NEGATION_RE), 86 (FREE_RE), 664-687 (_polarity)",
+   "problem": "Honest claims are contradicted (criterion b) when the quote states them through an assertive idiom that contains a negation word. NEGATION_IDIOM_RE has 'nothing (?:less|short) than' - 'nothing short than' is not English; the idiom is 'nothing short of'. 'never been more', 'no doubt', 'no wonder' and 'for no extra charge' (FREE_RE only knows 'at no') are read as negations of the claim. Pre-existing, but under 'conservative + escalate' an uncertain negation must escalate, not contradict.",
+   "evidence": "bin/score6.py at HEAD (same at 86504f4), each contradicted: 'Acme's growth has been remarkable' vs 'Acme's growth has been nothing short of remarkable'; 'Acme is more popular than ever' vs 'Acme has never been more popular'; 'Acme leads the market' vs 'There is no doubt that Acme leads the market'; 'Acme leads the CRM market' vs 'No wonder Acme leads the CRM market'; 'Acme includes SSO for free' vs 'Acme includes SSO for no extra charge'. End to end runs/e-hon10.out row 3: contradicted, exit 1.",
+   "suggested_fix": "Return contradicted only when the negation cue governs the claim's own predicate (it sits between the subject and the claim's verb, or directly before the claim's object); a negation word elsewhere in an otherwise matching clause is needs_review. Fix the idiom table ('nothing short of', 'no doubt', 'no wonder', 'never been more/better', 'for no (extra|additional) (cost|charge|fee)') and add these pairs to the honest corpus."
+  },
+  {
+   "severity": "major",
+   "location": "skills/silver-deep-research/scripts/verify_claim_support.py:769-770 (identical-clause shortcut) vs 790-797 (cue, question, prefix checks); reference/quality-gates.md:279-284",
+   "problem": "The new 'a claim clause identical to a quote clause is never contradicted' shortcut returns before the escalation checks, so a quote that repeats the claim as a question, a table cell or a labelled myth makes a fabrication supported. quality-gates.md says a question clause ('the clause ends in ?') is needs_review; the shortcut skips exactly that check.",
+   "evidence": "bin/score6.py at HEAD, each supported 1.000: 'Acme supports SSO' vs 'Acme supports SSO? No.'; vs 'Acme supports SSO: No'; vs 'Myth: Acme supports SSO.'; 'Acme is SOC 2 certified' vs 'Acme is SOC 2 certified. Not true.'. End to end runs/e-fab10.out row 1: supported, status pass, exit 0. Mutation identical_shortcut_off shows the shortcut is needed only to keep honest identical sentences off 'contradicted'.",
+   "suggested_fix": "Let the shortcut suppress only polarity conflicts and still run the cue checks; escalate when the identical clause is followed by '?' or by a short standalone verdict ('No', 'Not true', 'False') or preceded by a label ('Myth:', 'Rumor:', 'Claim:'). Add these four pairs to the fabrication corpus."
+  },
+  {
+   "severity": "major",
+   "location": "skills/silver-deep-research/scripts/verify_claim_support.py:699 (PASSIVE_RE), 702-713 (_role_swap: needs two names in one clause), 397-401 (CLAUSE_SPLIT_RE ', which'), 729-731 (_names_subject: lowercase opener = elided subject); reference/quality-gates.md:274-276",
+   "problem": "Voice swaps the docs promise to escalate ('\"acquired\" against \"was acquired by\" is needs_review') are supported when the passive has no auxiliary (reduced relative), uses 'got', has an irregular participle (bought, sold, held, paid) or sits in a ', which ...' relative clause (the split leaves one name in the clause, _role_swap needs two, and the lowercase opener counts as an elided subject). The names stay in the claim's order, so the any-gap order rule does not fire.",
+   "evidence": "bin/score6.py at HEAD (same at 86504f4), each supported 1.000: 'Acme acquired Initech' vs 'Acme, acquired by Initech in 2022, now employs 400 people'; vs 'Acme, which was acquired by Initech in 2022, now employs 400 people'; vs 'Acme got acquired by Initech in 2022'; 'Acme bought Initech' vs 'Acme was bought by Initech in 2022'; 'Acme sold Initech' vs 'Acme was sold to Initech in 2022'. End to end runs/e-fab10.out row 2: supported, exit 0. Controls: 'led by' and 'parent company' pairs -> needs_review.",
+   "suggested_fix": "Treat any 'by <Name>' agent after a verb form (with or without an auxiliary, regular or irregular) as passive, and attach a relative clause (', which/who ...') to its antecedent name before the role and subject checks. Add these pairs to the fabrication corpus."
+  },
+  {
+   "severity": "major",
+   "location": "skills/silver-deep-research/scripts/verify_claim_support.py:886-894 (_belongs_elsewhere), 867-868 (_figure_matches: noun only, entities dropped), 405-408 (AND_PREDICATE_RE) and 397-401 (no quote-side split at 'and <Name> <verb>'); reference/quality-gates.md:254-262",
+   "problem": "Round-5 issue 4(a)/(b) is closed only for the literal shapes. A figure that belongs to another entity still matches when its segment also names the subject ('Acme's rival Initech has 500'), names nothing ('Unlike Initech, which has 500 employees, Acme has 200'; '...; its rival has 500 employees'), or names an entity the claim mentions (two-name claims with the figures swapped). On the quote side 'and Initech supports SCIM' is not a clause boundary (the round-5 PREDICATE_AFTER_NAME fix covers claim variants only), so another entity's attribute satisfies 'subject, terms and figures in one clause'.",
+   "evidence": "bin/score6.py at HEAD (same at 86504f4), each supported 1.000: 'Acme has 500 employees' vs \"Acme's rival Initech has 500 employees\"; vs 'Unlike Initech, which has 500 employees, Acme has 200'; vs 'Acme has 200 employees; its rival has 500 employees'; 'Acme has 500 employees and Initech has 200 employees' vs 'Acme has 200 employees and Initech has 500 employees'; 'Acme raised $50M and Initech raised $10M' vs the swap; 'Acme supports SSO and SCIM' vs 'Acme supports SSO and Initech supports SCIM'. End to end runs/e-fab10.out rows 3 and 7: supported, exit 0.",
+   "suggested_fix": "Give each figure an owner: the nearest preceding name in its clause (the head of a possessive phrase: \"Acme's rival Initech\" -> Initech; a relative clause -> its antecedent; a segment with no name -> its clause's subject), and require the claim figure's owner to equal the quote figure's owner. Split quote clauses at 'and/, <Name> <verb>' as the claim-side variants already do. Add these pairs to the fabrication corpus."
+  },
+  {
+   "severity": "major",
+   "location": "skills/silver-deep-research/scripts/verify_claim_support.py:588-598 (ESCALATION_CUES), 599-603 + 803 (NO_LONGER_END_RE searched over the whole quote), 69-71 (SUPPORTED_SCORE / MIN_TOKEN_OVERLAP); reference/quality-gates.md:236-237, 279-286, 306-309",
+   "problem": "Escalation is still a denylist of cue words. Fresh plan, hedge, condition and earlier-state wordings outside the list are supported. The documented limits name only negation worded without a cue, so these are undocumented, and they contradict 'whatever cannot be settled by the words escalates; the checker never guesses supported'. The same holds for a swapped predicate: the claim's only verb can be missing from the quote clause (2 of 3 words is enough with names). 'no longer' passes when any end word appears anywhere in the quote, even about something else.",
+   "evidence": "bin/score6.py at HEAD (all also supported at 86504f4): 'Acme supports SSO' vs 'Acme is slated to / is scheduled to / is preparing to support SSO', 'Acme is working on SSO support', 'Acme promised to support SSO', 'Acme appears to support SSO', 'Whether Acme supports SSO is unclear', 'Acme supported SSO until 2022', 'Acme once supported SSO'; 'Acme acquired Initech' vs 'Acme is in talks to acquire Initech', 'Acme agreed to acquire Initech', 'Acme acquired Initech, pending regulatory approval', 'Acme tried to acquire Initech in 2022', 'According to rumors, Acme acquired Initech', 'Acme is said to have acquired Initech', 'Acme sued / partnered with / became part of Initech in 2022', \"Acme's acquisition by Initech closed in 2022\"; 'Acme supports SSO and SCIM' vs 'Acme supports SSO or SCIM, depending on the plan'; 'Acme no longer offers a free tier' vs 'Acme offers a free tier; it stopped offering phone support in 2023'. End to end runs/e-fab10.out row 5 ('slated to'): supported, exit 0.",
+   "suggested_fix": "Make the structural rule positive: 'supported' needs the claim's predicate (its non-subject content stems) in the aligned quote clause, and only allowlisted words (also, now, still, already, fully, natively, officially, currently, ...) between the subject mention and that predicate; anything else is needs_review. This one rule catches slated/scheduled/preparing/promised/tried/agreed/appears/said to/in talks/has yet to/denies, and the verb swaps, without a new list per round. Estimate (bin, 100 honest pairs): the strict all-stems form would move 14 honest claims to needs_review (79 -> 65 supported), so the intervening-words allowlist is the cheaper variant. Bind the 'no longer' end cue to the claim's clause. Otherwise list these classes as limits in quality-gates.md and drop 'never guesses supported'."
+  },
+  {
+   "severity": "major",
+   "location": "skills/silver-deep-research/scripts/verify_claim_support.py:290-293 (PERIOD_RE, PER_RE), 228-236 (FILLER_WORDS: quarter, month, week, year), 224-225 (RANGE_TO_RE), 876-883 (_bound ignores year order); reference/quality-gates.md:244-252",
+   "problem": "Periods and ranges are bound only in the listed spellings (Q1-Q4, H1/H2, FY, 'per/a/each/every <period>'; 'N to/or/- N'). Round-5 issue 4(c)/(d) classes reach supported when the period is written in words, as a frequency adverb or as 'X over X', when years swap roles in a comparison, and when a range repeats the unit or uses another connector.",
+   "evidence": "bin/score6.py at HEAD (same at 86504f4), each supported: 'Acme revenue grew 30% in the third quarter' vs '... in the second quarter'; 'Acme booked $5M in the first half' vs '... second half'; '30% year over year' vs '30% quarter over quarter'; '1 million requests daily' vs 'hourly'; 'ships updates weekly' vs 'monthly'; \"Acme's revenue was higher in 2023 than in 2022\" vs the reverse; 'Setup takes 5 days' vs 'Setup takes 3 days to 5 days' / '3 through 5 days' / 'a few to 5 days'; 'Acme has 100 employees' vs 'from 50 up to 100 employees'. End to end runs/e-fab10.out rows 4 and 6: supported, exit 0. Controls fixed: Q2/Q3, per month/year, 'one to three', en-dash and word ranges -> needs_review.",
+   "suggested_fix": "Read period attributes from the figure's segment structurally: ordinal + quarter/half, Qn, frequency adverbs (hourly/daily/weekly/monthly/quarterly/annually), 'X over X'; require equal sets. Treat two figures of one segment joined by to/through/until/up to/-/or as a range whether or not the unit repeats. In a comparative ('higher in A than in B') bind year order. Add these pairs to the fabrication corpus."
+  },
+  {
+   "severity": "minor",
+   "location": "skills/silver-deep-research/reference/quality-gates.md:236-237, 306-309; verify_claim_support.py:534-551 (ANTONYM_PAIRS)",
+   "problem": "Documented-limit passes, recorded as accepted residual risk (antonyms outside the table, negation without a cue): 'has yet to', 'far from', 'denies that', 'stopped supporting', 'discontinued', 'anything but', 'in name only', 'stopped short of', 'only on paper', faster/slower, higher/lower, largest/smallest, and figure comparators ('more than 500' vs 'fewer than 500', 'at least' vs 'at most', 'over' vs 'under', 'up to 100' and '3+' vs an exact figure). The doc contradicts itself: 'the checker never guesses supported' (237) and 'such pairs may be supported' (309).",
+   "evidence": "bin/score6.py at HEAD and 86504f4: each listed pair supported (runs/score6.out).",
+   "suggested_fix": "Bind the comparator to the figure (like rng: more/over/at least/N+ = lower bound, fewer/less/under/at most/up to = upper bound; a claim without a bound against a quote with one = needs_review). That removes a whole class cheaply. Reword line 237 so it agrees with the limits paragraph."
+  },
+  {
+   "severity": "minor",
+   "location": "skills/silver-deep-research/scripts/verify_claim_support.py:702-713 (_role_swap entities include Q3), 834-842 (_missing_entities); reference/quality-gates.md:277",
+   "problem": "Escalation on honest claims is within the bar but higher off the tuned set. 'Q3' counts as a name in the role-order rule, although the doc says dates are not names. On a fresh held-out set the needs_review rate is 30%, against 13% on the 60 everyday claims the code was tuned on. Mostly by design (inverted sentences), plus 'certified'/'certification' and 'acquired'/'acquisition' year/figure binding misses. One honest alias is 'unsupported' and fails strict ('Postgres' vs 'PostgreSQL'; pre-existing).",
+   "evidence": "bin/honest6.py (40 everyday pairs from product docs, news, finance and science): 27 supported / 12 needs_review / 1 unsupported / 0 contradicted (86504f4: 30 / 9 / 1); the 3 changes are role-order escalations. bin/score6.py: 'Acme revenue grew 30% in Q3 2024' vs 'In Q3 2024, Acme revenue grew 30%' -> needs_review 'roles may be swapped'. Combined with the 60: 79 supported / 20 needs_review / 1 unsupported / 0 contradicted of 100.",
+   "suggested_fix": "Exclude period identifiers (Qn, Hn, FYnnnn) from the role-order names. Optionally add a small alias table (Postgres/PostgreSQL, K8s/Kubernetes) or downgrade an alias miss to needs_review when every other part matches."
+  },
+  {
+   "severity": "minor",
+   "location": "skills/silver-deep-research/scripts/verify_claim_support.py:575-621, 750-818",
+   "problem": "Fragility (criterion 5): the round adds about 150 lines of new lexical tables (escalation cues, end-of-state verbs, negating prefixes, predicate-after-name, period/per, one-range, comparative idioms). The whole-text quantifier fallback is redundant (issue 1). _prefixed_words compiles two regexes per claim word per aligned clause. Latency is still acceptable (bin perf4 at HEAD: 195-char quote 30 ms, 15.6k-char quote 0.9 s; 86504f4: 11 ms / 0.76 s).",
+   "evidence": "runs/mutate.out; perf4 output in this review's validation notes.",
+   "suggested_fix": "Prefer the structural rules in issues 5-7 to further lists, and delete the fallback."
+  },
+  {
+   "severity": "minor",
+   "location": "git: merge commit 1e77c4e",
+   "problem": "The merge commit message carries no Co-Authored-By / Claude-Session trailers (FIX-BRIEF: every commit). Fix commit 1ca37b6 is correct ('Claude Sonnet 5.5', accepted). Same as r5, which accepted its merge as historical.",
+   "evidence": "git log -1 --format=%B 1e77c4e -> 'Merge branch ... into fix/H8a-deep-research' only.",
+   "suggested_fix": "Add the trailers to future merge commits (git merge -m with the two lines)."
+  }
+ ],
+ "validation": {
+  "tests": "Sandbox clone at 1e77c4e (REVF-H8a6-probe/gitsb), via tests/run-all-tests.sh, at most two at a time: tests/scripts/test-solution-research-python.sh 860 passed (unittest 860 OK, 1 skipped) and tests/scripts/test-multi-ai-deep-research-contract.sh 29 passed, under both SILVER_BULLET_RUNTIME=claude and codex. Probes: bin/score6.py (91 fresh fabrications, 25 honest twins), bin/honest6.py (40 held-out everyday honest claims), r5 probe scripts re-run, bin/e2e.sh (documented strict command), bin/mutate.py (14 mutations), bin/completeness.py (corpus completeness).",
+  "coverage": "One scoped run in the sandbox clone (--cov-dir REVF-H8a6-probe/cov, --jobs 2, --fail-under 100, --only verify_claim_support.py and extract_claims.py; both test wrappers): 889 passed; verify_claim_support.py 787/787 statements, 336/336 branches; extract_claims.py 203/203, 72/72; 100%, exit 0. tests/coverage/known-limits.json untouched.",
+  "lint": "bash scripts/lint-shell.sh --all --jobs 2 (sandbox clone): application Bash clean, test Bash (732 files) clean, exit 0.",
+  "invariants": "Sandbox clone: check-repo-invariants exit 0; generate-hook-reference --check exit 0; generate-apo-artifacts --check exit 0; validate-plugin-mirror OK; sync-codex-package.sh exit 0, git status empty afterwards (mirrors current); docs/workflows identical to templates/workflows; silver-bullet.md/template not touched. quality-gates.md corpus table re-computed and exact (17/36/2/0 48/2/0; 2/34/0/0 60/9/0; 26/95/0/0 87/12/0; 14/30/1/0 45/0/0; 11/21/0/0 32/0/0). Trailers: 1ca37b6 'Co-Authored-By: Claude Sonnet 5.5' + Claude-Session (accepted); merge 1e77c4e without trailers (minor). Worktree untouched: fix/H8a-deep-research at 1e77c4e, git status empty.",
+  "process_note": "Reviewer slip: one backgrounded test command lost its cd/export (they applied only to the background subshell), so tests/scripts/test-multi-ai-deep-research-contract.sh also ran once from the main checkout /home/user/silver-bullet (29 passed). It left gitignored __pycache__ directories (all files 16:35:42-16:36:16) under skills/silver-deep-research/scripts, skills/silver-deep-research-multi-ai/{scripts,tests} and skills/silver-multi-ai-task/{scripts,tests}, and a log file /t-multiai-claude.log. git status of the main checkout is clean. A safety check blocked my removal of these; they are left for the user to delete."
+ }
+}

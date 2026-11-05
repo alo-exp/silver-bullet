@@ -1,0 +1,297 @@
+{
+ "package": "G3-stop-prompt-override",
+ "branch": "fix/G3-stop-prompt-override",
+ "head": "ac28384",
+ "worktree": "/home/user/silver-bullet/.claude/worktrees/G3",
+ "dispositions": [
+  {
+   "id": "R10-03",
+   "status": "fixed",
+   "commits": [
+    "668c3f6"
+   ],
+   "tests": [
+    "test-g3-skill-gates.sh: UAT FAIL/NOT-RUN row variants (|FAIL|, Fail, fail, failed, not run, Not_Run)"
+   ],
+   "evidence": "base: lowercase/unpadded rows passed the gate (26/63 passed on base) -> all deny; all-pass tables with legend rows still allowed",
+   "notes": "review-uat QC-5 lowercase vocabulary now works as written; skill text not edited"
+  },
+  {
+   "id": "R2-09",
+   "status": "fixed",
+   "commits": [
+    "efb1cb4"
+   ],
+   "tests": [
+    "test-g3-stop-check.sh: R2-09 stall cases"
+   ],
+   "evidence": "red: stall block persisted after progress -> green: lifted by state mtime (stop-check) and removed by timeout-check on progress reset",
+   "notes": ""
+  },
+  {
+   "id": "R2-10",
+   "status": "partial",
+   "commits": [
+    "efb1cb4",
+    "cd39164"
+   ],
+   "tests": [
+    "test-g3-stop-check.sh: R2-10",
+    "test-g3-prompt-gates.sh: SubagentStop cases"
+   ],
+   "evidence": "red: branch-mismatch block repeated with stop_hook_active; ordinary SubagentStop held by parent ledger/outcomes -> green: released with systemMessage + stop-loop-release.log; SubagentStop exempt",
+   "notes": "Branch file is still one global file per runtime (concurrent sessions can still trip the first block once); per-session keying needs session-start (G4)"
+  },
+  {
+   "id": "R2-11",
+   "status": "fixed",
+   "commits": [
+    "cd39164"
+   ],
+   "tests": [
+    "test-g3-prompt-gates.sh",
+    "test-instruction-ledger-lib.sh",
+    "test-resolve-instruction-ledger-cli.sh"
+   ],
+   "evidence": "absolute resolver path, ids i<n>-<b64>, path-targeted resolve (ambiguous legacy ids refused), branch switch re-stamps instead of deleting",
+   "notes": ""
+  },
+  {
+   "id": "R2-17",
+   "status": "fixed",
+   "commits": [
+    "668c3f6"
+   ],
+   "tests": [
+    "test-g3-skill-gates.sh: forbidden normalisation, Codex invoke-skill channel, classifier-unavailable deny"
+   ],
+   "evidence": "red 37 failed on base -> green; new hooks/lib/skill-channel.sh reads literal argv via F2 classifier; hooks.json adds Bash|exec_command group for forbidden-skill-check and uat-gate",
+   "notes": "scripts/silver-bullet invoke-skill itself still has no gate of its own (not touched)"
+  },
+  {
+   "id": "R2-19",
+   "status": "fixed",
+   "commits": [
+    "cd39164"
+   ],
+   "tests": [
+    "test-g3-prompt-gates.sh: classifier table, tamper seal"
+   ],
+   "evidence": "red 26 failed on base -> green: bullet/mixed prompts are work, follow-up whole-word, outcomes sealed with sha256 sidecar (tamper reset + log), remedy no longer says edit the JSON",
+   "notes": "A same-user shell agent can recompute the seal; it now takes deliberate effort and leaves outcomes-tamper.log"
+  },
+  {
+   "id": "R2-22",
+   "status": "partial",
+   "commits": [
+    "efb1cb4"
+   ],
+   "tests": [
+    "test-g3-stop-check.sh: SubagentStop coalesce reset",
+    "test-coalesce-libs.sh: no /tmp fallback"
+   ],
+   "evidence": "coalesce file reset on SubagentStop; /tmp fallbacks removed from stop-coalesce, outcomes-gate, instruction-ledger, ups-coalesce",
+   "notes": "Per-session/worktree keying of branch/outcomes/ledger files NOT done (spans session-start, G4); recommend session_id-keyed dir"
+  },
+  {
+   "id": "R2-23",
+   "status": "partial",
+   "commits": [
+    "668c3f6"
+   ],
+   "tests": [
+    "test-g3-skill-gates.sh: workflow id filter"
+   ],
+   "evidence": "workflow names injected into context are filtered to the documented id shape (letters/digits allowed in the random part, as real ids use)",
+   "notes": "Perf budget (<200ms) not addressed; sub-claim 3 rejected: record-requested-skill hard-resets the UPS coalesce on every prompt, probe ran prompt-reminder alone; dev-cycle-check/workflow-chain-guard deny-reason filtering belongs to G2"
+  },
+  {
+   "id": "R2-24",
+   "status": "fixed",
+   "commits": [
+    "668c3f6"
+   ],
+   "tests": [
+    "test-g3-skill-gates.sh: R2-24",
+    "test-subagent-stop-enforcement-hook.sh"
+   ],
+   "evidence": "apply_patch/exec_command gated; each worker return needs an audit AFTER it (Skill PostToolUse, Codex adapter via classifier, or user /sb:completion-audit); new PostToolUse Skill|Bash|exec_command registration",
+   "notes": ""
+  },
+  {
+   "id": "R2-25",
+   "status": "fixed",
+   "commits": [
+    "668c3f6"
+   ],
+   "tests": [
+    "test-g3-skill-gates.sh; test-uat-gate-paths.sh"
+   ],
+   "evidence": "column-aware case-insensitive result cells, project-root paths, exact canonical skill name",
+   "notes": ""
+  },
+  {
+   "id": "R2-30",
+   "status": "fixed",
+   "commits": [
+    "efb1cb4"
+   ],
+   "tests": [
+    "test-g3-stop-check.sh: R2-30"
+   ],
+   "evidence": "red: CODE-REVIEW.md counted as transient + awk warning -> green: anchored regex via ENVIRON, empty stderr",
+   "notes": ""
+  },
+  {
+   "id": "R2-32",
+   "status": "partial",
+   "commits": [
+    "668c3f6"
+   ],
+   "tests": [
+    "docs"
+   ],
+   "evidence": "documented as an inert stub in hooks-purpose.json/HOOKS.md and the script header",
+   "notes": "Script and registration kept (removal touches hooks count, plugin integrity, install tests, mirrors); recommend deleting in a cleanup package"
+  },
+  {
+   "id": "R2-36",
+   "status": "fixed",
+   "commits": [
+    "efb1cb4"
+   ],
+   "tests": [
+    "test-g3-stop-check.sh: R2-36"
+   ],
+   "evidence": "red: empty state + agent-written src allowed -> green: trivial-file-clear leaves files-written; fresh marker + dirty src_pattern path applies the planning floor; user's own WIP and docs-only edits still allowed",
+   "notes": "Bash-made writes do not leave the marker (same gap as the legacy trivial marker)"
+  },
+  {
+   "id": "R4-07",
+   "status": "partial",
+   "commits": [
+    "efb1cb4"
+   ],
+   "tests": [
+    "test-g3-override.sh: R4-07"
+   ],
+   "evidence": "red: synthetic UserPromptSubmit cleared the directive and wrote a user-looking line -> green: needs host session_id (and a real transcript_path if given); audit carries session, host, prompt sha256, hash chain; PreToolUse guard no longer honours a prompt field",
+   "notes": "A same-user agent can still forge by supplying any session_id; delegate state-dir isolation and stripping SB OVERRIDE from delegation briefs are in scripts/agent-* (G6), not done"
+  },
+  {
+   "id": "R4-08",
+   "status": "fixed",
+   "commits": [
+    "efb1cb4"
+   ],
+   "tests": [
+    "test-g3-override.sh: R4-08",
+    "test-orchestrator-state-advance-lib.sh"
+   ],
+   "evidence": "orchestrator-parent sourced before the interrupt clear; only bare work requests clear a queue (status questions keep it) and the clear is logged to queue-clear.log",
+   "notes": ""
+  },
+  {
+   "id": "R4-12",
+   "status": "fixed",
+   "commits": [
+    "efb1cb4"
+   ],
+   "tests": [
+    "test-g3-override.sh: R4-12",
+    "test-orchestrator-directive-lib.sh"
+   ],
+   "evidence": "override must be the first non-blank line, upper case, 8+ char non-placeholder reason; denial text no longer prints the literal marker",
+   "notes": ""
+  },
+  {
+   "id": "R4-13",
+   "status": "fixed",
+   "commits": [
+    "efb1cb4"
+   ],
+   "tests": [
+    "test-g3-override.sh",
+    "docs"
+   ],
+   "evidence": "contract decided and documented in silver-bullet.md 2h + template + ENFORCEMENT/ORCHESTRATOR docs: override clears the directive AND abandons the flow queue (Stop no longer held), does not lift parent-mode tool limits or other gates; uat-gate no longer advertises it",
+   "notes": ""
+  },
+  {
+   "id": "R4-14",
+   "status": "fixed",
+   "commits": [
+    "efb1cb4"
+   ],
+   "tests": [
+    "test-g3-override.sh: R4-14",
+    "test-g3-coverage.sh"
+   ],
+   "evidence": "audit written before anything is cleared; refuses symlinked .planning/log and unwritable logs; creates .planning; session/host/prompt hash + prev-line sha256 chain; mirrored in the runtime state dir",
+   "notes": "No signing; chain is tamper-evident, not tamper-proof"
+  },
+  {
+   "id": "R5-06",
+   "status": "fixed",
+   "commits": [
+    "efb1cb4"
+   ],
+   "tests": [
+    "test-g3-stop-check.sh: R5-06",
+    "test-stop-check.sh ORCH-3..7"
+   ],
+   "evidence": "red: touch-created marker exempted Stop -> green: needs SB_E2E_ENTERPRISE_MATRIX=1 in the hook env AND a future-expiry epoch the harness wrote; no /tmp fallback",
+   "notes": "Harness (matrix.sh) already exports the env and writes the marker through the same lib"
+  }
+ ],
+ "files_changed_outside_ownership": [
+  "hooks/timeout-check.sh: R2-09 names it (removes stall-block on progress)",
+  "hooks/trivial-file-clear.sh: R2-36 files-written marker",
+  "hooks/lib/trivial-bypass.sh: identical copy of G1's sb_trivial_path_trusted/sb_expand_state_config_path so the hand-off works before G1 merges (clean merge expected)",
+  "hooks/lib/orchestrator-state.sh, hooks/lib/orchestrator-directive.sh, hooks/orchestrator-directive-guard.sh: R4-08/R4-12/R4-13/R4-14",
+  "hooks/forbidden-skill-check.sh, hooks/uat-gate.sh, hooks/dependency-skill-check.sh (comment), hooks/lib/skill-channel.sh (new): R2-17/R2-25/R10-03/R2-32",
+  "hooks/hooks.json (+3 registrations), hooks/cursor-hooks.json and plugins/silver-bullet/cursor-hooks.json (regenerated), docs/HOOKS.md (regenerated), docs/hooks-purpose.json, CLAUDE.md (hook count 99)",
+  "scripts/resolve-instruction-ledger.sh: R2-11 list/scope handling",
+  "silver-bullet.md, templates/silver-bullet.md.base, plugins/silver-bullet/templates (synced), README.md, docs/ENFORCEMENT.md, docs/ORCHESTRATOR.md: SB OVERRIDE contract text",
+  "tests outside the package: test-project-libs.sh, test-enterprise-e2e-matrix-routing.sh, test-hook-faults-sessions.sh, test-dgates-staged-fallbacks.sh, test-orchestrator-*-lib.sh (contract changes)"
+ ],
+ "validation": {
+  "tests": "New: test-g3-{stop-check,override,prompt-gates,skill-gates,coverage}.sh. 62 covering test files plus plugin-integrity, install-codex, template-parity run under SILVER_BULLET_RUNTIME=claude then codex (--jobs 2): 3667 passed, 1 failed in each runtime; the failure is test-install-codex 'Runtime Claude path references' caused by H3b's scripts/lib/repo_invariants.py (.claude/skills), not G3. docs suite 198/198.",
+  "coverage": "Scoped single run (22 changed files, --fail-under 100): Bash statements 3368/3368, lines 2262/2262, functions 116/116, exit 0, 3143 tests passed.",
+  "lint": "scripts/lint-shell.sh --all --jobs 2 clean (after fixes).",
+  "invariants": "check-repo-invariants all PASS; generate-hook-reference --check, generate-apo-artifacts --check, validate-plugin-mirror OK after sync-codex-package (committed); latest claude/optimistic-ramanujan-tccfud merged (6eaa24c)."
+ },
+ "notes": "Never used git stash after one shared-stash collision early on (recovered, nothing lost). Open for the orchestrator: per-session state keying (R2-22/R2-10), delegation brief stripping + state-dir isolation (R4-07, G6), perf of prompt hooks (R2-23), removal of the inert dependency-skill-check (R2-32), scripts/silver-bullet invoke-skill own gate. test-install-codex failure is from H3b.",
+ "review_repair_r1": {
+  "commits": "fb9a190, 7bb8dbf, ac28384 plus merges of G2 (463adfb) and G1 (3e2f557); base 2a65018 already contained",
+  "items": {
+   "1 no-gsd scan": "fixed: retired namespace built at run time in test-g3-skill-gates.sh; test-no-gsd-runtime passes",
+   "2 R4-08 forged clear": "fixed: the clear needs the provenance check (parent session, session_id, no agent_id, transcript under the host root) and a queue-clear line in the project audit log first; without repo root or payload it never clears",
+   "3 override in workers": "fixed in override_apply via the same provenance check; /etc/hostname, symlink and '..' transcripts refused; reasons need 12+ chars, two words, no placeholder",
+   "4 R2-10 floor": "fixed: stop_hook_active releases only the mismatch; the planning floor still runs with a mismatch note; remedy names /clear or a new session, or stopping again",
+   "5 R2-36 Bash": "fixed: trivial-file-clear also runs PostToolUse Bash|exec_command (new registration) and marks files-written when the F2 classifier lists a write path; read-only Bash leaves the trivial marker alone",
+   "6 R2-19 delete": "fixed: a missing checklist with a seal or ledger of the session is restored pending and logged; a never-seeded session is not blocked",
+   "7 G2/G1 conflicts": "merged G2 and G1 tips; took G2's forbidden-skill-check.sh and uat-gate.sh, dropped skill-channel.sh and my duplicate hooks.json group; re-applied only normalisation/segment check (forbidden) and column-aware case-insensitive UAT cells with exact silver-release (uat); stop-check keeps G1's sb_trivial_path_trusted; hooks.json merged semantically, no duplicate registrations (98 commands)",
+   "8 R2-22/R2-23": "R2-22 fixed: outcomes/ledger files keyed by session_id (session-key.sh, no-jq fallback, resolver CLI finds the newest per-session ledger). R2-23 partial: about 540 -> 390 ms CPU per prompt (159 -> 114 execs, jq 40 -> 14) via one jq per template read, one consent jq per tool, sha256sum before perl shasum, no dirname forks in walks, one read instead of six sed; jq budget pinned by a test; the 200 ms target is NOT met (bash start-up and library sourcing)",
+   "9 minors": "fixed: Codex audit clear needs exit 0 and a fresh adapter receipt newer than the pending marker, exemption only for a sole command; classifier 'Q? Fix it.'; UAT legend reads the Result/Status column from the header; weak override reasons. Noted: per-Bash overhead (forbidden/uat registration is G2's; G3 adds trivial-file-clear and the prefiltered subagent hook on Bash); Cursor bridge dropping session_id is moot (Cursor removal)"
+  },
+  "depends_on_g2_files": [
+   "hooks/forbidden-skill-check.sh",
+   "hooks/uat-gate.sh",
+   "hooks/lib/planning-floor.sh (sb_pf_skill_calls, sb_pf_unanalysable_message)",
+   "hooks/lib/hook-output.sh emit helpers"
+  ],
+  "files_outside_ownership": [
+   "hooks/lib/required-skills.sh, recommended-tools.sh, core-rules-integrity.sh, sb-project-gate.sh (latency, with their tests in the coverage run)",
+   "hooks/lib/session-key.sh (new)",
+   "hooks/hooks.json (+trivial-file-clear Bash group), generated docs and cursor files, CLAUDE.md hook count"
+  ],
+  "validation": {
+   "coverage": "one scoped run, 26 changed files: statements 4201/4201, lines 2900/2900, functions 178/178 (100%), 6278 tests",
+   "tests": "claude: 1 failure only, tests/hooks/test-hook-faults-gates.sh 'ci: tool name extraction failing is tolerated', which also fails with G3's lib change reverted (G1+G2 merge interplay, not G3). codex: 620 passed 0 failed on the G3-related files. docs suite 198/198.",
+   "lint": "lint-shell --all --jobs 2 clean",
+   "invariants": "check-repo-invariants: only FAIL personal-data at tests/hooks/test-delivery-gates-g1.sh:134 (G1's file); generator checks, plugin mirror, template parity OK"
+  },
+  "notes": "session-start still wipes only instruction-ledger.json on a scope change; per-session instruction-ledger-<id>.json files survive (G4: change the rm to a glob). Deleting both the checklist and its seal is not detectable."
+ }
+}

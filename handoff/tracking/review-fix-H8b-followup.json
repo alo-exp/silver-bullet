@@ -1,0 +1,92 @@
+{
+ "package": "H8b-followup",
+ "head_reviewed": "e57873224a148aa30fdd084a00b73165a78f0cd6",
+ "verdict": "APPROVE",
+ "per_finding": [
+  {
+   "id": "r4-1 gate _fold",
+   "verdict": "fixed",
+   "notes": "r4 probe gate_fold.py at head: both row orders -> [] (base: one order gave a false gap). validate._fold is now category_pack.feature_key, which materialize._feature_key also uses, so the gate and the packager fold the same way. Mutation (old regex fold) fails 2 tests in test_validate_landscape_content_unit. Edge case: 'C♯ support' (U+266F) still folds to 'c support'. That is rare, so no issue is filed."
+  },
+  {
+   "id": "r4-2 capitalised compounds",
+   "verdict": "fixed",
+   "notes": "amb_fp.py: 0/14 at head (base 10/14). Real APO run (/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-probe/tools/amb_diff.py base vs head): conductor/continue/director/factory/linear/sweep mention sets identical, harness/scout lost only inside 'Claude Harness'/'Cognition Scout' (full names still resolve), cursor +5 (see issue 3). Mutation removing _inside_ordinary_phrase fails 2 tests. But recall dropped on synthetic genuine prose (issue 1)."
+  },
+  {
+   "id": "r4-3 one product one slug",
+   "verdict": "fixed",
+   "notes": "/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-probe/tools/copilot.py: 'GitHub Copilot'/'Copilot'/'Microsoft Copilot'/'Copilot SDK' -> ['github-copilot'] only; github-copilot-workspace no longer produced. The residual the author acknowledged remains: 'Copilot Workspace' and 'GitHub Copilot Enterprise' also credit github-copilot (the classifier did this at base too). Mutation of the overlay alias fails 3 tests."
+  },
+  {
+   "id": "r4-4 --force edited profile",
+   "verdict": "incomplete",
+   "notes": "The r4 probe force_edited_cat.py now carries the must-haves. But /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-probe/tools/force_cat_only.py shows that an edit of only the category (or only the note) for the SAME query is still skipped (_generated_for_old_query True), because the key set stays within _AUTO_PROFILE_KEYS. This is mitigated: skipped_inputs now reports it and the file survives in the moved-aside run. See issue 5."
+  },
+  {
+   "id": "r4-5 feature words in vendor names",
+   "verdict": "fixed",
+   "notes": "name_keyword.py: all {} at head; real run removes 14 cells, all from whole-claim critique spreads (checked with who_ticks.py at base: e.g. windsurf/openhands IDE-native from 'Cursor Background Agents, Windsurf, and OpenHands are hard-excluded...'). Masking itself does not hide genuine single-vendor claims (/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-probe/tools/absence.py: 'Barkain Workflow Orchestrator provides workflow composition' still ticks). The added absence veto does hide genuine claims (issue 2)."
+  },
+  {
+   "id": "r4-6 quadratic mentions_vendor",
+   "verdict": "fixed",
+   "notes": "/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-probe/tools/perf.py at head: 'Director. '*8000 (80 KB) 0.14 s, 'Director '*16000 0.15 s, 'VP or Director '*8000 0.17 s, 400 KB whitespace/opener runs 0.03 s, 'Director\\n'*16000 0.31 s. Mutation back to the full-prefix _CUE_BEFORE search makes the timing test fail (14.8 s). Pre-existing and not in scope: parse_feature_support as a whole is still super-linear in claim length (13.8 KB claim 6.9 s at head, 5.8 s at base)."
+  },
+  {
+   "id": "r4-7 prefix match of bare prose",
+   "verdict": "fixed",
+   "notes": "prefix_probe.py: 'Claude, Devin' -> ['devin'], and the claude--devin phantom is gone. Mutation restoring the prefix canonicalisation fails 1 test. Exact matching now drops some decorated items that base resolved (issue 4)."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "minor",
+   "location": "skills/silver-deep-research-multi-ai/scripts/materialize_solution_artifacts.py:264-277 (_inside_ordinary_phrase)",
+   "problem": "The Title-Case-compound rule treats any capitalised previous word that is not in _FUNCTION_WORDS as a compound. Sentence-initial adverbs, prepositions and verbs therefore silence a genuine vendor right after them, and so does a vendor-qualified product name. Hit: 'Unlike Cursor, ...', 'Like Cursor', 'Install Cursor', 'Besides Director', 'Notably Director', 'Compare Director and cc10x'. Next-word cases are hit too: 'Melty Conductor' (the vendor's own name), 'Factory Droids', 'Cursor Pro', 'Director Pro', 'Cursor Composer', and lowercase head nouns such as 'Cursor agents' and 'Cursor model'. All of these counted at base. The real APO run is unaffected.",
+   "evidence": "python3 /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-probe/tools/recall.py <scripts>: base EV/EX for 22/26 sentences; head loses 'Unlike Cursor, Silver Bullet enforces gates.', 'Install Cursor and enable the plugin.', 'Like Cursor, Windsurf ships an IDE.', 'Unlike Director, cc10x has no hooks.', 'Besides Director, ...', 'Notably Director enforces review gates.', 'Teams run Cursor agents in the cloud.', 'The Cursor model picker ...', 'Melty Conductor runs parallel Claude Code agents.', 'Most teams adopt Cursor Pro.', 'Tools such as Director Pro enforce gates.', 'Compare Director and cc10x.' (all '-- --').",
+   "suggested_fix": "Ignore the previous word when it is itself sentence-initial (reuse _sentence_initial on its start), or when it is a known vendor or maker name such as Melty or Anysphere. Make the next-word compound test require that the pair is not a known product phrase, and drop the agent/agents/model head nouns or let them be overridden when the name is otherwise proper. Add these sentences to STILL_COUNTS."
+  },
+  {
+   "severity": "minor",
+   "location": "skills/silver-deep-research-multi-ai/scripts/materialize_solution_artifacts.py:537-541 (_ABSENCE_MARKER), 1131-1132 (_apply_slug_scoped_prose)",
+   "problem": "The absence veto applies to the whole claim. Any 'no/zero/without/lacking/missing ... evidence|claims' anywhere in the claim drops every positive vote in it, including genuine ones in another clause. In this category 'without evidence' and 'missing evidence' also describe the evidence-gate feature itself. No genuine cell was lost on the real run, but the focus item said feature claims must not be hidden.",
+   "evidence": "python3 /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-probe/tools/absence.py: base vs head. 'Silver Bullet provides workflow composition; Deepwork has no public evidence.' base {'silver-bullet': WC} -> head {}. 'Director provides workflow composition, and no claims of SSO were found.' base director WC -> head {}. 'Silver Bullet supports workflow composition with zero claims of regressions.' base SB WC -> head {}. 'Silver Bullet provides hook-enforced gates and blocks PR creation without evidence of review.' head {}.",
+   "suggested_fix": "Scope the veto to the clause or sentence that carries the marker, and to the vendors named in it (split on ';', '.' and ', and'). Exclude 'without evidence of <noun>' and 'missing evidence' used as objects of block, refuse or fail. Add the sentences above as positive tests."
+  },
+  {
+   "severity": "minor",
+   "location": "skills/silver-deep-research-multi-ai/scripts/materialize_solution_artifacts.py:213 (_CUE_AFTER '|Background')",
+   "problem": "The new 'Background' product cue makes every 'Cursor Background Agents' mention also credit the host-runtime slug 'cursor'. That is one product with two slugs, the class r4-3 fixed, and it reaches classifier evidence as well.",
+   "evidence": "'Hard exclusions: Cursor Background Agents, Sweep.' base _extract_slugs_from_text=['cursor-background-agents','sweep','cursor-agents','sweep-ai'], evidence=['cursor-background-agents','sweep']; head adds 'cursor' to both. On the real run, cursor mentions grew from 30 to 35, all in 'Cursor Background Agents' contexts (amb_diff.py).",
+   "suggested_fix": "Drop 'Background' from _CUE_AFTER, or skip the ambiguous short name when a longer known name covers the same span (the masking pass already has longest-name ordering). Add a test that 'Cursor Background Agents' does not yield 'cursor'."
+  },
+  {
+   "severity": "minor",
+   "location": "skills/silver-deep-research-multi-ai/scripts/materialize_solution_artifacts.py:692-693, 753-769 (exact list items)",
+   "problem": "Exact matching removes the phantoms but also drops slightly decorated items that base resolved correctly. In leaders lists: 'Conductor (Melty Labs)', 'Factory', '`director`' and 'Director 2.0'. In core lists: 'Director 2.0'. Neither base nor head resolves '**Director**' or 'Director.' (base produced a phantom).",
+   "evidence": "python3 /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-probe/tools/lists.py <scripts>: leaders base 'Conductor (Melty Labs)' -> ['conductor'], head []; 'Director 2.0' core/leaders base ['director'], head []; '`director`' leaders base ['director`--devin'], head []; 'Factory' leaders base ['factory'], head [].",
+   "suggested_fix": "Before the exact lookup, strip markdown emphasis and backticks, trailing punctuation, a parenthetical and a version suffix (v?\\d+(\\.\\d+)*). Then resolve exactly by name or alias, and drop the item if it still does not resolve."
+  },
+  {
+   "severity": "minor",
+   "location": "skills/silver-deep-research-multi-ai/scripts/dr_multi_ai_cli.py:81-108 (_generated_for_old_query)",
+   "problem": "Partial fix of r4-4. A user who follows the profile note and only renames the category (or edits only the note or research_type) keeps the key set inside _AUTO_PROFILE_KEYS. --force with the same query then still skips the edited profile. The new skipped_inputs field reports it, and the file stays in the moved-aside run.",
+   "evidence": "python3 /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-probe/tools/force_cat_only.py <head scripts> <tmp>: keys ['auto_assumed','category','interview_complete','note','research_type']; 'category only -> skipped for same query: True'; 'note edited -> skipped: True'.",
+   "suggested_fix": "Treat a profile as untouched only if it equals the dict prepare_run_inputs would write for some query (category == research_type-default note etc.). An equivalent test: the note equals the generated note text, and the category equals the topic recorded in the moved-aside scope.md or run manifest. Otherwise carry it."
+  },
+  {
+   "severity": "minor",
+   "location": "plugins/silver-bullet/cursor-skill-source/sb-deep-research-multi-ai/** (mirror added on claude/optimistic-ramanujan-tccfud after 21606d0)",
+   "problem": "git merge-tree with 9b5db30 is clean (tree d20bd0f), but the target branch added a new Cursor hidden-skill mirror that holds the 21606d0 versions. After the merge, 9 mirror paths drift and validate-plugin-mirror fails until sync-codex-package is re-run.",
+   "evidence": "Merged tree archived to /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8bfu-probe/merged: validate-plugin-mirror.sh -> '::error::Plugin mirror drift detected (9 path(s))'; sync-codex-package.sh then modifies exactly the 9 cursor-skill-source files (materialize, category_pack, dr_multi_ai_cli, validate_landscape_content, overlay json, 4 tests).",
+   "suggested_fix": "The orchestrator runs bash scripts/sync-codex-package.sh in the merge commit (or the author merges 9b5db30 and regenerates), then re-runs validate-plugin-mirror and check-repo-invariants."
+  }
+ ],
+ "validation": {
+  "tests": "bash tests/run-all-tests.sh tests/scripts/test-solution-research-python.sh tests/scripts/test-multi-ai-deep-research-contract.sh (SILVER_BULLET_RUNTIME=codex): 670 passed, 0 failed. Mutation checks in sandbox copies ($P/mut): reverting each of the 7 fixes (fold, ordinary-phrase rule, absence veto, masking, --force untouched check, exact list match, copilot overlay, bounded look-behind) makes the new tests fail (2/2/1/1/3/1/3/1 failures). No test pins defective behaviour; test_cov_materialize's expectation was corrected to one slug per product.",
+  "coverage": "One scoped run: run-coverage.sh --only materialize_solution_artifacts.py/category_pack.py/dr_multi_ai_cli.py/validate_landscape_content.py tests/scripts/test-multi-ai-deep-research-contract.sh -> 100.00% statements and branches for all 4 files (1970/1970 stmts, 1070/1070 branches), rc 0. known-limits.json valid; none of its files touched.",
+  "lint": "bash scripts/lint-shell.sh --all --jobs 2: exit 0, clean. No shell files changed (Bash 3.2 not affected); Python uses walrus (3.8+), fine.",
+  "invariants": "check-repo-invariants exit 0; generate-hook-reference --check up to date; generate-apo-artifacts --check exit 0; validate-plugin-mirror OK on the branch; codex/cursor/plugin skill-source mirrors byte-identical to skills/ for every changed file. Trailers on b094b31 and e578732: 'Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>' + correct Claude-Session (accepted); no other model names in messages. merge-tree with claude/optimistic-ramanujan-tccfud 9b5db30: clean (tree d20bd0f), but the new cursor-skill-source mirror needs regeneration (issue 6). Worktree left unmodified (git status clean)."
+ }
+}

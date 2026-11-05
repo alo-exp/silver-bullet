@@ -1,0 +1,269 @@
+{
+  "package": "HC-remove-cursor",
+  "branch": "fix/HC-remove-cursor",
+  "head": "bf9e3a3",
+  "worktree": "/home/user/silver-bullet/.claude/worktrees/HC-remove-cursor",
+  "dispositions": [
+    {
+      "id": "HC-remove-cursor",
+      "status": "partial",
+      "commits": [
+        "4e75e55",
+        "579ebac",
+        "ebd1d17",
+        "1295efd",
+        "b7ad4ee",
+        "ac04ead",
+        "c5a0f56",
+        "44be258",
+        "314a2d3",
+        "370b362",
+        "704445a",
+        "d4d9c40",
+        "4a10c0f",
+        "8af7de0",
+        "58e61f0",
+        "5e4c864",
+        "96a0ea6",
+        "5c8a3bf",
+        "0b74b0a",
+        "f02b77f",
+        "14dc9bb",
+        "2883cee",
+        "1ea25eb",
+        "f42dddf",
+        "df8c952",
+        "0b9e177",
+        "3654bc9",
+        "d1d0184",
+        "a985913",
+        "b75299a",
+        "de0eaba",
+        "362f40e"
+      ],
+      "tests": [
+        "tests/hooks: ~45 files rewritten/trimmed (runtime-paths, tier-libs, gates, recommended-tools, orchestrator, session-start, completion-audit, delegation guard)",
+        "tests/docs/test-doc-facts.sh: command-stub counts dropped"
+      ],
+      "evidence": "Green: lint-shell --app (clean), check-repo-invariants, generate-hook-reference --check, generate-apo-artifacts --check, validate-plugin-mirror, validate-host-agnostic-core, docs suite (194 passed, 0 failed). Hooks suite (SILVER_BULLET_RUNTIME=claude, --jobs 3, before the final merge): 9862 passed, 2 failed (one real, fixed: AGENTMEMORY docs; one SIGPIPE flake in test-instruction-ledger-lib that passes alone); key runtime-detection files also pass under SILVER_BULLET_RUNTIME=codex. Python suite: 1490 tests OK. Docs suite: 194 passed. Re-ran invariants, hook-reference, APO, mirror, host-agnostic-core and lint-shell --app after merging base 127e2f9. Not green: scripts and python suites (see remaining_work).",
+      "notes": "Removed: Cursor installers and the global toolstack deployed to ~/.cursor, hook bridge + manifest + generators, host-bundles/cursor, cursor-skill-source, .cursor, .cursor-plugin, .cursorignore, command stubs and their generator, cursor-sb-agents tooling, picker/smoke scripts, silver-agent-cursor skill, Cursor CI step, Cursor runtime value/detection, doctor checks D8/D18/D19/D21/D22, Cursor RC cells (markers now four), Stage 4c five-tool Cursor gate, enterprise-e2e Cursor host, minimal-intent harness, config-template cursor keys, delegation advise tier and its progress surface."
+    }
+  ],
+  "moot_findings_cursor_only": [
+    "R6-02",
+    "R6-12",
+    "R6-13",
+    "R6-25",
+    "R6-31",
+    "R7-02",
+    "R7-03",
+    "R7-04",
+    "R7-05",
+    "R7-11",
+    "R7-15",
+    "R7-20",
+    "R7-24",
+    "R7-25",
+    "R7-26",
+    "R7-28",
+    "R8-10",
+    "R8-20",
+    "R13-26",
+    "R10b-19"
+  ],
+  "partially_moot_findings": [
+    "R7-01 (Codex adapter half remains)",
+    "R7-14 (Cursor half)",
+    "R7-22 (Codex adapter half remains)",
+    "R7-23 (Cursor half)",
+    "R7-27 (Cursor tests removed, Codex part remains)",
+    "R10-06 (default host no longer cursor; init/update/migrate now default to claude)",
+    "R8-02 (Cursor render gone, Codex render unchanged)",
+    "R6-27 (.cursorrules guard removed; AGENTS.md guard remains)",
+    "R8-11/R8-12 (Cursor smoke helpers removed, codex/claude helpers remain)",
+    "R14-07 (Cursor gate pair removed)",
+    "R16-07/R16-13 (docs not yet updated)"
+  ],
+  "findings_with_cursor_code_still_present": [
+    "R11-10",
+    "R11-29",
+    "R11-30 (silver-multi-ai-task cursor backend/adapter intentionally kept: needs-user)"
+  ],
+  "needs_user": [
+    {
+      "id": "HC-NU-1",
+      "question": "Existing Cursor users still have Silver Bullet hook entries in ~/.cursor/hooks.json and plugin caches. I deleted the whole uninstall path (post-release-uninstall.sh cursor branch, strip-cursor-sb-hooks.py) so no code writes into ~/.cursor. Keep a minimal one-time cleanup?",
+      "recommendation": "Yes: ship a documented manual-cleanup note (CHANGELOG/docs) now; if you want automation, add a tiny strip-only script (removes entries whose command points at a Silver Bullet hooks dir, atomic write, backup, never adds anything) invoked only by an explicit command, not by install/doctor."
+    },
+    {
+      "id": "HC-NU-2",
+      "question": "silver-multi-ai-task (and silver-deep-research-multi-ai live dispatch) declare Cursor as the only v1 execution host and the default backend (cursor_default_pool, cursor_host_adapter.py, provision-cursor-agents.sh, live_dispatch.py run_cursor_worker, host-matrix-v1.json). Removing Cursor leaves OCG-only dispatch and no supported host. Remove the skills, or port to an OCG-only/claude/codex host?",
+      "recommendation": "Retire the cursor backend and make OCG the sole backend with host claude/codex, as a dedicated package with its own 100% coverage tests; I left this subsystem untouched (files restored) rather than half-edit it."
+    },
+    {
+      "id": "HC-NU-3",
+      "question": "The review-fix-ladder is built around Cursor custom subagents (sb-* names), a Cursor ladder resolver (resolve_cursor_ladder, cursor_sb_agents config), the subscription-first / cursor_task / cursor_fallback decision logic, hook state (subscription_quota_fallback) and rfl_launcher_policy's Cursor/Grok/Composer rungs. Remove the Cursor ladder and subscription-first mechanism entirely (redesign for claude/codex spawns)?",
+      "recommendation": "Yes, in a dedicated RFL package; it needs a ladder redesign (default host, rung naming, guard enforcement), not a mechanical delete. Left untouched here; scripts/lib/cursor-sb-agents and install-cursor-sb-agents.sh are gone so the resolver now falls back to its file checks."
+    },
+    {
+      "id": "HC-NU-4",
+      "question": "Matchers 'CallMcpTool|MCP' in hooks.json (and CallMcpTool handling in hooks) are Cursor's MCP tool name. Kept because Claude/Codex MCP naming is not covered by 'MCP' alone. Drop 'CallMcpTool'?",
+      "recommendation": "Verify Claude (mcp__*) and Codex MCP tool names against hook payloads first; then drop CallMcpTool and widen the matcher to the real names."
+    }
+  ],
+  "files_changed_outside_ownership": [
+    "whole repository: this package is a cross-cutting removal; the orchestrator should resolve conflicts with other packages as 'keep the deletion'"
+  ],
+  "commits": [
+    "7d62aa3 Cover the empty-ownership branch of the Cursor legacy MCP cleanup",
+    "5c35786 Merge claude/optimistic-ramanujan-tccfud into HC-remove-cursor",
+    "cf45eab Fix lint findings and scripts README index after Cursor removal",
+    "d49487d Align silver-doctor fix-fence assertion with remaining host check ids",
+    "7bbbba2 Fix orchestrator wording, silver-doctor alias asserts and live-doctor noise after Cursor removal",
+    "5ea885c Remove Cursor host mentions from live docs",
+    "edacc19 Drop Cursor-only MCP and parent tool names from matchers and allowlists",
+    "afc1495 Regenerate certification status mirror for two hosts",
+    "8ec86f3 Convert remaining reconcile, optimize, release, site and tri-host smoke tests off Cursor",
+    "f804987 Docs and site: testing docs, registries and flow-step count without the Cursor host",
+    "2056950 Tests: doctor, diagnostics, recommended-tools probes and sync tests without the Cursor host",
+    "6487f3a docs/internal: pre-release quality gate without the Cursor host",
+    "3ec21d7 Tests: installer, leanctx, smoke and release-gate tests without the Cursor host",
+    "7ec2328 Tests: enterprise-e2e, agent and verify tests without the Cursor host",
+    "d77bb44 Certification status: count hosts instead of assuming three",
+    "820c0fe Site and testing registries: drop Cursor as a supported host",
+    "94800f8 fix(test): align site-gate and gsd-scan tests with the F2 analyzer",
+    "4754ee5 Add strip-only legacy cleanup for ~/.cursor and its changelog note"
+  ],
+  "kept": [
+    "skills/silver-multi-ai-task and skills/silver-deep-research-multi-ai Cursor backend/adapter/pool (needs-user HC-NU-2); the 5 multi-ai files I had deleted were restored",
+    "scripts/_review_fix_ladder_impl.py, scripts/lib/rfl_launcher_policy.py, skills/silver-review-fix-ladder, hooks/lib/review-fix-ladder-state.sh Cursor ladder and subscription-first logic (needs-user HC-NU-3)",
+    "'CallMcpTool|MCP' matchers in hooks/hooks.json (needs-user HC-NU-4)",
+    "Market-research data naming Cursor as a competitor product (skills/silver-deep-research*/reference/*, landscape templates and tests): not host support",
+    "Historical records not edited: .planning/, .agentmemory/, research/, graphify-out/, CHANGELOG.md, docs/CHANGELOG.md, docs/handoffs, docs/audits, docs/instruction-following, SETUP_REPORT.md",
+    ".agents/skills/find-skills/adapters/cursor-directory.md: third-party skill-directory adapter, not host support",
+    "site/ (22 files) still mentions Cursor and tri-host wording"
+  ],
+  "remaining_work": [],
+  "validation": {
+    "tests": "Hooks suite (SILVER_BULLET_RUNTIME=claude, --jobs 3, before the final merge): 9862 passed, 2 failed (one real, fixed: AGENTMEMORY docs; one SIGPIPE flake in test-instruction-ledger-lib that passes alone); key runtime-detection files also pass under SILVER_BULLET_RUNTIME=codex. Python suite: 1490 tests OK. Docs suite: 194 passed. Re-ran invariants, hook-reference, APO, mirror, host-agnostic-core and lint-shell --app after merging base 127e2f9. docs suite: 194 passed, 0 failed. scripts and python suites: not green.",
+    "coverage": "not measured",
+    "lint": "scripts/lint-shell.sh --app clean (320 files); --tests not run",
+    "invariants": "check-repo-invariants, generate-hook-reference --check, generate-apo-artifacts --check, validate-plugin-mirror, validate-host-agnostic-core pass"
+  },
+  "notes": "Cross-cutting removal; merged claude/optimistic-ramanujan-tccfud (5e4c864) cleanly. No code writes to ~/.cursor except patch-mcp.py's residual cursor default (remaining_work). A retired SILVER_BULLET_RUNTIME=cursor is coerced to claude by runtime-paths.sh. hooks/core-rules.md edited and core-rules.sha256 re-pinned: other packages touching core-rules.md must re-pin.",
+  "moot_note": "Classified by finding title and locations in R*.json; not re-verified one by one.",
+  "finish_round": {
+    "head": "7d62aa30764438d275f058e2f0554f5cc3f55fb5",
+    "legacy_cleanup": "scripts/uninstall-cursor-legacy.sh + scripts/lib/uninstall_cursor_legacy.py; strip-only, exact markers/names, atomic with .sb-backup, moved files go to ~/.cursor/.silver-bullet-legacy-backup/<UTC>/, idempotent, --dry-run; 19 python + 11 shell asserts; 100% stmt+branch. CHANGELOG [Unreleased] tells Cursor users to run it.",
+    "mcp_matchers": "Claude and Codex send mcp__<server>__<tool>; CallMcpTool is Cursor-only. Dropped CallMcpTool from hooks.json (2 matchers -> MCP), 5 hook case labels, shell_analysis._mcp_tool, plus Cursor-only parent allowlist names (SemanticSearch, AskQuestion, SwitchMode, UpdateCurrentStep, FetchMcpResource). Tests moved to tool_name MCP. docs/HOOKS.md regenerated. OPEN FINDING (pre-existing, not widened per decision): matcher 'MCP' does not match real mcp__* names, so these PostToolUse/PreToolUse MCP hooks never fire on Claude/Codex; the in-script mcp__ handling is unreachable from the registered matcher.",
+    "multi_ai": "skills/silver-multi-ai-task and silver-deep-research-multi-ai byte-identical to base 127e2f9; cursor-agent backend, provision-cursor-agents and test-multi-ai-* all present. Nothing restored.",
+    "moot_reverified": {
+      "all_20_confirmed_moot": [
+        "R6-02",
+        "R6-12",
+        "R6-13",
+        "R6-25",
+        "R6-31",
+        "R7-02",
+        "R7-03",
+        "R7-04",
+        "R7-05",
+        "R7-11",
+        "R7-15",
+        "R7-20",
+        "R7-24",
+        "R7-25",
+        "R7-26",
+        "R7-28",
+        "R8-10",
+        "R8-20",
+        "R13-26",
+        "R10b-19"
+      ],
+      "method": "read each finding's locations in R*.json and checked that every primary file is deleted in the worktree (global-toolstack common/install-body/patch-hooks/verify scripts, install-cursor*.sh, cursor-hook-bridge.sh, merge-cursor-hooks.py, backend-cache.sh, cursor_sb_agents_lib.py, pre-release-cursor-cli-smoke.sh, diagnose-cursor-picker-duplicates.sh, .cursorignore, generate-plugin-commands.sh and plugins/silver-bullet/commands). R6-12 also referenced install-global-toolstack.sh and R6-31 parity-verify/verify.sh: both gone, no host-agnostic remnant.",
+      "corrections": [
+        "R16-13 Cursor half now fixed (identity tag row removed from docs/multi-agent-coordination.md); other parts of R16-13 still open",
+        "R16-07 rtk-cm README and ORCHESTRATOR parts fixed, rest not Cursor-related and still open",
+        "R10-06 skills init/update/migrate no longer mention Cursor; default is claude",
+        "R7-14 and R7-23: Cursor halves moot, Codex/Claude halves remain open",
+        "R7-01, R7-22: Codex adapter halves remain open",
+        "R11-10, R11-29, R11-30 are NOT moot: the cursor-agent backend of silver-multi-ai-task is kept by decision (3); they stay open for the H8 package"
+      ]
+    },
+    "docs_site": "Removed Cursor host mentions from docs/ (runtime-extensibility-comparison Cursor column+refs, AGENT-HOST-DELEGATION-SIBLING-PROMPT cursor reference/prompt sections, AGENT-DELEGATION-INTERACTION-MODES, ENTERPRISE-E2E-LIVE-TEST, rtk-cm, RELEASE, ARCHITECTURE, TESTING, RUNTIME-COMPATIBILITY, CODEX-CLOUD, CONTEXT-MODE, PRODUCT-VISION, multi-agent-coordination). site/ clean (remaining hits are CSS cursor and the intentional legacy-cleanup notes). Kept: historical dated audits/handoffs/.planning records, CHANGELOG, sb-vs-as1 competitor mention, multi-AI backend docs.",
+    "validation": {
+      "lint_shell_all": "clean (src + tests)",
+      "check_repo_invariants": "pass",
+      "generate_hook_reference_check": "up to date",
+      "generate_apo_artifacts_check": "pass",
+      "validate_plugin_mirror": "OK",
+      "validate_host_agnostic_core": "OK",
+      "core_rules_pin": "sha256 matches",
+      "full_run_all_tests_jobs2": "31502 passed, 1 failed (7/8 suites); the one failure is test_shell_analysis_review2 BudgetTest timing test (20s parse budget) failing under parallel load; passes alone (test-python-unit 1662/0). Last full per-suite results: docs 193/1 before fix of scripts/README.md index (fixed, doc-facts green), hooks 11302/1 before merge (test-site-hooks-gates, fixed by base commit 94800f8), scripts 18401/2 before fixes (validate-host-agnostic README row, same timing test), all re-run green after.",
+      "scoped_coverage": "100% statements/lines/functions/branches on 17 files: hooks/lib/{leanctx-gate,orchestrator-parent,stack-compression-coordinator}.sh, hooks/record-{agentmemory-usage,leanctx-usage,recommended-mcp,site-visual-evidence}.sh, hooks/stack-compression-coordinator.sh, hooks/lib/tool-input/shell_analysis.py, scripts/{uninstall-cursor-legacy,enterprise-e2e-certification-status,regenerate-site-certification-status,pre-release-gate,sb-doctor,validate-host-agnostic-core}.sh, scripts/lib/uninstall_cursor_legacy.py, site/help/concepts/certification-status.js. known-limits.json unchanged (core.sh:26 entry still valid)."
+    },
+    "base_merge": "merged claude/optimistic-ramanujan-tccfud (94800f8) as 5c35786; the one conflict (tests/scripts/test-no-gsd-runtime.sh allowlist) resolved to the base version, which supersedes my earlier allowlist edit.",
+    "incidents": "Disk filled to 100% during the first scripts run (shared /tmp, ~14G of REVF-*-probe dirs under the review scratchpad owned by the caller); run died with ENOSPC, deletion of shared tmp dirs was denied so I did not clean them; reruns fit in the ~1GB left. Caller should prune review/*-probe.",
+    "notes_for_caller": [
+      ".planning/enterprise-e2e/CERTIFICATION-STATUS.json regenerated (generated artifact mirrored by site test)",
+      "plugins/silver-bullet/commands/ stubs were already deleted by the previous author; test-silver-doctor now asserts the alias on the skill instead",
+      "removed the 'Host question tool' AskQuestion name from silver-orchestrator SKILL (AskUserQuestion is banned by test-no-agent-leaks)"
+    ]
+  },
+  "review_repair_r1": {
+    "head": "7a330e344eadedc651a877284105f41839de1b94",
+    "branch": "fix/HC-remove-cursor",
+    "fixed": {
+      "major1_toolstack_entries": "TOOLSTACK_GATES now includes session-bootstrap.sh and shell-compression.sh; the hooks.json strip also matches the literal ~/.cursor, $HOME and ${HOME} spellings of ~/.cursor/hooks/toolstack/. Test: both events stripped, user entry kept.",
+      "major2_plugin_paths": "clean_plugins now moves cache/alo-labs, cache/alo-labs-agent-plugins, cache/alo-labs-cursor (symlinks moved, not followed) and marketplaces/github.com/alo-exp/silver-bullet, even when the path is itself a symlink; clean_state moves the 7 exact ~/.cursor/.silver-bullet state files the old uninstall removed. One test per path with a user-owned neighbour left alone.",
+      "major3_rfl": "Removed the cursor ladder (resolve_cursor_ladder, cursor_sb_agents config/catalog/probe/rung code, --check-agents, host choice and detection) from scripts/_review_fix_ladder_impl.py; removed the cursor catalog entry, aliases, grok/composer family routing, cursor gemini fallback and the Grok-substitute launch policy from scripts/lib/rfl_launcher_policy.py; hooks/lib/review-fix-ladder-state.sh resolves the detected host instead of --host cursor; SKILL.md no longer names deleted scripts. A resolved ladder holds only claude or codex rungs; grok/composer slugs route like any unknown model (Pi/OpenCode). Python, shell and hook tests updated (guard test uses a stub resolver for the custom-subagent cases).",
+      "major4_e2e_harness": "Removed the Cursor host from tests/e2e-live/helpers.sh and recommended-tools-preflight.sh (default runtime now claude), tests/live (helpers, common lib, smoke, full-ladder, README), the enterprise-e2e-live structural suite, and the dead SB_FIVE_TOOL_LIVE block of tests/run-all-tests.sh; deleted the two cursor-only triage-scenario wrappers. Harness contract suites e2e-live (110/0) and enterprise-e2e-live (208/0) green; multi-AI Cursor backend tests untouched.",
+      "minors": [
+        "stale generator/stub references dropped from AGENTS.md, docs/NEW-WORKFLOW.md, the sibling prompt and the proof baseline JSON",
+        "cleanup script: codex-hook-adapter program rule, user-* MCP server names, per-step ConfigError handling (continue, exit 1 at the end)",
+        "merge-commit trailer placement: accepted as the F2 precedent says; the new merge commits carry the trailers last"
+      ]
+    },
+    "base_merge": "merged claude/optimistic-ramanujan-tccfud (5acae75). Conflicts resolved: Cursor-only files kept deleted (.cursor-plugin, .cursorignore, .cursorindexingignore, command stub, cursor picker/sync scripts, cursor-skill-source mirrors, install-cursor and sync-cursor tests); CHANGELOG, CICD, catalog, visual-qa and invariants-test merged by hand; docs/skills/AGENT-HOST-DELEGATION-SIBLING-PROMPT.md takes H3b's scrubbed version with only the Cursor sections re-removed (no personal path; personal-data invariant passes).",
+    "sibling_conflicts_merge_tree_vs_this_branch": {
+      "already_in_base": [
+        "F1",
+        "F2",
+        "H2",
+        "H3",
+        "H3b",
+        "H5",
+        "H8a"
+      ],
+      "all_branches_also_modify_deleted_cursor_files": "every listed branch changes hooks/cursor-hooks.json and plugins/silver-bullet/cursor-hooks.json (and some cursor-skill-source/host-bundles/cursor files): resolve as keep-the-deletion.",
+      "raw": "## G1-delivery-gates\ndocs/testing/RC-VALIDATION-MATRIX.md hooks/lib/completion-audit/deploy-tier.sh scripts/lib/pre-release-host-isolation.sh tests/scripts/test-pre-release-host-isolation-lib.sh tests/scripts/test-run-rc-validation-matrix-cells.sh \ndeleted-in-HEAD: 7\n## G2-planning-floor\ndocs/HOOKS.md \ndeleted-in-HEAD: 2\n## G3-stop-prompt-override\ndocs/HOOKS.md docs/ORCHESTRATOR.md \ndeleted-in-HEAD: 2\n## G4-session-state\ndocs/runtime-extensibility-comparison.md scripts/sb-migrate-orchestrator-parent.sh \ndeleted-in-HEAD: 2\n## G5-orchestrator\ndocs/HOOKS.md docs/ORCHESTRATOR.md hooks/lib/orchestrator-parent.sh \ndeleted-in-HEAD: 5\n## H4a-toolgates-consent\ndocs/CONFIGURATION.md docs/HOOKS.md hooks/core-rules.md hooks/core-rules.sha256 hooks/lib/agentmemory-gate.sh hooks/lib/alumnium-gate.sh hooks/lib/context-mode-gate.sh hooks/lib/leanctx-gate.sh hooks/lib/recommended-tools.sh hooks/lib/rtk-compat.sh hooks/lib/rtk-gate.sh hooks/lib/stack-compression-coordinator.sh hooks/lib/token-compression-tools-gate.sh hooks/record-agentmemory-usage.sh hooks/record-leanctx-usage.sh hooks/record-recommended-mcp.sh hooks/stack-compression-coordinator.sh tests/hooks/test-agentmemory-gate-lib-coverage.sh tests/hooks/test-context-mode-libs-coverage.sh tests/hooks/test-leanctx-gate-lib-coverage.sh tests/hooks/test-leanctx-gate.sh tests/hooks/test-recommended-tools-coverage.sh tests/hooks/test-recommended-tools.sh tests/hooks/test-record-agentmemory-usage.sh tests/hooks/test-record-usage-agentmemory-hook.sh tests/hooks/test-record-usage-compression-hooks.sh tests/hooks/test-record-usage-graphify-mcp-hooks.sh tests/hooks/test-site-session-gates.sh tests/hooks/test-stack-compression-coordinator-coverage.sh tests/hooks/test-stack-compression-coordinator-hook-coverage.sh \ndeleted-in-HEAD: 4\n## H4b-toolstack-scripts\ndocs/CONFIGURATION.md docs/HOOKS.md docs/RTK.md hooks/core-rules.md hooks/core-rules.sha256 hooks/lib/agentmemory-gate.sh hooks/lib/alumnium-gate.sh hooks/lib/context-mode-gate.sh hooks/lib/leanctx-gate.sh hooks/lib/recommended-tools.sh hooks/lib/rtk-compat.sh hooks/lib/rtk-gate.sh hooks/lib/stack-compression-coordinator.sh hooks/lib/token-compression-tools-gate.sh hooks/record-agentmemory-usage.sh hooks/record-leanctx-usage.sh hooks/record-recommended-mcp.sh hooks/stack-compression-coordinator.sh scripts/install-leanctx-sb.sh scripts/lib/merge-leanctx-mcp-config.py scripts/lib/merge-token-compression-config.py scripts/lib/recommended-tools/probe-context-mode.sh scripts/lib/recommended-tools/probe-leanctx.sh scripts/lib/recommended-tools/probe-rtk.sh scripts/lib/recommended-tools/receipts.sh scripts/lib/recommended-tools/repair-graphify.sh scripts/optimize-five-tool-stack.sh scripts/optimize-rtk-context-mode.sh scripts/sb-optimize-stack.sh tests/hooks/test-agentmemory-gate-lib-coverage.sh tests/hooks/test-context-mode-libs-coverage.sh tests/hooks/test-leanctx-gate-lib-coverage.sh tests/hooks/test-leanctx-gate.sh tests/hooks/test-recommended-tools-coverage.sh tests/hooks/test-recommended-tools.sh tests/hooks/test-record-agentmemory-usage.sh tests/hooks/test-record-usage-agentmemory-hook.sh tests/hooks/test-record-usage-compression-hooks.sh tests/hooks/test-record-usage-graphify-mcp-hooks.sh tests/hooks/test-site-session-gates.sh tests/hooks/test-stack-compression-coordinator-coverage.sh tests/hooks/test-stack-compression-coordinator-hook-coverage.sh tests/python/test_merge_leanctx_mcp_config.py tests/python/test_merge_token_compression_config.py tests/python/test_toolstack_patch_mcp_json.py tests/scripts/test-install-leanctx-sb-staged.sh tests/scripts/test-install-leanctx-sb.sh tests/scripts/test-install-recommended-tools-hosts.sh tests/scripts/test-merge-leanctx-mcp-config.sh tests/scripts/test-optimize-five-tool-stack-staged.sh tests/scripts/test-optimize-five-tool-stack.sh tests/scripts/test-optimize-rtk-context-mode.sh tests/scripts/test-reconcile-recommended-tools.sh tests/scripts/test-rt-heartbeat-session-vendor.sh tests/scripts/test-rt-probes-host-tools.sh tests/scripts/test-sb-doctor-host-checks.sh tests/scripts/test-silver-doctor.sh \ndeleted-in-HEAD: 28\n## H8b-followup\n\ndeleted-in-HEAD: 13\n",
+      "advice": "merge HC after H4a/H4b or expect hand-merges in the gates (agentmemory/alumnium/context-mode/leanctx/rtk, stack-compression-coordinator, record-*-usage), core-rules.md+sha (re-pin), docs/HOOKS.md (regenerate), orchestrator-parent.sh (G5)."
+    },
+    "g6a_note": "The ladder now resolves only claude/codex rungs and carries no reference to deleted files. Still present and unchanged in name only: decide_launch/classify_subscription_attempt keep the 'cursor_task' / 'cursor_fallback' action names and the mark-quota-fallback state key, and the SKILL still describes a Task-fallback after quota exhaustion; there is no Cursor Task to fall back to, so G6a should replace that quota-fallback concept with native subagents, drop the sb-* subagent_name/model_param fields the state hook and guard read, and drop the grok/composer slugs from the SKILL/tests.",
+    "validation": {
+      "lint_shell_all": "clean",
+      "check_repo_invariants": "pass incl. personal-data and workflow-hardening",
+      "generators": "hook reference, apo, plugin mirror, host-agnostic core all pass",
+      "docs_suite": "194/0",
+      "scripts_suite_jobs2": "18792 passed, 0 failed (after fixes)",
+      "hooks_suite_jobs2": "11304 passed, 0 failed",
+      "e2e_live_harness": "110/0",
+      "enterprise_e2e_live_structural": "208/0",
+      "scoped_coverage": "100% statements/branches/functions on scripts/lib/uninstall_cursor_legacy.py, scripts/uninstall-cursor-legacy.sh, scripts/_review_fix_ladder_impl.py, scripts/lib/rfl_launcher_policy.py and hooks/lib/review-fix-ladder-state.sh (one run; the cleanup script's final adapter-rule line was re-measured alone after the last test edit). Known flake under tracing: test_shell_analysis_review2 BudgetTest timing tests."
+    }
+  },
+  "review_repair_r2": {
+    "head": "bf9e3a3",
+    "fixed": [
+      "MAJOR: recommended-tools.mdc now matched in both deployed variants (project and 'Global recommended tools \u2014 five_tool_routed stack (always enforced)'); edited copies kept and reported",
+      "toolstack: only SB-deployed files move (exact installer names, lib/common.sh, __pycache__); user scripts stay, are reported, hooks.json entries for them stay consistent",
+      "symlinked parent folders (.silver-bullet, rules, plugin cache, plugins) are skipped and reported for moves and JSON rewrites",
+      "OSError handled per step with report and non-zero exit, no traceback",
+      "mutants killed: ${HOME} spelling test added, state-file test hardcodes the seven names",
+      "sentinel manifest row for silver-agent-cursor dropped; validator default count 96 -> 95"
+    ],
+    "left_for_g6a": "ladder SKILL Cursor text (substitute Grok sentence at line 71, mirrors), the composer-2.5 defaults in hooks/lib/review-fix-ladder-state.sh and the Grok/Composer routing in tests/skill-scenarios/silver-review-fix-ladder.md",
+    "merge_picture": "reviewer's refinement accepted: modify/delete conflicts keep the deletion; H4b's cursor-only merge-token-compression-config sides drop; G1/G3 deploy-tier, G5 orchestrator-parent and H4a/H4b gates are semantic merges; after merging re-pin core-rules.sha256, regenerate docs/HOOKS.md, grep for resurrected cursor arms and re-run hooks and scripts suites",
+    "validation": "scoped coverage 100% statements/branches on the cleanup script (257/257, 122/122); lint, invariants, generator checks, mirror, host-agnostic core and core-rules pin green; sentinel/pre-release/doc-facts/cleanup tests 134/0"
+  }
+}

@@ -1,0 +1,113 @@
+{
+ "package": "H8a-deep-research",
+ "round": 9,
+ "head_reviewed": "42fa840",
+ "verdict": "CHANGES_REQUIRED",
+ "per_finding": [
+  {
+   "id": "r8-B1 case folding of units",
+   "verdict": "fixed",
+   "notes": "attack8.py: 5 MB/5 Mb, mW/MW, Gbps/GBps, mg/Mg, 5k/5K all needs_review. Only the first word's capital is folded (US/Us/us, WHO/Who, iPhone/IPhone, eBay/EBay stay distinct)."
+  },
+  {
+   "id": "r8-B2 capital A dropped",
+   "verdict": "fixed",
+   "notes": "Articles are ordinary tokens; Hepatitis A, Vitamin A, Class A and a/the swaps all needs_review."
+  },
+  {
+   "id": "r8-M1 sibling quote contradicts",
+   "verdict": "fixed",
+   "notes": "honest8.py row 1 and honest9.py: 2023 sibling + reworded/unrelated/empty quote -> needs_review. Docs section 'Several quotes for one claim' matches compute_support_score."
+  },
+  {
+   "id": "r8-M2 'No' interjection/abbreviation",
+   "verdict": "incomplete",
+   "notes": "'No,' and 'No.' fixed, but 'No:', 'No;', 'No…', '\"No\",' and 'No 1' are still read as negators -> honest claims contradicted, --strict exit 1 (issue M1)."
+  },
+  {
+   "id": "r8-M3 digit scripts",
+   "verdict": "fixed",
+   "notes": "Full-width, Arabic-Indic, Devanagari, math-bold and mixed-script digits are supported against ASCII; superscripts, circled, Roman numerals, ½ stay distinct (needs_review)."
+  },
+  {
+   "id": "r8-m1 ? and *",
+   "verdict": "fixed",
+   "notes": "'safe?' vs 'safe' and 'free*' vs 'free' needs_review; **not** emphasis needs_review."
+  },
+  {
+   "id": "r8-m2 stemming",
+   "verdict": "fixed",
+   "notes": "stemmer removed; plurals differ."
+  },
+  {
+   "id": "r8-m3 [N] glued to digit",
+   "verdict": "fixed",
+   "notes": "$5[1]0, 1[2]5%, 1.[2]5%, 1,[2]5% never supported. [n] after a space/letter is stripped, as the rule allows."
+  },
+  {
+   "id": "r8-m4 docs ellipsis/backtick",
+   "verdict": "fixed",
+   "notes": "quality-gates.md lists the dropped set exactly as TOKEN_RE; corpus count table recomputed and matches."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "blocker",
+   "location": "skills/silver-deep-research/scripts/verify_claim_support.py:TOKEN_RE (quotation marks dropped)",
+   "problem": "ASCII ' and \" after a figure are feet/inches (or arc-minutes/seconds) units, but the tokenizer drops them as quotation marks, so a claim that changes or removes the unit is 'supported'. Same class as the r8 unit-case blocker (5 MB/5 Mb).",
+   "evidence": "attack9.py: 'The board is 6\" wide.' <= 'The board is 6' wide.' supported; 'The screen is 12' wide.' <= 'The screen is 12\" wide.' supported; 'The screen is 12 wide.' <= 'The screen is 12\" wide.' supported; 'The deviation was 5\".' <= \"The deviation was 5'.\" supported. _words('12\" wide') == ['12','wide']. End to end /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8a9-probe/runs/e-inch: verify --strict status pass, exit 0, supported. (Pre-existing at 6ae3709.) Prime/double prime U+2032/U+2033 are kept and correctly needs_review.",
+   "suggested_fix": "Keep a ' / \" / ’ / ” glued directly after a digit as part of the figure token (add it to the figure suffix alternative, before \\w*), and keep the apostrophe-year rule. Add these four pairs to the corpus."
+  },
+  {
+   "severity": "blocker",
+   "location": "skills/silver-deep-research/scripts/verify_claim_support.py:TOKEN_RE ('!' dropped)",
+   "problem": "'!' is dropped everywhere, so the operator '!=' becomes '=' and a claim that inverts a condition is 'supported' (also 5! vs 5).",
+   "evidence": "'The flag x = 0 is set.' <= 'The flag x != 0 is set.' supported; 'Set x = 0 in config.' <= 'Set `x != 0` in config.' supported; end to end /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8a9-probe/runs/e-neq ('Requests with status = 200 are retried.' <= 'Requests with status != 200 are retried.'): --strict pass, exit 0, supported. 'The result is 5.' <= 'The result is 5!' supported. (Pre-existing.)",
+   "suggested_fix": "Drop '!' only as sentence punctuation (followed by whitespace, a closing quote/bracket or end of text); otherwise keep it as a token, so '!=' and '5!' survive."
+  },
+  {
+   "severity": "major",
+   "location": "skills/silver-deep-research/scripts/verify_claim_support.py:_words ('No,'/'No.' special case) and _conflict",
+   "problem": "Only 'No,' and 'No.' are exempted. An interjection 'No' followed by ':' ';' '…' or a closing quote, and the abbreviation 'No 1', are still negators, so honest claims are contradicted and --strict exits 1. Incomplete fix of r8-M2.",
+   "evidence": "honest9.py: 'The tool is not free.' <= 'No: the tool is not free.' / 'No; the tool is not free.' / 'No… the tool is not free.' / '\"No\", the tool is not free.' all contradicted; 'Acme ranks 1 in Europe.' <= 'Acme ranks No 1 in Europe.' contradicted. End to end /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8a9-probe/runs/e-nocolon: --strict status fail, exit 1.",
+   "suggested_fix": "Treat 'no' as a negator only when the raw text after it is whitespace followed by a letter (not punctuation, a closing quote or a figure). Add these pairs to the honest corpus."
+  },
+  {
+   "severity": "major",
+   "location": "skills/silver-deep-research/scripts/verify_claim_support.py:TOKEN_RE (brackets dropped)",
+   "problem": "Accounting notation '(5.3)' means -5.3, but parentheses are dropped, so a sign flip is 'supported'.",
+   "evidence": "'Net income was 5.3 million.' <= 'Net income was (5.3) million.' supported. ('$(5.3)' vs '$5.3' is correctly needs_review.) Pre-existing.",
+   "suggested_fix": "Keep '(' and ')' as tokens when they enclose exactly one figure (regex '\\(\\s*<figure>\\s*\\)' -> one token '(5.3)')."
+  },
+  {
+   "severity": "minor",
+   "location": "skills/silver-deep-research/scripts/verify_claim_support.py:TOKEN_RE (':' and ',' dropped between digits)",
+   "problem": "Ratio/time colon dropped: '3:1' equals '3 1', '1:10' equals '1, 10'. The resulting claims are odd text, so low risk.",
+   "evidence": "attack9.py rows 'ratio colon vs space' and 'ratio colon vs comma' supported.",
+   "suggested_fix": "Keep ':' between two digits as part of the figure ('3:1', '10:30')."
+  },
+  {
+   "severity": "minor",
+   "location": "skills/silver-deep-research/reference/quality-gates.md 'Only these differences are ignored'; verify_claim_support.py module docstring",
+   "problem": "Doc says 'the code has no others' but omits that a space after a currency symbol is ignored ('£ 5m' = '£5m') and that ’/ʼ are read as '. The module docstring's allowed list omits contractions and citation markers. 'a plural is a different word' starts a sentence in lowercase.",
+   "evidence": "attack8.out: 'Acme raised £ 5m.' <= 'Acme raised £5m.' supported; QUOTE_MARKS maps U+2018/2019/02BC.",
+   "suggested_fix": "List both in quality-gates.md and the docstring."
+  },
+  {
+   "severity": "minor",
+   "location": "rule (first-word capital)",
+   "problem": "Residual, allowed by the binding rule: the first word's capital alone may differ, so 'Polish/polish', 'May/may', 'Turkey/turkey' at sentence start match when a quote starts in lowercase.",
+   "evidence": "attack9.py 'cap polish/Polish', 'cap may/May' supported (quote starting lowercase). Mid-sentence case is exact.",
+   "suggested_fix": "Accept as documented residual risk, or fold the first word only when the quote's first word is capitalised and the claim's is lowercase."
+  }
+ ],
+ "aggregation": "ANY-supports / EVERY-contradicts matches docs. An identical quote makes the claim supported by construction (the sentence is in the cited evidence); an irrelevant non-identical quote cannot raise a verdict to supported. With quotes ['rose','fell'] the claim 'fell' is supported because 'fell' is quoted: inherent to whole-quote matching, quote provenance is not verified here. Empty quotes never support; an empty quote alone vs a one-word negator claim ('Not.') gives contradicted (degenerate, harmless).",
+ "validation": {
+  "tests": "868 passed, 0 failed (test-solution-research-python.sh + test-multi-ai-deep-research-contract.sh via the coverage run).",
+  "coverage": "one scoped run: verify_claim_support.py 351/351 statements, 164/164 branches; extract_claims.py 203/203, 72/72; 100%.",
+  "lint": "lint-shell.sh --all --jobs 2 exit 0",
+  "invariants": "check-repo-invariants exit 0; generate-hook-reference and generate-apo-artifacts --check pass; validate-plugin-mirror OK; sync-codex-package.sh in an exported copy of 42fa840: no diff; mirrors byte-identical; no print/exit/JSON changes in the diff (exit codes and output format unchanged); trailers Co-Authored-By + Claude-Session on all package commits; claude/optimistic-ramanujan-tccfud (94800f8) is an ancestor and merge-tree is clean; corpus count table in quality-gates.md recomputed and matches; worktree untouched; no network.",
+  "earlier_probes": "attack.py (r7): 0 leaks besides identical control; attack8.py: 12 supported rows, all equal by the rule (identical, digit script, spacing, backtick, brackets, [n] after a space); honest.py and honest8.py: only genuine contradictions (Version 2/3, no debt, 3.11/3.12, Chapter 3/4) and the user-accepted only/uncommon; r5 bin (score1-5b, honest5, honest_neg4, misc5, roles5, variants) and r6 (score6, honest6): 0 fabrications supported, 0 honest contradicted/unsupported.",
+  "probes": "/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8a9-probe/attack9.py, honest9.py, runs/*.out, runs/e-inch, e-neq, e-nocolon, e-ident"
+ }
+}

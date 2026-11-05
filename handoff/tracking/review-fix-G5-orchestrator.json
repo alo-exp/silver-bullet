@@ -1,0 +1,153 @@
+{
+  "package": "G5-orchestrator",
+  "head_reviewed": "482229d3afc2103a6e2e88c4a844798ecb8acbde",
+  "verdict": "CHANGES_REQUIRED",
+  "per_finding": [
+    {
+      "id": "R4-02",
+      "verdict": "fixed",
+      "notes": "Claude: original probe no longer reproduces (sandbox, parent mode): parent Edit denied; Agent spawn then parent Edit/Bash still denied; forged fresh marker confers nothing; agent_id inside tool_input, empty or non-string agent_id -> still parent. Confirmed the installed Claude Code binary's hook-input schema carries agent_id only inside subagents ('Absent for the main thread'). Mutation (re-add marker-based worker check in a sandbox copy) makes 6 assertions in test-orchestrator-parent-guard.sh fail. BUT Codex: see major issue (Codex workers carry no agent_id and are now classified as parent)."
+    },
+    {
+      "id": "R4-03",
+      "verdict": "fixed",
+      "notes": "All six original spoofs denied. 50+ variants tried (comment, ;, &&, ||, |, newline, &, $(...), backticks, <(...), redirects, env -S, sh -c chains, nested bash -c, xargs, git -c alias/pager, PAGER/GIT_PAGER/GIT_CONFIG_PARAMETERS, eval of a writer, time/nohup/command/exec prefixes, find -exec/-delete, sed -i, sort -o, git log/diff --output): all denied. Honest read-only parent commands (git status/log/diff/branch/rev-parse, ls, cat, jq, grep -rn, head, wc, find -name, pipes of these, 2>/dev/null, graphify query, sanctioned resolve-ledger and invoke-skill silver) allowed. Remaining minor: NAME=value prefixes are peeled without checking the variable (BASH_ENV/PATH), see issues."
+    },
+    {
+      "id": "R4-05",
+      "verdict": "regressed",
+      "notes": "Queue advance/join/re-sync fixed: driving every token of silver-devops (19), silver-bugfix (16), silver-ui (18), silver-release (12) and silver-feature through sb_orchestrator_advance_on_atom with the shipped catalog keeps directive == next token's skill at every step and ends with current_flow empty. But the new Stop release exits stop-check.sh entirely, skipping the planning floor, stall block and everything after it: BLOCKER issue."
+    },
+    {
+      "id": "R4-06",
+      "verdict": "fixed",
+      "notes": "Python flow_to_skill gone; handoff next_skill derived from sb_orchestrator_flow_to_skill on batch_tokens; shipped-flow test checks every queue token of 17 composers maps to an installed skill (ran: green)."
+    },
+    {
+      "id": "R4-17",
+      "verdict": "fixed",
+      "notes": "Original probe (Codex apply_patch input/command bodies, Add/Update/Move-to) denied. Bash writers into the delegated scope (> , sed -i, cp, mv, rm, tee, python -c, node -e, perl -pi, dd of=, git checkout --, cd src && >, ../ paths, find -delete, xargs cp) denied; reads and out-of-scope writes allowed. Remainder (minor): tree-scope writes that F2 reports in .writes[] (git reset --hard, git apply, git stash pop) and opaque writers are allowed, because only write_paths is consulted."
+    },
+    {
+      "id": "R4-18",
+      "verdict": "fixed",
+      "notes": "Atomic unique-temp writes + re-entrant mkdir lock around every orchestrator.json RMW; concurrent-join tests green. Lock waits 5 s then proceeds unlocked (documented)."
+    },
+    {
+      "id": "R4-19",
+      "verdict": "fixed",
+      "notes": "Planner fixed for both catalogs from the finding; the shipped-catalog placeholder scopes are documented in ORCHESTRATOR.md, which is the finding's stated alternative. Partial disposition accepted."
+    },
+    {
+      "id": "R4-26",
+      "verdict": "fixed",
+      "notes": "hooks.json now registers orchestrator-directive-guard once per tool (Edit/Write/MultiEdit/Bash/apply_patch/exec_command matcher + Task matcher); meta-test added; Cursor half moot."
+    },
+    {
+      "id": "R4-27",
+      "verdict": "fixed",
+      "notes": "ORCHESTRATOR.md rewritten (worker identity, parent Bash, locks, log bounds, removed APIs); doc test added. Stale leftovers outside ORCHESTRATOR.md noted as minor (session-start comment, runtime-extensibility-comparison.md row)."
+    },
+    {
+      "id": "R4-28",
+      "verdict": "fixed",
+      "notes": "PreToolUse 'prompt' override path removed (SB OVERRIDE stays UserPromptSubmit-only via outcomes-check, audited); dead tail/resume/saga/handoff-matcher helpers removed; grep finds no remaining callers."
+    },
+    {
+      "id": "R4-29",
+      "verdict": "ok",
+      "notes": "Partial accepted: event log bounded (1 MiB -> newest 2000 lines). RFL quota-retry pruning/TTL is in scripts/lib/rfl_quota_retry.py (G6) and is correctly handed off."
+    },
+    {
+      "id": "R4-30",
+      "verdict": "ok",
+      "notes": "Partial accepted: production-layer tests added for this package's findings; R4-01/R4-08/R4-13/R4-16 belong to other packages (G3 handles R4-08)."
+    },
+    {
+      "id": "R9-05",
+      "verdict": "fixed",
+      "notes": "Worker skip removed from the Stop branch of live-publish-evidence-gate.sh and v-loop-rollup-gate.sh; a fresh marker no longer releases the parent's Stop (tests green)."
+    },
+    {
+      "id": "R9-31",
+      "verdict": "fixed",
+      "notes": "sb_site_session_clear_all no longer deactivates the external-agent delegation."
+    },
+    {
+      "id": "R10-02",
+      "verdict": "incomplete",
+      "notes": "Part A fixed (planning floor inserted before plan/execute in every composer queue, custom required_planning honoured; bugfix/fast skill text aligned). Part B open with no owner: required_deploy still needs silver-triage, tdd and verify-tests, which no queue records, so following the sb:feature queue exactly still ends in 'COMPLETION BLOCKED ... /silver-triage /tdd /verify-tests' at gh pr create; templates/workflows/*.md still contradict required_deploy. See major issue."
+    }
+  ],
+  "issues": [
+    {
+      "severity": "blocker",
+      "location": "hooks/stop-check.sh:236,258 (calls sb_orchestrator_stop_block_released from hooks/lib/orchestrator-state.sh:478)",
+      "problem": "The new Stop release (R4-05) runs `exit 0` from stop-check.sh, so once it releases, everything after it is skipped: the L-04 stall block, HOOK-14 and the planning floor (required_planning). Any agent can trigger this on purpose by calling Stop 6 times while an orchestrator queue is pending. That queue exists for every composer run, and orchestrator.json does not change between Stops. The core planning-floor gate is then bypassed with no audit trail. Before this change, the orchestrator block trapped the session; now the agent gets out past the floor.",
+      "evidence": "Sandbox (HOME=REVF-G5-probe/home, runtime claude): project with dirty tree, state file holding only 'silver-feature'. Without orchestrator.json, Stop gives {decision:block,'missing required skills: silver-quality-gates, silver-context, silver-plan'}. With orchestrator.json {current_flow:FLOW-PLAN,repo_root:<proj>}, Stops 1-5 give 'Orchestrator parent: flow queue pending (FLOW-PLAN)...' and Stops 6 and 7 give empty output, rc 0, so the floor never runs. tests/hooks/test-stop-check-paths.sh:99-117 locks this in: it asserts an empty reason ('third Stop with no progress is released') on a reset_state fixture that is missing planning skills, the same fixture whose baseline at :66 blocks on the floor.",
+      "suggested_fix": "On release, skip only the orchestrator block and fall through to the remaining stop-check checks (wrap the two orchestrator blocks in `if ! sb_orchestrator_stop_block_released; then ... fi`, never exit 0). Log the release to the event log. Change the test: once released, a Stop with missing planning skills must still block on the floor, and only a Stop with the planning skills recorded may print nothing."
+    },
+    {
+      "severity": "major",
+      "location": "hooks/lib/orchestrator-parent.sh:44-54 (sb_orchestrator_is_worker_session); hooks/codex-hook-adapter.sh",
+      "problem": "Worker identity now comes only from the payload's agent_id (Claude) or SB_ORCHESTRATOR_WORKER=1 in the hook process environment. Codex payloads carry no agent id, and nothing in the Codex adapter or installer sets the variable. In the default parent mode a Codex session therefore cannot edit at all: the parent is denied, and spawn_agent workers are denied too, because they are classified as the parent. The old marker made Codex work, insecurely. This change turns that into a full block of legitimate work on a primary host. The author raised it only as a question in the notes but marked R4-02 'fixed'.",
+      "evidence": "SILVER_BULLET_RUNTIME=codex, parent-mode project: PreToolUse apply_patch {command:'*** Begin Patch\\n*** Update File: src/a.txt ...'} with no agent id, the shape a Codex spawn_agent worker sends -> deny '🛑 ORCHESTRATOR PARENT — apply_patch is forbidden in parent mode'. `grep agent_id hooks/codex-hook-adapter.sh` finds nothing; only the external delegate scripts (scripts/agent-*/lib.sh) export SB_ORCHESTRATOR_WORKER.",
+      "suggested_fix": "Settle this before merge (needs-user/orchestrator decision): find out whether Codex subagent hook calls carry a distinct session or thread id and map it in the adapter, for example a per-spawn session-id map written by the parent spawn_agent PreToolUse and matched per call. If no Codex signal exists, make parent-mode enforcement advisory on Codex (tier < 2) and document it, rather than blocking every edit. Add a Codex-runtime test either way."
+    },
+    {
+      "severity": "major",
+      "location": "hooks/lib/orchestrator-state.sh (composer queues) / skills / templates/workflows",
+      "problem": "R10-02 part B is still open and has no owner. required_deploy needs silver-triage, tdd and verify-tests, but no composer queue records them, so following the sb:feature queue exactly still ends with 'COMPLETION BLOCKED ... /silver-triage /tdd /verify-tests' at gh pr create. templates/workflows/*.md still contradict required_deploy. The queue lives in G5's own file, and no other package owns the remainder (packages.json and PKG-NOTES list no owner).",
+      "evidence": "sb_orchestrator_queue_for_composer silver-feature -> FLOW-QUALITY-GATE,silver-clarify,silver-spec,silver-context,silver-plan,silver-validate,silver-execute,silver-review-request,silver-review,silver-review-triage,silver-verify,security,silver-secure,silver-validate,FLOW-QUALITY-GATE-PRESHIP,silver-branch-finish,silver-completion-audit,silver-ship (no silver-triage, tdd or verify-tests); templates/silver-bullet.config.json.default required_deploy includes all three.",
+      "suggested_fix": "Close it in G5: make the queue, or the skill text of sb:execute, sb:review-triage and sb:verify, record tdd, silver-triage and verify-tests (or derive the PR-gate list from what the queue records), and align full-dev-cycle.md and devops-cycle.md in both templates/workflows and docs/workflows. Add a hook-level test: record every queue token, then run gh pr create and expect it not to be blocked for workflow skills."
+    },
+    {
+      "severity": "minor",
+      "location": "hooks/lib/orchestrator-parent.sh:_sb_orch_parent_lone_argv (env / NAME=value peeling)",
+      "problem": "Sanctioned parent commands accept any NAME=value or env prefix without checking the variable. BASH_ENV=<existing file> makes the bash-based scripts/silver-bullet source that file, and PATH=<dir> picks a different silver-bullet, so the parent can run the contents of an existing script that no hook inspects. F2's read-only verdict refuses the same prefixes on read-only commands (LD_PRELOAD=, GIT_PAGER=), so G5 is weaker than F2 here. A 'bash <file>' wrapper whose script basename is silver-bullet (F2 reports opaque:true) is accepted as well.",
+      "evidence": "Guard results for the parent: 'BASH_ENV=src/a.txt silver-bullet invoke-skill silver' -> ALLOW; 'PATH=/tmp/evil silver-bullet invoke-skill silver' -> ALLOW; \"env BASH_ENV=src/a.txt bash -c 'silver-bullet invoke-skill silver'\" -> ALLOW; 'bash silver-bullet invoke-skill silver' -> ALLOW (F2 opaque_reasons: 'runs a shell script'); 'LD_PRELOAD=/tmp/x.so git status' -> deny.",
+      "suggested_fix": "Deny sanctioned commands that carry assignments or env options (or allow only a short safe list), and deny when F2 reports opaque for the 'bash <script>' form unless the script resolves to the plugin's own scripts/silver-bullet."
+    },
+    {
+      "severity": "minor",
+      "location": "hooks/agent-delegation-guard.sh:63-84",
+      "problem": "Only F2's write_paths and patch paths are checked. Tree-scope writes that F2 reports in .writes[] (scope 'tree': git reset --hard, git apply, git stash pop, git checkout .) and opaque writers are allowed during an active delegation. In parent mode the directive guard already denies these, so the remaining exposure is worker sessions racing a delegated external agent.",
+      "evidence": "Delegation {active:true,ownership_scope:[src]}, exec_command: 'git reset --hard' -> ALLOW, 'git apply p.diff' -> ALLOW, 'git stash pop' -> ALLOW, while F2 JSON for 'git reset --hard' has writes:[{path:<repo root>,via:'git reset',scope:'tree'}].",
+      "suggested_fix": "Treat a .writes[] entry with scope 'tree' whose path contains an ownership_scope entry as in scope."
+    },
+    {
+      "severity": "minor",
+      "location": "hooks/session-start:387-402; docs/runtime-extensibility-comparison.md:48; hooks/site-visual-evidence-gate.sh:24-27",
+      "problem": "Stale text and dead branches left by the identity change. session-start still says it 'preserves a fresh marker (within TTL via sb_orchestrator_is_worker_session)'. The comparison doc still lists 'SubagentStop worker handoff (orchestrator-worker-active.json clear)'. Every Claude SubagentStop carries agent_id, so the SubagentStop branches of site-visual-evidence-gate and stop-check now always skip; the docs should say so.",
+      "evidence": "Static reading of the cited lines. The Claude hook schema (binary at /opt/claude-code/bin/claude) defines SubagentStop with a required agent_id.",
+      "suggested_fix": "Update the comments and docs; state in ENFORCEMENT.md that SubagentStop is never gated on Claude."
+    },
+    {
+      "severity": "minor",
+      "location": "hooks/lib/orchestrator-scheduler.sh:2, hooks/lib/orchestrator-parent.sh:2",
+      "problem": "File-wide `# shellcheck disable=SC2034` hides real unused-variable warnings in the 900-line scheduler. The scheduler does not even define SB_ORCH_PARENT_BASH_DENY_REASON, which the comment cites.",
+      "evidence": "The diff adds the disable at line 2 of both files.",
+      "suggested_fix": "Scope the disable to the SB_SCHEDULER_JOIN_RESULT assignments."
+    },
+    {
+      "severity": "minor",
+      "location": "hooks/lib/orchestrator-event-log.sh:17-52",
+      "problem": "The trim (tail and rename, under the lock) races appenders that never take the lock, so an event appended between tail and mv is lost. This is evidence for the scorers, so the impact is low.",
+      "evidence": "Static: sb_orchestrator_event_append appends with >> and takes no lock; _sb_orchestrator_event_log_cut runs under sb_orchestrator_with_lock.",
+      "suggested_fix": "Take the lock for the append too, or append to the temp file after the tail."
+    },
+    {
+      "severity": "minor",
+      "location": "merge with fix/G3-stop-prompt-override",
+      "problem": "G3 and G5 both removed the PreToolUse SB OVERRIDE path (G3 as R4-07, G5 as R4-28), and both edited orchestrator-state.sh next to sb_orchestrator_clear_queue_on_interrupt (G3 R4-08). merge-tree reports content conflicts in hooks/lib/orchestrator-state.sh, hooks/orchestrator-directive-guard.sh, tests/hooks/test-orchestrator-directive-guard-hook.sh, CLAUDE.md (hook count 95 vs 99) and docs/HOOKS.md. All of them look mechanical: comments, adjacent functions, and regenerated counts.",
+      "evidence": "git merge-tree --write-tree fix/G5-orchestrator fix/G3-stop-prompt-override -> rc 1 with the conflicts listed. Merges with claude/optimistic-ramanujan-tccfud (5acae75) are clean. With fix/G4-session-state the only conflicts are CLAUDE.md and docs/HOOKS.md (generated).",
+      "suggested_fix": "Keep both functions when merging (G5's stop_block_released and G3's clear_queue_on_interrupt), keep one override comment, then regenerate docs/HOOKS.md and the CLAUDE.md count."
+    }
+  ],
+  "validation": {
+    "tests": "Through run-all-tests: test-orchestrator-shipped-flow.sh + test-orchestrator-parent-lib.sh 370/0 (claude); test-stop-check-paths.sh + test-orchestrator-parent-guard.sh 107/0 (codex); the coverage run executed 37 test files, 2513/0. Mutation in a sandbox copy (marker-based worker identity re-added) failed 6 parent-guard assertions. The Stop-release test pins the blocker behaviour. Probes: 90+ parent Bash variants, 25 delegation-guard writers, R4-02 identity cases, full queues for 5 composers. Per-advance latency ~2.0-2.9 s vs ~1.8-2.2 s at base (machine shared), +10-25%.",
+    "coverage": "One scoped run (--jobs 2, 15 --only files, 37 test files) EXIT=0, so the known limit hooks/lib/orchestrator-scheduler.sh:774 is valid (same statement as the old 797). Bash lines 2296/2296 and functions 176/176. Statements: 13 of the 15 files at 100%. live-publish-evidence-gate.sh 90/95 (37, 57, 62, 70, 71) and stop-check.sh 406/407 (329): all are unchanged pre-existing fallbacks that my narrower test selection did not reach. G5's only change in live-publish is a deletion. The author's 36-file run reports 3528/3528.",
+    "lint": "bash scripts/lint-shell.sh --all --jobs 1: application (356) and test (744) Bash clean.",
+    "invariants": "check-repo-invariants.sh rc 0 (17 PASS incl. personal-data and workflow-hardening); generate-hook-reference --check, generate-apo-artifacts --check and validate-plugin-mirror all OK; docs/workflows identical to templates/workflows; template parity 2/2; all 6 commits carry the Sonnet 5.5 Co-Authored-By and Claude-Session trailers (accepted), no model names elsewhere; worktree left clean; no Bash 4 or GNU-only constructs in the hooks diff."
+  }
+}

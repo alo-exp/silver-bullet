@@ -1,0 +1,253 @@
+{
+ "package": "H4b-toolstack-scripts",
+ "head_reviewed": "7348fe77142cc708044c51dcf5dee5ae4cdd7ec7",
+ "verdict": "CHANGES_REQUIRED",
+ "per_finding": [
+  {
+   "id": "R6-01",
+   "verdict": "fixed",
+   "notes": "Probe <probe>/rc: project .silver-bullet.json with post_index ['echo EVAL-PAYLOAD >> PWNED', 'graphify cursor install']; no consent -> consent pending, no calls, nothing under ~/.cursor; after sb-consent grant graphify -> calls.log shows only 'graphify cursor install' (built-in table), PWNED.txt absent. rt_run_registry_command refuses metacharacters/foreign programs; graphify update runs with ROOT as argv. Mutation (eval instead of rt_run_registry_command) is caught by test-rt-graphify-agentmemory.sh (see validation). Residual eval sites are H4a's (stack-optimizer.sh, graphify-am-global.sh)."
+  },
+  {
+   "id": "R6-02",
+   "verdict": "fixed",
+   "notes": "Probe <probe>/gates1: deployed gates + project with scripts/lib/recommended-tools/heartbeat.sh payload; 6 gates piped an Edit payload, with and without ~/.cursor/state/toolstack/repo-root -> PWNED.txt absent. session-verify with a project/ancestor reconcile-recommended-tools.sh payload -> not run; rt_resolve_lib_script with a project copy returns the SB copy."
+  },
+  {
+   "id": "R6-03",
+   "verdict": "incomplete",
+   "notes": "Project recommendation alone no longer unlocks anything (probe <probe>/rc: consent pending, no writes). But the capability split is not enforced in the reconciler: rt_mutation_allowed TOOL with no capability (install OR wire) still guards host-config writes in receipts.sh batches, probe-rtk.sh and repair-graphify platform refresh, and package installs in probe-search_cli.sh. See issue 2."
+  },
+  {
+   "id": "R6-04",
+   "verdict": "fixed",
+   "notes": "optimize-rtk-context-mode.sh gates every RTK/CM step on per-tool wire, npm install on install, Claude plugin disable only with CM wire; optimize-five passes RT_PATCH_* from consent. Probe <probe>/o5a: --force with no consent -> 'SKIP: LeanCTX install', 'SKIP: optimize-rtk-context-mode.sh', 'mcp.json unchanged (no patch flags)'. (Global rules are a separate regression, issue 3.)"
+  },
+  {
+   "id": "R6-05",
+   "verdict": "incomplete",
+   "notes": "Default merge is now 'read_only' (14 entries), but it pre-approves Shell(git log *), Shell(git diff *), Shell(git show *) and Shell(tree *), which write arbitrary files: git log -1 --format='format:{\"permissions\":{\"allow\":[\"Shell(*)\"],\"deny\":[]}}' --output=<file> wrote valid JSON granting Shell(*). See issue 1."
+  },
+  {
+   "id": "R6-06",
+   "verdict": "fixed",
+   "notes": "Probe <probe>/toml1: hand-written config.toml (comments, multi-line string containing '[mcp_servers.graphify]', spaced header with comment, multi-line args array with comment, inline env table, lean-ctx with env secret, literal strings) symlinked from a dotfiles dir with mode 640 -> patch-mcp.py (graphify+agentmemory) output parses with tomllib, symlink kept, mode 640 kept, .sb-backup written, lean-ctx kept, user inline env kept; second run 'unchanged (idempotent)', md5 identical; merge-leanctx-mcp-config.py --host codex also valid."
+  },
+  {
+   "id": "R6-07",
+   "verdict": "fixed",
+   "notes": "lean-ctx table kept unless RT_PATCH_LEANCTX=1 (probe <probe>/toml1). Residual: with LeanCTX consent the user's lean-ctx env secret is dropped and, in a multi-step run, the backup is overwritten too (issue 5)."
+  },
+  {
+   "id": "R6-08",
+   "verdict": "fixed",
+   "notes": "global-toolstack/rtk-gate.sh records rtk usage atomically when a shell command passes with RTK installed and hooked; commit gate then passes. Mutation (drop ts_token_usage_record) is caught (see validation)."
+  },
+  {
+   "id": "R6-09",
+   "verdict": "fixed",
+   "notes": "Probe <probe>/pi1: settings.json with a // comment -> install-pi.py exits 2 'not valid JSON ... left unchanged', md5 unchanged."
+  },
+  {
+   "id": "R6-10",
+   "verdict": "fixed",
+   "notes": "npm:pi-lean-ctx added only with --enable-tool leanctx; no --enable-tool enables nothing new."
+  },
+  {
+   "id": "R6-11",
+   "verdict": "fixed",
+   "notes": "RETURN trap removed, pid recorded, stale recovery added; tests cover caller-return and stale cases. Minor residual race in stale recovery (issue 6)."
+  },
+  {
+   "id": "R6-12",
+   "verdict": "incomplete",
+   "notes": "Existing toolstack.json kept (probe <probe>/igt1: user file with enforcement off survived), Cursor/consent check added. But the rules copy is not gated per tool: with only leanctx wire consent the installer wrote graphify/agentmemory/context-mode/token-compression/recommended-tools rules globally and replaced the user's own symlinked graphify.mdc content (backup kept). Issue 3."
+  },
+  {
+   "id": "R6-13",
+   "verdict": "fixed",
+   "notes": "Project rules go to PROJECT_ROOT/.cursor/rules; missing bundled rule warns. optimize-rtk-context-mode.sh still swallows the global-rules installer failure (2>/dev/null || ... || true)."
+  },
+  {
+   "id": "R6-14",
+   "verdict": "fixed",
+   "notes": "read loop handles an unterminated last line; test asserts the last command runs."
+  },
+  {
+   "id": "R6-16",
+   "verdict": "fixed",
+   "notes": "No mapfile/readarray/declare -A/${,,} left in owned scripts (grep); while-read loops with empty-array fallback."
+  },
+  {
+   "id": "R6-17",
+   "verdict": "incomplete",
+   "notes": "curl|sh replaced by https-only download + mandatory user-supplied SHA-256 + install consent (tests cover mismatch/failed/empty installers); npm/uv/pipx/brew installs need install consent and no longer hide errors. Orchestrator decision (DECISIONS.md: pin to template min_version) not applied: the template has min_version only for rtk (0.42.0) and leanctx (3.9.9) and neither pin is used (cargo install lean-ctx hint, rtk install hints); the other packages have no template version. Issue 7."
+  },
+  {
+   "id": "R6-18",
+   "verdict": "fixed",
+   "notes": "Real-HTTP probe <probe>/mm: upstream returns chunked gzip JSON -> proxy answers 200 with content-length, no content-encoding/transfer-encoding, normalized body {\"parsed\":{}}; accept-encoding forwarded as identity."
+  },
+  {
+   "id": "R6-19",
+   "verdict": "fixed",
+   "notes": "Proxy started through '<probe>/mm/link dir/minimax-openai-proxy.mjs' (symlinked dir with a space) listened and served."
+  },
+  {
+   "id": "R6-20",
+   "verdict": "fixed",
+   "notes": "Private run dir (umask 077), symlinked pid/log refused, pid counted only if its command line is the proxy."
+  },
+  {
+   "id": "R6-21",
+   "verdict": "ok",
+   "notes": "Partial accepted by orchestrator: 16 MiB request limit returns 413 (probe: 5000-byte body with limit 1000 -> 413), response limit and 120 s idle timeout; SSE still buffered whole (accepted residual)."
+  },
+  {
+   "id": "R6-22",
+   "verdict": "fixed",
+   "notes": "pkill replaced by listener-on-port + command-line check, XML escaping, port validation, --uninstall, bootout on failed health (tests stub launchctl/lsof)."
+  },
+  {
+   "id": "R6-23",
+   "verdict": "fixed",
+   "notes": "--project-root (default git toplevel/cwd) used for target and config. Residual: no refusal when the resolved project is the plugin root itself (the proposed fix asked for it); running from the plugin directory still rewrites the bundled .silver-bullet.json timestamps (minor, issue 8)."
+  },
+  {
+   "id": "R6-24",
+   "verdict": "fixed",
+   "notes": "config_file returns only the project's file; bundled config/template never read for consent or rewritten (test checks cksums); profile stamping via sb_host_config.write_atomic."
+  },
+  {
+   "id": "R6-25",
+   "verdict": "incomplete",
+   "notes": "Context Mode hooks are rewritten only with CM consent and a resolvable command. But lean-ctx deny/redirect/rewrite hooks are still deleted whenever RTK is patched, although LeanCTX is not consented and the finding's fix asked to gate them on patch_leanctx and keep redirect. Probe <probe>/rc4: consent rtk=install only (wire unset), hooks.json with 'lean-ctx hook redirect' + a user hook -> reconciler apply removed the redirect hook (cross_tool action patch_hooks). Issues 2 and 4."
+  },
+  {
+   "id": "R6-26",
+   "verdict": "fixed",
+   "notes": "All Python writers go through sb_host_config.write_atomic (symlink target replaced atomically, mode kept, .sb-backup, unchanged files not rewritten) - verified in probes toml1/pi1/igt1. Backup semantics across multi-process runs are weak (issue 5)."
+  },
+  {
+   "id": "R6-27",
+   "verdict": "fixed",
+   "notes": "GUARD_PATHS use PROJECT_ROOT (required argument)."
+  },
+  {
+   "id": "R6-28",
+   "verdict": "ok",
+   "notes": "Accepted residual: cleared receipts marked cleared_by=host_evidence_stdin / evidence_assurance=self_reported."
+  },
+  {
+   "id": "R6-29",
+   "verdict": "ok",
+   "notes": "Routed to H4a (hooks/lib/graphify-am-global.sh is H4a-owned); recommendation recorded."
+  },
+  {
+   "id": "R6-30",
+   "verdict": "fixed",
+   "notes": "Self-test labeled as validator-only; --wire-proxy-evidence FILE validates captured traffic; docs/LEANCTX.md corrected."
+  },
+  {
+   "id": "R6-31",
+   "verdict": "fixed",
+   "notes": "r41j path removed; opted-out tools are warnings; enforcement off accepted only when every tool is opted out."
+  },
+  {
+   "id": "R6-32",
+   "verdict": "fixed",
+   "notes": "Pinned-defect assertions inverted (lean-ctx preserved without consent, invalid settings refused, toolstack.json preserved, gate allows after a recorded RTK command). One test was changed the other way: test-optimize-five-tool-stack-staged.sh now asserts the new global rules install (issue 3)."
+  },
+  {
+   "id": "R5-04",
+   "verdict": "incomplete",
+   "notes": "Consumers read the per-user store (rt_consent_for, heartbeat, doctor/diagnostics fixtures) and the 14 known_failing_until_h4b files pass (see validation). Capability semantics are not honoured everywhere (issue 2)."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "major",
+   "location": "scripts/lib/cursor-cli-allowlist.json:102-117 (read_only), docs/RTK.md:72, scripts/lib/merge-token-compression-config.py:240-249",
+   "problem": "R6-05 fix incomplete: the new default 'read_only' Cursor CLI allow-list is described as 'inspection commands that cannot write or reach the network' but pre-approves Shell(git log *), Shell(git diff *), Shell(git show *) and Shell(tree *). All four write arbitrary files (git --output=<file>, tree -o <file> / -R). git log's --format text is fully caller-controlled, so a Cursor CLI agent can, without any approval prompt, overwrite ~/.cursor/cli-config.json with permissions.allow ['Shell(*)'] or write ~/.bashrc - a complete escalation from the default list.",
+   "evidence": "cd <probe>/allow/repo && git log -1 --format='format:{\"permissions\":{\"allow\":[\"Shell(*)\"],\"deny\":[]}}' --output=<probe>/allow/cli-config.json && jq -c . <probe>/allow/cli-config.json -> {\"permissions\":{\"allow\":[\"Shell(*)\"],\"deny\":[]}}; git log -1 --format='tformat:echo PWNED-FROM-FORMAT' --output=<probe>/allow/bashrc -> file contains 'echo PWNED-FROM-FORMAT'; git diff --output=F and git show --output=F also create F. jq .read_only scripts/lib/cursor-cli-allowlist.json lists all four.",
+   "suggested_fix": "Drop git log/diff/show * and tree * from read_only (or use exact argument-free forms such as Shell(git status), Shell(git diff), Shell(git log)); keep only commands with no output-file option (cat, head, tail, wc, grep, ls, pwd, which, git status). Add a test that fails if any read_only entry is a command family with a known file-writing option, and correct docs/RTK.md."
+  },
+  {
+   "severity": "major",
+   "location": "scripts/lib/recommended-tools/receipts.sh:551-578,615-650,678-707,741-760; scripts/lib/recommended-tools/probe-rtk.sh:158,179; scripts/lib/recommended-tools/probe-search_cli.sh:138,171; scripts/lib/recommended-tools/repair-graphify.sh:95-130 (rt_repair_graphify_platform); docs/CONSENT.md:135",
+   "problem": "Consent capabilities are not enforced in the reconciler. The cross-tool host batches (patch-hooks.py, patch-mcp.py, install-pi), rt_repair_rtk's patch-hooks run (RT_PATCH_RTK=1 hard-coded), the graphify platform refresh ('graphify cursor install') and the search-cli brew install are all guarded by rt_mutation_allowed TOOL without a capability, i.e. 'install OR wire'. A user who grants only 'install' gets machine-wide host config rewritten; one who grants only 'wire' for search_cli gets a brew install. docs/CONSENT.md states 'install for package installs, wire for host-config writes'.",
+   "evidence": "<probe>/rc3: sb-consent.sh grant graphify --all-projects --capabilities install; check graphify wire -> unset; reconcile-recommended-tools.sh --mode apply --scope all --entry-point init --host cursor -> cross_tool actions [patch_mcp,...]; ~/.cursor/mcp.json created with mcpServers.graphify; calls.log includes 'graphify cursor install'. <probe>/rc4: grant rtk --capabilities install only; ~/.cursor/hooks.json seeded with {'command':'lean-ctx hook redirect'} and a user hook -> after apply cross_tool actions [patch_hooks], the lean-ctx hook is gone and hooks.json.sb-backup exists.",
+   "suggested_fix": "Pass the capability at every mutation site: rt_mutation_allowed TOOL wire for every RT_PATCH_* flag, install-pi --enable-tool, the patch-hooks call in rt_repair_rtk and rt_repair_graphify_platform; rt_mutation_allowed search_cli install before the brew chain. Add reconciler tests with install-only and wire-only grants asserting no host-config write / no package install respectively."
+  },
+  {
+   "severity": "major",
+   "location": "scripts/optimize-five-tool-stack.sh:184-188; scripts/install-recommended-tools-cursor.sh:79-96; scripts/lib/global-toolstack/install-body.sh:161-171; tests/scripts/test-optimize-five-tool-stack-staged.sh (assert 'rules are installed into the project and globally')",
+   "problem": "Global Cursor rules are written without per-tool consent, and this branch widened it. optimize-five-tool-stack.sh now passes --global in apply mode (the base ran the rules installer without --global in apply mode; the test that asserted 'cursor real run: no --global' was flipped to pin the new behaviour). With LeanCTX consent only - or with --force and no consent at all - it writes alwaysApply rules for graphify, agentmemory, context-mode, token-compression-enforcement, leanctx and recommended-tools into ~/.cursor/rules for every project; recommended-tools.mdc is overwritten with plain cp and no backup. install-global-toolstack.sh / install-body.sh likewise copy every tool's rule when any single tool is wired, replacing a user's own (symlinked) rule. This contradicts the script header ('Every step is limited to the tools the user granted wire for'), docs/CONSENT.md and R6-12's proposed fix.",
+   "evidence": "<probe>/o5a: no consent store; optimize-five-tool-stack.sh --host cursor --project-root proj --force --skip-synergy -> 'SKIP: LeanCTX install - no consent', 'SKIP: optimize-rtk-context-mode.sh', then 'OK: <home>/.cursor/rules/{context-mode,token-compression-enforcement,graphify,agentmemory,leanctx}.mdc' and 'recommended-tools.mdc (global variant)'; ls <home>/.cursor/rules shows the 6 files. <probe>/igt1: consent leanctx=wire only, user ~/.cursor/rules/graphify.mdc symlinked to dotfiles/graphify.mdc ('my own rule') -> install-global-toolstack.sh wrote SB's graphify/agentmemory/context-mode/token-compression/recommended-tools rules; dotfiles/graphify.mdc now holds the SB rule (graphify.mdc.sb-backup kept).",
+   "suggested_fix": "Install a global rule only for tools with wire consent (map rule -> tool; recommended-tools.mdc / token-compression only when at least one relevant tool is wired), keep apply mode project-only in optimize-five unless the user asked for --global, back up recommended-tools.mdc like the others, and make --force skip only the LeanCTX check, never consent. Restore the test to assert no global writes without consent."
+  },
+  {
+   "severity": "major",
+   "location": "scripts/lib/global-toolstack/patch-hooks.py:30-35,91-99,297-316",
+   "problem": "R6-25 incomplete: hooks belonging to LeanCTX ('lean-ctx hook deny', 'lean-ctx hook redirect', 'lean-ctx hook rewrite') are still removed from ~/.cursor/hooks.json whenever RTK is patched and resolvable, although the run has no LeanCTX consent and Silver Bullet did not create those entries (FIX-BRIEF rule: never remove entries SB did not create). The finding's fix asked to gate lean-ctx markers on patch_leanctx and to keep the redirect hook. The new test only covers 'RTK not consented'. Combined with issue 2 this is reachable with an install-only RTK grant.",
+   "evidence": "<probe>/rc4 (see issue 2): hooks.json before: preToolUse [{'command':'lean-ctx hook redirect','matcher':'Shell'},{'command':'/usr/local/bin/my-own-hook.sh'}]; consent: rtk install only, leanctx unset; after reconciler apply: preToolUse [{'command':'/usr/local/bin/my-own-hook.sh'}].",
+   "suggested_fix": "Treat lean-ctx markers as removable only when RT_PATCH_LEANCTX=1 (LeanCTX wire consent), or at most remove the shell 'rewrite'/'deny' hooks that conflict with RTK and always keep 'redirect'; add a test with RTK consented and LeanCTX not."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/optimize-five-tool-stack.sh, scripts/optimize-rtk-context-mode.sh, scripts/install-leanctx-sb.sh, scripts/install-global-toolstack.sh, scripts/reconcile-recommended-tools.sh (no SB_INSTALL_RUN_START export); docs/CONSENT.md:142",
+   "problem": "sb_host_config keeps the pre-run content in <file>.sb-backup only within one 'install run' (SB_INSTALL_RUN_START, exported by H2's installers). None of H4b's multi-step entry points export it, so each Python writer is its own run and the backup is overwritten by the next writer. With LeanCTX consent, merge-leanctx-mcp-config.py deletes [mcp_servers.lean-ctx] (including a user env secret, not migrated) and a later patch-mcp.py write in the same optimize run replaces the backup, so the secret is lost from both files - the R6-07 'previous file is kept in config.toml.sb-backup' guarantee does not hold.",
+   "evidence": "<probe>/toml2: config.toml with [mcp_servers.lean-ctx.env] LEANCTX_API_KEY='sk-secret'; merge-leanctx-mcp-config.py --host codex; 3 s later RT_HOST=codex RT_PATCH_GRAPHIFY=1 RT_PATCH_LEANCTX=1 patch-mcp.py -> grep -c sk-secret config.toml config.toml.sb-backup -> 0 and 0.",
+   "suggested_fix": "export SB_INSTALL_RUN_START=\"${SB_INSTALL_RUN_START:-$(date +%s)}\" at the top of every H4b entry script (optimize-*, install-leanctx-sb, install-global-toolstack, install-recommended-tools-*, reconcile apply), and copy a legacy lean-ctx env table into leanctx.env (or keep the legacy table) instead of dropping it."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/lib/recommended-tools/common.sh:433-470 (rt_lock_is_stale / rt_with_lock)",
+   "problem": "Stale-lock recovery is check-then-remove: two waiters that both judge the same dead-owner lock stale can interleave so that the second one's rm -rf deletes the lock the first one just re-created, and both run the critical section.",
+   "evidence": "Static: waiter A: rt_lock_is_stale -> true, rm -rf, mkdir ok, writes pid; waiter B (judged stale before A's mkdir): rm -rf removes A's fresh lock, mkdir ok -> both hold it. Requires a stale lock and concurrent reconcilers.",
+   "suggested_fix": "Rename the stale lock to a unique name (mv lock lock.stale.$$) before removing it, so only one waiter wins the rename, or re-verify ownership via the pid file after mkdir."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/install-leanctx-sb.sh:250-262; scripts/lib/recommended-tools/probe-*.sh; scripts/lib/global-toolstack/install-pi.py:139; .../review/DECISIONS.md:22",
+   "problem": "R6-17 version pins: the orchestrator decided 'pin to the min_version already in the template', but nothing is pinned. The only template versions are rtk 0.42.0 and leanctx 3.9.9; the cargo fallback hint ('cargo install lean-ctx') and RTK hints are unpinned, and npm/uv/pipx/brew installs (context-mode, @agentmemory/agentmemory, graphifyy[mcp], pi-lean-ctx, search-cli) have no template version to pin to.",
+   "evidence": "jq '.recommended_tools[].min_version' templates/silver-bullet.config.json.default -> only rtk '0.42.0', leanctx '3.9.9'; grep of owned scripts shows unversioned 'npm install -g context-mode', 'npm install -g @agentmemory/agentmemory', \"uv tool install 'graphifyy[mcp]'\", 'npm:pi-lean-ctx', 'cargo install lean-ctx'.",
+   "suggested_fix": "Apply the decision where a version exists (e.g. 'cargo install lean-ctx --version 3.9.9 --locked', rtk >= 0.42.0 in hints) and record the remaining packages as an explicit residual for the orchestrator (they need template min_versions first)."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/sb-optimize-stack.sh:63-75, scripts/sb-verify-synergy.sh:32-40",
+   "problem": "R6-23's proposed fix also asked to refuse when the resolved project is the plugin root. Run from the plugin directory (or with cwd inside it), PROJECT_ROOT defaults to the plugin root and the bundled .silver-bullet.json is used and its timestamps rewritten; sb-verify-synergy --write-setup-report appends SETUP_REPORT.md there.",
+   "evidence": "Static: PROJECT_ROOT=$(git rev-parse --show-toplevel || pwd); no comparison with REPO_ROOT before sb_stack_update_config_timestamps \"$PROJECT_CONFIG\".",
+   "suggested_fix": "Exit 2 with 'run from your project or pass --project-root' when PROJECT_ROOT equals REPO_ROOT (unless an explicit dogfooding flag is set)."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/install-recommended-tools-global.sh:37-63",
+   "problem": "install_opencode_agents / install_codex_agents overwrite ~/.config/opencode/AGENTS.md and ~/.codex/AGENTS.md (the user's global instructions) with plain cp: no consent check, no backup, not atomic. Owned file; the package scope requires config writers to be consent-scoped and backed up.",
+   "evidence": "Static: 'cp \"$cm_pkg\" \"$dest\"' with dest=${HOME}/.codex/AGENTS.md; reachable via --host codex|opencode|all (documented fix path in docs/rtk-cm/verification/opencode-verify-rtk-cm.md:61).",
+   "suggested_fix": "Gate on context_mode wire consent, stage beside an existing file (as stage_agents_template does) or back it up, and write atomically."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/optimize-rtk-context-mode.sh:188-206,270-279",
+   "problem": "With RTK consented and Context Mode not, Cursor never gets the CLI allow-list merge or the patch-hooks canonicalization (both live only in optimize_context_mode_cursor), so 'rtk hook cursor' rewrites nothing (it only rewrites allow-listed commands) while the global rtk-gate now records 'RTK usage' for every shell command.",
+   "evidence": "Static: run_merge_py cursor (allow-list) and canonicalize_cursor_toolstack_hooks are called only after the WIRE_CM check; optimize_rtk_cursor only runs 'rtk init -g --agent cursor'.",
+   "suggested_fix": "Run the allow-list merge and RTK hook canonicalization in the RTK branch (merge-token-compression-config.py --rtk-only for cursor)."
+  },
+  {
+   "severity": "minor",
+   "location": "branch fix/H4b-toolstack-scripts; scripts/lib/sb_host_config.py",
+   "problem": "Process: the branch was not merged with the latest claude/optimistic-ramanujan-tccfud (06bef6f, which merged H2): sb_host_config.py/test_sb_host_config.py are a byte copy of fix/H2-installers ce04f38 (an unmerged H2 follow-up), so the merge is an add/add conflict that must take whichever H2 version lands. The commit message has no red/green output and the report lists commits as 'H4b-fix' instead of the SHA.",
+   "evidence": "git merge-base --is-ancestor claude/optimistic-ramanujan-tccfud 7348fe7 -> not ancestor; git diff --stat 06bef6f 7348fe7 -- scripts/lib/sb_host_config.py -> 61 lines differ; git diff fix/H2-installers 7348fe7 -- scripts/lib/sb_host_config.py -> empty.",
+   "suggested_fix": "Merge the latest base, take H2's sb_host_config.py, re-run the toolstack tests; record red/green evidence and the real SHA."
+  }
+ ],
+ "validation": {
+  "tests": "PARTIAL. SILVER_BULLET_RUNTIME=claude run over 136 toolstack test files (scripts/python/js/hooks/integration that reference the changed code), --jobs 2: 69 files had reported when the review was handed back, all 'Results: N passed, 0 failed'. The rest of that run, the codex-runtime run (list in REVF-H4b-probe/run-list-codex.txt), the 14 known_failing_until_h4b files (reconcile/rt-*/sb-doctor/silver-doctor; scripts tests had not reached them yet) and test-agent-delegate-common.sh were NOT confirmed. Mutation checks were prepared (REVF-H4b-probe/mut/run-mut.sh) but not run; the red/green claims in the author's report are unverified by mutation.",
+  "coverage": "NOT RUN (the scoped --only coverage run was not reached). Author reports bash 100% (4741/4741 statements, 28 files) and does not state Python/JS coverage for patch-mcp.py, patch-hooks.py, install-pi.py, merge-*.py, sb_host_config.py, minimax-openai-proxy.mjs.",
+  "lint": "NOT RUN (lint-shell --all --jobs 2 not reached); author reports clean.",
+  "invariants": "On a sandbox copy of 7348fe7: check-repo-invariants.sh rc=0 (0 FAIL); generate-hook-reference.py --check up to date; generate-apo-artifacts.py --check rc=0; validate-plugin-mirror.sh OK; docs/workflows == templates/workflows; known-limits.json valid; no skills/ or silver-bullet.md change. Trailer 'Co-Authored-By: Claude Sonnet 5.5' + Claude-Session present (accepted). Branch does not contain the latest base 06bef6f (see last issue)."
+ },
+ "probe_dir": "/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H4b-probe (<probe> in evidence)"
+}

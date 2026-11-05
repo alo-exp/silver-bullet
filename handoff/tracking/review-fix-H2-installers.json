@@ -1,0 +1,214 @@
+{
+  "package": "H2-installers",
+  "head_reviewed": "ae12e03a3f8f256d335a901632275136ec0c6dc5",
+  "verdict": "CHANGES_REQUIRED",
+  "per_finding": [
+    {
+      "id": "R7-02",
+      "verdict": "fixed",
+      "notes": "Re-ran R7 probe: HOME='.../r702/space home/u', merge-cursor-hooks.py into it, then bash -c \"$CMD\" for completion-audit: shlex.split -> 3 tokens, bridge executed the deny stub and printed {\"permission\":\"deny\",...} (before: exit 127). Mutation (hook path unquoted in generate-cursor-hooks.py) -> test_generate_cursor_hooks FAILED (failures=6). Regenerating both cursor-hooks.json files produced no diff."
+    },
+    {
+      "id": "R7-04",
+      "verdict": "fixed",
+      "notes": "Probe: merged 0.53.0 manifest, then a 0.54.0 manifest without completion-audit and with stop-check timeout 99 -> completion-audit entries 0, stop-check timeout [99], current -> 0.54.0, user entries ($HOME/bin/my guard.sh, ${CURSOR_PLUGIN_ROOT}/hooks/other-plugin.sh, bash ~/stop.sh, top-level 'custom' key) kept in order. Old unquoted, versioned (0.50.0) and placeholder SB entries all replaced. Mutation (keep all entries) -> 10 test failures."
+    },
+    {
+      "id": "R7-06",
+      "verdict": "fixed",
+      "notes": "Probe r706: ~/.agents/skills/{security,tdd,reliability,my-own}, ~/.codex/skills/usability (unmarked), testability symlink outside SB: all kept with 'Kept ...' notes; marked modularity removed; unmarked silver-feature moved to ~/.codex/.silver-bullet-backup/skills/<ts>/agents/. Mutation (rmtree without marker) -> test-install-codex-libs 5 failures."
+    },
+    {
+      "id": "R7-07",
+      "verdict": "fixed",
+      "notes": "Probe r707: user ~/.codex/skills/security/{SKILL.md,team-notes.md} and a foreign symlink at verify-tests kept with WARN; unmarked sb:review backed up then mirrored; marked stale old-sb-thing removed; second run idempotent, no staging dirs left."
+    },
+    {
+      "id": "R7-08",
+      "verdict": "fixed",
+      "notes": "Re-ran R7 probe: registry with other@thirdparty-mkt (aaaa1111/ffff0000) and realcur@mkt2 (real current/ dir with data.txt): both records byte-identical, no alias created, data.txt intact; only silver-bullet@alo-labs-codex re-pointed to current (0.53.0). Truncated registry -> rc=1, file byte-identical. Mutation clobbering foreign versions -> 2 test failures."
+    },
+    {
+      "id": "R7-09",
+      "verdict": "fixed",
+      "notes": "Re-ran probe with implicit [hooks.state.\"<SB key>\"] form plus comments, multi-line array, inline table, user trust table: two seeding runs -> valid TOML (tomllib), 97 keys (96 SB + 1 user), user's 'enabled = false' on the SB table kept, mode 600 kept, .sb-backup written. Duplicate-table config repaired by seed. Differential test (complex.toml: multiline strings containing fake headers, literal keys, arrays of tables, spaced headers) -> remove/set results equal to tomllib reference. Residuals: see issues (repair unreachable in a full install; false refusal for sub-table-only parents)."
+    },
+    {
+      "id": "R7-10",
+      "verdict": "fixed",
+      "notes": "Re-ran alias probe: [plugins.\"silver-bullet@alo-labs-codex\"], its trust and registry entry kept; only the -local id (table with header comment, trust, registry, cache) removed. install-codex.sh no longer calls remove_plugin_enabled outside a project."
+    },
+    {
+      "id": "R7-11",
+      "verdict": "fixed",
+      "notes": "Re-ran quar probe: team/notes.json, my-skill/ (incl helper.md), tdd.md, code-reviewer.md mentioning silver-bullet, silverlight-porter.md, symlinked silver-x.md all stay; tdd.md with non-SB content reported not moved. Residual: any user agent named silver-* is still quarantined without proof (minor issue)."
+    },
+    {
+      "id": "R7-12",
+      "verdict": "fixed",
+      "notes": "Re-ran prune probe (r712): \"$HOME/bin/fmt.sh\", \"${CLAUDE_PROJECT_DIR}/...\", node \"$HOME/.claude/hooks/my-hook.js\", hooks/relative.sh, existing SB 0.53.0 hook and gsd-statusline.sh hook all kept; only 3 stale SB entries (missing 0.50.0/0.40.0 cache scripts, ${CLAUDE_PLUGIN_ROOT} placeholder) removed; no file under ~/.claude/hooks deleted; mode 640 kept; .sb-backup written. Mutations (judge $-paths, re-add gsd deletion) caught by tests."
+    },
+    {
+      "id": "R7-13",
+      "verdict": "fixed",
+      "notes": "install-claude.sh default CLAUDE_GIT_HTTPS_REWRITE=0; opt-in sets GIT_CONFIG_COUNT/KEY/VALUE appended after caller's; no 'git config --global' left in installer files; test-install-claude-offline asserts ~/.gitconfig byte-identical in default and opt-in runs (106/0)."
+    },
+    {
+      "id": "R7-14",
+      "verdict": "fixed",
+      "notes": "Cursor and Codex registries: truncated JSON -> rc=1 with 'Repair or move the file aside' message, byte-identical. Symlinked Cursor registry (mode 640) stays a symlink, target mode 640, other plugins and top-level keys kept. merge-hooks.py/merge-cursor-hooks.py write atomically with backup."
+    },
+    {
+      "id": "R7-15",
+      "verdict": "fixed",
+      "notes": "clone_public_release_checkout against a local file:// repo: pinned full sha -> checks out that commit; no sha -> tag v<version>; missing tag, wrong sha, abbreviated sha -> FAILED-CLOSED; empty/null version refused before cloning. No default-branch fallback remains."
+    },
+    {
+      "id": "R7-19",
+      "verdict": "fixed",
+      "notes": ".codex/hooks.json now 'graphify hook-check' (no /Users paths); .cursor/rules/silver-orchestrator.mdc equals template; test-dogfood-host-config-portable.sh 6/0. Identical change on fix/H3-release-ci, merges cleanly."
+    },
+    {
+      "id": "R7-20",
+      "verdict": "fixed",
+      "notes": "Static: LIST_ARGS always holds --list-selectable; rows read with while-read; remaining expansions (PARTS, SELECTED) are provably non-empty. No Bash 3.2 binary to run."
+    },
+    {
+      "id": "R7-21",
+      "verdict": "fixed",
+      "notes": "Probe r729 via the sb:init shim: with silver-bullet in ~/.claude/plugins/installed_plugins.json the merge removed 96 SB entries and added none; user hooks ($HOME, ${CLAUDE_PROJECT_DIR}, gsd-*) and other keys kept. Mutation (ignore delivery) -> 4 failures. Residual docs drift in skills/silver-init/references/scaffold-steps.md (minor issue)."
+    },
+    {
+      "id": "R7-23",
+      "verdict": "fixed",
+      "notes": "Probe r723: Cursor uninstall removed plugins/local/silver-bullet, gitPath clone, SB registry record and SB hook (quoted bridge form); kept sidekick record, plugins/local/sidekick, agent-plugins clone, ${CURSOR_PLUGIN_ROOT}/hooks/rtk-hook.sh and 'bash ~/silver-bullet-notes/hooks/check.sh'. Claude uninstall removed SB enabledPlugins/registry/hook entries, kept other@m, \"$HOME/bin/notify.sh\", env; mode 600 kept."
+    },
+    {
+      "id": "R7-24",
+      "verdict": "fixed",
+      "notes": "--merge-hooks-only reads VERSION from DEST_ROOT/.cursor-plugin/plugin.json (fallback: dir name); test-install-cursor-script-merge-only passes (no 0.0.0)."
+    },
+    {
+      "id": "R7-25",
+      "verdict": "fixed",
+      "notes": "agent_name() fullmatch [A-Za-z0-9][A-Za-z0-9._ -]*; prune lists the agents dir instead of globbing a config prefix. Flow test covers prefix/effort/model traversal (exit 1, nothing written outside). Mutation (no validation) -> test_cursor_sb_agents_lib failure."
+    },
+    {
+      "id": "R7-26",
+      "verdict": "fixed",
+      "notes": "Static: installer-written plugin roots get an empty cursor-hooks.json while the repo/marketplace plugin.json still points at ./hooks/cursor-hooks.json (marketplace installs keep plugin hooks)."
+    },
+    {
+      "id": "R7-27",
+      "verdict": "fixed",
+      "notes": "Installer tests now seed foreign data and assert it survives (mutations of 9 Python and 4 shell fixes all caught). Bridge-test gaps listed in R7-27 belong with H1's bridge findings. Residual: test-install-codex.sh's trust helper (lines ~286-300) still parses TOML with a regex; validity is covered in test-install-codex-libs via tomllib and by write_toml's own check."
+    },
+    {
+      "id": "R7-28",
+      "verdict": "fixed",
+      "notes": "Probe: real manifest merged twice -> byte-identical file, 35 preToolUse entries (33 SB + 2 user), orchestrator-directive-guard 3 (= manifest)."
+    },
+    {
+      "id": "R7-29",
+      "verdict": "fixed",
+      "notes": "Probe r729 (not plugin-delivered): all 96 (event, matcher, command) triples present, idempotent second run byte-identical. Mutation (per-(event,command) dedupe) -> test failure."
+    },
+    {
+      "id": "R8-16",
+      "verdict": "incomplete",
+      "notes": "The pruner half is fixed (see R7-12). The worker half is not: scripts/agent-claude/lib.sh:130-200 (agent_claude_seed_lightweight_settings) is unchanged and still drops any gsd-*.sh hook and any quoted .sh/.js path that fails os.path.isfile after expanduser only. Probe r816: settings PreToolUse [\"$HOME/bin/guard.sh\" (exists), bash ~/.claude/hooks/gsd-statusline.sh (exists)] -> worker settings {\"hooks\":{\"PreToolUse\":[]}}. Disposition says 'fixed' and the report does not hand this part off."
+    }
+  ],
+  "issues": [
+    {
+      "severity": "major",
+      "location": "scripts/agent-claude/lib.sh:130-200 (R8-16, disposition in fix-H2-installers.json)",
+      "problem": "R8-16 is marked fixed, but its second half (the same broken heuristic strips the user's own hooks from delegated Claude workers) is untouched; the report mentions only the preflight call site.",
+      "evidence": "HOME=/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H2-probe/r816 with ~/bin/guard.sh and ~/.claude/hooks/gsd-statusline.sh present; settings.json PreToolUse hooks \"\\\"$HOME/bin/guard.sh\\\"\" and \"bash ~/.claude/hooks/gsd-statusline.sh\"; source scripts/agent-claude/lib.sh; agent_claude_seed_lightweight_settings /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H2-probe/r816/worker -> worker/settings.json = {\"hooks\":{\"PreToolUse\":[]}}.",
+      "suggested_fix": "Make agent_claude_seed_lightweight_settings keep every hook except stale SB-owned ones (reuse prune-claude-settings.stale_sb_hook / sb_host_config.is_sb_hook_command), or record R8-16 as partial and hand the lib.sh part to G6 explicitly; add a test with an existing \"$HOME/...\" hook and a gsd-*.sh hook surviving into the worker settings."
+    },
+    {
+      "severity": "major",
+      "location": "scripts/lib/post-release-uninstall.sh:113",
+      "problem": "The changed file is not 100% covered, so CI's --fail-under 100 gate fails: the '|| return 1' after forgetting SB's records in an unparseable Claude installed_plugins.json is never executed (tests cover the unparseable Claude settings.json and Cursor registry cases, not the Claude registry). The author's report says coverage was 'not re-run' for this file.",
+      "evidence": "bash tests/coverage/run-coverage.sh --cov-dir /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H2-probe/cov --jobs 2 --show-missing --only <20 changed files> <22 test files incl. test-post-release-uninstall.sh, test-post-release-host-verify.sh> -> 'scripts/lib/post-release-uninstall.sh 69/70 ... 98.57%  missing: 113(return)'; Bash statements 1891/1892. test-post-release-host-verify-flow.sh never makes that registry unparseable.",
+      "suggested_fix": "Add a case to tests/scripts/test-post-release-uninstall.sh: valid settings.json, '{\"plugins\": {' in ~/.claude/plugins/installed_plugins.json -> uninstall exits 1, error names the file, registry byte-identical."
+    },
+    {
+      "severity": "minor",
+      "location": "scripts/lib/install-codex/legacy.sh:178-182, hooks.sh:178-189, plugin.sh (_sb_codex_edit_config), install-codex.sh:74",
+      "problem": "The repair of SB's own duplicated [hooks.state.\"silver-bullet@...\"] tables (the R7-09 damage left by older installers) only exists in seed_silver_bullet_hook_trust_state. A full install-codex.sh run edits config.toml first through _sb_codex_edit_config (remove_marketplace_if_present at line 74), which refuses the invalid file and aborts the install, so the repair is reachable only through --hook-trust-seed-only; the error does not say how to proceed.",
+      "evidence": "config.toml with [hooks.state.\"silver-bullet@alo-labs-codex:hooks/hooks.json:pre_tool_use:0:0\"] declared twice; remove_marketplace_if_present silver-bullet-local -> 'ERROR: ...config.toml: not valid TOML (Cannot declare (...) twice ...); left unchanged', rc=1 (set -e aborts the install).",
+      "suggested_fix": "Apply the SB-duplicate repair in read_toml's callers used by install-codex (or run it first in install-codex.sh), or extend the error with 'remove the duplicated silver-bullet@ trust tables or run install-codex.sh --hook-trust-seed-only'."
+    },
+    {
+      "severity": "minor",
+      "location": "scripts/lib/sb_host_config.py:518-529 (_require_free)",
+      "problem": "Keys defined under a sub-table header are mistaken for dotted keys: with [features.sub] (or [plugins.\"silver-bullet@alo-labs-codex\".x]) present and no [features] header, set_value(('features',), ...) raises 'defined with dotted keys', although appending [features] is valid TOML. ensure_feature_enabled/ensure_plugin_enabled then exit 1 and abort the install.",
+      "evidence": "TomlDocument('[features.sub]\\na = 1\\n').set_value(('features',),'plugin_hooks','true') -> ConfigError 'config.toml: [features] is defined with dotted keys; left unchanged' (toml_probe.py case 'subtable first').",
+      "suggested_fix": "Record each keyval's header path in TomlStatement and flag a dotted-key conflict only when the keyval's header path is a proper prefix of the target table path; add a test for a sub-table-only parent."
+    },
+    {
+      "severity": "minor",
+      "location": "scripts/lib/install-codex/hooks.sh:212-291 with legacy.sh:240-273 (Kay / SB_CODEX_MERGE_USER_HOOKS=1)",
+      "problem": "Trust keys are positional. The purge removes SB entries from the user's group (shifting the user's hooks), the merge appends SB hooks into the user's existing group with the same matcher, and the seed then overwrites the user's own Codex-approved trust table at the new SB index. The user's approval is silently lost and Codex re-prompts for their hook.",
+      "evidence": "/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H2-probe/kay: hooks.json Bash group [SB completion-audit, \"$HOME/bin/guard.sh\"], config.toml trust 0:0=sha256:sbold, 0:1=sha256:userguard; purge + merge + seed (MERGE_USER_HOOKS=1) -> group [guard.sh, SB hook]; config has only ...:pre_tool_use:0:1 = <SB hash>; the 'sha256:userguard' entry is gone and guard.sh (now 0:0) has no trust.",
+      "suggested_fix": "Append SB hooks in their own groups after the user's (never into a user group), and when removing SB entries re-key or drop only the trust entries whose hash matches SB's hook; never set_value over an existing trust table whose hash is not SB's."
+    },
+    {
+      "severity": "minor",
+      "location": "scripts/lib/sb_host_config.py:73-91 (write_atomic backup)",
+      "problem": "<file>.sb-backup is overwritten by every write, so after a multi-step install (install-codex edits config.toml several times; install-claude's sync then prune) the backup holds an intermediate state, not the user's pre-install file. The 'back up before a destructive change' guarantee does not let the user recover what they had.",
+      "evidence": "config.toml '# ORIGINAL user config\\nmodel = \"o3\"'; ensure_marketplace_registered /srv/sb; ensure_feature_enabled plugin_hooks; ensure_plugin_enabled ... -> config.toml.sb-backup already contains [marketplaces.alo-labs-codex] and [features].",
+      "suggested_fix": "Keep the first backup of a run (e.g. skip the backup when <file>.sb-backup is newer than the installer start, passed via an env var), or write timestamped backups with a small retention."
+    },
+    {
+      "severity": "minor",
+      "location": "scripts/lib/install-cursor/merge-cursor-hooks.py:118-122; scripts/lib/sb_host_config.py:128",
+      "problem": "Ownership is still partly substring/path-shape based: any ~/.cursor/hooks.json entry whose command merely contains 'codex-hook-adapter' is deleted (strip-cursor-sb-hooks.py requires adapter AND bridge), and _CACHE_ROOT_RE owns any '.../silver-bullet/<x.y.z>/hooks/<anything>' regardless of hook name.",
+      "evidence": "/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H2-probe/r704b: user entries '/home/me/scripts/codex-hook-adapter-notes.sh check' and 'node \"$HOME/silver-bullet/1.0.0/hooks/lint.js\"' removed by merge-cursor-hooks.py; 'python3 /home/me/projects/silver-bullet/hooks/my-own-check.py' kept.",
+      "suggested_fix": "Use the strip script's predicate (adapter and cursor-hook-bridge both present, or the adapter as the program in an SB hooks dir); require an SB hook name for the bare '/silver-bullet/<semver>/' layout outside plugins/cache."
+    },
+    {
+      "severity": "minor",
+      "location": "scripts/lib/install-cursor/backend-cache.sh:225-276 (SB_NAMESPACE)",
+      "problem": "cleanup_cursor_custom_agents still quarantines any top-level user agent named silver-* (file or SKILL.md dir) on every install without proof that SB wrote it; legacy generic names now need byte-identical content, but the namespace rule is a name heuristic. Files are moved, not deleted.",
+      "evidence": "/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H2-probe/r711: ~/.cursor/agents/silver-lining.md and silver-surfer/SKILL.md (user content) moved to ~/.cursor/.silver-bullet-quarantine/cursor-agents/<ts>/user/.",
+      "suggested_fix": "Quarantine silver-*/sb:* entries only when their name is one SB has shipped (list from host-bundles/cursor or a fixed legacy list) or their content matches the bundle; report the rest."
+    },
+    {
+      "severity": "minor",
+      "location": "scripts/lib/install-codex/config.sh:40-75 (codex_marketplace_root)",
+      "problem": "The reader of [marketplaces.alo-labs-codex] is still line-based while the writer is now structural: a header with a trailing comment (which ae12e03 explicitly preserves and tests) or a source path containing a quote/backslash (now written escaped) is not recognised, and the installer silently falls back to the default ~/.codex/.tmp marketplace root.",
+      "evidence": "ensure_marketplace_registered '/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H2-probe/mroot/src/we\"ird'; codex_marketplace_root -> /.codex/.tmp/marketplaces/alo-labs-codex. '[marketplaces.alo-labs-codex] # mine' + source = \".../src/plain dir\" -> default root (the same source without the comment -> /src/plain dir).",
+      "suggested_fix": "Read the table with sb_host_config.read_toml + tomllib (toml_parser) and take marketplaces['alo-labs-codex'].source when source_type == 'local'."
+    },
+    {
+      "severity": "minor",
+      "location": "scripts/lib/install-claude/merge-hooks.py:117-127; tests/python/test_merge_hooks_claude.py:216-220",
+      "problem": "In plugin-delivered mode the merge always writes settings.json: with nothing to remove it still adds an empty \"hooks\": {} to the user's settings (reformatting the file and writing settings.json.sb-backup), and on a machine without settings.json it creates one. The test named 'writes_nothing_new' pins this ({\"theme\": \"dark\", \"hooks\": {}}).",
+      "evidence": "/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H2-probe/clean: registry has silver-bullet@alo-labs, no settings.json -> merge-hooks.py creates settings.json {\"hooks\": {}}; with settings {\"theme\":\"dark\"} -> rewritten as {\"theme\": \"dark\", \"hooks\": {}} plus settings.json.sb-backup.",
+      "suggested_fix": "In delivered mode write only when remove_hooks removed something (and do not add the hooks key); update the test to assert the file is byte-identical."
+    },
+    {
+      "severity": "minor",
+      "location": "skills/silver-init/references/scaffold-steps.md:262-315",
+      "problem": "Docs drift: Phase 3.7.5 still says it 'Merges the SB hook entries into the user's global host settings file' and 'appends only new hook entries'. INSTALL_PATH is only resolved from installed_plugins.json, so on Claude the step now always removes SB's settings copies and adds nothing; on Codex/Cursor it is a no-op. Outside H2's file list, but the behaviour change is H2's.",
+      "evidence": "scaffold-steps.md:264 and :312 vs merge-hooks.py:92-127 and probe r729.",
+      "suggested_fix": "Update Phase 3.7.5's text (or ask the owning package to), describing removal on plugin installs and registration only for manual installs."
+    },
+    {
+      "severity": "minor",
+      "location": "/tmp/.../review/fix-H2-installers.json",
+      "problem": "The report is not usable as an audit record: every finding's tests field says 'see commit message' (no test files or assertion names), R7-27's commits field is a split sentence ('all','(tests',...), R8-16 is reported fixed without the lib.sh hand-off, and the coverage line says 'not re-run'.",
+      "evidence": "fix-H2-installers.json dispositions[*].tests == ['see commit message (red/green recorded)'].",
+      "suggested_fix": "List the test file and assertion names per finding, and record partial dispositions and hand-offs."
+    }
+  ],
+  "validation": {
+    "tests": "All pass at ae12e03 (claude runtime, via tests/run-all-tests.sh, sandboxed): Python test_sb_host_config/merge_cursor_hooks/merge_hooks_claude/prune_claude_settings/silver_init_merge_shims/strip_cursor_sb_hooks/generate_cursor_hooks/cursor_sb_agents_lib 204 OK (1 pre-existing root skip); test-install-codex-libs 219/0, test-prune-stale-claude-user-hooks 73/0, test-install-cursor-functions 172/0, -backend-cache 175/0, test-post-release-uninstall + test-install-claude-offline 174/0, test-install-codex + -script-flows 361/0, test-install-cursor + -sb-agents-flows 139/0, -script-merge-only + -script-public 19/0, dogfood 6/0 (test-install-claude.sh is a live skip), silver-init-merge-hooks + post-release-host-verify 28/0, codex-hook-transplant + generate-cursor-hooks-shell-dedup 51/0, cursor-hooks-paths + agent-live-preflights 138/0, post-release-host-verify-flow 73/0. Mutation checks in a sandbox copy (/tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H2-probe/mut): 11 Python and 4 shell inverse changes each made the relevant tests fail.",
+    "coverage": "Scoped run (one, --jobs 2) over the 20 changed application files with 22 test files (test-python-unit.sh, all test-install-claude/codex/cursor*, test-post-release-uninstall, test-prune-stale-claude-user-hooks, test-silver-init-merge-hooks, test-generate-cursor-hooks-shell-dedup, test-post-release-host-verify, test-codex-hook-transplant): 3162 passed, 0 failed. Python 7 files 1237/1237 statements, 564/564 branches (100%). Bash 13 files: lines 1408/1408, functions 118/118, statements 1891/1892: scripts/lib/post-release-uninstall.sh 69/70 (98.57%), missing line 113 (return). Every other changed file 100%. known-limits.json untouched, no known-limit errors.",
+    "lint": "bash scripts/lint-shell.sh --all --jobs 2: application and test Bash clean.",
+    "invariants": "check-repo-invariants.sh rc=0; generate-hook-reference.py --check OK; generate-apo-artifacts.py --check rc=0; validate-plugin-mirror.sh OK; hooks/cursor-hooks.json == plugins/silver-bullet/cursor-hooks.json and regeneration produced no diff (note: I ran 'python3 scripts/generate-cursor-hooks.py --check', which has no --check flag and rewrote both files in the worktree; git status stayed clean, so the content was identical). No skills/ or template changes; known-limits.json untouched and valid; commit trailers exact on all 11 commits, no model names elsewhere. Overlaps with siblings: fix/H3-release-ci makes the identical .codex/hooks.json change (also README, RUNTIME-COMPATIBILITY); fix/H5-packaging-doctor touches install-cursor.sh, backend-cache.sh, test-install-codex-libs.sh and host-install-guides/claude.md (H5-owned, also edited here)."
+  }
+}

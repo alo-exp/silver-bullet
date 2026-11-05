@@ -1,0 +1,202 @@
+{
+ "package": "H5-packaging-doctor",
+ "head_reviewed": "03a559e90bef8b846775b79ee010a92bc4ac1358",
+ "verdict": "CHANGES_REQUIRED",
+ "per_finding": [
+  {
+   "id": "R8-01",
+   "verdict": "fixed",
+   "notes": "Probe in a clone: `bash scripts/sync-runtime-mirrors.sh` on the committed symlink layout -> rc=0 'Runtime mirrors linked (2 links)', tree unchanged. Seeded hooks/ as a real copy + scripts link removed -> --check rc=1 'DRIFT: plugins/silver-bullet/scripts is missing' / 'hooks is a directory, not a link'; regenerate restores both links; scripts -> ../../hooks -> 'DRIFT: ... (expected ../../scripts)'. Bad arg -> rc=2. Test test-sync-runtime-mirrors.sh now uses the committed symlink layout."
+  },
+  {
+   "id": "R8-02",
+   "verdict": "fixed",
+   "notes": "plugins/silver-bullet/cursor-skill-source/sb-init/SILVER_SOURCE now uses $HOME/.cursor/.silver-bullet/session-init and $HOME/.cursor/plugins/installed_plugins.json (0 'Codex' mentions); command stubs read cursor-skill-source/<stem>/SILVER_SOURCE and carry no 'SB: Sb' titles; package templates are host-neutral (${SB_RUNTIME_HOME_ROOT}, ~/.cursor/mcp.json for the cursor hint); the Codex installer now sanitizes its cache copy (test-install-codex-libs 139/139). Remaining .codex strings in cursor-skill-source come from skills/silver-deep-research sources (H8a scope). Note: done via undeclared edits to H2-owned installer files (see issues)."
+  },
+  {
+   "id": "R8-03",
+   "verdict": "fixed",
+   "notes": "validate-plugin-mirror.sh now regenerates in a scratch copy and diffs both ways. Seeded in a clone, each detected with rc=1 and the path named: reference edit (4 surfaces), deleted skill (5 surfaces), stray host-bundles/codex/sb-stale, stray agents/claude/sb:stale, extra skill-source / cursor-skill-source files, template edit and template-mirror edit, hand-edited composer stub, hooks.json change (both cursor-hooks.json), hooks link replaced by a copy, scripts wrong link, stray package top-level entry, codex manifest / package.json version, CRLF file, colon paths. Gaps (minor issues below): an orphan stub for a deleted composer and committed symlinks inside generated trees pass."
+  },
+  {
+   "id": "R8-04",
+   "verdict": "fixed",
+   "notes": "Clone placed under .../hooks/repo2 with HOME=.../hooks/home, `bash scripts/sync-codex-package.sh` -> 0 changed files. Direct render probe: CRLF kept byte-for-byte for claude/codex/cursor (title line gets \\r\\n too), `aliases: [\"sb:x\"]` stays a YAML list in Codex, code files (.sh) left verbatim. Mutations in a copy (path.parts instead of rel_parts; dropping the '['/'{' quoting guard; read_text instead of read_bytes) each make tests/python/test_render_agent_bundle.py fail (2/1/2 failures)."
+  },
+  {
+   "id": "R8-05",
+   "verdict": "fixed",
+   "notes": "Original probes re-run in a clone: (a) $HOME/${HOME}/\"$HOME\" forms in hooks/lib/probe-foreign.sh flagged; (b) .toml in templates and .js in skills flagged; (c) skills/x/scripts/agent-helper.sh flagged; (d) `# validate-host` comment marker no longer exempts. Residual: a marker in the code part (`rm -rf \"$HOME/.codex/plugins\"; : validate-host`) still exempts the line (minor issue), and 17 whole files are allowlisted for the $HOME form (documented trade-off)."
+  },
+  {
+   "id": "R8-06",
+   "verdict": "fixed",
+   "notes": "Duplicate codex routes counted by entries and codex dirs must be sb-<route> (test-validate-host-skill-surface 11/11); validate-host-install-surface runs sub-validators via bash when -f and fails when missing (10/10, args 49/49). sb-doctor D14/D16/D17 still gate on -x (named in the finding's description) -> minor issue."
+  },
+  {
+   "id": "R8-09",
+   "verdict": "fixed",
+   "notes": "Real-hook probe (clone as plugin root, sandbox HOME with state/branch/quality-gate-state/release-live-matrix/e2e-live-matrix/verify-tests-state, projects proj/other, stub reconciler): `cd proj && sb-doctor.sh other` -> D11 PASS x3, state dir, proj and other byte-identical (sha256 snapshots), no orchestrator-directive.json, no sb-doctor-smoke.* left in TMPDIR. Repeated with SILVER_BULLET_PROJECT_ROOT / SB_PROJECT_ROOT_CACHE_FILE / SB_RUNTIME_EXTRA_STATE_ROOTS set -> still unchanged. Reverting run_hook_smoke in a copy fails 6 assertions of test-sb-doctor-host-checks.sh. (The 'user runtime state untouched' assertion itself is vacuous with stub hooks; see issues.)"
+  },
+  {
+   "id": "R8-10",
+   "verdict": "fixed",
+   "notes": "Stub cursor-agent logging argv/env: argv has no --api-key and no key text (grep count 0), CURSOR_API_KEY present in env; with only an `agent` binary on PATH -> 'cursor-agent CLI not found ... set CURSOR_AGENT_BIN', agent never ran. Re-adding --api-key in a copy fails 3 assertions of test-pre-release-cursor-cli-smoke.sh."
+  },
+  {
+   "id": "R8-11",
+   "verdict": "fixed",
+   "notes": "Standalone cursor smoke with TMPDIR=probe/tmp leaves the TMPDIR empty; SB_PRE_RELEASE_SMOKE_ROOT=<dir with precious.txt> -> run passes, precious.txt intact, cursor/ subdir left (caller-owned root never removed); key file in an operator root is read. Unpinned helpers in $(...) now fail instead of minting roots (tests)."
+  },
+  {
+   "id": "R8-12",
+   "verdict": "fixed",
+   "notes": "assert_invoke_route moved after sb_smoke_begin_*; begin_* and tri-host smoke clear KAY_HOME/CLAUDE_CONFIG_DIR/CODEX_HOME/CURSOR_CONFIG_DIR/SB state vars/XDG; release-live-matrix-cursor-smoke pins its state dir inside the fake HOME and writes the marker only on explicit opt-in. Tests green under claude and codex. Marker default change does not break documented release flow: docs/RELEASE.md / run-release-live-matrix.sh never call this script for the marker, host-smoke-cell forces WRITE_CURSOR_MARKER=0 in ci-smoke/pre-release, CI already sets it to 0, pre-release-quality-gate.md says 'when enabled'."
+  },
+  {
+   "id": "R8-17",
+   "verdict": "fixed",
+   "notes": "Probe: npm layout bin/codex -> @openai/codex/bin/codex.js resolves to vendor/<triple>/codex/codex; codex -> codex-aarch64-apple-darwin accepted via `--version`; a symlink named codex to a non-Codex binary rejected (rc=1)."
+  },
+  {
+   "id": "R8-20",
+   "verdict": "fixed",
+   "notes": "sb/sb-<x> stems map to routes; enumerate fails on zero commands (test-cursor-picker-scripts-args 48/48)."
+  },
+  {
+   "id": "R8-21",
+   "verdict": "fixed",
+   "notes": "Probe: opted-in project -> graphify/agentmemory checks run; opted-out project (run from a subdir, walks up) -> 'consent: disabled', 0 failed; argument overrides cwd. Residual: the walk-up crosses .git boundaries (minor issue)."
+  },
+  {
+   "id": "R8-22",
+   "verdict": "fixed",
+   "notes": "render cleanup catches BaseException (test_interrupt_also_cleans_staging); .*.staging-*/ ignored; lock records PID and is broken when the PID is gone (test-sync-codex-package-paths 57/57)."
+  },
+  {
+   "id": "R8-23",
+   "verdict": "fixed",
+   "notes": "Probe: {0.53.0, 0.54.0-rc1, test, dev, v0.9.0, 0.53.0-rc.10, 0.53.0-rc.9, current, 1.0.0+build(orphan)} -> 0.54.0-rc1 (correct semver); without 0.53.0/0.54.0-rc1 -> 0.53.0-rc.10 (numeric pre-release ordering); test/dev/current never chosen."
+  },
+  {
+   "id": "R8-24",
+   "verdict": "fixed",
+   "notes": "D7 now checks the project's silver-bullet.md sections against the plugin template; D2/D6 use only the plugin template; D4 honours CLAUDE_CONFIG_DIR/CODEX_HOME; readlink -f/timeout replaced. Residual: D13 still reads ${SB_RUNTIME_HOME_ROOT}/settings.json and config.toml (minor issue). Note the separate D17 regression (blocker)."
+  },
+  {
+   "id": "R8-25",
+   "verdict": "ok",
+   "notes": "partial is consistent with DECISIONS.md (remove SB_DOCTOR_ASSUME_YES once the H4a per-user consent record exists): refusal no longer names the override, host/all scopes always ask, override referenced nowhere outside sb-doctor.sh:370. Follow-up required when H4a lands."
+  },
+  {
+   "id": "R8-27",
+   "verdict": "fixed",
+   "notes": "claude.md artifact path corrected; OK printed only when the pin succeeds; dead opencode surface probe removed (test-agent-live-preflights 138/138)."
+  },
+  {
+   "id": "R8-28",
+   "verdict": "fixed",
+   "notes": "Resolver returns the newest vX.Y.Z older than package.json (N-1), ignores rc/test tags, rc package versions rank below their release (tests cover each case)."
+  },
+  {
+   "id": "R8-29",
+   "verdict": "fixed",
+   "notes": "Operator state dir resolved before isolation; marker copied there on success; doc updated (test-run-pre-release-host-smoke-exec 69/69 claude+codex)."
+  },
+  {
+   "id": "R10b-04",
+   "verdict": "ok",
+   "notes": "needs-user was the right call at the time; the user has since approved the rename (DECISIONS.md) -> follow-up work. validate-plugin-mirror.sh now hard-codes the colon exception at depth 2 and cites docs/ARCHITECTURE.md, which does not document it (docs issue). The follow-up must remove that exception. All 344 Windows-unsafe tracked paths are inside the two excepted trees."
+  },
+  {
+   "id": "R10b-19",
+   "verdict": "fixed",
+   "notes": "generate-plugin-commands.sh output is final, --check works ('Command stubs fresh'), folded descriptions read, validate-plugin-mirror regenerates stubs (hand edit of sb-feature.md detected). Residual: stubs for removed composers are never pruned or flagged (minor issue). sb-orient's stale description is R10-23 (H7)."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "blocker",
+   "location": "scripts/sb-doctor.sh:117,236 (introduced in ae93606)",
+   "problem": "The host-agnostic core validator fails on the package head. sb-doctor.sh gained `sb_runtime_codex_home() { printf '%s' \"${CODEX_HOME:-${HOME}/.codex}\"; }` and an `env -u KAY_HOME -u CLAUDE_CONFIG_DIR -u CODEX_HOME -u CURSOR_CONFIG_DIR ...` line, both hits for the [scripts]-tier CODEX_HOME / CURSOR_ patterns. Consequences: (1) tests/scripts/test-validate-host-agnostic-core.sh 'live repo passes validate-host-agnostic-core' fails, so CI (full suite) goes red; (2) every user's /sb:doctor prints 'FAIL: D17 \u2014 host-specific bleed in SB core' and OVERALL: FAIL, since D17 validates the plugin's own REPO_ROOT; (3) run-pre-release-host-smoke.sh's mandatory structural stage and host-smoke-cell structural-only fail, so release step 4 cannot pass. The author's report claims every touched test is green and 17/17 for this file; that was true at 83d7bf3 only.",
+   "evidence": "cd <worktree> && bash scripts/validate-host-agnostic-core.sh -> '[scripts] scripts/sb-doctor.sh:117: CODEX_HOME ... [scripts] scripts/sb-doctor.sh:236: CODEX_HOME ... [scripts] scripts/sb-doctor.sh:236: CURSOR_ ... validate-host-agnostic-core: FAIL (3 violations)'. bash tests/run-all-tests.sh tests/scripts/test-validate-host-agnostic-core.sh -> '16 passed, 1 failed ... FAIL: live repo passes validate-host-agnostic-core'. Restoring sb-doctor.sh from 308baa6 in a clone -> 'OK \u2014 core is host-agent agnostic'. Real sb-doctor probe output: 'FAIL: D17 \u2014 host-specific bleed in SB core \u2014 run: bash scripts/validate-host-agnostic-core.sh'. git blame: both lines from ae93606.",
+   "suggested_fix": "Keep the host-specific variable names out of sb-doctor.sh: reuse a shared scrub helper from a library the validator already treats as host tooling (e.g. move the unset list into scripts/lib/pre-release-host-isolation.sh's sb_smoke_clear_host_env or a new scripts/lib helper, and call it inside the smoke subshell), and drop the local sb_runtime_codex_home fallback (use runtime-paths.sh's helper, which already honours CODEX_HOME/KAY_HOME) \u2014 or, if the names must stay, add a narrow, commented allowlist entry for sb-doctor.sh in validate-host-agnostic-core.sh. Re-run test-validate-host-agnostic-core.sh and a real sb-doctor D17."
+  },
+  {
+   "severity": "major",
+   "location": "scripts/lib/codex-cli.sh:20; scripts/generate-plugin-commands.sh:164",
+   "problem": "Two lines added by this package are never executed by any test, so the CI coverage gate (run-coverage.sh --fail-under 100) fails for both files: the `|| return 1` in _sb_codex_npm_native (a .js realpath that is not under @openai/codex) and the `|| true` of the --check copy (no committed commands dir). The report says the other changed scripts were 100%.",
+   "evidence": "Scoped run: bash tests/coverage/run-coverage.sh --cov-dir <probe>/cov --jobs 2 --show-missing --only <27 changed files> <41 test files incl. test-codex-cli-resolve.sh and test-generate-plugin-commands.sh> -> 'scripts/lib/codex-cli.sh 82/83 ... 98.80% missing: 20(return)' and 'scripts/generate-plugin-commands.sh 41/42 ... 97.62% missing: 164(true)'. No other default test sources codex-cli.sh with a .js candidate (grep of test-agent-host-exec-lib.sh, test-agent-codex-skill.sh, k-agents-live-2-helpers.sh) or runs generate-plugin-commands.sh --check without a commands dir.",
+   "suggested_fix": "Add test cases: a PATH codex symlinked to some other-package/bin/x.js that does not report a Codex version (rejected), and `generate-plugin-commands.sh --check` in a tree with no plugins/silver-bullet/commands (reports the missing stubs as drift); re-run the scoped coverage to 100%."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/install-cursor.sh, scripts/lib/install-codex/cache.sh, scripts/lib/install-cursor/backend-cache.sh, tests/scripts/test-install-codex-libs.sh, tests/hooks/test-orchestrator-worker-templates.sh, .gitignore",
+   "problem": "Out-of-ownership edits not listed in files_changed_outside_ownership. The first four are H2 (installers) files and change installer behaviour (Codex cache copies are now sanitized; the checkout package is never sanitized; Cursor installs copy cursor-skill-source); .gitignore is H3-owned. The changes are justified by R8-02/R8-22 and small, but the orchestrator was not told.",
+   "evidence": "git diff --stat 02eff38..HEAD lists them; fix report's files_changed_outside_ownership omits them. git merge-tree --write-tree fix/H5-packaging-doctor fix/H3-release-ci -> 'CONFLICT (content): Merge conflict in .gitignore'; merge with fix/H2-installers is clean. Installer suites pass on this head (test-install-codex 309, install-codex-libs 139, install-cursor* 389 assertions, 0 failed).",
+   "suggested_fix": "List these files in the report with the reason; resolve the trivial .gitignore conflict with H3 at merge (keep both entries)."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/generate-plugin-commands.sh (non-composer stub retention loop) / scripts/validate-plugin-mirror.sh",
+   "problem": "A command stub for a composer that is removed (skill deleted or dropped from COMPOSERS) is kept forever: the generator only WARNs 'missing', keeps any stub that has frontmatter, and the mirror validator passes. Cursor then shows a /sb-<x> command whose body points to cursor-skill-source/sb-<x>/SILVER_SOURCE, which no longer exists. Same for a hand-added orphan stub.",
+   "evidence": "Clone: git rm -r skills/silver-fast; bash scripts/sync-codex-package.sh (prints 'WARN: missing .../skills/silver-fast/SKILL.md'); plugins/silver-bullet/commands/sb-fast.md still present, plugins/silver-bullet/cursor-skill-source/sb-fast absent; bash scripts/validate-plugin-mirror.sh -> 'Plugin mirror OK'; generate-plugin-commands.sh --check -> 'Command stubs fresh'. Seeded commands/sb-bogus.md -> 'Plugin mirror OK'.",
+   "suggested_fix": "Keep an explicit list of hand-written stubs (sb-doctor.md) and delete or flag any other stub that is not generated from a present composer; make a missing composer skill an error in --check / validate-plugin-mirror."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/validate-plugin-mirror.sh list_files (find -type f); tests/scripts/test-render-agent-bundle-freshness.sh list_files",
+   "problem": "Only regular files are compared, so a committed symlink inside agents/claude, host-bundles/* or the hidden source trees (which ship in the plugin payload) is never reported as drift.",
+   "evidence": "Clone: ln -s /etc/hostname 'agents/claude/sb:init/evil'; bash scripts/validate-plugin-mirror.sh -> 'Plugin mirror OK' (rc=0).",
+   "suggested_fix": "List with `find . ! -type d` (or -type f -o -type l) and compare symlink targets with readlink; fail on any symlink in a generated tree that the fresh render does not produce."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/validate-plugin-mirror.sh:11-12; docs/ARCHITECTURE.md:12,27,86; AGENTS.md:50; CONTRIBUTING.md:76,113; scripts/README.md:56,59,60; skills/silver-doctor/SKILL.md:31-34,111",
+   "problem": "Docs drift: the validator says the colon route-directory exception is documented in docs/ARCHITECTURE.md (it is not); ARCHITECTURE/AGENTS/CONTRIBUTING/scripts README still say the Cursor plugin reads skill-source/, omit cursor-skill-source/, say sync-templates/codex-sanitize expand placeholders in the package and that sync-runtime-mirrors copies scripts/hooks; the doctor skill still calls D7 a 'template parity test' and lists --fix=host/--fix=all for the agent without saying the user must run or confirm them (they are now refused without a TTY).",
+   "evidence": "grep -n 'colon\\|Windows' docs/ARCHITECTURE.md -> nothing; grep -rn 'skill-source' docs/ARCHITECTURE.md AGENTS.md CONTRIBUTING.md scripts/README.md (lines cited); sed -n 59,60p scripts/README.md.",
+   "suggested_fix": "Update those lines (or coordinate with the docs owner) and document the colon exception, pending the approved R10b-04 rename."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/validate-host-agnostic-core.sh check_installer_cross_contamination (skip_line_markers)",
+   "problem": "R8-05 part 4 is only closed for comments: a skip marker anywhere in the code part of a line still exempts it, so the same bypass works as a no-op argument or string.",
+   "evidence": "Clone: append `rm -rf \"$HOME/.codex/plugins\"; : validate-host` to scripts/install-claude.sh -> no [installer-cross] violation (count unchanged at baseline 3); the same line with `# validate-host` is now flagged.",
+   "suggested_fix": "Replace substring markers with an exact per-line annotation or a path:line allowlist, as the finding proposed."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/sb-doctor.sh:837-880 (D14/D16/D17)",
+   "problem": "R8-06 remainder: the doctor still runs the surface/agnostic validators only when they are executable; a checkout or archive without exec bits reports 'WARN: ... not found; skipped' for a file that exists.",
+   "evidence": "Static: `if [[ -x \"$agnostic_script\" ]] && bash ...; elif [[ -x ...]]; else record warn D17 \"validate-host-agnostic-core.sh not found; skipped\"` (same pattern D14/D16), unchanged by the package.",
+   "suggested_fix": "Test -f and run through bash, as done in validate-host-install-surface.sh."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/sb-diagnostics.sh:12-19",
+   "problem": "Project-root resolution walks up to any ancestor with .silver-bullet.json and crosses .git boundaries, unlike the hooks (sb-project-gate stops at .git and needs silver-bullet.md too). A new repo nested inside an opted-in SB project is diagnosed as the parent project.",
+   "evidence": "Probe: git init on/vendor/newrepo inside an opted-in project 'on'; run sb-diagnostics.sh from newrepo -> 'PASS: graphify-cli \u2014 CLI available (opted in)', 'FAIL: graphify-index \u2014 index missing', Results 6 passed, 5 failed.",
+   "suggested_fix": "Reuse the hooks' walk (stop at a .git directory, require .silver-bullet.json + silver-bullet.md) or source sb-project-gate.sh's helper."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/sb-doctor.sh:790-834 (D13)",
+   "problem": "D4 now honours CLAUDE_CONFIG_DIR and CODEX_HOME, but D13 still greps ${SB_RUNTIME_HOME_ROOT}/settings.json and ${SB_RUNTIME_HOME_ROOT}/config.toml, so with a redirect the two checks read different files.",
+   "evidence": "Static: D4 uses claude_settings=${CLAUDE_CONFIG_DIR:-${SB_RUNTIME_HOME_ROOT}}/settings.json and $(sb_runtime_codex_home)/config.toml; D13 uses hooks_manifest_path=${SB_RUNTIME_HOME_ROOT}/settings.json / config.toml.",
+   "suggested_fix": "Compute the host config paths once and use them in D4 and D13."
+  },
+  {
+   "severity": "minor",
+   "location": "tests/scripts/test-sb-doctor-host-checks.sh:38-49",
+   "problem": "'user runtime state untouched by the doctor' and 'no orchestrator directive written' run against stub hooks that never write state, so they pass even with the old non-sandboxed smoke; no test runs the real session-start/outcomes-check through the doctor. The report's 'real hooks leave seeded ... intact' evidence is a manual run.",
+   "evidence": "Reverting run_hook_smoke to the 02eff38 version in a copy: the HOME/cwd/source assertions fail (6), but both state assertions still pass.",
+   "suggested_fix": "Add one case that stages the real hooks (or a stub that deletes quality-gate-state and writes orchestrator-directive.json under $SB_RUNTIME_STATE_DIR/$HOME) so the state assertions fail without the sandbox."
+  }
+ ],
+ "validation": {
+  "tests": "Ran from the worktree via tests/run-all-tests.sh --jobs 2: batch 1 (43 files: mirrors, validators, doctor, diagnostics, smokes, cli libs, generators, installers' codex libs, template mirrors) 3694 passed 0 failed under claude; batch 2 (20 files: install-codex/cursor/claude suites, marketplace sync, post-release verify, RC matrix, completion-audit-release) 1328 passed 0 failed; codex runtime (9 key files) 588 passed 0 failed; tests/python test_render_agent_bundle 81 OK. FAIL: tests/scripts/test-validate-host-agnostic-core.sh 16 passed, 1 failed ('live repo passes validate-host-agnostic-core').",
+  "coverage": "One scoped run (27 changed files, 41 test files, --jobs 2): 5494 passed, 1 failed (the agnostic-core live-repo assertion). 100% for sb-doctor.sh, sb-diagnostics.sh, pre-release-host-isolation.sh, sync-runtime-mirrors.sh, validate-plugin-mirror.sh, sync-codex-package.sh, sync-templates.sh, render-agent-bundle.py (347/347 stmts, 158/158 branches), plugin-cache-version.sh, install-codex/cache.sh, backend-cache.sh, the smokes, validators, preflights and picker scripts. NOT 100%: scripts/lib/codex-cli.sh 98.80% (line 20, new) and scripts/generate-plugin-commands.sh 97.62% (line 164, new) -> major issue. sync-cursor-package.sh 85.29% and install-cursor.sh 96.38% misses are unchanged lines covered by suites outside this scoped run (test-sync-cursor-package.sh, other install-cursor flows); the package's changed lines in them are covered. known-limits.json untouched and valid.",
+  "lint": "bash scripts/lint-shell.sh --all --jobs 2 -> application Bash clean (354 files), test Bash clean (725 files).",
+  "invariants": "check-repo-invariants.sh rc=0 (9 PASS); validate-plugin-mirror.sh OK (and real drift detection proven by ~25 seeded cases); sync-runtime-mirrors --check fresh; generate-hook-reference --check up to date; generate-apo-artifacts --check rc=0; generate-plugin-commands --check fresh; sync-codex-package.sh in a fresh clone (also under a 'hooks' ancestor and other HOME) produces no diff; docs/workflows == templates/workflows; known-limits.json valid and untouched; commit trailers exact on all 7 commits, no model names. BUT validate-host-agnostic-core.sh FAILS (3 violations, blocker)."
+ }
+}

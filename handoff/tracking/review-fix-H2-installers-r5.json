@@ -1,0 +1,47 @@
+{
+ "package": "H2-installers",
+ "head_reviewed": "96a0ea6",
+ "verdict": "APPROVE",
+ "per_finding": [
+  {
+   "id": "r4-major-1 (Cursor case-insensitive quarantine)",
+   "verdict": "ok",
+   "notes": "Accepted as moot by user decision: Cursor support is removed by another package."
+  },
+  {
+   "id": "r4-minor-1 (Cursor committed())",
+   "verdict": "ok",
+   "notes": "Accepted as moot: Cursor support removed."
+  },
+  {
+   "id": "r4-minor-2 (post-release uninstall run start)",
+   "verdict": "fixed",
+   "notes": "post-release-uninstall.sh:85 exports SB_INSTALL_RUN_START=${SB_INSTALL_RUN_START:-$(date +%s)} before both writers. Probe /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H2-r5-probe/fixture.sh with a python3 shim that sleeps 3 s on every call plus a stale 2020 .sb-backup: fixed lib -> backup==original, 0 SB tables left; inverse copy (export removed, /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H2-r5-probe/inv) -> backup is the intermediate repaired file. Nested: two calls in one shell 3 s apart keep the same start, backup==original. Pre-set empty -> date used, backup==original. Pre-set start 1 s earlier (parent run) -> backup==original. Inverse in a clone makes the new test fail (75/1)."
+  },
+  {
+   "id": "r4-minor-3 (scaffold-steps wording)",
+   "verdict": "fixed",
+   "notes": "Line 318 now says 'Could not clean up stale Silver Bullet hook entries ... Do not add hooks by hand'. The text is in the source and all 4 mirrors, cursor-skill-source included via 96a0ea6. It is accurate, because the section states /sb:init always sees a registered plugin. git grep finds the old phrases only in .planning/archive. The test pins both stale phrases on the source and requires the new sentence in source+3 mirrors; 57/0."
+  },
+  {
+   "id": "r4-minor-4 (merge trailers)",
+   "verdict": "fixed",
+   "notes": "5c8a3bf, merge cc0fe89 and 96a0ea6 each end with 'Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>' + the Claude-Session line (Sonnet accepted by FIX-BRIEF). No other model names in these three commits; the 'gemini' hit in the range is from an upstream mainline commit. The merge is clean: git show --remerge-diff cc0fe89 is empty."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "minor",
+   "location": "scripts/lib/post-release-uninstall.sh:85 / scripts/lib/sb_host_config.py:83",
+   "problem": "A pre-set SB_INSTALL_RUN_START is trusted unvalidated. A stale value keeps a backup from an earlier run, and the pre-run original is never saved. A non-numeric or future value falls back to per-process start or always refreshes, so the backup becomes the intermediate file, which is the r4 symptom. The installers share the same pattern, so this is not a regression of this delta. Separately, because the lib is sourced, the export persists in post-release-host-verify.sh after the codex uninstall, and the later install-codex.sh, the RC smoke and the claude host inherit it. The effect is benign: the backups keep the pre-verify original.",
+   "evidence": "Probe fixture /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H2-r5-probe/fixture.sh (3 s python3 shim, 2020 .sb-backup): SB_INSTALL_RUN_START=1 -> backup still 'OLD BACKUP'; =garbage and =9999999999 -> backup is the intermediate repaired file. Leak probe I: a later write_atomic in the same shell keeps the uninstall's backup (== original).",
+   "suggested_fix": "Optional hardening in _backup_is_from_this_run: ignore a start that is non-numeric, in the future, or older than some bound (e.g. 1 day), and fall back to the process start. Not required for merge."
+  }
+ ],
+ "validation": {
+  "tests": "In a --shared clone at 96a0ea6 under /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H2-r5-probe/repo: test-post-release-uninstall.sh 76/0, test-silver-init-merge-hooks.sh 57/0, template parity 2/0, docs suite 198/0. Inverse mutation: 75/1.",
+  "coverage": "run-coverage --only scripts/lib/post-release-uninstall.sh (test-post-release-uninstall + test-post-release-host-verify): 74/74 stmts, 58/58 lines, 7/7 funcs, 100%. known-limits.json parses.",
+  "lint": "lint-shell.sh --all --jobs 2 clean (rc 0)",
+  "invariants": "check-repo-invariants rc 0; hook-reference and apo --check fresh; validate-plugin-mirror rc 0; sync-codex-package.sh leaves no diff; docs/workflows == templates/workflows. Merge: claude/optimistic-ramanujan-tccfud == 9b5db30, already an ancestor of 96a0ea6; git merge-tree --write-tree is clean (fast-forward). Worktree untouched."
+ }
+}

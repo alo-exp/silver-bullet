@@ -1,0 +1,121 @@
+{
+ "package": "G3-stop-prompt-override",
+ "head_reviewed": "ac28384",
+ "verdict": "CHANGES_REQUIRED",
+ "per_finding": [
+  {
+   "id": "r1-1 no-gsd scan",
+   "verdict": "fixed",
+   "notes": "tests/scripts/test-no-gsd-runtime.sh 4/4 pass on ac28384 (names built at run time in test-g3-skill-gates.sh)."
+  },
+  {
+   "id": "r1-2 R4-08 queue clear",
+   "verdict": "fixed",
+   "notes": "p1.sh: r1 probe (worker pipes {prompt:'add a small readme note now'} with no session_id) -> queue kept, directive kept. Also refused: SB_ORCHESTRATOR_WORKER=1, agent_id, transcript /etc/hostname, '..', symlinked file. A clear writes kind=queue-clear (with provenance) to .planning/orchestrator-override-log.jsonl before clearing. Residual (minor issue below): transcript_path is optional, so a parent-session shell forging {session_id:'forged'} with no transcript clears it (traced in the project audit log, deliberate effort -> acceptable under the threat model); a symlinked DIRECTORY under the runtime root also passes. Mutation (provenance_ok -> return 0) fails 8 test-g3-repair asserts."
+  },
+  {
+   "id": "r1-3 SB OVERRIDE in workers",
+   "verdict": "fixed",
+   "notes": "Refused with SB_ORCHESTRATOR_WORKER=1, agent_id, worker marker, /etc/hostname, '..', symlink. Weak reasons '........', 'xx yy zz ww qq', '<todo>' refused; 'aaaa bbbb cc', 'lol lol lol lol' still honoured (two 3+ letter words: acceptable, audited). Forging from tool output/subagent messages is not possible (only the UPS prompt's first line counts); forging from the agent's own shell by piping a payload into outcomes-check.sh works when session_id is supplied (no transcript needed) but leaves a hash-chained audit line. Transcript is not tamper-resistant against a shell (any file under the runtime root passes; content never read). Side effect (minor issue): honest parent overrides are refused while a fresh worker marker exists (TTL 2 h)."
+  },
+  {
+   "id": "r1-4 R2-10 branch release",
+   "verdict": "fixed",
+   "notes": "p3.sh: after git checkout -b other, Stop{stop_hook_active:true} with missing skills -> block with mismatch note + missing-skills list; with all skills -> systemMessage only. p4b.sh: SessionStart (/clear) re-stamps the branch file (feature/test -> other) and Stop then evaluates normally, so the remedy text is accurate. Mutation (old exit-0 release) fails 2 asserts."
+  },
+  {
+   "id": "r1-5 R2-36 Bash writes",
+   "verdict": "fixed",
+   "notes": "trivial-file-clear on PostToolUse Bash|exec_command marks files-written for >, tee, cp, mv, python/node open-for-write, sed -i, perl -i, dd of=, install, rsync, truncate, ln, touch, bash -c, git checkout -- src, Codex string and argv cmd; read-only ls/git status keep the trivial marker. Stop with empty state + Bash-written src now blocks. Not detected (F2 classifier write list, not G3): git apply, patch, tar x, unzip, git stash pop, make/npm run. Mutation fails 3 asserts."
+  },
+  {
+   "id": "r1-6 R2-19 deleted checklist",
+   "verdict": "fixed",
+   "notes": "p5.sh/p6.sh: rm outcomes-session-<sid>.json with sidecar -> restored pending, Stop blocks, outcomes-tamper.log line; rm checklist+sidecar with ledger present -> still blocks. rm checklist+sidecar with no ledger (single-step prompt) -> passes silently (author-acknowledged residual, minor). Mutation fails 3 asserts."
+  },
+  {
+   "id": "r1-7 G1/G2 merge conflicts",
+   "verdict": "incomplete",
+   "notes": "The duplicate forbidden/uat registrations are gone and the G2 helper is used. BUT the branch does not contain the G1/G2 tips stated: it merged G1 at 04f61b9 and G2 at 20c46f0; 90a70e9 and 191cc9d are NOT ancestors (git merge-base --is-ancestor). See issue 1."
+  },
+  {
+   "id": "r1-8 R2-22 per-session files",
+   "verdict": "fixed",
+   "notes": "p5.sh: sessions sA (work prompt) and sB (question) keep separate checklists; sA Stop blocks, sB passes; '../../evil' session id falls back to the global file. Mutation (no key) fails the per-session assert. session-start still wipes only instruction-ledger.json (hooks/session-start:300) -> G4 follow-up confirmed."
+  },
+  {
+   "id": "r1-8 R2-23 latency",
+   "verdict": "ok",
+   "notes": "Partial accepted. Measured CPU (user+sys, 5 runs, load avg ~14 on 4 CPUs): prompt-reminder base 553 ms -> head 422 ms; outcomes-check 184 -> 153 ms; whole UPS chain (4 heaviest hooks) 903 -> 760 ms CPU. Improved ~20-25%, no regression, the 200 ms comment is now honest, jq budget pinned (12 jq, budget 18; also 12 after taking H4a's recommended-tools.sh). Not a major: pre-existing, honestly documented; needs an orchestrator follow-up (bash start-up/sourcing)."
+  },
+  {
+   "id": "r1-9 minors",
+   "verdict": "fixed",
+   "notes": "Codex audit clear needs exit 0 + fresh receipt (3 asserts with teeth); 'What is going on with CI? Fix it.' -> WORK; weak override reasons tightened; UAT header-aware. Residuals in minor issues: audit-alone exemption allows `invoke-skill ... > src/a.js`; 'Q?Fix it' / 'What is going on... fix it' stay INFO; UAT table with both Status and Result columns reads only Status (FAIL in Result allowed; base blocked it)."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "major",
+   "location": "branch history (merges 463adfb, 3e2f557); hooks/ci-status-check.sh, tests/hooks/test-delivery-gates-g1.sh:134",
+   "problem": "The branch does not contain the sibling tips it is said to contain. It merged G1 at 04f61b9 and G2 at 20c46f0; G1 90a70e9/4456b67 and G2 191cc9d/4168fc9 are not ancestors. Both failures the author attributes to a 'G1+G2 interplay' are simply stale G1 code: G1's 287b4ee ('ci-status keeps legacy shell handling without the tool-input lib ... personal-data safe test paths') fixes exactly the failing test-hook-faults-gates.sh case and the personal-data invariant. As the branch stands, a claude test fails and check-repo-invariants exits 1.",
+   "evidence": "git merge-base --is-ancestor 90a70e9 HEAD -> no; 04f61b9 -> yes. test-hook-faults-gates.sh in archived trees: 90a70e9 54/0, 191cc9d 49/0, merge-tree(90a70e9,191cc9d) 49/0, 3e2f557 48/1, ac28384 48/1 ('ci: tool name extraction failing is tolerated'). git diff <G1+G2 tree> HEAD -- hooks/ci-status-check.sh shows G3 lacks G1's `*)` legacy-shell arm. check-repo-invariants: FAIL personal-data tests/hooks/test-delivery-gates-g1.sh:134 (/home/fake; G1 fixed to /home/u). Nothing in G3's own files causes either failure.",
+   "suggested_fix": "Merge the current fix/G1-delivery-gates (4456b67) and fix/G2-planning-floor (4168fc9) tips (they already include base 54f285f), resolve, rerun test-hook-faults-gates.sh, check-repo-invariants and the G3 tests. Or have the orchestrator merge G1/G2 to base first and G3 merges base."
+  },
+  {
+   "severity": "major",
+   "location": "hooks/lib/recommended-tools.sh:13-27 (merge with claude/optimistic-ramanujan-tccfud 54f285f)",
+   "problem": "G3's latency rewrite of sb_recommended_tool_consent conflicts with H4a's per-user consent API now on the base (sb_recommended_tool_project_preference + sb_consent_decision). G3's version keeps the old semantics where the committed project file's enabled_by_user:true means consent, which H4a deliberately removed. A merge taking G3's side would reintroduce project-file consent. Merge-tree with the base also conflicts in CLAUDE.md and docs/HOOKS.md.",
+   "evidence": "git merge-tree --write-tree HEAD claude/optimistic-ramanujan-tccfud -> CONFLICT CLAUDE.md, docs/HOOKS.md, hooks/lib/recommended-tools.sh (hunk: G3 single-jq cascade vs base consent API). Simulated resolution taking the base file: test-g3-repair.sh 49/0 (jq budget 12 <= 18), test-g3-prompt-gates.sh 43/0.",
+   "suggested_fix": "Merge the base now; take the base's recommended-tools.sh entirely (drop G3's hunk and any G3 test lines that cover the old cascade), regenerate HOOKS.md/CLAUDE.md count, rerun the scoped coverage for the remaining changed files."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/lib/orchestrator-directive.sh:sb_orchestrator_prompt_provenance_ok; silver-bullet.md / templates/silver-bullet.md.base SB OVERRIDE paragraph",
+   "problem": "transcript_path is optional, so the check reduces to 'a session_id is present'; the docs say the override needs 'a transcript path under the host's runtime root'. The prefix test also accepts a file reached through a symlinked directory under the root. Forgery from the agent's shell remains easy (but deliberate and audited).",
+   "evidence": "p1.sh #7: {session_id:'forged', prompt:'add a small readme note now'} piped into outcomes-check.sh -> queue CLEARED, audit {kind:'queue-clear',session_id:'forged',transcript_path:''}. #6b: ln -s /etc $ROOT/projects/y; transcript $ROOT/projects/y/hostname -> CLEARED.",
+   "suggested_fix": "Require transcript_path on hosts that always send it (Claude, Codex), resolve it with realpath (pwd -P on the dir) before the prefix test, and optionally require the basename to contain session_id. Or align the docs to 'when given'."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/lib/orchestrator-directive.sh:373 (provenance_ok uses sb_orchestrator_is_worker_session)",
+   "problem": "An honest SB OVERRIDE (and an honest new-goal queue clear) in the PARENT session is refused while orchestrator-worker-active.json is fresh (TTL 2 h): during a background Task or after an interrupted subagent whose SubagentStop never fired. The refusal text tells the model it is a worker session. Impact is limited because the same marker also suspends the parent Stop hold.",
+   "evidence": "p2.sh: marker spawned_at 30 min ago, UPS {session_id:'realparent', transcript under root, prompt:'SB OVERRIDE: the planning step is already done manually'} -> 'SB OVERRIDE was NOT honoured: this is a worker or delegate session ...', directive and queue kept.",
+   "suggested_fix": "For the override, treat only SB_ORCHESTRATOR_WORKER/agent_id as worker evidence (a UPS payload is by definition the top-level session in Claude), or say 'a worker marker is active (spawned <time>); retry after it finishes' in the refusal."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/subagent-stop-enforcement.sh:110-112 (sb_subagent_audit_command_alone)",
+   "problem": "The PreToolUse exemption checks only that there is one command, so a redirection on the audit invocation itself writes while the audit is pending.",
+   "evidence": "p7.sh: '/x/silver-bullet invoke-skill sb:completion-audit > src/a.js' -> commands=1, write_paths=[.../src/a.js] (exempt).",
+   "suggested_fix": "Also require SB_SA_WRITE_PATHS to be empty for the exemption."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/uat-gate.sh:87-115",
+   "problem": "With a header naming both Status and Result, only the first (Status) column is read, so a FAIL in Result passes; base blocked this. Headerless rows with an 'expected pass' cell plus a fail cell are still skipped as legends.",
+   "evidence": "p9.sh: '| ID | Status | Result |' / '| A | done | FAIL |' -> ALLOW; '| AC-1 | login | pass | fail |' -> ALLOW.",
+   "suggested_fix": "Prefer the Result column when both exist (or evaluate every Result/Status column), and add the test."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/lib/prompt-classifier.sh:38-42",
+   "problem": "Sentence splitting needs whitespace after the terminator and ignores ellipses.",
+   "evidence": "p8.sh: 'What is going on with CI?Fix it.' -> INFO; 'What is going on... fix it' -> INFO.",
+   "suggested_fix": "Split on [.?!]+ followed by optional space."
+  },
+  {
+   "severity": "minor",
+   "location": "hooks/lib/outcomes-gate.sh:sb_outcomes_restore_deleted; hooks/session-start:300 (G4)",
+   "problem": "Deleting checklist + sidecar when no ledger exists passes Stop silently (no trace); the instruction ledger itself has no seal (rm ledger -> ledger gate passes). session-start's scope-change wipe still removes only instruction-ledger.json, so per-session instruction-ledger-<id>.json and outcomes-session-<id>.json survive a branch change (G4 follow-up: glob).",
+   "evidence": "p5.sh: rm outcomes-session-sA.json* (no ledger) -> Stop output empty; p6.sh: rm instruction-ledger-sA.json -> ledger gate passes.",
+   "suggested_fix": "Record the seed in a hook-written per-session marker (e.g. the ups-coalesce file) and treat its presence with a missing checklist as tamper; G4: rm instruction-ledger*.json outcomes-session*.json on scope change."
+  }
+ ],
+ "validation": {
+  "tests": "test-no-gsd-runtime.sh 4/0, test-g3-repair.sh 49/0 (worktree, run-all-tests). test-hook-faults-gates.sh (claude) 48/1: stale G1 code, see issue 1. Mutations in a sandbox copy (REVF-G3-r2-probe/mut): provenance->ok (8 fails), old branch release (2), shell writes ignored (3), no delete restore (3), audit always succeeded (3), no session key (1), clear without audit log (2): the tests have teeth. Simulated base merge (recommended-tools from base): test-g3-repair 49/0, test-g3-prompt-gates 43/0.",
+  "coverage": "One scoped run (--only over 25 G3-changed files, 139 covering test files, --jobs 2, ~75 min): Bash statements 4182/4182, lines 2886/2886, functions 175/175, every file 100.00%. Run exit 1 only from 3 test failures (9918 passed): test-hook-faults-gates 'ci: tool name extraction failing is tolerated' and test-check-repo-invariants personal-data x2, all from the stale G1 snapshot (issue 1). Author's 26-file/4201 count differs slightly (my list is the diff vs merge-tree(04f61b9,20c46f0)).",
+  "lint": "scripts/lint-shell.sh --all --jobs 2: exit 0 (application and test Bash clean).",
+  "invariants": "check-repo-invariants exit 1: only FAIL personal-data tests/hooks/test-delivery-gates-g1.sh:134 (G1's file, fixed in G1 287b4ee which G3 has not merged). generate-hook-reference --check OK, generate-apo-artifacts --check OK, validate-plugin-mirror OK, generate-cursor-hooks no diff, template parity 2/0, docs/workflows == templates/workflows, core-rules.md unchanged. hooks.json 98 commands; same-event duplicates: orchestrator-directive-guard on Edit|Write|MultiEdit|apply_patch AND the broad Edit|...|Bash group (pre-existing R9-31, G5 removes it), trivial-file-clear on Write|Edit group and the new Bash|exec_command group (disjoint matchers, fine). Trailers: all 6 new commits Co-Authored-By Claude Sonnet 5.5 + Claude-Session, no other model names. merge-tree: base 54f285f -> CONFLICT CLAUDE.md, docs/HOOKS.md, hooks/lib/recommended-tools.sh (issue 2); G5 dc0ee05 -> CLAUDE.md, HOOKS.md, ORCHESTRATOR.md, hooks.json (phase-lock-claim entry), orchestrator-state.sh (G3 doc comment vs G5's sb_orchestrator_stop_block_released + comment: keep both; the merged clear_queue_on_interrupt body and the 3-arg call in outcomes-check.sh are G3's), orchestrator-directive-guard.sh (comment only), test-orchestrator-directive-guard-hook.sh. G5's advice is correct: keep both functions, take G3's matcher layout, drop directive-guard and delegation-guard from the Edit|Write|MultiEdit|apply_patch group (do not re-add the duplicate), keep phase-lock-claim; expected 99 after all merges. G1 4456b67 -> CLAUDE.md, HOOKS.md, recommended-tools.sh, test-session-scenarios.sh; G2 4168fc9 -> CLAUDE.md, HOOKS.md, recommended-tools.sh."
+ }
+}

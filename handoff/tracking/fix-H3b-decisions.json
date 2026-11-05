@@ -1,0 +1,233 @@
+{
+ "package": "H3b-decisions",
+ "branch": "fix/H3b-decisions",
+ "head": "01c0af5",
+ "worktree": "/home/user/silver-bullet/.claude/worktrees/agent-a60e1e510101fb888",
+ "dispositions": [
+  {
+   "id": "R13-02/R7-30",
+   "status": "fixed",
+   "commits": [
+    "6f13e83"
+   ],
+   "tests": [
+    "test-release-version-alignment.sh: 4 red -> 22/0",
+    "sync path tests"
+   ],
+   "evidence": "Claude and Cursor entries pin ref v<version>, sha once tagged; publish writes both",
+   "notes": "In-repo sha omitted until the tag exists."
+  },
+  {
+   "id": "R13-26",
+   "status": "fixed",
+   "commits": [
+    "b2acfad"
+   ],
+   "tests": [
+    "test-install-cursor.sh 69/0"
+   ],
+   "evidence": ".cursorindexingignore holds skills/ and templates/workflows/",
+   "notes": ""
+  },
+  {
+   "id": "R13-11",
+   "status": "fixed",
+   "commits": [
+    "051c8aa"
+   ],
+   "tests": [
+    "test-no-personal-machine-paths.sh",
+    "test_repo_invariants.py PersonalDataTest",
+    "test-check-repo-invariants.sh personal-data"
+   ],
+   "evidence": "tree scrubbed; personal-data invariant added",
+   "notes": "History not rewritten (user decision)."
+  },
+  {
+   "id": "R13-13",
+   "status": "partial",
+   "commits": [
+    "051c8aa"
+   ],
+   "tests": [
+    "test-plugin-payload.sh 32/0"
+   ],
+   "evidence": ".gitattributes export-ignore plus scripts/build-plugin-payload.sh",
+   "notes": "needs-user: hosts clone, so marketplace installs still fetch the full tree. Question: publish the payload as a release asset or payload-only tag, or move the Claude plugin root to a subdirectory with a git-subdir source? Recommendation: payload-only release tag built by build-plugin-payload.sh."
+  },
+  {
+   "id": "graphify-lock",
+   "status": "fixed",
+   "commits": [
+    "051c8aa"
+   ],
+   "tests": [
+    "test_repo_invariants.py",
+    "test-check-repo-invariants.sh"
+   ],
+   "evidence": "skills-lock.json toolManaged; refresh command documented",
+   "notes": ""
+  },
+  {
+   "id": "actions-pin-list",
+   "status": "needs-user",
+   "commits": [
+    "8667a48"
+   ],
+   "tests": [],
+   "evidence": "docs/RELEASE.md table",
+   "notes": "Maintainer pins SHAs."
+  },
+  {
+   "id": "H3-r3-minors",
+   "status": "fixed",
+   "commits": [
+    "051c8aa"
+   ],
+   "tests": [
+    "CR/BOM/union worm tests",
+    "workflow honest-script and flow-job tests",
+    "hook-references chained forms",
+    "trap leak"
+   ],
+   "evidence": "all 6 addressed",
+   "notes": ""
+  }
+ ],
+ "files_changed_outside_ownership": [
+  "many tracked files under .planning/, research/, docs/, .agentmemory/, graphify-out/graph.json, tests/: path placeholder scrub (user-approved)",
+  "skills-lock.json, .gitattributes, scripts/README.md, docs/CICD.md"
+ ],
+ "validation": {
+  "tests": "19 touching test files, claude and codex: 2600/0 each; docs suite 198/0",
+  "coverage": "scoped run 100% for all changed scripts, rc=0",
+  "lint": "lint-shell clean",
+  "invariants": "17 PASS; hook-reference, apo, plugin mirror ok"
+ },
+ "notes": "Base merged (6dcbc84). Tests were written alongside the first implementation for the sync scripts (red shown for alignment test and python invariants only).",
+ "review_repair_r1": {
+  "head_before": "8667a48",
+  "commits": [
+   "dd467e3",
+   "820e02e",
+   "merge of claude/optimistic-ramanujan-tccfud (with trailers)"
+  ],
+  "issues": [
+   {
+    "n": 1,
+    "status": "fixed",
+    "evidence": "BLOCK_SCALAR measured from key column; 3 new tests fail on 8667a48 module (red 5F/3E across new tests), 65 OK after"
+   },
+   {
+    "n": 2,
+    "status": "fixed",
+    "evidence": "Users-n-, _Users_n_, lowercase /users/ and users_n_ labels, rotated logs, PDF links (same-length mask, pdfinfo opens; compressed streams cannot be scanned) scrubbed; invariant extended (/var/home, -home-n-, JSON-escaped, URL-encoded, PDFs, .local emails). PDFs kept, cleaned in place."
+   },
+   {
+    "n": 3,
+    "status": "fixed",
+    "evidence": "allowlist for linuxbrew/CI accounts, @2x assets, git@host:, role mailboxes; trial merge a6d14d0 with fix/F2-input-analysis passes personal-data; check ~10s (graph.json 4.5s), from 47s"
+   },
+   {
+    "n": "minor e2e-live",
+    "status": "fixed",
+    "evidence": "SB_E2E_LOCAL_SKILL_SOURCE_ROOT default $HOME/projects/codex-plugins/skills"
+   },
+   {
+    "n": "minor auth/logs",
+    "status": "fixed",
+    "evidence": "auth/email/owner/hostname lines redacted; 58 rotated logs removed; .gitignore *.log.* *.err.*. needs-user: ~286 *-stdout.txt/*-stderr.txt captures under .planning/research/docs are still tracked; recommend deleting them. User decided to delete captures: done."
+   },
+   {
+    "n": "minor pre-tag",
+    "status": "fixed",
+    "evidence": "documented in docs/RELEASE.md (skill unchanged to avoid mirror churn)"
+   },
+   {
+    "n": "minor codex sha",
+    "status": "fixed",
+    "evidence": "docs and CHANGELOG scoped: Codex writes ref only"
+   },
+   {
+    "n": "minor hook-references",
+    "status": "fixed",
+    "evidence": "allowlist shape; 7 chained forms fail in test-check-repo-invariants-cli.sh"
+   },
+   {
+    "n": "minor flow bypasses",
+    "status": "fixed",
+    "evidence": "FLOW_LINE, 'continue-on-error :'; tests"
+   },
+   {
+    "n": "minor refresh-skills-lock",
+    "status": "fixed",
+    "evidence": "tracked_files; test_refresh_hashes_tracked_files_only"
+   },
+   {
+    "n": "minor CHANGELOG",
+    "status": "fixed",
+    "evidence": "[Unreleased] at top"
+   },
+   {
+    "n": "minor SETUP_REPORT docs",
+    "status": "fixed",
+    "evidence": "reworded in 3 docs"
+   },
+   {
+    "n": "minor merge trailers",
+    "status": "fixed",
+    "evidence": "new merge commit carries both trailers"
+   }
+  ],
+  "coordinator_update_R13-13": "scripts/build-plugin-payload.sh and its test removed; docs/RELEASE.md documents alo-labs/agent-plugins -> plugins/silver-bullet; export-ignore kept",
+  "cursor": "Cursor-only items marked moot; Cursor files still scrubbed",
+  "files_changed_outside_ownership": [
+   "tests/scripts/test-enterprise-e2e-row-pass-registry.sh: user.email test.local -> test.invalid (local TLD no longer allowlisted)",
+   "scripts/run-visual-qa-pipeline.sh: personal Cursor image default removed"
+  ],
+  "validation": "scoped coverage: repo_invariants.py 100% stmts/branches; check-repo-invariants.sh 99.49% (line 127 '|| true' is base code, not changed here); lint-shell --all clean; check-repo-invariants 17/17 PASS (14s); docs suite 198/0; python unit 1783/0; generator and mirror checks OK; trial merge with fix/F2-input-analysis passes personal-data. Codex-runtime rerun of the two bash tests not run separately.",
+  "captures_deleted": "240 tracked captures removed (218 *-stdout/stderr.txt + 22 stdout.txt/stderr.txt, all under .planning; 218 not 286); .gitignore covers them; none kept; historic .planning docs still name some paths (not edited); commit a1c9241",
+  "validation_round2": "after merge of 8c161a5 (head 2f7a418): test-no-personal-machine-paths and -cli 58/0 and test-check-repo-invariants 191/0 under both SILVER_BULLET_RUNTIME=claude and codex; check-repo-invariants all PASS; docs suite 198/0; hook-reference and mirror checks OK; lint-shell clean"
+ },
+ "review_repair_r2": {
+  "commits": [
+   "f06beda",
+   "c69921d (merge of 127e2f9, trailers)"
+  ],
+  "fixed": [
+   "SC2016 disable on the allowlist regex (lint-shell --all rc=0)",
+   "commented/${{ }} in run and script: bodies now reported",
+   "graph.json users_<n>_projects scrubbed (2 ids, 4 places; no duplicate node ids); invariant catches users_<n>_ (lookahead), /mnt/c/Users, lowercase users-<n>-, _home_<n>_ (with subdir), double-escaped and \\u002f JSON",
+   "anchors/tags/aliases/complex keys/'run :'/run alias/escaped quoted keys fail closed; github-script script: bodies checked",
+   "false positives: cloud/CI/distro accounts, bot and placeholder emails, ssh user@host; audited allowlist .github/personal-data-allow.txt",
+   "94 remaining captures deleted; .gitignore patterns scoped to .planning/**, research/**, docs/**; test that fixture names stay trackable",
+   "docs/RELEASE.md reworded: no size reduction claimed (symlinks)",
+   "check-repo-invariants.sh line 127 covered by no-trailing-newline fixture"
+  ],
+  "perf": "personal-data ~4 s (patterns run only around 'users'/'home' hits)",
+  "validation": "scoped coverage: repo_invariants.py 440/440 stmts, 222/222 branches, check-repo-invariants.sh 197/197, both 100%; lint-shell --all rc=0; check-repo-invariants all PASS; three bash tests 264/0 under SILVER_BULLET_RUNTIME=claude and codex; docs suite 198/0; hook-reference, apo and mirror checks OK; python unit via coverage run green",
+  "notes": "Not parsed with PyYAML (stdlib only); exotic YAML fails closed instead. Placeholder name 'someone' is now a generic email local."
+ },
+ "review_repair_r3": {
+  "workflow_hardening": "rewritten on PyYAML (custom safe loader keeping key lines; duplicate keys, parse errors, missing PyYAML and non-mapping files fail closed); walks run, with: code inputs (script/run/command/args/...), step/job continue-on-error, checkout persist-credentials, write-all, unpinned strings; line machinery deleted; CI installs PyYAML==6.0.2 before the invariants step; all r1-r3 probes are tests",
+  "personal_data": "hashed identity tokens (.github/personal-data-hashes.txt, SHA-256 + length; tokens split on non-alnum, any separator form); known-directory regex dropped; allowlist file scanned, unknown directives are errors, public identity uses are explicit 'file' entries (marketplace.json, site/brute, graph.json, 5 .planning contributor lines); ~4 s CPU",
+  "captures": "38 *.out / launch.nohup.out* deleted; .gitignore scopes *.err and *.out* to .planning/**, research/** (docs/** for *.err); remaining invoke-start/end.txt.attemptN and launch.pid.attemptN not deleted (not in the decision)",
+  "docs": "RELEASE.md states only the verified agent-plugins path/ref/sha; Private data section documents hashes, allowlist and capture patterns",
+  "validation": "scoped coverage repo_invariants.py 473/473 stmts 236/236 branches and check-repo-invariants.sh 197/197 (100%); lint-shell --all rc=0; check-repo-invariants all PASS; invariants tests (74+199) under claude and codex pass; docs suite 198/0; hook-reference, apo, mirror OK; merged 94800f8 (merge 4a084a9)",
+  "notes": "with: values other than code inputs and env values may carry expressions (safe pattern). Lowercase users_<n>_ forms in allowlisted graph.json rely on the hash check being off for that file."
+ },
+ "review_repair_r4": {
+  "commit": "01c0af5 (merge of claude/optimistic-ramanujan-tccfud was already up to date)",
+  "allowlist": "'file <glob> <context hash>' exempts one quoted string or line (hash printed by the failing check); other lines still scanned; path-shaped tokens (users_/-users-/_home_/~/Users/) always reported; graph.json needs 2 entries (two author label forms, 'Name Surname' and 'Surname, Name')",
+  "minors": [
+   "CODE_INPUTS extended in one documented list + *-command suffix + list values + container/service options",
+   "pull_request_target/workflow_run head checkout rule; checkout match case-insensitive; reusable-caller jobs skip timeout",
+   "identity decoding: \\u, \\n/\\t/\\r (and path-safe second pass), %XX, numeric entities, zero-width strip, NFKC; base64/hex/glued tokens documented residuals",
+   "hash file header and RELEASE.md say obfuscation not secrecy, only already-public tokens",
+   "docs/**/*-stdout.txt|stderr.txt ignore patterns restored + test",
+   "validate job: actions/setup-python@v6 (3.12) before pip install PyYAML"
+  ],
+  "validation": "scoped coverage repo_invariants.py 528/528 stmts 258/258 branches, check-repo-invariants.sh 197/197 (100%); lint-shell --all rc=0; check-repo-invariants all PASS; invariants bash tests 275/0 under claude and codex (one codex run flaked under load 11, rerun green); docs suite green; hook-reference and mirror OK",
+  "perf": "personal-data measured 15 s CPU at machine load ~11 (was ~4 s idle before the identity decoding); not re-measured idle"
+ }
+}

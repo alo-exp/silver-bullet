@@ -1,0 +1,300 @@
+{
+ "package": "H5-packaging-doctor",
+ "branch": "fix/H5-packaging-doctor",
+ "head": "ddee84b",
+ "worktree": "/home/user/silver-bullet/.claude/worktrees/agent-a611e411d4f203ae3",
+ "dispositions": [
+  {
+   "id": "R8-01",
+   "status": "fixed",
+   "commits": [
+    "fcf80ec"
+   ],
+   "tests": [
+    "test-sync-runtime-mirrors.sh: 26/26"
+   ],
+   "evidence": "regenerate died on cp-onto-itself -> verifies/repairs links; wrong link is drift",
+   "notes": ""
+  },
+  {
+   "id": "R8-02",
+   "status": "fixed",
+   "commits": [
+    "fcf80ec"
+   ],
+   "tests": [
+    "test-validate-plugin-mirror-fixture.sh"
+   ],
+   "evidence": "Cursor plugin shipped Codex wording -> per-host render, cursor-skill-source",
+   "notes": ""
+  },
+  {
+   "id": "R8-03",
+   "status": "fixed",
+   "commits": [
+    "fcf80ec"
+   ],
+   "tests": [
+    "test-validate-plugin-mirror-fixture.sh 24/24",
+    "test-render-agent-bundle-freshness.sh"
+   ],
+   "evidence": "validator printed OK with 5 seeded drifts -> each class named",
+   "notes": ""
+  },
+  {
+   "id": "R8-04",
+   "status": "fixed",
+   "commits": [
+    "fcf80ec"
+   ],
+   "tests": [
+    "python unit tests 81/81"
+   ],
+   "evidence": "27 failing unit tests -> green",
+   "notes": ""
+  },
+  {
+   "id": "R8-05",
+   "status": "fixed",
+   "commits": [
+    "83d7bf3"
+   ],
+   "tests": [
+    "test-validate-host-agnostic-core.sh 17/17"
+   ],
+   "evidence": "8 seeded cases passed -> flagged",
+   "notes": ""
+  },
+  {
+   "id": "R8-06",
+   "status": "fixed",
+   "commits": [
+    "83d7bf3"
+   ],
+   "tests": [
+    "test-validate-host-skill-surface.sh 11/11",
+    "test-validate-host-install-surface*.sh"
+   ],
+   "evidence": "6 failing cases -> green",
+   "notes": ""
+  },
+  {
+   "id": "R8-09",
+   "status": "fixed",
+   "commits": [
+    "ae93606",
+    "03a559e"
+   ],
+   "tests": [
+    "test-sb-doctor-host-checks.sh: smoke HOME is a temp sandbox, no hook saw user HOME/project, source=resume, user state untouched"
+   ],
+   "evidence": "5 failing assertions -> 73/73; real hooks leave seeded quality-gate-state/release-live-matrix/state/branch intact",
+   "notes": "skills/silver-doctor read-only claim now true"
+  },
+  {
+   "id": "R8-10",
+   "status": "fixed",
+   "commits": [
+    "308baa6"
+   ],
+   "tests": [
+    "test-pre-release-cursor-cli-smoke.sh 49/49"
+   ],
+   "evidence": "key in argv, bare agent trusted -> env only, cursor-agent/CURSOR_AGENT_BIN only",
+   "notes": ""
+  },
+  {
+   "id": "R8-11",
+   "status": "fixed",
+   "commits": [
+    "308baa6"
+   ],
+   "tests": [
+    "test-pre-release-host-isolation-lib.sh 93/93"
+   ],
+   "evidence": "fresh root per $(...) and inherited root deleted -> pinned root, inherited kept",
+   "notes": ""
+  },
+  {
+   "id": "R8-12",
+   "status": "fixed",
+   "commits": [
+    "308baa6"
+   ],
+   "tests": [
+    "test-run-pre-release-host-smoke-exec.sh 69/69",
+    "test-release-live-matrix-cursor-smoke.sh 47/47",
+    "test-run-tri-host-install-smoke-paths.sh 98/98"
+   ],
+   "evidence": "route check ran with operator HOME, marker in real state dir, KAY_HOME/CLAUDE_CONFIG_DIR leaked -> isolated first, marker opt-in, env cleared",
+   "notes": "release-live-matrix cursor marker now requires SB_RELEASE_LIVE_MATRIX_WRITE_CURSOR_MARKER=1 (default was 1); host-smoke-cell callers set it explicitly already"
+  },
+  {
+   "id": "R8-17",
+   "status": "fixed",
+   "commits": [
+    "7c34e5b"
+   ],
+   "tests": [
+    "test-codex-cli-resolve.sh 36/36"
+   ],
+   "evidence": "npm layout not resolved -> resolved",
+   "notes": ""
+  },
+  {
+   "id": "R8-20",
+   "status": "fixed",
+   "commits": [
+    "ae93606"
+   ],
+   "tests": [
+    "test-cursor-picker-scripts-args.sh 48/48"
+   ],
+   "evidence": "7 failing assertions -> green",
+   "notes": ""
+  },
+  {
+   "id": "R8-21",
+   "status": "fixed",
+   "commits": [
+    "ae93606"
+   ],
+   "tests": [
+    "test-sb-diagnostics-reallibs.sh (two projects, arg/env/cwd)",
+    "test-sb-diagnostics-branches.sh"
+   ],
+   "evidence": "plugin opt-in reported for opted-out project -> per-project",
+   "notes": "plugins/silver-bullet/.silver-bullet.json symlink still shipped by the sync (not read any more; removing it belongs to the sync scripts, left as is)"
+  },
+  {
+   "id": "R8-22",
+   "status": "fixed",
+   "commits": [
+    "fcf80ec"
+   ],
+   "tests": [
+    "test-sync-codex-package-paths.sh 57/57"
+   ],
+   "evidence": "staging leftovers and stale lock -> cleaned/broken by PID",
+   "notes": ""
+  },
+  {
+   "id": "R8-23",
+   "status": "fixed",
+   "commits": [
+    "7c34e5b"
+   ],
+   "tests": [
+    "test-plugin-cache-version.sh 15/15",
+    "test-plugin-cache-version-guards.sh 39/39"
+   ],
+   "evidence": "test/ and rc outranked release -> semver only",
+   "notes": ""
+  },
+  {
+   "id": "R8-24",
+   "status": "fixed",
+   "commits": [
+    "ae93606",
+    "03a559e"
+   ],
+   "tests": [
+    "test-sb-doctor-core-checks.sh (D7 project sections, project template cannot lower D2/D6, CLAUDE_CONFIG_DIR/CODEX_HOME in D4)"
+   ],
+   "evidence": "parity test measured the plugin; project template lowered version -> project audited, plugin template authoritative",
+   "notes": "readlink -f replaced by pure-bash cd -P; GNU timeout by sb_run_with_timeout; a dangling cache link now falls back to the checkout hooks in D11"
+  },
+  {
+   "id": "R8-25",
+   "status": "partial",
+   "commits": [
+    "ae93606"
+   ],
+   "tests": [
+    "test-sb-doctor-reconciler.sh: refusal never names SB_DOCTOR_ASSUME_YES, host/all scope always ask, no install without consent"
+   ],
+   "evidence": "refusal advertised the override and host scope never asked -> fixed",
+   "notes": "SB_DOCTOR_ASSUME_YES is still honoured (agent-settable). Needs the H4 per-user consent record; see report question"
+  },
+  {
+   "id": "R8-27",
+   "status": "fixed",
+   "commits": [
+    "ae93606"
+   ],
+   "tests": [
+    "test-agent-live-preflights.sh 138/138"
+   ],
+   "evidence": "ERROR then OK model pin; dead opencode probe; wrong artifact path -> fixed",
+   "notes": ""
+  },
+  {
+   "id": "R8-28",
+   "status": "fixed",
+   "commits": [
+    "308baa6"
+   ],
+   "tests": [
+    "test-pre-release-host-isolation-lib.sh previous-tag cases"
+   ],
+   "evidence": "second-newest tag -> newest release tag older than package.json version",
+   "notes": ""
+  },
+  {
+   "id": "R8-29",
+   "status": "fixed",
+   "commits": [
+    "308baa6"
+   ],
+   "tests": [
+    "test-run-pre-release-host-smoke-exec.sh: marker persisted to operator state dir"
+   ],
+   "evidence": "marker deleted with the smoke root -> copied to state dir resolved before isolation (6 failing assertions -> green)",
+   "notes": "docs/internal/pre-release-quality-gate.md updated"
+  },
+  {
+   "id": "R10b-04",
+   "status": "needs-user",
+   "commits": [],
+   "tests": [],
+   "evidence": "not changed",
+   "notes": "344 tracked paths contain ':' (agents/claude/sb:*, host-bundles/cursor/sb:*). Renaming directories to sb-<x> changes how hosts derive skill/agent names unless every host reads the name from frontmatter; I could not prove that from this sandbox. Question: may the colon directories be renamed (hyphen dirs, name kept in frontmatter) and the Claude/Cursor/Codex loaders re-verified live, accepting a one-time reinstall for users? Recommendation: yes for host-bundles/cursor and agents/claude after a live loader check; validate-plugin-mirror.sh already lists the colon directories explicitly so the Windows gap is visible."
+  },
+  {
+   "id": "R10b-19",
+   "status": "fixed",
+   "commits": [
+    "fcf80ec"
+   ],
+   "tests": [
+    "test-generate-plugin-commands.sh 54/54"
+   ],
+   "evidence": "generator output now final and deterministic with --check",
+   "notes": ""
+  }
+ ],
+ "files_changed_outside_ownership": [
+  "tests/lib/h-doctor-stage.sh: staged doctor repo gets template/command-timeout links, section-complete silver-bullet.md, richer hook stub",
+  "tests/lib/k-agents-live-2-helpers.sh: adapter stub logs HOME/state dir",
+  "scripts/run-tri-host-install-smoke.sh, scripts/release-live-matrix-cursor-smoke.sh, scripts/agent-opencode/preflight.sh, scripts/agent-pi/preflight.sh, scripts/diagnose-cursor-picker-duplicates.sh, scripts/enumerate-cursor-slash-picker.sh: smoke/picker scripts named in the finding",
+  "docs/internal/pre-release-quality-gate.md: marker location",
+  "scripts/install-cursor.sh, scripts/lib/install-codex/cache.sh, scripts/lib/install-cursor/backend-cache.sh, tests/scripts/test-install-codex-libs.sh (H2 installers): Codex cache copy sanitized, checkout never; Cursor installs ship cursor-skill-source (R8-02)",
+  "tests/hooks/test-orchestrator-worker-templates.sh: template mirror is host-neutral now",
+  "scripts/lib/codex-cli.sh, scripts/lib/plugin-cache-version.sh: R8-17/R8-23 (owned)",
+  ".gitignore (H3-owned): one minimal entry `.*.staging-*/` required by R8-22; trivial conflict expected with H3, keep both entries",
+  "skills/silver-doctor/SKILL.md: D7 wording, user-confirmed --fix scopes; docs/ARCHITECTURE.md, CONTRIBUTING.md, AGENTS.md, scripts/README.md: cursor-skill-source, colon exception, sync scripts"
+ ],
+ "validation": {
+  "tests": "every touched test file green under claude; doctor-host-checks, host-smoke-exec, cursor-smoke also green under codex; combined scoped run 872/872",
+  "coverage": "scoped run: sb-doctor.sh, sb-diagnostics.sh, pre-release-host-isolation.sh 100%; the other changed scripts 100% in the earlier combined scoped run",
+  "lint": "lint-shell --all clean",
+  "invariants": "check-repo-invariants all PASS; validate-plugin-mirror OK; generate-hook-reference --check OK"
+ },
+ "notes": "Mirrors regenerated once at the end (a115d25 plus no further drift). Merge of claude/optimistic-ramanujan-tccfud: already an ancestor, nothing to merge. Full suite not run (orchestrator).",
+ "repair_round": {
+  "blocker": "fixed: sb-doctor.sh scrub via sb_smoke_clear_host_env, host-neutral fallback; validate-host-agnostic-core OK, D17 passes",
+  "major": "fixed: codex-cli.sh and generate-plugin-commands.sh covered; all changed files 100% in scoped runs",
+  "minors": "all fixed (orphan stubs/missing composer, symlink drift, comment-only annotations, doctor -f via bash, diagnostics stop at .git, D4/D13 aligned, real state-untouched test, docs)",
+  "validation": "111 test files referencing changed scripts: 8383 passed under claude and under codex; docs suite 198; lint, invariants, mirror, agnostic-core clean"
+ }
+}

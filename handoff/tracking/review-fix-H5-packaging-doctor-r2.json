@@ -1,0 +1,205 @@
+{
+ "package": "H5-packaging-doctor",
+ "head_reviewed": "ddee84b26c99f30d7727af0ef97886f691fbd75e",
+ "previous_review": "03a559e90bef8b846775b79ee010a92bc4ac1358",
+ "verdict": "APPROVE",
+ "previous_issues_resolution": [
+  {
+   "issue": "blocker: validate-host-agnostic-core FAIL / doctor D17 FAIL (sb-doctor.sh CODEX_HOME/CURSOR_ names)",
+   "status": "resolved",
+   "evidence": "bash scripts/validate-host-agnostic-core.sh on worktree and clone -> 'OK — core is host-agent agnostic' rc=0; tests/scripts/test-validate-host-agnostic-core.sh 18/18 under claude and codex (incl. 'live repo passes'); real sb-doctor.sh run from the clone in a sandbox -> 'PASS: D17 — SB core is host-agent agnostic', D11 PASS x3, D16 PASS, user state/projects byte-identical."
+  },
+  {
+   "issue": "major: codex-cli.sh:20 and generate-plugin-commands.sh:164 uncovered",
+   "status": "resolved",
+   "evidence": "scoped coverage: codex-cli.sh 83/83, generate-plugin-commands.sh 43/43 (100%); new tests 'a .js binary outside @openai/codex that is not Codex is rejected' and '--check without a commands directory fails'."
+  },
+  {
+   "issue": "minor: undeclared out-of-ownership edits",
+   "status": "resolved",
+   "evidence": "fix report files_changed_outside_ownership now lists the H2 installer files, .gitignore, tests/lib helpers and docs."
+  },
+  {
+   "issue": "minor: orphan command stubs kept",
+   "status": "resolved",
+   "evidence": "seeded orphan .md and symlinked stub -> DRIFT; removed composer -> error; mutation test kills."
+  },
+  {
+   "issue": "minor: symlinks in generated trees not compared",
+   "status": "resolved",
+   "evidence": "seeded symlinks in skill-source, cursor-skill-source (dir link), templates, a file replaced by a same-content symlink -> DRIFT each; mutation reverting same_entry/find fails the fixture test."
+  },
+  {
+   "issue": "minor: docs drift",
+   "status": "resolved",
+   "evidence": "ARCHITECTURE documents the colon exception (claim verified), cursor-skill-source listed in ARCHITECTURE/AGENTS/CONTRIBUTING/scripts README, sync script rows corrected, doctor skill D7 wording + 'user confirms' notes."
+  },
+  {
+   "issue": "minor: skip marker in code part exempts installer line",
+   "status": "partially resolved",
+   "evidence": "validate-host marker removed; other markers still bypass (issue 2)."
+  },
+  {
+   "issue": "minor: D14/D16/D17 gated on -x",
+   "status": "resolved",
+   "evidence": "-f + bash; test with chmod -x stubs."
+  },
+  {
+   "issue": "minor: sb-diagnostics crosses .git",
+   "status": "resolved",
+   "evidence": "nested-repo test + mutation; but see new issue 1 (relative-path hang)."
+  },
+  {
+   "issue": "minor: D13 reads different paths than D4",
+   "status": "resolved",
+   "evidence": "test + mutation."
+  },
+  {
+   "issue": "minor: vacuous state-untouched test",
+   "status": "resolved",
+   "evidence": "stub hooks now delete state and write orchestrator-directive.json under $HOME; reverting run_hook_smoke fails both state assertions."
+  }
+ ],
+ "per_finding": [
+  {
+   "id": "R8-01",
+   "verdict": "fixed",
+   "notes": "Previous verdict re-confirmed on ddee84b: no change to this fix in 03a559e..ddee84b; its tests pass under claude and codex."
+  },
+  {
+   "id": "R8-02",
+   "verdict": "fixed",
+   "notes": "Previous verdict re-confirmed on ddee84b: no change to this fix in 03a559e..ddee84b; its tests pass under claude and codex."
+  },
+  {
+   "id": "R8-03",
+   "verdict": "fixed",
+   "notes": "Previous verdict re-confirmed on ddee84b: no change to this fix in 03a559e..ddee84b; its tests pass under claude and codex."
+  },
+  {
+   "id": "R8-04",
+   "verdict": "fixed",
+   "notes": "Previous verdict re-confirmed on ddee84b: no change to this fix in 03a559e..ddee84b; its tests pass under claude and codex."
+  },
+  {
+   "id": "R8-05",
+   "verdict": "fixed",
+   "notes": "Original probes still green (a-d); `# validate-host` comment and `: validate-host` code marker are now flagged (test + my probe). Residual: the other structural skip markers still exempt a line when placed in the code part (minor issue below)."
+  },
+  {
+   "id": "R8-06",
+   "verdict": "fixed",
+   "notes": "Codex route rules unchanged (fixed). Remainder closed in ddee84b: D14/D15/D16/D17 test -f and run through bash; test chmods the staged validator stubs -x and asserts PASS for D15/D16/D17 and no 'not found; skipped'."
+  },
+  {
+   "id": "R8-09",
+   "verdict": "fixed",
+   "notes": "Real-hook probe re-run on ddee84b (clone as plugin root, sandbox HOME with state/branch/quality-gate-state/release-live-matrix, SILVER_BULLET_STATE_FILE/SB_RUNTIME_STATE_DIR/SB_RUNTIME_HOME_ROOT/CODEX_HOME/CLAUDE_CONFIG_DIR pointing at it, `cd proj && sb-doctor.sh other`): D11 PASS x3, state dir/proj/other sha256-identical, no orchestrator-directive.json. The scrub now comes from sb_smoke_clear_host_env (same 16 variables as the old inline env -u list). Mutations: reverting run_hook_smoke to 02eff38 fails 8 assertions of test-sb-doctor-host-checks.sh incl. both state assertions (previously vacuous); dropping the scrub call fails 'state dir is not pinned'."
+  },
+  {
+   "id": "R8-10",
+   "verdict": "fixed",
+   "notes": "Previous verdict re-confirmed on ddee84b: no change to this fix in 03a559e..ddee84b; its tests pass under claude and codex."
+  },
+  {
+   "id": "R8-11",
+   "verdict": "fixed",
+   "notes": "Previous verdict re-confirmed on ddee84b: no change to this fix in 03a559e..ddee84b; its tests pass under claude and codex."
+  },
+  {
+   "id": "R8-12",
+   "verdict": "fixed",
+   "notes": "Previous verdict re-confirmed on ddee84b: no change to this fix in 03a559e..ddee84b; its tests pass under claude and codex."
+  },
+  {
+   "id": "R8-17",
+   "verdict": "fixed",
+   "notes": "Previous verdict re-confirmed on ddee84b: no change to this fix in 03a559e..ddee84b; its tests pass under claude and codex."
+  },
+  {
+   "id": "R8-20",
+   "verdict": "fixed",
+   "notes": "Previous verdict re-confirmed on ddee84b: no change to this fix in 03a559e..ddee84b; its tests pass under claude and codex."
+  },
+  {
+   "id": "R8-21",
+   "verdict": "fixed",
+   "notes": "Opted-in/opted-out/argument cases still pass; walk now stops at .git (nested repo case tested; mutation removing the .git stop fails the new assertion). New minor issue: the walk never terminates for a relative project path that does not exist (see issues)."
+  },
+  {
+   "id": "R8-22",
+   "verdict": "fixed",
+   "notes": "Previous verdict re-confirmed on ddee84b: no change to this fix in 03a559e..ddee84b; its tests pass under claude and codex."
+  },
+  {
+   "id": "R8-23",
+   "verdict": "fixed",
+   "notes": "Previous verdict re-confirmed on ddee84b: no change to this fix in 03a559e..ddee84b; its tests pass under claude and codex."
+  },
+  {
+   "id": "R8-24",
+   "verdict": "fixed",
+   "notes": "D13 now reads the same claude_settings/codex_config paths as D4 (test 'D13 reads the redirected settings.json too'; mutation back to ${SB_RUNTIME_HOME_ROOT}/settings.json fails it). D17 passes on a real doctor run (blocker resolved)."
+  },
+  {
+   "id": "R8-25",
+   "verdict": "ok",
+   "notes": "Unchanged: partial per DECISIONS.md (remove SB_DOCTOR_ASSUME_YES after H4a per-user consent lands). Follow-up, not blocking."
+  },
+  {
+   "id": "R8-27",
+   "verdict": "fixed",
+   "notes": "Previous verdict re-confirmed on ddee84b: no change to this fix in 03a559e..ddee84b; its tests pass under claude and codex."
+  },
+  {
+   "id": "R8-28",
+   "verdict": "fixed",
+   "notes": "Previous verdict re-confirmed on ddee84b: no change to this fix in 03a559e..ddee84b; its tests pass under claude and codex."
+  },
+  {
+   "id": "R8-29",
+   "verdict": "fixed",
+   "notes": "Previous verdict re-confirmed on ddee84b: no change to this fix in 03a559e..ddee84b; its tests pass under claude and codex."
+  },
+  {
+   "id": "R10b-04",
+   "verdict": "ok",
+   "notes": "needs-user disposition superseded by the approved rename (DECISIONS.md) -> follow-up, not blocking. docs/ARCHITECTURE.md now documents the colon exception (verified: all 344 colon paths are agents/claude/sb:*/ or host-bundles/cursor/sb:*/)."
+  },
+  {
+   "id": "R10b-19",
+   "verdict": "fixed",
+   "notes": "Orphan stubs now pruned (HAND_WRITTEN={sb-doctor.md}); a missing composer is an error in generate and --check; --check without a commands dir reports drift. Seeded in a clone: orphan sb-bogus.md / symlinked stub -> DRIFT; removed silver-fast -> sync fails with 'ERROR: missing composer skill'. Committed stubs (17 composers + sb-doctor.md) match base, none pruned. Mutation removing the prune fails 5 assertions."
+  }
+ ],
+ "issues": [
+  {
+   "severity": "minor",
+   "location": "scripts/sb-diagnostics.sh:12-20 (introduced in ae93606, kept in ddee84b)",
+   "problem": "The project-root walk never terminates when the project path (argument or SB_DIAG_PROJECT_ROOT) is relative and does not exist: `cd` fails, the raw relative path is kept, `dirname` reaches \".\" and stays there, and the loop only stops if the current directory itself holds .silver-bullet.json or .git. From a non-repo directory or any subdirectory of a repo, `sb-diagnostics.sh <typo>` busy-loops forever forking dirname.",
+   "evidence": "Probe dir REVF-H5b-probe/diag: `cd diag/empty && timeout 5 bash repo2/scripts/sb-diagnostics.sh no-such-rel` -> rc=124 (hang); `SB_DIAG_PROJECT_ROOT=sub/x` -> rc=124; `cd diag/repo/src` (subdir of a git repo) `&& timeout 5 bash .../sb-diagnostics.sh typo` -> rc=124. Controls: existing relative dir `realsub` rc=0, empty arg rc=0, absolute missing path (existing test) terminates at '/'.",
+   "suggested_fix": "Make the start path absolute before walking (case \"$p\" in /*) ;; *) p=\"$PWD/$p\" ;; esac) or stop when dirname returns its input; add a test with a relative missing path under a timeout."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/validate-host-agnostic-core.sh:528-555 (check_installer_cross_contamination)",
+   "problem": "R8-05 part 4 / previous minor only closed for the literal `validate-host` marker. The remaining skip markers are still substrings matched anywhere in the code part of a line, so the same bypass works with another marker as a no-op argument; the commit message's 'annotations are honoured in comments only' is not what the code does (markers are honoured in code only).",
+   "evidence": "Clone repo2 at ddee84b, append to scripts/install-claude.sh `rm -rf \"$HOME/.codex/plugins\"; <m>` and run the validator: m=': host-bundles/' rc=0, ': foreign namespace' rc=0, 'echo \"backup /\"' rc=0, ': agents/claude' rc=0 (0 installer-cross violations each); m=': validate-host' rc=1 (flagged).",
+   "suggested_fix": "Exempt by structure, not substring: a path:line allowlist, or match the markers only as the argument shape they stand for (e.g. a render_agent_bundle/sb_agent_bundle call, a host-bundles/ or agents/<host> path segment adjacent to the foreign token), and test one bypass per remaining marker."
+  },
+  {
+   "severity": "minor",
+   "location": "scripts/sb-doctor.sh:836-880 (D16/D17) run from an installed Codex cache; scripts/lib/install-codex/cache.sh sanitize_codex_cache_copy",
+   "problem": "Pre-existing, not a regression (follow-up): when the doctor runs from the Codex plugin cache (the package copy, then codex-sanitized), D16 fails (no agents/claude, host-bundles in a package root) and D17 fails (the sanitizer rewrites e.g. install-claude.sh's CLAUDE_HOME default to ${HOME}/.codex and templates/orchestrator-workers/PHASE.md to $HOME/.codex). D17 says '(repo checkout)', so a Codex user's /sb:doctor reports OVERALL FAIL.",
+   "evidence": "rsync -aL plugins/silver-bullet/ into cache/v, run codex-sanitize-package.sh on it: validate-host-agnostic-core --repo-root cache/v -> FAIL (10 violations); unsanitized copy -> OK; validate-host-install-surface --repo-root <copy> --host codex -> rc=1 for both. Base 02eff38: raw copy -> FAIL (1 violation, PHASE.md), sanitized -> FAIL (12); D16 rc=1. Same overall outcome before and after this package.",
+   "suggested_fix": "Follow-up outside this package's approval: make D16/D17 PASS-N/A (or skip) when REPO_ROOT is an installed package rather than a checkout, or validate the installed surface with the cache-root mode."
+  }
+ ],
+ "validation": {
+  "tests": "Ran from a clone at ddee84b (worktree untouched) via tests/run-all-tests.sh --jobs 2: all 82 shell test files that reference a script changed since 02eff38 (doctor, diagnostics, mirrors, validators, smokes, cli libs, generators, installers, marketplace sync, post-release verify, RC matrix, enterprise-e2e libs, agent-live unit tests) -> 6448 passed, 0 failed under SILVER_BULLET_RUNTIME=claude and 6448 passed, 0 failed under codex; test-python-unit.sh (incl. test_render_agent_bundle.py) green in the coverage run; docs suite 198 passed, 0 failed. test-validate-host-agnostic-core.sh 18/18 under both runtimes. Mutations in a second clone, each reverting one repair-round fix: run_hook_smoke -> base (8 assertions fail incl. both state assertions), scrub call removed (1 fails), symlink compare removed (fixture fails), orphan prune removed (5 fail), .git stop removed (1 fails), D13 path reverted (1 fails), validate-host marker re-added (1 fails). Real-hook doctor probe: D11 PASS x3, D16/D17 PASS, sandbox state/projects byte-identical.",
+  "coverage": "One scoped run (--jobs 2, --only the 27 non-test scripts changed since 02eff38, 82 shell test files + test-python-unit.sh): 8107 passed, 0 failed; every file 100%: Bash 26 files, statements 3528/3528, lines 2735/2735, functions 165/165; render-agent-bundle.py 347/347 statements, 158/158 branches. Previous major resolved: scripts/lib/codex-cli.sh 83/83, scripts/generate-plugin-commands.sh 43/43. tests/coverage/known-limits.json valid and untouched.",
+  "lint": "bash scripts/lint-shell.sh --all --jobs 2 -> application Bash clean (354 files), test Bash clean (725 files). bash -n clean on the repair-round scripts.",
+  "invariants": "check-repo-invariants.sh rc=0 (all PASS); validate-host-agnostic-core OK on worktree and clone; validate-plugin-mirror OK; sync-codex-package.sh in a clone -> no diff; generate-plugin-commands --check fresh; sync-runtime-mirrors --check fresh; generate-hook-reference --check up to date; generate-apo-artifacts --check rc=0; docs/workflows == templates/workflows; silver-bullet.md/template untouched; docs under 500 lines; trailers exact on all 8 commits, no model names elsewhere. Seeded drift (clone): symlinks in skill-source / cursor-skill-source (dir link) / templates / same-content symlink replacing a file, orphan .md stub, symlinked stub, removed composer -> all detected (rc=1); stray non-.md file in commands/ and edits to the hand-written sb-doctor.md pass (by design / negligible).",
+  "merge_notes": "main (claude/optimistic-ramanujan-tccfud) has advanced to 06bef6f (H2 merged) and is no longer an ancestor; git merge-tree with it is clean, but after the merge validate-plugin-mirror reports 1 drift (plugins/silver-bullet/cursor-skill-source/sb-init/references/scaffold-steps.md, from H2's skills change into the new Cursor render) -> run bash scripts/sync-codex-package.sh after merging (verified: fixes it, nothing else changes); agnostic-core, invariants, command and runtime-mirror checks pass on the merged tree. Textual conflicts: .gitignore with fix/H3-release-ci (known, keep both), tests/lib/h-doctor-stage.sh with fix/H4b-toolstack-scripts (H4b's consent-helpers source and hd_cfg vs H5's staging links; keep both). Clean with H4a, F1, F2, H8a, H8b."
+ }
+}

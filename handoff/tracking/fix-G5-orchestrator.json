@@ -1,0 +1,256 @@
+{
+  "package": "G5-orchestrator",
+  "branch": "fix/G5-orchestrator",
+  "head": "dc0ee057b8ec22ed6ccb0dc740a2ce27a92c72dd",
+  "worktree": "/home/user/silver-bullet/.claude/worktrees/G5",
+  "dispositions": [
+    {
+      "id": "R4-02",
+      "status": "fixed",
+      "commits": [
+        "74dc370"
+      ],
+      "tests": [
+        "tests/hooks/test-orchestrator-parent-lib.sh: payload agent_id: worker, forged marker alone never a worker, tool_input text not identity, no jq",
+        "tests/hooks/test-orchestrator-parent-guard.sh: after a parent Agent spawn Edit/Bash still denied, forged marker confers nothing, worker B stays a worker after worker A's SubagentStop",
+        "tests/hooks/test-stop-check-paths.sh: SubagentStop with agent_id skipped without touching shared state",
+        "tests/hooks/test-session-start.sh: fresh spawn record does not make the main session a worker"
+      ],
+      "evidence": "Red (finding probe): Agent spawn then Edit/Bash allowed, parallel SubagentStop reclassified worker B as parent. Green: worker identity is the payload agent_id per call; marker is evidence only; 8 guard/lib assertions pass under claude and codex.",
+      "notes": "Hosts that do not put agent_id in subagent hook payloads (Codex unverified) need SB_ORCHESTRATOR_WORKER=1 in the worker process env; see needs-user question in notes."
+    },
+    {
+      "id": "R4-03",
+      "status": "fixed",
+      "commits": [
+        "74dc370"
+      ],
+      "tests": [
+        "tests/hooks/test-orchestrator-parent-lib.sh: 19 spoof cases denied (comment/echo/&&/newline/bash -c chain/pipe/redirect/command substitution), honest variants allowed (env, bash -c, script path, 2>/dev/null, 2>&1), no-python3 denied with reason",
+        "tests/hooks/test-orchestrator-directive-guard-hook.sh: hook-level evasion + honest + helper_unavailable denial"
+      ],
+      "evidence": "Red (finding probe): all six spoofs allowed. Green: one-lone-command rule over F2's classifier JSON; strict read_only; classifier failure denied with python3 message.",
+      "notes": "Parent test runners (npm test) are no longer read-only (strict verdict, per DECISIONS follow-up)."
+    },
+    {
+      "id": "R4-05",
+      "status": "fixed",
+      "commits": [
+        "390cf12",
+        "74dc370"
+      ],
+      "tests": [
+        "tests/hooks/test-orchestrator-shipped-flow.sh: shipped catalog end to end, re-sync after 5 completions, twin re-run ignored, out-of-order siblings, stop release",
+        "tests/hooks/test-orchestrator-state-advance-lib.sh, test-orchestrator-state-lib.sh, test-orchestrator-directive-lib.sh, test-stop-check-paths.sh"
+      ],
+      "evidence": "Red (finding replay): current_flow never advanced, re-run jumped last_idx to 12, parent Stop blocked forever. Green: join result drives hold; current_flow follows; sync prefers waiting batch; Stop released after 5 no-progress blocks.",
+      "notes": "SB OVERRIDE still only clears the directive (outcomes-check, not edited); the Stop release is the in-band escape."
+    },
+    {
+      "id": "R4-06",
+      "status": "fixed",
+      "commits": [
+        "390cf12"
+      ],
+      "tests": [
+        "tests/hooks/test-orchestrator-shipped-flow.sh: every queue token of 17 composers maps to an installed skill; first handoff is silver-quality-gates",
+        "tests/hooks/test-orchestrator-scheduler-lib.sh"
+      ],
+      "evidence": "Red: handoff next_skill silver-quality-gate / silver-devops-route / silver-document (absent skills). Green: single sb_orchestrator_flow_to_skill applied to the queue token carried in .scheduler.batch_tokens.",
+      "notes": ""
+    },
+    {
+      "id": "R4-18",
+      "status": "fixed",
+      "commits": [
+        "390cf12"
+      ],
+      "tests": [
+        "tests/hooks/test-orchestrator-io-lib.sh (atomic write, symlink/dir refusal, lock, stale takeover, bounded wait, 6 concurrent RMW)",
+        "tests/hooks/test-orchestrator-shipped-flow.sh: 8 trials of two concurrent joins, none lost"
+      ],
+      "evidence": "Red (finding probe): 20/20 trials lost a join. Green: 0/8 lost, no temp files, lock released.",
+      "notes": ""
+    },
+    {
+      "id": "R4-19",
+      "status": "partial",
+      "commits": [
+        "390cf12"
+      ],
+      "tests": [
+        "tests/hooks/test-orchestrator-shipped-flow.sh: both catalogs from the finding (C after B, D satisfied after serial S)"
+      ],
+      "evidence": "Planner fixed: prior_atoms updated only on flush, in-open-batch dependency forces a later batch.",
+      "notes": "The shipped catalog still gives every atom the same two placeholder mutation scopes, so shipped queues stay one atom per batch (documented in docs/ORCHESTRATOR.md). Real scopes are catalog content (docs/apo-catalog.json is generated); not changed."
+    },
+    {
+      "id": "R4-17",
+      "status": "fixed",
+      "commits": [
+        "aa88a4c"
+      ],
+      "tests": [
+        "tests/hooks/test-agent-delegation-guard-hook.sh: real apply_patch input/command bodies, mixed patch, sed -i / redirect / tee / exec_command denied, reads and out-of-scope writes allowed"
+      ],
+      "evidence": "Red: apply_patch bodies and Bash writes returned rc 0. Green: all paths from file_path/path/patch bodies/classifier write paths checked; guard registered for Bash|exec_command.",
+      "notes": "Inert without jq (documented fail-open kept)."
+    },
+    {
+      "id": "R4-26",
+      "status": "fixed",
+      "commits": [
+        "aa88a4c"
+      ],
+      "tests": [
+        "tests/hooks/test-hooks-json-no-duplicate-registration.sh"
+      ],
+      "evidence": "Red: base hooks.json has orchestrator-directive-guard twice for Edit/Write/MultiEdit/apply_patch. Green: single registration per tool; Cursor-only half of the finding is moot (Cursor dropped).",
+      "notes": ""
+    },
+    {
+      "id": "R4-27",
+      "status": "fixed",
+      "commits": [
+        "462c25d"
+      ],
+      "tests": [
+        "tests/docs/test-orchestrator-doc.sh"
+      ],
+      "evidence": "ORCHESTRATOR.md rewritten sections; doc test checks no SB_ORCHESTRATOR_WORKER instruction, no removed APIs, every documented sb_* function exists.",
+      "notes": ""
+    },
+    {
+      "id": "R4-28",
+      "status": "fixed",
+      "commits": [
+        "74dc370",
+        "390cf12"
+      ],
+      "tests": [
+        "tests/hooks/test-orchestrator-directive-guard-hook.sh: a PreToolUse prompt field no longer bypasses/clears",
+        "tests/scripts/test-orchestrator-event-log.sh: dead helpers stay removed"
+      ],
+      "evidence": "PreToolUse override branch removed; tail/resume/checkpoint/saga helpers, handoff matcher, skill_for_atom and worker_template_for_atom deleted with their tests.",
+      "notes": ""
+    },
+    {
+      "id": "R4-29",
+      "status": "partial",
+      "commits": [
+        "390cf12"
+      ],
+      "tests": [
+        "tests/hooks/test-orchestrator-event-log-lib.sh (cap, symlink refusal, failing temp/rename), tests/scripts/test-orchestrator-event-log.sh"
+      ],
+      "evidence": "Event log bounded (1 MiB -> newest 2000 lines, env-tunable).",
+      "notes": "RFL quota-retry job pruning and ASK/EXECUTE re-surfacing TTL (scripts/lib/rfl_quota_retry.py) belong to G6 and were not touched."
+    },
+    {
+      "id": "R4-30",
+      "status": "partial",
+      "commits": [
+        "74dc370",
+        "390cf12",
+        "aa88a4c"
+      ],
+      "tests": [
+        "shipped-catalog flow, concurrent joins, real Codex apply_patch payloads, parent Bash evasions, hooks.json duplicate meta-test"
+      ],
+      "evidence": "Added tests at the layers production uses for R4-02/03/05/06/17/18/26.",
+      "notes": "R4-01 (cert bypass pin), R4-08 (interrupt clear hook order), R4-13/R4-16 (RFL guard events) are not in G5."
+    },
+    {
+      "id": "R9-05",
+      "status": "fixed",
+      "commits": [
+        "74dc370"
+      ],
+      "tests": [
+        "tests/hooks/test-site-hooks-gates.sh: Stop with worker env still blocks (live-publish)",
+        "tests/hooks/test-site-session-gates.sh: fresh marker, Stop blocked by live-publish and v-loop gates",
+        "tests/hooks/test-v-loop-rollup-gate-hook.sh"
+      ],
+      "evidence": "Red: fresh marker made both Stop gates allow. Green: worker skip removed on Stop; identity per call.",
+      "notes": ""
+    },
+    {
+      "id": "R9-31",
+      "status": "fixed",
+      "commits": [
+        "aa88a4c"
+      ],
+      "tests": [
+        "tests/hooks/test-site-session-gates.sh: delegation state survives a prompt naming the delegation"
+      ],
+      "evidence": "Red: state file deleted by a status question. Green: sb_site_session_clear_all clears site state only.",
+      "notes": ""
+    },
+    {
+      "id": "R10-02",
+      "status": "partial",
+      "commits": [
+        "9763896"
+      ],
+      "tests": [
+        "tests/hooks/test-orchestrator-queue-order.sh: floor before execute for 11 composers + devops floor for 4, configurable, no duplicates",
+        "tests/scripts/test-composition-triple-alignment.sh",
+        "tests/integration/test-skill-execution-paths.sh"
+      ],
+      "evidence": "Part A fixed: every composer queue reaching silver-execute carries required_planning (devops floor for devops/canary/deploy/incident and devops-cycle projects); sb:bugfix and sb:fast text/catalog aligned.",
+      "notes": "Part B open: silver-triage, tdd and verify-tests (required_deploy) are in no queue, and templates/workflows/*.md (full-dev-cycle conditional security/validate/TDD, devops-cycle missing security/validate/completion-audit/triage, Incident Fast Path) still contradict required_deploy. Recommendation: make sb:verify invoke verify-tests, sb:review-triage invoke silver-triage and sb:execute invoke tdd in the skill text (no new queue atoms: they would duplicate catalog atoms), and align the two workflow docs (docs/workflows must stay byte-identical to templates/workflows). Needs the skills/workflows owner."
+    }
+  ],
+  "files_changed_outside_ownership": [
+    "hooks/agent-delegation-guard.sh: R4-17 (G6 delegation file; minimal: path collection + registration)",
+    "hooks/hooks.json (+ generated docs/HOOKS.md, hooks/cursor-hooks.json, plugins/silver-bullet/cursor-hooks.json), CLAUDE.md hook count 96->95: R4-26 registration dedup and R4-17 Bash coverage",
+    "hooks/lib/site-session.sh: R9-31 (deactivate call removed)",
+    "hooks/live-publish-evidence-gate.sh, hooks/v-loop-rollup-gate.sh: R9-05 worker skip removed on Stop",
+    "hooks/stop-check.sh: worker SubagentStop no longer clears shared state; Stop release after repeated no-progress blocks",
+    "One-line `SB_ORCH_HOOK_INPUT=\"$input\"` (+shellcheck pragma) in hooks/flow-advance.sh, instruction-ledger-gate.sh, outcomes-check.sh, prompt-reminder.sh, review-fix-ladder-guard.sh (G6), rfl-policy-c-gate.sh (G6), session-start, site-preview-preflight.sh, site-regression-gate.sh, site-visual-evidence-gate.sh, subagent-stop-enforcement.sh: lets sb_orchestrator_is_worker_session read the payload",
+    "scripts/generate-apo-catalog.py + regenerated docs/apo-catalog.json, docs/composable-flows-contracts.md, docs/generated/atomic-flow-index.json, docs/workflow-composition-matrix.md: bugfix/fast queues (R10-02)",
+    "skills/silver-bugfix, silver-fast, silver-orchestrator SKILL.md + sync-codex-package mirrors (agents/claude, host-bundles/codex, plugins/silver-bullet/*skill-source, incl. cursor-skill-source: expect a trivial conflict with the Cursor removal)",
+    "docs/ENFORCEMENT.md: worker SubagentStop wording",
+    "tests: tests/lib/b-orchestrator-helpers.sh, tests/hooks/test-session-start.sh, test-stop-check-paths.sh, test-site-hooks-gates.sh, test-site-session-gates.sh, test-v-loop-rollup-gate-hook.sh, test-agent-delegation-guard-hook.sh, tests/integration/test-skill-execution-paths.sh, tests/scripts/test-composition-triple-alignment.sh, tests/scripts/test-orchestrator-event-log.sh",
+    "tests/coverage/known-limits.json: hooks/lib/orchestrator-scheduler.sh entry moved 797 -> 774 (same statement, scoped run exits 0)"
+  ],
+  "validation": {
+    "tests": "36 hooks test files + docs checks: 2553 passed, 0 failed under claude (post-merge); same 36 + test-orchestrator-doc under SILVER_BULLET_RUNTIME=codex: 2528 passed, 0 failed; wider affected set (48 files: session-start, prompt-reminder, outcomes, rfl, review-fix-ladder, site gates, integration, enterprise scorers, catalog scripts): 1889 passed under claude and under codex; 16 catalog/mirror/parity script tests: 650 passed; docs suite 216 passed.",
+    "coverage": "One scoped run (--jobs 2 --show-missing, 15 files: hooks/lib/orchestrator-*.sh, orchestrator-directive-guard, subagent-start, agent-delegation-guard, stop-check, site-session, live-publish-evidence-gate, v-loop-rollup-gate, flow-advance; 36 test files): Bash statements 3528/3528, lines 2296/2296, functions 176/176 = 100.00%, exit 0 (known limit scheduler:774 valid). The one-line SB_ORCH_HOOK_INPUT assignments in the other hooks run in each of their existing tests.",
+    "lint": "bash scripts/lint-shell.sh --all --jobs 2: application and test Bash clean (post-merge).",
+    "invariants": "check-repo-invariants.sh no FAIL; generate-hook-reference --check, generate-apo-artifacts --check, validate-plugin-mirror.sh OK; sync-codex-package.sh leaves no diff."
+  },
+  "notes": "Merged claude/optimistic-ramanujan-tccfud (5acae75) into the branch: clean merge, post-merge tests re-run green. Commits were regrouped into 5 topical commits (+ merge). Red evidence is the finding probes (same scenarios reproduced by the new tests); full red runs against the base tree were not repeated because the repository must not be copied. Questions for the user: (1) does Codex put an agent id in subagent hook payloads, and under which field name? If not, the Codex adapter must export SB_ORCHESTRATOR_WORKER=1 for workers, otherwise Codex workers are treated as parent (Edit/Write denied). (2) R10-02 part B recommendation above.",
+  "review_repair_r1": {
+    "blocker_stop_release": "stop-check.sh skips only the two orchestrator blocks when sb_orchestrator_stop_block_released; planning floor, stall block and later checks still run; stop_release event logged; tests/hooks/test-stop-check-paths.sh rewritten (floor blocks on every Stop, stall block honoured, floor satisfied allows).",
+    "major_codex_workers": "sb_orchestrator_host_identifies_workers (SILVER_BULLET_RUNTIME claude only); sb_orchestrator_is_parent_session is false elsewhere unless SB_ORCHESTRATOR_PARENT=1/true; docs/ORCHESTRATOR.md states 'parent-mode enforcement needs host worker identity; Claude has it, Codex pending'. Tests: parent-lib, parent-guard (codex patch/Bash not denied, claude denied/worker), stop-check-paths; parent-mode tests pinned to claude, prompt-reminder/site-hooks-gates/stop-check use SB_ORCHESTRATOR_PARENT=1.",
+    "major_R10-02_B": "sb_orchestrator_apply_deploy_floor adds silver-triage (after review-triage), verify-tests (after verify), tdd (before execute) from the configured required_deploy[_devops] (config authoritative; devops list has no tdd); flow_to_skill/is_flow_atom/worker-template mapping for the 3 tokens (existing REVIEW-TRIAGE/EXECUTE/VERIFY templates); catalog generator df() mirrors it; templates/workflows + docs/workflows (byte-identical) name every required_deploy skill; tests: queue-order (every required_deploy skill recorded by feature/ui/bugfix/refactor/devops queues, config authority, no-op cases), tests/docs/test-workflow-required-deploy.sh, alignment test sets tdd aside.",
+    "minors": [
+      "env/assignment prefixes (rtk_unwrapped, also in sh -c payloads) and foreign `bash <silver-bullet>` scripts denied for sanctioned parent commands",
+      "delegation guard: tree-scope .writes[] over an owned dir are in scope",
+      "stale session-start comment, runtime-extensibility row, site-visual-evidence-gate comment, ENFORCEMENT.md SubagentStop statement",
+      "SC2034 disables scoped to the result-variable assignments",
+      "event-log append and trim under one lock"
+    ],
+    "merge": "merged claude/optimistic-ramanujan-tccfud 2a65018 (clean, no conflicts) before the fixes",
+    "predicted_conflicts_with_G3_fix/G3-stop-prompt-override": [
+      "CLAUDE.md (hook count)",
+      "docs/HOOKS.md (regenerate)",
+      "docs/ORCHESTRATOR.md",
+      "hooks/hooks.json",
+      "hooks/lib/orchestrator-state.sh (keep both sb_orchestrator_stop_block_released and G3's clear_queue_on_interrupt)",
+      "hooks/orchestrator-directive-guard.sh (both removed the PreToolUse override branch; keep one comment)",
+      "tests/hooks/test-orchestrator-directive-guard-hook.sh"
+    ],
+    "predicted_conflicts_with_G4_fix/G4-session-state": [
+      "CLAUDE.md (hook count)",
+      "docs/HOOKS.md (regenerate)"
+    ],
+    "validation": {
+      "coverage": "one scoped run, 16 files (adds site-visual-evidence-gate.sh): Bash statements 3691/3691, lines 2399/2399, functions 182/182 = 100%, exit 0; known limit scheduler.sh moved 774 -> 773 and valid",
+      "tests": "84 test files + 2 docs tests: 4523 passed claude, same set codex run clean after pinning parent-mode tests (646/646 on the 5 affected files under both)",
+      "lint": "lint-shell --all --jobs 2 clean",
+      "invariants": "check-repo-invariants no FAIL; hook-reference, apo-artifacts, plugin-mirror OK; sync-codex-package no diff"
+    }
+  }
+}

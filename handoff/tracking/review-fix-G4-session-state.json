@@ -1,0 +1,216 @@
+{
+  "package": "G4-session-state",
+  "head_reviewed": "a18ccca",
+  "verdict": "CHANGES_REQUIRED",
+  "per_finding": [
+    {
+      "id": "R2-12",
+      "verdict": "fixed",
+      "notes": "sb_prereq_find_repair_script resolves only <plugin>/scripts; the repair is report-only (no brew/apt/sudo) and only prunes/refreshes the cache alias. The hostile scripts/sb-prerequisite-repair.sh is never run (test-g4-session-start, re-run in both runtimes). sb_claude_ensure_plugin_cache_ready still rsyncs hooks when repo_root/.claude-plugin/plugin.json names silver-bullet (a repo can forge that), but it is now reached only from agent-claude delegate/preflight with SB_ROOT = the plugin's own root, not from any hook."
+    },
+    {
+      "id": "R3-03",
+      "verdict": "incomplete",
+      "notes": "session-start, semantic-compress, rfl-quota-retry-due and the prerequisite probe now resolve from the plugin root (probe pB/pC; the reverted copy fails 3 assertions in test-g4-session-start). NOT fixed: hooks/phase-lock-claim.sh (and heartbeat/release) still execute $PWD/.planning/scripts/phase-lock.sh. Probe pD: a project with .planning/scripts/phase-lock.sh (touch PWNED) plus an Edit payload on .planning/phases/001-x/001-PLAN.md -> PWNED-phaselock created, rc=0. See issue 1."
+    },
+    {
+      "id": "R3-04",
+      "verdict": "fixed",
+      "notes": "Probe pC: 'a[$(touch X)]' in all four numeric keys -> no PWNED, normal output; 1e400, -1 and '0x10' fall back to the defaults. tfidf-rank validates SB_CHUNK_BYTES."
+    },
+    {
+      "id": "R8-08",
+      "verdict": "fixed",
+      "notes": "Same as the session-start part of R3-03; hostile paths/heartbeat/session-verify are never sourced."
+    },
+    {
+      "id": "R10b-03",
+      "verdict": "fixed",
+      "notes": "silver-bullet:sb:plan and silver-bullet:silver-bullet:sb:plan record silver-plan; SILVER-BULLET:, 'silver-bullet::' and a leading space record nothing. The reverted copy fails 6 assertions in test-skill-discovery. Side gap: hooks/semantic-compress.sh still triggers only on the bare sb:plan/silver-plan names (issue 5)."
+    },
+    {
+      "id": "R3-06",
+      "verdict": "fixed",
+      "notes": "Probe pC: '/../x/outside/', a symlinked src dir, '/src/../../outside/', '/./srclink/', '//srclink//', an absolute path, a symlinked file or dir inside src and a symlinked docs/ all leak nothing. Residual: the new cache .gitignore write follows a planted dangling symlink (issue 3)."
+    },
+    {
+      "id": "R3-07",
+      "verdict": "fixed",
+      "notes": "Probe pA: a deleted branch file plus a new branch 'feature/b+1' resets; a symlinked branch file pointing at a forged record resets (the read is refused); a branch file that is a directory resets; resume onto another branch resets; a symlinked state file is unlinked and its target untouched. Scope key not moved inside the state file (the reviewer's first option); forging the branch file by hand is deliberate same-user tampering, which the threat model accepts."
+    },
+    {
+      "id": "R3-08",
+      "verdict": "fixed",
+      "notes": "Probe pE (claude and codex): invoke-skill sb:release with no UAT.md and a valid receipt -> 'Skill not recorded: ... UAT GATE', state empty. A failing gate counts as a deny. Residual: the skill text is still printed to the agent (only the record is refused); adapter skill roots are not restricted (minor, issue 6)."
+    },
+    {
+      "id": "R3-11",
+      "verdict": "fixed",
+      "notes": "session-start no longer persists the tier; config bytes and mode are unchanged across startup/clear/compact/resume; a planted .silver-bullet.json.tmp symlink is not followed. sb_atomic_write_file: mktemp in the same directory, mode kept, symlink refused. sb_enforcement_tier_persist now has no caller although its comment says 'sb:doctor' (minor, issue 7)."
+    },
+    {
+      "id": "R3-12",
+      "verdict": "fixed",
+      "notes": "The ledger path needs the enclosing SB project and physical containment, so a prompt from a non-SB repo or another project is not logged; token redaction added. Residual: JWT/Bearer tokens are not redacted."
+    },
+    {
+      "id": "R8-07",
+      "verdict": "fixed",
+      "notes": "As R2-12."
+    },
+    {
+      "id": "R1-23",
+      "verdict": "fixed",
+      "notes": "The 'security' alias is gone; evil:security and evil:silver-plan record nothing. The trusted dependency namespaces (superpowers, engineering, design, product-management, multai) still peel to SB-owned names: 'engineering:silver-secure' and 'superpowers:silver-plan' record SB markers (minor, issue 4)."
+    },
+    {
+      "id": "R16-01",
+      "verdict": "fixed",
+      "notes": "CLAUDE.md is corrected, and session-start warns when it discards an out-of-scope override. record-skill and completion-audit still discard it silently (noted by the author)."
+    },
+    {
+      "id": "R3-14",
+      "verdict": "ok",
+      "notes": "Partial (mitigation only) is acceptable: per-project/worktree state needs every state reader across G1-G5. Recommended answer: yes, do it as one dedicated change after G1-G5 merge, with the state dir keyed by sha256(git toplevel) plus the branch, and the project-root cache keyed by session_id."
+    },
+    {
+      "id": "R3-15",
+      "verdict": "fixed",
+      "notes": "Detached HEAD leaves the state and branch file untouched (probe pA #8); a rebase scopes to the rebased branch (rebase-merge/apply head-name, works in worktrees via rev-parse --git-dir); an unborn branch uses symbolic-ref."
+    },
+    {
+      "id": "R3-16",
+      "verdict": "ok",
+      "notes": "needs-user. Recommended answer: yes. Ship the helper as scripts/phase-lock.sh (or scripts/lib/), with the R3-16 fix (empty file = {}, corrupt JSON -> claim/heartbeat/release return 1 and the claim hook warns), and have the three phase-lock hooks resolve it from the plugin root. This needs no edit to .planning/: the dogfood copy can stay until a sanctioned sync, and known-limits.json then moves to the new path. The hook-side resolution (issue 1) does not need the user at all."
+    },
+    {
+      "id": "R3-17",
+      "verdict": "incomplete",
+      "notes": "needs-user only for the helper semantics (owner_id, identity_tags). The hook-side items are in hooks/phase-lock-claim.sh and hooks/phase-lock-release.sh, which carry this finding (by-file.tsv), so they are G4's: verify the owner via peek before the short-circuit, session id as owner_id, skip release on SubagentStop when agent_id differs. The report defers them to 'the phase-lock release hook owner', which is this package. Recommended answer: as R3-16, then do the hook side here."
+    },
+    {
+      "id": "R3-18",
+      "verdict": "fixed",
+      "notes": "The lock is created before the sentinel starts and removed by its EXIT/TERM path, so a recycled pid has no lock. Residual: the legacy pid-only format still kills on a user check alone (pre-existing), and a sentinel lost to SIGKILL or a reboot leaves its lock (minor)."
+    },
+    {
+      "id": "R3-19",
+      "verdict": "ok",
+      "notes": "Partial is acceptable: python3 now starts only for invoke-skill commands; semantic-compress uses one find/grep -I pass with caps; the update check is cached for 24 h. The dispatcher merge is a large follow-up. Narrowing the compliance-status '.*' matcher was cheap and could have been done (minor)."
+    },
+    {
+      "id": "R3-20",
+      "verdict": "fixed",
+      "notes": "The phases/<NNN>/ layout produces output with hookEventName PostToolUse (probe pC baseline: 16 KB of output)."
+    },
+    {
+      "id": "R3-22",
+      "verdict": "fixed",
+      "notes": "Deep merge with the existing file winning ($t * $e), order-preserving unions, a backup, and a no-op when the file is already current; covered by test-g4-scripts."
+    },
+    {
+      "id": "R3-23",
+      "verdict": "fixed",
+      "notes": "Next falls through to the configured required_deploy/required_release, devops variants included."
+    },
+    {
+      "id": "R3-25",
+      "verdict": "fixed",
+      "notes": "Probe pA #5: compact keeps trivial, the approval marker and the matrices; startup clears them."
+    },
+    {
+      "id": "R3-26",
+      "verdict": "fixed",
+      "notes": "jq -nc --arg plus hookEventName."
+    },
+    {
+      "id": "R3-28",
+      "verdict": "fixed",
+      "notes": "Migrations go through sb_atomic_write_file, refuse symlinks, validate up front, create .cursor only when it already exists, and test -e for workflows.sh."
+    },
+    {
+      "id": "R3-29",
+      "verdict": "fixed",
+      "notes": "The installed version is regex-checked before arithmetic, and version_to_int rejects non-digits."
+    },
+    {
+      "id": "R3-30",
+      "verdict": "fixed",
+      "notes": "The tautological block is removed; the digest pin rejects tampered content (tested)."
+    },
+    {
+      "id": "R3-32",
+      "verdict": "ok",
+      "notes": "Partial (documented only) is acceptable at low severity; renaming the 48-file alias is risky. Follow-up: route boundary walks through sb_find_project_config_walk_only."
+    },
+    {
+      "id": "R3-33",
+      "verdict": "fixed",
+      "notes": "4 h TTL on the flag, 5 MB rotation, BSD-safe sed redaction, a symlink refusal on the dump file, and a session-start warning."
+    }
+  ],
+  "issues": [
+    {
+      "severity": "major",
+      "location": "hooks/phase-lock-claim.sh:86-130 (also hooks/phase-lock-heartbeat.sh, hooks/phase-lock-release.sh)",
+      "problem": "R3-03 (critical) is left partial in G4's own files: the PreToolUse phase-lock hook still executes repository-controlled code, $PWD/.planning/scripts/phase-lock.sh. /sb:init never stamps that helper into downstream projects, so in any downstream project it can only come from the repository itself, which makes this an RCE on the first Edit of a phase file. The justification ('the brief forbids editing .planning/') does not apply: the hooks can resolve the helper from the plugin root without touching .planning/.",
+      "evidence": "REVF-G4-probe/pD.sh: printf '#!/bin/sh\\ntouch $TL_TMP/PWNED-phaselock' > .planning/scripts/phase-lock.sh; chmod +x; payload {tool_name:Edit, tool_input:{file_path:<proj>/.planning/phases/001-x/001-PLAN.md}} | hooks/phase-lock-claim.sh -> rc=0, PWNED-phaselock created.",
+      "suggested_fix": "Resolve the helper only from the plugin tree: a shipped copy under scripts/ (preferred), or $(dirname BASH_SOURCE)/../.planning/scripts/phase-lock.sh for dogfooding. Never use $PWD. Skip with a message when it is absent. Add a hostile-helper test to tests/hooks/test-phase-lock-hooks-paths.sh. Do the R3-17 hook-side items (owner check via peek, session-id owner, no release from a SubagentStop whose agent_id differs) in the same change."
+    },
+    {
+      "severity": "minor",
+      "location": "hooks/record-skill.sh:213-215",
+      "problem": "The G2 hand-off ('require tool_name Skill, or an adapter receipt, before honouring tool_input.skill') was not done and is not mentioned in the report. Any Bash or exec_command payload that carries tool_input.skill records that skill. Claude Code's strict tool schemas probably prevent the extra key, but whether Codex or other hosts forward unknown argument keys is unverified.",
+      "evidence": "pB.sh: {tool_name:'exec_command', tool_input:{cmd:'ls', skill:'silver-plan'}} | record-skill.sh -> 'Skill recorded', state=[silver-plan]; the same with tool_name Bash.",
+      "suggested_fix": "Take raw_skill only when sb_tool_name is Skill (or the host's skill-tool name); otherwise use the adapter/receipt path only. Add a test."
+    },
+    {
+      "severity": "minor",
+      "location": "scripts/semantic-compress.sh:183 (cache .gitignore) and the cache_dir writes",
+      "problem": "The new '[[ -e .gitignore ]] || printf > .gitignore' follows a dangling symlink (SEC-02), so a repository can make the hook create a file at a path it chooses (fixed content '*'). A symlinked .planning/.context-cache also still sends the cache (project text) outside the repository.",
+      "evidence": "pC.sh: ln -s $TL_TMP/victim-gi .planning/.context-cache/.gitignore; run the hook -> victim-gi created (2 bytes). ln -s victimdir .planning/.context-cache -> the cache JSON is written into victimdir.",
+      "suggested_fix": "Refuse when cache_dir or .gitignore is a symlink ([[ -L ]] -> skip caching), or move the cache under SB_RUNTIME_STATE_DIR keyed by repo hash."
+    },
+    {
+      "severity": "minor",
+      "location": "hooks/lib/skill-discovery.sh:184-193",
+      "problem": "The trusted dependency namespaces peel into SB-owned names: 'engineering:silver-secure', 'superpowers:silver-plan' and 'multai:silver-quality-gates' record SB markers. 'engineering', 'design' and 'product-management' are generic plugin names that other marketplaces also use (they are installed in this very environment).",
+      "evidence": "pB.sh: engineering:silver-secure -> state=[silver-secure]; superpowers:silver-plan -> state=[silver-plan].",
+      "suggested_fix": "After peeling a dependency namespace, accept only that dependency's own retired names (code-review, writing-plans, tdd, ...), never silver-* or sb:*. Only the silver-bullet namespace may yield SB-owned markers."
+    },
+    {
+      "severity": "minor",
+      "location": "hooks/semantic-compress.sh:17-21",
+      "problem": "Following R10b-03, Claude invokes plugin-qualified names (silver-bullet:sb:plan), but the semantic-compress hook's case statement matches only bare names, so the feature R3-20 just made work stays inert for qualified invocations.",
+      "evidence": "pC.sh: a payload with skill silver-bullet:sb:plan -> 0 bytes of output (bare sb:plan -> 16678 bytes).",
+      "suggested_fix": "Canonicalise the name with sb_skill_canonical_name before the case statement."
+    },
+    {
+      "severity": "minor",
+      "location": "hooks/record-skill.sh:150-168",
+      "problem": "The adapter gating refuses only the record; the skill body has already been printed to the agent by scripts/silver-bullet, and the adapter skill roots are not restricted to the plugin. This is acceptable for the state floor, but the forbidden or UAT-gated text is still delivered.",
+      "evidence": "pE.sh: the UAT-denied sb:release is not recorded (good), but scripts/silver-bullet prints the skill text before the PostToolUse hook runs.",
+      "suggested_fix": "Follow-up: run the same gates inside scripts/silver-bullet invoke-skill before printing, and restrict skill_file to the plugin's skills/."
+    },
+    {
+      "severity": "minor",
+      "location": "hooks/lib/enforcement-tier-gate.sh:30-50",
+      "problem": "sb_enforcement_tier_persist has no caller left, but its comment says 'explicit callers only: sb:doctor'. It is dead code, kept alive only by tests.",
+      "evidence": "grep -rn sb_enforcement_tier_persist hooks scripts skills -> only the definition and tests.",
+      "suggested_fix": "Delete it (and its tests), or wire it to the real sb:doctor path and fix the comment."
+    },
+    {
+      "severity": "minor",
+      "location": "CLAUDE.md:111, docs/HOOKS.md",
+      "problem": "A textual merge conflict with fix/G3-stop-prompt-override: the hook-command count (G4 says 97, G3 says 99; merged it should be 100) and the generated HOOKS.md. Clean against the base, G1 and G2.",
+      "evidence": "git merge-tree --write-tree fix/G4-session-state fix/G3-stop-prompt-override -> CONFLICT in CLAUDE.md and docs/HOOKS.md.",
+      "suggested_fix": "Whoever merges second: recount from hooks.json and regenerate docs/HOOKS.md with scripts/generate-hook-reference.py."
+    }
+  ],
+  "validation": {
+    "tests": "tests/hooks/test-g4-session-start.sh + tests/hooks/test-record-skill-adapter.sh under claude and codex: 95/95 each. Reverse-change check in a git-archive copy: plugin root -> project root makes 3 assertions in test-g4-session-start fail; the old namespace stripping makes 6 assertions in test-skill-discovery fail. The tests assert behaviour.",
+    "coverage": "One scoped run (claude, --jobs 2, the 26 changed hook/script files, the author's 75 test files): Bash statements 3012/3012, lines 2093/2093, functions 95/95 = 100% for every file; 2805 tests passed, 0 failed; exit 0. known-limits untouched.",
+    "lint": "scripts/lint-shell.sh --all --jobs 2: application and test Bash clean. No Bash 4 constructs or GNU-only flags without a fallback added in hooks/.",
+    "invariants": "check-repo-invariants: all PASS (incl. personal-data, workflow-hardening). generate-hook-reference --check OK, generate-apo-artifacts --check OK, validate-plugin-mirror OK; skills unchanged (no sync needed). silver-bullet.md/template/core-rules.md unchanged; docs/workflows == templates/workflows. Trailers: all 8 commits end with Co-Authored-By: Claude Sonnet 5.5 + Claude-Session; no other model names. merge-tree: clean vs claude/optimistic-ramanujan-tccfud (5acae75), fix/G1, fix/G2; CLAUDE.md + docs/HOOKS.md conflict vs fix/G3 (count line + generated file). G1 hand-off done: enterprise-human-deploy-approved and ci-red-override are cleared on startup/clear and on a scope reset (probe pA #6), and the file names match G1's. Latency: session-start ~4-5 s, the same as the base with CLAUDE_PLUGIN_ROOT set (no regression); record-skill on a plain Bash call ~0.5 s, no python."
+  }
+}

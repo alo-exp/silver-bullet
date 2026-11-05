@@ -1,0 +1,641 @@
+{
+  "package": "H8a-deep-research",
+  "branch": "fix/H8a-deep-research",
+  "head": "15b4701",
+  "worktree": "/home/user/silver-bullet/.claude/worktrees/agent-a279a828b36127c91",
+  "dispositions": [
+    {
+      "id": "R11-01",
+      "status": "fixed",
+      "commits": [
+        "25bf9f0",
+        "197a8d6",
+        "a9a8968",
+        "dd40805"
+      ],
+      "tests": [
+        "skills/silver-multi-ai-task/tests/test_worker_hardening.py"
+      ],
+      "evidence": "red 17F/5E -> green; cursor no --force, delegates strict, fresh temp cwd, fenced prompts; repair: codex runs directly with --sandbox read-only (prompt on stdin, fresh empty cwd); claude delegate forced to CLAUDE_PERMISSION_MODE=default, SB_AGENT_CERT_RUN dropped; Ctrl-C/SIGTERM kills live worker groups",
+      "notes": "Codex runs codex exec --sandbox read-only and claude runs claude --print --permission-mode default, both direct with stdin prompts. G6 need: agent-host-exec.sh:69/83 and tests/live/agents/codex/agent.sh:211 map strict to acceptEdits / danger-full-access; a default/plan and read-only mapping is needed before the delegates can be used for research. Dispatcher interrupt cancels queued workers. Residual: cursor_host_adapter.launch passes a non-empty task_prompt unfenced (no production caller). Round 3: cancel flag checked before every spawn (no fallback/retry session after Ctrl-C)."
+    },
+    {
+      "id": "R12-04",
+      "status": "fixed",
+      "commits": [
+        "25bf9f0"
+      ],
+      "tests": [
+        "test_worker_hardening: fenced prompt tests"
+      ],
+      "evidence": "build_worker_prompt fences prior-phase context with per-prompt nonce and data-not-instructions rule",
+      "notes": "dr_live_runner.py (H8b) still forwards raw prior output; it now arrives fenced by live_dispatch"
+    },
+    {
+      "id": "R11-02",
+      "status": "fixed",
+      "commits": [
+        "88f266f",
+        "197a8d6",
+        "a9a8968",
+        "dd40805",
+        "86504f4"
+      ],
+      "tests": [
+        "test_claim_gate_hardening.py",
+        "test_claim_gate_hardening.py: ThreeValuedVerdictTests, VerbatimAndHeldOutCorpusTests (r4 corpus), ClaimCorpusTests",
+        "fixtures/claim_corpus_r4.json"
+      ],
+      "evidence": "r4 repair (user decision \"Conservative + escalate\"): verdicts are three-valued. supported only when value+unit/currency/range+bound noun, every entity and polarity are unambiguous; contradicted on clear opposite evidence (scoped polarity, zero/without, opposite verbs); otherwise needs_review naming the figure/entity/polarity; unsupported when no quote shares a name, figure or enough words. strict exits 1 on contradicted and unsupported/uncited factual claims, lists needs_review (review_required, needs_review[], stderr count, report section). Fixed r4 bugs: range parsing (\"and\" joins number words only in a compound; ranges tagged lo/hi), currency set (yen/yuan/RMB/rupee/franc/A$/C$/HK$/S$/NZ$/codes/words; stated claim currency must appear in quote), year binding (opener segments merge forward; year must co-occur with the claim's other figures), metric binding (verbs of change dropped; nearest metric word required), \"not even\" is a negation, scoped negation (\"A supports X and B does not\", \"with no X\", \"X, not Y\", idioms), role swap/voice ambiguity, negated fragments, short evaluative sentences (\"Pricing is simple\") are not claims while counts (\"7 days\") and names are. Corpus verdict counts: {\"verbatim r1-r3\": {\"F\": {\"supported\": 0, \"contradicted\": 17, \"needs_review\": 36, \"unsupported\": 2}, \"H\": {\"supported\": 49, \"contradicted\": 0, \"needs_review\": 1, \"unsupported\": 0}}, \"r4 verbatim\": {\"F\": {\"supported\": 0, \"contradicted\": 2, \"needs_review\": 34, \"unsupported\": 0}, \"H\": {\"supported\": 64, \"contradicted\": 0, \"needs_review\": 5, \"unsupported\": 0}}, \"curated\": {\"F\": {\"supported\": 0, \"contradicted\": 14, \"needs_review\": 30, \"unsupported\": 1}, \"H\": {\"supported\": 45, \"contradicted\": 0, \"needs_review\": 0, \"unsupported\": 0}}, \"held-out\": {\"F\": {\"supported\": 0, \"contradicted\": 11, \"needs_review\": 21, \"unsupported\": 0}, \"H\": {\"supported\": 32, \"contradicted\": 0, \"needs_review\": 0, \"unsupported\": 0}}}",
+      "notes": "needs_review is not a pass: documented resolve workflow (quote the exact supporting span as evidence, or correct/remove the claim) in SKILL.md and reference/quality-gates.md. Fabrication probes (r1-r4 verbatim, curated, held-out): 0 supported; 3 are unsupported (unrelated quote) which strict fails; honest probes: 0 contradicted/unsupported, 6 of 119 verbatim honest need review (passive/active voice, \", not X,\" parenthetical, negation reach in a coordinated claim, noun paraphrase of a metric). Residual: supported means the words match, not that the claim is true (antonyms outside the table, unit synonyms, idioms)."
+    },
+    {
+      "id": "R11-03",
+      "status": "fixed",
+      "commits": [
+        "88f266f"
+      ],
+      "tests": [
+        "test_claim_gate_hardening.py"
+      ],
+      "evidence": "--json - / --json-file; docs use quoted heredocs",
+      "notes": ""
+    },
+    {
+      "id": "R11-05",
+      "status": "fixed",
+      "commits": [
+        "88f266f",
+        "197a8d6"
+      ],
+      "tests": [
+        "test_claim_gate_hardening.py"
+      ],
+      "evidence": "verify takes --report; repair: SKILL.md now `verify --dir --report --strict`; DocumentedCommandsTests parse every documented command and run the SKILL.md gate on honest/fabricated runs (red: \"invalid choice\")",
+      "notes": ""
+    },
+    {
+      "id": "R11-06",
+      "status": "fixed",
+      "commits": [
+        "4eb8729",
+        "197a8d6",
+        "a9a8968",
+        "dd40805"
+      ],
+      "tests": [
+        "test_report_output_hardening.py",
+        "test_verify_citations.py"
+      ],
+      "evidence": "red 4F/10E -> green",
+      "notes": "Round 2: whole-word case-aware placeholders, AI/transformer anachronism removed, only future-year/no-locator/DOI-mismatch are hard; 16-entry honest bibliography passes incl. lenient. Round 3: --lenient comment/docs corrected (placeholders are warnings)."
+    },
+    {
+      "id": "R11-07",
+      "status": "fixed",
+      "commits": [
+        "4eb8729"
+      ],
+      "tests": [
+        "test_report_output_hardening.py"
+      ],
+      "evidence": "escaped HTML, http(s)-only hrefs, html_to_pdf url_fetcher",
+      "notes": ""
+    },
+    {
+      "id": "R11-08",
+      "status": "fixed",
+      "commits": [
+        "25bf9f0"
+      ],
+      "tests": [
+        "test_worker_hardening.py"
+      ],
+      "evidence": "per-future isolation; ok only with authoritative result",
+      "notes": ""
+    },
+    {
+      "id": "R11-09",
+      "status": "fixed",
+      "commits": [
+        "25bf9f0"
+      ],
+      "tests": [
+        "test_worker_hardening.py"
+      ],
+      "evidence": "max-agents/concurrency enforced; honest budget; ledger",
+      "notes": ""
+    },
+    {
+      "id": "R11-10",
+      "status": "fixed",
+      "commits": [
+        "25bf9f0"
+      ],
+      "tests": [
+        "test_worker_hardening.py"
+      ],
+      "evidence": "fallback models only with SB_CURSOR_MODEL_ALLOW_FALLBACK",
+      "notes": ""
+    },
+    {
+      "id": "R11-11",
+      "status": "fixed",
+      "commits": [
+        "25bf9f0",
+        "86504f4"
+      ],
+      "tests": [
+        "test_worker_hardening.py"
+      ],
+      "evidence": "process-group SIGTERM/SIGKILL",
+      "notes": " Round 4: the cancel flag is checked and the process registered under one lock after Popen (interrupt sets the flag under the same lock), closing the check-then-spawn race (test_an_interrupt_during_spawn_still_stops_the_new_worker)."
+    },
+    {
+      "id": "R11-12",
+      "status": "fixed",
+      "commits": [
+        "911f8e7"
+      ],
+      "tests": [
+        "skills/silver-deep-research/tests/test_landscape_pipeline_hardening.py: CompareCategoryPackTests, ShortlistTests; test_cov_category_pack.py"
+      ],
+      "evidence": "red: windsurf ranked in solution-compare; green after shared category_pack.py + fail-closed",
+      "notes": "skills/silver-deep-research/scripts/category_pack.py is the canonical module; H8b should replace skills/silver-deep-research-multi-ai/scripts/category_pack.py with a shim importing it (not edited here)"
+    },
+    {
+      "id": "R11-13",
+      "status": "fixed",
+      "commits": [
+        "4eb8729",
+        "88f266f"
+      ],
+      "tests": [
+        "test_report_output_hardening.py",
+        "test_claim_gate_hardening.py"
+      ],
+      "evidence": "bounded citation numbers",
+      "notes": ""
+    },
+    {
+      "id": "R11-14",
+      "status": "fixed",
+      "commits": [
+        "88f266f"
+      ],
+      "tests": [
+        "test_claim_gate_hardening.py"
+      ],
+      "evidence": "report path + bibliography formats agree",
+      "notes": ""
+    },
+    {
+      "id": "R11-15",
+      "status": "fixed",
+      "commits": [
+        "25bf9f0"
+      ],
+      "tests": [
+        "tests/test_contracts.py docs test"
+      ],
+      "evidence": "SKILL.md CLI matches multi_ai_cli.py",
+      "notes": ""
+    },
+    {
+      "id": "R11-16",
+      "status": "fixed",
+      "commits": [
+        "25bf9f0",
+        "88f266f",
+        "4eb8729",
+        "911f8e7",
+        "29714af",
+        "197a8d6",
+        "dd40805"
+      ],
+      "tests": [
+        "skills/silver-deep-research/tests/test_landscape_pipeline_hardening.py: GeneratedArtifactsPassThePhaseGateTests"
+      ],
+      "evidence": "tests that pinned defects rewritten; fake category_pack module tests replaced; real tool output run through phase gate",
+      "notes": "Every documented python3 script command in SKILL.md/README/reference is parsed by a test; the SKILL.md claim gate is executed end to end. No live-AI run."
+    },
+    {
+      "id": "R11-17",
+      "status": "partial",
+      "commits": [
+        "911f8e7",
+        "29714af",
+        "197a8d6"
+      ],
+      "tests": [
+        "skills/silver-deep-research/tests/test_landscape_pipeline_hardening.py: CompareScoringTests"
+      ],
+      "evidence": "red: 'supported':'false' ticked, duplicate category double-counted",
+      "notes": "Dict features need supported/present true or non-empty evidence_ids; bare-string features remain ticks (legacy list form, no evidence field to check; fixtures of H8b rely on it). Ties flagged; winner stays set for the H8b package gate; SPA labels it \"Top-ranked (tie)\"."
+    },
+    {
+      "id": "R11-18",
+      "status": "fixed",
+      "commits": [
+        "911f8e7"
+      ],
+      "tests": [
+        "test_cov_matrix_ops.py: TestFormulaInjection"
+      ],
+      "evidence": "red: platform name stored as formula -> green data_type s",
+      "notes": ""
+    },
+    {
+      "id": "R11-19",
+      "status": "fixed",
+      "commits": [
+        "911f8e7"
+      ],
+      "tests": [
+        "skills/silver-deep-research/tests/test_landscape_pipeline_hardening.py: SpaTests"
+      ],
+      "evidence": "esc(String(r.score))",
+      "notes": ""
+    },
+    {
+      "id": "R11-20",
+      "status": "fixed",
+      "commits": [
+        "911f8e7"
+      ],
+      "tests": [
+        "skills/silver-deep-research/tests/test_landscape_pipeline_hardening.py: SpaTests"
+      ],
+      "evidence": "report-data block excluded from forbidden scan",
+      "notes": ""
+    },
+    {
+      "id": "R11-21",
+      "status": "fixed",
+      "commits": [
+        "4eb8729"
+      ],
+      "tests": [
+        "test_report_output_hardening.py"
+      ],
+      "evidence": "sections end at level-1/2 heading",
+      "notes": ""
+    },
+    {
+      "id": "R11-22",
+      "status": "fixed",
+      "commits": [
+        "4eb8729",
+        "197a8d6",
+        "a9a8968",
+        "dd40805"
+      ],
+      "tests": [
+        "test_report_output_hardening.py"
+      ],
+      "evidence": "private/loopback/metadata blocked incl. redirects; 1 MB cap",
+      "notes": "Round 2: CONNECT tunnel through HTTPS_PROXY (proxy itself not vetted; target vetted by unsafe_url_reason), tested with a local fake proxy. Round 3: proxy decision = Request.has_proxy(); userinfo/% hosts rejected."
+    },
+    {
+      "id": "R11-23",
+      "status": "fixed",
+      "commits": [
+        "911f8e7"
+      ],
+      "tests": [
+        "skills/silver-deep-research/tests/test_landscape_pipeline_hardening.py: SourceEvaluatorSpoofTests"
+      ],
+      "evidence": "hostname parsing, whole-label matches, future dates",
+      "notes": ""
+    },
+    {
+      "id": "R11-24",
+      "status": "fixed",
+      "commits": [
+        "911f8e7"
+      ],
+      "tests": [
+        "skills/silver-deep-research/tests/test_landscape_pipeline_hardening.py: ShortlistTests"
+      ],
+      "evidence": "SPDX licences pass oss; slugs sanitised",
+      "notes": ""
+    },
+    {
+      "id": "R11-25",
+      "status": "fixed",
+      "commits": [
+        "88f266f"
+      ],
+      "tests": [
+        "test_claim_gate_hardening.py"
+      ],
+      "evidence": "advisory lock per run dir",
+      "notes": ""
+    },
+    {
+      "id": "R11-26",
+      "status": "fixed",
+      "commits": [
+        "88f266f"
+      ],
+      "tests": [
+        "test_claim_gate_hardening.py"
+      ],
+      "evidence": "atomic rewrite, no row loss",
+      "notes": ""
+    },
+    {
+      "id": "R11-27",
+      "status": "fixed",
+      "commits": [
+        "911f8e7",
+        "197a8d6"
+      ],
+      "tests": [
+        "skills/silver-deep-research/tests/test_landscape_pipeline_hardening.py: SearchOrchestratorFaultTests"
+      ],
+      "evidence": "red: RemoteDisconnected traceback -> green recorded in portals_failed; items enriched; token or skipped",
+      "notes": ""
+    },
+    {
+      "id": "R11-28",
+      "status": "fixed",
+      "commits": [
+        "25bf9f0",
+        "88f266f"
+      ],
+      "tests": [
+        "test_worker_hardening.py",
+        "test_claim_gate_hardening.py"
+      ],
+      "evidence": "relative paths in manifest and cohort request",
+      "notes": ""
+    },
+    {
+      "id": "R11-29",
+      "status": "fixed",
+      "commits": [
+        "25bf9f0"
+      ],
+      "tests": [
+        "test_worker_hardening.py"
+      ],
+      "evidence": "-- separator, deadline timeouts, cancel not supported",
+      "notes": ""
+    },
+    {
+      "id": "R11-30",
+      "status": "fixed",
+      "commits": [
+        "25bf9f0"
+      ],
+      "tests": [
+        "tests/scripts/test-provision-cursor-agents.sh"
+      ],
+      "evidence": "project scope writes into git top level",
+      "notes": ""
+    },
+    {
+      "id": "R11-31",
+      "status": "fixed",
+      "commits": [
+        "25bf9f0"
+      ],
+      "tests": [
+        "test_worker_hardening.py"
+      ],
+      "evidence": "plugin layout resolved",
+      "notes": ""
+    },
+    {
+      "id": "R10b-16",
+      "status": "partial",
+      "commits": [
+        "911f8e7"
+      ],
+      "tests": [
+        "skills/silver-deep-research/tests/test_landscape_pipeline_hardening.py: ProjectLocalPackTests"
+      ],
+      "evidence": "red: gate fails for any non-bundled pack -> green with <run>/category-packs/<id>.json",
+      "notes": "partial: project-local packs and pack-driven prompt template/docs done; the interview does not auto-draft a pack and the SB pack still lists Silver Bullet as a must-research seed (it is an example for its own market); drafting UX is a product decision"
+    }
+  ],
+  "files_changed_outside_ownership": [
+    "scripts/agent-opencode-delegate.sh: resolves cohort script via agent_opencode_multi_ai_skill_dir (one line, R11-31)",
+    "plugin/host mirrors (agents/claude, host-bundles, plugins/silver-bullet/skill-source): regenerated by sync-codex-package.sh"
+  ],
+  "validation": {
+    "tests": "round 4: deep-research + multi-ai-task via tests/run-all-tests.sh test-solution-research-python.sh and test-multi-ai-deep-research-contract.sh: 872 passed, 0 failed (see final report for both runtimes)",
+    "coverage": "scoped 100% stmt+branch: verify_claim_support (719/719, 308/308), extract_claims (203/203, 72/72), live_dispatch",
+    "lint": "lint-shell --all clean",
+    "invariants": "check-repo-invariants PASS; generate-hook-reference --check, validate-plugin-mirror OK; merge of claude/optimistic-ramanujan-tccfud: already up to date"
+  },
+  "notes": "Needs: scripts/lib/agent-host-exec.sh (G6) permissive mapping; H8b: shim multi-ai category_pack.py to the deep-research module and add landscape-report.html to its own gate if wanted (the multi-ai package script generates it; deep-research phases.json no longer requires it). Round 4 process: merge commits carry the Co-Authored-By / Claude-Session trailers (git merge --no-ff -m with trailers).",
+  "corpus_numbers_r4": {
+    "verbatim r1-r3": {
+      "F": {
+        "supported": 0,
+        "contradicted": 17,
+        "needs_review": 36,
+        "unsupported": 2
+      },
+      "H": {
+        "supported": 49,
+        "contradicted": 0,
+        "needs_review": 1,
+        "unsupported": 0
+      }
+    },
+    "r4 verbatim": {
+      "F": {
+        "supported": 0,
+        "contradicted": 2,
+        "needs_review": 34,
+        "unsupported": 0
+      },
+      "H": {
+        "supported": 64,
+        "contradicted": 0,
+        "needs_review": 5,
+        "unsupported": 0
+      }
+    },
+    "curated": {
+      "F": {
+        "supported": 0,
+        "contradicted": 14,
+        "needs_review": 30,
+        "unsupported": 1
+      },
+      "H": {
+        "supported": 45,
+        "contradicted": 0,
+        "needs_review": 0,
+        "unsupported": 0
+      }
+    },
+    "held-out": {
+      "F": {
+        "supported": 0,
+        "contradicted": 11,
+        "needs_review": 21,
+        "unsupported": 0
+      },
+      "H": {
+        "supported": 32,
+        "contradicted": 0,
+        "needs_review": 0,
+        "unsupported": 0
+      }
+    }
+  },
+  "review_repair_r5": {
+    "head": "1e77c4e",
+    "fix_commit": "1ca37b6",
+    "decision": "Conservative + escalate (user, binding)",
+    "issues": {
+      "1 negation regression": "fixed: quantifier check on normalised clause + whole-text fallback; no more/less/fewer than vs bare comparative -> needs_review; failed/refused to, hardly, nobody negate",
+      "2 comparison false contradiction": "fixed: name+predicate is not a list item; claim clause == quote clause never contradicted",
+      "3 role swaps": "fixed: names in another order, any gap -> needs_review",
+      "4 co-occurrence/periods/ranges/modal": "fixed: subject+terms+figures in one clause; figure in another entity's segment rejected; parentheses split; Q/H/FY and per-period bound; lone 'one' ranges (pinned test fixed); plan/hedge/condition/replacement/question/prefix cues",
+      "5 sentence split": "fixed (blank line; citation marker before digit/lowercase)",
+      "6 generic openers": "docs now state only listed nouns are excluded"
+    },
+    "tests": [
+      "tests/test_claim_checker_regression_corpus.py (17 tests, all probe pairs of rounds 1-5, 584 pairs)",
+      "fixtures/claim_corpus_r5.json (220 pairs)",
+      "test_claim_gate_hardening.py: 5 pinned expectations updated"
+    ],
+    "evidence": "red: 14 failures in new corpus file (about 75 pairs wrong) + 2 splitter failures; green: 17/17, skill suite 860 OK, 889 passed under claude and codex incl. multi-ai contract",
+    "everyday_honest_60": {
+      "before": "51 supported / 8 needs_review / 1 contradicted",
+      "after": "52 / 8 / 0"
+    },
+    "validation": {
+      "coverage": "verify_claim_support.py 787/787 + 336/336, extract_claims.py 203/203 + 72/72 = 100%",
+      "lint": "lint-shell --all clean",
+      "invariants": "check-repo-invariants exit 0; sync-codex-package no diff",
+      "merge": "claude/optimistic-ramanujan-tccfud merged (merge commit), tests re-run"
+    },
+    "side_effect": "honest paraphrases that invert a sentence (SSO is included on every Acme plan / Acme includes SSO) are now needs_review by decision"
+  },
+  "review_repair_r6": {
+    "review": "review-fix-H8a-deep-research-r6.json (7 major; 65 of 91 fresh fabrications were still supported)",
+    "decision": "User-binding: strict near-quote only. supported = claim repeats one quote word for word (case, punctuation, articles, simple inflection, number written form, 2-pair alias table); order, figures, periods, units exact. Any rewording/reorder/voice change/paraphrase = needs_review. contradicted only for same sentence with explicit not/never added or removed, or one exact same-kind figure replaced.",
+    "commits": [
+      "bafa76e fix(deep-research): sixth repair round",
+      "8c206c5 merge of claude/optimistic-ramanujan-tccfud",
+      "d8474bc chore(mirrors): regenerate",
+      "44ff41d follow-up: writer rules + dr_category_pack rename"
+    ],
+    "removed": "_quantifier_conflict whole-text fallback, role-swap, cue lists, comparator/range tables, figure/segment/clause machinery; verify_claim_support.py 1416 -> 689 lines",
+    "results": {
+      "r6_fabrications_supported": "0 of 91 (86 needs_review, 5 contradicted)",
+      "all_corpus_fabrications_supported": "0 of 380",
+      "honest_contradicted_or_unsupported": 0,
+      "everyday_60_honest": {
+        "supported": 4,
+        "needs_review": 56
+      },
+      "heldout_40_honest": {
+        "supported": 0,
+        "needs_review": 40
+      }
+    },
+    "red_green": "133 tests: red 28 failures + 4 errors against previous script; green 133 OK; test-solution-research-python.sh 832 passed; scoped coverage verify_claim_support.py + extract_claims.py 100% (statements and branches)",
+    "tests_changed": [
+      "new tests/test_claim_strict_rule.py",
+      "tests/test_claim_checker_regression_corpus.py (invariant form + pins)",
+      "tests/fixtures/claim_corpus_r6.json (91 F, 25 H twins, 40 held-out H)",
+      "test_claim_gate_hardening.py, test_verify_claim_support*.py updated; tests of deleted helpers removed"
+    ],
+    "needs_user": "Supported rate is 7% on everyday-60 and 0% on held-out-40, far below \"roughly half\". Whole-quote equality is the only rule found with zero leaks. Alternative (claim is a contiguous run inside the quote, extras allowed): everyday 18/60, held-out 4/40 supported, but 16-21 of 380 fabrications leak (trailing/leading qualifiers: only if, not even, : No, in name only). Recommendation: keep strict; instruct researchers to quote only the supporting sentence.",
+    "outside_ownership": "plugins/silver-bullet/** generated mirrors incl. cursor-skill-source regenerated by sync-codex-package.sh because the merged base left 64 mirror paths stale; no hand edits to Cursor files",
+    "validation": {
+      "tests": "test-solution-research-python.sh + test-multi-ai-deep-research-contract.sh green under claude and codex",
+      "coverage": "verify_claim_support.py, extract_claims.py, dr_category_pack.py 100% statements and branches",
+      "lint": "lint-shell --all clean",
+      "invariants": "check-repo-invariants PASS; validate-plugin-mirror OK; sync no diff",
+      "merge": "claude/optimistic-ramanujan-tccfud 8c161a5 merged"
+    },
+    "integration_conflict": "RESOLVED: skills/silver-deep-research/scripts/category_pack.py renamed dr_category_pack.py (tests and mirrors too); no other module name collides with silver-deep-research-multi-ai or silver-multi-ai-task.",
+    "decision_followup": "User kept whole-quote rule (needs_user resolved). Writer instructions updated (one claim, one sentence, one quote) in SKILL.md, quality-gates.md, prompts, methodology, report-assembly."
+  },
+  "review_repair_r7": {
+    "review": "review-fix-H8a-deep-research-r7.json (3 blockers, 2 majors, 2 minors)",
+    "fix": "Tokenizer keeps every meaning-bearing character (Unicode letters/digits, signs, comparators, currency, %, degree, superscripts, / and hyphens); figures are verbatim tokens with % and currency attached across a space. Removed NFKC, number-word parsing, percent/currency/version rewriting, aliases, filler words; only a/an/the and plural -s remain. contradicted needs exactly one differing token (added/removed not/never/no, or one same-form figure of another value); each quote judged alone. 1416 -> ~560 lines overall.",
+    "tests": "new tests/fixtures/claim_corpus_r7.json (55 F, 12 H from attack.py and honest.py); rewrote tests/test_claim_strict_rule.py; regression corpus pins updated. Red: 19 of 42 failures against the r6 script; green 834 research tests.",
+    "results": {
+      "fabrications_supported": "0 of 428",
+      "honest_contradicted_or_unsupported": 0,
+      "everyday_60": {
+        "supported": 4,
+        "needs_review": 56
+      },
+      "heldout_40": {
+        "supported": 0,
+        "needs_review": 40
+      }
+    },
+    "docs": "SKILL.md, quality-gates.md, chapter_agent prompt state the same rule and list exactly the code (no aliases).",
+    "validation": {
+      "tests": "solution-research-python + multi-ai contract: 863 passed, 0 failed under claude and codex",
+      "coverage": "verify_claim_support.py and extract_claims.py 100% statements and branches",
+      "lint": "lint-shell --all clean",
+      "invariants": "check-repo-invariants PASS; validate-plugin-mirror OK",
+      "merge": "claude/optimistic-ramanujan-tccfud 127e2f9 merged"
+    },
+    "notes": "inflection reduced to plural -s (opening/open leaked); \"does not support\" vs \"supports\" is now needs_review (two tokens)"
+  },
+  "review_repair_r8": {
+    "review": "review-fix-H8a-deep-research-r8.json (2 blockers, 3 majors, 4 minors)",
+    "fix": "Case-sensitive tokens (only the first word capital may differ); articles dropped only lowercase; stemmer removed; ? and * are tokens; [n] stripped only after space/non-digit; Unicode Nd digits mapped to 0-9, NFC; No, and No. are own tokens; sign attaches only at word start; backtick and ellipsis documented as dropped. Several quotes: supported if ANY supports, contradicted only if EVERY quote contradicts, else needs_review.",
+    "tests": "claim_corpus_r8.json (79 F, 19 H, from attack8.py and honest8.py; pairs equal by the rule are filed as honest; the a/the article swap is accepted by the user-approved article rule and left out); strict-rule tests rewritten; red 11 of 46 failures against the r7 script, green 838 research tests",
+    "results": {
+      "fabrications_supported": "0 of 513",
+      "honest_contradicted_or_unsupported": 0,
+      "everyday_60": {
+        "supported": 4,
+        "needs_review": 56
+      },
+      "heldout_40": {
+        "supported": 0,
+        "needs_review": 40
+      }
+    },
+    "validation": {
+      "tests": "863->867 passed, 0 failed under claude and codex (solution-research-python + multi-ai contract)",
+      "coverage": "verify_claim_support.py and extract_claims.py 100% statements and branches",
+      "lint": "clean",
+      "invariants": "PASS, mirror OK",
+      "merge": "94800f8 merged"
+    },
+    "notes": "Open: \"uncommon\"/\"not uncommon\" and \"only\"/\"not only\" contradicted by the one-token rule (accepted by the user).",
+    "followup_articles": "a/an/the are ordinary tokens (STOPWORDS and _keys removed); five article-swap rows added to claim_corpus_r8.json (84 F, 19 H); docs no longer list articles as ignored. Red 4 of 55 failures, green 839 research tests; 868 passed under claude and codex; coverage 100%; lint/invariants/mirror pass."
+  },
+  "review_repair_r9": {
+    "review": "review-fix-H8a-deep-research-r9.json (2 blockers, 2 majors, 3 minors)",
+    "fix": "Tokens = word-character runs, figures, and every other non-space character on its own (nothing dropped). Ignored only: first word capital, one final \".\", curly vs straight quotes, digit script + NFC, [n] marker after space/non-digit, space after a currency symbol or before %/currency, contractions. \"no\" negates only when a word follows directly. Docs, docstring and prompt list exactly these and the Polish/polish residual.",
+    "tests": "claim_corpus_r9.json (90 F, 62 H from attack9.py and honest9.py single-quote rows; pairs equal by the rule filed as honest); red 7 of 50 against the r8 script, green 842 research tests",
+    "results": {
+      "fabrications_supported": "0 of 609",
+      "honest_contradicted_or_unsupported": 0,
+      "everyday_60": {
+        "supported": 4,
+        "needs_review": 56
+      },
+      "heldout_40": {
+        "supported": 0,
+        "needs_review": 40
+      }
+    },
+    "validation": {
+      "tests": "871 passed, 0 failed under claude and codex",
+      "coverage": "verify_claim_support.py and extract_claims.py 100%",
+      "lint": "clean",
+      "invariants": "PASS, mirror OK",
+      "merge": "already up to date"
+    },
+    "notes": "Multi-quote probe rows are covered by the any/every aggregation tests, not by the single-quote fixture."
+  }
+}

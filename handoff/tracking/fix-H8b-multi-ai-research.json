@@ -1,0 +1,593 @@
+{
+  "package": "H8b-multi-ai-research",
+  "branch": "fix/H8b-multi-ai-research",
+  "head": "e0938c03df0ec5a4fbc940b9395c84a4132120f6",
+  "worktree": "/home/user/silver-bullet/.claude/worktrees/agent-a43f9d089d0241c7f",
+  "dispositions": [
+    {
+      "id": "R10b-01",
+      "status": "fixed",
+      "commits": [
+        "2c391b4"
+      ],
+      "tests": [
+        "skills/silver-deep-research-multi-ai/tests/test_report_security.py",
+        "tests/js/landscape-report-xss.test.mjs: hostile entries in real Chromium"
+      ],
+      "evidence": "Red: body 'Loading report\u2026', marked.min.js loaded, <img onerror> survived -> Green: report body rendered to static HTML in Python, every sink builds DOM, CSP; 13 python + 4 node tests pass.",
+      "notes": ""
+    },
+    {
+      "id": "R12-01",
+      "status": "fixed",
+      "commits": [
+        "2c391b4"
+      ],
+      "tests": [
+        "skills/silver-deep-research-multi-ai/tests/test_report_security.py"
+      ],
+      "evidence": "Same fix and evidence as R10b-01.",
+      "notes": ""
+    },
+    {
+      "id": "R12-02",
+      "status": "fixed",
+      "commits": [
+        "00a0677",
+        "193300e",
+        "2d0b3eb",
+        "340d13e",
+        "3f1429e",
+        "5907c3b",
+        "915d724",
+        "93956e3",
+        "b83bba8",
+        "ecfefa7",
+        "f0d44b1"
+      ],
+      "tests": [
+        "skills/silver-deep-research-multi-ai/tests/test_cov_landscape_critique_artifacts.py: test_defaults_without_data, test_with_chart_and_audit, test_table_rows_come_from_the_run_divergences, test_patch_creates_empty_ledger_without_inventing_vendors_or_run_id",
+        "skills/silver-deep-research-multi-ai/tests/test_synthesize_landscape_report.py: test_buying_guidance, test_legacy_report_*"
+      ],
+      "evidence": "Red: 13 errors/16 failures once literals were removed (tests pinned them) -> rewritten; green 784 tests. Executive summary, ledger membership, coverage gaps, buying guidance, adjacent note, outlook, problem/market/trend text and consensus themes are now built from the run or from the pack overlay; canonical resolutions naming absent models, Zuvo ledger row, fixed run_id/date, SB leader fallback and gemini='Heavy' weighting removed. | RESUME: COMMERCIAL/OSS/EMERGING catalogues are empty in code and the per-market chart profiles live in the APO overlay (market_chart_profiles) with a neutral default; tests install tests/legacy_catalog_fixture.py explicitly; test_no_vendor_catalogue_or_market_profile_is_built_in pins it. | FINAL: KNOWN_SOLUTIONS, OVERVIEW_SEEDS, SLUG_ALIASES, _HEAD_SLUG_ALIASES now empty in code; the APO overlay carries known_solutions/overview_seeds/slug_aliases/head_slug_aliases, merged only when the pack is selected (NoBuiltInVendorDataTests). | REPAIR: all APO/SDLC wording and rules are pack vocabulary (scripts/pack_vocabulary.py, overlay 'vocabulary'): feature rubric/aliases/prose signals, leader rules, wave weights, KCFs, ledger criteria+legend, rename policies, URL rewrites, vendor special cases; cards/inclusion text/category default are neutral. Non-APO e2e (tests/test_open_world_e2e.py) asserts no SDLC/APO/3-of-7 wording.",
+      "notes": ""
+    },
+    {
+      "id": "R12-03",
+      "status": "fixed",
+      "commits": [
+        "193300e",
+        "3f1429e",
+        "5907c3b",
+        "915d724",
+        "93956e3",
+        "b83bba8",
+        "c3a29e2",
+        "ecfefa7"
+      ],
+      "tests": [
+        "skills/silver-deep-research-multi-ai/tests/test_data_safety.py",
+        "skills/silver-deep-research-multi-ai/tests/test_cov_dr_live_runner.py"
+      ],
+      "evidence": "Red: brief hard-coded the APO question and need_profile.json/scope.md overwritten -> Green: brief from query/research type/need profile, files written only when absent, pack lines from overlay. | REPAIR: --force carries need_profile.json and scope.md into the fresh run.",
+      "notes": ""
+    },
+    {
+      "id": "R12-04",
+      "status": "fixed",
+      "commits": [
+        "c3a29e2"
+      ],
+      "tests": [
+        "skills/silver-deep-research-multi-ai/tests/test_data_safety.py"
+      ],
+      "evidence": "Cross-phase context lists every model sorted, structured claim/source/confidence only, bounded to 2000 chars, labelled untrusted, never raw_text.",
+      "notes": "The least-privilege worker side (scripts/lib/agent-host-exec.sh, silver-multi-ai-task/live_dispatch.py) belongs to G6/R11, not changed here."
+    },
+    {
+      "id": "R12-05",
+      "status": "fixed",
+      "commits": [
+        "c3a29e2"
+      ],
+      "tests": [
+        "skills/silver-deep-research-multi-ai/tests/test_data_safety.py"
+      ],
+      "evidence": "Red: 2000-char prefix of last five payloads -> Green: deterministic, all models, structured.",
+      "notes": ""
+    },
+    {
+      "id": "R12-06",
+      "status": "fixed",
+      "commits": [
+        "193300e",
+        "3f1429e",
+        "5907c3b",
+        "7d807e8",
+        "915d724",
+        "93956e3",
+        "b83bba8",
+        "ecfefa7",
+        "f0d44b1"
+      ],
+      "tests": [
+        "skills/silver-deep-research-multi-ai/tests/test_cov_materialize.py: test_assign_support_is_a_majority_vote_not_sticky, test_one_claim_is_one_vote_and_negation_wins_inside_it, test_parse_feature_support_negation_and_dissent, test_clause_without_a_vendor_and_features_without_cues"
+      ],
+      "evidence": "Red: 3 'Tembo lacks SSO' + 1 positive gave a tick; 'Devin lacks hook gates, while Factory.ai provides composition' ticked both; 'Unlike SB, Devin offers ...' credited Silver Bullet -> Green: per-claim majority vote (tie = no tick), negation beats positive inside a claim, clauses/while/whereas/unlike start a new subject, windows end at the next vendor, SB-only parsers removed. | RESUME: Workers' matrix_entries rows ({vendor, feature, supported, source_ref}) are one vote each and decide their cells (optional field added to dr-phase-contribution-envelope-v1, inside this skill); prose heuristics (clause/negation/majority) remain only as fallback for unvoted cells. | REPAIR: structured votes per model (latest phase wins), exact vendor resolution (blank ignored, no prefix, unknown vendors discovered), disputed cells written to landscape/disputed-cells.json and shown in the report.",
+      "notes": "The worker prompt text lives in skills/silver-multi-ai-task/scripts/live_dispatch.py PHASE_INSTRUCTIONS ('Return JSON only with keys: ...'); it should list matrix_entries as an allowed key. Not edited (R11/G6 ownership); the research brief from dr_live_runner already asks for it. NEED FOR H8a: skills/silver-multi-ai-task/scripts/live_dispatch.py PHASE_INSTRUCTIONS (DR-RETRIEVE/TRIANGULATE/CRITIQUE) say \"Return JSON only with keys: ...\"; add an allowed optional key matrix_entries (array of {vendor, feature, supported:boolean, source_ref}) so workers do not drop it. Envelope schema already accepts it."
+    },
+    {
+      "id": "R12-07",
+      "status": "fixed",
+      "commits": [
+        "f0d44b1",
+        "00a0677"
+      ],
+      "tests": [
+        "skills/silver-deep-research-multi-ai/tests/test_cov_solution_classifier.py: test_core_requires_evidence_for_every_seed",
+        "skills/silver-deep-research-multi-ai/tests/test_synthesize_landscape_helpers.py: test_cross_session_status, test_methodology_and_leader_rules",
+        "skills/silver-deep-research-multi-ai/tests/test_validate_landscape_content_unit.py: test_no_vendor_specific_zero_score_gate"
+      ],
+      "evidence": "Red: 16 tests pinning silver-bullet exceptions failed when removed -> rewritten to assert identical treatment; silver-bullet is core only with envelope evidence, no cross-session allow-list, no score-0 gate, no built-in catalogue/overview entry; APO pack records licence 'mixed' (BUSL-1.1) not 'oss'.",
+      "notes": ""
+    },
+    {
+      "id": "R12-08",
+      "status": "fixed",
+      "commits": [
+        "193300e",
+        "3f1429e",
+        "5907c3b",
+        "915d724",
+        "93956e3",
+        "b83bba8",
+        "ecfefa7",
+        "f0d44b1"
+      ],
+      "tests": [
+        "skills/silver-deep-research-multi-ai/tests/test_cov_materialize.py: test_open_discovery_without_pack, test_mentions_requires_a_name_and_whole_words"
+      ],
+      "evidence": "Red: 'SBOM'/'USB' matched silver-bullet and discovery padded with five catalogue vendors -> Green: whole-word matching, no padding. | REPAIR: solution_classifier candidate extraction is whole-word.",
+      "notes": ""
+    },
+    {
+      "id": "R12-09",
+      "status": "fixed",
+      "commits": [
+        "00a0677",
+        "193300e",
+        "3f1429e",
+        "5907c3b",
+        "915d724",
+        "93956e3",
+        "b83bba8",
+        "ecfefa7"
+      ],
+      "tests": [
+        "skills/silver-deep-research-multi-ai/tests/test_synthesize_landscape_report.py: test_consensus, test_consensus_requires_agreement_not_a_keyword"
+      ],
+      "evidence": "Red: three families all saying 'no hook gates' printed 'Models agree ... gates' -> Green: theme needs >= N non-negated families and more for than against; dissent recorded; themes are pack data. | REPAIR: consolidate labels opposite-polarity claims 'contested' (stance recorded), never consensus.",
+      "notes": ""
+    },
+    {
+      "id": "R12-10",
+      "status": "fixed",
+      "commits": [
+        "c3a29e2"
+      ],
+      "tests": [
+        "skills/silver-deep-research-multi-ai/tests/test_data_safety.py"
+      ],
+      "evidence": "Malformed items counted/skipped; pool from result index; CLI rejects disagreeing --resolved-pool.",
+      "notes": ""
+    },
+    {
+      "id": "R12-11",
+      "status": "fixed",
+      "commits": [
+        "c3a29e2"
+      ],
+      "tests": [
+        "skills/silver-deep-research-multi-ai/tests/test_data_safety.py",
+        "skills/silver-deep-research-multi-ai/tests/test_dr_live_pool_completeness.py"
+      ],
+      "evidence": "Red: phases dispatched after a failed member -> Green: later phases not dispatched, envelopes/index/POOL_INCOMPLETE manifest persisted; --max-phases >= 1.",
+      "notes": ""
+    },
+    {
+      "id": "R12-12",
+      "status": "fixed",
+      "commits": [
+        "c3a29e2"
+      ],
+      "tests": [
+        "skills/silver-deep-research-multi-ai/tests/test_data_safety.py"
+      ],
+      "evidence": "Red: FileNotFoundError .../solutions/kafka-notes/notes.md (rmtree) and host landscape-report.md replaced -> Green: no rmtree, host files preserved, SHA-256 record in generated-files.json.",
+      "notes": ""
+    },
+    {
+      "id": "R12-13",
+      "status": "fixed",
+      "commits": [
+        "2c391b4",
+        "915d724",
+        "b83bba8",
+        "c3a29e2",
+        "ecfefa7"
+      ],
+      "tests": [
+        "skills/silver-deep-research-multi-ai/tests/test_report_security.py",
+        "skills/silver-deep-research-multi-ai/tests/test_independent_landscape_pdf.py"
+      ],
+      "evidence": "Link schemes limited to http(s)/relative/#fragment; PDF content check compares visible text so apostrophes, '&' and inline formatting no longer abort. | REPAIR: relative links are text in the print HTML (no file:/// URIs in the PDF).",
+      "notes": ""
+    },
+    {
+      "id": "R12-14",
+      "status": "fixed",
+      "commits": [
+        "2c391b4",
+        "62102f3",
+        "c3a29e2"
+      ],
+      "tests": [
+        "skills/silver-deep-research-multi-ai/tests/test_cov_independent_pdf.py"
+      ],
+      "evidence": "Pinned npx --no-install, SRI on CDN scripts, offline-safe viewer, Google Fonts opt-in, no --no-sandbox.",
+      "notes": ""
+    },
+    {
+      "id": "R12-15",
+      "status": "fixed",
+      "commits": [
+        "193300e",
+        "2675ec7",
+        "3f1429e",
+        "5907c3b",
+        "915d724",
+        "93956e3",
+        "b83bba8",
+        "ecfefa7"
+      ],
+      "tests": [
+        "skills/silver-deep-research-multi-ai/tests/test_vendor_link_labels_unit.py: SsrfGuardTests (incl. real local server redirecting into loopback), HealthBudgetTests"
+      ],
+      "evidence": "Red: http://169.254.169.254/ and a 302 to 127.0.0.1 were requested -> Green: refused before connecting; <=3 redirects each re-validated; <=60 distinct URLs per call within 120 s, once per URL, remainder kept unverified. | REPAIR: allowlist (ip.is_global + not multicast, IPv4-mapped unwrapped): 100.64.0.0/10 and 100.100.100.200 refused; process-wide probe cache and one shared budget.",
+      "notes": "Residual: DNS rebinding between validation and connect is not closed (needs a pinned-IP connection)."
+    },
+    {
+      "id": "R12-16",
+      "status": "fixed",
+      "commits": [
+        "c3a29e2"
+      ],
+      "tests": [
+        "skills/silver-deep-research-multi-ai/tests/test_data_safety.py"
+      ],
+      "evidence": "Default root <cwd>/research/<date>-<slug>, one [a-z0-9-] segment; --force refuses /, $HOME, cwd and parents and non-runs, moves aside instead of deleting.",
+      "notes": ""
+    },
+    {
+      "id": "R12-17",
+      "status": "fixed",
+      "commits": [
+        "00a0677",
+        "915d724",
+        "b83bba8",
+        "ecfefa7"
+      ],
+      "tests": [
+        "skills/silver-deep-research-multi-ai/tests/test_synthesize_landscape_report.py (scrub tests removed, consensus/divergence quoted as said)"
+      ],
+      "evidence": "scrub_membership_framing (rewrote model claims and wording) and its callers deleted; membership disagreements are reported in the Consensus Resolution Table instead; dead scrub_vendor_markdown_links (URL replacement) deleted. | REPAIR: scrub_embedded_vendor_urls and the APO substring rewrites deleted; rewrites are pack data.",
+      "notes": ""
+    },
+    {
+      "id": "R12-18",
+      "status": "fixed",
+      "commits": [
+        "5feb64a",
+        "e310084"
+      ],
+      "tests": [
+        "skills/silver-deep-research-multi-ai/tests/test_vendor_link_labels_unit.py: AutoLinkTests"
+      ],
+      "evidence": "Markdown linkify and the SPA's linkify() both link a vendor at its first prose mention (table cells always link); node test counts 1 prose + all cells.",
+      "notes": ""
+    },
+    {
+      "id": "R12-19",
+      "status": "fixed",
+      "commits": [
+        "5feb64a",
+        "915d724",
+        "b83bba8",
+        "ecfefa7"
+      ],
+      "tests": [
+        "skills/silver-deep-research-multi-ai/tests/test_multi_market_landscape.py: test_tied_vendors_keep_the_same_quadrant_in_any_order"
+      ],
+      "evidence": "Red: tied 5.5/5.5 vendors changed quadrant by order -> Green: quadrant from true scores, slotting moves only the dot. | REPAIR: tied Leaders slotted without crossing the 5.5 line.",
+      "notes": ""
+    },
+    {
+      "id": "R12-20",
+      "status": "fixed",
+      "commits": [
+        "5feb64a"
+      ],
+      "tests": [
+        "skills/silver-deep-research-multi-ai/tests/test_cov_small_scripts.py: test_ordinary_phrases_are_not_markers, test_sanitize_inline_marker_kept_when_text_remains_and_dropped_when_empty",
+        "skills/silver-deep-research-multi-ai/tests/test_compression_markers.py: test_build_report_markdown_reports_what_the_sanitiser_removed"
+      ],
+      "evidence": "Red: a prose line containing 'omitted 12 lines' was dropped -> Green: only tool marker syntax matches; dropped lines reported on stderr.",
+      "notes": ""
+    },
+    {
+      "id": "R12-21",
+      "status": "fixed",
+      "commits": [
+        "14f66f1",
+        "915d724",
+        "b83bba8",
+        "ecfefa7"
+      ],
+      "tests": [
+        "skills/silver-deep-research-multi-ai/tests/(false-coverage tests deleted)"
+      ],
+      "evidence": "Deleted divergences_html, notable_divergence_bullets, quadrant_divergences, comparison_highlights_html, assert_section_bodies_in_text, section_body_needles, sync_canonical_payload_files, load_spa_report_data, scrub_vendor_markdown_links, classify_and_audit, _norm_body_haystack and their tests; scoped coverage still 100%. | REPAIR: scrub_embedded_vendor_urls deleted with its tests.",
+      "notes": ""
+    },
+    {
+      "id": "R12-22",
+      "status": "fixed",
+      "commits": [
+        "14f66f1",
+        "193300e",
+        "3f1429e",
+        "5907c3b",
+        "915d724",
+        "93956e3",
+        "b83bba8",
+        "ecfefa7"
+      ],
+      "tests": [
+        "skills/silver-deep-research-multi-ai/tests/test_contracts.py: SkillDocContractTests"
+      ],
+      "evidence": "SKILL.md example path, validation claim, 'self-contained' claim, packaging/regeneration behaviour, pack coupling and no-delete rules now match the code and are pinned. | REPAIR: SKILL.md describes per-model votes, exact matching, open-world discovery, vocabulary.",
+      "notes": ""
+    },
+    {
+      "id": "R12-23",
+      "status": "fixed",
+      "commits": [
+        "00a0677",
+        "14f66f1",
+        "2675ec7",
+        "2c391b4",
+        "915d724",
+        "b83bba8",
+        "c3a29e2",
+        "ecfefa7",
+        "f0d44b1"
+      ],
+      "tests": [
+        "skills/silver-deep-research-multi-ai/tests/test_report_security.py",
+        "skills/silver-deep-research-multi-ai/tests/test_data_safety.py",
+        "skills/silver-deep-research-multi-ai/tests/test_vendor_link_labels_unit.py",
+        "skills/silver-deep-research-multi-ai/tests/test_cov_materialize.py"
+      ],
+      "evidence": "Defect-pinning assertions (npx --yes, fixed run_id, SB core, APO brief, canonical rows) replaced; added hostile-render, SSRF/budget, conflicting-sentence, data-preservation and non-mocked print-HTML tests. | REPAIR: test_open_discovery_without_pack replaced by undecorated OpenDiscoveryTests; SDLC fallback pin removed; hostile linkify JS test; non-APO e2e.",
+      "notes": ""
+    },
+    {
+      "id": "R12-24",
+      "status": "fixed",
+      "commits": [
+        "2c391b4"
+      ],
+      "tests": [
+        "skills/silver-deep-research-multi-ai/tests/test_report_security.py"
+      ],
+      "evidence": "Embedded payload has no envelopes/consolidation and report-relative paths.",
+      "notes": ""
+    },
+    {
+      "id": "R12-25",
+      "status": "fixed",
+      "commits": [
+        "c3a29e2"
+      ],
+      "tests": [
+        "skills/silver-deep-research-multi-ai/tests/test_migrate_run_manifest.py",
+        "skills/silver-deep-research-multi-ai/tests/test_data_safety.py"
+      ],
+      "evidence": "No all-zero hashes (schema rejects), no metering/pricing claims, started_at from source mtime (recorded).",
+      "notes": ""
+    },
+    {
+      "id": "R12-26",
+      "status": "fixed",
+      "commits": [
+        "915d724",
+        "b83bba8",
+        "c3a29e2",
+        "ecfefa7"
+      ],
+      "tests": [
+        "skills/silver-deep-research-multi-ai/tests/test_data_safety.py"
+      ],
+      "evidence": "Atomic writes, symlinked targets replaced not followed, sibling names follow the HTML stem. | REPAIR: PDF keeps umask/replaced-file mode.",
+      "notes": ""
+    },
+    {
+      "id": "R12-27",
+      "status": "fixed",
+      "commits": [
+        "2c391b4",
+        "62102f3"
+      ],
+      "tests": [
+        "skills/silver-deep-research-multi-ai/tests/test_report_security.py"
+      ],
+      "evidence": "scripts/render_landscape_pdf.cjs: chromiumSandbox true, JS off, non-file requests aborted. Verified here: as root without a sandbox it exits 4 with a clear message; SB_LANDSCAPE_PDF_NO_SANDBOX=1 renders a %PDF.",
+      "notes": "The sandboxed success path could not be exercised in this root container; the real-render test accepts either outcome and checks the failure message."
+    },
+    {
+      "id": "R12-28",
+      "status": "fixed",
+      "commits": [
+        "2c391b4",
+        "c3a29e2"
+      ],
+      "tests": [
+        "skills/silver-deep-research-multi-ai/tests/test_report_security.py",
+        "skills/silver-deep-research-multi-ai/tests/test_data_safety.py"
+      ],
+      "evidence": "Non-finite numbers nulled in the embedded payload and in envelopes/index/consolidation/manifest (strict JSON).",
+      "notes": ""
+    },
+    {
+      "id": "R10b-02",
+      "status": "fixed",
+      "commits": [
+        "2c391b4",
+        "62102f3"
+      ],
+      "tests": [],
+      "evidence": "integrity=sha384 computed from the exact pinned files fetched through the proxy (Chart.js 4.4.0, datalabels 2.2.0, lucide 0.469.0); test_report_security.TemplateScriptIntegrityTests requires exact version + integrity on every external script tag.",
+      "notes": ""
+    }
+  ],
+  "files_changed_outside_ownership": [
+    "skills/silver-deep-research/reference/landscape/category-packs/agentic-sdlc-process-orchestrator.json: the three silver-bullet seed entries now say license \"mixed\" (BUSL-1.1 source-available) instead of \"oss\"",
+    "agents/claude/sb:deep-research*/, host-bundles/codex/sb-deep-research*/, plugins/silver-bullet/skill-source/sb-deep-research*/: regenerated by scripts/sync-codex-package.sh (mirrors of this skill and of the pack file)"
+  ],
+  "validation": {
+    "tests": "skill suite 816+ tests OK under SILVER_BULLET_RUNTIME=claude and codex; contract script 29/29 in the coverage run; node --test landscape-report-xss 6/6",
+    "coverage": "scoped sbcov over skills/silver-deep-research-multi-ai/scripts/*.py: 21 files, statements 6550/6550, branches 2958/2958 (100%), exit 0",
+    "lint": "bash scripts/lint-shell.sh --all --jobs 2 clean",
+    "invariants": "check-repo-invariants all PASS; validate-plugin-mirror OK; generate-apo-artifacts --check OK; merge of claude/optimistic-ramanujan-tccfud no-op"
+  },
+  "notes": "Base claude/optimistic-ramanujan-tccfud had not moved (02eff38), so the merge was a no-op. Not done: structured worker output for matrix ticks (R12-06), moving legacy vendor catalogs into the pack (R12-02), SRI/vendored scripts (R10b-02), Chromium sandbox (R12-27). | r3: see review_repair_r3.",
+  "needs_for_other_packages": [
+    "H8a / skills/silver-multi-ai-task/scripts/live_dispatch.py: list matrix_entries as an allowed optional key in PHASE_INSTRUCTIONS (see R12-06)"
+  ],
+  "review_repair": {
+    "majors": [
+      "1 open-world e2e + discovery (test_open_world_e2e, OpenDiscoveryTests)",
+      "2 pack vocabulary for all category wording/rules/vendor special cases",
+      "3 classifier whole-word",
+      "4 exact matrix_entries vendor resolution",
+      "5 SSRF allowlist"
+    ],
+    "minors": [
+      "6 per-model votes + disputed display",
+      "7 process-wide link-check cache/budget",
+      "8 scrub_embedded_vendor_urls deleted, URL rewrites -> pack",
+      "9 hostile linkify JS test",
+      "10 PDF mode",
+      "11 no file:/// links in PDF",
+      "12 --force keeps need profile/scope",
+      "13 consolidate contested",
+      "14 tie placement"
+    ]
+  },
+  "review_repair_r2": {
+    "majors": [
+      "1 prose parsers resolve vendors from the run set (pack + discovered); production-path tests without the catalogue fixture; fixture installs only run context + pack vocabulary",
+      "2 feature names folded before voting; user must-have spelling else most common; e2e with 3 casings",
+      "3 ambiguous common-word names need a product cue (pack AMBIGUOUS_NAMES) in materialize and classifier"
+    ],
+    "minors": [
+      "4 pack vocabulary reaches scripts run as __main__",
+      "5 claude bonus, Managed-hosting cap, methodology/ledger/hard-exclusion wording, link-label lists, SDLC Plugin override moved to pack vocabulary",
+      "6 runs without usable must-haves get a flagged derived weights_override and package",
+      "7 --force skips auto-generated need profile/scope",
+      "8 NAT64/IPv4-compatible/site-local SSRF",
+      "9 has/lacks, can/cannot, will/won't contested"
+    ],
+    "audit": "tests using with_legacy_catalogs now run in the same run context a real pack run installs (module vendor lists empty); undecorated tests alone leave materialize ~67% covered, the rest is exercised through the pack-vocabulary run context; production paths additionally covered by test_production_paths.py and test_open_world_e2e.py"
+  },
+  "review_repair_r3": {
+    "run_id": "REPAIR-H8b-r3",
+    "commit": "7b62bac",
+    "merge": "e0938c0 (claude/optimistic-ramanujan-tccfud, 15 commits, clean)",
+    "issues": {
+      "1 major (ambiguous names / sdlc alias / matrix_entries evidence)": {
+        "status": "fixed",
+        "tests": [
+          "test_production_paths: ProperReferencesToCommonWordVendorsTests (real run sentences, plain-English negatives, Director core, structured evidence, category-word alias, one product one slug)",
+          "test_apo_pack_e2e"
+        ],
+        "evidence": "red: ambiguous_fn Director/Cursor/Factory sentences no evidence, sdlc_alias zuvo core, real run matrix_slugs 22 director gap; green: all evidence True, zuvo excluded, matrix_slugs 23, director core_seed; real APO package gate gaps ['sdlc-plugin'] only (as 915d724)"
+      },
+      "2 major (fold once)": {
+        "status": "fixed",
+        "tests": [
+          "FeatureFoldingAcrossProseAndStructuredCellsTests (5)"
+        ],
+        "evidence": "red: pref_split two rows; green: one row 'Workflow composition' (rubric spelling, matches the must-have case-insensitively), prose_fold one key; user wording kept when it differs beyond case. compare_solutions/validate untouched (H8a-owned): both already compare case-insensitively; need recorded"
+      },
+      "3 major (derived written to profile)": {
+        "status": "fixed",
+        "tests": [
+          "test_open_world_e2e: not_sticky, earlier_version_profile, derived e2e; test_cov_small_scripts: effective_need_profile; test_cov_materialize derive"
+        ],
+        "evidence": "red: need_profile gained weights_override, repackage kept 5 stale Critical rows; green: profile unchanged on failure, repackage Critical ['Exactly-once semantics'], scores 11/9/6/4 = fresh run"
+      },
+      "4 major (fixture-only paths)": {
+        "status": "fixed",
+        "tests": [
+          "apo_pack_run_fixture + TheSharedFixtureIsTheProductionRunContextTests",
+          "test_apo_pack_e2e (undecorated public entry)"
+        ],
+        "evidence": "unreachable module catalogues + 9 branches deleted; fixture now = pack vocabulary + materialize.run_context(production known, resolved pack), no module list patched; 9 assertions updated to production behaviour (cavekit-v31, bmad, Devin, sweep, one copilot mention -> github-copilot + workspace alias). Residual: pack-internals tests (materialize 165 stmts, synthesize 111 in no-fixture-only coverage, was 275/118) still run through the production-context decorator"
+      },
+      "5 minor (symbol collisions)": {
+        "status": "fixed",
+        "tests": [
+          "test_symbols_are_part_of_a_feature_name"
+        ],
+        "evidence": "fold_collision: C++/C#/C three keys, coverity C++ True C# False"
+      },
+      "6 minor (hollow matrix)": {
+        "status": "fixed",
+        "tests": [
+          "test_a_matrix_with_nothing_to_discriminate_on_fails_the_gate...",
+          "test_derived_priorities_note_reads_the_materialized_file"
+        ],
+        "evidence": "e2e_open3 hollow -> gate 'no Critical feature rows'; derived needs >=2 vendor-discriminating features; report discloses 'Machine-derived priorities'"
+      },
+      "7 minor (--force drops edited auto profile)": {
+        "status": "fixed",
+        "tests": [
+          "test_force_for_the_same_query_keeps_the_auto_profile_the_user_edited"
+        ],
+        "evidence": "force_edited: must_haves carried; other-query auto profile still dropped"
+      },
+      "8 minor (must-have satisfaction APO features)": {
+        "status": "fixed",
+        "tests": [
+          "HardWiredApoFeaturesStayOutOfOtherCategoriesTests"
+        ],
+        "evidence": "nopack_leak {'redpanda': {'Tiered storage': True}}; pack still applies the phrase"
+      },
+      "9 minor (wording)": {
+        "status": "fixed",
+        "tests": [
+          "ReportWordingTests"
+        ],
+        "evidence": "'priority-weighted' (report + PDF); Leader-caps sentence only with Leader rules; stream/pwm reports 0 APO/startup words"
+      }
+    },
+    "validation": {
+      "skill_tests": "841 OK; contract test 29/29 under SILVER_BULLET_RUNTIME=claude and codex via run-all-tests.sh (post-merge)",
+      "coverage": "scoped, 21 scripts: statements 6591/6591, branches 2968/2968, exit 0 (post-merge)",
+      "xss": "node --test tests/js/landscape-report-xss.test.mjs 6/6; hostile open-world run (e2e_open3 xss) packages ok",
+      "non_apo_e2e": "stream and pwm stub runs: ok, 0 SDLC/APO/startup wording",
+      "lint": "lint-shell --all exit 0; check-repo-invariants exit 0; generate-hook-reference/apo --check OK; validate-plugin-mirror OK; sync-codex-package 0 changed"
+    }
+  }
+}

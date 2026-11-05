@@ -1,0 +1,216 @@
+{
+  "package": "H8a-deep-research",
+  "head_reviewed": "dd40805",
+  "verdict": "CHANGES_REQUIRED",
+  "per_finding": [
+    {
+      "id": "R11-01",
+      "verdict": "fixed",
+      "notes": "Unchanged worker argv/env since r3 (claude --permission-mode default, codex --sandbox read-only, fresh empty cwd, stdin prompt). Interrupt follow-up verified, see R11-11."
+    },
+    {
+      "id": "R12-04",
+      "verdict": "fixed",
+      "notes": "Unchanged since the previous round; suites green (deep-research 827, multi-ai-task 208 + contract 29) under claude and codex."
+    },
+    {
+      "id": "R11-02",
+      "verdict": "regressed",
+      "notes": "Re-ran every earlier probe at dd40805: r1 bin/score1.py (all fabrications non-supported, honest pass), r2 bin/score2.py (22 F all partial/needs_review, 12 H all supported), r3 bin/score3.py (35 cases: every F partial, every H supported), and end to end through the SKILL.md gate (bin/e2e.sh): r2 fab3 fail exit 1 (6/6 partial), r2 fab4 3 partial + the honest 'employs 400 engineers in Berlin' supported, r2 hon3 pass exit 0, r3 fab5 fail exit 1 (9/9 partial), r3 hon5 and hon6 pass exit 0, r1 fab2 run fail exit 1, r3 short report: the three short fabrications are now extracted. The verbatim corpus holds (tests green). But this round introduced new false positives and two fabrication regressions outside the documented limit classes (issues 1 and 2), and several figure/currency/year probes outside those classes pass the strict gate end to end."
+    },
+    {
+      "id": "R10b-16",
+      "verdict": "ok",
+      "notes": "Partial disposition unchanged and still justified."
+    },
+    {
+      "id": "R11-03",
+      "verdict": "fixed",
+      "notes": "Unchanged; '--json -' used by every end-to-end probe."
+    },
+    {
+      "id": "R11-04",
+      "verdict": "fixed",
+      "notes": "Unchanged since the previous round; suites green (deep-research 827, multi-ai-task 208 + contract 29) under claude and codex."
+    },
+    {
+      "id": "R11-05",
+      "verdict": "fixed",
+      "notes": "The documented command 'verify_claim_support.py verify --dir ... --report ... --strict' is what bin/e2e.sh runs; it exits 1 on caught fabrications and 0 on clean runs."
+    },
+    {
+      "id": "R11-06",
+      "verdict": "fixed",
+      "notes": "bin/vc_honest.py on r2 runs/vc2: 'Suspicious: 0/11', PASSED; r1 bin/vc_fp.py: 0/3 PASSED; bin/vc_real.py on runs/bib/academic.md (30) and license.md (23): PASSED with 0 suspicious; offline default fails, --lenient passes. r3 minor issue 6 resolved: the verify_all comment and quality-gates.md 'Modes' paragraph now say placeholders are warnings once a DOI/URL confirms the entry (bin/vc_real.py placeholder.md PASSED, vc_offline default False / lenient True, as documented). The 'No placeholder text' line in quality-gates.md belongs to validate_report.py, not verify_citations."
+    },
+    {
+      "id": "R11-07",
+      "verdict": "fixed",
+      "notes": "Unchanged since the previous round; suites green (deep-research 827, multi-ai-task 208 + contract 29) under claude and codex."
+    },
+    {
+      "id": "R11-08",
+      "verdict": "fixed",
+      "notes": "Unchanged since the previous round; suites green (deep-research 827, multi-ai-task 208 + contract 29) under claude and codex."
+    },
+    {
+      "id": "R11-09",
+      "verdict": "fixed",
+      "notes": "Unchanged since the previous round; suites green (deep-research 827, multi-ai-task 208 + contract 29) under claude and codex."
+    },
+    {
+      "id": "R11-10",
+      "verdict": "fixed",
+      "notes": "Unchanged since the previous round; suites green (deep-research 827, multi-ai-task 208 + contract 29) under claude and codex."
+    },
+    {
+      "id": "R11-11",
+      "verdict": "fixed",
+      "notes": "r3 minor issue 3 resolved: r3 bin/sigdrive3.py at dd40805 (fake cursor logging START/TERM): (A) SB_CURSOR_MODEL_ALLOW_FALLBACK=1, SIGTERM at +2.00 s -> worker TERMed at +2.01 s, no further START, dispatcher exits at 1.8 s; (B) transient marker printed, SIGINT at +2.01 s -> TERM at +2.01 s, no relaunch, dispatcher exits at 4.8 s (the 3 s retry sleep, then _run_cli refuses); (C) 3 items, concurrency 1 -> only the first started. A narrow check-then-spawn race remains (issue 3, minor)."
+    },
+    {
+      "id": "R11-12",
+      "verdict": "fixed",
+      "notes": "Unchanged since the previous round; suites green (deep-research 827, multi-ai-task 208 + contract 29) under claude and codex."
+    },
+    {
+      "id": "R11-13",
+      "verdict": "fixed",
+      "notes": "Unchanged since the previous round; suites green (deep-research 827, multi-ai-task 208 + contract 29) under claude and codex."
+    },
+    {
+      "id": "R11-14",
+      "verdict": "fixed",
+      "notes": "Unchanged since the previous round; suites green (deep-research 827, multi-ai-task 208 + contract 29) under claude and codex."
+    },
+    {
+      "id": "R11-15",
+      "verdict": "fixed",
+      "notes": "Worker-safety text now matches behaviour (no session starts after an interrupt, apart from the race in issue 3)."
+    },
+    {
+      "id": "R11-16",
+      "verdict": "fixed",
+      "notes": "New tests assert behaviour. Sandbox revert checks (REVF-H8a4-probe/rev): dropping the _CANCEL check in _run_cli fails test_a_cancelled_dispatch_never_launches_a_session and test_no_fallback_or_retry_session_starts_after_an_interrupt; dropping the userinfo/% rejection and restoring the old _is_proxied fails test_ambiguous_hosts_are_not_requested_and_never_count_as_proxied; ignoring currency fails test_currency_is_part_of_the_figure plus the verbatim and held-out corpus tests; disabling segment binding fails test_years_are_bound_to_the_event and the verbatim tests; disabling number-word normalisation fails test_normalisation and the corpora; restoring the old _long_enough fails 4 ShortClaimSignalTests. One gap: making every AND_PREDICATE split unconditional (never re-merging same-polarity pieces) leaves all 120 claim tests green, so the merge rule is executed but not pinned. The honest corpus has no mixed-polarity coordination with a present-tense verb, 'with no X', or 'X, not Y' pair, which is how issue 1 slipped through."
+    },
+    {
+      "id": "R11-17",
+      "verdict": "ok",
+      "notes": "Justified partial, unchanged."
+    },
+    {
+      "id": "R11-18",
+      "verdict": "fixed",
+      "notes": "Unchanged since the previous round; suites green (deep-research 827, multi-ai-task 208 + contract 29) under claude and codex."
+    },
+    {
+      "id": "R11-19",
+      "verdict": "fixed",
+      "notes": "Unchanged since the previous round; suites green (deep-research 827, multi-ai-task 208 + contract 29) under claude and codex."
+    },
+    {
+      "id": "R11-20",
+      "verdict": "fixed",
+      "notes": "Unchanged since the previous round; suites green (deep-research 827, multi-ai-task 208 + contract 29) under claude and codex."
+    },
+    {
+      "id": "R11-21",
+      "verdict": "fixed",
+      "notes": "Unchanged since the previous round; suites green (deep-research 827, multi-ai-task 208 + contract 29) under claude and codex."
+    },
+    {
+      "id": "R11-22",
+      "verdict": "fixed",
+      "notes": "r3 minor issue 4 resolved: r3 bin/differential.py at dd40805 -> 'http://169.254.169.254%23@public.example/...', 'http://a%2f@public.example/x', 'https://127.0.0.1%23@public.example/x' all 'skipped (userinfo or percent-encoding in the host part)', no name vetted, no socket connect; _is_proxied False without a proxy. Proxy paths still right: bin/proxy3.py CONNECT doi.org:443 with SNI doi.org, MITM self-signed cert rejected, NO_PROXY target resolving to 10.0.0.5 blocked; bin/proxy4.py absolute-URI HEAD through an HTTP proxy, 169.254.169.254/127.0.0.1 targets skipped before the proxy; bin/proxy_probe.py corp proxy gets CONNECT; bin/proxy2.py private/loopback proxies no longer rejected as non-public; bin/rebind.py http/https rebinding 'connection blocked' with no socket connect; bin/authredir.py Authorization dropped on cross-host redirect. Request.has_proxy() is only consulted on the http handler; https proxies are detected by _tunnel_host, so the https-through-proxy path is unaffected. Known low residuals unchanged (multicast 224.0.0.1, SIIT ::ffff:0:a9fe:a9fe, 5f00::/16)."
+    },
+    {
+      "id": "R11-23",
+      "verdict": "fixed",
+      "notes": "Unchanged since the previous round; suites green (deep-research 827, multi-ai-task 208 + contract 29) under claude and codex."
+    },
+    {
+      "id": "R11-24",
+      "verdict": "fixed",
+      "notes": "Unchanged since the previous round; suites green (deep-research 827, multi-ai-task 208 + contract 29) under claude and codex."
+    },
+    {
+      "id": "R11-25",
+      "verdict": "fixed",
+      "notes": "Unchanged since the previous round; suites green (deep-research 827, multi-ai-task 208 + contract 29) under claude and codex."
+    },
+    {
+      "id": "R11-26",
+      "verdict": "fixed",
+      "notes": "Unchanged since the previous round; suites green (deep-research 827, multi-ai-task 208 + contract 29) under claude and codex."
+    },
+    {
+      "id": "R11-27",
+      "verdict": "fixed",
+      "notes": "bin/authredir.py: Authorization only in unredirected_hdrs, absent after a cross-host redirect."
+    },
+    {
+      "id": "R11-28",
+      "verdict": "fixed",
+      "notes": "Unchanged since the previous round; suites green (deep-research 827, multi-ai-task 208 + contract 29) under claude and codex."
+    },
+    {
+      "id": "R11-29",
+      "verdict": "fixed",
+      "notes": "Unchanged since the previous round; suites green (deep-research 827, multi-ai-task 208 + contract 29) under claude and codex."
+    },
+    {
+      "id": "R11-30",
+      "verdict": "fixed",
+      "notes": "Unchanged since the previous round; suites green (deep-research 827, multi-ai-task 208 + contract 29) under claude and codex."
+    },
+    {
+      "id": "R11-31",
+      "verdict": "fixed",
+      "notes": "Unchanged since the previous round; suites green (deep-research 827, multi-ai-task 208 + contract 29) under claude and codex."
+    }
+  ],
+  "issues": [
+    {
+      "severity": "major",
+      "location": "skills/silver-deep-research/scripts/verify_claim_support.py:304-308 (AND_PREDICATE_RE), 310-316 (NEGATION_RE), 326-355 (_is_negated, _clauses), 441-464 (_negation_conflict); skills/silver-deep-research/tests/fixtures/claim_corpus*.json",
+      "problem": "False-positive regression in dd40805: honest, everyday comparison and product-doc claims now fail the strict gate. Clause polarity is decided for the whole quote clause, and 'and' now splits a clause only before an auxiliary or an -ed word. So when a quote states the claim and then negates something else in the same sentence with a present-tense verb or an ellipsis ('Okta supports SCIM and OneLogin does not', 'supports SSO and lacks SCIM', 'runs on AWS and requires no agents', 'encrypts data at rest and never stores keys in plaintext', 'returns JSON and accepts no XML payloads'), the whole clause counts as negated and contradicts the honest claim. These passed at 3c517f0. The same root cause, already present before, also rejects 'with no X' ('supports SSO with no extra configuration', 'migrated ... in 2023 with no downtime', 'free tier with no time limit'), 'X, not Y' ('supports SAML, not LDAP') and comma-joined clauses ('integrates with Jira, and no plugin is required'). None of these is a documented limit: the documented negation limit is a fabrication passing ('a negated lowercase conjunct'), not honest claims failing. The same round also regressed one fabrication: NOT_ONLY_RE now strips 'not even', so 'Not even Acme supports SSO for enterprise customers' supports 'Acme supports SSO for enterprise customers' (caught at 3c517f0). Competitive comparisons ('A supports X and B does not') are exactly what this skill's solution-landscape runs quote, and FIX-BRIEF says a false positive is a bug.",
+      "evidence": "End to end through the SKILL.md gate (bin/e2e.sh, verify --dir --report --strict), REVF-H8a4-probe/runs/hon7.tsv, 8 honest pairs: HEAD dd40805 status fail, factual_not_supported 8, exit=1 (all 'partial', 'negation mismatch' except the range in issue 2); same TSV at 3c517f0: the first four ('Acme supports SAML single sign-on for enterprise customers' / '... and lacks SCIM provisioning'; '... on every plan' / '... and Initech does not'; 'Acme Cloud runs on AWS in three regions' / '... and requires no agents'; 'Acme encrypts customer data at rest with AES-256' / '... and never stores keys in plaintext') are 'supported'. bin/honest_neg4.py (18 honest product-doc pairs): HEAD rejects 11/18, 3c517f0 rejects 5/18. bin/score4.py: 7 honest mixed-polarity coordinations 'partial [negation mismatch]' at HEAD, supported at 3c517f0; 'with no extra configuration', 'with no setup fee', 'with no downtime', 'X, not Y' partial at both. REVF-H8a4-probe/runs/fab6.tsv line 7 ('Acme supports SSO for enterprise customers' vs 'Not even Acme supports SSO for enterprise customers'): HEAD 'supported', 3c517f0 'partial'. Sandbox mutation: making the AND_PREDICATE split unconditional keeps all 120 claim tests green, and no honest corpus pair has these shapes.",
+      "suggested_fix": "Scope the negation instead of flagging the whole clause: a negation cue negates the terms that follow it up to the next clause boundary, and an elliptical 'X does not' / 'X doesn't' at the end of a conjunct negates only the conjunct's own subject X (so 'A supports SSO and B does not' contradicts 'B supports SSO' but not 'A supports SSO'). Check alignment against the negated span, not the whole clause. Treat 'with no X' and 'no X' after a positive predicate as terms (like 'without X' and 'zero X'), split ', not Y' into its own negated span, and keep 'not even' a negation when it opens the clause (strip it only after another cue). Add these pairs verbatim to the honest corpus and the 'Not even' pair to the fabrications."
+    },
+    {
+      "severity": "major",
+      "location": "skills/silver-deep-research/scripts/verify_claim_support.py:94-122 (NUMBER_WORDS_RE, _words_to_number), 81-82 and 165-174 (CURRENCY_CODE_RE, FIGURE_RE, CURRENCY_WORDS), 222-226 and 495 (segment binding), 483-505 (_figure_matches); skills/silver-deep-research/reference/quality-gates.md:208-213",
+      "problem": "Figure, currency and year handling still lets fabrications through the strict gate, outside the documented limit classes (which name role swaps, antonyms/synonyms outside the tables, a negated lowercase conjunct and idioms), and contrary to quality-gates.md, which says every figure matches 'the same value, unit and currency' in a segment that shares a word, 'so swapped years or percentages fail'. (a) New in dd40805: number-word normalisation adds every number word joined by 'and', so 'between two and five days' becomes 'between 7 days' and 'four and five regions' becomes '9'. A fabricated '7 days' / '9 regions' is now supported (it was caught at 3c517f0), and the honest 'between 2 and 5 days' against 'between two and five days' fails. (b) Only $, EUR and GBP are currencies. Yen/yuan (¥, 'yen', JPY, RMB), rupees (₹), CHF and prefixed dollars (A$, C$; the letter before '$' makes FIGURE_RE skip the symbol) carry no currency, so '$5 billion' matches '¥5 billion' or '5 billion yen', and '$50M' matches 'A$50M'. (c) Year binding is skipped when the claim's year sits in a comma-separated opener: 'In 2019,' and 'By 2019,' form a segment with no content words, so the year matches any 2019 in the quote ('In 2019, Acme was founded ...' against '... founded ... in 2015 and acquired ... in 2019'). That is a re-ordering of the r3 year-swap probe, and the most common way English places a year. (d) A figure with no noun after it matches when either of its two nearest preceding words appears before the quote figure. A shared verb is enough, so 'Acme revenue grew 30%' matches 'Acme revenue grew 10% and Acme margins grew 30%', a percentage moved between metrics.",
+      "evidence": "End to end, REVF-H8a4-probe/runs/fab6.tsv through bin/e2e.sh (SKILL.md command, --strict): HEAD status pass, supported 7, factual_not_supported 0, exit=0 for 'Initial setup of Acme takes 7 days ...' vs '... between two and five days ...'; '$5 billion' vs '¥5 billion'; '$50M' vs 'A$50M'; '$500 million' vs '₹500 million'; 'In 2019, Acme was founded by two former Initech engineers' vs '... founded ... in 2015 and acquired by Globex in 2019'; 'In 2023, Acme revenue grew 30%' vs 'In 2023 Acme revenue grew 10% and Acme margins grew 30%'; plus the 'Not even' pair from issue 1. At 3c517f0 the same TSV fails, but only on the range and 'Not even' rows; the currency, year-opener and %-verb rows pass there too (pre-existing, not fixed by this round). Unit probes bin/score4.py and bin/variants.py at HEAD: 'supported' for '$5 billion' vs '5 billion yen', 'JPY 5 billion', 'RMB 5 billion', 'C$50M', 'CHF 50 million'; 'By 2019, Acme had 300 employees' vs '... 300 employees by 2021 and 100 employees in 2019'; 'Acme revenue grew 30%' vs 'Acme revenue grew 10% and Acme margins grew 30%'; 'Acme has 12 offices' vs 'between five and seven offices'; honest 'Acme has between 5 and 7 offices' vs 'between five and seven offices' 'partial [number mismatch]'. $ vs EUR, euros vs dollars and pounds vs dollars are correctly rejected.",
+      "suggested_fix": "(a) In _words_to_number, 'and' joins only inside a compound ('two hundred and fifty', 'one thousand and one'), that is after hundred/thousand/million; otherwise end the run, so 'two and five' stays two numbers. (b) Recognise ¥/₹/₩/CHF/JPY/CNY/RMB/INR/AUD/CAD and word forms (yen, yuan, rupees, francs), treat a letter-prefixed '$' (A$, C$, HK$, S$, NZ$) as its own currency and leave only 'US$' as '$'. Or make a claim currency fail when the quote figure has an unrecognised symbol next to it. (c) Give the opener segment the stems of the clause it introduces (merge 'In 2019,' with the following segment), or bind years to the whole clause when their own segment has no content words. (d) Without a noun, require the claim's nearest content word (the metric, e.g. 'revenue') rather than any of the two nearest words, and do not count verbs from the change table (grew/fell/rose/cut) as attachment. Add each pair to the fabrication corpus and the digit/word range pair to the honest corpus, and correct quality-gates.md for anything left out of scope."
+    },
+    {
+      "severity": "minor",
+      "location": "skills/silver-multi-ai-task/scripts/live_dispatch.py:408-423 (_run_cli), 375-393 (_terminate_live_workers), 906-911",
+      "problem": "The cancel flag is checked before Popen, but a process is registered in _LIVE_PROCS only after Popen returns. If the dispatcher is interrupted while a worker thread is between the check and the registration (fork/exec in progress, slower under load), _terminate_live_workers' snapshot misses that process. It then runs to its own timeout (600 s by default) while ThreadPoolExecutor.__exit__ waits for it. This is one paid session and a 10-minute hang after Ctrl-C. The window is milliseconds in normal conditions.",
+      "evidence": "REVF-H8a4-probe/bin/race4.py widens the window with a Popen wrapper that sleeps 0.5 s before spawning and sends SIGTERM to the dispatcher at +0.2 s (worker timeout 12 s, fake cursor logging START/TERM): fake log '+0.67s START pid=5537' (after the signal), '+12.69s TERM pid=5537' (its own timeout); dispatcher 'KeyboardInterrupt after 12.5'. Without an injected delay, bin/sigdrive3.py never hits it.",
+      "suggested_fix": "Close the gap under the lock: after Popen, add the process to _LIVE_PROCS while holding _LIVE_LOCK and re-check _CANCEL there (kill the group and raise KeyboardInterrupt when it is set). Have the interrupt path set _CANCEL while holding the same lock, before it snapshots the processes."
+    },
+    {
+      "severity": "minor",
+      "location": "skills/silver-deep-research/scripts/extract_claims.py:139-147 (_has_name), 150-162; skills/silver-deep-research/reference/quality-gates.md:234-236",
+      "problem": "The short-sentence rule says a sentence of 30 characters or fewer is a claim when it names a thing. But _has_name counts any capitalised first word that is not on the starter list as a name. So almost every short sentence of three or more words becomes a factual claim, and if uncited it fails --strict: transitions and evaluations such as 'Next, we compare costs.', 'Pricing is simple.', 'Documentation is thin.' and 'Setup took minutes.'. All of these were excluded at 3c517f0. Long sentences of the same kind were already claims, so this is mostly a consistency change, but it contradicts the documentation. 'Next, we compare costs.' is navigation, the class the round meant to exclude.",
+      "evidence": "bin probe (inline): extract_claims._long_enough at HEAD -> True for 'Pricing is simple.', 'Support is responsive.', 'Setup took minutes.', 'Next, we compare costs.', 'Documentation is thin.' (all classified factual); at 3c517f0 -> False. 'We compared 4 vendors.' and 'See Figure 3 below.' are now correctly excluded, and the r3 short fabrications ('Acme is HIPAA compliant.', 'Acme never had a breach.', 'Microsoft owns Acme outright.') are now extracted (re-run of r3 runs/short: 6 claims, the 3 fabrications unsupported, strict fail).",
+      "suggested_fix": "Count the opener as a name only when it is an acronym, camelCase, an identifier, or followed by another capitalised word, and add transition openers ('next', 'below', 'above', 'first', 'finally') to NAVIGATION_RE. Or document that every short sentence of three or more words is a claim."
+    },
+    {
+      "severity": "minor",
+      "location": "git history: d599335 (Merge branch 'claude/optimistic-ramanujan-tccfud' into fix/H8a-deep-research)",
+      "problem": "The merge commit message has no Co-Authored-By / Claude-Session trailers. FIX-BRIEF requires them on every commit message, and the orchestrator's own merge 06bef6f carries them. dd40805 is correct.",
+      "evidence": "git log -1 --format=%B d599335 -> 'Merge branch 'claude/optimistic-ramanujan-tccfud' into fix/H8a-deep-research' only. git log -1 --format=%B dd40805 ends with exactly 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' and the Claude-Session line, and names no model elsewhere ('GPT' appears only as product identifiers in the change description).",
+      "suggested_fix": "Add the trailers to future merge commits (git merge --no-ff -m with the trailers). Rewriting this one is not worth a history rewrite; the orchestrator can accept it."
+    }
+  ],
+  "validation": {
+    "tests": "In the worktree via tests/run-all-tests.sh, two at a time: tests/scripts/test-solution-research-python.sh 827 passed (unittest 827 OK, 1 skipped) and tests/scripts/test-multi-ai-deep-research-contract.sh 29 passed (multi-ai-task 208 OK, multi-ai 747 OK), under both SILVER_BULLET_RUNTIME=claude and codex. Worktree untouched afterwards (git status empty, HEAD dd40805, branch fix/H8a-deep-research). Revert checks in a sandbox copy (REVF-H8a4-probe/rev): cancel check, userinfo/% rejection + has_proxy, currency compare, segment binding, number-word normalisation and the short-sentence rule each make new tests fail; the same-polarity re-merge in _clauses is not pinned (all 120 claim tests pass with it disabled).",
+    "coverage": "One scoped run in a sandbox clone at dd40805 (REVF-H8a4-probe/gitsb, --cov-dir REVF-H8a4-probe/cov, --jobs 2, --fail-under 100, --only extract_claims.py, verify_citations.py, verify_claim_support.py, live_dispatch.py; both test wrappers): 100% statements and branches for all four (1642/1642 statements, 588/588 branches), exit 0. tests/coverage/known-limits.json valid and not touched.",
+    "lint": "bash scripts/lint-shell.sh --all --jobs 2 in the sandbox clone: application Bash 354 files clean, test Bash 726 files clean, exit 0.",
+    "invariants": "In the sandbox clone: check-repo-invariants exit 0; generate-hook-reference --check up to date; generate-apo-artifacts --check exit 0; validate-plugin-mirror OK; sync-codex-package.sh exit 0 with no diff; docs/workflows identical to templates/workflows; silver-bullet.md / template not touched by this round (parity unaffected). claude/optimistic-ramanujan-tccfud (06bef6f) is merged (d599335). dd40805 ends with exactly the two required trailers; merge d599335 has none (minor issue 5)."
+  },
+  "notes": "Probe directory: /tmp/claude-0/-home-user-silver-bullet/a8e36ab4-d9e2-56b2-b366-31e100f031d9/scratchpad/review/REVF-H8a4-probe (src = archive of dd40805, old = 3c517f0, rev = revert copies, gitsb = sandbox clone for coverage/lint/invariants; HOME/TMPDIR under the probe dir). Scope of this round: 3c517f0..dd40805 = merge d599335 (main 02eff38..06bef6f, reviewed with H2) + dd40805 (skills/silver-deep-research, skills/silver-multi-ai-task and their generated mirrors only). Accepted per the orchestrator's convergence rules and not raised: role swaps, antonyms/synonyms outside the tables (e.g. 'Initech acquired Acme for $300M in 2022' vs 'In 2022 Initech bought Acme for $300M' fails because year/figure segments must share a word, which makes verb paraphrases like founded/established fail too), idioms restating negation ('instead of', 'is planned'), non-negating negation idioms ('no fewer than', 'no less than', 'not to mention', 'second to none' reject honest claims; borderline, listed in bin/score4.py), recommendation/hedge exemptions. Performance: a 40-vendor coordinated-list claim against 3 quotes scores in 1.2 s; a 15.6 KB quote in 0.8 s; an unrealistic 18 KB run of capitalised words without and/or takes 12 s (ENTITY_LIST_RE backtracking), not raised. No crashes in any probe. verify_citations multi-line bibliography entries remain hard 'No DOI or URL' (pre-existing, template mandates one line)."
+}

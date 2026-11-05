@@ -1,0 +1,424 @@
+{
+  "package": "G2 planning-floor",
+  "branch": "fix/G2-planning-floor",
+  "head": "eb32cff43e0eb4ef5fb8c361b95ea8e944b92a32",
+  "worktree": "/home/user/silver-bullet/.claude/worktrees/G2",
+  "dispositions": [
+    {
+      "id": "R1-07",
+      "status": "partial",
+      "commits": [
+        "0a65e7a",
+        "829903a"
+      ],
+      "tests": [
+        "test-dev-cycle-check-protect.sh: contract-file Write/Edit/MultiEdit/NotebookEdit/patch/mv/sed -i/rm denied; init/update recorded allows; trivial_file config ignored"
+      ],
+      "evidence": "red: mv silver-bullet.md /tmp/x and Write .silver-bullet.json allowed (decision none) -> green: deny 'ENFORCEMENT CONTRACT PROTECTED'; honest variants (jq/cat/cp out, silver-init or silver-update recorded) pass.",
+      "notes": "Not done (other owners): completion-audit/ci-status-check/stop-check/deploy-gate-snippet fail closed on a removed or malformed config pair and validate state.trivial_file (G1/G3). No hook-maintained digest of the config pair."
+    },
+    {
+      "id": "R2-01",
+      "status": "fixed",
+      "commits": [
+        "0a65e7a"
+      ],
+      "tests": [
+        "cov-a-dc.sh decision() returns 'invalid' for a second JSON document; test-dev-cycle-check-protect.sh 'one JSON document' group; paths 'exactly one document'"
+      ],
+      "evidence": "red: F-06 advisory + HARD STOP printed 2 documents; green: 1 document (advisories folded into systemMessage of the verdict). PostToolUse never denies.",
+      "notes": "stop-check.sh's identical shape (transient_path_ignore_patterns warning then block) is not in this package."
+    },
+    {
+      "id": "R2-04",
+      "status": "partial",
+      "commits": [
+        "0a65e7a",
+        "829903a",
+        "ca0a670"
+      ],
+      "tests": [
+        "test-dev-cycle-check-protect.sh (contract + trivcfg), test-planning-file-guard.sh, test-trivial-file-guard-paths.sh"
+      ],
+      "evidence": "(1) mv/Write of the pair denied; (2) configured trivial_file never honoured by dev-cycle-check and planning-file-guard, and trivial-file-guard guards both paths; (3) 'hard minimum planning floor' NOT implemented: CLAUDE.md invariant says config is authoritative for required lists.",
+      "notes": "stop-check, outcomes-check, instruction-ledger-gate, subagent-stop-enforcement and ci-status-check still honour a configured trivial_file (G1/G3/G5 owners). Reported as residual risk: a current-version config can still shrink required_planning when written by python (the file is now protected from file tools and shell write targets)."
+    },
+    {
+      "id": "R2-15",
+      "status": "partial",
+      "commits": [
+        "0a65e7a"
+      ],
+      "tests": [
+        "test-dev-cycle-check-protect.sh state tamper group (~45 assertions incl. honest variants)"
+      ],
+      "evidence": "fixed-by-F2 for printf >> \"$HOME/...\"/state, tee -a, mv state (red probe: already deny on base); red on base: rm -f stall-block, touch sentinel; echo >> state, rm -rf state dir, Write planning-edit-override-audit.log all allowed -> green deny. Judged by canonical write target; per-target sentinel exemption (session-init, stack-compression-mutex, sb-friction-log.md, roadmap-edit-override only); deletion of an ancestor counts; inline interpreter code naming .silver-bullet/ is refused.",
+      "notes": "No HMAC/digest of state lines (needs record-skill, G4). python/node string-built paths remain a known limit."
+    },
+    {
+      "id": "R3-01",
+      "status": "partial",
+      "commits": [
+        "0a65e7a"
+      ],
+      "tests": [
+        "test-dev-cycle-check-protect.sh: recorder execution (bash/direct/env sh/source) denied, cat/grep allowed"
+      ],
+      "evidence": "red: printf payload | bash hooks/record-skill.sh allowed; green: STATE TAMPER (recorder). tee -a / dd of= / cd+relative forms covered by the path rule.",
+      "notes": "Follow-up for record-skill.sh owner (G4): require tool_name Skill (or an adapter receipt) before honouring tool_input.skill; dev-cycle-check.sh:447 argv transport is gone (stdin)."
+    },
+    {
+      "id": "R2-05",
+      "status": "fixed",
+      "commits": [
+        "829903a"
+      ],
+      "tests": [
+        "test-trivial-file-guard-paths.sh: literal ~, $HOME, ${HOME}, cd+touch, : > trivial, cp/mv/ln/tee, one-liners; rm allowed"
+      ],
+      "evidence": "red: touch \"$HOME/.claude/.silver-bullet/trivial\" and cd state && touch trivial allowed -> green deny. Tilde test now uses literal strings.",
+      "notes": "trivial-file-clear.sh (PostToolUse only on file tools) is not in this package."
+    },
+    {
+      "id": "R2-06",
+      "status": "fixed",
+      "commits": [
+        "0a65e7a"
+      ],
+      "tests": [
+        "test-dev-cycle-check-protect.sh: unrelated repo Edit/Bash/PostToolUse = none (with a stale project-root cache)",
+        "test-dev-cycle-check-shell.sh asserts decision none"
+      ],
+      "evidence": "red: Write src/main.go in a plain repo -> HARD STOP; green: none. State, plugin-cache and registry protections stay global.",
+      "notes": ""
+    },
+    {
+      "id": "R2-07",
+      "status": "partial",
+      "commits": [
+        "ca0a670"
+      ],
+      "tests": [
+        "test-planning-file-guard-paths.sh: sed -i/>>/cp/git mv/rm/cd+relative, multi-file and Move-to patches, symlinked dir, Roadmap.md case, OSTYPE=msys path, NotebookEdit, honest reads"
+      ],
+      "evidence": "red: sed -i ROADMAP.md, Roadmap.md case variant, README-first patch all allowed -> green deny. Registered for Bash|exec_command|NotebookEdit.",
+      "notes": "(4) rejected by design: SB-native unprefixed phase artifacts (PLAN.md, VERIFICATION.md, REVIEW.md, ...) are written by the owning skills through the file tools (existing test pins 'phases/01-x/PLAN.md is not protected'); evidence integrity belongs to completion-audit (G1)."
+    },
+    {
+      "id": "R2-08",
+      "status": "fixed",
+      "commits": [
+        "ca0a670",
+        "0a65e7a"
+      ],
+      "tests": [
+        "test-planning-file-guard*.sh roadmap override needs sb:phase/sb:undo recorded; test-dev-cycle-check-protect.sh sentinel/audit-log tests"
+      ],
+      "evidence": "red: touch planning-edit-override and Write the audit log allowed -> green deny. Deny text no longer tells the agent to touch an override; roadmap-edit-override is honoured only while silver-phase or silver-undo is recorded; audit logs are hook-only.",
+      "notes": "Expiry of overrides at Stop is stop-check's job; session-start still deletes them."
+    },
+    {
+      "id": "R2-13",
+      "status": "fixed",
+      "commits": [
+        "f338333"
+      ],
+      "tests": [
+        "test-workflow-chain-guard-paths.sh scope + catalog + python3-missing groups"
+      ],
+      "evidence": "red: Write .planning/phases/03/CONTEXT.md denied while Bash heredoc into src allowed; green reversed. Catalog read from the plugin (SB_ATOMIC_FLOW_INDEX test override), planted project catalog ignored.",
+      "notes": "Bash writes are gated only inside the source scope (mkdir/touch/docs never deadlock the chain)."
+    },
+    {
+      "id": "R2-14",
+      "status": "fixed",
+      "commits": [
+        "0a65e7a",
+        "f338333"
+      ],
+      "tests": [
+        "test-dev-cycle-check.sh WF-PASS2-A/C; test-dev-cycle-check-shell.sh admission group; test-planning-floor-lib.sh workflow id"
+      ],
+      "evidence": "The active workflow is SB_WORKFLOW_ID (test override), ${SB_RUNTIME_STATE_DIR}/active-workflow, a first-line export, or the only workflow file; Write/Edit of src is admitted with no variable the agent cannot set.",
+      "notes": "scripts/workflows.sh does not yet write active-workflow (outside this package); with several workflows the agent must complete stale ones."
+    },
+    {
+      "id": "R2-16",
+      "status": "fixed",
+      "commits": [
+        "d20130c"
+      ],
+      "tests": [
+        "test-spec-floor-check-paths.sh, test-forbidden-skill-check-paths.sh, test-uat-gate-paths.sh: Skill + Codex invoke-skill + hooks.json contract for all three"
+      ],
+      "evidence": "red: invoke-skill sb:plan / executing-plans allowed, gates registered for Skill only -> green deny; also python3-missing and unparsable invoke-skill fail closed, read-only commands get no message.",
+      "notes": ""
+    },
+    {
+      "id": "R2-18",
+      "status": "fixed",
+      "commits": [
+        "0a65e7a"
+      ],
+      "tests": [
+        "test-dev-cycle-check-protect.sh scope group",
+        "test-planning-floor-lib.sh (case-insensitive stub)"
+      ],
+      "evidence": "symlinked dir, /./ and /../ spellings, plugins/./cache, NotebookEdit, MCP write tools, settings.env.py, small-edit budget (300 chars/session), patch led by a non-logic file: all gated as expected.",
+      "notes": "Case folding on a case-insensitive filesystem is covered only through a stubbed sb_path_case_insensitive (Linux CI)."
+    },
+    {
+      "id": "R2-20",
+      "status": "fixed",
+      "commits": [
+        "c240b60"
+      ],
+      "tests": [
+        "test-roadmap-freshness-paths.sh"
+      ],
+      "evidence": "red: git add <summary> && git -C . commit allowed -> green deny; padded 07-x vs 'Phase 7:' and decimal 7.1 handled; remedy points at /sb:phase.",
+      "notes": ""
+    },
+    {
+      "id": "R2-21",
+      "status": "fixed",
+      "commits": [
+        "35798d5"
+      ],
+      "tests": [
+        "test-phase-archive.sh, test-phase-archive-paths.sh"
+      ],
+      "evidence": "red: with archive/v1 present a new phase was deleted uncopied and a commit message naming 'phases clear' created archive files -> green: new snapshot-<UTC> dir, prose ignored, unnamed-milestone when PROJECT.md lacks a milestone, rm -rf .planning/phases archived first.",
+      "notes": ""
+    },
+    {
+      "id": "R2-29",
+      "status": "fixed",
+      "commits": [
+        "0a65e7a"
+      ],
+      "tests": [
+        "test-dev-cycle-check-protect.sh scope",
+        "test-planning-floor-lib.sh check_scope"
+      ],
+      "evidence": "red: tools/src-gen.py hard-blocked -> green none; src/test/java, *_test.go, test_*.py exempt; custom /lib/ pattern no longer matches zlib-1.3 or python-lib.py.",
+      "notes": ""
+    },
+    {
+      "id": "R2-31",
+      "status": "fixed",
+      "commits": [
+        "0a65e7a"
+      ],
+      "tests": [
+        "test-dev-cycle-check-protect.sh: registry write denied; rm of the running install denied although the registry omits it; other plugins' cleanup still allowed"
+      ],
+      "evidence": "plugin-cache-guard.sh never treats the running install (or a directory above it) as uninstalled; installed_plugins.json is protected from file tools and shell writes.",
+      "notes": ""
+    },
+    {
+      "id": "R2-33",
+      "status": "partial",
+      "commits": [
+        "0a65e7a",
+        "d20130c",
+        "829903a"
+      ],
+      "tests": [
+        "cov-a-dc.sh decision() single-document; no-config tests assert decision none; literal tilde/$HOME guard tests; spec-floor/forbidden/uat driven with Skill payloads and invoke-skill"
+      ],
+      "evidence": "items (1)-(4) done",
+      "notes": "(5) prerequisite-repair precedence (R2-12), (6) coalesce path (R2-22), (7) live harness are other packages'; stop_hook_active/stall-block tests belong to stop-check's owner."
+    },
+    {
+      "id": "R2-34",
+      "status": "partial",
+      "commits": [
+        "0a65e7a"
+      ],
+      "tests": [
+        "test-dev-cycle-check-protect.sh: one python3 start per call (shim counts)"
+      ],
+      "evidence": "from ~5 python3 starts per Bash call to 1; read-only commands exit right after the analysis; PostToolUse only invalidates the marker.",
+      "notes": "No wall-clock latency budget test (flaky on shared CI)."
+    },
+    {
+      "id": "R2-35",
+      "status": "partial",
+      "commits": [
+        "0a65e7a",
+        "ca0a670"
+      ],
+      "tests": [
+        "test-planning-floor-lib.sh (C:\\ via OSTYPE=msys), dev-cycle/planning-file-guard backslash relative paths"
+      ],
+      "evidence": "all path guards go through sb_pf_canon/sb_canonical_path (backslashes, drive letters, '..', symlinks).",
+      "notes": "instruction-file-guard and trivial-file-guard use the same helper; run-hook.cmd untouched; no Windows CI to prove drive-letter absolute paths end to end."
+    },
+    {
+      "id": "R3-13",
+      "status": "fixed",
+      "commits": [
+        "0a65e7a"
+      ],
+      "tests": [
+        "test-dev-cycle-check-paths.sh: production-format branch file (branch + toplevel) same branch = no warning, other branch/toplevel warns"
+      ],
+      "evidence": "dev-cycle-check reads the branch scope with sb_branch_scope_mismatch (sb_branch_scope_read of sb_branch_scope_file).",
+      "notes": ""
+    },
+    {
+      "id": "R2-26",
+      "status": "fixed",
+      "commits": [
+        "829903a"
+      ],
+      "tests": [
+        "test-instruction-file-guard-paths.sh"
+      ],
+      "evidence": "red: printf > CLAUDE.md and Write claude.md allowed -> green deny; existing instruction file (any case) may be updated; patch paths, Move to, NotebookEdit covered.",
+      "notes": ""
+    },
+    {
+      "id": "R2-27",
+      "status": "fixed",
+      "commits": [
+        "1c25b48"
+      ],
+      "tests": [
+        "test-compression-marker-guard-coverage.sh"
+      ],
+      "evidence": "red: a docs sentence mentioning [lean-ctx: ...] denied -> green allowed; pasted ctx_read block (marker line at line start) still denied; removing a marker allowed; unparsable payload no longer a hit.",
+      "notes": ""
+    }
+  ],
+  "files_changed_outside_ownership": [
+    "hooks/hooks.json (+ regenerated hooks/cursor-hooks.json, plugins/silver-bullet/cursor-hooks.json, docs/HOOKS.md): spec-floor/forbidden-skill/uat-gate moved to Bash|Skill|exec_command; planning-file-guard/instruction-file-guard/workflow-chain-guard registered for Bash|exec_command|NotebookEdit; dev-cycle-check got its own group with NotebookEdit and MCP write tools. Expect merge conflicts with HC (Cursor removal) on cursor-hooks.json.",
+    "hooks/lib/planning-floor.sh (new shared library), hooks/lib/plugin-cache-guard.sh (running install never uninstalled)",
+    "docs/hooks-purpose.json, docs/ENFORCEMENT.md, docs/CONFIGURATION.md: purposes and behaviour",
+    "tests/lib/cov-a-dc.sh (single-document decision), tests/hooks/test-hook-faults-gates.sh, tests/integration/test-session-scenarios.sh (configured trivial file no longer arms dev-cycle-check), tests/hooks/test-planning-floor-lib.sh (new)",
+    "SB_KAY_HOOK_BRIDGE_INVOKED exit-2 branch dropped from dev-cycle-check (Cursor removal)"
+  ],
+  "validation": {
+    "tests": "Both runtimes (SILVER_BULLET_RUNTIME=claude and codex): 2933 passed, 0 failed over 76 files (all changed hook tests plus dependants: jq-gate, cert-bypass, project-active-guard, dgates-staged-fallbacks, gate-hooks-fault-injection, shell-analysis-*, codex contract/bootstrap, integration planning/session/lifecycle, docs hook-reference, repo-invariants).",
+    "coverage": "tests/coverage/run-coverage.sh --only <13 changed hooks/libs>: 100% statements, lines and functions for dev-cycle-check, workflow-chain-guard, planning-file-guard, roadmap-freshness, phase-archive, spec-floor-check, forbidden-skill-check, instruction-file-guard, trivial-file-guard, uat-gate, compression-marker-guard, lib/planning-floor, lib/plugin-cache-guard (two scoped runs: g2-cov2, g2-cov3).",
+    "lint": "scripts/lint-shell.sh --all: application and test Bash clean",
+    "invariants": "check-repo-invariants all PASS; generate-hook-reference --check, generate-apo-artifacts --check, validate-plugin-mirror OK; sync-codex-package produces no diff; no __pycache__"
+  },
+  "notes": "Red/green probe: scratchpad g2-redgreen.sh, outputs g2-red.txt (base 127e2f9) and g2-green.txt. Process: no pkill; one worktree G2red created and removed. Residual risks: the agent can still forge state with interpreter one-liners that build paths from strings; stop-check/completion-audit/ci-status still honour a configured trivial_file; record-skill still trusts any stdin payload.",
+  "review_repair_r1": {
+    "blockers": {
+      "1_unseen_commands": "fixed: sb_pf_unseen_reason/sb_pf_unseen_message; dev-cycle-check, planning-file-guard, instruction-file-guard, trivial-file-guard and workflow-chain-guard deny unseen/opaque/parse-failed shell inside an SB project with 'cannot inspect: <reason>' and how to proceed, unless F2 says read_only",
+      "2_ancestor_writes": "fixed: ancestor expansion (sb_pf_expand_ancestors) for every write; tree-scope records for tar -x and unzip; cp/mv/install/rsync/git checkout dir-capable; destination containing a protected path is denied"
+    },
+    "majors": {
+      "3_R3-01": "structural: record-skill.sh requires hook_event_name PostToolUse; any command naming a recorder real path denied; hooks/lib/state-seal.sh sealed digest (<state>.seal), unsealed/edited lines ignored by sb_pf_state_has_skill; session-start drops seal on branch reset",
+      "4_interpreter_basenames": "fixed: contract basenames are needles for os.rename/os.replace/shutil.move/perl unlink",
+      "5_contract_unlock": "fixed: computed allowlist SB_PF_CONTRACT_WRITER_SKILLS (silver-init silver-update silver-add silver-devops silver-migrate) via sb_pf_contract_unlocked, with tests",
+      "6_mcp_registration": "fixed: hooks.json group matcher adds NotebookEdit and mcp__.*__(write|edit|create|move|rename|patch|replace|delete|append|save)*; ordering preserved. dev-cycle-check does not duplicate .planning/CLAUDE.md protection for MCP since the registered guards cover it. Depends on G1 for completion-audit's own Bash|exec_command|mcp__.* group (G1 not in base at merge time; hooks.json merge to be re-resolved when G1 lands)",
+      "7_stop_check_trivial": "closed by G1; not touched here"
+    },
+    "minors": "find -exec/ln/script-file reach; || true on jq extraction (three guards, tested); accurate opaque wording and distinct recorder-by-stdin message; PostToolUse skips analysis without a verify-tests marker; MCP path keys extended; HOOKS.md regenerated; phase-archive treats 'mv source' as a clear",
+    "files_outside_ownership": [
+      "hooks/record-skill.sh",
+      "hooks/session-start",
+      "hooks/lib/state-seal.sh (new)",
+      "hooks/lib/planning-floor.sh (new in G2)",
+      "hooks/hooks.json",
+      "hooks/cursor-hooks.json",
+      "docs/HOOKS.md",
+      "docs/ENFORCEMENT.md",
+      "docs/hooks-purpose.json"
+    ],
+    "tests_added": [
+      "tests/hooks/test-dev-cycle-check-review.sh",
+      "tests/hooks/test-state-seal.sh",
+      "extended: planning-floor-lib, planning/instruction/trivial/workflow-chain/phase-archive paths, dev-cycle-check-protect"
+    ],
+    "merge": "merged claude/optimistic-ramanujan-tccfud (2a65018) cleanly",
+    "checks": "lint-shell --all clean; check-repo-invariants all PASS; generate-hook-reference/apo --check and validate-plugin-mirror OK; sync-codex-package no diff; claude set 2380 passed 0 failed; codex subset run",
+    "coverage": "one scoped run, 100% on all changed files incl. dev-cycle-check.sh 514/514 (planning-floor 285/285 confirmed in a follow-up run after one extra test). Test files listed in scratchpad g2-r1-covfiles2.txt: tests/hooks/test-dev-cycle-check{,-faults,-paths,-protect,-review,-shell}.sh, tests/hooks/test-shell-analysis-{gates,writes}.sh, guards *-paths and base tests, record-skill*, session-start*, state-seal, planning-floor-lib, hook-faults-gates, dgates-staged-fallbacks, gate-hooks-fault-injection, plugin-cache-guard-lib, cert-bypass, pipe-grep-quiet-producers",
+    "residuals": [
+      "other readers of the state file do not apply the seal",
+      "a crafted PostToolUse payload to the recorder is still forgeable",
+      "contract unlock is ever-recorded-on-branch, not most-recent skill",
+      "string-built code is refused as unseen"
+    ]
+  },
+  "review_repair_r2": {
+    "head": "see git log of fix/G2-planning-floor",
+    "blockers": {
+      "1_globs": "fixed: write targets with * ? [ , brace lists or unresolved variables are expanded on the real filesystem and fnmatched against the state dir, contract, instruction and planning files (planning-floor.sh _sb_pf_pattern_records/_sb_pf_brace_records); bare-variable targets refused except mktemp temp files and script bodies",
+      "2_patch_git_apply": "fixed: patch, git apply, git am are tree writes: need the planning floor at the project root, and cover state/registry/plugin cache when applied above them (contract and planning files are covered only by readable-diff path records; an unreadable diff over the project root is a documented residual)"
+    },
+    "majors": {
+      "3_R3-01": "recorder refuses unless running from the plugin root the host registered (CLAUDE_PLUGIN_ROOT + installed_plugins.json; .git checkout is its own authority); cp/mv/rsync/ln/tar/find -exec on the plugin hooks dir or an ancestor inside the runtime home denied before the plugin-boundary rule; HMAC-SHA256 keyed seal (python3 hmac) with per-install 0600 key; docs state it is not tamper-proof",
+      "4_inline_code": "python -c, node -e, perl -e (not -pi filters), ruby -e, awk system(), stdin programs: 'cannot inspect: inline X code'; allowed while a contract-writer skill is unlocked. Scripts written by the same command or unreadable are unseen. Residual: a readable script file that builds a protected path by concatenation is not detected; a contract-pair digest is the follow-up"
+    },
+    "state_seal": "counter + hwm, shorter rewrite / deleted seal / rollback / other-branch pair / missing key => untrusted and logged to seal-events.log; session-start and deploy-gate-snippet remove seal and counter",
+    "minors": "unlock scoped to a 2h record written by the recorder, json-only for silver-add/devops; MCP verbs shared with hooks.json matcher (test compares) and relative_path/path-like keys; messages name the matched needle and check the recorder first; Edit/Write skip the python helper; MCP writes judged by name when python3 is missing; cpio/7z/pax extractors left to F2; commit 4317adc stays as is (contained in G3's merged 191cc9d)",
+    "g1_conflicts": "trial merge of fix/G1-delivery-gates: conflicts in hooks/hooks.json (PreToolUse group 2: G1 adds ci-status-check and mcp__.* to the matcher; resolve by splitting: completion-audit and ci-status-check in the Bash|exec_command|mcp__.* group, spec-floor-check, forbidden-skill-check, uat-gate in a Bash|Skill|exec_command group after it), docs/HOOKS.md, hooks/cursor-hooks.json, plugins/silver-bullet/cursor-hooks.json (regenerate), scripts/deploy-gate-snippet.sh (keep G1's comment, add ${STATE_FILE}.seal and .hwm to the rm), tests/integration/test-session-scenarios.sh (keep G2's S5.0 assertion then G1's touch trivial)",
+    "checks": "lint-shell --all clean; check-repo-invariants all PASS; generator checks and mirror OK; sync-codex-package no diff; coverage run 59 test files 2856 passed 0 failed, 100% on every changed file incl. hooks/session-start 444/444 and dev-cycle-check 550/550; codex subset 9 files 857 passed",
+    "coverage_test_files": [
+      "tests/hooks/test-branch-scope.sh",
+      "tests/hooks/test-cert-bypass.sh",
+      "tests/hooks/test-compression-marker-guard-coverage.sh",
+      "tests/hooks/test-compression-marker-guard.sh",
+      "tests/hooks/test-config-walk-vanishes.sh",
+      "tests/hooks/test-dev-cycle-check-faults.sh",
+      "tests/hooks/test-dev-cycle-check-paths.sh",
+      "tests/hooks/test-dev-cycle-check-protect.sh",
+      "tests/hooks/test-dev-cycle-check-r2.sh",
+      "tests/hooks/test-dev-cycle-check-review.sh",
+      "tests/hooks/test-dev-cycle-check-shell.sh",
+      "tests/hooks/test-dev-cycle-check.sh",
+      "tests/hooks/test-dgates-staged-fallbacks.sh",
+      "tests/hooks/test-enterprise-policy.sh",
+      "tests/hooks/test-forbidden-skill-check-paths.sh",
+      "tests/hooks/test-forbidden-skill-check.sh",
+      "tests/hooks/test-gate-hooks-fault-injection.sh",
+      "tests/hooks/test-hook-faults-gates.sh",
+      "tests/hooks/test-instruction-file-guard-paths.sh",
+      "tests/hooks/test-instruction-file-guard.sh",
+      "tests/hooks/test-orchestrator-non-sb-workspace-guard.sh",
+      "tests/hooks/test-phase-archive-paths.sh",
+      "tests/hooks/test-phase-archive.sh",
+      "tests/hooks/test-pipe-grep-quiet-producers.sh",
+      "tests/hooks/test-planning-file-guard-paths.sh",
+      "tests/hooks/test-planning-file-guard.sh",
+      "tests/hooks/test-planning-floor-lib.sh",
+      "tests/hooks/test-plugin-cache-guard-lib.sh",
+      "tests/hooks/test-project-active-guard.sh",
+      "tests/hooks/test-record-skill-adapter-forms.sh",
+      "tests/hooks/test-record-skill-adapter.sh",
+      "tests/hooks/test-record-skill-faults.sh",
+      "tests/hooks/test-record-skill-ledger.sh",
+      "tests/hooks/test-record-skill-origin.sh",
+      "tests/hooks/test-record-skill-state.sh",
+      "tests/hooks/test-record-skill-wiring.sh",
+      "tests/hooks/test-record-skill.sh",
+      "tests/hooks/test-roadmap-freshness-paths.sh",
+      "tests/hooks/test-roadmap-freshness.sh",
+      "tests/hooks/test-session-start-faults.sh",
+      "tests/hooks/test-session-start-path-validation.sh",
+      "tests/hooks/test-session-start-paths.sh",
+      "tests/hooks/test-session-start-recommended-tools.sh",
+      "tests/hooks/test-session-start-update-check.sh",
+      "tests/hooks/test-session-start.sh",
+      "tests/hooks/test-shell-analysis-gates.sh",
+      "tests/hooks/test-shell-analysis-writes.sh",
+      "tests/hooks/test-spec-floor-check-paths.sh",
+      "tests/hooks/test-spec-floor-check.sh",
+      "tests/hooks/test-state-path-containment.sh",
+      "tests/hooks/test-state-seal.sh",
+      "tests/hooks/test-symlink-guard.sh",
+      "tests/hooks/test-trivial-file-guard-paths.sh",
+      "tests/hooks/test-trivial-file-guard.sh",
+      "tests/hooks/test-uat-gate-paths.sh",
+      "tests/hooks/test-uat-gate.sh",
+      "tests/hooks/test-workflow-chain-guard-paths.sh",
+      "tests/hooks/test-workflow-chain-guard.sh",
+      "tests/scripts/test-deploy-gate-snippet.sh"
+    ]
+  }
+}
