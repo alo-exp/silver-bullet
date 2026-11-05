@@ -97,6 +97,9 @@ if cnt != "/dev/null":
 ent = plan[min(n, len(plan) - 1)].split(":")
 with open(os.environ["FAKE_LOG"], "a") as f:
     f.write("GUARD idle=%s hard=%s expect=%s min=%s cwd=%s argv=%s\n" % (a[0], a[1], a[2], a[3], os.getcwd(), " ".join(a[4:])))
+if "--continue" in a[4:]:
+    import subprocess
+    sys.exit(subprocess.call(a[4:]))
 if os.environ.get("GUARD_OUT"):
     print(os.environ["GUARD_OUT"])
 if len(ent) > 1 and ent[1]:

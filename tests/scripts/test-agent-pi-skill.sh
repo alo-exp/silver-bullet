@@ -373,8 +373,8 @@ grep -q 'not --continue' <<<"$invoke_out" \
   && check "invoke.sh logs rewrite is not --continue" pass \
   || check "invoke.sh logs rewrite is not --continue" fail
 compgen -G "${TMP_PI}/work/.pi-fresh-rewrite."* >/dev/null \
-  && check "invoke.sh fresh rewrite uses new session dir under work-dir" pass \
-  || check "invoke.sh fresh rewrite uses new session dir under work-dir" fail
+  && check "invoke.sh fresh rewrite leaves no scratch dir in the work-dir" fail \
+  || check "invoke.sh fresh rewrite leaves no scratch dir in the work-dir" pass
 rewrite_lines="$(grep -vE '(^|[[:space:]])--continue([[:space:]]|$)' "$PI_ARGV_LOG" || true)"
 grep -q -- '-p' <<<"$rewrite_lines" \
   && check "invoke.sh rewrite argv is pi -p without --continue" pass \

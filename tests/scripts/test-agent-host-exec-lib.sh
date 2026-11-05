@@ -30,6 +30,9 @@ if cnt != "/dev/null":
 ent = plan[min(n, len(plan) - 1)].split(":")
 with open(os.environ["FAKE_LOG"], "a") as f:
     f.write("GUARD idle=%s hard=%s expect=%s min=%s cwd=%s argv=%s\n" % (a[0], a[1], a[2], a[3], os.getcwd(), " ".join(a[4:])))
+if "--continue" in a[4:]:
+    import subprocess
+    sys.exit(subprocess.call(a[4:]))
 if os.environ.get("GUARD_OUT"):
     print(os.environ["GUARD_OUT"])
 if len(ent) > 1 and ent[1]:
@@ -255,14 +258,16 @@ assert_eq "fresh: already ok returns 0 without work" 0 "$rc"
 rm -f "$EXP"
 rc=0; PATH="$NOHOSTS" PI_BIN="" HOME="$TL_TMP/nohome" agent_host_pi_fresh_rewrite_for_file "$EXP" orig "$W" || rc=$?
 assert_eq "fresh: no pi cli returns 127" 127 "$rc"
-rc=0; agent_host_pi_fresh_rewrite_for_file "$EXP" orig "$TL_TMP/no-such-dir" 2>/dev/null || rc=$?
+rc=0; TMPDIR="$TL_TMP/no-such-dir" agent_host_pi_fresh_rewrite_for_file "$EXP" orig "$W" 2>/dev/null || rc=$?
 assert_eq "fresh: mktemp failure returns 1" 1 "$rc"
 reset_log
 rc=0; GUARD_PLAN="0:3000" GUARD_OUT=guard-said agent_host_pi_fresh_rewrite_for_file "$EXP" "the original" "$W" >"$TL_TMP/o" 2>"$TL_TMP/e" || rc=$?
 assert_eq "fresh: success returns 0" 0 "$rc"
 assert_contains "fresh: guard output replayed" "$(cat "$TL_TMP/o")" "guard-said"
-assert_contains "fresh: announces new session dir" "$(cat "$TL_TMP/e")" "[agent-pi] fresh pi -p rewrite (new session dir, not --continue) in $W/.pi-fresh-rewrite."
-assert_contains "fresh: argv has session dir, tools and prompt" "$(logged)" "--provider opencode-go --model mimo-v2.5 --session-dir $W/.pi-fresh-rewrite."
+assert_contains "fresh: announces new session dir" "$(cat "$TL_TMP/e")" "[agent-pi] fresh pi -p rewrite (new session dir, not --continue) in ${TMPDIR:-/tmp}/pi-fresh-rewrite."
+assert_contains "fresh: argv has session dir, tools and prompt" "$(logged)" "--provider opencode-go --model mimo-v2.5 --session-dir ${TMPDIR:-/tmp}/pi-fresh-rewrite."
+compgen -G "$W/.pi-fresh-rewrite.*" >/dev/null && tl_fail "fresh: nothing left in the work dir" || tl_pass "fresh: nothing left in the work dir"
+compgen -G "${TMPDIR:-/tmp}/pi-fresh-rewrite.*" >/dev/null && tl_fail "fresh: scratch session dir removed" || tl_pass "fresh: scratch session dir removed"
 assert_contains "fresh: write tools only" "$(logged)" '--tools write,edit,read,bash FRESH SESSION'
 assert_not_contains "fresh: no rails for mimo" "$(logged)" "--thinking off"
 rm -f "$EXP"; reset_log
@@ -270,7 +275,7 @@ PI_MODEL=qwen3 GUARD_PLAN="0:3000" agent_host_pi_fresh_rewrite_for_file "$EXP" "
 assert_contains "fresh: rails for qwen" "$(logged)" "--thinking off --no-context-files --no-skills --no-extensions --append-system-prompt NON-INTERACTIVE:"
 # cd into the session dir failing inside the guard subshell
 rm -f "$EXP"; reset_log
-cd() { if [[ "${1:-}" == *.pi-fresh-rewrite.* ]]; then return 1; fi; builtin cd "$@"; }
+cd() { if [[ "${1:-}" == */pi-fresh-rewrite.* ]]; then return 1; fi; builtin cd "$@"; }
 rc=0; GUARD_PLAN="0:3000" agent_host_pi_fresh_rewrite_for_file "$EXP" x "$W" >/dev/null 2>&1 || rc=$?
 unset -f cd
 assert_eq "fresh: cd failure aborts the guard run (returns 1)" 1 "$rc"
@@ -312,6 +317,8 @@ rm -f "$EXP"; reset_log; : >"$TL_TMP/pic"; rm -f "$TL_TMP/pic"
 rc=0; PI_PLAN="0:3000" PI_COUNTER="$TL_TMP/pic" agent_host_pi_continue_for_file "$EXP" "my continue" x "$W" >/dev/null 2>"$TL_TMP/e" || rc=$?
 assert_eq "continue: success on hop 1" 0 "$rc"
 assert_contains "continue: hop banner" "$(cat "$TL_TMP/e")" "[agent-pi] --continue hop 1/2 for $EXP"
+assert_contains "continue: hop runs under the zero-byte guard" "$(logged)" "GUARD idle="
+assert_contains "continue: guard wraps the --continue argv" "$(logged)" "argv=$TL_BIN/pi -p --continue"
 assert_contains "continue: argv and custom prompt" "$(logged)" "PI -p --continue --provider opencode-go --model mimo-v2.5 --tools write,edit my continue"
 # hop 2 uses the generated prompt even with a custom first prompt; both hops fail -> fresh rewrite
 rm -f "$EXP" "$TL_TMP/pic"; reset_log
@@ -410,5 +417,30 @@ tl_run env PATH="$NOHOSTS" OPENCODE_BIN="" HOME="$TL_TMP/nohome" bash -c 'source
 assert_eq "pty: missing cli returns 1" 1 "$TL_STATUS"
 tl_run env OPENCODE_BIN="$STUB_BIN/opencode" bash -c 'source "$1"; shift; agent_host_run_pty "$@"' _ "$S/agent-host-exec.sh" opencode "$TL_TMP/no-such-dir" hi
 assert_eq "pty: chdir failure in child maps to 3" 3 "$TL_STATUS"
+
+
+# R4-21: a hard timeout stops the whole session (TERM, then KILL) in bounded time.
+PIDF="$TL_TMP/pty-grandchild.pid"
+printf '#!/usr/bin/env bash\ntrap "" TERM\n( trap "" TERM; exec sleep 300 ) &\necho $! >"%s"\nwhile :; do sleep 1; done\n' "$PIDF" >"$STUB_BIN/opencode"
+start=$SECONDS
+tl_run env OPENCODE_BIN="$STUB_BIN/opencode" bash -c 'source "$1"; shift; agent_host_run_pty "$@"' _ "$S/agent-host-exec.sh" opencode "$W" hi permissive 2
+elapsed=$((SECONDS - start))
+assert_eq "pty: TERM-ignoring child is stopped at the timeout (exit 124)" 124 "$TL_STATUS"
+[[ "$elapsed" -le 14 ]] && tl_pass "pty: returns within the bounded kill window (${elapsed}s)" || tl_fail "pty: returns within the bounded kill window (${elapsed}s)"
+GC="$(cat "$PIDF" 2>/dev/null || true)"
+gone=0
+for _ in 1 2 3 4 5 6 7 8 9 10; do
+  st="$(ps -o stat= -p "${GC:-0}" 2>/dev/null | tr -d ' ' || true)"
+  if [[ -z "$st" || "$st" == Z* ]]; then gone=1; break; fi
+  sleep 0.3
+done
+[[ -n "$GC" && "$gone" -eq 1 ]] && tl_pass "pty: descendant of the stopped CLI is gone" || { [[ -n "$GC" ]] && kill -KILL "$GC" 2>/dev/null || true; tl_fail "pty: descendant of the stopped CLI is gone"; }
+# Output ends (all tty fds closed) but the child lingers: bounded by the deadline, then stopped.
+printf '#!/usr/bin/env bash\nexec >&- 2>&- <&-\nexec sleep 300\n' >"$STUB_BIN/opencode"
+start=$SECONDS
+tl_run env OPENCODE_BIN="$STUB_BIN/opencode" bash -c 'source "$1"; shift; agent_host_run_pty "$@"' _ "$S/agent-host-exec.sh" opencode "$W" hi permissive 2
+elapsed=$((SECONDS - start))
+assert_eq "pty: lingering child after EOF is stopped at the deadline" 124 "$TL_STATUS"
+[[ "$elapsed" -le 14 ]] && tl_pass "pty: EOF-then-linger returns in bounded time (${elapsed}s)" || tl_fail "pty: EOF-then-linger returns in bounded time (${elapsed}s)"
 
 tl_results
