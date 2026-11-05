@@ -67,9 +67,14 @@ assert_eq "mismatch: unparsable ledger is not a mismatch" 1 "$(rc sb_instruction
 ledger feature/test ""
 assert_eq "mismatch: no branch in cwd" 1 "$(cd "$PLAIN" && rc sb_instruction_ledger_scope_mismatch)"
 assert_eq "mismatch: explicit root argument" 1 "$(rc sb_instruction_ledger_scope_mismatch "$PLAIN")"
-ledger other/branch "$G"
-assert_eq "drop: foreign ledger cleared" 0 "$(rc sb_instruction_ledger_drop_if_scope_mismatch)"
+ledger feature/test /elsewhere
+assert_eq "drop: foreign-worktree ledger cleared" 0 "$(rc sb_instruction_ledger_drop_if_scope_mismatch)"
 assert_file_absent "drop: file removed" "$LF"
+ledger other/branch "$G"
+assert_eq "drop: branch switch in this worktree keeps the ledger (R2-11)" 1 "$(rc sb_instruction_ledger_drop_if_scope_mismatch)"
+assert_file_exists "drop: file kept" "$LF"
+assert_eq "drop: and re-stamps the branch" "feature/test" "$(jq -r .scope.branch "$LF")"
+assert_eq "drop: unresolved items survive" 2 "$(jq '[.. | objects | select(.status == "pending" and .id != "root")] | length' "$LF")"
 ledger feature/test "$G"
 assert_eq "drop: matching ledger kept" 1 "$(rc sb_instruction_ledger_drop_if_scope_mismatch)"
 assert_file_exists "drop: file kept" "$LF"
@@ -213,19 +218,37 @@ assert_eq "resolve: root stays pending while a child is pending" pending "$(jq -
 assert_eq "resolve: by unique label substring (deferred)" 0 "$(rc sb_instruction_ledger_resolve_item "second" deferred "later")"
 assert_eq "resolve: root auto-resolved" "done" "$(jq -r '.intents[0].status' "$LF")"
 assert_eq "all_resolved: after resolution" 0 "$(rc sb_instruction_ledger_all_resolved)"
-ledger other/branch "$G"
+ledger feature/test /elsewhere
 assert_eq "resolve: foreign ledger refused" 1 "$(rc sb_instruction_ledger_resolve_item c1 "done" ev)"
 assert_file_absent "resolve: foreign ledger dropped" "$LF"
+ledger other/branch "$G"
+assert_eq "resolve: after a branch switch the ledger still resolves" 0 "$(rc sb_instruction_ledger_resolve_item c1 "done" ev)"
 rm -f "$LF"
 assert_eq "resolve: missing ledger" 1 "$(rc sb_instruction_ledger_resolve_item c1 "done" ev)"
 ledger feature/test "$G"
-tl_stub jq "if [[ \"\$*\" == *'update_node'* ]]; then exit 1; fi; exec $dg_real_jq \"\$@\""; hash -r
+tl_stub jq "if [[ \"\$*\" == *'setpath'* ]]; then exit 1; fi; exec $dg_real_jq \"\$@\""; hash -r
 assert_eq "resolve: update filter failure" 1 "$(rc sb_instruction_ledger_resolve_item c1 "done" ev)"
 rm -f "$TL_BIN/jq"; hash -r
 assert_eq "resolve: failed update leaves ledger intact" pending "$(jq -r '.intents[0].children[0].status' "$LF")"
-jqfail 'def leaves'
-assert_eq "resolve: match lookup failure" 1 "$(rc sb_instruction_ledger_resolve_item c1 "done" ev)"
+# ids are unique per item even when labels share their first characters (R2-11)
+ledger feature/test "$G"
+printf '%s' $'- add login form\n- add logout button\n- add session tests' >"$TL_TMP/bullets"
+rm -f "$LF"
+sb_instruction_ledger_seed_from_prompt "$(cat "$TL_TMP/bullets")"
+assert_eq "ids: three distinct ids" 3 "$(jq '[.intents[0].children[].id] | unique | length' "$LF")"
+login_id="$(jq -r '.intents[0].children[0].id' "$LF")"
+assert_eq "ids: resolving one leaves the others pending" 0 "$(rc sb_instruction_ledger_resolve_item "$login_id" "done" "only the login form")"
+assert_eq "ids: the login item is done" done "$(jq -r '.intents[0].children[0].status' "$LF")"
+assert_eq "ids: the logout item is still pending" pending "$(jq -r '.intents[0].children[1].status' "$LF")"
+# a legacy ledger with colliding ids: the shared id is ambiguous, an exact label still resolves one leaf
+jq '.intents[0].children[1].id = .intents[0].children[0].id | .intents[0].children[0].status = "pending"' "$LF" >"$LF.t" && mv "$LF.t" "$LF"
+assert_eq "ids: a shared (legacy) id is ambiguous" 1 "$(rc sb_instruction_ledger_resolve_item "$login_id" "done" ev)"
+assert_eq "ids: an exact label resolves exactly one leaf" 0 "$(rc sb_instruction_ledger_resolve_item "add logout button" "done" ev)"
+assert_eq "ids: the other colliding leaf stays pending" pending "$(jq -r '.intents[0].children[0].status' "$LF")"
+assert_contains "summary: absolute resolver path" "$(sb_instruction_ledger_pending_summary)" "$TL_REPO_ROOT/scripts/resolve-instruction-ledger.sh"
+assert_eq "resolver path exists" 1 "$([[ -f "$(sb_instruction_ledger_resolver_path)" ]] && echo 1 || echo 0)"
 jqunstub
+ledger feature/test "$G"
 jqfail 'length'
 assert_eq "resolve: match count failure" 1 "$(rc sb_instruction_ledger_resolve_item c1 "done" ev)"
 jqunstub

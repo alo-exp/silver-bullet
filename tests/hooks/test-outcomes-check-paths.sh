@@ -99,7 +99,8 @@ run "$(ev SubagentStop)" SB_ORCHESTRATOR_PARENT=0
 assert_eq "worker SubagentStop skipped" "" "$TL_OUT"
 dg_assert_ok "worker SubagentStop skipped: exits 0"
 run "$(ev SubagentStop)"
-assert_eq "parent SubagentStop blocks" "block" "$(dec)"
+assert_eq "ordinary SubagentStop is never held by the parent's checklist (R2-10)" "none" "$(dec)"
+dg_assert_ok "ordinary SubagentStop allowed: exits 0"
 rm -f "$ST/stop-coalesce-block"
 : >"$ST/trivial"
 run "$(ev Stop)"
@@ -122,8 +123,8 @@ printf 'silver-quality-gates\n' >"$STATE"
 dg_run "$P" "$S1/hooks/outcomes-check.sh" "$(ev Stop)" SILVER_BULLET_STATE_FILE="$STATE"
 assert_eq "no coalesce lib: Stop blocks" "block" "$(dec)"
 S5="$TL_TMP/s5"; dg_stage_hooks "$S5" orchestrator-parent.sh
-dg_run "$P" "$S5/hooks/outcomes-check.sh" "$(ev SubagentStop)" SILVER_BULLET_STATE_FILE="$STATE" SB_ORCHESTRATOR_PARENT=0
-assert_eq "no parent lib: SubagentStop evaluated as parent" "block" "$(dec)"
+dg_run "$P" "$S5/hooks/outcomes-check.sh" "$(ev Stop)" SILVER_BULLET_STATE_FILE="$STATE" SB_ORCHESTRATOR_PARENT=0
+assert_eq "no parent lib: Stop evaluated as parent" "block" "$(dec)"
 
 # directive write failures and unreadable state are tolerated
 clean
@@ -147,8 +148,8 @@ dg_run_nojq "$P" "$H" '{"hook_event_name":"Stop"}' SILVER_BULLET_STATE_FILE="$ST
 assert_eq "no jq: Stop with pending outcomes still blocks" "block" "$(jq -r .decision <<<"$TL_OUT")"
 assert_contains "no jq: block carries the fallback summary" "$TL_OUT" "jq unavailable"
 rm -f "$ST/stop-coalesce-block"
-dg_run_nojq "$P" "$S1/hooks/outcomes-check.sh" '{"hook_event_name":"SubagentStop"}' SILVER_BULLET_STATE_FILE="$STATE"
-assert_eq "no jq, no coalesce lib: SubagentStop blocks" "block" "$(jq -r .decision <<<"$TL_OUT")"
+dg_run_nojq "$P" "$S1/hooks/outcomes-check.sh" '{"hook_event_name":"Stop"}' SILVER_BULLET_STATE_FILE="$STATE"
+assert_eq "no jq, no coalesce lib: Stop blocks" "block" "$(jq -r .decision <<<"$TL_OUT")"
 tl_stub jq 'exit 1'; hash -r
 dg_run "$P" "$H" '{"hook_event_name":"Stop"}' SILVER_BULLET_STATE_FILE="$STATE"
 rm -f "$TL_BIN/jq"; hash -r

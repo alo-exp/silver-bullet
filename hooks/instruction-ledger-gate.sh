@@ -62,13 +62,10 @@ if [[ "$hook_event" == "UserPromptSubmit" ]]; then
   exit 0
 fi
 
-# Stop / SubagentStop — workers skip ledger block
-if [[ "$hook_event" == "SubagentStop" ]]; then
-  if [[ -f "$_lib_dir/orchestrator-parent.sh" ]]; then
-    source "$_lib_dir/orchestrator-parent.sh"
-    sb_orchestrator_is_worker_session 2>/dev/null && exit 0
-  fi
-fi
+# Stop / SubagentStop — the ledger is the parent session's record of the user's request, so an
+# ordinary subagent finishing (a research or review Task) is never held by it (R2-10); the
+# parent's own Stop is where unresolved items block.
+[[ "$hook_event" == "SubagentStop" ]] && exit 0
 
 if declare -f sb_trivial_bypass >/dev/null 2>&1; then
   sb_trivial_bypass "$trivial_file"
@@ -92,7 +89,7 @@ if [[ -f "$_lib_dir/stop-coalesce.sh" ]]; then
     exit 0
   fi
 fi
-reason=$(printf 'Cannot complete — instruction ledger has unresolved items.\n\n%s\n\nDo not Edit %s/instruction-ledger.json (state tamper blocks it). Use scripts/resolve-instruction-ledger.sh to mark each leaf done or deferred with evidence, then Stop.' \
+reason=$(printf 'Cannot complete — instruction ledger has unresolved items.\n\n%s\n\nDo not Edit %s/instruction-ledger.json (state tamper blocks it). Use the resolver above to mark each leaf done or deferred with evidence, then Stop.' \
   "$summary" "${SB_RUNTIME_STATE_DIR}")
 json_reason=$(printf '%s' "$reason" | jq -Rs '.')
 if declare -f sb_stop_coalesce_record >/dev/null 2>&1; then

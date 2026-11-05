@@ -120,14 +120,9 @@ if [[ "$hook_event" == "UserPromptSubmit" ]]; then
   exit 0
 fi
 
-# Stop / SubagentStop
-if [[ "$hook_event" == "SubagentStop" ]]; then
-  if [[ -f "$_lib_dir/orchestrator-parent.sh" ]]; then
-    # shellcheck source=lib/orchestrator-parent.sh
-    source "$_lib_dir/orchestrator-parent.sh"
-    sb_orchestrator_is_worker_session 2>/dev/null && exit 0
-  fi
-fi
+# Stop / SubagentStop — the checklist belongs to the parent's prompt, so an ordinary subagent
+# finishing is never held by it (R2-10); the parent's own Stop is where it blocks.
+[[ "$hook_event" == "SubagentStop" ]] && exit 0
 
 state_contents=""
 [[ -f "$state_file" && ! -L "$state_file" ]] && state_contents=$(cat "$state_file" 2>/dev/null || true)
@@ -138,6 +133,7 @@ fi
 
 [[ -z "$state_contents" ]] && exit 0
 
+sb_outcomes_reject_tampered
 sb_outcomes_auto_evaluate "$state_contents" "$trivial_file"
 
 if sb_outcomes_all_done; then
@@ -155,7 +151,7 @@ if [[ -f "$_lib_dir/stop-coalesce.sh" ]]; then
     exit 0
   fi
 fi
-reason=$(printf 'Cannot complete — per-prompt outcome checklist incomplete.\n\n%s\n\nUpdate %s (mark outcomes done with evidence) or complete the missing work.' \
+reason=$(printf 'Cannot complete — per-prompt outcome checklist incomplete.\n\n%s\n\nComplete the missing work: route through /sb (or a composer skill), define the deliverables in a plan, and run sb:verify. The checklist is derived from recorded skills and plan files; editing %s is detected and reset.' \
   "$summary" "$(sb_outcomes_session_file)")
 if [[ "$_sb_outcomes_have_jq" == true ]]; then
   json_reason=$(printf '%s' "$reason" | jq -Rs '.')
