@@ -145,7 +145,11 @@ assert_eq "no cert permission mode outside cert runs" "<unset>" "$(alh_env CLAUD
 cfg_seen="$(alh_env CLAUDE_CONFIG_DIR)"
 assert_match "adapter ran with an ephemeral CLAUDE_CONFIG_DIR" "^$TL_TMP/tmp/agent-claude-config-" "$cfg_seen"
 assert_contains "the config dir existed while the adapter ran" "$(alh_rec)" "config-dir-present yes"
-assert_contains "the folder trust file existed while the adapter ran" "$(alh_rec)" "config-trust-present yes"
+assert_contains "strict (the default outside the project) pre-accepts no folder trust" "$(alh_rec)" "config-trust-present no"
+alh_script "0|ok-output"
+run_cd --prompt "do the thing" --mode permissive
+assert_contains "permissive pre-accepts folder trust in the ephemeral config" "$(alh_rec)" "config-trust-present yes"
+alh_script "0|ok-output"
 assert_file_absent "ephemeral CLAUDE_CONFIG_DIR is removed afterwards" "$cfg_seen"
 assert_contains "task artifacts are written under the work dir" "$(ls "$W/.planning/agent-claude")" "task-"
 

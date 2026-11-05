@@ -221,7 +221,7 @@ assert_contains "continue prompt hop 2 default" "$(agent_host_pi_continue_prompt
 assert_eq "continue prompt hop 1 override" "go1" "$(PI_CONTINUE=go1 agent_host_pi_continue_prompt /a/out.md)"
 assert_eq "continue prompt hop 2 override" "go2" "$(PI_CONTINUE=go1 PI_CONTINUE_RETRY=go2 agent_host_pi_continue_prompt /a/out.md 2)"
 assert_contains "continue prompt hop 2 ignores PI_CONTINUE" "$(PI_CONTINUE=go1 agent_host_pi_continue_prompt /a/out.md 2)" "You already failed"
-assert_contains "fresh prompt with original" "$(agent_host_pi_fresh_rewrite_prompt /a/out.md 'ORIGINAL')" "FRESH SESSION (not --continue). ./out.md"
+assert_contains "fresh prompt with original" "$(agent_host_pi_fresh_rewrite_prompt /a/out.md 'ORIGINAL')" "FRESH SESSION (not --continue). /a/out.md"
 assert_contains "fresh prompt appends original" "$(agent_host_pi_fresh_rewrite_prompt /a/out.md 'ORIGINAL')" "
 
 ORIGINAL"
