@@ -64,7 +64,9 @@ fi
 _ci_gate_tool=false
 case "$tool_name" in
   mcp__* | CallMcpTool | MCP) _ci_gate_tool=true ;;
-  Bash | Shell | shell | exec_command) _ci_gate_tool=true ;;
+  # an empty name (the extraction failed) cannot exclude the call: the analysis below decides, and its
+  # plain-verb fallback applies when the helper cannot read the payload either
+  Bash | Shell | shell | exec_command | "") _ci_gate_tool=true ;;
   *)
     # without the tool-input library the tool name cannot be classified: treat the call as a shell call
     if ! declare -f sb_tool_is_shell_like >/dev/null 2>&1; then
