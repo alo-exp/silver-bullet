@@ -178,13 +178,12 @@ therefore does not guess from the words around a name. Identity is declared (`sc
   person's name (Director, Cursor, Linear, Continue, Silver Bullet, Devin, GSD, Barkain, ...) is credited only by:
   a `vendors` tag on the claim row (at most 12 per row, each an exact vendor slug; a category alias such as
   `sdlc` is not one); a `source_ref` that names it (the text must also spell it in capitals); or its pack URL.
-  A URL is parsed, not pattern-matched: only a token that starts with `http://`, `https://` or `www.` counts, its
-  host (userinfo, port and Markdown link text ignored) must be a lower-case ASCII pack domain or a subdomain of
-  it. A scheme-less `cursor.com/x` or `devin.ai/2` credits nothing (an accepted recall cost); the same parser
-  reads `source_ref`.
-  Nothing else credits it: not lists, matrix lines, qualified displays such as `Devin (Cognition)`, acronym
-  expansions, head nouns, versions, makers, capitals or headings. No parser can tick a feature cell for it from
-  free text.
+  A pack URL counts only as the WHOLE value of a source field (`source_ref`, `source_url`, `url`, `source`, or one
+  item of `supporting_sources`): one URL starting with `http://`, `https://` or `www.`, no other text, a lower-case
+  ASCII host that is a pack domain or one of its subdomains, no userinfo, `%`, backslash, bad port or `..`/empty
+  path segment. A URL inside running prose (`text`, `claim`, links, HTML, code spans) credits nothing, and a
+  scheme-less `cursor.com/x` credits nothing: agents put the source URL alone in `source_ref` and tag vendors with
+  `vendors` (the research brief says so).
 - **Tagging is part of the research contract.** The brief asks every evidence, claim_candidates, critiques and
   gaps row to carry `vendors` (slugs copied from the `[CATEGORY_PACK]` block); `matrix_entries.vendor` remains
   the structured channel. Untagged prose about an ambiguous vendor credits nothing, so recall depends on tags.

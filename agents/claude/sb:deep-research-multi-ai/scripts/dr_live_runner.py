@@ -101,7 +101,8 @@ def research_brief(
             f"{source}the exact vendor names you use in matrix_entries, for the products the row's "
             "statement is about, or [] when none. Write one row per vendor statement and do not put a group "
             "generalisation on every member. A product whose name is also a common word or a person's name "
-            "(Director, Cursor, Linear, Devin, ...) is counted only when the row lists it in vendors."
+            "(Director, Cursor, Linear, Devin, ...) is counted only when the row lists it in vendors. "
+            "Put the source URL alone in source_ref (one URL, no other text): a URL inside a claim's prose is not read."
         )
     lines.append("Back every claim with a source.")
     lines.extend(str(line) for line in pack_overlay(pack).get("research_brief_lines") or [])
