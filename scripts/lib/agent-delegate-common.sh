@@ -53,23 +53,29 @@ agent_delegate_exec_pinned_ni() {
 }
 
 
-# Default permission mode when --mode is not given (R4-23): permissive only for a work dir inside
-# the current project (CLAUDE_PROJECT_DIR, else the git toplevel of $PWD, else $PWD); any other
-# directory (a fresh clone, a scratch dir) defaults to strict. SB_AGENT_DELEGATE_DEFAULT_MODE
-# (permissive|strict) is an explicit operator override.
+# Default permission mode when --mode is not given (R4-23): permissive only when the work dir IS the
+# current project: CLAUDE_PROJECT_DIR (else $PWD) names the project; when that is a git repo the work
+# dir must resolve to the same git toplevel (so a separate repo cloned inside the project is outside),
+# otherwise the work dir must be that exact directory (so a session started in $HOME does not make
+# everything below it "the project"). Everything else defaults to strict.
+# SB_AGENT_DELEGATE_DEFAULT_MODE (permissive|strict) is an explicit operator override.
 agent_delegate_default_mode() {
-  local work_dir="$1" project wd
+  local work_dir="$1" project wd ptop wtop mode=strict
   case "${SB_AGENT_DELEGATE_DEFAULT_MODE:-}" in
     permissive|strict) printf '%s' "$SB_AGENT_DELEGATE_DEFAULT_MODE"; return 0 ;;
   esac
-  project="${CLAUDE_PROJECT_DIR:-$PWD}"
-  project="$(cd "$project" 2>/dev/null && { git rev-parse --show-toplevel 2>/dev/null || pwd; })"
-  project="$(cd "$project" 2>/dev/null && pwd -P)"
-  wd="$(cd "$work_dir" 2>/dev/null && pwd -P)"
-  case "$wd" in
-    "$project"|"$project"/*) printf 'permissive' ;;
-    *) printf 'strict' ;;
-  esac
+  project="$(cd "${CLAUDE_PROJECT_DIR:-$PWD}" 2>/dev/null && pwd -P)" || project=""
+  wd="$(cd "$work_dir" 2>/dev/null && pwd -P)" || wd=""
+  ptop="$(git -C "${project:-/nonexistent}" rev-parse --show-toplevel 2>/dev/null || true)"
+  if [[ -n "$ptop" ]]; then
+    wtop="$(git -C "${wd:-/nonexistent}" rev-parse --show-toplevel 2>/dev/null || true)"
+    [[ -n "$wtop" && "$(cd "$wtop" && pwd -P)" == "$(cd "$ptop" && pwd -P)" ]] && mode=permissive
+  elif [[ -n "$project" && "$wd" == "$project" ]]; then
+    mode=permissive
+  fi
+  printf '[agent-delegate] default --mode %s (work dir %s the current project; pass --mode to choose)\n' \
+    "$mode" "$([[ "$mode" == permissive ]] && echo is || echo is not)" >&2
+  printf '%s' "$mode"
 }
 
 # Canonicalize a repo-relative path to absolute.
@@ -93,23 +99,36 @@ agent_delegate_clear_matrix_env() {
 # A quota/rate-limit failure is recognised only from provider or CLI error text (HTTP status
 # fields, rate_limit_error types, "quota exceeded"-style sentences). A bare 429, "quota" or
 # "rate limit" elsewhere in the output (test logs, file names, code under review) is not one (R4-20).
-AGENT_DELEGATE_QUOTA_ERROR_RE='rate_limit_error|rate_limit_exceeded|insufficient_quota|rate[[:space:]]*limit(ed|[[:space:]]+(exceeded|reached|hit))|too[[:space:]]+many[[:space:]]+requests|token[[:space:]]+plan[^[:cntrl:]]{0,40}(exhaust|exceed|limit|reach)|(exceeded|exhausted|reached)[^[:cntrl:]]{0,30}(quota|usage[[:space:]]+limit|token[[:space:]]+plan)|quota[^[:cntrl:]]{0,20}(exceeded|exhausted|reached|used[[:space:]]+up)|usage[[:space:]]+limit[[:space:]]+(reached|exceeded)|(status|http|code)["'"'"']?[[:space:]]*[:=/]?[[:space:]]*429([^0-9]|$)|(^|[^0-9.])429[[:space:]]+(too|rate|error|status)'
+AGENT_DELEGATE_QUOTA_ERROR_RE='rate_limit_error|rate_limit_exceeded|insufficient_quota|rate[[:space:]]*limit(ed|[[:space:]]+(exceeded|reached|hit))|too[[:space:]]+many[[:space:]]+requests|token[[:space:]]+plan[^[:cntrl:]]{0,40}(exhaust|exceed|limit|reach)|(hit|exceeded|exhausted|reached)[^[:cntrl:]]{0,30}(quota|usage[[:space:]]+limit|token[[:space:]]+plan)|quota[^[:cntrl:]]{0,20}(exceeded|exhausted|reached|used[[:space:]]+up)|usage[[:space:]]+limit[[:space:]]+(reached|exceeded)|(error|status|http|code)["'"'"']?[[:space:]]*[:=/]?[[:space:]]*429([^0-9]|$)|(^|[^0-9.])429[[:space:]]+(too|rate|error|status)'
+# Only lines that look like CLI/provider errors are classified (an "Error:" / "API Error:" line, an
+# HTTP status line, a JSON error object, a provider error code, or a provider's own quota sentence);
+# test output such as "expected status 429, got 200" or "quota exceeded test passed" is not.
+AGENT_DELEGATE_ERROR_LINE_RE='^[[:space:]]*(\[[^]]*\][[:space:]]*)?(api[[:space:]]+)?(error|fatal|exception)([^a-z]|$)|HTTP[/ ][0-9.]* *[45][0-9][0-9]|^[[:space:]]*\{.*"error"|rate_limit_error|rate_limit_exceeded|insufficient_quota|^[[:space:]]*(quota[[:space:]]+(exceeded|exhausted)[[:space:]]*[:.-]|token[[:space:]]+plan[[:space:]]+(exhausted|exceeded|limit)|you(.ve|[[:space:]]+have)[[:space:]]+(hit|reached|exceeded)|(claude|codex|openai|anthropic)[^.]{0,40}(quota|usage[[:space:]]+limit))'
 agent_delegate_is_quota_error() {
-  local blob="$1"
-  grep -qiE "$AGENT_DELEGATE_QUOTA_ERROR_RE" <<<"$blob"
+  local blob="$1" lines
+  lines="$(grep -iE "$AGENT_DELEGATE_ERROR_LINE_RE" <<<"$blob" || true)"
+  grep -qiE "$AGENT_DELEGATE_QUOTA_ERROR_RE" <<<"$lines"
 }
 
-# Fingerprint of the work dir's tracked state (HEAD, status, diff). "unknown" outside a git repo.
+# Fingerprint of the work dir's state (HEAD, status, tracked diff, untracked file hashes). "unknown" outside a git repo.
 agent_delegate_workdir_fingerprint() {
   local work_dir="$1"
   if ! git -C "$work_dir" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     printf 'unknown'
     return 0
   fi
+  # HEAD, status, the tracked diff and the content hash of every untracked (not ignored) file, so an
+  # edit to a pre-existing untracked file counts. Ignored files and writes outside the work dir are
+  # not seen (documented residual).
   {
     git -C "$work_dir" rev-parse HEAD 2>/dev/null || echo no-head
     git -C "$work_dir" status --porcelain -uall 2>/dev/null || true
     git -C "$work_dir" diff HEAD --no-ext-diff 2>/dev/null || true
+    (cd "$work_dir" && git ls-files -o --exclude-standard -z 2>/dev/null | while IFS= read -r -d '' f; do
+      printf '%s ' "$f"
+      git hash-object -- "$f" 2>/dev/null
+    done
+    true)
   } | cksum
 }
 
@@ -182,12 +201,29 @@ agent_delegate_guard_log() {
   trap 'exit 129' HUP
 }
 
-# Returns 0 when text holds a value-shaped credential (a bare keyword such as "password: field"
-# in a feature description is not one).
+# Returns 0 when text holds a literal credential (token prefix, JWT, PEM key, Bearer value or a
+# high-entropy KEY=value; references such as settings.X, process.env.X or calls are not literals) and
+# sets AGENT_DELEGATE_SECRET_FINDING to "<rule> line <n>". A scanner failure counts as "has secrets"
+# (fail closed). SB_AGENT_ALLOW_SECRET_LIKE_BRIEF=1 is the user's override: it is read from the
+# environment of the process that starts the delegate (set it in your own shell before the session;
+# never from the brief), and every use is announced on stderr.
 agent_delegate_brief_has_secrets() {
-  local text="$1"
-  # A scanner failure (python3 missing, bad exit) counts as "has secrets": fail closed.
-  ! printf '%s' "$text" | python3 "${_AGENT_DELEGATE_COMMON_DIR}/agent_redact.py" --scan >/dev/null
+  local text="$1" rc=0
+  AGENT_DELEGATE_SECRET_FINDING=""
+  AGENT_DELEGATE_SECRET_FINDING="$(printf '%s' "$text" | python3 "${_AGENT_DELEGATE_COMMON_DIR}/agent_redact.py" --scan)" || rc=$?
+  [[ "$rc" -ne 0 ]] || return 1
+  [[ -n "$AGENT_DELEGATE_SECRET_FINDING" ]] || AGENT_DELEGATE_SECRET_FINDING="scanner-error"
+  if [[ "${SB_AGENT_ALLOW_SECRET_LIKE_BRIEF:-}" == "1" ]]; then
+    printf '[agent-delegate] WARN: SB_AGENT_ALLOW_SECRET_LIKE_BRIEF=1 overrides the brief secret scan (%s)\n' \
+      "$AGENT_DELEGATE_SECRET_FINDING" >&2
+    return 1
+  fi
+  return 0
+}
+
+agent_delegate_secret_error() {
+  printf 'ERROR: %s contains secret patterns — a secret-looking value (rule/line: %s); replace it with a placeholder or an environment reference, or set SB_AGENT_ALLOW_SECRET_LIKE_BRIEF=1 in your own shell to override\n' \
+    "$1" "$AGENT_DELEGATE_SECRET_FINDING" >&2
 }
 
 # Resolve PROMPT_TEXT from --prompt, --prompt-file, or --brief-file (caller sets vars).
@@ -200,7 +236,7 @@ agent_delegate_resolve_prompt() {
     brief_file="$(agent_delegate_canonicalize_path "$brief_file")"
     resolved="$(cat "$brief_file")"
     if agent_delegate_brief_has_secrets "$resolved"; then
-      printf 'ERROR: brief contains secret patterns — remove credentials before launch\n' >&2
+      agent_delegate_secret_error "brief"
       return 2
     fi
   elif [[ -n "$prompt_file" ]]; then
@@ -208,13 +244,13 @@ agent_delegate_resolve_prompt() {
     prompt_file="$(agent_delegate_canonicalize_path "$prompt_file")"
     resolved="$(cat "$prompt_file")"
     if agent_delegate_brief_has_secrets "$resolved"; then
-      printf 'ERROR: prompt file contains secret patterns — remove credentials before launch\n' >&2
+      agent_delegate_secret_error "prompt file"
       return 2
     fi
   else
     resolved="$prompt_text"
     if agent_delegate_brief_has_secrets "$resolved"; then
-      printf 'ERROR: prompt contains secret patterns — remove credentials before launch\n' >&2
+      agent_delegate_secret_error "prompt"
       return 2
     fi
   fi

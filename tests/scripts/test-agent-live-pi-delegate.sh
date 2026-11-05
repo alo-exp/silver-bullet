@@ -44,7 +44,7 @@ export PI_NI_ZERO_BYTE_IDLE_SEC=20 PI_RUN_TIMEOUT=25
 unset SB_AGENT_SKIP_PREFLIGHT PI_MODEL PI_PROVIDER SB_AGENT_EXPECT_FILE PI_EXPECT_FILE
 
 run_pd() {
-  tl_run timeout 60 bash "$DELEGATE" --sb-root "$SB" --skip-preflight --work-dir "$W" "$@"
+  tl_run timeout 60 env SB_AGENT_DELEGATE_DEFAULT_MODE=permissive bash "$DELEGATE" --sb-root "$SB" --skip-preflight --work-dir "$W" "$@"
 }
 
 alh_script "0|ok-output"
@@ -122,7 +122,7 @@ alh_script "0|ok-output"
 run_pd --prompt "do the thing"
 assert_eq "auto NI delegation exits 0" "0" "$TL_STATUS"
 assert_eq "delegation prints the adapter output" "ok-output" "$TL_OUT"
-assert_contains "adapter got mode and prompt" "$(alh_rec)" "invoke n=1 mode=strict prompt=do the thing"
+assert_contains "adapter got mode and prompt" "$(alh_rec)" "invoke n=1 mode=permissive prompt=do the thing"
 assert_eq "provider pinned" "opencode-go" "$(alh_env PI_PROVIDER)"
 assert_eq "model pinned" "mimo-v2.5" "$(alh_env PI_MODEL)"
 assert_eq "PI_BIN is the resolved CLI" "$PI" "$(alh_env PI_BIN)"
@@ -137,9 +137,18 @@ assert_eq "RTK disabled" "1" "$(alh_env RTK_DISABLED)"
 assert_eq "idle seconds reach the adapter when given" "<unset>" "$(alh_env SB_AGENT_IDLE_SEC)"
 
 alh_script "0|ok"
-run_pd --prompt p --idle-sec 17 --mode strict
+run_pd --prompt p --idle-sec 17 --mode permissive
 assert_eq "idle seconds reach the adapter" "17" "$(alh_env SB_AGENT_IDLE_SEC)"
-assert_contains "strict mode reaches the adapter" "$(alh_rec)" "mode=strict"
+assert_contains "permissive mode reaches the adapter" "$(alh_rec)" "mode=permissive"
+# R4-23: Pi has no strict mode; strict (explicit, or the default outside the project) is refused
+alh_script "0|ok"
+: >"$ALH_RECORD"
+run_pd --prompt p --mode strict
+assert_eq "pi strict is refused" "2" "$TL_STATUS"
+assert_contains "pi strict refusal explains" "$TL_ERR" "Pi has no strict mode"
+assert_eq "pi strict never reaches the adapter" "" "$(cat "$ALH_RECORD")"
+tl_run timeout 60 bash "$DELEGATE" --sb-root "$SB" --skip-preflight --work-dir "$W" --prompt p
+assert_eq "pi default outside the project is strict, hence refused" "2" "$TL_STATUS"
 
 alh_script "0|ok"
 tl_run timeout 60 env SB_AGENT_PI_LIGHTWEIGHT=0 bash "$DELEGATE" --sb-root "$SB" --skip-preflight --work-dir "$W" --prompt p

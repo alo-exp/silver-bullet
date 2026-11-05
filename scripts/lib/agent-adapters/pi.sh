@@ -117,7 +117,8 @@ stdout_parts = []
 activity_at = None
 fd = proc.stdout.fileno()
 
-while proc.poll() is None:
+eof = False
+while True:
     now = time.monotonic()
     if now >= hard_deadline:
         break
@@ -127,12 +128,21 @@ while proc.poll() is None:
     if ready:
         data = os.read(fd, 65536)
         if not data:
+            eof = True
             break
         chunk = data.decode(errors="replace")
         stdout_parts.append(chunk)
         if chunk.strip():
             activity_at = time.monotonic()
+    elif proc.poll() is not None:
+        break
 
+if eof and proc.poll() is None:
+    # output closed: let the CLI finish, but never past the hard deadline
+    try:
+        proc.wait(timeout=max(0.1, hard_deadline - time.monotonic()))
+    except subprocess.TimeoutExpired:
+        pass
 combined = "".join(stdout_parts)
 if combined:
     sys.stdout.write(combined)

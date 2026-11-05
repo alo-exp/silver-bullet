@@ -81,6 +81,23 @@ rc=0; agent_claude_seed_folder_trust "$WORK" "$CLAUDE_CONFIG_DIR" 2>/dev/null ||
 [[ "$rc" -eq 0 ]] && ok "corrupt ephemeral file is not fatal" || bad "corrupt ephemeral file is not fatal"
 [[ "$(cat "$CLAUDE_CONFIG_DIR/.claude.json")" == '{oops' ]] && ok "corrupt ephemeral file untouched" || bad "corrupt ephemeral file untouched"
 
+# 5c. strict mode keeps Claude's trust dialog: nothing is pre-accepted (R4-23)
+rm -rf "$CLAUDE_CONFIG_DIR" "$HOME/.claude.json"
+err="$(SB_AM_PERMISSION_MODE=strict SB_AGENT_CLAUDE_SEED_FOLDER_TRUST_GLOBAL=1 agent_claude_seed_folder_trust "$WORK" "$CLAUDE_CONFIG_DIR" 2>&1 >/dev/null)"
+[[ ! -e "$CLAUDE_CONFIG_DIR/.claude.json" && ! -e "$HOME/.claude.json" ]] && ok "strict: no trust seeded anywhere" || bad "strict: no trust seeded anywhere"
+[[ "$err" == *"strict mode: folder trust not pre-accepted"* ]] && ok "strict: skip is announced" || bad "strict: skip is announced"
+SB_AM_PERMISSION_MODE=permissive agent_claude_seed_folder_trust "$WORK" "$CLAUDE_CONFIG_DIR" 2>/dev/null
+trusted "$CLAUDE_CONFIG_DIR/.claude.json" && ok "permissive: ephemeral trust still seeded" || bad "permissive: ephemeral trust still seeded"
+
+# 5d. a symlinked ~/.claude.json (dotfile manager) keeps its link; the target is updated under a lock
+rm -f "$HOME/.claude.json"
+mkdir -p "$TMP/dots"; printf '{"oauthAccount":{"id":"keep"}}\n' >"$TMP/dots/claude.json"
+ln -s "$TMP/dots/claude.json" "$HOME/.claude.json"
+SB_AGENT_CLAUDE_SEED_FOLDER_TRUST_GLOBAL=1 agent_claude_seed_folder_trust "$WORK" "$CLAUDE_CONFIG_DIR" 2>/dev/null
+[[ -L "$HOME/.claude.json" ]] && ok "symlink preserved" || bad "symlink preserved"
+trusted "$TMP/dots/claude.json" && grep -q '"keep"' "$TMP/dots/claude.json" && ok "symlink target updated, data kept" || bad "symlink target updated, data kept"
+[[ -f "$TMP/dots/claude.json.sb-lock" ]] && ok "lock sidecar used" || bad "lock sidecar used"
+
 # 6. seeding disabled entirely
 rm -rf "$CLAUDE_CONFIG_DIR"
 SB_AGENT_CLAUDE_SEED_FOLDER_TRUST=0 agent_claude_seed_folder_trust "$WORK" "$CLAUDE_CONFIG_DIR" 2>/dev/null

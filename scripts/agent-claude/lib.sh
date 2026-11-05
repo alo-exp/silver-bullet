@@ -65,6 +65,12 @@ agent_claude_seed_folder_trust() {
   local config_dir="${2:-${CLAUDE_CONFIG_DIR:-}}"
   [[ -n "$work_dir" ]] || return 0
   [[ "${SB_AGENT_CLAUDE_SEED_FOLDER_TRUST:-1}" == "1" ]] || return 0
+  # Strict delegations (the default outside the current project) must keep Claude's trust dialog:
+  # pre-accepting it would load the repo's project hooks/settings without a prompt (R4-23).
+  if [[ "${SB_AM_PERMISSION_MODE:-}" == "strict" ]]; then
+    printf '[agent-claude] strict mode: folder trust not pre-accepted for %s\n' "$work_dir" >&2
+    return 0
+  fi
   command -v python3 >/dev/null 2>&1 || return 0
 
   # $3 = "global" for the user's real ~/.claude.json: never replace a file that
@@ -82,9 +88,17 @@ import shutil
 import sys
 import tempfile
 
+import fcntl
+
 path = pathlib.Path(sys.argv[1])
 raw = pathlib.Path(sys.argv[2])
 kind = sys.argv[3]
+if kind == "global":
+    # A dotfile manager may symlink ~/.claude.json: update the real file, not the link,
+    # and serialise with other writers through a sidecar lock.
+    path = pathlib.Path(os.path.realpath(str(path)))
+    lock = open(str(path.with_name(path.name + ".sb-lock")), "w")
+    fcntl.flock(lock, fcntl.LOCK_EX)
 resolved = raw.resolve()
 paths = []
 for candidate in (raw, resolved):

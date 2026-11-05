@@ -213,5 +213,5 @@ if [[ "$final_exit" -ne 0 ]]; then
   fi
 fi
 
-printf '%s' "$final_output"
+agent_delegate_redact_output "$final_output"
 exit "$final_exit"

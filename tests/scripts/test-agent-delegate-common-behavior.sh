@@ -90,19 +90,26 @@ quota_no() { agent_delegate_is_quota_error "$1" && tl_fail "quota no: $1" || tl_
 quota_yes '{"type":"error","error":{"type":"rate_limit_error","message":"slow down"}}'
 quota_yes 'HTTP/1.1 429 Too Many Requests'
 quota_yes 'Error: 429 rate limit exceeded for model'
+quota_yes 'API Error: 429 {"message":"Number of request tokens has exceeded your per-minute rate limit"}'
 quota_yes '{"status": 429, "error": "x"}'
-quota_yes 'status=429'
-quota_yes "error: You exceeded your current quota, please check your plan"
+quota_yes "Error: You exceeded your current quota, please check your plan"
 quota_yes 'insufficient_quota'
-quota_yes 'Rate limit reached for requests'
-quota_yes 'usage limit reached; resets in 3 hours'
-quota_yes 'Your token plan limit was reached'
+quota_yes "You've hit your usage limit. Upgrade to Pro or try again in 3 hours."
+quota_yes 'Claude 5-hour quota has been exhausted. Resets in 2hr'
+quota_yes $'building...\nERROR: usage limit reached; resets in 3 hours\nbye'
 quota_no 'AssertionError at line 429'
 quota_no 'edited docs/quota.md and src/rate-limiter.py'
 quota_no 'wrote 429 bytes to out.txt'
 quota_no 'tests/rate_limit_test.go: PASS (version 4.29)'
 quota_no 'FAIL: expected quota calculation for tenant 4290'
 quota_no 'the user token plan page renders'
+# test output that merely mentions the words (R4-20 minor)
+quota_no 'expected status 429, got 200'
+quota_no 'FAIL: rate limiter should return Too Many Requests'
+quota_no 'quota exceeded test passed'
+quota_no 'implementing rate limit exceeded handler'
+quota_no 'status=429'
+quota_no $'  1) retries on 429\n     AssertionError: expected rate limit exceeded to be thrown'
 
 cat >"$ST/scripts/review-fix-ladder.py" <<'PY'
 import json, os, sys
@@ -203,6 +210,22 @@ done
 for honest in "Implement login: POST /login returns a session token: JWT" "the form shows password: field and api_key: optional" "Authorization: Bearer <token> is documented in README" "set GITHUB_TOKEN=\${GITHUB_TOKEN} in the workflow" "tokens: 12 used, secret: none" "api_key = os.environ[\"API_KEY\"]"; do
   agent_delegate_brief_has_secrets "$honest" && tl_fail "secrets: accepts honest brief: ${honest:0:30}" || tl_pass "secrets: accepts honest brief: ${honest:0:30}"
 done
+# honest auth-feature code: references and calls are not literal secrets (R10b-06)
+for honest in "client_secret: settings.GOOGLE_CLIENT_SECRET" "const password = req.body.passwordConfirmation" "secret=getSecretFromVaultClient()" "private_key: loadPrivateKeyFromDisk(path)" "Use secret: process.env.SESSION_SECRET for cookie signing"; do
+  agent_delegate_brief_has_secrets "$honest" && tl_fail "secrets: accepts code '${honest:0:34}'" || tl_pass "secrets: accepts code '${honest:0:34}'"
+done
+# the refusal names the rule and the line, and the user's override is announced
+printf 'ok\nGITLAB_TOKEN=%s\n' "$fake_val" >"$TL_TMP/line2.md"
+tl_run agent_delegate_resolve_prompt "$TL_TMP/line2.md" "" ""
+assert_eq "named finding: refused" 2 "$TL_STATUS"
+assert_contains "named finding: rule and line" "$TL_ERR" "rule/line: assignment line 2"
+assert_contains "named finding: how to override" "$TL_ERR" "SB_AGENT_ALLOW_SECRET_LIKE_BRIEF=1"
+SB_AGENT_ALLOW_SECRET_LIKE_BRIEF=1 tl_run agent_delegate_resolve_prompt "$TL_TMP/line2.md" "" ""
+assert_eq "override: accepted" 0 "$TL_STATUS"
+assert_contains "override: announced on stderr" "$TL_ERR" "overrides the brief secret scan (assignment line 2)"
+assert_contains "override: brief passes through unchanged" "$TL_OUT" "GITLAB_TOKEN="
+SB_AGENT_ALLOW_SECRET_LIKE_BRIEF=0 tl_run agent_delegate_resolve_prompt "$TL_TMP/line2.md" "" ""
+assert_eq "override: only an explicit 1 counts" 2 "$TL_STATUS"
 rc=0; PATH="$(tl_path_without python3)" agent_delegate_brief_has_secrets "benign" 2>/dev/null || rc=$?
 assert_eq "secrets: scanner failure fails closed" 0 "$rc"
 
@@ -373,10 +396,19 @@ DM_PROJ="$TL_TMP/dm-proj"; DM_OTHER="$TL_TMP/dm-other"
 mkdir -p "$DM_PROJ/sub" "$DM_OTHER"
 git -C "$DM_PROJ" init -q
 unset SB_AGENT_DELEGATE_DEFAULT_MODE CLAUDE_PROJECT_DIR
-assert_eq "default mode: work dir is the project root" "permissive" "$(cd "$DM_PROJ" && agent_delegate_default_mode "$DM_PROJ")"
+assert_eq "default mode: work dir is the project root" "permissive" "$(cd "$DM_PROJ" && agent_delegate_default_mode "$DM_PROJ" 2>/dev/null)"
 assert_eq "default mode: work dir inside the project" "permissive" "$(cd "$DM_PROJ/sub" && agent_delegate_default_mode "$DM_PROJ/sub")"
 assert_eq "default mode: project subdir cwd, project root work dir" "permissive" "$(cd "$DM_PROJ/sub" && agent_delegate_default_mode "$DM_PROJ")"
 assert_eq "default mode: unrelated directory is strict" "strict" "$(cd "$DM_PROJ" && agent_delegate_default_mode "$DM_OTHER")"
+# a separate repo cloned inside the project, and children of a non-repo project dir, are outside (strict)
+mkdir -p "$DM_PROJ/vendor/third" "$TL_TMP/dm-plain/child"
+git -C "$DM_PROJ/vendor/third" init -q
+assert_eq "default mode: nested separate clone is strict" "strict" "$(cd "$DM_PROJ" && agent_delegate_default_mode "$DM_PROJ/vendor/third" 2>/dev/null)"
+assert_eq "default mode: non-git project dir, child is strict" "strict" "$(cd "$TL_TMP/dm-plain" && agent_delegate_default_mode "$TL_TMP/dm-plain/child" 2>/dev/null)"
+assert_eq "default mode: CLAUDE_PROJECT_DIR=non-repo, clone below it is strict" "strict" "$(cd "$TL_TMP" && CLAUDE_PROJECT_DIR="$TL_TMP/dm-plain" agent_delegate_default_mode "$DM_PROJ" 2>/dev/null)"
+assert_contains "default mode: the choice is announced" "$(cd "$DM_PROJ" && agent_delegate_default_mode "$DM_OTHER" 2>&1 >/dev/null)" "default --mode strict"
+assert_eq "default mode: unreadable project dir is strict" "strict" "$(cd "$DM_PROJ" && CLAUDE_PROJECT_DIR="$TL_TMP/no-project" agent_delegate_default_mode "$DM_PROJ" 2>/dev/null)"
+assert_eq "default mode: unreadable work dir is strict" "strict" "$(cd "$DM_PROJ" && agent_delegate_default_mode "$TL_TMP/nonexistent-dir" 2>/dev/null)"
 assert_eq "default mode: non-git cwd, same dir" "permissive" "$(cd "$DM_OTHER" && agent_delegate_default_mode "$DM_OTHER")"
 assert_eq "default mode: CLAUDE_PROJECT_DIR defines the project" "permissive" "$(cd "$DM_OTHER" && CLAUDE_PROJECT_DIR="$DM_PROJ" agent_delegate_default_mode "$DM_PROJ/sub")"
 assert_eq "default mode: explicit override strict" "strict" "$(cd "$DM_PROJ" && SB_AGENT_DELEGATE_DEFAULT_MODE=strict agent_delegate_default_mode "$DM_PROJ")"
@@ -399,6 +431,13 @@ REAL_GIT="$(command -v git)"
 printf '#!/usr/bin/env bash\nfor a in "$@"; do [[ "$a" == status || "$a" == diff ]] && exit 128; done\nexec "%s" "$@"\n' "$REAL_GIT" >"$TL_TMP/gitfail/git"
 chmod +x "$TL_TMP/gitfail/git"
 assert_eq "fingerprint survives failing git status/diff" 0 "$(PATH="$TL_TMP/gitfail:$PATH" agent_delegate_workdir_fingerprint "$QD_REPO" >/dev/null; echo $?)"
+# an edit to a pre-existing untracked file changes the fingerprint
+echo one >"$QD_REPO/untracked.txt"
+FP_U1="$(agent_delegate_workdir_fingerprint "$QD_REPO")"
+echo two >>"$QD_REPO/untracked.txt"
+FP_U2="$(agent_delegate_workdir_fingerprint "$QD_REPO")"
+[[ "$FP_U1" != "$FP_U2" ]] && tl_pass "fingerprint sees edits to untracked files" || tl_fail "fingerprint sees edits to untracked files"
+rm -f "$QD_REPO/untracked.txt"
 echo changed >"$QD_REPO/new.txt"
 rc=0; err="$(agent_delegate_quota_retry_decision lbl "$QD_ERR" 1 3 "$QD_REPO" "$FP" 2>&1 >/dev/null)" || rc=$?
 assert_eq "retry decision: changed repo stops" 1 "$rc"

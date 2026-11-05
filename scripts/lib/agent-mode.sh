@@ -1076,7 +1076,11 @@ path, payload, lib_dir = sys.argv[1], sys.argv[2], sys.argv[3]
 sys.path.insert(0, lib_dir)
 import agent_fifo
 try:
-    agent_fifo.write_line(path, payload, float(os.environ.get("SB_AGENT_CTL_TIMEOUT") or "8"))
+    try:
+        timeout = float(os.environ.get("SB_AGENT_CTL_TIMEOUT") or "8")
+    except ValueError:
+        timeout = 8.0
+    agent_fifo.write_line(path, payload, timeout)
 except (OSError, TimeoutError) as exc:
     sys.stderr.write("ERROR: could not open cmd.fifo (no driver reading it?): %s\n" % exc)
     sys.exit(2)

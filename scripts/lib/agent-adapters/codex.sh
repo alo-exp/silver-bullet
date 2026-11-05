@@ -26,8 +26,10 @@ agent_cli_path() {
   printf '%s\n' "$cli"
 }
 
+# Per-run transcript directory. Never inside SB_ROOT (the plugin cache in an installed package):
+# CODEX_TRANSCRIPT_DIR (live-test isolation sets it), else a private directory under TMPDIR.
 agent_transcript_dir() {
-  printf '%s\n' "${CODEX_TRANSCRIPT_DIR:-${SB_ROOT}/tests/live/agents/codex/transcripts}"
+  printf '%s\n' "${CODEX_TRANSCRIPT_DIR:-${TMPDIR:-/tmp}/sb-codex-transcripts.$(id -u).$$}"
 }
 
 agent_preflight() {
@@ -78,8 +80,10 @@ codex_capture_transcript() {
   local meta_dest
 
   transcript_dir="$(agent_transcript_dir)"
-  mkdir -p "$transcript_dir"
+  ( umask 077; mkdir -p "$transcript_dir" )
+  chmod 700 "$transcript_dir"
   [[ -f "$transcript_source_file" ]] || return 1
+  umask 077
   transcript_dest="${transcript_dir}/latest.jsonl"
   if [[ -f "$prompt_file" ]]; then
     python3 - "$transcript_source_file" "$prompt_file" "$transcript_dest" <<'PY'
@@ -112,6 +116,12 @@ PY
     --arg work_dir "$WORK_DIR" \
     '{archive_id:$archive_id, captured_at:$captured_at, source:$source, work_dir:$work_dir}' \
     > "$meta_dest"
+  # Transcripts hold the prompt and the whole session: redact them like the delegate logs.
+  local redactor="${SCRIPT_DIR}/../agent_redact.py" f
+  for f in "$transcript_dest" "${transcript_dir}/${archive_id}.jsonl" "$meta_dest"; do
+    python3 "$redactor" --redact-file "$f"
+    chmod 600 "$f"
+  done
   printf '%s\n' "$transcript_dest"
   return 1
 }
@@ -168,7 +178,7 @@ agent_invoke() {
 
   cli="$(agent_cli_path)"
   [[ -n "${WORK_DIR:-}" && -d "$WORK_DIR" ]] || { printf 'ERROR: WORK_DIR required\n' >&2; return 1; }
-  WORK_DIR="$(cd "$WORK_DIR" && pwd)" || return 1
+  WORK_DIR="$(cd "$WORK_DIR" && pwd)"
   export WORK_DIR
   tmpdir="${TMPDIR:-/tmp}"
   last_message_file="$(mktemp "${tmpdir}/codex-live-last-message-XXXXXX")"

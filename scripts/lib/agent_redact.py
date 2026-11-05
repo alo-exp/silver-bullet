@@ -39,7 +39,11 @@ _PREFIXED = [
     ("aws", re.compile(r"\b(?:AKIA|ASIA)[A-Z0-9]{16}\b"), REDACTED),
     ("google", re.compile(r"\bAIza[0-9A-Za-z_-]{35}"), REDACTED),
     ("sk", re.compile(r"\bsk-[A-Za-z0-9_-]{8,}"), "sk-" + REDACTED),
+    ("npm", re.compile(r"\bnpm_[A-Za-z0-9]{20,}"), "npm_" + REDACTED),
+    ("huggingface", re.compile(r"\bhf_[A-Za-z0-9]{20,}"), "hf_" + REDACTED),
+    ("url-userinfo", re.compile(r"(?<=://)[^\s/@:]+:[^\s/@]+(?=@)"), REDACTED),
 ]
+_PASSWORD_FLAG = re.compile(r"(--(?:password|passwd|token|secret|api-key)(?:=|\s+))\S+", re.I)
 _BEARER = re.compile(r"\b(bearer)(\s+)[A-Za-z0-9._~+/=-]{8,}", re.I)
 _AUTH_HEADER = re.compile(r"\b(authorization)(\s*[:=]\s*)(?:(?:bearer|basic|token)\s+)?[^\s\"',;]+", re.I)
 _ASSIGN = re.compile(r"\b(" + _NAME + r")([\"']?\s*[:=]\s*[\"']?)(" + _VALUE + ")", re.I)
@@ -49,6 +53,7 @@ def redact(text):
     """Return ``text`` with credentials replaced."""
     for _kind, pattern, replacement in _PREFIXED:
         text = pattern.sub(replacement, text)
+    text = _PASSWORD_FLAG.sub(lambda m: m.group(1) + REDACTED, text)
     text = _AUTH_HEADER.sub(lambda m: m.group(1) + m.group(2) + REDACTED, text)
     text = _BEARER.sub(lambda m: m.group(1) + m.group(2) + REDACTED, text)
     return _ASSIGN.sub(lambda m: m.group(1) + m.group(2) + REDACTED, text)
@@ -61,27 +66,47 @@ def _entropy(value):
     return -sum(n / len(value) * math.log2(n / len(value)) for n in counts.values())
 
 
+_IDENT_CHAIN = re.compile(r"^[A-Za-z_$][A-Za-z0-9_$]*(?:(?:\.|::|->)[A-Za-z_$][A-Za-z0-9_$]*)+$")
+_UNDERSCORE_IDENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+_PLAIN_WORD = re.compile(r"^[A-Za-z]+$")
+_ENV_REF = re.compile(r"^(?:process\.env|os\.environ|os\.getenv|getenv|ENV\[|settings\.|config\.|secrets\.|vault\.|\$\{|\$[A-Z_]|<|%\()", re.I)
+_PEM_HEADER = re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----")
+
+
 def _looks_random(value):
-    """A secret-shaped assignment value: long, not a placeholder, and high entropy."""
+    """A literal secret-shaped assignment value: long, not a placeholder, not a code reference
+    (identifier, dotted/attribute chain, call, environment or settings lookup), high entropy."""
     value = value.strip("\"'")
     if len(value) < 16:
         return False
     if value[0] in "<{$[(" or value.lower().startswith(("xxxx", "your", "example", "changeme")):
         return False
-    return _entropy(value) >= 3.5
+    if "(" in value or ")" in value or _ENV_REF.match(value):
+        return False
+    if _IDENT_CHAIN.match(value) or (_UNDERSCORE_IDENT.match(value) and "_" in value):
+        return False
+    entropy = _entropy(value)
+    if _PLAIN_WORD.match(value):
+        # camelCase / PascalCase names read as identifiers; only a long random letter run is a key
+        return len(value) >= 24 and entropy >= 4.3
+    return entropy >= 3.5
 
 
 def scan(text):
-    """Return the kind of the first value-shaped credential in ``text``, or None."""
-    for kind, pattern, _replacement in _PREFIXED:
-        if pattern.search(text):
-            return kind
-    for match in re.finditer(r"\b(?:bearer)\s+([A-Za-z0-9._~+/=-]{16,})", text, re.I):
-        if _looks_random(match.group(1)):
-            return "bearer"
-    for match in _ASSIGN.finditer(text):
-        if _looks_random(match.group(3)):
-            return "assignment"
+    """Return ``(kind, line_number)`` of the first literal credential in ``text``, or None."""
+    for number, line in enumerate(text.splitlines(), 1):
+        for kind, pattern, _replacement in _PREFIXED:
+            if kind == "pem":
+                if _PEM_HEADER.search(line):
+                    return kind, number
+            elif pattern.search(line):
+                return kind, number
+        for match in re.finditer(r"\b(?:bearer)\s+([A-Za-z0-9._~+/=-]{16,})", line, re.I):
+            if _looks_random(match.group(1)):
+                return "bearer", number
+        for match in _ASSIGN.finditer(line):
+            if _looks_random(match.group(3)):
+                return "assignment", number
     return None
 
 
@@ -122,9 +147,9 @@ def main(argv):
             return 2
         return 0
     if len(argv) == 2 and argv[1] == "--scan":
-        kind = scan(sys.stdin.read())
-        if kind:
-            sys.stdout.write(kind + "\n")
+        found = scan(sys.stdin.read())
+        if found:
+            sys.stdout.write("%s line %d\n" % found)
             return 1
         return 0
     sys.stderr.write(__doc__)

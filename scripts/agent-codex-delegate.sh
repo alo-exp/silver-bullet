@@ -117,6 +117,23 @@ log_floor="${SB_AGENT_CODEX_LOG_FLOOR:-512}"
 attempt=0
 fp_before="unknown"
 
+# The lightweight home holds a copy of auth.json; an abnormally killed run (SIGKILL/OOM) skips the
+# EXIT trap. Sweep this user's leftovers on start, but never a home whose owner delegate is still
+# alive (it records its PID); a home without a PID file is swept once it is over two hours old (R4-31).
+agent_codex_sweep_stale_homes() {
+  local d pid
+  for d in "${TMPDIR:-/tmp}"/agent-codex-codex-home-*; do
+    [[ -d "$d" && ! -L "$d" && -O "$d" ]] || continue
+    pid="$(cat "${d}/.sb-owner-pid" 2>/dev/null || true)"
+    if [[ -n "$pid" ]]; then
+      ! kill -0 "$pid" 2>/dev/null || continue
+    elif [[ -z "$(find "$d" -maxdepth 0 -mmin +120 2>/dev/null)" ]]; then
+      continue
+    fi
+    rm -rf -- "$d" 2>/dev/null || true
+  done
+}
+
 agent_codex_apply_lightweight_env() {
   [[ "${SB_AGENT_CODEX_LIGHTWEIGHT:-1}" == "1" ]] || return 0
 
@@ -128,11 +145,9 @@ agent_codex_apply_lightweight_env() {
 
   if [[ "${SB_AGENT_CODEX_SKIP_MCP:-1}" == "1" && -z "${SB_AGENT_CODEX_CODEX_HOME_RESTORE:-}" ]]; then
     local lightweight_home
-    # The lightweight home holds a copy of auth.json; an abnormally killed run (SIGKILL/OOM) skips
-    # the EXIT trap, so sweep this user's stale ones on start (R4-31).
-    find "${TMPDIR:-/tmp}" -maxdepth 1 -type d -name 'agent-codex-codex-home-*' -user "$(id -un)" -mmin +120 \
-      -exec rm -rf {} + 2>/dev/null || true
+    agent_codex_sweep_stale_homes
     lightweight_home="$(mktemp -d "${TMPDIR:-/tmp}/agent-codex-codex-home-XXXXXX")"
+    printf '%s' "$$" >"${lightweight_home}/.sb-owner-pid"
     agent_codex_prepare_lightweight_codex_home "${CODEX_HOME:-${HOME}/.codex}" "$lightweight_home"
     SB_AGENT_CODEX_CODEX_HOME_RESTORE="${CODEX_HOME:-}"
     export CODEX_HOME="$lightweight_home"
@@ -237,5 +252,5 @@ if [[ "$final_exit" -ne 0 ]]; then
   fi
 fi
 
-printf '%s' "$final_output"
+agent_delegate_redact_output "$final_output"
 exit "$final_exit"

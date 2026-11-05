@@ -61,6 +61,12 @@ if [[ -z "$MODE" ]]; then
   MODE="$(agent_delegate_default_mode "$WORK_DIR")"
   agent_mode_note_permission_mode "$MODE"
 fi
+# Pi has no permission controls to tighten: strict cannot be honoured, so refuse rather than
+# run it unrestricted under a name that promises otherwise (R4-23).
+if [[ "$MODE" == "strict" ]]; then
+  printf 'ERROR: Pi has no strict mode (it has no permission controls). Pass --mode permissive to run Pi explicitly, or delegate to a host that supports strict (claude, codex, opencode).\n' >&2
+  exit 2
+fi
 agent_delegate_clear_matrix_env
 
 if [[ -n "$BRIEF_FILE" ]]; then
@@ -182,5 +188,5 @@ if [[ "$final_exit" -ne 0 ]]; then
   fi
 fi
 
-printf '%s' "$final_output"
+agent_delegate_redact_output "$final_output"
 exit "$final_exit"

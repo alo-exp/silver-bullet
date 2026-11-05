@@ -83,7 +83,10 @@ control, payload, op, lib_dir = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[
 sys.path.insert(0, lib_dir)
 import agent_fifo
 
-timeout = float(os.environ.get("SB_AGENT_CTL_TIMEOUT") or "8")
+try:
+    timeout = float(os.environ.get("SB_AGENT_CTL_TIMEOUT") or "8")
+except ValueError:
+    timeout = 8.0
 
 cmd = os.path.join(control, "cmd.fifo")
 reply = os.path.join(control, "reply.fifo")

@@ -165,6 +165,16 @@ assert_eq "adapter that removes the log still succeeds" 0 "$TL_STATUS"
 assert_contains "fallback log announced" "$TL_ERR" "log written: $WORK/log"
 assert_file_exists "fallback log written" "$WORK/log"
 
+# ---- the delegate's own stdout is redacted too (R4-31)
+reset
+echo 'curl -H "Authorization: Bearer abcdefgh12345678" https://user:S3cr3tPassw0rdXYZ@host/x' >"$CFG/fail-msg"; echo 0 >"$CFG/fail-until"
+cat >>"$CFG/fail-msg" <<<"plain line"
+printf '%s\n' 1 >"$CFG/fail-until"
+delegate --work-dir "$WORK" --prompt p --sb-root "$SB" --no-escalate --quota-retry
+assert_not_contains "stdout: bearer token redacted" "$TL_OUT" "abcdefgh12345678"
+assert_not_contains "stdout: URL password redacted" "$TL_OUT" "S3cr3tPassw0rdXYZ"
+assert_contains "stdout: other text kept" "$TL_OUT" "plain line"
+
 # ---- quota retries
 reset
 echo 1 >"$CFG/fail-until"; echo "HTTP 429 rate limit" >"$CFG/fail-msg"
@@ -242,23 +252,26 @@ assert_eq "failing escalated retry exits 1" 1 "$TL_STATUS"
 assert_eq "exactly one retry" 2 "$(<"$CFG/count")"
 ENVX=()
 
-# ---- the stale-home sweep failing (find error) is tolerated
+# ---- stale lightweight CODEX_HOME sweep: by owner PID, never a live delegate's home (R4-31)
 reset
-printf '#!/usr/bin/env bash\nfor a in "$@"; do [[ "$a" == agent-codex-codex-home-* ]] && exit 1; done\nexec "%s" "$@"\n' "$(command -v find)" >"$TL_BIN/find"
-chmod +x "$TL_BIN/find"
-delegate --work-dir "$WORK" --prompt p --sb-root "$SB"
-assert_eq "failing stale-home sweep tolerated" 0 "$TL_STATUS"
-rm -f "$TL_BIN/find"
-# a stale lightweight home from an earlier killed run is swept on start (R4-31)
-reset
-STALE="$TL_TMP/tmp/agent-codex-codex-home-stale1"
-mkdir -p "$TL_TMP/tmp" "$STALE"; touch -d '3 hours ago' "$STALE"
-FRESH="$TL_TMP/tmp/agent-codex-codex-home-fresh1"; mkdir -p "$FRESH"
-ENVX=(TMPDIR="$TL_TMP/tmp")
+TT="$TL_TMP/tmp"; mkdir -p "$TT"
+DEAD_PID="$(bash -c 'echo $$')"
+sleep 120 & LIVE_PID=$!
+D_DEAD="$TT/agent-codex-codex-home-dead1";  mkdir -p "$D_DEAD";  printf '%s' "$DEAD_PID" >"$D_DEAD/.sb-owner-pid"
+D_LIVE="$TT/agent-codex-codex-home-live1";  mkdir -p "$D_LIVE";  printf '%s' "$LIVE_PID" >"$D_LIVE/.sb-owner-pid"; touch -d '5 hours ago' "$D_LIVE"
+D_OLD="$TT/agent-codex-codex-home-old1";    mkdir -p "$D_OLD";   touch -d '3 hours ago' "$D_OLD"
+D_NEW="$TT/agent-codex-codex-home-new1";    mkdir -p "$D_NEW"
+ln -s "$D_NEW" "$TT/agent-codex-codex-home-link1"
+ENVX=(TMPDIR="$TT")
 delegate --work-dir "$WORK" --prompt p --sb-root "$SB"
 ENVX=()
-assert_file_absent "stale lightweight CODEX_HOME removed" "$STALE"
-assert_file_exists "recent lightweight CODEX_HOME kept" "$FRESH"
+kill "$LIVE_PID" 2>/dev/null || true
+assert_file_absent "home of a dead delegate removed" "$D_DEAD"
+assert_file_exists "home of a live delegate kept even when old" "$D_LIVE"
+assert_file_absent "old home without an owner PID removed" "$D_OLD"
+assert_file_exists "recent home without an owner PID kept" "$D_NEW"
+assert_file_exists "a symlinked home is left alone" "$TT/agent-codex-codex-home-link1"
+rm -rf "$D_LIVE" "$D_NEW" "$TT/agent-codex-codex-home-link1"
 
 # ---- the temporary CODEX_HOME cannot be removed: tolerated
 reset
