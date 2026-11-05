@@ -97,7 +97,7 @@ detect_host() {
     printf '%s' "claude"
     return 0
   fi
-  printf '%s' "cursor"
+  printf '%s' "none"
 }
 
 # The project's own file; never Silver Bullet's bundled config or template (those are not the
@@ -233,6 +233,10 @@ fi
 PROJECT_ROOT="$(cd "$PROJECT_ROOT" && pwd -P)"
 
 [[ "$HOST" == "auto" ]] && HOST="$(detect_host)"
+if [[ "$HOST" == "none" ]]; then
+  log "No host detected (no Claude, Codex, OpenCode, Pi or Cursor config found): nothing written. Pass --host <name> to choose one."
+  exit 0
+fi
 
 if [[ "$FORCE" -eq 0 ]] && ! leanctx_opted_in; then
   log "LeanCTX is not consented (bash ${SCRIPT_DIR}/sb-consent.sh grant leanctx --all-projects --capabilities wire)"

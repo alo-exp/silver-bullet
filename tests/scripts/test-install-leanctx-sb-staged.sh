@@ -269,6 +269,12 @@ for h in claude codex opencode; do
 done
 run_inst --host pi --skip-verify
 assert_contains "pi installer args" "$(calls)" "install-pi --repo-root ${STAGE}"
+# wire without install consent: Pi would install the pi-lean-ctx npm package, so it is not enabled
+sb_test_consent_revoke_all; sb_test_consent_grant leanctx wire
+run_inst --host pi --skip-verify
+assert_not_contains "pi without install consent: adapter not asked to enable leanctx" "$(calls)" "install-pi"
+assert_contains "pi without install consent: says why" "$TL_OUT$TL_ERR" "needs install consent"
+sb_test_consent_grant_all
 run_inst --host pi --skip-verify --dry-run
 assert_contains "pi dry-run" "$TL_OUT" "DRY-RUN: python3 ${STAGE}/scripts/lib/global-toolstack/install-pi.py --repo-root ${STAGE}"
 run_inst --host hermes --skip-verify

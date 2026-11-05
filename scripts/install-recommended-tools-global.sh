@@ -97,20 +97,14 @@ install_pi_global() {
   }
   # The adapter, its config and ~/.pi/agent/settings.json are host configuration: written only with
   # wire consent, and only the consented tools are switched on (docs/CONSENT.md).
-  local -a pi_args=(--repo-root "$REPO_ROOT")
-  local tool wired=0
-  for tool in graphify agentmemory context_mode leanctx rtk; do
-    if sb_consent_granted "$tool" wire; then
-      pi_args+=(--enable-tool "$tool")
-      wired=1
-    fi
-  done
-  if [[ "$wired" -eq 0 ]]; then
+  local -a pi_args=(--repo-root "$REPO_ROOT") enable_words=()
+  read -r -a enable_words <<<"$(sb_consent_pi_enable_words)"
+  if [[ "${#enable_words[@]}" -eq 0 ]]; then
     printf 'SKIP: Pi adapter - no wire consent for any tool (bash %s/sb-consent.sh grant <tool> --all-projects --capabilities wire)\n' \
       "$SCRIPT_DIR" >&2
     return 0
   fi
-  python3 "$installer" "${pi_args[@]}"
+  python3 "$installer" "${pi_args[@]}" "${enable_words[@]}"
 }
 
 install_hermes_note() {

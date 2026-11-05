@@ -360,7 +360,10 @@ merge_mcp_config() {
         warn "Pi adapter installer missing: $pi_installer"
         return 1
       }
-      if [[ "$DRY_RUN" -eq 1 ]]; then
+      if ! leanctx_consented install; then
+        # Enabling LeanCTX in Pi makes the host install the pi-lean-ctx npm package.
+        log "SKIP: enabling LeanCTX in Pi needs install consent (bash ${SCRIPT_DIR}/sb-consent.sh grant leanctx --all-projects --capabilities install)"
+      elif [[ "$DRY_RUN" -eq 1 ]]; then
         log "DRY-RUN: python3 $pi_installer --repo-root $REPO_ROOT --enable-tool leanctx"
       else
         run_cmd python3 "$pi_installer" --repo-root "$REPO_ROOT" --enable-tool leanctx

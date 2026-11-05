@@ -49,6 +49,28 @@ assert_eq "stack optimizer: consented graphify and agentmemory are enabled, noth
 fresh
 assert_eq "stack optimizer: no consent adds no --enable-tool" "0" "$(_sb_stack_graphify_platform_words pre pi | grep -c -e '--enable-tool' || true)"
 
+# ---- leanctx makes Pi install an npm package: that needs install consent, not only wire
+fresh; sb_test_consent_grant leanctx wire
+tl_run bash "$TL_REPO_ROOT/scripts/install-recommended-tools-global.sh" --host pi
+assert_eq "leanctx wire-only: not enabled in Pi" "" "$( [[ -f "$CFG" ]] && enabled || true)"
+assert_eq "leanctx wire-only: no npm package added to Pi settings" "0" "$( { cat "$HOME/.pi/agent/settings.json" 2>/dev/null || true; } | { grep -c 'pi-lean-ctx' || true; })"
+fresh; sb_test_consent_grant leanctx install,wire
+tl_run bash "$TL_REPO_ROOT/scripts/install-recommended-tools-global.sh" --host pi
+assert_eq "leanctx install+wire: enabled in Pi" "leanctx" "$(enabled)"
+assert_contains "leanctx install+wire: npm package added" "$(cat "$HOME/.pi/agent/settings.json")" "npm:pi-lean-ctx"
+fresh; sb_test_consent_grant leanctx wire; sb_test_consent_grant graphify install,wire
+line="$(_sb_stack_graphify_platform_words pre pi)"
+_sb_stack_run_words "$PROJ" "$line"
+assert_eq "stack optimizer: leanctx wire-only is not enabled alongside graphify" "graphify" "$(enabled)"
+
+# ---- revoking consent does not switch a tool off in Pi (documented in docs/CONSENT.md)
+fresh; sb_test_consent_grant rtk install,wire,enforce
+tl_run bash "$TL_REPO_ROOT/scripts/optimize-rtk-context-mode.sh" --host pi --project-root "$PROJ" --skip-cm-doctor
+sb_test_consent_revoke_all; sb_test_consent_grant context_mode install,wire,enforce
+tl_run bash "$TL_REPO_ROOT/scripts/optimize-rtk-context-mode.sh" --host pi --project-root "$PROJ" --skip-cm-doctor
+assert_eq "revoke: a previously enabled tool stays on, the new one is added" "context_mode,rtk" "$(enabled)"
+assert_contains "docs say revoke does not unwire" "$(cat "$TL_REPO_ROOT/docs/CONSENT.md")" "Revoking or declining consent stops"
+
 # ---- the recommended-tools registry command (text shown to the agent)
 # shellcheck source=../../hooks/lib/recommended-tools.sh
 source "$TL_REPO_ROOT/hooks/lib/recommended-tools.sh"

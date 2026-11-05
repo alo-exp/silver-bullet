@@ -144,6 +144,15 @@ a one-time notice per tool and project (marker under the runtime state dir) tell
 what changed and giving the exact `grant` and `decline` commands. Until the user answers, the
 tool's gates are inactive.
 
+## What revoking does not undo
+
+Revoking or declining consent stops Silver Bullet from acting; it does not unwire what an earlier
+run wrote. In Pi, `install-pi.py` only adds servers: a tool switched on while consent stood stays on
+in `~/.pi/agent/extensions/silver-bullet-five-tool-stack/config.json` (and `npm:pi-lean-ctx` stays in
+Pi's `settings.json`) until you switch it off there. Revoking does not undo host configuration in other
+hosts either; remove those entries by hand or with the uninstall scripts. Enabling LeanCTX in Pi needs
+both `wire` and `install` consent, because Pi then installs the `pi-lean-ctx` npm package.
+
 ## Scripts that honor consent
 
 These scripts run only for tools the user granted, and say how to grant the rest:
