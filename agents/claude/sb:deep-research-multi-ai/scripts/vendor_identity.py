@@ -17,8 +17,13 @@ from typing import Any
 from urllib.parse import urlparse
 
 # Tokens of a display name that say what a product is, not which one: never distinctive.
-GENERIC_TOKENS = frozenset("ai ide cli sdk api sdlc llm mcp pr ci cd saas oss apo swe ui ux ml os dev app io devops".split())
-_URL = re.compile(r"(?:https?://)?(?:www\.)?[a-z0-9-]+(?:\.[a-z0-9-]+)+(?:/[^\s;,)\]]*)?")
+GENERIC_TOKENS = frozenset("ai ide cli sdk api sdlc llm mcp pr ci cd saas oss apo swe ui ux ml os dev app io devops autogen".split())
+# A pack URL in text must look like a URL: a lower-case host with a boundary on both sides (not a file name, an
+# email domain, a query or fragment value, an identifier part), and a scheme, "www." or a path.
+_URL = re.compile(
+    r"(?<![\w@.?#=&%+/-])(?P<scheme>https?://)?(?P<www>www\.)?(?P<host>[a-z0-9-]+(?:\.[a-z0-9-]+)+)(?P<path>/[^\s;,)\]]*)?"
+    r"(?![\w@(-]|\.[A-Za-z0-9])"
+)
 
 
 def distinctive_tokens(display: str, coined: frozenset[str] = frozenset()) -> frozenset[str]:
@@ -122,7 +127,9 @@ class Registry:
 
     def _url_vendors(self, text: str) -> set[str]:
         found: set[str] = set()
-        for hit in _URL.finditer(text.lower()):
+        for hit in _URL.finditer(text):
+            if not (hit.group("scheme") or hit.group("www") or hit.group("path")):
+                continue
             host, path = self._host_path(hit.group(0))
             for known_host, known_path, vendor in self._hosts:
                 host_ok = host == known_host or (not known_path and host.endswith("." + known_host))

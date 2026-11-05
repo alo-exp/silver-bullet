@@ -190,6 +190,40 @@ class VendorMentionCorpusTests(unittest.TestCase):
         self.assertTrue(support["silver-bullet"]["Workflow composition"])
         self.assertNotIn("barkain-workflow-orchestrator", {a for a, c in support.items() if any(c.values())})
 
+    def test_the_r8_adversarial_rows_credit_no_wrong_vendor(self) -> None:
+        spec = json.loads((Path(__file__).parent / "fixtures" / "vendor_row_cases.json").read_text(encoding="utf-8"))
+        self.assertEqual(len(spec["cases"]), 76)
+        leaks = []
+        for case in spec["cases"]:
+            row = case["row"] if isinstance(case["row"], dict) else {"text": case["row"]}
+            text = row["text"]
+            others = {k: v for k, v in row.items() if k != "text"}
+            wrong = set(case["wrong"] or spec["wrong_default"])
+            with m.claim_scope(m._declared_for_row(dict(row), self.known, self.pack)):
+                got = set(m._extract_slugs_from_text(text, self.known, self.pack))
+            got |= set(sc._envelope_evidence_slugs(envs(text, others), self.pack))
+            got |= {a for a, c in self.support(text, others).items() if any(c.values())}
+            if got & wrong:
+                leaks.append((sorted(got & wrong), row))
+        self.assertEqual(leaks, [], f"{len(leaks)} of 76 rows credit a wrong vendor")
+
+    def test_a_pack_url_must_be_a_real_url_to_credit(self) -> None:
+        for text in ("See https://www.cursor.com/pricing for plans.", "Docs: cursor.com/pricing.", "Visit www.cursor.com today.",
+                     "Try https://devin.ai/ now."):
+            vendors = set(sc._envelope_evidence_slugs(envs(text), self.pack)) | set(m._extract_slugs_from_text(text, self.known, self.pack))
+            self.assertTrue(vendors & {"cursor", "cursor-agents", "devin"}, text)
+        for text in ("Export the logo as devin.ai and send it.", "Email devin.ai@school.edu.", "conductor.build() registers it.",
+                     "The DOS program CURSOR.COM runs.", "See user_cursor.com.", "Redirect via https://example.org?next=cursor.com",
+                     "Redirect via https://example.org#tembo.io", "Run ./autogen.sh before ./configure.", "cursor.com", "Visit cursor.COM/x"):
+            vendors = set(sc._envelope_evidence_slugs(envs(text), self.pack)) | set(m._extract_slugs_from_text(text, self.known, self.pack))
+            self.assertEqual(vendors & self.ambiguous, set(), text)
+
+    def test_autogen_is_a_build_tool_name_so_it_needs_a_signal(self) -> None:
+        self.assertIn("autogen", self.registry.ambiguous_vendors())
+        for text in ("Run ./autogen.sh before ./configure.", "GNU AutoGen generates the option parser.", "The autogen files are checked in."):
+            self.assertNotIn("autogen", set(sc._envelope_evidence_slugs(envs(text), self.pack)) | set(m._extract_slugs_from_text(text, self.known, self.pack)), text)
+        self.assertTrue(self.credited("autogen", "AutoGen runs agents.", {"vendors": ["autogen"]}))
+
     def test_the_classification_of_a_vendor_needs_a_declaration_too(self) -> None:
         self.assertNotIn("sweep", sc._envelope_evidence_slugs(envs("Sweep provides workflow composition."), self.pack))
         self.assertIn("sweep", sc._envelope_evidence_slugs(envs("The row names it.", {"vendors": ["sweep"]}), self.pack))
