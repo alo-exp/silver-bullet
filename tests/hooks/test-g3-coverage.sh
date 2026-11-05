@@ -20,10 +20,10 @@ NOSHA3="$(tl_path_without sha256sum shasum openssl)"
 
 # ---- e2e marker library ---------------------------------------------------------------------
 export SB_E2E_ENTERPRISE_MATRIX=1
-assert_eq "e2e: no state dir, no marker path" 1 "$(SB_RUNTIME_STATE_DIR= rc sb_e2e_matrix_routing_row_marker_file)"
-assert_eq "e2e: no state dir, never active" 1 "$(SB_RUNTIME_STATE_DIR= rc sb_e2e_matrix_routing_row_active)"
-assert_eq "e2e: no state dir, set refused" 1 "$(SB_RUNTIME_STATE_DIR= rc sb_e2e_matrix_set_routing_row_marker)"
-assert_eq "e2e: no state dir, clear is a no-op" 0 "$(SB_RUNTIME_STATE_DIR= rc sb_e2e_matrix_clear_routing_row_marker)"
+assert_eq "e2e: no state dir, no marker path" 1 "$(SB_RUNTIME_STATE_DIR='' rc sb_e2e_matrix_routing_row_marker_file)"
+assert_eq "e2e: no state dir, never active" 1 "$(SB_RUNTIME_STATE_DIR='' rc sb_e2e_matrix_routing_row_active)"
+assert_eq "e2e: no state dir, set refused" 1 "$(SB_RUNTIME_STATE_DIR='' rc sb_e2e_matrix_set_routing_row_marker)"
+assert_eq "e2e: no state dir, clear is a no-op" 0 "$(SB_RUNTIME_STATE_DIR='' rc sb_e2e_matrix_clear_routing_row_marker)"
 assert_eq "e2e: no marker, not active" 1 "$(rc sb_e2e_matrix_routing_row_active)"
 sb_e2e_matrix_set_routing_row_marker
 assert_eq "e2e: harness marker active" 0 "$(rc sb_e2e_matrix_routing_row_active)"
@@ -58,8 +58,8 @@ done
 
 # ---- outcomes seal and tamper log -------------------------------------------------------------------
 OF="$(sb_outcomes_session_file)"
-assert_eq "seal: no state dir" 0 "$(SB_RUNTIME_STATE_DIR= rc sb_outcomes_seal)"
-assert_eq "reject: no state dir" 0 "$(SB_RUNTIME_STATE_DIR= rc sb_outcomes_reject_tampered)"
+assert_eq "seal: no state dir" 0 "$(SB_RUNTIME_STATE_DIR='' rc sb_outcomes_seal)"
+assert_eq "reject: no state dir" 0 "$(SB_RUNTIME_STATE_DIR='' rc sb_outcomes_reject_tampered)"
 rm -f "$OF" "$OF.sha256"
 assert_eq "seal: no outcomes file" 0 "$(rc sb_outcomes_seal)"
 assert_eq "reject: no outcomes file" 0 "$(rc sb_outcomes_reject_tampered)"
