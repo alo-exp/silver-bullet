@@ -44,7 +44,7 @@
     "phase-archive.sh": "Archives `.planning/phases/` directories before a `phases clear` command runs. Fails closed: if archiving fails, the clear is denied.",
     "phase-lock-claim.sh": "Claims the `.planning/phases/<NNN>/` lock (via `scripts/phase-lock.sh` (plugin root)) before a session edits a phase's files.",
     "phase-lock-heartbeat.sh": "Refreshes heartbeats for the phase locks this session holds (throttled to once per 5 minutes per phase).",
-    "phase-lock-release.sh": "Releases this session's phase locks at Stop/SubagentStop. Never blocks.",
+    "phase-lock-release.sh": "Releases this session's phase locks at Stop. A SubagentStop that carries an agent_id releases nothing, so a finishing subagent never drops its parent session's locks. Never blocks.",
     "planning-file-guard.sh": "Blocks direct edits to SB-managed planning artifacts (`.planning/ROADMAP.md`, `STATE.md`, phase `PLAN.md`/`SUMMARY.md`, ...); they change only through the owning SB skill.",
     "pr-traceability.sh": "After `gh pr create`, appends the spec traceability block to the PR body and records the PR URL in `SPEC.md`.",
     "prompt-reminder.sh": "Injects a compact compliance reminder (missing skills, active workflow position, opted-in tool notes) before each prompt.",

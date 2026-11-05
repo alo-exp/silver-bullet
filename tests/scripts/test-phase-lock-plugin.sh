@@ -79,4 +79,103 @@ done
 reset; pl claim 9 martian t
 assert_eq "an unknown runtime is still refused" 3 "$TL_STATUS"
 
+
+# ===== repository-controlled input never reaches arithmetic or a write through a symlink (R3-03) =====
+export HOME="$TL_TMP/home"
+PRJ="$TL_TMP/prj"
+mkproj() { # [ttl-json-value]
+  rm -rf "$PRJ"; mkdir -p "$PRJ/.planning/phases/001-x"
+  git -C "$PRJ" init -q
+  jq -n --argjson t "${1:-1800}" '{multi_agent:{stale_lock_ttl_seconds:$t}}' >"$PRJ/.silver-bullet.json"
+  printf '{"001":{"owner_id":"claude-other-1","agent_runtime":"claude","claimed_at":"2026-01-01T00:00:00Z","last_heartbeat_at":"2026-01-01T00:00:00Z","host":"x","pid":1,"intent":"x"}}\n' >"$PRJ/.planning/.phase-locks.json"
+}
+inprj() { tl_run env -u SB_PHASE_LOCK_FILE -u SB_DEFAULT_CONFIG bash -c 'cd "$1" && shift && exec "$@"' _ "$PRJ" bash "$SCRIPT" "$@"; }
+HOSTILE_TTLS=('"BASH_VERSINFO[$(touch '"$TL_TMP"'/PWNED-ttl)]"' '"a[$(touch '"$TL_TMP"'/PWNED-ttl)]"' '"1+$(touch '"$TL_TMP"'/PWNED-ttl)"' '"99999999999"' '"-5"' '"0x10"' '"1e400"' 'null' '{"x":1}')
+for ttl in "${HOSTILE_TTLS[@]}"; do
+  mkproj "$ttl"
+  for op in "claim 1 claude t" "heartbeat 1 claude" "release 1 claude" "peek 1"; do
+    # shellcheck disable=SC2086
+    inprj $op
+    assert_file_absent "hostile ttl $ttl: '$op' runs nothing" "$TL_TMP/PWNED-ttl"
+  done
+  mkproj "$ttl"
+  inprj peek 1
+  assert_contains "hostile ttl $ttl falls back to the default (the 2026-01-01 lock is stale)" "$TL_OUT" '"expired":true'
+done
+mkproj '"0010"'
+inprj peek 1
+assert_contains "a zero-padded ttl is read as decimal" "$TL_OUT" '"expired":true'
+mkproj 99999999
+inprj peek 1
+assert_not_contains "a large valid ttl keeps the lock fresh" "$TL_OUT" 'expired'
+
+# hostile values inside the lock entry itself
+mkproj 1800
+jq --arg h "BASH_VERSINFO[\$(touch $TL_TMP/PWNED-hb)]" '."001".last_heartbeat_at=$h | ."001".owner_id=$h | ."001".host=$h' "$PRJ/.planning/.phase-locks.json" >"$PRJ/.planning/x" && mv "$PRJ/.planning/x" "$PRJ/.planning/.phase-locks.json"
+for op in "claim 1 claude t" "peek 1" "heartbeat 1 claude" "release 1 claude"; do
+  # shellcheck disable=SC2086
+  inprj $op
+  assert_file_absent "hostile lock-entry values: '$op' runs nothing" "$TL_TMP/PWNED-hb"
+done
+# the stop-check peek trap
+mkproj '"BASH_VERSINFO[$(touch '"$TL_TMP"'/PWNED-ttl)]"'
+tl_run bash -c 'cd "$1/.planning/phases/001-x" && source "$2/hooks/lib/runtime-paths.sh" && source "$2/hooks/lib/phase-path.sh" && _phase_lock_peek_on_exit' _ "$PRJ" "$TL_REPO_ROOT"
+assert_file_absent "the peek exit trap runs nothing for a hostile ttl" "$TL_TMP/PWNED-ttl"
+# the claim hook end to end
+mkproj '"BASH_VERSINFO[$(touch '"$TL_TMP"'/PWNED-ttl)]"'
+git -C "$PRJ" add -A >/dev/null; git -C "$PRJ" -c user.email=a@b -c user.name=a commit -qm x
+PAY="$(jq -cn --arg f "$PRJ/.planning/phases/001-x/001-PLAN.md" '{hook_event_name:"PreToolUse",tool_name:"Edit",session_id:"s1",tool_input:{file_path:$f}}')"
+tl_run_stdin "$PAY" bash -c 'cd "$1" && exec bash "$2"' _ "$PRJ" "$TL_REPO_ROOT/hooks/phase-lock-claim.sh"
+assert_file_absent "the claim hook runs nothing for a hostile ttl" "$TL_TMP/PWNED-ttl"
+
+# a project's templates/ is repository content: never a config source
+mkproj 1800
+mkdir -p "$PRJ/templates"
+printf '{"multi_agent":{"identity_tags":["gamma"],"stale_lock_ttl_seconds":5}}\n' >"$PRJ/templates/silver-bullet.config.json.default"
+jq 'del(.multi_agent)' "$PRJ/.silver-bullet.json" >"$PRJ/x" && mv "$PRJ/x" "$PRJ/.silver-bullet.json"
+inprj claim 2 gamma t
+assert_eq "tags from the project's templates/ are ignored" 3 "$TL_STATUS"
+
+# never write through a symlink at any file the helper touches (SEC-02)
+precious() { printf 'precious user data\n' >"$TL_TMP/victim"; }
+sym_case() { # name setup-command...
+  local name="$1"; shift
+  mkproj 1800; rm -f "$PRJ/.planning/.phase-locks.json"; precious
+  "$@"
+  for op in "claim 1 claude t" "heartbeat 1 claude" "release 1 claude" "peek 1"; do
+    # shellcheck disable=SC2086
+    inprj $op
+    assert_eq "$name: '$op' refuses" 1 "$TL_STATUS"
+    assert_eq "$name: '$op' leaves the target untouched" "precious user data" "$(cat "$TL_TMP/victim")"
+  done
+  assert_contains "$name: the refusal is explained" "$TL_ERR" "refusing to use a symlink"
+}
+sym_case "symlinked sidecar" ln -s "$TL_TMP/victim" "$PRJ/.planning/.phase-locks.json.lock"
+sym_case "symlinked lock file" ln -s "$TL_TMP/victim" "$PRJ/.planning/.phase-locks.json"
+sym_case "symlinked mkdir mutex" ln -s "$TL_TMP/victim" "$PRJ/.planning/.phase-locks.json.lock.d"
+mkproj 1800; precious; mkdir -p "$TL_TMP/realplan"; rm -rf "$PRJ/.planning"; ln -s "$TL_TMP/realplan" "$PRJ/.planning"
+inprj claim 1 claude t
+assert_eq "symlinked .planning: refused" 1 "$TL_STATUS"
+assert_eq "symlinked .planning: nothing written behind it" "" "$(ls -A "$TL_TMP/realplan")"
+# the claim hook (fail-open) leaves the target alone as well
+mkproj 1800; rm -f "$PRJ/.planning/.phase-locks.json"; precious; ln -s "$TL_TMP/victim" "$PRJ/.planning/.phase-locks.json.lock"
+tl_run_stdin "$PAY" bash -c 'cd "$1" && exec bash "$2"' _ "$PRJ" "$TL_REPO_ROOT/hooks/phase-lock-claim.sh"
+assert_eq "claim hook: exits 0 (fail-open)" 0 "$TL_STATUS"
+assert_eq "claim hook: the symlink target is untouched" "precious user data" "$(cat "$TL_TMP/victim")"
+# an ordinary run leaves no predictable temp file behind and writes only the lock file and sidecar
+mkproj 1800; rm -f "$PRJ/.planning/.phase-locks.json"
+inprj claim 1 claude t
+assert_eq "an honest claim succeeds" 0 "$TL_STATUS"
+assert_eq "only the lock file and its sidecar exist" ".phase-locks.json .phase-locks.json.lock phases" "$(ls -A "$PRJ/.planning" | tr '\n' ' ' | sed 's/ $//')"
+
+# config fallbacks: a bare plugin tree (no templates/) and a project without config
+BARE="$TL_TMP/bare"; mkdir -p "$BARE/scripts"; ln -s "$SCRIPT" "$BARE/scripts/phase-lock.sh"
+mkproj 1800; rm -f "$PRJ/.silver-bullet.json"
+bare() { tl_run env -u SB_PHASE_LOCK_FILE -u SB_DEFAULT_CONFIG bash -c 'cd "$1" && shift && exec "$@"' _ "$PRJ" bash "$BARE/scripts/phase-lock.sh" "$@"; }
+bare claim 2 martian t
+assert_eq "no template anywhere: unknown runtime refused" 3 "$TL_STATUS"
+assert_contains "no template anywhere: the built-in tag list" "$TL_ERR" "allowed: claude codex opencode pi goose hermes forge"
+bare peek 1
+assert_contains "no template anywhere: the default ttl of 1800 s applies" "$TL_OUT" '"expired":true'
+
 tl_results

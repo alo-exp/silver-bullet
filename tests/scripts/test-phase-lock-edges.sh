@@ -127,10 +127,16 @@ assert_eq "ttl from default config marks lock expired" "true" "$(jq -r '.expired
 # Without SB_DEFAULT_CONFIG the repo template is used.
 mkdir -p "$CFG_REPO/templates"
 printf '{"multi_agent":{"identity_tags":["gamma"],"stale_lock_ttl_seconds":3600}}\n' >"$CFG_REPO/templates/silver-bullet.config.json.default"
+if [[ -z "${PL_SCRIPT:-}" ]]; then
 in_dir "$CFG_REPO" tl_run env -u SB_DEFAULT_CONFIG SB_PHASE_LOCK_FILE="$CFG_REPO/.planning/l3.json" bash "$SCRIPT" claim 1 gamma t
 assert_eq "repo template tags used" "0" "$TL_STATUS"
 in_dir "$CFG_REPO" tl_run env -u SB_DEFAULT_CONFIG SB_PHASE_LOCK_FILE="$CFG_REPO/.planning/l3.json" bash "$SCRIPT" claim 2 claude t
 assert_contains "repo template tag list in error" "$TL_ERR" "allowed: gamma"
+else
+  # the plugin copy never reads a templates/ directory from the project (R3-03)
+  in_dir "$CFG_REPO" tl_run env -u SB_DEFAULT_CONFIG SB_PHASE_LOCK_FILE="$CFG_REPO/.planning/l3.json" bash "$SCRIPT" claim 1 gamma t
+  assert_eq "the project's templates/ tag list is ignored" "3" "$TL_STATUS"
+fi
 
 # Outside git, no SB_DEFAULT_CONFIG: the template next to the script tree is used.
 in_dir "$NOGIT" tl_run env -u SB_DEFAULT_CONFIG bash "$SCRIPT" claim 1 forge t

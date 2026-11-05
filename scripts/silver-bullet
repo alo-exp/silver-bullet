@@ -71,12 +71,14 @@ append_skill_roots() {
   local cache_root="${SB_RUNTIME_PLUGIN_CACHE_ROOT:-${HOME}/.codex/plugins/cache}"
   local candidate
 
+  # The plugin's own skills come first, so a same-named SKILL.md in a user-level or cache root
+  # can never shadow a Silver Bullet skill and still earn its receipt.
   SKILL_ROOTS+=(
+    "${PLUGIN_ROOT}/skills"
+    "${PLUGIN_ROOT}/skill-source"
     "${SB_RUNTIME_HOME_ROOT:-${HOME}/.codex}/skills"
     "${HOME}/.codex/skills"
     "${HOME}/.agents/skills"
-    "${PLUGIN_ROOT}/skills"
-    "${PLUGIN_ROOT}/skill-source"
   )
 
   shopt -s nullglob

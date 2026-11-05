@@ -104,10 +104,11 @@ mkskill "$FX/skills" writing-plans SKILL.md "PLANS ALIAS"
 run invoke-skill sb:plan
 assert_contains "silver-plan alias writing-plans is found" "$TL_OUT" "Source: $FX/skills/writing-plans/SKILL.md"
 
-# root precedence: runtime skills dir beats the plugin skills dir
+# root precedence: the plugin skills dir beats the runtime skills dir (a user-level copy cannot shadow SB)
 mkskill "$SB_RUNTIME_HOME_ROOT/skills" silver-feature SKILL.md "RUNTIME COPY"
 run invoke-skill sb:feature
-assert_contains "runtime skills dir wins" "$TL_OUT" "Source: $SB_RUNTIME_HOME_ROOT/skills/silver-feature/SKILL.md"
+assert_contains "the plugin skills dir wins over a runtime copy" "$TL_OUT" "Source: $FX/skills/silver-feature/SKILL.md"
+assert_not_contains "the runtime copy does not shadow the plugin's" "$TL_OUT" "RUNTIME COPY"
 rm -rf "${SB_RUNTIME_HOME_ROOT:?}/skills"
 
 # plugin-cache roots (several depths, plus upstream)
