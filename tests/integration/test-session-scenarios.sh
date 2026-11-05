@@ -84,8 +84,8 @@ echo "--- Scenario 5: Trivial file bypass across hooks ---"
 integration_setup
 write_default_config
 
-# Create trivial file
-touch "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
+# Create the trivial file (the state directory's own `trivial`; a config naming another file is ignored, R3-02)
+touch "${SB_TEST_DIR}/trivial" "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
 
 # dev-cycle-check: should bypass
 out=$(run_dev_cycle_edit "PreToolUse" "$TMPDIR_TEST/src/app.js")
@@ -98,6 +98,7 @@ assert_allowed "S5.2: trivial bypass on completion-audit" "$out"
 # stop-check: should bypass
 out=$(run_stop_check "Stop")
 assert_allowed "S5.3: trivial bypass on stop-check" "$out"
+rm -f "${SB_TEST_DIR}/trivial" "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
 
 integration_teardown
 
