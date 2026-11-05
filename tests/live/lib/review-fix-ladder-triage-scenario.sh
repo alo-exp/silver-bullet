@@ -124,27 +124,6 @@ EOF
   esac
 }
 
-review_fix_ladder_cursor_phase_response() {
-  local phase="$1"
-  case "$phase" in
-    review)
-      printf '%s\n' 'REVIEW_RAW: divide() lacks a zero-divisor guard and will raise ZeroDivisionError when b is 0.'
-      ;;
-    triage)
-      printf '%s\n' 'TRIAGE_PASS: VALID-NONBLOCKER — divide() must reject zero divisors per charter; filed via /sb:triage.'
-      ;;
-    fix)
-      printf '%s\n' 'FIX_PASS: added zero check in divide() returning ValueError for b == 0.'
-      ;;
-    verify)
-      printf '%s\n' 'LADDER_PASS: divide() now rejects zero divisors with an explicit error instead of ZeroDivisionError.'
-      ;;
-    *)
-      printf '%s\n' 'LADDER_PASS: triage scenario phase complete.'
-      ;;
-  esac
-}
-
 review_fix_ladder_assert_phase_response() {
   local phase="$1"
   local response="$2"

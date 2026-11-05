@@ -15,7 +15,7 @@ REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 # shellcheck source=/dev/null
 [[ -f "$REPO_ROOT/hooks/lib/context-mode-gate.sh" ]] && source "$REPO_ROOT/hooks/lib/context-mode-gate.sh"
 
-export SILVER_BULLET_RUNTIME="${SB_E2E_LIVE_RUNTIME:-cursor}"
+export SILVER_BULLET_RUNTIME="${SB_E2E_LIVE_RUNTIME:-claude}"
 
 echo "=== E2E Live: Recommended Tools Preflight ==="
 

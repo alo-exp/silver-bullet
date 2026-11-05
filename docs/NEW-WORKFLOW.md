@@ -47,7 +47,6 @@ python3 scripts/generate-apo-catalog.py
 python3 scripts/generate-apo-artifacts.py
 bash scripts/sync-codex-package.sh
 bash scripts/sync-templates.sh
-bash scripts/generate-plugin-commands.sh
 graphify update .
 ```
 

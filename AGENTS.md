@@ -46,7 +46,6 @@ bash scripts/check-repo-invariants.sh   # manifests, versions, hook references, 
 |--------|---------------------|--------------|
 | `skills/` | `agents/claude/`, `host-bundles/codex/`, `plugins/silver-bullet/skill-source/` | `bash scripts/sync-codex-package.sh` |
 | `templates/` | `plugins/silver-bullet/templates/` | `bash scripts/sync-templates.sh` (also run by `sync-codex-package.sh`) |
-| Composer `SKILL.md` frontmatter | `plugins/silver-bullet/commands/` (18 stubs) | `bash scripts/generate-plugin-commands.sh` |
 | `hooks/hooks.json` + `docs/hooks-purpose.json` | `docs/HOOKS.md` | `python3 scripts/generate-hook-reference.py` |
 | `docs/apo-catalog.json` | `docs/composable-flows-contracts.md`, `docs/workflow-composition-matrix.md`, `docs/generated/` | `python3 scripts/generate-apo-artifacts.py` |
 

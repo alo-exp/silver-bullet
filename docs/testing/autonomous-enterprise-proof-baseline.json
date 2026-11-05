@@ -103,7 +103,6 @@
         ".planning/minimal-intent-e2e/MATRIX-LEDGER.json",
         ".planning/minimal-intent-e2e/MATRIX.json",
         ".planning/minimal-intent-e2e/runs/20260705T175518Z-MI-01/result.md",
-        "scripts/minimal-intent-autonomous-e2e.sh",
         "docs/testing/host-certification-sources.json"
       ],
       "notes": "1/1 PASS (MI-01) on install_fp claude@e2da8f2bf9a5+2717f916398e; 6 Task workers, 0 parent inline edits, PR #26 on enterprise-grade-test-app; scoped track only — not 22/22 enterprise matrix; does not upgrade tri-host or public_autonomous_enterprise_claim_ready"

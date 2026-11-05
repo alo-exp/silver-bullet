@@ -290,7 +290,6 @@ Fixture / live-test only: set `SB_AGENT_<HOST>_FIXTURE=1`, `SB_AGENT_<HOST>_LIGH
 
 ```bash
 bash scripts/sync-codex-package.sh    # agents/, host-bundles/, plugins/silver-bullet/skill-source/
-bash scripts/generate-plugin-commands.sh  # only if adding a new top-level composer route (agent-* skills are Skill-tool-only)
 bash -n scripts/agent-<host>-delegate.sh
 bash tests/scripts/test-agent-<host>-skill.sh
 graphify update .

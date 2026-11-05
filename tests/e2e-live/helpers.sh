@@ -28,7 +28,6 @@ KAY_HOME="${KAY_HOME:-${SB_LIVE_CODEX_ISOLATION_DIR:-${KAY_SB_TEST_HOME:-}}}"
 case "$E2E_RUNTIME" in
   claude) export SILVER_BULLET_RUNTIME=claude ;;
   kay|codex) export SILVER_BULLET_RUNTIME=codex ;;
-  cursor) export SILVER_BULLET_RUNTIME=cursor ;;
 esac
 if [[ -f "${SB_ROOT}/hooks/lib/runtime-paths.sh" ]]; then
   # shellcheck source=hooks/lib/runtime-paths.sh
@@ -102,10 +101,6 @@ case "$E2E_RUNTIME" in
   codex)
     # shellcheck source=tests/live/agents/codex/agent.sh
     source "$AGENT_DIR/codex/agent.sh"
-    ;;
-  cursor)
-    # shellcheck source=tests/live/agents/cursor/agent.sh
-    source "$AGENT_DIR/cursor/agent.sh"
     ;;
   kay)
     # shellcheck source=tests/live/agents/kay/agent.sh
@@ -542,13 +537,6 @@ setup_workspace() {
       # Pre-trust fixture workspace before interactive Codex matrix turns
       trust_runtime_workspace
       bash "${SB_ROOT}/scripts/install-codex.sh" --purge-legacy-skills >/dev/null
-      ;;
-    cursor)
-      if [[ "${SB_E2E_SKIP_CURSOR_INSTALL:-}" != "1" ]]; then
-        bash "${SB_ROOT}/scripts/install-cursor.sh" >/dev/null
-      else
-        echo "SKIP: cursor plugin install (SB_E2E_SKIP_CURSOR_INSTALL=1)" >&2
-      fi
       ;;
   esac
 }
@@ -987,31 +975,6 @@ verify_runtime_dependency_access() {
       assert_file_contains "Claude Silver Bullet router skill uses silver name" "$latest_claude_cache/skills/silver/SKILL.md" 'name: silver'
     else
       echo "FAIL: Claude Silver Bullet cache root missing: $claude_cache_root"
-      FAIL=$((FAIL + 1))
-    fi
-  elif [[ "$E2E_RUNTIME" == "cursor" ]]; then
-    assert_command_succeeds "cursor-agent CLI on PATH" command -v cursor-agent
-    local cursor_home cursor_cache_root latest_cursor_cache sb_version
-    cursor_home="${CURSOR_HOME:-$HOME/.cursor}"
-    sb_version="$(jq -r '.version // "0.0.0"' "${SB_ROOT}/package.json" 2>/dev/null || echo 0.0.0)"
-    cursor_cache_root="${cursor_home}/plugins/cache/alo-labs/silver-bullet"
-    latest_cursor_cache="${cursor_cache_root}/${sb_version}"
-    if [[ ! -d "$latest_cursor_cache" ]]; then
-      latest_cursor_cache="$(find "$cursor_cache_root" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort -V | tail -n 1)"
-    fi
-    if [[ -n "$latest_cursor_cache" && -d "$latest_cursor_cache" ]]; then
-      assert_file_exists "Cursor Silver Bullet plugin synced" "${latest_cursor_cache}/.cursor-plugin/plugin.json"
-      assert_file_exists "Cursor Silver Bullet template synced" "${latest_cursor_cache}/templates/silver-bullet.md.base"
-      assert_file_exists "Cursor live agent adapter present" "${SB_ROOT}/tests/live/agents/cursor/agent.sh"
-    else
-      echo "FAIL: Cursor Silver Bullet cache root missing: ${cursor_cache_root}"
-      FAIL=$((FAIL + 1))
-    fi
-    if [[ -f "${cursor_home}/hooks.json" ]] && grep -q 'silver-bullet' "${cursor_home}/hooks.json" 2>/dev/null; then
-      echo "PASS: Cursor hooks.json merged with Silver Bullet"
-      PASS=$((PASS + 1))
-    else
-      echo "FAIL: Cursor hooks.json merged with Silver Bullet"
       FAIL=$((FAIL + 1))
     fi
   else

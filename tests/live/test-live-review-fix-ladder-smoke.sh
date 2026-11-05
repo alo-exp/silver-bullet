@@ -4,7 +4,6 @@
 # Default (no API cost): resolver + invoke-skill adapter + fixture charter checks.
 # Optional live agent turn: SB_LIVE_REVIEW_FIX_LADDER_LIVE=1 SB_LIVE_RUNTIME=codex|kay|claude
 #
-# Cursor automated path: detects CURSOR_AGENT=1 and validates the cursor ladder.
 # Not part of the default run-live-tests.sh matrix (opt-in, like test-silver-init-migration.sh).
 set -euo pipefail
 
@@ -22,10 +21,6 @@ fail() { printf 'FAIL: %s\n' "$1"; FAIL=$((FAIL + 1)); }
 detect_smoke_host() {
   if [[ -n "${SB_REVIEW_FIX_LADDER_HOST:-}" ]]; then
     printf '%s\n' "$SB_REVIEW_FIX_LADDER_HOST"
-    return 0
-  fi
-  if [[ "${SILVER_BULLET_RUNTIME:-}" == "cursor" || -n "${CURSOR_PLUGIN_ROOT:-}" || "${CURSOR_AGENT:-}" == "1" ]]; then
-    printf 'cursor\n'
     return 0
   fi
   if [[ "${SILVER_BULLET_RUNTIME:-}" == "codex" ]] || [[ -n "${CODEX_CI:-}${CODEX_THREAD_ID:-}" ]]; then
@@ -243,9 +238,6 @@ run_automated_smoke() {
   assert_json_true "first rung has model and reasoning" '.rungs[0].model and .rungs[0].reasoning' "$ladder_json"
 
   case "$host" in
-    cursor)
-      assert_json_true "cursor ladder starts composer-2.5 low" '.rungs[0] == {"model":"composer-2.5","reasoning":"low"}' "$ladder_json"
-      ;;
     codex)
       assert_json_true "codex ladder excludes mini tier" '[.rungs[].model] | index("gpt-5.4-mini") | not' "$ladder_json"
       ;;
@@ -277,12 +269,8 @@ run_live_agent_smoke() {
     return 0
   fi
   if [[ -z "$runtime" ]]; then
-    if [[ "${CURSOR_AGENT:-}" == "1" || "${SILVER_BULLET_RUNTIME:-}" == "cursor" ]]; then
-      runtime="cursor"
-    else
-      fail "live agent phase requires SB_LIVE_RUNTIME or SB_LIVE_AGENT"
-      return 0
-    fi
+    fail "live agent phase requires SB_LIVE_RUNTIME or SB_LIVE_AGENT"
+    return 0
   fi
 
   export SB_LIVE_AGENT="$runtime"
@@ -302,9 +290,6 @@ run_live_agent_smoke() {
       ;;
     claude)
       SILVER_BULLET_RUNTIME="claude"
-      ;;
-    cursor)
-      SILVER_BULLET_RUNTIME="cursor"
       ;;
     *)
       fail "unsupported live runtime: $runtime"
@@ -336,9 +321,6 @@ run_live_agent_smoke() {
   case "$runtime" in
     codex|kay)
       prompt="Run exactly this command as your first and only non-hook command: \`silver-bullet invoke-skill sb:review-fix-ladder smoke-target.py\`. After the adapter prints the skill, read only smoke-target.py and CHARTER.md. Reply with one sentence naming the divide() defect from the charter. Do not edit files, run tests, or invoke additional commands."
-      ;;
-    cursor)
-      prompt="Use /sb:review-fix-ladder on smoke-target.py only. Read smoke-target.py and CHARTER.md. Derive the charter, run python3 scripts/review-fix-ladder.py --json, and reply with one sentence naming the divide() defect. Do not edit files or expand scope."
       ;;
     *)
       prompt="Use /sb:review-fix-ladder on smoke-target.py only. Read smoke-target.py and CHARTER.md. Derive the charter, run python3 scripts/review-fix-ladder.py --json, and reply with one sentence naming the divide() defect. Do not edit files or expand scope."
