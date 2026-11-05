@@ -83,6 +83,7 @@ k2_stage_agent_lib() {
     multi-ai-opencode-worker.sh pi-cli.sh; do
     cp "$TL_REPO_ROOT/scripts/lib/$f" "$d/scripts/lib/"
   done
+  cp "$TL_REPO_ROOT/scripts/lib/agent_redact.py" "$TL_REPO_ROOT/scripts/lib/agent_fifo.py" "$d/scripts/lib/"
   cat >"$d/scripts/lib/pi-zero-byte-guard.py" <<'PY'
 import os, sys
 a = sys.argv[1:]

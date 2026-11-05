@@ -152,30 +152,42 @@ d=json.load(sys.stdin)
 sys.exit(0 if d.get("should_short_retry") is False else 1)' <<<"$json"
 }
 
-# Redact secrets from log/progress surfaces (sk-*, ghp_*, key=value patterns).
+# Redaction and brief scanning live in scripts/lib/agent_redact.py (case-insensitive, value-shaped:
+# token prefixes, JWTs, PEM keys, Bearer/Authorization values, KEY=value assignments).
 agent_delegate_redact_output() {
   local blob="$1"
-  printf '%s' "$blob" | sed -E \
-    -e 's/(api[_-]?key|token|password|secret|authorization|bearer)[[:space:]]*[:=][[:space:]]*[^[:space:]]+/\1=[REDACTED]/gi' \
-    -e 's/sk-[A-Za-z0-9_-]{8,}/sk-[REDACTED]/g' \
-    -e 's/ghp_[A-Za-z0-9]{20,}/ghp_[REDACTED]/g'
+  printf '%s' "$blob" | python3 "${_AGENT_DELEGATE_COMMON_DIR}/agent_redact.py" --redact
 }
 
+# Redact a log in place (atomic; never through a symlink).
 agent_delegate_redact_log_file() {
   local path="$1"
   [[ -f "$path" ]] || return 0
-  local tmp
-  tmp="$(mktemp "${TMPDIR:-/tmp}/agent-delegate-log-XXXXXX")"
-  agent_delegate_redact_output "$(cat "$path")" >"$tmp"
-  mv "$tmp" "$path"
+  python3 "${_AGENT_DELEGATE_COMMON_DIR}/agent_redact.py" --redact-file "$path" || true
 }
 
+# Keep the raw log private while the child runs (0600) and redact it even when the delegate is
+# interrupted: the traps redact on EXIT and turn INT/TERM/HUP into an exit so EXIT runs.
+# SIGKILL cannot be trapped; the 0600 mode is the remaining protection (R4-31).
+agent_delegate_guard_log() {
+  local log_file="$1"
+  [[ -n "$log_file" ]] || return 0
+  AGENT_DELEGATE_GUARDED_LOG="$log_file"
+  mkdir -p "$(dirname "$log_file")"
+  ( umask 077; : >>"$log_file" )
+  chmod 600 "$log_file" 2>/dev/null || true
+  trap 'agent_delegate_redact_log_file "$AGENT_DELEGATE_GUARDED_LOG"' EXIT
+  trap 'exit 130' INT
+  trap 'exit 143' TERM
+  trap 'exit 129' HUP
+}
+
+# Returns 0 when text holds a value-shaped credential (a bare keyword such as "password: field"
+# in a feature description is not one).
 agent_delegate_brief_has_secrets() {
   local text="$1"
-  grep -qE '(api[_-]?key|token|password|secret|authorization|bearer)[[:space:]]*[:=]' <<<"$text" && return 0
-  grep -qE 'sk-[A-Za-z0-9_-]{8,}' <<<"$text" && return 0
-  grep -qE 'ghp_[A-Za-z0-9]{20,}' <<<"$text" && return 0
-  return 1
+  # A scanner failure (python3 missing, bad exit) counts as "has secrets": fail closed.
+  ! printf '%s' "$text" | python3 "${_AGENT_DELEGATE_COMMON_DIR}/agent_redact.py" --scan >/dev/null
 }
 
 # Resolve PROMPT_TEXT from --prompt, --prompt-file, or --brief-file (caller sets vars).
