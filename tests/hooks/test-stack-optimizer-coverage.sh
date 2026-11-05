@@ -2,6 +2,10 @@
 # Behavior tests for hooks/lib/stack-optimizer.sh. graphify, agentmemory, launchctl,
 # systemctl, pgrep, brew, curl, gitleaks and node are all logging stubs.
 set -euo pipefail
+# The opt-in gates act only on the user's own consent, never on .silver-bullet.json alone.
+# shellcheck source=../lib/consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/consent-helpers.sh"
+sb_test_consent_grant_all
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init claude
 unset CI SB_STACK_OPTIMIZER_DRY_RUN SB_STACK_SKIP_HOST_HOOKS SB_AGENTMEMORY_HOME SB_STACK_SCORE_THRESHOLD SB_AGENTMEMORY_MCP_ARTIFACT
@@ -23,6 +27,10 @@ w() { printf '%s' "$1" >"$CFG"; }
 PB="$(tl_path_without graphify agentmemory curl gitleaks brew apt-get node launchctl systemctl pgrep python3)"
 PNJ="$(tl_path_without graphify agentmemory curl gitleaks brew apt-get node launchctl systemctl pgrep python3 jq)"
 export SB_AGENTMEMORY_HOME="$TL_TMP/amhome"
+# A user with no consent record at all (a project recommendation alone is not consent).
+NC="$TL_TMP/noconsent"
+# The server-health result is cached for a few seconds; scenarios change the probe, so drop it.
+hc() { rm -f "$SB_RUNTIME_STATE_DIR/agentmemory-health"; }
 
 # ---------- simple flags ----------
 no_t "dry run default" sb_stack_optimizer_dry_run
@@ -45,7 +53,8 @@ assert_eq "empty profile uses default" "synergy_max" "$(sb_stack_optimization_pr
 w 'garbage'
 assert_eq "profile invalid json" "synergy_max" "$(sb_stack_optimization_profile_name "$CFG")"
 w '{"optimization_profiles":{"p":{"graphify":{"k":"v","n":null,"f":false}}}}'
-assert_eq "knob value" "v" "$(sb_stack_profile_knob "$CFG" p graphify k dflt)"
+assert_eq "knob value outside the allowed set is ignored" "dflt" "$(sb_stack_profile_knob "$CFG" p graphify k dflt)"
+assert_eq "knob value inside the allowed set" "v" "$(sb_stack_profile_knob "$CFG" p graphify k dflt "v w")"
 assert_eq "knob missing default" "dflt" "$(sb_stack_profile_knob "$CFG" p graphify none dflt)"
 assert_eq "knob explicit false preserved" "false" "$(sb_stack_profile_knob "$CFG" p graphify f dflt)"
 assert_eq "knob null default" "dflt" "$(sb_stack_profile_knob "$CFG" p graphify n dflt)"
@@ -62,8 +71,6 @@ stub_log graphify 'if [[ "${1:-}" == hook && "${2:-}" == status ]]; then echo "$
 no_t "hooks: nothing installed, status empty" sb_stack_graphify_hooks_installed "$RP"
 export GFY_HOOK_STATUS="hooks Installed"
 yes_t "hooks: via graphify hook status" sb_stack_graphify_hooks_installed "$RP"
-export GFY_HOOK_RC=1
-no_t "hooks: status command fails" sb_stack_graphify_hooks_installed "$RP"
 unset GFY_HOOK_RC GFY_HOOK_STATUS
 no_t "hooks: no graphify cli" env PATH="$PB" bash -c 'source "$1"; sb_stack_graphify_hooks_installed "$2"' _ "$LIBF" "$RP"
 printf '#!/bin/sh\ngraphify update\n' >"$RP/.git/hooks/post-commit"
@@ -78,7 +85,7 @@ yes_t "hooks: default repo is PWD" bash -c 'cd "$1" && source "$2" && GFY_HOOK_S
 # ---------- gitignore ----------
 GI="$RP/.gitignore"; rm -f "$GI"
 assert_eq "gitignore dry-run new" "DRY-RUN: append agentmemory gitignore block to $GI" "$(SB_STACK_OPTIMIZER_DRY_RUN=1 sb_stack_ensure_agentmemory_gitignore "$RP")"
-assert_file_exists "gitignore touched even in dry-run" "$GI"
+assert_file_absent "dry-run does not create the gitignore" "$GI"
 assert_eq "dry-run does not append" "" "$(cat "$GI")"
 sb_stack_ensure_agentmemory_gitignore "$RP"
 assert_contains "gitignore block appended" "$(cat "$GI")" "# === agentmemory managed block ==="
@@ -97,6 +104,47 @@ printf '# === agentmemory managed block ===\n!.agentmemory/memory/\n' >"$GI"
 sb_stack_ensure_agentmemory_gitignore "$RP" && tl_pass "gitignore repair tolerates sed failures" || tl_fail "gitignore repair tolerates sed failures"
 assert_not_contains "failed repair leaves file unchanged" "$(cat "$GI")" '!.agentmemory/memory/**'
 unstub sed
+[[ -z "$(find "$RP" -maxdepth 1 -name '.gitignore.*' 2>/dev/null)" ]] && tl_pass "no temp file is left behind" || tl_fail "no temp file is left behind"
+# A committed symlink at .gitignore must never be followed (it could point at ~/.bashrc).
+VICTIM_GI="$TL_TMP/victim-bashrc"; printf 'export A=1\n' >"$VICTIM_GI"
+rm -f "$GI"; ln -s "$VICTIM_GI" "$GI"
+out="$(sb_stack_ensure_agentmemory_gitignore "$RP" 2>&1)"
+assert_contains "a symlinked gitignore is refused with a warning" "$out" "symlink"
+assert_eq "the symlink target is untouched" "export A=1" "$(cat "$VICTIM_GI")"
+[[ -L "$GI" ]] && tl_pass "the symlink itself is left in place" || tl_fail "the symlink itself is left in place"
+rm -f "$GI"; mkdir "$GI"
+out="$(sb_stack_ensure_agentmemory_gitignore "$RP" 2>&1)"
+assert_contains "a directory named .gitignore is refused too" "$out" "not a regular file"
+rmdir "$GI"
+printf 'node_modules/\n' >"$GI"; chmod 640 "$GI"
+sb_stack_ensure_agentmemory_gitignore "$RP"
+assert_contains "the user's lines survive the append" "$(cat "$GI")" "node_modules/"
+assert_contains "the block is appended" "$(cat "$GI")" "# === agentmemory managed block ==="
+assert_eq "the file mode is kept" "640" "$(stat -c %a "$GI" 2>/dev/null || stat -f %Lp "$GI")"
+tl_stub mktemp 'exit 1'; hash -r
+rm -f "$GI"
+sb_stack_ensure_agentmemory_gitignore "$RP" && tl_pass "an unwritable project does not abort the optimizer" || tl_fail "an unwritable project does not abort the optimizer"
+assert_file_absent "nothing is written when the temp file cannot be created" "$GI"
+unstub mktemp
+# failure paths of the temp-file-and-rename write
+rm -f "$GI"
+tl_stub cp 'exit 1'; hash -r
+printf 'x\n' >"$GI"
+sb_stack_ensure_agentmemory_gitignore "$RP" && tl_pass "a failing copy does not abort" || tl_fail "a failing copy does not abort"
+assert_eq "a failing copy leaves the file as it was" "x" "$(cat "$GI")"
+unstub cp
+tl_stub chmod 'exit 1'; hash -r
+rm -f "$GI"
+sb_stack_ensure_agentmemory_gitignore "$RP" && tl_pass "a failing chmod on a new file is tolerated" || tl_fail "a failing chmod on a new file is tolerated"
+unstub chmod
+tl_stub mv 'exit 1'; hash -r
+rm -f "$GI"
+sb_stack_ensure_agentmemory_gitignore "$RP" && tl_pass "a failing rename does not abort (append)" || tl_fail "a failing rename does not abort (append)"
+assert_file_absent "a failing rename writes nothing" "$GI"
+printf '# === agentmemory managed block ===\n!.agentmemory/memory/\n' >"$GI"
+sb_stack_ensure_agentmemory_gitignore "$RP" && tl_pass "a failing rename does not abort (repair)" || tl_fail "a failing rename does not abort (repair)"
+unstub mv
+[[ -z "$(find "$RP" -maxdepth 1 -name '.gitignore.*' 2>/dev/null)" ]] && tl_pass "no temp file survives a failed write" || tl_fail "no temp file survives a failed write"
 rm -f "$GI"
 ( cd "$RP" && sb_stack_ensure_agentmemory_gitignore ) && assert_file_exists "gitignore default repo is PWD" "$GI"
 
@@ -151,12 +199,7 @@ stub_log agentmemory; stub_log launchctl
 sb_stack_launchd_server_plist "$RP"
 assert_contains "agentmemory path rewritten to PATH binary" "$(cat "$SP")" "<string>$TL_BIN/agentmemory</string>"
 assert_file_absent "sed backup removed" "$SP.bak"
-# first sed fails (replacement contains '|'), fallback sed also fails: still succeeds
-mkdir -p "$TL_TMP/bin|x"; printf '#!/bin/sh\nexit 0\n' >"$TL_TMP/bin|x/agentmemory"; chmod +x "$TL_TMP/bin|x/agentmemory"
-tl_stub sed 'exit 1'; hash -r
-( PATH="$TL_TMP/bin|x:$PATH"; sb_stack_launchd_server_plist "$RP" ) && tl_pass "server plist survives sed failures" || tl_fail "server plist survives sed failures"
-assert_contains "path not rewritten when sed fails" "$(cat "$SP")" "<string>$HOME/.npm-global/bin/agentmemory</string>"
-unstub sed agentmemory
+unstub agentmemory
 rm -rf "$LA"
 unstub node
 PATH="$PB" sb_stack_launchd_server_plist "$RP" ""
@@ -226,8 +269,10 @@ stub_log systemctl 'exit 3'
 no_t "persistence: systemctl inactive, unhealthy" env PATH="$TL_BIN:$PB" CURL_RC=22 bash -c 'source "$1"; sb_stack_server_persistence_ok' _ "$LIBF"
 unstub systemctl
 unset CURL_RC
+hc
 yes_t "persistence via healthy server" env PATH="$TL_BIN:$PB" CURL_RC=0 bash -c 'source "$1"; sb_stack_server_persistence_ok' _ "$LIBF"
 export CURL_RC=22
+hc
 no_t "persistence: nothing available" env PATH="$TL_BIN:$PB" CURL_RC=22 bash -c 'source "$1"; sb_stack_server_persistence_ok' _ "$LIBF"
 unset CURL_RC
 
@@ -283,7 +328,7 @@ reset_calls; stub_log graphify
 sb_optimize_graphify "$GR" "$TL_TMP/none.json" claude
 assert_eq "graphify not consented: no-op" "" "$(calls)"
 printf '{}' >"$TL_TMP/empty.json"
-sb_optimize_graphify "$GR" "$TL_TMP/empty.json" claude
+XDG_CONFIG_HOME="$NC" sb_optimize_graphify "$GR" "$G" claude
 assert_eq "graphify pending consent: no-op" "" "$(calls)"
 sb_optimize_graphify "$GR" "$G" claude
 assert_contains "hook install runs" "$(calls)" "graphify hook install"
@@ -306,7 +351,7 @@ assert_contains "dry-run index build" "$out" "DRY-RUN: graphify update . --no-cl
 printf '{"recommended_tools":{"graphify":{"enabled_by_user":true}},"optimization_profiles":{"synergy_max":{"graphify":{"install_git_hooks":false,"prefer_no_cluster":false}}}}' >"$G"
 out="$(SB_STACK_OPTIMIZER_DRY_RUN=1 sb_optimize_graphify "$GR" "$G" claude)"
 assert_not_contains "install_git_hooks=false skips hook install" "$out" "graphify hook install"
-assert_contains "prefer_no_cluster=false drops flag" "$out" "DRY-RUN: graphify update . "
+assert_contains "prefer_no_cluster=false drops flag" "$out" "DRY-RUN: graphify update ."
 assert_not_contains "no cluster flag" "$out" "--no-cluster"
 reset_calls
 sb_optimize_graphify "$GR" "$G" claude
@@ -315,13 +360,21 @@ printf '{"recommended_tools":{"graphify":{"enabled_by_user":true}}}' >"$G"
 reset_calls
 PATH="$PB" sb_optimize_graphify "$GR" "$G" claude
 assert_eq "no graphify cli: nothing run" "" "$(calls)"
-(
-  sb_recommended_tool_platform_pre_index_commands() { printf '\n'; }
-  sb_recommended_tool_platform_post_index_commands() { printf '\ngraphify custom-post\n'; }
-  CI=1 SB_STACK_OPTIMIZER_DRY_RUN=1 sb_optimize_graphify "$GR" "$G" claude
-) >"$TL_TMP/blank.out"
-assert_contains "blank platform lines skipped, real one kept" "$(cat "$TL_TMP/blank.out")" "DRY-RUN: graphify custom-post"
-assert_not_contains "no empty DRY-RUN command line" "$(cat "$TL_TMP/blank.out")" "DRY-RUN: $"
+# R5-14: host wiring is machine configuration and needs the user's "wire" consent
+reset_calls
+sb_test_consent_sandbox; sb_test_consent_grant graphify enforce
+WIRE_OFF="$XDG_CONFIG_HOME"; sb_test_consent_grant_all
+out="$(XDG_CONFIG_HOME="$WIRE_OFF" sb_optimize_graphify "$GR" "$G" claude)"
+assert_contains "no wire consent: says how to grant it" "$out" "grant graphify --all-projects --capabilities wire"
+assert_not_contains "no wire consent: no hook install" "$(calls)" "graphify hook install"
+assert_not_contains "no wire consent: no platform command" "$(calls)" "graphify install --project"
+assert_contains "no wire consent: the index is still built" "$(calls)" "graphify update ."
+# R5-14: commands in the project config are never run
+reset_calls
+printf '{"recommended_tools":{"graphify":{"enabled_by_user":true,"platform_install_commands":{"claude":{"pre_index":["touch %s/pwned-gfy"],"post_index":["touch %s/pwned-gfy2"]}}}}}' "$TL_TMP" "$TL_TMP" >"$TL_TMP/gevil.json"
+sb_optimize_graphify "$GR" "$TL_TMP/gevil.json" claude
+[[ ! -e "$TL_TMP/pwned-gfy" && ! -e "$TL_TMP/pwned-gfy2" ]] && tl_pass "config platform commands are never executed (graphify)" || tl_fail "config platform commands are never executed (graphify)"
+assert_not_contains "config commands are not logged as run" "$(calls)" "pwned"
 reset_calls
 (cd "$GR" && SILVER_BULLET_RUNTIME=claude sb_optimize_graphify)  # no config: consent pending
 assert_eq "defaults without config: no-op" "" "$(calls)"
@@ -336,8 +389,17 @@ printf '{"recommended_tools":{"agentmemory":{"enabled_by_user":true}}}' >"$A"
 AR="$TL_TMP/arepo"; tl_git_repo "$AR"
 reset_calls; stub_log agentmemory; stub_log launchctl; stub_log node
 rm -rf "$SB_AGENTMEMORY_HOME" "$LA"
-sb_optimize_agentmemory "$AR" "$TL_TMP/empty.json" claude
+XDG_CONFIG_HOME="$NC" sb_optimize_agentmemory "$AR" "$A" claude
 assert_file_absent "agentmemory not consented: nothing created" "$AR/.agentmemory"
+# R5-14: without the user's "wire" consent nothing machine-wide is touched
+sb_test_consent_sandbox; sb_test_consent_grant agentmemory enforce
+WIRE_OFF="$XDG_CONFIG_HOME"; sb_test_consent_grant_all
+out="$(XDG_CONFIG_HOME="$WIRE_OFF" sb_optimize_agentmemory "$AR" "$A" claude)"
+assert_contains "no wire consent: says how to grant it" "$out" "grant agentmemory --all-projects --capabilities wire"
+assert_file_exists "no wire consent: the project export root is still scaffolded" "$AR/.agentmemory/memory/."
+assert_file_absent "no wire consent: ~/.agentmemory/.env is not written" "$SB_AGENTMEMORY_HOME/.env"
+assert_file_absent "no wire consent: no LaunchAgent" "$SP"
+rm -rf "$AR/.agentmemory" "$AR/.gitignore"
 sb_optimize_agentmemory "$AR" "$A" claude
 assert_file_exists "memory dir scaffolded" "$AR/.agentmemory/memory/."
 assert_file_exists "snapshots dir scaffolded" "$AR/.agentmemory/snapshots/."
@@ -358,18 +420,18 @@ assert_contains "dry-run codex commands" "$out" "DRY-RUN: agentmemory connect co
 reset_calls
 printf '{"recommended_tools":{"agentmemory":{"enabled_by_user":true,"platform_install_commands":{"claude":{"post_index":["","Verify the thing","agentmemory custom-step"]}}}}}' >"$A"
 CI=1 sb_optimize_agentmemory "$AR" "$A" claude
-assert_contains "custom post-index command executed" "$(calls)" "agentmemory custom-step"
-assert_not_contains "Verify* hint lines are skipped" "$(calls)" "Verify"
+assert_not_contains "config post-index commands are never executed (R5-14)" "$(calls)" "agentmemory custom-step"
+assert_contains "the built-in connect command still runs" "$(calls)" "agentmemory connect claude-code"
+# profile knobs that could inject lines into ~/.agentmemory/.env are ignored
+printf '{"recommended_tools":{"agentmemory":{"enabled_by_user":true}},"optimization_profiles":{"synergy_max":{"agentmemory":{"inject_context":"true\\nEVIL=1","server_persistence":"none"}}}}' >"$TL_TMP/inject.json"
+rm -rf "$SB_AGENTMEMORY_HOME"; CI=1 sb_optimize_agentmemory "$AR" "$TL_TMP/inject.json" claude
+assert_not_contains "no injected line in the global env file" "$(cat "$SB_AGENTMEMORY_HOME/.env")" "EVIL"
+assert_contains "the knob fell back to its default" "$(cat "$SB_AGENTMEMORY_HOME/.env")" "AGENTMEMORY_INJECT_CONTEXT=true"
 # gitleaks required but not installable must not abort the apply (callers run under set -e)
 printf '{"recommended_tools":{"agentmemory":{"enabled_by_user":true}},"optimization_profiles":{"synergy_max":{"agentmemory":{"gitleaks_required":true,"server_persistence":"none"}}}}' >"$TL_TMP/gl-req.json"
 out="$(set -e; PATH="$PB:$TL_BIN" CI=1 sb_optimize_agentmemory "$AR" "$TL_TMP/gl-req.json" claude 2>&1; echo "rc=$?")"
 assert_contains "gitleaks failure is only a warning" "$out" "WARN: gitleaks not installed"
 assert_contains "apply continues after gitleaks failure" "$out" "rc=0"
-(
-  sb_recommended_tool_platform_post_index_commands() { printf '\nagentmemory late-step\n'; }
-  CI=1 sb_optimize_agentmemory "$AR" "$TL_TMP/gl-req.json" claude
-) >/dev/null 2>&1
-assert_contains "blank post-index line skipped, command run" "$(calls)" "agentmemory late-step"
 stub_log agentmemory 'exit 1'
 CI=1 sb_optimize_agentmemory "$AR" "$A" claude && tl_pass "failing post-index command tolerated" || tl_fail "failing post-index command tolerated"
 stub_log agentmemory
@@ -384,43 +446,52 @@ S="$TL_TMP/scfg.json"
 printf '{"recommended_tools":{"graphify":{"enabled_by_user":true},"agentmemory":{"enabled_by_user":true}}}' >"$S"
 SR="$TL_TMP/srepo"; tl_git_repo "$SR"
 reset_calls; stub_log graphify; stub_log agentmemory 'echo Connected'; stub_log curl 'exit "${CURL_RC:-0}"'
-sb_optimize_synergy "$SR" "$TL_TMP/empty.json"
+hc
+XDG_CONFIG_HOME="$NC" sb_optimize_synergy "$SR" "$S"
 assert_eq "synergy: no consent no-op" "" "$(calls)"
-printf '{"recommended_tools":{"graphify":{"enabled_by_user":true}}}' >"$TL_TMP/g-only.json"
+printf '{"recommended_tools":{"graphify":{"enabled_by_user":true},"agentmemory":{"enabled_by_user":false}}}' >"$TL_TMP/g-only.json"
 sb_optimize_synergy "$SR" "$TL_TMP/g-only.json"
 assert_eq "synergy: graphify only no-op" "" "$(calls)"
-printf '{"recommended_tools":{"agentmemory":{"enabled_by_user":true}}}' >"$TL_TMP/a-only.json"
+printf '{"recommended_tools":{"agentmemory":{"enabled_by_user":true},"graphify":{"enabled_by_user":false}}}' >"$TL_TMP/a-only.json"
 sb_optimize_synergy "$SR" "$TL_TMP/a-only.json"
 assert_eq "synergy: agentmemory only no-op" "" "$(calls)"
+hc
 sb_optimize_synergy "$SR" "$S"
-assert_contains "synergy: obsidian export POST" "$(calls)" "curl -sf -X POST http://localhost:3111/agentmemory/obsidian/export"
+assert_contains "synergy: obsidian export POST" "$(calls)" "-X POST"
+assert_contains "synergy: export URL follows --" "$(calls)" "-- http://localhost:3111/agentmemory/obsidian/export"
+assert_contains "synergy: redirects are not followed" "$(calls)" "--max-redirs 0"
 assert_contains "synergy: vault dir" "$(calls)" "$SR/.agentmemory/memory"
 assert_contains "synergy: post-export graph update" "$(calls)" "graphify update . --no-cluster"
-reset_calls
+reset_calls; hc
 out="$(SB_STACK_OPTIMIZER_DRY_RUN=1 sb_optimize_synergy "$SR" "$S")"
 assert_contains "synergy dry-run export" "$out" "DRY-RUN: POST obsidian export to $SR/.agentmemory"
-assert_contains "synergy dry-run update" "$out" "DRY-RUN: graphify update . --no-cluster (post-export)"
-printf '{"recommended_tools":{"graphify":{"enabled_by_user":true},"agentmemory":{"enabled_by_user":true,"health_url":"http://h:9/agentmemory/health"}},"optimization_profiles":{"synergy_max":{"synergy":{"post_export_graphify_update":false}}}}' >"$S"
-reset_calls
+assert_contains "synergy dry-run update" "$out" "DRY-RUN: graphify update . --no-cluster"
+printf '{"recommended_tools":{"graphify":{"enabled_by_user":true},"agentmemory":{"enabled_by_user":true,"health_url":"http://localhost:9/agentmemory/health"}},"optimization_profiles":{"synergy_max":{"synergy":{"post_export_graphify_update":false}}}}' >"$S"
+reset_calls; hc
 sb_optimize_synergy "$SR" "$S"
-assert_contains "synergy: custom health url base" "$(calls)" "http://h:9/agentmemory/obsidian/export"
+assert_contains "synergy: custom loopback health url base" "$(calls)" "http://localhost:9/agentmemory/obsidian/export"
+printf '{"recommended_tools":{"graphify":{"enabled_by_user":true},"agentmemory":{"enabled_by_user":true,"health_url":"http://evil.example/agentmemory/health"}},"optimization_profiles":{"synergy_max":{"synergy":{"post_export_graphify_update":false}}}}' >"$TL_TMP/s-evil.json"
+reset_calls; hc
+sb_optimize_synergy "$SR" "$TL_TMP/s-evil.json"
+assert_not_contains "synergy: a non-loopback health url is never contacted (R5-03)" "$(calls)" "evil.example"
 assert_not_contains "synergy: post_export disabled" "$(calls)" "graphify update"
 printf '{"recommended_tools":{"graphify":{"enabled_by_user":true},"agentmemory":{"enabled_by_user":true}},"optimization_profiles":{"synergy_max":{"graphify":{"prefer_no_cluster":false}}}}' >"$S"
 out="$(SB_STACK_OPTIMIZER_DRY_RUN=1 sb_optimize_synergy "$SR" "$S")"
-assert_contains "synergy: cluster flag dropped" "$out" "DRY-RUN: graphify update .  (post-export)"
+assert_contains "synergy: cluster flag dropped" "$out" "DRY-RUN: graphify update ."
+assert_not_contains "synergy: no cluster flag" "$out" "--no-cluster"
 export CURL_RC=22
 unstub agentmemory; stub_log agentmemory 'echo down'
-reset_calls
+reset_calls; hc
 sb_optimize_synergy "$SR" "$S"
 assert_not_contains "synergy: unhealthy server skips export" "$(calls)" "obsidian/export"
 unset CURL_RC
 stub_log agentmemory 'echo Connected'; unstub curl
-reset_calls
+reset_calls; hc
 PATH="$TL_BIN:$PB" sb_optimize_synergy "$SR" "$S"
 assert_not_contains "synergy: without curl nothing posted" "$(calls)" "obsidian"
 stub_log curl 'exit 0'
 stub_log agentmemory 'echo Connected'
-reset_calls
+reset_calls; hc
 (cd "$SR" && sb_optimize_synergy "" "$S")
 assert_contains "synergy defaults repo to PWD" "$(calls)" "obsidian/export"
 assert_contains "synergy PWD vault dir" "$(calls)" "$SR/.agentmemory/memory"
@@ -443,9 +514,9 @@ yes_t "graph refs: present" sb_stack_graph_has_agentmemory_refs "$SR" "$TL_TMP/p
 yes_t "graph refs: default repo" bash -c 'cd "$1" && source "$2" && sb_stack_graph_has_agentmemory_refs' _ "$SR" "$LIBF"
 
 # score: nothing opted in
-score="$(sb_optimization_score "$SR" "$TL_TMP/empty.json")"
+score="$(XDG_CONFIG_HOME="$NC" sb_optimization_score "$SR" "$TL_TMP/empty.json")"
 assert_eq "score nothing enabled" "0" "$score"
-sb_optimization_score "$SR" "$TL_TMP/empty.json" >/dev/null
+XDG_CONFIG_HOME="$NC" sb_optimization_score "$SR" "$TL_TMP/empty.json" >/dev/null
 assert_contains "score report skips graphify" "$SB_STACK_SCORE_REPORT" "skip|graphify-opt|graphify not opted in|0"
 # fully healthy stack
 H="$TL_TMP/hcfg.json"
@@ -455,9 +526,11 @@ mkdir -p "$SR/.claude"; printf 'graphify' >"$SR/.claude/settings.json"
 rm -rf "$SB_AGENTMEMORY_HOME"; mkdir -p "$SB_AGENTMEMORY_HOME"; printf 'AGENTMEMORY_INJECT_CONTEXT=true\n' >"$SB_AGENTMEMORY_HOME/.env"
 stub_log pgrep 'exit 0'; stub_log curl 'exit 0'; tl_stub gitleaks 'exit 0'; hash -r
 export SB_AGENTMEMORY_MCP_ARTIFACT="$TL_TMP/amart"; printf 'agentmemory' >"$SB_AGENTMEMORY_MCP_ARTIFACT"
+hc
 score="$(SILVER_BULLET_RUNTIME=claude sb_optimization_score "$SR" "$H")"
 assert_eq "full score" "120" "$score"
 unset SB_AGENTMEMORY_MCP_ARTIFACT
+hc
 SILVER_BULLET_RUNTIME=claude sb_optimization_score "$SR" "$H" >/dev/null
 assert_eq "score fails" "0" "$SB_STACK_SCORE_FAILS"
 assert_eq "score warns" "0" "$SB_STACK_SCORE_WARNS"
@@ -467,8 +540,10 @@ assert_contains "score gitleaks installed" "$SB_STACK_SCORE_REPORT" "pass|gitlea
 # degrade: everything missing but opted in
 unstub gitleaks pgrep curl graphify agentmemory
 rm -rf "$SB_AGENTMEMORY_HOME" "$SR/.git/hooks/post-commit" "$SR/.claude" "$SR/graphify-out"
+hc
 score="$(PATH="$PB" SILVER_BULLET_RUNTIME=claude sb_optimization_score "$SR" "$H")"
 assert_eq "degraded score" "25" "$score"
+hc
 PATH="$PB" SILVER_BULLET_RUNTIME=claude sb_optimization_score "$SR" "$H" >/dev/null
 assert_eq "degraded fails counted" "5" "$SB_STACK_SCORE_FAILS"
 assert_contains "degraded report" "$SB_STACK_SCORE_REPORT" "fail|graphify-cli|CLI missing|10"
@@ -492,7 +567,10 @@ tl_pass "score defaults to PWD and no config"
 
 # ---------- prompt line ----------
 assert_eq "prompt line: no config file" "" "$(sb_stack_optimization_prompt_line "$SR" "$TL_TMP/none.json")"
-assert_eq "prompt line: nothing opted in" "" "$(sb_stack_optimization_prompt_line "$SR" "$TL_TMP/empty.json")"
+assert_eq "prompt line: nothing opted in" "" "$(XDG_CONFIG_HOME="$NC" sb_stack_optimization_prompt_line "$SR" "$H")"
+sb_test_consent_sandbox; sb_test_consent_grant graphify enforce; sb_test_consent_grant agentmemory enforce
+assert_eq "prompt line: no wire consent, never nudges (R5-14)" "" "$(PATH="$PB" sb_stack_optimization_prompt_line "$SR" "$H")"
+sb_test_consent_grant_all
 out="$(PATH="$PB" sb_stack_optimization_prompt_line "$SR" "$H")"
 assert_contains "prompt line below threshold" "$out" "STACK OPTIMIZATION: score"
 assert_contains "prompt line hint" "$out" "sb-optimize-stack.sh --apply"

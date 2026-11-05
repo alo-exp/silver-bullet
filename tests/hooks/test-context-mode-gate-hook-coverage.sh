@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Behavior tests for hooks/context-mode-gate.sh (PreToolUse). node/context-mode are stubs.
 set -euo pipefail
+# The opt-in gates act only on the user's own consent, never on .silver-bullet.json alone.
+# shellcheck source=../lib/consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/consent-helpers.sh"
+sb_test_consent_grant_all
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init claude
 unset SB_CONTEXT_MODE_MCP_ARTIFACT SB_AGENT_CERT_RUN SB_KAY_HOOK_BRIDGE_INVOKED
@@ -41,9 +45,21 @@ assert_gate_denies "node ok but cli/plugin missing is denied" "package not insta
 tl_stub context-mode 'exit 0'; hash -r
 gh_run "$HOOK" "$EDIT"
 assert_gate_denies "cli present but not wired" "CONTEXT MODE NOT WIRED"
-assert_contains "no_platform names artifact" "$(gh_reason)" "$PLUGIN"
+assert_contains "no_platform names the shared MCP config" "$(gh_reason)" "$HOME/.claude.json"
 rm -f "$TL_BIN/context-mode"; hash -r
-# plugin dir wired, instruction fragment missing
+# R5-08: the documented Claude wiring is a context-mode MCP entry in ~/.claude.json
+tl_stub context-mode 'exit 0'; hash -r
+printf '{"mcpServers":{"context-mode":{"command":"context-mode"}}}' >"$HOME/.claude.json"
+gh_run "$HOOK" "$EDIT"
+assert_gate_denies "MCP entry in ~/.claude.json counts as wired (next gate: fragment)" "INSTRUCTION FRAGMENT MISSING"
+printf '{"mcpServers":{"other":{}},"projects":{"%s":{"mcpServers":{"context_mode":{}}}}}' "$GH_PROJ" >"$HOME/.claude.json"
+gh_run "$HOOK" "$EDIT"
+assert_gate_denies "project-scoped MCP entry counts as wired" "INSTRUCTION FRAGMENT MISSING"
+printf '{"mcpServers":{"other":{}}}' >"$HOME/.claude.json"
+gh_run "$HOOK" "$EDIT"
+assert_gate_denies "an unrelated MCP entry is not wiring" "CONTEXT MODE NOT WIRED"
+rm -f "$HOME/.claude.json" "$TL_BIN/context-mode"; hash -r
+# legacy plugin dir wired, instruction fragment missing
 mkdir -p "$PLUGIN"
 gh_run "$HOOK" "$EDIT"
 assert_gate_denies "fragment missing is denied" "INSTRUCTION FRAGMENT MISSING"
@@ -62,6 +78,8 @@ assert_gate_allows "cursor hooks.json edit is exempt"
 gh_run "$HOOK" "$(gh_bash_input "npm install -g context-mode")"
 assert_gate_allows "installing context-mode is exempt"
 gh_run "$HOOK" "$(gh_bash_input "mkdir -p x && cp a b")"
-assert_gate_allows "mkdir/cp helper commands are exempt"
+assert_gate_denies "a compound write is not an exempt helper command" "INSTRUCTION FRAGMENT MISSING"
+gh_run "$HOOK" "$(gh_bash_input "git status")"
+assert_gate_allows "read-only command is exempt"
 
 tl_results

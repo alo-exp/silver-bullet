@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Behavior tests for hooks/graphify-gate.sh (PreToolUse). The graphify CLI is a stub.
 set -euo pipefail
+# The opt-in gates act only on the user's own consent, never on .silver-bullet.json alone.
+# shellcheck source=../lib/consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/consent-helpers.sh"
+sb_test_consent_grant_all
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init claude
 unset SB_AGENT_CERT_RUN SB_KAY_HOOK_BRIDGE_INVOKED
@@ -22,15 +26,27 @@ EDIT="$(gh_edit_input)"
 gh_scenario_block
 assert_contains "no-cli message lists install" "$( gh_run "$HOOK" "$EDIT"; gh_reason)" "uv tool install"
 
-# a command that neither writes nor delivers is not gated (and is not on the exempt list)
-gh_run "$HOOK" "$(gh_bash_input "make build")"
-assert_gate_allows "non-writing, non-exempt command allows"
-
-# retrieval/index commands are exempt even when they write
-gh_run "$HOOK" "$(gh_bash_input "graphify update . --no-cluster > build.log")"
+# commands that write, deliver or install are gated; builds and tests are not (see the
+# honest-variant cases in test-opt-in-gates-hostile-config.sh)
+gh_run "$HOOK" "$(gh_bash_input "make build > build.log")"
+assert_gate_denies "an arbitrary command is gated" "GRAPHIFY REQUIRED"
+# a word that merely appears in the command never exempts it
+gh_run "$HOOK" "$(gh_bash_input "make build > build.log; echo graphify query")"
+assert_gate_denies "a mentioned retrieval does not exempt a compound command" "GRAPHIFY REQUIRED"
+gh_run "$HOOK" "$(gh_bash_input "sed -i s/a/b/ src/app.js # graphify query")"
+assert_gate_denies "a comment mentioning graphify does not exempt a write" "GRAPHIFY REQUIRED"
+# Graphify's own CLI is exempt: building the index is how the gate is satisfied
+gh_run "$HOOK" "$(gh_bash_input "graphify update . --no-cluster")"
 assert_gate_allows "index build command is exempt"
-gh_run "$HOOK" "$(gh_bash_input "git status > s.txt")"
+gh_run "$HOOK" "$(gh_bash_input "git status")"
 assert_gate_allows "read-only git command is exempt"
+gh_run "$HOOK" "$(gh_bash_input "git status > s.txt")"
+assert_gate_denies "a redirect makes a read-only command a write" "GRAPHIFY REQUIRED"
+# edit targets are normalized: graphify-out/../src is src
+gh_run "$HOOK" "$(gh_edit_input "$GH_PROJ/graphify-out/../src/app.js")"
+assert_gate_denies "dotdot out of graphify-out is not exempt" "GRAPHIFY REQUIRED"
+gh_run "$HOOK" "$(gh_edit_input "$GH_PROJ/graphify-out/notes.md")"
+assert_gate_allows "files under graphify-out are exempt"
 
 # CLI present, index missing
 gfy_cli

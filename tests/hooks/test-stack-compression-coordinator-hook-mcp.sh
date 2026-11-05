@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Behavior tests for hooks/stack-compression-coordinator.sh: MCP routing and helper-failure paths
 set -euo pipefail
+# The opt-in gates act only on the user's own consent, never on .silver-bullet.json alone.
+# shellcheck source=../lib/consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/consent-helpers.sh"
+sb_test_consent_grant_all
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
 # shellcheck source=../lib/c-toolgates-2-helpers.sh
@@ -9,14 +13,15 @@ tg2_init_project
 tg2_install_jq_stub
 
 HOOK=hooks/stack-compression-coordinator.sh
-COORD="$SB_RUNTIME_STATE_DIR/stack-compression-coordinator"
-MUTEX="$SB_RUNTIME_STATE_DIR/stack-compression-mutex"
+# Coordinator state is scoped to one project and one host session (R5-13); the payloads carry no session id.
+COORD="$(source "$TL_REPO_ROOT/hooks/lib/stack-compression-coordinator.sh"; SB_STACK_SESSION=""; export SB_STACK_SESSION; sb_stack_coordinator_state_path "$TG2_CFG")"
+MUTEX="$(source "$TL_REPO_ROOT/hooks/lib/stack-compression-coordinator.sh"; SB_STACK_SESSION=""; export SB_STACK_SESSION; sb_stack_mutex_state_path "$TG2_CFG")"
 LEAN_CFG='{"sb_initiated":true,
  "recommended_tools":{"leanctx":{"enabled_by_user":true},"rtk":{"enabled_by_user":true},"context_mode":{"enabled_by_user":true}},
  "optimization_profiles":{"five_tool_routed":{"routes":{"sb_read":"leanctx","sb_shell":"rtk","sb_graph":"graphify","sb_remember":"agentmemory","sb_webfetch":"context_mode","sb_slice":"context_mode","sb_grep":"context_mode"}}}}'
 
 reset() { rm -f "$COORD" "$MUTEX" "$SB_RUNTIME_STATE_DIR/project-root"; tg2_cfg "$LEAN_CFG"; }
-dirty_mutex() { printf '{"violations":[{"route":"sb_shell","attempted":"leanctx","incumbent":"rtk","reason":"x","epoch":1}]}' >"$MUTEX"; }
+dirty_mutex() { mkdir -p "$(dirname "$MUTEX")"; printf '{"violations":[{"route":"sb_shell","attempted":"leanctx","incumbent":"rtk","reason":"x","epoch":1}]}' >"$MUTEX"; }
 mutex_count() { [[ -f "$MUTEX" ]] && jq -r '.violations | length' "$MUTEX" || echo "none"; }
 owner_of() { [[ -f "$COORD" ]] && jq -r --arg r "$1" '.surfaces[$r].owner // ""' "$COORD" || true; }
 mcp_input() { # tool [server] [arguments-json]
@@ -45,7 +50,10 @@ reset; tg2_run "$HOOK" "$(mcp_input lctx_read_ast leanctx)"
 assert_silent_ok "routed MCP read is allowed"
 assert_eq "routed MCP read is recorded" "leanctx" "$(owner_of sb_read)"
 tg2_run "$HOOK" "$(mcp_input ctx_execute context-mode)" JQ_FAIL='.tool_input.server'
-assert_silent_ok "unreadable MCP server name does not matter"
+assert_silent_ok "an MCP call whose server cannot be read is not a compression call"
+assert_eq "...and records nothing" "" "$(owner_of sb_slice)"
+tg2_run "$HOOK" "$(mcp_input ctx_execute context-mode)"
+assert_silent_ok "a routed ctx_* call is allowed"
 assert_eq "ctx_execute is recorded under sb_slice" "context_mode" "$(owner_of sb_slice)"
 reset; tg2_run "$HOOK" "$(mcp_input browser_click)"
 assert_silent_ok "unrouted MCP tool is ignored"
@@ -89,6 +97,6 @@ farm_run "$(mcp_input lctx_read_ast leanctx)" STUB_NO_ROUTE_OWNER=1
 assert_silent_ok "MCP route without an owner records nothing"
 assert_file_absent "MCP route without an owner leaves no coordinator state" "$COORD"
 farm_run "$(mcp_input lctx_read_ast leanctx)" STUB_ALWAYS_DENY_MCP=1 STUB_NO_MCP_ROUTE=1 STUB_NO_ROUTE_OWNER=1
-assert_denied "a denial with unresolved route and owner still produces a deny" "STACK ROUTING"
+assert_silent_ok "an unresolved route is ignored, even when a deny helper would say no"
 
 tl_results

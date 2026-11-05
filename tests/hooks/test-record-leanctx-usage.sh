@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Tests for hooks/record-leanctx-usage.sh
 set -euo pipefail
+# The opt-in gates act only on the user's own consent, never on .silver-bullet.json alone.
+# shellcheck source=../lib/consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/consent-helpers.sh"
+sb_test_consent_grant_all
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
@@ -20,7 +24,7 @@ mkdir -p "$SB_TEST_DIR"
 TEST_RUN_ID="$$"
 
 cleanup_all() {
-  rm -rf "$TMPDIR_TEST" "${SB_TEST_DIR}/leanctx-usage-test-${TEST_RUN_ID}"
+  rm -rf "$TMPDIR_TEST" "${SB_TEST_DIR}/ttest-${TEST_RUN_ID}-leanctx-usage"
 }
 trap cleanup_all EXIT
 
@@ -29,7 +33,7 @@ fail() { echo "  FAIL: $1"; FAIL=$((FAIL + 1)); }
 
 setup() {
   TMPDIR_TEST="$(mktemp -d)"
-  USAGE_STATE="${SB_TEST_DIR}/leanctx-usage-test-${TEST_RUN_ID}"
+  USAGE_STATE="${SB_TEST_DIR}/ttest-${TEST_RUN_ID}-leanctx-usage"
   rm -f "$USAGE_STATE"
   cat >"$TMPDIR_TEST/silver-bullet.md" <<'EOF'
 # Silver Bullet
