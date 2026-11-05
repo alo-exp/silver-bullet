@@ -412,6 +412,7 @@ sb_orchestrator_provenance_json() {
 #     no longer holds the session. It does NOT lift parent-mode tool restrictions or other
 #     PreToolUse gates (docs/ORCHESTRATOR.md).
 # Status 0 honoured; 1 not an override; 2 override refused (SB_OVERRIDE_REFUSAL says why).
+# shellcheck disable=SC2034  # SB_OVERRIDE_REFUSAL is an output read by the caller
 sb_orchestrator_override_apply() {
   local input="${1:-}" prompt="${2:-}" repo_root="${3:-}" reason prov
   SB_OVERRIDE_REFUSAL=""

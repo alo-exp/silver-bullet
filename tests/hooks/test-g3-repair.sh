@@ -134,7 +134,8 @@ run "$LG" '{"hook_event_name":"Stop","session_id":"A"}'
 assert_contains "session A's ledger survives session B's prompt" "$(reason)" "unresolved items"
 run "$LG" '{"hook_event_name":"Stop","session_id":"B"}'
 assert_eq "session B has no ledger" "0:" "$TL_STATUS:$TL_OUT"
-assert_eq "path-unsafe session ids fall back to the global file" 0 "$(run "$OC" "$(ups 'Refactor the auth module and add tests' '{"session_id":"../../x"}')" >/dev/null 2>&1; ls "$SD" | grep -c '\.\./' || true)"
+run "$OC" "$(ups 'Refactor the auth module and add tests' '{"session_id":"../../x"}')"
+assert_file_exists "path-unsafe session ids fall back to the global file" "$SD/outcomes-session.json"
 
 # ---- minors -------------------------------------------------------------------------------------------------
 source "$TL_REPO_ROOT/hooks/lib/prompt-classifier.sh"
