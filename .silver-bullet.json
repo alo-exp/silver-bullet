@@ -567,7 +567,10 @@
     "identity_tags": [
       "claude",
       "codex",
-      "opencode"
+      "opencode",
+      "pi",
+      "goose",
+      "hermes"
     ],
     "stale_lock_ttl_seconds": 1800,
     "delegation_timeout_seconds": 1200

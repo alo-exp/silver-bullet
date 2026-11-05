@@ -192,7 +192,7 @@ sb_skill_namespace_is_trusted() {
 }
 
 sb_skill_canonical_name() {
-  local skill="${1:-}" namespace=""
+  local skill="${1:-}" namespace="" original="${1:-}" via_dependency=0
   [[ -n "$skill" ]] || return 1
 
   # Peel trusted plugin namespaces first, repeatedly, so `silver-bullet:sb:plan` reaches the `sb:`
@@ -200,12 +200,22 @@ sb_skill_canonical_name() {
   while [[ "$skill" == *:* ]]; do
     namespace="${skill%%:*}"
     if [[ "$namespace" != "sb" ]] && sb_skill_namespace_is_trusted "$namespace"; then
+      [[ "$namespace" == "silver-bullet" ]] || via_dependency=1
       skill="${skill#*:}"
     else
       break
     fi
   done
   [[ -n "$skill" ]] || return 1
+
+  # A dependency plugin (superpowers, engineering, ...) supplies only its own retired names
+  # (code-review, writing-plans, tdd, ...). It never reaches a Silver Bullet-owned name: only the
+  # silver-bullet namespace may yield silver-*, sb and sb:* markers.
+  if [[ "$via_dependency" == 1 ]]; then
+    case "$skill" in
+      silver*|sb|sb:*|sb-*) printf '%s' "$original"; return 0 ;;
+    esac
+  fi
 
   # Public host routes use `sb:<route>`; compliance state and the canonical
   # authoring tree retain silver-* markers internally.

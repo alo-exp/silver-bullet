@@ -3,7 +3,7 @@
 #
 # Stop / SubagentStop hook. Reads the session-claim manifest at
 # `<host runtime>/.silver-bullet/claimed-phases-<session>.txt` and calls
-# `.planning/scripts/phase-lock.sh release <phase> <runtime>` for every entry,
+# `scripts/phase-lock.sh (plugin root) release <phase> <runtime>` for every entry,
 # then deletes the manifest. Stop and SubagentStop must NEVER block —
 # release-on-non-owner emits a warning to stderr but continues clearing
 # the rest of the manifest.
@@ -45,7 +45,10 @@ if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
 fi
 
 # ── Helper-exists check (graceful degrade) ──────────────────────────────────
-helper="$PWD/.planning/scripts/phase-lock.sh"
+# The helper is Silver Bullet's own, resolved from the plugin root, never from the project (R3-03).
+_hook_dir="${BASH_SOURCE[0]%/*}"
+[[ "$_hook_dir" != "${BASH_SOURCE[0]}" ]] || _hook_dir="."
+helper="${_hook_dir}/../scripts/phase-lock.sh"
 [[ -x "$helper" ]] || exit 0
 
 # ── Read stdin and resolve session id ───────────────────────────────────────
@@ -53,6 +56,13 @@ input=$(cat)
 raw_session_id=$(printf '%s' "$input" | jq -r '.session_id // empty')
 [[ -z "$raw_session_id" ]] && raw_session_id="$(date +%s)-$$"
 session_id=$(printf '%s' "${raw_session_id}" | tr -c 'A-Za-z0-9_-' '_')
+
+# A subagent finishing must not release the locks its parent session holds (R3-17): the manifest
+# belongs to the session, and SubagentStop payloads carry the subagent's own agent_id.
+if [[ -n "$(printf '%s' "$input" | jq -r '.agent_id // empty' 2>/dev/null)" ]]; then
+  exit 0
+fi
+export SB_PHASE_LOCK_SESSION="$session_id"
 
 SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
 manifest="${SB_STATE_DIR}/claimed-phases-${session_id}.txt"

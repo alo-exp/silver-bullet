@@ -38,7 +38,7 @@ printf '%s\n' 'sb_project_root_cache_write() { return 1; }' >"$L/sb-project-gate
 printf '%s\n' 'sb_graphify_clear_query_state() { return 1; }' >"$L/graphify-gate.sh"
 printf '%s\n' 'sb_agentmemory_clear_usage_state() { return 1; }' >"$L/agentmemory-gate.sh"
 printf '%s\n' 'sb_capability_tier_banner() { return 1; }' 'sb_capability_runtime_name() { return 1; }' 'sb_capability_tier_number() { return 1; }' >"$L/capability-tier.sh"
-printf '%s\n' 'sb_enforcement_tier_effective() { return 1; }' 'sb_enforcement_tier_persist() { return 1; }' 'sb_enforcement_tier_session_banner() { printf "TIER-BANNER-%s" "$1"; }' >"$L/enforcement-tier-gate.sh"
+printf '%s\n' 'sb_enforcement_tier_effective() { return 1; }' 'sb_enforcement_tier_session_banner() { printf "TIER-BANNER-%s" "$1"; }' >"$L/enforcement-tier-gate.sh"
 printf '%s\n' 'sb_enterprise_policy_persist_active_marker() { return 1; }' 'sb_enterprise_policy_apply_session_mode_default() { return 1; }' \
   'sb_enterprise_policy_session_banner() { return 1; }' 'sb_enterprise_policy_clarify_hint_block() { return 1; }' 'sb_enterprise_policy_evidence_strict_marker() { return 1; }' >"$L/enterprise-policy.sh"
 printf '%s\n' 'sb_orchestrator_directive_context_block() { return 1; }' >"$L/orchestrator-directive.sh"

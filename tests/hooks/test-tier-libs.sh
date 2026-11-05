@@ -91,22 +91,8 @@ if gate SB_RUNTIME_NAME=claude SB_RUNTIME_HOME_ROOT="$TL_TMP/none" SB_RUNTIME_ST
 
 assert_eq "a missing config file reads as configured tier 0" "0" "$(gate SILVER_BULLET_TEST_HOOK_ENFORCED=1 -- sb_enforcement_tier_effective "$TL_TMP/absent.json")"
 
-# persist
-printf '{"a":1}' >"$CFG"
-gate -- sb_enforcement_tier_persist "$CFG" 2
-assert_eq "tier persisted" "2" "$(jq -r .sb_enforcement_tier "$CFG")"
-assert_eq "other keys preserved" "1" "$(jq -r .a "$CFG")"
-assert_file_absent "no temp file left" "$CFG.tmp"
-gate SB_HOOK_SMOKE=1 -- sb_enforcement_tier_persist "$CFG" 3
-assert_eq "smoke mode does not mutate" "2" "$(jq -r .sb_enforcement_tier "$CFG")"
-gate -- sb_enforcement_tier_persist "$TL_TMP/absent.json" 3
-assert_file_absent "missing config: nothing created" "$TL_TMP/absent.json"
-gate -- sb_enforcement_tier_persist "$CFG" ""
-assert_eq "empty tier: no change" "2" "$(jq -r .sb_enforcement_tier "$CFG")"
-PATH="$(tl_path_without jq)" gate -- sb_enforcement_tier_persist "$CFG" 0
-assert_eq "no jq: no change" "2" "$(jq -r .sb_enforcement_tier "$CFG")"
-gate -- sb_enforcement_tier_persist "$CFG" notjson || true
-assert_eq "invalid tier value: config untouched" "2" "$(jq -r .sb_enforcement_tier "$CFG")"
+# the tier is never written into the project config: there is no persist function (R3-11)
+if declare -f sb_enforcement_tier_persist >/dev/null 2>&1; then tl_fail "no tier persist function"; else tl_pass "no tier persist function"; fi
 
 # messages
 assert_contains "block message names the tier" "$(gate -- sb_enforcement_tier_block_message 1)" "tier 1 (< 2 hook-enforced)"

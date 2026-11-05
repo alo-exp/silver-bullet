@@ -42,7 +42,7 @@
     "orchestrator-directive-guard.sh": "Orchestrator parent mode: blocks edits, shell commands and Task spawns until the skill named by the pending directive has been invoked.",
     "outcomes-check.sh": "Tracks the per-prompt outcome checklist; at Stop, blocks while outcomes are incomplete.",
     "phase-archive.sh": "Archives `.planning/phases/` directories before a `phases clear` command runs. Fails closed: if archiving fails, the clear is denied.",
-    "phase-lock-claim.sh": "Claims the `.planning/phases/<NNN>/` lock (via `.planning/scripts/phase-lock.sh`) before a session edits a phase's files.",
+    "phase-lock-claim.sh": "Claims the `.planning/phases/<NNN>/` lock (via `scripts/phase-lock.sh` (plugin root)) before a session edits a phase's files.",
     "phase-lock-heartbeat.sh": "Refreshes heartbeats for the phase locks this session holds (throttled to once per 5 minutes per phase).",
     "phase-lock-release.sh": "Releases this session's phase locks at Stop/SubagentStop. Never blocks.",
     "planning-file-guard.sh": "Blocks direct edits to SB-managed planning artifacts (`.planning/ROADMAP.md`, `STATE.md`, phase `PLAN.md`/`SUMMARY.md`, ...); they change only through the owning SB skill.",

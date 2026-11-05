@@ -178,9 +178,17 @@ fi
 
 [[ ${#TEXT_SRC[@]} -eq 0 && ${#TEXT_DOC[@]} -eq 0 ]] && exit 0
 
-mkdir -p "$cache_dir"
-# The cache holds copies of project text: keep it out of commits whatever the project's ignore rules.
-[[ -e "$cache_dir/.gitignore" ]] || printf '*\n' >"$cache_dir/.gitignore"
+# The cache holds copies of project text, so it is only used when it really lives inside the repo:
+# a symlinked .planning/, cache dir or .gitignore (SEC-02) turns caching off for this run instead of
+# being followed. A usable cache dir ignores itself whatever the project's ignore rules say.
+use_cache=1
+if [[ -L "$REPO_ROOT/.planning" || -L "$cache_dir" || -L "$cache_dir/.gitignore" ]]; then
+  use_cache=0
+  debug_log=/dev/null
+else
+  mkdir -p "$cache_dir"
+  [[ -e "$cache_dir/.gitignore" ]] || printf '*\n' >"$cache_dir/.gitignore"
+fi
 
 # Cache key from file mtimes + phase goal
 mtime_str=""
@@ -191,7 +199,7 @@ cache_key=$(md5_str "${mtime_str}${phase_goal}")
 phase_slug=$(printf '%s' "${phase_goal:-nogoal}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | cut -c1-40)
 cache_file="$cache_dir/${phase_slug}-${cache_key}.json"
 
-if [[ -f "$cache_file" ]]; then
+if [[ $use_cache -eq 1 && -f "$cache_file" && ! -L "$cache_file" ]]; then
   cat "$cache_file"
   exit 0
 fi
@@ -327,5 +335,7 @@ full_output="${SENTINEL_BOUNDARY}${header}
 ${output}"
 json_output=$(printf '%s' "$full_output" | jq -Rs '{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":.}}')
 
-printf '%s' "$json_output" > "$cache_file"
+if [[ $use_cache -eq 1 && ! -L "$cache_file" ]]; then
+  printf '%s' "$json_output" > "$cache_file"
+fi
 printf '%s' "$json_output"

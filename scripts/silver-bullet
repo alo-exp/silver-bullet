@@ -214,6 +214,18 @@ invoke_skill() {
     return 1
   fi
 
+  # Refuse BEFORE the skill text is printed or a receipt is written: the host sees this call as
+  # Bash, so its Skill gates (forbidden skills, UAT, review ladder) have not run (R3-08).
+  local denial
+  if [[ -f "${LIB_DIR}/skill-gates.sh" ]]; then
+    # shellcheck source=../hooks/lib/skill-gates.sh
+    source "${LIB_DIR}/skill-gates.sh"
+    if denial="$(sb_skill_gates_denial "$raw_skill" "${PLUGIN_ROOT}/hooks")"; then
+      printf 'ERROR: skill refused by the Silver Bullet Skill gates: %s\n' "$denial" >&2
+      return 1
+    fi
+  fi
+
   write_receipt "$raw_skill" "$canonical_skill" "$skill_file"
 
   printf 'Silver Bullet skill invocation adapter\n'

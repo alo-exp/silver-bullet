@@ -37,7 +37,7 @@ assert_true() {
 # ---------------------------------------------------------------------------
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-SCRIPT="${REPO_ROOT}/.planning/scripts/phase-lock.sh"
+SCRIPT="${PL_SCRIPT:-${REPO_ROOT}/.planning/scripts/phase-lock.sh}"
 [[ -x "$SCRIPT" ]] || { echo "FAIL: phase-lock.sh not found or not executable at $SCRIPT"; exit 1; }
 
 TMP=$(mktemp -d)

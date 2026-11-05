@@ -17,11 +17,18 @@ assert_in "tracked skill is appended to the state file" "$STATE" silver-context
 reset; rs "$(skill_input silver-context)"; rs "$(skill_input silver-context)"
 assert_eq "re-recording a skill is reported as nothing new" "$NOTHING" "$(msg)"
 assert_eq "re-recording does not duplicate the state line" "1" "$(grep -Fxc silver-context "$STATE")"
+# a non-Skill tool that carries tool_input.skill records nothing
+for t in Bash exec_command Edit; do
+  reset; rs "$(jq -cn --arg t "$t" '{hook_event_name:"PostToolUse", tool_name:$t, tool_input:{command:"ls", skill:"silver-plan"}}')"
+  assert_not_in "a $t payload carrying a skill key records nothing" "$STATE" silver-plan
+done
 reset; rs "$(skill_input some-untracked-skill)"
 assert_eq "untracked skill is reported as nothing recorded" "$NOTHING" "$(msg)"
 assert_file_absent "untracked skill creates no state file" "$STATE"
+reset; rs "$(skill_input silver-bullet:sb:plan)"
+assert_in "the silver-bullet namespace is stripped" "$STATE" silver-plan
 reset; rs "$(skill_input silver-bullet:superpowers:silver-plan)"
-assert_in "trusted namespace prefixes are stripped" "$STATE" silver-plan
+assert_not_in "a dependency namespace never reaches an SB-owned name" "$STATE" silver-plan
 reset; rs "$(skill_input plugin:ns:silver-plan)"
 assert_not_in "foreign namespace prefixes mint no marker" "$STATE" silver-plan
 reset; rs "$(skill_input sb:feature)"

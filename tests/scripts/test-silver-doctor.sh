@@ -575,23 +575,6 @@ if [[ -f "$RT_COMMON" ]]; then
 fi
 
 
-# ── Report 1 / #256: persist preserves trailing newline ──────────────────────
-PERSIST_NL_TMP="$(mktemp -d)"
-PERSIST_NL_CFG="${PERSIST_NL_TMP}/.silver-bullet.json"
-jq -n '{sb_initiated:true, sb_enforcement_tier:0}' >"$PERSIST_NL_CFG"
-# shellcheck source=../../hooks/lib/enforcement-tier-gate.sh
-source "${REPO_ROOT}/hooks/lib/enforcement-tier-gate.sh"
-sb_enforcement_tier_persist "$PERSIST_NL_CFG" "0"
-if [[ "$(last_byte_hex "$PERSIST_NL_CFG")" == "0a" ]]; then
-  echo "PASS: sb_enforcement_tier_persist preserves trailing newline"
-  PASS=$((PASS + 1))
-else
-  echo "FAIL: sb_enforcement_tier_persist stripped trailing newline"
-  tail -c16 "$PERSIST_NL_CFG" | od -c || true
-  FAIL=$((FAIL + 1))
-fi
-rm -rf "$PERSIST_NL_TMP"
-
 # ── F8 / #257: doctor --dry-run D11 must not dirty .silver-bullet.json ───────
 DRY_NL_TMP="$(mktemp -d)"
 DRY_NL_CFG="${DRY_NL_TMP}/.silver-bullet.json"

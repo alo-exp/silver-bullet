@@ -95,6 +95,27 @@ assert_eq "the cache directory ignores itself" "*" "$(cat "$P/.planning/.context
 first="$TL_OUT"
 run
 assert_eq "an unchanged second run returns the cached answer" "$first" "$TL_OUT"
+# SEC-02: symlinked cache locations are never followed; the run still answers, uncached
+mkproj; bigfile "$P/src/auth.sh" authentication 40
+mkdir -p "$P/.planning/.context-cache"; ln -s "$TL_TMP/victim-gi" "$P/.planning/.context-cache/.gitignore"
+run
+assert_file_absent "a dangling .gitignore symlink is not written through" "$TL_TMP/victim-gi"
+assert_contains "caching off, output still produced" "$(ctx)" "src/auth.sh"
+assert_eq "no cache file is written beside a symlinked .gitignore" 0 "$(find "$P/.planning/.context-cache" -name '*.json' | wc -l | tr -d ' ')"
+mkproj; bigfile "$P/src/auth.sh" authentication 40
+mkdir -p "$TL_TMP/victim-dir"; ln -s "$TL_TMP/victim-dir" "$P/.planning/.context-cache"
+run
+assert_eq "a symlinked cache dir receives nothing" 0 "$(ls -A "$TL_TMP/victim-dir" | wc -l | tr -d ' ')"
+assert_contains "a symlinked cache dir: output still produced" "$(ctx)" "src/auth.sh"
+mkproj; bigfile "$P/src/auth.sh" authentication 40
+mv "$P/.planning" "$TL_TMP/real-planning"; ln -s "$TL_TMP/real-planning" "$P/.planning"
+run
+assert_eq "a symlinked .planning receives no cache" 0 "$(find "$TL_TMP/real-planning" -name '.context-cache' | wc -l | tr -d ' ')"
+mkproj; bigfile "$P/src/auth.sh" authentication 40
+run
+ln -sf "$TL_TMP/victim-file" "$(ls "$P"/.planning/.context-cache/*.json | head -1)"
+run
+assert_file_absent "a symlinked cache file is neither read nor written through" "$TL_TMP/victim-file"
 # the standard layout: the phase goal lives in .planning/phases/<NNN>/
 mkproj
 rm -f "$P/.planning/phase1-CONTEXT.md"
