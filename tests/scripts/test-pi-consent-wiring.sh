@@ -63,6 +63,31 @@ line="$(_sb_stack_graphify_platform_words pre pi)"
 _sb_stack_run_words "$PROJ" "$line"
 assert_eq "stack optimizer: leanctx wire-only is not enabled alongside graphify" "graphify" "$(enabled)"
 
+# ---- every path that enables leanctx in Pi: wire alone lists no npm package, install+wire does
+printf '#!/usr/bin/env bash\necho "lean-ctx 3.12.0"\n' >"$TL_BIN/lean-ctx"; chmod +x "$TL_BIN/lean-ctx"
+SETTINGS="$HOME/.pi/agent/settings.json"
+pkgs() { jq -c '.packages // []' "$SETTINGS" 2>/dev/null || echo '[]'; }
+for host in pi all; do
+  fresh; sb_test_consent_grant leanctx wire
+  tl_run bash "$TL_REPO_ROOT/scripts/optimize-five-tool-stack.sh" --host "$host" --project-root "$PROJ" --skip-synergy
+  assert_eq "optimizer --host $host, leanctx wire-only: no npm package" "[]" "$(pkgs)"
+  fresh; sb_test_consent_grant leanctx install,wire
+  tl_run bash "$TL_REPO_ROOT/scripts/optimize-five-tool-stack.sh" --host "$host" --project-root "$PROJ" --skip-synergy
+  assert_eq "optimizer --host $host, leanctx install+wire: npm package listed" '["npm:pi-lean-ctx"]' "$(pkgs)"
+done
+fresh; sb_test_consent_grant leanctx wire
+tl_run bash "$TL_REPO_ROOT/scripts/install-leanctx-sb.sh" --host pi --project-root "$PROJ" --skip-verify
+assert_eq "install-leanctx-sb --host pi, wire-only: no npm package" "[]" "$(pkgs)"
+fresh; sb_test_consent_grant leanctx install,wire
+tl_run bash "$TL_REPO_ROOT/scripts/install-leanctx-sb.sh" --host pi --project-root "$PROJ" --skip-verify
+assert_eq "install-leanctx-sb --host pi, install+wire: npm package listed" '["npm:pi-lean-ctx"]' "$(pkgs)"
+fresh; sb_test_consent_grant leanctx install,wire; sb_test_consent_grant graphify install,wire
+_sb_stack_run_words "$PROJ" "$(_sb_stack_graphify_platform_words pre pi)"
+assert_eq "stack optimizer pre:pi, leanctx install+wire: npm package listed" '["npm:pi-lean-ctx"]' "$(pkgs)"
+fresh; sb_test_consent_grant graphify install,wire; sb_test_consent_grant leanctx wire
+_sb_stack_run_words "$PROJ" "$(_sb_stack_graphify_platform_words pre pi)"
+assert_eq "stack optimizer pre:pi, leanctx wire-only: no npm package" "[]" "$(pkgs)"
+
 # ---- revoking consent does not switch a tool off in Pi (documented in docs/CONSENT.md)
 fresh; sb_test_consent_grant rtk install,wire,enforce
 tl_run bash "$TL_REPO_ROOT/scripts/optimize-rtk-context-mode.sh" --host pi --project-root "$PROJ" --skip-cm-doctor

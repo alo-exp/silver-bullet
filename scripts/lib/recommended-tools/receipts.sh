@@ -748,6 +748,12 @@ rt_apply_host_mcp_batch() {
   else
     export RT_PATCH_LEANCTX=0
   fi
+  # Pi lists the pi-lean-ctx npm package (the host installs code) only with install consent too.
+  if rt_mutation_allowed leanctx install; then
+    export RT_LEANCTX_ALLOW_INSTALL=1
+  else
+    export RT_LEANCTX_ALLOW_INSTALL=0
+  fi
   if rt_mutation_allowed agentmemory wire; then
     export RT_PATCH_AGENTMEMORY=1
   else
@@ -775,7 +781,7 @@ rt_apply_host_mcp_batch() {
       fi
     fi
   fi
-  unset RT_PATCH_GRAPHIFY RT_PATCH_LEANCTX RT_PATCH_AGENTMEMORY RT_PATCH_CONTEXT_MODE
+  unset RT_PATCH_GRAPHIFY RT_PATCH_LEANCTX RT_PATCH_AGENTMEMORY RT_PATCH_CONTEXT_MODE RT_LEANCTX_ALLOW_INSTALL
   jq -n \
     --argjson actions "$(rt_json_string_array ${actions[@]+"${actions[@]}"})" \
     --argjson failures "$(rt_json_string_array ${failures[@]+"${failures[@]}"})" \

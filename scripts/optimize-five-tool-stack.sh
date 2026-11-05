@@ -60,6 +60,8 @@ source "$CONSENT_LIB"
 tool_wired() { sb_consent_granted "$1" wire; }
 # flag TOOL: 1 when TOOL is wired, else 0 (for the RT_PATCH_* switches).
 flag() { if tool_wired "$1"; then printf '1'; else printf '0'; fi; }
+# install_flag TOOL: 1 when TOOL is wired AND installable (Pi lists an npm package only then).
+install_flag() { if tool_wired "$1" && sb_consent_granted "$1" install; then printf '1'; else printf '0'; fi; }
 
 log() { printf '%s\n' "$*"; }
 warn() { printf 'WARN: %s\n' "$*" >&2; }
@@ -199,9 +201,9 @@ optimize_host() {
       patch_env+=(RT_PATCH_GRAPHIFY=0 RT_PATCH_AGENTMEMORY=0)
     fi
     if [[ "$SKIP_RTCM" -eq 0 ]]; then
-      patch_env+=("RT_PATCH_CONTEXT_MODE=$(flag context_mode)" "RT_PATCH_LEANCTX=$(flag leanctx)")
+      patch_env+=("RT_PATCH_CONTEXT_MODE=$(flag context_mode)" "RT_PATCH_LEANCTX=$(flag leanctx)" "RT_LEANCTX_ALLOW_INSTALL=$(install_flag leanctx)")
     else
-      patch_env+=(RT_PATCH_CONTEXT_MODE=0 RT_PATCH_LEANCTX=0)
+      patch_env+=(RT_PATCH_CONTEXT_MODE=0 RT_PATCH_LEANCTX=0 RT_LEANCTX_ALLOW_INSTALL=0)
     fi
     run_cmd env "${patch_env[@]}" "${patch_args[@]}"
   fi

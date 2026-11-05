@@ -154,6 +154,7 @@ sb_consent_pi_enable_words() {
     # LeanCTX in Pi makes the host install an npm package: that also needs "install" consent.
     if [[ "$tool" == "leanctx" ]] && ! sb_consent_granted leanctx install; then continue; fi
     printf ' --enable-tool %s' "$tool"
+    if [[ "$tool" == "leanctx" ]]; then printf ' --allow-install'; fi
   done
   return 0
 }

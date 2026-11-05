@@ -354,6 +354,7 @@ def install_pi_adapter(
     *,
     dry_run: bool,
     enabled_tools: set[str],
+    allow_package_install: bool = False,
 ) -> tuple[bool, str]:
     """Install the native Pi adapter without importing a hyphenated filename."""
     import importlib.util
@@ -364,7 +365,7 @@ def install_pi_adapter(
         return False, "ERROR: unable to load Pi adapter installer"
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    result = module.install(repo_root, dry_run, enabled_tools)
+    result = module.install(repo_root, dry_run, enabled_tools, allow_package_install=allow_package_install)
     return True, "OK: Pi five-tool adapter installed (" + ",".join(sorted(enabled_tools)) + ")"
 
 
@@ -480,6 +481,8 @@ def _main() -> int:
             Path(os.environ.get("TOOLSTACK_REPO_ROOT", Path.cwd())),
             dry_run=False,
             enabled_tools=enabled,
+            # npm:pi-lean-ctx is listed only when the caller passes the user's install consent
+            allow_package_install=os.environ.get("RT_LEANCTX_ALLOW_INSTALL", "0") == "1",
         )
         if not ok:
             print(message, file=sys.stderr)

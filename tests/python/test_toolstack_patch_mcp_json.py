@@ -639,6 +639,17 @@ class MainJsonHostsTest(McpCase):
         self.assertEqual(args[0], self.root)
         self.assertFalse(kwargs["dry_run"])
         self.assertEqual(kwargs["enabled_tools"], {"graphify", "leanctx"})
+        self.assertFalse(kwargs["allow_package_install"])  # wire alone never lists an npm package
+
+    def test_pi_host_passes_the_install_consent_flag(self):
+        os.environ["RT_HOST"] = "pi"
+        os.environ["TOOLSTACK_REPO_ROOT"] = str(self.root)
+        os.environ["RT_LEANCTX_ALLOW_INSTALL"] = "1"
+        self.addCleanup(os.environ.pop, "RT_LEANCTX_ALLOW_INSTALL", None)
+        self.flags(leanctx=True)
+        with mock.patch.object(pm, "install_pi_adapter", return_value=(True, "OK: pi")) as install:
+            self.run_main()
+        self.assertTrue(install.call_args.kwargs["allow_package_install"])
 
     def test_pi_host_failure_exits_2(self):
         os.environ["RT_HOST"] = "pi"
