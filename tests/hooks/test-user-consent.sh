@@ -339,4 +339,14 @@ tl_run env SB_CONSENT_LOCK_TRIES=2 bash "$CLI" grant graphify --all-projects --c
 assert_contains "the give-up message names the takeover directory too" "$TL_ERR" ".consent.lock.takeover"
 rm -rf "$LOCK" "${LOCK}.takeover"
 
+echo "=== an unwritable pid file does not fail the grant ==="
+reset_store
+_sb_consent_write_owner() { return 1; }   # the owner record cannot be written
+rc=0; sb_consent_set granted rtk enforce machine test >/dev/null 2>&1 || rc=$?
+unset -f _sb_consent_write_owner
+source "$LIB"
+assert_eq "grant succeeds although the lock's pid file cannot be written" "0" "$rc"
+assert_eq "and is recorded" "granted" "$(sb_consent_decision rtk enforce)"
+[[ ! -d "$(dirname "$STORE")/.consent.lock" ]] && tl_pass "the lock is released" || tl_fail "the lock is released"
+
 tl_results
