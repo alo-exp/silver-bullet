@@ -1431,6 +1431,7 @@ _GRAPHQL_MUTATIONS = (
 
 _MCP_ACTIONS = {
     "create_pull_request": ("pr_create",),
+    "create_pull_request_with_copilot": ("pr_create",),
     "create_merge_request": ("pr_create",),
     "merge_pull_request": ("pr_merge",),
     "merge_merge_request": ("pr_merge",),
@@ -1448,6 +1449,9 @@ _MCP_ACTIONS = {
     "create_release": ("release_create",),
     "actions_run_trigger": ("deploy",),
 }
+
+# actions_run_trigger methods that only stop or clean up runs (not a delivery)
+_MCP_NON_DELIVERY_METHODS = {"cancel_workflow_run", "force_cancel_workflow_run", "delete_workflow_run_logs"}
 
 _DEPLOY_FIRST = {"deploy", "release", "publish", "ship"}
 _DEPLOY_ANY = {"deploy", "publish"}
@@ -4581,7 +4585,11 @@ def analyze_payload(text, base_dir=None, lookups=True):
         response = payload.get("tool_response")
         file_path = response.get("filePath") if isinstance(response, dict) else None
     file_path = file_path if isinstance(file_path, str) and file_path else (paths[0] if paths else "")
-    for action in _MCP_ACTIONS.get((mcp_tool or "").lower(), ()) if kind == "mcp" else ():
+    mcp_actions = _MCP_ACTIONS.get((mcp_tool or "").lower(), ()) if kind == "mcp" else ()
+    if mcp_actions and (mcp_tool or "").lower() == "actions_run_trigger" and \
+            str(fields.get("method", "")).lower() in _MCP_NON_DELIVERY_METHODS:
+        mcp_actions = ()
+    for action in mcp_actions:
         result["actions"] = sorted(set(result["actions"]) | {action})
         result["delivery"].append({"action": action, "tier": ACTION_TIER[action], "possible": False,
                                    "canonical": "%s [mcp %s %s]" % (CANONICAL_PREFIX[action], server, mcp_tool)})

@@ -65,24 +65,38 @@ fi
 
 # --- Read config (gracefully degrade if jq is absent) ---
 _SB_STATE_DIR="${SB_RUNTIME_STATE_DIR:-}"
+# A copy of this file outside the plugin has none of the hooks/lib helpers. The gate then fails CLOSED: it
+# cannot locate the state directory, so it blocks with a message instead of passing (an undefined helper
+# would otherwise trip the ERR trap, which exits 0).
+if [[ -z "$_SB_STATE_DIR" ]]; then
+  echo "[deploy-gate] ❌ Silver Bullet's runtime libraries were not found next to this script, so the workflow state cannot be located."
+  echo "    Run it from the Silver Bullet plugin (bash /path/to/silver-bullet/scripts/deploy-gate-snippet.sh), or source it with SB_RUNTIME_STATE_DIR set."
+  return 1 2>/dev/null || exit 1
+fi
 STATE_FILE="${_SB_STATE_DIR}/state"
 TRIVIAL_FILE="${_SB_STATE_DIR}/trivial"
 _DEFAULT_TRIVIAL_FILE="$TRIVIAL_FILE"
 REQUIRED_DEPLOY="silver-quality-gates silver-context silver-plan silver-execute silver-verify silver-ship silver-review security silver-secure silver-validate silver-review-request silver-review-triage silver-triage silver-branch-finish silver-completion-audit tdd verify-tests"
 [[ -n "${DEFAULT_REQUIRED:-}" ]] && REQUIRED_DEPLOY="$DEFAULT_REQUIRED"
 
+_dw_have_path_helpers=false
+if declare -F sb_expand_state_config_path >/dev/null 2>&1 && declare -F sb_trivial_path_trusted >/dev/null 2>&1 \
+  && declare -F sb_runtime_path_is_state_scoped >/dev/null 2>&1; then
+  _dw_have_path_helpers=true
+fi
+
 if [[ -n "$_dw_config_file" ]] && command -v jq >/dev/null 2>&1; then
   # Config paths are repository content: they get the same expansion and state-directory check the hooks
   # apply (R1-24, R1-25), so the shipped template's ${SB_RUNTIME_HOME_ROOT}/... spelling resolves to the
   # real files and a path outside the state directory falls back to the defaults.
   _val=$(jq -r '.state.state_file // ""' "$_dw_config_file")
-  if [[ -n "$_val" ]]; then
+  if [[ -n "$_val" && "$_dw_have_path_helpers" == true ]]; then
     _val="$(sb_expand_state_config_path "$_val")"
     ! sb_runtime_path_is_state_scoped "$_val" || STATE_FILE="$_val"
   fi
 
   _val=$(jq -r '.state.trivial_file // ""' "$_dw_config_file")
-  if [[ -n "$_val" ]]; then
+  if [[ -n "$_val" && "$_dw_have_path_helpers" == true ]]; then
     _val="$(sb_expand_state_config_path "$_val")"
     ! sb_trivial_path_trusted "$_val" "$_DEFAULT_TRIVIAL_FILE" || TRIVIAL_FILE="$_val"
   fi

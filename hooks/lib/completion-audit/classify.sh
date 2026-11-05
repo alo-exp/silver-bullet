@@ -83,7 +83,7 @@ _ca_regex_tier() {
 # quote, variable or substitution is allowed anywhere in the command, so nothing can hide a second command.
 _ca_plain_readonly_command() {
   local text="$1"
-  [[ -n "$text" && "$text" =~ ^[A-Za-z0-9\ ._/=:@,+-]+$ ]] || return 1
+  [[ -n "$text" && "$text" =~ ^[A-Za-z0-9\ ._/=:@,+~^-]+$ ]] || return 1
   case "$text" in
     "git status" | "git status "* | "git diff" | "git diff "* | "git log" | "git log "* | "git show "* | \
       "git rev-parse "* | "git ls-files" | "git ls-files "* | "git remote -v" | "ls" | "ls "* | "pwd") ;;
@@ -197,16 +197,33 @@ ca_classify_command() {
   return 0
 }
 
-# ca_push_targets_default_branch: an analysed push updates the default branch (main, master, the remote
-# default), a release tag (refs/tags/v*), or mirrors/pushes everything; a bare `git push` counts when the
-# current branch is the default branch (on_main). Needs the analysis of the command (SB_SA_JSON).
+# ca_push_targets_default_branch: an analysed push updates the default branch (main, master, init.defaultBranch,
+# the remote's default), any tag, or mirrors/pushes everything. Each destination is resolved through git
+# before matching: HEAD and @ are the current branch, refs/heads/x is x, and a bare name that is a tag (and
+# not a branch) is a tag push. A bare `git push` counts when the current branch is a default branch.
+# Needs the analysis of the command (SB_SA_JSON).
 ca_push_targets_default_branch() {
-  local names="main master" ref
+  local names="main master" ref cur dst
   ref="$(git symbolic-ref -q --short refs/remotes/origin/HEAD 2>/dev/null || true)"
   [[ -z "$ref" ]] || names="$names ${ref#origin/}"
-  printf '%s' "${SB_SA_JSON:-}" | jq -e --arg names "$names" --argjson on_main "${on_main:-false}" '
-    ($names | split(" ")) as $n
-    | (.push // []) | any(.[];
-        ((.dsts // []) | any(.[]; ((sub("^refs/heads/"; "")) as $d | ($n | index($d)) != null) or startswith("refs/tags/v")))
-        or ((.default // false) and $on_main) or (.tags // false) or (.mirror // false) or (.all // false))' >/dev/null 2>&1
+  names="$names $(git config --get init.defaultBranch 2>/dev/null || true)"
+  cur="$(git symbolic-ref -q --short HEAD 2>/dev/null || true)"
+  if printf '%s' "${SB_SA_JSON:-}" | jq -e '(.push // []) | any(.[]; (.tags // false) or (.mirror // false) or (.all // false))' >/dev/null 2>&1; then
+    return 0
+  fi
+  if printf '%s' "${SB_SA_JSON:-}" | jq -e '(.push // []) | any(.[]; .default // false)' >/dev/null 2>&1; then
+    [[ " $names " == *" $cur "* ]] && return 0
+  fi
+  while IFS= read -r dst; do
+    case "$dst" in
+      HEAD | @) dst="$cur" ;;
+      refs/tags/*) return 0 ;;
+    esac
+    dst="${dst#refs/heads/}"
+    [[ -n "$dst" && " $names " == *" $dst "* ]] && return 0
+    if git show-ref --verify -q "refs/tags/$dst" 2>/dev/null && ! git show-ref --verify -q "refs/heads/$dst" 2>/dev/null; then
+      return 0
+    fi
+  done < <(printf '%s' "${SB_SA_JSON:-}" | jq -r '(.push // [])[] | (.refspecs // [])[] | (sub("^\\+"; "") | split(":") | last)' 2>/dev/null)
+  return 1
 }

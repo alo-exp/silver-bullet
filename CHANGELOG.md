@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Security (breaking default): a push to the default branch (main, master, the remote default), of any tag, or with `--all`/`--mirror` is now final delivery and needs the full `required_deploy` floor in every project, resolved through git (`HEAD`, `@`, `refs/heads/x`, tag names). Opt out per project with `project.push_to_default_branch_tier: "intermediate"`.
+- Security: delivery gates cover MCP delivery tools (GitHub create/merge/push/run-workflow, also in `ci-status-check`); `state.trivial_file` is honoured only as the state directory's own `trivial` file (also in `stop-check`); the cert and test override switches work only under a fixed system temp root, not `$TMPDIR`; release CI is checked for the commit `gh release create` or `gh api .../releases` will release; RC markers bind to the release commit; the release-gate flags are off in the template; the deploy-gate snippet fails closed when copied without the plugin libraries.
 - Security: the Claude marketplace entry is pinned to the release tag (`ref`, plus `sha` once tagged); the Codex entry is pinned by `ref` only; the alignment test enforces it.
 - Privacy: working-tree scrub of personal machine paths, a quota plan, a machine setup report and AI CLI transcripts (history not rewritten); the new `personal-data` invariant keeps them out.
 - Skills: the graphify-managed `.agents/skills/graphify` and `.claude/skills/graphify` are hash-locked in `skills-lock.json`.

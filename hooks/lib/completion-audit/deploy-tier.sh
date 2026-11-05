@@ -3,7 +3,9 @@
 
 # ca_release_commit_sha ROOT: the commit `gh release create` will release, resolved the way gh does:
 # an existing tag wins (--target is ignored for it), else --target (the remote branch, then a local ref),
-# else the remote default branch, else HEAD. The tag and target come from the analysed command's argv.
+# else the remote default branch, else HEAD. The tag and target come from the analysed command's argv:
+# `gh release create TAG --target X`, `gh api .../releases -f tag_name=TAG -f target_commitish=X` (also -F,
+# --field, --raw-field), or the MCP create_release payload (tool_input.tag_name / target_commitish).
 # Called as the condition of an `if`, so a failing helper makes the gate deny instead of tripping the ERR trap.
 # Prints the sha; status 1 when --target names nothing that resolves (R13-08, R1-19).
 ca_release_commit_sha() {
@@ -21,8 +23,19 @@ ca_release_commit_sha() {
         | if $r[$k] == "--target" then ($r[$k + 1] // "")
           elif ($r[$k] | startswith("--target=")) then ($r[$k] | ltrimstr("--target="))
           else empty end] | first // "") as $target
+    | ([.commands[]? | select((.program | split("/") | last) == "gh")
+        | select((.argv | index("api")) != null)] | first // {argv: []}) .argv as $ap
+    | ([range(0; $ap | length) as $k
+        | select($ap[$k] | IN("-f", "-F", "--field", "--raw-field"))
+        | ($ap[$k + 1] // "") | capture("^(?<k>[^=]+)=(?<v>.*)$")]) as $f
+    | (if $tag == "" then ([$f[] | select(.k == "tag_name") | .v] | first // "") else $tag end) as $tag
+    | (if $target == "" then ([$f[] | select(.k == "target_commitish") | .v] | first // "") else $target end) as $target
     | $tag + "\u001f" + $target' 2>/dev/null)"
   IFS=$'\037' read -r tag target <<<"$parsed"
+  if [[ -z "$tag$target" && -n "${mcp_payload:-}" ]]; then
+    parsed="$(printf '%s' "$mcp_payload" | jq -r '(.tool_input // {}) | ((.tag_name // .tag // "") + "\u001f" + (.target_commitish // .target // ""))' 2>/dev/null)"
+    IFS=$'\037' read -r tag target <<<"$parsed"
+  fi
   if [[ -n "$tag" ]]; then
     sha="$(git -C "$root" rev-parse -q --verify "refs/tags/${tag}^{commit}" 2>/dev/null || true)"
   fi
@@ -157,7 +170,7 @@ if grep -qE '\bgh release create\b' <<<"$cmd_first_line"; then
       source "$_rc_iso"
     fi
     if ! declare -F sb_smoke_rc_markers_complete >/dev/null 2>&1 || ! (cd "$project_root" && SB_RC_RELEASE_COMMIT="$release_commit_sha" sb_smoke_rc_markers_complete) 2>/dev/null; then
-      emit_block "$(printf '🛑 RELEASE BLOCKED — RC validation matrix incomplete for commit %s.\n\nRun bash scripts/run-rc-validation-matrix.sh locally on your dev machine (codex/claude × fresh/upgrade with host CLIs + your API keys) at this commit. A --dry-run, a run without the host CLIs (status=skip) and markers written for another commit do not count. CI rc-validation.yml is diagnostic only — it does not satisfy this gate.\nMarkers live under %s/rc-validation/.\nSee docs/testing/RC-VALIDATION-MATRIX.md.' "$release_commit_sha" "${SB_RUNTIME_STATE_DIR:-${HOME}/.silver-bullet}")"
+      emit_block "$(printf '🛑 RELEASE BLOCKED — RC validation matrix incomplete for commit %s.\n\nRun bash scripts/run-rc-validation-matrix.sh locally on your dev machine (operator-local markers; codex/claude × fresh/upgrade with host CLIs + your API keys) at this commit. A --dry-run, a run without the host CLIs (status=skip) and markers written for another commit do not count. CI rc-validation.yml is diagnostic only — it does not satisfy this gate.\nMarkers live under %s/rc-validation/.\nSee docs/testing/RC-VALIDATION-MATRIX.md.' "$release_commit_sha" "${SB_RUNTIME_STATE_DIR:-${HOME}/.silver-bullet}")"
       exit 0
     fi
   fi
@@ -434,8 +447,8 @@ test_freshness_warning=""
 if [[ "$verify_tests_required" == true ]] && has_skill "verify-tests" && [[ ! -f "$verify_tests_state_file" ]]; then
   test_freshness_warning=$(printf '🛑 TEST GATE STALE — /verify-tests was recorded earlier, but the freshness marker is missing at %s.\n\nSource changes invalidate the marker. Re-run /verify-tests before creating the PR, deploy, or release.' "$verify_tests_state_file")
 elif [[ "$verify_tests_required" == true ]] && has_skill "verify-tests" && [[ -f "$verify_tests_state_file" ]]; then
-  # the marker names the repository it verified: one written for another project (or by hand without
-  # the field) does not vouch for this one (R1-08)
+  # the marker names the repository it verified: one written for another project does not vouch for this
+  # one (R1-08). A marker without a repo_root line (older versions, hand-made) is accepted as before.
   marker_repo_root="$(sed -n 's/^repo_root=//p' "$verify_tests_state_file" 2>/dev/null | head -1)"
   if [[ -n "$marker_repo_root" && "$(cd -P "$marker_repo_root" 2>/dev/null && pwd -P)" != "$(cd -P "$project_root" && pwd -P)" ]]; then
     test_freshness_warning=$(printf '🛑 TEST GATE STALE — the /verify-tests marker at %s was written for another repository (%s), not %s.\n\nRe-run /verify-tests in this project before creating the PR, deploy, or release.' "$verify_tests_state_file" "$(printf '%s' "$marker_repo_root" | tr -d '[:cntrl:]' | cut -c1-120)" "$project_root")
@@ -450,7 +463,11 @@ if [[ -n "$missing" ]]; then
   done
   ordering_note=""
   [[ -n "$ordering_issues" ]] && ordering_note=$(printf '\n⚠️  Ordering issues detected:\n%s' "$ordering_issues")
-  msg=$(printf '🛑 COMPLETION BLOCKED — Workflow incomplete.\n\nChange class: %s\nYou are attempting to create a PR/deploy but these required steps are missing:\n%s%sComplete ALL required workflow steps before finalizing.\nDo NOT proceed with this action.' "${ca_change_class:-mixed}" "$missing_lines" "$ordering_note")
+  unseen_note=""
+  if declare -f sb_enterprise_policy_unseen_note >/dev/null 2>&1 && [[ -n "${ca_unseen_reasons:-}" ]]; then
+    unseen_note="$(sb_enterprise_policy_unseen_note)"$'\n\n'
+  fi
+  msg=$(printf '🛑 COMPLETION BLOCKED — Workflow incomplete.\n\n%sChange class: %s\nYou are attempting to create a PR/deploy but these required steps are missing:\n%s%sComplete ALL required workflow steps before finalizing.\nDo NOT proceed with this action.' "$unseen_note" "${ca_change_class:-mixed}" "$missing_lines" "$ordering_note")
   if [[ -n "$ignored" ]]; then
     ignored_lines=""
     for skill in $ignored; do
