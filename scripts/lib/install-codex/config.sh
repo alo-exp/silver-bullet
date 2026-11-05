@@ -53,7 +53,10 @@ try:
     loads = toml_parser()
     if loads is not None:
         with open(sys.argv[1], encoding="utf-8") as handle:
-            table = loads(handle.read()).get("marketplaces", {}).get("alo-labs-codex", {})
+            section = loads(handle.read()).get("marketplaces", {})
+        table = section.get("alo-labs-codex", {}) if isinstance(section, dict) else None
+        if not isinstance(table, dict):
+            raise ConfigError("marketplaces.alo-labs-codex is not a table")
     else:  # no TOML parser installed: the statement-level reader finds the same two strings
         table = read_toml(sys.argv[1]).string_values(("marketplaces", "alo-labs-codex"))
     if table.get("source_type") == "local" and isinstance(table.get("source"), str):

@@ -78,6 +78,24 @@ printf 'raise ImportError("hidden for the test")\n' >"$NOPARSER/pip/__init__.py"
 printf '[marketplaces.alo-labs-codex] # mine\nsource_type = "local"\nsource = "%s"\n' "$TL_TMP/plain dir" >"$CFG"
 PYTHONPATH="$NOPARSER" sub codex_marketplace_root
 assert_eq "root read without a TOML parser" "$TL_TMP/plain dir" "$TL_OUT"
+# the same shapes resolve with and without a parser: inline table, \U escape, literal tab
+mkdir -p "$TL_TMP/emoji😀dir" "$TL_TMP/tab	dir"
+for mode in parser noparser; do
+  runroot() { if [[ $mode == noparser ]]; then PYTHONPATH="$NOPARSER" sub codex_marketplace_root; else sub codex_marketplace_root; fi; }
+  printf 'marketplaces.alo-labs-codex = { source_type = "local", source = "%s" }\n' "$TL_TMP/plain dir" >"$CFG"
+  runroot; assert_eq "inline-table registration read ($mode)" "$TL_TMP/plain dir" "$TL_OUT"
+  printf '[marketplaces.alo-labs-codex]\nsource_type = "local"\nsource = "%s/emoji\\U0001F600dir"\n' "$TL_TMP" >"$CFG"
+  runroot; assert_eq "\\U escape in the path read ($mode)" "$TL_TMP/emoji😀dir" "$TL_OUT"
+  printf '[marketplaces.alo-labs-codex]\nsource_type = "local"\nsource = "%s/tab	dir"\n' "$TL_TMP" >"$CFG"
+  runroot; assert_eq "literal tab in the path read ($mode)" "$TL_TMP/tab	dir" "$TL_OUT"
+  for bad in '[marketplaces]\nalo-labs-codex = "x"\n' 'marketplaces = 3\n'; do
+    printf "$bad" >"$CFG"
+    runroot
+    assert_contains "non-table registration warns ($mode)" "$TL_ERR" "cannot read the Codex marketplace registration"
+    assert_not_contains "no traceback ($mode)" "$TL_ERR" "Traceback"
+    assert_eq "non-table registration uses the default root ($mode)" "$MP" "$TL_OUT"
+  done
+done
 printf 'not [valid\n' >"$CFG"
 PYTHONPATH="$NOPARSER" sub codex_marketplace_root
 assert_contains "an unreadable registration is reported, not silently ignored" "$TL_ERR" "cannot read the Codex marketplace registration"

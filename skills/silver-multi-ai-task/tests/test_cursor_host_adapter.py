@@ -60,10 +60,11 @@ class CursorHostAdapterStubTests(unittest.TestCase):
         self.assertEqual(out["error_code"], "CURSOR_HOST_ADAPTER_NOT_LIVE")
         self.assertEqual(out["launch"]["logical_model_id"], "composer-2.5")
 
-    def test_cancel_is_idempotent_stub(self) -> None:
+    def test_cancel_reports_that_it_cannot_cancel(self) -> None:
         out = cancel("attempt-1", "idem-1")
-        self.assertTrue(out["ok"])
-        self.assertTrue(out["cancellation_acknowledged"])
+        self.assertFalse(out["ok"])
+        self.assertFalse(out["cancellation_acknowledged"])
+        self.assertEqual(out["error_code"], "CANCEL_NOT_SUPPORTED")
         self.assertEqual(out["live_status"], "not-live")
 
     def test_cas_generation_conflict(self) -> None:

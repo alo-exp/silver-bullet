@@ -85,7 +85,7 @@
         "scope": {"add": ["need_profile.json"]},
         "triangulate": {"add": ["landscape/landscape-report.md", "shortlist/shortlist.json"]},
         "synthesize": {"add": ["comparison/comparison.json", "comparison/comparison-matrix.md", "comparison/{dir-slug}-comparison-matrix.xlsx"]},
-        "package": {"add": ["report.html", "landscape-report.html"]}
+        "package": {"add": ["report.html"]}
       }
     },
     "solution-compare": {
@@ -94,7 +94,7 @@
       "phase_artifacts": {
         "scope": {"add": ["need_profile.json", "solutions_requested.json"]},
         "synthesize": {"add": ["comparison/comparison.json", "comparison/comparison-matrix.md", "comparison/{dir-slug}-comparison-matrix.xlsx"]},
-        "package": {"add": ["report.html", "landscape-report.html"]}
+        "package": {"add": ["report.html"]}
       }
     }
   },

@@ -46,11 +46,47 @@ class MultiAiContractTests(unittest.TestCase):
         schema = json.loads((SKILL_ROOT / "schemas" / "multi-ai-work-item-manifest-v1.schema.json").read_text())
         self.assertEqual(schema["properties"]["spine"]["const"], "multi-ai-task-v2")
 
-    def test_regular_lite_mutex(self) -> None:
+    def test_empty_pool_selection_is_rejected(self) -> None:
+        # The lite/regular mutex needs no check: --ocg-pool takes a single choice.
         from multi_ai_core import PoolSelection, resolve_pool
 
         with self.assertRaises(ValueError):
             resolve_pool(PoolSelection(ocg_pool="none", cursor_pool="none"))
+
+    def test_skill_md_cli_block_runs_as_documented(self) -> None:
+        """R11-15: the documented command must work exactly as written (with placeholders filled)."""
+        import os
+        import re
+        import shlex
+        import tempfile
+
+        text = (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")
+        section = text.split("## CLI contract", 1)[1]
+        block = re.search(r"```bash\n(.*?)```", section, re.DOTALL).group(1)
+        with tempfile.TemporaryDirectory() as tmp:
+            command = block.replace("\\\n", " ").replace("<run-id>", "probe").replace("<task brief>", "probe task")
+            argv = shlex.split(command)
+            self.assertEqual(argv[:2], ["python3", "skills/silver-multi-ai-task/scripts/multi_ai_cli.py"])
+            repo = SKILL_ROOT.parents[1]
+            proc = subprocess.run(
+                [sys.executable, str(repo / argv[1]), *argv[2:]],
+                capture_output=True, text=True, check=False, cwd=tmp,
+                env={**os.environ, "SB_HOST": "cursor"},
+            )
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            self.assertTrue(json.loads(proc.stdout)["ok"])
+            self.assertEqual(os.listdir(tmp), [], "a dry run must not write anything")
+        # Every flag in the documented flag table is accepted by the CLI.
+        documented = set(re.findall(r"^\| `(--[a-z-]+)", section, re.MULTILINE))
+        help_text = subprocess.run(
+            [sys.executable, str(SCRIPTS / "multi_ai_cli.py"), "--help"], capture_output=True, text=True, check=True
+        ).stdout
+        self.assertGreaterEqual(len(documented), 10)
+        for flag in documented:
+            self.assertIn(flag, help_text)
+        # Referenced schema files exist.
+        for ref in re.findall(r"`(multi-ai-[a-z-]+-v1)`", text):
+            self.assertTrue((SKILL_ROOT / "schemas" / f"{ref}.schema.json").is_file(), ref)
 
     def test_glm_alias_normalization(self) -> None:
         from multi_ai_core import normalize_logical_id
