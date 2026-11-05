@@ -4,7 +4,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT"
-FIXTURE="${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/shafqat/projects/enterprise-grade-test-app}"
+FIXTURE="${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/<user>/projects/enterprise-grade-test-app}"
 BASELINE="${SB_E2E_TEST_APP_BASELINE_SHA:-09f8d1a}"
 BRANCH="${SB_E2E_TEST_APP_BRANCH:-enterprise-e2e/round-9-codex}"
 LAUNCH_LOG="${ROOT}/.planning/enterprise-e2e/.codex-r3-force36-launch.log"

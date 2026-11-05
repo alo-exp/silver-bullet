@@ -2,7 +2,7 @@ model: composer-2.5
 
 **Subagent:** `sb-composer-2-5-high`  
 **Phase:** VERIFY-ONLY pass 2/2 (`verify_2`, independent of verify_1)  
-**Artifact:** `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
+**Artifact:** `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
 **SHA-256:** `39673cb6a7cd07a12a57d816c283a839805d727fae6b0bdaba506253f1e91847` (verified via `shasum -a 256`)  
 **Graphify:** `graphify query "dr_search_gateway plan AB1 AB2 AB3 AB4 I-33 I-34 I-35 I-36 cache-ttl x-union dedup"` (375 nodes; oriented cache/dedup/gateway context)  
 **Apply ref:** AB1 / I-33, AB2 / I-34, AB3 / I-35, AB4 / I-36 (round-4 post-clarify rung 1 pass 13)

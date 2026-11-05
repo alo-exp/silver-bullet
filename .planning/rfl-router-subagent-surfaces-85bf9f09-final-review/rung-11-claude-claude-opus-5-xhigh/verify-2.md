@@ -29,8 +29,8 @@ Hashed with `shasum -a 256`; sizes with `wc -c`; identity with `cmp`.
 
 | Copy | SHA-256 | Bytes |
 |------|---------|-------|
-| `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | **621095** |
-| `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | **621095** |
+| `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | **621095** |
+| `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | **621095** |
 
 - **Byte-identical: YES** — `cmp` exited 0 with no output (`CMP_IDENTICAL`), pre-verify and post-verify.
 - **SHA I actually hashed: `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` / 621095 bytes.**
@@ -124,4 +124,4 @@ No line refs to report — no findings exist. Nothing was fixed; this is a verif
 - Written by **Pi Claude Opus 5 Extra High** (`claude/claude-opus-5-xhigh`), attempt 1, no substitute
 - **EXIT: 0**
 
-Report path: `/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-11-claude-claude-opus-5-xhigh/verify-2.md`
+Report path: `/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-11-claude-claude-opus-5-xhigh/verify-2.md`

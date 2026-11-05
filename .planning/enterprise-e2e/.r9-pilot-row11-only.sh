@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # R9 sequential single-row pilots: 1 → (PASS) 6 → (PASS) 11
 set -euo pipefail
-MAIN="/Users/shafqat/projects/silver-bullet/repo"
+MAIN="/Users/<user>/projects/silver-bullet/repo"
 SB_ROOT="/private/tmp/sb-main-row11-fp"
 LOG="${MAIN}/.e2e-r9-pilot-rows-6-11-sequential.log"
 PIDFILE="${MAIN}/.e2e-r9-pilot-rows-6-11.pid"
@@ -28,7 +28,7 @@ rm -f "${SB_ROOT}/.e2e-live-test.lock"
 printf '%s\n' "$$" >"$PIDFILE"
 
 export SB_ROOT SB_E2E_MAIN_REPO="$MAIN"
-export SB_TEST_ENTERPRISE_APP_ROOT=/Users/shafqat/projects/enterprise-grade-test-app-round9-claude
+export SB_TEST_ENTERPRISE_APP_ROOT=/Users/<user>/projects/enterprise-grade-test-app-round9-claude
 mkdir -p "${SB_TEST_ENTERPRISE_APP_ROOT}/.agentmemory/memory"
 export SB_E2E_TEST_APP_BRANCH=enterprise-e2e/round-9-claude
 export SB_E2E_TEST_APP_BASELINE_SHA=8482e60

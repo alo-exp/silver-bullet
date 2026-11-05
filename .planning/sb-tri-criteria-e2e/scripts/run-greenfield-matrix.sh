@@ -3,8 +3,8 @@
 # Skips cells that already have a scored greenfield PASS in runs/*/ledger.json.
 set -euo pipefail
 
-SB_ROOT="${SB_ROOT:-/Users/shafqat/projects/silver-bullet/repo}"
-WORK_DIR="${SB_TRI_CRITERIA_WORK_DIR:-/Users/shafqat/projects/enterprise-grade-test-app}"
+SB_ROOT="${SB_ROOT:-/Users/<user>/projects/silver-bullet/repo}"
+WORK_DIR="${SB_TRI_CRITERIA_WORK_DIR:-/Users/<user>/projects/enterprise-grade-test-app}"
 RUNS_ROOT="${SB_ROOT}/.planning/sb-tri-criteria-e2e/runs"
 LOG_ROOT="${RUNS_ROOT}/greenfield-batch-$(date -u +%Y%m%dT%H%M%SZ)"
 mkdir -p "$LOG_ROOT"

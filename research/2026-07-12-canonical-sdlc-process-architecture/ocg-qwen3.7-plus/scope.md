@@ -70,7 +70,7 @@ What is the canonical industry-standard software development process architectur
 
 ## Output Directory
 
-`/Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-qwen3.7-plus/`
+`/Users/<user>/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-qwen3.7-plus/`
 
 ## Agent
 

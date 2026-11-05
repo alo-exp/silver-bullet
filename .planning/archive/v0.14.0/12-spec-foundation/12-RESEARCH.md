@@ -608,18 +608,18 @@ No network dependencies, no npm packages, no new runtimes.
 ## Sources
 
 ### Primary (HIGH confidence — direct file inspection)
-- `/Users/shafqat/Documents/Projects/silver-bullet/hooks/hooks.json` — hook registration format, event types, matcher patterns
-- `/Users/shafqat/Documents/Projects/silver-bullet/hooks/dev-cycle-check.sh` — emit_block pattern, self-protection logic, stdin JSON parsing
-- `/Users/shafqat/Documents/Projects/silver-bullet/hooks/forbidden-skill-check.sh` — PreToolUse deny pattern, jq-absent graceful degradation
-- `/Users/shafqat/Documents/Projects/silver-bullet/hooks/completion-audit.sh` — hook boilerplate structure
-- `/Users/shafqat/Documents/Projects/silver-bullet/skills/silver-feature/SKILL.md` — orchestration skill structure, step-skip protocol, non-skippable gates
-- `/Users/shafqat/Documents/Projects/silver-bullet/skills/silver-fast/SKILL.md` — fast-path pattern, complexity triage
-- `/Users/shafqat/Documents/Projects/silver-bullet/skills/silver/SKILL.md` — routing table format, intent signals
-- `/Users/shafqat/Documents/Projects/silver-bullet/.planning/STATE.md` — locked architectural decisions for v0.14.0
-- `/Users/shafqat/Documents/Projects/silver-bullet/.planning/REQUIREMENTS.md` — SPEC/ELIC/FLOR requirement definitions
-- `/Users/shafqat/Documents/Projects/silver-bullet/.planning/research/ARCHITECTURE.md` — component responsibilities, anti-patterns, data flow
-- `/Users/shafqat/Documents/Projects/silver-bullet/.planning/research/FEATURES.md` — capability area analysis, existing skills to reuse
-- `/Users/shafqat/Documents/Projects/silver-bullet/.planning/research/SUMMARY.md` — v0.14.0 executive summary, critical pitfalls
+- `/Users/<user>/Documents/Projects/silver-bullet/hooks/hooks.json` — hook registration format, event types, matcher patterns
+- `/Users/<user>/Documents/Projects/silver-bullet/hooks/dev-cycle-check.sh` — emit_block pattern, self-protection logic, stdin JSON parsing
+- `/Users/<user>/Documents/Projects/silver-bullet/hooks/forbidden-skill-check.sh` — PreToolUse deny pattern, jq-absent graceful degradation
+- `/Users/<user>/Documents/Projects/silver-bullet/hooks/completion-audit.sh` — hook boilerplate structure
+- `/Users/<user>/Documents/Projects/silver-bullet/skills/silver-feature/SKILL.md` — orchestration skill structure, step-skip protocol, non-skippable gates
+- `/Users/<user>/Documents/Projects/silver-bullet/skills/silver-fast/SKILL.md` — fast-path pattern, complexity triage
+- `/Users/<user>/Documents/Projects/silver-bullet/skills/silver/SKILL.md` — routing table format, intent signals
+- `/Users/<user>/Documents/Projects/silver-bullet/.planning/STATE.md` — locked architectural decisions for v0.14.0
+- `/Users/<user>/Documents/Projects/silver-bullet/.planning/REQUIREMENTS.md` — SPEC/ELIC/FLOR requirement definitions
+- `/Users/<user>/Documents/Projects/silver-bullet/.planning/research/ARCHITECTURE.md` — component responsibilities, anti-patterns, data flow
+- `/Users/<user>/Documents/Projects/silver-bullet/.planning/research/FEATURES.md` — capability area analysis, existing skills to reuse
+- `/Users/<user>/Documents/Projects/silver-bullet/.planning/research/SUMMARY.md` — v0.14.0 executive summary, critical pitfalls
 
 ### Tertiary (LOW confidence — training knowledge tagged ASSUMED)
 - Socratic elicitation domain sequence (Gause & Weinberg requirements engineering pattern) — A3

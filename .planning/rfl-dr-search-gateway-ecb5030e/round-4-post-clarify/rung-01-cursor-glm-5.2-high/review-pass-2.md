@@ -1,7 +1,7 @@
 # Review pass 2 — rung 1/8 (glm-5.2-high)
 
 **Phase:** REVIEW-ONLY (Policy F re-review after ACCEPT-apply). Streak 0/2.
-**Scope:** `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`
+**Scope:** `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`
 **SHA-256:** `265040b002871e9f109a710a2bdea64ab5c8ac24ae7ef5f225bec0303397490a` ✅ verified
 **Ledger:** F1–F13 already ACCEPT/applied (brief-review-2.md). Residual-only — no re-report.
 

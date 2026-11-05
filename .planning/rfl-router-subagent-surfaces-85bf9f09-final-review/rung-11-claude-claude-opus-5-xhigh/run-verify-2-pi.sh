@@ -3,8 +3,8 @@
 # Wait for verify-2.md, not events.jsonl (verify_1 note: work-dir may lack events until report).
 # Avoid bash 3.2 + set -u empty-array EXTRA[@] unbound.
 set -u
-RUNG="/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-11-claude-claude-opus-5-xhigh"
-SB_ROOT="/Users/shafqat/projects/silver-bullet/repo"
+RUNG="/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-11-claude-claude-opus-5-xhigh"
+SB_ROOT="/Users/<user>/projects/silver-bullet/repo"
 INVOKE="${SB_ROOT}/scripts/agent-pi/invoke.sh"
 REPORT="${RUNG}/verify-2.md"
 WORK="${RUNG}/work"

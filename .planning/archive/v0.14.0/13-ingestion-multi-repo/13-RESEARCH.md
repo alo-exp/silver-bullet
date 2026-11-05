@@ -415,13 +415,13 @@ Phase 13 adds no new code that handles sensitive data beyond the existing hook p
 ## Sources
 
 ### Primary (HIGH confidence)
-- Direct inspection: `/Users/shafqat/Documents/Projects/silver-bullet/.planning/research/STACK.md` — MCP connector capabilities, tool names, limitations
-- Direct inspection: `/Users/shafqat/Documents/Projects/silver-bullet/.planning/research/ARCHITECTURE.md` — component responsibilities, hook patterns, data flows
-- Direct inspection: `/Users/shafqat/Documents/Projects/silver-bullet/hooks/spec-floor-check.sh` — hook implementation pattern, exit code conventions
-- Direct inspection: `/Users/shafqat/Documents/Projects/silver-bullet/hooks/hooks.json` — hook registration format, event matchers
-- Direct inspection: `/Users/shafqat/Documents/Projects/silver-bullet/skills/silver-spec/SKILL.md` — SKILL.md authoring pattern, step structure, non-skippable gates
-- Direct inspection: `/Users/shafqat/Documents/Projects/silver-bullet/templates/specs/SPEC.md.template` — SPEC.md frontmatter fields, section structure
-- Direct inspection: `/Users/shafqat/Documents/Projects/silver-bullet/templates/specs/DESIGN.md.template` — DESIGN.md section structure
+- Direct inspection: `/Users/<user>/Documents/Projects/silver-bullet/.planning/research/STACK.md` — MCP connector capabilities, tool names, limitations
+- Direct inspection: `/Users/<user>/Documents/Projects/silver-bullet/.planning/research/ARCHITECTURE.md` — component responsibilities, hook patterns, data flows
+- Direct inspection: `/Users/<user>/Documents/Projects/silver-bullet/hooks/spec-floor-check.sh` — hook implementation pattern, exit code conventions
+- Direct inspection: `/Users/<user>/Documents/Projects/silver-bullet/hooks/hooks.json` — hook registration format, event matchers
+- Direct inspection: `/Users/<user>/Documents/Projects/silver-bullet/skills/silver-spec/SKILL.md` — SKILL.md authoring pattern, step structure, non-skippable gates
+- Direct inspection: `/Users/<user>/Documents/Projects/silver-bullet/templates/specs/SPEC.md.template` — SPEC.md frontmatter fields, section structure
+- Direct inspection: `/Users/<user>/Documents/Projects/silver-bullet/templates/specs/DESIGN.md.template` — DESIGN.md section structure
 
 ### Secondary (MEDIUM confidence)
 - `.planning/research/SUMMARY.md` — executive summary, research flags, build order

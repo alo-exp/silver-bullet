@@ -5,7 +5,7 @@ import subprocess
 import time
 from pathlib import Path
 
-REPO = Path("/Users/shafqat/projects/silver-bullet/repo")
+REPO = Path("/Users/<user>/projects/silver-bullet/repo")
 LEDGER = REPO / ".planning/rfl-router-subagent-surfaces-85bf9f09-final-review"
 INVOKE = REPO / "scripts/agent-pi/invoke.sh"
 
