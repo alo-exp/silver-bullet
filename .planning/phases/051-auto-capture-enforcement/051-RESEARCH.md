@@ -487,17 +487,17 @@ No test framework applicable — this phase edits markdown prose files. Verifica
 ## Sources
 
 ### Primary (HIGH confidence)
-- [VERIFIED: Read tool] `/Users/shafqat/Documents/Projects/silver-bullet/silver-bullet.md` — §3b full content (lines 509-529), §3 rules, §10
-- [VERIFIED: Read tool] `/Users/shafqat/Documents/Projects/silver-bullet/templates/silver-bullet.md.base` — §3b identical structure confirmed
-- [VERIFIED: Read tool] `/Users/shafqat/Documents/Projects/silver-bullet/hooks/session-log-init.sh` — skeleton template (lines 167-224), idempotency block (lines 95-147)
-- [VERIFIED: Read tool] `/Users/shafqat/Documents/Projects/silver-bullet/skills/silver-feature/SKILL.md` — all gsd-add-backlog occurrences
-- [VERIFIED: Read tool] `/Users/shafqat/Documents/Projects/silver-bullet/skills/silver-bugfix/SKILL.md` — gsd-add-backlog occurrence, no deferred-capture step
-- [VERIFIED: Read tool] `/Users/shafqat/Documents/Projects/silver-bullet/skills/silver-ui/SKILL.md` — gsd-add-backlog occurrence, no deferred-capture step
-- [VERIFIED: Read tool] `/Users/shafqat/Documents/Projects/silver-bullet/skills/silver-devops/SKILL.md` — zero gsd-add-backlog occurrences confirmed
-- [VERIFIED: Read tool] `/Users/shafqat/Documents/Projects/silver-bullet/skills/silver-fast/SKILL.md` — zero gsd-add-backlog occurrences confirmed
-- [VERIFIED: Read tool] `/Users/shafqat/Documents/Projects/silver-bullet/skills/silver-release/SKILL.md` — step structure through Step 9
-- [VERIFIED: Read tool] `/Users/shafqat/Documents/Projects/silver-bullet/skills/silver-add/SKILL.md` — Step 6 session log recording, Step 3 classification rubric
-- [VERIFIED: Read tool] `/Users/shafqat/Documents/Projects/silver-bullet/skills/silver-rem/SKILL.md` — confirmed absence of session log recording step
+- [VERIFIED: Read tool] `/Users/<user>/Documents/Projects/silver-bullet/silver-bullet.md` — §3b full content (lines 509-529), §3 rules, §10
+- [VERIFIED: Read tool] `/Users/<user>/Documents/Projects/silver-bullet/templates/silver-bullet.md.base` — §3b identical structure confirmed
+- [VERIFIED: Read tool] `/Users/<user>/Documents/Projects/silver-bullet/hooks/session-log-init.sh` — skeleton template (lines 167-224), idempotency block (lines 95-147)
+- [VERIFIED: Read tool] `/Users/<user>/Documents/Projects/silver-bullet/skills/silver-feature/SKILL.md` — all gsd-add-backlog occurrences
+- [VERIFIED: Read tool] `/Users/<user>/Documents/Projects/silver-bullet/skills/silver-bugfix/SKILL.md` — gsd-add-backlog occurrence, no deferred-capture step
+- [VERIFIED: Read tool] `/Users/<user>/Documents/Projects/silver-bullet/skills/silver-ui/SKILL.md` — gsd-add-backlog occurrence, no deferred-capture step
+- [VERIFIED: Read tool] `/Users/<user>/Documents/Projects/silver-bullet/skills/silver-devops/SKILL.md` — zero gsd-add-backlog occurrences confirmed
+- [VERIFIED: Read tool] `/Users/<user>/Documents/Projects/silver-bullet/skills/silver-fast/SKILL.md` — zero gsd-add-backlog occurrences confirmed
+- [VERIFIED: Read tool] `/Users/<user>/Documents/Projects/silver-bullet/skills/silver-release/SKILL.md` — step structure through Step 9
+- [VERIFIED: Read tool] `/Users/<user>/Documents/Projects/silver-bullet/skills/silver-add/SKILL.md` — Step 6 session log recording, Step 3 classification rubric
+- [VERIFIED: Read tool] `/Users/<user>/Documents/Projects/silver-bullet/skills/silver-rem/SKILL.md` — confirmed absence of session log recording step
 - [VERIFIED: Read tool] `.planning/STATE.md` — frontmatter fields (milestone, last_activity), no milestone_start field
 - [VERIFIED: Read tool] `.planning/REQUIREMENTS.md` — CAPT-01 through CAPT-05 full text
 - [VERIFIED: Grep tool] `gsd-add-backlog` occurrences across all skill files — exhaustive count per file

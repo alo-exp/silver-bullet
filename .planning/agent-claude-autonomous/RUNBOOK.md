@@ -13,14 +13,14 @@
 ## Phase 0 — Orientation
 
 ```bash
-cd /Users/shafqat/projects/silver-bullet/repo
+cd /Users/<user>/projects/silver-bullet/repo
 graphify query "silver agent-claude autonomous test mechanism command skill"
 ```
 
 ## Phase 1 — Preflight
 
 ```bash
-export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
+export SB_ROOT=/Users/<user>/projects/silver-bullet/repo
 bash scripts/agent-claude-autonomous-test.sh preflight
 ```
 
@@ -35,8 +35,8 @@ Preflight verifies:
 ## Phase 2 — Start row (AUTO-C01 default)
 
 ```bash
-export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
-export CLAUDE_WORK_DIR=/Users/shafqat/projects/enterprise-grade-test-app
+export SB_ROOT=/Users/<user>/projects/silver-bullet/repo
+export CLAUDE_WORK_DIR=/Users/<user>/projects/enterprise-grade-test-app
 
 # Interactive TUI (preferred)
 bash scripts/agent-claude-autonomous-test.sh start --row AUTO-C01
@@ -108,8 +108,8 @@ Reuses `scripts/lib/enterprise-e2e-outcome-assessment.sh` for blocking gates.
 ## Exact operator command (live run)
 
 ```bash
-export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
-export CLAUDE_WORK_DIR=/Users/shafqat/projects/enterprise-grade-test-app
+export SB_ROOT=/Users/<user>/projects/silver-bullet/repo
+export CLAUDE_WORK_DIR=/Users/<user>/projects/enterprise-grade-test-app
 bash scripts/agent-claude-autonomous-test.sh preflight && \
 bash scripts/agent-claude-autonomous-test.sh start --row AUTO-C01
 ```

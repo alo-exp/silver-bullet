@@ -12,8 +12,8 @@ Cursor Task cursor-grok-4.6-high (no Pi)
 - **Parent Policy A:** **no ACCEPT to apply** this rung
 - **Stale Pi archive:** prior Pi `verify-1.md` (SHA `edff7c0c…` / 621101) saved as [`verify-1-prior-pi.md`](verify-1-prior-pi.md). This file is a fresh independent verify of the current freeze. It does not copy `verify-1-prior-pi.md` or `verify-1-prior-wave.md`.
 - **Scope (independently re-hashed; disk wins; neither copy edited):**
-  - [`/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md)
-  - [`/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md)
+  - [`/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md)
+  - [`/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md)
 
 ---
 

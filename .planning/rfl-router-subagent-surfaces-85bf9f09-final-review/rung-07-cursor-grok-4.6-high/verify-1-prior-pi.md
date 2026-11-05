@@ -3,13 +3,13 @@
 Phase: `rung_07_verify_1` (pass 1/2). VERIFY-ONLY. Do not fix.
 Worker: Pi `cursor/grok-4.6-high` via `/silver:agent-pi` / OmniRoute. Never Extra High / XHigh. Never Fast.
 Session parent: `d5150f38-4d37-458d-9bdb-5e6f985975d3`
-Work dir: [rung-07-cursor-grok-4.6-high](/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-07-cursor-grok-4.6-high)
-Official deliverable: [verify-1.md](/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-07-cursor-grok-4.6-high/verify-1.md)
-Prior-wave file [verify-1-prior-wave.md](/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-07-cursor-grok-4.6-high/verify-1-prior-wave.md) is stale (`d5343ac1…` / 621095) and was not copied.
+Work dir: [rung-07-cursor-grok-4.6-high](/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-07-cursor-grok-4.6-high)
+Official deliverable: [verify-1.md](/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-07-cursor-grok-4.6-high/verify-1.md)
+Prior-wave file [verify-1-prior-wave.md](/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-07-cursor-grok-4.6-high/verify-1-prior-wave.md) is stale (`d5343ac1…` / 621095) and was not copied.
 
 Freeze copies (read-only; no Edit/Write):
-- [repo `.planning` freeze](/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md)
-- [Cursor plans freeze](/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md)
+- [repo `.planning` freeze](/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md)
+- [Cursor plans freeze](/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md)
 
 ## Freeze integrity (SHA actually hashed this process)
 

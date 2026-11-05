@@ -38,7 +38,6 @@ class IdAndMoneyTests(HermeticCase):
         budget = core.BudgetPolicy()
         self.assertEqual(budget.max_cost_micro_usd, 25_000_000)
         self.assertEqual((budget.max_total_tokens, budget.max_agents, budget.concurrency), (2_000_000, 11, 6))
-        self.assertFalse(budget.allow_unknown_cost)
 
 
 class RegistryTests(HermeticCase):
@@ -217,9 +216,23 @@ class DocumentBuilderTests(HermeticCase):
         self.assertEqual((manifest["run_id"], manifest["work_item_id"], manifest["input_hash"]), ("run-1", "work-1", "hash"))
         self.assertEqual(manifest["resolved_logical_ids"], resolved)
         self.assertEqual(manifest["budget"]["currency_micro_usd_cap"], 25_000_000)
-        self.assertTrue(manifest["budget"]["price_known"])
-        unknown = core.build_work_item_manifest("r", "w", "h", resolved, core.BudgetPolicy(allow_unknown_cost=True))
-        self.assertFalse(unknown["budget"]["price_known"])
+        self.assertEqual((manifest["budget"]["max_agents"], manifest["budget"]["concurrency"]), (11, 6))
+        # Nothing is metered, so the manifest claims neither prices nor actual usage.
+        self.assertFalse(manifest["budget"]["price_known"])
+        self.assertFalse(manifest["budget"]["usage_metered"])
+        self.assertNotIn("currency_micro_usd_actual", manifest["budget"])
+        self.assertNotIn("total_tokens_actual", manifest["budget"])
+
+    def test_append_ledger_entry_bumps_generation_and_rehashes(self) -> None:
+        ledger = core.empty_ledger("run-1")
+        first = core.append_ledger_entry(ledger, {"attempt_id": "a1", "status": "completed"})
+        self.assertEqual((first["entry_id"], ledger["generation"]), ("entry-000001", 1))
+        self.assertRegex(first["timestamp"], r"Z$")
+        head_one = ledger["head_hash"]
+        core.append_ledger_entry(ledger, {"attempt_id": "a2", "status": "failed"})
+        self.assertEqual(ledger["generation"], 2)
+        self.assertNotEqual(ledger["head_hash"], head_one)
+        self.assertEqual(ledger["head_hash"], core.sha256_json(ledger["entries"]))
 
     def test_result_index_sorted_and_pending(self) -> None:
         resolved = [{"logical_model_id": "b"}, {"logical_model_id": "a"}]

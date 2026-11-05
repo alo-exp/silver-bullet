@@ -32,7 +32,8 @@ python scripts/md_to_html.py [markdown_report_path]
 - **Part A ({{CONTENT}}):** All sections except Bibliography
 - **Part B ({{BIBLIOGRAPHY}}):** Bibliography section only
 
-**Script handles all conversion:**
+**Script handles all conversion** (report text is HTML-escaped first, and only http(s)
+bibliography URLs become links, with `rel="noopener noreferrer"`):
 - Headers: `##` -> `<div class="section"><h2 class="section-title">`
 - Headers: `###` -> `<h3 class="subsection-title">`
 - Lists: Markdown bullets -> `<ul><li>` with nesting
@@ -95,7 +96,10 @@ open [html_path]
    - `orphans: 3; widows: 3` on paragraphs
    - Use `display: table` not Flexbox/Grid
    - Font sizes in pt (10pt body, 8pt citations)
-3. Generate: `weasyprint [html_path] [pdf_path]`
+3. Generate: `python3 scripts/html_to_pdf.py --html [html_path] --pdf [pdf_path]`
+   (never the bare `weasyprint` CLI: its default fetcher reads `file://` URLs and
+   embeds `rel="attachment"` targets, and the report quotes untrusted web text; the
+   script allows only inline `data:` resources)
 4. Open: `open [pdf_path]`
 
 **Option B: generating-pdf Skill**

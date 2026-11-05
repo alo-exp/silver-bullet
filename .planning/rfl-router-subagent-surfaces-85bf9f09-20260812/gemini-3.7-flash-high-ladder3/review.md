@@ -9,7 +9,7 @@
 3. [router_subagent_surfaces_85bf9f09-CLARIFY-260717-143757.md](../../router_subagent_surfaces_85bf9f09-CLARIFY-260717-143757.md)
 
 **Plan SHA-256 (frozen):** `5f8b3abd51f172adf226f7f422c9a8a7cd1eae56434bcb4435534a5d13bb7d9c` (verified `shasum -a 256` on both copies)  
-**Mirror parity:** `cmp` exit 0 between `.planning/router_subagent_surfaces_85bf9f09.plan.md` and `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`  
+**Mirror parity:** `cmp` exit 0 between `.planning/router_subagent_surfaces_85bf9f09.plan.md` and `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`  
 **Graphify orientation:** `graphify query "router subagent surfaces Orchestrator Executor Advisor Verifier Validator"`  
 
 ---

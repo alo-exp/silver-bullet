@@ -1,7 +1,7 @@
 # RFL rung 2 — review pass 3 (residual-only, Policy G)
 
 - **Model:** Cursor Kimi K3 High (`kimi-k3-high` / `sb-kimi-k3-high`)
-- **Confirmed SHA-256:** `0f3258bc4a2b9ed937504c65a8c4a1259d92f5dd1e7f55cff4a370e401f3a79f` (re-hashed `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`, matches freeze)
+- **Confirmed SHA-256:** `0f3258bc4a2b9ed937504c65a8c4a1259d92f5dd1e7f55cff4a370e401f3a79f` (re-hashed `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`, matches freeze)
 - **Encoder brief:** `.planning/rfl-dr-search-gateway-ecb5030e/round-4-post-clarify/rung-02-cursor-kimi-k3-high/brief-review-pass-3.md`
 - **Method:** full re-read of the plan at the freeze SHA (all 783 lines, sequential chunked reads), cross-checked against the issue ledger (I-1…I-55, K7–K11 — all ACCEPT/resolved at this SHA). Residual-only: no ledger rows re-reported. Verified each ledger fix is actually encoded in the text (spot-confirmed: §2.3 fingerprint has `--allow-private`; §7 mermaid quota subgraph has `reddit-oauth-token.json` + `.lock` and providers include `x`/`xweb`; §6.12 `config.example.toml` X keys Phase-2-gated; §4.4 X-credit-0 alert includes xweb; §2.7 step 4 `search config set`; §3.2 `partial_success`; §6.4 Serper 2,500/50k; §4.1/§5/§8.1/§8.4 clear() rosters include `qN_*`, `last.json.tmp.*`, query-cache `.gitignore`; §6.3/§6.4 sub-bullets on own lines).
 

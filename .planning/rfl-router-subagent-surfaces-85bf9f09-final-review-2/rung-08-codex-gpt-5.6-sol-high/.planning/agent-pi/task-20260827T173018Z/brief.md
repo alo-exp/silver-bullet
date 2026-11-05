@@ -1,6 +1,6 @@
 You are on rung 8/11 of RFL round 2 (`final-review-2`). Named model: **Pi** `codex/gpt-5.6-sol-high` via `/silver:agent-pi` (OmniRoute). You are the **verify_1** verifier. Reasoning: host-default (`--thinking off` may be present from the harness; do not change it).
 
-**Repo:** `/Users/shafqat/projects/silver-bullet/repo`
+**Repo:** `/Users/<user>/projects/silver-bullet/repo`
 **Branch:** `main` @ `3280e5cc` — NEVER git checkout / git switch / SetActiveBranch.
 **Work directory:** this rung folder (not `work/`):
 `.planning/rfl-router-subagent-surfaces-85bf9f09-final-review-2/rung-08-codex-gpt-5.6-sol-high/`
@@ -21,8 +21,8 @@ Expected (post rung-8 APPLY, committed as HEAD `3280e5cc`):
 
 Copies (must stay byte-identical):
 
-1. Repo working tree: `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
-2. Cursor plans: `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
+1. Repo working tree: `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
+2. Cursor plans: `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
 3. Git HEAD blob: `git show HEAD:.planning/router_subagent_surfaces_85bf9f09.plan.md`
 
 If any copy splits from the expected SHA/bytes, **STOP** and report VERIFY_FAIL with the three live SHAs. Do not sync copies. Do not verify a split freeze as PASS.

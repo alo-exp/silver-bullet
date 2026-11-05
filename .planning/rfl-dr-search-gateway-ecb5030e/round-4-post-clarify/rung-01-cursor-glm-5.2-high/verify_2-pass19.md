@@ -2,7 +2,7 @@ model: composer-2.5
 
 **Subagent:** `sb-composer-2-5-high`  
 **Phase:** VERIFY-ONLY pass 2/2 (`rung_1_verify_2`, post ACCEPT-apply of AG1 / I-43)  
-**Artifact:** `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
+**Artifact:** `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
 **SHA-256:** `146e0ccba885dee360a1874d471b6a8f0276c2626bfcfcc8a6668ea9e2ec3c3e` (verified via `shasum -a 256`)  
 **Graphify:** `graphify query "dr_search_gateway plan Phase 1 CachedEntry malformed json AF1 qN delete-set AE1 AD1 gitignore"` (305 nodes; oriented §6.3/§6.4 + AF1/AE1 context)  
 **Apply ref:** AG1 / I-43 (round-4 post-clarify rung 1 pass 19)

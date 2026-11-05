@@ -2,7 +2,7 @@ model: glm-5.2-high
 
 # Review pass 11 — Policy F re-review (residual-only)
 
-Corpus: `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`
+Corpus: `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`
 SHA-256 verified: `f08aef058f38cd592b98f0739b414ec93a64644245ab3ab7045f6df6f2d13c71` (match — `shasum -a 256` confirmed before review).
 Scope: residual-only against ledger I-1…I-30 (all ACCEPT+applied) plus the Y1 APPLY at this SHA. New findings only; I-1…I-30 not re-reported.
 

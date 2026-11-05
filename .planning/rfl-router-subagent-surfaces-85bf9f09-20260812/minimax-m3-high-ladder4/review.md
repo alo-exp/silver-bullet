@@ -5,8 +5,8 @@
 **Branch:** `main` (no switch; REVIEW ONLY)
 **Read order (mandatory):** [`SB-PRODUCT-OVERVIEW-FOR-REVIEWERS.md`](../SB-PRODUCT-OVERVIEW-FOR-REVIEWERS.md) → [`REVIEW-PROMPT-PREAMBLE.md`](../REVIEW-PROMPT-PREAMBLE.md) → [`router_subagent_surfaces_85bf9f09.plan.md`](../../router_subagent_surfaces_85bf9f09.plan.md) → [`router_subagent_surfaces_85bf9f09-CLARIFY-260717-143757.md`](../../router_subagent_surfaces_85bf9f09-CLARIFY-260717-143757.md) through latest addendum (round-36 ACCEPT freeze)
 **Frozen SHA-256 (both copies, hash gate verified before review):** `9c9aa7d93a6fa7dd701e18528dd3d8f422cff0da47902aac4b8ac8c76ce21b06`
-  - Canonical: `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` → `9c9aa7d9…1b06` ✅
-  - Cursor mirror: `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` → `9c9aa7d9…1b06` ✅
+  - Canonical: `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` → `9c9aa7d9…1b06` ✅
+  - Cursor mirror: `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` → `9c9aa7d9…1b06` ✅
 
 Both copies match the freeze SHA `9c9aa7d9…1b06`. Spec is round-36 ACCEPT freeze (Clarify banner round-36 SHA `71427c3d…8c54` supersede; round-35/34/33/32/31/30/29/28/27/26/25/24/23/22/21/20/19/18/17/16/15/14/13/12/11/10/9/8/7/6/5/4/3/2 prior SHAs all marked superseded/invalidated in the Clarify banner; round-36 lands limb (b) of row 1 as observable post-revoke effects only and the mid-I new PUB-01 definition / new catalog WF record cell in row 40, not row 37).
 
@@ -109,9 +109,9 @@ None.
 
 ## Files
 
-- Plan (frozen, byte-identical pair): `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` and `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` — SHA-256 `9c9aa7d93a6fa7dd701e18528dd3d8f422cff0da47902aac4b8ac8c76ce21b06`
-- Clarify (through round-36 ACCEPT freeze): `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09-CLARIFY-260717-143757.md`
-- Overview: `/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-20260812/SB-PRODUCT-OVERVIEW-FOR-REVIEWERS.md`
-- Preamble: `/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-20260812/REVIEW-PROMPT-PREAMBLE.md`
+- Plan (frozen, byte-identical pair): `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` and `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` — SHA-256 `9c9aa7d93a6fa7dd701e18528dd3d8f422cff0da47902aac4b8ac8c76ce21b06`
+- Clarify (through round-36 ACCEPT freeze): `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09-CLARIFY-260717-143757.md`
+- Overview: `/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-20260812/SB-PRODUCT-OVERVIEW-FOR-REVIEWERS.md`
+- Preamble: `/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-20260812/REVIEW-PROMPT-PREAMBLE.md`
 
 This review is REVIEW-ONLY. No plan edits. No commits. No branch switch. No Cursor Task spawned. No workflow queue started.

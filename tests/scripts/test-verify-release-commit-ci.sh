@@ -107,7 +107,7 @@ assert_contains "wait succeeds once release CI settles" "fully green" "$wait_log
 
 # GITHUB_REPOSITORY is derived from origin when unset (the skill and docs rely on it).
 derive_root="$(mktemp -d)"
-trap 'rm -rf "$derive_root"' EXIT
+trap 'rm -rf "$TMP" "$derive_root"' EXIT
 mkdir -p "$derive_root/scripts"
 cp "$SCRIPT" "$derive_root/scripts/verify-release-commit-ci.sh"
 git init -q "$derive_root"

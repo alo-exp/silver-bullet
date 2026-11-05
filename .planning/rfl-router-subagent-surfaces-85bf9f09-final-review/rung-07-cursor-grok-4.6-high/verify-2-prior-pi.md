@@ -11,8 +11,8 @@ Independently re-hashed both freeze copies in this process. Disk wins. SHA actua
 
 | Copy | Bytes | SHA-256 |
 |------|------:|---------|
-| `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | 621101 | `edff7c0cca55e7e6662cafbbf3f10cea71230483c4992c2a5d5149c629a63e5e` |
-| `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | 621101 | `edff7c0cca55e7e6662cafbbf3f10cea71230483c4992c2a5d5149c629a63e5e` |
+| `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | 621101 | `edff7c0cca55e7e6662cafbbf3f10cea71230483c4992c2a5d5149c629a63e5e` |
+| `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | 621101 | `edff7c0cca55e7e6662cafbbf3f10cea71230483c4992c2a5d5149c629a63e5e` |
 
 - Byte-identical: **yes**
 - Locked freeze (post rung-2 Policy C APPLY F3/F4): **yes** — `edff7c0c…` / **621101**
