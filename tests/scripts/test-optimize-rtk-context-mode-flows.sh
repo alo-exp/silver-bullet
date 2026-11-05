@@ -205,7 +205,7 @@ assert_contains "opencode merge" "$(logs)" "merge --host opencode"
 
 run_args --host pi --project-root "$PROJ" --skip-cm-doctor
 assert_contains "pi rtk note" "$TL_OUT" "OK: Pi RTK is wired by the shared native tool_call adapter"
-assert_contains "pi adapter installer" "$(logs)" "install-pi --repo-root $ST"
+assert_contains "pi adapter installer enables exactly the consented tools" "$(logs)" "install-pi --repo-root $ST --enable-tool rtk --enable-tool context_mode"
 mv "$ST/scripts/lib/global-toolstack/install-pi.py" "$ST/scripts/lib/global-toolstack/install-pi.off"
 run_args --host pi --project-root "$PROJ" --skip-cm-doctor
 assert_eq "missing pi installer fails" "1" "$TL_STATUS"

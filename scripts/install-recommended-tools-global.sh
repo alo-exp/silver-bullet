@@ -95,14 +95,21 @@ install_pi_global() {
     printf 'ERROR: Pi five-tool installer missing: %s\n' "$installer" >&2
     return 1
   }
-  # Only the tools the user consented to wire are switched on in Pi (docs/CONSENT.md).
+  # The adapter, its config and ~/.pi/agent/settings.json are host configuration: written only with
+  # wire consent, and only the consented tools are switched on (docs/CONSENT.md).
   local -a pi_args=(--repo-root "$REPO_ROOT")
-  local tool
+  local tool wired=0
   for tool in graphify agentmemory context_mode leanctx rtk; do
     if sb_consent_granted "$tool" wire; then
       pi_args+=(--enable-tool "$tool")
+      wired=1
     fi
   done
+  if [[ "$wired" -eq 0 ]]; then
+    printf 'SKIP: Pi adapter - no wire consent for any tool (bash %s/sb-consent.sh grant <tool> --all-projects --capabilities wire)\n' \
+      "$SCRIPT_DIR" >&2
+    return 0
+  fi
   python3 "$installer" "${pi_args[@]}"
 }
 
