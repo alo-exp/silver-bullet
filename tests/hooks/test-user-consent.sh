@@ -300,4 +300,32 @@ assert_eq "no key was recorded for the subdirectory" "false" "$(jq --arg k "$SUB
 tl_run bash "$CLI" grant graphify --project "$PROJ" --capabilities enforce
 assert_eq "a directory outside any SB project is recorded as given" "granted" "$(sb_consent_decision graphify enforce "$PROJ")"
 
+echo "=== lock: stale takeover race, ownerless lock, bad tries ==="
+for round in 1 2 3; do
+  reset_store
+  LOCK="$(dirname "$STORE")/.consent.lock"
+  mkdir -p "$LOCK"; printf '999999' >"$LOCK/pid"
+  pids=()
+  for t in graphify agentmemory alumnium rtk context_mode leanctx search_cli; do
+    bash "$CLI" grant "$t" --all-projects --capabilities enforce >/dev/null 2>&1 &
+    pids+=("$!")
+  done
+  for pid in "${pids[@]}"; do wait "$pid" || true; done
+  assert_eq "round $round: a stale lock and 7 parallel grants: all recorded" "7" "$(jq '[.machine[] | select(.enforce.decision == "granted")] | length' "$STORE")"
+done
+reset_store
+LOCK="$(dirname "$STORE")/.consent.lock"
+mkdir -p "$LOCK"
+tl_run env SB_CONSENT_LOCK_TRIES=3 bash "$CLI" grant graphify --all-projects --capabilities enforce
+assert_eq "a lock without an owner record is reclaimed after the wait" "0" "$TL_STATUS"
+assert_eq "and the grant is recorded" "granted" "$(sb_consent_decision graphify enforce)"
+mkdir -p "$LOCK" "${LOCK}.takeover"
+tl_run env SB_CONSENT_LOCK_TRIES=2 bash "$CLI" grant rtk --all-projects --capabilities enforce
+assert_eq "an ownerless lock whose takeover is busy gives up with status 2" "2" "$TL_STATUS"
+rm -rf "$LOCK" "${LOCK}.takeover"
+for bad in abc -5 0 "" 1.5; do
+  tl_run env SB_CONSENT_LOCK_TRIES="$bad" bash "$CLI" grant rtk --all-projects --capabilities enforce
+  assert_eq "SB_CONSENT_LOCK_TRIES='$bad' falls back to the default" "0" "$TL_STATUS"
+done
+
 tl_results

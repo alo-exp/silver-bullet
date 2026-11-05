@@ -142,6 +142,25 @@ rm -f "$GI"
 sb_stack_ensure_agentmemory_gitignore "$RP" && tl_pass "an unwritable project does not abort the optimizer" || tl_fail "an unwritable project does not abort the optimizer"
 assert_file_absent "nothing is written when the temp file cannot be created" "$GI"
 unstub mktemp
+# failure paths of the temp-file-and-rename write
+rm -f "$GI"
+tl_stub cp 'exit 1'; hash -r
+printf 'x\n' >"$GI"
+sb_stack_ensure_agentmemory_gitignore "$RP" && tl_pass "a failing copy does not abort" || tl_fail "a failing copy does not abort"
+assert_eq "a failing copy leaves the file as it was" "x" "$(cat "$GI")"
+unstub cp
+tl_stub chmod 'exit 1'; hash -r
+rm -f "$GI"
+sb_stack_ensure_agentmemory_gitignore "$RP" && tl_pass "a failing chmod on a new file is tolerated" || tl_fail "a failing chmod on a new file is tolerated"
+unstub chmod
+tl_stub mv 'exit 1'; hash -r
+rm -f "$GI"
+sb_stack_ensure_agentmemory_gitignore "$RP" && tl_pass "a failing rename does not abort (append)" || tl_fail "a failing rename does not abort (append)"
+assert_file_absent "a failing rename writes nothing" "$GI"
+printf '# === agentmemory managed block ===\n!.agentmemory/memory/\n' >"$GI"
+sb_stack_ensure_agentmemory_gitignore "$RP" && tl_pass "a failing rename does not abort (repair)" || tl_fail "a failing rename does not abort (repair)"
+unstub mv
+[[ -z "$(find "$RP" -maxdepth 1 -name '.gitignore.*' 2>/dev/null)" ]] && tl_pass "no temp file survives a failed write" || tl_fail "no temp file survives a failed write"
 rm -f "$GI"
 ( cd "$RP" && sb_stack_ensure_agentmemory_gitignore ) && assert_file_exists "gitignore default repo is PWD" "$GI"
 

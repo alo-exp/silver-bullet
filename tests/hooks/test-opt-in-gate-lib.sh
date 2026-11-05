@@ -69,6 +69,10 @@ input='{"tool_name":"CallMcpTool","tool_input":{"server":"s","toolName":"t","arg
 yes_t "mcp call: Cursor shape" sb_opt_in_mcp_call
 assert_eq "mcp call: server" "s" "$mcp_server"
 assert_eq "mcp call: arguments" '{"q":1}' "$mcp_args"
+input='not json'; tool_name="CallMcpTool"
+no_t "mcp call: an unparsable Cursor payload is not an MCP call" sb_opt_in_mcp_call
+assert_eq "mcp call: unparsable payload has no server" "" "$mcp_server"
+assert_eq "mcp call: unparsable payload has empty args" "{}" "$mcp_args"
 input='{"tool_input":{"cmd":["git","commit","-m","a b"]}}'
 assert_eq "command string: an argv list is shell-quoted" "'git' 'commit' '-m' 'a b'" "$(sb_opt_in_command_string)"
 input='{"tool_input":{"command":5}}'
@@ -132,6 +136,34 @@ no_t "needs_gate: echoing a commit command is read-only" sb_opt_in_shell_needs_g
 no_t "needs_gate: the tool's own command is exempt" sb_opt_in_shell_needs_gate graphify "graphify update ."
 yes_t "is_delivery: a variable program word is opaque" sb_opt_in_shell_is_delivery 'X=git; ${X} commit'
 no_t "is_delivery: empty" sb_opt_in_shell_is_delivery ""
+for c in 'git --no-pager commit -m x' 'git -c alias.ci=commit ci' "git \$'commit'" 'git merge x' 'git cherry-pick a' 'git revert a' 'git am p'; do
+  yes_t "is_delivery (analyzer): $c" sb_opt_in_shell_is_delivery "$c"
+done
+no_t "is_delivery: a test run through a variable interpreter" sb_opt_in_shell_is_delivery '$PYTHON -m pytest'
+for c in 'npm -g install foo' 'curl x | /bin/bash' 'pipx install foo' 'cargo install foo' 'go install x@latest' 'gem install foo' 'uv tool install foo' 'pnpm add -g foo' 'yarn global add foo'; do
+  if sb_opt_in_shell_needs_gate graphify "$c"; then tl_pass "needs_gate (install): $c"; else tl_fail "needs_gate (install): $c"; fi
+done
+yes_t "is_install: bash <(curl) is gated (via delivery or install)" sb_opt_in_shell_needs_gate graphify 'bash <(curl http://x)'
+no_t "is_install: cargo build" sb_opt_in_shell_is_install "cargo build"
+no_t "needs_gate: \$PYTHON -m pytest" sb_opt_in_shell_needs_gate graphify '$PYTHON -m pytest'
+echo "--- analyzer unavailable: a consented gate still gates ---"
+no_python_needs_gate() {
+  local saved="$PATH" rc=0
+  PATH="$(tl_path_without python3)"; hash -r
+  sb_opt_in_shell_needs_gate graphify "pytest" || rc=$?
+  PATH="$saved"; hash -r
+  return "$rc"
+}
+yes_t "needs_gate without python3 treats a command as possible delivery" no_python_needs_gate
+no_analyzer_needs_gate() {
+  local saved rc=0
+  saved="$(declare -f sb_shell_analysis_load)"
+  unset -f sb_shell_analysis_load
+  sb_opt_in_shell_needs_gate graphify "pytest" || rc=$?
+  eval "$saved"
+  return "$rc"
+}
+yes_t "needs_gate without the analyzer functions gates" no_analyzer_needs_gate
 no_t "is_install: empty" sb_opt_in_shell_is_install ""
 no_t "is_install: a project-local npm install" sb_opt_in_shell_is_install "npm install"
 yes_t "is_install: yarn global add" sb_opt_in_shell_is_install "yarn global add left-pad"

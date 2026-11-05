@@ -85,20 +85,20 @@ assert_eq "state default no config" "$DEF" "$(sb_leanctx_usage_state_path)"
 assert_eq "state default invalid json" "$DEF" "$(sb_leanctx_usage_state_path "$CFG")"
 w '{}'
 assert_eq "state default empty config" "$DEF" "$(sb_leanctx_usage_state_path "$CFG")"
-w "{\"recommended_tools\":{\"leanctx\":{\"usage_state_file\":\"$SB_RUNTIME_STATE_DIR/custom\"}}}"
-assert_eq "state configured" "$SB_RUNTIME_STATE_DIR/custom" "$(sb_leanctx_usage_state_path "$CFG")"
-w '{"recommended_tools":{"leanctx":{"usage_state_file":"${SB_RUNTIME_STATE_DIR}/ph"}}}'
-assert_eq "state placeholder STATE_DIR" "$SB_RUNTIME_STATE_DIR/ph" "$(sb_leanctx_usage_state_path "$CFG")"
-w '{"recommended_tools":{"leanctx":{"usage_state_file":"${SB_RUNTIME_HOME_ROOT}/.silver-bullet/ph2"}}}'
-assert_eq "state placeholder HOME_ROOT" "$SB_RUNTIME_HOME_ROOT/.silver-bullet/ph2" "$(sb_leanctx_usage_state_path "$CFG")"
+w "{\"recommended_tools\":{\"leanctx\":{\"usage_state_file\":\"$SB_RUNTIME_STATE_DIR/custom-usage\"}}}"
+assert_eq "state configured" "$SB_RUNTIME_STATE_DIR/custom-usage" "$(sb_leanctx_usage_state_path "$CFG")"
+w '{"recommended_tools":{"leanctx":{"usage_state_file":"${SB_RUNTIME_STATE_DIR}/ph-usage"}}}'
+assert_eq "state placeholder STATE_DIR" "$SB_RUNTIME_STATE_DIR/ph-usage" "$(sb_leanctx_usage_state_path "$CFG")"
+w '{"recommended_tools":{"leanctx":{"usage_state_file":"${SB_RUNTIME_HOME_ROOT}/.silver-bullet/ph2-usage"}}}'
+assert_eq "state placeholder HOME_ROOT" "$SB_RUNTIME_HOME_ROOT/.silver-bullet/ph2-usage" "$(sb_leanctx_usage_state_path "$CFG")"
 w '{"recommended_tools":{"leanctx":{"usage_state_file":"/tmp/outside/x"}}}'
 assert_eq "state outside scope rejected" "$DEF" "$(sb_leanctx_usage_state_path "$CFG")"
 w '{"recommended_tools":{"leanctx":{"usage_state_file":"~/outside"}}}'
 assert_eq "state ~ outside scope rejected" "$DEF" "$(sb_leanctx_usage_state_path "$CFG")"
 assert_eq "state fallbacks without runtime vars" "$HOME/.silver-bullet/leanctx-usage" "$(env -u SB_RUNTIME_STATE_DIR -u SB_RUNTIME_HOME_ROOT bash -c 'source "$1"; sb_leanctx_usage_state_path' _ "$LIBF")"
-w '{"recommended_tools":{"leanctx":{"usage_state_file":"${SB_RUNTIME_STATE_DIR}/a"}}}'
-assert_eq "state STATE_DIR placeholder fallback" "$HOME/.silver-bullet/a" "$(env -u SB_RUNTIME_STATE_DIR -u SB_RUNTIME_HOME_ROOT bash -c 'source "$1"; sb_leanctx_usage_state_path "$2"' _ "$LIBF" "$CFG")"
-w '{"recommended_tools":{"leanctx":{"usage_state_file":"${SB_RUNTIME_HOME_ROOT}/b"}}}'
+w '{"recommended_tools":{"leanctx":{"usage_state_file":"${SB_RUNTIME_STATE_DIR}/a-usage"}}}'
+assert_eq "state STATE_DIR placeholder fallback" "$HOME/.silver-bullet/a-usage" "$(env -u SB_RUNTIME_STATE_DIR -u SB_RUNTIME_HOME_ROOT bash -c 'source "$1"; sb_leanctx_usage_state_path "$2"' _ "$LIBF" "$CFG")"
+w '{"recommended_tools":{"leanctx":{"usage_state_file":"${SB_RUNTIME_HOME_ROOT}/b-usage"}}}'
 assert_eq "state HOME_ROOT placeholder without a runtime home is rejected" "$HOME/.silver-bullet/leanctx-usage" "$(env -u SB_RUNTIME_STATE_DIR -u SB_RUNTIME_HOME_ROOT bash -c 'source "$1"; sb_leanctx_usage_state_path "$2"' _ "$LIBF" "$CFG")"
 
 U="$DEF"

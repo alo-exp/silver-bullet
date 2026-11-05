@@ -50,7 +50,7 @@ mkdir -p "${TEST_HOME}/.cursor"
 printf '{"mcpServers":{"leanctx":{"command":"lean-ctx","args":["mcp"]}}}\n' >"${TEST_HOME}/.cursor/mcp.json"
 export HOME="$TEST_HOME" SILVER_BULLET_RUNTIME=cursor SB_LEANCTX_MCP_ARTIFACT="${TEST_HOME}/.cursor/mcp.json"
 
-USAGE_STATE="${SB_RUNTIME_STATE_DIR}/leanctx-usage-lib-test-$$"
+USAGE_STATE="${SB_RUNTIME_STATE_DIR}/tlib-test-$$-leanctx-usage"
 cat >"$TMP/.silver-bullet.json" <<EOF
 {
   "config_version": "${CURRENT_CONFIG_VERSION}",

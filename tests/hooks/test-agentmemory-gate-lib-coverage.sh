@@ -190,12 +190,12 @@ DEFSTATE="$SB_RUNTIME_STATE_DIR/agentmemory-usage"
 assert_eq "state path default no config" "$DEFSTATE" "$(sb_agentmemory_usage_state_path)"
 w '{}'
 assert_eq "state path default empty config" "$DEFSTATE" "$(sb_agentmemory_usage_state_path "$CFG")"
-w "{\"recommended_tools\":{\"agentmemory\":{\"usage_state_file\":\"$SB_RUNTIME_STATE_DIR/custom\"}}}"
-assert_eq "state path configured inside state dir" "$SB_RUNTIME_STATE_DIR/custom" "$(sb_agentmemory_usage_state_path "$CFG")"
-w '{"recommended_tools":{"agentmemory":{"usage_state_file":"${SB_RUNTIME_STATE_DIR}/placeholder"}}}'
-assert_eq "state path placeholder STATE_DIR expanded" "$SB_RUNTIME_STATE_DIR/placeholder" "$(sb_agentmemory_usage_state_path "$CFG")"
-w '{"recommended_tools":{"agentmemory":{"usage_state_file":"${SB_RUNTIME_HOME_ROOT}/.silver-bullet/home-placeholder"}}}'
-assert_eq "state path placeholder HOME_ROOT expanded" "$SB_RUNTIME_HOME_ROOT/.silver-bullet/home-placeholder" "$(sb_agentmemory_usage_state_path "$CFG")"
+w "{\"recommended_tools\":{\"agentmemory\":{\"usage_state_file\":\"$SB_RUNTIME_STATE_DIR/custom-usage\"}}}"
+assert_eq "state path configured inside state dir" "$SB_RUNTIME_STATE_DIR/custom-usage" "$(sb_agentmemory_usage_state_path "$CFG")"
+w '{"recommended_tools":{"agentmemory":{"usage_state_file":"${SB_RUNTIME_STATE_DIR}/placeholder-usage"}}}'
+assert_eq "state path placeholder STATE_DIR expanded" "$SB_RUNTIME_STATE_DIR/placeholder-usage" "$(sb_agentmemory_usage_state_path "$CFG")"
+w '{"recommended_tools":{"agentmemory":{"usage_state_file":"${SB_RUNTIME_HOME_ROOT}/.silver-bullet/home-placeholder-usage"}}}'
+assert_eq "state path placeholder HOME_ROOT expanded" "$SB_RUNTIME_HOME_ROOT/.silver-bullet/home-placeholder-usage" "$(sb_agentmemory_usage_state_path "$CFG")"
 w '{"recommended_tools":{"agentmemory":{"usage_state_file":"${UNKNOWN_VAR}/x"}}}'
 assert_eq "state path unresolved placeholder rejected" "$DEFSTATE" "$(sb_agentmemory_usage_state_path "$CFG")"
 w '{"recommended_tools":{"agentmemory":{"usage_state_file":"/tmp/elsewhere/state"}}}'
@@ -203,8 +203,8 @@ assert_eq "state path outside state scope rejected" "$DEFSTATE" "$(sb_agentmemor
 w '{"recommended_tools":{"agentmemory":{"usage_state_file":"~/outside-state"}}}'
 assert_eq "state path ~ outside state scope rejected" "$DEFSTATE" "$(sb_agentmemory_usage_state_path "$CFG")"
 assert_eq "state path default without runtime dirs" "$HOME/.silver-bullet/agentmemory-usage" "$(env -u SB_RUNTIME_STATE_DIR -u SB_RUNTIME_HOME_ROOT bash -c 'source "$1"; unset -f sb_runtime_path_is_state_scoped; sb_agentmemory_usage_state_path' _ "$LIBF")"
-assert_eq "state path expands placeholders with fallbacks" "$HOME/.silver-bullet/p" "$(env -u SB_RUNTIME_STATE_DIR -u SB_RUNTIME_HOME_ROOT bash -c 'source "$1"; unset -f sb_runtime_path_is_state_scoped; sb_agentmemory_usage_state_path "$2"' _ "$LIBF" "$(w '{"recommended_tools":{"agentmemory":{"usage_state_file":"${SB_RUNTIME_STATE_DIR}/p"}}}'; echo "$CFG")")"
-w '{"recommended_tools":{"agentmemory":{"usage_state_file":"${SB_RUNTIME_HOME_ROOT}/h"}}}'
+assert_eq "state path expands placeholders with fallbacks" "$HOME/.silver-bullet/p-usage" "$(env -u SB_RUNTIME_STATE_DIR -u SB_RUNTIME_HOME_ROOT bash -c 'source "$1"; unset -f sb_runtime_path_is_state_scoped; sb_agentmemory_usage_state_path "$2"' _ "$LIBF" "$(w '{"recommended_tools":{"agentmemory":{"usage_state_file":"${SB_RUNTIME_STATE_DIR}/p-usage"}}}'; echo "$CFG")")"
+w '{"recommended_tools":{"agentmemory":{"usage_state_file":"${SB_RUNTIME_HOME_ROOT}/h-usage"}}}'
 assert_eq "home root placeholder without a runtime home is rejected" "$HOME/.silver-bullet/agentmemory-usage" "$(env -u SB_RUNTIME_STATE_DIR -u SB_RUNTIME_HOME_ROOT bash -c 'source "$1"; unset -f sb_runtime_path_is_state_scoped; sb_agentmemory_usage_state_path "$2"' _ "$LIBF" "$CFG")"
 
 w 'garbage'
