@@ -109,6 +109,15 @@ flag --max-turns 5; assert_eq "--max-turns" "5 2" "$SB_AM_MAX_TURNS $SB_AM_SHIFT
 flag --max-wall-sec 90; assert_eq "--max-wall-sec" "90 2" "$SB_AM_MAX_WALL_SEC $SB_AM_SHIFT"
 flag --idle-sec 30; assert_eq "--idle-sec" "30 2" "$SB_AM_IDLE_SEC $SB_AM_SHIFT"
 flag --task-id t-7; assert_eq "--task-id" "t-7 2" "$SB_AM_TASK_ID $SB_AM_SHIFT"
+for ok_id in a A9 t-7 v1.2_x "$(printf 'a%.0s' $(seq 1 64))"; do
+  flag --task-id "$ok_id"; assert_eq "--task-id accepts ${ok_id:0:12}" "$ok_id" "$SB_AM_TASK_ID"
+done
+agent_mode_reset
+for bad_id in 'fix "login" bug' 'a\b' '../../etc' '.' '..' 'a/b' '' "$(printf 'a%.0s' $(seq 1 65))" "$(printf 'x\ny')"; do
+  rc=0; tl_run flag --task-id "$bad_id"; rc=$TL_STATUS
+  assert_eq "--task-id rejects ${bad_id:0:14}" 2 "$rc"
+  assert_contains "--task-id rejection explained" "$TL_ERR" "--task-id must match"
+done
 flag --quota-retry; assert_eq "--quota-retry" 1 "$SB_AM_QUOTA_RETRY"
 flag --skip-preflight; assert_eq "--skip-preflight" 1 "$SB_AM_SKIP_PREFLIGHT"
 rc=0; flag --delegation-mode x || rc=$?; assert_eq "--delegation-mode not consumed" 1 "$rc"

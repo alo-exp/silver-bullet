@@ -183,7 +183,8 @@ agent_opencode_invoke_pool_cohort() {
   if [[ -n "$COHORT_OUTPUT" ]]; then
     cohort_args+=(--output "$COHORT_OUTPUT")
   fi
-  printf '{"type":"ocg.pool.cohort.start","pool":"%s","request":"%s"}\n' "$MULTI_AI_POOL" "$COHORT_REQUEST" >&2
+  jq -nc --arg pool "$MULTI_AI_POOL" --arg request "$COHORT_REQUEST" \
+    '{type:"ocg.pool.cohort.start",pool:$pool,request:$request}' >&2
   (cd "$WORK_DIR" && "${cohort_args[@]}")
 }
 

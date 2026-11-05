@@ -349,8 +349,16 @@ agent_delegate_check_workflow_markers() {
   return 1
 }
 
+# One Markdown table cell: no pipes or line breaks that would split the row.
+agent_delegate_md_cell() {
+  printf '%s' "$1" | tr '\n\r|' '   '
+}
+
 agent_delegate_write_result_skeleton() {
-  local result_file="$1" host="$2" task_id="$3" exit_code="$4"
+  local result_file="$1" host task_id exit_code
+  host="$(agent_delegate_md_cell "$2")"
+  task_id="$(agent_delegate_md_cell "$3")"
+  exit_code="$(agent_delegate_md_cell "$4")"
   [[ -n "$result_file" ]] || return 0
   mkdir -p "$(dirname "$result_file")"
   cat >"$result_file" <<EOF
@@ -436,19 +444,19 @@ agent_delegate_write_state_marker() {
   local marker_dir="$1" host="$2" task_id="$3" exit_code="$4" failure_class="$5"
   [[ -n "$marker_dir" ]] || return 0
   mkdir -p "$marker_dir"
-  cat >"${marker_dir}/state.json" <<EOF
-{"host":"$host","task_id":"$task_id","exit_code":$exit_code,"failure_class":"$failure_class","updated":"$(date -u +%Y-%m-%dT%H:%M:%SZ)"}
-EOF
+  jq -nc --arg host "$host" --arg task_id "$task_id" --arg exit_code "$exit_code" \
+    --arg failure_class "$failure_class" --arg updated "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+    '{host:$host,task_id:$task_id,exit_code:(try ($exit_code|tonumber) catch 1),failure_class:$failure_class,updated:$updated}' \
+    >"${marker_dir}/state.json"
 }
 
 agent_delegate_write_degraded_fallback_evidence() {
   local artifact_dir="$1" host="$2" task_id="$3" trigger="$4" reason="$5"
   [[ -n "$artifact_dir" ]] || return 0
   mkdir -p "$artifact_dir"
-  local ts
-  ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-  printf '{"evidence_id":"EV-DELEGATE-DEGRADED-FALLBACK","host":"%s","trigger":"%s","task_id":"%s","timestamp":"%s","reason":"%s"}\n' \
-    "$host" "$trigger" "$task_id" "$ts" "$(printf '%s' "$reason" | sed 's/"/\\"/g')" \
+  jq -nc --arg host "$host" --arg trigger "$trigger" --arg task_id "$task_id" \
+    --arg timestamp "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg reason "$reason" \
+    '{evidence_id:"EV-DELEGATE-DEGRADED-FALLBACK",host:$host,trigger:$trigger,task_id:$task_id,timestamp:$timestamp,reason:$reason}' \
     >>"${artifact_dir}/degraded-fallback.jsonl"
 }
 
