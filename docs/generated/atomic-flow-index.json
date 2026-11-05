@@ -481,6 +481,8 @@
     ],
     "silver-bugfix": [
       "silver-debug",
+      "silver-quality-gates",
+      "silver-context",
       "silver-plan",
       "silver-execute",
       "silver-review-request",
@@ -554,6 +556,7 @@
     ],
     "silver-fast": [
       "FLOW-QUALITY-GATE",
+      "silver-context",
       "silver-plan",
       "silver-validate",
       "silver-execute",

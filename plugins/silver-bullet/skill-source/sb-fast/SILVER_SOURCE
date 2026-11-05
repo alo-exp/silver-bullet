@@ -14,7 +14,7 @@ SB triage spec for parent orchestrator. **Tier 1** still routes to a FAST worker
 | Tier | Criteria | Routes to |
 |------|----------|-----------|
 | **Tier 1 (Trivial)** | ≤3 files AND no logic changes AND no `src/`/app code paths | parent spawns FAST worker |
-| **Tier 2 (Medium)** | 4-10 files OR logic change in ≤3 files OR dependency update | `sb:quality-gates` (pre-plan), `sb:plan`, `sb:validate`, `sb:execute`, `sb:verify`; optional `sb:context` / `sb:deep-research` when signals match |
+| **Tier 2 (Medium)** | 4-10 files OR logic change in ≤3 files OR dependency update | `sb:quality-gates` (pre-plan), `sb:context`, `sb:plan`, `sb:validate`, `sb:execute`, `sb:verify`; optional `sb:deep-research` when signals match |
 | **Tier 3 (Complex)** | >10 files OR cross-cutting OR schema change OR new capability | sb:feature |
 
 > **Note:** Tier 2+ fast-path work starts a lightweight workflow tracker (`scripts/workflows.sh start /sb:fast ...`) so `workflow-chain-guard` and delivery gates can observe the path. Tier 1 remains direct edit with verification only.
@@ -98,11 +98,11 @@ Before invoking SB lifecycle skills, detect which gates to apply by scanning $AR
 
 **Gate composition rules:**
 - Any combination is valid.
-- Always invoke `sb:plan`, `sb:validate`, `sb:execute`, and `sb:verify` for Tier 2.
+- Always invoke `sb:context`, `sb:plan`, `sb:validate`, `sb:execute`, and `sb:verify` for Tier 2 (`sb:context` is part of the planning floor that `dev-cycle-check` enforces before any source edit).
 - Invoke `sb:quality-gates` (pre-plan design-time) before planning when starting the Tier 2 tracker — `workflow-chain-guard` enforces this marker.
 - When `.planning/SPEC.md` is absent, `sb:validate` runs in **plan-only mode** (PLAN.md completeness — see `skills/silver-validate/SKILL.md` Step 0). Do not run `/sb:spec` unless product requirements need a formal SPEC.
-- Invoke `sb:context` or `sb:deep-research` only when triggered by the signal table above.
-- `workflow-chain-guard` for Tier 2 requires `silver-quality-gates` (design marker), `silver-plan`, and `silver-validate` before implementation edits — not `silver-context`.
+- Invoke `sb:deep-research` only when triggered by the signal table above; the signals for `sb:context` select how deep that pass goes, not whether it runs.
+- `workflow-chain-guard` for Tier 2 requires `silver-quality-gates` (design marker), `silver-plan`, and `silver-validate` before implementation edits, and `dev-cycle-check` additionally requires `silver-context` (the `required_planning` floor).
 
 Display detected signals:
 
@@ -110,7 +110,7 @@ Display detected signals:
 Detected signals:
   Ambiguity: {yes/no} {reason if yes}
   Novel domain: {yes/no} {reason if yes}
-Gates: {sb:context sb:deep-research | (none)} + sb:plan sb:validate sb:execute sb:verify (always)
+Gates: {sb:deep-research | (none)} + sb:context sb:plan sb:validate sb:execute sb:verify (always)
 ```
 
 Invoke the selected SB lifecycle slice with $ARGUMENTS.
@@ -144,7 +144,7 @@ After the SB lifecycle slice completes, run scope expansion check (Step 4).
 
 ### Tier 2 delivery (deploy gap — important)
 
-The Tier 2 slice (`quality-gates → plan → validate → execute → verify`) intentionally stops at
+The Tier 2 slice (`quality-gates → context → plan → validate → execute → verify`) intentionally stops at
 verification. It does **not** record the post-execution deploy chain
 (`sb:review-request`, `sb:review`, `sb:review-triage`, `sb:secure`,
 `sb:validate`, `sb:branch-finish`, `sb:ship`).

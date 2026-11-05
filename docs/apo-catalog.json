@@ -536,12 +536,16 @@
       "composition_tree": [
         {
           "kind": "atomic_flow",
-          "ref": "AF-ORIENT",
-          "optional": true
+          "ref": "AF-DEBUG"
         },
         {
           "kind": "atomic_flow",
-          "ref": "AF-DEBUG"
+          "ref": "AF-QUALITY-GATE",
+          "label": "pre-plan"
+        },
+        {
+          "kind": "atomic_flow",
+          "ref": "AF-ORIENT"
         },
         {
           "kind": "atomic_flow",
@@ -567,6 +571,8 @@
       "final_intent_gate": "INTENT-GATE-DEFAULT",
       "enforcement_queue": [
         "silver-debug",
+        "silver-quality-gates",
+        "silver-context",
         "silver-plan",
         "silver-execute",
         "silver-review-request",
@@ -794,6 +800,10 @@
         },
         {
           "kind": "atomic_flow",
+          "ref": "AF-ORIENT"
+        },
+        {
+          "kind": "atomic_flow",
           "ref": "AF-PLAN"
         },
         {
@@ -820,6 +830,7 @@
       "final_intent_gate": "INTENT-GATE-DEFAULT",
       "enforcement_queue": [
         "FLOW-QUALITY-GATE",
+        "silver-context",
         "silver-plan",
         "silver-validate",
         "silver-execute",
