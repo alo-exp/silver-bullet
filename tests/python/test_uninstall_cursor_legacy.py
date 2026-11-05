@@ -180,7 +180,7 @@ class AgentsTest(Base):
 
 class RulesToolstackPluginsTest(Base):
     def rule(self, name, description=None):
-        self.write(f"rules/{name}.mdc", f"---\ndescription: {description or m.RULES[name]}\nalwaysApply: true\n---\nx\n")
+        self.write(f"rules/{name}.mdc", f"---\ndescription: {description or (m.RULES[name] if isinstance(m.RULES[name], str) else m.RULES[name][0])}\nalwaysApply: true\n---\nx\n")
 
     def test_rules_by_name_and_exact_description(self):
         self.rule("no-fast-mode")
@@ -208,6 +208,79 @@ class RulesToolstackPluginsTest(Base):
         for rel in ("hooks/toolstack", "toolstack.json", "state/toolstack"):
             self.assertFalse((self.home / rel).exists(), rel)
         self.assertEqual(len(self.backups()), 4)
+
+    def test_only_silver_bullet_toolstack_files_move(self):
+        self.write("hooks/toolstack/lib/common.sh", f"{m.TOOLSTACK_HEADER}\n")
+        for name in ("graphify-gate.sh", "session-bootstrap.sh", "patch-hooks.py", "install.sh",
+                     "global-recommended-tools.mdc", "__pycache__/x.pyc"):
+            self.write(f"hooks/toolstack/{name}", "x")
+        self.write("hooks/toolstack/mygate.sh", "mine")
+        self.write("hooks/toolstack/lib/mine.sh", "mine")
+        (self.home / "hooks/toolstack/link.sh").symlink_to(self.home / "hooks/toolstack/mygate.sh")
+        code, _, err = self.clean()
+        self.assertEqual(code, 0)
+        left = sorted(p.relative_to(self.home / "hooks/toolstack").as_posix()
+                      for p in (self.home / "hooks/toolstack").rglob("*") if p.is_file() or p.is_symlink())
+        self.assertEqual(left, ["lib/mine.sh", "link.sh", "mygate.sh"])
+        self.assertIn("mygate.sh", err)
+        self.assertEqual(len(self.backups()), 7)
+
+    def test_recommended_tools_rule_in_both_variants_and_edited_copy_kept(self):
+        for description in ("Global recommended tools — five_tool_routed stack (always enforced)",
+                            "SB recommended tools — full enforcement in Cursor"):
+            self.rule("recommended-tools", description=description)
+            self.assertEqual(self.clean()[0], 0)
+            self.assertFalse((self.home / "rules/recommended-tools.mdc").exists(), description)
+        self.rule("recommended-tools", description="Global recommended tools — my edit")
+        code, _, err = self.clean()
+        self.assertIn("recommended-tools.mdc: named like", err)
+        self.assertTrue((self.home / "rules/recommended-tools.mdc").exists())
+
+    def test_symlinked_parent_directories_are_not_followed(self):
+        outside = Path(self._tmp.name).resolve() / "outside"
+        for rel in ("state/site-session.json", "rules/leanctx.mdc", "cache/silver-bullet/x"):
+            (outside / rel).parent.mkdir(parents=True, exist_ok=True)
+        (outside / "state/site-session.json").write_text("x")
+        (outside / "rules/leanctx.mdc").write_text(f"---\ndescription: {m.RULES['leanctx']}\n---\n")
+        (outside / "cache/silver-bullet/x").write_text("x")
+        self.home.joinpath("plugins/cache").mkdir(parents=True)
+        (self.home / ".silver-bullet").symlink_to(outside / "state")
+        (self.home / "rules").symlink_to(outside / "rules")
+        (self.home / "plugins/cache/alo-labs-agent-plugins").symlink_to(outside / "cache")
+        code, _, err = self.clean()
+        self.assertEqual(code, 0)
+        self.assertTrue((outside / "state/site-session.json").exists())
+        self.assertTrue((outside / "rules/leanctx.mdc").exists())
+        self.assertTrue((outside / "cache/silver-bullet/x").exists())
+        self.assertIn("symlinked parent", err)
+
+    def test_symlinked_registry_folder_is_not_rewritten(self):
+        outside = Path(self._tmp.name).resolve() / "outside-plugins"
+        outside.mkdir()
+        registry = outside / "installed_plugins.json"
+        registry.write_text(json.dumps({"plugins": {m.PLUGIN_ID: [{"x": 1}]}}))
+        (self.home / "plugins").symlink_to(outside)
+        code, _, err = self.clean()
+        self.assertEqual(code, 0)
+        self.assertIn(m.PLUGIN_ID, registry.read_text())
+        self.assertIn("symlinked parent", err)
+
+    def test_a_symlinked_common_sh_is_left_alone(self):
+        real = self.write("elsewhere/common.sh", f"{m.TOOLSTACK_HEADER}\n")
+        link = self.home / "hooks/toolstack/lib/common.sh"
+        link.parent.mkdir(parents=True)
+        link.symlink_to(real)
+        self.assertEqual(self.clean()[0], 0)
+        self.assertTrue(link.is_symlink())
+
+    def test_an_oserror_is_reported_and_the_other_steps_continue(self):
+        self.write(".silver-bullet-legacy-backup", "a regular file where the backup folder goes")
+        self.write("rules/leanctx.mdc", f"---\ndescription: {m.RULES['leanctx']}\n---\n")
+        self.write("plugins/cache/alo-labs/silver-bullet/1/x", "x")
+        code, _, err = self.clean()
+        self.assertEqual(code, 1)
+        self.assertIn("ERROR", err)
+        self.assertNotIn("Traceback", err)
 
     def test_unmarked_toolstack_is_kept(self):
         self.write("hooks/toolstack/lib/common.sh", "# mine\n")
@@ -268,6 +341,7 @@ class ReviewRepairTest(Base):
                     {"command": f"bash {deployed}/shell-compression.sh"},
                     {"command": "bash ~/.cursor/hooks/toolstack/session-bootstrap.sh"},
                     {"command": "bash $HOME/.cursor/hooks/toolstack/shell-compression.sh"},
+                    {"command": "bash ${HOME}/.cursor/hooks/toolstack/graphify-gate.sh"},
                     {"command": f"bash {deployed}/mine.sh"},
                 ],
             }
@@ -314,11 +388,14 @@ class ReviewRepairTest(Base):
         self.assertTrue(real.is_dir())
 
     def test_sb_state_files_are_moved_and_neighbours_stay(self):
-        for name in m.STATE_FILES:
+        names = ("site-session.json", "site-visual-evidence.json", "site-vloops.json",
+                 "agent-delegation-active.json", "subagent-spawns.jsonl", "live-publish-evidence.json",
+                 "pending-completion-audit.json")
+        for name in names:
             self.write(f".silver-bullet/{name}", "x")
         mine = self.write(".silver-bullet/mine.json", "keep")
         self.assertEqual(self.clean()[0], 0)
-        for name in m.STATE_FILES:
+        for name in names:
             self.assertFalse((self.home / ".silver-bullet" / name).exists(), name)
         self.assertTrue(mine.exists())
 
