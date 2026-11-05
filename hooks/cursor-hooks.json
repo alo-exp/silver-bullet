@@ -13,11 +13,6 @@
         "matcher": "startup|clear|compact"
       },
       {
-        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" sessionStart \"${CURSOR_PLUGIN_ROOT}/hooks/stack-compression-lifecycle.sh\"",
-        "timeout": 10,
-        "matcher": "startup|clear|compact"
-      },
-      {
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" sessionStart \"${CURSOR_PLUGIN_ROOT}/hooks/rfl-quota-retry-due.sh\"",
         "timeout": 10,
         "matcher": "startup|clear|compact"
@@ -294,11 +289,6 @@
         "matcher": "Shell"
       },
       {
-        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/record-recommended-mcp.sh\"",
-        "timeout": 10,
-        "matcher": "Shell"
-      },
-      {
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/record-leanctx-usage.sh\"",
         "timeout": 10,
         "matcher": "CallMcpTool|MCP"
@@ -307,6 +297,16 @@
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/record-recommended-mcp.sh\"",
         "timeout": 10,
         "matcher": "CallMcpTool|MCP"
+      },
+      {
+        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/record-leanctx-usage.sh\"",
+        "timeout": 10,
+        "matcher": "mcp__.*agentmemory.*|mcp__.*graphify.*|mcp__.*lean-?ctx.*"
+      },
+      {
+        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/record-recommended-mcp.sh\"",
+        "timeout": 10,
+        "matcher": "mcp__.*agentmemory.*|mcp__.*graphify.*|mcp__.*lean-?ctx.*"
       }
     ],
     "subagentStart": [

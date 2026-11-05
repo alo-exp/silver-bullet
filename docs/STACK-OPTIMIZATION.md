@@ -53,7 +53,7 @@ Configured in `.silver-bullet.json` under `optimization_profiles.synergy_max`:
 
 ## Consent and safety
 
-- Optimization runs only when `recommended_tools.graphify.enabled_by_user` and/or `recommended_tools.agentmemory.enabled_by_user` is `true`.
+- Optimization runs only for tools you consented to (`sb-consent.sh`, see [CONSENT.md](CONSENT.md)); machine-wide changes (`~/.agentmemory/.env`, LaunchAgents, host hooks) need the `wire` capability and package installs the `install` capability. Commands come only from built-in tables; nothing in `.silver-bullet.json` is executed.
 - `.env` merge preserves user keys outside the SB managed block; backs up to `.env.bak`.
 - Host-level hooks and launchd are **skipped** when `CI=true`.
 - `INJECT_CONTEXT=true` increases token usage — document tradeoff; use future `cost_minimized` profile to reduce.

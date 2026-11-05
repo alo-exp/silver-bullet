@@ -36,7 +36,7 @@ cat >"$TMPCFG" <<EOF
       "enabled_by_user": true,
       "install_status": "installed",
       "cli_command": "rtk",
-      "usage_state_file": "${SB_RUNTIME_STATE_DIR}/rtk-usage-test-$$"
+      "usage_state_file": "${SB_RUNTIME_STATE_DIR}/ttest-$$-rtk-usage"
     }
   },
   "state": { "state_file": "${SB_RUNTIME_STATE_DIR}/state-test-$$" }

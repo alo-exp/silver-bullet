@@ -278,18 +278,19 @@ assert_contains "leanctx doctor: --yes" "$(cat "$HR_LOG")" "lean-ctx doctor --ye
 assert_eq "leanctx doctor: failing" "1" "$(LC_DOC_RC=2 vdr rt_probe_leanctx_vendor_doctor)"
 hr_bin lean-ctx 'case "$*" in "doctor --help") echo "unknown command"; exit 1;; esac'
 assert_eq "leanctx doctor: no doctor subcommand" "2" "$(vdr rt_probe_leanctx_vendor_doctor)"
-# configured cli_command is honoured
+# a cli_command from the project file is ignored (R5-14): the vendor doctor runs lean-ctx only
+hr_bin lean-ctx 'case "$*" in "doctor --help") echo usage;; doctor*) echo "lean-ctx $*" >>"$HR_LOG";; esac'
 hr_bin my-lc 'case "$*" in "doctor --help") echo usage;; doctor*) echo "my-lc $*" >>"$HR_LOG";; esac'
 printf '{"recommended_tools":{"leanctx":{"cli_command":"my-lc"}}}\n' >"$TL_TMP/lc-cli.json"
 cfg="$TL_TMP/lc-cli.json"; : >"$HR_LOG"
 rt_probe_leanctx_vendor_doctor || true
-assert_contains "leanctx doctor: custom cli command" "$(cat "$HR_LOG")" "my-lc doctor"
+assert_contains "leanctx doctor: runs the built-in lean-ctx" "$(cat "$HR_LOG")" "lean-ctx doctor"
+assert_not_contains "leanctx doctor: a project-file cli_command never runs" "$(cat "$HR_LOG")" "my-lc"
 # shellcheck disable=SC2034
 cfg=""
 # without the gate helpers there is no binary to find
 assert_eq "leanctx doctor: gate helpers unavailable -> default binary name" "0" "$( (unset -f sb_leanctx_cli_command sb_leanctx_cli_path; hr_bin lean-ctx 'case "$*" in "doctor --help") echo usage;; esac'; rc_of rt_probe_leanctx_vendor_doctor) )"
 assert_eq "leanctx doctor: unresolvable binary -> skip" "2" "$( (sb_leanctx_cli_path() { return 1; }; vdr rt_probe_leanctx_vendor_doctor) )"
-assert_eq "leanctx doctor: failing cli_command lookup finds no binary (skip)" "1" "$( (sb_leanctx_cli_command() { return 1; }; hr_bin lean-ctx 'case "$*" in "doctor --help") echo usage;; esac'; rc_of rt_probe_leanctx_vendor_doctor) )"
 export RT_SKIP_VENDOR_DOCTOR=1
 
 # probe table
