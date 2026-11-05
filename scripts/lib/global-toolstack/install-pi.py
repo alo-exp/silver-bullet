@@ -82,6 +82,7 @@ def install(
     repo_root: Path,
     dry_run: bool,
     enabled_tools: set[str] | None = None,
+    allow_package_install: bool = False,
 ) -> dict[str, Any]:
     manifest = ensure_global_instances(dry_run=dry_run)
     manifest_path = global_instances_manifest_path()
@@ -135,7 +136,13 @@ def install(
     if not isinstance(packages, list):
         packages = []
         settings["packages"] = packages
-    if "leanctx" in requested and not any("pi-lean-ctx" in str(item) for item in packages):
+    # Listing an npm package makes Pi install code: only when the caller passes the user's "install"
+    # consent (--allow-install). Enabling leanctx alone never adds a package.
+    if (
+        allow_package_install
+        and "leanctx" in requested
+        and not any("pi-lean-ctx" in str(item) for item in packages)
+    ):
         packages.append("npm:pi-lean-ctx")
     write_json(settings_path, settings, dry_run)
 
@@ -171,11 +178,18 @@ def main() -> int:
         choices=("graphify", "agentmemory", "context_mode", "leanctx", "rtk"),
         help="Enable one consented tool while preserving previously enabled Pi tools (repeatable); none by default",
     )
+    parser.add_argument(
+        "--allow-install",
+        action="store_true",
+        help="The user consented to install: list the pi-lean-ctx npm package when leanctx is enabled",
+    )
     args = parser.parse_args()
     enabled_tools = set(args.enable_tool) if args.enable_tool else None
     previous_umask = os.umask(0o077)  # new Pi files are private; existing files keep their mode
     try:
-        result = install(Path(args.repo_root).resolve(), args.dry_run, enabled_tools)
+        result = install(
+            Path(args.repo_root).resolve(), args.dry_run, enabled_tools, allow_package_install=args.allow_install
+        )
     except sbc.ConfigError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 2

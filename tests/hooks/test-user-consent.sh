@@ -64,7 +64,7 @@ sb_consent_set granted leanctx wire machine test >/dev/null
 sb_consent_set granted graphify install machine test >/dev/null
 assert_eq "pi enable words: wire only; leanctx needs install too; install alone is not wire" " --enable-tool rtk" "$(sb_consent_pi_enable_words)"
 sb_consent_set granted leanctx install,wire machine test >/dev/null
-assert_eq "pi enable words: leanctx with install+wire" " --enable-tool leanctx --enable-tool rtk" "$(sb_consent_pi_enable_words)"
+assert_eq "pi enable words: leanctx with install+wire" " --enable-tool leanctx --allow-install --enable-tool rtk" "$(sb_consent_pi_enable_words)"
 reset_store
 assert_eq "unknown capability: unset" "unset" "$(sb_consent_decision graphify root)"
 
