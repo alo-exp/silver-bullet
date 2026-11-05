@@ -139,4 +139,7 @@ assert_contains "no python3: a Write to the marker is refused" "$(reason)" "pyth
 run_tg "$(bash_in "echo 'unterminated trivial")"
 assert_contains "an unparsable command naming the marker fails closed" "$(reason)" "cannot inspect"
 
+tl_run_stdin "$(write_in "$TRIVIAL")" bash -c 'sb_project_active() { return 1; }; export -f sb_project_active; cd "$1" && exec bash "$2"' _ "$EC_PROJ" "$HOOK"
+assert_eq "a project reported inactive: the guard stands down" "" "$TL_OUT"
+
 tl_results
