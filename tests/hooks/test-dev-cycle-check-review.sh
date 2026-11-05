@@ -208,7 +208,7 @@ rm -f "$SILVER_BULLET_VERIFY_TESTS_STATE_FILE"
 # ── empty arguments in the capability checks ──────────────────────────────────────────────────
 mkproj emptyarg
 state inst-a
-dc_cmd 'cp -r "" dest'
+dc_cmd 'cp "" dest'
 assert_eq "cp with an empty source argument does not crash the check" "none" "$(decision)"
 dc_cmd 'ln -s "" link'
 assert_eq "ln with an empty argument does not crash the check" "none" "$(decision)"
