@@ -165,7 +165,7 @@ evaluate_rung_passes() {
 run_full_ladder_for_host() {
   local runtime="$1"
   local ladder_json rung_count start_rung max_rung rung_index
-  local model reasoning prompt response cleaned slug
+  local model reasoning prompt response cleaned
   local rung_status row
 
   LADDER_HOST="$(review_fix_ladder_resolve_host "$runtime")" || return 1

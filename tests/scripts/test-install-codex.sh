@@ -1360,6 +1360,7 @@ RUNTIME_CLAUDE_ALLOWED_GLOBS=(
   -g '!**/hooks/lib/agentmemory-gate.sh'
   -g '!**/hooks/lib/token-compression-tools-gate.sh'
   -g '!**/hooks/review-fix-ladder-guard.sh'
+  -g '!**/scripts/lib/repo_invariants.py'
   -g '!**/scripts/dogfood-orchestrator-parent-surface.sh'
   -g '!**/scripts/lib/recommended-tools/receipts.sh'
   -g '!**/scripts/lib/recommended-tools/probe-rtk.sh'
