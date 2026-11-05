@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Shared PreToolUse gate assertions, part a (deny, audit, bridge, input shapes) for hooks/token-compression-tools-gate.sh (tg2_gate_suite)
 set -euo pipefail
+# The opt-in gates act only on the user's own consent, never on .silver-bullet.json alone.
+# shellcheck source=../lib/consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/consent-helpers.sh"
+sb_test_consent_grant_all
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
 # shellcheck source=../lib/c-toolgates-2-helpers.sh
@@ -12,7 +16,8 @@ HOOK=hooks/token-compression-tools-gate.sh
 RTK_STATE="$SB_RUNTIME_STATE_DIR/rtk-usage"
 MUTEX="$SB_RUNTIME_STATE_DIR/stack-compression-mutex"
 CFG_JSON='{"sb_initiated":true,"recommended_tools":{"rtk":{"enabled_by_user":true,"install_status":"installed"}}}'
-EDIT="$(tg2_edit_input)"
+# R5-16: the gate guards delivery commands only; edits are never gated.
+EDIT="$(tg2_bash_input 'git commit -m x')"
 
 install_rtk() { tl_stub rtk 'exit 0'; }
 uninstall_rtk() { rm -f "$TL_BIN/rtk"; }
@@ -27,6 +32,6 @@ tg2_scenario_off() {
     suspended) jq '.recommended_tools.rtk.enforcement_suspended=true' <<<"$CFG_JSON" >"$TG2_CFG" ;;
   esac
 }
-TG2_SUITE_PART=a tg2_gate_suite "$HOOK" token-compression-tools-gate "$EDIT" "USAGE REQUIRED" "$TG2_PROJ/src/app.js" yes no
+TG2_SUITE_PART=a tg2_gate_suite "$HOOK" token-compression-tools-gate "$EDIT" "USAGE REQUIRED" "git commit -m x" yes yes
 
 tl_results

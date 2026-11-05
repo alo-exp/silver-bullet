@@ -30,6 +30,7 @@ Called by skills and hooks while Silver Bullet runs in a project.
 | `install-global-toolstack.sh` | Install host-global Cursor toolstack hooks, rules and MCP config |
 | `install-recommended-tools-cursor.sh`, `install-recommended-tools-global.sh` | Always-on rules / instruction artifacts for the recommended tools |
 | `reconcile-recommended-tools.sh` | Canonical five-tool reconciliation engine (Graphify, agentmemory, Context Mode, LeanCTX, RTK) |
+| `sb-consent.sh` | Record and query your per-user consent (install, wire, enforce) for the opt-in tool stack; the store lives outside every repository (see [docs/CONSENT.md](../docs/CONSENT.md)) |
 | `install-leanctx-sb.sh` | Host-aware LeanCTX install in library mode |
 | `optimize-five-tool-stack.sh`, `optimize-rtk-context-mode.sh` | Apply the five-tool routed profile, or the RTK + Context Mode host optimization |
 | `enable-alumnium.sh`, `enable-rtk-context-mode.sh` | Verify Alumnium, RTK and Context Mode install and wiring |
