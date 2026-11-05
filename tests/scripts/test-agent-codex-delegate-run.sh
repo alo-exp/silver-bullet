@@ -30,6 +30,7 @@ agent_invoke() {
     echo "home-config: \$(tr '\\n' ' ' <"\$CODEX_HOME/config.toml") auth=\$(cat "\$CODEX_HOME/auth.json" 2>/dev/null)"
     echo "\$CODEX_HOME" >"$CFG/codex-home"
   fi
+  [[ -f "$CFG/touch" ]] && echo x >>"$WORK/changed.txt"
   [[ -f "$CFG/rm-log" ]] && rm -f "\${CLAUDE_INTERACTIVE_LOG_FILE:-}"
   if [[ -f "$CFG/fail-until" && \$n -le \$(<"$CFG/fail-until") ]]; then
     cat "$CFG/fail-msg" 2>/dev/null
@@ -39,7 +40,7 @@ agent_invoke() {
 }
 ADAPTER
 
-reset() { rm -rf "$CFG/count" "$CFG/fail-until" "$CFG/fail-msg" "$CFG/rm-log" "$CFG/codex-home" "$CFG/codex-argv.log" "$WORK/.planning" "$WORK/log"; }
+reset() { rm -rf "$CFG/touch" "$WORK/changed.txt" "$CFG/count" "$CFG/fail-until" "$CFG/fail-msg" "$CFG/rm-log" "$CFG/codex-home" "$CFG/codex-argv.log" "$WORK/.planning" "$WORK/log"; }
 # delegate <args...> : fast defaults, cwd outside the repo
 delegate() {
   tl_run env CODEX_BIN="$TL_TMP/codexbin/codex" SB_AGENT_SKIP_PREFLIGHT=1 SB_AGENT_CODEX_LOG_FLOOR=0 \
@@ -83,7 +84,7 @@ assert_contains "unavailability reported" "$TL_ERR" "mode-unavailable"
 reset
 delegate --work-dir "$WORK" --prompt "do the thing" --sb-root "$SB" --log "$WORK/log"
 assert_eq "delegation succeeds" 0 "$TL_STATUS"
-assert_contains "adapter output returned" "$TL_OUT" "invoke#1 mode=permissive prompt=do the thing exec=1"
+assert_contains "adapter output returned" "$TL_OUT" "invoke#1 mode=strict prompt=do the thing exec=1"
 assert_contains "lightweight delegate env exported" "$TL_OUT" "lightweight=1 worker=1"
 assert_contains "MCP servers stripped from the delegate CODEX_HOME" "$TL_OUT" "home-config: model = \"m\" [other] k = 1  auth=tok"
 assert_file_absent "temporary CODEX_HOME removed afterwards" "$(<"$CFG/codex-home")"
@@ -144,7 +145,7 @@ reset
 delegate --work-dir "$WORK" --prompt "native run" --non-interactive --mode strict
 assert_eq "pinned NI exits 0" 0 "$TL_STATUS"
 assert_contains "pinned NI output is codex's" "$TL_OUT" "NATIVE-OUT"
-assert_contains "native argv carries exec + prompt" "$(<"$CFG/codex-argv.log")" "codex exec --cd $WORK --sandbox danger-full-access --color never"
+assert_contains "native argv (default strict outside the project) carries exec + prompt" "$(<"$CFG/codex-argv.log")" "codex exec --cd $WORK --sandbox workspace-write --color never"
 assert_contains "native argv ends with prompt" "$(<"$CFG/codex-argv.log")" "native run"
 
 # ---- log handling
@@ -174,10 +175,41 @@ assert_eq "adapter invoked twice" 2 "$(<"$CFG/count")"
 reset
 echo 99 >"$CFG/fail-until"; echo "HTTP 429 rate limit" >"$CFG/fail-msg"
 ENVX=(AGENT_CODEX_QUOTA_RETRY_MAX=1)
-delegate --work-dir "$WORK" --prompt p --sb-root "$SB" --no-escalate
+delegate --work-dir "$WORK" --prompt p --sb-root "$SB" --no-escalate --quota-retry
 assert_eq "persistent quota failure exits 1" 1 "$TL_STATUS"
 assert_contains "retries exhausted" "$TL_ERR" "quota retries exhausted"
 assert_eq "two attempts made" 2 "$(<"$CFG/count")"
+# R4-20: a bare 429 / "quota" in test output or file names is not a quota error
+reset
+echo 99 >"$CFG/fail-until"; echo "AssertionError at line 429 in docs/quota.md; 2 tests failed" >"$CFG/fail-msg"
+ENVX=(AGENT_CODEX_QUOTA_RETRY_MAX=3)
+delegate --work-dir "$WORK" --prompt p --sb-root "$SB" --no-escalate --quota-retry
+assert_eq "429 in test output runs the task once" 1 "$(<"$CFG/count")"
+# a provider error type is retried without a repo only with the explicit flag
+reset
+echo 1 >"$CFG/fail-until"; echo '{"type":"error","error":{"type":"rate_limit_error"}}' >"$CFG/fail-msg"
+ENVX=(AGENT_CODEX_QUOTA_RETRY_MAX=3)
+delegate --work-dir "$WORK" --prompt p --sb-root "$SB" --no-escalate
+assert_eq "no git repo and no --quota-retry: not re-run" 1 "$(<"$CFG/count")"
+assert_contains "refusal explains how to opt in" "$TL_ERR" "pass --quota-retry"
+# in a git work dir: unchanged tree retries by itself, a changed tree does not
+git -C "$WORK" init -q 2>/dev/null
+reset
+echo 1 >"$CFG/fail-until"; echo '{"type":"error","error":{"type":"rate_limit_error"}}' >"$CFG/fail-msg"
+delegate --work-dir "$WORK" --prompt p --sb-root "$SB" --no-escalate
+assert_eq "unchanged git work dir: rate_limit_error retried" 2 "$(<"$CFG/count")"
+assert_eq "retry succeeded" 0 "$TL_STATUS"
+reset
+touch "$CFG/touch"
+echo 1 >"$CFG/fail-until"; echo '{"type":"error","error":{"type":"rate_limit_error"}}' >"$CFG/fail-msg"
+delegate --work-dir "$WORK" --prompt p --sb-root "$SB" --no-escalate
+assert_eq "changed git work dir: not re-run without --quota-retry" 1 "$(<"$CFG/count")"
+reset
+touch "$CFG/touch"
+echo 1 >"$CFG/fail-until"; echo '{"type":"error","error":{"type":"rate_limit_error"}}' >"$CFG/fail-msg"
+delegate --work-dir "$WORK" --prompt p --sb-root "$SB" --no-escalate --quota-retry
+assert_eq "changed git work dir: --quota-retry opts in" 2 "$(<"$CFG/count")"
+rm -rf "$WORK/.git"
 reset
 echo 99 >"$CFG/fail-until"; echo "quota exceeded: You have hit your 5-hour limit, resets in 3 hours" >"$CFG/fail-msg"
 ENVX=(AGENT_CODEX_QUOTA_RETRY_MAX=3)
@@ -200,7 +232,7 @@ ENVX=(SB_AGENT_MODE_TUI_AVAILABLE=1)
 delegate --work-dir "$WORK" --prompt p --sb-root "$SB"
 assert_eq "escalated retry succeeds" 0 "$TL_STATUS"
 assert_eq "adapter invoked for the retry" 2 "$(<"$CFG/count")"
-assert_contains "retry runs without exec" "$TL_OUT" "invoke#2 mode=permissive prompt=p exec=0"
+assert_contains "retry runs without exec" "$TL_OUT" "invoke#2 mode=strict prompt=p exec=0"
 # the retry also fails -> its status is final
 reset
 echo 99 >"$CFG/fail-until"; echo "miss" >"$CFG/fail-msg"

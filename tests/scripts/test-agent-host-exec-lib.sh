@@ -117,10 +117,16 @@ rc=0; agent_host_build_argv codex interactive /w p || rc=$?
 assert_eq "build: codex has no interactive mode (2)" 2 "$rc"
 agent_host_build_argv codex non-interactive /w p
 assert_eq "build codex permissive" "$STUB_BIN/codex|exec|--cd|/w|--sandbox|danger-full-access|--color|never|--dangerously-bypass-approvals-and-sandbox|p|" "$(argv_str)"
-CODEX_BYPASS_HOOK_TRUST=1 SB_LIVE_CODEX_MODEL=gpt-live agent_host_build_argv codex non-interactive /w p strict
-assert_eq "build codex strict + hook trust + live model" "$STUB_BIN/codex|exec|--cd|/w|--sandbox|danger-full-access|--color|never|--dangerously-bypass-hook-trust|--model|gpt-live|p|" "$(argv_str)"
-CODEX_AUTO_TRUST_HOOKS=1 CODEX_MODEL=gpt-x agent_host_build_argv codex non-interactive /w p strict
+# Hook-trust bypass needs an explicit opt-in, and strict never carries a bypass flag (R4-23, R8-15).
+assert_not_contains "build codex permissive: no hook-trust bypass by default" "$(argv_str)" "--dangerously-bypass-hook-trust"
+CODEX_BYPASS_HOOK_TRUST=1 SB_LIVE_CODEX_MODEL=gpt-live agent_host_build_argv codex non-interactive /w p
+assert_eq "build codex permissive + explicit hook trust + live model" "$STUB_BIN/codex|exec|--cd|/w|--sandbox|danger-full-access|--color|never|--dangerously-bypass-approvals-and-sandbox|--dangerously-bypass-hook-trust|--model|gpt-live|p|" "$(argv_str)"
+CODEX_AUTO_TRUST_HOOKS=1 CODEX_MODEL=gpt-x agent_host_build_argv codex non-interactive /w p
 assert_contains "build codex auto-trust alias + CODEX_MODEL wins" "$(argv_str)" "--dangerously-bypass-hook-trust|--model|gpt-x|"
+agent_host_build_argv codex non-interactive /w p strict
+assert_eq "build codex strict: workspace-write, no bypass flags" "$STUB_BIN/codex|exec|--cd|/w|--sandbox|workspace-write|--color|never|p|" "$(argv_str)"
+CODEX_BYPASS_HOOK_TRUST=1 CODEX_AUTO_TRUST_HOOKS=1 agent_host_build_argv codex non-interactive /w p strict
+assert_eq "build codex strict ignores hook-trust opt-in" "$STUB_BIN/codex|exec|--cd|/w|--sandbox|workspace-write|--color|never|p|" "$(argv_str)"
 
 agent_host_build_argv opencode non-interactive /w p
 assert_eq "build opencode NI" "$STUB_BIN/opencode|run|--dir|/w|-m|opencode-go/mimo-v2.5|--auto|p|" "$(argv_str)"

@@ -53,6 +53,25 @@ agent_delegate_exec_pinned_ni() {
 }
 
 
+# Default permission mode when --mode is not given (R4-23): permissive only for a work dir inside
+# the current project (CLAUDE_PROJECT_DIR, else the git toplevel of $PWD, else $PWD); any other
+# directory (a fresh clone, a scratch dir) defaults to strict. SB_AGENT_DELEGATE_DEFAULT_MODE
+# (permissive|strict) is an explicit operator override.
+agent_delegate_default_mode() {
+  local work_dir="$1" project wd
+  case "${SB_AGENT_DELEGATE_DEFAULT_MODE:-}" in
+    permissive|strict) printf '%s' "$SB_AGENT_DELEGATE_DEFAULT_MODE"; return 0 ;;
+  esac
+  project="${CLAUDE_PROJECT_DIR:-$PWD}"
+  project="$(cd "$project" 2>/dev/null && { git rev-parse --show-toplevel 2>/dev/null || pwd; })"
+  project="$(cd "$project" 2>/dev/null && pwd -P)"
+  wd="$(cd "$work_dir" 2>/dev/null && pwd -P)"
+  case "$wd" in
+    "$project"|"$project"/*) printf 'permissive' ;;
+    *) printf 'strict' ;;
+  esac
+}
+
 # Canonicalize a repo-relative path to absolute.
 agent_delegate_canonicalize_path() {
   local path="$1"
@@ -71,9 +90,53 @@ agent_delegate_clear_matrix_env() {
     SB_E2E_LIVE_TEST_LOCK_FILE 2>/dev/null || true
 }
 
+# A quota/rate-limit failure is recognised only from provider or CLI error text (HTTP status
+# fields, rate_limit_error types, "quota exceeded"-style sentences). A bare 429, "quota" or
+# "rate limit" elsewhere in the output (test logs, file names, code under review) is not one (R4-20).
+AGENT_DELEGATE_QUOTA_ERROR_RE='rate_limit_error|rate_limit_exceeded|insufficient_quota|rate[[:space:]]*limit(ed|[[:space:]]+(exceeded|reached|hit))|too[[:space:]]+many[[:space:]]+requests|token[[:space:]]+plan[^[:cntrl:]]{0,40}(exhaust|exceed|limit|reach)|(exceeded|exhausted|reached)[^[:cntrl:]]{0,30}(quota|usage[[:space:]]+limit|token[[:space:]]+plan)|quota[^[:cntrl:]]{0,20}(exceeded|exhausted|reached|used[[:space:]]+up)|usage[[:space:]]+limit[[:space:]]+(reached|exceeded)|(status|http|code)["'"'"']?[[:space:]]*[:=/]?[[:space:]]*429([^0-9]|$)|(^|[^0-9.])429[[:space:]]+(too|rate|error|status)'
 agent_delegate_is_quota_error() {
   local blob="$1"
-  grep -qiE '429|rate[[:space:]]*limit|token[[:space:]]*plan|quota' <<<"$blob"
+  grep -qiE "$AGENT_DELEGATE_QUOTA_ERROR_RE" <<<"$blob"
+}
+
+# Fingerprint of the work dir's tracked state (HEAD, status, diff). "unknown" outside a git repo.
+agent_delegate_workdir_fingerprint() {
+  local work_dir="$1"
+  if ! git -C "$work_dir" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    printf 'unknown'
+    return 0
+  fi
+  {
+    git -C "$work_dir" rev-parse HEAD 2>/dev/null || echo no-head
+    git -C "$work_dir" status --porcelain -uall 2>/dev/null || true
+    git -C "$work_dir" diff HEAD --no-ext-diff 2>/dev/null || true
+  } | cksum
+}
+
+# Decide whether a failed attempt is re-run: only for a real provider quota error, only inside the
+# retry budget, and, unless --quota-retry opted in, only when the attempt left the work dir
+# untouched (a retry replays the whole task with permissive flags, so side effects would repeat).
+# Returns 0 to retry, 1 to stop.
+agent_delegate_quota_retry_decision() {
+  local label="$1" output="$2" attempt="$3" max="$4" work_dir="$5" fp_before="$6"
+  agent_delegate_is_quota_error "$output" || return 1
+  if agent_delegate_quota_blocks_short_retry "$output"; then
+    printf '[%s] quota window exhausted — skip short retry (RFL schedule)\n' "$label" >&2
+    return 1
+  fi
+  if [[ "$attempt" -gt "$max" ]]; then
+    printf '[%s] quota retries exhausted\n' "$label" >&2
+    return 1
+  fi
+  if [[ "${SB_AM_QUOTA_RETRY:-0}" -ne 1 ]]; then
+    local fp_after
+    fp_after="$(agent_delegate_workdir_fingerprint "$work_dir")"
+    if [[ "$fp_before" == "unknown" || "$fp_after" != "$fp_before" ]]; then
+      printf '[%s] quota error, but the attempt may have changed the work dir; not re-running (pass --quota-retry to retry anyway)\n' "$label" >&2
+      return 1
+    fi
+  fi
+  return 0
 }
 
 # 5-hour / weekly / monthly windows are not 60s-retryable. RFL schedules those.

@@ -331,11 +331,11 @@ mkdir -p "$TL_TMP/codexbin"
 printf '#!/usr/bin/env bash\nexit 0\n' >"$TL_TMP/codexbin/codex"
 chmod +x "$TL_TMP/codexbin/codex"
 lib_run "$CX" 'agent_codex_apply_delegate_env; printf "%s|%s|%s|%s|%s|%s|[%s]" "$SB_AGENT_CODEX_DELEGATE" "$SB_AGENT_CODEX_LIGHTWEIGHT" "$SB_ORCHESTRATOR_WORKER" "$SB_ORCHESTRATOR_PARENT" "$CODEX_AUTO_TRUST_HOOKS" "$CODEX_BYPASS_HOOK_TRUST" "${CODEX_BIN-unset}"'
-assert_eq "codex delegate env defaults (no codex CLI is fine)" "1|1|1|0|1|1|[unset]" "$TL_OUT"
+assert_eq "codex delegate env defaults: hook trust bypass off (no codex CLI is fine)" "1|1|1|0|0|0|[unset]" "$TL_OUT"
 lib_run "$CX" 'agent_codex_apply_delegate_env; printf "[%s]" "${CODEX_BIN-unset}"' CODEX_BIN="$TL_TMP/codexbin/codex"
 assert_eq "codex delegate env resolves and exports CODEX_BIN" "[$TL_TMP/codexbin/codex]" "$TL_OUT"
-lib_run "$CX" 'agent_codex_apply_delegate_env; printf "%s|[%s]" "$CODEX_AUTO_TRUST_HOOKS" "${SB_E2E_ENTERPRISE_MATRIX-unset}"' CODEX_AUTO_TRUST_HOOKS=0 SB_E2E_ENTERPRISE_MATRIX=1
-assert_eq "codex delegate env keeps explicit values and clears matrix env" "0|[unset]" "$TL_OUT"
+lib_run "$CX" 'agent_codex_apply_delegate_env; printf "%s|[%s]" "$CODEX_AUTO_TRUST_HOOKS" "${SB_E2E_ENTERPRISE_MATRIX-unset}"' CODEX_AUTO_TRUST_HOOKS=1 SB_E2E_ENTERPRISE_MATRIX=1
+assert_eq "codex delegate env keeps explicit opt-in and clears matrix env" "1|[unset]" "$TL_OUT"
 lib_run "$CX" 'agent_codex_delegate_env_names | wc -l | tr -d " "'
 assert_eq "codex delegate env names" "11" "$TL_OUT"
 NOCOMMON="$TL_TMP/codex-nocommon"

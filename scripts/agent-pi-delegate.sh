@@ -27,7 +27,7 @@ PROMPT_TEXT=""
 PROMPT_FILE=""
 BRIEF_FILE=""
 LOG_FILE=""
-MODE="permissive"
+MODE=""
 SB_ROOT="${SB_ROOT:-$REPO_ROOT}"
 
 while [[ $# -gt 0 ]]; do
@@ -57,6 +57,10 @@ while [[ $# -gt 0 ]]; do
 done
 
 agent_delegate_validate_work_dir "$WORK_DIR" || exit 2
+if [[ -z "$MODE" ]]; then
+  MODE="$(agent_delegate_default_mode "$WORK_DIR")"
+  agent_mode_note_permission_mode "$MODE" || exit 2
+fi
 agent_delegate_clear_matrix_env
 
 if [[ -n "$BRIEF_FILE" ]]; then
@@ -140,6 +144,7 @@ while [[ "$attempt" -le "$quota_retry_max" ]]; do
   fi
 
   final_exit=0
+  fp_before="$(agent_delegate_workdir_fingerprint "$WORK_DIR")"
   final_output="$(agent_pi_invoke_once)" || final_exit=$?
 
   if [[ -n "$LOG_FILE" ]]; then
@@ -161,17 +166,7 @@ while [[ "$attempt" -le "$quota_retry_max" ]]; do
   if [[ "$final_exit" -eq 0 ]]; then
     break
   fi
-  if ! agent_delegate_is_quota_error "$final_output"; then
-    break
-  fi
-  if agent_delegate_quota_blocks_short_retry "$final_output"; then
-    printf '[agent-pi] quota window exhausted — skip short retry (RFL schedule)\n' >&2
-    break
-  fi
-  if [[ "$attempt" -gt "$quota_retry_max" ]]; then
-    printf '[agent-pi] quota retries exhausted\n' >&2
-    break
-  fi
+  agent_delegate_quota_retry_decision "agent-pi" "$final_output" "$attempt" "$quota_retry_max" "$WORK_DIR" "$fp_before" || break
 done
 
 if [[ "$final_exit" -ne 0 ]]; then
