@@ -29,7 +29,7 @@
     "context-mode-gate.sh": "Opt-in (`recommended_tools.context_mode`): checks Context Mode install and MCP/hook wiring.",
     "context-mode-read-deny.sh": "Opt-in (`recommended_tools.context_mode`): denies Read/Grep on files larger than `read_deny_bytes`.",
     "debug-dump.sh": "Debug only: when the `debug-dump` flag file exists in the runtime state dir, appends each PreToolUse payload to `hook-dump.jsonl` there. Never blocks.",
-    "dependency-skill-check.sh": "Compatibility gate for dependency-skill invocations. Does not block SB-absorbed namespaces; forbidden execution modes are handled by `forbidden-skill-check.sh`.",
+    "dependency-skill-check.sh": "Inert compatibility stub: every path allows, it enforces nothing. Kept so the Skill matcher surface stays stable; forbidden execution modes are blocked by `forbidden-skill-check.sh`.",
     "dev-cycle-check.sh": "Planning-floor gate: blocks source edits and shell writes until workflow admission or the `required_planning` skills are recorded. Also blocks edits under the host plugin cache and direct writes to SB state files.",
     "flow-advance.sh": "Advances the autonomous orchestrator flow queue after a skill or tracked command completes.",
     "forbidden-skill-check.sh": "Blocks forbidden skills: the built-in list (`executing-plans`, `subagent-driven-development`) plus `skills.forbidden`.",
@@ -139,6 +139,7 @@
       "members": [
         "required-skills.sh",
         "skill-discovery.sh",
+        "skill-channel.sh",
         "workflow-utils.sh",
         "quality-gates-mode.sh",
         "prompt-classifier.sh",

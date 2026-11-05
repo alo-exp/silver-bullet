@@ -2,7 +2,7 @@
 set -euo pipefail
 trap 'printf "{\"hookSpecificOutput\":{\"message\":\"⚠️ uat-gate: hook error — check jq/input format\"}}" ; exit 0' ERR
 
-# PreToolUse hook (matcher: Skill)
+# PreToolUse hook (matcher: Skill|Bash|exec_command)
 # UAT GATE — blocks sb:release / milestone completion when UAT.md is missing,
 # has FAIL results, or was run against a stale spec version.
 
@@ -46,21 +46,37 @@ emit_block() {
   printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":%s}}' "$json_reason"
 }
 
-# Extract skill name from supported skill invocation input
-skill=$(printf '%s' "$input" | jq -r '.tool_input.skill // .tool_input.skillName // ""')
-
-if declare -F sb_skill_canonical_name >/dev/null 2>&1; then
-  skill="$(sb_skill_canonical_name "$skill" || true)"
-fi
-
-UAT=".planning/UAT.md"
-SPEC=".planning/SPEC.md"
-
-# Gate milestone release only — phase-level ship (sb:ship) does not require UAT.md.
-# UAT is generated at milestone completion (sb:feature Step 17) before sb:release.
-if ! grep -qE 'silver-release' <<<"$skill"; then
+# Which skills does this call invoke? The Skill tool, or the Codex invoke-skill adapter (R2-17).
+# shellcheck source=lib/skill-channel.sh
+source "$_lib_dir/skill-channel.sh"
+sb_skill_channel_load "$input"
+if [[ "$SB_SKILL_CHANNEL_STATUS" == "helper_unavailable" ]]; then
+  emit_block "$(sb_shell_analysis_helper_message)"
   exit 0
 fi
+
+# Gate milestone release only — phase-level ship (sb:ship) does not require UAT.md. The canonical
+# skill name must be exactly silver-release (a skill that merely contains the text is not it).
+# UAT is generated at milestone completion (sb:feature Step 17) before sb:release.
+is_release=false
+while IFS= read -r raw_skill; do
+  [[ -n "$raw_skill" ]] || continue
+  canonical="$raw_skill"
+  if declare -F sb_skill_canonical_name >/dev/null 2>&1; then
+    canonical="$(sb_skill_canonical_name "$raw_skill" || true)"
+  fi
+  canonical="$(printf '%s' "$canonical" | tr '[:upper:]' '[:lower:]')"
+  [[ "$canonical" == "silver-release" ]] && is_release=true
+done <<< "$SB_SKILL_CHANNEL_NAMES"
+[[ "$is_release" == true ]] || exit 0
+
+# Paths come from the project root, not the hook's working directory (R2-25).
+uat_root="$PWD"
+if declare -f sb_find_project_root_walk_only >/dev/null 2>&1; then
+  uat_root="$(sb_find_project_root_walk_only 2>/dev/null || printf '%s' "$PWD")"
+fi
+UAT="$uat_root/.planning/UAT.md"
+SPEC="$uat_root/.planning/SPEC.md"
 
 # Check 1: UAT.md must exist (UATG-01)
 if [[ ! -f "$UAT" ]]; then
@@ -68,18 +84,33 @@ if [[ ! -f "$UAT" ]]; then
   exit 0
 fi
 
+# Checks 2 and 3: result cells (R2-25, R10-03). Column-aware and case-insensitive: any table cell
+# that is exactly fail/failed or not-run (any spacing, `|FAIL|`, `| Fail |`, `not run`) counts.
+# Header and legend rows that name several result words (#, Total, Status, Result, PASS) do not.
+read -r fail_count not_run_count < <(awk -F'|' '
+  /^[[:space:]]*\|/ {
+    fail = 0; nr = 0; legend = 0
+    for (i = 2; i <= NF; i++) {
+      c = tolower($i); gsub(/^[ \t\r]+|[ \t\r]+$/, "", c)
+      if (c == "fail" || c == "failed") fail = 1
+      if (c ~ /^not[-_ ]?run$/) nr = 1
+      if (c == "pass" || c == "passed" || c == "#" || c == "total" || c == "status" || c == "result") legend = 1
+    }
+    if (legend || (fail && nr)) next
+    if (fail) f++
+    else if (nr) n++
+  }
+  END { print f + 0, n + 0 }
+' "$UAT")
+
 # Check 2: No FAIL results allowed (UATG-03)
-# Two-pipe approach: find lines with | FAIL | then exclude header rows (which also contain
-# column names like #, Total, PASS, NOT-RUN, Status, Result).
-if grep -qvE '\|\s*(#|Total|PASS|NOT.?RUN|Status|Result)\s*\|' < <(grep -E '\| FAIL \|' "$UAT"); then
-  fail_count=$(grep -E '\| FAIL \|' "$UAT" | grep -cvE '\|\s*(#|Total|PASS|NOT.?RUN|Status|Result)\s*\|' || true)
+if [[ "$fail_count" -gt 0 ]]; then
   emit_block "UAT GATE: ${fail_count} criterion/criteria marked FAIL in .planning/UAT.md. Resolve all failures before completing milestone."
   exit 0
 fi
 
 # Check 3: NOT-RUN blocks milestone release (UATG-02)
-if grep -qvE '\|\s*(#|Total|PASS|FAIL|Status|Result)\s*\|' < <(grep -E '\| NOT-RUN \|' "$UAT"); then
-  not_run_count=$(grep -E '\| NOT-RUN \|' "$UAT" | grep -cvE '\|\s*(#|Total|PASS|FAIL|Status|Result)\s*\|' || true)
+if [[ "$not_run_count" -gt 0 ]]; then
   emit_block "UAT GATE: ${not_run_count} criterion/criteria marked NOT-RUN in .planning/UAT.md. Execute all criteria before completing milestone."
   exit 0
 fi

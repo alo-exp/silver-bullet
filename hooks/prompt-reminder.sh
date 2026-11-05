@@ -276,6 +276,9 @@ if [[ -d "$workflows_dir" && ! -L "$workflows_dir" ]]; then
   for _wf in "$workflows_dir"/*.md; do
     [[ -f "$_wf" ]] || continue
     _id=$(basename "$_wf" .md)
+    # R2-23: file names come from the repository and are injected into model context, so only
+    # names matching the documented workflow id shape are listed (never free text).
+    [[ "$_id" =~ ^[0-9]{8}T[0-9]{6}Z-[A-Za-z0-9]+-[A-Za-z0-9-]+$ ]] || continue
     active_ids="${active_ids:+$active_ids,}${_id}"
   done
   shopt -u nullglob
