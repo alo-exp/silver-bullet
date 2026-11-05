@@ -36,6 +36,7 @@ import materialize_solution_artifacts as msa  # noqa: E402
 import migrate_run_manifest as mig  # noqa: E402
 import synthesize_landscape as sl  # noqa: E402
 from multi_ai_core import PoolSelection  # noqa: E402
+from apo_pack_run_fixture import plain_vendor_spellings  # noqa: E402
 
 APO = "agentic-sdlc-process-orchestrator"
 
@@ -83,6 +84,7 @@ def _apo_run(case: _Tmp) -> None:
     )
 
 
+@plain_vendor_spellings
 class PackagingPreservesUserDataTests(_Tmp):
     """R12-12: no deletion outside the computed set, no overwrite of host-authored files."""
 

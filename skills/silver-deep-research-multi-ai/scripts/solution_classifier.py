@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import json
-import re
 from pathlib import Path
 from typing import Any
 
@@ -22,12 +21,17 @@ from category_pack import (
     get_must_research_slugs,
     get_primary_market_id,
     get_sunset_registry,
-    normalize_slug,
     resolve_canonical_slug,
     resolve_pack_from_need,
     slugify,
 )
-from materialize_solution_artifacts import _iter_claim_texts, mentions_vendor, run_context, structured_vendor_names
+from materialize_solution_artifacts import (
+    _scoped_claim_texts,
+    mentions_vendor,
+    run_context,
+    structured_vendor_names,
+    tagged_vendor_slugs,
+)
 from pack_vocabulary import activated
 
 Classification = str  # core | adjacent | excluded | sunset
@@ -125,16 +129,17 @@ def _extract_candidates_from_text(
 ) -> list[str]:
     found: list[str] = []
     lower = text.lower()
-    for alias, canonical in sorted(aliases.items(), key=lambda x: -len(x[0])):
-        if len(alias) < 2:
-            continue
-        if mentions_vendor(text, lower, alias) or mentions_vendor(text, lower, alias.replace("-", " ")):
-            if canonical not in found:
-                found.append(canonical)
-    for slug, display in known.items():
-        if any(mentions_vendor(text, lower, name) for name in (slug.replace("-", " "), slug, display.lower())):
-            if slug not in found:
-                found.append(slug)
+    with run_context(known, None, aliases):  # mentions_vendor judges a name against the run's vendors and aliases
+        for alias, canonical in sorted(aliases.items(), key=lambda x: -len(x[0])):
+            if len(alias) < 2:
+                continue
+            if mentions_vendor(text, lower, alias) or mentions_vendor(text, lower, alias.replace("-", " ")):
+                if canonical not in found:
+                    found.append(canonical)
+        for slug, display in known.items():
+            if any(mentions_vendor(text, lower, name) for name in (slug.replace("-", " "), slug, display.lower())):
+                if slug not in found:
+                    found.append(slug)
     return found
 
 
@@ -148,9 +153,10 @@ def _envelope_evidence_slugs(
     """
     aliases = build_alias_map(pack)
     known = build_known_solutions(pack)
-    found: set[str] = {resolve_canonical_slug(slug, pack) for slug in structured_vendor_names(envelopes, known, pack)}
+    declared = set(structured_vendor_names(envelopes, known, pack)) | tagged_vendor_slugs(envelopes, known, pack)
+    found: set[str] = {resolve_canonical_slug(slug, pack) for slug in declared}
     with run_context(known, pack):  # the product-name checks of mentions_vendor read the run's names
-        for text in _iter_claim_texts(envelopes):
+        for text in _scoped_claim_texts(envelopes, known, pack):
             for slug in _extract_candidates_from_text(text, aliases, known):
                 found.add(resolve_canonical_slug(slug, pack))
     return found
@@ -167,20 +173,16 @@ def discover_candidate_slugs(
 
     for slug in get_all_market_seed_slugs(pack, include_adjacent=True):
         scores[slug] = scores.get(slug, 0) + 1
+    # The pack's own exclusions and sunset products are classified whether or not a claim names them: an
+    # ambiguous name ("Aider", "Windsurf", "Sweep") is no longer evidence by itself.
+    for slug in [*get_hard_exclusion_slugs(pack, None), *_sunset_map(pack)]:
+        scores.setdefault(resolve_canonical_slug(slug, pack), 0)
 
     with run_context(known, pack):  # the same product names the evidence extraction judges a name against
-        for text in _iter_claim_texts(envelopes):
+        for text in _scoped_claim_texts(envelopes, known, pack):
             for slug in _extract_candidates_from_text(text, aliases, known):
                 canonical = resolve_canonical_slug(slug, pack)
                 scores[canonical] = scores.get(canonical, 0) + 1
-            for token in re.split(r"[,;/\n]", text):
-                token = token.strip()
-                if len(token) < 2 or len(token) > 40:
-                    continue
-                if " " not in token and len(token.split()) == 1:
-                    resolved = normalize_slug(token, pack)
-                    if resolved and resolved in known:
-                        scores[resolved] = scores.get(resolved, 0) + 1
 
     return sorted(scores, key=lambda s: (-scores[s], s))
 

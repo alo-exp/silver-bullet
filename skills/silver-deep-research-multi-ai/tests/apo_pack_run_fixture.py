@@ -38,24 +38,37 @@ def with_apo_pack_run(cls):
     return cls
 
 
-def with_apo_pack_run_plain_names(cls):
-    """Like ``with_apo_pack_run``, with no name treated as an ambiguous word.
+def plain_vendor_spellings(cls):
+    """Class decorator: every spelling of a vendor counts in prose, as if no vendor name were an ordinary word.
 
-    For parser-structure tests that use the pack's vendors as bare synthetic names ("aider", "cline" in
-    lower case). What an ambiguous name needs in order to count is pinned by test_vendor_mention_corpus.
+    For tests of classification, packaging or parsing structure that write the pack's vendors as bare names in
+    their claims. What an ambiguous vendor needs in order to be credited is pinned by
+    test_vendor_identity_generative and test_vendor_mention_corpus.
     """
-    import materialize_solution_artifacts as mat
     from unittest import mock
+
+    import vendor_identity
 
     def plain(test):
         @functools.wraps(test)
-        def run(*args, **kwargs):  # runs inside the pack activation, which would otherwise reinstall the names
-            with mock.patch.object(mat, "AMBIGUOUS_NAMES", frozenset()):
-                return test(*args, **kwargs)
+        def run(*args, **kwargs):
+            import materialize_solution_artifacts as mat
+
+            mat._EXTRACTED.clear()  # the memo does not know the patch: results from outside it must not leak in or out
+            try:
+                with mock.patch.object(vendor_identity.Registry, "is_prose_spelling", lambda self, spelling: True):
+                    return test(*args, **kwargs)
+            finally:
+                mat._EXTRACTED.clear()
 
         return run
 
     for name, value in list(vars(cls).items()):
         if name.startswith("test") and callable(value):
             setattr(cls, name, plain(value))
-    return with_apo_pack_run(cls)
+    return cls
+
+
+def with_apo_pack_run_plain_names(cls):
+    """``with_apo_pack_run`` with every spelling of a vendor counting in prose (see ``plain_vendor_spellings``)."""
+    return with_apo_pack_run(plain_vendor_spellings(cls))
