@@ -83,13 +83,16 @@ dg_run "$P" "$H" "$(stop SubagentStop)" SB_ORCHESTRATOR_PARENT=0
 assert_eq "SubagentStop in a worker session is skipped" "" "$TL_OUT"
 dg_assert_ok "SubagentStop in a worker session is skipped: exits 0"
 dg_run "$P" "$H" "$(stop SubagentStop)"
-assert_eq "SubagentStop in a parent session blocks" "block" "$(dec)"
+assert_eq "SubagentStop of an ordinary subagent is never held by the parent ledger (R2-10)" "none" "$(dec)"
+dg_run "$P" "$H" "$(stop)"
+assert_eq "the parent's own Stop still blocks on the ledger" "block" "$(dec)"
 rm -f "$ST/stop-coalesce-block"
 dg_run_nojq "$P" "$H" "$(stop)"
 assert_eq "Stop without jq is inert" "" "$TL_OUT"
 dg_assert_ok "Stop without jq is inert: exits 0"
-: >"$ST/e2e-matrix-routing-row"
-dg_run "$P" "$H" "$(stop)"
+rm -f "$ST/stop-coalesce-block"
+printf '%s\n' "$(($(date +%s) + 600))" >"$ST/e2e-matrix-routing-row"
+dg_run "$P" "$H" "$(stop)" SB_E2E_ENTERPRISE_MATRIX=1
 assert_eq "e2e routing row exempts Stop" "" "$TL_OUT"
 dg_assert_ok "e2e routing row exempts Stop: exits 0"
 rm -f "$ST/e2e-matrix-routing-row"
@@ -100,10 +103,10 @@ dg_assert_ok "trivial marker bypasses: exits 0"
 rm -f "$ST/trivial"
 
 # foreign-scope ledger is dropped rather than deadlocking Stop
-jq '.scope.branch="other/branch"' "$LF" >"$LF.t" && mv "$LF.t" "$LF"
+jq '.scope.worktree="/elsewhere/worktree"' "$LF" >"$LF.t" && mv "$LF.t" "$LF"
 dg_run "$P" "$H" "$(stop)"
-assert_eq "foreign branch ledger does not block" "" "$TL_OUT"
-dg_assert_ok "foreign branch ledger does not block: exits 0"
+assert_eq "foreign worktree ledger does not block" "" "$TL_OUT"
+dg_assert_ok "foreign worktree ledger does not block: exits 0"
 assert_file_absent "foreign ledger removed" "$LF"
 
 # fully resolved ledger lets Stop through

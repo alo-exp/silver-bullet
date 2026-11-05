@@ -6,6 +6,47 @@ sb_outcomes_session_file() {
   printf '%s/outcomes-session.json' "$SB_RUNTIME_STATE_DIR"
 }
 
+# R2-19: the checklist is derived from recorded skills and plan files, never from what an agent
+# writes into the JSON. Every hook write is sealed with a sha256 sidecar; a file whose digest no
+# longer matches (or whose sidecar is gone) was changed outside the hooks, so it is reset to
+# pending, the tamper is logged, and only hook-observed evidence can complete it again.
+sb_outcomes_sha256_of() {
+  local out
+  if command -v sha256sum >/dev/null 2>&1; then
+    out="$(sha256sum -- "$1" 2>/dev/null)" || return 1
+  elif command -v shasum >/dev/null 2>&1; then
+    out="$(shasum -a 256 -- "$1" 2>/dev/null)" || return 1
+  elif command -v openssl >/dev/null 2>&1; then
+    out="$(openssl dgst -sha256 -r -- "$1" 2>/dev/null)" || return 1
+  else
+    return 1
+  fi
+  printf '%s' "${out%% *}"
+}
+
+sb_outcomes_seal() {
+  local outfile digest
+  outfile="$(sb_outcomes_session_file)" || return 0
+  [[ -f "$outfile" ]] || return 0
+  digest="$(sb_outcomes_sha256_of "$outfile")" || return 0
+  printf '%s\n' "$digest" >"${outfile}.sha256" 2>/dev/null || true
+}
+
+# Reset an outcomes file that was changed outside the hooks. No sha256 tool: cannot verify, allow.
+sb_outcomes_reject_tampered() {
+  local outfile digest stored
+  outfile="$(sb_outcomes_session_file)" || return 0
+  [[ -f "$outfile" ]] || return 0
+  digest="$(sb_outcomes_sha256_of "$outfile")" || return 0
+  stored="$(head -1 "${outfile}.sha256" 2>/dev/null || true)"
+  [[ "$stored" == "$digest" ]] && return 0
+  printf '%s\toutcomes-session.json changed outside the hooks; checklist reset to pending\n' \
+    "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >>"${SB_RUNTIME_STATE_DIR}/outcomes-tamper.log" 2>/dev/null || true
+  sb_outcomes_jq_update "$outfile" '(.outcomes // []) |= map(.status = "pending" | .evidence = "")
+    | del(.informational)'
+  sb_outcomes_seal
+}
+
 # Atomically apply a jq filter to a JSON file (unique mktemp; no fixed .tmp path).
 sb_outcomes_jq_update() {
   local outfile="$1"
@@ -16,6 +57,7 @@ sb_outcomes_jq_update() {
   tmp="$(mktemp "${outfile}.XXXXXX" 2>/dev/null)" || return 0
   if jq "$filter" "$outfile" >"$tmp" 2>/dev/null; then
     mv -f -- "$tmp" "$outfile" 2>/dev/null || rm -f -- "$tmp"
+    sb_outcomes_seal
   else
     rm -f -- "$tmp"
   fi
@@ -63,6 +105,7 @@ sb_outcomes_seed_for_prompt() {
             {id:"verify", label:"Run verification before claiming completion", status:"done", evidence:"informational query", decision_class:"autonomous_default"}
           ]
         }' >"$outfile" 2>/dev/null || true
+      sb_outcomes_seal
       return 0
     fi
     jq -n \
@@ -79,6 +122,7 @@ sb_outcomes_seed_for_prompt() {
           {id:"verify", label:"Run verification before claiming completion", status:"pending", evidence:"", decision_class:"autonomous_default"}
         ]
       }' >"$outfile" 2>/dev/null || true
+    sb_outcomes_seal
   fi
 }
 
