@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Behavior tests for the PostToolUse usage recorders (record-agentmemory-usage.sh)
 set -euo pipefail
+# The opt-in gates act only on the user's own consent, never on .silver-bullet.json alone.
+# shellcheck source=../lib/consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/consent-helpers.sh"
+sb_test_consent_grant_all
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
 # shellcheck source=../lib/c-toolgates-2-helpers.sh
@@ -58,36 +62,25 @@ prologue_suite() {
   tg2_run "$hook" "$good"
   assert_not_recorded "$name: suspended enforcement is a no-op" "$state"
 
-  # Library farm: without sb-project-gate.sh the hook walks upward itself.
+  # Without sb-project-gate.sh the hook cannot find its project: inert (fail-open), never an error.
   reset; tg2_farm gate "hooks/$name" sb-project-gate.sh project-active.sh
   TG2_REPO="$TG2_FARM" TG2_PROJECT_ROOT="" TG2_CWD="$TG2_PROJ/src" tg2_run "hooks/$name" "$good"
-  assert_recorded "$name: farm without gate lib still records via its own walk-up" "$state"
+  assert_not_recorded "$name: farm without the project-gate lib is inert" "$state"
+  assert_eq "$name: farm without the project-gate lib exits 0" "0" "$TL_STATUS"
+
+  # A project recommendation without the user's consent records nothing.
+  reset; TG2_PROJECT_ROOT="$TG2_PROJ" tg2_run "$hook" "$good" XDG_CONFIG_HOME="$TL_TMP/no-consent"
+  assert_not_recorded "$name: no user consent is a no-op" "$state"
   # Without any lib dir the hook cannot source anything and stays inert (fail-open).
   reset; tg2_farm nolib "hooks/$name" -
   TG2_REPO="$TG2_FARM" tg2_run "hooks/$name" "$good"
   assert_not_recorded "$name: missing lib dir fails open" "$state"
 }
 
-# Walk-up fallback (no sb-project-gate.sh): finds config in a parent, stops at .git / root.
-walkup_suite() { # hook state good tool-with-gate-libs-note
-  local hook="$1" state="$2" good="$3" name="${1##*/}"
-  reset; tg2_farm walk "hooks/$name" sb-project-gate.sh project-active.sh
-  TG2_REPO="$TG2_FARM" TG2_PROJECT_ROOT="" TG2_CWD="$TG2_PROJ/src" tg2_run "hooks/$name" "$good"
-  if state_is_epoch "$state"; then tl_pass "$name: walk-up fallback finds parent config"; else tl_fail "$name: walk-up fallback did not record (status=$TL_STATUS err=$TL_ERR)"; fi
-  reset
-  mkdir -p "$TL_TMP/gitonly/sub"; git -C "$TL_TMP/gitonly" init -q 2>/dev/null
-  TG2_REPO="$TG2_FARM" TG2_PROJECT_ROOT="" TG2_CWD="$TL_TMP/gitonly/sub" tg2_run "hooks/$name" "$good"
-  assert_not_recorded "$name: walk-up stops at .git boundary" "$state"
-  reset
-  TG2_REPO="$TG2_FARM" TG2_PROJECT_ROOT="" TG2_CWD="$TL_TMP/outside" tg2_run "hooks/$name" "$good"
-  assert_not_recorded "$name: walk-up stops at filesystem root" "$state"
-}
-
 # ---------------------------------------------------------------- agentmemory
 AMH=hooks/record-agentmemory-usage.sh
 am_cmd="$(tg2_bash_input 'agentmemory search "auth flow"' Bash PostToolUse)"
 prologue_suite "$AMH" "$AM_STATE" "$am_cmd" "✅ agentmemory usage recorded" agentmemory
-walkup_suite "$AMH" "$AM_STATE" "$am_cmd"
 
 reset; tg2_run "$AMH" "$(tg2_bash_input 'agentmemory search x' Bash PostToolUse 1)"
 assert_not_recorded "agentmemory: failed retrieval command is not recorded" "$AM_STATE"
@@ -95,29 +88,33 @@ reset; tg2_run "$AMH" "$(tg2_bash_input 'ls -la' Bash PostToolUse)"
 assert_not_recorded "agentmemory: non-retrieval command is not recorded" "$AM_STATE"
 reset; tg2_run "$AMH" "$(jq -cn '{hook_event_name:"PostToolUse", tool_name:"Bash", tool_input:{}}')"
 assert_not_recorded "agentmemory: shell tool without command is a no-op" "$AM_STATE"
-reset; tg2_run "$AMH" "$(tg2_bash_input 'curl -s localhost:3111/agentmemory/recall' exec_command PostToolUse)"
+reset; tg2_run "$AMH" "$(tg2_bash_input 'curl -s http://localhost:3111/agentmemory/recall' exec_command PostToolUse)"
 assert_recorded "agentmemory: exec_command HTTP recall is recorded" "$AM_STATE"
+# R5-10: a word in another program's arguments, a pipe, a foreign host or a non-retrieval endpoint never records
+for c in 'echo agentmemory search x' 'agentmemory search x | head' 'agentmemory search x || true' \
+  'curl -s http://evil.example/agentmemory/recall' 'curl -s http://localhost:3111/agentmemory/health' \
+  'curl -s -o /tmp/x http://localhost:3111/agentmemory/recall' 'curl -s localhost:3111/agentmemory/recall'; do
+  reset; tg2_run "$AMH" "$(tg2_bash_input "$c" Bash PostToolUse)"
+  assert_not_recorded "agentmemory: not a retrieval: $c" "$AM_STATE"
+done
+# A missing exit code is never taken as success; output alone (no error flag) is
+reset; tg2_run "$AMH" "$(jq -cn '{hook_event_name:"PostToolUse", tool_name:"Bash", tool_input:{command:"agentmemory search x"}}')"
+assert_not_recorded "agentmemory: no exit code and no output is not success" "$AM_STATE"
+reset; tg2_run "$AMH" "$(jq -cn '{hook_event_name:"PostToolUse", tool_name:"Bash", tool_input:{command:"agentmemory search x"}, tool_response:{stdout:"3 results"}}')"
+assert_recorded "agentmemory: output without an exit code counts" "$AM_STATE"
+reset; tg2_run "$AMH" "$(jq -cn '{hook_event_name:"PostToolUse", tool_name:"Bash", tool_input:{command:"agentmemory search x"}, tool_response:{stdout:"x", interrupted:true}}')"
+assert_not_recorded "agentmemory: an interrupted command is not success" "$AM_STATE"
+reset; tg2_run "$AMH" "$(jq -cn '{hook_event_name:"PostToolUse", tool_name:"Bash", tool_input:{command:"agentmemory search x"}, tool_response:"oops"}')"
+assert_not_recorded "agentmemory: a non-object response is not success" "$AM_STATE"
+# MCP retrievals are recorded by record-recommended-mcp.sh, not by this Bash recorder
 reset; tg2_run "$AMH" "$(tg2_mcp_input agentmemory memory_recall CallMcpTool)"
-assert_recorded "agentmemory: CallMcpTool on agentmemory server records" "$AM_STATE"
-assert_eq "agentmemory: MCP confirmation" "✅ agentmemory usage recorded" "$(msg)"
-reset; tg2_run "$AMH" "$(tg2_mcp_input other-server smart_search MCP)"
-assert_recorded "agentmemory: MCP memory tool on any server records" "$AM_STATE"
-reset; tg2_run "$AMH" "$(tg2_mcp_input other-server list_files CallMcpTool)"
-assert_not_recorded "agentmemory: unrelated MCP tool does not record" "$AM_STATE"
-reset; tg2_run "$AMH" "$(jq -cn '{hook_event_name:"PostToolUse", tool_name:"mcp__user-agentmemory__search", tool_input:{}}')"
-assert_recorded "agentmemory: mcp__*agentmemory* tool records" "$AM_STATE"
-reset; tg2_run "$AMH" "$(jq -cn '{hook_event_name:"PostToolUse", tool_name:"memory_save", tool_input:{}}')"
-assert_recorded "agentmemory: named memory_save tool records" "$AM_STATE"
+assert_not_recorded "agentmemory: the Bash recorder ignores MCP calls" "$AM_STATE"
 # Unwritable state path (a directory) -> record fails, hook stays silent and exits 0.
-reset; mkdir -p "$SB_RUNTIME_STATE_DIR/am-dir"
-jq --arg p "$SB_RUNTIME_STATE_DIR/am-dir" '.recommended_tools.agentmemory.usage_state_file=$p' <<<"$all_cfg" >"$TG2_CFG"
+reset; mkdir -p "$SB_RUNTIME_STATE_DIR/am-dir-usage"
+jq --arg p "$SB_RUNTIME_STATE_DIR/am-dir-usage" '.recommended_tools.agentmemory.usage_state_file=$p' <<<"$all_cfg" >"$TG2_CFG"
 tg2_run "$AMH" "$am_cmd"
 assert_silent_ok "agentmemory: failed state write is silent (command path)"
-tg2_run "$AMH" "$(tg2_mcp_input agentmemory memory_recall CallMcpTool)"
-assert_silent_ok "agentmemory: failed state write is silent (CallMcpTool path)"
-tg2_run "$AMH" "$(jq -cn '{hook_event_name:"PostToolUse", tool_name:"memory_search", tool_input:{}}')"
-assert_silent_ok "agentmemory: failed state write is silent (named tool path)"
-rmdir "$SB_RUNTIME_STATE_DIR/am-dir"
+rmdir "$SB_RUNTIME_STATE_DIR/am-dir-usage"
 # jq-free farm: no tool-input.sh -> jq fallbacks parse the payload.
 reset; tg2_farm notoolinput "$AMH" tool-input.sh
 TG2_REPO="$TG2_FARM" tg2_run "$AMH" "$am_cmd"
@@ -129,9 +126,6 @@ assert_not_recorded "agentmemory: jq fallbacks still skip non-retrieval" "$AM_ST
 # A farm whose tool-input.sh answers from env (so unparsable JSON still routes to a tool)
 # exercises the "jq failed -> default" fallbacks; a farm whose project-active.sh reports
 # "not initiated" exercises the initiation guards.
-stub_tool_input='sb_tool_name() { printf "%s" "${STUB_TOOL_NAME:-}"; }
-sb_tool_command_string() { printf "%s" "${STUB_CMD:-}"; }
-sb_tool_file_path() { printf "%s" "${STUB_FILE:-}"; }'
 stub_inactive='sb_project_active() { return 1; }
 sb_project_is_initiated() { return 1; }
 sb_project_gate_or_exit() { exit 0; }'
@@ -140,18 +134,12 @@ fault_suite() { # hook state bash-cmd mcp-tool-env-ok
   local hook="$1" state="$2" cmd="$3" name="${1##*/}"
   reset; TG2_STDIN_UNREADABLE=1 tg2_run "$hook" ""
   assert_not_recorded "$name: unreadable stdin is a no-op" "$state"
-  if [[ -n "$cmd" ]]; then
-    reset; tg2_farm "ti-$name" "$hook" tool-input.sh; tg2_farm_stub tool-input.sh "$stub_tool_input"
-    TG2_REPO="$TG2_FARM" tg2_run "$hook" "not json" STUB_TOOL_NAME=Bash "STUB_CMD=$cmd"
-    assert_recorded "$name: unparsable exit_code defaults to success" "$state"
-  fi
+  reset; tg2_run "$hook" "not json"
+  assert_not_recorded "$name: unparsable payload records nothing" "$state"
   reset; tg2_farm "inactive-$name" "$hook" project-active.sh; tg2_farm_stub project-active.sh "$stub_inactive"
   TG2_REPO="$TG2_FARM" tg2_run "$hook" "$4" STUB_TOOL_NAME="${5:-Bash}" "STUB_CMD=$cmd"
   assert_not_recorded "$name: not-initiated project is a no-op" "$state"
 }
 fault_suite "$AMH" "$AM_STATE" 'agentmemory search x' "$am_cmd"
-reset; tg2_farm ti-am-mcp "$AMH" tool-input.sh; tg2_farm_stub tool-input.sh "$stub_tool_input"
-TG2_REPO="$TG2_FARM" tg2_run "$AMH" "not json" STUB_TOOL_NAME=CallMcpTool
-assert_not_recorded "agentmemory: unparsable MCP payload records nothing" "$AM_STATE"
 
 tl_results

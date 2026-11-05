@@ -1,16 +1,18 @@
 #!/usr/bin/env bash
 # Tests for hooks/rtk-gate.sh
 set -euo pipefail
+# The opt-in gates act only on the user's own consent, never on .silver-bullet.json alone.
+# shellcheck source=../lib/consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/consent-helpers.sh"
+sb_test_consent_grant_all
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 ORIG_HOME="${HOME:-}"
 ORIG_RTK_HOME="${RTK_HOME:-}"
-ORIG_XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-}"
 ORIG_XDG_STATE_HOME="${XDG_STATE_HOME:-}"
 SB_TEST_HOME_ROOT="$(mktemp -d)"
 export HOME="$SB_TEST_HOME_ROOT"
 export RTK_HOME="$SB_TEST_HOME_ROOT/.rtk"
-export XDG_CONFIG_HOME="$SB_TEST_HOME_ROOT/.config"
 export XDG_STATE_HOME="$SB_TEST_HOME_ROOT/.local/state"
 if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
   # shellcheck source=hooks/lib/runtime-paths.sh
@@ -40,7 +42,6 @@ cleanup_all() {
   rm -rf "$SB_TEST_HOME_ROOT"
   if [[ -n "$ORIG_HOME" ]]; then export HOME="$ORIG_HOME"; else unset HOME; fi
   if [[ -n "$ORIG_RTK_HOME" ]]; then export RTK_HOME="$ORIG_RTK_HOME"; else unset RTK_HOME; fi
-  if [[ -n "$ORIG_XDG_CONFIG_HOME" ]]; then export XDG_CONFIG_HOME="$ORIG_XDG_CONFIG_HOME"; else unset XDG_CONFIG_HOME; fi
   if [[ -n "$ORIG_XDG_STATE_HOME" ]]; then export XDG_STATE_HOME="$ORIG_XDG_STATE_HOME"; else unset XDG_STATE_HOME; fi
 }
 trap cleanup_all EXIT
@@ -88,7 +89,7 @@ isolate_home() {
   TEST_HOME="$(mktemp -d)"
   export HOME="$TEST_HOME" SILVER_BULLET_RUNTIME=cursor
   export RTK_HOME="$TEST_HOME/.rtk"
-  export XDG_CONFIG_HOME="$TEST_HOME/.config"
+
   export XDG_STATE_HOME="$TEST_HOME/.local/state"
 }
 
@@ -143,7 +144,6 @@ setup() {
   export PATH="/usr/bin:/bin:/usr/sbin:/sbin"
   export HOME="$SB_TEST_HOME_ROOT"
   export RTK_HOME="$SB_TEST_HOME_ROOT/.rtk"
-  export XDG_CONFIG_HOME="$SB_TEST_HOME_ROOT/.config"
   export XDG_STATE_HOME="$SB_TEST_HOME_ROOT/.local/state"
   unset SILVER_BULLET_RUNTIME SB_RTK_HOOK_ARTIFACT 2>/dev/null || true
   mkdir -p "$(dirname "$TMPFILE")"

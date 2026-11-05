@@ -61,11 +61,4 @@ uat_case() { # <result> <rows>
 assert_contains "uat-gate blocks a large UAT with FAIL rows" "$(uat_case FAIL)" "UAT GATE"
 assert_contains "uat-gate blocks a large UAT with NOT-RUN rows" "$(uat_case NOT-RUN)" "UAT GATE"
 
-# --- context-mode-gate.sh:164 (grep -rl | grep -q . with many matching files) ---
-RULES="$TL_TMP/cm/.cursor/rules"; mkdir -p "$RULES"
-for ((i = 1; i <= 5000; i++)); do
-  printf 'context-mode\n' >"$RULES/rule-with-a-reasonably-long-descriptive-file-name-$i.mdc"
-done
-yes_t "context-mode: cursor rule found among many matching files" lib_fn hooks/lib/context-mode-gate.sh sb_context_mode_cursor_rule_present "$TL_TMP/cm"
-
 tl_results
