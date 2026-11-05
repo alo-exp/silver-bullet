@@ -50,7 +50,9 @@ assert_deny() {
 
 assert_contains() {
   local label="$1" output="$2" needle="$3"
-  if printf '%s' "$output" | jq -r '.hookSpecificOutput.permissionDecisionReason // ""' | grep -qF -- "$needle"; then
+  local reason
+  reason="$(printf '%s' "$output" | jq -r '.hookSpecificOutput.permissionDecisionReason // ""')"
+  if grep -qF -- "$needle" <<<"$reason"; then
     echo "  PASS: $label"
     PASS=$((PASS + 1))
   else
