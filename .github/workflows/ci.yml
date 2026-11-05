@@ -134,7 +134,10 @@ jobs:
 
   coverage:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    # The traced run of every suite on a 4-core runner took 90+ minutes once the shell-analysis
+    # corpus tests landed, and was cancelled at the old 90-minute limit before reaching the
+    # --fail-under check. Leave room; the suite is trimmed over time.
+    timeout-minutes: 180
     steps:
       - uses: actions/checkout@v5
         with:
