@@ -1,0 +1,667 @@
+{
+ "wrong_default": [
+  "cursor",
+  "director",
+  "conductor",
+  "linear",
+  "continue",
+  "cognition-scout",
+  "aider",
+  "poolside",
+  "superpowers",
+  "windsurf",
+  "codex",
+  "cline",
+  "devin",
+  "sweep",
+  "sweep-ai",
+  "augment-cosmos",
+  "silver-bullet",
+  "gsd",
+  "oh-my-pi",
+  "devika",
+  "linear-agent",
+  "cursor-agents",
+  "claude-code",
+  "deepwork",
+  "tembo",
+  "workflow-manager",
+  "claude-harness",
+  "open-interpreter",
+  "amazon-q-developer",
+  "barkain-workflow-orchestrator",
+  "cursor-background-agents",
+  "claude-code-expert"
+ ],
+ "cases": [
+  {
+   "row": {
+    "text": "Director approved the final cut.",
+    "source_ref": "Director's Cut — Blu-ray review"
+   },
+   "cat": "src",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Director approved the final cut.",
+    "source_ref": "Interview with the Director (IMDb)"
+   },
+   "cat": "src",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Cursor shapes differ per OS.",
+    "source_ref": "https://en.wikipedia.org/wiki/Cursor_(user_interface)"
+   },
+   "cat": "src",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Cursor shapes differ per OS.",
+    "source_ref": "Cursor (user interface) - Wikipedia"
+   },
+   "cat": "src",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Linear models are fast.",
+    "source_ref": "Linear regression - Wikipedia"
+   },
+   "cat": "src",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Linear models are fast.",
+    "source_ref": "https://linear-regression.example.org/"
+   },
+   "cat": "src",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Continue reading for the setup.",
+    "source_ref": "Continue reading - Medium"
+   },
+   "cat": "src",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Continue reading for the setup.",
+    "source_ref": "https://continue-reading.example.com"
+   },
+   "cat": "src",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Silver Bullet thinking fails.",
+    "source_ref": "Silver Bullet - Official Site"
+   },
+   "cat": "src",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Silver Bullet thinking fails.",
+    "source_ref": "No Silver Bullet (Brooks, 1986)"
+   },
+   "cat": "src",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Codex Sinaiticus is a manuscript.",
+    "source_ref": "https://en.wikipedia.org/wiki/Codex_Sinaiticus"
+   },
+   "cat": "src",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Codex Sinaiticus is a manuscript.",
+    "source_ref": "openai.com/codex-history"
+   },
+   "cat": "src",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Conductor rails carry current.",
+    "source_ref": "https://conductor.build.example.net/rails"
+   },
+   "cat": "src",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Conductor rails carry current.",
+    "source_ref": "https://example.net/conductor.build"
+   },
+   "cat": "src",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Cursor shapes differ per OS.",
+    "source_ref": "https://cursor.com.evil.example/blog"
+   },
+   "cat": "src",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Cursor shapes differ per OS.",
+    "source_ref": "https://precursor.com/blog"
+   },
+   "cat": "src",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Cursor shapes differ per OS.",
+    "source_ref": "https://example.org?ref=cursor.com"
+   },
+   "cat": "src",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Cursor shapes differ per OS.",
+    "source_ref": "https://example.org#cursor.com"
+   },
+   "cat": "src",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Cursor shapes differ per OS.",
+    "source_ref": "https://gist.github.com/someone/cursor.com"
+   },
+   "cat": "src",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Tembo means elephant in Swahili.",
+    "source_ref": "https://tembo.io.example/"
+   },
+   "cat": "src",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Superpowers include flight.",
+    "source_ref": "https://github.com/obra/superpowers-fanfic"
+   },
+   "cat": "src",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "GSD is a productivity habit.",
+    "source_ref": "https://github.com/gsd-build"
+   },
+   "cat": "src",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "GSD is a productivity habit.",
+    "source_ref": "https://github.com/"
+   },
+   "cat": "src",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "the director approved it.",
+    "source_ref": "Director"
+   },
+   "cat": "src",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "the cursor blinks twice.",
+    "source_ref": "https://cursor.com/"
+   },
+   "cat": "src",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Director approved it.",
+    "source_ref": "Directors"
+   },
+   "cat": "src",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Director approved it.",
+    "source_ref": "Director Pro"
+   },
+   "cat": "src",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Director approved it.",
+    "source_ref": "Director 2"
+   },
+   "cat": "src",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Directory services are slow.",
+    "source_ref": "Director"
+   },
+   "cat": "src",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "DIRECTORY listing is slow.",
+    "source_ref": "Director"
+   },
+   "cat": "src",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Cursorless voice coding is fun.",
+    "source_ref": "Cursor"
+   },
+   "cat": "src",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Lineare Algebra ist schwer.",
+    "source_ref": "Linear"
+   },
+   "cat": "src",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Codexes are old books.",
+    "source_ref": "Codex"
+   },
+   "cat": "src",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Cognitive load rises.",
+    "source_ref": "https://cognition.ai"
+   },
+   "cat": "src",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "The Wachowskis directed it; see Director notes.",
+    "source_ref": [
+     "Wikipedia",
+     "IMDb"
+    ]
+   },
+   "cat": "src",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Director approved it.",
+    "supporting_sources": [
+     "env-3",
+     "Directory"
+    ]
+   },
+   "cat": "src",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Director approved it.",
+    "source_ref": "Producer; Directorate"
+   },
+   "cat": "src",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Director approved it.",
+    "source_ref": "Director-General report"
+   },
+   "cat": "src",
+   "wrong": null
+  },
+  {
+   "row": "Add third_party/conductor.BUILD so Bazel can fetch Netflix Conductor.",
+   "cat": "url",
+   "wrong": null
+  },
+  {
+   "row": "WorkflowDef def = conductor.build(); registers the Netflix Conductor workflow.",
+   "cat": "url",
+   "wrong": null
+  },
+  {
+   "row": "Export the logo as devin.ai and send it to print.",
+   "cat": "url",
+   "wrong": null
+  },
+  {
+   "row": "The Illustrator file cognition.ai holds the memory-lab poster.",
+   "cat": "url",
+   "wrong": null
+  },
+  {
+   "row": "Email devin.ai@school.edu for the roster.",
+   "cat": "url",
+   "wrong": null
+  },
+  {
+   "row": "See user_cursor.com in the fixture list.",
+   "cat": "url",
+   "wrong": null
+  },
+  {
+   "row": "Redirect via https://example.org?next=cursor.com after login.",
+   "cat": "url",
+   "wrong": null
+  },
+  {
+   "row": "Redirect via https://example.org#tembo.io after login.",
+   "cat": "url",
+   "wrong": null
+  },
+  {
+   "row": "Tutorial: precursor.com and cursorx.com are brandable names.",
+   "cat": "url",
+   "wrong": null
+  },
+  {
+   "row": "Ping cursor.community and linear.app.example for status.",
+   "cat": "url",
+   "wrong": null
+  },
+  {
+   "row": "The fork github.com/obra/superpowers-fanfic collects stories.",
+   "cat": "url",
+   "wrong": null
+  },
+  {
+   "row": "The org page github.com/gsd-build lists nothing yet.",
+   "cat": "url",
+   "wrong": null
+  },
+  {
+   "row": "Docs at openai.com/codexes cover old books.",
+   "cat": "url",
+   "wrong": null
+  },
+  {
+   "row": "Our host conductor.builders.example ships rails.",
+   "cat": "url",
+   "wrong": null
+  },
+  {
+   "row": "File names like tembo.iox are invalid.",
+   "cat": "url",
+   "wrong": null
+  },
+  {
+   "row": "The DOS program CURSOR.COM changes the caret shape.",
+   "cat": "url",
+   "wrong": null
+  },
+  {
+   "row": "The Bazel overlay devin.ai.BUILD pins nothing.",
+   "cat": "url",
+   "wrong": null
+  },
+  {
+   "row": "sb.alolabs.development is not a real host.",
+   "cat": "url",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Director approved it.",
+    "vendors": [
+     "x",
+     "x",
+     "x",
+     "x",
+     "x",
+     "x",
+     "x",
+     "x",
+     "x",
+     "x",
+     "x",
+     "x",
+     "director"
+    ]
+   },
+   "cat": "tag",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Director approved it.",
+    "vendors": [
+     "director-2"
+    ]
+   },
+   "cat": "tag",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Director approved it.",
+    "vendors": [
+     "the director"
+    ]
+   },
+   "cat": "tag",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Director approved it.",
+    "vendors": "director"
+   },
+   "cat": "tag",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Director approved it.",
+    "vendors": {
+     "director": true
+    }
+   },
+   "cat": "tag",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Director approved it.",
+    "vendors": [
+     [
+      "director"
+     ]
+    ]
+   },
+   "cat": "tag",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Director approved it.",
+    "vendors": [
+     "director (film)"
+    ]
+   },
+   "cat": "tag",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Director approved it.",
+    "vendors": [
+     "ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddirector"
+    ]
+   },
+   "cat": "tag",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Director approved it.",
+    "vendors": [
+     "directors"
+    ]
+   },
+   "cat": "tag",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Director approved it.",
+    "vendors": [
+     "dir"
+    ]
+   },
+   "cat": "tag",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Cursor blinks.",
+    "vendors": [
+     "cursor.com"
+    ]
+   },
+   "cat": "tag",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Cursor blinks.",
+    "vendors": [
+     "https://cursor.com"
+    ]
+   },
+   "cat": "tag",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Codex Sinaiticus.",
+    "vendors": [
+     "openai"
+    ]
+   },
+   "cat": "tag",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Copilot flies the plane.",
+    "vendors": [
+     "copilot"
+    ]
+   },
+   "cat": "tag",
+   "wrong": [
+    "github-copilot",
+    "copilot-workspace"
+   ]
+  },
+  {
+   "row": {
+    "text": "Director approved it.",
+    "vendors": [
+     null,
+     3,
+     "sdlc",
+     "apo"
+    ]
+   },
+   "cat": "tag",
+   "wrong": null
+  },
+  {
+   "row": {
+    "text": "Cursor Agents run tasks; the Cursor key moves the caret.",
+    "vendors": [
+     "cursor-agents"
+    ]
+   },
+   "cat": "shared",
+   "wrong": [
+    "cursor",
+    "cursor-background-agents"
+   ]
+  },
+  {
+   "row": {
+    "text": "Linear Agent triages issues; Linear algebra is unrelated.",
+    "vendors": [
+     "linear-agent"
+    ]
+   },
+   "cat": "shared",
+   "wrong": [
+    "linear"
+   ]
+  },
+  {
+   "row": {
+    "text": "Sweep AI fixes bugs; Sweep the floor first.",
+    "vendors": [
+     "sweep-ai"
+    ]
+   },
+   "cat": "shared",
+   "wrong": [
+    "sweep"
+   ]
+  },
+  {
+   "row": {
+    "text": "Claude Code Expert is a plugin bundle.",
+    "vendors": [
+     "claude-code-expert"
+    ]
+   },
+   "cat": "shared",
+   "wrong": [
+    "claude-code"
+   ]
+  },
+  {
+   "row": {
+    "text": "Cognition Scout reads repos; Cognition is a psychology topic.",
+    "vendors": [
+     "cognition-scout"
+    ]
+   },
+   "cat": "shared",
+   "wrong": [
+    "devin"
+   ]
+  }
+ ]
+}
