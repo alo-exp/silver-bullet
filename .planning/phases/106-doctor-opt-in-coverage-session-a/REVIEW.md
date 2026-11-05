@@ -46,7 +46,7 @@ Session B; Omni Phase 3 (footnote only); Phase 4 plugin; freeze-file; SPEC/REQUI
 
 ## SILVER BULLET > REVIEW
 
-Findings ordered by severity. File references are under `/Users/shafqat/projects/silver-bullet/repo`.
+Findings ordered by severity. File references are under `/Users/<user>/projects/silver-bullet/repo`.
 
 | ID | Sev | Finding | Evidence |
 |----|-----|---------|----------|

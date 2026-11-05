@@ -4,8 +4,8 @@ Phase: VERIFY-ONLY pass 1/2 (`rung_06_verify_1`)
 This is `/silver:review-fix-ladder` only. Do **not** run `/silver:clarify`. Do not AskQuestion. Do not encode product forks. Do not combine verify_2.
 
 Scope (FORBIDDEN to Edit/Write either freeze copy):
-- `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
-- `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
+- `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
+- `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
 
 Independently re-hash both copies. Disk wins.
 Locked SHA: `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` / 621095 bytes (both copies byte-identical).
@@ -23,7 +23,7 @@ STALE leftover `verify-1.md` from old SHA `07b98609…` is **not** this pass —
 Charter: 33 pending YAML; forbid-only multi-ai-task / agent-wrap; FAST not a Job / not a compose route; E→Ver→Val + thin capture; OmniRoute routing-only; KEEP REJECT / Q1–Q3 / Part A then Part B; LS-post-val-kl Executor producer; single mermaid; TOC-GFM single-hyphen.
 
 You ARE required to Write the report ONLY to this ABSOLUTE path:
-`/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-06-cursor-gemini-3.7-flash-high/verify-1.md`
+`/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-06-cursor-gemini-3.7-flash-high/verify-1.md`
 
 The verify-1.md MUST include:
 - SHA-256 you hashed for each copy, sizes, byte-identical yes/no (must be `d5343ac1…` / 621095)

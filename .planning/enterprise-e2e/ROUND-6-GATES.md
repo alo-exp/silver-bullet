@@ -73,9 +73,9 @@ Round 6 is **strict-clean** only when **all** hold:
 ### Re-score commands (rows 3/4/21/22)
 
 ```bash
-export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
+export SB_ROOT=/Users/<user>/projects/silver-bullet/repo
 export SB_E2E_LEDGER_FILE="$SB_ROOT/.planning/enterprise-e2e/ROUND-6-LEDGER.md"
-export SB_TEST_ENTERPRISE_APP_ROOT=/Users/shafqat/projects/enterprise-grade-test-app
+export SB_TEST_ENTERPRISE_APP_ROOT=/Users/<user>/projects/enterprise-grade-test-app
 source scripts/lib/enterprise-e2e-outcome-assessment.sh
 source scripts/enterprise-e2e/lib/host.sh
 rt="$(enterprise_e2e_runtime_state_dir)"

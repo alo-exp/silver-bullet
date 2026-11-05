@@ -8,7 +8,7 @@ Reusable handoff prompt for a **fresh session on `main`**. Task-detail mode incl
 
 - **Repo:** silver-bullet (`alo-exp/silver-bullet`)
 - **Origin:** https://github.com/alo-exp/silver-bullet.git
-- **Canonical root:** [`/Users/shafqat/projects/silver-bullet/repo`](/Users/shafqat/projects/silver-bullet/repo)
+- **Canonical root:** [`/Users/<user>/projects/silver-bullet/repo`](/Users/<user>/projects/silver-bullet/repo)
 - **Branch:** `main` (stay here). HEAD [`11362001d`](https://github.com/alo-exp/silver-bullet/commit/11362001d) (`memory: auto-snapshot 2026-08-30T16:55:09Z`). Tracking: `main...origin/main` **ahead 2, behind 1**. Do **not** `git pull` / rebase / merge / checkout to “catch up” unless the user asks — freeze twins and rung-07 artifacts are **untracked**.
 - **Plugin / tag:** `v0.52.0` (`package.json` 0.52.0). Not a plugin-release slice. Planning `STATE.md` still reads **v0.39.3 Zuvo Runtime Parity** complete — that is **not** the active work.
 - **Working tree junk (do not commit):** `.alumnium/logs/`, `.agentmemory/snapshots`, `${SB_RUNTIME_HOME_ROOT}/...`, MCP logs, secrets. Unrelated dirty: `.planning/router_subagent_surfaces_85bf9f09.plan.md`, `.silver-bullet.json`, `.silver-bullet/cursor-models-catalog.json`.
@@ -59,7 +59,7 @@ Reusable handoff prompt for a **fresh session on `main`**. Task-detail mode incl
 
 ## First 3 Actions for Next Session
 
-1. In `/Users/shafqat/projects/silver-bullet/repo`, stay on **`main`**. Do not switch branches. Reconfirm freeze `fcf09491…` with `shasum -a 256` + `cmp` on both twins.
+1. In `/Users/<user>/projects/silver-bullet/repo`, stay on **`main`**. Do not switch branches. Reconfirm freeze `fcf09491…` with `shasum -a 256` + `cmp` on both twins.
 2. `graphify query "spec_template_world_class rung-07 Policy F pass 11 Claude High"` then inspect pass-11b: pids 6234/6240, `review-rerun-11.md`, `logs/review-attempt11b-exit.txt`. Do not start a second Pi invoke while 11b is live.
 3. Continue the Policy F loop on **rung 07 only** with the model locks below. Commit only at streak 2. Do not start rung 8.
 
@@ -128,7 +128,7 @@ Pi env used for 11b: `PI_PROVIDER=omniroute`, `PI_MODEL=claude/claude-opus-5-hig
 ```text
 Continue Silver Bullet SPEC-template RFL from main. Do NOT switch branches.
 
-Repo: /Users/shafqat/projects/silver-bullet/repo
+Repo: /Users/<user>/projects/silver-bullet/repo
 Branch: main (HEAD 11362001d; origin ahead 2 behind 1 — do not pull/rebase unless I ask)
 Run dir: .planning/rfl-spec-template-world-class/rung-07-pi-claude-opus-5-high/
 Rung: 07 Pi claude/claude-opus-5-high (Policy F streak 0; need 2 consecutive CLEAN)

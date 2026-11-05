@@ -1,9 +1,9 @@
 You are on rung 2/13: model=DeepSeek V4 Pro, reasoning=max, host=OpenCode.
 Phase: REVIEW-ONLY (rung_2_review)
 
-Plan: /Users/shafqat/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md
-Charter: /Users/shafqat/projects/silver-bullet/repo/.planning/rfl-agent-interaction-modes-17ed9bf7/CHARTER.md
-Rung 1 ledger: /Users/shafqat/projects/silver-bullet/repo/.planning/rfl-agent-interaction-modes-17ed9bf7/LEDGER.md
+Plan: /Users/<user>/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md
+Charter: /Users/<user>/projects/silver-bullet/repo/.planning/rfl-agent-interaction-modes-17ed9bf7/CHARTER.md
+Rung 1 ledger: /Users/<user>/projects/silver-bullet/repo/.planning/rfl-agent-interaction-modes-17ed9bf7/LEDGER.md
 
 Scope: that plan file only. Spec review, not product implementation.
 

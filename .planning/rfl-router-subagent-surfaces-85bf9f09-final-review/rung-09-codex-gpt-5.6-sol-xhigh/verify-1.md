@@ -10,8 +10,8 @@ Disk bytes were treated as authoritative. I independently ran SHA-256 and byte-s
 
 | Freeze copy | Bytes actually measured | SHA-256 actually hashed |
 |---|---:|---|
-| `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | 621233 | `4c18af575adc848542c3d04faa2579a206ac0a627c80aade0d7aba3514e91de9` |
-| `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | 621233 | `4c18af575adc848542c3d04faa2579a206ac0a627c80aade0d7aba3514e91de9` |
+| `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | 621233 | `4c18af575adc848542c3d04faa2579a206ac0a627c80aade0d7aba3514e91de9` |
+| `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | 621233 | `4c18af575adc848542c3d04faa2579a206ac0a627c80aade0d7aba3514e91de9` |
 
 Byte-identical: **YES** (`cmp -s` passed). This verification covers the current locked `4c18af57…` / 621233-byte freeze, not historical `d5343ac1…` / 621095, `edff7c0c…` / 621101, or `07b98609…` / 620985.
 

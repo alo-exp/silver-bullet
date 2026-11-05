@@ -19,7 +19,7 @@ export CURSOR_AGENT=1 SB_LIVE_CURSOR_IN_SESSION=1
 export CURSOR_AGENT_MODEL=composer-2.5 CURSOR_MODEL=composer-2.5
 
 if [[ -z "${SB_TEST_ENTERPRISE_APP_ROOT:-}" ]]; then
-  SB_TEST_ENTERPRISE_APP_ROOT="/Users/shafqat/projects/enterprise-grade-test-app-cursor"
+  SB_TEST_ENTERPRISE_APP_ROOT="/Users/<user>/projects/enterprise-grade-test-app-cursor"
 fi
 export SB_TEST_ENTERPRISE_APP_ROOT
 

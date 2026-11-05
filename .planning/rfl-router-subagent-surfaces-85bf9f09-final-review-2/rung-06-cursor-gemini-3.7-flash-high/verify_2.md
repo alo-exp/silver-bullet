@@ -2,7 +2,7 @@
 
 **Reviewer / Worker:** Cursor Task `gemini-3.7-flash-high` (`sb-gemini-3-7-flash-high`) (no Pi, no agent-pi, no OmniRoute, no invoke.sh, no Grok substitute).  
 **Parent:** d5150f38-4d37-458d-9bdb-5e6f985975d3  
-**Repo:** `/Users/shafqat/projects/silver-bullet/repo`  
+**Repo:** `/Users/<user>/projects/silver-bullet/repo`  
 **Branch:** `main` (clean working tree on freeze targets; no git branch switch)  
 **Mode:** VERIFY ONLY — second independent pass (verify_2). No freeze edits, no Policy-C edits, no APPLY, no Rung 7 start.  
 **Verdict:** **VERIFY_PASS**

@@ -2,7 +2,7 @@
 
 **Profile default:** `synergy_max`  
 **Audience:** Silver Bullet init/update/diagnostics implementers  
-**Sources:** [graphify](https://github.com/safishamsi/graphify), [agentmemory](https://github.com/rohitg00/agentmemory), `SETUP_REPORT.md`, `agentmemory-stack-setup.md`, `agentmemory-graphify-synergy-audit.md`
+**Sources:** [graphify](https://github.com/safishamsi/graphify), [agentmemory](https://github.com/rohitg00/agentmemory), the locally generated setup report (`sb-verify-synergy.sh --write-setup-report`, not committed), `agentmemory-stack-setup.md`, `agentmemory-graphify-synergy-audit.md`
 
 ## Executive Summary
 
@@ -12,10 +12,10 @@ Multi-agent teams get the best retrieval/capture loop when **agentmemory exports
 
 | Knob | synergy_max | Rationale |
 |------|-------------|-----------|
-| `query --budget 2000` | Yes | SB §2g-i default; caps traversal tokens [SETUP_REPORT, silver-bullet.md] |
+| `query --budget 2000` | Yes | SB §2g-i default; caps traversal tokens [local setup report, silver-bullet.md] |
 | `query_ttl_seconds: 1800` | Yes | Hook freshness gate; 30 min matches session cadence |
 | `graphify hook install` | Yes | Auto-rebuild on commit/checkout [graphify README] |
-| `graphify update . --no-cluster` | Yes | Faster incremental index; sufficient for memory+code [SETUP_REPORT Step 8.7] |
+| `graphify update . --no-cluster` | Yes | Faster incremental index; sufficient for memory+code [local setup report Step 8.7] |
 | Platform always-on | Per host | Cursor `.cursor/rules/graphify.mdc`; Claude hooks; Codex hooks [issue #137] |
 | Team `graphify-out/` commit | Optional | Document only — not auto-applied this pass |
 
@@ -30,8 +30,8 @@ Multi-agent teams get the best retrieval/capture loop when **agentmemory exports
 | `AGENTMEMORY_INJECT_CONTEXT=true` | Yes | Proactive injection [#152 integration layer] |
 | `AGENTMEMORY_AUTO_COMPRESS=false` | Yes | Cost control until user adds LLM key |
 | `OBSIDIAN_AUTO_EXPORT=true` | Yes | Markdown export for Graphify indexing |
-| `AGENTMEMORY_EXPORT_ROOT` | **Absolute path** | Relative paths resolve to `~/.agentmemory` when cwd ≠ repo [SETUP_REPORT deviation] |
-| Server persistence | launchd (macOS) / systemd (Linux) | `nohup` exits when CLI returns [SETUP_REPORT] |
+| `AGENTMEMORY_EXPORT_ROOT` | **Absolute path** | Relative paths resolve to `~/.agentmemory` when cwd ≠ repo [local setup report deviation] |
+| Server persistence | launchd (macOS) / systemd (Linux) | `nohup` exits when CLI returns [local setup report] |
 | Bridge + gitleaks | Bridge required; gitleaks required | Regex scan always; gitleaks second line |
 | BM25 floor | ≥0.9.5 | BM25 fix in 0.9.5+ [agentmemory issues] |
 
@@ -41,7 +41,7 @@ Multi-agent teams get the best retrieval/capture loop when **agentmemory exports
 2. `POST /agentmemory/obsidian/export` (or auto-export) → `.agentmemory/memory/`  
 3. Bridge commits clean changes  
 4. `graphify update . --no-cluster`  
-5. `graphify query "<topic>"` must return `.agentmemory` nodes [SETUP_REPORT 8.7]
+5. `graphify query "<topic>"` must return `.agentmemory` nodes [local setup report 8.7]
 
 **Anti-pattern:** Reading raw `.agentmemory/` dumps for orientation when Graphify is enabled — use save-via-agentmemory, retrieve-via-Graphify.
 
@@ -56,7 +56,7 @@ Multi-agent teams get the best retrieval/capture loop when **agentmemory exports
 
 ## gitignore Fix (mandatory)
 
-Use `.agentmemory/*` with `!.agentmemory/memory/**` — not `!.agentmemory/memory/` alone. Without `/**`, `git add` fails and bridge crashes [SETUP_REPORT, runbook Step 3].
+Use `.agentmemory/*` with `!.agentmemory/memory/**` — not `!.agentmemory/memory/` alone. Without `/**`, `git add` fails and bridge crashes [local setup report, runbook Step 3].
 
 ## cost_minimized Stub
 
@@ -67,4 +67,4 @@ Future profile: `INJECT_CONTEXT=false`, no bridge launchd, no graphify hooks, re
 - `docs/STACK-OPTIMIZATION.md` — SB automation contract  
 - `docs/GRAPHIFY.md` — platform registration  
 - `docs/AGENTMEMORY.md` — MCP and `.env`  
-- `SETUP_REPORT.md` — dogfood evidence on this repo
+- the locally generated setup report (`sb-verify-synergy.sh --write-setup-report`, not committed) — dogfood evidence on this repo

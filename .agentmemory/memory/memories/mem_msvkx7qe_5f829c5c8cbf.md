@@ -6,7 +6,7 @@ updated: "2026-08-16T09:05:08.940Z"
 strength: 7
 version: 1
 concepts: ["RFL rung 9", "verify_2", "search gateway", "ACCEPT coverage", "cache quiesce", "q3 atomicity"]
-files: [".planning/PLAN-dr-search-gateway-search-cli-fork.md", ".planning/dr_search_gateway_prd_ecb5030e-CLARIFY-260815-20260815T140745Z.md", "/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md"]
+files: [".planning/PLAN-dr-search-gateway-search-cli-fork.md", ".planning/dr_search_gateway_prd_ecb5030e-CLARIFY-260815-20260815T140745Z.md", "/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md"]
 ---
 
 # RFL rung 9 verify_2 independent audit: all six ACCEPTs H1-H4/M1-M2 are explicitl

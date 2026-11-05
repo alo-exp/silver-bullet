@@ -2,7 +2,7 @@ model: composer-2.5
 
 **Subagent:** `sb-composer-2-5-high`  
 **Phase:** VERIFY-ONLY pass 1/2 (`rung_1_verify_1`)  
-**Artifact:** `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
+**Artifact:** `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
 **SHA-256:** `265040b002871e9f109a710a2bdea64ab5c8ac24ae7ef5f225bec0303397490a` (verified via `shasum -a 256`)  
 **Graphify:** `graphify query "DR search gateway plan X xweb dedup consent cache" --budget 2000` (168 nodes; plan is PRD not indexed as source — oriented via direct read)  
 **APPLY ref:** [APPLY.md](APPLY.md) · **Review ref:** [review.md](review.md)

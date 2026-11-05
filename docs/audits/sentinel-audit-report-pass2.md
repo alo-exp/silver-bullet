@@ -1,5 +1,5 @@
 # SENTINEL v2.3 — Audit Pass 2 Report
-**Target:** Silver Bullet plugin at `/Users/shafqat/Documents/Projects/silver-bullet`
+**Target:** Silver Bullet plugin at `/Users/<user>/Documents/Projects/silver-bullet`
 **Date:** 2026-04-08
 **Auditor:** SENTINEL v2.3
 **Scope:** Verify all Pass-1 findings (F1-01 through F10-02) are remediated. Detect regressions introduced by fixes.
