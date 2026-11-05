@@ -11,7 +11,7 @@ SESSION_LOG="$TG2_PROJ/docs/sessions/log.md"
 BASE_CFG='{"sb_initiated":true}'
 
 reset() {
-  rm -rf "$STATE" "$LOADED" "$DIRECTIVE" "$RECEIPTS" "$SB_RUNTIME_STATE_DIR/project-root" \
+  rm -rf "$STATE" "$STATE.seal" "$STATE.hwm" "$LOADED" "$DIRECTIVE" "$RECEIPTS" "$SB_RUNTIME_STATE_DIR/project-root" \
     "$SB_RUNTIME_STATE_DIR/record-skill.debug.log" "$TG2_PROJ/.planning"
   tg2_cfg "$BASE_CFG"
 }
