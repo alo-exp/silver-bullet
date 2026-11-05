@@ -115,6 +115,7 @@ quota_retry_interval="${AGENT_CODEX_QUOTA_RETRY_INTERVAL:-60}"
 quota_retry_max="$(agent_delegate_quota_retry_max AGENT_CODEX_QUOTA_RETRY_MAX 5)"
 log_floor="${SB_AGENT_CODEX_LOG_FLOOR:-512}"
 attempt=0
+fp_before="unknown"
 
 agent_codex_apply_lightweight_env() {
   [[ "${SB_AGENT_CODEX_LIGHTWEIGHT:-1}" == "1" ]] || return 0

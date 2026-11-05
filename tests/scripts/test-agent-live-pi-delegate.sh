@@ -68,7 +68,7 @@ run_pd --mode bogus --prompt hi
 assert_eq "pi delegate invalid --mode exits 2" "2" "$TL_STATUS"
 run_pd
 assert_eq "pi delegate without a prompt exits 2" "2" "$TL_STATUS"
-run_pd --prompt 'api_key=abcdef'
+run_pd --prompt "api_key=$(printf '%s%s' 'wJalrXUtnFEMI/K7MDENG' '/bPxRfiCYEXAMPLEKEY')"
 assert_eq "pi delegate refuses a prompt with secrets" "2" "$TL_STATUS"
 run_pd --auto-policy bogus --prompt hi
 assert_eq "pi delegate invalid --auto-policy exits 2" "2" "$TL_STATUS"
