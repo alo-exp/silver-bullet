@@ -37,9 +37,7 @@ def _candidates(text: str) -> list[str]:
             j += 1
         if text[j:j + 2] == "](":
             continue  # markdown link text: only the target counts
-        token = text[i:j].rstrip(".,;:!?")
-        if token:
-            found.append(token)
+        found.append(text[i:j].rstrip(".,;:!?"))  # never empty: it starts with the scheme or "www"
     return found
 
 
