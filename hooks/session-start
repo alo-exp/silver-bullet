@@ -292,7 +292,7 @@ elif [[ "$sb_should_mutate" == true && -n "$current_branch" && -n "$stored_branc
   # trigger a wipe — that was the v0.27.x mid-session state-loss path.
   SB_BRANCH_RESET_BANNER="⚠️ SB: git scope changed (${stored_branch}@${stored_git_toplevel:-?} → ${current_branch}@${current_git_toplevel:-?}). Skill state was reset — re-run planning/quality-gates for this branch before delivery."
   sb_safe_write "$state_file"
-  rm -f -- "$state_file" "${state_file}.seal" 2>/dev/null || true
+  rm -f -- "$state_file" "${state_file}.seal" "${state_file}.hwm" "${SB_STATE_DIR}/contract-unlock" 2>/dev/null || true
   rm -f -- "${SB_STATE_DIR}/orchestrator.json" \
         "${SB_STATE_DIR}/orchestrator-directive.json" \
         "${SB_STATE_DIR}/orchestrator-worker-active.json" \

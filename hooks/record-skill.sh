@@ -57,6 +57,17 @@ if ! declare -F sb_state_seal_write >/dev/null 2>&1; then
   sb_state_seal_write() { :; }
   sb_state_seal_enforce() { :; }
 fi
+if [[ -f "$_lib_dir/contract-unlock.sh" ]]; then
+  # shellcheck source=lib/contract-unlock.sh
+  source "$_lib_dir/contract-unlock.sh"
+fi
+if ! declare -F sb_contract_unlock_write >/dev/null 2>&1; then
+  sb_contract_unlock_write() { :; }
+fi
+if [[ -f "$_lib_dir/plugin-cache-guard.sh" ]]; then
+  # shellcheck source=lib/plugin-cache-guard.sh
+  source "$_lib_dir/plugin-cache-guard.sh"
+fi
 
 # jq is required for JSON parsing
 if [[ -f "$_lib_dir/jq-gate.sh" ]]; then
@@ -283,6 +294,32 @@ if ! sb_runtime_path_is_state_scoped "$STATE_FILE"; then
   STATE_FILE="${SB_STATE_DIR}/state"
 fi
 
+# --- Only the install the host runs may record (R3-01) ---
+# A copy of the plugin made to run the recorder elsewhere is refused: the host sets
+# CLAUDE_PLUGIN_ROOT to the root of the hook it runs, and the host's registry names the installs
+# of this plugin. A source checkout (.git) is its own authority.
+_self_root="$(cd "${_repo_dir:-.}" 2>/dev/null && pwd -P)" || _self_root=""
+_origin_ok=true
+if [[ -n "${CLAUDE_PLUGIN_ROOT:-}" && "$(cd "$CLAUDE_PLUGIN_ROOT" 2>/dev/null && pwd -P)" != "$_self_root" ]]; then
+  _origin_ok=false
+fi
+if [[ "$_origin_ok" == true && ! -e "${_repo_dir:-.}/.git" ]] && declare -F sb_plugin_cache_installed_paths >/dev/null 2>&1; then
+  _registered=""
+  if [[ -f "$(sb_plugin_cache_registry_file)" ]]; then
+    _registered="$(jq -r '.plugins // {} | to_entries[] | select(.key | test("silver-bullet"; "i")) | .value[]? | .installPath // empty' "$(sb_plugin_cache_registry_file)" 2>/dev/null || true)"
+  fi
+  if [[ -n "$_registered" ]]; then
+    _origin_ok=false
+    while IFS= read -r _install; do
+      [[ -n "$_install" && "$(cd "$_install" 2>/dev/null && pwd -P)" == "$_self_root" ]] && _origin_ok=true
+    done <<<"$_registered"
+  fi
+fi
+if [[ "$_origin_ok" != true ]]; then
+  declare -F _sb_state_seal_log >/dev/null 2>&1 && _sb_state_seal_log "$STATE_FILE" "recorder refused: it is not running from the plugin root the host registered ($_self_root)"
+  exit 0
+fi
+
 # --- Tracked skills list ---
 # SB lifecycle phases (tracked as current silver-* markers)
 # Prefer the canonical tracked list from the packaged config template so
@@ -362,6 +399,7 @@ for raw in "${skills_to_record[@]}"; do
   fi
 
   completed_skills_to_mark+=("$skill")
+  sb_contract_unlock_write "$skill"
 
   # --- Record completed skill invocation (no duplicates) ---
   mkdir -p "$(dirname "$STATE_FILE")" 2>/dev/null || true

@@ -42,7 +42,7 @@ setup() {
   TMPSTATE="${SB_TEST_DIR}/test-state-${TEST_RUN_ID}"
   TMPCFG="${TMPDIR_TEST}/.silver-bullet.json"
   SESSION_LOG_FILE="${TMPDIR_TEST}/docs/sessions/test-state-${TEST_RUN_ID}.md"
-  rm -f "$TMPSTATE"  # clean slate per test
+  rm -f "$TMPSTATE" "$TMPSTATE.seal" "$TMPSTATE.hwm"  # clean slate per test
   cat > "$TMPDIR_TEST/silver-bullet.md" <<'EOF'
 # Silver Bullet
 EOF
@@ -78,7 +78,7 @@ EOF
 
 teardown() {
   rm -rf "$TMPDIR_TEST"
-  rm -f "$TMPSTATE"
+  rm -f "$TMPSTATE" "$TMPSTATE.seal" "$TMPSTATE.hwm"
   rm -f "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
   rm -f "$TMPLOG_PATH_FILE"
   SESSION_LOG_FILE=""
