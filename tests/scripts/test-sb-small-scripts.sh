@@ -99,7 +99,7 @@ rm -f "$TL_BIN/brew" "$TL_BIN/apt-get" "$TL_BIN/sudo"
 PATH="$PATH_SAVE"
 
 # the cache alias is refreshed through the cache helpers; project files are never copied
-SD="$TL_TMP/prscripts"
+SD="$TL_TMP/prstage/scripts"
 mkdir -p "$SD/lib" "$TL_TMP/home/.claude/plugins/cache/alo-labs/silver-bullet"
 ln -s "$PR" "$SD/sb-prerequisite-repair.sh"   # a symlink, so coverage is attributed to the real script
 cat >"$SD/lib/plugin-cache-version.sh" <<STUB

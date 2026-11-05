@@ -228,6 +228,24 @@ assert_eq "failing leanctx clear: hook exits 0" 0 "$TL_STATUS"
 assert_file_absent "failing leanctx clear: the rest of the reset still happened" "$STATE"
 assert_contains "failing leanctx clear: rules still injected" "$(ctx)" "Non-Negotiable Rules"
 
+# the plugin's session-verify script failing never aborts the start
+fresh
+ec_stage_hooks "$TL_TMP/vfail"
+mkdir -p "$TL_TMP/vfail/scripts/lib/recommended-tools"
+printf 'return 1\n' >"$TL_TMP/vfail/scripts/lib/recommended-tools/session-verify.sh"
+tl_run_stdin '{"source":"startup"}' bash -c 'cd "$1" && exec bash "$2"' _ "$EC_PROJ" "$TL_TMP/vfail/hooks/session-start"
+assert_eq "failing session-verify script: hook exits 0" 0 "$TL_STATUS"
+assert_contains "failing session-verify script: rules still injected" "$(ctx)" "Non-Negotiable Rules"
+# the project config vanishing mid-start (the walk for the trivial marker reaches .git) is tolerated
+fresh
+REALGIT="$(ec_real git)"
+tl_stub git 'if [[ "${1:-}" == -C && "${3:-}" == symbolic-ref ]]; then rm -f "'"$EC_CFG"'"; fi; exec '"$REALGIT"' "$@"'
+hash -r
+tl_run_stdin '{"source":"startup"}' bash -c 'cd "$1" && exec bash "$2"' _ "$EC_PROJ" "$HOOK"
+rm -f "$TL_BIN/git"; hash -r
+ec_cfg '{"config_version":"0.40.0","sb_initiated":true,"project":{"src_pattern":"/src/","active_workflow":"full-dev-cycle"},"skills":{}}'
+assert_eq "config removed mid-start: hook exits 0" 0 "$TL_STATUS"
+
 # ---- a non-SB workspace does not wipe a concurrent SB session's markers on compact/resume (R3-14) ---
 fresh
 mkdir -p "$TL_TMP/plain-ws"
