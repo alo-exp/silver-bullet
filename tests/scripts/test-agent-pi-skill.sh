@@ -179,7 +179,7 @@ EOF
 chmod +x "$FAKE_PI"
 set +e
 invoke_out="$(
-  SB_AGENT_PI_DELEGATE="$FAKE_DELEGATE" PI_BIN="$FAKE_PI" \
+  SB_AGENT_PI_DELEGATE_SCRIPT="$FAKE_DELEGATE" PI_BIN="$FAKE_PI" \
     bash "${AGENT_DIR}/invoke.sh" \
       --work-dir "${TMP_PI}/work" \
       --expect-file "$EXPECT_OUT" \
@@ -218,7 +218,7 @@ EOF
 chmod +x "$FAKE_PI"
 set +e
 invoke_out="$(
-  SB_AGENT_PI_DELEGATE="$FAKE_DELEGATE" PI_BIN="$FAKE_PI" \
+  SB_AGENT_PI_DELEGATE_SCRIPT="$FAKE_DELEGATE" PI_BIN="$FAKE_PI" \
     PI_EXPECT_FILE_MIN_BYTES=1 \
     bash "${AGENT_DIR}/invoke.sh" \
       --work-dir "${TMP_PI}/work" \
@@ -269,7 +269,7 @@ EOF
 chmod +x "$FAKE_PI"
 set +e
 invoke_out="$(
-  SB_AGENT_PI_DELEGATE="$FAKE_DELEGATE" PI_BIN="$FAKE_PI" \
+  SB_AGENT_PI_DELEGATE_SCRIPT="$FAKE_DELEGATE" PI_BIN="$FAKE_PI" \
     PI_EXPECT_FILE_MIN_BYTES=1 \
     bash "${AGENT_DIR}/invoke.sh" \
       --work-dir "${TMP_PI}/work" \
@@ -307,7 +307,7 @@ EOF
 chmod +x "$FAKE_PI"
 set +e
 invoke_out="$(
-  SB_AGENT_PI_DELEGATE="$FAKE_DELEGATE" PI_BIN="$FAKE_PI" \
+  SB_AGENT_PI_DELEGATE_SCRIPT="$FAKE_DELEGATE" PI_BIN="$FAKE_PI" \
     bash "${AGENT_DIR}/invoke.sh" \
       --work-dir "${TMP_PI}/work" \
       --expect-file "$EXPECT_OUT" \
@@ -349,7 +349,7 @@ EOF
 chmod +x "$FAKE_PI"
 set +e
 invoke_out="$(
-  SB_AGENT_PI_DELEGATE="$FAKE_DELEGATE" PI_BIN="$FAKE_PI" \
+  SB_AGENT_PI_DELEGATE_SCRIPT="$FAKE_DELEGATE" PI_BIN="$FAKE_PI" \
     PI_PROVIDER=omniroute PI_MODEL='cursor/grok-4.6-high' \
     PI_EXPECT_FILE_MIN_BYTES=1 \
     bash "${AGENT_DIR}/invoke.sh" \
@@ -415,7 +415,7 @@ EOF
 chmod +x "$FAKE_PI"
 set +e
 invoke_out="$(
-  SB_AGENT_PI_DELEGATE="$FAKE_DELEGATE" PI_BIN="$FAKE_PI" \
+  SB_AGENT_PI_DELEGATE_SCRIPT="$FAKE_DELEGATE" PI_BIN="$FAKE_PI" \
     PI_CONTINUE='Call the write tool now to ./review.md' \
     PI_EXPECT_FILE_MIN_BYTES=1 \
     bash "${AGENT_DIR}/invoke.sh" \
@@ -532,7 +532,7 @@ chmod +x "$FAKE_PI"
 set +e
 invoke_out="$(
   unset PI_EXPECT_FILE_MIN_BYTES
-  SB_AGENT_PI_DELEGATE="$FAKE_DELEGATE" PI_BIN="$FAKE_PI" \
+  SB_AGENT_PI_DELEGATE_SCRIPT="$FAKE_DELEGATE" PI_BIN="$FAKE_PI" \
     bash "${AGENT_DIR}/invoke.sh" \
       --work-dir "${TMP_PI}/work" \
       --expect-file "$STUB_EXPECT" \
