@@ -36,3 +36,39 @@ def with_apo_pack_run(cls):
         if name.startswith("test") and callable(value):
             setattr(cls, name, in_pack_run(value))
     return cls
+
+
+def plain_vendor_spellings(cls):
+    """Class decorator: every spelling of a vendor counts in prose, as if no vendor name were an ordinary word.
+
+    For tests of classification, packaging or parsing structure that write the pack's vendors as bare names in
+    their claims. What an ambiguous vendor needs in order to be credited is pinned by
+    test_vendor_identity_generative and test_vendor_mention_corpus.
+    """
+    from unittest import mock
+
+    import vendor_identity
+
+    def plain(test):
+        @functools.wraps(test)
+        def run(*args, **kwargs):
+            import materialize_solution_artifacts as mat
+
+            mat._EXTRACTED.clear()  # the memo does not know the patch: results from outside it must not leak in or out
+            try:
+                with mock.patch.object(vendor_identity.Registry, "is_prose_spelling", lambda self, spelling: True):
+                    return test(*args, **kwargs)
+            finally:
+                mat._EXTRACTED.clear()
+
+        return run
+
+    for name, value in list(vars(cls).items()):
+        if name.startswith("test") and callable(value):
+            setattr(cls, name, plain(value))
+    return cls
+
+
+def with_apo_pack_run_plain_names(cls):
+    """``with_apo_pack_run`` with every spelling of a vendor counting in prose (see ``plain_vendor_spellings``)."""
+    return with_apo_pack_run(plain_vendor_spellings(cls))

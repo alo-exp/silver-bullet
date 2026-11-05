@@ -396,7 +396,7 @@
     "cavekit": "Cavekit v3.1",
     "factory-ai": "Factory.ai",
     "devin": "Devin (Cognition)",
-    "github-copilot-workspace": "GitHub Copilot Workspace",
+    "copilot-workspace": "GitHub Copilot Workspace",
     "cursor-agents": "Cursor Background Agents",
     "openhands": "OpenHands",
     "langgraph-platform": "LangGraph Platform",
@@ -415,7 +415,7 @@
   "overview_seeds": {
     "factory-ai": "Factory.ai provides managed Droids with workflow composition, parent/child delegation, review loops, and cloud hosting for agentic software delivery.",
     "devin": "Devin is Cognition's autonomous software engineer that plans, implements, tests, and ships code via pull requests in customer repositories.",
-    "github-copilot-workspace": "GitHub Copilot Workspace is a Copilot-native environment for issue→spec→plan→implement→PR workflows on GitHub.",
+    "copilot-workspace": "GitHub Copilot Workspace is a Copilot-native environment for issue→spec→plan→implement→PR workflows on GitHub.",
     "cursor-agents": "Cursor Background Agents run long-lived coding agents in the cloud against your repos, with IDE-native handoff into Cursor.",
     "sweep-ai": "Sweep automates GitHub issue→PR coding workflows as an AI assistant on the git control plane.",
     "tembo": "Tembo runs cloud agents across repos, tickets, and tools with reviewable sessions and automations for startup engineering teams.",
@@ -458,10 +458,10 @@
     "factory.ai": "factory-ai",
     "factory ai": "factory-ai",
     "factory": "factory-ai",
-    "github copilot workspace": "github-copilot-workspace",
-    "github copilot": "github-copilot-workspace",
-    "copilot workspace": "github-copilot-workspace",
-    "copilot": "github-copilot-workspace",
+    "github copilot workspace": "copilot-workspace",
+    "github copilot": "github-copilot",
+    "copilot workspace": "copilot-workspace",
+    "copilot": "github-copilot",
     "cursor cloud": "cursor-agents",
     "cursor background agents": "cursor-agents",
     "cursor agents": "cursor-agents",
@@ -1226,20 +1226,6 @@
       "C6 Enf",
       "C7 Proc"
     ],
-    "materialize_solution_artifacts.NON_VENDOR_TERMS": [
-      "sdlc"
-    ],
-    "materialize_solution_artifacts.AMBIGUOUS_NAMES": [
-      "director",
-      "factory",
-      "cursor",
-      "continue",
-      "linear",
-      "conductor",
-      "scout",
-      "harness",
-      "sweep"
-    ],
     "synthesize_landscape.SOLO_HOST_MARKER": "claude",
     "synthesize_landscape.PRESENCE_REQUIRES_FEATURE": "Managed hosting",
     "synthesize_landscape.KCF_FALLBACK_EXCLUDE": [
@@ -1261,6 +1247,15 @@
     ],
     "vendor_link_labels.SLUG_LINK_LABEL_OVERRIDES": {
       "sdlc-plugin": "SDLC Plugin"
+    },
+    "materialize_solution_artifacts.COINED_NAMES": {
+      "zuvo": "invented word (no English word, given name or surname)",
+      "turboshovel": "invented compound, no English word",
+      "ruflo": "invented word",
+      "cavekit": "invented compound (cave + kit)",
+      "replit": "invented word (REPL + it)",
+      "sourcegraph": "invented compound of two words that never co-occur as one",
+      "coderabbit": "invented compound (code + rabbit)"
     }
   },
   "market_chart_notes": {
