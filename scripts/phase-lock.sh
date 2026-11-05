@@ -90,6 +90,19 @@ if [[ ! -d "$PLANNING_DIR" ]]; then
   exit 1
 fi
 
+# Everything below writes into the project's planning directory, whose content a repository
+# controls. Refuse to go through a symlink at any path this helper reads or writes (SEC-02): a
+# committed .phase-locks.json.lock -> ~/precious would otherwise be truncated.
+for _pl_path in "$PLANNING_DIR" "$LOCK_FILE" "$LOCK_SIDECAR" "${LOCK_SIDECAR}.d"; do
+  if [[ -L "$_pl_path" ]]; then
+    echo "ERR: refusing to use a symlink: $_pl_path" >&2
+    exit 1
+  fi
+done
+unset _pl_path
+# With the default location the planning directory is <repo root>/.planning, spelled from git's own
+# toplevel, so refusing a symlink there is what keeps every write inside the repository.
+
 # ---------------------------------------------------------------------------
 # Config resolution (mirrors hooks/lib/required-skills.sh)
 # ---------------------------------------------------------------------------
@@ -99,10 +112,8 @@ _pl_find_default_config() {
     printf '%s' "${SB_DEFAULT_CONFIG}"
     return 0
   fi
-  if [[ -n "${REPO_ROOT}" ]] && [[ -f "${REPO_ROOT}/templates/silver-bullet.config.json.default" ]]; then
-    printf '%s' "${REPO_ROOT}/templates/silver-bullet.config.json.default"
-    return 0
-  fi
+  # Only the plugin's own template is a default source: the project's templates/ is repository
+  # content and is never consulted (R3-03).
   local self_dir
   self_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
   local candidate="${self_dir}/../templates/silver-bullet.config.json.default"
@@ -144,19 +155,22 @@ _pl_config_get_tags() {
 _pl_config_get_ttl() {
   local out=""
   local proj
+  # Every value is validated as a plain integer before any arithmetic sees it: the project
+  # config is repository content and bash arithmetic evaluates names and command substitutions.
   if proj="$(_pl_find_project_config)"; then
     out="$(jq -r '.multi_agent.stale_lock_ttl_seconds // empty' "$proj" 2>/dev/null)"
   fi
-  if [[ -z "$out" || "$out" == "null" ]]; then
+  if ! [[ "$out" =~ ^[0-9]{1,9}$ ]]; then
+    out=""
     local def
     if def="$(_pl_find_default_config)"; then
       out="$(jq -r '.multi_agent.stale_lock_ttl_seconds // empty' "$def" 2>/dev/null)"
     fi
   fi
-  if [[ -z "$out" || "$out" == "null" ]]; then
+  if ! [[ "$out" =~ ^[0-9]{1,9}$ ]]; then
     out="1800"
   fi
-  printf '%s' "$out"
+  printf '%s' "$((10#$out))"
 }
 
 # ---------------------------------------------------------------------------
@@ -235,9 +249,11 @@ _pl_write_json() {
     echo "ERR: refusing to write an invalid lock file" >&2
     return 1
   fi
-  local tmp="${LOCK_FILE}.tmp.$$"
+  # A fresh, unpredictable temp file in the verified planning directory, then an atomic rename.
+  local tmp
+  tmp="$(mktemp "${PLANNING_DIR}/.phase-locks.XXXXXX")" || return 1
   printf '%s\n' "$payload" > "$tmp"
-  mv "$tmp" "$LOCK_FILE"
+  mv -f "$tmp" "$LOCK_FILE"
 }
 
 # ---------------------------------------------------------------------------
@@ -290,13 +306,13 @@ _pl_release_mkdir_lock() {
 }
 
 _pl_with_flock() {
-  : > "$LOCK_SIDECAR" 2>/dev/null || true
+  : >> "$LOCK_SIDECAR" 2>/dev/null || true
   if [[ ! -f "$LOCK_SIDECAR" ]]; then
     echo "ERR: cannot create flock sidecar at $LOCK_SIDECAR" >&2
     return 1
   fi
   if [[ $_PL_HAVE_FLOCK -eq 1 ]]; then
-    exec 9>"$LOCK_SIDECAR"
+    exec 9>>"$LOCK_SIDECAR"
     flock -x 9
     set +e
     "$@"
