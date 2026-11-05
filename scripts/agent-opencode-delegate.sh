@@ -20,7 +20,7 @@ Usage: agent-opencode-delegate.sh --work-dir PATH (--prompt TEXT | --brief-file 
        [--multi-ai-profile PROFILE_ID] [--multi-ai-pool lite|regular]
        [--cohort-request PATH] [--cohort-output PATH]
 
-Delegates a single task to OpenCode via tests/live/agents/opencode/agent.sh (opencode run primary).
+Delegates a single task to OpenCode via scripts/lib/agent-adapters/opencode.sh (opencode run primary).
 Model policy: default opencode-go / mimo-v2.5. multi-ai-worker-v1 selects allowlisted OCG profiles only.
 EOF
 }
@@ -125,9 +125,9 @@ if ! agent_delegate_preflight_recommended_tools "$WORK_DIR" "$SB_ROOT" "opencode
   exit 2
 fi
 
-AGENT_SH="${SB_ROOT}/tests/live/agents/opencode/agent.sh"
+AGENT_SH="${SB_ROOT}/scripts/lib/agent-adapters/opencode.sh"
 [[ -f "$AGENT_SH" ]] || {
-  printf 'ERROR: missing OpenCode live adapter at %s (full SB checkout required)\n' "$AGENT_SH" >&2
+  printf 'ERROR: missing OpenCode live adapter at %s\n' "$AGENT_SH" >&2
   exit 1
 }
 
@@ -200,7 +200,7 @@ agent_opencode_invoke_once() {
   export OPENCODE_BIN="$CLI"
   export SB_LIVE_OPENCODE_USE_INTERACTIVE="$USE_INTERACTIVE"
   export CLAUDE_INTERACTIVE_LOG_FILE="${LOG_FILE:-}"
-  # shellcheck source=tests/live/agents/opencode/agent.sh
+  # shellcheck source=scripts/lib/agent-adapters/opencode.sh
   source "$AGENT_SH"
   agent_preflight
   agent_invoke "$MODE" "$PROMPT_TEXT"

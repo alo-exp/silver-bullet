@@ -215,7 +215,7 @@ tl_tmp_cache="$TL_TMP/cache-calls"
 tl_run timeout 60 env SB_AGENT_CERT_RUN=1 bash "$DELEGATE" --sb-root "$SB" --work-dir "$W" --prompt p
 assert_eq "cert run asks the plugin cache check about the staged root" "$SB" "$(cat "$tl_tmp_cache")"
 assert_contains "cert run reports the plugin cache ready" "$TL_ERR" "Claude plugin cache ready"
-rm -rf "$W/.silver-bullet" "$SB/scripts"
+rm -rf "$W/.silver-bullet" "$SB/scripts/enterprise-e2e"
 # an exported sb_cert_run_touch_marker takes over marker creation
 alh_script "0|cert-ok"
 sb_cert_run_touch_marker() { printf '%s\n' "$1" >"$TL_TMP/touch-marker-arg"; }
@@ -256,14 +256,14 @@ tl_run timeout 60 env PREFLIGHT_RC=1 bash "$DELEGATE" --sb-root "$SB" --work-dir
 assert_eq "preflight failure exits 2" "2" "$TL_STATUS"
 assert_contains "preflight failure message" "$TL_ERR" "recommended-tools preflight failed"
 assert_eq "preflight failure never reaches the adapter" "0" "$(alh_attempts)"
-rm -rf "$SB/scripts"
+rm -rf "$SB/scripts/enterprise-e2e"
 
 # ---------------------------------------------------------------- missing adapter
 MISSING_SB="$TL_TMP/sb-missing"
 mkdir -p "$MISSING_SB"
 tl_run timeout 60 bash "$DELEGATE" --sb-root "$MISSING_SB" --skip-preflight --work-dir "$W" --prompt p
 assert_eq "missing adapter exits 1" "1" "$TL_STATUS"
-assert_contains "missing adapter message" "$TL_ERR" "missing Claude live adapter at $MISSING_SB/tests/live/agents/claude/agent.sh"
+assert_contains "missing adapter message" "$TL_ERR" "missing Claude live adapter at $MISSING_SB/scripts/lib/agent-adapters/claude.sh"
 
 # ---------------------------------------------------------------- quota retry loop (bounded by env, sleep is a stub)
 rm -f "$TL_TMP/sleep.log"

@@ -45,7 +45,7 @@ grep -q 'SB_AGENT_DELEGATE_V2' "$SKILL" && check "documents V2 default-on flag" 
 grep -q 'AGENT-DELEGATE' "$SKILL" && check "documents native worker template" pass || check "documents native worker template" fail
 
 [[ -x "$WRAPPER" ]] && check "delegate wrapper executable" pass || check "delegate wrapper executable" fail
-grep -q 'tests/live/agents/opencode/agent.sh' "$WRAPPER" && check "wrapper uses live agent adapter" pass || check "wrapper uses live agent adapter" fail
+grep -q 'scripts/lib/agent-adapters/opencode.sh' "$WRAPPER" && check "wrapper uses live agent adapter" pass || check "wrapper uses live agent adapter" fail
 grep -q 'agent_preflight' "$WRAPPER" && check "wrapper calls agent_preflight" pass || check "wrapper calls agent_preflight" fail
 grep -q 'agent_delegate_canonicalize_path' "$WRAPPER" && check "wrapper canonicalizes log/brief paths" pass || check "wrapper canonicalizes log/brief paths" fail
 grep -q 'absolute' "$SKILL" && check "documents absolute path policy" pass || check "documents absolute path policy" fail
@@ -58,7 +58,7 @@ grep -q 'agent_opencode_pin_mimo_model_env' "$WRAPPER" && check "wrapper pins mi
 LIB="${REPO_ROOT}/scripts/agent-opencode/lib.sh"
 grep -q 'OPENCODE_RUN_TIMEOUT' "$LIB" && check "harness run timeout env" pass || check "harness run timeout env" fail
 grep -q 'agent_opencode_apply_runtime_env' "$LIB" && check "harness disables RTK for logs" pass || check "harness disables RTK for logs" fail
-grep -q 'OPENCODE_RUN_TAIL_IDLE_TIMEOUT' "${REPO_ROOT}/tests/live/agents/opencode/agent.sh" && check "adapter run tail idle timeout" pass || check "adapter run tail idle timeout" fail
+grep -q 'OPENCODE_RUN_TAIL_IDLE_TIMEOUT' "${REPO_ROOT}/scripts/lib/agent-adapters/opencode.sh" && check "adapter run tail idle timeout" pass || check "adapter run tail idle timeout" fail
 
 grep -q 'scripts/agent-opencode/' "$SKILL" && check "references agent-opencode harness dir" pass || check "references agent-opencode harness dir" fail
 grep -q 'SB_AGENT_OPENCODE_LOG_FLOOR' "$SKILL" && check "documents log floor" pass || check "documents log floor" fail

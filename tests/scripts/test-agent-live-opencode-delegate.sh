@@ -163,14 +163,14 @@ tl_run timeout 60 bash "$DELEGATE" --sb-root "$SB" --work-dir "$W" --prompt p
 assert_eq "preflight failure exits 2" "2" "$TL_STATUS"
 assert_contains "preflight failure message" "$TL_ERR" "recommended-tools preflight failed"
 assert_eq "preflight failure never reaches the adapter" "0" "$(alh_attempts)"
-rm -rf "$SB/scripts"
+rm -rf "$SB/scripts/enterprise-e2e"
 
 # ---------------------------------------------------------------- missing adapter / CLI
 MISSING_SB="$TL_TMP/sb-missing"
 mkdir -p "$MISSING_SB"
 tl_run timeout 60 bash "$DELEGATE" --sb-root "$MISSING_SB" --skip-preflight --work-dir "$W" --prompt p
 assert_eq "missing adapter exits 1" "1" "$TL_STATUS"
-assert_contains "missing adapter message" "$TL_ERR" "missing OpenCode live adapter at $MISSING_SB/tests/live/agents/opencode/agent.sh"
+assert_contains "missing adapter message" "$TL_ERR" "missing OpenCode live adapter at $MISSING_SB/scripts/lib/agent-adapters/opencode.sh"
 NOOC_PATH="$(tl_path_without opencode)"
 tl_run timeout 60 env PATH="$NOOC_PATH" OPENCODE_BIN= bash "$DELEGATE" --sb-root "$SB" --skip-preflight --work-dir "$W" --prompt p
 assert_eq "missing OpenCode CLI exits 1" "1" "$TL_STATUS"

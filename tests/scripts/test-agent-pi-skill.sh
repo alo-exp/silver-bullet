@@ -45,7 +45,7 @@ grep -q 'SB_AGENT_DELEGATE_V2' "$SKILL" && check "documents V2 default-on flag" 
 grep -q 'AGENT-DELEGATE' "$SKILL" && check "documents native worker template" pass || check "documents native worker template" fail
 
 [[ -x "$WRAPPER" ]] && check "delegate wrapper executable" pass || check "delegate wrapper executable" fail
-grep -q 'tests/live/agents/pi/agent.sh' "$WRAPPER" && check "wrapper uses live agent adapter" pass || check "wrapper uses live agent adapter" fail
+grep -q 'scripts/lib/agent-adapters/pi.sh' "$WRAPPER" && check "wrapper uses live agent adapter" pass || check "wrapper uses live agent adapter" fail
 grep -q 'agent_preflight' "$WRAPPER" && check "wrapper calls agent_preflight" pass || check "wrapper calls agent_preflight" fail
 grep -q 'agent_delegate_canonicalize_path' "$WRAPPER" && check "wrapper canonicalizes log/brief paths" pass || check "wrapper canonicalizes log/brief paths" fail
 grep -q 'absolute' "$SKILL" && check "documents absolute path policy" pass || check "documents absolute path policy" fail
@@ -58,7 +58,7 @@ grep -q 'agent_pi_pin_mimo_model_env' "$WRAPPER" && check "wrapper pins mimo mod
 LIB="${REPO_ROOT}/scripts/agent-pi/lib.sh"
 grep -q 'PI_RUN_TIMEOUT' "$LIB" && check "harness run timeout env" pass || check "harness run timeout env" fail
 grep -q 'agent_pi_apply_runtime_env' "$LIB" && check "harness disables RTK for logs" pass || check "harness disables RTK for logs" fail
-grep -q 'PI_RUN_TAIL_IDLE_TIMEOUT' "${REPO_ROOT}/tests/live/agents/pi/agent.sh" && check "adapter run tail idle timeout" pass || check "adapter run tail idle timeout" fail
+grep -q 'PI_RUN_TAIL_IDLE_TIMEOUT' "${REPO_ROOT}/scripts/lib/agent-adapters/pi.sh" && check "adapter run tail idle timeout" pass || check "adapter run tail idle timeout" fail
 
 grep -q 'scripts/agent-pi/' "$SKILL" && check "references agent-pi harness dir" pass || check "references agent-pi harness dir" fail
 grep -q 'SB_AGENT_PI_LOG_FLOOR' "$SKILL" && check "documents log floor" pass || check "documents log floor" fail

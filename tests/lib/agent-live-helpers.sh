@@ -3,7 +3,7 @@
 # Everything here is sandbox-only: the "host adapter" is a scripted stub and host CLIs are
 # recording stubs. Source after tests/lib/testlib.sh and tl_init.
 
-# alh_stage_sb DIR HOST: stage an SB root whose tests/live/agents/HOST/agent.sh is a scripted stub.
+# alh_stage_sb DIR HOST: stage an SB root whose scripts/lib/agent-adapters/HOST.sh is a scripted stub.
 #
 # The stub records to $ALH_RECORD, counts invocations in $ALH_COUNT and plays one
 # "rc|text" line per attempt from $ALH_SCRIPT (the last line repeats). Environment
@@ -14,8 +14,8 @@
 # ALH_RM_LOG=1 makes the stub delete $CLAUDE_INTERACTIVE_LOG_FILE (adapter that loses the log).
 alh_stage_sb() {
   local sb="$1" host="$2"
-  mkdir -p "$sb/tests/live/agents/$host"
-  cat >"$sb/tests/live/agents/$host/agent.sh" <<'EOF'
+  mkdir -p "$sb/scripts/lib/agent-adapters"
+  cat >"$sb/scripts/lib/agent-adapters/$host.sh" <<'EOF'
 agent_preflight() {
   printf 'preflight\n' >>"$ALH_RECORD"
 }
