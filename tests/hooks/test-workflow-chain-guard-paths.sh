@@ -264,6 +264,20 @@ assert_contains "an unparsable write fails closed" "$TL_OUT" "cannot inspect"
 dg_run "$P" "$H" '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":""}}' SILVER_BULLET_STATE_FILE="$STATE"
 assert_eq "an empty command is ignored" "" "$TL_OUT"
 
+# --- review repair: unseen commands and MCP write tools -----------------------------------------
+fresh; workflow wf1 /sb:ui
+markers silver-quality-gates
+PADF="$TL_TMP/pad.txt"; head -c 600000 /dev/zero | tr '\0' 'a' >"$PADF"
+dg_run "$P" "$H" "$(jq -cn --rawfile pad "$PADF" '{hook_event_name:"PreToolUse",tool_name:"Bash",tool_input:{command:("echo x > src/app.py; # " + $pad)}}')" SILVER_BULLET_STATE_FILE="$STATE"
+assert_eq "an over-budget command is refused while the chain is incomplete" "deny" "$(dec)"
+assert_contains "with the reason" "$TL_OUT" "cannot inspect this command"
+dg_run "$P" "$H" "$(sh 'eval "$X"')" SILVER_BULLET_STATE_FILE="$STATE"
+assert_eq "eval of computed text is refused" "deny" "$(dec)"
+dg_run "$P" "$H" "$(jq -cn --arg p "$P/src/a.py" '{hook_event_name:"PreToolUse",tool_name:"mcp__filesystem__write_file",tool_input:{path:$p,content:"x"}}')" SILVER_BULLET_STATE_FILE="$STATE"
+assert_eq "an MCP write into source is gated like Write" "deny" "$(dec)"
+dg_run "$P" "$H" "$(jq -cn --arg p "$P/src/a.py" '{hook_event_name:"PreToolUse",tool_name:"mcp__filesystem__read_file",tool_input:{path:$p}}')" SILVER_BULLET_STATE_FILE="$STATE"
+assert_eq "an MCP read is not gated" "none" "$(dec)"
+
 # --- the active workflow: the state file, a sole workflow file, the env override (R2-14) --------
 fresh; workflow wf1 /sb:feature; workflow wf2 /sb:bugfix
 : >"$STATE"

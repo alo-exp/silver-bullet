@@ -102,7 +102,7 @@
         ]
       },
       {
-        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash|apply_patch|exec_command",
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash|apply_patch|exec_command|mcp__.*__(write|edit|create|move|rename|patch|replace|delete|append|save)[A-Za-z0-9_]*",
         "hooks": [
           {
             "type": "command",

@@ -98,14 +98,25 @@ if declare -f sb_project_active >/dev/null 2>&1; then
 fi
 project_root="$(sb_pf_canon "$(dirname "$config_file")")"
 
+# (An unparsable payload has no tool name: it goes on to the analysis, which fails closed.)
+tool_name="$(printf '%s' "$input" | jq -r '.tool_name // ""' 2>/dev/null || true)"
+case "$tool_name" in
+  "" | Edit | Write | MultiEdit | NotebookEdit | apply_patch) ;;
+  *) sb_tool_is_shell_like "$tool_name" || sb_pf_mcp_write_tool "$tool_name" || exit 0 ;;
+esac
+
 sb_tool_input_load "$input" "$PWD"
 if ! sb_tool_input_ok; then
   [[ "${SB_TI_STATUS:-}" == "empty" ]] && exit 0
   # The call cannot be analysed: refuse only what names the planning directory.
   [[ "$(printf '%s' "$input" | tr '[:upper:]' '[:lower:]')" == *.planning* ]] || exit 0
-  cmd="$(printf '%s' "$input" | jq -r '.tool_input.command // .tool_input.cmd // ""' 2>/dev/null)"
+  cmd="$(printf '%s' "$input" | jq -r '.tool_input.command // .tool_input.cmd // ""' 2>/dev/null || true)"
   sb_pf_plain_read_only "$cmd" && exit 0
   deny "$(sb_pf_unanalysable_message)"
+fi
+if [[ "${SB_TI_TOOL_KIND:-}" == "shell" ]]; then
+  unseen_why="$(sb_pf_unseen_reason)"
+  [[ -z "$unseen_why" ]] || deny "$(sb_pf_unseen_message "$unseen_why")"
 fi
 
 # Is this canonical path one of the SB-managed planning artifacts? Sets planning_rel.
@@ -226,7 +237,9 @@ ${skill_hint}
 
 A one-off doc fix is the user's decision: only the user can allow it, from their own terminal
 (\`touch ${SB_RUNTIME_STATE_DIR}/planning-edit-override\`, removed when done)." "$target"
-done < <(sb_pf_write_records "$input")
+done < <(sb_pf_expand_ancestors "$(sb_pf_write_records "$input")" \
+  "$project_root/.planning/ROADMAP.md" "$project_root/.planning/STATE.md" "$project_root/.planning/PROJECT.md" \
+  "$project_root/.planning/RELEASE.md" "$project_root/.planning/REQUIREMENTS.md" "$project_root/.planning/UAT.md")
 
 if [[ -n "$notices" ]]; then
   sb_emit_hook_message PreToolUse "$notices"

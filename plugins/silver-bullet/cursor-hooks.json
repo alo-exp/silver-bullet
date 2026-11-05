@@ -72,17 +72,17 @@
       {
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/planning-file-guard.sh\"",
         "timeout": 10,
-        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Shell"
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Shell|mcp__.*__(write|edit|create|move|rename|patch|replace|delete|append|save)[A-Za-z0-9_]*"
       },
       {
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/instruction-file-guard.sh\"",
         "timeout": 10,
-        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Shell"
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Shell|mcp__.*__(write|edit|create|move|rename|patch|replace|delete|append|save)[A-Za-z0-9_]*"
       },
       {
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/workflow-chain-guard.sh\"",
         "timeout": 10,
-        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Shell"
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Shell|mcp__.*__(write|edit|create|move|rename|patch|replace|delete|append|save)[A-Za-z0-9_]*"
       },
       {
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/orchestrator-directive-guard.sh\"",

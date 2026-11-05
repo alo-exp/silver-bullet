@@ -129,6 +129,27 @@ dg_run "$P" "$H" "$(write "$P/rules.md")"
 assert_eq "a symlink to a not-yet-created CLAUDE.md is the same target" "deny" "$(dec)"
 rm -f "$P/rules.md"
 
+# --- review repair: unseen commands, MCP tools, truncated payloads ------------------------------
+PADF="$TL_TMP/pad.txt"; head -c 600000 /dev/zero | tr '\0' 'a' >"$PADF"
+dg_run "$P" "$H" "$(jq -cn --rawfile pad "$PADF" '{hook_event_name:"PreToolUse",tool_name:"Bash",tool_input:{command:("echo hi > CLAUDE.md; # " + $pad)}}')"
+assert_eq "an over-budget command is refused" "deny" "$(dec)"
+assert_contains "with the reason and the way forward" "$TL_OUT" "cannot inspect this command"
+dg_run "$P" "$H" "$(sh 'eval "$X"')"
+assert_eq "eval of computed text is refused" "deny" "$(dec)"
+mcp() { jq -cn --arg t "$1" --arg p "$2" '{hook_event_name:"PreToolUse",tool_name:$t,tool_input:{path:$p,content:"x"}}'; }
+dg_run "$P" "$H" "$(mcp mcp__filesystem__write_file "$P/CLAUDE.md")"
+assert_eq "an MCP write that would create CLAUDE.md is refused" "deny" "$(dec)"
+dg_run "$P" "$H" "$(mcp mcp__filesystem__create_directory "$P/CLAUDE.md")"
+assert_eq "any MCP create tool is judged" "deny" "$(dec)"
+dg_run "$P" "$H" "$(mcp mcp__filesystem__read_file "$P/CLAUDE.md")"
+assert_eq "an MCP read tool is not a write" "none" "$(dec)"
+echo existing >"$P/CLAUDE.md"
+dg_run "$P" "$H" "$(mcp mcp__filesystem__write_file "$P/CLAUDE.md")"
+assert_eq "an MCP update of an existing CLAUDE.md passes" "none" "$(dec)"
+rm -f "$P/CLAUDE.md"
+dg_run "$P" "$H" '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"echo x > CLAUDE.md'
+assert_eq "a truncated payload that names CLAUDE.md fails closed" "deny" "$(dec)"
+
 # --- python3 missing: the shell analysis helper is unavailable ----------------------------
 NOPY="$(tl_path_without python3)"
 dg_run "$P" "$H" "$(sh "echo x > CLAUDE.md")" PATH="$NOPY"

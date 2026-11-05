@@ -75,7 +75,7 @@ runs_phases_clear() {
 deletes_phases_dir() {
   local via target
   while IFS=$'\t' read -r via target; do
-    case "$via" in rm | rmdir | unlink | "git rm" | "find -delete") ;; *) continue ;; esac
+    case "$via" in rm | rmdir | unlink | "git rm" | "find -delete" | "mv source") ;; *) continue ;; esac
     case "$phases_dir/" in
       "$target"/*) return 0 ;;
     esac

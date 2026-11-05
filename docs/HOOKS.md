@@ -44,9 +44,9 @@ Before a tool runs; a hook can deny the call.
 | 7 | `Edit\|Write\|MultiEdit\|apply_patch` | `orchestrator-directive-guard.sh` | 10 |
 | 8 | `Edit\|Write\|MultiEdit\|apply_patch` | `agent-delegation-guard.sh` | 10 |
 | 9 | `Edit\|Write\|MultiEdit\|apply_patch` | `phase-lock-claim.sh` | 10 |
-| 10 | `Edit\|Write\|MultiEdit\|NotebookEdit\|Bash\|apply_patch\|exec_command` | `planning-file-guard.sh` | 10 |
-| 11 | `Edit\|Write\|MultiEdit\|NotebookEdit\|Bash\|apply_patch\|exec_command` | `instruction-file-guard.sh` | 10 |
-| 12 | `Edit\|Write\|MultiEdit\|NotebookEdit\|Bash\|apply_patch\|exec_command` | `workflow-chain-guard.sh` | 10 |
+| 10 | `Edit\|Write\|MultiEdit\|NotebookEdit\|Bash\|apply_patch\|exec_command\|mcp__.*__(write\|edit\|create\|move\|rename\|patch\|replace\|delete\|append\|save)[A-Za-z0-9_]*` | `planning-file-guard.sh` | 10 |
+| 11 | `Edit\|Write\|MultiEdit\|NotebookEdit\|Bash\|apply_patch\|exec_command\|mcp__.*__(write\|edit\|create\|move\|rename\|patch\|replace\|delete\|append\|save)[A-Za-z0-9_]*` | `instruction-file-guard.sh` | 10 |
+| 12 | `Edit\|Write\|MultiEdit\|NotebookEdit\|Bash\|apply_patch\|exec_command\|mcp__.*__(write\|edit\|create\|move\|rename\|patch\|replace\|delete\|append\|save)[A-Za-z0-9_]*` | `workflow-chain-guard.sh` | 10 |
 | 13 | `Task\|Subagent\|Agent` | `orchestrator-directive-guard.sh` | 10 |
 | 14 | `Task\|Subagent\|Agent` | `subagent-stop-enforcement.sh` | 10 |
 | 15 | `Task\|Subagent\|Agent` | `review-fix-ladder-guard.sh` | 10 |
@@ -183,7 +183,7 @@ Before each user prompt is processed; hooks add context or record the requested 
 | `forbidden-skill-check.sh` | PreToolUse `Bash\|Skill\|exec_command` | Blocks forbidden skills (the Skill tool or the Codex `invoke-skill` adapter): the built-in list (`executing-plans`, `subagent-driven-development`) plus `skills.forbidden`. |
 | `graphify-gate.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Opt-in (`recommended_tools.graphify`): requires a recent Graphify query before substantive work. |
 | `industry-tooling-hint.sh` | PreToolUse `Bash\|exec_command` | Optional reminders about industry tooling for shell commands; active only when `hooks.industry_tooling.enabled` is true. |
-| `instruction-file-guard.sh` | PreToolUse `Edit\|Write\|MultiEdit\|NotebookEdit\|Bash\|apply_patch\|exec_command` | Blocks creating a brand-new root `CLAUDE.md` or `AGENTS.md` (any case) with the file tools, apply_patch or shell writes; existing files may be reconciled in place. |
+| `instruction-file-guard.sh` | PreToolUse `Edit\|Write\|MultiEdit\|NotebookEdit\|Bash\|apply_patch\|exec_command\|mcp__.*__(write\|edit\|create\|move\|rename\|patch\|replace\|delete\|append\|save)[A-Za-z0-9_]*` | Blocks creating a brand-new root `CLAUDE.md` or `AGENTS.md` (any case) with the file tools, MCP file-write tools, apply_patch or shell writes (unreadable commands are refused); existing files may be reconciled in place. |
 | `instruction-ledger-gate.sh` | Stop `.*`; SubagentStop `.*`; UserPromptSubmit `.*` | Maintains the nested per-session instruction ledger; at Stop, blocks while ledger items remain open. |
 | `leanctx-gate.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Opt-in (`recommended_tools.leanctx`): checks LeanCTX install, wiring and usage freshness. |
 | `live-publish-evidence-gate.sh` | PreToolUse `Bash\|exec_command`; Stop `.*` | Requires fetched live-page evidence before a site publish is claimed LIVE (Stop) and before `git push` to main for site work. |
@@ -193,7 +193,7 @@ Before each user prompt is processed; hooks add context or record the requested 
 | `phase-lock-claim.sh` | PreToolUse `Edit\|Write\|MultiEdit\|apply_patch` | Claims the `.planning/phases/<NNN>/` lock (via `.planning/scripts/phase-lock.sh`) before a session edits a phase's files. |
 | `phase-lock-heartbeat.sh` | PostToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Refreshes heartbeats for the phase locks this session holds (throttled to once per 5 minutes per phase). |
 | `phase-lock-release.sh` | Stop `.*`; SubagentStop `.*` | Releases this session's phase locks at Stop/SubagentStop. Never blocks. |
-| `planning-file-guard.sh` | PreToolUse `Edit\|Write\|MultiEdit\|NotebookEdit\|Bash\|apply_patch\|exec_command` | Blocks direct edits to SB-managed planning artifacts (`.planning/ROADMAP.md`, `STATE.md`, phase `*-PLAN.md`/`*-SUMMARY.md`, ...) by the file tools, every apply_patch path and shell writes; they change only through the owning SB skill. Overrides are the user's: `planning-edit-override` is created from a terminal, and `roadmap-edit-override` works only while `sb:phase` or `sb:undo` is recorded. |
+| `planning-file-guard.sh` | PreToolUse `Edit\|Write\|MultiEdit\|NotebookEdit\|Bash\|apply_patch\|exec_command\|mcp__.*__(write\|edit\|create\|move\|rename\|patch\|replace\|delete\|append\|save)[A-Za-z0-9_]*` | Blocks direct edits to SB-managed planning artifacts (`.planning/ROADMAP.md`, `STATE.md`, phase `*-PLAN.md`/`*-SUMMARY.md`, ...) by the file tools (and MCP file-write tools), every apply_patch path and shell writes (a copy, extract or move over a directory that holds them included; unreadable commands are refused); they change only through the owning SB skill. Overrides are the user's: `planning-edit-override` is created from a terminal, and `roadmap-edit-override` works only while `sb:phase` or `sb:undo` is recorded. |
 | `pr-traceability.sh` | PostToolUse `Bash\|exec_command` | After `gh pr create`, appends the spec traceability block to the PR body and records the PR URL in `SPEC.md`. |
 | `prompt-reminder.sh` | UserPromptSubmit `.*` | Injects a compact compliance reminder (missing skills, active workflow position, opted-in tool notes) before each prompt. |
 | `record-agentmemory-usage.sh` | PostToolUse `Bash\|exec_command`; PostToolUse `CallMcpTool\|MCP` | Records successful agentmemory retrievals (CLI or MCP) for the opt-in agentmemory gate. |
@@ -230,7 +230,7 @@ Before each user prompt is processed; hooks add context or record the requested 
 | `trivial-file-guard.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Blocks agents from creating the legacy trivial marker (any spelling of its path: `~`, `$HOME`, `cd` + relative, cp/mv/ln/tee/dd); small changes go through `/sb:fast`. |
 | `uat-gate.sh` | PreToolUse `Bash\|Skill\|exec_command` | Blocks `sb:release` (Skill tool or Codex `invoke-skill`) and milestone completion when `UAT.md` is missing, failing or stale against the spec version. |
 | `v-loop-rollup-gate.sh` | Stop `.*` | At Stop, blocks when active site-session V-loops lack evidence. |
-| `workflow-chain-guard.sh` | PreToolUse `Edit\|Write\|MultiEdit\|NotebookEdit\|Bash\|apply_patch\|exec_command` | Inside a composed workflow (`.planning/workflows/<id>.md`), blocks implementation writes (file tools and shell writes into source) until the pre-execution chain is recorded; the planning skills' own artifacts (`.planning/**`, `docs/specs/**`) are never gated. |
+| `workflow-chain-guard.sh` | PreToolUse `Edit\|Write\|MultiEdit\|NotebookEdit\|Bash\|apply_patch\|exec_command\|mcp__.*__(write\|edit\|create\|move\|rename\|patch\|replace\|delete\|append\|save)[A-Za-z0-9_]*` | Inside a composed workflow (`.planning/workflows/<id>.md`), blocks implementation writes (file tools and shell writes into source) until the pre-execution chain is recorded; the planning skills' own artifacts (`.planning/**`, `docs/specs/**`) are never gated. |
 
 ## Other files in hooks/
 
@@ -260,6 +260,6 @@ Hooks source these helpers; none of them is registered as a hook. Each file's he
 - **Orchestrator, delegation and review ladder:** `orchestrator-directive.sh`, `orchestrator-event-log.sh`, `orchestrator-parent.sh`, `orchestrator-scheduler.sh`, `orchestrator-skill-atom.sh`, `orchestrator-state.sh`, `agent-delegation-state.sh`, `review-fix-ladder-state.sh`, `rfl-policy-c-assert.sh`
 - **Opt-in recommended tools (five-tool stack):** `recommended-tools.sh`, `recommended-tools-registry.sh`, `graphify-gate.sh`, `agentmemory-gate.sh`, `alumnium-gate.sh`, `context-mode-gate.sh`, `context-mode-read-deny.sh`, `leanctx-gate.sh`, `rtk-gate.sh`, `token-compression-tools-gate.sh`, `stack-compression-coordinator.sh`, `stack-optimizer.sh`, `graphify-am-global.sh`, `rtk-cm-global.sh`
 - **Site sessions:** `site-session.sh`
-- **Other:** `planning-floor.sh`
+- **Other:** `planning-floor.sh`, `state-seal.sh`
 
 `hooks/lib/completion-audit/` holds the modules `completion-audit.sh` sources (command classification, planning tier, deploy tier, change class, gate runners, state helpers). `hooks/lib/tool-input/` holds the Python helpers `tool-input.sh` calls to parse tool payloads (command strings, write targets, patch paths, RTK unwrapping); they share `shell_analysis.py`, the shell-command analyzer that `shell-analysis.sh` loads with `sb_tool_input_load` (delivery actions and tier, read-only verdict, write targets, opaque and unseen parts); completion-audit loads it once per call, the other gates start it through the accessors until they adopt the load.

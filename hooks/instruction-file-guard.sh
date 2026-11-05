@@ -33,13 +33,14 @@ input=$(cat)
 if declare -f sb_cert_run_bypass_active >/dev/null 2>&1 && sb_cert_run_bypass_active; then
   exit 0
 fi
-hook_event=$(printf '%s' "$input" | jq -r '.hook_event_name // "PreToolUse"')
+hook_event=$(printf '%s' "$input" | jq -r '.hook_event_name // "PreToolUse"' 2>/dev/null || echo PreToolUse)
 [[ "$hook_event" == "PreToolUse" ]] || exit 0
 
-tool_name=$(printf '%s' "$input" | jq -r '.tool_name // ""')
+# (An unparsable payload has no tool name: it goes on to the analysis, which fails closed.)
+tool_name=$(printf '%s' "$input" | jq -r '.tool_name // ""' 2>/dev/null || true)
 case "$tool_name" in
-  Edit | Write | MultiEdit | NotebookEdit | apply_patch) ;;
-  *) sb_tool_is_shell_like "$tool_name" || exit 0 ;;
+  "" | Edit | Write | MultiEdit | NotebookEdit | apply_patch) ;;
+  *) sb_tool_is_shell_like "$tool_name" || sb_pf_mcp_write_tool "$tool_name" || exit 0 ;;
 esac
 
 resolve_repo_root() {
@@ -79,9 +80,13 @@ if ! sb_tool_input_ok; then
   # The shell command cannot be analysed: refuse only what names an instruction file.
   lower="$(printf '%s' "$input" | tr '[:upper:]' '[:lower:]')"
   [[ "$lower" == *claude.md* || "$lower" == *agents.md* ]] || exit 0
-  cmd="$(printf '%s' "$input" | jq -r '.tool_input.command // .tool_input.cmd // ""' 2>/dev/null)"
+  cmd="$(printf '%s' "$input" | jq -r '.tool_input.command // .tool_input.cmd // ""' 2>/dev/null || true)"
   sb_pf_plain_read_only "$cmd" && exit 0
   deny "$(sb_pf_unanalysable_message)"
+fi
+if [[ "${SB_TI_TOOL_KIND:-}" == "shell" ]]; then
+  unseen_why="$(sb_pf_unseen_reason)"
+  [[ -z "$unseen_why" ]] || deny "$(sb_pf_unseen_message "$unseen_why")"
 fi
 
 if [[ "${SB_TI_TOOL_KIND:-}" == "shell" ]] && sb_pf_opaque_mentions claude.md agents.md; then

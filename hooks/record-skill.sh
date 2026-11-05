@@ -49,6 +49,14 @@ if [[ -f "$_lib_dir/hook-output.sh" ]]; then
   # shellcheck source=lib/hook-output.sh
   source "$_lib_dir/hook-output.sh"
 fi
+if [[ -f "$_lib_dir/state-seal.sh" ]]; then
+  # shellcheck source=lib/state-seal.sh
+  source "$_lib_dir/state-seal.sh"
+fi
+if ! declare -F sb_state_seal_write >/dev/null 2>&1; then
+  sb_state_seal_write() { :; }
+  sb_state_seal_enforce() { :; }
+fi
 
 # jq is required for JSON parsing
 if [[ -f "$_lib_dir/jq-gate.sh" ]]; then
@@ -218,6 +226,10 @@ fi
 
 [[ ${#skills_to_record[@]} -gt 0 ]] || exit 0
 
+# Only a host hook event records: the payload must carry the host's PostToolUse event name. (A
+# crafted payload can still say so; the planning gates refuse commands that run the recorder.)
+[[ "$(printf '%s' "$input" | jq -r '.hook_event_name // ""')" == "PostToolUse" ]] || exit 0
+
 debug_record_skill() {
   [[ "${SILVER_BULLET_DEBUG_RECORD_SKILL:-0}" == "1" ]] || return 0
   local dbg_dir="${SB_RUNTIME_STATE_DIR}"
@@ -356,6 +368,7 @@ for raw in "${skills_to_record[@]}"; do
   # SEC-02: refuse to write through a symlink at STATE_FILE
   sb_guard_nofollow "$STATE_FILE"
   touch -- "$STATE_FILE"
+  sb_state_seal_enforce "$STATE_FILE"
   if ! grep -Fqx -- "$skill" "$STATE_FILE" 2>/dev/null; then
     printf '%s\n' "$skill" >> "$STATE_FILE"
     recorded_any=true
@@ -391,6 +404,10 @@ for raw in "${skills_to_record[@]}"; do
     fi
   fi
 done
+
+if [[ "${recorded_any:-false}" == true ]]; then
+  sb_state_seal_write "$STATE_FILE"
+fi
 
 if [[ ${#completed_skills_to_mark[@]} -gt 0 ]] && declare -F sb_session_ledger_mark_completed >/dev/null 2>&1; then
   for skill in "${completed_skills_to_mark[@]}"; do

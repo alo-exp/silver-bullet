@@ -66,8 +66,8 @@ assert_contains "tee into the marker is denied" "$(reason)" "BLOCKED"
 run_tg "$(bash_in "python3 -c \"open('$TRIVIAL','w').close()\"")"
 assert_contains "an interpreter one-liner naming the marker is denied" "$(reason)" "BLOCKED"
 run_tg "$(bash_in "python3 -c \"open(__import__('os').path.expanduser('~/.claude/.silver-bullet/'+'triv'+'ial'),'w')\"")"
-assert_eq "string-built paths in one-liners are a known limit, not blocked" "" "$TL_OUT"
-run_tg "$(bash_in "python3 -c \"import os; os.system('touch ' + os.path.expanduser('~/') + '.claude/silver-bullet/trivial')\"")"
+assert_contains "string-built paths in one-liners are refused as code that cannot be read" "$(reason)" "cannot inspect this command"
+run_tg "$(bash_in "python3 -c \"import shutil; shutil.copy('a', '/x/.claude/.silver-bullet/trivial')\"")"
 assert_contains "a one-liner that names silver-bullet/trivial is blocked" "$(reason)" "BLOCKED"
 run_tg "$(bash_in "touch /somewhere/else")"
 assert_eq "unrelated commands are allowed" "" "$TL_OUT"
@@ -105,6 +105,26 @@ EC_RUN_DIR="$TL_TMP/plain"
 run_tg "$(write_in "$TRIVIAL")"
 assert_eq "outside an SB project: allowed" "" "$TL_OUT"
 EC_RUN_DIR="$EC_PROJ"
+
+# ---- review repair: ancestor writes, unseen commands, truncated payloads ---------------------
+FAKE="$TL_TMP/fake"; mkdir -p "$FAKE/.silver-bullet"; : >"$FAKE/.silver-bullet/trivial"
+for c in "cp -r $FAKE/.silver-bullet $HOME/.${SB_RUNTIME_NAME}/" "cp -a $FAKE/.silver-bullet $HOME/.${SB_RUNTIME_NAME}/" "rsync -a $FAKE/ $HOME/.${SB_RUNTIME_NAME}/" "tar -xf s.tar -C $HOME" "unzip -o s.zip -d $HOME" "mv $FAKE/.silver-bullet $HOME/.${SB_RUNTIME_NAME}/"; do
+  run_tg "$(bash_in "$c")"
+  assert_contains "ancestor write arms the marker: $c" "$(reason)" "BLOCKED"
+done
+for c in "cp settings.json $HOME/.${SB_RUNTIME_NAME}/" "rsync -a build/ out/" "mkdir -p $HOME/.${SB_RUNTIME_NAME}"; do
+  run_tg "$(bash_in "$c")"
+  assert_eq "an honest write passes: $c" "" "$TL_OUT"
+done
+PADF="$TL_TMP/pad.txt"; head -c 600000 /dev/zero | tr '\0' 'a' >"$PADF"
+run_tg "$(jq -cn --arg t "$TRIVIAL" --rawfile pad "$PADF" '{hook_event_name:"PreToolUse",tool_name:"Bash",tool_input:{command:("touch " + $t + "; # " + $pad)}}')"
+assert_contains "an over-budget command is refused" "$(reason)" "cannot inspect this command"
+run_tg "$(bash_in 'eval "$X"')"
+assert_contains "eval of computed text is refused" "$(reason)" "cannot inspect this command"
+run_tg "$(bash_in 'npm test')"
+assert_eq "an ordinary command passes" "" "$TL_OUT"
+run_tg '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"touch /x/trivial'
+assert_contains "a truncated payload that names the marker fails closed" "$(reason)" "cannot inspect"
 
 # ---- python3 missing: the analysis helper is unavailable --------------------
 NOPY="$(tl_path_without python3)"
