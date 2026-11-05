@@ -239,6 +239,11 @@ agent_mode_handle_flag() {
       ;;
     --task-id)
       SB_AM_SHIFT=2
+      # The id becomes a directory name under .planning/agent-<host>/ and a JSON/Markdown value.
+      if ! [[ "$value" =~ ^[A-Za-z0-9._-]{1,64}$ ]] || [[ "$value" == "." || "$value" == ".." ]]; then
+        printf 'ERROR: --task-id must match ^[A-Za-z0-9._-]{1,64}$ (and not be . or ..): %s\n' "$value" >&2
+        return 2
+      fi
       SB_AM_TASK_ID="$value"
       return 0
       ;;

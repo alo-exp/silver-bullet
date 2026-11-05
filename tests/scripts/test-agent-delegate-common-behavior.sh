@@ -328,9 +328,21 @@ assert_eq "state marker: json fields" "cursor|t-1|3|quota" "$(jq -r '[.host,.tas
 agent_delegate_write_degraded_fallback_evidence "" h t trig why
 agent_delegate_write_degraded_fallback_evidence "$TL_TMP/deg" "codex" "t-2" "quota" 'said "no"'
 agent_delegate_write_degraded_fallback_evidence "$TL_TMP/deg" "codex" "t-3" "quota" 'again'
+agent_delegate_write_state_marker "$TL_TMP/marker2" 'h"o' 't"\x' 7 'cl"ass'
+assert_eq "state marker: awkward values round-trip" 'h"o|t"\x|7|cl"ass' "$(jq -r '[.host,.task_id,(.exit_code|tostring),.failure_class]|join("|")' "$TL_TMP/marker2/state.json")"
+agent_delegate_write_state_marker "$TL_TMP/marker3" h t "not-a-number" c
+assert_eq "state marker: non-numeric exit code becomes 1" 1 "$(jq -r .exit_code "$TL_TMP/marker3/state.json")"
+agent_delegate_write_result_skeleton "$TL_TMP/res/result.md" $'ho|st' $'t\nid|x' 3
+assert_eq "result skeleton: cells cannot split the table" 1 "$(grep -c '^| task_id |' "$TL_TMP/res/result.md")"
+assert_contains "result skeleton: pipes and newlines flattened" "$(cat "$TL_TMP/res/result.md")" "| task_id | t id x |"
 assert_eq "degraded evidence: two jsonl records" 2 "$(wc -l <"$TL_TMP/deg/degraded-fallback.jsonl" | tr -d ' ')"
 assert_eq "degraded evidence: record fields and escaped quotes" "EV-DELEGATE-DEGRADED-FALLBACK|codex|quota|t-2|said \"no\"" \
   "$(head -1 "$TL_TMP/deg/degraded-fallback.jsonl" | jq -r '[.evidence_id,.host,.trigger,.task_id,.reason]|join("|")')"
+# JSON stays valid for awkward values (R4-32)
+agent_delegate_write_degraded_fallback_evidence "$TL_TMP/deg" 'h"o\st' 't"4\' "q" $'line one\nline "two" \\ end'
+assert_eq "degraded evidence: awkward values round-trip" $'h"o\\st|t"4\\|line one\nline "two" \\ end' \
+  "$(tail -1 "$TL_TMP/deg/degraded-fallback.jsonl" | jq -r '[.host,.task_id,.reason]|join("|")')"
+assert_eq "degraded evidence: every line parses" 3 "$(jq -c . "$TL_TMP/deg/degraded-fallback.jsonl" | wc -l | tr -d ' ')"
 
 # ---------------- failure class ----------------
 fc() { SB_AM_FAILURE_CLASS="${FC_PRE:-}" agent_delegate_normalize_failure_class "$@"; }
