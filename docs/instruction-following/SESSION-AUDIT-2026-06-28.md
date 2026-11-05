@@ -2,7 +2,7 @@
 
 **Session ID:** `e12690dc-fb94-4616-b1c4-d9341a80e789`  
 **Audit date:** 2026-06-28  
-**Repo:** `/Users/shafqat/projects/silver-bullet/repo`  
+**Repo:** `/Users/<user>/projects/silver-bullet/repo`  
 **Primary source:** `agent-transcripts/e12690dc-fb94-4616-b1c4-d9341a80e789/e12690dc-fb94-4616-b1c4-d9341a80e789.jsonl` (+ ~77 subagent transcripts; 74–76 at audit cutoff)  
 **Meta-audit:** [META-AUDIT-2026-06-28.md](./META-AUDIT-2026-06-28.md) — independent verification; **76.2% failure rate confirmed**
 

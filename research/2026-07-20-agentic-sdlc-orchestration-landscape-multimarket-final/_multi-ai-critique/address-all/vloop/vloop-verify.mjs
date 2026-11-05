@@ -228,7 +228,7 @@ const deferred = backlogRows.filter((r) =>
 
 const result = {
   verified_at: new Date().toISOString(),
-  workspace: "/Users/shafqat/.cursor/worktrees/repo/3ht3",
+  workspace: "/Users/<user>/.cursor/worktrees/repo/3ht3",
   report:
     "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/landscape-report.html",
   overall,

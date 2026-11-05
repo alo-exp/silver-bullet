@@ -2,7 +2,7 @@ model: composer-2.5
 
 **Subagent:** `sb-composer-2-5-high`  
 **Phase:** VERIFY-ONLY pass 2/2 (`verify_2`, independent of verify_1)  
-**Artifact:** `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
+**Artifact:** `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
 **SHA-256:** `32b8f337499b1933a57bf6ad438929c4b2cdbe821f0fb6a77cae337ea2a5407b` (verified via `shasum -a 256`)  
 **Graphify:** `graphify query "dr_search_gateway plan AC1 AC2 AC3 I-37 I-38 I-39 clear cache reddit oauth lock"` (301 nodes; oriented cache/clear/reddit-lock context)  
 **Apply ref:** AC1 / I-37, AC2 / I-38, AC3 / I-39 (round-4 post-clarify rung 1 pass 14)

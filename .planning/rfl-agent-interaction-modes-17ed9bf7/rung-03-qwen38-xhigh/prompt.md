@@ -2,9 +2,9 @@
 
 You are a spec reviewer. REVIEW ONLY. Do **not** edit the plan.
 
-**Plan (canonical):** `/Users/shafqat/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md`
-**Charter:** `/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-agent-interaction-modes-17ed9bf7/CHARTER.md`
-**Write your review to:** `/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-agent-interaction-modes-17ed9bf7/rung-03-qwen38-xhigh/review.md`
+**Plan (canonical):** `/Users/<user>/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md`
+**Charter:** `/Users/<user>/projects/silver-bullet/repo/.planning/rfl-agent-interaction-modes-17ed9bf7/CHARTER.md`
+**Write your review to:** `/Users/<user>/projects/silver-bullet/repo/.planning/rfl-agent-interaction-modes-17ed9bf7/rung-03-qwen38-xhigh/review.md`
 
 Read the **current** plan from disk (native/full). Do not use a stale copy.
 

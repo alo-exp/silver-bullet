@@ -3,7 +3,7 @@
 **Date:** 2026-07-06  
 **Authority:** Supersedes cold-only [UNIFIED-RUN-20260706/RESULT.md](runs/UNIFIED-RUN-20260706/RESULT.md) for confidence claims  
 **Harness:** `bash scripts/sb-tri-criteria-e2e.sh live --track <TC-01|TC-02|TC-03>`  
-**Fixture:** `/Users/shafqat/projects/enterprise-grade-test-app`
+**Fixture:** `/Users/<user>/projects/enterprise-grade-test-app`
 
 ---
 
@@ -71,9 +71,9 @@ Parent (Cursor, orchestrator_mode=parent)
 **Environment:**
 
 ```bash
-export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
+export SB_ROOT=/Users/<user>/projects/silver-bullet/repo
 export SB_RUNTIME_PRESERVE_STATE_DIR=1
-export SB_TRI_CRITERIA_WORK_DIR=/Users/shafqat/projects/enterprise-grade-test-app
+export SB_TRI_CRITERIA_WORK_DIR=/Users/<user>/projects/enterprise-grade-test-app
 ```
 
 **Per track:**

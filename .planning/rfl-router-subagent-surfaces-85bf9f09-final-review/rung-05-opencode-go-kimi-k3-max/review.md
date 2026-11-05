@@ -17,8 +17,8 @@ report for this rung; prior-wave archives (`review-prior-wave.md`,
 
 | Copy | SHA-256 recorded | Bytes |
 |------|------------------|-------|
-| `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `3166a309baa55fb49158df4531c7bf7e8f8609f1c720b0f4d0cae5c396346321` | 621247 |
-| `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `3166a309baa55fb49158df4531c7bf7e8f8609f1c720b0f4d0cae5c396346321` | 621247 |
+| `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `3166a309baa55fb49158df4531c7bf7e8f8609f1c720b0f4d0cae5c396346321` | 621247 |
+| `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `3166a309baa55fb49158df4531c7bf7e8f8609f1c720b0f4d0cae5c396346321` | 621247 |
 
 - Byte-identical: **yes** (both copies), per the locked freeze.
 - The recorded SHA is the authoritative locked freeze `3166a309…` / 621247.

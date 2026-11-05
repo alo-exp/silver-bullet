@@ -6,7 +6,7 @@
   "orchestrator_mode": "parent",
   "harness": "scripts/sb-tri-criteria-e2e.sh",
   "fixture": {
-    "work_dir_default": "/Users/shafqat/projects/enterprise-grade-test-app",
+    "work_dir_default": "/Users/<user>/projects/enterprise-grade-test-app",
     "vision_template": "fixtures/TC-02-vision.md",
     "prefs_template": "fixtures/TC-02-prefs.json"
   },

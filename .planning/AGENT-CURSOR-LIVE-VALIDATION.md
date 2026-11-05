@@ -36,7 +36,7 @@
 
 ### Enterprise temp branch
 
-- **Repo:** `/Users/shafqat/projects/enterprise-grade-test-app-cursor`
+- **Repo:** `/Users/<user>/projects/enterprise-grade-test-app-cursor`
 - **Branch:** `agent-cursor-af-live-20260705-live`
 - **Commit:** `fb68b45` — `docs: agent-cursor AF live health-smoke guide`
 

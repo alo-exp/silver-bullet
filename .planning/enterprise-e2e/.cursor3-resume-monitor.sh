@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Resume monitor: wait for rows 15-22, process each, update ledger summary.
 set -euo pipefail
-SB=/Users/shafqat/projects/silver-bullet/repo
-FIX=/Users/shafqat/projects/enterprise-grade-test-app-cursor
+SB=/Users/<user>/projects/silver-bullet/repo
+FIX=/Users/<user>/projects/enterprise-grade-test-app-cursor
 STATE=$SB/.planning/enterprise-e2e/cursor3-real-pipeline.state
 LEDGER=$SB/.planning/enterprise-e2e/ROUND-CURSOR-3-REAL-LEDGER.md
 PROC=$SB/.planning/enterprise-e2e/.cursor3-process-row.sh

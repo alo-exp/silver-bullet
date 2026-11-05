@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # One-shot Pi Qwen smoke for rung 3. Does not write a Grok substitute review.md.
 set -u
-RUNG="/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-03-opencode-go-qwen3.8-max"
+RUNG="/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-03-opencode-go-qwen3.8-max"
 LOGDIR="$RUNG/logs"
 mkdir -p "$LOGDIR"
 WRAP="$LOGDIR/rung3-qwen-smoke-fix.txt"
@@ -18,7 +18,7 @@ export SB_AGENT_HOST_ARGV_FILE="$ARGV"
 export PI_NI_ZERO_BYTE_IDLE_SEC=120
 export PI_RUN_TIMEOUT=600
 set +e
-bash /Users/shafqat/projects/silver-bullet/repo/scripts/agent-pi/invoke.sh \
+bash /Users/<user>/projects/silver-bullet/repo/scripts/agent-pi/invoke.sh \
   --non-interactive \
   --work-dir "$RUNG" \
   --expect-file "$RUNG/review.md" \

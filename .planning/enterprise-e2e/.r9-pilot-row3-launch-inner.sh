@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Canonical R9 pilot row 3 driver (single instance — do not duplicate).
 set -euo pipefail
-MAIN="/Users/shafqat/projects/silver-bullet/repo"
+MAIN="/Users/<user>/projects/silver-bullet/repo"
 LOG="${MAIN}/.e2e-r9-pilot-row3-live.log"
 PIDFILE="${MAIN}/.e2e-r9-pilot-row3.pid"
 SB_ROOT="/private/tmp/sb-main-row11-fp"
@@ -32,7 +32,7 @@ rm -f "${SB_ROOT}/.e2e-live-test.lock"
 printf '%s\n' "$$" >"$PIDFILE"
 
 export SB_ROOT
-export SB_TEST_ENTERPRISE_APP_ROOT=/Users/shafqat/projects/enterprise-grade-test-app-round9-claude
+export SB_TEST_ENTERPRISE_APP_ROOT=/Users/<user>/projects/enterprise-grade-test-app-round9-claude
 mkdir -p "${SB_TEST_ENTERPRISE_APP_ROOT}/.agentmemory/memory"
 export SB_E2E_TEST_APP_BRANCH=enterprise-e2e/round-9-claude
 export SB_E2E_TEST_APP_BASELINE_SHA=8482e60

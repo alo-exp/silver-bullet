@@ -4,8 +4,8 @@ Phase: VERIFY-ONLY pass 2/2 (`rung_11_verify_2`). This is the **final** ladder r
 This is `/silver:review-fix-ladder` only. Do **not** run `/silver:clarify`. Do not AskQuestion. Do not encode product forks. Do not combine with verify_1.
 
 Scope (FORBIDDEN to Edit/Write either freeze copy):
-- `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
-- `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
+- `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
+- `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
 
 Independently re-hash both copies. Disk wins.
 - Charter start SHA: `07b986094e983d39fe3c7d2f1ac215ae730cbd28ccf3957655f5ec4c53d3280a` / 620985 bytes is **historical only**. Do **not** treat as current. Ignore stale briefs that still cite it.
@@ -29,7 +29,7 @@ Independent launcher re-check (do **not** copy from verify-1.md or review.md —
 - No freeze edits during this verify
 
 You ARE required to Write the report ONLY to this ABSOLUTE path:
-`/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-11-claude-claude-opus-5-xhigh/verify-2.md`
+`/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-11-claude-claude-opus-5-xhigh/verify-2.md`
 
 The verify-2.md MUST include:
 - Official model honesty: if you (Pi Claude Opus 5 Extra High) wrote it, say so; do not claim a substitute. If you are a Grok 4.6 High substitute, say that.

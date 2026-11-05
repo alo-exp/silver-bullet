@@ -128,7 +128,7 @@ Correcting row 64: reclassified on review — no hard naming conflict. The singl
 
 - Source: skill-development §Keep SKILL.md lean ("Keep under 3,000 words, ideally 1,500-2,000 words"; anti-pattern §Mistake 2 caps at 5k via "<5k max" in validation checklist)
 - Requirement: Skill body ≤5,000 words; split detail into `references/`.
-- Affected: `/Users/shafqat/Documents/Projects/silver-bullet/skills/silver-init/SKILL.md` (5,454 words).
+- Affected: `/Users/<user>/Documents/Projects/silver-bullet/skills/silver-init/SKILL.md` (5,454 words).
 - Fix: Extract at least ~1,500 words of the detailed stack-detection / doc-migration / ci-templates walk-throughs out of `SKILL.md` into the existing `references/` files (good news: references scaffolding already present), leaving only procedural core in `SKILL.md`.
 
 ## WARN findings (non-blocking) — grouped

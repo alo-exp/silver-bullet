@@ -1,6 +1,6 @@
 # Cursor Task cursor-grok-4.6-high (no Pi) — verify_1
 
-RFL round 2, rung 7, verify_1 only (not verify_2). Repo: `/Users/shafqat/projects/silver-bullet/repo`. Branch: `main` (NEVER git checkout / git switch / SetActiveBranch). Parent: `d5150f38-4d37-458d-9bdb-5e6f985975d3`. Model lock: Cursor Task `cursor-grok-4.6-high` (this IS the Grok 4.6 High rung — not Extra High / XHigh, not Fast, no Pi).
+RFL round 2, rung 7, verify_1 only (not verify_2). Repo: `/Users/<user>/projects/silver-bullet/repo`. Branch: `main` (NEVER git checkout / git switch / SetActiveBranch). Parent: `d5150f38-4d37-458d-9bdb-5e6f985975d3`. Model lock: Cursor Task `cursor-grok-4.6-high` (this IS the Grok 4.6 High rung — not Extra High / XHigh, not Fast, no Pi).
 
 VERIFY ONLY — no edits to freeze `.planning/router_subagent_surfaces_85bf9f09.plan.md`, no skills/hooks/product modifications, no git checkout/switch/restore, no YAML todo execution, no rung 8.
 
@@ -17,8 +17,8 @@ Live verification across all three canonical copies. Expected post-APPLY (rung-7
 
 | Copy | Path | SHA-256 | Bytes | Status |
 |---|---|---|---|---|
-| Repo Working Tree | `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `1c4a1ce931c1791b4ab3374a2127f71baedbcb8292ebcac33627410909664f90` | 642234 | MATCH |
-| Cursor UI Copy | `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `1c4a1ce931c1791b4ab3374a2127f71baedbcb8292ebcac33627410909664f90` | 642234 | MATCH |
+| Repo Working Tree | `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `1c4a1ce931c1791b4ab3374a2127f71baedbcb8292ebcac33627410909664f90` | 642234 | MATCH |
+| Cursor UI Copy | `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `1c4a1ce931c1791b4ab3374a2127f71baedbcb8292ebcac33627410909664f90` | 642234 | MATCH |
 | Git HEAD Blob | `git show HEAD:.planning/router_subagent_surfaces_85bf9f09.plan.md` | `1c4a1ce931c1791b4ab3374a2127f71baedbcb8292ebcac33627410909664f90` | 642234 | MATCH |
 
 - **Line count:** 4382 (unchanged vs pre-APPLY; heading length delta only).

@@ -1,6 +1,6 @@
 # `/silver:deep-research-multi-ai` — Clarification Brief
 
-**Source plan:** [multi_ai_deep_research_b3d9881b.plan.md](/Users/shafqat/.cursor/plans/multi_ai_deep_research_b3d9881b.plan.md)  
+**Source plan:** [multi_ai_deep_research_b3d9881b.plan.md](/Users/<user>/.cursor/plans/multi_ai_deep_research_b3d9881b.plan.md)  
 **Clarify run:** 2026-07-15 (AF-CLARIFY on workflow implementation plan)  
 **Scope:** Catalog-backed multi-model orchestration layer on the existing SB deep-research engine — not a second DR engine, not a MultAI revival.
 
@@ -174,6 +174,6 @@ The plan correctly rejects simpler options for the stated acceptance criteria. O
 | Artifact | Path |
 |----------|------|
 | Clarify brief (this file) | [.planning/CLARIFY.md](.planning/CLARIFY.md) |
-| Source implementation plan | [multi_ai_deep_research_b3d9881b.plan.md](/Users/shafqat/.cursor/plans/multi_ai_deep_research_b3d9881b.plan.md) |
+| Source implementation plan | [multi_ai_deep_research_b3d9881b.plan.md](/Users/<user>/.cursor/plans/multi_ai_deep_research_b3d9881b.plan.md) |
 | Parent DR contract | [research/README.md](research/README.md) |
 | Clarify workflow reference | [site/help/workflows/silver-clarify.html](site/help/workflows/silver-clarify.html) |

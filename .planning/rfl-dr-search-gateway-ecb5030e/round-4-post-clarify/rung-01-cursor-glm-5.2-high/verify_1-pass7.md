@@ -2,7 +2,7 @@ model: composer-2.5
 
 **Subagent:** `sb-composer-2-5-high`  
 **Phase:** VERIFY-ONLY pass 1/2 (`rung_1_verify_1`, post ACCEPT-apply of V1 / I-19)  
-**Artifact:** `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
+**Artifact:** `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
 **SHA-256:** `a53d81dfd58d6969ba4984ef88a5d6ee1355c7b40dc1b64f05a87478ae387bd4` (verified via `shasum -a 256`)  
 **Graphify:** `graphify query "doctor.rs bounded patch Modify checklist" --budget 2000` (98 nodes; oriented doctor/bounded-patch contract)  
 **Apply ref:** [APPLY.md](APPLY.md) pass 7 (V1 / I-19) · **Prior verify:** [verify_1-pass6.md](verify_1-pass6.md)

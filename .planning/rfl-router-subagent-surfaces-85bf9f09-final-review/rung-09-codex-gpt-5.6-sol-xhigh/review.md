@@ -10,8 +10,8 @@ Disk bytes were treated as authoritative and both allowed freeze copies were ind
 
 | Copy | Bytes | SHA-256 actually hashed |
 |---|---:|---|
-| `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | 621233 | `4c18af575adc848542c3d04faa2579a206ac0a627c80aade0d7aba3514e91de9` |
-| `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | 621233 | `4c18af575adc848542c3d04faa2579a206ac0a627c80aade0d7aba3514e91de9` |
+| `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | 621233 | `4c18af575adc848542c3d04faa2579a206ac0a627c80aade0d7aba3514e91de9` |
+| `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | 621233 | `4c18af575adc848542c3d04faa2579a206ac0a627c80aade0d7aba3514e91de9` |
 
 Byte-identical: **yes** (`cmp` equality confirmed). This is the current `4c18af57…` freeze, not any historical `07b98609…`, `d5343ac1…`, or `edff7c0c…` image.
 

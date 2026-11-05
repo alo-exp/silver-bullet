@@ -9,7 +9,7 @@ Reusable handoff prompt for a fresh session. Task-detail mode included (user req
 - **Repo:** silver-bullet (`alo-exp/silver-bullet`)
 - **Origin:** https://github.com/alo-exp/silver-bullet.git
 - **Branch:** `main` @ `890d2ff3` on `origin/main` (merge `80fd6715`; handoff `0c1c8bc5`; tip-align through `ff01c000`; V-loop enrich `890d2ff3`)
-- **Primary checkout:** `/Users/shafqat/projects/silver-bullet/repo`
+- **Primary checkout:** `/Users/<user>/projects/silver-bullet/repo`
 - **Cleanup confirmed:** worktree `r41j` removed; branch `cursor/16e60539` deleted (no longer in `git worktree list` / local or remote branch list)
 - **Working tree:** dirty with unrelated untracked junk (`.alumnium/logs`, `${SB_RUNTIME_HOME_ROOT}/`, planning run dirs) — do not mix into DR commits
 

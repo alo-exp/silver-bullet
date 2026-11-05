@@ -264,7 +264,7 @@ This keeps the nav concise while linking to the new section.
   </action>
   <verify>
     <automated>
-cd /Users/shafqat/Documents/Projects/silver-bullet && \
+cd /Users/<user>/Documents/Projects/silver-bullet && \
 grep -q 'id="cost-optimization"' site/index.html && echo "OK: section exists" || echo "FAIL: section missing" && \
 grep -q 'Right Model, Right Task' site/index.html && echo "OK: title exists" || echo "FAIL: title missing" && \
 grep -q 'href="#cost-optimization"' site/index.html && echo "OK: nav link exists" || echo "FAIL: nav link missing" && \
@@ -285,13 +285,13 @@ All content uses existing CSS classes — no new styles.
   <action>
 1. Run the Silver Bullet test suite:
    ```bash
-   cd /Users/shafqat/Documents/Projects/silver-bullet && npm test
+   cd /Users/<user>/Documents/Projects/silver-bullet && npm test
    ```
    All tests must pass. If any fail, diagnose and fix before proceeding.
 
 2. Commit ONLY the site/index.html change to the SB repo:
    ```bash
-   cd /Users/shafqat/Documents/Projects/silver-bullet
+   cd /Users/<user>/Documents/Projects/silver-bullet
    git add site/index.html
    git commit -m "feat: automatic model switching -- route agents to optimal model tier"
    ```
@@ -303,7 +303,7 @@ All content uses existing CSS classes — no new styles.
   </action>
   <verify>
     <automated>
-cd /Users/shafqat/Documents/Projects/silver-bullet && npm test && \
+cd /Users/<user>/Documents/Projects/silver-bullet && npm test && \
 git log --oneline -1 | grep -q "automatic model switching" && echo "OK: committed" || echo "FAIL: not committed"
     </automated>
   </verify>

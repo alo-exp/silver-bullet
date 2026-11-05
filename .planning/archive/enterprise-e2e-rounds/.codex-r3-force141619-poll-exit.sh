@@ -103,7 +103,7 @@ resume_friction_monitor() {
 
 run_frozen_merge_rescore() {
   export SB_ROOT="$ROOT"
-  export SB_TEST_ENTERPRISE_APP_ROOT="${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/shafqat/projects/enterprise-grade-test-app}"
+  export SB_TEST_ENTERPRISE_APP_ROOT="${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/<user>/projects/enterprise-grade-test-app}"
   export SILVER_BULLET_RUNTIME=codex
   export SB_E2E_LIVE_RUNTIME=codex
   export SB_E2E_LEDGER_FILE="$LEDGER"
@@ -179,7 +179,7 @@ run_frozen_merge_rescore() {
 
 draft_product_audit() {
   local audit="${ROOT}/.planning/enterprise-e2e/CODEX-3-TEST-APP-PRODUCT-AUDIT.md"
-  local fixture="${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/shafqat/projects/enterprise-grade-test-app}"
+  local fixture="${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/<user>/projects/enterprise-grade-test-app}"
   local baseline="${SB_E2E_TEST_APP_BASELINE_SHA:-09f8d1a}"
   local commit_count delta fixture_sha sb_sha
   fixture_sha="$(git -C "$fixture" rev-parse --short HEAD 2>/dev/null || echo unknown)"

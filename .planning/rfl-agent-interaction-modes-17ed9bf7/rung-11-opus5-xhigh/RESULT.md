@@ -10,7 +10,7 @@ ISSUES:
 EVIDENCE: .cursor/plans/agent_interaction_modes_17ed9bf7.plan.md ; .planning/rfl-agent-interaction-modes-17ed9bf7/rung-11-opus5-xhigh/{review.md,claude-run.log,invoke.stdout,invoke-meta.md,brief.md,model-probe.stdout,RESULT.md}
 BLOCKERS: none
 
-Plan: [agent_interaction_modes_17ed9bf7.plan.md](/Users/shafqat/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
+Plan: [agent_interaction_modes_17ed9bf7.plan.md](/Users/<user>/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
 
 Notes:
 - NI print path (`invoke.sh --skip-preflight --use-print --mode strict`). Preflight WARN only: missing `install-claude.sh` plugin-cache helper (exit 1, same as rung 10). Model probe `PONG` on `claude-opus-5 --effort xhigh` (Extra High) succeeded; `--bare` skipped (keychain skip → not logged in).

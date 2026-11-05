@@ -42,7 +42,7 @@
     "local_repo_docs",
     "graphify_query"
   ],
-  "report_dir": "/Users/shafqat/projects/silver-bullet/repo/.planning/research/2026-07-05-context-mode-vs-lean-context-ultradeep",
+  "report_dir": "/Users/<user>/projects/silver-bullet/repo/.planning/research/2026-07-05-context-mode-vs-lean-context-ultradeep",
   "artifact_paths": {
     "sources": "sources.jsonl",
     "evidence": "evidence.jsonl",
