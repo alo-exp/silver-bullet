@@ -4,7 +4,7 @@
 > Do not edit by hand: change those files, then run `python3 scripts/generate-hook-reference.py`.
 > `tests/docs/test-hook-reference.sh` fails when this file is stale.
 
-`hooks/hooks.json` registers **96 hook commands** backed by **64 scripts** across 7 events. No registrations are async: the host waits for each hook up to its timeout (in seconds). The `#` column is the position in `hooks.json`; hosts may run the hooks that match one event in parallel, so do not rely on hook order.
+`hooks/hooks.json` registers **97 hook commands** backed by **64 scripts** across 7 events. No registrations are async: the host waits for each hook up to its timeout (in seconds). The `#` column is the position in `hooks.json`; hosts may run the hooks that match one event in parallel, so do not rely on hook order.
 
 ## How hooks are wired
 
@@ -28,6 +28,7 @@ Session startup, `/clear` and compaction (`startup|clear|compact`).
 | 2 | `startup\|clear\|compact` | `spec-session-record.sh` | 10 |
 | 3 | `startup\|clear\|compact` | `stack-compression-lifecycle.sh` | 10 |
 | 4 | `startup\|clear\|compact` | `rfl-quota-retry-due.sh` | 10 |
+| 5 | `resume` | `session-start` | 15 |
 
 ### PreToolUse
 
@@ -212,7 +213,7 @@ Before each user prompt is processed; hooks add context or record the requested 
 | `rtk-gate.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Opt-in (`recommended_tools.rtk`): checks RTK install, version and host hook wiring (it does not rewrite commands itself). |
 | `semantic-compress.sh` | PostToolUse `Skill` | After phase skills, assembles a ranked context summary for the current phase goal (`semantic_compression` config). |
 | `session-log-init.sh` | PostToolUse `Bash\|exec_command` | When the session mode is written, creates the `docs/sessions/` log skeleton; in autonomous mode starts the timeout sentinel. |
-| `session-start` | SessionStart `startup\|clear\|compact` | Injects the core rules, resets branch- and worktree-scoped state, clears the trivial marker and stale gate files, and probes prerequisites (warns when `jq` is missing). |
+| `session-start` | SessionStart `startup\|clear\|compact`; SessionStart `resume` | Injects the core rules, resets branch- and worktree-scoped state, clears the trivial marker and stale gate files, and probes prerequisites (warns when `jq` is missing). |
 | `site-chrome-guard.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Blocks inline `<nav>`/`<footer>` in site HTML (canonical fragments live in `site/_chrome/`) and unmarked font edits in `site/tokens.css`. |
 | `site-preview-preflight.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Before `site/**` edits, checks that the local site preview server is healthy. |
 | `site-regression-gate.sh` | PreToolUse `Bash\|exec_command`; Stop `.*`; SubagentStop `.*` | Runs the site regression tests at Stop and before `git push` when `site/**` was touched in the session. |

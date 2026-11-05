@@ -77,7 +77,7 @@ tl_run bash "$VS"
 assert_eq "high score with a fail exits 1" "1" "$TL_STATUS"
 assert_contains "high score with a fail is NEEDS_WORK" "$TL_OUT" "Synergy audit verdict: NEEDS_WORK (score=95/100, fails=1"
 
-# ---------- sb-prerequisite-repair.sh ----------
+# ---------- sb-prerequisite-repair.sh (report-only: R2-12, R8-07) ----------
 PR="$TL_REPO_ROOT/scripts/sb-prerequisite-repair.sh"
 LOG="$TL_TMP/pkg.log"
 : >"$LOG"
@@ -86,51 +86,48 @@ NOJQ="$(tl_path_without jq brew apt-get sudo)"
 tl_run bash "$PR" "$TL_TMP"
 assert_eq "jq present exits 0" "0" "$TL_STATUS"
 
-# jq missing, no package manager -> exit 1
+# jq missing: exit 1 with the install command printed; no package manager is ever run
 PATH_SAVE="$PATH"
-PATH="$NOJQ" tl_run bash "$PR" "$TL_TMP"
-assert_eq "no jq and no manager exits 1" "1" "$TL_STATUS"
-
-# jq missing, brew present: brew install jq attempted (still missing -> exit 1)
-tl_stub brew 'echo "brew $*" >>"'"$LOG"'"; exit 1'
-NOJQ_BREW="$(tl_path_without jq apt-get sudo)"
-PATH="$NOJQ_BREW" tl_run bash "$PR" "$TL_TMP"
-assert_eq "brew failure tolerated, still exits 1" "1" "$TL_STATUS"
-assert_contains "brew install jq attempted" "$(cat "$LOG")" "brew install jq"
-# brew that really "installs" jq: next probe finds it
-JQREAL="$(command -v jq)"
-mkdir -p "$TL_TMP/instbin"
-tl_stub brew 'echo "brew $*" >>"'"$LOG"'"; ln -sf "'"$JQREAL"'" "'"$TL_TMP"'/instbin/jq"'
-NOJQ_BREW2="$(tl_path_without jq apt-get sudo)"
-PATH="$NOJQ_BREW2:$TL_TMP/instbin" tl_run bash "$PR" "$TL_TMP"
-assert_eq "brew installing jq gives exit 0" "0" "$TL_STATUS"
-rm -f "$TL_BIN/brew"
-
-# jq missing, apt-get present (no brew): sudo apt-get install -y jq
-: >"$LOG"
-tl_stub apt-get 'exit 0'
-tl_stub sudo 'echo "sudo $*" >>"'"$LOG"'"; exit 1'
-NOJQ_APT="$(tl_path_without jq brew)"
-PATH="$NOJQ_APT" tl_run bash "$PR" "$TL_TMP"
-assert_eq "apt failure tolerated, exits 1" "1" "$TL_STATUS"
-assert_contains "sudo apt-get install attempted" "$(cat "$LOG")" "sudo apt-get install -y jq"
-rm -f "$TL_BIN/apt-get" "$TL_BIN/sudo"
+tl_stub brew 'echo "brew $*" >>"'"$LOG"'"; exit 0'
+tl_stub apt-get 'echo "apt-get $*" >>"'"$LOG"'"; exit 0'
+tl_stub sudo 'echo "sudo $*" >>"'"$LOG"'"; exit 0'
+NOJQ_PM="$(tl_path_without jq)"
+PATH="$NOJQ_PM" tl_run bash "$PR" "$TL_TMP"
+assert_eq "no jq exits 1" "1" "$TL_STATUS"
+assert_contains "install hint printed for the user" "$TL_ERR" "brew install jq"
+assert_eq "no package manager invoked" "" "$(cat "$LOG")"
+rm -f "$TL_BIN/brew" "$TL_BIN/apt-get" "$TL_BIN/sudo"
 PATH="$PATH_SAVE"
 
-# plugin cache repair is invoked with the repo root when a cache exists
+# the cache alias is refreshed through the cache helpers; project files are never copied
 SD="$TL_TMP/prscripts"
-mkdir -p "$SD/lib"
+mkdir -p "$SD/lib" "$TL_TMP/home/.claude/plugins/cache/alo-labs/silver-bullet"
 cp "$PR" "$SD/"
 cat >"$SD/lib/plugin-cache-version.sh" <<STUB
-sb_claude_ensure_plugin_cache_ready() { echo "ensure \$1" >>"$LOG"; return 1; }
+sb_plugin_cache_prune_orphaned_dirs() { echo "prune \$1" >>"$LOG"; }
+sb_plugin_cache_refresh_current_alias() { echo "refresh \$1" >>"$LOG"; }
+sb_claude_ensure_plugin_cache_ready() { echo "ensure \$1" >>"$LOG"; }
 STUB
 : >"$LOG"
 tl_run bash "$SD/sb-prerequisite-repair.sh" "/some/repo"
-assert_eq "failing cache repair tolerated" "0" "$TL_STATUS"
-assert_contains "cache repair receives repo root" "$(cat "$LOG")" "ensure /some/repo"
+assert_eq "cache alias repair exits 0" "0" "$TL_STATUS"
+assert_contains "cache alias refreshed" "$(cat "$LOG")" "refresh $TL_TMP/home/.claude/plugins/cache/alo-labs/silver-bullet"
+assert_not_contains "project root never passed to the cache repair" "$(cat "$LOG")" "ensure"
+# cache helpers that fail never fail the repair
+mkdir -p "$TL_TMP/home/.claude/plugins/cache/alo-labs/silver-bullet"
+cat >"$SD/lib/plugin-cache-version.sh" <<STUB
+sb_plugin_cache_prune_orphaned_dirs() { echo "prune" >>"$LOG"; return 1; }
+sb_plugin_cache_refresh_current_alias() { echo "refresh" >>"$LOG"; return 1; }
+STUB
 : >"$LOG"
-(cd "$TL_TMP/home" && bash "$SD/sb-prerequisite-repair.sh" >/dev/null 2>&1)
-assert_contains "repo root defaults to PWD" "$(cat "$LOG")" "ensure $TL_TMP/home"
+tl_run bash "$SD/sb-prerequisite-repair.sh" "/some/repo"
+assert_eq "failing cache helpers are tolerated" "0" "$TL_STATUS"
+assert_eq "both helpers were attempted" "prune refresh" "$(tr '\n' ' ' <"$LOG" | sed 's/ $//')"
+rm -rf "$TL_TMP/home/.claude/plugins/cache"
+: >"$LOG"
+tl_run bash "$SD/sb-prerequisite-repair.sh" "/some/repo"
+assert_eq "no cache dir is tolerated" "0" "$TL_STATUS"
+assert_eq "no cache dir means no repair call" "" "$(cat "$LOG")"
 
 # ---------- sb-bootstrap.sh ----------
 BS="$TL_REPO_ROOT/scripts/sb-bootstrap.sh"

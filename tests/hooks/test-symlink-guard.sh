@@ -150,7 +150,7 @@ test_session_start_rejects_symlink_branch() {
   ln -sfn "$target" "$branch_link"
 
   # The stored branch ("canary") differs from feature/symlink-guard, so the hook
-  # rewrites the branch file; the nofollow guard must stop it there with exit 1.
+  # rewrites the branch file; the nofollow guard must refuse that write and nothing else.
   local rc=0
   (cd "$project" && printf '{"source":"startup"}' | \
     env -u SILVER_BULLET_BRANCH_FILE "$HOOK" >/dev/null 2>&1) || rc=$?
@@ -163,10 +163,11 @@ test_session_start_rejects_symlink_branch() {
   [[ -n "$backup" ]] && mv "$backup" "$branch_link"
   rm -rf "$cache_stub"
 
-  if [[ "$rc" -eq 1 ]]; then
-    pass "session-start reaches the guarded branch-file write (exit 1)"
+  # R3-07: the refusal skips only the write; the hook is not aborted.
+  if [[ "$rc" -eq 0 ]]; then
+    pass "session-start skips the symlinked branch file and finishes (exit 0)"
   else
-    fail "session-start did not stop at the symlinked branch file — rc=$rc"
+    fail "session-start aborted at the symlinked branch file — rc=$rc"
   fi
   if [[ "$target_content" == "canary" ]]; then
     pass "session-start refuses to write through symlink branch file"

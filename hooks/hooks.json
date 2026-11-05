@@ -29,6 +29,17 @@
             "timeout": 10
           }
         ]
+      },
+      {
+        "matcher": "resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/session-start\"",
+            "async": false,
+            "timeout": 15
+          }
+        ]
       }
     ],
     "PreToolUse": [

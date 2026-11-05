@@ -664,11 +664,9 @@ if [[ -f "$TMPBRANCH" ]]; then
     FAIL=$((FAIL + 1))
   fi
 fi
-# State file must NOT have been wiped — skill recordings should survive
-assert_file_exists "branch file absent -> state file preserved" "$TMPSTATE"
-assert_file_contains "branch file absent -> skill recordings preserved" "$TMPSTATE" "silver-quality-gates"
-# Branch-file-absent and same-branch startup preserve SB lifecycle evidence.
-assert_file_contains "branch file absent -> SB lifecycle markers preserved" "$TMPSTATE" "silver-context"
+# R3-07: recorded state with no branch record cannot be tied to this branch (a deleted branch file
+# must not carry satisfied state onto a new branch), so it is reset.
+assert_file_missing "branch file absent -> unverifiable state reset" "$TMPSTATE"
 assert_file_missing "branch file absent -> pre-release quality gate file cleared" "$QUALITY_GATE_FILE"
 rm -rf "$HOOK_WORKDIR"
 rm -f "$TMPSTATE" "$TMPBRANCH" "$QUALITY_GATE_FILE"

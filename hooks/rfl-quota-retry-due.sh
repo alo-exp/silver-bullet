@@ -69,16 +69,12 @@ fi
 hook_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd 2>/dev/null)" || hook_dir=""
 resolver="${SB_RFL_RESOLVER:-}"
 if [[ -z "$resolver" ]]; then
-  for candidate in \
-    "$project_root/scripts/review-fix-ladder.py" \
-    "${hook_dir}/../scripts/review-fix-ladder.py" \
-    "${hook_dir}/../../scripts/review-fix-ladder.py"
-  do
-    if [[ -f "$candidate" ]]; then
-      resolver="$candidate"
-      break
-    fi
-  done
+  # Silver Bullet's own resolver only: a project must not supply Python that a SessionStart
+  # hook executes (R3-03).
+  candidate="${hook_dir}/../scripts/review-fix-ladder.py"
+  if [[ -n "$hook_dir" && -f "$candidate" ]]; then
+    resolver="$candidate"
+  fi
 fi
 [[ -n "$resolver" && -f "$resolver" ]] || finish_noop
 command -v python3 >/dev/null 2>&1 || finish_noop

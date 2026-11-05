@@ -6,7 +6,7 @@ trap 'exit 0' ERR
 umask 0077
 
 _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
-for _lib in runtime-paths.sh sb-project-gate.sh orchestrator-state.sh orchestrator-parent.sh skill-discovery.sh jq-gate.sh hook-output.sh; do
+for _lib in runtime-paths.sh nofollow-guard.sh sb-project-gate.sh orchestrator-state.sh orchestrator-parent.sh skill-discovery.sh jq-gate.sh hook-output.sh; do
   if [[ -f "$_lib_dir/$_lib" ]]; then
     # shellcheck source=/dev/null
     source "$_lib_dir/$_lib"
@@ -69,13 +69,10 @@ fi
 if [[ "$skill" == "silver-ship" && -f "$repo_root/.silver-bullet.json" ]]; then
   aw="$(jq -r '.project.active_workflow // "full-dev-cycle"' "$repo_root/.silver-bullet.json" 2>/dev/null || true)"
   if [[ "$aw" == "devops-cycle" ]]; then
-    tmp="$(mktemp)"
-    if jq '.project.active_workflow = "full-dev-cycle"' "$repo_root/.silver-bullet.json" >"$tmp" 2>/dev/null; then
-      mv "$tmp" "$repo_root/.silver-bullet.json"
+    updated="$(jq '.project.active_workflow = "full-dev-cycle"' "$repo_root/.silver-bullet.json" 2>/dev/null || true)"
+    if [[ -n "$updated" ]] && printf '%s\n' "$updated" | sb_atomic_write_file "$repo_root/.silver-bullet.json"; then
       reset_note="SB ► active_workflow reset to full-dev-cycle after devops ship"
       msg="${msg:+$msg — }${reset_note}"
-    else
-      rm -f -- "$tmp" 2>/dev/null || true
     fi
   fi
 fi

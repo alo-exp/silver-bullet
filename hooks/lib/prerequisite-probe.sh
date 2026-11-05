@@ -1,17 +1,16 @@
 # shellcheck shell=bash
 # SessionStart prerequisite probe (Wave 0.2).
 
+# The repair script is Silver Bullet's own: it is looked up in the plugin root (two levels above
+# this file) and never in the project, so an opened repository cannot supply code that a hook runs
+# (R2-12, R3-03, R8-07). The argument is the project root, kept only so callers need not change.
 sb_prereq_find_repair_script() {
-  local root="${1:-$PWD}"
   local candidate
-  for candidate in \
-    "$root/scripts/sb-prerequisite-repair.sh" \
-    "$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." 2>/dev/null && pwd)/scripts/sb-prerequisite-repair.sh"; do
-    if [[ -x "$candidate" ]]; then
-      printf '%s' "$candidate"
-      return 0
-    fi
-  done
+  candidate="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." 2>/dev/null && pwd)/scripts/sb-prerequisite-repair.sh"
+  if [[ -x "$candidate" ]]; then
+    printf '%s' "$candidate"
+    return 0
+  fi
   return 1
 }
 

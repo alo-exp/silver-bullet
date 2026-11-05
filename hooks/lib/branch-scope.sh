@@ -13,6 +13,10 @@
 #                                           validated) or sb_branch_scope_file. Status 1 for an
 #                                           empty BRANCH, no path, or a symlinked file (refused
 #                                           without exiting the caller).
+#   sb_branch_scope_current_ref [DIR]       the branch to scope state by: the symbolic ref (works on an
+#                                           unborn branch), or the branch being rebased while HEAD is
+#                                           detached by a rebase. Empty for a plain detached HEAD,
+#                                           which callers treat as "do not touch state".
 #   sb_branch_scope_mismatch BRANCH [TOPLEVEL]  true when the stored scope differs.
 
 if ! declare -f sb_runtime_state_path >/dev/null 2>&1; then
@@ -35,6 +39,24 @@ sb_branch_scope_file() {
     file="${SB_RUNTIME_STATE_DIR}/branch"
   }
   printf '%s' "$file"
+}
+
+sb_branch_scope_current_ref() {
+  local root="${1:-$PWD}" ref="" gd="" headfile=""
+  ref="$(git -C "$root" symbolic-ref -q --short HEAD 2>/dev/null || true)"
+  if [[ -z "$ref" ]]; then
+    gd="$(git -C "$root" rev-parse --git-dir 2>/dev/null || true)"
+    if [[ -n "$gd" && "$gd" != /* ]]; then gd="$root/$gd"; fi
+    for headfile in "$gd/rebase-merge/head-name" "$gd/rebase-apply/head-name"; do
+      if [[ -n "$gd" && -f "$headfile" ]]; then
+        ref="$(sed -n '1p' "$headfile" | tr -d '\n')"
+        ref="${ref#refs/heads/}"
+        break
+      fi
+    done
+    [[ "$ref" != "detached HEAD" ]] || ref=""
+  fi
+  printf '%s' "$ref"
 }
 
 sb_branch_scope_git_toplevel() {

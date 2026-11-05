@@ -37,8 +37,6 @@ fresh() {
 fresh
 printf 'old-branch\n/elsewhere\n' >"$BRANCH"
 printf 'silver-plan\n' >"$STATE"
-run_ss '{"source":"resume"}'
-assert_file_exists "resume does not reset state" "$STATE"
 run_ss '{"source":"compact"}'
 assert_file_exists "compact does not reset state" "$STATE"
 run_ss '{"source":"bogus"}'
@@ -47,8 +45,18 @@ assert_contains "reset banner shown" "$(ctx)" "git scope changed (old-branch@/el
 fresh
 printf 'old-branch\n' >"$BRANCH"
 printf 'silver-plan\n' >"$STATE"
-SILVER_BULLET_SESSION_SOURCE=resume run_ss '{"source":"startup"}'
+SILVER_BULLET_SESSION_SOURCE=compact run_ss '{"source":"startup"}'
 assert_file_exists "env source override wins over payload" "$STATE"
+
+# resume re-checks the scope (R3-07): another branch resets, the same branch keeps state
+fresh
+printf 'old-branch\n/elsewhere\n' >"$BRANCH"
+printf 'silver-plan\n' >"$STATE"
+run_ss '{"source":"resume"}'
+assert_file_absent "resume onto another branch resets state (R3-07)" "$STATE"
+printf 'silver-plan\n' >"$STATE"
+run_ss '{"source":"resume"}'
+assert_file_exists "resume on the same branch keeps state" "$STATE"
 
 # ---- reset side effects -----------------------------------------------------
 fresh
@@ -97,13 +105,14 @@ assert_contains "branch write failure is reported" "$TL_ERR" "branch file write 
 printf 'old-branch\n' >"$BRANCH"
 SILVER_BULLET_BRANCH_FILE="$SD/no-such-dir/branch" run_ss
 assert_contains "branch write failure is reported (initialisation, no stored branch)" "$TL_ERR" "branch file write failed"
-# unsafe branch name: no mutation
+# any valid ref name is a scope (R3-07): a name the old allowlist rejected still resets state
 fresh
 git -C "$EC_PROJ" checkout -q -b 'odd+branch'
 printf 'old-branch\n' >"$BRANCH"
 printf 'keep' >"$STATE"
 run_ss
-assert_file_exists "unsafe branch name leaves state alone" "$STATE"
+assert_file_absent "an unusual branch name is a real scope: state reset" "$STATE"
+assert_eq "the unusual name is recorded" "odd+branch" "$(sed -n 1p "$BRANCH")"
 git -C "$EC_PROJ" checkout -q feature/test
 
 # ---- non-SB workspace -------------------------------------------------------
@@ -241,21 +250,26 @@ assert_eq "fallback guard refuses a symlinked marker (exit 1)" "1" "$TL_STATUS"
 rm -f "${SD:?}/session-rules-injected"
 assert_eq "symlink target untouched by fallback guard" "precious" "$(cat "$TL_TMP/target")"
 
-# ---- project-local recommended-tools scripts (no paths.sh) -------------------
+# ---- recommended-tools scripts come from the plugin tree, never the project (R3-03) -----------
 fresh
-RT="$EC_PROJ/scripts/lib/recommended-tools"
+ec_stage_hooks "$TL_TMP/rtplug"
+RT="$TL_TMP/rtplug/scripts/lib/recommended-tools"
 mkdir -p "$RT"
 printf '%s\n' 'rt_heartbeat_write() { printf "%s %s\n" "$1" "$2" >"$SB_RUNTIME_STATE_DIR/hb-written"; }' >"$RT/heartbeat.sh"
 printf '%s\n' 'rt_session_verify_block() { printf "VERIFY-BLOCK for %s" "$2"; }' >"$RT/session-verify.sh"
+PRT="$EC_PROJ/scripts/lib/recommended-tools"; mkdir -p "$PRT"
+printf '%s\n' 'rt_heartbeat_write() { printf "PROJECT" >"$SB_RUNTIME_STATE_DIR/hb-written"; }' >"$PRT/heartbeat.sh"
 ec_cfg '{"config_version":"0.40.0","sb_initiated":true}'
-run_ss
-assert_file_exists "heartbeat written from project-local script" "$SD/hb-written"
+run_ss '' "$TL_TMP/rtplug/hooks/session-start"
+assert_file_exists "heartbeat written from the plugin's script" "$SD/hb-written"
 assert_contains "heartbeat gets project root" "$(cat "$SD/hb-written")" "$EC_PROJ"
-assert_contains "verify block injected" "$(ctx)" "VERIFY-BLOCK for"
+assert_not_contains "the project's own heartbeat script is never used" "$(cat "$SD/hb-written")" "PROJECT"
+assert_contains "verify block injected from the plugin's script" "$(ctx)" "VERIFY-BLOCK for"
 rm -f "${SD:?}/hb-written"
 ec_cfg '{"config_version":"0.40.0","sb_initiated":false}'
-run_ss
+run_ss '' "$TL_TMP/rtplug/hooks/session-start"
 assert_file_absent "uninitiated project: no heartbeat" "$SD/hb-written"
+rm -rf "$EC_PROJ/scripts"
 
 # ---- cursor host below tier 2 gets the hooks-manifest note ----------------------
 fresh

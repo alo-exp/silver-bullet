@@ -27,6 +27,8 @@ sb_enforcement_tier_probe() {
   esac
 }
 
+# Writes sb_enforcement_tier into the project config (explicit callers only: sb:doctor). Hooks do
+# not call it: session-start must not rewrite the committed config (R3-11).
 sb_enforcement_tier_persist() {
   local config_file="$1"
   local tier="$2"
@@ -34,9 +36,17 @@ sb_enforcement_tier_persist() {
   [[ "${SB_HOOK_SMOKE:-0}" == "1" ]] && return 0
   [[ -n "$config_file" && -f "$config_file" && -n "$tier" ]] || return 0
   command -v jq >/dev/null 2>&1 || return 0
+  [[ ! -L "$config_file" ]] || return 0
   local updated
+  # Unchanged value: do not touch the committed file (no reformat, no mtime churn).
+  [[ "$(sb_enforcement_tier_read_config "$config_file")" != "$tier" ]] || return 0
   updated="$(jq --argjson t "$tier" '.sb_enforcement_tier = $t' "$config_file" 2>/dev/null || true)"
-  [[ -n "$updated" ]] && printf '%s\n' "$updated" >"${config_file}.tmp" && mv "${config_file}.tmp" "$config_file"
+  [[ -n "$updated" ]] || return 0
+  if ! declare -f sb_atomic_write_file >/dev/null 2>&1; then
+    # shellcheck source=nofollow-guard.sh
+    source "$(dirname "${BASH_SOURCE[0]}")/nofollow-guard.sh"
+  fi
+  printf '%s\n' "$updated" | sb_atomic_write_file "$config_file" || true
 }
 
 sb_enforcement_tier_effective() {
