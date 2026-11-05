@@ -84,6 +84,25 @@ assert_contains "clear matrix env: readonly var tolerated, others still cleared"
 # ---------------- quota detection / short-retry gate ----------------
 agent_delegate_is_quota_error "Token Plan exhausted" && tl_pass "quota: token plan" || tl_fail "quota: token plan"
 agent_delegate_is_quota_error "all fine" && tl_fail "quota: clean output" || tl_pass "quota: clean output is not quota"
+# Only provider/CLI error text counts (R4-20): honest output that merely mentions the words is not a quota error.
+quota_yes() { agent_delegate_is_quota_error "$1" && tl_pass "quota yes: $1" || tl_fail "quota yes: $1"; }
+quota_no() { agent_delegate_is_quota_error "$1" && tl_fail "quota no: $1" || tl_pass "quota no: $1"; }
+quota_yes '{"type":"error","error":{"type":"rate_limit_error","message":"slow down"}}'
+quota_yes 'HTTP/1.1 429 Too Many Requests'
+quota_yes 'Error: 429 rate limit exceeded for model'
+quota_yes '{"status": 429, "error": "x"}'
+quota_yes 'status=429'
+quota_yes "error: You exceeded your current quota, please check your plan"
+quota_yes 'insufficient_quota'
+quota_yes 'Rate limit reached for requests'
+quota_yes 'usage limit reached; resets in 3 hours'
+quota_yes 'Your token plan limit was reached'
+quota_no 'AssertionError at line 429'
+quota_no 'edited docs/quota.md and src/rate-limiter.py'
+quota_no 'wrote 429 bytes to out.txt'
+quota_no 'tests/rate_limit_test.go: PASS (version 4.29)'
+quota_no 'FAIL: expected quota calculation for tenant 4290'
+quota_no 'the user token plan page renders'
 
 cat >"$ST/scripts/review-fix-ladder.py" <<'PY'
 import json, os, sys
@@ -296,6 +315,48 @@ assert_eq "class: a 511-byte log is under the default floor" "log-floor" "$(fc 1
 assert_eq "class: a 512-byte log meets the default floor" "delegate-failure" "$(fc 1 "boom" "$TL_TMP/floor.log")"
 assert_eq "class: missing log file falls through" "delegate-failure" "$(fc 1 "boom" "$TL_TMP/nolog")"
 assert_eq "class: generic failure" "delegate-failure" "$(fc 1 "boom")"
+
+# ---------------- default permission mode (R4-23) ----------------
+DM_PROJ="$TL_TMP/dm-proj"; DM_OTHER="$TL_TMP/dm-other"
+mkdir -p "$DM_PROJ/sub" "$DM_OTHER"
+git -C "$DM_PROJ" init -q
+unset SB_AGENT_DELEGATE_DEFAULT_MODE CLAUDE_PROJECT_DIR
+assert_eq "default mode: work dir is the project root" "permissive" "$(cd "$DM_PROJ" && agent_delegate_default_mode "$DM_PROJ")"
+assert_eq "default mode: work dir inside the project" "permissive" "$(cd "$DM_PROJ/sub" && agent_delegate_default_mode "$DM_PROJ/sub")"
+assert_eq "default mode: project subdir cwd, project root work dir" "permissive" "$(cd "$DM_PROJ/sub" && agent_delegate_default_mode "$DM_PROJ")"
+assert_eq "default mode: unrelated directory is strict" "strict" "$(cd "$DM_PROJ" && agent_delegate_default_mode "$DM_OTHER")"
+assert_eq "default mode: non-git cwd, same dir" "permissive" "$(cd "$DM_OTHER" && agent_delegate_default_mode "$DM_OTHER")"
+assert_eq "default mode: CLAUDE_PROJECT_DIR defines the project" "permissive" "$(cd "$DM_OTHER" && CLAUDE_PROJECT_DIR="$DM_PROJ" agent_delegate_default_mode "$DM_PROJ/sub")"
+assert_eq "default mode: explicit override strict" "strict" "$(cd "$DM_PROJ" && SB_AGENT_DELEGATE_DEFAULT_MODE=strict agent_delegate_default_mode "$DM_PROJ")"
+assert_eq "default mode: explicit override permissive" "permissive" "$(cd "$DM_PROJ" && SB_AGENT_DELEGATE_DEFAULT_MODE=permissive agent_delegate_default_mode "$DM_OTHER")"
+assert_eq "default mode: bad override ignored" "strict" "$(cd "$DM_PROJ" && SB_AGENT_DELEGATE_DEFAULT_MODE=bogus agent_delegate_default_mode "$DM_OTHER")"
+
+# ---------------- quota retry decision (R4-20) ----------------
+QD_REPO="$TL_TMP/qd-repo"; mkdir -p "$QD_REPO"; git -C "$QD_REPO" init -q
+QD_ERR='{"error":{"type":"rate_limit_error"}}'
+rc=0; agent_delegate_quota_retry_decision lbl "plain failure" 1 3 "$QD_REPO" x 2>/dev/null || rc=$?
+assert_eq "retry decision: non-quota output stops" 1 "$rc"
+FP="$(agent_delegate_workdir_fingerprint "$QD_REPO")"
+assert_eq "fingerprint: non-repo is unknown" "unknown" "$(agent_delegate_workdir_fingerprint "$TL_TMP/dm-other")"
+assert_eq "fingerprint: stable for an untouched repo" "$FP" "$(agent_delegate_workdir_fingerprint "$QD_REPO")"
+rc=0; agent_delegate_quota_retry_decision lbl "$QD_ERR" 1 3 "$QD_REPO" "$FP" 2>/dev/null || rc=$?
+assert_eq "retry decision: untouched repo retries" 0 "$rc"
+echo changed >"$QD_REPO/new.txt"
+rc=0; err="$(agent_delegate_quota_retry_decision lbl "$QD_ERR" 1 3 "$QD_REPO" "$FP" 2>&1 >/dev/null)" || rc=$?
+assert_eq "retry decision: changed repo stops" 1 "$rc"
+assert_contains "retry decision: changed repo explains opt-in" "$err" "pass --quota-retry"
+rc=0; SB_AM_QUOTA_RETRY=1 agent_delegate_quota_retry_decision lbl "$QD_ERR" 1 3 "$QD_REPO" "$FP" 2>/dev/null || rc=$?
+assert_eq "retry decision: --quota-retry opts in" 0 "$rc"
+mv "$ST/scripts/rfl.bak" "$ST/scripts/review-fix-ladder.py"
+rc=0; err="$(RESOLVER_JSON='{"should_short_retry": false}' agent_delegate_quota_retry_decision lbl "$QD_ERR" 1 3 "$QD_REPO" "$FP" 2>&1 >/dev/null)" || rc=$?
+mv "$ST/scripts/review-fix-ladder.py" "$ST/scripts/rfl.bak"
+assert_eq "retry decision: long quota window stops" 1 "$rc"
+assert_contains "retry decision: long window left to the RFL schedule" "$err" "skip short retry (RFL schedule)"
+rc=0; agent_delegate_quota_retry_decision lbl "$QD_ERR" 1 3 "$TL_TMP/dm-other" unknown 2>/dev/null || rc=$?
+assert_eq "retry decision: unknown fingerprint stops" 1 "$rc"
+rc=0; err="$(SB_AM_QUOTA_RETRY=1 agent_delegate_quota_retry_decision lbl "$QD_ERR" 4 3 "$QD_REPO" "$FP" 2>&1 >/dev/null)" || rc=$?
+assert_eq "retry decision: budget exhausted stops" 1 "$rc"
+assert_contains "retry decision: exhaustion reported" "$err" "quota retries exhausted"
 
 # ---------------- preflight ----------------
 SBR="$TL_TMP/sbroot"; mkdir -p "$SBR/scripts/enterprise-e2e/lib"

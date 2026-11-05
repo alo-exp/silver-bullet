@@ -164,6 +164,7 @@ agent_invoke() {
   local codex_reasoning_effort
   local hook_trust_bypass
   local auto_trust_hooks
+  local sandbox_mode
 
   cli="$(agent_cli_path)"
   [[ -n "${WORK_DIR:-}" && -d "$WORK_DIR" ]] || { printf 'ERROR: WORK_DIR required\n' >&2; return 1; }
@@ -185,8 +186,9 @@ agent_invoke() {
     auto_trust_hooks="${SB_LIVE_CODEX_AUTO_TRUST_HOOKS:-1}"
   fi
   if [[ "${SB_AGENT_CODEX_LIGHTWEIGHT:-0}" == "1" || "${SB_AGENT_CODEX_DELEGATE:-0}" == "1" ]]; then
-    hook_trust_bypass="${CODEX_BYPASS_HOOK_TRUST:-1}"
-    auto_trust_hooks="${CODEX_AUTO_TRUST_HOOKS:-1}"
+    # Production delegation: hook trust is never bypassed unless the operator opted in (R4-23, R8-15).
+    hook_trust_bypass="${CODEX_BYPASS_HOOK_TRUST:-0}"
+    auto_trust_hooks="${CODEX_AUTO_TRUST_HOOKS:-0}"
   fi
   if [[ "${CODEX_AUTO_TRUST_HOOKS:-}" == "1" ]]; then
     auto_trust_hooks=1
@@ -194,6 +196,15 @@ agent_invoke() {
   fi
   if [[ "${CODEX_BYPASS_HOOK_TRUST:-}" == "1" ]]; then
     hook_trust_bypass=1
+  fi
+  [[ "${CODEX_BYPASS_HOOK_TRUST:-}" == "0" ]] && hook_trust_bypass="0"
+  [[ "${CODEX_AUTO_TRUST_HOOKS:-}" == "0" ]] && auto_trust_hooks="0"
+  # Strict mode never bypasses hook trust or the sandbox, whatever the environment says.
+  sandbox_mode="danger-full-access"
+  if [[ "$mode" == "strict" ]]; then
+    hook_trust_bypass="0"
+    auto_trust_hooks="0"
+    sandbox_mode="workspace-write"
   fi
   if [[ "${SB_LIVE_CODEX_GUARD:-0}" == "1" ]]; then
     codex_prompt="${codex_prompt}"$'\n\n'"$(codex_live_guard_context)"
@@ -209,7 +220,7 @@ agent_invoke() {
     exec_args=(
       exec
       --cd "$WORK_DIR"
-      --sandbox danger-full-access
+      --sandbox "$sandbox_mode"
       --color never
     )
     if [[ "$mode" == "permissive" ]]; then
@@ -372,13 +383,13 @@ PY
       CODEX_JSON="1" \
       CODEX_COLOR="never" \
       CODEX_INTERACTIVE_PROMPT_INPUT="1" \
-      CODEX_SANDBOX_MODE="danger-full-access" \
+      CODEX_SANDBOX_MODE="$sandbox_mode" \
       CODEX_INTERACTIVE_TIMEOUT="${CODEX_INTERACTIVE_TIMEOUT:-${CLAUDE_INTERACTIVE_TIMEOUT:-900}}" \
       CODEX_INTERACTIVE_QUIET_TIMEOUT="${CODEX_INTERACTIVE_QUIET_TIMEOUT:-${CLAUDE_INTERACTIVE_QUIET_TIMEOUT:-120}}" \
       CODEX_INTERACTIVE_READY_TIMEOUT="${CODEX_INTERACTIVE_READY_TIMEOUT:-${CLAUDE_INTERACTIVE_READY_TIMEOUT:-20}}" \
       CODEX_BYPASS=$([[ "$mode" == "permissive" ]] && printf '1' || printf '0') \
-      CODEX_BYPASS_HOOK_TRUST="${CODEX_BYPASS_HOOK_TRUST:-$hook_trust_bypass}" \
-      CODEX_AUTO_TRUST_HOOKS="${CODEX_AUTO_TRUST_HOOKS:-$auto_trust_hooks}" \
+      CODEX_BYPASS_HOOK_TRUST="$hook_trust_bypass" \
+      CODEX_AUTO_TRUST_HOOKS="$auto_trust_hooks" \
       python3 "$SB_ROOT/scripts/codex-interactive-invoke.py"
   ) || true
   if [[ -f "$last_message_file" ]]; then

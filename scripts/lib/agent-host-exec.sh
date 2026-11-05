@@ -83,12 +83,16 @@ agent_host_build_argv() {
       if [[ "$interaction" == "interactive" ]]; then
         return 2
       fi
-      AGENT_HOST_ARGV=("$cli" exec --cd "$work_dir" --sandbox danger-full-access --color never)
+      # Strict never carries a bypass flag: workspace-write sandbox, approvals and hook trust
+      # stay on. Permissive keeps the full-access sandbox; the hook-trust bypass additionally
+      # needs an explicit CODEX_BYPASS_HOOK_TRUST=1 (or CODEX_AUTO_TRUST_HOOKS=1) opt-in.
       if [[ "$permission_mode" == "permissive" ]]; then
-        AGENT_HOST_ARGV+=(--dangerously-bypass-approvals-and-sandbox)
-      fi
-      if [[ "${CODEX_BYPASS_HOOK_TRUST:-${CODEX_AUTO_TRUST_HOOKS:-}}" == "1" ]]; then
-        AGENT_HOST_ARGV+=(--dangerously-bypass-hook-trust)
+        AGENT_HOST_ARGV=("$cli" exec --cd "$work_dir" --sandbox danger-full-access --color never --dangerously-bypass-approvals-and-sandbox)
+        if [[ "${CODEX_BYPASS_HOOK_TRUST:-${CODEX_AUTO_TRUST_HOOKS:-}}" == "1" ]]; then
+          AGENT_HOST_ARGV+=(--dangerously-bypass-hook-trust)
+        fi
+      else
+        AGENT_HOST_ARGV=("$cli" exec --cd "$work_dir" --sandbox workspace-write --color never)
       fi
       if [[ -n "${CODEX_MODEL:-${SB_LIVE_CODEX_MODEL:-}}" ]]; then
         AGENT_HOST_ARGV+=(--model "${CODEX_MODEL:-${SB_LIVE_CODEX_MODEL}}")

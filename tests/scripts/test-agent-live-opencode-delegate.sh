@@ -117,7 +117,7 @@ alh_script "0|ok-output"
 run_od --prompt "do the thing"
 assert_eq "default delegation exits 0" "0" "$TL_STATUS"
 assert_eq "default delegation prints the adapter output" "ok-output" "$TL_OUT"
-assert_contains "adapter got mode and prompt" "$(alh_rec)" "invoke n=1 mode=permissive prompt=do the thing"
+assert_contains "adapter got mode and prompt" "$(alh_rec)" "invoke n=1 mode=strict prompt=do the thing"
 assert_eq "model pinned to mimo-v2.5" "mimo-v2.5" "$(alh_env OPENCODE_MODEL)"
 assert_eq "provider pinned to opencode-go" "opencode-go" "$(alh_env OPENCODE_MODEL_PROVIDER)"
 assert_eq "run model pinned" "opencode-go/mimo-v2.5" "$(alh_env OPENCODE_RUN_MODEL)"
@@ -177,6 +177,8 @@ assert_eq "missing OpenCode CLI exits 1" "1" "$TL_STATUS"
 assert_contains "missing OpenCode CLI message" "$TL_ERR" "native OpenCode CLI not found"
 
 # ---------------------------------------------------------------- quota retry loop
+# an untouched git work dir lets the delegate re-run a quota failure without --quota-retry (R4-20)
+git -C "$W" init -q 2>/dev/null
 rm -f "$TL_TMP/sleep.log"
 alh_script "1|HTTP 429 rate limit hit"
 tl_run timeout 60 env AGENT_OPENCODE_QUOTA_RETRY_MAX=2 AGENT_OPENCODE_QUOTA_RETRY_INTERVAL=3 bash "$DELEGATE" --sb-root "$SB" --skip-preflight --work-dir "$W" --prompt p --no-escalate

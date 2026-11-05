@@ -26,7 +26,7 @@ PROMPT_TEXT=""
 PROMPT_FILE=""
 BRIEF_FILE=""
 LOG_FILE=""
-MODE="permissive"
+MODE=""
 SB_ROOT="${SB_ROOT:-$REPO_ROOT}"
 USE_PRINT=0
 
@@ -58,6 +58,10 @@ done
 
 agent_delegate_validate_work_dir "$WORK_DIR" || exit 2
 agent_delegate_clear_matrix_env
+if [[ -z "$MODE" ]]; then
+  MODE="$(agent_delegate_default_mode "$WORK_DIR")"
+  agent_mode_note_permission_mode "$MODE" || exit 2
+fi
 
 if [[ "${SB_AGENT_CERT_RUN:-}" == "1" || "${SB_AGENT_CERT_RUN:-}" == "true" ]] && [[ -z "${CLAUDE_PERMISSION_MODE:-}" ]]; then
   export CLAUDE_PERMISSION_MODE=bypassPermissions
@@ -168,6 +172,7 @@ while [[ "$attempt" -le "$quota_retry_max" ]]; do
   fi
 
   final_exit=0
+  fp_before="$(agent_delegate_workdir_fingerprint "$WORK_DIR")"
   final_output="$(agent_claude_invoke_once)" || final_exit=$?
 
   if [[ -n "$LOG_FILE" && "$USE_PRINT" -eq 1 ]]; then
@@ -191,17 +196,7 @@ while [[ "$attempt" -le "$quota_retry_max" ]]; do
   if [[ "$final_exit" -eq 0 ]]; then
     break
   fi
-  if ! agent_delegate_is_quota_error "$final_output"; then
-    break
-  fi
-  if agent_delegate_quota_blocks_short_retry "$final_output"; then
-    printf '[agent-claude] quota window exhausted — skip short retry (RFL schedule)\n' >&2
-    break
-  fi
-  if [[ "$attempt" -gt "$quota_retry_max" ]]; then
-    printf '[agent-claude] quota retries exhausted\n' >&2
-    break
-  fi
+  agent_delegate_quota_retry_decision "agent-claude" "$final_output" "$attempt" "$quota_retry_max" "$WORK_DIR" "$fp_before" || break
 done
 
 if [[ "$final_exit" -ne 0 ]]; then

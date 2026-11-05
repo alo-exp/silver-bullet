@@ -122,7 +122,7 @@ alh_script "0|ok-output"
 run_pd --prompt "do the thing"
 assert_eq "auto NI delegation exits 0" "0" "$TL_STATUS"
 assert_eq "delegation prints the adapter output" "ok-output" "$TL_OUT"
-assert_contains "adapter got mode and prompt" "$(alh_rec)" "invoke n=1 mode=permissive prompt=do the thing"
+assert_contains "adapter got mode and prompt" "$(alh_rec)" "invoke n=1 mode=strict prompt=do the thing"
 assert_eq "provider pinned" "opencode-go" "$(alh_env PI_PROVIDER)"
 assert_eq "model pinned" "mimo-v2.5" "$(alh_env PI_MODEL)"
 assert_eq "PI_BIN is the resolved CLI" "$PI" "$(alh_env PI_BIN)"
@@ -188,6 +188,8 @@ assert_eq "missing Pi CLI exits 1" "1" "$TL_STATUS"
 assert_contains "missing Pi CLI message" "$TL_ERR" "native Pi CLI not found"
 
 # ---------------------------------------------------------------- quota retry loop
+# an untouched git work dir lets the delegate re-run a quota failure without --quota-retry (R4-20)
+git -C "$W" init -q 2>/dev/null
 rm -f "$TL_TMP/sleep.log"
 alh_script "1|HTTP 429 rate limit hit"
 tl_run timeout 60 env AGENT_PI_QUOTA_RETRY_MAX=2 AGENT_PI_QUOTA_RETRY_INTERVAL=3 bash "$DELEGATE" --sb-root "$SB" --skip-preflight --work-dir "$W" --prompt p --no-escalate

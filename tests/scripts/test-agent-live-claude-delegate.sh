@@ -132,7 +132,7 @@ assert_eq "auto NI delegation exits 0" "0" "$TL_STATUS"
 assert_eq "delegate prints the adapter output" "ok-output" "$TL_OUT"
 assert_eq "adapter ran once" "1" "$(alh_attempts)"
 assert_contains "adapter preflight ran" "$(alh_rec)" "preflight"
-assert_contains "adapter got the mode and prompt" "$(alh_rec)" "invoke n=1 mode=permissive prompt=do the thing"
+assert_contains "adapter got the mode and prompt" "$(alh_rec)" "invoke n=1 mode=strict prompt=do the thing"
 assert_eq "NI delegation disables the interactive TUI" "0" "$(alh_env CLAUDE_USE_INTERACTIVE)"
 assert_eq "lightweight delegate flag exported" "1" "$(alh_env SB_AGENT_CLAUDE_DELEGATE)"
 assert_eq "orchestrator worker flag exported" "1" "$(alh_env SB_ORCHESTRATOR_WORKER)"
@@ -266,6 +266,8 @@ assert_eq "missing adapter exits 1" "1" "$TL_STATUS"
 assert_contains "missing adapter message" "$TL_ERR" "missing Claude live adapter at $MISSING_SB/scripts/lib/agent-adapters/claude.sh"
 
 # ---------------------------------------------------------------- quota retry loop (bounded by env, sleep is a stub)
+# an untouched git work dir lets the delegate re-run a quota failure without --quota-retry (R4-20)
+git -C "$W" init -q 2>/dev/null
 rm -f "$TL_TMP/sleep.log"
 alh_script "1|HTTP 429 rate limit hit"
 tl_run timeout 60 env AGENT_CLAUDE_QUOTA_RETRY_MAX=2 AGENT_CLAUDE_QUOTA_RETRY_INTERVAL=3 bash "$DELEGATE" --sb-root "$SB" --skip-preflight --work-dir "$W" --prompt p
