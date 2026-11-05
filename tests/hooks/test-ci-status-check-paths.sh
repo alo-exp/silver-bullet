@@ -120,6 +120,14 @@ GH_STATUS_OVERRIDE="$RED" run_ci "$(pre 'git push origin x')"
 assert_contains "helper failing: plain verbs still gate" "$TL_OUT" "CI FAILURE DETECTED"
 GH_STATUS_OVERRIDE="$RED" run_ci "$(pre 'git status')"
 assert_eq "helper failing: an unrelated command is not held" "" "$TL_OUT"
+GH_STATUS_OVERRIDE="$RED" run_ci "$(pre 'gh pr new --fill')"
+assert_contains "helper failing: the gh pr new alias is gated" "$TL_OUT" "CI FAILURE DETECTED"
+for t in mcp__github__create_pull_request mcp__github__push_files mcp__github__merge_pull_request; do
+  GH_STATUS_OVERRIDE="$RED" run_ci "$(jq -cn --arg t "$t" '{hook_event_name:"PreToolUse",tool_name:$t,tool_input:{}}')"
+  assert_contains "helper failing: MCP delivery tool $t is gated" "$TL_OUT" "CI FAILURE DETECTED"
+done
+GH_STATUS_OVERRIDE="$RED" run_ci '{"hook_event_name":"PreToolUse","tool_name":"mcp__github__list_issues","tool_input":{}}'
+assert_eq "helper failing: an MCP read tool is not held" "" "$TL_OUT"
 GH_STATUS_OVERRIDE="$RED" run_ci "$(post 'git commit -m x')"
 assert_contains "helper failing: PostToolUse commit is still checked" "$TL_OUT" "CI FAILURE DETECTED"
 rm -f "$TL_BIN/python3"

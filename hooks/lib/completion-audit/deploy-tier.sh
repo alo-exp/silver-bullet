@@ -9,11 +9,26 @@
 # Called as the condition of an `if`, so a failing helper makes the gate deny instead of tripping the ERR trap.
 # Prints the sha; status 1 when --target names nothing that resolves (R13-08, R1-19).
 ca_release_commit_sha() {
-  local root="$1" parsed tag="" target="" sha="" ref
+  local root="$1" parsed tag="" target="" bad="" sha="" ref
   parsed="$(printf '%s' "${SB_SA_JSON:-}" | jq -r '
     def vflags: ["-t","--title","-n","--notes","-F","--notes-file","--target","--discussion-category","--notes-start-tag","-R","--repo"];
-    ([.commands[]? | select((.program | split("/") | last) == "gh")
-      | select((.argv | index("release")) != null and (.argv | index("create")) != null)] | first // {argv: []}) .argv as $a
+    def apivals: ["-X","--method","-H","--header","-q","--jq","-t","--template","--hostname","--cache","-f","-F","--field","--raw-field","--input"];
+    def gh: select((.program | split("/") | last) == "gh");
+    # gh api fields in every spelling: -f k=v, -fk=v, --field k=v, --field=k=v, --raw-field ...
+    def fields($a): [range(0; $a | length) as $k
+      | ($a[$k]) as $t
+      | (if ($t | IN("-f", "-F", "--field", "--raw-field")) then ($a[$k + 1] // "")
+         elif ($t | test("^--(raw-)?field=")) then ($t | sub("^--(raw-)?field="; ""))
+         elif ($t | test("^-[fF].")) then ($t | .[2:])
+         else empty end)
+      | select(test("="))
+      | {k: (split("=")[0]), v: (split("=")[1:] | join("="))}];
+    # the endpoint is the first positional argument after `api` that is not an option value
+    def endpoint($a): ($a | index("api")) as $i
+      | [range($i + 1; $a | length) as $k
+         | select(($a[$k] | startswith("-") | not) and ((($a[$k - 1] // "") | IN(apivals[])) | not))
+         | $a[$k]] | first // "";
+    ([.commands[]? | gh | select((.argv | index("release")) != null and (.argv | index("create")) != null)] | first // {argv: []}) .argv as $a
     | (($a | index("create")) // -1) as $i
     | ($a[($i + 1):]) as $r
     | ([range(0; $r | length) as $k
@@ -23,15 +38,19 @@ ca_release_commit_sha() {
         | if $r[$k] == "--target" then ($r[$k + 1] // "")
           elif ($r[$k] | startswith("--target=")) then ($r[$k] | ltrimstr("--target="))
           else empty end] | first // "") as $target
-    | ([.commands[]? | select((.program | split("/") | last) == "gh")
-        | select((.argv | index("api")) != null)] | first // {argv: []}) .argv as $ap
-    | ([range(0; $ap | length) as $k
-        | select($ap[$k] | IN("-f", "-F", "--field", "--raw-field"))
-        | ($ap[$k + 1] // "") | capture("^(?<k>[^=]+)=(?<v>.*)$")]) as $f
+    | ([.commands[]? | gh | select((.argv | index("api")) != null)
+        | select(endpoint(.argv) | test("(^|/)releases(\\?.*)?$"))]) as $apis
+    | ([$apis[] | .argv as $x | fields($x)[]]) as $f
+    | (if ($apis | length) > 1 then 1
+       elif ([$apis[] | .argv | map(select(. == "--input" or startswith("--input="))) | length] | add // 0) > 0 then 1
+       elif ([$f[] | select(.v | test("[$`]"))] | length) > 0 then 1
+       else 0 end) as $bad
     | (if $tag == "" then ([$f[] | select(.k == "tag_name") | .v] | first // "") else $tag end) as $tag
     | (if $target == "" then ([$f[] | select(.k == "target_commitish") | .v] | first // "") else $target end) as $target
-    | $tag + "\u001f" + $target' 2>/dev/null)"
-  IFS=$'\037' read -r tag target <<<"$parsed"
+    | $tag + "\u001f" + $target + "\u001f" + ($bad | tostring)' 2>/dev/null)"
+  IFS=$'\037' read -r tag target bad <<<"$parsed"
+  # a body read from a file, a second releases call, or a value built at run time: the target cannot be read
+  [[ "${bad:-1}" == "0" ]] || return 1
   if [[ -z "$tag$target" && -n "${mcp_payload:-}" ]]; then
     parsed="$(printf '%s' "$mcp_payload" | jq -r '(.tool_input // {}) | ((.tag_name // .tag // "") + "\u001f" + (.target_commitish // .target // ""))' 2>/dev/null)"
     IFS=$'\037' read -r tag target <<<"$parsed"
@@ -78,7 +97,7 @@ e2e_live_matrix_file="${SB_RUNTIME_STATE_DIR}/e2e-live-matrix"
 inline_e2e_matrix_file="${SB_RUNTIME_STATE_DIR}/inline-e2e-matrix"
 if grep -qE '\bgh release create\b' <<<"$cmd_first_line"; then
   if ! release_commit_sha="$(ca_release_commit_sha "$project_root")"; then
-    emit_block "$(printf '🛑 RELEASE BLOCKED — the release target named in the command does not resolve to a commit in this checkout.\n\nFetch it (git fetch origin) or name an existing branch, tag or commit with --target, then retry.' )"
+    emit_block "$(printf '🛑 RELEASE BLOCKED — the release target named in the command does not resolve to a commit in this checkout (cannot determine release commit).\n\nFetch it (git fetch origin) or name an existing branch, tag or commit with --target; for gh api use a literal -f target_commitish=<sha>, one releases call and no --input body. Then retry.' )"
     exit 0
   fi
   if [[ -z "$release_commit_sha" ]]; then
@@ -214,7 +233,6 @@ if grep -qE '\bgh release create\b' <<<"$cmd_first_line"; then
   if [[ -n "$blocked_runs" ]]; then
     blocked_lines=""
     while IFS=$'\t' read -r wf status conclusion created_at; do
-      [[ -z "$wf" ]] && continue
       line=$(printf '  • %s — status=%s conclusion=%s created=%s' "$wf" "$status" "$conclusion" "$created_at")
       if [[ -n "$blocked_lines" ]]; then
         blocked_lines+=$'\n'"$line"
