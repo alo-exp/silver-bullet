@@ -187,7 +187,10 @@ assert_contains "dry-run reports the default profile as active" "$TL_OUT" "Profi
 
 # ---- all hosts, --force, and a config that is not opted in
 run_opt --host all --project-root "$PROJ" --skip-rtcm --skip-synergy
-for h in cursor claude codex opencode pi; do
+# Cursor support is being removed: --host all no longer reaches the Cursor writes (explicit --host cursor still works).
+assert_not_contains "all: no cursor leanctx run" "$(calls)" "install-leanctx-sb --host cursor"
+assert_not_contains "all: no cursor rules installer" "$(calls)" "install-recommended-tools-cursor"
+for h in claude codex opencode pi; do
   assert_contains "all: leanctx for $h" "$(calls)" "install-leanctx-sb --host $h --project-root ${PROJ}"
 done
 assert_not_contains "all: synergy host flag omitted" "$(calls)" "sb-optimize-stack"
