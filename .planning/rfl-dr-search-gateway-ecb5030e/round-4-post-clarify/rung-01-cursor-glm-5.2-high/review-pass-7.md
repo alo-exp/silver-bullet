@@ -2,7 +2,7 @@ model: glm-5.2-high
 
 # Review pass 7 — Policy F re-review (streak 0/2 after U1/U2 ACCEPT-apply)
 
-- Corpus: `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`
+- Corpus: `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`
 - SHA-256 verified: `b71a7efdc0b70ea12b74bc485d740a76d927a15bd41fe8e84ea2c5fd62c3ee9f` (matches brief)
 - Scope: residual-only (Policy G). Ledger rows I-1 … I-18 are ACCEPT+applied and are NOT re-reported below.
 - Method: graphify CLI query (`DR search gateway plan cache-ttl fleet slots X consent`) + full bird's-eye (48 headings mapped) then ant's-eye (all 778 lines / ~160 KB read in full via sandbox in line-range passes).

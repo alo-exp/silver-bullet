@@ -91,9 +91,9 @@ In `templates/silver-bullet.md.base`, insert the identical text (step 5 block ab
 Do NOT alter the existing steps 1-4, the compactPrompt blockquote (template-only), or the Anti-Skip blockquote.
   </action>
   <verify>
-    grep -n "Check for updates" /Users/shafqat/Documents/Projects/silver-bullet/silver-bullet.md
-    grep -n "Check for updates" /Users/shafqat/Documents/Projects/silver-bullet/templates/silver-bullet.md.base
-    grep -n "silver:update\|gsd-update" /Users/shafqat/Documents/Projects/silver-bullet/silver-bullet.md
+    grep -n "Check for updates" /Users/<user>/Documents/Projects/silver-bullet/silver-bullet.md
+    grep -n "Check for updates" /Users/<user>/Documents/Projects/silver-bullet/templates/silver-bullet.md.base
+    grep -n "silver:update\|gsd-update" /Users/<user>/Documents/Projects/silver-bullet/silver-bullet.md
   </verify>
   <done>
     - Both files contain "5. **Check for updates**" between step 4 and the Anti-Skip blockquote
@@ -108,10 +108,10 @@ Do NOT alter the existing steps 1-4, the compactPrompt blockquote (template-only
 <verification>
 ```bash
 # Confirm step 5 exists in both files
-grep -c "Check for updates" /Users/shafqat/Documents/Projects/silver-bullet/silver-bullet.md /Users/shafqat/Documents/Projects/silver-bullet/templates/silver-bullet.md.base
+grep -c "Check for updates" /Users/<user>/Documents/Projects/silver-bullet/silver-bullet.md /Users/<user>/Documents/Projects/silver-bullet/templates/silver-bullet.md.base
 
 # Confirm steps 1-4 and Anti-Skip blockquote still intact
-grep -n "Switch to Opus\|Read all project docs\|Compact the context\|Switch back to original\|Anti-Skip" /Users/shafqat/Documents/Projects/silver-bullet/silver-bullet.md
+grep -n "Switch to Opus\|Read all project docs\|Compact the context\|Switch back to original\|Anti-Skip" /Users/<user>/Documents/Projects/silver-bullet/silver-bullet.md
 ```
 </verification>
 

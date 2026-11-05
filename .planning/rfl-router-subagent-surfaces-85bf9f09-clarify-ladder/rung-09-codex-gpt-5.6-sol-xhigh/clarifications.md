@@ -4,7 +4,7 @@
 
 - Independently re-read the canonical freeze at `.planning/router_subagent_surfaces_85bf9f09.plan.md`.
 - SHA-256: `babfc2d55bdce116cbd4ddda9ee0d265ad71bf38de5aecf0e0b0186e65dfed41`; size: `622457` bytes.
-- The repo freeze and `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` are byte-identical.
+- The repo freeze and `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` are byte-identical.
 - Branch remained `main`. No freeze copy was edited. No checkout/switch, commit, or product implementation was performed.
 
 ## Findings

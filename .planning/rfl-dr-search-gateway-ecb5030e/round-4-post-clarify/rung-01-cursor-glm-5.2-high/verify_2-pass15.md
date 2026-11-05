@@ -2,7 +2,7 @@ model: composer-2.5
 
 **Subagent:** `sb-composer-2-5-high`  
 **Phase:** VERIFY-ONLY pass 2/2 (`verify_2`, independent of verify_1)  
-**Artifact:** `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
+**Artifact:** `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
 **SHA-256:** `e0b487d4f815919a83c585d01d7d83f94a7122d3166487ac813b030b159f015e` (verified via `shasum -a 256`)  
 **Graphify:** `graphify query "dr search gateway AD1 I-40 clear query-cache gitignore"` (200 nodes; oriented AD1 / cache-clear context)  
 **Apply ref:** AD1 / I-40 (round-4 post-clarify rung 1 pass 15)

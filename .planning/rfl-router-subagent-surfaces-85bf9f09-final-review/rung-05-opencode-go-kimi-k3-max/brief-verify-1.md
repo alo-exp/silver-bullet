@@ -13,8 +13,8 @@ A stale Grok-substitute `verify-1.md` on SHA `d5343ac1…` / 621095 was archived
 This is `/silver:review-fix-ladder` only. Do **not** run `/silver:clarify`. Do not AskQuestion. Do not encode product forks. Do not combine verify_2. Do **not** start verify_2 or rung 11.
 
 Scope (FORBIDDEN to Edit/Write either freeze copy):
-- `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
-- `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
+- `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
+- `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
 
 Independently re-hash both copies. Disk wins.
 - Charter start SHA: `07b986094e983d39fe3c7d2f1ac215ae730cbd28ccf3957655f5ec4c53d3280a` / 620985 bytes (historical; do not treat as current)
@@ -53,7 +53,7 @@ Independent checks you MUST perform (do not copy review.md):
 Charter: 33 pending YAML; forbid-only multi-ai-task / agent-wrap; FAST not a Job / not a compose route; E→Ver→Val + thin capture; OmniRoute routing-only; KEEP REJECT / Q1–Q3 / Part A then Part B; LS-post-val-kl Executor producer; single mermaid; TOC-GFM single-hyphen.
 
 You ARE required to Write the report ONLY to `./verify-1.md` (same as this absolute path):
-`/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-05-opencode-go-kimi-k3-max/verify-1.md`
+`/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-05-opencode-go-kimi-k3-max/verify-1.md`
 
 The verify-1.md MUST include:
 - Official-model honesty: you are Pi `opencode-go/kimi-k3-max` via `/silver:agent-pi`

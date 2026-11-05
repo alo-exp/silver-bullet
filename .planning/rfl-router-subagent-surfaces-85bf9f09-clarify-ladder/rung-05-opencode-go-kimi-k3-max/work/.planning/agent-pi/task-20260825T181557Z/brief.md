@@ -4,7 +4,7 @@
 
 Read:
 
-`/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
+`/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
 
 Rung 5 (`opencode-go/kimi-k3-max`). Canonical freeze SHA `0a9e732545e852712ce9cf4ae8d9c9036ad9f119d1c9b468dddc4e1efd25214b` (620974 bytes). Independently re-read. Do not replay prior rungs. User retry of OpenCode through Pi after prior 401 skip-failed.
 

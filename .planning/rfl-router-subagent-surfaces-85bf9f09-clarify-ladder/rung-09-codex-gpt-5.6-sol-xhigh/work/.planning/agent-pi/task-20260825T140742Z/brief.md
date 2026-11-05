@@ -4,7 +4,7 @@
 
 Read:
 
-`/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
+`/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
 
 Rung 9 (`codex/gpt-5.6-sol-xhigh`). Canonical freeze SHA `babfc2d55bdce116cbd4ddda9ee0d265ad71bf38de5aecf0e0b0186e65dfed41` (622457 bytes). Independently re-read. Do not replay prior rungs. Owner already applied rung-8 editorial repairs (completed truncated procedure/coverage headings; split spliced §5.4 coverage bullet; LS-post-val-kl Executor producer conformance).
 

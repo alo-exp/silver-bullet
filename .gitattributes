@@ -1,1 +1,12 @@
 graphify-out/graph.json merge=graphify
+
+# Development-only trees stay out of the release payload (git archive, GitHub source
+# tarballs); the runtime needs hooks/, scripts/, skills/,
+# agents/, templates/ and .planning/scripts/ (R13-13). A plain `git clone` still fetches
+# everything: see docs/RELEASE.md for what each host installs from.
+/research/ export-ignore
+/.planning/* export-ignore
+/.planning/scripts -export-ignore
+/.agentmemory/ export-ignore
+/graphify-out/graph.json export-ignore
+*.bak export-ignore

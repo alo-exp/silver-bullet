@@ -2,7 +2,7 @@ model: composer-2.5
 
 **Subagent:** `sb-composer-2-5-high`  
 **Phase:** VERIFY-ONLY pass 1/2 (`rung_1_verify_1`, post ACCEPT-apply of AD1 / I-40)  
-**Artifact:** `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
+**Artifact:** `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
 **SHA-256:** `e0b487d4f815919a83c585d01d7d83f94a7122d3166487ac813b030b159f015e` (verified via `shasum -a 256`)  
 **Graphify:** `graphify query "dr search gateway clear query-cache gitignore AD1 I-40"` (200 nodes; oriented AD1 / cache / gateway)  
 **Apply ref:** AD1 / I-40 · **Prior verify:** [verify_1-pass14.md](verify_1-pass14.md) (AC1–AC3 PASS at `32b8f337…`)

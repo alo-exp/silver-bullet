@@ -5,7 +5,7 @@
 #     "bash .planning/enterprise-e2e/cursor3-real-pipeline-driver.sh 2>&1 | tee -a .e2e-cursor3-pipeline-live.log"
 set -euo pipefail
 
-SB_ROOT="/Users/shafqat/projects/silver-bullet/repo"
+SB_ROOT="/Users/<user>/projects/silver-bullet/repo"
 cd "$SB_ROOT"
 LOG="${SB_ROOT}/.e2e-cursor3-pipeline-live.log"
 PIPELINE_MARKER="${SB_ROOT}/.planning/enterprise-e2e/cursor3-real-pipeline.state"
@@ -14,7 +14,7 @@ LADDER_LOG="${SB_ROOT}/.planning/enterprise-e2e/cursor3-ladder-live.log"
 export SB_ROOT SB_E2E_BRANCH=enterprise-e2e/cursor
 export SILVER_BULLET_RUNTIME=cursor SB_E2E_LIVE_RUNTIME=cursor SB_LIVE_RUNTIME=cursor
 export SB_E2E_LEDGER_FILE="$SB_ROOT/.planning/enterprise-e2e/ROUND-CURSOR-3-REAL-LEDGER.md"
-export SB_TEST_ENTERPRISE_APP_ROOT=/Users/shafqat/projects/enterprise-grade-test-app-cursor
+export SB_TEST_ENTERPRISE_APP_ROOT=/Users/<user>/projects/enterprise-grade-test-app-cursor
 export SB_ENTERPRISE_E2E_LIVE=1 SB_E2E_SKIP_CURSOR_INSTALL=1
 export SB_E2E_SURFACE_SKIP=0 SB_LIVE_CURSOR_FORCE_HEADLESS=1
 export SB_E2E_MATRIX_FORCE_ALL=1 SB_E2E_MATRIX_FORCE=1

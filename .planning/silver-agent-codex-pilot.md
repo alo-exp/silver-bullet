@@ -2,7 +2,7 @@
 
 **Date:** 2026-07-05  
 **Branch (SB):** `feature/silver-agent-codex-skill`  
-**Branch (test app):** `feature/agent-codex-pilot-20260705` @ `/Users/shafqat/projects/enterprise-grade-test-app-codex`  
+**Branch (test app):** `feature/agent-codex-pilot-20260705` @ `/Users/<user>/projects/enterprise-grade-test-app-codex`  
 **Skill:** `/silver:agent-codex` → [`skills/silver-agent-codex/SKILL.md`](../skills/silver-agent-codex/SKILL.md)  
 **Harness:** [`scripts/agent-codex/invoke.sh`](../scripts/agent-codex/invoke.sh) (`--use-exec`)
 
@@ -22,8 +22,8 @@ Brief: [`.planning/agent-codex-pilot-20260705/brief.md`](agent-codex-pilot-20260
 ## Invocation
 
 ```bash
-export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
-export CODEX_WORK_DIR=/Users/shafqat/projects/enterprise-grade-test-app-codex
+export SB_ROOT=/Users/<user>/projects/silver-bullet/repo
+export CODEX_WORK_DIR=/Users/<user>/projects/enterprise-grade-test-app-codex
 
 bash scripts/agent-codex/invoke.sh --use-exec \
   --work-dir "$CODEX_WORK_DIR" \

@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | Phase | `106-doctor-opt-in-coverage-session-a` |
-| Worktree / implement root | `/Users/shafqat/projects/silver-bullet/repo` (lean-ctx path-jail) |
+| Worktree / implement root | `/Users/<user>/projects/silver-bullet/repo` (lean-ctx path-jail) |
 | Branch | `main` (ahead of origin; **not merged**, **not switched**) |
 | Waves | Wave 1 + Wave 2 **complete** |
 | Chain | execute → verify → review triad → quality-gates adversarial |

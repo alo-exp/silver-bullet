@@ -3,8 +3,8 @@
 - type: decision
 - result: handoff written
 - commit: false
-- worktree: `/Users/shafqat/.cursor/worktrees/repo/3ht3` (`sync/3ht3-main` @ `c055a3c8`)
-- next_session_root: `/Users/shafqat/projects/silver-bullet/repo` on `main` @ `c055a3c8` then feature branch
+- worktree: `/Users/<user>/.cursor/worktrees/repo/3ht3` (`sync/3ht3-main` @ `c055a3c8`)
+- next_session_root: `/Users/<user>/projects/silver-bullet/repo` on `main` @ `c055a3c8` then feature branch
 - locked_run: `run-57f38dfa25d83cc50d224e283d4692f3`
 - handoff: `.planning/handoffs/2026-08-14-dr-engine-handoff.md`
 

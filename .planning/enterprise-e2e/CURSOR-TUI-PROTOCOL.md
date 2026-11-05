@@ -5,8 +5,8 @@ Operator protocol for executing 22 supervised Cursor agent workflow sessions aga
 **Supervisor session:** Cursor Composer (parent orchestrator with `Task` tool, `composer-2.5` only).  
 **Matrix child:** `cursor-agent` / `agent` CLI headless **or** in-session Composer when `SB_LIVE_CURSOR_IN_SESSION=1`.
 
-**Working directory for SB fixes:** `/Users/shafqat/projects/silver-bullet/repo`  
-**Working directory for matrix rows:** `/Users/shafqat/projects/enterprise-grade-test-app`
+**Working directory for SB fixes:** `/Users/<user>/projects/silver-bullet/repo`  
+**Working directory for matrix rows:** `/Users/<user>/projects/enterprise-grade-test-app`
 
 See also: [CURSOR-ENTERPRISE-E2E-EXECUTION-PROMPT.md](./CURSOR-ENTERPRISE-E2E-EXECUTION-PROMPT.md)
 
@@ -24,7 +24,7 @@ See also: [CURSOR-ENTERPRISE-E2E-EXECUTION-PROMPT.md](./CURSOR-ENTERPRISE-E2E-EX
 ## Host-isolated harness env (mandatory)
 
 ```bash
-export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
+export SB_ROOT=/Users/<user>/projects/silver-bullet/repo
 export SILVER_BULLET_RUNTIME=cursor
 export SB_E2E_LIVE_RUNTIME=cursor
 export CURSOR_API_KEY="${CURSOR_API_KEY:?}"

@@ -2,7 +2,7 @@
 # RFL ladder 4 rung 5: Qwen 3.8 High via /silver:agent-opencode.
 # Registry has no ocg-qwen3.8-max; wrapper pins opencode-go/qwen3.8-max --variant high.
 set -euo pipefail
-ROOT="/Users/shafqat/projects/silver-bullet/repo"
+ROOT="/Users/<user>/projects/silver-bullet/repo"
 LOGDIR="$ROOT/.planning/rfl-router-subagent-surfaces-85bf9f09-20260812/qwen-high-ladder4"
 export SB_ROOT="$ROOT"
 export OPENCODE_WORK_DIR="$ROOT"

@@ -2,7 +2,7 @@
 
 RFL round 2, rung 11, **verify_2 only** (independent of verify_1) — post **named Pi Claude Opus 5 Extra High** ACCEPT APPLY ([`APPLY.md`](APPLY.md), freeze commit `e2606b92`). Native Cursor Task — **no Pi**, no OmniRoute, no `/silver:agent-pi`, no `scripts/agent-pi/invoke.sh`. Model lock: `cursor-grok-4.5-high` / `sb-grok-4-5-high` (not Grok 4.6 High, Extra High, Fast, or any Pi model).
 
-Repo: `/Users/shafqat/projects/silver-bullet/repo`. Branch: `main` (no `git checkout` / `git switch` / SetActiveBranch). VERIFY ONLY — no freeze edits, no second APPLY, no product/YAML execution, no Policy D, no `--mark-ladder-status completed`.
+Repo: `/Users/<user>/projects/silver-bullet/repo`. Branch: `main` (no `git checkout` / `git switch` / SetActiveBranch). VERIFY ONLY — no freeze edits, no second APPLY, no product/YAML execution, no Policy D, no `--mark-ladder-status completed`.
 
 Graphify first: `graphify query` for rung-11 / Policy C / freeze / KR-panel-public-trio-only. Live checks below are **hashlib** + `rg -i fusion` + line-exact on freeze bytes (not graph-only; not verify_1 claims). agentmemory `memory_save` at end.
 

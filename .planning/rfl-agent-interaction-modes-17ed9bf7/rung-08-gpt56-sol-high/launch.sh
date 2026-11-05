@@ -2,10 +2,10 @@
 # RFL rung 8: GPT-5.6 Sol High REVIEW ONLY via /silver:agent-codex NI (codex exec).
 # scripts/agent-codex/invoke.sh is absent at detached 1569b060; D7 native exec is the NI path.
 set -euo pipefail
-ROOT="/Users/shafqat/projects/silver-bullet/repo"
+ROOT="/Users/<user>/projects/silver-bullet/repo"
 LOGDIR="$ROOT/.planning/rfl-agent-interaction-modes-17ed9bf7/rung-08-gpt56-sol-high"
-export HOME="/Users/shafqat"
-export CODEX_HOME="/Users/shafqat/.codex"
+export HOME="/Users/<user>"
+export CODEX_HOME="/Users/<user>/.codex"
 export SB_ROOT="$ROOT"
 export CODEX_WORK_DIR="$ROOT"
 export SB_AGENT_DELEGATE_V2=0
@@ -20,7 +20,7 @@ export CODEX_REASONING_EFFORT="high"
 date -u +%Y-%m-%dT%H:%M:%SZ > "$LOGDIR/invoke-start.txt"
 set +e
 HOME="$HOME" CODEX_HOME="$CODEX_HOME" \
-  /Users/shafqat/.local/bin/codex exec --skip-git-repo-check \
+  /Users/<user>/.local/bin/codex exec --skip-git-repo-check \
     -m gpt-5.6-sol -c model_reasoning_effort=high \
     -C "$ROOT" \
     --sandbox workspace-write \

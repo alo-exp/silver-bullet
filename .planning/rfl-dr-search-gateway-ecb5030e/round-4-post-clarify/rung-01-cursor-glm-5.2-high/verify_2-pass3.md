@@ -2,7 +2,7 @@ model: composer-2.5
 
 **Subagent:** `sb-composer-2-5-high`  
 **Phase:** VERIFY-ONLY pass 2/2 after CLEAN GLM review pass 3  
-**Artifact:** `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
+**Artifact:** `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
 **SHA-256:** `ddc71a73810355206f57fd4267358478cea6e33622b7ae7c0617444a90f8b2a9` (verified via `shasum -a 256`)  
 **Graphify:** `graphify query "DR search gateway plan X xweb consent superseded" --budget 2000` (143 nodes; plan is PRD not indexed as source — oriented via independent read)  
 **Prior verify:** [verify_1-pass3.md](verify_1-pass3.md) (not copied; independent re-read)

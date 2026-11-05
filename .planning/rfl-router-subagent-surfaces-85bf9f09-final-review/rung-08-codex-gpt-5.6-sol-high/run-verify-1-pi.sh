@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Bounded Pi invoke for rung_08_verify_1. Hang-kill ~6m if idle (0% CPU / no events / no verify-1.md).
 set -u
-RUNG="/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-08-codex-gpt-5.6-sol-high"
-SB_ROOT="/Users/shafqat/projects/silver-bullet/repo"
+RUNG="/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-08-codex-gpt-5.6-sol-high"
+SB_ROOT="/Users/<user>/projects/silver-bullet/repo"
 INVOKE="${SB_ROOT}/scripts/agent-pi/invoke.sh"
 REPORT="${RUNG}/verify-1.md"
 WORK="${RUNG}/work"

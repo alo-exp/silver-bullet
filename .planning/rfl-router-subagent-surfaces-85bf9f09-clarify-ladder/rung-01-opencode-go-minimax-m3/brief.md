@@ -2,7 +2,7 @@
 
 Autonomous `/silver:clarify --auto` against the freeze plan only (not product implementation):
 
-`/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
+`/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
 
 Resolve only items the skill allows without the human (recommended defaults, consistency, already-locked KEEP REJECT / Q1–Q3). Do not reopen KEEP REJECT as questions. Do not implement hooks/skills/tests as product.
 
