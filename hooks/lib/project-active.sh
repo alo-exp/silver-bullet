@@ -30,7 +30,10 @@ sb_config_marked_initiated() {
   [[ "$(jq -r '.sb_initiated // false' "$config_file" 2>/dev/null || echo false)" == "true" ]]
 }
 
-# Back-compat aliases (Wave 0.1 naming).
+# Back-compat alias (Wave 0.1 naming). Despite the name it only means "the project config file
+# exists" (the project boundary, sb_project_active); it does NOT read sb_initiated. Gates that need
+# the explicit flag call sb_config_marked_initiated. Boundary discovery for hooks goes through
+# sb_find_project_config / sb_find_project_config_walk_only in sb-project-gate.sh (R3-32).
 sb_project_is_initiated() {
   sb_project_active "$@"
 }

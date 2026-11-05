@@ -142,7 +142,11 @@ config_vals=$(jq -r '[
   (.state.state_file // env.SB_RUNTIME_STATE_DIR + "/state"),
   ((.skills.required_planning // []) | join(" ")),
   (.project.active_workflow // "full-dev-cycle"),
-  ((.skills.required_planning_devops // []) | join(" "))
+  ((.skills.required_planning_devops // []) | join(" ")),
+  ((.skills.required_deploy // []) | join(" ")),
+  ((.skills.required_deploy_devops // []) | join(" ")),
+  ((.skills.required_release // []) | join(" ")),
+  ((.skills.required_release_devops // []) | join(" "))
 ] | join("\n")' "$config_file")
 
 state_file=$(printf '%s' "$config_vals" | sed -n '1p')
@@ -153,17 +157,38 @@ required_planning=$(printf '%s' "$config_vals" | sed -n '2p')
 # shellcheck disable=SC2034
 active_workflow=$(printf '%s' "$config_vals" | sed -n '3p')
 required_planning_devops=$(printf '%s' "$config_vals" | sed -n '4p')
+configured_deploy=$(printf '%s' "$config_vals" | sed -n '5p')
+configured_deploy_devops=$(printf '%s' "$config_vals" | sed -n '6p')
+configured_release=$(printf '%s' "$config_vals" | sed -n '7p')
+configured_release_devops=$(printf '%s' "$config_vals" | sed -n '8p')
 
 default_planning="$DEFAULT_PLANNING"
 configured_planning="$required_planning"
+# The delivery and release lists the gates enforce, so the status can never show a phase complete
+# while a configured required skill is still missing (R3-23).
+default_deploy="${DEFAULT_REQUIRED:-}"
+configured_deploy_list="$configured_deploy"
+default_release="${DEFAULT_RELEASE_REQUIRED:-silver-create-release}"
+configured_release_list="$configured_release"
 if [[ "$active_workflow" == "devops-cycle" ]]; then
   default_planning="$DEVOPS_DEFAULT_PLANNING"
   configured_planning="${required_planning_devops:-$required_planning}"
+  default_deploy="${DEVOPS_DEFAULT_REQUIRED:-}"
+  configured_deploy_list="${configured_deploy_devops:-$configured_deploy}"
+  default_release="${DEVOPS_DEFAULT_RELEASE_REQUIRED:-$default_release}"
+  configured_release_list="${configured_release_devops:-$configured_release}"
 fi
 if declare -F sb_required_skills_normalize_configured_list >/dev/null 2>&1; then
   required_planning="$(sb_required_skills_normalize_configured_list "$config_file" "$configured_planning" "$default_planning")"
 else
   required_planning="${configured_planning:-$default_planning}"
+fi
+if declare -F sb_required_skills_normalize_configured_list >/dev/null 2>&1; then
+  required_deploy="$(sb_required_skills_normalize_configured_list "$config_file" "$configured_deploy_list" "$default_deploy")"
+  required_release="$(sb_required_skills_normalize_configured_list "$config_file" "$configured_release_list" "$default_release")"
+else
+  required_deploy="${configured_deploy_list:-$default_deploy}"
+  required_release="${configured_release_list:-$default_release}"
 fi
 
 # Env var override
@@ -314,6 +339,12 @@ elif [[ -n "$first_missing_final" ]]; then
   next_skill="$first_missing_final"
 elif [[ -n "$first_missing_release" ]]; then
   next_skill="$first_missing_release"
+else
+  # The display groups are fixed, but the gates enforce the configured lists: name the first
+  # configured delivery or release skill still missing instead of showing nothing left (R3-23).
+  for skill in $required_deploy $required_release; do
+    if ! has_skill "$skill"; then next_skill="$skill"; break; fi
+  done
 fi
 
 # --- Build output ---

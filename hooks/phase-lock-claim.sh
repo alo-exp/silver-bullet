@@ -85,7 +85,9 @@ phase=$(_resolve_phase_from_path "$file_path" || true)
 # ── Helper-exists check (graceful degrade for non-SB-initialized projects) ──
 helper="$PWD/.planning/scripts/phase-lock.sh"
 if [[ ! -x "$helper" ]]; then
-  printf '{"hookSpecificOutput":{"message":"⚠️ phase-lock-claim.sh: %s not executable — skipping"}}\n' "$helper"
+  # jq builds the JSON: the project path may contain quotes or backslashes (R3-26).
+  jq -nc --arg m "⚠️ phase-lock-claim.sh: ${helper} not executable — skipping" \
+    '{hookSpecificOutput:{hookEventName:"PreToolUse",message:$m}}'
   exit 0
 fi
 
