@@ -81,7 +81,7 @@ reset
 FAKE_RC=0 FAKE_OUT="flag-ok" tl_run timeout 60 env SB_AGENT_PI_DELEGATE=1 bash "$INVOKE" --work-dir "$W" --prompt x --skip-preflight
 assert_eq "invoke with SB_AGENT_PI_DELEGATE=1 still runs the delegate" "0" "$TL_STATUS"
 assert_contains "flag set: delegate output reached" "$TL_OUT" "flag-ok"
-(cd "$W" && printf '#!/usr/bin/env bash\necho RAN-LOCAL-ONE >&2\n' >1 && chmod +x 1)
+printf '#!/usr/bin/env bash\necho RAN-LOCAL-ONE >&2\n' >"$W/1" && chmod +x "$W/1"
 FAKE_RC=0 FAKE_OUT="flag-ok" tl_run bash -c "cd '$W' && SB_AGENT_PI_DELEGATE=1 bash '$INVOKE' --work-dir '$W' --prompt x --skip-preflight"
 assert_not_contains "a ./1 in the working directory is never executed" "$TL_ERR$TL_OUT" "RAN-LOCAL-ONE"
 rm -f "$W/1"

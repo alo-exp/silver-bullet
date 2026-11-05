@@ -133,6 +133,7 @@ agent_invoke() {
       # even when the shell env is empty, which conflicts with claude.ai OAuth.
       claude_matrix_auth_prepare
       trap 'claude_matrix_auth_restore' RETURN
+      # shellcheck disable=SC2016  # the inner bash, not this shell, expands $1 and $CLAUDE_WORK_DIR
       output=$(
         env -i \
           HOME="${HOME}" \
