@@ -347,4 +347,27 @@ rm -f "$DIR" "$SB_RUNTIME_STATE_DIR/agent-delegation-active.json"
 assert_eq "lib-less staging still writes the directive" silver-agent-codex "$(orch_directive_get .next_skill)"
 assert_file_absent "lib-less staging does not activate delegation" "$SB_RUNTIME_STATE_DIR/agent-delegation-active.json"
 
+echo "=== sync from state prefers the scheduler batch (R4-05) ==="
+batch_state() { # batch_state NEXT_SKILL
+  orch_write_state "$(jq -n --arg s "$1" '{repo_root:"/x",active_intent:"intent",current_flow:"silver-plan",flow_queue:["silver-plan"],
+    scheduler:{batch_dispatch:{batch_index:0,dispatch_mode:"sequential",status:"pending_dispatch",
+      handoffs:[{atomic_flow_id:"AF-X",next_skill:$s,next_worker_template:"X",dispatch_status:"pending",join_status:"pending"}]}}}')"
+}
+rm -f "$DIR"
+batch_state silver-batch-skill
+( source "$TL_REPO_ROOT/hooks/lib/orchestrator-directive.sh"; sb_orchestrator_sync_directive_from_state )
+assert_eq "a waiting batch handoff wins over current_flow" silver-batch-skill "$(orch_directive_get .next_skill)"
+assert_eq "the batch directive keeps the handoff metadata" pending_dispatch "$(orch_directive_get .batch_dispatch.status)"
+rm -f "$DIR"
+( source "$staged/orchestrator-directive.sh"; sb_orchestrator_sync_directive_from_state )
+assert_eq "without the scheduler lib the flow-based directive is written" silver-plan "$(orch_directive_get .next_skill)"
+rm -f "$DIR"
+batch_state ""
+( source "$TL_REPO_ROOT/hooks/lib/orchestrator-directive.sh"; sb_orchestrator_sync_directive_from_state )
+assert_eq "a batch that cannot name a skill falls back to current_flow" silver-plan "$(orch_directive_get .next_skill)"
+rm -f "$DIR"
+orch_write_state '{"repo_root":"/x","current_flow":"silver-plan","scheduler":{"batch_dispatch":{"handoffs":[{"next_skill":"s","join_status":"joined"}]}}}'
+( source "$TL_REPO_ROOT/hooks/lib/orchestrator-directive.sh"; sb_orchestrator_sync_directive_from_state )
+assert_eq "a fully joined batch does not drive the directive" silver-plan "$(orch_directive_get .next_skill)"
+
 tl_results

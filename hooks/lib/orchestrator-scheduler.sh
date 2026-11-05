@@ -1,4 +1,5 @@
 # shellcheck shell=bash
+# shellcheck disable=SC2034  # SB_ORCH_PARENT_BASH_DENY_REASON / SB_SCHEDULER_JOIN_RESULT are results read by callers
 # Catalog-driven runtime scheduler — parallel batches, mutation-scope safety, join gates (Phase B).
 
 _sb_scheduler_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -55,20 +56,26 @@ sb_scheduler_mutation_scopes_conflict() {
 }
 
 # Plan parallel-safe dispatch batches for ordered atom ids. Prints JSON plan to stdout.
+#   sb_scheduler_plan_batches_json CATALOG ATOM_IDS_JSON [QUEUE_TOKENS_JSON]
+# QUEUE_TOKENS_JSON is an optional array aligned with ATOM_IDS_JSON (the flow_queue token each
+# atom came from); the plan then carries `batch_tokens` (same shape as `batches`) so handoffs
+# can name the skill the queue token means (R4-06).
 sb_scheduler_plan_batches_json() {
-  local catalog_file="$1" atoms_json="$2"
+  local catalog_file="$1" atoms_json="$2" tokens_json="${3:-[]}"
   [[ -n "$catalog_file" && -f "$catalog_file" ]] || return 1
   command -v python3 >/dev/null 2>&1 || return 1
-  python3 - "$catalog_file" "$atoms_json" <<'PY'
+  python3 - "$catalog_file" "$atoms_json" "$tokens_json" <<'PY'
 import json
 import sys
 from pathlib import Path
 
 catalog = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
 atom_ids = json.loads(sys.argv[2])
+queue_tokens = json.loads(sys.argv[3])
 atoms = {item["id"]: item for item in catalog.get("atomic_flows", [])}
 
 batches = []
+batch_tokens = []
 decisions = []
 dispatch_records = []
 
@@ -81,9 +88,6 @@ def depends_on_atoms(aid):
     deps = flow.get("execution", {}).get("depends_on_atoms", [])
     return [d for d in deps if isinstance(d, str) and d.startswith("AF-")]
 
-def dependencies_satisfied(aid, prior_atoms):
-    return all(d in prior_atoms for d in depends_on_atoms(aid))
-
 def batch_conflicts(batch, aid):
     s = scopes_for(aid)
     for other in batch:
@@ -92,132 +96,109 @@ def batch_conflicts(batch, aid):
     return False, []
 
 current = []
+current_tokens = []
+# Atoms of FLUSHED batches only: an atom counts as done for its dependants once its batch is
+# closed, never while it is still in the open batch (R4-19).
 prior_atoms = set()
-for aid in atom_ids:
+
+def flush():
+    global current, current_tokens
+    if current:
+        batches.append(current)
+        batch_tokens.append(current_tokens)
+        prior_atoms.update(current)
+    current = []
+    current_tokens = []
+
+def record(aid, execution, scopes, scheduling, rationale):
+    dispatch_records.append({
+        "atomic_flow_id": aid,
+        "worker_template": execution.get("worker_template", ""),
+        "mutation_scopes": scopes,
+        "scheduling": scheduling,
+        "serialization_rationale": rationale,
+        "join_status": "pending",
+        "step_v_loop_status": "pending",
+        "v_gate_result": "pending",
+        "retries": 0,
+        "dispatch_record_shape": execution.get("dispatch_record_shape", ""),
+    })
+
+def decide(aid, decision, rationale, scopes):
+    decisions.append({
+        "atom_id": aid,
+        "decision": decision,
+        "catalog_rule_ref": "DR-PARALLELIZE-INDEPENDENT-ATOMS",
+        "rationale": rationale,
+        "mutation_scopes": scopes,
+    })
+
+for index, aid in enumerate(atom_ids):
+    token = queue_tokens[index] if index < len(queue_tokens) else ""
     flow = atoms.get(aid)
     if not flow:
         decisions.append({"atom_id": aid, "decision": "skip", "rationale": "unknown catalog atom"})
         continue
-    if not dependencies_satisfied(aid, prior_atoms):
-        if current:
-            batches.append(current)
-            prior_atoms.update(current)
-            current = []
-        batches.append([aid])
-        execution = flow.get("execution", {})
-        scopes = sorted(scopes_for(aid))
-        worker = execution.get("worker_template", "")
-        shape = execution.get("dispatch_record_shape", "")
-        missing = [d for d in depends_on_atoms(aid) if d not in prior_atoms]
-        decisions.append({
-            "atom_id": aid,
-            "decision": "serialized",
-            "catalog_rule_ref": "DR-PARALLELIZE-INDEPENDENT-ATOMS",
-            "rationale": f"catalog depends_on_atoms unsatisfied: {', '.join(missing)}",
-            "mutation_scopes": scopes,
-        })
-        dispatch_records.append({
-            "atomic_flow_id": aid,
-            "worker_template": worker,
-            "mutation_scopes": scopes,
-            "scheduling": "serialized",
-            "serialization_rationale": f"depends_on_atoms: {', '.join(missing)}",
-            "join_status": "pending",
-            "step_v_loop_status": "pending",
-            "v_gate_result": "pending",
-            "retries": 0,
-            "dispatch_record_shape": shape,
-        })
-        prior_atoms.add(aid)
-        continue
     execution = flow.get("execution", {})
     parallelizable = bool(execution.get("parallelizable", False))
     scopes = sorted(scopes_for(aid))
-    worker = execution.get("worker_template", "")
-    shape = execution.get("dispatch_record_shape", "")
+    deps = depends_on_atoms(aid)
+    in_open_batch = [d for d in deps if d in current]
+    missing = [d for d in deps if d not in prior_atoms and d not in current]
+
+    if missing:
+        flush()
+        batches.append([aid])
+        batch_tokens.append([token])
+        decide(aid, "serialized", f"catalog depends_on_atoms unsatisfied: {', '.join(missing)}", scopes)
+        record(aid, execution, scopes, "serialized", f"depends_on_atoms: {', '.join(missing)}")
+        prior_atoms.add(aid)
+        continue
+
+    if in_open_batch:
+        # A dependency still in the open batch: close it so the dependant runs after the join.
+        flush()
+        reason = f"depends_on_atoms in the same batch: {', '.join(in_open_batch)}"
+        decide(aid, "serialized", reason, scopes)
+        record(aid, execution, scopes, "serialized", reason)
+        if parallelizable:
+            current = [aid]
+            current_tokens = [token]
+        else:
+            batches.append([aid])
+            batch_tokens.append([token])
+            prior_atoms.add(aid)
+        continue
 
     if not parallelizable:
-        if current:
-            batches.append(current)
-            current = []
+        flush()
         batches.append([aid])
-        decisions.append({
-            "atom_id": aid,
-            "decision": "serialized",
-            "catalog_rule_ref": "DR-PARALLELIZE-INDEPENDENT-ATOMS",
-            "rationale": "atom is not parallelizable per catalog execution metadata",
-            "mutation_scopes": scopes,
-        })
-        dispatch_records.append({
-            "atomic_flow_id": aid,
-            "worker_template": worker,
-            "mutation_scopes": scopes,
-            "scheduling": "serialized",
-            "serialization_rationale": "not parallelizable",
-            "join_status": "pending",
-            "step_v_loop_status": "pending",
-            "v_gate_result": "pending",
-            "retries": 0,
-            "dispatch_record_shape": shape,
-        })
+        batch_tokens.append([token])
+        decide(aid, "serialized", "atom is not parallelizable per catalog execution metadata", scopes)
+        record(aid, execution, scopes, "serialized", "not parallelizable")
         prior_atoms.add(aid)
         continue
 
     conflict, overlap = batch_conflicts(current, aid)
     if current and conflict:
-        batches.append(current)
-        prior_atoms.update(current)
-        current = []
-        decisions.append({
-            "atom_id": aid,
-            "decision": "serialized",
-            "catalog_rule_ref": "DR-PARALLELIZE-INDEPENDENT-ATOMS",
-            "rationale": f"mutation scope conflict with prior batch: {', '.join(overlap)}",
-            "mutation_scopes": scopes,
-        })
-        dispatch_records.append({
-            "atomic_flow_id": aid,
-            "worker_template": worker,
-            "mutation_scopes": scopes,
-            "scheduling": "serialized",
-            "serialization_rationale": f"mutation scope conflict: {', '.join(overlap)}",
-            "join_status": "pending",
-            "step_v_loop_status": "pending",
-            "v_gate_result": "pending",
-            "retries": 0,
-            "dispatch_record_shape": shape,
-        })
+        flush()
+        reason = f"mutation scope conflict with prior batch: {', '.join(overlap)}"
+        decide(aid, "serialized", reason, scopes)
+        record(aid, execution, scopes, "serialized", f"mutation scope conflict: {', '.join(overlap)}")
         current = [aid]
-        prior_atoms.add(aid)
+        current_tokens = [token]
         continue
 
     current.append(aid)
-    decisions.append({
-        "atom_id": aid,
-        "decision": "parallel",
-        "catalog_rule_ref": "DR-PARALLELIZE-INDEPENDENT-ATOMS",
-        "rationale": "dependency inputs satisfied and mutation scopes do not conflict",
-        "mutation_scopes": scopes,
-    })
-    dispatch_records.append({
-        "atomic_flow_id": aid,
-        "worker_template": worker,
-        "mutation_scopes": scopes,
-        "scheduling": "parallel",
-        "serialization_rationale": "",
-        "join_status": "pending",
-        "step_v_loop_status": "pending",
-        "v_gate_result": "pending",
-        "retries": 0,
-        "dispatch_record_shape": shape,
-    })
+    current_tokens.append(token)
+    decide(aid, "parallel", "dependency inputs satisfied and mutation scopes do not conflict", scopes)
+    record(aid, execution, scopes, "parallel", "")
 
-if current:
-    batches.append(current)
-    prior_atoms.update(current)
+flush()
 
 print(json.dumps({
     "batches": batches,
+    "batch_tokens": batch_tokens,
     "scheduler_decisions": decisions,
     "dispatch_records": dispatch_records,
 }, separators=(",", ":")))
@@ -226,6 +207,10 @@ PY
 
 # Merge scheduler plan into orchestrator.json under .scheduler.
 sb_scheduler_write_plan_to_state() {
+  sb_orchestrator_with_lock _sb_scheduler_write_plan_to_state "$@"
+}
+
+_sb_scheduler_write_plan_to_state() {
   local plan_json="$1"
   [[ -n "$plan_json" ]] || return 1
   command -v jq >/dev/null 2>&1 || return 1
@@ -253,17 +238,21 @@ sb_scheduler_plan_queue_from_state() {
   command -v python3 >/dev/null 2>&1 || return 1
   queue_json="$(jq -c '.flow_queue // []' "$file" 2>/dev/null || echo '[]')"
   atom_ids_json='[]'
-  local token aid atoms_tmp=()
+  local token aid atoms_tmp=() tokens_tmp=() tokens_json='[]'
   while IFS= read -r token; do
     [[ -n "$token" ]] || continue
     aid="$(sb_scheduler_resolve_atom_id "$catalog_file" "$token" 2>/dev/null || true)"
-    [[ -n "$aid" ]] && atoms_tmp+=("$aid")
+    if [[ -n "$aid" ]]; then
+      atoms_tmp+=("$aid")
+      tokens_tmp+=("$token")
+    fi
   done < <(jq -r '.[]' <<<"$queue_json" 2>/dev/null || true)
   if [[ "${#atoms_tmp[@]}" -gt 0 ]]; then
     atom_ids_json="$(printf '%s\n' "${atoms_tmp[@]}" | jq -R . | jq -s .)"
+    tokens_json="$(printf '%s\n' "${tokens_tmp[@]}" | jq -R . | jq -s .)"
   fi
   [[ -n "$atom_ids_json" && "$atom_ids_json" != "[]" ]] || return 1
-  plan="$(sb_scheduler_plan_batches_json "$catalog_file" "$atom_ids_json" 2>/dev/null || true)"
+  plan="$(sb_scheduler_plan_batches_json "$catalog_file" "$atom_ids_json" "$tokens_json" 2>/dev/null || true)"
   [[ -n "$plan" ]] || return 1
   sb_scheduler_write_plan_to_state "$plan"
   printf '%s' "$plan"
@@ -404,6 +393,10 @@ sb_scheduler_detect_multi_capability_intent() {
 
 # Record insert ops + composer_chain for autonomous multi-workflow advance after each WF drains.
 sb_scheduler_apply_multi_workflow_chain() {
+  sb_orchestrator_with_lock _sb_scheduler_apply_multi_workflow_chain "$@"
+}
+
+_sb_scheduler_apply_multi_workflow_chain() {
   local repo_root="$1" composer_skill="$2" intent="${3:-}"
   [[ -n "$repo_root" && -n "$composer_skill" ]] || return 1
   [[ "$composer_skill" == "silver-feature" ]] || return 0
@@ -433,6 +426,10 @@ sb_scheduler_detect_net_new_workflow_intent() {
 
 # Record net-new route decision when parent would otherwise force-fit an existing WF.
 sb_scheduler_apply_net_new_workflow_route() {
+  sb_orchestrator_with_lock _sb_scheduler_apply_net_new_workflow_route "$@"
+}
+
+_sb_scheduler_apply_net_new_workflow_route() {
   local repo_root="$1" composer_skill="$2" intent="${3:-}"
   [[ -n "$repo_root" ]] || return 1
   sb_scheduler_detect_net_new_workflow_intent "$intent" || return 0
@@ -467,6 +464,10 @@ sb_scheduler_owned_step_ids_json() {
 
 # Update step V-loop status in orchestrator.json (.scheduler.step_v_loops).
 sb_scheduler_set_step_vloop_status() {
+  sb_orchestrator_with_lock _sb_scheduler_set_step_vloop_status "$@"
+}
+
+_sb_scheduler_set_step_vloop_status() {
   local atom_id="$1" step_id="$2" status="$3"
   [[ -n "$atom_id" && -n "$step_id" && -n "$status" ]] || return 1
   command -v jq >/dev/null 2>&1 || return 1
@@ -506,6 +507,10 @@ sb_scheduler_eval_join_gate() {
 
 # Persist join gate evaluation on orchestrator state.
 sb_scheduler_refresh_join_gate() {
+  sb_orchestrator_with_lock _sb_scheduler_refresh_join_gate "$@"
+}
+
+_sb_scheduler_refresh_join_gate() {
   local repo_root="$1" atom_id="$2"
   local gate file now updated
   gate="$(sb_scheduler_eval_join_gate "$repo_root" "$atom_id")"
@@ -584,100 +589,66 @@ sb_scheduler_host_supports_parallel_dispatch() {
   return 1
 }
 
-# Resolve worker template basename for catalog atom (FIXTURE-READ-A, PLAN, …).
-sb_scheduler_worker_template_for_atom() {
-  local catalog_file="$1" atom_id="$2"
-  [[ -n "$catalog_file" && -f "$catalog_file" && -n "$atom_id" ]] || return 1
-  local worker slug tmpl
-  worker="$(jq -r --arg id "$atom_id" '.atomic_flows[] | select(.id == $id) | .execution.worker_template // ""' "$catalog_file" 2>/dev/null || true)"
-  if [[ -n "$worker" && "$worker" != "null" ]]; then
-    tmpl="$(basename "$worker" .md)"
-    printf '%s' "$tmpl"
-    return 0
-  fi
-  slug="$(jq -r --arg id "$atom_id" '.atomic_flows[] | select(.id == $id) | .slug // ""' "$catalog_file" 2>/dev/null || true)"
-  [[ -n "$slug" && "$slug" != "null" ]] || return 1
-  printf '%s' "$slug"
-}
-
-# Best-effort skill token for a catalog atom (queue token, migration map, or slug-derived).
-sb_scheduler_skill_for_atom() {
-  local catalog_file="$1" atom_id="$2"
-  local token skill slug
-  token="$(sb_scheduler_resolve_atom_id "$catalog_file" "$atom_id" 2>/dev/null || true)"
-  [[ -n "$token" ]] || token="$atom_id"
-  if declare -f sb_orchestrator_flow_to_skill >/dev/null 2>&1; then
-    skill="$(sb_orchestrator_flow_to_skill "$token" 2>/dev/null || true)"
-    [[ -n "$skill" ]] && { printf '%s' "$skill"; return 0; }
-  fi
-  slug="$(jq -r --arg id "$atom_id" '.atomic_flows[] | select(.id == $id) | .slug // ""' "$catalog_file" 2>/dev/null || true)"
-  if [[ -n "$slug" && "$slug" != "null" ]]; then
-    printf 'silver-%s' "$(printf '%s' "$slug" | tr '[:upper:]' '[:lower:]')"
-    return 0
-  fi
-  printf '%s' "$token"
-}
-
 # Build JSON handoff array for a batch of atom ids.
+#   sb_scheduler_build_handoffs_json CATALOG BATCH_JSON [QUEUE_TOKENS_JSON]
+# next_skill comes from the ONE queue-token -> skill mapping (sb_orchestrator_flow_to_skill),
+# applied to the flow_queue token the atom came from. Without tokens the first catalog
+# runtime-queue token for the atom is used, then the atom's slug (R4-06).
 sb_scheduler_build_handoffs_json() {
-  local catalog_file="$1" batch_json="$2"
+  local catalog_file="$1" batch_json="$2" tokens_json="${3:-[]}"
   [[ -n "$catalog_file" && -f "$catalog_file" ]] || return 1
   command -v python3 >/dev/null 2>&1 || return 1
-  python3 - "$catalog_file" "$batch_json" <<'PY'
+  command -v jq >/dev/null 2>&1 || return 1
+  local rows
+  rows="$(python3 - "$catalog_file" "$batch_json" "$tokens_json" <<'PY'
 import json
 import pathlib
-import re
 import sys
 
 catalog = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
 atoms = json.loads(sys.argv[2])
+tokens = json.loads(sys.argv[3])
 atoms_by_id = {item["id"]: item for item in catalog.get("atomic_flows", [])}
 rt = catalog.get("migration_map", {}).get("runtime_queue_tokens", {})
 skill_map = catalog.get("migration_map", {}).get("skill_to_entity", {})
 
-def flow_to_skill(token: str) -> str:
-    if token.startswith("silver-"):
-        return token
-    if token in rt:
-        token = rt[token]
-    if token in skill_map:
-        token = skill_map[token]
-    flow = token.upper().replace("-", "-")
-    if token.startswith("FLOW-"):
-        slug = token[5:].lower().replace("-", "-")
-        return f"silver-{slug}"
-    if re.match(r"^[A-Z]+-", token):
-        return f"silver-{token.split('-', 1)[1].lower()}"
-    return f"silver-{token.lower()}"
-
-handoffs = []
-for atom_id in atoms:
+rows = []
+for index, atom_id in enumerate(atoms):
     flow = atoms_by_id.get(atom_id, {})
-    execution = flow.get("execution", {})
-    worker = execution.get("worker_template", "")
+    worker = flow.get("execution", {}).get("worker_template", "")
     tmpl = pathlib.Path(worker).stem if worker else flow.get("slug", atom_id)
-    token = atom_id
-    if atom_id in rt.values():
-        for k, v in rt.items():
-            if v == atom_id:
-                token = k
-                break
-    skill = flow_to_skill(token)
-    handoffs.append({
-        "atomic_flow_id": atom_id,
-        "next_skill": skill,
-        "next_worker_template": tmpl,
-        "dispatch_status": "pending",
-        "join_status": "pending",
-    })
-print(json.dumps(handoffs, separators=(",", ":")))
+    token = tokens[index] if index < len(tokens) else ""
+    if not token:
+        # No queue token (state written before batch_tokens existed): a real skill-style token
+        # the catalog maps to this atom (runtime queue tokens, then skill_to_entity), then a
+        # FLOW- alias, then the slug.
+        def pick(table, flow_alias):
+            return next((k for k, v in table.items() if v == atom_id and k.startswith("FLOW-") == flow_alias), "")
+        token = pick(rt, False) or pick(skill_map, False) or pick(rt, True)
+    if not token:
+        token = "silver-" + str(flow.get("slug", atom_id)).lower()
+    rows.append({"atomic_flow_id": atom_id, "queue_token": token, "next_worker_template": tmpl})
+print(json.dumps(rows, separators=(",", ":")))
 PY
+)" || return 1
+  local out="[]" atom token tmpl skill
+  while IFS=$'\037' read -r atom token tmpl; do
+    [[ -n "$atom" ]] || continue
+    skill="$(sb_orchestrator_flow_to_skill "$token")"
+    out="$(jq -c --arg a "$atom" --arg s "$skill" --arg t "$tmpl" \
+      '. + [{atomic_flow_id: $a, next_skill: $s, next_worker_template: $t, dispatch_status: "pending", join_status: "pending"}]' <<<"$out")"
+  done < <(jq -r '.[] | [.atomic_flow_id, .queue_token, .next_worker_template] | join("\u001f")' <<<"$rows")
+  printf '%s' "$out"
 }
 
 # Refresh .scheduler.batch_dispatch for the active batch index.
 sb_scheduler_refresh_active_batch_dispatch() {
+  sb_orchestrator_with_lock _sb_scheduler_refresh_active_batch_dispatch "$@"
+}
+
+_sb_scheduler_refresh_active_batch_dispatch() {
   local repo_root="${1:-}"
-  local catalog_file file batch_index batches_json handoffs_json mode status now updated parallel_ok
+  local catalog_file file batch_index batches_json tokens_json handoffs_json mode status now updated parallel_ok
   catalog_file="$(sb_scheduler_catalog_file "$repo_root" 2>/dev/null || true)"
   file="$(sb_orchestrator_state_file)"
   [[ -n "$catalog_file" && -f "$file" ]] || return 1
@@ -685,7 +656,8 @@ sb_scheduler_refresh_active_batch_dispatch() {
   batch_index="$(jq -r '.scheduler.active_batch_index // 0' "$file" 2>/dev/null || echo 0)"
   batches_json="$(jq -c --argjson idx "$batch_index" '.scheduler.batches[$idx] // []' "$file" 2>/dev/null || echo '[]')"
   [[ -n "$batches_json" && "$batches_json" != "[]" && "$batches_json" != "null" ]] || return 1
-  handoffs_json="$(sb_scheduler_build_handoffs_json "$catalog_file" "$batches_json" 2>/dev/null || echo '[]')"
+  tokens_json="$(jq -c --argjson idx "$batch_index" '.scheduler.batch_tokens[$idx] // []' "$file" 2>/dev/null || echo '[]')"
+  handoffs_json="$(sb_scheduler_build_handoffs_json "$catalog_file" "$batches_json" "$tokens_json" 2>/dev/null || echo '[]')"
   [[ -n "$handoffs_json" && "$handoffs_json" != "[]" ]] || return 1
   if sb_scheduler_host_supports_parallel_dispatch && [[ "$(jq 'length' <<<"$batches_json")" -gt 1 ]]; then
     mode="parallel"
@@ -756,7 +728,12 @@ sb_scheduler_write_batch_directive() {
 }
 
 # Mark a handoff dispatched when host spawns a worker (subagent-start).
+# Every orchestrator.json read-modify-write runs under sb_orchestrator_with_lock (R4-18).
 sb_scheduler_mark_handoff_dispatched() {
+  sb_orchestrator_with_lock _sb_scheduler_mark_handoff_dispatched "$@"
+}
+
+_sb_scheduler_mark_handoff_dispatched() {
   local atom_id="${1:-}" skill="${2:-}"
   [[ -n "$atom_id" || -n "$skill" ]] || return 1
   command -v jq >/dev/null 2>&1 || return 1
@@ -801,11 +778,23 @@ sb_scheduler_mark_handoff_dispatched() {
 }
 
 # Mark handoff joined after flow atom completes; advance batch when all joined.
+# Sets SB_SCHEDULER_JOIN_RESULT for the caller (read in the caller's shell, not a subshell):
+#   no-batch        no scheduler state to join against
+#   no-match        the completion matched no handoff that was still waiting
+#   batch-pending   a handoff joined and the batch still waits for others
+#   batch-complete  this join finished the batch (the next batch is already dispatched)
+# shellcheck disable=SC2034  # read by sb_orchestrator_advance_on_atom
+SB_SCHEDULER_JOIN_RESULT=""
 sb_scheduler_mark_handoff_joined() {
+  SB_SCHEDULER_JOIN_RESULT="no-batch"
+  sb_orchestrator_with_lock _sb_scheduler_mark_handoff_joined "$@"
+}
+
+_sb_scheduler_mark_handoff_joined() {
   local atom_id="${1:-}" skill="${2:-}"
   [[ -n "$atom_id" || -n "$skill" ]] || return 1
   command -v jq >/dev/null 2>&1 || return 1
-  local file now updated repo_root all_joined catalog_file
+  local file now updated repo_root catalog_file matched result
   file="$(sb_orchestrator_state_file)"
   [[ -f "$file" ]] || return 1
   now="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
@@ -816,26 +805,37 @@ sb_scheduler_mark_handoff_joined() {
       atom_id="$(sb_scheduler_resolve_atom_id "$catalog_file" "$skill" 2>/dev/null || true)"
     fi
   fi
-  updated="$(jq --arg atom "$atom_id" --arg skill "$skill" --arg now "$now" '
-    .scheduler = (.scheduler // {}) |
-    (.scheduler.batch_dispatch // empty) as $bd |
-    if ($bd | type) != "object" then . else
-      .scheduler.batch_dispatch.handoffs = [
-        $bd.handoffs[]?
-        | if (
-            ($atom != "" and .atomic_flow_id == $atom)
-            or ($skill != "" and .next_skill == $skill)
-            or ($skill != "" and ((.next_skill // "") | gsub("^sb:"; "silver-")) == ($skill | gsub("^sb:"; "silver-")))
-          )
-          then . + {dispatch_status: "joined", join_status: "joined", joined_at: $now}
-          else .
-          end
-      ] |
-      .scheduler.batch_dispatch.updated_at = $now |
-      .scheduler.updated_at = $now
-    end
-  ' "$file" 2>/dev/null || true)"
-  [[ -n "$updated" ]] || return 1
+  # shellcheck disable=SC2016  # a jq program: its $variables are jq's, not the shell's
+  local join_filter='
+    def hit: (
+        ($atom != "" and .atomic_flow_id == $atom)
+        or ($skill != "" and .next_skill == $skill)
+        or ($skill != "" and ((.next_skill // "") | gsub("^sb:"; "silver-")) == ($skill | gsub("^sb:"; "silver-")))
+      );
+    (.scheduler.batch_dispatch // null) as $bd
+    | (if ($bd | type) == "object" then [$bd.handoffs[]? | select(hit and .join_status != "joined")] | length else 0 end) as $n
+    | {matched: $n, doc: (
+        .scheduler = (.scheduler // {}) |
+        if ($bd | type) != "object" then . else
+          .scheduler.batch_dispatch.handoffs = [
+            $bd.handoffs[]?
+            | if (hit and .join_status != "joined")
+              then . + {dispatch_status: "joined", join_status: "joined", joined_at: $now}
+              else .
+              end
+          ] |
+          .scheduler.batch_dispatch.updated_at = $now |
+          .scheduler.updated_at = $now
+        end)}
+  '
+  result="$(jq -c --arg atom "$atom_id" --arg skill "$skill" --arg now "$now" "$join_filter" "$file" 2>/dev/null || true)"
+  [[ -n "$result" ]] || return 1
+  updated="$(jq -c .doc <<<"$result")"
+  matched="$(jq -r .matched <<<"$result")"
+  if [[ "$matched" -eq 0 ]]; then
+    SB_SCHEDULER_JOIN_RESULT="no-match"
+    return 0
+  fi
   sb_orchestrator_write_json "$updated"
   if declare -f sb_orchestrator_event_record_join >/dev/null 2>&1; then
     sb_orchestrator_event_record_join "$atom_id" "$skill" "joined" 2>/dev/null || true
@@ -848,14 +848,20 @@ sb_scheduler_mark_handoff_joined() {
     all_joined=true
   fi
   if [[ "$all_joined" == true ]]; then
+    SB_SCHEDULER_JOIN_RESULT="batch-complete"
     sb_scheduler_complete_active_batch "$repo_root" 2>/dev/null || true
   else
+    SB_SCHEDULER_JOIN_RESULT="batch-pending"
     sb_scheduler_write_batch_directive "$repo_root" 2>/dev/null || true
   fi
 }
 
 # Active batch fully joined — advance to next batch or clear dispatch state.
 sb_scheduler_complete_active_batch() {
+  sb_orchestrator_with_lock _sb_scheduler_complete_active_batch "$@"
+}
+
+_sb_scheduler_complete_active_batch() {
   local repo_root="${1:-}"
   local file now updated batch_count next_idx
   file="$(sb_orchestrator_state_file)"

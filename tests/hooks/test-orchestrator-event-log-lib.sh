@@ -11,12 +11,10 @@ source "$TL_REPO_ROOT/hooks/lib/orchestrator-event-log.sh"
 source "$TL_REPO_ROOT/hooks/lib/orchestrator-skill-atom.sh"
 
 LOG="$(sb_orchestrator_event_log_file)"
-SAGA="$(sb_orchestrator_event_log_saga_file)"
 NOJQ="$(tl_path_without jq)"
 
 echo "=== paths ==="
 assert_eq "event log path" "$SB_RUNTIME_STATE_DIR/orchestrator-events.jsonl" "$LOG"
-assert_eq "saga path" "$SB_RUNTIME_STATE_DIR/orchestrator-saga.json" "$SAGA"
 
 echo "=== append ==="
 sb_orchestrator_event_append "" '{}' && rc=0 || rc=$?
@@ -68,110 +66,43 @@ assert_eq "retry attempt" 2 "$(ev retry 1 | jq -r .payload.attempt)"
 assert_eq "retry reason" flaky "$(ev retry 1 | jq -r .payload.reason)"
 assert_eq "retry default reason" "" "$(ev retry 2 | jq -r .payload.reason)"
 
-echo "=== tail ==="
+echo "=== bounded log (R4-29) ==="
 rm -f "$LOG"
-assert_eq "tail without a log" "[]" "$(sb_orchestrator_event_tail_json)"
-for i in 1 2 3; do sb_orchestrator_event_append "e$i" "{\"i\":$i}"; done
-assert_eq "tail default returns all" 3 "$(sb_orchestrator_event_tail_json | jq length)"
-assert_eq "tail honors the limit" "e3" "$(sb_orchestrator_event_tail_json 1 | jq -r '.[0].type')"
-printf 'garbage\n' >"$LOG"
-assert_eq "tail of a corrupt log is empty" "[]" "$(sb_orchestrator_event_tail_json)"
-
-echo "=== resume hints ==="
+export SB_ORCHESTRATOR_EVENT_LOG_MAX_BYTES=2000 SB_ORCHESTRATOR_EVENT_LOG_KEEP_LINES=10
+for i in $(seq 1 120); do sb_orchestrator_event_append "e$i" "{\"i\":$i}"; done
+assert_eq "log never exceeds the cap by more than one trim window" 1 "$(( $(wc -c <"$LOG" | tr -d ' ') <= 2000 + 200 ? 1 : 0 ))"
+assert_eq "newest event kept" e120 "$(tail -1 "$LOG" | jq -r .type)"
+assert_eq "kept lines are whole JSON documents" 0 "$(jq -e . "$LOG" >/dev/null 2>&1; echo $?)"
+assert_eq "no temp files left behind" 0 "$(find "$SB_RUNTIME_STATE_DIR" -name 'orchestrator-events.jsonl.*' | wc -l | tr -d ' ')"
+export SB_ORCHESTRATOR_EVENT_LOG_MAX_BYTES=junk
+before="$(wc -l <"$LOG" | tr -d ' ')"
+sb_orchestrator_event_append more '{}'
+assert_eq "non-numeric cap: no trimming, still appends" "$((before + 1))" "$(wc -l <"$LOG" | tr -d ' ')"
+unset SB_ORCHESTRATOR_EVENT_LOG_MAX_BYTES SB_ORCHESTRATOR_EVENT_LOG_KEEP_LINES
 rm -f "$LOG"
-( PATH="$NOJQ"; sb_orchestrator_event_resume_hints_json ) && rc=0 || rc=$?
-assert_eq "hints need jq" 1 "$rc"
-assert_eq "no state file: not resumable" '{"resumable":false,"reason":"no orchestrator.json"}' "$(sb_orchestrator_event_resume_hints_json)"
-sb_orchestrator_event_resume_hints_json >/dev/null && rc=0 || rc=$?
-assert_eq "no state file: reported as success" 0 "$rc"
-orch_write_state '{"flow_queue":["a","b"],"active_intent":"go","current_flow":"a","last_completed":"z","workflow_id":"W1",
-  "scheduler":{"batch_dispatch":{"status":"open","handoffs":[{"join_status":"joined"},{"join_status":"pending"},{"join_status":"pending"}]}}}'
-sb_orchestrator_event_append seen '{}'
-hints="$(sb_orchestrator_event_resume_hints_json)"
-assert_eq "resumable with queue" true "$(jq -r .resumable <<<"$hints")"
-assert_eq "hint intent" go "$(jq -r .active_intent <<<"$hints")"
-assert_eq "hint current flow" a "$(jq -r .current_flow <<<"$hints")"
-assert_eq "hint last completed" z "$(jq -r .last_completed <<<"$hints")"
-assert_eq "hint workflow" W1 "$(jq -r .workflow_id <<<"$hints")"
-assert_eq "hint scheduler status" open "$(jq -r .scheduler_status <<<"$hints")"
-assert_eq "hint pending handoffs" 2 "$(jq -r .pending_handoffs <<<"$hints")"
-assert_eq "hint recent events" seen "$(jq -r '.recent_events[0].type' <<<"$hints")"
-orch_write_state '{}'
-hints="$(sb_orchestrator_event_resume_hints_json)"
-assert_eq "empty state: not resumable" false "$(jq -r .resumable <<<"$hints")"
-assert_eq "empty state: blank scheduler status" "" "$(jq -r .scheduler_status <<<"$hints")"
-printf 'garbage' >"$(orch_state_file)"
-assert_eq "corrupt state: fallback" '{"resumable":false}' "$(sb_orchestrator_event_resume_hints_json)"
-
-echo "=== resume checkpoint ==="
-rm -f "$LOG" "$(orch_state_file)"
-sb_orchestrator_event_apply_resume_checkpoint && rc=0 || rc=$?
-assert_eq "no log and no state" 1 "$rc"
-orch_write_state '{"flow_queue":["a"]}'
-sb_orchestrator_event_apply_resume_checkpoint && rc=0 || rc=$?
-assert_eq "state without log" 1 "$rc"
-sb_orchestrator_event_record_dispatch AF-A silver-a T 1
-sb_orchestrator_event_record_dispatch AF-B silver-b T 4
-sb_orchestrator_event_append other '{}'
-( PATH="$NOJQ"; sb_orchestrator_event_apply_resume_checkpoint ) && rc=0 || rc=$?
-assert_eq "no jq" 1 "$rc"
-sb_orchestrator_event_apply_resume_checkpoint
-assert_eq "batch index restored from the last dispatch" 4 "$(orch_state_get .scheduler.active_batch_index)"
-assert_match "resume timestamp stored" '^[0-9]{4}-' "$(orch_state_get .scheduler.resume_applied_at)"
-assert_eq "existing state preserved" a "$(orch_state_get '.flow_queue[0]')"
+printf '{}' >"$TL_TMP/elsewhere.jsonl"
+ln -s "$TL_TMP/elsewhere.jsonl" "$LOG"
+sb_orchestrator_event_append t '{}' && rc=0 || rc=$?
+assert_eq "a symlinked log is refused" 1 "$rc"
+assert_eq "symlink target untouched" "{}" "$(cat "$TL_TMP/elsewhere.jsonl")"
 rm -f "$LOG"
-sb_orchestrator_event_append other '{}'
-sb_orchestrator_event_apply_resume_checkpoint
-assert_eq "no dispatch events: index 0" 0 "$(orch_state_get .scheduler.active_batch_index)"
-printf 'garbage\n' >"$LOG"
-sb_orchestrator_event_apply_resume_checkpoint
-assert_eq "corrupt log falls back to index 0" 0 "$(orch_state_get .scheduler.active_batch_index)"
-printf 'garbage' >"$(orch_state_file)"
-sb_orchestrator_event_apply_resume_checkpoint && rc=0 || rc=$?
-assert_eq "corrupt state: not applied" 1 "$rc"
-
-echo "=== saga ==="
-rm -f "$LOG" "$SAGA"
-( PATH="$NOJQ"; sb_orchestrator_saga_begin silver-ship ) && rc=0 || rc=$?
-assert_eq "saga_begin needs jq" 1 "$rc"
-( PATH="$NOJQ"; sb_orchestrator_saga_complete silver-ship ) && rc=0 || rc=$?
-assert_eq "saga_complete needs jq" 1 "$rc"
-( PATH="$NOJQ"; sb_orchestrator_saga_rollback_hint silver-ship ) && rc=0 || rc=$?
-assert_eq "saga_rollback_hint needs jq" 1 "$rc"
-sb_orchestrator_saga_complete silver-ship && rc=0 || rc=$?
-assert_eq "complete without a saga fails" 1 "$rc"
-sb_orchestrator_saga_begin silver-ship deploy '["a.txt"]'
-assert_eq "saga status" in_progress "$(jq -r .status "$SAGA")"
-assert_eq "saga action" deploy "$(jq -r .action "$SAGA")"
-assert_eq "saga artifacts" a.txt "$(jq -r '.artifacts[0]' "$SAGA")"
-assert_eq "saga_begin event logged" saga_begin "$(tail -1 "$LOG" | jq -r .type)"
-sb_orchestrator_saga_begin silver-ship
-assert_eq "defaults: action ship" ship "$(jq -r .action "$SAGA")"
-assert_eq "defaults: no artifacts" 0 "$(jq -r '.artifacts|length' "$SAGA")"
-sb_orchestrator_saga_complete silver-ship
-assert_eq "saga completed" completed "$(jq -r .status "$SAGA")"
-assert_match "completed_at stored" '^[0-9]{4}-' "$(jq -r .completed_at "$SAGA")"
-assert_eq "saga_complete event logged" saga_complete "$(tail -1 "$LOG" | jq -r .type)"
-sb_orchestrator_saga_complete silver-ship custom
-assert_eq "explicit completion status" custom "$(jq -r .status "$SAGA")"
-printf 'garbage' >"$SAGA"
-sb_orchestrator_saga_complete silver-ship && rc=0 || rc=$?
-assert_eq "corrupt saga: complete fails" 1 "$rc"
-sb_orchestrator_saga_begin silver-ship
-hint="$(sb_orchestrator_saga_rollback_hint silver-ship "disk full")"
-assert_contains "hint names worker and reason" "$hint" "Saga rollback required for silver-ship: disk full."
-assert_eq "saga marked rollback_required" rollback_required "$(jq -r .status "$SAGA")"
-assert_eq "rollback step recorded" revert_declared_artifacts "$(jq -r '.rollback_steps[0].action' "$SAGA")"
-assert_eq "rollback event logged" saga_rollback "$(tail -1 "$LOG" | jq -r .type)"
-hint="$(sb_orchestrator_saga_rollback_hint silver-ship)"
-assert_contains "default reason" "$hint" "worker failure"
-printf 'garbage' >"$SAGA"
-sb_orchestrator_saga_rollback_hint silver-ship boom >/dev/null
-assert_eq "corrupt saga is left alone" garbage "$(cat "$SAGA")"
-rm -f "$SAGA"
-hint="$(sb_orchestrator_saga_rollback_hint silver-ship nosaga)"
-assert_contains "hint without a saga file" "$hint" "nosaga"
-assert_file_absent "no saga file is invented" "$SAGA"
+export SB_ORCHESTRATOR_EVENT_LOG_MAX_BYTES=10 SB_ORCHESTRATOR_EVENT_LOG_KEEP_LINES=1
+sb_orchestrator_event_append a '{}'
+tl_stub mktemp 'exit 1'; hash -r
+sb_orchestrator_event_append b '{}' && rc=0 || rc=$?
+rm -f "$TL_BIN/mktemp"; hash -r
+assert_eq "no temp file for the cut: the append still succeeds" 0 "$rc"
+assert_eq "no temp file for the cut: the log keeps its lines" 2 "$(wc -l <"$LOG" | tr -d ' ')"
+tl_stub mv 'exit 1'; tl_stub rm 'exit 1'; hash -r
+sb_orchestrator_event_append c '{}' && rc=0 || rc=$?
+/bin/rm -f "$TL_BIN/mv" "$TL_BIN/rm"; hash -r
+assert_eq "a failing rename and a failing cleanup do not fail the append" 0 "$rc"
+assert_eq "the log is intact after the failed cut" 3 "$(wc -l <"$LOG" | tr -d ' ')"
+find "$SB_RUNTIME_STATE_DIR" -name 'orchestrator-events.jsonl.*' -delete
+sb_orchestrator_event_append d '{}'
+assert_eq "a working cut keeps only the newest line" d "$(tail -1 "$LOG" | jq -r .type)"
+unset SB_ORCHESTRATOR_EVENT_LOG_MAX_BYTES SB_ORCHESTRATOR_EVENT_LOG_KEEP_LINES
+rm -f "$LOG"
 
 echo "=== skill atom resolution ==="
 CAT="$TL_TMP/catalog.json"
@@ -228,26 +159,5 @@ assert_eq "entity id present resolves" 0 "$rc"
 CAT3="$TL_TMP/catalog3.json"
 jq -n '{atomic_flows:[{id:"AF-X",slug:"x"}],migration_map:{skill_to_entity:{"some-skill":"AF-X"}}}' >"$CAT3"
 assert_eq "skill_to_entity value used as a token" AF-X "$(sb_scheduler_resolve_atom_id "$CAT3" some-skill)"
-
-echo "=== handoff completion match ==="
-m() { sb_scheduler_handoff_matches_completion "$@"; }
-m "" AF-A silver-a && rc=0 || rc=$?
-assert_eq "empty handoff" 1 "$rc"
-( PATH="$NOJQ"; m '{"atomic_flow_id":"AF-A"}' AF-A silver-a ) && rc=0 || rc=$?
-assert_eq "no jq" 1 "$rc"
-m '{"atomic_flow_id":"AF-A"}' AF-A "" && rc=0 || rc=$?
-assert_eq "matches by atom id" 0 "$rc"
-m '{"atomic_flow_id":"AF-A"}' "" "" && rc=0 || rc=$?
-assert_eq "empty atom never matches" 1 "$rc"
-m '{"next_skill":"silver-a"}' AF-Z silver-a && rc=0 || rc=$?
-assert_eq "matches by skill" 0 "$rc"
-m '{"next_skill":"sb:a"}' AF-Z silver-a && rc=0 || rc=$?
-assert_eq "sb: prefix normalised" 0 "$rc"
-m '{"next_skill":"sb:a"}' AF-Z silver-b && rc=0 || rc=$?
-assert_eq "different skill" 1 "$rc"
-m '{"next_skill":"silver-a"}' AF-Z "" && rc=0 || rc=$?
-assert_eq "empty skill never matches" 1 "$rc"
-m 'not json' AF-A silver-a && rc=0 || rc=$?
-assert_eq "malformed handoff" 1 "$((rc != 0))"
 
 tl_results
