@@ -14,6 +14,7 @@ sb_instruction_ledger_file() {
   [[ -n "${SB_RUNTIME_STATE_DIR:-}" ]] || return 1
   if [[ -z "${SB_SESSION_KEY:-}" && ! -f "$SB_RUNTIME_STATE_DIR/instruction-ledger.json" ]]; then
     # No session key (the resolver CLI): the most recent per-session ledger.
+    # shellcheck disable=SC2012  # file names here are our own [A-Za-z0-9_-] session keys
     newest="$(ls -t "$SB_RUNTIME_STATE_DIR"/instruction-ledger-*.json 2>/dev/null | head -1)"
     if [[ -n "$newest" ]]; then
       printf '%s' "$newest"

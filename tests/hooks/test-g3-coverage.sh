@@ -127,4 +127,26 @@ ln -s /dev/null "$SD/orchestrator-override-log.jsonl"
 assert_eq "mirror: a symlinked mirror is left alone" 0 "$(rc sb_orchestrator_mirror_override x)"
 rm -f "$SD/orchestrator-override-log.jsonl"
 
+# ---- shasum fallbacks of the prompt/fingerprint/core-rules hashes (R2-23: sha256sum is tried first) -------------
+for fn_lib in "outcomes-gate.sh:sb_outcomes_prompt_id" "instruction-ledger.sh:sb_instruction_ledger_prompt_id" "ups-coalesce.sh:sb_ups_coalesce_fingerprint"; do
+  want_id="$(bash -c 'source "$1"; "$2" hello' _ "$TL_REPO_ROOT/hooks/lib/${fn_lib%%:*}" "${fn_lib##*:}")"
+  got_id="$(PATH="$NOSHA256" bash -c 'source "$1"; "$2" hello' _ "$TL_REPO_ROOT/hooks/lib/${fn_lib%%:*}" "${fn_lib##*:}")"
+  assert_eq "shasum fallback: ${fn_lib##*:}" "$want_id" "$got_id"
+done
+source "$TL_REPO_ROOT/hooks/lib/core-rules-integrity.sh"
+printf 'rules' >"$TL_TMP/rules.md"
+assert_eq "core rules hash: shasum fallback" "$(sb_core_rules_compute_hash "$TL_TMP/rules.md")" "$(PATH="$NOSHA256" sb_core_rules_compute_hash "$TL_TMP/rules.md")"
+assert_eq "core rules hash: no tool" 1 "$(PATH="$NOSHA3" rc sb_core_rules_compute_hash "$TL_TMP/rules.md")"
+
+# ---- a deleted checklist with an unwritable tamper log is still restored -------------------------------------
+OF="$(sb_outcomes_session_file)"
+rm -f "$OF"; printf 'seal' >"$OF.sha256"
+mkdir "$SD/outcomes-tamper.log"
+sb_outcomes_reject_tampered
+assert_eq "deleted checklist restored although the tamper log is unwritable" pending "$(jq -r '.outcomes[0].status' "$OF")"
+rmdir "$SD/outcomes-tamper.log"; rm -f "$OF" "$OF.sha256"
+
+# ---- required-skills cache: an unknown list name ------------------------------------------------------------
+assert_eq "required-skills: unknown list" 1 "$(bash -c 'source "$1"; __sb_rs_load bogus >/dev/null 2>&1; echo $?' _ "$TL_REPO_ROOT/hooks/lib/required-skills.sh")"
+
 tl_results
