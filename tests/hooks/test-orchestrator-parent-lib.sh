@@ -367,6 +367,7 @@ assert_eq "PATH prefix on the adapter" no "$(b "PATH=$TL_TMP silver-bullet invok
 assert_eq "env PATH= on the adapter" no "$(b "env PATH=$TL_TMP silver-bullet invoke-skill silver")"
 assert_eq "env -i on the adapter" no "$(b "env -i silver-bullet invoke-skill silver")"
 assert_eq "BASH_ENV prefix on the ledger CLI" no "$(b "BASH_ENV=$TL_TMP/evil-rc scripts/resolve-instruction-ledger.sh list")"
+assert_eq "env behind time (prefix the classifier does not unwrap)" no "$(b "time env PATH=$TL_TMP silver-bullet invoke-skill silver")"
 assert_eq "prefix inside a bash -c payload" no "$(b "bash -c 'BASH_ENV=$TL_TMP/evil-rc silver-bullet invoke-skill silver'")"
 assert_eq "prefix inside a nested bash -c payload" no "$(b "bash -c \"sh -c 'PATH=$TL_TMP silver-bullet invoke-skill silver'\"")"
 assert_eq "delegate under the fallback with a prefix" no "$(SB_AGENT_DELEGATE_DIRECT_FALLBACK=1 b "LD_PRELOAD=$TL_TMP/x scripts/agent-codex-delegate.sh")"
