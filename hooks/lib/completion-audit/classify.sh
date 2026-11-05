@@ -223,7 +223,7 @@ _ca_branch_is_feature() {
 # cannot resolve). Anything else is final delivery (R1-22). Uses SB_SA_JSON (the shell analysis) and git:
 # `git -C DIR` and `cd DIR` targets are resolved to the repository they name.
 ca_push_is_feature_only() {
-  local json="${SB_SA_JSON:-}" sub bad cwd dirs d dir="" npush nsub entry names cur ref src dst
+  local json="${SB_SA_JSON:-}" sub bad cwd dirs d dir="" npush nsub entry names cur ref src dst parts
   [[ "${SB_TI_STATUS:-}" == "ok" && "${SB_SA_OPAQUE:-false}" != "true" && -z "${SB_SA_POSSIBLE_ACTIONS:-}" ]] || return 1
   # environment that redirects git is not visible in argv: refuse the literal assignments
   case "${cmd:-}${SB_TI_COMMAND:-}" in
@@ -237,13 +237,13 @@ ca_push_is_feature_only() {
     [[ "$bad" == "false" ]] || return 1
     nsub=$((nsub + 1))
     d="$cwd"
-    while IFS= read -r entry; do
-      [[ -n "$entry" ]] || continue
+    IFS=$'\037' read -r -a parts <<<"$dirs"
+    for entry in ${parts[@]+"${parts[@]}"}; do
       case "$entry" in
         /*) d="$entry" ;;
         *) d="$d/$entry" ;;
       esac
-    done < <(printf '%s\n' "$dirs" | tr '\037' '\n')
+    done
     d="$(cd "$d" 2>/dev/null && pwd -P)" || return 1
     git -C "$d" rev-parse --git-dir >/dev/null 2>&1 || return 1
     [[ -z "$dir" || "$dir" == "$d" ]] || return 1
