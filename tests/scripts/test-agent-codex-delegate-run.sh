@@ -242,6 +242,24 @@ assert_eq "failing escalated retry exits 1" 1 "$TL_STATUS"
 assert_eq "exactly one retry" 2 "$(<"$CFG/count")"
 ENVX=()
 
+# ---- the stale-home sweep failing (find error) is tolerated
+reset
+printf '#!/usr/bin/env bash\nfor a in "$@"; do [[ "$a" == agent-codex-codex-home-* ]] && exit 1; done\nexec "%s" "$@"\n' "$(command -v find)" >"$TL_BIN/find"
+chmod +x "$TL_BIN/find"
+delegate --work-dir "$WORK" --prompt p --sb-root "$SB"
+assert_eq "failing stale-home sweep tolerated" 0 "$TL_STATUS"
+rm -f "$TL_BIN/find"
+# a stale lightweight home from an earlier killed run is swept on start (R4-31)
+reset
+STALE="$TL_TMP/tmp/agent-codex-codex-home-stale1"
+mkdir -p "$TL_TMP/tmp" "$STALE"; touch -d '3 hours ago' "$STALE"
+FRESH="$TL_TMP/tmp/agent-codex-codex-home-fresh1"; mkdir -p "$FRESH"
+ENVX=(TMPDIR="$TL_TMP/tmp")
+delegate --work-dir "$WORK" --prompt p --sb-root "$SB"
+ENVX=()
+assert_file_absent "stale lightweight CODEX_HOME removed" "$STALE"
+assert_file_exists "recent lightweight CODEX_HOME kept" "$FRESH"
+
 # ---- the temporary CODEX_HOME cannot be removed: tolerated
 reset
 REAL_RM="$(command -v rm)"

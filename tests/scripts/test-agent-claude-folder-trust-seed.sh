@@ -75,6 +75,12 @@ rm -f "$HOME/.claude.json" "$HOME/.claude.json.sb-backup"
 SB_AGENT_CLAUDE_SEED_FOLDER_TRUST_GLOBAL=1 agent_claude_seed_folder_trust "$WORK" "$CLAUDE_CONFIG_DIR" 2>/dev/null
 trusted "$HOME/.claude.json" && ok "opt-in creates missing global" || bad "opt-in creates missing global"
 
+# 5b. a corrupt ephemeral file is reported but never fatal
+mkdir -p "$CLAUDE_CONFIG_DIR"; printf '{oops' >"$CLAUDE_CONFIG_DIR/.claude.json"
+rc=0; agent_claude_seed_folder_trust "$WORK" "$CLAUDE_CONFIG_DIR" 2>/dev/null || rc=$?
+[[ "$rc" -eq 0 ]] && ok "corrupt ephemeral file is not fatal" || bad "corrupt ephemeral file is not fatal"
+[[ "$(cat "$CLAUDE_CONFIG_DIR/.claude.json")" == '{oops' ]] && ok "corrupt ephemeral file untouched" || bad "corrupt ephemeral file untouched"
+
 # 6. seeding disabled entirely
 rm -rf "$CLAUDE_CONFIG_DIR"
 SB_AGENT_CLAUDE_SEED_FOLDER_TRUST=0 agent_claude_seed_folder_trust "$WORK" "$CLAUDE_CONFIG_DIR" 2>/dev/null
