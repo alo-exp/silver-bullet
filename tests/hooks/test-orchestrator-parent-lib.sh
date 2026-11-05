@@ -3,7 +3,7 @@
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/b-orchestrator-helpers.sh"
-tl_init
+tl_init claude
 export SILVER_BULLET_RUNTIME=claude
 export SB_RUNTIME_PRESERVE_STATE_DIR=1
 unset SB_ORCHESTRATOR_WORKER SB_ORCHESTRATOR_PARENT SB_ORCHESTRATOR_WORKER_MARKER_TTL_SECONDS SILVER_BULLET_PROJECT_ROOT SB_AGENT_DELEGATE_DIRECT_FALLBACK

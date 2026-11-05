@@ -105,7 +105,7 @@ dg_assert_ok "preflight: non-edit tool ignored: exits 0"
 dg_run "$TL_TMP/outside" "$H" "$(edit_json Edit site/a.html x)" SB_ORCHESTRATOR_PARENT=0
 assert_eq "preflight: outside project inert" "" "$TL_OUT"
 dg_assert_ok "preflight: outside project inert: exits 0"
-dg_run "$P/sub" "$H" "$(edit_json Edit site/a.html x)"
+dg_run "$P/sub" "$H" "$(edit_json Edit site/a.html x)" SB_ORCHESTRATOR_PARENT=1
 assert_eq "preflight: parent orchestrator session skipped" "" "$TL_OUT"
 dg_assert_ok "preflight: parent orchestrator session skipped: exits 0"
 dg_run "$P/sub" "$H" "$(edit_json Edit site/a.html x)" SB_ORCHESTRATOR_PARENT=0

@@ -2,7 +2,7 @@
 # hooks/stop-check.sh: orchestrator, stall, branch-scope, anchor and fallback paths.
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
-tl_init
+tl_init claude
 export SILVER_BULLET_RUNTIME=claude
 source "$TL_REPO_ROOT/tests/lib/e-core-helpers.sh"
 

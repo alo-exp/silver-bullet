@@ -128,7 +128,7 @@ teardown() {
 run_hook() {
   local input='{"hook_event_name":"Stop"}'
   # Use subshell to set PWD to temp project dir (hook walks up from PWD)
-  ( cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "$HOOK" 2>/dev/null )
+  ( cd "$TMPDIR_TEST" && printf '%s' "$input" | SB_ORCHESTRATOR_PARENT=1 bash "$HOOK" 2>/dev/null )
 }
 
 is_blocked() {

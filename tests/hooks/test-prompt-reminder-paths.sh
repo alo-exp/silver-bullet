@@ -110,8 +110,11 @@ reset
 SILVER_BULLET_RUNTIME=claude run_pr "please fix the failing login test"
 assert_contains "claude host: Skill tool routing" "$(ctx)" 'invoke the Skill tool with skill "sb" (Claude/Cursor)'
 reset
+SILVER_BULLET_RUNTIME=codex SB_ORCHESTRATOR_PARENT=1 run_pr "please fix the failing login test"
+assert_contains "codex parent (forced): prefers the Skill tool" "$(ctx)" "(parent mode)"
+reset
 SILVER_BULLET_RUNTIME=codex run_pr "please fix the failing login test"
-assert_contains "codex parent: prefers the Skill tool" "$(ctx)" "(parent mode)"
+assert_not_contains "codex without worker identity: no parent-mode wording" "$(ctx)" "(parent mode)"
 reset
 SB_ORCHESTRATOR_WORKER=1 SILVER_BULLET_RUNTIME=codex run_pr "please fix the user's login test"
 assert_contains "codex worker: adapter invocation" "$(ctx)" "invoke-skill sb"
