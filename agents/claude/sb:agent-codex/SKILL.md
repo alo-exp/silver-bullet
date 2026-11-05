@@ -121,7 +121,7 @@ Set explicitly — **fixture vs real project**:
 | Variable | Real product project | SB fixture / live-test |
 |----------|---------------------|-------------------------|
 | `CODEX_WORK_DIR` | Target repo root (e.g. `enterprise-grade-test-app`) | Fixture clone path |
-| `SB_ROOT` | SB install path (for harness scripts) | SB repo checkout |
+| `SB_ROOT` | Plugin root (default: the installed plugin; the host adapter ships in `scripts/lib/agent-adapters/`, no SB clone needed) | SB repo checkout |
 | `SB_AGENT_CODEX_FIXTURE` | `0` (default) | `1` — enables live-test guard patterns |
 | `SB_AGENT_CODEX_LIGHTWEIGHT` | `1` (delegate default) | `0` — keep full MCP boot + orchestrator context in Codex child |
 | `SB_AGENT_CODEX_SKIP_MCP` | `1` when lightweight | `0` — do not strip `[mcp_servers.*]` from ephemeral `CODEX_HOME` |
@@ -140,8 +140,8 @@ Set explicitly — **fixture vs real project**:
 | `CODEX_INTERACTIVE_IDLE_TIMEOUT` | 1800 (harness); **3600** via delegate | Idle watchdog |
 | `AGENT_CODEX_QUOTA_RETRY_INTERVAL` | 60 | 429 / quota backoff |
 | `AGENT_CODEX_QUOTA_RETRY_MAX` | 5 | Max quota retries |
-| `CODEX_AUTO_TRUST_HOOKS` | 1 | Auto-accept hook trust when isolated |
-| `CODEX_BYPASS_HOOK_TRUST` | 1 | Bypass hook trust prompt when pre-seeded |
+| `CODEX_AUTO_TRUST_HOOKS` | 0 | Opt-in only: auto-accept hook trust (isolated test homes) |
+| `CODEX_BYPASS_HOOK_TRUST` | 0 | Opt-in only: bypass the hook trust prompt (permissive mode; never in strict) |
 | `RTK_DISABLED` | 1 | Set during delegate.sh for readable ops logs |
 | `SB_ORCHESTRATOR_WORKER` | 1 (lightweight) | Codex child executes directly — hooks must not spawn parent Task workers |
 | `SB_ORCHESTRATOR_PARENT` | 0 (lightweight) | Paired with worker flag for exec/PTY subprocess |
@@ -224,7 +224,7 @@ Sidekick-inspired **single-task** lifecycle:
 | Class | Signals | Parent action |
 |-------|---------|---------------|
 | **Stuck** | Idle timeout, no post-submit output, repeated spinner | Re-brief with narrower scope; reduce acceptance criteria; retry once |
-| **Quota (429)** | `rate limit`, `429`, `token plan` in log | delegate.sh retries automatically; if exhausted, schedule resume after `AGENT_CODEX_QUOTA_RETRY_INTERVAL` |
+| **Quota (429)** | provider error text only (HTTP status 429, `rate_limit_error`, "quota exceeded"-style sentences); a bare `429` or `quota` in test output or file names is not one | delegate re-runs only if the work dir is unchanged since the attempt (git) or `--quota-retry` was passed; 5-hour/weekly windows are never short-retried; if exhausted, schedule resume |
 | **Auth** | `auth`, `login`, `api key` errors | Stop — user must refresh Codex credentials; do not rotate keys in prompt |
 | **Hook trust** | `hooks need review`, trust prompt surfaced | Run `bash scripts/install-codex.sh --hook-trust-seed-only` from `SB_ROOT`; retry |
 | **Harness** | `ERROR:` from `codex-interactive-invoke.py` | Fix SB harness; file issue if reproducible |
@@ -241,7 +241,7 @@ Escalate to user when: auth required, two stuck retries fail, or acceptance crit
 | **E2E-081 submit order** | Enter-wake for 0-token banner must not starve `$sb:*` route submit — harness sends wake then paste; parent verifies `prompt submitted` in log before checkpoint 2 |
 | **Stale locks** | Do not reuse `.e2e-live-test*.lock` from matrix; delegation clears matrix env; use per-task log under `.planning/agent-codex/` only |
 | **SB-only plugins** | `preflight.sh` validates Codex install surface; child uses SB marketplace package — no third-party skill pollution in ephemeral `CODEX_HOME` |
-| **Hook preflight** | `install-codex.sh --hook-trust-seed-only` before invoke; `CODEX_BYPASS_HOOK_TRUST=1` when pre-seeded |
+| **Hook preflight** | `install-codex.sh --hook-trust-seed-only` before invoke; `CODEX_BYPASS_HOOK_TRUST=1` only as an explicit opt-in |
 | **No false completion on 0-token** | PASS requires log floor + product evidence; monitor warns below floor; outcome FAIL if delegate exit 0 but acceptance unmet |
 | **Channel timeline** | Parent runs `monitor.sh` bullets between checkpoints — not matrix batch PID polling |
 
@@ -275,9 +275,10 @@ Honest outcomes: do not claim PASS on timeout-only logs, inherited baseline arti
 
 | Risk | Mitigation |
 |------|------------|
-| **Secrets in brief/log** | `agent-delegate-common.sh` rejects briefs with `api_key`/`sk-` patterns; logs redacted before persist |
+| **Secrets in brief/log** | Best effort, not a guarantee. `agent-delegate-common.sh` rejects briefs holding value-shaped credentials (token prefixes such as `sk-`/`ghp_`/`github_pat_`/`xox`/`AKIA`, JWTs, PEM keys, `Bearer <token>`, `KEY=<high-entropy value>`; case-insensitive; plain words like "password: field" are fine). Logs are created 0600 and redacted after the run and on interrupt (a SIGKILL leaves the raw 0600 log); the brief itself is still passed to the host CLI as an argument, so it is visible to local `ps` |
+| **Permission mode** | `--mode` defaults to `permissive` only when `--work-dir` is inside the current project; any other directory (fresh clone, scratch dir) defaults to `strict`. `strict` never adds bypass flags (no hook-trust bypass, workspace-write sandbox on Codex). Override with `--mode` or `SB_AGENT_DELEGATE_DEFAULT_MODE` |
 | **Matrix env bleed** | `agent-codex/env.sh` clears `SB_E2E_*` ledger/lock vars — never inherit matrix certification state |
-| **Hook trust bypass** | `CODEX_BYPASS_HOOK_TRUST` only when `install-codex.sh --hook-trust-seed-only` ran; parent audits trust state on hook-trust failures |
+| **Hook trust bypass** | Off by default (`CODEX_BYPASS_HOOK_TRUST=0`, `CODEX_AUTO_TRUST_HOOKS=0`); only an explicit `=1` in permissive mode adds `--dangerously-bypass-hook-trust`; strict never does. Parent audits trust state on hook-trust failures |
 | **Ephemeral CODEX_HOME** | Lightweight mode strips `[mcp_servers.*]` to reduce MCP auth attack surface; destroyed after task |
 | **Credential rotation in prompt** | Forbidden — auth failures escalate to user; never paste API keys into Codex prompt |
 | **SB-only plugin surface** | Preflight validates host install; child must not load unvetted marketplace skills into delegation session |
@@ -299,7 +300,7 @@ Run `security` / SENTINEL lens on harness changes under `scripts/agent-codex/` b
 
 - Sibling hosts: [`docs/skills/AGENT-HOST-DELEGATION-SIBLING-PROMPT.md`](../../docs/skills/AGENT-HOST-DELEGATION-SIBLING-PROMPT.md) — meta-prompt to build `/sb:agent-<host>` on other hosts
 - Harness: `scripts/agent-codex/` (`invoke.sh`, `preflight.sh`, `monitor.sh`, `env.sh`), `scripts/codex-interactive-invoke.py`, `scripts/agent-codex-delegate.sh`
-- Live adapter: `tests/live/agents/codex/agent.sh`
+- Live adapter: `scripts/lib/agent-adapters/codex.sh`
 - E2E adapter (matrix only): `scripts/enterprise-e2e/lib/adapters/codex.sh`
 - Protocol (matrix): `.planning/enterprise-e2e/CODEX-TUI-PROTOCOL.md`
 - Readiness audit: `docs/testing/CODEX-METHODOLOGY-HARNESS-READINESS-AUDIT.md`

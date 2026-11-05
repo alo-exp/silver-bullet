@@ -17,7 +17,7 @@ Copy-paste template for sibling host agents (Claude, Cursor, Codex, future hosts
 |----------|------|
 | Canonical skill (Codex) | [`skills/silver-agent-codex/SKILL.md`](../../skills/silver-agent-codex/SKILL.md) |
 | Delegate wrapper (Codex) | [`scripts/agent-codex-delegate.sh`](../../scripts/agent-codex-delegate.sh) |
-| Live adapter (Codex) | [`tests/live/agents/codex/agent.sh`](../../tests/live/agents/codex/agent.sh) |
+| Live adapter (Codex) | [`scripts/lib/agent-adapters/codex.sh`](../../scripts/lib/agent-adapters/codex.sh) |
 | Structural test (Codex) | [`tests/scripts/test-agent-codex-skill.sh`](../../tests/scripts/test-agent-codex-skill.sh) |
 | Canonical skill (Cursor) | [`skills/silver-agent-cursor/SKILL.md`](../../skills/silver-agent-cursor/SKILL.md) |
 | Delegate wrapper (Cursor) | [`scripts/agent-cursor-delegate.sh`](../../scripts/agent-cursor-delegate.sh) |
@@ -78,7 +78,7 @@ Replace `<host>`, `<HOST>`, and placeholders below.
 | Skill dir | `skills/silver-agent-codex/` |
 | Route | `/sb:agent-codex` |
 | Wrapper | `scripts/agent-codex-delegate.sh` |
-| Live adapter | `tests/live/agents/codex/agent.sh` |
+| Live adapter | `scripts/lib/agent-adapters/codex.sh` |
 | Invoke | Codex TUI via `codex-interactive-invoke.py`; headless fallback `--use-exec` |
 | Work dir env | `CODEX_WORK_DIR` |
 | Route syntax in child prompts | `$sb:*` (Codex picker) |
@@ -91,7 +91,7 @@ Replace `<host>`, `<HOST>`, and placeholders below.
 | Skill dir | `skills/silver-agent-claude/` |
 | Route | `/sb:agent-claude` |
 | Wrapper | `scripts/agent-claude-delegate.sh` |
-| Live adapter | Reuse [`tests/live/agents/claude/agent.sh`](../../tests/live/agents/claude/agent.sh) |
+| Live adapter | Reuse [`scripts/lib/agent-adapters/claude.sh`](../../scripts/lib/agent-adapters/claude.sh) |
 | Invoke | Claude TUI via `scripts/claude-interactive-invoke.expect` (expect); print fallback when non-interactive |
 | Work dir env | `CLAUDE_WORK_DIR` |
 | Route syntax in child prompts | `/sb:*` or `[$silver]` per Claude picker |
@@ -136,7 +136,7 @@ Before authoring a new `silver-agent-<host>` sibling:
 
 | Prerequisite | Check |
 |--------------|-------|
-| Live adapter exists | `tests/live/agents/<host>/agent.sh` with `agent_preflight` + `agent_invoke` |
+| Live adapter exists | `scripts/lib/agent-adapters/<host>.sh` (Cursor: `tests/live/agents/cursor/agent.sh`) with `agent_preflight` + `agent_invoke` |
 | Host CLI on PATH | `cursor-agent`, native Codex CLI, etc. |
 | Router entry | [`skills/silver/SKILL.md`](../../skills/silver/SKILL.md) intent table row for `sb:agent-<host>` |
 | Orchestrator allowlist | [`hooks/lib/orchestrator-parent.sh`](../../hooks/lib/orchestrator-parent.sh) → `sb_orchestrator_parent_skill_allowed` includes `silver-agent-<host>` |
@@ -208,7 +208,7 @@ version: 0.1.0
 | Host | Auth | Forbidden / pitfalls |
 |------|------|----------------------|
 | **Cursor** | Keychain via `cursor-agent login`; preflight `agent_preflight` | **Do not** set `CURSOR_API_KEY` — bypasses Keychain, breaks cert parity (methodology §8) |
-| **Codex** | Native CLI session + hook trust | Use `CODEX_AUTO_TRUST_HOOKS=1`, `CODEX_BYPASS_HOOK_TRUST=1` in lightweight delegate; seed via `bash scripts/install-codex.sh --hook-trust-seed-only` on trust failure |
+| **Codex** | Native CLI session + hook trust | Hook-trust bypass is off by default; only set `CODEX_BYPASS_HOOK_TRUST=1` / `CODEX_AUTO_TRUST_HOOKS=1` explicitly (permissive mode only); seed via `bash scripts/install-codex.sh --hook-trust-seed-only` on trust failure |
 | **Claude** (future) | API key / OAuth per Claude Code docs | Isolate state per delegation wave; no matrix inherit-keys shortcuts (E2E-110) |
 | **Gemini** (future) | TBD when adapter lands | Document in skill before ship |
 
@@ -254,7 +254,7 @@ Complete **every** item before merging a new `/sb:agent-<host>` skill.
 
 - [ ] Executable bash; `set -euo pipefail`
 - [ ] CLI: `--work-dir`, `--prompt` | `--brief-file` | `--prompt-file`, `--log`, `--mode permissive|strict`, `--sb-root`
-- [ ] Resolves and **sources** `tests/live/agents/<host>/agent.sh` — **do not** duplicate invoke logic in the wrapper
+- [ ] Resolves and **sources** `scripts/lib/agent-adapters/<host>.sh` (Cursor: `tests/live/agents/cursor/agent.sh`) — **do not** duplicate invoke logic in the wrapper
 - [ ] **Absolute paths** for `--log` and `--brief-file` — canonicalize in wrapper (pilot lesson: relative paths resolve under `WORK_DIR`)
 - [ ] Quota retry loop (`AGENT_<HOST>_QUOTA_RETRY_INTERVAL`, `AGENT_<HOST>_QUOTA_RETRY_MAX`)
 - [ ] Log redaction (api keys, tokens) before writing `--log`
@@ -415,7 +415,7 @@ Adapt matrix certification lessons for **production delegation** — do not copy
 | Parent implementing delegated edits in parallel | Violates orchestrator parent contract |
 | `pkill` / removing another host's lock files | §9 cross-agent isolation |
 | Committing `.planning/agent-<host>/*.log` | May contain secrets — gitignore only |
-| Duplicating invoke logic instead of sourcing `tests/live/agents/<host>/agent.sh` | Drift from live certification harness |
+| Duplicating invoke logic instead of sourcing `scripts/lib/agent-adapters/<host>.sh` (Cursor: `tests/live/agents/cursor/agent.sh`) | Drift from live certification harness |
 | Using `composer-2.5-fast` for Cursor delegation | Global subagent policy violation |
 | Relative `--log` / `--brief-file` paths | Resolve under `WORK_DIR`, not SB_ROOT — use absolute paths |
 
@@ -513,13 +513,13 @@ You are building `/sb:agent-claude` in the Silver Bullet repo (`/Users/<user>/pr
 **Read first (graphify query before grep):**
 - `skills/silver-agent-codex/SKILL.md` — canonical pattern
 - `scripts/agent-codex-delegate.sh` — wrapper shape
-- `tests/live/agents/claude/agent.sh` — reuse this adapter
+- `scripts/lib/agent-adapters/claude.sh` — reuse this adapter
 - `scripts/claude-interactive-invoke.expect`
 - `docs/skills/AGENT-HOST-DELEGATION-SIBLING-PROMPT.md` — full checklist
 
 **Deliverables:**
 1. `skills/silver-agent-claude/SKILL.md` — mirror codex structure; Claude-specific env (`CLAUDE_WORK_DIR`, expect invoke, `/sb:*` routes, OAuth auth policy)
-2. `scripts/agent-claude-delegate.sh` — sources `tests/live/agents/claude/agent.sh`; lightweight defaults (`SB_ORCHESTRATOR_WORKER=1`, `RTK_DISABLED=1`, quota retry); no matrix env; absolute log/brief paths
+2. `scripts/agent-claude-delegate.sh` — sources `scripts/lib/agent-adapters/claude.sh`; lightweight defaults (`SB_ORCHESTRATOR_WORKER=1`, `RTK_DISABLED=1`, quota retry); no matrix env; absolute log/brief paths
 3. Router: `skills/silver/SKILL.md` row, `hooks/lib/orchestrator-parent.sh` allowlist, `tests/integration/test-skill-execution-paths.sh` case
 4. `tests/scripts/test-agent-claude-skill.sh` — structural contract
 5. `.gitignore` → `.planning/agent-claude/`
