@@ -106,7 +106,7 @@ class VendorMentionCorpusTests(unittest.TestCase):
     def test_an_ambiguous_name_is_credited_only_by_an_explicit_signal(self) -> None:
         yes = (("Director enforces gates.", {"vendors": ["director"]}), ("Director enforces gates.", {"source_ref": "Director"}),
                ("Cursor ships agents.", {"source_ref": "https://cursor.com/pricing"}),
-               ("See https://cursor.com/pricing for plans.", None),
+               ("Cursor ships agents.", {"source_url": "https://cursor.com/pricing"}),
                ("GitHub Copilot reviews pull requests.", None),
                ("Factory.ai offers SSO.", None))
         slugs = {"Director": "director", "Cursor": "cursor", "See": "cursor", "Devin": "devin", "Workflow": "director",
@@ -207,15 +207,9 @@ class VendorMentionCorpusTests(unittest.TestCase):
                 leaks.append((sorted(got & wrong), row))
         self.assertEqual(leaks, [], f"{len(leaks)} of 76 rows credit a wrong vendor")
 
-    def test_a_pack_url_must_be_a_real_url_to_credit(self) -> None:
-        for text in ("See https://www.cursor.com/pricing for plans.", "Visit www.cursor.com today.",
-                     "Try https://devin.ai/ now."):
-            vendors = set(sc._envelope_evidence_slugs(envs(text), self.pack)) | set(m._extract_slugs_from_text(text, self.known, self.pack))
-            self.assertTrue(vendors & {"cursor", "cursor-agents", "devin"}, text)
+    def test_urls_in_prose_never_credit(self) -> None:
         for text in ("Export the logo as devin.ai and send it.", "Email devin.ai@example.com.", "conductor.build() registers it.",
-                     "The DOS program CURSOR.COM runs.", "See user_cursor.com.", "Redirect via https://example.org?next=cursor.com",
-                     "Redirect via https://example.org#tembo.io", "Run ./autogen.sh before ./configure.", "cursor.com", "Visit cursor.COM/x",
-                     "Docs: cursor.com/pricing.", "Go: github.com/obra/superpowers/skills."):
+                     "See https://www.cursor.com/pricing.", "Run ./autogen.sh before ./configure."):
             vendors = set(sc._envelope_evidence_slugs(envs(text), self.pack)) | set(m._extract_slugs_from_text(text, self.known, self.pack))
             self.assertEqual(vendors & self.ambiguous, set(), text)
 
@@ -235,17 +229,40 @@ class VendorMentionCorpusTests(unittest.TestCase):
                     leaks.append((sorted(got & self.ambiguous), row))
         self.assertEqual(leaks, [], f"{len(leaks)} of 140 rows credit an ambiguous vendor")
 
-    def test_only_a_parsed_url_with_a_scheme_or_www_credits(self) -> None:
-        yes = ("See https://www.cursor.com/pricing for plans.", "Try https://devin.ai/ now.", "See https://docs.cursor.com/x.",
-               "See <https://cursor.com>.", "See [Cursor](https://cursor.com/pricing).", "(see HTTPS://cursor.com/pricing)",
-               "Use www.tembo.io, now.", "Port https://cursor.com:8443/x works.", "https://cursor.com.", '"https://cursor.com/x" is the link.')
-        for text in yes:
-            self.assertTrue((set(sc._envelope_evidence_slugs(envs(text), self.pack)) | set(m._extract_slugs_from_text(text, self.known, self.pack))) & self.ambiguous, text)
-        no = ("https://devin.ai:443@mirror.example/gates", "https://devin.ai%2eexample.org/", "cursor.com.\u00e9vil.io", "https://cursor.com.\u00e9vil.io/",
-              "Visit cursor.com/x or devin.ai/2 today.", "[https://devin.ai/](https://example.com/)", "x(https://cursor.com/) y", "https://cursor.com.evil.example/",
-              "https://notcursor.com/", "https://evilcursor.com/", "https://cursor.com:99999/x", "https://cursor.com:abc/x", "https://Cursor.com/", "https://cursor.com\\@evil.example/")
-        for text in no:
-            self.assertEqual((set(sc._envelope_evidence_slugs(envs(text), self.pack)) | set(m._extract_slugs_from_text(text, self.known, self.pack))) & self.ambiguous, set(), text)
+    def test_the_r10_url_attacks_credit_nothing(self) -> None:
+        spec = json.loads((Path(__file__).parent / "fixtures" / "vendor_url_cases.json").read_text(encoding="utf-8"))
+        self.assertEqual(len(spec["neg12"]), 112)
+        names = " Cursor Devin Conductor Tembo Superpowers GSD Codex"
+        leaks = []
+        for _cls, text in spec["neg12"]:
+            word = next((w for w in text.split(" ") if "://" in w or "www" in w.lower() or "." in w.strip(".")), text)
+            for row in (text, {"text": text + names, "source_ref": word}, {"text": names.strip() + " ship it.", "source_ref": text}):
+                body = row if isinstance(row, str) else row["text"]
+                extra = {} if isinstance(row, str) else {"source_ref": row["source_ref"]}
+                with m.claim_scope(m._declared_for_row(dict(extra, text=body), self.known, self.pack)):
+                    got = set(m._extract_slugs_from_text(body, self.known, self.pack))
+                got |= set(sc._envelope_evidence_slugs(envs(body, extra), self.pack))
+                if got & self.ambiguous:
+                    leaks.append((sorted(got & self.ambiguous), str(row)[:120]))
+        self.assertEqual(leaks, [], f"{len(leaks)} of 336 rows credit an ambiguous vendor")
+
+    def test_a_pack_url_credits_only_as_the_whole_source_field(self) -> None:
+        text = "Cursor ships agents. Devin opens pull requests. Tembo runs jobs."
+        for url, vendor in (("https://www.cursor.com/pricing", "cursor"), ("https://devin.ai/", "devin"), ("https://docs.cursor.com/x", "cursor"),
+                            ("HTTPS://devin.ai/", "devin"), ("www.tembo.io", "tembo"), ("  https://devin.ai/  ", "devin")):
+            self.assertIn(vendor, sc._envelope_evidence_slugs(envs(text, {"source_ref": url}), self.pack), url)
+        self.assertIn("devin", sc._envelope_evidence_slugs(envs(text, {"supporting_sources": ["https://devin.ai/"]}), self.pack))
+        self.assertIn("devin", sc._envelope_evidence_slugs(envs(text, {"source_url": "https://devin.ai/"}), self.pack))
+        for url in ("https://devin.ai/ and more", "see https://devin.ai/", "https://devin.ai/a//b", "https://devin.ai/../x", "https://devin.ai/./x",
+                    "cursor.com/pricing", "https://devin.ai:443@mirror.example/", "https://devin.ai%2eexample.org/", "https://Devin.ai/",
+                    "https://devin.ai.evil.example/", "javascript:alert('https://devin.ai/')", "https://cursor.com:99999/", "https://cursor.com\\@evil.example/",
+                    "https://cursor.com.\u00e9vil.example/"):
+            self.assertEqual(sc._envelope_evidence_slugs(envs(text, {"source_ref": url}), self.pack) & {"devin", "cursor", "tembo"}, set(), url)
+        # the same URL in running prose credits nothing, in any form
+        for prose in ("See https://www.cursor.com/pricing for plans.", "See [Cursor](https://cursor.com/pricing).", "See <https://cursor.com>.",
+                      '<a href="https://devin.ai/">Devin</a>', "```\nfetch('https://cursor.com/api')\n```", "Try www.devin.ai today.", "(https://conductor.build/)"):
+            got = set(sc._envelope_evidence_slugs(envs(prose), self.pack)) | set(m._extract_slugs_from_text(prose, self.known, self.pack))
+            self.assertEqual(got & self.ambiguous, set(), prose)
         self.assertEqual(self.registry.url_slug("cursor.com/pricing"), None)
         self.assertEqual(self.registry.url_slug("https://cursor.com/pricing"), "cursor")
 
@@ -390,6 +407,7 @@ class TaggingContractTests(unittest.TestCase):
         solution = runner.research_brief("APO landscape", "solution-landscape")
         self.assertIn("Tag every evidence, claim_candidates, critiques and gaps row with vendors", solution)
         self.assertIn("(Director, Cursor, Linear, Devin, ...)", solution)
+        self.assertIn("Put the source URL alone in source_ref", solution)
         self.assertNotIn("vendors", runner.research_brief("Why is the sky blue", "general"))
         self.assertNotIn("[CATEGORY_PACK]", solution)  # no pack selected: the tag names come from matrix_entries
         pack = resolve_pack_from_need({"category_pack_id": "agentic-sdlc-process-orchestrator"})

@@ -18,44 +18,34 @@ from urllib.parse import urlparse, urlsplit
 
 # Tokens of a display name that say what a product is, not which one: never distinctive.
 GENERIC_TOKENS = frozenset("ai ide cli sdk api sdlc llm mcp pr ci cd saas oss apo swe ui ux ml os dev app io devops autogen".split())
-# A pack URL in text is PARSED, not pattern-matched: a candidate token starts with a scheme (http/https, any case) or
-# "www." after a real boundary, is cut at whitespace and closing delimiters, and its authority is read with urlsplit.
-_SCHEME = re.compile(r"(?:https?://|www\.)", re.IGNORECASE)
-_CLOSERS = frozenset(")]>\"'`<")
+# A pack URL is read from a STRUCTURED field only (a claim row's source_ref / source_url ...), never from running
+# prose: the whole trimmed field value must be one URL. It starts with http:// or https:// (any case) or www.
 _HOST = re.compile(r"[a-z0-9-]+(?:\.[a-z0-9-]+)+")
 
 
-def _candidates(text: str) -> list[str]:
-    """The URL-shaped tokens of a text: scheme or www. start, real left boundary, cut at closers; link text is skipped."""
-    found: list[str] = []
-    for match in _SCHEME.finditer(text):
-        i = match.start()
-        if i and not (text[i - 1].isspace() or (text[i - 1] in "([<\"'" and (i == 1 or not (text[i - 2].isalnum() or text[i - 2] == "_")))):
-            continue
-        j = i
-        while j < len(text) and not text[j].isspace() and text[j] not in _CLOSERS:
-            j += 1
-        if text[j:j + 2] == "](":
-            continue  # markdown link text: only the target counts
-        found.append(text[i:j].rstrip(".,;:!?"))  # never empty: it starts with the scheme or "www"
-    return found
+def parse_whole_url(value: str) -> tuple[str, str] | None:
+    """(host, path) when the whole value is one plain URL; None for anything else or anything suspicious.
 
-
-def _host_path_of(token: str) -> tuple[str, str] | None:
-    """(host, path) of a candidate when it is a plain, lower-case ASCII hostname; None for anything suspicious."""
+    Rejected: surrounding text or whitespace inside, another scheme, userinfo, a percent sign, a backslash,
+    non-ASCII characters, a bad port, a host that is not a lower-case ASCII hostname as written, and a path with
+    empty, "." or ".." segments.
+    """
+    token = value.strip()
+    if not re.match(r"(?i)(?:https?://|www\.)", token) or any(c.isspace() for c in token):
+        return None
     if "\\" in token or "%" in token or not token.isascii():
         return None
-    url = token if "://" in token.lower()[:8] else "https://" + token
     try:
-        parsed = urlsplit(url)
+        parsed = urlsplit(token if "://" in token[:8] else "https://" + token)
         parsed.port  # noqa: B018 - raises ValueError on a bad port
     except ValueError:
         return None
     netloc = parsed.netloc
-    if "@" in netloc:
-        return None  # userinfo: the real host is not the one that is written first
     host = netloc.rsplit(":", 1)[0] if ":" in netloc else netloc
-    if not _HOST.fullmatch(host):  # also rejects upper case: compared as written
+    if "@" in netloc or not _HOST.fullmatch(host):  # userinfo; upper case is compared as written
+        return None
+    segments = parsed.path.split("/")[1:]
+    if any(s in ("", ".", "..") for s in segments[:-1]) or segments[-1:] in (["."], [".."]):
         return None
     return host.removeprefix("www."), parsed.path.rstrip("/").lower()
 
@@ -154,27 +144,18 @@ class Registry:
             for vendor in sorted(self.displays)
         }
 
-    def url_slug(self, segment: str) -> str | None:
-        """The vendor whose pack URL a segment is: same host (or a subdomain of a root host) and path prefix."""
-        found = {vendor for vendor in self._url_vendors(segment)}
+    def url_slug(self, value: str) -> str | None:
+        """The vendor whose pack URL the whole field value is: the host equals a pack domain or is a subdomain of it."""
+        parts = parse_whole_url(value)
+        if parts is None:
+            return None
+        host, path = parts
+        found = set()
+        for known_host, known_path, vendor in self._hosts:
+            host_ok = host == known_host or (not known_path and host.endswith("." + known_host))
+            if host_ok and (not known_path or path == known_path or path.startswith(known_path + "/")):
+                found.add(vendor)
         return min(found) if found else None
-
-    def _url_vendors(self, text: str) -> set[str]:
-        found: set[str] = set()
-        for token in _candidates(text):
-            parts = _host_path_of(token)
-            if parts is None:
-                continue
-            host, path = parts
-            for known_host, known_path, vendor in self._hosts:
-                host_ok = host == known_host or (not known_path and host.endswith("." + known_host))
-                if host_ok and (not known_path or path == known_path or path.startswith(known_path + "/")):
-                    found.add(vendor)
-        return found
-
-    def signals(self, text: str) -> frozenset[str]:
-        """Vendors a text names by an explicit form: a pack URL."""
-        return frozenset(self._url_vendors(text))
 
 
 def build_registry(
