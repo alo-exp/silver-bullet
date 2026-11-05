@@ -20,8 +20,6 @@
 #                             the operator-only interactive Claude TUI matrix; full live
 #                             matrix: bash scripts/run-enterprise-e2e-live-test.sh, see
 #                             docs/ENTERPRISE-E2E-LIVE-TEST.md)
-#   SB_FIVE_TOOL_LIVE=1       adds tests/live/test-live-five-tool-stack-cursor.sh
-#                             (the pre-release gate runs test-five-tool-prerelease-cursor.sh)
 #
 # Coverage: tests/coverage/run-coverage.sh runs this script with SB_COV_DIR set; each
 # test file then traces into its own directory and is folded in when it finishes.
@@ -303,35 +301,6 @@ while [[ $next_to_print -lt $n ]]; do
   [[ $reaped -eq 0 && $next_to_print -lt $n ]] && sleep 0.1
 done
 close_suite
-
-# Five-tool live Cursor validation (agent-cursor harness). Offline hook/script tests above always run.
-# Pre-release gate (scripts/pre-release-gate.sh Stage 4c) invokes test-five-tool-prerelease-cursor.sh.
-# Optional manual full live: SB_FIVE_TOOL_LIVE=1 SB_FIVE_TOOL_LIVE_EXECUTE=1 SB_FIVE_TOOL_MODE=full
-if [[ "${SB_FIVE_TOOL_LIVE:-}" == "1" && ${#EXPLICIT_FILES[@]} -eq 0 ]]; then
-  printf '\n========================================\n'
-  printf '  Five-Tool Live Tests (Cursor)\n'
-  printf '========================================\n\n'
-  live_file="$SCRIPT_DIR/live/test-live-five-tool-stack-cursor.sh"
-  if [[ -f "$live_file" ]]; then
-    echo "[ $(basename "$live_file") ]"
-    live_exit=0
-    live_output=$(bash "$live_file" </dev/null 2>&1) || live_exit=$?
-    printf '%s\n' "$live_output"
-    lp=$(printf '%s' "$live_output" | grep -oE '[0-9]+ passed' | grep -oE '[0-9]+' | tail -1 || echo "0")
-    lf=$(printf '%s' "$live_output" | grep -oE '[0-9]+ failed' | grep -oE '[0-9]+' | tail -1 || echo "0")
-    lp=${lp:-0}
-    lf=${lf:-0}
-    TOTAL_PASS=$((TOTAL_PASS + lp))
-    TOTAL_FAIL=$((TOTAL_FAIL + lf))
-    if [[ $live_exit -ne 0 || "$lf" -gt 0 ]]; then
-      SUITE_FAIL=$((SUITE_FAIL + 1))
-      printf '  *** SUITE FAILED (exit %d) ***\n\n' "$live_exit"
-    else
-      SUITE_PASS=$((SUITE_PASS + 1))
-    fi
-    printf '\nFive-Tool Live: %d passed, %d failed\n' "$lp" "$lf"
-  fi
-fi
 
 # Coverage matrix: every hook registered in hooks.json is exercised by some test.
 coverage_exit=0

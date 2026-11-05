@@ -1,66 +1,11 @@
 #!/usr/bin/env bash
 # Shared helpers for review-fix-ladder live smoke and full-ladder runs.
 
-review_fix_ladder_cursor_slug() {
-  local sb_root="${SB_ROOT:-}"
-  python3 - "$1" "$2" "$sb_root" <<'PY'
-import importlib.util
-import pathlib
-import sys
-
-repo_root = pathlib.Path(sys.argv[3])
-spec = importlib.util.spec_from_file_location(
-    "review_fix_ladder",
-    repo_root / "scripts" / "review-fix-ladder.py",
-)
-module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(module)
-print(module.cursor_task_slug(sys.argv[1], sys.argv[2]))
-PY
-}
-
-review_fix_ladder_cursor_agent_model() {
-  local sb_root="${SB_ROOT:-}"
-  python3 - "$1" "$2" "$sb_root" <<'PY'
-import importlib.util
-import pathlib
-import sys
-
-repo_root = pathlib.Path(sys.argv[3])
-spec = importlib.util.spec_from_file_location(
-    "review_fix_ladder",
-    repo_root / "scripts" / "review-fix-ladder.py",
-)
-module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(module)
-print(module.cursor_agent_model(sys.argv[1], sys.argv[2]))
-PY
-}
-
-review_fix_ladder_rung_delegation() {
-  local sb_root="${SB_ROOT:-}"
-  python3 - "$1" "$2" "$sb_root" <<'PY'
-import importlib.util
-import pathlib
-import sys
-
-repo_root = pathlib.Path(sys.argv[3])
-spec = importlib.util.spec_from_file_location(
-    "review_fix_ladder",
-    repo_root / "scripts" / "review-fix-ladder.py",
-)
-module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(module)
-print(module.cursor_rung_delegation(sys.argv[1], sys.argv[2]))
-PY
-}
-
 review_fix_ladder_resolve_host() {
   local runtime="${1:-${SB_LIVE_RUNTIME:-${SB_LIVE_AGENT:-}}}"
   case "$runtime" in
     codex|kay) printf 'codex\n' ;;
     claude) printf 'claude\n' ;;
-    cursor) printf 'cursor\n' ;;
     *)
       printf 'ERROR: unsupported runtime for review-fix-ladder: %s\n' "$runtime" >&2
       return 1
@@ -213,17 +158,6 @@ review_fix_ladder_apply_rung_env() {
       export CLAUDE_LIVE_CONTINUE="0"
       # shellcheck disable=SC2034  # read by the sourced tests/live/agents/claude/agent.sh
       CLAUDE_PROMPT_COUNT=0
-      ;;
-    cursor)
-      local delegation
-      delegation="$(review_fix_ladder_rung_delegation "$model" "$reasoning")"
-      if [[ "$delegation" == "agent-cursor" ]]; then
-        CURSOR_AGENT_MODEL="$(review_fix_ladder_cursor_agent_model "$model" "$reasoning")"
-      else
-        CURSOR_AGENT_MODEL="$(review_fix_ladder_cursor_slug "$model" "$reasoning")"
-      fi
-      export CURSOR_AGENT_MODEL
-      export CURSOR_MODEL="$CURSOR_AGENT_MODEL"
       ;;
   esac
 }

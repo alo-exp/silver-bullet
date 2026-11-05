@@ -113,9 +113,6 @@ setup_runtime_isolation() {
     claude)
       SILVER_BULLET_RUNTIME="claude"
       ;;
-    cursor)
-      SILVER_BULLET_RUNTIME="cursor"
-      ;;
     *)
       fail "unsupported runtime: $runtime"
       return 1
@@ -186,45 +183,8 @@ run_full_ladder_for_host() {
 
   printf '\n=== Review Fix Ladder FULL LADDER (host=%s, runtime=%s) ===\n' "$LADDER_HOST" "$runtime"
 
-  local cursor_resolver_only="${SB_LIVE_REVIEW_FIX_LADDER_CURSOR_RESOLVER_ONLY:-1}"
-  if [[ "$runtime" == "cursor" ]] && cursor_in_session_active 2>/dev/null; then
-    cursor_resolver_only=0
-    export SB_LIVE_CURSOR_IN_SESSION=1
-  fi
-
   if ! agent_preflight; then
-    if [[ "$runtime" == "cursor" && "$cursor_resolver_only" == "1" ]]; then
-      skip "cursor-agent live turns (not logged in; running resolver-only validation)"
-    else
-      fail "agent preflight for $runtime"
-    fi
-    if [[ "$runtime" == "cursor" && "$cursor_resolver_only" == "1" ]]; then
-      local resolver_work_dir
-      printf 'NOTE: running cursor resolver-only validation (no cursor-agent API turns)\n'
-      resolver_work_dir="$(mktemp -d)"
-      git -C "$resolver_work_dir" init -q
-      git -C "$resolver_work_dir" config user.email "review-fix-ladder-smoke@silver-bullet.test"
-      git -C "$resolver_work_dir" config user.name "Review Fix Ladder Smoke"
-      review_fix_ladder_seed_workspace "$resolver_work_dir" "$FIXTURE_DIR" "$RESOLVER"
-      ladder_json="$(review_fix_ladder_ladder_json "$LADDER_HOST" "$resolver_work_dir")"
-      rung_count="$(jq -r '.rungs | length' <<<"$ladder_json")"
-      for rung_index in $(seq 1 "$rung_count"); do
-        model="$(jq -r ".rungs[$((rung_index - 1))].model" <<<"$ladder_json")"
-        reasoning="$(jq -r ".rungs[$((rung_index - 1))].reasoning" <<<"$ladder_json")"
-        slug="$(review_fix_ladder_cursor_slug "$model" "$reasoning")"
-        if [[ -n "$slug" ]]; then
-          pass "cursor resolver rung ${rung_index}/${rung_count} slug ${slug}"
-          row="$(printf '%-4s %-22s %-10s %-8s' "$rung_index" "$model" "$reasoning" "RESOLVER")"
-          LADDER_RESULTS+=("$row")
-        else
-          fail "cursor resolver rung ${rung_index}/${rung_count} slug missing"
-        fi
-      done
-      review_fix_ladder_print_results_table "$LADDER_HOST" "${LADDER_RESULTS[@]}"
-      rm -rf "$resolver_work_dir"
-      teardown_runtime_isolation "$runtime"
-      return 0
-    fi
+    fail "agent preflight for $runtime"
     skip "remaining rungs for $runtime (agent preflight failed)"
     teardown_runtime_isolation "$runtime"
     return 1
@@ -233,13 +193,6 @@ run_full_ladder_for_host() {
 
   live_setup
   review_fix_ladder_seed_workspace "$WORK_DIR" "$FIXTURE_DIR" "$RESOLVER"
-
-  if [[ "$runtime" == "cursor" ]] && cursor_in_session_active 2>/dev/null; then
-    export SB_LIVE_CURSOR_SESSION_DIR="${WORK_DIR}/.cursor-live-session"
-    mkdir -p "$SB_LIVE_CURSOR_SESSION_DIR"
-    printf 'NOTE: cursor in-session mode — responses via %s (see tests/live/lib/cursor-in-session-respond.sh)\n' \
-      "$SB_LIVE_CURSOR_SESSION_DIR"
-  fi
 
   case "$runtime" in
     codex)
@@ -268,13 +221,7 @@ run_full_ladder_for_host() {
     RUNG_REASONING="$reasoning"
 
     review_fix_ladder_apply_rung_env "$LADDER_HOST" "$model" "$reasoning"
-    if [[ "$LADDER_HOST" == "cursor" ]]; then
-      slug="${CURSOR_AGENT_MODEL:-}"
-      delegation="$(review_fix_ladder_rung_delegation "$model" "$reasoning")"
-      printf '%s\n' "--- Rung ${rung_index}/${rung_count}: model=${model} reasoning=${reasoning} (delegation=${delegation}, cursor model=${slug}) ---"
-    else
-      printf '%s\n' "--- Rung ${rung_index}/${rung_count}: model=${model} reasoning=${reasoning} ---"
-    fi
+    printf '%s\n' "--- Rung ${rung_index}/${rung_count}: model=${model} reasoning=${reasoning} ---"
 
     if [[ "$rung_index" -gt "$start_rung" && "${SB_LIVE_REVIEW_FIX_LADDER_RESET_FIXTURE:-1}" == "1" ]]; then
       review_fix_ladder_reset_fixture "$WORK_DIR" "$FIXTURE_DIR"
@@ -289,7 +236,7 @@ run_full_ladder_for_host() {
       fail "rung ${rung_index}/${rung_count} ${model}/${reasoning} (auth required)"
       row="$(printf '%-4s %-22s %-10s %-8s' "$rung_index" "$model" "$reasoning" "$rung_status")"
       LADDER_RESULTS+=("$row")
-      skip "remaining rungs for $runtime (cursor-agent auth required)"
+      skip "remaining rungs for $runtime (auth required)"
       break
     fi
 
@@ -323,15 +270,15 @@ main() {
   case "$runtime" in
     all)
       local host_runtime
-      for host_runtime in codex claude cursor; do
+      for host_runtime in codex claude; do
         run_full_ladder_for_host "$host_runtime" || true
       done
       ;;
-    codex|claude|cursor)
+    codex|claude)
       run_full_ladder_for_host "$runtime"
       ;;
     *)
-      fail "unsupported SB_LIVE_RUNTIME: $runtime (use codex|claude|cursor|all)"
+      fail "unsupported SB_LIVE_RUNTIME: $runtime (use codex|claude|all)"
       ;;
   esac
 
