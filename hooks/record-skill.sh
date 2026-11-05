@@ -148,7 +148,7 @@ extract_invoke_skill_adapter_skill() {
 # PreToolUse gates, because the host sees a Bash call. Run the same gates here with a synthetic
 # Skill payload and refuse to record when any denies. Prints the first denial reason.
 adapter_skill_gate_denial() {
-  local skill="$1" gate payload out hooks_dir
+  local skill="$1" gate payload out hooks_dir reason
   hooks_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   payload="$(jq -cn --arg s "$skill" '{hook_event_name:"PreToolUse", tool_name:"Skill", tool_input:{skill:$s}, cwd:env.PWD}')"
   for gate in review-fix-ladder-guard.sh rfl-policy-c-gate.sh forbidden-skill-check.sh dependency-skill-check.sh uat-gate.sh; do
@@ -158,8 +158,9 @@ adapter_skill_gate_denial() {
       printf 'the %s gate failed' "$gate"
       return 0
     fi
-    if [[ "$(printf '%s' "$out" | jq -r '.hookSpecificOutput.permissionDecision // ""' 2>/dev/null || true)" == "deny" ]]; then
-      printf '%s' "$out" | jq -r '.hookSpecificOutput.permissionDecisionReason // "denied"' 2>/dev/null || printf 'denied'
+    reason="$(printf '%s' "$out" | jq -r 'select(.hookSpecificOutput.permissionDecision == "deny") | (.hookSpecificOutput.permissionDecisionReason // "denied")' 2>/dev/null)" || reason=""
+    if [[ -n "$reason" ]]; then
+      printf '%s' "$reason"
       return 0
     fi
   done

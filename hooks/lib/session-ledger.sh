@@ -59,8 +59,8 @@ sb_session_ledger_log_path() {
   project_root="$(sb_session_ledger_project_root 2>/dev/null || true)"
   [[ -n "$project_root" ]] || return 1
   local real_root real_dir
-  real_root="$(cd -P -- "$project_root" 2>/dev/null && pwd || true)"
-  real_dir="$(cd -P -- "$(dirname "$log_path")" 2>/dev/null && pwd || true)"
+  real_root="$(cd -P -- "$project_root" 2>/dev/null && pwd)" || real_root=""
+  real_dir="$(cd -P -- "$(dirname "$log_path")" 2>/dev/null && pwd)" || real_dir=""
   [[ -n "$real_root" && -n "$real_dir" ]] || return 1
   case "$real_dir/" in
     "$real_root"/*) ;;

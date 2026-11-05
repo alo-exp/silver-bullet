@@ -42,6 +42,7 @@ P="$TL_TMP/proj"
 mkdir -p "$P/.git" "$P/sub/deeper"
 echo '{"a":1}' >"$P/.silver-bullet.json"
 echo md >"$P/silver-bullet.md"
+mkdir -p "$P/.cursor/rules"   # the rule is refreshed only in a project that already uses Cursor
 tl_run env PLUGIN_ROOT="$PL" bash "$R/scripts/sb-migrate-orchestrator-parent.sh" "$P/sub/deeper"
 assert_eq "migrate parent ok" 0 "$TL_STATUS"
 assert_contains "reports prior mode absent" "$TL_OUT" "Set orchestrator_mode=parent (was: absent)"
@@ -67,6 +68,7 @@ assert_eq "migrate without templates ok" 0 "$TL_STATUS"
 assert_not_contains "no template copy message" "$TL_OUT" "Copied worker templates"
 assert_not_contains "no rule refresh message" "$TL_OUT" "Refreshed .cursor"
 assert_file_absent "no rule file" "$P2/.cursor/rules/silver-orchestrator.mdc"
+assert_file_absent "no .cursor directory is created in a project without one (R3-28)" "$P2/.cursor"
 
 # no project found: stops at a .git dir
 P3="$TL_TMP/nop"

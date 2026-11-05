@@ -67,4 +67,4 @@ printf '%s\n' "$payload" \
     -e 's/AKIA[0-9A-Z]{16}/[REDACTED]/g' \
     -e 's/xox[abprs]-[A-Za-z0-9-]{10,}/[REDACTED]/g' \
     -e 's/(([Pp][Aa][Ss][Ss]([Ww][Oo][Rr])?[Dd]|[Ss][Ee][Cc][Rr][Ee][Tt]|[Tt][Oo][Kk][Ee][Nn]|[Aa][Pp][Ii][_-]?[Kk][Ee][Yy])[^A-Za-z0-9]{1,6})[^ ",}\\]+/\1[REDACTED]/g' \
-    >>"$DBG_OUT"
+    2>/dev/null >>"$DBG_OUT"

@@ -140,13 +140,13 @@ fi
 # project.src_pattern is joined to the repo root; it must stay inside the repo (R3-06). A pattern
 # with `..` or one that resolves outside (symlinked directory) selects nothing.
 src_root=""
-_repo_real="$(cd -P -- "$REPO_ROOT" 2>/dev/null && pwd || true)"
+_repo_real="$(cd -P -- "$REPO_ROOT" 2>/dev/null && pwd)" || _repo_real=""
 case "$src_pattern" in
   *..*) ;;
   *)
     _src_candidate="$REPO_ROOT${src_pattern%/}"
     if [[ -d "$_src_candidate" ]]; then
-      _src_real="$(cd -P -- "$_src_candidate" 2>/dev/null && pwd || true)"
+      _src_real="$(cd -P -- "$_src_candidate" 2>/dev/null && pwd)" || _src_real=""
       if [[ -n "$_src_real" && -n "$_repo_real" && ( "$_src_real" == "$_repo_real" || "$_src_real" == "$_repo_real"/* ) ]]; then
         src_root="$_src_real"
       fi

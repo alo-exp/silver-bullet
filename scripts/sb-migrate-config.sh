@@ -67,6 +67,7 @@ merged="$(jq \
   | .version = $ver
   | .sb_initiated = true
   | .orchestrator_mode = "parent"
+  | if .verify_commands == null then del(.verify_commands) else . end
   ' "$CONFIG")"
 
 if [[ "$merged" == "$(jq . "$CONFIG")" ]]; then
@@ -77,4 +78,5 @@ fi
 backup="${CONFIG}.bak-$(date +%Y%m%d%H%M%S)"
 cp -p -- "$CONFIG" "$backup"
 printf '%s\n' "$merged" | sb_atomic_write_file "$CONFIG"
-echo "Merged $CONFIG forward (version $PKG_VERSION, sb_initiated: true, orchestrator_mode: parent; backup: ${backup##*/})"
+echo "Merged $CONFIG forward (version $PKG_VERSION, sb_initiated: true, orchestrator_mode: parent)"
+echo "Previous file kept as ${backup##*/}"

@@ -81,7 +81,6 @@ assert_contains "high score with a fail is NEEDS_WORK" "$TL_OUT" "Synergy audit 
 PR="$TL_REPO_ROOT/scripts/sb-prerequisite-repair.sh"
 LOG="$TL_TMP/pkg.log"
 : >"$LOG"
-NOJQ="$(tl_path_without jq brew apt-get sudo)"
 
 tl_run bash "$PR" "$TL_TMP"
 assert_eq "jq present exits 0" "0" "$TL_STATUS"
@@ -102,7 +101,7 @@ PATH="$PATH_SAVE"
 # the cache alias is refreshed through the cache helpers; project files are never copied
 SD="$TL_TMP/prscripts"
 mkdir -p "$SD/lib" "$TL_TMP/home/.claude/plugins/cache/alo-labs/silver-bullet"
-cp "$PR" "$SD/"
+ln -s "$PR" "$SD/sb-prerequisite-repair.sh"   # a symlink, so coverage is attributed to the real script
 cat >"$SD/lib/plugin-cache-version.sh" <<STUB
 sb_plugin_cache_prune_orphaned_dirs() { echo "prune \$1" >>"$LOG"; }
 sb_plugin_cache_refresh_current_alias() { echo "refresh \$1" >>"$LOG"; }

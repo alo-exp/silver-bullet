@@ -210,6 +210,14 @@ ec_stage_hooks "$TL_TMP/nolean" leanctx-gate.sh
 printf 'old-branch\n' >"$BRANCH"; printf 'silver-plan\n' >"$STATE"; printf 'x' >"$SD/leanctx-usage"
 tl_run_stdin '{"source":"startup"}' bash -c 'cd "$1" && exec bash "$2"' _ "$EC_PROJ" "$TL_TMP/nolean/hooks/session-start"
 assert_file_absent "no leanctx library: usage state removed" "$SD/leanctx-usage"
+# ... and a removal that fails does not abort the start
+fresh
+printf 'old-branch\n' >"$BRANCH"; printf 'silver-plan\n' >"$STATE"; printf 'x' >"$SD/leanctx-usage"
+ec_fail rm '*leanctx-usage*'
+tl_run_stdin '{"source":"startup"}' bash -c 'cd "$1" && exec bash "$2"' _ "$EC_PROJ" "$TL_TMP/nolean/hooks/session-start"
+ec_unfail rm
+assert_eq "failing leanctx removal: hook exits 0" 0 "$TL_STATUS"
+assert_contains "failing leanctx removal: rules still injected" "$(ctx)" "Non-Negotiable Rules"
 # a failing leanctx clear never aborts the reset
 fresh
 ec_stage_hooks "$TL_TMP/leanfail" leanctx-gate.sh
