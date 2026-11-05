@@ -204,8 +204,8 @@ class TestEngine(unittest.TestCase):
             try:
                 with contextlib.redirect_stdout(io.StringIO()):
                     report = self.engine.run_pipeline("q")
-                self.assertEqual(report, ".planning/research/offline-run/research_report.md")
-                self.assertTrue(Path(".planning/research/offline-run/phase_manifest.json").exists())
+                self.assertEqual(report, "research/offline-run/research_report.md")
+                self.assertTrue(Path("research/offline-run/phase_manifest.json").exists())
             finally:
                 os.chdir(cwd)
 

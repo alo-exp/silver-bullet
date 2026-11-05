@@ -4,22 +4,23 @@
 
 | Dimension | Values | Mutex |
 |-----------|--------|-------|
-| OCG pool | `none`, `lite`, `regular` | `lite` and `regular` are mutually exclusive |
+| OCG pool | `none`, `lite`, `regular` | one value per run (`--ocg-pool` takes a single choice) |
 | Cursor pool | `none`, `default` | — |
 
 ## Resolution order
 
-1. Validate pool mutex (`regular` + `lite` → reject).
-2. Expand pools to canonical logical IDs.
-3. If `--include-only` is present, replace the candidate set.
+1. Expand pools to canonical logical IDs.
+2. If `--include-only` is present, replace the candidate set.
+3. Normalise aliases to canonical IDs; a canonical ID and its alias count once (first
+   occurrence wins).
 4. Apply `--exclude` (exclusion wins over inclusion).
 5. Run subscription routing for surviving `glm-5.2` slots.
-6. Reject empty set, unknown IDs, and canonical+alias duplicates.
+6. Reject an empty set and unknown IDs.
 
 ## Default dry-run (11 slots)
 
-- OCG: `lite` → `ocg-mimo-v2.5`
-- Cursor: `default` → six logical slots from `model-family-registry-v1.json`
+- OCG: `lite` → the five `ocg_lite_pool` profiles in `model-family-registry-v1.json`
+- Cursor: `default` → the six `cursor_default_pool` logical slots
 
 ## GLM-5.2 routing
 
@@ -31,11 +32,13 @@
 
 ## Budget defaults
 
-| Field | Default | Precedence |
-|-------|---------|------------|
-| `max_cost_usd` | 25.00 | CLI > project > global > default |
-| `max_total_tokens` | 2000000 | same |
-| `max_agents` | 11 | same |
-| `concurrency` | 6 | same |
+| Field | Default | Enforced in v1 |
+|-------|---------|----------------|
+| `max_agents` | 11 | Yes — before any worker starts (`--max-agents`) |
+| `concurrency` | 6 | Yes — parallel worker bound (`--concurrency`) |
+| `max_cost_usd` | 25.00 | Recorded only; the CLIs report no usage |
+| `max_total_tokens` | 2000000 | Recorded only; the CLIs report no usage |
+
+v1 reads budget values from CLI flags only; preferences files are not consulted.
 
 `max_agents` counts unique resolved logical IDs once per run (phase repetitions and retries do not increment).

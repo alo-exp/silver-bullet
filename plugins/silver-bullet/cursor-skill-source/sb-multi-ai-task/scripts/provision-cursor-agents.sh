@@ -2,57 +2,64 @@
 # Provision Cursor sb-dr-* custom agents for multi-AI deep research (safe, idempotent).
 set -euo pipefail
 
-provision_cursor_agents_repo_root() {
-  local dir
-  dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  while [[ "$dir" != "/" ]]; do
-    if [[ -f "$dir/skills/silver-multi-ai-task/reference/model-family-registry-v1.json" ]]; then
-      printf '%s\n' "$dir"
-      return 0
-    fi
-    dir="$(dirname "$dir")"
-  done
-  printf 'ERROR: cannot locate Silver Bullet repo root from %s\n' "${BASH_SOURCE[0]}" >&2
-  return 1
-}
-
-REPO_ROOT="$(provision_cursor_agents_repo_root)"
+# The registry ships beside this script in every layout: skills/silver-multi-ai-task in the
+# repository, skill-source/sb-multi-ai-task in the packaged plugin. Resolve it from the
+# (logical) directory the script is invoked through.
+SKILL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+REGISTRY="$SKILL_DIR/reference/model-family-registry-v1.json"
 # Literal .cursor path — split so non-cursor agent mirrors do not rewrite host dirs.
 CURSOR_HOME="${CURSOR_HOME:-${HOME}/.cur""sor}"
 AGENTS_DIR="${CURSOR_AGENTS_DIR:-${CURSOR_HOME}/agents}"
-REGISTRY="$REPO_ROOT/skills/silver-multi-ai-task/reference/model-family-registry-v1.json"
 
 usage() {
   cat <<'EOF'
-Usage: provision-cursor-agents.sh [--dry-run] [--scope project|global]
+Usage: provision-cursor-agents.sh [--dry-run] [--scope project|global] [--project-dir DIR]
 
 Creates sb-dr-* agent stubs for Cursor default pool logical slots when missing.
 Does not overwrite existing agent definitions.
+
+--scope project writes <project>/.cursor/agents, where <project> is --project-dir, else the
+git top level of the current directory, else the current directory.
 EOF
 }
 
 DRY_RUN=0
 SCOPE="global"
+PROJECT_DIR=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --dry-run) DRY_RUN=1; shift ;;
     --scope) SCOPE="${2:-global}"; shift 2 ;;
+    --project-dir) PROJECT_DIR="${2:-}"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) echo "unknown arg: $1" >&2; exit 2 ;;
   esac
 done
 
-if [[ "$SCOPE" == "project" ]]; then
-  AGENTS_DIR="$REPO_ROOT/.cur""sor/agents"
+if [[ ! -f "$REGISTRY" ]]; then
+  printf 'ERROR: model family registry not found at %s\n' "$REGISTRY" >&2
+  exit 1
 fi
 
-if [[ "$DRY_RUN" -eq 0 ]]; then
-  mkdir -p "$AGENTS_DIR"
+if [[ "$SCOPE" == "project" ]]; then
+  # The user's project, never the Silver Bullet checkout or plugin install this script lives in.
+  if [[ -z "$PROJECT_DIR" ]]; then
+    PROJECT_DIR="$(git -C "$PWD" rev-parse --show-toplevel 2>/dev/null || printf '%s' "$PWD")"
+  fi
+  if [[ ! -d "$PROJECT_DIR" ]]; then
+    printf 'ERROR: project directory not found: %s\n' "$PROJECT_DIR" >&2
+    exit 2
+  fi
+  AGENTS_DIR="$(cd "$PROJECT_DIR" && pwd)/.cur""sor/agents"
 fi
 
 if ! command -v jq >/dev/null 2>&1; then
   echo "ERROR: jq is required to read cursor_default_pool from registry" >&2
   exit 2
+fi
+
+if [[ "$DRY_RUN" -eq 0 ]]; then
+  mkdir -p "$AGENTS_DIR"
 fi
 
 logical_ids=()
@@ -94,4 +101,6 @@ EOF
   created=$((created + 1))
 done
 
-echo "{\"ok\":true,\"scope\":\"$SCOPE\",\"agents_dir\":\"$AGENTS_DIR\",\"created\":$created,\"skipped\":$skipped,\"registry\":\"$REGISTRY\"}"
+jq -cn --arg scope "$SCOPE" --arg dir "$AGENTS_DIR" --arg reg "$REGISTRY" \
+  --argjson created "$created" --argjson skipped "$skipped" \
+  '{ok: true, scope: $scope, agents_dir: $dir, created: $created, skipped: $skipped, registry: $reg}'

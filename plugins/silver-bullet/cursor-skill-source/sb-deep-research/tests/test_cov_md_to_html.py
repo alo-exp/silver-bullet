@@ -23,7 +23,7 @@ class TestSplit(unittest.TestCase):
         content, bib = m.convert_markdown_to_html("# T\n## A\ntext\n## Bibliography\n[1] T - https://x.org/p\n")
         self.assertIn('<h2 class="section-title">A</h2>', content)
         self.assertNotIn("x.org", content)
-        self.assertIn('<a href="https://x.org/p" target="_blank">T</a>', bib)
+        self.assertIn('<a href="https://x.org/p" target="_blank" rel="noopener noreferrer">T</a>', bib)
 
     def test_no_bibliography(self):
         content, bib = m.convert_markdown_to_html("# T\n## A\ntext")
@@ -40,8 +40,8 @@ class TestBibliography(unittest.TestCase):
             "\n[1] Title one - https://example.com/a\n[2] Other **bold** - http://x.org/b\nfree **text**\n")
         self.assertTrue(html.startswith('<div class="bibliography-content">'))
         self.assertTrue(html.endswith("</div>"))
-        self.assertIn('<span class="bib-number">[1]</span> <a href="https://example.com/a" target="_blank">Title one</a>', html)
-        self.assertIn('target="_blank">Other <strong>bold</strong></a>', html)
+        self.assertIn('<span class="bib-number">[1]</span> <a href="https://example.com/a" target="_blank" rel="noopener noreferrer">Title one</a>', html)
+        self.assertIn('rel="noopener noreferrer">Other <strong>bold</strong></a>', html)
         self.assertIn("free <strong>text</strong>", html)
 
 
@@ -97,8 +97,12 @@ class TestDivBalance(unittest.TestCase):
     def test_summary_not_first_and_adjacent_headings(self):
         self.assert_balanced("## Intro\nx\n## Executive Summary\n## Findings\nbody")
 
-    def test_raw_html_divs_in_body_do_not_confuse_balance(self):
+    def test_raw_html_in_body_is_escaped_not_passed_through(self):
+        # R11-07: report text quotes web content, so raw HTML is never emitted as markup.
         self.assert_balanced("## Executive Summary\n<div>raw</div>\n## Findings\nbody")
+        html = m._convert_content_section("## Executive Summary\n<div>raw</div>\n## Findings\nbody")
+        self.assertIn("&lt;div&gt;raw&lt;/div&gt;", html)
+        self.assertNotIn("<div>raw</div>", html)
 
 
 class TestLists(unittest.TestCase):
