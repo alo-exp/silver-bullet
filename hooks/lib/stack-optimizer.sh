@@ -157,17 +157,23 @@ AGENTMEMORY_EXPORT_ROOT=${export_abs}
     return 0
   fi
   mkdir -p "$am_home"
-  local tmp
+  local tmp body=""
   tmp="$(mktemp "${env_file}.XXXXXX")" || return 1
   if [[ -f "$env_file" ]]; then
-    cp -p "$env_file" "${env_file}.bak"
-    awk '
+    # The first backup is the user's original file: later runs must not overwrite it.
+    [[ -e "${env_file}.bak" ]] || cp -p "$env_file" "${env_file}.bak"
+    body="$(awk '
       /^# === SB synergy_max managed block ===/ { skip=1; next }
       /^# === end SB synergy_max managed block ===/ { skip=0; next }
       skip==0 { print }
-    ' "$env_file" >"$tmp"
+    ' "$env_file")"
   fi
-  printf '\n%s\n' "$template" >>"$tmp"
+  # Command substitution drops trailing newlines, so re-running adds no blank lines.
+  if [[ -n "$body" ]]; then
+    printf '%s\n\n%s\n' "$body" "$template" >"$tmp"
+  else
+    printf '%s\n' "$template" >"$tmp"
+  fi
   chmod 600 "$tmp" 2>/dev/null || true
   mv -f -- "$tmp" "$env_file"
 }
