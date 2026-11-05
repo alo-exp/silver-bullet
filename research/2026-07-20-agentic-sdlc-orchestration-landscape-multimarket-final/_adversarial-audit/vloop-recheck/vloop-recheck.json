@@ -1,7 +1,7 @@
 {
   "mode": "file://",
-  "fileUrl": "file:///Users/shafqat/.cursor/worktrees/repo/3ht3/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/landscape-report.html",
-  "reportPath": "/Users/shafqat/.cursor/worktrees/repo/3ht3/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/landscape-report.html",
+  "fileUrl": "file:///Users/<user>/.cursor/worktrees/repo/3ht3/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/landscape-report.html",
+  "reportPath": "/Users/<user>/.cursor/worktrees/repo/3ht3/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/landscape-report.html",
   "passAll": true,
   "pageErrors": [],
   "consoleErrors": [],
@@ -75,7 +75,7 @@
     "hasSDLC": true,
     "hasSaaS": true,
     "cavekitMq": "Visionaries",
-    "locationHref": "file:///Users/shafqat/.cursor/worktrees/repo/3ht3/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/landscape-report.html",
+    "locationHref": "file:///Users/<user>/.cursor/worktrees/repo/3ht3/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/landscape-report.html",
     "protocol": "file:"
   },
   "leadersProbe": {
@@ -271,8 +271,8 @@
     }
   },
   "screenshots": {
-    "vloop1280": "/Users/shafqat/.cursor/worktrees/repo/3ht3/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-audit/vloop-recheck/VLOOP-1280.png",
-    "vloopDark": "/Users/shafqat/.cursor/worktrees/repo/3ht3/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-audit/vloop-recheck/VLOOP-dark-1280.png",
-    "vloop375": "/Users/shafqat/.cursor/worktrees/repo/3ht3/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-audit/vloop-recheck/VLOOP-375.png"
+    "vloop1280": "/Users/<user>/.cursor/worktrees/repo/3ht3/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-audit/vloop-recheck/VLOOP-1280.png",
+    "vloopDark": "/Users/<user>/.cursor/worktrees/repo/3ht3/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-audit/vloop-recheck/VLOOP-dark-1280.png",
+    "vloop375": "/Users/<user>/.cursor/worktrees/repo/3ht3/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-audit/vloop-recheck/VLOOP-375.png"
   }
 }

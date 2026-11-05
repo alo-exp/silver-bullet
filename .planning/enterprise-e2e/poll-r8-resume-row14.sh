@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Poll R8 resume batch after row-14 kill (driver-based, no orchestrator).
 set -o pipefail
-MAIN=/Users/shafqat/projects/silver-bullet/repo
+MAIN=/Users/<user>/projects/silver-bullet/repo
 SB_ROOT=/private/tmp/sb-main-row11-fp
 LOG="$SB_ROOT/.e2e-r8-claude-resume-fp-live.log"
 LEDGER="$SB_ROOT/.planning/enterprise-e2e/ROUND-8-LEDGER.md"

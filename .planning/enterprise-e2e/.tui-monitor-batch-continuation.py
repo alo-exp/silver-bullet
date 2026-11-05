@@ -14,7 +14,7 @@ import sys
 import time
 from datetime import datetime, timezone
 
-SB = os.environ.get("SB_ROOT", "/Users/shafqat/projects/silver-bullet/repo")
+SB = os.environ.get("SB_ROOT", "/Users/<user>/projects/silver-bullet/repo")
 os.chdir(SB)
 
 RETRY_ROWS = set(range(1, 23))  # full Round 4 matrix rows 1-22
@@ -152,7 +152,7 @@ def ensure_pending_driver():
     )
     env.setdefault(
         "SB_TEST_ENTERPRISE_APP_ROOT",
-        "/Users/shafqat/projects/enterprise-grade-test-app",
+        "/Users/<user>/projects/enterprise-grade-test-app",
     )
     env.setdefault("SB_E2E_MATRIX_LOG", MATRIX_LOG)
     subprocess.Popen(

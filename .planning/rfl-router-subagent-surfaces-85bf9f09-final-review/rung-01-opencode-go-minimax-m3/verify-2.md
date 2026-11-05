@@ -12,8 +12,8 @@ Ran `sha256sum`, `stat`, and `cmp` against both copies in this session (no other
 
 | Copy | Path | SHA-256 | Size (bytes) |
 |---|---|---|---|
-| primary | `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | 621095 |
-| cursor | `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | 621095 |
+| primary | `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | 621095 |
+| cursor | `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | 621095 |
 
 - **Byte-identical:** **YES** (`cmp` exited 0; both copies hash the same `d534…1029e0`).
 - **Locked SHA match:** both copies = `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0`, both 621095 bytes. Matches the locked SHA pinned in the task.

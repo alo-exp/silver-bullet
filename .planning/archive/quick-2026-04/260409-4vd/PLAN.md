@@ -146,14 +146,14 @@ absent (it was intentionally removed and must stay out). Result:
 ```bash
 # Confirm all targeted hooks now have the trap line
 grep -l 'trap.*exit 0.*ERR\|trap.*ERR.*exit 0' \
-  /Users/shafqat/Documents/Projects/silver-bullet/hooks/session-start \
-  /Users/shafqat/Documents/Projects/silver-bullet/hooks/compliance-status.sh \
-  /Users/shafqat/Documents/Projects/silver-bullet/hooks/session-log-init.sh \
-  /Users/shafqat/Documents/Projects/silver-bullet/hooks/ensure-model-routing.sh \
-  /Users/shafqat/Documents/Projects/silver-bullet/hooks/semantic-compress.sh \
-  /Users/shafqat/Documents/Projects/silver-bullet/hooks/record-skill.sh \
-  /Users/shafqat/Documents/Projects/silver-bullet/hooks/ci-status-check.sh \
-  /Users/shafqat/Documents/Projects/silver-bullet/hooks/dev-cycle-check.sh
+  /Users/<user>/Documents/Projects/silver-bullet/hooks/session-start \
+  /Users/<user>/Documents/Projects/silver-bullet/hooks/compliance-status.sh \
+  /Users/<user>/Documents/Projects/silver-bullet/hooks/session-log-init.sh \
+  /Users/<user>/Documents/Projects/silver-bullet/hooks/ensure-model-routing.sh \
+  /Users/<user>/Documents/Projects/silver-bullet/hooks/semantic-compress.sh \
+  /Users/<user>/Documents/Projects/silver-bullet/hooks/record-skill.sh \
+  /Users/<user>/Documents/Projects/silver-bullet/hooks/ci-status-check.sh \
+  /Users/<user>/Documents/Projects/silver-bullet/hooks/dev-cycle-check.sh
 
 # Confirm plugin.json now has the hooks field and no skills field
 jq '{"hooks":.hooks, "has_skills":(.skills != null)}' \
@@ -170,14 +170,14 @@ for f in \
   hooks/record-skill.sh \
   hooks/ci-status-check.sh \
   hooks/dev-cycle-check.sh; do
-  bash -n "/Users/shafqat/Documents/Projects/silver-bullet/$f" && echo "OK: $f" || echo "PARSE ERROR: $f"
+  bash -n "/Users/<user>/Documents/Projects/silver-bullet/$f" && echo "OK: $f" || echo "PARSE ERROR: $f"
 done
 ```
 
 ### Commit Task 1
 
 ```bash
-cd /Users/shafqat/Documents/Projects/silver-bullet
+cd /Users/<user>/Documents/Projects/silver-bullet
 git add hooks/session-start \
         hooks/compliance-status.sh \
         hooks/session-log-init.sh \
@@ -351,14 +351,14 @@ steps 5 ("Run conflict detection") and 6 ("Output: Silver Bullet updated..."). I
 Confirm the new section appears between 3.7 and 3.8:
 ```bash
 grep -n "3.7.5\|3.8 Activate" \
-  /Users/shafqat/Documents/Projects/silver-bullet/skills/silver-init/SKILL.md
+  /Users/<user>/Documents/Projects/silver-bullet/skills/silver-init/SKILL.md
 ```
 Expected: line for `3.7.5` appears before the line for `3.8`.
 
 ### Commit Task 2
 
 ```bash
-cd /Users/shafqat/Documents/Projects/silver-bullet
+cd /Users/<user>/Documents/Projects/silver-bullet
 git add skills/silver-init/SKILL.md
 git commit -m "$(cat <<'EOF'
 feat(silver:init): register SB hooks into ${SB_RUNTIME_HOME_ROOT}/settings.json
@@ -435,13 +435,13 @@ jq -r '.hooks' ${SB_RUNTIME_HOME_ROOT}-plugin/plugin.json
 # Expected: ./hooks/hooks.json
 
 # Confirm CHANGELOG has the new entry
-grep -A 3 '0.13.2' /Users/shafqat/Documents/Projects/silver-bullet/CHANGELOG.md
+grep -A 3 '0.13.2' /Users/<user>/Documents/Projects/silver-bullet/CHANGELOG.md
 ```
 
 ### Commit Task 3
 
 ```bash
-cd /Users/shafqat/Documents/Projects/silver-bullet
+cd /Users/<user>/Documents/Projects/silver-bullet
 git add .claude-plugin/plugin.json CHANGELOG.md
 git commit -m "$(cat <<'EOF'
 chore: release v0.13.2

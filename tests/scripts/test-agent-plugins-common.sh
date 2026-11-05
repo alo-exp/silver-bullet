@@ -220,6 +220,13 @@ git -C "$TAGREPO" tag v3.0.0 "$(git -C "$TAGREPO" rev-parse 'HEAD^{tree}')"
 rc=0; agent_plugins_release_tag_commit "$TAGREPO" 3.0.0 >/dev/null 2>&1 || rc=$?
 assert_eq "a tag that is not a commit is refused" "1" "$rc"
 
+# tag_commit_if_any: the commit when the tag exists, nothing (and success) when it does not.
+assert_eq "tag_commit_if_any resolves an existing tag" "$(git -C "$TAGREPO" rev-parse HEAD)" "$(agent_plugins_tag_commit_if_any "$TAGREPO" 2.0.0)"
+rc=0; out="$(agent_plugins_tag_commit_if_any "$TAGREPO" 9.9.9)" || rc=$?
+assert_eq "tag_commit_if_any succeeds without the tag" "0" "$rc"
+assert_eq "tag_commit_if_any prints nothing without the tag" "" "$out"
+assert_eq "tag_commit_if_any ignores a tag that is not a commit" "" "$(agent_plugins_tag_commit_if_any "$TAGREPO" 3.0.0)"
+
 # --- catalog path ---
 REPO="$TL_TMP/repo"
 mkdir -p "$REPO/scripts/lib"

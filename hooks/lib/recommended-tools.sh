@@ -178,11 +178,9 @@ sb_rt_version_ge() {
 # CONFIGURED comes from the project config, so it is honoured only when it names a file
 # inside $SB_RUNTIME_STATE_DIR: '~/' and the ${SB_RUNTIME_HOME_ROOT} / ${SB_RUNTIME_STATE_DIR}
 # placeholders are expanded; empty, relative or placeholder-bearing values, control
-# characters, '.' or '..' components, names that are not a '<name>-usage' / '<name>-query' stamp, and paths whose existing parent resolves (physically)
-# outside the state dir all fall back to $SB_RUNTIME_STATE_DIR/DEFAULT_NAME.
+# characters and names that are not exactly <state dir>/<name>-usage or <name>-query all fall back to $SB_RUNTIME_STATE_DIR/DEFAULT_NAME.
 sb_rt_state_file() {
-  local configured="${1:-}" default_name="${2:-}" state_dir fallback candidate rel part probe canon_state canon_probe base_lc
-  local -a _sb_rt_parts
+  local configured="${1:-}" default_name="${2:-}" state_dir fallback candidate rel base_lc
   state_dir="${SB_RUNTIME_STATE_DIR:-${HOME}/.silver-bullet}"
   state_dir="${state_dir%/}"
   fallback="${state_dir}/${default_name}"
@@ -206,34 +204,30 @@ sb_rt_state_file() {
   # including the bare state dir, falls back to the built-in stamp.
   base_lc="$(printf '%s' "${rel##*/}" | tr '[:upper:]' '[:lower:]')"
   [[ "$base_lc" =~ ^[a-z0-9-]+-(usage|query)$ ]] || { printf '%s' "$fallback"; return 0; }
-  IFS=/ read -r -a _sb_rt_parts <<<"$rel"
-  for part in ${_sb_rt_parts[@]+"${_sb_rt_parts[@]}"}; do
-    case "$part" in
-      "" | . | ..) printf '%s' "$fallback"; return 0 ;;
-    esac
-  done
-  # A symlinked directory inside the state dir must not lead outside it.
-  if canon_state="$(cd -P -- "$state_dir" 2>/dev/null && pwd -P)"; then
-    probe="$(dirname "$candidate")"
-    while [[ ! -d "$probe" ]]; do
-      probe="$(dirname "$probe")"
-    done
-    canon_probe="$(cd -P -- "$probe" 2>/dev/null && pwd -P)" || canon_probe=""
-    case "$canon_probe" in
-      "$canon_state" | "$canon_state"/*) ;;
-      *) printf '%s' "$fallback"; return 0 ;;
-    esac
-  fi
+  # Exactly <state dir>/<stamp>: no subdirectory (a stamp writer must never be made to create
+  # a directory that shadows one of SB's own state files), so rel is one plain component.
+  case "$rel" in
+    */*) printf '%s' "$fallback"; return 0 ;;
+  esac
   printf '%s' "$candidate"
 }
 
 # sb_rt_stamp_write PATH: write the current epoch to PATH atomically. The temp file is
 # created next to PATH and renamed over it, so a symlink at PATH is replaced, not followed.
 sb_rt_stamp_write() {
-  local path="${1:-}" dir tmp
+  local path="${1:-}" dir tmp state_dir
   [[ -n "$path" && ! -d "$path" ]] || return 1
   dir="$(dirname "$path")"
-  mkdir -p "$dir" 2>/dev/null || return 1
+  # Only the runtime state dir itself is created with parents (a fixed path); a marker
+  # subdirectory of it is created one level deep with plain mkdir, never a tree.
+  state_dir="${SB_RUNTIME_STATE_DIR:-${HOME}/.silver-bullet}"
+  state_dir="${state_dir%/}"
+  case "$dir" in
+    "$state_dir") mkdir -p "$dir" 2>/dev/null || return 1 ;;
+    "$state_dir"/*/*) [[ -d "$dir" ]] || return 1 ;;
+    "$state_dir"/*) mkdir -p "$state_dir" 2>/dev/null && { [[ -d "$dir" ]] || mkdir "$dir" 2>/dev/null; } || return 1 ;;
+    *) [[ -d "$dir" ]] || return 1 ;;
+  esac
   tmp="$(mktemp "${path}.XXXXXX" 2>/dev/null)" || return 1
   if date +%s >"$tmp" 2>/dev/null && mv -f -- "$tmp" "$path" 2>/dev/null; then
     return 0

@@ -184,6 +184,16 @@ assert_file_absent "stamp_write: no temp file is left behind" "$STAMP"
 [[ -z "$(find "$TL_TMP" -maxdepth 1 -name 'stamp.*' 2>/dev/null)" ]] && tl_pass "stamp_write: no stray temp file" || tl_fail "stamp_write: no stray temp file"
 rm -f "$TL_BIN/mv"; hash -r
 yes_t "stamp_write: ok" sb_rt_stamp_write "$STAMP"
+echo "--- stamp writer never makes a directory tree ---"
+WSTATE="$TL_TMP/wstate"; rm -rf "$WSTATE"
+no_t "stamp_write: a nested path under a missing directory is refused" env SB_RUNTIME_STATE_DIR="$WSTATE" bash -c 'source "$1"; sb_rt_stamp_write "$2"' _ "$LIBDIR/recommended-tools.sh" "$WSTATE/trivial/x/y-usage"
+assert_file_absent "stamp_write: no tree was created" "$WSTATE/trivial"
+no_t "stamp_write: a path outside the state dir needs its directory to exist" env SB_RUNTIME_STATE_DIR="$WSTATE" bash -c 'source "$1"; sb_rt_stamp_write "$2"' _ "$LIBDIR/recommended-tools.sh" "$TL_TMP/nodir/x-usage"
+assert_file_absent "stamp_write: nothing created outside" "$TL_TMP/nodir"
+yes_t "stamp_write: the state dir itself is created" env SB_RUNTIME_STATE_DIR="$WSTATE" bash -c 'source "$1"; sb_rt_stamp_write "$2"' _ "$LIBDIR/recommended-tools.sh" "$WSTATE/a-usage"
+yes_t "stamp_write: a one-level marker directory is created" env SB_RUNTIME_STATE_DIR="$WSTATE" bash -c 'source "$1"; sb_rt_stamp_write "$2"' _ "$LIBDIR/recommended-tools.sh" "$WSTATE/markers/m"
+no_t "stamp_write: a two-level marker directory is refused" env SB_RUNTIME_STATE_DIR="$WSTATE" bash -c 'source "$1"; sb_rt_stamp_write "$2"' _ "$LIBDIR/recommended-tools.sh" "$WSTATE/markers2/deep/m"
+rm -rf "$WSTATE"
 yes_t "stamp fresh" sb_rt_stamp_is_fresh "$STAMP" 60
 printf '%s' "$(date +%s)" >"$STAMP"
 yes_t "stamp fresh without a trailing newline" sb_rt_stamp_is_fresh "$STAMP" 60

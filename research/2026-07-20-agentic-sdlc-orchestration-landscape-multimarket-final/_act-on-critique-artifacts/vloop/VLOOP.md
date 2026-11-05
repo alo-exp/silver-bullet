@@ -1,7 +1,7 @@
 # Independent analyst-grade V-loop
 
 Date: 2026-08-14  
-Workspace: `/Users/shafqat/.cursor/worktrees/repo/3ht3`  
+Workspace: `/Users/<user>/.cursor/worktrees/repo/3ht3`  
 Prior PASS: **not trusted**. Live parse of MD, HTML `#report-data`, and `comparison.json`.  
 Engine: **not edited** (all checks PASS). **No commit.**
 

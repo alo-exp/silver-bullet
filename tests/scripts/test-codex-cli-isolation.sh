@@ -102,7 +102,7 @@ enabled = true
 [agents.sb-planner]
 config_file = "${ORIGINAL_HOME}/.codex/agents/sb-planner.toml"
 
-[projects."/Users/shafqat/projects/silver-bullet"]
+[projects."/Users/example/projects/silver-bullet"]
 trust_level = "trusted"
 EOF
 
@@ -298,7 +298,7 @@ assert_file_contains "Isolated Codex config rewrites alo-labs marketplace to a l
 assert_file_not_contains "Isolated Codex config does not add GSD marketplace" "$CODEX_HOME/config.toml" "get-shit-done-marketplace"
 assert_file_not_contains "Isolated Codex config does not add Superpowers marketplace" "$CODEX_HOME/config.toml" "superpowers-marketplace"
 assert_file_contains "Isolated Codex config keeps only required Silver Bullet plugin enablement" "$CODEX_HOME/config.toml" '[plugins."silver-bullet@alo-labs-codex"]'
-assert_file_contains "Isolated Codex config keeps existing trusted projects" "$CODEX_HOME/config.toml" '[projects."/Users/shafqat/projects/silver-bullet"]'
+assert_file_contains "Isolated Codex config keeps existing trusted projects" "$CODEX_HOME/config.toml" '[projects."/Users/example/projects/silver-bullet"]'
 assert_file_contains "Isolated Codex config keeps trusted project level" "$CODEX_HOME/config.toml" 'trust_level = "trusted"'
 assert_file_exists "Isolated Codex env mirrors host Codex skill roots" "$CODEX_HOME/skills/silver-context/SKILL.md"
 assert_file_exists "Isolated Codex env mirrors host .agents skill roots" "$HOME/.agents/skills/silver-plan/SKILL.md"

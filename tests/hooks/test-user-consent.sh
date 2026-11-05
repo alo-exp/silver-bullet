@@ -332,9 +332,38 @@ mkdir -p "$LOCK" "${LOCK}.takeover"
 tl_run env SB_CONSENT_LOCK_TRIES=2 bash "$CLI" grant rtk --all-projects --capabilities enforce
 assert_eq "an ownerless lock whose takeover is busy gives up with status 2" "2" "$TL_STATUS"
 rm -rf "$LOCK" "${LOCK}.takeover"
-for bad in abc -5 0 "" 1.5; do
+for bad in abc -5 0 "" 1.5 1001 99999999999999999999; do
   tl_run env SB_CONSENT_LOCK_TRIES="$bad" bash "$CLI" grant rtk --all-projects --capabilities enforce
-  assert_eq "SB_CONSENT_LOCK_TRIES='$bad' falls back to the default" "0" "$TL_STATUS"
+  assert_eq "SB_CONSENT_LOCK_TRIES='$bad' with no lock: grant works" "0" "$TL_STATUS"
 done
+# With an ownerless lock held, the default wait (not the bad value) governs: the lock is
+# reclaimed after about 10 s instead of waiting 10^20 tries.
+for bad in abc 99999999999999999999; do
+  rm -rf "$LOCK"; mkdir -p "$LOCK"
+  start=$SECONDS
+  tl_run env SB_CONSENT_LOCK_TRIES="$bad" bash "$CLI" grant rtk --all-projects --capabilities enforce
+  assert_eq "SB_CONSENT_LOCK_TRIES='$bad' with an ownerless lock: reclaimed" "0" "$TL_STATUS"
+  [[ $((SECONDS - start)) -lt 40 ]] && tl_pass "SB_CONSENT_LOCK_TRIES='$bad': the default wait applies" || tl_fail "SB_CONSENT_LOCK_TRIES='$bad': the default wait applies"
+done
+# A leftover takeover directory from a killed process does not disable takeover for good.
+rm -rf "$LOCK"; mkdir -p "$LOCK" "${LOCK}.takeover"; printf '999999' >"$LOCK/pid"
+touch -d '10 minutes ago' "${LOCK}.takeover" 2>/dev/null || touch -t 200001010000 "${LOCK}.takeover"
+tl_run env SB_CONSENT_LOCK_TRIES=3 bash "$CLI" grant graphify --all-projects --capabilities enforce
+assert_eq "an old takeover directory is cleared and the stale lock taken over" "0" "$TL_STATUS"
+rm -rf "$LOCK" "${LOCK}.takeover"; mkdir -p "$LOCK" "${LOCK}.takeover"; printf '%s' "$$" >"$LOCK/pid"
+tl_run env SB_CONSENT_LOCK_TRIES=2 bash "$CLI" grant graphify --all-projects --capabilities enforce
+assert_contains "the give-up message names the takeover directory too" "$TL_ERR" ".consent.lock.takeover"
+rm -rf "$LOCK" "${LOCK}.takeover"
+
+echo "=== an unwritable pid file does not fail the grant ==="
+reset_store
+_sb_consent_write_owner() { return 1; }   # the owner record cannot be written
+rc=0; sb_consent_set granted rtk enforce machine test >/dev/null 2>&1 || rc=$?
+unset -f _sb_consent_write_owner
+# shellcheck source=../../hooks/lib/user-consent.sh
+source "$LIB"
+assert_eq "grant succeeds although the lock's pid file cannot be written" "0" "$rc"
+assert_eq "and is recorded" "granted" "$(sb_consent_decision rtk enforce)"
+[[ ! -d "$(dirname "$STORE")/.consent.lock" ]] && tl_pass "the lock is released" || tl_fail "the lock is released"
 
 tl_results

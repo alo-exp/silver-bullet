@@ -3,8 +3,8 @@ set -euo pipefail
 export PI_PROVIDER=omniroute
 export PI_MODEL=cursor/grok-4.6-high
 export PI_EXPECT_FILE_MIN_BYTES=800
-R7="/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-07-cursor-grok-4.6-high"
-REPO="/Users/shafqat/projects/silver-bullet/repo"
+R7="/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-07-cursor-grok-4.6-high"
+REPO="/Users/<user>/projects/silver-bullet/repo"
 LOG="$R7/logs/triage-fix-smoke.txt"
 {
   echo "START $(date -u +%Y-%m-%dT%H:%M:%SZ)"

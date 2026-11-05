@@ -8,8 +8,8 @@ This is the independent `rung_08_verify_2` report produced by Pi `codex/gpt-5.6-
 
 | Copy | SHA-256 actually hashed | Bytes |
 |---|---|---:|
-| `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `4c18af575adc848542c3d04faa2579a206ac0a627c80aade0d7aba3514e91de9` | 621233 |
-| `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `4c18af575adc848542c3d04faa2579a206ac0a627c80aade0d7aba3514e91de9` | 621233 |
+| `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `4c18af575adc848542c3d04faa2579a206ac0a627c80aade0d7aba3514e91de9` | 621233 |
+| `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `4c18af575adc848542c3d04faa2579a206ac0a627c80aade0d7aba3514e91de9` | 621233 |
 
 `cmp` result: **byte-identical YES**. The audited disk freeze is therefore `4c18af575adc848542c3d04faa2579a206ac0a627c80aade0d7aba3514e91de9` / 621233 bytes, not any historical or stale freeze.
 

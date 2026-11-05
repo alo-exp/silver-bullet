@@ -4,7 +4,7 @@ import subprocess
 from pathlib import Path
 
 pdf = Path(
-    "/Users/shafqat/.cursor/worktrees/repo/3ht3/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/landscape-report.pdf"
+    "/Users/<user>/.cursor/worktrees/repo/3ht3/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/landscape-report.pdf"
 )
 needles = (
     "cc10x",

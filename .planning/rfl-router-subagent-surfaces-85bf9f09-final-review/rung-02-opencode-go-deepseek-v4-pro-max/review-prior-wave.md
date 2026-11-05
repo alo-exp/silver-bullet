@@ -5,8 +5,8 @@
 - **Reasoning:** high
 - **Phase:** REVIEW-ONLY — no clarify, no triage, no fixes, no ACCEPT/REJECT, no ladder advancement
 - **Reviewed files (scope, nothing else):**
-  - `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
-  - `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
+  - `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
+  - `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
 - **Method:** graphify query first (`router_subagent_surfaces_85bf9f09 freeze review rung ladder`, 230-node subgraph used for navigation only), agentmemory session note saved, then a full independent re-read of all 4296 lines of the plan plus scripted structural audits (YAML frontmatter parse via Ruby psych, GFM slug check, TOC/body cross-check, mermaid count, token-context scan).
 
 ## 1. Disk SHA evidence (hashed by this rung)
@@ -42,7 +42,7 @@ SHA-256  ~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md:
 | LS-post-val-kl Executor producer | YES — canonical L765: "Both (1) and (2) are **Executor work** ... not the Advisor `knowledge_postwrite` leaf as the producer"; consistent at L2504–L2506 and VAL/TST-RFL-613 (L3846) |
 | OmniRoute routing-only | YES — "Not a second `/sb` router"; "routing-only proxy"; compression/memory off; no `/sb:agent-omni`; origin SHA `745c7f41…` cited consistently |
 | TOC-GFM | YES — 171/171 TOC anchors resolve under GitHub slug semantics (link text + code-stripped); 274/274 body inline anchors resolve; zero TOC/body heading-level mismatches; every TOC heading occurs exactly once in the body |
-| Broken refs | NONE internal — 0 unresolved anchors. Provenance file `/Users/shafqat/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md` exists on disk. File links to to-be-created artifacts are explicitly annotated ("create it", "does not exist today") |
+| Broken refs | NONE internal — 0 unresolved anchors. Provenance file `/Users/<user>/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md` exists on disk. File links to to-be-created artifacts are explicitly annotated ("create it", "does not exist today") |
 | Document-integrity claims | One `#` title; one `## How to read this document`; one `## Table of contents`; one `---`…`---` frontmatter block (2 fence lines); no Addendum headings; 33 unique todo ids |
 
 ## 3. Findings (raw, untriaged)

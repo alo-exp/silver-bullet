@@ -8,7 +8,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-ROOT = Path("/Users/shafqat/projects/silver-bullet/repo")
+ROOT = Path("/Users/<user>/projects/silver-bullet/repo")
 LOGDIR = ROOT / ".planning/rfl-agent-interaction-modes-17ed9bf7/rung-03-qwen38-xhigh"
 OPENCODE = os.environ.get("OPENCODE_BIN", str(Path.home() / ".opencode/bin/opencode"))
 VARIANT = os.environ.get("OPENCODE_VARIANT", "max")  # live CLI: high|max|minimal; no xhigh

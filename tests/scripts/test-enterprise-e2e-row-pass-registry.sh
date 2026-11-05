@@ -17,7 +17,7 @@ mkdir -p "$TMP/hooks" "$TMP/.planning/enterprise-e2e"
 printf '{"version":"0.48.9-test"}\n' >"$TMP/package.json"
 printf '{}\n' >"$TMP/hooks/hooks.json"
 git -C "$TMP" init -q
-git -C "$TMP" config user.email "e2e@test.local"
+git -C "$TMP" config user.email "e2e@test.invalid"
 git -C "$TMP" config user.name "e2e"
 git -C "$TMP" add -A
 git -C "$TMP" commit -q -m "init"

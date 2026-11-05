@@ -2,7 +2,7 @@
 """Filter opencode models for qwen; summarize run --help."""
 from pathlib import Path
 
-base = Path("/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-agent-interaction-modes-17ed9bf7/rung-03-qwen38-xhigh")
+base = Path("/Users/<user>/projects/silver-bullet/repo/.planning/rfl-agent-interaction-modes-17ed9bf7/rung-03-qwen38-xhigh")
 models = (base / "models.raw.txt").read_text(encoding="utf-8", errors="replace") if (base / "models.raw.txt").exists() else ""
 helptext = (base / "run-help.txt").read_text(encoding="utf-8", errors="replace") if (base / "run-help.txt").exists() else ""
 lines = models.splitlines()

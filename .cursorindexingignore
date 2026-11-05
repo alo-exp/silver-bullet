@@ -1,0 +1,7 @@
+# Cursor can index workspace skill-style folders into the agent TUI "/" picker. Keep the
+# source skills and workflow templates out of indexing and that public menu without hiding
+# them from the agent's file tools (.cursorignore would; R13-26). Generated host bundles are
+# listed in .cursorignore. Installed plugin command stubs under plugins/silver-bullet/commands
+# stay public.
+skills/
+templates/workflows/

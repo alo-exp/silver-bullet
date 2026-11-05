@@ -35,7 +35,7 @@
 
 ### Enterprise temp branch
 
-- **Repo:** `/Users/shafqat/projects/enterprise-grade-test-app`
+- **Repo:** `/Users/<user>/projects/enterprise-grade-test-app`
 - **Branch:** `agent-claude-af-live-20260705-live`
 - **Commit:** [`e8ac95d`](https://github.com/alo-exp/enterprise-grade-test-app/commit/e8ac95df79fa23b8a0dc47c60153917ec0df0a6d) — `docs: agent-claude AF live health-smoke guide`
 
@@ -48,10 +48,10 @@ Delegated via brief: create `docs/AGENT-CLAUDE-AF-LIVE.md` (health contract + sm
 ## Command transcript (representative)
 
 ```bash
-export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
+export SB_ROOT=/Users/<user>/projects/silver-bullet/repo
 export SB_AGENT_DELEGATE_V2=1 SB_ORCHESTRATOR_WORKER=1 SB_ORCHESTRATOR_PARENT=0
 export SB_AGENT_CLAUDE_LOG_FLOOR=512 CLAUDE_INTERACTIVE_TIMEOUT=900
-export CLAUDE_WORK_DIR=/Users/shafqat/projects/enterprise-grade-test-app
+export CLAUDE_WORK_DIR=/Users/<user>/projects/enterprise-grade-test-app
 
 # FS-DELEGATE-BRIEF + directive seed:
 sb_orchestrator_seed_delegation_directive claude live-af-20260705 \

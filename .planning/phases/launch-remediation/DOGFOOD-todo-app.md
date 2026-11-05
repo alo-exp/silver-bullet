@@ -1,6 +1,6 @@
 # Launch Dogfood — todo-app (2026-06-14)
 
-**Workspace:** `/Users/shafqat/projects/todo-app` (sibling repo; not under `projects/todo-app` in SB source tree)
+**Workspace:** `/Users/<user>/projects/todo-app` (sibling repo; not under `projects/todo-app` in SB source tree)
 
 ## Setup
 
@@ -142,7 +142,7 @@ None — feature scope inferred from codebase + prior dogfood intent; no user ch
 | Feature shipped | Priority column + API + UI + 56/56 Jest green |
 | Cursor rule | `.cursor/rules/silver-orchestrator.mdc` installed from SB template |
 
-**State dir (pinned):** `/Users/shafqat/projects/todo-app/.sb-dogfood-state` with `SB_RUNTIME_PRESERVE_STATE_DIR=1`
+**State dir (pinned):** `/Users/<user>/projects/todo-app/.sb-dogfood-state` with `SB_RUNTIME_PRESERVE_STATE_DIR=1`
 
 ### Feature delivered (Session B)
 
@@ -157,9 +157,9 @@ None — feature scope inferred from codebase + prior dogfood intent; no user ch
 
 ```bash
 export SILVER_BULLET_RUNTIME=cursor SB_RUNTIME_PRESERVE_STATE_DIR=1
-export SB_RUNTIME_STATE_DIR=/Users/shafqat/projects/todo-app/.sb-dogfood-state
+export SB_RUNTIME_STATE_DIR=/Users/<user>/projects/todo-app/.sb-dogfood-state
 export SILVER_BULLET_STATE_FILE=$SB_RUNTIME_STATE_DIR/state
-cd /Users/shafqat/projects/todo-app
+cd /Users/<user>/projects/todo-app
 echo '{"source":"startup"}' | bash $SB_REPO/hooks/session-start
 echo '{"prompt":"continue"}' | bash $SB_REPO/hooks/prompt-reminder.sh
 ```

@@ -68,7 +68,6 @@ j_make_remote "$TL_TMP/mk"
 j_clone_remote "$TL_TMP/work"
 remote_head="$(git -C "$J_REMOTE" rev-parse main)"
 new_tree
-HEAD1="$(git -C "$T" rev-parse HEAD)"
 sync_run env AGENT_PLUGINS_REPO_ROOT="$TL_TMP/work" bash "$SCRIPT" v2.0.0
 assert_eq "in-repo sync exits 0" 0 "$TL_STATUS"
 assert_contains "in-repo update reported" "$TL_OUT" "Updated in-repo marketplace.json: 0.0.1 → 2.0.0"
@@ -77,7 +76,7 @@ assert_eq "in-repo version" "2.0.0" "$(sb_version "$T/$MF")"
 # No tag exists yet (a real repository): the release commit is HEAD and the ref is the
 # tag the release is about to create, never main.
 assert_eq "no tag: ref is the release tag to be created" "v2.0.0" "$(sb_get "$T/$MF" ref)"
-assert_eq "no tag: sha is HEAD" "$HEAD1" "$(sb_get "$T/$MF" sha)"
+assert_eq "no tag: no sha is pinned (HEAD is not the release commit)" "null" "$(sb_get "$T/$MF" sha)"
 assert_eq "path pinned to the package dir" "plugins/silver-bullet" "$(sb_get "$T/$MF" path)"
 assert_eq "in-repo manifest keeps mode 644" "644" "$(stat -c %a "$T/$MF" 2>/dev/null || stat -f %Lp "$T/$MF")"
 assert_eq "package manifest regenerated" "2.0.0" "$(jq -r .version "$T/plugins/silver-bullet/.cursor-plugin/plugin.json")"
@@ -98,24 +97,26 @@ assert_eq "tag at HEAD: exits 0" 0 "$TL_STATUS"
 assert_eq "tag at HEAD: sha is the tagged commit" "$(git -C "$T" rev-parse 'v2.0.0^{commit}')" "$(sb_get "$T/$MF" sha)"
 assert_eq "tag at HEAD: ref is the tag" "v2.0.0" "$(sb_get "$T/$MF" ref)"
 
-# Tag behind HEAD: development continues on main, so pin main at HEAD.
+# Tag behind HEAD: development continues on main, but the entry stays pinned to the tag and
+# its commit, never to main or HEAD (R13-02).
 new_tree
 git -C "$T" tag v2.0.0
+TAGGED="$(git -C "$T" rev-parse 'v2.0.0^{commit}')"
 echo more >"$T/more.txt"
 git -C "$T" add more.txt && git -C "$T" commit -q -m second
 HEAD2="$(git -C "$T" rev-parse HEAD)"
 sync_run bash "$SCRIPT"
 assert_eq "tag behind HEAD: exits 0" 0 "$TL_STATUS"
-assert_eq "tag behind HEAD: sha is HEAD" "$HEAD2" "$(sb_get "$T/$MF" sha)"
-assert_eq "tag behind HEAD: ref is main" "main" "$(sb_get "$T/$MF" ref)"
+assert_eq "tag behind HEAD: sha is the tagged commit" "$TAGGED" "$(sb_get "$T/$MF" sha)"
+assert_eq "tag behind HEAD: HEAD is a later commit" "1" "$([[ "$HEAD2" != "$TAGGED" ]] && echo 1 || echo 0)"
+assert_eq "tag behind HEAD: ref is the tag, not main" "v2.0.0" "$(sb_get "$T/$MF" ref)"
 
 # A tag that is not a commit (points at a tree) does not count as a release tag.
 new_tree
 git -C "$T" tag v2.0.0 "$(git -C "$T" rev-parse 'HEAD^{tree}')"
-HEAD3="$(git -C "$T" rev-parse HEAD)"
 sync_run bash "$SCRIPT"
 assert_eq "non-commit tag: exits 0" 0 "$TL_STATUS"
-assert_eq "non-commit tag: sha is HEAD" "$HEAD3" "$(sb_get "$T/$MF" sha)"
+assert_eq "non-commit tag: no sha is pinned" "null" "$(sb_get "$T/$MF" sha)"
 assert_eq "non-commit tag: ref is the release tag to be created" "v2.0.0" "$(sb_get "$T/$MF" ref)"
 sync_run env AGENT_PLUGINS_REPO_ROOT="$TL_TMP/work" bash "$SCRIPT" --publish
 assert_eq "non-commit tag: publish refused" 1 "$TL_STATUS"

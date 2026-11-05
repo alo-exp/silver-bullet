@@ -17,7 +17,7 @@ Host-isolated lock/log paths only.
 | SB repo SHA | `26cf687f` |
 | Test-app branch | `enterprise-e2e/round-1-cursor` |
 | Test app SHA | `8482e60` |
-| Test-app worktree | `/Users/shafqat/projects/enterprise-grade-test-app-cursor` |
+| Test-app worktree | `/Users/<user>/projects/enterprise-grade-test-app-cursor` |
 | Cursor model (frozen) | `composer-2.5` |
 | Operator | TUI monitor agent |
 | Start date | 2026-07-01 |

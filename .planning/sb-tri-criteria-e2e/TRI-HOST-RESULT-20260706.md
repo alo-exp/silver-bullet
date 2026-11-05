@@ -1,7 +1,7 @@
 # SB Tri-Criteria — Tri-Host Result Matrix (2026-07-06)
 
 **Harness:** `bash scripts/sb-tri-criteria-e2e.sh live --host <cursor|claude|codex> --track <TC-01|TC-02|TC-03>`  
-**Fixture:** `/Users/shafqat/projects/enterprise-grade-test-app`  
+**Fixture:** `/Users/<user>/projects/enterprise-grade-test-app`  
 **Log audit:** [LOG-AUDIT-20260706.md](LOG-AUDIT-20260706.md)  
 **Cursor live rollup:** [LIVE-RESULT-20260706.md](LIVE-RESULT-20260706.md)
 
@@ -54,10 +54,10 @@
 ## Reproduce
 
 ```bash
-cd /Users/shafqat/projects/silver-bullet/repo
+cd /Users/<user>/projects/silver-bullet/repo
 export SB_ROOT="$PWD"
 export SB_RUNTIME_PRESERVE_STATE_DIR=1
-export SB_TRI_CRITERIA_WORK_DIR=/Users/shafqat/projects/enterprise-grade-test-app
+export SB_TRI_CRITERIA_WORK_DIR=/Users/<user>/projects/enterprise-grade-test-app
 
 for host in cursor claude codex; do
   for track in TC-01 TC-02 TC-03; do
