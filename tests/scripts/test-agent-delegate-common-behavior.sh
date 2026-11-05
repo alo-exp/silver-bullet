@@ -151,7 +151,7 @@ agent_delegate_redact_log_file "$TL_TMP/log.link" 2>/dev/null
 assert_eq "redact file: refuses to write through a symlink" "token=zzz999" "$(cat "$TL_TMP/log.txt")"
 
 # the raw log stays private and is redacted when the delegate is interrupted (R4-31)
-GL_OUT="$(bash -c '
+bash -c '
   source "$1/scripts/lib/agent-delegate-common.sh"
   LOGF="$2/guarded/run.log"
   agent_delegate_guard_log "$LOGF"
@@ -159,7 +159,7 @@ GL_OUT="$(bash -c '
   printf "key=\"x\" token=livevalue123\n" >>"$LOGF"
   kill -TERM $$
   sleep 5
-  echo "mode=$stat_mode"' _ "$ST" "$TL_TMP" 2>&1 || true)"
+  echo "mode=$stat_mode"' _ "$ST" "$TL_TMP" >/dev/null 2>&1 || true
 assert_eq "guard_log: interrupted delegate leaves a redacted log" "key=\"x\" token=[REDACTED]" "$(cat "$TL_TMP/guarded/run.log")"
 assert_eq "guard_log: log is 0600" "0o600" "$(python3 -c 'import os,sys;print(oct(os.stat(sys.argv[1]).st_mode & 0o777))' "$TL_TMP/guarded/run.log")"
 bash -c 'source "$1/scripts/lib/agent-delegate-common.sh"; agent_delegate_guard_log ""; echo noop' _ "$ST" | grep -q noop && tl_pass "guard_log: empty log path is a no-op" || tl_fail "guard_log: empty log path is a no-op"
