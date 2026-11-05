@@ -41,7 +41,7 @@ When leanctx.enabled_by_user is true, callers MUST use this script instead of
 optimize-rtk-context-mode.sh alone (conflict #9).
 
 Options:
-  --host <cursor|claude|codex|opencode|pi|all> Target host (required)
+  --host <cursor|claude|codex|opencode|pi|all> Target host (required; all = every host except cursor)
   --project-root <path>                       Canonical SB project root (required)
   --dry-run                                        Print actions without writes
   --skip-rtcm                                      Skip RTK+CM optimize helper
@@ -247,7 +247,9 @@ apply_profile_metadata
 
 case "$HOST" in
   all)
-    for h in cursor claude codex opencode pi; do
+    # Cursor is not part of "all": its installer writes ~/.cursor without a consent check, and
+    # Cursor support is being removed. Name it explicitly with --host cursor.
+    for h in claude codex opencode pi; do
       optimize_host "$h"
     done
     ;;
