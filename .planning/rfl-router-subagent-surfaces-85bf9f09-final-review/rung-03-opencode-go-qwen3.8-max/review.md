@@ -12,8 +12,8 @@ Hashed with `shasum -a 256` on the actual files on disk, 2026 review run:
 
 | Copy | SHA-256 actually hashed | Bytes | Lines |
 |---|---|---|---|
-| `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `4c18af575adc848542c3d04faa2579a206ac0a627c80aade0d7aba3514e91de9` | 621233 | 4289 |
-| `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `4c18af575adc848542c3d04faa2579a206ac0a627c80aade0d7aba3514e91de9` | 621233 | 4289 |
+| `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `4c18af575adc848542c3d04faa2579a206ac0a627c80aade0d7aba3514e91de9` | 621233 | 4289 |
+| `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `4c18af575adc848542c3d04faa2579a206ac0a627c80aade0d7aba3514e91de9` | 621233 | 4289 |
 
 - **Byte-identical:** YES (`cmp` clean).
 - **Matches locked freeze:** YES — `4c18af57…` / **621233** bytes (post rung-8 APPLY MED-1/NIT-1).
@@ -34,7 +34,7 @@ Hashed with `shasum -a 256` on the actual files on disk, 2026 review run:
 | Q1–Q3 locked | PASS | Q1 FAST unify = locked KR-fast-overlay amendment (L916); Q2 decided (A): WS1 catalog/routes, WS4 Job+FAST runtime, WS7 docs/Doctor/site (L3449, L4087); Q3 deep-research = `WF-DEEP-RESEARCH` + `/sb:deep-research` (L468, L762, L4093) |
 | Part A then Part B | PASS | L16, L25–100 (YAML annotations), L647: Part A quality-order core MUST land before Part B; Part B invokes Part A |
 | LS-post-val-kl Executor producer | PASS | Canonical §L766; “Both (1) and (2) are Executor work” — not the Advisor `knowledge_postwrite` leaf (L1092, L1100, L1108, L1110, L2465) |
-| Broken refs | PASS | 317 headings parsed (code-fence aware); 193 unique anchor links (277 total) — **0 broken** under the charter’s github-slugger algorithm (strip punctuation, collapse whitespace to a single hyphen; no `--` demand for ` / `, ` → `, ` — `; F-1 REJECT respected, no double-hyphen miss invented; `ws0--ws0b` untouched). External provenance file `/Users/shafqat/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md` exists on disk (provenance only) |
+| Broken refs | PASS | 317 headings parsed (code-fence aware); 193 unique anchor links (277 total) — **0 broken** under the charter’s github-slugger algorithm (strip punctuation, collapse whitespace to a single hyphen; no `--` demand for ` / `, ` → `, ` — `; F-1 REJECT respected, no double-hyphen miss invented; `ws0--ws0b` untouched). External provenance file `/Users/<user>/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md` exists on disk (provenance only) |
 | Truncated headings | PASS | All headings terminate cleanly (checked for open code spans/parens, dangling punctuation, truncation markers, mojibake; non-ASCII inventory is the intentional set § – — ’ “ ” … ← → ↔ ⇄ ≠ ≤ ≥) |
 | TOC-GFM | PASS | TOC L165–340; all TOC links resolve; document’s own integrity notes (EOF) consistent with observed structure |
 | Closed rung-2 Policy C findings (F3/F4) | PASS — not present on disk | Odd-`**` line scan (9 lines: L515, L522, L553, L2638, L3181, L3518, L3887, L3925, L4122) — every one is a glob path (`…/status/**`, `site/**`, `policies/sb/**/*.policy.md`), not misnested bold; the three host tables (L1155–1161) are well-formed, Pi/OpenCode rows correctly escape `\|`. All KR/lock sentences read complete — no truncated/garbled lock sentence remains |

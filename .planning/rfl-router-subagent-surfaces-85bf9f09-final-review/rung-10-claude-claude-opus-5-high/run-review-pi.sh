@@ -2,8 +2,8 @@
 # Bounded Pi invoke for rung_10_review. Hang-kill ~4m if idle (0% CPU / no events / no review.md).
 # Avoid bash 3.2 + set -u empty-array EXTRA[@] unbound.
 set -u
-RUNG="/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-10-claude-claude-opus-5-high"
-SB_ROOT="/Users/shafqat/projects/silver-bullet/repo"
+RUNG="/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-10-claude-claude-opus-5-high"
+SB_ROOT="/Users/<user>/projects/silver-bullet/repo"
 INVOKE="${SB_ROOT}/scripts/agent-pi/invoke.sh"
 REPORT="${RUNG}/review.md"
 WORK="${RUNG}/work"

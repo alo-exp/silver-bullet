@@ -8,8 +8,8 @@ This is the official VERIFY-ONLY pass 1/2 for parent `d5150f38-4d37-458d-9bdb-5e
 
 | Copy | SHA-256 actually hashed | Size |
 |---|---|---:|
-| `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `4c18af575adc848542c3d04faa2579a206ac0a627c80aade0d7aba3514e91de9` | 621233 bytes |
-| `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `4c18af575adc848542c3d04faa2579a206ac0a627c80aade0d7aba3514e91de9` | 621233 bytes |
+| `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `4c18af575adc848542c3d04faa2579a206ac0a627c80aade0d7aba3514e91de9` | 621233 bytes |
+| `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `4c18af575adc848542c3d04faa2579a206ac0a627c80aade0d7aba3514e91de9` | 621233 bytes |
 
 `cmp` result: **byte-identical YES**. This verifies the current `4c18af57…` freeze, not historical `07b98609…`, stale `d5343ac1…`, or stale-review `edff7c0c…`.
 

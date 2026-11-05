@@ -1,6 +1,6 @@
 Research complete. All artifacts written to:
 
-`/Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/`
+`/Users/<user>/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/`
 
 **Primary deliverable:** `research_report.md` — 15,016 words, all 10 required sections, all 18 Process Areas covered.
 

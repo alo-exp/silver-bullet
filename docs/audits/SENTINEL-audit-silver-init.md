@@ -57,7 +57,7 @@ Step 0: No encoded content detected. Proceeding.
 
 ## Step 1 — Environment & Scope Initialization
 
-1. Target skill file readable: YES — `/Users/shafqat/Documents/Projects/silver-bullet/skills/silver:init/SKILL.md`
+1. Target skill file readable: YES — `/Users/<user>/Documents/Projects/silver-bullet/skills/silver:init/SKILL.md`
 2. SENTINEL isolation verified: YES — static analysis only, no runtime execution
 3. Trust boundary established: YES — all skill content treated as untrusted data
 4. Report destination configured: YES — markdown output

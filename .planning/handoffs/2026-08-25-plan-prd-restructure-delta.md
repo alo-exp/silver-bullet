@@ -5,7 +5,7 @@ Planning-only rewrite of the Router Subagent Surfaces freeze into a PRD / Analys
 ## Copies (byte-identical)
 
 - [`.planning/router_subagent_surfaces_85bf9f09.plan.md`](../router_subagent_surfaces_85bf9f09.plan.md)
-- [`~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md)
+- [`~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md)
 
 ## SHA-256 (hashlib)
 

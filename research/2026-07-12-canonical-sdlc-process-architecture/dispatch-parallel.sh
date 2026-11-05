@@ -3,7 +3,7 @@
 # Maps ocg-* subagent slugs to opencode-go models (primary invocation pattern).
 set -u
 
-REPO="/Users/shafqat/projects/silver-bullet/repo"
+REPO="/Users/<user>/projects/silver-bullet/repo"
 BRIEF="${REPO}/research/2026-07-12-canonical-sdlc-process-architecture/RESEARCH-BRIEF.md"
 BASE_OUT="${REPO}/research/2026-07-12-canonical-sdlc-process-architecture"
 OPENCODE="${OPENCODE_BIN:-$HOME/.opencode/bin/opencode}"

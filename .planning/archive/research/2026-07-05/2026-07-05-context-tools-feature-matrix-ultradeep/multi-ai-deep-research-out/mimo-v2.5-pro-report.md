@@ -458,4 +458,4 @@ Addressed critique by: noting the `CTX_FETCH_STRICT` gap as persona-conditional 
 
 ### Phase 8 — PACKAGE
 
-Final report written to: `/Users/shafqat/projects/silver-bullet/repo/.planning/archive/research/2026-07-05/2026-07-05-context-tools-feature-matrix-ultradeep/multi-ai-deep-research-out/mimo-v2.5-pro-report.md`
+Final report written to: `/Users/<user>/projects/silver-bullet/repo/.planning/archive/research/2026-07-05/2026-07-05-context-tools-feature-matrix-ultradeep/multi-ai-deep-research-out/mimo-v2.5-pro-report.md`

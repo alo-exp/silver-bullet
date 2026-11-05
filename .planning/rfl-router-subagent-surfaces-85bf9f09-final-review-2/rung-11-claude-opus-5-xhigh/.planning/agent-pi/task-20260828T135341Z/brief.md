@@ -1,6 +1,6 @@
 You are on rung 11/11 of RFL round 2 (`final-review-2`) — **last named reviewer**. Named model: **Pi** `claude/claude-opus-5-xhigh` (Claude Opus 5 Extra High) via `/silver:agent-pi` (OmniRoute). This Extra High slug is **user-named for this rung** — **keep it**. Do **not** remap to Grok High, Grok Extra High, Grok 4.5, Cursor Task Claude, Fast, or `claude/claude-opus-5-high` (that was rung 10). You are the reviewer. Reasoning: host-default (`--thinking off` may be present from the harness; do not change it).
 
-**Repo:** `/Users/shafqat/projects/silver-bullet/repo`
+**Repo:** `/Users/<user>/projects/silver-bullet/repo`
 **Branch:** `main` @ `81560474` (`Record freeze HEAD blob SHA on the panel-rename APPLY note.`) — NEVER git checkout / git switch / SetActiveBranch. HEAD is a **descendant of** panel-rename freeze APPLY `783e9fce` (`Remove residual … wording from the freeze; public name is panel.`), not a rollback.
 **Work directory:** this rung folder (not `work/`):
 `.planning/rfl-router-subagent-surfaces-85bf9f09-final-review-2/rung-11-claude-opus-5-xhigh/`
@@ -23,8 +23,8 @@ Expected (parent hashlib after panel-rename APPLY `783e9fce`; HEAD `81560474` fr
 
 Copies (must stay byte-identical):
 
-1. Repo working tree: `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
-2. Cursor plans: `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
+1. Repo working tree: `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
+2. Cursor plans: `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
 3. Git HEAD blob: `git show HEAD:.planning/router_subagent_surfaces_85bf9f09.plan.md`
 
 Parent already verified all three copies MATCH `1e3c9866…` / 653189. **Do not write a freeze-gate STOP review.** Hash, record, and proceed with a full review of the live working-tree freeze. If a copy splits, record the split and still review the working-tree live freeze — do not sync copies.

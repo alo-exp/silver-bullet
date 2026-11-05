@@ -52,8 +52,10 @@ prepared_tree() {
 }
 SCRIPT="$T/scripts/sync-marketplace-version.sh"
 sync_run() { tl_run env -u AGENT_PLUGINS_REPO_ROOT -u MARKETPLACE_REPO_ROOT -u AGENT_PLUGINS_REPO_URL -u MARKETPLACE_REPO_URL -u AGENT_PLUGINS_SKIP_PUSH timeout 60 "$@"; }
+sb_get() { jq -r --arg k "$2" '.plugins[] | select(.name=="silver-bullet") | .source[$k]' "$1"; }
 sb_version() { jq -r '.plugins[] | select(.name=="silver-bullet") | .version' "$1"; }
 mode_of() { stat -c %a "$1" 2>/dev/null || stat -f %Lp "$1"; }
+remote_get() { j_remote_show "$MF" | jq -r --arg k "$1" '.plugins[] | select(.name=="silver-bullet") | .source[$k]'; }
 remote_version() { j_remote_show "$MF" | jq -r '.plugins[] | select(.name=="silver-bullet") | .version'; }
 
 # --- default mode: this repository only ----------------------------------------------------------
@@ -67,6 +69,11 @@ assert_eq "in-repo sync exits 0" 0 "$TL_STATUS"
 assert_contains "in-repo manifest update reported" "$TL_OUT" "Updated in-repo marketplace.json: 0.0.1 → 2.0.0"
 assert_contains "in-repo banner" "$TL_OUT" "This repository's Claude marketplace manifest is at v2.0.0."
 assert_eq "in-repo version bumped" "2.0.0" "$(sb_version "$T/$MF")"
+# R13-02: the entry installs the release tag, never the default branch. No tag exists yet
+# (the release is about to create it), so only the ref is pinned and no stale sha is written.
+assert_eq "in-repo source pinned to the release tag" "v2.0.0" "$(sb_get "$T/$MF" ref)"
+assert_eq "no tag yet: no sha pinned" "null" "$(sb_get "$T/$MF" sha)"
+assert_eq "source repo preserved" "o/sb" "$(sb_get "$T/$MF" repo)"
 assert_eq "in-repo manifest keeps mode 644 (R13-28)" "644" "$(mode_of "$T/$MF")"
 assert_eq "marketplace checkout untouched" "" "$(git -C "$TL_TMP/work" status --porcelain)"
 assert_eq "remote untouched" "$remote_head" "$(git -C "$J_REMOTE" rev-parse main)"
@@ -76,6 +83,25 @@ plugin.json" "$(ls -A "$T/.claude-plugin")"
 sync_run bash "$SCRIPT"
 assert_eq "second in-repo sync exits 0" 0 "$TL_STATUS"
 assert_contains "versions already in sync" "$TL_OUT" "Versions already in sync: 2.0.0"
+
+# Version already right but the source unpinned (the pre-fix manifest): the sync pins it.
+new_tree
+jq '(.plugins[] | select(.name=="silver-bullet") | .version) = "2.0.0"' "$T/$MF" >"$TL_TMP/v.json" && cp "$TL_TMP/v.json" "$T/$MF"
+sync_run bash "$SCRIPT"
+assert_eq "unpinned source with a current version exits 0" 0 "$TL_STATUS"
+assert_contains "pin reported" "$TL_OUT" "Pinned in-repo marketplace.json to v2.0.0"
+assert_eq "unpinned source gets the tag ref" "v2.0.0" "$(sb_get "$T/$MF" ref)"
+
+# Once the release is tagged, the tag's commit is pinned too, and a stale sha is replaced.
+new_tree v2.0.0
+TAGGED="$(git -C "$T" rev-parse 'v2.0.0^{commit}')"
+jq '(.plugins[] | select(.name=="silver-bullet") | .source.sha) = "0000000000000000000000000000000000000000"' "$T/$MF" >"$TL_TMP/v.json" && cp "$TL_TMP/v.json" "$T/$MF"
+sync_run bash "$SCRIPT"
+assert_eq "tagged: exits 0" 0 "$TL_STATUS"
+assert_eq "tagged: sha is the tag commit" "$TAGGED" "$(sb_get "$T/$MF" sha)"
+assert_eq "tagged: ref is the tag" "v2.0.0" "$(sb_get "$T/$MF" ref)"
+sync_run bash "$SCRIPT"
+assert_contains "tagged: second sync is a no-op" "$TL_OUT" "Versions already in sync: 2.0.0"
 
 new_tree
 chmod 640 "$T/$MF"
@@ -119,6 +145,9 @@ assert_contains "remote manifest update reported" "$TL_OUT" "Updated Claude mark
 assert_contains "push reported" "$TL_OUT" "Pushed 1 commit(s) to origin/main"
 assert_contains "publish banner" "$TL_OUT" "The agent-plugins Claude manifest now offers silver-bullet v2.0.0."
 assert_eq "remote version bumped and pushed (R13-01)" "2.0.0" "$(remote_version)"
+assert_eq "remote source pinned to the release tag (R13-02)" "v2.0.0" "$(remote_get ref)"
+assert_eq "remote source pinned to the tagged commit (R13-02)" "$(git -C "$T" rev-parse 'v2.0.0^{commit}')" "$(remote_get sha)"
+assert_eq "remote source repo preserved" "o/sb" "$(remote_get repo)"
 assert_eq "bump commit message" "Bump silver-bullet Claude manifest to 2.0.0" "$(git -C "$J_REMOTE" log -1 --format=%s main)"
 assert_eq "bump commit holds only the manifest (R8-19)" "$MF" "$(git -C "$J_REMOTE" show --name-only --format= main)"
 assert_eq "untracked file stays local" "?? scratch-untracked.txt" "$(git -C "$TL_TMP/work" status --porcelain)"

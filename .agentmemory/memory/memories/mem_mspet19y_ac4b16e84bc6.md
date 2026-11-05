@@ -11,4 +11,4 @@ files: []
 
 # SB-BUG-C #249 + SB-BUG-D #250: fixing instruction-ledger on branch fix/sb-bug-cd
 
-SB-BUG-C #249 + SB-BUG-D #250: fixing instruction-ledger on branch fix/sb-bug-cd-249-250-instruction-ledger in worktree /Users/shafqat/projects/silver-bullet/worktrees/fix-sb-bug-cd-249-250-instruction-ledger. Design: (1) wipe/rotate ledger on session-start scope mismatch like state wipe; (2) sanctioned resolve helper for leaf done/deferred; (3) ignore foreign prompt_id on mismatch.
+SB-BUG-C #249 + SB-BUG-D #250: fixing instruction-ledger on branch fix/sb-bug-cd-249-250-instruction-ledger in worktree /Users/<user>/projects/silver-bullet/worktrees/fix-sb-bug-cd-249-250-instruction-ledger. Design: (1) wipe/rotate ledger on session-start scope mismatch like state wipe; (2) sanctioned resolve helper for leaf done/deferred; (3) ignore foreign prompt_id on mismatch.

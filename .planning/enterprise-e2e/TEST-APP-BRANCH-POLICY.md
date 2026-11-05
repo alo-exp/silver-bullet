@@ -12,7 +12,7 @@ Pattern: **`enterprise-e2e/round-{N}-{host}`** where `{host}` is `claude`, `code
 |------------|----------------------------------|----------------------------------------|--------------------------------|--------------|
 | Claude Round 6 | `enterprise-e2e/round6` | `enterprise-e2e/round-6-claude` | *(shared default)* | `8482e60` |
 | Codex Round 1 | `enterprise-e2e/codex` | `enterprise-e2e/round-1-codex` | *(shared default)* | `8482e60` |
-| Cursor Round 1 | `enterprise-e2e/cursor` | `enterprise-e2e/round-1-cursor` | `/Users/shafqat/projects/enterprise-grade-test-app-cursor` | `8482e60` |
+| Cursor Round 1 | `enterprise-e2e/cursor` | `enterprise-e2e/round-1-cursor` | `/Users/<user>/projects/enterprise-grade-test-app-cursor` | `8482e60` |
 
 **Legacy aliases (do not reuse for new work):** `enterprise-e2e/round6` (test app, Claude), `enterprise-e2e/round-codex-1` (Codex).
 
@@ -46,16 +46,16 @@ When Codex (or another host) holds the shared clone (`~/projects/enterprise-grad
 
 | Item | Value |
 |------|-------|
-| Shared clone (do not checkout for Cursor) | `/Users/shafqat/projects/enterprise-grade-test-app` |
-| Cursor worktree | `/Users/shafqat/projects/enterprise-grade-test-app-cursor` |
+| Shared clone (do not checkout for Cursor) | `/Users/<user>/projects/enterprise-grade-test-app` |
+| Cursor worktree | `/Users/<user>/projects/enterprise-grade-test-app-cursor` |
 | Branch | `enterprise-e2e/round-1-cursor` |
 | Baseline | `8482e60` |
 
 Create once (from the shared clone — does not change its HEAD):
 
 ```bash
-APP=/Users/shafqat/projects/enterprise-grade-test-app
-WORKTREE=/Users/shafqat/projects/enterprise-grade-test-app-cursor
+APP=/Users/<user>/projects/enterprise-grade-test-app
+WORKTREE=/Users/<user>/projects/enterprise-grade-test-app-cursor
 BRANCH=enterprise-e2e/round-1-cursor
 BASELINE=8482e60
 
@@ -75,7 +75,7 @@ Harness picks up `hosts.json` → `hosts.cursor.test_app_root` automatically whe
 ## Create Cursor Round 1 branch (without disturbing in-flight batch)
 
 ```bash
-APP=/Users/shafqat/projects/enterprise-grade-test-app
+APP=/Users/<user>/projects/enterprise-grade-test-app
 BASELINE=8482e60
 BRANCH=enterprise-e2e/round-1-cursor
 

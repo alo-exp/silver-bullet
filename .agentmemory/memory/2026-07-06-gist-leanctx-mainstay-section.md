@@ -1,7 +1,7 @@
 # Gist update: LeanCTX as mainstay section
 
 **Date:** 2026-07-06  
-**Gist:** https://gist.github.com/shafqatevo/3ab842979d93dd524e4db291307241a4  
+**Gist:** <private-gist-url>  
 **Local:** `.planning/research/2026-07-05-context-tools-feature-matrix-ultradeep/gist-leanctx-capability-analysis.md`
 
 ## Action

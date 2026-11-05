@@ -6,7 +6,7 @@
 | Original launch | `opencode-go/minimax-m3` via Pi — 401 ×2; this pass is **Grok 4.6 High substitute**. Not Pi. Not Extra High. Not Fast. |
 | Reviewer artifact | [`review.md`](review.md) (SHA cites not re-used as freeze evidence) |
 | Prior pass | [`verify-1.md`](verify-1.md) was CLEAN; **not** treated as sufficient. This pass re-hashed and re-scanned the freeze. |
-| Freeze | [`.planning/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md) and [`~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md) |
+| Freeze | [`.planning/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md) and [`~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md) |
 | SHA-256 seen (disk wins) | `70d44b7dfca21fd74617b40a848a1fcace0c638dd2d3ace6a982e6c7da1a3ef5` |
 | Size | 620076 bytes (both copies) |
 | Line count | 4296 newline-terminated records (`split('\n')` = 4297 including trailing empty) |

@@ -1,7 +1,7 @@
 # Independent V-loop recheck — analyst-grade overhaul claims
 
 ts: 2026-07-21T10:53:00Z (after Harness scrub fix + regen)
-file: file:///Users/shafqat/.cursor/worktrees/repo/3ht3/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/landscape-report.html
+file: file:///Users/<user>/.cursor/worktrees/repo/3ht3/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/landscape-report.html
 overall: **PASS**
 
 Fresh Playwright DOM/chart checks — prior PASS not trusted. First pass found a **hard** Harness prose miscategorization; fixed at source + regen; re-verified PASS.

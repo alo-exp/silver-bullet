@@ -1,7 +1,7 @@
 # Full SB Surface Checklist — Orchestrator Parent Mode
 
 **Purpose:** Every host live run must tick each applicable row and record evidence.  
-**Fixture:** `/Users/shafqat/projects/todo-app`  
+**Fixture:** `/Users/<user>/projects/todo-app`  
 **Branch:** `feat/orchestrator-parent-mode`  
 **Date:** 2026-06-14 (v5 full-surface closure)
 

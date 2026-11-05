@@ -1,8 +1,8 @@
 # Orchestrator Parent Mode — Live Test Report
 
 **Branch:** `feat/orchestrator-parent-mode`  
-**SB repo:** `/Users/shafqat/projects/silver-bullet/repo`  
-**Fixture:** `/Users/shafqat/projects/todo-app`  
+**SB repo:** `/Users/<user>/projects/silver-bullet/repo`  
+**Fixture:** `/Users/<user>/projects/todo-app`  
 **Date:** 2026-06-14 (v5 full-surface closure)  
 **Checklist:** `FULL-SURFACE-CHECKLIST.md`
 

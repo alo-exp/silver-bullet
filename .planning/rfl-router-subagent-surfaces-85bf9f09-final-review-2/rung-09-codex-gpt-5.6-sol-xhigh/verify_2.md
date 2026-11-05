@@ -2,7 +2,7 @@
 
 RFL round 2, rung 9, **verify_2 only** (second independent Verify). Native Cursor Task — **no Pi**, no OmniRoute, no `/silver:agent-pi`, no `scripts/agent-pi/invoke.sh`. Model lock: `cursor-grok-4.5-high` / `sb-grok-4-5-high` (not Grok 4.6 High, Extra High, Fast, or any Pi model).
 
-Repo: `/Users/shafqat/projects/silver-bullet/repo`. Branch: `main` (no `git checkout` / `git switch` / SetActiveBranch). VERIFY ONLY — no freeze edits, no APPLY, no product/YAML execution, no rung 10.
+Repo: `/Users/<user>/projects/silver-bullet/repo`. Branch: `main` (no `git checkout` / `git switch` / SetActiveBranch). VERIFY ONLY — no freeze edits, no APPLY, no product/YAML execution, no rung 10.
 
 `leftover_count = 0`
 
@@ -15,8 +15,8 @@ The integer above counts incomplete members of exactly `{H1, M1, M2, L2}`. L1 an
 
 | Copy | Path | SHA-256 | Bytes | Status |
 |------|------|---------|-------|--------|
-| Repo planning | `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `e48a524b884e58fb2ade29e1d1cd32234fb2bf13ec1ee8288df8000dda6712dd` | 644327 | MATCH |
-| Cursor UI | `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `e48a524b884e58fb2ade29e1d1cd32234fb2bf13ec1ee8288df8000dda6712dd` | 644327 | MATCH |
+| Repo planning | `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `e48a524b884e58fb2ade29e1d1cd32234fb2bf13ec1ee8288df8000dda6712dd` | 644327 | MATCH |
+| Cursor UI | `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `e48a524b884e58fb2ade29e1d1cd32234fb2bf13ec1ee8288df8000dda6712dd` | 644327 | MATCH |
 | Expected constant | (brief) | `e48a524b884e58fb2ade29e1d1cd32234fb2bf13ec1ee8288df8000dda6712dd` | 644327 | MATCH |
 
 - **Three SHAs (identical):** `e48a524b884e58fb2ade29e1d1cd32234fb2bf13ec1ee8288df8000dda6712dd` / `e48a524b884e58fb2ade29e1d1cd32234fb2bf13ec1ee8288df8000dda6712dd` / `e48a524b884e58fb2ade29e1d1cd32234fb2bf13ec1ee8288df8000dda6712dd`

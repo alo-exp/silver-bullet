@@ -11,10 +11,10 @@ export PI_RUN_TIMEOUT=7200
 export PI_RUN_TAIL_IDLE_TIMEOUT=7200
 export PI_EXPECT_FILE_MIN_BYTES=2500
 
-RUNG="/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-spec-template-world-class/rung-07-pi-claude-opus-5-high"
+RUNG="/Users/<user>/projects/silver-bullet/repo/.planning/rfl-spec-template-world-class/rung-07-pi-claude-opus-5-high"
 LOG="$RUNG/logs/review-attempt10-stdout.txt"
 EXITF="$RUNG/logs/review-attempt10-exit.txt"
-REPO="/Users/shafqat/projects/silver-bullet/repo"
+REPO="/Users/<user>/projects/silver-bullet/repo"
 
 mkdir -p "$RUNG/logs"
 rm -f "$RUNG/review-rerun-10.md" "$RUNG/review-rerun-10.md.IN_PROGRESS-stub-aside"

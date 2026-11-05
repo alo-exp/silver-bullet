@@ -38,8 +38,8 @@ SB_FIVE_TOOL_LIVE=1 SB_FIVE_TOOL_LIVE_EXECUTE=1 bash tests/live/test-live-five-t
 
 **Environment**
 
-- `cursor-agent` on PATH: `/Users/shafqat/.local/bin/cursor-agent`
-- `agent` alias on PATH: `/Users/shafqat/.local/bin/agent`
+- `cursor-agent` on PATH: `/Users/<user>/.local/bin/cursor-agent`
+- `agent` alias on PATH: `/Users/<user>/.local/bin/agent`
 - Auth: not verified (skeleton did not require auth check before skip)
 
 **Conclusion**

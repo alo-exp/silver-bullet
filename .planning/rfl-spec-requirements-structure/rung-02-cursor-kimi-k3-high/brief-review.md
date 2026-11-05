@@ -2,7 +2,7 @@
 
 You are **RFL rung 2 of 8**: Cursor **Kimi K3 High**. Review the freeze **plan document**. Write `review.md`. Do not implement. Do not switch branches. Do not commit.
 
-Workspace: `/Users/shafqat/projects/silver-bullet/repo`
+Workspace: `/Users/<user>/projects/silver-bullet/repo`
 
 ## Freeze (pin this SHA — post rung-01 APPLY)
 File: `.planning/spec_requirements_structure.plan.md`

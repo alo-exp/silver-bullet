@@ -13,8 +13,8 @@
 
 | Copy | SHA-256 (as hashed) | Size (bytes) |
 |---|---|---|
-| [`/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md) | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | 621095 |
-| [`/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md) | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | 621095 |
+| [`/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md) | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | 621095 |
+| [`/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md) | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | 621095 |
 
 - Byte-identical: **YES** (identical SHA-256, byte size, and `Buffer.equals`).
 - Charter start SHA `07b986094e983d39fe3c7d2f1ac215ae730cbd28ccf3957655f5ec4c53d3280a` / 620985 bytes is historical. Disk SHA `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` / 621095 bytes is current.
@@ -40,7 +40,7 @@
 
 - Headings: 317; 0 truncated / unbalanced-backtick headings. Unique GFM slugs: 316 because F-2 duplicate heading is held.
 - F-2 HOLD: L3246 remains exactly `#### \`blocked_advisor_state\` (row 14)` (backticks). Twin L3052 unchanged.
-- Origin / companions: Omni origin plan exists at [`/Users/shafqat/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md`](/Users/shafqat/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md) (SHA match). [`docs/NEW-WORKFLOW.md`](docs/NEW-WORKFLOW.md) and [`templates/orchestrator-workers/NEW-WORKFLOW.md`](templates/orchestrator-workers/NEW-WORKFLOW.md) exist. As-is help page is [`site/help/workflows/silver-new-workflow.html`](site/help/workflows/silver-new-workflow.html) pending WS2 `silver`→`sb` rename — not a freeze-lock miss while YAML remains pending.
+- Origin / companions: Omni origin plan exists at [`/Users/<user>/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md`](/Users/<user>/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md) (SHA match). [`docs/NEW-WORKFLOW.md`](docs/NEW-WORKFLOW.md) and [`templates/orchestrator-workers/NEW-WORKFLOW.md`](templates/orchestrator-workers/NEW-WORKFLOW.md) exist. As-is help page is [`site/help/workflows/silver-new-workflow.html`](site/help/workflows/silver-new-workflow.html) pending WS2 `silver`→`sb` rename — not a freeze-lock miss while YAML remains pending.
 
 ## Findings
 
@@ -80,4 +80,4 @@ Closed / held items not re-filed:
 
 This is a REVIEW-ONLY report. No ACCEPT/REJECT triage. No freeze edits. No verify_1 / verify_2. No Policy D. Ladder is not claimed PASS.
 
-Pi EXIT (both attempts): **143**. Official writer: **Grok 4.6 High substitute**. Report path: [`review.md`](/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-11-claude-claude-opus-5-xhigh/review.md).
+Pi EXIT (both attempts): **143**. Official writer: **Grok 4.6 High substitute**. Report path: [`review.md`](/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-11-claude-claude-opus-5-xhigh/review.md).

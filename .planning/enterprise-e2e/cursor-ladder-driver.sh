@@ -2,7 +2,7 @@
 # Phase A live review-fix-ladder 8/8 — Cursor host.
 set -euo pipefail
 
-SB_ROOT="/Users/shafqat/projects/silver-bullet/repo"
+SB_ROOT="/Users/<user>/projects/silver-bullet/repo"
 LOG="${SB_ROOT}/.planning/enterprise-e2e/cursor-ladder-live.log"
 cd "$SB_ROOT"
 

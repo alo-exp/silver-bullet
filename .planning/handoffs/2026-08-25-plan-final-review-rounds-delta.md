@@ -7,7 +7,7 @@ Planning-only. Two adversarial passes on the merged freeze. No YAML inflation (s
 | Path | SHA-256 | Bytes |
 |------|---------|-------|
 | [`.planning/router_subagent_surfaces_85bf9f09.plan.md`](../router_subagent_surfaces_85bf9f09.plan.md) | `cca61544e25d60e8f645910b55f456db35663a76440349c12de19895cfa726f2` | 627223 |
-| [`~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md) | same | same |
+| [`~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md) | same | same |
 
 Pre-C (Phase B): `2c9961350a9799b23a0aab35cfdc20ea58b7e9fae38236c43b88b59fbb937b53` / 626942.
 

@@ -2,7 +2,7 @@ model: composer-2.5
 
 **Subagent:** `sb-composer-2-5-high`  
 **Phase:** VERIFY-ONLY pass 2/2 (`verify_2`, independent of verify_1)  
-**Artifact:** `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
+**Artifact:** `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
 **SHA-256:** `201732f621e72585c3bf236a963309adab025e419a7d484b4602eb9a14462571` (verified via `shasum -a 256`)  
 **Graphify:** `graphify query "dr_search_gateway plan AE1 I-41 query-cache gitignore clear preserve rosters"` (336 nodes; oriented AE1 / cache-clear context)  
 **Apply ref:** AE1 / I-41 (round-4 post-clarify rung 1 pass 16)

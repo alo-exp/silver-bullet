@@ -16,8 +16,8 @@
 
 | Role | Path |
 |------|------|
-| SB workspace (fixes, harness, ledger) | `/Users/shafqat/projects/silver-bullet/repo` |
-| Matrix CWD (test app) | `/Users/shafqat/projects/enterprise-grade-test-app` |
+| SB workspace (fixes, harness, ledger) | `/Users/<user>/projects/silver-bullet/repo` |
+| Matrix CWD (test app) | `/Users/<user>/projects/enterprise-grade-test-app` |
 
 **Goal:** **2 consecutive strict-clean rounds** per host track before release.
 
