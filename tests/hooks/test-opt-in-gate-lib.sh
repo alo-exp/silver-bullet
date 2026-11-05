@@ -190,6 +190,8 @@ no_t "stamp_write: a nested path under a missing directory is refused" env SB_RU
 assert_file_absent "stamp_write: no tree was created" "$WSTATE/trivial"
 no_t "stamp_write: a path outside the state dir needs its directory to exist" env SB_RUNTIME_STATE_DIR="$WSTATE" bash -c 'source "$1"; sb_rt_stamp_write "$2"' _ "$LIBDIR/recommended-tools.sh" "$TL_TMP/nodir/x-usage"
 assert_file_absent "stamp_write: nothing created outside" "$TL_TMP/nodir"
+printf x >"$TL_TMP/a-file"
+no_t "stamp_write: a state dir that cannot be created is refused" env SB_RUNTIME_STATE_DIR="$TL_TMP/a-file/state" bash -c 'source "$1"; sb_rt_stamp_write "$2"' _ "$LIBDIR/recommended-tools.sh" "$TL_TMP/a-file/state/a-usage"
 yes_t "stamp_write: the state dir itself is created" env SB_RUNTIME_STATE_DIR="$WSTATE" bash -c 'source "$1"; sb_rt_stamp_write "$2"' _ "$LIBDIR/recommended-tools.sh" "$WSTATE/a-usage"
 yes_t "stamp_write: a one-level marker directory is created" env SB_RUNTIME_STATE_DIR="$WSTATE" bash -c 'source "$1"; sb_rt_stamp_write "$2"' _ "$LIBDIR/recommended-tools.sh" "$WSTATE/markers/m"
 no_t "stamp_write: a two-level marker directory is refused" env SB_RUNTIME_STATE_DIR="$WSTATE" bash -c 'source "$1"; sb_rt_stamp_write "$2"' _ "$LIBDIR/recommended-tools.sh" "$WSTATE/markers2/deep/m"
