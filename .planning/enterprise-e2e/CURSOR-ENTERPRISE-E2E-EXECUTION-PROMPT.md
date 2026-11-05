@@ -100,10 +100,10 @@ On any friction:
 
 | Role | Path |
 |------|------|
-| **Session workspace root (SB fixes, harness, ledger)** | `/Users/shafqat/projects/silver-bullet/repo` |
+| **Session workspace root (SB fixes, harness, ledger)** | `/Users/<user>/projects/silver-bullet/repo` |
 | **SB git branch (Cursor harness work)** | `enterprise-e2e/cursor` |
 | **Test-app git branch (matrix evidence)** | `enterprise-e2e/round-1-cursor` — [TEST-APP-BRANCH-POLICY.md](./TEST-APP-BRANCH-POLICY.md) |
-| **Cursor agent TUI CWD (matrix rows, Session 0)** | `/Users/shafqat/projects/enterprise-grade-test-app` (checkout host branch above) |
+| **Cursor agent TUI CWD (matrix rows, Session 0)** | `/Users/<user>/projects/enterprise-grade-test-app` (checkout host branch above) |
 
 **Never** use the test app as SB workspace root. Operator parent sessions use SB repo root per silver-orchestrator rules.
 
@@ -141,25 +141,25 @@ TUI protocol: [CURSOR-TUI-PROTOCOL.md](./CURSOR-TUI-PROTOCOL.md)
 
 | Resource | Path |
 |----------|------|
-| SB repo root | `/Users/shafqat/projects/silver-bullet/repo` |
+| SB repo root | `/Users/<user>/projects/silver-bullet/repo` |
 | SB git branch (Cursor) | `enterprise-e2e/cursor` |
-| Test app (agent CWD) | `/Users/shafqat/projects/enterprise-grade-test-app` |
-| Cursor install script | `/Users/shafqat/projects/silver-bullet/repo/scripts/install-cursor.sh` |
-| Cursor live adapter | `/Users/shafqat/projects/silver-bullet/repo/tests/live/agents/cursor/agent.sh` |
-| Cursor CLI smoke (pre-release) | `/Users/shafqat/projects/silver-bullet/repo/scripts/pre-release-cursor-cli-smoke.sh` |
+| Test app (agent CWD) | `/Users/<user>/projects/enterprise-grade-test-app` |
+| Cursor install script | `/Users/<user>/projects/silver-bullet/repo/scripts/install-cursor.sh` |
+| Cursor live adapter | `/Users/<user>/projects/silver-bullet/repo/tests/live/agents/cursor/agent.sh` |
+| Cursor CLI smoke (pre-release) | `/Users/<user>/projects/silver-bullet/repo/scripts/pre-release-cursor-cli-smoke.sh` |
 | Review-fix-ladder resolver | `python3 scripts/review-fix-ladder.py --host cursor` |
-| Round ledger (Cursor-1) | `/Users/shafqat/projects/silver-bullet/repo/.planning/enterprise-e2e/ROUND-CURSOR-1-LEDGER.md` |
-| Round ledger (Cursor-2) | `/Users/shafqat/projects/silver-bullet/repo/.planning/enterprise-e2e/ROUND-CURSOR-2-LEDGER.md` |
-| Round gates (Cursor-1) | `/Users/shafqat/projects/silver-bullet/repo/.planning/enterprise-e2e/ROUND-CURSOR-1-GATES.md` |
-| Round gates (Cursor-2) | `/Users/shafqat/projects/silver-bullet/repo/.planning/enterprise-e2e/ROUND-CURSOR-2-GATES.md` |
-| Matrix live log | `/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-cursor-live.log` |
-| Monitor status | `/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-cursor-monitor-status.txt` |
-| TUI watch findings | `/Users/shafqat/projects/silver-bullet/repo/.e2e-tui-watch-cursor-findings.jsonl` |
-| Outcome rubric | `/Users/shafqat/projects/silver-bullet/repo/.planning/enterprise-e2e/OUTCOME-ASSESSMENT-RUBRIC.md` |
-| SB issues baseline | `/Users/shafqat/projects/silver-bullet/repo/docs/issues/ENTERPRISE-E2E-SB-ISSUES.md` (**76** unique IDs — 0 new for strict-clean) |
-| Cherry-pick policy | `/Users/shafqat/projects/silver-bullet/repo/docs/testing/ENTERPRISE-E2E-CHERRY-PICK.md` |
-| Operator prompt (canonical) | `/Users/shafqat/projects/silver-bullet/repo/scripts/ENTERPRISE-E2E-OPERATOR-PROMPT.md` |
-| Workflow matrix (22 rows) | `/Users/shafqat/projects/enterprise-grade-test-app/docs/WORKFLOW_E2E_MATRIX.md` |
+| Round ledger (Cursor-1) | `/Users/<user>/projects/silver-bullet/repo/.planning/enterprise-e2e/ROUND-CURSOR-1-LEDGER.md` |
+| Round ledger (Cursor-2) | `/Users/<user>/projects/silver-bullet/repo/.planning/enterprise-e2e/ROUND-CURSOR-2-LEDGER.md` |
+| Round gates (Cursor-1) | `/Users/<user>/projects/silver-bullet/repo/.planning/enterprise-e2e/ROUND-CURSOR-1-GATES.md` |
+| Round gates (Cursor-2) | `/Users/<user>/projects/silver-bullet/repo/.planning/enterprise-e2e/ROUND-CURSOR-2-GATES.md` |
+| Matrix live log | `/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-cursor-live.log` |
+| Monitor status | `/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-cursor-monitor-status.txt` |
+| TUI watch findings | `/Users/<user>/projects/silver-bullet/repo/.e2e-tui-watch-cursor-findings.jsonl` |
+| Outcome rubric | `/Users/<user>/projects/silver-bullet/repo/.planning/enterprise-e2e/OUTCOME-ASSESSMENT-RUBRIC.md` |
+| SB issues baseline | `/Users/<user>/projects/silver-bullet/repo/docs/issues/ENTERPRISE-E2E-SB-ISSUES.md` (**76** unique IDs — 0 new for strict-clean) |
+| Cherry-pick policy | `/Users/<user>/projects/silver-bullet/repo/docs/testing/ENTERPRISE-E2E-CHERRY-PICK.md` |
+| Operator prompt (canonical) | `/Users/<user>/projects/silver-bullet/repo/scripts/ENTERPRISE-E2E-OPERATOR-PROMPT.md` |
+| Workflow matrix (22 rows) | `/Users/<user>/projects/enterprise-grade-test-app/docs/WORKFLOW_E2E_MATRIX.md` |
 
 ---
 
@@ -168,7 +168,7 @@ TUI protocol: [CURSOR-TUI-PROTOCOL.md](./CURSOR-TUI-PROTOCOL.md)
 ### Git branch (session start — before install)
 
 ```bash
-export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
+export SB_ROOT=/Users/<user>/projects/silver-bullet/repo
 export SB_E2E_BRANCH=enterprise-e2e/cursor
 cd "$SB_ROOT"
 git fetch origin
@@ -179,7 +179,7 @@ git branch --show-current   # must show enterprise-e2e/cursor — abort if on ro
 ### Install & runtime
 
 ```bash
-export SB_TEST_ENTERPRISE_APP_ROOT=/Users/shafqat/projects/enterprise-grade-test-app
+export SB_TEST_ENTERPRISE_APP_ROOT=/Users/<user>/projects/enterprise-grade-test-app
 export SILVER_BULLET_RUNTIME=cursor
 export SB_E2E_LIVE_RUNTIME=cursor
 cd "$SB_ROOT"
@@ -261,7 +261,7 @@ Waiver (document reason): `SB_E2E_SESSION0_SKIP=1` + `SB_E2E_SESSION0_SKIP_REASO
 **Session 0 in Cursor agent TUI:**
 
 ```bash
-cd /Users/shafqat/projects/enterprise-grade-test-app
+cd /Users/<user>/projects/enterprise-grade-test-app
 agent -p "Run silver init for this project" --workspace .
 # Or open Cursor IDE Composer in-session (SB_LIVE_CURSOR_IN_SESSION=1)
 ```
@@ -339,7 +339,7 @@ SB_E2E_LIVE_RUNTIME=cursor SILVER_BULLET_RUNTIME=cursor \
 
 tmux new-session -d -s cursor-e2e bash -lc '
   unset AGENT_CLI_CREDENTIAL_STORE 2>/dev/null || true
-  export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
+  export SB_ROOT=/Users/<user>/projects/silver-bullet/repo
   cd "$SB_ROOT" && \
   export SB_ENTERPRISE_E2E_LIVE=1 SILVER_BULLET_RUNTIME=cursor SB_E2E_LIVE_RUNTIME=cursor \
     RTK_DISABLED=1 && \
@@ -467,7 +467,7 @@ Full checklist: [CURSOR-TUI-PROTOCOL.md](./CURSOR-TUI-PROTOCOL.md)
 ```bash
 # Keychain auth (default): omit --api-key
 agent -p "$(cat prompt.txt)" \
-  --workspace /Users/shafqat/projects/enterprise-grade-test-app \
+  --workspace /Users/<user>/projects/enterprise-grade-test-app \
   --model composer-2.5
 
 # CI/memory-store only:
@@ -561,9 +561,9 @@ Same as **§Mission** above, with Cursor-specific substitutions:
 6. Continue until round strict-clean + Phase C; then `bash scripts/lib/enterprise-e2e-consecutive-rounds-check.sh --host cursor`.
 
 ```bash
-export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
+export SB_ROOT=/Users/<user>/projects/silver-bullet/repo
 export SB_E2E_BRANCH=enterprise-e2e/cursor
-export SB_TEST_ENTERPRISE_APP_ROOT=/Users/shafqat/projects/enterprise-grade-test-app
+export SB_TEST_ENTERPRISE_APP_ROOT=/Users/<user>/projects/enterprise-grade-test-app
 export SILVER_BULLET_RUNTIME=cursor
 export SB_E2E_LIVE_RUNTIME=cursor
 export SB_E2E_LEDGER_FILE="$SB_ROOT/.planning/enterprise-e2e/ROUND-CURSOR-1-LEDGER.md"
@@ -580,7 +580,7 @@ git branch --show-current   # must show enterprise-e2e/cursor
 rm -f .e2e-live-test-cursor.lock
 tmux new-session -d -s cursor-e2e bash -lc '
   unset AGENT_CLI_CREDENTIAL_STORE 2>/dev/null || true
-  export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
+  export SB_ROOT=/Users/<user>/projects/silver-bullet/repo
   cd "$SB_ROOT" && SB_ENTERPRISE_E2E_LIVE=1 SILVER_BULLET_RUNTIME=cursor SB_E2E_LIVE_RUNTIME=cursor \
     SB_E2E_LEDGER_FILE=.planning/enterprise-e2e/ROUND-CURSOR-1-LEDGER.md \
     SB_E2E_MATRIX_LOG=.e2e-matrix-cursor-live.log RTK_DISABLED=1 \
@@ -596,4 +596,4 @@ tail -f .e2e-matrix-cursor-monitor-status.txt
 
 ## One-liner (fresh session copy-paste)
 
-> **Self-contained Cursor operator prompt** — paste only this file for fresh sessions (no separate addendum). SB `/Users/shafqat/projects/silver-bullet/repo` on branch **`enterprise-e2e/cursor`** (never `round6`/Codex/multi-host), agent CWD `/Users/shafqat/projects/enterprise-grade-test-app`, `--host cursor`, **2 consecutive strict-clean rounds** (Cursor-1→2). One `composer-2.5` parent + `cursor-agent` matrix child, poll 60–90s, checkpoint within 90s on resume. Read OUTCOME-ASSESSMENT-RUBRIC before row scoring (27 + WBS). Deterministic preflight: structural suite + outcome harness + `--preflight-only` + dry-run matrix (see §Deterministic preflight). Fix loop: diagnose→commit on cursor branch→cherry-pick to main→graphify→FORCE; baseline 76 issues. Host lock `.e2e-live-test-cursor.lock` only. Consecutive rounds: `enterprise-e2e-consecutive-rounds-check.sh --host cursor`. Keychain auth OK for live drivers (no `CURSOR_API_KEY` required). Compaction not `/clear`; no `gsd`.
+> **Self-contained Cursor operator prompt** — paste only this file for fresh sessions (no separate addendum). SB `/Users/<user>/projects/silver-bullet/repo` on branch **`enterprise-e2e/cursor`** (never `round6`/Codex/multi-host), agent CWD `/Users/<user>/projects/enterprise-grade-test-app`, `--host cursor`, **2 consecutive strict-clean rounds** (Cursor-1→2). One `composer-2.5` parent + `cursor-agent` matrix child, poll 60–90s, checkpoint within 90s on resume. Read OUTCOME-ASSESSMENT-RUBRIC before row scoring (27 + WBS). Deterministic preflight: structural suite + outcome harness + `--preflight-only` + dry-run matrix (see §Deterministic preflight). Fix loop: diagnose→commit on cursor branch→cherry-pick to main→graphify→FORCE; baseline 76 issues. Host lock `.e2e-live-test-cursor.lock` only. Consecutive rounds: `enterprise-e2e-consecutive-rounds-check.sh --host cursor`. Keychain auth OK for live drivers (no `CURSOR_API_KEY` required). Compaction not `/clear`; no `gsd`.

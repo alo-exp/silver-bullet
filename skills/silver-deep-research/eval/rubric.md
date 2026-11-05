@@ -10,7 +10,7 @@
 | Multilingual | 5 | en/zh report profiles, language-aware validation |
 | Report Formats | 5 | Block library, chapter assembly, metadata |
 | Validation/Eval | 5 | validate_report, eval harness, structure checks |
-| Portability | 5 | Host-agnostic artifacts under .planning/research/ |
+| Portability | 5 | Host-agnostic artifacts under research/<date>-<slug>/ |
 | Human-in-Loop | 5 | Narrow checkpoints only |
 | Composability | 5 | AF-DECIDE, V-loops, handoff |
 | Source Catalogs | 5 | intent_classes, channels, domain matrices |

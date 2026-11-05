@@ -1,5 +1,0 @@
-START 2026-08-25T22:39:05Z
-PI_PROVIDER=omniroute PI_MODEL=opencode-go/deepseek-v4-pro-max
-phase=rung_02_verify_1 attempt=2 retry (no max-turns; prior wrapper EXIT:2 mode-conflict)
-EXIT:killed-hang
-END 2026-08-25T22:59:42Z

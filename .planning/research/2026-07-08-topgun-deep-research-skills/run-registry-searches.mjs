@@ -274,8 +274,8 @@ function searchLocal() {
   const start = Date.now();
   const results = [];
   const paths = [
-    '/Users/shafqat/projects/silver-bullet/repo/skills/silver-deep-research/SKILL.md',
-    '/Users/shafqat/projects/silver-bullet/repo/.agents/skills/deep-research/SKILL.md',
+    '/Users/<user>/projects/silver-bullet/repo/skills/silver-deep-research/SKILL.md',
+    '/Users/<user>/projects/silver-bullet/repo/.agents/skills/deep-research/SKILL.md',
   ];
   const globPaths = execSync('find ~/.codex/skills ~/.codex/skills -name SKILL.md 2>/dev/null | head -200', { encoding: 'utf8' })
     .trim()

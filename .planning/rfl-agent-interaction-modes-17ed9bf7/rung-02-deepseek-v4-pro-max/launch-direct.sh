@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # RFL rung 2: DeepSeek V4 Pro Max via native OpenCode NI (harness missing / mimo pin).
 set -euo pipefail
-ROOT="/Users/shafqat/projects/silver-bullet/repo"
+ROOT="/Users/<user>/projects/silver-bullet/repo"
 LOGDIR="$ROOT/.planning/rfl-agent-interaction-modes-17ed9bf7/rung-02-deepseek-v4-pro-max"
 OPENCODE="${OPENCODE_BIN:-$HOME/.opencode/bin/opencode}"
 export RTK_DISABLED=1

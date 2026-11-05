@@ -11,8 +11,8 @@ Both freeze copies were re-hashed from disk during this pass. The historical cha
 
 | Freeze copy | SHA-256 actually hashed | Size |
 |---|---|---:|
-| `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | 621095 bytes |
-| `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | 621095 bytes |
+| `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | 621095 bytes |
+| `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | 621095 bytes |
 
 - Byte-identical: **YES** (`cmp` and matching full hashes/sizes)
 - Current line count: 4289

@@ -5,7 +5,7 @@
 **Branch:** `main` (no switch; no plan edits; no commit)
 **Read order:** [SB-PRODUCT-OVERVIEW-FOR-REVIEWERS.md](../SB-PRODUCT-OVERVIEW-FOR-REVIEWERS.md) (read in full first) → [router_subagent_surfaces_85bf9f09.plan.md](../../router_subagent_surfaces_85bf9f09.plan.md) (653 lines) → [router_subagent_surfaces_85bf9f09-CLARIFY-260717-143757.md](../../router_subagent_surfaces_85bf9f09-CLARIFY-260717-143757.md) (read in full)
 **Plan SHA-256:** `3712dc7731fdaa462ca0079a4c8a1fee53118d8b9c4cf94c478a60b0204a86ec` — matches the Composer 2.5 Extra High ACCEPT ledger value.
-**Mirror parity:** `cmp` exit 0 vs [`~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md). Clarify brief has no Cursor-mirror twin (`cmp` exit 2); plan line 652 only requires the plan copies.
+**Mirror parity:** `cmp` exit 0 vs [`~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md). Clarify brief has no Cursor-mirror twin (`cmp` exit 2); plan line 652 only requires the plan copies.
 **Graphify:** `graphify query "router subagent surfaces control plane hosts five-tool Task delegation"` (orientation; 158-node subgraph, truncated). Graphify MCP was down; CLI used.
 **Lenses:** control plane; hosts/five-tool; consistency.
 

@@ -2,7 +2,7 @@
 
 RFL round 2, rung 9, **verify_1 only** (not verify_2). Native Cursor Task — **no Pi**, no OmniRoute, no `/silver:agent-pi`, no `scripts/agent-pi/invoke.sh`. Model lock: `cursor-grok-4.5-high` / `sb-grok-4-5-high` (not Grok 4.6 High, Extra High, Fast, or any Pi model).
 
-Repo: `/Users/shafqat/projects/silver-bullet/repo`. Branch: `main` (no `git checkout` / `git switch` / SetActiveBranch). VERIFY ONLY — no freeze edits, no APPLY (rung 9 CLEAN), no product/YAML execution, no rung 10.
+Repo: `/Users/<user>/projects/silver-bullet/repo`. Branch: `main` (no `git checkout` / `git switch` / SetActiveBranch). VERIFY ONLY — no freeze edits, no APPLY (rung 9 CLEAN), no product/YAML execution, no rung 10.
 
 Graphify first: `graphify query "router_subagent_surfaces FAST Executor panel-end blocked_launch_prompt_spec"` against `graphify-out/graph.json`. Live leftover checks below are hashlib + line-exact on freeze bytes, not graph-only.
 
@@ -22,7 +22,7 @@ Expected freeze (parent + live):
 | Copy | Path | SHA-256 | Bytes | Status |
 |---|---|---|---|---|
 | Repo Working Tree | `.planning/router_subagent_surfaces_85bf9f09.plan.md` | `e48a524b884e58fb2ade29e1d1cd32234fb2bf13ec1ee8288df8000dda6712dd` | 644327 | MATCH |
-| Cursor UI Copy | `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `e48a524b884e58fb2ade29e1d1cd32234fb2bf13ec1ee8288df8000dda6712dd` | 644327 | MATCH |
+| Cursor UI Copy | `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `e48a524b884e58fb2ade29e1d1cd32234fb2bf13ec1ee8288df8000dda6712dd` | 644327 | MATCH |
 | Git HEAD Blob | `git show HEAD:.planning/router_subagent_surfaces_85bf9f09.plan.md` | `e48a524b884e58fb2ade29e1d1cd32234fb2bf13ec1ee8288df8000dda6712dd` | 644327 | MATCH |
 
 - **Line count:** 4384

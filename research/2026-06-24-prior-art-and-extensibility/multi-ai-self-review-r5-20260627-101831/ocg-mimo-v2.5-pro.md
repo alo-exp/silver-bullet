@@ -1,7 +1,7 @@
 I'll read all 8 files in parallel first.
 Now let me check for cross-file consistency issues and patterns.
 Now I have all 8 files plus the 2 prior reviews. Let me write a genuinely new critical review that goes beyond what's already been found.
-The review is written to `/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/critical-review-r4.md`.
+The review is written to `/Users/<user>/projects/silver-bullet/repo/skills/multi-ai-task/critical-review-r4.md`.
 
 **Key findings beyond prior reviews (R2, R3):**
 

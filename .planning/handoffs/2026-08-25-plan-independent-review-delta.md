@@ -7,7 +7,7 @@ Planning-only. No product code, tests, hooks, skills, WS0, or YAML-todo executio
 | Path | SHA-256 | Bytes |
 |------|---------|-------|
 | [`.planning/router_subagent_surfaces_85bf9f09.plan.md`](../router_subagent_surfaces_85bf9f09.plan.md) | `31406f106e131c39cb86fa788819353671a31b5b69966d08cae87038c3d995e1` | 580674 |
-| [`~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md) | same | same |
+| [`~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md) | same | same |
 
 Start pair (confirmed before edits): `c4950cbd0a4e657ac5aee2921e3fd514f54a397c7662ab767f5194e61acfb75e` / 598581 bytes.
 

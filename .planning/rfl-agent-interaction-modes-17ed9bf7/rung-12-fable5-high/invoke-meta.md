@@ -11,7 +11,7 @@
 - Settings export: `CLAUDE_PRINT_SKIP_SETTINGS_EXPORT=1` (missing `scripts/lib/claude-matrix-auth.sh`)
 - Timeout: `CLAUDE_INTERACTIVE_TIMEOUT=900`
 - Quota retries: `AGENT_CLAUDE_QUOTA_RETRY_MAX=1` (spend-limit is not a 429)
-- Work dir: `/Users/shafqat/projects/silver-bullet/repo`
+- Work dir: `/Users/<user>/projects/silver-bullet/repo`
 - Branch intent: **main** (do not switch; no commit). Current HEAD is detached rebase of main at `1569b060`.
 - Plan: `.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md`
 - Plan SHA256: `5192423a986d602beb4170d3cdf474e7e573974d14666afc2d9da577b894501e` (415 lines)

@@ -3,7 +3,7 @@
 **Research date:** 2026-07-12
 **Agent:** ocgResearch complete. All deliverables written to:
 
-**`/Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-mimo-v2.5/`**
+**`/Users/<user>/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-mimo-v2.5/`**
 
 ### Deliverables (13 files)
 

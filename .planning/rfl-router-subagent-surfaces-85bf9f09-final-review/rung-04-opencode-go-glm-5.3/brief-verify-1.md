@@ -5,8 +5,8 @@ This session parent: `d5150f38-4d37-458d-9bdb-5e6f985975d3`.
 This is `/silver:review-fix-ladder` only. Do **not** run `/silver:clarify`. Do not AskQuestion. Do not encode product forks. Do not copy `review.md` — re-derive every check from disk. Do **not** start verify_2. Do **not** start rungs 5/10/11. APPLY no.
 
 Scope (read-only freeze — FORBIDDEN to Edit/Write either freeze copy):
-- `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
-- `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
+- `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
+- `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
 
 **Locked freeze (authoritative — do **not** cite `4c18af57`, `edff7c0c`, or `d5343ac1` as current):**
 - SHA-256: `1e2e775aa4cf885a816a96a060e5fe50a76c07d4ec02e84ff83c5b922448957e`

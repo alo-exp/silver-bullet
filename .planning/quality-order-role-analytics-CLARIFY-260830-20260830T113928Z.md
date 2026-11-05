@@ -27,7 +27,7 @@ Standalone analytics plan (later: [`.planning/quality-order-role-analytics.plan.
 
 Silver Bullet’s freeze quality order adds hops (composition-Val, plan-time Val, I, Advisor two-clean, Ver-loop to `v_verified`, Process-scope Advisor/Verifier, Process-final Val). Those hops cost extra model calls. The operator has no **honest, encoder-written** evidence that (1) the order improves the actual work enough to justify that cost, or (2) each role’s model / thinking-effort / Panel membership is the most cost-effective assignment.
 
-A prior Cursor draft ([`quality-order_role_analytics_03e76c86`](file:///Users/shafqat/.cursor/plans/quality-order_role_analytics_03e76c86.plan.md)) mixed freeze hops with analog review-ladder nomenclature and an operator **real-time ops** view (who is active, queue depth, idle-kills). **The user superseded that draft.** This brief is the replacement framing.
+A prior Cursor draft ([`quality-order_role_analytics_03e76c86`](file:///Users/<user>/.cursor/plans/quality-order_role_analytics_03e76c86.plan.md)) mixed freeze hops with analog review-ladder nomenclature and an operator **real-time ops** view (who is active, queue depth, idle-kills). **The user superseded that draft.** This brief is the replacement framing.
 
 ## Current context
 

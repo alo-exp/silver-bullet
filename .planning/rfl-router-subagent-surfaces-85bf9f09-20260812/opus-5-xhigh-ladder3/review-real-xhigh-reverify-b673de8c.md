@@ -14,7 +14,7 @@ SHA verified before review: both copies matched `b673de8c…40c18`, so the spec 
 VERDICT: CLEAN
 ```
 
-Frozen-plan integrity: both copies of [`router_subagent_surfaces_85bf9f09.plan.md`](.planning/router_subagent_surfaces_85bf9f09.plan.md) and [`~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md) hash to `b673de8cc11bb46dfb12ed8bd48fa1d9ecc642f9e4ea4b9047d46b8e9c240c18`; branch `main`. Read order honored ([overview](.planning/rfl-router-subagent-surfaces-85bf9f09-20260812/SB-PRODUCT-OVERVIEW-FOR-REVIEWERS.md), plan, [round-19 SUPERSEDE](.planning/router_subagent_surfaces_85bf9f09-CLARIFY-260717-143757.md) L33), contrasted against [prior Extra High](.planning/rfl-router-subagent-surfaces-85bf9f09-20260812/opus-5-xhigh-ladder3/review-real-xhigh-reverify-65fde3d6.md).
+Frozen-plan integrity: both copies of [`router_subagent_surfaces_85bf9f09.plan.md`](.planning/router_subagent_surfaces_85bf9f09.plan.md) and [`~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md) hash to `b673de8cc11bb46dfb12ed8bd48fa1d9ecc642f9e4ea4b9047d46b8e9c240c18`; branch `main`. Read order honored ([overview](.planning/rfl-router-subagent-surfaces-85bf9f09-20260812/SB-PRODUCT-OVERVIEW-FOR-REVIEWERS.md), plan, [round-19 SUPERSEDE](.planning/router_subagent_surfaces_85bf9f09-CLARIFY-260717-143757.md) L33), contrasted against [prior Extra High](.planning/rfl-router-subagent-surfaces-85bf9f09-20260812/opus-5-xhigh-ladder3/review-real-xhigh-reverify-65fde3d6.md).
 
 ## Blockers
 None.

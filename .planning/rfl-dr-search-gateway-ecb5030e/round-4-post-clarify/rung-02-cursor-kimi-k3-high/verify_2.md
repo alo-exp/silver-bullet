@@ -2,7 +2,7 @@ model: composer-2.5
 
 **Subagent:** `sb-composer-2-5-high`  
 **Phase:** VERIFY-ONLY pass 2/2 (`rung_2_verify_2`, post ACCEPT-apply of K1–K6 / I-45–I-50)  
-**Artifact:** `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
+**Artifact:** `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
 **SHA-256:** `9b79d0144559ac6abbe360f39f7c894742295bb0f1e245124b21606559099a21` (verified via `shasum -a 256`)  
 **Graphify:** `graphify query "dr search gateway plan Serper partial_success SB_SEARCH_BIN xweb"` (272 nodes; oriented gateway / partial_success / search-cli context)  
 **Apply ref:** [APPLY.md](APPLY.md) — K1–K6 / I-45–I-50 Policy G pack  

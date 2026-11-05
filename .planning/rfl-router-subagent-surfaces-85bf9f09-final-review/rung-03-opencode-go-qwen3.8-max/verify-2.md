@@ -6,8 +6,8 @@
 
 | Copy | SHA-256 | Size |
 |---|---|---|
-| `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `1e2e775aa4cf885a816a96a060e5fe50a76c07d4ec02e84ff83c5b922448957e` | 621246 bytes |
-| `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `1e2e775aa4cf885a816a96a060e5fe50a76c07d4ec02e84ff83c5b922448957e` | 621246 bytes |
+| `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `1e2e775aa4cf885a816a96a060e5fe50a76c07d4ec02e84ff83c5b922448957e` | 621246 bytes |
+| `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `1e2e775aa4cf885a816a96a060e5fe50a76c07d4ec02e84ff83c5b922448957e` | 621246 bytes |
 
 - Byte-identical: **yes** (`cmp` clean).
 - Match locked freeze `1e2e775a…` / **621246**: **yes**.
