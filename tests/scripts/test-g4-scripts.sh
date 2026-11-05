@@ -91,6 +91,10 @@ bigfile "$P/src/auth.sh" authentication 40
 run
 assert_eq "the additionalContext carries the event name" "PostToolUse" "$(jq -r '.hookSpecificOutput.hookEventName' <<<"$TL_OUT")"
 assert_eq "the cache directory ignores itself" "*" "$(cat "$P/.planning/.context-cache/.gitignore")"
+# a second run with unchanged inputs is answered from the cache
+first="$TL_OUT"
+run
+assert_eq "an unchanged second run returns the cached answer" "$first" "$TL_OUT"
 # the standard layout: the phase goal lives in .planning/phases/<NNN>/
 mkproj
 rm -f "$P/.planning/phase1-CONTEXT.md"
