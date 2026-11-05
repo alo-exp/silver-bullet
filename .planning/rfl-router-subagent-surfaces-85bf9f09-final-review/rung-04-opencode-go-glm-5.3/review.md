@@ -9,8 +9,8 @@ Pi opencode-go/glm-5.3 via /silver:agent-pi
 
 | Copy | SHA-256 (as hashed) | Size | Note |
 |---|---|---|---|
-| `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `1e2e775aa4cf885a816a96a060e5fe50a76c07d4ec02e84ff83c5b922448957e` | 621246 bytes | matches locked freeze |
-| `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `1e2e775aa4cf885a816a96a060e5fe50a76c07d4ec02e84ff83c5b922448957e` | 621246 bytes | matches locked freeze |
+| `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `1e2e775aa4cf885a816a96a060e5fe50a76c07d4ec02e84ff83c5b922448957e` | 621246 bytes | matches locked freeze |
+| `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `1e2e775aa4cf885a816a96a060e5fe50a76c07d4ec02e84ff83c5b922448957e` | 621246 bytes | matches locked freeze |
 
 - **Byte-identical:** yes (`cmp` clean). The SHA I actually hashed is `1e2e775a…` / 621246 — NOT the stale `4c18af57…` / 621233, `edff7c0c…` / 621101, `d5343ac1…` / 621095, or the historical charter-start `07b98609…` / 620985.
 

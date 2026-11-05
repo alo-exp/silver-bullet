@@ -4,7 +4,7 @@ opus --effort max
 
 ### [intents[0].children[25]] ✅ RESOLVED
 **Requirement:** `verify_2.md` exists at path; first line is live slug `opus --effort max`
-**Evidence:** File created at `/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-dr-search-gateway-ecb5030e/missing-highplus/rung-10-opus-5-max/verify_2.md`; first line confirmed as `opus --effort max`
+**Evidence:** File created at `/Users/<user>/projects/silver-bullet/repo/.planning/rfl-dr-search-gateway-ecb5030e/missing-highplus/rung-10-opus-5-max/verify_2.md`; first line confirmed as `opus --effort max`
 
 ### [intents[0].children[26]] ⚠️ DEFERRED — Context Mismatch
 **Requirement:** Each of H-1, H-2, H-3, M-1, M-2, M-3, M-4 confirmed locked with file:line, or leftover listed

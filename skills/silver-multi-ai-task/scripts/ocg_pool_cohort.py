@@ -19,6 +19,9 @@ if str(SCRIPT_DIR) not in sys.path:
 
 from live_dispatch import (  # noqa: E402
     OCG_MODEL_MAP,
+    _merged_output,
+    _run_cli,
+    _worker_sandbox,
     build_worker_prompt,
     extract_json_payload,
     ocg_model_for,
@@ -41,6 +44,11 @@ def load_request(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def _argv_safe(prompt: str) -> str:
+    """A prompt that starts with '-' could be parsed as an option; a leading newline prevents it."""
+    return "\n" + prompt if prompt.startswith("-") else prompt
+
+
 def run_profile(
     *,
     logical_model_id: str,
@@ -49,64 +57,49 @@ def run_profile(
     timeout_sec: int,
     progress_path: Path | None,
 ) -> dict[str, Any]:
+    """Run one OCG profile least-privileged: no --auto, in a fresh empty sandbox directory."""
     model = ocg_model_for(logical_model_id)
-    cmd = [OPENCODE_BIN, "run", "--dir", str(work_dir), "-m", model, "--auto", prompt]
     _log(progress_path, f"START {logical_model_id} model={model} timeout={timeout_sec}s")
     started = time.monotonic()
+    base = {"logical_model_id": logical_model_id, "backend": "ocg", "effective_model_id": model}
     try:
-        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout_sec, cwd=str(work_dir))
-        elapsed = int(time.monotonic() - started)
-        raw = (proc.stdout or "") + ("\n" + proc.stderr if proc.stderr else "")
-        status = "completed" if proc.returncode == 0 else "failed"
-        payload = extract_json_payload(raw) if status == "completed" else {}
-        if status == "completed" and not payload:
-            status = "failed"
-        out_path = work_dir / f"{logical_model_id}-{model.replace('/', '-')}.raw.txt"
-        out_path.write_text(raw[:50000], encoding="utf-8")
-        _log(progress_path, f"DONE {logical_model_id} status={status} elapsed={elapsed}s exit={proc.returncode}")
-        return {
-            "logical_model_id": logical_model_id,
-            "backend": "ocg",
-            "status": status,
-            "payload": payload,
-            "raw_output_path": str(out_path.name),
-            "error": None if status == "completed" else f"exit {proc.returncode}",
-            "effective_model_id": model,
-            "elapsed_sec": elapsed,
-        }
+        with _worker_sandbox("ocg") as sandbox:
+            cmd = [OPENCODE_BIN, "run", "--dir", str(sandbox), "-m", model, _argv_safe(prompt)]
+            proc = _run_cli(cmd, timeout=timeout_sec, cwd=str(sandbox))
     except subprocess.TimeoutExpired:
         elapsed = int(time.monotonic() - started)
         _log(progress_path, f"TIMEOUT {logical_model_id} after {elapsed}s")
-        return {
-            "logical_model_id": logical_model_id,
-            "backend": "ocg",
-            "status": "partial",
-            "payload": {},
-            "raw_output_path": "",
-            "error": "timeout",
-            "effective_model_id": model,
-            "elapsed_sec": elapsed,
-        }
-    except FileNotFoundError:
-        _log(progress_path, f"FAIL {logical_model_id} opencode CLI not found")
-        return {
-            "logical_model_id": logical_model_id,
-            "backend": "ocg",
-            "status": "failed",
-            "payload": {},
-            "raw_output_path": "",
-            "error": "opencode CLI not found",
-            "effective_model_id": model,
-            "elapsed_sec": 0,
-        }
+        return {**base, "status": "partial", "payload": {}, "raw_output_path": "", "error": "timeout", "elapsed_sec": elapsed}
+    except OSError as exc:
+        error = "opencode CLI not found" if isinstance(exc, FileNotFoundError) else f"opencode launch failed: {exc}"
+        _log(progress_path, f"FAIL {logical_model_id} {error}")
+        return {**base, "status": "failed", "payload": {}, "raw_output_path": "", "error": error, "elapsed_sec": 0}
+    elapsed = int(time.monotonic() - started)
+    raw = _merged_output(proc)
+    status = "completed" if proc.returncode == 0 else "failed"
+    payload = extract_json_payload(raw) if status == "completed" else {}
+    if status == "completed" and not payload:
+        status = "failed"
+    out_path = work_dir / f"{logical_model_id}-{model.replace('/', '-')}.raw.txt"
+    out_path.write_text(raw[:50000], encoding="utf-8")
+    _log(progress_path, f"DONE {logical_model_id} status={status} elapsed={elapsed}s exit={proc.returncode}")
+    return {
+        **base,
+        "status": status,
+        "payload": payload,
+        "raw_output_path": str(out_path.name),
+        "error": None if status == "completed" else f"exit {proc.returncode}",
+        "elapsed_sec": elapsed,
+    }
 
 
-def run_cohort(request: dict[str, Any]) -> dict[str, Any]:
+def run_cohort(request: dict[str, Any], *, base_dir: Path | None = None) -> dict[str, Any]:
+    """Run every profile in the request; a relative work_dir resolves against ``base_dir``."""
     phase_id = str(request["phase_id"])
     query = str(request["query"])
     context = sanitize_phase_context(str(request.get("context", "")))
     logical_ids = list(request["logical_model_ids"])
-    work_dir = Path(request["work_dir"]).resolve()
+    work_dir = ((base_dir or Path.cwd()) / str(request["work_dir"])).resolve()
     per_model_timeout = min(int(request.get("timeout_sec", DEFAULT_PER_MODEL_TIMEOUT)), DEFAULT_PER_MODEL_TIMEOUT)
     progress_path = work_dir / f"ocg-cohort-progress-{request.get('attempt_id', 'run')}.log"
     work_dir.mkdir(parents=True, exist_ok=True)
@@ -153,7 +146,8 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     request_path = Path(args.request)
-    result = run_cohort(load_request(request_path))
+    # The request stores work_dir relative to its own directory (no local paths in artifacts).
+    result = run_cohort(load_request(request_path), base_dir=request_path.resolve().parent)
     body = json.dumps(result, indent=2) + "\n"
     if args.output:
         Path(args.output).write_text(body, encoding="utf-8")

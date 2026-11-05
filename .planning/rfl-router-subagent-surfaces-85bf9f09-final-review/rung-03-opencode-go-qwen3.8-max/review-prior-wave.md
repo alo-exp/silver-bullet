@@ -9,8 +9,8 @@
 
 | Copy | SHA-256 (as hashed) | Size (bytes) |
 |---|---|---|
-| `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `0e8510e053178bde539024169f70f6644e3f9d1eeef869453e95a74b5d2308be` | 621086 |
-| `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `0e8510e053178bde539024169f70f6644e3f9d1eeef869453e95a74b5d2308be` | 621086 |
+| `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `0e8510e053178bde539024169f70f6644e3f9d1eeef869453e95a74b5d2308be` | 621086 |
+| `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `0e8510e053178bde539024169f70f6644e3f9d1eeef869453e95a74b5d2308be` | 621086 |
 
 - Byte-identical: **YES** (`cmp` clean).
 - Charter start SHA `07b986094e983d39fe3c7d2f1ac215ae730cbd28ccf3957655f5ec4c53d3280a` / 620985 bytes ≠ disk SHA — consistent with rung-2 APPLY ACCEPT having landed (+101 bytes).
@@ -32,7 +32,7 @@
 11. **Single mermaid:** PASS. Exactly 1 ` ```mermaid ` fence (L1438); total code fences = 3 (mermaid + 2 `text`). Mermaid content consistent with locks (FAST short order; comp_val_two_clean skip-promote vs synthesized-overlay promote; Advisor-only compose).
 12. **Closed locks intact (KEEP REJECT / Q1–Q3 / Part A→B / no multi-ai-task / no agent-wrap / FAST not Job / OmniRoute routing-only):** PASS (items 2-9 above).
 13. **Truncated headings / placeholders:** PASS. No heading ends mid-sentence (no ellipsis/dangling colon/dash terminators among 317 headings); no TBD/FIXME/PLACEHOLDER markers; no empty headings; no heading at EOF; file ends cleanly after "F. Document integrity" content (final bytes "after every edit.\n"); no duplicate heading texts; rows 1–42 all have named `blocked_*` headings (row 42 = `blocked_sb_host_install` L3238).
-14. **Broken external refs:** PASS. Absolute-path refs to `/Users/shafqat/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md` (8 occurrences) — file exists (7284 bytes); SHA `745c7f41…` cited consistently (L346, L486, L471, L4103). Repo-relative `skills/…` / `scripts/…` links (13) are the established repo-root-relative convention for plan docs, not broken refs.
+14. **Broken external refs:** PASS. Absolute-path refs to `/Users/<user>/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md` (8 occurrences) — file exists (7284 bytes); SHA `745c7f41…` cited consistently (L346, L486, L471, L4103). Repo-relative `skills/…` / `scripts/…` links (13) are the established repo-root-relative convention for plan docs, not broken refs.
 15. **TOC-GFM anchor resolution:** **FAIL** — see Finding F-1.
 
 ## Findings (raw; line refs from 4289-line freeze)

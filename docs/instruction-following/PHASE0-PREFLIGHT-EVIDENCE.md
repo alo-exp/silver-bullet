@@ -1,8 +1,8 @@
 # Phase 0 Preflight Evidence — SB IF Reduction Plan
 
 **Date:** 2026-06-28  
-**Plan:** [SB IF Reduction Plan](file:///Users/shafqat/.cursor/plans/sb_if_reduction_plan_71f2493c.plan.md)  
-**Workspace:** `/Users/shafqat/projects/silver-bullet/repo`  
+**Plan:** [SB IF Reduction Plan](file:///Users/<user>/.cursor/plans/sb_if_reduction_plan_71f2493c.plan.md)  
+**Workspace:** `/Users/<user>/projects/silver-bullet/repo`  
 **Scope:** Phase 0 only (Waves 1–4 **not** started)
 
 ## Exit criteria summary
@@ -55,7 +55,7 @@ cursor-hook-bridge OK
 === E1: Host plugin 0.48.6 ===
 {
   "version": "0.48.6",
-  "installPath": "/Users/shafqat/.cursor/plugins/cache/alo-labs/silver-bullet/0.48.6"
+  "installPath": "/Users/<user>/.cursor/plugins/cache/alo-labs/silver-bullet/0.48.6"
 }
 ```
 
@@ -63,7 +63,7 @@ cursor-hook-bridge OK
 
 ```
 === E2: current symlink ===
-/Users/shafqat/.cursor/plugins/cache/alo-labs/silver-bullet/0.48.6
+/Users/<user>/.cursor/plugins/cache/alo-labs/silver-bullet/0.48.6
 ```
 
 ---
@@ -145,7 +145,7 @@ Path: `~/.cursor/.silver-bullet/sb-friction-log.md` (Cursor host `SB_RUNTIME_STA
 
 ```
 === E8: Friction log ===
--rw-r--r--@ 1 shafqat  staff  1890 Jun 28 19:01 /Users/shafqat/.cursor/.silver-bullet/sb-friction-log.md
+-rw-r--r--@ 1 <user>  staff  1890 Jun 28 19:01 /Users/<user>/.cursor/.silver-bullet/sb-friction-log.md
 ```
 
 ---

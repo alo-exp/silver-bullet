@@ -1,6 +1,6 @@
 You are on rung 10/11 of RFL round 2 (`final-review-2`). Named model: **Pi** `claude/claude-opus-5-high` (Claude Opus 5 High) via `/silver:agent-pi` (OmniRoute). This slug is **user-named for this rung** — keep it. Do **not** remap to Grok High, Cursor Task Claude, Fast, or Extra High (`claude/claude-opus-5-xhigh` is rung 11). You are the reviewer. Reasoning: host-default (`--thinking off` may be present from the harness; do not change it).
 
-**Repo:** `/Users/shafqat/projects/silver-bullet/repo`
+**Repo:** `/Users/<user>/projects/silver-bullet/repo`
 **Branch:** `main` @ `32742b87` (`memory: auto-snapshot 2026-08-28T10:50:16Z`) — NEVER git checkout / git switch / SetActiveBranch. HEAD is a **descendant of** freeze APPLY commit `f507e80f` (`Restate F-5-1 KEEP REJECT in §3.3 and disambiguate empty current-panel.`), not a rollback.
 **Work directory:** this rung folder (not `work/`):
 `.planning/rfl-router-subagent-surfaces-85bf9f09-final-review-2/rung-10-claude-opus-5-high/`
@@ -21,8 +21,8 @@ Expected (parent hashlib after rung-10 APPLY `f507e80f`; freeze blob must be thi
 
 Copies (must stay byte-identical):
 
-1. Repo working tree: `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
-2. Cursor plans: `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
+1. Repo working tree: `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
+2. Cursor plans: `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
 3. Git HEAD blob: `git show HEAD:.planning/router_subagent_surfaces_85bf9f09.plan.md`
 
 If your re-hash is **not** `088a18a6…` / 648963, **STOP** after recording the mismatch/split in `review.md`. Do not sync copies. Do not proceed to a full review of a different blob.

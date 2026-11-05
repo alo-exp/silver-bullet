@@ -3,7 +3,7 @@
 **Skill:** `/silver:verify`  
 **status:** passed  
 **Date:** 2026-08-30  
-**Implement root:** `/Users/shafqat/projects/silver-bullet/repo`  
+**Implement root:** `/Users/<user>/projects/silver-bullet/repo`  
 **Branch:** `main` (not switched; not merged)
 
 ## Verdict

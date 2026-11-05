@@ -164,16 +164,41 @@ else
 fi
 
 cursorignore="${REPO_ROOT}/.cursorignore"
+indexingignore="${REPO_ROOT}/.cursorindexingignore"
+# R13-26: .cursorignore blocks the agent's file tools, so it lists generated mirrors only; the
+# editable sources are hidden from indexing and the "/" picker by .cursorindexingignore.
 cursorignore_missing=0
-for pattern in 'skills/' 'host-bundles/' 'agents/' '.agents/' '.cursor/agents/' 'plugins/silver-bullet/skill-source/' 'plugins/silver-bullet/agents/' 'plugins/silver-bullet/skills/' 'plugins/silver-bullet/templates/' 'templates/orchestrator-workers/' 'templates/workflows/'; do
+for pattern in 'host-bundles/' 'agents/' '.agents/' '.cursor/agents/' 'plugins/silver-bullet/skill-source/' 'plugins/silver-bullet/agents/' 'plugins/silver-bullet/skills/' 'plugins/silver-bullet/templates/' 'templates/orchestrator-workers/'; do
   if ! grep -qxF "$pattern" "$cursorignore" 2>/dev/null; then
     (( cursorignore_missing++ )) || true
   fi
 done
 if [[ "$cursorignore_missing" -eq 0 ]]; then
-  pass "source .cursorignore excludes workspace SB skill surfaces"
+  pass "source .cursorignore excludes generated workspace SB skill surfaces"
 else
-  fail "source .cursorignore excludes workspace SB skill surfaces — missing ${cursorignore_missing}"
+  fail "source .cursorignore excludes generated workspace SB skill surfaces — missing ${cursorignore_missing}"
+fi
+indexingignore_missing=0
+for pattern in 'skills/' 'templates/workflows/'; do
+  if ! grep -qxF "$pattern" "$indexingignore" 2>/dev/null; then
+    (( indexingignore_missing++ )) || true
+  fi
+done
+if [[ "$indexingignore_missing" -eq 0 ]]; then
+  pass "source .cursorindexingignore hides skills/ and templates/workflows/ from the picker"
+else
+  fail "source .cursorindexingignore hides skills/ and templates/workflows/ from the picker — missing ${indexingignore_missing}"
+fi
+source_dirs_in_cursorignore=0
+for pattern in 'skills/' 'templates/workflows/'; do
+  if grep -qxF "$pattern" "$cursorignore" 2>/dev/null; then
+    (( source_dirs_in_cursorignore++ )) || true
+  fi
+done
+if [[ "$source_dirs_in_cursorignore" -eq 0 ]]; then
+  pass "source .cursorignore keeps skills/ and templates/workflows/ readable by the agent"
+else
+  fail "source .cursorignore keeps skills/ and templates/workflows/ readable by the agent — ${source_dirs_in_cursorignore} listed"
 fi
 
 registry_path="${CURSOR_HOME}/plugins/installed_plugins.json"
@@ -413,11 +438,18 @@ for bad_route in '/silver-ui' '/silver-add' '/silver-plan' '/subagent-sb:init' '
     fail "enumerate-cursor-slash-picker reports screenshot bad route ${bad_route}"
   fi
 done
-printf '%s\n'   'skills/'   'host-bundles/'   'plugins/silver-bullet/skill-source/'   'plugins/silver-bullet/agents/'   '.cursor/agents/' > "${workspace_fixture}/.cursorignore"
+# Only the mirrors are in .cursorignore: skills/ is still reported until .cursorindexingignore hides it.
+printf '%s\n'   'host-bundles/'   'plugins/silver-bullet/skill-source/'   'plugins/silver-bullet/agents/'   '.cursor/agents/' > "${workspace_fixture}/.cursorignore"
 if bash "${REPO_ROOT}/scripts/enumerate-cursor-slash-picker.sh" --cursor-home "$CURSOR_HOME" --workspace "$workspace_fixture" >/dev/null 2>&1; then
-  pass "enumerate-cursor-slash-picker honors .cursorignore for workspace skill surfaces"
+  fail ".cursorignore alone (without skills/) leaves the source skills unignored"
 else
-  fail "enumerate-cursor-slash-picker honors .cursorignore for workspace skill surfaces"
+  pass ".cursorignore alone (without skills/) leaves the source skills unignored"
+fi
+printf '%s\n'   'skills/' > "${workspace_fixture}/.cursorindexingignore"
+if bash "${REPO_ROOT}/scripts/enumerate-cursor-slash-picker.sh" --cursor-home "$CURSOR_HOME" --workspace "$workspace_fixture" >/dev/null 2>&1; then
+  pass "enumerate-cursor-slash-picker honors .cursorignore plus .cursorindexingignore for workspace skill surfaces"
+else
+  fail "enumerate-cursor-slash-picker honors .cursorignore plus .cursorindexingignore for workspace skill surfaces"
 fi
 
 if [[ ! -f "${resolved_current}/skills/silver-feature/SKILL.md" ]] && \

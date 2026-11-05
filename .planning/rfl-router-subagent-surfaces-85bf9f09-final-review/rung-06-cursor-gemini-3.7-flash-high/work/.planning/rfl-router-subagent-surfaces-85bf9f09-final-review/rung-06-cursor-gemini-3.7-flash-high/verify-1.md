@@ -1,11 +1,11 @@
 # Verification Report — Rung 06: `cursor/gemini-3.7-flash-high` (Pass 1/2)
 
 **Phase:** `rung_06_verify_1` (VERIFY-ONLY)  
-**Charter:** [`CHARTER.md`](/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/CHARTER.md)  
-**Prior Review:** [`review.md`](/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-06-cursor-gemini-3.7-flash-high/review.md)  
+**Charter:** [`CHARTER.md`](/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/CHARTER.md)  
+**Prior Review:** [`review.md`](/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-06-cursor-gemini-3.7-flash-high/review.md)  
 **Target Freeze Scope:**
-- [`/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md)
-- [`/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md)
+- [`/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md)
+- [`/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md)
 
 ---
 

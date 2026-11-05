@@ -22,6 +22,20 @@ NOREG="$TL_TMP/sb-none"; mkdir -p "$NOREG"
 
 assert_eq "registry path" "/x/skills/silver-multi-ai-task/reference/model-family-registry-v1.json" "$(agent_opencode_registry_path /x)"
 assert_eq "registry path default root" "./skills/silver-multi-ai-task/reference/model-family-registry-v1.json" "$(agent_opencode_registry_path)"
+assert_eq "skill dir in repo layout" "$SB/skills/silver-multi-ai-task" "$(agent_opencode_multi_ai_skill_dir "$SB")"
+
+# Packaged plugin layout (plugins/silver-bullet): skill-source/sb-multi-ai-task, no skills/ (R11-31).
+PLUG="$TL_TMP/plugin-root"
+mkdir -p "$PLUG/skill-source/sb-multi-ai-task/reference"
+cp "$REG_DIR/model-family-registry-v1.json" "$PLUG/skill-source/sb-multi-ai-task/reference/"
+assert_eq "skill dir in plugin layout" "$PLUG/skill-source/sb-multi-ai-task" "$(agent_opencode_multi_ai_skill_dir "$PLUG")"
+assert_eq "registry in plugin layout" "$PLUG/skill-source/sb-multi-ai-task/reference/model-family-registry-v1.json" "$(agent_opencode_registry_path "$PLUG")"
+rc=0; agent_opencode_validate_multi_ai_pool_mode lite "$PLUG" || rc=$?
+assert_eq "pool validates in plugin layout" 0 "$rc"
+assert_eq "alias resolves in plugin layout" real-model "$(agent_opencode_profile_to_run_model ocg-alias "$PLUG")"
+# The real packaged mirror resolves too.
+assert_eq "shipped plugin mirror resolves" "$TL_REPO_ROOT/plugins/silver-bullet/skill-source/sb-multi-ai-task" \
+  "$(agent_opencode_multi_ai_skill_dir "$TL_REPO_ROOT/plugins/silver-bullet")"
 
 # profile -> run model
 assert_eq "alias resolves via registry" real-model "$(agent_opencode_profile_to_run_model ocg-alias "$SB")"

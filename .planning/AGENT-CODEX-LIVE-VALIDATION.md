@@ -34,7 +34,7 @@
 
 ### Enterprise temp branch
 
-- **Repo:** `/Users/shafqat/projects/enterprise-grade-test-app-codex`
+- **Repo:** `/Users/<user>/projects/enterprise-grade-test-app-codex`
 - **Branch:** `agent-codex-af-live-20260705-live`
 - **Commit:** `ec44459` — `docs: agent-codex AF live health-smoke guide`
 
@@ -47,7 +47,7 @@ Delegated via brief: create `docs/AGENT-CODEX-AF-LIVE.md` (health contract + smo
 ## Command transcript (representative)
 
 ```bash
-export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
+export SB_ROOT=/Users/<user>/projects/silver-bullet/repo
 export SB_AGENT_DELEGATE_V2=1 SB_ORCHESTRATOR_WORKER=1 SB_ORCHESTRATOR_PARENT=0
 export SB_AGENT_CODEX_LOG_FLOOR=512
 export SB_AGENT_CODEX_SKIP_MCP=0 SB_AGENT_CODEX_LIGHTWEIGHT=0
@@ -58,7 +58,7 @@ sb_orchestrator_seed_delegation_directive codex live-af-20260705 \
   '[".../enterprise-grade-test-app-codex/docs",".../enterprise-grade-test-app-codex/README.md"]'
 
 bash scripts/agent-codex-delegate.sh --use-exec \
-  --work-dir /Users/shafqat/projects/enterprise-grade-test-app-codex \
+  --work-dir /Users/<user>/projects/enterprise-grade-test-app-codex \
   --brief-file .planning/agent-codex/live-af-20260705/brief.md \
   --log .planning/agent-codex/live-af-20260705/codex-run.log
 ```

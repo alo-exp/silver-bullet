@@ -173,4 +173,4 @@ The Codex enterprise E2E session **validated SB harness and outcome scoring** on
 
 ---
 
-*Audit generated 2026-07-02. Evidence: test-app git @ `/Users/shafqat/projects/enterprise-grade-test-app`, SB logs @ `/private/tmp/sb-codex-force4-wt/.e2e-row*-codex-attempt.log`, rescore logs @ `.planning/enterprise-e2e/.codex-r*.log`.*
+*Audit generated 2026-07-02. Evidence: test-app git @ `/Users/<user>/projects/enterprise-grade-test-app`, SB logs @ `/private/tmp/sb-codex-force4-wt/.e2e-row*-codex-attempt.log`, rescore logs @ `.planning/enterprise-e2e/.codex-r*.log`.*

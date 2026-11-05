@@ -40,7 +40,7 @@
           "model_family_id": { "type": "string" },
           "requested_model_id": { "type": "string" },
           "effective_model_id": { "type": "string" },
-          "backend": { "enum": ["cursor", "ocg"] },
+          "backend": { "enum": ["cursor", "codex", "claude", "ocg"] },
           "model_family_registry_version": { "type": "string" },
           "model_family_registry_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
         },
@@ -56,7 +56,7 @@
           "attempt_id": { "type": "string" },
           "logical_model_id": { "type": "string" },
           "status": {
-            "enum": ["queued", "running", "completed", "partial", "failed", "cancelled", "excluded", "budget_stopped"]
+            "enum": ["queued", "running", "completed", "fallback", "partial", "failed", "cancelled", "excluded", "budget_stopped"]
           },
           "authoritative": { "type": "boolean" }
         },

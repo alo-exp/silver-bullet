@@ -15,8 +15,8 @@ Archive existing Pi `review.md` as `review-prior-pi.md` before overwriting. Do n
 This is `/silver:review-fix-ladder` only. Do **not** run `/silver:clarify`. Do not write clarifications.md. Do not AskQuestion. Do not encode product forks. Do not Policy-C. Do not APPLY. Do not start verify. Do not redo rung 6.
 
 Scope (do not exceed — FORBIDDEN to touch any other path except this rung folder's brief/review artifacts):
-- `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
-- `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
+- `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
+- `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
 
 Independently re-hash both copies. Disk wins.
 - Historical (do not treat as current): charter-start `07b98609…` / 620985; prior-wave `d5343ac1…` / 621095; prior Pi-rung SHA `edff7c0c…` / 621101
@@ -38,7 +38,7 @@ Tasks:
 1. Audit the freeze against the charter. Full independent re-read.
 2. Report raw findings with line references and severity (HIGH / MED / LOW / NIT) or **none**.
 3. Write `./review.md` at:
-   `/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-07-cursor-grok-4.6-high/review.md`
+   `/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-07-cursor-grok-4.6-high/review.md`
    Header line MUST be exactly: `Cursor Task cursor-grok-4.6-high (no Pi)`
 4. Do NOT classify ACCEPT/REJECT, file issues, or apply fixes.
 5. MUST NOT Edit/Write either freeze copy.

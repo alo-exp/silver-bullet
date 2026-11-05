@@ -8,8 +8,8 @@
 
 | Copy hashed | SHA-256 actually hashed | Bytes |
 |---|---|---:|
-| `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `4c18af575adc848542c3d04faa2579a206ac0a627c80aade0d7aba3514e91de9` | 621233 |
-| `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `4c18af575adc848542c3d04faa2579a206ac0a627c80aade0d7aba3514e91de9` | 621233 |
+| `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `4c18af575adc848542c3d04faa2579a206ac0a627c80aade0d7aba3514e91de9` | 621233 |
+| `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `4c18af575adc848542c3d04faa2579a206ac0a627c80aade0d7aba3514e91de9` | 621233 |
 
 `cmp -s` result: **byte-identical YES**. This report audits those disk bytes as the current locked freeze.
 

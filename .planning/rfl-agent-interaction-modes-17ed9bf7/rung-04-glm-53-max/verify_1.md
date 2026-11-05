@@ -1,6 +1,6 @@
 # Rung 4 verify pass 1 — GLM 5.3 Max (OpenCode)
 
-**Plan:** [agent_interaction_modes_17ed9bf7.plan.md](/Users/shafqat/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
+**Plan:** [agent_interaction_modes_17ed9bf7.plan.md](/Users/<user>/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
 
 **Method:** VERIFY-ONLY pass 1. Line-level check of I-32 / I-33 (from `review.md`) against the patched plan text; both rung-04 patches (`patch_i32.py`, `patch_i33.py`) confirmed landed on disk. I-34..I-42 assessed non-blocking per brief. No plan edits.
 
