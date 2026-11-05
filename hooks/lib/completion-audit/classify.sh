@@ -230,7 +230,6 @@ ca_push_is_feature_only() {
     *GIT_DIR* | *GIT_WORK_TREE* | *GIT_COMMON_DIR* | *GIT_NAMESPACE*) return 1 ;;
   esac
   npush="$(printf '%s' "$json" | jq -r '(.push // []) | length')"
-  [[ "$npush" -ge 1 ]] || return 1
   printf '%s' "$json" | jq -e '(.push // []) | all(.[]; ((.tags // false) or (.all // false) or (.mirror // false) or (.delete // false)) | not)' >/dev/null || return 1
   nsub=0
   while IFS=$'\t' read -r sub bad cwd dirs; do
@@ -261,7 +260,7 @@ ca_push_is_feature_only() {
     (.commands // [])[] | select((.program | split("/") | last) == "git") | . as $c | parse($c.argv)
     | [.sub, (.bad | tostring), $c.cwd, (.dirs | join("\u001f"))] | @tsv')
   # a push through an alias (or one we could not place) shows up as fewer `git push` commands than push entries
-  [[ "$nsub" -eq "$npush" ]] || return 1
+  [[ "$nsub" -ge 1 && "$nsub" -eq "$npush" ]] || return 1
   names="$(ca_default_branch_names "$dir")"
   cur="$(git -C "$dir" symbolic-ref -q --short HEAD 2>/dev/null || true)"
   if printf '%s' "$json" | jq -e '(.push // []) | any(.[]; .default // false)' >/dev/null; then

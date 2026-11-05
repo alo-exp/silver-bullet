@@ -522,6 +522,11 @@ deny_push 'git push origin :feat'
 deny_push 'git push origin refs/heads/*:refs/heads/*'
 deny_push 'git push origin *'
 deny_push 'git push --all'
+deny_push 'git push origin feat && ./run.sh'
+deny_push "cd $TL_TMP && git push origin feat"
+deny_push "git push origin feat && git -C $OTHER push origin main"
+allow_push "cd $PROJ && git -C sub push origin feat"
+allow_push "git -C $PROJ/sub -C .. push origin feat"
 deny_push 'git push origin $B'
 deny_push 'git push origin $(git rev-parse --abbrev-ref HEAD)'
 deny_push 'git push origin newbranch'

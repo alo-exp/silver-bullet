@@ -82,7 +82,9 @@ for cmd in 'f(){ "$@"; }; f gh pr create --fill' 'a=(gh pr create --fill); "${a[
   "\$(printf '\\x67it') commit -m x"; do
   expect "unseen delivery is gated: $cmd" deny "COMPLETION BLOCKED" "$cmd"
 done
-for cmd in '/usr/lib/git-core/git-push origin HEAD' 'git merge -n other' \
+# a push through the git-core helper path is not provably a feature-branch push: final delivery
+expect "git-core helper push is final delivery" deny "COMPLETION BLOCKED" '/usr/lib/git-core/git-push origin HEAD'
+for cmd in 'git merge -n other' \
   'git commit --allow-empty -m --help' 'HOME=/tmp/h git ci -m x' 'git pull --no-rebase . other'; do
   expect "reshaped commit is gated: $cmd" deny "COMMIT BLOCKED" "$cmd"
 done
