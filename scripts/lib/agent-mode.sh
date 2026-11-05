@@ -4,6 +4,8 @@
 # Host adapters implement native ctl start/send/key/snapshot/status/abort.
 # shellcheck shell=bash
 
+_AGENT_MODE_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 agent_mode_iso_now() {
   date -u +%Y-%m-%dT%H:%M:%SZ
 }
@@ -1062,11 +1064,16 @@ agent_mode_maybe_escalate() {
 agent_mode_ctl_write() {
   local control="$1" json="$2"
   [[ -p "${control}/cmd.fifo" ]] || return 1
-  python3 - "${control}/cmd.fifo" "$json" <<'PY'
-import sys
-path, payload = sys.argv[1], sys.argv[2]
-with open(path, "w", encoding="utf-8") as fh:
-    fh.write(payload.rstrip() + "\n")
+  python3 - "${control}/cmd.fifo" "$json" "${_AGENT_MODE_LIB_DIR}" <<'PY'
+import os, sys
+path, payload, lib_dir = sys.argv[1], sys.argv[2], sys.argv[3]
+sys.path.insert(0, lib_dir)
+import agent_fifo
+try:
+    agent_fifo.write_line(path, payload, float(os.environ.get("SB_AGENT_CTL_TIMEOUT") or "8"))
+except (OSError, TimeoutError) as exc:
+    sys.stderr.write("ERROR: could not open cmd.fifo (no driver reading it?): %s\n" % exc)
+    sys.exit(2)
 PY
 }
 

@@ -76,51 +76,32 @@ json_payload() {
   esac
 }
 
-python3 - "$CONTROL_DIR" "$(json_payload)" "$OP" <<'PY'
-import json, os, select, sys, time
+python3 - "$CONTROL_DIR" "$(json_payload)" "$OP" "${REPO_ROOT}/scripts/lib" <<'PY'
+import os, sys
 
-control, payload, op = sys.argv[1], sys.argv[2], sys.argv[3]
+control, payload, op, lib_dir = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+sys.path.insert(0, lib_dir)
+import agent_fifo
+
+timeout = float(os.environ.get("SB_AGENT_CTL_TIMEOUT") or "8")
+
 cmd = os.path.join(control, "cmd.fifo")
 reply = os.path.join(control, "reply.fifo")
 if not os.path.exists(cmd):
     sys.stderr.write("ERROR: cmd.fifo missing (not interactive)\n")
     sys.exit(2)
 
-def open_fifo(path, flags, timeout=5.0):
-    deadline = time.time() + timeout
-    while time.time() < deadline:
-        try:
-            return os.open(path, flags)
-        except OSError:
-            time.sleep(0.05)
-    raise TimeoutError(path)
-
-flags = os.O_WRONLY | getattr(os, "O_NONBLOCK", 0)
 try:
-    fd = open_fifo(cmd, os.O_WRONLY, 8.0)
-except Exception as exc:
-    sys.stderr.write("ERROR: could not open cmd.fifo: %s\n" % exc)
+    agent_fifo.write_line(cmd, payload, timeout)
+except (OSError, TimeoutError) as exc:
+    sys.stderr.write("ERROR: could not open cmd.fifo (no driver reading it?): %s\n" % exc)
     sys.exit(2)
-os.write(fd, (payload.rstrip() + "\n").encode("utf-8"))
-os.close(fd)
 
 if op in ("snapshot", "status"):
     try:
-        rfd = open_fifo(reply, os.O_RDONLY, 8.0)
-    except Exception as exc:
+        data = agent_fifo.read_line(reply, timeout)
+    except OSError as exc:
         sys.stderr.write("ERROR: could not open reply.fifo: %s\n" % exc)
         sys.exit(2)
-    chunks = []
-    deadline = time.time() + 8.0
-    while time.time() < deadline:
-        ready, _, _ = select.select([rfd], [], [], 0.2)
-        if ready:
-            data = os.read(rfd, 65536)
-            if not data:
-                break
-            chunks.append(data)
-            if b"\n" in data:
-                break
-    os.close(rfd)
-    sys.stdout.write(b"".join(chunks).decode("utf-8", "replace"))
+    sys.stdout.write(data.decode("utf-8", "replace"))
 PY
