@@ -56,7 +56,7 @@ frozen_row1_passes() {
   row_log="$(latest_row_log 1)"
   [[ -n "$row_log" && -f "$row_log" ]] || return 1
   export SB_ROOT="$ROOT"
-  export SB_TEST_ENTERPRISE_APP_ROOT="${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/shafqat/projects/enterprise-grade-test-app}"
+  export SB_TEST_ENTERPRISE_APP_ROOT="${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/<user>/projects/enterprise-grade-test-app}"
   export SILVER_BULLET_RUNTIME=codex
   export SB_E2E_LIVE_RUNTIME=codex
   export SB_E2E_LEDGER_FILE="$LEDGER"
@@ -74,7 +74,7 @@ frozen_row1_passes() {
 
 run_tierb_rescore() {
   export SB_ROOT="$ROOT"
-  export SB_TEST_ENTERPRISE_APP_ROOT="${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/shafqat/projects/enterprise-grade-test-app}"
+  export SB_TEST_ENTERPRISE_APP_ROOT="${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/<user>/projects/enterprise-grade-test-app}"
   export SILVER_BULLET_RUNTIME=codex
   export SB_E2E_LIVE_RUNTIME=codex
   export SB_E2E_LEDGER_FILE="$LEDGER"

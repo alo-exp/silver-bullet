@@ -65,22 +65,16 @@
     "available_at": null,
     "omni_fill_first": true,
     "omni_round_robin": false,
-    "accounts": [
-      "shafqat@sourcevo.com",
-      "shafqat.ullah@gmail.com"
-    ],
     "rungs": [
       7,
       8
     ],
     "action": "launch_now",
-    "substitute_grok": false,
-    "note": "Claude and OpenCode Go use Omni fill-first: drain one account until exhausted, then the next. When that exhausts, an earlier account may have reset. No round-robin. No Grok remap."
+    "substitute_grok": false
   },
   "opencode_go": {
     "omni_fill_first": true,
     "omni_round_robin": false,
-    "connected_accounts": 2,
     "note": "OpenCode Go dashboard strategy set to fill-first (was round-robin)."
   },
   "policy_d_written": true

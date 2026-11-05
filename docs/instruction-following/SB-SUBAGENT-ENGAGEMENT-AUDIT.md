@@ -2,7 +2,7 @@
 
 **Date:** 2026-06-28  
 **Updated:** 2026-06-29 (all gaps closed; Wave 3 hook tests added)  
-**Workspace:** `/Users/shafqat/projects/silver-bullet/repo`  
+**Workspace:** `/Users/<user>/projects/silver-bullet/repo`  
 **Verdict:** **CLOSED** — Wave 1 committed; audit hooks + Waves 2–4 shipped.
 
 ---

@@ -210,7 +210,7 @@ Cursor agent attempted `scripts/run-enterprise-e2e-matrix.sh` + direct `claude-i
 | Probe 1: `/silver` from SB worktree CWD | **Partial** | Prompt submitted; **Fail** at 53s — `quiet_timeout=30` too short (`ERROR: timed out waiting for Claude response`) |
 | Probe 2: `/silver route me…` from SB worktree | **Pass** | Expect exited 0 in **113s** (`haiku`, `quiet_timeout=60`); log shows `SILVER BULLET ► ROUTING` → `silver:fast` with boundary table |
 
-**Conclusion:** A Cursor agent **can** drive interactive Claude TUI via the expect harness (Skill routing confirmed in Probe 2), but **cannot** run the enterprise matrix from `CWD = test app` in this environment because the fixture repo is not mounted in the execution sandbox. Matrix row evidence paths (`.planning/workflows/router-session.md`, etc.) are unreachable for live TUI sessions until the agent workspace is the real test-app checkout (e.g. `move_agent_to_root` to `/Users/shafqat/projects/enterprise-grade-test-app` on the host, or run matrix from a human terminal).
+**Conclusion:** A Cursor agent **can** drive interactive Claude TUI via the expect harness (Skill routing confirmed in Probe 2), but **cannot** run the enterprise matrix from `CWD = test app` in this environment because the fixture repo is not mounted in the execution sandbox. Matrix row evidence paths (`.planning/workflows/router-session.md`, etc.) are unreachable for live TUI sessions until the agent workspace is the real test-app checkout (e.g. `move_agent_to_root` to `/Users/<user>/projects/enterprise-grade-test-app` on the host, or run matrix from a human terminal).
 
 **Remaining gaps for Cursor-as-operator:**
 1. Sandbox must expose `enterprise-grade-test-app` (or clone fixture into mounted path).
@@ -267,10 +267,10 @@ Autonomous follow-up from [Clarify TUI driver tooling](8890d756-ef38-4dca-b988-0
 **Row 1 interactive matrix: FAIL** — routing works via direct probe but full matrix row does not produce `router-session.md`.
 
 **Evidence paths:**
-- `/Users/shafqat/projects/silver-bullet/repo/.e2e-row1-run.log`
-- `/Users/shafqat/projects/silver-bullet/repo/.e2e-row1-retry.log`
-- `/Users/shafqat/projects/silver-bullet/repo/.e2e-row1-retry2.log`
-- `/Users/shafqat/projects/enterprise-grade-test-app/.planning/workflows/` (empty)
+- `/Users/<user>/projects/silver-bullet/repo/.e2e-row1-run.log`
+- `/Users/<user>/projects/silver-bullet/repo/.e2e-row1-retry.log`
+- `/Users/<user>/projects/silver-bullet/repo/.e2e-row1-retry2.log`
+- `/Users/<user>/projects/enterprise-grade-test-app/.planning/workflows/` (empty)
 
 **Remaining blockers:**
 1. Claude CLI auth conflict (`claude.ai` + stored `ANTHROPIC_API_KEY`) — matrix sessions stall at 0 tokens despite `env -i`.
@@ -303,8 +303,8 @@ Follow-up from [Commit harness fix, run row 1](e14313d7-45a2-4cce-861c-c7190b693
 **Row 1 interactive matrix: FAIL** — harness improvements landed; runtime blocked by Claude CLI 401 auth (not splash/submit logic).
 
 **Evidence paths:**
-- `/Users/shafqat/projects/silver-bullet/repo/.e2e-row1-attempt4.log`
-- `/Users/shafqat/projects/silver-bullet/repo/.e2e-row1-attempt5.log`
+- `/Users/<user>/projects/silver-bullet/repo/.e2e-row1-attempt4.log`
+- `/Users/<user>/projects/silver-bullet/repo/.e2e-row1-attempt5.log`
 
 **Remaining blockers:**
 1. **Claude CLI auth 401** — `claude --print` fails on host; matrix cannot generate tokens until `claude login` / valid API key or claude.ai OAuth is restored.
@@ -335,8 +335,8 @@ Follow-up from [Fix matrix prompt, rerun row 1](b7b598d8-4cd3-48bc-8ddc-dfd89bf5
 **Row 1 interactive matrix: FAIL** — harness auth wrapper ready; host needs `claude auth login` (claude.ai) and settings.json API-key env removed or conflict-resolved before `/silver` TUI can authenticate.
 
 **Evidence paths:**
-- `/Users/shafqat/projects/silver-bullet/repo/.e2e-row1-attempt6.log`
-- `/Users/shafqat/projects/silver-bullet/repo/.e2e-row1-attempt7.log`
+- `/Users/<user>/projects/silver-bullet/repo/.e2e-row1-attempt6.log`
+- `/Users/<user>/projects/silver-bullet/repo/.e2e-row1-attempt7.log`
 
 **Operator action required:**
 1. `jq 'del(.env.ANTHROPIC_API_KEY, .env.ANTHROPIC_BASE_URL)' ~/.codex/settings.json` (or keep keys — harness strips temporarily on oauth conflict only)
@@ -361,7 +361,7 @@ Retry after network recovery; harness `12a49cfc` + `16f979c9` (`SB_E2E_MATRIX_CL
 **Row 1 interactive matrix: FAIL** — inherit-env harness active; non-interactive CLI works; interactive TUI still shows `Not logged in` before prompt submit (0 tokens). Operator attributes prior failures to internet outage; this retry after `--print` sanity pass still fails on interactive session only.
 
 **Evidence paths:**
-- `/Users/shafqat/projects/silver-bullet/repo/.e2e-row1-inherit-env4.log`
+- `/Users/<user>/projects/silver-bullet/repo/.e2e-row1-inherit-env4.log`
 
 ---
 
@@ -385,7 +385,7 @@ Follow-up from [Fix harness auth passthrough](cad529ac-3ea1-401d-beba-97992bf192
 **Row 1 interactive matrix: PASS** (routing-only criterion via state delta).
 
 **Evidence paths:**
-- `/Users/shafqat/projects/silver-bullet/repo/.e2e-row1-attempt12.log`
+- `/Users/<user>/projects/silver-bullet/repo/.e2e-row1-attempt12.log`
 
 ---
 

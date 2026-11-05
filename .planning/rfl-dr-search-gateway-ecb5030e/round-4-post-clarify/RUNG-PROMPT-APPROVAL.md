@@ -7,7 +7,7 @@
 
 ## Key tasks (5–12 bullets) — approved with edits
 
-- **Artifact:** review [`dr_search_gateway_prd_ecb5030e.plan.md`](/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md) **only**. Do not attach or require the clarify brief or the agent-reach research note. Clarify decisions are already in the plan. Not SB plugin source unless the plan cites a broken contract.
+- **Artifact:** review [`dr_search_gateway_prd_ecb5030e.plan.md`](/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md) **only**. Do not attach or require the clarify brief or the agent-reach research note. Clarify decisions are already in the plan. Not SB plugin source unless the plan cites a broken contract.
 - **Bird’s-eye:** missed alternative strategies/architectures, missed perspectives, outside-the-box improvements.
 - **Ant’s-eye:** flaws, gaps, inconsistencies, clap `--x` vs `-p xweb`, catalog vs tests, fleet/cache/quota, X union cascade, consent/init, ToS vs unpaid HTTP, agent-reach non-goals.
 - **Findings:** raw only — ID, `file:line` or heading+quote, HIGH|MED|LOW|NIT. Residual-only vs [ISSUE-LEDGER.md](ISSUE-LEDGER.md) (do not re-report ledger rows). File the full pack; CLEAN only if nothing valid remains. Reviewer does **not** ACCEPT/REJECT.

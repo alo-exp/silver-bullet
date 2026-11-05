@@ -7,7 +7,7 @@ model: glm-5.2-high
 
 ## Corpus
 
-- **Path:** `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`
+- **Path:** `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`
 - **Pinned SHA-256:** `e8d4de532ef111fac2dd44ca7fce43e9345e970a3a6a320a09492e1944329c2e`
 - **Verified:** `shasum -a 256` matches the pinned digest exactly (see shell evidence). Review proceeded on the frozen SHA.
 

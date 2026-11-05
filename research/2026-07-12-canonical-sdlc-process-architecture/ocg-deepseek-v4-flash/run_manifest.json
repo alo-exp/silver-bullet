@@ -3,7 +3,7 @@
   "model": "opencode-go/deepseek-v4-flash",
   "started_at": "2026-07-11T19:53:16Z",
   "completed_at": "2026-07-12T00:30:00Z",
-  "output_dir": "/Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-deepseek-v4-flash",
+  "output_dir": "/Users/<user>/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-deepseek-v4-flash",
   "artifacts_written": [
     "scope.md",
     "research-plan.md",

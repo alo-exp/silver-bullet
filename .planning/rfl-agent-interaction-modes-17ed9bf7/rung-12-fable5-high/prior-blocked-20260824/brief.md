@@ -6,7 +6,7 @@ You are **Claude Fable 5 High** (`claude-fable-5` `--effort high`). Method: `/si
 
 `.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md`
 
-Plan markdown link: [agent_interaction_modes_17ed9bf7.plan.md](/Users/shafqat/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
+Plan markdown link: [agent_interaction_modes_17ed9bf7.plan.md](/Users/<user>/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
 
 SHA256 at parent launch: `56e26c7d8925a362ae6dc967e4f16be5618d84a80a75d51307b5146278e89d21` (413 lines). Re-hash before citing. Rung 11 hashed `061467c46de70f3ed4cda326fcaca0c013b12b39c8430e9a7ec7bc99e58bc257` (413 lines) — this copy is **post I-63–I-65 land** (labels may be prose-only; verify substance).
 

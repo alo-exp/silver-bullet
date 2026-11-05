@@ -1,6 +1,6 @@
 # Rung 11 triage (Grok 4.6 High parent-model worker)
 
-Plan: [agent_interaction_modes_17ed9bf7.plan.md](/Users/shafqat/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
+Plan: [agent_interaction_modes_17ed9bf7.plan.md](/Users/<user>/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
 
 Review: `.planning/rfl-agent-interaction-modes-17ed9bf7/rung-11-opus5-xhigh/review.md`
 

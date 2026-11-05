@@ -1,8 +1,8 @@
 You are on rung 1/13: model=MiniMax M3, reasoning=high, host=OpenCode.
 Phase: VERIFY-ONLY pass 1/2 (rung_1_verify_1)
 
-Plan: /Users/shafqat/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md
-Triage: /Users/shafqat/projects/silver-bullet/repo/.planning/rfl-agent-interaction-modes-17ed9bf7/rung-01-minimax-m3-high/triage.md
+Plan: /Users/<user>/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md
+Triage: /Users/<user>/projects/silver-bullet/repo/.planning/rfl-agent-interaction-modes-17ed9bf7/rung-01-minimax-m3-high/triage.md
 
 READONLY. Do not edit any file.
 

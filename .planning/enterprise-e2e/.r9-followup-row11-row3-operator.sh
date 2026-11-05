@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
-MAIN="/Users/shafqat/projects/silver-bullet/repo"
+MAIN="/Users/<user>/projects/silver-bullet/repo"
 SB_ROOT="/private/tmp/sb-main-row11-fp"
-WT="/Users/shafqat/projects/enterprise-grade-test-app-round9-claude"
+WT="/Users/<user>/projects/enterprise-grade-test-app-round9-claude"
 BASELINE=8482e60
 LOG11="$MAIN/.e2e-r9-pilot-rows-6-11-sequential.log"
 LOG3="$MAIN/.e2e-r9-pilot-row3-live.log"

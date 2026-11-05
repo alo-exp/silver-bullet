@@ -22,8 +22,8 @@ See **[Denominator reconciliation](#denominator-reconciliation-2026-08-30-v-loop
 
 1. **Graphify orientation:** `graphify query "review-fix-ladder verify_1 verify_2 VERIFY_FAIL Overturns"` (CLI; MCP `user-graphify` not invoked).
 2. **Programmatic full walk** (Node via `ctx_execute` / on-disk scripts under `.planning/_tmp-verifier-scan-strict.mjs`):
-   - Transcripts: `/Users/shafqat/.cursor/projects/*/agent-transcripts/**/*.jsonl` (includes `subagents/`).
-   - Verify artifacts: `**/verify_*.md`, `**/verify-*.md` under `/Users/shafqat/projects/` and `.planning/`.
+   - Transcripts: `/Users/<user>/.cursor/projects/*/agent-transcripts/**/*.jsonl` (includes `subagents/`).
+   - Verify artifacts: `**/verify_*.md`, `**/verify-*.md` under `/Users/<user>/projects/` and `.planning/`.
 3. **Classification:** Strict closing-verdict patterns only; last verdict per subagent transcript file; deduped duplicate workspace copies of the same conversation UUID.
 4. **This analytics session excluded** from FAIL numerator (`d5150f38-4d37-458d-9bdb-5e6f985975d3`) to avoid self-referential methodology hits.
 
@@ -54,9 +54,9 @@ Verifier (`verify_1`, `verify_2`, or equivalent worker) **closed** with FAIL:
 
 | Source | Path | Files |
 |--------|------|------:|
-| Agent transcripts | `/Users/shafqat/.cursor/projects/*/agent-transcripts/` | 6,085 `.jsonl` |
-| Silver Bullet transcripts | `.../Users-shafqat-projects-silver-bullet-repo/agent-transcripts/` | (subset) |
-| Verify artifacts | `/Users/shafqat/projects/**/verify_{1,2}.md`, `verify-*.md` | 449 |
+| Agent transcripts | `/Users/<user>/.cursor/projects/*/agent-transcripts/` | 6,085 `.jsonl` |
+| Silver Bullet transcripts | `.../Users-user-projects-silver-bullet-repo/agent-transcripts/` | (subset) |
+| Verify artifacts | `/Users/<user>/projects/**/verify_{1,2}.md`, `verify-*.md` | 449 |
 | SearchConversations | — | **not available** |
 
 ## Breakdown
@@ -146,7 +146,7 @@ Silver Bullet **RFL spec-template-world-class** rungs **05–06** were previousl
 
 | Class | Count | Notes |
 |-------|------:|-------|
-| **Total files** | 451 | `verify_*.md` / `verify-*.md` under `/Users/shafqat/projects/` + `.planning/` |
+| **Total files** | 451 | `verify_*.md` / `verify-*.md` under `/Users/<user>/projects/` + `.planning/` |
 | **PASS** | 90 | `## Overall: **PASS**` (30) + inline `**PASS**` verdict blocks (40) + table `\| verify_N \| **PASS** \|` |
 | **FAIL** | 0 | No `## Overall: **FAIL**` or `Verdict: VERIFY_FAIL` closing in any artifact |
 | **sustain-NOT-CLEAN** | 8 | `**PASS** — sustain **NOT CLEAN**` (verify sustain, **not** FAIL) |

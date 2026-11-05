@@ -38,8 +38,8 @@
     "overflow": 0
   },
   "screenshots": {
-    "after1280": "/Users/shafqat/.cursor/worktrees/repo/3ht3/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-audit/AFTER-1280.png",
-    "afterDark": "/Users/shafqat/.cursor/worktrees/repo/3ht3/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-audit/AFTER-dark-1280.png",
-    "after375": "/Users/shafqat/.cursor/worktrees/repo/3ht3/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-audit/AFTER-375.png"
+    "after1280": "/Users/<user>/.cursor/worktrees/repo/3ht3/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-audit/AFTER-1280.png",
+    "afterDark": "/Users/<user>/.cursor/worktrees/repo/3ht3/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-audit/AFTER-dark-1280.png",
+    "after375": "/Users/<user>/.cursor/worktrees/repo/3ht3/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-audit/AFTER-375.png"
   }
 }

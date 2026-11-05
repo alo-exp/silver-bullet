@@ -48,7 +48,7 @@ This hook fires when the active runtime writes the session mode to `/tmp/.silver
 - [ ] **Step 1.1: Create tests directory and write test driver**
 
 ```bash
-mkdir -p /Users/shafqat/Documents/Projects/silver-bullet/tests/hooks
+mkdir -p /Users/<user>/Documents/Projects/silver-bullet/tests/hooks
 ```
 
 Write `tests/hooks/test-session-log-init.sh`:
@@ -104,13 +104,13 @@ printf 'All tests passed.\n'
 ```
 
 ```bash
-chmod +x /Users/shafqat/Documents/Projects/silver-bullet/tests/hooks/test-session-log-init.sh
+chmod +x /Users/<user>/Documents/Projects/silver-bullet/tests/hooks/test-session-log-init.sh
 ```
 
 - [ ] **Step 1.2: Run test to confirm it fails (script not yet written)**
 
 ```bash
-bash /Users/shafqat/Documents/Projects/silver-bullet/tests/hooks/test-session-log-init.sh 2>&1 || true
+bash /Users/<user>/Documents/Projects/silver-bullet/tests/hooks/test-session-log-init.sh 2>&1 || true
 ```
 Expected: error (HOOK path not found) or FAIL.
 
@@ -231,13 +231,13 @@ printf '{"hookSpecificOutput":{"message":"📋 Session log created: docs/session
 - [ ] **Step 1.4: Make executable**
 
 ```bash
-chmod +x /Users/shafqat/Documents/Projects/silver-bullet/hooks/session-log-init.sh
+chmod +x /Users/<user>/Documents/Projects/silver-bullet/hooks/session-log-init.sh
 ```
 
 - [ ] **Step 1.5: Run test to confirm it passes**
 
 ```bash
-bash /Users/shafqat/Documents/Projects/silver-bullet/tests/hooks/test-session-log-init.sh
+bash /Users/<user>/Documents/Projects/silver-bullet/tests/hooks/test-session-log-init.sh
 ```
 Expected: `All tests passed.`
 
@@ -311,13 +311,13 @@ printf 'All tests passed.\n'
 ```
 
 ```bash
-chmod +x /Users/shafqat/Documents/Projects/silver-bullet/tests/hooks/test-ci-status-check.sh
+chmod +x /Users/<user>/Documents/Projects/silver-bullet/tests/hooks/test-ci-status-check.sh
 ```
 
 - [ ] **Step 2.2: Run test to confirm it fails**
 
 ```bash
-bash /Users/shafqat/Documents/Projects/silver-bullet/tests/hooks/test-ci-status-check.sh 2>&1 || true
+bash /Users/<user>/Documents/Projects/silver-bullet/tests/hooks/test-ci-status-check.sh 2>&1 || true
 ```
 Expected: error or FAIL.
 
@@ -369,13 +369,13 @@ fi
 - [ ] **Step 2.4: Make executable**
 
 ```bash
-chmod +x /Users/shafqat/Documents/Projects/silver-bullet/hooks/ci-status-check.sh
+chmod +x /Users/<user>/Documents/Projects/silver-bullet/hooks/ci-status-check.sh
 ```
 
 - [ ] **Step 2.5: Run test to confirm it passes**
 
 ```bash
-bash /Users/shafqat/Documents/Projects/silver-bullet/tests/hooks/test-ci-status-check.sh
+bash /Users/<user>/Documents/Projects/silver-bullet/tests/hooks/test-ci-status-check.sh
 ```
 Expected: `All tests passed.`
 
@@ -403,7 +403,7 @@ Read `hooks/hooks.json` first. Add two new objects to the `PostToolUse` array �
 - [ ] **Step 3.1: Read current hooks.json**
 
 ```bash
-cat /Users/shafqat/Documents/Projects/silver-bullet/hooks/hooks.json
+cat /Users/<user>/Documents/Projects/silver-bullet/hooks/hooks.json
 ```
 Confirm the 4 existing PostToolUse entries are present before editing.
 
@@ -439,7 +439,7 @@ Note: `session-log-init` is async (non-blocking); `ci-status-check` is sync (use
 - [ ] **Step 3.3: Verify JSON is valid and has 6 PostToolUse entries**
 
 ```bash
-jq '.hooks.PostToolUse | length' /Users/shafqat/Documents/Projects/silver-bullet/hooks/hooks.json
+jq '.hooks.PostToolUse | length' /Users/<user>/Documents/Projects/silver-bullet/hooks/hooks.json
 ```
 Expected: `6`
 
@@ -524,7 +524,7 @@ Write `templates/KNOWLEDGE.md.base` with this content:
 - [ ] **Step 4.2: Verify file created correctly**
 
 ```bash
-head -3 /Users/shafqat/Documents/Projects/silver-bullet/templates/KNOWLEDGE.md.base
+head -3 /Users/<user>/Documents/Projects/silver-bullet/templates/KNOWLEDGE.md.base
 ```
 Expected: first line is `# {{PROJECT_NAME}} — Project Knowledge`
 
@@ -669,7 +669,7 @@ Read the file first. Append two new sections after the existing Section 3.
 - [ ] **Step 7.1: Read current CLAUDE.md.base to confirm Section 3 is the last section**
 
 ```bash
-tail -10 /Users/shafqat/Documents/Projects/silver-bullet/templates/CLAUDE.md.base
+tail -10 /Users/<user>/Documents/Projects/silver-bullet/templates/CLAUDE.md.base
 ```
 Expected: ends with content from Section 3.
 
@@ -736,7 +736,7 @@ or a step expected to produce a file produces none. Log escalation as an autonom
 - [ ] **Step 7.3: Verify both sections appended**
 
 ```bash
-grep -c "Session Mode\|Model Routing" /Users/shafqat/Documents/Projects/silver-bullet/templates/CLAUDE.md.base
+grep -c "Session Mode\|Model Routing" /Users/<user>/Documents/Projects/silver-bullet/templates/CLAUDE.md.base
 ```
 Expected: `2`
 
@@ -898,7 +898,7 @@ After the step 17 block, add:
 
 ```bash
 for term in "STEP 0" "MODEL ROUTING" "Agent Team" "KNOWLEDGE.md" "ci.yml" "silver-bullet-mode"; do
-  count=$(grep -c "$term" /Users/shafqat/Documents/Projects/silver-bullet/templates/workflows/full-dev-cycle.md 2>/dev/null || echo 0)
+  count=$(grep -c "$term" /Users/<user>/Documents/Projects/silver-bullet/templates/workflows/full-dev-cycle.md 2>/dev/null || echo 0)
   if [[ "$count" -gt 0 ]]; then
     printf 'PASS: "%s" found (%s occurrences)\n' "$term" "$count"
   else
@@ -1037,7 +1037,7 @@ mkdir -p docs/sessions && touch docs/sessions/.gitkeep
 
 ```bash
 grep -c "CI setup\|verify_commands\|KNOWLEDGE.md.base\|CHANGELOG-project\|sessions/.gitkeep" \
-  /Users/shafqat/Documents/Projects/silver-bullet/skills/sb:init/SKILL.md
+  /Users/<user>/Documents/Projects/silver-bullet/skills/sb:init/SKILL.md
 ```
 Expected: `≥ 4`
 
@@ -1079,8 +1079,8 @@ Note: the root-level `CHANGELOG.md` is the SB release log — leave it untouched
 - [ ] **Step 10.3: Create docs/sessions/.gitkeep**
 
 ```bash
-mkdir -p /Users/shafqat/Documents/Projects/silver-bullet/docs/sessions
-touch /Users/shafqat/Documents/Projects/silver-bullet/docs/sessions/.gitkeep
+mkdir -p /Users/<user>/Documents/Projects/silver-bullet/docs/sessions
+touch /Users/<user>/Documents/Projects/silver-bullet/docs/sessions/.gitkeep
 ```
 
 - [ ] **Step 10.4: Replace docs/workflows/full-dev-cycle.md (requires Task 8 complete)**
@@ -1091,7 +1091,7 @@ Read `templates/workflows/full-dev-cycle.md` (which now contains all Task 8 addi
 
 Check if sections already present:
 ```bash
-grep -c "Session Mode\|Model Routing" /Users/shafqat/Documents/Projects/silver-bullet/CLAUDE.md || echo 0
+grep -c "Session Mode\|Model Routing" /Users/<user>/Documents/Projects/silver-bullet/CLAUDE.md || echo 0
 ```
 If output is `0`: read `templates/CLAUDE.md.base`, extract the content from `## 4. Session Mode` to end of file, and append it to `CLAUDE.md`.
 If output is `2`: skip this step — sections already present.
@@ -1100,20 +1100,20 @@ If output is `2`: skip this step — sections already present.
 
 ```bash
 # Files exist
-ls /Users/shafqat/Documents/Projects/silver-bullet/docs/KNOWLEDGE.md \
-   /Users/shafqat/Documents/Projects/silver-bullet/docs/CHANGELOG.md \
-   /Users/shafqat/Documents/Projects/silver-bullet/docs/sessions/.gitkeep
+ls /Users/<user>/Documents/Projects/silver-bullet/docs/KNOWLEDGE.md \
+   /Users/<user>/Documents/Projects/silver-bullet/docs/CHANGELOG.md \
+   /Users/<user>/Documents/Projects/silver-bullet/docs/sessions/.gitkeep
 
 # CLAUDE.md has new sections
-grep -c "Session Mode\|Model Routing" /Users/shafqat/Documents/Projects/silver-bullet/CLAUDE.md
+grep -c "Session Mode\|Model Routing" /Users/<user>/Documents/Projects/silver-bullet/CLAUDE.md
 # Expected: 2
 
 # Workflow is the new template (not stale 31-step copy)
-grep "gsd:execute-phase" /Users/shafqat/Documents/Projects/silver-bullet/docs/workflows/full-dev-cycle.md | head -2
+grep "gsd:execute-phase" /Users/<user>/Documents/Projects/silver-bullet/docs/workflows/full-dev-cycle.md | head -2
 # Expected: ≥ 1 match
 
 # KNOWLEDGE.md placeholder substituted
-grep "alo-exp/silver-bullet" /Users/shafqat/Documents/Projects/silver-bullet/docs/KNOWLEDGE.md
+grep "alo-exp/silver-bullet" /Users/<user>/Documents/Projects/silver-bullet/docs/KNOWLEDGE.md
 # Expected: 1 match
 ```
 
@@ -1140,33 +1140,33 @@ Note: Steps 11.3 must run in the same shell session that built the test files, O
 
 ```bash
 echo "=== Hook scripts ===" && \
-  ls -la /Users/shafqat/Documents/Projects/silver-bullet/hooks/session-log-init.sh \
-         /Users/shafqat/Documents/Projects/silver-bullet/hooks/ci-status-check.sh && \
+  ls -la /Users/<user>/Documents/Projects/silver-bullet/hooks/session-log-init.sh \
+         /Users/<user>/Documents/Projects/silver-bullet/hooks/ci-status-check.sh && \
 echo "=== Test drivers ===" && \
-  ls -la /Users/shafqat/Documents/Projects/silver-bullet/tests/hooks/test-session-log-init.sh \
-         /Users/shafqat/Documents/Projects/silver-bullet/tests/hooks/test-ci-status-check.sh && \
+  ls -la /Users/<user>/Documents/Projects/silver-bullet/tests/hooks/test-session-log-init.sh \
+         /Users/<user>/Documents/Projects/silver-bullet/tests/hooks/test-ci-status-check.sh && \
 echo "=== Templates ===" && \
-  ls -la /Users/shafqat/Documents/Projects/silver-bullet/templates/KNOWLEDGE.md.base \
-         /Users/shafqat/Documents/Projects/silver-bullet/templates/CHANGELOG-project.md.base \
-         /Users/shafqat/Documents/Projects/silver-bullet/templates/sessions/session-log.md.base && \
+  ls -la /Users/<user>/Documents/Projects/silver-bullet/templates/KNOWLEDGE.md.base \
+         /Users/<user>/Documents/Projects/silver-bullet/templates/CHANGELOG-project.md.base \
+         /Users/<user>/Documents/Projects/silver-bullet/templates/sessions/session-log.md.base && \
 echo "=== Project files ===" && \
-  ls -la /Users/shafqat/Documents/Projects/silver-bullet/docs/KNOWLEDGE.md \
-         /Users/shafqat/Documents/Projects/silver-bullet/docs/CHANGELOG.md \
-         /Users/shafqat/Documents/Projects/silver-bullet/docs/sessions/.gitkeep
+  ls -la /Users/<user>/Documents/Projects/silver-bullet/docs/KNOWLEDGE.md \
+         /Users/<user>/Documents/Projects/silver-bullet/docs/CHANGELOG.md \
+         /Users/<user>/Documents/Projects/silver-bullet/docs/sessions/.gitkeep
 ```
 
 - [ ] **Step 11.2: Verify hooks.json is valid and has correct entry count**
 
 ```bash
-jq '.hooks.PostToolUse | length' /Users/shafqat/Documents/Projects/silver-bullet/hooks/hooks.json
+jq '.hooks.PostToolUse | length' /Users/<user>/Documents/Projects/silver-bullet/hooks/hooks.json
 ```
 Expected: `6`
 
 - [ ] **Step 11.3: Run all hook tests from committed paths**
 
 ```bash
-bash /Users/shafqat/Documents/Projects/silver-bullet/tests/hooks/test-session-log-init.sh && \
-bash /Users/shafqat/Documents/Projects/silver-bullet/tests/hooks/test-ci-status-check.sh
+bash /Users/<user>/Documents/Projects/silver-bullet/tests/hooks/test-session-log-init.sh && \
+bash /Users/<user>/Documents/Projects/silver-bullet/tests/hooks/test-ci-status-check.sh
 ```
 Expected: `All tests passed.` for each.
 

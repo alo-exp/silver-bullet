@@ -67,6 +67,13 @@ agent_plugins_release_tag_commit() {
   printf '%s\n' "$sha"
 }
 
+# agent_plugins_tag_commit_if_any REPO_ROOT VERSION: print the commit that tag vVERSION points
+# at, or nothing when the tag does not exist yet. The in-repo manifests pin that commit only
+# once the release is tagged; before that they pin the tag name alone.
+agent_plugins_tag_commit_if_any() {
+  git -C "$1" rev-parse --verify --quiet "refs/tags/v${2}^{commit}" 2>/dev/null || true
+}
+
 # agent_plugins_require_tag_on_origin REPO_ROOT VERSION: the release tag must also be on the
 # repository's origin with the same target, so a standalone --publish cannot advertise a
 # version nobody can fetch. Batch runs (AGENT_PLUGINS_SKIP_PUSH=1) are checked by the wrapper.

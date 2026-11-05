@@ -446,8 +446,8 @@
   },
   "numbering": [],
   "screenshots": {
-    "before1280": "/Users/shafqat/.cursor/worktrees/repo/3ht3/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-audit/BEFORE-1280.png",
-    "before375": "/Users/shafqat/.cursor/worktrees/repo/3ht3/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-audit/BEFORE-375.png"
+    "before1280": "/Users/<user>/.cursor/worktrees/repo/3ht3/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-audit/BEFORE-1280.png",
+    "before375": "/Users/<user>/.cursor/worktrees/repo/3ht3/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-audit/BEFORE-375.png"
   },
   "findings": [
     {

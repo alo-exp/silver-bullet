@@ -3,7 +3,7 @@
 - Official model: Pi `cursor/grok-4.6-high` via `/silver:agent-pi` (OmniRoute). Not Extra High / XHigh. Not Fast. Not a substitute family.
 - Phase: REVIEW-ONLY (`rung_07_review`). No ACCEPT/REJECT classification, no issue filing, no APPLY, no clarify encode, no freeze edits.
 - Session parent: `d5150f38-4d37-458d-9bdb-5e6f985975d3`
-- Work dir: `/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-07-cursor-grok-4.6-high/`
+- Work dir: `/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-07-cursor-grok-4.6-high/`
 - Scope (read-only): both freeze copies of `router_subagent_surfaces_85bf9f09.plan.md`. Neither copy was edited.
 
 ## Hash / identity (disk wins)
@@ -12,8 +12,8 @@ Independently hashed both copies with `shasum -a 256`, sized with `wc -c`, compa
 
 | Copy | SHA-256 actually hashed | Bytes |
 |---|---|---|
-| `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `edff7c0cca55e7e6662cafbbf3f10cea71230483c4992c2a5d5149c629a63e5e` | 621101 |
-| `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `edff7c0cca55e7e6662cafbbf3f10cea71230483c4992c2a5d5149c629a63e5e` | 621101 |
+| `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `edff7c0cca55e7e6662cafbbf3f10cea71230483c4992c2a5d5149c629a63e5e` | 621101 |
+| `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `edff7c0cca55e7e6662cafbbf3f10cea71230483c4992c2a5d5149c629a63e5e` | 621101 |
 
 - Byte-identical: **yes**
 - Matches locked freeze: **yes** (`edff7c0c…` / **621101**)

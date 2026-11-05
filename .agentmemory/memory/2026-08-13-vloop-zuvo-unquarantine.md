@@ -2,7 +2,7 @@
 
 Date: 2026-08-14
 Overall: PASS (did not trust prior PASS)
-Workspace: /Users/shafqat/.cursor/worktrees/repo/3ht3
+Workspace: /Users/<user>/.cursor/worktrees/repo/3ht3
 
 ## Decisions
 - Hard FAIL path (packs + regen) not taken. Membership, HTML, live URLs, file://, and durable packs all PASS.

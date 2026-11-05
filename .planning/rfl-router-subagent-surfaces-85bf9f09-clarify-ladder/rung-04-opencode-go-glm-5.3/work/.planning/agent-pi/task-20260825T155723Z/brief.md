@@ -4,7 +4,7 @@
 
 Read:
 
-`/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
+`/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
 
 Rung 4 (`opencode-go/glm-5.3`). Canonical freeze SHA `0a9e732545e852712ce9cf4ae8d9c9036ad9f119d1c9b468dddc4e1efd25214b` (620974 bytes). Independently re-read. Do not replay prior rungs. Parent timer fired — this is a retry after a prior OpenCode 429 skip-failed.
 

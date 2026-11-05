@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # RFL ladder 4 rung 1: DeepSeek V4 Pro High via /silver:agent-opencode.
 set -euo pipefail
-ROOT="/Users/shafqat/projects/silver-bullet/repo"
+ROOT="/Users/<user>/projects/silver-bullet/repo"
 LOGDIR="$ROOT/.planning/rfl-router-subagent-surfaces-85bf9f09-20260812/deepseek-v4-pro-high-ladder4"
 export SB_ROOT="$ROOT"
 export OPENCODE_WORK_DIR="$ROOT"

@@ -64,7 +64,7 @@ matrix_evidence_for_row() {
 
 run_full_rescore() {
   export SB_ROOT="$ROOT"
-  export SB_TEST_ENTERPRISE_APP_ROOT="${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/shafqat/projects/enterprise-grade-test-app}"
+  export SB_TEST_ENTERPRISE_APP_ROOT="${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/<user>/projects/enterprise-grade-test-app}"
   export SILVER_BULLET_RUNTIME=codex
   export SB_E2E_LIVE_RUNTIME=codex
   export SB_E2E_LEDGER_FILE="$LEDGER"
@@ -175,7 +175,7 @@ elif [[ "$pass_count" -eq 18 ]]; then
   if [[ "$fail15" -eq 1 && "$fail16" -eq 1 && -z "$other_fails" ]]; then
     log_line "DIAGNOSE rows 15,16 OUT-REVIEW-01/OUT-MEASURE-01 — launching single FORCE 15 16"
     export SB_ROOT="$ROOT"
-    export SB_TEST_ENTERPRISE_APP_ROOT="${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/shafqat/projects/enterprise-grade-test-app}"
+    export SB_TEST_ENTERPRISE_APP_ROOT="${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/<user>/projects/enterprise-grade-test-app}"
     export SB_E2E_MATRIX_FORCE=1
     export SB_E2E_LEDGER_NO_UX_APPEND=1
     export SB_E2E_LEDGER_FILE="$LEDGER"
