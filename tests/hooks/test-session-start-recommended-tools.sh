@@ -90,13 +90,24 @@ printf '%s' "$ctx" | grep 'opted out' >/dev/null && pass "disabled consent injec
 write_consent true
 out="$(run_session)"
 ctx="$(printf '%s' "$out" | extract_ctx)"
-# enabled + no CLI should mention install
-printf '%s' "$ctx" | grep -i 'graphify' >/dev/null && pass "enabled consent injects graphify status" || fail "enabled consent injects graphify status"
+# R5-04: a project that merely recommends the tool gets a one-time notice, not an enforced gate
+printf '%s' "$ctx" | grep 'CONSENT NEEDED' >/dev/null && pass "a project recommendation without user consent injects the consent notice" || fail "a project recommendation without user consent injects the consent notice"
+printf '%s' "$ctx" | grep 'sb-consent.sh' >/dev/null && pass "the notice names the consent CLI" || fail "the notice names the consent CLI"
+out="$(run_session)"
+ctx="$(printf '%s' "$out" | extract_ctx)"
+printf '%s' "$ctx" | grep 'CONSENT NEEDED' >/dev/null && fail "the notice is shown once" || pass "the notice is shown once"
 
+
+# With the user's own consent the suspension note shows
+# shellcheck source=../lib/consent-helpers.sh
+source "$REPO_ROOT/tests/lib/consent-helpers.sh"
+sb_test_consent_sandbox
+sb_test_consent_grant graphify enforce
 write_consent true true
 out="$(run_session)"
 ctx="$(printf '%s' "$out" | extract_ctx)"
 printf '%s' "$ctx" | grep 'enforcement suspended' >/dev/null && pass "suspended opt-in injects suspension note" || fail "suspended opt-in injects suspension note"
+unset XDG_CONFIG_HOME
 
 # Fresh init template always defaults enabled_by_user to null (pending)
 template_null="$(jq -r '.recommended_tools.graphify.enabled_by_user' "$REPO_ROOT/templates/silver-bullet.config.json.default")"

@@ -4,7 +4,7 @@
 > Do not edit by hand: change those files, then run `python3 scripts/generate-hook-reference.py`.
 > `tests/docs/test-hook-reference.sh` fails when this file is stale.
 
-`hooks/hooks.json` registers **96 hook commands** backed by **64 scripts** across 7 events. No registrations are async: the host waits for each hook up to its timeout (in seconds). The `#` column is the position in `hooks.json`; hosts may run the hooks that match one event in parallel, so do not rely on hook order.
+`hooks/hooks.json` registers **96 hook commands** backed by **63 scripts** across 7 events. No registrations are async: the host waits for each hook up to its timeout (in seconds). The `#` column is the position in `hooks.json`; hosts may run the hooks that match one event in parallel, so do not rely on hook order.
 
 ## How hooks are wired
 
@@ -26,8 +26,7 @@ Session startup, `/clear` and compaction (`startup|clear|compact`).
 |---|---------|--------|---------|
 | 1 | `startup\|clear\|compact` | `session-start` | 15 |
 | 2 | `startup\|clear\|compact` | `spec-session-record.sh` | 10 |
-| 3 | `startup\|clear\|compact` | `stack-compression-lifecycle.sh` | 10 |
-| 4 | `startup\|clear\|compact` | `rfl-quota-retry-due.sh` | 10 |
+| 3 | `startup\|clear\|compact` | `rfl-quota-retry-due.sh` | 10 |
 
 ### PreToolUse
 
@@ -70,15 +69,16 @@ Before a tool runs; a hook can deny the call.
 | 33 | `Read\|Grep` | `context-mode-read-deny.sh` | 10 |
 | 34 | `WebFetch` | `stack-compression-coordinator.sh` | 10 |
 | 35 | `CallMcpTool\|MCP` | `stack-compression-coordinator.sh` | 10 |
-| 36 | `Skill` | `forbidden-skill-check.sh` | 10 |
-| 37 | `Skill` | `dependency-skill-check.sh` | 10 |
-| 38 | `Skill` | `uat-gate.sh` | 10 |
-| 39 | `Bash\|exec_command` | `site-regression-gate.sh` | 120 |
-| 40 | `Bash\|exec_command` | `live-publish-evidence-gate.sh` | 15 |
-| 41 | `Bash\|exec_command` | `industry-tooling-hint.sh` | 5 |
-| 42 | `Bash\|exec_command` | `roadmap-freshness.sh` | 10 |
-| 43 | `Bash\|exec_command` | `spec-floor-check.sh` | 10 |
-| 44 | `Bash\|exec_command` | `rfl-policy-c-gate.sh` | 10 |
+| 36 | `mcp__.*lean-?ctx.*\|mcp__.*context[-_]mode.*` | `stack-compression-coordinator.sh` | 10 |
+| 37 | `Skill` | `forbidden-skill-check.sh` | 10 |
+| 38 | `Skill` | `dependency-skill-check.sh` | 10 |
+| 39 | `Skill` | `uat-gate.sh` | 10 |
+| 40 | `Bash\|exec_command` | `site-regression-gate.sh` | 120 |
+| 41 | `Bash\|exec_command` | `live-publish-evidence-gate.sh` | 15 |
+| 42 | `Bash\|exec_command` | `industry-tooling-hint.sh` | 5 |
+| 43 | `Bash\|exec_command` | `roadmap-freshness.sh` | 10 |
+| 44 | `Bash\|exec_command` | `spec-floor-check.sh` | 10 |
+| 45 | `Bash\|exec_command` | `rfl-policy-c-gate.sh` | 10 |
 
 ### PostToolUse
 
@@ -107,10 +107,10 @@ After a tool runs; a hook can report, record state, or ask the agent to stop.
 | 19 | `Bash\|exec_command` | `record-token-compression-usage.sh` | 10 |
 | 20 | `Bash\|exec_command` | `record-leanctx-usage.sh` | 10 |
 | 21 | `Bash\|exec_command` | `record-site-visual-evidence.sh` | 10 |
-| 22 | `Bash\|exec_command` | `record-recommended-mcp.sh` | 10 |
-| 23 | `CallMcpTool\|MCP` | `record-leanctx-usage.sh` | 10 |
-| 24 | `CallMcpTool\|MCP` | `record-recommended-mcp.sh` | 10 |
-| 25 | `CallMcpTool\|MCP` | `record-agentmemory-usage.sh` | 10 |
+| 22 | `CallMcpTool\|MCP` | `record-leanctx-usage.sh` | 10 |
+| 23 | `CallMcpTool\|MCP` | `record-recommended-mcp.sh` | 10 |
+| 24 | `mcp__.*agentmemory.*\|mcp__.*graphify.*\|mcp__.*lean-?ctx.*` | `record-leanctx-usage.sh` | 10 |
+| 25 | `mcp__.*agentmemory.*\|mcp__.*graphify.*\|mcp__.*lean-?ctx.*` | `record-recommended-mcp.sh` | 10 |
 
 ### SubagentStart
 
@@ -169,13 +169,13 @@ Before each user prompt is processed; hooks add context or record the requested 
 |--------|---------------|---------|
 | `agent-delegation-guard.sh` | PreToolUse `Edit\|Write\|MultiEdit\|apply_patch` | While an `/sb:agent-*` delegation is active, blocks parent-session edits on Claude and Codex and advises on Cursor. |
 | `agentmemory-gate.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Opt-in (`recommended_tools.agentmemory`): requires a recent agentmemory capture/retrieval before substantive work. |
-| `alumnium-gate.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Opt-in (`recommended_tools.alumnium`): checks that the Alumnium MCP server is wired before browser/visual work. |
+| `alumnium-gate.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Opt-in (user consent to Alumnium): checks that the Alumnium MCP server is wired before browser/visual work (browser-test edits and browser-tool commands only). |
 | `ci-status-check.sh` | PreToolUse `Bash\|Skill\|exec_command\|mcp__.*`; PostToolUse `Bash\|exec_command` | Checks the latest GitHub Actions run for the branch. Pre: blocks `git push`, `gh pr create/merge` and `gh release create` while CI failed or was cancelled. Post: warns after `git commit`. CI-fix commits and the `ci-red-override` flag bypass it. |
 | `completion-audit.sh` | PreToolUse `Bash\|Skill\|exec_command\|mcp__.*`; PostToolUse `Bash\|exec_command` | Two-tier delivery gate. Commits, pushes and commit plumbing need `skills.required_planning`; `gh pr create/merge`, deploy commands and `gh release create` need `skills.required_deploy` plus the release gates (live matrices, quality-gate markers, RC matrix, green CI on the release commit). |
 | `compliance-status.sh` | PostToolUse `.*` | Prints workflow progress (flow N/M, or recorded-skill count) after every tool call. Informational only. |
 | `compression-marker-guard.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Blocks writes whose content contains LeanCTX compression markers (pasted `ctx_read` output). |
 | `context-mode-gate.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Opt-in (`recommended_tools.context_mode`): checks Context Mode install and MCP/hook wiring. |
-| `context-mode-read-deny.sh` | PreToolUse `Read\|Grep` | Opt-in (`recommended_tools.context_mode`): denies Read/Grep on files larger than `read_deny_bytes`. |
+| `context-mode-read-deny.sh` | PreToolUse `Read\|Grep` | Opt-in (user consent to Context Mode, installed and wired): redirects the first full Read/Grep of a file larger than 5 KB to the sandboxed ctx_* tools; repeating the Read is allowed. |
 | `debug-dump.sh` | PreToolUse `.*` | Debug only: when the `debug-dump` flag file exists in the runtime state dir, appends each PreToolUse payload to `hook-dump.jsonl` there. Never blocks. |
 | `dependency-skill-check.sh` | PreToolUse `Skill` | Compatibility gate for dependency-skill invocations. Does not block SB-absorbed namespaces; forbidden execution modes are handled by `forbidden-skill-check.sh`. |
 | `dev-cycle-check.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command`; PostToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Planning-floor gate: blocks source edits and shell writes until workflow admission or the `required_planning` skills are recorded. Also blocks edits under the host plugin cache and direct writes to SB state files. |
@@ -196,10 +196,10 @@ Before each user prompt is processed; hooks add context or record the requested 
 | `planning-file-guard.sh` | PreToolUse `Edit\|Write\|MultiEdit\|apply_patch` | Blocks direct edits to SB-managed planning artifacts (`.planning/ROADMAP.md`, `STATE.md`, phase `PLAN.md`/`SUMMARY.md`, ...); they change only through the owning SB skill. |
 | `pr-traceability.sh` | PostToolUse `Bash\|exec_command` | After `gh pr create`, appends the spec traceability block to the PR body and records the PR URL in `SPEC.md`. |
 | `prompt-reminder.sh` | UserPromptSubmit `.*` | Injects a compact compliance reminder (missing skills, active workflow position, opted-in tool notes) before each prompt. |
-| `record-agentmemory-usage.sh` | PostToolUse `Bash\|exec_command`; PostToolUse `CallMcpTool\|MCP` | Records successful agentmemory retrievals (CLI or MCP) for the opt-in agentmemory gate. |
+| `record-agentmemory-usage.sh` | PostToolUse `Bash\|exec_command` | Records a successful agentmemory CLI or loopback REST retrieval (run on its own) for the opt-in agentmemory gate. |
 | `record-graphify-query.sh` | PostToolUse `Bash\|exec_command` | Records successful Graphify queries for the opt-in Graphify gate. |
-| `record-leanctx-usage.sh` | PostToolUse `Bash\|exec_command`; PostToolUse `CallMcpTool\|MCP` | Records LeanCTX CLI/MCP usage for the opt-in LeanCTX gate. |
-| `record-recommended-mcp.sh` | PostToolUse `Bash\|exec_command`; PostToolUse `CallMcpTool\|MCP` | Records agentmemory/Graphify MCP tool calls for the opt-in gates. |
+| `record-leanctx-usage.sh` | PostToolUse `Bash\|exec_command`; PostToolUse `CallMcpTool\|MCP`; PostToolUse `mcp__.*agentmemory.*\|mcp__.*graphify.*\|mcp__.*lean-?ctx.*` | Records LeanCTX CLI/MCP usage for the opt-in LeanCTX gate. |
+| `record-recommended-mcp.sh` | PostToolUse `CallMcpTool\|MCP`; PostToolUse `mcp__.*agentmemory.*\|mcp__.*graphify.*\|mcp__.*lean-?ctx.*` | Records agentmemory and Graphify MCP retrieval calls (from the tool's own server) for the opt-in gates. |
 | `record-requested-skill.sh` | UserPromptSubmit `.*` | Records the SB route requested in the user prompt (for example `/sb:feature`) in the state file. |
 | `record-site-session.sh` | PostToolUse `Write\|Edit\|MultiEdit\|apply_patch`; UserPromptSubmit `.*` | Records `site/**` edits and site-intent prompts so the site session gates know a site session is active. |
 | `record-site-visual-evidence.sh` | PostToolUse `Bash\|exec_command` | Records browser screenshot paths as site visual evidence. |
@@ -219,13 +219,12 @@ Before each user prompt is processed; hooks add context or record the requested 
 | `site-visual-evidence-gate.sh` | Stop `.*` | At Stop, requires 1280px visual evidence for active site sessions. |
 | `spec-floor-check.sh` | PreToolUse `Bash\|exec_command` | Spec floor: blocks `sb:plan` without a minimum viable `SPEC.md`; advisory for `sb:fast`. |
 | `spec-session-record.sh` | SessionStart `startup\|clear\|compact` | Captures spec version and Jira ID from `.planning/SPEC.md` for `pr-traceability.sh`. |
-| `stack-compression-coordinator.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command`; PreToolUse `Read\|Grep`; PreToolUse `WebFetch`; PreToolUse `CallMcpTool\|MCP` | Five-tool stack coordinator: routes Read/Grep/shell/WebFetch/MCP surfaces to their owning tool and blocks double compression. |
-| `stack-compression-lifecycle.sh` | SessionStart `startup\|clear\|compact` | On compaction, records the LeanCTX lifecycle phase after the agentmemory snapshot. |
+| `stack-compression-coordinator.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command`; PreToolUse `Read\|Grep`; PreToolUse `WebFetch`; PreToolUse `CallMcpTool\|MCP`; PreToolUse `mcp__.*lean-?ctx.*\|mcp__.*context[-_]mode.*` | Five-tool stack coordinator: routes Read/Grep/shell/WebFetch/MCP surfaces to their owning tool and blocks double compression. |
 | `stop-check.sh` | Stop `.*`; SubagentStop `.*` | Stop/SubagentStop gate: blocks a task-complete declaration while `required_planning` skills are missing, and enforces doc-scheme finalization when `docs/doc-scheme.md` exists. |
 | `subagent-start.sh` | SubagentStart `.*` | Injects the worker banner and tool requirements into subagent sessions. |
 | `subagent-stop-enforcement.sh` | PreToolUse `Task\|Subagent\|Agent`; PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command`; PostToolUse `Task\|Subagent\|Agent`; Stop `.*`; UserPromptSubmit `.*` | Tracks Task worker spawns and returns; at Stop, blocks a parent session whose workers ran but `sb:completion-audit` is not recorded. |
 | `timeout-check.sh` | PostToolUse `.*` | Autonomous mode only: warns on wall-clock timeout and on 30/60/100 tool calls without a recorded skill. |
-| `token-compression-tools-gate.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Opt-in: requires recent RTK usage before substantive commits. |
+| `token-compression-tools-gate.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Opt-in: requires recent RTK usage before commits, PRs and releases (shell delivery commands only), and enforces the stack mutex. |
 | `trivial-file-clear.sh` | PostToolUse `Write\|Edit\|MultiEdit\|apply_patch` | Deletes the legacy trivial-session marker after any file write. |
 | `trivial-file-guard.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Blocks agents from creating the legacy trivial marker; small changes go through `/sb:fast`. |
 | `uat-gate.sh` | PreToolUse `Skill` | Blocks `sb:release` and milestone completion when `UAT.md` is missing, failing or stale against the spec version. |
@@ -260,5 +259,6 @@ Hooks source these helpers; none of them is registered as a hook. Each file's he
 - **Orchestrator, delegation and review ladder:** `orchestrator-directive.sh`, `orchestrator-event-log.sh`, `orchestrator-parent.sh`, `orchestrator-scheduler.sh`, `orchestrator-skill-atom.sh`, `orchestrator-state.sh`, `agent-delegation-state.sh`, `review-fix-ladder-state.sh`, `rfl-policy-c-assert.sh`
 - **Opt-in recommended tools (five-tool stack):** `recommended-tools.sh`, `recommended-tools-registry.sh`, `graphify-gate.sh`, `agentmemory-gate.sh`, `alumnium-gate.sh`, `context-mode-gate.sh`, `context-mode-read-deny.sh`, `leanctx-gate.sh`, `rtk-gate.sh`, `token-compression-tools-gate.sh`, `stack-compression-coordinator.sh`, `stack-optimizer.sh`, `graphify-am-global.sh`, `rtk-cm-global.sh`
 - **Site sessions:** `site-session.sh`
+- **Other:** `opt-in-gate.sh`, `user-consent.sh`
 
 `hooks/lib/completion-audit/` holds the modules `completion-audit.sh` sources (command classification, planning tier, deploy tier, change class, gate runners, state helpers). `hooks/lib/tool-input/` holds the Python helpers `tool-input.sh` calls to parse tool payloads (command strings, write targets, patch paths, RTK unwrapping); they share `shell_analysis.py`, the shell-command analyzer that `shell-analysis.sh` loads with `sb_tool_input_load` (delivery actions and tier, read-only verdict, write targets, opaque and unseen parts); completion-audit loads it once per call, the other gates start it through the accessors until they adopt the load.

@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Behavior tests for the PostToolUse usage recorders (record-leanctx-usage.sh, record-token-compression-usage.sh)
 set -euo pipefail
+# The opt-in gates act only on the user's own consent, never on .silver-bullet.json alone.
+# shellcheck source=../lib/consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/consent-helpers.sh"
+sb_test_consent_grant_all
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
 # shellcheck source=../lib/c-toolgates-2-helpers.sh
@@ -58,36 +62,26 @@ prologue_suite() {
   tg2_run "$hook" "$good"
   assert_not_recorded "$name: suspended enforcement is a no-op" "$state"
 
-  # Library farm: without sb-project-gate.sh the hook walks upward itself.
+  # Without sb-project-gate.sh the hook cannot find its project: inert (fail-open), never an error.
   reset; tg2_farm gate "hooks/$name" sb-project-gate.sh project-active.sh
   TG2_REPO="$TG2_FARM" TG2_PROJECT_ROOT="" TG2_CWD="$TG2_PROJ/src" tg2_run "hooks/$name" "$good"
-  assert_recorded "$name: farm without gate lib still records via its own walk-up" "$state"
+  assert_not_recorded "$name: farm without the project-gate lib is inert" "$state"
+  assert_eq "$name: farm without the project-gate lib exits 0" "0" "$TL_STATUS"
+
+  # A project recommendation without the user's consent records nothing.
+  reset; TG2_PROJECT_ROOT="$TG2_PROJ" tg2_run "$hook" "$good" XDG_CONFIG_HOME="$TL_TMP/no-consent"
+  assert_not_recorded "$name: no user consent is a no-op" "$state"
   # Without any lib dir the hook cannot source anything and stays inert (fail-open).
   reset; tg2_farm nolib "hooks/$name" -
   TG2_REPO="$TG2_FARM" tg2_run "hooks/$name" "$good"
   assert_not_recorded "$name: missing lib dir fails open" "$state"
 }
 
-# Walk-up fallback (no sb-project-gate.sh): finds config in a parent, stops at .git / root.
-walkup_suite() { # hook state good tool-with-gate-libs-note
-  local hook="$1" state="$2" good="$3" name="${1##*/}"
-  reset; tg2_farm walk "hooks/$name" sb-project-gate.sh project-active.sh
-  TG2_REPO="$TG2_FARM" TG2_PROJECT_ROOT="" TG2_CWD="$TG2_PROJ/src" tg2_run "hooks/$name" "$good"
-  if state_is_epoch "$state"; then tl_pass "$name: walk-up fallback finds parent config"; else tl_fail "$name: walk-up fallback did not record (status=$TL_STATUS err=$TL_ERR)"; fi
-  reset
-  mkdir -p "$TL_TMP/gitonly/sub"; git -C "$TL_TMP/gitonly" init -q 2>/dev/null
-  TG2_REPO="$TG2_FARM" TG2_PROJECT_ROOT="" TG2_CWD="$TL_TMP/gitonly/sub" tg2_run "hooks/$name" "$good"
-  assert_not_recorded "$name: walk-up stops at .git boundary" "$state"
-  reset
-  TG2_REPO="$TG2_FARM" TG2_PROJECT_ROOT="" TG2_CWD="$TL_TMP/outside" tg2_run "hooks/$name" "$good"
-  assert_not_recorded "$name: walk-up stops at filesystem root" "$state"
-}
 
 # -------------------------------------------------------------------- leanctx
 LCH=hooks/record-leanctx-usage.sh
 lc_cmd="$(tg2_bash_input 'lean-ctx read src/app.js' Bash PostToolUse)"
 prologue_suite "$LCH" "$LC_STATE" "$lc_cmd" "✅ LeanCTX usage recorded" leanctx
-walkup_suite "$LCH" "$LC_STATE" "$lc_cmd"
 reset; tg2_run "$LCH" "$(tg2_bash_input 'lean-ctx read x' Bash PostToolUse 1)"
 assert_not_recorded "leanctx: failed CLI command is not recorded" "$LC_STATE"
 reset; tg2_run "$LCH" "$(tg2_bash_input 'ls' Bash PostToolUse)"
@@ -96,20 +90,18 @@ reset; tg2_run "$LCH" "$(tg2_mcp_input user-leanctx lctx_read_ast CallMcpTool)"
 assert_recorded "leanctx: matching server and tool records" "$LC_STATE"
 assert_eq "leanctx: MCP confirmation" "✅ LeanCTX usage recorded" "$(msg)"
 reset; tg2_run "$LCH" "$(tg2_mcp_input some-other-server lctx_wire MCP)"
-assert_recorded "leanctx: lctx_* tool on a foreign server still records" "$LC_STATE"
+assert_not_recorded "leanctx: an lctx_* tool on a foreign server does not record (R5-10)" "$LC_STATE"
 reset; tg2_run "$LCH" "$(tg2_mcp_input leanctx read_file CallMcpTool)"
 assert_not_recorded "leanctx: non-lctx tool on leanctx server does not record" "$LC_STATE"
 reset; tg2_run "$LCH" "$(tg2_mcp_input other read_file CallMcpTool)"
 assert_not_recorded "leanctx: unrelated MCP call does not record" "$LC_STATE"
-reset; mkdir -p "$SB_RUNTIME_STATE_DIR/lc-dir"
-jq --arg p "$SB_RUNTIME_STATE_DIR/lc-dir" '.recommended_tools.leanctx.usage_state_file=$p' <<<"$all_cfg" >"$TG2_CFG"
+reset; mkdir -p "$SB_RUNTIME_STATE_DIR/lc-dir-usage"
+jq --arg p "$SB_RUNTIME_STATE_DIR/lc-dir-usage" '.recommended_tools.leanctx.usage_state_file=$p' <<<"$all_cfg" >"$TG2_CFG"
 tg2_run "$LCH" "$lc_cmd"
 assert_silent_ok "leanctx: failed state write is silent (command path)"
 tg2_run "$LCH" "$(tg2_mcp_input user-leanctx lctx_wire CallMcpTool)"
 assert_silent_ok "leanctx: failed state write is silent (matching server path)"
-tg2_run "$LCH" "$(tg2_mcp_input other lctx_wire CallMcpTool)"
-assert_silent_ok "leanctx: failed state write is silent (foreign server path)"
-rmdir "$SB_RUNTIME_STATE_DIR/lc-dir"
+rmdir "$SB_RUNTIME_STATE_DIR/lc-dir-usage"
 reset; tg2_farm notoolinput-lc "$LCH" tool-input.sh
 TG2_REPO="$TG2_FARM" tg2_run "$LCH" "$lc_cmd"
 assert_recorded "leanctx: jq fallbacks record without tool-input.sh" "$LC_STATE"
@@ -145,7 +137,12 @@ tg2_run "$TCH" "$tc_cmd"
 assert_not_recorded "token-compression: not-installed rtk is a no-op" "$RTK_STATE"
 reset; jq '.recommended_tools.rtk.cli_command="myrtk"' <<<"$all_cfg" >"$TG2_CFG"
 tg2_run "$TCH" "$(tg2_bash_input 'myrtk gain' exec_command PostToolUse)"
-assert_recorded "token-compression: configured CLI name is honoured" "$RTK_STATE"
+assert_not_recorded "token-compression: a configured cli_command is not honoured (R5-10)" "$RTK_STATE"
+reset; jq '.recommended_tools.rtk.cli_command="git"' <<<"$all_cfg" >"$TG2_CFG"
+tg2_run "$TCH" "$(tg2_bash_input 'git status' exec_command PostToolUse)"
+assert_not_recorded "token-compression: cli_command=git cannot make every git command count as RTK usage" "$RTK_STATE"
+reset; tg2_run "$TCH" "$(tg2_bash_input 'echo rtk gain' Bash PostToolUse)"
+assert_not_recorded "token-compression: a mention of rtk in another program's arguments is not usage" "$RTK_STATE"
 reset; tg2_farm tc-noti "$TCH" tool-input.sh
 TG2_REPO="$TG2_FARM" tg2_run "$TCH" "$tc_cmd"
 assert_recorded "token-compression: jq fallbacks record without tool-input.sh" "$RTK_STATE"
@@ -171,11 +168,8 @@ fault_suite() { # hook state bash-cmd mcp-tool-env-ok
   local hook="$1" state="$2" cmd="$3" name="${1##*/}"
   reset; TG2_STDIN_UNREADABLE=1 tg2_run "$hook" ""
   assert_not_recorded "$name: unreadable stdin is a no-op" "$state"
-  if [[ -n "$cmd" ]]; then
-    reset; tg2_farm "ti-$name" "$hook" tool-input.sh; tg2_farm_stub tool-input.sh "$stub_tool_input"
-    TG2_REPO="$TG2_FARM" tg2_run "$hook" "not json" STUB_TOOL_NAME=Bash "STUB_CMD=$cmd"
-    assert_recorded "$name: unparsable exit_code defaults to success" "$state"
-  fi
+  reset; tg2_run "$hook" "not json"
+  assert_not_recorded "$name: unparsable payload records nothing" "$state"
   reset; tg2_farm "inactive-$name" "$hook" project-active.sh; tg2_farm_stub project-active.sh "$stub_inactive"
   TG2_REPO="$TG2_FARM" tg2_run "$hook" "$4" STUB_TOOL_NAME="${5:-Bash}" "STUB_CMD=$cmd"
   assert_not_recorded "$name: not-initiated project is a no-op" "$state"
