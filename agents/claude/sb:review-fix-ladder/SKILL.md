@@ -415,9 +415,9 @@ Report:
 
 ## Host Delegation Notes
 
-### Cursor rung routing (custom subagents)
+### Rung routing
 
-Resolve the ladder first (`python3 scripts/review-fix-ladder.py --host cursor --json --project-root .`). Each Cursor rung includes:
+Resolve the ladder first (`python3 scripts/review-fix-ladder.py --json --project-root .`; the host is detected, or pass `--host codex|claude`). Each rung includes:
 
 | Field | Meaning |
 |-------|---------|
@@ -440,7 +440,7 @@ Quota exhaustion signals (narrow): `429`, `rate limit`, `token plan`, `out of qu
 
 **Not quota (no Cursor fallback):** brief bugs, HASH MISMATCH, missing CLI install, network blips, NOT CLEAN review results.
 
-Grok and Composer default to Cursor (`/sb:agent-cursor`). Gemini defaults to Gemini CLI if the user did not name an agent, else Pi, else OpenCode, else Cursor. GPT defaults to Codex (`/sb:agent-codex`). Claude defaults to Claude (`/sb:agent-claude`). Other models default to Pi or OpenCode, or any other external agent the user named. User `--user-agent` / named host always wins. Do **not** smash host `--mode` permission flags. Do **not** remap RFL GPT/Claude rungs onto Grok High. Encoder: `python3 scripts/review-fix-ladder.py --default-host-route --model {model}`.
+Gemini defaults to Gemini CLI if the user did not name an agent, else Pi, else OpenCode. Models with no dedicated host (including Grok and Composer slugs) default to Pi or OpenCode. GPT defaults to Codex (`/sb:agent-codex`). Claude defaults to Claude (`/sb:agent-claude`). Other models default to Pi or OpenCode, or any other external agent the user named. User `--user-agent` / named host always wins. Do **not** smash host `--mode` permission flags. Do **not** remap RFL GPT/Claude rungs onto Grok High. Encoder: `python3 scripts/review-fix-ladder.py --default-host-route --model {model}`.
 
 Grok, Composer, GLM, Gemini, and Kimi rungs still skip the GPT/Claude **subscription-first quota gate**. `--decide-launch` for those families does not invoke Codex/Claude. OpenCode family rungs are **not** Cursor `sb-*` Tasks — see **OpenCode Go models** below.
 
@@ -451,7 +451,7 @@ Grok, Composer, GLM, Gemini, and Kimi rungs still skip the GPT/Claude **subscrip
 Phase routing detail:
 
 ```bash
-python3 scripts/review-fix-ladder.py --host cursor --json --project-root . --rung 2 --phase verify_1
+python3 scripts/review-fix-ladder.py --json --project-root . --rung 2 --phase verify_1
 python3 scripts/review-fix-ladder.py --decide-launch --model gpt-5.6-sol --reasoning xhigh
 ```
 
@@ -462,11 +462,9 @@ For non-subscription `delegation: custom-subagent` (and GPT/Claude **after** quo
 3. On verify passes, also set `readonly: true`.
 4. Do **not** pass `model` unless resolver emits `model_param` and host policy requires it — **except** when re-spawning after an empty/"Let" Task (then pass explicit `model`).
 
-Install or refresh agents before the ladder: `bash scripts/install-cursor-sb-agents.sh` (see `scripts/lib/cursor-sb-agents/`).
-
 | Host | Delegation |
 |------|------------|
-| **Cursor (custom subagent)** | GPT → `/sb:agent-codex` first; Claude/Opus → `/sb:agent-claude` first; Cursor `Task` **only** on quota exhaustion. Grok/Composer default host: `/sb:agent-cursor`. Gemini: Gemini CLI, else Pi, else OpenCode, else Cursor. Other families: Pi or OpenCode (or the agent the user named). User override wins. Do not smash host `--mode`. Do not remap GPT/Claude onto Grok High. Verify passes: `readonly: true`. **Forbidden:** Fast, `composer-2.5-fast`. Do not skip Extra High/Max when those slugs exist. Re-run the subscription gate on every GPT/Claude review/verify launch (not once per family). |
+| **Custom subagent** | GPT → `/sb:agent-codex` first; Claude/Opus → `/sb:agent-claude` first. Gemini: Gemini CLI, else Pi, else OpenCode. Other families: Pi or OpenCode (or the agent the user named). User override wins. Do not smash host `--mode`. Do not remap GPT/Claude onto Grok High. Verify passes: `readonly: true`. **Forbidden:** Fast, `composer-2.5-fast`. Do not skip Extra High/Max when those slugs exist. Re-run the subscription gate on every GPT/Claude review/verify launch (not once per family). |
 | **the active host agent** | Subagent with model `primary-model`, `Claude Code-opus-4-7`, or `Claude Code-opus-4-8` and thinking `medium`, `high`, or `xhigh` |
 | **Secondary host agent** | `Codex exec -m <model> -c model_reasoning_effort=<reasoning>` (native Codex binary, not Kay shim) |
 

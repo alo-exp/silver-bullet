@@ -57,7 +57,15 @@ cat >"$WORK/.silver-bullet.json" <<EOF
 EOF
 touch "${SB_RUNTIME_STATE_DIR}/state"
 mkdir -p "$WORK/scripts"
-ln -sf "$REPO_ROOT/scripts/review-fix-ladder.py" "$WORK/scripts/review-fix-ladder.py"
+# A fixed ladder with named custom subagents: the real resolver emits none for the kept hosts.
+cat >"$WORK/scripts/review-fix-ladder.py" <<'PYSTUB'
+import json
+rungs = [{"model": "m", "reasoning": e, "subagent_name": f"sb-composer-2-5-{e}", "model_param": "composer-2.5"}
+         for e in ("medium", "high", "xhigh")]
+rungs += [{"model": "g", "reasoning": e, "subagent_name": f"sb-grok-4-5-{e}", "model_param": "grok"} for e in ("medium", "high", "xhigh")]
+print(json.dumps({"host": "claude", "total_rungs": len(rungs), "rungs": rungs}))
+PYSTUB
+export SB_RFL_PROJECT_ROOT="$WORK"
 
 echo "=== review-fix-ladder guard tests ==="
 

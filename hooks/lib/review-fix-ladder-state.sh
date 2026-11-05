@@ -66,7 +66,7 @@ sb_rfl_resolver_json() {
     printf '{}'
     return 1
   fi
-  SB_CURSOR_SB_AGENTS_SKIP_PROBE=1 python3 "$resolver" --host cursor --json --project-root "$project_root" 2>/dev/null || printf '{}'
+  python3 "$resolver" --json --project-root "$project_root" 2>/dev/null || printf '{}'
 }
 
 sb_rfl_total_rungs_from_resolver() {
