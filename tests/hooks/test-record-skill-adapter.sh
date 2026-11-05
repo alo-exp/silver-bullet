@@ -61,6 +61,10 @@ printf '#!/usr/bin/env bash\nexit 2\n' >"$TL_TMP/farm-gatefail/hooks/uat-gate.sh
 TG2_REPO="$TG2_FARM" rs "$(bash_input "$ADAPTER")"
 assert_not_in "a failing Skill gate blocks the adapter record" "$STATE" silver-plan
 assert_contains "the failing gate is named" "$(msg)" "uat-gate.sh gate failed"
+printf '#!/usr/bin/env bash\necho "not json"\n' >"$TL_TMP/farm-gatefail/hooks/uat-gate.sh"
+reset; write_receipt silver-plan
+TG2_REPO="$TG2_FARM" rs "$(bash_input "$ADAPTER")"
+assert_in "a gate that prints garbage but exits 0 is an allow" "$STATE" silver-plan
 rm -f "$TL_TMP/farm-gatefail/hooks/uat-gate.sh"
 reset; write_receipt silver-plan
 TG2_REPO="$TG2_FARM" rs "$(bash_input "$ADAPTER")"

@@ -15,6 +15,10 @@ for s in sb-migrate-config sb-migrate-project sb-migrate-orchestrator-parent; do
 cp "$R/templates/silver-bullet.config.json.default" "$PL/templates/"
 cp "$R/templates/workflows/full-dev-cycle.md" "$PL/templates/workflows/"   # devops-cycle.md deliberately absent
 printf '#!/usr/bin/env bash\necho workflows-helper\n' >"$PL/scripts/workflows.sh"
+# the scripts source the plugin's atomic-write helper from hooks/lib
+mkdir -p "$PL/hooks/lib"
+ln -s "$R/hooks/lib/nofollow-guard.sh" "$PL/hooks/lib/nofollow-guard.sh"
+ln -s "$R/hooks/lib/runtime-paths.sh" "$PL/hooks/lib/runtime-paths.sh"
 echo '{"version":"9.9.9"}' >"$PL/package.json"
 
 # ---------------- sb-migrate-config.sh ----------------
@@ -62,7 +66,8 @@ assert_eq "merge: project name kept" acme "$(jq -r .project.name "$M")"
 assert_eq "merge: project src_pattern kept" "/lib/" "$(jq -r .project.src_pattern "$M")"
 assert_eq "merge: template project key filled" "full-dev-cycle" "$(jq -r .project.active_workflow "$M")"
 assert_eq "merge: custom required_planning unioned" true "$(jq '.skills.required_planning | index("zz-custom") != null and index("silver-plan") != null' "$M")"
-assert_eq "merge: union has no duplicates" "$(jq -c '.skills.required_planning | unique' "$M")" "$(jq -c .skills.required_planning "$M")"
+assert_eq "merge: union has no duplicates" "$(jq '.skills.required_planning | length' "$M")" "$(jq '.skills.required_planning | unique | length' "$M")"
+assert_eq "merge: template order kept, project extras appended (R3-22)" '["silver-quality-gates","silver-context","silver-plan","zz-custom"]' "$(jq -c .skills.required_planning "$M")"
 assert_eq "merge: forbidden unioned" true "$(jq '.skills.forbidden | index("bad-skill") != null' "$M")"
 assert_eq "merge: custom hook kept" true "$(jq -r .hooks.custom_hook "$M")"
 assert_eq "merge: legacy tracker -> local" local "$(jq -r .issue_tracker "$M")"
