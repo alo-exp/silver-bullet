@@ -228,7 +228,7 @@ detect() {
   tl_run env -u CURSOR_PLUGIN_ROOT -u CODEX_HOME -u PI_CODING_AGENT_DIR -u RT_HOST "$@" bash -c 'source "$1"; detect_host' _ "$FN"
 }
 rm -rf "$HOME/.cursor" "$HOME/.codex" "$HOME/.claude" "$HOME/.pi" "$HOME/.config"
-detect; assert_eq "detect: nothing found falls back to cursor" "cursor" "$TL_OUT"
+detect; assert_eq "detect: nothing found is reported as none, not a Cursor fallback" "none" "$TL_OUT"
 detect RT_HOST=pi; assert_eq "detect: RT_HOST wins" "pi" "$TL_OUT"
 mkdir -p "$HOME/.cursor"; detect; assert_eq "detect: ~/.cursor" "cursor" "$TL_OUT"
 rmdir "$HOME/.cursor"
@@ -258,6 +258,14 @@ sb_test_consent_revoke_all
 tl_run bash -c 'source "$1"; PROJECT_ROOT="$2"; if leanctx_opted_in; then echo opted=0; else echo opted=1; fi' _ "$FN" "$PROJ"
 assert_contains "not consented: not opted in" "$TL_OUT" "opted=1"
 sb_test_consent_grant_all
+
+# --host auto with no detected host writes nothing and says so (even with --force)
+rm -rf "$HOME/.cursor" "$HOME/.codex" "$HOME/.claude" "$HOME/.pi" "$HOME/.config"
+run_opt --host auto --project-root "$PROJ" --force
+assert_eq "auto with no host: exits 0" "0" "$TL_STATUS"
+assert_eq "auto with no host: no helper ran" "" "$(calls)"
+assert_contains "auto with no host: says so" "$TL_OUT" "No host detected"
+assert_eq "auto with no host: nothing written under HOME" "0" "$(find "$HOME" -type f ! -path "$HOME/.local/*" 2>/dev/null | wc -l | tr -d ' ')"
 
 # --host auto resolves through detect_host before the opt-in check
 mkdir -p "$HOME/.codex"
