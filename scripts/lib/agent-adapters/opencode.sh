@@ -48,7 +48,7 @@ agent_invoke() {
   work_dir="${OPENCODE_WORK_DIR:-${WORK_DIR:-}}"
   [[ -n "$work_dir" ]] || { printf 'ERROR: OPENCODE_WORK_DIR or WORK_DIR required\n' >&2; return 1; }
   [[ -d "$work_dir" ]] || { printf 'ERROR: work dir is not a directory: %s\n' "$work_dir" >&2; return 1; }
-  work_dir="$(cd "$work_dir" && pwd)" || return 1
+  work_dir="$(cd "$work_dir" && pwd)"
   OPENCODE_WORK_DIR="$work_dir"
   WORK_DIR="$work_dir"
 
@@ -61,14 +61,19 @@ agent_invoke() {
     use_interactive=1
   fi
 
+  # --auto auto-approves tool calls: only in permissive mode (strict never adds it, R4-23).
   if [[ "$use_interactive" -eq 1 ]]; then
     # D6: native TUI (`opencode [project]`), never silent `opencode run`.
-    args=("$work_dir" -m "$run_model" --auto --prompt "$prompt")
+    args=("$work_dir" -m "$run_model")
   else
-    args=(run --dir "$work_dir" -m "$run_model" --auto)
-    if [[ "$mode" == "permissive" ]]; then
-      args+=(--auto)
-    fi
+    args=(run --dir "$work_dir" -m "$run_model")
+  fi
+  if [[ "$mode" == "permissive" ]]; then
+    args+=(--auto)
+  fi
+  if [[ "$use_interactive" -eq 1 ]]; then
+    args+=(--prompt "$prompt")
+  else
     args+=("$prompt")
   fi
 
@@ -197,7 +202,8 @@ stdout_parts = []
 activity_at = None
 fd = proc.stdout.fileno()
 
-while proc.poll() is None:
+eof = False
+while True:
     now = time.monotonic()
     if now >= hard_deadline:
         break
@@ -207,12 +213,21 @@ while proc.poll() is None:
     if ready:
         data = os.read(fd, 65536)
         if not data:
+            eof = True
             break
         chunk = data.decode(errors="replace")
         stdout_parts.append(chunk)
         if chunk.strip():
             activity_at = time.monotonic()
+    elif proc.poll() is not None:
+        break
 
+if eof and proc.poll() is None:
+    # output closed: let the CLI finish, but never past the hard deadline
+    try:
+        proc.wait(timeout=max(0.1, hard_deadline - time.monotonic()))
+    except subprocess.TimeoutExpired:
+        pass
 combined = "".join(stdout_parts)
 if combined:
     sys.stdout.write(combined)

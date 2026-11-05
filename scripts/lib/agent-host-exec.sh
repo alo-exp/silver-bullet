@@ -101,10 +101,13 @@ agent_host_build_argv() {
       ;;
     opencode)
       local run_model="${OPENCODE_RUN_MODEL:-opencode-go/mimo-v2.5}"
+      # --auto auto-approves tool calls: permissive only; strict never adds it (R4-23).
+      local oc_auto=()
+      [[ "$permission_mode" == "permissive" ]] && oc_auto=(--auto)
       if [[ "$interaction" == "interactive" ]]; then
-        AGENT_HOST_ARGV=("$cli" "$work_dir" -m "$run_model" --auto --prompt "$prompt")
+        AGENT_HOST_ARGV=("$cli" "$work_dir" -m "$run_model" ${oc_auto[@]+"${oc_auto[@]}"} --prompt "$prompt")
       else
-        AGENT_HOST_ARGV=("$cli" run --dir "$work_dir" -m "$run_model" --auto "$prompt")
+        AGENT_HOST_ARGV=("$cli" run --dir "$work_dir" -m "$run_model" ${oc_auto[@]+"${oc_auto[@]}"} "$prompt")
       fi
       ;;
     pi)
@@ -253,10 +256,8 @@ agent_host_pi_continue_prompt() {
 agent_host_pi_fresh_rewrite_prompt() {
   local expect_file="$1"
   local original_prompt="${2:-}"
-  local rel
-  rel="./$(basename "$expect_file")"
   local demand
-  demand="FRESH SESSION (not --continue). ${rel} is still missing, too small, or an IN_PROGRESS stub (also ${expect_file}). Your first or second tool call must be write to that path. Never end on a plan. Forbidden phrases: I will, I'll, Next I will. A sentence without a write tool call is a failed task."
+  demand="FRESH SESSION (not --continue). ${expect_file} is still missing, too small, or an IN_PROGRESS stub (write to this absolute path: this session starts in a scratch directory). Your first or second tool call must be write to that path. Never end on a plan. Forbidden phrases: I will, I'll, Next I will. A sentence without a write tool call is a failed task."
   if [[ -n "$original_prompt" ]]; then
     printf '%s\n\n%s' "$demand" "$original_prompt"
   else

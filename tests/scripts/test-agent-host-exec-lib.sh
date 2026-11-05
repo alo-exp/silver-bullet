@@ -135,6 +135,10 @@ agent_host_build_argv opencode non-interactive /w p
 assert_eq "build opencode NI" "$STUB_BIN/opencode|run|--dir|/w|-m|opencode-go/mimo-v2.5|--auto|p|" "$(argv_str)"
 OPENCODE_RUN_MODEL=opencode-go/other agent_host_build_argv opencode interactive /w p
 assert_eq "build opencode interactive" "$STUB_BIN/opencode|/w|-m|opencode-go/other|--auto|--prompt|p|" "$(argv_str)"
+agent_host_build_argv opencode non-interactive /w p strict
+assert_eq "build opencode NI strict: no --auto" "$STUB_BIN/opencode|run|--dir|/w|-m|opencode-go/mimo-v2.5|p|" "$(argv_str)"
+OPENCODE_RUN_MODEL=opencode-go/other agent_host_build_argv opencode interactive /w p strict
+assert_eq "build opencode interactive strict: no --auto" "$STUB_BIN/opencode|/w|-m|opencode-go/other|--prompt|p|" "$(argv_str)"
 
 agent_host_build_argv pi non-interactive /w p
 assert_eq "build pi NI (no rails for mimo)" "$TL_BIN/pi|-p|--provider|opencode-go|--model|mimo-v2.5|p|" "$(argv_str)"

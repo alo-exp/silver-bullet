@@ -65,16 +65,18 @@ class ScanTests(unittest.TestCase):
     def test_prefixed_tokens_are_found(self):
         for kind, token in SAMPLES.items():
             with self.subTest(kind=kind):
-                self.assertEqual(agent_redact.scan("ctx " + token), kind)
+                self.assertEqual(agent_redact.scan("ctx " + token), (kind, 1))
 
     def test_bearer_needs_a_random_looking_value(self):
-        self.assertEqual(agent_redact.scan("Authorization: Bearer " + LONG_VALUE), "bearer")
+        self.assertEqual(agent_redact.scan("a\nAuthorization: Bearer " + LONG_VALUE), ("bearer", 2))
         self.assertIsNone(agent_redact.scan("Authorization: Bearer <your-token-here>"))
         self.assertIsNone(agent_redact.scan("Bearer aaaaaaaaaaaaaaaaaaaaaaaa"))
 
     def test_assignment_needs_a_random_looking_value(self):
-        self.assertEqual(agent_redact.scan("GITLAB_TOKEN=" + LONG_VALUE), "assignment")
-        self.assertEqual(agent_redact.scan("password: '%s'" % LONG_VALUE), "assignment")
+        self.assertEqual(agent_redact.scan("x\ny\nGITLAB_TOKEN=" + LONG_VALUE), ("assignment", 3))
+        self.assertEqual(agent_redact.scan("password: '%s'" % LONG_VALUE), ("assignment", 1))
+        self.assertEqual(agent_redact.scan("secret = aB3dE5gH7jK9mN1pQ3sT5vW7"), ("assignment", 1))
+        self.assertEqual(agent_redact.scan("api_key=" + "aBcDeFgHiJkLmNoPqRsTuVwXyZqWeRtYuIoP"), ("assignment", 1))
 
     def test_honest_text_passes(self):
         for text in (
@@ -89,9 +91,34 @@ class ScanTests(unittest.TestCase):
             "secret = xxxxxxxxxxxxxxxxxxxxxxxx",
             "password=example-example-example",
             "nothing here",
+            # honest auth-feature code: references and calls, not literals (R10b-06)
+            "client_secret: settings.GOOGLE_CLIENT_SECRET",
+            "const password = req.body.passwordConfirmation",
+            "secret=getSecretFromVaultClient()",
+            "private_key: loadPrivateKeyFromDisk(path)",
+            "Use secret: process.env.SESSION_SECRET for cookie signing",
+            "api_key = os.environ['PAYMENT_API_KEY_PRIMARY']",
+            "token: ${{ secrets.DEPLOY_TOKEN_LONG_NAME }}",
+            "secret = SessionSecretProviderFactory",
+            "password: GOOGLE_CLIENT_SECRET_VALUE_ENV",
+            "key: Foo::Bar::loadSecretMaterialFromVault",
         ):
             with self.subTest(text=text):
                 self.assertIsNone(agent_redact.scan(text))
+
+
+class MoreRedactionTests(unittest.TestCase):
+    def test_url_userinfo_flags_and_registry_tokens(self):
+        text = "git clone https://user:S3cr3tPassw0rdXYZ@github.com/x.git; tool --password hunter2Super --token=abc; " + "npm_" + "a" * 24 + " hf_" + "b" * 24
+        out = agent_redact.redact(text)
+        for leaked in ("S3cr3tPassw0rdXYZ", "hunter2Super", "abc;", "a" * 24, "b" * 24):
+            self.assertNotIn(leaked, out)
+        self.assertIn("github.com/x.git", out)
+        self.assertIn("--password [REDACTED]", out)
+
+    def test_plain_urls_are_untouched(self):
+        text = "see https://example.com/a:b and git@github.com:org/repo.git"
+        self.assertEqual(agent_redact.redact(text), text)
 
 
 class RedactFileTests(unittest.TestCase):
@@ -157,8 +184,8 @@ class MainTests(unittest.TestCase):
         self.assertEqual((rc, out), (0, "token=[REDACTED]\n"))
 
     def test_scan_exit_codes(self):
-        rc, out, _ = self.run_main(["--scan"], "x " + SAMPLES["github"])
-        self.assertEqual((rc, out), (1, "github\n"))
+        rc, out, _ = self.run_main(["--scan"], "ok\nx " + SAMPLES["github"])
+        self.assertEqual((rc, out), (1, "github line 2\n"))
         rc, out, _ = self.run_main(["--scan"], "plain text")
         self.assertEqual((rc, out), (0, ""))
 
