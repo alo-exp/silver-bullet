@@ -190,7 +190,7 @@ ad codex 'agent_invoke permissive "p"; echo rc=$?' CODEX_BIN="$CB/codex" SB_ROOT
 assert_contains "codex: failing TUI launcher tolerated" "$TL_OUT" "launcher failed"
 cp "$FSB/scripts/launcher.ok" "$FSB/scripts/codex-interactive-invoke.py"
 # explicit transcript dir (live-test isolation) is honoured; rotation keeps four archives
-for i in 1 2 3 4 5 6; do
+for _ in 1 2 3 4 5 6; do
   ad codex 'agent_invoke strict "p"' CODEX_BIN="$CB/codex" SB_ROOT="$FSB" CODEX_TRANSCRIPT_DIR="$TL_TMP/tdir"
   sleep 1
 done

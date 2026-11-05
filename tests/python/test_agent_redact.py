@@ -109,15 +109,15 @@ class ScanTests(unittest.TestCase):
 
 class MoreRedactionTests(unittest.TestCase):
     def test_url_userinfo_flags_and_registry_tokens(self):
-        text = "git clone https://user:S3cr3tPassw0rdXYZ@github.com/x.git; tool --password hunter2Super --token=abc; " + "npm_" + "a" * 24 + " hf_" + "b" * 24
+        text = "git clone https://user:S3cr3tPassw0rdXYZ@host.test/x.git; tool --password hunter2Super --token=abc; " + "npm_" + "a" * 24 + " hf_" + "b" * 24
         out = agent_redact.redact(text)
         for leaked in ("S3cr3tPassw0rdXYZ", "hunter2Super", "abc;", "a" * 24, "b" * 24):
             self.assertNotIn(leaked, out)
-        self.assertIn("github.com/x.git", out)
+        self.assertIn("host.test/x.git", out)
         self.assertIn("--password [REDACTED]", out)
 
     def test_plain_urls_are_untouched(self):
-        text = "see https://example.com/a:b and git@github.com:org/repo.git"
+        text = "see https://example.com/a:b and ssh://host/org/repo.git"
         self.assertEqual(agent_redact.redact(text), text)
 
 
