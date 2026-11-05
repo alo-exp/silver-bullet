@@ -323,7 +323,7 @@ class ReviewRepairTest(Base):
         self.assertTrue(mine.exists())
 
     def test_codex_adapter_program_is_stripped_but_user_hooks_stay(self):
-        adapter = "/home/u/.cursor/plugins/cache/alo-labs/silver-bullet/1/hooks/codex-hook-adapter.sh"
+        adapter = "/opt/elsewhere/codex-hook-adapter.sh"
         path = self.write_json("hooks.json", {"hooks": {"stop": [{"command": f"bash {adapter} stop.sh"}, USER_HOOK]}})
         self.assertEqual(self.clean()[0], 0)
         self.assertEqual(json.loads(path.read_text())["hooks"]["stop"], [USER_HOOK])
