@@ -243,7 +243,7 @@ class VendorMentionCorpusTests(unittest.TestCase):
             self.assertTrue((set(sc._envelope_evidence_slugs(envs(text), self.pack)) | set(m._extract_slugs_from_text(text, self.known, self.pack))) & self.ambiguous, text)
         no = ("https://devin.ai:443@mirror.example/gates", "https://devin.ai%2eexample.org/", "cursor.com.\u00e9vil.io", "https://cursor.com.\u00e9vil.io/",
               "Visit cursor.com/x or devin.ai/2 today.", "[https://devin.ai/](https://example.com/)", "x(https://cursor.com/) y", "https://cursor.com.evil.example/",
-              "https://notcursor.com/", "https://evilcursor.com/", "https://Cursor.com/", "https://cursor.com\\@evil.example/")
+              "https://notcursor.com/", "https://evilcursor.com/", "https://cursor.com:99999/x", "https://cursor.com:abc/x", "https://Cursor.com/", "https://cursor.com\\@evil.example/")
         for text in no:
             self.assertEqual((set(sc._envelope_evidence_slugs(envs(text), self.pack)) | set(m._extract_slugs_from_text(text, self.known, self.pack))) & self.ambiguous, set(), text)
         self.assertEqual(self.registry.url_slug("cursor.com/pricing"), None)
