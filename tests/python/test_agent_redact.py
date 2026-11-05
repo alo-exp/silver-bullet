@@ -158,6 +158,10 @@ class CorpusTests(unittest.TestCase):
         self.assertEqual(agent_redact.scan("x https://deploy:Zq8vLm2Xr9TnW4@host.test/r")[0], "url-userinfo")
         self.assertIsNone(agent_redact.scan("x https://deploy:deploy@host.test/r"))
 
+    def test_digitless_values_with_symbols_use_entropy(self):
+        self.assertIsNotNone(agent_redact.scan("secret=abcdefgh/ijklmnop+qrstuvwx"))
+        self.assertIsNone(agent_redact.scan("secret=aaaa/aaaa/aaaa/aaaa/aaaa"))
+
     def test_camel_case_names_and_random_letter_runs(self):
         self.assertIsNone(agent_redact.scan("secret=getSecretFromVaultClientFactory"))
         self.assertIsNotNone(agent_redact.scan("secret=qWeRtYuIoPaSdFgHjKlZxCvB"))
