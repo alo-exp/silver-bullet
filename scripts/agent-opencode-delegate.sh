@@ -168,7 +168,8 @@ agent_opencode_invoke_pool_cohort() {
   agent_opencode_apply_delegation_mode || return $?
   agent_opencode_apply_lightweight_env || return $?
   agent_opencode_apply_runtime_env
-  local cohort_script="${SB_ROOT}/skills/silver-multi-ai-task/scripts/ocg_pool_cohort.py"
+  local cohort_script
+  cohort_script="$(agent_opencode_multi_ai_skill_dir "$SB_ROOT")/scripts/ocg_pool_cohort.py"
   [[ -f "$cohort_script" ]] || {
     printf 'ERROR: missing OCG cohort script at %s\n' "$cohort_script" >&2
     return 1

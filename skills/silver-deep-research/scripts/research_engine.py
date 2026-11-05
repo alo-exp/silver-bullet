@@ -243,7 +243,7 @@ Output directory: $SB_RESEARCH_OUT_DIR (research/<date>-<slug>/)
 
     def run_pipeline(self, query: str, out_dir: Optional[Path] = None) -> str:
         self.initialize_research(query)
-        out_dir = out_dir or Path(".planning/research/offline-run")
+        out_dir = out_dir or Path("research/offline-run")
         self.write_phase_manifest(out_dir)
         for phase in self.phases_for_mode():
             self.state.phase = phase  # type: ignore[union-attr]

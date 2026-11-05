@@ -23,6 +23,8 @@ import sys
 from datetime import datetime, timezone
 from typing import Optional
 
+from jsonl_store import add_json_input_args, append_jsonl, append_unique, load_json_input, read_jsonl  # noqa: F401
+
 
 # ---------------------------------------------------------------------------
 # Evidence ID computation
@@ -43,27 +45,6 @@ def compute_evidence_id(source_id: str, quote: str, locator: Optional[str]) -> s
 
 
 # ---------------------------------------------------------------------------
-# JSONL helpers (shared pattern with citation_manager)
-# ---------------------------------------------------------------------------
-
-def append_jsonl(path: str, obj: dict) -> None:
-    with open(path, 'a') as f:
-        f.write(json.dumps(obj, ensure_ascii=False) + '\n')
-
-
-def read_jsonl(path: str) -> list[dict]:
-    rows = []
-    if not os.path.exists(path):
-        return rows
-    with open(path) as f:
-        for line in f:
-            line = line.strip()
-            if line:
-                rows.append(json.loads(line))
-    return rows
-
-
-# ---------------------------------------------------------------------------
 # Subcommands
 # ---------------------------------------------------------------------------
 
@@ -79,7 +60,7 @@ def cmd_init(args: argparse.Namespace) -> None:
 
 def cmd_add(args: argparse.Namespace) -> None:
     """Append evidence row, print evidence_id."""
-    data = json.loads(args.json)
+    data = load_json_input(args)
     source_id = data.get('source_id', '')
     quote = data.get('quote', '')
     if not source_id or not quote:
@@ -89,16 +70,6 @@ def cmd_add(args: argparse.Namespace) -> None:
     locator = data.get('locator')
     evidence_id = compute_evidence_id(source_id, quote, locator)
     evidence_path = os.path.join(args.dir, 'evidence.jsonl')
-
-    # Check for duplicate
-    existing = read_jsonl(evidence_path)
-    for row in existing:
-        if row.get('evidence_id') == evidence_id:
-            print(json.dumps({
-                'status': 'duplicate',
-                'evidence_id': evidence_id,
-            }))
-            return
 
     valid_types = {'direct_quote', 'paraphrase', 'data_point', 'figure_reference', 'methodology'}
     evidence_type = data.get('evidence_type', 'direct_quote')
@@ -114,7 +85,13 @@ def cmd_add(args: argparse.Namespace) -> None:
         'evidence_type': evidence_type,
         'captured_at': datetime.now(timezone.utc).isoformat(),
     }
-    append_jsonl(evidence_path, row)
+    # Read-check-append under the store lock: parallel agents never duplicate a row.
+    if append_unique(evidence_path, row, 'evidence_id') is not None:
+        print(json.dumps({
+            'status': 'duplicate',
+            'evidence_id': evidence_id,
+        }))
+        return
     print(json.dumps({
         'status': 'added',
         'evidence_id': evidence_id,
@@ -179,7 +156,7 @@ def main() -> None:
 
     # add
     p_add = sub.add_parser('add', help='Append evidence row')
-    p_add.add_argument('--json', required=True, help='JSON with source_id, quote, locator, evidence_type, retrieval_query')
+    add_json_input_args(p_add, 'JSON with source_id, quote, locator, evidence_type, retrieval_query')
     p_add.add_argument('--dir', required=True, help='Run directory containing evidence.jsonl')
 
     # list

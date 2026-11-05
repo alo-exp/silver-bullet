@@ -35,15 +35,15 @@ Output: Both files updated identically with the new §2h section.
 </execution_context>
 
 <context>
-@/Users/shafqat/Documents/Projects/silver-bullet/silver-bullet.md
-@/Users/shafqat/Documents/Projects/silver-bullet/templates/silver-bullet.md.base
+@/Users/<user>/Documents/Projects/silver-bullet/silver-bullet.md
+@/Users/<user>/Documents/Projects/silver-bullet/templates/silver-bullet.md.base
 </context>
 
 <tasks>
 
 <task type="auto">
   <name>Task 1: Insert §2h into silver-bullet.md</name>
-  <files>/Users/shafqat/Documents/Projects/silver-bullet/silver-bullet.md</files>
+  <files>/Users/<user>/Documents/Projects/silver-bullet/silver-bullet.md</files>
   <action>
 Read silver-bullet.md. Find the line containing only `---` that immediately precedes
 `## 3. NON-NEGOTIABLE RULES` (around line 282). Insert the following block between
@@ -94,14 +94,14 @@ The blank line before `### 2h.` and the closing `---` line plus a blank line bef
 `## 3. NON-NEGOTIABLE RULES` must be preserved so document structure stays intact.
   </action>
   <verify>
-    <automated>grep -c "2h\. SB Orchestrated Workflows" /Users/shafqat/Documents/Projects/silver-bullet/silver-bullet.md</automated>
+    <automated>grep -c "2h\. SB Orchestrated Workflows" /Users/<user>/Documents/Projects/silver-bullet/silver-bullet.md</automated>
   </verify>
   <done>Output of verify command is 1. The §2h heading appears after the §2g closing --- and before ## 3. NON-NEGOTIABLE RULES.</done>
 </task>
 
 <task type="auto">
   <name>Task 2: Insert identical §2h into templates/silver-bullet.md.base</name>
-  <files>/Users/shafqat/Documents/Projects/silver-bullet/templates/silver-bullet.md.base</files>
+  <files>/Users/<user>/Documents/Projects/silver-bullet/templates/silver-bullet.md.base</files>
   <action>
 Read templates/silver-bullet.md.base. Find the line containing only `---` that
 immediately precedes `## 3. NON-NEGOTIABLE RULES` (around line 212). Insert the
@@ -112,7 +112,7 @@ closing `---` of §2g, blank line, §2h content, closing `---`, blank line, then
 The inserted content must be byte-for-byte identical to what was inserted in Task 1.
   </action>
   <verify>
-    <automated>grep -c "2h\. SB Orchestrated Workflows" /Users/shafqat/Documents/Projects/silver-bullet/templates/silver-bullet.md.base</automated>
+    <automated>grep -c "2h\. SB Orchestrated Workflows" /Users/<user>/Documents/Projects/silver-bullet/templates/silver-bullet.md.base</automated>
   </verify>
   <done>Output of verify command is 1. The §2h heading appears in the correct position in the base template.</done>
 </task>
@@ -130,7 +130,7 @@ lines before and after the §2h section:
 3. Extract the §2h block from each file and diff them to confirm identical content.
   </action>
   <verify>
-    <automated>grep -c "2h\. SB Orchestrated Workflows" /Users/shafqat/Documents/Projects/silver-bullet/silver-bullet.md /Users/shafqat/Documents/Projects/silver-bullet/templates/silver-bullet.md.base</automated>
+    <automated>grep -c "2h\. SB Orchestrated Workflows" /Users/<user>/Documents/Projects/silver-bullet/silver-bullet.md /Users/<user>/Documents/Projects/silver-bullet/templates/silver-bullet.md.base</automated>
   </verify>
   <done>Both files report count of 1. Diff of extracted §2h blocks between both files shows no differences.</done>
 </task>
@@ -140,20 +140,20 @@ lines before and after the §2h section:
 <verification>
 ```bash
 grep -c "2h\. SB Orchestrated Workflows" \
-  /Users/shafqat/Documents/Projects/silver-bullet/silver-bullet.md \
-  /Users/shafqat/Documents/Projects/silver-bullet/templates/silver-bullet.md.base
+  /Users/<user>/Documents/Projects/silver-bullet/silver-bullet.md \
+  /Users/<user>/Documents/Projects/silver-bullet/templates/silver-bullet.md.base
 ```
 Expected output:
 ```
-/Users/shafqat/Documents/Projects/silver-bullet/silver-bullet.md:1
-/Users/shafqat/Documents/Projects/silver-bullet/templates/silver-bullet.md.base:1
+/Users/<user>/Documents/Projects/silver-bullet/silver-bullet.md:1
+/Users/<user>/Documents/Projects/silver-bullet/templates/silver-bullet.md.base:1
 ```
 
 Additional structural check:
 ```bash
 grep -n "2h\. SB Orchestrated Workflows\|NON-NEGOTIABLE RULES" \
-  /Users/shafqat/Documents/Projects/silver-bullet/silver-bullet.md \
-  /Users/shafqat/Documents/Projects/silver-bullet/templates/silver-bullet.md.base
+  /Users/<user>/Documents/Projects/silver-bullet/silver-bullet.md \
+  /Users/<user>/Documents/Projects/silver-bullet/templates/silver-bullet.md.base
 ```
 §2h line number must be lower than NON-NEGOTIABLE RULES line number in each file.
 </verification>

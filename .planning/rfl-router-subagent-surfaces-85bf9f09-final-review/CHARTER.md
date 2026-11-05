@@ -5,7 +5,7 @@
 ## Scope
 
 - `.planning/router_subagent_surfaces_85bf9f09.plan.md`
-- `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
+- `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
 
 Byte-identical freeze. Starting SHA `07b986094e983d39fe3c7d2f1ac215ae730cbd28ccf3957655f5ec4c53d3280a` / 620985 bytes.
 

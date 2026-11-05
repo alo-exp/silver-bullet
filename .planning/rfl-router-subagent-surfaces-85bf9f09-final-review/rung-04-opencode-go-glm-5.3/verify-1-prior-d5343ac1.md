@@ -11,8 +11,8 @@
 - **Prior review:** [`review.md`](review.md) — **CLEAN**, HIGH 0 / MED 0 / LOW 0 / NIT 0, Grok 4.6 High substitute after Pi GLM 401×2
 - **Parent Policy A:** **no ACCEPT to apply** this rung
 - **Scope (independently re-hashed; disk wins):**
-  - [`.planning/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md)
-  - [`~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md)
+  - [`.planning/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md)
+  - [`~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md)
 
 Graphify CLI `query` first (MCP `user-graphify` unavailable). agentmemory `memory_save`. Freeze **not** edited this pass.
 
@@ -20,8 +20,8 @@ Graphify CLI `query` first (MCP `user-graphify` unavailable). agentmemory `memor
 
 | Copy | SHA-256 (as hashed) | Size (bytes) |
 |---|---|---|
-| `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | 621095 |
-| `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | 621095 |
+| `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | 621095 |
+| `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | 621095 |
 
 - Byte-identical: **YES**
 - Matches locked launcher SHA `d5343ac1…` / 621095 exactly. Charter start SHA `07b98609…` / 620985 is historical and is **not** current disk.
@@ -53,7 +53,7 @@ Review ACCEPT set for this rung: **empty** (CLEAN, 0 findings). Nothing to HOLD-
 | `sb:agent-wrap` | Mentions are FORBIDDEN / KEEP REJECT / “there is **no** `sb:agent-wrap`” (L4072) | PASS (forbid-only) |
 | FAST not a Job / not a legal compose `<route>` | L10, L385, L747 fail-closed, L1441 mermaid “FAST Executor (not a Job; no GST)”, L4080 | PASS |
 | FAST short order E→Ver→Val + thin capture | L789–L792; mermaid L1441–L1444 FastI → FastVer → FastVal → FastCap | PASS |
-| OmniRoute routing-only | L157 / L486; origin [`omni_agent_opt-in_67f2f73a.plan.md`](/Users/shafqat/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md) SHA `745c7f4166f70dff9181d7c8a639eb2e3519eedeb25487dda2f97e84425c2c26` / 7284 bytes **match** | PASS |
+| OmniRoute routing-only | L157 / L486; origin [`omni_agent_opt-in_67f2f73a.plan.md`](/Users/<user>/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md) SHA `745c7f4166f70dff9181d7c8a639eb2e3519eedeb25487dda2f97e84425c2c26` / 7284 bytes **match** | PASS |
 | KEEP REJECT / Q1–Q3 / Part A then Part B | L4070 / L4072 / L128 / L3285 | PASS |
 | LS-post-val-kl Executor producer | L773 both capture and key-doc revision are **Executor** work, **not** Advisor `knowledge_postwrite` as producer; L776 no second Process-final Val | PASS |
 | Single mermaid | Exactly one ` ```mermaid ` (L1438); 6 fence openers (even) | PASS |

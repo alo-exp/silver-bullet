@@ -13,11 +13,11 @@
 ### Task 1: Add turn-sequence, terminal drivers, and coverage-ledger helpers
 
 **Files:**
-- Modify: `/Users/shafqat/projects/silver-bullet/repo/tests/e2e-live/helpers.sh`
-- Create: `/Users/shafqat/projects/silver-bullet/repo/tests/e2e-live/lib/coverage-ledger.sh`
-- Create: `/Users/shafqat/projects/silver-bullet/repo/tests/e2e-live/lib/turn-driver.sh`
-- Create: `/Users/shafqat/projects/silver-bullet/repo/scripts/codex-interactive-invoke.expect`
-- Test: `/Users/shafqat/projects/silver-bullet/repo/tests/e2e-live/test-e2e-live-ledger.sh`
+- Modify: `/Users/<user>/projects/silver-bullet/repo/tests/e2e-live/helpers.sh`
+- Create: `/Users/<user>/projects/silver-bullet/repo/tests/e2e-live/lib/coverage-ledger.sh`
+- Create: `/Users/<user>/projects/silver-bullet/repo/tests/e2e-live/lib/turn-driver.sh`
+- Create: `/Users/<user>/projects/silver-bullet/repo/scripts/codex-interactive-invoke.expect`
+- Test: `/Users/<user>/projects/silver-bullet/repo/tests/e2e-live/test-e2e-live-ledger.sh`
 
 - [ ] **Step 1: Write the failing test**
 
@@ -45,7 +45,7 @@ Then assert that deleting one required entry causes `ledger_require_all` to exit
 Run:
 
 ```bash
-bash /Users/shafqat/projects/silver-bullet/repo/tests/e2e-live/test-e2e-live-ledger.sh
+bash /Users/<user>/projects/silver-bullet/repo/tests/e2e-live/test-e2e-live-ledger.sh
 ```
 
 Expected: fail because the helper files, the ledger functions, and the Codex terminal driver do not exist yet.
@@ -115,7 +115,7 @@ of relying on the desktop chat pane.
 Run:
 
 ```bash
-bash /Users/shafqat/projects/silver-bullet/repo/tests/e2e-live/test-e2e-live-ledger.sh
+bash /Users/<user>/projects/silver-bullet/repo/tests/e2e-live/test-e2e-live-ledger.sh
 ```
 
 Expected: PASS, with ordered ledger entries and a non-zero failure on the intentionally missing surface case.
@@ -130,14 +130,14 @@ git commit -m "test(e2e-live): add coverage ledger helpers"
 ### Task 2: Replace the live todo-app suite with one inline full-surface journey
 
 **Files:**
-- Create: `/Users/shafqat/projects/silver-bullet/repo/tests/e2e-live/scenarios/test-e2e-live-full-surface-journey.sh`
-- Modify: `/Users/shafqat/projects/silver-bullet/repo/tests/e2e-live/run-e2e-live-tests.sh`
-- Modify: `/Users/shafqat/projects/silver-bullet/repo/tests/e2e-live/test-e2e-live-suite.sh`
-- Modify: `/Users/shafqat/projects/silver-bullet/repo/tests/e2e-live/README.md`
-- Delete: `/Users/shafqat/projects/silver-bullet/repo/tests/e2e-live/scenarios/test-e2e-live-install-ux.sh`
-- Delete: `/Users/shafqat/projects/silver-bullet/repo/tests/e2e-live/scenarios/test-e2e-live-init-and-feature.sh`
-- Delete: `/Users/shafqat/projects/silver-bullet/repo/tests/e2e-live/scenarios/test-e2e-live-regression-repair.sh`
-- Delete: `/Users/shafqat/projects/silver-bullet/repo/tests/e2e-live/scenarios/test-e2e-live-release-prep.sh`
+- Create: `/Users/<user>/projects/silver-bullet/repo/tests/e2e-live/scenarios/test-e2e-live-full-surface-journey.sh`
+- Modify: `/Users/<user>/projects/silver-bullet/repo/tests/e2e-live/run-e2e-live-tests.sh`
+- Modify: `/Users/<user>/projects/silver-bullet/repo/tests/e2e-live/test-e2e-live-suite.sh`
+- Modify: `/Users/<user>/projects/silver-bullet/repo/tests/e2e-live/README.md`
+- Delete: `/Users/<user>/projects/silver-bullet/repo/tests/e2e-live/scenarios/test-e2e-live-install-ux.sh`
+- Delete: `/Users/<user>/projects/silver-bullet/repo/tests/e2e-live/scenarios/test-e2e-live-init-and-feature.sh`
+- Delete: `/Users/<user>/projects/silver-bullet/repo/tests/e2e-live/scenarios/test-e2e-live-regression-repair.sh`
+- Delete: `/Users/<user>/projects/silver-bullet/repo/tests/e2e-live/scenarios/test-e2e-live-release-prep.sh`
 
 - [ ] **Step 1: Write the failing test**
 
@@ -156,7 +156,7 @@ mapfile -t scenario_list < <("${SCRIPT_DIR}/run-e2e-live-tests.sh" --list)
 Run:
 
 ```bash
-bash /Users/shafqat/projects/silver-bullet/repo/tests/e2e-live/test-e2e-live-suite.sh
+bash /Users/<user>/projects/silver-bullet/repo/tests/e2e-live/test-e2e-live-suite.sh
 ```
 
 Expected: fail because the scenario does not exist yet and the runner still knows about the old multi-scenario suite.
@@ -205,7 +205,7 @@ marker when the full-surface journey completes.
 Run:
 
 ```bash
-bash /Users/shafqat/projects/silver-bullet/repo/tests/e2e-live/test-e2e-live-suite.sh
+bash /Users/<user>/projects/silver-bullet/repo/tests/e2e-live/test-e2e-live-suite.sh
 ```
 
 Expected: PASS, with the single full-surface scenario listed and no old scenario
@@ -222,9 +222,9 @@ git commit -m "test(e2e-live): add inline full-surface todo-app journey"
 ### Task 3: Teach `sb:add` to carry the todo-app tag and prove it
 
 **Files:**
-- Modify: `/Users/shafqat/projects/silver-bullet/repo/skills/silver-add/SKILL.md`
-- Modify: `/Users/shafqat/projects/silver-bullet/repo/tests/e2e-live/scenarios/test-e2e-live-full-surface-journey.sh`
-- Create: `/Users/shafqat/projects/silver-bullet/repo/tests/scripts/test-silver-add-todo-app-tag.sh`
+- Modify: `/Users/<user>/projects/silver-bullet/repo/skills/silver-add/SKILL.md`
+- Modify: `/Users/<user>/projects/silver-bullet/repo/tests/e2e-live/scenarios/test-e2e-live-full-surface-journey.sh`
+- Create: `/Users/<user>/projects/silver-bullet/repo/tests/scripts/test-silver-add-todo-app-tag.sh`
 
 - [ ] **Step 1: Write the failing test**
 
@@ -245,7 +245,7 @@ gh issue edit 123 --add-label todo-app
 Run:
 
 ```bash
-bash /Users/shafqat/projects/silver-bullet/repo/tests/scripts/test-silver-add-todo-app-tag.sh
+bash /Users/<user>/projects/silver-bullet/repo/tests/scripts/test-silver-add-todo-app-tag.sh
 ```
 
 Expected: fail because the `sb:add` instructions do not yet require the
@@ -269,7 +269,7 @@ and then verifying the returned issue URL has the `todo-app` label attached.
 Run:
 
 ```bash
-bash /Users/shafqat/projects/silver-bullet/repo/tests/scripts/test-silver-add-todo-app-tag.sh
+bash /Users/<user>/projects/silver-bullet/repo/tests/scripts/test-silver-add-todo-app-tag.sh
 ```
 
 Expected: PASS, with the stub showing the `todo-app` label was created/applied.
@@ -284,13 +284,13 @@ git commit -m "feat(silver-add): tag todo-app issue filings"
 ### Task 4: Make the inline journey a release gate and document it
 
 **Files:**
-- Modify: `/Users/shafqat/projects/silver-bullet/repo/hooks/completion-audit.sh`
-- Modify: `/Users/shafqat/projects/silver-bullet/repo/tests/hooks/test-completion-audit.sh`
-- Modify: `/Users/shafqat/projects/silver-bullet/repo/docs/TESTING.md`
-- Modify: `/Users/shafqat/projects/silver-bullet/repo/docs/RELEASE.md`
-- Modify: `/Users/shafqat/projects/silver-bullet/repo/tests/live/README.md`
-- Modify: `/Users/shafqat/projects/silver-bullet/repo/tests/e2e-live/README.md`
-- Modify: `/Users/shafqat/projects/silver-bullet/repo/docs/ENFORCEMENT.md`
+- Modify: `/Users/<user>/projects/silver-bullet/repo/hooks/completion-audit.sh`
+- Modify: `/Users/<user>/projects/silver-bullet/repo/tests/hooks/test-completion-audit.sh`
+- Modify: `/Users/<user>/projects/silver-bullet/repo/docs/TESTING.md`
+- Modify: `/Users/<user>/projects/silver-bullet/repo/docs/RELEASE.md`
+- Modify: `/Users/<user>/projects/silver-bullet/repo/tests/live/README.md`
+- Modify: `/Users/<user>/projects/silver-bullet/repo/tests/e2e-live/README.md`
+- Modify: `/Users/<user>/projects/silver-bullet/repo/docs/ENFORCEMENT.md`
 
 - [ ] **Step 1: Write the failing test**
 
@@ -312,7 +312,7 @@ Add a test that asserts:
 Run:
 
 ```bash
-bash /Users/shafqat/projects/silver-bullet/repo/tests/hooks/test-completion-audit.sh
+bash /Users/<user>/projects/silver-bullet/repo/tests/hooks/test-completion-audit.sh
 ```
 
 Expected: fail on the new inline marker case because the hook does not yet know
@@ -340,7 +340,7 @@ Then update the docs to explain:
 Run:
 
 ```bash
-bash /Users/shafqat/projects/silver-bullet/repo/tests/hooks/test-completion-audit.sh
+bash /Users/<user>/projects/silver-bullet/repo/tests/hooks/test-completion-audit.sh
 ```
 
 Expected: PASS, including the new inline journey gate.
@@ -362,7 +362,7 @@ git commit -m "fix(release): gate on inline todo-app journey"
 Run:
 
 ```bash
-cd /Users/shafqat/projects/silver-bullet/repo
+cd /Users/<user>/projects/silver-bullet/repo
 bash tests/run-all-tests.sh
 ```
 

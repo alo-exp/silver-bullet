@@ -506,7 +506,7 @@ bash scripts/agent-cursor-delegate.sh \
 ## Prompt for Claude agent
 
 ```markdown
-You are building `/sb:agent-claude` in the Silver Bullet repo (`/Users/shafqat/projects/silver-bullet/repo`).
+You are building `/sb:agent-claude` in the Silver Bullet repo (`/Users/<user>/projects/silver-bullet/repo`).
 
 **Mission:** On-demand, single-task delegation from a parent host (Cursor, Codex, or Claude parent) to **Claude TUI** as executor — parent supervises (brief → checkpoint → escalate); Claude implements in `CLAUDE_WORK_DIR`. NOT Sidekick session mode. NOT enterprise E2E matrix.
 
@@ -538,7 +538,7 @@ Return: changed file list + smoke commit SHA + structural test output.
 ## Prompt for Cursor agent
 
 ```markdown
-You are extending or verifying `/sb:agent-cursor` in the Silver Bullet repo (`/Users/shafqat/projects/silver-bullet/repo`).
+You are extending or verifying `/sb:agent-cursor` in the Silver Bullet repo (`/Users/<user>/projects/silver-bullet/repo`).
 
 **Mission:** On-demand, single-task delegation from a parent host (Claude, Codex, or Cursor parent) to **cursor-agent** headless CLI as executor — parent supervises (brief → checkpoint → escalate); Cursor implements in `CURSOR_WORK_DIR`. NOT Sidekick session mode. NOT enterprise E2E matrix.
 

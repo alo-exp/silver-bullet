@@ -2,7 +2,7 @@ model: composer-2.5
 
 **Subagent:** `sb-composer-2-5-high`  
 **Phase:** VERIFY-ONLY pass 1/2 (`rung_1_verify_1`, post ACCEPT-apply of AB1–AB4 / I-33–I-36)  
-**Artifact:** `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
+**Artifact:** `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
 **SHA-256:** `39673cb6a7cd07a12a57d816c283a839805d727fae6b0bdaba506253f1e91847` (verified via `shasum -a 256`)  
 **Graphify:** `graphify query "dr search gateway plan AB1 AB4 cache-ttl x-union dedup reddit stampede clear qN fixture"` (276 nodes; oriented search-cli / dedup / ttl)  
 **Apply ref:** AB1–AB4 / I-33–I-36 · **Prior verify:** [verify_1-pass12.md](verify_1-pass12.md) (AA1 / AA2 PASS at `bd706ef2…`)

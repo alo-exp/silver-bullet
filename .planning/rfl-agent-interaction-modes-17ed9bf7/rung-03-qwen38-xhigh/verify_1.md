@@ -1,6 +1,6 @@
 # Rung 3 verify pass 1 (re-run) — Qwen3.8 XHigh (OpenCode)
 
-**Plan:** [agent_interaction_modes_17ed9bf7.plan.md](/Users/shafqat/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
+**Plan:** [agent_interaction_modes_17ed9bf7.plan.md](/Users/<user>/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
 
 **Method:** VERIFY-ONLY re-run. Line-level grep/cross-check of I-25..I-31 (from `review.md`) plus the prior pass-1 residual punch-list (R-1..R-9) against the re-patched plan text. No plan edits. Supersedes the 03:09 pass-1 verdict.
 

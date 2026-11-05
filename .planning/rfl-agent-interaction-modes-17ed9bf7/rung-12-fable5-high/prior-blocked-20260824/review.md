@@ -1,6 +1,6 @@
 # RFL rung 12 — Fable 5 High REVIEW (blocked)
 
-**Plan:** [agent_interaction_modes_17ed9bf7.plan.md](/Users/shafqat/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
+**Plan:** [agent_interaction_modes_17ed9bf7.plan.md](/Users/<user>/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
 
 **STATUS: blocked** — review body not produced.
 

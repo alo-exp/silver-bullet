@@ -5,7 +5,7 @@ Independent adversarial re-verification against repo-plan SHA-256 `c0a9a09904384
 ## Baseline checks
 
 - Read the product overview, review preamble, full 443-line plan, and Cycle-7 report in the required order; also checked the Cycle-6 report and relevant round-4 clarify locks.
-- `cmp` returned exit 0 for the repo plan and `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`.
+- `cmp` returned exit 0 for the repo plan and `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`.
 - Both plan copies have SHA-256 `c0a9a0990438425c65bf2bb12b8a409cfc62cf56f4510b7aa7b536eafd145a2e`; Cycle-7's sole byte-parity defect is closed.
 
 ## Cycle-6/7 content re-verification

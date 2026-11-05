@@ -3,7 +3,7 @@
 # Policy: SB_E2E_MATRIX_FORCE=1 on explicit rows — NOT full matrix, NOT FORCE_ALL.
 set -euo pipefail
 
-SB_ROOT="/Users/shafqat/projects/silver-bullet/repo"
+SB_ROOT="/Users/<user>/projects/silver-bullet/repo"
 cd "$SB_ROOT"
 LOG="${SB_ROOT}/.planning/enterprise-e2e/cursor-c2-force-fail-rows.log"
 MATRIX_LOG="${SB_ROOT}/.e2e-matrix-cursor-c2-force-fail.log"

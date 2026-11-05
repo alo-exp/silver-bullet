@@ -3,8 +3,8 @@
 # Avoids MCP port conflicts that come with parallel subprocesses.
 
 set -u
-PROMPT_FILE="/Users/shafqat/projects/silver-bullet/repo/docs/research-260624/SB_PRIOR_ART_RESEARCH_PROMPT.md"
-OUTPUT_DIR="/Users/shafqat/projects/silver-bullet/repo/docs/research-260624/agent-output"
+PROMPT_FILE="/Users/<user>/projects/silver-bullet/repo/docs/research-260624/SB_PRIOR_ART_RESEARCH_PROMPT.md"
+OUTPUT_DIR="/Users/<user>/projects/silver-bullet/repo/docs/research-260624/agent-output"
 mkdir -p "$OUTPUT_DIR"
 
 MODELS=(

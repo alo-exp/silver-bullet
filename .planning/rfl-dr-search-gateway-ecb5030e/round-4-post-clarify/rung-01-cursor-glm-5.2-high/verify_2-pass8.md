@@ -2,7 +2,7 @@ model: composer-2.5
 
 **Subagent:** `sb-composer-2-5-high`  
 **Phase:** VERIFY-ONLY pass 2/2 (`verify_2`, independent of verify_1)  
-**Artifact:** `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
+**Artifact:** `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
 **SHA-256:** `c0bd99f901238743caa04d7f6f169b9ab9d722acb94d0391c4efadc3c05098fc` (verified via `shasum -a 256`)  
 **Graphify:** `graphify query "quota-dir ProjectDirs allow-private last field reddit lock brave" --budget 2000` (10 nodes; oriented quota-dir / allow-private / brave / reddit-lock contract)  
 **Apply ref:** W1–W7 / I-20–I-26 ([apply-rung1-pass8.py](../apply-rung1-pass8.py))

@@ -16,7 +16,7 @@
     "primary": "search-cli",
     "scholarly": null
   },
-  "report_dir": "/Users/shafqat/projects/silver-bullet/repo/docs/research-260624/license",
+  "report_dir": "/Users/<user>/projects/silver-bullet/repo/docs/research-260624/license",
   "artifact_paths": {
     "sources": "sources.jsonl",
     "evidence": "evidence.jsonl",

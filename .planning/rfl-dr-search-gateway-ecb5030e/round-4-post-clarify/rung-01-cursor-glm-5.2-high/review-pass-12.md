@@ -2,7 +2,7 @@ model: glm-5.2-high
 
 # Review pass 12 — Policy F re-review (residual-only)
 
-Corpus: `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`
+Corpus: `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`
 SHA-256 verified: `f08aef058f38cd592b98f0739b414ec93a64644245ab3ab7045f6df6f2d13c71` (match — `shasum -a 256` confirmed before review).
 Scope: residual-only against ledger I-1…I-30 (all ACCEPT+applied) plus the Y1 APPLY at this SHA. New findings only; I-1…I-30 not re-reported. This is the second consecutive CLEAN attempt (streak 1/2) — pass 11 was not rubber-stamped; the plan was re-read end-to-end (§1.2 ledger clauses, §2.1–§2.8, §3, §4.1–§4.4, §5, §6.1–§6.13, §7, §8.1–§8.4) and cross-checked independently.
 

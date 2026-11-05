@@ -42,9 +42,23 @@ require_silver_bullet_entry() {
   fi
 }
 
+# set_silver_bullet_version MANIFEST VERSION [SHA]: align the entry with the release. The
+# source is pinned to the release tag (ref) and, once the tag exists, to its commit (sha), so
+# Claude Code installs the tagged release and not whatever the default branch holds (R13-02).
 set_silver_bullet_version() {
-  # shellcheck disable=SC2016  # $v is a jq variable
-  agent_plugins_json_rewrite "$1" --arg v "$2" '(.plugins[] | select(.name=="silver-bullet") | .version) = $v'
+  # shellcheck disable=SC2016  # $v, $ref and $sha are jq variables
+  agent_plugins_json_rewrite "$1" --arg v "$2" --arg ref "v$2" --arg sha "${3:-}" '
+    (.plugins[] | select(.name=="silver-bullet") | .version) = $v
+    | (.plugins[] | select(.name=="silver-bullet") | .source.ref) = $ref
+    | (.plugins[] | select(.name=="silver-bullet") | .source) |= (if $sha == "" then del(.sha) else .sha = $sha end)'
+}
+
+# silver_bullet_pin_current MANIFEST VERSION [SHA]: true when version, ref and sha already match.
+silver_bullet_pin_current() {
+  # shellcheck disable=SC2016  # $v, $ref and $sha are jq variables
+  jq -e --arg v "$2" --arg ref "v$2" --arg sha "${3:-}" '
+    .plugins[] | select(.name=="silver-bullet")
+    | .version == $v and .source.ref == $ref and (.source.sha // "") == $sha' "$1" >/dev/null
 }
 
 current_plugin_v=$(jq -r '.version' "$plugin_json")
@@ -61,11 +75,16 @@ require_silver_bullet_entry "$marketplace_json"
 market_v=$(jq -r '.plugins[] | select(.name=="silver-bullet") | .version' "$marketplace_json")
 
 if [[ "$AGENT_PLUGINS_PUBLISH" != "1" ]]; then
-  if [[ "$plugin_v" == "$market_v" ]]; then
+  tag_sha="$(agent_plugins_tag_commit_if_any "$repo_root" "$plugin_v")"
+  if silver_bullet_pin_current "$marketplace_json" "$plugin_v" "$tag_sha"; then
     echo "✓ Versions already in sync: $plugin_v"
   else
-    set_silver_bullet_version "$marketplace_json" "$plugin_v"
-    echo "✓ Updated in-repo marketplace.json: $market_v → $plugin_v"
+    set_silver_bullet_version "$marketplace_json" "$plugin_v" "$tag_sha"
+    if [[ "$plugin_v" == "$market_v" ]]; then
+      echo "✓ Pinned in-repo marketplace.json to v$plugin_v"
+    else
+      echo "✓ Updated in-repo marketplace.json: $market_v → $plugin_v"
+    fi
   fi
   printf "\nThis repository's Claude marketplace manifest is at v%s.\n" "$plugin_v"
   exit 0
@@ -74,6 +93,7 @@ fi
 publish_marketplace_repo() {
   local root="$1"
   local version="$2"
+  local release_sha="$3"
   local manifest="$root/$marketplace_rel"
   local remote_before
   local remote_after
@@ -92,9 +112,8 @@ publish_marketplace_repo() {
   [[ "${AGENT_PLUGINS_SKIP_PUSH:-0}" == "1" ]] || agent_plugins_check_publishable "$root"
   agent_plugins_require_clean_path "$root" "$marketplace_rel"
   remote_before=$(jq -r '.plugins[] | select(.name=="silver-bullet") | .version' "$manifest")
-  if [[ "$remote_before" != "$version" ]]; then
-    set_silver_bullet_version "$manifest" "$version"
-  fi
+  # The unified marketplace always ships the tagged release commit.
+  set_silver_bullet_version "$manifest" "$version" "$release_sha"
 
   if git -C "$root" diff --quiet -- "$marketplace_rel"; then
     echo "✓ Claude marketplace manifest already at silver-bullet $version: $root"
@@ -114,17 +133,17 @@ if [[ "$market_v" != "$plugin_v" ]]; then
   echo "ERROR: $marketplace_json is $market_v, not $plugin_v: run scripts/sync-marketplace-version.sh $plugin_v and commit the result before publishing" >&2
   exit 1
 fi
-agent_plugins_release_tag_commit "$repo_root" "$plugin_v" >/dev/null
+release_sha="$(agent_plugins_release_tag_commit "$repo_root" "$plugin_v")"
 agent_plugins_require_tag_on_origin "$repo_root" "$plugin_v"
 agent_plugins_require_green_ci "$repo_root" "$plugin_v"
 
 if [[ -n "$marketplace_repo_root" ]]; then
-  publish_marketplace_repo "$marketplace_repo_root" "$plugin_v"
+  publish_marketplace_repo "$marketplace_repo_root" "$plugin_v" "$release_sha"
 else
   tmp_repo_root=$(mktemp -d "${TMPDIR:-/tmp}/sb-agent-plugins.XXXXXX")
   trap 'rm -rf -- "$tmp_repo_root"' EXIT
   git clone -q "$marketplace_repo_url" "$tmp_repo_root"
-  publish_marketplace_repo "$tmp_repo_root" "$plugin_v"
+  publish_marketplace_repo "$tmp_repo_root" "$plugin_v" "$release_sha"
 fi
 
 if [[ "${AGENT_PLUGINS_SKIP_PUSH:-0}" == "1" ]]; then

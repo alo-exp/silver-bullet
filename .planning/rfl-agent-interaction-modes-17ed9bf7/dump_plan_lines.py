@@ -3,7 +3,7 @@ from pathlib import Path
 import hashlib
 import subprocess
 
-ROOT = Path("/Users/shafqat/projects/silver-bullet/repo")
+ROOT = Path("/Users/<user>/projects/silver-bullet/repo")
 p = ROOT / ".cursor/plans/agent_interaction_modes_17ed9bf7.plan.md"
 art = Path(
     "/private/var/folders/d8/f43nf6b17p31q9qzj5c82_nw0000gn/T/cursor_agent_stores/bc-e1c20f57-9008-4b11-9f7b-ace97d1b2763/files/artifacts/plans/agent_interaction_modes_17ed9bf7.plan.md"

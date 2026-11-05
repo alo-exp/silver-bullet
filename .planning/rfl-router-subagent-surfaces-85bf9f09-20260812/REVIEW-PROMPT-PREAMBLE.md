@@ -6,7 +6,7 @@ Every adversarial architecture review cycle for plan `router_subagent_surfaces_8
 
 Read in full (native/raw):
 
-`/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-20260812/SB-PRODUCT-OVERVIEW-FOR-REVIEWERS.md`
+`/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-20260812/SB-PRODUCT-OVERVIEW-FOR-REVIEWERS.md`
 
 This is the **product briefing** (what SB is, Process/Workflow/AF, orchestrator parent/worker, hosts, hooks/skills, quality loops as product behavior, Authorizer/migrate).  
 **Do not** treat `silver-bullet.md` as a rules dump substitute for this overview.
@@ -20,11 +20,11 @@ Optional deepeners only if needed after the overview:
 
 ## 2. Plan under review
 
-`/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
+`/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
 
 ## 3. Clarify brief (skim)
 
-`/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09-CLARIFY-260717-143757.md`
+`/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09-CLARIFY-260717-143757.md`
 
 ## 4. Then review
 

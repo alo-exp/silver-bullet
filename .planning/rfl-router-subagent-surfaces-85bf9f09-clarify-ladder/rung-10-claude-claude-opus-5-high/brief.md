@@ -4,7 +4,7 @@
 
 Read:
 
-`/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
+`/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
 
 Rung 10 (`claude/claude-opus-5-high`). Canonical freeze SHA `70606c7b8a8ac729be0f80407d50dd0ac6e0945f10a827f520ac0b2aed9d13f8` (620492 bytes). Independently re-read. Do not replay prior rungs. Owner already applied: rung-8 editorial heading/splice repairs; rung-9 LS-post-val-kl Executor-producer conformance on remaining role/admission/blocker/613/mermaid surfaces; FAST short-order WBS/terminal hops; removed duplicate mermaid (one Process quality-order sketch). TOC fragment regen (R9-F4) is owner-deferred.
 

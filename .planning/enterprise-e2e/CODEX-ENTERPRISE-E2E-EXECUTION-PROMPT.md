@@ -119,9 +119,9 @@ On any friction:
 
 | Role | Path |
 |------|------|
-| **Session workspace root (SB fixes, harness, ledger)** | `/Users/shafqat/projects/silver-bullet/repo` |
+| **Session workspace root (SB fixes, harness, ledger)** | `/Users/<user>/projects/silver-bullet/repo` |
 | **SB git branch (Codex harness work)** | `main` (default post Codex-3 merge; optional `enterprise-e2e/codex-round4` for ledger-only) |
-| **Codex TUI CWD (matrix rows, Session 0)** | `/Users/shafqat/projects/enterprise-grade-test-app` |
+| **Codex TUI CWD (matrix rows, Session 0)** | `/Users/<user>/projects/enterprise-grade-test-app` |
 
 **Never** use the test app as SB workspace root. **Never** use Cursor global config as session root.
 
@@ -157,25 +157,25 @@ TUI protocol: [CODEX-TUI-PROTOCOL.md](./CODEX-TUI-PROTOCOL.md)
 
 | Resource | Path |
 |----------|------|
-| SB repo root | `/Users/shafqat/projects/silver-bullet/repo` |
+| SB repo root | `/Users/<user>/projects/silver-bullet/repo` |
 | SB git branch (Codex) | `main` (default) |
-| Test app (Codex CWD) | `/Users/shafqat/projects/enterprise-grade-test-app` |
-| Codex install script | `/Users/shafqat/projects/silver-bullet/repo/scripts/install-codex.sh` |
-| Codex live adapter | `/Users/shafqat/projects/silver-bullet/repo/tests/live/agents/codex/agent.sh` |
-| Codex interactive invoke | `/Users/shafqat/projects/silver-bullet/repo/scripts/codex-interactive-invoke.py` (+ `.expect`) |
+| Test app (Codex CWD) | `/Users/<user>/projects/enterprise-grade-test-app` |
+| Codex install script | `/Users/<user>/projects/silver-bullet/repo/scripts/install-codex.sh` |
+| Codex live adapter | `/Users/<user>/projects/silver-bullet/repo/tests/live/agents/codex/agent.sh` |
+| Codex interactive invoke | `/Users/<user>/projects/silver-bullet/repo/scripts/codex-interactive-invoke.py` (+ `.expect`) |
 | Review-fix-ladder resolver | `python3 scripts/review-fix-ladder.py --host codex` |
-| Round ledger (Codex-1) | `/Users/shafqat/projects/silver-bullet/repo/.planning/enterprise-e2e/ROUND-CODEX-1-LEDGER.md` |
-| Round ledger (Codex-2) | `/Users/shafqat/projects/silver-bullet/repo/.planning/enterprise-e2e/ROUND-CODEX-2-LEDGER.md` |
-| Round gates (Codex-1) | `/Users/shafqat/projects/silver-bullet/repo/.planning/enterprise-e2e/ROUND-CODEX-1-GATES.md` |
-| Round gates (Codex-2) | `/Users/shafqat/projects/silver-bullet/repo/.planning/enterprise-e2e/ROUND-CODEX-2-GATES.md` |
-| Matrix live log | `/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-codex-live.log` |
-| Monitor status | `/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-codex-monitor-status.txt` |
-| TUI watch findings | `/Users/shafqat/projects/silver-bullet/repo/.e2e-tui-watch-codex-findings.jsonl` |
-| Outcome rubric | `/Users/shafqat/projects/silver-bullet/repo/.planning/enterprise-e2e/OUTCOME-ASSESSMENT-RUBRIC.md` |
-| SB issues baseline | `/Users/shafqat/projects/silver-bullet/repo/docs/issues/ENTERPRISE-E2E-SB-ISSUES.md` (**76** unique IDs — 0 new for strict-clean) |
-| Cherry-pick policy | `/Users/shafqat/projects/silver-bullet/repo/docs/testing/ENTERPRISE-E2E-CHERRY-PICK.md` |
-| Operator prompt (canonical) | `/Users/shafqat/projects/silver-bullet/repo/scripts/ENTERPRISE-E2E-OPERATOR-PROMPT.md` |
-| Workflow matrix (22 rows) | `/Users/shafqat/projects/enterprise-grade-test-app/docs/WORKFLOW_E2E_MATRIX.md` |
+| Round ledger (Codex-1) | `/Users/<user>/projects/silver-bullet/repo/.planning/enterprise-e2e/ROUND-CODEX-1-LEDGER.md` |
+| Round ledger (Codex-2) | `/Users/<user>/projects/silver-bullet/repo/.planning/enterprise-e2e/ROUND-CODEX-2-LEDGER.md` |
+| Round gates (Codex-1) | `/Users/<user>/projects/silver-bullet/repo/.planning/enterprise-e2e/ROUND-CODEX-1-GATES.md` |
+| Round gates (Codex-2) | `/Users/<user>/projects/silver-bullet/repo/.planning/enterprise-e2e/ROUND-CODEX-2-GATES.md` |
+| Matrix live log | `/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-codex-live.log` |
+| Monitor status | `/Users/<user>/projects/silver-bullet/repo/.e2e-matrix-codex-monitor-status.txt` |
+| TUI watch findings | `/Users/<user>/projects/silver-bullet/repo/.e2e-tui-watch-codex-findings.jsonl` |
+| Outcome rubric | `/Users/<user>/projects/silver-bullet/repo/.planning/enterprise-e2e/OUTCOME-ASSESSMENT-RUBRIC.md` |
+| SB issues baseline | `/Users/<user>/projects/silver-bullet/repo/docs/issues/ENTERPRISE-E2E-SB-ISSUES.md` (**76** unique IDs — 0 new for strict-clean) |
+| Cherry-pick policy | `/Users/<user>/projects/silver-bullet/repo/docs/testing/ENTERPRISE-E2E-CHERRY-PICK.md` |
+| Operator prompt (canonical) | `/Users/<user>/projects/silver-bullet/repo/scripts/ENTERPRISE-E2E-OPERATOR-PROMPT.md` |
+| Workflow matrix (22 rows) | `/Users/<user>/projects/enterprise-grade-test-app/docs/WORKFLOW_E2E_MATRIX.md` |
 
 ---
 
@@ -184,7 +184,7 @@ TUI protocol: [CODEX-TUI-PROTOCOL.md](./CODEX-TUI-PROTOCOL.md)
 ### Git branch (session start — before install)
 
 ```bash
-export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
+export SB_ROOT=/Users/<user>/projects/silver-bullet/repo
 export SB_E2E_BRANCH=main
 cd "$SB_ROOT"
 git fetch origin
@@ -196,7 +196,7 @@ git branch --show-current   # must be main (or explicit SB_E2E_BRANCH)
 ### Install & runtime
 
 ```bash
-export SB_TEST_ENTERPRISE_APP_ROOT=/Users/shafqat/projects/enterprise-grade-test-app
+export SB_TEST_ENTERPRISE_APP_ROOT=/Users/<user>/projects/enterprise-grade-test-app
 export SILVER_BULLET_RUNTIME=codex
 export SB_E2E_LIVE_RUNTIME=codex
 cd "$SB_ROOT"
@@ -261,7 +261,7 @@ Waiver (document reason): `SB_E2E_SESSION0_SKIP=1` + `SB_E2E_SESSION0_SKIP_REASO
 **Session 0 in Codex TUI:**
 
 ```bash
-cd /Users/shafqat/projects/enterprise-grade-test-app
+cd /Users/<user>/projects/enterprise-grade-test-app
 codex   # CWD = test app
 ```
 
@@ -335,7 +335,7 @@ SB_E2E_LIVE_RUNTIME=codex SILVER_BULLET_RUNTIME=codex \
 
 # tmux detached (export SB_ROOT inside bash -lc):
 tmux new-session -d -s codex-e2e bash -lc '
-  export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
+  export SB_ROOT=/Users/<user>/projects/silver-bullet/repo
   cd "$SB_ROOT" && \
   export SB_ENTERPRISE_E2E_LIVE=1 SILVER_BULLET_RUNTIME=codex SB_E2E_LIVE_RUNTIME=codex \
     SB_E2E_LEDGER_FILE=.planning/enterprise-e2e/ROUND-CODEX-1-LEDGER.md RTK_DISABLED=1 && \
@@ -528,9 +528,9 @@ Shared harness (`enterprise-e2e/multi-host`) wires `--host`, `SB_E2E_LIVE_RUNTIM
 6. Continue until round strict-clean + Phase C; then `bash scripts/lib/enterprise-e2e-consecutive-rounds-check.sh --host codex`.
 
 ```bash
-export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
+export SB_ROOT=/Users/<user>/projects/silver-bullet/repo
 export SB_E2E_BRANCH=enterprise-e2e/codex-round1
-export SB_TEST_ENTERPRISE_APP_ROOT=/Users/shafqat/projects/enterprise-grade-test-app
+export SB_TEST_ENTERPRISE_APP_ROOT=/Users/<user>/projects/enterprise-grade-test-app
 export SILVER_BULLET_RUNTIME=codex
 export SB_E2E_LIVE_RUNTIME=codex
 export SB_E2E_LEDGER_FILE="$SB_ROOT/.planning/enterprise-e2e/ROUND-CODEX-1-LEDGER.md"
@@ -545,7 +545,7 @@ git branch --show-current   # must contain codex
 # If dead — host lock only, single relaunch:
 rm -f .e2e-live-test-codex.lock
 tmux new-session -d -s codex-e2e bash -lc '
-  export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
+  export SB_ROOT=/Users/<user>/projects/silver-bullet/repo
   cd "$SB_ROOT" && SB_ENTERPRISE_E2E_LIVE=1 SILVER_BULLET_RUNTIME=codex SB_E2E_LIVE_RUNTIME=codex \
     SB_E2E_LEDGER_FILE=.planning/enterprise-e2e/ROUND-CODEX-1-LEDGER.md \
     SB_E2E_MATRIX_LOG=.e2e-matrix-codex-live.log RTK_DISABLED=1 \
@@ -561,4 +561,4 @@ tail -f .e2e-matrix-codex-monitor-status.txt
 
 ## One-liner (fresh session copy-paste)
 
-> **Self-contained Codex operator prompt** — paste only this file for fresh sessions (no separate addendum). SB `/Users/shafqat/projects/silver-bullet/repo` on branch **`enterprise-e2e/codex-round1`** (`*codex*` only — never `round6`/Cursor), TUI CWD `/Users/shafqat/projects/enterprise-grade-test-app`, `--host codex`, **2 consecutive strict-clean rounds** (Codex-1→2). One `composer-2.5` background operator, poll 60–90s, checkpoint within 90s on resume. Read OUTCOME-ASSESSMENT-RUBRIC before row scoring (27 + WBS). Deterministic preflight: structural suite + outcome harness + `--preflight-only` + dry-run matrix (see §Deterministic preflight). Fix loop: diagnose→commit on codex branch→cherry-pick to main→graphify→FORCE; baseline 76 issues. Host lock `.e2e-live-test-codex.lock` only. Consecutive rounds: `enterprise-e2e-consecutive-rounds-check.sh --host codex`. Compaction not `/clear`; no `gsd`.
+> **Self-contained Codex operator prompt** — paste only this file for fresh sessions (no separate addendum). SB `/Users/<user>/projects/silver-bullet/repo` on branch **`enterprise-e2e/codex-round1`** (`*codex*` only — never `round6`/Cursor), TUI CWD `/Users/<user>/projects/enterprise-grade-test-app`, `--host codex`, **2 consecutive strict-clean rounds** (Codex-1→2). One `composer-2.5` background operator, poll 60–90s, checkpoint within 90s on resume. Read OUTCOME-ASSESSMENT-RUBRIC before row scoring (27 + WBS). Deterministic preflight: structural suite + outcome harness + `--preflight-only` + dry-run matrix (see §Deterministic preflight). Fix loop: diagnose→commit on codex branch→cherry-pick to main→graphify→FORCE; baseline 76 issues. Host lock `.e2e-live-test-codex.lock` only. Consecutive rounds: `enterprise-e2e-consecutive-rounds-check.sh --host codex`. Compaction not `/clear`; no `gsd`.

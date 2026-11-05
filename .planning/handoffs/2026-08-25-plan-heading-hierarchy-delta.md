@@ -7,7 +7,7 @@ Planning-only. No product code, tests, hooks, skills, or YAML todo status change
 | Path | SHA-256 | Bytes |
 |------|---------|-------|
 | [`.planning/router_subagent_surfaces_85bf9f09.plan.md`](../router_subagent_surfaces_85bf9f09.plan.md) | `68422bc5ccd736d58898e118c59e2f5775eabd9ffddf8bbc0501d2352988aa70` | 645293 |
-| [`~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md) | same | same |
+| [`~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md) | same | same |
 
 Pre-edit pair: `2b47ee79ca398398cace753fad99764ae04bd77ccab938531fcfea93064d5251` / 618090 bytes.
 

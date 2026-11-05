@@ -6,8 +6,8 @@ This is `/silver:review-fix-ladder` only. Do **not** run `/silver:clarify`. Do n
 This is an **independent second verify**. Do **not** treat verify-1 as sufficient. Do **not** copy `verify-1.md` verdict or wording. Re-hash and re-check charter on disk yourself.
 
 Scope (FORBIDDEN to Edit/Write either freeze copy):
-- `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
-- `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
+- `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
+- `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
 
 Independently re-hash both copies. Disk wins.
 Locked SHA: `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` / 621095 bytes (both copies byte-identical).
@@ -25,7 +25,7 @@ Parent Policy A: **no ACCEPT to apply**. Do not reopen F-1 `--` or F-2 HOLD as l
 Charter: 33 pending YAML; forbid-only multi-ai-task / agent-wrap; FAST not a Job / not a compose route; E→Ver→Val + thin capture; OmniRoute routing-only; KEEP REJECT / Q1–Q3 / Part A then Part B; LS-post-val-kl Executor producer; single mermaid; TOC-GFM single-hyphen.
 
 You ARE required to Write the report ONLY to this ABSOLUTE path:
-`/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-08-codex-gpt-5.6-sol-high/verify-2.md`
+`/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-08-codex-gpt-5.6-sol-high/verify-2.md`
 
 The verify-2.md MUST include:
 - SHA-256 you hashed for each copy, sizes, byte-identical yes/no (must be `d5343ac1…` / 621095)

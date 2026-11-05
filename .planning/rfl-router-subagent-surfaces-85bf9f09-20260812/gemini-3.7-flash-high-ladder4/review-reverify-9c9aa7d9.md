@@ -4,8 +4,8 @@
 - **Branch:** `main`
 - **Target Freeze SHA-256:** `9c9aa7d93a6fa7dd701e18528dd3d8f422cff0da47902aac4b8ac8c76ce21b06`
 - **Reviewed Plan Files:**
-  - Repo copy: `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` (`9c9aa7d93a6fa7dd701e18528dd3d8f422cff0da47902aac4b8ac8c76ce21b06`)
-  - Cursor mirror: `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` (`9c9aa7d93a6fa7dd701e18528dd3d8f422cff0da47902aac4b8ac8c76ce21b06`)
+  - Repo copy: `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` (`9c9aa7d93a6fa7dd701e18528dd3d8f422cff0da47902aac4b8ac8c76ce21b06`)
+  - Cursor mirror: `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` (`9c9aa7d93a6fa7dd701e18528dd3d8f422cff0da47902aac4b8ac8c76ce21b06`)
 - **Clarify Brief:** `.planning/router_subagent_surfaces_85bf9f09-CLARIFY-260717-143757.md`
 - **Verdict:** **CLEAN**
 
@@ -14,8 +14,8 @@
 ## 1. Hash & Integrity Check
 
 Both files start and end on the identical frozen SHA-256:
-- `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`: `9c9aa7d93a6fa7dd701e18528dd3d8f422cff0da47902aac4b8ac8c76ce21b06`
-- `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`: `9c9aa7d93a6fa7dd701e18528dd3d8f422cff0da47902aac4b8ac8c76ce21b06`
+- `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`: `9c9aa7d93a6fa7dd701e18528dd3d8f422cff0da47902aac4b8ac8c76ce21b06`
+- `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`: `9c9aa7d93a6fa7dd701e18528dd3d8f422cff0da47902aac4b8ac8c76ce21b06`
 
 Hash match confirmed (0 mismatch).
 

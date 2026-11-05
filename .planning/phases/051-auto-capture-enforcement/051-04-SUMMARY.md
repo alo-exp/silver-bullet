@@ -75,7 +75,7 @@ completed: 2026-04-24
 
 ## Files Created/Modified
 
-- `/Users/shafqat/Documents/Projects/silver-bullet/skills/silver-release/SKILL.md` — Step 9b block added (79 lines inserted after Step 9; file grew from 222 to 301 lines)
+- `/Users/<user>/Documents/Projects/silver-bullet/skills/silver-release/SKILL.md` — Step 9b block added (79 lines inserted after Step 9; file grew from 222 to 301 lines)
 
 ## Decisions Made
 

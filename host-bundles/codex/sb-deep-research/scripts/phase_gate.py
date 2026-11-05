@@ -94,9 +94,15 @@ def _category_packs_dir() -> Path:
     return _skill_root() / "reference" / "landscape" / "category-packs"
 
 
-def _load_category_pack_for_gate(pack_id: str) -> dict[str, Any]:
-    path = _category_packs_dir() / f"{pack_id}.json"
-    if not path.is_file():
+def _load_category_pack_for_gate(pack_id: str, out_dir: Path | None = None) -> dict[str, Any]:
+    """Load a pack: a project-local ``<run dir>/category-packs/<id>.json`` wins over a bundled one."""
+    if not pack_id or not pack_id.replace("-", "").isalnum():
+        raise ValueError(f"invalid category_pack_id: {pack_id!r}")
+    candidates = [_category_packs_dir() / f"{pack_id}.json"]
+    if out_dir is not None:
+        candidates.insert(0, out_dir / "category-packs" / f"{pack_id}.json")
+    path = next((c for c in candidates if c.is_file()), None)
+    if path is None:
         raise FileNotFoundError(f"category pack not found: {pack_id}")
     data = json.loads(path.read_text(encoding="utf-8"))
     if data.get("category_id") != pack_id:
@@ -111,13 +117,15 @@ def _effective_inclusion_criteria(need_profile: dict[str, Any], pack: dict[str, 
     return pack.get("inclusion_criteria") or {}
 
 
-def check_category_pack_gate(need_profile: dict[str, Any]) -> tuple[bool, str]:
+def check_category_pack_gate(
+    need_profile: dict[str, Any], out_dir: Path | None = None
+) -> tuple[bool, str]:
     """Fail closed when landscape/compare lacks a resolvable pack with inclusion criteria."""
     pack_id = need_profile.get("category_pack_id")
     if not pack_id:
         return False, "need_profile.json missing category_pack_id (required for solution research)"
     try:
-        pack = _load_category_pack_for_gate(str(pack_id))
+        pack = _load_category_pack_for_gate(str(pack_id), out_dir)
     except (FileNotFoundError, ValueError, json.JSONDecodeError) as exc:
         return False, f"unresolvable category_pack_id {pack_id!r}: {exc}"
     criteria = _effective_inclusion_criteria(need_profile, pack)
@@ -150,13 +158,28 @@ def check_need_profile_gate(
         return False, "need_profile.json license_preference not set"
     rt = research_type or resolve_research_type(out_dir)
     if rt in SOLUTION_TYPES:
-        pack_ok, pack_detail = check_category_pack_gate(data)
+        pack_ok, pack_detail = check_category_pack_gate(data, out_dir)
         if not pack_ok:
             return False, pack_detail
     return True, "ok"
 
 
+_SLUG_XLSX = "comparison/{dir-slug}-comparison-matrix.xlsx"
+
+
 def artifact_satisfied(out_dir: Path, artifact: str) -> tuple[bool, str]:
+    if artifact == _SLUG_XLSX:
+        from matrix_core import comparison_matrix_xlsx_path
+
+        path = comparison_matrix_xlsx_path(out_dir)
+        if not path.is_file():
+            legacy = out_dir / "comparison" / "comparison-matrix.xlsx"
+            if not legacy.is_file():
+                return False, f"missing: comparison/{path.name} (or legacy comparison-matrix.xlsx)"
+            path = legacy
+        if path.stat().st_size == 0:
+            return False, f"empty: {path.name}"
+        return True, "ok"
     path = out_dir / artifact
     if not path.exists():
         return False, f"missing: {artifact}"

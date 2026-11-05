@@ -36,5 +36,5 @@
 ## Contact / Continuation
 - Agent slug: `ocg-kimi-k2.7-code`
 - Model: `opencode-go/kimi-k2.7-code`
-- Output directory: `/Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/`
+- Output directory: `/Users/<user>/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-kimi-k2.7-code/`
 - Run started: 2026-07-11T19:53:16Z

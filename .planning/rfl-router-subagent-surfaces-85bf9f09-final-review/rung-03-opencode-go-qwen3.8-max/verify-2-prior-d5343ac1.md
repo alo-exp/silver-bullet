@@ -7,8 +7,8 @@
 - **Prior review:** [`review.md`](review.md) (stale vs disk: hashed `0e8510e0…` / 621086; NOT CLEAN F-1 MED + F-2 NIT)
 - **Prior verify_1:** [`verify-1.md`](verify-1.md) — CLEAN / VERIFY_PASS, Grok 4.6 High substitute after Pi 401×2 (re-audited here; not treated as sufficient)
 - **Scope (re-hashed; disk wins):**
-  - [`.planning/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md)
-  - [`~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md)
+  - [`.planning/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md)
+  - [`~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md)
 
 Graphify query first. agentmemory `memory_save` id `mem_mt9c3dj5_94aa9a0bb69b`. Freeze **not** edited this pass. Stale bundled [`SKIPPED.md`](SKIPPED.md) ignored.
 
@@ -25,8 +25,8 @@ Official report is this substitute file.
 
 | Copy | SHA-256 | Size (bytes) |
 |---|---|---|
-| `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | 621095 |
-| `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | 621095 |
+| `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | 621095 |
+| `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` | 621095 |
 
 - **Byte-identical:** **YES** (`cmp` + matching SHA-256 and size).
 - Matches parent locked SHA `d5343ac1…` / 621095. Disk wins over [`review.md`](review.md) SHA `0e8510e0…` / 621086.

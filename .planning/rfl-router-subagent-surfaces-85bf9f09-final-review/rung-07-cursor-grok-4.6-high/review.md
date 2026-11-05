@@ -5,7 +5,7 @@ Cursor Task cursor-grok-4.6-high (no Pi)
 - Official model: **Cursor Task** `cursor-grok-4.6-high` (Grok 4.6 High). Not Pi. Not `/silver:agent-pi`. Not OmniRoute invoke. Not Extra High / XHigh. Not Fast. This process did **not** call `scripts/agent-pi/invoke.sh`.
 - Phase: REVIEW-ONLY (`rung_07_review`). No ACCEPT/REJECT classification, no issue filing, no Policy C, no APPLY, no clarify encode, no freeze edits, no verify, no rung 6 redo.
 - Session parent: `d5150f38-4d37-458d-9bdb-5e6f985975d3`
-- Work dir: `/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-07-cursor-grok-4.6-high/`
+- Work dir: `/Users/<user>/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-07-cursor-grok-4.6-high/`
 - Scope (read-only freeze): both copies of `router_subagent_surfaces_85bf9f09.plan.md`. Neither copy was edited.
 - Prior Pi `review.md` archived as [`review-prior-pi.md`](review-prior-pi.md) (stale SHA `edff7c0c…` / 621101). This file is a fresh independent review of the current freeze. It does not copy `review-prior-pi.md`, `review-prior-wave.md`, or `review-grok-substitute.md`.
 
@@ -15,8 +15,8 @@ Independently hashed both copies with Python `hashlib.sha256` on the raw bytes. 
 
 | Copy | SHA-256 actually hashed | Bytes |
 |---|---|---|
-| [`/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md) | `3166a309baa55fb49158df4531c7bf7e8f8609f1c720b0f4d0cae5c396346321` | 621247 |
-| [`/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md) | `3166a309baa55fb49158df4531c7bf7e8f8609f1c720b0f4d0cae5c396346321` | 621247 |
+| [`/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md) | `3166a309baa55fb49158df4531c7bf7e8f8609f1c720b0f4d0cae5c396346321` | 621247 |
+| [`/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md) | `3166a309baa55fb49158df4531c7bf7e8f8609f1c720b0f4d0cae5c396346321` | 621247 |
 
 - Byte-identical: **yes**
 - Matches locked freeze: **yes** (`3166a309…` / **621247**)

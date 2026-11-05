@@ -127,6 +127,11 @@ class TestFetchPortal(unittest.TestCase):
             res = so.fetch_portal("skills_sh", "q")
         self.assertEqual(len(res["results"]["raw"]), 500)
 
+    def setUp(self):
+        patcher = mock.patch.dict("os.environ", {"GITHUB_TOKEN": "t-test"})
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
     def test_errors_reported(self):
         for exc in (urllib.error.URLError("down"), TimeoutError("slow")):
             with mock.patch("urllib.request.urlopen", fake_urlopen(exc)):
