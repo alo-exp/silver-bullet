@@ -74,7 +74,7 @@ Then investigate with `gh run list --limit 3` and `gh run view <run-id> --log-fa
 
 ## Debugging hooks
 
-- **Payload dump.** Create the flag file `${SB_RUNTIME_STATE_DIR}/debug-dump` and every PreToolUse payload is appended to `${SB_RUNTIME_STATE_DIR}/hook-dump.jsonl` by `hooks/debug-dump.sh`. Delete the flag when done; the dump can contain prompts and file contents.
+- **Payload dump.** Create the flag file `${SB_RUNTIME_STATE_DIR}/debug-dump` and every PreToolUse payload is appended to `${SB_RUNTIME_STATE_DIR}/hook-dump.jsonl` by `hooks/debug-dump.sh`. Delete the flag when done; the dump can contain prompts and file contents. The flag expires after 4 hours (`SB_DEBUG_DUMP_TTL_SECONDS`), the dump rotates past 5 MB, token-like values are redacted, and `session-start` warns while the flag exists.
 - **Hook audit log.** Create `${SB_RUNTIME_STATE_DIR}/hook-audit-enabled` (or export `SILVER_BULLET_HOOK_AUDIT_LOG` to a path inside the state dir) and gates that support it record their allow/deny decisions to `hook-audit.jsonl` (`hooks/lib/hook-audit.sh`).
 - **Run a hook by hand.** Pipe a payload into it from the project directory, for example `printf '%s' '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"git push"}}' | bash hooks/ci-status-check.sh`.
 - [HOOKS.md](HOOKS.md) lists every hook with its event, matcher and timeout.

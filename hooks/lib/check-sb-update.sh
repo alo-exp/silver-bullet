@@ -10,6 +10,9 @@
 sb_update_version_to_int() {
   local v="${1%%-*}"
   local maj min patch
+  # Digits only: the value is used in bash arithmetic, which evaluates names and substitutions,
+  # and the installed version comes from a registry file (R3-29).
+  if ! [[ "$v" =~ ^[0-9]+(\.[0-9]+){0,2}$ ]]; then v="0.0.0"; fi
   IFS='.' read -r maj min patch <<<"$v"
   maj="${maj:-0}"; min="${min:-0}"; patch="${patch:-0}"
   printf '%d' $((10#$maj * 1000000 + 10#$min * 1000 + 10#$patch))
@@ -59,11 +62,26 @@ sb_update_fetch_latest_version() {
   if ! command -v curl >/dev/null 2>&1 || ! command -v jq >/dev/null 2>&1; then
     return 1
   fi
+  # One network lookup per day: the answer is cached in the state dir (R3-19).
+  local cache="${SB_RUNTIME_STATE_DIR:+${SB_RUNTIME_STATE_DIR}/update-check-cache}" cached_at="" cached_ver="" now
+  now="$(date +%s)"
+  if [[ -n "$cache" && -f "$cache" && ! -L "$cache" ]]; then
+    cached_at="$(awk 'NR == 1 { print $1 }' "$cache")"
+    cached_ver="$(awk 'NR == 1 { print $2 }' "$cache")"
+    if [[ "$cached_at" =~ ^[0-9]+$ ]] && sb_update_version_valid "$cached_ver" \
+       && (( now - cached_at >= 0 && now - cached_at < 86400 )); then
+      printf '%s' "$cached_ver"
+      return 0
+    fi
+  fi
   latest="$(curl -fsSL --connect-timeout 3 --max-time 8 \
     https://api.github.com/repos/alo-exp/silver-bullet/releases/latest 2>/dev/null \
     | jq -r '.tag_name // empty' 2>/dev/null \
     | sed 's/^v//' || true)"
   if sb_update_version_valid "$latest"; then
+    if [[ -n "$cache" && ! -L "$cache" ]]; then
+      printf '%s %s\n' "$now" "$latest" >"$cache" 2>/dev/null || true
+    fi
     printf '%s' "$latest"
     return 0
   fi
@@ -85,7 +103,7 @@ sb_check_sb_update() {
   local reg installed latest
   reg="$(sb_update_registry_path)"
   installed="$(sb_update_resolve_installed_version "$reg" 2>/dev/null || true)"
-  if [[ -z "$installed" ]]; then
+  if ! [[ "$installed" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.]+)?$ ]]; then
     installed="0.0.0"
   fi
   SB_UPDATE_INSTALLED="$installed"

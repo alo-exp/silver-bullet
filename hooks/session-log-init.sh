@@ -89,6 +89,27 @@ fi
 sessions_dir="${SESSION_LOG_TEST_DIR:-$project_root/docs/sessions}"
 mkdir -p "$sessions_dir"
 
+# Launch the timeout sentinel. The lock file proves a recorded pid is still this sentinel
+# instance, so it is created BEFORE the sentinel starts and removed BY the sentinel when it
+# ends (timeout or TERM). A pid recycled by an unrelated process therefore never has a lock and
+# is never signalled (R3-18).
+sb_launch_timeout_sentinel() {
+  local _uuid _lock sentinel_pid
+  _uuid=$(uuidgen 2>/dev/null || cat /proc/sys/kernel/random/uuid 2>/dev/null || printf '%s-%s' "$$" "$(date +%s)")
+  _lock="$SB_DIR/sentinel-lock-$_uuid"
+  sb_guard_nofollow "$_lock"
+  touch "$_lock" || return 0
+  # The sleep runs as a child the subshell waits on, so stopping the sentinel (TERM on the
+  # recorded pid) stops the sleep too instead of orphaning it until the timeout.
+  # shellcheck disable=SC2016
+  (trap 'kill "$!" 2>/dev/null; rm -f -- "$_lock"; exit 0' TERM
+   sleep "${SENTINEL_SLEEP_OVERRIDE:-600}" & wait "$!" && echo "TIMEOUT" > "$SB_DIR"/timeout
+   rm -f -- "$_lock") </dev/null >/dev/null 2>&1 &
+  sentinel_pid=$!
+  printf '%s:%s\n' "$sentinel_pid" "$_uuid" > "$SB_DIR"/sentinel-pid
+  disown "$sentinel_pid"
+}
+
 # --- Step 4: Sentinel cleanup (unconditional, before dedup guard) ---
 if [[ -f "$SB_DIR"/sentinel-pid && ! -L "$SB_DIR"/sentinel-pid ]]; then
   # M3 TOCTOU fix: sentinel file may contain "pid" (legacy) or "pid:start-time".
@@ -188,17 +209,7 @@ if [[ -n "$existing" ]]; then
     # The PID is tracked in sentinel-pid for cleanup; kill is called on lock failure.
     # The sleep runs as a child the subshell waits on, so stopping the sentinel (TERM on the
     # recorded pid) stops the sleep too instead of orphaning it until the timeout.
-    # shellcheck disable=SC2016
-    (trap 'kill "$!" 2>/dev/null; exit 0' TERM; sleep "${SENTINEL_SLEEP_OVERRIDE:-600}" & wait "$!" && echo "TIMEOUT" > "$SB_DIR"/timeout) </dev/null >/dev/null 2>&1 &
-    sentinel_pid=$!
-    _uuid=$(uuidgen 2>/dev/null || cat /proc/sys/kernel/random/uuid 2>/dev/null || printf '%s-%s' "$$" "$(date +%s)")
-    sb_guard_nofollow "$SB_DIR/sentinel-lock-$_uuid"
-    if touch "$SB_DIR/sentinel-lock-$_uuid"; then
-      printf '%s:%s\n' "$sentinel_pid" "$_uuid" > "$SB_DIR"/sentinel-pid
-      disown "$sentinel_pid"
-    else
-      kill "$sentinel_pid" 2>/dev/null || true
-    fi
+    sb_launch_timeout_sentinel
     # Insert note under ## Autonomous decisions (portable awk — no sed -i '' macOS dependency)
     _note_tmp=$(mktemp)
     if awk '/^## Autonomous decisions$/ { print; print ""; print "[Timeout sentinel restarted: session re-triggered from second terminal]"; next } { print }' \
@@ -313,19 +324,7 @@ date +%s > "$SB_DIR"/session-start-time
 if [[ "$mode" == "autonomous" ]]; then
   sb_guard_nofollow "$SB_DIR"/timeout
   sb_guard_nofollow "$SB_DIR"/sentinel-pid
-  # The sleep runs as a child the subshell waits on, so stopping the sentinel (TERM on the
-  # recorded pid) stops the sleep too instead of orphaning it until the timeout.
-  # shellcheck disable=SC2016
-  (trap 'kill "$!" 2>/dev/null; exit 0' TERM; sleep "${SENTINEL_SLEEP_OVERRIDE:-600}" & wait "$!" && echo "TIMEOUT" > "$SB_DIR"/timeout) </dev/null >/dev/null 2>&1 &
-  sentinel_pid=$!
-  _uuid=$(uuidgen 2>/dev/null || cat /proc/sys/kernel/random/uuid 2>/dev/null || printf '%s-%s' "$$" "$(date +%s)")
-  sb_guard_nofollow "$SB_DIR/sentinel-lock-$_uuid"
-  if touch "$SB_DIR/sentinel-lock-$_uuid"; then
-    printf '%s:%s\n' "$sentinel_pid" "$_uuid" > "$SB_DIR"/sentinel-pid
-    disown "$sentinel_pid"
-  else
-    kill "$sentinel_pid" 2>/dev/null || true
-  fi
+  sb_launch_timeout_sentinel
 fi
 
 sb_guard_nofollow "$SB_DIR"/session-log-path; printf '%s' "$log_file" > "$SB_DIR"/session-log-path

@@ -217,10 +217,31 @@ tl_stub curl 'printf "{\"tag_name\":\"v9.8.7\"}"'
 assert_eq "latest release parsed from the API reply" "9.8.7" "$(sb_update_fetch_latest_version)"
 SILVER_BULLET_INSTALLED_PLUGINS_FILE="$TL_TMP/none.json" sb_check_sb_update
 assert_eq "update available from the live lookup" "update_available" "$SB_UPDATE_CHECK_RESULT"
+# R3-19: the answer is cached for a day, so a later failing lookup still sees it
+assert_eq "the latest release is cached" "9.8.7" "$(awk '{print $2}' "$SB_RUNTIME_STATE_DIR/update-check-cache")"
+tl_stub curl 'exit 22'
+assert_eq "a fresh cache answers without the network" "9.8.7" "$(sb_update_fetch_latest_version)"
+printf '%s 1.2.3\n' "$(( $(date +%s) - 90000 ))" >"$SB_RUNTIME_STATE_DIR/update-check-cache"
+nok sb_update_fetch_latest_version
+printf 'garbage\n' >"$SB_RUNTIME_STATE_DIR/update-check-cache"
+nok sb_update_fetch_latest_version
+rm -f "$SB_RUNTIME_STATE_DIR/update-check-cache"
 tl_stub curl 'printf "{\"tag_name\":\"not-a-version\"}"'
 nok sb_update_fetch_latest_version
 tl_stub curl 'exit 22'
 nok sb_update_fetch_latest_version
+# an unwritable cache location never breaks the lookup
+tl_stub curl 'printf "{\"tag_name\":\"v9.8.7\"}"'
+mkdir -p "$SB_RUNTIME_STATE_DIR/update-check-cache"
+assert_eq "an unwritable cache is skipped silently" "9.8.7" "$(sb_update_fetch_latest_version)"
+rmdir "$SB_RUNTIME_STATE_DIR/update-check-cache"
+tl_stub curl 'exit 22'
+# R3-29: a registry version that is not a version is never evaluated in arithmetic
+printf '{"plugins":{"silver-bullet@alo-labs":[{"version":"a[$(touch %s/pwned)]"}]}}' "$TL_TMP" >"$TL_TMP/evil.json"
+SILVER_BULLET_UPDATE_CHECK_LATEST=1.0.0 SILVER_BULLET_INSTALLED_PLUGINS_FILE="$TL_TMP/evil.json" sb_check_sb_update
+assert_file_absent "hostile installed version is not executed" "$TL_TMP/pwned"
+assert_eq "hostile installed version is treated as 0.0.0" "0.0.0" "$SB_UPDATE_INSTALLED"
+assert_eq "to_int ignores non-numeric parts" "0" "$(sb_update_version_to_int 'a[$(touch x)]')"
 SILVER_BULLET_INSTALLED_PLUGINS_FILE="$TL_TMP/none.json" sb_check_sb_update
 assert_eq "failing lookup is check_failed" "check_failed" "$SB_UPDATE_CHECK_RESULT"
 ec_unfail curl
