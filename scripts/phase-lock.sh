@@ -116,7 +116,8 @@ _pl_find_default_config() {
   # content and is never consulted (R3-03).
   local self_dir
   self_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
-  local candidate="${self_dir}/../templates/silver-bullet.config.json.default"
+  # SB_PHASE_LOCK_PLUGIN_ROOT is a test seam for the plugin root (default: the parent of scripts/).
+  local candidate="${SB_PHASE_LOCK_PLUGIN_ROOT:-${self_dir}/..}/templates/silver-bullet.config.json.default"
   if [[ -f "${candidate}" ]]; then
     printf '%s' "${candidate}"
     return 0
