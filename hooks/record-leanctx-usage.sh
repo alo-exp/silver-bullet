@@ -1,74 +1,37 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2154,SC2034  # input, tool_name, config_file, project_root, mcp_* are set by sb_opt_in_hook_begin (hooks/lib/opt-in-gate.sh)
 set -euo pipefail
 trap 'exit 0' ERR
 
-# PostToolUse — record LeanCTX CLI/MCP usage for the opt-in gate.
+# PostToolUse — record LeanCTX usage for the opt-in gate: one lean-ctx CLI command run on its
+# own that visibly succeeded, or an lctx_* tool call on the LeanCTX MCP server.
 
 umask 0077
 
-_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
-[[ -f "$_lib_dir/runtime-paths.sh" ]] && source "$_lib_dir/runtime-paths.sh"
-[[ -f "$_lib_dir/sb-project-gate.sh" ]] && source "$_lib_dir/sb-project-gate.sh"
-[[ -f "$_lib_dir/tool-input.sh" ]] && source "$_lib_dir/tool-input.sh"
-[[ -f "$_lib_dir/recommended-tools.sh" ]] && source "$_lib_dir/recommended-tools.sh"
-[[ -f "$_lib_dir/leanctx-gate.sh" ]] && source "$_lib_dir/leanctx-gate.sh"
-
-command -v jq >/dev/null 2>&1 || exit 0
-
-input="$(cat 2>/dev/null || true)"
-[[ -n "$input" ]] || exit 0
-
-tool_name="$(sb_tool_name "$input" 2>/dev/null || printf '%s' "$input" | jq -r '.tool_name // ""')"
-
-config_file=""
-if declare -f sb_find_project_config >/dev/null 2>&1; then
-  config_file="$(sb_find_project_config 2>/dev/null || true)"
-fi
-if [[ -z "$config_file" ]]; then
-  search_dir="$PWD"
-  while true; do
-    if [[ -f "$search_dir/.silver-bullet.json" && -f "$search_dir/silver-bullet.md" ]]; then
-      config_file="$search_dir/.silver-bullet.json"
-      break
-    fi
-    if [[ -d "$search_dir/.git" ]] || [[ "$search_dir" == "/" ]]; then
-      break
-    fi
-    search_dir="$(dirname "$search_dir")"
-  done
-fi
-[[ -n "$config_file" ]] || exit 0
-
-if declare -f sb_project_is_initiated >/dev/null 2>&1; then
-  sb_project_is_initiated "$config_file" || exit 0
-fi
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || exit 0
+[[ -f "$_lib_dir/opt-in-gate.sh" ]] || exit 0
+# shellcheck source=lib/opt-in-gate.sh
+source "$_lib_dir/opt-in-gate.sh"
+sb_opt_in_hook_begin record-leanctx-usage leanctx
+# shellcheck source=lib/leanctx-gate.sh
+source "$_lib_dir/leanctx-gate.sh"
 
 sb_leanctx_required "$config_file" || exit 0
 
-recorded=0
-
 case "$tool_name" in
   Bash|Shell|shell|exec_command)
-    cmd="$(sb_tool_command_string "$input" 2>/dev/null || printf '%s' "$input" | jq -r '.tool_input.command // ""')"
-    exit_code="$(printf '%s' "$input" | jq -r '.tool_response.exit_code // .tool_response.exitCode // 0' 2>/dev/null || echo 0)"
-    [[ "$exit_code" == "0" ]] || exit 0
-    if sb_leanctx_command_is_usage "$cmd" "$config_file"; then
-      sb_leanctx_record_usage "$config_file" && recorded=1
-    fi
+    sb_leanctx_command_is_usage "$(sb_opt_in_command_string)" || exit 0
+    sb_opt_in_shell_succeeded || exit 0
     ;;
-  CallMcpTool|MCP)
-    mcp_server="$(printf '%s' "$input" | jq -r '.tool_input.server // .tool_input.mcpServer // ""' 2>/dev/null || true)"
-    mcp_tool="$(printf '%s' "$input" | jq -r '.tool_input.toolName // .tool_input.name // ""' 2>/dev/null || true)"
-    if sb_leanctx_mcp_server_matches "$mcp_server" && sb_leanctx_mcp_tool_is_usage "$mcp_tool"; then
-      sb_leanctx_record_usage "$config_file" && recorded=1
-    elif sb_leanctx_mcp_tool_is_usage "$mcp_tool"; then
-      sb_leanctx_record_usage "$config_file" && recorded=1
-    fi
+  *)
+    sb_opt_in_mcp_call || exit 0
+    sb_leanctx_mcp_server_matches "$mcp_server" || exit 0
+    sb_leanctx_mcp_tool_is_usage "$mcp_tool" || exit 0
+    sb_opt_in_mcp_succeeded || exit 0
     ;;
 esac
 
-if [[ "$recorded" -eq 1 ]]; then
+if sb_leanctx_record_usage "$config_file"; then
   printf '{"hookSpecificOutput":{"message":"✅ LeanCTX usage recorded"}}'
 fi
-
 exit 0

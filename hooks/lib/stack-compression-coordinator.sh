@@ -1,32 +1,57 @@
 # shellcheck shell=bash
 # Five-tool stack compression coordinator — surface ownership, MCP blocks, mutual-exclusion state.
 # Sourced by: stack-compression-coordinator.sh, context-mode-read-deny.sh,
-# token-compression-tools-gate.sh, semantic-compress.sh
+# token-compression-tools-gate.sh, semantic-compress.sh, sb-doctor.sh
+#
+# Coordinator state (recorded surface owners and double-compression violations) is scoped
+# to one project and one host session: a violation in one session never blocks another
+# session or another project. Hooks set SB_STACK_SESSION from the payload's session id
+# (sb_stack_set_session); without it the state is per project.
 
 _sb_stack_default_profile="five_tool_routed"
 _sb_stack_mutex_reason="sb_stack_double_compression"
+_sb_stack_lib_dir="${BASH_SOURCE[0]%/*}"
 
-if [[ -f "$(dirname "${BASH_SOURCE[0]}")/recommended-tools.sh" ]]; then
-  # shellcheck source=recommended-tools.sh
-  source "$(dirname "${BASH_SOURCE[0]}")/recommended-tools.sh"
-fi
+# shellcheck source=recommended-tools.sh
+source "${_sb_stack_lib_dir}/recommended-tools.sh"
+# shellcheck source=opt-in-gate.sh
+source "${_sb_stack_lib_dir}/opt-in-gate.sh"
+
+# sb_stack_set_session PAYLOAD: remember the host session id (sanitized) for state scoping.
+sb_stack_set_session() {
+  local sid
+  sid="$(printf '%s' "${1:-}" | jq -r '.session_id // .sessionId // .conversation_id // "" | strings' 2>/dev/null || true)"
+  SB_STACK_SESSION="$(printf '%s' "$sid" | tr -cd 'A-Za-z0-9._-' | cut -c1-128)"
+}
+
+_sb_stack_state_dir() {
+  printf '%s' "${SB_RUNTIME_STATE_DIR:-${HOME}/.silver-bullet}"
+}
+
+# Key of the project that CONFIG belongs to (cksum of its consent project key).
+_sb_stack_project_sum() {
+  local config_file="${1:-}" root key
+  root="$(dirname "${config_file:-$PWD/x}")"
+  key="$(sb_consent_project_key "$root" 2>/dev/null || printf '%s' "$root")"
+  printf '%s' "$key" | cksum | awk '{print $1}'
+}
+
+_sb_stack_scoped_path() {
+  local kind="$1" config_file="${2:-}" session_sum
+  session_sum="$(printf '%s' "${SB_STACK_SESSION:-}" | cksum | awk '{print $1}')"
+  printf '%s/%s.d/%s-%s.json' "$(_sb_stack_state_dir)" "$kind" "$(_sb_stack_project_sum "$config_file")" "$session_sum"
+}
 
 sb_stack_coordinator_state_path() {
-  printf '%s/stack-compression-coordinator' "${SB_RUNTIME_STATE_DIR:-${HOME}/.silver-bullet}"
+  _sb_stack_scoped_path stack-compression-coordinator "${1:-}"
 }
 
 sb_stack_mutex_state_path() {
-  printf '%s/stack-compression-mutex' "${SB_RUNTIME_STATE_DIR:-${HOME}/.silver-bullet}"
-}
-
-sb_stack_lifecycle_state_path() {
-  printf '%s/stack-compression-lifecycle' "${SB_RUNTIME_STATE_DIR:-${HOME}/.silver-bullet}"
+  _sb_stack_scoped_path stack-compression-mutex "${1:-}"
 }
 
 sb_stack_compression_tools_enabled_count() {
-  local config_file="${1:-}"
-  local count=0
-  local tool_id
+  local config_file="${1:-}" count=0 tool_id
   for tool_id in rtk context_mode leanctx; do
     if sb_recommended_tool_enforced "$config_file" "$tool_id" 2>/dev/null; then
       count=$((count + 1))
@@ -45,8 +70,7 @@ sb_stack_coordinator_needed() {
 }
 
 sb_stack_default_route_owner() {
-  local route="${1:-}"
-  case "$route" in
+  case "${1:-}" in
     sb_wire|sb_read|sb_pathjail|sb_injection) printf 'leanctx' ;;
     sb_grep|sb_slice|sb_webfetch) printf 'context_mode' ;;
     sb_shell) printf 'rtk' ;;
@@ -57,8 +81,7 @@ sb_stack_default_route_owner() {
 }
 
 sb_stack_route_owner() {
-  local config_file="${1:-}" route="${2:-}"
-  local profile owner
+  local config_file="${1:-}" route="${2:-}" profile owner
 
   [[ -n "$config_file" && -f "$config_file" && -n "$route" ]] || return 1
 
@@ -67,7 +90,7 @@ sb_stack_route_owner() {
       '.recommended_tools.leanctx.optimization_profile // $def' "$config_file" 2>/dev/null || echo "$_sb_stack_default_profile")"
     owner="$(jq -r --arg p "$profile" --arg r "$route" \
       '.optimization_profiles[$p].routes[$r] // empty' "$config_file" 2>/dev/null || true)"
-    if [[ -n "$owner" && "$owner" != "null" ]]; then
+    if sb_stack_owner_valid "$owner"; then
       printf '%s' "$owner"
       return 0
     fi
@@ -84,53 +107,59 @@ sb_stack_route_owner() {
   esac
 }
 
+# Atomic JSON update of a state file: FILTER applied to the current document (or {}).
+_sb_stack_json_update() {
+  local state_path="$1" filter="$2" tmp current='{}'
+  shift 2
+  [[ ! -d "$state_path" ]] || return 1
+  mkdir -p "$(dirname "$state_path")" 2>/dev/null || return 1
+  [[ -f "$state_path" && ! -L "$state_path" ]] && current="$(cat "$state_path" 2>/dev/null || printf '{}')"
+  tmp="$(mktemp "${state_path}.XXXXXX" 2>/dev/null)" || return 1
+  if printf '%s' "$current" | jq "$@" "$filter" >"$tmp" 2>/dev/null && mv -f -- "$tmp" "$state_path" 2>/dev/null; then
+    return 0
+  fi
+  rm -f -- "$tmp" 2>/dev/null
+  return 1
+}
+
 sb_stack_record_surface_owner() {
   local config_file="${1:-}" route="${2:-}" owner="${3:-}"
-  local state_path
   [[ -n "$route" && -n "$owner" ]] || return 1
-  state_path="$(sb_stack_coordinator_state_path)"
-  mkdir -p "$(dirname "$state_path")" 2>/dev/null || true
-  if [[ -f "$state_path" ]]; then
-    jq --arg route "$route" --arg owner "$owner" --argjson epoch "$(date +%s)" \
-      '.surfaces[$route] = {owner: $owner, epoch: $epoch}' "$state_path" >"${state_path}.tmp" 2>/dev/null \
-      && mv "${state_path}.tmp" "$state_path"
-  else
-    jq -n --arg route "$route" --arg owner "$owner" --argjson epoch "$(date +%s)" \
-      '{surfaces: {($route): {owner: $owner, epoch: $epoch}}}' >"$state_path" 2>/dev/null || return 1
-  fi
+  # shellcheck disable=SC2016  # jq variables, not shell
+  _sb_stack_json_update "$(sb_stack_coordinator_state_path "$config_file")" \
+    '(if type == "object" then . else {} end) | .surfaces[$route] = {owner: $owner, epoch: $epoch}' \
+    --arg route "$route" --arg owner "$owner" --argjson epoch "$(date +%s)"
 }
 
 sb_stack_surface_recorded_owner() {
-  local config_file="${1:-}" route="${2:-}"
-  local state_path
-  state_path="$(sb_stack_coordinator_state_path)"
+  local config_file="${1:-}" route="${2:-}" state_path
+  state_path="$(sb_stack_coordinator_state_path "$config_file")"
   [[ -f "$state_path" ]] || return 1
   jq -r --arg route "$route" '.surfaces[$route].owner // empty' "$state_path" 2>/dev/null || true
 }
 
 sb_stack_record_double_compression() {
   local config_file="${1:-}" route="${2:-}" attempted_owner="${3:-}" incumbent_owner="${4:-}"
-  local state_path reason
-  state_path="$(sb_stack_mutex_state_path)"
-  mkdir -p "$(dirname "$state_path")" 2>/dev/null || true
-  reason="${_sb_stack_mutex_reason}"
-  if [[ -f "$state_path" ]]; then
-    jq --arg route "$route" --arg attempted "$attempted_owner" --arg incumbent "$incumbent_owner" \
-      --arg reason "$reason" --argjson epoch "$(date +%s)" \
-      '.violations += [{route: $route, attempted: $attempted, incumbent: $incumbent, reason: $reason, epoch: $epoch}]' \
-      "$state_path" >"${state_path}.tmp" 2>/dev/null && mv "${state_path}.tmp" "$state_path"
-  else
-    jq -n --arg route "$route" --arg attempted "$attempted_owner" --arg incumbent "$incumbent_owner" \
-      --arg reason "$reason" --argjson epoch "$(date +%s)" \
-      '{violations: [{route: $route, attempted: $attempted, incumbent: $incumbent, reason: $reason, epoch: $epoch}]}' \
-      >"$state_path" 2>/dev/null || return 1
-  fi
+  # shellcheck disable=SC2016  # jq variables, not shell
+  _sb_stack_json_update "$(sb_stack_mutex_state_path "$config_file")" \
+    '(if type == "object" then . else {} end)
+     | .violations = ((.violations // []) + [{route: $route, attempted: $attempted, incumbent: $incumbent, reason: $reason, epoch: $epoch}])' \
+    --arg route "$route" --arg attempted "$attempted_owner" --arg incumbent "$incumbent_owner" \
+    --arg reason "$_sb_stack_mutex_reason" --argjson epoch "$(date +%s)"
 }
 
+# Clear violations: for this project and session, every session of CONFIG's project when no
+# session is set (sb-doctor), or every project when CONFIG is omitted (sb-doctor --fix).
 sb_stack_clear_mutex_violations() {
-  local state_path
-  state_path="$(sb_stack_mutex_state_path)"
-  rm -f -- "$state_path" 2>/dev/null || true
+  local config_file="${1:-}" dir
+  dir="$(_sb_stack_state_dir)/stack-compression-mutex.d"
+  if [[ -z "$config_file" ]]; then
+    rm -f -- "$dir"/*.json 2>/dev/null || true
+  elif [[ -z "${SB_STACK_SESSION:-}" ]]; then
+    rm -f -- "$dir/$(_sb_stack_project_sum "$config_file")"-*.json 2>/dev/null || true
+  else
+    rm -f -- "$(sb_stack_mutex_state_path "$config_file")" 2>/dev/null || true
+  fi
 }
 
 sb_stack_record_routed_owner_success() {
@@ -146,8 +175,7 @@ sb_stack_record_routed_owner_success() {
 # Prints "route owner" on stdout when compliant.
 sb_stack_tool_is_compliant_routed_owner() {
   local config_file="${1:-}" tool_name="${2:-}" mcp_server="${3:-}" mcp_tool="${4:-}"
-  local command_str="${5:-}" mcp_args="${6:-}"
-  local route owner=""
+  local command_str="${5:-}" mcp_args="${6:-}" route owner=""
 
   [[ -n "$config_file" && -n "$tool_name" ]] || return 1
   sb_stack_coordinator_needed "$config_file" || return 1
@@ -163,7 +191,7 @@ sb_stack_tool_is_compliant_routed_owner() {
       printf '%s %s\n' "$route" "$owner"
       return 0
       ;;
-    CallMcpTool|MCP)
+    *)
       [[ -n "$mcp_tool" ]] || return 1
       route="$(sb_stack_mcp_tool_route "$mcp_tool" 2>/dev/null || true)"
       [[ -n "$route" ]] || return 1
@@ -175,31 +203,37 @@ sb_stack_tool_is_compliant_routed_owner() {
       printf '%s %s\n' "$route" "$owner"
       return 0
       ;;
-    *)
-      return 1
-      ;;
   esac
 }
 
+# Clean when no violation is recorded for this project and session (or, with no session
+# set, for any session of the project).
 sb_stack_mutual_exclusion_is_clean() {
-  local config_file="${1:-}"
-  local state_path count
-  state_path="$(sb_stack_mutex_state_path)"
+  local config_file="${1:-}" state_path count
+  if [[ -z "${SB_STACK_SESSION:-}" ]]; then
+    for state_path in "$(_sb_stack_state_dir)/stack-compression-mutex.d/$(_sb_stack_project_sum "$config_file")"-*.json; do
+      [[ -f "$state_path" ]] || continue
+      count="$(jq -r '.violations | length' "$state_path" 2>/dev/null || echo 0)"
+      [[ "$count" =~ ^[0-9]+$ ]] && ((count > 0)) && return 1
+    done
+    return 0
+  fi
+  state_path="$(sb_stack_mutex_state_path "$config_file")"
   [[ -f "$state_path" ]] || return 0
   count="$(jq -r '.violations | length' "$state_path" 2>/dev/null || echo 0)"
-  [[ "${count:-0}" -eq 0 ]]
+  [[ "$count" =~ ^[0-9]+$ ]] && ((count > 0)) && return 1
+  return 0
 }
 
 sb_stack_mutual_exclusion_required() {
-  local config_file="${1:-}"
-  sb_stack_coordinator_needed "$config_file"
+  sb_stack_coordinator_needed "${1:-}"
 }
 
 sb_stack_mutual_exclusion_block_message() {
   cat <<EOF
 🚫 STACK COMPRESSION CONFLICT — double-compression detected (sb_stack_double_compression).
 
-Two compression tools attempted the same surface in one session. Resolve by using the routed owner only:
+Two compression tools attempted the same surface in this session. Resolve by using the routed owner only:
   sb_read → LeanCTX lctx_read_ast (not raw Read + CM)
   sb_shell → RTK (LeanCTX shell rewrite OFF)
   sb_webfetch → Context Mode ctx_fetch_and_index (LeanCTX fetch MCP OFF)
@@ -211,35 +245,24 @@ See docs/LEANCTX.md and silver-bullet.md §2g.
 EOF
 }
 
+# The command (after optional env and NAME=value words) starts with the rtk wrapper.
 sb_stack_bash_rtk_rewritten() {
-  local command_str="${1:-}"
-  local unwrapped
-  [[ -n "$command_str" ]] || return 1
-  if ! declare -f sb_shell_command_unwrap_rtk >/dev/null 2>&1; then
-    return 1
-  fi
-  unwrapped="$(sb_shell_command_unwrap_rtk "$command_str" 2>/dev/null || true)"
-  [[ -n "$unwrapped" && "$unwrapped" != "$command_str" ]]
+  [[ "${1:-}" =~ ^[[:space:]]*(env[[:space:]]+)?([A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*[[:space:]]+)*rtk[[:space:]] ]]
 }
 
+# LeanCTX shell wrapping in program position: lean-ctx shell / leanctx shell / lctx_shell as
+# the command, or an SB_LEANCTX_SHELL=1 assignment prefix. A mention elsewhere (grep -rn
+# lctx_shell docs/) is not a wrapper.
 sb_stack_bash_leanctx_shell_marker() {
-  local command_str="${1:-}"
-  [[ -n "$command_str" ]] || return 1
-  if grep -qE 'SB_LEANCTX_SHELL=1' <<<"$command_str"; then
-    return 0
-  fi
-  if grep -qE '(^|[[:space:]|&;])(lean-ctx|leanctx)[[:space:]]+shell\b' <<<"$command_str"; then
-    return 0
-  fi
-  if grep -qE '\blctx_shell\b' <<<"$command_str"; then
-    return 0
-  fi
+  local cmd="${1:-}"
+  local prefix='^[[:space:]]*(env[[:space:]]+)?([A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*[[:space:]]+)*'
+  [[ "$cmd" =~ ${prefix}((lean-ctx|leanctx)[[:space:]]+shell|lctx_shell)([[:space:]]|$) ]] && return 0
+  [[ "$cmd" =~ ^[[:space:]]*(env[[:space:]]+)?([A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*[[:space:]]+)*SB_LEANCTX_SHELL=1([[:space:]]|$) ]] && return 0
   return 1
 }
 
 sb_stack_mcp_tool_route() {
-  local mcp_tool="${1:-}"
-  case "$mcp_tool" in
+  case "${1:-}" in
     lctx_read_ast|lctx_read*) printf 'sb_read' ;;
     lctx_graph*) printf 'sb_graph' ;;
     lctx_remember*) printf 'sb_remember' ;;
@@ -254,10 +277,7 @@ sb_stack_mcp_tool_route() {
 sb_stack_mcp_query_looks_like_code() {
   local payload="${1:-}"
   [[ -n "$payload" ]] || return 1
-  if grep -qiE 'graphify|codebase|symbol|dependency|import |function |class |hooks/|\.tsx?|\.py|\.sh' <<<"$payload"; then
-    return 0
-  fi
-  return 1
+  grep -qiE 'graphify|codebase|symbol|dependency|import |function |class |hooks/|\.tsx?|\.py|\.sh' <<<"$payload"
 }
 
 # Returns 0 when MCP tool should be denied on this surface.
@@ -276,8 +296,8 @@ sb_stack_should_deny_mcp_tool() {
 
   case "$mcp_tool" in
     lctx_remember*)
-      [[ "$owner" == "agentmemory" ]]
-      return
+      [[ "$owner" == "agentmemory" ]] && return 0
+      return 1
       ;;
     lctx_graph*)
       if [[ "$owner" == "graphify" ]] && sb_stack_mcp_query_looks_like_code "$tool_args"; then
@@ -286,28 +306,18 @@ sb_stack_should_deny_mcp_tool() {
       return 1
       ;;
     lctx_fetch*|lctx_webfetch*)
-      [[ "$owner" == "context_mode" ]]
-      return
+      [[ "$owner" == "context_mode" ]] && return 0
+      return 1
       ;;
     lctx_shell*)
-      [[ "$owner" == "rtk" ]]
-      return
+      [[ "$owner" == "rtk" ]] && return 0
+      return 1
       ;;
     ctx_fetch_and_index)
-      [[ "$owner" == "leanctx" ]]
-      return
+      [[ "$owner" == "leanctx" ]] && return 0
+      return 1
       ;;
   esac
-
-  if [[ "$mcp_tool" == lctx_* ]] && [[ "$owner" != "leanctx" ]]; then
-    case "$route" in
-      sb_slice|sb_grep) [[ "$owner" == "context_mode" ]] && return 0 ;;
-      sb_shell) [[ "$owner" == "rtk" ]] && return 0 ;;
-      sb_webfetch) [[ "$owner" == "context_mode" ]] && return 0 ;;
-      sb_graph) [[ "$owner" == "graphify" ]] && return 0 ;;
-      sb_remember) [[ "$owner" == "agentmemory" ]] && return 0 ;;
-    esac
-  fi
 
   incumbent="$(sb_stack_surface_recorded_owner "$config_file" "$route" 2>/dev/null || true)"
   if [[ -n "$incumbent" && "$incumbent" != "$owner" ]]; then
@@ -338,8 +348,7 @@ EOF
 }
 
 sb_stack_should_deny_bash_double_wrap() {
-  local config_file="${1:-}" command_str="${2:-}"
-  local shell_owner incumbent
+  local config_file="${1:-}" command_str="${2:-}" shell_owner incumbent
 
   sb_stack_coordinator_needed "$config_file" || return 1
   shell_owner="$(sb_stack_route_owner "$config_file" "sb_shell" 2>/dev/null || true)"
@@ -347,7 +356,7 @@ sb_stack_should_deny_bash_double_wrap() {
 
   if sb_stack_bash_rtk_rewritten "$command_str"; then
     sb_stack_record_surface_owner "$config_file" "sb_shell" "rtk"
-    if sb_stack_bash_leanctx_shell_marker "$command_str"; then
+    if sb_stack_bash_leanctx_shell_marker "$(sb_opt_in_rtk_unwrap "$command_str")"; then
       sb_stack_record_double_compression "$config_file" "sb_shell" "leanctx" "rtk"
       return 0
     fi
@@ -385,41 +394,15 @@ sb_stack_read_deny_defer_to_leanctx() {
 sb_stack_read_deny_message_leanctx() {
   local file_path="${1:-}" size="${2:-}" threshold="${3:-}"
   cat <<EOF
-🚫 LEANCTX READ ROUTING — native Read blocked (${size} bytes > ${threshold} byte threshold).
+🚫 LEANCTX READ ROUTING — large native Read redirected once (${size} bytes > ${threshold} byte threshold).
 
-LeanCTX owns sb_read in the five-tool routed profile. Use AST read instead of raw Read for analysis:
+LeanCTX owns sb_read in the five-tool routed profile. For analysis use the AST read instead of raw Read:
 
-  CallMcpTool → lctx_read_ast (leanctx server)
+  lctx_read_ast (LeanCTX MCP server)
 
-Native Read is still correct when you will Edit the same file next (exact bytes required).
+Need the exact bytes (for example to Edit this file)? Repeat the same Read: it is allowed for the next 30 minutes.
 
 Path: ${file_path}
 See docs/LEANCTX.md and silver-bullet.md §2g.
 EOF
-}
-
-# Lifecycle ordering markers (SessionStart compact): CM → AM → LeanCTX → stop-check.
-sb_stack_lifecycle_mark() {
-  local phase="${1:-}"
-  local state_path
-  [[ -n "$phase" ]] || return 1
-  state_path="$(sb_stack_lifecycle_state_path)"
-  mkdir -p "$(dirname "$state_path")" 2>/dev/null || true
-  date +%s >"${state_path}.${phase}" 2>/dev/null || return 1
-}
-
-sb_stack_lifecycle_phase_epoch() {
-  local phase="${1:-}"
-  local state_path="${2:-$(sb_stack_lifecycle_state_path)}"
-  [[ -f "${state_path}.${phase}" ]] || return 1
-  sed -n '1p' "${state_path}.${phase}" 2>/dev/null
-}
-
-sb_stack_lifecycle_order_ok() {
-  local cm_epoch am_epoch lc_epoch
-  cm_epoch="$(sb_stack_lifecycle_phase_epoch "context_mode_precompact" 2>/dev/null || true)"
-  am_epoch="$(sb_stack_lifecycle_phase_epoch "agentmemory_snapshot" 2>/dev/null || true)"
-  lc_epoch="$(sb_stack_lifecycle_phase_epoch "leanctx_compact" 2>/dev/null || true)"
-  [[ -n "$cm_epoch" && -n "$am_epoch" && -n "$lc_epoch" ]] || return 0
-  [[ "$cm_epoch" -le "$am_epoch" && "$am_epoch" -le "$lc_epoch" ]]
 }

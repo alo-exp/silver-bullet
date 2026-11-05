@@ -271,15 +271,11 @@ tg2_gate_suite() {
     fi
 
     # library faults
+    # a missing project-gate library leaves the hook unable to find its project: inert, never an error
     tg2_farm "walk-$name" "$hook" sb-project-gate.sh project-active.sh
     TG2_REPO="$TG2_FARM" TG2_PROJECT_ROOT="" TG2_CWD="$TG2_PROJ/src" tg2_run "$hook" "$input"
-    assert_denied "$name: walk-up fallback finds the config from a subdirectory" "$reason"
-    TG2_REPO="$TG2_FARM" TG2_PROJECT_ROOT="" TG2_CWD="$TL_TMP/outside" tg2_run "$hook" "$input"
-    assert_silent_ok "$name: walk-up fallback stops at the filesystem root"
-    mkdir -p "$TL_TMP/gitonly/sub"
-    git -C "$TL_TMP/gitonly" init -q 2>/dev/null
-    TG2_REPO="$TG2_FARM" TG2_PROJECT_ROOT="" TG2_CWD="$TL_TMP/gitonly/sub" tg2_run "$hook" "$input"
-    assert_silent_ok "$name: walk-up fallback stops at a .git boundary"
+    assert_silent_ok "$name: missing project-gate library fails open"
+    assert_eq "$name: missing project-gate library exits 0" "0" "$TL_STATUS"
     tg2_farm "inactive-$name" "$hook" project-active.sh
     tg2_farm_stub project-active.sh 'sb_project_active() { return 1; }
   sb_project_is_initiated() { return 1; }'

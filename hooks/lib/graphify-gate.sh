@@ -1,52 +1,50 @@
 # shellcheck shell=bash
 # Graphify retrieval gate — CLI/index/query state helpers.
-# Enforcement is active only when recommended_tools.graphify.enabled_by_user is true.
-# Sourced by: graphify-gate.sh, record-graphify-query.sh, prompt-reminder.sh, sb-diagnostics.sh
+# Enforcement is active only with the user's consent (see user-consent.sh) in a project
+# whose .silver-bullet.json does not turn Graphify off.
+# Sourced by: graphify-gate.sh, record-graphify-query.sh, record-recommended-mcp.sh,
+# prompt-reminder.sh, session-start, sb-diagnostics.sh
 
 _sb_graphify_default_ttl_seconds=1800
 _sb_graphify_default_graph_path="graphify-out/graph.json"
+_sb_graphify_lib_dir="${BASH_SOURCE[0]%/*}"
 
-if [[ -f "$(dirname "${BASH_SOURCE[0]}")/recommended-tools.sh" ]]; then
-  # shellcheck source=recommended-tools.sh
-  source "$(dirname "${BASH_SOURCE[0]}")/recommended-tools.sh"
-fi
+# shellcheck source=recommended-tools.sh
+source "${_sb_graphify_lib_dir}/recommended-tools.sh"
+# shellcheck source=opt-in-gate.sh
+source "${_sb_graphify_lib_dir}/opt-in-gate.sh"
 
+# Project-relative path to graph.json. The config value is repository data: it must be a
+# relative path of plain characters with no '.' or '..' component, else the default is used.
 sb_graphify_graph_rel_path() {
-  local config_file="${1:-}"
-  local rel="${_sb_graphify_default_graph_path}"
+  local config_file="${1:-}" rel=""
   if [[ -n "$config_file" && -f "$config_file" ]]; then
-    rel="$(jq -r --arg def "$_sb_graphify_default_graph_path" \
-      '.recommended_tools.graphify.graph_path // .graphify.graph_path // $def' "$config_file" 2>/dev/null || echo "$_sb_graphify_default_graph_path")"
+    rel="$(jq -r '.recommended_tools.graphify.graph_path // .graphify.graph_path // "" | strings' \
+      "$config_file" 2>/dev/null || true)"
   fi
-  printf '%s' "$rel"
+  sb_rt_safe_rel_path "$rel" "$_sb_graphify_default_graph_path"
 }
 
 sb_graphify_query_ttl_seconds() {
-  local config_file="${1:-}"
-  local ttl="${_sb_graphify_default_ttl_seconds}"
+  local config_file="${1:-}" ttl=""
   if [[ -n "$config_file" && -f "$config_file" ]]; then
-    ttl="$(jq -r --argjson def "$_sb_graphify_default_ttl_seconds" \
-      '.recommended_tools.graphify.query_ttl_seconds // .graphify.query_ttl_seconds // $def' "$config_file" 2>/dev/null || echo "$_sb_graphify_default_ttl_seconds")"
+    ttl="$(jq -r '.recommended_tools.graphify.query_ttl_seconds // .graphify.query_ttl_seconds // ""
+      | tostring' "$config_file" 2>/dev/null || true)"
   fi
-  if ! [[ "$ttl" =~ ^[0-9]+$ ]] || [[ "$ttl" -lt 60 ]]; then
-    ttl="${_sb_graphify_default_ttl_seconds}"
-  fi
-  printf '%s' "$ttl"
+  sb_rt_ttl_seconds "$ttl" "$_sb_graphify_default_ttl_seconds"
 }
 
 sb_graphify_cli_path() {
-  if declare -f sb_global_tool_command >/dev/null 2>&1; then
-    local global_graphify_command=""
-    global_graphify_command="$(sb_global_tool_command graphify 2>/dev/null || true)"
-    if [[ -n "$global_graphify_command" && "$(basename "$global_graphify_command")" == "graphify" ]]; then
-      if [[ "$global_graphify_command" == */* ]]; then
-        [[ -x "$global_graphify_command" ]] || return 1
-        printf '%s' "$global_graphify_command"
-        return 0
-      fi
-      command -v "$global_graphify_command"
-      return $?
+  local global_graphify_command=""
+  global_graphify_command="$(sb_global_tool_command graphify 2>/dev/null || true)"
+  if [[ -n "$global_graphify_command" && "$(basename "$global_graphify_command")" == "graphify" ]]; then
+    if [[ "$global_graphify_command" == */* ]]; then
+      [[ -x "$global_graphify_command" ]] || return 1
+      printf '%s' "$global_graphify_command"
+      return 0
     fi
+    command -v "$global_graphify_command"
+    return $?
   fi
   if command -v graphify >/dev/null 2>&1; then
     command -v graphify
@@ -64,145 +62,97 @@ sb_graphify_cli_available() {
 }
 
 sb_graphify_abs_graph_path() {
-  local project_root="${1:-$PWD}"
-  local config_file="${2:-}"
-  local rel
-  rel="$(sb_graphify_graph_rel_path "$config_file")"
-  if [[ "$rel" == /* ]]; then
-    printf '%s' "$rel"
-  else
-    printf '%s/%s' "${project_root%/}" "$rel"
-  fi
+  local project_root="${1:-$PWD}" config_file="${2:-}"
+  printf '%s/%s' "${project_root%/}" "$(sb_graphify_graph_rel_path "$config_file")"
 }
 
 sb_graphify_index_exists() {
-  local project_root="${1:-$PWD}"
-  local config_file="${2:-}"
-  local graph_path
+  local project_root="${1:-$PWD}" config_file="${2:-}" graph_path
   graph_path="$(sb_graphify_abs_graph_path "$project_root" "$config_file")"
   [[ -f "$graph_path" && ! -L "$graph_path" ]]
 }
 
+# The query stamp. A configured query_state_file is repository data: it is honoured only
+# inside the runtime state dir (sb_rt_state_file), so it can never name a user file.
 sb_graphify_query_state_path() {
-  local config_file="${1:-}"
-  local state_path=""
+  local config_file="${1:-}" configured=""
   if [[ -n "$config_file" && -f "$config_file" ]]; then
-    state_path="$(jq -r '.recommended_tools.graphify.query_state_file // .graphify.query_state_file // ""' "$config_file" 2>/dev/null || true)"
-    state_path="${state_path/#\~/$HOME}"
+    configured="$(jq -r '.recommended_tools.graphify.query_state_file // .graphify.query_state_file // ""
+      | strings' "$config_file" 2>/dev/null || true)"
   fi
-  if [[ -z "$state_path" ]]; then
-    state_path="${SB_RUNTIME_STATE_DIR:-${HOME}/.silver-bullet}/graphify-query"
-  fi
-  if declare -f sb_runtime_path_is_state_scoped >/dev/null 2>&1; then
-    if ! sb_runtime_path_is_state_scoped "$state_path"; then
-      state_path="${SB_RUNTIME_STATE_DIR:-${HOME}/.silver-bullet}/graphify-query"
-    fi
-  fi
-  printf '%s' "$state_path"
-}
-
-sb_graphify_query_epoch() {
-  local state_path="${1:-}"
-  [[ -f "$state_path" && ! -L "$state_path" ]] || return 1
-  local epoch
-  epoch="$(sed -n '1p' "$state_path" 2>/dev/null || true)"
-  [[ "$epoch" =~ ^[0-9]+$ ]] || return 1
-  printf '%s' "$epoch"
+  sb_rt_state_file "$configured" graphify-query
 }
 
 sb_graphify_query_is_fresh() {
   local config_file="${1:-}"
-  local state_path epoch now ttl age
-  state_path="$(sb_graphify_query_state_path "$config_file")"
-  epoch="$(sb_graphify_query_epoch "$state_path" 2>/dev/null || true)"
-  [[ -n "$epoch" ]] || return 1
-  now="$(date +%s)"
-  ttl="$(sb_graphify_query_ttl_seconds "$config_file")"
-  age=$((now - epoch))
-  [[ "$age" -ge 0 && "$age" -le "$ttl" ]]
+  sb_rt_stamp_is_fresh "$(sb_graphify_query_state_path "$config_file")" \
+    "$(sb_graphify_query_ttl_seconds "$config_file")"
 }
 
 sb_graphify_record_query() {
-  local config_file="${1:-}"
-  local state_path
-  state_path="$(sb_graphify_query_state_path "$config_file")"
-  mkdir -p "$(dirname "$state_path")" 2>/dev/null || true
-  if declare -f sb_guard_nofollow >/dev/null 2>&1; then
-    sb_guard_nofollow "$state_path"
-  fi
-  date +%s >"$state_path" 2>/dev/null || return 1
+  sb_rt_stamp_write "$(sb_graphify_query_state_path "${1:-}")"
 }
 
 sb_graphify_clear_query_state() {
-  local config_file="${1:-}"
-  local state_path
-  state_path="$(sb_graphify_query_state_path "$config_file")"
-  rm -f -- "$state_path" 2>/dev/null || true
+  rm -f -- "$(sb_graphify_query_state_path "${1:-}")" 2>/dev/null || true
 }
 
+# Status 0 when CMD is one Graphify retrieval: a single simple command whose program is
+# graphify (after an optional RTK prefix and NAME=value assignments) and whose subcommand
+# is query, explain, path or affected. An optional trailing 2>/dev/null is allowed. Words
+# that merely appear in another program's arguments (echo graphify query) never count, and
+# a pipe or list (| head, || true, ;) could hide a failure, so it does not count either.
 sb_graphify_command_is_retrieval() {
-  local cmd="${1:-}"
-  [[ -n "$cmd" ]] || return 1
-  grep -qE '(^|[[:space:]/])(graphify|graphifyy)([[:space:]]|$)' <<<"$cmd" || return 1
-  grep -qE '\b(query|explain|affected|path|diagnose|dfs)\b' <<<"$cmd"
-}
-
-sb_graphify_command_is_index_build() {
-  local cmd="${1:-}"
-  [[ -n "$cmd" ]] || return 1
-  grep -qE '(^|[[:space:]/])(graphify|graphifyy)([[:space:]]|$)' <<<"$cmd" || return 1
-  grep -qE '\b(update|extract|watch)\b' <<<"$cmd"
-}
-
-sb_graphify_command_is_exempt() {
-  local cmd="${1:-}"
-  [[ -n "$cmd" ]] || return 0
-  if sb_graphify_command_is_retrieval "$cmd" || sb_graphify_command_is_index_build "$cmd"; then
-    return 0
-  fi
-  if grep -qE '(^|[[:space:]/])(graphify|graphifyy)([[:space:]]|$)' <<<"$cmd"; then
-    return 0
-  fi
-  if grep -qE '(^|[[:space:]])(cat|head|tail|less|more|wc|ls|pwd|which|type|file|stat|jq|git (status|diff|log|show|branch|rev-parse)|command -v|echo|printf|true|false)(\s|$)' <<<"$cmd"; then
-    return 0
-  fi
+  local cmd program
+  local -a words
+  cmd="$(sb_opt_in_rtk_unwrap "${1:-}")"
+  cmd="$(_sb_opt_in_squash "$cmd")"
+  cmd="${cmd% 2>/dev/null}"
+  [[ -n "$cmd" ]] && _sb_opt_in_simple_command "$cmd" || return 1
+  program="$(_sb_opt_in_program "$cmd" || true)"
+  [[ "$program" == "graphify" || "$program" == "graphifyy" ]] || return 1
+  read -r -a words <<<"$cmd"
+  local word seen=0
+  for word in "${words[@]}"; do
+    if [[ "$seen" == 0 ]]; then
+      [[ "${word##*/}" == "$program" ]] && seen=1
+      continue
+    fi
+    case "$word" in
+      query | explain | path | affected) return 0 ;;
+      -*) continue ;;
+      *) return 1 ;;
+    esac
+  done
   return 1
 }
 
+# Status 0 when a shell command does not need the Graphify gate (see opt-in-gate.sh).
+sb_graphify_command_is_exempt() {
+  ! sb_opt_in_shell_needs_gate graphify "${1:-}"
+}
+
+# Status 0 when an edit target is Graphify's own output or Silver Bullet state. Paths are
+# normalized first, so graphify-out/../src/app.py is src/app.py.
 sb_graphify_edit_path_is_exempt() {
-  local file_path="${1:-}"
-  local config_file="${2:-}"
+  local file_path="${1:-}" config_file="${2:-}" project_root graph_dir normalized
   [[ -n "$file_path" ]] || return 1
-  local graph_rel graph_dir
-  graph_rel="$(sb_graphify_graph_rel_path "$config_file")"
-  graph_dir="$(dirname "$graph_rel")"
-  case "$file_path" in
-    */graphify-out/*|graphify-out/*|*/"$graph_dir"/*|"$graph_dir"/*)
-      return 0
-      ;;
+  project_root="$(dirname "${config_file:-$PWD/.silver-bullet.json}")"
+  normalized="$(sb_opt_in_normalize_path "$file_path" "$project_root")"
+  case "$normalized" in
+    */graphify-out/* | */.silver-bullet/*) return 0 ;;
   esac
-  if [[ "$file_path" == *"/.silver-bullet/"* ]]; then
-    return 0
-  fi
+  graph_dir="$(dirname "$(sb_graphify_graph_rel_path "$config_file")")"
+  [[ "$graph_dir" != "." ]] && sb_opt_in_path_under "$normalized" "${project_root%/}/${graph_dir}" && return 0
   return 1
 }
 
 sb_graphify_block_message_no_cli() {
-  local config_file="${1:-}"
-  local host install_lines
+  local config_file="${1:-}" host install_lines
   host="$(sb_runtime_host)"
-  install_lines="$(sb_recommended_tool_full_install_lines "$config_file" graphify "$host" 2>/dev/null || true)"
-  if [[ -z "$install_lines" ]]; then
-    install_lines=$'uv tool install graphifyy\npipx install graphifyy'
-    local pre post
-    pre="$(sb_recommended_tool_platform_pre_index_commands "$config_file" graphify "$host" 2>/dev/null || true)"
-    post="$(sb_recommended_tool_platform_post_index_commands "$config_file" graphify "$host" 2>/dev/null || true)"
-    [[ -n "$pre" ]] && install_lines="${install_lines}"$'\n'"${pre}"
-    install_lines="${install_lines}"$'\n'"graphify update . --no-cluster"
-    [[ -n "$post" ]] && install_lines="${install_lines}"$'\n'"${post}"
-  fi
+  install_lines="$(sb_recommended_tool_full_install_lines "" graphify "$host")"
   cat <<EOF
-🚫 GRAPHIFY REQUIRED — CLI not installed (user opted in).
+🚫 GRAPHIFY REQUIRED — CLI not installed (you opted in to Graphify enforcement).
 
 Silver Bullet mandates Graphify for tier-1 project-memory retrieval in this project. Install before substantive work (host: ${host}):
 
@@ -210,7 +160,7 @@ ${install_lines}
 
 Then run: graphify update . --no-cluster
 
-To disable enforcement, set recommended_tools.graphify.enabled_by_user to false in .silver-bullet.json.
+If the user asks to turn Graphify enforcement off: bash $(sb_rt_plugin_script scripts/sb-consent.sh) decline graphify --project $(printf '%q' "$(dirname "${config_file:-$PWD/x}")")
 EOF
 }
 
@@ -230,8 +180,7 @@ EOF
 }
 
 sb_graphify_block_message_stale_query() {
-  local graph_path="${1:-graphify-out/graph.json}"
-  local ttl="${2:-1800}"
+  local graph_path="${1:-graphify-out/graph.json}" ttl="${2:-1800}"
   cat <<EOF
 🚫 GRAPHIFY QUERY REQUIRED — run retrieval before substantive work.
 
@@ -239,13 +188,13 @@ From the project root, query with concrete file/feature context:
 
   graphify query "<task, file paths, hook names, or feature context>" --graph ${graph_path} --budget 2000
 
+Run it on its own: a query inside a pipe or list (| head, || true, ;) is not recorded, because its failure would be hidden.
 Inspect returned nodes before editing. A fresh query is required every ${ttl}s (or after branch change). Native search is not an acceptable substitute when Graphify is enabled.
 EOF
 }
 
 sb_graphify_prompt_reminder_line() {
-  local config_file="${1:-}"
-  local project_root graph_rel ttl
+  local config_file="${1:-}" project_root graph_rel ttl
   project_root="$(dirname "$config_file")"
   graph_rel="$(sb_graphify_graph_rel_path "$config_file")"
 
@@ -267,7 +216,7 @@ sb_graphify_prompt_reminder_line() {
         printf '%s' "Graphify: fresh query recorded — substantive work allowed until TTL expires."
       else
         ttl="$(sb_graphify_query_ttl_seconds "$config_file")"
-        printf '%s' "Graphify: QUERY REQUIRED — run \`graphify query \"<concrete task context>\" --graph ${graph_rel} --budget 2000\` before edits (TTL ${ttl}s). Native search is not a substitute."
+        printf '%s' "Graphify: QUERY REQUIRED — run \`graphify query \"<concrete task context>\" --graph ${graph_rel} --budget 2000\` on its own (no pipe) before edits (TTL ${ttl}s). Native search is not a substitute."
       fi
       ;;
   esac

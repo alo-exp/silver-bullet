@@ -1,16 +1,18 @@
 #!/usr/bin/env bash
 # Tests for hooks/record-token-compression-usage.sh
 set -euo pipefail
+# The opt-in gates act only on the user's own consent, never on .silver-bullet.json alone.
+# shellcheck source=../lib/consent-helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/consent-helpers.sh"
+sb_test_consent_grant_all
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 ORIG_HOME="${HOME:-}"
 ORIG_RTK_HOME="${RTK_HOME:-}"
-ORIG_XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-}"
 ORIG_XDG_STATE_HOME="${XDG_STATE_HOME:-}"
 SB_TEST_HOME_ROOT="$(mktemp -d)"
 export HOME="$SB_TEST_HOME_ROOT"
 export RTK_HOME="$SB_TEST_HOME_ROOT/.rtk"
-export XDG_CONFIG_HOME="$SB_TEST_HOME_ROOT/.config"
 export XDG_STATE_HOME="$SB_TEST_HOME_ROOT/.local/state"
 if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
   # shellcheck source=hooks/lib/runtime-paths.sh
@@ -33,11 +35,10 @@ RTK_STATE=""
 
 cleanup_all() {
   [[ -n "${TMPDIR_TEST:-}" ]] && rm -rf "$TMPDIR_TEST"
-  [[ -n "${TEST_RUN_ID:-}" ]] && rm -rf "${SB_TEST_DIR}/rtk-usage-${TEST_RUN_ID}"
+  [[ -n "${TEST_RUN_ID:-}" ]] && rm -rf "${SB_TEST_DIR}/t${TEST_RUN_ID}-rtk-usage"
   rm -rf "$SB_TEST_HOME_ROOT"
   if [[ -n "$ORIG_HOME" ]]; then export HOME="$ORIG_HOME"; else unset HOME; fi
   if [[ -n "$ORIG_RTK_HOME" ]]; then export RTK_HOME="$ORIG_RTK_HOME"; else unset RTK_HOME; fi
-  if [[ -n "$ORIG_XDG_CONFIG_HOME" ]]; then export XDG_CONFIG_HOME="$ORIG_XDG_CONFIG_HOME"; else unset XDG_CONFIG_HOME; fi
   if [[ -n "$ORIG_XDG_STATE_HOME" ]]; then export XDG_STATE_HOME="$ORIG_XDG_STATE_HOME"; else unset XDG_STATE_HOME; fi
 }
 trap cleanup_all EXIT
@@ -52,9 +53,8 @@ setup() {
   TMPDIR_TEST="$(mktemp -d)"
   export HOME="$SB_TEST_HOME_ROOT"
   export RTK_HOME="$SB_TEST_HOME_ROOT/.rtk"
-  export XDG_CONFIG_HOME="$SB_TEST_HOME_ROOT/.config"
   export XDG_STATE_HOME="$SB_TEST_HOME_ROOT/.local/state"
-  RTK_STATE="${SB_TEST_DIR}/rtk-usage-${TEST_RUN_ID}"
+  RTK_STATE="${SB_TEST_DIR}/t${TEST_RUN_ID}-rtk-usage"
   rm -f "$RTK_STATE"
   cat >"$TMPDIR_TEST/silver-bullet.md" <<'EOF'
 # Silver Bullet
