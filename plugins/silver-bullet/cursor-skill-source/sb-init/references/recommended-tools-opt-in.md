@@ -6,8 +6,10 @@ Load this reference when executing Phase 1.1a–§1.1g during `/sb:init` or upda
 ### 1.1a Graphify (recommended tool — opt-in)
 
 Graphify powers SB's retrieval-oriented project memory. SB **asks for explicit permission**
-before enabling mandatory enforcement. Consent is stored in `.silver-bullet.json` under
-`recommended_tools.graphify.enabled_by_user` (`null` = pending, `true` = opted in, `false` = opted out).
+before enabling mandatory enforcement. The user's consent is recorded with
+`scripts/sb-consent.sh` in their own consent store (`docs/CONSENT.md`), never in the repository.
+`.silver-bullet.json` carries only the project's recommendation,
+`recommended_tools.graphify.enabled_by_user` (`null` = pending, `true` = recommended, `false` = turned off).
 
 **Benefits (present concisely when asking):**
 - Scoped retrieval saves tokens vs broad file reads
@@ -42,6 +44,17 @@ If `graphify_consent` is `null`, use ask the user directly (do **not** auto-inst
   - "B. No — skip Graphify (advisory/docs fallback only)"
 
 If **A**: set `graphify_consent=true`. If **B**: set `graphify_consent=false`.
+
+**Record the answer as the user's consent (required).** `.silver-bullet.json` is committed
+repository content and never grants consent; hooks enforce a tool only after the user's own
+consent store says so (`docs/CONSENT.md`). After the user answers, run (substitute the tool id):
+```bash
+bash "${PLUGIN_ROOT}/scripts/sb-consent.sh" grant <tool> --project "$PWD"     # Yes
+bash "${PLUGIN_ROOT}/scripts/sb-consent.sh" decline <tool> --project "$PWD"   # No
+```
+Yes also allows installing and wiring the tool on this machine; use `--capabilities enforce`
+to allow enforcement only. Writing `enabled_by_user` into the file (below) is only the project's
+recommendation.
 
 Record the choice — it will be written to `.silver-bullet.json` in Phase 3.4 (fresh) or preserved in update mode:
 ```json
@@ -177,6 +190,17 @@ If `agentmemory_consent` is `null`, ask the user (do **not** auto-install):
 
 If **A**: set `agentmemory_consent=true`. If **B**: set `agentmemory_consent=false`.
 
+**Record the answer as the user's consent (required).** `.silver-bullet.json` is committed
+repository content and never grants consent; hooks enforce a tool only after the user's own
+consent store says so (`docs/CONSENT.md`). After the user answers, run (substitute the tool id):
+```bash
+bash "${PLUGIN_ROOT}/scripts/sb-consent.sh" grant agentmemory --project "$PWD"     # Yes
+bash "${PLUGIN_ROOT}/scripts/sb-consent.sh" decline agentmemory --project "$PWD"   # No
+```
+Yes also allows installing and wiring the tool on this machine; use `--capabilities enforce`
+to allow enforcement only. Writing `enabled_by_user` into the file (below) is only the project's
+recommendation.
+
 #### Step 3 — Install and wire (when opted in or retrying suspended install)
 
 Run when `agentmemory_consent` is `true` AND (fresh opt-in OR `agentmemory_suspended` is `true`).
@@ -269,8 +293,8 @@ jq -r '.recommended_tools.rtk.enforcement_suspended // false' .silver-bullet.jso
 
 Question: "Silver Bullet recommends **RTK** for shell output compression.\n\nBenefits: automatic PreToolUse rewrite for git, npm, cargo, kubectl, etc.\n\n**Note:** Cursor uses AGENTS.md awareness only (no live Bash rewrite yet).\n\nEnable RTK for this project?"
 
-- **Yes** → `enabled_by_user: true`
-- **No** → `enabled_by_user: false`
+- **Yes** → `sb-consent.sh grant <tool> --project "$PWD"` (then the recommendation `enabled_by_user: true`)
+- **No** → `sb-consent.sh decline <tool> --project "$PWD"` (then `enabled_by_user: false`)
 
 #### Step 3 — Install when opted in or retrying suspended
 
@@ -350,8 +374,8 @@ jq -r '.recommended_tools.leanctx.enforcement_suspended // false' .silver-bullet
 
 Question: "Silver Bullet recommends **LeanCTX** for parallel-routed compression (wire proxy, AST read, PathJail, ledger).\n\n**Note:** Requires explicit surface routing with RTK and Context Mode — no double-compression.\n\nEnable LeanCTX for this project?"
 
-- **Yes** → `enabled_by_user: true`
-- **No** → `enabled_by_user: false`
+- **Yes** → `sb-consent.sh grant <tool> --project "$PWD"` (then the recommendation `enabled_by_user: true`)
+- **No** → `sb-consent.sh decline <tool> --project "$PWD"` (then `enabled_by_user: false`)
 
 #### Step 3 — Install when opted in or retrying suspended
 

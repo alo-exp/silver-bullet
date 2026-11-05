@@ -1,67 +1,45 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2154,SC2034  # input, tool_name, config_file, project_root, mcp_* are set by sb_opt_in_hook_begin (hooks/lib/opt-in-gate.sh)
 set -euo pipefail
 trap 'exit 0' ERR
 
-# PostToolUse CallMcpTool — record agentmemory / graphify MCP usage for opt-in gates (Wave 3).
+# PostToolUse MCP — record Graphify and agentmemory MCP retrievals for the opt-in gates.
+# The call must come from the tool's own MCP server (exact or namespaced name) and be one
+# of its read tools: query_graph/get_node/get_neighbors/shortest_path for Graphify,
+# memory_smart_search/memory_recall/memory_search/memory_file_history for agentmemory.
+# Hosts name these mcp__<server>__<tool>, or send CallMcpTool/MCP with server and tool in the payload.
+
 umask 0077
 
-_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
-[[ -f "$_lib_dir/runtime-paths.sh" ]] && source "$_lib_dir/runtime-paths.sh"
-[[ -f "$_lib_dir/sb-project-gate.sh" ]] && source "$_lib_dir/sb-project-gate.sh"
-[[ -f "$_lib_dir/tool-input.sh" ]] && source "$_lib_dir/tool-input.sh"
-[[ -f "$_lib_dir/recommended-tools.sh" ]] && source "$_lib_dir/recommended-tools.sh"
-[[ -f "$_lib_dir/agentmemory-gate.sh" ]] && source "$_lib_dir/agentmemory-gate.sh"
-[[ -f "$_lib_dir/graphify-gate.sh" ]] && source "$_lib_dir/graphify-gate.sh"
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || exit 0
+[[ -f "$_lib_dir/opt-in-gate.sh" ]] || exit 0
+# shellcheck source=lib/opt-in-gate.sh
+source "$_lib_dir/opt-in-gate.sh"
+sb_opt_in_hook_begin record-recommended-mcp graphify agentmemory
+sb_opt_in_mcp_call || exit 0
+sb_opt_in_mcp_succeeded || exit 0
 
-command -v jq >/dev/null 2>&1 || exit 0
-
-input="$(cat 2>/dev/null || true)"
-[[ -n "$input" ]] || exit 0
-
-tool_name="$(sb_tool_name "$input" 2>/dev/null || printf '%s' "$input" | jq -r '.tool_name // ""')"
-case "$tool_name" in
-  CallMcpTool|MCP) ;;
-  *) exit 0 ;;
-esac
-
-config_file=""
-search_dir="$PWD"
-while true; do
-  if [[ -f "$search_dir/.silver-bullet.json" && -f "$search_dir/silver-bullet.md" ]]; then
-    config_file="$search_dir/.silver-bullet.json"
-    break
+recorded=""
+if [[ "$mcp_server" =~ ^([A-Za-z0-9_-]+[_-])?graphify$ ]]; then
+  case "$mcp_tool" in
+    query_graph | get_node | get_neighbors | shortest_path)
+      # shellcheck source=lib/graphify-gate.sh
+      source "$_lib_dir/graphify-gate.sh"
+      if sb_graphify_required "$config_file" && sb_graphify_record_query "$config_file"; then
+        recorded="Graphify query"
+      fi
+      ;;
+  esac
+else
+  # shellcheck source=lib/agentmemory-gate.sh
+  source "$_lib_dir/agentmemory-gate.sh"
+  if sb_agentmemory_mcp_server_matches "$mcp_server" && sb_agentmemory_mcp_tool_is_retrieval "$mcp_tool" \
+    && sb_agentmemory_required "$config_file" && sb_agentmemory_record_usage "$config_file"; then
+    recorded="agentmemory usage"
   fi
-  if [[ -d "$search_dir/.git" ]] || [[ "$search_dir" == "/" ]]; then
-    break
-  fi
-  search_dir="$(dirname "$search_dir")"
-done
-[[ -n "$config_file" ]] || exit 0
-sb_project_gate_or_exit 2>/dev/null || exit 0
+fi
 
-server="$(printf '%s' "$input" | jq -r '.tool_input.server // .tool_input.mcpServer // ""' 2>/dev/null || true)"
-mcp_tool="$(printf '%s' "$input" | jq -r '.tool_input.toolName // .tool_input.name // ""' 2>/dev/null || true)"
-[[ -n "$server" && -n "$mcp_tool" ]] || exit 0
-
-recorded=0
-case "$server" in
-  *agentmemory*)
-    if sb_agentmemory_required "$config_file" 2>/dev/null && declare -f sb_agentmemory_record_usage >/dev/null 2>&1; then
-      sb_agentmemory_record_usage "$config_file" && recorded=1
-    fi
-    ;;
-esac
-
-case "$mcp_tool" in
-  save_memory|capture|remember|store*|memory_smart_search|memory_recall|memory_search|memory_save|smart_search|recall|search)
-    if sb_agentmemory_required "$config_file" 2>/dev/null && declare -f sb_agentmemory_record_usage >/dev/null 2>&1; then
-      sb_agentmemory_record_usage "$config_file" && recorded=1
-    fi
-    ;;
-esac
-
-if [[ "$recorded" -eq 1 ]]; then
-  printf '{"hookSpecificOutput":{"message":"✅ recommended MCP usage recorded"}}'
+if [[ -n "$recorded" ]]; then
+  printf '{"hookSpecificOutput":{"message":"✅ %s recorded"}}' "$recorded"
 fi
 exit 0
-
