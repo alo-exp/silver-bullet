@@ -160,7 +160,11 @@ rt_repair_rtk() {
     return 0
   fi
   local opt="${RT_REPO_ROOT}/scripts/optimize-rtk-context-mode.sh"
-  if [[ -f "$opt" ]]; then
+  if ! rt_mutation_allowed rtk wire; then
+    # Install-only consent: the optimizer would skip every step, so do not run it or claim success.
+    rt_wire_skipped_notice rtk
+    failures+=("wire_not_consented")
+  elif [[ -f "$opt" ]]; then
     local -a opt_args=(--host "${RT_HOST:-cursor}" --project-root "${RT_PROJECT_ROOT:-}" --skip-cm-doctor)
     rt_cross_tool_batch_active && opt_args+=(--skip-rtk-init)
     if rt_cross_tool_batch_active; then

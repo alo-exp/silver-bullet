@@ -182,8 +182,10 @@ assert_eq "rtk repair (claude): no cursor hook patch" '{"actions":["optimize_rtk
 sb_test_consent_reset_mirror "$HR_PROJ/.silver-bullet.json" install
 : >"$HR_LOG"
 out="$(rt_repair_rtk 2>/dev/null)"
-assert_eq "rtk repair (install-only grant): no hooks.json patch" '{"actions":["optimize_rtk_context_mode"],"failures":[],"restart_required":false}' "$(jq -c . <<<"$out")"
+assert_eq "rtk repair (install-only grant): skipped, no false success" '{"actions":[],"failures":["wire_not_consented"],"restart_required":false}' "$(jq -c . <<<"$out")"
 assert_not_contains "rtk repair (install-only grant): patch-hooks never ran" "$(cat "$HR_LOG")" "patch-hooks"
+assert_not_contains "rtk repair (install-only grant): the optimizer never ran" "$(cat "$HR_LOG")" "optimize-rtk-context-mode"
+assert_contains "rtk repair (install-only grant): says why" "$(rt_repair_rtk 2>&1 >/dev/null)" "skipped: no consent (capability wire)"
 sb_test_consent_reset_mirror "$HR_PROJ/.silver-bullet.json" install,wire,enforce
 H cursor
 mv "$HR_STAGE/scripts/optimize-rtk-context-mode.sh" "$HR_STAGE/scripts/opt.off"; mv "$HR_STAGE/scripts/lib/global-toolstack/patch-hooks.py" "$HR_STAGE/scripts/lib/global-toolstack/patch-hooks.off"
@@ -341,6 +343,14 @@ assert_eq "leanctx repair: installer ran" '{"actions":["install_leanctx_sb"],"fa
 assert_contains "leanctx repair: installer arguments" "$(cat "$HR_LOG")" "install-leanctx-sb --host cursor --project-root $HR_PROJ |"
 : >"$HR_LOG"; RT_CROSS_TOOL_BATCH=1 rt_repair_leanctx >/dev/null 2>&1
 assert_contains "leanctx repair (batch): merge skipped" "$(cat "$HR_LOG")" "--skip-merge"
+# an install-only grant: the installer would skip everything, so it is not run and nothing is claimed
+sb_test_consent_reset_mirror "$HR_PROJ/.silver-bullet.json" install
+: >"$HR_LOG"
+out="$(rt_repair_leanctx 2>/dev/null)"
+assert_eq "leanctx repair (install-only grant): skipped, no success action, no restart" '{"actions":[],"failures":["wire_not_consented"],"restart_required":false}' "$(jq -c . <<<"$out")"
+assert_not_contains "leanctx repair (install-only grant): the installer never ran" "$(cat "$HR_LOG")" "install-leanctx-sb"
+assert_contains "leanctx repair (install-only grant): says why" "$(rt_repair_leanctx 2>&1 >/dev/null)" "skipped: no consent (capability wire)"
+sb_test_consent_reset_mirror "$HR_PROJ/.silver-bullet.json" install,wire,enforce
 out="$(HR_SH_RC_install_leanctx_sb=1 rt_repair_leanctx 2>/dev/null)"
 assert_eq "leanctx repair: installer failure" '{"actions":[],"failures":["install_leanctx_failed"],"restart_required":true}' "$(jq -c . <<<"$out")"
 mv "$HR_STAGE/scripts/install-leanctx-sb.sh" "$HR_STAGE/scripts/install.off"
