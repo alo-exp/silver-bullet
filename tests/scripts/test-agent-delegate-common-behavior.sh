@@ -123,18 +123,46 @@ mv "$ST/scripts/rfl.bak" "$ST/scripts/review-fix-ladder.py"
 # ---------------- redaction ----------------
 fake_sk="$(printf '%s-%s' 'sk' 'abc1234567890')"
 fake_ghp="$(printf '%s%s' 'ghp_' 'abcdefghijklmnopqrstuvwxyz')"
-out="$(agent_delegate_redact_output "Authorization: Bearer hunter2 password = swordfish ${fake_sk} ${fake_ghp} keep")"
-assert_contains "redact: key/value patterns" "$out" "Authorization=[REDACTED]"
+fake_pat="$(printf '%s%s' 'github_pat_' '11ABCDEFG0123456789_abcdefghijklmnopqrstuv')"
+fake_xox="$(printf '%s%s' 'xoxb-' '123456789012-abcdefABCDEF')"
+fake_aws="$(printf '%s%s' 'AKIA' 'IOSFODNN7ABCDEFG')"
+fake_jwt="$(printf '%s.%s.%s' 'eyJhbGciOiJIUzI1NiJ9' 'eyJzdWIiOiIxMjM0NTY3ODkwIn0' 'SflKxwRJSMeKKF2QT4fwpMeJf36')"
+fake_val="$(printf '%s%s' 'wJalrXUtnFEMI/K7MDENG' '/bPxRfiCYEXAMPLEKEY')"
+out="$(agent_delegate_redact_output "Authorization: Bearer hunter2xyz password = swordfish ${fake_sk} ${fake_ghp} keep")"
+assert_contains "redact: authorization header value" "$out" "Authorization: [REDACTED]"
+assert_not_contains "redact: bearer token gone" "$out" "hunter2xyz"
 assert_contains "redact: sk key" "$out" "sk-[REDACTED]"
-assert_contains "redact: ghp token" "$out" "ghp_[REDACTED]"
+assert_contains "redact: ghp token" "$out" "gh_[REDACTED]"
 assert_not_contains "redact: secret value gone" "$out" "swordfish"
 assert_contains "redact: plain text kept" "$out" "keep"
+for tok in "$fake_pat" "$fake_xox" "$fake_aws" "$fake_jwt" "$fake_val"; do
+  out="$(agent_delegate_redact_output "curl -H 'Authorization: Bearer ${tok}' https://x; AWS_SECRET_ACCESS_KEY=${tok}")"
+  assert_not_contains "redact: ${tok:0:8}... removed everywhere" "$out" "$tok"
+done
 agent_delegate_redact_log_file "$TL_TMP/nolog"
 assert_file_absent "redact file: missing file stays missing" "$TL_TMP/nolog"
 printf 'token=abc123\nok line\n' >"$TL_TMP/log.txt"
 agent_delegate_redact_log_file "$TL_TMP/log.txt"
 assert_eq "redact file: rewritten in place" "token=[REDACTED]
 ok line" "$(cat "$TL_TMP/log.txt")"
+ln -s "$TL_TMP/log.txt" "$TL_TMP/log.link"
+printf 'token=zzz999\n' >"$TL_TMP/log.txt"
+agent_delegate_redact_log_file "$TL_TMP/log.link" 2>/dev/null
+assert_eq "redact file: refuses to write through a symlink" "token=zzz999" "$(cat "$TL_TMP/log.txt")"
+
+# the raw log stays private and is redacted when the delegate is interrupted (R4-31)
+GL_OUT="$(bash -c '
+  source "$1/scripts/lib/agent-delegate-common.sh"
+  LOGF="$2/guarded/run.log"
+  agent_delegate_guard_log "$LOGF"
+  stat_mode="$(python3 -c "import os,sys;print(oct(os.stat(sys.argv[1]).st_mode & 0o777))" "$LOGF")"
+  printf "key=\"x\" token=livevalue123\n" >>"$LOGF"
+  kill -TERM $$
+  sleep 5
+  echo "mode=$stat_mode"' _ "$ST" "$TL_TMP" 2>&1 || true)"
+assert_eq "guard_log: interrupted delegate leaves a redacted log" "key=\"x\" token=[REDACTED]" "$(cat "$TL_TMP/guarded/run.log")"
+assert_eq "guard_log: log is 0600" "0o600" "$(python3 -c 'import os,sys;print(oct(os.stat(sys.argv[1]).st_mode & 0o777))' "$TL_TMP/guarded/run.log")"
+bash -c 'source "$1/scripts/lib/agent-delegate-common.sh"; agent_delegate_guard_log ""; echo noop' _ "$ST" | grep -q noop && tl_pass "guard_log: empty log path is a no-op" || tl_fail "guard_log: empty log path is a no-op"
 
 # ---------------- resolve_prompt ----------------
 tl_run agent_delegate_resolve_prompt "$TL_TMP/nobrief" "" ""
@@ -143,7 +171,7 @@ assert_contains "prompt: missing brief message" "$TL_ERR" "brief file not found"
 printf 'do the thing\n' >"$TL_TMP/brief.md"
 tl_run agent_delegate_resolve_prompt "$TL_TMP/brief.md" "$TL_TMP/ignored" "ignored"
 assert_eq "prompt: brief wins" "do the thing" "$TL_OUT"
-printf 'api_key: hunter2\n' >"$TL_TMP/secret.md"
+printf 'use AWS_SECRET_ACCESS_KEY=%s for the upload\n' "$fake_val" >"$TL_TMP/secret.md"
 tl_run agent_delegate_resolve_prompt "$TL_TMP/secret.md" "" ""
 assert_eq "prompt: secret in brief" 2 "$TL_STATUS"
 assert_contains "prompt: secret in brief message" "$TL_ERR" "brief contains secret patterns"
@@ -157,7 +185,7 @@ assert_eq "prompt: secret in prompt file" 2 "$TL_STATUS"
 assert_contains "prompt: secret in prompt file message" "$TL_ERR" "prompt file contains secret patterns"
 tl_run agent_delegate_resolve_prompt "" "" "inline prompt"
 assert_eq "prompt: inline text" "inline prompt" "$TL_OUT"
-tl_run agent_delegate_resolve_prompt "" "" "password: x"
+tl_run agent_delegate_resolve_prompt "" "" "export GITLAB_TOKEN=${fake_val}"
 assert_eq "prompt: secret inline" 2 "$TL_STATUS"
 assert_contains "prompt: secret inline message" "$TL_ERR" "prompt contains secret patterns"
 tl_run agent_delegate_resolve_prompt "" "" ""
@@ -165,6 +193,16 @@ assert_eq "prompt: nothing provided" 2 "$TL_STATUS"
 assert_contains "prompt: nothing provided message" "$TL_ERR" "provide --prompt, --prompt-file, or --brief-file"
 agent_delegate_brief_has_secrets "x ${fake_sk}" && tl_pass "secrets: sk key" || tl_fail "secrets: sk key"
 agent_delegate_brief_has_secrets "x ${fake_ghp}" && tl_pass "secrets: ghp token" || tl_fail "secrets: ghp token"
+# R10b-06: upper-case env assignments, Bearer JWTs and prefix tokens are caught ...
+for sample in "AWS_SECRET_ACCESS_KEY=${fake_val}" "GITLAB_TOKEN=$(printf '%s%s' 'glpat-' 'abcdefghij0123456789xy')" "Authorization: Bearer ${fake_jwt}" "${fake_pat}" "${fake_xox}" "${fake_aws}" "-----BEGIN RSA PRIVATE KEY-----"; do
+  agent_delegate_brief_has_secrets "context: ${sample}" && tl_pass "secrets: rejects ${sample:0:14}..." || tl_fail "secrets: rejects ${sample:0:14}..."
+done
+# ... and an honest auth-feature brief is not refused
+for honest in "Implement login: POST /login returns a session token: JWT" "the form shows password: field and api_key: optional" "Authorization: Bearer <token> is documented in README" "set GITHUB_TOKEN=\${GITHUB_TOKEN} in the workflow" "tokens: 12 used, secret: none" "api_key = os.environ[\"API_KEY\"]"; do
+  agent_delegate_brief_has_secrets "$honest" && tl_fail "secrets: accepts honest brief: ${honest:0:30}" || tl_pass "secrets: accepts honest brief: ${honest:0:30}"
+done
+rc=0; PATH="$(tl_path_without python3)" agent_delegate_brief_has_secrets "benign" 2>/dev/null || rc=$?
+assert_eq "secrets: scanner failure fails closed" 0 "$rc"
 
 # ---------------- work dir ----------------
 tl_run agent_delegate_validate_work_dir ""
@@ -347,9 +385,7 @@ assert_eq "retry decision: changed repo stops" 1 "$rc"
 assert_contains "retry decision: changed repo explains opt-in" "$err" "pass --quota-retry"
 rc=0; SB_AM_QUOTA_RETRY=1 agent_delegate_quota_retry_decision lbl "$QD_ERR" 1 3 "$QD_REPO" "$FP" 2>/dev/null || rc=$?
 assert_eq "retry decision: --quota-retry opts in" 0 "$rc"
-mv "$ST/scripts/rfl.bak" "$ST/scripts/review-fix-ladder.py"
 rc=0; err="$(RESOLVER_JSON='{"should_short_retry": false}' agent_delegate_quota_retry_decision lbl "$QD_ERR" 1 3 "$QD_REPO" "$FP" 2>&1 >/dev/null)" || rc=$?
-mv "$ST/scripts/review-fix-ladder.py" "$ST/scripts/rfl.bak"
 assert_eq "retry decision: long quota window stops" 1 "$rc"
 assert_contains "retry decision: long window left to the RFL schedule" "$err" "skip short retry (RFL schedule)"
 rc=0; agent_delegate_quota_retry_decision lbl "$QD_ERR" 1 3 "$TL_TMP/dm-other" unknown 2>/dev/null || rc=$?

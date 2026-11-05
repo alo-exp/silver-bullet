@@ -81,6 +81,7 @@ fi
 if [[ -n "$LOG_FILE" ]]; then
   LOG_FILE="$(agent_delegate_canonicalize_path "$LOG_FILE")"
 fi
+agent_delegate_guard_log "$LOG_FILE"
 
 PROMPT_TEXT="$(agent_delegate_resolve_prompt "$BRIEF_FILE" "$PROMPT_FILE" "$PROMPT_TEXT")" || exit 2
 agent_mode_run_delegate_resolver "codex" "$WORK_DIR" "$PROMPT_TEXT" || exit $?
@@ -126,6 +127,10 @@ agent_codex_apply_lightweight_env() {
 
   if [[ "${SB_AGENT_CODEX_SKIP_MCP:-1}" == "1" && -z "${SB_AGENT_CODEX_CODEX_HOME_RESTORE:-}" ]]; then
     local lightweight_home
+    # The lightweight home holds a copy of auth.json; an abnormally killed run (SIGKILL/OOM) skips
+    # the EXIT trap, so sweep this user's stale ones on start (R4-31).
+    find "${TMPDIR:-/tmp}" -maxdepth 1 -type d -name 'agent-codex-codex-home-*' -user "$(id -un)" -mmin +120 \
+      -exec rm -rf {} + 2>/dev/null || true
     lightweight_home="$(mktemp -d "${TMPDIR:-/tmp}/agent-codex-codex-home-XXXXXX")"
     agent_codex_prepare_lightweight_codex_home "${CODEX_HOME:-${HOME}/.codex}" "$lightweight_home"
     SB_AGENT_CODEX_CODEX_HOME_RESTORE="${CODEX_HOME:-}"
@@ -155,6 +160,9 @@ agent_codex_invoke_once() {
   # EXIT, not RETURN: a RETURN trap also fires when `source "$AGENT_SH"` finishes,
   # which would delete the lightweight CODEX_HOME before the adapter runs.
   trap agent_codex_cleanup_lightweight_env EXIT
+  trap 'exit 130' INT
+  trap 'exit 143' TERM
+  trap 'exit 129' HUP
   export SB_ROOT
   export WORK_DIR="$WORK_DIR"
   export CODEX_BIN="$CLI"

@@ -76,6 +76,7 @@ fi
 if [[ -n "$LOG_FILE" ]]; then
   LOG_FILE="$(agent_delegate_canonicalize_path "$LOG_FILE")"
 fi
+agent_delegate_guard_log "$LOG_FILE"
 
 PROMPT_TEXT="$(agent_delegate_resolve_prompt "$BRIEF_FILE" "$PROMPT_FILE" "$PROMPT_TEXT")" || exit 2
 agent_mode_run_delegate_resolver "claude" "$WORK_DIR" "$PROMPT_TEXT" || exit $?
