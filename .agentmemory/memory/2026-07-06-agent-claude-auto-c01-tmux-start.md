@@ -5,7 +5,7 @@
 - **install_fp:** claude@609ee0a1812c+2717f916398e
 - **sb_git_sha:** 609ee0a1812c
 - **tmux session:** agent-claude-auto-c01 (pane driver)
-- **work_dir:** /Users/shafqat/projects/enterprise-grade-test-app
+- **work_dir:** /Users/<user>/projects/enterprise-grade-test-app
 - **verdict:** STARTED (not blocked) — claude-run.log grew 0→110KB+; expect PID active; prompt pasted; window title "Add health endpoint via silver bullet"
 - **prior blocker:** non-tmux `start` left E2E-081 0-token banner at ~1.3KB (interactive=0 / no PTY wait)
 - **operator tmux:** `tmux attach -t agent-claude-auto-c01`

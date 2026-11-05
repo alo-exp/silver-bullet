@@ -7,7 +7,7 @@ ISSUES: none (review did not run; I-1..I-65 not re-filed)
 EVIDENCE: .cursor/plans/agent_interaction_modes_17ed9bf7.plan.md ; .planning/rfl-agent-interaction-modes-17ed9bf7/rung-12-fable5-high/{brief.md,invoke-meta.md,model-probe.stdout,model-probe2.stdout,invoke.stdout,invoke.stderr,claude-run.log,preflight.stdout,preflight.stderr,RESULT.md,agentmemory-export.md}
 BLOCKERS: monthly spend limit on `claude-fable-5` / `fable` `--effort high` (slug recognized; not missing). Exact CLI text: `You've hit your monthly spend limit. Switch to another model, or manage usage credits at claude.ai/settings/usage?from=cc_cli_limit_message, to continue.` Secondary: invoke log-floor (389 B < 512 B). Harness: `scripts/lib/claude-matrix-auth.sh` missing (same adapter path as rungs 10–11; probe still reached the model).
 
-Plan: [agent_interaction_modes_17ed9bf7.plan.md](/Users/shafqat/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
+Plan: [agent_interaction_modes_17ed9bf7.plan.md](/Users/<user>/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
 
 Notes:
 - NI print path (`invoke.sh --skip-preflight --use-print --mode strict`). Preflight WARN only: missing `install-claude.sh` plugin-cache helper (exit 1, same as rungs 10–11).

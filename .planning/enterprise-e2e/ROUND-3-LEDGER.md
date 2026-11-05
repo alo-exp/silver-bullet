@@ -243,7 +243,7 @@ Copy this template to `ROUND-1-LEDGER.md`, `ROUND-2-LEDGER.md`, etc. at round st
 | Preflight | **PASS** (`RTK_DISABLED=1 --preflight-only`, `SB_E2E_SESSION0_SKIP=1`) @ `fc012e2f` |
 | RCS | **58/100** — structural 15/15, claims 15/15, matrix ledger 7/25 (8/22 pass, `LEDGER_MISMATCH`) |
 | Reconcile | **LEDGER_MISMATCH** (8/22) |
-| Fixture | `/Users/shafqat/projects/enterprise-grade-test-app` |
+| Fixture | `/Users/<user>/projects/enterprise-grade-test-app` |
 | Row 1 | **IN FLIGHT** — `failure_class: environmental` (OpenCode proxy weekly **429**); bypass OK; quota retry **#3** @ 600s; PIDs **62086/62131** (not duplicated) |
 | Monitor | **79415** (restarted; was `1120` dead; `SB_E2E_MATRIX_LOG=.e2e-row1-attempt.log`) |
 | TUI watch | **79416** (restarted; was `2043` dead) |

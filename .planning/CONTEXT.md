@@ -31,7 +31,7 @@ Scope: project-level maintenance (no active milestone/phase; STATE.md milestone 
 | D3 | Verify with `scripts/sb-doctor.sh` D10/D20 checks, not by self-report | `docs/LEANCTX.md`: a dirty mutex makes prior tool self-reports untrustworthy |
 | D4 | Commit `graphify-out/` as-is; do not rebuild the graph first | User asked to commit existing changes; artifacts already tracked (`a79ecb77`) |
 | D5 | Restore the trailing newline on `.silver-bullet.json` before committing | Working tree removed it; unrelated to any intended change |
-| D6 | Revert the `.claude/settings.json` graphify hook change | It hardcodes `/Users/shafqat/.local/bin/graphify`, which breaks for other contributors (user decision) |
+| D6 | Revert the `.claude/settings.json` graphify hook change | It hardcodes `/Users/<user>/.local/bin/graphify`, which breaks for other contributors (user decision) |
 | D7 | Commit the `CLAUDE.md` graphify section and the vendored `.claude/skills/graphify/` | User decision; consistent with `graphify-out/` already being shared |
 | D8 | Gitignore `.claude/settings.json.graphify-bak` and `.claude/CLAUDE.md` | Local-machine artifacts of the graphify install |
 | D9 | Push directly to `main` | Explicit user instruction; fast-forward, no PR requested |

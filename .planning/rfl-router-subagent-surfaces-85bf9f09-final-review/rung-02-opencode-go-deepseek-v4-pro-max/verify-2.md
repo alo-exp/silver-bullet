@@ -8,8 +8,8 @@ No freeze edits, no YAML execute, no git branch switch, no clarify, no rung-3 st
 
 | Copy | SHA-256 (independently hashed this pass) | Size |
 |---|---|---|
-| `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `edff7c0cca55e7e6662cafbbf3f10cea71230483c4992c2a5d5149c629a63e5e` | 621101 bytes |
-| `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `edff7c0cca55e7e6662cafbbf3f10cea71230483c4992c2a5d5149c629a63e5e` | 621101 bytes |
+| `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `edff7c0cca55e7e6662cafbbf3f10cea71230483c4992c2a5d5149c629a63e5e` | 621101 bytes |
+| `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `edff7c0cca55e7e6662cafbbf3f10cea71230483c4992c2a5d5149c629a63e5e` | 621101 bytes |
 
 - **Byte-identical: YES** (`cmp -s` exit 0).
 - Both match the locked freeze `edff7c0c…` / 621101. Disk wins — the locked freeze is what is on disk.

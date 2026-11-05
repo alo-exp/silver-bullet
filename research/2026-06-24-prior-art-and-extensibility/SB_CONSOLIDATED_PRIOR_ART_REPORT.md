@@ -6,16 +6,16 @@ Click any link to open in Cursor's built-in viewer.
 
 | Artifact | Path |
 |----------|------|
-| **Consolidated report (this file)** | [SB_CONSOLIDATED_PRIOR_ART_REPORT.md](/Users/shafqat/projects/silver-bullet/repo/docs/research-260624/SB_CONSOLIDATED_PRIOR_ART_REPORT.md) |
-| **HTML report** | [SB_CONSOLIDATED_PRIOR_ART_REPORT.html](/Users/shafqat/projects/silver-bullet/repo/docs/research-260624/SB_CONSOLIDATED_PRIOR_ART_REPORT.html) |
-| **Master prompt** | [PRIOR-ART-MASTER-PROMPT.txt](/Users/shafqat/projects/silver-bullet/repo/docs/research-260624/PRIOR-ART-MASTER-PROMPT.txt) |
-| **Index** | [PRIOR-ART-MULTI-AI-PROMPT.md](/Users/shafqat/projects/silver-bullet/repo/docs/research-260624/PRIOR-ART-MULTI-AI-PROMPT.md) |
-| **Source: deepseek-v4-pro** | [prior-art-landscape-2026-06-27.md](/Users/shafqat/projects/silver-bullet/repo/docs/research-260624/prior-art-landscape-2026-06-27.md) |
-| **Source: minimax-m3** | [prior-art-landscape-minimax-m3.md](/Users/shafqat/projects/silver-bullet/repo/docs/research-260624/prior-art-landscape-minimax-m3.md) |
-| **Source: glm-5.2** | [prior-art-landscape-glm-5.2.md](/Users/shafqat/projects/silver-bullet/repo/docs/research-260624/prior-art-landscape-glm-5.2.md) |
-| **Source: kimi-k2.6** | [prior-art-landscape-report.md](/Users/shafqat/projects/silver-bullet/repo/docs/research-260624/prior-art-landscape-report.md) |
-| **Source: mimo-v2.5-pro** | [prior-art-landscape-research.md](/Users/shafqat/projects/silver-bullet/repo/docs/research-260624/prior-art-landscape-research.md) |
-| **Source: qwen3.7-max** | [prior-art-report.md](/Users/shafqat/projects/silver-bullet/repo/docs/research-260624/prior-art-report.md) |
+| **Consolidated report (this file)** | [SB_CONSOLIDATED_PRIOR_ART_REPORT.md](/Users/<user>/projects/silver-bullet/repo/docs/research-260624/SB_CONSOLIDATED_PRIOR_ART_REPORT.md) |
+| **HTML report** | [SB_CONSOLIDATED_PRIOR_ART_REPORT.html](/Users/<user>/projects/silver-bullet/repo/docs/research-260624/SB_CONSOLIDATED_PRIOR_ART_REPORT.html) |
+| **Master prompt** | [PRIOR-ART-MASTER-PROMPT.txt](/Users/<user>/projects/silver-bullet/repo/docs/research-260624/PRIOR-ART-MASTER-PROMPT.txt) |
+| **Index** | [PRIOR-ART-MULTI-AI-PROMPT.md](/Users/<user>/projects/silver-bullet/repo/docs/research-260624/PRIOR-ART-MULTI-AI-PROMPT.md) |
+| **Source: deepseek-v4-pro** | [prior-art-landscape-2026-06-27.md](/Users/<user>/projects/silver-bullet/repo/docs/research-260624/prior-art-landscape-2026-06-27.md) |
+| **Source: minimax-m3** | [prior-art-landscape-minimax-m3.md](/Users/<user>/projects/silver-bullet/repo/docs/research-260624/prior-art-landscape-minimax-m3.md) |
+| **Source: glm-5.2** | [prior-art-landscape-glm-5.2.md](/Users/<user>/projects/silver-bullet/repo/docs/research-260624/prior-art-landscape-glm-5.2.md) |
+| **Source: kimi-k2.6** | [prior-art-landscape-report.md](/Users/<user>/projects/silver-bullet/repo/docs/research-260624/prior-art-landscape-report.md) |
+| **Source: mimo-v2.5-pro** | [prior-art-landscape-research.md](/Users/<user>/projects/silver-bullet/repo/docs/research-260624/prior-art-landscape-research.md) |
+| **Source: qwen3.7-max** | [prior-art-report.md](/Users/<user>/projects/silver-bullet/repo/docs/research-260624/prior-art-report.md) |
 
 ---
 

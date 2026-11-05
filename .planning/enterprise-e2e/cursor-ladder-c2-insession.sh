@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Persistent in-session responder for Cursor-2 Phase A ladder.
 set -euo pipefail
-SB_ROOT="/Users/shafqat/projects/silver-bullet/repo"
+SB_ROOT="/Users/<user>/projects/silver-bullet/repo"
 LOG="/tmp/cursor-ladder-c2-in-session-driver.log"
 LADDER_LOG="${SB_ROOT}/.planning/enterprise-e2e/cursor-ladder-live.log"
 export SB_LIVE_CURSOR_SESSION_MAX_POLLS="${SB_LIVE_CURSOR_SESSION_MAX_POLLS:-7200}"

@@ -2,7 +2,7 @@
 
 - **Model:** Composer 2.5 High (`composer-2.5` / `sb-composer-2-5-high`)
 - **Phase:** `rung_2_verify_2` after ACCEPT-apply of Kimi pack K7–K11 / I-51–I-55
-- **Plan:** `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`
+- **Plan:** `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`
 - **Method:** Independent re-hash (`shasum -a 256`), graphify CLI orientation, ctx_execute line-range extraction from the live plan (not copied from verify_1 or review artifacts)
 
 ## SHA gate

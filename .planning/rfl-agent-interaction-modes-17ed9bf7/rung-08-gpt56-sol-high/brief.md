@@ -6,13 +6,13 @@ You are Codex CLI (`gpt-5.6-sol`, `model_reasoning_effort=high`) under `/silver:
 
 Independent **plan/spec review** of dual interaction modes. Write the complete review to **exactly**:
 
-`/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-agent-interaction-modes-17ed9bf7/rung-08-gpt56-sol-high/review.md`
+`/Users/<user>/projects/silver-bullet/repo/.planning/rfl-agent-interaction-modes-17ed9bf7/rung-08-gpt56-sol-high/review.md`
 
 Also print the same review as your final message. You may write **only** that review file.
 
 ## Plan
 
-[`/Users/shafqat/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md`](/Users/shafqat/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
+[`/Users/<user>/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md`](/Users/<user>/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
 
 SHA-256 at launch: `56e26c7d8925a362ae6dc967e4f16be5618d84a80a75d51307b5146278e89d21` (`wc -l` = 413). Re-hash at review time. If it differs, note both hashes; still review the file on disk. Do not abort solely on hash drift.
 
@@ -55,7 +55,7 @@ G1–G8 in CHARTER. Dual modes, auto default, pin wins, D3 live-session, one D4 
 ```
 # Rung 8 review — GPT-5.6 Sol High (Codex NI)
 
-**Plan:** [agent_interaction_modes_17ed9bf7.plan.md](/Users/shafqat/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
+**Plan:** [agent_interaction_modes_17ed9bf7.plan.md](/Users/<user>/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
 
 ```
 RUNG: 8

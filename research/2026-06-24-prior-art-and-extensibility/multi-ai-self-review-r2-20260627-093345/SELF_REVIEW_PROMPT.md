@@ -4,7 +4,7 @@ You are conducting a **critical self-review** of a skill that may be invoked by 
 
 ## The Skill
 
-**Location:** `/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/`
+**Location:** `/Users/<user>/projects/silver-bullet/repo/skills/multi-ai-task/`
 
 **Files to read (use the read tool for each — do not skip any):**
 

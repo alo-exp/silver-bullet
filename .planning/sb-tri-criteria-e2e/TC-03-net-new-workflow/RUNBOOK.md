@@ -3,14 +3,14 @@
 ## Preflight
 
 ```bash
-export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
+export SB_ROOT=/Users/<user>/projects/silver-bullet/repo
 bash scripts/sb-tri-criteria-e2e.sh preflight --track TC-03
 ```
 
 ## Start (Cursor parent — default)
 
 ```bash
-export SB_MINIMAL_INTENT_WORK_DIR=/Users/shafqat/projects/enterprise-grade-test-app
+export SB_MINIMAL_INTENT_WORK_DIR=/Users/<user>/projects/enterprise-grade-test-app
 bash scripts/sb-tri-criteria-e2e.sh start --track TC-03
 ```
 

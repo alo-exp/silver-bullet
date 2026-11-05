@@ -100,7 +100,7 @@ Phase checks from `agentmemory-graphify-synergy-audit.md` map to optimizer score
 
 ## Research traceability
 
-Every optimization step traces to `docs/research/graphify-agentmemory-optimization.md` (ultradeep digest) and dogfood evidence in `SETUP_REPORT.md`.
+Every optimization step traces to `docs/research/graphify-agentmemory-optimization.md` (ultradeep digest) and dogfood evidence in the locally generated setup report (`sb-verify-synergy.sh --write-setup-report`, not committed).
 
 ## Related
 

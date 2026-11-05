@@ -35,7 +35,7 @@ assert_blocks "release blocked without sidekick gate markers in live state" "$ou
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `bash /Users/shafqat/projects/silver-bullet/repo/tests/hooks/test-completion-audit.sh`
+Run: `bash /Users/<user>/projects/silver-bullet/repo/tests/hooks/test-completion-audit.sh`
 Expected: FAIL on the new sidekick marker case because the hook still reads `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state`.
 
 - [ ] **Step 3: Write minimal implementation**
@@ -56,7 +56,7 @@ fi
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `bash /Users/shafqat/projects/silver-bullet/repo/tests/hooks/test-completion-audit.sh`
+Run: `bash /Users/<user>/projects/silver-bullet/repo/tests/hooks/test-completion-audit.sh`
 Expected: PASS with the new Silver Bullet quality-gate state case and existing live-matrix cases.
 
 - [ ] **Step 5: Commit**
@@ -79,11 +79,11 @@ git commit -m "fix(release): enforce pre-release gate via Silver Bullet quality-
 
 ```bash
 grep -R "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state" \
-  /Users/shafqat/projects/silver-bullet/repo/docs/internal/pre-release-quality-gate.md \
-  /Users/shafqat/projects/silver-bullet/repo/skills/silver-release/SKILL.md \
-  /Users/shafqat/projects/silver-bullet/repo/silver-bullet.md \
-  /Users/shafqat/projects/silver-bullet/repo/templates/silver-bullet.md.base \
-  /Users/shafqat/projects/silver-bullet/repo/tests/test-app/silver-bullet.md
+  /Users/<user>/projects/silver-bullet/repo/docs/internal/pre-release-quality-gate.md \
+  /Users/<user>/projects/silver-bullet/repo/skills/silver-release/SKILL.md \
+  /Users/<user>/projects/silver-bullet/repo/silver-bullet.md \
+  /Users/<user>/projects/silver-bullet/repo/templates/silver-bullet.md.base \
+  /Users/<user>/projects/silver-bullet/repo/tests/test-app/silver-bullet.md
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
@@ -119,7 +119,7 @@ git commit -m "docs: move pre-release gate markers to Silver Bullet quality-gate
 - [ ] **Step 1: Write the failing test**
 
 ```bash
-bash /Users/shafqat/projects/silver-bullet/repo/tests/hooks/test-session-start.sh
+bash /Users/<user>/projects/silver-bullet/repo/tests/hooks/test-session-start.sh
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
@@ -134,7 +134,7 @@ rm -f -- "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state" 2>/dev/null
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `bash /Users/shafqat/projects/silver-bullet/repo/tests/hooks/test-session-start.sh`
+Run: `bash /Users/<user>/projects/silver-bullet/repo/tests/hooks/test-session-start.sh`
 Expected: PASS and the new sidekick file is cleared on session start.
 
 - [ ] **Step 5: Commit**

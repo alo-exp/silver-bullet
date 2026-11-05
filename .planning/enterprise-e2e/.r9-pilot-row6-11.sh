@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-MAIN="/Users/shafqat/projects/silver-bullet/repo"
+MAIN="/Users/<user>/projects/silver-bullet/repo"
 LOG="${MAIN}/.e2e-r9-pilot-rows-6-11-sequential.log"
 SB_ROOT="/private/tmp/sb-main-row11-fp"
 _ISO_CFG="${MAIN}/.planning/enterprise-e2e/.r9-claude-config"

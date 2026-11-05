@@ -67,7 +67,7 @@ CLAUDE_MEMORY_BRIDGE=true
 AGENTMEMORY_EXPORT_ROOT=/absolute/path/to/project/.agentmemory
 ```
 
-**launchd (macOS):** `com.agentmemory.server` with `KeepAlive` and absolute export root in plist env (see `SETUP_REPORT.md` deviations). **Bridge:** `com.agentmemory.bridge` watches `.agentmemory/` when `~/.agentmemory/bridge.py` exists. The bridge plist includes `GITLEAKS_PATH` and `PATH` so the second-line gitleaks scan runs reliably.
+**launchd (macOS):** `com.agentmemory.server` with `KeepAlive` and absolute export root in plist env (see the locally generated setup report (`sb-verify-synergy.sh --write-setup-report`, not committed) deviations). **Bridge:** `com.agentmemory.bridge` watches `.agentmemory/` when `~/.agentmemory/bridge.py` exists. The bridge plist includes `GITLEAKS_PATH` and `PATH` so the second-line gitleaks scan runs reliably.
 
 ### gitleaks (required with bridge)
 

@@ -1,16 +1,16 @@
 # RFL defs inventory — router_subagent_surfaces_85bf9f09 (2026-08-14)
 
-Canonical location: [`~/.cursor/agents/`](/Users/shafqat/.cursor/agents/) (existing `agents_install_scope: global`). Live slugs from `agent models` this session. No Fast variants created. Low skipped unless it was the only way to get Medium (it never was).
+Canonical location: [`~/.cursor/agents/`](/Users/<user>/.cursor/agents/) (existing `agents_install_scope: global`). Live slugs from `agent models` this session. No Fast variants created. Low skipped unless it was the only way to get Medium (it never was).
 
 ## Created this turn
 
 | Path | Model slug | Level |
 |---|---|---|
-| [`~/.cursor/agents/sb-gemini-3-7-flash-medium.md`](/Users/shafqat/.cursor/agents/sb-gemini-3-7-flash-medium.md) | `gemini-3.7-flash-medium` | Medium |
-| [`~/.cursor/agents/sb-gemini-3-7-flash-high.md`](/Users/shafqat/.cursor/agents/sb-gemini-3-7-flash-high.md) | `gemini-3.7-flash-high` | High |
-| [`~/.cursor/agents/sb-opus-5-medium.md`](/Users/shafqat/.cursor/agents/sb-opus-5-medium.md) | `claude-opus-5-thinking-medium` | Medium |
-| [`~/.cursor/agents/sb-opus-5-max.md`](/Users/shafqat/.cursor/agents/sb-opus-5-max.md) | `claude-opus-5-thinking-max` | Max |
-| [`~/.cursor/agents/sb-gpt-5-6-sol-max.md`](/Users/shafqat/.cursor/agents/sb-gpt-5-6-sol-max.md) | `gpt-5.6-sol-max` | Max |
+| [`~/.cursor/agents/sb-gemini-3-7-flash-medium.md`](/Users/<user>/.cursor/agents/sb-gemini-3-7-flash-medium.md) | `gemini-3.7-flash-medium` | Medium |
+| [`~/.cursor/agents/sb-gemini-3-7-flash-high.md`](/Users/<user>/.cursor/agents/sb-gemini-3-7-flash-high.md) | `gemini-3.7-flash-high` | High |
+| [`~/.cursor/agents/sb-opus-5-medium.md`](/Users/<user>/.cursor/agents/sb-opus-5-medium.md) | `claude-opus-5-thinking-medium` | Medium |
+| [`~/.cursor/agents/sb-opus-5-max.md`](/Users/<user>/.cursor/agents/sb-opus-5-max.md) | `claude-opus-5-thinking-max` | Max |
+| [`~/.cursor/agents/sb-gpt-5-6-sol-max.md`](/Users/<user>/.cursor/agents/sb-gpt-5-6-sol-max.md) | `gpt-5.6-sol-max` | Max |
 
 `~/.config/silver-bullet/cursor-sb-agents.json` `rfl_effort_maps` updated for gemini-3.7-flash, gpt-5.6-sol max/medium, opus-5 medium/max.
 
