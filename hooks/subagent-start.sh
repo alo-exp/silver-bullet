@@ -44,15 +44,16 @@ if [[ -n "$prompt_preview" ]]; then
 fi
 
 now="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+# Evidence record only (e2e scorers, diagnostics): who is a worker is decided per call from the
+# payload's agent_id, never from this file (R4-02).
 marker_file="$(sb_orchestrator_worker_marker_file)"
-mkdir -p "$(dirname "$marker_file")" 2>/dev/null || true
-jq -n \
+marker_json="$(jq -n \
   --arg at "$now" \
   --arg st "$subagent_type" \
   --arg skill "$assigned_skill" \
   --arg preview "$prompt_preview" \
-  '{spawned_at:$at, subagent_type:$st, assigned_skill:$skill, prompt_preview:$preview, source:"subagent-start"}' \
-  >"${marker_file}.tmp" 2>/dev/null && mv "${marker_file}.tmp" "$marker_file"
+  '{spawned_at:$at, subagent_type:$st, assigned_skill:$skill, prompt_preview:$preview, source:"subagent-start"}' 2>/dev/null || true)"
+[[ -z "$marker_json" ]] || sb_orchestrator_atomic_write "$marker_file" "$marker_json" || true
 
 if [[ -f "$_lib_dir/orchestrator-scheduler.sh" ]]; then
   # shellcheck source=lib/orchestrator-scheduler.sh

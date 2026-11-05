@@ -217,8 +217,8 @@ site_session site-intent false true
 dg_run "$P" "$H" "$stop_json"
 assert_eq "live: Stop with live claim pending blocks" "block" "$(decision)"
 dg_run "$P" "$H" "$stop_json" SB_ORCHESTRATOR_PARENT=0
-assert_eq "live: Stop in worker session skipped" "" "$TL_OUT"
-dg_assert_ok "live: Stop in worker session skipped: exits 0"
+assert_eq "live: a Stop is always the parent's, even with the worker env (R9-05)" "block" "$(decision)"
+dg_assert_ok "live: Stop with the worker env still gated: exits 0"
 site_session site-intent false false
 dg_run "$P" "$H" "$stop_json"
 assert_eq "live: Stop without push intent or claim allowed" "" "$TL_OUT"

@@ -69,13 +69,20 @@ assert_eq "baseline exit" "0" "$TL_STATUS"
 assert_contains "baseline blocks on missing skills" "$(reason)" "silver-quality-gates"
 assert_not_contains "recorded skill is not listed as missing" "$(reason)" "- silver-context"
 
-# ---- SubagentStop of a worker clears the marker -----------------------------
+# ---- SubagentStop of a worker is skipped; shared state is left alone (R4-02) --
 reset_state
 marker="$SD/orchestrator-worker-active.json"
 jq -n --arg at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '{skill:"silver-execute",spawned_at:$at}' >"$marker"
+run_stop '{"hook_event_name":"SubagentStop","agent_id":"agent-A","agent_type":"general-purpose"}'
+assert_eq "worker SubagentStop (payload agent_id) prints nothing" "" "$TL_OUT"
+assert_file_exists "another worker may still run: the spawn record stays" "$marker"
 run_stop '{"hook_event_name":"SubagentStop"}'
-assert_eq "worker SubagentStop prints nothing" "" "$TL_OUT"
-assert_file_absent "worker marker cleared" "$marker"
+assert_contains "SubagentStop without an agent id is not a worker: the floor applies" "$(reason)" "missing required skills"
+SB_ORCHESTRATOR_WORKER=1 run_stop '{"hook_event_name":"SubagentStop"}'
+assert_eq "worker env on SubagentStop prints nothing" "" "$TL_OUT"
+run_stop '{"hook_event_name":"Stop","agent_id":"agent-A"}'
+assert_contains "a Stop is always the parent's, whatever the payload says" "$(reason)" "missing required skills"
+rm -f "$marker"
 
 # ---- parent session with a pending flow queue -------------------------------
 reset_state
@@ -88,6 +95,27 @@ jq -n '{next_skill:"silver-verify",next_worker_template:"VERIFY"}' >"$SD/orchest
 run_stop
 assert_contains "parent directive skill wins" "$(reason)" "/silver-verify"
 assert_contains "parent directive template wins" "$(reason)" "(VERIFY.md)"
+
+# ---- a Stop that can never progress is released (R4-05) ----------------------
+reset_state
+rm -f "$SD/orchestrator-directive.json" "$SD/orchestrator-stop-blocks.json"
+jq -n --arg repo "$EC_PROJ" '{current_flow:"FLOW-EXECUTE",repo_root:$repo}' >"$SD/orchestrator.json"
+SB_ORCHESTRATOR_STOP_BLOCK_LIMIT=2 run_stop
+assert_contains "first block with no progress still blocks" "$(reason)" "(FLOW-EXECUTE)"
+SB_ORCHESTRATOR_STOP_BLOCK_LIMIT=2 run_stop
+assert_contains "second block with no progress still blocks" "$(reason)" "(FLOW-EXECUTE)"
+SB_ORCHESTRATOR_STOP_BLOCK_LIMIT=2 run_stop
+assert_eq "third Stop with no progress is released" "" "$(reason)"
+jq -n --arg repo "$EC_PROJ" '{current_flow:"FLOW-VERIFY",repo_root:$repo}' >"$SD/orchestrator.json"
+SB_ORCHESTRATOR_STOP_BLOCK_LIMIT=2 run_stop
+assert_contains "progress in the queue blocks again" "$(reason)" "(FLOW-VERIFY)"
+rm -f "$SD/orchestrator-stop-blocks.json"
+jq -n --arg repo "$EC_PROJ" '{repo_root:$repo,scheduler:{join_gates:{"gate-7":"blocked"}}}' >"$SD/orchestrator.json"
+SB_ORCHESTRATOR_STOP_BLOCK_LIMIT=1 run_stop
+assert_contains "scheduler block, first time: blocks" "$(reason)" "join gate blocked for gate-7"
+SB_ORCHESTRATOR_STOP_BLOCK_LIMIT=1 run_stop
+assert_eq "scheduler block released after repeated blocks with no progress" "" "$(reason)"
+rm -f "$SD/orchestrator-stop-blocks.json"
 
 # ---- scheduler pending work blocks the parent -------------------------------
 reset_state

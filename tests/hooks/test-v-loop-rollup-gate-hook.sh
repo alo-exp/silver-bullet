@@ -44,8 +44,13 @@ tree="$(orch_stage_tree)"
 printf '%s\n' 'sb_project_gate_or_exit() { return 1; }' >"$tree/lib/sb-project-gate.sh"
 tl_run_stdin "$(stop_json)" bash "$tree/v-loop-rollup-gate.sh"
 assert_eq "refusing project gate: silent" "0|" "$TL_STATUS|$TL_OUT"
+# R9-05: a Stop is always the parent's; a fresh spawn record or a worker env must not skip the gate.
 SB_ORCHESTRATOR_WORKER=1 tl_run_hook "$HOOK" "$(stop_json)"
-assert_eq "worker session: silent" "0|" "$TL_STATUS|$TL_OUT"
+assert_contains "Stop with a worker env still gated (R9-05)" "$TL_OUT" '"decision":"block"'
+printf '{"spawned_at":"%s"}' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >"$SB_RUNTIME_STATE_DIR/orchestrator-worker-active.json"
+tl_run_hook "$HOOK" "$(stop_json)"
+assert_contains "Stop with a fresh spawn marker still gated (R9-05)" "$TL_OUT" '"decision":"block"'
+rm -f "$SB_RUNTIME_STATE_DIR/orchestrator-worker-active.json"
 : >"$SB_RUNTIME_STATE_DIR/trivial"
 tl_run_hook "$HOOK" "$(stop_json)"
 assert_eq "legacy trivial marker bypasses the gate" "0|" "$TL_STATUS|$TL_OUT"

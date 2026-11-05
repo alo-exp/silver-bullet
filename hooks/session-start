@@ -35,6 +35,8 @@ if command -v jq >/dev/null 2>&1; then
   if [[ ! -t 0 ]]; then
     _sb_stdin_payload=$(cat 2>/dev/null || true)
   fi
+  # shellcheck disable=SC2034  # read by sb_orchestrator_is_worker_session (subagent identity)
+  SB_ORCH_HOOK_INPUT="$_sb_stdin_payload"
   if [[ -n "$_sb_stdin_payload" ]]; then
     _sb_src=$(printf '%s' "$_sb_stdin_payload" | jq -r '.source // "startup"' 2>/dev/null || true)
     case "$_sb_src" in

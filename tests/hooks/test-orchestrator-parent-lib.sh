@@ -33,53 +33,49 @@ assert_eq "no jq: parent" parent "$(PATH="$NOJQ" sb_orchestrator_mode_from_confi
 echo "=== marker file ==="
 assert_eq "marker path" "$SB_RUNTIME_STATE_DIR/orchestrator-worker-active.json" "$MARKER"
 
-echo "=== worker session detection ==="
-worker() { sb_orchestrator_is_worker_session && echo yes || echo no; }
+echo "=== worker session detection (per-call identity, R4-02) ==="
+worker() { sb_orchestrator_is_worker_session "${1:-}" && echo yes || echo no; }
 assert_eq "no signals: not a worker" no "$(worker)"
 assert_eq "SB_ORCHESTRATOR_WORKER=1" yes "$(SB_ORCHESTRATOR_WORKER=1 worker)"
 assert_eq "SB_ORCHESTRATOR_WORKER=true" yes "$(SB_ORCHESTRATOR_WORKER=true worker)"
 assert_eq "SB_ORCHESTRATOR_PARENT=0" yes "$(SB_ORCHESTRATOR_PARENT=0 worker)"
+assert_eq "payload agent_id: worker" yes "$(worker '{"hook_event_name":"PreToolUse","tool_name":"Edit","agent_id":"a1b2","agent_type":"general-purpose"}')"
+assert_eq "payload agentId alias: worker" yes "$(worker '{"agentId":"a1b2"}')"
+assert_eq "payload without agent_id: parent" no "$(worker '{"hook_event_name":"PreToolUse","tool_name":"Edit","session_id":"s1"}')"
+assert_eq "empty agent_id: parent" no "$(worker '{"agent_id":""}')"
+assert_eq "non-string agent_id: parent" no "$(worker '{"agent_id":{"x":1}}')"
+assert_eq "agent_id inside tool_input is model text, not identity" no "$(worker '{"tool_input":{"content":"agent_id","agent_id":"forged"}}')"
+assert_eq "non-object payload: parent" no "$(worker '"agent_id"')"
+assert_eq "garbage payload: parent" no "$(worker 'not json')"
+assert_eq "explicit parent=1 beats a payload id" no "$(SB_ORCHESTRATOR_PARENT=1 worker '{"agent_id":"a1"}')"
+assert_eq "explicit parent=true beats a payload id" no "$(SB_ORCHESTRATOR_PARENT=true worker '{"agent_id":"a1"}')"
+assert_eq "payload from SB_ORCH_HOOK_INPUT" yes "$(SB_ORCH_HOOK_INPUT='{"agent_id":"a9"}' worker)"
+assert_eq "no jq: a payload id cannot be read, never a worker" no "$(PATH="$NOJQ" worker '{"agent_id":"a1"}')"
 now_iso="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 printf '{"spawned_at":"%s"}' "$now_iso" >"$MARKER"
-assert_eq "fresh marker: worker" yes "$(worker)"
-assert_eq "explicit parent=1 beats a fresh marker" no "$(SB_ORCHESTRATOR_PARENT=1 worker)"
-assert_eq "explicit parent=true beats a fresh marker" no "$(SB_ORCHESTRATOR_PARENT=true worker)"
-printf '{"spawned_at":"2001-01-01T00:00:00Z"}' >"$MARKER"
-assert_eq "stale marker: not a worker" no "$(worker)"
-assert_eq "stale marker within a huge ttl" yes "$(SB_ORCHESTRATOR_WORKER_MARKER_TTL_SECONDS=999999999 worker)"
-printf '{"spawned_at":"not-a-date"}' >"$MARKER"
-assert_eq "unparseable spawned_at: not a worker" no "$(worker)"
-printf '{"other":1}' >"$MARKER"
-assert_eq "marker without spawned_at: not a worker" no "$(worker)"
-printf '{"other":1}' >"$MARKER"
-assert_eq "marker without spawned_at, no jq: not a worker" no "$(PATH="$NOJQ" worker)"
-printf '{"spawned_at":"%s"}' "$now_iso" >"$MARKER"
-assert_eq "no jq: grep fallback reads a fresh marker" yes "$(PATH="$NOJQ" worker)"
-printf '{"spawned_at":"2001-01-01T00:00:00Z"}' >"$MARKER"
-assert_eq "no jq: grep fallback reads a stale marker" no "$(PATH="$NOJQ" worker)"
+assert_eq "fresh spawn marker alone never makes a worker (R4-02)" no "$(worker)"
+assert_eq "fresh spawn marker, payload without id: parent" no "$(worker '{"session_id":"main"}')"
 rm -f "$MARKER"
-printf '{"spawned_at":"%s"}' "$now_iso" >"$TL_TMP/real-marker"
+sb_orchestrator_mark_worker_spawn silver-plan "" "intent" && rc=0 || rc=$?
+assert_eq "mark_worker_spawn writes the evidence record" 0 "$rc"
+assert_eq "record skill" silver-plan "$(jq -r .skill "$MARKER")"
+assert_eq "record template derived from skill" PLAN "$(jq -r .template "$MARKER")"
+assert_eq "record keeps the spawn args" intent "$(jq -r .args "$MARKER")"
+assert_eq "record has no worker authority" no "$(worker)"
+sb_orchestrator_mark_worker_spawn silver-plan PLAN2 && assert_eq "explicit template wins" PLAN2 "$(jq -r .template "$MARKER")"
+sb_orchestrator_mark_worker_spawn "" && rc=0 || rc=$?
+assert_eq "mark_worker_spawn needs a skill" 1 "$rc"
+( PATH="$NOJQ"; sb_orchestrator_mark_worker_spawn silver-plan ) && rc=0 || rc=$?
+assert_eq "mark_worker_spawn needs jq" 1 "$rc"
+rm -f "$MARKER"
+printf '{}' >"$TL_TMP/real-marker"
 ln -s "$TL_TMP/real-marker" "$MARKER"
-assert_eq "symlinked marker ignored" no "$(worker)"
-rm -f "$MARKER"
-# macOS date flavours: stub `date` so the BSD branches are exercised deterministically.
-real_date="$(command -v date)"
-cat >"$TL_BIN/date" <<STUB
-#!/usr/bin/env bash
-case "\$*" in
-  *"-ju -f"*) [[ -n "\${STUB_JU:-}" ]] && { echo "\$STUB_JU"; exit 0; }; exit 1 ;;
-  *"-j -f"*) [[ -n "\${STUB_J:-}" ]] && { echo "\$STUB_J"; exit 0; }; exit 1 ;;
-  "+%s") echo 100000 ;;
-  *) exec "$real_date" "\$@" ;;
-esac
-STUB
-chmod +x "$TL_BIN/date"
-printf '{"spawned_at":"2024-01-01T00:00:00Z"}' >"$MARKER"
-assert_eq "BSD date -ju: recent spawn is a worker" yes "$(STUB_JU=99000 worker)"
-assert_eq "BSD date -ju: old spawn is not" no "$(STUB_JU=1000 worker)"
-assert_eq "BSD date -j: recent spawn is a worker" yes "$(STUB_J=99000 worker)"
-assert_eq "BSD date -j: old spawn is not" no "$(STUB_J=1000 worker)"
-rm -f "$TL_BIN/date" "$MARKER"
+sb_orchestrator_mark_worker_spawn silver-plan && rc=0 || rc=$?
+assert_eq "mark_worker_spawn refuses a symlinked record" 1 "$rc"
+assert_eq "symlink target untouched" "{}" "$(cat "$TL_TMP/real-marker")"
+rm -f "$MARKER" "$TL_TMP/real-marker"
+sb_orchestrator_clear_worker_marker
+assert_eq "clear removes the record" no "$([[ -e "$MARKER" ]] && echo yes || echo no)"
 
 echo "=== workspace boundary ==="
 ( cd "$TL_TMP" && mkdir -p plain/.git && cd plain && sb_orchestrator_workspace_has_boundary ) && rc=0 || rc=$?
@@ -187,7 +183,7 @@ assert_eq "marker skill" silver-plan "$(jq -r .skill "$MARKER")"
 assert_eq "marker template derived" PLAN "$(jq -r .template "$MARKER")"
 assert_eq "marker args" "the args" "$(jq -r .args "$MARKER")"
 assert_match "marker timestamp" '^[0-9]{4}-' "$(jq -r .spawned_at "$MARKER")"
-assert_eq "fresh marker makes this a worker" yes "$(worker)"
+assert_eq "the spawn record makes no worker" no "$(worker)"
 sb_orchestrator_mark_worker_spawn silver-plan CUSTOM
 assert_eq "explicit template" CUSTOM "$(jq -r .template "$MARKER")"
 sb_orchestrator_clear_worker_marker
@@ -333,6 +329,57 @@ assert_eq "mutating command refused" no "$(b "rm -rf build")"
 # Without the tool-input classifier the parent has no read-only allowance.
 staged="$(orch_stage_libs orchestrator-parent.sh)"
 assert_eq "no classifier available: refused" no "$(bash -c 'source "$1"; sb_orchestrator_parent_bash_allowed "git status" && echo yes || echo no' _ "$staged/orchestrator-parent.sh")"
+
+echo "=== parent bash: substring and chaining spoofs (R4-03) ==="
+LED="scripts/resolve-instruction-ledger.sh"
+assert_eq "comment naming the ledger script does not whitelist rm" no "$(b "rm -f x # $LED")"
+assert_eq "echo of the ledger script chained to rm" no "$(b "echo $LED; rm x")"
+assert_eq "commit chained after echo of the script" no "$(b "git commit -am wip; echo $LED")"
+assert_eq "ledger script plus a redirect writes a file" no "$(b "$LED list > out.txt")"
+assert_eq "ledger script with a command substitution" no "$(b "$LED list \$(rm x)")"
+assert_eq "ledger script with an unlisted sub-command" no "$(b "$LED rm-everything")"
+assert_eq "ledger script then a second command" no "$(b "$LED list && rm x")"
+assert_eq "ledger script in a pipe to tee" no "$(b "$LED list | tee x")"
+assert_eq "adapter chained with && to rm" no "$(b "silver-bullet invoke-skill silver && rm -f x")"
+assert_eq "adapter chained with a newline" no "$(b $'silver-bullet invoke-skill sb\ntouch pwned')"
+assert_eq "adapter inside bash -c, extra command after" no "$(b "bash -c 'silver-bullet invoke-skill silver' ; touch pwned2")"
+assert_eq "adapter inside bash -c with a chain inside" no "$(b "bash -c 'silver-bullet invoke-skill silver; rm x'")"
+assert_eq "adapter piped to a shell" no "$(b "silver-bullet invoke-skill silver | sh")"
+assert_eq "adapter with a redirect" no "$(b "silver-bullet invoke-skill silver > x")"
+assert_eq "env wrapper hiding a second command" no "$(b "env A=1 silver-bullet invoke-skill silver; rm x")"
+assert_eq "bare shell reading stdin" no "$(b "bash")"
+assert_eq "delegate script chained to rm under the fallback" no "$(SB_AGENT_DELEGATE_DIRECT_FALLBACK=1 b "bash scripts/agent-codex-delegate.sh; rm x")"
+assert_eq "echoed delegate script under the fallback" no "$(SB_AGENT_DELEGATE_DIRECT_FALLBACK=1 b "echo scripts/agent-codex-delegate.sh; rm x")"
+echo "=== parent bash: honest variants stay allowed ==="
+assert_eq "ledger done with id" yes "$(b "bash ./$LED done 3")"
+assert_eq "ledger deferred" yes "$(b "$LED deferred 3")"
+assert_eq "ledger bare (prints help)" yes "$(b "bash '$LED'")"
+assert_eq "adapter through env" yes "$(b "env A=1 silver-bullet invoke-skill silver")"
+assert_eq "adapter through bash -c" yes "$(b "bash -c 'silver-bullet invoke-skill silver'")"
+assert_eq "adapter through a script path" yes "$(b "bash /opt/bin/silver-bullet invoke-skill silver")"
+assert_eq "adapter through nested shells" yes "$(b "bash -c \"sh -c 'silver-bullet invoke-skill silver'\"")"
+assert_eq "adapter in the background" yes "$(b "silver-bullet invoke-skill silver &")"
+assert_eq "git log piped to head is read-only" yes "$(b "git log --oneline | head -3")"
+assert_eq "graphify query is read-only" yes "$(b "graphify query 'where is the guard'")"
+assert_eq "test runner is not read-only: strict verdict (F2)" no "$(b "npm test")"
+echo "=== parent bash: classifier failure is denied with a reason ==="
+( PATH="$(tl_path_without python3)"; sb_orchestrator_parent_bash_allowed "git status" ) >/dev/null 2>&1 && rc=0 || rc=$?
+assert_eq "no python3: refused" 1 "$rc"
+reason="$( PATH="$(tl_path_without python3)"; sb_orchestrator_parent_bash_allowed "git status" >/dev/null 2>&1; printf '%s' "$SB_ORCH_PARENT_BASH_DENY_REASON" )"
+assert_contains "no python3: reason names python3" "$reason" "python3"
+sb_orchestrator_parent_bash_allowed "git status" && assert_eq "reason cleared on success" "" "$SB_ORCH_PARENT_BASH_DENY_REASON"
+sb_orchestrator_parent_bash_allowed "git commit -m 'unterminated" && rc=0 || rc=$?
+assert_eq "unparseable command: refused" 1 "$rc"
+assert_eq "unparseable command: no helper reason" "" "$SB_ORCH_PARENT_BASH_DENY_REASON"
+
+assert_eq "no classifier available: adapter extraction refused" "" "$(bash -c 'source "$1"; sb_orchestrator_extract_invoke_skill_adapter "silver-bullet invoke-skill silver" || true' _ "$staged/orchestrator-parent.sh")"
+assert_eq "no classifier available: delegate refused" no "$(SB_AGENT_DELEGATE_DIRECT_FALLBACK=1 bash -c 'source "$1"; sb_orchestrator_parent_delegate_bash_allowed "scripts/agent-codex-delegate.sh" && echo yes || echo no' _ "$staged/orchestrator-parent.sh")"
+assert_eq "no classifier available: ledger refused" no "$(bash -c 'source "$1"; sb_orchestrator_parent_resolve_ledger_bash_allowed "scripts/resolve-instruction-ledger.sh list" && echo yes || echo no' _ "$staged/orchestrator-parent.sh")"
+# Honest forms around the sanctioned tools stay allowed.
+assert_eq "adapter with stderr redirected to /dev/null" yes "$(b "silver-bullet invoke-skill silver 2>/dev/null")"
+assert_eq "ledger with stderr merged" yes "$(b "scripts/resolve-instruction-ledger.sh list 2>&1")"
+assert_eq "delegate chained to a harmless second command refused under the fallback" no "$(SB_AGENT_DELEGATE_DIRECT_FALLBACK=1 b "scripts/agent-codex-delegate.sh && echo hi")"
+assert_eq "a script that is not a delegate refused under the fallback" no "$(SB_AGENT_DELEGATE_DIRECT_FALLBACK=1 b "scripts/other.sh")"
 
 echo "=== parent skill allowance ==="
 s() { sb_orchestrator_parent_skill_allowed "$1" && echo yes || echo no; }

@@ -17,6 +17,8 @@ _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib
 command -v jq >/dev/null 2>&1 || exit 0
 
 input="$(cat 2>/dev/null || true)"
+# shellcheck disable=SC2034  # read by sb_orchestrator_is_worker_session (subagent identity)
+SB_ORCH_HOOK_INPUT="$input"
 [[ -n "$input" ]] || exit 0
 if declare -f sb_cert_run_bypass_active >/dev/null 2>&1 && sb_cert_run_bypass_active; then
   exit 0

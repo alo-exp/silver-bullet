@@ -32,10 +32,8 @@ done
 [[ -n "$config_file" ]] || exit 0
 sb_project_gate_or_exit 2>/dev/null || exit 0
 
-if [[ -f "$_lib_dir/orchestrator-parent.sh" ]]; then
-  source "$_lib_dir/orchestrator-parent.sh"
-  sb_orchestrator_is_worker_session 2>/dev/null && exit 0
-fi
+# A Stop event is always the parent session's: workers end with SubagentStop, which this gate
+# ignores above. Never skip on a worker marker here (R9-05).
 
 SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
 trivial_file="${SB_STATE_DIR}/trivial"
