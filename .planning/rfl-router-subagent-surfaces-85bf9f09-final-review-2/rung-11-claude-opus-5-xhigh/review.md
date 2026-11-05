@@ -6,8 +6,8 @@ RFL round 2 — rung 11/11 (`final-review-2`), last named reviewer. Phase: **REV
 
 | # | Copy | SHA-256 | Bytes | Result |
 |---|------|---------|-------|--------|
-| 1 | `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `1e3c9866d47de094ba8815fadac95c9cc4ff47062cc0fa9c9a6b24326ed27b13` | 653189 | **MATCH** |
-| 2 | `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `1e3c9866d47de094ba8815fadac95c9cc4ff47062cc0fa9c9a6b24326ed27b13` | 653189 | **MATCH** |
+| 1 | `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `1e3c9866d47de094ba8815fadac95c9cc4ff47062cc0fa9c9a6b24326ed27b13` | 653189 | **MATCH** |
+| 2 | `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `1e3c9866d47de094ba8815fadac95c9cc4ff47062cc0fa9c9a6b24326ed27b13` | 653189 | **MATCH** |
 | 3 | `git show HEAD:.planning/router_subagent_surfaces_85bf9f09.plan.md` | `1e3c9866d47de094ba8815fadac95c9cc4ff47062cc0fa9c9a6b24326ed27b13` | 653189 | **MATCH** |
 
 All three copies byte-identical to the expected post-`783e9fce` value `1e3c9866…` / **653189**. No split. Git blob OID `024d305b39a53a9c4e92725897b75a3c1e505a70`. No freeze copy was edited, written, restored, or checked out by this rung. `review-grok-substitute.md` in this rung folder is untouched.

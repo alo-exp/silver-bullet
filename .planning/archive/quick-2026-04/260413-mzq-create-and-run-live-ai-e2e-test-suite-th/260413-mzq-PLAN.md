@@ -73,7 +73,7 @@ Create `tests/live/helpers.sh` with these shared utilities:
 
 **Constants:**
 - `SB_ROOT` — absolute path to silver-bullet repo root (derived from script location: `$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)`)
-- `CLAUDE_BIN="/Users/shafqat/.local/bin/claude"`
+- `CLAUDE_BIN="/Users/<user>/.local/bin/claude"`
 - `MAX_BUDGET="0.20"`
 - `PASS=0`, `FAIL=0`, `TEST_RUN_ID="$$"`
 
@@ -315,8 +315,8 @@ echo "Estimated cost: \$0.08-\$0.40 per full run."
 echo ""
 
 # Check claude CLI exists
-if ! command -v /Users/shafqat/.local/bin/claude >/dev/null 2>&1; then
-  echo "ERROR: claude CLI not found at /Users/shafqat/.local/bin/claude"
+if ! command -v /Users/<user>/.local/bin/claude >/dev/null 2>&1; then
+  echo "ERROR: claude CLI not found at /Users/<user>/.local/bin/claude"
   exit 1
 fi
 

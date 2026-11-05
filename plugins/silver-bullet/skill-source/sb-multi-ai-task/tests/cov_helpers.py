@@ -30,6 +30,10 @@ class NetworkAttempt(AssertionError):
 class HermeticCase(unittest.TestCase):
     def setUp(self) -> None:
         super().setUp()
+        import live_dispatch as _ld
+
+        _ld._CANCEL.clear()  # a test that interrupts a dispatch must not leak the flag
+        self.addCleanup(_ld._CANCEL.clear)
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         self.tmp = Path(tmp.name)

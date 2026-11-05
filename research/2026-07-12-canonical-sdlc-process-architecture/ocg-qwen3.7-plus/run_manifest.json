@@ -5,7 +5,7 @@
   "completed_at": "2026-07-12T00:30:00Z",
   "research_mode": "ultradeep",
   "topic": "Canonical SDLC Process Architecture",
-  "output_directory": "/Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-qwen3.7-plus/",
+  "output_directory": "/Users/<user>/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-qwen3.7-plus/",
   "phases_completed": ["scope", "plan", "retrieve", "triangulate", "outline_refinement", "synthesize", "critique", "refine", "package"],
   "total_sources": 32,
   "total_claims": 87,

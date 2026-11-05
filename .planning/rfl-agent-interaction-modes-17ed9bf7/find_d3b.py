@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from pathlib import Path
-text = Path("/Users/shafqat/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md").read_text()
+text = Path("/Users/<user>/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md").read_text()
 needle = "Session continuity requires interactive"
 idx = text.find(needle)
 print("idx", idx)

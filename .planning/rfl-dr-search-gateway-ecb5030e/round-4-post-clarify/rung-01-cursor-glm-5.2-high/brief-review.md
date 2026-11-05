@@ -17,11 +17,11 @@ Phase: REVIEW-ONLY (rung_1_review)
 
 ## Freeze / scope
 
-- Artifact (ONLY): `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`
+- Artifact (ONLY): `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`
 - Expected SHA-256: `6859761f6d6886e97942ea50ccab4ae37fe02d9784e73139a15159ed40d007be`
 - STOP if `shasum -a 256` does not match.
-- Write findings to: `/Users/shafqat/.cursor/worktrees/repo/ewwf/.planning/rfl-dr-search-gateway-ecb5030e/round-4-post-clarify/rung-01-cursor-glm-5.2-high/review.md`
-- Workspace: `/Users/shafqat/.cursor/worktrees/repo/ewwf`
+- Write findings to: `/Users/<user>/.cursor/worktrees/repo/ewwf/.planning/rfl-dr-search-gateway-ecb5030e/round-4-post-clarify/rung-01-cursor-glm-5.2-high/review.md`
+- Workspace: `/Users/<user>/.cursor/worktrees/repo/ewwf`
 
 Do **not** attach or read the clarify brief or the agent-reach research note.
 

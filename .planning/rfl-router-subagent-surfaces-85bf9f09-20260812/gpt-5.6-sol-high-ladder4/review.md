@@ -1,9 +1,9 @@
 VERDICT: NOT CLEAN
 
-Hash verified on `main`: both [plans](/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md) match frozen SHA `c9511f2d…aaddf`.
+Hash verified on `main`: both [plans](/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md) match frozen SHA `c9511f2d…aaddf`.
 
 Blockers
-- **Proxy prompt/depth integrity conflict** ([plan](/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md), lines 427, 431, 433, 588): `prepared` requires immutable hash-bound prompt bytes before yield, but the ancestor only stamps `remaining_depth` during consume, while the final envelope must already contain it. If `prompt_hash` covers the envelope, late stamping breaks the hash; if it covers only the inner prompt, `remaining_depth` is absent from `launch_intent` and unbound by admission. No re-hash/re-admit or separately authenticated metadata transition is specified.
+- **Proxy prompt/depth integrity conflict** ([plan](/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md), lines 427, 431, 433, 588): `prepared` requires immutable hash-bound prompt bytes before yield, but the ancestor only stamps `remaining_depth` during consume, while the final envelope must already contain it. If `prompt_hash` covers the envelope, late stamping breaks the hash; if it covers only the inner prompt, `remaining_depth` is absent from `launch_intent` and unbound by admission. No re-hash/re-admit or separately authenticated metadata transition is specified.
 
 Highs
 - None.

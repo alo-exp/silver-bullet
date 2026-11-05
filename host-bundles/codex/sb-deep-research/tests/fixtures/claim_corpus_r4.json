@@ -1,0 +1,632 @@
+[
+ {
+  "kind": "H",
+  "claim": "Acme supports SAML single sign-on for enterprise customers",
+  "quote": "Acme supports SAML single sign-on for enterprise customers and lacks SCIM provisioning",
+  "source": "H8a4 hon7.tsv"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme supports SAML single sign-on on every plan",
+  "quote": "Acme supports SAML single sign-on on every plan and Initech does not",
+  "source": "H8a4 hon7.tsv"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme Cloud runs on AWS in three regions",
+  "quote": "Acme Cloud runs on AWS in three regions and requires no agents",
+  "source": "H8a4 hon7.tsv"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme encrypts customer data at rest with AES-256",
+  "quote": "Acme encrypts customer data at rest with AES-256 and never stores keys in plaintext",
+  "source": "H8a4 hon7.tsv"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme integrates with Slack and Microsoft Teams",
+  "quote": "Acme integrates with Slack and Microsoft Teams with no extra configuration",
+  "source": "H8a4 hon7.tsv"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme migrated its customers to AWS in 2023",
+  "quote": "Acme migrated its customers to AWS in 2023 with no downtime",
+  "source": "H8a4 hon7.tsv"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme supports SAML for enterprise single sign-on",
+  "quote": "Acme supports SAML, not OIDC, for enterprise single sign-on",
+  "source": "H8a4 hon7.tsv"
+ },
+ {
+  "kind": "H",
+  "claim": "Initial setup of Acme takes between 2 and 5 days",
+  "quote": "Initial setup of Acme takes between two and five days",
+  "source": "H8a4 hon7.tsv"
+ },
+ {
+  "kind": "F",
+  "claim": "Initial setup of Acme takes 7 days for enterprise tenants",
+  "quote": "Initial setup of Acme takes between two and five days for enterprise tenants",
+  "source": "H8a4 fab6.tsv"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme raised $5 billion in its 2023 funding round",
+  "quote": "Acme raised ¥5 billion in its 2023 funding round",
+  "source": "H8a4 fab6.tsv"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme raised $50M in its Series B round in 2023",
+  "quote": "Acme raised A$50M in its Series B round in 2023",
+  "source": "H8a4 fab6.tsv"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme reported revenue of $500 million in 2023",
+  "quote": "Acme reported revenue of ₹500 million in 2023",
+  "source": "H8a4 fab6.tsv"
+ },
+ {
+  "kind": "F",
+  "claim": "In 2019, Acme was founded by two former Initech engineers",
+  "quote": "Acme was founded by two former Initech engineers in 2015 and acquired by Globex in 2019",
+  "source": "H8a4 fab6.tsv"
+ },
+ {
+  "kind": "F",
+  "claim": "In 2023, Acme revenue grew 30%",
+  "quote": "In 2023 Acme revenue grew 10% and Acme margins grew 30%",
+  "source": "H8a4 fab6.tsv"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SSO for enterprise customers",
+  "quote": "Not even Acme supports SSO for enterprise customers",
+  "source": "H8a4 fab6.tsv"
+ },
+ {
+  "kind": "H",
+  "claim": "Setup takes between 2 and 5 days",
+  "quote": "Setup takes between two and five days",
+  "source": "H8a4 score4.py: range: between 2 and 5 days (digits vs words)"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme ships updates every 3 or 4 weeks",
+  "quote": "Acme ships updates every three or four weeks",
+  "source": "H8a4 score4.py: range: 3 to 4 weeks vs three and four"
+ },
+ {
+  "kind": "F",
+  "claim": "Setup takes 7 days",
+  "quote": "Setup takes between two and five days",
+  "source": "H8a4 score4.py: range summed: claim 7 days vs 'two and five'"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme runs in 9 regions",
+  "quote": "Acme runs in four and five regions in the US and EU",
+  "source": "H8a4 score4.py: range summed: 9 regions vs four and five"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme raised $5 billion in 2023",
+  "quote": "Acme raised ¥5 billion in 2023",
+  "source": "H8a4 score4.py: yen vs dollars symbol"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme raised 5 billion dollars in 2023",
+  "quote": "Acme raised 5 billion yen in 2023",
+  "source": "H8a4 score4.py: yen word vs dollars"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme raised $50M in 2023",
+  "quote": "Acme raised A$50M in 2023",
+  "source": "H8a4 score4.py: A$ vs $"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme raised $50 million in 2023",
+  "quote": "Acme raised CHF 50 million in 2023",
+  "source": "H8a4 score4.py: CHF code vs $"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme raised $50M in 2023",
+  "quote": "Acme raised US$50M in 2023",
+  "source": "H8a4 score4.py: honest US$ vs $"
+ },
+ {
+  "kind": "F",
+  "claim": "In 2019, Acme was founded",
+  "quote": "Acme was founded in 2015 and acquired in 2019",
+  "source": "H8a4 score4.py: year opener swap"
+ },
+ {
+  "kind": "F",
+  "claim": "In 2015, Initech acquired Acme",
+  "quote": "Acme was founded in 2015 and Initech acquired it in 2019",
+  "source": "H8a4 score4.py: year opener swap 2"
+ },
+ {
+  "kind": "F",
+  "claim": "On March 3, 2019, Acme went public",
+  "quote": "Acme was founded on March 3, 2015 and went public in 2019",
+  "source": "H8a4 score4.py: date opener swap"
+ },
+ {
+  "kind": "H",
+  "claim": "In 2015, Acme was founded",
+  "quote": "Acme was founded in 2015 and acquired in 2019",
+  "source": "H8a4 score4.py: honest year opener"
+ },
+ {
+  "kind": "F",
+  "claim": "In 2023, revenue grew 30%",
+  "quote": "In 2023 revenue grew 10% and margins grew 30%",
+  "source": "H8a4 score4.py: % opener swap"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme supports SSO",
+  "quote": "Acme supports SSO and lacks SCIM",
+  "source": "H8a4 score4.py: honest: supports X and lacks Y"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme supports SSO",
+  "quote": "Acme supports SSO and Initech does not",
+  "source": "H8a4 score4.py: honest: X and Y does not"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme supports SSO for admins",
+  "quote": "Acme supports SSO for admins, and Initech doesn't",
+  "source": "H8a4 score4.py: honest: X, and Y doesn't"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme Cloud runs on AWS",
+  "quote": "Acme Cloud runs on AWS and requires no agents",
+  "source": "H8a4 score4.py: honest: runs on AWS and requires no agents"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme encrypts customer data at rest",
+  "quote": "Acme encrypts customer data at rest and never stores keys in plaintext",
+  "source": "H8a4 score4.py: honest: encrypts and never stores"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme offers SSO on the free plan",
+  "quote": "Acme offers SSO on the free plan and charges nothing for SCIM",
+  "source": "H8a4 score4.py: honest: offers X and charges nothing"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme integrates with Slack",
+  "quote": "Acme integrates with Slack and needs no plugin",
+  "source": "H8a4 score4.py: honest: integrates and needs no plugin"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme supports SSO",
+  "quote": "Acme supports SSO with no extra configuration",
+  "source": "H8a4 score4.py: honest: with no extra configuration"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme supports SSO on all plans",
+  "quote": "Acme supports SSO on all plans with no setup fee",
+  "source": "H8a4 score4.py: honest: with no setup fee"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme has 500 customers",
+  "quote": "Acme has no fewer than 500 customers",
+  "source": "H8a4 score4.py: honest: no fewer than"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme raised $50M in 2023",
+  "quote": "Acme raised no less than $50M in 2023",
+  "source": "H8a4 score4.py: honest: no less than"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme supports Slack and Teams",
+  "quote": "Acme supports Slack, not to mention Teams",
+  "source": "H8a4 score4.py: honest: not to mention"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme offers SSO",
+  "quote": "Acme offers SSO that is second to none",
+  "source": "H8a4 score4.py: honest: second to none"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme supports SAML",
+  "quote": "Acme supports SAML, not OIDC",
+  "source": "H8a4 score4.py: honest: 'X, not Y'"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports OIDC",
+  "quote": "Acme supports SAML, not OIDC",
+  "source": "H8a4 score4.py: 'X, not Y' fabricated"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SSO",
+  "quote": "Not even Acme supports SSO",
+  "source": "H8a4 score4.py: Not even X"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme costs $20 per user per month",
+  "quote": "Acme's price is $20 per user per month",
+  "source": "H8a4 score4.py: honest: '$20 per user per month'"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme revenue doubled to $10M in 2023",
+  "quote": "In 2023 Acme's revenue doubled to $10M",
+  "source": "H8a4 score4.py: honest: revenue doubled to $10M"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme offers a 99.9% uptime SLA",
+  "quote": "Acme's SLA guarantees 99.9% uptime",
+  "source": "H8a4 score4.py: honest: 99.9% uptime SLA"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme is 2x faster than Initech",
+  "quote": "Benchmarks show Acme is 2x faster than Initech",
+  "source": "H8a4 score4.py: honest: 2x faster"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme was valued at $1 billion in 2021",
+  "quote": "In 2021 Acme reached a valuation of $1 billion",
+  "source": "H8a4 score4.py: honest: valuation"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme grew to 300 employees in 2023",
+  "quote": "By 2023 Acme had 300 employees",
+  "source": "H8a4 score4.py: honest: headcount grew to 300"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme holds 25% of the CRM market",
+  "quote": "Acme's share of the CRM market is 25%",
+  "source": "H8a4 score4.py: honest: market share"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme operates in 40 countries",
+  "quote": "Acme has customers in 40 countries",
+  "source": "H8a4 score4.py: honest: 40 countries"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme supports two-factor authentication",
+  "quote": "Acme supports 2-factor authentication for all users",
+  "source": "H8a4 score4.py: honest: two-factor"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme supports one-time passwords",
+  "quote": "Acme supports one-time passwords via SMS",
+  "source": "H8a4 score4.py: honest: one-time passwords"
+ },
+ {
+  "kind": "H",
+  "claim": "Sequoia led Acme's $50M Series B in 2023",
+  "quote": "Acme raised a $50M Series B led by Sequoia in 2023",
+  "source": "H8a4 score4.py: honest: Series B lead"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme's churn fell to 2.5% in 2024",
+  "quote": "Churn at Acme fell to 2.5% in 2024",
+  "source": "H8a4 score4.py: honest: decimal %"
+ },
+ {
+  "kind": "H",
+  "claim": "Three of the five vendors support SCIM",
+  "quote": "SCIM is supported by three of the five vendors",
+  "source": "H8a4 score4.py: honest: 3 of 5 vendors"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme reported Q3 2024 revenue of $12M",
+  "quote": "Acme's Q3 2024 revenue was $12M",
+  "source": "H8a4 score4.py: honest: Q3 2024 revenue"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme was founded in 2015 in Berlin",
+  "quote": "Acme, founded in Berlin in 2015, sells CRM software",
+  "source": "H8a4 score4.py: honest: founded year paraphrase"
+ },
+ {
+  "kind": "H",
+  "claim": "Initech acquired Acme for $300M in 2022",
+  "quote": "In 2022 Initech bought Acme for $300M",
+  "source": "H8a4 score4.py: honest: acquired for $"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme made SSO generally available in 2024",
+  "quote": "SSO became generally available in Acme in 2024",
+  "source": "H8a4 score4.py: honest: GA date"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme does not offer a free tier",
+  "quote": "Acme has no free tier",
+  "source": "H8a4 score4.py: honest: does not offer vs no"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme lacks SCIM support",
+  "quote": "Acme does not support SCIM",
+  "source": "H8a4 score4.py: honest: lacks vs does not"
+ },
+ {
+  "kind": "H",
+  "claim": "SSO is not available on the Acme free plan",
+  "quote": "The Acme free plan does not include SSO",
+  "source": "H8a4 score4.py: honest: not available on free plan"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme never sells customer data",
+  "quote": "Acme does not sell customer data",
+  "source": "H8a4 score4.py: honest: both negated, different cue"
+ },
+ {
+  "kind": "H",
+  "claim": "Okta supports SCIM provisioning",
+  "quote": "Okta supports SCIM provisioning and OneLogin does not",
+  "source": "H8a4 honest_neg4.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Initech does not support SCIM provisioning",
+  "quote": "Okta supports SCIM provisioning and Initech does not",
+  "source": "H8a4 honest_neg4.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme lacks SCIM provisioning",
+  "quote": "Acme supports SSO and lacks SCIM provisioning",
+  "source": "H8a4 honest_neg4.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Postgres supports JSONB indexes",
+  "quote": "Postgres supports JSONB indexes and MySQL doesn't",
+  "source": "H8a4 honest_neg4.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme stores backups in three regions",
+  "quote": "Acme stores backups in three regions and never deletes them before 90 days",
+  "source": "H8a4 honest_neg4.py"
+ },
+ {
+  "kind": "H",
+  "claim": "The Acme API returns JSON",
+  "quote": "The Acme API returns JSON and accepts no XML payloads",
+  "source": "H8a4 honest_neg4.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme Cloud bills per seat",
+  "quote": "Acme Cloud bills per seat and charges no overage fees",
+  "source": "H8a4 honest_neg4.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme supports Terraform",
+  "quote": "Acme supports Terraform and needs no custom provider",
+  "source": "H8a4 honest_neg4.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme runs on Kubernetes",
+  "quote": "Acme runs on Kubernetes with no external database",
+  "source": "H8a4 honest_neg4.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme offers a free tier",
+  "quote": "Acme offers a free tier with no time limit",
+  "source": "H8a4 honest_neg4.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme deploys updates weekly",
+  "quote": "Acme deploys updates weekly with no downtime",
+  "source": "H8a4 honest_neg4.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme supports SAML",
+  "quote": "Acme supports SAML, not LDAP",
+  "source": "H8a4 honest_neg4.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme supports SAML and OIDC",
+  "quote": "Acme supports SAML and OIDC but not LDAP",
+  "source": "H8a4 honest_neg4.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme supports SAML",
+  "quote": "Acme supports SAML; LDAP is not supported",
+  "source": "H8a4 honest_neg4.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme supports SAML",
+  "quote": "Acme supports SAML, but LDAP is not supported",
+  "source": "H8a4 honest_neg4.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme exports reports to PDF",
+  "quote": "Acme exports reports to PDF and cannot export to Excel",
+  "source": "H8a4 honest_neg4.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme encrypts data in transit",
+  "quote": "Acme encrypts data in transit and does not log request bodies",
+  "source": "H8a4 honest_neg4.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme integrates with Jira",
+  "quote": "Acme integrates with Jira, and no plugin is required",
+  "source": "H8a4 honest_neg4.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme revenue grew 30% in 2023",
+  "quote": "In 2023 Acme revenue grew 10% and Acme margins grew 30%",
+  "source": "H8a4 variants.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme revenue grew 30%",
+  "quote": "Acme revenue grew 10% and Acme margins grew 30%",
+  "source": "H8a4 variants.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Revenue grew 30% at Acme",
+  "quote": "At Acme revenue grew 10% and margins grew 30%",
+  "source": "H8a4 variants.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme cut latency by 30%",
+  "quote": "Acme cut cost by 30% and latency by 10%",
+  "source": "H8a4 variants.py"
+ },
+ {
+  "kind": "F",
+  "claim": "By 2019, Acme had 300 employees",
+  "quote": "Acme had 300 employees by 2021 and 100 employees in 2019",
+  "source": "H8a4 variants.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Since 2015, Acme has been public",
+  "quote": "Acme was founded in 2015 and has been public since 2019",
+  "source": "H8a4 variants.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme was founded in 2019",
+  "quote": "Acme was founded by two former Initech engineers in 2015 and acquired by Globex in 2019",
+  "source": "H8a4 variants.py"
+ },
+ {
+  "kind": "F",
+  "claim": "In 2019 Acme was founded",
+  "quote": "Acme was founded in 2015 and acquired in 2019",
+  "source": "H8a4 variants.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme raised $5 billion",
+  "quote": "Acme raised 5 billion yen",
+  "source": "H8a4 variants.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme raised $5 billion",
+  "quote": "Acme raised JPY 5 billion",
+  "source": "H8a4 variants.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme raised $5 billion",
+  "quote": "Acme raised RMB 5 billion",
+  "source": "H8a4 variants.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme raised $50M",
+  "quote": "Acme raised C$50M",
+  "source": "H8a4 variants.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme raised €50M",
+  "quote": "Acme raised $50M",
+  "source": "H8a4 variants.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme raised 50 million euros",
+  "quote": "Acme raised 50 million dollars",
+  "source": "H8a4 variants.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme raised 50 million pounds",
+  "quote": "Acme raised 50 million dollars",
+  "source": "H8a4 variants.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme has 7 offices",
+  "quote": "Acme has two and five offices in the US and EU respectively",
+  "source": "H8a4 variants.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme has 12 offices",
+  "quote": "Acme has between five and seven offices",
+  "source": "H8a4 variants.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme has between 5 and 7 offices",
+  "quote": "Acme has between five and seven offices",
+  "source": "H8a4 variants.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme has 5 to 7 offices",
+  "quote": "Acme has five to seven offices",
+  "source": "H8a4 variants.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme cut prices by 20% in 2024",
+  "quote": "Acme cut prices by twenty percent in 2024",
+  "source": "H8a4 variants.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme employs 1,200 people",
+  "quote": "Acme employs one thousand two hundred people",
+  "source": "H8a4 variants.py"
+ }
+]

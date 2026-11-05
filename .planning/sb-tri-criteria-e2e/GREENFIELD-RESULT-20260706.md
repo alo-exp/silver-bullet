@@ -2,7 +2,7 @@
 
 **Harness:** [`scripts/sb-tri-criteria-e2e.sh`](../../scripts/sb-tri-criteria-e2e.sh) with `--greenfield`  
 **SB base:** `97522629` (+ harness fixes)  
-**Fixture:** `/Users/shafqat/projects/enterprise-grade-test-app`  
+**Fixture:** `/Users/<user>/projects/enterprise-grade-test-app`  
 **Visions:** [UNIFIED-DESIGN.md](UNIFIED-DESIGN.md)
 
 ---

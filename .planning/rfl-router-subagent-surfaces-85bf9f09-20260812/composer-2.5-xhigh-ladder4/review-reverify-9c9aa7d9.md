@@ -10,7 +10,7 @@
 | Artifact | SHA-256 | Match |
 |---|---|---|
 | [`.planning/router_subagent_surfaces_85bf9f09.plan.md`](../../router_subagent_surfaces_85bf9f09.plan.md) | `9c9aa7d93a6fa7dd701e18528dd3d8f422cff0da47902aac4b8ac8c76ce21b06` | ✅ |
-| [`~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md) | `9c9aa7d93a6fa7dd701e18528dd3d8f422cff0da47902aac4b8ac8c76ce21b06` | ✅ |
+| [`~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md) | `9c9aa7d93a6fa7dd701e18528dd3d8f422cff0da47902aac4b8ac8c76ce21b06` | ✅ |
 | [`.planning/router_subagent_surfaces_85bf9f09-CLARIFY-260717-143757.md`](../../router_subagent_surfaces_85bf9f09-CLARIFY-260717-143757.md) | `c070c928245af3797c05a7346a3fc48a2db7cd13ce1f496a2c1ddce20aee2964` (informational; not part of plan freeze) | — |
 
 **Hash gate:** PASS — both plan copies byte-identical at frozen SHA.

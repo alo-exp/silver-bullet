@@ -2,7 +2,7 @@ model: glm-5.2-high
 
 # Review pass 17 — Policy F re-review (residual-only)
 
-Corpus: `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`
+Corpus: `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`
 SHA-256 verified: `201732f621e72585c3bf236a963309adab025e419a7d484b4602eb9a14462571` (match — `shasum -a 256` confirmed; pinned SHA == on-disk SHA).
 Scope: residual-only vs ledger I-1…I-41 (all ACCEPT+applied). AE1 / I-41 (query-cache `.gitignore` preserve on `clear()` at §4.1 L330, §5 L351, §8.1 L736, §8.4 L773, plus §6.12 L634 and §1.2 L85 rollup) closed this SHA. New findings only; I-1…I-41 not re-reported. First re-review after AE1 / I-41 ACCEPT-apply (streak 0 / 2). Plan re-read end-to-end (§1.2 L65–L85, §1.3–§1.4, §2.1–§2.8, §3, §4.1–§4.4, §5, §6.1–§6.13, §7, §8.1–§8.4); AE1 / I-41 spot-checked at all eight named sites.
 

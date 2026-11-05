@@ -1,0 +1,632 @@
+[
+ {
+  "kind": "F",
+  "claim": "the vendor guarantees zero downtime for all customers",
+  "quote": "the weather was cold and windy yesterday",
+  "source": "r1 score.py: R11-02 orig: zero downtime vs weather"
+ },
+ {
+  "kind": "F",
+  "claim": "adoption of the framework collapsed after the license change",
+  "quote": "unrelated text about cooking pasta",
+  "source": "r1 score.py: R11-02 orig: pasta"
+ },
+ {
+  "kind": "F",
+  "claim": "Kubernetes is deprecated and unsafe for production",
+  "quote": "Kubernetes is the most popular container orchestrator",
+  "source": "r1 score.py: R11-02 orig: k8s contradiction"
+ },
+ {
+  "kind": "F",
+  "claim": "AWS acquired GitHub in 2018 for 7.5 billion dollars",
+  "quote": "Microsoft acquired GitHub in 2018 for 7.5 billion dollars",
+  "source": "r1 score.py: acronym entity swap"
+ },
+ {
+  "kind": "F",
+  "claim": "IBM acquired the company in 2019 for 34 billion",
+  "quote": "Oracle acquired the company in 2019 for 34 billion",
+  "source": "r1 score.py: acronym entity swap 2"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme raised 50 million in 2023",
+  "quote": "Acme lost 50 million in 2023",
+  "source": "r1 score.py: verb swap"
+ },
+ {
+  "kind": "F",
+  "claim": "The vendor does not guarantee zero downtime for customers",
+  "quote": "The vendor guarantees zero downtime for all customers",
+  "source": "r1 score.py: negation"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme had 500 employees in 2023",
+  "quote": "In 2023, Acme had 12 offices and 500 customers",
+  "source": "r1 score.py: noun swap short claim"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme cut latency by 30% and cost by 10%",
+  "quote": "Acme cut cost by 30% and latency by 10%",
+  "source": "r1 score.py: number moved"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme grew revenue 40% in 2024",
+  "quote": "Acme revenue increased by 40 percent in fiscal 2024",
+  "source": "r1 score.py: honest paraphrase 40 percent"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme grew revenue 40% in 2024",
+  "quote": "In 2024 Acme grew revenue 40% year over year",
+  "source": "r1 score.py: honest exact"
+ },
+ {
+  "kind": "F",
+  "claim": "openai released gpt-5 in 2025 with 400 billion parameters",
+  "quote": "anthropic released claude in 2025 with 400 billion parameters",
+  "source": "r1 score.py: lowercase entity"
+ },
+ {
+  "kind": "F",
+  "claim": "GitLab acquired the startup in 2021",
+  "quote": "GitHub acquired the startup in 2021",
+  "source": "r1 score.py: camelcase entity"
+ },
+ {
+  "kind": "F",
+  "claim": "Google Cloud launched the service in 2022",
+  "quote": "Google launched the service in 2022",
+  "source": "r1 score.py: multiword entity partial"
+ },
+ {
+  "kind": "F",
+  "claim": "the product supports single sign on for enterprise customers",
+  "quote": "the product supports enterprise customers on single plans only",
+  "source": "r1 score.py: tokens only generic"
+ },
+ {
+  "kind": "F",
+  "claim": "The vendor does not guarantee zero downtime for enterprise customers",
+  "quote": "The vendor guarantees zero downtime for all enterprise customers",
+  "source": "score2.py: prev: negation"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme raised $50M from investors in 2023",
+  "quote": "Acme raised $90M from investors in 2023",
+  "source": "score2.py: suffix $50M vs $90M"
+ },
+ {
+  "kind": "F",
+  "claim": "Microsoft acquired GitHub for $7.5B in 2018",
+  "quote": "Microsoft acquired GitHub for $7.9B in 2018",
+  "source": "score2.py: suffix $7.5B vs $7.9B"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme reached 10k paying users in 2024",
+  "quote": "Acme reached 90k paying users in 2024",
+  "source": "score2.py: 10k vs 90k users"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme has 2,500 customers across regions",
+  "quote": "Acme has 500 customers across 2 regions",
+  "source": "score2.py: thousands sep 2,500 vs 500/2"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme has five thousand enterprise customers",
+  "quote": "Acme has fifty enterprise customers",
+  "source": "score2.py: spelled number"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme was acquired by Initech in FY2018",
+  "quote": "Acme was acquired by Initech in FY2021",
+  "source": "score2.py: FY2018 vs FY2021"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme shipped version two in Q3 2023",
+  "quote": "Acme shipped version two in Q1 2023",
+  "source": "score2.py: Q3 2023 vs Q1"
+ },
+ {
+  "kind": "F",
+  "claim": "AWS launched EC2 publicly in 2006",
+  "quote": "AWS launched S3 publicly in 2006",
+  "source": "score2.py: EC2 vs S3 product"
+ },
+ {
+  "kind": "F",
+  "claim": "OpenAI released GPT5 to enterprise customers",
+  "quote": "OpenAI released GPT4 to enterprise customers",
+  "source": "score2.py: GPT4 vs GPT5"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme is 15x faster than Initech",
+  "quote": "Acme is 1.5x faster than Initech",
+  "source": "score2.py: 1.5x vs 15x"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SSO for enterprise customers",
+  "quote": "Acme does not support SSO; enterprise customers can use SAML instead",
+  "source": "score2.py: clause split: positive claim, quote negates in other clause"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme encrypts customer data at rest",
+  "quote": "Acme does not encrypt data at rest, but customer data is encrypted in transit",
+  "source": "score2.py: clause split 2"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SSO",
+  "quote": "SSO is unsupported in Acme",
+  "source": "score2.py: negation via prefix"
+ },
+ {
+  "kind": "F",
+  "claim": "The Acme free tier includes audit logs",
+  "quote": "Audit logs are absent from the Acme free tier",
+  "source": "score2.py: negation via 'absent'"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme reported security incidents in 2023",
+  "quote": "Acme reported zero security incidents in 2023",
+  "source": "score2.py: negation via 'zero'"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme is SOC 2 certified",
+  "quote": "Acme is pursuing certification. It is not SOC 2 certified yet.",
+  "source": "score2.py: double sentence quote"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme's revenue rose 40% in 2024",
+  "quote": "In 2024, Acme increased revenue by 40%",
+  "source": "score2.py: honest paraphrase"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme does not publish pricing on its website",
+  "quote": "Acme does not publish pricing on its website; contact sales",
+  "source": "score2.py: honest negated both"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme, which was not profitable in 2022, raised 50 million dollars in 2023",
+  "quote": "Acme raised 50 million dollars in 2023. The company was not profitable in 2022.",
+  "source": "score2.py: honest multi-clause neg"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme supports not only SSO but also SCIM provisioning",
+  "quote": "Acme supports SSO and SCIM provisioning for every plan",
+  "source": "score2.py: honest 'not only'"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme includes SSO at no extra cost on every plan",
+  "quote": "SSO is included on every Acme plan for free",
+  "source": "score2.py: honest no-extra-cost"
+ },
+ {
+  "kind": "H",
+  "claim": "AWS launched Lambda in 2014",
+  "quote": "AWS launched Lambda at re:Invent in 2014",
+  "source": "score2.py: honest acronym"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme raised $50M in 2023",
+  "quote": "Acme raised 50 million dollars in 2023",
+  "source": "score2.py: honest $50M vs 50 million"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme has 2,500 customers",
+  "quote": "Acme now has 2,500 customers worldwide",
+  "source": "score2.py: honest 2,500"
+ },
+ {
+  "kind": "H",
+  "claim": "Microsoft acquired GitHub for 7.5 billion dollars in 2018",
+  "quote": "In 2018 Microsoft acquired GitHub for $7.5B",
+  "source": "score2.py: honest 7.5 billion vs $7.5B"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme ships an iPhone app since 2019",
+  "quote": "Acme has shipped an iPhone app since 2019",
+  "source": "score2.py: honest camel lowercase start"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme works offline without an account",
+  "quote": "The Acme app works offline and without an account",
+  "source": "score2.py: honest without"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme Cloud is SOC 2 Type II certified for its enterprise platform",
+  "quote": "Acme Cloud is pursuing certification for its enterprise platform. It is not SOC 2 Type II certified yet.",
+  "source": "score3.py: r2 fab4 SOC2 +extra words"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SSO on the enterprise plan",
+  "quote": "Acme doesn’t support SSO on the enterprise plan",
+  "source": "score3.py: curly doesn't"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme is SOC 2 certified",
+  "quote": "Acme isn’t SOC 2 certified",
+  "source": "score3.py: curly isn't"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme doesn't support SSO on the enterprise plan",
+  "quote": "Acme doesn’t support SSO on the enterprise plan",
+  "source": "score3.py: honest ascii vs curly"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SSO",
+  "quote": "Neither Acme nor Initech supports SSO",
+  "source": "score3.py: neither ... nor"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SSO",
+  "quote": "No, Acme does not support SSO",
+  "source": "score3.py: no, ... not"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SSO on enterprise plans",
+  "quote": "Acme does not support SSO, not even on enterprise plans",
+  "source": "score3.py: not ..., not even"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SCIM",
+  "quote": "Acme does not support SSO and SCIM",
+  "source": "score3.py: not X and Y"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme encrypts backups",
+  "quote": "Acme never encrypts logs and backups",
+  "source": "score3.py: never A and B"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme does not store passwords",
+  "quote": "Acme hashes and does not store passwords",
+  "source": "score3.py: honest neg + and quote"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme does not sell customer data",
+  "quote": "Acme encrypts and does not sell customer data",
+  "source": "score3.py: honest neg + and quote 2"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme raised $50M in 2023",
+  "quote": "Acme raised €50M in 2023",
+  "source": "score3.py: currency $ vs EUR"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme raised 50 million dollars in 2023",
+  "quote": "Acme raised 50 million euros in 2023",
+  "source": "score3.py: dollars vs euros word"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme grew revenue 40% in 2024",
+  "quote": "Acme grew revenue 40 percent in 2024",
+  "source": "score3.py: 40 percent vs 40%"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme grew revenue 40 percent in 2024",
+  "quote": "Acme grew revenue 40% in 2024",
+  "source": "score3.py: 40 per cent"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme raised $50 million in 2023",
+  "quote": "Acme raised USD 50 million in 2023",
+  "source": "score3.py: USD 50 million"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme raised $50M in 2023",
+  "quote": "Acme raised $50,000,000 in 2023",
+  "source": "score3.py: 50,000,000"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme raised $1.2 billion in 2023",
+  "quote": "Acme raised $1.2bn in 2023",
+  "source": "score3.py: 1.2bn"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme has 10 to 20 offices",
+  "quote": "Acme has 10 to 20 offices worldwide",
+  "source": "score3.py: range 10-20"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme has 500 enterprise customers",
+  "quote": "Acme has 500 staff serving enterprise customers",
+  "source": "score3.py: noun within 3 after"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme employs 300 engineers",
+  "quote": "Acme employs 300 contractors and engineers",
+  "source": "score3.py: noun 2nd word"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme was founded in 2015 and acquired in 2019",
+  "quote": "Acme was founded in 2019 and acquired in 2015",
+  "source": "score3.py: year swap"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme went public in 2021",
+  "quote": "Acme was founded in 2021 and plans to go public in 2026",
+  "source": "score3.py: year reattach"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme has 30% market share and Initech has 10%",
+  "quote": "Acme has 10% market share and Initech has 30%",
+  "source": "score3.py: % swap across subjects"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme charges $20 per seat",
+  "quote": "Seats cost $20 each at Acme",
+  "source": "score3.py: honest 'per year' order"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme was founded in 2015 and employs 200 people",
+  "quote": "Acme was founded in 2015. It employs 200 people.",
+  "source": "score3.py: honest pronoun"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme has more than 500 customers",
+  "quote": "Acme has over 500 customers",
+  "source": "score3.py: honest more than"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme has 2,000 employees",
+  "quote": "Acme's 2,000 employees work remotely",
+  "source": "score3.py: honest unit order"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme offers zero-trust network access",
+  "quote": "Acme offers zero-trust network access for remote teams",
+  "source": "score3.py: honest zero-trust term"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme provides zero-trust access to internal apps",
+  "quote": "Acme provides zero-trust access to internal apps and SSO",
+  "source": "score3.py: honest zero-trust vs claim w/o"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme is a no-code platform for workflows",
+  "quote": "Acme is a no-code platform for building workflows",
+  "source": "score3.py: honest no-code"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme supports SSO and SCIM",
+  "quote": "Acme supports not only SSO but also SCIM",
+  "source": "score3.py: honest 'not only' quote"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme cannot export to PDF",
+  "quote": "Users are unable to export Acme reports to PDF",
+  "source": "score3.py: honest unable/cannot"
+ },
+ {
+  "kind": "H",
+  "claim": "Revenue increased 12% year over year to $5.2 billion",
+  "quote": "Acme reported revenue of $5.2 billion, up 12% year over year",
+  "source": "r3 honest4.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme closed a $50 million Series B round in 2023",
+  "quote": "In 2023, Acme closed a $50M Series B led by Sequoia",
+  "source": "r3 honest4.py"
+ },
+ {
+  "kind": "H",
+  "claim": "GitHub has more than 100 million developers",
+  "quote": "GitHub now has over 100 million developers on the platform",
+  "source": "r3 honest4.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Kubernetes 1.29 was released in December 2023",
+  "quote": "Kubernetes v1.29 was released on December 13, 2023",
+  "source": "r3 honest4.py"
+ },
+ {
+  "kind": "H",
+  "claim": "The company employs 1,200 people across 14 countries",
+  "quote": "The company's 1,200 employees work across 14 countries",
+  "source": "r3 honest4.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme's net loss narrowed to $30M in 2023",
+  "quote": "In 2023 Acme narrowed its net loss to $30M",
+  "source": "r3 honest4.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme cut prices by 20% in March 2024",
+  "quote": "In March 2024 Acme cut its prices by 20%",
+  "source": "r3 honest4.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Snowflake reported product revenue of $2.67 billion for fiscal 2024",
+  "quote": "Product revenue for fiscal 2024 was $2.67 billion, Snowflake reported",
+  "source": "r3 honest4.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme supports SSO but does not support SCIM",
+  "quote": "Acme supports SSO. SCIM is not supported.",
+  "source": "r3 honest4.py"
+ },
+ {
+  "kind": "H",
+  "claim": "The free plan does not include audit logs and is limited to 3 users",
+  "quote": "The free plan is limited to 3 users and does not include audit logs",
+  "source": "r3 honest4.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme does not offer an on-premises version and has no plans to",
+  "quote": "Acme does not offer an on-premises version, and it has no plans to do so",
+  "source": "r3 honest4.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme stores no customer data outside the EU",
+  "quote": "Acme does not store customer data outside the EU",
+  "source": "r3 honest4.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme has never raised outside funding and remains profitable",
+  "quote": "Acme has never raised outside funding. It remains profitable.",
+  "source": "r3 honest4.py"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme's API has a rate limit of 100 requests per minute",
+  "quote": "The Acme API is rate limited to 100 requests per minute",
+  "source": "r3 honest4.py"
+ },
+ {
+  "kind": "H",
+  "claim": "About 70% of respondents use Kubernetes in production",
+  "quote": "70% of respondents said they run Kubernetes in production",
+  "source": "r3 honest4.py"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme raised 90 million dollars in 2023. Acme also employs 400 engineers in Berlin",
+  "quote": "Acme employs 400 engineers in Berlin and raised 50 million dollars in 2023",
+  "source": "H8a2 fab4.tsv"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme Cloud retired its free tier in 2024 and now has 3,000 paying teams",
+  "quote": "Acme Cloud retired its free tier in 2024 and now has 300 paying teams in 10 countries",
+  "source": "H8a2 fab4.tsv"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme no longer offers a free tier since 2024",
+  "quote": "Since 2024, Acme has offered only paid plans after retiring its free tier",
+  "source": "H8a2 hon3.tsv"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SSO on every enterprise plan",
+  "quote": "Neither Acme nor Initech supports SSO on any enterprise plan",
+  "source": "H8a3 fab5.tsv"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SSO for its enterprise customers",
+  "quote": "No, Acme does not support SSO for its enterprise customers",
+  "source": "H8a3 fab5.tsv"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SCIM provisioning for admins",
+  "quote": "Acme does not support SSO and SCIM provisioning for admins",
+  "source": "H8a3 fab5.tsv"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme encrypts customer backups at rest",
+  "quote": "Acme never encrypts customer logs and backups at rest",
+  "source": "H8a3 fab5.tsv"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SAML single sign-on for all customers",
+  "quote": "Acme doesn’t support SAML single sign-on for all customers",
+  "source": "H8a3 fab5.tsv"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme raised $50M in its Series B round in 2023",
+  "quote": "Acme raised €50M in its Series B round in 2023",
+  "source": "H8a3 fab5.tsv"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme was founded in 2015 and acquired by Initech in 2019",
+  "quote": "Acme was founded in 2019 and acquired by Initech in 2015",
+  "source": "H8a3 fab5.tsv"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme has 500 enterprise customers in North America",
+  "quote": "Acme has 500 staff serving enterprise customers in North America",
+  "source": "H8a3 fab5.tsv"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme works offline without an account on mobile",
+  "quote": "The Acme mobile app works offline and without an account",
+  "source": "H8a3 hon5.tsv"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme doesn't support SAML single sign-on on the free plan",
+  "quote": "Acme doesn’t support SAML single sign-on on the free plan",
+  "source": "H8a3 hon5.tsv"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme grew revenue 40% in 2024 according to its filing",
+  "quote": "Acme grew revenue 40 percent in 2024, according to its annual filing",
+  "source": "H8a3 hon5.tsv"
+ }
+]

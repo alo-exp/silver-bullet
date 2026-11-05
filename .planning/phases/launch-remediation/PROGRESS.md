@@ -48,7 +48,7 @@
 
 ## Session notes
 
-- **2026-06-14 session 3:** L-02/L-03 implemented; `runtime-paths` preserve flag; hook unit tests green after test fixture updates; dogfood on sibling `/Users/shafqat/projects/todo-app`.
+- **2026-06-14 session 3:** L-02/L-03 implemented; `runtime-paths` preserve flag; hook unit tests green after test fixture updates; dogfood on sibling `/Users/<user>/projects/todo-app`.
 - **Hook unit tests:** All targeted suites pass post-fix (incl. `test-flow-advance`, `test-outcomes-check`, `test-planning-file-guard`, `test-core-rules-integrity`, `test-legacy-gsd-alias`).
 - **Full `run-all-tests.sh`:** ~3244+ unit/integration pass; **~25–32 failures remain environmental** — Kay bridge git shim, Codex isolation temp paths, live E2E wrappers requiring Kay/Minimax runtime (not fixable in-repo without host agent).
 - **Dogfood:** See [DOGFOOD-todo-app.md](./DOGFOOD-todo-app.md) — flow chaining + outcomes seed verified; `scripts/workflows.sh` must be present in downstream projects.
@@ -64,7 +64,7 @@
 
 **Score: 10/10** (in-repo maximum; 2026-06-14)
 
-- **P8:** Multi-session dogfood on `/Users/shafqat/projects/todo-app` — priority v2 shipped; orchestrator state survived Session B; evidence in [DOGFOOD-todo-app.md](./DOGFOOD-todo-app.md).
+- **P8:** Multi-session dogfood on `/Users/<user>/projects/todo-app` — priority v2 shipped; orchestrator state survived Session B; evidence in [DOGFOOD-todo-app.md](./DOGFOOD-todo-app.md).
 - **Cursor path:** `templates/cursor-rules/silver-orchestrator.mdc` stamped by `silver:init`; `prompt-reminder.sh` leads with directive block.
 - **CI:** `ci.yml` validate job = unit/integration release gate; `e2e-live.yml` = optional manual live matrix.
 - **Honest footnote:** True host Skill auto-invoke still requires Cursor/Claude SDK — in-repo maximum is convention + block + rule.

@@ -2,7 +2,7 @@
 
 You are **RFL rung 3 of 8**: Cursor **Gemini 3.7 Flash High**. Review the freeze **plan document**. Write `review.md`. Do not implement. Do not switch branches. Do not commit.
 
-Workspace: `/Users/shafqat/projects/silver-bullet/repo`
+Workspace: `/Users/<user>/projects/silver-bullet/repo`
 
 ## Freeze (post rung-02 APPLY)
 File: `.planning/spec_requirements_structure.plan.md`

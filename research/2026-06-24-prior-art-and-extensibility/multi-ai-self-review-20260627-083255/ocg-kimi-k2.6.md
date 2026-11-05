@@ -1,6 +1,6 @@
 The critical self-review is complete and written to:
 
-**`/Users/shafqat/projects/silver-bullet/repo/multi-ai-task-critical-review.md`**
+**`/Users/<user>/projects/silver-bullet/repo/multi-ai-task-critical-review.md`**
 
 ---
 

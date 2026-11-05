@@ -2,7 +2,7 @@
 
 - **Model:** Composer 2.5 High (`composer-2.5` / `sb-composer-2-5-high`)
 - **Phase:** `rung_2_verify_2` after ACCEPT-apply of Kimi pack R2P5-1…R2P5-4 (I-61…I-64)
-- **Plan:** `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`
+- **Plan:** `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`
 - **Apply ledger:** [APPLY.md](APPLY.md) Pass 5 section
 - **Review input:** [review-pass-5.md](review-pass-5.md)
 - **Method:** `shasum -a 256` gate; graphify CLI orientation; independent `ctx_execute` grep/section extraction on freeze plan (not copied from verify_1 or review artifact)

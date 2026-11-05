@@ -1,0 +1,938 @@
+[
+ {
+  "kind": "F",
+  "claim": "Acme supports SSO",
+  "quote": "Acme has yet to support SSO",
+  "source": "r6 score6.py: neg: has yet to"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme is profitable",
+  "quote": "Acme is far from profitable",
+  "source": "r6 score6.py: neg: far from"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SSO",
+  "quote": "Acme denies that it supports SSO",
+  "source": "r6 score6.py: neg: denies"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SSO",
+  "quote": "Acme stopped supporting SSO in 2023",
+  "source": "r6 score6.py: neg: stopped supporting"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SSO",
+  "quote": "Acme discontinued SSO support in 2023",
+  "source": "r6 score6.py: neg: discontinued"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SSO",
+  "quote": "Acme supports SSO: No",
+  "source": "r6 score6.py: neg: table row colon no"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SSO",
+  "quote": "Acme supports SSO? No.",
+  "source": "r6 score6.py: neg: question then no"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SSO",
+  "quote": "Myth: Acme supports SSO.",
+  "source": "r6 score6.py: neg: myth label"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme is SOC 2 certified",
+  "quote": "Acme is SOC 2 certified. Not true.",
+  "source": "r6 score6.py: neg: claim then not true"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SCIM",
+  "quote": "Acme feature matrix - SCIM: not supported; SSO: supported",
+  "source": "r6 score6.py: neg: matrix row"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SCIM",
+  "quote": "Acme supports SSO, though not SCIM",
+  "source": "r6 score6.py: neg: though not"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme encrypts backups",
+  "quote": "Acme has never once encrypted backups",
+  "source": "r6 score6.py: neg: never once"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme offers phone support",
+  "quote": "No one at Acme offers phone support",
+  "source": "r6 score6.py: neg: no-one"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme encrypts backups",
+  "quote": "Acme stores backups without encrypting them",
+  "source": "r6 score6.py: neg: without (verb)"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme has more than 500 customers",
+  "quote": "Acme has fewer than 500 customers",
+  "source": "r6 score6.py: cmp: more than vs fewer than"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme raised more than $50M",
+  "quote": "Acme raised less than $50M",
+  "source": "r6 score6.py: cmp: more than vs less than"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme has at least 500 customers",
+  "quote": "Acme has at most 500 customers",
+  "source": "r6 score6.py: cmp: at least vs at most"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme has over 500 employees",
+  "quote": "Acme has under 500 employees",
+  "source": "r6 score6.py: cmp: over vs under"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme has 100 employees",
+  "quote": "Acme has up to 100 employees",
+  "source": "r6 score6.py: cmp: up to vs exactly"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme is faster than Initech",
+  "quote": "Acme is slower than Initech",
+  "source": "r6 score6.py: cmp: faster/slower"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme's prices are higher than Initech's",
+  "quote": "Acme's prices are lower than Initech's",
+  "source": "r6 score6.py: cmp: higher/lower"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme's revenue was higher in 2023 than in 2022",
+  "quote": "Acme's revenue was higher in 2022 than in 2023",
+  "source": "r6 score6.py: cmp: years swapped"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme's revenue went from $10M in 2022 to $50M in 2023",
+  "quote": "Acme's revenue went from $50M in 2022 to $10M in 2023",
+  "source": "r6 score6.py: cmp: from-to swapped years"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme is the largest vendor in Europe",
+  "quote": "Acme is the smallest vendor in Europe",
+  "source": "r6 score6.py: cmp: largest/smallest"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme acquired Initech",
+  "quote": "Acme, acquired by Initech in 2022, now employs 400 people",
+  "source": "r6 score6.py: role: reduced relative passive"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme acquired Initech",
+  "quote": "Acme, which was acquired by Initech in 2022, now employs 400 people",
+  "source": "r6 score6.py: role: which was acquired by"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme acquired Initech",
+  "quote": "Acme got acquired by Initech in 2022",
+  "source": "r6 score6.py: role: got acquired"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme bought Initech",
+  "quote": "Acme was bought by Initech in 2022",
+  "source": "r6 score6.py: role: irregular passive bought"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme sold Initech",
+  "quote": "Acme was sold to Initech in 2022",
+  "source": "r6 score6.py: role: irregular passive sold"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme acquired Initech",
+  "quote": "Acme's acquisition by Initech closed in 2022",
+  "source": "r6 score6.py: role: nominalised"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme acquired Initech",
+  "quote": "Acme became part of Initech in 2022",
+  "source": "r6 score6.py: role: became part of"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme acquired Initech",
+  "quote": "Acme sued Initech in 2022",
+  "source": "r6 score6.py: role: verb swap sued"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme acquired Initech",
+  "quote": "Acme partnered with Initech in 2022",
+  "source": "r6 score6.py: role: partnered"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme led the funding round for Initech",
+  "quote": "Acme's funding round was led by Initech",
+  "source": "r6 score6.py: role: led by"
+ },
+ {
+  "kind": "F",
+  "claim": "Initech is the parent company of Acme",
+  "quote": "Acme is the parent company of Initech",
+  "source": "r6 score6.py: role: parent"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme has 500 employees",
+  "quote": "Acme's rival Initech has 500 employees",
+  "source": "r6 score6.py: xent: rival in same segment"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme has 500 employees",
+  "quote": "Unlike Initech, which has 500 employees, Acme has 200",
+  "source": "r6 score6.py: xent: unlike which has"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme has 500 employees and Initech has 200 employees",
+  "quote": "Acme has 200 employees and Initech has 500 employees",
+  "source": "r6 score6.py: xent: both named swapped"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme raised $50M and Initech raised $10M",
+  "quote": "Acme raised $10M and Initech raised $50M",
+  "source": "r6 score6.py: xent: both named funding"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme raised $10M",
+  "quote": "Acme and Initech raised $50M and $10M respectively",
+  "source": "r6 score6.py: xent: respectively"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme's revenue was $50M",
+  "quote": "Acme's revenue was $5M compared with $50M for Initech",
+  "source": "r6 score6.py: xent: compared with"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme has 500 employees",
+  "quote": "Acme has 200 employees; its rival has 500 employees",
+  "source": "r6 score6.py: xent: lowercase rival"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SSO and SCIM",
+  "quote": "Acme supports SSO and Initech supports SCIM",
+  "source": "r6 score6.py: xent: attribute to other"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme Cloud costs $20 per month",
+  "quote": "Acme Cloud costs $35 per month and Acme Lite costs $20 per month",
+  "source": "r6 score6.py: xent: product of other"
+ },
+ {
+  "kind": "F",
+  "claim": "Setup takes 5 days",
+  "quote": "Setup takes 3 days to 5 days",
+  "source": "r6 score6.py: rng: days to days"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme has 100 employees",
+  "quote": "Acme has from 50 up to 100 employees",
+  "source": "r6 score6.py: rng: from up to"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme has 3 offices",
+  "quote": "Acme has 3+ offices",
+  "source": "r6 score6.py: rng: plus"
+ },
+ {
+  "kind": "F",
+  "claim": "Setup takes 5 days",
+  "quote": "Setup takes 3 through 5 days",
+  "source": "r6 score6.py: rng: through"
+ },
+ {
+  "kind": "F",
+  "claim": "Setup takes 5 days",
+  "quote": "Setup takes three to five days",
+  "source": "r6 score6.py: rng: words to"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme has 100 employees",
+  "quote": "Acme has 50–100 employees",
+  "source": "r6 score6.py: rng: en dash"
+ },
+ {
+  "kind": "F",
+  "claim": "Setup takes 2 days",
+  "quote": "Setup takes one-two days",
+  "source": "r6 score6.py: rng: one-two"
+ },
+ {
+  "kind": "F",
+  "claim": "Setup takes 5 days",
+  "quote": "Setup takes a few to 5 days",
+  "source": "r6 score6.py: rng: a few to"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme revenue grew 30% in the third quarter",
+  "quote": "Acme revenue grew 30% in the second quarter",
+  "source": "r6 score6.py: per: quarter in words"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme revenue grew 30% year over year",
+  "quote": "Acme revenue grew 30% quarter over quarter",
+  "source": "r6 score6.py: per: yoy vs qoq"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme processes 1 million requests daily",
+  "quote": "Acme processes 1 million requests hourly",
+  "source": "r6 score6.py: per: daily vs hourly"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme costs $20/yr",
+  "quote": "Acme costs $20 per month",
+  "source": "r6 score6.py: per: /yr claim vs per month"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme's annual fee is $240",
+  "quote": "Acme's monthly fee is $240",
+  "source": "r6 score6.py: per: annual vs monthly"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme booked $5M in the first half",
+  "quote": "Acme booked $5M in the second half",
+  "source": "r6 score6.py: per: first half words"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme revenue grew 30% in fiscal Q3",
+  "quote": "Acme revenue grew 30% in fiscal Q2",
+  "source": "r6 score6.py: per: fiscal Q"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme launched SSO in March 2023",
+  "quote": "Acme launched SSO in May 2023",
+  "source": "r6 score6.py: per: month names"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme costs $20 per seat",
+  "quote": "Acme costs $20 per organisation",
+  "source": "r6 score6.py: per: per seat vs per org"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme ships updates weekly",
+  "quote": "Acme ships updates monthly",
+  "source": "r6 score6.py: per: weekly vs monthly"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SSO",
+  "quote": "Acme is slated to support SSO in 2025",
+  "source": "r6 score6.py: modal: slated to"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SSO",
+  "quote": "Acme is scheduled to support SSO in 2025",
+  "source": "r6 score6.py: modal: scheduled to"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SSO",
+  "quote": "Acme is preparing to support SSO",
+  "source": "r6 score6.py: modal: preparing to"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SSO",
+  "quote": "Acme is working on SSO support",
+  "source": "r6 score6.py: modal: working on"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme acquired Initech",
+  "quote": "Acme is in talks to acquire Initech",
+  "source": "r6 score6.py: modal: in talks"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme acquired Initech",
+  "quote": "Acme agreed to acquire Initech",
+  "source": "r6 score6.py: modal: agreed to acquire"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme acquired Initech",
+  "quote": "Acme acquired Initech, pending regulatory approval",
+  "source": "r6 score6.py: modal: pending approval"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme is SOC 2 certified",
+  "quote": "Acme is seeking SOC 2 certification",
+  "source": "r6 score6.py: modal: seeking certification"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme is SOC 2 certified",
+  "quote": "Acme has applied for SOC 2 certification",
+  "source": "r6 score6.py: modal: applied for"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SSO",
+  "quote": "Acme supported SSO until 2022",
+  "source": "r6 score6.py: modal: until (earlier state)"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SSO",
+  "quote": "Acme once supported SSO",
+  "source": "r6 score6.py: modal: once supported"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme acquired Initech",
+  "quote": "According to rumors, Acme acquired Initech",
+  "source": "r6 score6.py: modal: rumors"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme acquired Initech",
+  "quote": "Acme is said to have acquired Initech",
+  "source": "r6 score6.py: modal: said to have"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SSO",
+  "quote": "Acme appears to support SSO",
+  "source": "r6 score6.py: modal: appears to"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SSO",
+  "quote": "Whether Acme supports SSO is unclear",
+  "source": "r6 score6.py: modal: whether unclear"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme acquired Initech",
+  "quote": "Acme tried to acquire Initech in 2022",
+  "source": "r6 score6.py: modal: tried to"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SSO",
+  "quote": "Acme promised to support SSO",
+  "source": "r6 score6.py: modal: promised"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme is SOC 2 certified",
+  "quote": "Acme targets SOC 2 certification by 2025",
+  "source": "r6 score6.py: modal: targets"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme no longer offers a free tier",
+  "quote": "Acme offers a free tier; it stopped offering phone support in 2023",
+  "source": "r6 score6.py: modal: no longer + unrelated end"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme offers SSO and SCIM on all plans",
+  "quote": "Acme offers SSO on all plans and SCIM on Enterprise",
+  "source": "r6 score6.py: coord: all plans scope"
+ },
+ {
+  "kind": "F",
+  "claim": "Both Acme and Initech are SOC 2 certified",
+  "quote": "Acme is SOC 2 certified; Initech is not",
+  "source": "r6 score6.py: coord: both certified"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SSO and SCIM",
+  "quote": "Acme supports SSO or SCIM, depending on the plan",
+  "source": "r6 score6.py: coord: or vs and"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SCIM",
+  "quote": "Acme supports SSO but neither SCIM nor LDAP",
+  "source": "r6 score6.py: coord: neither late"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports LDAP",
+  "quote": "Acme supports SSO, SCIM and SAML; LDAP is not supported",
+  "source": "r6 score6.py: coord: list then not"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme is HIPAA compliant",
+  "quote": "Acme is HIPAA compliant in name only",
+  "source": "r6 score6.py: idiom: in name only"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme's pricing is cheap",
+  "quote": "Acme's pricing is anything but cheap",
+  "source": "r6 score6.py: idiom: anything but"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme is SOC 2 certified",
+  "quote": "Acme's SOC 2 certification lapsed in 2022",
+  "source": "r6 score6.py: idiom: lapsed"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme acquired Initech",
+  "quote": "Acme stopped short of acquiring Initech",
+  "source": "r6 score6.py: idiom: stopped short"
+ },
+ {
+  "kind": "F",
+  "claim": "Acme supports SSO",
+  "quote": "Acme supports SSO only on paper",
+  "source": "r6 score6.py: idiom: on paper"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme's growth has been remarkable",
+  "quote": "Acme's growth has been nothing short of remarkable",
+  "source": "r6 score6.py: h neg: nothing short of"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme is more popular than ever",
+  "quote": "Acme has never been more popular",
+  "source": "r6 score6.py: h neg: never been more"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme leads the market",
+  "quote": "There is no doubt that Acme leads the market",
+  "source": "r6 score6.py: h neg: no doubt"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme leads the CRM market",
+  "quote": "No wonder Acme leads the CRM market",
+  "source": "r6 score6.py: h neg: no wonder"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme includes SSO for free",
+  "quote": "Acme includes SSO for no extra charge",
+  "source": "r6 score6.py: h neg: for no extra charge"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme is popular",
+  "quote": "Acme is not unpopular",
+  "source": "r6 score6.py: h neg: not unpopular"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme reported 5 security incidents in 2022",
+  "quote": "Acme reported 5 security incidents in 2022 and zero incidents in 2023",
+  "source": "r6 score6.py: h neg: zero other year"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme reported 3 outages in 2023",
+  "quote": "Acme reported 3 outages in 2023, while Initech reported zero outages",
+  "source": "r6 score6.py: h neg: zero rival"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme offers SCIM provisioning",
+  "quote": "Acme offers SCIM provisioning, while Initech ships without provisioning",
+  "source": "r6 score6.py: h neg: without rival"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme's free trial required a credit card in 2022",
+  "quote": "Acme's free trial required a credit card in 2022, but since 2023 it works without a credit card",
+  "source": "r6 score6.py: h neg: without later"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme offers audit logs on every plan",
+  "quote": "Acme offers audit logs on every plan; Initech ships with no audit logs",
+  "source": "r6 score6.py: h neg: with no rival"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme had 12 outages in 2022",
+  "quote": "Acme had 12 outages in 2022. In 2023 it had zero outages.",
+  "source": "r6 score6.py: h neg: zero two sentences"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme never stores passwords",
+  "quote": "Acme never stores passwords in plain text or hashed form",
+  "source": "r6 score6.py: h neg: never stores"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme no longer offers a free tier",
+  "quote": "Acme discontinued its free tier in 2023",
+  "source": "r6 score6.py: h neg: no longer since"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme is cheaper than Initech",
+  "quote": "Acme is cheaper than Initech for teams under 50 users",
+  "source": "r6 score6.py: h cmp: cheaper"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme has more than 500 customers",
+  "quote": "Acme has more than 500 customers worldwide",
+  "source": "r6 score6.py: h cmp: more than"
+ },
+ {
+  "kind": "H",
+  "claim": "Initech acquired Acme in 2022",
+  "quote": "In 2022, Initech acquired Acme for $1 billion",
+  "source": "r6 score6.py: h role: acquired in"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme has 500 employees",
+  "quote": "Acme has 500 employees, while Initech has 200",
+  "source": "r6 score6.py: h xent: comparison"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme has 500 employees and Initech has 200 employees",
+  "quote": "Acme has 500 employees and Initech has 200 employees",
+  "source": "r6 score6.py: h xent: both"
+ },
+ {
+  "kind": "H",
+  "claim": "Setup takes 3 to 5 days",
+  "quote": "Setup takes three to five days",
+  "source": "r6 score6.py: h rng: range"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme costs $20 per month",
+  "quote": "Acme costs $20 a month",
+  "source": "r6 score6.py: h per: per month"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme revenue grew 30% in Q3 2024",
+  "quote": "In Q3 2024, Acme revenue grew 30%",
+  "source": "r6 score6.py: h per: Q3"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme will support SSO in 2025",
+  "quote": "Acme will support SSO in 2025, the company said",
+  "source": "r6 score6.py: h modal: will claim"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme supports SSO and SCIM",
+  "quote": "Acme supports SSO and SCIM on all plans",
+  "source": "r6 score6.py: h coord: SSO and SCIM"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme supports SCIM",
+  "quote": "Not only does Acme support SSO, it also supports SCIM",
+  "source": "r6 score6.py: h idiom: not only"
+ },
+ {
+  "kind": "H",
+  "claim": "Stripe processed $1 trillion in payments in 2023",
+  "quote": "In 2023, Stripe processed $1 trillion in total payment volume.",
+  "source": "r6 honest6.py (held-out everyday honest)"
+ },
+ {
+  "kind": "H",
+  "claim": "Snowflake had 9,437 customers at the end of fiscal 2024",
+  "quote": "Snowflake ended fiscal 2024 with 9,437 total customers.",
+  "source": "r6 honest6.py (held-out everyday honest)"
+ },
+ {
+  "kind": "H",
+  "claim": "Datadog supports OpenTelemetry",
+  "quote": "Datadog supports OpenTelemetry for traces, metrics and logs.",
+  "source": "r6 honest6.py (held-out everyday honest)"
+ },
+ {
+  "kind": "H",
+  "claim": "Okta offers SCIM provisioning on its Workforce Identity plans",
+  "quote": "SCIM provisioning is available on Okta Workforce Identity plans.",
+  "source": "r6 honest6.py (held-out everyday honest)"
+ },
+ {
+  "kind": "H",
+  "claim": "GitLab's Premium tier costs $29 per user per month",
+  "quote": "GitLab Premium costs $29 per user per month, billed annually.",
+  "source": "r6 honest6.py (held-out everyday honest)"
+ },
+ {
+  "kind": "H",
+  "claim": "Linear integrates with Slack",
+  "quote": "Linear integrates with Slack, GitHub and Figma.",
+  "source": "r6 honest6.py (held-out everyday honest)"
+ },
+ {
+  "kind": "H",
+  "claim": "Notion launched Notion AI in February 2023",
+  "quote": "Notion launched Notion AI to all users in February 2023.",
+  "source": "r6 honest6.py (held-out everyday honest)"
+ },
+ {
+  "kind": "H",
+  "claim": "Atlassian moved Jira Server to end of life in February 2024",
+  "quote": "Atlassian ended support for Jira Server in February 2024.",
+  "source": "r6 honest6.py (held-out everyday honest)"
+ },
+ {
+  "kind": "H",
+  "claim": "Supabase is built on Postgres",
+  "quote": "Supabase is an open source Firebase alternative built on Postgres.",
+  "source": "r6 honest6.py (held-out everyday honest)"
+ },
+ {
+  "kind": "H",
+  "claim": "Cloudflare operates data centers in more than 300 cities",
+  "quote": "Cloudflare's network spans more than 300 cities in over 100 countries.",
+  "source": "r6 honest6.py (held-out everyday honest)"
+ },
+ {
+  "kind": "H",
+  "claim": "Vercel raised $150 million in a Series D round",
+  "quote": "Vercel raised $150 million in Series D funding.",
+  "source": "r6 honest6.py (held-out everyday honest)"
+ },
+ {
+  "kind": "H",
+  "claim": "PagerDuty is SOC 2 Type II certified",
+  "quote": "PagerDuty maintains SOC 2 Type II certification.",
+  "source": "r6 honest6.py (held-out everyday honest)"
+ },
+ {
+  "kind": "H",
+  "claim": "Figma has more than 4 million paying users",
+  "quote": "Figma has more than 4 million paying users, the company said.",
+  "source": "r6 honest6.py (held-out everyday honest)"
+ },
+ {
+  "kind": "H",
+  "claim": "Twilio cut about 17% of its workforce in 2023",
+  "quote": "Twilio laid off about 17% of its workforce in 2023.",
+  "source": "r6 honest6.py (held-out everyday honest)"
+ },
+ {
+  "kind": "H",
+  "claim": "HashiCorp switched Terraform to the Business Source License in 2023",
+  "quote": "In August 2023, HashiCorp moved Terraform to the Business Source License.",
+  "source": "r6 honest6.py (held-out everyday honest)"
+ },
+ {
+  "kind": "H",
+  "claim": "Zoom reported revenue of $4.5 billion in fiscal 2024",
+  "quote": "Zoom reported total revenue of $4.5 billion for fiscal year 2024.",
+  "source": "r6 honest6.py (held-out everyday honest)"
+ },
+ {
+  "kind": "H",
+  "claim": "Salesforce acquired Slack in 2021",
+  "quote": "Salesforce completed its acquisition of Slack in July 2021.",
+  "source": "r6 honest6.py (held-out everyday honest)"
+ },
+ {
+  "kind": "H",
+  "claim": "Adobe abandoned its plan to acquire Figma",
+  "quote": "Adobe and Figma abandoned the proposed acquisition in December 2023.",
+  "source": "r6 honest6.py (held-out everyday honest)"
+ },
+ {
+  "kind": "H",
+  "claim": "Shopify merchants sold $235.9 billion of goods in 2023",
+  "quote": "Merchants on Shopify sold $235.9 billion in gross merchandise volume in 2023.",
+  "source": "r6 honest6.py (held-out everyday honest)"
+ },
+ {
+  "kind": "H",
+  "claim": "MongoDB Atlas is available on AWS, Azure and Google Cloud",
+  "quote": "MongoDB Atlas runs on AWS, Azure and Google Cloud.",
+  "source": "r6 honest6.py (held-out everyday honest)"
+ },
+ {
+  "kind": "H",
+  "claim": "Rust 1.0 was released in May 2015",
+  "quote": "The Rust 1.0 release came out in May 2015.",
+  "source": "r6 honest6.py (held-out everyday honest)"
+ },
+ {
+  "kind": "H",
+  "claim": "Kubernetes was originally designed by Google",
+  "quote": "Kubernetes was originally designed by Google and is now maintained by the CNCF.",
+  "source": "r6 honest6.py (held-out everyday honest)"
+ },
+ {
+  "kind": "H",
+  "claim": "Python 3.12 removed the distutils module",
+  "quote": "Python 3.12 removed the distutils package.",
+  "source": "r6 honest6.py (held-out everyday honest)"
+ },
+ {
+  "kind": "H",
+  "claim": "Postgres 16 added logical replication from standby servers",
+  "quote": "PostgreSQL 16 adds the ability to perform logical replication from a standby server.",
+  "source": "r6 honest6.py (held-out everyday honest)"
+ },
+ {
+  "kind": "H",
+  "claim": "The trial enrolled 1,200 patients across 40 sites",
+  "quote": "The trial enrolled 1,200 patients at 40 sites in Europe and North America.",
+  "source": "r6 honest6.py (held-out everyday honest)"
+ },
+ {
+  "kind": "H",
+  "claim": "The drug reduced LDL cholesterol by 52% versus placebo",
+  "quote": "The drug lowered LDL cholesterol by 52% compared with placebo at week 12.",
+  "source": "r6 honest6.py (held-out everyday honest)"
+ },
+ {
+  "kind": "H",
+  "claim": "Global EV sales reached 14 million in 2023",
+  "quote": "Global electric car sales reached almost 14 million in 2023, according to the IEA.",
+  "source": "r6 honest6.py (held-out everyday honest)"
+ },
+ {
+  "kind": "H",
+  "claim": "Solar accounted for three quarters of new renewable capacity in 2023",
+  "quote": "Solar PV accounted for three-quarters of renewable capacity additions worldwide in 2023.",
+  "source": "r6 honest6.py (held-out everyday honest)"
+ },
+ {
+  "kind": "H",
+  "claim": "The survey found that 62% of developers use Docker",
+  "quote": "62% of respondents said they use Docker, the survey found.",
+  "source": "r6 honest6.py (held-out everyday honest)"
+ },
+ {
+  "kind": "H",
+  "claim": "Median developer salary in the US was $130,000",
+  "quote": "The median salary for developers in the US was $130,000.",
+  "source": "r6 honest6.py (held-out everyday honest)"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme Analytics stores data in the EU by default",
+  "quote": "By default, Acme Analytics stores customer data in the EU.",
+  "source": "r6 honest6.py (held-out everyday honest)"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme's API is rate limited to 100 requests per minute",
+  "quote": "The Acme API enforces a rate limit of 100 requests per minute per key.",
+  "source": "r6 honest6.py (held-out everyday honest)"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme offers a 30-day free trial",
+  "quote": "Acme offers a free 30-day trial of its Pro plan.",
+  "source": "r6 honest6.py (held-out everyday honest)"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme supports single sign-on through SAML and OIDC",
+  "quote": "Acme supports single sign-on via SAML 2.0 and OIDC.",
+  "source": "r6 honest6.py (held-out everyday honest)"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme's mobile app is available on iOS and Android",
+  "quote": "The Acme mobile app is available for iOS and Android.",
+  "source": "r6 honest6.py (held-out everyday honest)"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme encrypts data at rest with AES-256",
+  "quote": "All data at rest is encrypted with AES-256 by Acme.",
+  "source": "r6 honest6.py (held-out everyday honest)"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme was founded in 2016 in Berlin",
+  "quote": "Founded in Berlin in 2016, Acme now has offices in five countries.",
+  "source": "r6 honest6.py (held-out everyday honest)"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme's free plan is limited to 3 projects",
+  "quote": "The free plan includes up to 3 projects.",
+  "source": "r6 honest6.py (held-out everyday honest)"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme does not support on-premises deployment",
+  "quote": "Acme is cloud-only and does not offer on-premises deployment.",
+  "source": "r6 honest6.py (held-out everyday honest)"
+ },
+ {
+  "kind": "H",
+  "claim": "Acme's uptime SLA is 99.9%",
+  "quote": "Acme guarantees 99.9% uptime in its SLA for paid plans.",
+  "source": "r6 honest6.py (held-out everyday honest)"
+ }
+]

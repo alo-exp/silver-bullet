@@ -11,8 +11,8 @@
 
 | Copy | SHA-256 (actually hashed) | Bytes | Matches locked freeze? |
 |------|---------------------------|-------|------------------------|
-| `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `3166a309baa55fb49158df4531c7bf7e8f8609f1c720b0f4d0cae5c396346321` | 621247 | ✅ yes |
-| `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `3166a309baa55fb49158df4531c7bf7e8f8609f1c720b0f4d0cae5c396346321` | 621247 | ✅ yes |
+| `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `3166a309baa55fb49158df4531c7bf7e8f8609f1c720b0f4d0cae5c396346321` | 621247 | ✅ yes |
+| `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `3166a309baa55fb49158df4531c7bf7e8f8609f1c720b0f4d0cae5c396346321` | 621247 | ✅ yes |
 
 **Byte-identical:** ✅ **yes** (`cmp -s` exit 0). **Disk SHA recorded:** `3166a309baa55fb49158df4531c7bf7e8f8609f1c720b0f4d0cae5c396346321` / **621247** bytes — the current locked freeze. I did **not** use (and explicitly measured I am not on) stale SHAs `07b98609…` (620985), `d5343ac1…` (621095), `edff7c0c…` (621101), `4c18af57…` (621233), or `1e2e775a…` (621246). Single-command `shasum -a 256` + `wc -c` + `cmp` on both paths; no freeze Edit/Write performed or attempted.
 

@@ -9,7 +9,7 @@ The required Python `hashlib.sha256` checks were run at review start and rerun i
 | Copy | Start SHA-256 / bytes | Pre-write SHA-256 / bytes | Result |
 |---|---|---|---|
 | Repo working tree `.planning/router_subagent_surfaces_85bf9f09.plan.md` | `e48a524b884e58fb2ade29e1d1cd32234fb2bf13ec1ee8288df8000dda6712dd` / `644327` | `e48a524b884e58fb2ade29e1d1cd32234fb2bf13ec1ee8288df8000dda6712dd` / `644327` | PASS |
-| Cursor plan `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `e48a524b884e58fb2ade29e1d1cd32234fb2bf13ec1ee8288df8000dda6712dd` / `644327` | `e48a524b884e58fb2ade29e1d1cd32234fb2bf13ec1ee8288df8000dda6712dd` / `644327` | PASS |
+| Cursor plan `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `e48a524b884e58fb2ade29e1d1cd32234fb2bf13ec1ee8288df8000dda6712dd` / `644327` | `e48a524b884e58fb2ade29e1d1cd32234fb2bf13ec1ee8288df8000dda6712dd` / `644327` | PASS |
 | Git `HEAD:.planning/router_subagent_surfaces_85bf9f09.plan.md` | `e48a524b884e58fb2ade29e1d1cd32234fb2bf13ec1ee8288df8000dda6712dd` / `644327` | `e48a524b884e58fb2ade29e1d1cd32234fb2bf13ec1ee8288df8000dda6712dd` / `644327` | PASS |
 
 All three copies are byte-identical and match the expected hash and size. Freeze integrity passes.

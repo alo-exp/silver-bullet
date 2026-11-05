@@ -2,7 +2,7 @@
 # Round Cursor-2 phased driver: Phase A ladder → T2 smoke (1,3,6) → full matrix → Phase C.
 set -euo pipefail
 
-SB_ROOT="/Users/shafqat/projects/silver-bullet/repo"
+SB_ROOT="/Users/<user>/projects/silver-bullet/repo"
 cd "$SB_ROOT"
 LOG="${SB_ROOT}/.planning/enterprise-e2e/cursor-c2-pipeline.log"
 PIPELINE_MARKER="${SB_ROOT}/.planning/enterprise-e2e/cursor-c2-pipeline.state"

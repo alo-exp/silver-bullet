@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from pathlib import Path
-text = Path("/Users/shafqat/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md").read_text()
+text = Path("/Users/<user>/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md").read_text()
 keys = [
     "6.2.1", "prior wave", "task-id", "events.jsonl", "mode.json", "reply.fifo",
     "auto_policy", "hook-trust", "allow-mode-fallback", "control-dir",
