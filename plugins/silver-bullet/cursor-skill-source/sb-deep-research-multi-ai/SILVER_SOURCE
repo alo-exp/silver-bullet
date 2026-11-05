@@ -172,17 +172,27 @@ therefore does not guess from the words around a name. Identity is declared (`sc
 - **Distinctive names count in prose.** A vendor whose display name has a distinctive token (a digit, a dot
   between letters, an inner capital such as `GitHub`/`OpenHands`/`CrewAI`, or a coined word listed in the pack
   vocabulary `COINED_NAMES`) is credited wherever a spelling that carries that token appears.
-- **Ambiguous names need a signal.** A vendor whose name is also an ordinary word, phrase or person's name
-  (Director, Cursor, Linear, Continue, Silver Bullet, Devin, GSD, ...) is credited only by a `vendors` tag on the
-  claim row, a `source_ref` that names it (when the text names it too), its pack URL, a qualified display such as
-  `Devin (Cognition)` in exact case, or a whole item of a matrix line (`Matrix entry - X: A, B`). Lists, head
-  nouns, versions, makers, capitals and headings never credit a name.
+- **Ambiguous names need a signal.** A vendor whose name is also an ordinary word, phrase, surname or person's
+  name (Director, Cursor, Linear, Continue, Silver Bullet, Devin, GSD, Barkain, ...) is credited only by:
+  a `vendors` tag on the claim row (at most 12 per row, each an exact vendor slug; a category alias such as
+  `sdlc` is not one); a `source_ref` that names it (the text must also spell it in capitals); its pack URL; a
+  qualified display in the canonical order, the product's name then another of its declared names in
+  parentheses (`Devin (Cognition)`; never an acronym's expansion such as `GSD (Get Shit Done)`, and never the
+  reverse order); or a whole item of a matrix line. Matrix lines are machine syntax anchored at a line start
+  (`Matrix entry - <feature>: A, B`, `Matrix - <feature>: ...`, `Matrix ... row '<feature>': ...`,
+  `<feature> ✔ for A, B`, the pack's leader lists) with a known feature and every item a known vendor.
+  Lists, head nouns, versions, makers, capitals and headings never credit a name.
 - **Tagging is part of the research contract.** The brief asks every evidence, claim_candidates, critiques and
   gaps row to carry `vendors` (slugs copied from the `[CATEGORY_PACK]` block); `matrix_entries.vendor` remains
   the structured channel. Untagged prose about an ambiguous vendor credits nothing, so recall depends on tags.
 - **Audit.** `tests/fixtures/vendor_spelling_audit.json` is generated from the pack (distinctive tokens and prose
   spellings per vendor); a pack change shows up there as a diff. `tests/test_vendor_identity_generative.py`
-  exhausts the sentence grammar for every ambiguous spelling. There is no lexical residual.
+  exhausts the sentence grammar for every ambiguous spelling.
+- **Trust residuals (accepted, not lexical).** Declared identity is trusted. A `source_ref` that names a vendor
+  plus a capitalised use of the same word in the text credits it (a cursor.com page cited for a Windsurf claim
+  that says "Cursor ..."). A research agent that tags the wrong vendor credits it, as it would in
+  `matrix_entries`. The quoted canonical form `Devin (Cognition)` credits Devin wherever it is written. A person
+  or place named like a distinctive coined word would credit that product.
 
 ## GLM-5.2 routing
 

@@ -44,6 +44,15 @@ def distinctive_tokens(display: str, coined: frozenset[str] = frozenset()) -> fr
     return frozenset(found)
 
 
+def _is_expansion(display: str) -> bool:
+    """"GSD (Get Shit Done)", "Oh My Pi (OMP)": the parenthetical spells out the initials, which ordinary prose does too."""
+    head, _, rest = display.partition("(")
+    qualifier = rest.rstrip(") ")
+    initials = lambda text: "".join(w[0] for w in re.findall(r"[A-Za-z0-9]+", text)).lower()  # noqa: E731
+    squash = lambda text: re.sub(r"[^a-z0-9]", "", text.lower())  # noqa: E731
+    return initials(qualifier) == squash(head) or initials(head) == squash(qualifier)
+
+
 def _normal(text: str) -> str:
     return re.sub(r"[^a-z0-9]+", " ", text.lower()).strip()
 
@@ -70,9 +79,9 @@ class Registry:
                 self._add(vendor, spelling)
         for alias, slug in aliases.items():
             self._add(self.canonical(slug), alias)
-        for vendor, displays in self.displays.items():  # "Devin (Cognition)": a vendor's name qualified by another of its names
-            plain = sorted(d for d in displays if "(" not in d)
-            self.displays[vendor] |= {f"{one} ({other})" for one in plain for other in plain if one != other}
+        for vendor, displays in self.displays.items():  # "Devin (Cognition)": the product's name, then another of its declared names
+            primary = known.get(vendor)
+            self.displays[vendor] |= {f"{primary} ({other})" for other in sorted(displays) if primary and "(" not in other and other != primary}
         self.distinctive = {
             vendor: frozenset().union(*(distinctive_tokens(d, coined) for d in displays))
             for vendor, displays in self.displays.items()
@@ -81,7 +90,7 @@ class Registry:
         self.qualified: dict[str, str] = {}
         for vendor, displays in self.displays.items():
             for display in displays:
-                if _PARENTHETICAL.search(display):
+                if _PARENTHETICAL.search(display) and not _is_expansion(display):
                     self.qualified[display] = vendor
         self._qualified_rx = re.compile(
             "|".join(rf"(?<![A-Za-z0-9]){re.escape(d)}(?![A-Za-z0-9])" for d in sorted(self.qualified, key=len, reverse=True)) or r"(?!x)x"

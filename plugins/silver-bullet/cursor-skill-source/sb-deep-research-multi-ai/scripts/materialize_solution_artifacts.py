@@ -200,8 +200,8 @@ def _normalize_slug(token: str, known: dict[str, str] | None = None, pack: dict[
 
 def _mentions(lower_text: str, name: str) -> bool:
     """Whole-word match, so 'sbom' is not 'sb' and 'compliance' is not 'pi'."""
-    if not name:
-        return False
+    if not name or name not in lower_text:
+        return False  # a plain substring scan is far cheaper than a failing regex over a long claim
     return re.search(rf"(?<![a-z0-9]){re.escape(name)}(?![a-z0-9])", lower_text) is not None
 
 
@@ -248,7 +248,7 @@ def _known_phrases() -> frozenset[str]:
 
 # The vendor set of the run being parsed (known names incl. discovered vendors, and its pack) and the vendors
 # the claim row being parsed declares: prose parsers that take no explicit `known` resolve vendors from it.
-_RUN: dict[str, Any] = {"known": None, "pack": None, "declared": frozenset(), "aliases": {}}
+_RUN: dict[str, Any] = {"known": None, "pack": None, "declared": frozenset(), "aliases": {}, "blocked": frozenset()}
 
 
 @contextlib.contextmanager
@@ -294,32 +294,51 @@ def vendor_registry() -> Any:
 
 
 _SLOT_CLEAN = re.compile(
-    r"[✔✓✗✖✘*_`#]|\([^)]*\)|\bv?\d+(?:\.\d+)*\b|\b(?:only|also|pass|fail|scores?|true|yes|no|not|do|does|partially)\b",
+    r"[✔✓✗✖✘*_`#]|\([^)]*\)|\bv?\d+(?:\.\d+)*\b|\b(?:only|also|pass|fail|scores?|true|yes|no|not|do|does|partially|are|is)\b",
     re.IGNORECASE,
 )
 _SLOT_SPLIT = re.compile(r"[,;/]|\s+and\s+")
 _SIGNALS: dict[tuple[Any, ...], frozenset[str]] = {}
 
 
+def _line_start(text: str, at: int) -> bool:
+    start = text.rfind("\n", 0, at) + 1
+    return not text[start:at].strip(" \t-*•>|")
+
+
+def _is_feature_name(text: str) -> bool:
+    """The whole text is one of the rubric's features (or an alias of one): "Workflow composition", not "Throughput: Workflow composition"."""
+    key = text.strip(" \t:*_`").lower()
+    return bool(key) and (key in {f.lower() for f in _all_template_features()} or key in _FEATURE_ALIASES)
+
+
 def _slot_vendors(text: str, registry: Any) -> set[str]:
-    """Vendors that are a whole item of a recognised matrix line ("Matrix entry - X: A, B", "X ✔ for A, B", the pack's leader lists)."""
-    slots: list[str] = []
+    """Vendors that are a whole item of a recognised matrix line ("Matrix entry - X: A, B", "X ✔ for A, B", the pack's leader lists).
+
+    The line formats are anchored at a line start. The items of a list count only when the feature is a known
+    one and every item is a known vendor, so a sentence that merely starts like a matrix line credits nothing; the
+    head of a solution-led line ("Matrix entry - Director: ...") is an item of its own.
+    """
+    groups: list[list[str]] = []
     for rx in (_MATRIX_ENTRY_RE, _MATRIX_DASH_RE, _MATRIX_ROW_RE):
         match = rx.search(text)
         if match:
-            slots += [match.group("feature"), *_SLOT_SPLIT.split(match.group("body"))]
+            groups.append([match.group("feature")])
+            if _is_feature_name(match.group("feature")):
+                groups.append(_SLOT_SPLIT.split(match.group("body")))
     check = _CHECKMARK_FOR_RE.search(text) if _CHECK_THEN_FOR.search(text) else None
-    if check:
-        slots += _SLOT_SPLIT.split(check.group("body"))
+    if check and _is_feature_name(check.group("feature")):
+        groups.append(_SLOT_SPLIT.split(check.group("body")))
     for rx in (_MATRIX_LEADERS_RE, _CORE_SET_CLAIM_RE):
         match = rx.search(text)
-        if match:
-            slots += _SLOT_SPLIT.split(text[match.end():])
+        if match and _line_start(text, match.start()):
+            groups.append(_SLOT_SPLIT.split(text[match.end():]))
     found: set[str] = set()
-    for slot in slots:
-        key = " ".join(_SLOT_CLEAN.sub(" ", slot).split())
-        if key:
-            found |= registry.slugs_of(key)
+    for group in groups:
+        keys = [key for slot in group if (key := " ".join(_SLOT_CLEAN.sub(" ", slot).split()))]
+        resolved = [registry.slugs_of(key) for key in keys]
+        if any(resolved) and all(slugs or len(key.split()) <= 2 for key, slugs in zip(keys, resolved)):
+            found |= set().union(*resolved)  # a name-like leftover ("Claude") is fine; a phrase ("GSD in our maths class") is prose
     return found
 
 
@@ -453,40 +472,85 @@ def _source_segments(item: dict[str, Any]) -> list[str]:
     for field in ("source_ref", "url", "source", "supporting_sources"):
         value = item.get(field)
         values += [value] if isinstance(value, str) else [str(v) for v in value if isinstance(v, str)] if isinstance(value, list) else []
-    return [seg.strip() for value in values for seg in re.split(r";| \+ ", value) if seg.strip()]
+    return [seg.strip() for value in values for seg in re.split(r";| \+ | [—–] ", value) if seg.strip()]
+
+
+_MAX_TAGS = 12  # per row, as in the schema
+_MAX_SOURCES = 12
 
 
 def _tagged_vendors(item: dict[str, Any], known: dict[str, str], pack: dict[str, Any] | None) -> set[str]:
+    """The vendors a row's ``vendors`` tag names: at most 12, each an exact vendor slug (a name that slug-normalises to one).
+
+    A category alias ("sdlc"), an unknown slug, a sentence or a non-string is ignored.
+    """
     tags = item.get("vendors")
-    registry = vendor_registry()
-    slugs = (resolve_structured_vendor(tag, known, pack) for tag in tags if isinstance(tag, str)) if isinstance(tags, list) else ()
-    return {registry.canonical(slug) for slug in slugs if slug}
+    if not isinstance(tags, list):
+        return set()
+    vendors = vendor_registry().displays
+    slugs = (re.sub(r"[^a-z0-9]+", "-", tag.lower()).strip("-") for tag in tags[:_MAX_TAGS] if isinstance(tag, str) and len(tag) <= 80)
+    return {slug for slug in slugs if slug in vendors}
+
+
+def _names_in_case(text: str, vendor: str, registry: Any) -> bool:
+    """The text spells the vendor in capitals (its display, or a spelling in Title Case or upper case): "Cursor", "GSD", not "the cursor"."""
+    spellings = registry.spellings_of.get(vendor, ())
+    shown = {*registry.displays.get(vendor, ()), *(" ".join(w.capitalize() for w in sp.split()) for sp in spellings), *(sp.upper() for sp in spellings)}
+    return any(re.search(rf"(?<![A-Za-z0-9]){re.escape(name)}(?![A-Za-z0-9])", text) for name in shown)
+
+
+_DECLARED: dict[tuple[Any, ...], frozenset[str]] = {}
 
 
 def _declared_for_row(item: dict[str, Any], known: dict[str, str] | None = None, pack: dict[str, Any] | None = None) -> frozenset[str]:
-    """The vendors a claim row declares: its ``vendors`` tag, and a source field that names one the text also names."""
+    """The vendors a claim row declares: its ``vendors`` tag, and a source field that names one the text also names.
+
+    The source channel is a disambiguator, not an invention: the text must spell the vendor, and an ambiguous
+    vendor must be spelled in capitals. Memoised per row content (the parsers revisit a row on every path).
+    """
     effective, pack = _known_or_run(known), pack or _RUN["pack"]
-    with run_context(effective, pack):
-        registry = vendor_registry()
-        declared = _tagged_vendors(item, effective, pack)
-        lower = str(item.get("text") or item.get("claim") or item.get("finding") or item.get("description") or "").lower()
-        for segment in _source_segments(item):
-            vendor = registry.url_slug(segment)
-            vendor = registry.canonical(vendor or resolve_structured_vendor(segment, effective, pack) or "")
-            if vendor in registry.spellings_of and any(_mentions(lower, spelling) for spelling in registry.spellings_of[vendor]):
-                declared.add(vendor)
-        return frozenset(declared)
+    text = str(item.get("text") or item.get("claim") or item.get("finding") or item.get("description") or "")
+    segments = _source_segments(item)[:_MAX_SOURCES]
+    key = (text, tuple(segments), repr(item.get("vendors")), _run_key(effective, pack))
+    hit = _DECLARED.get(key)
+    if hit is None:
+        if len(_DECLARED) >= 2048:
+            _DECLARED.clear()
+        with run_context(effective, pack):
+            registry = vendor_registry()
+            declared = _tagged_vendors(item, effective, pack)
+            lower = text.lower()
+            for segment in segments:
+                vendor = registry.url_slug(segment)
+                vendor = registry.canonical(vendor or resolve_structured_vendor(segment, effective, pack) or "")
+                if vendor in registry.spellings_of and any(_mentions(lower, spelling) for spelling in registry.spellings_of[vendor]):
+                    if vendor not in registry.ambiguous_vendors() or _names_in_case(text, vendor, registry):
+                        declared.add(vendor)
+        hit = _DECLARED[key] = frozenset(declared)
+    return hit
 
 
-def _scoped_claim_texts(envelopes: list[dict[str, Any]], known: dict[str, str] | None = None, pack: dict[str, Any] | None = None) -> Iterator[str]:
-    """The claim texts, each yielded with its row's declared vendors installed (restored when the loop ends)."""
-    previous = _RUN["declared"]
+def _scoped_claim_texts(
+    envelopes: list[dict[str, Any]],
+    known: dict[str, str] | None = None,
+    pack: dict[str, Any] | None = None,
+    *,
+    block_uncredited: bool = False,
+) -> Iterator[str]:
+    """The claim texts, each yielded with its row's declared vendors installed (restored when the loop ends).
+
+    With ``block_uncredited`` the feature votes of an ambiguous vendor that the row does not credit are dropped
+    (see ``_assign_support``): no parser, matrix-line parsers included, can tick a vendor the row does not name.
+    """
+    previous = (_RUN["declared"], _RUN["blocked"])
     try:
         for text, item in _claim_items(envelopes):
             _RUN["declared"] = _declared_for_row(dict(item, text=text), known, pack)
+            if block_uncredited:
+                _RUN["blocked"] = frozenset(vendor_registry().ambiguous_vendors()) - frozenset(_extract_slugs_from_text(text, known, pack))
             yield text
     finally:
-        _RUN["declared"] = previous
+        _RUN["declared"], _RUN["blocked"] = previous
 
 
 def tagged_vendor_slugs(envelopes: list[dict[str, Any]], known: dict[str, str], pack: dict[str, Any] | None) -> set[str]:
@@ -495,22 +559,20 @@ def tagged_vendor_slugs(envelopes: list[dict[str, Any]], known: dict[str, str], 
         return {slug for _text, item in _claim_items(envelopes) for slug in _tagged_vendors(item, known, pack)}
 
 
+# The matrix line formats are machine syntax: they start a line (after an optional list bullet) with the literal
+# marker, so prose that merely contains "row", "critical", "Matrix -" or "✔ for" is never a matrix line.
+_LINE_START = r"(?im)^[ \t]*(?:[-*•>|][ \t]*)*"
 _MATRIX_ENTRY_RE = re.compile(
-    r"Matrix entry\s*[—–\-]\s*(?P<feature>[^:]+?)(?:\s*\([^)]*\))?\s*:\s*(?P<body>.+)",
-    re.IGNORECASE,
+    _LINE_START + r"Matrix entry\s*[—–\-]\s*(?P<feature>[^:\n]+?)(?:\s*\([^)\n]*\))?\s*:\s*(?P<body>.+)"
 )
 _MATRIX_ROW_RE = re.compile(
-    r"(?:matrix|row|critical|very high)[^'\"]*['\"](?P<feature>[^'\"]+)['\"]"
-    r"[^:]*:\s*(?P<body>.+)",
-    re.IGNORECASE,
+    _LINE_START + r"(?:matrix|row)\b[^'\"\n]*['\"](?P<feature>[^'\"\n]+)['\"][^:\n]*:\s*(?P<body>.+)"
 )
 _MATRIX_DASH_RE = re.compile(
-    r"Matrix\s*[—–\-]\s*(?P<feature>[^:]+?)(?:\s*\([^)]*\))?\s*:\s*(?P<body>.+)",
-    re.IGNORECASE,
+    _LINE_START + r"Matrix\s*[—–\-]\s*(?P<feature>[^:\n]+?)(?:\s*\([^)\n]*\))?\s*:\s*(?P<body>.+)"
 )
 _CHECKMARK_FOR_RE = re.compile(
-    r"(?P<feature>[^✔✓\n]{4,}?)\s*[✔✓]\s+for\s+(?P<body>.+)",
-    re.IGNORECASE,
+    _LINE_START + r"(?P<feature>[^✔✓\n]{4,}?)\s*[✔✓]\s+for\s+(?P<body>.+)"
 )
 _CHECK_THEN_FOR = re.compile(r"[✔✓]\s+for\s", re.IGNORECASE)
 _SLUG_NEGATION_RE = re.compile(
@@ -838,6 +900,8 @@ def _assign_support(
     feature: str,
     value: bool,
 ) -> None:
+    if slug in _RUN["blocked"]:
+        return  # an ambiguous vendor the claim does not credit
     cell = support.get(slug)
     if not isinstance(cell, _VoteMap):
         cell = _VoteMap(cell or {})
@@ -1804,7 +1868,7 @@ def _parse_prose_unscoped(
 ) -> dict[str, dict[str, bool | None]]:
     effective = _known_or_run(known)
     support: dict[str, dict[str, bool | None]] = {}
-    for voter, text in enumerate(_scoped_claim_texts(envelopes, effective, pack)):
+    for voter, text in enumerate(_scoped_claim_texts(envelopes, effective, pack, block_uncredited=True)):
         _VOTER[0] = voter
         if _parse_core_set_bulk_claim(support, text, known=effective, pack=pack):
             continue

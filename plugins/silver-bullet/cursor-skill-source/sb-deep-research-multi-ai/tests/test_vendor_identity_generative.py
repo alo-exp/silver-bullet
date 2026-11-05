@@ -152,9 +152,11 @@ class GenerativeVendorIdentityTests(unittest.TestCase):
 
     def test_a_qualified_display_credits_in_exact_case_only(self) -> None:
         self.assertIn("devin", self.credited("Devin (Cognition) opens pull requests."))
-        self.assertIn("gsd", self.credited("GSD (Get Shit Done) structures the work."))
+        self.assertNotIn("gsd", self.credited("GSD (Get Shit Done) structures the work."))  # an acronym's expansion is prose
+        self.assertIn("gsd", self.credited("GSD (Get Shit Done) structures the work.", {"vendors": ["gsd"]}))
         self.assertNotIn("devin", self.credited("Devin (cognition) opens pull requests."))
         self.assertNotIn("devin", self.credited("devin (Cognition) opens pull requests."))
+        self.assertNotIn("devin", self.credited("Cognition (Devin) opens pull requests."))
 
     def test_a_source_ref_alone_never_invents_a_vendor(self) -> None:
         self.assertNotIn("director", self.credited("The report covers pricing only.", {"source_ref": "Director"}))

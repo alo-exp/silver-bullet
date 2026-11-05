@@ -38,7 +38,8 @@ EXPECTED_COUNTS = {"r4_false_positive": 14, "r2_false_positive": 31, "round1_rec
                    "absence_drop": 14, "r3_false_positive": 52, "r3b_false_positive": 25, "r3_recall": 24,
                    "r3_absence": 34, "r1_absence": 7, "copilot": 7, "r4b_false_positive": 52,
                    "r4c_false_positive": 30, "r4_recall": 25, "r4_absence": 24, "r4_absence_plain": 17,
-                   "r5_false_positive": 82, "r5_audit": 14}
+                   "r5_false_positive": 82, "r5_audit": 14, "r6_false_positive": 79, "r6_matrix_false_positive": 10,
+                   "r6_qualified_false_positive": 2}
 KNOWN_MISSES = 74  # of 81: the ambiguous vendors need an explicit signal
 REPO = Path(__file__).resolve().parents[3]
 REAL_RUN = REPO / "research" / "2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final"
@@ -80,7 +81,7 @@ class VendorMentionCorpusTests(unittest.TestCase):
 
     def test_the_corpus_has_every_probed_sentence(self) -> None:
         self.assertEqual(dict(collections.Counter(c["set"] for c in CORPUS)), EXPECTED_COUNTS)
-        self.assertEqual(len([c for c in CORPUS if c["kind"] == "plain_english"]), 301)
+        self.assertEqual(len([c for c in CORPUS if c["kind"] == "plain_english"]), 392)
         self.assertFalse([c for c in CORPUS if "residual" in c])  # no lexical residual remains (Devin is ambiguous)
 
     def test_plain_english_credits_no_vendor(self) -> None:
@@ -126,6 +127,64 @@ class VendorMentionCorpusTests(unittest.TestCase):
         self.assertFalse(m.mentions_vendor("Zorp works.", "zorp works.", "zorp"))
         self.assertEqual(m._slot_vendors("Workflow composition ✔ for , cc10x", self.registry), {"cc10x"})
         self.assertEqual(m._slot_vendors("Matrix entry - Workflow composition: Director (v2), Sweep pass", self.registry), {"director", "sweep", "sweep-ai"})
+
+    def test_a_qualified_display_is_the_canonical_name_then_its_maker_and_never_an_expansion(self) -> None:
+        self.assertEqual(sorted(self.registry.qualified), ["Augment Cosmos (Augment Code)", "Devin (Cognition)"])
+        for text, slug, wanted in (("Devin (Cognition) opens pull requests.", "devin", True),
+                                   ("Cognition (Devin) is a heading in my notes.", "devin", False),
+                                   ("Our culture is GSD (Get Shit Done): ship fast.", "gsd", False),
+                                   ("Oh My Pi (OMP) is the name of our bakery.", "oh-my-pi", False),
+                                   ("Augment Code (Augment Cosmos) is a phrase.", "augment-cosmos", False)):
+            self.assertEqual(slug in set(sc._envelope_evidence_slugs(envs(text), self.pack)) | set(m._extract_slugs_from_text(text, self.known, self.pack)),
+                             wanted, text)
+        self.assertTrue(self.credited("gsd", "GSD (Get Shit Done) structures the work.", {"vendors": ["gsd"]}))
+
+    def test_matrix_line_formats_are_anchored_machine_syntax(self) -> None:
+        for text in ('Escrow "Free tier" terms: Linear, monthly.', 'Very high "Hook-enforced gates" adoption among: Linear, Jira users.',
+                     'Critical "gap": Cursor and keyboard navigation are untested.', "The Matrix - cast: Director, Producer, Editor.",
+                     "Quality ✔ for Director, Producer and Editor.", "See Matrix entry - Workflow composition: Director, cc10x.",
+                     'Growth "Free tier" notes: Conductor, then upgrade.'):
+            self.assertEqual(m._slot_vendors(text, self.registry), set(), text)
+            self.assertFalse(self.credited("director", text) or self.credited("linear", text), text)
+            self.assertEqual({a for a, c in self.support(text).items() if any(c.values())} & {"director", "linear", "conductor", "cursor"}, set(), text)
+        for text, wanted in (("Matrix entry - Workflow composition: Director, cc10x", {"director", "cc10x"}),
+                             ("- Matrix - Workflow composition: Director", {"director"}),
+                             ('Matrix Critical row "Workflow composition": Director pass; Sweep do not.', {"director", "sweep", "sweep-ai"}),
+                             ("Workflow composition ✔ for Director", {"director"}),
+                             ("APO matrix leaders are Conductor, cc10x", {"conductor", "cc10x"})):
+            self.assertEqual(m._slot_vendors(text, self.registry) & wanted, wanted & m._slot_vendors(text, self.registry), text)
+            self.assertTrue(m._slot_vendors(text, self.registry), text)
+        self.assertEqual(m._slot_vendors("Throughput: Workflow composition ✔ for Director", self.registry), set())
+
+    def test_vendors_tags_are_capped_slug_checked_and_exact(self) -> None:
+        def tagged(tags):
+            return sc._envelope_evidence_slugs(envs("Many agents copy the SDLC category.", {"vendors": tags}), self.pack)
+
+        self.assertEqual(tagged(["sdlc"]), set())  # a category alias is not a vendor slug
+        self.assertEqual(tagged(["Director of Engineering", "no-such-vendor", 7, {"slug": "cursor"}]), set())
+        self.assertEqual(tagged("cursor"), set())
+        self.assertEqual(tagged(["Director"]), {"director"})  # a name that slug-normalises to a vendor slug
+        slugs = [f"vendor-{n}" for n in range(30)]
+        known = dict(self.known, **{s: s for s in slugs})
+        with m.run_context(known, self.pack):
+            self.assertEqual(len(m.tagged_vendor_slugs(envs("x", {"vendors": slugs}), known, self.pack)), 12)
+
+    def test_barkain_is_a_surname_so_the_product_needs_a_signal(self) -> None:
+        self.assertNotIn("barkain", m.COINED_NAMES)
+        self.assertIn("barkain-workflow-orchestrator", self.registry.ambiguous_vendors())
+        self.assertNotIn("barkain-workflow-orchestrator", sc._envelope_evidence_slugs(envs("Mr Barkain from accounting approved it."), self.pack))
+
+    def test_two_hundred_kilobyte_claims_stay_inside_the_budget(self) -> None:
+        budget = 2.0 * (8 if "coverage" in sys.modules else 1)
+        for unit in ("Linear, ", "Keyboard, Mouse, Cursor and Touch, Linear, Factory, Continue and Copilot. The model is Linear in x. Each Director owns. "):
+            text = unit * (200_000 // len(unit))
+            started = time.monotonic()
+            self.support(text)
+            self.assertLess(time.monotonic() - started, budget, unit)
+        row = {"source_ref": "; ".join(f"https://example.com/{n}" for n in range(200))}
+        started = time.monotonic()
+        self.support("Silver Bullet provides workflow composition. " * 2000, row)
+        self.assertLess(time.monotonic() - started, budget)
 
     def test_the_classification_of_a_vendor_needs_a_declaration_too(self) -> None:
         self.assertNotIn("sweep", sc._envelope_evidence_slugs(envs("Sweep provides workflow composition."), self.pack))
