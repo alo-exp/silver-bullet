@@ -336,14 +336,10 @@ _sb_orch_parent_lone_argv() {
 
 # No assignment/env prefix may change how a sanctioned command starts or which program it finds
 # (BASH_ENV=, PATH=, LD_PRELOAD= ... make a trusted name run something else). F2 drops plain
-# NAME=value words from argv, so the prefix is read from its rtk_unwrapped field and from `env`
-# entries; the same is applied to every sh -c payload (nested).
+# NAME=value words from argv, so the prefix is read from its rtk_unwrapped field (env, NAME=value, rtk); the same is applied to every sh -c payload (nested).
 _sb_orch_parent_prefix_free() {
   local payload payloads
   [[ -z "${SB_SA_RTK_UNWRAPPED:-}" ]] || return 1
-  if printf '%s' "${SB_SA_JSON:-}" | jq -e '[.commands[]? | select((.argv[0] // "") | split("/") | last == "env")] | length > 0' >/dev/null 2>&1; then
-    return 1
-  fi
   payloads="$(printf '%s' "${SB_SA_JSON:-}" | jq -r '
     .commands[]? | .argv as $a
     | select((["bash", "sh", "zsh", "dash", "ksh"] | index(($a[0] // "") | split("/") | last)) != null)
