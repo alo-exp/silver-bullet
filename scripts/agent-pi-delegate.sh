@@ -17,7 +17,7 @@ Usage: agent-pi-delegate.sh --work-dir PATH (--prompt TEXT | --brief-file PATH |
        [--log PATH] [--mode permissive|strict] [--interaction-mode auto|interactive|non-interactive]
        [--sb-root PATH] [--attach] [--no-escalate] [--allow-mode-fallback]
 
-Delegates a single task to Pi via tests/live/agents/pi/agent.sh.
+Delegates a single task to Pi via scripts/lib/agent-adapters/pi.sh.
 NI: pi -p --provider opencode-go --model mimo-v2.5. Interactive: TUI probe or honest mode-unavailable.
 EOF
 }
@@ -83,9 +83,9 @@ if ! agent_delegate_preflight_recommended_tools "$WORK_DIR" "$SB_ROOT" "pi"; the
   exit 2
 fi
 
-AGENT_SH="${SB_ROOT}/tests/live/agents/pi/agent.sh"
+AGENT_SH="${SB_ROOT}/scripts/lib/agent-adapters/pi.sh"
 [[ -f "$AGENT_SH" ]] || {
-  printf 'ERROR: missing Pi live adapter at %s (full SB checkout required)\n' "$AGENT_SH" >&2
+  printf 'ERROR: missing Pi live adapter at %s\n' "$AGENT_SH" >&2
   exit 1
 }
 
@@ -117,7 +117,7 @@ agent_pi_invoke_once() {
   export PI_WORK_DIR="$WORK_DIR"
   export PI_BIN="$CLI"
   export CLAUDE_INTERACTIVE_LOG_FILE="${LOG_FILE:-}"
-  # shellcheck source=tests/live/agents/pi/agent.sh
+  # shellcheck source=scripts/lib/agent-adapters/pi.sh
   source "$AGENT_SH"
   agent_preflight
   agent_invoke "$MODE" "$PROMPT_TEXT"

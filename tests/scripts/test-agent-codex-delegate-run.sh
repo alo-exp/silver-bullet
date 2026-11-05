@@ -10,7 +10,7 @@ DELEGATE="$TL_REPO_ROOT/scripts/agent-codex-delegate.sh"
 SB="$TL_TMP/sb"
 CFG="$TL_TMP/cfg"
 WORK="$TL_TMP/work"
-mkdir -p "$SB/tests/live/agents/codex" "$CFG" "$WORK" "$HOME/.codex"
+mkdir -p "$SB/scripts/lib/agent-adapters" "$CFG" "$WORK" "$HOME/.codex"
 mkdir -p "$TL_TMP/codexbin"
 printf '#!/usr/bin/env bash\necho "codex $*" >>"%s/codex-argv.log"\necho NATIVE-OUT\n' "$CFG" >"$TL_TMP/codexbin/codex"
 chmod +x "$TL_TMP/codexbin/codex"
@@ -19,7 +19,7 @@ printf 'tok' >"$HOME/.codex/auth.json"
 
 # Scripted adapter: counts calls; fails (message from $CFG/fail-msg) until the
 # call number exceeds $CFG/fail-until; prints what the delegate exported.
-cat >"$SB/tests/live/agents/codex/agent.sh" <<ADAPTER
+cat >"$SB/scripts/lib/agent-adapters/codex.sh" <<ADAPTER
 agent_preflight() { echo "adapter-preflight" >&2; }
 agent_invoke() {
   local n=1
@@ -127,7 +127,7 @@ ENVX=()
 reset
 delegate --work-dir "$WORK" --prompt p --sb-root "$TL_TMP/no-such-root"
 assert_eq "missing adapter exits 1" 1 "$TL_STATUS"
-assert_contains "missing adapter explained" "$TL_ERR" "missing Codex live adapter at $TL_TMP/no-such-root/tests/live/agents/codex/agent.sh"
+assert_contains "missing adapter explained" "$TL_ERR" "missing Codex live adapter at $TL_TMP/no-such-root/scripts/lib/agent-adapters/codex.sh"
 tl_run env -u CODEX_BIN PATH="$(tl_path_without codex)" SB_CODEX_APP_CANDIDATES=/nonexistent/codex SB_AGENT_SKIP_PREFLIGHT=1 bash "$DELEGATE" --work-dir "$WORK" --prompt p --sb-root "$SB"
 assert_eq "missing codex CLI exits 1" 1 "$TL_STATUS"
 assert_contains "missing codex CLI explained" "$TL_ERR" "native Codex CLI not found"
@@ -137,7 +137,7 @@ printf 'enterprise_e2e_code_intel_preflight() { return 1; }\n' >"$SB/scripts/ent
 tl_run env CODEX_BIN="$TL_TMP/codexbin/codex" SB_AGENT_CODEX_LOG_FLOOR=0 bash "$DELEGATE" --work-dir "$WORK" --prompt p --sb-root "$SB"
 assert_eq "failing recommended-tools preflight exits 2" 2 "$TL_STATUS"
 assert_contains "preflight failure explained" "$TL_ERR" "recommended-tools preflight failed"
-rm -rf "$SB/scripts"
+rm -rf "$SB/scripts/enterprise-e2e"
 
 # ---- pinned non-interactive: execs the native codex
 reset

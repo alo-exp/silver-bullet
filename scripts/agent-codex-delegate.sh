@@ -17,8 +17,7 @@ Usage: agent-codex-delegate.sh --work-dir PATH (--prompt TEXT | --brief-file PAT
        [--log PATH] [--mode permissive|strict] [--interaction-mode auto|interactive|non-interactive]
        [--sb-root PATH] [--use-exec] [--attach] [--no-escalate] [--allow-mode-fallback]
 
-Delegates a single task to Codex via tests/live/agents/codex/agent.sh (TUI or --use-exec).
-Requires full SB checkout (agent adapter). Parent supervisors: see /sb:agent-codex.
+Delegates a single task to Codex via scripts/lib/agent-adapters/codex.sh (TUI or --use-exec).
 EOF
 }
 
@@ -95,9 +94,9 @@ if ! agent_delegate_preflight_recommended_tools "$WORK_DIR" "$SB_ROOT" "codex"; 
   exit 2
 fi
 
-AGENT_SH="${SB_ROOT}/tests/live/agents/codex/agent.sh"
+AGENT_SH="${SB_ROOT}/scripts/lib/agent-adapters/codex.sh"
 [[ -f "$AGENT_SH" ]] || {
-  printf 'ERROR: missing Codex live adapter at %s (full SB checkout required)\n' "$AGENT_SH" >&2
+  printf 'ERROR: missing Codex live adapter at %s\n' "$AGENT_SH" >&2
   exit 1
 }
 
@@ -157,7 +156,7 @@ agent_codex_invoke_once() {
   export CODEX_BIN="$CLI"
   export SB_LIVE_CODEX_USE_EXEC="$USE_EXEC"
   export CLAUDE_INTERACTIVE_LOG_FILE="${LOG_FILE:-}"
-  # shellcheck source=tests/live/agents/codex/agent.sh
+  # shellcheck source=scripts/lib/agent-adapters/codex.sh
   source "$AGENT_SH"
   agent_preflight
   agent_invoke "$MODE" "$PROMPT_TEXT"

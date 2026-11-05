@@ -86,26 +86,26 @@ LIB_PATH="$NOPY" seed "agent_claude_seed_folder_trust '$W' '$CFG'; echo rc=\$?"
 assert_eq "folder trust without python3 is a no-op" "rc=0" "$TL_OUT"
 assert_file_absent "folder trust without python3 writes nothing" "$CFG/.claude.json"
 
-seed "agent_claude_seed_folder_trust '$W' '$CFG'"
+seed "agent_claude_seed_folder_trust '$W' '$CFG'" SB_AGENT_CLAUDE_SEED_FOLDER_TRUST_GLOBAL=1
 assert_eq "folder trust seeding exits 0" "0" "$TL_STATUS"
 assert_eq "folder trust seeded in the config dir" "true" \
   "$(jq -r --arg w "$W" '.projects[$w].hasTrustDialogAccepted' "$CFG/.claude.json")"
-assert_eq "folder trust seeded in the global file" "true" \
+assert_eq "folder trust seeded in the global file (opt-in)" "true" \
   "$(jq -r --arg w "$W" '.projects[$w].hasTrustDialogAccepted' "$HOME/.claude.json")"
 assert_contains "folder trust says where it seeded" "$TL_ERR" "[agent-claude] seeded folder trust for $W in $CFG/.claude.json"
 
 # user data in an existing file is preserved; other projects and keys survive
 printf '{"userID":"u-1","projects":{"/other":{"allowedTools":["x"],"hasTrustDialogAccepted":false}}}\n' >"$HOME/.claude.json"
-seed "agent_claude_seed_folder_trust '$W' ''"
+seed "agent_claude_seed_folder_trust '$W' ''" SB_AGENT_CLAUDE_SEED_FOLDER_TRUST_GLOBAL=1
 assert_eq "folder trust keeps unrelated top-level keys" "u-1" "$(jq -r .userID "$HOME/.claude.json")"
 assert_eq "folder trust keeps other projects untouched" '{"allowedTools":["x"],"hasTrustDialogAccepted":false}' \
   "$(jq -c '.projects["/other"]' "$HOME/.claude.json")"
 assert_eq "folder trust adds the work dir" "true" "$(jq -r --arg w "$W" '.projects[$w].hasTrustDialogAccepted' "$HOME/.claude.json")"
 
-# invalid JSON is replaced, not fatal
+# invalid JSON is never replaced (R4-11)
 printf '{broken\n' >"$HOME/.claude.json"
-seed "agent_claude_seed_folder_trust '$W' ''"
-assert_eq "folder trust recovers from invalid JSON" "true" "$(jq -r --arg w "$W" '.projects[$w].hasTrustDialogAccepted' "$HOME/.claude.json")"
+seed "agent_claude_seed_folder_trust '$W' ''; echo rc=\$?" SB_AGENT_CLAUDE_SEED_FOLDER_TRUST_GLOBAL=1
+assert_eq "folder trust leaves invalid JSON byte-identical" '{broken' "$(cat "$HOME/.claude.json")"
 
 # a symlinked work dir records both the given and the resolved path
 REAL="$TL_TMP/real-work"
@@ -113,17 +113,17 @@ LINK="$TL_TMP/link-work"
 mkdir -p "$REAL"
 ln -s "$REAL" "$LINK"
 rm -f "$HOME/.claude.json"
-seed "agent_claude_seed_folder_trust '$LINK' ''"
+seed "agent_claude_seed_folder_trust '$LINK' ''" SB_AGENT_CLAUDE_SEED_FOLDER_TRUST_GLOBAL=1
 assert_eq "folder trust records the symlink and its target" "2" "$(jq '.projects | length' "$HOME/.claude.json")"
 assert_eq "folder trust records the resolved path" "true" "$(jq -r --arg w "$REAL" '.projects[$w].hasTrustDialogAccepted' "$HOME/.claude.json")"
 
 # global seeding can be switched off, and needs a HOME
 rm -rf "$HOME/.claude.json" "$CFG"
-seed "agent_claude_seed_folder_trust '$W' '$CFG'" SB_AGENT_CLAUDE_SEED_FOLDER_TRUST_GLOBAL=0
+seed "agent_claude_seed_folder_trust '$W' '$CFG'"
 assert_file_exists "folder trust still seeds the config dir with global off" "$CFG/.claude.json"
 assert_file_absent "folder trust global off writes no HOME file" "$HOME/.claude.json"
 rm -f "$HOME/.claude.json"
-tl_run timeout 60 env -u HOME bash -c "source '$CL'; agent_claude_seed_folder_trust '$W' ''; echo rc=\$?"
+tl_run timeout 60 env -u HOME SB_AGENT_CLAUDE_SEED_FOLDER_TRUST_GLOBAL=1 bash -c "source '$CL'; agent_claude_seed_folder_trust '$W' ''; echo rc=\$?"
 assert_eq "folder trust without HOME and config dir is a no-op" "rc=0" "$TL_OUT"
 assert_file_absent "folder trust without HOME writes nothing" "$HOME/.claude.json"
 

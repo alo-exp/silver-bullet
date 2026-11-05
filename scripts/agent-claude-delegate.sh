@@ -17,8 +17,7 @@ Usage: agent-claude-delegate.sh --work-dir PATH (--prompt TEXT | --brief-file PA
        [--log PATH] [--mode permissive|strict] [--interaction-mode auto|interactive|non-interactive]
        [--sb-root PATH] [--use-print] [--attach] [--no-escalate] [--allow-mode-fallback]
 
-Delegates a single task to Claude via tests/live/agents/claude/agent.sh (NI: claude --print; interactive: expect PTY).
-Requires full SB checkout (agent adapter). Parent supervisors: see /sb:agent-claude.
+Delegates a single task to Claude via scripts/lib/agent-adapters/claude.sh (NI: claude --print; interactive: expect PTY).
 EOF
 }
 
@@ -90,9 +89,9 @@ if ! agent_delegate_preflight_recommended_tools "$WORK_DIR" "$SB_ROOT" "claude";
   exit 2
 fi
 
-AGENT_SH="${SB_ROOT}/tests/live/agents/claude/agent.sh"
+AGENT_SH="${SB_ROOT}/scripts/lib/agent-adapters/claude.sh"
 [[ -f "$AGENT_SH" ]] || {
-  printf 'ERROR: missing Claude live adapter at %s (full SB checkout required)\n' "$AGENT_SH" >&2
+  printf 'ERROR: missing Claude live adapter at %s\n' "$AGENT_SH" >&2
   exit 1
 }
 
@@ -138,7 +137,7 @@ agent_claude_invoke_once() {
   export WORK_DIR="$WORK_DIR"
   export CLAUDE_WORK_DIR="$WORK_DIR"
   export CLAUDE_INTERACTIVE_LOG_FILE="${LOG_FILE:-}"
-  # shellcheck source=tests/live/agents/claude/agent.sh
+  # shellcheck source=scripts/lib/agent-adapters/claude.sh
   source "$AGENT_SH"
   agent_preflight
   # Clean up explicitly after the invoke: a RETURN trap would also fire when the sourced
