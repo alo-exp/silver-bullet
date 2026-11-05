@@ -98,9 +98,11 @@ dg_run "$P" "$H" '{"hook_event_name":"PreToolUse","tool_name":"Read"}' SILVER_BU
 assert_eq "non-edit tool ignored" "" "$TL_OUT"
 dg_assert_ok "non-edit tool ignored: exits 0"
 for t in Write MultiEdit apply_patch; do
-  dg_run "$P" "$H" "$(jq -cn --arg t "$t" '{hook_event_name:"PreToolUse",tool_name:$t,tool_input:{}}')" SILVER_BULLET_STATE_FILE="$STATE"
+  dg_run "$P" "$H" "$(jq -cn --arg t "$t" --arg p "$P/src/a.sh" '{hook_event_name:"PreToolUse",tool_name:$t,tool_input:{file_path:$p,input:("*** Begin Patch\n*** Update File: " + $p + "\n@@\n-a\n+b\n*** End Patch")}}')" SILVER_BULLET_STATE_FILE="$STATE"
   assert_eq "$t edits are gated" "deny" "$(dec)"
 done
+dg_run "$P" "$H" '{"hook_event_name":"PreToolUse","tool_name":"Write","tool_input":{}}' SILVER_BULLET_STATE_FILE="$STATE"
+assert_eq "a file tool call without any path writes nothing: not gated" "none" "$(dec)"
 run SB_AGENT_CERT_RUN=1
 assert_eq "cert run bypass" "" "$TL_OUT"
 dg_assert_ok "cert run bypass: exits 0"
@@ -169,21 +171,27 @@ rm -f "$STATE"
 dg_run "$P" "$H" "$(edit)"
 assert_eq "absent state file means nothing recorded" "deny" "$(dec)"
 
-# --- catalog aliases -----------------------------------------------------------
+# --- catalog aliases: the plugin's own catalog, never the project tree (R2-13) ---------------
 fresh; workflow wf1 /sb:release
-mkdir -p "$P/docs/generated"
-echo '{"runtime_queue_tokens":{"silver-quality-gates":"flow-quality-gates"}}' >"$P/docs/generated/atomic-flow-index.json"
+CAT="$TL_TMP/catalog.json"
+echo '{"runtime_queue_tokens":{"silver-quality-gates":"flow-quality-gates"}}' >"$CAT"
 : >"$STATE"
-run
+run SB_ATOMIC_FLOW_INDEX="$CAT"
 assert_eq "catalog entity not recorded: still blocked" "deny" "$(dec)"
 markers flow-quality-gates
-run
+run SB_ATOMIC_FLOW_INDEX="$CAT"
 assert_eq "catalog entity recorded satisfies the marker" "none" "$(dec)"
-echo 'not json' >"$P/docs/generated/atomic-flow-index.json"
 run
+assert_eq "without the plugin catalog the alias does not apply" "deny" "$(dec)"
+mkdir -p "$P/docs/generated"
+cp "$CAT" "$P/docs/generated/atomic-flow-index.json"
+run
+assert_eq "a catalog planted in the project tree is ignored" "deny" "$(dec)"
+echo 'not json' >"$CAT"
+run SB_ATOMIC_FLOW_INDEX="$CAT"
 assert_eq "unparsable catalog: marker stays missing" "deny" "$(dec)"
-echo '{"runtime_queue_tokens":{}}' >"$P/docs/generated/atomic-flow-index.json"
-run
+echo '{"runtime_queue_tokens":{}}' >"$CAT"
+run SB_ATOMIC_FLOW_INDEX="$CAT"
 assert_eq "catalog without entry: marker stays missing" "deny" "$(dec)"
 
 # --- jq missing ----------------------------------------------------------------
@@ -199,26 +207,91 @@ run
 assert_eq "composer unreadable: workflow not gated" "none" "$(dec)"
 rm -f "$TL_BIN/awk"
 
-# --- degraded: helper libraries unavailable ----------------------------------
-AUDIT='sb_hook_audit_record() { :; }; export -f sb_hook_audit_record'
-fresh; printf '# s\n' >"$P/.planning/SPEC.md"; workflow wf1 /sb:release
-: >"$STATE"
-dg_run_with_fn "$P" "$H" "$(edit)" "cd() { [[ \"\$1\" == */lib ]] && return 1; builtin cd \"\$@\"; }; export -f cd; $AUDIT" SILVER_BULLET_STATE_FILE="$STATE"
-assert_eq "no libs: literal marker lookup blocks when missing" "deny" "$(dec)"
+# --- scope: the planning skills' own artifacts are never gated (R2-13) ---------------------
+sbfile() { jq -cn --arg t "$1" --arg p "$2" '{hook_event_name:"PreToolUse",tool_name:$t,tool_input:{file_path:$p}}'; }
+sh() { jq -cn --arg c "$1" '{hook_event_name:"PreToolUse",tool_name:"Bash",tool_input:{command:$c}}'; }
+fresh; workflow wf1 /sb:ui
+markers silver-quality-gates silver-context
+mkdir -p "$P/.planning/phases/03-x" "$P/docs/specs"
+dg_run "$P" "$H" "$(sbfile Write "$P/.planning/phases/03-x/CONTEXT.md")" SILVER_BULLET_STATE_FILE="$STATE"
+assert_eq "sb:context can write its CONTEXT.md while later markers are missing" "none" "$(dec)"
+dg_run "$P" "$H" "$(sbfile Write "$P/.planning/phases/03-x/03-01-PLAN.md")" SILVER_BULLET_STATE_FILE="$STATE"
+assert_eq "sb:plan can write its PLAN.md while ui-contract and validate are missing" "none" "$(dec)"
+dg_run "$P" "$H" "$(sbfile Write "$P/.planning/SPEC.md")" SILVER_BULLET_STATE_FILE="$STATE"
+assert_eq "sb:spec can write SPEC.md" "none" "$(dec)"
+dg_run "$P" "$H" "$(sbfile Write "$P/docs/specs/feature.md")" SILVER_BULLET_STATE_FILE="$STATE"
+assert_eq "docs/specs artifacts are exempt" "none" "$(dec)"
+dg_run "$P" "$H" "$(sbfile Write "$P/src/app.py")" SILVER_BULLET_STATE_FILE="$STATE"
+assert_eq "source is still gated" "deny" "$(dec)"
+assert_eq "the deny is one JSON document" 1 "$(jq -s length <<<"$TL_OUT")"
+dg_run "$P" "$H" "$(sbfile NotebookEdit "$P/src/nb.ipynb" | jq -c '.tool_input={notebook_path:.tool_input.file_path}')" SILVER_BULLET_STATE_FILE="$STATE"
+assert_eq "NotebookEdit is gated like Write" "deny" "$(dec)"
+dg_run "$P" "$H" "$(sh "cat > src/app.py <<'EOF'
+print(1)
+EOF")" SILVER_BULLET_STATE_FILE="$STATE"
+assert_eq "a Bash heredoc into src/ is gated (R2-13)" "deny" "$(dec)"
+dg_run "$P" "$H" "$(sh "export SB_WORKFLOW_ID=wf1; echo x > src/app.py")" SILVER_BULLET_STATE_FILE="$STATE"
+assert_eq "a first-line export does not open the gate" "deny" "$(dec)"
+dg_run "$P" "$H" "$(sh "mkdir -p build && touch build/out.log && git status")" SILVER_BULLET_STATE_FILE="$STATE"
+assert_eq "mkdir/touch outside source are not gated" "none" "$(dec)"
+dg_run "$P" "$H" "$(sh "echo '# notes' > docs/notes.md")" SILVER_BULLET_STATE_FILE="$STATE"
+assert_eq "a Bash write to a doc outside source is not gated" "none" "$(dec)"
+dg_run "$P" "$H" "$(sh "echo '# notes' > src/notes.md")" SILVER_BULLET_STATE_FILE="$STATE"
+assert_eq "a Bash write to a non-logic file inside src is not gated" "none" "$(dec)"
+dg_run "$P" "$H" "$(sh "echo x > src/app_test.py")" SILVER_BULLET_STATE_FILE="$STATE"
+assert_eq "a Bash write to a test file is not gated" "none" "$(dec)"
+dg_run "$P" "$H" "$(sh "cat src/app.py; ls src")" SILVER_BULLET_STATE_FILE="$STATE"
+assert_eq "reading source is not gated" "none" "$(dec)"
+dg_run "$P" "$H" "$(sh "python3 -c \"open('src/app.py','w').write('x')\"")" SILVER_BULLET_STATE_FILE="$STATE"
+assert_eq "an interpreter one-liner writing src is gated" "deny" "$(dec)"
+dg_run "$P" "$H" "$(sh "python3 -c 'print(1)'")" SILVER_BULLET_STATE_FILE="$STATE"
+assert_eq "an interpreter one-liner that names no path is not gated" "none" "$(dec)"
+dg_run "$P" "$H" "$(sh "echo x > $TL_TMP/outside.txt")" SILVER_BULLET_STATE_FILE="$STATE"
+assert_eq "a write outside the project is not gated" "none" "$(dec)"
+markers silver-quality-gates silver-context silver-plan silver-ui-contract silver-validate
+printf '# spec\n' >"$P/.planning/SPEC.md"
+dg_run "$P" "$H" "$(sh "echo x > src/app.py")" SILVER_BULLET_STATE_FILE="$STATE"
+assert_eq "the full chain opens source writes" "none" "$(dec)"
+# python3 missing: shell commands cannot be judged, file tools can
+markers silver-context
+rm -f "$P/.planning/SPEC.md"
+dg_run "$P" "$H" "$(sh "echo x > src/app.py")" SILVER_BULLET_STATE_FILE="$STATE" PATH="$(tl_path_without python3)"
+assert_contains "no python3: a write is refused with the fix" "$TL_OUT" "python3"
+dg_run "$P" "$H" "$(sh "ls -la")" SILVER_BULLET_STATE_FILE="$STATE" PATH="$(tl_path_without python3)"
+assert_eq "no python3: a plainly read-only command gets no message" "" "$TL_OUT"
+dg_run "$P" "$H" "$(sh "echo 'unterminated > src/app.py")" SILVER_BULLET_STATE_FILE="$STATE"
+assert_contains "an unparsable write fails closed" "$TL_OUT" "cannot inspect"
+dg_run "$P" "$H" '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":""}}' SILVER_BULLET_STATE_FILE="$STATE"
+assert_eq "an empty command is ignored" "" "$TL_OUT"
+
+# --- review repair: unseen commands and MCP write tools -----------------------------------------
+fresh; workflow wf1 /sb:ui
 markers silver-quality-gates
-dg_run_with_fn "$P" "$H" "$(edit)" "cd() { [[ \"\$1\" == */lib ]] && return 1; builtin cd \"\$@\"; }; export -f cd; $AUDIT" SILVER_BULLET_STATE_FILE="$STATE"
-assert_eq "no libs: literal marker lookup passes when recorded" "none" "$(dec)"
-dg_assert_ok "no libs: literal marker lookup passes when recorded: exits 0"
-echo '{"runtime_queue_tokens":{"silver-quality-gates":"alt-entity"}}' >/dev/null
-fresh; workflow wf1 /sb:release
-mkdir -p "$P/docs/generated"
-echo '{"runtime_queue_tokens":{"silver-quality-gates":"alt-entity"}}' >"$P/docs/generated/atomic-flow-index.json"
-markers alt-entity
-dg_run_with_fn "$P" "$H" "$(edit)" "cd() { [[ \"\$1\" == */lib ]] && return 1; builtin cd \"\$@\"; }; export -f cd; $AUDIT" SILVER_BULLET_STATE_FILE="$STATE"
-assert_eq "no libs: catalog entity literal lookup passes" "none" "$(dec)"
-dg_assert_ok "no libs: catalog entity literal lookup passes: exits 0"
-markers other
-dg_run_with_fn "$P" "$H" "$(edit)" "cd() { [[ \"\$1\" == */lib ]] && return 1; builtin cd \"\$@\"; }; export -f cd; $AUDIT" SILVER_BULLET_STATE_FILE="$STATE"
-assert_eq "no libs: catalog entity literal lookup blocks when absent" "deny" "$(dec)"
+PADF="$TL_TMP/pad.txt"; head -c 600000 /dev/zero | tr '\0' 'a' >"$PADF"
+dg_run "$P" "$H" "$(jq -cn --rawfile pad "$PADF" '{hook_event_name:"PreToolUse",tool_name:"Bash",tool_input:{command:("echo x > src/app.py; # " + $pad)}}')" SILVER_BULLET_STATE_FILE="$STATE"
+assert_eq "an over-budget command is refused while the chain is incomplete" "deny" "$(dec)"
+assert_contains "with the reason" "$TL_OUT" "cannot inspect this command"
+dg_run "$P" "$H" "$(sh 'eval "$X"')" SILVER_BULLET_STATE_FILE="$STATE"
+assert_eq "eval of computed text is refused" "deny" "$(dec)"
+dg_run "$P" "$H" "$(jq -cn --arg p "$P/src/a.py" '{hook_event_name:"PreToolUse",tool_name:"mcp__filesystem__write_file",tool_input:{path:$p,content:"x"}}')" SILVER_BULLET_STATE_FILE="$STATE"
+assert_eq "an MCP write into source is gated like Write" "deny" "$(dec)"
+dg_run "$P" "$H" "$(jq -cn --arg p "$P/src/a.py" '{hook_event_name:"PreToolUse",tool_name:"mcp__filesystem__read_file",tool_input:{path:$p}}')" SILVER_BULLET_STATE_FILE="$STATE"
+assert_eq "an MCP read is not gated" "none" "$(dec)"
+
+# --- the active workflow: the state file, a sole workflow file, the env override (R2-14) --------
+fresh; workflow wf1 /sb:feature; workflow wf2 /sb:bugfix
+: >"$STATE"
+printf 'wf2\n' >"$ST/active-workflow"
+run
+assert_contains "the persisted active workflow selects wf2" "$(reason)" "(wf2)"
+printf 'nope\n' >"$ST/active-workflow"
+run
+assert_contains "an unknown persisted id is ignored (multiple workflows still ambiguous)" "$(reason)" "multiple active composed workflows"
+rm -f "$ST/active-workflow"
+fresh; workflow wf1 /sb:bugfix
+run
+assert_contains "the only workflow is the active one without any variable" "$(reason)" "(wf1)"
+dg_run "$P" "$H" "$(sh "export SB_WORKFLOW_ID=wf9; echo x > src/app.py")" SILVER_BULLET_STATE_FILE="$STATE"
+assert_eq "a first-line export selects among workflows but cannot open the gate" "deny" "$(dec)"
 
 tl_results

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
-trap 'printf "{\"hookSpecificOutput\":{\"message\":\"⚠️ uat-gate: hook error — check jq/input format\"}}" ; exit 0' ERR
+trap 'sb_emit_hook_message PreToolUse "⚠️ uat-gate: hook error — check jq/input format"; exit 0' ERR
 
-# PreToolUse hook (matcher: Skill|Bash|exec_command)
+# PreToolUse hook (matcher: Skill)
 # UAT GATE — blocks sb:release / milestone completion when UAT.md is missing,
 # has FAIL results, or was run against a stale spec version.
 
@@ -10,7 +10,7 @@ trap 'printf "{\"hookSpecificOutput\":{\"message\":\"⚠️ uat-gate: hook error
 umask 0077
 
 _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
-for _lib in jq-gate.sh sb-project-gate.sh skill-discovery.sh; do
+for _lib in jq-gate.sh sb-project-gate.sh skill-discovery.sh planning-floor.sh; do
   if [[ -f "$_lib_dir/$_lib" ]]; then
     # shellcheck source=/dev/null
     source "$_lib_dir/$_lib"
@@ -27,7 +27,12 @@ emit_block_jq_missing() {
 if declare -f sb_jq_enforcement_block_sb_initiated >/dev/null 2>&1; then
   sb_jq_enforcement_block_sb_initiated "uat-gate" "emit_block_jq_missing"
 elif ! command -v jq >/dev/null 2>&1; then
-  printf '{"hookSpecificOutput":{"message":"⚠️ Silver Bullet hooks require jq. Install: brew install jq (macOS) / apt install jq (Linux)"}}'
+  printf '{"systemMessage":"⚠️ Silver Bullet hooks require jq. Install: brew install jq (macOS) / apt install jq (Linux)"}'
+  exit 0
+fi
+
+if ! declare -f sb_pf_skill_calls >/dev/null 2>&1; then
+  printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"Silver Bullet hook libraries are missing (hooks/lib/planning-floor.sh). Reinstall the plugin."}}'
   exit 0
 fi
 
@@ -38,55 +43,34 @@ if declare -f sb_project_gate_or_exit >/dev/null 2>&1; then
   sb_project_gate_or_exit
 fi
 
+hook_event=$(printf '%s' "$input" | jq -r '.hook_event_name // "PreToolUse"')
+
 # Emit a block (PreToolUse deny)
 emit_block() {
-  local reason="$1"
-  local json_reason
-  json_reason=$(printf '%s' "$reason" | jq -Rs '.')
-  printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":%s}}' "$json_reason"
+  sb_emit_hook_decision "$hook_event" deny "$1"
 }
 
-# Which skills does this call invoke? The Skill tool, or the Codex invoke-skill adapter (R2-17).
-# Unparsable input is an unexpected error (the trap reports it).
-printf '%s' "$input" | jq -e . >/dev/null
-if [[ -f "$_lib_dir/skill-channel.sh" ]]; then
-  # shellcheck source=lib/skill-channel.sh
-  source "$_lib_dir/skill-channel.sh"
-  sb_skill_channel_load "$input"
-else
-  # Without the channel lib the Skill tool's own field is still gated.
-  SB_SKILL_CHANNEL_NAMES="$(printf '%s' "$input" | jq -r '.tool_input.skill // .tool_input.skillName // ""')"
-  SB_SKILL_CHANNEL_STATUS="ok"
-fi
-if [[ "$SB_SKILL_CHANNEL_STATUS" == "helper_unavailable" ]]; then
-  emit_block "$(sb_shell_analysis_helper_message)"
+# The invoked skill(s): the Skill tool, or the Codex invoke-skill adapter. A skill named in a
+# payload under the tool_input.skillName spelling is read by sb_pf_invoked_skills too.
+rc=0
+sb_pf_skill_calls "$input" || rc=$?
+[[ "$rc" -eq 1 ]] && exit 0
+if [[ "$rc" -eq 2 ]]; then
+  emit_block "$(sb_pf_unanalysable_message)"
   exit 0
 fi
+skill="$SB_PF_SKILLS"
 
-# Gate milestone release only — phase-level ship (sb:ship) does not require UAT.md. The canonical
-# skill name must be exactly silver-release (a skill that merely contains the text is not it).
+project_root="$(sb_find_project_root_walk_only 2>/dev/null || true)"
+[[ -n "$project_root" ]] || project_root="$PWD"
+UAT="$project_root/.planning/UAT.md"
+SPEC="$project_root/.planning/SPEC.md"
+
+# Gate milestone release only — phase-level ship (sb:ship) does not require UAT.md.
 # UAT is generated at milestone completion (sb:feature Step 17) before sb:release.
-is_release=false
-while IFS= read -r raw_skill; do
-  [[ -n "$raw_skill" ]] || continue
-  canonical="$raw_skill"
-  if declare -F sb_skill_canonical_name >/dev/null 2>&1; then
-    canonical="$(sb_skill_canonical_name "$raw_skill")"
-  fi
-  canonical="$(printf '%s' "$canonical" | tr '[:upper:]' '[:lower:]')"
-  [[ "$canonical" == "silver-release" ]] && is_release=true
-done <<< "$SB_SKILL_CHANNEL_NAMES"
-[[ "$is_release" == true ]] || exit 0
-
-# Paths come from the project root, not the hook's working directory (R2-25).
-uat_root="$PWD"
-if declare -f sb_find_project_root_walk_only >/dev/null 2>&1; then
-  if found_root="$(sb_find_project_root_walk_only 2>/dev/null)"; then
-    uat_root="$found_root"
-  fi
+if ! grep -qE 'silver-release' <<<"$skill"; then
+  exit 0
 fi
-UAT="$uat_root/.planning/UAT.md"
-SPEC="$uat_root/.planning/SPEC.md"
 
 # Check 1: UAT.md must exist (UATG-01)
 if [[ ! -f "$UAT" ]]; then
@@ -94,34 +78,19 @@ if [[ ! -f "$UAT" ]]; then
   exit 0
 fi
 
-# Checks 2 and 3: result cells (R2-25, R10-03). Column-aware and case-insensitive: any table cell
-# that is exactly fail/failed or not-run (any spacing, `|FAIL|`, `| Fail |`, `not run`) counts.
-# Header and legend rows that name several result words (#, Total, Status, Result, PASS) do not.
-read -r fail_count not_run_count < <(awk -F'|' '
-  /^[[:space:]]*\|/ {
-    fail = 0; nr = 0; legend = 0
-    for (i = 2; i <= NF; i++) {
-      c = tolower($i); gsub(/^[ \t\r]+|[ \t\r]+$/, "", c)
-      if (c == "fail" || c == "failed") fail = 1
-      if (c ~ /^not[-_ ]?run$/) nr = 1
-      if (c == "pass" || c == "passed" || c == "#" || c == "total" || c == "status" || c == "result") legend = 1
-    }
-    if (legend || (fail && nr)) next
-    if (fail) f++
-    else if (nr) n++
-  }
-  END { print f + 0, n + 0 }
-' "$UAT")
-
 # Check 2: No FAIL results allowed (UATG-03)
-if [[ "$fail_count" -gt 0 ]]; then
+# Two-pipe approach: find lines with | FAIL | then exclude header rows (which also contain
+# column names like #, Total, PASS, NOT-RUN, Status, Result).
+if grep -qvE '\|\s*(#|Total|PASS|NOT.?RUN|Status|Result)\s*\|' < <(grep -E '\| FAIL \|' "$UAT"); then
+  fail_count=$(grep -E '\| FAIL \|' "$UAT" | grep -cvE '\|\s*(#|Total|PASS|NOT.?RUN|Status|Result)\s*\|' || true)
   emit_block "UAT GATE: ${fail_count} criterion/criteria marked FAIL in .planning/UAT.md. Resolve all failures before completing milestone."
   exit 0
 fi
 
 # Check 3: NOT-RUN blocks milestone release (UATG-02)
-if [[ "$not_run_count" -gt 0 ]]; then
-  emit_block "UAT GATE: ${not_run_count} criterion/criteria marked NOT-RUN in .planning/UAT.md. Execute all criteria before completing milestone."
+if grep -qvE '\|\s*(#|Total|PASS|FAIL|Status|Result)\s*\|' < <(grep -E '\| NOT-RUN \|' "$UAT"); then
+  not_run_count=$(grep -E '\| NOT-RUN \|' "$UAT" | grep -cvE '\|\s*(#|Total|PASS|FAIL|Status|Result)\s*\|' || true)
+  emit_block "UAT GATE: ${not_run_count} criterion/criteria marked NOT-RUN in .planning/UAT.md. Execute all criteria before completing milestone. Override only with explicit SB OVERRIDE: documented waiver in user message (audited)."
   exit 0
 fi
 
@@ -144,5 +113,5 @@ if [[ -f "$SPEC" ]]; then
 fi
 
 # All checks passed
-printf '{"hookSpecificOutput":{"message":"✓ UAT gate passed. Milestone completion allowed."}}'
+sb_emit_hook_message "$hook_event" "✓ UAT gate passed. Milestone completion allowed."
 exit 0

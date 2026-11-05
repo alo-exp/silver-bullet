@@ -25,7 +25,7 @@ Beside the twelve layers run further gates: the spec floor (`spec-floor-check.sh
 
 ## Planning-Floor Gate
 
-`dev-cycle-check.sh` enforces pre-execution readiness. When an active `.planning/workflows/<id>.md` exists, the gate requires `SB_WORKFLOW_ID` admission before non-trivial source edits. The skill-based check is the legacy fallback for projects without a composed workflow.
+`dev-cycle-check.sh` enforces pre-execution readiness. When an active `.planning/workflows/<id>.md` exists, the gate admits non-trivial source edits for that workflow: the active workflow is the only workflow file, the id persisted in `${SB_RUNTIME_STATE_DIR}/active-workflow`, or `SB_WORKFLOW_ID` (an override that only a hook-visible environment can set; a first-line `export SB_WORKFLOW_ID=…` in a Bash command also selects among several workflows). The skill-based check is the legacy fallback for projects without a composed workflow. The gate enforces nothing outside a Silver Bullet project, judges every write target (file tools, `NotebookEdit`, MCP file writes, apply_patch paths and shell writes) in canonical form, treats `lib/` symlinked to `src/` as source, and does not gate `tools/src-gen.py` or test layouts (`src/test/`, `*_test.go`, `test_*.py`). A cumulative budget of 300 characters per session covers tiny typo edits. It also refuses to let the agent write the state directory, run, name or copy `record-*.sh` (whichever interpreter launches them), rewrite `.silver-bullet.json`, `silver-bullet.md` or `.silver-bullet.prompt.json` (only the skills that own them unlock the files: `sb:init`, `sb:update`, `sb:add`, `sb:devops`, `sb:migrate`; the list is `SB_PF_CONTRACT_WRITER_SKILLS` in `hooks/lib/planning-floor.sh`), or edit the host plugin registry. A directory-capable write (`cp -r`, `rsync`, `tar -x`, `unzip`, `mv`, `git checkout`) or a delete into a directory above a protected path counts as a write of that path. A command the analyser reports as code it cannot read (over its budget, `eval` of computed text, a shell fed by a pipe) is refused inside an SB project with `cannot inspect this command: <reason>`, unless it is plainly read-only. `record-skill.sh` seals the state file (`<state>.seal`): lines appended by anything else are ignored by the planning floor and dropped at the next record, and an in-place edit of the sealed lines yields no records. This is tamper evidence, not a lock: other gates that read the state file directly do not apply the seal yet.
 
 | Stage | Requires | Blocks until |
 |-------|----------|--------------|
@@ -96,7 +96,7 @@ All hooks check active `.planning/workflows/<id>.md` files first, falling back t
 
 | Hook | Composed-workflow mode | Legacy fallback |
 |------|------------------------|-----------------|
-| `dev-cycle-check.sh` | Active workflow exists and `SB_WORKFLOW_ID` matches before non-trivial source edits | 4-stage skill marker check |
+| `dev-cycle-check.sh` | Active workflow exists (the only one, the persisted id, or `SB_WORKFLOW_ID`) before non-trivial source edits | 4-stage skill marker check |
 | `completion-audit.sh` | `SB_WORKFLOW_ID`-matched workflow file shows all required flow rows complete | `required_deploy` skill list check |
 | `compliance-status.sh` | Shows path progress (FLOW N/M) | Shows skill count only |
 | `prompt-reminder.sh` | Includes active composed workflow IDs and current position | Omits composition context |

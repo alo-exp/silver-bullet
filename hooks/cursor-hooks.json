@@ -40,19 +40,19 @@
         "matcher": "Shell|Skill"
       },
       {
-        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/planning-file-guard.sh\"",
+        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/spec-floor-check.sh\"",
         "timeout": 10,
-        "matcher": "Edit|Write|MultiEdit"
+        "matcher": "Shell|Skill"
       },
       {
-        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/instruction-file-guard.sh\"",
+        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/forbidden-skill-check.sh\"",
         "timeout": 10,
-        "matcher": "Edit|Write|MultiEdit"
+        "matcher": "Shell|Skill"
       },
       {
-        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/workflow-chain-guard.sh\"",
+        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/uat-gate.sh\"",
         "timeout": 10,
-        "matcher": "Edit|Write|MultiEdit"
+        "matcher": "Shell|Skill"
       },
       {
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/orchestrator-directive-guard.sh\"",
@@ -68,6 +68,21 @@
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/phase-lock-claim.sh\"",
         "timeout": 10,
         "matcher": "Edit|Write|MultiEdit"
+      },
+      {
+        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/planning-file-guard.sh\"",
+        "timeout": 10,
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Shell|mcp__.*__(write|edit|create|move|rename|patch|replace|delete|append|save)[A-Za-z0-9_]*"
+      },
+      {
+        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/instruction-file-guard.sh\"",
+        "timeout": 10,
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Shell|mcp__.*__(write|edit|create|move|rename|patch|replace|delete|append|save)[A-Za-z0-9_]*"
+      },
+      {
+        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/workflow-chain-guard.sh\"",
+        "timeout": 10,
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Shell|mcp__.*__(write|edit|create|move|rename|patch|replace|delete|append|save)[A-Za-z0-9_]*"
       },
       {
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/orchestrator-directive-guard.sh\"",
@@ -98,16 +113,6 @@
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/rfl-policy-c-gate.sh\"",
         "timeout": 10,
         "matcher": "Skill"
-      },
-      {
-        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/forbidden-skill-check.sh\"",
-        "timeout": 10,
-        "matcher": "Shell"
-      },
-      {
-        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/uat-gate.sh\"",
-        "timeout": 10,
-        "matcher": "Shell"
       },
       {
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/subagent-stop-enforcement.sh\"",
@@ -140,27 +145,17 @@
         "matcher": "Edit|Write|MultiEdit|Shell"
       },
       {
-        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/dev-cycle-check.sh\"",
-        "timeout": 15,
-        "matcher": "Edit|Write|MultiEdit|Shell"
-      },
-      {
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/alumnium-gate.sh\"",
         "timeout": 10,
         "matcher": "Edit|Write|MultiEdit|Shell"
       },
       {
-        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/forbidden-skill-check.sh\"",
-        "timeout": 10,
-        "matcher": "Skill"
+        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/dev-cycle-check.sh\"",
+        "timeout": 15,
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Shell|mcp__.*__(write|edit|create|move|rename|patch|replace|delete|append|save)[A-Za-z0-9_]*"
       },
       {
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/dependency-skill-check.sh\"",
-        "timeout": 10,
-        "matcher": "Skill"
-      },
-      {
-        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/uat-gate.sh\"",
         "timeout": 10,
         "matcher": "Skill"
       },
@@ -187,11 +182,6 @@
       {
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/ci-status-check.sh\"",
         "timeout": 30,
-        "matcher": "Shell"
-      },
-      {
-        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/spec-floor-check.sh\"",
-        "timeout": 10,
         "matcher": "Shell"
       },
       {
@@ -254,14 +244,14 @@
         "matcher": "Skill|Shell"
       },
       {
-        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/dev-cycle-check.sh\"",
-        "timeout": 15,
-        "matcher": "Edit|Write|MultiEdit|Shell"
-      },
-      {
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/phase-lock-heartbeat.sh\"",
         "timeout": 10,
         "matcher": "Edit|Write|MultiEdit|Shell"
+      },
+      {
+        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/dev-cycle-check.sh\"",
+        "timeout": 15,
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Shell|mcp__.*__(write|edit|create|move|rename|patch|replace|delete|append|save)[A-Za-z0-9_]*"
       },
       {
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse \"${CURSOR_PLUGIN_ROOT}/hooks/compliance-status.sh\"",

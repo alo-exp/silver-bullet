@@ -193,6 +193,7 @@ assert_decoded_message_real_newlines() {
     // .permissionDecisionReason
     // .hookSpecificOutput.permissionDecisionReason
     // .hookSpecificOutput.message
+    // .systemMessage
     // empty
   ' 2>/dev/null || true)
   if [[ -z "$decoded" ]]; then
@@ -384,6 +385,8 @@ teardown
 
 # Test 4ab: Stage A — scaffold/config write with /src/ literal stays outside source gate
 setup
+# sb:init owns the config files: with it recorded the write is its own business (R2-04)
+echo "silver-init" > "$TMPSTATE"
 out=$(run_hook_bash "PreToolUse" "cat > .silver-bullet.json <<'EOF'
 {\"project\":{\"src_pattern\":\"/src/\"}}
 EOF")
@@ -628,11 +631,18 @@ out=$(run_hook_edit "PreToolUse" "$CSS_FILE" "old" "new")
 assert_passes "CSS file bypasses enforcement (non-logic extension)" "$out"
 teardown
 
-# Test 12: Trivial file bypass
+# Test 12: Trivial file bypass (the default marker, created by the user; a configured path is not honoured)
+setup
+touch "${SB_TEST_DIR}/trivial"
+out=$(run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
+assert_passes "trivial file bypass works" "$out"
+rm -f "${SB_TEST_DIR}/trivial"
+teardown
+
 setup
 touch "${SB_TEST_DIR}/trivial-test-${TEST_RUN_ID}"
 out=$(run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
-assert_passes "trivial file bypass works" "$out"
+assert_blocks "a configured trivial file does not arm the bypass (R2-04)" "$out"
 teardown
 
 # Test 13: Plugin cache boundary — blocks edits to ${SB_RUNTIME_HOME_ROOT}/plugins/cache
@@ -751,10 +761,10 @@ out=$(run_hook_bash "PreToolUse" "/bin/zsh -lc 'bash .hook-probes/probe.sh'")
 assert_blocks "tamper: wrapped shell script write through symlinked state file is blocked" "$out"
 teardown
 
-# Test 17d: tee to trivial file is now ALLOWED (BUG-03 fix — trivial is not state-managed)
+# Test 17d: tee to the trivial marker is blocked (R2-05/R2-08: the marker is the user's to create)
 setup
 out=$(run_hook_bash "PreToolUse" "echo 'x' | tee ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial")
-assert_passes "tamper: tee to trivial file is allowed (BUG-03 fix)" "$out"
+assert_blocks "tamper: tee to the trivial marker is blocked" "$out"
 teardown
 
 # Test 17e: git commit mentioning state path in -m is NOT blocked (QA-05)
@@ -793,16 +803,22 @@ out=$(run_hook_bash "PreToolUse" "echo 'x' | tee \"${SB_RUNTIME_HOME_ROOT}/.silv
 assert_blocks "tamper: tee with expanded quoted state path is still blocked (exemption abuse)" "$out"
 teardown
 
-# Test 17i: planning-edit-override sentinel via touch is ALLOWED
+# Test 17i: the PLAN override sentinel is the user's: the agent cannot arm it (R2-08)
 setup
 out=$(run_hook_bash "PreToolUse" "touch ${SB_RUNTIME_STATE_DIR}/planning-edit-override")
-assert_passes "tamper: touch planning-edit-override sentinel is allowed" "$out"
+assert_blocks "tamper: touch planning-edit-override sentinel is blocked" "$out"
 teardown
 
-# Test 17j: planning-edit-override sentinel via Write is ALLOWED
+# Test 17j: ... nor with the Write tool
 setup
 out=$(run_hook_write "PreToolUse" "${SB_RUNTIME_STATE_DIR}/planning-edit-override")
-assert_passes "tamper: Write planning-edit-override sentinel is allowed" "$out"
+assert_blocks "tamper: Write planning-edit-override sentinel is blocked" "$out"
+teardown
+
+# Test 17ja: the roadmap sentinel stays open (sb:phase / sb:undo arm it; the guard checks the skill)
+setup
+out=$(run_hook_bash "PreToolUse" "touch ${SB_RUNTIME_STATE_DIR}/roadmap-edit-override")
+assert_passes "tamper: touch roadmap-edit-override sentinel is allowed" "$out"
 teardown
 
 # Test 17k: direct Write to state file is still BLOCKED
@@ -836,8 +852,16 @@ teardown
 
 # Test 19c: cp from plugin cache template into project workspace is ALLOWED (#227)
 setup
+echo "silver-init" > "$TMPSTATE"
 out=$(run_hook_bash "PreToolUse" "cp ${PLUGIN_CACHE_PATH}/some-plugin/template.md ${TMPDIR_TEST}/silver-bullet.md")
-assert_passes "F-07: cp from plugin cache into project workspace is allowed" "$out"
+assert_passes "F-07: cp from plugin cache into project workspace is allowed (sb:init copies the template)" "$out"
+teardown
+
+setup
+out=$(run_hook_bash "PreToolUse" "cp ${PLUGIN_CACHE_PATH}/some-plugin/template.md ${TMPDIR_TEST}/notes/template.md")
+assert_passes "F-07: cp from plugin cache into a non-contract project file is allowed" "$out"
+out=$(run_hook_bash "PreToolUse" "cp ${PLUGIN_CACHE_PATH}/some-plugin/template.md ${TMPDIR_TEST}/silver-bullet.md")
+assert_blocks "R2-04: without sb:init recorded, overwriting silver-bullet.md is refused" "$out"
 teardown
 
 # Test 20: python3 execution of plugin binary should be ALLOWED
@@ -985,7 +1009,8 @@ teardown
 # Before the fix the fallback used /silver-bullet[^/]*/hooks/ which caught both the
 # installed plugin AND the source repo, preventing legitimate hook edits in dev.
 echo "--- Group 11: Bug 2 regression — source repo hooks/ not falsely blocked ---"
-SB_SOURCE_HOOKS_DIR="$(dirname "$HOOK")"  # absolute path to this repo's hooks/ dir
+SB_SOURCE_HOOKS_DIR="$(mktemp -d)/hooks"  # a source checkout's hooks/ dir: outside the runtime root, no SB project
+mkdir -p "$SB_SOURCE_HOOKS_DIR"
 
 # Test 28: cp to source repo hooks/ is NOT blocked (path outside ${SB_RUNTIME_HOME_ROOT}/)
 setup
@@ -1058,9 +1083,21 @@ echo "=== Composed-workflow gate (Pass 2: SB_WORKFLOW_ID admission control) ==="
 echo "--- WF-PASS2-A: active workflow without SB_WORKFLOW_ID is blocked ---"
 setup
 workflow_id=$(create_active_workflow silver-feature "admission control" "bootstrap,execute,ship")
+cat > "$TMPSTATE" << 'EOF'
+silver-quality-gates
+silver-review
+finishing-a-development-branch
+EOF
 out=$(run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
-assert_blocks "WF-PASS2-A: active workflow requires SB_WORKFLOW_ID" "$out"
-assert_contains "WF-PASS2-A: block mentions SB_WORKFLOW_ID" "$out" "SB_WORKFLOW_ID"
+assert_passes "WF-PASS2-A: a sole active workflow admits the edit without a variable the hook cannot see (R2-14)" "$out"
+other_id=$(create_active_workflow silver-bugfix "second workflow" "bootstrap,execute,ship")
+out=$(run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
+assert_blocks "WF-PASS2-A: several active workflows and none selected blocks" "$out"
+assert_contains "WF-PASS2-A: block says none is selected" "$out" "none is selected"
+printf '%s\n' "$other_id" > "${SB_RUNTIME_STATE_DIR}/active-workflow"
+out=$(run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
+assert_passes "WF-PASS2-A: the persisted active workflow id selects" "$out"
+rm -f "${SB_RUNTIME_STATE_DIR}/active-workflow"
 teardown
 
 # WF-PASS2-B: mismatched SB_WORKFLOW_ID is blocked
@@ -1077,8 +1114,8 @@ echo "--- WF-PASS2-C: active workflow admission applies to MultiEdit too ---"
 setup
 workflow_id=$(create_active_workflow silver-feature "admission control" "bootstrap,execute,ship")
 out=$(run_hook_multiedit "PreToolUse" "$TMPFILE")
-assert_blocks "WF-PASS2-C: MultiEdit is gated the same as Edit/Write" "$out"
-assert_contains "WF-PASS2-C: MultiEdit block mentions SB_WORKFLOW_ID" "$out" "SB_WORKFLOW_ID"
+assert_blocks "WF-PASS2-C: MultiEdit is gated the same as Edit/Write (planning floor, workflow admitted)" "$out"
+assert_contains "WF-PASS2-C: MultiEdit block names the missing planning skill" "$out" "HARD STOP"
 teardown
 
 # WF-PASS2-D: matching SB_WORKFLOW_ID allows the edit to reach the legacy gate

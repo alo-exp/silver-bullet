@@ -2,7 +2,7 @@
 set -euo pipefail
 trap 'exit 0' ERR
 
-# PreToolUse hook (matcher: Edit|Write|MultiEdit)
+# PreToolUse hook (matcher: Edit|Write|MultiEdit|NotebookEdit|apply_patch|Bash|exec_command)
 # Blocks direct edits to GSD-managed planning artifacts (.planning/ROADMAP.md etc.)
 # that must only be modified through the appropriate GSD skill.
 #
@@ -12,14 +12,22 @@ trap 'exit 0' ERR
 # and VERIFICATION.md. SB may own separate spec/quality artifacts, but it does
 # not directly mutate GSD lifecycle artifacts.
 #
-# Bypass: create <host runtime>/.silver-bullet/planning-edit-override (file, not symlink)
-# or set env var SB_ALLOW_PLANNING_EDITS=1 before starting Claude Code.
+# Every path a call writes is judged: the file tools' paths (every apply_patch path, Move to
+# targets), and the write targets of shell commands (redirects, sed -i, cp, mv, tee, rm...,
+# resolved by the shell analysis). Paths compare in canonical form (symlinks, '..', Windows
+# spellings) and case-insensitively.
+#
+# Bypass (user-owned): set SB_ALLOW_PLANNING_EDITS=1 before starting Claude Code, or have the
+# USER create <host runtime>/.silver-bullet/planning-edit-override (PLAN files) from a
+# terminal. The roadmap-edit-override sentinel (ROADMAP.md/STATE.md) is honoured only while
+# the owning skill (sb:phase or sb:undo) is recorded in this session's state, and the dev-cycle
+# gate refuses an agent writing any other sentinel or the audit logs. Overrides are audited.
 
 # Security: restrict file creation permissions (user-only)
 umask 0077
 
 # Source runtime path selector so the override/trivial files follow the host.
-_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)"
 if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
   # shellcheck source=lib/runtime-paths.sh
   source "$_lib_dir/runtime-paths.sh"
@@ -32,6 +40,8 @@ if [[ -f "$_lib_dir/tool-input.sh" ]]; then
   # shellcheck source=lib/tool-input.sh
   source "$_lib_dir/tool-input.sh"
 fi
+# shellcheck source=lib/planning-floor.sh
+source "$_lib_dir/planning-floor.sh"
 if [[ -f "$_lib_dir/cert-bypass.sh" ]]; then
   # shellcheck source=lib/cert-bypass.sh
   source "$_lib_dir/cert-bypass.sh"
@@ -65,11 +75,7 @@ PY
   printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"jq required for Silver Bullet enforcement"}}'
 }
 
-if declare -f sb_jq_enforcement_block_sb_initiated >/dev/null 2>&1; then
-  sb_jq_enforcement_block_sb_initiated "planning-file-guard" "emit_block_jq_missing"
-elif ! command -v jq >/dev/null 2>&1; then
-  exit 0
-fi
+sb_jq_enforcement_block_sb_initiated "planning-file-guard" "emit_block_jq_missing"
 
 input=$(cat)
 if declare -f sb_hook_exit_on_cert_run >/dev/null 2>&1; then
@@ -78,186 +84,164 @@ elif declare -f sb_cert_run_bypass_active >/dev/null 2>&1 && sb_cert_run_bypass_
   exit 0
 fi
 
-# Extract file path from tool input. Native Codex apply_patch payloads are
-# parsed by hooks/lib/tool-input.sh from patch file headers.
-if declare -f sb_tool_file_path >/dev/null 2>&1; then
-  file_path="$(sb_tool_file_path "$input")"
-else
-  file_path=$(printf '%s' "$input" | jq -r '.tool_input.file_path // ""')
-fi
-[[ -z "$file_path" ]] && exit 0
-
-# Canonicalize path to prevent traversal bypass (e.g. .planning/sub/../ROADMAP.md)
-_norm_path=$(python3 -c "import os,sys; print(os.path.normpath(sys.argv[1]))" "$file_path" 2>/dev/null || printf '%s' "$file_path")
-case "$_norm_path" in
-  /*) ;;
-  *) _norm_path="$PWD/$_norm_path" ;;
-esac
-basename_path=$(basename "$_norm_path")
-
-# Check if the file is in the protected set (SB-managed lifecycle artifacts).
-# Legacy GSD-created artifacts remain protected during migration.
-protected=false
-planning_rel=""
-case "$_norm_path" in
-  */.planning/*)
-    planning_rel="${_norm_path#*/.planning/}"
-    ;;
-  *) exit 0 ;;
-esac
-
-case "$planning_rel" in
-  ROADMAP.md|STATE.md|PROJECT.md|RELEASE.md|REQUIREMENTS.md|UAT.md)
-    protected=true
-    ;;
-  v*-MILESTONE-*.md|milestones/*.md)
-    protected=true
-    ;;
-  phases/*/*-PLAN.md|phases/*/*-SUMMARY.md|phases/*/*-REVIEW.md|phases/*/*-SECURITY.md|phases/*/*-VERIFICATION.md)
-    protected=true
-    ;;
-  # SB-native phase layout (phases/<phase>/PLAN.md etc.) is owned by SB skills
-  # (silver-plan, silver-review, silver-verify, silver-secure) — not GSD CLI.
-esac
-
-[[ "$protected" == false ]] && exit 0
+deny() {
+  sb_hook_audit_record "planning-file-guard" "PreToolUse" "deny" "$1" "${2:-}"
+  sb_emit_hook_decision PreToolUse deny "$1"
+  exit 0
+}
 
 # ── Exit early if project is not using Silver Bullet ─────────────────────────
-config_file=""
-search_dir="$PWD"
-while true; do
-  if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; then
-    config_file="$search_dir/.silver-bullet.json"
-    break
-  fi
-  if [[ -d "$search_dir/.git" ]] || [[ "$search_dir" == "/" ]]; then
-    break
-  fi
-  search_dir=$(dirname "$search_dir")
-done
-[[ -z "$config_file" ]] && exit 0
-
+config_file="$(sb_find_project_config_walk_only 2>/dev/null || true)"
+[[ -n "$config_file" ]] || exit 0
 if declare -f sb_project_active >/dev/null 2>&1; then
   sb_project_active "$config_file" || exit 0
-elif declare -f sb_project_is_initiated >/dev/null 2>&1; then
-  sb_project_is_initiated "$config_file" || exit 0
 fi
+project_root="$(sb_pf_canon "$(dirname "$config_file")")"
 
-# ── Verify the file being edited is under THIS project's root (WR-05) ─────────
-# Prevents enforcement firing on a different project's .planning/ when Claude is
-# running in a multi-repo or worktree setup where absolute paths are passed.
-_project_root=$(dirname "$config_file")
-case "$_norm_path" in
-  "$_project_root"/*) ;;   # file is inside this project — enforce
-  *) exit 0 ;;             # file is outside this project — skip
+# (An unparsable payload has no tool name: it goes on to the analysis, which fails closed.)
+tool_name="$(printf '%s' "$input" | jq -r '.tool_name // ""' 2>/dev/null || true)"
+case "$tool_name" in
+  "" | Edit | Write | MultiEdit | NotebookEdit | apply_patch) ;;
+  *) sb_tool_is_shell_like "$tool_name" || sb_pf_mcp_write_tool "$tool_name" || exit 0 ;;
 esac
 
-# ── Bypass: env var override ──────────────────────────────────────────────────
-if [[ "${SB_ALLOW_PLANNING_EDITS:-}" == "1" ]]; then
-  _msg="⚠️  planning-file-guard: SB_ALLOW_PLANNING_EDITS=1 — allowing direct edit to ${basename_path}. Prefer the owning SB skill."
-  printf '{"hookSpecificOutput":{"message":%s}}\n' "$(printf '%s' "$_msg" | jq -Rs '.')"
-  exit 0
+sb_tool_input_load "$input" "$PWD"
+if ! sb_tool_input_ok; then
+  [[ "${SB_TI_STATUS:-}" == "empty" ]] && exit 0
+  # The call cannot be analysed: refuse only what names the planning directory.
+  [[ "$(printf '%s' "$input" | tr '[:upper:]' '[:lower:]')" == *.planning* ]] || exit 0
+  cmd="$(printf '%s' "$input" | jq -r '.tool_input.command // .tool_input.cmd // ""' 2>/dev/null || true)"
+  sb_pf_plain_read_only "$cmd" && exit 0
+  deny "$(sb_pf_unanalysable_message)"
+fi
+if [[ "${SB_TI_TOOL_KIND:-}" == "shell" ]]; then
+  unseen_why="$(sb_pf_unseen_reason)"
+  [[ -z "$unseen_why" ]] || deny "$(sb_pf_unseen_message "$unseen_why")"
 fi
 
-# ── Bypass: file-based override (M-03: PLAN.md only) ─────────────────────────
+# Is this canonical path one of the SB-managed planning artifacts? Sets planning_rel.
+is_protected() {
+  local target="$1" rel
+  case "$target" in
+    "$project_root"/.planning/*) rel="${target#"$project_root"/.planning/}" ;;
+    *) return 1 ;;
+  esac
+  planning_rel="$rel"
+  local ret=1
+  shopt -s nocasematch
+  case "$rel" in
+    ROADMAP.md | STATE.md | PROJECT.md | RELEASE.md | REQUIREMENTS.md | UAT.md) ret=0 ;;
+    v*-MILESTONE-*.md | milestones/*.md) ret=0 ;;
+    phases/*/*-PLAN.md | phases/*/*-SUMMARY.md | phases/*/*-REVIEW.md | phases/*/*-SECURITY.md | phases/*/*-VERIFICATION.md) ret=0 ;;
+    # SB-native phase layout (phases/<phase>/PLAN.md etc.) is owned by SB skills
+    # (silver-plan, silver-review, silver-verify, silver-secure) and written through the
+    # agent's file tools by design: not protected here (completion-audit checks the evidence).
+  esac
+  shopt -u nocasematch
+  return "$ret"
+}
+
+notices=""
+nl=$'\n'
+note() {
+  notices="${notices:+$notices$nl}$1"
+}
+
 _override="${SB_RUNTIME_STATE_DIR}/planning-edit-override"
-if [[ -f "$_override" && ! -L "$_override" ]]; then
-  case "$basename_path" in
-    *-PLAN.md|PLAN.md)
-      _audit="${SB_RUNTIME_STATE_DIR}/planning-edit-override-audit.log"
-      printf '%s override-used path=%s\n' "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" "$basename_path" >>"$_audit" 2>/dev/null || true
-      _msg="⚠️  planning-file-guard: PLAN override active — allowing direct edit to ${basename_path}. Remove ${_override} when done."
-      printf '{"hookSpecificOutput":{"message":%s}}\n' "$(printf '%s' "$_msg" | jq -Rs '.')"
-      exit 0
-      ;;
-    *)
-      :
-      ;;
-  esac
-fi
-
-# ── Bypass: roadmap phase CRUD (sb:phase / sb:undo) ─────────────────
 _roadmap_override="${SB_RUNTIME_STATE_DIR}/roadmap-edit-override"
-if [[ -f "$_roadmap_override" && ! -L "$_roadmap_override" ]]; then
+_trivial_file="${SB_RUNTIME_STATE_DIR}/trivial"
+
+while IFS=$'\t' read -r via target; do
+  planning_rel=""
+  is_protected "$target" || continue
+  basename_path="$(basename "$target")"
+
+  # ── Bypass: env var override ────────────────────────────────────────────────
+  if [[ "${SB_ALLOW_PLANNING_EDITS:-}" == "1" ]]; then
+    note "⚠️  planning-file-guard: SB_ALLOW_PLANNING_EDITS=1 — allowing direct edit to ${basename_path}. Prefer the owning SB skill."
+    continue
+  fi
+
+  # ── Bypass: user-created PLAN override (M-03: PLAN files only) ──────────────
+  if [[ -f "$_override" && ! -L "$_override" ]]; then
+    case "$basename_path" in
+      *-PLAN.md | PLAN.md)
+        printf '%s override-used path=%s\n' "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" "$basename_path" >>"${SB_RUNTIME_STATE_DIR}/planning-edit-override-audit.log" 2>/dev/null || true
+        note "⚠️  planning-file-guard: PLAN override active — allowing direct edit to ${basename_path}. Remove ${_override} when done."
+        continue
+        ;;
+    esac
+  fi
+
+  # ── Bypass: roadmap phase CRUD (sb:phase / sb:undo own it) ──────────────────
+  if [[ -f "$_roadmap_override" && ! -L "$_roadmap_override" ]] && sb_pf_state_has_skill silver-phase silver-undo; then
+    case "$basename_path" in
+      ROADMAP.md | STATE.md)
+        printf '%s override-used path=%s\n' "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" "$basename_path" >>"${SB_RUNTIME_STATE_DIR}/roadmap-edit-override-audit.log" 2>/dev/null || true
+        note "⚠️  planning-file-guard: roadmap-edit-override active — allowing ${basename_path} edit via owning SB skill. Remove ${_roadmap_override} when done."
+        continue
+        ;;
+    esac
+  fi
+
+  # ── Trivial bypass (user-created marker; the configured path is never honoured) ──
+  if [[ -f "$_trivial_file" && ! -L "$_trivial_file" ]]; then
+    continue
+  fi
+
+  # ── Block direct edit ───────────────────────────────────────────────────────
+  skill_hint=""
   case "$basename_path" in
-    ROADMAP.md|STATE.md)
-      _audit="${SB_RUNTIME_STATE_DIR}/roadmap-edit-override-audit.log"
-      printf '%s override-used path=%s\n' "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" "$basename_path" >>"$_audit" 2>/dev/null || true
-      _msg="⚠️  planning-file-guard: roadmap-edit-override active — allowing ${basename_path} edit via owning SB skill. Remove ${_roadmap_override} when done."
-      printf '{"hookSpecificOutput":{"message":%s}}\n' "$(printf '%s' "$_msg" | jq -Rs '.')"
-      exit 0
+    ROADMAP.md)
+      skill_hint="Use /sb:phase for phase CRUD, /sb:plan, /sb:add, /sb:release, or the owning roadmap workflow instead."
       ;;
-    *)
-      :
+    STATE.md)
+      skill_hint="Use /sb:execute, /sb:release, or the owning resume/pause workflow instead."
+      ;;
+    PROJECT.md)
+      skill_hint="Use /sb:init instead."
+      ;;
+    RELEASE.md)
+      skill_hint="Use /sb:release or /sb:create-release instead."
+      ;;
+    REQUIREMENTS.md)
+      skill_hint="Use /sb:spec, /sb:ingest, /sb:init, or /sb:plan instead. SB requirements should be updated through SB-owned spec and planning workflows."
+      ;;
+    UAT.md)
+      skill_hint="Use /sb:verify or /sb:validate instead."
+      ;;
+    v*-MILESTONE-*.md)
+      skill_hint="Use /sb:release instead."
+      ;;
+    *-PLAN.md | PLAN.md)
+      skill_hint="Use /sb:plan instead."
+      ;;
+    *-SUMMARY.md | SUMMARY.md)
+      skill_hint="Use /sb:execute, /sb:release, or the relevant SB phase completion workflow instead."
+      ;;
+    *-REVIEW.md | REVIEW.md)
+      skill_hint="Use /sb:review instead."
+      ;;
+    *-SECURITY.md | SECURITY.md)
+      skill_hint="Use /sb:secure instead."
+      ;;
+    *-VERIFICATION.md | VERIFICATION.md)
+      skill_hint="Use /sb:verify or /sb:validate instead."
       ;;
   esac
-fi
 
-# ── Trivial bypass (sourced from shared helper — REF-01) ─────────────────────
-_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)"
-_trivial_file="${SB_RUNTIME_STATE_DIR}/trivial"
-_cfg_trivial=$(jq -r '.state.trivial_file // ""' "$config_file" 2>/dev/null || true)
-[[ -n "$_cfg_trivial" ]] && _trivial_file="${_cfg_trivial/#\~/$HOME}"
-# Security: validate trivial path stays within the host runtime state root (mirrors stop-check.sh SB-002)
-if ! sb_runtime_path_is_state_scoped "$_trivial_file"; then
-  _trivial_file="${SB_RUNTIME_STATE_DIR}/trivial"
-fi
-if [[ -f "$_lib_dir/trivial-bypass.sh" ]]; then
-  # shellcheck disable=SC1090
-  source "$_lib_dir/trivial-bypass.sh"
-  sb_trivial_bypass "$_trivial_file"
-fi
-
-# ── Block direct edit ─────────────────────────────────────────────────────────
-skill_hint=""
-case "$basename_path" in
-  ROADMAP.md)
-    skill_hint="Use /sb:phase for phase CRUD, /sb:plan, /sb:add, /sb:release, or the owning roadmap workflow instead."
-    ;;
-  STATE.md)
-    skill_hint="Use /sb:execute, /sb:release, or the owning resume/pause workflow instead."
-    ;;
-  PROJECT.md)
-    skill_hint="Use /sb:init instead."
-    ;;
-  RELEASE.md)
-    skill_hint="Use /sb:release or /sb:create-release instead."
-    ;;
-  REQUIREMENTS.md)
-    skill_hint="Use /sb:spec, /sb:ingest, /sb:init, or /sb:plan instead. SB requirements should be updated through SB-owned spec and planning workflows."
-    ;;
-  UAT.md)
-    skill_hint="Use /sb:verify or /sb:validate instead."
-    ;;
-  v*-MILESTONE-*.md)
-    skill_hint="Use /sb:release instead."
-    ;;
-  *-PLAN.md|PLAN.md)
-    skill_hint="Use /sb:plan instead."
-    ;;
-  *-SUMMARY.md|SUMMARY.md)
-    skill_hint="Use /sb:execute, /sb:release, or the relevant SB phase completion workflow instead."
-    ;;
-  *-REVIEW.md|REVIEW.md)
-    skill_hint="Use /sb:review instead."
-    ;;
-  *-SECURITY.md|SECURITY.md)
-    skill_hint="Use /sb:secure instead."
-    ;;
-  *-VERIFICATION.md|VERIFICATION.md)
-    skill_hint="Use /sb:verify or /sb:validate instead."
-    ;;
-esac
-
-msg="🚫 PLANNING FILE GUARD — Direct edits to .planning/${basename_path} are not permitted.
+  deny "🚫 PLANNING FILE GUARD — Direct edits to .planning/${planning_rel} are not permitted (${via}).
 
 SB-managed planning artifacts must be modified only through their owning skills.
 ${skill_hint}
 
-To bypass for a one-off doc fix:
-  touch ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/planning-edit-override
-Remove the file when done."
+A one-off doc fix is the user's decision: only the user can allow it, from their own terminal
+(\`touch ${SB_RUNTIME_STATE_DIR}/planning-edit-override\`, removed when done)." "$target"
+done < <(sb_pf_expand_ancestors "$(sb_pf_write_records "$input")" \
+  "$project_root/.planning/ROADMAP.md" "$project_root/.planning/STATE.md" "$project_root/.planning/PROJECT.md" \
+  "$project_root/.planning/RELEASE.md" "$project_root/.planning/REQUIREMENTS.md" "$project_root/.planning/UAT.md")
 
-json_msg=$(printf '%s' "$msg" | jq -Rs '.')
-sb_hook_audit_record "planning-file-guard" "PreToolUse" "deny" "$msg" "$_norm_path"
-printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":%s}}' "$json_msg"
+if [[ -n "$notices" ]]; then
+  sb_emit_hook_message PreToolUse "$notices"
+fi
+exit 0

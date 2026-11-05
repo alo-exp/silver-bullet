@@ -19,7 +19,8 @@ assert_eq "skill sb:plan without SPEC denies" "deny" "$(jq -r .hookSpecificOutpu
 assert_contains "deny names the missing file" "$TL_OUT" "SPEC.md is missing"
 dg_run "$P" "$H" "$(skill_json PostToolUse silver-plan)"
 assert_eq "PostToolUse uses decision/block shape" "block" "$(jq -r .decision <<<"$TL_OUT")"
-assert_contains "PostToolUse also carries a hook message" "$(jq -r .hookSpecificOutput.message <<<"$TL_OUT")" "SPEC FLOOR VIOLATION"
+assert_contains "PostToolUse block carries the reason" "$(jq -r .reason <<<"$TL_OUT")" "SPEC FLOOR VIOLATION"
+assert_eq "PostToolUse output is exactly one JSON document" 1 "$(jq -s length <<<"$TL_OUT")"
 printf '# Spec\n\n## Overview\n\ntext\n' >"$P/.planning/SPEC.md"
 dg_run "$P" "$H" "$(skill_json PreToolUse sb:plan)"
 assert_contains "missing Acceptance Criteria section denied" "$TL_OUT" "## Acceptance Criteria"
@@ -85,17 +86,65 @@ dg_run_nojq "$P" "$H" "$(skill_json PreToolUse sb:plan)"
 assert_contains "no jq => visible enforcement-inactive warning" "$TL_OUT" "ENFORCEMENT INACTIVE"
 assert_eq "no jq => exit 0" 0 "$TL_STATUS"
 
-# --- degraded: helper libraries unavailable ------------------------------
-dg_run_nolib_in "$P" "$H" "$(skill_json PreToolUse silver-plan)"
-assert_contains "no libs: Skill route still gated via jq" "$TL_OUT" "SPEC FLOOR VIOLATION"
-dg_run_nolib_in "$P" "$H" "$(bash_json PreToolUse 'silver-plan')"
-assert_contains "no libs: Bash route still gated via jq" "$TL_OUT" "SPEC FLOOR VIOLATION"
-dg_run_nolib_in "$P" "$H" "$(bash_json PreToolUse '/sb:plan')"
-assert_contains "no libs: literal /sb:plan slash route still gated" "$TL_OUT" "SPEC FLOOR VIOLATION"
-dg_run_nolib_in "$P" "$H" "$(bash_json PreToolUse '/sb:fast')"
-assert_contains "no libs: literal /sb:fast slash route still warns" "$TL_OUT" "SPEC FLOOR ADVISORY"
-dg_run_nolib_in "$P" "$H" "$(bash_json PreToolUse '')"
-assert_eq "no libs: empty command ignored" "" "$TL_OUT"
-dg_assert_ok "no libs: empty command ignored: exits 0"
+# --- Codex: the invoke-skill adapter is the skill invocation channel (R2-16) -------------
+AD="$TL_REPO_ROOT/scripts/silver-bullet"
+dg_run "$P" "$H" "$(bash_json PreToolUse "$AD invoke-skill sb:plan")"
+assert_contains "Codex invoke-skill sb:plan without SPEC is denied" "$TL_OUT" "SPEC FLOOR VIOLATION"
+assert_eq "Codex invoke-skill deny names the permission decision" deny "$(jq -r .hookSpecificOutput.permissionDecision <<<"$TL_OUT")"
+dg_run "$P" "$H" "$(jq -cn --arg c "$AD invoke-skill sb:plan" '{hook_event_name:"PreToolUse",tool_name:"exec_command",tool_input:{cmd:$c}}')"
+assert_contains "exec_command invoke-skill sb:plan is denied" "$TL_OUT" "SPEC FLOOR VIOLATION"
+dg_run "$P" "$H" "$(bash_json PreToolUse "bash $AD invoke-skill silver-plan")"
+assert_contains "bash-wrapped invoke-skill silver-plan is denied" "$TL_OUT" "SPEC FLOOR VIOLATION"
+dg_run "$P" "$H" "$(bash_json PreToolUse "$AD invoke-skill sb:fast")"
+assert_contains "Codex invoke-skill sb:fast warns" "$TL_OUT" "SPEC FLOOR ADVISORY"
+assert_eq "the advisory is one JSON document" 1 "$(jq -s length <<<"$TL_OUT")"
+dg_run "$P" "$H" "$(bash_json PreToolUse "$AD invoke-skill sb:review")"
+assert_eq "Codex invoke-skill of another skill is ignored" "" "$TL_OUT"
+dg_run "$P" "$H" "$(bash_json PreToolUse "echo $AD invoke-skill sb:plan")"
+assert_eq "prose that merely contains the adapter command is ignored" "" "$TL_OUT"
+dg_run "$P" "$H" "$(bash_json PreToolUse "git commit -m 'run invoke-skill sb:plan later'")"
+assert_eq "a commit message naming invoke-skill is ignored" "" "$TL_OUT"
+printf '# Spec\n\n## Overview\n\nx\n\n## Acceptance Criteria\n\ny\n' >"$P/.planning/SPEC.md"
+dg_run "$P" "$H" "$(bash_json PreToolUse "$AD invoke-skill sb:plan")"
+assert_eq "Codex invoke-skill sb:plan with a complete SPEC is allowed" "" "$TL_OUT"
+rm -f "$P/.planning/SPEC.md"
+mkdir -p "$P/sub/dir"
+dg_run "$P/sub/dir" "$H" "$(skill_json PreToolUse sb:plan)"
+assert_contains "the SPEC is looked up at the project root, not the cwd" "$TL_OUT" "SPEC FLOOR VIOLATION"
+printf '# Spec\n\n## Overview\n\nx\n\n## Acceptance Criteria\n\ny\n' >"$P/.planning/SPEC.md"
+dg_run "$P/sub/dir" "$H" "$(skill_json PreToolUse sb:plan)"
+assert_eq "a root SPEC satisfies the floor from a subdirectory" "" "$TL_OUT"
+rm -f "$P/.planning/SPEC.md"
+
+dg_run "$P" "$H" 'not json {'
+assert_eq "an invalid payload is ignored" "" "$TL_OUT"
+# cwd outside the project, project known through the root cache: the SPEC is looked up in the cwd
+mkdir -p "$TL_TMP/elsewhere"
+printf '%s\n' "$P" >"$SB_RUNTIME_STATE_DIR/project-root"
+dg_run "$TL_TMP/elsewhere" "$H" "$(skill_json PreToolUse sb:plan)"
+assert_contains "no project on the walk: the SPEC is expected under the cwd" "$TL_OUT" "SPEC FLOOR VIOLATION"
+rm -f "$SB_RUNTIME_STATE_DIR/project-root"
+
+# --- hooks.json contract: every skill-invocation channel reaches the skill gates ------------
+for h in spec-floor-check forbidden-skill-check uat-gate; do
+  for tool in Skill Bash exec_command; do
+    n="$(jq -r --arg h "$h.sh" --arg t "$tool" '[.hooks.PreToolUse[] | select(.matcher | split("|") | index($t)) | .hooks[] | select(.command | endswith($h + "\""))] | length' "$TL_REPO_ROOT/hooks/hooks.json")"
+    assert_eq "$h is registered for $tool" 1 "$n"
+  done
+done
+
+# --- python3 missing: the analysis helper is unavailable -----------------------------------
+NOPY="$(tl_path_without python3)"
+dg_run "$P" "$H" "$(bash_json PreToolUse "$AD invoke-skill sb:plan")" PATH="$NOPY"
+assert_contains "no python3: an invoke-skill command is denied, not ignored" "$TL_OUT" "python3"
+assert_eq "no python3: the deny is a permission decision" deny "$(jq -r .hookSpecificOutput.permissionDecision <<<"$TL_OUT")"
+dg_run "$P" "$H" "$(bash_json PreToolUse "ls -la")" PATH="$NOPY"
+assert_eq "no python3: a plainly read-only command gets no message" "" "$TL_OUT"
+dg_run "$P" "$H" "$(skill_json PreToolUse sb:plan)" PATH="$NOPY"
+assert_contains "no python3: the Skill route is still gated" "$TL_OUT" "SPEC FLOOR VIOLATION"
+dg_run "$P" "$H" "$(bash_json PreToolUse 'echo "unterminated')"
+assert_eq "an unparsable command that is not a skill call is ignored" "" "$TL_OUT"
+dg_run "$P" "$H" "$(bash_json PreToolUse "$AD invoke-skill sb:plan 'unterminated")"
+assert_contains "an unparsable invoke-skill command fails closed" "$TL_OUT" "cannot inspect"
 
 tl_results

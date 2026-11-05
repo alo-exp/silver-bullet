@@ -11,11 +11,22 @@ trap 'exit 0' ERR
 # pre-execution dependency chain has been recorded in the Silver Bullet state
 # file. It deliberately does not require execute, review, verify, or ship
 # markers before edits; those are post-implementation and final-delivery gates.
+#
+# Scope: implementation writes only. The planning skills' own artifacts (.planning/**,
+# .silver-bullet/**, docs/specs/**, docs/workflows/**) are never gated here, so sb:context,
+# sb:plan and sb:spec can write theirs. Any other project file written through the file tools
+# (Edit, Write, MultiEdit, NotebookEdit, every apply_patch path) is gated; shell writes (the
+# write targets of the shell analysis, interpreter one-liners included) are gated when they
+# land in source (the dev-cycle scope: path-segment match on the project-relative path, test
+# layouts and docs/config files excluded), so mkdir/touch and cache writes never deadlock the
+# chain. The active workflow is read from the state dir or is the only workflow file (hooks do
+# not inherit variables the agent exports in its own shell). Marker aliases come from the
+# plugin's own catalog, never from the project tree.
 
 umask 0077
 
 # Source runtime path selector for the state ledger fallback.
-_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)"
 if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
   # shellcheck source=lib/runtime-paths.sh
   source "$_lib_dir/runtime-paths.sh"
@@ -44,6 +55,8 @@ if [[ -f "$_lib_dir/tool-input.sh" ]]; then
   # shellcheck source=lib/tool-input.sh
   source "$_lib_dir/tool-input.sh"
 fi
+# shellcheck source=lib/planning-floor.sh
+source "$_lib_dir/planning-floor.sh"
 if [[ -f "$_lib_dir/cert-bypass.sh" ]]; then
   # shellcheck source=lib/cert-bypass.sh
   source "$_lib_dir/cert-bypass.sh"
@@ -73,8 +86,8 @@ hook_event=$(printf '%s' "$input" | jq -r '.hook_event_name // "PreToolUse"')
 
 tool_name=$(printf '%s' "$input" | jq -r '.tool_name // ""')
 case "$tool_name" in
-  Edit|Write|MultiEdit|apply_patch) ;;
-  *) exit 0 ;;
+  Edit|Write|MultiEdit|NotebookEdit|apply_patch) ;;
+  *) sb_tool_is_shell_like "$tool_name" || sb_pf_mcp_write_tool "$tool_name" || exit 0 ;;
 esac
 
 if declare -f sb_project_gate_or_exit >/dev/null 2>&1; then
@@ -94,11 +107,8 @@ resolve_repo_root() {
 }
 
 emit_block() {
-  local reason="$1"
-  local json_reason
-  json_reason=$(printf '%s' "$reason" | jq -Rs '.')
-  sb_hook_audit_record "workflow-chain-guard" "PreToolUse" "deny" "$reason" "${workflow_file:-}"
-  printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":%s}}' "$json_reason"
+  sb_hook_audit_record "workflow-chain-guard" "PreToolUse" "deny" "$1" "${workflow_file:-}"
+  sb_emit_hook_decision PreToolUse deny "$1"
 }
 
 composer_slug_from_value() {
@@ -126,8 +136,9 @@ active_workflows=("$wf_dir"/*.md)
 shopt -u nullglob
 [[ ${#active_workflows[@]} -gt 0 ]] || exit 0
 
+raw_command="$(printf '%s' "$input" | jq -r '.tool_input | objects | (.command // .cmd // "") | strings' 2>/dev/null)"
 if [[ ${#active_workflows[@]} -gt 1 ]]; then
-  scoped_id="${SB_WORKFLOW_ID:-}"
+  scoped_id="$(sb_pf_workflow_id "$wf_dir" "$raw_command")"
   if [[ -n "$scoped_id" && -f "$wf_dir/$scoped_id.md" ]]; then
     active_workflows=("$wf_dir/$scoped_id.md")
   else
@@ -137,7 +148,7 @@ if [[ ${#active_workflows[@]} -gt 1 ]]; then
       active_names+="  • $(basename "$wf" .md)"$'\n'
     done
     stale_hint=$'\nStale workflows (>7 days) are auto-archived on session start. To archive manually: bash scripts/workflows.sh complete <workflow-id>'
-    emit_block "$(printf 'WORKFLOW DEPENDENCY GATE — multiple active composed workflows are present.\n\nActive workflows:\n%s\nSet SB_WORKFLOW_ID to the workflow you are executing, archive stale workflows with scripts/workflows.sh complete <id>,%s or resolve the active set before making implementation edits.' "$active_names" "$stale_hint")"
+    emit_block "$(printf 'WORKFLOW DEPENDENCY GATE — multiple active composed workflows are present.\n\nActive workflows:\n%s\nArchive stale workflows with scripts/workflows.sh complete <id>,%s or resolve the active set before making implementation edits.' "$active_names" "$stale_hint")"
     exit 0
   fi
 fi
@@ -231,10 +242,8 @@ case "$composer_slug" in
     ;;
 esac
 
-config_file=""
-if [[ -f "$repo_root/.silver-bullet.json" ]]; then
-  config_file="$repo_root/.silver-bullet.json"
-fi
+config_file="$(sb_find_project_config)"
+sb_pf_src_load "$config_file"
 
 state_file="${SILVER_BULLET_STATE_FILE:-${SB_RUNTIME_STATE_DIR}/state}"
 if [[ -n "$config_file" ]]; then
@@ -248,31 +257,69 @@ fi
 missing_markers=()
 state_contents=""
 [[ -f "$state_file" ]] && state_contents=$(cat "$state_file")
-catalog_index="$repo_root/docs/generated/atomic-flow-index.json"
+catalog_index="${SB_ATOMIC_FLOW_INDEX:-$_lib_dir/../../docs/generated/atomic-flow-index.json}"
 for marker in "${required_markers[@]}"; do
   if [[ "$marker" == "silver-quality-gates" ]] && declare -f sb_qg_preplan_marker_recorded >/dev/null 2>&1; then
     sb_qg_preplan_marker_recorded "$state_contents" && continue
   elif [[ "$marker" == "devops-quality-gates" ]] && declare -f sb_dqg_preplan_marker_recorded >/dev/null 2>&1; then
     sb_dqg_preplan_marker_recorded "$state_contents" && continue
-  elif declare -F sb_required_skill_is_recorded >/dev/null 2>&1; then
+  else
     sb_required_skill_is_recorded "$state_contents" "$marker" && continue
-  elif grep -Fqx -- "$marker" "$state_file" 2>/dev/null; then
-    continue
   fi
   if [[ -f "$catalog_index" ]]; then
     catalog_entity="$(jq -r --arg marker "$marker" '.runtime_queue_tokens[$marker] // ""' "$catalog_index" 2>/dev/null || true)"
     if [[ -n "$catalog_entity" ]]; then
-      if declare -F sb_required_skill_is_recorded >/dev/null 2>&1; then
-        sb_required_skill_is_recorded "$state_contents" "$catalog_entity" && continue
-      elif grep -Fqx -- "$catalog_entity" "$state_file" 2>/dev/null; then
-        continue
-      fi
+      sb_required_skill_is_recorded "$state_contents" "$catalog_entity" && continue
     fi
   fi
   missing_markers+=("$marker")
 done
 
 [[ ${#missing_markers[@]} -eq 0 ]] && exit 0
+
+# The chain only gates IMPLEMENTATION writes: find out whether this call makes one.
+sb_tool_input_load "$input" "$PWD"
+if ! sb_tool_input_ok; then
+  [[ "${SB_TI_STATUS:-}" == "empty" ]] && exit 0
+  # Not analysable: file tools carry their path in the payload, shell commands cannot be judged.
+  if sb_tool_is_shell_like "$tool_name"; then
+    cmd="$raw_command"
+    sb_pf_plain_read_only "$cmd" && exit 0
+    emit_block "$(sb_pf_unanalysable_message)"
+    exit 0
+  fi
+fi
+
+if [[ "${SB_TI_TOOL_KIND:-}" == "shell" ]]; then
+  unseen_why="$(sb_pf_unseen_reason)"
+  if [[ -n "$unseen_why" ]]; then
+    emit_block "$(sb_pf_unseen_message "$unseen_why")"
+    exit 0
+  fi
+fi
+
+project_root="$(sb_pf_canon "$(dirname "$config_file")")"
+implementation_write=false
+while IFS=$'\t' read -r via target; do
+  case "$target" in
+    "$project_root"/*) rel="${target#"$project_root"/}" ;;
+    *) continue ;;
+  esac
+  # The artifacts the pre-execution skills themselves write are never gated by their own chain.
+  case "$rel" in
+    .planning/* | .silver-bullet/* | docs/specs/* | docs/workflows/*) continue ;;
+  esac
+  if [[ "$via" == "edit" ]]; then
+    implementation_write=true
+    break
+  fi
+  # Shell writes: source files only (the dev-cycle scope), so mkdir/touch/cache writes pass.
+  sb_pf_src_in_scope "$target" "$project_root" || continue
+  sb_pf_is_non_logic "$target" "$SB_PF_WORKFLOW" && continue
+  implementation_write=true
+  break
+done < <(sb_pf_write_records "$input"; if sb_tool_is_shell_like "$tool_name"; then sb_pf_opaque_targets | sed 's/^/opaque\t/'; fi)
+[[ "$implementation_write" == true ]] || exit 0
 
 missing_lines=""
 for marker in "${missing_markers[@]}"; do
