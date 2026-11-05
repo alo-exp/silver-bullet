@@ -376,7 +376,7 @@ PY
     return 0
   fi
 
-  output=$(
+  output="$(
     cd "$SB_ROOT" && \
       TERM="xterm-256color" \
       CODEX_RUNTIME_AGENT="codex" \
@@ -401,7 +401,7 @@ PY
       CODEX_BYPASS_HOOK_TRUST="$hook_trust_bypass" \
       CODEX_AUTO_TRUST_HOOKS="$auto_trust_hooks" \
       python3 "$SB_ROOT/scripts/codex-interactive-invoke.py"
-  ) || true
+  )" || true
   if [[ -f "$last_message_file" ]]; then
     output="${output}"$'\n'"$(cat "$last_message_file")"
     rm -f -- "$last_message_file"

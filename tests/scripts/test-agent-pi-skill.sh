@@ -717,6 +717,7 @@ gemini_pin_out="$(
     --expect-file "$GEMINI_PIN_EXPECT" \
     --prompt 'write review.md' \
     --interaction-mode non-interactive \
+    --mode permissive \
     --skip-preflight 2>&1
 )"
 gemini_pin_rc=$?

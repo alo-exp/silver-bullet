@@ -44,10 +44,12 @@ export PI_NI_ZERO_BYTE_IDLE_SEC=20 PI_RUN_TIMEOUT=25
 unset SB_AGENT_SKIP_PREFLIGHT PI_MODEL PI_PROVIDER SB_AGENT_EXPECT_FILE PI_EXPECT_FILE
 
 run_pd() {
-  tl_run timeout 60 env SB_AGENT_DELEGATE_DEFAULT_MODE=permissive bash "$DELEGATE" --sb-root "$SB" --skip-preflight --work-dir "$W" "$@"
+  tl_run timeout 60 bash "$DELEGATE" --sb-root "$SB" --skip-preflight --work-dir "$W" "$@"
 }
 
 alh_script "0|ok-output"
+# Pi has no strict mode, so every case below that is not about strictness runs permissive
+export SB_AGENT_DELEGATE_DEFAULT_MODE=permissive
 
 # ---------------------------------------------------------------- argument handling
 tl_run timeout 60 bash "$DELEGATE" --help
@@ -147,7 +149,7 @@ run_pd --prompt p --mode strict
 assert_eq "pi strict is refused" "2" "$TL_STATUS"
 assert_contains "pi strict refusal explains" "$TL_ERR" "Pi has no strict mode"
 assert_eq "pi strict never reaches the adapter" "" "$(cat "$ALH_RECORD")"
-tl_run timeout 60 bash "$DELEGATE" --sb-root "$SB" --skip-preflight --work-dir "$W" --prompt p
+tl_run timeout 60 env -u SB_AGENT_DELEGATE_DEFAULT_MODE bash "$DELEGATE" --sb-root "$SB" --skip-preflight --work-dir "$W" --prompt p
 assert_eq "pi default outside the project is strict, hence refused" "2" "$TL_STATUS"
 
 alh_script "0|ok"

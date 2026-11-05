@@ -273,6 +273,17 @@ assert_file_exists "recent home without an owner PID kept" "$D_NEW"
 assert_file_exists "a symlinked home is left alone" "$TT/agent-codex-codex-home-link1"
 rm -rf "$D_LIVE" "$D_NEW" "$TT/agent-codex-codex-home-link1"
 
+# ---- a stale home that cannot be removed is tolerated by the sweep
+reset
+D_DEAD2="$TT/agent-codex-codex-home-dead2"; mkdir -p "$D_DEAD2"; printf '%s' "$DEAD_PID" >"$D_DEAD2/.sb-owner-pid"
+REAL_RM2="$(command -v rm)"
+tl_stub rm 'for a in "$@"; do [[ "$a" == */agent-codex-codex-home-dead2 ]] && exit 1; done; exec '"$REAL_RM2"' "$@"'
+ENVX=(TMPDIR="$TT")
+delegate --work-dir "$WORK" --prompt p --sb-root "$SB"
+ENVX=()
+assert_eq "undeletable stale home tolerated" 0 "$TL_STATUS"
+"$REAL_RM2" -rf "$TL_BIN/rm" "$D_DEAD2"
+
 # ---- the temporary CODEX_HOME cannot be removed: tolerated
 reset
 REAL_RM="$(command -v rm)"

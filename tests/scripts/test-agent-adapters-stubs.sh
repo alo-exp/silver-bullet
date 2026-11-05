@@ -75,6 +75,10 @@ assert_not_contains "opencode: TUI strict never adds --auto" "$TL_OUT" "--auto"
 ad opencode 'agent_invoke strict "do it"; echo rc=$?' OPENCODE_BIN="$TL_TMP/bins/oc-tui/opencode" OPENCODE_USE_INTERACTIVE=1 OPENCODE_RUN_TIMEOUT=20 OC_TUI_RC=4
 assert_contains "opencode: TUI failure maps to mode-unavailable (3)" "$TL_OUT" "rc=3"
 
+stub_cli opencode "$TL_TMP/bins/oc-fail" "echo oc-failing; exit 5"
+ad opencode 'agent_invoke permissive "do it"; echo rc=$?' OPENCODE_BIN="$TL_TMP/bins/oc-fail/opencode" OPENCODE_RUN_TAIL_IDLE_TIMEOUT=2
+assert_contains "opencode: a failing CLI is tolerated and its output kept" "$TL_OUT" "oc-failing"
+
 # ============================================================ Pi
 PB="$TL_TMP/bins/pi"
 stub_cli pi "$PB" "printf '%s\n' \"\$*\" >>'$TL_TMP/pi.argv'; echo pi-out"
@@ -111,6 +115,8 @@ assert_contains "pi: interactive failure maps to mode-unavailable (3)" "$TL_OUT"
 assert_contains "pi: interactive failure reports through agent-mode when loaded" "$TL_OUT" "FAIL-UNAVAILABLE mode-unavailable"
 ad pi 'agent_invoke permissive "do it"; echo rc=$?' PI_BIN="$TL_TMP/bins/pi-fail/pi" PI_USE_INTERACTIVE=1 PI_RUN_TIMEOUT=20 SB_ROOT="$TL_REPO_ROOT"
 assert_contains "pi: interactive failure without agent-mode loaded" "$TL_OUT" "rc=3"
+ad pi 'agent_invoke permissive "do it"; echo rc=$?' PI_BIN="$TL_TMP/bins/pi-fail/pi" PI_RUN_TAIL_IDLE_TIMEOUT=2
+assert_contains "pi: a failing CLI is tolerated" "$TL_OUT" "rc=0"
 ad pi 'agent_invoke permissive "do it"' PI_BIN="$PB/pi" PI_USE_INTERACTIVE=1 SB_ROOT="$TL_TMP/no-sb-root" PI_RUN_TAIL_IDLE_TIMEOUT=2
 assert_contains "pi: interactive without the host-exec lib falls back to the plain run" "$TL_OUT" "pi-out"
 
