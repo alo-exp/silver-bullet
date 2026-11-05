@@ -6,7 +6,7 @@ trap 'exit 0' ERR
 umask 0077
 
 _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
-for _lib in runtime-paths.sh sb-project-gate.sh agent-delegation-state.sh hook-audit.sh cert-bypass.sh; do
+for _lib in runtime-paths.sh sb-project-gate.sh agent-delegation-state.sh hook-audit.sh cert-bypass.sh tool-input.sh; do
   # shellcheck disable=SC1090
   [[ -f "$_lib_dir/$_lib" ]] && source "$_lib_dir/$_lib"
 done
@@ -50,18 +50,37 @@ hook_event="$(sb_adg_hook_field "$input" 'hook_event_name' 'PreToolUse')"
 
 tool_name="$(sb_adg_hook_field "$input" 'tool_name' '')"
 case "$tool_name" in
-  Edit|Write|MultiEdit|apply_patch) ;;
+  Edit|Write|MultiEdit|apply_patch|Bash|exec_command|Shell) ;;
   *) exit 0 ;;
 esac
 
-repo_root="$(dirname "$_workspace_config")"
-target_path=""
-if [[ "$_sb_adg_have_jq" == true ]]; then
-  target_path="$(printf '%s' "$input" | jq -r '.tool_input.file_path // .tool_input.path // ""' 2>/dev/null || true)"
-fi
-[[ -n "$target_path" ]] || exit 0
+# Without jq the guard cannot read the payload's paths: it stays inert (documented fail-open;
+# session-start already warns that jq is missing).
+[[ "$_sb_adg_have_jq" == true ]] || exit 0
 
-sb_agent_delegation_path_in_scope "$target_path" "$repo_root" || exit 0
+repo_root="$(dirname "$_workspace_config")"
+
+# Every path the call would write: tool_input.file_path/path, the files named inside an
+# apply_patch body (Codex sends them only there), and for shell tools the paths the shared
+# classifier finds (redirections, tee, sed -i, ...). Any one inside the delegated scope denies (R4-17).
+target_paths=""
+if declare -f sb_tool_input_load >/dev/null 2>&1; then
+  sb_tool_input_load "$input" "$PWD"
+  if [[ "$SB_TI_STATUS" == "ok" ]]; then
+    target_paths="$(printf '%s\n%s\n%s' "$SB_TI_FILE_PATH" "$SB_TI_PATCH_PATHS" "$SB_SA_WRITE_PATHS")"
+  fi
+fi
+target_paths="$(printf '%s\n%s' "$target_paths" "$(printf '%s' "$input" | jq -r '.tool_input.file_path // .tool_input.path // ""' 2>/dev/null || true)")"
+
+in_scope=false
+while IFS= read -r target_path; do
+  [[ -n "$target_path" ]] || continue
+  if sb_agent_delegation_path_in_scope "$target_path" "$repo_root"; then
+    in_scope=true
+    break
+  fi
+done <<<"$target_paths"
+[[ "$in_scope" == true ]] || exit 0
 
 tier="$(sb_agent_delegation_parent_host_tier)"
 progress="$(sb_agent_delegation_progress_surface 2>/dev/null || true)"

@@ -158,6 +158,30 @@ out=$(run_hook "$LIVE_HOOK" Stop "$(jq -n '{hook_event_name:"Stop"}')")
 assert_allow "Stop allows with valid live-publish-evidence.json" "$out"
 teardown
 
+echo "--- R9-05: a fresh spawn marker never skips the parent's Stop gates ---"
+setup
+jq -n '{active:true,push_intent:true,live_claim_pending:false,last_touch_at:"2026-06-28T12:00:00Z"}' \
+  >"${SB_TEST_DIR}/site-session.json"
+printf '{"spawned_at":"%s"}' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >"${SB_TEST_DIR}/orchestrator-worker-active.json"
+out=$(run_hook "$LIVE_HOOK" Stop "$(jq -n '{hook_event_name:"Stop"}')")
+assert_block "live-publish gate still blocks Stop with a fresh worker marker" "$out"
+out=$(run_hook "$VLOOP_HOOK" Stop "$(jq -n '{hook_event_name:"Stop"}')")
+assert_block "v-loop rollup gate still blocks Stop with a fresh worker marker" "$out"
+teardown
+
+echo "--- R9-31: a prompt that names a delegation keeps the delegation guard on ---"
+setup
+jq -n '{active:true,host:"codex",task_id:"t1",ownership_scope:["src/"]}' >"${SB_TEST_DIR}/agent-delegation-active.json"
+run_hook "$RECORD_HOOK" UserPromptSubmit "$(jq -n --arg p 'Quick question: is the silver-agent-codex delegation still running? Do not change anything.' '{hook_event_name:"UserPromptSubmit",prompt:$p}')" >/dev/null
+if [[ -f "${SB_TEST_DIR}/agent-delegation-active.json" ]]; then
+  echo "  ok: delegation state survives a prompt that mentions the delegation"
+  PASS=$((PASS + 1))
+else
+  echo "  FAIL: a status question deleted the active delegation state"
+  FAIL=$((FAIL + 1))
+fi
+teardown
+
 echo "--- subagent-stop-enforcement ---"
 setup
 printf '{"spawned_at":"2026-06-28T12:00:00Z","site_related":true}\n' >"${SB_TEST_DIR}/subagent-spawns.jsonl"

@@ -4,7 +4,7 @@
 > Do not edit by hand: change those files, then run `python3 scripts/generate-hook-reference.py`.
 > `tests/docs/test-hook-reference.sh` fails when this file is stale.
 
-`hooks/hooks.json` registers **96 hook commands** backed by **64 scripts** across 7 events. No registrations are async: the host waits for each hook up to its timeout (in seconds). The `#` column is the position in `hooks.json`; hosts may run the hooks that match one event in parallel, so do not rely on hook order.
+`hooks/hooks.json` registers **95 hook commands** backed by **64 scripts** across 7 events. No registrations are async: the host waits for each hook up to its timeout (in seconds). The `#` column is the position in `hooks.json`; hosts may run the hooks that match one event in parallel, so do not rely on hook order.
 
 ## How hooks are wired
 
@@ -41,44 +41,43 @@ Before a tool runs; a hook can deny the call.
 | 4 | `Edit\|Write\|MultiEdit\|apply_patch` | `planning-file-guard.sh` | 10 |
 | 5 | `Edit\|Write\|MultiEdit\|apply_patch` | `instruction-file-guard.sh` | 10 |
 | 6 | `Edit\|Write\|MultiEdit\|apply_patch` | `workflow-chain-guard.sh` | 10 |
-| 7 | `Edit\|Write\|MultiEdit\|apply_patch` | `orchestrator-directive-guard.sh` | 10 |
-| 8 | `Edit\|Write\|MultiEdit\|apply_patch` | `agent-delegation-guard.sh` | 10 |
-| 9 | `Edit\|Write\|MultiEdit\|apply_patch` | `phase-lock-claim.sh` | 10 |
-| 10 | `Task\|Subagent\|Agent` | `orchestrator-directive-guard.sh` | 10 |
-| 11 | `Task\|Subagent\|Agent` | `subagent-stop-enforcement.sh` | 10 |
-| 12 | `Task\|Subagent\|Agent` | `review-fix-ladder-guard.sh` | 10 |
-| 13 | `Task\|Subagent\|Agent` | `rfl-policy-c-gate.sh` | 10 |
-| 14 | `Skill` | `review-fix-ladder-guard.sh` | 10 |
-| 15 | `Skill` | `rfl-policy-c-gate.sh` | 10 |
-| 16 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `subagent-stop-enforcement.sh` | 10 |
-| 17 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `site-preview-preflight.sh` | 10 |
-| 18 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `site-chrome-guard.sh` | 10 |
-| 19 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `compression-marker-guard.sh` | 10 |
-| 20 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `orchestrator-directive-guard.sh` | 10 |
-| 21 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `trivial-file-guard.sh` | 10 |
-| 22 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `dev-cycle-check.sh` | 15 |
-| 23 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `graphify-gate.sh` | 10 |
-| 24 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `agentmemory-gate.sh` | 10 |
-| 25 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `alumnium-gate.sh` | 10 |
-| 26 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `leanctx-gate.sh` | 10 |
-| 27 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `stack-compression-coordinator.sh` | 10 |
-| 28 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `rtk-gate.sh` | 10 |
-| 29 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `context-mode-gate.sh` | 10 |
-| 30 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `token-compression-tools-gate.sh` | 10 |
-| 31 | `Read\|Grep` | `stack-compression-coordinator.sh` | 10 |
-| 32 | `Read\|Grep` | `context-mode-read-deny.sh` | 10 |
-| 33 | `WebFetch` | `stack-compression-coordinator.sh` | 10 |
-| 34 | `CallMcpTool\|MCP` | `stack-compression-coordinator.sh` | 10 |
-| 35 | `Skill` | `forbidden-skill-check.sh` | 10 |
-| 36 | `Skill` | `dependency-skill-check.sh` | 10 |
-| 37 | `Skill` | `uat-gate.sh` | 10 |
-| 38 | `Bash\|exec_command` | `site-regression-gate.sh` | 120 |
-| 39 | `Bash\|exec_command` | `live-publish-evidence-gate.sh` | 15 |
-| 40 | `Bash\|exec_command` | `industry-tooling-hint.sh` | 5 |
-| 41 | `Bash\|exec_command` | `roadmap-freshness.sh` | 10 |
-| 42 | `Bash\|exec_command` | `ci-status-check.sh` | 30 |
-| 43 | `Bash\|exec_command` | `spec-floor-check.sh` | 10 |
-| 44 | `Bash\|exec_command` | `rfl-policy-c-gate.sh` | 10 |
+| 7 | `Edit\|Write\|MultiEdit\|apply_patch` | `phase-lock-claim.sh` | 10 |
+| 8 | `Task\|Subagent\|Agent` | `orchestrator-directive-guard.sh` | 10 |
+| 9 | `Task\|Subagent\|Agent` | `subagent-stop-enforcement.sh` | 10 |
+| 10 | `Task\|Subagent\|Agent` | `review-fix-ladder-guard.sh` | 10 |
+| 11 | `Task\|Subagent\|Agent` | `rfl-policy-c-gate.sh` | 10 |
+| 12 | `Skill` | `review-fix-ladder-guard.sh` | 10 |
+| 13 | `Skill` | `rfl-policy-c-gate.sh` | 10 |
+| 14 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `subagent-stop-enforcement.sh` | 10 |
+| 15 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `site-preview-preflight.sh` | 10 |
+| 16 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `site-chrome-guard.sh` | 10 |
+| 17 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `compression-marker-guard.sh` | 10 |
+| 18 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `orchestrator-directive-guard.sh` | 10 |
+| 19 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `agent-delegation-guard.sh` | 10 |
+| 20 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `trivial-file-guard.sh` | 10 |
+| 21 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `dev-cycle-check.sh` | 15 |
+| 22 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `graphify-gate.sh` | 10 |
+| 23 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `agentmemory-gate.sh` | 10 |
+| 24 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `alumnium-gate.sh` | 10 |
+| 25 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `leanctx-gate.sh` | 10 |
+| 26 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `stack-compression-coordinator.sh` | 10 |
+| 27 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `rtk-gate.sh` | 10 |
+| 28 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `context-mode-gate.sh` | 10 |
+| 29 | `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | `token-compression-tools-gate.sh` | 10 |
+| 30 | `Read\|Grep` | `stack-compression-coordinator.sh` | 10 |
+| 31 | `Read\|Grep` | `context-mode-read-deny.sh` | 10 |
+| 32 | `WebFetch` | `stack-compression-coordinator.sh` | 10 |
+| 33 | `CallMcpTool\|MCP` | `stack-compression-coordinator.sh` | 10 |
+| 34 | `Skill` | `forbidden-skill-check.sh` | 10 |
+| 35 | `Skill` | `dependency-skill-check.sh` | 10 |
+| 36 | `Skill` | `uat-gate.sh` | 10 |
+| 37 | `Bash\|exec_command` | `site-regression-gate.sh` | 120 |
+| 38 | `Bash\|exec_command` | `live-publish-evidence-gate.sh` | 15 |
+| 39 | `Bash\|exec_command` | `industry-tooling-hint.sh` | 5 |
+| 40 | `Bash\|exec_command` | `roadmap-freshness.sh` | 10 |
+| 41 | `Bash\|exec_command` | `ci-status-check.sh` | 30 |
+| 42 | `Bash\|exec_command` | `spec-floor-check.sh` | 10 |
+| 43 | `Bash\|exec_command` | `rfl-policy-c-gate.sh` | 10 |
 
 ### PostToolUse
 
@@ -167,7 +166,7 @@ Before each user prompt is processed; hooks add context or record the requested 
 
 | Script | Registered on | Purpose |
 |--------|---------------|---------|
-| `agent-delegation-guard.sh` | PreToolUse `Edit\|Write\|MultiEdit\|apply_patch` | While an `/sb:agent-*` delegation is active, blocks parent-session edits on Claude and Codex and advises on Cursor. |
+| `agent-delegation-guard.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | While an `/sb:agent-*` delegation is active, blocks parent-session edits on Claude and Codex and advises on Cursor. |
 | `agentmemory-gate.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Opt-in (`recommended_tools.agentmemory`): requires a recent agentmemory capture/retrieval before substantive work. |
 | `alumnium-gate.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Opt-in (`recommended_tools.alumnium`): checks that the Alumnium MCP server is wired before browser/visual work. |
 | `ci-status-check.sh` | PreToolUse `Bash\|exec_command`; PostToolUse `Bash\|exec_command` | Checks the latest GitHub Actions run for the branch. Pre: blocks `git push`, `gh pr create/merge` and `gh release create` while CI failed or was cancelled. Post: warns after `git commit`. CI-fix commits and the `ci-red-override` flag bypass it. |
@@ -187,7 +186,7 @@ Before each user prompt is processed; hooks add context or record the requested 
 | `instruction-ledger-gate.sh` | Stop `.*`; SubagentStop `.*`; UserPromptSubmit `.*` | Maintains the nested per-session instruction ledger; at Stop, blocks while ledger items remain open. |
 | `leanctx-gate.sh` | PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Opt-in (`recommended_tools.leanctx`): checks LeanCTX install, wiring and usage freshness. |
 | `live-publish-evidence-gate.sh` | PreToolUse `Bash\|exec_command`; Stop `.*` | Requires fetched live-page evidence before a site publish is claimed LIVE (Stop) and before `git push` to main for site work. |
-| `orchestrator-directive-guard.sh` | PreToolUse `Edit\|Write\|MultiEdit\|apply_patch`; PreToolUse `Task\|Subagent\|Agent`; PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Orchestrator parent mode: blocks edits, shell commands and Task spawns until the skill named by the pending directive has been invoked. |
+| `orchestrator-directive-guard.sh` | PreToolUse `Task\|Subagent\|Agent`; PreToolUse `Edit\|Write\|MultiEdit\|Bash\|apply_patch\|exec_command` | Orchestrator parent mode: blocks edits, shell commands and Task spawns until the skill named by the pending directive has been invoked. |
 | `outcomes-check.sh` | Stop `.*`; SubagentStop `.*`; UserPromptSubmit `.*` | Tracks the per-prompt outcome checklist; at Stop, blocks while outcomes are incomplete. |
 | `phase-archive.sh` | PreToolUse `Bash\|Skill\|exec_command` | Archives `.planning/phases/` directories before a `phases clear` command runs. Fails closed: if archiving fails, the clear is denied. |
 | `phase-lock-claim.sh` | PreToolUse `Edit\|Write\|MultiEdit\|apply_patch` | Claims the `.planning/phases/<NNN>/` lock (via `.planning/scripts/phase-lock.sh`) before a session edits a phase's files. |
@@ -260,5 +259,6 @@ Hooks source these helpers; none of them is registered as a hook. Each file's he
 - **Orchestrator, delegation and review ladder:** `orchestrator-directive.sh`, `orchestrator-event-log.sh`, `orchestrator-parent.sh`, `orchestrator-scheduler.sh`, `orchestrator-skill-atom.sh`, `orchestrator-state.sh`, `agent-delegation-state.sh`, `review-fix-ladder-state.sh`, `rfl-policy-c-assert.sh`
 - **Opt-in recommended tools (five-tool stack):** `recommended-tools.sh`, `recommended-tools-registry.sh`, `graphify-gate.sh`, `agentmemory-gate.sh`, `alumnium-gate.sh`, `context-mode-gate.sh`, `context-mode-read-deny.sh`, `leanctx-gate.sh`, `rtk-gate.sh`, `token-compression-tools-gate.sh`, `stack-compression-coordinator.sh`, `stack-optimizer.sh`, `graphify-am-global.sh`, `rtk-cm-global.sh`
 - **Site sessions:** `site-session.sh`
+- **Other:** `orchestrator-io.sh`
 
 `hooks/lib/completion-audit/` holds the modules `completion-audit.sh` sources (command classification, planning tier, deploy tier, change class, gate runners, state helpers). `hooks/lib/tool-input/` holds the Python helpers `tool-input.sh` calls to parse tool payloads (command strings, write targets, patch paths, RTK unwrapping); they share `shell_analysis.py`, the shell-command analyzer that `shell-analysis.sh` loads with `sb_tool_input_load` (delivery actions and tier, read-only verdict, write targets, opaque and unseen parts); completion-audit loads it once per call, the other gates start it through the accessors until they adopt the load.

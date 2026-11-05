@@ -157,13 +157,8 @@ sb_site_session_clear_all() {
     "$(sb_site_session_vloop_file)" \
     "$(sb_site_session_pending_audit_file)" \
     "$(sb_site_session_subagent_log)" 2>/dev/null || true
-  if [[ -f "$(dirname "${BASH_SOURCE[0]}")/agent-delegation-state.sh" ]]; then
-    # shellcheck source=agent-delegation-state.sh
-    source "$(dirname "${BASH_SOURCE[0]}")/agent-delegation-state.sh"
-    if declare -f sb_agent_delegation_deactivate >/dev/null 2>&1; then
-      sb_agent_delegation_deactivate
-    fi
-  fi
+  # Site state only. The external-agent delegation state belongs to the delegation (activate and
+  # cleanup own it): a prompt that merely names a delegation must not switch its guard off (R9-31).
 }
 
 sb_site_session_regression_current() {
