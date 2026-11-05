@@ -32,6 +32,14 @@
       "kind": "unmeasurable",
       "reason": "`done < <(\"$@\")` in enterprise_e2e_read_lines_to_array runs a dynamic command (`\"$@\"`): xtrace prints the resolved command, so the static word match fails. It does run.",
       "evidence": "tests/scripts/test-enterprise-e2e-core-fixture.sh asserts the array that this process substitution fills."
+    },
+    {
+      "file": "scripts/lib/agent-adapters/codex.sh",
+      "line": 380,
+      "word": "cd",
+      "kind": "unmeasurable",
+      "reason": "The `cd \"$SB_ROOT\"` that opens the multi-line output=\"$(...)\" substitution around the Codex TUI launcher runs (its effect is asserted) but the xtrace attribution drops the record for the first command of this particular substitution; the identical pattern in opencode.sh is attributed.",
+      "evidence": "tests/scripts/test-agent-adapters-stubs.sh runs the TUI path against a fake launcher that prints its working directory and asserts `cwd=fsb`, i.e. the launcher started in SB_ROOT, which only the cd at this line can cause."
     }
   ]
 }

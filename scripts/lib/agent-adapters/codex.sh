@@ -377,8 +377,8 @@ PY
   fi
 
   output="$(
-    cd "$SB_ROOT" && \
-      TERM="xterm-256color" \
+    cd "$SB_ROOT"
+    TERM="xterm-256color" \
       CODEX_RUNTIME_AGENT="codex" \
       CODEX_LAUNCH_MODE="${CODEX_LAUNCH_MODE:-interactive}" \
       CODEX_MODEL="$codex_model" \
