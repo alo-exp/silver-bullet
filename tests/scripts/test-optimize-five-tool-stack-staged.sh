@@ -103,7 +103,7 @@ run_opt --host claude --project-root "$PROJ"
 assert_eq "claude run exits 0" "0" "$TL_STATUS"
 expected="install-leanctx-sb --host claude --project-root ${PROJ}
 optimize-rtk-context-mode --host claude --project-root ${PROJ} --skip-cm-doctor
-patch-mcp ${STAGE}/scripts/lib/global-toolstack/patch-mcp.py RT_HOST=claude RT_PATCH_AGENTMEMORY=1 RT_PATCH_CONTEXT_MODE=1 RT_PATCH_GRAPHIFY=1 RT_PATCH_LEANCTX=1 TOOLSTACK_REPO_ROOT=${STAGE}
+patch-mcp ${STAGE}/scripts/lib/global-toolstack/patch-mcp.py RT_HOST=claude RT_LEANCTX_ALLOW_INSTALL=1 RT_PATCH_AGENTMEMORY=1 RT_PATCH_CONTEXT_MODE=1 RT_PATCH_GRAPHIFY=1 RT_PATCH_LEANCTX=1 TOOLSTACK_REPO_ROOT=${STAGE}
 sb-optimize-stack --apply --project-root ${PROJ} --host claude"
 assert_eq "claude: helper sequence and arguments" "$expected" "$(calls)"
 assert_contains "profile stamped announcement" "$TL_OUT" "OK: five_tool_routed profile metadata applied to .silver-bullet.json"
@@ -147,6 +147,7 @@ sb_test_consent_grant leanctx wire
 sb_test_consent_grant graphify wire
 run_opt --host claude --project-root "$PROJ"
 assert_contains "only consented tools are patched" "$(calls)" "RT_PATCH_AGENTMEMORY=0 RT_PATCH_CONTEXT_MODE=0 RT_PATCH_GRAPHIFY=1 RT_PATCH_LEANCTX=1"
+assert_contains "wire-only leanctx: the optimizer withholds the package-install consent" "$(calls)" "RT_LEANCTX_ALLOW_INSTALL=0"
 assert_not_contains "no RTK/Context Mode optimizer without their consent" "$(calls)" "optimize-rtk-context-mode"
 sb_test_consent_grant context_mode wire
 run_opt --host claude --project-root "$PROJ"
