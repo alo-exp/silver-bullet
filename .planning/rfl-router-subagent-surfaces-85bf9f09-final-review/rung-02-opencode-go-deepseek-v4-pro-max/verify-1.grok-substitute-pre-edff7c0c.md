@@ -6,8 +6,8 @@
 - **Phase:** VERIFY-ONLY — no triage, no fix, no freeze edits, no ladder advancement
 - **Reviewed:** [`review.md`](review.md) (stale vs disk: hashed `70d44b7d…` / 620076)
 - **Scope (re-hashed; disk wins):**
-  - [`.planning/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md)
-  - [`~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md)
+  - [`.planning/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md)
+  - [`~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md)
 
 Graphify query first. agentmemory `memory_save` id `mem_mt99vj9v_075ddea82c63`. Freeze **not** edited this pass.
 

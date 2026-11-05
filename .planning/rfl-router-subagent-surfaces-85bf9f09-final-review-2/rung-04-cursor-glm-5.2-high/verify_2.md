@@ -1,7 +1,7 @@
 # Cursor Task glm-5.2-high (no Pi) — verify_2
 
 RFL round 2, rung 4, **second independent pass** (verify_2). Parent: d5150f38-4d37-458d-9bdb-5e6f985975d3.
-Repo: `/Users/shafqat/projects/silver-bullet/repo`. Branch: **main** (no checkout/switch).
+Repo: `/Users/<user>/projects/silver-bullet/repo`. Branch: **main** (no checkout/switch).
 Mode: VERIFY ONLY — no product edits. Only this file was written.
 
 ## Method

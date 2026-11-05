@@ -28,7 +28,7 @@
           "work_item_id": { "type": "string" },
           "logical_model_id": { "type": "string" },
           "status": {
-            "enum": ["completed", "partial", "failed", "excluded", "cancelled", "budget_stopped", "pending"]
+            "enum": ["completed", "fallback", "partial", "failed", "excluded", "cancelled", "budget_stopped", "pending"]
           },
           "authoritative_attempt_id": { "type": ["string", "null"] },
           "validation_outcome": { "type": ["string", "null"] },

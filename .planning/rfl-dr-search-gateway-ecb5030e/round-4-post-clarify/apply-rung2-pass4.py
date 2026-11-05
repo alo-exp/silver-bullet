@@ -2,7 +2,7 @@
 import hashlib
 from pathlib import Path
 
-PLAN = Path("/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md")
+PLAN = Path("/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md")
 LEDGER = Path(__file__).resolve().parent / "ISSUE-LEDGER.md"
 text = PLAN.read_text(encoding="utf-8")
 orig = text

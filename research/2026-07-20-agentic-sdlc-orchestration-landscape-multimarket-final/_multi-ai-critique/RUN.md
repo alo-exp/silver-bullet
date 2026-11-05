@@ -1,7 +1,7 @@
 # Multi-AI critique RUN log
 
 **Mission:** Thorough multi-AI review of multimarket landscape report  
-**Workspace:** `/Users/shafqat/.cursor/worktrees/repo/3ht3`  
+**Workspace:** `/Users/<user>/.cursor/worktrees/repo/3ht3`  
 **Subject run_id:** `run-57f38dfa25d83cc50d224e283d4692f3`  
 **Critique multi-ai run_id:** `run-669f16b82b1410119835b2f8772ce933`  
 **Work item:** `work-e3341b367f137dd92e48c6ff5b930183`  
@@ -56,7 +56,7 @@ codex exec -m gpt-5.6-terra -c model_reasoning_effort=\"high\" \
 codex exec -m gpt-5.6-terra -c model_reasoning_effort=\"high\" \
   --dangerously-bypass-approvals-and-sandbox \
   --skip-git-repo-check \
-  -C /Users/shafqat/.cursor/worktrees/repo/3ht3 \
+  -C /Users/<user>/.cursor/worktrees/repo/3ht3 \
   - < .planning/agent-codex/landscape-critique-terra-high/direct-prompt.md
 ```
 
@@ -72,7 +72,7 @@ codex exec -m gpt-5.6-terra -c model_reasoning_effort=\"high\" \
 
 ```bash
 claude auth status
-# → loggedIn: true, authMethod: claude.ai, email: shafqat@sourcevo.com, subscriptionType: pro
+# → loggedIn: true, authMethod: claude.ai, email: <account>, subscriptionType: <plan>
 ```
 
 **Harness note:** `invoke.sh --use-print` hit 300s timeout (permission/hooks path). Successful run used the same print contract with `--dangerously-skip-permissions` (matches live adapter `bypassPermissions`):

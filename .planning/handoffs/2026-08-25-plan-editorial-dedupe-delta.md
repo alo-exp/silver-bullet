@@ -7,7 +7,7 @@ Planning-only. CLARIFY-R3-Q1 = **A**. Stayed on `main`. No commit. No product im
 | Path | SHA-256 | Bytes |
 |------|---------|-------|
 | [`.planning/router_subagent_surfaces_85bf9f09.plan.md`](../router_subagent_surfaces_85bf9f09.plan.md) | `7581f0d2725bcaef7bd8225a7b096ceb72958d4f17d60befa8ab22610926d3a0` | 618769 |
-| [`~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md) | same | same |
+| [`~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md) | same | same |
 
 Pre-edit pair (rung-2 CL-01 / rung-3 stop): `b9ed055d1f67c451ef1658c8e38ec4e15abc805a3de55d226d32a743341c7b2d` / 627240 bytes / 4398 lines (incl. trailing empty).
 

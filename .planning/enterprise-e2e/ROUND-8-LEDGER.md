@@ -199,8 +199,8 @@ Poll log: [.e2e-matrix-round8-poll.log](../../.e2e-matrix-round8-poll.log) (90s 
 **Resume plan (after driver exit, rows 3–22 on `enterprise-e2e/round-8-claude@8482e60`):**
 
 ```bash
-export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
-export SB_TEST_ENTERPRISE_APP_ROOT=/Users/shafqat/projects/enterprise-grade-test-app
+export SB_ROOT=/Users/<user>/projects/silver-bullet/repo
+export SB_TEST_ENTERPRISE_APP_ROOT=/Users/<user>/projects/enterprise-grade-test-app
 export SB_E2E_TEST_APP_BRANCH=enterprise-e2e/round-8-claude
 git -C "$SB_TEST_ENTERPRISE_APP_ROOT" fetch origin enterprise-e2e/round-8-claude
 git -C "$SB_TEST_ENTERPRISE_APP_ROOT" checkout enterprise-e2e/round-8-claude
@@ -228,8 +228,8 @@ Re-FORCE rows **3–22** if branch-miss PASSes on codex fixture must be re-run o
 ### Resume (rows 3–22 re-FORCE on correct branch)
 
 ```bash
-export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
-export SB_TEST_ENTERPRISE_APP_ROOT=/Users/shafqat/projects/enterprise-grade-test-app
+export SB_ROOT=/Users/<user>/projects/silver-bullet/repo
+export SB_TEST_ENTERPRISE_APP_ROOT=/Users/<user>/projects/enterprise-grade-test-app
 export SB_E2E_TEST_APP_BRANCH=enterprise-e2e/round-8-claude
 git -C "$SB_TEST_ENTERPRISE_APP_ROOT" fetch origin enterprise-e2e/round-8-claude
 git -C "$SB_TEST_ENTERPRISE_APP_ROOT" checkout enterprise-e2e/round-8-claude
@@ -269,9 +269,9 @@ Re-FORCE rows 3–22 if ledger shows branch-miss PASS (wrong `round-8-codex` fix
 **Next live step (Cursor track):**
 
 ```bash
-export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
+export SB_ROOT=/Users/<user>/projects/silver-bullet/repo
 export SB_E2E_LIVE_RUNTIME=cursor
-export SB_TEST_ENTERPRISE_APP_ROOT=/Users/shafqat/projects/enterprise-grade-test-app-cursor  # worktree per hosts.json
+export SB_TEST_ENTERPRISE_APP_ROOT=/Users/<user>/projects/enterprise-grade-test-app-cursor  # worktree per hosts.json
 export SB_E2E_TEST_APP_BRANCH=enterprise-e2e/round-1-cursor
 RTK_DISABLED=1 bash scripts/enterprise-e2e/preflight-round.sh --host cursor   # Gate 0+1
 SB_ENTERPRISE_E2E_LIVE=1 RTK_DISABLED=1 bash scripts/enterprise-e2e/smoke-matrix.sh --host cursor
@@ -310,8 +310,8 @@ SB_ENTERPRISE_E2E_LIVE=1 RTK_DISABLED=1 bash scripts/enterprise-e2e/smoke-matrix
 ### Resume: round-8-claude re-FORCE (rows 3–22)
 
 ```bash
-export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
-export SB_TEST_ENTERPRISE_APP_ROOT=/Users/shafqat/projects/enterprise-grade-test-app
+export SB_ROOT=/Users/<user>/projects/silver-bullet/repo
+export SB_TEST_ENTERPRISE_APP_ROOT=/Users/<user>/projects/enterprise-grade-test-app
 export SB_E2E_TEST_APP_BRANCH=enterprise-e2e/round-8-claude
 git -C "$SB_TEST_ENTERPRISE_APP_ROOT" fetch origin enterprise-e2e/round-8-claude
 git -C "$SB_TEST_ENTERPRISE_APP_ROOT" checkout enterprise-e2e/round-8-claude
@@ -346,8 +346,8 @@ Re-FORCE rows **3–22** after claude checkout (branch-miss on `round-8-codex` f
 **Preflight env (Claude track):**
 
 ```bash
-export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
-export SB_TEST_ENTERPRISE_APP_ROOT=/Users/shafqat/projects/enterprise-grade-test-app
+export SB_ROOT=/Users/<user>/projects/silver-bullet/repo
+export SB_TEST_ENTERPRISE_APP_ROOT=/Users/<user>/projects/enterprise-grade-test-app
 export SB_E2E_TEST_APP_BRANCH=enterprise-e2e/round-8-claude
 export SB_E2E_TEST_APP_BASELINE_SHA=8482e60
 export SB_E2E_LEDGER_FILE="$SB_ROOT/.planning/enterprise-e2e/ROUND-8-LEDGER.md"
@@ -368,8 +368,8 @@ RTK_DISABLED=1 bash scripts/enterprise-e2e/smoke-matrix.sh --host claude
 **R8 resume FORCE rows 3–22 (launch only if preflight+smoke green and no lock):**
 
 ```bash
-export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
-export SB_TEST_ENTERPRISE_APP_ROOT=/Users/shafqat/projects/enterprise-grade-test-app
+export SB_ROOT=/Users/<user>/projects/silver-bullet/repo
+export SB_TEST_ENTERPRISE_APP_ROOT=/Users/<user>/projects/enterprise-grade-test-app
 export SB_E2E_TEST_APP_BRANCH=enterprise-e2e/round-8-claude
 export SB_E2E_TEST_APP_BASELINE_SHA=8482e60
 git -C "$SB_TEST_ENTERPRISE_APP_ROOT" checkout enterprise-e2e/round-8-claude

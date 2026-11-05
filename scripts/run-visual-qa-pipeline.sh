@@ -8,7 +8,7 @@ AUDIT_DIR="$REPO_ROOT/.visual-audit/responsive-full"
 DATE_TAG="${VISUAL_QA_DATE:-$(date +%Y-%m-%d)}"
 BRANCH="$(git -C "$REPO_ROOT" branch --show-current 2>/dev/null || echo unknown)"
 DOC=".visual-audit/VISUAL-QA-PIPELINE.md"
-SDG_IMAGE="${SDG_TEST_IMAGE:-$HOME/.cursor/projects/Users-shafqat-projects-silver-bullet-repo/assets/image-36bc6f57-1985-4ccc-813a-62d0faf54b3c.png}"
+SDG_IMAGE="${SDG_TEST_IMAGE:-}"  # optional reference image for the SDG step; the step is skipped when unset
 
 PROOF_ONLY=false
 SKIP_CAPTURE=false

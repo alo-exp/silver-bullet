@@ -8,8 +8,8 @@ Reusable handoff prompt for a **fresh session on `main`**. Task-detail mode incl
 
 - **Repo:** silver-bullet (`alo-exp/silver-bullet`)
 - **Origin:** https://github.com/alo-exp/silver-bullet.git
-- **Canonical start:** [`/Users/shafqat/projects/silver-bullet/repo`](/Users/shafqat/projects/silver-bullet/repo) on **`main`** at **`c055a3c8`** (`Fix DR landscape CI failures on script unit tests.`) matching `origin/main`
-- **This worktree (abandoned for engine work):** [`/Users/shafqat/.cursor/worktrees/repo/3ht3`](/Users/shafqat/.cursor/worktrees/repo/3ht3) on `sync/3ht3-main` @ `c055a3c8`
+- **Canonical start:** [`/Users/<user>/projects/silver-bullet/repo`](/Users/<user>/projects/silver-bullet/repo) on **`main`** at **`c055a3c8`** (`Fix DR landscape CI failures on script unit tests.`) matching `origin/main`
+- **This worktree (abandoned for engine work):** [`/Users/<user>/.cursor/worktrees/repo/3ht3`](/Users/<user>/.cursor/worktrees/repo/3ht3) on `sync/3ht3-main` @ `c055a3c8`
 - **Why 3ht3 exists / was abandoned:** git worktrees cannot check out `main` twice; primary already has `main`. 3ht3 therefore uses `sync/3ht3-main`. Prior session had a broken gitdir and a stale **v0.51.7** tree. Do **not** hack 3ht3 for the next slice — create a **feature branch from `c055a3c8` in the primary clone**.
 - **Primary HEAD caveat (2026-08-14):** primary `main` was observed at `13a4f7b9` (`memory: auto-snapshot 2026-08-14T07:33:16Z`), **ahead 1** of `origin/main` (`c055a3c8`). Align to `c055a3c8` while staying on `main` (not a branch switch), then branch for engine work. Do not reset away untracked handoff files.
 - **Plugin version on this SHA:** v0.52.0 (tags include `v0.52.0`, `v0.51.7`, …)
@@ -59,7 +59,7 @@ Only **STILL TODO** items are work. Landed items are “do not regress” (full 
 
 ## First 3 Actions for Next Session
 
-1. In `/Users/shafqat/projects/silver-bullet/repo`, stay on **`main`**, align HEAD to **`c055a3c8`**, then **create a feature branch** for DR-engine work. Do not use 3ht3.
+1. In `/Users/<user>/projects/silver-bullet/repo`, stay on **`main`**, align HEAD to **`c055a3c8`**, then **create a feature branch** for DR-engine work. Do not use 3ht3.
 2. `graphify query "render_landscape_outputs landscape_critique_artifacts search gateway source_channels"` then implement remaining report-gen/analyst defaults + tests (order 1 below).
 3. After that slice is green, start search-gateway MVP (SE + GH Discussions + HN Algolia + Discourse + GitLab + YouTube + Brave/Serper `site:` + query cache).
 
@@ -70,7 +70,7 @@ Only **STILL TODO** items are work. Landed items are “do not regress” (full 
 ### Why this worktree was abandoned
 
 - Primary clone already has **`main`** checked out → this worktree is `sync/3ht3-main`.
-- Prior gitdir was broken; tree was also **v0.51.7-stale**. Current 3ht3 gitdir pointer: `gitdir: /Users/shafqat/projects/silver-bullet/repo/.git/worktrees/3ht3` @ `c055a3c8`.
+- Prior gitdir was broken; tree was also **v0.51.7-stale**. Current 3ht3 gitdir pointer: `gitdir: /Users/<user>/projects/silver-bullet/repo/.git/worktrees/3ht3` @ `c055a3c8`.
 - Next session must **not** continue engine commits here.
 
 ### Locked landscape run (do not re-derive)

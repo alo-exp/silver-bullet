@@ -3,7 +3,7 @@
 Replace the bracketed placeholders before use:
 - `[SOLUTION_CATEGORY]` — the solution category to research (from category pack `display_name`)
 - `[TARGET_AUDIENCE]` — target audience description (default: "CTOs, Heads of Engineering/Operations/Product, and senior procurement leads at SMBs")
-- `[CATEGORY_PACK]` — full market contract block from `category_pack.pack_prompt_block()` (definition, inclusion criteria, seeds, exclusions)
+- `[CATEGORY_PACK]` — full market contract block from `dr_category_pack.pack_prompt_block()` (definition, inclusion criteria, seeds, exclusions)
 - `[SCOPE_MODIFIERS]` — additional scope constraints or focus areas (remove this line if none)
 
 ---
@@ -21,7 +21,7 @@ Replace the bracketed placeholders before use:
 [TASK] Generate a comprehensive, production-grade Market Landscape Report for: [SOLUTION_CATEGORY]
 
 The report must:
-1. Define the category using the pack definition — explicitly exclude coding agents, host runtimes, single-step tools, PM SaaS, generic frameworks, and sunset products per the contract.
+1. Define the category using the pack definition — explicitly exclude every exclusion class, hard exclusion and sunset product named in the pack contract (the pack, not this template, decides what is out of scope for this category).
 2. Position **in-scope core** vendors using analyst frameworks (2×2 + Wave + value curve).
 3. Surface 5–10 key industry trends with explicit SMB implications.
 4. Profile every **in-scope core** solution found (commercial and OSS) — do **not** pad with wrong-category products.
@@ -45,7 +45,7 @@ Step 2: Market Overview
 
 Step 3: Competitive Positioning — Analyst Frameworks (CORE ONLY)
 
-Use **in-scope core** solutions only — never place coding agents, host runtimes, or excluded products on MQ/Wave/value-curve charts.
+Use **in-scope core** solutions only — never place excluded products (the pack's exclusion classes and hard exclusions) on MQ/Wave/value-curve charts.
 
 3A. Primary 2×2 Matrix
 * Choose two axes meaningful for this category (justify; do not use generic axes blindly).
@@ -94,8 +94,8 @@ Step 10: Future Outlook & Emerging Disruptors (3–5 year horizon)
 * Must: Apply SMB lens consistently.
 * Must: Cover every **in-scope** solution found with evidence; **do not invent or pad** to hit arbitrary counts.
 * Must: Put non-qualifying names only under **Adjacent** or **Explicitly Excluded** with rationale.
-* Must: Use product-level naming (Augment Cosmos not Augment Code; Devin not Cognition+Devin; never dual-list parent+child).
-* Must: Ban from core sections: coding agents, host runtimes (as peers), single-step tools, PM SaaS, generic frameworks without process product, sunset/discontinued products, and all pack hard exclusions.
+* Must: Use product-level naming and apply the pack's `product_aliases` / `parent_child_dedupe` (never dual-list parent+child).
+* Must: Ban from core sections everything in the pack's exclusion classes, its sunset/discontinued products and all pack hard exclusions.
 * Must: Include a **fitness scorecard** per core candidate showing which inclusion criteria passed/failed.
 * Must NOT: Fabricate vendors, market-share percentages, pricing, or customer names.
 * Must NOT: Use marketing language or euphemistic cons.
@@ -122,10 +122,10 @@ Section order:
 10. Future Outlook & Emerging Disruptors
 
 [SELF-CRITIQUE] Before outputting, verify:
-* No coding agent / host runtime / excluded product appears in Sections 3, 5, or 6
+* No product from the pack's exclusion classes, hard exclusions or sunset registry appears in Sections 3, 5, or 6
 * Every core entry has fitness scorecard with criterion pass/fail
 * Must-research seeds from pack are covered or listed as coverage gaps in Section 8
-* Parent/child dedupe applied (no Cognition+Devin, no LangChain+LangGraph dual-list)
+* Parent/child dedupe applied per the pack (no parent+child dual-list)
 * Adjacent and Excluded sections present when out-of-scope names were researched
 * No arbitrary padding to hit 20+20
 ```

@@ -5,7 +5,7 @@ Independent adversarial re-verification against repo-plan SHA-256 `c0a9a09904384
 ## Baseline checks
 
 - Read the product overview, review preamble, full plan, Cycle-8 report, and clarify brief in the required order.
-- `cmp` returned exit 0 for the repo plan and `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`; both copies have the SHA-256 above.
+- `cmp` returned exit 0 for the repo plan and `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`; both copies have the SHA-256 above.
 - Rechecked the locked P→I→A→V→Val ordering and control-plane exemptions, Authorizer launch admission, migration, Process-synthesis, callbacks, blocker preservation, LPS/WBS/POA traceability, ordinary-versus-Iterate discrimination, and product fit.
 
 ## Material findings

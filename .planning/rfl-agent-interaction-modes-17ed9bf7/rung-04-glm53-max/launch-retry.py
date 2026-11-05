@@ -8,14 +8,14 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-os.environ["HOME"] = "/Users/shafqat"
+os.environ["HOME"] = "/Users/<user>"
 os.environ["RTK_DISABLED"] = "1"
 os.environ["LEANCTX_DISABLED"] = "1"
 
-ROOT = Path("/Users/shafqat/projects/silver-bullet/repo")
+ROOT = Path("/Users/<user>/projects/silver-bullet/repo")
 LOGDIR = ROOT / ".planning/rfl-agent-interaction-modes-17ed9bf7/rung-04-glm53-max"
 RETRY = LOGDIR / "retry-20260823T2108Z"
-OPENCODE = os.environ.get("OPENCODE_BIN", "/Users/shafqat/.opencode/bin/opencode")
+OPENCODE = os.environ.get("OPENCODE_BIN", "/Users/<user>/.opencode/bin/opencode")
 PROMPT = (LOGDIR / "prompt.md").read_text(encoding="utf-8")
 TIMEOUT_SEC = int(os.environ.get("RFL_OPENCODE_TIMEOUT", "720"))
 

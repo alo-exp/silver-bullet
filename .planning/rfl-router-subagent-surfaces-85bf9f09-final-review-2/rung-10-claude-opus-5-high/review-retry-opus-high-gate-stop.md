@@ -17,7 +17,7 @@ Both hashings were performed with Python `hashlib.sha256` on raw bytes: once at 
 
 | # | Copy | SHA-256 (hashlib) | Bytes | Matches mandate? |
 |---|------|-------------------|-------|------------------|
-| 1 | Repo working tree `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `088a18a6dc755ffee2ec68755cf72df0d28c5fde53d9c6f86198fb6672719f4e` | **648963** | **NO** |
+| 1 | Repo working tree `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `088a18a6dc755ffee2ec68755cf72df0d28c5fde53d9c6f86198fb6672719f4e` | **648963** | **NO** |
 | 2 | Cursor plans `~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `088a18a6dc755ffee2ec68755cf72df0d28c5fde53d9c6f86198fb6672719f4e` | **648963** | **NO** |
 | 3 | Git HEAD blob (`git show HEAD:.planning/router_subagent_surfaces_85bf9f09.plan.md`) | `088a18a6dc755ffee2ec68755cf72df0d28c5fde53d9c6f86198fb6672719f4e` | **648963** | **NO** |
 

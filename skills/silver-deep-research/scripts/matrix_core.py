@@ -93,3 +93,15 @@ def score_solutions_from_rows(
                 scores[sol] += wt
     return scores
 
+
+_FORMULA_PREFIXES = ("=", "+", "-", "@")
+
+
+def _sanitize_cell_value(value: Any) -> Any:
+    """Neutralize spreadsheet formula injection for user-controlled strings."""
+    if not isinstance(value, str) or not value:
+        return value
+    lead = value.lstrip("\t\r\n ")
+    if lead and lead[0] in _FORMULA_PREFIXES:
+        return "'" + value
+    return value

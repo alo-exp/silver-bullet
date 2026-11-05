@@ -1,6 +1,6 @@
 # Rung 6 BLOCKED — Gemini 3.1 Flash High (Cursor Task)
 
-**Plan:** [agent_interaction_modes_17ed9bf7.plan.md](/Users/shafqat/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
+**Plan:** [agent_interaction_modes_17ed9bf7.plan.md](/Users/<user>/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
 
 **Mapped host/model:** Cursor Task `gemini-3.1-flash-high` / `gemini-3.1-flash-high`
 

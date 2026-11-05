@@ -62,4 +62,15 @@ tl_run bash "$SCRIPT" --root "$FIX" --check hook-references
 assert_eq "a command naming no plugin script fails" 1 "$TL_STATUS"
 assert_contains "unresolvable command reported" "$TL_OUT" "hooks.json command names no hooks/ or scripts/ file: echo plain command"
 
+# The shape is an allowlist: project-relative commands chained or substituted after a valid
+# plugin script fail, whatever the path looks like (REVF H3b).
+good='bash "${CLAUDE_PLUGIN_ROOT}/hooks/present.sh"'
+for evil in '&& bash ./tools/evil.sh' '&& bash "$CLAUDE_PROJECT_DIR/.githooks/x"' '; python3 evil.py' '&& source .envrc' '&& make -f Makefile' '$(cat x)' '| sh'; do
+  jq --arg c "$good $evil" '.hooks.Stop = [{"hooks":[{"type":"command","command":$c}]}]' "$FIX/hooks/hooks.json" >"$FIX/h.json"
+  mv "$FIX/h.json" "$FIX/hooks/hooks.json"
+  tl_run bash "$SCRIPT" --root "$FIX" --check hook-references
+  assert_eq "chained '$evil' fails" 1 "$TL_STATUS"
+  assert_contains "'$evil' is reported" "$TL_OUT" "is not a single plugin-root script"
+done
+
 tl_results

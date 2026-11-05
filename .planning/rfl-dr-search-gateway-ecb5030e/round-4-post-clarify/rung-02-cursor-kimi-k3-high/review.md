@@ -1,7 +1,7 @@
 # Rung 2 review — Cursor Kimi K3 High (Policy G pack)
 
 - `model: kimi-k3-high`
-- Freeze SHA-256 confirmed via `shasum -a 256`: `916d87f52b25688f7953c76c89b96802d9438eb8da537a8c16b927b98b2ee138` (matches pin; reviewed `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md` only).
+- Freeze SHA-256 confirmed via `shasum -a 256`: `916d87f52b25688f7953c76c89b96802d9438eb8da537a8c16b927b98b2ee138` (matches pin; reviewed `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md` only).
 - Encoder brief used: `.planning/rfl-dr-search-gateway-ecb5030e/round-4-post-clarify/rung-02-cursor-kimi-k3-high/brief-review.md` (emitted by `python3 scripts/review-fix-ladder.py --write-review-brief --run-dir .planning/rfl-dr-search-gateway-ecb5030e/round-4-post-clarify`). Obeyed in full: residual-only = no ledger re-reports (I-1…I-44), all severities filed, nits filed, did not stop after one class.
 - Method: Graphify CLI orientation (`graphify query` over clear() rosters / `qN_*` / fleet-slots quiesce / reddit lock / fingerprint families — surfaced only rung-1 ledger nodes W6/I-25, AC2/I-38, S1/I-16, AE1/I-41, i.e. already-encoded), then full end-to-end re-read of the plan (783 lines, bird then ant) via `ctx_execute_file` over the true line split, cross-checking §1.2 vs §2/§3/§4/§5/§6/§8. No ledger row re-filed; all findings below are new residuals at this freeze.
 
