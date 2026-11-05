@@ -187,4 +187,30 @@ run_dc "$(edit_json "$PROJ/src/app.js" Write PostToolUse)"
 assert_file_absent "with a record the source write still invalidates it" "$SILVER_BULLET_VERIFY_TESTS_STATE_FILE"
 rm -f "$TL_BIN/python3"
 
+# ── PostToolUse with a test record: scope fallback, helper outages, unparsable shell ─────────
+mkproj post3
+state inst-a
+NOPY3="$(tl_path_without python3)"
+rm -f "$TL_TMP/outside-marker"
+printf 'v\n' >"$SD/verify-tests-state"
+dc_cmd 'echo x > src/app.js' PostToolUse SILVER_BULLET_VERIFY_TESTS_STATE_FILE="$TL_TMP/outside-marker"
+assert_eq "a test-record path outside the state directory falls back to the default one" "none" "$(decision)"
+rm -f "$SD/verify-tests-state"
+printf 'v\n' >"$SILVER_BULLET_VERIFY_TESTS_STATE_FILE"
+dc_cmd 'echo x > src/app.js' PostToolUse PATH="$NOPY3"
+assert_eq "no python3, PostToolUse, a write-like command: nothing to refuse after the fact" "none" "$(decision)"
+run_dc "$(jq -cn --arg p "$PATCH_SRC" '{hook_event_name:"PostToolUse",tool_name:"apply_patch",tool_input:{input:$p}}')" PATH="$NOPY3"
+assert_eq "no python3, PostToolUse, apply_patch: ignored" "none" "$(decision)"
+dc_cmd "echo 'unterminated > src/app.js" PostToolUse
+assert_eq "an unparsable command on PostToolUse is not refused afterwards" "none" "$(decision)"
+rm -f "$SILVER_BULLET_VERIFY_TESTS_STATE_FILE"
+
+# ── empty arguments in the capability checks ──────────────────────────────────────────────────
+mkproj emptyarg
+state inst-a
+dc_cmd 'cp -r "" dest'
+assert_eq "cp with an empty source argument does not crash the check" "none" "$(decision)"
+dc_cmd 'ln -s "" link'
+assert_eq "ln with an empty argument does not crash the check" "none" "$(decision)"
+
 tl_results

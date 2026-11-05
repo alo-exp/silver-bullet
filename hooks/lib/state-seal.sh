@@ -19,7 +19,6 @@ sb_state_seal_file() { printf '%s.seal' "$1"; }
 
 _sb_state_seal_prefix_ok() { # STATE N CKSUM
   local state="$1" n="$2" sum="$3"
-  [[ "$n" =~ ^[0-9]+$ ]] || return 1
   [[ "$(head -n "$n" "$state" 2>/dev/null | cksum)" == "$sum" ]]
 }
 
