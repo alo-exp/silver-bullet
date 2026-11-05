@@ -14,16 +14,52 @@ from __future__ import annotations
 
 import re
 from typing import Any
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlsplit
 
 # Tokens of a display name that say what a product is, not which one: never distinctive.
 GENERIC_TOKENS = frozenset("ai ide cli sdk api sdlc llm mcp pr ci cd saas oss apo swe ui ux ml os dev app io devops autogen".split())
-# A pack URL in text must look like a URL: a lower-case host with a boundary on both sides (not a file name, an
-# email domain, a query or fragment value, an identifier part), and a scheme, "www." or a path.
-_URL = re.compile(
-    r"(?<![\w@.?#=&%+/-])(?P<scheme>https?://)?(?P<www>www\.)?(?P<host>[a-z0-9-]+(?:\.[a-z0-9-]+)+)(?P<path>/[^\s;,)\]]*)?"
-    r"(?![\w@(-]|\.[A-Za-z0-9])"
-)
+# A pack URL in text is PARSED, not pattern-matched: a candidate token starts with a scheme (http/https, any case) or
+# "www." after a real boundary, is cut at whitespace and closing delimiters, and its authority is read with urlsplit.
+_SCHEME = re.compile(r"(?:https?://|www\.)", re.IGNORECASE)
+_CLOSERS = frozenset(")]>\"'`<")
+_HOST = re.compile(r"[a-z0-9-]+(?:\.[a-z0-9-]+)+")
+
+
+def _candidates(text: str) -> list[str]:
+    """The URL-shaped tokens of a text: scheme or www. start, real left boundary, cut at closers; link text is skipped."""
+    found: list[str] = []
+    for match in _SCHEME.finditer(text):
+        i = match.start()
+        if i and not (text[i - 1].isspace() or (text[i - 1] in "([<\"'" and (i == 1 or not (text[i - 2].isalnum() or text[i - 2] == "_")))):
+            continue
+        j = i
+        while j < len(text) and not text[j].isspace() and text[j] not in _CLOSERS:
+            j += 1
+        if text[j:j + 2] == "](":
+            continue  # markdown link text: only the target counts
+        token = text[i:j].rstrip(".,;:!?")
+        if token:
+            found.append(token)
+    return found
+
+
+def _host_path_of(token: str) -> tuple[str, str] | None:
+    """(host, path) of a candidate when it is a plain, lower-case ASCII hostname; None for anything suspicious."""
+    if "\\" in token or "%" in token or not token.isascii():
+        return None
+    url = token if "://" in token.lower()[:8] else "https://" + token
+    try:
+        parsed = urlsplit(url)
+        parsed.port  # noqa: B018 - raises ValueError on a bad port
+    except ValueError:
+        return None
+    netloc = parsed.netloc
+    if "@" in netloc:
+        return None  # userinfo: the real host is not the one that is written first
+    host = netloc.rsplit(":", 1)[0] if ":" in netloc else netloc
+    if not _HOST.fullmatch(host):  # also rejects upper case: compared as written
+        return None
+    return host.removeprefix("www."), parsed.path.rstrip("/").lower()
 
 
 def distinctive_tokens(display: str, coined: frozenset[str] = frozenset()) -> frozenset[str]:
@@ -127,10 +163,11 @@ class Registry:
 
     def _url_vendors(self, text: str) -> set[str]:
         found: set[str] = set()
-        for hit in _URL.finditer(text):
-            if not (hit.group("scheme") or hit.group("www") or hit.group("path")):
+        for token in _candidates(text):
+            parts = _host_path_of(token)
+            if parts is None:
                 continue
-            host, path = self._host_path(hit.group(0))
+            host, path = parts
             for known_host, known_path, vendor in self._hosts:
                 host_ok = host == known_host or (not known_path and host.endswith("." + known_host))
                 if host_ok and (not known_path or path == known_path or path.startswith(known_path + "/")):
