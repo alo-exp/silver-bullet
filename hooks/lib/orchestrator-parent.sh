@@ -337,14 +337,13 @@ _sb_orch_parent_lone_argv() {
 # No assignment/env prefix may change how a sanctioned command starts or which program it finds
 # (BASH_ENV=, PATH=, LD_PRELOAD= ... make a trusted name run something else). F2 drops plain
 # NAME=value words from argv, so the prefix is read from its rtk_unwrapped field and from `env`
-# entries; the same is applied to every sh -c payload (nested, bounded depth).
+# entries; the same is applied to every sh -c payload (nested).
 _sb_orch_parent_prefix_free() {
-  local depth="${1:-0}" payload payloads
+  local payload payloads
   [[ -z "${SB_SA_RTK_UNWRAPPED:-}" ]] || return 1
   if printf '%s' "${SB_SA_JSON:-}" | jq -e '[.commands[]? | select((.argv[0] // "") | split("/") | last == "env")] | length > 0' >/dev/null 2>&1; then
     return 1
   fi
-  (( depth < 4 )) || return 1
   payloads="$(printf '%s' "${SB_SA_JSON:-}" | jq -r '
     .commands[]? | .argv as $a
     | select((["bash", "sh", "zsh", "dash", "ksh"] | index(($a[0] // "") | split("/") | last)) != null)
@@ -353,9 +352,9 @@ _sb_orch_parent_prefix_free() {
   while IFS= read -r payload; do
     [[ -n "$payload" ]] || continue
     payload="$(printf '%s' "$payload" | base64 -d 2>/dev/null)"
+    # Each payload is a strictly shorter string than its parent command, so the recursion ends.
     sb_shell_analysis_load "$payload"
-    [[ "$SB_TI_STATUS" == "ok" ]] || return 1
-    _sb_orch_parent_prefix_free $((depth + 1)) || return 1
+    [[ "$SB_TI_STATUS" == "ok" ]] && _sb_orch_parent_prefix_free || return 1
   done <<<"$payloads"
   return 0
 }

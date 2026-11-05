@@ -541,8 +541,9 @@ sb_orchestrator_stop_block_released() {
   sb_orchestrator_atomic_write "$counter" "$(jq -nc --arg stamp "$stamp" --argjson count "$count" '{stamp:$stamp,count:$count}')" || true
   limit="${SB_ORCHESTRATOR_STOP_BLOCK_LIMIT:-5}"
   [[ "$limit" =~ ^[0-9]+$ ]] || limit=5
-  if (( count == limit + 1 )) && declare -f sb_orchestrator_event_append >/dev/null 2>&1; then
-    sb_orchestrator_event_append "stop_release" "$(jq -nc --argjson n "$count" '{blocks_without_progress: $n}')" 2>/dev/null || true
+  if (( count == limit + 1 )) && declare -f sb_orchestrator_event_append >/dev/null 2>&1 \
+     && sb_orchestrator_event_append "stop_release" "$(jq -nc --argjson n "$count" '{blocks_without_progress: $n}')" 2>/dev/null; then
+    :  # logged
   fi
   (( count > limit ))
 }

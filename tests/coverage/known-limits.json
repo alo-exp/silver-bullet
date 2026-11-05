@@ -19,7 +19,7 @@
     },
     {
       "file": "hooks/lib/orchestrator-scheduler.sh",
-      "line": 774,
+      "line": 773,
       "word": "true",
       "kind": "unmeasurable",
       "reason": "The `|| true` after `tmpl=$(jq ...)` in sb_scheduler_mark_handoff_dispatched is a late-reported fallback that the tracer does not attribute to the statement. It does run.",

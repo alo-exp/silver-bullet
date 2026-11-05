@@ -76,16 +76,14 @@ in_scope=false
 # A tree-scope write (git reset --hard, git apply, ...) touches every owned path under its tree.
 if [[ "${SB_TI_STATUS:-}" == "ok" ]]; then
   while IFS= read -r tree_path; do
-    [[ -n "$tree_path" ]] || continue
+    tree_path="${tree_path%/}"
     while IFS= read -r owned; do
-      [[ -n "$owned" ]] || continue
-      owned="$(sb_agent_delegation_normalize_path "$owned" "$repo_root" 2>/dev/null || true)"
-      tree_path="${tree_path%/}"
-      if [[ -n "$owned" && ( "$owned" == "$tree_path" || "$owned" == "$tree_path"/* ) ]]; then
+      if owned="$(sb_agent_delegation_normalize_path "$owned" "$repo_root" 2>/dev/null)" \
+         && [[ "$owned" == "$tree_path" || "$owned" == "$tree_path"/* ]]; then
         in_scope=true
       fi
-    done < <(jq -r '.ownership_scope[]? // empty' "$(sb_agent_delegation_state_file)" 2>/dev/null)
-  done < <(printf '%s' "$SB_SA_JSON" | jq -r '.writes[]? | select(.scope == "tree") | .path' 2>/dev/null)
+    done < <(jq -r '.ownership_scope[]? | select(. != "")' "$(sb_agent_delegation_state_file)" 2>/dev/null)
+  done < <(printf '%s' "$SB_SA_JSON" | jq -r '.writes[]? | select(.scope == "tree" and (.path // "") != "") | .path' 2>/dev/null)
 fi
 while IFS= read -r target_path; do
   [[ -n "$target_path" ]] || continue
