@@ -3,8 +3,7 @@
 
 A vendor whose display name has no DISTINCTIVE token is AMBIGUOUS: its name is also an ordinary word,
 phrase or surname ("Director", "Cursor", "Silver Bullet", "Devin"). It is credited only by an explicit
-signal (a ``vendors`` tag, a ``source_ref`` that names it, its pack URL, a qualified display such as
-"Devin (Cognition)", a whole matrix slot). The words around a name never credit it. A prose spelling that
+signal (a ``vendors`` tag, a ``source_ref`` that names it, its pack URL). The words around a name never credit it. A prose spelling that
 carries a distinctive token ("GitHub Copilot", "Cc10x", "Factory.ai") counts wherever it appears.
 
 Mechanical and per run: ``build_registry`` reads the run's known vendors and pack; nothing is hand-listed
@@ -20,7 +19,6 @@ from urllib.parse import urlparse
 # Tokens of a display name that say what a product is, not which one: never distinctive.
 GENERIC_TOKENS = frozenset("ai ide cli sdk api sdlc llm mcp pr ci cd saas oss apo swe ui ux ml os dev app io devops".split())
 _URL = re.compile(r"(?:https?://)?(?:www\.)?[a-z0-9-]+(?:\.[a-z0-9-]+)+(?:/[^\s;,)\]]*)?")
-_PARENTHETICAL = re.compile(r"\([^)]+\)")
 
 
 def distinctive_tokens(display: str, coined: frozenset[str] = frozenset()) -> frozenset[str]:
@@ -44,21 +42,12 @@ def distinctive_tokens(display: str, coined: frozenset[str] = frozenset()) -> fr
     return frozenset(found)
 
 
-def _is_expansion(display: str) -> bool:
-    """"GSD (Get Shit Done)", "Oh My Pi (OMP)": the parenthetical spells out the initials, which ordinary prose does too."""
-    head, _, rest = display.partition("(")
-    qualifier = rest.rstrip(") ")
-    initials = lambda text: "".join(w[0] for w in re.findall(r"[A-Za-z0-9]+", text)).lower()  # noqa: E731
-    squash = lambda text: re.sub(r"[^a-z0-9]", "", text.lower())  # noqa: E731
-    return initials(qualifier) == squash(head) or initials(head) == squash(qualifier)
-
-
 def _normal(text: str) -> str:
     return re.sub(r"[^a-z0-9]+", " ", text.lower()).strip()
 
 
 class Registry:
-    """Spellings, distinctive tokens, URLs and qualified displays of the run's vendors."""
+    """Spellings, distinctive tokens and URLs of the run's vendors."""
 
     def __init__(
         self,
@@ -79,22 +68,11 @@ class Registry:
                 self._add(vendor, spelling)
         for alias, slug in aliases.items():
             self._add(self.canonical(slug), alias)
-        for vendor, displays in self.displays.items():  # "Devin (Cognition)": the product's name, then another of its declared names
-            primary = known.get(vendor)
-            self.displays[vendor] |= {f"{primary} ({other})" for other in sorted(displays) if primary and "(" not in other and other != primary}
         self.distinctive = {
             vendor: frozenset().union(*(distinctive_tokens(d, coined) for d in displays))
             for vendor, displays in self.displays.items()
         }
         self.urls = {self.canonical(slug): [self._host_path(u) for u in entries] for slug, entries in urls.items()}
-        self.qualified: dict[str, str] = {}
-        for vendor, displays in self.displays.items():
-            for display in displays:
-                if _PARENTHETICAL.search(display) and not _is_expansion(display):
-                    self.qualified[display] = vendor
-        self._qualified_rx = re.compile(
-            "|".join(rf"(?<![A-Za-z0-9]){re.escape(d)}(?![A-Za-z0-9])" for d in sorted(self.qualified, key=len, reverse=True)) or r"(?!x)x"
-        )
         self._hosts = [(host, path, vendor) for vendor, entries in self.urls.items() for host, path in entries]
 
     def canonical(self, slug: str) -> str:
@@ -153,10 +131,8 @@ class Registry:
         return found
 
     def signals(self, text: str) -> frozenset[str]:
-        """Vendors a text names by an explicit form: a pack URL, or a qualified display in exact case."""
-        found = self._url_vendors(text)
-        found.update(self.qualified[m.group(0)] for m in self._qualified_rx.finditer(text))
-        return frozenset(found)
+        """Vendors a text names by an explicit form: a pack URL."""
+        return frozenset(self._url_vendors(text))
 
 
 def build_registry(
