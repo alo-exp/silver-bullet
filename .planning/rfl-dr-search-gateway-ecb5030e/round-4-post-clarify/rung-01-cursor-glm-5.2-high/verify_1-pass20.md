@@ -2,7 +2,7 @@ model: composer-2.5
 
 **Subagent:** `sb-composer-2-5-high`  
 **Phase:** VERIFY-ONLY pass 1/2 (`rung_1_verify_1`, post ACCEPT-apply of AH1 / I-44)  
-**Artifact:** `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
+**Artifact:** `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
 **SHA-256:** `916d87f52b25688f7953c76c89b96802d9438eb8da537a8c16b927b98b2ee138` (verified via `shasum -a 256`)  
 **Graphify:** `graphify query "dr_search_gateway plan AH1 I-44 X-union dedup section 4.3 citation"` (330 nodes; oriented AH1 / X-union / §4.3)  
 **Apply ref:** AH1 / I-44 · **Prior verify:** [verify_1-pass19.md](verify_1-pass19.md) (AG1 / I-43 PASS at `146e0ccba885dee360a1874d471b6a8f0276c2626bfcfcc8a6668ea9e2ec3c3e`)

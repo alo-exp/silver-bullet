@@ -8,7 +8,8 @@
       "claude": {
         "version": "0.53.0",
         "license": "BUSL-1.1",
-        "strict": true
+        "strict": true,
+        "ref": "v0.53.0"
       },
       "codex": {
         "version": "0.53.0",

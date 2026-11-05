@@ -23,18 +23,18 @@
         "disarm": "launchctl bootout gui/501/dev.alolabs.sb.rfl-quota-retry.rfl-router-subagent-surfaces-85bf9f09-final-review-2--rung-11--claude-claude-opu rc=0",
         "backend": "launchd",
         "fire_at": "2026-08-28T15:41:00Z",
-        "command": "/opt/homebrew/opt/python@3.14/bin/python3.14 /Users/shafqat/projects/silver-bullet/repo/scripts/review-fix-ladder.py --quota-retry-wake --project-root /Users/shafqat/projects/silver-bullet/repo --run-dir .planning/rfl-router-subagent-surfaces-85bf9f09-final-review-2",
+        "command": "/opt/homebrew/opt/python@3.14/bin/python3.14 /Users/<user>/projects/silver-bullet/repo/scripts/review-fix-ladder.py --quota-retry-wake --project-root /Users/<user>/projects/silver-bullet/repo --run-dir .planning/rfl-router-subagent-surfaces-85bf9f09-final-review-2",
         "argv": [
           "/opt/homebrew/opt/python@3.14/bin/python3.14",
-          "/Users/shafqat/projects/silver-bullet/repo/scripts/review-fix-ladder.py",
+          "/Users/<user>/projects/silver-bullet/repo/scripts/review-fix-ladder.py",
           "--quota-retry-wake",
           "--project-root",
-          "/Users/shafqat/projects/silver-bullet/repo",
+          "/Users/<user>/projects/silver-bullet/repo",
           "--run-dir",
           ".planning/rfl-router-subagent-surfaces-85bf9f09-final-review-2"
         ],
         "label": "dev.alolabs.sb.rfl-quota-retry.rfl-router-subagent-surfaces-85bf9f09-final-review-2--rung-11--claude-claude-opu",
-        "plist": "/Users/shafqat/Library/LaunchAgents/dev.alolabs.sb.rfl-quota-retry.rfl-router-subagent-surfaces-85bf9f09-final-review-2--rung-11--claude-claude-opu.plist"
+        "plist": "/Users/<user>/Library/LaunchAgents/dev.alolabs.sb.rfl-quota-retry.rfl-router-subagent-surfaces-85bf9f09-final-review-2--rung-11--claude-claude-opu.plist"
       },
       "wake_at": "2026-08-28T15:41:00Z",
       "reset_at": "2026-08-28T15:41:00Z",

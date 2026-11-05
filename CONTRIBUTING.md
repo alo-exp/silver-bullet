@@ -80,7 +80,7 @@ To dogfood enforcement while you work, install the plugin into your host from th
 | `graphify-out/` | Committed Graphify knowledge graph of the repo (refreshed with `graphify update .`). |
 | `data/` | Local agentmemory engine state; its machine-specific `iii-config.yaml` is generated and git-ignored. |
 | `subagent-model-scores.csv` | Maintainer log of subagent assessments. |
-| `SETUP_REPORT.md` | Output of `bash scripts/sb-verify-synergy.sh --write-setup-report` (a point-in-time machine report). |
+| `SETUP_REPORT.md` | Output of `bash scripts/sb-verify-synergy.sh --write-setup-report` (a point-in-time machine report; generated locally, gitignored, not committed). |
 | `CHANGELOG.md` | Release notes per version. `docs/CHANGELOG.md` is the task log. |
 | `Makefile`, `requirements-dev.txt` | Developer entry points (`make setup`, `lint`, `test`, `coverage`, `check`) and the Python packages the test suite and coverage need. |
 

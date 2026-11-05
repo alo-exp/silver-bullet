@@ -143,6 +143,34 @@ See `docs/internal/update-command-instructions.md` for full implementation guide
 
 [CICD.md](CICD.md) describes the GitHub Actions workflows (`ci.yml`, `secret-scan.yml`, `pages.yml`, `announce-release.yml` and the optional `e2e-live.yml` and `rc-validation.yml`). `bash tests/run-all-tests.sh` is the local equivalent of the CI test jobs.
 
+## Pinned distribution
+
+Every distribution entry installs the release tag, never a branch (R13-02). `sync-marketplace-version.sh` (Claude), `sync-cursor-marketplace-version.sh` and `sync-codex-marketplace-version.sh` write `source.ref = v<version>`. Once the tag exists the Claude script also writes `source.sha` (the tag's commit) and the Claude and Cursor `--publish` paths write both into the unified `alo-labs/agent-plugins` marketplace; the Codex script writes `ref` only. Before tagging, only `ref` is written, so the in-repo manifest never carries a stale sha. Pre-tag window: the release commit is pushed (skill Step 5c) before the tag (Step 7), so until the tag lands the default branch's in-repo entry names a `ref` that does not exist and installs through it fail; the published `agent-plugins` entry is unaffected because it is bumped only after the tag. Keep the window short and do not leave a red release CI unresolved. `tests/scripts/test-release-version-alignment.sh` fails unless every in-repo marketplace entry and every `scripts/lib/agent-plugins-catalog.json` row pins `v<package.json version>` and any `sha` is the tag's commit.
+
+## Plugin payload
+
+The public install path is the separate manifest repo `alo-labs/agent-plugins`: its Claude and Codex entries install from `alo-exp/silver-bullet` with `path: plugins/silver-bullet`, pinned by `ref` and `sha` that are bumped at each release. The older `claude-plugins` and `codex-plugins` repos are deprecated and point at `agent-plugins`. `.gitattributes` also marks development-only trees `export-ignore` (`research/`, `.planning/` except `.planning/scripts/`, which the phase-lock hooks run, `.agentmemory/`, `graphify-out/graph.json`, `*.bak`) so GitHub source tarballs stay slim; a plain clone or the in-repo marketplace entry still fetches the full tree.
+
+## Private data
+
+`bash scripts/check-repo-invariants.sh --check personal-data` (part of CI) fails on a tracked text file (and on PDF links) that holds a personal home-directory path (`/Users/<name>/`, `/home/<name>/`, `/mnt/c/Users/<name>/`, `C:\Users\<name>\`, the flattened `Users-<name>-` forms, escaped and URL-encoded spellings), an email address outside the allowlist, or a token whose SHA-256 is listed in `.github/personal-data-hashes.txt` (the maintainer's username and name parts, in any separator form). Generic and CI accounts (`runner`, `azureuser`, `linuxbrew`, ...), placeholder domains, bot and role mailboxes pass. The hash file is obfuscation, not secrecy (the name is public in author fields), must list only already-public tokens, and does not cover base64/hex encodings, glued tokens or homoglyphs beyond Unicode folding; escapes (`\u`, `%XX`, `&#NN;`, `\n`), zero-width characters and fullwidth forms are decoded first. `.github/personal-data-allow.txt` lists audited exceptions (`home`, `email`, and `file <glob> <context hash>` entries): a `file` entry exempts only the quoted string or line with that hash, never the rest of the file and never a name inside a home-directory-shaped path (`users_<n>_`, `~<n>`, `/Users/<n>`); an unknown directive in it is an error, and the file is scanned like any other. The check reports file and line, never the value. Use `/Users/<user>/` style placeholders. AI CLI captures (`*.err`, `*.out`, run `*.log`, `*-stdout.txt`, `*.stdout`, ...) under `.planning/`, `research/` and `docs/` are git-ignored, as are `SETUP_REPORT.md` and quota plans. Git history was not rewritten, so earlier commits still contain the removed data. The workflow-hardening check also rejects `pull_request_target`/`workflow_run` workflows that check out the pull request head, and parses `.github/workflows/*.yml` with PyYAML (`requirements-dev.txt`; CI installs it) and fails when PyYAML is missing or a file does not parse.
+
+## Third-party actions to pin
+
+Workflows reference actions by tag; pinning to full commit SHAs is deferred to the maintainer (no network was available to resolve them). Pin each to the commit its tag points at, keeping the tag as a comment (`uses: actions/checkout@<sha> # v5`):
+
+| Action | Current tag | Used in |
+|--------|-------------|---------|
+| `actions/checkout` | `v5` | ci.yml (3), e2e-live.yml, pages.yml, rc-validation.yml, secret-scan.yml, announce-release.yml |
+| `actions/setup-node` | `v5` | ci.yml (2), rc-validation.yml |
+| `actions/setup-python` | `v6` | ci.yml (2) |
+| `actions/upload-artifact` | `v5` | ci.yml |
+| `actions/configure-pages` | `v5` | pages.yml |
+| `actions/upload-pages-artifact` | `v3` | pages.yml |
+| `actions/deploy-pages` | `v4` | pages.yml |
+
+Resolve with `gh api repos/actions/<name>/commits/<tag> --jq .sha`. Also unpinned: `apt-get install` of `shellcheck`, `jq`, `git` and `expect` in ci.yml, e2e-live.yml and rc-validation.yml.
+
 ## Scalability
 
 **Fixed** — process doc rewritten when release process changes. Not append-only.

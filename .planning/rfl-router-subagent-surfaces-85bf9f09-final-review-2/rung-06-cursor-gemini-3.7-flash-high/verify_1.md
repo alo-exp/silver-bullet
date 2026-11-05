@@ -1,6 +1,6 @@
 # Cursor Task gemini-3.7-flash-high (no Pi) — verify_1
 
-RFL round 2, rung 6, verify_1 only (not verify_2). Repo: `/Users/shafqat/projects/silver-bullet/repo`. Branch: `main` (NEVER git checkout / git switch / SetActiveBranch). Parent: `d5150f38-4d37-458d-9bdb-5e6f985975d3`.
+RFL round 2, rung 6, verify_1 only (not verify_2). Repo: `/Users/<user>/projects/silver-bullet/repo`. Branch: `main` (NEVER git checkout / git switch / SetActiveBranch). Parent: `d5150f38-4d37-458d-9bdb-5e6f985975d3`.
 
 VERIFY ONLY — no edits to freeze plan `.planning/router_subagent_surfaces_85bf9f09.plan.md`, no skills/hooks/product modifications, no git checkout/switch/restore.
 
@@ -12,8 +12,8 @@ Live verification across all three canonical copies of the freeze document:
 
 | Copy | Path | SHA-256 | Bytes | Status |
 |---|---|---|---|---|
-| Repo Working Tree | `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `fb94a91e5196703f56925d16f287180ad8cb67b5ade8806b35ba47575e299804` | 642228 | MATCH |
-| Cursor UI Copy | `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `fb94a91e5196703f56925d16f287180ad8cb67b5ade8806b35ba47575e299804` | 642228 | MATCH |
+| Repo Working Tree | `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `fb94a91e5196703f56925d16f287180ad8cb67b5ade8806b35ba47575e299804` | 642228 | MATCH |
+| Cursor UI Copy | `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `fb94a91e5196703f56925d16f287180ad8cb67b5ade8806b35ba47575e299804` | 642228 | MATCH |
 | Git HEAD Blob | `git show HEAD:.planning/router_subagent_surfaces_85bf9f09.plan.md` | `fb94a91e5196703f56925d16f287180ad8cb67b5ade8806b35ba47575e299804` | 642228 | MATCH |
 
 - **Expected SHA-256:** `fb94a91e5196703f56925d16f287180ad8cb67b5ade8806b35ba47575e299804`

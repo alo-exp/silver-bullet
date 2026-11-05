@@ -2,7 +2,7 @@ model: composer-2.5
 
 **Subagent:** `sb-composer-2-5-high`  
 **Phase:** VERIFY-ONLY pass 1/2 (`rung_2_verify_1`, post ACCEPT-apply of R2P5-1–R2P5-4 / I-61–I-64)  
-**Artifact:** `/Users/shafqat/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
+**Artifact:** `/Users/<user>/.cursor/plans/dr_search_gateway_prd_ecb5030e.plan.md`  
 **SHA-256:** `f6ba43bb7d7d4d4ca394333ae5f7c15022059040edac9ec75585654630584cd6` (verified via `shasum -a 256`)  
 **Graphify:** `graphify query "dr search gateway plan R2P5 I-61 I-62 I-63 I-64 verify"` (234 nodes; oriented R2P5-4 / review-pass-5 / search-cli)  
 **Apply ref:** [APPLY.md](APPLY.md) (Pass 5 section) · **Review ref:** [review-pass-5.md](review-pass-5.md) · **Prior verify:** [verify_1-pass4.md](verify_1-pass4.md) (R2P4-1/2/3 PASS at `44bf064c33810669bf945f91a4e05afa24e5c82fef36a43dabe499f159d28fc4`)

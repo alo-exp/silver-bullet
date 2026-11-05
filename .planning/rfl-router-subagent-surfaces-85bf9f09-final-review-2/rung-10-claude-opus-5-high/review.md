@@ -6,7 +6,7 @@ RFL round 2, rung 10/11 (`final-review-2`) — **REVIEW-ONLY**. Named model kept
 
 | # | Copy | SHA-256 | Bytes |
 |---|------|---------|-------|
-| 1 | `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `088a18a6dc755ffee2ec68755cf72df0d28c5fde53d9c6f86198fb6672719f4e` | 648963 |
+| 1 | `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `088a18a6dc755ffee2ec68755cf72df0d28c5fde53d9c6f86198fb6672719f4e` | 648963 |
 | 2 | `~/.c⁠ursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `088a18a6dc755ffee2ec68755cf72df0d28c5fde53d9c6f86198fb6672719f4e` | 648963 |
 | 3 | `git show HEAD:.planning/router_subagent_surfaces_85bf9f09.plan.md` | `088a18a6dc755ffee2ec68755cf72df0d28c5fde53d9c6f86198fb6672719f4e` | 648963 |
 

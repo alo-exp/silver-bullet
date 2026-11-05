@@ -16,7 +16,7 @@ SHA verified before review: both copies matched `d9d452ee…`, so the spec was f
 VERDICT: NOT CLEAN
 ```
 
-Hash gate passed before review: both copies of [`router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md) and [`~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md) are byte-identical at `d9d452eee1d4ed2307cdc9c195d42afaf03889ab18923e52cc48ca8e72bdd172` = frozen SHA. Stayed on `main`.
+Hash gate passed before review: both copies of [`router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md) and [`~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`](/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md) are byte-identical at `d9d452eee1d4ed2307cdc9c195d42afaf03889ab18923e52cc48ca8e72bdd172` = frozen SHA. Stayed on `main`.
 
 **Prior Extra High findings: all ten landed.** H-1 row 35 dashboard-only/non-gating (row 35 + identity fixture in `VAL/TST-RFL-621`); H-2 `.sb/` present in all 14 ledger-omit enumerations (lines 3, 15, 48×2, 96, 453, 475, 530, 578, 624, 723, 756, 782, 846) including the row-33 discriminator; H-3 FAST has no Job step-1 pre-read node; H-4 `blocked_fast_leaf` terminal at row 36; H-5 `AF-agent-delegate` / `sb:agent-wrap` in WS1 APO. M-1–M-5 all landed (the only "amends" string left is inside the round-16 revision-history cell at line 80, in the same cell as its own M-1 correction — acceptable history, not residue).
 

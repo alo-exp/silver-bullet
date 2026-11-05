@@ -1,1 +1,0 @@
-503: {"message":"Chat admission capacity is temporarily unavailable. Retry shortly.","type":"server_error","code":"chat_admission_busy"}

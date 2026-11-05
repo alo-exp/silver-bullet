@@ -4,8 +4,8 @@
 - **Model:** opencode-go/deepseek-v4-pro-max (this document is authored by this model; not copied from any prior-wave review)
 - **Phase:** REVIEW-ONLY (rung_02_review)
 - **Freeze identity:** one freeze, two byte-identical copies
-  - `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
-  - `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
+  - `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md`
+  - `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md`
 - **Canonical SHA-256:** `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0`
 - **Canonical byte size:** 621095
 - **Review charter:** freeze completeness/consistency; closed locks intact (KEEP REJECT, Q1–Q3, Part A then Part B, no `/sb:multi-ai-task`, no `sb:agent-wrap` even as alias, FAST not a Job / not a legal compose route, OmniRoute routing-only); YAML 33 todos pending; broken refs / truncated headings / TOC-GFM; LS-post-val-kl Executor producer; FAST short-order E→Ver→Val + thin capture; single mermaid.

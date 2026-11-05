@@ -23,7 +23,7 @@
           "attempt_id": { "type": "string" },
           "phase_id": { "type": ["string", "null"] },
           "status": {
-            "enum": ["reserved", "queued", "running", "completed", "partial", "failed", "cancelled", "excluded", "budget_stopped"]
+            "enum": ["reserved", "queued", "running", "completed", "fallback", "partial", "failed", "cancelled", "excluded", "budget_stopped"]
           },
           "authoritative_attempt_id": { "type": ["string", "null"] },
           "timestamp": { "type": "string", "format": "date-time" }

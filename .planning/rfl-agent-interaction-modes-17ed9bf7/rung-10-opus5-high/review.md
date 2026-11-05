@@ -6,7 +6,7 @@ METHOD: /silver:agent-claude (--print / NI)
 STATUS: review-complete
 ```
 
-Plan: [agent_interaction_modes_17ed9bf7.plan.md](/Users/shafqat/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
+Plan: [agent_interaction_modes_17ed9bf7.plan.md](/Users/<user>/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
 SHA256 re-hashed at review time: `4d3b3b0954f97527e5f641a401a2a1bc6582e8f599bf435b1bda904d3db0e068` (411 lines) — matches parent-launch hash. Plan text unchanged; no edits, no commit, no branch move (detached at `1569b060`).
 
 Method: `graphify query "agent interaction modes I-56 I-57 I-58 I-59 mode_fallback mermaid"` (5368-node graph, 95-node BFS subgraph — plan + CHARTER/LEDGER + rung-1..9 reviews; nothing outside the RFL cluster bears on the spec), then full 411-line read from disk, then a duplicate sweep across `.planning/rfl-agent-interaction-modes-17ed9bf7/**` for every candidate before filing.

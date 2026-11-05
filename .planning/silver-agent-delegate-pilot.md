@@ -2,7 +2,7 @@
 
 **Date:** 2026-07-05  
 **Gate:** Phase 4 `migration_map` flip requires both hosts **PASS** with `SB_AGENT_DELEGATE_V2=1` on AGENT-DELEGATE worker path  
-**Plan:** Phase 3b — [agent-delegation-af plan](file:///Users/shafqat/.cursor/plans/agent-delegation-af_f2849554.plan.md)  
+**Plan:** Phase 3b — [agent-delegation-af plan](file:///Users/<user>/.cursor/plans/agent-delegation-af_f2849554.plan.md)  
 **Live rollups:** [AGENT-CURSOR-LIVE-VALIDATION.md](AGENT-CURSOR-LIVE-VALIDATION.md) · [AGENT-CODEX-LIVE-VALIDATION.md](AGENT-CODEX-LIVE-VALIDATION.md) · [AGENT-CLAUDE-LIVE-VALIDATION.md](AGENT-CLAUDE-LIVE-VALIDATION.md)
 
 ## Per-host results
@@ -34,7 +34,7 @@ Prior direct-wrapper baseline (no V2): [silver-agent-cursor-pilot.md](silver-age
 export SB_AGENT_DELEGATE_V2=1 SB_AGENT_CURSOR_LOG_FLOOR=512 CURSOR_AGENT_TIMEOUT=600
 # seed directive + guard, then:
 bash scripts/agent-cursor-delegate.sh \
-  --work-dir /Users/shafqat/projects/enterprise-grade-test-app-cursor \
+  --work-dir /Users/<user>/projects/enterprise-grade-test-app-cursor \
   --brief-file .planning/agent-cursor/pilot-v2-20260705/brief.md \
   --log .planning/agent-cursor/pilot-v2-20260705/cursor-run.log
 ```
@@ -64,7 +64,7 @@ export SB_AGENT_CODEX_SKIP_MCP=0 SB_AGENT_CODEX_LIGHTWEIGHT=0
 export SB_AGENT_CODEX_DELEGATE=1 SB_ORCHESTRATOR_WORKER=1 SB_ORCHESTRATOR_PARENT=0
 export CODEX_HOME="$HOME/.codex" CODEX_INTERACTIVE_TIMEOUT=900 CODEX_EXEC_TAIL_IDLE_TIMEOUT=30
 bash scripts/agent-codex-delegate.sh --use-exec \
-  --work-dir /Users/shafqat/projects/enterprise-grade-test-app-codex \
+  --work-dir /Users/<user>/projects/enterprise-grade-test-app-codex \
   --brief-file .planning/agent-codex/pilot-v2-20260705/brief-rerun.md \
   --log .planning/agent-codex/pilot-v2-20260705/codex-run-rerun.log
 ```

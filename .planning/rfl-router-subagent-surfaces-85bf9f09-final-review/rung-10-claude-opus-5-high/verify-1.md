@@ -15,8 +15,8 @@ One `shasum -a 256` invocation over both copies, plus `wc -c` and `cmp`:
 
 | Copy | Path | SHA-256 (hashed by me, this session) | Bytes |
 |---|---|---|---|
-| A (repo) | `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `3166a309baa55fb49158df4531c7bf7e8f8609f1c720b0f4d0cae5c396346321` | 621247 |
-| B (cursor) | `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `3166a309baa55fb49158df4531c7bf7e8f8609f1c720b0f4d0cae5c396346321` | 621247 |
+| A (repo) | `/Users/<user>/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` | `3166a309baa55fb49158df4531c7bf7e8f8609f1c720b0f4d0cae5c396346321` | 621247 |
+| B (cursor) | `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` | `3166a309baa55fb49158df4531c7bf7e8f8609f1c720b0f4d0cae5c396346321` | 621247 |
 
 - **Byte-identical: YES** (`cmp -s` → identical; both SHAs and both sizes match exactly).
 - **Matches the locked freeze:** YES — `3166a309…` / **621247** bytes.

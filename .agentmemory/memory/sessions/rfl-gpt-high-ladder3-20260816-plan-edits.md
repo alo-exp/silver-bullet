@@ -10,4 +10,4 @@ observations: 1
 **Status:** active
 **Started:** 2026-08-15T16:06:39.636Z
 **Observations:** 1
-**CWD:** `/Users/shafqat/projects/silver-bullet/repo`
+**CWD:** `/Users/<user>/projects/silver-bullet/repo`

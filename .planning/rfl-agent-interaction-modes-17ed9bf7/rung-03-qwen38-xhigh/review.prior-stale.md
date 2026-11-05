@@ -1,6 +1,6 @@
 # Rung 3 review — Qwen3.8 XHigh (OpenCode)
 
-**Plan:** [agent_interaction_modes_17ed9bf7.plan.md](/Users/shafqat/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
+**Plan:** [agent_interaction_modes_17ed9bf7.plan.md](/Users/<user>/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
 
 **Method:** interactive OpenCode session, model `opencode-go/qwen3.8-max` (rung label Qwen3.8 XHigh). Direct full-plan read plus grep/sha cross-reference verification of every internal citation (event names, artifact names, schemas, flag scopes). Repo file-existence check for §1/§10 references. No plan edits.
 

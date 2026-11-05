@@ -11,7 +11,7 @@ No additional material callback-contract defect was found in the canonical plan.
 
 ## Mirror parity
 
-`cmp` failed. The repo plan and `/Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` both have 443 lines but different SHA-256 hashes:
+`cmp` failed. The repo plan and `/Users/<user>/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` both have 443 lines but different SHA-256 hashes:
 
 - repo: `08afd8bce5660e3ae430616f528e582f0fa61ada89b473239088f686ef877f45`
 - Cursor mirror: `396df7efea689b2204e562074d9a34f448e86c8c7b1cb09e9983a68f48bdaae1`

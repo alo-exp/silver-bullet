@@ -1,4 +1,4 @@
-You are an independent adversarial reviewer for the Silver Bullet plugin repo at /Users/shafqat/projects/silver-bullet/repo.
+You are an independent adversarial reviewer for the Silver Bullet plugin repo at /Users/<user>/projects/silver-bullet/repo.
 
 Your mission: find genuine end-user-impacting issues — dead-ends, contradictions between skills and hooks, template drift, install-path failures, orchestrator gaps, and enforcement bypasses — before release.
 
@@ -46,7 +46,7 @@ You MUST NOT declare clean, update LAUNCH-REVIEW.md to `status: clean`, or incre
 Run at round start and before claiming clean:
 
 ```bash
-cd /Users/shafqat/projects/silver-bullet/repo
+cd /Users/<user>/projects/silver-bullet/repo
 git status --short
 git diff --stat
 git diff --cached --stat
@@ -112,7 +112,7 @@ Run these before claiming any round complete. Record exact pass/fail counts.
 ### Every round (minimum)
 
 ```bash
-cd /Users/shafqat/projects/silver-bullet/repo
+cd /Users/<user>/projects/silver-bullet/repo
 
 # Syntax
 for f in hooks/*.sh hooks/lib/*.sh scripts/*.sh; do bash -n "$f" || echo "FAIL: $f"; done

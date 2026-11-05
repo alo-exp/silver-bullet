@@ -8,8 +8,8 @@
 - `origin/main` still contains session SHAs including `a0c5c340`
 
 ## a9385078: PRESERVE / not local to this repo
-- `git worktree list`: only `/Users/shafqat/projects/silver-bullet/repo` on `main`
-- No path containing `a9385078` under `/Users/shafqat/projects/silver-bullet`, `~/.cursor/worktrees`, or `.git/worktrees`
+- `git worktree list`: only `/Users/<user>/projects/silver-bullet/repo` on `main`
+- No path containing `a9385078` under `/Users/<user>/projects/silver-bullet`, `~/.cursor/worktrees`, or `.git/worktrees`
 - No local/remote branch `cursor/a9385078`
 - Leftover worker did not remove/prune/reset it (only removed bug-f worktree)
 - Not deleted by us → nothing to restore; exact path+branch+HEAD unknown on this machine

@@ -1,6 +1,6 @@
 # Rung 4 review — GLM 5.3 Max (OpenCode)
 
-Plan: [`.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md`](/Users/shafqat/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
+Plan: [`.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md`](/Users/<user>/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
 
 SHA256: `6e33742a3f462edc50d1eb9ed3add2c2665c007edc87e896cea32476b92907ba` (410 lines; I-32–I-40 already landed)
 

@@ -43,5 +43,15 @@
       "skillPath": "skills/topgun-update/SKILL.md",
       "computedHash": "a6af29979cf70f649539e6ba98d079aa6ef59883aea280b1dace8d50609bd898"
     }
+  },
+  "toolManaged": {
+    ".agents/skills/graphify": {
+      "version": "0.9.35",
+      "computedHash": "77b3d16eaaf433c9a4b6c67b48c97c7e8c51e86b4c1822ab7404008b190c6003"
+    },
+    ".claude/skills/graphify": {
+      "version": "0.9.35",
+      "computedHash": "949d2082d7b6861d515f9290519a7147bc53f0531dea5643a8d4f2f6dc3bee01"
+    }
   }
 }

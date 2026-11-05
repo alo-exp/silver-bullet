@@ -81,9 +81,9 @@ Pristine-repo `test-claude-agent-surface-isolation.sh` **PASS**es @ `156630f6`, 
 ### Environment (Round 8 launch)
 
 ```bash
-export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
+export SB_ROOT=/Users/<user>/projects/silver-bullet/repo
 export SB_E2E_LEDGER_FILE="$SB_ROOT/.planning/enterprise-e2e/ROUND-8-LEDGER.md"
-export SB_TEST_ENTERPRISE_APP_ROOT=/Users/shafqat/projects/enterprise-grade-test-app
+export SB_TEST_ENTERPRISE_APP_ROOT=/Users/<user>/projects/enterprise-grade-test-app
 export SB_E2E_SURFACE_SKIP=0          # REQUIRED — no skip
 export SB_E2E_MONITOR_AUTO_RESTART=0
 export RTK_DISABLED=1

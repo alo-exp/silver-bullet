@@ -4,7 +4,7 @@ You are **rung 5 REVIEW ONLY** (retry after OpenCode Go quota). Separate rung ag
 
 ## Plan (locked)
 
-[`/Users/shafqat/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md`](/Users/shafqat/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
+[`/Users/<user>/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md`](/Users/<user>/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
 
 - SHA256: `d62a05d38cefd51892cba1d95e6043c6a51e37abf18dc62a9399efe6798ebe16`
 - ~410 lines. **I-1..I-55 already in this text** (rungs 1–4 + GLM I-48–I-55 landing). Do **not** re-file I-1..I-55 unless the **current** plan text is still wrong.
@@ -48,7 +48,7 @@ Open residuals from GLM (re-check, do not duplicate unless still wrong): I-32 me
 
 ## Write
 
-`/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-agent-interaction-modes-17ed9bf7/rung-05-kimi-k3-max/review.md`
+`/Users/<user>/projects/silver-bullet/repo/.planning/rfl-agent-interaction-modes-17ed9bf7/rung-05-kimi-k3-max/review.md`
 
 Required shape:
 

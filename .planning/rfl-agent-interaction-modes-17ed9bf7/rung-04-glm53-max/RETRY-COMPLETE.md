@@ -5,7 +5,7 @@
 **MODEL:** `opencode-go/glm-5.3` `--variant max`  
 **METHOD:** `/silver:agent-opencode` → native CLI (`scripts/agent-opencode/invoke.sh` pin-locks `mimo-v2.5`; skipped)
 
-Plan: [`.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md`](/Users/shafqat/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
+Plan: [`.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md`](/Users/<user>/projects/silver-bullet/repo/.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md)
 
 - SHA256: `0716b40e1992c3bf7548b3ef0b4b8a78b034f913484b2c30bf2f731edc3c078d`
 - Branch: `main`. No plan edits. No commit.
