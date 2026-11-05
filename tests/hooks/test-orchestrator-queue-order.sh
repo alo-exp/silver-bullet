@@ -47,7 +47,7 @@ else
 fi
 
 bugfix_q="$(sb_orchestrator_default_queue_for_composer silver-bugfix)"
-if grep -q '^silver-debug,silver-quality-gates,silver-context,silver-plan,silver-execute\|^silver-debug,FLOW-QUALITY-GATE,silver-context,silver-plan,silver-execute' <<<"$bugfix_q"; then
+if grep -q '^silver-debug,silver-quality-gates,silver-context,silver-plan,tdd,silver-execute\|^silver-debug,FLOW-QUALITY-GATE,silver-context,silver-plan,tdd,silver-execute' <<<"$bugfix_q"; then
   echo "PASS: silver-bugfix diagnosis first, then the planning floor (R10-02)"
   PASS=$((PASS + 1))
 else
@@ -74,7 +74,7 @@ else
   FAIL=$((FAIL + 1))
 fi
 
-if grep -q 'silver-plan,silver-ui-contract,silver-validate,silver-execute' <<<"$ui_q"; then
+if grep -q 'silver-plan,silver-ui-contract,silver-validate,tdd,silver-execute' <<<"$ui_q"; then
   echo "PASS: silver-ui pre-exec includes plan → ui-contract → validate → execute"
   PASS=$((PASS + 1))
 else
@@ -260,7 +260,7 @@ done
 proj="$(mktemp -d)"
 printf '{"skills":{"required_planning":["silver-quality-gates","silver-context","silver-plan","silver-clarify"]}}' >"$proj/.silver-bullet.json"
 q="$(sb_orchestrator_queue_for_composer silver-bugfix "$proj")"
-if [[ "$q" == "silver-debug,FLOW-QUALITY-GATE,silver-context,silver-clarify,silver-plan,silver-execute"* || "$q" == "silver-debug,silver-quality-gates,silver-context,silver-clarify,silver-plan,silver-execute"* ]]; then
+if [[ "$q" == "silver-debug,FLOW-QUALITY-GATE,silver-context,silver-clarify,silver-plan,tdd,silver-execute"* || "$q" == "silver-debug,silver-quality-gates,silver-context,silver-clarify,silver-plan,tdd,silver-execute"* ]]; then
   echo "PASS: project required_planning extends the bugfix floor"; PASS=$((PASS + 1))
 else
   echo "FAIL: project floor not applied (got: $q)"; FAIL=$((FAIL + 1))
@@ -273,7 +273,7 @@ else
 fi
 printf '{"skills":{"required_planning":[]}}' >"$proj/.silver-bullet.json"
 q="$(sb_orchestrator_queue_for_composer silver-bugfix "$proj")"
-if [[ "$q" == silver-debug,*silver-quality-gates*silver-plan,silver-execute* || "$q" == silver-debug,FLOW-QUALITY-GATE*silver-plan,silver-execute* ]]; then
+if [[ "$q" == silver-debug,*silver-quality-gates*silver-plan,tdd,silver-execute* || "$q" == silver-debug,FLOW-QUALITY-GATE*silver-plan,tdd,silver-execute* ]]; then
   echo "PASS: an empty configured floor falls back to the shipped default"; PASS=$((PASS + 1))
 else
   echo "FAIL: empty configured floor (got: $q)"; FAIL=$((FAIL + 1))
@@ -306,6 +306,34 @@ else
   echo "FAIL: built-in devops floor (got: $got)"; FAIL=$((FAIL + 1))
 fi
 rm -rf "$(dirname "$(dirname "$staged_lib")")"
+# R10-02 part B: following a delivery queue exactly records every required_deploy skill, so
+# `gh pr create` is not blocked for workflow skills. Config is authoritative.
+TPL="$REPO_ROOT/templates/silver-bullet.config.json.default"
+for dc in silver-feature silver-ui silver-bugfix silver-refactor silver-devops; do
+  key=required_deploy; [[ "$dc" == silver-devops ]] && key=required_deploy_devops
+  dq="$(sb_orchestrator_default_queue_for_composer "$dc")"
+  have=","
+  IFS=',' read -ra dtoks <<<"$dq"
+  for t in "${dtoks[@]}"; do have="$have$t,$(sb_orchestrator_flow_to_skill "$t"),"; done
+  miss=""
+  for need in $(jq -r --arg k "$key" '.skills[$k][]' "$TPL"); do
+    case "$have" in *",$need,"*) ;; *) miss="$miss $need" ;; esac
+  done
+  if [[ -z "$miss" ]]; then echo "PASS: $dc queue records every $key skill"; PASS=$((PASS + 1)); else echo "FAIL: $dc queue lacks$miss from $key"; FAIL=$((FAIL + 1)); fi
+done
+# A project that drops tdd / verify-tests / silver-triage from required_deploy does not get them queued.
+proj="$(mktemp -d)"
+printf '{"skills":{"required_deploy":["silver-quality-gates","silver-plan","silver-execute","silver-review-triage","silver-verify","silver-ship"]}}' >"$proj/.silver-bullet.json"
+q="$(sb_orchestrator_queue_for_composer silver-feature "$proj")"
+if [[ "$q" != *tdd* && "$q" != *verify-tests* && "$q" != *silver-triage* ]]; then echo "PASS: config is authoritative: unlisted delivery skills not queued"; PASS=$((PASS + 1)); else echo "FAIL: unlisted skills queued (got: $q)"; FAIL=$((FAIL + 1)); fi
+rm -rf "$proj"
+# Queues that never reach ship / the review triad are untouched.
+q="$(sb_orchestrator_apply_deploy_floor "silver-plan,silver-execute,silver-verify" "tdd,verify-tests,silver-triage")"
+if [[ "$q" == "silver-plan,silver-execute,silver-verify" ]]; then echo "PASS: no ship: no delivery floor"; PASS=$((PASS + 1)); else echo "FAIL: (got: $q)"; FAIL=$((FAIL + 1)); fi
+q="$(sb_orchestrator_apply_deploy_floor "silver-execute,silver-verify,silver-ship" "tdd,verify-tests,silver-triage")"
+if [[ "$q" == "silver-execute,silver-verify,silver-ship" ]]; then echo "PASS: no review triad: no delivery floor"; PASS=$((PASS + 1)); else echo "FAIL: (got: $q)"; FAIL=$((FAIL + 1)); fi
+q="$(sb_orchestrator_apply_deploy_floor "silver-execute,silver-review-triage,silver-triage,silver-verify,tdd,verify-tests,silver-ship" "tdd,verify-tests,silver-triage")"
+if [[ "$q" == "silver-execute,silver-review-triage,silver-triage,silver-verify,tdd,verify-tests,silver-ship" ]]; then echo "PASS: already queued: not duplicated"; PASS=$((PASS + 1)); else echo "FAIL: (got: $q)"; FAIL=$((FAIL + 1)); fi
 # Queues without an execute step are untouched.
 q="$(sb_orchestrator_default_queue_for_composer silver-deep-research)"
 if [[ "$q" == "silver-clarify,silver-deep-research,silver-ensure-docs,silver-validate" ]]; then

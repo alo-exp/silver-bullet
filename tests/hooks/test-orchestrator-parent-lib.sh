@@ -4,6 +4,7 @@ set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/b-orchestrator-helpers.sh"
 tl_init
+export SILVER_BULLET_RUNTIME=claude
 export SB_RUNTIME_PRESERVE_STATE_DIR=1
 unset SB_ORCHESTRATOR_WORKER SB_ORCHESTRATOR_PARENT SB_ORCHESTRATOR_WORKER_MARKER_TTL_SECONDS SILVER_BULLET_PROJECT_ROOT SB_AGENT_DELEGATE_DIRECT_FALLBACK
 # shellcheck source=../../hooks/lib/sb-project-gate.sh
@@ -110,6 +111,15 @@ assert_eq "explicit parent=true in a project" yes "$(SB_ORCHESTRATOR_PARENT=true
 assert_eq "no jq: parent by default" yes "$(PATH="$NOJQ" parent)"
 ( unset -f sb_find_project_config_walk_only; cd "$PROJ"; sb_orchestrator_is_parent_session ) && rc=0 || rc=$?
 assert_eq "no config resolver: not parent" 1 "$rc"
+
+echo "=== host worker identity (parent mode is Claude-only for now) ==="
+host_parent() { (cd "$PROJ" && sb_orchestrator_is_parent_session && echo yes || echo no); }
+assert_eq "claude identifies workers: parent mode on" yes "$(SILVER_BULLET_RUNTIME=claude host_parent)"
+assert_eq "unset runtime defaults to claude" yes "$(env -u SILVER_BULLET_RUNTIME bash -c 'source "$1"; source "$2"; source "$3"; cd "$4"; sb_orchestrator_is_parent_session && echo yes || echo no' _ "$TL_REPO_ROOT/hooks/lib/sb-project-gate.sh" "$TL_REPO_ROOT/hooks/lib/orchestrator-state.sh" "$TL_REPO_ROOT/hooks/lib/orchestrator-parent.sh" "$PROJ")"
+assert_eq "codex cannot identify workers: parent mode inactive" no "$(SILVER_BULLET_RUNTIME=codex host_parent)"
+assert_eq "other hosts: inactive too" no "$(SILVER_BULLET_RUNTIME=opencode host_parent)"
+assert_eq "codex with SB_ORCHESTRATOR_PARENT=1: forced on" yes "$(SILVER_BULLET_RUNTIME=codex SB_ORCHESTRATOR_PARENT=1 host_parent)"
+assert_eq "codex with SB_ORCHESTRATOR_PARENT=true: forced on" yes "$(SILVER_BULLET_RUNTIME=codex SB_ORCHESTRATOR_PARENT=true host_parent)"
 
 echo "=== worker template names ==="
 while IFS='=' read -r skill want; do
@@ -350,13 +360,27 @@ assert_eq "env wrapper hiding a second command" no "$(b "env A=1 silver-bullet i
 assert_eq "bare shell reading stdin" no "$(b "bash")"
 assert_eq "delegate script chained to rm under the fallback" no "$(SB_AGENT_DELEGATE_DIRECT_FALLBACK=1 b "bash scripts/agent-codex-delegate.sh; rm x")"
 assert_eq "echoed delegate script under the fallback" no "$(SB_AGENT_DELEGATE_DIRECT_FALLBACK=1 b "echo scripts/agent-codex-delegate.sh; rm x")"
+echo "=== parent bash: env prefixes that change startup or lookup (review minor) ==="
+echo '# marker' >"$TL_TMP/evil-rc"
+assert_eq "BASH_ENV prefix on the adapter" no "$(b "BASH_ENV=$TL_TMP/evil-rc silver-bullet invoke-skill silver")"
+assert_eq "PATH prefix on the adapter" no "$(b "PATH=$TL_TMP silver-bullet invoke-skill silver")"
+assert_eq "env PATH= on the adapter" no "$(b "env PATH=$TL_TMP silver-bullet invoke-skill silver")"
+assert_eq "env -i on the adapter" no "$(b "env -i silver-bullet invoke-skill silver")"
+assert_eq "BASH_ENV prefix on the ledger CLI" no "$(b "BASH_ENV=$TL_TMP/evil-rc scripts/resolve-instruction-ledger.sh list")"
+assert_eq "prefix inside a bash -c payload" no "$(b "bash -c 'BASH_ENV=$TL_TMP/evil-rc silver-bullet invoke-skill silver'")"
+assert_eq "prefix inside a nested bash -c payload" no "$(b "bash -c \"sh -c 'PATH=$TL_TMP silver-bullet invoke-skill silver'\"")"
+assert_eq "delegate under the fallback with a prefix" no "$(SB_AGENT_DELEGATE_DIRECT_FALLBACK=1 b "LD_PRELOAD=$TL_TMP/x scripts/agent-codex-delegate.sh")"
+assert_eq "bash <file named silver-bullet> that is not the plugin script" no "$(b "bash $TL_TMP/silver-bullet invoke-skill silver")"
+assert_eq "bash <the plugin's own scripts/silver-bullet>" yes "$(b "bash $TL_REPO_ROOT/scripts/silver-bullet invoke-skill silver")"
+assert_eq "bash -c payload without a prefix stays allowed" yes "$(b "bash -c 'silver-bullet invoke-skill silver'")"
+assert_eq "an unparseable bash -c payload is refused" no "$(b "bash -c 'silver-bullet invoke-skill silver \"'")"
 echo "=== parent bash: honest variants stay allowed ==="
 assert_eq "ledger done with id" yes "$(b "bash ./$LED done 3")"
 assert_eq "ledger deferred" yes "$(b "$LED deferred 3")"
 assert_eq "ledger bare (prints help)" yes "$(b "bash '$LED'")"
-assert_eq "adapter through env" yes "$(b "env A=1 silver-bullet invoke-skill silver")"
+assert_eq "adapter through a bare env (no assignments) is still a prefix: refused" no "$(b "env silver-bullet invoke-skill silver")"
 assert_eq "adapter through bash -c" yes "$(b "bash -c 'silver-bullet invoke-skill silver'")"
-assert_eq "adapter through a script path" yes "$(b "bash /opt/bin/silver-bullet invoke-skill silver")"
+assert_eq "adapter through a foreign script path refused (only the plugin script)" no "$(b "bash /opt/bin/silver-bullet invoke-skill silver")"
 assert_eq "adapter through nested shells" yes "$(b "bash -c \"sh -c 'silver-bullet invoke-skill silver'\"")"
 assert_eq "adapter in the background" yes "$(b "silver-bullet invoke-skill silver &")"
 assert_eq "git log piped to head is read-only" yes "$(b "git log --oneline | head -3")"

@@ -74,10 +74,10 @@ If the plan exposes unresolved assumptions, return to `/sb:context`.
 
 Run `/sb:execute`.
 
-For behavior-changing code, the SB TDD gate runs before implementation. Use
-`sb:execute --tdd` when the plan requires red/green/refactor discipline.
-Use ordinary `sb:execute` for docs-only, config-only, or pure layout tasks
-where TDD does not apply.
+The `tdd` gate is part of the configured `required_deploy` list, so it runs
+before every implementation, including docs-only, config-only and pure layout
+tasks (for those it records the "no behavior change" decision and stops there).
+Use `sb:execute --tdd` when the plan requires red/green/refactor discipline.
 
 Execution must produce atomic commits or clearly grouped changes and update the
 relevant summary artifacts.
@@ -89,6 +89,7 @@ Run the SB review sequence:
 1. `/sb:review-request`
 2. `/sb:review`
 3. `/sb:review-triage`
+4. `/sb:triage` for the findings that review-triage routes onward
 
 Review loops must continue until two consecutive clean passes or an explicit
 deferred item is captured with `/sb:add`. Do not silently drop accepted
@@ -107,11 +108,13 @@ SB test-gap path and re-run verification.
 
 ### 8. Security and validation
 
-- Run `security` for an independent security review when the change has security
-  surface, auth surface, data handling, dependency, or deployment impact.
+- Run `security` for an independent security review. It is part of
+  `required_deploy`, so it runs for every deliverable; the review is short when the
+  change has no security surface, auth surface, data handling, dependency, or
+  deployment impact.
 - Run `/sb:secure` for threat mitigation verification.
-- Run `/sb:validate` when spec/plan/UAT coverage needs another consistency
-  pass.
+- Run `/sb:validate` for a spec/plan/UAT consistency pass; it is part of
+  `required_deploy`.
 
 ### 9. Pre-ship quality gates
 
@@ -159,8 +162,9 @@ readiness, fresh tests, `sb:ship`, milestone archival, and
 - `/sb:quality-gates` before planning and before ship
 - `/sb:verify`
 - `/verify-tests` before PR, deploy, or release
-- `/sb:review` and `/sb:review-triage`
-- `/sb:secure` when security-sensitive behavior exists
+- `/sb:review`, `/sb:review-triage` and `/sb:triage`
+- `security`, `/sb:secure` and `/sb:validate`
+- `tdd` before implementation
 - `/sb:release` gates before milestone publication
 
 ## Optional Extension Plugins

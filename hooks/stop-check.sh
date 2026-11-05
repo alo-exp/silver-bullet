@@ -230,10 +230,11 @@ fi
     fi
   fi
   _stop_project_root="$(dirname "$config_file")"
+  # No endless trap: after repeated blocks with no orchestrator progress the ORCHESTRATOR blocks
+  # below are skipped (R4-05). Everything after them (planning floor, stall block, ...) still runs.
   if sb_orchestrator_is_parent_session 2>/dev/null \
-    && sb_orchestrator_state_applies_to_project "$_stop_project_root" 2>/dev/null; then
-    # No endless trap: release after repeated blocks with no orchestrator progress (R4-05).
-    sb_orchestrator_stop_block_released 2>/dev/null && exit 0
+    && sb_orchestrator_state_applies_to_project "$_stop_project_root" 2>/dev/null \
+    && ! sb_orchestrator_stop_block_released 2>/dev/null; then
     cur_flow=""
     orch_file="$(sb_orchestrator_state_file 2>/dev/null || true)"
     [[ -f "$orch_file" ]] && cur_flow="$(jq -r '.current_flow // ""' "$orch_file" 2>/dev/null || true)"
@@ -254,8 +255,8 @@ fi
   fi
   if sb_orchestrator_is_parent_session 2>/dev/null \
     && declare -f sb_scheduler_parent_stop_blocked >/dev/null 2>&1 \
-    && sb_scheduler_parent_stop_blocked "$_stop_project_root" 2>/dev/null; then
-    sb_orchestrator_stop_block_released 2>/dev/null && exit 0
+    && sb_scheduler_parent_stop_blocked "$_stop_project_root" 2>/dev/null \
+    && ! sb_orchestrator_stop_block_released 2>/dev/null; then
     sched_reason="$(sb_scheduler_parent_stop_block_reason "$_stop_project_root" 2>/dev/null || printf 'Orchestrator scheduler: pending batch dispatch or join.')"
     if declare -f sb_orchestrator_event_record_stop_block >/dev/null 2>&1; then
       sb_orchestrator_event_record_stop_block "$sched_reason" 2>/dev/null || true

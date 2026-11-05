@@ -41,8 +41,11 @@ For active incidents:
 5. Capture a follow-up task with `/sb:add` for the full review or permanent
    fix when the incident is over.
 
-Emergency work does not bypass verification, rollback evidence, or post-incident
-capture.
+Emergency work does not bypass the devops planning floor
+(`required_planning_devops`: blast radius, `/devops-quality-gates`, context and
+plan are recorded before the change is applied), verification, rollback evidence,
+or post-incident capture. The change is applied only after those are recorded; a
+very small stabilizing action may be taken first, but it counts as part of step 1.
 
 ## Required Lifecycle
 
@@ -108,6 +111,7 @@ Run the SB review sequence:
 1. `/sb:review-request`
 2. `/sb:review`
 3. `/sb:review-triage`
+4. `/sb:triage` for the findings that review-triage routes onward
 
 For infrastructure, review must inspect least privilege, network exposure,
 encryption, backups, tags/labels, idempotency, state handling, observability, and
@@ -125,8 +129,13 @@ environment-specific acceptance criteria.
 
 Run `/sb:secure`.
 
-Confirm no credentials are committed, IAM boundaries are least-privilege, network
-exposure is intentional, secret references are safe, and defaults are secure.
+Run `security` for an independent security review, then confirm no credentials
+are committed, IAM boundaries are least-privilege, network exposure is
+intentional, secret references are safe, and defaults are secure. Both are part
+of `required_deploy_devops`.
+
+Run `/sb:validate` for a plan/acceptance consistency pass (also part of
+`required_deploy_devops`).
 
 ### 10. Promote environments
 
@@ -140,10 +149,13 @@ For each promoted environment:
 
 ### 11. CI and deploy readiness
 
-- Run `/verify-tests` when the repo has runnable verification commands.
+- Run `/verify-tests` (part of `required_deploy_devops`; it reports when the repo has no runnable verification commands).
 - Confirm CI is green before deployment or PR/release operations.
 - If CI is red, run `/sb:debug`, fix, re-run tests, and re-check CI.
 - Run the SB deploy readiness path before production apply or public release.
+
+Run `/sb:branch-finish` and `/sb:completion-audit` immediately before ship; both
+are part of `required_deploy_devops`.
 
 Deploy readiness covers rollback plan, monitoring, on-call availability, change
 window, incident communication, and post-deploy observation.
@@ -171,9 +183,10 @@ what future maintainers need to know.
 - `/sb:blast-radius`
 - `/devops-quality-gates` before planning and before ship/release
 - `/sb:verify`
-- `/sb:review` and `/sb:review-triage`
-- `/sb:secure`
-- `/verify-tests` before PR, deploy, or release when tests exist
+- `/sb:review`, `/sb:review-triage` and `/sb:triage`
+- `security`, `/sb:secure` and `/sb:validate`
+- `/sb:completion-audit` immediately before ship
+- `/verify-tests` before PR, deploy, or release
 - SB deploy readiness before production deployment
 
 ## Optional Extension Plugins

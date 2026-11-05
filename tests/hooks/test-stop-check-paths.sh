@@ -3,6 +3,7 @@
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/testlib.sh"
 tl_init
+export SILVER_BULLET_RUNTIME=claude
 source "$TL_REPO_ROOT/tests/lib/e-core-helpers.sh"
 
 HOOK="$TL_REPO_ROOT/hooks/stop-check.sh"
@@ -105,7 +106,18 @@ assert_contains "first block with no progress still blocks" "$(reason)" "(FLOW-E
 SB_ORCHESTRATOR_STOP_BLOCK_LIMIT=2 run_stop
 assert_contains "second block with no progress still blocks" "$(reason)" "(FLOW-EXECUTE)"
 SB_ORCHESTRATOR_STOP_BLOCK_LIMIT=2 run_stop
-assert_eq "third Stop with no progress is released" "" "$(reason)"
+assert_not_contains "third Stop: the orchestrator block is released" "$(reason)" "(FLOW-EXECUTE)"
+assert_contains "released Stop still hits the planning floor (BLOCKER fix)" "$(reason)" "missing required skills"
+assert_eq "release is logged" stop_release "$(jq -r 'select(.type=="stop_release")|.type' "$SD/orchestrator-events.jsonl" 2>/dev/null | head -1)"
+for _ in 1 2 3; do SB_ORCHESTRATOR_STOP_BLOCK_LIMIT=2 run_stop; assert_contains "every later Stop still blocks on the floor" "$(reason)" "missing required skills"; done
+printf 'silver-quality-gates\nsilver-context\nsilver-plan\n' >"$STATE"
+SB_ORCHESTRATOR_STOP_BLOCK_LIMIT=2 run_stop
+assert_eq "released and floor satisfied: allowed" "" "$(reason)"
+printf 'silver-context\n' >"$STATE"
+printf '120' >"$SD/stall-block"
+SB_ORCHESTRATOR_STOP_BLOCK_LIMIT=2 run_stop
+assert_contains "released Stop still honours the stall block" "$(reason)" "tool calls without workflow progress"
+rm -f "$SD/stall-block" "$SD/orchestrator-events.jsonl"
 jq -n --arg repo "$EC_PROJ" '{current_flow:"FLOW-VERIFY",repo_root:$repo}' >"$SD/orchestrator.json"
 SB_ORCHESTRATOR_STOP_BLOCK_LIMIT=2 run_stop
 assert_contains "progress in the queue blocks again" "$(reason)" "(FLOW-VERIFY)"
@@ -114,8 +126,16 @@ jq -n --arg repo "$EC_PROJ" '{repo_root:$repo,scheduler:{join_gates:{"gate-7":"b
 SB_ORCHESTRATOR_STOP_BLOCK_LIMIT=1 run_stop
 assert_contains "scheduler block, first time: blocks" "$(reason)" "join gate blocked for gate-7"
 SB_ORCHESTRATOR_STOP_BLOCK_LIMIT=1 run_stop
-assert_eq "scheduler block released after repeated blocks with no progress" "" "$(reason)"
+assert_not_contains "scheduler block released after repeated blocks" "$(reason)" "join gate blocked"
+assert_contains "released scheduler Stop still hits the planning floor" "$(reason)" "missing required skills"
 rm -f "$SD/orchestrator-stop-blocks.json"
+
+# ---- Codex cannot identify workers: the orchestrator block is inactive, the floor is not -----
+reset_state
+jq -n --arg repo "$EC_PROJ" '{current_flow:"FLOW-EXECUTE",repo_root:$repo}' >"$SD/orchestrator.json"
+SILVER_BULLET_RUNTIME=codex run_stop
+assert_not_contains "codex: no orchestrator queue block" "$(reason)" "flow queue pending"
+assert_eq "codex: the hook exits cleanly" 0 "$TL_STATUS"
 
 # ---- scheduler pending work blocks the parent -------------------------------
 reset_state

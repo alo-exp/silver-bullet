@@ -33,7 +33,7 @@ sb_orchestrator_is_composer_skill() {
 
 sb_orchestrator_is_flow_atom() {
   case "$1" in
-    silver-quality-gates|silver-context|silver-plan|silver-execute|silver-verify|silver-ship|silver-review|silver-review-request|silver-review-triage|silver-review-fix-ladder|silver-secure|silver-validate|silver-clarify|silver-deep-research|silver-scan|silver-ensure-docs|silver-handoff|silver-spec|silver-debug|silver-ui-contract|silver-ui-review|silver-blast-radius|devops-quality-gates|devops-skill-router|silver-branch-finish|silver-completion-audit|silver-create-release|security|silver-agent-codex|silver-agent-cursor|silver-fixture-read-a|silver-fixture-read-b)
+    silver-quality-gates|silver-context|silver-plan|silver-execute|silver-verify|silver-ship|silver-review|silver-review-request|silver-review-triage|silver-review-fix-ladder|silver-secure|silver-validate|silver-clarify|silver-deep-research|silver-scan|silver-ensure-docs|silver-handoff|silver-spec|silver-debug|silver-ui-contract|silver-ui-review|silver-blast-radius|devops-quality-gates|devops-skill-router|silver-branch-finish|silver-completion-audit|silver-create-release|security|silver-triage|tdd|verify-tests|silver-agent-codex|silver-agent-cursor|silver-fixture-read-a|silver-fixture-read-b)
       return 0
       ;;
     *)
@@ -57,13 +57,22 @@ sb_orchestrator_post_exec_queue() {
 # edits and commits until these are recorded, so every queue that reaches silver-execute must
 # contain them (R10-02).
 sb_orchestrator_planning_floor_csv() {
-  local composer="$1" repo_root="${2:-}" key="required_planning" cfg csv="" tpl
-  case "$composer" in silver-devops|silver-canary|silver-deploy|silver-incident) key="required_planning_devops" ;; esac
+  _sb_orch_floor_csv required_planning "$1" "${2:-}" \
+    "silver-quality-gates,silver-context,silver-plan" \
+    "silver-blast-radius,devops-quality-gates,silver-context,silver-plan"
+}
+
+# The configured skill list KEY (required_planning / required_deploy; the _devops variant for devops
+# composers and devops-cycle projects): project config, else shipped template, else FALLBACK.
+_sb_orch_floor_csv() {
+  local base="$1" composer="$2" repo_root="${3:-}" fallback="$4" devops_fallback="$5"
+  local key="$base" cfg csv="" tpl
+  case "$composer" in silver-devops|silver-canary|silver-deploy|silver-incident) key="${base}_devops" ;; esac
   cfg="$repo_root/.silver-bullet.json"
-  # The hooks pick the floor from the project's active workflow, so the queue does the same.
+  # The hooks pick the list from the project's active workflow, so the queue does the same.
   if [[ -n "$repo_root" && -f "$cfg" ]] && command -v jq >/dev/null 2>&1 \
      && [[ "$(jq -r '.project.active_workflow // ""' "$cfg" 2>/dev/null || true)" == "devops-cycle" ]]; then
-    key="required_planning_devops"
+    key="${base}_devops"
   fi
   if command -v jq >/dev/null 2>&1; then
     [[ -n "$repo_root" && -f "$cfg" ]] && csv="$(jq -r --arg k "$key" '(.skills[$k] // []) | join(",")' "$cfg" 2>/dev/null || true)"
@@ -73,10 +82,42 @@ sb_orchestrator_planning_floor_csv() {
     fi
   fi
   if [[ -z "$csv" ]]; then
-    csv="silver-quality-gates,silver-context,silver-plan"
-    [[ "$key" == "required_planning_devops" ]] && csv="silver-blast-radius,devops-quality-gates,silver-context,silver-plan"
+    csv="$fallback"
+    [[ "$key" == "${base}_devops" ]] && csv="$devops_fallback"
   fi
   printf '%s' "$csv"
+}
+
+# Delivery floor (R10-02 part B): the required_deploy skills that no queue token stands for. A queue
+# that reaches silver-ship through the review triad is given silver-triage (after review-triage),
+# verify-tests (after verify) and tdd (before execute) when the configured required_deploy list
+# asks for them, so following the queue exactly leaves `gh pr create` unblocked. Config is
+# authoritative: a project that drops one of them from required_deploy does not get it queued.
+sb_orchestrator_apply_deploy_floor() {
+  local queue="$1" deploy_csv="$2" token out="" skill
+  case ",$queue," in *,silver-ship,*) ;; *) printf '%s' "$queue"; return 0 ;; esac
+  case ",$queue," in *,silver-review-triage,*) ;; *) printf '%s' "$queue"; return 0 ;; esac
+  local IFS=','
+  local -a tokens
+  read -ra tokens <<< "$queue"
+  local want_triage=false want_vt=false want_tdd=false
+  case ",$deploy_csv," in *,silver-triage,*) want_triage=true ;; esac
+  case ",$deploy_csv," in *,verify-tests,*) want_vt=true ;; esac
+  case ",$deploy_csv," in *,tdd,*) want_tdd=true ;; esac
+  for token in "${tokens[@]}"; do
+    skill="$(sb_orchestrator_flow_to_skill "$token")"
+    if [[ "$want_tdd" == true && "$token" == "silver-execute" && ",$queue," != *,tdd,* ]]; then
+      out="${out:+$out,}tdd"
+    fi
+    out="${out:+$out,}$token"
+    if [[ "$want_triage" == true && "$skill" == "silver-review-triage" && ",$queue," != *,silver-triage,* ]]; then
+      out="$out,silver-triage"
+    fi
+    if [[ "$want_vt" == true && "$skill" == "silver-verify" && ",$queue," != *,verify-tests,* ]]; then
+      out="$out,verify-tests"
+    fi
+  done
+  printf '%s' "$out"
 }
 
 # Insert the floor skills the queue lacks, in floor order, right before its silver-plan (or, when
@@ -115,7 +156,9 @@ sb_orchestrator_apply_planning_floor() {
 
 sb_orchestrator_default_queue_for_composer() {
   local composer="$1"
-  sb_orchestrator_apply_planning_floor "$(_sb_orch_raw_queue_for_composer "$composer")" "$(sb_orchestrator_planning_floor_csv "$composer")"
+  local q
+  q="$(sb_orchestrator_apply_planning_floor "$(_sb_orch_raw_queue_for_composer "$composer")" "$(sb_orchestrator_planning_floor_csv "$composer")")"
+  sb_orchestrator_apply_deploy_floor "$q" "$(_sb_orch_floor_csv required_deploy "$composer" "" "" "")"
 }
 
 _sb_orch_raw_queue_for_composer() {
@@ -204,7 +247,8 @@ sb_orchestrator_queue_for_composer() {
       fi
       ;;
   esac
-  sb_orchestrator_apply_planning_floor "$queue" "$(sb_orchestrator_planning_floor_csv "$composer" "$repo_root")"
+  queue="$(sb_orchestrator_apply_planning_floor "$queue" "$(sb_orchestrator_planning_floor_csv "$composer" "$repo_root")")"
+  sb_orchestrator_apply_deploy_floor "$queue" "$(_sb_orch_floor_csv required_deploy "$composer" "$repo_root" "" "")"
 }
 
 sb_orchestrator_flow_label_for_token() {
@@ -473,8 +517,8 @@ sb_orchestrator_clear_queue() {
 # Parent Stop blocks (queue pending / scheduler work pending) must not trap a session forever
 # when nothing can move (R4-05). Each call counts one block that is about to be issued; the
 # count restarts whenever orchestrator.json changed since the previous block. After
-# SB_ORCHESTRATOR_STOP_BLOCK_LIMIT (default 5) blocks with no progress this returns 0:
-# release the Stop. Otherwise 1: keep blocking.
+# SB_ORCHESTRATOR_STOP_BLOCK_LIMIT (default 5) blocks with no progress this returns 0: the caller
+# skips only the orchestrator block (all other Stop checks still run) and a stop_release event is logged. Otherwise 1: keep blocking.
 sb_orchestrator_stop_block_released() {
   local file counter stamp prior_stamp prior_count count limit
   file="$(sb_orchestrator_state_file)"
@@ -497,6 +541,9 @@ sb_orchestrator_stop_block_released() {
   sb_orchestrator_atomic_write "$counter" "$(jq -nc --arg stamp "$stamp" --argjson count "$count" '{stamp:$stamp,count:$count}')" || true
   limit="${SB_ORCHESTRATOR_STOP_BLOCK_LIMIT:-5}"
   [[ "$limit" =~ ^[0-9]+$ ]] || limit=5
+  if (( count == limit + 1 )) && declare -f sb_orchestrator_event_append >/dev/null 2>&1; then
+    sb_orchestrator_event_append "stop_release" "$(jq -nc --argjson n "$count" '{blocks_without_progress: $n}')" 2>/dev/null || true
+  fi
   (( count > limit ))
 }
 

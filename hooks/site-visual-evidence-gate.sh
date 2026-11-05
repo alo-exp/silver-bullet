@@ -22,6 +22,7 @@ case "$hook_event" in
   *) exit 0 ;;
 esac
 
+# On Claude every SubagentStop carries agent_id, so a worker's SubagentStop is always skipped here.
 if [[ "$hook_event" == "SubagentStop" && -f "$_lib_dir/orchestrator-parent.sh" ]]; then
   source "$_lib_dir/orchestrator-parent.sh"
   sb_orchestrator_is_worker_session 2>/dev/null && exit 0

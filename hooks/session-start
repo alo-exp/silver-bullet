@@ -386,9 +386,9 @@ if [[ "$sb_should_mutate" == true ]]; then
   rm -f -- "${SB_STATE_DIR}/planning-edit-override" \
         "${SB_STATE_DIR}/roadmap-edit-override" 2>/dev/null || true
   # #275: Claude Agent workers fire SessionStart(startup) but never SubagentStart.
-  # Parent PreToolUse writes orchestrator-worker-active.json; wiping it here before
-  # classification misclassifies workers as parents. Preserve a *fresh* marker
-  # (within TTL via sb_orchestrator_is_worker_session). Stale/invalid markers still clear.
+  # orchestrator-worker-active.json is only an evidence record of the delegation; it never
+  # classifies a session. A SessionStart whose payload carries the host's subagent id (a worker,
+  # per sb_orchestrator_is_worker_session) keeps the record; any other startup clears it.
   _sb_preserve_worker_marker=false
   if [[ -f "$_lib_dir/orchestrator-parent.sh" ]]; then
     # shellcheck source=lib/orchestrator-parent.sh
