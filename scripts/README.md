@@ -45,7 +45,8 @@ Called by skills and hooks while Silver Bullet runs in a project.
 | `sb-bootstrap.sh` | Onboarding probe with next steps |
 | `sb-diagnostics.sh` | Capability tier, hook config, jq, Graphify, package version (`SB_DIAG_FORMAT=json`) |
 | `sb-doctor.sh` | Install and project-activation audit behind `/sb:doctor` (`--deep`, `--dry-run`, `--fix=...`) |
-| `sb-prerequisite-repair.sh` | Automatic prerequisite repair, called from `session-start` |
+| `sb-prerequisite-repair.sh` | Report-only prerequisite repair (prints the jq install command, refreshes the plugin cache alias), called from `session-start` |
+| `phase-lock.sh` | Phase-ownership lock helper; the phase-lock hooks run this plugin copy, never a script from the project |
 | `sb-migrate-config.sh`, `sb-migrate-initiated.sh`, `sb-migrate-orchestrator-parent.sh`, `sb-migrate-project.sh` | Merge `.silver-bullet.json` forward and migrate legacy projects |
 | `diagnose-cursor-picker-duplicates.sh`, `enumerate-cursor-slash-picker.sh` | Inspect what Cursor's slash picker would register |
 
